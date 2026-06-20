@@ -32,7 +32,6 @@ import org.cangnova.cangjie.cfir.analysis.collectors.components.DiagnosticCompon
 import org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.diagnostics.CjDiagnostic
-import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.impl.BaseDiagnosticsCollector
 import org.cangnova.cangjie.cfir.diagnostics.impl.PendingDiagnosticsReporterImpl
 import org.cangnova.cangjie.cfir.lightTree.LightTree2Cfir
@@ -73,14 +72,12 @@ fun CfirSession.buildPreMacroRawCfirFromCjFiles(cjFiles: Collection<CjFile>): Pr
  */
 fun CfirSession.buildPreMacroRawCfirViaLightTree(
     lightTreeFiles: Collection<CjSourceFile>,
-    @Suppress("UNUSED_PARAMETER") diagnosticReporterForLightTree: DiagnosticReporter? = null,
     reportFilesAndLines: ((String, Int) -> Unit)? = null,
 ): PreMacroRawBuildResult {
     val firProvider = cfirProvider as CfirProviderImpl
     val builder = LightTree2Cfir(
         session = this,
         scopeProvider = firProvider.cangjieScopeProvider,
-        diagnosticsReporter = diagnosticReporterForLightTree,
     )
     val rawFilesWithSurfaces = lightTreeFiles.map { sourceFile ->
         val (code, linesMapping) = sourceFile.getContentsAsStream().reader(Charsets.UTF_8).use {
@@ -116,10 +113,9 @@ fun CfirSession.buildCfirFromCjFiles(cjFiles: Collection<CjFile>): List<CfirFile
  */
 fun CfirSession.buildCfirViaLightTree(
     lightTreeFiles: Collection<CjSourceFile>,
-    @Suppress("UNUSED_PARAMETER") diagnosticReporterForLightTree: DiagnosticReporter? = null,
     reportFilesAndLines: ((String, Int) -> Unit)? = null,
 ): List<CfirFile> {
-    return buildRecordableCfirViaLightTree(lightTreeFiles, diagnosticReporterForLightTree, reportFilesAndLines).files
+    return buildRecordableCfirViaLightTree(lightTreeFiles, reportFilesAndLines).files
 }
 
 /**
@@ -139,10 +135,9 @@ fun CfirSession.buildRecordableCfirFromCjFiles(cjFiles: Collection<CjFile>): Rec
  */
 fun CfirSession.buildRecordableCfirViaLightTree(
     lightTreeFiles: Collection<CjSourceFile>,
-    diagnosticReporterForLightTree: DiagnosticReporter? = null,
     reportFilesAndLines: ((String, Int) -> Unit)? = null,
 ): RecordableRawCfirFiles {
-    val pre = buildPreMacroRawCfirViaLightTree(lightTreeFiles, diagnosticReporterForLightTree, reportFilesAndLines)
+    val pre = buildPreMacroRawCfirViaLightTree(lightTreeFiles, reportFilesAndLines)
     return finalizeIdentity(pre)
 }
 

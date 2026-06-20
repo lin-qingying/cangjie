@@ -22,7 +22,6 @@
  *
  */
 
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.io.ByteArrayOutputStream
 import java.io.OutputStream
 import java.net.URI
@@ -51,15 +50,6 @@ val cangjieVersion = providers.gradleProperty("cangjieVersion").get()
 allprojects {
     group = "org.cangnova.cangjie"
     version = cangjieVersion
-
-    tasks.withType<KotlinCompile>().configureEach {
-        compilerOptions {
-            freeCompilerArgs.add("-Xskip-prerelease-check")
-            freeCompilerArgs.add("-Xjvm-default=all")
-//            freeCompilerArgs.add("-XXLanguage:+ExplicitBackingFields")
-            freeCompilerArgs.add("-Xcontext-parameters")
-        }
-    }
 
     pluginManager.apply("common-configuration")
 }
@@ -479,7 +469,10 @@ abstract class GenerateCodeStatsFileListTask : DefaultTask() {
             .filter { path -> executionDirectory.get().asFile.resolve(path.replace('/', File.separatorChar)).isFile }
             .toList()
 
-        Files.write(outputFile.toPath(), files, Charsets.UTF_8)
+        val content = files.joinToString(separator = "\n", postfix = if (files.isEmpty()) "" else "\n")
+        if (!outputFile.exists() || outputFile.readText(Charsets.UTF_8) != content) {
+            outputFile.writeText(content, Charsets.UTF_8)
+        }
     }
 }
 
@@ -555,6 +548,7 @@ val generateCodeStatsFileList by tasks.registering(GenerateCodeStatsFileListTask
     excludedDirectories.set(codeStatsExcludedDirectories)
     executionDirectory.set(layout.projectDirectory)
     listFile.set(codeStatsReportDirectory.map { it.file("git-files.txt") })
+    outputs.upToDateWhen { false }
 }
 
 val downloadCodeStatsCloc by tasks.registering(DownloadCodeStatsToolTask::class) {
@@ -611,7 +605,6 @@ val codeStatsClocMarkdown by tasks.registering(CodeStatsToolTask::class) {
     executionDirectory.set(layout.projectDirectory)
     reportFile.set(codeStatsClocMarkdownReport)
     errorLogFile.set(codeStatsReportDirectory.map { it.file("cloc.md.stderr.log") })
-    outputs.upToDateWhen { false }
 }
 
 val codeStatsClocCsvReport = codeStatsReportDirectory.map { it.file("cloc-by-file.csv") }
@@ -634,7 +627,6 @@ val codeStatsClocCsv by tasks.registering(CodeStatsToolTask::class) {
     executionDirectory.set(layout.projectDirectory)
     reportFile.set(codeStatsClocCsvReport)
     errorLogFile.set(codeStatsReportDirectory.map { it.file("cloc-by-file.csv.stderr.log") })
-    outputs.upToDateWhen { false }
 }
 
 val codeStatsTokeiJson by tasks.registering(CodeStatsToolTask::class) {
@@ -651,7 +643,6 @@ val codeStatsTokeiJson by tasks.registering(CodeStatsToolTask::class) {
     executionDirectory.set(layout.projectDirectory)
     reportFile.set(codeStatsReportDirectory.map { it.file("tokei.json") })
     errorLogFile.set(codeStatsReportDirectory.map { it.file("tokei.json.stderr.log") })
-    outputs.upToDateWhen { false }
 }
 
 val codeStatsSccHtml by tasks.registering(CodeStatsToolTask::class) {
@@ -672,7 +663,6 @@ val codeStatsSccHtml by tasks.registering(CodeStatsToolTask::class) {
     executionDirectory.set(layout.projectDirectory)
     reportFile.set(codeStatsReportDirectory.map { it.file("scc.html") })
     errorLogFile.set(codeStatsReportDirectory.map { it.file("scc.html.stderr.log") })
-    outputs.upToDateWhen { false }
 }
 
 val renderCodeStatsReport by tasks.registering(RenderCodeStatsReportTask::class) {
@@ -683,7 +673,6 @@ val renderCodeStatsReport by tasks.registering(RenderCodeStatsReportTask::class)
     excludedDirectories.set(codeStatsExcludedDirectories)
     markdownReport.set(codeStatsReportDirectory.map { it.file("code-stats.md") })
     htmlReport.set(codeStatsReportDirectory.map { it.file("code-stats.html") })
-    outputs.upToDateWhen { false }
 }
 
 tasks.register("codeStats") {

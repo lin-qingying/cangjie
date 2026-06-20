@@ -102,6 +102,7 @@ object CommonExpressionCheckers : ExpressionCheckers() {
             CfirFunctionReferenceLegalityChecker,
             CfirGenericBareClassifierAccessChecker,
             CfirUpperBoundViolatedQualifiedAccessExpressionChecker,
+            CfirCaptureHasShadowVariableChecker,
             CfirClassifierAsExpressionChecker,
             CfirMutFuncReferenceChecker,
             CfirUnsafeFuncReferenceChecker,

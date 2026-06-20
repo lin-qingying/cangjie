@@ -1153,7 +1153,7 @@ class FrontendMacroConstructionService(
         val foreignTargets = context.symbolIndex.foreigns.map { entry ->
             "${entry.fqName.asString()}|exec=${entry.executableFqName.asString()}|${entry.source}|lib=${entry.libPath.orEmpty()}|abi=${entry.executorAbi.orEmpty()}|" +
                     "artifact=${entry.artifactSignature.orEmpty()}|cjo=${entry.cjoHash.orEmpty()}|" +
-                    "dylib=${entry.dynamicLibHash.orEmpty()}|bchir=${entry.dependenciesBchirHash.orEmpty()}|" +
+                    "dylib=${entry.dynamicLibHash.orEmpty()}|deps=${entry.dependenciesArtifactHash.orEmpty()}|" +
                     "resolver=${entry.resolverAlgorithmVersion ?: -1}"
         }
         return org.cangnova.cangjie.utils.StableHash.sha256Of(sourceTargets + foreignTargets)

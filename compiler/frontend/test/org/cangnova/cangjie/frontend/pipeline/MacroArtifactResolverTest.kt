@@ -46,7 +46,7 @@ class MacroArtifactResolverTest {
         assertTrue(result.definitions.all { !it.artifactSignature.isNullOrBlank() })
         assertTrue(result.definitions.all { !it.cjoHash.isNullOrBlank() })
         assertTrue(result.definitions.all { !it.dynamicLibHash.isNullOrBlank() })
-        assertTrue(result.definitions.all { !it.dependenciesBchirHash.isNullOrBlank() })
+        assertTrue(result.definitions.all { !it.dependenciesArtifactHash.isNullOrBlank() })
         assertTrue(result.definitions.all { it.resolverAlgorithmVersion == MacroArtifactResolver.ALGORITHM_VERSION })
     }
 

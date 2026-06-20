@@ -49,8 +49,10 @@ object DiagnosticNameMapper {
         "TYPE_INCOMPATIBLE" to "sema_type_incompatible",
 
         // ── Resolve ──
-        "NO_CONSTRUCTOR" to "sema_no_matching_constructor",
+        "NO_CONSTRUCTOR" to "sema_no_match_constructor",
+        "INVALID_ACCESS_CONTROL" to "sema_invalid_access_control",
         "REF_NOT_BE_TYPE" to "sema_ref_not_be_type",
+        "UNDECLARED_TYPE_NAME" to "sema_undeclared_type_name",
         "UNRESOLVED_REFERENCE" to "sema_undeclared_identifier",
         "INVISIBLE_MEMBER" to "sema_no_matching_function",
         "INVISIBLE_REFERENCE" to "sema_undeclared_identifier",
@@ -61,6 +63,7 @@ object DiagnosticNameMapper {
         "AMBIGUOUS_ARG_TYPE" to "sema_ambiguous_arg_type",
         "AMBIGUOUS_FUNCTION_REFERENCE" to "sema_ambiguous_function_reference",
         "NO_MATCHING_OPERATOR_INVOKE" to "sema_no_matching_operator_invoke",
+        "NO_MATCH_OPERATOR_FUNCTION_CALL" to "sema_no_match_operator_function_call",
         "ENUM_TYPE_CANNOT_BE_USED_AS_CONSTRUCTOR" to "sema_enum_type_cannot_be_used_as_constructor",
         "CANNOT_OVERRIDE_INVISIBLE_MEMBER" to "sema_cannot_override_invisible_member",
         "CANNOT_OVERRIDE" to "sema_cannot_override",
@@ -106,6 +109,10 @@ object DiagnosticNameMapper {
 
         // ── Constructor ──
         "ILLEGAL_THIS_OR_SUPER_CALL" to "sema_illegal_this_or_super_call",
+        "sema_multiple_primary_constructors" to "sema_multiple_primary_constructors",
+        "sema_illegal_place_of_calling_this_or_super" to "sema_illegal_place_of_calling_this_or_super",
+        "sema_illegal_place_of_calling_this_primary_constructor" to "sema_illegal_place_of_calling_this_primary_constructor",
+        "sema_no_non_param_constructor_in_super_class" to "sema_no_non_param_constructor_in_super_class",
         "RECURSIVE_CONSTRUCTOR_CALL" to "sema_recursive_constructor_call",
         "VALUE_TYPE_RECURSIVE" to "sema_value_type_recursive",
 
@@ -211,7 +218,6 @@ object DiagnosticNameMapper {
         "VARRAY_ARGS_NUMBER_MISMATCH" to "sema_varray_args_number_mismatch",
         "VARRAY_ARG_TYPE_WITH_REFTYPE" to "sema_varray_arg_type_with_reftype",
         "BUILTIN_INDEX_IN_BOUND" to "sema_builtin_index_in_bound",
-        "chir_idx_out_of_bounds" to "chir_idx_out_of_bounds",
 
         // ── Common/Specific ──
         "COMMON_OPEN_CLASS_NO_INIT" to "parse_cjmp_in_common_ctor_required",
@@ -224,6 +230,7 @@ object DiagnosticNameMapper {
         // ── General ──
         "CORE_OBJECT_NOT_FOUND_WHEN_NO_PRELUDE" to "sema_core_object_not_found_when_no_prelude",
         "TYPEALIAS_UNUSED_TYPE_PARAMETERS" to "typealias_unused_type_parameters",
+        "TYPEALIAS_CYCLE" to "sema_typealias_cycle",
     )
 
     /** cjc DiagKind → 项目诊断名集合（一对多） */

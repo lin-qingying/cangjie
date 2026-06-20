@@ -90,7 +90,9 @@ object CfirUnusedExpressionChecker : CfirBasicDeclarationChecker() {
             matchExpression.subject?.accept(this, UsageState.Used)
             matchExpression.branches.forEach { branch ->
                 branch.guard?.accept(this, UsageState.Used)
-                branch.body.accept(this, data)
+                if (!branch.body.isPureUnitBranchResult()) {
+                    branch.body.accept(this, data)
+                }
             }
         }
 
@@ -140,20 +142,32 @@ object CfirUnusedExpressionChecker : CfirBasicDeclarationChecker() {
                 is CfirWrappedExpression -> expression.hasSideEffect()
                 is CfirOptionalExpression -> expression.hasSideEffect()
                 is CfirSmartCastExpression -> originalExpression.hasSideEffect()
+                is CfirTupleLiteral -> elements.any { it.hasSideEffect() }
 
                 is CfirFunctionCall -> true
 
                 is CfirQualifiedAccessExpression -> {
                     /*
-                     * 官方 cjc 将裸变量、形参、成员属性等名称访问交给 unused-variable/DCE
-                     * 诊断族处理，不再额外报告 unused expression；属性访问是否有 accessor
-                     * 不是 CFIR unused-expression checker 的判定边界。
+                     * 裸变量、形参、成员属性等名称访问不属于 CFIR unused-expression
+                     * 检查的职责；这里仅判断表达式结果是否被丢弃。
                      */
                     true
                 }
 
                 else -> true
             }
+        }
+
+        /**
+         * 对齐 Kotlin `FirUnusedCheckerBase.isUnitBlock`：match/when 分支中的纯 `Unit` 结果
+         * 是分支占位结果，不作为被丢弃的普通表达式报告。
+         */
+        private fun CfirExpression.isPureUnitBranchResult(): Boolean {
+            val singleResult = when (this) {
+                is CfirBlock -> statements.singleOrNull() as? CfirExpression
+                else -> this
+            }
+            return singleResult is CfirLiteralExpression && singleResult.coneTypeOrNull == ConePrimitiveType.UNIT
         }
     }
 }

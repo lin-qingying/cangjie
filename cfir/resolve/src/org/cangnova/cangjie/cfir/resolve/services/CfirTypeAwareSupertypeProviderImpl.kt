@@ -29,6 +29,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.resolve.CfirTypeResolutionConfiguration
 import org.cangnova.cangjie.cfir.resolve.SupertypeSupplier
+import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.resolve.providers.CfirExtendProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirTypeAwareSupertypeProvider
 import org.cangnova.cangjie.cfir.resolve.providers.createExtendDeclarationSubstitution
@@ -67,10 +68,11 @@ class CfirTypeAwareSupertypeProviderImpl(
     }
 
     private fun computeDirectSupertypes(type: ConeCangJieType): List<ConeCangJieType> {
-        if (!type.isSupportedClassifierType()) return emptyList()
+        val semanticType = type.fullyExpandedType(session)
+        if (!semanticType.isSupportedClassifierType()) return emptyList()
 
-        val declaredSupertypes = resolveDeclaredDirectSupertypes(type)
-        val effectiveExtendSupertypes = collectEffectiveExtendSupertypes(type, linkedSetOf())
+        val declaredSupertypes = resolveDeclaredDirectSupertypes(semanticType)
+        val effectiveExtendSupertypes = collectEffectiveExtendSupertypes(semanticType, linkedSetOf())
 
         if (declaredSupertypes.isEmpty() && effectiveExtendSupertypes.isEmpty()) return emptyList()
         return buildList {
@@ -168,6 +170,9 @@ class CfirTypeAwareSupertypeProviderImpl(
 
     private fun resolveExtends(type: ConeCangJieType): List<CfirExtend> {
         return when (type) {
+            is ConeIdealLiteralType -> type.idealExtendLookupTypes
+                .flatMap { extendProvider.getExtendsForBuiltinType(it.kind) }
+                .distinct()
             is ConePrimitiveType -> extendProvider.getExtendsForBuiltinType(type.kind)
             else -> {
                 val classId = type.classIdOrPrimitiveClassId ?: return emptyList()

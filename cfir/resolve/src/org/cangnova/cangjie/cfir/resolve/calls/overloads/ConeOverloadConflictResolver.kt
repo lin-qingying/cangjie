@@ -108,18 +108,16 @@ class ConeOverloadConflictResolver(
             is CfirNamedFunctionSymbol -> overrides(
                 MemberWithBaseScope(candidateSymbol, scope),
                 otherSymbol,
-                ProcessAllOverridden<CfirNamedFunctionSymbol> { baseScope, symbol, processor ->
-                    baseScope.processDirectOverriddenFunctionsWithBaseScope(symbol, processor)
-                },
-            )
+            ) { baseScope, symbol, processor ->
+                baseScope.processDirectOverriddenFunctionsWithBaseScope(symbol, processor)
+            }
 
             is CfirPropertySymbol -> overrides(
                 MemberWithBaseScope(candidateSymbol, scope),
                 otherSymbol,
-                ProcessAllOverridden<CfirPropertySymbol> { baseScope, symbol, processor ->
-                    baseScope.processDirectOverriddenPropertiesWithBaseScope(symbol, processor)
-                },
-            )
+            ) { baseScope, symbol, processor ->
+                baseScope.processDirectOverriddenPropertiesWithBaseScope(symbol, processor)
+            }
 
             else -> false
         }
@@ -490,7 +488,7 @@ class ConeOverloadConflictResolver(
 
     private fun ConeCangJieType.typeParameterLookupTagOrNull(): ConeTypeParameterLookupTag? {
         return when (this) {
-            is ConeTypeParameterType -> lookupTag as? ConeTypeParameterLookupTag
+            is ConeTypeParameterType -> lookupTag
             is ConeTypeVariableType -> typeConstructor.originalTypeParameter as? ConeTypeParameterLookupTag
             else -> null
         }
@@ -624,10 +622,11 @@ class ConeOverloadConflictResolver(
         }
 
         return when (val declaration = call.symbol.cfir) {
-            is CfirFunction -> createFlatSignature(call, declaration)
             is CfirConstructor -> createFlatSignature(call, declaration)
             is CfirEnumConstructor -> createFlatSignature(call, declaration)
             is CfirProperty -> createFlatSignature(call, declaration)
+            is CfirFunction -> createFlatSignature(call, declaration)
+
             is CfirVariable -> createFlatSignature(call, declaration)
             is CfirClassLikeDeclaration -> createFlatSignature(call, declaration)
             else -> error("Unsupported declaration for overload conflict resolution: ${declaration::class.java.name}")
@@ -755,9 +754,10 @@ class ConeOverloadConflictResolver(
 
     private fun declaredParametersFor(called: CfirCallableDeclaration): List<CfirValueParameter> {
         return when (called) {
-            is CfirFunction -> called.valueParameters
             is CfirConstructor -> called.valueParameters
             is CfirEnumConstructor -> called.valueParameters
+            is CfirFunction -> called.valueParameters
+
             else -> emptyList()
         }
     }
@@ -811,18 +811,17 @@ class ConeOverloadConflictResolver(
     }
 
     private fun List<CfirTypeParameterRef>.toTypeParameterMarkers(): List<TypeParameterMarker> {
-        return mapNotNull { (it.symbol as? CfirTypeParameterSymbol)?.toLookupTag() as? TypeParameterMarker }
+        return mapNotNull { it.symbol.toLookupTag() as? TypeParameterMarker }
     }
 
     private fun CfirClassLikeDeclaration.typeParameters(): List<CfirTypeParameter> {
         return when (this) {
             is CfirClass -> typeParameters
-            is org.cangnova.cangjie.cfir.declarations.CfirPrimitiveTypeDeclaration -> emptyList()
+            is CfirPrimitiveTypeDeclaration -> emptyList()
             is CfirInterface -> typeParameters
             is CfirStruct -> typeParameters
             is CfirEnum -> typeParameters
             is CfirTypeAlias -> typeParameters
-            else -> emptyList()
         }
     }
 
@@ -904,8 +903,8 @@ class ConeOverloadConflictResolver(
 
 }
 
-private fun org.cangnova.cangjie.cfir.types.CfirTypeRef.coneTypeOrNull(): ConeCangJieType? {
-    return (this as? org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef)?.coneType
+private fun CfirTypeRef.coneTypeOrNull(): ConeCangJieType? {
+    return (this as? CfirResolvedTypeRef)?.coneType
 }
 
 private class ConeSimpleConstraintSystemImpl(

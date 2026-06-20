@@ -10,6 +10,12 @@ import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.references.impl.CfirResolvedAppliedCallableReference
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirTypeAliasSymbol
+import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
+import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.coneTypeOrNull
+import org.cangnova.cangjie.cfir.types.contains
 
 /**
  * 裸泛型 classifier 被当作值或限定符使用时，需要落到专门的 generic 诊断，
@@ -26,7 +32,7 @@ object CfirGenericBareClassifierAccessChecker : CfirQualifiedAccessChecker() {
 
         val resolvedReference = expression.calleeReference as? CfirResolvedNamedReference ?: return
         val resolvedSymbol = resolvedReference.resolvedSymbol as? CfirClassLikeSymbol<*> ?: return
-        if (resolvedSymbol.cfir.typeParameters.isEmpty()) return
+        if (!resolvedSymbol.requiresExplicitTypeArgumentsForBareAccess()) return
 
         reporter.reportOn(
             source = resolvedReference.source ?: expression.source,
@@ -34,6 +40,26 @@ object CfirGenericBareClassifierAccessChecker : CfirQualifiedAccessChecker() {
             a = resolvedSymbol.classId.shortClassName,
         )
     }
+
+    /**
+     * typealias 的裸访问按真实展开类型判断：只有参与展开的别名参数才需要由 use-site 提供。
+     * 官方 `GenerateTypeMappingForBaseExpr` 会把未参与展开的 typealias 参数从待求解映射中剔除。
+     */
+    private fun CfirClassLikeSymbol<*>.requiresExplicitTypeArgumentsForBareAccess(): Boolean {
+        val typeParameters = cfir.typeParameters
+        if (typeParameters.isEmpty()) return false
+        if (this !is CfirTypeAliasSymbol) return true
+
+        val expandedType = cfir.expandedTypeRef.coneTypeOrNull ?: return false
+        return typeParameters.any { parameter ->
+            expandedType.referencesTypeParameter(parameter.symbol)
+        }
+    }
+
+    private fun ConeCangJieType.referencesTypeParameter(symbol: CfirTypeParameterSymbol): Boolean =
+        contains { type ->
+            type is ConeTypeParameterType && type.lookupTag.typeParameterSymbol == symbol
+        }
 
     context(context: CheckerContext)
     private fun CfirQualifiedAccessExpression.isQualifierOfEnumConstructorAccess(): Boolean {

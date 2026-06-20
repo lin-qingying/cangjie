@@ -101,6 +101,8 @@ class CfirTypeResolverImpl(
         expandTypeAliases: Boolean,
     ): CfirTypeResolutionResult {
         return when (typeRef) {
+            is CfirErrorTypeRef -> result(ConeErrorType(typeRef.diagnostic))
+
             is CfirResolvedTypeRef -> result(typeRef.coneType)
             is CfirImplicitTypeRef -> result(ConeErrorType(ConeSimpleDiagnostic("Implicit type reference is not resolvable at this stage")))
             is CfirBasicTypeRef -> result(resolveBasicType(typeRef, configuration))
@@ -124,8 +126,6 @@ class CfirTypeResolverImpl(
                     result(ConeErrorType(ConeSimpleDiagnostic("Invalid VArray size: ${typeRef.sizeLiteral}")))
                 }
             }
-            is CfirErrorTypeRef -> result(ConeErrorType(typeRef.diagnostic))
-            else -> result(ConeErrorType(ConeSimpleDiagnostic("Unsupported type reference: ${typeRef::class.simpleName}")))
         }
     }
 
@@ -509,17 +509,17 @@ class CfirTypeResolverImpl(
                 isRefEnum = resolvedClass.isRefEnum,
             )
             is CfirTypeAlias -> {
-                val expandedType = resolvedClass.expandedTypeRef.coneTypeOrNull
-                    ?: resolveType(
-                        resolvedClass.expandedTypeRef,
-                        configuration,
-                        areBareTypesAllowed = false,
-                        isOperandOfIsOperator = false,
-                        resolveDeprecations = true,
-                        supertypeSupplier = SupertypeSupplier.Default,
-                        expandTypeAliases = true,
-                    ).type
                 if (expandTypeAliases && !aliasedTypeExpansionGloballyDisabled) {
+                    val expandedType = resolvedClass.expandedTypeRef.coneTypeOrNull
+                        ?: resolveType(
+                            resolvedClass.expandedTypeRef,
+                            configuration,
+                            areBareTypesAllowed = false,
+                            isOperandOfIsOperator = false,
+                            resolveDeprecations = true,
+                            supertypeSupplier = SupertypeSupplier.Default,
+                            expandTypeAliases = true,
+                        ).type
                     ConeTypeAliasType(
                         classId = classId,
                         expandedType = expandedType,
@@ -528,7 +528,7 @@ class CfirTypeResolverImpl(
                 } else {
                     ConeTypeAliasType(
                         classId = classId,
-                        expandedType = expandedType,
+                        expandedType = resolvedClass.expandedTypeRef.coneTypeOrNull,
                         typeArguments = resolvedArguments,
                     )
                 }

@@ -39,6 +39,7 @@ import org.cangnova.cangjie.cfir.scopes.impl.CfirClassMemberScopeKind
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassSubstitutionScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirCompositeTypeScope
+import org.cangnova.cangjie.cfir.scopes.impl.CfirUnionTypeScope
 import org.cangnova.cangjie.cfir.scopes.impl.staticScopeForQualifierType
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
@@ -248,9 +249,16 @@ private fun typeToScope(
     return when (scopes.size) {
         0 -> null
         1 -> scopes.single()
-        else -> CfirCompositeTypeScope(scopes.toList())
+        else -> if (type.requiresPrimitiveExtendUnionScope()) {
+            CfirUnionTypeScope(scopes.toList())
+        } else {
+            CfirCompositeTypeScope(scopes.toList())
+        }
     }
 }
+
+private fun ConeCangJieType.requiresPrimitiveExtendUnionScope(): Boolean =
+    this is ConeIdealLiteralType || this is ConePrimitiveType && kind.isIdeal
 
 private fun collectTypeScopes(
     session: CfirSession,
@@ -301,6 +309,30 @@ private fun collectTypeScopes(
             }
         }
 
+        is ConeIdealLiteralType -> {
+            collectIdealPrimitiveTypeScopes(
+                session,
+                scopeSession,
+                type,
+                scopeKind,
+                destination,
+                visitedClassIds,
+                visitedTypeParameters,
+            )
+        }
+
+        is ConePrimitiveType if type.kind.isIdeal -> {
+            collectIdealPrimitiveTypeScopes(
+                session,
+                scopeSession,
+                type,
+                scopeKind,
+                destination,
+                visitedClassIds,
+                visitedTypeParameters,
+            )
+        }
+
         else -> {
             val classId = type.classIdOrPrimitiveClassId ?: return
             if (!visitedClassIds.add(classId)) return
@@ -337,6 +369,28 @@ private fun collectTypeScopes(
             }
             destination += CfirClassSubstitutionScope(session, rawScope, type)
         }
+    }
+}
+
+private fun collectIdealPrimitiveTypeScopes(
+    session: CfirSession,
+    scopeSession: ScopeSession,
+    type: ConeCangJieType,
+    scopeKind: CfirClassMemberScopeKind,
+    destination: MutableSet<CfirTypeScope>,
+    visitedClassIds: MutableSet<org.cangnova.cangjie.name.ClassId>,
+    visitedTypeParameters: MutableSet<ConeTypeParameterLookupTag>,
+) {
+    for (primitiveType in type.idealExtendLookupTypes) {
+        collectTypeScopes(
+            session,
+            scopeSession,
+            primitiveType,
+            scopeKind,
+            destination,
+            visitedClassIds,
+            visitedTypeParameters,
+        )
     }
 }
 

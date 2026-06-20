@@ -27,13 +27,22 @@ package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 import org.cangnova.cangjie.cfir.analysis.checkers.CfirExtendSemantics
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
+import org.cangnova.cangjie.cfir.unwrapSubstitutionOverrides
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
+import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
+import org.cangnova.cangjie.cfir.scopes.impl.CfirClassMemberScopeKind
+import org.cangnova.cangjie.cfir.scopes.impl.CfirClassSubstitutionScope
+import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
 import org.cangnova.cangjie.cfir.scopes.overrideSignatureKey
+import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
+import org.cangnova.cangjie.cfir.session.extendProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
+import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.name.Name
 
 /**
@@ -156,7 +165,7 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
         val targetDecl = context.session.symbolProvider
             .getClassLikeSymbolByClassId(targetType.classId)?.cfir as? org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
             ?: return
-        val targetScope = context.createUseSiteMemberScope(targetDecl)
+        val targetScope = createTargetShadowScope(targetDecl, targetType)
 
         for (member in extend.declarations) {
             val memberName = member.shadowableName() ?: continue
@@ -178,6 +187,41 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
     }
 
     /**
+     * extend shadow 需要按被扩展类型的实例化 use-site 成员集比较。
+     *
+     * Kotlin FIR 在 `FirClassSubstitutionScope` 中创建 use-site substitution override；
+     * 仓颉官方 `CheckMembersWithInheritedDecls` 则把被扩展类型本体成员、同目标可见
+     * extend 成员和 extend 引入的接口成员合并后，再与当前 extend 成员比较。
+     *
+     * 因此这里使用目标类型的 use-site scope，并在外层套 substitution scope；不能
+     * 直接使用 declaration-site 裸 scope，否则 `C<A>.f(A)` 与 `extend<B> C<B>.f(B)`
+     * 会被误判为不同签名，也看不到同一目标上的其它 extend 成员。
+     */
+    context(context: CheckerContext)
+    private fun createTargetShadowScope(
+        targetDecl: org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration,
+        targetType: ConeClassLikeType,
+    ): CfirTypeScope {
+        val targetSymbol = targetDecl.symbol as? CfirClassLikeSymbol<*> ?: return CfirTypeScope.Empty
+        val rawScope = CfirClassUseSiteMemberScope(
+            session = context.session,
+            classSymbol = targetSymbol,
+            symbolProvider = context.session.symbolProvider,
+            extendProvider = context.session.extendProvider,
+            directSupertypeProvider = context.session.directSupertypeProviderOrNull,
+            ownerType = targetType,
+            dispatchReceiverType = targetType,
+            scopeKind = CfirClassMemberScopeKind.USE_SITE,
+        )
+        return CfirClassSubstitutionScope(
+            session = context.session,
+            useSiteMemberScope = rawScope,
+            dispatchReceiverType = targetType,
+            substitutionOwnerType = targetType,
+        )
+    }
+
+    /**
      * extend shadow 必须按成员签名判断，不能只按名称判断。
      *
      * Kotlin FIR 的 extension shadow checker 会比较参数个数、泛型参数个数和 overloadability；
@@ -192,7 +236,7 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
                 val signature = symbol.overrideSignatureKey()
                 var found = false
                 targetScope.processFunctionsByName(name) { candidate ->
-                    if (candidate.isBound && candidate.cfir !== this && candidate.overrideSignatureKey() == signature) {
+                    if (candidate.canShadowThis(this, signature)) {
                         found = true
                     }
                 }
@@ -203,7 +247,7 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
                 val signature = symbol.overrideSignatureKey()
                 var found = false
                 targetScope.processPropertiesByName(name) { candidate ->
-                    if (candidate.isBound && candidate.cfir !== this && candidate.overrideSignatureKey() == signature) {
+                    if (candidate.canShadowThis(this, signature)) {
                         found = true
                     }
                 }
@@ -212,6 +256,18 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
 
             else -> false
         }
+    }
+
+    private fun org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol<*>.canShadowThis(
+        currentMember: CfirDeclaration,
+        currentSignature: String,
+    ): Boolean {
+        if (!isBound) return false
+        if (unwrapSubstitutionOverrides().cfir === currentMember) return false
+
+        // 官方 RemoveMembersShouldNotInherit / IsInvisibleMember 会排除 private 成员。
+        if (cfir.status.visibility == Visibilities.Private) return false
+        return overrideSignatureKey() == currentSignature
     }
 
     private fun CfirDeclaration.shadowableName(): Name? = when (this) {

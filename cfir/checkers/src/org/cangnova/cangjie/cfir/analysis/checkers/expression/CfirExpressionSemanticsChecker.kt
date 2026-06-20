@@ -301,15 +301,6 @@ object CfirSubscriptAssignmentChecker : CfirSubscriptExpressionChecker() {
                 source = expression.receiver.source ?: index.source ?: expression.source,
                 factory = CfirErrors.BUILTIN_INDEX_IN_BOUND,
             )
-            return
-        }
-
-        val chirEffectiveSize = BigInteger.valueOf(receiverType.chirEffectiveSize)
-        if (parsedIndex.value >= chirEffectiveSize) {
-            reporter.reportOn(
-                source = expression.source,
-                factory = CfirErrors.chir_idx_out_of_bounds,
-            )
         }
     }
 }

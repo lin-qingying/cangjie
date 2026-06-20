@@ -13,8 +13,8 @@ class Test {
     public let length2: Int8
 
     Test(width: Int64, length: Int64) {
-        width2 = <!TYPE_MISMATCH!>width<!>
-        length2 = <!TYPE_MISMATCH!>length<!>
+        width2 = <!ASSIGNMENT_TYPE_MISMATCH!>width<!>
+        length2 = <!ASSIGNMENT_TYPE_MISMATCH!>length<!>
     }
 }
 

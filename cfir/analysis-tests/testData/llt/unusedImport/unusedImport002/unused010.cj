@@ -1,7 +1,7 @@
 
 import std.collection.{ArrayList as A, <!UNUSED_IMPORT!>Map as B<!>}
 main() {
-  var <!chir_dce_unused_variable!>a<!> : A<Int64>
+  var a : A<Int64>
 }
 
 // Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.

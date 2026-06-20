@@ -24,6 +24,9 @@ import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.ConeStructType
 import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
+import org.cangnova.cangjie.cfir.types.type
+import org.cangnova.cangjie.cfir.types.withArguments
+import org.cangnova.cangjie.cfir.types.withoutAbbreviation
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.Name
 
@@ -131,12 +134,20 @@ private fun CfirTypeRef.toResolvedSuperDeclaration(context: CheckerContext): Cfi
 private fun CfirTypeRef.duplicateSupertypeKey(context: CheckerContext): ConeCangJieType? {
     val resolvedTypeRef = this as? CfirResolvedTypeRef ?: return null
     if (resolvedTypeRef.coneType is ConeErrorType) return null
-    return when (val type = resolvedTypeRef.coneType.fullyExpandedType(context.session)) {
+    return when (val type = resolvedTypeRef.coneType.normalizedDuplicateSupertypeKey(context)) {
         is ConePrimitiveType,
         is ConeClassLikeType,
         is ConeStructType,
         is ConeEnumType -> type
         else -> null
+    }
+}
+
+private fun ConeCangJieType.normalizedDuplicateSupertypeKey(context: CheckerContext): ConeCangJieType {
+    val expanded = fullyExpandedType(context.session).withoutAbbreviation()
+    if (expanded.typeArguments.isEmpty()) return expanded
+    return expanded.withArguments { projection ->
+        projection.type.normalizedDuplicateSupertypeKey(context)
     }
 }
 

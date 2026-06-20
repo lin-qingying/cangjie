@@ -1,27 +1,3 @@
-/*
- * Copyright 2026 LinQingYing. and contributors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * The use of this source code is governed by the Apache License 2.0,
- * which allows users to freely use, modify, and distribute the code,
- * provided they adhere to the terms of the license.
- *
- * The software is provided "as-is", and the authors are not responsible for
- * any damages or issues arising from its use.
- *
- */
-
 
 
 package org.cangnova.cangjie.analysis.api.cfir.diagnostics
@@ -51,6 +27,10 @@ import org.cangnova.cangjie.psi.CjTypeReference
 sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
     interface NoConstructor : CaCfirDiagnostic<PsiElement> {
         override val diagnosticClass get() = NoConstructor::class
+    }
+
+    interface RefNotBeType : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = RefNotBeType::class
     }
 
     interface EnumTypeCannotBeUsedAsConstructor : CaCfirDiagnostic<PsiElement> {
@@ -332,13 +312,28 @@ sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
         val functionName: Name
     }
 
+    interface AmbiguousArgType : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = AmbiguousArgType::class
+        val functionName: Name
+    }
+
     interface RecursiveConstructorCall : CaCfirDiagnostic<PsiElement> {
         override val diagnosticClass get() = RecursiveConstructorCall::class
+    }
+
+    interface ValueTypeRecursive : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = ValueTypeRecursive::class
     }
 
     interface IllegalThisOrSuperCall : CaCfirDiagnostic<PsiElement> {
         override val diagnosticClass get() = IllegalThisOrSuperCall::class
         val calleeName: String
+    }
+
+    interface AssignmentOfMemberVariableCannotUseThisOrSuper : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = AssignmentOfMemberVariableCannotUseThisOrSuper::class
+        val memberName: String
+        val contextDescription: String
     }
 
     interface ExplicitSuperCallRequired : CaCfirDiagnostic<PsiElement> {
@@ -511,6 +506,14 @@ sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
         val message: String
     }
 
+    interface ArrayLiteralTypeCannotBeInferred : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = ArrayLiteralTypeCannotBeInferred::class
+    }
+
+    interface InconsistentArrayLiteralElementType : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = InconsistentArrayLiteralElementType::class
+    }
+
     interface TypeInferenceOnlyInputTypesError : CaCfirDiagnostic<CjElement> {
         override val diagnosticClass get() = TypeInferenceOnlyInputTypesError::class
         val parameter: CaTypeParameterSymbol
@@ -573,6 +576,11 @@ sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
         val isMismatchDueToNullability: Boolean
     }
 
+    interface TypeIncompatible : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = TypeIncompatible::class
+        val contextDescription: String
+    }
+
     interface VarraySizeMismatch : CaCfirDiagnostic<PsiElement> {
         override val diagnosticClass get() = VarraySizeMismatch::class
         val expectedSize: Long
@@ -587,6 +595,10 @@ sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
 
     interface ParseThisTypeNotAllow : CaCfirDiagnostic<CjTypeReference> {
         override val diagnosticClass get() = ParseThisTypeNotAllow::class
+    }
+
+    interface InvalidPositionOfThisType : CaCfirDiagnostic<CjTypeReference> {
+        override val diagnosticClass get() = InvalidPositionOfThisType::class
     }
 
     interface InvisibleMember : CaCfirDiagnostic<PsiElement> {
@@ -658,6 +670,11 @@ sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
         override val diagnosticClass get() = ConstEvalShiftCountOverflow::class
     }
 
+    interface UndeclaredTypeName : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = UndeclaredTypeName::class
+        val typeName: String
+    }
+
     interface UnresolvedReference : CaCfirDiagnostic<PsiElement> {
         override val diagnosticClass get() = UnresolvedReference::class
         val reference: String
@@ -675,6 +692,10 @@ sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
         override val diagnosticClass get() = NoMatchingOperatorInvoke::class
         val name: String
         val type: CaType
+    }
+
+    interface NoMatchOperatorFunctionCall : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = NoMatchOperatorFunctionCall::class
     }
 
     interface InvalidNodeAfterCheck : CaCfirDiagnostic<PsiElement> {
@@ -842,6 +863,10 @@ sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
         val indexDescription: String
     }
 
+    interface BuiltinIndexInBound : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = BuiltinIndexInBound::class
+    }
+
     interface CannotAssignToSubscript : CaCfirDiagnostic<PsiElement> {
         override val diagnosticClass get() = CannotAssignToSubscript::class
     }
@@ -922,6 +947,13 @@ sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
         override val diagnosticClass get() = GenericArgumentNoMatch::class
     }
 
+    interface GenericTypeArgumentNotMatchConstraint : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = GenericTypeArgumentNotMatchConstraint::class
+        val actualType: CaType
+        val upperBound: CaType
+        val genericType: CaType
+    }
+
     interface GenericConstraintNotLooser : CaCfirDiagnostic<PsiElement> {
         override val diagnosticClass get() = GenericConstraintNotLooser::class
     }
@@ -979,6 +1011,12 @@ sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
         val memberName: Name
     }
 
+    interface CannotOverride : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = CannotOverride::class
+        val memberKind: String
+        val memberName: Name
+    }
+
     interface InheritSuperMemberKindInconsistent : CaCfirDiagnostic<PsiElement> {
         override val diagnosticClass get() = InheritSuperMemberKindInconsistent::class
         val memberName: Name
@@ -1022,7 +1060,7 @@ sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
         val declarationName: Name
     }
 
-    interface InheritNotReturnThis : CaCfirDiagnostic<PsiElement> {
+    interface InheritNotReturnThis : CaCfirDiagnostic<CjNamedDeclaration> {
         override val diagnosticClass get() = InheritNotReturnThis::class
     }
 
@@ -1048,6 +1086,27 @@ sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
     interface InstanceFuncCannotBeUsedInFinalizer : CaCfirDiagnostic<PsiElement> {
         override val diagnosticClass get() = InstanceFuncCannotBeUsedInFinalizer::class
         val memberKind: String
+    }
+
+    interface FinalizerForbiddenInClass : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = FinalizerForbiddenInClass::class
+        val className: Name
+        val classKind: String
+    }
+
+    interface CannotCurrying : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = CannotCurrying::class
+        val declarationKind: String
+    }
+
+    interface CannotHaveParameter : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = CannotHaveParameter::class
+        val declarationKind: String
+    }
+
+    interface ForbidGenericFinalizer : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = ForbidGenericFinalizer::class
+        val finalizerName: Name
     }
 
     interface NonAbstractClassCannotBeSealed : CaCfirDiagnostic<CjNamedDeclaration> {
@@ -1855,6 +1914,11 @@ sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
 
     interface UnusedExpression : CaCfirDiagnostic<CjExpression> {
         override val diagnosticClass get() = UnusedExpression::class
+    }
+
+    interface TypealiasUnusedTypeParameters : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = TypealiasUnusedTypeParameters::class
+        val typeParameters: String
     }
 
     interface MockDisabled : CaCfirDiagnostic<PsiElement> {

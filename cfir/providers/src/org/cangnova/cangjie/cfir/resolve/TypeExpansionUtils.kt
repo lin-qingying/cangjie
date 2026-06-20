@@ -14,8 +14,10 @@ import org.cangnova.cangjie.cfir.types.AbbreviatedTypeAttribute
 import org.cangnova.cangjie.cfir.types.AbstractConeSubstitutor
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassifierType
+import org.cangnova.cangjie.cfir.types.ConeLookupTagBasedType
 import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
 import org.cangnova.cangjie.cfir.types.ConeTypeProjection
+import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.types.forEachType
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.type
@@ -40,7 +42,9 @@ fun CfirTypeAlias.expandedConeTypeWithEnsuredPhase(): ConeCangJieType? {
 fun ConeClassifierType.fullyExpandedType(
     useSiteSession: CfirSession,
     expandedConeType: (CfirTypeAlias) -> ConeCangJieType? = CfirTypeAlias::expandedConeTypeWithEnsuredPhase,
-): ConeClassifierType = this
+): ConeClassifierType {
+    return (this as ConeCangJieType).fullyExpandedType(useSiteSession, expandedConeType) as? ConeClassifierType ?: this
+}
 
 /**
  * @see fullyExpandedType (the first function in the file)
@@ -50,11 +54,12 @@ fun ConeCangJieType.fullyExpandedType(
     useSiteSession: CfirSession,
     expandedConeType: (CfirTypeAlias) -> ConeCangJieType? = CfirTypeAlias::expandedConeTypeWithEnsuredPhase,
 ): ConeCangJieType = when (this) {
+    is ConeLookupTagBasedType -> fullyExpandedTypeNoCache(useSiteSession, expandedConeType)
     is ConeTypeAliasType -> fullyExpandedTypeNoCache(useSiteSession, expandedConeType)
     else -> this
 }
 
-private fun ConeTypeAliasType.fullyExpandedTypeNoCache(
+private fun ConeCangJieType.fullyExpandedTypeNoCache(
     useSiteSession: CfirSession,
     expandedConeType: (CfirTypeAlias) -> ConeCangJieType?,
 ): ConeCangJieType {
@@ -63,16 +68,21 @@ private fun ConeTypeAliasType.fullyExpandedTypeNoCache(
     return expansion.withAbbreviation(AbbreviatedTypeAttribute(this))
 }
 
-fun ConeTypeAliasType.directExpansionType(
+fun ConeCangJieType.directExpansionType(
     useSiteSession: CfirSession,
     expandedConeType: (CfirTypeAlias) -> ConeCangJieType? = { alias ->
         alias.lazyResolveToPhase(CfirResolvePhase.SUPER_TYPES)
         alias.expandedConeType
     },
 ): ConeCangJieType? {
+    val classId = when (this) {
+        is ConeTypeAliasType -> classId
+        is ConeLookupTagBasedType -> classIdOrPrimitiveClassId
+        else -> null
+    } ?: return null
     val typeAlias = useSiteSession.symbolProvider.getClassLikeSymbolByClassId(classId)?.cfir as? CfirTypeAlias
 
-    val resultType = expandedType
+    val resultType = (this as? ConeTypeAliasType)?.expandedType
         ?: typeAlias?.let(expandedConeType)
         ?: typeAlias?.expandedTypeRef?.coneTypeOrNull
         ?: return null
@@ -85,13 +95,13 @@ fun ConeTypeAliasType.directExpansionType(
 }
 
 private fun ConeCangJieType.applyAttributesFrom(
-    abbreviation: ConeTypeAliasType,
+    abbreviation: ConeCangJieType,
 ): ConeCangJieType {
     val combinedAttributes = attributes.add(abbreviation.attributes)
     return withAttributes(combinedAttributes)
 }
 
-fun CfirTypeAlias.mapParametersToArgumentsOf(type: ConeTypeAliasType): List<Pair<CfirTypeParameterSymbol, ConeTypeProjection>> =
+fun CfirTypeAlias.mapParametersToArgumentsOf(type: ConeCangJieType): List<Pair<CfirTypeParameterSymbol, ConeTypeProjection>> =
     typeParameters.map { it.symbol }.zip(type.typeArguments)
 
 fun createParametersSubstitutor(
@@ -109,13 +119,13 @@ fun createParametersSubstitutor(
 }
 
 fun CfirTypeAlias.createParametersSubstitutor(
-    abbreviatedType: ConeTypeAliasType,
+    abbreviatedType: ConeCangJieType,
     useSiteSession: CfirSession,
 ): ConeSubstitutor = createParametersSubstitutor(useSiteSession, mapParametersToArgumentsOf(abbreviatedType).toMap())
 
 private fun mapTypeAliasArguments(
     typeAlias: CfirTypeAlias,
-    abbreviatedType: ConeTypeAliasType,
+    abbreviatedType: ConeCangJieType,
     resultingType: ConeCangJieType,
     useSiteSession: CfirSession,
 ): ConeCangJieType {

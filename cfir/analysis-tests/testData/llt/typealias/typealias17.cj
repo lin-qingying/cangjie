@@ -18,13 +18,13 @@ class A<T> {
     }
 }
 
-type A1<T> = A<Rune>
+<!TYPEALIAS_UNUSED_TYPE_PARAMETERS!>t<!>ype A1<T> = A<Rune>
 
-type A2<T, K> = A1<K>
+<!TYPEALIAS_UNUSED_TYPE_PARAMETERS!>t<!>ype A2<T, K> = A1<K>
 
 type B1<T> = A<T>
 
-type B2<T, K> = B1<K>
+<!TYPEALIAS_UNUSED_TYPE_PARAMETERS!>t<!>ype B2<T, K> = B1<K>
 
 main() {
     let a = A2<Int64, String>(r'a')

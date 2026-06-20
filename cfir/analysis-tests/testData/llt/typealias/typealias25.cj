@@ -8,6 +8,6 @@ interface I {}
 
 type X = I
 
-interface J <: <!SUPER_TYPES_DUPLICATE!>I<!> & X {}
+interface <!SUPER_TYPES_DUPLICATE!>J<!> <: I & X {}
 
 main() {}

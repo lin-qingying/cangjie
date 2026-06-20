@@ -6,7 +6,6 @@ import org.cangnova.cangjie.cfir.declarations.CfirEnum
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.resolve.BodyResolveComponents
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallInfo
-import org.cangnova.cangjie.cfir.resolve.fullyExpandedClass
 import org.cangnova.cangjie.cfir.scopes.CfirScope
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
@@ -43,14 +42,22 @@ private fun CfirScope.processConstructorsByName(
 ) {
     val seen = linkedSetOf<CfirClassLikeSymbol<*>>()
     processClassifiersByName(callInfo.name) { classifier ->
-        val matchedSymbol = when (classifier) {
-            is CfirTypeAliasSymbol -> classifier.fullyExpandedClass(bodyResolveComponents.session)
-            else -> classifier
-        } ?: return@processClassifiersByName
+        val matchedSymbol = classifier
 
         if (!seen.add(matchedSymbol)) return@processClassifiersByName
 
         matchedSymbol.lazyResolveToPhase(CfirResolvePhase.TYPES)
+        if (matchedSymbol is CfirTypeAliasSymbol) {
+            matchedSymbol.cfir.scopeProvider
+                .getTypealiasConstructorScope(
+                    matchedSymbol.cfir,
+                    bodyResolveComponents.session,
+                    bodyResolveComponents.scopeSession,
+                )
+                .processDeclaredConstructors(processor)
+            return@processClassifiersByName
+        }
+
         val declaration = matchedSymbol.cfir as? CfirClassLikeDeclaration ?: return@processClassifiersByName
         if (declaration is CfirEnum) return@processClassifiersByName
         if (!constructorFilter.accepts(declaration)) return@processClassifiersByName

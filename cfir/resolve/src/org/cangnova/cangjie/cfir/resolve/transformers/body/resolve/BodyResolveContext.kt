@@ -29,6 +29,7 @@ import org.cangnova.cangjie.cfir.SessionAndScopeSessionHolder
 import org.cangnova.cangjie.cfir.calls.ImplicitExtensionReceiverValue
 import org.cangnova.cangjie.cfir.calls.ImplicitReceiverValue
 import org.cangnova.cangjie.cfir.calls.InaccessibleImplicitReceiverValue
+import org.cangnova.cangjie.cfir.correspondingProperty
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.resolve.ImplicitValueStorage
@@ -448,8 +449,7 @@ class BodyResolveContext(
         val constructor = (owner as? CfirClass)?.declarations?.firstOrNull { it is CfirConstructor } as? CfirConstructor
         val (primaryConstructorPureParametersScope, primaryConstructorAllParametersScope) =
             if (constructor?.isPrimary == true) {
-                val scope = buildConstructorParametersScope(constructor, holder.session)
-                scope to scope
+                constructor.scopesWithPrimaryConstructorParameters(holder.session)
             } else {
                 null to null
             }
@@ -826,6 +826,24 @@ class BodyResolveContext(
         constructor.valueParameters.fold(CfirLocalScope(session)) { scope, parameter ->
             scope.storeVariable(parameter, session)
         }
+
+    /**
+     * 对齐 Kotlin FIR `FirConstructor.scopesWithPrimaryConstructorParameters`：
+     * pure scope 只暴露没有提升为成员属性的主构造参数，all scope 保留完整参数集合。
+     */
+    private fun CfirConstructor.scopesWithPrimaryConstructorParameters(
+        session: CfirSession,
+    ): Pair<CfirLocalScope, CfirLocalScope> {
+        var pureScope = CfirLocalScope(session)
+        var allScope = CfirLocalScope(session)
+        for (parameter in valueParameters) {
+            allScope = allScope.storeVariable(parameter, session)
+            if (parameter.correspondingProperty == null) {
+                pureScope = pureScope.storeVariable(parameter, session)
+            }
+        }
+        return pureScope to allScope
+    }
 
     // ── Annotation class context ──────────────────────────────────────────
 

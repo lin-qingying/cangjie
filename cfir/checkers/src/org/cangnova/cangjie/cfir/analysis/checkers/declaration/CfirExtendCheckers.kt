@@ -6,8 +6,10 @@ import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
+import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedTypeQualifierError
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
+import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.session.extendRuleQueryServiceOrNull
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.types.CfirBasicTypeRef
@@ -17,6 +19,7 @@ import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeEnumType
+import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.types.ConeIntersectionType
 import org.cangnova.cangjie.cfir.types.ConePointerType
@@ -26,6 +29,7 @@ import org.cangnova.cangjie.cfir.types.ConeTupleType
 import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
 import org.cangnova.cangjie.cfir.types.ConeUnionType
 import org.cangnova.cangjie.cfir.types.ConeVArrayType
+import org.cangnova.cangjie.cfir.types.abbreviatedType
 import org.cangnova.cangjie.cfir.types.arrayElementType
 import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.name.Name
@@ -36,7 +40,8 @@ object CfirExtendTargetLegalityChecker : CfirExtendChecker() {
     override fun check(extend: CfirExtend) {
         val targetTypeRef = extend.extendedTypeRef
 
-        if (targetTypeRef.isDefinitelyIllegalExtendedType()) {
+        val targetConeType = targetTypeRef.extendSemanticType()
+        if (targetTypeRef.isDefinitelyIllegalExtendedType() && targetConeType == null) {
             reporter.reportOn(
                 source = targetTypeRef.source,
                 factory = CfirErrors.ILLEGAL_EXTENDED_TYPE,
@@ -45,7 +50,7 @@ object CfirExtendTargetLegalityChecker : CfirExtendChecker() {
             return
         }
 
-        val targetConeType = (targetTypeRef as? CfirResolvedTypeRef)?.coneType ?: return
+        targetConeType ?: return
         if (CfirExtendSemantics.isForeignInteropBoundaryTarget(context, extend)) {
             reporter.reportOn(
                 source = targetTypeRef.source,
@@ -132,20 +137,20 @@ object CfirExtendInterfaceKindChecker : CfirExtendChecker() {
 
 object CfirExtendDuplicateInterfaceChecker : CfirExtendChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
-    override fun check(extend: CfirExtend) {
+    override fun check(declaration: CfirExtend) {
         val query = context.session.extendRuleQueryServiceOrNull ?: return
-        val targetClassId = query.targetClassIdOf(extend) ?: return
+        val targetClassId = query.targetClassIdOf(declaration) ?: return
 
         val localSeen = linkedSetOf<String>()
-        val localSemanticKeys = query.inheritedInterfaceSemanticKeysOf(extend)
-        val localInterfaces = query.inheritedInterfacesOf(extend)
+        val localSemanticKeys = query.inheritedInterfaceSemanticKeysOf(declaration)
+        val localInterfaces = query.inheritedInterfacesOf(declaration)
         val interfacesInOtherExtends = query
-            .inheritedInterfaceSemanticKeysForTarget(targetClassId, excludingDeclaration = extend)
+            .inheritedInterfaceSemanticKeysForTarget(targetClassId, excludingDeclaration = declaration)
             .toSet()
         val targetOwnInterfaces = query.targetClassOwnInterfaceClassIds(targetClassId)
-        val reportCrossExtendDuplicate = extend.superTypeRefs.size == 1 && query.isFirstExtendForTarget(extend, targetClassId)
+        val reportCrossExtendDuplicate = declaration.superTypeRefs.size == 1 && query.isFirstExtendForTarget(declaration, targetClassId)
 
-        for ((index, superTypeRef) in extend.superTypeRefs.withIndex()) {
+        for ((index, superTypeRef) in declaration.superTypeRefs.withIndex()) {
             val key = localSemanticKeys.getOrNull(index) ?: superTypeRef.toSemanticStableKey()
             val firstInDeclaration = localSeen.add(key)
             val duplicatedInsideDeclaration = !firstInDeclaration &&
@@ -332,9 +337,16 @@ private fun org.cangnova.cangjie.cfir.types.CfirTypeRef.isDefinitelyNotInterface
 }
 
 private fun org.cangnova.cangjie.cfir.types.CfirTypeRef.isDefinitelyIllegalExtendedType(): Boolean = when (this) {
-    is CfirImplicitTypeRef,
-    is CfirErrorTypeRef -> true
+    is CfirImplicitTypeRef -> true
+    is CfirErrorTypeRef -> this.diagnostic !is ConeUnresolvedTypeQualifierError
     else -> false
+}
+
+context(context: CheckerContext)
+private fun org.cangnova.cangjie.cfir.types.CfirTypeRef.extendSemanticType(): ConeCangJieType? {
+    val coneType = (this as? CfirResolvedTypeRef)?.coneType ?: return null
+    val recoverableType = (coneType as? ConeErrorType)?.delegatedType ?: coneType
+    return recoverableType.fullyExpandedType(context.session)
 }
 
 private fun org.cangnova.cangjie.cfir.types.CfirTypeRef.toSemanticStableKey(): String {
@@ -354,7 +366,10 @@ private fun org.cangnova.cangjie.cfir.types.CfirTypeRef.containsAnyExtendTypePar
     return parameterNames.any { parameterName -> coneType.containsTypeParameter(parameterName) }
 }
 
-private fun ConeCangJieType.containsTypeParameter(parameterName: String): Boolean = when (this) {
+private fun ConeCangJieType.containsTypeParameter(parameterName: String): Boolean =
+    abbreviatedType?.containsTypeParameter(parameterName) == true || containsTypeParameterInConstructor(parameterName)
+
+private fun ConeCangJieType.containsTypeParameterInConstructor(parameterName: String): Boolean = when (this) {
     is ConeTypeParameterType -> lookupTag.name.asString() == parameterName
     is ConeClassLikeType -> typeArguments.any { it.type.containsTypeParameter(parameterName) }
     is ConeStructType -> typeArguments.any { it.type.containsTypeParameter(parameterName) }

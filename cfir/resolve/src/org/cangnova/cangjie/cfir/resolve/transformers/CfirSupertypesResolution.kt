@@ -51,14 +51,12 @@ import org.cangnova.cangjie.cfir.session.superTypeGraphStoreOrNull
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.symbols.toLookupTag
-import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeEnumType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
-import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.ConeStructType
 import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
 import org.cangnova.cangjie.cfir.types.StdlibClassIds
@@ -250,7 +248,7 @@ open class SupertypeComputationSession {
             return typeRef
         }
 
-        val expandedType = typeRef.coneType.fullyExpandedType(session)
+        val expandedType = typeRef.coneType.fullyExpandedType(session, ::getResolvedExpandedType)
         if (expandedType == typeRef.coneType) return typeRef
         val expandedTypeRef = buildResolvedTypeRefCopy(typeRef) {
             coneType = expandedType
@@ -261,6 +259,9 @@ open class SupertypeComputationSession {
             expandedTypeRef
         }
     }
+
+    fun getResolvedExpandedType(typeAlias: CfirTypeAlias): ConeCangJieType? =
+        getResolvedExpandedTypeRef(typeAlias).coneTypeSafe()
 
     fun breakLoops(session: CfirSession, localClassesNavigationInfo: LocalClassesNavigationInfo?) {
         val declarations = LinkedHashSet<CfirClassLikeDeclaration>()
@@ -309,6 +310,7 @@ open class SupertypeComputationSession {
             sourceElement = typeRef.source,
             message = message,
             kind = if (owner is CfirTypeAlias) DiagnosticKind.Other else DiagnosticKind.LoopInSupertype,
+            delegatedTypeRef = typeRef,
         )
     }
 
@@ -558,7 +560,7 @@ internal open class CfirSupertypeResolverVisitor(
             if (ref.coneType is ConeErrorType) ref.toErrorTypeRef() else ref
         }.let { resolvedRefs ->
             resolvedRefs.withImplicitStdCoreSupertypes(classLikeDeclaration, session)
-        }.markDuplicateSupertypes(session)
+        }
         supertypeComputationSession.storeSupertypes(classLikeDeclaration, resolvedTypeRefs)
         return resolvedTypeRefs
     }
@@ -902,10 +904,12 @@ private fun createErrorTypeRef(
     sourceElement: CjSourceElement?,
     message: String,
     kind: DiagnosticKind = DiagnosticKind.Other,
+    delegatedTypeRef: CfirTypeRef? = null,
 ): CfirResolvedTypeRef = buildErrorTypeRef {
     source = sourceElement
 
     diagnostic = ConeSimpleDiagnostic(message, kind)
+    this.delegatedTypeRef = delegatedTypeRef
 }
 
 private fun CfirResolvedTypeRef.toErrorTypeRef(): CfirResolvedTypeRef {
@@ -916,42 +920,6 @@ private fun CfirResolvedTypeRef.toErrorTypeRef(): CfirResolvedTypeRef {
         annotations += this@toErrorTypeRef.annotations
         delegatedTypeRef = this@toErrorTypeRef.delegatedTypeRef ?: this@toErrorTypeRef
         diagnostic = errorType.diagnostic
-    }
-}
-
-private fun List<CfirResolvedTypeRef>.markDuplicateSupertypes(session: CfirSession): List<CfirResolvedTypeRef> {
-    val firstIndexByKey = linkedMapOf<ConeCangJieType, Int>()
-    val duplicates = mutableSetOf<Int>()
-
-    forEachIndexed { index, ref ->
-        val key = ref.duplicateKey(session) ?: return@forEachIndexed
-        val previous = firstIndexByKey.putIfAbsent(key, index)
-        if (previous != null) {
-            duplicates += previous
-        }
-    }
-
-    if (duplicates.isEmpty()) return this
-
-    return mapIndexed { index, ref ->
-        if (index !in duplicates || ref is CfirErrorTypeRef) return@mapIndexed ref
-        buildErrorTypeRef {
-            source = ref.source
-            annotations += ref.annotations
-            coneType = ref.coneType
-            delegatedTypeRef = ref.delegatedTypeRef ?: ref
-            diagnostic = ConeSimpleDiagnostic("Duplicate supertype: ${ref.renderReadable()}", DiagnosticKind.DuplicateSupertype)
-        }
-    }
-}
-
-private fun CfirResolvedTypeRef.duplicateKey(session: CfirSession): ConeCangJieType? {
-    return when (val type = coneType.fullyExpandedType(session)) {
-        is ConePrimitiveType,
-        is ConeClassLikeType,
-        is ConeStructType,
-        is ConeEnumType -> type
-        else -> null
     }
 }
 

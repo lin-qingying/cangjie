@@ -5,7 +5,6 @@ import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 plugins {
     `kotlin-dsl`
     `java-gradle-plugin`
-    kotlin("jvm")
 }
 
 
@@ -29,4 +28,3 @@ kotlin {
 
 dependencies {
 }
-

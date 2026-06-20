@@ -1,18 +1,24 @@
 package org.cangnova.cangjie.cfir.resolve.providers
 
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.cfirProvider
+import org.cangnova.cangjie.cfir.session.extendProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.session.typeAwareSupertypeProviderOrNull
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
+import org.cangnova.cangjie.cfir.symbols.constructType
 import org.cangnova.cangjie.cfir.types.CfirTypeSubstitutorByMap
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeLookupTagBasedType
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
+import org.cangnova.cangjie.cfir.types.expandedClassIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.types.type
+import org.cangnova.cangjie.cfir.unwrapSubstitutionOverrides
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.type.model.TypeConstructorMarker
 
@@ -30,7 +36,15 @@ fun createCallableOwnerUseSiteSubstitutionMap(
     receiverType: ConeCangJieType?,
 ): Map<TypeConstructorMarker, ConeCangJieType> {
     if (callableSymbol == null || receiverType == null) return emptyMap()
-    val ownerClassId = session.cfirProvider.getContainingClass(callableSymbol)?.classId
+    val originalCallableSymbol = callableSymbol.unwrapSubstitutionOverrides()
+    val ownerExtend = session.extendProvider.getContainingExtend(originalCallableSymbol)
+        ?.takeIf(session.extendProvider::isExtendAccessible)
+    if (ownerExtend != null) {
+        return createExtendOwnerSubstitutionMap(session, ownerExtend, receiverType)
+    }
+
+    val ownerClassId = session.cfirProvider.getContainingClass(originalCallableSymbol)?.classId
+        ?: enumConstructorOwnerClassId(originalCallableSymbol, receiverType, session)
         ?: return emptyMap()
     val concreteOwnerType = findConcreteOwnerType(session, receiverType, ownerClassId)
         ?: return emptyMap()
@@ -38,6 +52,32 @@ fun createCallableOwnerUseSiteSubstitutionMap(
         ?: session.cfirProvider.getCfirClassifierByFqName(ownerClassId)
         ?: return emptyMap()
     return createClassLikeOwnerSubstitutionMap(ownerDeclaration, concreteOwnerType)
+}
+
+private fun createExtendOwnerSubstitutionMap(
+    session: CfirSession,
+    ownerExtend: org.cangnova.cangjie.cfir.declarations.CfirExtend,
+    receiverType: ConeCangJieType,
+): Map<TypeConstructorMarker, ConeCangJieType> {
+    val substitution = findExtendDeclarationSubstitution(session, ownerExtend, receiverType)
+        ?: return emptyMap()
+    if (ownerExtend.typeParameters.isEmpty()) return emptyMap()
+
+    return ownerExtend.typeParameters.mapNotNull { typeParameter ->
+        val key = typeParameter.symbol.toLookupTag()
+        val value = substitution.substitutor.substituteOrNull(typeParameter.symbol.constructType())
+            ?: return@mapNotNull null
+        key to value
+    }.toMap()
+}
+
+private fun enumConstructorOwnerClassId(
+    callableSymbol: CfirCallableSymbol<*>,
+    receiverType: ConeCangJieType,
+    session: CfirSession,
+): ClassId? {
+    if (callableSymbol !is CfirEnumConstructorSymbol && callableSymbol.cfir !is CfirEnumConstructor) return null
+    return receiverType.fullyExpandedType(session).expandedClassIdOrPrimitiveClassId
 }
 
 fun createCallableOwnerUseSiteSubstitutor(

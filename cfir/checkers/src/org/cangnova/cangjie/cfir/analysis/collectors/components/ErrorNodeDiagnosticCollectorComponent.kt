@@ -6,6 +6,7 @@ import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.isInvalidPrimitiveCompoundAssignmentCall
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.analysis.diagnostics.toCfirDiagnostics
+import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
@@ -198,6 +199,10 @@ class ErrorNodeDiagnosticCollectorComponent(
         // If the receiver cannot be resolved, we skip reporting any further problems for this call.
         // If the receiver cannot be resolved, we skip reporting any further problems for this call.
         if (callOrAssignment is CfirQualifiedAccessExpression) {
+            if (diagnostic is ConeUnresolvedNameError &&
+                callOrAssignment.explicitReceiver is CfirSuperReceiverExpression &&
+                context.isInsideConstructorValueParameterDefaultValue()
+            ) return
             if (callOrAssignment.explicitReceiver is CfirSuperReceiverExpression &&
                 context.findClosestDeclaration<CfirExtend>() != null
             ) return
@@ -352,6 +357,12 @@ class ErrorNodeDiagnosticCollectorComponent(
                         diagnostic.kind == org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind.EmptyArrayLiteralTypeUndefined
             else -> false
         }
+    }
+
+    private fun CheckerContext.isInsideConstructorValueParameterDefaultValue(): Boolean {
+        val valueParameter = findClosestDeclaration<CfirValueParameter>() ?: return false
+        val constructor = findClosestDeclaration<CfirConstructor>() ?: return false
+        return valueParameter in constructor.valueParameters && valueParameter.defaultValue != null
     }
 
     /**

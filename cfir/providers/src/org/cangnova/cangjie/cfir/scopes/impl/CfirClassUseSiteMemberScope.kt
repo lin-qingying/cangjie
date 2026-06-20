@@ -80,6 +80,7 @@ class CfirClassUseSiteMemberScope private constructor(
     private val ownerType: ConeCangJieType? = declarationSelfType(classSymbol),
     private val dispatchReceiverType: ConeCangJieType? = ownerType,
     private val scopeKind: CfirClassMemberScopeKind = CfirClassMemberScopeKind.USE_SITE,
+    private val allowBareGenericStaticQualifierExtends: Boolean = false,
     private val supertypePath: CfirSupertypePath = CfirSupertypePath.root(classSymbol.classId),
 ) : CfirTypeScope() {
     constructor(
@@ -91,6 +92,7 @@ class CfirClassUseSiteMemberScope private constructor(
         ownerType: ConeCangJieType? = declarationSelfType(classSymbol),
         dispatchReceiverType: ConeCangJieType? = ownerType,
         scopeKind: CfirClassMemberScopeKind = CfirClassMemberScopeKind.USE_SITE,
+        allowBareGenericStaticQualifierExtends: Boolean = false,
     ) : this(
         session = session,
         classSymbol = classSymbol,
@@ -100,6 +102,7 @@ class CfirClassUseSiteMemberScope private constructor(
         ownerType = ownerType,
         dispatchReceiverType = dispatchReceiverType,
         scopeKind = scopeKind,
+        allowBareGenericStaticQualifierExtends = allowBareGenericStaticQualifierExtends,
         supertypePath = CfirSupertypePath.root(classSymbol.classId),
     )
 
@@ -125,7 +128,13 @@ class CfirClassUseSiteMemberScope private constructor(
         ?.let {
             val provider = extendProvider ?: return@let null
             val receiverType = ownerType ?: return@let null
-            CfirExtendMemberScope(classSymbol.classId, provider, session, receiverType)
+            CfirExtendMemberScope(
+                targetClassId = classSymbol.classId,
+                extendProvider = provider,
+                session = session,
+                receiverType = receiverType,
+                allowBareGenericStaticQualifierExtends = allowBareGenericStaticQualifierExtends,
+            )
         }
     private val parentScopes: List<CfirTypeScope> by lazy { buildParentScopes() }
     private val callableNamesCached by lazy(LazyThreadSafetyMode.PUBLICATION) {
@@ -191,6 +200,7 @@ class CfirClassUseSiteMemberScope private constructor(
         ownerType = ownerType,
         dispatchReceiverType = dispatchReceiverType,
         scopeKind = scopeKind,
+        allowBareGenericStaticQualifierExtends = allowBareGenericStaticQualifierExtends,
         supertypePath = supertypePath,
     )
 
@@ -209,6 +219,10 @@ class CfirClassUseSiteMemberScope private constructor(
         for (parent in parentScopes) {
             parent.processClassifiersByName(name, processor)
         }
+    }
+
+    override fun processDeclaredConstructors(processor: (CfirConstructorSymbol) -> Unit) {
+        declaredScope.processDeclaredConstructors(processor)
     }
 
     override fun processFunctionsByName(name: Name, processor: (CfirNamedFunctionSymbol) -> Unit) {
@@ -282,6 +296,7 @@ class CfirClassUseSiteMemberScope private constructor(
                 ownerType = supertype,
                 dispatchReceiverType = dispatchReceiverType ?: rootType,
                 scopeKind = parentScopeKind(),
+                allowBareGenericStaticQualifierExtends = allowBareGenericStaticQualifierExtends,
                 supertypePath = supertypePath.child(classId),
             )
             parentScope.substitutionScopeForSupertype(parentSymbol, supertype)
@@ -315,23 +330,52 @@ class CfirClassUseSiteMemberScope private constructor(
     private fun extendsForCurrentClass() = buildList {
         if (scopeKind != CfirClassMemberScopeKind.USE_SITE) return@buildList
         val provider = extendProvider ?: return@buildList
-        addAll(provider.getExtendsForClass(classSymbol.classId))
+        val receiverType = ownerType ?: return@buildList
+        addAll(provider.getExtendsForClass(classSymbol.classId).map { ExtendLookupCandidate(it, receiverType) })
         classSymbol.classId.toPrimitiveTypeKindOrNull()?.let { kind ->
-            addAll(provider.getExtendsForBuiltinType(kind))
+            val concreteReceiverTypes = receiverType.idealExtendLookupTypes.ifEmpty {
+                listOf(ConePrimitiveType(kind))
+            }
+            for (concreteReceiverType in concreteReceiverTypes) {
+                addAll(provider.getExtendsForBuiltinType(concreteReceiverType.kind).map {
+                    ExtendLookupCandidate(it, concreteReceiverType)
+                })
+            }
         }
-    }.filter(::isExtendApplicableToCurrentOwner)
+    }.distinctBy { it.extend }.filter { (extend, concreteReceiverType) ->
+        isExtendApplicableToCurrentOwner(extend, concreteReceiverType)
+    }.map { it.extend }
 
-    private fun isExtendApplicableToCurrentOwner(extend: CfirExtend): Boolean {
+    private fun isExtendApplicableToCurrentOwner(
+        extend: CfirExtend,
+        concreteReceiverType: ConeCangJieType,
+    ): Boolean {
         val provider = extendProvider ?: return false
         if (!provider.isExtendAccessible(extend)) return false
-        val receiverType = ownerType ?: return false
         val targetPattern = extend.extendedTypeRef.coneTypeOrNull ?: return false
-        return createExtendDeclarationSubstitution(
+        if (createExtendDeclarationSubstitution(
             session = session,
             extend = extend,
             targetPattern = targetPattern,
-            concreteReceiverType = receiverType,
-        ) != null
+            concreteReceiverType = concreteReceiverType,
+        ) != null) {
+            return true
+        }
+
+        return canDeferBareGenericStaticQualifierApplicability(targetPattern, concreteReceiverType)
+    }
+
+    private fun canDeferBareGenericStaticQualifierApplicability(
+        targetPattern: ConeCangJieType,
+        concreteReceiverType: ConeCangJieType,
+    ): Boolean {
+        if (!allowBareGenericStaticQualifierExtends) return false
+        val bareReceiverType = concreteReceiverType as? ConeLookupTagBasedType ?: return false
+        if (bareReceiverType.typeArguments.isNotEmpty()) return false
+
+        val patternType = targetPattern as? ConeLookupTagBasedType ?: return false
+        if (patternType.typeArguments.isEmpty()) return false
+        return patternType.classIdOrPrimitiveClassId == bareReceiverType.classIdOrPrimitiveClassId
     }
 
     private fun parentCallableNames(): Set<Name> = buildSet {
@@ -380,6 +424,7 @@ class CfirClassUseSiteMemberScope private constructor(
                 directSupertypeProvider = directSupertypeProvider,
                 ownerType = supertype,
                 scopeKind = parentScopeKind(),
+                allowBareGenericStaticQualifierExtends = allowBareGenericStaticQualifierExtends,
                 supertypePath = supertypePath.child(classId),
             )
             addNames(parentScope.declaredScope.collectDeclaredNames())
@@ -483,6 +528,11 @@ private class CfirSupertypePath private constructor(
 private data class MemberWithBaseScope<S : CfirCallableSymbol<*>>(
     val symbol: S,
     val scope: CfirTypeScope,
+)
+
+private data class ExtendLookupCandidate(
+    val extend: CfirExtend,
+    val concreteReceiverType: ConeCangJieType,
 )
 
 private typealias ProcessOverriddenWithBaseScope<S> =

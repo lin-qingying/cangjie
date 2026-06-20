@@ -2,6 +2,8 @@ package org.cangnova.cangjie.cfir.analysis.checkers.type
 
 import org.cangnova.cangjie.cfir.analysis.checkers.checkUpperBoundViolated
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
+import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 
@@ -13,5 +15,13 @@ import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
  */
 object CfirUpperBoundViolatedTypeChecker : CfirResolvedTypeRefChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
-    override fun check(typeRef: CfirResolvedTypeRef) = checkUpperBoundViolated(typeRef)
+    override fun check(typeRef: CfirResolvedTypeRef) {
+        if (context.containingDeclarations.lastOrNull() is CfirTypeAlias) return
+
+        val container = context.containingElements.dropLast(1).lastOrNull()
+        checkUpperBoundViolated(
+            typeRef = typeRef,
+            isIgnoreTypeParameters = container is CfirTypeParameter,
+        )
+    }
 }

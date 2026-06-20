@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>analysis-tests LLT 测试错误分析报告</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f7fa; color: #2d3748; line-height: 1.6; }
+  
+  .header { background: linear-gradient(135deg, #1a365d 0%, #2b6cb0 100%); color: white; padding: 32px 40px; }
+  .header h1 { font-size: 26px; font-weight: 700; margin-bottom: 6px; }
+  .header .subtitle { opacity: 0.8; font-size: 14px; }
+  
+  .container { max-width: 1300px; margin: 0 auto; padding: 24px 24px; }
+  
+  /* Summary cards */
+  .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+  .stat-card { background: white; border-radius: 10px; padding: 20px 24px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); border-left: 4px solid #4299e1; }
+  .stat-card.red { border-left-color: #e53e3e; }
+  .stat-card.green { border-left-color: #38a169; }
+  .stat-card.orange { border-left-color: #dd6b20; }
+  .stat-card.purple { border-left-color: #805ad5; }
+  .stat-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #718096; font-weight: 600; }
+  .stat-value { font-size: 36px; font-weight: 800; color: #1a202c; margin-top: 4px; }
+  .stat-sub { font-size: 13px; color: #a0aec0; margin-top: 2px; }
+  
+  /* Sections */
+  .section { background: white; border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); margin-bottom: 24px; overflow: hidden; }
+  .section-header { background: #f7fafc; border-bottom: 1px solid #e2e8f0; padding: 16px 24px; display: flex; align-items: center; gap: 10px; }
+  .section-header h2 { font-size: 16px; font-weight: 700; color: #2d3748; }
+  .section-header .badge { background: #ebf4ff; color: #2b6cb0; font-size: 12px; font-weight: 700; padding: 2px 10px; border-radius: 12px; }
+  .section-body { padding: 20px 24px; }
+  
+  /* Two-col layout */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
+  .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; margin-bottom: 24px; }
+  
+  /* Bar charts */
+  .bar-list { list-style: none; }
+  .bar-item { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .bar-label { min-width: 200px; font-size: 13px; color: #4a5568; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bar-label.mono { font-family: 'Consolas', 'Monaco', monospace; font-size: 12px; min-width: 260px; }
+  .bar-track { flex: 1; background: #edf2f7; border-radius: 4px; height: 16px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 4px; transition: width 0.3s; }
+  .bar-fill.blue { background: linear-gradient(90deg, #4299e1, #3182ce); }
+  .bar-fill.red { background: linear-gradient(90deg, #fc8181, #e53e3e); }
+  .bar-fill.green { background: linear-gradient(90deg, #68d391, #38a169); }
+  .bar-fill.orange { background: linear-gradient(90deg, #fbd38d, #dd6b20); }
+  .bar-fill.purple { background: linear-gradient(90deg, #b794f4, #805ad5); }
+  .bar-fill.teal { background: linear-gradient(90deg, #81e6d9, #319795); }
+  .bar-num { font-size: 13px; font-weight: 700; color: #4a5568; min-width: 40px; text-align: right; }
+  
+  /* Error category cards */
+  .cat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .cat-card { border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px 16px; }
+  .cat-card.major { border-color: #feb2b2; background: #fff5f5; }
+  .cat-card.warn { border-color: #fbd38d; background: #fffaf0; }
+  .cat-card.info { border-color: #bee3f8; background: #ebf8ff; }
+  .cat-title { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+  .cat-count { font-size: 28px; font-weight: 800; }
+  .cat-count.major { color: #e53e3e; }
+  .cat-count.warn { color: #dd6b20; }
+  .cat-count.info { color: #2b6cb0; }
+  .cat-desc { font-size: 12px; color: #718096; margin-top: 4px; }
+  
+  /* Feature table */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { background: #f7fafc; border-bottom: 2px solid #e2e8f0; padding: 10px 14px; text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #718096; font-weight: 700; }
+  td { padding: 9px 14px; border-bottom: 1px solid #f0f4f8; vertical-align: top; }
+  tr:hover td { background: #f7fafc; }
+  .tag { display: inline-block; font-size: 11px; padding: 1px 7px; border-radius: 10px; margin: 1px; font-family: monospace; font-weight: 600; white-space: nowrap; }
+  .tag.red { background: #fed7d7; color: #9b2c2c; }
+  .tag.blue { background: #bee3f8; color: #2c5282; }
+  .tag.gray { background: #edf2f7; color: #4a5568; }
+  .tag.orange { background: #feebc8; color: #9c4221; }
+  .tag.green { background: #c6f6d5; color: #276749; }
+  .severity-bar { height: 8px; border-radius: 4px; display: inline-block; }
+  
+  /* Pie-like donut */
+  .donut-wrapper { display: flex; align-items: center; gap: 20px; }
+  .donut-legend { flex: 1; }
+  .legend-item { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 13px; }
+  .legend-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+  
+  /* Error detail blocks */
+  .error-block { border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 12px; overflow: hidden; }
+  .error-block-header { background: #f7fafc; padding: 10px 14px; font-weight: 700; font-size: 13px; display: flex; justify-content: space-between; align-items: center; }
+  .error-block-body { padding: 12px 14px; font-size: 12px; color: #4a5568; }
+  .mono-text { font-family: 'Consolas', 'Monaco', monospace; background: #f0f4f8; padding: 2px 5px; border-radius: 3px; font-size: 12px; }
+
+  .progress-ring { display: inline-block; }
+  
+  .note { background: #fffaf0; border: 1px solid #fbd38d; border-radius: 8px; padding: 12px 16px; font-size: 13px; color: #744210; margin-top: 12px; }
+  .note strong { display: block; margin-bottom: 4px; }
+
+  .section-title-sub { color: #718096; font-size: 13px; font-weight: 400; margin-top: 2px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>analysis-tests · LLT 测试错误分析报告</h1>
+  <div class="subtitle">cfir/analysis-tests | 生成时间：2026-06-18 | 数据来源：build/test-results/test/*.xml</div>
+</div>
+
+<div class="container">
+
+  <!-- Summary Stats -->
+  <div class="summary-grid">
+    <div class="stat-card">
+      <div class="stat-label">总测试用例</div>
+      <div class="stat-value">8,788</div>
+      <div class="stat-sub">来自 1,379 个 XML 文件</div>
+    </div>
+    <div class="stat-card red">
+      <div class="stat-label">失败用例</div>
+      <div class="stat-value" style="color:#e53e3e">3,629</div>
+      <div class="stat-sub">失败率 41.3%</div>
+    </div>
+    <div class="stat-card green">
+      <div class="stat-label">通过用例</div>
+      <div class="stat-value" style="color:#38a169">5,159</div>
+      <div class="stat-sub">通过率 58.7%</div>
+    </div>
+    <div class="stat-card orange">
+      <div class="stat-label">非 Snapshot 错误</div>
+      <div class="stat-value" style="color:#dd6b20">161</div>
+      <div class="stat-sub">运行时异常 / 框架错误</div>
+    </div>
+  </div>
+
+  <!-- Error Category Overview -->
+  <div class="section">
+    <div class="section-header">
+      <h2>一、错误大类分布</h2>
+      <span class="badge">9 类</span>
+    </div>
+    <div class="section-body">
+      <div class="cat-grid">
+        <div class="cat-card major">
+          <div class="cat-title">📸 Snapshot 不匹配</div>
+          <div class="cat-count major">3,468</div>
+          <div class="cat-desc">实际诊断输出与预期文件内容不一致，诊断逻辑变更导致</div>
+        </div>
+        <div class="cat-card warn">
+          <div class="cat-title">📊 ArrayIndexOutOfBounds</div>
+          <div class="cat-count warn">111</div>
+          <div class="cat-desc">数组越界异常，主要出现在 Macro/CjcLLT 测试中</div>
+        </div>
+        <div class="cat-card warn">
+          <div class="cat-title">⚠️ Directive 作用域错误</div>
+          <div class="cat-count warn">10</div>
+          <div class="cat-desc">DIAGNOSTICS 指令声明在 File 级别但具有 Global 作用域</div>
+        </div>
+        <div class="cat-card warn">
+          <div class="cat-title">🔄 Macro 展开循环</div>
+          <div class="cat-count warn">8</div>
+          <div class="cat-desc">宏展开时检测到循环依赖（MACRO_CYCLE），APILevelChecker/Hide</div>
+        </div>
+        <div class="cat-card info">
+          <div class="cat-title">⚖️ 非法参数异常</div>
+          <div class="cat-count info">12</div>
+          <div class="cat-desc">FileAnalysisException 包裹 IllegalArgumentException，涉及 string_interpolation、逻辑运算符等</div>
+        </div>
+        <div class="cat-card info">
+          <div class="cat-title">📂 模块重复文件</div>
+          <div class="cat-count info">4</div>
+          <div class="cat-desc">hide.cj 在 mix_macro1_use/mix_macro2_use 模块中被重复定义</div>
+        </div>
+        <div class="cat-card info">
+          <div class="cat-title">🎭 ClassCast 异常</div>
+          <div class="cat-count info">4</div>
+          <div class="cat-desc">SourceCodeAnalysisException 包裹 ClassCastException</div>
+        </div>
+        <div class="cat-card info">
+          <div class="cat-title">🔍 穷举性分析异常</div>
+          <div class="cat-count info">4</div>
+          <div class="cat-desc">SourceCodeAnalysisException: exhaustiveness 相关分析失败</div>
+        </div>
+        <div class="cat-card info">
+          <div class="cat-title">✋ 断言顺序错误</div>
+          <div class="cat-count info">5</div>
+          <div class="cat-desc">Another not done marker added after this one，测试框架内部顺序问题</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Suite Distribution -->
+  <div class="two-col">
+    <div class="section">
+      <div class="section-header">
+        <h2>二、失败按测试套件分布</h2>
+      </div>
+      <div class="section-body">
+        <ul class="bar-list">
+          <li class="bar-item">
+            <span class="bar-label">LLT (non-Psi)</span>
+            <div class="bar-track"><div class="bar-fill blue" style="width:41.8%"></div></div>
+            <span class="bar-num">1,517</span>
+          </li>
+          <li class="bar-item">
+            <span class="bar-label">LLT-Psi</span>
+            <div class="bar-track"><div class="bar-fill blue" style="width:41.5%"></div></div>
+            <span class="bar-num">1,507</span>
+          </li>
+          <li class="bar-item">
+            <span class="bar-label">Macro</span>
+            <div class="bar-track"><div class="bar-fill orange" style="width:7.1%"></div></div>
+            <span class="bar-num">256</span>
+          </li>
+          <li class="bar-item">
+            <span class="bar-label">Macro-Psi</span>
+            <div class="bar-track"><div class="bar-fill orange" style="width:6.6%"></div></div>
+            <span class="bar-num">239</span>
+          </li>
+          <li class="bar-item">
+            <span class="bar-label">Diagnostics</span>
+            <div class="bar-track"><div class="bar-fill purple" style="width:3.0%"></div></div>
+            <span class="bar-num">108</span>
+          </li>
+          <li class="bar-item">
+            <span class="bar-label">ClassFinalizer</span>
+            <div class="bar-track"><div class="bar-fill teal" style="width:0.1%"></div></div>
+            <span class="bar-num">2</span>
+          </li>
+        </ul>
+        <div class="note">
+          <strong>💡 说明</strong>
+          LLT 与 LLT-Psi 套件各占约 42%，合计 3,024 个失败，是主要失败来源。两者共享测试数据，分别使用 PSI 与非 PSI 解析路径。
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <h2>三、失败按语言功能区分布（Top 20）</h2>
+      </div>
+      <div class="section-body">
+        <ul class="bar-list">
+          <li class="bar-item"><span class="bar-label">Class（类）</span><div class="bar-track"><div class="bar-fill red" style="width:100%"></div></div><span class="bar-num">189</span></li>
+          <li class="bar-item"><span class="bar-label">APILevelChecker（API 层级）</span><div class="bar-track"><div class="bar-fill red" style="width:94%"></div></div><span class="bar-num">178</span></li>
+          <li class="bar-item"><span class="bar-label">Extend（扩展）</span><div class="bar-track"><div class="bar-fill red" style="width:87%"></div></div><span class="bar-num">165</span></li>
+          <li class="bar-item"><span class="bar-label">Generics（泛型）</span><div class="bar-track"><div class="bar-fill red" style="width:83%"></div></div><span class="bar-num">157</span></li>
+          <li class="bar-item"><span class="bar-label">Annotation（注解）</span><div class="bar-track"><div class="bar-fill red" style="width:79%"></div></div><span class="bar-num">150</span></li>
+          <li class="bar-item"><span class="bar-label">Function（函数）</span><div class="bar-track"><div class="bar-fill orange" style="width:75%"></div></div><span class="bar-num">142</span></li>
+          <li class="bar-item"><span class="bar-label">Mut（可变性）</span><div class="bar-track"><div class="bar-fill orange" style="width:35%"></div></div><span class="bar-num">66</span></li>
+          <li class="bar-item"><span class="bar-label">Enum（枚举）</span><div class="bar-track"><div class="bar-fill orange" style="width:32%"></div></div><span class="bar-num">61</span></li>
+          <li class="bar-item"><span class="bar-label">Record（记录类型）</span><div class="bar-track"><div class="bar-fill orange" style="width:31%"></div></div><span class="bar-num">58</span></li>
+          <li class="bar-item"><span class="bar-label">ErrMsgs（错误消息）</span><div class="bar-track"><div class="bar-fill blue" style="width:30%"></div></div><span class="bar-num">56</span></li>
+          <li class="bar-item"><span class="bar-label">TypePattern / Call / ConstraintCheck</span><div class="bar-track"><div class="bar-fill blue" style="width:29%"></div></div><span class="bar-num">55 ×3</span></li>
+          <li class="bar-item"><span class="bar-label">Constructor（构造函数）</span><div class="bar-track"><div class="bar-fill blue" style="width:27%"></div></div><span class="bar-num">52</span></li>
+          <li class="bar-item"><span class="bar-label">InitializationCheck（初始化）</span><div class="bar-track"><div class="bar-fill blue" style="width:26%"></div></div><span class="bar-num">50</span></li>
+          <li class="bar-item"><span class="bar-label">Enhancedcondition / Varray</span><div class="bar-track"><div class="bar-fill teal" style="width:26%"></div></div><span class="bar-num">49 ×2</span></li>
+          <li class="bar-item"><span class="bar-label">TypeInfer（类型推断）</span><div class="bar-track"><div class="bar-fill teal" style="width:25%"></div></div><span class="bar-num">48</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Diagnostic Change Analysis -->
+  <div class="section">
+    <div class="section-header">
+      <h2>四、Snapshot 诊断变更分析</h2>
+      <span class="badge">Snapshot 失败 3,468 个</span>
+    </div>
+    <div class="section-body">
+      <p style="font-size:13px;color:#718096;margin-bottom:16px">
+        下表统计了所有 snapshot 失败中，<strong>新增诊断</strong>（实际输出有、期望文件没有）和<strong>消失诊断</strong>（期望文件有、实际输出没有）的数量。
+        新增诊断 = 编译器新增报错（可能为回归）；消失诊断 = 原有检查不再生效（可能为功能丢失）。
+      </p>
+      <div class="two-col">
+        <div>
+          <h3 style="font-size:14px;color:#e53e3e;margin-bottom:12px">🔴 新增诊断（编译器新增报错，Top 20）</h3>
+          <ul class="bar-list">
+            <li class="bar-item"><span class="bar-label mono">UNRESOLVED_REFERENCE</span><div class="bar-track"><div class="bar-fill red" style="width:100%"></div></div><span class="bar-num">356</span></li>
+            <li class="bar-item"><span class="bar-label mono">UNDECLARED_TYPE_NAME</span><div class="bar-track"><div class="bar-fill red" style="width:81%"></div></div><span class="bar-num">287</span></li>
+            <li class="bar-item"><span class="bar-label mono">INVALID_BINARY_OPERATOR</span><div class="bar-track"><div class="bar-fill red" style="width:68%"></div></div><span class="bar-num">242</span></li>
+            <li class="bar-item"><span class="bar-label mono">ARGUMENT_TYPE_MISMATCH</span><div class="bar-track"><div class="bar-fill red" style="width:52%"></div></div><span class="bar-num">184</span></li>
+            <li class="bar-item"><span class="bar-label mono">AMBIGUOUS_FUNCTION_CALL</span><div class="bar-track"><div class="bar-fill red" style="width:44%"></div></div><span class="bar-num">158</span></li>
+            <li class="bar-item"><span class="bar-label mono">UNRESOLVED_IMPORT</span><div class="bar-track"><div class="bar-fill red" style="width:43%"></div></div><span class="bar-num">152</span></li>
+            <li class="bar-item"><span class="bar-label mono">NOT_MEMBER_OF</span><div class="bar-track"><div class="bar-fill red" style="width:41%"></div></div><span class="bar-num">147</span></li>
+            <li class="bar-item"><span class="bar-label mono">UNABLE_TO_INFER_GENERIC_FUNC</span><div class="bar-track"><div class="bar-fill red" style="width:40%"></div></div><span class="bar-num">142</span></li>
+            <li class="bar-item"><span class="bar-label mono">REDECLARATION</span><div class="bar-track"><div class="bar-fill red" style="width:22%"></div></div><span class="bar-num">80</span></li>
+            <li class="bar-item"><span class="bar-label mono">RETURN_TYPE_MISMATCH</span><div class="bar-track"><div class="bar-fill red" style="width:21%"></div></div><span class="bar-num">74</span></li>
+            <li class="bar-item"><span class="bar-label mono">PATTERN_NOT_MATCH</span><div class="bar-track"><div class="bar-fill red" style="width:20%"></div></div><span class="bar-num">73</span></li>
+            <li class="bar-item"><span class="bar-label mono">TYPE_MISMATCH</span><div class="bar-track"><div class="bar-fill red" style="width:20%"></div></div><span class="bar-num">71</span></li>
+            <li class="bar-item"><span class="bar-label mono">WRONG_MODIFIER_TARGET</span><div class="bar-track"><div class="bar-fill red" style="width:19%"></div></div><span class="bar-num">68</span></li>
+            <li class="bar-item"><span class="bar-label mono">UNUSED_EXPRESSION</span><div class="bar-track"><div class="bar-fill red" style="width:17%"></div></div><span class="bar-num">61</span></li>
+            <li class="bar-item"><span class="bar-label mono">ABSTRACT_MEMBER_NOT_IMPLEMENTED</span><div class="bar-track"><div class="bar-fill red" style="width:16%"></div></div><span class="bar-num">58</span></li>
+            <li class="bar-item"><span class="bar-label mono">GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT</span><div class="bar-track"><div class="bar-fill red" style="width:16%"></div></div><span class="bar-num">58</span></li>
+            <li class="bar-item"><span class="bar-label mono">UNUSED_IMPORT</span><div class="bar-track"><div class="bar-fill red" style="width:14%"></div></div><span class="bar-num">51</span></li>
+            <li class="bar-item"><span class="bar-label mono">EFFECTS_FEATURE_DISABLED</span><div class="bar-track"><div class="bar-fill red" style="width:10%"></div></div><span class="bar-num">34</span></li>
+            <li class="bar-item"><span class="bar-label mono">RECURSIVE_CONSTRUCTOR_CALL</span><div class="bar-track"><div class="bar-fill red" style="width:11%"></div></div><span class="bar-num">38</span></li>
+            <li class="bar-item"><span class="bar-label mono">LAMBDA_MUST_HAVE_TYPE_ANNOTATION</span><div class="bar-track"><div class="bar-fill red" style="width:10%"></div></div><span class="bar-num">36</span></li>
+          </ul>
+        </div>
+        <div>
+          <h3 style="font-size:14px;color:#38a169;margin-bottom:12px">🟢 消失诊断（原有检查不再触发，Top 20）</h3>
+          <ul class="bar-list">
+            <li class="bar-item"><span class="bar-label mono">TYPE_MISMATCH</span><div class="bar-track"><div class="bar-fill green" style="width:100%"></div></div><span class="bar-num">162</span></li>
+            <li class="bar-item"><span class="bar-label mono">APILEVEL_REF_HIGHER</span><div class="bar-track"><div class="bar-fill green" style="width:41%"></div></div><span class="bar-num">66</span></li>
+            <li class="bar-item"><span class="bar-label mono">UNRESOLVED_REFERENCE</span><div class="bar-track"><div class="bar-fill green" style="width:41%"></div></div><span class="bar-num">66</span></li>
+            <li class="bar-item"><span class="bar-label mono">package_search_error</span><div class="bar-track"><div class="bar-fill green" style="width:38%"></div></div><span class="bar-num">62</span></li>
+            <li class="bar-item"><span class="bar-label mono">GENERIC_INSTANTIATION_CAUSES_AMBIGUOUS_FUNCTIONS</span><div class="bar-track"><div class="bar-fill green" style="width:37%"></div></div><span class="bar-num">60</span></li>
+            <li class="bar-item"><span class="bar-label mono">ABSTRACT_MEMBER_NOT_IMPLEMENTED</span><div class="bar-track"><div class="bar-fill green" style="width:35%"></div></div><span class="bar-num">56</span></li>
+            <li class="bar-item"><span class="bar-label mono">USED_BEFORE_INITIALIZATION</span><div class="bar-track"><div class="bar-fill green" style="width:33%"></div></div><span class="bar-num">54</span></li>
+            <li class="bar-item"><span class="bar-label mono">UNUSED_IMPORT</span><div class="bar-track"><div class="bar-fill green" style="width:23%"></div></div><span class="bar-num">38</span></li>
+            <li class="bar-item"><span class="bar-label mono">STATIC_FUNCTION_CANNOT_ACCESS_NON_STATIC_MEMBER</span><div class="bar-track"><div class="bar-fill green" style="width:21%"></div></div><span class="bar-num">34</span></li>
+            <li class="bar-item"><span class="bar-label mono">STATIC_VARIABLE_USE_GENERIC_PARAMETER</span><div class="bar-track"><div class="bar-fill green" style="width:20%"></div></div><span class="bar-num">32</span></li>
+            <li class="bar-item"><span class="bar-label mono">EXTEND_MEMBER_CANNOT_SHADOW</span><div class="bar-track"><div class="bar-fill green" style="width:19%"></div></div><span class="bar-num">30</span></li>
+            <li class="bar-item"><span class="bar-label mono">NEW_INFERENCE_ERROR</span><div class="bar-track"><div class="bar-fill green" style="width:19%"></div></div><span class="bar-num">30</span></li>
+            <li class="bar-item"><span class="bar-label mono">OVERRIDING_RETURN_TYPE_MISMATCH</span><div class="bar-track"><div class="bar-fill green" style="width:17%"></div></div><span class="bar-num">28</span></li>
+            <li class="bar-item"><span class="bar-label mono">CANNOT_ASSIGN_TO_IMMUTABLE</span><div class="bar-track"><div class="bar-fill green" style="width:17%"></div></div><span class="bar-num">27</span></li>
+            <li class="bar-item"><span class="bar-label mono">INTERFACE_CALL_WITH_UNIMPLEMENTED_CALL</span><div class="bar-track"><div class="bar-fill green" style="width:16%"></div></div><span class="bar-num">26</span></li>
+            <li class="bar-item"><span class="bar-label mono">UNREACHABLE_PATTERN</span><div class="bar-track"><div class="bar-fill green" style="width:16%"></div></div><span class="bar-num">26</span></li>
+            <li class="bar-item"><span class="bar-label mono">GENERIC_ARGUMENT_NO_MATCH</span><div class="bar-track"><div class="bar-fill green" style="width:16%"></div></div><span class="bar-num">26</span></li>
+            <li class="bar-item"><span class="bar-label mono">USE_FUNC_CAPTURE_VAR_ALONE</span><div class="bar-track"><div class="bar-fill green" style="width:15%"></div></div><span class="bar-num">24</span></li>
+            <li class="bar-item"><span class="bar-label mono">NON_EXHAUSTIVE_MATCH</span><div class="bar-track"><div class="bar-fill green" style="width:14%"></div></div><span class="bar-num">23</span></li>
+            <li class="bar-item"><span class="bar-label mono">GENERIC_INFINITE_INSTANTIATION</span><div class="bar-track"><div class="bar-fill green" style="width:14%"></div></div><span class="bar-num">22</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Feature-level breakdown -->
+  <div class="section">
+    <div class="section-header">
+      <h2>五、各功能区诊断变更明细（Top 失败功能区）</h2>
+    </div>
+    <div class="section-body">
+      <table>
+        <thead>
+          <tr>
+            <th>功能区</th>
+            <th>失败数</th>
+            <th>主要新增诊断（多报）</th>
+            <th>主要消失诊断（漏报）</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>APILevelChecker</strong><br><span style="color:#718096;font-size:12px">API 层级检查</span></td>
+            <td><strong>178</strong></td>
+            <td>
+              <span class="tag red">UNDECLARED_TYPE_NAME ×71</span>
+              <span class="tag red">UNABLE_TO_INFER_GENERIC_FUNC ×54</span>
+              <span class="tag red">NO_CONST_INIT ×30</span>
+              <span class="tag red">CLASS_UNINITIALIZED_FIELD ×30</span>
+              <span class="tag red">WRONG_MODIFIER_TARGET ×30</span>
+            </td>
+            <td>
+              <span class="tag green">APILEVEL_REF_HIGHER ×54</span>
+              <span class="tag green">HIDE_MISSING_HIDE ×20</span>
+              <span class="tag green">package_search_error ×10</span>
+              <span class="tag green">HIDE_DIFF_PARAM ×10</span>
+            </td>
+          </tr>
+          <tr>
+            <td><strong>Annotation</strong><br><span style="color:#718096;font-size:12px">注解</span></td>
+            <td><strong>150</strong></td>
+            <td>
+              <span class="tag red">UNDECLARED_TYPE_NAME ×55</span>
+              <span class="tag red">MACRO_EXPANSION_FAILED ×16</span>
+              <span class="tag red">ANNOTATION_ARG_TARGET_ARRAY_LIT ×16</span>
+              <span class="tag red">NO_CONST_INIT ×9</span>
+            </td>
+            <td>
+              <span class="tag green">ANNOTATION_NOT_APPLICABLE_JFFI ×20</span>
+              <span class="tag green">APILEVEL_REF_HIGHER ×12</span>
+              <span class="tag green">ANNOTATION_CUSTOM_PLACE ×6</span>
+            </td>
+          </tr>
+          <tr>
+            <td><strong>Class</strong><br><span style="color:#718096;font-size:12px">类定义</span></td>
+            <td><strong>189</strong></td>
+            <td>
+              <span class="tag red">RECURSIVE_CONSTRUCTOR_CALL ×18</span>
+              <span class="tag red">UNRESOLVED_REFERENCE ×10</span>
+              <span class="tag red">ILLEGAL_THIS_OR_SUPER_CALL ×4</span>
+            </td>
+            <td>
+              <span class="tag green">USED_BEFORE_INITIALIZATION ×12</span>
+              <span class="tag green">STATIC_FUNCTION_CANNOT_ACCESS_NON_STATIC_MEMBER ×6</span>
+              <span class="tag green">GENERIC_INSTANTIATION_CAUSES_AMBIGUOUS_FUNCTIONS ×6</span>
+              <span class="tag green">INHERIT_MEMBER_KIND_INCONSISTENT ×6</span>
+            </td>
+          </tr>
+          <tr>
+            <td><strong>Extend</strong><br><span style="color:#718096;font-size:12px">扩展</span></td>
+            <td><strong>165</strong></td>
+            <td>
+              <span class="tag red">UNRESOLVED_REFERENCE ×23</span>
+              <span class="tag red">NOT_MEMBER_OF ×17</span>
+              <span class="tag red">GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT ×14</span>
+              <span class="tag red">EXTEND_DUPLICATE_INTERFACE ×8</span>
+            </td>
+            <td>
+              <span class="tag green">GENERIC_INSTANTIATION_CAUSES_AMBIGUOUS_FUNCTIONS ×10</span>
+              <span class="tag green">EXTEND_INTERFACE_NOT_EXTENDABLE ×8</span>
+              <span class="tag green">EXTEND_MEMBER_CANNOT_SHADOW ×6</span>
+              <span class="tag green">NEED_MEMBER_IMPLEMENTATION ×6</span>
+            </td>
+          </tr>
+          <tr>
+            <td><strong>Generics</strong><br><span style="color:#718096;font-size:12px">泛型</span></td>
+            <td><strong>157</strong></td>
+            <td>
+              <span class="tag red">UNDECLARED_TYPE_NAME ×19</span>
+              <span class="tag red">UNABLE_TO_INFER_GENERIC_FUNC ×18</span>
+              <span class="tag red">INVALID_BINARY_OPERATOR ×12</span>
+            </td>
+            <td>
+              <span class="tag green">GENERIC_INFINITE_INSTANTIATION ×22</span>
+              <span class="tag green">GENERIC_INSTANTIATION_CAUSES_AMBIGUOUS_FUNCTIONS ×20</span>
+              <span class="tag green">OVERRIDING_RETURN_TYPE_MISMATCH ×10</span>
+              <span class="tag green">GENERIC_ARGUMENT_NO_MATCH ×8</span>
+            </td>
+          </tr>
+          <tr>
+            <td><strong>Function</strong><br><span style="color:#718096;font-size:12px">函数</span></td>
+            <td><strong>142</strong></td>
+            <td>
+              <span class="tag red">INVALID_BINARY_OPERATOR ×13</span>
+              <span class="tag red">TYPE_MISMATCH ×12</span>
+              <span class="tag red">ARGUMENT_TYPE_MISMATCH ×12</span>
+              <span class="tag red">AMBIGUOUS_FUNCTION_CALL ×7</span>
+            </td>
+            <td>
+              <span class="tag green">CANNOT_MODIFY_VAR ×10</span>
+              <span class="tag green">NO_MATCH_FUNCTION_DECLARATION_FOR_REF ×8</span>
+              <span class="tag green">UNABLE_TO_INFER_RETURN_TYPE ×8</span>
+            </td>
+          </tr>
+          <tr>
+            <td><strong>Effect</strong><br><span style="color:#718096;font-size:12px">Effect 系统</span></td>
+            <td><strong>36</strong></td>
+            <td>
+              <span class="tag red">EFFECTS_FEATURE_DISABLED ×34</span>
+              <span class="tag red">UNRESOLVED_IMPORT ×30</span>
+              <span class="tag red">UNDECLARED_TYPE_NAME ×26</span>
+            </td>
+            <td>—</td>
+          </tr>
+          <tr>
+            <td><strong>Mut</strong><br><span style="color:#718096;font-size:12px">可变性修饰</span></td>
+            <td><strong>66</strong></td>
+            <td>
+              <span class="tag red">WRONG_MODIFIER_TARGET ×24</span>
+              <span class="tag red">USE_MUTABLE_FUNC_ALONE ×10</span>
+              <span class="tag red">NAMED_PARAMETER_NOT_FOUND ×8</span>
+            </td>
+            <td>
+              <span class="tag green">IMMUTABLE_FUNCTION_CANNOT_ACCESS_MUTABLE_FUNCTION ×10</span>
+              <span class="tag green">sema_use_this_as_an_expression_in_func ×6</span>
+              <span class="tag green">CAPTURE_THIS_OR_INSTANCE_FIELD_IN_FUNC ×6</span>
+            </td>
+          </tr>
+          <tr>
+            <td><strong>OptionalChain</strong><br><span style="color:#718096;font-size:12px">可选链</span></td>
+            <td><strong>37</strong></td>
+            <td>
+              <span class="tag red">NOT_MEMBER_OF ×27</span>
+              <span class="tag red">INVALID_SUBSCRIPT_EXPR ×7</span>
+              <span class="tag red">OPTIONAL_CHAIN_NON_OPTIONAL ×4</span>
+            </td>
+            <td>—</td>
+          </tr>
+          <tr>
+            <td><strong>InitializationCheck</strong><br><span style="color:#718096;font-size:12px">初始化检查</span></td>
+            <td><strong>50</strong></td>
+            <td>—</td>
+            <td>
+              <span class="tag green">USED_BEFORE_INITIALIZATION ×18</span>
+              <span class="tag green">TYPE_UNINITIALIZED_STATIC_FIELD ×6</span>
+              <span class="tag green">CLASS_UNINITIALIZED_FIELD ×4</span>
+              <span class="tag green">CAPTURE_BEFORE_INITIALIZATION ×4</span>
+            </td>
+          </tr>
+          <tr>
+            <td><strong>LambdaCapture</strong><br><span style="color:#718096;font-size:12px">Lambda 捕获</span></td>
+            <td><strong>27</strong></td>
+            <td>—</td>
+            <td>
+              <span class="tag green">USE_FUNC_CAPTURE_VAR_ALONE ×18</span>
+              <span class="tag green">CAPTURE_BEFORE_INITIALIZATION ×4</span>
+              <span class="tag green">CAPTURE_HAS_SHADOW_VARIABLE ×2</span>
+            </td>
+          </tr>
+          <tr>
+            <td><strong>InterfaceDefaultImpl</strong><br><span style="color:#718096;font-size:12px">接口默认实现</span></td>
+            <td><strong>28</strong></td>
+            <td>—</td>
+            <td>
+              <span class="tag green">INTERFACE_CALL_WITH_UNIMPLEMENTED_CALL ×20</span>
+              <span class="tag green">INHERIT_ABSTRACT_CLASS_STATIC_UNIMPLEMENT_FUNC ×4</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Runtime Errors Detail -->
+  <div class="section">
+    <div class="section-header">
+      <h2>六、运行时异常详情（161 个非 Snapshot 失败）</h2>
+    </div>
+    <div class="section-body">
+      
+      <div class="error-block">
+        <div class="error-block-header">
+          <span>🔴 ArrayIndexOutOfBoundsException（111 个）</span>
+          <span class="tag red">最严重</span>
+        </div>
+        <div class="error-block-body">
+          <p><strong>症状：</strong>107 个无消息体，另有 3 个负数越界：<span class="mono-text">Index -32755/−32753/−32751 out of bounds for length 40457</span></p>
+          <p style="margin-top:6px"><strong>分布：</strong>主要在 <span class="mono-text">CfirAnalysisMacroTestGenerated</span>（Macro）和 <span class="mono-text">CjcLlTArraylit5ErrorTest</span> 中</p>
+          <p style="margin-top:6px"><strong>根因推测：</strong>负数索引通常来源于整数溢出或 Short 转换后的负值被直接用作数组下标，可能在宏处理的 token offset 计算中存在符号位处理问题</p>
+        </div>
+      </div>
+
+      <div class="error-block">
+        <div class="error-block-header">
+          <span>🟠 IllegalStateException: Directive DIAGNOSTICS 作用域错误（10 个）</span>
+          <span class="tag orange">测试框架问题</span>
+        </div>
+        <div class="error-block-body">
+          <p><strong>症状：</strong><span class="mono-text">Directive DIAGNOSTICS has Global applicability but it declared in File</span></p>
+          <p style="margin-top:6px"><strong>影响：</strong>全部在 <span class="mono-text">CfirAnalysisLLTPsiTestGenerated$Extend$ExtendExport$DirectExtend</span> 子套件下</p>
+          <p style="margin-top:6px"><strong>根因：</strong>测试文件将 <span class="mono-text">// !DIAGNOSTICS</span> 指令放在了文件级别而非模块级别，导致测试框架拒绝解析</p>
+        </div>
+      </div>
+
+      <div class="error-block">
+        <div class="error-block-header">
+          <span>🟠 IllegalStateException: Macro 展开循环（8 个）</span>
+          <span class="tag orange">MACRO_CYCLE</span>
+        </div>
+        <div class="error-block-body">
+          <p><strong>症状：</strong><span class="mono-text">Macro construction failed before CFIR test frontend output was produced. ERROR MACRO_CYCLE [CONSTRUCTION]: Macro expansion cycle detected for `Hide`</span></p>
+          <p style="margin-top:6px"><strong>影响：</strong>全部在 <span class="mono-text">APILevelChecker$Hide</span> 下的 testCallHide2/3、testOverrideByHide34/35/61 等</p>
+          <p style="margin-top:6px"><strong>根因：</strong><span class="mono-text">Hide</span> 宏在 API 层级检查场景下产生了自引用展开循环，宏展开器未正确处理此类递归情况</p>
+        </div>
+      </div>
+
+      <div class="error-block">
+        <div class="error-block-header">
+          <span>🟡 IllegalStateException: 模块内重复文件名（4 个）</span>
+          <span class="tag orange">测试数据问题</span>
+        </div>
+        <div class="error-block-body">
+          <p><strong>症状：</strong><span class="mono-text">File with name "hide.cj" already defined in module mix_macro1_use.cj / mix_macro2_use.cj</span></p>
+          <p style="margin-top:6px"><strong>根因：</strong>测试数据中同一模块下出现了同名文件 <span class="mono-text">hide.cj</span>，可能是测试 case 生成时引入了重复文件</p>
+        </div>
+      </div>
+
+      <div class="error-block">
+        <div class="error-block-header">
+          <span>🟡 IllegalArgumentException（12 个）</span>
+          <span class="tag blue">分析异常</span>
+        </div>
+        <div class="error-block-body">
+          <p><strong>症状：</strong>FileAnalysisException 包裹 IllegalArgumentException，涉及文件：</p>
+          <ul style="margin-top:6px;margin-left:20px;font-size:12px">
+            <li><span class="mono-text">EnvVarsConfigurationSource.cj:614</span> × 2</li>
+            <li><span class="mono-text">string_interpolation_01.cj:10:22</span> × 2</li>
+            <li><span class="mono-text">and.cj:9:9</span>，<span class="mono-text">and2.cj:9:9</span>，<span class="mono-text">and.cj:9:16</span> 等</li>
+          </ul>
+          <p style="margin-top:6px"><strong>根因：</strong>逻辑运算符（and/or）和字符串插值处理中传入了非法参数，可能是 PSI 节点类型校验不严格</p>
+        </div>
+      </div>
+
+      <div class="error-block">
+        <div class="error-block-header">
+          <span>🟡 AssertionError: 标记顺序错误（5 个）</span>
+          <span class="tag blue">测试框架问题</span>
+        </div>
+        <div class="error-block-body">
+          <p><strong>症状：</strong><span class="mono-text">Another not done marker added after this one. Must be done before this.</span></p>
+          <p style="margin-top:6px"><strong>根因：</strong>测试框架内部的 "done marker" 机制：前一个任务未完成时又添加了新任务，属于测试框架并发/顺序问题</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Key Findings -->
+  <div class="section">
+    <div class="section-header">
+      <h2>七、关键发现与建议</h2>
+    </div>
+    <div class="section-body">
+      <table>
+        <thead>
+          <tr>
+            <th>优先级</th>
+            <th>问题</th>
+            <th>影响范围</th>
+            <th>建议行动</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="tag red">P0 高</span></td>
+            <td>大量 UNRESOLVED_REFERENCE / UNDECLARED_TYPE_NAME 新增</td>
+            <td>356 + 287 = 643 个 case</td>
+            <td>检查名称解析流程是否发生了回归，重点查 extend / generics / annotation 模块的解析链</td>
+          </tr>
+          <tr>
+            <td><span class="tag red">P0 高</span></td>
+            <td>TYPE_MISMATCH 大量消失（漏报）</td>
+            <td>162 个 case（Class/ErrMsgs 为主）</td>
+            <td>类型检查器可能丢失了部分 TYPE_MISMATCH 诊断，需对比相关提交历史</td>
+          </tr>
+          <tr>
+            <td><span class="tag red">P0 高</span></td>
+            <td>ArrayIndexOutOfBoundsException（宏/数组相关）</td>
+            <td>111 个</td>
+            <td>负数索引 (-32755...) 是关键线索，查 token offset 或 Short 整数转换溢出</td>
+          </tr>
+          <tr>
+            <td><span class="tag orange">P1 中</span></td>
+            <td>GENERIC_INSTANTIATION_CAUSES_AMBIGUOUS_FUNCTIONS 大量消失</td>
+            <td>60 个（Generics/Extend/Class）</td>
+            <td>泛型实例化歧义检测可能被关闭或路径变更，需验证 checker 是否仍注册</td>
+          </tr>
+          <tr>
+            <td><span class="tag orange">P1 中</span></td>
+            <td>USED_BEFORE_INITIALIZATION 大量消失（54 个）+ CLASS_UNINITIALIZED_FIELD 新增（44 个）</td>
+            <td>初始化检查模块重构</td>
+            <td>初始化分析器可能被重构，旧诊断码失效而新诊断码未正确更新期望文件</td>
+          </tr>
+          <tr>
+            <td><span class="tag orange">P1 中</span></td>
+            <td>EFFECTS_FEATURE_DISABLED 大量新增（34 个）</td>
+            <td>Effect 功能区</td>
+            <td>Effect 系统特性被禁用但测试用例仍期望其开启，需确认 Effect 编译开关状态</td>
+          </tr>
+          <tr>
+            <td><span class="tag orange">P1 中</span></td>
+            <td>APILEVEL_REF_HIGHER 消失（66 个）+ Macro 展开循环（8 个）</td>
+            <td>APILevelChecker/Hide</td>
+            <td>API 层级检查器中 Hide 宏相关逻辑存在循环依赖和诊断丢失，需重点修复</td>
+          </tr>
+          <tr>
+            <td><span class="tag blue">P2 低</span></td>
+            <td>Directive DIAGNOSTICS 作用域错误（10 个）</td>
+            <td>ExtendExport 子套件</td>
+            <td>修改对应测试文件，将 !DIAGNOSTICS 指令移至正确的模块级位置</td>
+          </tr>
+          <tr>
+            <td><span class="tag blue">P2 低</span></td>
+            <td>模块重复文件 hide.cj（4 个）</td>
+            <td>mix_macro1_use / mix_macro2_use</td>
+            <td>检查测试数据生成脚本，去除重复的 hide.cj 文件引用</td>
+          </tr>
+          <tr>
+            <td><span class="tag gray">P3 低</span></td>
+            <td>大量 snapshot 文件需要更新</td>
+            <td>3,468 个</td>
+            <td>在非回归类变更确认后，可通过 -PupdateTestData=true 批量更新预期文件</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div style="text-align:center;color:#a0aec0;font-size:12px;padding:20px 0 40px">
+    报告由 WorkBuddy 自动分析生成 · 数据源：cfir/analysis-tests/build/test-results/test/*.xml · 共 1,379 个 XML 文件 · 8,788 个测试用例
+  </div>
+</div>
+
+</body>
+</html>

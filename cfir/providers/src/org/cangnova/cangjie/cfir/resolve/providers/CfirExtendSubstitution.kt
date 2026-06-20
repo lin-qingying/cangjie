@@ -2,6 +2,7 @@ package org.cangnova.cangjie.cfir.resolve.providers
 
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.typeAwareSupertypeProviderOrNull
@@ -16,6 +17,7 @@ import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.types.collectUpperBounds
+import org.cangnova.cangjie.cfir.types.idealExtendLookupTypes
 import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.type.AbstractTypeChecker
@@ -73,14 +75,54 @@ fun createExtendDeclarationSubstitution(
     targetPattern: ConeCangJieType,
     concreteReceiverType: ConeCangJieType,
 ): CfirExtendDeclarationSubstitution? {
+    return createExtendDeclarationSubstitution(
+        session = session,
+        extend = extend,
+        targetPattern = targetPattern,
+        concreteReceiverType = concreteReceiverType,
+        checkGenericConstraints = true,
+    )
+}
+
+/**
+ * 只完成 extend 目标类型匹配，不过滤 where 约束。
+ *
+ * 调用解析和普通父类型查询必须使用 [createExtendDeclarationSubstitution]；
+ * 这个入口只供约束系统把 `extend<T> Option<T> <: I where T <: I`
+ * 派生成 `T <: I` 这样的初始约束，不能作为成员可见性或子类型成功的判据。
+ */
+fun createExtendDeclarationSubstitutionForConstraintDerivation(
+    session: CfirSession,
+    extend: CfirExtend,
+    targetPattern: ConeCangJieType,
+    concreteReceiverType: ConeCangJieType,
+): CfirExtendDeclarationSubstitution? {
+    return createExtendDeclarationSubstitution(
+        session = session,
+        extend = extend,
+        targetPattern = targetPattern,
+        concreteReceiverType = concreteReceiverType,
+        checkGenericConstraints = false,
+    )
+}
+
+private fun createExtendDeclarationSubstitution(
+    session: CfirSession,
+    extend: CfirExtend,
+    targetPattern: ConeCangJieType,
+    concreteReceiverType: ConeCangJieType,
+    checkGenericConstraints: Boolean,
+): CfirExtendDeclarationSubstitution? {
+    val semanticTargetPattern = targetPattern.fullyExpandedType(session)
+    val semanticReceiverType = concreteReceiverType.fullyExpandedType(session)
     val substitutions = linkedMapOf<TypeConstructorMarker, ConeCangJieType>()
     val extendTypeParameterConstructors = extend.typeParameters.mapTo(linkedSetOf<TypeConstructorMarker>()) {
         it.symbol.toLookupTag()
     }
 
     if (!matchExtendTargetType(
-            pattern = targetPattern,
-            actual = concreteReceiverType,
+            pattern = semanticTargetPattern,
+            actual = semanticReceiverType,
             extendTypeParameterConstructors = extendTypeParameterConstructors,
             substitutions = substitutions,
         )
@@ -93,12 +135,12 @@ fun createExtendDeclarationSubstitution(
 
     val substitutor = substitutions.takeIf { it.isNotEmpty() }?.let(::CfirTypeSubstitutorByMap)
         ?: ConeSubstitutor.Empty
-    if (!extend.satisfiesGenericConstraints(session, substitutor)) {
+    if (checkGenericConstraints && !extend.satisfiesGenericConstraints(session, substitutor)) {
         return null
     }
     return CfirExtendDeclarationSubstitution(
         substitutor = substitutor,
-        substitutedReceiverType = substitutor.substituteOrSelf(targetPattern),
+        substitutedReceiverType = substitutor.substituteOrSelf(semanticTargetPattern),
     )
 }
 
@@ -166,7 +208,10 @@ private fun matchExtendTargetType(
             }
         }
 
-        is ConePrimitiveType -> actual is ConePrimitiveType && pattern.kind == actual.kind
+        is ConePrimitiveType -> {
+            actual is ConePrimitiveType && pattern.kind == actual.kind ||
+                    actual.idealExtendLookupTypes.any { it.kind == pattern.kind }
+        }
 
         is ConeLookupTagBasedType -> {
             val actualClassifier = actual as? ConeLookupTagBasedType ?: return false

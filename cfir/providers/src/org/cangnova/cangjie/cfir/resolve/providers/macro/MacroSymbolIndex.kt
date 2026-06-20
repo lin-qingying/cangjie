@@ -57,8 +57,8 @@ data class MacroDefinitionEntry(
     val cjoHash: String? = null,
     /** 动态库内容 hash；运行产物变化必须触发 cache 失效。 */
     val dynamicLibHash: String? = null,
-    /** 依赖 BCHIR 内容 hash 聚合；宏依赖变化必须触发 cache 失效。 */
-    val dependenciesBchirHash: String? = null,
+    /** 依赖产物内容 hash 聚合；宏依赖变化必须触发 cache 失效。 */
+    val dependenciesArtifactHash: String? = null,
     /** 产生该 entry 的 artifact resolver 算法版本。 */
     val resolverAlgorithmVersion: Int? = null,
     /** 若该宏支持 `@!` 强制形式则为 true（baseline 第 8 节 / 第 12 节 Batch 5）。 */

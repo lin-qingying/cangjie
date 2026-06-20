@@ -26,7 +26,7 @@ open class CallInfo(
     override val explicitReceiver: CfirExpression?,
     override val arguments: List<CfirExpression>,
     val isUsedAsGetClassReceiver: Boolean,
-    val typeArguments: List<CfirTypeRef>,
+    override val typeArguments: List<CfirTypeRef>,
     val session: CfirSession,
     val containingFile: CfirFile,
     val containingDeclarations: List<CfirDeclaration>,

@@ -144,28 +144,6 @@ object BuiltinPrimitiveOperators {
         return BuiltinPrimitiveOperatorMatch(signature)
     }
 
-    /**
-     * 判断一次 operator 调用是否已经进入内建 primitive 运算语义域。
-     *
-     * 该判断只描述“应由内建运算规则处理”的形态，不代表匹配成功；
-     * 匹配失败时由 body resolve 保留 operator token、左右操作数类型，
-     * 交给诊断映射阶段归类为官方的 invalid binary/unary operator。
-     */
-    fun canDiagnoseInvalidPrimitiveOperator(
-        name: Name,
-        receiverType: ConeCangJieType?,
-        argumentTypes: List<ConeCangJieType>,
-    ): Boolean {
-        receiverType?.toBuiltinOperatorKind() ?: return false
-        if (argumentTypes.any { it.toBuiltinOperatorKind() == null }) return false
-        return signaturesByReceiver.values
-            .asSequence()
-            .flatten()
-            .any { signature ->
-                signature.name == name && signature.parameterKinds.size == argumentTypes.size
-            }
-    }
-
     private fun resolveSignature(
         name: Name,
         receiverKind: PrimitiveTypeKind,

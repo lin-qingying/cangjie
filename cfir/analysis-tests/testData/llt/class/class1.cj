@@ -1,5 +1,4 @@
-<!MISSING_ENTRY!>/<!>/ Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
-// CHECK_PROGRAM_ENTRY
+// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
@@ -18,6 +17,6 @@ class B <: <!NON_INHERITABLE_SUPER_CLASS!>A<!> {
     }
 }
 
-<!INHERITANCE_CYCLE!>c<!>lass C <: <!NON_INHERITABLE_SUPER_CLASS!>D<!> {} // regex inheritance cycle detected: 'D->C->D'
+<!INHERITANCE_CYCLE!>c<!>lass C <: <!NON_INHERITABLE_SUPER_CLASS!>D<!> {}
 
 class <!RECURSIVE_CONSTRUCTOR_CALL!>D<!> <: <!NON_INHERITABLE_SUPER_CLASS!>C<!> {}

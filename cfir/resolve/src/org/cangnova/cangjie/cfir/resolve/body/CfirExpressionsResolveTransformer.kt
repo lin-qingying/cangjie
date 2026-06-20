@@ -523,28 +523,7 @@ open class CfirExpressionsResolveTransformer(
             callee.name,
             receiverType,
             argumentTypes,
-        )
-        if (builtinMatch == null) {
-            if (!CfirBuiltinOperatorResolver.canDiagnoseInvalidPrimitiveOperator(callee.name, receiverType, argumentTypes)) {
-                return null
-            }
-            val operatorToken = OperatorNameConventions.TOKENS_BY_OPERATOR_NAME[callee.name]
-            val diagnostic = ConeUnresolvedNameError(
-                callee.name,
-                operatorToken,
-                receiverType,
-                argumentTypes,
-            )
-            functionCall.replaceCalleeReference(
-                buildErrorNamedReference {
-                    source = callee.source
-                    name = callee.name
-                    this.diagnostic = diagnostic
-                },
-            )
-            functionCall.replaceConeTypeOrNull(ConeErrorType(diagnostic))
-            return functionCall
-        }
+        ) ?: return null
         val returnType = data.expectedTypeOrNull?.let { expectedType ->
             IdealTypeResolver.resolveIfIdeal(builtinMatch.returnType, expectedType)
         } ?: builtinMatch.returnType

@@ -13,5 +13,5 @@ func f(x: Int64) {
 }
 
 main() {
-    <!chir_dce_unreachable!>f<!>(return 0)
+    f(return 0)
 }

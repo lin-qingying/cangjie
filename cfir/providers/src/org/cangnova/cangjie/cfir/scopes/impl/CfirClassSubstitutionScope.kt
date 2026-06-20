@@ -56,9 +56,22 @@ class CfirClassSubstitutionScope(
     private val dispatchReceiverType: ConeCangJieType,
     private val substitutionOwnerType: ConeCangJieType? = null,
 ) : CfirTypeScope() {
+    val substitutor: ConeSubstitutor by lazy(LazyThreadSafetyMode.PUBLICATION) {
+        val ownerClassId = dispatchReceiverType.classIdOrPrimitiveClassId
+        val concreteOwnerType = ownerClassId?.let(::concreteTypeForOwner)
+        val ownerDeclaration = ownerClassId
+            ?.let { session.symbolProvider.getClassLikeSymbolByClassId(it)?.cfir }
+        if (ownerDeclaration != null && concreteOwnerType != null) {
+            createClassLikeDeclarationSubstitutor(ownerDeclaration, concreteOwnerType) ?: ConeSubstitutor.Empty
+        } else {
+            ConeSubstitutor.Empty
+        }
+    }
+
     private val functionOverrideCache = mutableMapOf<CfirNamedFunctionSymbol, CfirNamedFunctionSymbol>()
     private val propertyOverrideCache = mutableMapOf<CfirPropertySymbol, CfirPropertySymbol>()
     private val fieldOverrideCache = mutableMapOf<CfirFieldVariableSymbol, CfirFieldVariableSymbol>()
+    private val constructorOverrideCache = mutableMapOf<CfirConstructorSymbol, CfirConstructorSymbol>()
     private val enumConstructorOverrideCache = mutableMapOf<CfirEnumConstructorSymbol, CfirEnumConstructorSymbol>()
     private val wrappedBaseScopeCache = mutableMapOf<CfirTypeScope, CfirTypeScope>()
     private val concreteSupertypeCache = mutableMapOf<ClassId, ConeCangJieType?>()
@@ -81,6 +94,12 @@ class CfirClassSubstitutionScope(
 
     override fun processClassifiersByName(name: Name, processor: (CfirClassLikeSymbol<*>) -> Unit) {
         useSiteMemberScope.processClassifiersByName(name, processor)
+    }
+
+    override fun processDeclaredConstructors(processor: (CfirConstructorSymbol) -> Unit) {
+        useSiteMemberScope.processDeclaredConstructors { original ->
+            processor(substituteConstructorSymbol(original))
+        }
     }
 
     override fun processCallablesByName(name: Name, processor: (CfirCallableSymbol<*>) -> Unit) {
@@ -165,6 +184,14 @@ class CfirClassSubstitutionScope(
         }
     }
 
+    private fun substituteConstructorSymbol(symbol: CfirConstructorSymbol): CfirConstructorSymbol {
+        return synchronized(constructorOverrideCache) {
+            constructorOverrideCache.getOrPut(symbol) {
+                createSubstitutedConstructorSymbol(symbol)
+            }
+        }
+    }
+
     private fun substituteEnumConstructorSymbol(symbol: CfirEnumConstructorSymbol): CfirEnumConstructorSymbol {
         return synchronized(enumConstructorOverrideCache) {
             enumConstructorOverrideCache.getOrPut(symbol) {
@@ -240,6 +267,31 @@ class CfirClassSubstitutionScope(
             typeParameters.clear()
             typeParameters += typeParameterSubstitution.typeParameters
             returnTypeRef = returnTypeData.typeRef
+        }
+        copiedDeclaration.attributes.deferredCallableCopyReturnType = returnTypeData.deferredReturnType
+        copiedDeclaration.originalForSubstitutionOverrideAttr = declaration
+        return copiedSymbol
+    }
+
+    private fun createSubstitutedConstructorSymbol(symbol: CfirConstructorSymbol): CfirConstructorSymbol {
+        val ownerSubstitutor = computeCallableSubstitutor(symbol)
+        if (ownerSubstitutor === ConeSubstitutor.Empty || ownerSubstitutor == null) return symbol
+
+        symbol.lazyResolveToPhase(CfirResolvePhase.TYPES)
+        val declaration = symbol.cfir
+        val copiedSymbol = CfirConstructorSymbol(symbol.callableId)
+        val typeParameterSubstitution = declaration.createSubstitutedTypeParameters(copiedSymbol, ownerSubstitutor)
+        val substitutor = typeParameterSubstitution.substitutor
+        val returnTypeData = declaration.substitutedReturnTypeData(symbol, substitutor)
+        val copiedDeclaration = buildConstructorCopy(declaration) {
+            origin = substitutionOverrideOrigin(symbol)
+            this.symbol = copiedSymbol
+            dispatchReceiverType = substituteDispatchReceiverType(declaration.dispatchReceiverType, substitutor)
+            typeParameters.clear()
+            typeParameters += typeParameterSubstitution.typeParameters
+            returnTypeRef = returnTypeData.typeRef
+            valueParameters.clear()
+            valueParameters += substituteValueParameters(declaration.valueParameters, substitutor)
         }
         copiedDeclaration.attributes.deferredCallableCopyReturnType = returnTypeData.deferredReturnType
         copiedDeclaration.originalForSubstitutionOverrideAttr = declaration
@@ -425,7 +477,7 @@ class CfirClassSubstitutionScope(
             }
         }
 
-        val ownerClassId = session.cfirProvider.getContainingClass(symbol)?.classId
+        val ownerClassId = ownerClassIdForCallable(symbol)
         return if (ownerClassId != null && ownerClassId == dispatchReceiverType.classIdOrPrimitiveClassId) {
             CfirDeclarationOrigin.SubstitutionOverride.CallSite
         } else {
@@ -440,13 +492,20 @@ class CfirClassSubstitutionScope(
             return findExtendDeclarationSubstitution(session, ownerExtend, dispatchReceiverType)?.substitutor
         }
 
-        val ownerClassId = session.cfirProvider.getContainingClass(symbol)?.classId
+        val ownerClassId = ownerClassIdForCallable(symbol)
         if (ownerClassId != null) {
             val concreteOwnerType = concreteTypeForOwner(ownerClassId) ?: return null
             val ownerDeclaration = session.symbolProvider.getClassLikeSymbolByClassId(ownerClassId)?.cfir ?: return null
             return createClassLikeDeclarationSubstitutor(ownerDeclaration, concreteOwnerType)
         }
         return null
+    }
+
+    private fun ownerClassIdForCallable(symbol: CfirCallableSymbol<*>): ClassId? {
+        return session.cfirProvider.getContainingClass(symbol)?.classId
+            ?: (symbol as? CfirEnumConstructorSymbol)?.let {
+                dispatchReceiverType.expandedClassIdOrPrimitiveClassId
+            }
     }
 
     private fun concreteTypeForOwner(ownerClassId: ClassId): ConeCangJieType? {

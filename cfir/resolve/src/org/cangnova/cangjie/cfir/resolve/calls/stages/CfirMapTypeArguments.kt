@@ -25,6 +25,7 @@
 package org.cangnova.cangjie.cfir.resolve.calls.stages
 
 import org.cangnova.cangjie.cfir.diagnostic.WrongArgumentCount
+import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CheckerSink
@@ -50,8 +51,7 @@ object CfirMapTypeArguments : ResolutionStage() {
     }
 
     private fun buildTypeArgumentMapping(candidate: Candidate): TypeArgumentMapping {
-        val explicitTypeArguments = candidate.callInfo.typeArguments
-            .mapNotNull { it as? CfirResolvedTypeRef }
+        val explicitTypeArguments = candidate.resolvedExplicitTypeArguments()
 
         if (explicitTypeArguments.isEmpty()) {
             return TypeArgumentMapping.NoExplicitArguments
@@ -71,8 +71,7 @@ object CfirMapTypeArguments : ResolutionStage() {
         candidate: Candidate,
         context: ResolutionContext,
     ) {
-        val explicitCount = candidate.callInfo.typeArguments
-            .count { it is CfirResolvedTypeRef }
+        val explicitCount = candidate.resolvedExplicitTypeArguments().size
         if (explicitCount == 0) return
 
         val declaration = candidate.symbol.takeIf { it.isBound }?.cfir ?: return
@@ -83,5 +82,15 @@ object CfirMapTypeArguments : ResolutionStage() {
         if (expected != explicitCount) {
             sink.reportDiagnostic(WrongArgumentCount(expected, explicitCount))
         }
+    }
+
+    private fun Candidate.resolvedExplicitTypeArguments(): List<CfirResolvedTypeRef> {
+        val fromCallInfo = callInfo.typeArguments.mapNotNull { it as? CfirResolvedTypeRef }
+        if (fromCallInfo.isNotEmpty()) return fromCallInfo
+
+        return (callInfo.callSite as? CfirQualifiedAccessExpression)
+            ?.typeArguments
+            ?.mapNotNull { it as? CfirResolvedTypeRef }
+            .orEmpty()
     }
 }

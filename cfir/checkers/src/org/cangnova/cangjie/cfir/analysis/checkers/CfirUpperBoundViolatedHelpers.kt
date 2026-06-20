@@ -18,7 +18,9 @@ import org.cangnova.cangjie.cfir.types.CfirUserTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassifierType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
+import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
 import org.cangnova.cangjie.cfir.types.ConeTypeContext
+import org.cangnova.cangjie.cfir.types.abbreviatedType
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.createTypeSubstitutorByTypeConstructor
 import org.cangnova.cangjie.cfir.types.type
@@ -37,12 +39,25 @@ import org.cangnova.cangjie.type.model.TypeConstructorMarker
  * 共享同一套 upper-bound 校验，只由调用方提供声明侧类型参数、实参和使用点替换。
  */
 context(context: CheckerContext, reporter: DiagnosticReporter)
-internal fun checkUpperBoundViolated(typeRef: CfirResolvedTypeRef) {
+internal fun checkUpperBoundViolated(
+    typeRef: CfirResolvedTypeRef,
+    isIgnoreTypeParameters: Boolean = false,
+) {
     if (typeRef is CfirErrorTypeRef) return
+    val coneType = typeRef.coneType
+    val notExpandedType = coneType.abbreviatedType as? ConeTypeAliasType ?: coneType as? ConeTypeAliasType
+    if (notExpandedType != null) {
+        checkUpperBoundViolatedForTypealiasExpansion(
+            notExpandedType = notExpandedType,
+            fallbackSource = typeRef.source ?: typeRef.delegatedTypeRef?.source,
+        )
+        return
+    }
     checkUpperBoundViolated(
-        type = typeRef.coneType,
+        type = coneType,
         sourceTypeRef = typeRef.delegatedTypeRef,
         fallbackSource = typeRef.source,
+        isIgnoreTypeParameters = isIgnoreTypeParameters,
     )
 }
 
@@ -51,6 +66,7 @@ internal fun checkUpperBoundViolated(
     type: ConeCangJieType,
     sourceTypeRef: CfirTypeRef?,
     fallbackSource: CjSourceElement?,
+    isIgnoreTypeParameters: Boolean = false,
 ) {
     val expandedType = (type as? ConeClassifierType)
         ?.fullyExpandedType(context.session) as? ConeClassifierType
@@ -67,6 +83,7 @@ internal fun checkUpperBoundViolated(
         ?.typeArguments
         .orEmpty()
     val canMapArgumentSources = sourceArguments.size == expandedType.typeArguments.size
+    val genericSource = sourceTypeRef?.source ?: fallbackSource
     val substitutor = createGenericUseSiteSubstitutor(
         typeParameters = typeParameters.take(minOf(typeParameters.size, expandedType.typeArguments.size)),
         resolvedArguments = expandedType.typeArguments.map { it.type },
@@ -81,11 +98,45 @@ internal fun checkUpperBoundViolated(
                 .takeIf { canMapArgumentSources }
                 ?.source
                 ?.firstCharacterDiagnosticSource()
+                ?: genericSource?.firstCharacterDiagnosticSource()
         },
         sourceTypeRefs = sourceArguments.takeIf { canMapArgumentSources },
-        fallbackSource = sourceTypeRef?.source ?: fallbackSource,
+        fallbackSource = genericSource,
         substitutor = substitutor,
         diagnosticGenericType = expandedType,
+        isIgnoreTypeParameters = isIgnoreTypeParameters,
+    )
+}
+
+context(context: CheckerContext, reporter: DiagnosticReporter)
+internal fun checkUpperBoundViolatedForTypealiasExpansion(
+    notExpandedType: ConeTypeAliasType,
+    fallbackSource: CjSourceElement?,
+) {
+    val expandedType = notExpandedType.fullyExpandedType(context.session) as? ConeClassifierType
+        ?: return
+    if (expandedType.typeArguments.isEmpty()) return
+
+    val symbol = expandedType.toSymbol(context.session) as? CfirClassLikeSymbol<*> ?: return
+    val typeParameters = symbol.cfir.typeParameters
+    if (typeParameters.isEmpty()) return
+
+    val substitutor = createGenericUseSiteSubstitutor(
+        typeParameters = typeParameters.take(minOf(typeParameters.size, expandedType.typeArguments.size)),
+        resolvedArguments = expandedType.typeArguments.map { it.type },
+        typeContext = context.session.typeContext,
+    )
+
+    checkUpperBoundViolated(
+        typeParameters = typeParameters,
+        argumentTypes = expandedType.typeArguments.map { it.type },
+        argumentSources = expandedType.typeArguments.indices.map {
+            fallbackSource?.firstCharacterDiagnosticSource()
+        },
+        sourceTypeRefs = null,
+        fallbackSource = fallbackSource,
+        substitutor = substitutor,
+        diagnosticGenericType = notExpandedType,
     )
 }
 
@@ -133,6 +184,7 @@ private fun checkUpperBoundViolated(
     fallbackSource: CjSourceElement?,
     substitutor: ConeSubstitutor,
     diagnosticGenericType: ConeCangJieType?,
+    isIgnoreTypeParameters: Boolean = false,
 ) {
     val count = minOf(typeParameters.size, argumentTypes.size)
     for (index in 0 until count) {
@@ -140,7 +192,11 @@ private fun checkUpperBoundViolated(
         val sourceTypeRef = sourceTypeRefs?.getOrNull(index)
         val argumentSource = argumentSources.getOrNull(index) ?: fallbackSource
 
-        if (argumentType !is ConeErrorType && !argumentType.isGenericTypeWithInvalidUpperBound()) {
+        if (
+            argumentType !is ConeErrorType &&
+            !argumentType.isGenericTypeWithInvalidUpperBound() &&
+            (!isIgnoreTypeParameters || (argumentType.typeArguments.isEmpty() && argumentType !is ConeTypeParameterType))
+        ) {
             val upperBounds = typeParameters[index].symbol.resolvedBounds
                 .map { it.coneType }
                 .filterNot { it is ConeErrorType }
@@ -171,6 +227,7 @@ private fun checkUpperBoundViolated(
             type = argumentType,
             sourceTypeRef = sourceTypeRef,
             fallbackSource = argumentSource,
+            isIgnoreTypeParameters = isIgnoreTypeParameters,
         )
     }
 }

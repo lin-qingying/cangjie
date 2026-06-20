@@ -10,6 +10,6 @@
 main() {
     var a: A<Bool> = 10;
     var b: A<Int64> = 20;
-    var <!chir_dce_unused_variable!>c<!> = a + b
+    var c = a + b
     return 0
 }

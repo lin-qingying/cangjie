@@ -13,6 +13,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirPrimitiveTypeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirStruct
 import org.cangnova.cangjie.cfir.declarations.CfirEnum
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
+import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
 import org.cangnova.cangjie.cfir.declarations.callableNameOrNull
 import org.cangnova.cangjie.cfir.resolve.CfirTypeResolver
@@ -22,11 +23,15 @@ import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeEnumType
 import org.cangnova.cangjie.cfir.types.ConeStructType
+import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
 import org.cangnova.cangjie.cfir.types.ConeTypeProjection
+import org.cangnova.cangjie.cfir.types.abbreviatedType
 import org.cangnova.cangjie.cfir.types.arrayElementType
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
+import org.cangnova.cangjie.cfir.types.expandedClassIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
@@ -148,7 +153,7 @@ class CfirExtendIndexStore : CfirSessionComponent {
         val targetClass = resolver.resolveClass(extendedTypeRef)
         val inheritedInterfaces = superTypeRefs.map { superTypeRef ->
             CfirExtendInheritedInterfaceSemantic(
-                classId = superTypeRef.toClassIdOrNull(),
+                classId = superTypeRef.toClassIdOrNull(resolver),
                 semanticKey = semanticNormalizer.semanticKeyOrNull(superTypeRef) ?: superTypeRef.toString(),
             )
         }
@@ -159,7 +164,7 @@ class CfirExtendIndexStore : CfirSessionComponent {
             packageFqName = file.packageDirective.packageFqName,
             fileName = file.name,
             declarationIndexInFile = declarationIndexInFile,
-            targetClassId = extendedTypeRef.toClassIdOrNull(),
+            targetClassId = extendedTypeRef.toClassIdOrNull(resolver),
             targetClassKind = targetClass?.classKindOrNull(),
             inheritedInterfaces = inheritedInterfaces,
             inheritedInterfaceClassIds = inheritedInterfaceClassIds,
@@ -259,7 +264,7 @@ class CfirExtendIndexStore : CfirSessionComponent {
         val result = linkedSetOf<ClassId>()
         val memo = linkedMapOf<ClassId, Set<ClassId>>()
         for (superTypeRef in declaration.superTypeRefsOrEmpty()) {
-            val classId = superTypeRef.toClassIdOrNull() ?: continue
+            val classId = superTypeRef.toClassIdOrNull(resolver) ?: continue
             result.addAll(collectInterfaceClosure(classId, resolver, memo, linkedSetOf()))
         }
         return result
@@ -281,7 +286,7 @@ class CfirExtendIndexStore : CfirSessionComponent {
         }
 
         for (superTypeRef in declaration.superTypeRefsOrEmpty()) {
-            val superClassId = superTypeRef.toClassIdOrNull() ?: continue
+            val superClassId = superTypeRef.toClassIdOrNull(resolver) ?: continue
             result += collectInterfaceClosure(superClassId, resolver, memo, visiting)
         }
 
@@ -290,9 +295,22 @@ class CfirExtendIndexStore : CfirSessionComponent {
         return result
     }
 
-    private fun CfirTypeRef.toClassIdOrNull(): ClassId? {
+    private fun CfirTypeRef.toClassIdOrNull(resolver: CfirTypeResolver): ClassId? {
         val coneType = (this as? CfirResolvedTypeRef)?.coneType ?: return null
+        val abbreviatedTypeAlias = coneType.abbreviatedType as? ConeTypeAliasType
+        if (abbreviatedTypeAlias != null) return abbreviatedTypeAlias.classId
+        if (coneType is ConeTypeAliasType) return coneType.classId
         return coneType.classIdOrPrimitiveClassId
+    }
+
+    private fun ConeCangJieType.expandedClassIdOrPrimitiveClassId(resolver: CfirTypeResolver): ClassId? {
+        if (this !is ConeTypeAliasType) return classIdOrPrimitiveClassId
+
+        expandedType?.expandedClassIdOrPrimitiveClassId(resolver)?.let { return it }
+        val typeAlias = resolver.resolveClass(classId) as? CfirTypeAlias
+        val expandedConeType = (typeAlias?.expandedTypeRef as? CfirResolvedTypeRef)?.coneType
+        return expandedConeType?.expandedClassIdOrPrimitiveClassId(resolver)
+            ?: expandedClassIdOrPrimitiveClassId
     }
 }
 

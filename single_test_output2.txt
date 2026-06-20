@@ -1,0 +1,1379 @@
+Initialized native services in: C:\Users\lin17\.gradle\native
+Initialized jansi services in: C:\Users\lin17\.gradle\native
+The client will now receive all logging from the daemon (pid: 45580). The daemon log file: C:\Users\lin17\.gradle\daemon\9.4.0\daemon-45580.out.log
+Starting 4th build in daemon [uptime: 15 mins 30.751 secs, performance: 100%, GC rate: 0.00/s, heap usage: 0% of 3 GiB, non-heap usage: 11% of 1 GiB]
+Using 16 worker leases.
+Operational build model parameters: {cachingModelBuilding=false, configurationCache=true, configurationCacheDisabledReason=null, configurationCacheParallelLoad=true, configurationCacheParallelStore=false, configureOnDemand=false, invalidateCoupledProjects=false, isolatedProjects=false, modelAsProjectDependency=false, modelBuilding=false, parallelModelBuilding=false, parallelProjectConfiguration=false, parallelProjectExecution=true, resilientModelBuilding=false}
+Invalidating in-memory cache of D:\code\intellij\cangjie\.gradle\9.4.0\fileHashes\fileHashes.bin
+Invalidating in-memory cache of D:\code\intellij\cangjie\.gradle\9.4.0\fileHashes\resourceHashesCache.bin
+Encryption key source: default Gradle keystore (pkcs12)
+Invalidating in-memory cache of C:\Users\lin17\.gradle\caches\journal-1\file-access.bin
+Now considering [D:\code\intellij\cangjie, D:\code\intellij\cangjie\repo\gradle-settings-conventions, D:\code\intellij\cangjie\repo\gradle-build-conventions] as hierarchies to watch
+Now considering [D:\code\intellij\cangjie\repo\gradle-build-conventions, D:\code\intellij\cangjie, D:\code\intellij\cangjie\repo\gradle-settings-conventions] as hierarchies to watch
+Now considering [D:\code\intellij\cangjie\repo\gradle-settings-conventions, D:\code\intellij\cangjie\repo\gradle-build-conventions, D:\code\intellij\cangjie] as hierarchies to watch
+Invalidating in-memory cache of C:\Users\lin17\.gradle\caches\9.4.0\fileHashes\kotlinDslCompileAvoidanceClasspathHashCache.bin
+Invalidating in-memory cache of C:\Users\lin17\.gradle\caches\9.4.0\fileHashes\fileHashes.bin
+Invalidating in-memory cache of C:\Users\lin17\.gradle\caches\9.4.0\fileHashes\KotlinMetadataCompatibilityCache.bin
+Invalidating in-memory cache of C:\Users\lin17\.gradle\caches\9.4.0\fileHashes\resourceHashesCache.bin
+Reusing configuration cache.
+Now considering [D:\code\intellij\cangjie, D:\code\intellij\cangjie\repo\gradle-settings-conventions, D:\code\intellij\cangjie\repo\gradle-build-conventions] as hierarchies to watch
+Watching the file system is configured to be enabled if available
+File system watching is active
+Using local directory build cache for the root build (location = C:\Users\lin17\.gradle\caches\build-cache-1, remove unused entries = after 7 days).
+Tasks to be executed: [task ':cfir:analysis-tests:checkKotlinGradlePluginConfigurationErrors', task ':dependencies:intellij-core:compileJava', task ':cfir:analysis-tests:compileKotlin', task ':cfir:analysis-tests:compileJava', task ':cfir:analysis-tests:processResources', task ':cfir:analysis-tests:classes', task ':cfir:analysis-tests:jar', task ':common:checkKotlinGradlePluginConfigurationErrors', task ':util:checkKotlinGradlePluginConfigurationErrors', task ':util:compileKotlin', task ':util:compileJava', task ':util:processResources', task ':util:classes', task ':util:jar', task ':common:compileKotlin', task ':common:compileJava', task ':common:processResources', task ':common:classes', task ':common:jar', task ':flatbuffers-gen:checkKotlinGradlePluginConfigurationErrors', task ':flatbuffers-gen:locateFlatc', task ':flatbuffers-gen:generateKotlinFlatBuffers', task ':flatbuffers-gen:compileKotlin', task ':flatbuffers-gen:compileJava', task ':flatbuffers-gen:processResources', task ':flatbuffers-gen:classes', task ':flatbuffers-gen:jar', task ':psi:checkKotlinGradlePluginConfigurationErrors', task ':psi:generateCDocLexer', task ':psi:generateCangJieLexer', task ':psi:generateLexers', task ':psi:compileKotlin', task ':psi:compileJava', task ':psi:processResources', task ':psi:classes', task ':psi:jar', task ':resolution.common:checkKotlinGradlePluginConfigurationErrors', task ':resolution.common:compileKotlin', task ':resolution.common:compileJava', task ':resolution.common:processResources', task ':resolution.common:classes', task ':resolution.common:jar', task ':cfir:cfir-common:checkKotlinGradlePluginConfigurationErrors', task ':common:diagnostics:checkKotlinGradlePluginConfigurationErrors', task ':common:diagnostics:compileKotlin', task ':common:diagnostics:compileJava', task ':common:diagnostics:processResources', task ':common:diagnostics:classes', task ':common:diagnostics:jar', task ':compiler:config:checkKotlinGradlePluginConfigurationErrors', task ':compiler:config:compileKotlin', task ':compiler:config:compileJava', task ':compiler:config:processResources', task ':compiler:config:classes', task ':compiler:config:jar', task ':cfir:cfir-common:compileKotlin', task ':cfir:cfir-common:compileJava', task ':cfir:cfir-common:processResources', task ':cfir:cfir-common:classes', task ':cfir:cfir-common:jar', task ':cfir:cfir-cones:checkKotlinGradlePluginConfigurationErrors', task ':cfir:cfir-cones:compileKotlin', task ':cfir:cfir-cones:compileJava', task ':cfir:cfir-cones:processResources', task ':cfir:cfir-cones:classes', task ':cfir:cfir-cones:jar', task ':cfir:cfir-serialization:checkKotlinGradlePluginConfigurationErrors', task ':cfir:cfir-tree:checkKotlinGradlePluginConfigurationErrors', task ':generators:checkKotlinGradlePluginConfigurationErrors', task ':generators:compileKotlin', task ':generators:compileJava', task ':generators:processResources', task ':generators:classes', task ':generators:jar', task ':dependencies:intellij-core:processResources', task ':dependencies:intellij-core:classes', task ':dependencies:intellij-core:jar', task ':cfir:cfir-tree:tree-generator:checkKotlinGradlePluginConfigurationErrors', task ':cfir:cfir-tree:tree-generator:compileKotlin', task ':cfir:cfir-tree:tree-generator:compileJava', task ':cfir:cfir-tree:tree-generator:processResources', task ':cfir:cfir-tree:tree-generator:classes', task ':cfir:cfir-tree:tree-generator:jar', task ':cfir:cfir-tree:generateTree', task ':cfir:cfir-tree:compileKotlin', task ':cfir:cfir-tree:compileJava', task ':cfir:cfir-tree:processResources', task ':cfir:cfir-tree:classes', task ':cfir:cfir-tree:jar', task ':cfir:providers:checkKotlinGradlePluginConfigurationErrors', task ':cfir:providers:compileKotlin', task ':cfir:providers:compileJava', task ':cfir:providers:processResources', task ':cfir:providers:classes', task ':cfir:providers:jar', task ':cfir:cfir-serialization:compileKotlin', task ':cfir:cfir-serialization:compileJava', task ':cfir:cfir-serialization:processResources', task ':cfir:cfir-serialization:classes', task ':cfir:cfir-serialization:jar', task ':cfir:checkers:checkKotlinGradlePluginConfigurationErrors', task ':cfir:checkers:checkers-component-generator:checkKotlinGradlePluginConfigurationErrors', task ':cfir:checkers:checkers-component-generator:compileKotlin', task ':cfir:checkers:checkers-component-generator:compileJava', task ':cfir:checkers:checkers-component-generator:processResources', task ':cfir:checkers:checkers-component-generator:classes', task ':cfir:checkers:checkers-component-generator:jar', task ':cfir:checkers:generateCheckersComponents', task ':cfir:diagnostic-renderers:checkKotlinGradlePluginConfigurationErrors', task ':cfir:diagnostic-renderers:compileKotlin', task ':cfir:diagnostic-renderers:compileJava', task ':cfir:diagnostic-renderers:processResources', task ':cfir:diagnostic-renderers:classes', task ':cfir:diagnostic-renderers:jar', task ':cfir:semantics:checkKotlinGradlePluginConfigurationErrors', task ':cfir:semantics:compileKotlin', task ':cfir:semantics:compileJava', task ':cfir:semantics:processResources', task ':cfir:semantics:classes', task ':cfir:semantics:jar', task ':cfir:checkers:compileKotlin', task ':cfir:checkers:compileJava', task ':cfir:checkers:processResources', task ':cfir:checkers:classes', task ':cfir:checkers:jar', task ':cfir:entrypoint:checkKotlinGradlePluginConfigurationErrors', task ':cfir:resolve:checkKotlinGradlePluginConfigurationErrors', task ':cfir:resolve:compileKotlin', task ':cfir:resolve:compileJava', task ':cfir:resolve:processResources', task ':cfir:resolve:classes', task ':cfir:resolve:jar', task ':cfir:raw-cfir:light-tree2cfir:checkKotlinGradlePluginConfigurationErrors', task ':cfir:raw-cfir:raw-cfir-common:checkKotlinGradlePluginConfigurationErrors', task ':cfir:raw-cfir:raw-cfir-common:compileKotlin', task ':cfir:raw-cfir:raw-cfir-common:compileJava', task ':cfir:raw-cfir:raw-cfir-common:processResources', task ':cfir:raw-cfir:raw-cfir-common:classes', task ':cfir:raw-cfir:raw-cfir-common:jar', task ':cfir:raw-cfir:light-tree2cfir:compileKotlin', task ':cfir:raw-cfir:light-tree2cfir:compileJava', task ':cfir:raw-cfir:light-tree2cfir:processResources', task ':cfir:raw-cfir:light-tree2cfir:classes', task ':cfir:raw-cfir:light-tree2cfir:jar', task ':cfir:raw-cfir:psi2cfir:checkKotlinGradlePluginConfigurationErrors', task ':cfir:raw-cfir:psi2cfir:compileKotlin', task ':cfir:raw-cfir:psi2cfir:compileJava', task ':cfir:raw-cfir:psi2cfir:processResources', task ':cfir:raw-cfir:psi2cfir:classes', task ':cfir:raw-cfir:psi2cfir:jar', task ':cfir:entrypoint:compileKotlin', task ':cfir:entrypoint:compileJava', task ':cfir:entrypoint:processResources', task ':cfir:entrypoint:classes', task ':cfir:entrypoint:jar', task ':compiler:frontend:checkKotlinGradlePluginConfigurationErrors', task ':compiler:arguments:checkKotlinGradlePluginConfigurationErrors', task ':compiler:arguments:compileKotlin', task ':compiler:arguments:compileJava', task ':compiler:arguments:processResources', task ':compiler:arguments:classes', task ':compiler:arguments:jar', task ':compiler:frontend-arguments-generator:checkKotlinGradlePluginConfigurationErrors', task ':compiler:frontend-arguments-generator:compileKotlin', task ':compiler:frontend-arguments-generator:compileJava', task ':compiler:frontend-arguments-generator:processResources', task ':compiler:frontend-arguments-generator:classes', task ':compiler:frontend-arguments-generator:jar', task ':compiler:frontend:generateFrontendArguments', task ':compiler:phaser:checkKotlinGradlePluginConfigurationErrors', task ':compiler:phaser:compileKotlin', task ':compiler:phaser:compileJava', task ':compiler:phaser:processResources', task ':compiler:phaser:classes', task ':compiler:phaser:jar', task ':macro:macro-common:checkKotlinGradlePluginConfigurationErrors', task ':macro:macro-common:compileKotlin', task ':macro:macro-common:compileJava', task ':macro:macro-common:processResources', task ':macro:macro-common:classes', task ':macro:macro-common:jar', task ':compiler:frontend:compileKotlin', task ':compiler:frontend:compileJava', task ':compiler:frontend:processResources', task ':compiler:frontend:classes', task ':compiler:frontend:jar', task ':macro:macro-process:checkKotlinGradlePluginConfigurationErrors', task ':macro:macro-process:compileKotlin', task ':macro:macro-process:compileJava', task ':macro:macro-process:processResources', task ':macro:macro-process:classes', task ':macro:macro-process:jar', task ':tests:test-infrastructure:checkKotlinGradlePluginConfigurationErrors', task ':tests:test-infrastructure:compileKotlin', task ':tests:test-infrastructure:compileJava', task ':tests:test-infrastructure:processResources', task ':tests:test-infrastructure:classes', task ':tests:test-infrastructure:jar', task ':tests:test-infrastructure:compileTestFixturesKotlin', task ':tests:test-infrastructure:compileTestFixturesJava', task ':cfir:analysis-tests:compileTestFixturesKotlin', task ':cfir:analysis-tests:compileTestFixturesJava', task ':cfir:analysis-tests:processTestFixturesResources', task ':cfir:analysis-tests:testFixturesClasses', task ':cfir:analysis-tests:testFixturesJar', task ':tests:test-infrastructure:processTestFixturesResources', task ':tests:test-infrastructure:testFixturesClasses', task ':tests:test-infrastructure:testFixturesJar', task ':cfir:analysis-tests:generateTestGeneratorForCfirAnalysisTestsTests', task ':cfir:analysis-tests:compileTestKotlin', task ':cfir:analysis-tests:compileTestJava', task ':cfir:analysis-tests:processTestResources', task ':cfir:analysis-tests:testClasses', task ':cfir:analysis-tests:test']
+Tasks that were excluded: []
+Resolve mutations for :cfir:analysis-tests:checkKotlinGradlePluginConfigurationErrors (Thread[#323,Execution worker Thread 2,5,main]) started.
+Resolve mutations for :dependencies:intellij-core:compileJava (Thread[#322,Execution worker,5,main]) started.
+:cfir:analysis-tests:checkKotlinGradlePluginConfigurationErrors (Thread[#323,Execution worker Thread 2,5,main]) started.
+Resolve mutations for :cfir:analysis-tests:processResources (Thread[#324,Execution worker Thread 3,5,main]) started.
+:dependencies:intellij-core:compileJava (Thread[#322,Execution worker,5,main]) started.
+Resolve mutations for :common:checkKotlinGradlePluginConfigurationErrors (Thread[#325,Execution worker Thread 4,5,main]) started.
+:cfir:analysis-tests:processResources (Thread[#324,Execution worker Thread 3,5,main]) started.
+:common:checkKotlinGradlePluginConfigurationErrors (Thread[#325,Execution worker Thread 4,5,main]) started.
+Resolve mutations for :util:checkKotlinGradlePluginConfigurationErrors (Thread[#321,included builds,5,main]) started.
+:util:checkKotlinGradlePluginConfigurationErrors (Thread[#321,included builds,5,main]) started.
+Resolve mutations for :util:processResources (Thread[#329,Execution worker Thread 8,5,main]) started.
+Resolve mutations for :common:processResources (Thread[#331,Execution worker Thread 10,5,main]) started.
+:util:processResources (Thread[#332,Execution worker Thread 11,5,main]) started.
+:common:processResources (Thread[#329,Execution worker Thread 8,5,main]) started.
+Resolve mutations for :flatbuffers-gen:checkKotlinGradlePluginConfigurationErrors (Thread[#331,Execution worker Thread 10,5,main]) started.
+Resolve mutations for :flatbuffers-gen:processResources (Thread[#333,Execution worker Thread 12,5,main]) started.
+:flatbuffers-gen:checkKotlinGradlePluginConfigurationErrors (Thread[#331,Execution worker Thread 10,5,main]) started.
+:flatbuffers-gen:processResources (Thread[#333,Execution worker Thread 12,5,main]) started.
+Resolve mutations for :flatbuffers-gen:locateFlatc (Thread[#326,Execution worker Thread 5,5,main]) started.
+Resolve mutations for :psi:generateCDocLexer (Thread[#337,Execution worker Thread 15,5,main]) started.
+Resolve mutations for :psi:checkKotlinGradlePluginConfigurationErrors (Thread[#330,Execution worker Thread 9,5,main]) started.
+Resolve mutations for :psi:generateCangJieLexer (Thread[#327,Execution worker Thread 6,5,main]) started.
+:psi:checkKotlinGradlePluginConfigurationErrors (Thread[#330,Execution worker Thread 9,5,main]) started.
+Resolve mutations for :resolution.common:checkKotlinGradlePluginConfigurationErrors (Thread[#334,Execution worker Thread 13,5,main]) started.
+:psi:generateCDocLexer (Thread[#337,Execution worker Thread 15,5,main]) started.
+:resolution.common:checkKotlinGradlePluginConfigurationErrors (Thread[#334,Execution worker Thread 13,5,main]) started.
+Resolve mutations for :psi:processResources (Thread[#328,Execution worker Thread 7,5,main]) started.
+:psi:processResources (Thread[#328,Execution worker Thread 7,5,main]) started.
+Resolve mutations for :resolution.common:processResources (Thread[#327,Execution worker Thread 6,5,main]) started.
+:resolution.common:processResources (Thread[#327,Execution worker Thread 6,5,main]) started.
+:flatbuffers-gen:locateFlatc (Thread[#326,Execution worker Thread 5,5,main]) started.
+
+> Task :cfir:analysis-tests:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':cfir:analysis-tests:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+Resolve mutations for :cfir:cfir-common:checkKotlinGradlePluginConfigurationErrors (Thread[#323,Execution worker Thread 2,5,main]) started.
+
+> Task :psi:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':psi:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+Build b02c8516-dc6d-4bd9-b1fc-7632243f2a45 is started
+Resolve mutations for :common:diagnostics:processResources (Thread[#330,Execution worker Thread 9,5,main]) started.
+
+> Task :resolution.common:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':resolution.common:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+:cfir:cfir-common:checkKotlinGradlePluginConfigurationErrors (Thread[#323,Execution worker Thread 2,5,main]) started.
+
+> Task :common:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':common:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+Resolve mutations for :compiler:config:checkKotlinGradlePluginConfigurationErrors (Thread[#325,Execution worker Thread 4,5,main]) started.
+
+> Task :cfir:cfir-common:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':cfir:cfir-common:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+Resolve mutations for :compiler:config:processResources (Thread[#334,Execution worker Thread 13,5,main]) started.
+
+> Task :flatbuffers-gen:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':flatbuffers-gen:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+Resolve mutations for :common:diagnostics:checkKotlinGradlePluginConfigurationErrors (Thread[#335,Execution worker Thread 14,5,main]) started.
+
+> Task :cfir:analysis-tests:processResources NO-SOURCE
+Skipping task ':cfir:analysis-tests:processResources' as it has no source files and no previous output files.
+
+> Task :util:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':util:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+:common:diagnostics:checkKotlinGradlePluginConfigurationErrors (Thread[#335,Execution worker Thread 14,5,main]) started.
+:compiler:config:checkKotlinGradlePluginConfigurationErrors (Thread[#325,Execution worker Thread 4,5,main]) started.
+Resolve mutations for :cfir:cfir-cones:processResources (Thread[#321,included builds,5,main]) started.
+Resolve mutations for :cfir:cfir-serialization:checkKotlinGradlePluginConfigurationErrors (Thread[#331,Execution worker Thread 10,5,main]) started.
+
+> Task :compiler:config:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':compiler:config:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+Resolve mutations for :cfir:cfir-cones:checkKotlinGradlePluginConfigurationErrors (Thread[#324,Execution worker Thread 3,5,main]) started.
+Resolve mutations for :cfir:cfir-common:processResources (Thread[#323,Execution worker Thread 2,5,main]) started.
+:cfir:cfir-cones:checkKotlinGradlePluginConfigurationErrors (Thread[#324,Execution worker Thread 3,5,main]) started.
+:compiler:config:processResources (Thread[#334,Execution worker Thread 13,5,main]) started.
+:cfir:cfir-common:processResources (Thread[#323,Execution worker Thread 2,5,main]) started.
+
+> Task :dependencies:intellij-core:compileJava NO-SOURCE
+Skipping task ':dependencies:intellij-core:compileJava' as it has no source files and no previous output files.
+
+> Task :cfir:cfir-cones:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':cfir:cfir-cones:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+work action resolve main (project :dependencies:intellij-core) (Thread[#322,Execution worker,5,main]) started.
+Resolve mutations for :cfir:analysis-tests:compileKotlin (Thread[#322,Execution worker,5,main]) started.
+Resolve mutations for :util:compileKotlin (Thread[#324,Execution worker Thread 3,5,main]) started.
+
+> Task :compiler:config:processResources NO-SOURCE
+Skipping task ':compiler:config:processResources' as it has no source files and no previous output files.
+Resolve mutations for :generators:checkKotlinGradlePluginConfigurationErrors (Thread[#334,Execution worker Thread 13,5,main]) started.
+:generators:checkKotlinGradlePluginConfigurationErrors (Thread[#334,Execution worker Thread 13,5,main]) started.
+:util:compileKotlin (Thread[#324,Execution worker Thread 3,5,main]) started.
+Resolve mutations for :cfir:cfir-tree:checkKotlinGradlePluginConfigurationErrors (Thread[#325,Execution worker Thread 4,5,main]) started.
+
+> Task :flatbuffers-gen:locateFlatc UP-TO-DATE
+Caching disabled for task ':flatbuffers-gen:locateFlatc' because:
+  Caching has not been enabled for the task
+Skipping task ':flatbuffers-gen:locateFlatc' as it is up-to-date.
+:cfir:cfir-tree:checkKotlinGradlePluginConfigurationErrors (Thread[#325,Execution worker Thread 4,5,main]) started.
+
+> Task :psi:generateCDocLexer UP-TO-DATE
+Caching disabled for task ':psi:generateCDocLexer' because:
+  Gradle would require more information to cache this task
+Skipping task ':psi:generateCDocLexer' as it is up-to-date.
+
+> Task :common:diagnostics:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':common:diagnostics:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+Resolve mutations for :flatbuffers-gen:generateKotlinFlatBuffers (Thread[#326,Execution worker Thread 5,5,main]) started.
+:common:diagnostics:processResources (Thread[#330,Execution worker Thread 9,5,main]) started.
+:cfir:cfir-cones:processResources (Thread[#321,included builds,5,main]) started.
+Resolve mutations for :generators:processResources (Thread[#335,Execution worker Thread 14,5,main]) started.
+:psi:generateCangJieLexer (Thread[#337,Execution worker Thread 15,5,main]) started.
+:cfir:analysis-tests:compileKotlin (Thread[#322,Execution worker,5,main]) started.
+:flatbuffers-gen:generateKotlinFlatBuffers (Thread[#326,Execution worker Thread 5,5,main]) started.
+
+> Task :util:processResources NO-SOURCE
+Skipping task ':util:processResources' as it has no source files and no previous output files.
+:cfir:cfir-serialization:checkKotlinGradlePluginConfigurationErrors (Thread[#331,Execution worker Thread 10,5,main]) started.
+
+> Task :flatbuffers-gen:processResources NO-SOURCE
+Skipping task ':flatbuffers-gen:processResources' as it has no source files and no previous output files.
+
+> Task :common:processResources NO-SOURCE
+Skipping task ':common:processResources' as it has no source files and no previous output files.
+:generators:processResources (Thread[#335,Execution worker Thread 14,5,main]) started.
+Resolve mutations for :dependencies:intellij-core:processResources (Thread[#329,Execution worker Thread 8,5,main]) started.
+Resolve mutations for :cfir:cfir-tree:tree-generator:processResources (Thread[#332,Execution worker Thread 11,5,main]) started.
+:cfir:cfir-tree:tree-generator:processResources (Thread[#332,Execution worker Thread 11,5,main]) started.
+
+> Task :psi:processResources UP-TO-DATE
+Caching disabled for task ':psi:processResources' because:
+  Not worth caching
+Skipping task ':psi:processResources' as it is up-to-date.
+
+> Task :generators:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':generators:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+
+> Task :psi:generateCangJieLexer UP-TO-DATE
+Caching disabled for task ':psi:generateCangJieLexer' because:
+  Gradle would require more information to cache this task
+Skipping task ':psi:generateCangJieLexer' as it is up-to-date.
+
+> Task :cfir:cfir-tree:tree-generator:processResources NO-SOURCE
+Skipping task ':cfir:cfir-tree:tree-generator:processResources' as it has no source files and no previous output files.
+Resolve mutations for :cfir:providers:processResources (Thread[#332,Execution worker Thread 11,5,main]) started.
+:cfir:providers:processResources (Thread[#332,Execution worker Thread 11,5,main]) started.
+
+> Task :cfir:cfir-serialization:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':cfir:cfir-serialization:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+Resolve mutations for :cfir:cfir-serialization:processResources (Thread[#331,Execution worker Thread 10,5,main]) started.
+:cfir:cfir-serialization:processResources (Thread[#331,Execution worker Thread 10,5,main]) started.
+:dependencies:intellij-core:processResources (Thread[#329,Execution worker Thread 8,5,main]) started.
+Resolve mutations for :cfir:cfir-tree:tree-generator:checkKotlinGradlePluginConfigurationErrors (Thread[#333,Execution worker Thread 12,5,main]) started.
+
+> Task :cfir:cfir-tree:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':cfir:cfir-tree:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+Resolve mutations for :psi:generateLexers (Thread[#337,Execution worker Thread 15,5,main]) started.
+:psi:generateLexers (Thread[#337,Execution worker Thread 15,5,main]) started.
+
+> Task :psi:generateLexers UP-TO-DATE
+Skipping task ':psi:generateLexers' as it has no actions.
+Resolve mutations for :cfir:providers:checkKotlinGradlePluginConfigurationErrors (Thread[#334,Execution worker Thread 13,5,main]) started.
+Resolve mutations for :cfir:cfir-tree:processResources (Thread[#328,Execution worker Thread 7,5,main]) started.
+
+> Task :cfir:cfir-common:processResources NO-SOURCE
+Skipping task ':cfir:cfir-common:processResources' as it has no source files and no previous output files.
+Resolve mutations for :cfir:checkers:checkers-component-generator:processResources (Thread[#323,Execution worker Thread 2,5,main]) started.
+:cfir:cfir-tree:processResources (Thread[#328,Execution worker Thread 7,5,main]) started.
+:cfir:providers:checkKotlinGradlePluginConfigurationErrors (Thread[#334,Execution worker Thread 13,5,main]) started.
+Resolve mutations for :cfir:checkers:checkers-component-generator:checkKotlinGradlePluginConfigurationErrors (Thread[#337,Execution worker Thread 15,5,main]) started.
+:cfir:checkers:checkers-component-generator:checkKotlinGradlePluginConfigurationErrors (Thread[#337,Execution worker Thread 15,5,main]) started.
+
+> Task :cfir:providers:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':cfir:providers:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+
+> Task :flatbuffers-gen:generateKotlinFlatBuffers UP-TO-DATE
+Caching disabled for task ':flatbuffers-gen:generateKotlinFlatBuffers' because:
+  Gradle would require more information to cache this task
+Skipping task ':flatbuffers-gen:generateKotlinFlatBuffers' as it is up-to-date.
+Resolve mutations for :cfir:diagnostic-renderers:checkKotlinGradlePluginConfigurationErrors (Thread[#334,Execution worker Thread 13,5,main]) started.
+Resolve mutations for :flatbuffers-gen:compileKotlin (Thread[#326,Execution worker Thread 5,5,main]) started.
+Resolve mutations for :cfir:checkers:checkKotlinGradlePluginConfigurationErrors (Thread[#325,Execution worker Thread 4,5,main]) started.
+
+> Task :cfir:checkers:checkers-component-generator:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':cfir:checkers:checkers-component-generator:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+Resolve mutations for :cfir:diagnostic-renderers:processResources (Thread[#337,Execution worker Thread 15,5,main]) started.
+:flatbuffers-gen:compileKotlin (Thread[#326,Execution worker Thread 5,5,main]) started.
+:cfir:cfir-tree:tree-generator:checkKotlinGradlePluginConfigurationErrors (Thread[#333,Execution worker Thread 12,5,main]) started.
+:cfir:diagnostic-renderers:processResources (Thread[#337,Execution worker Thread 15,5,main]) started.
+:cfir:checkers:checkers-component-generator:processResources (Thread[#323,Execution worker Thread 2,5,main]) started.
+:cfir:diagnostic-renderers:checkKotlinGradlePluginConfigurationErrors (Thread[#334,Execution worker Thread 13,5,main]) started.
+
+> Task :cfir:diagnostic-renderers:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':cfir:diagnostic-renderers:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+Resolve mutations for :cfir:semantics:checkKotlinGradlePluginConfigurationErrors (Thread[#334,Execution worker Thread 13,5,main]) started.
+:cfir:semantics:checkKotlinGradlePluginConfigurationErrors (Thread[#334,Execution worker Thread 13,5,main]) started.
+:cfir:checkers:checkKotlinGradlePluginConfigurationErrors (Thread[#325,Execution worker Thread 4,5,main]) started.
+
+> Task :cfir:cfir-tree:tree-generator:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':cfir:cfir-tree:tree-generator:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+Resolve mutations for :cfir:semantics:processResources (Thread[#333,Execution worker Thread 12,5,main]) started.
+:cfir:semantics:processResources (Thread[#333,Execution worker Thread 12,5,main]) started.
+
+> Task :cfir:semantics:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':cfir:semantics:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+Resolve mutations for :cfir:checkers:processResources (Thread[#334,Execution worker Thread 13,5,main]) started.
+:cfir:checkers:processResources (Thread[#334,Execution worker Thread 13,5,main]) started.
+
+> Task :cfir:checkers:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':cfir:checkers:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+Resolve mutations for :cfir:entrypoint:checkKotlinGradlePluginConfigurationErrors (Thread[#325,Execution worker Thread 4,5,main]) started.
+:cfir:entrypoint:checkKotlinGradlePluginConfigurationErrors (Thread[#325,Execution worker Thread 4,5,main]) started.
+
+> Task :cfir:entrypoint:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':cfir:entrypoint:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+Resolve mutations for :cfir:resolve:checkKotlinGradlePluginConfigurationErrors (Thread[#325,Execution worker Thread 4,5,main]) started.
+:cfir:resolve:checkKotlinGradlePluginConfigurationErrors (Thread[#325,Execution worker Thread 4,5,main]) started.
+
+> Task :cfir:resolve:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':cfir:resolve:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+Resolve mutations for :cfir:resolve:processResources (Thread[#325,Execution worker Thread 4,5,main]) started.
+:cfir:resolve:processResources (Thread[#325,Execution worker Thread 4,5,main]) started.
+
+> Task :cfir:cfir-serialization:processResources NO-SOURCE
+Skipping task ':cfir:cfir-serialization:processResources' as it has no source files and no previous output files.
+
+> Task :dependencies:intellij-core:processResources NO-SOURCE
+Skipping task ':dependencies:intellij-core:processResources' as it has no source files and no previous output files.
+
+> Task :cfir:analysis-tests:compileKotlin NO-SOURCE
+Skipping task ':cfir:analysis-tests:compileKotlin' as it has no source files and no previous output files.
+
+> Task :resolution.common:processResources NO-SOURCE
+Skipping task ':resolution.common:processResources' as it has no source files and no previous output files.
+
+> Task :cfir:cfir-cones:processResources NO-SOURCE
+Skipping task ':cfir:cfir-cones:processResources' as it has no source files and no previous output files.
+
+> Task :common:diagnostics:processResources NO-SOURCE
+Skipping task ':common:diagnostics:processResources' as it has no source files and no previous output files.
+Resolve mutations for :dependencies:intellij-core:classes (Thread[#329,Execution worker Thread 8,5,main]) started.
+Resolve mutations for :cfir:analysis-tests:compileJava (Thread[#322,Execution worker,5,main]) started.
+Resolve mutations for :cfir:raw-cfir:light-tree2cfir:checkKotlinGradlePluginConfigurationErrors (Thread[#331,Execution worker Thread 10,5,main]) started.
+Resolve mutations for :cfir:raw-cfir:raw-cfir-common:processResources (Thread[#321,included builds,5,main]) started.
+Resolve mutations for :cfir:raw-cfir:raw-cfir-common:checkKotlinGradlePluginConfigurationErrors (Thread[#330,Execution worker Thread 9,5,main]) started.
+:dependencies:intellij-core:classes (Thread[#329,Execution worker Thread 8,5,main]) started.
+:cfir:raw-cfir:light-tree2cfir:checkKotlinGradlePluginConfigurationErrors (Thread[#331,Execution worker Thread 10,5,main]) started.
+:cfir:raw-cfir:raw-cfir-common:processResources (Thread[#321,included builds,5,main]) started.
+:cfir:analysis-tests:compileJava (Thread[#322,Execution worker,5,main]) started.
+Resolve mutations for :cfir:raw-cfir:light-tree2cfir:processResources (Thread[#327,Execution worker Thread 6,5,main]) started.
+:cfir:raw-cfir:raw-cfir-common:checkKotlinGradlePluginConfigurationErrors (Thread[#330,Execution worker Thread 9,5,main]) started.
+
+> Task :cfir:raw-cfir:light-tree2cfir:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':cfir:raw-cfir:light-tree2cfir:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+Resolve mutations for :cfir:raw-cfir:psi2cfir:checkKotlinGradlePluginConfigurationErrors (Thread[#331,Execution worker Thread 10,5,main]) started.
+:cfir:raw-cfir:light-tree2cfir:processResources (Thread[#327,Execution worker Thread 6,5,main]) started.
+:cfir:raw-cfir:psi2cfir:checkKotlinGradlePluginConfigurationErrors (Thread[#331,Execution worker Thread 10,5,main]) started.
+
+> Task :dependencies:intellij-core:classes UP-TO-DATE
+Skipping task ':dependencies:intellij-core:classes' as it has no actions.
+
+> Task :cfir:raw-cfir:raw-cfir-common:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':cfir:raw-cfir:raw-cfir-common:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+Resolve mutations for :cfir:raw-cfir:psi2cfir:processResources (Thread[#330,Execution worker Thread 9,5,main]) started.
+Resolve mutations for :dependencies:intellij-core:jar (Thread[#329,Execution worker Thread 8,5,main]) started.
+:cfir:raw-cfir:psi2cfir:processResources (Thread[#330,Execution worker Thread 9,5,main]) started.
+:dependencies:intellij-core:jar (Thread[#329,Execution worker Thread 8,5,main]) started.
+
+> Task :cfir:raw-cfir:psi2cfir:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':cfir:raw-cfir:psi2cfir:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+Resolve mutations for :cfir:entrypoint:processResources (Thread[#331,Execution worker Thread 10,5,main]) started.
+:cfir:entrypoint:processResources (Thread[#331,Execution worker Thread 10,5,main]) started.
+
+> Task :flatbuffers-gen:compileKotlin UP-TO-DATE
+Build cache key for task ':flatbuffers-gen:compileKotlin' is bf4e1cd4dab7b8e6a2d69b465c7c39c5
+Skipping task ':flatbuffers-gen:compileKotlin' as it is up-to-date.
+Resolve mutations for :flatbuffers-gen:compileJava (Thread[#326,Execution worker Thread 5,5,main]) started.
+
+> Task :cfir:cfir-tree:processResources NO-SOURCE
+Skipping task ':cfir:cfir-tree:processResources' as it has no source files and no previous output files.
+
+> Task :cfir:providers:processResources NO-SOURCE
+Skipping task ':cfir:providers:processResources' as it has no source files and no previous output files.
+
+> Task :cfir:diagnostic-renderers:processResources NO-SOURCE
+Skipping task ':cfir:diagnostic-renderers:processResources' as it has no source files and no previous output files.
+Resolve mutations for :compiler:frontend:checkKotlinGradlePluginConfigurationErrors (Thread[#328,Execution worker Thread 7,5,main]) started.
+Resolve mutations for :compiler:arguments:processResources (Thread[#337,Execution worker Thread 15,5,main]) started.
+:compiler:frontend:checkKotlinGradlePluginConfigurationErrors (Thread[#328,Execution worker Thread 7,5,main]) started.
+:compiler:arguments:processResources (Thread[#337,Execution worker Thread 15,5,main]) started.
+
+> Task :cfir:checkers:processResources NO-SOURCE
+Skipping task ':cfir:checkers:processResources' as it has no source files and no previous output files.
+
+> Task :cfir:semantics:processResources NO-SOURCE
+Skipping task ':cfir:semantics:processResources' as it has no source files and no previous output files.
+:flatbuffers-gen:compileJava (Thread[#326,Execution worker Thread 5,5,main]) started.
+
+> Task :generators:processResources NO-SOURCE
+Skipping task ':generators:processResources' as it has no source files and no previous output files.
+
+> Task :cfir:raw-cfir:raw-cfir-common:processResources NO-SOURCE
+Skipping task ':cfir:raw-cfir:raw-cfir-common:processResources' as it has no source files and no previous output files.
+Resolve mutations for :compiler:frontend-arguments-generator:checkKotlinGradlePluginConfigurationErrors (Thread[#335,Execution worker Thread 14,5,main]) started.
+
+> Task :cfir:raw-cfir:psi2cfir:processResources NO-SOURCE
+Skipping task ':cfir:raw-cfir:psi2cfir:processResources' as it has no source files and no previous output files.
+
+> Task :cfir:raw-cfir:light-tree2cfir:processResources NO-SOURCE
+Skipping task ':cfir:raw-cfir:light-tree2cfir:processResources' as it has no source files and no previous output files.
+Resolve mutations for :compiler:frontend-arguments-generator:processResources (Thread[#333,Execution worker Thread 12,5,main]) started.
+Resolve mutations for :compiler:phaser:checkKotlinGradlePluginConfigurationErrors (Thread[#327,Execution worker Thread 6,5,main]) started.
+Resolve mutations for :compiler:arguments:checkKotlinGradlePluginConfigurationErrors (Thread[#332,Execution worker Thread 11,5,main]) started.
+
+> Task :cfir:entrypoint:processResources NO-SOURCE
+Skipping task ':cfir:entrypoint:processResources' as it has no source files and no previous output files.
+
+> Task :cfir:analysis-tests:compileJava NO-SOURCE
+Skipping task ':cfir:analysis-tests:compileJava' as it has no source files and no previous output files.
+:compiler:frontend-arguments-generator:processResources (Thread[#333,Execution worker Thread 12,5,main]) started.
+
+> Task :compiler:frontend:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':compiler:frontend:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+
+> Task :cfir:resolve:processResources NO-SOURCE
+Skipping task ':cfir:resolve:processResources' as it has no source files and no previous output files.
+Resolve mutations for :compiler:phaser:processResources (Thread[#328,Execution worker Thread 7,5,main]) started.
+Resolve mutations for :macro:macro-common:checkKotlinGradlePluginConfigurationErrors (Thread[#334,Execution worker Thread 13,5,main]) started.
+Resolve mutations for :macro:macro-common:processResources (Thread[#325,Execution worker Thread 4,5,main]) started.
+Resolve mutations for :cfir:analysis-tests:classes (Thread[#322,Execution worker,5,main]) started.
+
+> Task :dependencies:intellij-core:jar UP-TO-DATE
+Caching disabled for task ':dependencies:intellij-core:jar' because:
+  Not worth caching
+Skipping task ':dependencies:intellij-core:jar' as it is up-to-date.
+
+> Task :compiler:arguments:processResources NO-SOURCE
+Skipping task ':compiler:arguments:processResources' as it has no source files and no previous output files.
+work action resolve intellij-core-1.1.1.jar (project :dependencies:intellij-core) (Thread[#329,Execution worker Thread 8,5,main]) started.
+Resolve mutations for :compiler:frontend:processResources (Thread[#329,Execution worker Thread 8,5,main]) started.
+:compiler:frontend:processResources (Thread[#329,Execution worker Thread 8,5,main]) started.
+
+> Task :cfir:checkers:checkers-component-generator:processResources NO-SOURCE
+Skipping task ':cfir:checkers:checkers-component-generator:processResources' as it has no source files and no previous output files.
+:macro:macro-common:processResources (Thread[#325,Execution worker Thread 4,5,main]) started.
+Resolve mutations for :macro:macro-process:checkKotlinGradlePluginConfigurationErrors (Thread[#323,Execution worker Thread 2,5,main]) started.
+:macro:macro-process:checkKotlinGradlePluginConfigurationErrors (Thread[#323,Execution worker Thread 2,5,main]) started.
+:macro:macro-common:checkKotlinGradlePluginConfigurationErrors (Thread[#334,Execution worker Thread 13,5,main]) started.
+
+> Task :flatbuffers-gen:compileJava NO-SOURCE
+Skipping task ':flatbuffers-gen:compileJava' as it has no source files and no previous output files.
+Resolve mutations for :flatbuffers-gen:classes (Thread[#326,Execution worker Thread 5,5,main]) started.
+:flatbuffers-gen:classes (Thread[#326,Execution worker Thread 5,5,main]) started.
+Resolve mutations for :macro:macro-process:processResources (Thread[#331,Execution worker Thread 10,5,main]) started.
+:macro:macro-process:processResources (Thread[#331,Execution worker Thread 10,5,main]) started.
+
+> Task :macro:macro-process:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':macro:macro-process:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+:compiler:arguments:checkKotlinGradlePluginConfigurationErrors (Thread[#332,Execution worker Thread 11,5,main]) started.
+:compiler:phaser:checkKotlinGradlePluginConfigurationErrors (Thread[#327,Execution worker Thread 6,5,main]) started.
+Resolve mutations for :tests:test-infrastructure:checkKotlinGradlePluginConfigurationErrors (Thread[#330,Execution worker Thread 9,5,main]) started.
+Resolve mutations for :tests:test-infrastructure:processResources (Thread[#321,included builds,5,main]) started.
+:tests:test-infrastructure:processResources (Thread[#337,Execution worker Thread 15,5,main]) started.
+:cfir:analysis-tests:classes (Thread[#322,Execution worker,5,main]) started.
+
+> Task :cfir:analysis-tests:classes UP-TO-DATE
+Skipping task ':cfir:analysis-tests:classes' as it has no actions.
+Resolve mutations for :cfir:analysis-tests:jar (Thread[#322,Execution worker,5,main]) started.
+:cfir:analysis-tests:jar (Thread[#322,Execution worker,5,main]) started.
+:compiler:phaser:processResources (Thread[#321,included builds,5,main]) started.
+:compiler:frontend-arguments-generator:checkKotlinGradlePluginConfigurationErrors (Thread[#335,Execution worker Thread 14,5,main]) started.
+
+> Task :compiler:arguments:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':compiler:arguments:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+Resolve mutations for :tests:test-infrastructure:processTestFixturesResources (Thread[#332,Execution worker Thread 11,5,main]) started.
+Resolve mutations for :cfir:analysis-tests:processTestResources (Thread[#328,Execution worker Thread 7,5,main]) started.
+
+> Task :flatbuffers-gen:classes UP-TO-DATE
+Skipping task ':flatbuffers-gen:classes' as it has no actions.
+:tests:test-infrastructure:processTestFixturesResources (Thread[#332,Execution worker Thread 11,5,main]) started.
+Resolve mutations for :flatbuffers-gen:jar (Thread[#326,Execution worker Thread 5,5,main]) started.
+
+> Task :macro:macro-common:processResources NO-SOURCE
+Skipping task ':macro:macro-common:processResources' as it has no source files and no previous output files.
+:cfir:analysis-tests:processTestResources (Thread[#328,Execution worker Thread 7,5,main]) started.
+
+> Task :compiler:frontend:processResources NO-SOURCE
+Skipping task ':compiler:frontend:processResources' as it has no source files and no previous output files.
+:flatbuffers-gen:jar (Thread[#326,Execution worker Thread 5,5,main]) started.
+
+> Task :tests:test-infrastructure:processTestFixturesResources NO-SOURCE
+Skipping task ':tests:test-infrastructure:processTestFixturesResources' as it has no source files and no previous output files.
+
+> Task :compiler:phaser:processResources NO-SOURCE
+Skipping task ':compiler:phaser:processResources' as it has no source files and no previous output files.
+
+> Task :cfir:analysis-tests:processTestResources NO-SOURCE
+Skipping task ':cfir:analysis-tests:processTestResources' as it has no source files and no previous output files.
+
+> Task :cfir:analysis-tests:jar UP-TO-DATE
+Caching disabled for task ':cfir:analysis-tests:jar' because:
+  Not worth caching
+Skipping task ':cfir:analysis-tests:jar' as it is up-to-date.
+
+> Task :compiler:frontend-arguments-generator:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':compiler:frontend-arguments-generator:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+
+> Task :macro:macro-process:processResources NO-SOURCE
+Skipping task ':macro:macro-process:processResources' as it has no source files and no previous output files.
+work action resolve analysis-tests-1.1.1.jar (project :cfir:analysis-tests) (Thread[#322,Execution worker,5,main]) started.
+:tests:test-infrastructure:checkKotlinGradlePluginConfigurationErrors (Thread[#330,Execution worker Thread 9,5,main]) started.
+
+> Task :flatbuffers-gen:jar UP-TO-DATE
+Caching disabled for task ':flatbuffers-gen:jar' because:
+  Not worth caching
+Skipping task ':flatbuffers-gen:jar' as it is up-to-date.
+
+> Task :tests:test-infrastructure:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':tests:test-infrastructure:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+
+> Task :compiler:frontend-arguments-generator:processResources NO-SOURCE
+Skipping task ':compiler:frontend-arguments-generator:processResources' as it has no source files and no previous output files.
+Resolve mutations for :cfir:analysis-tests:processTestFixturesResources (Thread[#323,Execution worker Thread 2,5,main]) started.
+
+> Task :macro:macro-common:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':macro:macro-common:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+:cfir:analysis-tests:processTestFixturesResources (Thread[#323,Execution worker Thread 2,5,main]) started.
+work action resolve flatbuffers-gen-1.1.1.jar (project :flatbuffers-gen) (Thread[#326,Execution worker Thread 5,5,main]) started.
+
+> Task :tests:test-infrastructure:processResources NO-SOURCE
+Skipping task ':tests:test-infrastructure:processResources' as it has no source files and no previous output files.
+
+> Task :cfir:analysis-tests:processTestFixturesResources NO-SOURCE
+Skipping task ':cfir:analysis-tests:processTestFixturesResources' as it has no source files and no previous output files.
+
+> Task :compiler:phaser:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':compiler:phaser:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+
+> Task :util:compileKotlin UP-TO-DATE
+Build cache key for task ':util:compileKotlin' is 4b4201ad6f8c416e9495dfab43e51ab9
+Skipping task ':util:compileKotlin' as it is up-to-date.
+Resolve mutations for :util:compileJava (Thread[#324,Execution worker Thread 3,5,main]) started.
+:util:compileJava (Thread[#324,Execution worker Thread 3,5,main]) started.
+
+> Task :util:compileJava NO-SOURCE
+Skipping task ':util:compileJava' as it has no source files and no previous output files.
+Resolve mutations for :util:classes (Thread[#324,Execution worker Thread 3,5,main]) started.
+:util:classes (Thread[#324,Execution worker Thread 3,5,main]) started.
+
+> Task :util:classes UP-TO-DATE
+Skipping task ':util:classes' as it has no actions.
+Resolve mutations for :util:jar (Thread[#324,Execution worker Thread 3,5,main]) started.
+:util:jar (Thread[#324,Execution worker Thread 3,5,main]) started.
+
+> Task :util:jar UP-TO-DATE
+Caching disabled for task ':util:jar' because:
+  Not worth caching
+Skipping task ':util:jar' as it is up-to-date.
+work action resolve util-1.1.1.jar (project :util) (Thread[#324,Execution worker Thread 3,5,main]) started.
+Resolve mutations for :common:compileKotlin (Thread[#324,Execution worker Thread 3,5,main]) started.
+:common:compileKotlin (Thread[#324,Execution worker Thread 3,5,main]) started.
+
+> Task :common:compileKotlin UP-TO-DATE
+Build cache key for task ':common:compileKotlin' is 0c1a34417fc7abfaa663cda4654f6b2a
+Skipping task ':common:compileKotlin' as it is up-to-date.
+Resolve mutations for :common:compileJava (Thread[#324,Execution worker Thread 3,5,main]) started.
+:common:compileJava (Thread[#324,Execution worker Thread 3,5,main]) started.
+
+> Task :common:compileJava NO-SOURCE
+Skipping task ':common:compileJava' as it has no source files and no previous output files.
+Resolve mutations for :common:classes (Thread[#324,Execution worker Thread 3,5,main]) started.
+:common:classes (Thread[#324,Execution worker Thread 3,5,main]) started.
+
+> Task :common:classes UP-TO-DATE
+Skipping task ':common:classes' as it has no actions.
+Resolve mutations for :common:jar (Thread[#324,Execution worker Thread 3,5,main]) started.
+:common:jar (Thread[#324,Execution worker Thread 3,5,main]) started.
+
+> Task :common:jar UP-TO-DATE
+Caching disabled for task ':common:jar' because:
+  Not worth caching
+Skipping task ':common:jar' as it is up-to-date.
+work action resolve common-1.1.1.jar (project :common) (Thread[#324,Execution worker Thread 3,5,main]) started.
+Resolve mutations for :psi:compileKotlin (Thread[#324,Execution worker Thread 3,5,main]) started.
+Resolve mutations for :resolution.common:compileKotlin (Thread[#325,Execution worker Thread 4,5,main]) started.
+Resolve mutations for :generators:compileKotlin (Thread[#329,Execution worker Thread 8,5,main]) started.
+:psi:compileKotlin (Thread[#324,Execution worker Thread 3,5,main]) started.
+:generators:compileKotlin (Thread[#329,Execution worker Thread 8,5,main]) started.
+:resolution.common:compileKotlin (Thread[#325,Execution worker Thread 4,5,main]) started.
+
+> Task :generators:compileKotlin UP-TO-DATE
+Build cache key for task ':generators:compileKotlin' is fc43a914ca05f6b98c14bf1f4aa1b71a
+Skipping task ':generators:compileKotlin' as it is up-to-date.
+Resolve mutations for :generators:compileJava (Thread[#329,Execution worker Thread 8,5,main]) started.
+:generators:compileJava (Thread[#329,Execution worker Thread 8,5,main]) started.
+
+> Task :generators:compileJava NO-SOURCE
+Skipping task ':generators:compileJava' as it has no source files and no previous output files.
+Resolve mutations for :generators:classes (Thread[#329,Execution worker Thread 8,5,main]) started.
+:generators:classes (Thread[#329,Execution worker Thread 8,5,main]) started.
+
+> Task :generators:classes UP-TO-DATE
+Skipping task ':generators:classes' as it has no actions.
+Resolve mutations for :generators:jar (Thread[#329,Execution worker Thread 8,5,main]) started.
+:generators:jar (Thread[#329,Execution worker Thread 8,5,main]) started.
+
+> Task :generators:jar UP-TO-DATE
+Caching disabled for task ':generators:jar' because:
+  Not worth caching
+Skipping task ':generators:jar' as it is up-to-date.
+work action resolve generators-1.1.1.jar (project :generators) (Thread[#329,Execution worker Thread 8,5,main]) started.
+Resolve mutations for :compiler:arguments:compileKotlin (Thread[#329,Execution worker Thread 8,5,main]) started.
+:compiler:arguments:compileKotlin (Thread[#329,Execution worker Thread 8,5,main]) started.
+
+> Task :compiler:arguments:compileKotlin UP-TO-DATE
+Build cache key for task ':compiler:arguments:compileKotlin' is b09c47cfec4e5b9e24989255543915fc
+Skipping task ':compiler:arguments:compileKotlin' as it is up-to-date.
+Resolve mutations for :compiler:arguments:compileJava (Thread[#329,Execution worker Thread 8,5,main]) started.
+:compiler:arguments:compileJava (Thread[#329,Execution worker Thread 8,5,main]) started.
+
+> Task :compiler:arguments:compileJava NO-SOURCE
+Skipping task ':compiler:arguments:compileJava' as it has no source files and no previous output files.
+Resolve mutations for :compiler:arguments:classes (Thread[#329,Execution worker Thread 8,5,main]) started.
+:compiler:arguments:classes (Thread[#329,Execution worker Thread 8,5,main]) started.
+
+> Task :compiler:arguments:classes UP-TO-DATE
+Skipping task ':compiler:arguments:classes' as it has no actions.
+Resolve mutations for :compiler:arguments:jar (Thread[#329,Execution worker Thread 8,5,main]) started.
+:compiler:arguments:jar (Thread[#329,Execution worker Thread 8,5,main]) started.
+
+> Task :compiler:arguments:jar UP-TO-DATE
+Caching disabled for task ':compiler:arguments:jar' because:
+  Not worth caching
+Skipping task ':compiler:arguments:jar' as it is up-to-date.
+work action resolve arguments-1.1.1.jar (project :compiler:arguments) (Thread[#329,Execution worker Thread 8,5,main]) started.
+Resolve mutations for :compiler:frontend-arguments-generator:compileKotlin (Thread[#329,Execution worker Thread 8,5,main]) started.
+:compiler:frontend-arguments-generator:compileKotlin (Thread[#329,Execution worker Thread 8,5,main]) started.
+
+> Task :resolution.common:compileKotlin UP-TO-DATE
+Build cache key for task ':resolution.common:compileKotlin' is 29f1d1f7ee43b879899bd62e0ada5de0
+Skipping task ':resolution.common:compileKotlin' as it is up-to-date.
+Resolve mutations for :resolution.common:compileJava (Thread[#325,Execution worker Thread 4,5,main]) started.
+:resolution.common:compileJava (Thread[#325,Execution worker Thread 4,5,main]) started.
+
+> Task :compiler:frontend-arguments-generator:compileKotlin UP-TO-DATE
+Build cache key for task ':compiler:frontend-arguments-generator:compileKotlin' is 0ca57561c34623e3ea8b05dc53860206
+Skipping task ':compiler:frontend-arguments-generator:compileKotlin' as it is up-to-date.
+Resolve mutations for :compiler:frontend-arguments-generator:compileJava (Thread[#329,Execution worker Thread 8,5,main]) started.
+:compiler:frontend-arguments-generator:compileJava (Thread[#329,Execution worker Thread 8,5,main]) started.
+
+> Task :compiler:frontend-arguments-generator:compileJava NO-SOURCE
+Skipping task ':compiler:frontend-arguments-generator:compileJava' as it has no source files and no previous output files.
+Resolve mutations for :compiler:frontend-arguments-generator:classes (Thread[#329,Execution worker Thread 8,5,main]) started.
+:compiler:frontend-arguments-generator:classes (Thread[#329,Execution worker Thread 8,5,main]) started.
+
+> Task :compiler:frontend-arguments-generator:classes UP-TO-DATE
+Skipping task ':compiler:frontend-arguments-generator:classes' as it has no actions.
+Resolve mutations for :compiler:frontend-arguments-generator:jar (Thread[#329,Execution worker Thread 8,5,main]) started.
+:compiler:frontend-arguments-generator:jar (Thread[#329,Execution worker Thread 8,5,main]) started.
+
+> Task :compiler:frontend-arguments-generator:jar UP-TO-DATE
+Caching disabled for task ':compiler:frontend-arguments-generator:jar' because:
+  Not worth caching
+Skipping task ':compiler:frontend-arguments-generator:jar' as it is up-to-date.
+work action resolve frontend-arguments-generator-1.1.1.jar (project :compiler:frontend-arguments-generator) (Thread[#329,Execution worker Thread 8,5,main]) started.
+Resolve mutations for :compiler:frontend:generateFrontendArguments (Thread[#329,Execution worker Thread 8,5,main]) started.
+:compiler:frontend:generateFrontendArguments (Thread[#329,Execution worker Thread 8,5,main]) started.
+
+> Task :compiler:frontend:generateFrontendArguments UP-TO-DATE
+Caching disabled for task ':compiler:frontend:generateFrontendArguments' because:
+  Gradle would require more information to cache this task
+Skipping task ':compiler:frontend:generateFrontendArguments' as it is up-to-date.
+
+> Task :resolution.common:compileJava UP-TO-DATE
+Build cache key for task ':resolution.common:compileJava' is c69f1fbcdcdcb493b660b963465bdd26
+Skipping task ':resolution.common:compileJava' as it is up-to-date.
+No compile result for :resolution.common:compileJava
+Resolve mutations for :resolution.common:classes (Thread[#325,Execution worker Thread 4,5,main]) started.
+:resolution.common:classes (Thread[#325,Execution worker Thread 4,5,main]) started.
+
+> Task :resolution.common:classes UP-TO-DATE
+Skipping task ':resolution.common:classes' as it has no actions.
+Resolve mutations for :resolution.common:jar (Thread[#325,Execution worker Thread 4,5,main]) started.
+:resolution.common:jar (Thread[#325,Execution worker Thread 4,5,main]) started.
+
+> Task :resolution.common:jar UP-TO-DATE
+Caching disabled for task ':resolution.common:jar' because:
+  Not worth caching
+Skipping task ':resolution.common:jar' as it is up-to-date.
+work action resolve resolution.common-1.1.1.jar (project :resolution.common) (Thread[#325,Execution worker Thread 4,5,main]) started.
+
+> Task :psi:compileKotlin UP-TO-DATE
+Build cache key for task ':psi:compileKotlin' is 03982ef5d3e501ebf7ba36c66afd4dec
+Skipping task ':psi:compileKotlin' as it is up-to-date.
+Resolve mutations for :psi:compileJava (Thread[#324,Execution worker Thread 3,5,main]) started.
+:psi:compileJava (Thread[#324,Execution worker Thread 3,5,main]) started.
+
+> Task :psi:compileJava UP-TO-DATE
+Build cache key for task ':psi:compileJava' is 2828907fe155f6ec6348cd16f1222234
+Skipping task ':psi:compileJava' as it is up-to-date.
+No compile result for :psi:compileJava
+Resolve mutations for :psi:classes (Thread[#324,Execution worker Thread 3,5,main]) started.
+:psi:classes (Thread[#324,Execution worker Thread 3,5,main]) started.
+
+> Task :psi:classes UP-TO-DATE
+Skipping task ':psi:classes' as it has no actions.
+Resolve mutations for :psi:jar (Thread[#324,Execution worker Thread 3,5,main]) started.
+:psi:jar (Thread[#324,Execution worker Thread 3,5,main]) started.
+
+> Task :psi:jar UP-TO-DATE
+Caching disabled for task ':psi:jar' because:
+  Not worth caching
+Skipping task ':psi:jar' as it is up-to-date.
+work action resolve psi-1.1.1.jar (project :psi) (Thread[#324,Execution worker Thread 3,5,main]) started.
+Resolve mutations for :common:diagnostics:compileKotlin (Thread[#324,Execution worker Thread 3,5,main]) started.
+:common:diagnostics:compileKotlin (Thread[#324,Execution worker Thread 3,5,main]) started.
+
+> Task :common:diagnostics:compileKotlin UP-TO-DATE
+Build cache key for task ':common:diagnostics:compileKotlin' is 802f45b387de9b439d58f0936a772edf
+Skipping task ':common:diagnostics:compileKotlin' as it is up-to-date.
+Resolve mutations for :common:diagnostics:compileJava (Thread[#324,Execution worker Thread 3,5,main]) started.
+:common:diagnostics:compileJava (Thread[#324,Execution worker Thread 3,5,main]) started.
+
+> Task :common:diagnostics:compileJava NO-SOURCE
+Skipping task ':common:diagnostics:compileJava' as it has no source files and no previous output files.
+Resolve mutations for :common:diagnostics:classes (Thread[#324,Execution worker Thread 3,5,main]) started.
+:common:diagnostics:classes (Thread[#324,Execution worker Thread 3,5,main]) started.
+
+> Task :common:diagnostics:classes UP-TO-DATE
+Skipping task ':common:diagnostics:classes' as it has no actions.
+Resolve mutations for :common:diagnostics:jar (Thread[#324,Execution worker Thread 3,5,main]) started.
+:common:diagnostics:jar (Thread[#324,Execution worker Thread 3,5,main]) started.
+
+> Task :common:diagnostics:jar UP-TO-DATE
+Caching disabled for task ':common:diagnostics:jar' because:
+  Not worth caching
+Skipping task ':common:diagnostics:jar' as it is up-to-date.
+work action resolve diagnostics-1.1.1.jar (project :common:diagnostics) (Thread[#324,Execution worker Thread 3,5,main]) started.
+Resolve mutations for :compiler:config:compileKotlin (Thread[#324,Execution worker Thread 3,5,main]) started.
+Resolve mutations for :tests:test-infrastructure:compileKotlin (Thread[#329,Execution worker Thread 8,5,main]) started.
+:compiler:config:compileKotlin (Thread[#323,Execution worker Thread 2,5,main]) started.
+:tests:test-infrastructure:compileKotlin (Thread[#324,Execution worker Thread 3,5,main]) started.
+
+> Task :tests:test-infrastructure:compileKotlin NO-SOURCE
+Skipping task ':tests:test-infrastructure:compileKotlin' as it has no source files and no previous output files.
+Resolve mutations for :tests:test-infrastructure:compileJava (Thread[#324,Execution worker Thread 3,5,main]) started.
+:tests:test-infrastructure:compileJava (Thread[#324,Execution worker Thread 3,5,main]) started.
+
+> Task :tests:test-infrastructure:compileJava NO-SOURCE
+Skipping task ':tests:test-infrastructure:compileJava' as it has no source files and no previous output files.
+Resolve mutations for :tests:test-infrastructure:classes (Thread[#324,Execution worker Thread 3,5,main]) started.
+:tests:test-infrastructure:classes (Thread[#324,Execution worker Thread 3,5,main]) started.
+
+> Task :tests:test-infrastructure:classes UP-TO-DATE
+Skipping task ':tests:test-infrastructure:classes' as it has no actions.
+Resolve mutations for :tests:test-infrastructure:jar (Thread[#324,Execution worker Thread 3,5,main]) started.
+:tests:test-infrastructure:jar (Thread[#324,Execution worker Thread 3,5,main]) started.
+
+> Task :tests:test-infrastructure:jar UP-TO-DATE
+Caching disabled for task ':tests:test-infrastructure:jar' because:
+  Not worth caching
+Skipping task ':tests:test-infrastructure:jar' as it is up-to-date.
+work action resolve test-infrastructure-1.1.1.jar (project :tests:test-infrastructure) (Thread[#324,Execution worker Thread 3,5,main]) started.
+
+> Task :compiler:config:compileKotlin UP-TO-DATE
+Build cache key for task ':compiler:config:compileKotlin' is d393f0a4da9fdfce530e32ec5eee0c18
+Skipping task ':compiler:config:compileKotlin' as it is up-to-date.
+Resolve mutations for :compiler:config:compileJava (Thread[#323,Execution worker Thread 2,5,main]) started.
+:compiler:config:compileJava (Thread[#323,Execution worker Thread 2,5,main]) started.
+
+> Task :compiler:config:compileJava NO-SOURCE
+Skipping task ':compiler:config:compileJava' as it has no source files and no previous output files.
+Resolve mutations for :compiler:config:classes (Thread[#323,Execution worker Thread 2,5,main]) started.
+:compiler:config:classes (Thread[#323,Execution worker Thread 2,5,main]) started.
+
+> Task :compiler:config:classes UP-TO-DATE
+Skipping task ':compiler:config:classes' as it has no actions.
+Resolve mutations for :compiler:config:jar (Thread[#323,Execution worker Thread 2,5,main]) started.
+:compiler:config:jar (Thread[#323,Execution worker Thread 2,5,main]) started.
+
+> Task :compiler:config:jar UP-TO-DATE
+Caching disabled for task ':compiler:config:jar' because:
+  Not worth caching
+Skipping task ':compiler:config:jar' as it is up-to-date.
+work action resolve config-1.1.1.jar (project :compiler:config) (Thread[#323,Execution worker Thread 2,5,main]) started.
+Resolve mutations for :cfir:cfir-common:compileKotlin (Thread[#323,Execution worker Thread 2,5,main]) started.
+Resolve mutations for :compiler:phaser:compileKotlin (Thread[#329,Execution worker Thread 8,5,main]) started.
+:cfir:cfir-common:compileKotlin (Thread[#323,Execution worker Thread 2,5,main]) started.
+:compiler:phaser:compileKotlin (Thread[#329,Execution worker Thread 8,5,main]) started.
+
+> Task :compiler:phaser:compileKotlin UP-TO-DATE
+Build cache key for task ':compiler:phaser:compileKotlin' is a2ccc1a03abf14ed94abef072a59e64a
+Skipping task ':compiler:phaser:compileKotlin' as it is up-to-date.
+Resolve mutations for :compiler:phaser:compileJava (Thread[#329,Execution worker Thread 8,5,main]) started.
+:compiler:phaser:compileJava (Thread[#329,Execution worker Thread 8,5,main]) started.
+
+> Task :compiler:phaser:compileJava NO-SOURCE
+Skipping task ':compiler:phaser:compileJava' as it has no source files and no previous output files.
+Resolve mutations for :compiler:phaser:classes (Thread[#329,Execution worker Thread 8,5,main]) started.
+:compiler:phaser:classes (Thread[#329,Execution worker Thread 8,5,main]) started.
+
+> Task :compiler:phaser:classes UP-TO-DATE
+Skipping task ':compiler:phaser:classes' as it has no actions.
+Resolve mutations for :compiler:phaser:jar (Thread[#329,Execution worker Thread 8,5,main]) started.
+:compiler:phaser:jar (Thread[#329,Execution worker Thread 8,5,main]) started.
+
+> Task :compiler:phaser:jar UP-TO-DATE
+Caching disabled for task ':compiler:phaser:jar' because:
+  Not worth caching
+Skipping task ':compiler:phaser:jar' as it is up-to-date.
+work action resolve phaser-1.1.1.jar (project :compiler:phaser) (Thread[#329,Execution worker Thread 8,5,main]) started.
+
+> Task :cfir:cfir-common:compileKotlin UP-TO-DATE
+Build cache key for task ':cfir:cfir-common:compileKotlin' is b9e8f15ddc9ffce960d67796ecec2e13
+Skipping task ':cfir:cfir-common:compileKotlin' as it is up-to-date.
+Resolve mutations for :cfir:cfir-common:compileJava (Thread[#323,Execution worker Thread 2,5,main]) started.
+:cfir:cfir-common:compileJava (Thread[#323,Execution worker Thread 2,5,main]) started.
+
+> Task :cfir:cfir-common:compileJava NO-SOURCE
+Skipping task ':cfir:cfir-common:compileJava' as it has no source files and no previous output files.
+Resolve mutations for :cfir:cfir-common:classes (Thread[#323,Execution worker Thread 2,5,main]) started.
+:cfir:cfir-common:classes (Thread[#335,Execution worker Thread 14,5,main]) started.
+
+> Task :cfir:cfir-common:classes UP-TO-DATE
+Skipping task ':cfir:cfir-common:classes' as it has no actions.
+Resolve mutations for :cfir:cfir-common:jar (Thread[#335,Execution worker Thread 14,5,main]) started.
+:cfir:cfir-common:jar (Thread[#330,Execution worker Thread 9,5,main]) started.
+
+> Task :cfir:cfir-common:jar UP-TO-DATE
+Caching disabled for task ':cfir:cfir-common:jar' because:
+  Not worth caching
+Skipping task ':cfir:cfir-common:jar' as it is up-to-date.
+work action resolve cfir-common-1.1.1.jar (project :cfir:cfir-common) (Thread[#330,Execution worker Thread 9,5,main]) started.
+Resolve mutations for :cfir:cfir-cones:compileKotlin (Thread[#330,Execution worker Thread 9,5,main]) started.
+:cfir:cfir-cones:compileKotlin (Thread[#330,Execution worker Thread 9,5,main]) started.
+
+> Task :cfir:cfir-cones:compileKotlin UP-TO-DATE
+Build cache key for task ':cfir:cfir-cones:compileKotlin' is 11610b3ba46370686b26b31f4d70ca30
+Skipping task ':cfir:cfir-cones:compileKotlin' as it is up-to-date.
+Resolve mutations for :cfir:cfir-cones:compileJava (Thread[#330,Execution worker Thread 9,5,main]) started.
+:cfir:cfir-cones:compileJava (Thread[#330,Execution worker Thread 9,5,main]) started.
+
+> Task :cfir:cfir-cones:compileJava NO-SOURCE
+Skipping task ':cfir:cfir-cones:compileJava' as it has no source files and no previous output files.
+Resolve mutations for :cfir:cfir-cones:classes (Thread[#330,Execution worker Thread 9,5,main]) started.
+:cfir:cfir-cones:classes (Thread[#330,Execution worker Thread 9,5,main]) started.
+
+> Task :cfir:cfir-cones:classes UP-TO-DATE
+Skipping task ':cfir:cfir-cones:classes' as it has no actions.
+Resolve mutations for :cfir:cfir-cones:jar (Thread[#330,Execution worker Thread 9,5,main]) started.
+:cfir:cfir-cones:jar (Thread[#330,Execution worker Thread 9,5,main]) started.
+
+> Task :cfir:cfir-cones:jar UP-TO-DATE
+Caching disabled for task ':cfir:cfir-cones:jar' because:
+  Not worth caching
+Skipping task ':cfir:cfir-cones:jar' as it is up-to-date.
+work action resolve cfir-cones-1.1.1.jar (project :cfir:cfir-cones) (Thread[#330,Execution worker Thread 9,5,main]) started.
+Resolve mutations for :cfir:cfir-tree:tree-generator:compileKotlin (Thread[#330,Execution worker Thread 9,5,main]) started.
+:cfir:cfir-tree:tree-generator:compileKotlin (Thread[#330,Execution worker Thread 9,5,main]) started.
+
+> Task :cfir:cfir-tree:tree-generator:compileKotlin UP-TO-DATE
+Build cache key for task ':cfir:cfir-tree:tree-generator:compileKotlin' is fddf2b3de5a24062e6028f1efa89a8d8
+Skipping task ':cfir:cfir-tree:tree-generator:compileKotlin' as it is up-to-date.
+Resolve mutations for :cfir:cfir-tree:tree-generator:compileJava (Thread[#330,Execution worker Thread 9,5,main]) started.
+:cfir:cfir-tree:tree-generator:compileJava (Thread[#330,Execution worker Thread 9,5,main]) started.
+
+> Task :cfir:cfir-tree:tree-generator:compileJava NO-SOURCE
+Skipping task ':cfir:cfir-tree:tree-generator:compileJava' as it has no source files and no previous output files.
+Resolve mutations for :cfir:cfir-tree:tree-generator:classes (Thread[#330,Execution worker Thread 9,5,main]) started.
+:cfir:cfir-tree:tree-generator:classes (Thread[#330,Execution worker Thread 9,5,main]) started.
+
+> Task :cfir:cfir-tree:tree-generator:classes UP-TO-DATE
+Skipping task ':cfir:cfir-tree:tree-generator:classes' as it has no actions.
+Resolve mutations for :cfir:cfir-tree:tree-generator:jar (Thread[#330,Execution worker Thread 9,5,main]) started.
+:cfir:cfir-tree:tree-generator:jar (Thread[#330,Execution worker Thread 9,5,main]) started.
+
+> Task :cfir:cfir-tree:tree-generator:jar UP-TO-DATE
+Caching disabled for task ':cfir:cfir-tree:tree-generator:jar' because:
+  Not worth caching
+Skipping task ':cfir:cfir-tree:tree-generator:jar' as it is up-to-date.
+work action resolve tree-generator-1.1.1.jar (project :cfir:cfir-tree:tree-generator) (Thread[#330,Execution worker Thread 9,5,main]) started.
+Resolve mutations for :cfir:cfir-tree:generateTree (Thread[#330,Execution worker Thread 9,5,main]) started.
+:cfir:cfir-tree:generateTree (Thread[#330,Execution worker Thread 9,5,main]) started.
+
+> Task :cfir:cfir-tree:generateTree UP-TO-DATE
+Caching disabled for task ':cfir:cfir-tree:generateTree' because:
+  Gradle would require more information to cache this task
+Skipping task ':cfir:cfir-tree:generateTree' as it is up-to-date.
+Resolve mutations for :cfir:cfir-tree:compileKotlin (Thread[#330,Execution worker Thread 9,5,main]) started.
+:cfir:cfir-tree:compileKotlin (Thread[#330,Execution worker Thread 9,5,main]) started.
+
+> Task :cfir:cfir-tree:compileKotlin UP-TO-DATE
+Build cache key for task ':cfir:cfir-tree:compileKotlin' is 1a34885eeb9f7d3de10abc4ca1e73b1e
+Skipping task ':cfir:cfir-tree:compileKotlin' as it is up-to-date.
+Resolve mutations for :cfir:cfir-tree:compileJava (Thread[#330,Execution worker Thread 9,5,main]) started.
+:cfir:cfir-tree:compileJava (Thread[#330,Execution worker Thread 9,5,main]) started.
+
+> Task :cfir:cfir-tree:compileJava NO-SOURCE
+Skipping task ':cfir:cfir-tree:compileJava' as it has no source files and no previous output files.
+Resolve mutations for :cfir:cfir-tree:classes (Thread[#330,Execution worker Thread 9,5,main]) started.
+:cfir:cfir-tree:classes (Thread[#330,Execution worker Thread 9,5,main]) started.
+
+> Task :cfir:cfir-tree:classes UP-TO-DATE
+Skipping task ':cfir:cfir-tree:classes' as it has no actions.
+Resolve mutations for :cfir:cfir-tree:jar (Thread[#330,Execution worker Thread 9,5,main]) started.
+:cfir:cfir-tree:jar (Thread[#330,Execution worker Thread 9,5,main]) started.
+
+> Task :cfir:cfir-tree:jar UP-TO-DATE
+Caching disabled for task ':cfir:cfir-tree:jar' because:
+  Not worth caching
+Skipping task ':cfir:cfir-tree:jar' as it is up-to-date.
+work action resolve cfir-tree-1.1.1.jar (project :cfir:cfir-tree) (Thread[#330,Execution worker Thread 9,5,main]) started.
+Resolve mutations for :cfir:providers:compileKotlin (Thread[#330,Execution worker Thread 9,5,main]) started.
+:cfir:providers:compileKotlin (Thread[#330,Execution worker Thread 9,5,main]) started.
+Resolve mutations for :cfir:checkers:checkers-component-generator:compileKotlin (Thread[#331,Execution worker Thread 10,5,main]) started.
+:cfir:checkers:checkers-component-generator:compileKotlin (Thread[#331,Execution worker Thread 10,5,main]) started.
+Resolve mutations for :cfir:diagnostic-renderers:compileKotlin (Thread[#332,Execution worker Thread 11,5,main]) started.
+Resolve mutations for :macro:macro-common:compileKotlin (Thread[#328,Execution worker Thread 7,5,main]) started.
+:macro:macro-common:compileKotlin (Thread[#328,Execution worker Thread 7,5,main]) started.
+:cfir:diagnostic-renderers:compileKotlin (Thread[#332,Execution worker Thread 11,5,main]) started.
+
+> Task :macro:macro-common:compileKotlin UP-TO-DATE
+Build cache key for task ':macro:macro-common:compileKotlin' is 16af2053a0b638ee808e37bff4f66c1d
+Skipping task ':macro:macro-common:compileKotlin' as it is up-to-date.
+
+> Task :cfir:diagnostic-renderers:compileKotlin UP-TO-DATE
+Build cache key for task ':cfir:diagnostic-renderers:compileKotlin' is d74d6ad639e272daeae4954384dbc6db
+Skipping task ':cfir:diagnostic-renderers:compileKotlin' as it is up-to-date.
+Resolve mutations for :cfir:diagnostic-renderers:compileJava (Thread[#332,Execution worker Thread 11,5,main]) started.
+
+> Task :cfir:checkers:checkers-component-generator:compileKotlin UP-TO-DATE
+Build cache key for task ':cfir:checkers:checkers-component-generator:compileKotlin' is 865c29ca88e0c735dafdd41aa8cea448
+Skipping task ':cfir:checkers:checkers-component-generator:compileKotlin' as it is up-to-date.
+Resolve mutations for :cfir:checkers:checkers-component-generator:compileJava (Thread[#331,Execution worker Thread 10,5,main]) started.
+:cfir:diagnostic-renderers:compileJava (Thread[#332,Execution worker Thread 11,5,main]) started.
+Resolve mutations for :macro:macro-common:compileJava (Thread[#328,Execution worker Thread 7,5,main]) started.
+:macro:macro-common:compileJava (Thread[#328,Execution worker Thread 7,5,main]) started.
+:cfir:checkers:checkers-component-generator:compileJava (Thread[#331,Execution worker Thread 10,5,main]) started.
+
+> Task :cfir:checkers:checkers-component-generator:compileJava NO-SOURCE
+Skipping task ':cfir:checkers:checkers-component-generator:compileJava' as it has no source files and no previous output files.
+Resolve mutations for :cfir:checkers:checkers-component-generator:classes (Thread[#331,Execution worker Thread 10,5,main]) started.
+:cfir:checkers:checkers-component-generator:classes (Thread[#331,Execution worker Thread 10,5,main]) started.
+
+> Task :cfir:checkers:checkers-component-generator:classes UP-TO-DATE
+Skipping task ':cfir:checkers:checkers-component-generator:classes' as it has no actions.
+Resolve mutations for :cfir:checkers:checkers-component-generator:jar (Thread[#331,Execution worker Thread 10,5,main]) started.
+:cfir:checkers:checkers-component-generator:jar (Thread[#331,Execution worker Thread 10,5,main]) started.
+
+> Task :cfir:diagnostic-renderers:compileJava NO-SOURCE
+Skipping task ':cfir:diagnostic-renderers:compileJava' as it has no source files and no previous output files.
+Resolve mutations for :cfir:diagnostic-renderers:classes (Thread[#332,Execution worker Thread 11,5,main]) started.
+:cfir:diagnostic-renderers:classes (Thread[#332,Execution worker Thread 11,5,main]) started.
+
+> Task :cfir:diagnostic-renderers:classes UP-TO-DATE
+Skipping task ':cfir:diagnostic-renderers:classes' as it has no actions.
+Resolve mutations for :cfir:diagnostic-renderers:jar (Thread[#332,Execution worker Thread 11,5,main]) started.
+:cfir:diagnostic-renderers:jar (Thread[#332,Execution worker Thread 11,5,main]) started.
+
+> Task :cfir:diagnostic-renderers:jar UP-TO-DATE
+Caching disabled for task ':cfir:diagnostic-renderers:jar' because:
+  Not worth caching
+Skipping task ':cfir:diagnostic-renderers:jar' as it is up-to-date.
+work action resolve diagnostic-renderers-1.1.1.jar (project :cfir:diagnostic-renderers) (Thread[#332,Execution worker Thread 11,5,main]) started.
+
+> Task :cfir:providers:compileKotlin UP-TO-DATE
+Build cache key for task ':cfir:providers:compileKotlin' is 531a21f6164fbf4474b1c9d9e768de93
+Skipping task ':cfir:providers:compileKotlin' as it is up-to-date.
+Resolve mutations for :cfir:providers:compileJava (Thread[#330,Execution worker Thread 9,5,main]) started.
+:cfir:providers:compileJava (Thread[#330,Execution worker Thread 9,5,main]) started.
+
+> Task :cfir:providers:compileJava NO-SOURCE
+Skipping task ':cfir:providers:compileJava' as it has no source files and no previous output files.
+Resolve mutations for :cfir:providers:classes (Thread[#330,Execution worker Thread 9,5,main]) started.
+:cfir:providers:classes (Thread[#330,Execution worker Thread 9,5,main]) started.
+
+> Task :macro:macro-common:compileJava NO-SOURCE
+Skipping task ':macro:macro-common:compileJava' as it has no source files and no previous output files.
+
+> Task :cfir:providers:classes UP-TO-DATE
+Skipping task ':cfir:providers:classes' as it has no actions.
+Resolve mutations for :cfir:providers:jar (Thread[#330,Execution worker Thread 9,5,main]) started.
+:cfir:providers:jar (Thread[#328,Execution worker Thread 7,5,main]) started.
+Resolve mutations for :macro:macro-common:classes (Thread[#321,included builds,5,main]) started.
+:macro:macro-common:classes (Thread[#321,included builds,5,main]) started.
+
+> Task :macro:macro-common:classes UP-TO-DATE
+Skipping task ':macro:macro-common:classes' as it has no actions.
+Resolve mutations for :macro:macro-common:jar (Thread[#321,included builds,5,main]) started.
+:macro:macro-common:jar (Thread[#321,included builds,5,main]) started.
+
+> Task :macro:macro-common:jar UP-TO-DATE
+Caching disabled for task ':macro:macro-common:jar' because:
+  Not worth caching
+Skipping task ':macro:macro-common:jar' as it is up-to-date.
+work action resolve macro-common-1.1.1.jar (project :macro:macro-common) (Thread[#321,included builds,5,main]) started.
+Resolve mutations for :macro:macro-process:compileKotlin (Thread[#321,included builds,5,main]) started.
+
+> Task :cfir:providers:jar UP-TO-DATE
+Caching disabled for task ':cfir:providers:jar' because:
+  Not worth caching
+Skipping task ':cfir:providers:jar' as it is up-to-date.
+work action resolve providers-1.1.1.jar (project :cfir:providers) (Thread[#328,Execution worker Thread 7,5,main]) started.
+:macro:macro-process:compileKotlin (Thread[#321,included builds,5,main]) started.
+Resolve mutations for :cfir:cfir-serialization:compileKotlin (Thread[#328,Execution worker Thread 7,5,main]) started.
+Resolve mutations for :cfir:semantics:compileKotlin (Thread[#325,Execution worker Thread 4,5,main]) started.
+Resolve mutations for :cfir:raw-cfir:raw-cfir-common:compileKotlin (Thread[#335,Execution worker Thread 14,5,main]) started.
+:cfir:semantics:compileKotlin (Thread[#325,Execution worker Thread 4,5,main]) started.
+:cfir:raw-cfir:raw-cfir-common:compileKotlin (Thread[#335,Execution worker Thread 14,5,main]) started.
+
+> Task :cfir:checkers:checkers-component-generator:jar UP-TO-DATE
+Caching disabled for task ':cfir:checkers:checkers-component-generator:jar' because:
+  Not worth caching
+Skipping task ':cfir:checkers:checkers-component-generator:jar' as it is up-to-date.
+work action resolve checkers-component-generator-1.1.1.jar (project :cfir:checkers:checkers-component-generator) (Thread[#331,Execution worker Thread 10,5,main]) started.
+:cfir:cfir-serialization:compileKotlin (Thread[#328,Execution worker Thread 7,5,main]) started.
+Resolve mutations for :cfir:checkers:generateCheckersComponents (Thread[#331,Execution worker Thread 10,5,main]) started.
+:cfir:checkers:generateCheckersComponents (Thread[#331,Execution worker Thread 10,5,main]) started.
+
+> Task :cfir:checkers:generateCheckersComponents UP-TO-DATE
+Caching disabled for task ':cfir:checkers:generateCheckersComponents' because:
+  Gradle would require more information to cache this task
+Skipping task ':cfir:checkers:generateCheckersComponents' as it is up-to-date.
+
+> Task :cfir:semantics:compileKotlin UP-TO-DATE
+Build cache key for task ':cfir:semantics:compileKotlin' is 4fbdaf8f590a384cdf8f95efae473bc5
+Skipping task ':cfir:semantics:compileKotlin' as it is up-to-date.
+Resolve mutations for :cfir:semantics:compileJava (Thread[#325,Execution worker Thread 4,5,main]) started.
+:cfir:semantics:compileJava (Thread[#325,Execution worker Thread 4,5,main]) started.
+
+> Task :cfir:cfir-serialization:compileKotlin UP-TO-DATE
+Build cache key for task ':cfir:cfir-serialization:compileKotlin' is 0f9c3687cb79e9fc6e8e66a66c7c6082
+Skipping task ':cfir:cfir-serialization:compileKotlin' as it is up-to-date.
+Resolve mutations for :cfir:cfir-serialization:compileJava (Thread[#328,Execution worker Thread 7,5,main]) started.
+:cfir:cfir-serialization:compileJava (Thread[#328,Execution worker Thread 7,5,main]) started.
+
+> Task :cfir:semantics:compileJava NO-SOURCE
+Skipping task ':cfir:semantics:compileJava' as it has no source files and no previous output files.
+Resolve mutations for :cfir:semantics:classes (Thread[#325,Execution worker Thread 4,5,main]) started.
+:cfir:semantics:classes (Thread[#325,Execution worker Thread 4,5,main]) started.
+
+> Task :cfir:semantics:classes UP-TO-DATE
+Skipping task ':cfir:semantics:classes' as it has no actions.
+Resolve mutations for :cfir:semantics:jar (Thread[#325,Execution worker Thread 4,5,main]) started.
+:cfir:semantics:jar (Thread[#325,Execution worker Thread 4,5,main]) started.
+
+> Task :cfir:cfir-serialization:compileJava NO-SOURCE
+Skipping task ':cfir:cfir-serialization:compileJava' as it has no source files and no previous output files.
+Resolve mutations for :cfir:cfir-serialization:classes (Thread[#328,Execution worker Thread 7,5,main]) started.
+:cfir:cfir-serialization:classes (Thread[#328,Execution worker Thread 7,5,main]) started.
+
+> Task :cfir:cfir-serialization:classes UP-TO-DATE
+Skipping task ':cfir:cfir-serialization:classes' as it has no actions.
+Resolve mutations for :cfir:cfir-serialization:jar (Thread[#328,Execution worker Thread 7,5,main]) started.
+:cfir:cfir-serialization:jar (Thread[#328,Execution worker Thread 7,5,main]) started.
+
+> Task :cfir:semantics:jar UP-TO-DATE
+Caching disabled for task ':cfir:semantics:jar' because:
+  Not worth caching
+Skipping task ':cfir:semantics:jar' as it is up-to-date.
+work action resolve semantics-1.1.1.jar (project :cfir:semantics) (Thread[#325,Execution worker Thread 4,5,main]) started.
+Resolve mutations for :cfir:checkers:compileKotlin (Thread[#325,Execution worker Thread 4,5,main]) started.
+Resolve mutations for :cfir:resolve:compileKotlin (Thread[#327,Execution worker Thread 6,5,main]) started.
+:cfir:checkers:compileKotlin (Thread[#325,Execution worker Thread 4,5,main]) started.
+:cfir:resolve:compileKotlin (Thread[#327,Execution worker Thread 6,5,main]) started.
+
+> Task :cfir:cfir-serialization:jar UP-TO-DATE
+Caching disabled for task ':cfir:cfir-serialization:jar' because:
+  Not worth caching
+Skipping task ':cfir:cfir-serialization:jar' as it is up-to-date.
+work action resolve cfir-serialization-1.1.1.jar (project :cfir:cfir-serialization) (Thread[#328,Execution worker Thread 7,5,main]) started.
+
+> Task :cfir:raw-cfir:raw-cfir-common:compileKotlin UP-TO-DATE
+Build cache key for task ':cfir:raw-cfir:raw-cfir-common:compileKotlin' is 7d1bbd041431d59b612cfedf6973067d
+Skipping task ':cfir:raw-cfir:raw-cfir-common:compileKotlin' as it is up-to-date.
+Resolve mutations for :cfir:raw-cfir:raw-cfir-common:compileJava (Thread[#335,Execution worker Thread 14,5,main]) started.
+:cfir:raw-cfir:raw-cfir-common:compileJava (Thread[#335,Execution worker Thread 14,5,main]) started.
+
+> Task :cfir:raw-cfir:raw-cfir-common:compileJava NO-SOURCE
+Skipping task ':cfir:raw-cfir:raw-cfir-common:compileJava' as it has no source files and no previous output files.
+Resolve mutations for :cfir:raw-cfir:raw-cfir-common:classes (Thread[#328,Execution worker Thread 7,5,main]) started.
+:cfir:raw-cfir:raw-cfir-common:classes (Thread[#328,Execution worker Thread 7,5,main]) started.
+
+> Task :cfir:raw-cfir:raw-cfir-common:classes UP-TO-DATE
+Skipping task ':cfir:raw-cfir:raw-cfir-common:classes' as it has no actions.
+Resolve mutations for :cfir:raw-cfir:raw-cfir-common:jar (Thread[#328,Execution worker Thread 7,5,main]) started.
+:cfir:raw-cfir:raw-cfir-common:jar (Thread[#328,Execution worker Thread 7,5,main]) started.
+
+> Task :cfir:resolve:compileKotlin UP-TO-DATE
+Build cache key for task ':cfir:resolve:compileKotlin' is ecd913f44fe0d6198f67badc28ac7be3
+Skipping task ':cfir:resolve:compileKotlin' as it is up-to-date.
+
+> Task :macro:macro-process:compileKotlin UP-TO-DATE
+Build cache key for task ':macro:macro-process:compileKotlin' is ff6ba3906d9c1bfcaea97d6db0f1ac86
+Skipping task ':macro:macro-process:compileKotlin' as it is up-to-date.
+Resolve mutations for :macro:macro-process:compileJava (Thread[#321,included builds,5,main]) started.
+:macro:macro-process:compileJava (Thread[#321,included builds,5,main]) started.
+Resolve mutations for :cfir:resolve:compileJava (Thread[#327,Execution worker Thread 6,5,main]) started.
+:cfir:resolve:compileJava (Thread[#327,Execution worker Thread 6,5,main]) started.
+
+> Task :cfir:checkers:compileKotlin UP-TO-DATE
+Build cache key for task ':cfir:checkers:compileKotlin' is 52958f18d6009db0f4b2c979ad0549c5
+Skipping task ':cfir:checkers:compileKotlin' as it is up-to-date.
+Resolve mutations for :cfir:checkers:compileJava (Thread[#325,Execution worker Thread 4,5,main]) started.
+:cfir:checkers:compileJava (Thread[#325,Execution worker Thread 4,5,main]) started.
+
+> Task :macro:macro-process:compileJava NO-SOURCE
+Skipping task ':macro:macro-process:compileJava' as it has no source files and no previous output files.
+Resolve mutations for :macro:macro-process:classes (Thread[#321,included builds,5,main]) started.
+:macro:macro-process:classes (Thread[#321,included builds,5,main]) started.
+
+> Task :cfir:resolve:compileJava NO-SOURCE
+Skipping task ':cfir:resolve:compileJava' as it has no source files and no previous output files.
+
+> Task :macro:macro-process:classes UP-TO-DATE
+Skipping task ':macro:macro-process:classes' as it has no actions.
+Resolve mutations for :cfir:resolve:classes (Thread[#327,Execution worker Thread 6,5,main]) started.
+:cfir:resolve:classes (Thread[#327,Execution worker Thread 6,5,main]) started.
+
+> Task :cfir:resolve:classes UP-TO-DATE
+Skipping task ':cfir:resolve:classes' as it has no actions.
+Resolve mutations for :macro:macro-process:jar (Thread[#321,included builds,5,main]) started.
+Resolve mutations for :cfir:resolve:jar (Thread[#327,Execution worker Thread 6,5,main]) started.
+:macro:macro-process:jar (Thread[#321,included builds,5,main]) started.
+:cfir:resolve:jar (Thread[#327,Execution worker Thread 6,5,main]) started.
+
+> Task :cfir:checkers:compileJava NO-SOURCE
+Skipping task ':cfir:checkers:compileJava' as it has no source files and no previous output files.
+Resolve mutations for :cfir:checkers:classes (Thread[#325,Execution worker Thread 4,5,main]) started.
+:cfir:checkers:classes (Thread[#325,Execution worker Thread 4,5,main]) started.
+
+> Task :cfir:checkers:classes UP-TO-DATE
+Skipping task ':cfir:checkers:classes' as it has no actions.
+Resolve mutations for :cfir:checkers:jar (Thread[#325,Execution worker Thread 4,5,main]) started.
+:cfir:checkers:jar (Thread[#325,Execution worker Thread 4,5,main]) started.
+
+> Task :cfir:resolve:jar UP-TO-DATE
+Caching disabled for task ':cfir:resolve:jar' because:
+  Not worth caching
+Skipping task ':cfir:resolve:jar' as it is up-to-date.
+
+> Task :macro:macro-process:jar UP-TO-DATE
+Caching disabled for task ':macro:macro-process:jar' because:
+  Not worth caching
+Skipping task ':macro:macro-process:jar' as it is up-to-date.
+work action resolve macro-process-1.1.1.jar (project :macro:macro-process) (Thread[#321,included builds,5,main]) started.
+work action resolve resolve-1.1.1.jar (project :cfir:resolve) (Thread[#327,Execution worker Thread 6,5,main]) started.
+
+> Task :cfir:checkers:jar UP-TO-DATE
+Caching disabled for task ':cfir:checkers:jar' because:
+  Not worth caching
+Skipping task ':cfir:checkers:jar' as it is up-to-date.
+work action resolve checkers-1.1.1.jar (project :cfir:checkers) (Thread[#325,Execution worker Thread 4,5,main]) started.
+
+> Task :cfir:raw-cfir:raw-cfir-common:jar UP-TO-DATE
+Caching disabled for task ':cfir:raw-cfir:raw-cfir-common:jar' because:
+  Not worth caching
+Skipping task ':cfir:raw-cfir:raw-cfir-common:jar' as it is up-to-date.
+work action resolve raw-cfir-common-1.1.1.jar (project :cfir:raw-cfir:raw-cfir-common) (Thread[#328,Execution worker Thread 7,5,main]) started.
+Resolve mutations for :cfir:raw-cfir:light-tree2cfir:compileKotlin (Thread[#328,Execution worker Thread 7,5,main]) started.
+Resolve mutations for :cfir:raw-cfir:psi2cfir:compileKotlin (Thread[#327,Execution worker Thread 6,5,main]) started.
+:cfir:raw-cfir:psi2cfir:compileKotlin (Thread[#327,Execution worker Thread 6,5,main]) started.
+:cfir:raw-cfir:light-tree2cfir:compileKotlin (Thread[#328,Execution worker Thread 7,5,main]) started.
+
+> Task :cfir:raw-cfir:psi2cfir:compileKotlin UP-TO-DATE
+Build cache key for task ':cfir:raw-cfir:psi2cfir:compileKotlin' is cff7650548b23f23b779ca6c6bce09af
+Skipping task ':cfir:raw-cfir:psi2cfir:compileKotlin' as it is up-to-date.
+Resolve mutations for :cfir:raw-cfir:psi2cfir:compileJava (Thread[#327,Execution worker Thread 6,5,main]) started.
+:cfir:raw-cfir:psi2cfir:compileJava (Thread[#327,Execution worker Thread 6,5,main]) started.
+
+> Task :cfir:raw-cfir:psi2cfir:compileJava NO-SOURCE
+Skipping task ':cfir:raw-cfir:psi2cfir:compileJava' as it has no source files and no previous output files.
+Resolve mutations for :cfir:raw-cfir:psi2cfir:classes (Thread[#327,Execution worker Thread 6,5,main]) started.
+:cfir:raw-cfir:psi2cfir:classes (Thread[#327,Execution worker Thread 6,5,main]) started.
+
+> Task :cfir:raw-cfir:psi2cfir:classes UP-TO-DATE
+Skipping task ':cfir:raw-cfir:psi2cfir:classes' as it has no actions.
+Resolve mutations for :cfir:raw-cfir:psi2cfir:jar (Thread[#327,Execution worker Thread 6,5,main]) started.
+:cfir:raw-cfir:psi2cfir:jar (Thread[#327,Execution worker Thread 6,5,main]) started.
+
+> Task :cfir:raw-cfir:psi2cfir:jar UP-TO-DATE
+Caching disabled for task ':cfir:raw-cfir:psi2cfir:jar' because:
+  Not worth caching
+Skipping task ':cfir:raw-cfir:psi2cfir:jar' as it is up-to-date.
+work action resolve psi2cfir-1.1.1.jar (project :cfir:raw-cfir:psi2cfir) (Thread[#327,Execution worker Thread 6,5,main]) started.
+
+> Task :cfir:raw-cfir:light-tree2cfir:compileKotlin UP-TO-DATE
+Build cache key for task ':cfir:raw-cfir:light-tree2cfir:compileKotlin' is daeda531a38c3defba96f8956d3bd4a2
+Skipping task ':cfir:raw-cfir:light-tree2cfir:compileKotlin' as it is up-to-date.
+Resolve mutations for :cfir:raw-cfir:light-tree2cfir:compileJava (Thread[#328,Execution worker Thread 7,5,main]) started.
+:cfir:raw-cfir:light-tree2cfir:compileJava (Thread[#328,Execution worker Thread 7,5,main]) started.
+
+> Task :cfir:raw-cfir:light-tree2cfir:compileJava NO-SOURCE
+Skipping task ':cfir:raw-cfir:light-tree2cfir:compileJava' as it has no source files and no previous output files.
+Resolve mutations for :cfir:raw-cfir:light-tree2cfir:classes (Thread[#328,Execution worker Thread 7,5,main]) started.
+:cfir:raw-cfir:light-tree2cfir:classes (Thread[#328,Execution worker Thread 7,5,main]) started.
+
+> Task :cfir:raw-cfir:light-tree2cfir:classes UP-TO-DATE
+Skipping task ':cfir:raw-cfir:light-tree2cfir:classes' as it has no actions.
+Resolve mutations for :cfir:raw-cfir:light-tree2cfir:jar (Thread[#328,Execution worker Thread 7,5,main]) started.
+:cfir:raw-cfir:light-tree2cfir:jar (Thread[#328,Execution worker Thread 7,5,main]) started.
+
+> Task :cfir:raw-cfir:light-tree2cfir:jar UP-TO-DATE
+Caching disabled for task ':cfir:raw-cfir:light-tree2cfir:jar' because:
+  Not worth caching
+Skipping task ':cfir:raw-cfir:light-tree2cfir:jar' as it is up-to-date.
+work action resolve light-tree2cfir-1.1.1.jar (project :cfir:raw-cfir:light-tree2cfir) (Thread[#328,Execution worker Thread 7,5,main]) started.
+Resolve mutations for :cfir:entrypoint:compileKotlin (Thread[#328,Execution worker Thread 7,5,main]) started.
+:cfir:entrypoint:compileKotlin (Thread[#328,Execution worker Thread 7,5,main]) started.
+
+> Task :cfir:entrypoint:compileKotlin UP-TO-DATE
+Build cache key for task ':cfir:entrypoint:compileKotlin' is aaf4f33558e33949469d160f8aa67882
+Skipping task ':cfir:entrypoint:compileKotlin' as it is up-to-date.
+Resolve mutations for :cfir:entrypoint:compileJava (Thread[#328,Execution worker Thread 7,5,main]) started.
+:cfir:entrypoint:compileJava (Thread[#328,Execution worker Thread 7,5,main]) started.
+
+> Task :cfir:entrypoint:compileJava NO-SOURCE
+Skipping task ':cfir:entrypoint:compileJava' as it has no source files and no previous output files.
+Resolve mutations for :cfir:entrypoint:classes (Thread[#328,Execution worker Thread 7,5,main]) started.
+:cfir:entrypoint:classes (Thread[#328,Execution worker Thread 7,5,main]) started.
+
+> Task :cfir:entrypoint:classes UP-TO-DATE
+Skipping task ':cfir:entrypoint:classes' as it has no actions.
+Resolve mutations for :cfir:entrypoint:jar (Thread[#328,Execution worker Thread 7,5,main]) started.
+:cfir:entrypoint:jar (Thread[#328,Execution worker Thread 7,5,main]) started.
+
+> Task :cfir:entrypoint:jar UP-TO-DATE
+Caching disabled for task ':cfir:entrypoint:jar' because:
+  Not worth caching
+Skipping task ':cfir:entrypoint:jar' as it is up-to-date.
+work action resolve entrypoint-1.1.1.jar (project :cfir:entrypoint) (Thread[#328,Execution worker Thread 7,5,main]) started.
+Resolve mutations for :compiler:frontend:compileKotlin (Thread[#328,Execution worker Thread 7,5,main]) started.
+:compiler:frontend:compileKotlin (Thread[#328,Execution worker Thread 7,5,main]) started.
+
+> Task :compiler:frontend:compileKotlin UP-TO-DATE
+Build cache key for task ':compiler:frontend:compileKotlin' is 0cebc9b2ae4484faee9d2f4d0df1906c
+Skipping task ':compiler:frontend:compileKotlin' as it is up-to-date.
+Resolve mutations for :compiler:frontend:compileJava (Thread[#328,Execution worker Thread 7,5,main]) started.
+:compiler:frontend:compileJava (Thread[#327,Execution worker Thread 6,5,main]) started.
+
+> Task :compiler:frontend:compileJava NO-SOURCE
+Skipping task ':compiler:frontend:compileJava' as it has no source files and no previous output files.
+Resolve mutations for :compiler:frontend:classes (Thread[#327,Execution worker Thread 6,5,main]) started.
+:compiler:frontend:classes (Thread[#327,Execution worker Thread 6,5,main]) started.
+
+> Task :compiler:frontend:classes UP-TO-DATE
+Skipping task ':compiler:frontend:classes' as it has no actions.
+Resolve mutations for :compiler:frontend:jar (Thread[#327,Execution worker Thread 6,5,main]) started.
+:compiler:frontend:jar (Thread[#327,Execution worker Thread 6,5,main]) started.
+
+> Task :compiler:frontend:jar UP-TO-DATE
+Caching disabled for task ':compiler:frontend:jar' because:
+  Not worth caching
+Skipping task ':compiler:frontend:jar' as it is up-to-date.
+work action resolve frontend-1.1.1.jar (project :compiler:frontend) (Thread[#327,Execution worker Thread 6,5,main]) started.
+Resolve mutations for :tests:test-infrastructure:compileTestFixturesKotlin (Thread[#327,Execution worker Thread 6,5,main]) started.
+:tests:test-infrastructure:compileTestFixturesKotlin (Thread[#327,Execution worker Thread 6,5,main]) started.
+
+> Task :tests:test-infrastructure:compileTestFixturesKotlin UP-TO-DATE
+Build cache key for task ':tests:test-infrastructure:compileTestFixturesKotlin' is 25047f093de6c426796308e49875a0f0
+Skipping task ':tests:test-infrastructure:compileTestFixturesKotlin' as it is up-to-date.
+Resolve mutations for :tests:test-infrastructure:compileTestFixturesJava (Thread[#327,Execution worker Thread 6,5,main]) started.
+:tests:test-infrastructure:compileTestFixturesJava (Thread[#327,Execution worker Thread 6,5,main]) started.
+
+> Task :tests:test-infrastructure:compileTestFixturesJava UP-TO-DATE
+Build cache key for task ':tests:test-infrastructure:compileTestFixturesJava' is 17cedb5a2be2364f3c56e7845723f975
+Skipping task ':tests:test-infrastructure:compileTestFixturesJava' as it is up-to-date.
+No compile result for :tests:test-infrastructure:compileTestFixturesJava
+work action resolve testFixtures (project :tests:test-infrastructure) (Thread[#327,Execution worker Thread 6,5,main]) started.
+Resolve mutations for :tests:test-infrastructure:testFixturesClasses (Thread[#328,Execution worker Thread 7,5,main]) started.
+work action resolve testFixtures (project :tests:test-infrastructure) (Thread[#324,Execution worker Thread 3,5,main]) started.
+Resolve mutations for :cfir:analysis-tests:compileTestFixturesKotlin (Thread[#327,Execution worker Thread 6,5,main]) started.
+:tests:test-infrastructure:testFixturesClasses (Thread[#328,Execution worker Thread 7,5,main]) started.
+
+> Task :tests:test-infrastructure:testFixturesClasses UP-TO-DATE
+Skipping task ':tests:test-infrastructure:testFixturesClasses' as it has no actions.
+Resolve mutations for :tests:test-infrastructure:testFixturesJar (Thread[#328,Execution worker Thread 7,5,main]) started.
+:tests:test-infrastructure:testFixturesJar (Thread[#328,Execution worker Thread 7,5,main]) started.
+:cfir:analysis-tests:compileTestFixturesKotlin (Thread[#335,Execution worker Thread 14,5,main]) started.
+
+> Task :tests:test-infrastructure:testFixturesJar UP-TO-DATE
+Caching disabled for task ':tests:test-infrastructure:testFixturesJar' because:
+  Not worth caching
+Skipping task ':tests:test-infrastructure:testFixturesJar' as it is up-to-date.
+work action resolve test-infrastructure-1.1.1-test-fixtures.jar (project :tests:test-infrastructure) (Thread[#328,Execution worker Thread 7,5,main]) started.
+
+> Task :cfir:analysis-tests:compileTestFixturesKotlin UP-TO-DATE
+Build cache key for task ':cfir:analysis-tests:compileTestFixturesKotlin' is 9a8a7386c53f9954d6775a88aa3b981a
+Skipping task ':cfir:analysis-tests:compileTestFixturesKotlin' as it is up-to-date.
+Resolve mutations for :cfir:analysis-tests:compileTestFixturesJava (Thread[#335,Execution worker Thread 14,5,main]) started.
+:cfir:analysis-tests:compileTestFixturesJava (Thread[#335,Execution worker Thread 14,5,main]) started.
+
+> Task :cfir:analysis-tests:compileTestFixturesJava NO-SOURCE
+Skipping task ':cfir:analysis-tests:compileTestFixturesJava' as it has no source files and no previous output files.
+Resolve mutations for :cfir:analysis-tests:testFixturesClasses (Thread[#335,Execution worker Thread 14,5,main]) started.
+:cfir:analysis-tests:testFixturesClasses (Thread[#335,Execution worker Thread 14,5,main]) started.
+work action resolve testFixtures (project :cfir:analysis-tests) (Thread[#327,Execution worker Thread 6,5,main]) started.
+
+> Task :cfir:analysis-tests:testFixturesClasses UP-TO-DATE
+Skipping task ':cfir:analysis-tests:testFixturesClasses' as it has no actions.
+Resolve mutations for :cfir:analysis-tests:testFixturesJar (Thread[#335,Execution worker Thread 14,5,main]) started.
+Resolve mutations for :cfir:analysis-tests:generateTestGeneratorForCfirAnalysisTestsTests (Thread[#321,included builds,5,main]) started.
+:cfir:analysis-tests:testFixturesJar (Thread[#335,Execution worker Thread 14,5,main]) started.
+work action resolve testFixtures (project :cfir:analysis-tests) (Thread[#332,Execution worker Thread 11,5,main]) started.
+:cfir:analysis-tests:generateTestGeneratorForCfirAnalysisTestsTests (Thread[#321,included builds,5,main]) started.
+
+> Task :cfir:analysis-tests:testFixturesJar UP-TO-DATE
+Caching disabled for task ':cfir:analysis-tests:testFixturesJar' because:
+  Not worth caching
+Skipping task ':cfir:analysis-tests:testFixturesJar' as it is up-to-date.
+work action resolve analysis-tests-1.1.1-test-fixtures.jar (project :cfir:analysis-tests) (Thread[#335,Execution worker Thread 14,5,main]) started.
+
+> Task :cfir:analysis-tests:generateTestGeneratorForCfirAnalysisTestsTests
+Caching disabled for task ':cfir:analysis-tests:generateTestGeneratorForCfirAnalysisTestsTests' because:
+  Gradle would require more information to cache this task
+Task ':cfir:analysis-tests:generateTestGeneratorForCfirAnalysisTestsTests' is not up-to-date because:
+  Task has not declared any outputs despite executing actions.
+Shortening Java classpath [D:\code\intellij\cangjie\cfir\analysis-tests\build\classes\java\testFixtures, D:\code\intellij\cangjie\cfir\analysis-tests\build\classes\kotlin\testFixtures, D:\code\intellij\cangjie\cfir\analysis-tests\build\resources\testFixtures, D:\code\intellij\cangjie\cfir\analysis-tests\build\libs\analysis-tests-1.1.1.jar, D:\code\intellij\cangjie\tests\test-infrastructure\build\libs\test-infrastructure-1.1.1-test-fixtures.jar, D:\code\intellij\cangjie\tests\test-infrastructure\build\libs\test-infrastructure-1.1.1.jar, D:\code\intellij\cangjie\compiler\frontend\build\libs\frontend-1.1.1.jar, D:\code\intellij\cangjie\cfir\entrypoint\build\libs\entrypoint-1.1.1.jar, D:\code\intellij\cangjie\cfir\resolve\build\libs\resolve-1.1.1.jar, D:\code\intellij\cangjie\cfir\checkers\build\libs\checkers-1.1.1.jar, D:\code\intellij\cangjie\cfir\cfir-serialization\build\libs\cfir-serialization-1.1.1.jar, D:\code\intellij\cangjie\cfir\raw-cfir\psi2cfir\build\libs\psi2cfir-1.1.1.jar, D:\code\intellij\cangjie\cfir\raw-cfir\light-tree2cfir\build\libs\light-tree2cfir-1.1.1.jar, D:\code\intellij\cangjie\cfir\raw-cfir\raw-cfir-common\build\libs\raw-cfir-common-1.1.1.jar, D:\code\intellij\cangjie\macro\macro-process\build\libs\macro-process-1.1.1.jar, D:\code\intellij\cangjie\macro\macro-common\build\libs\macro-common-1.1.1.jar, D:\code\intellij\cangjie\cfir\semantics\build\libs\semantics-1.1.1.jar, D:\code\intellij\cangjie\cfir\providers\build\libs\providers-1.1.1.jar, D:\code\intellij\cangjie\cfir\diagnostic-renderers\build\libs\diagnostic-renderers-1.1.1.jar, D:\code\intellij\cangjie\cfir\cfir-tree\build\libs\cfir-tree-1.1.1.jar, D:\code\intellij\cangjie\cfir\cfir-cones\build\libs\cfir-cones-1.1.1.jar, D:\code\intellij\cangjie\cfir\cfir-common\build\libs\cfir-common-1.1.1.jar, D:\code\intellij\cangjie\compiler\phaser\build\libs\phaser-1.1.1.jar, D:\code\intellij\cangjie\compiler\config\build\libs\config-1.1.1.jar, D:\code\intellij\cangjie\common\diagnostics\build\libs\diagnostics-1.1.1.jar, D:\code\intellij\cangjie\psi\build\libs\psi-1.1.1.jar, D:\code\intellij\cangjie\resolution.common\build\libs\resolution.common-1.1.1.jar, D:\code\intellij\cangjie\common\build\libs\common-1.1.1.jar, D:\code\intellij\cangjie\util\build\libs\util-1.1.1.jar, D:\code\intellij\cangjie\flatbuffers-gen\build\libs\flatbuffers-gen-1.1.1.jar, D:\code\intellij\cangjie\dependencies\intellij-core\build\libs\intellij-core-1.1.1.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\ide-impl\253.29346.379\cd3814be3f177116391170fd0e54977b8fc73c95\ide-impl-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\lang\253.29346.379\a6c44592fc553598ed8d2e973e6394e431a4efff\lang-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\refactoring\253.29346.379\d99a340922e14d62cc990950ff49060ed8dcb482\refactoring-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\resources\253.29346.379\45fae7dba110c91d1d4fb36905526bc92011cc56\resources-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\ide-concurrency\253.29346.379\ebf87c8679ed267fc8981c7a6170d805dd1e3e0a\ide-concurrency-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\lang-core\253.29346.379\3a0d6a6cad0895caa1274cc63f9a9f72dc831c44\lang-core-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\rd-community\253.29346.379\4a7fcdc514ddb8874f07ec004c29de73c22a395a\rd-community-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\ui-jcef\253.29346.379\8ff3b841dd33daac3e148289eb4e4beea97148bb\ui-jcef-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\ide\253.29346.379\764bcf4b886090d4e8dea146f3a913eb64b08a24\ide-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\ide-progress\253.29346.379\39ded757adf88a704ae0eb4c2c176c25cfa4ceb6\ide-progress-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\project\253.29346.379\d76c798d6ba725b48f8251399226f0afd5012a4e\project-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\ide-rpc\253.29346.379\2847436682a251ef0620e586fada7604940244d3\ide-rpc-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\usage-view\253.29346.379\201712d2bfb1677aaee81d6c5656c57a129447a7\usage-view-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\ide-core-impl\253.29346.379\8fa615234aace61ea856cf27444e96ae7d3f7666\ide-core-impl-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\code-style-impl\253.29346.379\9c201298f8e1ac5ab60e9da7ac61273168a9835a\code-style-impl-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\analysis-impl\253.29346.379\e8108cd8aeafa94db9a5afd10dfb10ebf540f612\analysis-impl-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\editor-ex\253.29346.379\705365e1464cc6d595c5b9a2e3ecb6f80972ee4a\editor-ex-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\indexing-impl\253.29346.379\7a5e5dd40c053922a061bc261f87e047d7516a7b\indexing-impl-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\service-container\253.29346.379\52e676dd584f0beeeee3d37583fca23c46739ee4\service-container-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\project-model-impl\253.29346.379\855e0125705d63b9d7c88328a3153d13e27d8909\project-model-impl-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\diff\253.29346.379\5ce57e95a1bafaf6201c487b232d33d85993b7a\diff-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\built-in-server\253.29346.379\f04276a1e06f3f2461715d567ca66d9f3201760c\built-in-server-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\execution\253.29346.379\2600b5c5d67bba9ebc54f6ff20710c41ce666527\execution-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\statistics\253.29346.379\e4bea5286c6985f5bf2c682963ebc2a0b42d1a50\statistics-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\ide-core-plugins\253.29346.379\882693dda11852b05515d1067f97d8ccd5e69539\ide-core-plugins-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\ide-ui\253.29346.379\12c15f8361148585af5617ae04d51a174c15c833\ide-ui-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\ijent-community-impl\253.29346.379\be1248e0acc4eb244981777b9dc9517dc06c21f0\ijent-community-impl-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\eel-impl\253.29346.379\aa0e7fec411b9165d7031b0e6e41140e5993049\eel-impl-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\ide-core\253.29346.379\61678be8757a4c4ac646b3c29c57b2ace435652f\ide-core-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\analysis\253.29346.379\114ef518900ab79700cc1a1e864b86a796a085\analysis-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\code-style\253.29346.379\7fbbbcb4c39cda8c91cfb4943a15de0c1663431d\code-style-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\ide-recent-projects\253.29346.379\13f3fe5a98c4b5f02fee91fbb8b50a79d62ee43\ide-recent-projects-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\editor-ui\253.29346.379\bb2e6fd81317802ab7e8a31d104ddddd302ae209\editor-ui-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\indexing\253.29346.379\a5693c2c70fe28e42e0ad70030f789a0f320a85e\indexing-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\object-serializer\253.29346.379\8d56185693361cb42ca7c0a1b9275a08f5e0684\object-serializer-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\remote-core\253.29346.379\7de1bafb4be3daab06743f80da3f6e3f3c81a6af\remote-core-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\project-model\253.29346.379\c29a17ae05df30fa6f8069b19febe858868118d2\project-model-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\credential-store\253.29346.379\4577b2c0a4cc1415b3b03ab5c24117bccb0cf488\credential-store-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\ide-observable\253.29346.379\6e81285b39b99efe3d6f1914b9b8037729389e48\ide-observable-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\concurrency\253.29346.379\387ec382787018d680b3325d68e77e31923f356d\concurrency-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\diagnostic-start-up-performance-reporter\253.29346.379\f22700fd7259720bce3d11a8d795c2523695b6db\diagnostic-start-up-performance-reporter-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\diagnostic-telemetry-impl\253.29346.379\dfedba4d72fbf0736a8915bac63530bf72e9fc6c\diagnostic-telemetry-impl-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\syntax-psi\253.29346.379\1fb0abc7113ef9eaa9c3400c46668b12a22aa167\syntax-psi-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\pratt\253.29346.379\274b8991d79f0917e65656f79edf3b966575584a\pratt-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\core-impl\253.29346.379\dac57f669bad2257d5a9ee3f1431583f71980be6\core-impl-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\lvcs\253.29346.379\b9683d95de714469fffff31926b90dfee8ea8479\lvcs-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\ide-util-io-impl\253.29346.379\e13ef4c856659f115a5c79f4f9de2985d1913be\ide-util-io-impl-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\jbr\253.29346.379\4829369be8d4116549b79a7e0b07879204b89ff8\jbr-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\core-ui\253.29346.379\243465951ef939a6d3b93f0364216b9ccb8a869e\core-ui-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\ide-util-netty\253.29346.379\b77bda0a091d5233931c9977c6ca19bb4fbef3ff\ide-util-netty-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\backend-workspace\253.29346.379\58c86b2ff7acccd5faa67adec05ee82d5ff84f81\backend-workspace-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\ijent\253.29346.379\70f3b6543fa1b0407f23d16373f1af8ace634318\ijent-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\backend-observation\253.29346.379\e539080d7b1aa2d0161ba55e61f29e402e604b58\backend-observation-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\settings\253.29346.379\3f90f9d1bc6ac475a01a4737aee350b33702fd8e\settings-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\kernel\253.29346.379\8017e1f961d77e1ed7edddedd889a96757749ac\kernel-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\ide-util-io\253.29346.379\822dd63ab625fe1a30be3f0921c61e0a8a9ef95b\ide-util-io-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\eel-provider\253.29346.379\521a47f74291251378f423ad5456af3bb7d0c3c5\eel-provider-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\pasta\253.29346.379\dc225b19a6fcd95041e6718959ce7e316e3094f7\pasta-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\locking-impl\253.29346.379\2f74080d65c075f21a8c28950b4803cb5b6958ed\locking-impl-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\rpc\253.29346.379\d00858119e957c1c1fcb19cd481a111fe96232ea\rpc-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\core\253.29346.379\fc1b177647367bcbef1fee36dc4e5474975e42d6\core-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\instance-container\253.29346.379\9c2e12c93019383cf2431210f79618fd86ef0bb2\instance-container-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\util-progress\253.29346.379\f57263c11525c8e089ddc38ea567d3f7d6880a00\util-progress-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\workspace-jps\253.29346.379\2b2389a21d28f6e0059a5ddffc112b6ddb1cfeb7\workspace-jps-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\jps-model-serialization\253.29346.379\fb28e95d26fe91fd8c6cda2d456628883b3b14ca\jps-model-serialization-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\jps-model-impl\253.29346.379\518a5acd56c5674a0884ad70433c1051b8e2b21a\jps-model-impl-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\jps-model\253.29346.379\44560ab78e69ab2a97077a115e61ae2c013fd4d3\jps-model-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\util-ui\253.29346.379\58e413f085d7ad84df1797115c7e63ed27110088\util-ui-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\util-io-storages\253.29346.379\fac012013e8cb253934fe340e84265a24492af21\util-io-storages-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\workspace-storage\253.29346.379\85975f857e2187ca2dc874c65405f54750b77bb1\workspace-storage-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\diagnostic-telemetry-exporters\253.29346.379\7857d2325f66d05964d337d8dfbb779f8c834450\diagnostic-telemetry-exporters-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\diagnostic-telemetry\253.29346.379\5908937c713063cd16b822ef6f2d6ce81d542e5f\diagnostic-telemetry-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\util-ex\253.29346.379\a96149d71df45cf89f02c98a82c027a3046708e\util-ex-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\plugins-parser-impl\253.29346.379\6738bfdf39e88a11c5e8132a4de1f1c57f591913\plugins-parser-impl-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\extensions\253.29346.379\e39b8dfaf9963364ac1901296b48aca8c5b8b0f3\extensions-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\util\253.29346.379\1e3a21bbebeb84dcb20a9024543199d6f0ae4fb6\util-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\util-coroutines\253.29346.379\5888f7559ac643f0a649c23cdf1d91bec0013455\util-coroutines-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.fleet\andel\253.29346.379\992a7641347c0264fb0646ed439f51a6d113e721\andel-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.fleet\kernel\253.29346.379\77bd833b654b7ec6314fb85ad817ef0690f65021\kernel-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.fleet\rpc\253.29346.379\dfdfbadab9ba2324b48131c3aebb2b8500e6766c\rpc-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.fleet\util-codepoints\253.29346.379\e50594ae5ffa38b85e069bafd04ce7c80f90d239\util-codepoints-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.fleet\rhizomedb\253.29346.379\9c2d5f118ed6d50aebbca5c10efd4b2475c472c1\rhizomedb-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.fleet\util-core\253.29346.379\b256d5d4a55150659a3dc4ef9bcc79d5573de0bc\util-core-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.fleet\bifurcan\253.29346.379\dd2ec658a3c8a1fb3572ac39e5f2309de5b84fdc\bifurcan-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.fleet\util-serialization\253.29346.379\4e5159f4a9dc0b39eb29903a4ff7ee5f743ab71b\util-serialization-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\org.jetbrains.kotlinx\kotlinx-collections-immutable-jvm\0.4.0\82499bf608b0fc3ae6737a5eac1a1f1325279bbf\kotlinx-collections-immutable-jvm-0.4.0.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\util-diff\253.29346.379\e94eca819d20636a03210c6d6a778f6f697279fb\util-diff-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\util-xml-dom\253.29346.379\5827601536ee64662198277e99db3ae042585f00\util-xml-dom-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\diagnostic\253.29346.379\9da262fe7d03b46c180e6036a57cce3cf76421a5\diagnostic-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\ijent-community-build-constants\253.29346.379\1167460ef3886da5c31ff864ee7b6b5c425df170\ijent-community-build-constants-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\build-data\253.29346.379\91b207a3b126f25e1545c2da8499d7e20de5060e\build-data-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\syntax-tree\253.29346.379\a5fc57c380560177da7d06c750e4e58494317dcf\syntax-tree-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\syntax-util\253.29346.379\17b87abe556fc9c4b6fc9d0902023e3e911df92a\syntax-util-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\syntax-extensions\253.29346.379\7a183abd60eae1a54ff0d6c43863b59c7bc6daef\syntax-extensions-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\syntax\253.29346.379\8486418d8c159616cbce21c641b942e4ba921bf7\syntax-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\syntax-i18-n\253.29346.379\e69c5848831e82ac70a5b75211d91e0ef2feb8ce\syntax-i18-n-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\eel\253.29346.379\88ce6be6b646dd7d7322385c815b893e009e099b\eel-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\runtime-product\253.29346.379\4e199dfc02c089856ec6a55c499ae74c74161e70\runtime-product-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\util-text-matching\253.29346.379\609e2fe3d16c9df2fae7b5b6277e2ea81b105a8c\util-text-matching-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\util-base\253.29346.379\25d37ffa373ff908411f236a75954f292fd794b5\util-base-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\util-base-multiplatform\253.29346.379\a542df747d89927934c733cbda47858f1c2b470d\util-base-multiplatform-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\util-multiplatform\253.29346.379\c0ca2e3a3d9ccf8dc917e484c028271cd8a2d073\util-multiplatform-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\statistics-uploader\253.29346.379\b867145c06159147b4e6d1e00ef7de09fa38fb21\statistics-uploader-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\util-http\253.29346.379\eaefe99481799c257f737187a86bee3360764a88\util-http-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.fleet\util-logging-api\253.29346.379\35416443d3af7c37f4cf0bb6793f0d80ada2e6ba\util-logging-api-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.fleet\reporting-shared\253.29346.379\318fae65980781b3ac878a86209c617fda8726cb\reporting-shared-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.fleet\reporting-api\253.29346.379\f36ae90a30450ab2f43d38ff797be6bc4ed553ff\reporting-api-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.fleet\multiplatform-shims\253.29346.379\d98f2a60b9cc2dc7fcfe44ae4629dd3d3c9a4ea6\multiplatform-shims-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.fleet\fastutil\253.29346.379\31986af614e1d8a42d36d74d361e8d8bd9ef04b7\fastutil-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\statistics-config\253.29346.379\40b48a257501304dcf201d7bf82549be5f83a39b\statistics-config-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\org.jetbrains.kotlin\kotlin-stdlib\2.2.20\5380b19fa1924399b62ce3a1faffebb2b4f82272\kotlin-stdlib-2.2.20.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\io.ktor\ktor-serialization-kotlinx-json-jvm\3.1.3\e110d4b68d6af58bd976b69e603dfde31b453d99\ktor-serialization-kotlinx-json-jvm-3.1.3.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.google.flatbuffers\flatbuffers-java\25.2.10\9bb1a149ec48588fc04a3d00a3cc4e0135273b4e\flatbuffers-java-25.2.10.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.google.guava\guava\33.4.8-jre\e70a3268e6cd3e7d458aa15787ce6811c34e96ae\guava-33.4.8-jre.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\net.java.dev.jna\jna-platform\5.17.0\a4934c44d25a9d8c2ddf4203affd20330cb3426f\jna-platform-5.17.0.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\net.java.dev.jna\jna\5.17.0\33d12735bef894440780fce64f9758d420c7bae2\jna-5.17.0.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\junit\junit\4.13.2\8ac9e16d933b6fb43bc7f576336b8f4d7eb5ba12\junit-4.13.2.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\org.junit.jupiter\junit-jupiter-api\5.12.2\6de3a3256c5d90f4a439edcb6c2e8dc5180907b0\junit-jupiter-api-5.12.2.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\org.junit.platform\junit-platform-launcher\1.12.2\79d49ad13017c67a8bf76e10ba5ac8937d811772\junit-platform-launcher-1.12.2.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\org.junit.platform\junit-platform-engine\1.12.2\8519ece93f91b8115705d36be2c36d49808935cd\junit-platform-engine-1.12.2.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\org.junit.platform\junit-platform-commons\1.12.2\b89e88a89ee009937374a4c96912e007b34c8e35\junit-platform-commons-1.12.2.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\util-class-loader\253.29346.379\b4925b45b2b9c380341ea0812b08c6e2460fdc3c\util-class-loader-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\util-zip\253.29346.379\6f67817071aaaeccf191dabd1eeaea0705799c61\util-zip-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\util-jdom\253.29346.379\b717ea6ace4cb3eda6f3957c9cf821b67ab23c39\util-jdom-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\core-nio-fs\253.29346.379\dea846abf2684bb9724c1c100a25bfec465f6d8f\core-nio-fs-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\util-rt-java8\253.29346.379\276059223d2dd2260b18a1d88a3b1c237a82f174\util-rt-java8-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\diagnostic-telemetry-rt\253.29346.379\3fa18458942a9117d7994aa549ee64288e986d8\diagnostic-telemetry-rt-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\util-rt\253.29346.379\69b931d974bf18286d9c715d775efda822c812d3\util-rt-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\runtime-repository\253.29346.379\c9ea4416404e64d92ee113bfe0f5e807e5c52365\runtime-repository-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\org.jetbrains\annotations\26.0.2\c7ce3cdeda3d18909368dfe5977332dfad326c6d\annotations-26.0.2.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\org.jetbrains.kotlinx\kotlinx-serialization-json-jvm\1.8.1\4de3bace4b175753df5484d2acd74c14bfeb5be9\kotlinx-serialization-json-jvm-1.8.1.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.google.guava\failureaccess\1.0.3\aeaffd00d57023a2c947393ed251f0354f0985fc\failureaccess-1.0.3.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.google.guava\listenablefuture\9999.0-empty-to-avoid-conflict-with-guava\b421526c5f297295adef1c886e5246c39d4ac629\listenablefuture-9999.0-empty-to-avoid-conflict-with-guava.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.google.errorprone\error_prone_annotations\2.36.0\227d4d4957ccc3dc5761bd897e3a0ee587e750a7\error_prone_annotations-2.36.0.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.google.j2objc\j2objc-annotations\3.0.0\7399e65dd7e9ff3404f4535b2f017093bdb134c7\j2objc-annotations-3.0.0.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\lang-impl\253.29346.379\9111fdc3d8483993eedd88a4a865ebfb2ffb7994\lang-impl-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\org.hamcrest\hamcrest-core\1.3\42a25dc3219429f0e5d060061f71acb49bf010a0\hamcrest-core-1.3.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\org.opentest4j\opentest4j\1.3.0\152ea56b3a72f655d4fd677fc0ef2596c3dd5e6e\opentest4j-1.3.0.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\io.ktor\ktor-utils-jvm\3.1.3\d2e56dca809c965fa498df86a570fc9ed5b9551f\ktor-utils-jvm-3.1.3.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\io.ktor\ktor-client-core-jvm\3.1.3\6691d28df87f6a195d6d4f48088b74cb4445d1f4\ktor-client-core-jvm-3.1.3.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\io.ktor\ktor-http-cio-jvm\3.1.3\a38e4f73b7ca3fb65acd040d95b0d3dd935505fc\ktor-http-cio-jvm-3.1.3.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\io.ktor\ktor-http-jvm\3.1.3\881944d6731e34f5a90e9d9ac3e942f45d41761c\ktor-http-jvm-3.1.3.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\io.ktor\ktor-serialization-kotlinx-jvm\3.1.3\bcea8c228ac519643a977226402addf53fca15d8\ktor-serialization-kotlinx-jvm-3.1.3.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\oro\oro\2.0.8\5592374f834645c4ae250f4c9fbb314c9369d698\oro-2.0.8.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\org.jetbrains.intellij.deps.winp\winp\1.30.1\a62f0f7d25aecfc422332dc6b53c00e90b4bb7f6\winp-1.30.1.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\org.swinglabs\swingx-core\1.6.2-2\4475f362eafad890321631daa3d56f0f55e04edf\swingx-core-1.6.2-2.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.miglayout\miglayout-swing\11.4.2\f93a3587e77d2a3fb6448452dde818e8cc62dfc1\miglayout-swing-11.4.2.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\org.jetbrains.intellij.deps\commons-imaging\1.0-RC-1\b0c770b1105a0070d633b24cd6699df487d75c9\commons-imaging-1.0-RC-1.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.google.code.gson\gson\2.13.1\853ce06c11316b33a8eae5e9095da096a9528b8f\gson-2.13.1.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\org.apache.httpcomponents\httpmime\4.5.14\6662758a1f1cb1149cf916bdac28332e0902ec44\httpmime-4.5.14.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\org.imgscalr\imgscalr-lib\4.2\e2838f7119361511ef7d54fe0d502bf07f3325eb\imgscalr-lib-4.2.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\org.slf4j\slf4j-api\2.0.13\80229737f704b121a318bba5d5deacbcf395bc77\slf4j-api-2.0.13.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\org.slf4j\slf4j-jdk14\2.0.13\bc8fbbb53855dc7fd21ec1783befae0d74ea86ac\slf4j-jdk14-2.0.13.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\one.util\streamex\0.8.4\bdef8b8d1d9bf6a172f03247f95df2e567dccf17\streamex-0.8.4.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.intellij.platform\kotlinx-coroutines-core-jvm\1.10.1-intellij-5\2da05cc4be72e455a67a52ce66274335310eb242\kotlinx-coroutines-core-jvm-1.10.1-intellij-5.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\io.netty\netty-codec-http2\4.2.0.RC2\1780cc0137102a3476e7aea70b483641e6b37e10\netty-codec-http2-4.2.0.RC2.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.fasterxml.jackson.core\jackson-databind\2.19.0\b3f7506f6414fb04760561eec11a0880165c2a4a\jackson-databind-2.19.0.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.fasterxml.jackson.core\jackson-annotations\2.19.0\fd1e7c56de1e5b658563c8c66d5074cceb4e3a0b\jackson-annotations-2.19.0.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.fasterxml.jackson.core\jackson-core\2.19.0\a90640e59ea42632a8e331ff1d6b706cf306050a\jackson-core-2.19.0.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\org.jetbrains.intellij.deps\java-compatibility\1.0.1\880f9e97c3ec19ebedb7d35b81513deda4b784de\java-compatibility-1.0.1.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\org.jetbrains.kotlin\kotlin-reflect\2.2.20\665c83286bdf6e8ed541ff485e0d322ffeca8d2b\kotlin-reflect-2.2.20.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.fasterxml.jackson.jr\jackson-jr-objects\2.19.0\9e9cfc2d238f87e4334082a1040ea59b97f0e465\jackson-jr-objects-2.19.0.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\org.jetbrains.intellij.deps.jcef\jcef\137.0.17-gf354b0e-chromium-137.0.7151.104-api-1.20-253-b13\3c8e0ad32411880ee5fa1fbc9b550281625d65bc\jcef-137.0.17-gf354b0e-chromium-137.0.7151.104-api-1.20-253-b13.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\org.jetbrains.intellij.deps\asm-all\9.6.1\4090f44cc6d54de074b3ab7a1a894a58163b90b7\asm-all-9.6.1.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\org.jsoup\jsoup\1.21.2\55ba93337201b6f1208a6691f291ca2828860150\jsoup-1.21.2.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\org.jetbrains.intellij.deps.fastutil\intellij-deps-fastutil\8.5.16-jb1\d9e9fe5111a9582a1c2d38439de50d1b34af0cc7\intellij-deps-fastutil-8.5.16-jb1.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\org.codehaus.groovy\groovy-jsr223\3.0.25\556af05bbaa01b3ee01aa375ad730f5016502613\groovy-jsr223-3.0.25.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\org.codehaus.groovy\groovy-json\3.0.25\25a47780615947d68211e9f0616295184ed37cc9\groovy-json-3.0.25.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\org.codehaus.groovy\groovy-templates\3.0.25\5304ab674c98f076755bcaf8c5918c8762a6e86d\groovy-templates-3.0.25.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\org.codehaus.groovy\groovy-xml\3.0.25\6d1a6fd6badc8236e15c7a0545a958654ad8b417\groovy-xml-3.0.25.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\org.jetbrains.intellij\blockmap\1.0.7\a41324b001d0741e3b0e3438d314c049b232b8a1\blockmap-1.0.7.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\io.netty\netty-buffer\4.2.0.RC2\ef6f3359dd97b1b184302c107e061bf5c4fa321f\netty-buffer-4.2.0.RC2.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\org.jetbrains\marketplace-zip-signer\0.1.43\b35a123c32da5bab3b275949d658b7d146913216\marketplace-zip-signer-0.1.43.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.github.ben-manes.caffeine\caffeine\3.2.2\8b0a31cb57ac00e18161d5586759912bd2637398\caffeine-3.2.2.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\io.github.classgraph\classgraph\4.8.181\b9d104d7bab46d70ee8839acc1a91c41bb9454de\classgraph-4.8.181.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.google.protobuf\protobuf-java\3.24.4-jb.2\a215d5e705613c651c02299f308ea10252e9543d\protobuf-java-3.24.4-jb.2.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.ibm.icu\icu4j\77.1\38693cf0b1d7362a8b726af74dc06026a7c23809\icu4j-77.1.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.fasterxml\aalto-xml\1.3.3\1e120978218b92dc6c6ea91798e5bd9e0a6cd72f\aalto-xml-1.3.3.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jgoodies\jgoodies-common\1.4.0\6f9364fafb8d8f467ddbab16dfcaadfecaea6bdd\jgoodies-common-1.4.0.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jgoodies\forms\1.1-preview\384c13dda97c15d252d680a18d2161e43a93ff31\forms-1.1-preview.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\org.jetbrains.runtime\jbr-api\1.9.0\2bc161f5472b5fd5610740e4d6ebe896c811cb0e\jbr-api-1.9.0.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\org.jetbrains.kotlinx\kotlinx-serialization-core-jvm\1.8.1\510cb839cce9a3e708052d480a6fbf4a7274dfcd\kotlinx-serialization-core-jvm-1.8.1.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\org.jetbrains.nativecerts\jvm-native-trusted-roots\1.1.7\b33e87c3e8968bbccdb2f58f491133c3b3fcd8b5\jvm-native-trusted-roots-1.1.7.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\io.opentelemetry\opentelemetry-sdk\1.48.0\604cf24a771b247a755d075b6975ef1881b6d12e\opentelemetry-sdk-1.48.0.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\io.opentelemetry.semconv\opentelemetry-semconv\1.30.0\43aaff264cf2e3fab5839505356de87298408a9b\opentelemetry-semconv-1.30.0.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\io.opentelemetry\opentelemetry-extension-kotlin\1.48.0\eee5873e354805d489f99a200b42b03d2941ace9\opentelemetry-extension-kotlin-1.48.0.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\org.hdrhistogram\HdrHistogram\2.2.2\7959933ebcc0f05b2eaa5af0a0c8689fa257b15c\HdrHistogram-2.2.2.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.dynatrace.hash4j\hash4j\0.26.0\634308f85751cabd7a34d70c4b76b361bf011f97\hash4j-0.26.0.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\org.jetbrains.pty4j\pty4j\0.13.11\d8027e6285532a27888574f75d0fcce17c4dcada\pty4j-0.13.11.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\org.lz4\lz4-java\1.8.0\4b986a99445e49ea5fbf5d149c4b63f6ed6c6780\lz4-java-1.8.0.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\org.bouncycastle\bcpkix-jdk18on\1.81\819fd6f5d170c8b8bf8c5acc73816e9c36574042\bcpkix-jdk18on-1.81.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\resources-en\253.29346.379\362733404e5c5dc1052812e4318ab43222cd9c2f\resources-en-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.fasterxml.jackson.module\jackson-module-kotlin\2.19.0\b26bbc89112d7b71e3ef4d523671f430e95426fe\jackson-module-kotlin-2.19.0.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\util-nanoxml\253.29346.379\a7f22e86538763153ece7acafa1ee4f4226e1cdf\util-nanoxml-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.esotericsoftware\kryo5\5.6.0\9233dccc859921ff8dfc94dd1e826ed18c7710b4\kryo5-5.6.0.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\org.jspecify\jspecify\1.0.0\7425a601c1c7ec76645a78d22b8c6a627edee507\jspecify-1.0.0.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.java\java-gui-forms-rt\253.29346.379\def6a20a6443862bdb9ebee395bce199947e80c6\java-gui-forms-rt-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\icons\253.29346.379\9c24901ed1401742938f20f44134dae981100029\icons-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\dk.brics\automaton\1.12-4\664a98c97a976d210ff70b34e10f3947bfb8675b\automaton-1.12-4.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.miglayout\miglayout-core\11.4.2\994a23f8c271cb1c22e74d6ebec67850b84613e0\miglayout-core-11.4.2.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\org.apache.httpcomponents\httpclient\4.5.14\1194890e6f56ec29177673f2f12d0b8e627dec98\httpclient-4.5.14.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\io.netty\netty-codec-http\4.2.0.RC2\488886fd8cb2e6724cafcdd31582ed64a33bce1\netty-codec-http-4.2.0.RC2.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\io.netty\netty-handler\4.2.0.RC2\a4dee7ccde0a78202d068fa7cf03925990635365\netty-handler-4.2.0.RC2.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\io.netty\netty-codec\4.2.0.RC2\d951c7890eb2530d20ef1894494cc684d1f2d4ac\netty-codec-4.2.0.RC2.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\io.netty\netty-codec-base\4.2.0.RC2\809bed7200d1be4ea0c2b11feca7c1362ae22ee9\netty-codec-base-4.2.0.RC2.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\io.netty\netty-transport-native-unix-common\4.2.0.RC2\8d71732cb82f08a427a99a45a2b1dabe9603fc9f\netty-transport-native-unix-common-4.2.0.RC2.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\io.netty\netty-transport\4.2.0.RC2\a77422a14694277e8cf392f1903c5cef9f84306b\netty-transport-4.2.0.RC2.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.amazon.ion\ion-java\1.11.10\e70f7a90f38eb4dfed97a6c214c5872e7053dc3f\ion-java-1.11.10.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.platform\object-serializer-annotations\253.29346.379\7db0f4d8d23f553e0adb8e72eb0cc56e279ca0f6\object-serializer-annotations-253.29346.379.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.github.weisj\jsvg\1.3.0-jb.8\7ddb0d60fcb6e52781d69b098dc038ad7d3d37b8\jsvg-1.3.0-jb.8.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\org.jetbrains.kotlinx\kotlinx-serialization-protobuf-jvm\1.8.1\ab27197907a6e0a673cee0e5c32ff3567438a32d\kotlinx-serialization-protobuf-jvm-1.8.1.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.h2database\h2-mvstore\2.3.232\a1857e2a549b5dfe60f8a4e1bc06dafcd36e36d1\h2-mvstore-2.3.232.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\org.bidib.com.github.markusbernhardt\proxy-vole\1.1.6\9cd0f68cf0d28eef3f31084adf0397a9b717b7b4\proxy-vole-1.1.6.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\org.mozilla\rhino-runtime\1.7.15\6f61b492156b9e02edbeebbee7632986c9a2e9dd\rhino-runtime-1.7.15.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\org.slf4j\log4j-over-slf4j\1.7.36\2a753acda077203a4794f106871bb237501c9a53\log4j-over-slf4j-1.7.36.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\org.apache.commons\commons-compress\1.27.1\a19151084758e2fbb6b41eddaa88e7b8ff4e6599\commons-compress-1.27.1.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\commons-io\commons-io\2.18.0\44084ef756763795b31c578403dd028ff4a22950\commons-io-2.18.0.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\commons-codec\commons-codec\1.18.0\ee45d1cf6ec2cc2b809ff04b4dc7aec858e0df8f\commons-codec-1.18.0.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\org.apache.commons\commons-lang3\3.18.0\fb14946f0e39748a6571de0635acbe44e7885491\commons-lang3-3.18.0.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.fus.reporting\model\171\ec5656c12988992d24e0cb0fd6d9848b531c63b7\model-171.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.fus.reporting\serialization-kotlin\171\4150610280988198659862291c93d8013868b19c\serialization-kotlin-171.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.fus.reporting\connection-client\171\c927a11c064bbe9d38cb52839a436086fe9945c3\connection-client-171.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.fus.reporting\configuration\171\38653507b04a68131a72c7e305614bcb993c9040\configuration-171.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.fus.reporting\ap-validation\171\46b91a755c81ed6a8eeb216842ee8c293dd1515e\ap-validation-171.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.rd\rd-core\2025.3.1\8e3136d6ddd43a9f9277786a50ccc4e4a8fdf726\rd-core-2025.3.1.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.rd\rd-framework\2025.3.1\dbb91d6a87b0de6b8e1367040fa5c476824f8a1\rd-framework-2025.3.1.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.rd\rd-text\2025.3.1\5dae82dd4b343af73e908768861e462335620c3f\rd-text-2025.3.1.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.jetbrains.rd\rd-swing\2025.3.1\6548213221da1b6a571cb38a462bc182ecbee9e6\rd-swing-2025.3.1.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\io.netty\netty-common\4.2.0.RC2\221ce8781fb1651fb1b741fd644349d4cbbf7f26\netty-common-4.2.0.RC2.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\org.codehaus.woodstox\stax2-api\4.2.2\b0d746cadea928e5264f2ea294ea9a1bf815bbde\stax2-api-4.2.2.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\jaxen\jaxen\1.2.0\c10535a925bd35129a4329bc75065cc6b5293f2c\jaxen-1.2.0.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\io.opentelemetry\opentelemetry-sdk-trace\1.48.0\e88429ab27db3fbb6ed579daf0ae5ceb98b70210\opentelemetry-sdk-trace-1.48.0.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\io.opentelemetry\opentelemetry-sdk-metrics\1.48.0\b65ddd2c3f7cd4a86a82df954aa9b977e1d3f5fe\opentelemetry-sdk-metrics-1.48.0.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\io.opentelemetry\opentelemetry-sdk-logs\1.48.0\b6eb957af452058da4fafc118ba4126a41678e52\opentelemetry-sdk-logs-1.48.0.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\io.opentelemetry\opentelemetry-sdk-common\1.48.0\bba82ce5fd67bf83b8ae91b647a31ce9bea8ca15\opentelemetry-sdk-common-1.48.0.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\io.opentelemetry\opentelemetry-api\1.48.0\c0bf9ca48b875780db7cd4607c7e22176702265e\opentelemetry-api-1.48.0.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\net.jcip\jcip-annotations\1.0\afba4942caaeaf46aab0b976afd57cc7c181467e\jcip-annotations-1.0.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\io.opentelemetry\opentelemetry-exporter-otlp-common\1.48.0\75e1576bf1b5f8e30a52b8a1c369d46730df6557\opentelemetry-exporter-otlp-common-1.48.0.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\org.bouncycastle\bcutil-jdk18on\1.81.1\cd685b869ed03e8557674f00969e66e0e2ccf3aa\bcutil-jdk18on-1.81.1.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\org.jetbrains.intellij.deps\rwmutex-idea\0.0.10\9cda970ab808e0a44787eafbd1ea5637d06e5f00\rwmutex-idea-0.0.10.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\org.jetbrains.kotlinx\kotlinx-serialization-json-io-jvm\1.8.1\de4e31bfc7ddf8585418f8d4fca649feca574cdf\kotlinx-serialization-json-io-jvm-1.8.1.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\com.intellij.platform\kotlinx-coroutines-debug\1.10.1-intellij-5\efa310f663faa383a92301f9a63066ba6c156a2a\kotlinx-coroutines-debug-1.10.1-intellij-5.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\org.apache.httpcomponents\httpcore\4.4.16\51cf043c87253c9f58b539c9f7e44c8894223850\httpcore-4.4.16.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\io.netty\netty-resolver\4.2.0.RC2\d96cc92ccf8f62b0fbc8aca44266fc8746971f9b\netty-resolver-4.2.0.RC2.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\org.javadelight\delight-rhino-sandbox\0.0.17\f25d81d0fa4674f1002ed4a0dd4df784e58b00a1\delight-rhino-sandbox-0.0.17.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\io.opentelemetry\opentelemetry-context\1.48.0\c9da9cfcaef4e1076e0cb6825a80966ee9dfc7e0\opentelemetry-context-1.48.0.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\org.jetbrains.kotlinx\kotlinx-datetime-jvm\0.6.2\f177b43ce53f69151797206ce762b36199692474\kotlinx-datetime-jvm-0.6.2.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\io.opentelemetry\opentelemetry-exporter-common\1.48.0\d5622f3987ce37671d986f71a7b8605523c85ed9\opentelemetry-exporter-common-1.48.0.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\io.ktor\ktor-client-java-jvm\3.1.3\693d4ae161423d7146a6bf265dc2771d1ed6c133\ktor-client-java-jvm-3.1.3.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\io.ktor\ktor-client-encoding-jvm\3.1.3\73ab12e22b374a4450e9c23f7a06eebb9d895987\ktor-client-encoding-jvm-3.1.3.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\io.ktor\ktor-client-content-negotiation-jvm\3.1.3\97b1c424b25f897f88a8440f8be07533b638c9a8\ktor-client-content-negotiation-jvm-3.1.3.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\io.ktor\ktor-client-auth-jvm\3.1.3\37c8badb62614932d9fb00fe4b34dd34a7789618\ktor-client-auth-jvm-3.1.3.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\io.ktor\ktor-client-logging-jvm\3.1.3\8acac49240c4c1df422a8d773cedb92760a4b2db\ktor-client-logging-jvm-3.1.3.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\io.ktor\ktor-io-jvm\3.1.3\24be84462406569be2359e5a013a4fa8770a1c0c\ktor-io-jvm-3.1.3.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\org.jetbrains.kotlinx\kotlinx-io-core-jvm\0.7.0\1d9595ed390f6304ce90a049e6b2f1fab3b408c4\kotlinx-io-core-jvm-0.7.0.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\de.cketti.unicode\kotlin-codepoints-jvm\0.9.0\e69aec55f2fb2fe4279ed8d8c542e0f87a13ef3a\kotlin-codepoints-jvm.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\org.bouncycastle\bcprov-jdk18on\1.81.1\7bcb4c4664600c51190ab3774710a51bfdeb2eb\bcprov-jdk18on-1.81.1.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\io.ktor\ktor-events-jvm\3.1.3\ebce4d94edc41cd8ca119da9152af8aa63f706c7\ktor-events-jvm-3.1.3.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\io.ktor\ktor-websocket-serialization-jvm\3.1.3\e89460b5597c8cbe0fc22766c6cf6fd25af5326b\ktor-websocket-serialization-jvm-3.1.3.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\io.ktor\ktor-sse-jvm\3.1.3\923aed31a9c222641d0dcb1c793d3c8d03f976a3\ktor-sse-jvm-3.1.3.jar, C:\Users\lin17\.gradle\caches\modules-2\files-2.1\org.jetbrains.kotlinx\kotlinx-io-bytestring-jvm\0.7.0\ffe5bd231da40d21870250703326113277dbf9c3\kotlinx-io-bytestring-jvm-0.7.0.jar] with C:\Users\lin17\.gradle\.tmp\gradle-javaexec-classpath3797264433815521501.jar
+Starting process 'command 'C:\Users\lin17\.jdks\corretto-21.0.9\bin\java.exe''. Working directory: D:\code\intellij\cangjie Command: C:\Users\lin17\.jdks\corretto-21.0.9\bin\java.exe -Didea.ignore.disabled.plugins=true -Dline.separator=
+ -Dfile.encoding=UTF-8 -Duser.country=CN -Duser.language=zh -Duser.variant -cp C:\Users\lin17\.gradle\.tmp\gradle-javaexec-classpath3797264433815521501.jar org.cangnova.cangjie.cfir.analysis.tests.TestGeneratorForCfirAnalysisTests
+Successfully started process 'command 'C:\Users\lin17\.jdks\corretto-21.0.9\bin\java.exe''
+Generated: D:\code\intellij\cangjie\cfir\analysis-tests\tests-gen\org\cangnova\cangjie\cfir\analysis\tests\CfirAnalysisDiagnosticsTestGenerated.kt
+Generated: D:\code\intellij\cangjie\cfir\analysis-tests\tests-gen\org\cangnova\cangjie\cfir\analysis\tests\CfirAnalysisDiagnosticsWithoutAliasExpansionTestGenerated.kt
+Generated: D:\code\intellij\cangjie\cfir\analysis-tests\tests-gen\org\cangnova\cangjie\cfir\analysis\tests\CfirAnalysisDiagnosticsPsiTestGenerated.kt
+Generated: D:\code\intellij\cangjie\cfir\analysis-tests\tests-gen\org\cangnova\cangjie\cfir\analysis\tests\CfirAnalysisDiagnostics2TestGenerated.kt
+Generated: D:\code\intellij\cangjie\cfir\analysis-tests\tests-gen\org\cangnova\cangjie\cfir\analysis\tests\CfirAnalysisDiagnostics2WithoutAliasExpansionTestGenerated.kt
+Generated: D:\code\intellij\cangjie\cfir\analysis-tests\tests-gen\org\cangnova\cangjie\cfir\analysis\tests\CfirAnalysisDiagnostics2PsiTestGenerated.kt
+Generated: D:\code\intellij\cangjie\cfir\analysis-tests\tests-gen\org\cangnova\cangjie\cfir\analysis\tests\CfirAnalysisLLTTestGenerated.kt
+Generated: D:\code\intellij\cangjie\cfir\analysis-tests\tests-gen\org\cangnova\cangjie\cfir\analysis\tests\CfirAnalysisLLTPsiTestGenerated.kt
+Generated: D:\code\intellij\cangjie\cfir\analysis-tests\tests-gen\org\cangnova\cangjie\cfir\analysis\tests\CfirAnalysisMacroTestGenerated.kt
+Generated: D:\code\intellij\cangjie\cfir\analysis-tests\tests-gen\org\cangnova\cangjie\cfir\analysis\tests\CfirAnalysisMacroPsiTestGenerated.kt
+Resolve mutations for :cfir:analysis-tests:compileTestKotlin (Thread[#321,included builds,5,main]) started.
+:cfir:analysis-tests:compileTestKotlin (Thread[#321,included builds,5,main]) started.
+
+> Task :cfir:analysis-tests:compileTestKotlin UP-TO-DATE
+Invalidating in-memory cache of D:\code\intellij\cangjie\.gradle\9.4.0\fileHashes\fileHashes.bin
+Invalidating in-memory cache of D:\code\intellij\cangjie\.gradle\9.4.0\fileHashes\resourceHashesCache.bin
+Invalidating in-memory cache of C:\Users\lin17\.gradle\caches\9.4.0\fileHashes\kotlinDslCompileAvoidanceClasspathHashCache.bin
+Invalidating in-memory cache of C:\Users\lin17\.gradle\caches\9.4.0\fileHashes\fileHashes.bin
+Invalidating in-memory cache of C:\Users\lin17\.gradle\caches\9.4.0\fileHashes\KotlinMetadataCompatibilityCache.bin
+Invalidating in-memory cache of C:\Users\lin17\.gradle\caches\9.4.0\fileHashes\resourceHashesCache.bin
+Build cache key for task ':cfir:analysis-tests:compileTestKotlin' is d8635aded11471ea79165c87c6493997
+Skipping task ':cfir:analysis-tests:compileTestKotlin' as it is up-to-date.
+Resolve mutations for :cfir:analysis-tests:compileTestJava (Thread[#321,included builds,5,main]) started.
+:cfir:analysis-tests:compileTestJava (Thread[#321,included builds,5,main]) started.
+
+> Task :cfir:analysis-tests:compileTestJava NO-SOURCE
+Skipping task ':cfir:analysis-tests:compileTestJava' as it has no source files and no previous output files.
+Resolve mutations for :cfir:analysis-tests:testClasses (Thread[#321,included builds,5,main]) started.
+:cfir:analysis-tests:testClasses (Thread[#321,included builds,5,main]) started.
+
+> Task :cfir:analysis-tests:testClasses UP-TO-DATE
+Skipping task ':cfir:analysis-tests:testClasses' as it has no actions.
+Resolve mutations for :cfir:analysis-tests:test (Thread[#321,included builds,5,main]) started.
+:cfir:analysis-tests:test (Thread[#321,included builds,5,main]) started.
+
+> Task :cfir:analysis-tests:test
+Build cache key for task ':cfir:analysis-tests:test' is 8b3ef3485fa3eca1462b6415a6fbee09
+Task ':cfir:analysis-tests:test' is not up-to-date because:
+  Task has failed previously.
+file or directory 'D:\code\intellij\cangjie\cfir\analysis-tests\build\classes\java\test', not found
+Starting process 'Gradle Test Executor 4'. Working directory: D:\code\intellij\cangjie Command: C:\Users\lin17\.jdks\corretto-21.0.9\bin\java.exe -Didea.home.path=D:\code\intellij\cangjie\cfir\analysis-tests\build\test-idea-home -Dkotlin.test.update.test.data=false -Dorg.gradle.internal.worker.tmpdir=D:\code\intellij\cangjie\cfir\analysis-tests\build\tmp\test\work -Dupdate.test.data=false @C:\Users\lin17\.gradle\.tmp\gradle-worker-classpath965581932739608791txt -Xmx512m -Dfile.encoding=UTF-8 -Duser.country=CN -Duser.language=zh -Duser.variant -ea worker.org.gradle.process.internal.worker.GradleWorkerMain 'Gradle Test Executor 4'
+Successfully started process 'Gradle Test Executor 4'
+
+Gradle Test Executor 4 started executing tests.
+Gradle Test Executor 4 finished executing tests.
+
+> Task :cfir:analysis-tests:test
+
+CfirAnalysisLLTTestGenerated > Class > testClassRedef11() FAILED
+    org.opentest4j.AssertionFailedError: Actual data differs from file content: class_redef_11.cj
+    =====棰勬湡======
+    // Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+    // This source file is part of the Cangjie project, licensed under Apache-2.0
+    // with Runtime Library Exception.
+    //
+    // See https://cangjie-lang.cn/pages/LICENSE for license information.
+
+
+    main(): Int64 {
+        if (Coo.foo<<!GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT!>I<!>nt32>(1, 2) != 2 || Boo<Int32>.foo<Int32>(3, 4) != 4) {
+            return 1
+        }
+        return 0
+    }
+
+    open class Boo<T> {
+        public static func foo<<!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>V<!>>(x: T, y: V) where V <: Int32 {
+            return y
+        }
+    }
+
+    class Coo <: Boo<Int32> {
+        public static redef func foo<<!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>V<!>>(x: Int32, y: V) where <!GENERIC_CONSTRAINT_NOT_LOOSER!>V <: Int64<!> {
+            return y
+        }
+    }
+
+    =====寰楀埌======
+    // Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+    // This source file is part of the Cangjie project, licensed under Apache-2.0
+    // with Runtime Library Exception.
+    //
+    // See https://cangjie-lang.cn/pages/LICENSE for license information.
+
+
+    main(): Int64 {
+        if (Coo.foo<<!GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT, GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT!>I<!>nt32>(1, 2) != 2 || Boo<Int32>.foo<Int32>(3, 4) != 4) {
+            return 1
+        }
+        return 0
+    }
+
+    open class Boo<T> {
+        public static func foo<<!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>V<!>>(x: T, y: V) where V <: Int32 {
+            return y
+        }
+    }
+
+    class Coo <: Boo<Int32> {
+        public static redef func foo<<!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>V<!>>(x: Int32, y: V) where <!GENERIC_CONSTRAINT_NOT_LOOSER!>V <: Int64<!> {
+            return y
+        }
+    }
+        at app//org.cangnova.cangjie.test.services.impl.JUnit5Assertions.assertEqualsToFile(DefaultAssertionsService.kt:68)
+        at app//org.cangnova.cangjie.test.Assertions.assertEqualsToFile(Assertions.kt:15)
+        at app//org.cangnova.cangjie.test.Assertions.assertEqualsToFile$default(Assertions.kt:14)
+        at app//org.cangnova.cangjie.test.services.GlobalMetadataInfoHandler.compareAllMetaDataInfos(GlobalMetadataInfoHandler.kt:77)
+        at app//org.cangnova.cangjie.test.NonGroupingTestRunner.runSteps(NonGroupingTestRunner.kt:89)
+        at app//org.cangnova.cangjie.test.NonGroupingTestRunner.runTestPipeline(NonGroupingTestRunner.kt:60)
+        at app//org.cangnova.cangjie.test.NonGroupingTestRunner.runTest(NonGroupingTestRunner.kt:24)
+        at app//org.cangnova.cangjie.test.NonGroupingTestRunner.runTest$default(NonGroupingTestRunner.kt:21)
+        at app//org.cangnova.cangjie.test.runners.AbstractCangjieCompilerTest.runTest(AbstractCangjieCompilerTest.kt:59)
+        at app//org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTTestGenerated$Class.testClassRedef11(CfirAnalysisLLTTestGenerated.kt:7656)
+
+1 test completed, 1 failed
+Generating HTML test report...
+Finished generating test html results (4.123 secs) into: D:\code\intellij\cangjie\cfir\analysis-tests\build\reports\tests\test
+Finished generating test XML results (0.005 secs) into: D:\code\intellij\cangjie\cfir\analysis-tests\build\test-results\test
+Invalidating in-memory cache of D:\code\intellij\cangjie\.gradle\9.4.0\fileHashes\fileHashes.bin
+Invalidating in-memory cache of D:\code\intellij\cangjie\.gradle\9.4.0\fileHashes\resourceHashesCache.bin
+
+> Task :cfir:analysis-tests:test FAILED
+Build b02c8516-dc6d-4bd9-b1fc-7632243f2a45 is closed
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':cfir:analysis-tests:test'.
+> There were failing tests. See the report at: file:///D:/code/intellij/cangjie/cfir/analysis-tests/build/reports/tests/test/index.html
+
+* Try:
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+
+BUILD FAILED in 59s
+79 actionable tasks: 2 executed, 77 up-to-date
+Watched directory hierarchies: [D:\code\intellij\cangjie]
+Configuration cache entry reused.

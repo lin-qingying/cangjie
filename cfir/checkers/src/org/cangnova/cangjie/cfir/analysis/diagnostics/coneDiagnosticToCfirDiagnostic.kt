@@ -36,13 +36,17 @@ import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.resolve.inference.AnonymousFunctionBasedMultiLambdaBuilderInferenceRestriction
 import org.cangnova.cangjie.cfir.resolve.inference.model.*
+import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
+import org.cangnova.cangjie.cfir.resolve.toSymbol
 import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeParameterBasedTypeVariable
+import org.cangnova.cangjie.cfir.scopes.impl.typeAliasConstructorInfo
 import org.cangnova.cangjie.cfir.semantics.AbstractCallCandidate
 import org.cangnova.cangjie.cfir.semantics.ErrorTypeInArguments
 import org.cangnova.cangjie.cfir.semantics.ResolutionDiagnostic
 import org.cangnova.cangjie.cfir.semantics.isSuccess
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.cfirProvider
+import org.cangnova.cangjie.cfir.session.extendProvider
 import org.cangnova.cangjie.cfir.session.languageVersionSettings
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.*
@@ -58,6 +62,8 @@ import org.cangnova.cangjie.resolve.calls.tower.ApplicabilityDetail
 import org.cangnova.cangjie.resolve.calls.tower.isSuccess
 import org.cangnova.cangjie.resolve.checkers.EmptyIntersectionTypeKind
 import org.cangnova.cangjie.source.*
+import org.cangnova.cangjie.type.AbstractTypeChecker
+import org.cangnova.cangjie.type.model.TypeConstructorMarker
 import org.cangnova.cangjie.type.model.TypeParameterMarker
 
 fun ConeDiagnostic.toCfirDiagnostics(
@@ -152,7 +158,7 @@ private fun ConstraintSystemError.mapConstraintSystemError(
             } else if (
                 candidate.isImplicitBuiltinArrayConstructorCall() ||
                 candidate.isImplicitGenericCallWithTypeParameters() ||
-                candidate.hasGenericCallNotEnoughTypeInformation() ||
+                candidate.hasGenericCallNotEnoughTypeInformation(session) ||
                 candidate.looksLikeImplicitGenericCallInferenceFailure(source, qualifiedAccessSource)
             ) {
                 ConeConstraintSystemHasContradiction(candidate)
@@ -228,6 +234,11 @@ private fun ConeConstraintSystemHasContradiction.mapSystemHasContradictionError(
         .takeIf { it.isNotEmpty() }
         ?.let { return it }
     if (candidate.callInfo.arguments.any { it.containsErrorDiagnosticInArgument() }) return emptyList()
+    if (errors.hasExplicitTypeArgumentConstraintMismatch()) {
+        // 显式类型实参上界违例由 CfirUpperBoundViolatedQualifiedAccessExpressionChecker 负责。
+        // 约束系统只记录同一根因，不能再降级成调用表达式 TYPE_MISMATCH。
+        return emptyList()
+    }
 
     if (isBareStaticGenericQualifierInferenceError(session)) {
         return listOfNotNull(
@@ -237,16 +248,17 @@ private fun ConeConstraintSystemHasContradiction.mapSystemHasContradictionError(
             )
         )
     }
-    if (candidate.hasGenericCallNotEnoughTypeInformation()) {
+    if (candidate.hasGenericCallNotEnoughTypeInformation(session)) {
         return listOfNotNull(unableToInferGenericFunctionDiagnostic(source, qualifiedAccessSource, session))
     }
-    explicitTypeArgumentConstraintMismatchDiagnostic(source, qualifiedAccessSource, session)
-        ?.let { return listOf(it) }
     if (hasGenericInferenceConstraintMismatch()) {
         return listOfNotNull(genericInferenceErrorDiagnostic(source, qualifiedAccessSource, session))
     }
 
     val hasNotEnoughInformationError = errors.any { it is NotEnoughInformationForTypeParameter<*> }
+    val typeAliasConstructorUpperBoundMismatch =
+        candidate.hasTypeAliasConstructorExpansionUpperBoundViolation(session) ||
+            candidate.hasTypeAliasConstructorUpperBoundConstraintMismatch()
     return errors.coalesceArgumentConstraintMismatches().coalesceExpectedTypeConstraintMismatches().mapNotNull { error ->
         if (hasNotEnoughInformationError &&
             error is ConstraintMismatch &&
@@ -256,6 +268,12 @@ private fun ConeConstraintSystemHasContradiction.mapSystemHasContradictionError(
             // expected-type mismatches are usually secondary noise.
             return@mapNotNull null
         }
+        if (typeAliasConstructorUpperBoundMismatch &&
+            error is ConstraintMismatch &&
+            error.position.from is ConeExpectedTypeConstraintPosition
+        ) {
+            return@mapNotNull null
+        }
         error.mapConstraintSystemError(
             source,
             qualifiedAccessSource,
@@ -263,6 +281,11 @@ private fun ConeConstraintSystemHasContradiction.mapSystemHasContradictionError(
             candidate,
         )
     }.ifEmpty {
+        if (typeAliasConstructorUpperBoundMismatch) {
+            // typealias 构造器展开后的上界违例已经由专项 checker 报告在别名名处；
+            // fallback 只能用于真正缺少更具体诊断的约束系统，不能再泛化成 TYPE_MISMATCH。
+            return emptyList()
+        }
         if (errors.any { error ->
                 when (error) {
                     is ConstrainingTypeIsError -> true
@@ -320,7 +343,29 @@ private fun ConeConstraintSystemHasContradiction.isBareStaticGenericQualifierInf
     if (receiver.typeArguments.isNotEmpty()) return false
 
     val ownerSymbol = receiver.resolvedQualifierClassifier(session) ?: return false
-    return ownerSymbol.cfir.typeParameters.isNotEmpty()
+    val ownerTypeParameterSymbols = ownerSymbol.cfir.typeParameters.mapTo(linkedSetOf()) { it.symbol }
+    if (ownerTypeParameterSymbols.isEmpty()) return false
+    val explicitCount = (candidate.callInfo.callSite as? CfirQualifiedAccessExpression)
+        ?.typeArguments
+        ?.count { it is CfirResolvedTypeRef }
+        ?: 0
+    return !candidate.hasExplicitTypeArgumentsForBareStaticQualifier(ownerTypeParameterSymbols, explicitCount)
+}
+
+private fun AbstractCallCandidate<*>.hasExplicitTypeArgumentsForBareStaticQualifier(
+    ownerTypeParameterSymbols: Set<CfirTypeParameterSymbol>,
+    explicitCount: Int,
+): Boolean {
+    if (explicitCount == 0) return false
+
+    val declaration = symbol.takeIf { it.isBound }?.cfir ?: return false
+    if (declaration is CfirConstructor && explicitCount == ownerTypeParameterSymbols.size) return true
+
+    val callableTypeParameters = (declaration as? CfirTypeParameterRefsOwner)?.typeParameters.orEmpty()
+    if (callableTypeParameters.size != explicitCount) return false
+
+    val explicitlyMappedSymbols = callableTypeParameters.mapTo(linkedSetOf()) { it.symbol }
+    return explicitlyMappedSymbols.containsAll(ownerTypeParameterSymbols)
 }
 
 private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
@@ -379,7 +424,7 @@ private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
                 ) {
                     return@mapNotNull null
                 }
-                if (candidate.hasGenericCallNotEnoughTypeInformation() && rootCause.argument is CfirAnonymousFunctionExpression) {
+                if (candidate.hasGenericCallNotEnoughTypeInformation(session) && rootCause.argument is CfirAnonymousFunctionExpression) {
                     return@mapNotNull null
                 }
 
@@ -464,6 +509,11 @@ private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
             is NeedNamedArgument -> CfirErrors.NEED_NAMED_ARGUMENT.on(
                 rootCause.argument.source ?: source ?: qualifiedAccessSource ?: return@mapNotNull null,
                 rootCause.parameter.name,
+                session,
+            )
+
+            is WrongArgumentCount -> CfirErrors.GENERIC_ARGUMENT_NO_MATCH.on(
+                qualifiedAccessSource ?: source ?: candidate.callInfo.callSite.source ?: return@mapNotNull null,
                 session,
             )
 
@@ -608,8 +658,8 @@ private fun ConeInapplicableCandidateError.genericInferenceInapplicableDiagnosti
     val contradiction = ConeConstraintSystemHasContradiction(candidate)
     val hasInferenceConstraintDiagnostic = !candidate.hasExplicitTypeArgumentsInCall() &&
         candidate.diagnostics.any { it is InferenceConstraintError }
-    if (!candidate.hasGenericInferenceArgumentMismatch() &&
-        !candidate.hasGenericCallNotEnoughTypeInformation() &&
+    if (!candidate.hasGenericInferenceArgumentMismatch(session) &&
+        !candidate.hasGenericCallNotEnoughTypeInformation(session) &&
         !contradiction.hasGenericInferenceConstraintMismatch() &&
         !hasInferenceConstraintDiagnostic
     ) {
@@ -771,20 +821,17 @@ private fun ConeAmbiguityError.mapConeAmbiguityError(
     val isCallLikeContext = psi is CjCallExpression || PsiTreeUtil.getParentOfType(psi, CjCallExpression::class.java, false) != null
 
     // 检查是否为基本类型扩展歧义
-    if (isCallLikeContext) {
+    if (isCallLike || isCallLikeContext) {
         val extendOriginNames = candidateSymbols
-            .mapNotNull { symbol ->
-                val callableSymbol = symbol as? CfirCallableSymbol<*> ?: return@mapNotNull null
-                val containingClassId = session.cfirProvider.getContainingClass(callableSymbol)?.classId
-                containingClassId?.shortClassName
-            }
+            .mapNotNull { symbol -> (symbol as? CfirCallableSymbol<*>)?.primitiveExtendReceiverName(session) }
         if (extendOriginNames.size >= 2) {
             // 如果候选来自不同的 extend 目标类型，报告 AMBIGUOUS_MATCH_PRIMITIVE_EXTEND
             val distinctOrigins = extendOriginNames.distinct()
             if (distinctOrigins.size >= 2) {
+                val primitiveExtendDiagnosticSource = source ?: diagnosticSource
                 return listOfNotNull(
                     CfirErrors.AMBIGUOUS_MATCH_PRIMITIVE_EXTEND.on(
-                        diagnosticSource,
+                        primitiveExtendDiagnosticSource,
                         name,
                         distinctOrigins.map { it },
                         session,
@@ -796,6 +843,13 @@ private fun ConeAmbiguityError.mapConeAmbiguityError(
 
     val factory = if (isCallLike || isCallLikeContext) CfirErrors.AMBIGUOUS_FUNCTION_CALL else CfirErrors.AMBIGUOUS_USE
     return listOfNotNull(factory.on(diagnosticSource, name, session))
+}
+
+private fun CfirCallableSymbol<*>.primitiveExtendReceiverName(session: CfirSession): Name? {
+    val ownerExtend = session.extendProvider.getContainingExtend(this) ?: return null
+    val receiverType = ownerExtend.extendedTypeRef.coneTypeOrNull as? ConePrimitiveType ?: return null
+    if (receiverType.kind.isIdeal) return null
+    return receiverType.kind.classId.shortClassName
 }
 
 private data class DiagnosticIdentityKey(
@@ -1028,6 +1082,10 @@ private fun ConeVisibilityError.mapConeVisibilityError(
 
     // 可见性失败来自解析阶段候选筛选，这里只负责把已有 cone 诊断稳定映射到前端诊断。
     val invisibleSymbol = symbol
+    if (invisibleSymbol is CfirConstructorSymbol) {
+        return CfirErrors.NO_CONSTRUCTOR.on(diagnosticSource, session)
+    }
+
     val invisibleName = when (invisibleSymbol) {
         is CfirCallableSymbol<*> -> invisibleSymbol.name.asString()
         is CfirClassLikeSymbol<*> -> invisibleSymbol.classId.shortClassName.asString()
@@ -1044,7 +1102,8 @@ private fun ConeVisibilityError.mapConeVisibilityError(
     }
 
     return if (isMemberAccess) {
-        CfirErrors.INVISIBLE_MEMBER.on(diagnosticSource, invisibleName, visibilityText, session)
+        val accessSource = (callOrAssignmentSource ?: diagnosticSource).firstCharacterDiagnosticSource()
+        CfirErrors.INVALID_ACCESS_CONTROL.on(accessSource, session)
     } else {
         CfirErrors.INVISIBLE_REFERENCE.on(diagnosticSource, invisibleName, visibilityText, session)
     }
@@ -1117,6 +1176,14 @@ private fun ConeDiagnostic.mapOtherDiagnostic(
                 CjOffsetsOnlySourceElement(invokeDiagnosticSource.startOffset, invokeDiagnosticSource.endOffset),
                 name.asString(),
                 receiverType,
+                session,
+            )
+        }
+
+        is ConeNoMatchOperatorFunctionCallError -> {
+            val invokeDiagnosticSource = source ?: diagnosticSource
+            CfirErrors.NO_MATCH_OPERATOR_FUNCTION_CALL.on(
+                CjOffsetsOnlySourceElement(invokeDiagnosticSource.startOffset, invokeDiagnosticSource.endOffset),
                 session,
             )
         }
@@ -1247,10 +1314,14 @@ private fun ConeDiagnostic.mapOtherDiagnostic(
             when {
                 source?.kind == CjRealSourceElementKind -> {
                     val lastQualifier = this.qualifiers.last()
-                    CfirErrors.UNRESOLVED_REFERENCE.createOn(lastQualifier.source, lastQualifier.name.asString(), null, session)
+                    CfirErrors.UNDECLARED_TYPE_NAME.on(
+                        lastQualifier.source.requireNotNull(),
+                        lastQualifier.name.asString(),
+                        session,
+                    )
                 }
                 else -> {
-                    CfirErrors.UNRESOLVED_REFERENCE.createOn(source, this.qualifier, null, session)
+                    CfirErrors.UNDECLARED_TYPE_NAME.on(source.requireNotNull(), this.qualifier, session)
                 }
             }
         }
@@ -1416,34 +1487,87 @@ private fun ConeConstraintSystemHasContradiction.hasGenericInferenceConstraintMi
     return candidate.errors.any { it is ConstraintMismatch }
 }
 
-private fun ConeConstraintSystemHasContradiction.explicitTypeArgumentConstraintMismatchDiagnostic(
-    source: CjSourceElement?,
-    qualifiedAccessSource: CjSourceElement?,
+private fun AbstractCallCandidate<*>.isTypeAliasConstructorCandidate(): Boolean {
+    val constructorSymbol = symbol as? CfirConstructorSymbol ?: return false
+    return constructorSymbol.typeAliasConstructorInfo != null
+}
+
+private fun List<ConstraintSystemError>.hasExplicitTypeArgumentConstraintMismatch(): Boolean =
+    any { error ->
+        error is ConstraintMismatch &&
+            error.position.from is ConeExplicitTypeParameterConstraintPosition
+    }
+
+private fun AbstractCallCandidate<*>.hasTypeAliasConstructorExpansionUpperBoundViolation(
     session: CfirSession,
-): CjDiagnostic? {
-    if (!candidate.hasExplicitTypeArgumentsInCall()) return null
-    val mismatch = candidate.errors
-        .filterIsInstance<ConstraintMismatch>()
-        .firstOrNull { it.position.from is ConeExplicitTypeParameterConstraintPosition }
-        ?: return null
-    val explicitPosition = mismatch.position.from as ConeExplicitTypeParameterConstraintPosition
-    val diagnosticSource = explicitPosition.typeArgument.source?.firstCharacterDiagnosticSource()
-        ?: qualifiedAccessSource?.genericInferenceWholeCallSource()
-        ?: candidate.callInfo.callSite.source?.genericInferenceWholeCallSource()
-        ?: source?.genericInferenceWholeCallSource()
-        ?: return null
+): Boolean {
+    val constructorSymbol = symbol as? CfirConstructorSymbol ?: return false
+    val typeAliasConstructorInfo = constructorSymbol.typeAliasConstructorInfo ?: return false
+    val typeArguments = resolvedExplicitTypeArgumentTypes()
+    if (typeArguments.isEmpty()) return false
 
-    val actualType = mismatch.lowerConeType.substituteTypeVariableTypes(candidate, session)
-    val upperBound = mismatch.upperConeType.substituteTypeVariableTypes(candidate, session)
-    val genericType = candidate.callableConstraintOwnerType(session) ?: return null
+    val typeAlias = typeAliasConstructorInfo.typeAliasSymbol.cfir
+    val expandedType = ConeTypeAliasType(
+        classId = typeAliasConstructorInfo.typeAliasSymbol.classId,
+        expandedType = typeAlias.expandedTypeRef.coneTypeOrNull,
+        typeArguments = typeArguments,
+    ).fullyExpandedType(session) as? ConeClassifierType ?: return false
+    if (expandedType.typeArguments.isEmpty()) return false
 
-    return CfirErrors.GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT.on(
-        diagnosticSource,
-        actualType,
-        upperBound,
-        genericType,
-        session,
+    val expandedSymbol = expandedType.toSymbol(session) as? CfirClassLikeSymbol<*> ?: return false
+    val typeParameters = expandedSymbol.cfir.typeParameters
+    if (typeParameters.isEmpty()) return false
+
+    val substitutor = createTypeSubstitutorByTypeConstructor(
+        map = typeParameters
+            .zip(expandedType.typeArguments.map { it.type })
+            .associate { (typeParameter, argument) ->
+                typeParameter.symbol.toLookupTag() as TypeConstructorMarker to argument
+            },
+        context = session.typeContext,
+        approximateIntegerLiterals = false,
     )
+
+    val count = minOf(typeParameters.size, expandedType.typeArguments.size)
+    for (index in 0 until count) {
+        val argumentType = expandedType.typeArguments[index].type
+        if (argumentType is ConeErrorType) continue
+
+        val upperBounds = typeParameters[index].symbol.resolvedBounds
+            .map { it.coneType }
+            .filterNot { it is ConeErrorType }
+        if (upperBounds.isEmpty()) continue
+
+        val upperBound = substitutor.substituteOrSelf(
+            session.typeContext.intersectTypes(upperBounds) as ConeCangJieType,
+        )
+        if (upperBound !is ConeErrorType &&
+            !AbstractTypeChecker.isSubtypeOf(session.typeContext, argumentType, upperBound)
+        ) {
+            return true
+        }
+    }
+    return false
+}
+
+private fun AbstractCallCandidate<*>.hasTypeAliasConstructorUpperBoundConstraintMismatch(): Boolean {
+    if (!isTypeAliasConstructorCandidate()) return false
+    if (!hasExplicitTypeArgumentsInCall()) return false
+
+    return errors.any { error ->
+        error is ConstraintMismatch &&
+            when (error.position.from) {
+                is ConeExplicitTypeParameterConstraintPosition,
+                is ConeDeclaredUpperBoundConstraintPosition,
+                -> true
+
+                else -> false
+            }
+    }
+}
+
+private fun AbstractCallCandidate<*>.resolvedExplicitTypeArgumentTypes(): List<ConeCangJieType> {
+    return callInfo.typeArguments.mapNotNull { it.coneTypeOrNull }
 }
 
 private fun AbstractCallCandidate<*>.callableConstraintOwnerType(session: CfirSession): ConeCangJieType? {
@@ -1463,12 +1587,11 @@ private fun AbstractCallCandidate<*>.callableConstraintOwnerType(session: CfirSe
     }
 }
 
-private fun AbstractCallCandidate<*>.hasGenericInferenceArgumentMismatch(): Boolean {
-    val callableSymbol = symbol as? CfirCallableSymbol<*> ?: return false
-    if (callableSymbol.cfir.typeParameters.isEmpty()) return false
+private fun AbstractCallCandidate<*>.hasGenericInferenceArgumentMismatch(session: CfirSession): Boolean {
+    val declaredTypeParameters = genericInferenceDeclaredTypeParameters(session)
+    if (declaredTypeParameters.isEmpty()) return false
     if (hasExplicitTypeArgumentsInCall()) return false
 
-    val declaredTypeParameters = callableSymbol.cfir.typeParameters.mapTo(mutableSetOf()) { it.symbol }
     val argumentMismatches = diagnostics.filterIsInstance<ArgumentTypeMismatch>()
         .filter { it.argument !is CfirAnonymousFunctionExpression }
     return argumentMismatches.any { diagnostic ->
@@ -1481,8 +1604,8 @@ private fun ConeConstraintSystemHasContradiction.genericInferenceErrorDiagnostic
     qualifiedAccessSource: CjSourceElement?,
     session: CfirSession,
 ): CjDiagnostic? {
-    val candidateSymbol = candidate.symbol as? CfirCallableSymbol<*> ?: return null
-    val declaredTypeParameters = candidateSymbol.cfir.typeParameters.mapTo(mutableSetOf()) { it.symbol }
+    if (candidate.symbol !is CfirCallableSymbol<*>) return null
+    val declaredTypeParameters = candidate.genericInferenceDeclaredTypeParameters(session)
     val candidateTypeVariable = candidate.system.asReadOnlyStorage().allTypeVariables.values.firstOrNull { variable ->
         (variable as? ConeTypeParameterBasedTypeVariable)?.typeParameterSymbol in declaredTypeParameters
     }
@@ -1762,9 +1885,8 @@ private fun CjSourceElement?.hasExplicitTypeArgumentsInSource(): Boolean {
 
 private fun AbstractCallCandidate<*>.hasExplicitTypeArgumentsInCall(): Boolean {
     return callInfo.hasExplicitTypeArguments ||
-        (callInfo.callSite as? CfirQualifiedAccessExpression)?.typeArguments?.isNotEmpty() == true ||
-        (callInfo.explicitReceiver as? CfirQualifiedAccessExpression)?.typeArguments?.isNotEmpty() == true ||
-        callInfo.callSite.source.hasExplicitTypeArgumentsInSource()
+        callInfo.callSite.source.hasExplicitTypeArgumentsInSource() ||
+        callInfo.explicitReceiver?.source.hasExplicitTypeArgumentsInSource()
 }
 
 /**
@@ -1781,15 +1903,7 @@ private fun AbstractCallCandidate<*>.hasExplicitTypeArgumentError(): Boolean {
 }
 
 private fun AbstractCallCandidate<*>.explicitTypeArgumentRefsInCall(): Sequence<CfirTypeRef> =
-    sequence {
-        val callSite = callInfo.callSite as? CfirQualifiedAccessExpression
-        if (callSite != null) yieldAll(callSite.typeArguments)
-
-        val explicitReceiver = callInfo.explicitReceiver as? CfirQualifiedAccessExpression
-        if (explicitReceiver != null && explicitReceiver !== callSite) {
-            yieldAll(explicitReceiver.typeArguments)
-        }
-    }
+    callInfo.typeArguments.asSequence()
 
 private fun PsiElement.containingCallExpressionOrNull(): CjCallExpression? =
     this as? CjCallExpression ?: PsiTreeUtil.getParentOfType(this, CjCallExpression::class.java, false)
@@ -1935,17 +2049,36 @@ private fun ConeCangJieType.referencesDeclaredTypeParameter(
     }
 }
 
-private fun AbstractCallCandidate<*>.hasGenericCallNotEnoughTypeInformation(): Boolean {
-    val callableSymbol = symbol as? CfirCallableSymbol<*> ?: return false
-    if (callableSymbol.cfir.typeParameters.isEmpty()) return false
+private fun AbstractCallCandidate<*>.hasGenericCallNotEnoughTypeInformation(session: CfirSession): Boolean {
+    val declaredTypeParameters = genericInferenceDeclaredTypeParameters(session)
+    if (declaredTypeParameters.isEmpty()) return false
     if (hasExplicitTypeArgumentsInCall()) return false
 
-    val declaredTypeParameters = callableSymbol.cfir.typeParameters.mapTo(mutableSetOf()) { it.symbol }
     return errors.any { error ->
         val notEnough = error as? NotEnoughInformationForTypeParameter<*> ?: return@any false
         val typeParameterSymbol = notEnough.typeVariable.asDeclaredTypeParameterSymbolOrNull() ?: return@any false
         typeParameterSymbol in declaredTypeParameters
     }
+}
+
+private fun AbstractCallCandidate<*>.genericInferenceDeclaredTypeParameters(
+    session: CfirSession,
+): Set<CfirTypeParameterSymbol> {
+    val callableSymbol = symbol as? CfirCallableSymbol<*> ?: return emptySet()
+    val result = linkedSetOf<CfirTypeParameterSymbol>()
+    callableSymbol.cfir.typeParameters.mapTo(result) { it.symbol }
+
+    val typeAliasConstructorInfo = (callableSymbol as? CfirConstructorSymbol)?.typeAliasConstructorInfo
+        ?: return result
+    typeAliasConstructorInfo.originalConstructor.typeParameters.mapTo(result) { it.symbol }
+
+    val expandedReturnType = typeAliasConstructorInfo.originalConstructor.returnTypeRef.coneTypeOrNull
+        ?.fullyExpandedType(session) as? ConeLookupTagBasedType
+        ?: return result
+    val expandedSymbol = expandedReturnType.toSymbol(session) as? CfirClassLikeSymbol<*>
+        ?: return result
+    expandedSymbol.cfir.typeParameters.mapTo(result) { it.symbol }
+    return result
 }
 
 private fun AbstractCallCandidate<*>.isImplicitGenericCallWithTypeParameters(): Boolean {

@@ -42,6 +42,7 @@ import org.cangnova.cangjie.descriptors.Visibility
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.source.AbstractCjSourceElement
+import org.cangnova.cangjie.source.CjFakeSourceElementKind
 import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.type.AbstractTypeChecker
 
@@ -330,7 +331,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
 
                 is CfirProperty -> InheritedMemberInfo(
                     name = member.name,
-                    kind = "property",
+                    kind = member.inheritanceMemberKind(),
                     isStatic = member.status.isStatic,
                     isConst = member.status.isConst,
                     source = member.source,
@@ -378,6 +379,11 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                     }
                 }
                 for (superInfo in superInfos) {
+                    val classDecl = subject.classLikeDeclaration
+                    if (classDecl != null && superInfo.symbol?.isVisibleIn(classDecl, context) == false) {
+                        continue
+                    }
+
                     val ownSameNameMembers = ownMembers[superInfo.name].orEmpty()
 
                     for (ownInfo in ownSameNameMembers) {
@@ -385,7 +391,9 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                         if (hasStaticConflict) {
                             if (reportedStaticConflicts.add(ownInfo.name)) {
                                 reporter.reportOn(
-                                    source = ownInfo.nameSource ?: ownInfo.source ?: subject.source,
+                                    source = ownInfo.source?.firstCharacterDiagnosticSource()
+                                        ?: ownInfo.nameSource
+                                        ?: subject.source,
                                     factory = CfirErrors.INHERIT_MEMBER_KIND_INCONSISTENT,
                                     a = ownInfo.staticKind,
                                     b = ownInfo.name,
@@ -444,7 +452,6 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                             continue
                         }
 
-                        val classDecl = subject.classLikeDeclaration
                         if (classDecl != null && ownInfo.canNotOverride(superInfo, classDecl, context)) {
                             val key = ownInfo.overrideDiagnosticKey(superInfo)
                             if (reportedCannotOverrides.add(key)) {
@@ -481,7 +488,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
 
             is CfirProperty -> InheritedMemberInfo(
                 name = declaration.name,
-                kind = "property",
+                kind = declaration.inheritanceMemberKind(),
                 isStatic = declaration.status.isStatic,
                 isConst = declaration.status.isConst,
                 source = declaration.source,
@@ -540,6 +547,8 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
     /**
      * 官方继承检查在收集 inherited member 后会执行 RemoveMembersShouldNotInherit，
      * private 成员不会进入后续同名成员、类型一致性和 shadow 检查。
+     * 继承诊断还需要在 use-site 处按派生类视角过滤 internal/package 可见性，
+     * 该过滤在 [checkInheritedMemberKindConsistency] 拿到 subject 后完成。
      */
     private fun CfirCallableSymbol<*>.canBeInheritedMember(): Boolean =
         cfir.status.visibility != Visibilities.Private
@@ -618,6 +627,13 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
     ) {
         val staticKind: String get() = if (isStatic) "static" else "non-static"
     }
+
+    /**
+     * 主构造 `let/var` 参数在 CFIR 中复用 property 结构承载 getter/setter，
+     * 但官方继承检查把它们作为 VAR_DECL 参与同名成员 shadow 规则。
+     */
+    private fun CfirProperty.inheritanceMemberKind(): String =
+        if (source?.kind == CjFakeSourceElementKind.PropertyFromParameter) "variable" else "property"
 
     private data class MemberInheritanceSubject(
         val declarations: List<CfirDeclaration>,

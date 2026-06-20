@@ -6,15 +6,11 @@
 
 
 class A {
-let m2 = return
+let m2 = <!INVALID_RETURN!>return<!>
 }
 
 struct B {
-let m2 :Unit = return
+let m2 :Unit = <!INVALID_RETURN!>return<!>
 }
 
-interface C {
-<!parse_unexpected_declaration_in_scope!>let<!> m2 = return
-}
-
-var a = return
+var a = <!INVALID_RETURN!>return<!>

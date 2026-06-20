@@ -461,6 +461,34 @@ class LightTreeRawCfirDeclarationBuilder(
         val modifiers = LightTreeModifierList.from(tree, node)
         val propertySource = node.toSource().fakeElement(CjFakeSourceElementKind.PropertyFromParameter)
         val propertySymbol = CfirPropertySymbol(callableIdFor(name))
+        val propertyStatus = cloneDeclarationStatus(
+            modifiers.toDeclarationStatusForCurrentContext()
+                .withConstDeclarationKeyword(hasConstKeyword(node))
+        ).also { status ->
+            status.isMut = hasVarKeyword(node)
+        }
+        val defaultAccessorSource = propertySource.fakeElement(CjFakeSourceElementKind.DefaultAccessor)
+        val propertyTypeRef = valueParameter.returnTypeRef.copyWithNewSource(defaultAccessorSource)
+        val getter = buildPrimaryConstructorParameterPropertyAccessor(
+            source = defaultAccessorSource,
+            accessorName = Name.special("<get-${name.asString()}>"),
+            propertyTypeRef = propertyTypeRef,
+            propertySymbol = propertySymbol,
+            propertyStatus = propertyStatus,
+            isGetter = true,
+        )
+        val setter = if (hasVarKeyword(node)) {
+            buildPrimaryConstructorParameterPropertyAccessor(
+                source = defaultAccessorSource,
+                accessorName = Name.special("<set-${name.asString()}>"),
+                propertyTypeRef = propertyTypeRef,
+                propertySymbol = propertySymbol,
+                propertyStatus = propertyStatus,
+                isGetter = false,
+            )
+        } else {
+            null
+        }
         val property = buildSourceDeclaration(propertySymbol) { symbol ->
             buildProperty {
                 resolvePhase = CfirResolvePhase.RAW_CFIR
@@ -471,16 +499,70 @@ class LightTreeRawCfirDeclarationBuilder(
                 attributes = CfirDeclarationAttributes.EMPTY
                 isLocal = context.inLocalContext
                 dispatchReceiverType = currentDispatchReceiverType()
-                status = modifiers.toDeclarationStatusForCurrentContext()
-                    .withConstDeclarationKeyword(hasConstKeyword(node))
+                status = propertyStatus
                 returnTypeRef = valueParameter.returnTypeRef.copyWithNewSource(propertySource)
                 this.name = name
-                getter = null
-                setter = null
+                this.getter = getter
+                this.setter = setter
             }
         }
         valueParameter.correspondingProperty = property
         return property
+    }
+
+    private fun buildPrimaryConstructorParameterPropertyAccessor(
+        source: CjSourceElement?,
+        accessorName: Name,
+        propertyTypeRef: CfirTypeRef,
+        propertySymbol: CfirPropertySymbol,
+        propertyStatus: CfirDeclarationStatus,
+        isGetter: Boolean,
+    ): CfirPropertyAccessor {
+        val accessorSymbol = CfirPropertyAccessorSymbol()
+        val valueParameters = if (isGetter) {
+            emptyList()
+        } else {
+            listOf(
+                buildValueParameter {
+                    resolvePhase = CfirResolvePhase.RAW_CFIR
+                    this.source = source
+                    this.symbol = CfirValueParameterSymbol(callableIdFor(Name.identifier("value")))
+                    origin = CfirDeclarationOrigin.Source
+                    moduleData = baseModuleData
+                    attributes = CfirDeclarationAttributes.EMPTY
+                    isLocal = false
+                    isNamed = false
+                    status = CfirDeclarationStatusImpl.DEFAULT
+                    returnTypeRef = propertyTypeRef
+                    name = Name.identifier("value")
+                    defaultValue = null
+                    containingDeclarationSymbol = accessorSymbol
+                }
+            )
+        }
+
+        return buildSourceDeclaration(accessorSymbol) { symbol ->
+            buildPropertyAccessor {
+                resolvePhase = CfirResolvePhase.RAW_CFIR
+                this.source = source
+                this.symbol = symbol
+                origin = CfirDeclarationOrigin.Source
+                moduleData = baseModuleData
+                attributes = CfirDeclarationAttributes.EMPTY
+                isLocal = context.inLocalContext
+                dispatchReceiverType = currentDispatchReceiverType()
+                status = propertyStatus
+                returnTypeRef = if (isGetter) {
+                    propertyTypeRef
+                } else {
+                    baseSession.builtinTypes.unitType.toCfirResolvedTypeRef(source)
+                }
+                this.propertySymbol = propertySymbol
+                this.isGetter = isGetter
+                this.valueParameters.addAll(valueParameters)
+                body = null
+            }
+        }
     }
 
     private fun findPrimaryConstructorNode(ownerNode: LighterASTNode): LighterASTNode? {

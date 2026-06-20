@@ -17,7 +17,11 @@ import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.cfir.symbols.CfirVariableSymbol
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.ConeLookupTagBasedType
+import org.cangnova.cangjie.cfir.types.ConePrimitiveType
+import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
+import org.cangnova.cangjie.cfir.types.idealExtendLookupTypes
 import org.cangnova.cangjie.cfir.types.toPrimitiveTypeKindOrNull
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.Name
@@ -31,6 +35,7 @@ class CfirExtendMemberScope(
     private val extendProvider: CfirExtendProvider,
     private val session: CfirSession,
     private val receiverType: ConeCangJieType,
+    private val allowBareGenericStaticQualifierExtends: Boolean = false,
 ) : CfirExtendScope() {
 
     private val memberIndex: MemberIndex by lazy { buildIndex() }
@@ -66,14 +71,9 @@ class CfirExtendMemberScope(
         val properties = HashMap<Name, MutableList<CfirPropertySymbol>>()
         val variables = HashMap<Name, MutableList<CfirVariableSymbol<*>>>()
 
-        val extends = buildList {
-            addAll(extendProvider.getExtendsForClass(targetClassId))
-            targetClassId.toPrimitiveTypeKindOrNull()?.let { kind ->
-                addAll(extendProvider.getExtendsForBuiltinType(kind))
-            }
-        }
-        for (extend in extends) {
-            if (!extend.isApplicableAtReceiver()) continue
+        val extends = extendsForTarget()
+        for ((extend, concreteReceiverType) in extends) {
+            if (!extend.isApplicableAtReceiver(concreteReceiverType)) continue
             for (declaration in extend.declarations) {
                 indexDeclaration(
                     declaration = declaration,
@@ -87,21 +87,64 @@ class CfirExtendMemberScope(
         return MemberIndex(classifiers, functions, properties, variables)
     }
 
+    private fun extendsForTarget(): List<ExtendLookupCandidate> {
+        val result = mutableListOf<ExtendLookupCandidate>()
+        result += extendProvider.getExtendsForClass(targetClassId).map {
+            ExtendLookupCandidate(it, receiverType)
+        }
+
+        val primitiveKind = targetClassId.toPrimitiveTypeKindOrNull() ?: return result.distinctBy { it.extend }
+        val concreteReceiverTypes = receiverType.idealExtendLookupTypes.ifEmpty {
+            listOf(ConePrimitiveType(primitiveKind))
+        }
+        for (concreteReceiverType in concreteReceiverTypes) {
+            result += extendProvider.getExtendsForBuiltinType(concreteReceiverType.kind).map {
+                ExtendLookupCandidate(it, concreteReceiverType)
+            }
+        }
+        return result.distinctBy { it.extend }
+    }
+
     /**
      * extend member scope 必须和 use-site substitution/receiver 检查共享同一适用性规则。
      *
      * 只按目标 ClassId 建索引会把不满足泛型约束的 extend 成员暴露给调用解析；
      * 官方成员访问流程会在候选阶段删除这些目标。
      */
-    private fun CfirExtend.isApplicableAtReceiver(): Boolean {
+    private fun CfirExtend.isApplicableAtReceiver(concreteReceiverType: ConeCangJieType): Boolean {
         if (!extendProvider.isExtendAccessible(this)) return false
         val targetPattern = extendedTypeRef.coneTypeOrNull ?: return false
-        return createExtendDeclarationSubstitution(
+        val substitution = createExtendDeclarationSubstitution(
             session = session,
             extend = this,
             targetPattern = targetPattern,
-            concreteReceiverType = receiverType,
-        ) != null
+            concreteReceiverType = concreteReceiverType,
+        )
+        if (substitution != null) {
+            return true
+        }
+
+        return canDeferBareGenericStaticQualifierApplicability(targetPattern, concreteReceiverType)
+    }
+
+    /**
+     * `A.staticExtendMember(...)` 中的裸泛型类名 `A` 不携带实例类型实参。
+     *
+     * 官方调用检查会先保留该 static extend 成员，再把 extend 声明类型参数加入
+     * 候选泛型映射，最终由调用实参/期望类型完成实例化。因此 scope 层不能在
+     * `A<T>` 与裸 `A` 的目标匹配阶段提前删除候选。
+     */
+    private fun canDeferBareGenericStaticQualifierApplicability(
+        targetPattern: ConeCangJieType,
+        concreteReceiverType: ConeCangJieType,
+    ): Boolean {
+        if (!allowBareGenericStaticQualifierExtends) return false
+        val bareReceiverType = concreteReceiverType as? ConeLookupTagBasedType ?: return false
+        if (bareReceiverType.typeArguments.isNotEmpty()) return false
+
+        val patternType = targetPattern as? ConeLookupTagBasedType ?: return false
+        if (patternType.typeArguments.isEmpty()) return false
+        return patternType.classIdOrPrimitiveClassId == bareReceiverType.classIdOrPrimitiveClassId
     }
 
     private fun indexDeclaration(
@@ -136,4 +179,9 @@ class CfirExtendMemberScope(
             else -> Unit
         }
     }
+
+    private data class ExtendLookupCandidate(
+        val extend: CfirExtend,
+        val concreteReceiverType: ConeCangJieType,
+    )
 }

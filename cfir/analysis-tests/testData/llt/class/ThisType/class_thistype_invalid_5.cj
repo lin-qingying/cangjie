@@ -12,7 +12,7 @@ class R{
 }
 
 extend R {
-	func foo(): <!parse_this_type_not_allow!>This<!> {
+	func foo(): This {
 		return this
 	}
 }

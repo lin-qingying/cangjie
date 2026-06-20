@@ -584,7 +584,7 @@ class MacroConstructionArchitectureGuardTest {
                 "entry.executableFqName" in source &&
                 "entry.artifactSignature" in source &&
                 "entry.dynamicLibHash" in source &&
-                "entry.dependenciesBchirHash" in source &&
+                "entry.dependenciesArtifactHash" in source &&
                 "entry.resolverAlgorithmVersion" in source,
             "Cache key must include executable fqName, macro artifact signature, dylib/BCHIR hashes, target platform, loader env, and resolver algorithm version.",
         )

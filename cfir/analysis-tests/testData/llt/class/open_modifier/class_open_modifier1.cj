@@ -13,9 +13,9 @@ class A {
     public init() {
         f()
         var a = {=> f}
-        <!chir_dce_unused_function!>func f3(<!chir_dce_unused_variable!>c<!>!: Int32 = f()) {
+        func f3(c!: Int32 = f()) {
             f
-        }<!>
+        }
         a()
     }
 }

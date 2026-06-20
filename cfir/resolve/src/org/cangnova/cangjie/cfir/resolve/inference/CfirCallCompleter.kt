@@ -25,16 +25,22 @@ import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirNamedReferenceWithCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.stages.TypeArgumentMapping
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
+import org.cangnova.cangjie.cfir.resolve.inference.model.ConeDeclaredUpperBoundConstraintPosition
+import org.cangnova.cangjie.cfir.resolve.inference.model.ConeExplicitTypeParameterConstraintPosition
 import org.cangnova.cangjie.cfir.resolve.inference.model.ConeArgumentConstraintPosition
 import org.cangnova.cangjie.cfir.resolve.inference.model.ConeExpectedTypeConstraintPosition
 import org.cangnova.cangjie.cfir.resolve.initialTypeOfCandidate
+import org.cangnova.cangjie.cfir.resolve.toSymbol
 import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.CfirPCLAInferenceSession
 import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.resultType
 import org.cangnova.cangjie.cfir.resolve.typeFromCallee
 import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeVariableForLambdaReturnType
+import org.cangnova.cangjie.cfir.scopes.impl.typeAliasConstructorInfo
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
@@ -44,11 +50,15 @@ import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeSubstitutorByMap
 import org.cangnova.cangjie.cfir.types.ConeAnyType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
+import org.cangnova.cangjie.cfir.types.ConeClassifierType
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeEnumType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeFunctionType
+import org.cangnova.cangjie.cfir.types.ConeLookupTagBasedType
 import org.cangnova.cangjie.cfir.types.ConeSimpleCangJieType
+import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
+import org.cangnova.cangjie.cfir.types.ConeTypeVariableType
 import org.cangnova.cangjie.cfir.types.StdlibClassIds
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.types.arrayLiteralElementType
@@ -58,6 +68,8 @@ import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.classId
 import org.cangnova.cangjie.cfir.types.coneTypeSafe
 import org.cangnova.cangjie.cfir.types.contains
+import org.cangnova.cangjie.cfir.types.createTypeSubstitutorByTypeConstructor
+import org.cangnova.cangjie.cfir.types.expandedClassIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.cfir.types.typeApproximator
 import org.cangnova.cangjie.cfir.types.typeContext
@@ -68,10 +80,13 @@ import org.cangnova.cangjie.resolve.calls.inference.buildAbstractResultingSubsti
 import org.cangnova.cangjie.resolve.calls.inference.buildCurrentSubstitutor
 import org.cangnova.cangjie.resolve.calls.inference.components.ConstraintSystemCompletionMode
 import org.cangnova.cangjie.resolve.calls.inference.components.PostponedArgumentInputTypesResolver
+import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintMismatch
 import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintStorage
 import org.cangnova.cangjie.source.CjFakeSourceElementKind
 import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.source.fakeElement
+import org.cangnova.cangjie.type.AbstractTypeChecker
+import org.cangnova.cangjie.type.model.TypeConstructorMarker
 import org.cangnova.cangjie.types.TypeApproximatorConfiguration
 import org.cangnova.cangjie.utils.runIf
 
@@ -163,6 +178,12 @@ class CfirCallCompleter(
         if (resolutionMode !is ResolutionMode.WithExpectedType) return
         val expectedType = resolutionMode.expectedType.fullyExpandedType()
         if (!candidate.shouldUseExpectedTypeForCompletion(initialType, expectedType)) return
+        if (
+            candidate.hasTypeAliasConstructorExpansionUpperBoundViolation() ||
+            candidate.hasTypeAliasConstructorUpperBoundMismatchBeforeExpectedType()
+        ) {
+            return
+        }
         val system = candidate.system
 
         if (candidate.addBuiltinArrayConstructorExpectedElementConstraint(expectedType)) return
@@ -211,6 +232,81 @@ class CfirCallCompleter(
         return true
     }
 
+    private fun Candidate.hasTypeAliasConstructorExpansionUpperBoundViolation(): Boolean {
+        val constructorSymbol = symbol as? CfirConstructorSymbol ?: return false
+        val typeAliasConstructorInfo = constructorSymbol.typeAliasConstructorInfo ?: return false
+        if (typeArgumentMapping == TypeArgumentMapping.NoExplicitArguments) return false
+
+        val typeAlias = typeAliasConstructorInfo.typeAliasSymbol.cfir
+        val typeArguments = typeAlias.typeParameters.indices.map { index ->
+            typeArgumentMapping[index]
+        }
+        if (typeArguments.isEmpty()) return false
+
+        val expandedType = ConeTypeAliasType(
+            classId = typeAliasConstructorInfo.typeAliasSymbol.classId,
+            expandedType = typeAlias.expandedTypeRef.coneTypeSafe<ConeCangJieType>(),
+            typeArguments = typeArguments,
+        ).fullyExpandedType(session) as? ConeClassifierType ?: return false
+        if (expandedType.typeArguments.isEmpty()) return false
+
+        val expandedSymbol = expandedType.toSymbol(session) as? CfirClassLikeSymbol<*> ?: return false
+        val typeParameters = expandedSymbol.cfir.typeParameters
+        if (typeParameters.isEmpty()) return false
+
+        val substitutor = createTypeSubstitutorByTypeConstructor(
+            map = typeParameters
+                .zip(expandedType.typeArguments.map { it.type })
+                .associate { (typeParameter, argument) ->
+                    typeParameter.symbol.toLookupTag() as TypeConstructorMarker to argument
+                },
+            context = session.typeContext,
+            approximateIntegerLiterals = false,
+        )
+
+        val count = minOf(typeParameters.size, expandedType.typeArguments.size)
+        for (index in 0 until count) {
+            val argumentType = expandedType.typeArguments[index].type
+            if (argumentType is ConeErrorType) continue
+
+            val upperBounds = typeParameters[index].symbol.resolvedBounds
+                .map { it.coneType }
+                .filterNot { it is ConeErrorType }
+            if (upperBounds.isEmpty()) continue
+
+            val upperBound = substitutor.substituteOrSelf(
+                session.typeContext.intersectTypes(upperBounds) as ConeCangJieType,
+            )
+            if (upperBound !is ConeErrorType &&
+                !AbstractTypeChecker.isSubtypeOf(session.typeContext, argumentType, upperBound)
+            ) {
+                return true
+            }
+        }
+        return false
+    }
+
+    /**
+     * typealias 构造器的展开上界错误已经由显式类型实参 checker 报告在别名名处。
+     * 此时继续加入 expected-type 约束只会把同一错误级联成外层 TYPE_MISMATCH。
+     */
+    private fun Candidate.hasTypeAliasConstructorUpperBoundMismatchBeforeExpectedType(): Boolean {
+        val constructorSymbol = symbol as? CfirConstructorSymbol ?: return false
+        if (constructorSymbol.typeAliasConstructorInfo == null) return false
+        if (!callInfo.hasExplicitTypeArguments) return false
+
+        return system.errors.any { error ->
+            error is ConstraintMismatch &&
+                when (error.position.from) {
+                    is ConeExplicitTypeParameterConstraintPosition,
+                    is ConeDeclaredUpperBoundConstraintPosition,
+                    -> true
+
+                    else -> false
+                }
+        }
+    }
+
     /**
      * 官方 enum sugar 在目标类型能确定同一个 enum owner 时，直接把该目标类型
      * 作为 enum constructor 表达式类型；这比普通 subtype 约束更强，能够保留
@@ -252,15 +348,86 @@ class CfirCallCompleter(
         if (initialEnumClassId != ownerClassId) return null
 
         val targetType = enumConstructorTargetType(ownerClassId, resolutionMode) ?: return null
-        val targetTypeArguments = targetType.enumTypeArgumentsForClassId(ownerClassId) ?: return null
-        if (targetTypeArguments.size != freshVariables.size) return null
         if (freshVariables.isEmpty()) return ConeSubstitutor.Empty
 
-        return CfirTypeSubstitutorByMap(
-            freshVariables.zip(targetTypeArguments).associate { (variable, typeArgument) ->
-                variable.typeConstructor to typeArgument
+        val targetSubstitution = createNoArgEnumConstructorTargetSubstitution(
+            initialType = initialType,
+            targetType = targetType,
+            ownerClassId = ownerClassId,
+        ) ?: return null
+        val freshTypeConstructors = freshVariables.mapTo(mutableSetOf()) { it.typeConstructor }
+        if (!freshTypeConstructors.all { it in targetSubstitution }) return null
+
+        return CfirTypeSubstitutorByMap(targetSubstitution)
+    }
+
+    private fun Candidate.createNoArgEnumConstructorTargetSubstitution(
+        initialType: ConeCangJieType,
+        targetType: ConeCangJieType,
+        ownerClassId: ClassId,
+    ): Map<TypeConstructorMarker, ConeCangJieType>? {
+        val initialTypeArguments = initialType
+            .fullyExpandedType(session)
+            .enumTypeArgumentsForClassId(ownerClassId)
+            ?: return null
+        val targetTypeArguments = targetType
+            .fullyExpandedType(session)
+            .enumTypeArgumentsForClassId(ownerClassId)
+            ?: return null
+        if (initialTypeArguments.size != targetTypeArguments.size) return null
+
+        val freshTypeConstructors = freshVariables.mapTo(mutableSetOf()) { it.typeConstructor }
+        val substitution = linkedMapOf<TypeConstructorMarker, ConeCangJieType>()
+        for ((initialArgument, targetArgument) in initialTypeArguments.zip(targetTypeArguments)) {
+            if (!collectTargetSubstitutionFromMatchingTypes(
+                    initialArgument,
+                    targetArgument,
+                    freshTypeConstructors,
+                    substitution,
+                )
+            ) {
+                return null
             }
-        )
+        }
+        return substitution
+    }
+
+    /**
+     * 无参 enum constructor 的 target type 定型需要从 owner 返回类型中抽取 fresh 变量绑定。
+     *
+     * `type X<K> = E<Int32, K>` 中，调用 `X.EEE` 时参与推断的 fresh 变量只有别名暴露的 `K`，
+     * 而目标 enum owner 类型仍是完整的 `E<Int32, Int8>`；因此这里按同形 owner 类型参数递归匹配，
+     * 只为 fresh 变量生成替代项。
+     */
+    private fun collectTargetSubstitutionFromMatchingTypes(
+        initialType: ConeCangJieType,
+        targetType: ConeCangJieType,
+        freshTypeConstructors: Set<TypeConstructorMarker>,
+        substitution: MutableMap<TypeConstructorMarker, ConeCangJieType>,
+    ): Boolean {
+        if (initialType is ConeTypeVariableType && initialType.typeConstructor in freshTypeConstructors) {
+            val previous = substitution.putIfAbsent(initialType.typeConstructor, targetType)
+            return previous == null || previous == targetType
+        }
+
+        if (initialType == targetType) return true
+
+        if (initialType is ConeLookupTagBasedType && targetType is ConeLookupTagBasedType) {
+            if (initialType.expandedClassIdOrPrimitiveClassId != targetType.expandedClassIdOrPrimitiveClassId) {
+                return false
+            }
+            if (initialType.typeArguments.size != targetType.typeArguments.size) return false
+            return initialType.typeArguments.zip(targetType.typeArguments).all { (initialArgument, targetArgument) ->
+                collectTargetSubstitutionFromMatchingTypes(
+                    initialArgument.type,
+                    targetArgument.type,
+                    freshTypeConstructors,
+                    substitution,
+                )
+            }
+        }
+
+        return false
     }
 
     /**

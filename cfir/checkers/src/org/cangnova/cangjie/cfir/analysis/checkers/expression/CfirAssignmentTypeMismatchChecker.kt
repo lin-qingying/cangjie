@@ -1,6 +1,7 @@
 ﻿package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.declaration.firstCharacterDiagnosticSource
 import org.cangnova.cangjie.cfir.analysis.diagnostics.specificTypeMismatchDiagnostic
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 
@@ -8,7 +9,9 @@ import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirAssignment
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
+import org.cangnova.cangjie.cfir.expressions.CfirSuperReceiverExpression
 import org.cangnova.cangjie.cfir.expressions.CfirSubscriptExpression
+import org.cangnova.cangjie.cfir.expressions.CfirThisReceiverExpression
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeVArrayType
@@ -50,6 +53,28 @@ object CfirAssignmentTypeMismatchChecker : CfirAssignmentChecker() {
         }
 
         if (AbstractTypeChecker.isSubtypeOf(context.session.typeContext, rValueType, lValueType) != true) {
+            val receiverSource = (lValue as? CfirQualifiedAccessExpression)
+                ?.explicitReceiver
+                ?.takeIf { receiver ->
+                    receiver is CfirThisReceiverExpression || receiver is CfirSuperReceiverExpression
+                }
+                ?.source as? AbstractCjSourceElement
+            if (receiverSource != null) {
+                reporter.reportOn(
+                    receiverSource.firstCharacterDiagnosticSource(),
+                    CfirErrors.TYPE_INCOMPATIBLE,
+                    "assignment expression",
+                )
+                reporter.reportOn(
+                    rValueSource,
+                    CfirErrors.TYPE_MISMATCH,
+                    lValueType,
+                    rValueType,
+                    false,
+                )
+                return
+            }
+
             reporter.reportOn(
                 rValueSource, CfirErrors.ASSIGNMENT_TYPE_MISMATCH,
                 lValueType,
