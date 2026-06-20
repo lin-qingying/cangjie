@@ -21,9 +21,9 @@ sealed interface I {
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 
-import <!package_search_error!>pkgs<!>.*
+import pkgs.*
 
-struct A <: I {}
+struct <!CANNOT_INHERIT_SEALED!>A<!> <: I {}
 
 main(): Int64 {
     return A.f() - 1

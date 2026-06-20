@@ -21,7 +21,7 @@ enum Data {
 }
 
 extend Data {
-    public <!sema_immutable_type_illegal_property!>mut<!> prop m: Int64 {
+    public <!EXTEND_IMMUTABLE_MUT_PROPERTY!>mut<!> prop m: Int64 {
         get() {
             return 2
         }

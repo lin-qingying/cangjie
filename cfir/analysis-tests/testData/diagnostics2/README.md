@@ -101,7 +101,7 @@ This batch directly covers or keeps direct regression files for:
 - for `createMock` / `createSpy`, unsupported target kinds such as primitives, tuples, function types, and enums stay `MOCK_UNSUPPORTED_TYPE` even outside test mode; class and interface targets then fall through to `MOCK_NOT_IN_TEST_MODE` in this matrix.
 - import conflicts: mark only the later conflicting imported short name or alias token.
 - unresolved import targets: when the package itself is missing, official current `cjc` marks the whole missing package path span such as `ghost.pkg`, `ghostv.pkg.deep`, or `std.void`, not only the last segment token.
-- repeated / shadowed catch types: official current C++/`cjc` semantics are `sema_useless_exception_type` on the catch type token; the project now defines this diagnostic name and default message, but these fixtures still keep it as `SUGGESTED_DIAGNOSTIC` until checker wiring lands.
+- repeated / shadowed catch types use `USELESS_EXCEPTION_TYPE` on the catch type token.
 - repeated / shadowed catch types are warnings in official current `cjc`, not hard errors, even though this matrix stores them as undefined-diagnostic placeholders.
 - ordinary `try` / `catch` branch result mismatch still reports on the mismatching tail expression inside the offending catch block, for example the `false` branch result in an `Int64`-typed `try` expression.
 - `try-with-resources` resource-type mismatch reports on the whole resource specification entry, for example `x = NotResource()`, with the note that the resource specification should implement `Resource`.
@@ -119,7 +119,7 @@ This batch directly covers or keeps direct regression files for:
 - `SUPER_TYPES_DUPLICATE` currently points at the whole class declaration in official `cjc`, not the duplicated interface/type token inside the supertype list.
 - a single identity lambda like `applyFunc({ a => a }, true)` is a legal positive case: `T` is inferred from the non-lambda argument, and official current `cjc` emits no diagnostic for the lambda body or call.
 - unresolved implicit function return type: when the current project surfaces `UNABLE_TO_INFER_RETURN_TYPE`, mark the function declaration name, not the tail expression that made the body return types disagree.
-- `return` inside `try { ... } handle (...) { ... }`: official `cjc` uses `sema_return_in_try_handle_block`, and the current project has `RETURN_IN_TRY_HANDLE_BLOCK`; do not degrade this case to generic `INVALID_RETURN`.
+- `return` inside `try { ... } handle (...) { ... }` uses `RETURN_IN_TRY_HANDLE_BLOCK`; do not degrade this case to generic `INVALID_RETURN`.
 - `resume with` wrong payload type currently stays `TYPE_MISMATCH`; official `ResumeExpr.cpp` reuses generic type checking here, and the current project has no stable specialized resumption-value diagnostic on this path.
 - `MISMATCHING_HANDLE_BLOCK`: mark the `handle` block itself (`{ ... }`), matching official `TypeCheckExpr/TryExpr.cpp` on `handler.block` and the existing rich fixture.
 - `BUILDER_INFERENCE_MULTI_LAMBDA_RESTRICTION`: official current `cjc` points at the later conflicting lambda expression, so do not mark the whole call.

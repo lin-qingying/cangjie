@@ -78,6 +78,7 @@ import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.OperatorNameConventions
 import org.cangnova.cangjie.psi.CjValueArgument
 import org.cangnova.cangjie.resolve.calls.inference.buildCurrentSubstitutor
+import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintKind
 import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintStorage
 import org.cangnova.cangjie.resolve.calls.tower.ApplicabilityDetail
 import org.cangnova.cangjie.resolve.calls.tower.CandidateApplicability
@@ -818,10 +819,108 @@ class CfirCallResolver(
                     return@reduceCollectedCandidates candidates
                 }
                 val syntaxFilteredCandidates = reduceTrailingLambdaCandidatesByParameterType(info, candidates)
+                reduceFreshTypeVariableReceiverCandidates(syntaxFilteredCandidates)?.let {
+                    return@reduceCollectedCandidates it
+                }
                 syntaxFilteredCandidates.singleOrNull()?.let(::setOf)
                     ?: conflictResolver.chooseMaximallySpecificCandidates(syntaxFilteredCandidates)
             },
         )
+    }
+
+    /**
+     * fresh lambda receiver 的成员访问对应官方 `TryInitializeBaseSum` / `FilterSumUpperbound`。
+     *
+     * 当 receiver 仍是 lambda 参数 placeholder 时，多个 owner 声明只是在为同一个
+     * callable shape 提供接收者类型约束；若参数检查后所有候选的可调用签名完全等价，
+     * 该集合不应退化为普通重载歧义。签名不等价时继续交给普通冲突解析，避免吞掉真实歧义。
+     */
+    private fun reduceFreshTypeVariableReceiverCandidates(candidates: Set<Candidate>): Set<Candidate>? {
+        if (candidates.size <= 1) return null
+
+        val receiverTypeConstructor = candidates.first().freshTypeVariableDispatchReceiverConstructor() ?: return null
+        if (candidates.any { it.freshTypeVariableDispatchReceiverConstructor() != receiverTypeConstructor }) {
+            return null
+        }
+        if (candidates.any { !it.isSuccessful }) return null
+
+        val shapes = candidates.map { candidate ->
+            candidate.freshReceiverCallableShape() ?: return null
+        }
+        val firstShape = shapes.first()
+        if (shapes.drop(1).all { it.isEquivalentTo(firstShape) }) {
+            return setOf(firstShape.candidate)
+        }
+
+        return null
+    }
+
+    private data class FreshReceiverCallableShape(
+        val candidate: Candidate,
+        val valueParameterTypes: List<ConeCangJieType>,
+        val returnType: ConeCangJieType,
+    )
+
+    private fun FreshReceiverCallableShape.isEquivalentTo(other: FreshReceiverCallableShape): Boolean {
+        if (valueParameterTypes.size != other.valueParameterTypes.size) return false
+        if (!returnType.isSameTypeAs(other.returnType)) return false
+        return valueParameterTypes.zip(other.valueParameterTypes).all { (left, right) ->
+            left.isSameTypeAs(right)
+        }
+    }
+
+    private fun ConeCangJieType.isSameTypeAs(other: ConeCangJieType): Boolean =
+        AbstractTypeChecker.equalTypes(session.typeContext, this, other)
+
+    private fun Candidate.freshReceiverCallableShape(): FreshReceiverCallableShape? {
+        if (!symbol.isBound || !argumentMappingInitialized) return null
+        val declaration = symbol.cfir as? CfirCallableDeclaration ?: return null
+
+        val valueParameterTypes = buildList {
+            for (parameter in argumentMapping.values) {
+                val parameterType = parameter.returnTypeRef.coneTypeOrNull ?: return null
+                add(normalizeFreshReceiverShapeType(parameterType))
+            }
+        }
+        val returnType = components.returnTypeCalculator
+            .tryCalculateReturnType(declaration)
+            .coneType
+            .let(::normalizeFreshReceiverShapeType)
+
+        return FreshReceiverCallableShape(this, valueParameterTypes, returnType)
+    }
+
+    private fun Candidate.normalizeFreshReceiverShapeType(type: ConeCangJieType): ConeCangJieType {
+        val substituted = substitutor.substituteOrSelf(type)
+        val currentSubstitutor = system.buildCurrentSubstitutor()
+        val currentType = currentSubstitutor.safeSubstitute(system, substituted).asCone()
+        return representativeConstraintType(currentType)
+    }
+
+    private fun Candidate.representativeConstraintType(type: ConeCangJieType): ConeCangJieType {
+        if (type !is ConeTypeVariableType) return type
+
+        val lowerOrEqualConstraints = system.currentStorage()
+            .notFixedTypeVariables[type.typeConstructor]
+            ?.constraints
+            .orEmpty()
+            .filter { constraint ->
+                constraint.kind == ConstraintKind.LOWER || constraint.kind == ConstraintKind.EQUALITY
+            }
+            .mapNotNull { constraint -> constraint.type as? ConeCangJieType }
+            .filterNot { constraintType -> constraintType is ConeErrorType }
+
+        return when (lowerOrEqualConstraints.size) {
+            0 -> type
+            1 -> lowerOrEqualConstraints.single()
+            else -> ConeTypeIntersector.intersectTypes(session.typeContext, lowerOrEqualConstraints)
+        }
+    }
+
+    private fun Candidate.freshTypeVariableDispatchReceiverConstructor(): org.cangnova.cangjie.type.model.TypeConstructorMarker? {
+        val receiverType = dispatchReceiverExpression()?.coneTypeOrNull as? ConeTypeVariableType ?: return null
+        if (receiverType.typeConstructor.originalTypeParameter != null) return null
+        return receiverType.typeConstructor
     }
 
     private fun createResolvedNamedReference(

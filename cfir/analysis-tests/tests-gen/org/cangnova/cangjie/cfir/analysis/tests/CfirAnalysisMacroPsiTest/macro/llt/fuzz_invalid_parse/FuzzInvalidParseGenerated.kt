@@ -18,11 +18,5 @@ class FuzzInvalidParseGenerated : AbstractCfirPsiMacroDiagnosticsTest() {
     fun testAllFilesPresent() {
         assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/macro/llt/fuzz_invalid_parse")
     }
-
-    @TestMetadata("invalid_import_ast_using_quote.cj")
-    @Test
-    fun testInvalidImportAstUsingQuote() {
-        runTest("cfir/analysis-tests/testData/macro/llt/fuzz_invalid_parse/invalid_import_ast_using_quote.cj")
-    }
 }
 

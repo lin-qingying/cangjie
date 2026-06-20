@@ -47,8 +47,8 @@ extend A <: I & J {
 
 package pkg2
 
-internal import <!package_search_error!>pkg0<!>.A
-internal import <!package_search_error!>pkg1<!>.I
+internal import pkg0.A
+internal import pkg1.I
 
 public interface K {}
 

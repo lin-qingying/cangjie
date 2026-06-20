@@ -26,7 +26,7 @@ class G {
 
 class H {
     public H(var z!: Int64 = 3) {}
-    <!sema_multiple_primary_constructors!>p<!>ublic H(var x!: String = "3") {}
+    <!MULTIPLE_PRIMARY_CONSTRUCTORS!>p<!>ublic H(var x!: String = "3") {}
 }
 
 class J {
@@ -44,13 +44,13 @@ open class D {
 class E <: D {
     public E(<!MEMBER_VARIABLE_CAN_NOT_SHADOW!>v<!>ar z!: Int64 = 3) {
         var c: Int64 = 2
-        <!sema_illegal_place_of_calling_this_or_super!>s<!>uper()
+        <!ILLEGAL_PLACE_OF_CALLING_THIS_OR_SUPER!>s<!>uper()
     }
 }
 
 class L <: D {
     public L(<!MEMBER_VARIABLE_CAN_NOT_SHADOW!>v<!>ar z!: Int64 = 3) {
-        <!sema_illegal_place_of_calling_this_primary_constructor!>t<!>his(<!NEED_NAMED_ARGUMENT!>"ww"<!>)
+        <!ILLEGAL_PLACE_OF_CALLING_THIS_PRIMARY_CONSTRUCTOR!>t<!>his(<!NEED_NAMED_ARGUMENT!>"ww"<!>)
     }
     public init(a!: String = "1") {
         <!TYPE_INCOMPATIBLE!>t<!>his.z = <!TYPE_MISMATCH!>"a"<!>
@@ -58,7 +58,7 @@ class L <: D {
 }
 
 class N <: B<Int64, Int64> {
-    public <!sema_no_non_param_constructor_in_super_class!>N<!>(c: Int64) {}
+    public <!NO_NON_PARAM_CONSTRUCTOR_IN_SUPER_CLASS!>N<!>(c: Int64) {}
 }
 
 main(): Int64 {

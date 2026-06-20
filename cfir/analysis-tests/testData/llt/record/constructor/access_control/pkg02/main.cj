@@ -5,7 +5,7 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 
-internal import <!package_search_error!>pkg<!>.*
+internal import <!UNRESOLVED_IMPORT!>pkg<!>.*
 
 main(): Int64 {
     return 0

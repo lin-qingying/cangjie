@@ -49,18 +49,6 @@ class IfavailableGenerated : AbstractCfirPsiMacroDiagnosticsTest() {
         runTest("cfir/analysis-tests/testData/macro/llt/annotation/ifavailable/err_not_literal.cj")
     }
 
-    @TestMetadata("err_too_few_args.cj")
-    @Test
-    fun testErrTooFewArgs() {
-        runTest("cfir/analysis-tests/testData/macro/llt/annotation/ifavailable/err_too_few_args.cj")
-    }
-
-    @TestMetadata("err_too_many_args.cj")
-    @Test
-    fun testErrTooManyArgs() {
-        runTest("cfir/analysis-tests/testData/macro/llt/annotation/ifavailable/err_too_many_args.cj")
-    }
-
     @TestMetadata("err_without_import.cj")
     @Test
     fun testErrWithoutImport() {

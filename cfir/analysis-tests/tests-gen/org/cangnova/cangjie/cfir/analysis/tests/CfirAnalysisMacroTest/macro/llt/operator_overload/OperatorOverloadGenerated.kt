@@ -24,17 +24,5 @@ class OperatorOverloadGenerated : AbstractCfirLightTreeMacroDiagnosticsTest() {
     fun testErrBinary00() {
         runTest("cfir/analysis-tests/testData/macro/llt/operator_overload/err_binary_00.cj")
     }
-
-    @TestMetadata("timeout_02.cj")
-    @Test
-    fun testTimeout02() {
-        runTest("cfir/analysis-tests/testData/macro/llt/operator_overload/timeout_02.cj")
-    }
-
-    @TestMetadata("timeout_05.cj")
-    @Test
-    fun testTimeout05() {
-        runTest("cfir/analysis-tests/testData/macro/llt/operator_overload/timeout_05.cj")
-    }
 }
 

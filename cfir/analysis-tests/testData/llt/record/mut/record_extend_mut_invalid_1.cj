@@ -10,7 +10,7 @@ class C1 {
 }
 
 extend C1 {
-    public <!sema_invalid_mut_modifier_extend_of_struct!>mut<!> func foo() {
+    public <!MUT_ONLY_ON_FUNCTION!>mut<!> func foo() {
         this.i = 1
     }
 }

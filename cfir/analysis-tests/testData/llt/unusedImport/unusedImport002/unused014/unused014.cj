@@ -25,7 +25,7 @@ public import a.*
 
 // FILE: unused014.cj
 package c
-import <!package_search_error!>b<!>.*
+import b.*
 
 main() {
     var a : ArrayList<Int64>

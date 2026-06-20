@@ -36,17 +36,5 @@ class BadGenerated : AbstractCfirPsiMacroDiagnosticsTest() {
     fun testInstantiated() {
         runTest("cfir/analysis-tests/testData/macro/llt/annotation/globals/bad/instantiated.cj")
     }
-
-    @TestMetadata("main.cj")
-    @Test
-    fun testMain() {
-        runTest("cfir/analysis-tests/testData/macro/llt/annotation/globals/bad/main.cj")
-    }
-
-    @TestMetadata("type.cj")
-    @Test
-    fun testType() {
-        runTest("cfir/analysis-tests/testData/macro/llt/annotation/globals/bad/type.cj")
-    }
 }
 

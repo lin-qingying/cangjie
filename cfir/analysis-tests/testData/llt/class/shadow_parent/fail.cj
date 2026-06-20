@@ -21,10 +21,10 @@ public open class A {
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 
-import <!package_search_error!>pkga<!>.*
+import pkga.*
 
 class B <: A {
-    func f() {
+    func <!CANNOT_OVERRIDE!>f<!>() {
         1
     }
 }

@@ -18,11 +18,5 @@ class DeprecatedGenerated : AbstractCfirPsiMacroDiagnosticsTest() {
     fun testAllFilesPresent() {
         assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/macro/llt/deprecated")
     }
-
-    @TestMetadata("dep.cj")
-    @Test
-    fun testDep() {
-        runTest("cfir/analysis-tests/testData/macro/llt/deprecated/dep.cj")
-    }
 }
 

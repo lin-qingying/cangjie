@@ -87,12 +87,12 @@ public class APILevel {
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 
-import <!package_search_error!>ohos.labels<!>.*
+import ohos.labels.*
 
 const a: UInt8 = 10
 const b = "xxx"
 
-@!APILevel[a, syscap: b]
+<!WRONG_NUMBER_OF_ARGUMENTS!>@!APILevel[a, syscap: <!ONLY_LITERAL_SUPPORT!>b<!>]<!>
 class A {
     public A() {}
 }

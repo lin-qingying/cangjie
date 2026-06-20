@@ -17,7 +17,7 @@ open class A<X> {
 }
 
 class B<X> <: A<X> {
-    <!sema_missing_redefined_func!>p<!>ublic static redef func test<T>(x: T): T {
+    public static redef func <!CANNOT_OVERRIDE!>test<!><T>(x: T): T {
         println("b");
         x
     }

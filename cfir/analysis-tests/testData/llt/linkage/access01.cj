@@ -7,7 +7,7 @@
 
 package a.b.c
 
-import <!package_search_error!>a.b<!>.*
+import <!UNRESOLVED_IMPORT!>a<!>.b.*
 
 main() {
     println(AAAA().f1())

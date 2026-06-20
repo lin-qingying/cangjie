@@ -12,7 +12,7 @@ interface I1 {
 }
 
 struct R1 <: I1 {
-    <!sema_incompatible_mut_modifier_between_struct_and_interface!>p<!>ublic mut func foo1() {
+    <!INCOMPATIBLE_MUT_MODIFIER_BETWEEN_STRUCT_AND_INTERFACE!>p<!>ublic mut func foo1() {
         return 0
     }
 }
@@ -24,7 +24,7 @@ interface I2 {
 }
 
 struct R2 <: I2 {
-    <!sema_incompatible_mut_modifier_between_struct_and_interface!>p<!>ublic func foo2() {
+    <!INCOMPATIBLE_MUT_MODIFIER_BETWEEN_STRUCT_AND_INTERFACE!>p<!>ublic func foo2() {
         return 0
     }
 }
@@ -34,7 +34,7 @@ interface I3 {
 }
 
 struct R3 <: I3 {
-    <!sema_incompatible_mut_modifier_between_struct_and_interface!>p<!>ublic mut func foo3(): Unit {
+    <!INCOMPATIBLE_MUT_MODIFIER_BETWEEN_STRUCT_AND_INTERFACE!>p<!>ublic mut func foo3(): Unit {
     }
 }
 
@@ -43,7 +43,7 @@ interface I4 {
 }
 
 struct R4 <: I4 {
-    <!sema_incompatible_mut_modifier_between_struct_and_interface!>p<!>ublic func foo4(): Unit {
+    <!INCOMPATIBLE_MUT_MODIFIER_BETWEEN_STRUCT_AND_INTERFACE!>p<!>ublic func foo4(): Unit {
     }
 }
 

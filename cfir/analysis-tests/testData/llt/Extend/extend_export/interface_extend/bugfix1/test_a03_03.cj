@@ -51,12 +51,12 @@ public class MyClass {}
 
 package c
 
-import <!package_search_error!>b<!>.{MyClass,I1}
+import b.{MyClass,I1}
 
 main() {
     var myClassImpl = MyClass()
     myClassImpl.test1()
-    myClassImpl.test2()
+    myClassImpl.<!NO_MATCH_FUNCTION_DECLARATION_FOR_CALL!>t<!>est2()
 }
 
 // Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.

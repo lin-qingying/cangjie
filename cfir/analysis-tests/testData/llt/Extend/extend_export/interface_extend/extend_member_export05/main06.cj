@@ -62,12 +62,12 @@ extend<T> Foo<T> <: I1 & I2 & I3 {
 
 package b.d
 
-import <!package_search_error!>a<!>.*
-import <!package_search_error!>b.c<!>.*
+import a.*
+import b.c.*
 
 main() {
     Foo<Int64>().f0() // ok
-    Foo<Int64>().f1() // error
-    Foo<Int64>().f2() // error
+    Foo<Int64>().<!NO_MATCH_FUNCTION_DECLARATION_FOR_CALL!>f<!>1() // error
+    Foo<Int64>().<!NO_MATCH_FUNCTION_DECLARATION_FOR_CALL!>f<!>2() // error
     Foo<Int64>().f3() // ok
 }

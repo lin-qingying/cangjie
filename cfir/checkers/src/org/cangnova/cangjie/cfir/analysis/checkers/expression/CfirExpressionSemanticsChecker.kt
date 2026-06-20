@@ -351,6 +351,39 @@ object CfirOpenConstructorMemberAccessChecker : CfirQualifiedAccessChecker() {
     }
 }
 
+/**
+ * 禁止通过 `super` 直接访问抽象函数。
+ *
+ * 官方语义将 `super.abstractFunc()` 与 `super.abstractFunc` 都视为直接访问抽象成员。
+ * 这里在解析后的 qualified access 上检查目标函数状态，并把诊断落在 `super` 关键字。
+ */
+object CfirAbstractSuperMemberAccessChecker : CfirQualifiedAccessChecker() {
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    override fun check(expression: CfirQualifiedAccessExpression) {
+        val receiver = expression.explicitReceiver as? CfirSuperReceiverExpression ?: return
+        val target = expression.resolvedCallableTarget() as? CfirNamedFunction ?: return
+        if (!target.status.isAbstract) return
+
+        reporter.reportOn(
+            source = receiver.calleeReference.source?.firstCharacterDiagnosticSource()
+                ?: receiver.source?.firstCharacterDiagnosticSource()
+                ?: expression.source,
+            factory = CfirErrors.ABSTRACT_METHOD_CANNOT_BE_ACCESSED_DIRECTLY,
+        )
+    }
+
+    private fun CfirQualifiedAccessExpression.resolvedCallableTarget(): CfirCallableDeclaration? {
+        return when (val reference = calleeReference) {
+            is CfirResolvedNamedReference -> reference.resolvedSymbol.cfir as? CfirCallableDeclaration
+            is CfirResolvedErrorReference -> reference.resolvedSymbol.cfir as? CfirCallableDeclaration
+            is CfirNamedReferenceWithCandidateBase -> reference.candidateSymbol?.cfir as? CfirCallableDeclaration
+            is CfirErrorNamedReference ->
+                (reference.diagnostic as? ConeDiagnosticWithSingleCandidate)?.candidateSymbol?.cfir as? CfirCallableDeclaration
+            else -> null
+        }
+    }
+}
+
 private fun CheckerContext.openClassConstructorOwner(): CfirClass? {
     containingDeclarations.asReversed().firstOrNull { it is CfirConstructor } ?: return null
     val owner = findClosestDeclaration<CfirClass>() ?: return null

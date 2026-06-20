@@ -21,15 +21,15 @@ public class F {
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 
-import <!package_search_error!>a<!>.*
+import a.*
 
-@F
+<!ANNOTATION_NOT_APPLICABLE_JFFI!>@F<!>
 extend Int8 {}
 
 @F
 func foo() {}
 
-@F
+<!ANNOTATION_NOT_APPLICABLE_JFFI!>@F<!>
 public var a = 3
 
 main() {

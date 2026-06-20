@@ -24,7 +24,7 @@ public import a.MyClass
 
 // FILE: unused013.cj
 package c
-import <!package_search_error!>b<!>.MyClass
+import b.MyClass
 
 main() {
     var myClassImpl = MyClass()

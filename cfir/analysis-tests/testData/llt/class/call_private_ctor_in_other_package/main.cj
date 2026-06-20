@@ -19,12 +19,12 @@ public open class Foo {
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 
-internal import <!package_search_error!>pkg<!>.*
+internal import pkg.*
 
 class Bar <: Foo {
-    init() {
+    <!NO_MATCH_FUNCTION_DECLARATION_FOR_CALL!>i<!>nit() {
     }
-    init(a: Int64) {
+    <!NO_MATCH_FUNCTION_DECLARATION_FOR_CALL!>i<!>nit(a: Int64) {
         let aNew = 1
     }
 }

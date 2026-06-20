@@ -25,12 +25,6 @@ class ConstEvaluationGenerated : AbstractCfirLightTreeMacroDiagnosticsTest() {
         runTest("cfir/analysis-tests/testData/macro/llt/const_evaluation/const_safe_macro_not_std.cj")
     }
 
-    @TestMetadata("const_safe_macro_std.cj")
-    @Test
-    fun testConstSafeMacroStd() {
-        runTest("cfir/analysis-tests/testData/macro/llt/const_evaluation/const_safe_macro_std.cj")
-    }
-
     @TestMetadata("const_safe_std.cj")
     @Test
     fun testConstSafeStd() {

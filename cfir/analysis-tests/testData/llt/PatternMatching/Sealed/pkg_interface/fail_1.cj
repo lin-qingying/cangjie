@@ -31,9 +31,9 @@ public class C <: B {}
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 
-internal import <!package_search_error!>pkga<!>.*
+internal import pkga.*
 
-enum Color <: I { // error
+enum <!CANNOT_INHERIT_SEALED!>Color<!> <: I { // error
     RED | GREEN | BLUE
 
     public func f() {
