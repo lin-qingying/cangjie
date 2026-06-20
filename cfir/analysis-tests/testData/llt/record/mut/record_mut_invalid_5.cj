@@ -45,11 +45,11 @@ struct R1<T> {
     }
 
     public mut func foo5() {
-        return <!sema_use_this_as_an_expression_in_func!>t<!>his
+        return <!THIS_AS_EXPRESSION_IN_FUNC!>t<!>his
     }
 
     public mut func foo6() {
-        var a = <!sema_use_this_as_an_expression_in_func!>t<!>his
+        var a = <!THIS_AS_EXPRESSION_IN_FUNC!>t<!>his
         return a
     }
 }

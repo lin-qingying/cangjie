@@ -60,7 +60,7 @@ object CfirConstructorDelegationChecker : CfirConstructorChecker() {
                 reporter.reportOn(
                     source = delegation.call.delegationDiagnosticSource()?.firstCharacterDiagnosticSource()
                         ?: declaration.source?.firstCharacterDiagnosticSource(),
-                    factory = CfirErrors.sema_illegal_place_of_calling_this_or_super,
+                    factory = CfirErrors.ILLEGAL_PLACE_OF_CALLING_THIS_OR_SUPER,
                     a = delegation.kind.keyword,
                 )
             }
@@ -73,7 +73,7 @@ object CfirConstructorDelegationChecker : CfirConstructorChecker() {
                     reporter.reportOn(
                         source = firstStatementDelegation.call.delegationDiagnosticSource()?.firstCharacterDiagnosticSource()
                             ?: declaration.source?.firstCharacterDiagnosticSource(),
-                        factory = CfirErrors.sema_illegal_place_of_calling_this_primary_constructor,
+                        factory = CfirErrors.ILLEGAL_PLACE_OF_CALLING_THIS_PRIMARY_CONSTRUCTOR,
                     )
                     return
                 }
@@ -99,7 +99,7 @@ object CfirConstructorDelegationChecker : CfirConstructorChecker() {
 
         reporter.reportOn(
             source = source?.firstCharacterDiagnosticSource(),
-            factory = CfirErrors.sema_multiple_primary_constructors,
+            factory = CfirErrors.MULTIPLE_PRIMARY_CONSTRUCTORS,
         )
     }
 
@@ -180,7 +180,7 @@ object CfirConstructorDelegationChecker : CfirConstructorChecker() {
 
         reporter.reportOn(
             source = declaration.constructorNameDiagnosticSource(),
-            factory = CfirErrors.sema_no_non_param_constructor_in_super_class,
+            factory = CfirErrors.NO_NON_PARAM_CONSTRUCTOR_IN_SUPER_CLASS,
         )
     }
 }

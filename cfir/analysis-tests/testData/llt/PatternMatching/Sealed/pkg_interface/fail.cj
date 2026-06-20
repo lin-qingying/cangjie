@@ -31,19 +31,19 @@ public class C <: B {}
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 
-internal import <!package_search_error!>pkga<!>.*
+internal import pkga.*
 
-class C <: I { // error
+class <!CANNOT_INHERIT_SEALED!>C<!> <: I { // error
     public func f() {
         2
     }
 }
 
-interface J <: I {} // error
+interface <!CANNOT_INHERIT_SEALED!>J<!> <: I {} // error
 
 class D {}
 
-extend D <: I { // error
+extend <!CANNOT_INHERIT_SEALED!>D<!> <: I { // error
     public func f() {
         3
     }

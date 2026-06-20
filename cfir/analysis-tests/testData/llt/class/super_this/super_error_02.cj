@@ -12,6 +12,6 @@ open class Base {
     }
 }
 
-class <!sema_no_non_param_constructor_in_super_class!>Test<!><T> <: Base {
+class <!NO_NON_PARAM_CONSTRUCTOR_IN_SUPER_CLASS!>Test<!><T> <: Base {
     public var a: Int32 = 3
 }

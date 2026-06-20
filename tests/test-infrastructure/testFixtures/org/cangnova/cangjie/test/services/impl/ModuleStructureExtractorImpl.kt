@@ -1,44 +1,17 @@
 package org.cangnova.cangjie.test.services.impl
 
-import org.cangnova.cangjie.utils.DFS
-
 import org.cangnova.cangjie.test.Assertions
 import org.cangnova.cangjie.test.TestInfrastructureInternals
-import org.cangnova.cangjie.test.testInfo
 import org.cangnova.cangjie.test.builders.LanguageVersionSettingsBuilder
 import org.cangnova.cangjie.test.directives.AdditionalFilesDirectives
 import org.cangnova.cangjie.test.directives.LanguageSettingsDirectives
 import org.cangnova.cangjie.test.directives.ModuleStructureDirectives
-import org.cangnova.cangjie.test.directives.model.ComposedDirectivesContainer
-import org.cangnova.cangjie.test.directives.model.ComposedRegisteredDirectives
-import org.cangnova.cangjie.test.directives.model.Directive
-import org.cangnova.cangjie.test.directives.model.DirectivesContainer
-import org.cangnova.cangjie.test.directives.model.RegisteredDirectives
-import org.cangnova.cangjie.test.model.ArtifactKind
-import org.cangnova.cangjie.test.model.BackendKind
-import org.cangnova.cangjie.test.model.DependencyDescription
-import org.cangnova.cangjie.test.model.DependencyKind
-import org.cangnova.cangjie.test.model.DependencyRelation
-import org.cangnova.cangjie.test.model.FrontendKind
-import org.cangnova.cangjie.test.model.FrontendKinds
-import org.cangnova.cangjie.test.model.TestFile
-import org.cangnova.cangjie.test.model.TestModule
-import org.cangnova.cangjie.test.model.TestModuleStructure
-import org.cangnova.cangjie.test.model.TestModuleStructureImpl
-import org.cangnova.cangjie.test.services.AbstractEnvironmentConfigurator
-import org.cangnova.cangjie.test.services.AdditionalSourceProvider
-import org.cangnova.cangjie.test.services.AssertionsService
-import org.cangnova.cangjie.test.services.DefaultRegisteredDirectivesProvider
-import org.cangnova.cangjie.test.services.DefaultsProvider
-import org.cangnova.cangjie.test.services.ExceptionFromModuleStructureTransformer
-import org.cangnova.cangjie.test.services.ModuleStructureExtractor
-import org.cangnova.cangjie.test.services.ModuleStructureTransformer
-import org.cangnova.cangjie.test.services.TestServices
-import org.cangnova.cangjie.test.services.assertions
-import org.cangnova.cangjie.test.services.defaultDirectives
-import org.cangnova.cangjie.test.services.defaultRegisteredDirectivesProvider
-import org.cangnova.cangjie.test.services.defaultsProvider
+import org.cangnova.cangjie.test.directives.model.*
+import org.cangnova.cangjie.test.model.*
+import org.cangnova.cangjie.test.services.*
+import org.cangnova.cangjie.test.testInfo
 import org.cangnova.cangjie.test.util.joinToArrayString
+import org.cangnova.cangjie.utils.DFS
 import java.io.File
 
 /*
@@ -295,9 +268,9 @@ class ModuleStructureExtractorImpl(
             val dependsOnNames = dependsOn.takeIf { it.isNotBlank() }?.split(" ") ?: emptyList()
 
             val intersection = buildSet {
-                addAll(dependenciesNames intersect friendsNames)
-                addAll(dependenciesNames intersect dependsOnNames)
-                addAll(friendsNames intersect dependsOnNames)
+                addAll(dependenciesNames intersect friendsNames.toSet())
+                addAll(dependenciesNames intersect dependsOnNames.toSet())
+                addAll(friendsNames intersect dependsOnNames.toSet())
             }
             require(intersection.isEmpty()) {
                 val m = if (intersection.size == 1) "module" else "modules"

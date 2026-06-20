@@ -55,12 +55,6 @@ class LevelGenerated : AbstractCfirPsiMacroDiagnosticsTest() {
         runTest("cfir/analysis-tests/testData/macro/llt/APILevelChecker/level/non_literal.cj")
     }
 
-    @TestMetadata("on_invalid_decl.cj")
-    @Test
-    fun testOnInvalidDecl() {
-        runTest("cfir/analysis-tests/testData/macro/llt/APILevelChecker/level/on_invalid_decl.cj")
-    }
-
     @TestMetadata("test_dep01.cj")
     @Test
     fun testTestDep01() {

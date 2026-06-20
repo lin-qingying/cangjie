@@ -13,6 +13,6 @@ main(): Int64 {
     func g() {
         return f() + 1
     }
-    {a: Int64 => <!sema_func_capture_var_cannot_expr!>g<!>}
+    {a: Int64 => <!USE_FUNC_CAPTURE_VAR_ALONE!>g<!>}
     return 0
 }

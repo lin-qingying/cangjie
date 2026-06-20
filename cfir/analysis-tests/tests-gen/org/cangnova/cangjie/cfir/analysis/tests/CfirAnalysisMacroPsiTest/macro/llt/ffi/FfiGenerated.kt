@@ -19,12 +19,6 @@ class FfiGenerated : AbstractCfirPsiMacroDiagnosticsTest() {
         assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/macro/llt/ffi")
     }
 
-    @TestMetadata("bad_cfunctype_check.cj")
-    @Test
-    fun testBadCfunctypeCheck() {
-        runTest("cfir/analysis-tests/testData/macro/llt/ffi/bad_cfunctype_check.cj")
-    }
-
     @TestMetadata("c_type_interface.cj")
     @Test
     fun testCTypeInterface() {

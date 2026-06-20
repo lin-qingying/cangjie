@@ -25,7 +25,7 @@ struct R {
     }
 }
 
-<!sema_incompatible_mut_modifier_between_struct_and_interface!>e<!>xtend R <: I {
+<!INCOMPATIBLE_MUT_MODIFIER_BETWEEN_STRUCT_AND_INTERFACE!>e<!>xtend R <: I {
     public func cc(): Int32 {
         return 1
     }

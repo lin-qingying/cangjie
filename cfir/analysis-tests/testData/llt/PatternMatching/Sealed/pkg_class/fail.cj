@@ -29,9 +29,9 @@ public class B <: A {}
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 
-internal import <!package_search_error!>pkga<!>.*
+internal import pkga.*
 
-class C <: A {} // error
+class <!CANNOT_INHERIT_SEALED!>C<!> <: A {} // error
 
 func f(x: A) {
     match (x) {

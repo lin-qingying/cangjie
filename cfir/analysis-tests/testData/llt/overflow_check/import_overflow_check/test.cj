@@ -22,7 +22,7 @@ public func fun_1(para_1: Int32, para_2: Int32, para_3!: Int32 = -10) {
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 
-internal import <!package_search_error!>p1<!>.*
+internal import p1.*
 
 main() {
     var varCO2 = fun_1(1, 1)

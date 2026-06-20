@@ -50,8 +50,8 @@ extend A <: I2 {}
 
 package pkg
 
-import <!package_search_error!>pkg1<!>.*
-import <!package_search_error!>pkg2<!>.*
+import pkg1.*
+import pkg2.*
 
 main() {
     var a = A()

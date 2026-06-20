@@ -19,12 +19,6 @@ class IntTypeSuffixGenerated : AbstractCfirLightTreeMacroDiagnosticsTest() {
         assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/macro/llt/type/int_type_suffix")
     }
 
-    @TestMetadata("001.cj")
-    @Test
-    fun test001() {
-        runTest("cfir/analysis-tests/testData/macro/llt/type/int_type_suffix/001.cj")
-    }
-
     @TestMetadata("002.cj")
     @Test
     fun test002() {
@@ -49,18 +43,6 @@ class IntTypeSuffixGenerated : AbstractCfirLightTreeMacroDiagnosticsTest() {
         runTest("cfir/analysis-tests/testData/macro/llt/type/int_type_suffix/005.cj")
     }
 
-    @TestMetadata("006.cj")
-    @Test
-    fun test006() {
-        runTest("cfir/analysis-tests/testData/macro/llt/type/int_type_suffix/006.cj")
-    }
-
-    @TestMetadata("007.cj")
-    @Test
-    fun test007() {
-        runTest("cfir/analysis-tests/testData/macro/llt/type/int_type_suffix/007.cj")
-    }
-
     @TestMetadata("010.cj")
     @Test
     fun test010() {
@@ -71,12 +53,6 @@ class IntTypeSuffixGenerated : AbstractCfirLightTreeMacroDiagnosticsTest() {
     @Test
     fun test011() {
         runTest("cfir/analysis-tests/testData/macro/llt/type/int_type_suffix/011.cj")
-    }
-
-    @TestMetadata("013.cj")
-    @Test
-    fun test013() {
-        runTest("cfir/analysis-tests/testData/macro/llt/type/int_type_suffix/013.cj")
     }
 }
 

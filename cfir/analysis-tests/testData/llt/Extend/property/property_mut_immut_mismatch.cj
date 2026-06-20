@@ -16,23 +16,23 @@ interface I {
 class A {}
 
 extend A <: I {
-    <!sema_property_have_same_declaration_in_inherit_mut!>s<!>tatic prop <!WEAK_VISIBILITY!>p1<!>: Int64 {
+    <!PROPERTY_HAVE_SAME_DECLARATION_IN_INHERIT_MUT!>s<!>tatic prop <!WEAK_VISIBILITY!>p1<!>: Int64 {
         get() {
             0
         }
     }
-    <!sema_property_have_same_declaration_in_inherit_mut!>p<!>rop <!WEAK_VISIBILITY!>p2<!>: Int64 {
+    <!PROPERTY_HAVE_SAME_DECLARATION_IN_INHERIT_MUT!>p<!>rop <!WEAK_VISIBILITY!>p2<!>: Int64 {
         get() {
             0
         }
     }
-    <!sema_property_have_same_declaration_in_inherit_immut!>m<!>ut static prop <!WEAK_VISIBILITY!>p3<!>: Int64 {
+    <!PROPERTY_HAVE_SAME_DECLARATION_IN_INHERIT_IMMUT!>m<!>ut static prop <!WEAK_VISIBILITY!>p3<!>: Int64 {
         get() {
             0
         }
         set(v) {}
     }
-    <!sema_property_have_same_declaration_in_inherit_immut!>m<!>ut prop <!WEAK_VISIBILITY!>p4<!>: Int64 {
+    <!PROPERTY_HAVE_SAME_DECLARATION_IN_INHERIT_IMMUT!>m<!>ut prop <!WEAK_VISIBILITY!>p4<!>: Int64 {
         get() {
             0
         }

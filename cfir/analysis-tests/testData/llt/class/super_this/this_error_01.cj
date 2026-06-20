@@ -7,7 +7,7 @@
 
 open class C1 {
     public func foo1() {
-        <!sema_invalid_assignment_to_this_expr!>t<!>his = C1()
+        <!CANNOT_ASSIGN_TO_IMMUTABLE!>this<!> = C1()
     }
 }
 

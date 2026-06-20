@@ -38,16 +38,16 @@ extend C {
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 
-internal import <!package_search_error!>pkg<!>.*
+internal import pkg.*
 
 class C1 <: C {
     func h() {
-        f()
-        g()
-        p = 0
-        p
-        q = 0
-        q
+        <!NO_MATCH_FUNCTION_DECLARATION_FOR_CALL!>f<!>()
+        <!UNRESOLVED_REFERENCE!>g<!>()
+        <!INVALID_ACCESS_CONTROL!>p<!> = 0
+        <!INVALID_ACCESS_CONTROL!>p<!>
+        <!UNRESOLVED_REFERENCE!>q<!> = 0
+        <!UNRESOLVED_REFERENCE!>q<!>
         0
     }
 }

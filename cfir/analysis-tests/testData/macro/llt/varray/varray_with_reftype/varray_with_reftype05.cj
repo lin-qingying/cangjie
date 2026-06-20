@@ -5,7 +5,7 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 
-<!sema_value_type_recursive!>s<!>truct S1 {
+<!VALUE_TYPE_RECURSIVE!>s<!>truct S1 {
     var a: S2
     init(a1: S2) {
         a = a1
@@ -29,5 +29,5 @@ struct S3 {
 }
 
 main() {
-    var a: VArray<<!sema_varray_arg_type_with_reftype!>S1<!>, $1>
+    var a: VArray<<!VARRAY_ARG_TYPE_WITH_REFTYPE!>S1<!>, $1>
 }

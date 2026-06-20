@@ -17,8 +17,8 @@ sealed interface I<T> {}
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 
-internal import <!package_search_error!>pkg<!>.I
+internal import pkg.I
 
-extend<T> Array<T> <: I<T> {}
+extend<T> <!TYPE_CANNOT_EXTEND_IMPORTED_INTERFACE!>Array<T><!> <: I<T> {}
 
 main() {}

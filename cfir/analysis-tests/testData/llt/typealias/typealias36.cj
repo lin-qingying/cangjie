@@ -6,7 +6,7 @@
 
 
 
-import <!package_search_error!>pkga<!>
+import <!UNRESOLVED_IMPORT!>pkga<!>
 
 main() {
     var a = pkga.AA<Int64>()

@@ -36,14 +36,14 @@ public class B<T1> {}
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 
-internal import <!package_search_error!>pkg1<!>.*
+internal import pkg1.*
 
-internal import <!package_search_error!>pkg<!>.*
+internal import pkg.*
 
 interface I2<T> <: I<T> {}
 
 extend<T3> A<T3> <: I2<T3> {}
 
-extend<T3> B<T3> <: I2<T3> {}
+extend<T3> <!TYPE_CANNOT_EXTEND_IMPORTED_INTERFACE!>B<T3><!> <: I2<T3> {}
 
 main() {}

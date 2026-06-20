@@ -106,13 +106,15 @@ object DiagnosticNameMapper {
         "STRUCT_SUPER_NOT_ALLOWED" to "sema_struct_super_not_allowed",
         "INTERFACE_SUPER_NOT_ALLOWED" to "sema_interface_super_not_allowed",
         "INVALID_MEMBER_VISIBILITY_IN_CLASS" to "sema_invalid_member_visibility_in_class",
+        "INCOMPATIBLE_MUT_MODIFIER_BETWEEN_STRUCT_AND_INTERFACE" to "sema_incompatible_mut_modifier_between_struct_and_interface",
+        "ABSTRACT_METHOD_CANNOT_BE_ACCESSED_DIRECTLY" to "sema_abstract_method_cannot_be_accessed_directly",
 
         // ── Constructor ──
         "ILLEGAL_THIS_OR_SUPER_CALL" to "sema_illegal_this_or_super_call",
-        "sema_multiple_primary_constructors" to "sema_multiple_primary_constructors",
-        "sema_illegal_place_of_calling_this_or_super" to "sema_illegal_place_of_calling_this_or_super",
-        "sema_illegal_place_of_calling_this_primary_constructor" to "sema_illegal_place_of_calling_this_primary_constructor",
-        "sema_no_non_param_constructor_in_super_class" to "sema_no_non_param_constructor_in_super_class",
+        "MULTIPLE_PRIMARY_CONSTRUCTORS" to "sema_multiple_primary_constructors",
+        "ILLEGAL_PLACE_OF_CALLING_THIS_OR_SUPER" to "sema_illegal_place_of_calling_this_or_super",
+        "ILLEGAL_PLACE_OF_CALLING_THIS_PRIMARY_CONSTRUCTOR" to "sema_illegal_place_of_calling_this_primary_constructor",
+        "NO_NON_PARAM_CONSTRUCTOR_IN_SUPER_CLASS" to "sema_no_non_param_constructor_in_super_class",
         "RECURSIVE_CONSTRUCTOR_CALL" to "sema_recursive_constructor_call",
         "VALUE_TYPE_RECURSIVE" to "sema_value_type_recursive",
 
@@ -214,6 +216,7 @@ object DiagnosticNameMapper {
 
         // ── Varray ──
         "VARRAY_SIZE_MISMATCH" to "sema_varray_size_mismatch",
+        "VARRAY_IN_CFUNC" to "sema_varray_in_cfunc",
         "VARRAY_SUBSCRIPT_NUM" to "sema_varray_subscript_num",
         "VARRAY_ARGS_NUMBER_MISMATCH" to "sema_varray_args_number_mismatch",
         "VARRAY_ARG_TYPE_WITH_REFTYPE" to "sema_varray_arg_type_with_reftype",

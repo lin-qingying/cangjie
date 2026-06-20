@@ -259,9 +259,9 @@ public class CustomAnno {
 
 package ohos.dep
 
-import <!package_search_error!>ohos.labels<!>.*
-import <!package_search_error!>m<!>.*
-import <!package_search_error!>anno<!>.*
+import ohos.labels.*
+import m.*
+import anno.*
 
 @!APILevel[since: "21"]
 @M

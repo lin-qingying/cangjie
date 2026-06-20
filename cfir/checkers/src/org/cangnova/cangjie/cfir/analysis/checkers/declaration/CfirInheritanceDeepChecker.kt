@@ -72,6 +72,43 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     internal fun checkExtend(declaration: CfirExtend) {
         checkInheritedMemberKindConsistency(declaration.memberInheritanceSubject())
+        checkExtendTargetMutCompatibility(declaration)
+    }
+
+    /**
+     * `extend T <: I` 需要让目标类型 `T` 的既有成员满足接口 `I` 的 mut 签名。
+     *
+     * 该路径不同于 extend 块内声明成员覆盖接口成员：冲突成员可能已经定义在目标类型上，
+     * 因此诊断落在 extend 声明本身。
+     */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun checkExtendTargetMutCompatibility(extend: CfirExtend) {
+        val targetDecl = extend.extendedTypeRef.resolvedClassLikeDeclaration() ?: return
+        val targetScope = context.createUseSiteMemberScope(targetDecl)
+        val reported = mutableSetOf<Name>()
+
+        for (superTypeRef in extend.superTypeRefs) {
+            val superDecl = superTypeRef.resolvedClassLikeDeclaration() ?: continue
+            for (superMember in superDecl.declarations) {
+                val superInfo = (superMember as? CfirNamedFunction)
+                    ?.symbol
+                    ?.inheritedMemberInfoOrNull(context)
+                    ?: continue
+
+                val targetInfos = buildList {
+                    targetScope.processFunctionsByName(superInfo.name) { symbol ->
+                        symbol.inheritedMemberInfoOrNull(context)?.let(::add)
+                    }
+                }
+
+                if (targetInfos.any { it.hasMutFunctionConflict(superInfo) } && reported.add(superInfo.name)) {
+                    reporter.reportOn(
+                        source = extend.source?.firstCharacterDiagnosticSource() ?: superTypeRef.source,
+                        factory = CfirErrors.INCOMPATIBLE_MUT_MODIFIER_BETWEEN_STRUCT_AND_INTERFACE,
+                    )
+                }
+            }
+        }
     }
 
     /**
@@ -323,6 +360,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                     kind = "function",
                     isStatic = member.status.isStatic,
                     isConst = member.status.isConst,
+                    isMut = member.status.isMut,
                     source = member.source,
                     nameSource = member.functionNameDiagnosticSource(),
                     ownerName = null,
@@ -334,6 +372,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                     kind = member.inheritanceMemberKind(),
                     isStatic = member.status.isStatic,
                     isConst = member.status.isConst,
+                    isMut = member.status.isMut,
                     source = member.source,
                     nameSource = member.propertyNameDiagnosticSource(),
                     ownerName = null,
@@ -345,6 +384,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                     kind = "variable",
                     isStatic = member.status.isStatic,
                     isConst = false,
+                    isMut = false,
                     source = member.source,
                     nameSource = member.fieldVariableNameDiagnosticSource(),
                     ownerName = null,
@@ -358,6 +398,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         val reportedStaticConflicts = mutableSetOf<Name>()
         val reportedKindConflicts = mutableSetOf<Name>()
         val reportedConstConflicts = mutableSetOf<String>()
+        val reportedMutConflicts = mutableSetOf<String>()
         val reportedVariableShadows = mutableSetOf<Name>()
         val reportedCannotOverrides = mutableSetOf<String>()
         val reportedExtendOverrides = mutableSetOf<String>()
@@ -431,6 +472,18 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                             }
                         }
 
+                        if (!hasStaticConflict && ownInfo.hasMutFunctionConflict(superInfo)) {
+                            val key = ownInfo.overrideDiagnosticKey(superInfo)
+                            if (reportedMutConflicts.add(key)) {
+                                reporter.reportOn(
+                                    source = ownInfo.source?.firstCharacterDiagnosticSource()
+                                        ?: ownInfo.nameSource
+                                        ?: subject.source,
+                                    factory = CfirErrors.INCOMPATIBLE_MUT_MODIFIER_BETWEEN_STRUCT_AND_INTERFACE,
+                                )
+                            }
+                        }
+
                         if (!hasStaticConflict && ownInfo.kind == "variable" && reportedVariableShadows.add(ownInfo.name)) {
                             reporter.reportOn(
                                 source = ownInfo.source?.firstCharacterDiagnosticSource() ?: subject.source,
@@ -480,6 +533,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                 kind = "function",
                 isStatic = declaration.status.isStatic,
                 isConst = declaration.status.isConst,
+                isMut = declaration.status.isMut,
                 source = declaration.source,
                 nameSource = declaration.functionNameDiagnosticSource(),
                 ownerName = ownerName,
@@ -491,6 +545,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                 kind = declaration.inheritanceMemberKind(),
                 isStatic = declaration.status.isStatic,
                 isConst = declaration.status.isConst,
+                isMut = declaration.status.isMut,
                 source = declaration.source,
                 nameSource = declaration.propertyNameDiagnosticSource(),
                 ownerName = ownerName,
@@ -502,6 +557,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                 kind = "variable",
                 isStatic = declaration.status.isStatic,
                 isConst = false,
+                isMut = false,
                 source = declaration.source,
                 nameSource = declaration.fieldVariableNameDiagnosticSource(),
                 ownerName = ownerName,
@@ -604,6 +660,12 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         return hasSameOverrideSignature(superInfo)
     }
 
+    private fun InheritedMemberInfo.hasMutFunctionConflict(superInfo: InheritedMemberInfo): Boolean {
+        if (kind != "function" || superInfo.kind != "function") return false
+        if (isMut == superInfo.isMut) return false
+        return hasSameOverrideSignature(superInfo)
+    }
+
     private fun InheritedMemberInfo.overrideDiagnosticKey(superInfo: InheritedMemberInfo): String =
         buildString {
             append(kind)
@@ -620,6 +682,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         val kind: String,
         val isStatic: Boolean,
         val isConst: Boolean,
+        val isMut: Boolean,
         val source: CjSourceElement?,
         val nameSource: AbstractCjSourceElement?,
         val ownerName: Name?,
@@ -665,6 +728,13 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
             source = source,
             classLikeDeclaration = null,
         )
+
+    context(context: CheckerContext)
+    private fun CfirTypeRef.resolvedClassLikeDeclaration(): CfirClassLikeDeclaration? {
+        val classId = ((this as? CfirResolvedTypeRef)?.coneType as? ConeClassLikeType)?.classId ?: return null
+        val symbol = context.session.symbolProvider.getClassLikeSymbolByClassId(classId) ?: return null
+        return symbol.cfir as? CfirClassLikeDeclaration
+    }
 
 }
 

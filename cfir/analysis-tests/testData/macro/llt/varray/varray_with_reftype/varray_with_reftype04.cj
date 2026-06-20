@@ -25,5 +25,5 @@ struct S3 {
 }
 
 main() {
-    var a: VArray<<!sema_varray_arg_type_with_reftype!>S1<!>, $1>
+    var a: VArray<<!VARRAY_ARG_TYPE_WITH_REFTYPE!>S1<!>, $1>
 }

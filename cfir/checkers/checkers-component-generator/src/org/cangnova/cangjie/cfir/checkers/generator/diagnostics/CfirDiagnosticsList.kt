@@ -364,7 +364,7 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
         val RECURSIVE_CONSTRUCTOR_CALL by error<PsiElement>(PositioningStrategy.ACTUAL_DECLARATION_NAME)
 
         // 类型声明中存在多个主构造器，对齐官方 sema_multiple_primary_constructors。
-        val sema_multiple_primary_constructors by error<PsiElement>()
+        val MULTIPLE_PRIMARY_CONSTRUCTORS by error<PsiElement>()
 
         // 值类型字段或构造器参数形成递归
         val VALUE_TYPE_RECURSIVE by error<PsiElement>()
@@ -375,12 +375,12 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
         }
 
         // this/super 构造器委托调用不是构造器第一条语句，对齐官方 sema_illegal_place_of_calling_this_or_super。
-        val sema_illegal_place_of_calling_this_or_super by error<PsiElement>() {
+        val ILLEGAL_PLACE_OF_CALLING_THIS_OR_SUPER by error<PsiElement>() {
             parameter<String>("calleeName")
         }
 
         // 主构造器中调用 this(...)，对齐官方 sema_illegal_place_of_calling_this_primary_constructor。
-        val sema_illegal_place_of_calling_this_primary_constructor by error<PsiElement>()
+        val ILLEGAL_PLACE_OF_CALLING_THIS_PRIMARY_CONSTRUCTOR by error<PsiElement>()
 
         // 构造器默认参数或委托参数中读取尚未完成初始化的实例成员
         val ASSIGNMENT_OF_MEMBER_VARIABLE_CANNOT_USE_THIS_OR_SUPER by error<PsiElement>(
@@ -399,6 +399,9 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
             parameter<Name>("className")
         }
 
+        // 通过 super 直接访问抽象函数，对齐官方 sema_abstract_method_cannot_be_accessed_directly。
+        val ABSTRACT_METHOD_CANNOT_BE_ACCESSED_DIRECTLY by error<PsiElement>()
+
         // open/abstract class 构造器中禁止把 this 当作普通表达式。
         val THIS_AS_EXPRESSION_IN_FUNC by error<PsiElement>() {
             parameter<String>("contextDescription")
@@ -408,7 +411,7 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
         val EXPLICIT_SUPER_CALL_REQUIRED by error<PsiElement>(PositioningStrategy.ACTUAL_DECLARATION_NAME)
 
         // 父类没有可隐式调用的无参构造器，对齐官方 sema_no_non_param_constructor_in_super_class。
-        val sema_no_non_param_constructor_in_super_class by error<PsiElement>()
+        val NO_NON_PARAM_CONSTRUCTOR_IN_SUPER_CLASS by error<PsiElement>()
 
         // break/continue 必须位于循环体内
         val INVALID_LOOP_CONTROL by error<PsiElement>()
@@ -1146,6 +1149,9 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
             parameter<String>("memberKind")
             parameter<Name>("memberName")
         }
+
+        // struct/extend 实现 interface 时函数 mut 修饰不一致。
+        val INCOMPATIBLE_MUT_MODIFIER_BETWEEN_STRUCT_AND_INTERFACE by error<PsiElement>()
 
         // 从多个父类型继承的同名成员声明类型不一致
         val INHERIT_SUPER_MEMBER_KIND_INCONSISTENT by error<PsiElement> {

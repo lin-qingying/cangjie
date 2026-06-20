@@ -243,7 +243,7 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
             "Recursive constructor call detected.",
         )
         map.put(
-            CfirErrors.sema_multiple_primary_constructors,
+            CfirErrors.MULTIPLE_PRIMARY_CONSTRUCTORS,
             "Class or struct cannot have more than one primary constructor.",
         )
         map.put(
@@ -256,12 +256,12 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
             RENDER_STRING,
         )
         map.put(
-            CfirErrors.sema_illegal_place_of_calling_this_or_super,
+            CfirErrors.ILLEGAL_PLACE_OF_CALLING_THIS_OR_SUPER,
             "Call to ''{0}'' must be first expression in constructor.",
             RENDER_STRING,
         )
         map.put(
-            CfirErrors.sema_illegal_place_of_calling_this_primary_constructor,
+            CfirErrors.ILLEGAL_PLACE_OF_CALLING_THIS_PRIMARY_CONSTRUCTOR,
             "Invalid calling 'this' in primary constructor.",
         )
         map.put(
@@ -278,6 +278,10 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
             RENDER_NAME,
         )
         map.put(
+            CfirErrors.ABSTRACT_METHOD_CANNOT_BE_ACCESSED_DIRECTLY,
+            "abstract method cannot be accessed directly.",
+        )
+        map.put(
             CfirErrors.THIS_AS_EXPRESSION_IN_FUNC,
             "'this' cannot be used as an expression in the {0}",
             RENDER_STRING,
@@ -287,7 +291,7 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
             "Explicit super constructor call is required.",
         )
         map.put(
-            CfirErrors.sema_no_non_param_constructor_in_super_class,
+            CfirErrors.NO_NON_PARAM_CONSTRUCTOR_IN_SUPER_CLASS,
             "There is no non-parameter constructor in super class; invoke super explicitly.",
         )
         map.put(
@@ -710,6 +714,10 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
             RENDER_NAME
         )
         map.put(CfirErrors.CANNOT_OVERRIDE, "cannot override {0} ''{1}''", RENDER_STRING, RENDER_NAME)
+        map.put(
+            CfirErrors.INCOMPATIBLE_MUT_MODIFIER_BETWEEN_STRUCT_AND_INTERFACE,
+            "mut modifier is inconsistent with inherited interface member",
+        )
         map.put(CfirErrors.INHERIT_SUPER_MEMBER_KIND_INCONSISTENT, "inherited members ''{0}'' have inconsistent decl types", RENDER_NAME)
         map.put(CfirErrors.INHERIT_MEMBER_TYPE_INCONSISTENT, "{0} of the inherited {1} members ''{2}'' are not identical and not in subtype relation", RENDER_STRING, RENDER_STRING, RENDER_NAME)
         map.put(CfirErrors.INHERIT_ABSTRACT_CLASS_STATIC_UNIMPLEMENT_FUNC, "abstract class ''{0}'' cannot contain unimplemented static {1} ''{2}''", RENDER_NAME, RENDER_STRING, RENDER_NAME)
