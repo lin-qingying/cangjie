@@ -705,7 +705,7 @@ class CfirCallCompleter(
         isRootLambdaForPCLASession: Boolean,
         containingCandidate: Candidate,
     ): ConeCangJieType {
-        if (useErrorTypeInsteadOfTypeVariableForParameterType(isRootLambdaForPCLASession)) {
+        if (useErrorTypeInsteadOfTypeVariableForParameterType(isRootLambdaForPCLASession, containingCandidate)) {
             val diagnostic = valueParameter?.let {
                 ConeCannotInferValueParameterType(
                     it,
@@ -723,8 +723,20 @@ class CfirCallCompleter(
 
     private fun ConeCangJieType.useErrorTypeInsteadOfTypeVariableForParameterType(
         isRootLambdaForPCLASession: Boolean,
+        containingCandidate: Candidate,
     ): Boolean {
         if (this !is org.cangnova.cangjie.cfir.types.ConeTypeVariableType) return false
+
+        /*
+         * 仓颉官方 `SynLamExpr` 会为无上下文 lambda 参数创建 placeholder type variable，
+         * 再由成员访问语法（MemSig/Mem2Decls）反推出接收者候选类型。synthetic 顶层
+         * lambda 正是 CFIR 承载该语义的入口，因此这里不能沿用 Kotlin 对普通无上下文
+         * lambda 的立即错误化策略；仍无法推断的变量会在后续 completion 阶段统一报错。
+         */
+        if (containingCandidate.isSyntheticCallForTopLevelLambda() && typeConstructor.originalTypeParameter == null) {
+            return false
+        }
+
         if (isRootLambdaForPCLASession || inferenceSession is CfirPCLAInferenceSession) {
             return typeConstructor.originalTypeParameter == null
         }
