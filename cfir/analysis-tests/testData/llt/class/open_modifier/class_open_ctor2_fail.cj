@@ -21,11 +21,11 @@ open class B <: A {
     public init() {
         { // lambda
             =>
-            <!sema_illegal_member_used_in_open_constructor!>f<!>oo()
-            <!sema_illegal_member_used_in_open_constructor!>g<!>oo()
-            let f1 = <!sema_illegal_member_used_in_open_constructor!>f<!>oo
-            <!sema_illegal_member_used_in_open_constructor!>g<!>oo
-            this.<!sema_illegal_member_used_in_open_constructor!>c<!>oo
+            <!ILLEGAL_MEMBER_USED_IN_OPEN_CONSTRUCTOR!>f<!>oo()
+            <!ILLEGAL_MEMBER_USED_IN_OPEN_CONSTRUCTOR!>g<!>oo()
+            let f1 = <!ILLEGAL_MEMBER_USED_IN_OPEN_CONSTRUCTOR!>f<!>oo
+            <!ILLEGAL_MEMBER_USED_IN_OPEN_CONSTRUCTOR!>g<!>oo
+            this.<!ILLEGAL_MEMBER_USED_IN_OPEN_CONSTRUCTOR!>c<!>oo
         }
     }
 }

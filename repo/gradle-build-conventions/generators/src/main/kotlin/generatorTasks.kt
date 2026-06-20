@@ -10,14 +10,12 @@ import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.Directory
 import org.gradle.api.plugins.ExtensionAware
 import org.gradle.api.plugins.JavaPluginExtension
-import org.gradle.api.tasks.JavaExec
-import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.kotlin.dsl.*
 import org.gradle.kotlin.dsl.getByType
 import org.gradle.plugins.ide.idea.model.IdeaModel
 
-fun Project.generatedDiagnosticContainersAndCheckerComponents(): TaskProvider<JavaExec> {
+fun Project.generatedDiagnosticContainersAndCheckerComponents(): TaskProvider<CacheableJavaExec> {
     return generatedSourcesTask(
         taskName = "generateCheckersComponents",
         generatorProject = ":cfir:checkers:checkers-component-generator",
@@ -59,10 +57,10 @@ fun Project.generatedSourcesTask(
     taskName: String,
     generatorProject: String,
     generatorMainClass: String,
-    argsProvider: JavaExec.(generationRoot: Directory) -> List<String> = { listOf(it.toString()) },
+    argsProvider: CacheableJavaExec.(generationRoot: Directory) -> List<String> = { listOf(it.toString()) },
     dependOnTaskOutput: Boolean = true,
     additionalInputsToTrack: (ConfigurableFileCollection) -> Unit = {},
-): TaskProvider<JavaExec> {
+): TaskProvider<CacheableJavaExec> {
     val generatorDependencies = configurations.dependencyScope("${taskName}GeneratorDependencies")
     val generatorClasspath = configurations.resolvable("${taskName}GeneratorClasspath") {
         extendsFrom(generatorDependencies.get())
@@ -88,28 +86,22 @@ fun Project.generatedSourcesTask(
     taskName: String,
     generatorClasspath: NamedDomainObjectProvider<ResolvableConfiguration>,
     generatorMainClass: String,
-    argsProvider: JavaExec.(generationRoot: Directory) -> List<String> = { listOf(it.toString()) },
+    argsProvider: CacheableJavaExec.(generationRoot: Directory) -> List<String> = { listOf(it.toString()) },
     dependOnTaskOutput: Boolean = true,
     additionalInputsToTrack: (ConfigurableFileCollection) -> Unit = {},
-): TaskProvider<JavaExec> {
+): TaskProvider<CacheableJavaExec> {
     val generationRoot = layout.projectDirectory.dir("gen")
-    val task = tasks.register<JavaExec>(taskName) {
-        workingDir = rootDir
-        classpath(generatorClasspath)
+    val task = tasks.register<CacheableJavaExec>(taskName) {
+        workingDirectory.set(rootProject.layout.projectDirectory)
+        classpath.from(generatorClasspath)
         mainClass.set(generatorMainClass)
-        systemProperties["line.separator"] = "\n"
-        args(argsProvider(generationRoot))
+        systemProperties.put("line.separator", "\n")
+        arguments.set(argsProvider(generationRoot))
+        outputDirectory.set(generationRoot)
 
         val additionalInputFiles = objects.fileCollection()
-        inputs.files(additionalInputFiles)
-            .ignoreEmptyDirectories()
-            .normalizeLineEndings()
-            .optional()
-            .withPathSensitivity(PathSensitivity.RELATIVE)
-            .withPropertyName("additionalInputFiles")
         additionalInputsToTrack(additionalInputFiles)
-
-        outputs.dir(generationRoot)
+        trackedInputs.from(additionalInputFiles)
     }
 
     val dependency: Any = when (dependOnTaskOutput) {
@@ -127,4 +119,3 @@ fun Project.generatedSourcesTask(
     }
     return task
 }
-

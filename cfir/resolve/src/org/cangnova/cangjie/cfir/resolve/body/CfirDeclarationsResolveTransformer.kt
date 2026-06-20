@@ -51,6 +51,7 @@ import org.cangnova.cangjie.cfir.symbols.ConeClassLikeLookupTagImpl
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.cfir.types.builder.buildErrorTypeRef
+import org.cangnova.cangjie.cfir.types.impl.ResolvedImplicitTypeRef
 import org.cangnova.cangjie.cfir.whileAnalysing
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
@@ -873,7 +874,10 @@ open class CfirDeclarationsResolveTransformer(
             shouldResolveEverything = shouldResolveEverything,
         ) as F
 
-        if (inferImplicitReturnType && result.returnTypeRef is CfirImplicitTypeRef) {
+        val alreadyResolvedReturnTypeRef = (result.returnTypeRef as? ResolvedImplicitTypeRef)?.typeRef
+        if (alreadyResolvedReturnTypeRef != null) {
+            result.transformReturnTypeRef(transformer, ResolutionMode.UpdateImplicitTypeRef(alreadyResolvedReturnTypeRef))
+        } else if (inferImplicitReturnType && result.returnTypeRef is CfirImplicitTypeRef) {
             val inferredType = inferFunctionReturnType(result)
             val resolved = result.returnTypeRef.resolvedTypeFromPrototype(
                 inferredType,

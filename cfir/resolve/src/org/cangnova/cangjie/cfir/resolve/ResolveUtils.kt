@@ -160,8 +160,8 @@ fun BodyResolveComponents.functionTypeForFunctionValueCandidate(
         candidate.substitutor.substituteOrSelf(resolvedType)
     }
 
-    returnTypeCalculator.tryCalculateReturnType(declaration)
-    val substitutedReturnType = candidate.substitutedReturnType().approximateThisTypeForDeclaration()
+    val calculatedReturnType = returnTypeCalculator.tryCalculateReturnType(declaration).coneType
+    val substitutedReturnType = candidate.substitutedReturnType(calculatedReturnType).approximateThisTypeForDeclaration()
 
     return ConeFunctionType(parameterTypes, substitutedReturnType)
 }

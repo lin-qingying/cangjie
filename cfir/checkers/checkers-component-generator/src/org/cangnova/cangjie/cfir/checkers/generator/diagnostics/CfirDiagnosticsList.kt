@@ -258,6 +258,9 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
             parameter<CjKeywordToken>("redundantBecauseOf")
         }
 
+        // 非可继承 class 中的 open 成员会被官方编译器忽略。
+        val IGNORE_OPEN by warning<PsiElement>()
+
         // 普通修饰符组合不兼容
         val INCOMPATIBLE_MODIFIERS by error<PsiElement> {
             parameter<CjKeywordToken>("modifier1")
@@ -384,6 +387,20 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
             PositioningStrategy.REFERENCED_NAME_BY_QUALIFIED
         ) {
             parameter<String>("memberName")
+            parameter<String>("contextDescription")
+        }
+
+        // open/abstract class 构造器中禁止访问实例函数或属性。
+        val ILLEGAL_MEMBER_USED_IN_OPEN_CONSTRUCTOR by error<PsiElement>(
+            PositioningStrategy.REFERENCED_NAME_BY_QUALIFIED
+        ) {
+            parameter<String>("memberKind")
+            parameter<String>("memberName")
+            parameter<Name>("className")
+        }
+
+        // open/abstract class 构造器中禁止把 this 当作普通表达式。
+        val THIS_AS_EXPRESSION_IN_FUNC by error<PsiElement>() {
             parameter<String>("contextDescription")
         }
 

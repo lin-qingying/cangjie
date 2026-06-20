@@ -27,4 +27,5 @@ kotlin {
 }
 
 dependencies {
+    api(project(":utilities"))
 }

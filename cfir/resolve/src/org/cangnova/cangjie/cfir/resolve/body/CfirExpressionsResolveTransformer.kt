@@ -50,7 +50,6 @@ import org.cangnova.cangjie.cfir.resolve.match.exhaustive.ExhaustivenessResult
 import org.cangnova.cangjie.cfir.resolve.transformers.CfirSpecificTypeResolverTransformer
 import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.CfirTowerDataMode
 import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.resultType
-import org.cangnova.cangjie.cfir.scopes.impl.CfirLocalScope
 import org.cangnova.cangjie.cfir.session.builtinTypes
 import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.languageVersionSettings
@@ -2283,65 +2282,20 @@ open class CfirExpressionsResolveTransformer(
             anonFunc.valueParameters.forEach { parameter ->
                 parameter.transformReturnTypeRef(transformer, ResolutionMode.ContextIndependent)
             }
-            val expectedFuncType = data.expectedTypeOrNull as? ConeFunctionType
 
             resolveAnonymousFunctionExplicitParameterTypes(anonFunc)
-            val hasUnresolvedParameterType = anonFunc.valueParameters.any { it.returnTypeRef !is CfirResolvedTypeRef }
-            if (expectedFuncType == null && hasUnresolvedParameterType) {
-                // Keep top-level lambda shape unresolved until call completion provides an expected function type.
-                // Eagerly fixing returnType here turns lambda return mismatches into outer argument mismatches.
+
+            if (data is ResolutionMode.ContextDependent) {
                 components.dataFlowAnalyzer.enterAnonymousFunctionExpression(anonymousFunctionExpression)
                 context.storeContextForAnonymousFunction(anonFunc)
                 return@withClearedEffectHandlers anonymousFunctionExpression
             }
 
-            components.dataFlowAnalyzer.enterFunction(anonFunc)
-
-            val parameterTypes = context.withTowerDataCleanup {
-                context.addLocalScope(CfirLocalScope(session))
-                val types = anonFunc.valueParameters.mapIndexed { i, param ->
-                    val expectedParamType = expectedFuncType?.parameterTypes?.getOrNull(i)
-                    val declaredParamType = (param.returnTypeRef as? CfirResolvedTypeRef)?.coneType
-                    if (param.returnTypeRef !is CfirResolvedTypeRef && expectedParamType != null) {
-                        param.replaceReturnTypeRef(
-                            param.returnTypeRef.resolvedTypeFromPrototype(expectedParamType, param.returnTypeRef.source)
-                        )
-                    }
-                    context.storeValueParameterIfNeeded(param, session)
-                    declaredParamType ?: expectedParamType
-                }
-                anonFunc.body?.resolveIndependently()
-                types
-            }
-
-            val returnType = when {
-                anonFunc.returnTypeRef is CfirResolvedTypeRef -> (anonFunc.returnTypeRef as CfirResolvedTypeRef).coneType
-                expectedFuncType != null -> expectedFuncType.returnType
-                else -> anonFunc.body?.coneTypeOrNull
-            }
-
-            if (returnType != null && anonFunc.returnTypeRef !is CfirResolvedTypeRef) {
-                anonFunc.replaceReturnTypeRef(
-                    returnType.toCfirResolvedTypeRef(anonFunc.returnTypeRef.source, anonFunc.returnTypeRef),
-                )
-            }
-
-            if (returnType != null && parameterTypes.all { it != null }) {
-                // CfirAnonymousFunctionExpression.coneTypeOrNull is derived from anonymousFunction.typeRef.
-                // Keep the source of truth on declaration side instead of writing expression cone type directly.
-                val lambdaType = ConeFunctionType(
-                    parameterTypes = parameterTypes.filterNotNull(),
-                    returnType = returnType,
-                    isCFunc = expectedFuncType?.isCFunc ?: false,
-                    isClosureType = expectedFuncType?.isClosureType ?: false,
-                    hasVariableLenArg = expectedFuncType?.hasVariableLenArg ?: false,
-                    attributes = expectedFuncType?.attributes ?: org.cangnova.cangjie.cfir.types.ConeAttributes.Empty,
-                )
-                anonFunc.replaceTypeRef(lambdaType.toCfirResolvedTypeRef(anonFunc.typeRef.source, anonFunc.typeRef))
-            }
-            anonFunc.replaceControlFlowGraphReference(components.dataFlowAnalyzer.exitFunction(anonFunc))
-            components.dataFlowAnalyzer.enterAnonymousFunctionExpression(anonymousFunctionExpression)
-            anonymousFunctionExpression
+            components.syntheticCallGenerator.resolveAnonymousFunctionExpressionWithSyntheticOuterCall(
+                anonymousFunctionExpression = anonymousFunctionExpression,
+                expectedTypeData = data as? ResolutionMode.WithExpectedType,
+                context = transformer.resolutionContext,
+            )
         }
     }
 

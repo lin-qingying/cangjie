@@ -40,6 +40,7 @@ import org.cangnova.cangjie.cfir.resolve.inference.CfirCallCompleter
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityFileScope
 import org.cangnova.cangjie.cfir.resolve.providers.CfirExtendProvider
 import org.cangnova.cangjie.cfir.resolve.transformers.CfirSpecificTypeResolverTransformer
+import org.cangnova.cangjie.cfir.resolve.transformers.CfirSyntheticCallGenerator
 import org.cangnova.cangjie.cfir.resolve.transformers.IntegerLiteralAndOperatorApproximationTransformer
 import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.BodyResolveContext
 import org.cangnova.cangjie.cfir.resolve.transformers.CfirAbstractPhaseTransformer
@@ -157,6 +158,9 @@ abstract class CfirAbstractBodyResolveTransformer(
             }
 
         override val callCompleter: CfirCallCompleter by lazy(LazyThreadSafetyMode.NONE) { CfirCallCompleter(transformer, this) }
+        override val syntheticCallGenerator: CfirSyntheticCallGenerator by lazy(LazyThreadSafetyMode.NONE) {
+            CfirSyntheticCallGenerator(this)
+        }
         override val inlineFunction: CfirFunction?
             get() = context.containers.lastOrNull() as? CfirFunction
 

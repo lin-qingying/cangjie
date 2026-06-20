@@ -2,6 +2,7 @@ package org.cangnova.cangjie.cfir.resolve.calls.candidate
 
 import org.cangnova.cangjie.cfir.resolve.calls.stages.CfirCheckArguments
 import org.cangnova.cangjie.cfir.resolve.calls.stages.CfirCheckCallableReferenceExpectedType
+import org.cangnova.cangjie.cfir.resolve.calls.stages.CfirCheckDispatchReceiver
 import org.cangnova.cangjie.cfir.resolve.calls.stages.CfirCheckExtensionReceiver
 import org.cangnova.cangjie.cfir.resolve.calls.stages.CfirCheckVisibility
 import org.cangnova.cangjie.cfir.resolve.calls.stages.CfirCreateFreshTypeVariableSubstitutorStage
@@ -23,6 +24,7 @@ sealed class CallKind(
         CfirMapArguments,
         CfirMapTypeArguments,
         CfirCreateFreshTypeVariableSubstitutorStage,
+        CfirCheckDispatchReceiver,
         CfirCheckExtensionReceiver,
         CfirCheckArguments,
         CfirEagerResolveOfCallableReferences,
@@ -40,6 +42,7 @@ sealed class CallKind(
         CfirMapArguments,
         CfirMapTypeArguments,
         CfirCreateFreshTypeVariableSubstitutorStage,
+        CfirCheckDispatchReceiver,
         CfirCheckExtensionReceiver,
         CfirCheckArguments,
         CfirEagerResolveOfCallableReferences,
@@ -56,6 +59,7 @@ sealed class CallKind(
         CfirMapTypeArguments,
         CfirInitializeEmptyArgumentMap,
         CfirCreateFreshTypeVariableSubstitutorStage,
+        CfirCheckDispatchReceiver,
         CfirCheckExtensionReceiver,
         CfirCheckCallableReferenceExpectedType,
     )
@@ -65,6 +69,7 @@ sealed class CallKind(
         CfirMapArguments,
         CfirMapTypeArguments,
         CfirCreateFreshTypeVariableSubstitutorStage,
+        CfirCheckDispatchReceiver,
         CfirCheckArguments,
     )
 }

@@ -17,10 +17,10 @@ open class A {
 
 open class B <: A {
     public init() {
-        <!sema_illegal_member_used_in_open_constructor!>f<!>
-        var a = {=> <!sema_illegal_member_used_in_open_constructor!>f<!>}
-        func f3(c!: Int32 = <!sema_illegal_member_used_in_open_constructor!>f<!>) {
-            <!sema_illegal_member_used_in_open_constructor!>f<!>
+        <!ILLEGAL_MEMBER_USED_IN_OPEN_CONSTRUCTOR!>f<!>
+        var a = {=> <!ILLEGAL_MEMBER_USED_IN_OPEN_CONSTRUCTOR!>f<!>}
+        func f3(c!: Int32 = <!ILLEGAL_MEMBER_USED_IN_OPEN_CONSTRUCTOR!>f<!>) {
+            <!ILLEGAL_MEMBER_USED_IN_OPEN_CONSTRUCTOR!>f<!>
         }
         a()
     }

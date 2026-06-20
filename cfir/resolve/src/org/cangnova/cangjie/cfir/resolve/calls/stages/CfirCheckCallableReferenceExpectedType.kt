@@ -53,8 +53,8 @@ object CfirCheckCallableReferenceExpectedType : ResolutionStage() {
             substitutor.substituteOrSelf(parameterType)
         }
 
-        context.returnTypeCalculator.tryCalculateReturnType(function)
-        val returnType = substitutedReturnType().approximateThisTypeForDeclaration()
+        val calculatedReturnType = context.returnTypeCalculator.tryCalculateReturnType(function).coneType
+        val returnType = substitutedReturnType(calculatedReturnType).approximateThisTypeForDeclaration()
         return ConeFunctionType(parameterTypes, returnType)
     }
 }

@@ -146,8 +146,10 @@ class CfirCallCompletionResultsWriterTransformer(
             parameterType.substituteType(candidate)
         }
 
-        typeCalculator.tryCalculateReturnType(declaration)
-        val returnType = finallySubstituteOrSelf(candidate.substitutedReturnType()).approximateThisTypeForDeclaration()
+        val calculatedReturnType = typeCalculator.tryCalculateReturnType(declaration).coneType
+        val returnType = finallySubstituteOrSelf(
+            candidate.substitutedReturnType(calculatedReturnType),
+        ).approximateThisTypeForDeclaration()
         return ConeFunctionType(parameterTypes, returnType)
     }
 
@@ -197,7 +199,7 @@ class CfirCallCompletionResultsWriterTransformer(
 
         val resultType = candidate.callFailureDiagnosticForResultType()?.let { diagnostic ->
             ConeErrorType(ConeUnreportedDuplicateDiagnostic(diagnostic))
-        } ?: result.resolvedType.substituteType(candidate)
+        } ?: candidate.completedFunctionCallResultType(result.resolvedType)
         val allArgs = calleeReference.computeAllArguments(originalArgumentList)
         val (regularMapping, allArgsMapping) = candidate.handleVarargsAndReturnResultingArgumentsMapping(
             argumentList = allArgs,
@@ -219,6 +221,13 @@ class CfirCallCompletionResultsWriterTransformer(
         session.lookupTracker?.recordTypeResolveAsLookup(resultType, functionCall.source, context.file.source)
         result.addNonFatalDiagnostics(candidate)
         return result
+    }
+
+    private fun Candidate.completedFunctionCallResultType(resolvedType: ConeCangJieType): ConeCangJieType {
+        if (callInfo.callKind == CallKind.Function && symbol.cfir is CfirVariable) {
+            return finallySubstituteOrSelf(substitutedReturnType())
+        }
+        return resolvedType.substituteType(this)
     }
 
     private fun rewriteArgumentList(

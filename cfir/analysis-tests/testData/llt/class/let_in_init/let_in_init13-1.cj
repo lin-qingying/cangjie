@@ -29,7 +29,7 @@ open class A {
         }
     }
     public init() {
-        <!CANNOT_ASSIGN_TO_IMMUTABLE!><!sema_illegal_member_used_in_open_constructor!>b<!> = 1<!>
+        <!CANNOT_ASSIGN_TO_IMMUTABLE!><!ILLEGAL_MEMBER_USED_IN_OPEN_CONSTRUCTOR!>b<!> = 1<!>
     }
 }
 

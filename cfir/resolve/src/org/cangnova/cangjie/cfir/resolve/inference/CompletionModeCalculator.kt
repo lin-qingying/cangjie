@@ -1,6 +1,5 @@
 package org.cangnova.cangjie.cfir.resolve.inference
 
-import org.cangnova.cangjie.cfir.resolve.calls.ConeFunctionTypeRelatedPostponedResolvedAtom
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.resolve.ResolutionMode
 import org.cangnova.cangjie.cfir.types.ConeFunctionType
@@ -26,8 +25,6 @@ fun Candidate.computeCompletionMode(
         callInfo.isCollectionLiteralCall -> error("Should not run completion for collection literal")
         currentReturnType == null -> ConstraintSystemCompletionMode.PARTIAL
         system.getBuilder().isProperType(currentReturnType) -> ConstraintSystemCompletionMode.FULL
-        postponedAtoms.any { it is ConeFunctionTypeRelatedPostponedResolvedAtom } ->
-            ConstraintSystemCompletionMode.FULL
         else -> CalculatorForNestedCall(
             this,
             currentReturnType,

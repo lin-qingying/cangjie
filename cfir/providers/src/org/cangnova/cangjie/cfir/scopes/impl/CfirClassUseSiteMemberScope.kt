@@ -137,6 +137,12 @@ class CfirClassUseSiteMemberScope private constructor(
             )
         }
     private val parentScopes: List<CfirTypeScope> by lazy { buildParentScopes() }
+    private val functions = hashMapOf<Name, Collection<CfirNamedFunctionSymbol>>()
+    private val properties = hashMapOf<Name, Collection<CfirPropertySymbol>>()
+    private val functionsFromParents = hashMapOf<Name, List<MemberWithBaseScope<CfirNamedFunctionSymbol>>>()
+    private val propertiesFromParents = hashMapOf<Name, List<MemberWithBaseScope<CfirPropertySymbol>>>()
+    private val directOverriddenFunctions = hashMapOf<CfirNamedFunctionSymbol, List<MemberWithBaseScope<CfirNamedFunctionSymbol>>>()
+    private val directOverriddenProperties = hashMapOf<CfirPropertySymbol, List<MemberWithBaseScope<CfirPropertySymbol>>>()
     private val callableNamesCached by lazy(LazyThreadSafetyMode.PUBLICATION) {
         buildSet {
             addAll(declaredScope.getCallableNames())
@@ -160,32 +166,38 @@ class CfirClassUseSiteMemberScope private constructor(
         functionSymbol: CfirNamedFunctionSymbol,
         processor: (CfirNamedFunctionSymbol, CfirTypeScope) -> ProcessorAction
     ): ProcessorAction {
-        for (parent in parentScopes) {
-            val candidates = mutableListOf<MemberWithBaseScope<CfirNamedFunctionSymbol>>()
-            parent.processFunctionsByName(functionSymbol.name) { candidates += MemberWithBaseScope(it, parent) }
-            for (candidate in filterOutOverridden(candidates, CfirTypeScope::processDirectOverriddenFunctionsWithBaseScope)) {
-                if (processor(candidate.symbol, candidate.scope) == ProcessorAction.STOP) {
-                    return ProcessorAction.STOP
+        val directOverridden = directOverriddenFunctions[functionSymbol]
+            ?: getFunctionsFromParentsByName(functionSymbol.name)
+                .firstOrNull { it.symbol == functionSymbol }
+                ?.let { parentMember ->
+                    return parentMember.scope.processDirectOverriddenFunctionsWithBaseScope(functionSymbol, processor)
                 }
+            ?: return ProcessorAction.NONE
+        for (candidate in directOverridden) {
+            if (processor(candidate.symbol, candidate.scope) == ProcessorAction.STOP) {
+                return ProcessorAction.STOP
             }
         }
-        return ProcessorAction.NEXT
+        return ProcessorAction.NONE
     }
 
     override fun processDirectOverriddenPropertiesWithBaseScope(
         propertySymbol: CfirPropertySymbol,
         processor: (CfirPropertySymbol, CfirTypeScope) -> ProcessorAction,
     ): ProcessorAction {
-        for (parent in parentScopes) {
-            val candidates = mutableListOf<MemberWithBaseScope<CfirPropertySymbol>>()
-            parent.processPropertiesByName(propertySymbol.name) { candidates += MemberWithBaseScope(it, parent) }
-            for (candidate in filterOutOverridden(candidates, CfirTypeScope::processDirectOverriddenPropertiesWithBaseScope)) {
-                if (processor(candidate.symbol, candidate.scope) == ProcessorAction.STOP) {
-                    return ProcessorAction.STOP
+        val directOverridden = directOverriddenProperties[propertySymbol]
+            ?: getPropertiesFromParentsByName(propertySymbol.name)
+                .firstOrNull { it.symbol == propertySymbol }
+                ?.let { parentMember ->
+                    return parentMember.scope.processDirectOverriddenPropertiesWithBaseScope(propertySymbol, processor)
                 }
+            ?: return ProcessorAction.NONE
+        for (candidate in directOverridden) {
+            if (processor(candidate.symbol, candidate.scope) == ProcessorAction.STOP) {
+                return ProcessorAction.STOP
             }
         }
-        return ProcessorAction.NEXT
+        return ProcessorAction.NONE
     }
 
     override fun withReplacedSessionOrNull(
@@ -228,38 +240,89 @@ class CfirClassUseSiteMemberScope private constructor(
     override fun processFunctionsByName(name: Name, processor: (CfirNamedFunctionSymbol) -> Unit) {
         if (name !in getCallableNames()) return
 
+        functions.getOrPut(name) {
+            collectFunctions(name)
+        }.forEach(processor)
+    }
+
+    private fun collectFunctions(name: Name): Collection<CfirNamedFunctionSymbol> = buildList {
         val local = mutableListOf<CfirNamedFunctionSymbol>()
         declaredScope.processFunctionsByName(name) { local += it }
         extendScope?.processFunctionsByName(name) { local += it }
-        local.forEach(processor)
-
-        val parentCandidates = mutableListOf<MemberWithBaseScope<CfirNamedFunctionSymbol>>()
-        for (parent in parentScopes) {
-            parent.processFunctionsByName(name) { parentCandidates += MemberWithBaseScope(it, parent) }
+        for (symbol in local) {
+            directOverriddenFunctions[symbol] = computeDirectOverriddenForDeclaredFunction(symbol)
+            add(symbol)
         }
-        for (candidate in filterOutOverridden(
-            parentCandidates,
-            CfirTypeScope::processDirectOverriddenFunctionsWithBaseScope
-        )) {
+
+        for (candidate in getFunctionsFromParentsByName(name)) {
             if (local.any { it.overridesFunctionCandidate(candidate.symbol) }) continue
-            processor(candidate.symbol)
+            add(candidate.symbol)
         }
     }
 
     override fun processPropertiesByName(name: Name, processor: (CfirPropertySymbol) -> Unit) {
         if (name !in getCallableNames()) return
 
+        properties.getOrPut(name) {
+            collectProperties(name)
+        }.forEach(processor)
+    }
+
+    private fun collectProperties(name: Name): Collection<CfirPropertySymbol> = buildList {
         val local = mutableListOf<CfirPropertySymbol>()
         declaredScope.processPropertiesByName(name) { local += it }
         if (local.isEmpty()) {
             extendScope?.processPropertiesByName(name) { local += it }
         }
         if (local.isNotEmpty()) {
-            local.forEach(processor)
-            return
+            for (symbol in local) {
+                directOverriddenProperties[symbol] = computeDirectOverriddenForDeclaredProperty(symbol)
+                add(symbol)
+            }
+            return@buildList
         }
-        for (parent in parentScopes) {
-            parent.processPropertiesByName(name, processor)
+        for (candidate in getPropertiesFromParentsByName(name)) {
+            add(candidate.symbol)
+        }
+    }
+
+    private fun computeDirectOverriddenForDeclaredFunction(
+        functionSymbol: CfirNamedFunctionSymbol,
+    ): List<MemberWithBaseScope<CfirNamedFunctionSymbol>> {
+        return getFunctionsFromParentsByName(functionSymbol.name)
+            .filter { functionSymbol.overridesFunctionCandidate(it.symbol) }
+    }
+
+    private fun computeDirectOverriddenForDeclaredProperty(
+        propertySymbol: CfirPropertySymbol,
+    ): List<MemberWithBaseScope<CfirPropertySymbol>> {
+        return getPropertiesFromParentsByName(propertySymbol.name)
+            .filter { propertySymbol.overridesPropertyCandidate(it.symbol) }
+    }
+
+    private fun getFunctionsFromParentsByName(name: Name): List<MemberWithBaseScope<CfirNamedFunctionSymbol>> {
+        return functionsFromParents.getOrPut(name) {
+            val parentCandidates = mutableListOf<MemberWithBaseScope<CfirNamedFunctionSymbol>>()
+            for (parent in parentScopes) {
+                parent.processFunctionsByName(name) { parentCandidates += MemberWithBaseScope(it, parent) }
+            }
+            filterOutOverridden(
+                parentCandidates,
+                CfirTypeScope::processDirectOverriddenFunctionsWithBaseScope,
+            ).toList()
+        }
+    }
+
+    private fun getPropertiesFromParentsByName(name: Name): List<MemberWithBaseScope<CfirPropertySymbol>> {
+        return propertiesFromParents.getOrPut(name) {
+            val parentCandidates = mutableListOf<MemberWithBaseScope<CfirPropertySymbol>>()
+            for (parent in parentScopes) {
+                parent.processPropertiesByName(name) { parentCandidates += MemberWithBaseScope(it, parent) }
+            }
+            filterOutOverridden(
+                parentCandidates,
+                CfirTypeScope::processDirectOverriddenPropertiesWithBaseScope,
+            ).toList()
         }
     }
 
@@ -273,8 +336,19 @@ class CfirClassUseSiteMemberScope private constructor(
             local.forEach(processor)
             if (local.any { it.isValueLikeCallable() }) return
         }
+        val localFunctions = local.filterIsInstance<CfirNamedFunctionSymbol>()
+        for (candidate in getFunctionsFromParentsByName(name)) {
+            if (localFunctions.any { it.overridesFunctionCandidate(candidate.symbol) }) continue
+            processor(candidate.symbol)
+        }
+        for (candidate in getPropertiesFromParentsByName(name)) {
+            processor(candidate.symbol)
+        }
         for (parent in parentScopes) {
-            parent.processCallablesByName(name, processor)
+            parent.processCallablesByName(name) { parentSymbol ->
+                if (parentSymbol is CfirNamedFunctionSymbol || parentSymbol is CfirPropertySymbol) return@processCallablesByName
+                processor(parentSymbol)
+            }
         }
     }
 
@@ -589,6 +663,14 @@ private fun <S : CfirCallableSymbol<*>> overrides(
 
 private fun CfirNamedFunctionSymbol.overridesFunctionCandidate(
     candidate: CfirNamedFunctionSymbol,
+): Boolean {
+    if (this == candidate) return true
+    if (isStaticMemberForOverride() != candidate.isStaticMemberForOverride()) return false
+    return overrideSignatureKey() == candidate.overrideSignatureKey()
+}
+
+private fun CfirPropertySymbol.overridesPropertyCandidate(
+    candidate: CfirPropertySymbol,
 ): Boolean {
     if (this == candidate) return true
     if (isStaticMemberForOverride() != candidate.isStaticMemberForOverride()) return false

@@ -68,6 +68,8 @@ val FIR_NON_SUPPRESSIBLE_ERROR_NAMES: Set<String> = setOf(
     "sema_illegal_place_of_calling_this_or_super",
     "sema_illegal_place_of_calling_this_primary_constructor",
     "ASSIGNMENT_OF_MEMBER_VARIABLE_CANNOT_USE_THIS_OR_SUPER",
+    "ILLEGAL_MEMBER_USED_IN_OPEN_CONSTRUCTOR",
+    "THIS_AS_EXPRESSION_IN_FUNC",
     "EXPLICIT_SUPER_CALL_REQUIRED",
     "sema_no_non_param_constructor_in_super_class",
     "INVALID_LOOP_CONTROL",

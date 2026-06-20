@@ -382,6 +382,11 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
                 return ownerTypeParameters
             }
         }
+        val typeVariableReceiverOwnerTypeParameters =
+            collectTypeVariableReceiverOwnerTypeParameters(session, candidate, declaration)
+        if (typeVariableReceiverOwnerTypeParameters.isNotEmpty()) {
+            return typeVariableReceiverOwnerTypeParameters + ownTypeParameters
+        }
         if (ownTypeParameters.isNotEmpty()) return ownTypeParameters
         if (declaration !is org.cangnova.cangjie.cfir.declarations.CfirConstructor &&
             declaration !is CfirEnumConstructor
@@ -466,6 +471,32 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
         val ownerSymbol = receiver.resolvedQualifierClassifier(session) ?: return emptyList()
         val ownerDeclaration = ownerSymbol.cfir as? CfirClassLikeDeclaration ?: return emptyList()
         return ownerDeclaration.typeParameters
+    }
+
+    /**
+     * fresh type variable 接收者的成员候选需要把 owner 泛型参数纳入同一候选约束系统。
+     *
+     * 官方 `TryEnforceCandidate` 在泛型接收者候选上会用 placeholder tyvars 填充 type arguments；
+     * 在 CFIR 中，这些 placeholder 对应 owner class-like type parameters 创建出的 fresh variables。
+     */
+    private fun collectTypeVariableReceiverOwnerTypeParameters(
+        session: CfirSession,
+        candidate: Candidate,
+        declaration: Any?,
+    ): List<CfirTypeParameterRef> {
+        val callable = declaration as? CfirCallableDeclaration ?: return emptyList()
+        if (callable.status.isStatic) return emptyList()
+        val receiverType = candidate.dispatchReceiverExpression()?.coneTypeOrNull as? ConeTypeVariableType
+            ?: return emptyList()
+        if (receiverType.typeConstructor.originalTypeParameter != null) return emptyList()
+
+        val ownerClassId = ownerClassIdForCallable(session, candidate)
+            ?: return emptyList()
+        val ownerDeclaration = session.symbolProvider.getClassLikeSymbolByClassId(ownerClassId)?.cfir
+            ?: session.cfirProvider.getCfirClassifierByFqName(ownerClassId)
+            ?: return emptyList()
+
+        return (ownerDeclaration as? CfirTypeParameterRefsOwner)?.typeParameters.orEmpty()
     }
 
     private fun collectBareTypeAliasQualifierTypeParameters(

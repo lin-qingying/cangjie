@@ -271,6 +271,18 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
             RENDER_STRING,
         )
         map.put(
+            CfirErrors.ILLEGAL_MEMBER_USED_IN_OPEN_CONSTRUCTOR,
+            "instance member {0} ''{1}'' cannot be accessed in the constructor of open class ''{2}''",
+            RENDER_STRING,
+            RENDER_STRING,
+            RENDER_NAME,
+        )
+        map.put(
+            CfirErrors.THIS_AS_EXPRESSION_IN_FUNC,
+            "'this' cannot be used as an expression in the {0}",
+            RENDER_STRING,
+        )
+        map.put(
             CfirErrors.EXPLICIT_SUPER_CALL_REQUIRED,
             "Explicit super constructor call is required.",
         )
@@ -399,6 +411,10 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
         )
         map.put(CfirErrors.REPEATED_MODIFIER, "Repeated modifier ''{0}''.", TO_STRING)
         map.put(CfirErrors.REDUNDANT_MODIFIER, "Modifier ''{0}'' is redundant because ''{1}'' is present.", TO_STRING, TO_STRING)
+        map.put(
+            CfirErrors.IGNORE_OPEN,
+            "the current member should not have 'open' modifier because it is in a non-inheritable class",
+        )
         map.put(CfirErrors.INCOMPATIBLE_MODIFIERS, "Incompatible modifiers: ''{0}'' and ''{1}''.", TO_STRING, TO_STRING)
         map.put(CfirErrors.WRONG_MODIFIER_TARGET, "Modifier ''{0}'' is not applicable to ''{1}''.", TO_STRING, RENDER_STRING)
         map.put(
