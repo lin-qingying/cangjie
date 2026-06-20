@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.cfir.resolve.calls.overloads
 
+import org.cangnova.cangjie.cfir.unwrapSubstitutionOverrides
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.resolve.BodyResolveComponents
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
@@ -97,7 +98,8 @@ class ConeOverloadConflictResolver(
         val candidateSymbol = symbol as? CfirCallableSymbol<*> ?: return false
         val otherSymbol = other.symbol as? CfirCallableSymbol<*> ?: return false
 
-        if (candidateSymbol == otherSymbol) return true
+        val otherOriginal = otherSymbol.unwrapSubstitutionOverrides()
+        if (candidateSymbol.unwrapSubstitutionOverrides() == otherOriginal) return true
 
         val scope = originScope as? CfirTypeScope ?: return false
 
@@ -107,14 +109,14 @@ class ConeOverloadConflictResolver(
             // 按 CfirNamedFunctionSymbol 窄化即可满足 CfirTypeScope API。
             is CfirNamedFunctionSymbol -> overrides(
                 MemberWithBaseScope(candidateSymbol, scope),
-                otherSymbol,
+                otherOriginal,
             ) { baseScope, symbol, processor ->
                 baseScope.processDirectOverriddenFunctionsWithBaseScope(symbol, processor)
             }
 
             is CfirPropertySymbol -> overrides(
                 MemberWithBaseScope(candidateSymbol, scope),
-                otherSymbol,
+                otherOriginal,
             ) { baseScope, symbol, processor ->
                 baseScope.processDirectOverriddenPropertiesWithBaseScope(symbol, processor)
             }

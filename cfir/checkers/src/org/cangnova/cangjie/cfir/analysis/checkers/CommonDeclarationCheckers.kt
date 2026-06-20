@@ -85,6 +85,7 @@ object CommonDeclarationCheckers : DeclarationCheckers() {
 
     override val valueParameterCheckers: Set<CfirValueParameterChecker>
         get() = setOf(
+            CfirValueParameterDefaultValueTypeMismatchChecker,
             CfirConstructorParameterThisOrSuperDefaultValueChecker,
         )
 
@@ -137,6 +138,7 @@ object CommonDeclarationCheckers : DeclarationCheckers() {
             CfirOverrideChecker,
             CfirNotImplementedOverrideChecker,
             CfirClassStructSemanticsChecker,
+            CfirOpenMemberChecker,
             CfirRecursiveConstructorCallChecker,
             CfirValueTypeRecursiveChecker,
             CfirConstDeclarationChecker,

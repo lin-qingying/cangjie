@@ -14,6 +14,7 @@ import org.cangnova.cangjie.cfir.resolve.body.CfirTowerDataElement
 import org.cangnova.cangjie.cfir.resolve.calls.stages.ResolutionStageRunner
 import org.cangnova.cangjie.cfir.resolve.inference.CfirCallCompleter
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
+import org.cangnova.cangjie.cfir.resolve.transformers.CfirSyntheticCallGenerator
 import org.cangnova.cangjie.cfir.resolve.transformers.IntegerLiteralAndOperatorApproximationTransformer
 import org.cangnova.cangjie.cfir.resolve.transformers.ReturnTypeCalculator
 import org.cangnova.cangjie.cfir.scopes.CfirScope
@@ -45,7 +46,7 @@ abstract class BodyResolveComponents : SessionAndScopeSessionHolder {
     abstract val callResolver: CfirCallResolver
     abstract val callCompleter: CfirCallCompleter
 //    abstract val doubleColonExpressionResolver: CfirDoubleColonExpressionResolver
-//    abstract val syntheticCallGenerator: CfirSyntheticCallGenerator
+    abstract val syntheticCallGenerator: CfirSyntheticCallGenerator
     abstract val dataFlowAnalyzer: CfirDataFlowAnalyzer
 //    abstract val outerClassManager: CfirOuterClassManager
     abstract val integerLiteralAndOperatorApproximationTransformer: IntegerLiteralAndOperatorApproximationTransformer

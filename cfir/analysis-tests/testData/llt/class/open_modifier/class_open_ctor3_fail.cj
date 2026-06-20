@@ -20,10 +20,10 @@ extend A {
 open class B <: A {
     public init() {
         { // lambda
-            => <!sema_use_this_as_an_expression_in_func!>t<!>his
+            => <!THIS_AS_EXPRESSION_IN_FUNC!>t<!>his
         }
-        let v = <!sema_use_this_as_an_expression_in_func!>t<!>his
-        test(<!sema_use_this_as_an_expression_in_func!>t<!>his)
+        let v = <!THIS_AS_EXPRESSION_IN_FUNC!>t<!>his
+        test(<!THIS_AS_EXPRESSION_IN_FUNC!>t<!>his)
     }
 }
 

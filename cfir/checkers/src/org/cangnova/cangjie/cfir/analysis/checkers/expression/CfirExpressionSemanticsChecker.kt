@@ -26,28 +26,39 @@ package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
+import org.cangnova.cangjie.cfir.analysis.checkers.declaration.firstCharacterDiagnosticSource
 import org.cangnova.cangjie.cfir.analysis.collectors.components.ErrorNodeDiagnosticCollectorComponent
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
+import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirClass
+import org.cangnova.cangjie.cfir.declarations.CfirConstructor
+import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFinalizer
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
+import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.diagnostic.ConeCannotInferType
 import org.cangnova.cangjie.cfir.diagnostic.ConeCommandHandleTypeError
 import org.cangnova.cangjie.cfir.diagnostic.ConeCommandIncompatibleTypeError
+import org.cangnova.cangjie.cfir.diagnostic.ConeDiagnosticWithSingleCandidate
 import org.cangnova.cangjie.cfir.diagnostic.ConeMismatchingHandleBlockError
 import org.cangnova.cangjie.cfir.diagnostics.*
 import org.cangnova.cangjie.cfir.expressions.*
+import org.cangnova.cangjie.cfir.references.CfirErrorNamedReference
 import org.cangnova.cangjie.cfir.patterns.CfirCatchPattern
 import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
+import org.cangnova.cangjie.cfir.references.CfirResolvedErrorReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.references.CfirSuperReference
 import org.cangnova.cangjie.cfir.resolve.constants.CfirIntConstantEvalUtils
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
+import org.cangnova.cangjie.cfir.session.extendProviderOrNull
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.toLookupTag
 import org.cangnova.cangjie.cfir.types.*
+import org.cangnova.cangjie.cfir.unwrapSubstitutionOverrides
 import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.type.AbstractTypeChecker
 import java.math.BigInteger
@@ -251,6 +262,99 @@ object CfirFinalizerThisUsageChecker : CfirBasicExpressionChecker() {
             a = "function",
         )
     }
+}
+
+/**
+ * open/abstract class 构造器中禁止把 `this` 当作普通表达式。
+ *
+ * 官方 `TypeCheckReference.cpp::CheckUsageOfThis` 使用最外层函数判断
+ * “constructor of inheritable class”，因此 lambda 或局部函数体中的裸 `this`
+ * 仍继承外层构造器语义；`this.member` 只是成员访问接收者，不由本规则报告。
+ */
+object CfirOpenConstructorThisUsageChecker : CfirBasicExpressionChecker() {
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    override fun check(expression: CfirStatement) {
+        if (expression !is CfirThisReceiverExpression) return
+        if (expression.calleeReference.isImplicit) return
+        val owner = context.openClassConstructorOwner() ?: return
+
+        val parent = context.callsOrAssignments.lastOrNull() as? CfirQualifiedAccessExpression
+        if (parent?.explicitReceiver === expression || parent?.dispatchReceiver === expression) return
+
+        val classKind = if (owner.status.isOpen) "open" else "abstract"
+        reporter.reportOn(
+            source = expression.calleeReference.source?.firstCharacterDiagnosticSource()
+                ?: expression.source?.firstCharacterDiagnosticSource(),
+            factory = CfirErrors.THIS_AS_EXPRESSION_IN_FUNC,
+            a = "constructor of $classKind class",
+        )
+    }
+}
+
+/**
+ * open/abstract class 构造器中禁止访问实例函数或属性。
+ *
+ * 官方 `TypeCheckExpr.cpp::CheckForbiddenFuncReferenceAccess` 对 class-like 与 extend
+ * 中的实例函数/属性统一生效，排除 constructor 与 static 成员。CFIR 侧按 resolved
+ * callable 的 dispatch receiver 判断实例成员，并覆盖调用、函数引用与属性访问。
+ */
+object CfirOpenConstructorMemberAccessChecker : CfirQualifiedAccessChecker() {
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    override fun check(expression: CfirQualifiedAccessExpression) {
+        val owner = context.openClassConstructorOwner() ?: return
+        if (!expression.usesCurrentInstanceReceiver()) return
+
+        val target = expression.resolvedCallableTarget() ?: return
+        if (!target.isForbiddenOpenConstructorMember()) return
+
+        val memberKind = when (target) {
+            is CfirProperty -> "property"
+            is CfirNamedFunction -> "function"
+            else -> return
+        }
+
+        reporter.reportOn(
+            source = expression.calleeReference.source?.firstCharacterDiagnosticSource()
+                ?: expression.source?.firstCharacterDiagnosticSource(),
+            factory = CfirErrors.ILLEGAL_MEMBER_USED_IN_OPEN_CONSTRUCTOR,
+            a = memberKind,
+            b = target.symbol.callableId.callableName.asString(),
+            c = owner.name,
+        )
+    }
+
+    private fun CfirQualifiedAccessExpression.usesCurrentInstanceReceiver(): Boolean {
+        val receiver = explicitReceiver
+        return receiver == null || receiver is CfirThisReceiverExpression || receiver is CfirSuperReceiverExpression
+    }
+
+    private fun CfirQualifiedAccessExpression.resolvedCallableTarget(): CfirCallableDeclaration? {
+        return when (val reference = calleeReference) {
+            is CfirResolvedNamedReference -> reference.resolvedSymbol.cfir as? CfirCallableDeclaration
+            is CfirResolvedErrorReference -> reference.resolvedSymbol.cfir as? CfirCallableDeclaration
+            is CfirNamedReferenceWithCandidateBase -> reference.candidateSymbol?.cfir as? CfirCallableDeclaration
+            is CfirErrorNamedReference ->
+                (reference.diagnostic as? ConeDiagnosticWithSingleCandidate)?.candidateSymbol?.cfir as? CfirCallableDeclaration
+            else -> null
+        }
+    }
+
+    context(context: CheckerContext)
+    private fun CfirCallableDeclaration.isForbiddenOpenConstructorMember(): Boolean {
+        if (this is CfirConstructor || this is CfirEnumConstructor) return false
+        if (this !is CfirNamedFunction && this !is CfirProperty) return false
+        if (status.isStatic) return false
+        if (dispatchReceiverType != null) return true
+        val extendProvider = context.session.extendProviderOrNull ?: return false
+        val ownerExtend = extendProvider.getContainingExtend(symbol.unwrapSubstitutionOverrides()) ?: return false
+        return extendProvider.isExtendAccessible(ownerExtend)
+    }
+}
+
+private fun CheckerContext.openClassConstructorOwner(): CfirClass? {
+    containingDeclarations.asReversed().firstOrNull { it is CfirConstructor } ?: return null
+    val owner = findClosestDeclaration<CfirClass>() ?: return null
+    return owner.takeIf { it.status.isOpen || it.status.isAbstract }
 }
 
 /**

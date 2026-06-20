@@ -3,7 +3,6 @@ import org.gradle.api.Task
 import org.gradle.api.file.FileCollection
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.artifacts.Configuration
-import org.gradle.api.tasks.JavaExec
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.testing.Test
 import org.gradle.kotlin.dsl.getByType
@@ -83,20 +82,22 @@ open class ProjectTestsExtension(
         doNotSetFixturesSourceSetDependency: Boolean = false,
         generatorClasspathSourceSetName: String? = null,
         excludeGeneratorSourceSetOutput: Boolean = false,
-        body: JavaExec.() -> Unit = {},
-    ): TaskProvider<JavaExec> {
+        body: CacheableJavaExec.() -> Unit = {},
+    ): TaskProvider<CacheableJavaExec> {
         val taskName = "generate" +
             mainClassName.substringAfterLast('.').removeSuffix("Kt") +
             "Tests"
 
         val sourceSets = project.extensions.getByType<JavaPluginExtension>().sourceSets
-        val generatorTask = project.tasks.register<JavaExec>(taskName) {
+        val generatorTask = project.tasks.register<CacheableJavaExec>(taskName) {
             group = "verification"
             description = "Generate tests using $mainClassName"
             mainClass.set(mainClassName)
-            workingDir = project.rootDir
-            systemProperty("line.separator", "\n")
-            systemProperty("idea.ignore.disabled.plugins", "true")
+            workingDirectory.set(project.rootProject.layout.projectDirectory)
+            outputDirectory.set(project.layout.projectDirectory.dir("tests-gen"))
+            trackedInputs.from(project.layout.projectDirectory.dir("testData"))
+            systemProperties.put("line.separator", "\n")
+            systemProperties.put("idea.ignore.disabled.plugins", "true")
 
             /**
              * 生成器任务的类路径需要与“生成器类真正声明在哪个 source set”保持一致。
@@ -139,7 +140,7 @@ open class ProjectTestsExtension(
             } else {
                 classpathSourceSet.runtimeClasspath
             }
-            classpath = generatorClasspath
+            classpath.from(generatorClasspath)
 
             if (!generateTestsInBuildDirectory) {
                 /**

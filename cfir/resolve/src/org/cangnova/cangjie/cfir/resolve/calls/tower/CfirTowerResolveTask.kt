@@ -178,6 +178,13 @@ internal open class CfirTowerResolveTask(
             explicitReceiverKind = ExplicitReceiverKind.DISPATCH_RECEIVER,
         )
 
+        processLevel(
+            CfirTypeVariableReceiverMemberScopeTowerLevel(components, explicitReceiver),
+            info,
+            CfirTowerGroup.EXPLICIT_MEMBER,
+            explicitReceiverKind = ExplicitReceiverKind.DISPATCH_RECEIVER,
+        )
+
         enumerateTowerLevels(
             onScope = { scope, group ->
                 processLevel(

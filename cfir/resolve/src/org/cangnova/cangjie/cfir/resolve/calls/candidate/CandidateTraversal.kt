@@ -20,6 +20,8 @@ private fun ConeResolutionAtom.processAtomRecursively(
     when (this) {
         is ConeAtomWithCandidate -> {
             candidateProcessor(candidate)
+            candidate.dispatchReceiver?.processAtomRecursively(visited, candidateProcessor, postponedAtomsProcessor)
+            candidate.givenExtensionReceiver?.processAtomRecursively(visited, candidateProcessor, postponedAtomsProcessor)
             for (argument in candidate.arguments) {
                 argument.processAtomRecursively(visited, candidateProcessor, postponedAtomsProcessor)
             }

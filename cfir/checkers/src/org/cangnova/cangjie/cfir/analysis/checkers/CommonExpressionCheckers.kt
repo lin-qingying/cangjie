@@ -34,6 +34,7 @@ object CommonExpressionCheckers : ExpressionCheckers() {
             CfirExpressionWithErrorTypeChecker,
             CfirFunctionBodyTypeMismatchChecker,
             org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirFinalizerThisUsageChecker,
+            org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirOpenConstructorThisUsageChecker,
             org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirEffectsBasicChecker,
             org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirRangeSemanticsChecker,
             org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirQuoteImportChecker,
@@ -106,6 +107,7 @@ object CommonExpressionCheckers : ExpressionCheckers() {
             CfirClassifierAsExpressionChecker,
             CfirMutFuncReferenceChecker,
             CfirUnsafeFuncReferenceChecker,
+            CfirOpenConstructorMemberAccessChecker,
         )
 
     override val superReceiverExpressionCheckers: Set<CfirSuperReceiverExpressionChecker>

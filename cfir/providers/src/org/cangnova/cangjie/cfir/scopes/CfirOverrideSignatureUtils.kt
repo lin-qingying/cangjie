@@ -104,8 +104,15 @@ private fun ConeCangJieType.toOverrideSignatureComponent(
             "enum:${classId.asString()}$marker${typeArguments.toOverrideSignatureComponent(ownTypeParameterIndices)}"
         }
 
-        is ConeTypeAliasType ->
-            "alias:${classId.asString()}${typeArguments.toOverrideSignatureComponent(ownTypeParameterIndices)}"
+        is ConeTypeAliasType -> {
+            // Override 签名比较使用展开后的真实语义类型；typealias 不是独立的 override/overload 键。
+            val expanded = expandedType
+            if (expanded != null) {
+                expanded.toOverrideSignatureComponent(ownTypeParameterIndices)
+            } else {
+                "alias:${classId.asString()}${typeArguments.toOverrideSignatureComponent(ownTypeParameterIndices)}"
+            }
+        }
 
         is ConeFunctionType -> {
             val parameters = parameterTypes.joinToString(

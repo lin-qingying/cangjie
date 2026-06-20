@@ -49,6 +49,7 @@ import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
+import org.cangnova.cangjie.cfir.types.impl.ResolvedImplicitTypeRef
 import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintStorage
@@ -477,13 +478,13 @@ class Candidate(
         }
     }
 
-    fun substitutedReturnType(): ConeCangJieType {
+    fun substitutedReturnType(declaredReturnType: ConeCangJieType? = null): ConeCangJieType {
         val declaration = symbol.cfir
-        val declared = when (declaration) {
-            is CfirFunction -> (declaration.returnTypeRef as? CfirResolvedTypeRef)?.coneType
-            is CfirConstructor -> (declaration.returnTypeRef as? CfirResolvedTypeRef)?.coneType
+        val declared = declaredReturnType ?: when (declaration) {
+            is CfirFunction -> declaration.returnTypeRef.resolvedConeTypeOrNull()
+            is CfirConstructor -> declaration.returnTypeRef.resolvedConeTypeOrNull()
             is CfirEnumConstructor -> enumConstructorOwnerType(declaration)
-                ?: (declaration.returnTypeRef as? CfirResolvedTypeRef)?.coneType
+                ?: declaration.returnTypeRef.resolvedConeTypeOrNull()
             is CfirVariable -> callableValueReturnType(declaration)
             else -> null
         } ?: return ConeErrorType(ConeSimpleDiagnostic("Unresolved return type"))
@@ -557,15 +558,21 @@ class Candidate(
     }
 
     private fun callableValueReturnType(declaration: CfirVariable): ConeCangJieType? {
-        val variableType = (declaration.returnTypeRef as? CfirResolvedTypeRef)?.coneType ?: return null
+        val variableType = declaration.returnTypeRef.resolvedConeTypeOrNull() ?: return null
         val functionType = variableType as? ConeFunctionType ?: return null
         return functionType.returnType
+    }
+
+    private fun CfirTypeRef.resolvedConeTypeOrNull(): ConeCangJieType? = when (this) {
+        is CfirResolvedTypeRef -> coneType
+        is ResolvedImplicitTypeRef -> typeRef.coneType
+        else -> null
     }
 
     private fun callableValueParametersForMapping(declaration: CfirVariable): List<CfirValueParameter> {
         cachedSyntheticCallableValueParameters?.let { return it }
 
-        val variableType = (declaration.returnTypeRef as? CfirResolvedTypeRef)?.coneType
+        val variableType = declaration.returnTypeRef.resolvedConeTypeOrNull()
         val functionType = variableType as? ConeFunctionType
         if (functionType == null || functionType.parameterTypes.isEmpty()) {
             cachedSyntheticCallableValueParameters = emptyList()

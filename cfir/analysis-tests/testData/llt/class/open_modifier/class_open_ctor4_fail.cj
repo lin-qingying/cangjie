@@ -9,7 +9,7 @@ abstract class A {
     var b: B
     init() {
         b = B()
-        b.bind(<!sema_use_this_as_an_expression_in_func!>t<!>his)
+        b.bind(<!THIS_AS_EXPRESSION_IN_FUNC!>t<!>his)
     }
 }
 
