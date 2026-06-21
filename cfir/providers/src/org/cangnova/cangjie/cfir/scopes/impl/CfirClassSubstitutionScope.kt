@@ -29,7 +29,7 @@ import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.builder.*
 import org.cangnova.cangjie.cfir.originalForSubstitutionOverride
 import org.cangnova.cangjie.cfir.originalForSubstitutionOverrideAttr
-import org.cangnova.cangjie.cfir.resolve.providers.findExtendDeclarationSubstitution
+import org.cangnova.cangjie.cfir.resolve.providers.createCallableOwnerUseSiteSubstitutor
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.scopes.*
 import org.cangnova.cangjie.cfir.session.*
@@ -486,19 +486,8 @@ class CfirClassSubstitutionScope(
     }
 
     private fun computeCallableSubstitutor(symbol: CfirCallableSymbol<*>): ConeSubstitutor? {
-        val ownerExtend = session.extendProvider.getContainingExtend(symbol)
-            ?.takeIf(session.extendProvider::isExtendAccessible)
-        if (ownerExtend != null) {
-            return findExtendDeclarationSubstitution(session, ownerExtend, dispatchReceiverType)?.substitutor
-        }
-
-        val ownerClassId = ownerClassIdForCallable(symbol)
-        if (ownerClassId != null) {
-            val concreteOwnerType = concreteTypeForOwner(ownerClassId) ?: return null
-            val ownerDeclaration = session.symbolProvider.getClassLikeSymbolByClassId(ownerClassId)?.cfir ?: return null
-            return createClassLikeDeclarationSubstitutor(ownerDeclaration, concreteOwnerType)
-        }
-        return null
+        val receiverType = substitutionOwnerType ?: dispatchReceiverType
+        return createCallableOwnerUseSiteSubstitutor(session, symbol, receiverType)
     }
 
     private fun ownerClassIdForCallable(symbol: CfirCallableSymbol<*>): ClassId? {

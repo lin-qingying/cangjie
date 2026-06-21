@@ -1159,6 +1159,18 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
             parameter<Name>("memberName")
         }
 
+        // extend 实现接口时缺少必须实现的抽象函数/属性。
+        val NEED_MEMBER_IMPLEMENTATION by error<PsiElement> {
+            parameter<String>("extendName")
+        }
+
+        // extend 继承接口 default 成员时，必须在 extend 声明中显式实现。
+        val INTERFACE_MEMBER_MUST_BE_IMPLEMENTED by error<PsiElement> {
+            parameter<String>("memberKind")
+            parameter<Name>("memberName")
+            parameter<String>("extendName")
+        }
+
         // struct/extend 实现 interface 时函数 mut 修饰不一致。
         val INCOMPATIBLE_MUT_MODIFIER_BETWEEN_STRUCT_AND_INTERFACE by error<PsiElement>()
 

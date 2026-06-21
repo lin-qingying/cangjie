@@ -13,7 +13,7 @@ interface B {
     func add(): Unit
 }
 
-<!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>class S<!> {}
+class S {}
 
 extend S <: A {
     public func add(): Unit {}

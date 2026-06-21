@@ -722,6 +722,18 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
         )
         map.put(CfirErrors.CANNOT_OVERRIDE, "cannot override {0} ''{1}''", RENDER_STRING, RENDER_NAME)
         map.put(
+            CfirErrors.NEED_MEMBER_IMPLEMENTATION,
+            "implementation of function or property is needed in ''{0}''",
+            RENDER_STRING,
+        )
+        map.put(
+            CfirErrors.INTERFACE_MEMBER_MUST_BE_IMPLEMENTED,
+            "interface {0} ''{1}'' must be implemented in ''{2}''",
+            RENDER_STRING,
+            RENDER_NAME,
+            RENDER_STRING,
+        )
+        map.put(
             CfirErrors.INCOMPATIBLE_MUT_MODIFIER_BETWEEN_STRUCT_AND_INTERFACE,
             "mut modifier is inconsistent with inherited interface member",
         )

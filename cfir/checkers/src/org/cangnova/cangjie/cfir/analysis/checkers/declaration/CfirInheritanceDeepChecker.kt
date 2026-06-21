@@ -29,7 +29,12 @@ import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
+import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
+import org.cangnova.cangjie.cfir.scopes.impl.CfirClassMemberScopeKind
+import org.cangnova.cangjie.cfir.scopes.impl.CfirClassSubstitutionScope
+import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
 import org.cangnova.cangjie.cfir.scopes.overrideSignatureKey
+import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
 import org.cangnova.cangjie.cfir.session.extendProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
@@ -84,9 +89,9 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkExtendTargetMemberCompatibility(extend: CfirExtend) {
+        val targetScope = extend.extendedTypeRef.resolvedUseSiteMemberScope() ?: return
         val targetDecl = extend.extendedTypeRef.resolvedClassLikeDeclaration() ?: return
         val targetClassId = (targetDecl.symbol as? CfirClassLikeSymbol<*>)?.classId
-        val targetScope = context.createUseSiteMemberScope(targetDecl)
         val ownMemberInfosByName = extend.declarations
             .mapNotNull { it.directMemberInfoOrNull(context) }
             .groupBy { it.name }
@@ -94,11 +99,11 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         val reportedWeakVisibilities = mutableSetOf<String>()
         val reportedPropertyTypeConflicts = mutableSetOf<String>()
         val reportedPropertyMutabilityConflicts = mutableSetOf<String>()
+        val reportedUnimplementedMembers = mutableSetOf<String>()
 
         for (superTypeRef in extend.superTypeRefs) {
             val superDecl = superTypeRef.resolvedClassLikeDeclaration() ?: continue
-            for (superMember in superDecl.declarations) {
-                val superInfo = superMember.inheritedMemberInfoOrNull(context) ?: continue
+            for (superInfo in superTypeRef.collectInterfaceRequirementMemberInfos(superDecl)) {
 
                 val implementationCandidates = buildList {
                     targetScope.processCallablesByName(superInfo.name) { symbol ->
@@ -179,9 +184,55 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                         }
                     }
                 }
+
+                val hasConcreteImplementation = implementationCandidates.any { candidate ->
+                    val implementationInfo = candidate.info
+                    implementationInfo.canImplement(superInfo) &&
+                        !implementationInfo.isAbstract &&
+                        !implementationInfo.isDefaultInterfaceMember(context)
+                }
+                if (hasConcreteImplementation) continue
+
+                if (superInfo.isAbstract) {
+                    val requirementKey = superInfo.requirementDiagnosticKey()
+                    if (reportedUnimplementedMembers.add(requirementKey)) {
+                        reporter.reportOn(
+                            source = extend.source?.firstCharacterDiagnosticSource() ?: extend.extendedTypeRef.source,
+                            factory = CfirErrors.NEED_MEMBER_IMPLEMENTATION,
+                            a = extend.targetDisplayName(),
+                        )
+                    }
+                }
             }
         }
     }
+
+    /**
+     * extend 实现接口时必须检查接口完整 use-site 成员表，而不仅是接口直接声明。
+     * 官方 `GetInheritedSuperMembers` 会把 super interface 的成员一并放入待实现集合。
+     *
+     * static 接口成员不进入普通实例 use-site scope；官方仍要求 extend 对其完成实现关系检查，
+     * 因此这里补入接口直接声明中的 static 成员，同时保留 use-site scope 对泛型实参的替换结果。
+     */
+    context(context: CheckerContext)
+    private fun CfirTypeRef.collectInterfaceRequirementMemberInfos(
+        superDecl: CfirClassLikeDeclaration,
+    ): List<InheritedMemberInfo> =
+        buildMap {
+            val superScope = resolvedUseSiteMemberScope() ?: context.createUseSiteMemberScope(superDecl)
+            for (info in superScope.collectInheritedMemberInfos(context)) {
+                put(info.requirementDiagnosticKey(), info)
+            }
+        }.values.toList()
+
+    private fun CfirTypeScope.collectInheritedMemberInfos(context: CheckerContext): List<InheritedMemberInfo> =
+        buildList {
+            for (name in getCallableNames()) {
+                processCallablesByName(name) { symbol ->
+                    symbol.inheritedMemberInfoOrNull(context)?.let(::add)
+                }
+            }
+        }
 
     /**
      * 多个父类型中同名成员的声明类型（function/property）不一致。
@@ -433,6 +484,8 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                     isStatic = member.status.isStatic,
                     isConst = member.status.isConst,
                     isMut = member.status.isMut,
+                    isDefault = member.status.isDefault,
+                    isAbstract = member.status.isAbstract,
                     visibility = member.status.visibility,
                     source = member.source,
                     nameSource = member.functionNameDiagnosticSource(),
@@ -446,6 +499,8 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                     isStatic = member.status.isStatic,
                     isConst = member.status.isConst,
                     isMut = member.status.isMut,
+                    isDefault = member.status.isDefault,
+                    isAbstract = member.status.isAbstract,
                     visibility = member.status.visibility,
                     source = member.source,
                     nameSource = member.propertyNameDiagnosticSource(),
@@ -459,6 +514,8 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                     isStatic = member.status.isStatic,
                     isConst = false,
                     isMut = false,
+                    isDefault = false,
+                    isAbstract = member.status.isAbstract,
                     visibility = member.status.visibility,
                     source = member.source,
                     nameSource = member.fieldVariableNameDiagnosticSource(),
@@ -613,6 +670,14 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
             else -> null
         }
 
+    private fun CfirDeclaration.inheritableDirectMemberInfoOrNull(context: CheckerContext): InheritedMemberInfo? =
+        when (this) {
+            is CfirNamedFunction -> symbol?.inheritedMemberInfoOrNull(context)
+            is CfirProperty -> symbol.inheritedMemberInfoOrNull(context)
+            is CfirFieldVariable -> symbol.inheritedMemberInfoOrNull(context)
+            else -> null
+        }
+
     private fun CfirCallableSymbol<*>.directMemberInfoOrNull(context: CheckerContext): InheritedMemberInfo? =
         memberInfoOrNull(context, inheritOnly = false)
 
@@ -627,6 +692,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         if (!isBound) return null
         val declaration = cfir
         if (inheritOnly && !canBeInheritedMember()) return null
+        val ownerDeclaration = context.ownerClassSymbol(this)?.cfir
         val ownerName = ownerClassId(context)?.shortClassName
         return when (declaration) {
             is CfirNamedFunction -> InheritedMemberInfo(
@@ -635,6 +701,8 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                 isStatic = declaration.status.isStatic,
                 isConst = declaration.status.isConst,
                 isMut = declaration.status.isMut,
+                isDefault = declaration.status.isDefault,
+                isAbstract = declaration.requiresInterfaceImplementation(ownerDeclaration),
                 visibility = declaration.status.visibility,
                 source = declaration.source,
                 nameSource = declaration.functionNameDiagnosticSource(),
@@ -648,6 +716,8 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                 isStatic = declaration.status.isStatic,
                 isConst = declaration.status.isConst,
                 isMut = declaration.status.isMut,
+                isDefault = declaration.status.isDefault,
+                isAbstract = declaration.requiresInterfaceImplementation(ownerDeclaration),
                 visibility = declaration.status.visibility,
                 source = declaration.source,
                 nameSource = declaration.propertyNameDiagnosticSource(),
@@ -661,6 +731,8 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                 isStatic = declaration.status.isStatic,
                 isConst = false,
                 isMut = false,
+                isDefault = false,
+                isAbstract = declaration.status.isAbstract,
                 visibility = declaration.status.visibility,
                 source = declaration.source,
                 nameSource = declaration.fieldVariableNameDiagnosticSource(),
@@ -671,6 +743,21 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
             else -> null
         }
     }
+
+    private fun CfirCallableDeclaration.requiresInterfaceImplementation(
+        ownerDeclaration: CfirClassLikeDeclaration?,
+    ): Boolean {
+        if (status.isAbstract) return true
+        if (ownerDeclaration !is CfirInterface) return false
+        return !hasOwnBodyOrAccessorBody()
+    }
+
+    private fun CfirCallableDeclaration.hasOwnBodyOrAccessorBody(): Boolean =
+        when (this) {
+            is CfirFunction -> body != null
+            is CfirProperty -> getter?.body != null || setter?.body != null
+            else -> true
+        }
 
     /**
      * 官方 GetInheritedSuperMembers 会把父类型可见 extend 的成员并入继承成员表。
@@ -829,12 +916,37 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
             append(superInfo.symbol?.overrideSignatureKey().orEmpty())
         }
 
+    private fun InheritedMemberInfo.requirementDiagnosticKey(): String =
+        buildString {
+            append(kind)
+            append(':')
+            append(name.asString())
+            append(':')
+            append(isStatic)
+            append(':')
+            append(symbol?.overrideSignatureKey().orEmpty())
+        }
+
+    private fun InheritedMemberInfo.isDefaultInterfaceMember(context: CheckerContext): Boolean {
+        if (!isDefault) return false
+        val owner = symbol?.let { context.ownerClassSymbol(it)?.cfir }
+        return owner is CfirInterface
+    }
+
+    context(context: CheckerContext)
+    private fun CfirExtend.targetDisplayName(): String =
+        "extend " + ((extendedTypeRef as? CfirResolvedTypeRef)?.coneType?.let { type ->
+            type.classIdOrPrimitiveClassId?.shortClassName?.asString() ?: type.toString()
+        } ?: "<unknown>")
+
     private data class InheritedMemberInfo(
         val name: Name,
         val kind: String,
         val isStatic: Boolean,
         val isConst: Boolean,
         val isMut: Boolean,
+        val isDefault: Boolean,
+        val isAbstract: Boolean,
         val visibility: Visibility,
         val source: CjSourceElement?,
         val nameSource: AbstractCjSourceElement?,
@@ -900,9 +1012,32 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
 
     context(context: CheckerContext)
     private fun CfirTypeRef.resolvedClassLikeDeclaration(): CfirClassLikeDeclaration? {
-        val classId = ((this as? CfirResolvedTypeRef)?.coneType as? ConeClassLikeType)?.classId ?: return null
+        val classId = (this as? CfirResolvedTypeRef)?.coneType?.expandedClassIdOrPrimitiveClassId ?: return null
         val symbol = context.session.symbolProvider.getClassLikeSymbolByClassId(classId) ?: return null
         return symbol.cfir as? CfirClassLikeDeclaration
+    }
+
+    context(context: CheckerContext)
+    private fun CfirTypeRef.resolvedUseSiteMemberScope(): CfirTypeScope? {
+        val coneType = (this as? CfirResolvedTypeRef)?.coneType ?: return null
+        val classId = coneType.expandedClassIdOrPrimitiveClassId ?: return null
+        val symbol = context.session.symbolProvider.getClassLikeSymbolByClassId(classId) ?: return null
+        val rawScope = CfirClassUseSiteMemberScope(
+            session = context.session,
+            classSymbol = symbol,
+            symbolProvider = context.session.symbolProvider,
+            extendProvider = context.session.extendProvider,
+            directSupertypeProvider = context.session.directSupertypeProviderOrNull,
+            ownerType = coneType,
+            dispatchReceiverType = coneType,
+            scopeKind = CfirClassMemberScopeKind.DECLARATION_SITE,
+        )
+        return CfirClassSubstitutionScope(
+            session = context.session,
+            useSiteMemberScope = rawScope,
+            dispatchReceiverType = coneType,
+            substitutionOwnerType = coneType,
+        )
     }
 
 }

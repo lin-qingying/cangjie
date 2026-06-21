@@ -109,6 +109,8 @@ object DiagnosticNameMapper {
         "INCOMPATIBLE_MUT_MODIFIER_BETWEEN_STRUCT_AND_INTERFACE" to "sema_incompatible_mut_modifier_between_struct_and_interface",
         "ABSTRACT_METHOD_CANNOT_BE_ACCESSED_DIRECTLY" to "sema_abstract_method_cannot_be_accessed_directly",
         "WEAK_VISIBILITY" to "sema_weak_visibility",
+        "NEED_MEMBER_IMPLEMENTATION" to "sema_need_member_implementation",
+        "INTERFACE_MEMBER_MUST_BE_IMPLEMENTED" to "sema_interface_member_must_be_implemented",
 
         // ── Constructor ──
         "ILLEGAL_THIS_OR_SUPER_CALL" to "sema_illegal_this_or_super_call",

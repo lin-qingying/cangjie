@@ -7,7 +7,7 @@ interface I<T> {
 
 class C<T, V> {} 
 
-<!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>extend<T,V> C<T, V> <: I<T> & I<V> {}<!>
+<!NEED_MEMBER_IMPLEMENTATION!>e<!>xtend<T,V> C<T, V> <: I<T> & I<V> {}
 
 main() {
     return 0

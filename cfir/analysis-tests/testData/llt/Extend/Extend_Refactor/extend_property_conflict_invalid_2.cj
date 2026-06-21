@@ -23,13 +23,13 @@ interface I2 {
 
 class C1 {}
 
-<!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>extend C1 <: I1 {
+<!INTERFACE_MEMBER_MUST_BE_IMPLEMENTED!>e<!>xtend C1 <: I1 {
     func <!EXTEND_MEMBER_CANNOT_SHADOW!>foo<!>(): Int64 {
         3
     }
-}<!>
+}
 
-<!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>extend C1 <: I2 {}<!>
+<!INTERFACE_MEMBER_MUST_BE_IMPLEMENTED!>e<!>xtend C1 <: I2 {}
 
 main() {
     return -1
