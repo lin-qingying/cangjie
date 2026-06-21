@@ -89,4 +89,3 @@ private object NoopTypeResolver : CfirTypeResolver() {
 
     override fun resolveClass(classId: ClassId): org.cangnova.cangjie.cfir.declarations.CfirClass? = null
 }
-

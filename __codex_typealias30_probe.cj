@@ -1,6 +1,3 @@
-
-
-
 class GennericClassA<T, V> {}
 
 type TypeClass1<T, V> = GennericClassA<T, V>
@@ -21,6 +18,6 @@ main() {
     var a: A = A()
     var b: B<Int64> = B<Int64>()
     var c: C<Int64> = GennericClassA<Array<Int64>, Array<Int64>>()
-    var i: InterfaceI<Int64> = <!TYPE_MISMATCH!>C<Int64>()<!>
+    var i: InterfaceI<Int64> = C<Int64>()
     0
 }

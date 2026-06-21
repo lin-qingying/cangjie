@@ -148,8 +148,8 @@ open class CfirDefaultTransformer<in D> : CfirTransformer<D>() {
         return transformFunction(propertyAccessor, data) as CfirPropertyAccessor
     }
 
-    override fun transformFieldVariable(variable: CfirFieldVariable, data: D): CfirFieldVariable {
-        return transformCallableDeclaration(variable, data) as CfirFieldVariable
+    override fun transformFieldVariable(fieldVariable: CfirFieldVariable, data: D): CfirFieldVariable {
+        return transformCallableDeclaration(fieldVariable, data) as CfirFieldVariable
     }
 
     override fun transformPatternBindingVariable(patternBindingVariable: CfirPatternBindingVariable, data: D): CfirPatternBindingVariable {

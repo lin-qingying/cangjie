@@ -61,13 +61,13 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
     private val JAVA_IMPL = Name.identifier("JavaImpl")
 
     context(context: CheckerContext, reporter: DiagnosticReporter)
-    override fun check(extend: CfirExtend) {
-        checkIllegalMembers(extend)
-        checkExtendJavaType(extend)
-        checkExtendJavaImplTarget(extend)
-        checkOverrideInExtend(extend)
-        checkMemberShadowing(extend)
-        checkExtendImportedInterface(extend)
+    override fun check(declaration: CfirExtend) {
+        checkIllegalMembers(declaration)
+        checkExtendJavaType(declaration)
+        checkExtendJavaImplTarget(declaration)
+        checkOverrideInExtend(declaration)
+        checkMemberShadowing(declaration)
+        checkExtendImportedInterface(declaration)
     }
 
     /**

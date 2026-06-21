@@ -277,13 +277,13 @@ object CfirExtendImmutableMemberChecker : CfirExtendChecker() {
 
 object CfirExtendSpecializationConflictChecker : CfirExtendChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
-    override fun check(extend: CfirExtend) {
-        if (!extend.requiresSpecializationConflictCheck(context)) return
+    override fun check(declaration: CfirExtend) {
+        if (!declaration.requiresSpecializationConflictCheck(context)) return
 
         val query = context.session.extendRuleQueryServiceOrNull ?: return
-        val targetKey = query.targetKeyOf(extend) ?: return
-        val localInterfaces = query.inheritedInterfacesOf(extend)
-        val foreignInterfaces = query.inheritedInterfacesForTarget(targetKey, excludingDeclaration = extend)
+        val targetKey = query.targetKeyOf(declaration) ?: return
+        val localInterfaces = query.inheritedInterfacesOf(declaration)
+        val foreignInterfaces = query.inheritedInterfacesForTarget(targetKey, excludingDeclaration = declaration)
 
         for ((index, localInterface) in localInterfaces.withIndex()) {
             val localClassId = localInterface.classId ?: continue
@@ -292,8 +292,8 @@ object CfirExtendSpecializationConflictChecker : CfirExtendChecker() {
             }
             if (!conflict) continue
 
-            val sourceTypeRef = extend.superTypeRefs.getOrNull(index)
-            val localUsesTypeParameter = sourceTypeRef?.containsAnyExtendTypeParameter(extend) == true
+            val sourceTypeRef = declaration.superTypeRefs.getOrNull(index)
+            val localUsesTypeParameter = sourceTypeRef?.containsAnyExtendTypeParameter(declaration) == true
             val foreignGenericConflict = localUsesTypeParameter &&
                 foreignInterfaces.any { other ->
                     other.classId == localClassId &&
@@ -301,7 +301,7 @@ object CfirExtendSpecializationConflictChecker : CfirExtendChecker() {
                         other.semanticKey.contains("__EXT_TP_")
                 }
             if (localUsesTypeParameter && !foreignGenericConflict) continue
-            if (foreignGenericConflict && query.isFirstExtendForTarget(extend, targetKey)) continue
+            if (foreignGenericConflict && query.isFirstExtendForTarget(declaration, targetKey)) continue
             reporter.reportOn(
                 source = sourceTypeRef?.source,
                 factory = CfirErrors.EXTEND_DUPLICATE_INTERFACE,
@@ -331,14 +331,14 @@ object CfirExtendSpecializationConflictChecker : CfirExtendChecker() {
 
 object CfirExtendDefaultImplementationConflictChecker : CfirExtendChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
-    override fun check(extend: CfirExtend) {
+    override fun check(declaration: CfirExtend) {
         val query = context.session.extendRuleQueryServiceOrNull ?: return
-        val targetKey = query.targetKeyOf(extend) ?: return
-        val localInterfaces = query.inheritedInterfacesOf(extend)
+        val targetKey = query.targetKeyOf(declaration) ?: return
+        val localInterfaces = query.inheritedInterfacesOf(declaration)
         if (localInterfaces.isEmpty()) return
 
         val foreignInterfaceIds = query
-            .inheritedInterfacesForTarget(targetKey, excludingDeclaration = extend)
+            .inheritedInterfacesForTarget(targetKey, excludingDeclaration = declaration)
             .mapNotNull { it.classId }
             .toSet()
         if (foreignInterfaceIds.isEmpty()) return
@@ -349,7 +349,7 @@ object CfirExtendDefaultImplementationConflictChecker : CfirExtendChecker() {
             val conflictMembers = query.defaultIndependentMembersOfInterface(interfaceClassId)
             if (conflictMembers.isEmpty()) continue
 
-            val sourceTypeRef = extend.superTypeRefs.getOrNull(index)
+            val sourceTypeRef = declaration.superTypeRefs.getOrNull(index)
             for (memberName in conflictMembers) {
                 reporter.reportOn(
                     source = sourceTypeRef?.source,
