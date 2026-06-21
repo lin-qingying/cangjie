@@ -1,9 +1,5 @@
 // FILE: aux_extend_test_a02_24.cj
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
-// This source file is part of the Cangjie project, licensed under Apache-2.0
-// with Runtime Library Exception.
-//
-// See https://cangjie-lang.cn/pages/LICENSE for license information.
+
 
 /*
   @Description:     Defines a package a.c for example.
@@ -51,11 +47,7 @@ extend <T> MyClass<T> <: I1 & I2 & I3 & I4 & I5 where T <: I11 & I12 & I13 {
 }
 
 // FILE: aux_test_a02_24.cj
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
-// This source file is part of the Cangjie project, licensed under Apache-2.0
-// with Runtime Library Exception.
-//
-// See https://cangjie-lang.cn/pages/LICENSE for license information.
+
 
 /*
   @Description:     Defines a package a.b for example.
@@ -68,11 +60,7 @@ package a.b
 internal class MyClass<T> {}
 
 // FILE: test_a02_24_02.cj
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
-// This source file is part of the Cangjie project, licensed under Apache-2.0
-// with Runtime Library Exception.
-//
-// See https://cangjie-lang.cn/pages/LICENSE for license information.
+
 
 /*
   @Name:            08_06_02_a02_24

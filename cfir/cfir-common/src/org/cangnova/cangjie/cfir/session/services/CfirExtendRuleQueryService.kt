@@ -21,6 +21,8 @@ interface CfirExtendRuleQueryService : CfirSessionComponent {
     fun inheritedInterfaceClassIdsForTarget(targetKey: CfirExtendTargetKey, excludingDeclaration: Any? = null): List<ClassId>
     fun inheritedInterfaceClassIdsForTarget(targetClassId: ClassId, excludingDeclaration: Any? = null): List<ClassId>
     fun inheritedInterfaceClosureClassIdsOf(declaration: Any): Set<ClassId>
+    fun areExtendsInInheritRelation(firstDeclaration: Any, secondDeclaration: Any): Boolean
+    fun hasUndecidableExtendCheckSequence(declaration: Any): Boolean
     fun inheritedInterfaceSemanticKeysOf(declaration: Any): List<String>
     fun inheritedInterfaceSemanticKeysForTarget(targetKey: CfirExtendTargetKey, excludingDeclaration: Any? = null): List<String>
     fun inheritedInterfaceSemanticKeysForTarget(targetClassId: ClassId, excludingDeclaration: Any? = null): List<String>

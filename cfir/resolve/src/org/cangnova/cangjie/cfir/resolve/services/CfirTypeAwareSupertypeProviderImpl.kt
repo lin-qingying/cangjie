@@ -220,7 +220,9 @@ class CfirTypeAwareSupertypeProviderImpl(
         return this is ConeClassLikeType ||
                 this is ConeStructType ||
                 this is ConeEnumType ||
-                this is ConePrimitiveType
+                this is ConePrimitiveType ||
+                this is ConePointerType ||
+                this is ConeCStringType
     }
 
     private val symbolProvider

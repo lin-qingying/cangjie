@@ -67,7 +67,7 @@
   - `analysis:light-declarations`、`analysis:symbol-light-declarations`
   - `analysis:analysis-tools`
   - `analysis:analysis-test-framework`
-- 可选后端：`compiler:chir`、`compiler:codegen`、`llvm-interop:llvm-interop-api`、`llvm-interop:llvm-interop-jni`
+- 可选后端：`chir:chir-tree`、`chir:cfir2chir`、`compiler:codegen`、`compiler:jvm-codegen`、`llvm-interop:llvm-interop-api`、`llvm-interop:llvm-interop-jni`
 - 测试支撑：`tests:test-infrastructure`
 - 发布工件：`prepare:frontend`、`prepare:frontend-embeddable`、`prepare:test-infrastructure`、`prepare:analysis-test-framework`、`prepare:ide-plugin-dependencies:*`、`prepare:ide-plugin-dependencies-module:*`
 

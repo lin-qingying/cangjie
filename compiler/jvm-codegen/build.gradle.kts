@@ -9,7 +9,7 @@ sourceSets {
 }
 
 dependencies {
-    api(project(":compiler:chir"))
+    api(project(":chir:chir-tree"))
     implementation(libs.asm)
     testImplementation(libs.asm.util)
     testImplementation(libs.junit.jupiter)

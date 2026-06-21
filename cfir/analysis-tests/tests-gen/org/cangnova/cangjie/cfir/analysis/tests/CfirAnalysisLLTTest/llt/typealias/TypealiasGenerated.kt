@@ -199,6 +199,12 @@ class TypealiasGenerated : AbstractCfirLightTreeLlTDiagnosticsTest() {
         runTest("cfir/analysis-tests/testData/llt/typealias/typealias36_dep.cj")
     }
 
+    @TestMetadata("typealias37.cj")
+    @Test
+    fun testTypealias37() {
+        runTest("cfir/analysis-tests/testData/llt/typealias/typealias37.cj")
+    }
+
     @TestMetadata("typealias4.cj")
     @Test
     fun testTypealias4() {

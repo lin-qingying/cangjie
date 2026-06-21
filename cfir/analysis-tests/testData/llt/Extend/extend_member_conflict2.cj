@@ -1,8 +1,4 @@
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
-// This source file is part of the Cangjie project, licensed under Apache-2.0
-// with Runtime Library Exception.
-//
-// See https://cangjie-lang.cn/pages/LICENSE for license information.
+
 
 
 extend A {
@@ -13,13 +9,13 @@ extend A {
     <!STATIC_AND_NON_STATIC_MEMBER_CANNOT_HAVE_SAME_NAME!>p<!>ublic func <!EXTEND_MEMBER_CANNOT_SHADOW!>f1<!>() {}
     public static func <!EXTEND_MEMBER_CANNOT_SHADOW!>f2<!>() {}
     public func <!EXTEND_MEMBER_CANNOT_SHADOW!>g1<!>() {}
-    <!STATIC_AND_NON_STATIC_MEMBER_CANNOT_HAVE_SAME_NAME!>p<!>ublic static func <!EXTEND_MEMBER_CANNOT_SHADOW!>g2<!>() {}
+    public static func g2() {}
 }
 
 extend A {
-    private func <!EXTEND_MEMBER_CANNOT_SHADOW!>a<!>() {}
-    public func <!EXTEND_MEMBER_CANNOT_SHADOW!>b<!>() {}
-    private func <!EXTEND_MEMBER_CANNOT_SHADOW!>c<!>() {}
+    private func a() {}
+    public func b() {}
+    private func c() {}
     public func d() {}
     private func e() {}
 }

@@ -1,8 +1,4 @@
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
-// This source file is part of the Cangjie project, licensed under Apache-2.0
-// with Runtime Library Exception.
-//
-// See https://cangjie-lang.cn/pages/LICENSE for license information.
+
 
 interface Add<T1, T2> {
     operator func +(right: T1): T2
@@ -17,7 +13,7 @@ struct Point {
     }
 }
 
-extend Point <: Add<Point, Poit> {
+extend Point <: <!EXTEND_NOT_INTERFACE!>Add<Point, <!UNDECLARED_TYPE_NAME!>P<!>oit><!> {
     public operator func +(right: Point): Point {
         Point(this.x + right.x, this.y + right.y)
     }

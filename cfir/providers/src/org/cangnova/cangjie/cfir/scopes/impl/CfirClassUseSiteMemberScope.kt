@@ -83,6 +83,7 @@ class CfirClassUseSiteMemberScope private constructor(
     private val dispatchReceiverType: ConeCangJieType? = ownerType,
     private val scopeKind: CfirClassMemberScopeKind = CfirClassMemberScopeKind.USE_SITE,
     private val allowBareGenericStaticQualifierExtends: Boolean = false,
+    private val excludingExtend: CfirExtend? = null,
     private val supertypePath: CfirSupertypePath = CfirSupertypePath.root(classSymbol.classId),
 ) : CfirTypeScope() {
     constructor(
@@ -95,6 +96,7 @@ class CfirClassUseSiteMemberScope private constructor(
         dispatchReceiverType: ConeCangJieType? = ownerType,
         scopeKind: CfirClassMemberScopeKind = CfirClassMemberScopeKind.USE_SITE,
         allowBareGenericStaticQualifierExtends: Boolean = false,
+        excludingExtend: CfirExtend? = null,
     ) : this(
         session = session,
         classSymbol = classSymbol,
@@ -105,6 +107,7 @@ class CfirClassUseSiteMemberScope private constructor(
         dispatchReceiverType = dispatchReceiverType,
         scopeKind = scopeKind,
         allowBareGenericStaticQualifierExtends = allowBareGenericStaticQualifierExtends,
+        excludingExtend = excludingExtend,
         supertypePath = CfirSupertypePath.root(classSymbol.classId),
     )
 
@@ -137,6 +140,7 @@ class CfirClassUseSiteMemberScope private constructor(
                 session = session,
                 receiverType = receiverType,
                 allowBareGenericStaticQualifierExtends = allowBareGenericStaticQualifierExtends,
+                excludingExtend = excludingExtend,
             )
         }
     private val parentScopes: List<CfirTypeScope> by lazy { buildParentScopes() }
@@ -265,6 +269,7 @@ class CfirClassUseSiteMemberScope private constructor(
         dispatchReceiverType = dispatchReceiverType,
         scopeKind = scopeKind,
         allowBareGenericStaticQualifierExtends = allowBareGenericStaticQualifierExtends,
+        excludingExtend = excludingExtend,
         supertypePath = supertypePath,
     )
 
@@ -438,6 +443,7 @@ class CfirClassUseSiteMemberScope private constructor(
                 dispatchReceiverType = dispatchReceiverType ?: rootType,
                 scopeKind = parentScopeKind(),
                 allowBareGenericStaticQualifierExtends = allowBareGenericStaticQualifierExtends,
+                excludingExtend = excludingExtend,
                 supertypePath = supertypePath.child(classId),
             )
             parentScope.substitutionScopeForSupertype(parentSymbol, supertype)
@@ -486,6 +492,7 @@ class CfirClassUseSiteMemberScope private constructor(
             }
         }
     }.distinctBy { it.extend }.filter { (extend, concreteReceiverType) ->
+        extend !== excludingExtend &&
         isExtendApplicableToCurrentOwner(extend, concreteReceiverType)
     }.map { it.extend }
 
@@ -568,6 +575,7 @@ class CfirClassUseSiteMemberScope private constructor(
                 ownerType = supertype,
                 scopeKind = parentScopeKind(),
                 allowBareGenericStaticQualifierExtends = allowBareGenericStaticQualifierExtends,
+                excludingExtend = excludingExtend,
                 supertypePath = supertypePath.child(classId),
             )
             addNames(parentScope.declaredScope.collectDeclaredNames())

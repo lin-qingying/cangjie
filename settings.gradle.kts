@@ -123,7 +123,9 @@ include(":analysis:analysis-test-framework")
 include(":tests")
 include(":tests:test-infrastructure")
 
-include(":compiler:chir")
+include(":chir")
+include(":chir:chir-tree")
+include(":chir:cfir2chir")
 include(":compiler:codegen")
 include(":compiler:jvm-codegen")
 

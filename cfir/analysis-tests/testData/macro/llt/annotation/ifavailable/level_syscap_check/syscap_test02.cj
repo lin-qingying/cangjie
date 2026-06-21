@@ -1,9 +1,5 @@
 // FILE: apilevel.cj
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
-// This source file is part of the Cangjie project, licensed under Apache-2.0
-// with Runtime Library Exception.
-//
-// See https://cangjie-lang.cn/pages/LICENSE for license information.
+
 
 package ohos.labels
 
@@ -80,11 +76,7 @@ public class APILevel {
 }
 
 // FILE: canIUse.cj
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
-// This source file is part of the Cangjie project, licensed under Apache-2.0
-// with Runtime Library Exception.
-//
-// See https://cangjie-lang.cn/pages/LICENSE for license information.
+
 
 package ohos.base
 
@@ -93,11 +85,7 @@ public func canIUse(syscap: String): Bool {
 }
 
 // FILE: syscap_test02.cj
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
-// This source file is part of the Cangjie project, licensed under Apache-2.0
-// with Runtime Library Exception.
-//
-// See https://cangjie-lang.cn/pages/LICENSE for license information.
+
 
 // Note: 2in1:   [A, B] + [A, C] ===> [A, B, C]
 //       phone:  [A, D] + [A, E] ===> [A, D, E]

@@ -165,11 +165,11 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
         val targetDecl = context.session.symbolProvider
             .getClassLikeSymbolByClassId(targetType.classId)?.cfir as? org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
             ?: return
-        val targetScope = createTargetShadowScope(targetDecl, targetType)
+        val targetScope = createTargetShadowScope(targetDecl, targetType, extend)
 
         for (member in extend.declarations) {
             val memberName = member.shadowableName() ?: continue
-            if (!member.shadowsExistingMember(targetScope)) continue
+            if (!member.shadowsExistingMember(targetScope, context)) continue
 
             val typeName = targetType.classId.shortClassName
             val source = when (member) {
@@ -201,6 +201,7 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
     private fun createTargetShadowScope(
         targetDecl: org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration,
         targetType: ConeClassLikeType,
+        excludingExtend: CfirExtend,
     ): CfirTypeScope {
         val targetSymbol = targetDecl.symbol as? CfirClassLikeSymbol<*> ?: return CfirTypeScope.Empty
         val rawScope = CfirClassUseSiteMemberScope(
@@ -212,6 +213,7 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
             ownerType = targetType,
             dispatchReceiverType = targetType,
             scopeKind = CfirClassMemberScopeKind.USE_SITE,
+            excludingExtend = excludingExtend,
         )
         return CfirClassSubstitutionScope(
             session = context.session,
@@ -230,13 +232,14 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
      */
     private fun CfirDeclaration.shadowsExistingMember(
         targetScope: org.cangnova.cangjie.cfir.scopes.CfirTypeScope,
+        context: CheckerContext,
     ): Boolean {
         return when (this) {
             is CfirNamedFunction -> {
                 val signature = symbol.overrideSignatureKey()
                 var found = false
                 targetScope.processFunctionsByName(name) { candidate ->
-                    if (candidate.canShadowThis(this, signature)) {
+                    if (candidate.canShadowThis(this, signature, context)) {
                         found = true
                     }
                 }
@@ -247,7 +250,7 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
                 val signature = symbol.overrideSignatureKey()
                 var found = false
                 targetScope.processPropertiesByName(name) { candidate ->
-                    if (candidate.canShadowThis(this, signature)) {
+                    if (candidate.canShadowThis(this, signature, context)) {
                         found = true
                     }
                 }
@@ -261,13 +264,28 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
     private fun org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol<*>.canShadowThis(
         currentMember: CfirDeclaration,
         currentSignature: String,
+        context: CheckerContext,
     ): Boolean {
         if (!isBound) return false
         if (unwrapSubstitutionOverrides().cfir === currentMember) return false
 
         // 官方 RemoveMembersShouldNotInherit / IsInvisibleMember 会排除 private 成员。
         if (cfir.status.visibility == Visibilities.Private) return false
+        if (isInterfaceRequirementMember(context)) return false
         return overrideSignatureKey() == currentSignature
+    }
+
+    private fun org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol<*>.isInterfaceRequirementMember(
+        context: CheckerContext,
+    ): Boolean {
+        val owner = context.ownerClassSymbol(this)?.cfir
+        if (owner !is org.cangnova.cangjie.cfir.declarations.CfirInterface) return false
+        return when (val declaration = cfir) {
+            is CfirFunction -> declaration.body == null || declaration.status.isAbstract
+            is CfirProperty -> declaration.status.isAbstract ||
+                (declaration.getter?.body == null && declaration.setter?.body == null)
+            else -> declaration.status.isAbstract
+        }
     }
 
     private fun CfirDeclaration.shadowableName(): Name? = when (this) {

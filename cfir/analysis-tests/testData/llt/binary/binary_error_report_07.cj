@@ -1,8 +1,4 @@
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
-// This source file is part of the Cangjie project, licensed under Apache-2.0
-// with Runtime Library Exception.
-//
-// See https://cangjie-lang.cn/pages/LICENSE for license information.
+
 
 public let var_1691786195655_30: UInt64 = UInt64(1)
 let var_1691786195655_37: UInt32 = UInt32(113)

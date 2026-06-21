@@ -2,6 +2,7 @@ package org.cangnova.cangjie.cfir.semantics
 
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.expressions.CfirFunctionCallOrigin
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.name.Name
 
@@ -24,6 +25,13 @@ abstract class AbstractCallInfo {
      * `AbstractCallInfo`，因此显式类型实参必须跟随调用语义信息跨模块传递。
      */
     abstract val typeArguments: List<CfirTypeRef>
+    /**
+     * 当前调用的来源语义。
+     *
+     * operator、构造委托、intrinsic 等调用来源会影响诊断归类；诊断层只能依赖
+     * 语义层抽象，因此调用来源必须随 `AbstractCallInfo` 跨模块传递。
+     */
+    abstract val origin: CfirFunctionCallOrigin
     abstract val explicitReceiver: CfirExpression?
     abstract val arguments: List<CfirExpression>
 }

@@ -31,16 +31,22 @@ import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirConstructorSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirEnumSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirInterfaceSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirStructSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
+import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
 import org.cangnova.cangjie.cfir.symbols.toLookupTag
 import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirUserTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeCStringType
 import org.cangnova.cangjie.cfir.types.ConeClassifierType
+import org.cangnova.cangjie.cfir.types.ConeEnumType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.types.ConeIntersectionType
@@ -48,13 +54,16 @@ import org.cangnova.cangjie.cfir.types.ConeLookupTagBasedType
 import org.cangnova.cangjie.cfir.types.ConePointerType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.ConeQuestType
+import org.cangnova.cangjie.cfir.types.ConeStructType
 import org.cangnova.cangjie.cfir.types.ConeTupleType
 import org.cangnova.cangjie.cfir.types.ConeUnionType
 import org.cangnova.cangjie.cfir.types.ConeVArrayType
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.createTypeSubstitutorByTypeConstructor
+import org.cangnova.cangjie.cfir.types.expandedExtendTargetKey
 import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.cfir.types.typeContext
+import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.visitors.CfirDefaultVisitorVoid
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.source.CjSourceElement
@@ -483,6 +492,7 @@ private class GenericInstantiationAnalyzer(
             for (genericMember in genericMembers) {
                 for (stableMember in stableMembers) {
                     if (!stableMember.conflictsWith(genericMember)) continue
+                    if (stableMember.isInheritedDefaultInterfaceConflictWith(genericMember)) continue
                     reportGenericInstantiationCausesAmbiguousFunctions(
                         source = triggerSource,
                         sourceKey = sourceKey,
@@ -513,7 +523,7 @@ private class GenericInstantiationAnalyzer(
             ) ?: continue
 
             signatures += extend.collectOwnFunctionSignatures(substitution.substitutor)
-            signatures += extend.collectInheritedDefaultFunctionSignatures(substitution.substitutor)
+            signatures += extend.collectInheritedDefaultFunctionSignatures(extend, substitution.substitutor)
         }
         return signatures.groupBy { it.name }
     }
@@ -531,6 +541,7 @@ private class GenericInstantiationAnalyzer(
     }
 
     private fun CfirExtend.collectInheritedDefaultFunctionSignatures(
+        ownerExtend: CfirExtend,
         substitutor: ConeSubstitutor,
     ): List<InstantiatedMemberSignature> {
         val signatures = mutableListOf<InstantiatedMemberSignature>()
@@ -538,6 +549,7 @@ private class GenericInstantiationAnalyzer(
         for (superTypeRef in superTypeRefs) {
             val supertype = superTypeRef.coneTypeOrNull ?: continue
             collectDefaultInterfaceFunctionSignatures(
+                ownerExtend = ownerExtend,
                 interfaceType = substitutor.substituteOrSelf(supertype),
                 destination = signatures,
                 visitedInterfaces = visitedInterfaces,
@@ -547,6 +559,7 @@ private class GenericInstantiationAnalyzer(
     }
 
     private fun collectDefaultInterfaceFunctionSignatures(
+        ownerExtend: CfirExtend?,
         interfaceType: ConeCangJieType,
         destination: MutableList<InstantiatedMemberSignature>,
         visitedInterfaces: MutableSet<org.cangnova.cangjie.name.ClassId>,
@@ -560,12 +573,17 @@ private class GenericInstantiationAnalyzer(
         for (member in declaration.declarations) {
             val function = member as? CfirFunction ?: continue
             if (function.body == null || function.status.isAbstract) continue
-            destination += function.toInstantiatedMemberSignature(declaration.name, substitutor) ?: continue
+            destination += function.toInstantiatedMemberSignature(
+                ownerName = declaration.name,
+                substitutor = substitutor,
+                inheritedDefaultOwnerExtend = ownerExtend,
+            ) ?: continue
         }
 
         for (superTypeRef in declaration.superTypeRefs) {
             val supertype = superTypeRef.coneTypeOrNull ?: continue
             collectDefaultInterfaceFunctionSignatures(
+                ownerExtend = ownerExtend,
                 interfaceType = substitutor.substituteOrSelf(supertype),
                 destination = destination,
                 visitedInterfaces = visitedInterfaces,
@@ -582,25 +600,102 @@ private class GenericInstantiationAnalyzer(
             functions[function.symbol] = function
         }
 
-        val classScope = checkerContext.createUseSiteMemberScope(this)
-        for (name in classScope.getCallableNames()) {
-            classScope.processFunctionsByName(name) { symbol ->
-                if (symbol.isBound) functions.putIfAbsent(symbol, symbol.cfir)
-            }
-        }
-        classScope.processDeclaredConstructors { symbol ->
-            if (symbol.isBound) functions.putIfAbsent(symbol, symbol.cfir)
+        val substitutor = substitutions.toConeSubstitutor()
+        val signatures = functions.values
+            .asSequence()
+            .mapNotNull { it.toInstantiatedMemberSignature(name, substitutor) }
+            .toMutableList()
+        signatures += collectInheritedDefaultFunctionSignatures(
+            superTypeRefs = superTypeRefs,
+            ownerExtend = null,
+            substitutor = substitutor,
+        )
+        instantiatedSelfType(substitutor)?.let { instantiatedType ->
+            signatures += collectClassLikeExtendMemberSignatures(instantiatedType)
         }
 
-        return functions.values
-            .asSequence()
-            .mapNotNull { it.toInstantiatedMemberSignature(name, substitutions.toConeSubstitutor()) }
-            .groupBy { it.name }
+        return signatures.groupBy { it.name }
+    }
+
+    private fun collectClassLikeExtendMemberSignatures(
+        instantiatedType: ConeCangJieType,
+    ): List<InstantiatedMemberSignature> {
+        val targetKey = instantiatedType.expandedExtendTargetKey ?: return emptyList()
+        val signatures = mutableListOf<InstantiatedMemberSignature>()
+        val extendProvider = checkerContext.session.extendProvider
+        for (extend in extendProvider.getExtendsForTarget(targetKey)) {
+            if (!extendProvider.isExtendAccessible(extend)) continue
+            val targetPattern = extend.extendedTypeRef.coneTypeOrNull ?: continue
+            val substitution = createExtendDeclarationSubstitution(
+                session = checkerContext.session,
+                extend = extend,
+                targetPattern = targetPattern,
+                concreteReceiverType = instantiatedType,
+            ) ?: continue
+
+            signatures += extend.collectOwnFunctionSignatures(substitution.substitutor)
+            signatures += extend.collectInheritedDefaultFunctionSignatures(extend, substitution.substitutor)
+        }
+        return signatures
+    }
+
+    private fun collectInheritedDefaultFunctionSignatures(
+        superTypeRefs: List<CfirTypeRef>,
+        ownerExtend: CfirExtend?,
+        substitutor: ConeSubstitutor,
+    ): List<InstantiatedMemberSignature> {
+        val signatures = mutableListOf<InstantiatedMemberSignature>()
+        val visitedInterfaces = linkedSetOf<org.cangnova.cangjie.name.ClassId>()
+        for (superTypeRef in superTypeRefs) {
+            val supertype = superTypeRef.coneTypeOrNull ?: continue
+            collectDefaultInterfaceFunctionSignatures(
+                ownerExtend = ownerExtend,
+                interfaceType = substitutor.substituteOrSelf(supertype),
+                destination = signatures,
+                visitedInterfaces = visitedInterfaces,
+            )
+        }
+        return signatures
+    }
+
+    private fun CfirClassLikeDeclaration.instantiatedSelfType(
+        substitutor: ConeSubstitutor,
+    ): ConeCangJieType? {
+        val selfType = declarationSelfTypeForInstantiation() ?: return null
+        return substitutor.substituteOrSelf(selfType)
+    }
+
+    private fun CfirClassLikeDeclaration.declarationSelfTypeForInstantiation(): ConeCangJieType? {
+        val classLikeSymbol = symbol as? CfirClassLikeSymbol<*> ?: return null
+        val arguments = typeParameters.map { typeParameter ->
+            ConeTypeParameterTypeImpl(typeParameter.symbol.toLookupTag())
+        }
+        return when (classLikeSymbol) {
+            is CfirInterfaceSymbol -> ConeClassLikeType(
+                lookupTag = classLikeSymbol.toLookupTag(),
+                typeArguments = arguments,
+                isInterface = true,
+            )
+            is CfirStructSymbol -> ConeStructType(
+                lookupTag = classLikeSymbol.toLookupTag(),
+                typeArguments = arguments,
+            )
+            is CfirEnumSymbol -> ConeEnumType(
+                lookupTag = classLikeSymbol.toLookupTag(),
+                typeArguments = arguments,
+                isRefEnum = classLikeSymbol.isRefEnum,
+            )
+            else -> ConeClassLikeType(
+                lookupTag = classLikeSymbol.toLookupTag(),
+                typeArguments = arguments,
+            )
+        }
     }
 
     private fun CfirFunction.toInstantiatedMemberSignature(
         ownerName: Name,
         substitutor: ConeSubstitutor,
+        inheritedDefaultOwnerExtend: CfirExtend? = null,
     ): InstantiatedMemberSignature? {
         if (origin != CfirDeclarationOrigin.Source && origin !is CfirDeclarationOrigin.SubstitutionOverride) return null
         if (typeParameters.isNotEmpty()) return null
@@ -619,6 +714,7 @@ private class GenericInstantiationAnalyzer(
             isStatic = status.isStatic,
             parameterTypes = instantiatedParameterTypes,
             hasGenericTypes = hasGenericTypes,
+            inheritedDefaultOwnerExtend = inheritedDefaultOwnerExtend,
         )
     }
 
@@ -659,6 +755,11 @@ private class GenericInstantiationAnalyzer(
             AbstractTypeChecker.equalTypes(checkerContext.session.typeContext, left, right)
         }
     }
+
+    private fun InstantiatedMemberSignature.isInheritedDefaultInterfaceConflictWith(
+        other: InstantiatedMemberSignature,
+    ): Boolean =
+        inheritedDefaultOwnerExtend != null && other.inheritedDefaultOwnerExtend != null
 
     private fun CfirClassLikeDeclaration.renderInstantiationName(
         substitutions: Map<CfirTypeParameterSymbol, ConeCangJieType>,
@@ -1090,6 +1191,7 @@ private data class InstantiatedMemberSignature(
     val isStatic: Boolean,
     val parameterTypes: List<ConeCangJieType>,
     val hasGenericTypes: Boolean,
+    val inheritedDefaultOwnerExtend: CfirExtend?,
 )
 
 private data class DeclarationInstantiationKey(

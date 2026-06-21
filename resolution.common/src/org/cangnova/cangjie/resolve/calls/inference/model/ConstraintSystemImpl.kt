@@ -488,7 +488,7 @@ class ConstraintSystemImpl(
         !type.contains {
             val typeToCheck = it
 
-            if (typeToCheck == null) return@contains false
+
             if (typeVariablesThatAreCountedAsProperTypes?.contains(typeToCheck.typeConstructor()) == true) {
                 return@contains false
             }

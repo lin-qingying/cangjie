@@ -1,9 +1,5 @@
 // FILE: host/DefautFilesMiddleware.cj
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
-// This source file is part of the Cangjie project, licensed under Apache-2.0
-// with Runtime Library Exception.
-//
-// See https://cangjie-lang.cn/pages/LICENSE for license information.
+
 
 package asp.host
 
@@ -41,11 +37,7 @@ public class DefaultFilesMiddleware <: Middleware {
 }
 
 // FILE: host/HostEnvironment.cj
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
-// This source file is part of the Cangjie project, licensed under Apache-2.0
-// with Runtime Library Exception.
-//
-// See https://cangjie-lang.cn/pages/LICENSE for license information.
+
 
 package asp.host
 
@@ -104,11 +96,7 @@ public class HostEnvironment {
 }
 
 // FILE: host/Middleware.cj
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
-// This source file is part of the Cangjie project, licensed under Apache-2.0
-// with Runtime Library Exception.
-//
-// See https://cangjie-lang.cn/pages/LICENSE for license information.
+
 
 package asp.host
 
@@ -119,11 +107,7 @@ public interface Middleware {
 }
 
 // FILE: host/RequestDelegate.cj
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
-// This source file is part of the Cangjie project, licensed under Apache-2.0
-// with Runtime Library Exception.
-//
-// See https://cangjie-lang.cn/pages/LICENSE for license information.
+
 
 package asp.host
 
@@ -132,11 +116,7 @@ import stdx.net.http.HttpContext
 public type RequestDelegate = (HttpContext) -> Unit
 
 // FILE: host/StaticFilesMiddleware.cj
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
-// This source file is part of the Cangjie project, licensed under Apache-2.0
-// with Runtime Library Exception.
-//
-// See https://cangjie-lang.cn/pages/LICENSE for license information.
+
 
 package asp.host
 
@@ -164,11 +144,7 @@ public class StaticFilesMiddleware <: Middleware {
 }
 
 // FILE: host/WebHost.cj
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
-// This source file is part of the Cangjie project, licensed under Apache-2.0
-// with Runtime Library Exception.
-//
-// See https://cangjie-lang.cn/pages/LICENSE for license information.
+
 
 package asp.host
 
@@ -308,11 +284,7 @@ public class WebHost {
 }
 
 // FILE: host/WebHostBuilder.cj
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
-// This source file is part of the Cangjie project, licensed under Apache-2.0
-// with Runtime Library Exception.
-//
-// See https://cangjie-lang.cn/pages/LICENSE for license information.
+
 
 package asp.host
 
@@ -356,11 +328,7 @@ public class WebHostBuilder {
 }
 
 // FILE: host/WebServer.cj
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
-// This source file is part of the Cangjie project, licensed under Apache-2.0
-// with Runtime Library Exception.
-//
-// See https://cangjie-lang.cn/pages/LICENSE for license information.
+
 
 package asp.host
 
@@ -405,11 +373,7 @@ private class WebRequestDistributor <: HttpRequestDistributor {
 }
 
 // FILE: config/ArgOptsConfigurationSource.cj
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
-// This source file is part of the Cangjie project, licensed under Apache-2.0
-// with Runtime Library Exception.
-//
-// See https://cangjie-lang.cn/pages/LICENSE for license information.
+
 
 package asp.config
 
@@ -439,11 +403,7 @@ class ArgOptsConfigurationSource <: ConfigurationSource {
 }
 
 // FILE: config/Configuration.cj
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
-// This source file is part of the Cangjie project, licensed under Apache-2.0
-// with Runtime Library Exception.
-//
-// See https://cangjie-lang.cn/pages/LICENSE for license information.
+
 
 package asp.config
 
@@ -457,11 +417,7 @@ public interface Configuration <: Iterable<(String, String)> {
 }
 
 // FILE: config/ConfigurationBuilder.cj
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
-// This source file is part of the Cangjie project, licensed under Apache-2.0
-// with Runtime Library Exception.
-//
-// See https://cangjie-lang.cn/pages/LICENSE for license information.
+
 
 package asp.config
 
@@ -482,11 +438,7 @@ public interface ConfigurationBuilder {
 }
 
 // FILE: config/ConfigurationManager.cj
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
-// This source file is part of the Cangjie project, licensed under Apache-2.0
-// with Runtime Library Exception.
-//
-// See https://cangjie-lang.cn/pages/LICENSE for license information.
+
 
 package asp.config
 
@@ -568,11 +520,7 @@ public class ConfigurationManager <: Configuration & ConfigurationBuilder {
 }
 
 // FILE: config/ConfigurationSource.cj
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
-// This source file is part of the Cangjie project, licensed under Apache-2.0
-// with Runtime Library Exception.
-//
-// See https://cangjie-lang.cn/pages/LICENSE for license information.
+
 
 package asp.config
 
@@ -586,11 +534,7 @@ public abstract class ConfigurationSource {
 }
 
 // FILE: config/EnvVarsConfigurationSource.cj
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
-// This source file is part of the Cangjie project, licensed under Apache-2.0
-// with Runtime Library Exception.
-//
-// See https://cangjie-lang.cn/pages/LICENSE for license information.
+
 
 package asp.config
 
@@ -622,11 +566,7 @@ class EnvVarsConfigurationSource <: ConfigurationSource {
 }
 
 // FILE: config/JosnConfigurationSource.cj
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
-// This source file is part of the Cangjie project, licensed under Apache-2.0
-// with Runtime Library Exception.
-//
-// See https://cangjie-lang.cn/pages/LICENSE for license information.
+
 
 package asp.config
 
@@ -694,11 +634,7 @@ class JosnConfigurationSource <: ConfigurationSource {
 }
 
 // FILE: config/MemoryConfigurationSource.cj
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
-// This source file is part of the Cangjie project, licensed under Apache-2.0
-// with Runtime Library Exception.
-//
-// See https://cangjie-lang.cn/pages/LICENSE for license information.
+
 
 package asp.config
 
@@ -720,11 +656,7 @@ class MemoryConfigurationSource <: ConfigurationSource {
 }
 
 // FILE: main.cj
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
-// This source file is part of the Cangjie project, licensed under Apache-2.0
-// with Runtime Library Exception.
-//
-// See https://cangjie-lang.cn/pages/LICENSE for license information.
+
 
 
 package asp

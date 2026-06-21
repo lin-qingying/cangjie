@@ -56,6 +56,12 @@ class CfirExtendRuleQueryServiceImpl(
     override fun inheritedInterfaceClosureClassIdsOf(declaration: Any): Set<ClassId> =
         indexStore.inheritedInterfaceClosureClassIdsOf(declaration)
 
+    override fun areExtendsInInheritRelation(firstDeclaration: Any, secondDeclaration: Any): Boolean =
+        indexStore.areExtendsInInheritRelation(firstDeclaration, secondDeclaration)
+
+    override fun hasUndecidableExtendCheckSequence(declaration: Any): Boolean =
+        indexStore.hasUndecidableExtendCheckSequence(declaration)
+
     override fun inheritedInterfaceSemanticKeysOf(declaration: Any): List<String> =
         indexStore.modelForDeclaration(declaration)?.inheritedInterfaceSemanticKeys.orEmpty()
 

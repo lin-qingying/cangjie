@@ -193,8 +193,9 @@ K2 无对应模块，为仓颉语言独有的编译阶段。
 |---|---|---|---|
 | `:cfir:serialization` | CFIR → .cjo 序列化 | 阶段 10 | `:cfir:cfir-tree` |
 | `:cfir:deserialization` | .cjo → CFIR 反序列化（供阶段 4 IMPORT_PACKAGE） | 阶段 4 | `:cfir:cfir-tree`, `:cfir:providers` |
-| `:compiler:chir` | CHIR 数据模型 + CFIR → CHIR 转换 + 优化 | 阶段 11 | `:cfir:cfir-tree` |
-| `:compiler:codegen` | CHIR → LLVM IR → 机器码 | 阶段 12 | `:compiler:chir` |
+| `:chir:chir-tree` | CHIR 数据模型 + pass 框架 | 阶段 11 | 无 CFIR 依赖 |
+| `:chir:cfir2chir` | CFIR → CHIR 转换 | 阶段 11 | `:cfir:cfir-tree`, `:chir:chir-tree` |
+| `:compiler:codegen` | CHIR → LLVM IR → 机器码 | 阶段 12 | `:chir:chir-tree` |
 
 ---
 
@@ -245,7 +246,7 @@ K2 无对应模块，为仓颉语言独有的编译阶段。
 | 8 | FINALIZE | `:compiler:finalize` | 未实现 |
 | 9 | MANGLING | `:compiler:mangling` | 未实现 |
 | 10 | SAVE_CJO | `:cfir:cfir-serialization` | ❌ 仅有反序列化 |
-| 11 | CFIR2CHIR | `:compiler:chir` | ⚠️ 数据模型已定义 |
+| 11 | CFIR2CHIR | `:chir:cfir2chir` + `:chir:chir-tree` | ⚠️ 数据模型已定义 |
 | 12 | CODEGEN | `:compiler:codegen` | ⚠️ JNI 绑定可用 |
 
 ---
@@ -260,7 +261,8 @@ K2 无对应模块，为仓颉语言独有的编译阶段。
 | `:cfir:symbols` | 从 `:cfir:cfir-tree` 拆出符号提供者 | ✅ 已完成 |
 | `:cfir:entrypoint` | 编排 CFIR 编译流程 | ✅ 已完成（15 个文件） |
 | `:cfir:cfir-serialization` | .cjo 反序列化 | ✅ 已完成（反序列化方向） |
-| `:compiler:chir` | CHIR 数据模型 | ✅ 已完成（39 个文件，接口层） |
+| `:chir:chir-tree` | CHIR 数据模型 | ✅ 已完成（接口层） |
+| `:chir:cfir2chir` | CFIR → CHIR 转换 | ⚠️ 转换模块已拆分 |
 | `:compiler:codegen` | 代码生成 | ✅ 已完成（25 个文件） |
 | `:llvm-interop:*` | LLVM JNI 互操作 | ✅ 已完成 |
 | `:cfir:cfir-common-psi` | — | ✅ 已删除 |
@@ -336,7 +338,8 @@ include(":cfir:entrypoint")
 // include(":cfir:deserialization")         // 阶段 4
 
 // ===== 后端 (按需启用) =====
-// include(":compiler:chir")               // 阶段 11
+// include(":chir:chir-tree")              // 阶段 11
+// include(":chir:cfir2chir")              // 阶段 11
 // include(":compiler:codegen")            // 阶段 12
 
 // ===== Analysis API =====

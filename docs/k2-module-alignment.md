@@ -82,9 +82,9 @@
 
 | 仓颉模块 | Kotlin K2 模块 | 关系 | 说明 |
 |---|---|---|---|
-| `:backend:chir`（规划） | `compiler/fir/fir2ir` + `compiler/ir/ir.tree` | 合并对应 | K2 的 `fir2ir` 负责 FIR → IR 转换，`ir.tree` 定义后端 IR 节点。仓颉的 CHIR 将数据模型和转换放在同一模块 |
-| `:backend:codegen`（规划） | `compiler/backend` + `compiler/ir/backend.*` | 合并对应 | K2 按平台拆分后端（`backend.jvm`/`.js`/`.native`/`.wasm`），仓颉单目标（LLVM）只需一个模块 |
-| — | `compiler/ir/ir.tree` | 对应 CHIR 数据模型 | K2 的 Backend IR 节点定义。仓颉的 CHIR 节点定义在 `:backend:chir` 内部 |
+| `:chir:cfir2chir` | `compiler/fir/fir2ir` | 对应转换层 | K2 的 `fir2ir` 负责 FIR → IR 转换；仓颉用独立模块承载 CFIR → CHIR |
+| `:chir:chir-tree` | `compiler/ir/ir.tree` | 对应 CHIR 数据模型 | K2 的 Backend IR 节点定义。仓颉的 CHIR 节点定义在独立 tree 模块 |
+| `:compiler:codegen` / `:compiler:jvm-codegen` | `compiler/backend` + `compiler/ir/backend.*` | 平台后端 | K2 按平台拆分后端（`backend.jvm`/`.js`/`.native`/`.wasm`），仓颉当前按 LLVM/JVM 后端模块拆分 |
 | — | `compiler/ir/ir.psi2ir` | 无对应 | K1 遗留的 PSI → IR 路径，K2 通过 fir2ir 替代。仓颉无此历史包袱 |
 | — | `compiler/ir/ir.inline` | 暂无对应 | IR 级内联。仓颉的内联在 CHIR 优化 Pass 中处理 |
 | — | `compiler/ir/ir.interpreter` | 暂无对应 | 编译期常量求值。仓颉暂未规划 |
@@ -174,7 +174,7 @@
 | `:compiler:finalize`（泛型单态化部分） | Kotlin 使用类型擦除（JVM）或 IR 降级，不做源码级单态化 |
 | `:compiler:mangling` | Kotlin 的 mangling 分散在各平台后端，不作为独立编译阶段 |
 | `:flatbuffers-gen` | .cjo 使用 FlatBuffers 格式，Kotlin 使用 ProtoBuf |
-| `:backend:chir` | 仓颉的 CHIR 是基于 CFG 的高级 IR，K2 的后端 IR 是基于 Tree 的 |
+| `:chir:chir-tree` | 仓颉的 CHIR 是基于 CFG 的高级 IR，K2 的后端 IR 是基于 Tree 的 |
 
 ---
 

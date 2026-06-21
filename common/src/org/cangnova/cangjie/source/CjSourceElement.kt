@@ -510,6 +510,14 @@ sealed class CjFakeSourceElementKind(final override val shouldSkipErrorTypeRepor
     object ImplicitImport : CjFakeSourceElementKind(shouldSkipErrorTypeReporting = true)
 
     /**
+     * 引用已失败 import 的包限定符使用点。
+     *
+     * import 声明本身负责报告解析失败；使用点只保留错误接收者形状，
+     * 用于阻断后续成员访问级联诊断。
+     */
+    object UnresolvedImportQualifier : CjFakeSourceElementKind(shouldSkipErrorTypeReporting = true)
+
+    /**
      * For repl base class.
      */
     object ReplBaseClass : CjFakeSourceElementKind(shouldSkipErrorTypeReporting = true)

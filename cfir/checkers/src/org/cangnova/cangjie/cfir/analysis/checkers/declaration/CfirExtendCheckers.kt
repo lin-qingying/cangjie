@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.analysis.checkers.CfirExtendSemantics
+import org.cangnova.cangjie.cfir.analysis.checkers.firstCharacterDiagnosticSource
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
@@ -164,6 +165,19 @@ object CfirExtendDuplicateInterfaceChecker : CfirExtendChecker() {
                 a = superTypeRef.toApproxName(),
             )
         }
+    }
+}
+
+object CfirExtendCheckSequenceChecker : CfirExtendChecker() {
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    override fun check(extend: CfirExtend) {
+        val query = context.session.extendRuleQueryServiceOrNull ?: return
+        if (!query.hasUndecidableExtendCheckSequence(extend)) return
+
+        reporter.reportOn(
+            source = extend.source?.firstCharacterDiagnosticSource() ?: extend.extendedTypeRef.source,
+            factory = CfirErrors.EXTEND_CHECK_SEQUENCE_CANNOT_DECIDE,
+        )
     }
 }
 
