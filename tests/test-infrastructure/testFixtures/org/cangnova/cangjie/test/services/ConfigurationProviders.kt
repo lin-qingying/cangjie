@@ -5,19 +5,13 @@ import com.intellij.openapi.project.Project
 import org.cangnova.cangjie.CangJieCoreEnvironment
 import org.cangnova.cangjie.CangJieCoreEnvironmentMode
 import org.cangnova.cangjie.cfir.entrypoint.configuration.createForCfirFrontend
-import org.cangnova.cangjie.config.CommonConfigurationKeys
-import org.cangnova.cangjie.config.CompilerConfiguration
-import org.cangnova.cangjie.config.CompilerConfigurationKey
-import org.cangnova.cangjie.config.addCangJieSourceRoot
-import org.cangnova.cangjie.config.create
-import org.cangnova.cangjie.config.languageVersionSettings
+import org.cangnova.cangjie.config.*
 import org.cangnova.cangjie.messages.CompilerMessageSeverity
-import org.cangnova.cangjie.messages.MessageCollector
 import org.cangnova.cangjie.messages.CompilerMessageSourceLocation
+import org.cangnova.cangjie.messages.MessageCollector
 import org.cangnova.cangjie.test.TestInfrastructureInternals
 import org.cangnova.cangjie.test.model.FrontendKinds
 import org.cangnova.cangjie.test.model.TestModule
-import kotlin.text.set
 
 abstract class CompilerConfigurationProvider(val testServices: TestServices) : TestService {
     abstract fun createCompilerConfiguration(module: TestModule): CompilerConfiguration
@@ -36,7 +30,7 @@ abstract class CompilerConfigurationProvider(val testServices: TestServices) : T
 }
 
 
-class CompilerConfigurationProviderImpl(
+open class CompilerConfigurationProviderImpl(
     testServices: TestServices,
     @Suppress("UNUSED_PARAMETER") override val testRootDisposable: Disposable,
     override val configurators: List<AbstractEnvironmentConfigurator>,

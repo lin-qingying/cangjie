@@ -143,6 +143,9 @@ private fun createExtendDeclarationSubstitution(
 
     val substitutor = substitutions.takeIf { it.isNotEmpty() }?.let(::CfirTypeSubstitutorByMap)
         ?: ConeSubstitutor.Empty
+    if (checkGenericConstraints && !extend.matchesOfficialInstantiationShape(session, concreteReceiverType, substitutor)) {
+        return null
+    }
     if (checkGenericConstraints && !extend.satisfiesGenericConstraints(session, substitutor)) {
         return null
     }
@@ -150,6 +153,30 @@ private fun createExtendDeclarationSubstitution(
         substitutor = substitutor,
         substitutedReceiverType = substitutor.substituteOrSelf(semanticTargetPattern),
     )
+}
+
+/**
+ * 对齐官方 `TypeManager::CheckGenericDeclInstantiation` 的 extend 实例化过滤。
+ *
+ * 结构匹配只负责从 `extend<T> A<T>` 这类目标模式提取替换；真正的 use-site
+ * 适用性还必须保证 extend 声明泛型逐个对应接收者展开后的顶层类型实参。
+ * 因此 `extend<T> A<Box<T>>` 或 typealias 展开成更多顶层实参时，不能仅靠
+ * 嵌套结构匹配把 `T` 绑定到内层类型后误认为该 extend 成立。
+ */
+private fun CfirExtend.matchesOfficialInstantiationShape(
+    session: CfirSession,
+    concreteReceiverType: ConeCangJieType,
+    substitutor: ConeSubstitutor,
+): Boolean {
+    val expandedReceiverType = concreteReceiverType.fullyExpandedType(session) as? ConeLookupTagBasedType
+        ?: return true
+    val receiverArguments = expandedReceiverType.typeArguments.map { it.type }
+    if (receiverArguments.isEmpty()) return true
+    if (typeParameters.size != receiverArguments.size) return false
+
+    return typeParameters.zip(receiverArguments).all { (typeParameter, receiverArgument) ->
+        substitutor.substituteOrSelf(typeParameter.symbol.constructType()) == receiverArgument
+    }
 }
 
 /**
