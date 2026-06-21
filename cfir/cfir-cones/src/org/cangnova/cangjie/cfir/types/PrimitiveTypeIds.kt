@@ -80,6 +80,23 @@ val ConeCangJieType.extendTargetKey: CfirExtendTargetKey?
     }
 
 /**
+ * extend 声明侧的目标索引键。
+ *
+ * typealias 目标必须保留别名声明身份：`extend C<T> <: I<T>` 不是
+ * 对 `C` 最终展开 class 的 extend。展开类型上的 abbreviation 只用于
+ * 还原声明侧 alias 视图，不能在索引时丢掉这层声明映射。
+ */
+val ConeCangJieType.declaredExtendTargetKey: CfirExtendTargetKey?
+    get() {
+        val abbreviatedAlias = abbreviatedType as? ConeTypeAliasType
+        if (abbreviatedAlias != null) return CfirExtendTargetKey.ClassLike(abbreviatedAlias.classId)
+        return when (this) {
+            is ConeTypeAliasType -> CfirExtendTargetKey.ClassLike(classId)
+            else -> extendTargetKey
+        }
+    }
+
+/**
  * extend 目标索引用的语义 ClassId。
  *
  * 仓颉官方 `Ty::IsExtendable()` 对 type alias 递归检查其展开类型，因此

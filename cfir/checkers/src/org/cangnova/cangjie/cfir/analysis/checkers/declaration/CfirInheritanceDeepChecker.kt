@@ -29,19 +29,28 @@ import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
+import org.cangnova.cangjie.cfir.resolve.providers.findExtendDeclarationSubstitution
+import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassMemberScopeKind
+import org.cangnova.cangjie.cfir.scopes.impl.CfirCompositeTypeScope
+import org.cangnova.cangjie.cfir.scopes.impl.CfirExtendMemberScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassSubstitutionScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
 import org.cangnova.cangjie.cfir.scopes.overrideSignatureKey
 import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
 import org.cangnova.cangjie.cfir.session.extendProvider
+import org.cangnova.cangjie.cfir.session.extendRuleQueryServiceOrNull
+import org.cangnova.cangjie.cfir.session.services.CfirExtendRuleQueryService
 import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.session.typeAwareSupertypeProviderOrNull
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
+import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.types.*
+import org.cangnova.cangjie.cfir.types.withReplacedSourceAndType
 import org.cangnova.cangjie.cfir.unwrapSubstitutionOverrides
 import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.descriptors.Visibility
@@ -89,12 +98,15 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkExtendTargetMemberCompatibility(extend: CfirExtend) {
-        val targetScope = extend.extendedTypeRef.resolvedUseSiteMemberScope() ?: return
-        val targetDecl = extend.extendedTypeRef.resolvedClassLikeDeclaration() ?: return
-        val targetClassId = (targetDecl.symbol as? CfirClassLikeSymbol<*>)?.classId
+        val targetScope = extend.extendedTypeRef.resolvedUseSiteMemberScope(excludingExtend = extend) ?: return
+        val targetClassId = (extend.extendedTypeRef as? CfirResolvedTypeRef)
+            ?.coneType
+            ?.expandedClassIdOrPrimitiveClassId
         val ownMemberInfosByName = extend.declarations
             .mapNotNull { it.directMemberInfoOrNull(context) }
             .groupBy { it.name }
+        checkDefaultInterfaceMemberConflicts(extend, targetScope, targetClassId, ownMemberInfosByName)
+
         val reportedMutConflicts = mutableSetOf<Name>()
         val reportedWeakVisibilities = mutableSetOf<String>()
         val reportedPropertyTypeConflicts = mutableSetOf<String>()
@@ -208,11 +220,183 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
     }
 
     /**
+     * 多个 default interface member 在同一目标类型的 use-site 发生同签名合并时，
+     * extend 必须显式实现该成员。
+     *
+     * 对齐官方 `MergeInheritedMemberHelper::shouldBeImplemented`：
+     * - 不把单个 default member 当作缺实现；
+     * - 同一 extend 的接口列表产生重复 default 时需要实现；
+     * - 不同 extend 的独立 default 冲突需要分别在相关 extend 上报；
+     * - 普通父子接口关系分散到两个非泛型 extend 时不报，但具体/泛型 extend 重叠仍会在具体实例化处报。
+     */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun checkDefaultInterfaceMemberConflicts(
+        extend: CfirExtend,
+        targetScope: CfirTypeScope,
+        targetClassId: ClassId?,
+        ownMemberInfosByName: Map<Name, List<InheritedMemberInfo>>,
+    ) {
+        val receiverType = (extend.extendedTypeRef as? CfirResolvedTypeRef)?.coneType ?: return
+        val query = context.session.extendRuleQueryServiceOrNull ?: return
+        val targetKey = query.targetKeyOf(extend) ?: return
+        val relatedExtends = context.session.extendProvider
+            .getExtendsForTarget(targetKey)
+            .filter(context.session.extendProvider::isExtendAccessible)
+        if (relatedExtends.isEmpty()) return
+
+        val occurrencesBySignature = relatedExtends
+            .flatMap { relatedExtend ->
+                relatedExtend.collectDefaultInterfaceMemberOccurrencesAtReceiver(receiverType)
+            }
+            .groupBy { it.info.defaultImplementationConflictKey() }
+
+        val reported = mutableSetOf<String>()
+        for ((signatureKey, occurrences) in occurrencesBySignature) {
+            val currentOccurrences = occurrences.filter { it.ownerExtend === extend }
+            if (currentOccurrences.isEmpty()) continue
+            if (!occurrences.hasDefaultImplementationConflictFor(extend, currentOccurrences, query)) continue
+
+            val representative = currentOccurrences.first().info
+            if (hasConcreteImplementation(
+                    representative,
+                    extend,
+                    targetScope,
+                    targetClassId,
+                    ownMemberInfosByName,
+                )
+            ) {
+                continue
+            }
+            if (!reported.add(signatureKey)) continue
+
+            reporter.reportOn(
+                source = extend.source?.firstCharacterDiagnosticSource() ?: extend.extendedTypeRef.source,
+                factory = CfirErrors.INTERFACE_MEMBER_MUST_BE_IMPLEMENTED,
+                a = representative.kind,
+                b = representative.name,
+                c = extend.targetDisplayName(),
+            )
+        }
+    }
+
+    context(context: CheckerContext)
+    private fun CfirExtend.collectDefaultInterfaceMemberOccurrencesAtReceiver(
+        receiverType: ConeCangJieType,
+    ): List<DefaultInterfaceMemberOccurrence> {
+        val substitution = findExtendDeclarationSubstitution(context.session, this, receiverType)
+            ?: return emptyList()
+        return buildList {
+            for (superTypeRef in superTypeRefs) {
+                val substitutedSuperTypeRef = superTypeRef.substituteForDefaultConflict(substitution.substitutor)
+                val superDecl = substitutedSuperTypeRef.resolvedClassLikeDeclaration() ?: continue
+                for (info in substitutedSuperTypeRef.collectInterfaceRequirementMemberInfos(superDecl)) {
+                    if (info.isDefaultInterfaceMember(context)) {
+                        add(DefaultInterfaceMemberOccurrence(this@collectDefaultInterfaceMemberOccurrencesAtReceiver, info))
+                    }
+                }
+            }
+        }
+    }
+
+    private fun CfirTypeRef.substituteForDefaultConflict(substitutor: ConeSubstitutor): CfirTypeRef {
+        val resolvedTypeRef = this as? CfirResolvedTypeRef ?: return this
+        val substitutedType = substitutor.substituteOrSelf(resolvedTypeRef.coneType)
+        if (substitutedType == resolvedTypeRef.coneType) return this
+        return resolvedTypeRef.withReplacedSourceAndType(resolvedTypeRef.source, substitutedType)
+    }
+
+    private fun List<DefaultInterfaceMemberOccurrence>.hasDefaultImplementationConflictFor(
+        extend: CfirExtend,
+        currentOccurrences: List<DefaultInterfaceMemberOccurrence>,
+        query: CfirExtendRuleQueryService,
+    ): Boolean {
+        if (currentOccurrences.size > 1) return true
+
+        val hasGenericRelatedExtend = any { occurrence ->
+            occurrence.ownerExtend !== extend &&
+                occurrence.ownerExtend.extendedTypeUsesOwnTypeParameter()
+        }
+        if (hasGenericRelatedExtend && !extend.extendedTypeUsesOwnTypeParameter()) return true
+
+        val originalSymbols = mapNotNull { occurrence ->
+            occurrence.info.symbol?.unwrapSubstitutionOverrides()
+        }.toSet()
+        if (originalSymbols.size <= 1) return false
+
+        val hasIndependentDefault = any { occurrence ->
+            occurrence.ownerExtend !== extend &&
+                !query.areExtendsInInheritRelation(extend, occurrence.ownerExtend)
+        }
+        if (hasIndependentDefault) return true
+        return false
+    }
+
+    context(context: CheckerContext)
+    private fun hasConcreteImplementation(
+        superInfo: InheritedMemberInfo,
+        extend: CfirExtend,
+        targetScope: CfirTypeScope,
+        targetClassId: ClassId?,
+        ownMemberInfosByName: Map<Name, List<InheritedMemberInfo>>,
+    ): Boolean {
+        var found = false
+        targetScope.processCallablesByName(superInfo.name) { symbol ->
+            val info = symbol.inheritedMemberInfoOrNull(context) ?: return@processCallablesByName
+            if (info.isConcreteImplementationOf(superInfo, context)) {
+                found = true
+            }
+        }
+        if (found) return true
+        if (targetClassId != null) {
+            for (info in collectDirectExtendMemberInfos(targetClassId, superInfo.name, context, excludingExtend = extend)) {
+                if (info.isConcreteImplementationOf(superInfo, context)) return true
+            }
+        }
+        for (info in ownMemberInfosByName[superInfo.name].orEmpty()) {
+            if (info.isConcreteImplementationOf(superInfo, context)) return true
+        }
+        return false
+    }
+
+    private fun CfirExtend.extendedTypeUsesOwnTypeParameter(): Boolean {
+        val parameterNames = typeParameters.mapTo(linkedSetOf()) { it.name.asString() }
+        if (parameterNames.isEmpty()) return false
+        val coneType = (extendedTypeRef as? CfirResolvedTypeRef)?.coneType ?: return false
+        return parameterNames.any { parameterName -> coneType.containsTypeParameter(parameterName) }
+    }
+
+    private fun ConeCangJieType.containsTypeParameter(parameterName: String): Boolean =
+        abbreviatedType?.containsTypeParameter(parameterName) == true || containsTypeParameterInConstructor(parameterName)
+
+    private fun ConeCangJieType.containsTypeParameterInConstructor(parameterName: String): Boolean = when (this) {
+        is ConeTypeParameterType -> lookupTag.name.asString() == parameterName
+        is ConeClassLikeType -> typeArguments.any { it.type.containsTypeParameter(parameterName) }
+        is ConeStructType -> typeArguments.any { it.type.containsTypeParameter(parameterName) }
+        is ConeEnumType -> typeArguments.any { it.type.containsTypeParameter(parameterName) }
+        is ConeTypeAliasType -> typeArguments.any { it.type.containsTypeParameter(parameterName) } ||
+            (expandedType?.containsTypeParameter(parameterName) == true)
+        is ConeFunctionType -> parameterTypes.any { it.containsTypeParameter(parameterName) } ||
+            returnType.containsTypeParameter(parameterName)
+        is ConeTupleType -> elementTypes.any { it.containsTypeParameter(parameterName) }
+        is ConeVArrayType -> elementType.containsTypeParameter(parameterName)
+        is ConePointerType -> pointeeType.containsTypeParameter(parameterName)
+        is ConeIntersectionType -> intersectedTypes.any { it.containsTypeParameter(parameterName) }
+        is ConeUnionType -> unionTypes.any { it.containsTypeParameter(parameterName) }
+        else -> arrayElementType?.containsTypeParameter(parameterName) == true
+    }
+
+    private fun InheritedMemberInfo.isConcreteImplementationOf(
+        superInfo: InheritedMemberInfo,
+        context: CheckerContext,
+    ): Boolean =
+        canImplement(superInfo) && !isAbstract && !isDefaultInterfaceMember(context)
+
+    private fun InheritedMemberInfo.defaultImplementationConflictKey(): String =
+        requirementDiagnosticKey()
+
+    /**
      * extend 实现接口时必须检查接口完整 use-site 成员表，而不仅是接口直接声明。
      * 官方 `GetInheritedSuperMembers` 会把 super interface 的成员一并放入待实现集合。
-     *
-     * static 接口成员不进入普通实例 use-site scope；官方仍要求 extend 对其完成实现关系检查，
-     * 因此这里补入接口直接声明中的 static 成员，同时保留 use-site scope 对泛型实参的替换结果。
      */
     context(context: CheckerContext)
     private fun CfirTypeRef.collectInterfaceRequirementMemberInfos(
@@ -962,6 +1146,11 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         val declarationSource: CjSourceElement?,
     )
 
+    private data class DefaultInterfaceMemberOccurrence(
+        val ownerExtend: CfirExtend,
+        val info: InheritedMemberInfo,
+    )
+
     private data class PropertyTypeMismatch(
         val implementationType: ConeCangJieType,
         val baseType: ConeCangJieType,
@@ -1018,26 +1207,61 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
     }
 
     context(context: CheckerContext)
-    private fun CfirTypeRef.resolvedUseSiteMemberScope(): CfirTypeScope? {
+    private fun CfirTypeRef.resolvedUseSiteMemberScope(excludingExtend: CfirExtend? = null): CfirTypeScope? {
         val coneType = (this as? CfirResolvedTypeRef)?.coneType ?: return null
-        val classId = coneType.expandedClassIdOrPrimitiveClassId ?: return null
-        val symbol = context.session.symbolProvider.getClassLikeSymbolByClassId(classId) ?: return null
-        val rawScope = CfirClassUseSiteMemberScope(
-            session = context.session,
-            classSymbol = symbol,
-            symbolProvider = context.session.symbolProvider,
-            extendProvider = context.session.extendProvider,
-            directSupertypeProvider = context.session.directSupertypeProviderOrNull,
-            ownerType = coneType,
-            dispatchReceiverType = coneType,
-            scopeKind = CfirClassMemberScopeKind.DECLARATION_SITE,
-        )
-        return CfirClassSubstitutionScope(
-            session = context.session,
-            useSiteMemberScope = rawScope,
-            dispatchReceiverType = coneType,
-            substitutionOwnerType = coneType,
-        )
+        return coneType.resolvedUseSiteMemberScope(excludingExtend)
+    }
+
+    context(context: CheckerContext)
+    private fun ConeCangJieType.resolvedUseSiteMemberScope(excludingExtend: CfirExtend? = null): CfirTypeScope? {
+        val classId = expandedClassIdOrPrimitiveClassId
+        if (classId != null) {
+            val symbol = context.session.symbolProvider.getClassLikeSymbolByClassId(classId) ?: return null
+            val rawScope = CfirClassUseSiteMemberScope(
+                session = context.session,
+                classSymbol = symbol,
+                symbolProvider = context.session.symbolProvider,
+                extendProvider = context.session.extendProvider,
+                directSupertypeProvider = context.session.directSupertypeProviderOrNull,
+                ownerType = this,
+                dispatchReceiverType = this,
+                scopeKind = CfirClassMemberScopeKind.DECLARATION_SITE,
+                excludingExtend = excludingExtend,
+            )
+            return CfirClassSubstitutionScope(
+                session = context.session,
+                useSiteMemberScope = rawScope,
+                dispatchReceiverType = this,
+                substitutionOwnerType = this,
+            )
+        }
+
+        val targetKey = expandedExtendTargetKey ?: return null
+        if (targetKey.classIdOrNull != null) return null
+        val scopes = buildList {
+            val builtinExtendScope = CfirExtendMemberScope(
+                targetKey = targetKey,
+                extendProvider = context.session.extendProvider,
+                session = context.session,
+                receiverType = this@resolvedUseSiteMemberScope,
+                excludingExtend = excludingExtend,
+            )
+            add(
+                CfirClassSubstitutionScope(
+                    session = context.session,
+                    useSiteMemberScope = builtinExtendScope,
+                    dispatchReceiverType = this@resolvedUseSiteMemberScope,
+                    substitutionOwnerType = this@resolvedUseSiteMemberScope,
+                )
+            )
+            for (supertype in context.session.typeAwareSupertypeProviderOrNull
+                ?.getDirectSupertypes(this@resolvedUseSiteMemberScope)
+                .orEmpty()
+            ) {
+                supertype.resolvedUseSiteMemberScope(excludingExtend)?.let(::add)
+            }
+        }
+        return CfirCompositeTypeScope(scopes)
     }
 
 }

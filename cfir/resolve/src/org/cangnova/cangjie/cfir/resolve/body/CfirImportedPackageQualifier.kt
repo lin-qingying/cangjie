@@ -21,8 +21,10 @@ import org.cangnova.cangjie.name.Name
 internal data class CfirImportedPackageQualifier(
     val name: Name,
     val packageFqNames: List<FqName>,
+    val hasUnresolvedImport: Boolean = false,
 ) {
     val isAmbiguous: Boolean get() = packageFqNames.size > 1
+    val isUnresolved: Boolean get() = packageFqNames.isEmpty() && hasUnresolvedImport
     val packageFqName: FqName? get() = packageFqNames.singleOrNull()
 }
 
@@ -36,9 +38,12 @@ internal fun CfirFile.resolveImportedPackageQualifier(
         store?.record(this, resolvedImports)
         resolvedImports
     }
-    val packageFqNames = bindings
+    val matchingBindings = bindings
         .asSequence()
         .filter { binding -> binding.effectiveName == name && !binding.importDirective.isAllUnder }
+        .toList()
+    val packageFqNames = matchingBindings
+        .asSequence()
         .flatMap { binding ->
             binding.targets.asSequence().mapNotNull { target ->
                 (target as? CfirResolvedImportTarget.Package)?.fqName
@@ -46,8 +51,13 @@ internal fun CfirFile.resolveImportedPackageQualifier(
         }
         .distinct()
         .toList()
-    if (packageFqNames.isEmpty()) return null
-    return CfirImportedPackageQualifier(name, packageFqNames)
+    val hasUnresolvedImport = matchingBindings.any { binding -> binding.targets.isEmpty() }
+    if (packageFqNames.isEmpty() && !hasUnresolvedImport) return null
+    return CfirImportedPackageQualifier(
+        name = name,
+        packageFqNames = packageFqNames,
+        hasUnresolvedImport = hasUnresolvedImport,
+    )
 }
 
 internal fun CfirExpression.importedPackageQualifierNameOrNull(): Name? =

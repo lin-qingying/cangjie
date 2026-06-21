@@ -83,6 +83,8 @@ import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintStorage
 import org.cangnova.cangjie.resolve.calls.tower.ApplicabilityDetail
 import org.cangnova.cangjie.resolve.calls.tower.CandidateApplicability
 import org.cangnova.cangjie.resolve.calls.tower.isSuccess
+import org.cangnova.cangjie.source.CjFakeSourceElementKind
+import org.cangnova.cangjie.source.fakeElement
 import org.cangnova.cangjie.source.psi
 import org.cangnova.cangjie.source.text
 import org.cangnova.cangjie.type.AbstractTypeChecker
@@ -383,6 +385,17 @@ class CfirCallResolver(
                             diagnostic = ConePackageNameConflictError(callee.name)
                         }
                     )
+                } else if (importedPackageQualifier.isUnresolved) {
+                    val diagnostic = ConeUnresolvedNameError(callee.name)
+                    val unreportedDiagnostic = ConeUnreportedDuplicateDiagnostic(diagnostic)
+                    transformedAccess.replaceCalleeReference(
+                        buildErrorNamedReference {
+                            source = callee.source?.fakeElement(CjFakeSourceElementKind.UnresolvedImportQualifier)
+                            name = callee.name
+                            this.diagnostic = unreportedDiagnostic
+                        }
+                    )
+                    transformedAccess.replaceConeTypeOrNull(ConeErrorType(unreportedDiagnostic))
                 } else {
                     // 当前 CFIR 没有 Kotlin `FirResolvedQualifier` 的独立节点。
                     // 已确认的导入包限定符在表达式管线中需要一个非错误、无值的稳定类型，

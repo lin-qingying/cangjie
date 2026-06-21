@@ -32,7 +32,7 @@ import org.cangnova.cangjie.cfir.types.ConeTypeProjection
 import org.cangnova.cangjie.cfir.types.abbreviatedType
 import org.cangnova.cangjie.cfir.types.arrayElementType
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
-import org.cangnova.cangjie.cfir.types.expandedExtendTargetKey
+import org.cangnova.cangjie.cfir.types.declaredExtendTargetKey
 import org.cangnova.cangjie.cfir.types.expandedClassIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.name.ClassId
@@ -110,6 +110,76 @@ class CfirExtendIndexStore : CfirSessionComponent {
         }
     }
 
+    /**
+     * 对齐官方 `TypeManager::IsExtendInheritRelation` 在默认接口成员合并中的用途：
+     * 两个 extend 只要存在“其中一个直接接口继承了另一个直接接口”的关系，就视为相关 extend。
+     */
+    fun areExtendsInInheritRelation(firstDeclaration: Any, secondDeclaration: Any): Boolean {
+        val first = modelForDeclaration(firstDeclaration) ?: return false
+        val second = modelForDeclaration(secondDeclaration) ?: return false
+        if (first === second) return true
+        if (first.targetKey == null || first.targetKey != second.targetKey) return false
+        return hasDirectInterfaceInheritedFrom(first, second) ||
+            hasDirectInterfaceInheritedFrom(second, first)
+    }
+
+    private fun hasDirectInterfaceInheritedFrom(
+        child: CfirExtendSemanticModel,
+        parent: CfirExtendSemanticModel,
+    ): Boolean {
+        if (child.inheritedInterfaceClassIds.isEmpty() || parent.inheritedInterfaceClassIds.isEmpty()) {
+            return false
+        }
+        val parentInterfaces = parent.inheritedInterfaceClassIds.toSet()
+        return child.inheritedInterfaceClassIds.any { childInterface ->
+            interfaceClosureByClassId[childInterface].orEmpty().any { it in parentInterfaces }
+        }
+    }
+
+    /**
+     * 对齐官方 `DeterminingSkipExtendByInheritanceRelationship`：
+     * 同一目标的两个 extend 如果在不同接口上同时要求“当前在前”和“当前在后”，
+     * 或单个接口同时被对方的子接口与父接口夹住，就无法决定检查顺序。
+     */
+    fun hasUndecidableExtendCheckSequence(declaration: Any): Boolean {
+        val current = modelForDeclaration(declaration) ?: return false
+        val targetKey = current.targetKey ?: return false
+        return modelsForTarget(targetKey).any { other ->
+            other.declaration !== current.declaration &&
+                hasUndecidableExtendCheckSequence(current, other)
+        }
+    }
+
+    private fun hasUndecidableExtendCheckSequence(
+        current: CfirExtendSemanticModel,
+        other: CfirExtendSemanticModel,
+    ): Boolean {
+        var previousOrder: Boolean? = null
+        for (currentInterface in current.inheritedInterfaceClassIds) {
+            var hasSubImplementation = false
+            var hasSuperImplementation = false
+            for (otherInterface in other.inheritedInterfaceClassIds) {
+                if (otherInterface == currentInterface) continue
+                if (otherInterface.isStrictSubtypeOfInterface(currentInterface)) {
+                    hasSubImplementation = true
+                }
+                if (currentInterface.isStrictSubtypeOfInterface(otherInterface)) {
+                    hasSuperImplementation = true
+                }
+            }
+            if (hasSubImplementation && hasSuperImplementation) return true
+            if (!hasSubImplementation && !hasSuperImplementation) continue
+
+            val currentOrder = hasSubImplementation
+            if (previousOrder != null && previousOrder != currentOrder) return true
+            previousOrder = currentOrder
+        }
+        return false
+    }
+
+    private fun ClassId.isStrictSubtypeOfInterface(superInterface: ClassId): Boolean =
+        this != superInterface && superInterface in interfaceClosureByClassId[this].orEmpty()
+
     fun otherPackageExtendedInterfaceClassIds(targetClassId: ClassId, currentPackage: FqName): Set<ClassId> =
         otherPackageExtendedInterfaceClassIds(CfirExtendTargetKey.ClassLike(targetClassId), currentPackage)
 
@@ -177,7 +247,7 @@ class CfirExtendIndexStore : CfirSessionComponent {
             packageFqName = file.packageDirective.packageFqName,
             fileName = file.name,
             declarationIndexInFile = declarationIndexInFile,
-            targetKey = extendedTypeRef.toExtendTargetKeyOrNull(resolver),
+            targetKey = extendedTypeRef.toExtendTargetKeyOrNull(),
             targetClassId = extendedTypeRef.toClassIdOrNull(resolver),
             targetClassKind = targetClass?.classKindOrNull(),
             inheritedInterfaces = inheritedInterfaces,
@@ -317,23 +387,9 @@ class CfirExtendIndexStore : CfirSessionComponent {
         return coneType.classIdOrPrimitiveClassId
     }
 
-    private fun CfirTypeRef.toExtendTargetKeyOrNull(resolver: CfirTypeResolver): CfirExtendTargetKey? {
+    private fun CfirTypeRef.toExtendTargetKeyOrNull(): CfirExtendTargetKey? {
         val coneType = (this as? CfirResolvedTypeRef)?.coneType ?: return null
-        val abbreviatedTypeAlias = coneType.abbreviatedType as? ConeTypeAliasType
-        if (abbreviatedTypeAlias != null) {
-            val expandedType = abbreviatedTypeAlias.expandedType
-                ?: (resolver.resolveClass(abbreviatedTypeAlias.classId) as? CfirTypeAlias)
-                    ?.expandedTypeRef
-                    ?.let { it as? CfirResolvedTypeRef }
-                    ?.coneType
-            return expandedType?.expandedExtendTargetKey
-                ?: CfirExtendTargetKey.ClassLike(abbreviatedTypeAlias.classId)
-        }
-        if (coneType is ConeTypeAliasType) {
-            return coneType.expandedType?.expandedExtendTargetKey
-                ?: CfirExtendTargetKey.ClassLike(coneType.classId)
-        }
-        return coneType.expandedExtendTargetKey
+        return coneType.declaredExtendTargetKey
     }
 
     private fun ConeCangJieType.expandedClassIdOrPrimitiveClassId(resolver: CfirTypeResolver): ClassId? {

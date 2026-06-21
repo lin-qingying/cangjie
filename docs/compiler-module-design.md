@@ -257,8 +257,9 @@ PSI 与 CFIR 是两棵不同用途的树：PSI 是源码语法镜像，CFIR 是�
 
 | 模块 | 职责 | 对应阶段 | 依赖 |
 |---|---|---|---|
-| `:backend:chir` | CHIR 数据模型（基于 CFG 的高级 IR）+ CFIR → CHIR 转换 + CHIR 级优化 | 阶段 11 | `:cfir:cfir-tree` |
-| `:backend:codegen` | CHIR → LLVM IR → `.bc` / `.o` / 可执行文件 | 阶段 12 | `:backend:chir` |
+| `:chir:chir-tree` | CHIR 数据模型（基于 CFG 的高级 IR）+ CHIR pass 框架 | 阶段 11 | 无 CFIR 依赖 |
+| `:chir:cfir2chir` | CFIR → CHIR 转换 | 阶段 11 | `:cfir:cfir-tree`, `:chir:chir-tree` |
+| `:compiler:codegen` | CHIR → LLVM IR → `.bc` / `.o` / 可执行文件 | 阶段 12 | `:chir:chir-tree` |
 
 ---
 
@@ -323,8 +324,9 @@ graph TD
     pipeline[":compiler:pipeline"]
     macro[":compiler:macro\n:compiler:condition-compile"]
     entrypoint[":cfir:entrypoint"]
-    codegen[":backend:codegen"]
-    chir[":backend:chir"]
+    codegen[":compiler:codegen"]
+    chirTree[":chir:chir-tree"]
+    cfir2chir[":chir:cfir2chir"]
     checkers[":cfir:checkers"]
     resolve[":cfir:resolve"]
     psi2cfir[":cfir:raw-cfir:psi2cfir"]
@@ -394,8 +396,8 @@ graph TD
 | 8 | FINALIZE | IR 变换 | `:compiler:finalize` | 未实现 |
 | 9 | MANGLING | IR 变换 | `:compiler:mangling` | 未实现 |
 | 10 | SAVE_CJO | 序列化 | `:cfir:serialization` | 未实现 |
-| 11 | CFIR2CHIR | 后端 | `:backend:chir` | 未实现 |
-| 12 | CODEGEN | 后端 | `:backend:codegen` | 未实现 |
+| 11 | CFIR2CHIR | 后端 | `:chir:cfir2chir` + `:chir:chir-tree` | 转换模块已拆分 |
+| 12 | CODEGEN | 后端 | `:compiler:codegen` | 已接入 CHIR tree |
 
 ---
 
@@ -468,8 +470,9 @@ include(":cfir:checkers:checkers-component-generator")
 // include(":cfir:deserialization")
 
 // ===== 后端（按需启用） =====
-// include(":backend:chir")
-// include(":backend:codegen")
+// include(":chir:chir-tree")
+// include(":chir:cfir2chir")
+// include(":compiler:codegen")
 
 // ===== 编译驱动 =====
 include(":compiler:frontend")

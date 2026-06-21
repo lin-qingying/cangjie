@@ -1,9 +1,5 @@
 // FILE: ser.cj
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
-// This source file is part of the Cangjie project, licensed under Apache-2.0
-// with Runtime Library Exception.
-//
-// See https://cangjie-lang.cn/pages/LICENSE for license information.
+
 
 package test
 
@@ -89,11 +85,7 @@ public class DataModelException <: Exception {
 }
 
 // FILE: ser2.cj
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
-// This source file is part of the Cangjie project, licensed under Apache-2.0
-// with Runtime Library Exception.
-//
-// See https://cangjie-lang.cn/pages/LICENSE for license information.
+
 
 package test
 
@@ -136,11 +128,7 @@ extend<T> ArrayList<T> <: Serializable<ArrayList<T>> where T <: Serializable<T> 
 }
 
 // FILE: main.cj
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
-// This source file is part of the Cangjie project, licensed under Apache-2.0
-// with Runtime Library Exception.
-//
-// See https://cangjie-lang.cn/pages/LICENSE for license information.
+
 
 
 package test

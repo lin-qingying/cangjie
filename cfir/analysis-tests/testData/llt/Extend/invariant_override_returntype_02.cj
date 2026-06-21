@@ -1,8 +1,4 @@
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
-// This source file is part of the Cangjie project, licensed under Apache-2.0
-// with Runtime Library Exception.
-//
-// See https://cangjie-lang.cn/pages/LICENSE for license information.
+
 
 interface I1<T> {
     func test(a: T): Int32 {
@@ -20,6 +16,6 @@ interface I2<T> {
 class A<T, K> <: I2<K> & I1<T> {}
 
 main() {
-    let x = <!GENERIC_INSTANTIATION_CAUSES_AMBIGUOUS_FUNCTIONS!>A<Int32, Int32>()<!>
+    let x = <!GENERIC_INSTANTIATION_CAUSES_AMBIGUOUS_FUNCTIONS!>A<Int32, Int32><!>()
     0
 }

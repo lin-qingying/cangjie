@@ -1,8 +1,4 @@
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
-// This source file is part of the Cangjie project, licensed under Apache-2.0
-// with Runtime Library Exception.
-//
-// See https://cangjie-lang.cn/pages/LICENSE for license information.
+
 
 
 public interface Tokens<T> {
@@ -10,7 +6,7 @@ public interface Tokens<T> {
 }
 
 extend String <: Tokens<Rune> {
-    public func <!OVERRIDING_RETURN_TYPE_MISMATCH!>dropFirst<!>(): String {
+    <!RETURN_TYPE_INVARIANCE!>p<!>ublic func dropFirst(): String {
         if (this.size > 1) {
             this[1..this.size]
         } else {

@@ -1,8 +1,4 @@
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
-// This source file is part of the Cangjie project, licensed under Apache-2.0
-// with Runtime Library Exception.
-//
-// See https://cangjie-lang.cn/pages/LICENSE for license information.
+
 
 
 class B {
@@ -27,14 +23,14 @@ main(): Int64 {
     var m: E = C(B())
 
     var res: Int64 = match (m) {
-        case <!VAR_IN_OR_PATTERN!>C(x: B) | D(<!REDECLARATION!>x<!>: B)<!> => x.f();
+        case C(<!VAR_IN_OR_PATTERN!>x<!>: B) | D(<!REDECLARATION!>x<!>: B) => x.f();
         case _ => 0
     }
 
     var n: E = D(B())
 
     res = match (n) {
-        case <!VAR_IN_OR_PATTERN!>C(x: B) | D(<!REDECLARATION!>x<!>: B)<!> => x.g()
+        case C(<!VAR_IN_OR_PATTERN!>x<!>: B) | D(<!REDECLARATION!>x<!>: B) => x.g()
         case _ => 0
     }
     res

@@ -70,6 +70,9 @@
             <option value="$PROJECT_DIR$/cfir/raw-cfir/raw-cfir-common" />
             <option value="$PROJECT_DIR$/cfir/resolve" />
             <option value="$PROJECT_DIR$/cfir/semantics" />
+            <option value="$PROJECT_DIR$/chir" />
+            <option value="$PROJECT_DIR$/chir/cfir2chir" />
+            <option value="$PROJECT_DIR$/chir/chir-tree" />
             <option value="$PROJECT_DIR$/code-insight" />
             <option value="$PROJECT_DIR$/code-insight/api" />
             <option value="$PROJECT_DIR$/code-insight/fixes-k2" />
@@ -82,7 +85,6 @@
             <option value="$PROJECT_DIR$/common/diagnostics" />
             <option value="$PROJECT_DIR$/compiler" />
             <option value="$PROJECT_DIR$/compiler/arguments" />
-            <option value="$PROJECT_DIR$/compiler/chir" />
             <option value="$PROJECT_DIR$/compiler/codegen" />
             <option value="$PROJECT_DIR$/compiler/config" />
             <option value="$PROJECT_DIR$/compiler/frontend" />
@@ -199,6 +201,9 @@
                   <project path="$PROJECT_DIR$/cfir/raw-cfir/raw-cfir-common" />
                   <project path="$PROJECT_DIR$/cfir/resolve" />
                   <project path="$PROJECT_DIR$/cfir/semantics" />
+                  <project path="$PROJECT_DIR$/chir" />
+                  <project path="$PROJECT_DIR$/chir/cfir2chir" />
+                  <project path="$PROJECT_DIR$/chir/chir-tree" />
                   <project path="$PROJECT_DIR$/code-insight" />
                   <project path="$PROJECT_DIR$/code-insight/api" />
                   <project path="$PROJECT_DIR$/code-insight/fixes-k2" />
@@ -211,7 +216,6 @@
                   <project path="$PROJECT_DIR$/common/diagnostics" />
                   <project path="$PROJECT_DIR$/compiler" />
                   <project path="$PROJECT_DIR$/compiler/arguments" />
-                  <project path="$PROJECT_DIR$/compiler/chir" />
                   <project path="$PROJECT_DIR$/compiler/codegen" />
                   <project path="$PROJECT_DIR$/compiler/config" />
                   <project path="$PROJECT_DIR$/compiler/frontend" />
@@ -330,6 +334,9 @@
             <option value="$PROJECT_DIR$/cfir/raw-cfir/raw-cfir-common" />
             <option value="$PROJECT_DIR$/cfir/resolve" />
             <option value="$PROJECT_DIR$/cfir/semantics" />
+            <option value="$PROJECT_DIR$/chir" />
+            <option value="$PROJECT_DIR$/chir/cfir2chir" />
+            <option value="$PROJECT_DIR$/chir/chir-tree" />
             <option value="$PROJECT_DIR$/code-insight" />
             <option value="$PROJECT_DIR$/code-insight/api" />
             <option value="$PROJECT_DIR$/code-insight/fixes-k2" />
@@ -342,7 +349,6 @@
             <option value="$PROJECT_DIR$/common/diagnostics" />
             <option value="$PROJECT_DIR$/compiler" />
             <option value="$PROJECT_DIR$/compiler/arguments" />
-            <option value="$PROJECT_DIR$/compiler/chir" />
             <option value="$PROJECT_DIR$/compiler/codegen" />
             <option value="$PROJECT_DIR$/compiler/config" />
             <option value="$PROJECT_DIR$/compiler/frontend" />

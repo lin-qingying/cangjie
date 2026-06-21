@@ -4,7 +4,7 @@
 
 This inventory captures the current Kotlin implementation status for:
 
-- `compiler:chir` (CHIR model and verifier-facing contracts)
+- `:chir:chir-tree` (CHIR model and verifier-facing contracts)
 - `compiler:codegen` (`CHIR -> LLVM IR` lowering pipeline)
 
 It focuses on implemented surfaces, missing semantics, and known incorrect
@@ -12,10 +12,10 @@ behavior that blocks full parity with `external/cangjie_compiler`.
 
 ## Implemented Surfaces
 
-- CHIR core data model exists in `compiler/chir/src/.../core/*`:
+- CHIR core data model exists in `chir/chir-tree/src/.../core/*`:
   - package/module/declaration/type/value/expression/control-flow families
   - semantic id and traversal/analysis utilities
-- CHIR baseline tests exist in `compiler/chir/tests/...`:
+- CHIR baseline tests exist in `chir/chir-tree/tests/...`:
   - model/transform/serializer/checker/pipeline coverage
   - codegen parity smoke tests (`ChirToLlvmLoweringParityTest`)
 - Kotlin codegen skeleton exists in `compiler/codegen/src/...`:
@@ -27,7 +27,7 @@ behavior that blocks full parity with `external/cangjie_compiler`.
 ## Missing or Incomplete Semantics
 
 - CHIR parity with official C++ model is not complete:
-  - see `compiler/chir/docs/chir-parity-gap-register.md` (`GAP-CHIR-001` to `GAP-CHIR-014`)
+  - see `chir/chir-tree/docs/chir-parity-gap-register.md` (`GAP-CHIR-001` to `GAP-CHIR-014`)
 - LLVM lowering coverage is partial:
   - expression family support remains operator-string based and incomplete
   - control-flow/phi/unwind-exception semantics are not fully modeled
@@ -53,7 +53,7 @@ behavior that blocks full parity with `external/cangjie_compiler`.
   - `simple-return` (`baseline/simple-return.chir.json`,
     `cpp-baseline/simple-return.llvmir.txt`)
 - Existing parity test entry:
-  - `compiler/chir/tests/.../ChirToLlvmLoweringParityTest.kt`
+  - `chir/chir-tree/tests/.../ChirToLlvmLoweringParityTest.kt`
 
 ## Immediate Next Gap Closures
 

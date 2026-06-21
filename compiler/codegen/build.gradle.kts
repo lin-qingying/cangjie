@@ -14,7 +14,7 @@ sourceSets {
 }
 
 dependencies {
-    implementation(project(":compiler:chir"))
+    implementation(project(":chir:chir-tree"))
     implementation(project(":llvm-interop:llvm-interop-api"))
     implementation(project(":llvm-interop:llvm-interop-jni"))
     testImplementation(libs.junit.jupiter)

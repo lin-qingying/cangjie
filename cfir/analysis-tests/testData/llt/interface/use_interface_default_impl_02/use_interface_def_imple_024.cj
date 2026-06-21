@@ -1,9 +1,5 @@
 // FILE: pkg1/a.cj
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
-// This source file is part of the Cangjie project, licensed under Apache-2.0
-// with Runtime Library Exception.
-//
-// See https://cangjie-lang.cn/pages/LICENSE for license information.
+
 
 package pkg1
 
@@ -25,11 +21,7 @@ public interface MyInterface<T> <: fatherInterface<T> {
 }
 
 // FILE: pkg2/b.cj
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
-// This source file is part of the Cangjie project, licensed under Apache-2.0
-// with Runtime Library Exception.
-//
-// See https://cangjie-lang.cn/pages/LICENSE for license information.
+
 
 package pkg2
 
@@ -50,11 +42,7 @@ extend<K> myClass<K> <: MyInterface<() -> Int64> {
 }
 
 // FILE: pkg3/c.cj
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
-// This source file is part of the Cangjie project, licensed under Apache-2.0
-// with Runtime Library Exception.
-//
-// See https://cangjie-lang.cn/pages/LICENSE for license information.
+
 
 package pkg3
 
@@ -71,11 +59,7 @@ public func call<T>(): Int64 {
 }
 
 // FILE: use_interface_def_imple_024.cj
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
-// This source file is part of the Cangjie project, licensed under Apache-2.0
-// with Runtime Library Exception.
-//
-// See https://cangjie-lang.cn/pages/LICENSE for license information.
+
 
 
 internal import pkg1.*

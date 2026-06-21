@@ -1,9 +1,5 @@
 // FILE: aux_extend_test_a03_01.cj
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
-// This source file is part of the Cangjie project, licensed under Apache-2.0
-// with Runtime Library Exception.
-//
-// See https://cangjie-lang.cn/pages/LICENSE for license information.
+
 
 /*
   @Description:     Defines a package b for example.
@@ -31,11 +27,7 @@ extend MyClass <: I1 & I2 {
 }
 
 // FILE: aux_test_a03_01.cj
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
-// This source file is part of the Cangjie project, licensed under Apache-2.0
-// with Runtime Library Exception.
-//
-// See https://cangjie-lang.cn/pages/LICENSE for license information.
+
 
 /*
   @Description:     Defines a package a for example.
@@ -59,8 +51,4 @@ main() {
     myClassImpl.<!NO_MATCH_FUNCTION_DECLARATION_FOR_CALL!>t<!>est2()
 }
 
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
-// This source file is part of the Cangjie project, licensed under Apache-2.0
-// with Runtime Library Exception.
-//
-// See https://cangjie-lang.cn/pages/LICENSE for license information.
+

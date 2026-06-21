@@ -1,7 +1,7 @@
 # CHIR -> LLVM IR Backend Contract
 
 ## Input
-- `ChirCodegenInput.chirPackage`: CHIR package model (`compiler:chir`) as the only backend source.
+- `ChirCodegenInput.chirPackage`: CHIR package model (`:chir:chir-tree`) as the only backend source.
 - `ChirCodegenInput.options`: backend behavior toggles, partition mode, post-processing order.
 
 ## Output

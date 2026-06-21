@@ -8,6 +8,7 @@ import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.analysis.diagnostics.toCfirDiagnostics
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
+import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
@@ -35,16 +36,19 @@ import org.cangnova.cangjie.cfir.diagnostic.ConeCannotInferValueParameterType
 import org.cangnova.cangjie.cfir.diagnostic.ConeDiagnosticWithSingleCandidate
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
+import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
 import org.cangnova.cangjie.cfir.diagnostic.ConeInapplicableCandidateError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedNameError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedReferenceError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedSymbolError
+import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedTypeQualifierError
 import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.expressions.toReference
 import org.cangnova.cangjie.cfir.references.CfirErrorNamedReference
 import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
 import org.cangnova.cangjie.cfir.references.CfirResolvedErrorReference
 import org.cangnova.cangjie.cfir.types.ConeDiagnostic
+import org.cangnova.cangjie.cfir.types.ConeUnreportedDuplicateDiagnostic
 import org.cangnova.cangjie.cfir.types.renderForDebugging
 import org.cangnova.cangjie.psi.CjNodeTypes
 
@@ -128,6 +132,7 @@ class ErrorNodeDiagnosticCollectorComponent(
     override fun visitErrorTypeRef(errorTypeRef: CfirErrorTypeRef, data: CheckerContext) {
 //        if (errorTypeRef.isLambdaReturnTypeRefThatDoesntNeedReporting(data)) return
 //        if (errorTypeRef.hasExpandedTypeAliasDeclarationSiteError()) return
+        if (errorTypeRef.isNestedTypeAliasDeclarationSiteCascade(data)) return
 
         val source = errorTypeRef.source
         if (source != null) {
@@ -146,6 +151,24 @@ class ErrorNodeDiagnosticCollectorComponent(
             // We provide a value parameter in case errorTypeRef is a type of this parameter
             valueParameter = data.containingElements.getOrNull(data.containingElements.lastIndex - 1) as? CfirValueParameter
         )
+    }
+
+    /**
+     * typealias 展开类型的根 classifier 未解析时，嵌套类型实参上的未声明类型属于级联错误。
+     *
+     * 官方 cjc 在 `type x = List<T>` 中只报告 `List` 未声明；Kotlin FIR 也会通过
+     * declaration-site typealias error 过滤避免使用点或嵌套节点重复报告。
+     */
+    private fun CfirErrorTypeRef.isNestedTypeAliasDeclarationSiteCascade(context: CheckerContext): Boolean {
+        if (diagnostic.unwrapUnreportedDuplicateDiagnostic() !is ConeUnresolvedTypeQualifierError) return false
+        context.findClosestDeclaration<CfirTypeAlias>() ?: return false
+        return context.containingElements
+            .asReversed()
+            .filterIsInstance<CfirErrorTypeRef>()
+            .any { parent ->
+                parent !== this &&
+                        parent.diagnostic.unwrapUnreportedDuplicateDiagnostic() is ConeUnresolvedTypeQualifierError
+            }
     }
     /**
      * 访问错误表达式节点（[CfirErrorExpression]）。
@@ -347,16 +370,34 @@ class ErrorNodeDiagnosticCollectorComponent(
      * null 表达式（无接收者）视为"可以解析"，返回 false。
      */
     private fun CfirExpression?.cannotBeResolved(): Boolean {
-        return when (val diagnostic = (this?.coneTypeOrNull as? ConeErrorType)?.diagnostic) {
+        val diagnostic = this?.coneTypeOrNull?.expandedErrorDiagnosticOrNull()
+            ?: (this?.toReferenceOrNull() as? CfirDiagnosticHolder)?.diagnostic
+        return when (val unwrappedDiagnostic = diagnostic.unwrapUnreportedDuplicateDiagnostic()) {
             is ConeUnresolvedNameError,
             is ConeUnresolvedReferenceError,
-            is ConeUnresolvedSymbolError -> true
+            is ConeUnresolvedSymbolError,
+            is ConeUnresolvedTypeQualifierError -> true
             is org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic ->
-                diagnostic.kind == org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind.SuperNotAllowed ||
-                        diagnostic.kind == org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind.GenericTypeWithoutTypeArgument ||
-                        diagnostic.kind == org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind.EmptyArrayLiteralTypeUndefined
+                unwrappedDiagnostic.kind == org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind.SuperNotAllowed ||
+                        unwrappedDiagnostic.kind == org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind.GenericTypeWithoutTypeArgument ||
+                        unwrappedDiagnostic.kind == org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind.EmptyArrayLiteralTypeUndefined
             else -> false
         }
+    }
+
+    private fun ConeDiagnostic?.unwrapUnreportedDuplicateDiagnostic(): ConeDiagnostic? =
+        (this as? ConeUnreportedDuplicateDiagnostic)?.original ?: this
+
+    /**
+     * typealias 声明侧已经携带 unresolved 错误时，使用点不能继续扩散成员/调用错误。
+     */
+    private fun ConeCangJieType.expandedErrorDiagnosticOrNull(): ConeDiagnostic? {
+        var current = this
+        val visitedAliases = linkedSetOf<ConeTypeAliasType>()
+        while (current is ConeTypeAliasType && visitedAliases.add(current)) {
+            current = current.expandedType ?: return null
+        }
+        return (current as? ConeErrorType)?.diagnostic
     }
 
     private fun CheckerContext.isInsideConstructorValueParameterDefaultValue(): Boolean {

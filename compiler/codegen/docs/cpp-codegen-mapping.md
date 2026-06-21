@@ -87,5 +87,5 @@ Recommended Kotlin build-out order:
 
 ## Related Baselines
 
-- CHIR mapping: [cpp-chir-mapping.md](/D:/code/intellij/cangjie/compiler/chir/docs/cpp-chir-mapping.md)
+- CHIR mapping: [cpp-chir-mapping.md](/D:/code/intellij/cangjie/chir/chir-tree/docs/cpp-chir-mapping.md)
 - Baseline fixtures: [README.md](/D:/code/intellij/cangjie/compiler/codegen/testResources/chir-parity/README.md)

@@ -24,7 +24,7 @@
 
 ## 与管线对应
 
-前端管线核心阶段（阶段 1 ~ 10）以 `:compiler:frontend` 为编排入口，配合 `:psi`、`:cfir:*`、`:macro:*`、`:resolution.common` 等模块完成。可选后端通过 `:compiler:chir` + `:compiler:codegen` 接入 LLVM 后端。
+前端管线核心阶段（阶段 1 ~ 10）以 `:compiler:frontend` 为编排入口，配合 `:psi`、`:cfir:*`、`:macro:*`、`:resolution.common` 等模块完成。可选后端通过 `:chir:cfir2chir` + `:chir:chir-tree` + `:compiler:codegen` 接入 LLVM 后端。
 
 ## 相关文档
 

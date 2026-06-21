@@ -1,9 +1,5 @@
 // FILE: pkga.cj
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
-// This source file is part of the Cangjie project, licensed under Apache-2.0
-// with Runtime Library Exception.
-//
-// See https://cangjie-lang.cn/pages/LICENSE for license information.
+
 
 package pkg.a
 
@@ -22,11 +18,7 @@ public interface ValueType {
 <!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>extend Int64 <: ValueType {}<!>
 
 // FILE: pkgb.cj
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
-// This source file is part of the Cangjie project, licensed under Apache-2.0
-// with Runtime Library Exception.
-//
-// See https://cangjie-lang.cn/pages/LICENSE for license information.
+
 
 package pkg.b
 
@@ -45,11 +37,7 @@ public interface ValueType {
 <!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>extend Int64 <: ValueType {}<!>
 
 // FILE: test.cj
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
-// This source file is part of the Cangjie project, licensed under Apache-2.0
-// with Runtime Library Exception.
-//
-// See https://cangjie-lang.cn/pages/LICENSE for license information.
+
 
 
 package pkg

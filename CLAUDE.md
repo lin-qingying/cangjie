@@ -86,7 +86,8 @@ CFIR2CHIR → CODEGEN
 - `:lsp` — 基于 lsp4j 的 Language Server 框架，能力协商 / 文档同步 / 工作区状态 / 分析桥接接缝
 
 **可选后端（CHIR / CodeGen / LLVM）**
-- `:compiler:chir` — CHIR 数据模型与 pass 框架
+- `:chir:chir-tree` — CHIR 数据模型与 pass 框架
+- `:chir:cfir2chir` — CFIR → CHIR 转换
 - `:compiler:codegen` — CHIR → LLVM IR
 - `:llvm-interop` 聚合 / `:llvm-interop:llvm-interop-api` / `:llvm-interop:llvm-interop-jni` — JVM 调 LLVM 的 API + JNI
 

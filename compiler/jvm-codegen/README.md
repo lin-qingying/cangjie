@@ -2,7 +2,7 @@
 
 ## Input
 
-- `ChirJvmCodegenInput.chirPackage`: CHIR package model (`compiler:chir`) as the backend source.
+- `ChirJvmCodegenInput.chirPackage`: CHIR package model (`:chir:chir-tree`) as the backend source.
 - `ChirJvmCodegenInput.options`: JVM classfile and output behavior.
 
 ## Output

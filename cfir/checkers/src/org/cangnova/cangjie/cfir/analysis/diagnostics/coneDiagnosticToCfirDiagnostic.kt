@@ -121,6 +121,8 @@ private fun ConstraintSystemError.mapConstraintSystemError(
                             return inferenceDiagnostic
                         }
                 }
+                candidate.invalidBinaryOperatorDiagnosticForOperatorCall(source, qualifiedAccessSource, session)
+                    ?.let { diagnostic -> return diagnostic }
                 return argumentTypeMismatch(
                     source = reportOn ?: it.source ?: source,
                     expectedType = upperConeType.substituteTypeVariableTypes(candidate, session),
@@ -436,6 +438,9 @@ private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
                         rootCause.actualType.substituteTypeVariableTypes(candidate, session)
                     }
 
+                candidate.invalidBinaryOperatorDiagnosticForOperatorCall(source, qualifiedAccessSource, session)
+                    ?.let { return@mapNotNull it }
+
                 argumentTypeMismatch(
                     source = rootCause.argument.source ?: source,
                     expectedType = expectedType,
@@ -733,6 +738,31 @@ private fun argumentTypeMismatch(
         expectedType,
         actualType,
         isMismatchDueToNullability,
+        session,
+    )
+}
+
+/**
+ * 二元 operator 调用候选存在但实参类型不适用时，官方 Cangjie 归类为
+ * `sema_invalid_binary_expr`，而不是普通函数实参类型不匹配。
+ */
+private fun AbstractCallCandidate<*>.invalidBinaryOperatorDiagnosticForOperatorCall(
+    source: CjSourceElement?,
+    qualifiedAccessSource: CjSourceElement?,
+    session: CfirSession,
+): CjDiagnostic? {
+    if (callInfo.origin != CfirFunctionCallOrigin.Operator) return null
+    val operatorToken = OperatorNameConventions.TOKENS_BY_OPERATOR_NAME[callInfo.name] ?: return null
+    val leftType = callInfo.explicitReceiver?.coneTypeOrNull ?: return null
+    val rightType = callInfo.arguments.singleOrNull()?.coneTypeOrNull ?: return null
+    if (leftType.containsErrorType() || rightType.containsErrorType()) return null
+
+    val diagnosticSource = source ?: qualifiedAccessSource ?: callInfo.callSite.source as? CjSourceElement ?: return null
+    return CfirErrors.INVALID_BINARY_OPERATOR.on(
+        diagnosticSource,
+        operatorToken,
+        leftType.renderInvalidBinaryOperatorType(session),
+        rightType.renderInvalidBinaryOperatorType(session),
         session,
     )
 }

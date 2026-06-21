@@ -40,6 +40,7 @@ class CfirExtendMemberScope(
     private val session: CfirSession,
     private val receiverType: ConeCangJieType,
     private val allowBareGenericStaticQualifierExtends: Boolean = false,
+    private val excludingExtend: CfirExtend? = null,
 ) : CfirTypeScope() {
 
     private val memberIndex: MemberIndex by lazy { buildIndex() }
@@ -100,6 +101,7 @@ class CfirExtendMemberScope(
 
         val extends = extendsForTarget()
         for ((extend, concreteReceiverType) in extends) {
+            if (extend === excludingExtend) continue
             if (!extend.isApplicableAtReceiver(concreteReceiverType)) continue
             for (declaration in extend.declarations) {
                 indexDeclaration(

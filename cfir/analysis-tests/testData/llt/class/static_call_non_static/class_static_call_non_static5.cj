@@ -1,8 +1,4 @@
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
-// This source file is part of the Cangjie project, licensed under Apache-2.0
-// with Runtime Library Exception.
-//
-// See https://cangjie-lang.cn/pages/LICENSE for license information.
+
 
 
 internal import std.collection.*
@@ -14,9 +10,9 @@ main() {
     let class_sub_ins = Class_sub_1()
     var map_main_1: HashMap<UInt16, Int64> = class_sub_ins.map_subCla_1 //子类成员变量
     var map_main_2: HashMap<Int32, Rune> = class_sub_ins.fun_sub_c1(map_top_2) //子类实例函数
-    var map_main_3: HashMap<Int32, Rune> = Class_sub_1.map_cla_2 // 父类静态成�?    var map_main_4: HashMap<Int32, Rune> = class_sub_ins.fun_c1(map_top_2, par_2: r'H') // 父类实例成员函数
-    var map_main_5: HashMap<Int32, Rune> = Class_sub_1.fun_cs1(12, r'Z') // 父类静态成员函�?
-    let map_main_6: HashMap<Int32, Rune> = Class_sub_1.fun_sub_cs1(r'G') //子类自有静态函�?
+    var map_main_3: HashMap<Int32, Rune> = Class_sub_1.map_cla_2 // 父类静态成�?    var map_main_4: HashMap<Int32, Rune> = class_sub_ins.fun_c1(map_top_2, par_2: r'H') // 父类实例成员函数
+    var map_main_5: HashMap<Int32, Rune> = Class_sub_1.fun_cs1(12, r'Z') // 父类静态成员函�?
+    let map_main_6: HashMap<Int32, Rune> = Class_sub_1.fun_sub_cs1(r'G') //子类自有静态函�?
     return -1
 }
 
@@ -54,7 +50,7 @@ open class Class_sub_1 <: Clazz_1 {
         super(110, -120)
     }
 
-    public var clazz_1_ins = Clazz_1() //父类的实例对�?    public static let sub_cp1: HashMap<Int32, Rune> = Class_sub_1.map_cla_2 //父类成员变量
+    public var clazz_1_ins = Clazz_1() //父类的实例对�?    public static let sub_cp1: HashMap<Int32, Rune> = Class_sub_1.map_cla_2 //父类成员变量
     public var map_subCla_1: HashMap<UInt16, Int64> = HashMap<UInt16, Int64>([(12, 17750), (23, 1836), (56, 3594)])
 
     public static func fun_sub_cs1(par_1: Rune): HashMap<Int32, Rune> {

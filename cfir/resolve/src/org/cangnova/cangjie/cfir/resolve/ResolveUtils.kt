@@ -26,6 +26,7 @@ package org.cangnova.cangjie.cfir.resolve
 
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
+import org.cangnova.cangjie.cfir.declarations.CfirTypeParameterRefsOwner
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.diagnostic.*
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
@@ -174,12 +175,37 @@ private fun BodyResolveComponents.typeFromSymbol(symbol: CfirBasedSymbol<*>): Co
         }
 
         is CfirClassifierSymbol<*> -> {
-            symbol.constructType()
+            symbol.constructDefaultQualifierType()
         }
 
         else -> errorWithAttachment("Failed to extract type from symbol: ${symbol::class.java}") {
             withCfirEntry("declaration", symbol.cfir)
         }
+    }
+}
+
+/**
+ * 裸 classifier 作为 qualifier 时需要保留声明侧类型参数。
+ *
+ * `C.test(1, 2)` 中 `type C<T> = A<T, Int16>` 的 qualifier 语义不是 `C<>`，
+ * 而是携带 `C<T>`，后续 owner use-site substitution 才能把 `A<T, Int16>`
+ * 与 static 成员 `A.test` 的外层类型参数接通并交给调用推断。
+ */
+private fun CfirClassifierSymbol<*>.constructDefaultQualifierType(): ConeCangJieType = when (this) {
+    is CfirTypeParameterSymbol -> constructType()
+    is CfirTypeAliasSymbol -> {
+        val typeArguments = cfir.typeParameters.map { typeParameter ->
+            ConeTypeParameterTypeImpl(typeParameter.symbol.toLookupTag())
+        }
+        ConeTypeAliasType(classId, typeArguments = typeArguments)
+    }
+
+    is CfirClassLikeSymbol<*> -> {
+        val typeArguments = (cfir as? CfirTypeParameterRefsOwner)
+            ?.typeParameters
+            ?.map { typeParameter -> ConeTypeParameterTypeImpl(typeParameter.symbol.toLookupTag()) }
+            .orEmpty()
+        constructType(typeArguments)
     }
 }
 

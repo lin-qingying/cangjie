@@ -32,7 +32,7 @@ open class CallInfo(
     val containingDeclarations: List<CfirDeclaration>,
     val candidateForCommonInvokeReceiver: Candidate? = null,
     val resolutionMode: ResolutionMode,
-    val origin: CfirFunctionCallOrigin = CfirFunctionCallOrigin.Regular,
+    override val origin: CfirFunctionCallOrigin = CfirFunctionCallOrigin.Regular,
     val implicitInvokeMode: ImplicitInvokeMode = ImplicitInvokeMode.None,
     val containingCandidateForCollectionLiteral: Candidate? = null,
 ) : AbstractCallInfo() {

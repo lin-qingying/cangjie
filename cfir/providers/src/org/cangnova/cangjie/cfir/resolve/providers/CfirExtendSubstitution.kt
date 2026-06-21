@@ -16,6 +16,8 @@ import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeLookupTagBasedType
 import org.cangnova.cangjie.cfir.types.ConePointerType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
+import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
+import org.cangnova.cangjie.cfir.types.abbreviatedType
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.types.collectUpperBounds
@@ -115,8 +117,12 @@ private fun createExtendDeclarationSubstitution(
     concreteReceiverType: ConeCangJieType,
     checkGenericConstraints: Boolean,
 ): CfirExtendDeclarationSubstitution? {
-    val semanticTargetPattern = targetPattern.fullyExpandedType(session)
-    val semanticReceiverType = concreteReceiverType.fullyExpandedType(session)
+    val semanticTargetPattern = targetPattern.abbreviatedType ?: targetPattern
+    val semanticReceiverType = if (semanticTargetPattern is ConeTypeAliasType) {
+        concreteReceiverType
+    } else {
+        concreteReceiverType.fullyExpandedType(session)
+    }
     val substitutions = linkedMapOf<TypeConstructorMarker, ConeCangJieType>()
     val extendTypeParameterConstructors = extend.typeParameters.mapTo(linkedSetOf<TypeConstructorMarker>()) {
         it.symbol.toLookupTag()
@@ -226,6 +232,21 @@ private fun matchExtendTargetType(
         }
 
         is ConeCStringType -> actual is ConeCStringType
+
+        is ConeTypeAliasType -> {
+            val actualAlias = actual as? ConeTypeAliasType ?: return false
+            if (pattern.classId != actualAlias.classId) return false
+            if (pattern.typeArguments.size != actualAlias.typeArguments.size) return false
+
+            pattern.typeArguments.indices.all { index ->
+                matchExtendTargetType(
+                    pattern = pattern.typeArguments[index].type,
+                    actual = actualAlias.typeArguments[index].type,
+                    extendTypeParameterConstructors = extendTypeParameterConstructors,
+                    substitutions = substitutions,
+                )
+            }
+        }
 
         is ConeLookupTagBasedType -> {
             val actualClassifier = actual as? ConeLookupTagBasedType ?: return false
