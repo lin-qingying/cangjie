@@ -11,11 +11,11 @@ class Y {}
 
 class A<T, K> where K <: ToString {}
 
-<!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>extend<T> A<Int64, T> <: ToString {
+<!NEED_MEMBER_IMPLEMENTATION!>e<!>xtend<T> A<Int64, T> <: ToString {
     func test() {
         println("A int64")
     }
-}<!>
+}
 
 extend A<Int64, Int64> {
     public func toString() { // invisible for extend ToString

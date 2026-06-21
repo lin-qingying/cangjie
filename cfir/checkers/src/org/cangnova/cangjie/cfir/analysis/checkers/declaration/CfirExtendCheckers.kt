@@ -264,6 +264,8 @@ object CfirExtendImmutableMemberChecker : CfirExtendChecker() {
 object CfirExtendSpecializationConflictChecker : CfirExtendChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(extend: CfirExtend) {
+        if (!extend.requiresSpecializationConflictCheck(context)) return
+
         val query = context.session.extendRuleQueryServiceOrNull ?: return
         val targetKey = query.targetKeyOf(extend) ?: return
         val localInterfaces = query.inheritedInterfacesOf(extend)
@@ -291,6 +293,24 @@ object CfirExtendSpecializationConflictChecker : CfirExtendChecker() {
                 factory = CfirErrors.EXTEND_DUPLICATE_INTERFACE,
                 a = localClassId.shortClassName,
             )
+        }
+    }
+
+    /**
+     * 官方 `CheckSpecializationExtend` 只检查泛型名义类型的特化版本；
+     * primitive built-in 目标只对 `CPointer` 额外执行这一类检查。
+     */
+    private fun CfirExtend.requiresSpecializationConflictCheck(context: CheckerContext): Boolean {
+        val targetType = (extendedTypeRef as? CfirResolvedTypeRef)
+            ?.coneType
+            ?.fullyExpandedType(context.session)
+            ?: return false
+        return when (targetType) {
+            is ConeClassLikeType -> targetType.typeArguments.isNotEmpty()
+            is ConeStructType -> targetType.typeArguments.isNotEmpty()
+            is ConeEnumType -> targetType.typeArguments.isNotEmpty()
+            is ConePointerType -> true
+            else -> false
         }
     }
 }

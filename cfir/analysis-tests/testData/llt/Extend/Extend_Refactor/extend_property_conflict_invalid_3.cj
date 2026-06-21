@@ -29,9 +29,9 @@ extend C1 {
     }
 }
 
-<!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>extend C1 <: I1 {}<!>
+<!INTERFACE_MEMBER_MUST_BE_IMPLEMENTED!>e<!>xtend C1 <: I1 {}
 
-<!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>extend C1 <: I2 {}<!>
+<!INTERFACE_MEMBER_MUST_BE_IMPLEMENTED!>e<!>xtend C1 <: I2 {}
 
 main() {
     return -1

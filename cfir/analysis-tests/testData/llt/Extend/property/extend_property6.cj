@@ -11,7 +11,7 @@ interface Foo {
     prop v1: Int64
 }
 
-<!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>extend A <: Foo {}<!>
+<!NEED_MEMBER_IMPLEMENTATION!>e<!>xtend A <: Foo {}
 
 main() {
     0

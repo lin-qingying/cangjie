@@ -15,13 +15,13 @@ interface I1<T> <: I<T> {}
 
 class A<T> {}
 
-<!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>extend A<Int64> <: I<Int64> {}<!>
+<!INTERFACE_MEMBER_MUST_BE_IMPLEMENTED!>e<!>xtend A<Int64> <: I<Int64> {}
 
 extend<T> A<T> <: I1<T> {}
 
 class B<T> {}
 
-<!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>extend B<Int64> <: I1<Int64> {}<!>
+<!INTERFACE_MEMBER_MUST_BE_IMPLEMENTED!>e<!>xtend B<Int64> <: I1<Int64> {}
 
 extend<T> B<T> <: I<T> {}
 

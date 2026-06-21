@@ -13,7 +13,7 @@ interface I2 <: I1 {}
 
 class A {}
 
-<!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>extend A <: I1 & I2 {}<!> // failed
+<!INTERFACE_MEMBER_MUST_BE_IMPLEMENTED!>e<!>xtend A <: I1 & I2 {} // failed
 
 main() {
     A().foo()
