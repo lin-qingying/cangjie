@@ -9,8 +9,10 @@ import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.callableNameOrNull
 import org.cangnova.cangjie.cfir.resolve.providers.CfirExtendProvider
 import org.cangnova.cangjie.cfir.resolve.providers.createExtendDeclarationSubstitution
-import org.cangnova.cangjie.cfir.scopes.CfirExtendScope
+import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.ProcessorAction
+import org.cangnova.cangjie.cfir.session.services.CfirExtendTargetKey
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
@@ -23,22 +25,32 @@ import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.idealExtendLookupTypes
 import org.cangnova.cangjie.cfir.types.toPrimitiveTypeKindOrNull
-import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.Name
 
 /**
- * Extend-member scope. Primitive targets are indexed through their synthetic
- * builtin ClassId, so builtin and ordinary targets share the same lookup path.
+ * Extend-member type scope.
+ *
+ * 官方 extend map 同时支持 nominal declaration 与 built-in type。这里以
+ * [CfirExtendTargetKey] 为索引键，让 `CPointer<T>` / `CString` 这类没有
+ * ClassId 的 built-in target 也能进入和普通类型相同的成员查询流程。
  */
 class CfirExtendMemberScope(
-    private val targetClassId: ClassId,
+    private val targetKey: CfirExtendTargetKey,
     private val extendProvider: CfirExtendProvider,
     private val session: CfirSession,
     private val receiverType: ConeCangJieType,
     private val allowBareGenericStaticQualifierExtends: Boolean = false,
-) : CfirExtendScope() {
+) : CfirTypeScope() {
 
     private val memberIndex: MemberIndex by lazy { buildIndex() }
+
+    override fun getCallableNames(): Set<Name> = buildSet {
+        addAll(memberIndex.functions.keys)
+        addAll(memberIndex.properties.keys)
+        addAll(memberIndex.variables.keys)
+    }
+
+    override fun getClassifierNames(): Set<Name> = memberIndex.classifiers.keys
 
     override fun processClassifiersByName(name: Name, processor: (CfirClassLikeSymbol<*>) -> Unit) {
         memberIndex.classifiers[name]?.forEach(processor)
@@ -57,6 +69,21 @@ class CfirExtendMemberScope(
         memberIndex.properties[name]?.forEach(processor)
         memberIndex.variables[name]?.forEach(processor)
     }
+
+    override fun processDirectOverriddenFunctionsWithBaseScope(
+        functionSymbol: CfirNamedFunctionSymbol,
+        processor: (CfirNamedFunctionSymbol, CfirTypeScope) -> ProcessorAction,
+    ): ProcessorAction = ProcessorAction.NONE
+
+    override fun processDirectOverriddenPropertiesWithBaseScope(
+        propertySymbol: CfirPropertySymbol,
+        processor: (CfirPropertySymbol, CfirTypeScope) -> ProcessorAction,
+    ): ProcessorAction = ProcessorAction.NONE
+
+    override fun withReplacedSessionOrNull(
+        newSession: CfirSession,
+        newScopeSession: org.cangnova.cangjie.cfir.ScopeSession,
+    ): CfirTypeScope? = null
 
     private class MemberIndex(
         val classifiers: Map<Name, List<CfirClassLikeSymbol<*>>>,
@@ -89,11 +116,12 @@ class CfirExtendMemberScope(
 
     private fun extendsForTarget(): List<ExtendLookupCandidate> {
         val result = mutableListOf<ExtendLookupCandidate>()
-        result += extendProvider.getExtendsForClass(targetClassId).map {
+        result += extendProvider.getExtendsForTarget(targetKey).map {
             ExtendLookupCandidate(it, receiverType)
         }
 
-        val primitiveKind = targetClassId.toPrimitiveTypeKindOrNull() ?: return result.distinctBy { it.extend }
+        val primitiveKind = targetKey.classIdOrNull?.toPrimitiveTypeKindOrNull()
+            ?: return result.distinctBy { it.extend }
         val concreteReceiverTypes = receiverType.idealExtendLookupTypes.ifEmpty {
             listOf(ConePrimitiveType(primitiveKind))
         }

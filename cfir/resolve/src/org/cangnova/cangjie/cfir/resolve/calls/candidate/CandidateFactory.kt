@@ -70,18 +70,18 @@ internal enum class BuiltinArrayConstructorKind {
     REPEAT_ELEMENT,
 }
 
-internal data class BuiltinArrayConstructorTypeParameter(
+internal data class BuiltinConstructorTypeParameter(
     val name: Name,
     val originalSymbol: CfirTypeParameterSymbol? = null,
 )
 
 internal sealed class BuiltinArrayConstructorTarget {
-    abstract val typeParameters: List<BuiltinArrayConstructorTypeParameter>
+    abstract val typeParameters: List<BuiltinConstructorTypeParameter>
     abstract fun returnType(elementType: ConeCangJieType): ConeCangJieType
 
     data object Array : BuiltinArrayConstructorTarget() {
-        override val typeParameters: List<BuiltinArrayConstructorTypeParameter> =
-            listOf(BuiltinArrayConstructorTypeParameter(Name.identifier("T")))
+        override val typeParameters: List<BuiltinConstructorTypeParameter> =
+            listOf(BuiltinConstructorTypeParameter(Name.identifier("T")))
 
         override fun returnType(elementType: ConeCangJieType): ConeCangJieType =
             ConeClassLikeType(StdlibClassIds.Array.toLookupTag(), typeArguments = listOf(elementType))
@@ -90,8 +90,8 @@ internal sealed class BuiltinArrayConstructorTarget {
     data class VArray(
         val sizeLiteral: String,
         val elementType: ConeCangJieType? = null,
-        override val typeParameters: List<BuiltinArrayConstructorTypeParameter> =
-            listOf(BuiltinArrayConstructorTypeParameter(Name.identifier("T"))),
+        override val typeParameters: List<BuiltinConstructorTypeParameter> =
+            listOf(BuiltinConstructorTypeParameter(Name.identifier("T"))),
     ) : BuiltinArrayConstructorTarget() {
         override fun returnType(elementType: ConeCangJieType): ConeCangJieType {
             val size = CfirIntConstantEvalUtils.parseVArraySizeLiteral(sizeLiteral)
@@ -100,6 +100,17 @@ internal sealed class BuiltinArrayConstructorTarget {
         }
     }
 }
+
+internal enum class BuiltinPointerConstructorKind {
+    EMPTY,
+    CONVERT_POINTER,
+}
+
+internal data class BuiltinPointerConstructorTarget(
+    val pointeeType: ConeCangJieType? = null,
+    val typeParameters: List<BuiltinConstructorTypeParameter> =
+        listOf(BuiltinConstructorTypeParameter(Name.identifier("T"))),
+)
 
 class CandidateFactory(
     private val context: ResolutionContext,
@@ -272,19 +283,12 @@ class CandidateFactory(
         target: BuiltinArrayConstructorTarget = BuiltinArrayConstructorTarget.Array,
     ): Candidate {
         val symbol = CfirNamedFunctionSymbol(CallableId(callInfo.name))
-        val typeParameters = target.typeParameters.map { parameter ->
-            buildTypeParameter {
-                source = callInfo.callSite.source
-                moduleData = context.session.moduleData
-                resolvePhase = CfirResolvePhase.BODY_RESOLVE
-                origin = CfirDeclarationOrigin.Synthetic.BuiltinArrayConstructor
-                attributes = CfirDeclarationAttributes.EMPTY
-                containingDeclarationSymbol = symbol
-                this.symbol = CfirTypeParameterSymbol()
-                name = parameter.name
-                addDefaultBoundIfNecessary()
-            }
-        }
+        val typeParameters = buildSyntheticTypeParameters(
+            ownerSymbol = symbol,
+            parameters = target.typeParameters,
+            source = callInfo.callSite.source,
+            origin = CfirDeclarationOrigin.Synthetic.BuiltinArrayConstructor,
+        )
         val elementType = target.syntheticElementType(typeParameters)
         val int64Type = ConePrimitiveType(PrimitiveTypeKind.INT64)
         val isVArrayTarget = target is BuiltinArrayConstructorTarget.VArray
@@ -301,6 +305,7 @@ class CandidateFactory(
                     ),
                     isNamed = false,
                     source = callInfo.arguments.getOrNull(0)?.source ?: callInfo.callSite.source,
+                    origin = CfirDeclarationOrigin.Synthetic.BuiltinArrayConstructor,
                 ),
             )
             BuiltinArrayConstructorKind.INIT_FUNCTION ->
@@ -312,6 +317,7 @@ class CandidateFactory(
                             parameterType = ConeFunctionType(parameterTypes = listOf(int64Type), returnType = elementType),
                             isNamed = false,
                             source = callInfo.arguments.getOrNull(0)?.source ?: callInfo.callSite.source,
+                            origin = CfirDeclarationOrigin.Synthetic.BuiltinArrayConstructor,
                         ),
                     )
                 } else {
@@ -322,6 +328,7 @@ class CandidateFactory(
                             parameterType = int64Type,
                             isNamed = false,
                             source = callInfo.arguments.getOrNull(0)?.source ?: callInfo.callSite.source,
+                            origin = CfirDeclarationOrigin.Synthetic.BuiltinArrayConstructor,
                         ),
                         buildSyntheticValueParameter(
                             ownerSymbol = symbol,
@@ -329,6 +336,7 @@ class CandidateFactory(
                             parameterType = ConeFunctionType(parameterTypes = listOf(int64Type), returnType = elementType),
                             isNamed = false,
                             source = callInfo.arguments.getOrNull(1)?.source ?: callInfo.callSite.source,
+                            origin = CfirDeclarationOrigin.Synthetic.BuiltinArrayConstructor,
                         ),
                     )
                 }
@@ -341,6 +349,7 @@ class CandidateFactory(
                             parameterType = elementType,
                             isNamed = true,
                             source = callInfo.arguments.getOrNull(0)?.source ?: callInfo.callSite.source,
+                            origin = CfirDeclarationOrigin.Synthetic.BuiltinArrayConstructor,
                         ),
                     )
                 } else {
@@ -351,6 +360,7 @@ class CandidateFactory(
                             parameterType = int64Type,
                             isNamed = false,
                             source = callInfo.arguments.getOrNull(0)?.source ?: callInfo.callSite.source,
+                            origin = CfirDeclarationOrigin.Synthetic.BuiltinArrayConstructor,
                         ),
                         buildSyntheticValueParameter(
                             ownerSymbol = symbol,
@@ -358,6 +368,7 @@ class CandidateFactory(
                             parameterType = elementType,
                             isNamed = true,
                             source = callInfo.arguments.getOrNull(1)?.source ?: callInfo.callSite.source,
+                            origin = CfirDeclarationOrigin.Synthetic.BuiltinArrayConstructor,
                         ),
                     )
                 }
@@ -378,6 +389,111 @@ class CandidateFactory(
                 coneType = target.returnType(elementType)
             }
             this.valueParameters.addAll(valueParameters)
+            body = null
+            this.symbol = symbol
+            name = callInfo.name
+            isMut = false
+        }
+
+        return createCandidate(
+            callInfo = callInfo,
+            symbol = symbol,
+            originScope = null,
+        )
+    }
+
+    /**
+     * 构造 `CPointer<T>(...)` 内建构造表达式候选。
+     *
+     * 官方前端将该调用解糖为 `PointerExpr`，并允许零参空指针构造或一个
+     * `CPointer<T>` 参数的指针转换；CFIR 在 synthetic function 中保留同一
+     * 参数形状，让普通参数映射与约束系统决定显式/隐式 `T`。
+     */
+    internal fun createBuiltinPointerConstructorCandidate(
+        callInfo: CallInfo,
+        kind: BuiltinPointerConstructorKind,
+        target: BuiltinPointerConstructorTarget = BuiltinPointerConstructorTarget(),
+    ): Candidate {
+        val symbol = CfirNamedFunctionSymbol(CallableId(callInfo.name))
+        val typeParameters = buildSyntheticTypeParameters(
+            ownerSymbol = symbol,
+            parameters = target.typeParameters,
+            source = callInfo.callSite.source,
+            origin = CfirDeclarationOrigin.Synthetic.BuiltinPointerConstructor,
+        )
+        val pointeeType = target.syntheticPointeeType(typeParameters)
+        val pointerType = ConePointerType(pointeeType)
+        val valueParameters = when (kind) {
+            BuiltinPointerConstructorKind.EMPTY -> emptyList()
+            BuiltinPointerConstructorKind.CONVERT_POINTER -> listOf(
+                buildSyntheticValueParameter(
+                    ownerSymbol = symbol,
+                    parameterName = POINTER_VALUE_PARAMETER_NAME,
+                    parameterType = pointerType,
+                    isNamed = false,
+                    source = callInfo.arguments.getOrNull(0)?.source ?: callInfo.callSite.source,
+                    origin = CfirDeclarationOrigin.Synthetic.BuiltinPointerConstructor,
+                ),
+            )
+        }
+
+        buildNamedFunction {
+            source = callInfo.callSite.source
+            moduleData = context.session.moduleData
+            resolvePhase = CfirResolvePhase.BODY_RESOLVE
+            origin = CfirDeclarationOrigin.Synthetic.BuiltinPointerConstructor
+            attributes = CfirDeclarationAttributes.EMPTY
+            isLocal = true
+            dispatchReceiverType = null
+            status = CfirDeclarationStatusImpl()
+            this.typeParameters.addAll(typeParameters)
+            returnTypeRef = buildResolvedTypeRef {
+                source = callInfo.callSite.source
+                coneType = pointerType
+            }
+            this.valueParameters.addAll(valueParameters)
+            body = null
+            this.symbol = symbol
+            name = callInfo.name
+            isMut = false
+        }
+
+        return createCandidate(
+            callInfo = callInfo,
+            symbol = symbol,
+            originScope = null,
+        )
+    }
+
+    /**
+     * 构造 `CString(CPointer<UInt8>)` 内建构造表达式候选。
+     */
+    internal fun createBuiltinCStringConstructorCandidate(callInfo: CallInfo): Candidate {
+        val symbol = CfirNamedFunctionSymbol(CallableId(callInfo.name))
+        val uint8Pointer = ConePointerType(ConePrimitiveType(PrimitiveTypeKind.UINT8))
+        val valueParameter = buildSyntheticValueParameter(
+            ownerSymbol = symbol,
+            parameterName = CSTRING_POINTER_PARAMETER_NAME,
+            parameterType = uint8Pointer,
+            isNamed = false,
+            source = callInfo.arguments.getOrNull(0)?.source ?: callInfo.callSite.source,
+            origin = CfirDeclarationOrigin.Synthetic.BuiltinCStringConstructor,
+        )
+
+        buildNamedFunction {
+            source = callInfo.callSite.source
+            moduleData = context.session.moduleData
+            resolvePhase = CfirResolvePhase.BODY_RESOLVE
+            origin = CfirDeclarationOrigin.Synthetic.BuiltinCStringConstructor
+            attributes = CfirDeclarationAttributes.EMPTY
+            isLocal = true
+            dispatchReceiverType = null
+            status = CfirDeclarationStatusImpl()
+            returnTypeRef = buildResolvedTypeRef {
+                source = callInfo.callSite.source
+                coneType = ConeCStringType()
+            }
+            valueParameters.add(valueParameter)
             body = null
             this.symbol = symbol
             name = callInfo.name
@@ -412,17 +528,57 @@ class CandidateFactory(
         return CfirTypeSubstitutorByMap(originalToSynthetic).substituteOrSelf(declaredElementType)
     }
 
+    private fun BuiltinPointerConstructorTarget.syntheticPointeeType(
+        syntheticTypeParameters: List<CfirTypeParameter>,
+    ): ConeCangJieType {
+        if (pointeeType == null) {
+            val pointeeTypeParameter = syntheticTypeParameters.firstOrNull()?.symbol
+                ?: return ConeErrorType(ConeSimpleDiagnostic("Missing builtin pointer type parameter"))
+            return ConeTypeParameterTypeImpl(pointeeTypeParameter.toLookupTag())
+        }
+
+        val originalToSynthetic: Map<TypeConstructorMarker, ConeCangJieType> = typeParameters.zip(syntheticTypeParameters)
+            .mapNotNull { (original, synthetic) ->
+                original.originalSymbol?.toLookupTag()?.let { originalTag ->
+                    originalTag to ConeTypeParameterTypeImpl(synthetic.symbol.toLookupTag())
+                }
+            }
+            .toMap()
+        if (originalToSynthetic.isEmpty()) return pointeeType
+        return CfirTypeSubstitutorByMap(originalToSynthetic).substituteOrSelf(pointeeType)
+    }
+
+    private fun buildSyntheticTypeParameters(
+        ownerSymbol: CfirNamedFunctionSymbol,
+        parameters: List<BuiltinConstructorTypeParameter>,
+        source: CjSourceElement?,
+        origin: CfirDeclarationOrigin.Synthetic,
+    ): List<CfirTypeParameter> = parameters.map { parameter ->
+        buildTypeParameter {
+            this.source = source
+            moduleData = context.session.moduleData
+            resolvePhase = CfirResolvePhase.BODY_RESOLVE
+            this.origin = origin
+            attributes = CfirDeclarationAttributes.EMPTY
+            containingDeclarationSymbol = ownerSymbol
+            symbol = CfirTypeParameterSymbol()
+            name = parameter.name
+            addDefaultBoundIfNecessary()
+        }
+    }
+
     private fun buildSyntheticValueParameter(
         ownerSymbol: CfirNamedFunctionSymbol,
         parameterName: Name,
         parameterType: ConeCangJieType,
         isNamed: Boolean,
         source: CjSourceElement?,
+        origin: CfirDeclarationOrigin.Synthetic,
     ) = buildValueParameter {
         this.source = source
         moduleData = context.session.moduleData
         resolvePhase = CfirResolvePhase.BODY_RESOLVE
-        origin = CfirDeclarationOrigin.Synthetic.BuiltinArrayConstructor
+        this.origin = origin
         attributes = CfirDeclarationAttributes.EMPTY
         isLocal = true
         dispatchReceiverType = null
@@ -549,3 +705,5 @@ private val ARRAY_SIZE_PARAMETER_NAME = Name.identifier("size")
 private val ARRAY_COLLECTION_PARAMETER_NAME = Name.identifier("elements")
 private val ARRAY_INIT_PARAMETER_NAME = Name.identifier("arrayInit")
 private val ARRAY_REPEAT_PARAMETER_NAME = Name.identifier("repeat")
+private val POINTER_VALUE_PARAMETER_NAME = Name.identifier("value")
+private val CSTRING_POINTER_PARAMETER_NAME = Name.identifier("pointer")

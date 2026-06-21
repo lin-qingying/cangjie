@@ -246,8 +246,19 @@ class ConstraintSystemCompleter(components: BodyResolveComponents) {
             .filterIsInstance<ConeResolvedLambdaAtom>()
             .takeIf { it.isNotEmpty() } ?: return false
 
+        fun ConeCangJieType.inputTypeVariablesForPCLA(): Set<TypeVariableTypeConstructorMarker> =
+            buildSet {
+                (typeConstructor() as? TypeVariableTypeConstructorMarker)?.let(::add)
+                addAll(extractTypeVariables())
+            }
+
+        /*
+         * Kotlin 的 extractTypeVariables() 只收集类型实参中的变量。仓颉官方
+         * SynLamExpr 对无上下文 lambda 参数创建的 placeholder 本身就是输入类型，
+         * 成员访问约束必须能通过 PCLA 回写到这个根类型变量。
+         */
         fun ConeResolvedLambdaAtom.notFixedInputTypeVariables() =
-            inputTypes.flatMap { it.extractTypeVariables() }.filter { it !in fixedTypeVariables }
+            inputTypes.flatMap { it.inputTypeVariablesForPCLA() }.filter { it !in fixedTypeVariables }
 
         val lambdaArgumentsWithNotFixedInputs = lambdaArguments.filter { it.notFixedInputTypeVariables().isNotEmpty() }
         val dangerousMultiLambdaBuilderInference = lambdaArgumentsWithNotFixedInputs.size >= 2

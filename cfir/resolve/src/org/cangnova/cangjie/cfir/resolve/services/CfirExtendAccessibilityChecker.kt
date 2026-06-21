@@ -36,8 +36,7 @@ class CfirExtendAccessibilityChecker(private val session: CfirSession) {
         if (!extend.allUpperBoundsAccessible(imports)) return false
 
         val targetClassId = model.targetClassId
-        val isTargetInSamePackageAsExtend = targetClassId?.packageFqName == model.packageFqName ||
-                targetClassId == null && model.packageFqName.asString() == STDLIB_CORE_PACKAGE
+        val isTargetInSamePackageAsExtend = model.isTargetInSamePackageAsExtend()
 
         return if (isTargetInSamePackageAsExtend) {
             targetClassId == null || isClassIdVisibleFromPackage(targetClassId, filePackage)
@@ -49,8 +48,7 @@ class CfirExtendAccessibilityChecker(private val session: CfirSession) {
 
     private fun CfirExtend.isExported(model: CfirExtendSemanticModel): Boolean {
         val targetClassId = model.targetClassId
-        val isTargetInSamePackageAsExtend = targetClassId?.packageFqName == model.packageFqName ||
-                targetClassId == null && model.packageFqName.asString() == STDLIB_CORE_PACKAGE
+        val isTargetInSamePackageAsExtend = model.isTargetInSamePackageAsExtend()
 
         if (model.inheritedInterfaceClassIds.isEmpty()) {
             if (model.packageFqName.asString() == STDLIB_CORE_PACKAGE) return true
@@ -59,11 +57,15 @@ class CfirExtendAccessibilityChecker(private val session: CfirSession) {
         }
 
         if (isTargetInSamePackageAsExtend) {
-            return targetClassId != null && isClassIdExported(targetClassId)
+            return targetClassId == null || isClassIdExported(targetClassId)
         }
 
         return model.inheritedInterfaceClassIds.any(::isClassIdExported) && allUpperBoundsExported()
     }
+
+    private fun CfirExtendSemanticModel.isTargetInSamePackageAsExtend(): Boolean =
+        targetClassId?.packageFqName == packageFqName ||
+            targetClassId == null && targetKey != null && packageFqName.asString() == STDLIB_CORE_PACKAGE
 
     private fun CfirExtend.allUpperBoundsExported(): Boolean =
         typeParameters.all { typeParameter -> typeParameter.bounds.all(::isTypeRefExported) }

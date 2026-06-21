@@ -39,12 +39,14 @@ import org.cangnova.cangjie.cfir.scopes.impl.CfirClassMemberScopeKind
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassSubstitutionScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirCompositeTypeScope
+import org.cangnova.cangjie.cfir.scopes.impl.CfirExtendMemberScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirUnionTypeScope
 import org.cangnova.cangjie.cfir.scopes.impl.staticScopeForQualifierType
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
 import org.cangnova.cangjie.cfir.session.extendProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.session.typeAwareSupertypeProviderOrNull
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.source.CjFakeSourceElementKind
@@ -334,6 +336,19 @@ private fun collectTypeScopes(
         }
 
         else -> {
+            if (collectNonClassBuiltinExtendScopes(
+                    session = session,
+                    scopeSession = scopeSession,
+                    type = type,
+                    scopeKind = scopeKind,
+                    destination = destination,
+                    visitedClassIds = visitedClassIds,
+                    visitedTypeParameters = visitedTypeParameters,
+                )
+            ) {
+                return
+            }
+
             val classId = type.classIdOrPrimitiveClassId ?: return
             if (!visitedClassIds.add(classId)) return
             val symbol = session.symbolProvider.getClassLikeSymbolByClassId(classId) ?: return
@@ -370,6 +385,46 @@ private fun collectTypeScopes(
             destination += CfirClassSubstitutionScope(session, rawScope, type)
         }
     }
+}
+
+private fun collectNonClassBuiltinExtendScopes(
+    session: CfirSession,
+    scopeSession: ScopeSession,
+    type: ConeCangJieType,
+    scopeKind: CfirClassMemberScopeKind,
+    destination: MutableSet<CfirTypeScope>,
+    visitedClassIds: MutableSet<org.cangnova.cangjie.name.ClassId>,
+    visitedTypeParameters: MutableSet<ConeTypeParameterLookupTag>,
+): Boolean {
+    val targetKey = type.expandedExtendTargetKey ?: return false
+    if (targetKey.classIdOrNull != null) return false
+
+    if (scopeKind == CfirClassMemberScopeKind.USE_SITE) {
+        destination += CfirExtendMemberScope(
+            targetKey = targetKey,
+            extendProvider = session.extendProvider,
+            session = session,
+            receiverType = type,
+        )
+    }
+
+    val directSupertypes = if (scopeKind == CfirClassMemberScopeKind.DECLARATION_SITE) {
+        emptyList()
+    } else {
+        session.typeAwareSupertypeProviderOrNull?.getDirectSupertypes(type).orEmpty()
+    }
+    for (supertype in directSupertypes) {
+        collectTypeScopes(
+            session,
+            scopeSession,
+            supertype,
+            scopeKind,
+            destination,
+            visitedClassIds,
+            visitedTypeParameters,
+        )
+    }
+    return true
 }
 
 private fun collectIdealPrimitiveTypeScopes(

@@ -11,8 +11,10 @@ import org.cangnova.cangjie.cfir.symbols.constructType
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.cfir.types.CfirTypeSubstitutorByMap
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.ConeCStringType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeLookupTagBasedType
+import org.cangnova.cangjie.cfir.types.ConePointerType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
@@ -212,6 +214,18 @@ private fun matchExtendTargetType(
             actual is ConePrimitiveType && pattern.kind == actual.kind ||
                     actual.idealExtendLookupTypes.any { it.kind == pattern.kind }
         }
+
+        is ConePointerType -> {
+            val actualPointer = actual as? ConePointerType ?: return false
+            matchExtendTargetType(
+                pattern = pattern.pointeeType,
+                actual = actualPointer.pointeeType,
+                extendTypeParameterConstructors = extendTypeParameterConstructors,
+                substitutions = substitutions,
+            )
+        }
+
+        is ConeCStringType -> actual is ConeCStringType
 
         is ConeLookupTagBasedType -> {
             val actualClassifier = actual as? ConeLookupTagBasedType ?: return false

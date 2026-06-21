@@ -65,7 +65,6 @@ object CfirExtendTargetLegalityChecker : CfirExtendChecker() {
             is ConeFunctionType,
             is ConeTupleType,
             is ConeVArrayType,
-            is ConePointerType,
             is ConeIntersectionType,
             is ConeUnionType -> true
             else -> false
@@ -139,16 +138,16 @@ object CfirExtendDuplicateInterfaceChecker : CfirExtendChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirExtend) {
         val query = context.session.extendRuleQueryServiceOrNull ?: return
-        val targetClassId = query.targetClassIdOf(declaration) ?: return
+        val targetKey = query.targetKeyOf(declaration) ?: return
 
         val localSeen = linkedSetOf<String>()
         val localSemanticKeys = query.inheritedInterfaceSemanticKeysOf(declaration)
         val localInterfaces = query.inheritedInterfacesOf(declaration)
         val interfacesInOtherExtends = query
-            .inheritedInterfaceSemanticKeysForTarget(targetClassId, excludingDeclaration = declaration)
+            .inheritedInterfaceSemanticKeysForTarget(targetKey, excludingDeclaration = declaration)
             .toSet()
-        val targetOwnInterfaces = query.targetClassOwnInterfaceClassIds(targetClassId)
-        val reportCrossExtendDuplicate = declaration.superTypeRefs.size == 1 && query.isFirstExtendForTarget(declaration, targetClassId)
+        val targetOwnInterfaces = targetKey.classIdOrNull?.let(query::targetClassOwnInterfaceClassIds).orEmpty()
+        val reportCrossExtendDuplicate = declaration.superTypeRefs.size == 1 && query.isFirstExtendForTarget(declaration, targetKey)
 
         for ((index, superTypeRef) in declaration.superTypeRefs.withIndex()) {
             val key = localSemanticKeys.getOrNull(index) ?: superTypeRef.toSemanticStableKey()
@@ -266,9 +265,9 @@ object CfirExtendSpecializationConflictChecker : CfirExtendChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(extend: CfirExtend) {
         val query = context.session.extendRuleQueryServiceOrNull ?: return
-        val targetClassId = query.targetClassIdOf(extend) ?: return
+        val targetKey = query.targetKeyOf(extend) ?: return
         val localInterfaces = query.inheritedInterfacesOf(extend)
-        val foreignInterfaces = query.inheritedInterfacesForTarget(targetClassId, excludingDeclaration = extend)
+        val foreignInterfaces = query.inheritedInterfacesForTarget(targetKey, excludingDeclaration = extend)
 
         for ((index, localInterface) in localInterfaces.withIndex()) {
             val localClassId = localInterface.classId ?: continue
@@ -286,7 +285,7 @@ object CfirExtendSpecializationConflictChecker : CfirExtendChecker() {
                         other.semanticKey.contains("__EXT_TP_")
                 }
             if (localUsesTypeParameter && !foreignGenericConflict) continue
-            if (foreignGenericConflict && query.isFirstExtendForTarget(extend, targetClassId)) continue
+            if (foreignGenericConflict && query.isFirstExtendForTarget(extend, targetKey)) continue
             reporter.reportOn(
                 source = sourceTypeRef?.source,
                 factory = CfirErrors.EXTEND_DUPLICATE_INTERFACE,
@@ -300,12 +299,12 @@ object CfirExtendDefaultImplementationConflictChecker : CfirExtendChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(extend: CfirExtend) {
         val query = context.session.extendRuleQueryServiceOrNull ?: return
-        val targetClassId = query.targetClassIdOf(extend) ?: return
+        val targetKey = query.targetKeyOf(extend) ?: return
         val localInterfaces = query.inheritedInterfacesOf(extend)
         if (localInterfaces.isEmpty()) return
 
         val foreignInterfaceIds = query
-            .inheritedInterfacesForTarget(targetClassId, excludingDeclaration = extend)
+            .inheritedInterfacesForTarget(targetKey, excludingDeclaration = extend)
             .mapNotNull { it.classId }
             .toSet()
         if (foreignInterfaceIds.isEmpty()) return

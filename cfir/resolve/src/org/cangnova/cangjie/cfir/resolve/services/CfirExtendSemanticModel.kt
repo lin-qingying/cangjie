@@ -4,6 +4,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirClassKind
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.session.services.CfirExtendInheritedInterfaceSemantic
+import org.cangnova.cangjie.cfir.session.services.CfirExtendTargetKey
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 
@@ -19,6 +20,7 @@ data class CfirExtendSemanticModel(
     val packageFqName: FqName,
     val fileName: String,
     val declarationIndexInFile: Int,
+    val targetKey: CfirExtendTargetKey?,
     val targetClassId: ClassId?,
     val targetClassKind: CfirClassKind?,
     val inheritedInterfaces: List<CfirExtendInheritedInterfaceSemantic>,
@@ -35,4 +37,3 @@ internal fun CfirDeclarationOrigin.toExtendSemanticOrigin(): CfirExtendSemanticO
     CfirDeclarationOrigin.Extension -> CfirExtendSemanticOrigin.SYNTHETIC
     else -> CfirExtendSemanticOrigin.OTHER
 }
-

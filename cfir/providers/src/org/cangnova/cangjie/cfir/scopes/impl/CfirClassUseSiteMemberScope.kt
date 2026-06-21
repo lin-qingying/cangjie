@@ -37,10 +37,12 @@ import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.scopes.isStaticMemberForOverride
 import org.cangnova.cangjie.cfir.scopes.overrideSignatureKey
 import org.cangnova.cangjie.cfir.session.*
+import org.cangnova.cangjie.cfir.session.services.CfirExtendTargetKey
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.type.AbstractTypeChecker
 import org.cangnova.cangjie.type.model.TypeConstructorMarker
 
 /**
@@ -129,7 +131,8 @@ class CfirClassUseSiteMemberScope private constructor(
             val provider = extendProvider ?: return@let null
             val receiverType = ownerType ?: return@let null
             CfirExtendMemberScope(
-                targetClassId = classSymbol.classId,
+                targetKey = receiverType.expandedExtendTargetKey
+                    ?: CfirExtendTargetKey.ClassLike(classSymbol.classId),
                 extendProvider = provider,
                 session = session,
                 receiverType = receiverType,
@@ -167,6 +170,7 @@ class CfirClassUseSiteMemberScope private constructor(
         processor: (CfirNamedFunctionSymbol, CfirTypeScope) -> ProcessorAction
     ): ProcessorAction {
         val directOverridden = directOverriddenFunctions[functionSymbol]
+            ?: computeDirectOverriddenForOwnFunctionIfAny(functionSymbol)
             ?: getFunctionsFromParentsByName(functionSymbol.name)
                 .firstOrNull { it.symbol == functionSymbol }
                 ?.let { parentMember ->
@@ -186,6 +190,7 @@ class CfirClassUseSiteMemberScope private constructor(
         processor: (CfirPropertySymbol, CfirTypeScope) -> ProcessorAction,
     ): ProcessorAction {
         val directOverridden = directOverriddenProperties[propertySymbol]
+            ?: computeDirectOverriddenForOwnPropertyIfAny(propertySymbol)
             ?: getPropertiesFromParentsByName(propertySymbol.name)
                 .firstOrNull { it.symbol == propertySymbol }
                 ?.let { parentMember ->
@@ -198,6 +203,53 @@ class CfirClassUseSiteMemberScope private constructor(
             }
         }
         return ProcessorAction.NONE
+    }
+
+    // direct-overridden 查询可能先于按名称收集成员发生；这里按需建立与 collectFunctions/collectProperties 相同的缓存。
+    private fun computeDirectOverriddenForOwnFunctionIfAny(
+        functionSymbol: CfirNamedFunctionSymbol,
+    ): List<MemberWithBaseScope<CfirNamedFunctionSymbol>>? {
+        if (!containsOwnFunction(functionSymbol)) return null
+        return directOverriddenFunctions.getOrPut(functionSymbol) {
+            computeDirectOverriddenForDeclaredFunction(functionSymbol)
+        }
+    }
+
+    private fun computeDirectOverriddenForOwnPropertyIfAny(
+        propertySymbol: CfirPropertySymbol,
+    ): List<MemberWithBaseScope<CfirPropertySymbol>>? {
+        if (!containsOwnProperty(propertySymbol)) return null
+        return directOverriddenProperties.getOrPut(propertySymbol) {
+            computeDirectOverriddenForDeclaredProperty(propertySymbol)
+        }
+    }
+
+    private fun containsOwnFunction(functionSymbol: CfirNamedFunctionSymbol): Boolean {
+        var found = false
+        declaredScope.processFunctionsByName(functionSymbol.name) {
+            if (it == functionSymbol) found = true
+        }
+        if (found) return true
+
+        extendScope?.processFunctionsByName(functionSymbol.name) {
+            if (it == functionSymbol) found = true
+        }
+        return found
+    }
+
+    private fun containsOwnProperty(propertySymbol: CfirPropertySymbol): Boolean {
+        var declaredPropertyWithSameName = false
+        var found = false
+        declaredScope.processPropertiesByName(propertySymbol.name) {
+            declaredPropertyWithSameName = true
+            if (it == propertySymbol) found = true
+        }
+        if (declaredPropertyWithSameName) return found
+
+        extendScope?.processPropertiesByName(propertySymbol.name) {
+            if (it == propertySymbol) found = true
+        }
+        return found
     }
 
     override fun withReplacedSessionOrNull(
@@ -309,6 +361,8 @@ class CfirClassUseSiteMemberScope private constructor(
             filterOutOverridden(
                 parentCandidates,
                 CfirTypeScope::processDirectOverriddenFunctionsWithBaseScope,
+            ).filterOutAbstractMembersImplementedByConcrete(
+                CfirNamedFunctionSymbol::overridesFunctionCandidate,
             ).toList()
         }
     }
@@ -322,8 +376,21 @@ class CfirClassUseSiteMemberScope private constructor(
             filterOutOverridden(
                 parentCandidates,
                 CfirTypeScope::processDirectOverriddenPropertiesWithBaseScope,
+            ).filterOutAbstractMembersImplementedByConcrete(
+                { candidate -> canImplementPropertyCandidate(candidate) },
             ).toList()
         }
+    }
+
+    private fun CfirPropertySymbol.canImplementPropertyCandidate(
+        candidate: CfirPropertySymbol,
+    ): Boolean {
+        if (!isBound || !candidate.isBound) return false
+        if (!overridesPropertyCandidate(candidate)) return false
+
+        val ownType = cfir.returnTypeRef.coneTypeOrNull ?: return false
+        val candidateType = candidate.cfir.returnTypeRef.coneTypeOrNull ?: return false
+        return AbstractTypeChecker.equalTypes(session.typeContext, ownType, candidateType)
     }
 
     override fun processCallablesByName(name: Name, processor: (CfirCallableSymbol<*>) -> Unit) {
@@ -405,8 +472,10 @@ class CfirClassUseSiteMemberScope private constructor(
         if (scopeKind != CfirClassMemberScopeKind.USE_SITE) return@buildList
         val provider = extendProvider ?: return@buildList
         val receiverType = ownerType ?: return@buildList
-        addAll(provider.getExtendsForClass(classSymbol.classId).map { ExtendLookupCandidate(it, receiverType) })
-        classSymbol.classId.toPrimitiveTypeKindOrNull()?.let { kind ->
+        val targetKey = receiverType.expandedExtendTargetKey
+            ?: CfirExtendTargetKey.ClassLike(classSymbol.classId)
+        addAll(provider.getExtendsForTarget(targetKey).map { ExtendLookupCandidate(it, receiverType) })
+        targetKey.classIdOrNull?.toPrimitiveTypeKindOrNull()?.let { kind ->
             val concreteReceiverTypes = receiverType.idealExtendLookupTypes.ifEmpty {
                 listOf(ConePrimitiveType(kind))
             }
@@ -629,6 +698,24 @@ private fun <S : CfirCallableSymbol<*>> filterOutOverridden(
     }
 }
 
+/**
+ * 对齐官方 `LookUpImpl::ResolveOverrideOrShadow` 与 Kotlin FIR 的交叉父类型 scope：
+ * 在同一个 use-site 父候选集合中，非抽象同签名成员实现抽象成员时，抽象候选不参与调用解析。
+ */
+private fun <S : CfirCallableSymbol<*>> Collection<MemberWithBaseScope<S>>.filterOutAbstractMembersImplementedByConcrete(
+    overridesCandidate: S.(S) -> Boolean,
+): Collection<MemberWithBaseScope<S>> {
+    return filter { candidate ->
+        if (!candidate.symbol.isAbstractForIntersectionResolution()) return@filter true
+
+        none { concreteCandidate ->
+            concreteCandidate !== candidate &&
+                    !concreteCandidate.symbol.isAbstractForIntersectionResolution() &&
+                    concreteCandidate.symbol.overridesCandidate(candidate.symbol)
+        }
+    }
+}
+
 private fun <S : CfirCallableSymbol<*>> overrides(
     member: MemberWithBaseScope<S>,
     target: S,
@@ -660,6 +747,9 @@ private fun <S : CfirCallableSymbol<*>> overrides(
 
     return visit(member)
 }
+
+private fun CfirCallableSymbol<*>.isAbstractForIntersectionResolution(): Boolean =
+    isBound && cfir.status.isAbstract
 
 private fun CfirNamedFunctionSymbol.overridesFunctionCandidate(
     candidate: CfirNamedFunctionSymbol,

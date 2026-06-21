@@ -5,6 +5,7 @@ import org.cangnova.cangjie.cfir.resolve.services.CfirExtendAccessibilityChecker
 import org.cangnova.cangjie.cfir.resolve.services.CfirExtendIndexStore
 import org.cangnova.cangjie.cfir.resolve.services.CfirExtendSemanticModel
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.services.CfirExtendTargetKey
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
 import org.cangnova.cangjie.cfir.types.classId
@@ -25,8 +26,12 @@ class CfirSessionExtendProvider(
 
     private val accessibilityChecker by lazy { CfirExtendAccessibilityChecker(session) }
 
+    override fun getExtendsForTarget(targetKey: CfirExtendTargetKey): List<CfirExtend> {
+        return indexStore.modelsForTarget(targetKey).map(CfirExtendSemanticModel::declaration)
+    }
+
     override fun getExtendsForClass(classId: ClassId): List<CfirExtend> {
-        return indexStore.modelsForClass(classId).map(CfirExtendSemanticModel::declaration)
+        return getExtendsForTarget(CfirExtendTargetKey.ClassLike(classId))
     }
 
     override fun getExtendsInPackage(packageFqName: FqName): List<CfirExtend> {
@@ -35,7 +40,7 @@ class CfirSessionExtendProvider(
 
     override fun getExtendsForBuiltinType(kind: PrimitiveTypeKind): List<CfirExtend> {
         return kind.extendLookupKinds
-            .flatMap { indexStore.modelsForClass(it.classId) }
+            .flatMap { indexStore.modelsForTarget(CfirExtendTargetKey.ClassLike(it.classId)) }
             .map(CfirExtendSemanticModel::declaration)
             .distinct()
     }

@@ -607,15 +607,17 @@ class PsiRawCfirBuilder(
                         resolvePhase = CfirResolvePhase.RAW_CFIR
                         val (classTypeParameters, classDeclarations) = withContainerSymbol(symbol) {
                             val typeParameters = convertTypeParameters(psi, symbol)
-                            val declarations = convertClassMembers(psi).toMutableList().also { declarations ->
-                                addPrimaryConstructorParameterProperties(psi, declarations)
-                                if (classKind != CfirClassKind.INTERFACE && declarations.none { it is CfirConstructor }) {
-                                    declarations.add(0, buildImplicitPrimaryConstructor(psi))
-                                }
-                                if (psi is CjEnum) {
-                                    declarations.addAll(
-                                        0,
-                                        psi.constructor.map { convertEnumConstructor(it) })
+                            val declarations = withDispatchReceiverType(symbol.rawDispatchReceiverType(typeParameters)) {
+                                convertClassMembers(psi).toMutableList().also { declarations ->
+                                    addPrimaryConstructorParameterProperties(psi, declarations)
+                                    if (classKind != CfirClassKind.INTERFACE && declarations.none { it is CfirConstructor }) {
+                                        declarations.add(0, buildImplicitPrimaryConstructor(psi))
+                                    }
+                                    if (psi is CjEnum) {
+                                        declarations.addAll(
+                                            0,
+                                            psi.constructor.map { convertEnumConstructor(it) })
+                                    }
                                 }
                             }
                             typeParameters to declarations
@@ -638,7 +640,11 @@ class PsiRawCfirBuilder(
                     buildInterface {
                         resolvePhase = CfirResolvePhase.RAW_CFIR
                         val (classTypeParameters, classDeclarations) = withContainerSymbol(symbol) {
-                            convertTypeParameters(psi, symbol) to convertClassMembers(psi).toMutableList()
+                            val typeParameters = convertTypeParameters(psi, symbol)
+                            val declarations = withDispatchReceiverType(symbol.rawDispatchReceiverType(typeParameters)) {
+                                convertClassMembers(psi).toMutableList()
+                            }
+                            typeParameters to declarations
                         }
                         source = psi.toCjPsiSourceElement()
                         this.symbol = symbol
@@ -659,10 +665,12 @@ class PsiRawCfirBuilder(
                         resolvePhase = CfirResolvePhase.RAW_CFIR
                         val (classTypeParameters, classDeclarations) = withContainerSymbol(symbol) {
                             val typeParameters = convertTypeParameters(psi, symbol)
-                            val declarations = convertClassMembers(psi).toMutableList().also { declarations ->
-                                addPrimaryConstructorParameterProperties(psi, declarations)
-                                if (declarations.none { it is CfirConstructor }) {
-                                    declarations.add(0, buildImplicitPrimaryConstructor(psi))
+                            val declarations = withDispatchReceiverType(symbol.rawDispatchReceiverType(typeParameters)) {
+                                convertClassMembers(psi).toMutableList().also { declarations ->
+                                    addPrimaryConstructorParameterProperties(psi, declarations)
+                                    if (declarations.none { it is CfirConstructor }) {
+                                        declarations.add(0, buildImplicitPrimaryConstructor(psi))
+                                    }
                                 }
                             }
                             typeParameters to declarations
@@ -686,15 +694,17 @@ class PsiRawCfirBuilder(
                         resolvePhase = CfirResolvePhase.RAW_CFIR
                         val (classTypeParameters, classDeclarations) = withContainerSymbol(symbol) {
                             val typeParameters = convertTypeParameters(psi, symbol)
-                            val declarations = convertClassMembers(psi).toMutableList().also { declarations ->
-                                addPrimaryConstructorParameterProperties(psi, declarations)
-                                if (declarations.none { it is CfirConstructor }) {
-                                    declarations.add(0, buildImplicitPrimaryConstructor(psi))
-                                }
-                                if (psi is CjEnum) {
-                                    declarations.addAll(
-                                        0,
-                                        psi.constructor.map { convertEnumConstructor(it) })
+                            val declarations = withDispatchReceiverType(symbol.rawDispatchReceiverType(typeParameters)) {
+                                convertClassMembers(psi).toMutableList().also { declarations ->
+                                    addPrimaryConstructorParameterProperties(psi, declarations)
+                                    if (declarations.none { it is CfirConstructor }) {
+                                        declarations.add(0, buildImplicitPrimaryConstructor(psi))
+                                    }
+                                    if (psi is CjEnum) {
+                                        declarations.addAll(
+                                            0,
+                                            psi.constructor.map { convertEnumConstructor(it) })
+                                    }
                                 }
                             }
                             typeParameters to declarations
@@ -3031,7 +3041,7 @@ class PsiRawCfirBuilder(
             )
         }
 
-        private fun collectFunctionBodyDiagnosticData(owner: CjFunction): CfirFunctionBodyDiagnosticData? {
+        private fun collectFunctionBodyDiagnosticData(owner: CjElement): CfirFunctionBodyDiagnosticData? {
             val parameterLists = owner.children
                 .filterIsInstance<CjParameterList>()
                 .map { parameterList ->
@@ -3058,8 +3068,15 @@ class PsiRawCfirBuilder(
                 }
             }
 
-            (owner as? CjFunction)?.let { function ->
-                collectFunctionBodyDiagnosticData(function)?.let { diagnosticData ->
+            val functionBodyDiagnosticOwner = when (owner) {
+                is CjFunction -> owner
+                // PSI 中 property accessor 不是 CjFunction，但官方 PropDecl 的 getter/setter
+                // 以 FuncDecl/FuncBody 保存参数列表，需要进入同一套函数体诊断数据。
+                is CjPropertyAccessor -> owner
+                else -> null
+            }
+            functionBodyDiagnosticOwner?.let { diagnosticOwner ->
+                collectFunctionBodyDiagnosticData(diagnosticOwner)?.let { diagnosticData ->
                     attributes.functionBodyDiagnosticData = diagnosticData
                     hasAttributes = true
                 }

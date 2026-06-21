@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.resolve.providers
 
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
+import org.cangnova.cangjie.cfir.session.services.CfirExtendTargetKey
 import org.cangnova.cangjie.cfir.session.CfirSessionComponent
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
@@ -18,6 +19,8 @@ import org.cangnova.cangjie.name.FqName
  * “声明复制 + 类型实参替换”，而不是在解析阶段退化成按 symbol 反查。
  */
 interface CfirExtendProvider : CfirSessionComponent {
+    fun getExtendsForTarget(targetKey: CfirExtendTargetKey): List<CfirExtend>
+
     fun getExtendsForClass(classId: ClassId): List<CfirExtend>
 
     fun getExtendsInPackage(packageFqName: FqName): List<CfirExtend>

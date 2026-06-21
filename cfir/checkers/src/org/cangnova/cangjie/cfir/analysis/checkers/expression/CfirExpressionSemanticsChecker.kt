@@ -305,6 +305,7 @@ object CfirOpenConstructorMemberAccessChecker : CfirQualifiedAccessChecker() {
         if (!expression.usesCurrentInstanceReceiver()) return
 
         val target = expression.resolvedCallableTarget() ?: return
+        if (target is CfirProperty && expression.isWritablePropertyAssignmentLValue(target)) return
         if (!target.isForbiddenOpenConstructorMember()) return
 
         val memberKind = when (target) {
@@ -348,6 +349,17 @@ object CfirOpenConstructorMemberAccessChecker : CfirQualifiedAccessChecker() {
         val extendProvider = context.session.extendProviderOrNull ?: return false
         val ownerExtend = extendProvider.getContainingExtend(symbol.unwrapSubstitutionOverrides()) ?: return false
         return extendProvider.isExtendAccessible(ownerExtend)
+    }
+
+    context(context: CheckerContext)
+    private fun CfirQualifiedAccessExpression.isWritablePropertyAssignmentLValue(property: CfirProperty): Boolean {
+        if (property.setter == null) return false
+        val assignment = context.callsOrAssignments
+            .asReversed()
+            .filterIsInstance<CfirAssignment>()
+            .firstOrNull()
+            ?: return false
+        return assignment.lValue === this
     }
 }
 

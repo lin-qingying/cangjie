@@ -57,7 +57,11 @@ fun CfirCallableSymbol<*>.overrideSignatureKey(): String {
             "fun:${name.asString()}$typeParameterPart$parameterPart"
         }
 
-        is CfirProperty -> "prop:${name.asString()}"
+        is CfirProperty -> {
+            // Kotlin FIR 的 property override 关系不把返回类型放进签名；
+            // 类型差异由 override checker 单独报告 PROPERTY_OVERRIDE_IMPLEMENT_TYPE_DIFF。
+            "prop:${name.asString()}"
+        }
         else -> callableIdAsString()
     }
 }

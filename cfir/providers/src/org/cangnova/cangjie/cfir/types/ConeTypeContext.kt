@@ -240,6 +240,8 @@ interface ConeTypeContext :
 
     override fun RigidTypeMarker.fastCorrespondingSupertypes(constructor: TypeConstructorMarker): List<SimpleTypeMarker>? {
         val type = this as? ConeCangJieType ?: return null
+        cTypeCorrespondingSupertype(type, constructor)?.let { return listOf(it) }
+
         val correspondingSupertypes = session.typeAwareSupertypeProviderOrNull
             ?.getDirectSupertypes(type)
             .orEmpty()
@@ -248,6 +250,16 @@ interface ConeTypeContext :
                 rigidSupertype.takeIf { areEqualTypeConstructors(it.typeConstructor(), constructor) }
             }
         return correspondingSupertypes.takeIf { it.isNotEmpty() }
+    }
+
+    private fun cTypeCorrespondingSupertype(
+        type: ConeCangJieType,
+        constructor: TypeConstructorMarker,
+    ): ConeClassLikeType? {
+        val lookupTag = constructor as? ConeClassLikeLookupTag ?: return null
+        if (lookupTag.classId != StdlibClassIds.CType) return null
+        if (!CfirCTypeSemantics.isMetCType(session, type)) return null
+        return ConeClassLikeType(lookupTag = lookupTag, isInterface = true)
     }
 
     override fun RigidTypeMarker.possibleIntegerTypes(): Collection<CangJieTypeMarker> =

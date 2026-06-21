@@ -17,7 +17,7 @@ interface I {
 }
 
 extend B <: I {
-    func <!CANNOT_WEAKEN_ACCESS_PRIVILEGE!>f<!>() {
+    func <!WEAK_VISIBILITY!>f<!>() {
         println("In extend B!");
         1
     }

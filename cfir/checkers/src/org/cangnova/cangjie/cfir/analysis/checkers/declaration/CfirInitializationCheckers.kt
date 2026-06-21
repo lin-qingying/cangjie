@@ -290,59 +290,44 @@ private class CfirInitializationFlowAnalyzer(
         lValue: CfirExpression,
         state: InitializationState,
     ): InitializationState = when (lValue) {
-        is CfirNamedAccessExpression -> {
-            val afterReceiver = lValue.explicitReceiver?.let { receiver ->
-                analyzeExpression(receiver, state)
-            } ?: state
-            when (val symbol = lValue.resolvedAccessSymbolOrNull()) {
-                is CfirVariableSymbol<*>,
-                is CfirPropertyAccessorSymbol,
-                is CfirPropertySymbol -> {
-                    recordInitializationAssignmentIfNeeded(symbol, state, assignment)
-                    afterReceiver.markInitialized(symbol)
-                }
-
-                null -> afterReceiver
-                else -> if (afterReceiver.inMemberInitializer && lValue.explicitReceiver is CfirSuperReceiverExpression) {
-                    afterReceiver
-                } else reportIllegalMemberAccessIfNeeded(
-                    symbol = symbol,
-                    diagnosticName = lValue.calleeReference.referenceNameOrNull()
-                        ?: symbol.nameOrNull()
-                        ?: Name.ERROR_NAME,
-                    source = lValue.calleeReference.source ?: lValue.source,
-                    state = afterReceiver,
-                )
-            }
-        }
-
-        is CfirQualifiedAccessExpression -> {
-            val afterReceiver = lValue.explicitReceiver?.let { receiver ->
-                analyzeExpression(receiver, state)
-            } ?: state
-            when (val symbol = lValue.resolvedAccessSymbolOrNull()) {
-                is CfirVariableSymbol<*>,
-                is CfirPropertyAccessorSymbol,
-                is CfirPropertySymbol -> {
-                    recordInitializationAssignmentIfNeeded(symbol, state, assignment)
-                    afterReceiver.markInitialized(symbol)
-                }
-
-                null -> afterReceiver
-                else -> if (afterReceiver.inMemberInitializer && lValue.explicitReceiver is CfirSuperReceiverExpression) {
-                    afterReceiver
-                } else reportIllegalMemberAccessIfNeeded(
-                    symbol = symbol,
-                    diagnosticName = lValue.calleeReference.referenceNameOrNull()
-                        ?: symbol.nameOrNull()
-                        ?: Name.ERROR_NAME,
-                    source = lValue.calleeReference.source ?: lValue.source,
-                    state = afterReceiver,
-                )
-            }
-        }
+        is CfirQualifiedAccessExpression -> analyzeAssignmentTargetAccess(assignment, lValue, state)
 
         else -> analyzeExpression(lValue, state)
+    }
+
+    /**
+     * 赋值左值要沿官方 `InitializationChecker::CheckInitInAssignExpr` 语义区分：
+     * 变量左值可以推进初始化状态；成员 `prop`/accessor 不是存储槽，未完成初始化时
+     * 需要回到同一套成员访问检查。Kotlin FIR 对应路径是在 `FirDataFlowAnalyzer.exitVariableAssignment`
+     * 中只把可跟踪 property/variable 写入初始化流。
+     */
+    private fun analyzeAssignmentTargetAccess(
+        assignment: CfirAssignment,
+        access: CfirQualifiedAccessExpression,
+        state: InitializationState,
+    ): InitializationState {
+        val afterReceiver = access.explicitReceiver?.let { receiver ->
+            analyzeExpression(receiver, state)
+        } ?: state
+        val symbol = access.resolvedAccessSymbolOrNull() ?: return afterReceiver
+
+        return when {
+            symbol is CfirVariableSymbol<*> || afterReceiver.isTracked(symbol) -> {
+                recordInitializationAssignmentIfNeeded(symbol, afterReceiver, assignment)
+                afterReceiver.markInitialized(symbol)
+            }
+
+            afterReceiver.inMemberInitializer && access.explicitReceiver is CfirSuperReceiverExpression -> afterReceiver
+
+            else -> reportIllegalMemberAccessIfNeeded(
+                symbol = symbol,
+                diagnosticName = access.calleeReference.referenceNameOrNull()
+                    ?: symbol.nameOrNull()
+                    ?: Name.ERROR_NAME,
+                source = access.calleeReference.source ?: access.source,
+                state = afterReceiver,
+            )
+        }
     }
 
     private fun recordInitializationAssignmentIfNeeded(

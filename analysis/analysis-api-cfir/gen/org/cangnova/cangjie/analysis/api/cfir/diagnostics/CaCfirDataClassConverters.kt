@@ -3301,6 +3301,14 @@ private fun CaDiagnosticConverterBuilder.addConversions175() {
             token,
         )
     }
+    add(CfirErrors.WEAK_VISIBILITY) { cfirDiagnostic ->
+        WeakVisibilityImpl(
+            cfirDiagnostic.a,
+            cfirDiagnostic.b,
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
     add(CfirErrors.USELESS_EXCEPTION_TYPE) { cfirDiagnostic ->
         UselessExceptionTypeImpl(
             cfirDiagnostic as CjPsiDiagnostic,

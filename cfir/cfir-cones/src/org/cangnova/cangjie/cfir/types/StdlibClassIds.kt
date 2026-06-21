@@ -23,6 +23,7 @@ object StdlibClassIds {
     @JvmField val Array = ClassId(core, StandardNames.ARRAY)
     @JvmField val Option = ClassId(core, StandardNames.OPTION)
     @JvmField val Range = ClassId(core, StandardNames.RANGE)
+    @JvmField val CType = ClassId(core, StandardNames.CTYPE)
     @JvmField val Exception = ClassId(core, StandardNames.EXCEPTION)
     @JvmField val Error = ClassId(core, StandardNames.ERROR)
     @JvmField val Resource = ClassId(core, StandardNames.RESOURCE)
@@ -45,7 +46,7 @@ object StdlibClassIds {
     /** 所有标准库核心类型 ClassId 集合 */
     @JvmField
     val allClassIds: Set<ClassId> = setOf(
-        Object, Any, String, Array, Option, Range, Exception, Error, Resource,
+        Object, Any, String, Array, Option, Range, CType, Exception, Error, Resource,
         Comparable, Equatable, Countable, Iterable, Collection, ToString, Future,
         Command, Resumption,
     )

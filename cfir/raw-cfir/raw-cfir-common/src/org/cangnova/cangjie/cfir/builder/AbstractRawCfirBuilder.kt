@@ -94,6 +94,15 @@ abstract class AbstractRawCfirBuilder<T : Any>(
         }
     }
 
+    protected inline fun <R> withDispatchReceiverType(type: ConeSimpleCangJieType, block: () -> R): R {
+        context.pushDispatchReceiverType(type)
+        return try {
+            block()
+        } finally {
+            context.popDispatchReceiverType()
+        }
+    }
+
     protected inline fun <R> withFunctionTarget(target: CfirFunctionTarget, block: () -> R): R {
         context.enterFunction(target)
         return try {
@@ -148,6 +157,7 @@ abstract class AbstractRawCfirBuilder<T : Any>(
 
     protected fun currentDispatchReceiverType(): ConeSimpleCangJieType? {
         if (context.inLocalContext) return null
+        context.currentDispatchReceiverType()?.let { return it }
 
         val containingClass = containerSymbolIfAny as? CfirClassLikeSymbol<*> ?: return null
         return when (containingClass) {
@@ -159,6 +169,19 @@ abstract class AbstractRawCfirBuilder<T : Any>(
             )
             else -> ConeClassLikeType(containingClass.classId.toLookupTag())
         }
+    }
+
+    /**
+     * 构造 class-like 内部成员声明看到的 self type。
+     *
+     * Kotlin raw FIR 在进入 class 时把 `C<T>` 压入 dispatch receiver 栈；
+     * CFIR 同样必须保留这些类型实参，供成员签名和 substitution scope 使用。
+     */
+    protected fun CfirClassLikeSymbol<*>.rawDispatchReceiverType(
+        typeParameters: List<CfirTypeParameter>,
+    ): ConeSimpleCangJieType {
+        val typeArguments = typeParameters.map { ConeTypeParameterTypeImpl(it.symbol.toLookupTag()) }
+        return constructType(typeArguments) as ConeSimpleCangJieType
     }
 
 

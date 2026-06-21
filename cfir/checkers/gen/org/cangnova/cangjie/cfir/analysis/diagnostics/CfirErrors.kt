@@ -89,6 +89,7 @@ object CfirErrors : CjDiagnosticsContainer() {
     val DEPRECATED_MODIFIER_CONTAINING_DECLARATION: CjDiagnosticFactory2<CjKeywordToken, String> = CjDiagnosticFactory2("CFIR_DEPRECATED_MODIFIER_CONTAINING_DECLARATION", Severity.WARNING, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val DEPRECATED_MODIFIER_PAIR: CjDiagnosticFactory2<CjKeywordToken, CjKeywordToken> = CjDiagnosticFactory2("CFIR_DEPRECATED_MODIFIER_PAIR", Severity.WARNING, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val CANNOT_WEAKEN_ACCESS_PRIVILEGE: CjDiagnosticFactory2<Name, Visibility> = CjDiagnosticFactory2("CFIR_CANNOT_WEAKEN_ACCESS_PRIVILEGE", Severity.ERROR, SourceElementPositioningStrategies.ACTUAL_DECLARATION_NAME, CjNamedDeclaration::class, getRendererFactory())
+    val WEAK_VISIBILITY: CjDiagnosticFactory2<Name, Visibility> = CjDiagnosticFactory2("CFIR_WEAK_VISIBILITY", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val PARAM_NAMED_MISMATCHED: CjDiagnosticFactory1<Name> = CjDiagnosticFactory1("CFIR_PARAM_NAMED_MISMATCHED", Severity.ERROR, SourceElementPositioningStrategies.ACTUAL_DECLARATION_NAME, CjNamedDeclaration::class, getRendererFactory())
 
     // CallResolution
@@ -271,6 +272,7 @@ object CfirErrors : CjDiagnosticsContainer() {
     val GENERIC_ARGUMENT_NO_MATCH: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_GENERIC_ARGUMENT_NO_MATCH", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT: CjDiagnosticFactory3<ConeCangJieType, ConeCangJieType, ConeCangJieType> = CjDiagnosticFactory3("CFIR_GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val GENERIC_CONSTRAINT_NOT_LOOSER: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_GENERIC_CONSTRAINT_NOT_LOOSER", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
+    val GENERIC_INFINITE_INSTANTIATION: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_GENERIC_INFINITE_INSTANTIATION", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val GENERIC_INSTANTIATION_CAUSES_AMBIGUOUS_FUNCTIONS: CjDiagnosticFactory2<Name, Name> = CjDiagnosticFactory2("CFIR_GENERIC_INSTANTIATION_CAUSES_AMBIGUOUS_FUNCTIONS", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val GENERIC_PARAM_EXIST_IN_CLASS_IRRELEVANT_UPPERBOUND_RECURSIVELY: CjDiagnosticFactory2<Name, ConeCangJieType> = CjDiagnosticFactory2("CFIR_GENERIC_PARAM_EXIST_IN_CLASS_IRRELEVANT_UPPERBOUND_RECURSIVELY", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val GENERIC_PARAM_DIRECTLY_RECURSIVE: CjDiagnosticFactory2<Name, Name> = CjDiagnosticFactory2("CFIR_GENERIC_PARAM_DIRECTLY_RECURSIVE", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
