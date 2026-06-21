@@ -2,6 +2,7 @@
 
 import org.cangnova.cangjie.cfir.session.services.CfirExtendRuleQueryService
 import org.cangnova.cangjie.cfir.session.services.CfirExtendInheritedInterfaceSemantic
+import org.cangnova.cangjie.cfir.session.services.CfirExtendTargetKey
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
@@ -9,6 +10,9 @@ import org.cangnova.cangjie.name.Name
 class CfirExtendRuleQueryServiceImpl(
     private val indexStore: CfirExtendIndexStore,
 ) : CfirExtendRuleQueryService {
+    override fun targetKeyOf(declaration: Any): CfirExtendTargetKey? =
+        indexStore.modelForDeclaration(declaration)?.targetKey
+
     override fun targetClassIdOf(declaration: Any): ClassId? =
         indexStore.modelForDeclaration(declaration)?.targetClassId
 
@@ -21,8 +25,14 @@ class CfirExtendRuleQueryServiceImpl(
     override fun inheritedInterfacesForTarget(
         targetClassId: ClassId,
         excludingDeclaration: Any?,
+    ): List<CfirExtendInheritedInterfaceSemantic> =
+        inheritedInterfacesForTarget(CfirExtendTargetKey.ClassLike(targetClassId), excludingDeclaration)
+
+    override fun inheritedInterfacesForTarget(
+        targetKey: CfirExtendTargetKey,
+        excludingDeclaration: Any?,
     ): List<CfirExtendInheritedInterfaceSemantic> {
-        return indexStore.modelsForClass(targetClassId)
+        return indexStore.modelsForTarget(targetKey)
             .asSequence()
             .filter { excludingDeclaration == null || it.declaration !== excludingDeclaration }
             .flatMap { it.inheritedInterfaces.asSequence() }
@@ -32,8 +42,11 @@ class CfirExtendRuleQueryServiceImpl(
     override fun inheritedInterfaceClassIdsOf(declaration: Any): List<ClassId> =
         indexStore.modelForDeclaration(declaration)?.inheritedInterfaceClassIds.orEmpty()
 
-    override fun inheritedInterfaceClassIdsForTarget(targetClassId: ClassId, excludingDeclaration: Any?): List<ClassId> {
-        return indexStore.modelsForClass(targetClassId)
+    override fun inheritedInterfaceClassIdsForTarget(targetClassId: ClassId, excludingDeclaration: Any?): List<ClassId> =
+        inheritedInterfaceClassIdsForTarget(CfirExtendTargetKey.ClassLike(targetClassId), excludingDeclaration)
+
+    override fun inheritedInterfaceClassIdsForTarget(targetKey: CfirExtendTargetKey, excludingDeclaration: Any?): List<ClassId> {
+        return indexStore.modelsForTarget(targetKey)
             .asSequence()
             .filter { excludingDeclaration == null || it.declaration !== excludingDeclaration }
             .flatMap { it.inheritedInterfaceClassIds.asSequence() }
@@ -46,8 +59,11 @@ class CfirExtendRuleQueryServiceImpl(
     override fun inheritedInterfaceSemanticKeysOf(declaration: Any): List<String> =
         indexStore.modelForDeclaration(declaration)?.inheritedInterfaceSemanticKeys.orEmpty()
 
-    override fun inheritedInterfaceSemanticKeysForTarget(targetClassId: ClassId, excludingDeclaration: Any?): List<String> {
-        return indexStore.modelsForClass(targetClassId)
+    override fun inheritedInterfaceSemanticKeysForTarget(targetClassId: ClassId, excludingDeclaration: Any?): List<String> =
+        inheritedInterfaceSemanticKeysForTarget(CfirExtendTargetKey.ClassLike(targetClassId), excludingDeclaration)
+
+    override fun inheritedInterfaceSemanticKeysForTarget(targetKey: CfirExtendTargetKey, excludingDeclaration: Any?): List<String> {
+        return indexStore.modelsForTarget(targetKey)
             .asSequence()
             .filter { excludingDeclaration == null || it.declaration !== excludingDeclaration }
             .flatMap { it.inheritedInterfaceSemanticKeys.asSequence() }
@@ -63,6 +79,12 @@ class CfirExtendRuleQueryServiceImpl(
     override fun otherPackageExtendedInterfaceClassIds(targetClassId: ClassId, currentPackage: FqName): Set<ClassId> =
         indexStore.otherPackageExtendedInterfaceClassIds(targetClassId, currentPackage)
 
+    override fun otherPackageExtendedInterfaceClassIds(targetKey: CfirExtendTargetKey, currentPackage: FqName): Set<ClassId> =
+        indexStore.otherPackageExtendedInterfaceClassIds(targetKey, currentPackage)
+
     override fun isFirstExtendForTarget(declaration: Any, targetClassId: ClassId): Boolean =
         indexStore.isFirstExtendForTarget(declaration, targetClassId)
+
+    override fun isFirstExtendForTarget(declaration: Any, targetKey: CfirExtendTargetKey): Boolean =
+        indexStore.isFirstExtendForTarget(declaration, targetKey)
 }

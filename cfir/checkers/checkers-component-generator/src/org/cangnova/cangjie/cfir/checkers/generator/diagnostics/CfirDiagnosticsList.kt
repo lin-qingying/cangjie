@@ -303,6 +303,12 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
             parameter<Visibility>("baseVisibility")
         }
 
+        // 继承/extend 实现成员可见性低于接口或基类成员可见性
+        val WEAK_VISIBILITY by error<PsiElement> {
+            parameter<Name>("baseMemberName")
+            parameter<Visibility>("baseVisibility")
+        }
+
         // override / redef 的形参与父声明的命名参数语义不一致
         val PARAM_NAMED_MISMATCHED by error<CjNamedDeclaration>(PositioningStrategy.ACTUAL_DECLARATION_NAME) {
             parameter<Name>("baseMemberName")
@@ -1087,6 +1093,9 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
 
         // 子类型约束不能比父类宽松
         val GENERIC_CONSTRAINT_NOT_LOOSER by error<PsiElement>()
+
+        // 泛型实例化沿声明链无限展开
+        val GENERIC_INFINITE_INSTANTIATION by error<PsiElement>()
 
         // 泛型实例化导致函数歧义
         val GENERIC_INSTANTIATION_CAUSES_AMBIGUOUS_FUNCTIONS by error<PsiElement> {

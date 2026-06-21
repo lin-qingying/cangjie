@@ -80,6 +80,7 @@ object CommonDeclarationCheckers : DeclarationCheckers() {
         get() = setOf(
             CfirImportsChecker,
             CfirGeneralSemanticsChecker,
+            CfirGenericInstantiationChecker,
             CfirCommonPackageMainChecker,
         )
 

@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.resolve.providers
 
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
+import org.cangnova.cangjie.cfir.session.services.CfirExtendTargetKey
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
 import org.cangnova.cangjie.name.ClassId
@@ -15,6 +16,9 @@ import org.cangnova.cangjie.name.FqName
 class CfirCompositeExtendProvider(
     private val providers: List<CfirExtendProvider>,
 ) : CfirExtendProvider {
+    override fun getExtendsForTarget(targetKey: CfirExtendTargetKey): List<CfirExtend> =
+        providers.flatMap { it.getExtendsForTarget(targetKey) }
+
     override fun getExtendsForClass(classId: ClassId): List<CfirExtend> =
         providers.flatMap { it.getExtendsForClass(classId) }
 

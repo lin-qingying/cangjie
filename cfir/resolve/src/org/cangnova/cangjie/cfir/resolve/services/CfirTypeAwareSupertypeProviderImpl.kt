@@ -175,8 +175,8 @@ class CfirTypeAwareSupertypeProviderImpl(
                 .distinct()
             is ConePrimitiveType -> extendProvider.getExtendsForBuiltinType(type.kind)
             else -> {
-                val classId = type.classIdOrPrimitiveClassId ?: return emptyList()
-                extendProvider.getExtendsForClass(classId)
+                val targetKey = type.expandedExtendTargetKey ?: return emptyList()
+                extendProvider.getExtendsForTarget(targetKey)
             }
         }
     }

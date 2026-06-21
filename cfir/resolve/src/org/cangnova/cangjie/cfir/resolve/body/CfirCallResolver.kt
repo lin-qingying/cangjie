@@ -86,6 +86,7 @@ import org.cangnova.cangjie.resolve.calls.tower.isSuccess
 import org.cangnova.cangjie.source.psi
 import org.cangnova.cangjie.source.text
 import org.cangnova.cangjie.type.AbstractTypeChecker
+import org.cangnova.cangjie.type.model.safeSubstitute
 import org.cangnova.cangjie.utils.runIf
 
 class CfirCallResolver(
@@ -156,6 +157,21 @@ class CfirCallResolver(
                         functionCall = functionCall,
                         name = callee.name,
                         target = directVArrayTarget,
+                        resolutionMode = resolutionMode,
+                    )
+                    classLikeCallResolved = true
+                } else if (callee.name.asString() == "CPointer" && result.candidates.isEmpty()) {
+                    effectiveResult = collectBuiltinPointerConstructorCandidates(
+                        functionCall = functionCall,
+                        name = callee.name,
+                        target = BuiltinPointerConstructorTarget(),
+                        resolutionMode = resolutionMode,
+                    )
+                    classLikeCallResolved = true
+                } else if (callee.name.asString() == "CString" && result.candidates.isEmpty()) {
+                    effectiveResult = collectBuiltinCStringConstructorCandidates(
+                        functionCall = functionCall,
+                        name = callee.name,
                         resolutionMode = resolutionMode,
                     )
                     classLikeCallResolved = true
@@ -885,7 +901,7 @@ class CfirCallResolver(
         val returnType = components.returnTypeCalculator
             .tryCalculateReturnType(declaration)
             .coneType
-            .let(::normalizeFreshReceiverShapeType)
+            .let { returnType -> normalizeFreshReceiverShapeType(returnType) }
 
         return FreshReceiverCallableShape(this, valueParameterTypes, returnType)
     }
@@ -1111,10 +1127,12 @@ class CfirCallResolver(
      * `Box.create()` 这类裸泛型类名静态成员调用属于调用推断错误。
      * 当 owner 泛型参数没有显式实参，且完全没有出现在可调用签名中时，
      * 调用上下文不可能为这些参数提供约束。
+     * 构造器的 owner 类型参数由构造调用自身推断，不属于 static member qualifier 诊断。
      */
     private fun Candidate.hasUninferableBareStaticGenericQualifier(): Boolean {
         if (callInfo.callKind == CallKind.NamedValueAccess) return false
         val callable = symbol.cfir as? CfirCallableDeclaration ?: return false
+        if (callable is CfirConstructor) return false
         if (callable is CfirEnumConstructor) return false
         if (!callable.status.isStatic) return false
 
@@ -1219,6 +1237,12 @@ class CfirCallResolver(
         type is ConeTypeParameterType && type.lookupTag.typeParameterSymbol == symbol
     }
 
+    private fun ConeCangJieType.referencesAnyTypeParameter(
+        symbols: Set<CfirTypeParameterSymbol>,
+    ): Boolean = contains { type ->
+        type is ConeTypeParameterType && type.lookupTag.typeParameterSymbol in symbols
+    }
+
     private fun CfirFunctionCall.directVArrayConstructorTargetOrNull(
         name: Name,
     ): BuiltinArrayConstructorTarget.VArray? {
@@ -1244,12 +1268,42 @@ class CfirCallResolver(
             sizeLiteral = "$${expandedType.size}",
             elementType = expandedType.elementType,
             typeParameters = alias.typeParameters.map { typeParameter ->
-                BuiltinArrayConstructorTypeParameter(
+                BuiltinConstructorTypeParameter(
                     name = typeParameter.name,
                     originalSymbol = typeParameter.symbol,
                 )
             },
         )
+    }
+
+    private fun CfirTypeAliasSymbol.typeAliasPointerConstructorTarget(
+        typeArgumentRefs: List<CfirTypeRef>,
+    ): BuiltinPointerConstructorTarget? {
+        lazyResolveToPhase(CfirResolvePhase.SUPER_TYPES)
+        val alias = cfir
+        val appliedArguments = typeArgumentRefs.mapNotNull { typeArgumentRef ->
+            (typeArgumentRef as? CfirResolvedTypeRef)?.coneType
+        }
+        val aliasType: ConeCangJieType = ConeTypeAliasType(
+            classId = classId,
+            typeArguments = appliedArguments,
+        )
+        val expandedType = aliasType.fullyExpandedType(session) as? ConePointerType ?: return null
+        return BuiltinPointerConstructorTarget(
+            pointeeType = expandedType.pointeeType,
+            typeParameters = alias.typeParameters.map { typeParameter ->
+                BuiltinConstructorTypeParameter(
+                    name = typeParameter.name,
+                    originalSymbol = typeParameter.symbol,
+                )
+            },
+        )
+    }
+
+    private fun CfirTypeAliasSymbol.isTypeAliasCStringConstructorTarget(): Boolean {
+        lazyResolveToPhase(CfirResolvePhase.SUPER_TYPES)
+        val aliasType: ConeCangJieType = ConeTypeAliasType(classId = classId)
+        return aliasType.fullyExpandedType(session) is ConeCStringType
     }
 
     private fun tryResolveVArraySizeAccess(
@@ -1304,6 +1358,23 @@ class CfirCallResolver(
                 functionCall = functionCall,
                 name = classifier.name,
                 target = varrayAliasTarget,
+                resolutionMode = resolutionMode,
+            )
+        }
+        val pointerAliasTarget = (classifier as? CfirTypeAliasSymbol)
+            ?.typeAliasPointerConstructorTarget(functionCall.typeArguments)
+        if (pointerAliasTarget != null) {
+            return collectBuiltinPointerConstructorCandidates(
+                functionCall = functionCall,
+                name = classifier.name,
+                target = pointerAliasTarget,
+                resolutionMode = resolutionMode,
+            )
+        }
+        if ((classifier as? CfirTypeAliasSymbol)?.isTypeAliasCStringConstructorTarget() == true) {
+            return collectBuiltinCStringConstructorCandidates(
+                functionCall = functionCall,
+                name = classifier.name,
                 resolutionMode = resolutionMode,
             )
         }
@@ -1368,6 +1439,11 @@ class CfirCallResolver(
                 components.resolutionStageRunner.fullyProcessCandidate(candidate, transformer.resolutionContext)
             },
             chooseMostSpecific = { currentCandidates ->
+                reduceConstructorCandidatesByOwnerTypeInference(
+                    candidates = currentCandidates,
+                    ownerTypeParameters = actualDeclaration.typeParameters,
+                    hasExplicitTypeArguments = functionCall.typeArguments.isNotEmpty(),
+                )?.let { return@reduceCollectedCandidates it }
                 currentCandidates.singleOrNull()?.let(::setOf)
                     ?: conflictResolver.chooseMaximallySpecificCandidates(currentCandidates)
             },
@@ -1378,6 +1454,31 @@ class CfirCallResolver(
             candidates = reducedCandidates,
             forwardedDiagnostics = emptyList(),
         )
+    }
+
+    /**
+     * 裸泛型 owner 的构造调用需要优先保留能约束 owner 类型参数的候选。
+     *
+     * 官方实例化检查以构造出的 nominal 类型实参为事实来源，随后检查该实例化下
+     * 所有成员签名是否冲突；因此 `A(0)` 这类调用不能让不含 `T` 的 `init(Int64)`
+     * 抢走结果类型代表，否则 owner `T` 会在 completion 阶段退化成“无法推断”。
+     */
+    private fun reduceConstructorCandidatesByOwnerTypeInference(
+        candidates: Set<Candidate>,
+        ownerTypeParameters: List<CfirTypeParameterRef>,
+        hasExplicitTypeArguments: Boolean,
+    ): Set<Candidate>? {
+        if (hasExplicitTypeArguments || candidates.size <= 1 || ownerTypeParameters.isEmpty()) return null
+        if (candidates.any { it.symbol.takeIf(CfirBasedSymbol<*>::isBound)?.cfir !is CfirConstructor }) return null
+
+        val ownerTypeParameterSymbols = ownerTypeParameters.mapTo(linkedSetOf()) { it.symbol }
+        val constrainingCandidates = candidates.filterTo(linkedSetOf()) { candidate ->
+            val constructor = candidate.symbol.cfir as? CfirConstructor ?: return@filterTo false
+            constructor.valueParameters.any { parameter ->
+                parameter.returnTypeRef.coneTypeOrNull?.referencesAnyTypeParameter(ownerTypeParameterSymbols) == true
+            }
+        }
+        return constrainingCandidates.takeIf { it.isNotEmpty() && it.size < candidates.size }
     }
 
     /**
@@ -1423,6 +1524,98 @@ class CfirCallResolver(
             candidateApplicability = Candidate::lowestApplicability,
             fullyProcessCandidate = { candidate ->
                 components.resolutionStageRunner.fullyProcessCandidate(candidate, transformer.resolutionContext)
+            },
+            chooseMostSpecific = { currentCandidates ->
+                currentCandidates.singleOrNull()?.let(::setOf)
+                    ?: conflictResolver.chooseMaximallySpecificCandidates(currentCandidates)
+            },
+        )
+        return ResolutionResult(
+            info = callInfo,
+            applicability = applicability,
+            candidates = reducedCandidates,
+            forwardedDiagnostics = emptyList(),
+        )
+    }
+
+    /**
+     * 仓颉 `CPointer<T>(...)` 对应官方 `PointerExpr` 内建表达式。
+     *
+     * 这里与 Array/VArray 一样只合成候选，不在 resolver 层提前判定类型成功；
+     * 显式类型实参、参数个数、命名实参与约束求解继续由统一 stages 处理。
+     */
+    private fun collectBuiltinPointerConstructorCandidates(
+        functionCall: CfirFunctionCall,
+        name: Name,
+        target: BuiltinPointerConstructorTarget,
+        resolutionMode: ResolutionMode,
+    ): ResolutionResult {
+        val callInfo = createBuiltinConstructorCallInfo(functionCall, name, resolutionMode)
+        val candidateFactory = CandidateFactory(transformer.resolutionContext, callInfo)
+        val argumentCount = callInfo.arguments.size
+
+        val candidates = if (argumentCount > 1) {
+            listOf(
+                candidateFactory.createBuiltinPointerConstructorCandidate(
+                    callInfo = callInfo,
+                    kind = BuiltinPointerConstructorKind.CONVERT_POINTER,
+                    target = target,
+                ).also { candidate ->
+                    candidate.addDiagnostic(TooManyArguments(functionCall, callInfo.name))
+                },
+            )
+        } else {
+            val kind = when (argumentCount) {
+                0 -> BuiltinPointerConstructorKind.EMPTY
+                else -> BuiltinPointerConstructorKind.CONVERT_POINTER
+            }
+            listOf(
+                candidateFactory.createBuiltinPointerConstructorCandidate(
+                    callInfo = callInfo,
+                    kind = kind,
+                    target = target,
+                ),
+            )
+        }
+        val (reducedCandidates, applicability) = reduceCollectedCandidates(
+            candidates = candidates,
+            collectorApplicability = CandidateApplicability.HIDDEN,
+            isCandidateSuccessful = Candidate::isSuccessful,
+            candidateApplicability = Candidate::lowestApplicability,
+            fullyProcessCandidate = { candidate ->
+                components.resolutionStageRunner.fullyProcessCandidate(candidate, transformer.resolutionContext)
+            },
+            chooseMostSpecific = { currentCandidates ->
+                currentCandidates.singleOrNull()?.let(::setOf)
+                    ?: conflictResolver.chooseMaximallySpecificCandidates(currentCandidates)
+            },
+        )
+        return ResolutionResult(
+            info = callInfo,
+            applicability = applicability,
+            candidates = reducedCandidates,
+            forwardedDiagnostics = emptyList(),
+        )
+    }
+
+    /**
+     * 仓颉 `CString(CPointer<UInt8>)` 对应官方 CString built-in call。
+     */
+    private fun collectBuiltinCStringConstructorCandidates(
+        functionCall: CfirFunctionCall,
+        name: Name,
+        resolutionMode: ResolutionMode,
+    ): ResolutionResult {
+        val callInfo = createBuiltinConstructorCallInfo(functionCall, name, resolutionMode)
+        val candidateFactory = CandidateFactory(transformer.resolutionContext, callInfo)
+        val candidate = candidateFactory.createBuiltinCStringConstructorCandidate(callInfo)
+        val (reducedCandidates, applicability) = reduceCollectedCandidates(
+            candidates = listOf(candidate),
+            collectorApplicability = CandidateApplicability.HIDDEN,
+            isCandidateSuccessful = Candidate::isSuccessful,
+            candidateApplicability = Candidate::lowestApplicability,
+            fullyProcessCandidate = { currentCandidate ->
+                components.resolutionStageRunner.fullyProcessCandidate(currentCandidate, transformer.resolutionContext)
             },
             chooseMostSpecific = { currentCandidates ->
                 currentCandidates.singleOrNull()?.let(::setOf)
@@ -1513,6 +1706,25 @@ class CfirCallResolver(
         arguments = functionCall.argumentList.arguments,
         isUsedAsGetClassReceiver = false,
         typeArguments = functionCall.builtinArrayConstructorTypeArguments(target),
+        session = session,
+        containingFile = components.file,
+        containingDeclarations = transformer.components.containingDeclarations,
+        resolutionMode = resolutionMode,
+    )
+
+    private fun createBuiltinConstructorCallInfo(
+        functionCall: CfirFunctionCall,
+        name: Name,
+        resolutionMode: ResolutionMode,
+    ): CallInfo = CallInfo(
+        callSite = functionCall,
+        callKind = CallKind.Function,
+        name = name,
+        origin = functionCall.origin,
+        explicitReceiver = functionCall.explicitReceiver,
+        arguments = functionCall.argumentList.arguments,
+        isUsedAsGetClassReceiver = false,
+        typeArguments = functionCall.typeArguments,
         session = session,
         containingFile = components.file,
         containingDeclarations = transformer.components.containingDeclarations,

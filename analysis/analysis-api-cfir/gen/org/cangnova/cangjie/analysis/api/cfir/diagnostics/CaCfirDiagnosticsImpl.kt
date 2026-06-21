@@ -310,6 +310,13 @@ internal class CannotWeakenAccessPrivilegeImpl(
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<CjNamedDeclaration>(cfirDiagnostic, token), CaCfirDiagnostic.CannotWeakenAccessPrivilege
 
+internal class WeakVisibilityImpl(
+    override val baseMemberName: Name,
+    override val baseVisibility: Visibility,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.WeakVisibility
+
 internal class ParamNamedMismatchedImpl(
     override val baseMemberName: Name,
     cfirDiagnostic: CjPsiDiagnostic,

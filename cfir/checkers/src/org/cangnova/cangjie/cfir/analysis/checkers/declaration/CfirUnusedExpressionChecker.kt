@@ -4,9 +4,14 @@ import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.*
+import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
+import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
+import org.cangnova.cangjie.cfir.symbols.CfirVariableSymbol
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.visitors.CfirDefaultVisitor
@@ -148,14 +153,29 @@ object CfirUnusedExpressionChecker : CfirBasicDeclarationChecker() {
 
                 is CfirQualifiedAccessExpression -> {
                     /*
-                     * 裸变量、形参、成员属性等名称访问不属于 CFIR unused-expression
-                     * 检查的职责；这里仅判断表达式结果是否被丢弃。
+                     * 官方 unused 诊断来自 CHIR DCE：LOAD/FIELD/GET_ELEMENT_REF 这类取值
+                     * 表达式在结果无用户时可被报告。CFIR 中非调用的 qualified access
+                     * 对应这类取值；只有 receiver 求值本身有副作用时才阻止报告。
                      */
-                    true
+                    hasAccessReceiverSideEffect()
                 }
 
                 else -> true
             }
+        }
+
+        private fun CfirQualifiedAccessExpression.hasAccessReceiverSideEffect(): Boolean {
+            if (calleeReference is CfirDiagnosticHolder) return true
+            if (!isValueLikeAccess()) return true
+            if (explicitReceiver?.hasSideEffect() == true) return true
+            return dispatchReceiver !== explicitReceiver && dispatchReceiver?.hasSideEffect() == true
+        }
+
+        private fun CfirQualifiedAccessExpression.isValueLikeAccess(): Boolean {
+            val symbol = (calleeReference as? CfirResolvedNamedReference)?.resolvedSymbol ?: return false
+            return symbol is CfirVariableSymbol<*> ||
+                    symbol is CfirPropertySymbol ||
+                    symbol is CfirEnumConstructorSymbol
         }
 
         /**

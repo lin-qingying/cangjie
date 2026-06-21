@@ -19,6 +19,7 @@ import org.cangnova.cangjie.cfir.declarations.callableNameOrNull
 import org.cangnova.cangjie.cfir.resolve.CfirTypeResolver
 import org.cangnova.cangjie.cfir.session.CfirSessionComponent
 import org.cangnova.cangjie.cfir.session.services.CfirExtendInheritedInterfaceSemantic
+import org.cangnova.cangjie.cfir.session.services.CfirExtendTargetKey
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
@@ -31,6 +32,7 @@ import org.cangnova.cangjie.cfir.types.ConeTypeProjection
 import org.cangnova.cangjie.cfir.types.abbreviatedType
 import org.cangnova.cangjie.cfir.types.arrayElementType
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
+import org.cangnova.cangjie.cfir.types.expandedExtendTargetKey
 import org.cangnova.cangjie.cfir.types.expandedClassIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.name.ClassId
@@ -39,7 +41,7 @@ import org.cangnova.cangjie.name.Name
 
 class CfirExtendIndexStore : CfirSessionComponent {
     private var models: List<CfirExtendSemanticModel> = emptyList()
-    private var modelsByTargetClassId: Map<ClassId, List<CfirExtendSemanticModel>> = emptyMap()
+    private var modelsByTargetKey: Map<CfirExtendTargetKey, List<CfirExtendSemanticModel>> = emptyMap()
     private var modelsByPackage: Map<FqName, List<CfirExtendSemanticModel>> = emptyMap()
     private var modelsByOrigin: Map<CfirExtendSemanticOrigin, List<CfirExtendSemanticModel>> = emptyMap()
     private var modelByDeclaration: Map<CfirExtend, CfirExtendSemanticModel> = emptyMap()
@@ -62,7 +64,7 @@ class CfirExtendIndexStore : CfirSessionComponent {
 
         models = next
         modelByDeclaration = next.associateBy { it.declaration }
-        modelsByTargetClassId = next.filter { it.targetClassId != null }.groupBy { it.targetClassId!! }
+        modelsByTargetKey = next.filter { it.targetKey != null }.groupBy { it.targetKey!! }
         modelsByPackage = next.groupBy { it.packageFqName }
         modelsByOrigin = next.groupBy { it.origin }
         containingExtendByCallableSymbol = buildContainingExtendIndex(next)
@@ -75,7 +77,11 @@ class CfirExtendIndexStore : CfirSessionComponent {
 
     fun modelForDeclaration(declaration: Any): CfirExtendSemanticModel? = modelByDeclaration[declaration]
 
-    fun modelsForClass(classId: ClassId): List<CfirExtendSemanticModel> = modelsByTargetClassId[classId].orEmpty()
+    fun modelsForTarget(targetKey: CfirExtendTargetKey): List<CfirExtendSemanticModel> =
+        modelsByTargetKey[targetKey].orEmpty()
+
+    fun modelsForClass(classId: ClassId): List<CfirExtendSemanticModel> =
+        modelsForTarget(CfirExtendTargetKey.ClassLike(classId))
 
     fun modelsInPackage(packageFqName: FqName): List<CfirExtendSemanticModel> = modelsByPackage[packageFqName].orEmpty()
 
@@ -104,8 +110,11 @@ class CfirExtendIndexStore : CfirSessionComponent {
         }
     }
 
-    fun otherPackageExtendedInterfaceClassIds(targetClassId: ClassId, currentPackage: FqName): Set<ClassId> {
-        return modelsForClass(targetClassId)
+    fun otherPackageExtendedInterfaceClassIds(targetClassId: ClassId, currentPackage: FqName): Set<ClassId> =
+        otherPackageExtendedInterfaceClassIds(CfirExtendTargetKey.ClassLike(targetClassId), currentPackage)
+
+    fun otherPackageExtendedInterfaceClassIds(targetKey: CfirExtendTargetKey, currentPackage: FqName): Set<ClassId> {
+        return modelsForTarget(targetKey)
             .asSequence()
             .filter { it.packageFqName != currentPackage }
             .flatMap { model ->
@@ -117,8 +126,12 @@ class CfirExtendIndexStore : CfirSessionComponent {
     }
 
     fun isFirstExtendForTarget(declaration: Any, targetClassId: ClassId): Boolean {
+        return isFirstExtendForTarget(declaration, CfirExtendTargetKey.ClassLike(targetClassId))
+    }
+
+    fun isFirstExtendForTarget(declaration: Any, targetKey: CfirExtendTargetKey): Boolean {
         val myModel = modelByDeclaration[declaration] ?: return true
-        val allModels = modelsForClass(targetClassId)
+        val allModels = modelsForTarget(targetKey)
         return allModels.firstOrNull() === myModel
     }
 
@@ -164,6 +177,7 @@ class CfirExtendIndexStore : CfirSessionComponent {
             packageFqName = file.packageDirective.packageFqName,
             fileName = file.name,
             declarationIndexInFile = declarationIndexInFile,
+            targetKey = extendedTypeRef.toExtendTargetKeyOrNull(resolver),
             targetClassId = extendedTypeRef.toClassIdOrNull(resolver),
             targetClassKind = targetClass?.classKindOrNull(),
             inheritedInterfaces = inheritedInterfaces,
@@ -177,7 +191,7 @@ class CfirExtendIndexStore : CfirSessionComponent {
         { it.packageFqName.asString() },
         { it.fileName },
         { it.declarationIndexInFile },
-        { it.targetClassId?.asString() ?: "" },
+        { it.targetKey?.toString() ?: "" },
         { it.inheritedInterfaceSemanticKeys.joinToString(separator = "|") },
     )
 
@@ -301,6 +315,25 @@ class CfirExtendIndexStore : CfirSessionComponent {
         if (abbreviatedTypeAlias != null) return abbreviatedTypeAlias.classId
         if (coneType is ConeTypeAliasType) return coneType.classId
         return coneType.classIdOrPrimitiveClassId
+    }
+
+    private fun CfirTypeRef.toExtendTargetKeyOrNull(resolver: CfirTypeResolver): CfirExtendTargetKey? {
+        val coneType = (this as? CfirResolvedTypeRef)?.coneType ?: return null
+        val abbreviatedTypeAlias = coneType.abbreviatedType as? ConeTypeAliasType
+        if (abbreviatedTypeAlias != null) {
+            val expandedType = abbreviatedTypeAlias.expandedType
+                ?: (resolver.resolveClass(abbreviatedTypeAlias.classId) as? CfirTypeAlias)
+                    ?.expandedTypeRef
+                    ?.let { it as? CfirResolvedTypeRef }
+                    ?.coneType
+            return expandedType?.expandedExtendTargetKey
+                ?: CfirExtendTargetKey.ClassLike(abbreviatedTypeAlias.classId)
+        }
+        if (coneType is ConeTypeAliasType) {
+            return coneType.expandedType?.expandedExtendTargetKey
+                ?: CfirExtendTargetKey.ClassLike(coneType.classId)
+        }
+        return coneType.expandedExtendTargetKey
     }
 
     private fun ConeCangJieType.expandedClassIdOrPrimitiveClassId(resolver: CfirTypeResolver): ClassId? {

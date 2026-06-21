@@ -3,12 +3,13 @@ package org.cangnova.cangjie.cfir.serialization.provider
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.resolve.providers.CfirExtendProvider
+import org.cangnova.cangjie.cfir.session.services.CfirExtendTargetKey
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
 import org.cangnova.cangjie.cfir.types.classId
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.extendLookupKinds
-import org.cangnova.cangjie.cfir.types.expandedClassIdOrPrimitiveClassId
+import org.cangnova.cangjie.cfir.types.expandedExtendTargetKey
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 
@@ -23,8 +24,11 @@ class CfirDeserializedExtendProvider(
 ) : CfirExtendProvider {
     private val index: ExtendIndex by lazy(LazyThreadSafetyMode.PUBLICATION) { buildIndex() }
 
+    override fun getExtendsForTarget(targetKey: CfirExtendTargetKey): List<CfirExtend> =
+        index.byTargetKey[targetKey].orEmpty()
+
     override fun getExtendsForClass(classId: ClassId): List<CfirExtend> =
-        index.byTargetClassId[classId].orEmpty()
+        getExtendsForTarget(CfirExtendTargetKey.ClassLike(classId))
 
     override fun getExtendsInPackage(packageFqName: FqName): List<CfirExtend> =
         index.byPackage[packageFqName].orEmpty()
@@ -36,7 +40,7 @@ class CfirDeserializedExtendProvider(
         index.byCallableSymbol[symbol]
 
     private fun buildIndex(): ExtendIndex {
-        val byTargetClassId = linkedMapOf<ClassId, MutableList<CfirExtend>>()
+        val byTargetKey = linkedMapOf<CfirExtendTargetKey, MutableList<CfirExtend>>()
         val byPackage = linkedMapOf<FqName, MutableList<CfirExtend>>()
         val byCallableSymbol = linkedMapOf<CfirCallableSymbol<*>, CfirExtend>()
 
@@ -49,9 +53,9 @@ class CfirDeserializedExtendProvider(
 
                 byPackage.getOrPut(packageFqName) { mutableListOf() }.addAll(extends)
                 for (extend in extends) {
-                    val targetClassId =
-                        extend.extendedTypeRef.coneTypeOrNull?.expandedClassIdOrPrimitiveClassId ?: continue
-                    byTargetClassId.getOrPut(targetClassId) { mutableListOf() }.add(extend)
+                    val targetKey =
+                        extend.extendedTypeRef.coneTypeOrNull?.expandedExtendTargetKey ?: continue
+                    byTargetKey.getOrPut(targetKey) { mutableListOf() }.add(extend)
                     for (declaration in extend.declarations) {
                         val callableDeclaration = declaration as? CfirCallableDeclaration ?: continue
                         byCallableSymbol[callableDeclaration.symbol] = extend
@@ -61,14 +65,14 @@ class CfirDeserializedExtendProvider(
         }
 
         return ExtendIndex(
-            byTargetClassId = byTargetClassId.mapValues { (_, extends) -> extends.distinct() },
+            byTargetKey = byTargetKey.mapValues { (_, extends) -> extends.distinct() },
             byPackage = byPackage.mapValues { (_, extends) -> extends.distinct() },
             byCallableSymbol = byCallableSymbol,
         )
     }
 
     private data class ExtendIndex(
-        val byTargetClassId: Map<ClassId, List<CfirExtend>>,
+        val byTargetKey: Map<CfirExtendTargetKey, List<CfirExtend>>,
         val byPackage: Map<FqName, List<CfirExtend>>,
         val byCallableSymbol: Map<CfirCallableSymbol<*>, CfirExtend>,
     )

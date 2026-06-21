@@ -13,19 +13,19 @@ interface I {
 class A {}
 
 extend A <: I {
-    <!PROPERTY_HAVE_SAME_DECLARATION_IN_INHERIT_MUT!>prop <!CANNOT_WEAKEN_ACCESS_PRIVILEGE!>a<!>: Int64 {
+    <!PROPERTY_HAVE_SAME_DECLARATION_IN_INHERIT_MUT!>p<!>rop <!WEAK_VISIBILITY!>a<!>: Int64 {
         get() {
             0
         }
-    }<!>
-    <!PROPERTY_HAVE_SAME_DECLARATION_IN_INHERIT_IMMUT!>mut prop <!CANNOT_WEAKEN_ACCESS_PRIVILEGE!>b<!>: Int64 {
+    }
+    <!PROPERTY_HAVE_SAME_DECLARATION_IN_INHERIT_IMMUT!>m<!>ut prop <!WEAK_VISIBILITY!>b<!>: Int64 {
         get() {
             0
         }
         set(v) {
             ()
         }
-    }<!>
+    }
 }
 
 main() {

@@ -264,6 +264,12 @@ sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
         val baseVisibility: Visibility
     }
 
+    interface WeakVisibility : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = WeakVisibility::class
+        val baseMemberName: Name
+        val baseVisibility: Visibility
+    }
+
     interface ParamNamedMismatched : CaCfirDiagnostic<CjNamedDeclaration> {
         override val diagnosticClass get() = ParamNamedMismatched::class
         val baseMemberName: Name

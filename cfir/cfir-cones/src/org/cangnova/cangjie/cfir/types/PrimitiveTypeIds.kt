@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.types
 
 import org.cangnova.cangjie.builtins.StandardNames
+import org.cangnova.cangjie.cfir.session.services.CfirExtendTargetKey
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.Name
 
@@ -65,6 +66,20 @@ val ConeCangJieType.classIdOrPrimitiveClassId: ClassId?
     }
 
 /**
+ * extend 目标索引用的语义键。
+ *
+ * primitive 仍复用其合成 ClassId；`CPointer` / `CString` 没有 ClassId，
+ * 但官方 `TypeManager::builtinTyToExtendMap` 会把它们作为 built-in type
+ * 参与 extend 查询，因此这里用专门 key 表示。
+ */
+val ConeCangJieType.extendTargetKey: CfirExtendTargetKey?
+    get() = when (this) {
+        is ConePointerType -> CfirExtendTargetKey.CPointer
+        is ConeCStringType -> CfirExtendTargetKey.CString
+        else -> classIdOrPrimitiveClassId?.let(CfirExtendTargetKey::ClassLike)
+    }
+
+/**
  * extend 目标索引用的语义 ClassId。
  *
  * 仓颉官方 `Ty::IsExtendable()` 对 type alias 递归检查其展开类型，因此
@@ -75,4 +90,10 @@ val ConeCangJieType.expandedClassIdOrPrimitiveClassId: ClassId?
     get() = when (this) {
         is ConeTypeAliasType -> expandedType?.expandedClassIdOrPrimitiveClassId ?: classId
         else -> classIdOrPrimitiveClassId
+    }
+
+val ConeCangJieType.expandedExtendTargetKey: CfirExtendTargetKey?
+    get() = when (this) {
+        is ConeTypeAliasType -> expandedType?.expandedExtendTargetKey ?: CfirExtendTargetKey.ClassLike(classId)
+        else -> extendTargetKey
     }

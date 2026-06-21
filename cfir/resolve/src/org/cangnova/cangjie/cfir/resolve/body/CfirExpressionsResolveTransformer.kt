@@ -87,6 +87,8 @@ open class CfirExpressionsResolveTransformer(
     private val specificTypeResolverTransformer = CfirSpecificTypeResolverTransformer(session)
     private val callResolver get() = components.callResolver
     private val effectHandlerStack = ArrayDeque<EffectHandlerContext>()
+    // optional-chain 内部的 `?` 节点承担 Kotlin FIR checked safe-call subject 的角色。
+    private var optionalChainResolveDepth: Int = 0
     private fun errorType(
         reason: String,
         kind: DiagnosticKind = DiagnosticKind.Other,
@@ -144,7 +146,14 @@ open class CfirExpressionsResolveTransformer(
         data: ResolutionMode,
     ): CfirExpression {
         optionalExpression.transformChildren(transformer, data)
-        optionalExpression.replaceConeTypeOrNull(optionalExpression.expression.coneTypeOrNull)
+        val expressionType = optionalExpression.expression.coneTypeOrNull
+        // 链内 selector 必须在 Option<T> 的 T 上解析；外层 chain 节点再统一恢复 Option<result>。
+        val resultType = if (optionalChainResolveDepth > 0) {
+            expressionType?.optionElementType ?: expressionType
+        } else {
+            expressionType
+        }
+        optionalExpression.replaceConeTypeOrNull(resultType)
         return optionalExpression
     }
 
@@ -153,7 +162,12 @@ open class CfirExpressionsResolveTransformer(
         data: ResolutionMode,
     ): CfirExpression {
         components.dataFlowAnalyzer.enterOptionalChain(optionalChainExpression)
-        optionalChainExpression.transformChildren(transformer, data)
+        optionalChainResolveDepth++
+        try {
+            optionalChainExpression.transformChildren(transformer, data)
+        } finally {
+            optionalChainResolveDepth--
+        }
 
         val chainRoot = optionalChainExpression.expression.optionalChainRootExpression()
         val rootType = chainRoot?.coneTypeOrNull

@@ -35,6 +35,7 @@ import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.cfir.unwrapSubstitutionOverrides
 import org.cangnova.cangjie.descriptors.Visibilities
@@ -72,40 +73,111 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     internal fun checkExtend(declaration: CfirExtend) {
         checkInheritedMemberKindConsistency(declaration.memberInheritanceSubject())
-        checkExtendTargetMutCompatibility(declaration)
+        checkExtendTargetMemberCompatibility(declaration)
     }
 
     /**
-     * `extend T <: I` 需要让目标类型 `T` 的既有成员满足接口 `I` 的 mut 签名。
+     * `extend T <: I` 需要让目标类型 `T` 的既有成员满足接口 `I` 的实现约束。
      *
      * 该路径不同于 extend 块内声明成员覆盖接口成员：冲突成员可能已经定义在目标类型上，
      * 因此诊断落在 extend 声明本身。
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
-    private fun checkExtendTargetMutCompatibility(extend: CfirExtend) {
+    private fun checkExtendTargetMemberCompatibility(extend: CfirExtend) {
         val targetDecl = extend.extendedTypeRef.resolvedClassLikeDeclaration() ?: return
+        val targetClassId = (targetDecl.symbol as? CfirClassLikeSymbol<*>)?.classId
         val targetScope = context.createUseSiteMemberScope(targetDecl)
-        val reported = mutableSetOf<Name>()
+        val ownMemberInfosByName = extend.declarations
+            .mapNotNull { it.directMemberInfoOrNull(context) }
+            .groupBy { it.name }
+        val reportedMutConflicts = mutableSetOf<Name>()
+        val reportedWeakVisibilities = mutableSetOf<String>()
+        val reportedPropertyTypeConflicts = mutableSetOf<String>()
+        val reportedPropertyMutabilityConflicts = mutableSetOf<String>()
 
         for (superTypeRef in extend.superTypeRefs) {
             val superDecl = superTypeRef.resolvedClassLikeDeclaration() ?: continue
             for (superMember in superDecl.declarations) {
-                val superInfo = (superMember as? CfirNamedFunction)
-                    ?.symbol
-                    ?.inheritedMemberInfoOrNull(context)
-                    ?: continue
+                val superInfo = superMember.inheritedMemberInfoOrNull(context) ?: continue
 
-                val targetInfos = buildList {
-                    targetScope.processFunctionsByName(superInfo.name) { symbol ->
-                        symbol.inheritedMemberInfoOrNull(context)?.let(::add)
+                val implementationCandidates = buildList {
+                    targetScope.processCallablesByName(superInfo.name) { symbol ->
+                        symbol.inheritedMemberInfoOrNull(context)?.let { info ->
+                            add(ExtendImplementationCandidate(info, extend.extendedTypeRef.source, null))
+                        }
+                    }
+                    if (targetClassId != null) {
+                        for (info in collectDirectExtendMemberInfos(targetClassId, superInfo.name, context, excludingExtend = extend)) {
+                            add(ExtendImplementationCandidate(info, extend.extendedTypeRef.source, null))
+                        }
+                    }
+                    for (info in ownMemberInfosByName[superInfo.name].orEmpty()) {
+                        add(ExtendImplementationCandidate(info, info.nameSource ?: info.source ?: extend.source, info.source))
                     }
                 }
 
-                if (targetInfos.any { it.hasMutFunctionConflict(superInfo) } && reported.add(superInfo.name)) {
-                    reporter.reportOn(
-                        source = extend.source?.firstCharacterDiagnosticSource() ?: superTypeRef.source,
-                        factory = CfirErrors.INCOMPATIBLE_MUT_MODIFIER_BETWEEN_STRUCT_AND_INTERFACE,
-                    )
+                for (candidate in implementationCandidates) {
+                    val implementationInfo = candidate.info
+                    if (!implementationInfo.canImplement(superInfo)) continue
+
+                    val propertyTypeMismatch = implementationInfo.propertyTypeMismatch(superInfo)
+                    if (propertyTypeMismatch != null) {
+                        val key = implementationInfo.overrideDiagnosticKey(superInfo)
+                        if (reportedPropertyTypeConflicts.add(key)) {
+                            reporter.reportOn(
+                                source = candidate.declarationSource
+                                    ?.firstCharacterDiagnosticSource()
+                                    ?: candidate.diagnosticSource,
+                                factory = CfirErrors.PROPERTY_OVERRIDE_IMPLEMENT_TYPE_DIFF,
+                                a = propertyTypeMismatch.implementationType,
+                                b = propertyTypeMismatch.baseType,
+                                c = superInfo.name,
+                            )
+                        }
+                    }
+
+                    val propertyMutabilityConflict = if (propertyTypeMismatch == null) {
+                        implementationInfo.propertyMutabilityConflict(superInfo)
+                    } else {
+                        null
+                    }
+                    if (propertyMutabilityConflict != null) {
+                        val key = implementationInfo.overrideDiagnosticKey(superInfo)
+                        if (reportedPropertyMutabilityConflicts.add(key)) {
+                            reporter.reportOn(
+                                source = candidate.declarationSource
+                                    ?.firstCharacterDiagnosticSource()
+                                    ?: candidate.diagnosticSource,
+                                factory = when (propertyMutabilityConflict) {
+                                    PropertyMutabilityConflict.MutExpected ->
+                                        CfirErrors.PROPERTY_HAVE_SAME_DECLARATION_IN_INHERIT_MUT
+
+                                    PropertyMutabilityConflict.ImmutExpected ->
+                                        CfirErrors.PROPERTY_HAVE_SAME_DECLARATION_IN_INHERIT_IMMUT
+                                },
+                                a = superInfo.name,
+                            )
+                        }
+                    }
+
+                    if (implementationInfo.hasMutFunctionConflict(superInfo) && reportedMutConflicts.add(superInfo.name)) {
+                        reporter.reportOn(
+                            source = extend.source?.firstCharacterDiagnosticSource() ?: superTypeRef.source,
+                            factory = CfirErrors.INCOMPATIBLE_MUT_MODIFIER_BETWEEN_STRUCT_AND_INTERFACE,
+                        )
+                    }
+
+                    if (implementationInfo.hasWeakVisibilityComparedTo(superInfo)) {
+                        val key = implementationInfo.overrideDiagnosticKey(superInfo)
+                        if (reportedWeakVisibilities.add(key)) {
+                            reporter.reportOn(
+                                source = candidate.diagnosticSource,
+                                factory = CfirErrors.WEAK_VISIBILITY,
+                                a = superInfo.name,
+                                b = superInfo.visibility,
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -361,6 +433,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                     isStatic = member.status.isStatic,
                     isConst = member.status.isConst,
                     isMut = member.status.isMut,
+                    visibility = member.status.visibility,
                     source = member.source,
                     nameSource = member.functionNameDiagnosticSource(),
                     ownerName = null,
@@ -373,6 +446,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                     isStatic = member.status.isStatic,
                     isConst = member.status.isConst,
                     isMut = member.status.isMut,
+                    visibility = member.status.visibility,
                     source = member.source,
                     nameSource = member.propertyNameDiagnosticSource(),
                     ownerName = null,
@@ -385,6 +459,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                     isStatic = member.status.isStatic,
                     isConst = false,
                     isMut = false,
+                    visibility = member.status.visibility,
                     source = member.source,
                     nameSource = member.fieldVariableNameDiagnosticSource(),
                     ownerName = null,
@@ -522,10 +597,36 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         }
     }
 
+    private fun CfirDeclaration.inheritedMemberInfoOrNull(context: CheckerContext): InheritedMemberInfo? =
+        when (this) {
+            is CfirNamedFunction -> symbol?.inheritedMemberInfoOrNull(context)
+            is CfirProperty -> symbol.inheritedMemberInfoOrNull(context)
+            is CfirFieldVariable -> symbol.inheritedMemberInfoOrNull(context)
+            else -> null
+        }
+
+    private fun CfirDeclaration.directMemberInfoOrNull(context: CheckerContext): InheritedMemberInfo? =
+        when (this) {
+            is CfirNamedFunction -> symbol?.directMemberInfoOrNull(context)
+            is CfirProperty -> symbol.directMemberInfoOrNull(context)
+            is CfirFieldVariable -> symbol.directMemberInfoOrNull(context)
+            else -> null
+        }
+
+    private fun CfirCallableSymbol<*>.directMemberInfoOrNull(context: CheckerContext): InheritedMemberInfo? =
+        memberInfoOrNull(context, inheritOnly = false)
+
     private fun CfirCallableSymbol<*>.inheritedMemberInfoOrNull(context: CheckerContext): InheritedMemberInfo? {
+        return memberInfoOrNull(context, inheritOnly = true)
+    }
+
+    private fun CfirCallableSymbol<*>.memberInfoOrNull(
+        context: CheckerContext,
+        inheritOnly: Boolean,
+    ): InheritedMemberInfo? {
         if (!isBound) return null
         val declaration = cfir
-        if (!canBeInheritedMember()) return null
+        if (inheritOnly && !canBeInheritedMember()) return null
         val ownerName = ownerClassId(context)?.shortClassName
         return when (declaration) {
             is CfirNamedFunction -> InheritedMemberInfo(
@@ -534,6 +635,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                 isStatic = declaration.status.isStatic,
                 isConst = declaration.status.isConst,
                 isMut = declaration.status.isMut,
+                visibility = declaration.status.visibility,
                 source = declaration.source,
                 nameSource = declaration.functionNameDiagnosticSource(),
                 ownerName = ownerName,
@@ -546,6 +648,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                 isStatic = declaration.status.isStatic,
                 isConst = declaration.status.isConst,
                 isMut = declaration.status.isMut,
+                visibility = declaration.status.visibility,
                 source = declaration.source,
                 nameSource = declaration.propertyNameDiagnosticSource(),
                 ownerName = ownerName,
@@ -558,6 +661,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                 isStatic = declaration.status.isStatic,
                 isConst = false,
                 isMut = false,
+                visibility = declaration.status.visibility,
                 source = declaration.source,
                 nameSource = declaration.fieldVariableNameDiagnosticSource(),
                 ownerName = ownerName,
@@ -576,10 +680,12 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         superClassId: ClassId,
         name: Name,
         context: CheckerContext,
+        excludingExtend: CfirExtend? = null,
     ): List<InheritedMemberInfo> {
         val provider = context.session.extendProvider
         return buildList {
             for (extend in provider.getExtendsForClass(superClassId)) {
+                if (extend === excludingExtend) continue
                 if (!provider.isExtendAccessible(extend)) continue
                 for (member in extend.declarations) {
                     when (member) {
@@ -654,6 +760,52 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         return ownSymbol.overrideSignatureKey() == superSymbol.overrideSignatureKey()
     }
 
+    private fun InheritedMemberInfo.canImplement(superInfo: InheritedMemberInfo): Boolean {
+        if (kind != superInfo.kind) return false
+        if (isStatic != superInfo.isStatic) return false
+        if (kind != "function" && kind != "property") return false
+        return hasSameOverrideSignature(superInfo)
+    }
+
+    private fun InheritedMemberInfo.hasWeakVisibilityComparedTo(superInfo: InheritedMemberInfo): Boolean {
+        if (!canImplement(superInfo)) return false
+        val compareResult = Visibilities.compare(visibility, superInfo.visibility)
+        return compareResult == null || compareResult < 0
+    }
+
+    context(context: CheckerContext)
+    private fun InheritedMemberInfo.propertyTypeMismatch(
+        superInfo: InheritedMemberInfo,
+    ): PropertyTypeMismatch? {
+        if (kind != "property" || superInfo.kind != "property") return null
+        val implementationSymbol = symbol as? CfirPropertySymbol ?: return null
+        val baseSymbol = superInfo.symbol as? CfirPropertySymbol ?: return null
+        if (!implementationSymbol.isBound || !baseSymbol.isBound) return null
+
+        val implementationType = context.returnTypeCalculator.tryCalculateReturnType(implementationSymbol.cfir).coneType
+        val baseType = context.returnTypeCalculator.tryCalculateReturnType(baseSymbol.cfir).coneType
+        if (implementationType is ConeErrorType || baseType is ConeErrorType) return null
+        if (AbstractTypeChecker.equalTypes(context.session.typeContext, implementationType, baseType)) return null
+
+        return PropertyTypeMismatch(
+            implementationType = implementationType,
+            baseType = baseType,
+        )
+    }
+
+    private fun InheritedMemberInfo.propertyMutabilityConflict(
+        superInfo: InheritedMemberInfo,
+    ): PropertyMutabilityConflict? {
+        if (kind != "property" || superInfo.kind != "property") return null
+        return when {
+            superInfo.isMut && !isMut -> PropertyMutabilityConflict.MutExpected
+
+            !superInfo.isMut && isMut -> PropertyMutabilityConflict.ImmutExpected
+
+            else -> null
+        }
+    }
+
     private fun InheritedMemberInfo.hasConstFunctionConflict(superInfo: InheritedMemberInfo): Boolean {
         if (kind != "function" || superInfo.kind != "function") return false
         if (isConst || !superInfo.isConst) return false
@@ -683,12 +835,29 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         val isStatic: Boolean,
         val isConst: Boolean,
         val isMut: Boolean,
+        val visibility: Visibility,
         val source: CjSourceElement?,
         val nameSource: AbstractCjSourceElement?,
         val ownerName: Name?,
         val symbol: CfirCallableSymbol<*>?,
     ) {
         val staticKind: String get() = if (isStatic) "static" else "non-static"
+    }
+
+    private data class ExtendImplementationCandidate(
+        val info: InheritedMemberInfo,
+        val diagnosticSource: AbstractCjSourceElement?,
+        val declarationSource: CjSourceElement?,
+    )
+
+    private data class PropertyTypeMismatch(
+        val implementationType: ConeCangJieType,
+        val baseType: ConeCangJieType,
+    )
+
+    private enum class PropertyMutabilityConflict {
+        MutExpected,
+        ImmutExpected,
     }
 
     /**

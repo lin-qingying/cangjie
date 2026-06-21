@@ -108,6 +108,7 @@ object DiagnosticNameMapper {
         "INVALID_MEMBER_VISIBILITY_IN_CLASS" to "sema_invalid_member_visibility_in_class",
         "INCOMPATIBLE_MUT_MODIFIER_BETWEEN_STRUCT_AND_INTERFACE" to "sema_incompatible_mut_modifier_between_struct_and_interface",
         "ABSTRACT_METHOD_CANNOT_BE_ACCESSED_DIRECTLY" to "sema_abstract_method_cannot_be_accessed_directly",
+        "WEAK_VISIBILITY" to "sema_weak_visibility",
 
         // ── Constructor ──
         "ILLEGAL_THIS_OR_SUPER_CALL" to "sema_illegal_this_or_super_call",
@@ -138,6 +139,7 @@ object DiagnosticNameMapper {
         // ── Generics / Constraints ──
         "GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT" to "sema_generic_type_without_type_argument",
         "GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT" to "sema_generic_type_argument_not_match_constraint",
+        "GENERIC_INFINITE_INSTANTIATION" to "sema_generic_infinite_instantiation",
         "GENERIC_NO_MEMBER_MATCH_IN_UPPER_BOUNDS" to "sema_generic_no_member_match_in_upper_bounds",
         "GENERIC_NO_METHOD_MATCH_IN_UPPER_BOUNDS" to "sema_generic_no_method_match_in_upper_bounds",
         "CONFLICTING_UPPER_BOUNDS" to "sema_conflicting_upper_bounds",

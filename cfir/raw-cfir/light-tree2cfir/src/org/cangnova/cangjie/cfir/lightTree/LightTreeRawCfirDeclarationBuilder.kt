@@ -324,10 +324,12 @@ class LightTreeRawCfirDeclarationBuilder(
                     resolvePhase = CfirResolvePhase.RAW_CFIR
                     val (typeParams, classDeclarations) = withContainerSymbol(symbol) {
                         val typeParameters = extractTypeParameters(node, symbol)
-                        val declarations = extractClassMembers(node).toMutableList().also { declarations ->
-                            addPrimaryConstructorParameterProperties(node, declarations)
-                            if (declarations.none { it is CfirConstructor }) {
-                                declarations.add(0, buildImplicitPrimaryConstructor(node))
+                        val declarations = withDispatchReceiverType(symbol.rawDispatchReceiverType(typeParameters)) {
+                            extractClassMembers(node).toMutableList().also { declarations ->
+                                addPrimaryConstructorParameterProperties(node, declarations)
+                                if (declarations.none { it is CfirConstructor }) {
+                                    declarations.add(0, buildImplicitPrimaryConstructor(node))
+                                }
                             }
                         }
                         typeParameters to declarations
@@ -349,7 +351,11 @@ class LightTreeRawCfirDeclarationBuilder(
                 buildInterface {
                     resolvePhase = CfirResolvePhase.RAW_CFIR
                     val (typeParams, classDeclarations) = withContainerSymbol(symbol) {
-                        extractTypeParameters(node, symbol) to extractClassMembers(node).toMutableList()
+                        val typeParameters = extractTypeParameters(node, symbol)
+                        val declarations = withDispatchReceiverType(symbol.rawDispatchReceiverType(typeParameters)) {
+                            extractClassMembers(node).toMutableList()
+                        }
+                        typeParameters to declarations
                     }
                     source = node.toSource()
                     this.symbol = symbol
@@ -369,10 +375,12 @@ class LightTreeRawCfirDeclarationBuilder(
                     resolvePhase = CfirResolvePhase.RAW_CFIR
                     val (typeParams, classDeclarations) = withContainerSymbol(symbol) {
                         val typeParameters = extractTypeParameters(node, symbol)
-                        val declarations = extractClassMembers(node).toMutableList().also { declarations ->
-                            addPrimaryConstructorParameterProperties(node, declarations)
-                            if (declarations.none { it is CfirConstructor }) {
-                                declarations.add(0, buildImplicitPrimaryConstructor(node))
+                        val declarations = withDispatchReceiverType(symbol.rawDispatchReceiverType(typeParameters)) {
+                            extractClassMembers(node).toMutableList().also { declarations ->
+                                addPrimaryConstructorParameterProperties(node, declarations)
+                                if (declarations.none { it is CfirConstructor }) {
+                                    declarations.add(0, buildImplicitPrimaryConstructor(node))
+                                }
                             }
                         }
                         typeParameters to declarations
@@ -395,16 +403,18 @@ class LightTreeRawCfirDeclarationBuilder(
                     resolvePhase = CfirResolvePhase.RAW_CFIR
                     val (typeParams, classDeclarations) = withContainerSymbol(symbol) {
                         val typeParameters = extractTypeParameters(node, symbol)
-                        val declarations = extractClassMembers(node).toMutableList().also { declarations ->
-                            addPrimaryConstructorParameterProperties(node, declarations)
-                            if (declarations.none { it is CfirConstructor }) {
-                                declarations.add(0, buildImplicitPrimaryConstructor(node))
-                            }
-                            val enumBody = tree.findChildByType(node, CjNodeTypes.ENUM_BODY)
-                            if (enumBody != null) {
-                                val enumCtors = tree.getChildrenByType(enumBody, CjNodeTypes.ENUM_CONSTRUCTOR)
-                                    .map { convertEnumConstructor(it) }
-                                declarations.addAll(0, enumCtors)
+                        val declarations = withDispatchReceiverType(symbol.rawDispatchReceiverType(typeParameters)) {
+                            extractClassMembers(node).toMutableList().also { declarations ->
+                                addPrimaryConstructorParameterProperties(node, declarations)
+                                if (declarations.none { it is CfirConstructor }) {
+                                    declarations.add(0, buildImplicitPrimaryConstructor(node))
+                                }
+                                val enumBody = tree.findChildByType(node, CjNodeTypes.ENUM_BODY)
+                                if (enumBody != null) {
+                                    val enumCtors = tree.getChildrenByType(enumBody, CjNodeTypes.ENUM_CONSTRUCTOR)
+                                        .map { convertEnumConstructor(it) }
+                                    declarations.addAll(0, enumCtors)
+                                }
                             }
                         }
                         typeParameters to declarations

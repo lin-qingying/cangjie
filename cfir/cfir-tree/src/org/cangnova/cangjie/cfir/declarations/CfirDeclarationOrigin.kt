@@ -21,6 +21,18 @@ sealed class CfirDeclarationOrigin(
          * synthetic fake function 的 expected-type equality 处理。
          */
         data object BuiltinArrayConstructor : Synthetic()
+        /**
+         * 仓颉内建 `CPointer<T>(...)` 构造表达式对应官方 `PointerExpr`。
+         *
+         * 它与 Array 一样只借用统一 call-resolution 管线承载类型实参、
+         * 参数映射与约束求解，不是用户源码中的函数声明。
+         */
+        data object BuiltinPointerConstructor : Synthetic()
+
+        /**
+         * 仓颉内建 `CString(CPointer<UInt8>)` 构造表达式对应官方 CString built-in call。
+         */
+        data object BuiltinCStringConstructor : Synthetic()
         object TypeAliasConstructor : Synthetic()
 
         object Error : Synthetic()

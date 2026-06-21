@@ -4,6 +4,7 @@ import org.cangnova.cangjie.cfir.CfirFunctionTarget
 import org.cangnova.cangjie.cfir.CfirLoopTarget
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
+import org.cangnova.cangjie.cfir.types.ConeSimpleCangJieType
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 
@@ -14,9 +15,10 @@ import org.cangnova.cangjie.name.Name
  * - 包级语境
  * - 局部语境
  * - 当前容器符号栈
+ * - 当前 class-like self type 栈
  *
- * 类型声明的稳定标识统一由顶层声明规则推导，
- * 此处不维护任何额外的类型层级状态。
+ * self type 与 Kotlin FIR `dispatchReceiverTypesStack` 对齐，必须携带当前
+ * class-like 的类型参数，否则成员声明会退化成裸接收者类型。
  */
 class Context<T> {
 
@@ -31,6 +33,7 @@ class Context<T> {
     private val loopTargets: ArrayDeque<CfirLoopTarget> = ArrayDeque()
     private val labelNames: ArrayDeque<Name> = ArrayDeque()
     private val containerSymbolStack: ArrayDeque<CfirBasedSymbol<*>> = ArrayDeque()
+    private val dispatchReceiverTypesStack: ArrayDeque<ConeSimpleCangJieType> = ArrayDeque()
 
     var forcedContainerSymbol: CfirBasedSymbol<*>? = null
 
@@ -70,6 +73,19 @@ class Context<T> {
 
     val containerSymbol: CfirBasedSymbol<*>
         get() = containerSymbolStack.last()
+
+    fun pushDispatchReceiverType(type: ConeSimpleCangJieType) {
+        dispatchReceiverTypesStack.addLast(type)
+    }
+
+    fun popDispatchReceiverType() {
+        if (dispatchReceiverTypesStack.isNotEmpty()) {
+            dispatchReceiverTypesStack.removeLast()
+        }
+    }
+
+    fun currentDispatchReceiverType(): ConeSimpleCangJieType? =
+        dispatchReceiverTypesStack.lastOrNull()
 
     fun enterFunction(target: CfirFunctionTarget) {
         functionTargets.addLast(target)

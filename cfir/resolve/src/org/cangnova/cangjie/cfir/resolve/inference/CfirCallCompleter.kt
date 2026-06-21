@@ -56,6 +56,7 @@ import org.cangnova.cangjie.cfir.types.ConeEnumType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.types.ConeLookupTagBasedType
+import org.cangnova.cangjie.cfir.types.ConePointerType
 import org.cangnova.cangjie.cfir.types.ConeSimpleCangJieType
 import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
 import org.cangnova.cangjie.cfir.types.ConeTypeVariableType
@@ -187,6 +188,7 @@ class CfirCallCompleter(
         val system = candidate.system
 
         if (candidate.addBuiltinArrayConstructorExpectedElementConstraint(expectedType)) return
+        if (candidate.addBuiltinPointerConstructorExpectedPointeeConstraint(expectedType)) return
         if (candidate.addEnumConstructorExpectedTypeConstraint(initialType, expectedType)) return
 
         when {
@@ -229,6 +231,25 @@ class CfirCallCompleter(
         val expectedElementType = expectedType.fullyExpandedType().arrayLiteralElementType ?: return false
         val elementVariableType = freshVariables.singleOrNull()?.defaultType as? ConeCangJieType ?: return false
         system.addSubtypeConstraint(elementVariableType, expectedElementType, ConeExpectedTypeConstraintPosition)
+        return true
+    }
+
+    /**
+     * 官方 `CPointer()` 在无显式类型实参时可从目标 `CPointer<T>` 反推 pointee 类型。
+     *
+     * 目标为 `CType` 或某个 extend 接口时不能直接反推出 pointee；这些场景仍交给
+     * 普通子类型/extend 约束处理，避免把所有 C pointer 退化成同一个泛型实参。
+     */
+    private fun Candidate.addBuiltinPointerConstructorExpectedPointeeConstraint(
+        expectedType: ConeCangJieType,
+    ): Boolean {
+        val callable = symbol.takeIf { it.isBound }?.cfir as? CfirFunction ?: return false
+        if (callable.origin != CfirDeclarationOrigin.Synthetic.BuiltinPointerConstructor) return false
+        if (callInfo.hasExplicitTypeArguments) return false
+
+        val expectedPointerType = expectedType.fullyExpandedType() as? ConePointerType ?: return false
+        val pointeeVariableType = freshVariables.singleOrNull()?.defaultType as? ConeCangJieType ?: return false
+        system.addSubtypeConstraint(pointeeVariableType, expectedPointerType.pointeeType, ConeExpectedTypeConstraintPosition)
         return true
     }
 

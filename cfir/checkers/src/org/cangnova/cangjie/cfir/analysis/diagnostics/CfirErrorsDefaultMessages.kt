@@ -442,6 +442,12 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
             RENDER_NAME,
             VISIBILITY,
         )
+        map.put(
+            CfirErrors.WEAK_VISIBILITY,
+            "a deriving member must be at least as visible as its base member. the visibility of the base ''{0}'' is ''{1}''",
+            RENDER_NAME,
+            VISIBILITY,
+        )
         map.put(CfirErrors.NON_EXHAUSTIVE_MATCH, "match expression is not exhaustive. Missing cases: {0}", RENDER_STRING_LIST)
         map.put(
             CfirErrors.TUPLE_PATTERN_NOT_MATCH,
@@ -695,6 +701,7 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
         map.put(CfirErrors.GENERIC_ARGUMENT_NO_MATCH, "type argument's number does not match type parameter's number")
         map.put(CfirErrors.GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT, "generic type argument ''{0}'' does not match upper bound ''{1}'' of ''{2}''", RENDER_TYPE, RENDER_TYPE, RENDER_TYPE)
         map.put(CfirErrors.GENERIC_CONSTRAINT_NOT_LOOSER, "the constraint of type parameter is not looser than parent's constraint")
+        map.put(CfirErrors.GENERIC_INFINITE_INSTANTIATION, "generic infinite instantiation")
         map.put(CfirErrors.GENERIC_INSTANTIATION_CAUSES_AMBIGUOUS_FUNCTIONS, "generic instantiation ''{0}'' causes ambiguous function ''{1}''", RENDER_NAME, RENDER_NAME)
         map.put(CfirErrors.GENERIC_PARAM_EXIST_IN_CLASS_IRRELEVANT_UPPERBOUND_RECURSIVELY, "generic parameter ''{0}'' cannot be used in class irrelevant upper bounds ''{1}''", RENDER_NAME, RENDER_TYPE)
         map.put(CfirErrors.GENERIC_PARAM_DIRECTLY_RECURSIVE, "generic parameter ''{0}'' is bounded directly recursively with ''{1}'' which is forbidden", RENDER_NAME, RENDER_NAME)

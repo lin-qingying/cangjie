@@ -20,12 +20,12 @@ interface I2 {
 class C1 {}
 
 extend C1 <: I1 {
-    func <!CANNOT_WEAKEN_ACCESS_PRIVILEGE!>foo<!>(): Int64 {
+    func <!WEAK_VISIBILITY!>foo<!>(): Int64 {
         3
     }
 }
 
-extend <!CANNOT_WEAKEN_ACCESS_PRIVILEGE!>C1<!> <: I2 {}
+extend <!WEAK_VISIBILITY!>C1<!> <: I2 {}
 
 main() {
     return -1
