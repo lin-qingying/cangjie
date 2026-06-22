@@ -53,6 +53,9 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
     val RESOLVE by object : DiagnosticGroup("Resolve") {
         val NO_CONSTRUCTOR by error<PsiElement>(PositioningStrategy.REFERENCED_NAME_BY_QUALIFIED)
         val REF_NOT_BE_TYPE by error<PsiElement>()
+        val NOT_A_TYPE by error<PsiElement>(PositioningStrategy.REFERENCED_NAME_BY_QUALIFIED) {
+            parameter<String>("typeName")
+        }
         val INVALID_ACCESS_CONTROL by error<PsiElement>()
 
         /**

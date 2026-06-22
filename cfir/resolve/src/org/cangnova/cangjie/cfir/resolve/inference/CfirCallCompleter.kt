@@ -481,6 +481,13 @@ class CfirCallCompleter(
         initialType: ConeCangJieType,
         expectedType: ConeCangJieType,
     ): Boolean {
+        // 官方 typealias 构造调用先经 alias target 替换生成构造器候选；
+        // expected type 属于外层初始化/赋值检查，不能反向补全该候选并吞掉真实不匹配。
+        if ((symbol as? CfirConstructorSymbol)?.typeAliasConstructorInfo != null &&
+            typeArgumentMapping != TypeArgumentMapping.NoExplicitArguments
+        ) {
+            return false
+        }
         if (symbol.takeIf { it.isBound }?.cfir !is CfirEnumConstructor) return true
         val initialEnumClassId = initialType.fullyExpandedType().enumConstructorOwnerClassIdOrNull() ?: return true
         val expectedEnumClassId = expectedType.fullyExpandedType().enumConstructorOwnerClassIdOrNull() ?: return false

@@ -8,7 +8,6 @@ import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.expressions.CfirErrorExpression
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
-import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirNamedAccessExpression
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
 import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
@@ -33,7 +32,6 @@ object CfirPatternVariableInitializerTypeMismatchChecker : CfirPatternVariableCh
 
         val expectedType = (declaration.returnTypeRef as? CfirResolvedTypeRef)?.coneType ?: return
         val initializer = declaration.initializer?.takeIf { it !is CfirErrorExpression } ?: return
-        if (initializer is CfirFunctionCall) return
         if (initializer.hasResolutionDiagnostic()) return
         if (initializer.isBareEnumConstructorAccess()) return
         val actualType = initializer.coneTypeOrNull ?: return

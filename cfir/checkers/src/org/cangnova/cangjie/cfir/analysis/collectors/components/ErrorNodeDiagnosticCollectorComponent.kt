@@ -158,6 +158,8 @@ class ErrorNodeDiagnosticCollectorComponent(
      *
      * 官方 cjc 在 `type x = List<T>` 中只报告 `List` 未声明；Kotlin FIR 也会通过
      * declaration-site typealias error 过滤避免使用点或嵌套节点重复报告。
+     * 但父节点若只是 `ConeUnreportedDuplicateDiagnostic(T)`，真实错误所有者仍是内层 `T`，
+     * 不能把这个重复包装当作根 classifier 错误继续抑制。
      */
     private fun CfirErrorTypeRef.isNestedTypeAliasDeclarationSiteCascade(context: CheckerContext): Boolean {
         if (diagnostic.unwrapUnreportedDuplicateDiagnostic() !is ConeUnresolvedTypeQualifierError) return false
@@ -167,7 +169,7 @@ class ErrorNodeDiagnosticCollectorComponent(
             .filterIsInstance<CfirErrorTypeRef>()
             .any { parent ->
                 parent !== this &&
-                        parent.diagnostic.unwrapUnreportedDuplicateDiagnostic() is ConeUnresolvedTypeQualifierError
+                        parent.diagnostic is ConeUnresolvedTypeQualifierError
             }
     }
     /**

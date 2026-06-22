@@ -10,6 +10,7 @@ package org.cangnova.cangjie.cfir.analysis.diagnostics
 val FIR_NON_SUPPRESSIBLE_ERROR_NAMES: Set<String> = setOf(
     "NO_CONSTRUCTOR",
     "REF_NOT_BE_TYPE",
+    "NOT_A_TYPE",
     "INVALID_ACCESS_CONTROL",
     "ENUM_TYPE_CANNOT_BE_USED_AS_CONSTRUCTOR",
     "CONFLICTING_OVERLOADS",

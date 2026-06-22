@@ -33,6 +33,7 @@ object CfirErrors : CjDiagnosticsContainer() {
     // Resolve
     val NO_CONSTRUCTOR: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_NO_CONSTRUCTOR", Severity.ERROR, SourceElementPositioningStrategies.REFERENCED_NAME_BY_QUALIFIED, PsiElement::class, getRendererFactory())
     val REF_NOT_BE_TYPE: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_REF_NOT_BE_TYPE", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
+    val NOT_A_TYPE: CjDiagnosticFactory1<String> = CjDiagnosticFactory1("CFIR_NOT_A_TYPE", Severity.ERROR, SourceElementPositioningStrategies.REFERENCED_NAME_BY_QUALIFIED, PsiElement::class, getRendererFactory())
     val INVALID_ACCESS_CONTROL: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_INVALID_ACCESS_CONTROL", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val ENUM_TYPE_CANNOT_BE_USED_AS_CONSTRUCTOR: CjDiagnosticFactory1<Name> = CjDiagnosticFactory1("CFIR_ENUM_TYPE_CANNOT_BE_USED_AS_CONSTRUCTOR", Severity.ERROR, SourceElementPositioningStrategies.REFERENCED_NAME_BY_QUALIFIED, PsiElement::class, getRendererFactory())
 

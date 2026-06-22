@@ -68,6 +68,7 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
     override val MAP: CjDiagnosticFactoryToRendererMap by CjDiagnosticFactoryToRendererMap("FIR") { map ->
         map.put(NO_CONSTRUCTOR, "No constructor available for this type.")
         map.put(REF_NOT_BE_TYPE, "type name cannot be used as an expression")
+        map.put(CfirErrors.NOT_A_TYPE, "''{0}'' is not a type", RENDER_STRING)
         map.put(CfirErrors.INVALID_ACCESS_CONTROL, "Invalid access control.")
         map.put(
             CfirErrors.ENUM_TYPE_CANNOT_BE_USED_AS_CONSTRUCTOR,
