@@ -268,11 +268,12 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
     }
 
     /**
-     * 将 extend 条件父类型派生成约束系统可求解的 where 约束。
+     * 将用户 extend 的条件父类型派生成约束系统可求解的 where 约束。
      *
      * 例如 `extend<T> Option<T> <: I where T <: I` 使 `Option<X> <: I`
-     * 等价于初始约束 `X <: I`。普通父类型查询仍由 providers 层按已满足
-     * 约束过滤；这里仅服务于声明上界进入推断系统的阶段。
+     * 等价于初始约束 `X <: I`。标准库 `Array<T>` 不在这里下沉元素约束：
+     * 官方 `cjc` 对 `GennericClassA<Array<Int64>, ...>` 的 typealias 构造
+     * 不会因此要求 `Int64` 满足 `Array` 的 PrettyPrintable 派生条件。
      */
     private fun collectExtendDerivedUpperBoundConstraints(
         session: CfirSession,
@@ -280,6 +281,8 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
         upperBound: ConeCangJieType,
     ): List<Pair<ConeCangJieType, ConeCangJieType>>? {
         val semanticLowerType = lowerType.fullyExpandedType(session)
+        if (semanticLowerType.isArray) return null
+
         val candidateExtends = when (semanticLowerType) {
             is ConePrimitiveType -> session.extendProvider.getExtendsForBuiltinType(semanticLowerType.kind)
             else -> {

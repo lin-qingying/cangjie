@@ -15,6 +15,6 @@ class B<T> {}
 extend<X> A<B<X>> <: I<X> {}
 
 main() {
-    var a: I<Int64> = A<B<Int64>>()
+    var a: I<Int64> = <!TYPE_MISMATCH!>A<B<Int64>>()<!>
     a.foo()
 }

@@ -5,11 +5,10 @@ import std.collection.*
 interface List1<T>{
 
 }
-type bb = <!这个实际有错误的!>List1<!><<!这里也有!>T<!>>
-type x = <!这个实际有错误的!>List<!><<!这里也有!>T<!>>
+type bb = <!NOT_A_TYPE!>List1<!><<!UNDECLARED_TYPE_NAME!>T<!>>
+type x = <!NOT_A_TYPE!>List<!><<!UNDECLARED_TYPE_NAME!>T<!>>
 
 main(): Int64 {
     var a: x = [1]
     return a.size - 1
 }
-

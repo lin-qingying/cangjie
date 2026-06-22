@@ -127,6 +127,7 @@ object CommonDeclarationCheckers : DeclarationCheckers() {
         get() = setOf(
             CfirTypeAliasCFuncLegalityChecker,
             CfirTypeAliasCycleChecker,
+            CfirTypeAliasExpandedTypeChecker,
             CfirTypeAliasUnusedTypeParameterChecker,
         )
 
