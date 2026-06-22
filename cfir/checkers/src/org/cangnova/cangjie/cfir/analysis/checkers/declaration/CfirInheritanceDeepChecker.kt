@@ -715,6 +715,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         val reportedKindConflicts = mutableSetOf<Name>()
         val reportedConstConflicts = mutableSetOf<String>()
         val reportedMutConflicts = mutableSetOf<String>()
+        val reportedReturnTypeConflicts = mutableSetOf<String>()
         val reportedVariableShadows = mutableSetOf<Name>()
         val reportedCannotOverrides = mutableSetOf<String>()
         val reportedExtendOverrides = mutableSetOf<String>()
@@ -724,7 +725,8 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
             val superClassId = (superType as? ConeClassLikeType)?.classId ?: continue
             val superSymbol = context.session.symbolProvider.getClassLikeSymbolByClassId(superClassId) ?: continue
             val superDecl = superSymbol.cfir as? CfirClassLikeDeclaration ?: continue
-            val superScope = context.createUseSiteMemberScope(superDecl)
+            val superScope = inheritedSource.typeRef.resolvedUseSiteMemberScope()
+                ?: context.createUseSiteMemberScope(superDecl)
 
             for (name in ownMembers.keys) {
                 val superInfos = buildList {
@@ -800,6 +802,22 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                             }
                         }
 
+                        if (!hasStaticConflict) {
+                            val returnTypeMismatch = ownInfo.functionReturnTypeMismatch(superInfo, context)
+                            if (returnTypeMismatch != null) {
+                                val key = ownInfo.overrideDiagnosticKey(superInfo)
+                                if (reportedReturnTypeConflicts.add(key)) {
+                                    reporter.reportOn(
+                                        source = ownInfo.nameSource ?: ownInfo.source ?: subject.source,
+                                        factory = CfirErrors.OVERRIDING_RETURN_TYPE_MISMATCH,
+                                        a = returnTypeMismatch.implementationType,
+                                        b = returnTypeMismatch.baseType,
+                                        c = superInfo.name,
+                                    )
+                                }
+                            }
+                        }
+
                         if (!hasStaticConflict && ownInfo.kind == "variable" && reportedVariableShadows.add(ownInfo.name)) {
                             reporter.reportOn(
                                 source = ownInfo.source?.firstCharacterDiagnosticSource() ?: subject.source,
@@ -836,6 +854,45 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                 }
             }
         }
+    }
+
+    private fun InheritedMemberInfo.functionReturnTypeMismatch(
+        superInfo: InheritedMemberInfo,
+        context: CheckerContext,
+    ): FunctionReturnTypeMismatch? {
+        if (!canImplement(superInfo)) return null
+        if (kind != "function") return null
+        val implementationSymbol = symbol as? CfirFunctionSymbol<*> ?: return null
+        val baseSymbol = superInfo.symbol as? CfirFunctionSymbol<*> ?: return null
+        val implementationType = implementationSymbol.resolvedReturnTypeOrNull(context) ?: return null
+        val baseType = baseSymbol.resolvedReturnTypeOrNull(context) ?: return null
+        if (implementationType is ConeErrorType || baseType is ConeErrorType) return null
+        if (implementationType.containsAnyTypeParameter() || baseType.containsAnyTypeParameter()) return null
+        if (AbstractTypeChecker.isSubtypeOf(context.session.typeContext, implementationType, baseType)) return null
+        return FunctionReturnTypeMismatch(
+            implementationType = implementationType,
+            baseType = baseType,
+        )
+    }
+
+    private fun ConeCangJieType.containsAnyTypeParameter(): Boolean =
+        abbreviatedType?.containsAnyTypeParameter() == true || containsAnyTypeParameterInConstructor()
+
+    private fun ConeCangJieType.containsAnyTypeParameterInConstructor(): Boolean = when (this) {
+        is ConeTypeParameterType -> true
+        is ConeClassLikeType -> typeArguments.any { it.type.containsAnyTypeParameter() }
+        is ConeStructType -> typeArguments.any { it.type.containsAnyTypeParameter() }
+        is ConeEnumType -> typeArguments.any { it.type.containsAnyTypeParameter() }
+        is ConeTypeAliasType -> typeArguments.any { it.type.containsAnyTypeParameter() } ||
+            (expandedType?.containsAnyTypeParameter() == true)
+        is ConeFunctionType -> parameterTypes.any { it.containsAnyTypeParameter() } ||
+            returnType.containsAnyTypeParameter()
+        is ConeTupleType -> elementTypes.any { it.containsAnyTypeParameter() }
+        is ConeVArrayType -> elementType.containsAnyTypeParameter()
+        is ConePointerType -> pointeeType.containsAnyTypeParameter()
+        is ConeIntersectionType -> intersectedTypes.any { it.containsAnyTypeParameter() }
+        is ConeUnionType -> unionTypes.any { it.containsAnyTypeParameter() }
+        else -> arrayElementType?.containsAnyTypeParameter() == true
     }
 
     private fun CfirDeclaration.inheritedMemberInfoOrNull(context: CheckerContext): InheritedMemberInfo? =
@@ -1152,6 +1209,11 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
     )
 
     private data class PropertyTypeMismatch(
+        val implementationType: ConeCangJieType,
+        val baseType: ConeCangJieType,
+    )
+
+    private data class FunctionReturnTypeMismatch(
         val implementationType: ConeCangJieType,
         val baseType: ConeCangJieType,
     )
