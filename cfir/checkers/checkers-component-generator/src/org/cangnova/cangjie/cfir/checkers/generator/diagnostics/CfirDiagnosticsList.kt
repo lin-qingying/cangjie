@@ -117,7 +117,7 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
         }
 
         // 超类型重复：同一类型在继承列表中出现多次
-        val SUPER_TYPES_DUPLICATE by error<CjNamedDeclaration>(PositioningStrategy.ACTUAL_DECLARATION_NAME) {
+        val SUPER_TYPES_DUPLICATE by error<PsiElement>(PositioningStrategy.ACTUAL_DECLARATION_NAME) {
             parameter<Name>("typeName")  // 重复出现的类型名
         }
 

@@ -183,6 +183,7 @@ private class GenericInstantiationAnalyzer(
             .zip(expandedArguments)
             .associate { (typeParameter, argument) -> typeParameter.symbol to argument }
         if (targetDeclaration is CfirClassLikeDeclaration) {
+            checkInstantiatedDuplicateSupertypes(targetDeclaration, nestedSubstitutions, memberInstantiationContext?.source)
             checkInstantiatedMemberSignatures(targetDeclaration, nestedSubstitutions, memberInstantiationContext?.source)
         }
         processDeclaration(targetDeclaration, nestedSubstitutions, memberInstantiationContext)
@@ -256,7 +257,6 @@ private class GenericInstantiationAnalyzer(
                         constructedType,
                         source,
                         isNestedTypeArgument = false,
-                        propagateSourceAsRoot = false,
                     )
                 }
             }
@@ -455,12 +455,84 @@ private class GenericInstantiationAnalyzer(
         triggerSource: CjSourceElement?,
     ) {
         if (substitutions.isEmpty()) return
+        if (substitutions.values.any { it.containsTypeParameterSymbol() }) return
         val membersByName = declaration.collectInstantiatedMemberSignatures(substitutions)
         reportInstantiatedMemberSignatureConflicts(
             membersByName = membersByName,
             triggerSource = triggerSource,
             instantiationName = { declaration.renderInstantiationName(substitutions) },
         )
+    }
+
+    /**
+     * 官方 `CheckInstDupSuperInterfaces` 会在类型引用/构造表达式实例化目标声明时，
+     * 对目标声明的父接口表做一次带类型实参的重复接口检查。这里和声明级父类型检查互补，
+     * 诊断归属实例化触发引用。
+     */
+    private fun checkInstantiatedDuplicateSupertypes(
+        declaration: CfirClassLikeDeclaration,
+        substitutions: Map<CfirTypeParameterSymbol, ConeCangJieType>,
+        triggerSource: CjSourceElement?,
+    ) {
+        if (substitutions.isEmpty()) return
+        if (substitutions.values.any { it.containsTypeParameterSymbol() }) return
+        val source = triggerSource ?: return
+        val substitutor = substitutions.toConeSubstitutor()
+        val seen = linkedMapOf<String, Name>()
+        for (superTypeRef in declaration.superTypeRefs) {
+            val supertype = superTypeRef.coneTypeOrNull ?: continue
+            collectInstantiatedSuperInterfaces(
+                type = substitutor.substituteOrSelf(supertype),
+                seen = seen,
+            )?.let { duplicatedInterface ->
+                context(checkerContext) {
+                    reporter.reportOn(
+                        source = source,
+                        factory = CfirErrors.SUPER_TYPES_DUPLICATE,
+                        a = duplicatedInterface,
+                    )
+                }
+                return
+            }
+        }
+    }
+
+    private fun collectInstantiatedSuperInterfaces(
+        type: ConeCangJieType,
+        seen: MutableMap<String, Name>,
+        visited: MutableSet<String> = linkedSetOf(),
+    ): Name? {
+        val classifierType = type as? ConeClassifierType ?: return null
+        val symbol = classifierType.toSymbol(checkerContext.session) as? CfirClassLikeSymbol<*> ?: return null
+        val declaration = symbol.cfir as? CfirClassLikeDeclaration ?: return null
+        val typeKey = classifierType.instantiatedInterfaceKey()
+        if (typeKey != null) {
+            seen.putIfAbsent(typeKey, declaration.name)?.let { return it }
+        }
+        if (!visited.add(typeKey ?: symbol.classId.asString())) return null
+
+        val substitutor = declaration.createDeclarationTypeSubstitutor(classifierType)
+        for (superTypeRef in declaration.superTypeRefs) {
+            val supertype = superTypeRef.coneTypeOrNull ?: continue
+            collectInstantiatedSuperInterfaces(
+                type = substitutor.substituteOrSelf(supertype),
+                seen = seen,
+                visited = visited,
+            )?.let { return it }
+        }
+        return null
+    }
+
+    private fun ConeClassifierType.instantiatedInterfaceKey(): String? {
+        val symbol = toSymbol(checkerContext.session) as? CfirClassLikeSymbol<*> ?: return null
+        return buildString {
+            append(symbol.classId.asString())
+            if (typeArguments.isNotEmpty()) {
+                append('<')
+                typeArguments.joinTo(this) { it.type.renderForInstantiationDiagnostic() }
+                append('>')
+            }
+        }
     }
 
     private fun checkInstantiatedBuiltinExtendMemberSignatures(
@@ -501,7 +573,6 @@ private class GenericInstantiationAnalyzer(
                     )
                     break
                 }
-                stableMembers += genericMember
             }
         }
     }
@@ -601,14 +672,20 @@ private class GenericInstantiationAnalyzer(
         }
 
         val substitutor = substitutions.toConeSubstitutor()
-        val signatures = functions.values
+        val ownSignatures = functions.values
             .asSequence()
             .mapNotNull { it.toInstantiatedMemberSignature(name, substitutor) }
-            .toMutableList()
+            .toList()
+        val signatures = ownSignatures.toMutableList()
         signatures += collectInheritedDefaultFunctionSignatures(
             superTypeRefs = superTypeRefs,
             ownerExtend = null,
             substitutor = substitutor,
+        )
+        signatures += collectInheritedInterfaceFunctionSignatures(
+            superTypeRefs = superTypeRefs,
+            substitutor = substitutor,
+            implementedBy = ownSignatures,
         )
         instantiatedSelfType(substitutor)?.let { instantiatedType ->
             signatures += collectClassLikeExtendMemberSignatures(instantiatedType)
@@ -637,6 +714,59 @@ private class GenericInstantiationAnalyzer(
             signatures += extend.collectInheritedDefaultFunctionSignatures(extend, substitution.substitutor)
         }
         return signatures
+    }
+
+    private fun collectInheritedInterfaceFunctionSignatures(
+        superTypeRefs: List<CfirTypeRef>,
+        substitutor: ConeSubstitutor,
+        implementedBy: List<InstantiatedMemberSignature> = emptyList(),
+    ): List<InstantiatedMemberSignature> {
+        val signatures = mutableListOf<InstantiatedMemberSignature>()
+        val visitedInterfaces = linkedSetOf<String>()
+        for (superTypeRef in superTypeRefs) {
+            val supertype = superTypeRef.coneTypeOrNull ?: continue
+            collectInterfaceFunctionSignatures(
+                interfaceType = substitutor.substituteOrSelf(supertype),
+                destination = signatures,
+                visitedInterfaces = visitedInterfaces,
+                implementedBy = implementedBy,
+            )
+        }
+        return signatures
+    }
+
+    private fun collectInterfaceFunctionSignatures(
+        interfaceType: ConeCangJieType,
+        destination: MutableList<InstantiatedMemberSignature>,
+        visitedInterfaces: MutableSet<String>,
+        implementedBy: List<InstantiatedMemberSignature> = emptyList(),
+    ) {
+        val classifierType = interfaceType as? ConeClassifierType ?: return
+        val symbol = classifierType.toSymbol(checkerContext.session) as? CfirClassLikeSymbol<*> ?: return
+        val declaration = symbol.cfir as? CfirClassLikeDeclaration ?: return
+        val interfaceKey = classifierType.instantiatedInterfaceKey() ?: symbol.classId.asString()
+        if (!visitedInterfaces.add(interfaceKey)) return
+
+        val substitutor = declaration.createDeclarationTypeSubstitutor(classifierType)
+        for (member in declaration.declarations) {
+            val function = member as? CfirFunction ?: continue
+            val signature = function.toInstantiatedMemberSignature(
+                ownerName = declaration.name,
+                substitutor = substitutor,
+            ) ?: continue
+            if (implementedBy.any { implementation -> implementation.conflictsWith(signature) }) continue
+            destination += signature
+        }
+
+        for (superTypeRef in declaration.superTypeRefs) {
+            val supertype = superTypeRef.coneTypeOrNull ?: continue
+            collectInterfaceFunctionSignatures(
+                interfaceType = substitutor.substituteOrSelf(supertype),
+                destination = destination,
+                visitedInterfaces = visitedInterfaces,
+                implementedBy = implementedBy,
+            )
+        }
     }
 
     private fun collectInheritedDefaultFunctionSignatures(
@@ -698,6 +828,7 @@ private class GenericInstantiationAnalyzer(
         inheritedDefaultOwnerExtend: CfirExtend? = null,
     ): InstantiatedMemberSignature? {
         if (origin != CfirDeclarationOrigin.Source && origin !is CfirDeclarationOrigin.SubstitutionOverride) return null
+        if (status.isStatic) return null
         if (typeParameters.isNotEmpty()) return null
         val parameterTypes = valueParameters.map { parameter ->
             parameter.returnTypeRef.coneTypeOrNull ?: return null
