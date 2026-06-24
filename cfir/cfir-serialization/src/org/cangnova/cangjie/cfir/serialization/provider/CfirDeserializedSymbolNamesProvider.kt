@@ -12,16 +12,20 @@ import org.cangnova.cangjie.name.Name
  * 从 `CjoPackageHeader` 中提取顶层名称，用于快速过滤。
  */
 class CfirDeserializedSymbolNamesProvider(
+    /** 负责读取 `.cjo` 包头并枚举包名的管理器。 */
     private val cjoManager: CjoManager,
 ) : CfirSymbolNamesProvider() {
+    /** 递归解析 public import re-export 后的顶层名称视图。 */
     private val exportedTopLevelNamesResolver = CjoExportedTopLevelNamesResolver(cjoManager)
 
+    /** 返回当前搜索路径中可用的包名集合。 */
     override fun getPackageNames(): Set<String>? =
         cjoManager.getAvailablePackageNames().mapTo(linkedSetOf()) { it.asString() }
 
     override val hasSpecificClassifierPackageNamesComputation: Boolean
         get() = false
 
+    /** 返回指定包导出的顶层 classifier 名称集合。 */
     override fun getTopLevelClassifierNamesInPackage(packageFqName: FqName): Set<Name>? {
         return exportedTopLevelNamesResolver.resolve(packageFqName).classifierNames
     }
@@ -29,6 +33,7 @@ class CfirDeserializedSymbolNamesProvider(
     override val hasSpecificCallablePackageNamesComputation: Boolean
         get() = false
 
+    /** 返回指定包导出的顶层 callable 名称集合。 */
     override fun getTopLevelCallableNamesInPackage(packageFqName: FqName): Set<Name>? {
         return exportedTopLevelNamesResolver.resolve(packageFqName).callableNames
     }

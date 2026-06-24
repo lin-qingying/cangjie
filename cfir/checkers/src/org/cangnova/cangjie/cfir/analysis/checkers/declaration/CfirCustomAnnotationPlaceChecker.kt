@@ -24,8 +24,14 @@ import org.cangnova.cangjie.name.Name
  * 局部 function / property / var 不允许带自定义注解。
  */
 object CfirCustomAnnotationPlaceChecker : CfirCallableDeclarationChecker() {
+    /**
+     * 标识自定义注解类的元注解名称。
+     */
     private val ANNOTATION = Name.identifier("Annotation")
 
+    /**
+     * 检查 callable 声明上的自定义注解是否放置在局部声明上。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirCallableDeclaration) {
         val isLocal = when (declaration) {
@@ -47,6 +53,9 @@ object CfirCustomAnnotationPlaceChecker : CfirCallableDeclarationChecker() {
         }
     }
 
+    /**
+     * 判断注解调用的类型是否指向带 `@Annotation` 元注解的自定义注解类。
+     */
     context(context: CheckerContext)
     private fun isCustomAnnotation(annotation: CfirAnnotation): Boolean {
         val type = (annotation.typeRef as? CfirResolvedTypeRef)?.coneType as? ConeClassLikeType ?: return false

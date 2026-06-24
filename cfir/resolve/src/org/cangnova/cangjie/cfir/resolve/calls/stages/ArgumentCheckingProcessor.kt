@@ -29,6 +29,7 @@ import org.cangnova.cangjie.cfir.semantics.ErrorTypeInArguments
 import org.cangnova.cangjie.cfir.semantics.ResolutionDiagnostic
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterLookupTag
+import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
@@ -36,6 +37,7 @@ import org.cangnova.cangjie.cfir.types.ConeIdealLiteralType
 import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.types.ConeTypeIntersector
 import org.cangnova.cangjie.cfir.types.ConeTypeVariableType
+import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.ConeUnreportedDuplicateDiagnostic
 import org.cangnova.cangjie.cfir.types.ConeVArrayType
 import org.cangnova.cangjie.cfir.types.IdealTypeResolver
@@ -53,25 +55,67 @@ import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintPosition
 import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.type.AbstractTypeChecker
 
+/**
+ * 实参检查处理器。
+ *
+ * 该对象负责把实参表达式类型与候选参数期望类型写入约束系统，
+ * 并为 lambda、函数引用、数组字面量等需要延迟处理的实参创建 postponed atom。
+ */
 internal object ArgumentCheckingProcessor {
+    /**
+     * 单个实参检查过程需要的上下文。
+     */
     private data class ArgumentContext(
+        /**
+         * 当前正在检查的调用候选。
+         */
         val candidate: Candidate,
+        /**
+         * 当前候选的约束系统 builder。
+         */
         val csBuilder: ConstraintSystemBuilder,
+        /**
+         * 当前实参位置上的期望类型。
+         */
         val expectedType: ConeCangJieType?,
+        /**
+         * 诊断 sink；completion 阶段仅构造 atom 时可为空。
+         */
         val sink: CheckerSink?,
+        /**
+         * 当前调用解析上下文。
+         */
         val context: ResolutionContext,
+        /**
+         * 当前实参是否作为 receiver 检查。
+         */
         val isReceiver: Boolean,
+        /**
+         * 当前 receiver 是否为 dispatch receiver。
+         */
         val isDispatch: Boolean,
+        /**
+         * 当该实参来自 lambda 返回表达式时，对应的匿名函数。
+         */
         val anonymousFunctionIfReturnExpression: CfirAnonymousFunction? = null,
     ) : SessionHolder {
+        /**
+         * 当前上下文所属会话。
+         */
         override val session: CfirSession
             get() = context.session
 
+        /**
+         * 向 sink 报告诊断；sink 为空时忽略。
+         */
         fun reportDiagnostic(diagnostic: ResolutionDiagnostic) {
             sink?.reportDiagnostic(diagnostic)
         }
     }
 
+    /**
+     * 解析并检查一个表达式实参。
+     */
     fun resolveArgumentExpression(
         candidate: Candidate,
         atom: ConeResolutionAtom,
@@ -94,6 +138,9 @@ internal object ArgumentCheckingProcessor {
         ).resolveArgumentExpression(atom)
     }
 
+    /**
+     * 直接使用已知实参类型进行适用性检查。
+     */
     fun resolvePlainArgumentType(
         candidate: Candidate,
         atom: ConeResolutionAtom,
@@ -116,6 +163,9 @@ internal object ArgumentCheckingProcessor {
         ).resolvePlainArgumentType(atom, argumentType, sourceForReceiver)
     }
 
+    /**
+     * completion 阶段按修订后的期望类型创建已解析 lambda atom。
+     */
     fun createResolvedLambdaAtomDuringCompletion(
         candidate: Candidate,
         csBuilder: ConstraintSystemBuilder,
@@ -137,6 +187,9 @@ internal object ArgumentCheckingProcessor {
         ).createResolvedLambdaAtom(atom, duringCompletion = true, returnTypeVariable = returnTypeVariable)
     }
 
+    /**
+     * 按 atom 类型分派实参解析。
+     */
     private fun ArgumentContext.resolveArgumentExpression(atom: ConeResolutionAtom) {
         when (atom) {
             is ConeResolutionAtomWithPostponedChild -> when (atom.expression) {
@@ -169,6 +222,9 @@ internal object ArgumentCheckingProcessor {
         }
     }
 
+    /**
+     * 在期望类型已知时把函数引用实参转为 postponed callable reference atom。
+     */
     private fun ArgumentContext.preprocessFunctionReferenceArgument(
         atom: ConeResolutionAtomWithPostponedChild,
         expression: CfirNamedAccessExpression,
@@ -193,11 +249,17 @@ internal object ArgumentCheckingProcessor {
         candidate.addPostponedAtom(postponedAtom)
     }
 
+    /**
+     * 解析普通表达式实参类型。
+     */
     private fun ArgumentContext.resolvePlainExpressionArgument(atom: ConeResolutionAtom) {
         val argumentType = arrayLiteralTypeFromExpectedType(atom.expression) ?: atom.expression.coneTypeOrNull ?: return
         resolvePlainArgumentType(atom, argumentType)
     }
 
+    /**
+     * 当期望类型可确定数组字面量元素类型时，为数组字面量补齐整体类型。
+     */
     private fun ArgumentContext.arrayLiteralTypeFromExpectedType(expression: CfirExpression): ConeCangJieType? {
         val arrayLiteral = expression as? CfirArrayLiteral ?: return null
         val expandedExpectedType = expectedType?.fullyExpandedType(session) ?: return null
@@ -220,6 +282,9 @@ internal object ArgumentCheckingProcessor {
         return expandedExpectedType
     }
 
+    /**
+     * 创建实参约束位置；lambda 返回表达式使用专门的位置对象。
+     */
     private fun  ArgumentContext.createArgumentConstraintPosition(atom: ConeResolutionAtom): ArgumentConstraintPosition<*> {
         return when (val containingLambda = anonymousFunctionIfReturnExpression) {
             null -> ConeArgumentConstraintPosition(atom.expression)
@@ -227,6 +292,9 @@ internal object ArgumentCheckingProcessor {
         }
     }
 
+    /**
+     * 将普通实参类型写入 subtype 约束并报告适用性错误。
+     */
     private fun ArgumentContext.resolvePlainArgumentType(
         atom: ConeResolutionAtom,
         argumentType: ConeCangJieType,
@@ -240,6 +308,10 @@ internal object ArgumentCheckingProcessor {
         val preparedType = prepareArgumentType(argumentType, context.session)
         checkApplicabilityForArgumentType(atom, preparedType, position)
     }
+
+    /**
+     * 检查实参类型是否适用于期望类型。
+     */
     private fun ArgumentContext.checkApplicabilityForArgumentType(
         atom: ConeResolutionAtom,
         argumentTypeBeforeCapturing: ConeCangJieType,
@@ -287,6 +359,7 @@ internal object ArgumentCheckingProcessor {
         }
 
         if (csBuilder.addSubtypeConstraintIfCompatible(argumentType, expectedType, position)) return
+        if (argumentType.isIdealTypeForTypeParameterExpectedType(expectedType)) return
         if (isReceiver) {
             csBuilder.addSubtypeConstraint(argumentType, expectedType, position)
             reportDiagnostic(InapplicableWrongReceiver(expectedType, argumentType))
@@ -294,6 +367,22 @@ internal object ArgumentCheckingProcessor {
         }
         reportDiagnostic(subtypeError(expectedType))
     }
+
+    /**
+     * 官方 LocalTypeArgumentSynthesis 会让 IdealInt/IdealFloat 先参与泛型参数推断，
+     * 再由后续目标类型或其他约束把 ideal 类型收束成具体原始类型。
+     * 因此实参检查不能在 `IdealInt <: T` 这类声明类型参数位置提前报参数不匹配。
+     */
+    private fun ConeCangJieType.isIdealTypeForTypeParameterExpectedType(
+        expectedType: ConeCangJieType,
+    ): Boolean {
+        if (expectedType !is ConeTypeParameterType) return false
+        return this is ConeIdealLiteralType || this is ConePrimitiveType && kind.isIdeal
+    }
+
+    /**
+     * 判断当前实参检查是否应运行转换流程。
+     */
     private fun  ArgumentContext.shouldRunConversion(): Boolean {
         // Currently, we only apply conversions for arguments, not lambda's return expressions
 //        if (anonymousFunctionIfReturnExpression != null) {
@@ -303,11 +392,17 @@ internal object ArgumentCheckingProcessor {
         return true
     }
 
+    /**
+     * 预处理 lambda 实参，必要时创建 postponed lambda atom。
+     */
     private fun ArgumentContext.preprocessLambdaArgument(atom: ConeResolutionAtomWithPostponedChild) {
         if (createLambdaWithTypeVariableAsExpectedTypeAtomIfNeeded(atom)) return
         createResolvedLambdaAtom(atom, duringCompletion = false, returnTypeVariable = null)
     }
 
+    /**
+     * 当 lambda 的期望类型本身是类型变量时创建可修订期望类型 atom。
+     */
     private fun ArgumentContext.createLambdaWithTypeVariableAsExpectedTypeAtomIfNeeded(
         atom: ConeResolutionAtomWithPostponedChild,
     ): Boolean {
@@ -337,6 +432,9 @@ internal object ArgumentCheckingProcessor {
         return true
     }
 
+    /**
+     * 创建已解析 lambda atom，并把对应函数类型约束写入候选约束系统。
+     */
     private fun ArgumentContext.createResolvedLambdaAtom(
         atom: ConeResolutionAtomWithPostponedChild,
         duringCompletion: Boolean,
@@ -417,6 +515,9 @@ internal object ArgumentCheckingProcessor {
         return resolvedAtom
     }
 
+    /**
+     * 将 postponed child atom 的表达式读取为匿名函数表达式。
+     */
     private val ConeResolutionAtomWithPostponedChild.lambdaExpression: CfirAnonymousFunctionExpression
         get() = expression as? CfirAnonymousFunctionExpression
             ?: error("Expected anonymous function expression, but was ${expression::class}")

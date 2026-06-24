@@ -19,12 +19,24 @@ import org.cangnova.cangjie.name.FqName
  * “声明复制 + 类型实参替换”，而不是在解析阶段退化成按 symbol 反查。
  */
 interface CfirExtendProvider : CfirSessionComponent {
+    /**
+     * 返回与规范化目标 key 匹配的所有 extend 声明。
+     */
     fun getExtendsForTarget(targetKey: CfirExtendTargetKey): List<CfirExtend>
 
+    /**
+     * 返回显式扩展 [classId] 的所有 extend 声明。
+     */
     fun getExtendsForClass(classId: ClassId): List<CfirExtend>
 
+    /**
+     * 返回声明在 [packageFqName] 包内的 extend 集合。
+     */
     fun getExtendsInPackage(packageFqName: FqName): List<CfirExtend>
 
+    /**
+     * 返回扩展 builtin primitive 类型 [kind] 的 extend 声明。
+     */
     fun getExtendsForBuiltinType(kind: PrimitiveTypeKind): List<CfirExtend>
 
     /**
@@ -35,5 +47,18 @@ interface CfirExtendProvider : CfirSessionComponent {
      */
     fun getContainingExtend(symbol: CfirCallableSymbol<*>): CfirExtend? = null
 
+    /**
+     * 返回 extend 声明所在包。
+     *
+     * use-site scope 需要用它模拟 CJO 导出面：跨包时 private extend 成员
+     * 不应进入候选集合。
+     */
+    fun getPackageFqName(extend: CfirExtend): FqName? = null
+
+    /**
+     * 判断 [extend] 对当前查询上下文是否可见。
+     *
+     * 该判定用于 provider 层过滤 CJO/跨包导出面，不替代后续 callable visibility check。
+     */
     fun isExtendAccessible(extend: CfirExtend): Boolean = true
 }

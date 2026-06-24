@@ -47,15 +47,28 @@ import org.cangnova.cangjie.name.Name
  * It owns source indexes and exposes them through both:
  * - [CfirProvider] APIs for declaration lookup.
  * - [symbolProvider] for class/callable symbol resolution.
+ *
+ * @property session 当前 source provider 绑定的 CFIR session。
+ * @property cangjieScopeProvider 为源码声明创建成员作用域时使用的 scope provider。
  */
 class CfirProviderImpl(
     val session: CfirSession,
     val cangjieScopeProvider: CfirCangJieScopeProvider = CfirCangJieScopeProvider(),
 ) : CfirProvider() {
 
+    /**
+     * 源码 provider 对外暴露的 symbol lookup 入口。
+     */
     override val symbolProvider: CfirSymbolProvider = SourceSymbolProvider()
 
+    /**
+     * 源码声明索引的可变状态。
+     */
     private val state = State()
+
+    /**
+     * 按包缓存 reexport 后可见的顶层名称视图。
+     */
     private val exportedTopLevelNamesCache: MutableMap<FqName, SourceExportedTopLevelNames> = hashMapOf()
 
     /**
@@ -70,8 +83,15 @@ class CfirProviderImpl(
      */
     private enum class RecordingState { EMPTY, OPEN_FOR_EXPANDED_RECORD, FINALIZED }
 
+    /**
+     * 当前源码文件注册状态。
+     */
     @Volatile
     private var recordingState: RecordingState = RecordingState.EMPTY
+
+    /**
+     * 保护源码文件一次性注册状态机的锁。
+     */
     private val recordingLock = Any()
 
     /** Provider 是否已经被 finalized，禁止后续注册。 */
@@ -110,6 +130,9 @@ class CfirProviderImpl(
         }
     }
 
+    /**
+     * 将单个源码文件写入包、声明、callable 与 reexport 索引。
+     */
     private fun recordFileInternal(file: CfirFile) {
         val packageName = file.packageDirective.packageFqName
         state.fileMap.getOrPut(packageName, ::mutableListOf).add(file)
@@ -132,9 +155,15 @@ class CfirProviderImpl(
         }
     }
 
+    /**
+     * 返回指定包下所有已注册源码文件。
+     */
     override fun getCfirFilesByPackage(fqName: FqName): List<CfirFile> =
         state.fileMap[fqName].orEmpty()
 
+    /**
+     * 从 source 索引中按 [classId] 查找 class-like 声明。
+     */
     override fun getCfirClassifierByFqName(classId: ClassId): CfirClassLikeDeclaration? {
         val symbol = state.classifierMap[classId]
             ?: symbolProvider.getClassLikeSymbolByClassId(classId)
@@ -142,24 +171,42 @@ class CfirProviderImpl(
         return if (symbol.isBound) symbol.cfir as? CfirClassLikeDeclaration else null
     }
 
+    /**
+     * 返回 source classifier 对应的容器文件。
+     */
     override fun getCfirClassifierContainerFile(fqName: ClassId): CfirFile =
         state.classifierContainerFileMap[fqName]
             ?: error("No containing file recorded for classifier $fqName")
 
+    /**
+     * 尝试返回 source classifier 对应的容器文件。
+     */
     override fun getCfirClassifierContainerFileIfAny(fqName: ClassId): CfirFile? =
         state.classifierContainerFileMap[fqName]
 
+    /**
+     * 返回 source callable 对应的容器文件。
+     */
     override fun getCfirCallableContainerFile(symbol: CfirCallableSymbol<*>): CfirFile? =
         state.callableContainerFileMap[symbol.unwrapCallableForDeclarationMetadataLookup()]
 
+    /**
+     * 返回 pattern binding 所属的外层 pattern variable。
+     */
     override fun getCfirPatternVariableForBinding(symbol: CfirPatternBindingSymbol): CfirPatternVariable? {
         val ownerSymbol = state.patternBindingOwnerMap[symbol] ?: return null
         return ownerSymbol.takeIf { it.isBound }?.cfir
     }
 
+    /**
+     * 返回指定包下 reexport 后可见的顶层 classifier 名称。
+     */
     override fun getClassNamesInPackage(fqName: FqName): Set<Name> =
         resolveSourcePackageTopLevelNames(fqName).classifierNames
 
+    /**
+     * 返回 source symbol 所属的 class-like 宿主。
+     */
     override fun getContainingClass(symbol: org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol<*>): CfirClassLikeSymbol<*>? {
         val normalizedSymbol = symbol.unwrapForDeclarationMetadataLookup()
         if (normalizedSymbol !is CfirCallableSymbol<*>) {
@@ -170,26 +217,53 @@ class CfirProviderImpl(
         return ownerClassId?.let(state.classifierMap::get) ?: super.getContainingClass(normalizedSymbol)
     }
 
+    /**
+     * source provider 的 symbol lookup 实现。
+     */
     private inner class SourceSymbolProvider : CfirSymbolProvider(session) {
+        /**
+         * 源码名称索引，包含本包声明和 reexport 后可见的顶层声明。
+         */
         override val symbolNamesProvider: CfirSymbolNamesProvider = object : CfirSymbolNamesProvider() {
+            /**
+             * 返回源码 provider 已知的所有包及其父包。
+             */
             override fun getPackageNames(): Set<String> = state.allSubPackages.mapTo(linkedSetOf()) { it.asString() }
 
+            /**
+             * source provider 的 classifier 包集合复用通用包集合。
+             */
             override val hasSpecificClassifierPackageNamesComputation: Boolean
                 get() = false
 
+            /**
+             * 返回指定包下可见的顶层 classifier 名称。
+             */
             override fun getTopLevelClassifierNamesInPackage(packageFqName: FqName): Set<Name> =
                 resolveSourcePackageTopLevelNames(packageFqName).classifierNames
 
+            /**
+             * source provider 的 callable 包集合复用通用包集合。
+             */
             override val hasSpecificCallablePackageNamesComputation: Boolean
                 get() = false
 
+            /**
+             * 返回指定包下可见的顶层 callable 名称。
+             */
             override fun getTopLevelCallableNamesInPackage(packageFqName: FqName): Set<Name> =
                 resolveSourcePackageTopLevelNames(packageFqName).callableNames
         }
 
+        /**
+         * 按 [classId] 加载 source 或 reexport 后可见的 class-like symbol。
+         */
         override fun getClassLikeSymbolByClassId(classId: ClassId): CfirClassLikeSymbol<*>? =
             resolveSourcePackageTopLevelClassSymbol(classId)
 
+        /**
+         * 将 source 或 reexport 后可见的顶层 callable symbol 追加到 [destination]。
+         */
         @CfirSymbolProviderInternals
         override fun getTopLevelCallableSymbolsTo(
             destination: MutableList<CfirCallableSymbol<*>>,
@@ -199,6 +273,9 @@ class CfirProviderImpl(
             destination += resolveSourcePackageTopLevelCallableSymbols(packageFqName, name)
         }
 
+        /**
+         * 将 source 或 reexport 后可见的顶层函数 symbol 追加到 [destination]。
+         */
         @CfirSymbolProviderInternals
         override fun getTopLevelFunctionSymbolsTo(
             destination: MutableList<CfirNamedFunctionSymbol>,
@@ -208,6 +285,9 @@ class CfirProviderImpl(
             destination += resolveSourcePackageTopLevelFunctionSymbols(packageFqName, name)
         }
 
+        /**
+         * 将 source 或 reexport 后可见的顶层属性 symbol 追加到 [destination]。
+         */
         @CfirSymbolProviderInternals
         override fun getTopLevelPropertySymbolsTo(
             destination: MutableList<CfirPropertySymbol>,
@@ -217,6 +297,9 @@ class CfirProviderImpl(
             destination += resolveSourcePackageTopLevelPropertySymbols(packageFqName, name)
         }
 
+        /**
+         * 判断 source 索引中是否存在指定包或其子包路径。
+         */
         override fun hasPackage(fqName: FqName): Boolean =
             fqName in state.allSubPackages
     }
@@ -235,6 +318,11 @@ class CfirProviderImpl(
         return resolveAvailableTopLevelNames(packageFqName, linkedSetOf())
     }
 
+    /**
+     * 解析指定包经过 reexport 后可见的顶层名称。
+     *
+     * [visiting] 用于切断包之间的循环 reexport，保证递归解析不会无限展开。
+     */
     private fun resolveAvailableTopLevelNames(
         packageFqName: FqName,
         visiting: LinkedHashSet<FqName>,
@@ -301,6 +389,11 @@ class CfirProviderImpl(
         return exportedTopLevelNamesCache[packageFqName] ?: resolved
     }
 
+    /**
+     * 从当前 session 的委托 symbol provider 中解析非 source 包的顶层名称。
+     *
+     * 该路径用于 source reexport 指向 library/builtin 包时的名称桥接。
+     */
     private fun resolveDelegatedTopLevelNames(packageFqName: FqName): SourceExportedTopLevelNames {
         exportedTopLevelNamesCache[packageFqName]?.let { return it }
 
@@ -325,11 +418,17 @@ class CfirProviderImpl(
         return exportedTopLevelNamesCache[packageFqName] ?: resolved
     }
 
+    /**
+     * 返回当前 session 中除本 source symbol provider 以外的委托 symbol provider。
+     */
     private fun delegatedSymbolProviders(): List<CfirSymbolProvider> {
         val composite = session.symbolProvider as? CfirCompositeSymbolProvider ?: return emptyList()
         return composite.providers.filterNot { it === symbolProvider }
     }
 
+    /**
+     * 解析 source 包中顶层 class-like 短名对应的 symbol。
+     */
     private fun resolveSourcePackageTopLevelClassSymbol(classId: ClassId): CfirClassLikeSymbol<*>? {
         if (classId.packageFqName !in state.allSubPackages) return null
         val target = resolveSourcePackageTopLevelNames(classId.packageFqName)
@@ -338,6 +437,9 @@ class CfirProviderImpl(
         return loadTargetClassLikeSymbol(target)
     }
 
+    /**
+     * 解析 source 包中顶层 callable 短名对应的 symbol 集合。
+     */
     private fun resolveSourcePackageTopLevelCallableSymbols(
         packageFqName: FqName,
         name: Name,
@@ -347,6 +449,9 @@ class CfirProviderImpl(
         return loadTargetCallableSymbols(target)
     }
 
+    /**
+     * 解析 source 包中顶层函数短名对应的 symbol 集合。
+     */
     private fun resolveSourcePackageTopLevelFunctionSymbols(
         packageFqName: FqName,
         name: Name,
@@ -356,6 +461,9 @@ class CfirProviderImpl(
         return loadTargetFunctionSymbols(target)
     }
 
+    /**
+     * 解析 source 包中顶层属性短名对应的 symbol 集合。
+     */
     private fun resolveSourcePackageTopLevelPropertySymbols(
         packageFqName: FqName,
         name: Name,
@@ -365,6 +473,11 @@ class CfirProviderImpl(
         return loadTargetPropertySymbols(target)
     }
 
+    /**
+     * 根据导出目标加载 class-like symbol。
+     *
+     * 先查当前 source 索引，再查委托 provider，以支持 reexport 到非源码包。
+     */
     private fun loadTargetClassLikeSymbol(target: SourceExportedTopLevelTarget): CfirClassLikeSymbol<*>? {
         val classId = ClassId(target.packageFqName, target.name)
         state.classifierMap[classId]?.let { return it as? CfirClassLikeSymbol<*> }
@@ -374,6 +487,9 @@ class CfirProviderImpl(
         return null
     }
 
+    /**
+     * 根据导出目标加载 callable symbol。
+     */
     @OptIn(CfirSymbolProviderInternals::class)
     private fun loadTargetCallableSymbols(target: SourceExportedTopLevelTarget): List<CfirCallableSymbol<*>> {
         val callableId = CallableId(target.packageFqName, target.name)
@@ -385,6 +501,9 @@ class CfirProviderImpl(
         }.distinct()
     }
 
+    /**
+     * 根据导出目标加载函数 symbol。
+     */
     @OptIn(CfirSymbolProviderInternals::class)
     private fun loadTargetFunctionSymbols(target: SourceExportedTopLevelTarget): List<CfirNamedFunctionSymbol> {
         val callableId = CallableId(target.packageFqName, target.name)
@@ -396,6 +515,9 @@ class CfirProviderImpl(
         }.distinct()
     }
 
+    /**
+     * 根据导出目标加载属性 symbol。
+     */
     @OptIn(CfirSymbolProviderInternals::class)
     private fun loadTargetPropertySymbols(target: SourceExportedTopLevelTarget): List<CfirPropertySymbol> {
         val callableId = CallableId(target.packageFqName, target.name)
@@ -407,6 +529,11 @@ class CfirProviderImpl(
         }.distinct()
     }
 
+    /**
+     * 将 reexport 来源的目标映射合并到目标表。
+     *
+     * 已存在的 key 不会被覆盖，从而保持本包声明优先于 reexport 声明。
+     */
     private fun mergeExportTargets(
         destination: MutableMap<Name, SourceExportedTopLevelTarget>,
         source: Map<Name, SourceExportedTopLevelTarget>,
@@ -416,6 +543,9 @@ class CfirProviderImpl(
         }
     }
 
+    /**
+     * 记录包及所有父包，保证包存在性查询可以识别中间包路径。
+     */
     private fun recordPackageAndParents(packageName: FqName) {
         var current = packageName
         while (true) {
@@ -425,6 +555,11 @@ class CfirProviderImpl(
         }
     }
 
+    /**
+     * 将一个 CFIR 声明写入 source provider 的分类器、callable、文件归属和宿主索引。
+     *
+     * [isTopLevel] 控制声明是否进入包级名称索引；成员声明只记录元数据，不暴露为顶层符号。
+     */
     private fun recordDeclaration(
         declaration: CfirDeclaration,
         packageFqName: FqName,
@@ -626,6 +761,11 @@ class CfirProviderImpl(
         }
     }
 
+    /**
+     * 记录顶层 class-like classifier 及其容器文件。
+     *
+     * 重复声明会登记到 [nameConflictsTracker]，实际 symbol map 保持首个声明优先。
+     */
     private fun recordClassLikeClassifier(
         symbol: CfirClassLikeSymbol<*>?,
         packageFqName: FqName,
@@ -656,6 +796,9 @@ class CfirProviderImpl(
         }
     }
 
+    /**
+     * 根据包名与短名构造仓颉当前顶层 class-like 的 [ClassId]。
+     */
     private fun computeClassId(
         packageFqName: FqName,
         shortName: Name,
@@ -687,6 +830,11 @@ class CfirProviderImpl(
         }
     }
 
+    /**
+     * 将 enum constructor 作为包级 callable 记录到 source 索引。
+     *
+     * 仓颉 enum constructor 在调用解析中需要按包级 callable 暴露，同时仍记录其 enum owner。
+     */
     private fun recordTopLevelEnumConstructors(
         declaration: CfirEnum,
         ownerClassId: ClassId,
@@ -705,30 +853,100 @@ class CfirProviderImpl(
             }
     }
 
+    /**
+     * source provider 的全部可变索引。
+     */
     private class State {
+        /**
+         * 包名到源码文件列表的索引。
+         */
         val fileMap: MutableMap<FqName, MutableList<CfirFile>> = hashMapOf()
+
+        /**
+         * 已知包及其父包集合。
+         */
         val allSubPackages: MutableSet<FqName> = hashSetOf()
 
+        /**
+         * ClassId 到 class-like symbol 的索引。
+         */
         val classifierMap: MutableMap<ClassId, CfirClassLikeSymbol<*>> = hashMapOf()
+
+        /**
+         * ClassId 到声明所在文件的索引。
+         */
         val classifierContainerFileMap: MutableMap<ClassId, CfirFile> = hashMapOf()
+
+        /**
+         * 包名到顶层 classifier 短名集合的索引。
+         */
         val classifierInPackage: MutableMap<FqName, MutableSet<Name>> = hashMapOf()
+
+        /**
+         * 包名到顶层 class 短名集合的索引。
+         */
         val classesInPackage: MutableMap<FqName, MutableSet<Name>> = hashMapOf()
+
+        /**
+         * callable symbol 到声明所在文件的索引。
+         */
         val callableContainerFileMap: MutableMap<CfirCallableSymbol<*>, CfirFile> = hashMapOf()
+
+        /**
+         * callable symbol 到所属 class id 的索引。
+         */
         val callableOwnerClassIdMap: MutableMap<CfirCallableSymbol<*>, ClassId?> = hashMapOf()
+
+        /**
+         * pattern binding symbol 到外层 pattern variable symbol 的索引。
+         */
         val patternBindingOwnerMap: MutableMap<CfirPatternBindingSymbol, CfirPatternVariableSymbol> = hashMapOf()
 
+        /**
+         * CallableId 到顶层 callable symbol 列表的索引。
+         */
         val callableMap: MutableMap<CallableId, MutableList<CfirCallableSymbol<*>>> = hashMapOf()
+
+        /**
+         * CallableId 到顶层函数 symbol 列表的索引。
+         */
         val functionMap: MutableMap<CallableId, MutableList<CfirNamedFunctionSymbol>> = hashMapOf()
+
+        /**
+         * CallableId 到顶层属性 symbol 列表的索引。
+         */
         val propertyMap: MutableMap<CallableId, MutableList<CfirPropertySymbol>> = hashMapOf()
+
+        /**
+         * 包名到顶层 callable 短名集合的索引。
+         */
         val callableNamesInPackage: MutableMap<FqName, MutableSet<Name>> = hashMapOf()
+
+        /**
+         * 包名到该包中 reexport import 的索引。
+         */
         val exportedImportsInPackage: MutableMap<FqName, MutableList<CfirReexportImportInfo>> = hashMapOf()
     }
 
+    /**
+     * reexport 后实际需要加载的顶层声明目标。
+     *
+     * @property packageFqName 目标声明真实所在包名。
+     * @property name 目标声明真实短名。
+     */
     private data class SourceExportedTopLevelTarget(
         val packageFqName: FqName,
         val name: Name,
     )
 
+    /**
+     * 一个包经过 reexport 合并后的顶层名称视图。
+     *
+     * @property callableNames 对调用方可见的 callable 短名集合。
+     * @property classifierNames 对调用方可见的 classifier 短名集合。
+     * @property callableTargets 可见 callable 短名到真实声明目标的映射。
+     * @property classifierTargets 可见 classifier 短名到真实声明目标的映射。
+     */
     private data class SourceExportedTopLevelNames(
         val callableNames: Set<Name>,
         val classifierNames: Set<Name>,
@@ -736,7 +954,13 @@ class CfirProviderImpl(
         val classifierTargets: Map<Name, SourceExportedTopLevelTarget> = emptyMap(),
     )
 
+    /**
+     * source provider 的常量与空视图。
+     */
     private companion object {
+        /**
+         * 不存在或不可见包的空顶层名称视图。
+         */
         val EMPTY_EXPORTED_TOP_LEVEL_NAMES = SourceExportedTopLevelNames(
             callableNames = emptySet(),
             classifierNames = emptySet(),

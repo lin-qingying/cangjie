@@ -9,50 +9,87 @@ import kotlin.collections.get
 import kotlin.properties.ReadOnlyProperty
 import kotlin.reflect.KClass
 
-
+/**
+ * Cone 类型属性的基类。
+ *
+ * 属性用于在类型对象上附加注解、缩写类型、推断保留信息等额外语义。每个属性通过
+ * [key] 在 [ConeAttributes] 中唯一注册，并提供 union/intersect/add/subtype 等组合规则。
+ */
 abstract class ConeAttribute<out T : ConeAttribute<T>> : AnnotationMarker {
+    /**
+     * 计算当前属性与 [other] 的并集结果。
+     */
     abstract fun union(other: @UnsafeVariance T?): T?
+
+    /**
+     * 计算当前属性与 [other] 的交集结果。
+     */
     abstract fun intersect(other: @UnsafeVariance T?): T?
 
     /**
-     * This function is used to decide how multiple attributes should be united in presence of typealiases:
-     * typealias B = @SomeAttribute(1) A
-     * typealias C = @SomeAttribute(2) B
+     * 决定 typealias 展开链上多个同类属性如何累加。
      *
-     * For determining attribute value of expanded type of C we should add @SomeAttribute(2) to @SomeAttribute(1)
+     * 例如 `typealias B = @SomeAttribute(1) A`、`typealias C = @SomeAttribute(2) B`，
+     * 计算 `C` 的展开类型属性时需要把 `@SomeAttribute(2)` 加到 `@SomeAttribute(1)` 上。
      */
     abstract fun add(other: @UnsafeVariance T?): T?
+
+    /**
+     * 判断当前属性是否是 [other] 的子属性。
+     */
     abstract fun isSubtypeOf(other: @UnsafeVariance T?): Boolean
 
+    /**
+     * 返回调试输出文本。
+     */
     abstract override fun toString(): String
+
+    /**
+     * 返回面向用户可读渲染的文本。
+     */
     open fun renderForReadability(): String? = null
 
     /**
-     * Signals that this attribute properly implements the [equals] and [hashCode] protocol.
+     * 当前属性是否可靠实现了 [equals] 与 [hashCode] 协议。
      *
-     * If it returns `true`, attributes will be compared using structural equality in [ConeAttributes.definitelyDifferFrom].
+     * 返回 `true` 时，[ConeAttributes.definitelyDifferFrom] 会用结构相等比较该属性。
      */
     open val implementsEquality: Boolean get() = false
 
+    /**
+     * 当前属性在属性集合中的唯一键。
+     */
     abstract val key: KClass<out T>
 
     /**
-     * This property indicates whether this attribute should be kept when inferring declaration return type.
+     * 推断声明返回类型时是否保留该属性。
      */
     abstract val keepInInferredDeclarationType: Boolean
 }
 
 /**
- * An attribute that contains a [ConeCangJieType].
- * It is assumed that the [coneType] in this attribute is somehow related to the type it is attached to.
- * Therefore, when the type is transformed (e.g., substitution, making not-null), the same transformation is applied to the attribute.
+ * 内部携带 [ConeCangJieType] 的属性。
+ *
+ * 该属性中的 [coneType] 与它附着的外层类型存在语义关联，因此当外层类型被替换、
+ * 展开或变换时，属性中的类型也必须同步变换。
  */
 abstract class ConeAttributeWithConeType<out T : ConeAttributeWithConeType<T>> : ConeAttribute<T>() {
+    /**
+     * 属性携带的内部 Cone 类型。
+     */
     abstract val coneType: ConeCangJieType
 
+    /**
+     * 使用 [newType] 复制当前属性。
+     */
     abstract fun copyWith(newType: ConeCangJieType): T
 }
 
+/**
+ * 对携带类型的属性应用 [transform]。
+ *
+ * 如果变换结果为空，属性被移除；如果结果与原类型相同，直接复用当前属性。
+ */
 inline fun <T : ConeAttributeWithConeType<T>> ConeAttributeWithConeType<T>.transformOrNull(
     transform: (ConeCangJieType) -> ConeCangJieType?,
 ): ConeAttributeWithConeType<T>? {
@@ -65,19 +102,40 @@ inline fun <T : ConeAttributeWithConeType<T>> ConeAttributeWithConeType<T>.trans
     return copyWith(transformedType.attributes[key]?.coneType ?: transformedType)
 }
 
+/**
+ * Cone 属性集合使用的属性键类型。
+ */
 typealias ConeAttributeKey = KClass<out ConeAttribute<*>>
 
+/**
+ * Cone 类型属性集合。
+ *
+ * 集合以属性类型作为键，并复用 [AttributeArrayOwner] 的数组存储，保证类型热路径上
+ * 属性读取不需要遍历列表。
+ */
 class ConeAttributes private constructor(attributes: List<ConeAttribute<*>>) : AttributeArrayOwner<ConeAttribute<*>, ConeAttribute<*>>(),
     Iterable<ConeAttribute<*>> {
 
+    /**
+     * Cone 属性访问器工厂和全局注册表。
+     */
     companion object : TypeRegistry<ConeAttribute<*>, ConeAttribute<*>>() {
+        /**
+         * 为属性类型 [T] 生成可为空读取访问器。
+         */
         inline fun <reified T : ConeAttribute<T>> attributeAccessor(): ReadOnlyProperty<ConeAttributes, T?> {
             @Suppress("UNCHECKED_CAST")
             return generateNullableAccessor(T::class) as ReadOnlyProperty<ConeAttributes, T?>
         }
 
+        /**
+         * 空属性集合共享实例。
+         */
         val Empty: ConeAttributes = ConeAttributes(emptyList())
 
+        /**
+         * 根据 [attributes] 创建属性集合。
+         */
         fun create(attributes: List<ConeAttribute<*>>): ConeAttributes {
             return if (attributes.isEmpty()) {
                 Empty
@@ -86,6 +144,9 @@ class ConeAttributes private constructor(attributes: List<ConeAttribute<*>>) : A
             }
         }
 
+        /**
+         * 为属性类型键分配稳定下标。
+         */
         override fun ConcurrentHashMap<String, Int>.customComputeIfAbsent(
             key: String,
             compute: (String) -> Int,
@@ -94,6 +155,9 @@ class ConeAttributes private constructor(attributes: List<ConeAttribute<*>>) : A
         }
     }
 
+    /**
+     * 单属性集合构造器。
+     */
     private constructor(attribute: ConeAttribute<*>) : this(listOf(attribute))
 
     init {
@@ -102,36 +166,60 @@ class ConeAttributes private constructor(attributes: List<ConeAttribute<*>>) : A
         }
     }
 
+    /**
+     * 计算两个属性集合的并集。
+     */
     fun union(other: ConeAttributes): ConeAttributes {
         return perform(other) { this.union(it) }
     }
 
+    /**
+     * 计算两个属性集合的交集。
+     */
     fun intersect(other: ConeAttributes): ConeAttributes {
         return perform(other) { this.intersect(it) }
     }
 
+    /**
+     * 将 [other] 属性集合累加到当前集合上。
+     */
     fun add(other: ConeAttributes): ConeAttributes {
         return perform(other) { this.add(it) }
     }
 
+    /**
+     * 将单个 [attribute] 累加到当前集合上。
+     */
     fun add(attribute: ConeAttribute<*>): ConeAttributes {
         return add(create(listOf(attribute)))
     }
 
+    /**
+     * 判断集合中是否包含与 [attribute] 同键的属性。
+     */
     operator fun contains(attribute: ConeAttribute<*>): Boolean {
         return contains(attribute.key)
     }
 
+    /**
+     * 判断集合中是否包含 [attributeKey] 对应的属性。
+     */
     operator fun contains(attributeKey: KClass<out ConeAttribute<*>>): Boolean {
         return get(attributeKey) != null
     }
 
+    /**
+     * 读取 [attributeKey] 对应的属性实例。
+     */
     operator fun <T : ConeAttribute<*>> get(attributeKey: KClass<T>) : T? {
         val index = Companion.getId(attributeKey)
         @Suppress("UNCHECKED_CAST")
         return arrayMap[index] as T?
     }
 
+    /**
+     * 从集合中移除 [attribute] 实例。
+     */
     fun remove(attribute: ConeAttribute<*>): ConeAttributes {
         if (isEmpty()) return this
         val attributes = arrayMap.filter { it != attribute }
@@ -139,6 +227,9 @@ class ConeAttributes private constructor(attributes: List<ConeAttribute<*>>) : A
         return create(attributes)
     }
 
+    /**
+     * 从集合中移除 [key] 对应的属性。
+     */
     fun remove(key: ConeAttributeKey): ConeAttributes {
         if (isEmpty()) return this
         val attributes = arrayMap.filter { it.key != key }
@@ -146,11 +237,17 @@ class ConeAttributes private constructor(attributes: List<ConeAttribute<*>>) : A
         return create(attributes)
     }
 
+    /**
+     * 过滤出推断声明返回类型时必须保留的属性。
+     */
     fun filterNecessaryToKeep(): ConeAttributes {
         return if (all { it.keepInInferredDeclarationType }) this
         else create(filter { it.keepInInferredDeclarationType })
     }
 
+    /**
+     * 按属性键逐项执行 [op]，并创建新的属性集合。
+     */
     private inline fun perform(other: ConeAttributes, op: ConeAttribute<*>.(ConeAttribute<*>?) -> ConeAttribute<*>?): ConeAttributes {
         if (this.isEmpty() && other.isEmpty()) return this
         val attributes = mutableListOf<ConeAttribute<*>>()
@@ -164,12 +261,10 @@ class ConeAttributes private constructor(attributes: List<ConeAttribute<*>>) : A
     }
 
     /**
-     * Returns `true` if this instance is definitely not equal to the [other] instance.
-     * This is `true` when one instance contains an attribute **type** that the other doesn't contain or both instances contain
-     * an attribute of a type where [ConeAttribute.implementsEquality]` == true` and the attribute's [equals] method returns `false`.
+     * 判断当前属性集合是否可以确定不同于 [other]。
      *
-     * A return value of `false` doesn't guarantee that the instances are equal because [ConeAttribute.implementsEquality] is optional,
-     * i.e., not all attributes can be compared structurally.
+     * 返回 `true` 表示某个可靠实现结构相等的属性不同；返回 `false` 不保证两个集合相等，
+     * 因为部分属性可能没有声明 [ConeAttribute.implementsEquality]。
      *
      * @see org.jetbrains.kotlin.fir.types.impl.ConeClassLikeTypeImpl.equals
      */
@@ -192,8 +287,9 @@ class ConeAttributes private constructor(attributes: List<ConeAttribute<*>>) : A
     }
 
     /**
-     * Applies the [transform] to all attributes that are subtypes of [ConeAttributeWithConeType] and returns a [ConeAttributes]
-     * with the results of transforms that were not-`null` or `null` if no attributes were transformed.
+     * 对所有 [ConeAttributeWithConeType] 属性中的内部类型应用 [transform]。
+     *
+     * 返回新的属性集合；若没有属性被变换，返回 `null`。
      */
     inline fun transformTypesWith(transform: (ConeCangJieType) -> ConeCangJieType?): ConeAttributes? {
         if (isEmpty()) return null
@@ -219,6 +315,9 @@ class ConeAttributes private constructor(attributes: List<ConeAttribute<*>>) : A
         return newList?.let(Companion::create)
     }
 
+    /**
+     * 当前属性集合使用的注册表。
+     */
     override val typeRegistry: TypeRegistry<ConeAttribute<*>, ConeAttribute<*>>
         get() = Companion
 }

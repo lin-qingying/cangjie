@@ -22,15 +22,20 @@ import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.source.toCjLightSourceElement
 import org.cangnova.cangjie.source.toCjPsiSourceElement
 
+/** 从真实源码中提取出的单个修饰符 token 及其 source。 */
 internal data class SourceModifier(
+    /** 修饰符对应的关键字 token。 */
     val token: CjKeywordToken,
+    /** 修饰符在源码中的精确 source。 */
     val source: CjSourceElement,
 )
 
+/** 在修饰符列表中按 token 查找第一个修饰符。 */
 internal fun List<SourceModifier>.modifierByToken(token: CjKeywordToken): SourceModifier? {
     return firstOrNull { it.token == token }
 }
 
+/** 检查两个修饰符之间的兼容性，并按兼容性分类上报重复、冗余、弃用或冲突诊断。 */
 context(reporter: DiagnosticReporter, context: CheckerContext)
 internal fun checkCompatibilityType(
     firstModifier: SourceModifier,
@@ -103,6 +108,7 @@ internal fun checkCompatibilityType(
     }
 }
 
+/** 对一个声明或 source owner 的修饰符列表执行两两兼容性检查。 */
 context(reporter: DiagnosticReporter, context: CheckerContext)
 internal fun checkModifiersCompatibility(
     owner: Any?,
@@ -116,6 +122,7 @@ internal fun checkModifiersCompatibility(
     }
 }
 
+/** 从 PSI 或 LightTree source 中提取真实源码修饰符列表。 */
 internal fun CjSourceElement.realSourceModifiers(): List<SourceModifier>? {
     if (kind !is CjRealSourceElementKind) return null
     return when (this) {
@@ -136,6 +143,7 @@ internal fun CjSourceElement.realSourceModifiers(): List<SourceModifier>? {
     }
 }
 
+/** 返回当前 source 外层的类型投影 source，用于检查类型投影修饰符。 */
 internal fun CjSourceElement.enclosingTypeProjectionSource(): CjSourceElement? {
     return when (this) {
         is CjPsiSourceElement -> {
@@ -156,6 +164,7 @@ internal fun CjSourceElement.enclosingTypeProjectionSource(): CjSourceElement? {
     }
 }
 
+/** 判断 source 是否对应构造器节点。 */
 internal fun CjSourceElement.isConstructorSource(): Boolean {
     return when (this) {
         is CjPsiSourceElement -> psi is org.cangnova.cangjie.psi.CjConstructor<*>
@@ -165,9 +174,11 @@ internal fun CjSourceElement.isConstructorSource(): Boolean {
     }
 }
 
+/** 提取 PSI modifier list 下的修饰符子节点。 */
 private fun ASTNode.modifierChildren(): List<ASTNode> =
     getChildren(null).filter { it.elementType is CjKeywordToken }
 
+/** 从 LightTree 节点提取修饰符列表。 */
 private fun CjLightSourceElement.realSourceModifiersForNode(node: LighterASTNode): List<SourceModifier>? {
     val modifierListNode = treeStructure.findChildByType(node, CjNodeTypes.MODIFIER_LIST) ?: return null
     return buildList {
@@ -188,6 +199,7 @@ private fun CjLightSourceElement.realSourceModifiersForNode(node: LighterASTNode
     }.takeIf { it.isNotEmpty() }
 }
 
+/** 以 sequence 形式遍历 LightTree 节点的直接子节点。 */
 private fun FlyweightCapableTreeStructure<LighterASTNode>.childrenOf(node: LighterASTNode): Sequence<LighterASTNode> {
     return sequence {
         for (child in getChildrenArray(node)) {
@@ -198,12 +210,14 @@ private fun FlyweightCapableTreeStructure<LighterASTNode>.childrenOf(node: Light
     }
 }
 
+/** 读取 LightTree 节点的直接子节点数组。 */
 private fun FlyweightCapableTreeStructure<LighterASTNode>.getChildrenArray(node: LighterASTNode): Array<LighterASTNode?> {
     val childrenRef = Ref<Array<LighterASTNode?>>()
     getChildren(node, childrenRef)
     return childrenRef.get() ?: emptyArray()
 }
 
+/** 在 LightTree 节点的直接子节点中查找指定 token 类型的节点。 */
 private fun FlyweightCapableTreeStructure<LighterASTNode>.findChildByType(
     node: LighterASTNode,
     type: IElementType,

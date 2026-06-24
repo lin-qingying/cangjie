@@ -15,7 +15,13 @@ import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.coroutines.intrinsics.createCoroutineUnintercepted
 import kotlin.coroutines.resume
 
+/** 顺序执行候选 resolution stage 的 runner。 */
 class ResolutionStageRunner {
+    /**
+     * 处理单个候选并返回其最低适用性。
+     *
+     * 该方法支持遇到首个错误即停止，也支持额外阶段运行；stage coroutine 会在 checker sink 要求 yield 时暂停。
+     */
     fun processCandidate(
         candidate: Candidate,
         context: ResolutionContext,
@@ -47,6 +53,7 @@ class ResolutionStageRunner {
             override val context: CoroutineContext
                 get() = EmptyCoroutineContext
 
+            /** 完成 stage coroutine，并把异常重新抛给同步调用方。 */
             override fun resumeWith(result: Result<Unit>) {
                 result.exceptionOrNull()?.let { throw it }
                 finished = true

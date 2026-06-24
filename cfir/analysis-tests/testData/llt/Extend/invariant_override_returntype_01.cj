@@ -6,7 +6,7 @@ public interface Tokens<T> {
 }
 
 extend String <: Tokens<Rune> {
-    <!RETURN_TYPE_INVARIANCE!>p<!>ublic func dropFirst(): String {
+    public func <!RETURN_TYPE_INVARIANCE!>dropFirst<!>(): String {
         if (this.size > 1) {
             this[1..this.size]
         } else {

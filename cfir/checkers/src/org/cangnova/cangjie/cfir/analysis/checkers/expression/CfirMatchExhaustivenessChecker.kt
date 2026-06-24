@@ -13,8 +13,19 @@ import org.cangnova.cangjie.cfir.reportEnumUsageInMatch
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.source.AbstractCjSourceElement
 
+/**
+ * selector-based match 穷尽性检查器。
+ *
+ * 该检查器复用共享 [ExhaustivenessAnalyzer]，并把分析结果缓存回 match 表达式，避免后续阶段
+ * 重复计算同一个 pattern matrix。
+ */
 object CfirMatchExhaustivenessChecker : CfirMatchExpressionChecker( ) {
 
+    /**
+     * 检查 match 表达式是否穷尽。
+     *
+     * subject 类型错误或 pattern 本身非法时跳过；非穷尽结果在 subject 位置报告缺失 case 文本。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirMatchExpression) {
         val source = expression.source as? AbstractCjSourceElement ?: return
@@ -34,6 +45,11 @@ object CfirMatchExhaustivenessChecker : CfirMatchExpressionChecker( ) {
         )
     }
 
+    /**
+     * 获取或计算 match 穷尽性状态。
+     *
+     * 已缓存状态直接复用；新计算结果会转换为 CFIR 表达式上的 exhaustiveness 状态并写回节点。
+     */
     private fun checkerExhaustivenessStatus(
         expression: CfirMatchExpression,
         context: CheckerContext,

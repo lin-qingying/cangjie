@@ -4,9 +4,11 @@ import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
+import org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.callableNameOrNull
+import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityFileScope
 import org.cangnova.cangjie.cfir.resolve.providers.CfirExtendProvider
 import org.cangnova.cangjie.cfir.resolve.providers.createExtendDeclarationSubstitution
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
@@ -25,10 +27,12 @@ import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.idealExtendLookupTypes
 import org.cangnova.cangjie.cfir.types.toPrimitiveTypeKindOrNull
+import org.cangnova.cangjie.descriptors.Visibilities
+import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 
 /**
- * Extend-member type scope.
+ * extend 成员 type scope。
  *
  * 官方 extend map 同时支持 nominal declaration 与 built-in type。这里以
  * [CfirExtendTargetKey] 为索引键，让 `CPointer<T>` / `CString` 这类没有
@@ -41,51 +45,90 @@ class CfirExtendMemberScope(
     private val receiverType: ConeCangJieType,
     private val allowBareGenericStaticQualifierExtends: Boolean = false,
     private val excludingExtend: CfirExtend? = null,
+    private val useSitePackage: FqName? = CfirAccessibilityFileScope.currentPackageFqName(),
 ) : CfirTypeScope() {
 
+    /**
+     * 当前目标可见 extend 成员索引。
+     */
     private val memberIndex: MemberIndex by lazy { buildIndex() }
 
+    /**
+     * 返回 extend 成员 callable 名称集合。
+     */
     override fun getCallableNames(): Set<Name> = buildSet {
         addAll(memberIndex.functions.keys)
         addAll(memberIndex.properties.keys)
         addAll(memberIndex.variables.keys)
     }
 
+    /**
+     * 返回 extend 成员 classifier 名称集合。
+     */
     override fun getClassifierNames(): Set<Name> = memberIndex.classifiers.keys
 
+    /**
+     * 按名称处理 extend classifier。
+     */
     override fun processClassifiersByName(name: Name, processor: (CfirClassLikeSymbol<*>) -> Unit) {
         memberIndex.classifiers[name]?.forEach(processor)
     }
 
+    /**
+     * 按名称处理 extend 函数。
+     */
     override fun processFunctionsByName(name: Name, processor: (CfirNamedFunctionSymbol) -> Unit) {
         memberIndex.functions[name]?.forEach(processor)
     }
 
+    /**
+     * 按名称处理 extend 属性。
+     */
     override fun processPropertiesByName(name: Name, processor: (CfirPropertySymbol) -> Unit) {
         memberIndex.properties[name]?.forEach(processor)
     }
 
+    /**
+     * 按名称处理所有 extend callable。
+     */
     override fun processCallablesByName(name: Name, processor: (CfirCallableSymbol<*>) -> Unit) {
         memberIndex.functions[name]?.forEach(processor)
         memberIndex.properties[name]?.forEach(processor)
         memberIndex.variables[name]?.forEach(processor)
     }
 
+    /**
+     * extend scope 自身不产生直接覆盖函数链。
+     */
     override fun processDirectOverriddenFunctionsWithBaseScope(
         functionSymbol: CfirNamedFunctionSymbol,
         processor: (CfirNamedFunctionSymbol, CfirTypeScope) -> ProcessorAction,
     ): ProcessorAction = ProcessorAction.NONE
 
+    /**
+     * extend scope 自身不产生直接覆盖属性链。
+     */
     override fun processDirectOverriddenPropertiesWithBaseScope(
         propertySymbol: CfirPropertySymbol,
         processor: (CfirPropertySymbol, CfirTypeScope) -> ProcessorAction,
     ): ProcessorAction = ProcessorAction.NONE
 
+    /**
+     * extend scope 不支持直接跨 session 替换。
+     */
     override fun withReplacedSessionOrNull(
         newSession: CfirSession,
         newScopeSession: org.cangnova.cangjie.cfir.ScopeSession,
     ): CfirTypeScope? = null
 
+    /**
+     * extend 成员索引。
+     *
+     * @property classifiers classifier 成员索引。
+     * @property functions 函数成员索引。
+     * @property properties 属性成员索引。
+     * @property variables 字段变量成员索引。
+     */
     private class MemberIndex(
         val classifiers: Map<Name, List<CfirClassLikeSymbol<*>>>,
         val functions: Map<Name, List<CfirNamedFunctionSymbol>>,
@@ -93,6 +136,9 @@ class CfirExtendMemberScope(
         val variables: Map<Name, List<CfirVariableSymbol<*>>>,
     )
 
+    /**
+     * 构建当前 receiver 可见的 extend 成员索引。
+     */
     private fun buildIndex(): MemberIndex {
         val classifiers = HashMap<Name, MutableList<CfirClassLikeSymbol<*>>>()
         val functions = HashMap<Name, MutableList<CfirNamedFunctionSymbol>>()
@@ -104,6 +150,7 @@ class CfirExtendMemberScope(
             if (extend === excludingExtend) continue
             if (!extend.isApplicableAtReceiver(concreteReceiverType)) continue
             for (declaration in extend.declarations) {
+                if (!extend.isMemberExportedToUseSite(declaration)) continue
                 indexDeclaration(
                     declaration = declaration,
                     classifiers = classifiers,
@@ -116,22 +163,34 @@ class CfirExtendMemberScope(
         return MemberIndex(classifiers, functions, properties, variables)
     }
 
+    /**
+     * 返回目标 key 与 ideal primitive 展开后对应的 extend 候选。
+     */
     private fun extendsForTarget(): List<ExtendLookupCandidate> {
         val result = mutableListOf<ExtendLookupCandidate>()
+
+        val primitiveKind = targetKey.classIdOrNull?.toPrimitiveTypeKindOrNull()
+        if (primitiveKind != null) {
+            /*
+             * primitive qualifier 在符号层是 synthetic class-like，但官方 extend map
+             * 以真实 builtin type 做适用性判断。先放入 ConePrimitiveType receiver，
+             * 再合并 class-like 索引，避免 distinctBy 保留 synthetic receiver 后
+             * 在 extend 目标匹配阶段把合法候选过滤掉。
+             */
+            val concreteReceiverTypes = receiverType.idealExtendLookupTypes.ifEmpty {
+                listOf(ConePrimitiveType(primitiveKind))
+            }
+            for (concreteReceiverType in concreteReceiverTypes) {
+                result += extendProvider.getExtendsForBuiltinType(concreteReceiverType.kind).map {
+                    ExtendLookupCandidate(it, concreteReceiverType)
+                }
+            }
+        }
+
         result += extendProvider.getExtendsForTarget(targetKey).map {
             ExtendLookupCandidate(it, receiverType)
         }
 
-        val primitiveKind = targetKey.classIdOrNull?.toPrimitiveTypeKindOrNull()
-            ?: return result.distinctBy { it.extend }
-        val concreteReceiverTypes = receiverType.idealExtendLookupTypes.ifEmpty {
-            listOf(ConePrimitiveType(primitiveKind))
-        }
-        for (concreteReceiverType in concreteReceiverTypes) {
-            result += extendProvider.getExtendsForBuiltinType(concreteReceiverType.kind).map {
-                ExtendLookupCandidate(it, concreteReceiverType)
-            }
-        }
         return result.distinctBy { it.extend }
     }
 
@@ -158,6 +217,21 @@ class CfirExtendMemberScope(
     }
 
     /**
+     * 跨包使用 extend 时按 CJO 导出面处理：private extend 成员不进入 use-site scope。
+     *
+     * 同包仍保留 private 成员候选，让后续访问控制给出函数 no-match / 字段 invalid-access；
+     * 这和官方源码同包路径的 `IsLegalAccess` 行为一致。
+     */
+    private fun CfirExtend.isMemberExportedToUseSite(declaration: CfirDeclaration): Boolean {
+        val member = declaration as? CfirMemberDeclaration ?: return true
+        if (member.status.visibility != Visibilities.Private) return true
+
+        val useSitePackage = useSitePackage ?: return true
+        val extendPackage = extendProvider.getPackageFqName(this) ?: return true
+        return useSitePackage == extendPackage
+    }
+
+    /**
      * `A.staticExtendMember(...)` 中的裸泛型类名 `A` 不携带实例类型实参。
      *
      * 官方调用检查会先保留该 static extend 成员，再把 extend 声明类型参数加入
@@ -170,13 +244,15 @@ class CfirExtendMemberScope(
     ): Boolean {
         if (!allowBareGenericStaticQualifierExtends) return false
         val bareReceiverType = concreteReceiverType as? ConeLookupTagBasedType ?: return false
-        if (bareReceiverType.typeArguments.isNotEmpty()) return false
 
         val patternType = targetPattern as? ConeLookupTagBasedType ?: return false
         if (patternType.typeArguments.isEmpty()) return false
         return patternType.classIdOrPrimitiveClassId == bareReceiverType.classIdOrPrimitiveClassId
     }
 
+    /**
+     * 将单个 extend 成员声明写入索引。
+     */
     private fun indexDeclaration(
         declaration: CfirDeclaration,
         classifiers: HashMap<Name, MutableList<CfirClassLikeSymbol<*>>>,
@@ -210,6 +286,12 @@ class CfirExtendMemberScope(
         }
     }
 
+    /**
+     * extend 查询候选。
+     *
+     * @property extend extend 声明。
+     * @property concreteReceiverType 用于匹配该 extend 的具体 receiver 类型。
+     */
     private data class ExtendLookupCandidate(
         val extend: CfirExtend,
         val concreteReceiverType: ConeCangJieType,

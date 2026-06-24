@@ -4,12 +4,13 @@ import org.cangnova.cangjie.ImportPath
 import org.cangnova.cangjie.resolve.DefaultImportsProvider
 
 /**
- * Default imports provider for Cangjie frontend sessions.
+ * 仓颉前端 session 使用的默认导入 provider。
  *
- * Language-level defaults are defined in [DefaultImportsProvider].
- * Platform-specific defaults are currently empty for the unified Cangjie pipeline.
+ * 语言级默认导入定义在 [DefaultImportsProvider]；当前统一仓颉流水线没有平台特定默认导入。
  */
 object CfirDefaultImportsProvider : DefaultImportsProvider() {
+    /**
+     * 平台特定默认导入列表；仓颉统一前端当前为空。
+     */
     override val platformSpecificDefaultImports: List<ImportPath> = emptyList()
 }
-

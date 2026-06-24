@@ -26,8 +26,14 @@ import org.cangnova.cangjie.name.Name
  * 注册为 callableDeclarationCheckers
  */
 object CfirDeprecatedDeclarationChecker : CfirCallableDeclarationChecker() {
+    /**
+     * Deprecated 注解名。
+     */
     private val DEPRECATED = Name.identifier("Deprecated")
 
+    /**
+     * 检查 override/redef 声明与父声明之间的 Deprecated 严格级别兼容性。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirCallableDeclaration) {
         val isOverride = when (declaration) {
@@ -125,6 +131,9 @@ object CfirDeprecatedDeclarationChecker : CfirCallableDeclarationChecker() {
         return null
     }
 
+    /**
+     * 判断声明是否带 `@Deprecated` 注解。
+     */
     private fun hasDeprecatedAnnotation(declaration: CfirDeclaration): Boolean {
         return declaration.hasAnnotation(DEPRECATED)
     }

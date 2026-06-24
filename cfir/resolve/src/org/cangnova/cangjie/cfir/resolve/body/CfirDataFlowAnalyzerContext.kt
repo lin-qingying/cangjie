@@ -101,13 +101,17 @@ class CfirDataFlowAnalyzerContext(
         }
     }
 
+    /** 分配新的变量赋值序号，并推进计数器。 */
     fun newAssignmentIndex(): Int {
         return assignmentCounter++
     }
 }
 
+/** DFA 上下文快照，包含上下文副本和 CFG 复制映射。 */
 class CfirDataFlowAnalyzerContextSnapshot(
+    /** 快照中的独立 DFA 上下文。 */
     val context: CfirDataFlowAnalyzerContext,
+    /** 原 CFG 到复制后 CFG 的映射。 */
     val graphMapping: Map<ControlFlowGraph, ControlFlowGraph>,
 )
 
@@ -115,6 +119,8 @@ class CfirDataFlowAnalyzerContextSnapshot(
  * 对位 Kotlin `SnapshotFirMapper`。
  */
 interface SnapshotCfirMapper {
+    /** 把原 symbol 映射为快照中的对应 symbol。 */
     fun <T : CfirBasedSymbol<*>> mapSymbol(symbol: T): T
+    /** 把原 CFIR 元素映射为快照中的对应元素。 */
     fun <T : CfirElement> mapElement(element: T): T
 }

@@ -13,7 +13,15 @@ import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.OperatorNameConventions
 import org.cangnova.cangjie.name.OperatorNameConventions.asOperatorString
 
+/**
+ * operator 函数声明签名检查器。
+ *
+ * 该检查器验证普通 unary/binary operator 的参数个数，以及 `operator set` 的下标赋值协议。
+ */
 object CfirOperatorDeclarationChecker : CfirSimpleFunctionChecker() {
+    /**
+     * 一元 operator 名称集合。
+     */
     private val unaryOperatorNames: Set<Name> = setOf(
         OperatorNameConventions.NOT,
         OperatorNameConventions.UNARY_MINUS,
@@ -22,15 +30,24 @@ object CfirOperatorDeclarationChecker : CfirSimpleFunctionChecker() {
         OperatorNameConventions.DEC,
     )
 
+    /**
+     * 需要专门签名规则的 operator 名称集合。
+     */
     private val specialArityOperatorNames: Set<Name> = setOf(
         OperatorNameConventions.INVOKE,
         OperatorNameConventions.GET,
         OperatorNameConventions.SET,
     )
 
+    /**
+     * 二元 operator 名称集合。
+     */
     private val binaryOperatorNames: Set<Name> =
         OperatorNameConventions.TOKENS_BY_OPERATOR_NAME.keys - unaryOperatorNames - specialArityOperatorNames
 
+    /**
+     * 检查 operator 函数的参数个数或 `set` 签名约束。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirNamedFunction) {
         if (!declaration.status.isOperator) return
@@ -55,6 +72,9 @@ object CfirOperatorDeclarationChecker : CfirSimpleFunctionChecker() {
         )
     }
 
+    /**
+     * 返回普通 operator 期望的位置参数个数。
+     */
     private fun expectedParameterCount(name: Name): Int? = when (name) {
         in unaryOperatorNames -> 0
         in binaryOperatorNames -> 1
@@ -98,6 +118,11 @@ object CfirOperatorDeclarationChecker : CfirSimpleFunctionChecker() {
         }
     }
 
+    /**
+     * 获取 operator 诊断的源码范围。
+     *
+     * 显式 `operator` 修饰符存在时优先定位到修饰符，否则退回声明源码。
+     */
     private fun CfirNamedFunction.operatorDiagnosticSource() =
         source?.realSourceModifiers()?.modifierByToken(CjTokens.OPERATOR_KEYWORD)?.source ?: source
 }

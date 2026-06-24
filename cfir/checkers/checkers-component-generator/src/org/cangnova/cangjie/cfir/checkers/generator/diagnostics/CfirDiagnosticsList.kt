@@ -116,6 +116,9 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
             parameter<Name>("className")  // 自引用的类名
         }
 
+        // 继承图中发现多节点循环
+        val INHERITANCE_CYCLE by error<PsiElement>(PositioningStrategy.DEFAULT)
+
         // 超类型重复：同一类型在继承列表中出现多次
         val SUPER_TYPES_DUPLICATE by error<PsiElement>(PositioningStrategy.ACTUAL_DECLARATION_NAME) {
             parameter<Name>("typeName")  // 重复出现的类型名
@@ -415,6 +418,9 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
         val THIS_AS_EXPRESSION_IN_FUNC by error<PsiElement>() {
             parameter<String>("contextDescription")
         }
+
+        // static 函数体中禁止引用实例 this。
+        val STATIC_MEMBERS_CANNOT_CALL_MEMBERS by error<PsiElement>()
 
         // 父类不存在可隐式调用的无参构造器，要求显式 super(...)
         val EXPLICIT_SUPER_CALL_REQUIRED by error<PsiElement>(PositioningStrategy.ACTUAL_DECLARATION_NAME)
@@ -735,6 +741,12 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
             parameter<Name>("overriddenName")
         }
 
+        // extend 关系不能作为 override/implement 返回类型协变依据。
+        val RETURN_TYPE_INVARIANCE by error<PsiElement> {
+            parameter<Name>("functionName")
+            parameter<ConeCangJieType>("interfaceType")
+        }
+
         // 属性 override/implement 的类型必须完全一致。
         val PROPERTY_OVERRIDE_IMPLEMENT_TYPE_DIFF by error<PsiElement> {
             parameter<ConeCangJieType>("actualType")
@@ -820,6 +832,9 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
             parameter<String>("name")       // 变量名
             parameter<ConeCangJieType>("type") // 接收器类型
         }
+
+        // 函数调用没有可访问的匹配声明，对齐官方 sema_no_match_function_declaration_for_call。
+        val NO_MATCH_FUNCTION_DECLARATION_FOR_CALL by error<PsiElement>(PositioningStrategy.DEFAULT)
 
         // 非函数表达式使用 `()` 调用，对齐官方 sema_no_match_operator_function_call。
         val NO_MATCH_OPERATOR_FUNCTION_CALL by error<PsiElement>(PositioningStrategy.DEFAULT)
@@ -1149,6 +1164,14 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
             parameter<Name>("memberName")
             parameter<String>("superMemberKind")
             parameter<Name>("containerName")
+        }
+
+        // extend 成员与被扩展类型成员 static 状态不一致。
+        val STATIC_AND_NON_STATIC_MEMBER_CANNOT_HAVE_SAME_NAME by error<PsiElement> {
+            parameter<String>("memberStaticKind")
+            parameter<Name>("memberName")
+            parameter<String>("superMemberStaticKind")
+            parameter<String>("containerKind")
         }
 
         // 成员变量不能遮蔽父类型中的成员变量
@@ -2151,6 +2174,12 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
 
         // 未使用的表达式
         val UNUSED_EXPRESSION by warning<CjExpression>()
+
+        // 未使用的局部变量
+        val UNUSED_VARIABLE by warning<PsiElement>()
+
+        // 未使用的函数
+        val UNUSED_FUNCTION by warning<PsiElement>()
 
         // type alias 声明了但展开类型未使用的类型参数
         val TYPEALIAS_UNUSED_TYPE_PARAMETERS by warning<PsiElement> {

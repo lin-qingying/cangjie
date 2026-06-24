@@ -12,19 +12,34 @@ import org.cangnova.cangjie.cfir.session.CfirSessionComponent
  * 只有 low-level 在特定分析场景下显式构造该组件时，才会关闭该优化。
  */
 class CfirLookupDefaultStarImportsInSourcesSettingHolder(internal val value: Boolean) : CfirSessionComponent {
+    /**
+     * 默认星号导入查询设置工厂。
+     */
     companion object {
+        /**
+         * 根据语言版本设置计算默认值。
+         */
         fun defaultSetting(languageVersionSettings: LanguageVersionSettings): Boolean {
             @Suppress("UNUSED_PARAMETER")
             return false
         }
 
+        /**
+         * 创建默认配置 holder。
+         */
         fun createDefault(languageVersionSettings: LanguageVersionSettings): CfirLookupDefaultStarImportsInSourcesSettingHolder =
             CfirLookupDefaultStarImportsInSourcesSettingHolder(defaultSetting(languageVersionSettings))
     }
 }
 
+/**
+ * 当前 session 注册的默认星号导入查询设置 holder。
+ */
 private val CfirSession.lookupDefaultStarImportsInSourcesSettingHolder: CfirLookupDefaultStarImportsInSourcesSettingHolder
     by CfirSession.sessionComponentAccessor()
 
+/**
+ * 当前 session 是否在源码中查询默认星号导入。
+ */
 internal val CfirSession.lookupDefaultStarImportsInSources: Boolean
     get() = lookupDefaultStarImportsInSourcesSettingHolder.value

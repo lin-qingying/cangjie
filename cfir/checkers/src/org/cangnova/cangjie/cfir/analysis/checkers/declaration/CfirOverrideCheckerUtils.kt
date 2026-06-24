@@ -31,6 +31,7 @@ import org.cangnova.cangjie.cfir.resolve.providers.getContainingFile
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassMemberScopeKind
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
+import org.cangnova.cangjie.cfir.scopes.impl.CfirClassSubstitutionScope
 import org.cangnova.cangjie.cfir.scopes.isStaticMemberForOverride
 import org.cangnova.cangjie.cfir.scopes.overrideSignatureKey
 import org.cangnova.cangjie.cfir.session.*
@@ -38,13 +39,23 @@ import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.name.ClassId
 
+/**
+ * 为 class-like 声明创建 use-site 成员 scope。
+ */
 internal fun CheckerContext.createUseSiteMemberScope(declaration: CfirClassLikeDeclaration): CfirTypeScope {
     return when (declaration) {
-        is CfirClass -> session.cangjieScopeProvider.getDeclarationSiteMemberScope(
-            declaration,
-            session,
-            scopeSession,
-        )
+        is CfirClass -> {
+            val symbol = declaration.symbol as? CfirClassLikeSymbol<*> ?: return CfirTypeScope.Empty
+            val rawScope = CfirClassUseSiteMemberScope(
+                session = session,
+                classSymbol = symbol,
+                symbolProvider = session.symbolProvider,
+                extendProvider = session.extendProvider,
+                directSupertypeProvider = session.directSupertypeProviderOrNull,
+                scopeKind = CfirClassMemberScopeKind.USE_SITE,
+            )
+            CfirClassSubstitutionScope(session, rawScope, symbol.constructType())
+        }
 
         is CfirStruct -> {
             val symbol = declaration.symbol as CfirClassLikeSymbol<*>
@@ -54,7 +65,7 @@ internal fun CheckerContext.createUseSiteMemberScope(declaration: CfirClassLikeD
                 symbolProvider = session.symbolProvider,
                 extendProvider = session.extendProvider,
                 directSupertypeProvider = session.directSupertypeProviderOrNull,
-                scopeKind = CfirClassMemberScopeKind.DECLARATION_SITE,
+                scopeKind = CfirClassMemberScopeKind.USE_SITE,
             )
         }
 
@@ -66,25 +77,37 @@ internal fun CheckerContext.createUseSiteMemberScope(declaration: CfirClassLikeD
                 symbolProvider = session.symbolProvider,
                 extendProvider = session.extendProvider,
                 directSupertypeProvider = session.directSupertypeProviderOrNull,
-                scopeKind = CfirClassMemberScopeKind.DECLARATION_SITE,
+                scopeKind = CfirClassMemberScopeKind.USE_SITE,
             )
         }
     }
 }
 
+/**
+ * 查找 callable 符号所属的 class-like 符号。
+ */
 internal fun CheckerContext.ownerClassSymbol(symbol: CfirCallableSymbol<*>): CfirClassLikeSymbol<*>? {
     val ownerClassId = symbol.ownerClassId(session = session)
         ?: return null
     return session.symbolProvider.getClassLikeSymbolByClassId(ownerClassId)
 }
 
+/**
+ * 在检查上下文中读取 callable 所属 class id。
+ */
 internal fun CfirCallableSymbol<*>.ownerClassId(context: CheckerContext): ClassId? =
     ownerClassId(session = context.session)
 
+/**
+ * 读取 callable id 或 provider 记录的所属 class id。
+ */
 private fun CfirCallableSymbol<*>.ownerClassId(session: org.cangnova.cangjie.cfir.session.CfirSession): ClassId? {
     return callableId.classId ?: session.cfirProvider.getContainingClass(this)?.classId
 }
 
+/**
+ * 收集与函数符号直接覆盖且签名和静态性一致的父函数。
+ */
 internal fun CfirTypeScope.collectDirectOverriddenFunctions(functionSymbol: CfirNamedFunctionSymbol): List<CfirFunctionSymbol<*>> {
     val targetSignature = functionSymbol.overrideSignatureKey()
     val targetIsStatic = functionSymbol.isStaticMemberForOverride()
@@ -102,6 +125,9 @@ internal fun CfirTypeScope.collectDirectOverriddenFunctions(functionSymbol: Cfir
     return result.toList()
 }
 
+/**
+ * 收集与函数符号直接覆盖且签名一致的父函数，忽略静态性差异。
+ */
 internal fun CfirTypeScope.collectDirectOverriddenFunctionsIgnoringStatic(
     functionSymbol: CfirNamedFunctionSymbol,
 ): List<CfirFunctionSymbol<*>> {
@@ -116,6 +142,9 @@ internal fun CfirTypeScope.collectDirectOverriddenFunctionsIgnoringStatic(
     return result.toList()
 }
 
+/**
+ * 收集与属性符号直接覆盖且签名和静态性一致的父属性。
+ */
 internal fun CfirTypeScope.collectDirectOverriddenProperties(propertySymbol: CfirPropertySymbol): List<CfirPropertySymbol> {
     val targetSignature = propertySymbol.overrideSignatureKey()
     val targetIsStatic = propertySymbol.isStaticMemberForOverride()
@@ -133,6 +162,9 @@ internal fun CfirTypeScope.collectDirectOverriddenProperties(propertySymbol: Cfi
     return result.toList()
 }
 
+/**
+ * 收集与属性符号直接覆盖且签名一致的父属性，忽略静态性差异。
+ */
 internal fun CfirTypeScope.collectDirectOverriddenPropertiesIgnoringStatic(
     propertySymbol: CfirPropertySymbol,
 ): List<CfirPropertySymbol> {
@@ -147,6 +179,9 @@ internal fun CfirTypeScope.collectDirectOverriddenPropertiesIgnoringStatic(
     return result.toList()
 }
 
+/**
+ * 判断 callable 符号从指定 owner 声明视角是否可见。
+ */
 internal fun CfirCallableSymbol<*>.isVisibleIn(
     ownerDeclaration: CfirClassLikeDeclaration,
     context: CheckerContext,
@@ -187,6 +222,9 @@ internal fun CfirCallableSymbol<*>.canParticipateInOverrideTargetSearch(
     return ownerClassId == currentClassId
 }
 
+/**
+ * 判断 callable 符号是否应按抽象成员处理。
+ */
 internal fun CfirCallableSymbol<*>.isAbstractLike(context: CheckerContext): Boolean {
     if (!isBound) return false
     // 是否抽象必须以 STATUS 阶段的 resolved status 为准。
@@ -194,6 +232,9 @@ internal fun CfirCallableSymbol<*>.isAbstractLike(context: CheckerContext): Bool
     return cfir.status.isAbstract
 }
 
+/**
+ * 判断 callable 符号是否能从指定 owner 声明中被 override/redef。
+ */
 internal fun CfirCallableSymbol<*>.isOverridableFrom(
     ownerDeclaration: CfirClassLikeDeclaration,
     context: CheckerContext,
@@ -212,5 +253,8 @@ internal fun CfirCallableSymbol<*>.isOverridableFrom(
     return ownerClassDeclaration is CfirInterface
 }
 
+/**
+ * 判断 callable 声明是否来自源代码。
+ */
 internal val CfirCallableDeclaration.isSourceDeclaration: Boolean
     get() = origin == org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin.Source

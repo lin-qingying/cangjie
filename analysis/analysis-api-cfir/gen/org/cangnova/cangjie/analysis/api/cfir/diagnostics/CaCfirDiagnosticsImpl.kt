@@ -35,6 +35,17 @@ internal class RefNotBeTypeImpl(
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.RefNotBeType
 
+internal class NotATypeImpl(
+    override val typeName: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.NotAType
+
+internal class InvalidAccessControlImpl(
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.InvalidAccessControl
+
 internal class EnumTypeCannotBeUsedAsConstructorImpl(
     override val enumName: Name,
     cfirDiagnostic: CjPsiDiagnostic,
@@ -83,11 +94,16 @@ internal class SuperTypesSelfReferenceImpl(
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<CjTypeReference>(cfirDiagnostic, token), CaCfirDiagnostic.SuperTypesSelfReference
 
+internal class InheritanceCycleImpl(
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.InheritanceCycle
+
 internal class SuperTypesDuplicateImpl(
     override val typeName: Name,
     cfirDiagnostic: CjPsiDiagnostic,
     token: CaLifetimeToken,
-) : CaAbstractCfirDiagnostic<CjNamedDeclaration>(cfirDiagnostic, token), CaCfirDiagnostic.SuperTypesDuplicate
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.SuperTypesDuplicate
 
 internal class InterfaceCannotInheritClassImpl(
     override val interfaceName: Name,
@@ -254,6 +270,11 @@ internal class RedundantModifierImpl(
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.RedundantModifier
 
+internal class IgnoreOpenImpl(
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.IgnoreOpen
+
 internal class IncompatibleModifiersImpl(
     override val modifier1: CjKeywordToken,
     override val modifier2: CjKeywordToken,
@@ -386,6 +407,11 @@ internal class RecursiveConstructorCallImpl(
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.RecursiveConstructorCall
 
+internal class MultiplePrimaryConstructorsImpl(
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.MultiplePrimaryConstructors
+
 internal class ValueTypeRecursiveImpl(
     cfirDiagnostic: CjPsiDiagnostic,
     token: CaLifetimeToken,
@@ -397,18 +423,52 @@ internal class IllegalThisOrSuperCallImpl(
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.IllegalThisOrSuperCall
 
+internal class IllegalPlaceOfCallingThisOrSuperImpl(
+    override val calleeName: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.IllegalPlaceOfCallingThisOrSuper
+
+internal class IllegalPlaceOfCallingThisPrimaryConstructorImpl(
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.IllegalPlaceOfCallingThisPrimaryConstructor
+
 internal class AssignmentOfMemberVariableCannotUseThisOrSuperImpl(
     override val memberName: String,
     override val contextDescription: String,
     cfirDiagnostic: CjPsiDiagnostic,
     token: CaLifetimeToken,
-) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token),
-    CaCfirDiagnostic.AssignmentOfMemberVariableCannotUseThisOrSuper
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.AssignmentOfMemberVariableCannotUseThisOrSuper
+
+internal class IllegalMemberUsedInOpenConstructorImpl(
+    override val memberKind: String,
+    override val memberName: String,
+    override val className: Name,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.IllegalMemberUsedInOpenConstructor
+
+internal class AbstractMethodCannotBeAccessedDirectlyImpl(
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.AbstractMethodCannotBeAccessedDirectly
+
+internal class ThisAsExpressionInFuncImpl(
+    override val contextDescription: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.ThisAsExpressionInFunc
 
 internal class ExplicitSuperCallRequiredImpl(
     cfirDiagnostic: CjPsiDiagnostic,
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.ExplicitSuperCallRequired
+
+internal class NoNonParamConstructorInSuperClassImpl(
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.NoNonParamConstructorInSuperClass
 
 internal class InvalidLoopControlImpl(
     cfirDiagnostic: CjPsiDiagnostic,
@@ -1109,6 +1169,12 @@ internal class CaptureBeforeInitializationImpl(
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.CaptureBeforeInitialization
 
+internal class CaptureHasShadowVariableImpl(
+    override val variableName: Name,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.CaptureHasShadowVariable
+
 internal class InterpolationInConstPatternImpl(
     cfirDiagnostic: CjPsiDiagnostic,
     token: CaLifetimeToken,
@@ -1149,6 +1215,11 @@ internal class GenericConstraintNotLooserImpl(
     cfirDiagnostic: CjPsiDiagnostic,
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.GenericConstraintNotLooser
+
+internal class GenericInfiniteInstantiationImpl(
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.GenericInfiniteInstantiation
 
 internal class GenericInstantiationCausesAmbiguousFunctionsImpl(
     override val instantiation: Name,
@@ -1219,6 +1290,25 @@ internal class CannotOverrideImpl(
     cfirDiagnostic: CjPsiDiagnostic,
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.CannotOverride
+
+internal class NeedMemberImplementationImpl(
+    override val extendName: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.NeedMemberImplementation
+
+internal class InterfaceMemberMustBeImplementedImpl(
+    override val memberKind: String,
+    override val memberName: Name,
+    override val extendName: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.InterfaceMemberMustBeImplemented
+
+internal class IncompatibleMutModifierBetweenStructAndInterfaceImpl(
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.IncompatibleMutModifierBetweenStructAndInterface
 
 internal class InheritSuperMemberKindInconsistentImpl(
     override val memberName: Name,
@@ -2307,6 +2397,12 @@ internal class TypealiasUnusedTypeParametersImpl(
     cfirDiagnostic: CjPsiDiagnostic,
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.TypealiasUnusedTypeParameters
+
+internal class TypealiasCycleImpl(
+    override val typeAlias: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.TypealiasCycle
 
 internal class MockDisabledImpl(
     override val option: String,

@@ -77,12 +77,23 @@ import org.cangnova.cangjie.source.fakeElement
  * 继承 [AbstractRawCfirBuilder]，实现三个模板方法，
  * 通过 `when(node.tokenType)` 手动分发代替 PSI Visitor 模式。
  */
+/**
+ * LightTree 到 raw CFIR 的声明构建器。
+ *
+ * 该 builder 对齐 PSI raw builder 的声明转换部分，负责文件、声明、
+ * annotation/macro surface、import/package 与声明状态构造。
+ *
+ * @property baseScopeProvider class-like 声明使用的基础 scope provider。
+ * @property bodyBuildingMode body 构建策略。
+ */
 class LightTreeRawCfirDeclarationBuilder(
     session: CfirSession,
+    /** class-like 声明使用的基础 scope provider。 */
     internal val baseScopeProvider: CfirScopeProvider,
     tree: FlyweightCapableTreeStructure<LighterASTNode>,
     source: CharSequence,
     context: Context<LighterASTNode> = Context(),
+    /** body 构建策略。 */
     val bodyBuildingMode: BodyBuildingMode = BodyBuildingMode.NORMAL,
 ) : AbstractLightTreeRawCfirBuilder(session, tree, source, context) {
 
@@ -102,6 +113,7 @@ class LightTreeRawCfirDeclarationBuilder(
         return snapshot
     }
 
+    /** 按当前 local/interface 上下文把 LightTree modifier list 转换为声明状态。 */
     private fun LightTreeModifierList.toDeclarationStatusForCurrentContext(
         defaultVisibility: Visibility? = null,
         isDefault: Boolean = false,
@@ -117,8 +129,11 @@ class LightTreeRawCfirDeclarationBuilder(
         )
     }
 
+    /** macro annotation surface 的宿主种类。 */
     private enum class MacroSurfaceOwnerKind {
+        /** annotation 附着在声明上。 */
         DECLARATION,
+        /** annotation 附着在参数上。 */
         PARAMETER,
     }
 
@@ -126,16 +141,19 @@ class LightTreeRawCfirDeclarationBuilder(
 
     // ===== 表达式构建器（延迟初始化，解决循环依赖） =====
 
+    /** 表达式构建器，延迟初始化以避免声明/表达式 builder 循环依赖。 */
     val expressionBuilder: LightTreeRawCfirExpressionBuilder by lazy {
         LightTreeRawCfirExpressionBuilder(baseSession, tree, source, context, this)
     }
 
     // ===== Public API =====
 
+    /** LightTree 文件构建必须使用带 sourceFile/linesMapping 的专用入口。 */
     override fun buildFile(file: LighterASTNode): CfirFile {
         error("Use buildCfirFile(lightTreeRoot, sourceFile, linesMapping) for LightTree file conversion")
     }
 
+    /** 构建 LightTree 文件根节点对应的 [CfirFile]。 */
     fun buildCfirFile(
         file: LighterASTNode,
         sourceFile: CjSourceFile,
@@ -167,6 +185,7 @@ class LightTreeRawCfirDeclarationBuilder(
         }
     }
 
+    /** 从 LightTree 声明节点构建 raw CFIR 声明。 */
     override fun buildDeclaration(declaration: LighterASTNode): CfirDeclaration =
         convertDeclaration(declaration)
 
@@ -182,6 +201,7 @@ class LightTreeRawCfirDeclarationBuilder(
         }
     }
 
+    /** 从 LightTree 表达式节点构建 raw CFIR 表达式。 */
     override fun buildExpression(expression: LighterASTNode): CfirExpression =
         expressionBuilder.convertExpression(expression)
 
@@ -266,6 +286,7 @@ class LightTreeRawCfirDeclarationBuilder(
 
     // ===== 声明转换入口 =====
 
+    /** 按 LightTree 声明节点 token type 分派到具体声明转换函数。 */
     fun convertDeclaration(node: LighterASTNode): CfirDeclaration {
         val modifiers = LightTreeModifierList.from(tree, node)
 
@@ -304,6 +325,7 @@ class LightTreeRawCfirDeclarationBuilder(
 
     // ===== 类/接口/结构体/枚举 =====
 
+    /** 转换 class、interface、struct、enum 等 class-like 声明。 */
     private fun convertClass(node: LighterASTNode, classKind: CfirClassKind): CfirDeclaration {
         val name = extractName(node)
         val modifiers = LightTreeModifierList.from(tree, node)
@@ -463,6 +485,7 @@ class LightTreeRawCfirDeclarationBuilder(
         }
     }
 
+    /** 为带 `let/var` 的主构造参数创建对应成员属性。 */
     private fun convertPrimaryConstructorParameterProperty(
         node: LighterASTNode,
         valueParameter: CfirValueParameter,
@@ -520,6 +543,7 @@ class LightTreeRawCfirDeclarationBuilder(
         return property
     }
 
+    /** 构造主构造参数属性的合成 getter 或 setter。 */
     private fun buildPrimaryConstructorParameterPropertyAccessor(
         source: CjSourceElement?,
         accessorName: Name,
@@ -575,6 +599,7 @@ class LightTreeRawCfirDeclarationBuilder(
         }
     }
 
+    /** 从 class-like 节点中查找主构造节点。 */
     private fun findPrimaryConstructorNode(ownerNode: LighterASTNode): LighterASTNode? {
         val bodyNode = tree.findChildByType(ownerNode, CjNodeTypes.CLASS_BODY)
             ?: tree.findChildByType(ownerNode, CjNodeTypes.INTERFACE_BODY)
@@ -583,6 +608,7 @@ class LightTreeRawCfirDeclarationBuilder(
         return tree.findChildByType(bodyNode, CjNodeTypes.PRIMARY_CONSTRUCTOR)
     }
 
+    /** 为没有显式构造函数的 class-like 声明构造隐式主构造。 */
     private fun buildImplicitPrimaryConstructor(ownerNode: LighterASTNode): CfirConstructor {
         return buildSourceDeclaration(CfirConstructorSymbol(callableIdFor(SpecialNames.INIT))) { symbol ->
             buildPrimaryConstructor {
@@ -603,6 +629,7 @@ class LightTreeRawCfirDeclarationBuilder(
 
     // ===== Extend =====
 
+    /** 转换 extend 声明，保留扩展目标类型、约束与成员声明。 */
     private fun convertExtend(node: LighterASTNode): CfirExtend {
         val modifiers = LightTreeModifierList.from(tree, node)
 
@@ -651,6 +678,7 @@ class LightTreeRawCfirDeclarationBuilder(
 
     // ===== 函数 =====
 
+    /** 转换普通命名函数声明。 */
     private fun convertFunction(node: LighterASTNode): CfirFunction {
         val name = extractFunctionName(node, countValueParameters(node))
         val functionSymbol = CfirNamedFunctionSymbol(callableIdFor(name))
@@ -687,6 +715,7 @@ class LightTreeRawCfirDeclarationBuilder(
         }.also { bindFunctionTarget(functionTarget, it) }
     }
 
+    /** 转换仓颉入口 main 函数声明。 */
     private fun convertMainFunction(node: LighterASTNode): CfirMainFunction {
         val modifiers = LightTreeModifierList.from(tree, node)
         val functionSymbol = CfirMainFunctionSymbol(callableIdFor(Name.identifier("main")))
@@ -715,6 +744,7 @@ class LightTreeRawCfirDeclarationBuilder(
         }.also { bindFunctionTarget(functionTarget, it) }
     }
 
+    /** 转换 macro declaration。 */
     private fun convertMacroDeclaration(node: LighterASTNode): CfirMacroDeclaration {
         val name = extractName(node)
         val modifiers = LightTreeModifierList.from(tree, node)
@@ -745,6 +775,7 @@ class LightTreeRawCfirDeclarationBuilder(
         }.also { bindFunctionTarget(functionTarget, it) }
     }
 
+    /** 转换 finalizer 声明。 */
     private fun convertFinalizer(node: LighterASTNode): CfirFinalizer {
         val modifiers = LightTreeModifierList.from(tree, node)
         val functionSymbol = CfirFinalizerSymbol(callableIdFor(SpecialNames.END_INIT))
@@ -776,6 +807,7 @@ class LightTreeRawCfirDeclarationBuilder(
 
     // ===== 属性/字段/变量 =====
 
+    /** 转换属性声明；无有效名称时显式构造 invalid declaration。 */
     private fun convertProperty(node: LighterASTNode): CfirDeclaration {
         val name = extractPropertyName(node)
         if (name.isSpecial) {
@@ -888,6 +920,7 @@ class LightTreeRawCfirDeclarationBuilder(
         }.also { bindFunctionTarget(functionTarget, it) }
     }
 
+    /** 转换字段变量声明。 */
     private fun convertFieldVariable(node: LighterASTNode): CfirFieldVariable {
         val name = extractName(node)
         val modifiers = LightTreeModifierList.from(tree, node)
@@ -915,6 +948,7 @@ class LightTreeRawCfirDeclarationBuilder(
         }
     }
 
+    /** 转换 pattern variable 声明。 */
     private fun convertPatternVariable(node: LighterASTNode): CfirPatternVariable {
         val modifiers = LightTreeModifierList.from(tree, node)
         val typeRef = extractReturnTypeRef(node)
@@ -953,6 +987,7 @@ class LightTreeRawCfirDeclarationBuilder(
 
     // ===== 构造器 =====
 
+    /** 转换主构造或次构造函数声明。 */
     private fun convertConstructor(node: LighterASTNode, isPrimary: Boolean): CfirConstructor {
         val modifiers = LightTreeModifierList.from(tree, node)
         val constructorSymbol = CfirConstructorSymbol(callableIdFor(SpecialNames.INIT))
@@ -1002,6 +1037,7 @@ class LightTreeRawCfirDeclarationBuilder(
 
     // ===== 类型别名 =====
 
+    /** 转换 typealias 声明；非法嵌套时显式构造 invalid declaration。 */
     private fun convertTypeAlias(node: LighterASTNode): CfirDeclaration {
         val name = extractName(node)
         val modifiers = LightTreeModifierList.from(tree, node)
@@ -1035,6 +1071,7 @@ class LightTreeRawCfirDeclarationBuilder(
 
     // ===== 枚举构造器 =====
 
+    /** 转换枚举构造项及其 payload 类型参数。 */
     private fun convertEnumConstructor(
         node: LighterASTNode,
     ): CfirEnumConstructor {
@@ -1080,6 +1117,7 @@ class LightTreeRawCfirDeclarationBuilder(
 
     // ===== 值参数 =====
 
+    /** 转换函数、构造函数、宏或 lambda 的值参数。 */
     fun convertValueParameter(
         node: LighterASTNode,
         containingDeclarationSymbol: CfirBasedSymbol<*>,
@@ -1183,6 +1221,7 @@ class LightTreeRawCfirDeclarationBuilder(
         }
     }
 
+    /** 基于 annotation 节点本身构造 raw annotation call。 */
     private fun buildRawAnnotationCall(
         annotation: LighterASTNode,
         rawName: String,
@@ -1202,6 +1241,7 @@ class LightTreeRawCfirDeclarationBuilder(
         )
     }
 
+    /** 基于已提取的 annotation 名称构造 raw annotation call。 */
     private fun buildRawAnnotationCall(
         annotation: LighterASTNode,
         rawName: String,
@@ -1229,6 +1269,7 @@ class LightTreeRawCfirDeclarationBuilder(
         }
     }
 
+    /** 转换 annotation 实参列表。 */
     private fun convertAnnotationArguments(
         annotation: LighterASTNode,
         valueArgumentList: LighterASTNode?,
@@ -1251,6 +1292,7 @@ class LightTreeRawCfirDeclarationBuilder(
         return emptyList()
     }
 
+    /** 转换单个 annotation 实参。 */
     private fun convertAnnotationArgument(valueArgumentNode: LighterASTNode): CfirExpression? {
         val expressionNode = findFirstExpressionIn(valueArgumentNode) ?: return null
         val convertedExpression = expressionBuilder.convertExpression(expressionNode)
@@ -1269,6 +1311,7 @@ class LightTreeRawCfirDeclarationBuilder(
         }
     }
 
+    /** 在节点子树中查找第一个表达式节点。 */
     private fun findFirstExpressionIn(node: LighterASTNode): LighterASTNode? {
         if (LightTreeRawCfirExpressionBuilder.isExpressionToken(node.tokenType)) return node
         tree.forEachChildren(node) { child ->
@@ -1277,6 +1320,7 @@ class LightTreeRawCfirDeclarationBuilder(
         return null
     }
 
+    /** 根据原始 annotation 名称构造 user type ref。 */
     private fun buildAnnotationTypeRef(rawName: String, annotation: LighterASTNode): CfirTypeRef {
         val parts = rawName.split('.').filter(String::isNotBlank)
         if (parts.isEmpty()) return buildImplicitTypeRef()
@@ -1294,6 +1338,7 @@ class LightTreeRawCfirDeclarationBuilder(
         }
     }
 
+    /** 根据 annotation 名称信息构造可重定位的 user type ref。 */
     private fun buildAnnotationTypeRef(annotationName: AnnotationNameInfo, sourceOffsetDelta: Int = 0): CfirTypeRef {
         val parts = annotationName.rawName.split('.').filter(String::isNotBlank)
         if (parts.isEmpty()) return buildImplicitTypeRef()
@@ -1310,6 +1355,7 @@ class LightTreeRawCfirDeclarationBuilder(
         }
     }
 
+    /** 从 annotation 或 macro-expression annotation 包装构造 macro surface。 */
     private fun buildMacroSurfaceFromAnnotation(
         ownerNode: LighterASTNode,
         annotation: LighterASTNode,
@@ -1406,6 +1452,17 @@ class LightTreeRawCfirDeclarationBuilder(
         }
     }
 
+    /**
+     * 构造 macro surface 时共享的字段集合。
+     *
+     * @property surfaceId construction 期唯一 surface id。
+     * @property kind macro 调用形态。
+     * @property qualifiedName surface 限定名。
+     * @property inputTokens input payload token 流。
+     * @property sourceRange surface 源码范围。
+     * @property scopeContext surface 作用域上下文。
+     * @property replaceHandle stable splice 句柄。
+     */
     private data class MacroSurfaceCommon(
         val surfaceId: Long,
         val qualifiedName: FqName?,
@@ -1422,6 +1479,7 @@ class LightTreeRawCfirDeclarationBuilder(
         val replaceHandle: CfirReplaceHandle,
     )
 
+    /** 对 surface payload 节点执行 lexer tokenization。 */
     private fun tokenizeSurfacePayload(node: LighterASTNode?): List<MacroSurfaceToken> {
         return MacroPayloadTokenizer.tokenize(
             payload = node?.asText(),
@@ -1436,6 +1494,7 @@ class LightTreeRawCfirDeclarationBuilder(
         }
     }
 
+    /** 对完整 annotation 文本执行 lexer tokenization。 */
     private fun tokenizeFullAnnotation(node: LighterASTNode): List<MacroSurfaceToken> {
         return MacroPayloadTokenizer.tokenize(
             payload = node.asText(),
@@ -1450,10 +1509,18 @@ class LightTreeRawCfirDeclarationBuilder(
         }
     }
 
+    /** 从 annotation 节点提取名称文本。 */
     private fun extractAnnotationNameText(annotation: LighterASTNode): String? {
         return annotationNameInfo(annotation)?.rawName
     }
 
+    /**
+     * annotation 名称与各段 source 信息。
+     *
+     * @property rawName annotation 原始限定名文本。
+     * @property calleeReferenceSource callee reference 的 source。
+     * @property segmentSources 限定名每一段对应的 source。
+     */
     private data class AnnotationNameInfo(
         val rawName: String,
         val nameSource: CjSourceElement,
@@ -1463,6 +1530,7 @@ class LightTreeRawCfirDeclarationBuilder(
             get() = segmentSources.lastOrNull() ?: nameSource
     }
 
+    /** 提取普通 annotation 节点的名称信息。 */
     private fun annotationNameInfo(annotation: LighterASTNode): AnnotationNameInfo? {
         val nameNode = findAnnotationNameNode(annotation) ?: return null
         val rawName = nameNode.asText().trim().takeIf { it.isNotEmpty() } ?: return null
@@ -1473,6 +1541,7 @@ class LightTreeRawCfirDeclarationBuilder(
         )
     }
 
+    /** 提取 macro-expression annotation 包装的名称信息。 */
     private fun macroExpressionAnnotationNameInfo(node: LighterASTNode): AnnotationNameInfo? {
         val nameNode = findMacroExpressionAnnotationNameNode(node) ?: return null
         val rawName = nameNode.asText().trim().takeIf { it.isNotEmpty() } ?: return null
@@ -1483,6 +1552,7 @@ class LightTreeRawCfirDeclarationBuilder(
         )
     }
 
+    /** 查找普通 annotation 的名称节点。 */
     private fun findAnnotationNameNode(annotation: LighterASTNode): LighterASTNode? {
         if (annotation.tokenType == CjNodeTypes.MACRO_EXPRESSION) {
             return findMacroExpressionAnnotationNameNode(annotation)
@@ -1506,19 +1576,23 @@ class LightTreeRawCfirDeclarationBuilder(
         return tree.findChildByType(typeRef, CjNodeTypes.USER_TYPE)
     }
 
+    /** 查找 macro-expression annotation 包装中的名称节点。 */
     private fun findMacroExpressionAnnotationNameNode(node: LighterASTNode): LighterASTNode? {
         return findAnnotationConstructorCalleeNameNode(node)
             ?: findMacroExpressionNameNode(node)
     }
 
+    /** 构造 annotation callee reference 的 source。 */
     private fun annotationCalleeReferenceSource(annotation: LighterASTNode): CjSourceElement? {
         return annotationNameInfo(annotation)?.calleeReferenceSource
     }
 
+    /** 计算 reparse 后 LightTree 节点与原始 source override 之间的偏移差。 */
     private fun sourceOffsetDelta(sourceOverride: CjSourceElement?, reparsedNode: LighterASTNode): Int {
         return sourceOverride?.let { it.startOffset - reparsedNode.toSource().startOffset } ?: 0
     }
 
+    /** 将 source element 按 [delta] 平移。 */
     private fun CjSourceElement.shiftedBy(delta: Int): CjSourceElement {
         if (delta == 0) return this
         return CjLightSourceElement(
@@ -1530,9 +1604,11 @@ class LightTreeRawCfirDeclarationBuilder(
         )
     }
 
+    /** 收集 annotation 限定名每一段对应的 source。 */
     private fun collectAnnotationNameSegmentSources(nameNode: LighterASTNode): List<CjSourceElement> {
         val sources = mutableListOf<CjSourceElement>()
 
+        /** 深度遍历名称节点并收集 reference expression source。 */
         fun visit(node: LighterASTNode) {
             if (node.tokenType == CjNodeTypes.REFERENCE_EXPRESSION) {
                 sources += node.toSource()
@@ -1545,6 +1621,7 @@ class LightTreeRawCfirDeclarationBuilder(
         return sources
     }
 
+    /** 查找第一个 token type 为 [tokenType] 的后代节点。 */
     private fun findFirstDescendantByType(
         node: LighterASTNode,
         tokenType: com.intellij.psi.tree.IElementType,
@@ -1556,6 +1633,7 @@ class LightTreeRawCfirDeclarationBuilder(
         return null
     }
 
+    /** 将 surface 原始名称提升为 FQN。 */
     private fun macroSurfaceQualifiedName(rawName: String): FqName {
         val normalizedName = rawName.trim()
         if (normalizedName.contains('.')) return FqName(normalizedName)
@@ -1568,6 +1646,7 @@ class LightTreeRawCfirDeclarationBuilder(
         }
     }
 
+    /** 构造 macro surface 的 scope context。 */
     private fun macroSurfaceScopeContext(): MacroSurfaceScopeContext {
         val classFqName = (containerSymbolIfAny as? CfirClassLikeSymbol<*>)?.classId?.asSingleFqName()
         val functionName = (containerSymbolIfAny as? CfirCallableSymbol<*>)?.name
@@ -1578,6 +1657,7 @@ class LightTreeRawCfirDeclarationBuilder(
         )
     }
 
+    /** 构造 macro surface 的语法容器上下文。 */
     private fun macroSurfaceContainerContext(ownerNode: LighterASTNode): MacroSurfaceContainerContext {
         return MacroSurfaceContainerContext(
             outerDeclarationKind = outerDeclarationKind(ownerNode),
@@ -1589,6 +1669,7 @@ class LightTreeRawCfirDeclarationBuilder(
         )
     }
 
+    /** 根据 owner 与当前容器符号推导外层声明种类。 */
     private fun outerDeclarationKind(ownerNode: LighterASTNode): MacroSurfaceContainerContext.OuterDeclarationKind {
         var current = ownerNode.getParent()
         while (current != null) {
@@ -1616,6 +1697,7 @@ class LightTreeRawCfirDeclarationBuilder(
         }
     }
 
+    /** 判断 [node] 是否存在指定 token type 的祖先节点。 */
     private fun hasAncestor(node: LighterASTNode, tokenType: com.intellij.psi.tree.IElementType): Boolean {
         var current = node.getParent()
         while (current != null) {
@@ -1625,6 +1707,7 @@ class LightTreeRawCfirDeclarationBuilder(
         return false
     }
 
+    /** 计算节点在逗号分隔列表中的位置；当前未能判定时返回 null。 */
     private fun commaListPosition(node: LighterASTNode): Int? {
         val parent = node.getParent()?.takeIf { it.tokenType == CjNodeTypes.VALUE_PARAMETER_LIST } ?: return null
         return tree.getChildrenByType(parent, CjNodeTypes.VALUE_PARAMETER).indexOf(node).takeIf { it >= 0 }
@@ -1632,6 +1715,7 @@ class LightTreeRawCfirDeclarationBuilder(
 
     // ===== 文件级构建辅助 =====
 
+    /** 从 package directive 节点提取包名。 */
     private fun extractPackageFqName(packageNode: LighterASTNode): FqName {
         // PACKAGE_DIRECTIVE 内部可能包含 DOT_QUALIFIED_EXPRESSION 或 REFERENCE_EXPRESSION
         val text = buildString {
@@ -1645,6 +1729,7 @@ class LightTreeRawCfirDeclarationBuilder(
         return if (text.isNotEmpty()) FqName(text) else FqName.ROOT
     }
 
+    /** 构造 CFIR package directive。 */
     private fun buildPackageDirectiveNode(
         packageNode: LighterASTNode?,
         fqName: FqName,
@@ -1656,6 +1741,7 @@ class LightTreeRawCfirDeclarationBuilder(
         }
     }
 
+    /** 判断节点是否包含直接子节点 [type]。 */
     private fun containsChildByType(node: LighterASTNode, type: com.intellij.psi.tree.IElementType): Boolean {
         tree.forEachChildren(node) { child ->
             if (child.tokenType == type || containsChildByType(child, type)) return true
@@ -1663,6 +1749,7 @@ class LightTreeRawCfirDeclarationBuilder(
         return false
     }
 
+    /** 从文件节点构造 import 列表。 */
     private fun buildImportsFromFile(file: LighterASTNode): List<CfirImport> {
         val imports = mutableListOf<CfirImport>()
         tree.forEachChildren(file) { child ->
@@ -1681,6 +1768,7 @@ class LightTreeRawCfirDeclarationBuilder(
         return imports
     }
 
+    /** 转换单个 import item。 */
     private fun convertImportItem(item: LighterASTNode): CfirImport? {
         // 提取导入的 FQN（从 DOT_QUALIFIED_EXPRESSION 或 REFERENCE_EXPRESSION）
         var fqNameText: String? = null
@@ -1708,6 +1796,7 @@ class LightTreeRawCfirDeclarationBuilder(
         }
     }
 
+    /** 规范化 LightTree 中可能重复包前缀的 import FQN。 */
     private fun normalizeImportFqName(fqName: FqName): FqName {
         val segments = fqName.pathSegments().map { it.asString() }
         for (prefixLength in 1..(segments.size / 2)) {
@@ -1720,6 +1809,7 @@ class LightTreeRawCfirDeclarationBuilder(
         return fqName
     }
 
+    /** 构造文件顶层声明列表。 */
     private fun buildFileDeclarations(file: LighterASTNode): List<CfirDeclaration> {
         val declarations = mutableListOf<CfirDeclaration>()
         val pendingAnnotations = mutableListOf<LighterASTNode>()
@@ -1774,6 +1864,7 @@ class LightTreeRawCfirDeclarationBuilder(
         return declarations
     }
 
+    /** 判断当前 macro expression 是否包裹顶层声明。 */
     private fun LighterASTNode.isTopLevelMacroDeclaration(): Boolean {
         return resolveTopLevelMacroDeclarationChain(this) != null
     }
@@ -1815,6 +1906,12 @@ class LightTreeRawCfirDeclarationBuilder(
         return null
     }
 
+    /**
+     * 将顶层 [CjNodeTypes.MACRO_EXPRESSION] 恢复成 CFIR annotation 与 macro surface。
+     *
+     * LightTree 中声明宏的 wrapper 与真实 carrier 声明分离，本方法负责把 wrapper 的语法快照、
+     * annotation slot 与稳定替换句柄统一挂到 [carrier] 上，保证后续宏展开可以按同一个声明对象 splice。
+     */
     private fun applyTopLevelMacroExpression(
         node: LighterASTNode,
         carrier: CfirDeclaration,
@@ -1901,6 +1998,12 @@ class LightTreeRawCfirDeclarationBuilder(
         }
     }
 
+    /**
+     * 在 macro wrapper 层查找函数返回类型引用。
+     *
+     * LightTree 对 `@Anno func f(): T` 的拆分可能让返回类型停留在 MACRO_EXPRESSION wrapper 上；
+     * 这里只接受参数列表之后、函数体之前且不属于 where 约束的 [CjNodeTypes.TYPE_REFERENCE]。
+     */
     private fun findMacroExpressionWrapperReturnTypeRef(macroExpression: LighterASTNode): LighterASTNode? {
         val parameterList = findFirstDescendantByType(macroExpression, CjNodeTypes.VALUE_PARAMETER_LIST) ?: return null
         val block = findFirstDescendantByType(macroExpression, CjNodeTypes.BLOCK)
@@ -1914,10 +2017,17 @@ class LightTreeRawCfirDeclarationBuilder(
             }
     }
 
+    /**
+     * 判断 [node] 是否位于 [root] 的 type constraint list 内部。
+     *
+     * 返回类型恢复需要排除 where 子句中的类型引用，否则泛型上界会被误认为函数返回类型。
+     */
     private fun isInsideTypeConstraintList(node: LighterASTNode, root: LighterASTNode): Boolean {
         val nodeStart = tree.getStartOffset(node)
         val nodeEnd = tree.getEndOffset(node)
         var result = false
+
+        /** 深度遍历 [root]，沿途携带当前节点是否已经进入 type constraint list。 */
         fun visit(current: LighterASTNode, insideConstraint: Boolean) {
             if (tree.getStartOffset(current) == nodeStart && tree.getEndOffset(current) == nodeEnd) {
                 result = insideConstraint
@@ -1933,11 +2043,18 @@ class LightTreeRawCfirDeclarationBuilder(
         return result
     }
 
+    /**
+     * 收集 [node] 子树中 token 类型等于 [tokenType] 的所有后代节点。
+     *
+     * LightTree 没有 PSI 的 typed descendant API，这里集中封装递归遍历，避免各调用点重复处理树访问。
+     */
     private fun findDescendantsByType(
         node: LighterASTNode,
         tokenType: com.intellij.psi.tree.IElementType,
     ): List<LighterASTNode> {
         val result = mutableListOf<LighterASTNode>()
+
+        /** 递归访问当前节点及其子节点，并按目标 token 类型累积命中节点。 */
         fun visit(current: LighterASTNode) {
             if (current.tokenType == tokenType) {
                 result += current
@@ -1961,6 +2078,11 @@ class LightTreeRawCfirDeclarationBuilder(
         return prefix + rawName + attrNode?.asText().orEmpty()
     }
 
+    /**
+     * 将 macro expression 还原出的 annotation 文本切分为 surface token。
+     *
+     * [baseOffset] 使用 wrapper 的源偏移，保证 token offset 与后续宏诊断、替换范围保持一致。
+     */
     private fun tokenizeMacroExpressionAnnotationSyntax(
         rawAnnotationSyntax: String,
         baseOffset: Int,
@@ -1974,6 +2096,11 @@ class LightTreeRawCfirDeclarationBuilder(
             )
         }
 
+    /**
+     * 在 [node] 子树中查找第一个声明节点。
+     *
+     * 该查询用于语法恢复场景，只返回 LightTree 声明 token，不会把表达式或 annotation 节点提升为声明。
+     */
     private fun findFirstDeclarationDescendant(node: LighterASTNode): LighterASTNode? {
         if (LightTreeRawCfirExpressionBuilder.isDeclarationToken(node.tokenType)) return node
         tree.forEachChildren(node) { child ->
@@ -1982,6 +2109,11 @@ class LightTreeRawCfirDeclarationBuilder(
         return null
     }
 
+    /**
+     * 查找 [node] 的直接声明子节点。
+     *
+     * 顶层 macro declaration 链只允许 wrapper input 的直接 carrier 被绑定，避免跨层吞掉内层 wrapper。
+     */
     private fun findDirectDeclarationChild(node: LighterASTNode): LighterASTNode? {
         var declarationNode: LighterASTNode? = null
         tree.forEachChildren(node) { child ->
@@ -1992,6 +2124,11 @@ class LightTreeRawCfirDeclarationBuilder(
         return declarationNode
     }
 
+    /**
+     * 查找 [node] 的直接 macro expression 子节点。
+     *
+     * 多层 annotation wrapper 解析依赖直接子节点关系，以保持 wrapper 顺序与源代码嵌套一致。
+     */
     private fun findDirectMacroExpressionChild(node: LighterASTNode): LighterASTNode? {
         var macroExpression: LighterASTNode? = null
         tree.forEachChildren(node) { child ->
@@ -2002,11 +2139,21 @@ class LightTreeRawCfirDeclarationBuilder(
         return macroExpression
     }
 
+    /**
+     * 从 macro expression 中提取 annotation/macro 名称文本。
+     *
+     * 返回值保留限定名文本；空白或缺失名称返回 null，由上层跳过无效 surface。
+     */
     private fun extractMacroExpressionNameText(node: LighterASTNode): String? {
         val reference = findMacroExpressionAnnotationNameNode(node) ?: return null
         return reference.asText().trim().takeIf { it.isNotEmpty() }
     }
 
+    /**
+     * 查找 macro expression 直接携带的名称节点。
+     *
+     * 支持限定名与普通引用两种 LightTree 形态，供兼容旧调用点使用。
+     */
     private fun findMacroExpressionNameNode(node: LighterASTNode): LighterASTNode? {
         return tree.findChildByType(node, CjNodeTypes.DOT_QUALIFIED_EXPRESSION)
             ?: tree.findChildByType(node, CjNodeTypes.REFERENCE_EXPRESSION)
@@ -2048,6 +2195,11 @@ class LightTreeRawCfirDeclarationBuilder(
         return result ?: Name.special("<anonymous>")
     }
 
+    /**
+     * 提取函数声明名称，并把操作符文本归一化为编译器约定名称。
+     *
+     * [valueParametersCount] 用于区分一元/二元 `+`、`-`，`[]` 通过参数形态进一步区分 get/set。
+     */
     private fun extractFunctionName(node: LighterASTNode, valueParametersCount: Int): Name {
         val nameNode = tree.findChildByType(node, CjTokens.IDENTIFIER)
             ?: tree.findChildByType(node, CjNodeTypes.OPERATION_NAME)
@@ -2137,11 +2289,21 @@ class LightTreeRawCfirDeclarationBuilder(
         }
     }
 
+    /**
+     * 提取类型参数名称。
+     *
+     * 语法错误导致缺失标识符时返回稳定错误名称，保证 raw CFIR 仍能保留声明骨架。
+     */
     private fun typeParameterName(node: LighterASTNode): Name {
         return tree.findChildByType(node, CjTokens.IDENTIFIER)?.let { Name.identifier(it.asText()) }
             ?: Name.identifier("<error>")
     }
 
+    /**
+     * 收集 [ownerNode] where/type constraint 子句声明的类型参数上界。
+     *
+     * 返回值按类型参数名分组，后续构造 [CfirTypeParameter] 时会把这些约束追加为 bounds。
+     */
     private fun collectTypeConstraintBounds(ownerNode: LighterASTNode): Map<Name, List<CfirTypeRef>> {
         val typeConstraintList = tree.findChildByType(ownerNode, CjNodeTypes.TYPE_CONSTRAINT_LIST) ?: return emptyMap()
         val boundsByParameter = linkedMapOf<Name, MutableList<CfirTypeRef>>()
@@ -2183,6 +2345,11 @@ class LightTreeRawCfirDeclarationBuilder(
         )
     }
 
+    /**
+     * 汇总声明节点上仅供诊断使用的附加属性。
+     *
+     * 目前保留 type constraint 与函数体参数列表的源位置信息；没有任何附加数据时返回共享 EMPTY 实例。
+     */
     private fun declarationAttributes(ownerNode: LighterASTNode): CfirDeclarationAttributes {
         var hasAttributes = false
         val attributes = CfirDeclarationAttributes()
@@ -2200,6 +2367,11 @@ class LightTreeRawCfirDeclarationBuilder(
         return if (hasAttributes) attributes else CfirDeclarationAttributes.EMPTY
     }
 
+    /**
+     * 收集函数体相关诊断需要的参数列表源信息。
+     *
+     * LightTree 错误恢复可能产生多个参数列表，保留这些 source 可让 checker 在 CFIR 阶段定位重复列表。
+     */
     private fun collectFunctionBodyDiagnosticData(ownerNode: LighterASTNode): CfirFunctionBodyDiagnosticData? {
         val parameterLists = tree.getChildrenByType(ownerNode, CjNodeTypes.VALUE_PARAMETER_LIST)
             .map { parameterList ->
@@ -2215,6 +2387,11 @@ class LightTreeRawCfirDeclarationBuilder(
         )
     }
 
+    /**
+     * 提取 class-like 或 extend 声明的直接超类型引用。
+     *
+     * 只读取 [CjNodeTypes.SUPER_TYPE_LIST] 下的 [CjNodeTypes.SUPER_TYPE_ENTRY]，避免误收 body 内部类型。
+     */
     private fun extractSuperTypeRefs(node: LighterASTNode): List<CfirTypeRef> {
         val superTypeList = tree.findChildByType(node, CjNodeTypes.SUPER_TYPE_LIST) ?: return emptyList()
         val superTypeEntries = tree.getChildrenByType(superTypeList, CjNodeTypes.SUPER_TYPE_ENTRY)
@@ -2321,6 +2498,11 @@ class LightTreeRawCfirDeclarationBuilder(
         return convertTypeRef(typeRef)
     }
 
+    /**
+     * 查找函数形声明冒号后的直接返回类型引用。
+     *
+     * 该方法只扫描声明直接子节点，避免把参数类型、泛型约束或函数体内部类型当作返回类型。
+     */
     private fun findFunctionLikeReturnTypeRef(node: LighterASTNode): LighterASTNode? {
         var isReturnType = false
         tree.forEachChildren(node) { child ->
@@ -2342,11 +2524,21 @@ class LightTreeRawCfirDeclarationBuilder(
             .map { convertValueParameter(it, containingDeclarationSymbol, requiresExplicitType) }
     }
 
+    /**
+     * 提取声明直接参数列表中的值参数节点。
+     *
+     * LightTree 路径只使用第一个 [CjNodeTypes.VALUE_PARAMETER_LIST] 作为签名参数列表，重复列表另由诊断属性记录。
+     */
     private fun extractValueParameterNodes(node: LighterASTNode): List<LighterASTNode> {
         val paramList = tree.findChildByType(node, CjNodeTypes.VALUE_PARAMETER_LIST) ?: return emptyList()
         return tree.getChildrenByType(paramList, CjNodeTypes.VALUE_PARAMETER)
     }
 
+    /**
+     * 统计声明签名中的值参数数量。
+     *
+     * 主要服务操作符名称归一化，尤其是一元/二元 `+`、`-` 的区分。
+     */
     private fun countValueParameters(node: LighterASTNode): Int {
         return extractValueParameterNodes(node).size
     }
@@ -2357,11 +2549,21 @@ class LightTreeRawCfirDeclarationBuilder(
         return expressionBuilder.convertBlock(blockNode)
     }
 
+    /**
+     * 提取属性体中显式声明的 getter/setter 节点。
+     *
+     * 无属性体或无 accessor 时返回空列表，调用方据此判断默认、抽象和隐式 accessor 语义。
+     */
     private fun extractPropertyAccessorNodes(node: LighterASTNode): List<LighterASTNode> {
         val propertyBody = tree.findChildByType(node, CjNodeTypes.PROPERTY_BODY) ?: return emptyList()
         return tree.getChildrenByType(propertyBody, CjNodeTypes.PROPERTY_ACCESSOR)
     }
 
+    /**
+     * 判断属性 accessor 节点是否为 getter。
+     *
+     * LightTree accessor 没有独立强类型模型，当前以 `get` 关键字存在性区分 getter 与 setter。
+     */
     private fun isGetterAccessor(node: LighterASTNode): Boolean {
         return tree.findChildByType(node, CjTokens.GET_KEYWORD) != null
     }
@@ -2401,6 +2603,11 @@ class LightTreeRawCfirDeclarationBuilder(
         return false
     }
 
+    /**
+     * 将源码中的 `const` 变量声明关键字同步到声明状态。
+     *
+     * 仅 [CfirDeclarationStatusImpl] 支持原地标记；其他实现保持不变以尊重状态对象边界。
+     */
     private fun CfirDeclarationStatus.withConstDeclarationKeyword(hasConstKeyword: Boolean): CfirDeclarationStatus {
         if (hasConstKeyword && this is CfirDeclarationStatusImpl) {
             isConst = true
@@ -2426,6 +2633,11 @@ class LightTreeRawCfirDeclarationBuilder(
         return null
     }
 
+    /**
+     * 为模式绑定中的单个命名变量构造 CFIR 变量声明。
+     *
+     * 该声明使用 fake source 指回模式绑定槽位，并复制外层变量状态，保证模式分解出的变量可被后续 scope/resolve 独立处理。
+     */
     internal fun createPatternBindingVariable(
         source: CjSourceElement?,
         name: Name,
@@ -2454,6 +2666,11 @@ class LightTreeRawCfirDeclarationBuilder(
         }
     }
 
+    /**
+     * 深复制声明状态到可变 [CfirDeclarationStatusImpl]。
+     *
+     * 模式绑定变量需要继承外层 `let/var/const`、可见性与修饰符语义，但不能共享同一个可变 status 实例。
+     */
     internal fun cloneDeclarationStatus(status: CfirDeclarationStatus): CfirDeclarationStatusImpl {
         return CfirDeclarationStatusImpl(
             visibility = status.visibility,
@@ -2478,12 +2695,22 @@ class LightTreeRawCfirDeclarationBuilder(
         }
     }
 
+    /**
+     * 判断接口成员函数是否应按 default 实现处理。
+     *
+     * 非 foreign、非 abstract 且源码含函数体时才标记 default，避免 lazy body 模式影响语义判断。
+     */
     private fun isDefaultInterfaceFunction(node: LighterASTNode, modifiers: LightTreeModifierList): Boolean =
         isInInterfaceMemberContext() &&
                 !modifiers.isForeign &&
                 !modifiers.isAbstract &&
                 hasSyntaxBody(node)
 
+    /**
+     * 判断接口属性是否因为显式 accessor body 而拥有 default 实现。
+     *
+     * 仅属性 accessor 自身存在 body 时成立，普通无体接口属性仍交给抽象语义处理。
+     */
     private fun isDefaultInterfaceProperty(
         node: LighterASTNode,
         modifiers: LightTreeModifierList,
@@ -2493,11 +2720,21 @@ class LightTreeRawCfirDeclarationBuilder(
                 !modifiers.isAbstract &&
                 accessors.any(::hasSyntaxBody)
 
+    /**
+     * 判断接口属性 accessor 是否应标记为 default。
+     *
+     * accessor 级别的 default 只依赖该 accessor 是否有语法 body，而不继承属性整体的判断结果。
+     */
     private fun isDefaultInterfaceAccessor(node: LighterASTNode, modifiers: LightTreeModifierList): Boolean =
         isInInterfaceMemberContext() &&
                 !modifiers.isAbstract &&
                 hasSyntaxBody(node)
 
+    /**
+     * 判断当前声明转换是否处在接口成员上下文。
+     *
+     * 本地声明永远不按接口成员处理，容器符号必须是 [CfirInterfaceSymbol]。
+     */
     private fun isInInterfaceMemberContext(): Boolean =
         !context.inLocalContext && containerSymbolIfAny is CfirInterfaceSymbol
 
@@ -2513,6 +2750,11 @@ class LightTreeRawCfirDeclarationBuilder(
                 !modifiers.isForeign &&
                 !hasSyntaxBody(node)
 
+    /**
+     * 判断 class/interface 成员属性是否应由无体语法隐式标记为 abstract。
+     *
+     * foreign 属性不走隐式 abstract；存在属性体或显式 accessor 时由更具体的 accessor/default 逻辑处理。
+     */
     private fun isImplicitAbstractClassLikeProperty(
         node: LighterASTNode,
         modifiers: LightTreeModifierList,
@@ -2523,15 +2765,35 @@ class LightTreeRawCfirDeclarationBuilder(
                 !hasPropertyBody(node) &&
                 accessors.isEmpty()
 
+    /**
+     * 判断当前声明转换是否处在 class 或 interface 成员上下文。
+     *
+     * 用于限制隐式 abstract 只作用于类型成员，避免污染局部声明。
+     */
     private fun isInClassOrInterfaceMemberContext(): Boolean =
         !context.inLocalContext && (containerSymbolIfAny is CfirClassSymbol || containerSymbolIfAny is CfirInterfaceSymbol)
 
+    /**
+     * 判断节点是否直接拥有语法函数体块。
+     *
+     * 该检查只看 LightTree 结构，不读取已经构造出的 CFIR body。
+     */
     private fun hasSyntaxBody(node: LighterASTNode): Boolean =
         tree.findChildByType(node, CjNodeTypes.BLOCK) != null
 
+    /**
+     * 判断属性节点是否直接拥有属性体。
+     *
+     * 属性体存在意味着 getter/setter 语义需要由属性体进一步拆分，而不是简单按无体成员处理。
+     */
     private fun hasPropertyBody(node: LighterASTNode): Boolean =
         tree.findChildByType(node, CjNodeTypes.PROPERTY_BODY) != null
 
+    /**
+     * 统一执行 source declaration builder 并返回构造出的声明。
+     *
+     * 该入口保留 symbol 与 declaration 的泛型关联，供所有 LightTree raw CFIR 声明构造路径共享。
+     */
     private inline fun <D : CfirDeclaration, S : CfirBasedSymbol<D>> buildSourceDeclaration(
         symbol: S,
         builder: (S) -> D,

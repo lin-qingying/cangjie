@@ -19,6 +19,7 @@ internal fun CfirCallableSymbol<*>.containingAccessibleExtendOrNull(session: Cfi
         ?.takeIf(extendProvider::isExtendAccessible)
 }
 
+/** 判断 callable symbol 是否是可作为实例 extend 成员参与点调用解析的候选。 */
 internal fun CfirCallableSymbol<*>.isInstanceExtendMemberCandidate(session: CfirSession): Boolean {
     if (cfir.status.isStatic) return false
     return containingAccessibleExtendOrNull(session) != null

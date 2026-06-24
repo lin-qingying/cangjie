@@ -63,6 +63,7 @@ fun IElementType.toComparisonOp(): CfirComparisonOp? = COMPARISON_OPS[this]
 
 // ===== 映射表 =====
 
+/** 所有赋值与复合赋值 token 集合。 */
 private val ASSIGNMENT_TOKENS: Set<IElementType> = setOf(
     CjTokens.EQ, CjTokens.PLUSEQ, CjTokens.MINUSEQ,
     CjTokens.MULTEQ, CjTokens.DIVEQ, CjTokens.PERCEQ,
@@ -71,6 +72,7 @@ private val ASSIGNMENT_TOKENS: Set<IElementType> = setOf(
     CjTokens.OROREQ, CjTokens.MULMULEQ,
 )
 
+/** 复合赋值 token 到其底层二元 operator 函数名的映射。 */
 private val COMPOUND_ASSIGN_NAMES: Map<IElementType, Name> = mapOf(
     CjTokens.PLUSEQ to OperatorNameConventions.PLUS,
     CjTokens.MINUSEQ to OperatorNameConventions.MINUS,
@@ -87,6 +89,7 @@ private val COMPOUND_ASSIGN_NAMES: Map<IElementType, Name> = mapOf(
     CjTokens.MULMULEQ to OperatorNameConventions.EXPONENTIATION,
 )
 
+/** 短路逻辑、空合、管道等内建二元运算 token 到 CFIR op kind 的映射。 */
 private val BINARY_OP_KINDS: Map<IElementType, CfirBinaryOpKind> = mapOf(
     CjTokens.ANDAND to CfirBinaryOpKind.AND,
     CjTokens.OROR to CfirBinaryOpKind.OR,
@@ -95,6 +98,7 @@ private val BINARY_OP_KINDS: Map<IElementType, CfirBinaryOpKind> = mapOf(
     CjTokens.COMPOSITION to CfirBinaryOpKind.COMPOSITION,
 )
 
+/** 比较运算 token 到 CFIR comparison op 的映射。 */
 private val COMPARISON_OPS: Map<IElementType, CfirComparisonOp> = mapOf(
     CjTokens.LT to CfirComparisonOp.LT,
     CjTokens.OPERATION_COMPARE_LT to CfirComparisonOp.LT,
@@ -110,6 +114,7 @@ private val COMPARISON_OPS: Map<IElementType, CfirComparisonOp> = mapOf(
     CjTokens.OPERATION_NOT_EQUALS to CfirComparisonOp.NE,
 )
 
+/** 普通二元可重载运算 token 到 operator 函数名的映射。 */
 private val BINARY_OPERATOR_NAMES: Map<IElementType, Name> = mapOf(
     CjTokens.PLUS to OperatorNameConventions.PLUS,
     CjTokens.OPERATION_PLUS to OperatorNameConventions.PLUS,
@@ -135,6 +140,7 @@ private val BINARY_OPERATOR_NAMES: Map<IElementType, Name> = mapOf(
     CjTokens.OPERATION_EXPONENTIATION to OperatorNameConventions.EXPONENTIATION,
 )
 
+/** 前缀一元可重载运算 token 到 operator 函数名的映射。 */
 private val PREFIX_UNARY_NAMES: Map<IElementType, Name> = mapOf(
     CjTokens.MINUS to OperatorNameConventions.UNARY_MINUS,
     CjTokens.OPERATION_MINUS to OperatorNameConventions.UNARY_MINUS,
@@ -146,6 +152,7 @@ private val PREFIX_UNARY_NAMES: Map<IElementType, Name> = mapOf(
     CjTokens.MINUSMINUS to OperatorNameConventions.DEC,
 )
 
+/** 后缀一元可重载运算 token 到 operator 函数名的映射。 */
 private val POSTFIX_UNARY_NAMES: Map<IElementType, Name> = mapOf(
     CjTokens.PLUSPLUS to OperatorNameConventions.INC,
     CjTokens.MINUSMINUS to OperatorNameConventions.DEC,

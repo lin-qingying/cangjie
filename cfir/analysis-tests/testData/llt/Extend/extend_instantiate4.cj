@@ -17,6 +17,6 @@ extend<T> Array<T> {
 }
 
 main() {
-    var a: A<Int64>
+    var <!UNUSED_VARIABLE!>a<!>: A<Int64>
     0
 }

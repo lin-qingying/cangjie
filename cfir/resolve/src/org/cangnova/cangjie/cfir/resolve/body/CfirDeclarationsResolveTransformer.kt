@@ -72,6 +72,7 @@ import org.cangnova.cangjie.name.FqName
 open class CfirDeclarationsResolveTransformer(
     transformer: CfirAbstractBodyResolveTransformerDispatcher,
 ) : CfirPartialBodyResolveTransformer(transformer) {
+    /** 显式类型引用解析器，用于 body resolve 中补解析局部声明和恢复错误类型引用。 */
     private val specificTypeResolverTransformer = CfirSpecificTypeResolverTransformer(session)
 
     /**
@@ -87,11 +88,17 @@ open class CfirDeclarationsResolveTransformer(
 
     // ── File ───────────────────────────────────────────────────────────────
 
+    /**
+     * 解析文件级声明内容，并用 `whileAnalysing` 保护重复进入和阶段状态。
+     */
     override fun transformFile(file: CfirFile, data: ResolutionMode): CfirFile =
         whileAnalysing(session, file) {
             doTransformFile(file, data)
         }
 
+    /**
+     * 在文件 scope / CFG 生命周期内解析文件内容。
+     */
     private fun doTransformFile(file: CfirFile, data: ResolutionMode): CfirFile =
         withFile(file) {
             transformFileContent(file, data)
@@ -120,9 +127,15 @@ open class CfirDeclarationsResolveTransformer(
         }
     }
 
+    /**
+     * 文件声明内容解析入口，允许 low-level resolver 覆写。
+     */
     protected open fun transformFileContent(file: CfirFile, data: ResolutionMode): CfirFile =
         transformDeclarationContent(file, data) as CfirFile
 
+    /**
+     * 解析代码片段并维护代码片段级 DFA 生命周期。
+     */
     override fun transformCodeFragment(codeFragment: CfirCodeFragment, data: ResolutionMode): CfirCodeFragment {
         dataFlowAnalyzer.enterCodeFragment(codeFragment)
         context.withCodeFragment(codeFragment, components) {
@@ -134,45 +147,77 @@ open class CfirDeclarationsResolveTransformer(
 
     // ── Class-like declarations ───────────────────────────────────────────
 
+    /**
+     * 解析 class body resolve 内容。
+     */
     override fun transformClass(klass: CfirClass, data: ResolutionMode): CfirClass =
         whileAnalysing(session, klass) {
             transformClassContent(klass, data)
         }
 
+    /**
+     * 解析 interface body resolve 内容。
+     */
     override fun transformInterface(`interface`: CfirInterface, data: ResolutionMode): CfirInterface =
         whileAnalysing(session, `interface`) {
             transformInterfaceContent(`interface`, data)
         }
 
+    /**
+     * 解析 struct body resolve 内容。
+     */
     override fun transformStruct(struct: CfirStruct, data: ResolutionMode): CfirStruct =
         whileAnalysing(session, struct) {
             transformStructContent(struct, data)
         }
 
+    /**
+     * 解析 enum body resolve 内容。
+     */
     override fun transformEnum(enum: CfirEnum, data: ResolutionMode): CfirEnum =
         whileAnalysing(session, enum) {
             transformEnumContent(enum, data)
         }
 
+    /**
+     * 解析 extend body resolve 内容。
+     */
     override fun transformExtend(extend: CfirExtend, data: ResolutionMode): CfirExtend =
         whileAnalysing(session, extend) {
             transformExtendContent(extend, data)
         }
 
+    /**
+     * class 声明内容解析入口。
+     */
     protected open fun transformClassContent(klass: CfirClass, data: ResolutionMode): CfirClass =
         doTransformRegularClassContent(klass, data)
 
+    /**
+     * interface 声明内容解析入口。
+     */
     protected open fun transformInterfaceContent(
         interfaceDeclaration: CfirInterface,
         data: ResolutionMode,
     ): CfirInterface = transformOtherClassLikeDeclaration(interfaceDeclaration, data) as CfirInterface
 
+    /**
+     * struct 声明内容解析入口。
+     */
     protected open fun transformStructContent(struct: CfirStruct, data: ResolutionMode): CfirStruct =
         transformOtherClassLikeDeclaration(struct, data) as CfirStruct
 
+    /**
+     * enum 声明内容解析入口。
+     */
     protected open fun transformEnumContent(enum: CfirEnum, data: ResolutionMode): CfirEnum =
         transformOtherClassLikeDeclaration(enum, data) as CfirEnum
 
+    /**
+     * extend 声明内容解析入口。
+     *
+     * 该入口建立 extend 专属 scope 和 container，结束时恢复 tower data context 并推进 phase。
+     */
     protected open fun transformExtendContent(extend: CfirExtend, data: ResolutionMode): CfirExtend {
         val savedContext = context.towerDataContext
         try {
@@ -198,6 +243,12 @@ open class CfirDeclarationsResolveTransformer(
         transformDeclarationContent(klass, data) as CfirClass
     }
 
+    /**
+     * 解析非 regular class-like 声明内容。
+     *
+     * interface/struct/enum 共享该入口：建立 class scope，执行声明内容解析，
+     * 恢复 tower data context，并把声明推进到 BODY_RESOLVE。
+     */
     private fun <T : CfirClassLikeDeclaration> transformOtherClassLikeDeclaration(classLike: T, data: ResolutionMode): T {
         val savedContext = context.towerDataContext
 
@@ -233,6 +284,12 @@ open class CfirDeclarationsResolveTransformer(
 
     // ── Function ──────────────────────────────────────────────────────────
 
+    /**
+     * 通用函数分发入口不应被直接调用。
+     *
+     * CFIR 中每类 function-like 节点都必须走自己的具体 transform 入口，
+     * 以便建立正确的局部作用域、container 和 CFG 生命周期。
+     */
     override fun transformFunction(
         function: CfirFunction,
         data: ResolutionMode,
@@ -240,6 +297,12 @@ open class CfirDeclarationsResolveTransformer(
         error("Concrete transform functions should be called")
     }
 
+    /**
+     * 解析函数声明体的公共实现。
+     *
+     * 当 `shouldResolveEverything` 为 true 时先解析签名和注解，再按返回类型决定 body 的期望类型，
+     * 最后退出函数级 DFA 并把 CFG 写回函数。
+     */
     protected open fun transformFunctionContent(
         function: CfirFunction,
         resolutionModeForBody: ResolutionMode,
@@ -298,6 +361,9 @@ open class CfirDeclarationsResolveTransformer(
         }
     }
 
+    /**
+     * 在已经保存的匿名函数上下文中解析 lambda body。
+     */
     private fun transformAnonymousFunctionBody(
         anonymousFunction: CfirAnonymousFunction,
         expectedReturnTypeRef: CfirTypeRef?,
@@ -327,6 +393,9 @@ open class CfirDeclarationsResolveTransformer(
 
     // ── Constructor ───────────────────────────────────────────────────────
 
+    /**
+     * 解析普通构造器 body resolve 内容。
+     */
     override fun transformConstructor(constructor: CfirConstructor, data: ResolutionMode): CfirConstructor =
         whileAnalysing(session, constructor) {
             if (transformer.implicitTypeOnly) return constructor
@@ -336,6 +405,9 @@ open class CfirDeclarationsResolveTransformer(
             return transformConstructorContent(constructor, data)
         }
 
+    /**
+     * 解析构造器内容，包括签名、委托构造调用、构造器参数作用域和构造器 body。
+     */
     protected open fun transformConstructorContent(
         constructor: CfirConstructor,
         data: ResolutionMode,
@@ -363,6 +435,9 @@ open class CfirDeclarationsResolveTransformer(
         return constructor
     }
 
+    /**
+     * 解析构造器 body 中第一条委托构造调用。
+     */
     private fun transformDelegatedConstructorCall(
         constructor: CfirConstructor,
         data: ResolutionMode,
@@ -371,6 +446,9 @@ open class CfirDeclarationsResolveTransformer(
         call.transform<CfirExpression, ResolutionMode>(transformer, data)
     }
 
+    /**
+     * 从语句包装层中抽取委托构造调用表达式。
+     */
     private fun CfirStatement.delegatedConstructorCallOrNull(): CfirFunctionCall? {
         val expression = when (this) {
             is CfirWrappedExpression -> this.expression
@@ -383,6 +461,9 @@ open class CfirDeclarationsResolveTransformer(
 
     // ── Enum constructor ──────────────────────────────────────────────────
 
+    /**
+     * 解析 enum constructor body resolve 内容。
+     */
     override fun transformEnumConstructor(
         enumConstructor: CfirEnumConstructor,
         data: ResolutionMode,
@@ -390,6 +471,9 @@ open class CfirDeclarationsResolveTransformer(
         transformEnumConstructorContent(enumConstructor, data)
     }
 
+    /**
+     * 解析 enum constructor 的值参数和返回类型，并把隐式返回类型回填为 owner enum 类型。
+     */
     protected open fun transformEnumConstructorContent(
         enumConstructor: CfirEnumConstructor,
         data: ResolutionMode,
@@ -429,11 +513,17 @@ open class CfirDeclarationsResolveTransformer(
 
     // ── Property ──────────────────────────────────────────────────────────
 
+    /**
+     * 解析属性声明 body resolve 内容。
+     */
     override fun transformProperty(property: CfirProperty, data: ResolutionMode): CfirProperty =
         whileAnalysing(session, property) {
             transformPropertyContent(property, data)
         }
 
+    /**
+     * 解析属性类型、注解、访问器与 body resolve 状态。
+     */
     protected open fun transformPropertyContent(
         property: CfirProperty,
         data: ResolutionMode,
@@ -478,6 +568,9 @@ open class CfirDeclarationsResolveTransformer(
         return property
     }
 
+    /**
+     * 访问器节点本身由所属属性统一驱动解析。
+     */
     override fun transformPropertyAccessor(
         propertyAccessor: CfirPropertyAccessor,
         data: ResolutionMode,
@@ -486,6 +579,9 @@ open class CfirDeclarationsResolveTransformer(
         return propertyAccessor
     }
 
+    /**
+     * 在属性访问器上下文内解析 getter/setter body。
+     */
     private fun transformAccessor(
         accessor: CfirPropertyAccessor,
         owner: CfirProperty,
@@ -505,11 +601,17 @@ open class CfirDeclarationsResolveTransformer(
 
     // ── Variable (generic fallback) ───────────────────────────────────────
 
+    /**
+     * 解析普通变量声明。
+     */
     override fun transformVariable(variable: CfirVariable, data: ResolutionMode): CfirVariable =
         whileAnalysing(session, variable) {
             transformVariableContent(variable, data)
         }
 
+    /**
+     * 解析变量显式类型、initializer，并从 initializer 回填隐式变量类型。
+     */
     protected open fun transformVariableContent(
         variable: CfirVariable,
         data: ResolutionMode,
@@ -537,6 +639,9 @@ open class CfirDeclarationsResolveTransformer(
 
     // ── Value parameter ───────────────────────────────────────────────────
 
+    /**
+     * 解析值参数声明。
+     */
     override fun transformValueParameter(
         valueParameter: CfirValueParameter,
         data: ResolutionMode,
@@ -544,6 +649,9 @@ open class CfirDeclarationsResolveTransformer(
         transformValueParameterContent(valueParameter, data)
     }
 
+    /**
+     * 解析值参数类型、默认值以及参数级 CFG。
+     */
     protected open fun transformValueParameterContent(
         valueParameter: CfirValueParameter,
         data: ResolutionMode,
@@ -572,6 +680,9 @@ open class CfirDeclarationsResolveTransformer(
 
     // ── Field variable ────────────────────────────────────────────────────
 
+    /**
+     * 解析字段变量声明。
+     */
     override fun transformFieldVariable(
         fieldVariable: CfirFieldVariable,
         data: ResolutionMode,
@@ -579,6 +690,9 @@ open class CfirDeclarationsResolveTransformer(
         transformFieldVariableContent(fieldVariable, data)
     }
 
+    /**
+     * 解析字段变量显式类型、initializer，并把字段 initializer 的 DFA 生命周期接入上层图。
+     */
     protected open fun transformFieldVariableContent(
         fieldVariable: CfirFieldVariable,
         data: ResolutionMode,
@@ -614,11 +728,17 @@ open class CfirDeclarationsResolveTransformer(
 
     // ── Declaration (generic fallback) ────────────────────────────────────
 
+    /**
+     * 未专门覆盖的声明只推进 body resolve phase。
+     */
     override fun transformDeclaration(declaration: CfirDeclaration, data: ResolutionMode): CfirDeclaration =
         whileAnalysing(session, declaration) {
             transformDeclarationBumpPhaseContent(declaration, data)
         }
 
+    /**
+     * 通用声明 phase 推进入口。
+     */
     protected open fun transformDeclarationBumpPhaseContent(
         declaration: CfirDeclaration,
         data: ResolutionMode,
@@ -629,6 +749,9 @@ open class CfirDeclarationsResolveTransformer(
 
     // ── Pattern binding / pattern variable ────────────────────────────────
 
+    /**
+     * 解析模式绑定变量声明。
+     */
     override fun transformPatternBindingVariable(
         patternBindingVariable: CfirPatternBindingVariable,
         data: ResolutionMode,
@@ -636,6 +759,9 @@ open class CfirDeclarationsResolveTransformer(
         transformPatternBindingVariableContent(patternBindingVariable, data)
     }
 
+    /**
+     * 解析模式绑定变量显式类型并推进 phase。
+     */
     protected open fun transformPatternBindingVariableContent(
         patternBindingVariable: CfirPatternBindingVariable,
         data: ResolutionMode,
@@ -647,6 +773,9 @@ open class CfirDeclarationsResolveTransformer(
         return patternBindingVariable
     }
 
+    /**
+     * 解析带 initializer 的模式变量声明。
+     */
     override fun transformPatternVariable(
         patternVariable: CfirPatternVariable,
         data: ResolutionMode,
@@ -654,6 +783,9 @@ open class CfirDeclarationsResolveTransformer(
         transformPatternVariableContent(patternVariable, data)
     }
 
+    /**
+     * 解析模式变量类型、initializer、整体模式以及模式绑定类型。
+     */
     protected open fun transformPatternVariableContent(
         patternVariable: CfirPatternVariable,
         data: ResolutionMode,
@@ -675,6 +807,7 @@ open class CfirDeclarationsResolveTransformer(
         }
 
         patternVariable.resolveImplicitReturnTypeFromInitializer()
+        propagateWholeInitializerToSimplePatternBinding(patternVariable.pattern, patternVariable.initializer)
 
         patternVariable.transformPattern(transformer, ResolutionMode.ContextIndependent)
         resolvePatternBindingTypes(
@@ -690,6 +823,9 @@ open class CfirDeclarationsResolveTransformer(
 
     // ── Block（非 declaration，不走 whileAnalysing） ───────────────────────
 
+    /**
+     * 在 block 作用域中解析表达式 block。
+     */
     override fun transformBlock(block: CfirBlock, data: ResolutionMode): CfirExpression =
         context.forBlock(session) {
             transformer.expressionsTransformer.transformBlock(block, data)
@@ -720,6 +856,11 @@ open class CfirDeclarationsResolveTransformer(
         replaceReturnTypeRef(resolvedTypeRef)
     }
 
+    /**
+     * 构造 body resolve 使用的导入和本地声明 scope 列表。
+     *
+     * 该列表保持声明解析阶段的查找优先级：默认导入最低，本地文件声明和显式 simple import 位于高优先级侧。
+     */
     private fun createImportingScopes(file: CfirFile): List<CfirScope> {
         val symbolProvider = session.symbolProvider
         val imports = file.imports
@@ -930,6 +1071,9 @@ open class CfirDeclarationsResolveTransformer(
         return ConeErrorType(ConeSimpleDiagnostic(message, DiagnosticKind.InferenceError))
     }
 
+    /**
+     * 如果所有返回表达式都是同一个 `This` 类型，则直接把该 `This` 类型作为公共返回类型。
+     */
     private fun List<ConeCangJieType>.commonThisReturnTypeOrNull(): ConeClassLikeType? {
         val thisTypes = map { type -> type as? ConeClassLikeType ?: return null }
         if (thisTypes.any { !it.isThisType }) return null
@@ -948,14 +1092,13 @@ open class CfirDeclarationsResolveTransformer(
         return expressionTypes.any { it is ConeClassLikeType && !it.isAnyType() }
     }
 
+    /**
+     * 判断类型是否为标准库 `Any`。
+     */
     private fun ConeCangJieType.isAnyType(): Boolean {
         return this === ConeAnyType || (this is ConeClassLikeType && classId == StdlibClassIds.Any)
     }
 
-    /**
-     * 隐式声明类型用于后续解析时，应采用错误表达式携带的有效类型。
-     * 原始错误仍保留在 initializer 上，由诊断收集阶段报告。
-     */
     /**
      * 提前把函数签名（返回类型、各参数类型）解析到 resolved 状态。
      * 用于局部嵌套函数进入 body resolve 前的一次性签名准备。
@@ -968,6 +1111,12 @@ open class CfirDeclarationsResolveTransformer(
             }
         }
     }
+
+    /**
+     * 在当前声明上下文中解析显式类型引用。
+     *
+     * 隐式类型保持原样；已解析但内部包含错误并保留 delegated type ref 的引用会尝试用 delegated ref 重新解析。
+     */
     private fun resolveExplicitTypeRefIfNeeded(
         typeRef: CfirTypeRef,
         additionalTypeParameters: List<CfirTypeParameter> = emptyList(),
@@ -1001,6 +1150,9 @@ open class CfirDeclarationsResolveTransformer(
         )
     }
 
+    /**
+     * 提取声明在当前类型解析上下文中暴露的类型参数。
+     */
     private fun extractTypeParameters(declaration: CfirDeclaration): List<CfirTypeParameter> {
         return when (declaration) {
             is CfirClass -> declaration.typeParameters
@@ -1024,6 +1176,9 @@ open class CfirDeclarationsResolveTransformer(
         }
     }
 
+    /**
+     * 将声明推进到 BODY_RESOLVE 阶段。
+     */
     private fun bumpPhase(declaration: CfirDeclaration) {
         if (declaration.resolvePhase >= CfirResolvePhase.IMPLICIT_TYPES &&
             declaration.resolvePhase < CfirResolvePhase.BODY_RESOLVE
@@ -1032,6 +1187,9 @@ open class CfirDeclarationsResolveTransformer(
         }
     }
 
+    /**
+     * 在当前文件和容器上下文中解析 class-like 声明的稳定 ClassId。
+     */
     private fun resolveClassId(klass: CfirClassLikeDeclaration): ClassId? {
         val packageFqName = try {
             context.file.packageDirective.packageFqName
@@ -1050,6 +1208,11 @@ open class CfirDeclarationsResolveTransformer(
         }
     }
 
+    /**
+     * 为构造器 owner 构造返回类型。
+     *
+     * class/interface/struct/enum 分别生成对应 Cone 类型，类型实参使用 owner 自身声明的类型参数。
+     */
     private fun buildConstructedTypeForClass(klass: CfirClassLikeDeclaration): ConeCangJieType {
         val classId = resolveClassId(klass)
             ?: return ConeErrorType(ConeSimpleDiagnostic("cannot resolve class id for constructor owner"))

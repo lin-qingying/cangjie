@@ -26,6 +26,7 @@ import org.cangnova.cangjie.source.AbstractCjSourceElement
  * 类型不匹配时主诊断落在具体尾表达式上，而不是落回整个 `return try`。
  */
 object CfirTryTargetTypeMismatchChecker : CfirTryExpressionChecker() {
+    /** 检查 target-typed try/catch block 尾表达式是否符合外层期望类型。 */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirTryExpression) {
         if (expression.resources.isNotEmpty()) return
@@ -38,12 +39,14 @@ object CfirTryTargetTypeMismatchChecker : CfirTryExpressionChecker() {
         }
     }
 
+    /** 检查 block 的尾表达式是否满足指定期望类型。 */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkBlockTail(block: CfirBlock, expectedType: ConeCangJieType) {
         val tailExpression = block.statements.lastOrNull() as? CfirExpression ?: return
         checkTailExpression(tailExpression, expectedType)
     }
 
+    /** 递归下钻 block/if/match 的尾位置，并对实际表达式执行类型匹配检查。 */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkTailExpression(expression: CfirExpression, expectedType: ConeCangJieType) {
         when (expression) {
@@ -80,6 +83,7 @@ object CfirTryTargetTypeMismatchChecker : CfirTryExpressionChecker() {
     }
 }
 
+/** 从 return、函数体尾位置或变量 initializer 上下文中推导 try 表达式的目标类型。 */
 private fun CfirTryExpression.expectedTypeFromContext(context: CheckerContext): ConeCangJieType? {
     val parentStatement = context.containingStatements.asReversed().drop(1).firstOrNull()
 
@@ -99,6 +103,7 @@ private fun CfirTryExpression.expectedTypeFromContext(context: CheckerContext): 
     return (containingVariable.returnTypeRef as? CfirResolvedTypeRef)?.coneType
 }
 
+/** 对 try target typing 下的 ideal literal 类型做期望类型归一化。 */
 private fun ConeCangJieType.normalizeForTryTarget(expectedType: ConeCangJieType): ConeCangJieType {
     return when (this) {
         is ConeIdealLiteralType -> expectedType

@@ -18,6 +18,9 @@ import org.cangnova.cangjie.resolve.deprecation.DeprecationLevelValue
  * 不再直接窥视 declaration 内部细节。
  */
 open class CfirHiddenDeprecationProvider(val session: CfirSession) : CfirSessionComponent {
+    /**
+     * 判断 [symbol] 当前语言版本下是否处于 `HIDDEN` deprecation 级别。
+     */
     open fun isDeprecationLevelHidden(symbol: CfirBasedSymbol<*>): Boolean = when (symbol) {
         is CfirCallableSymbol<*> ->
             symbol.getDeprecation(session.languageVersionSettings)?.all?.deprecationLevel == DeprecationLevelValue.HIDDEN
@@ -29,4 +32,7 @@ open class CfirHiddenDeprecationProvider(val session: CfirSession) : CfirSession
     }
 }
 
+/**
+ * 当前 session 注册的隐藏弃用判定组件。
+ */
 val CfirSession.hiddenDeprecationProvider: CfirHiddenDeprecationProvider by CfirSession.sessionComponentAccessor()

@@ -51,11 +51,26 @@ import org.cangnova.cangjie.type.model.TypeConstructorMarker
  * 层完成，解析层只消费最终成员签名。
  */
 class CfirClassSubstitutionScope(
+    /**
+     * 当前 use-site session。
+     */
     private val session: CfirSession,
+    /**
+     * 被包装的 use-site 成员 scope。
+     */
     private val useSiteMemberScope: CfirTypeScope,
+    /**
+     * 当前 dispatch receiver 具体类型。
+     */
     private val dispatchReceiverType: ConeCangJieType,
+    /**
+     * 可选的替换 owner 类型；父类型替换时与 dispatch receiver 区分。
+     */
     private val substitutionOwnerType: ConeCangJieType? = null,
 ) : CfirTypeScope() {
+    /**
+     * owner 类型参数替换器。
+     */
     val substitutor: ConeSubstitutor by lazy(LazyThreadSafetyMode.PUBLICATION) {
         val ownerClassId = dispatchReceiverType.classIdOrPrimitiveClassId
         val concreteOwnerType = ownerClassId?.let(::concreteTypeForOwner)
@@ -68,46 +83,91 @@ class CfirClassSubstitutionScope(
         }
     }
 
+    /**
+     * 函数 substitution override 缓存。
+     */
     private val functionOverrideCache = mutableMapOf<CfirNamedFunctionSymbol, CfirNamedFunctionSymbol>()
+    /**
+     * 属性 substitution override 缓存。
+     */
     private val propertyOverrideCache = mutableMapOf<CfirPropertySymbol, CfirPropertySymbol>()
+    /**
+     * 字段变量 substitution override 缓存。
+     */
     private val fieldOverrideCache = mutableMapOf<CfirFieldVariableSymbol, CfirFieldVariableSymbol>()
+    /**
+     * 构造器 substitution override 缓存。
+     */
     private val constructorOverrideCache = mutableMapOf<CfirConstructorSymbol, CfirConstructorSymbol>()
+    /**
+     * enum constructor substitution override 缓存。
+     */
     private val enumConstructorOverrideCache = mutableMapOf<CfirEnumConstructorSymbol, CfirEnumConstructorSymbol>()
+    /**
+     * base scope 替换 wrapper 缓存。
+     */
     private val wrappedBaseScopeCache = mutableMapOf<CfirTypeScope, CfirTypeScope>()
+    /**
+     * owner ClassId 到具体 supertype 的缓存。
+     */
     private val concreteSupertypeCache = mutableMapOf<ClassId, ConeCangJieType?>()
 
+    /**
+     * 返回委托 scope callable 名称。
+     */
     override fun getCallableNames(): Set<Name> = useSiteMemberScope.getCallableNames()
 
+    /**
+     * 返回委托 scope classifier 名称。
+     */
     override fun getClassifierNames(): Set<Name> = useSiteMemberScope.getClassifierNames()
 
+    /**
+     * 按名称处理替换后的函数。
+     */
     override fun processFunctionsByName(name: Name, processor: (CfirNamedFunctionSymbol) -> Unit) {
         useSiteMemberScope.processFunctionsByName(name) { original ->
             processor(substituteFunctionSymbol(original))
         }
     }
 
+    /**
+     * 按名称处理替换后的属性。
+     */
     override fun processPropertiesByName(name: Name, processor: (CfirPropertySymbol) -> Unit) {
         useSiteMemberScope.processPropertiesByName(name) { original ->
             processor(substitutePropertySymbol(original))
         }
     }
 
+    /**
+     * classifier 不需要 substitution override，直接透传。
+     */
     override fun processClassifiersByName(name: Name, processor: (CfirClassLikeSymbol<*>) -> Unit) {
         useSiteMemberScope.processClassifiersByName(name, processor)
     }
 
+    /**
+     * 处理替换后的声明构造器。
+     */
     override fun processDeclaredConstructors(processor: (CfirConstructorSymbol) -> Unit) {
         useSiteMemberScope.processDeclaredConstructors { original ->
             processor(substituteConstructorSymbol(original))
         }
     }
 
+    /**
+     * 按名称处理替换后的 callable。
+     */
     override fun processCallablesByName(name: Name, processor: (CfirCallableSymbol<*>) -> Unit) {
         useSiteMemberScope.processCallablesByName(name) { original ->
             processor(substituteCallableSymbol(original))
         }
     }
 
+    /**
+     * 处理替换后函数的直接覆盖链。
+     */
     override fun processDirectOverriddenFunctionsWithBaseScope(
         functionSymbol: CfirNamedFunctionSymbol,
         processor: (CfirNamedFunctionSymbol, CfirTypeScope) -> ProcessorAction
@@ -122,6 +182,9 @@ class CfirClassSubstitutionScope(
         }
     }
 
+    /**
+     * 处理替换后属性的直接覆盖链。
+     */
     override fun processDirectOverriddenPropertiesWithBaseScope(
         propertySymbol: CfirPropertySymbol,
         processor: (CfirPropertySymbol, CfirTypeScope) -> ProcessorAction,
@@ -136,11 +199,17 @@ class CfirClassSubstitutionScope(
         }
     }
 
+    /**
+     * 替换委托 scope 的 session 后重建 substitution scope。
+     */
     override fun withReplacedSessionOrNull(newSession: CfirSession, newScopeSession: ScopeSession): CfirTypeScope? {
         val replacedScope = useSiteMemberScope.withReplacedSessionOrNull(newSession, newScopeSession) ?: return null
         return CfirClassSubstitutionScope(newSession, replacedScope, dispatchReceiverType, substitutionOwnerType)
     }
 
+    /**
+     * 将 base scope 包装成当前 receiver 类型下的 substitution scope。
+     */
     private fun substitutedBaseScope(baseScope: CfirTypeScope): CfirTypeScope {
         if (baseScope === useSiteMemberScope) return this
         return synchronized(wrappedBaseScopeCache) {
@@ -150,6 +219,9 @@ class CfirClassSubstitutionScope(
         }
     }
 
+    /**
+     * 根据 callable symbol 具体类型创建或返回 substitution override。
+     */
     private fun substituteCallableSymbol(symbol: CfirCallableSymbol<*>): CfirCallableSymbol<*> {
         return when (symbol) {
             is CfirNamedFunctionSymbol -> substituteFunctionSymbol(symbol)
@@ -160,6 +232,9 @@ class CfirClassSubstitutionScope(
         }
     }
 
+    /**
+     * 替换函数 symbol。
+     */
     private fun substituteFunctionSymbol(symbol: CfirNamedFunctionSymbol): CfirNamedFunctionSymbol {
         return synchronized(functionOverrideCache) {
             functionOverrideCache.getOrPut(symbol) {
@@ -168,6 +243,9 @@ class CfirClassSubstitutionScope(
         }
     }
 
+    /**
+     * 替换属性 symbol。
+     */
     private fun substitutePropertySymbol(symbol: CfirPropertySymbol): CfirPropertySymbol {
         return synchronized(propertyOverrideCache) {
             propertyOverrideCache.getOrPut(symbol) {
@@ -176,6 +254,9 @@ class CfirClassSubstitutionScope(
         }
     }
 
+    /**
+     * 替换字段变量 symbol。
+     */
     private fun substituteFieldSymbol(symbol: CfirFieldVariableSymbol): CfirFieldVariableSymbol {
         return synchronized(fieldOverrideCache) {
             fieldOverrideCache.getOrPut(symbol) {
@@ -184,6 +265,9 @@ class CfirClassSubstitutionScope(
         }
     }
 
+    /**
+     * 替换构造器 symbol。
+     */
     private fun substituteConstructorSymbol(symbol: CfirConstructorSymbol): CfirConstructorSymbol {
         return synchronized(constructorOverrideCache) {
             constructorOverrideCache.getOrPut(symbol) {
@@ -192,6 +276,9 @@ class CfirClassSubstitutionScope(
         }
     }
 
+    /**
+     * 替换 enum constructor symbol。
+     */
     private fun substituteEnumConstructorSymbol(symbol: CfirEnumConstructorSymbol): CfirEnumConstructorSymbol {
         return synchronized(enumConstructorOverrideCache) {
             enumConstructorOverrideCache.getOrPut(symbol) {
@@ -200,6 +287,9 @@ class CfirClassSubstitutionScope(
         }
     }
 
+    /**
+     * 创建函数 substitution override。
+     */
     private fun createSubstitutedFunctionSymbol(symbol: CfirNamedFunctionSymbol): CfirNamedFunctionSymbol {
         val ownerSubstitutor = computeCallableSubstitutor(symbol)
         if (ownerSubstitutor === ConeSubstitutor.Empty || ownerSubstitutor == null) return symbol
@@ -225,6 +315,9 @@ class CfirClassSubstitutionScope(
         return copiedSymbol
     }
 
+    /**
+     * 创建属性 substitution override。
+     */
     private fun createSubstitutedPropertySymbol(symbol: CfirPropertySymbol): CfirPropertySymbol {
         val ownerSubstitutor = computeCallableSubstitutor(symbol)
         if (ownerSubstitutor === ConeSubstitutor.Empty || ownerSubstitutor == null) return symbol
@@ -250,6 +343,9 @@ class CfirClassSubstitutionScope(
         return copiedSymbol
     }
 
+    /**
+     * 创建字段变量 substitution override。
+     */
     private fun createSubstitutedFieldSymbol(symbol: CfirFieldVariableSymbol): CfirFieldVariableSymbol {
         val ownerSubstitutor = computeCallableSubstitutor(symbol)
         if (ownerSubstitutor === ConeSubstitutor.Empty || ownerSubstitutor == null) return symbol
@@ -273,6 +369,9 @@ class CfirClassSubstitutionScope(
         return copiedSymbol
     }
 
+    /**
+     * 创建构造器 substitution override。
+     */
     private fun createSubstitutedConstructorSymbol(symbol: CfirConstructorSymbol): CfirConstructorSymbol {
         val ownerSubstitutor = computeCallableSubstitutor(symbol)
         if (ownerSubstitutor === ConeSubstitutor.Empty || ownerSubstitutor == null) return symbol
@@ -298,6 +397,9 @@ class CfirClassSubstitutionScope(
         return copiedSymbol
     }
 
+    /**
+     * 创建 enum constructor substitution override。
+     */
     private fun createSubstitutedEnumConstructorSymbol(symbol: CfirEnumConstructorSymbol): CfirEnumConstructorSymbol {
         val ownerSubstitutor = computeCallableSubstitutor(symbol)
         if (ownerSubstitutor === ConeSubstitutor.Empty || ownerSubstitutor == null) return symbol
@@ -323,6 +425,9 @@ class CfirClassSubstitutionScope(
         return copiedSymbol
     }
 
+    /**
+     * 替换属性访问器函数。
+     */
     private fun substituteAccessorFunction(function: CfirPropertyAccessor?, substitutor: ConeSubstitutor): CfirPropertyAccessor? {
         function ?: return null
         val symbol = function.symbol
@@ -345,6 +450,9 @@ class CfirClassSubstitutionScope(
         return copiedDeclaration
     }
 
+    /**
+     * 替换 value parameter 列表。
+     */
     private fun substituteValueParameters(
         valueParameters: List<CfirValueParameter>,
         substitutor: ConeSubstitutor,
@@ -358,11 +466,23 @@ class CfirClassSubstitutionScope(
         }
     }
 
+    /**
+     * 返回类型替换结果。
+     *
+     * @property typeRef 替换后的 return type ref。
+     * @property deferredReturnType 若原返回类型未解析，则保存延迟替换任务。
+     */
     private data class ReturnTypeData(
         val typeRef: CfirTypeRef,
         val deferredReturnType: DeferredReturnTypeOfSubstitution?,
     )
 
+    /**
+     * callable 自身类型参数替换结果。
+     *
+     * @property typeParameters 新建的类型参数列表。
+     * @property substitutor 同时覆盖 callable 类型参数和 owner 类型参数的替换器。
+     */
     private data class TypeParameterSubstitutionData(
         val typeParameters: List<CfirTypeParameter>,
         val substitutor: ConeSubstitutor,
@@ -402,6 +522,9 @@ class CfirClassSubstitutionScope(
         return TypeParameterSubstitutionData(newTypeParameters, substitutor)
     }
 
+    /**
+     * 计算 callable 返回类型替换数据。
+     */
     private fun CfirCallableDeclaration.substitutedReturnTypeData(
         symbol: CfirCallableSymbol<*>,
         substitutor: ConeSubstitutor,
@@ -417,6 +540,9 @@ class CfirClassSubstitutionScope(
         )
     }
 
+    /**
+     * 替换 dispatch receiver 类型。
+     */
     private fun substituteDispatchReceiverType(
         type: ConeSimpleCangJieType?,
         substitutor: ConeSubstitutor,
@@ -425,6 +551,9 @@ class CfirClassSubstitutionScope(
         return substitutor.substituteOrSelf(type) as? ConeSimpleCangJieType ?: type
     }
 
+    /**
+     * 替换 resolved type ref。
+     */
     private fun substituteTypeRef(
         typeRef: CfirResolvedTypeRef,
         substitutor: ConeSubstitutor,
@@ -433,6 +562,9 @@ class CfirClassSubstitutionScope(
         return typeRef.withReplacedSourceAndType(typeRef.source, substitutedType)
     }
 
+    /**
+     * 替换普通 type ref；未 resolved 的 type ref 保持原样。
+     */
     private fun substituteTypeRef(
         typeRef: CfirTypeRef,
         substitutor: ConeSubstitutor,
@@ -443,20 +575,38 @@ class CfirClassSubstitutionScope(
         }
     }
 
+    /**
+     * 顺序应用两个 substitutor 的链式 substitutor。
+     */
     private class ChainedCfirSubstitutor(
+        /**
+         * 先执行的替换器。
+         */
         private val first: ConeSubstitutor,
+        /**
+         * 后执行的替换器。
+         */
         private val second: ConeSubstitutor,
     ) : ConeSubstitutor() {
+        /**
+         * 替换类型，若无变化则返回原类型。
+         */
         override fun substituteOrSelf(type: ConeCangJieType): ConeCangJieType {
             return second.substituteOrSelf(first.substituteOrSelf(type))
         }
 
+        /**
+         * 替换类型；无变化时返回 `null`。
+         */
         override fun substituteOrNull(type: ConeCangJieType): ConeCangJieType? {
             val afterFirst = first.substituteOrNull(type)
             val afterSecond = second.substituteOrNull(afterFirst ?: type)
             return afterSecond ?: afterFirst
         }
 
+        /**
+         * 替换类型实参。
+         */
         override fun substituteArgument(projection: ConeTypeProjection, index: Int): ConeTypeProjection? {
             val afterFirst = first.substituteArgument(projection, index)
             val afterSecond = second.substituteArgument(afterFirst ?: projection, index)
@@ -464,6 +614,9 @@ class CfirClassSubstitutionScope(
         }
     }
 
+    /**
+     * 计算 substitution override 的声明 origin。
+     */
     private fun substitutionOverrideOrigin(symbol: CfirCallableSymbol<*>): CfirDeclarationOrigin {
         val ownerExtend = session.extendProvider.getContainingExtend(symbol)
         if (ownerExtend != null) {
@@ -485,11 +638,17 @@ class CfirClassSubstitutionScope(
         }
     }
 
+    /**
+     * 计算 callable 使用的 owner substitutor。
+     */
     private fun computeCallableSubstitutor(symbol: CfirCallableSymbol<*>): ConeSubstitutor? {
         val receiverType = substitutionOwnerType ?: dispatchReceiverType
         return createCallableOwnerUseSiteSubstitutor(session, symbol, receiverType)
     }
 
+    /**
+     * 返回 callable 所属 owner class id。
+     */
     private fun ownerClassIdForCallable(symbol: CfirCallableSymbol<*>): ClassId? {
         return session.cfirProvider.getContainingClass(symbol)?.classId
             ?: (symbol as? CfirEnumConstructorSymbol)?.let {
@@ -497,6 +656,9 @@ class CfirClassSubstitutionScope(
             }
     }
 
+    /**
+     * 返回 [ownerClassId] 在当前 receiver 继承链中的具体类型。
+     */
     private fun concreteTypeForOwner(ownerClassId: ClassId): ConeCangJieType? {
         substitutionOwnerType
             ?.takeIf { it.classIdOrPrimitiveClassId == ownerClassId }
@@ -512,6 +674,9 @@ class CfirClassSubstitutionScope(
         }
     }
 
+    /**
+     * 在继承链中查找目标 class id 对应的具体类型。
+     */
     private fun findConcreteTypeInHierarchy(rootType: ConeCangJieType, targetClassId: ClassId): ConeCangJieType? {
         if (rootType.classIdOrPrimitiveClassId == targetClassId) return rootType
 
@@ -529,6 +694,9 @@ class CfirClassSubstitutionScope(
         return null
     }
 
+    /**
+     * 为 class-like declaration 创建类型参数替换器。
+     */
     private fun createClassLikeDeclarationSubstitutor(
         declaration: CfirClassLikeDeclaration,
         concreteType: ConeCangJieType,
@@ -544,6 +712,9 @@ class CfirClassSubstitutionScope(
         return replacements.takeIf { it.isNotEmpty() }?.let(::CfirTypeSubstitutorByMap) ?: ConeSubstitutor.Empty
     }
 
+    /**
+     * 返回调试文本。
+     */
     override fun toString(): String {
         return "Substitution scope for [$useSiteMemberScope] on $dispatchReceiverType"
     }
@@ -568,12 +739,18 @@ private class DeferredReturnTypeOfSubstitution(
     private val substitutor: ConeSubstitutor,
     private val baseSymbol: CfirCallableSymbol<*>,
 ) : DeferredCallableCopyReturnType() {
+    /**
+     * 推进原始返回类型计算并替换为当前 use-site 类型。
+     */
     override fun computeReturnType(calc: CallableCopyTypeCalculator): ConeCangJieType? {
         val baseDeclaration = baseSymbol.cfir
         val baseReturnType = calc.computeReturnTypeOrNull(baseDeclaration) ?: return null
         return substitutor.substituteOrSelf(baseReturnType)
     }
 
+    /**
+     * 返回调试文本。
+     */
     override fun toString(): String {
         return "DeferredReturnTypeOfSubstitution(substitutor=$substitutor, baseSymbol=$baseSymbol)"
     }

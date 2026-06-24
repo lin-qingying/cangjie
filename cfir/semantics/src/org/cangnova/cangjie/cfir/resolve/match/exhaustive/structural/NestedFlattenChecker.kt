@@ -36,13 +36,25 @@ import org.cangnova.cangjie.cfir.resolve.match.exhaustive.MatchExhaustivenessCon
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeEnumType
 
+/**
+ * 嵌套 enum 模式的展开式穷尽性检查器。
+ *
+ * 该 checker 将可控深度内的嵌套 enum 模式压平成字符串路径，再用位图检查覆盖情况。
+ */
 class NestedFlattenChecker : ExhaustivenessChecker {
+    /** 当前 checker 来源。 */
     override val source: CheckSource = CheckSource.NESTED_FLATTEN
+
+    /** 当前 checker 优先级。 */
     override val priority: Int = 50
 
+    /** 最大展开嵌套深度。 */
     private val maxNestingDepth = 3
+
+    /** 最大可展开构造器路径数量。 */
     private val maxFlattenedConstructors = 64
 
+    /** 只处理可展开路径数量在上限内的 enum 类型。 */
     override fun isApplicable(
         type: ConeCangJieType,
         patterns: List<CfirMatchPattern>,
@@ -53,6 +65,7 @@ class NestedFlattenChecker : ExhaustivenessChecker {
         return flattenedCount in 1..maxFlattenedConstructors
     }
 
+    /** 执行嵌套 enum 展开覆盖检查。 */
     override fun check(
         matrix: CfirMatrix,
         type: ConeCangJieType,
@@ -95,6 +108,7 @@ class NestedFlattenChecker : ExhaustivenessChecker {
         }
     }
 
+    /** 粗略估算展开后的构造器路径数量。 */
     private fun estimateFlattenedConstructors(
         type: ConeEnumType,
         context: MatchExhaustivenessContext,
@@ -106,6 +120,7 @@ class NestedFlattenChecker : ExhaustivenessChecker {
         return constructors.size
     }
 
+    /** 收集当前实现可识别的全部展开路径。 */
     private fun collectAllPaths(
         type: ConeEnumType,
         context: MatchExhaustivenessContext,
@@ -117,6 +132,7 @@ class NestedFlattenChecker : ExhaustivenessChecker {
         return constructors
     }
 
+    /** 将规范化模式压平成路径表示。 */
     private fun flattenPattern(pattern: CfirMatchPattern): FlattenedPattern {
         return when (val kind = pattern.kind) {
             CfirMatchPatternKind.Wild, is CfirMatchPatternKind.Binding -> FlattenedPattern.Wildcard
@@ -142,17 +158,36 @@ class NestedFlattenChecker : ExhaustivenessChecker {
         }
     }
 
+    /** 根据缺失路径恢复诊断用缺失模式。 */
     private fun reconstructPattern(type: ConeCangJieType, path: String): CfirMatchPattern {
         return CfirMatchPattern.wild(type)
     }
 
+    /** 单例实例。 */
     companion object {
+        /** 默认嵌套展开 checker 实例。 */
         val INSTANCE = NestedFlattenChecker()
     }
 }
 
+/**
+ * 嵌套模式压平后的路径形态。
+ */
 private sealed class FlattenedPattern {
+    /** 覆盖全部路径的通配形态。 */
     data object Wildcard : FlattenedPattern()
+
+    /**
+     * 精确路径形态。
+     *
+     * @property path 展开后的路径字符串。
+     */
     data class Path(val path: String) : FlattenedPattern()
+
+    /**
+     * 前缀覆盖形态。
+     *
+     * @property prefix 展开路径前缀。
+     */
     data class Prefix(val prefix: String) : FlattenedPattern()
 }

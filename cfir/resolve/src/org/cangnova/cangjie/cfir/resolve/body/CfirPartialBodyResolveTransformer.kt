@@ -29,6 +29,11 @@ abstract class CfirPartialBodyResolveTransformer(
     final override val components: BodyResolveTransformerComponents
         get() = transformer.components
 
+    /**
+     * 默认把当前元素的子节点交回 dispatcher 继续转换。
+     *
+     * 局部 transformer 只负责覆盖自己关心的节点，其余节点沿用共享 dispatcher 的完整 body resolve 流程。
+     */
     override fun <E : CfirElement> transformElement(element: E, data: ResolutionMode): E {
         element.transformChildren(transformer, data)
         @Suppress("UNCHECKED_CAST")

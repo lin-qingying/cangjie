@@ -9,6 +9,7 @@ import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.resolvedType
 
+/** 表达式当前解析出的结果类型，写入时同步更新表达式的 cone type。 */
 internal inline var CfirExpression.resultType: ConeCangJieType
     get() = resolvedType
     set(type) {

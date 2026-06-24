@@ -44,12 +44,27 @@ import org.cangnova.cangjie.cfir.scopes.impl.CfirPackageMemberScope
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.resolve.calls.tasks.ExplicitReceiverKind
 
+/**
+ * 针对单个调用名预筛选后的 tower data 视图。
+ */
 internal class TowerDataElementsForName(
+    /**
+     * 当前调用查找的名称。
+     */
     name: Name,
+    /**
+     * 当前 body resolve 的 tower data 上下文。
+     */
     towerDataContext: CfirTowerDataContext,
 ) {
+    /**
+     * 由内到外排列的非局部 tower data 元素。
+     */
     val nonLocalTowerDataElements = towerDataContext.nonLocalTowerDataElements.asReversed()
 
+    /**
+     * 由内到外排列、且可能包含目标名称的局部作用域。
+     */
     val reversedFilteredLocalScopes by lazy(LazyThreadSafetyMode.NONE) {
         buildList {
             val localScopesBase = towerDataContext.localScopes
@@ -64,19 +79,52 @@ internal class TowerDataElementsForName(
     }
 }
 
+/**
+ * tower resolve 任务的公共基类。
+ */
 internal abstract class CfirBaseTowerResolveTask(
+    /**
+     * tower level 构造所需的 body resolve 组件。
+     */
     protected val components: BodyResolveComponents,
+    /**
+     * 当前任务使用的 tower 调度器。
+     */
     private val manager: TowerResolveManager,
+    /**
+     * 针对当前调用名过滤后的 tower data。
+     */
     protected val towerDataElementsForName: TowerDataElementsForName,
+    /**
+     * 当前任务写入的候选收集器。
+     */
     private val collector: CfirCandidateCollector,
+    /**
+     * 候选创建工厂。
+     */
     private val candidateFactory: CandidateFactory,
+    /**
+     * 当前调用解析上下文。
+     */
     private val context: ResolutionContext,
 ) {
+    /**
+     * tower level 处理器。
+     */
     private val handler = TowerLevelHandler()
 
+    /**
+     * 在处理前改写 tower group。
+     */
     protected open fun interceptTowerGroup(towerGroup: CfirTowerGroup): CfirTowerGroup = towerGroup
+    /**
+     * 某个 tower level 成功产生候选后的回调。
+     */
     protected open fun onSuccessfulLevel(towerGroup: CfirTowerGroup) {}
 
+    /**
+     * 处理单个 tower level 并按 group 优先级参与调度。
+     */
     protected suspend fun processLevel(
         towerLevel: CfirTowerLevel,
         callInfo: CallInfo,
@@ -102,6 +150,9 @@ internal abstract class CfirBaseTowerResolveTask(
         }
     }
 
+    /**
+     * 按局部作用域、非局部作用域和隐式接收者枚举 tower levels。
+     */
     protected inline fun enumerateTowerLevels(
         onScope: (CfirScope, CfirTowerGroup) -> Unit,
         onImplicitReceiver: (ImplicitReceiverValue<*>, CfirTowerGroup) -> Unit,
@@ -127,6 +178,9 @@ internal abstract class CfirBaseTowerResolveTask(
     }
 }
 
+/**
+ * 默认 tower resolve 任务实现。
+ */
 internal open class CfirTowerResolveTask(
     components: BodyResolveComponents,
     manager: TowerResolveManager,
@@ -142,6 +196,9 @@ internal open class CfirTowerResolveTask(
     candidateFactory = candidateFactory,
     context = context,
 ) {
+    /**
+     * 解析没有显式接收者的调用。
+     */
     suspend fun runResolverForNoReceiver(info: CallInfo) {
         enumerateTowerLevels(
             onScope = { scope, group ->
@@ -158,6 +215,9 @@ internal open class CfirTowerResolveTask(
         )
     }
 
+    /**
+     * 解析显式表达式接收者调用。
+     */
     suspend fun runResolverForExpressionReceiver(
         info: CallInfo,
         receiverExpression: CfirExpression,
@@ -209,6 +269,9 @@ internal open class CfirTowerResolveTask(
         )
     }
 
+    /**
+     * 解析类型、包或导入包限定符作为接收者的调用。
+     */
     suspend fun runResolverForQualifierReceiver(
         info: CallInfo,
         receiverExpression: CfirExpression,
@@ -230,6 +293,9 @@ internal open class CfirTowerResolveTask(
     }
 }
 
+/**
+ * 将非局部作用域分类到 tower group。
+ */
 private fun classifyNonLocalScope(scope: CfirScope, importedDepth: Int): CfirTowerGroup {
     return when (scope) {
         is CfirClassDeclaredMemberScope -> CfirTowerGroup.NON_LOCAL

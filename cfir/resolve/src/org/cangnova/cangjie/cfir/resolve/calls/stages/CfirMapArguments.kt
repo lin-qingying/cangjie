@@ -47,6 +47,9 @@ import org.cangnova.cangjie.source.text
  * 这样可以避免把 call/constructor 语义错误继续退化成通用 unresolved 或 type mismatch。
  */
 object CfirMapArguments : ResolutionStage() {
+    /**
+     * 对候选执行实参到形参的映射。
+     */
     context(sink: CheckerSink, context: ResolutionContext)
     override suspend fun check(candidate: Candidate) {
         val argumentAtoms = candidate.callInfo.arguments.map(ConeResolutionAtom::createRawAtom)
@@ -68,6 +71,9 @@ object CfirMapArguments : ResolutionStage() {
         }
     }
 
+    /**
+     * 命名值访问不允许携带调用实参，所有实参都报告过多实参。
+     */
     context(sink: CheckerSink)
     private fun mapVariableAccessArguments(
         candidate: Candidate,
@@ -79,6 +85,9 @@ object CfirMapArguments : ResolutionStage() {
         }
     }
 
+    /**
+     * 映射函数、构造器和 enum constructor 的实参。
+     */
     context(sink: CheckerSink)
     private fun mapCallableArguments(
         candidate: Candidate,
@@ -127,6 +136,9 @@ object CfirMapArguments : ResolutionStage() {
         result.diagnostics.forEach(sink::reportDiagnostic)
     }
 
+    /**
+     * 构造一次 callable 实参映射结果。
+     */
     private fun createCallableArgumentMapping(
         candidate: Candidate,
         argumentAtoms: List<ConeResolutionAtom>,
@@ -281,6 +293,9 @@ object CfirMapArguments : ResolutionStage() {
         )
     }
 
+    /**
+     * 对 operator set 的尾部命名参数进行位置实参补位。
+     */
     private fun operatorSetTrailingNamedParameterForPositionalArgument(
         candidate: Candidate,
         parameters: List<CfirValueParameter>,
@@ -308,6 +323,9 @@ object CfirMapArguments : ResolutionStage() {
             ?.takeIf { remainingPositionalArguments <= trailingNamedParameters.size }
     }
 
+    /**
+     * 将外置尾随 lambda 映射到最后一个函数类型形参。
+     */
     private fun mapTrailingLambdaArguments(
         candidate: Candidate,
         parameters: List<CfirValueParameter>,
@@ -351,6 +369,9 @@ object CfirMapArguments : ResolutionStage() {
     }
 }
 
+/**
+ * 判断候选是否为内建 VArray 构造器候选。
+ */
 private fun Candidate.isBuiltinVArrayConstructorCandidate(): Boolean {
     val function = symbol.takeIf { it.isBound }?.cfir as? CfirNamedFunction ?: return false
     if (function.origin != CfirDeclarationOrigin.Synthetic.BuiltinArrayConstructor) return false
@@ -358,14 +379,35 @@ private fun Candidate.isBuiltinVArrayConstructorCandidate(): Boolean {
     return function.returnTypeRef.coneType is ConeVArrayType
 }
 
+/**
+ * callable 实参映射结果。
+ */
 private data class CallableArgumentMappingResult(
+    /**
+     * 实参 atom 到形参的映射。
+     */
     val argumentMapping: LinkedHashMap<ConeResolutionAtom, CfirValueParameter>,
+    /**
+     * 映射阶段产生的诊断。
+     */
     val diagnostics: List<ResolutionDiagnostic>,
+    /**
+     * 使用默认值的形参数量。
+     */
     val numDefaults: Int,
+    /**
+     * 是否使用仓颉变长参数路径。
+     */
     val usesCangjieVariadic: Boolean,
+    /**
+     * 实际参与调用的变长形参。
+     */
     val variadicParameter: CfirValueParameter?,
 )
 
+/**
+ * 判断当前调用是否可能按仓颉变长参数路径映射。
+ */
 private fun isPossibleCangjieVariadicCall(
     parameters: List<CfirValueParameter>,
     variadicParameter: CfirValueParameter?,
@@ -378,12 +420,27 @@ private fun isPossibleCangjieVariadicCall(
     return positionalArgumentSize + 1 >= positionalParameterSize
 }
 
+/**
+ * 变长参数映射辅助信息。
+ */
 private data class VariadicInfo(
+    /**
+     * 变长形参。
+     */
     val parameter: CfirValueParameter,
+    /**
+     * 变长形参的元素类型。
+     */
     val elementType: ConeCangJieType,
+    /**
+     * 变长参数前固定位置形参数量。
+     */
     val fixedPositionalArity: Int,
 )
 
+/**
+ * 根据候选和位置实参数量推导可用的仓颉变长参数信息。
+ */
 private fun Candidate.possibleVariadicInfo(
     parameters: List<CfirValueParameter>,
     positionalArgumentCount: Int,
@@ -405,6 +462,9 @@ private fun Candidate.possibleVariadicInfo(
     )
 }
 
+/**
+ * 判断操作符名是否禁止走仓颉变长参数路径。
+ */
 private fun Name.isDisallowedVariadicOperatorName(): Boolean {
     if (this !in OperatorNameConventions.TOKENS_BY_OPERATOR_NAME) return false
     return this != OperatorNameConventions.INVOKE &&
@@ -412,14 +472,29 @@ private fun Name.isDisallowedVariadicOperatorName(): Boolean {
             this != OperatorNameConventions.SET
 }
 
+/**
+ * 调用实参的映射前信息。
+ */
 private data class CallArgumentInfo(
+    /**
+     * 实参 atom。
+     */
     val atom: ConeResolutionAtom,
+    /**
+     * 命名实参名称；位置实参为空。
+     */
     val name: Name? = atom.expression.argumentNameOrNull(),
 ) {
+    /**
+     * 当前实参是否是外置尾随 lambda。
+     */
     val isTrailingLambda: Boolean
         get() = (atom.expression as? CfirAnonymousFunctionExpression)?.isTrailingLambda == true
 }
 
+/**
+ * 从表达式源码中恢复命名实参名称。
+ */
 private fun CfirExpression.argumentNameOrNull(): Name? {
     val source = valueArgumentSourceOrNull() ?: return null
     val psiArgument = source?.psi as? CjValueArgument
@@ -437,6 +512,9 @@ private fun CfirExpression.argumentNameOrNull(): Name? {
     return Name.identifierIfValid(possibleName)
 }
 
+/**
+ * 返回表达式对应的 value-argument source。
+ */
 private fun CfirExpression.valueArgumentSourceOrNull(): CjSourceElement? {
     return when (this) {
         is CfirBlock -> source?.takeIf { statements.size == 1 }
@@ -444,6 +522,9 @@ private fun CfirExpression.valueArgumentSourceOrNull(): CjSourceElement? {
     }
 }
 
+/**
+ * 判断调用来源是否允许省略命名前缀。
+ */
 private fun CfirFunctionCallOrigin.isNamedPrefixOptionalOrigin(): Boolean {
     return this == CfirFunctionCallOrigin.Operator
 }

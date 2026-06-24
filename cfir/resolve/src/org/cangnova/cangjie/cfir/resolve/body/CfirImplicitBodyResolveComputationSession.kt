@@ -54,6 +54,7 @@ sealed class CfirImplicitBodyResolveComputationStatus {
  */
 class CfirImplicitBodyResolveComputationSession {
 
+    /** callable symbol 到其隐式 body resolve 计算状态的映射。 */
     private val statusMap = HashMap<CfirCallableSymbol<*>, CfirImplicitBodyResolveComputationStatus>()
 
     /** 当前正在计算的符号栈，用于调试和错误报告。 */
@@ -113,6 +114,7 @@ class CfirImplicitBodyResolveComputationSession {
         return result
     }
 
+    /** 保存单个 callable 的已解析返回类型与变换后声明。 */
     private fun storeResult(
         symbol: CfirCallableSymbol<*>,
         transformedDeclaration: CfirCallableDeclaration,
@@ -148,6 +150,7 @@ class CfirImplicitBodyResolveComputationSession {
         return symbol in nonTrivialLoops
     }
 
+    /** jumping resolve 当前检测到的递归符号；为空表示没有待消费递归。 */
     private var cycledSymbol: CfirCallableSymbol<*>? = null
 
     /**
@@ -195,8 +198,12 @@ class CfirImplicitBodyResolveComputationSession {
  * 这里仅恢复“哪些 symbol 已经被计算/正在计算”的事务边界。
  */
 class CfirImplicitBodyResolveComputationSessionSnapshot internal constructor(
+    /** 捕获时 callable symbol 到隐式 body resolve 状态的映射。 */
     internal val statusMap: Map<CfirCallableSymbol<*>, CfirImplicitBodyResolveComputationStatus>,
+    /** 捕获时正在计算的 callable symbol 栈。 */
     internal val computingSymbolsStack: List<CfirCallableSymbol<*>>,
+    /** 捕获时已识别出的非平凡递归环成员集合。 */
     internal val nonTrivialLoops: Set<CfirCallableSymbol<*>>,
+    /** 捕获时 jumping resolve 尚未消费的递归符号。 */
     internal val cycledSymbol: CfirCallableSymbol<*>?,
 )

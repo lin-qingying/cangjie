@@ -36,13 +36,21 @@ import org.cangnova.cangjie.cfir.declarations.expandedPatternEnumType
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeEnumType
 
+/** 将有限深度的嵌套 enum 模式压平为路径后执行覆盖判断的结构化 checker。 */
 class NestedFlattenChecker : ExhaustivenessChecker {
+    /** 当前 checker 在穷尽性结果中使用的来源标记。 */
     override val source: CheckSource = CheckSource.NESTED_FLATTEN
+
+    /** 嵌套压平 checker 的调度优先级。 */
     override val priority: Int = 50
 
+    /** 为避免组合爆炸而允许展开的最大嵌套深度。 */
     private val maxNestingDepth = 3
+
+    /** 位掩码覆盖模型允许记录的最大压平构造器路径数量。 */
     private val maxFlattenedConstructors = 64
 
+    /** 仅对可枚举且压平路径数量在容量内的 enum 类型启用。 */
     override fun isApplicable(
         type: ConeCangJieType,
         patterns: List<CfirMatchPattern>,
@@ -53,6 +61,7 @@ class NestedFlattenChecker : ExhaustivenessChecker {
         return flattenedCount in 1..maxFlattenedConstructors
     }
 
+    /** 将矩阵首列模式压平为路径集合，并通过位掩码判断全部路径是否已覆盖。 */
     override fun check(
         matrix: CfirMatrix,
         type: ConeCangJieType,
@@ -94,6 +103,7 @@ class NestedFlattenChecker : ExhaustivenessChecker {
         }
     }
 
+    /** 估算给定 enum 在当前深度下会产生的压平构造器路径数量。 */
     private fun estimateFlattenedConstructors(
         type: ConeEnumType,
         context: CheckerContext,
@@ -105,6 +115,7 @@ class NestedFlattenChecker : ExhaustivenessChecker {
         return constructors.size
     }
 
+    /** 收集给定 enum 在当前深度下参与覆盖比较的全部路径标识。 */
     private fun collectAllPaths(
         type: ConeEnumType,
         context: CheckerContext,
@@ -116,6 +127,7 @@ class NestedFlattenChecker : ExhaustivenessChecker {
         return constructors
     }
 
+    /** 将一个嵌套模式转换为通配符、精确路径或路径前缀三类压平形态。 */
     private fun flattenPattern(pattern: CfirMatchPattern): FlattenedPattern {
         return when (val kind = pattern.kind) {
             CfirMatchPatternKind.Wild, is CfirMatchPatternKind.Binding -> FlattenedPattern.Wildcard
@@ -140,17 +152,34 @@ class NestedFlattenChecker : ExhaustivenessChecker {
         }
     }
 
+    /** 根据缺失路径构造对外报告的缺失模式；当前以目标类型通配符表达该路径缺口。 */
     private fun reconstructPattern(type: ConeCangJieType, path: String): CfirMatchPattern {
         return CfirMatchPattern.wild(type)
     }
 
+    /** 嵌套压平 checker 的共享单例容器。 */
     companion object {
+        /** 默认嵌套压平 checker 单例。 */
         val INSTANCE = NestedFlattenChecker()
     }
 }
 
+/** 压平后的模式形态，用于把嵌套 enum 覆盖问题转换为路径覆盖问题。 */
 private sealed class FlattenedPattern {
+    /** 表示当前模式覆盖目标类型下的全部路径。 */
     data object Wildcard : FlattenedPattern()
+
+    /**
+     * 表示一个精确构造器路径。
+     *
+     * @property path 已压平的构造器路径标识。
+     */
     data class Path(val path: String) : FlattenedPattern()
+
+    /**
+     * 表示一个构造器路径前缀，覆盖此前缀下的全部子路径。
+     *
+     * @property prefix 已压平的构造器路径前缀。
+     */
     data class Prefix(val prefix: String) : FlattenedPattern()
 }

@@ -16,6 +16,11 @@ import org.cangnova.cangjie.name.Name
 
 
 @OptIn(CfirImplementationDetail::class)
+/**
+ * 构造带最终替换结果的 resolved callable reference。
+ *
+ * 该引用保留候选符号、替换后的返回类型和参数类型，供后续 callable reference 适配与 analysis API 读取。
+ */
 internal fun buildAppliedCallableReference(
     name: Name,
     candidate: Candidate,

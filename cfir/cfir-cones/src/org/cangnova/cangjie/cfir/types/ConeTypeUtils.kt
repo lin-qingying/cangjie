@@ -4,13 +4,17 @@ import org.cangnova.cangjie.cfir.render.ConeTypeRendererForDebugging
 import org.cangnova.cangjie.utils.SmartSet
 import org.cangnova.cangjie.utils.popLast
 
-
+/**
+ * 判断当前类型树中是否存在满足 [predicate] 的类型节点。
+ */
 fun ConeCangJieType.contains(predicate: (ConeCangJieType) -> Boolean): Boolean {
     return contains(predicate, SmartSet.create())
 }
+
 /**
- * Recursively visits each [ConeCangJieType] inside (including itself) and performs the given action.
- * Doesn't give guarantees on the traversal order.
+ * 递归访问当前类型及其内部包含的所有 [ConeCangJieType]。
+ *
+ * 遍历顺序不作为 API 契约；调用方不能依赖具体访问顺序。
  */
 inline fun ConeCangJieType.forEachType(
     prepareType: (ConeCangJieType) -> ConeCangJieType = { it },
@@ -37,6 +41,9 @@ inline fun ConeCangJieType.forEachType(
     }
 }
 
+/**
+ * 带 visited 集合的递归 contains 实现，避免循环类型导致无限递归。
+ */
 private fun ConeCangJieType.contains(predicate: (ConeCangJieType) -> Boolean, visited: SmartSet<ConeCangJieType>): Boolean {
     if (this in visited) return false
     if (predicate(this)) return true
@@ -53,12 +60,18 @@ private fun ConeCangJieType.contains(predicate: (ConeCangJieType) -> Boolean, vi
     }
 }
 
+/**
+ * 使用调试渲染器渲染当前类型。
+ */
 fun ConeCangJieType.renderForDebugging(): String {
     val builder = StringBuilder()
     ConeTypeRendererForDebugging(builder).render(this)
     return builder.toString()
 }
 
+/**
+ * 返回一个带 [upperBound] 近似上界的新交叉类型。
+ */
 fun ConeIntersectionType.withUpperBound(upperBound: ConeCangJieType): ConeIntersectionType {
     return ConeIntersectionType(
         intersectedTypes = intersectedTypes,
@@ -67,6 +80,9 @@ fun ConeIntersectionType.withUpperBound(upperBound: ConeCangJieType): ConeInters
     )
 }
 
+/**
+ * 返回刚性类型对应的类型构造器。
+ */
 fun ConeRigidType.getConstructor(): ConeTypeConstructorMarker {
     return when (this) {
         is ConeLookupTagBasedType -> this.lookupTag

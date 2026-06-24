@@ -9,6 +9,9 @@ import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
  * 而不是等到 `foreign func` 使用该别名时退化为外层 use-site 诊断。
  */
 object CfirTypeAliasCFuncLegalityChecker : CfirTypeAliasChecker() {
+    /**
+     * 检查 typealias 展开类型是否为 CFunc，并报告嵌套类型上的 C 互操作非法诊断。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirTypeAlias) {
         with(context) {

@@ -49,13 +49,23 @@ import org.cangnova.cangjie.type.model.safeSubstitute
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 import org.cangnova.cangjie.utils.exceptions.withCfirEntry
 
+/**
+ * 取得候选符号的初始表达式类型，并应用候选当前 substitutor。
+ */
 fun BodyResolveComponents.initialTypeOfCandidate(candidate: Candidate): ConeCangJieType {
     val type = typeFromSymbol(candidate.symbol)
     return type.initialTypeOfCandidate(candidate)
 }
+
+/**
+ * 类型参数符号对应的默认类型。
+ */
 val CfirTypeParameterSymbol.defaultType: ConeTypeParameterType
     get() = ConeTypeParameterTypeImpl(toLookupTag())
 
+/**
+ * 从可解析访问表达式中提取表达式类型。
+ */
 fun <T : CfirResolvable> BodyResolveComponents.typeFromCallee(access: T): ConeCangJieType {
     if (access is CfirQualifiedAccessExpression && access.typeArguments.isNotEmpty()) {
         val classifierSymbol = (access.calleeReference as? CfirResolvedNamedReference)
@@ -72,6 +82,9 @@ fun <T : CfirResolvable> BodyResolveComponents.typeFromCallee(access: T): ConeCa
     return typeFromCallee(access.calleeReference)
 }
 
+/**
+ * 从 callee reference 中提取表达式类型。
+ */
 fun BodyResolveComponents.typeFromCallee(calleeReference: CfirReference): ConeCangJieType {
     return when (calleeReference) {
         is CfirNamedReferenceWithCandidate -> {
@@ -133,6 +146,9 @@ fun BodyResolveComponents.typeFromCallee(calleeReference: CfirReference): ConeCa
     }
 }
 
+/**
+ * 构造命名值候选作为表达式时的类型。
+ */
 private fun BodyResolveComponents.typeFromNamedValueCandidate(candidate: Candidate): ConeCangJieType {
     val declaration = candidate.symbol.cfir
     if (declaration !is CfirFunction) {
@@ -167,6 +183,9 @@ fun BodyResolveComponents.functionTypeForFunctionValueCandidate(
     return ConeFunctionType(parameterTypes, substitutedReturnType)
 }
 
+/**
+ * 从已解析符号中提取默认表达式类型。
+ */
 private fun BodyResolveComponents.typeFromSymbol(symbol: CfirBasedSymbol<*>): ConeCangJieType {
     return when (symbol) {
         is CfirCallableSymbol<*> -> {
@@ -209,6 +228,9 @@ private fun CfirClassifierSymbol<*>.constructDefaultQualifierType(): ConeCangJie
     }
 }
 
+/**
+ * 使用显式类型实参构造限定访问中的分类器类型。
+ */
 private fun CfirClassifierSymbol<*>.constructTypeForQualifiedAccess(
     typeArguments: List<ConeTypeProjection>,
 ): ConeCangJieType = when (this) {
@@ -216,6 +238,9 @@ private fun CfirClassifierSymbol<*>.constructTypeForQualifiedAccess(
     else -> constructType(typeArguments)
 }
 
+/**
+ * 根据候选适用性错误构造 cone 诊断。
+ */
 fun createConeDiagnosticForCandidateWithError(
     applicability: CandidateApplicability,
     candidate: Candidate,
@@ -238,9 +263,15 @@ fun createConeDiagnosticForCandidateWithError(
     }
 }
 
+/**
+ * 判断解析结果是否带有“保留兼容性时覆盖其他结果”的诊断标记。
+ */
 internal fun Candidate.doesResolutionResultOverrideOtherToPreserveCompatibility(): Boolean =
     diagnostics.any { it === ResolutionResultOverridesOtherToPreserveCompatibility }
 
+/**
+ * 返回 typealias 完整展开后的 class-like 符号。
+ */
 fun CfirTypeAliasSymbol.fullyExpandedClass(session: CfirSession): CfirClassLikeSymbol<*>? {
     if (!isBound) return null
     val expandedType = cfir.expandedTypeRef.coneTypeOrNull ?: return null
@@ -262,6 +293,9 @@ fun CfirTypeAliasSymbol.fullyExpandedClass(session: CfirSession): CfirClassLikeS
     return session.symbolProvider.getClassLikeSymbolByClassId(classId)
 }
 
+/**
+ * 将携带候选的命名引用转换为错误引用。
+ */
 fun CfirNamedReferenceWithCandidate.toErrorReference(diagnostic: ConeDiagnostic): CfirNamedReference {
     val calleeReference = this
     val errorSource = calleeReference.source ?: calleeReference.candidate.callInfo.callSite.source
@@ -282,6 +316,9 @@ fun CfirNamedReferenceWithCandidate.toErrorReference(diagnostic: ConeDiagnostic)
     }
 }
 
+/**
+ * 对候选初始类型应用当前约束系统 substitutor 和候选 substitutor。
+ */
 fun ConeCangJieType.initialTypeOfCandidate(candidate: Candidate): ConeCangJieType {
     val system = candidate.system
     val resultingSubstitutor = system.buildCurrentSubstitutor()

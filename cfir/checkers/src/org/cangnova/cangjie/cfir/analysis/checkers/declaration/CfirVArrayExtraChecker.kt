@@ -18,6 +18,9 @@ import org.cangnova.cangjie.cfir.types.ConeVArrayType
  * 注册为 callableDeclarationCheckers
  */
 object CfirVArrayExtraChecker : CfirCallableDeclarationChecker() {
+    /**
+     * 分发 callable 上的 VArray 附加语义检查。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirCallableDeclaration) {
         checkVArrayReturnInCFunc(declaration)

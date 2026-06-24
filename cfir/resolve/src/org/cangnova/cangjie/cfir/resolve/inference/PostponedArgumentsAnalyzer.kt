@@ -44,12 +44,27 @@ import org.cangnova.cangjie.source.CjFakeSourceElementKind
 import org.cangnova.cangjie.type.AbstractTypeChecker
 import org.cangnova.cangjie.type.model.safeSubstitute
 
+/**
+ * lambda 返回实参分析结果。
+ */
 data class ReturnArgumentsAnalysisResult(
+    /**
+     * lambda body 中可作为返回值参与约束的表达式 atom。
+     */
     val returnArguments: Collection<org.cangnova.cangjie.cfir.resolve.calls.ConeResolutionAtom>,
+    /**
+     * lambda body 分析额外产生的约束存储。
+     */
     val additionalConstraints: ConstraintStorage?,
 )
 
+/**
+ * lambda body 分析器接口。
+ */
 interface LambdaAnalyzer {
+    /**
+     * 分析 lambda 并返回其返回表达式 atom 与额外约束。
+     */
     fun analyzeAndGetLambdaReturnArguments(
         lambdaAtom: ConeResolvedLambdaAtom,
         parameters: List<ConeCangJieType>,
@@ -60,12 +75,33 @@ interface LambdaAnalyzer {
     ): ReturnArgumentsAnalysisResult
 }
 
+/**
+ * 延迟实参分析器。
+ *
+ * 该组件在调用完成阶段按约束系统当前状态分析 lambda、callable reference 和上下文敏感名称，
+ * 并把分析结果回写到顶层候选的约束系统。
+ */
 class PostponedArgumentsAnalyzer(
+    /**
+     * 当前调用解析上下文。
+     */
     private val resolutionContext: ResolutionContext,
+    /**
+     * lambda body 分析器。
+     */
     private val lambdaAnalyzer: LambdaAnalyzer,
+    /**
+     * 当前会话的推断组件集合。
+     */
     private val components: InferenceComponents,
+    /**
+     * 用于上下文敏感函数引用二次解析的调用解析器。
+     */
     private val callResolver: CfirCallResolver,
 ) {
+    /**
+     * 按延迟 atom 类型执行对应分析。
+     */
     fun analyze(
         csImpl: ConstraintSystemImpl,
         atom: ConePostponedResolvedAtom,
@@ -114,6 +150,9 @@ class PostponedArgumentsAnalyzer(
         }
     }
 
+    /**
+     * 处理上下文敏感函数引用实参。
+     */
     private fun processFunctionReferenceArgument(
         atom: ConeSimpleNameForContextSensitiveResolution,
         topLevelCandidate: Candidate,
@@ -190,6 +229,9 @@ class PostponedArgumentsAnalyzer(
         expression.replaceConeTypeOrNull(ConeErrorType(diagnostic, delegatedType = atom.expectedType))
     }
 
+    /**
+     * 按期望函数类型从歧义函数引用候选中选择唯一候选。
+     */
     private fun selectFunctionReferenceCandidateByExpectedType(
         atom: ConeSimpleNameForContextSensitiveResolution,
         candidates: List<Candidate>,
@@ -346,6 +388,9 @@ class PostponedArgumentsAnalyzer(
         atom.returnStatements = returnAtoms
     }
 
+    /**
+     * 对没有真实返回表达式的 lambda 添加 Unit 返回约束，或报告返回类型不匹配。
+     */
     private fun addLambdaReturnTypeUnitConstraintOrReportError(
         csImpl: ConstraintSystemImpl,
         atom: ConeResolvedLambdaAtom,
@@ -379,15 +424,24 @@ class PostponedArgumentsAnalyzer(
     }
 }
 
+/**
+ * 判断表达式是否是空 lambda 的隐式 Unit。
+ */
 private fun org.cangnova.cangjie.cfir.expressions.CfirExpression.isImplicitUnitForEmptyLambda(): Boolean {
     return source?.kind == CjFakeSourceElementKind.ImplicitUnit.ForEmptyLambda
 }
 
+/**
+ * 判断表达式是否已经携带解析错误。
+ */
 private fun org.cangnova.cangjie.cfir.expressions.CfirExpression.hasResolutionError(): Boolean {
     if (coneTypeOrNull is ConeErrorType) return true
     return this is CfirResolvable && calleeReference is CfirErrorNamedReference
 }
 
+/**
+ * 将“期望类型为类型变量”的 lambda atom 转换为已解析 lambda atom。
+ */
 fun ConeLambdaWithTypeVariableAsExpectedTypeAtom.transformToResolvedLambda(
     csBuilder: ConstraintSystemBuilder,
     context: ResolutionContext,

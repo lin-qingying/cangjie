@@ -37,6 +37,12 @@ import org.cangnova.cangjie.type.AbstractTypeChecker
  * - COMMAND_RESUMPTION_MISMATCH: command-resumption 类型不匹配
  */
 object CfirTryHandleReturnChecker : CfirTryExpressionChecker() {
+    /**
+     * 检查 try/handle 子句的 command 类型与 handle body 类型。
+     *
+     * 每个 handler 先检查 command pattern 中的错误类型，再验证 handle body 是否可作为 try body
+     * 的替代表达式结果。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirTryExpression) {
         val tryBodyType = expression.tryBlock.coneTypeOrNull
@@ -47,6 +53,9 @@ object CfirTryHandleReturnChecker : CfirTryExpressionChecker() {
         }
     }
 
+    /**
+     * 检查 handle command pattern 上解析失败的类型引用。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkHandleClauseType(handleClause: CfirHandleClause) {
         val commandPattern = handleClause.commandPattern
@@ -61,6 +70,9 @@ object CfirTryHandleReturnChecker : CfirTryExpressionChecker() {
         }
     }
 
+    /**
+     * 检查 handle body 类型是否兼容 try body 类型。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkHandlerBodyTypeMatch(handleClause: CfirHandleClause, tryBodyType: ConeCangJieType?) {
         if (tryBodyType == null || tryBodyType is ConeErrorType) return
@@ -79,9 +91,15 @@ object CfirTryHandleReturnChecker : CfirTryExpressionChecker() {
 }
 
 /**
- * Effects BasicExpression 级别检查器
+ * Effects BasicExpression 级别检查器。
+ *
+ * 该检查器覆盖不能单独挂在 try expression 分发上的 effects 表达式规则，包括 handle body
+ * 控制流限制和 `resume with` 类型约束。
  */
 object CfirEffectsBasicChecker : CfirBasicExpressionChecker() {
+    /**
+     * 分发表达式级 effects 检查。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirStatement) {
         when (expression) {
@@ -91,6 +109,12 @@ object CfirEffectsBasicChecker : CfirBasicExpressionChecker() {
         }
     }
 
+    /**
+     * 检查 handle 子句 body 内禁止出现的控制流表达式。
+     *
+     * break/continue 在 handle body 中按无效 loop control 报告，return 使用专门的
+     * `RETURN_IN_TRY_HANDLE_BLOCK` 诊断。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkHandleControlFlow(handleClause: CfirHandleClause) {
         handleClause.body.accept(object : CfirDefaultVisitorVoid() {
@@ -112,6 +136,11 @@ object CfirEffectsBasicChecker : CfirBasicExpressionChecker() {
         })
     }
 
+    /**
+     * 检查 `resume with` 表达式返回值是否匹配 command 的结果类型。
+     *
+     * 已由 resolve 产生 command/resumption mismatch 错误的场景不重复报告。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkResumeExpression(expression: CfirResumeExpression) {
         val exprType = expression.coneTypeOrNull
@@ -140,12 +169,18 @@ object CfirEffectsBasicChecker : CfirBasicExpressionChecker() {
         }
     }
 
+    /**
+     * 从 handle 子句的 command pattern 推导 command 结果类型。
+     */
     context(context: CheckerContext)
     private fun resolveCommandResultType(handleClause: CfirHandleClause): ConeCangJieType? {
         val commandType = handleClause.commandPattern.typeRefs.firstOrNull()?.coneType ?: return null
         return findCommandSupertype(commandType)?.typeArguments?.firstOrNull()?.type
     }
 
+    /**
+     * 在给定类型的继承链中查找 `std.core.Command` 超类型。
+     */
     context(context: CheckerContext)
     private fun findCommandSupertype(type: ConeCangJieType?): ConeClassLikeType? {
         if (type == null) return null
@@ -154,6 +189,12 @@ object CfirEffectsBasicChecker : CfirBasicExpressionChecker() {
             .firstOrNull { it.lookupTag.classId == StdlibClassIds.Command }
     }
 
+    /**
+     * 广度优先收集类型本身及其所有直接/间接超类型。
+     *
+     * 使用 [ConeInferenceContext] 读取 type constructor，避免在 effects 检查器中直接依赖具体
+     * class-like 声明结构。
+     */
     private fun collectSupertypeChain(
         type: ConeCangJieType,
         typeContext: ConeInferenceContext,

@@ -36,10 +36,17 @@ data class CjoExportedTopLevelNames(
  * - 对 alias 使用导出后的名字，对非 alias 保持原名字。
  */
 class CjoExportedTopLevelNamesResolver(
+    /** 负责按包名加载 `.cjo` 包头的管理器。 */
     private val cjoManager: CjoManager,
 ) {
+    /** 以完整包名为 key 的导出名称解析缓存，避免 public import 图重复遍历。 */
     private val cache = ConcurrentHashMap<String, CjoExportedTopLevelNames>()
 
+    /**
+     * 解析指定包最终对外导出的顶层 callable 与 classifier 名称。
+     *
+     * 返回值同时包含可见名称集合与 visible-name 到真实声明目标的映射。
+     */
     fun resolve(packageFqName: FqName): CjoExportedTopLevelNames {
         cache[packageFqName.asString()]?.let { return it }
         val resolved = resolveRecursively(packageFqName, linkedSetOf())
@@ -47,6 +54,11 @@ class CjoExportedTopLevelNamesResolver(
         return cache[packageFqName.asString()] ?: resolved
     }
 
+    /**
+     * 递归解析包导出视图，并使用 [visiting] 截断循环 re-export。
+     *
+     * 遇到缺失包或循环边时返回空导出视图，保证单个坏依赖不会污染已解析缓存。
+     */
     private fun resolveRecursively(
         packageFqName: FqName,
         visiting: LinkedHashSet<FqName>,
@@ -124,6 +136,11 @@ class CjoExportedTopLevelNamesResolver(
         )
     }
 
+    /**
+     * 把源包的 visible-name 到真实目标映射合并进目标表。
+     *
+     * 已存在项保持优先，符合当前包本地声明和先出现 public import 的遮蔽规则。
+     */
     private fun mergeExportTargets(
         destination: MutableMap<Name, CjoExportedTopLevelTarget>,
         source: Map<Name, CjoExportedTopLevelTarget>,
@@ -142,12 +159,15 @@ class CjoExportedTopLevelNamesResolver(
  */
 internal fun CjoImportEntry.isPublicExportImport(): Boolean = isDecl && withImplicitExport
 
+/** 将 import 前缀路径解释为被导入包的 [FqName]。 */
 internal fun CjoImportEntry.importedPackageFqName(): FqName? =
     prefixPaths.takeIf { it.isNotEmpty() }?.let(FqName::fromSegments)
 
+/** 返回非 all-under import 明确导入的成员名称。 */
 internal fun CjoImportEntry.importedMemberName(): Name? =
     identifier.takeIf { !isAllUnder && it.isNotBlank() }?.let(Name::identifier)
 
+/** 返回 re-export 后对外可见的成员名，alias 优先于原始 identifier。 */
 internal fun CjoImportEntry.exportedMemberName(): Name? = when {
     isAllUnder -> null
     !aliasName.isNullOrBlank() -> Name.identifier(aliasName)

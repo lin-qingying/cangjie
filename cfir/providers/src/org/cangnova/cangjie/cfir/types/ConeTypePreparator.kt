@@ -13,8 +13,14 @@ import org.cangnova.cangjie.type.model.CangJieTypeMarker
  * 不应让类型系统内部的语义比较继续拿 `ConeTypeAliasType` 当真实类型头工作。
  */
 class ConeTypePreparator(
+    /**
+     * 用于展开 typealias 的当前 session。
+     */
     private val session: CfirSession,
 ) : AbstractTypePreparator() {
+    /**
+     * 准备 rigid type，必要时展开顶层 typealias。
+     */
     private fun <T : ConeRigidType> prepareRigidType(type: T): T {
         @Suppress("UNCHECKED_CAST")
         return when (type) {
@@ -23,6 +29,9 @@ class ConeTypePreparator(
         } as T
     }
 
+    /**
+     * 将通用类型检查器传入的 type marker 准备为 cone type。
+     */
     override fun prepareType(type: CangJieTypeMarker): ConeCangJieType {
         if (type !is ConeCangJieType) {
             throw AssertionError("Unexpected type in ConeTypePreparator: ${type::class.java}")

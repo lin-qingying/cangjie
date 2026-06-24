@@ -12,13 +12,21 @@ import org.cangnova.cangjie.cfir.types.ConeTypeProjection
 import org.cangnova.cangjie.name.ClassId
 
 
+/**
+ * 将 [ClassId] 转换为 class-like lookup tag。
+ */
 fun ClassId.toLookupTag(): ConeClassLikeLookupTagImpl {
     return ConeClassLikeLookupTagImpl(this)
 }
-fun ConeClassifierLookupTag.constructType(
-    typeArguments: List<  ConeTypeProjection> = emptyList(),
 
-    attributes: ConeAttributes = ConeAttributes.Empty
+/**
+ * 基于 classifier lookup tag 构造类型。
+ *
+ * 类型参数 tag 构造 [ConeTypeParameterTypeImpl]，class-like tag 构造 class-like 类型。
+ */
+fun ConeClassifierLookupTag.constructType(
+    typeArguments: List<ConeTypeProjection> = emptyList(),
+    attributes: ConeAttributes = ConeAttributes.Empty,
 ): ConeLookupTagBasedType {
     return when (this) {
         is ConeTypeParameterLookupTag -> ConeTypeParameterTypeImpl(this, attributes)
@@ -26,9 +34,13 @@ fun ConeClassifierLookupTag.constructType(
         else -> error("! ${this::class}")
     }
 }
+
+/**
+ * 基于 classifier 符号构造对应类型。
+ */
 fun CfirClassifierSymbol<*>.constructType(
     typeArguments: List<ConeTypeProjection> = emptyList(),
-    attributes: ConeAttributes = ConeAttributes.Empty
+    attributes: ConeAttributes = ConeAttributes.Empty,
 ): ConeLookupTagBasedType {
     return when (this) {
         is CfirTypeParameterSymbol -> ConeTypeParameterTypeImpl(this.toLookupTag(), attributes)
@@ -36,9 +48,13 @@ fun CfirClassifierSymbol<*>.constructType(
 
     }
 }
+
+/**
+ * 基于 class-like 符号构造对应的 class、interface、struct 或 enum 类型。
+ */
 fun CfirClassLikeSymbol<*>.constructType(
     typeArguments: List<ConeTypeProjection> = emptyList(),
-    attributes: ConeAttributes = ConeAttributes.Empty
+    attributes: ConeAttributes = ConeAttributes.Empty,
 ): ConeLookupTagBasedType {
 
     return when (this) {
@@ -56,14 +72,17 @@ fun CfirClassLikeSymbol<*>.constructType(
  */
 fun CfirClassSymbol.constructThisType(
     typeArguments: List<ConeTypeProjection> = emptyList(),
-    attributes: ConeAttributes = ConeAttributes.Empty
+    attributes: ConeAttributes = ConeAttributes.Empty,
 ): ConeClassLikeType {
     return ConeClassLikeType(this.toLookupTag(), typeArguments, attributes, isThisType = true)
 }
-fun ConeClassLikeLookupTag.constructClassType(
-    typeArguments: List<  ConeTypeProjection> = emptyList(),
 
-    attributes: ConeAttributes = ConeAttributes.Empty
+/**
+ * 基于 class-like lookup tag 构造普通 class-like 类型。
+ */
+fun ConeClassLikeLookupTag.constructClassType(
+    typeArguments: List<ConeTypeProjection> = emptyList(),
+    attributes: ConeAttributes = ConeAttributes.Empty,
 ): ConeClassifierType {
     return ConeClassLikeType(this, typeArguments, attributes)
 }

@@ -41,6 +41,7 @@ import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirCompositeTypeScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirExtendMemberScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirUnionTypeScope
+import org.cangnova.cangjie.cfir.scopes.impl.staticScopeForBuiltinQualifierType
 import org.cangnova.cangjie.cfir.scopes.impl.staticScopeForQualifierType
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
@@ -52,19 +53,43 @@ import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.source.CjFakeSourceElementKind
 import org.cangnova.cangjie.source.fakeElement
 
+/**
+ * 调用解析中的 receiver 值抽象。
+ */
 sealed interface ReceiverValue {
+    /**
+     * receiver 当前参与成员查找的类型。
+     */
     val type: ConeCangJieType
 
+    /**
+     * receiver 在 CFIR 表达式树中的表达。
+     */
     val receiverExpression: CfirExpression
 
+    /**
+     * 返回该 receiver 可用于成员查找的 scope。
+     */
     fun scope(c: SessionAndScopeSessionHolder): CfirScope?
 }
 
-    class ExpressionReceiverValue(
+/**
+ * 显式表达式 receiver。
+ *
+ * @property receiverExpression 原始表达式 receiver。
+ */
+class ExpressionReceiverValue(
     override val receiverExpression: CfirExpression,
 ) : ReceiverValue {
+    /**
+     * 显式 receiver 的类型直接来自表达式解析类型。
+     */
     override val type: ConeCangJieType
         get() = receiverExpression.resolvedType
+
+    /**
+     * 优先返回 qualifier 静态 scope；否则按 receiver 类型构造成员 scope。
+     */
     override fun scope(c: SessionAndScopeSessionHolder): CfirScope? =
         receiverExpression.qualifierScopeOrNull(c.session, c.scopeSession)
             ?: typeToScope(
@@ -75,6 +100,16 @@ sealed interface ReceiverValue {
             )
 }
 
+/**
+ * 隐式 receiver 基类。
+ *
+ * 隐式 receiver 同时是 [ImplicitValue] 与 [SessionAndScopeSessionHolder]，负责在 smartcast 更新后
+ * 重建可见成员 scope。
+ *
+ * @property boundSymbol 绑定的 this owner symbol。
+ * @property session receiver 所属 use-site session。
+ * @property scopeSession 成员 scope 缓存会话。
+ */
 sealed class ImplicitReceiverValue<S : CfirThisOwnerSymbol<*>>(
     override val boundSymbol: S,
     type: ConeCangJieType,
@@ -85,23 +120,44 @@ sealed class ImplicitReceiverValue<S : CfirThisOwnerSymbol<*>>(
     private val inaccessibleReceiverKind: InaccessibleReceiverKind? = null,
 ) : ImplicitValue<S>(type, originalType, mutable), ReceiverValue, SessionAndScopeSessionHolder {
 
+    /**
+     * 隐式 receiver 成员查找使用的 class member scope 模式。
+     */
     protected open val implicitMemberScopeKind: CfirClassMemberScopeKind = CfirClassMemberScopeKind.BODY_LOOKUP
 
+    /**
+     * 当前隐式 receiver 的成员查找 scope。
+     */
     val implicitScope: CfirTypeScope?
         get() = lazyImplicitScope.value
 
+    /**
+     * 随 smartcast 类型变化而失效重建的 scope 缓存。
+     */
     private var lazyImplicitScope: Lazy<CfirTypeScope?> = lazy(LazyThreadSafetyMode.PUBLICATION) {
         typeToScope(session, scopeSession, type, scopeKind = implicitMemberScopeKind)
     }
 
+    /**
+     * 构造隐式 this 或 inaccessible receiver 的原始表达式。
+     */
     override fun computeOriginalExpression(): CfirExpression =
         receiverExpression(boundSymbol, originalType, inaccessibleReceiverKind)
 
+    /**
+     * 返回隐式 receiver 的成员 scope。
+     */
     override fun scope(c: SessionAndScopeSessionHolder): CfirScope? = implicitScope
 
+    /**
+     * 当前 receiver 表达式，必要时包含 smartcast 包装。
+     */
     final override val receiverExpression: CfirExpression
         get() = computeExpression()
 
+    /**
+     * 更新 smartcast 类型并重建成员 scope 缓存。
+     */
     @ImplicitValue.ImplicitValueInternals
     override fun updateTypeFromSmartcast(type: ConeCangJieType) {
         super.updateTypeFromSmartcast(type)
@@ -110,11 +166,20 @@ sealed class ImplicitReceiverValue<S : CfirThisOwnerSymbol<*>>(
         }
     }
 
+    /**
+     * 创建隐式 receiver 的快照。
+     */
     abstract override fun createSnapshot(keepMutable: Boolean): ImplicitReceiverValue<S>
 
+    /**
+     * 在新 session/scopeSession 中复用该隐式 receiver。
+     */
     abstract fun withReplacedSessionOrNull(newSession: CfirSession, newScopeSession: ScopeSession): ImplicitReceiverValue<S>
 }
 
+/**
+ * 根据 symbol 与类型构造隐式 receiver 表达式。
+ */
 private fun receiverExpression(
     symbol: CfirThisOwnerSymbol<*>,
     type: ConeCangJieType,
@@ -141,6 +206,9 @@ private fun receiverExpression(
     }
 }
 
+/**
+ * class/struct/enum/interface 的隐式 dispatch receiver。
+ */
 class ImplicitDispatchReceiverValue private constructor(
     boundSymbol: CfirClassLikeSymbol<*>,
     type: ConeCangJieType,
@@ -149,6 +217,9 @@ class ImplicitDispatchReceiverValue private constructor(
     scopeSession: ScopeSession,
     mutable: Boolean,
 ) : ImplicitReceiverValue<CfirClassLikeSymbol<*>>(boundSymbol, type, originalType, useSiteSession, scopeSession, mutable) {
+    /**
+     * 构造可变 dispatch receiver。
+     */
     constructor(
         boundSymbol: CfirClassLikeSymbol<*>,
         type: ConeCangJieType = boundSymbol.constructType(),
@@ -156,13 +227,22 @@ class ImplicitDispatchReceiverValue private constructor(
         scopeSession: ScopeSession,
     ) : this(boundSymbol, type, originalType = type, useSiteSession, scopeSession, mutable = true)
 
+    /**
+     * 创建 dispatch receiver 快照。
+     */
     override fun createSnapshot(keepMutable: Boolean): ImplicitReceiverValue<CfirClassLikeSymbol<*>> =
         ImplicitDispatchReceiverValue(boundSymbol, type, originalType, session, scopeSession, keepMutable)
 
+    /**
+     * 替换 use-site session 与 scope session。
+     */
     override fun withReplacedSessionOrNull(newSession: CfirSession, newScopeSession: ScopeSession): ImplicitDispatchReceiverValue =
         ImplicitDispatchReceiverValue(boundSymbol, type, originalType, newSession, newScopeSession, mutable)
 }
 
+/**
+ * extend 声明体内的隐式 extension receiver。
+ */
 class ImplicitExtensionReceiverValue private constructor(
     boundSymbol: CfirExtendSymbol,
     type: ConeCangJieType,
@@ -171,8 +251,14 @@ class ImplicitExtensionReceiverValue private constructor(
     scopeSession: ScopeSession,
     mutable: Boolean,
 ) : ImplicitReceiverValue<CfirExtendSymbol>(boundSymbol, type, originalType, useSiteSession, scopeSession, mutable) {
+    /**
+     * extend receiver 必须按 use-site 方式查找目标类型成员与 extend 成员。
+     */
     override val implicitMemberScopeKind: CfirClassMemberScopeKind = CfirClassMemberScopeKind.USE_SITE
 
+    /**
+     * 构造可变 extension receiver。
+     */
     constructor(
         boundSymbol: CfirExtendSymbol,
         type: ConeCangJieType,
@@ -180,13 +266,24 @@ class ImplicitExtensionReceiverValue private constructor(
         scopeSession: ScopeSession,
     ) : this(boundSymbol, type, originalType = type, useSiteSession, scopeSession, mutable = true)
 
+    /**
+     * 创建 extension receiver 快照。
+     */
     override fun createSnapshot(keepMutable: Boolean): ImplicitReceiverValue<CfirExtendSymbol> =
         ImplicitExtensionReceiverValue(boundSymbol, type, originalType, session, scopeSession, keepMutable)
 
+    /**
+     * 替换 use-site session 与 scope session。
+     */
     override fun withReplacedSessionOrNull(newSession: CfirSession, newScopeSession: ScopeSession): ImplicitExtensionReceiverValue =
         ImplicitExtensionReceiverValue(boundSymbol, type, originalType, newSession, newScopeSession, mutable)
 }
 
+/**
+ * 对当前调用不可访问但仍需参与候选诊断建模的隐式 receiver。
+ *
+ * @property kind 不可访问原因。
+ */
 class InaccessibleImplicitReceiverValue private constructor(
     boundSymbol: CfirClassLikeSymbol<*>,
     type: ConeCangJieType,
@@ -204,6 +301,9 @@ class InaccessibleImplicitReceiverValue private constructor(
     mutable = mutable,
     inaccessibleReceiverKind = kind,
 ) {
+    /**
+     * 构造可变 inaccessible receiver。
+     */
     constructor(
         boundSymbol: CfirClassLikeSymbol<*>,
         type: ConeCangJieType,
@@ -212,22 +312,37 @@ class InaccessibleImplicitReceiverValue private constructor(
         scopeSession: ScopeSession,
     ) : this(boundSymbol, type, originalType = type, useSiteSession, scopeSession, mutable = true, kind = kind)
 
+    /**
+     * 创建 inaccessible receiver 快照。
+     */
     override fun createSnapshot(keepMutable: Boolean): ImplicitReceiverValue<CfirClassLikeSymbol<*>> =
         InaccessibleImplicitReceiverValue(boundSymbol, type, originalType, session, scopeSession, keepMutable, kind)
 
+    /**
+     * 替换 use-site session 与 scope session。
+     */
     override fun withReplacedSessionOrNull(newSession: CfirSession, newScopeSession: ScopeSession): InaccessibleImplicitReceiverValue =
         InaccessibleImplicitReceiverValue(boundSymbol, type, originalType, newSession, newScopeSession, mutable, kind)
 }
 
+/**
+ * 返回隐式 receiver 对外代表的成员 symbol。
+ */
 val ImplicitReceiverValue<*>.referencedMemberSymbol: CfirBasedSymbol<*>
     get() = when (val boundSymbol = boundSymbol) {
         is CfirExtendSymbol -> boundSymbol
         else -> boundSymbol
     }
 
+/**
+ * 判断不可访问隐式 receiver 是否会产生不可适用候选。
+ */
 fun ImplicitReceiverValue<*>.producesInapplicableCandidate(): Boolean =
     this is InaccessibleImplicitReceiverValue && !kind.producesApplicableCandidate
 
+/**
+ * 为显式 receiver 表达式选择成员 scope 查找模式。
+ */
 private fun CfirExpression.memberScopeKind(): CfirClassMemberScopeKind = when (this) {
     // 官方查找在原类型本体的 this/super 路径关闭 extend；extend 体内的 this 仍以 extend 声明为当前 owner。
     is CfirThisReceiverExpression -> if (calleeReference.boundSymbol is CfirExtendSymbol) {
@@ -240,6 +355,9 @@ private fun CfirExpression.memberScopeKind(): CfirClassMemberScopeKind = when (t
     else -> CfirClassMemberScopeKind.USE_SITE
 }
 
+/**
+ * 将 receiver 类型转换为可查找成员的类型 scope。
+ */
 private fun typeToScope(
     session: CfirSession,
     scopeSession: ScopeSession,
@@ -259,9 +377,17 @@ private fun typeToScope(
     }
 }
 
+/**
+ * 判断 ideal primitive receiver 是否需要使用 union scope 合并多个候选 primitive scope。
+ */
 private fun ConeCangJieType.requiresPrimitiveExtendUnionScope(): Boolean =
     this is ConeIdealLiteralType || this is ConePrimitiveType && kind.isIdeal
 
+/**
+ * 递归收集 [type] 可见的成员 scope。
+ *
+ * 该函数统一处理类型变量上界、交叉类型、ideal literal、primitive extend 和普通 class-like 类型。
+ */
 private fun collectTypeScopes(
     session: CfirSession,
     scopeSession: ScopeSession,
@@ -387,6 +513,11 @@ private fun collectTypeScopes(
     }
 }
 
+/**
+ * 收集非 class builtin 或特殊类型上的 extend scope。
+ *
+ * 返回 `true` 表示当前类型已经由该分支完整处理，调用方不应继续按 class id 构造成员 scope。
+ */
 private fun collectNonClassBuiltinExtendScopes(
     session: CfirSession,
     scopeSession: ScopeSession,
@@ -427,6 +558,9 @@ private fun collectNonClassBuiltinExtendScopes(
     return true
 }
 
+/**
+ * 将 ideal primitive 类型展开为所有可能的 primitive lookup 类型并收集 scope。
+ */
 private fun collectIdealPrimitiveTypeScopes(
     session: CfirSession,
     scopeSession: ScopeSession,
@@ -449,6 +583,9 @@ private fun collectIdealPrimitiveTypeScopes(
     }
 }
 
+/**
+ * 收集类型参数上界对应的成员 scope。
+ */
 private fun collectTypeParameterBoundsScopes(
     session: CfirSession,
     scopeSession: ScopeSession,
@@ -474,6 +611,9 @@ private fun collectTypeParameterBoundsScopes(
     }
 }
 
+/**
+ * 收集类型参数类型的非错误、非类型参数递归上界。
+ */
 private fun collectTypeParameterUpperBounds(
     typeParameterType: org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType,
 ): Set<ConeCangJieType> {
@@ -501,15 +641,26 @@ private fun collectTypeParameterUpperBounds(
     return upperBounds
 }
 
+/**
+ * 将 lookup tag 解析到 TYPES 阶段并把所有 resolved upper bound 交给 [collect]。
+ */
 private fun ConeTypeParameterLookupTag.collectUpperBoundsTo(collect: (ConeCangJieType) -> Unit) {
     typeParameterSymbol.lazyResolveToPhase(org.cangnova.cangjie.cfir.declarations.CfirResolvePhase.TYPES)
     typeParameterSymbol.resolvedBounds.map { it.coneType }.forEach(collect)
 }
 
+/**
+ * 返回 qualifier 表达式解析出的 class-like symbol。
+ */
 fun CfirExpression.resolvedQualifierClassifier(session: CfirSession): CfirClassLikeSymbol<*>? {
     return resolvedQualifierSymbol(session) as? CfirClassLikeSymbol<*>
 }
 
+/**
+ * 返回 qualifier 表达式解析出的 classifier symbol。
+ *
+ * typealias qualifier 会展开到最终 class-like symbol。
+ */
 fun CfirExpression.resolvedQualifierSymbol(session: CfirSession): CfirClassifierSymbol<*>? {
     val resolvedSymbol = ((this as? CfirResolvable)?.calleeReference as? CfirResolvedNamedReference)?.resolvedSymbol
         ?: return null
@@ -520,12 +671,18 @@ fun CfirExpression.resolvedQualifierSymbol(session: CfirSession): CfirClassifier
     }
 }
 
+/**
+ * 返回 qualifier 表达式解析出的类型参数 symbol。
+ */
 fun CfirExpression.resolvedQualifierTypeParameter(): CfirTypeParameterSymbol? {
     val resolvedSymbol = ((this as? CfirResolvable)?.calleeReference as? CfirResolvedNamedReference)?.resolvedSymbol
         ?: return null
     return resolvedSymbol as? CfirTypeParameterSymbol
 }
 
+/**
+ * 返回 qualifier 表达式可用于静态成员查找的 scope。
+ */
 fun CfirExpression.qualifierScopeOrNull(
     session: CfirSession,
     scopeSession: ScopeSession,
@@ -535,10 +692,15 @@ fun CfirExpression.qualifierScopeOrNull(
         return classifier.staticScopeForQualifierType(session, scopeSession, qualifierType)
     }
 
+    coneTypeOrNull?.staticScopeForBuiltinQualifierType(session, scopeSession)?.let { return it }
+
     val typeParameter = resolvedQualifierTypeParameter() ?: return null
     return typeParameter.staticScopeForQualifierType(session, scopeSession)
 }
 
+/**
+ * 将 typealias symbol 展开到其底层 class-like symbol。
+ */
 private fun CfirTypeAliasSymbol.expandedClassLikeSymbol(session: CfirSession): CfirClassLikeSymbol<*>? {
     if (!isBound) return null
     val expandedType = (cfir as? CfirTypeAlias)?.expandedTypeRef?.coneTypeOrNull ?: return null

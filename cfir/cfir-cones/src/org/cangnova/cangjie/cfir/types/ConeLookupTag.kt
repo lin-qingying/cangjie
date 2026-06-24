@@ -20,9 +20,14 @@ import org.cangnova.cangjie.type.model.TypeVariableTypeConstructorMarker
  * - 其他：如类型参数对应的 tag，只有名字没有 ClassId
  */
 abstract class ConeClassifierLookupTag : ConeTypeConstructorMarker {
-    /** 声明的简单名称，用于调试输出和错误信息。 */
+    /**
+     * 声明的简单名称，用于调试输出和错误信息。
+     */
     abstract val name: Name
 
+    /**
+     * lookup tag 的默认调试输出使用简单名称。
+     */
     override fun toString(): String = name.asString()
 }
 
@@ -33,10 +38,14 @@ abstract class ConeClassifierLookupTag : ConeTypeConstructorMarker {
  * [name] 直接从 [ClassId.shortClassName] 派生，无需单独存储。
  */
 abstract class ConeClassLikeLookupTag : ConeClassifierLookupTag() {
-    /** 该声明的全局唯一标识符，包含包路径和类名层级。 */
+    /**
+     * 该声明的全局唯一标识符，包含包路径和类名层级。
+     */
     abstract val classId: ClassId
 
-    /** 短类名，直接委托给 classId，避免冗余字段。 */
+    /**
+     * 短类名，直接委托给 classId，避免冗余字段。
+     */
     override val name: Name
         get() = classId.shortClassName
 }
@@ -73,7 +82,9 @@ class ConeTypeVariableTypeConstructor(
     val originalTypeParameter: TypeParameterMarker?,
 ) : TypeVariableTypeConstructorMarker, ConeTypeConstructorMarker {
 
-    /** 将 debugName 包装为 [Name]，供需要统一 Name 类型的接口使用。 */
+    /**
+     * 将 debugName 包装为 [Name]，供需要统一 Name 类型的接口使用。
+     */
     val name: Name get() = Name.identifier(debugName)
 
     /**
@@ -96,6 +107,8 @@ class ConeTypeVariableTypeConstructor(
         isContainedInInvariantOrContravariantPositions = true
     }
 
-    /** 调试输出，格式为 `ConeTypeVariableTypeConstructor(T)`。 */
+    /**
+     * 调试输出，格式为 `ConeTypeVariableTypeConstructor(T)`。
+     */
     override fun toString(): String = "${this::class.simpleName}($debugName)"
 }

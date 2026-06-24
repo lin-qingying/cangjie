@@ -24,6 +24,7 @@ import org.cangnova.cangjie.cfir.types.approximateThisTypeForDeclaration
  */
 object CfirCheckCallableReferenceExpectedType : ResolutionStage() {
     context(sink: CheckerSink, context: ResolutionContext)
+    /** 在候选约束系统中加入 callable reference 结果函数类型到 expected type 的子类型约束。 */
     override suspend fun check(candidate: Candidate) {
         val expectedType = candidate.callInfo.resolutionMode.expectedType ?: return
         val function = candidate.symbol.takeIf { it.isBound }?.cfir as? CfirFunction ?: return
@@ -43,6 +44,7 @@ object CfirCheckCallableReferenceExpectedType : ResolutionStage() {
         }
     }
 
+    /** 根据函数声明与候选替换器构造 callable reference 表达式的结果函数类型。 */
     private fun Candidate.buildResultingCallableReferenceType(
         function: CfirFunction,
         context: ResolutionContext,
@@ -67,6 +69,7 @@ object CfirCheckCallableReferenceExpectedType : ResolutionStage() {
  */
 object CfirEagerResolveOfCallableReferences : ResolutionStage() {
     context(sink: CheckerSink, context: ResolutionContext)
+    /** 提前解析候选内尚未分析的 postponed callable-reference atom。 */
     override suspend fun check(candidate: Candidate) {
         val callableReferenceAtoms = candidate.postponedAtoms
             .filterIsInstance<org.cangnova.cangjie.cfir.resolve.calls.ConeResolvedCallableReferenceAtom>()

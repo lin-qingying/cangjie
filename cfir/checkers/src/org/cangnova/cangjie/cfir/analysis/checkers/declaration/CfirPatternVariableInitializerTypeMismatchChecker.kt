@@ -19,13 +19,16 @@ import org.cangnova.cangjie.source.AbstractCjSourceElement
 import org.cangnova.cangjie.source.text
 
 /**
- * Pattern variable initializer type mismatch checker.
+ * 模式变量初始化器类型检查器。
  *
  * 普通表达式初始化器由这里比较声明类型与初始化器类型。
  * 官方仓颉编译器把这类 `sema_mismatched_types` 锚定在初始化表达式，
  * 因此这里与字段初始化器保持同一诊断表面：报告表达式上的 `TYPE_MISMATCH`。
  */
 object CfirPatternVariableInitializerTypeMismatchChecker : CfirPatternVariableChecker() {
+    /**
+     * 检查 pattern variable 的初始化器类型是否兼容声明类型。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirPatternVariable) {
         val source = declaration.source as? AbstractCjSourceElement ?: return
@@ -48,6 +51,9 @@ object CfirPatternVariableInitializerTypeMismatchChecker : CfirPatternVariableCh
     }
 }
 
+/**
+ * 判断表达式引用是否已经携带解析诊断。
+ */
 private fun CfirExpression.hasResolutionDiagnostic(): Boolean {
     return when (this) {
         is CfirNamedAccessExpression -> calleeReference is CfirDiagnosticHolder
@@ -56,6 +62,11 @@ private fun CfirExpression.hasResolutionDiagnostic(): Boolean {
     }
 }
 
+/**
+ * 判断表达式是否是没有显式类型实参的裸 enum 构造器访问。
+ *
+ * 这种场景会由 enum 构造器语义负责，不在普通初始化器 mismatch 中重复报告。
+ */
 private fun CfirExpression.isBareEnumConstructorAccess(): Boolean {
     val access = when (this) {
         is CfirNamedAccessExpression -> this
@@ -68,6 +79,9 @@ private fun CfirExpression.isBareEnumConstructorAccess(): Boolean {
     return symbol.takeIf { it.isBound }?.cfir is CfirEnumConstructor
 }
 
+/**
+ * 判断表达式是否解析到 enum 构造器。
+ */
 private fun CfirExpression.isEnumConstructorAccess(): Boolean {
     val access = when (this) {
         is CfirNamedAccessExpression -> this
@@ -78,9 +92,15 @@ private fun CfirExpression.isEnumConstructorAccess(): Boolean {
     return symbol.takeIf { it.isBound }?.cfir is CfirEnumConstructor
 }
 
+/**
+ * 判断 qualified access 源码中是否显式写出类型实参。
+ */
 private fun CfirQualifiedAccessExpression.hasExplicitTypeArgumentsInSource(): Boolean =
     source.text?.contains('<') == true
 
+/**
+ * 从引用节点提取 enum constructor 符号。
+ */
 private fun CfirReference.enumConstructorSymbol() = when (this) {
     is CfirResolvedAppliedCallableReference -> resolvedSymbol
     is CfirResolvedNamedReference -> resolvedSymbol

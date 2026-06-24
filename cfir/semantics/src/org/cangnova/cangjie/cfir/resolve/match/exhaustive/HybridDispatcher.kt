@@ -20,10 +20,15 @@ import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
  * 穷尽性检查器分派器。
  *
  * 结构与 checkers 侧既有实现保持同构，按优先级选择 specialized/structural/maranget 检查器。
+ *
+ * @property checkers 按优先级排序后的候选检查器列表。
  */
 class HybridDispatcher private constructor(
     private val checkers: List<ExhaustivenessChecker>,
 ) {
+    /**
+     * 按优先级选择可用 checker 并执行穷尽性检查。
+     */
     fun check(
         matrix: CfirMatrix,
         type: ConeCangJieType,
@@ -39,12 +44,18 @@ class HybridDispatcher private constructor(
         return ExhaustivenessResult.Error("cannot determine exhaustiveness: no applicable checker")
     }
 
+    /**
+     * 选择第一个适用于当前类型与模式集合的 checker。
+     */
     fun selectChecker(
         type: ConeCangJieType,
         patterns: List<CfirMatchPattern>,
         context: MatchExhaustivenessContext,
     ): ExhaustivenessChecker? = checkers.find { it.isApplicable(type, patterns, context) }
 
+    /**
+     * 根据目标类型推荐最合适的 checker 来源。
+     */
     fun getRecommendedSource(type: ConeCangJieType): CheckSource {
         return when {
             type is ConePrimitiveType && type.kind == PrimitiveTypeKind.BOOLEAN -> CheckSource.BOOLEAN_FLAG
@@ -56,7 +67,13 @@ class HybridDispatcher private constructor(
         }
     }
 
+    /**
+     * 分派器构造工具。
+     */
     companion object {
+        /**
+         * 创建默认混合分派器。
+         */
         fun createDefault(): HybridDispatcher {
             return HybridDispatcher(
                 listOf(
@@ -72,15 +89,32 @@ class HybridDispatcher private constructor(
             )
         }
 
+        /**
+         * 创建只使用 Maranget 通用算法的分派器。
+         */
         fun createMarangetOnly(): HybridDispatcher = HybridDispatcher(listOf(MarangetChecker.INSTANCE))
 
+        /**
+         * 使用指定 checker 列表创建分派器。
+         */
         fun create(checkers: List<ExhaustivenessChecker>): HybridDispatcher =
             HybridDispatcher(checkers.sortedBy { it.priority })
 
+        /** 默认混合分派器。 */
         val DEFAULT: HybridDispatcher by lazy { createDefault() }
     }
 }
 
+/**
+ * 分派分析结果。
+ *
+ * @property typeName 被分析类型文本。
+ * @property patternCount 模式数量。
+ * @property complexity 模式复杂度。
+ * @property recommendedSource 按类型推荐的 checker。
+ * @property actualSource 实际产出结果的 checker。
+ * @property result 穷尽性检查结果。
+ */
 data class DispatchAnalysis(
     val typeName: String,
     val patternCount: Int,
@@ -90,7 +124,15 @@ data class DispatchAnalysis(
     val result: ExhaustivenessResult,
 )
 
+/**
+ * 带分派分析信息的 checker 调度器。
+ *
+ * @property delegate 实际执行检查的混合分派器。
+ */
 class AnalyzingDispatcher(private val delegate: HybridDispatcher) {
+    /**
+     * 执行穷尽性检查并返回分派分析信息。
+     */
     fun checkWithAnalysis(
         matrix: CfirMatrix,
         type: ConeCangJieType,
@@ -115,7 +157,11 @@ class AnalyzingDispatcher(private val delegate: HybridDispatcher) {
         )
     }
 
+    /**
+     * 分析调度器构造工具。
+     */
     companion object {
+        /** 默认分析调度器。 */
         val DEFAULT by lazy { AnalyzingDispatcher(HybridDispatcher.DEFAULT) }
     }
 }

@@ -1,5 +1,11 @@
 package org.cangnova.cangjie.cfir.expressions
 
+/**
+ * 函数调用节点的来源分类。
+ *
+ * origin 用于区分普通调用、运算符重写调用、编译器内建调用以及构造器 delegation 调用，
+ * 使 resolver 和 checker 可以在同一 [CfirFunctionCall] 结构上执行不同语义。
+ */
 enum class CfirFunctionCallOrigin {
     /**
      * 普通函数/构造器调用。
@@ -43,6 +49,9 @@ enum class CfirFunctionCallOrigin {
     ConstructorDelegationSuper,
     ;
 
+    /**
+     * 当前 origin 是否表示构造器 delegation 调用。
+     */
     val isConstructorDelegation: Boolean
         get() = this == ConstructorDelegationThis || this == ConstructorDelegationSuper
 }

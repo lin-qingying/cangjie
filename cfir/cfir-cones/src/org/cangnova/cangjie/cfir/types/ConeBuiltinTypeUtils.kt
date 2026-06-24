@@ -7,61 +7,107 @@ import org.cangnova.cangjie.name.ClassId
 // 适用于 ConePrimitiveType：Int64, Bool, Float64 等
 // ============================================================
 
+/**
+ * 当前类型是否是 `Bool` primitive。
+ */
 val ConeCangJieType.isBoolean: Boolean
     get() = this is ConePrimitiveType && kind == PrimitiveTypeKind.BOOLEAN
 
+/**
+ * 当前类型是否是 `Int8` primitive。
+ */
 val ConeCangJieType.isInt8: Boolean
     get() = this is ConePrimitiveType && kind == PrimitiveTypeKind.INT8
 
+/**
+ * 当前类型是否是 `Int16` primitive。
+ */
 val ConeCangJieType.isInt16: Boolean
     get() = this is ConePrimitiveType && kind == PrimitiveTypeKind.INT16
 
+/**
+ * 当前类型是否是 `Int32` primitive。
+ */
 val ConeCangJieType.isInt32: Boolean
     get() = this is ConePrimitiveType && kind == PrimitiveTypeKind.INT32
 
+/**
+ * 当前类型是否是 `Int64` primitive。
+ */
 val ConeCangJieType.isInt64: Boolean
     get() = this is ConePrimitiveType && kind == PrimitiveTypeKind.INT64
 
+/**
+ * 当前类型是否是 `Float16` primitive。
+ */
 val ConeCangJieType.isFloat16: Boolean
     get() = this is ConePrimitiveType && kind == PrimitiveTypeKind.FLOAT16
 
+/**
+ * 当前类型是否是 `Float32` primitive。
+ */
 val ConeCangJieType.isFloat32: Boolean
     get() = this is ConePrimitiveType && kind == PrimitiveTypeKind.FLOAT32
 
+/**
+ * 当前类型是否是 `Float64` primitive。
+ */
 val ConeCangJieType.isFloat64: Boolean
     get() = this is ConePrimitiveType && kind == PrimitiveTypeKind.FLOAT64
 
+/**
+ * 当前类型是否是 `Rune` primitive。
+ */
 val ConeCangJieType.isRune: Boolean
     get() = this is ConePrimitiveType && kind == PrimitiveTypeKind.RUNE
 
-/** 内建整数类型（含 IdealInt） */
+/**
+ * 内建整数类型（含 IdealInt）。
+ */
 val ConeCangJieType.isIntegerType: Boolean
     get() = this is ConePrimitiveType && kind.isInteger
 
-/** 内建浮点类型（含 IdealFloat） */
+/**
+ * 内建浮点类型（含 IdealFloat）。
+ */
 val ConeCangJieType.isFloatType: Boolean
     get() = this is ConePrimitiveType && kind.isFloat
 
-/** 内建数值类型（整数 + 浮点） */
+/**
+ * 内建数值类型（整数 + 浮点）。
+ */
 val ConeCangJieType.isNumericType: Boolean
     get() = this is ConePrimitiveType && kind.isNumeric
 
-/** 是否为内建原始类型 */
+/**
+ * 是否为内建原始类型。
+ */
 val ConeCangJieType.isPrimitiveType: Boolean
     get() = this is ConePrimitiveType
 
 // ---- IdealType 判断（仓颉特有，编译期字面量推断） ----
 
+/**
+ * 当前类型是否是 IdealInt。
+ */
 val ConeCangJieType.isIdealInt: Boolean
     get() = this is ConeIdealIntLiteralType || (this is ConePrimitiveType && kind == PrimitiveTypeKind.IDEAL_INT)
 
+/**
+ * 当前类型是否是 IdealFloat。
+ */
 val ConeCangJieType.isIdealFloat: Boolean
     get() = this is ConeIdealFloatLiteralType || (this is ConePrimitiveType && kind == PrimitiveTypeKind.IDEAL_FLOAT)
 
+/**
+ * 当前类型是否是任意 ideal 类型。
+ */
 val ConeCangJieType.isIdealType: Boolean
     get() = this is ConeIdealLiteralType || (this is ConePrimitiveType && kind.isIdeal)
 
-/** 是否为理想字面量类型（[ConeIdealLiteralType] 形式） */
+/**
+ * 是否为理想字面量类型（[ConeIdealLiteralType] 形式）。
+ */
 val ConeCangJieType.isIdealLiteralType: Boolean
     get() = this is ConeIdealLiteralType
 
@@ -70,7 +116,9 @@ val ConeCangJieType.isIdealLiteralType: Boolean
 // 适用于 ConeClassLikeType/ConeStructType/ConeEnumType 等
 // ============================================================
 
-/** 提取类类型的 ClassId（内建原始类型返回 null） */
+/**
+ * 提取类类型的 ClassId（内建原始类型返回 null）。
+ */
 val ConeCangJieType.classId: ClassId?
     get() = when (this) {
         is ConeClassifierType -> lookupTag.classId
@@ -78,9 +126,15 @@ val ConeCangJieType.classId: ClassId?
         else -> null
     }
 
+/**
+ * 当前类型是否是标准库 `String`。
+ */
 val ConeCangJieType.isString: Boolean
     get() = classId == StdlibClassIds.String
 
+/**
+ * 当前类型是否是标准库 `Array`。
+ */
 val ConeCangJieType.isArray: Boolean
     get() = classId == StdlibClassIds.Array
 
@@ -117,6 +171,9 @@ val ConeCangJieType.arrayLiteralElementType: ConeCangJieType?
         else -> arrayElementType
     }
 
+/**
+ * 当前类型是否是标准库 `Option`。
+ */
 val ConeCangJieType.isOption: Boolean
     get() = classId == StdlibClassIds.Option
 

@@ -19,6 +19,11 @@ import org.cangnova.cangjie.cfir.types.hasSupertypeWithGivenClassId
 import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintKind
 
+/**
+ * 将实参类型规整为参数兼容性检查可直接使用的形态。
+ *
+ * 当前阶段主要展开类型别名，避免调用检查在别名外壳上做构造器比较。
+ */
 internal fun prepareArgumentType(argumentType: ConeCangJieType, session: CfirSession): ConeCangJieType {
     return argumentType.fullyExpandedType(session)
 }
@@ -71,6 +76,12 @@ internal fun substituteTypeParameterUpperBoundIfNeeded(
     return chosenSupertype
 }
 
+/**
+ * 将约束系统中的临时类型变量规整回原始类型参数类型。
+ *
+ * 参数兼容性检查只关心声明层面的类型参数关系，不能把候选求解过程中创建的
+ * [ConeTypeVariableType] 当作独立源码类型参与最终 subtype 比较。
+ */
 internal fun normalizeTypeForCompatibilityCheck(type: ConeCangJieType): ConeCangJieType {
     return when (type) {
         is ConeTypeVariableType -> {
@@ -109,6 +120,12 @@ internal fun Candidate.substituteExplicitTypeArgumentConstraints(expectedType: C
     return CfirTypeSubstitutorByMap(replacements).substituteOrSelf(expectedType)
 }
 
+/**
+ * 计算表达式在当前参数位置上的期望类型。
+ *
+ * 普通参数直接使用参数返回类型；仓颉变长参数在需要按元素检查时会展开为元素类型。
+ * [session] 保留在签名中，以便函数类型服务恢复启用时继续沿用同一扩展点。
+ */
 fun CfirExpression.getExpectedType(
     session: CfirSession,
     parameter: CfirValueParameter,

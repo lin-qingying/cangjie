@@ -77,21 +77,40 @@ import org.cangnova.cangjie.source.fakeElement
 import org.cangnova.cangjie.types.TypeApproximatorConfiguration
 import java.util.IdentityHashMap
 
+/**
+ * 调用完成结果写回转换器。
+ *
+ * 该 transformer 在约束系统完成后遍历调用树，把最终 substitutor、实参映射、lambda 返回类型、
+ * PCLA 回调、整数字面量近似和错误候选诊断写回 CFIR 节点。
+ */
 class CfirCallCompletionResultsWriterTransformer(
+    /** 当前 CFIR session。 */
     override val session: CfirSession,
+    /** 当前 scope session。 */
     override val scopeSession: ScopeSession,
+    /** 约束完成后的最终类型替换器。 */
     private val finalSubstitutor: ConeSubstitutor,
+    /** 声明返回类型计算器。 */
     private val typeCalculator: ReturnTypeCalculator,
+    /** 完成后类型近似器。 */
     private val typeApproximator: ConeTypeApproximator,
+    /** 数据流分析门面，用于查询 lambda/函数返回表达式。 */
     private val dataFlowAnalyzer: CfirDataFlowAnalyzer,
+    /** 整数字面量和操作符完成后的近似转换器。 */
     private val integerOperatorApproximator: IntegerLiteralAndOperatorApproximationTransformer,
+    /** 当前 body resolve 上下文。 */
     private val context: BodyResolveContext,
+    /** 写回模式。 */
     private val mode: Mode = Mode.Normal,
+    /** 当前是否处在注解集合字面量解析上下文中。 */
     private var insideAnnotationContext: Boolean = false,
 ) : CfirAbstractTreeTransformer<ExpectedArgumentType?>(phase = CfirResolvePhase.BODY_RESOLVE),
     SessionAndScopeSessionHolder {
 
 
+    /**
+     * 为 qualified access 写回已选择候选、dispatch receiver、类型实参和结果类型。
+     */
     private fun <T : CfirQualifiedAccessExpression> prepareQualifiedTransform(
         qualifiedAccessExpression: T, calleeReference: CfirNamedReferenceWithCandidate,
     ): T {
@@ -153,6 +172,9 @@ class CfirCallCompletionResultsWriterTransformer(
         return ConeFunctionType(parameterTypes, returnType)
     }
 
+    /**
+     * 将声明类型经候选 substitutor 和最终 substitutor 替换后近似为可写回类型。
+     */
     private fun ConeCangJieType.substituteType(
         candidate: Candidate,
         // Substitutor from type variables (not type parameters)
@@ -176,6 +198,9 @@ class CfirCallCompletionResultsWriterTransformer(
         return finalType
     }
 
+    /**
+     * 计算调用完成后应写回到实参列表中的所有实参。
+     */
     private fun CfirNamedReferenceWithCandidate.computeAllArguments(
         originalArgumentList: CfirArgumentList,
         predefinedMapping: LinkedHashMap<CfirExpression, CfirValueParameter>? = null,
@@ -187,6 +212,9 @@ class CfirCallCompletionResultsWriterTransformer(
         }
     }
 
+    /**
+     * 写回函数调用的候选解析结果、实参列表、结果类型和非致命诊断。
+     */
     override fun transformFunctionCall(functionCall: CfirFunctionCall, data: ExpectedArgumentType?): CfirExpression {
         data?.argumentReplacements?.get(functionCall)?.let { replacement ->
             return replacement.transformSingle(this, data)
@@ -223,6 +251,9 @@ class CfirCallCompletionResultsWriterTransformer(
         return result
     }
 
+    /**
+     * 计算函数调用完成后表达式结果类型。
+     */
     private fun Candidate.completedFunctionCallResultType(resolvedType: ConeCangJieType): ConeCangJieType {
         if (callInfo.callKind == CallKind.Function && symbol.cfir is CfirVariable) {
             return finallySubstituteOrSelf(substitutedReturnType())
@@ -230,6 +261,9 @@ class CfirCallCompletionResultsWriterTransformer(
         return resolvedType.substituteType(this)
     }
 
+    /**
+     * 重写调用实参列表，并保持普通实参与全部实参映射同步。
+     */
     private fun rewriteArgumentList(
         candidate: Candidate,
         originalArgumentList: CfirArgumentList,
@@ -242,6 +276,9 @@ class CfirCallCompletionResultsWriterTransformer(
         val transformedAllArgsMapping = LinkedHashMap<CfirExpression, CfirValueParameter?>(allArgsMapping.size)
         val transformedArguments = IdentityHashMap<CfirExpression, CfirExpression>()
 
+        /**
+         * 转换单个实参，并缓存共享实参的转换结果。
+         */
         fun transform(argument: CfirExpression, parameter: CfirValueParameter?): CfirExpression =
             transformedArguments.getOrPut(argument) {
                 val transformed = transformCallArgument(argument, expectedArgumentsTypeMapping)
@@ -264,6 +301,9 @@ class CfirCallCompletionResultsWriterTransformer(
         }
     }
 
+    /**
+     * 对空数组字面量实参写回由形参推导出的数组类型。
+     */
     private fun CfirExpression.withResolvedArrayArgumentType(
         candidate: Candidate,
         parameter: CfirValueParameter?,
@@ -278,6 +318,9 @@ class CfirCallCompletionResultsWriterTransformer(
         return this
     }
 
+    /**
+     * 按期望实参类型转换实参表达式，并执行完成后的整数字面量/操作符近似。
+     */
     private fun transformCallArgument(
         originalArgument: CfirExpression,
         expectedArgumentsTypeMapping: ExpectedArgumentType.ArgumentsMap?,
@@ -302,12 +345,18 @@ class CfirCallCompletionResultsWriterTransformer(
         return replacedAfterTransform.transformSingle(integerOperatorApproximator, expectedType) as CfirExpression
     }
 
+    /**
+     * 为候选实参构造 expected type 映射。
+     */
     private fun Candidate.createArgumentsMapping(forErrorReference: Boolean): ExpectedArgumentType.ArgumentsMap? {
         val lambdasReturnType = postponedAtoms.filterIsInstance<ConeResolvedLambdaAtom>().associate { atom ->
             atom.anonymousFunction to finallySubstituteOrSelf(substitutor.substituteOrSelf(atom.returnType))
         }
         val arguments = LinkedHashMap<CfirElement, ConeCangJieType>()
 
+        /**
+         * 注册表达式及其匿名函数声明对应的期望类型。
+         */
         fun registerExpectedType(argument: CfirExpression, expectedType: ConeCangJieType) {
             arguments[argument] = expectedType
             if (argument is CfirAnonymousFunctionExpression) {
@@ -349,11 +398,20 @@ class CfirCallCompletionResultsWriterTransformer(
             argumentReplacements,
         )
     }
+
+    /**
+     * 变参处理后的实参映射结果。
+     */
     private data class ResultingArgumentsMapping(
+        /** 只包含已成功映射到形参的普通实参映射。 */
         val regularMapping: LinkedHashMap<CfirExpression, CfirValueParameter>,
+        /** 包含所有原始/合成实参的映射，未映射项值为空。 */
         val allArgsMapping: LinkedHashMap<CfirExpression, CfirValueParameter?>,
     )
 
+    /**
+     * 处理仓颉变参调用，并返回写回实参列表所需的映射。
+     */
     private fun Candidate.handleVarargsAndReturnResultingArgumentsMapping(
         argumentList: List<CfirExpression>,
         callSource: CjSourceElement?,
@@ -384,6 +442,9 @@ class CfirCallCompletionResultsWriterTransformer(
         }
     }
 
+    /**
+     * 将仓颉变参实参重映射为一个合成数组字面量实参。
+     */
     private fun remapArgumentsWithCangjieVararg(
         variadicParameter: CfirValueParameter,
         resolvedArrayType: ConeCangJieType,
@@ -397,6 +458,9 @@ class CfirCallCompletionResultsWriterTransformer(
         val variadicParameterIndex = parameters.indexOf(variadicParameter)
         var variadicArrayAdded = false
 
+        /**
+         * 将当前累计的变参实参刷入合成数组字面量。
+         */
         fun flushVariadicArguments(source: CjSourceElement?) {
             if (variadicArrayAdded) return
             val variadicArray = buildArrayLiteral {
@@ -429,6 +493,9 @@ class CfirCallCompletionResultsWriterTransformer(
         return result
     }
 
+    /**
+     * 写回命名访问表达式。
+     */
     override fun transformNamedAccessExpression(
         namedAccessExpression: CfirNamedAccessExpression,
         data: ExpectedArgumentType?
@@ -443,6 +510,9 @@ class CfirCallCompletionResultsWriterTransformer(
         return transformQualifiedAccessExpression(namedAccessExpression, data)
     }
 
+    /**
+     * 写回 qualified access 表达式。
+     */
     override fun transformQualifiedAccessExpression(
         qualifiedAccessExpression: CfirQualifiedAccessExpression,
         data: ExpectedArgumentType?
@@ -479,6 +549,9 @@ class CfirCallCompletionResultsWriterTransformer(
         return result
     }
 
+    /**
+     * 写回数组字面量类型，并对元素进行完成后转换。
+     */
     override fun transformArrayLiteral(arrayLiteral: CfirArrayLiteral, data: ExpectedArgumentType?): CfirExpression {
         data?.argumentReplacements?.get(arrayLiteral)?.let { replacement ->
             return replacement.transformSingle(this, data)
@@ -499,6 +572,9 @@ class CfirCallCompletionResultsWriterTransformer(
         return arrayLiteral
     }
 
+    /**
+     * 写回 block 结果类型。
+     */
     override fun transformBlock(block: CfirBlock, data: ExpectedArgumentType?): CfirExpression {
         val expectedType = data?.getExpectedType(block)
         if (expectedType != null && block.statements.singleOrNull() is CfirExpression) {
@@ -513,6 +589,9 @@ class CfirCallCompletionResultsWriterTransformer(
         return block
     }
 
+    /**
+     * 写回包装表达式类型。
+     */
     override fun transformWrappedExpression(wrappedExpression: CfirWrappedExpression, data: ExpectedArgumentType?): CfirExpression {
         val expectedType = data?.getExpectedType(wrappedExpression)
         val expressionData = expectedType?.toExpectedType(data.argumentReplacements) ?: data
@@ -521,6 +600,9 @@ class CfirCallCompletionResultsWriterTransformer(
         return wrappedExpression
     }
 
+    /**
+     * 写回 range 表达式及其端点期望类型。
+     */
     override fun transformRangeExpression(rangeExpression: CfirRangeExpression, data: ExpectedArgumentType?): CfirExpression {
         data?.argumentReplacements?.get(rangeExpression)?.let { replacement ->
             return replacement.transformSingle(this, data)
@@ -539,6 +621,9 @@ class CfirCallCompletionResultsWriterTransformer(
         return rangeExpression
     }
 
+    /**
+     * 完成匿名函数表达式的返回类型、参数类型和整体函数类型写回。
+     */
     override fun transformAnonymousFunctionExpression(
         anonymousFunctionExpression: CfirAnonymousFunctionExpression,
         data: ExpectedArgumentType?
@@ -606,6 +691,9 @@ class CfirCallCompletionResultsWriterTransformer(
         }
     }
 
+    /**
+     * 近似 lambda 输入类型，避免把内部推断类型直接写回形参。
+     */
     private fun approximateLambdaInputType(type: ConeCangJieType): ConeCangJieType {
         return typeApproximator.approximateToSuperType(
             type,
@@ -613,6 +701,9 @@ class CfirCallCompletionResultsWriterTransformer(
         ) ?: type
     }
 
+    /**
+     * 计算候选完成后应写回的类型实参类型列表。
+     */
     private fun computeTypeArgumentTypes(
         candidate: Candidate,
     ): List<ConeCangJieType> {
@@ -671,12 +762,18 @@ class CfirCallCompletionResultsWriterTransformer(
 
 
 
+    /**
+     * 查询表达式是否有候选记录的替换表达式。
+     */
     private fun replacementFor(expression: CfirExpression): CfirExpression? {
         val candidateReference = (expression as? org.cangnova.cangjie.cfir.expressions.CfirResolvable)
             ?.calleeReference as? CfirNamedReferenceWithCandidate ?: return null
         return candidateReference.candidate.argumentReplacements?.get(expression)
     }
 
+    /**
+     * 为候选引用构造 resolved reference，必要时构造成已应用 callable reference。
+     */
     private fun resolvedReferenceFor(
         calleeReference: CfirNamedReferenceWithCandidate,
         resultType: ConeCangJieType,
@@ -689,6 +786,9 @@ class CfirCallCompletionResultsWriterTransformer(
         }
     }
 
+    /**
+     * 执行候选关联的 PCLA 完成后写回任务。
+     */
     private fun runPCLARelatedTasksForCandidate(candidate: Candidate) {
         for (postponedCall in candidate.postponedPCLACalls) {
             postponedCall.expression.transform<CfirElement, ExpectedArgumentType?>(this, null)
@@ -703,6 +803,9 @@ class CfirCallCompletionResultsWriterTransformer(
         }
     }
 
+    /**
+     * 完成匿名函数的返回表达式、返回类型和隐式 return 写回。
+     */
     private fun finalizeAnonymousFunction(
         function: CfirFunction,
         data: ExpectedArgumentType?,
@@ -772,6 +875,9 @@ class CfirCallCompletionResultsWriterTransformer(
         anonymousFunction.addReturnToLastStatementIfNeeded()
     }
 
+    /**
+     * 根据匿名函数当前参数/返回类型构造函数类型。
+     */
     private fun buildLambdaType(
         function: CfirFunction,
         expectedFunctionType: ConeFunctionType? = null,
@@ -789,6 +895,9 @@ class CfirCallCompletionResultsWriterTransformer(
         )
     }
 
+    /**
+     * 计算匿名函数最终返回类型。
+     */
     private fun computeAnonymousFunctionReturnType(
         anonymousFunction: CfirAnonymousFunction,
         expectedReturnType: ConeCangJieType?,
@@ -810,6 +919,9 @@ class CfirCallCompletionResultsWriterTransformer(
         }
     }
 
+    /**
+     * 对非 Unit lambda 的最后一个表达式补写隐式 return。
+     */
     private fun CfirAnonymousFunction.addReturnToLastStatementIfNeeded() {
         val currentBody = body ?: return
         val returnType = returnTypeRef.coneTypeOrNull ?: return
@@ -840,6 +952,9 @@ class CfirCallCompletionResultsWriterTransformer(
         (this as? org.cangnova.cangjie.cfir.declarations.impl.CfirAnonymousFunctionImpl)?.body = newBody
     }
 
+    /**
+     * 将 return 表达式集合中的 postponed atom 替换为完成后的表达式。
+     */
     private fun Collection<CfirDataFlowAnalyzer.CfirAnonymousFunctionReturnExpressionInfo>.replacePostponedAtomsInReturnExpressions(
         data: ExpectedArgumentType?,
     ): Collection<CfirDataFlowAnalyzer.CfirAnonymousFunctionReturnExpressionInfo> {
@@ -854,6 +969,9 @@ class CfirCallCompletionResultsWriterTransformer(
         }
     }
 
+    /**
+     * 替换单个 postponed atom 表达式。
+     */
     private fun replacePostponedAtom(expression: CfirExpression): CfirExpression {
         val candidate = (expression as? org.cangnova.cangjie.cfir.expressions.CfirResolvable)
             ?.calleeReference as? CfirNamedReferenceWithCandidate
@@ -875,6 +993,9 @@ class CfirCallCompletionResultsWriterTransformer(
         }
     }
 
+    /**
+     * 根据候选失败状态构造用于结果类型的未报告诊断。
+     */
     @OptIn(ApplicabilityDetail::class)
     private fun Candidate.callFailureDiagnosticForResultType(): ConeDiagnostic? {
         if (!lowestApplicability.isSuccess) {
@@ -889,8 +1010,14 @@ class CfirCallCompletionResultsWriterTransformer(
         return null
     }
 
+    /**
+     * 是否存在额外解析错误。
+     */
     private fun CfirNamedReferenceWithCandidate.hasAdditionalResolutionErrors(): Boolean = false
 
+    /**
+     * 将候选引用转换为 resolved 或 error reference。
+     */
     @OptIn(ApplicabilityDetail::class)
     private fun CfirNamedReferenceWithCandidate.toResolvedReference(): CfirNamedReference {
         val errorDiagnostic = when {
@@ -923,6 +1050,9 @@ class CfirCallCompletionResultsWriterTransformer(
         }
     }
 
+    /**
+     * 使用最终 substitutor 替换类型；理想字面量类型在无法替换时直接近似。
+     */
     private fun finallySubstituteOrNull(
         type: ConeCangJieType,
         substitutor: ConeSubstitutor = finalSubstitutor,
@@ -934,19 +1064,30 @@ class CfirCallCompletionResultsWriterTransformer(
         return result?.approximateIntegerLiteralType()
     }
 
+    /**
+     * 使用最终 substitutor 替换类型，无法替换时返回原类型。
+     */
     private fun finallySubstituteOrSelf(type: ConeCangJieType): ConeCangJieType {
         return finallySubstituteOrNull(type) ?: type
     }
 
+    /**
+     * completion writer 模式。
+     */
     enum class Mode {
+        /** 普通调用完成写回。 */
         Normal,
 
         // Retained only as an upstream-aligned seam. The current local direct chain has
         // no delegated-property inference session or writer-construction call site that
         // selects this mode, so this enum value is intentionally unreachable for now.
+        /** 预留的委托属性完成模式。 */
         DelegatedPropertyCompletion,
     }
 
+    /**
+     * 在注解集合字面量上下文中执行 block。
+     */
     private inline fun <T> withCollectionLiteralInAnnotationResolution(block: () -> T): T {
         val savedInsideAnnotationContext = insideAnnotationContext
         insideAnnotationContext = true
@@ -957,33 +1098,56 @@ class CfirCallCompletionResultsWriterTransformer(
         }
     }
 
+    /**
+     * 默认元素转换：声明节点不参与调用完成写回。
+     */
     override fun <E : CfirElement> transformElement(element: E, data: ExpectedArgumentType?): E {
         if (element is CfirDeclaration) return element
         return super.transformElement(element, data)
     }
 }
 
+/**
+ * 调用完成写回时下传给实参/子表达式的期望类型信息。
+ */
 sealed class ExpectedArgumentType(
+    /** 子表达式替换映射。 */
     val argumentReplacements: Map<CfirElement, CfirExpression>?,
 ) {
+    /**
+     * 多实参调用的期望类型映射。
+     */
     class ArgumentsMap(
+        /** 表达式或匿名函数声明到期望类型的映射。 */
         val map: Map<CfirElement, ConeCangJieType>,
+        /** lambda 声明到推断返回类型的映射。 */
         val lambdasReturnTypes: Map<CfirAnonymousFunction, ConeCangJieType>,
+        /** 当前调用是否来自错误引用。 */
         val forErrorReference: Boolean,
         argumentReplacements: Map<CfirElement, CfirExpression>?,
     ) : ExpectedArgumentType(argumentReplacements)
 
+    /**
+     * 单一表达式期望类型。
+     */
     class ExpectedType(
+        /** 下传的期望类型。 */
         val type: ConeCangJieType,
         argumentReplacements: Map<CfirElement, CfirExpression>?,
     ) : ExpectedArgumentType(argumentReplacements)
 }
 
+/**
+ * 查询指定 CFIR 元素的期望类型。
+ */
 private fun ExpectedArgumentType.getExpectedType(argument: CfirElement): ConeCangJieType? = when (this) {
     is ExpectedArgumentType.ArgumentsMap -> map[argument]
     is ExpectedArgumentType.ExpectedType -> type
 }
 
+/**
+ * 如果类型表示标准库 Range，则返回其 classifier 类型。
+ */
 private fun ConeCangJieType.rangeTypeOrNull(): ConeClassifierType? = when (this) {
     is ConeClassLikeType -> takeIf { classId == StdlibClassIds.Range }
     is ConeStructType -> takeIf { classId == StdlibClassIds.Range }
@@ -991,10 +1155,16 @@ private fun ConeCangJieType.rangeTypeOrNull(): ConeClassifierType? = when (this)
     else -> null
 }
 
+/**
+ * 将 Cone 类型包装为 ExpectedArgumentType。
+ */
 private fun ConeCangJieType.toExpectedType(
     argumentReplacements: Map<CfirElement, CfirExpression>?,
 ): ExpectedArgumentType = ExpectedArgumentType.ExpectedType(this, argumentReplacements)
 
+/**
+ * 近似理想整数字面量或 primitive ideal 类型。
+ */
 private fun ConeCangJieType.approximateIntegerLiteralType(): ConeCangJieType =
     when (this) {
         is ConeIdealLiteralType -> getApproximatedType()
@@ -1002,6 +1172,9 @@ private fun ConeCangJieType.approximateIntegerLiteralType(): ConeCangJieType =
         else -> this
     }
 
+/**
+ * 基于原类型引用创建 resolved/error type ref。
+ */
 private fun org.cangnova.cangjie.cfir.types.CfirTypeRef.resolvedTypeFromPrototype(
     type: ConeCangJieType,
     source: org.cangnova.cangjie.source.CjSourceElement?,
@@ -1022,10 +1195,16 @@ private fun org.cangnova.cangjie.cfir.types.CfirTypeRef.resolvedTypeFromPrototyp
     }
 }
 
+/**
+ * 将 atom 集合展开为对应表达式列表。
+ */
 private fun Collection<ConeResolutionAtom>.unwrapAtoms(): List<CfirExpression> {
     return map { it.unwrapAtom() }
 }
 
+/**
+ * 展开单个 atom 的实际表达式。
+ */
 private fun ConeResolutionAtom.unwrapAtom(): CfirExpression {
     return when (this) {
 //        is ConeCollectionLiteralAtom -> subAtom?.unwrapAtom() ?: expression
@@ -1034,10 +1213,16 @@ private fun ConeResolutionAtom.unwrapAtom(): CfirExpression {
     }
 }
 
+/**
+ * 将以 atom 为键的映射转换为以表达式为键的映射。
+ */
 fun <V> LinkedHashMap<ConeResolutionAtom, V>.unwrapAtoms(): LinkedHashMap<CfirExpression, V> {
     return mapKeysToLinkedMap { it.unwrapAtom() }
 }
 
+/**
+ * 过滤掉空值并保留 LinkedHashMap 顺序。
+ */
 private fun <K, V : Any> LinkedHashMap<K, V?>.filterValuesNotNullToLinkedMap(): LinkedHashMap<K, V> {
     val result = LinkedHashMap<K, V>()
     for ((key, value) in this) {
@@ -1048,10 +1233,16 @@ private fun <K, V : Any> LinkedHashMap<K, V?>.filterValuesNotNullToLinkedMap(): 
     return result
 }
 
+/**
+ * 转换 LinkedHashMap 的键并保留插入顺序。
+ */
 inline fun <K1, K2, V> LinkedHashMap<K1, V>.mapKeysToLinkedMap(transform: (K1) -> K2): LinkedHashMap<K2, V> {
     return mapKeysTo(LinkedHashMap()) { transform(it.key) }
 }
 
+/**
+ * 追加候选的非致命诊断。
+ */
 internal fun CfirQualifiedAccessExpression.addNonFatalDiagnostics(candidate: Candidate){
 //    TODO 用于增加非致命性错误
 }

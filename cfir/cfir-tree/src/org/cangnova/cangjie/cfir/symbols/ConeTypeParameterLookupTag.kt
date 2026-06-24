@@ -15,9 +15,12 @@ import org.cangnova.cangjie.type.model.TypeParameterMarker
  * "固定"意味着 symbol 在 tag 创建后不再变更，适合已完成解析的声明。
  */
 abstract class ConeClassifierLookupTagWithFixedSymbol : ConeClassifierLookupTag() {
-    /** 该 tag 所对应的分类器符号，泛型参数表示具体符号子类型。 */
+    /**
+     * 该 tag 所对应的分类器符号，泛型参数表示具体符号子类型。
+     */
     abstract val symbol: CfirClassifierSymbol<*>
 }
+
 /**
  * 泛型类型参数的查找标签。
  *
@@ -38,10 +41,14 @@ data class ConeTypeParameterLookupTag(
     val typeParameterSymbol: CfirTypeParameterSymbol,
 ) : ConeClassifierLookupTagWithFixedSymbol(), TypeParameterMarker {
 
-    /** 类型参数的名称，直接委托给符号，如 `T`、`E`、`K` 等。 */
+    /**
+     * 类型参数的名称，直接委托给符号，如 `T`、`E`、`K` 等。
+     */
     override val name: Name get() = typeParameterSymbol.name
 
-    /** 直接返回构造时传入的类型参数符号，满足父类的 symbol 契约。 */
+    /**
+     * 直接返回构造时传入的类型参数符号，满足父类的 symbol 契约。
+     */
     override val symbol: CfirTypeParameterSymbol
         get() = typeParameterSymbol
 }

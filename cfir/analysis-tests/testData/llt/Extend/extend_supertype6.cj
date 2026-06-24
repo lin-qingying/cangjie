@@ -25,8 +25,8 @@ open class SubObj <: Obj {
 }
 
 main(): Int64 {
-    var x: ToObj = SubObj()
-    var y = SubObj()
+    var <!UNUSED_VARIABLE!>x<!>: ToObj = SubObj()
+    var <!UNUSED_VARIABLE!>y<!> = SubObj()
     var b: Array<ToObj> = [SubObj()];
     b[0].toObj()
     (b[0] as SubObj)?.f()

@@ -14,6 +14,7 @@ import org.cangnova.cangjie.type.AbstractTypeChecker
  * `if` 条件类型检查：条件表达式必须为 `Bool`。
  */
 object CfirIfConditionTypeMismatchChecker : CfirIfExpressionChecker( ) {
+    /** 检查 `if` 条件表达式类型是否可作为 `Bool` 使用。 */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirIfExpression) {
         val condition = expression.condition

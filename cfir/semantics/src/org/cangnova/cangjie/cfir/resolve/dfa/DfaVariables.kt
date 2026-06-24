@@ -18,10 +18,23 @@ import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.descriptors.Visibilities
 import java.util.Objects
 
+/**
+ * DFA 可追踪变量的公共基类。
+ */
 sealed class DataFlowVariable {
+    /** 进入数据流分析前的原始类型。 */
     abstract val originalType: ConeCangJieType
 }
 
+/**
+ * 具备符号身份的数据流变量。
+ *
+ * @property symbol 变量对应的 CFIR 符号。
+ * @property isImplicit 是否为隐式 receiver 变量。
+ * @property dispatchReceiver 成员访问的 dispatch receiver。
+ * @property extensionReceiver 成员访问的 extension receiver。
+ * @property originalType 进入数据流分析前的原始类型。
+ */
 class RealVariable(
     val symbol: CfirBasedSymbol<*>,
     val isImplicit: Boolean,
@@ -29,11 +42,18 @@ class RealVariable(
     val extensionReceiver: RealVariable?,
     override val originalType: ConeCangJieType,
 ) : DataFlowVariable() {
+    /**
+     * 真实变量构造工具。
+     */
     companion object {
+        /**
+         * 创建隐式 receiver 变量。
+         */
         fun implicit(symbol: CfirBasedSymbol<*>, type: ConeCangJieType): RealVariable =
             RealVariable(symbol, isImplicit = true, dispatchReceiver = null, extensionReceiver = null, originalType = type)
     }
 
+    /** 基于符号、隐式标记和 receiver 身份比较真实变量。 */
     override fun equals(other: Any?): Boolean =
         other is RealVariable &&
             symbol == other.symbol &&
@@ -41,9 +61,11 @@ class RealVariable(
             dispatchReceiver == other.dispatchReceiver &&
             extensionReceiver == other.extensionReceiver
 
+    /** 与 [equals] 一致的哈希值。 */
     override fun hashCode(): Int =
         Objects.hash(symbol, isImplicit, dispatchReceiver, extensionReceiver)
 
+    /** 数据流变量的调试文本。 */
     override fun toString(): String = buildString {
         if (isImplicit) append("this@")
         append(
@@ -60,6 +82,12 @@ class RealVariable(
         }
     }
 
+    /**
+     * 计算该变量是否可稳定 smart cast。
+     *
+     * 局部可变属性、带 getter 的属性、open 且非 private 的成员，以及接收者不稳定的成员访问都会
+     * 被视为不稳定。
+     */
     fun getStability(flow: Flow, session: CfirSession): CfirSmartcastStability {
         if (isImplicit) return CfirSmartcastStability.STABLE_VALUE
         val declaration = symbol.cfir
@@ -86,6 +114,9 @@ class RealVariable(
         return CfirSmartcastStability.STABLE_VALUE
     }
 
+    /**
+     * 判断当前变量在给定 flow 中是否拥有 final 类型。
+     */
     private fun hasFinalType(flow: Flow, session: CfirSession): Boolean {
         if (originalType is ConeClassLikeType) {
             val symbol = originalType.fullyExpandedType(session).toSymbol(session)
@@ -98,11 +129,20 @@ class RealVariable(
     }
 }
 
+/**
+ * 没有稳定符号身份的合成数据流变量。
+ *
+ * @property fir 该合成变量对应的表达式。
+ */
 data class SyntheticVariable(val fir: CfirExpression) : DataFlowVariable() {
+    /** 表达式解析后的原始类型。 */
     override val originalType: ConeCangJieType
         get() = fir.coneTypeOrNull ?: error("Synthetic variable requires resolved expression type: ${fir::class.simpleName}")
 }
 
+/**
+ * 判断符号是否解析为 final class-like 声明。
+ */
 private fun CfirBasedSymbol<*>?.isFinalClassLikeSymbol(): Boolean {
     this ?: return false
     lazyResolveToPhase(CfirResolvePhase.STATUS)

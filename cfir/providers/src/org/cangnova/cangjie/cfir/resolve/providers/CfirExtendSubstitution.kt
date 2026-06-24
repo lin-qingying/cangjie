@@ -32,6 +32,9 @@ import org.cangnova.cangjie.type.model.TypeConstructorMarker
  *
  * 这是 providers 层的共享语义入口：use-site substitution scope 与调用解析
  * receiver 检查必须使用同一套 extend 目标匹配规则，避免签名替换和候选适用性分叉。
+ *
+ * @property substitutor 从 extend 类型参数到 use-site 实参的替换器。
+ * @property substitutedReceiverType 应用替换后的 receiver 类型。
  */
 data class CfirExtendDeclarationSubstitution(
     val substitutor: ConeSubstitutor,
@@ -110,6 +113,9 @@ fun createExtendDeclarationSubstitutionForConstraintDerivation(
     )
 }
 
+/**
+ * 内部实现：匹配 extend 目标类型，并按调用方要求决定是否校验 where/upper-bound 约束。
+ */
 private fun createExtendDeclarationSubstitution(
     session: CfirSession,
     extend: CfirExtend,
@@ -205,6 +211,11 @@ private fun CfirExtend.satisfiesGenericConstraints(
     return true
 }
 
+/**
+ * 判断当前类型是否满足给定 upper bound。
+ *
+ * 对类型参数实参，会继续检查其已解析上界是否可以满足目标上界。
+ */
 private fun ConeCangJieType.satisfiesUpperBound(
     session: CfirSession,
     upperBound: ConeCangJieType,
@@ -222,6 +233,11 @@ private fun ConeCangJieType.satisfiesUpperBound(
     }
 }
 
+/**
+ * 递归匹配 extend 目标类型模式与实际 receiver 类型。
+ *
+ * 匹配成功时会把 extend 类型参数构造器写入 [substitutions]。
+ */
 private fun matchExtendTargetType(
     pattern: ConeCangJieType,
     actual: ConeCangJieType,

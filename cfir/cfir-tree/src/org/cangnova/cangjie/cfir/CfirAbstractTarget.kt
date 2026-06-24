@@ -9,11 +9,20 @@ package org.cangnova.cangjie.cfir
 abstract class CfirAbstractTarget<E : CfirTargetElement>(
     override val labelName: String?,
 ) : CfirTarget<E> {
+    /**
+     * 子类持有的可变目标元素槽。
+     */
     protected abstract var _labeledElement: E
 
+    /**
+     * 当前已绑定目标元素。
+     */
     final override val labeledElement: E
         get() = _labeledElement
 
+    /**
+     * 写入当前 target 绑定的元素。
+     */
     override fun bind(element: E) {
         _labeledElement = element
     }

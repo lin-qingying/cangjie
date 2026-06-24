@@ -20,6 +20,12 @@ import org.cangnova.cangjie.cfir.types.ConeErrorType
  * exhaustiveness 以及后续 body resolve 共同负责。
  */
 object CfirMatchCaseTypeChecker : CfirMatchExpressionChecker() {
+    /**
+     * 检查无 selector 的 match 分支是否拥有有效分支类型。
+     *
+     * 只处理表达式 pattern 和 wildcard pattern；已有错误类型的分支保留原始诊断，缺失类型的分支
+     * 报 `MATCH_CASE_HAS_NO_TYPE`。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirMatchExpression) {
         if (expression.subject != null) return

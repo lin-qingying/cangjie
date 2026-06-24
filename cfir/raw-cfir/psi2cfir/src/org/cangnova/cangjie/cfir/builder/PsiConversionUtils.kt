@@ -26,6 +26,10 @@ import org.cangnova.cangjie.psi.*
 
 /**
  * 将 PSI 类型引用转换为未解析的 CFIR 类型引用。
+ *
+ * @receiver 待转换的 PSI 类型引用；为 null 时生成 implicit type ref。
+ * @param toSource PSI 元素到 CFIR source element 的映射函数。
+ * @return raw 阶段未解析的 [CfirTypeRef]。
  */
 internal fun CjTypeReference?.toCfirOrImplicitTypeRef(
     toSource: (com.intellij.psi.PsiElement) -> AbstractCjSourceElement,
@@ -36,6 +40,7 @@ internal fun CjTypeReference?.toCfirOrImplicitTypeRef(
     return typeElement.toCfirTypeRef(this, toSource)
 }
 
+/** 按具体 PSI 类型元素分派到对应的 CFIR type ref 构建函数。 */
 private fun CjTypeElement.toCfirTypeRef(
     ref: CjTypeReference,
     toSource: (com.intellij.psi.PsiElement) -> AbstractCjSourceElement,
@@ -53,6 +58,7 @@ private fun CjTypeElement.toCfirTypeRef(
     }
 }
 
+/** 将可选类型 PSI 转换为 [CfirTypeRef]，缺少内部类型时生成 error type ref。 */
 private fun CjOptionType.toCfirOptionTypeRef(
     ref: CjTypeReference,
     toSource: (com.intellij.psi.PsiElement) -> AbstractCjSourceElement,
@@ -69,6 +75,7 @@ private fun CjOptionType.toCfirOptionTypeRef(
     }
 }
 
+/** 将基础类型 PSI 转换为 [CfirBasicTypeRef]。 */
 private fun CjBasicType.toCfirBasicTypeRef(
     ref: CjTypeReference,
     toSource: (com.intellij.psi.PsiElement) -> AbstractCjSourceElement,
@@ -79,6 +86,7 @@ private fun CjBasicType.toCfirBasicTypeRef(
     }
 }
 
+/** 将用户类型 PSI 转换为 [CfirUserTypeRef]，保留限定名与类型实参链。 */
 private fun CjUserType.toCfirUserTypeRef(
     ref: CjTypeReference,
     toSource: (com.intellij.psi.PsiElement) -> AbstractCjSourceElement,
@@ -90,6 +98,7 @@ private fun CjUserType.toCfirUserTypeRef(
     }
 }
 
+/** 将 `This` 类型 PSI 转换为普通 user type ref 形式。 */
 private fun CjThisType.toCfirThisTypeRef(
     ref: CjTypeReference,
     toSource: (com.intellij.psi.PsiElement) -> AbstractCjSourceElement,
@@ -103,6 +112,7 @@ private fun CjThisType.toCfirThisTypeRef(
     }
 }
 
+/** 从最内层 [CjUserType] 反向收集限定名片段并构造 CFIR qualifier。 */
 private fun buildQualifierFromUserType(
     userType: CjUserType,
     toSource: (com.intellij.psi.PsiElement) -> AbstractCjSourceElement,
@@ -126,6 +136,7 @@ private fun buildQualifierFromUserType(
     return segments
 }
 
+/** 将函数类型 PSI 转换为 [CfirFunctionTypeRef]。 */
 private fun CjFunctionType.toCfirFunctionTypeRef(
     ref: CjTypeReference,
     toSource: (com.intellij.psi.PsiElement) -> AbstractCjSourceElement,
@@ -139,6 +150,7 @@ private fun CjFunctionType.toCfirFunctionTypeRef(
     }
 }
 
+/** 将 tuple 类型 PSI 转换为 [CfirTupleTypeRef]。 */
 private fun CjTupleType.toCfirTupleTypeRef(
     ref: CjTypeReference,
     toSource: (com.intellij.psi.PsiElement) -> AbstractCjSourceElement,
@@ -150,6 +162,7 @@ private fun CjTupleType.toCfirTupleTypeRef(
     }
 }
 
+/** 将 VArray 类型 PSI 转换为 [CfirTypeRef]，缺少元素类型或大小时生成 error type ref。 */
 private fun CjVArrayType.toCfirVArrayTypeRef(
     ref: CjTypeReference,
     toSource: (com.intellij.psi.PsiElement) -> AbstractCjSourceElement,
@@ -176,10 +189,12 @@ private fun CjVArrayType.toCfirVArrayTypeRef(
     }
 }
 
+/** 尝试把当前类型引用映射为 [CjSourceElement]，失败时返回 null。 */
 private fun CjTypeReference.toCjSourceElementOrNull(
     toSource: (com.intellij.psi.PsiElement) -> AbstractCjSourceElement,
 ): CjSourceElement? = toSource(this) as? CjSourceElement
 
+/** 把当前类型引用映射为 [CjSourceElement]，无法映射时说明 raw builder source 管线损坏。 */
 private fun CjTypeReference.toCjSourceElement(
     toSource: (com.intellij.psi.PsiElement) -> AbstractCjSourceElement,
 ): CjSourceElement =

@@ -29,20 +29,52 @@ import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.type.model.TypeConstructorMarker
 import org.cangnova.cangjie.type.model.TypeSubstitutorMarker
 
+/**
+ * Cone 类型替换器抽象。
+ *
+ * 替换器负责把类型变量、类型参数或临时构造器替换成解析后的 Cone 类型，
+ * 同时允许调用方按类型实参位置替换投影。
+ */
 abstract class ConeSubstitutor : TypeSubstitutorMarker {
+    /**
+     * 替换 [type]；没有替换结果时返回原类型。
+     */
     open fun substituteOrSelf(type: ConeCangJieType): ConeCangJieType = substituteOrNull(type) ?: type
 
+    /**
+     * 替换 [type]；没有替换结果时返回 `null`。
+     */
     abstract fun substituteOrNull(type: ConeCangJieType): ConeCangJieType?
 
+    /**
+     * 替换类型实参 [projection]。
+     *
+     * [index] 是该投影在外层实参列表中的位置。
+     */
     abstract fun substituteArgument(projection: ConeTypeProjection, index: Int): ConeTypeProjection?
 
+    /**
+     * 不执行任何替换的空替换器。
+     */
     object Empty : ConeSubstitutor() {
+        /**
+         * 空替换器直接返回原类型。
+         */
         override fun substituteOrSelf(type: ConeCangJieType): ConeCangJieType = type
 
+        /**
+         * 空替换器没有可空替换结果。
+         */
         override fun substituteOrNull(type: ConeCangJieType): ConeCangJieType? = null
 
+        /**
+         * 空替换器不替换类型实参。
+         */
         override fun substituteArgument(projection: ConeTypeProjection, index: Int): ConeTypeProjection? = null
 
+        /**
+         * 空替换器的调试名称。
+         */
         override fun toString(): String = "Empty"
     }
 }

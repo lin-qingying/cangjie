@@ -3,11 +3,21 @@ package org.cangnova.cangjie.cfir.renderer
 import org.cangnova.cangjie.cfir.patterns.*
 import org.cangnova.cangjie.cfir.render.ConeTypeRenderer
 
+/**
+ * 模式节点单行渲染器。
+ *
+ * @property typeRenderer 类型渲染器。
+ * @property referenceRenderer 引用渲染器。
+ * @property inlineExpressionRenderer 表达式单行渲染器。
+ */
 open class CfirPatternRenderer(
     protected val typeRenderer: ConeTypeRenderer,
     protected val referenceRenderer: CfirReferenceRenderer,
     protected val inlineExpressionRenderer: CfirInlineExpressionRenderer,
 ) {
+    /**
+     * 将模式渲染为单行调试文本。
+     */
     open fun render(pattern: CfirPattern): String = when (pattern) {
         is CfirExpressionPattern -> "expr(${inlineExpressionRenderer.render(pattern.expression)})"
         is CfirOrPattern -> pattern.alternatives.joinToString(" | ") { render(it) }

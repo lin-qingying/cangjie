@@ -4,21 +4,28 @@ import org.cangnova.cangjie.cfir.analysis.checkers.CfirExtendSemantics
 import org.cangnova.cangjie.cfir.analysis.checkers.firstCharacterDiagnosticSource
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
+import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
+import org.cangnova.cangjie.cfir.declarations.CfirInterface
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
+import org.cangnova.cangjie.cfir.diagnostic.ConeUnmatchedTypeArgumentsError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedTypeQualifierError
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
+import org.cangnova.cangjie.cfir.resolve.toSymbol
 import org.cangnova.cangjie.cfir.session.extendRuleQueryServiceOrNull
+import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.types.CfirBasicTypeRef
 import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
 import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
+import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
+import org.cangnova.cangjie.cfir.types.ConeClassifierType
 import org.cangnova.cangjie.cfir.types.ConeEnumType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeFunctionType
@@ -28,13 +35,16 @@ import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.ConeStructType
 import org.cangnova.cangjie.cfir.types.ConeTupleType
 import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
+import org.cangnova.cangjie.cfir.types.ConeUnreportedDuplicateDiagnostic
 import org.cangnova.cangjie.cfir.types.ConeUnionType
 import org.cangnova.cangjie.cfir.types.ConeVArrayType
 import org.cangnova.cangjie.cfir.types.abbreviatedType
 import org.cangnova.cangjie.cfir.types.arrayElementType
+import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.OperatorNameConventions
+import org.cangnova.cangjie.source.CjOffsetsOnlySourceElement
 
 object CfirExtendTargetLegalityChecker : CfirExtendChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
@@ -116,21 +126,6 @@ object CfirExtendInterfaceKindChecker : CfirExtendChecker() {
                 continue
             }
 
-            val superConeType = (superTypeRef as? CfirResolvedTypeRef)?.coneType ?: continue
-            val definitelyNotInterface = when (superConeType) {
-                is ConeClassLikeType -> !superConeType.isInterface
-                is ConePrimitiveType,
-                is ConeStructType,
-                is ConeEnumType -> true
-                else -> false
-            }
-            if (!definitelyNotInterface) continue
-
-            reporter.reportOn(
-                source = superTypeRef.source,
-                factory = CfirErrors.EXTEND_NOT_INTERFACE,
-                a = superTypeRef.toApproxName(),
-            )
         }
     }
 }
@@ -143,20 +138,20 @@ object CfirExtendDuplicateInterfaceChecker : CfirExtendChecker() {
 
         val localSeen = linkedSetOf<String>()
         val localSemanticKeys = query.inheritedInterfaceSemanticKeysOf(declaration)
-        val localInterfaces = query.inheritedInterfacesOf(declaration)
         val interfacesInOtherExtends = query
             .inheritedInterfaceSemanticKeysForTarget(targetKey, excludingDeclaration = declaration)
             .toSet()
-        val targetOwnInterfaces = targetKey.classIdOrNull?.let(query::targetClassOwnInterfaceClassIds).orEmpty()
         val reportCrossExtendDuplicate = declaration.superTypeRefs.size == 1 && query.isFirstExtendForTarget(declaration, targetKey)
 
         for ((index, superTypeRef) in declaration.superTypeRefs.withIndex()) {
+            if (!superTypeRef.isResolvedInterfaceType()) continue
+
             val key = localSemanticKeys.getOrNull(index) ?: superTypeRef.toSemanticStableKey()
             val firstInDeclaration = localSeen.add(key)
             val duplicatedInsideDeclaration = !firstInDeclaration &&
                 localSemanticKeys.drop(index + 1).none { laterKey -> laterKey == key }
             val duplicatedAcrossExtends = reportCrossExtendDuplicate && key in interfacesInOtherExtends
-            val duplicatedWithTarget = localInterfaces.getOrNull(index)?.classId in targetOwnInterfaces
+            val duplicatedWithTarget = declaration.duplicatesInheritedTargetInterface(superTypeRef, index)
             if (!duplicatedInsideDeclaration && !duplicatedAcrossExtends && !duplicatedWithTarget) continue
 
             reporter.reportOn(
@@ -166,6 +161,98 @@ object CfirExtendDuplicateInterfaceChecker : CfirExtendChecker() {
             )
         }
     }
+}
+
+context(context: CheckerContext)
+internal fun CfirExtend.duplicatesInheritedTargetInterface(
+    superTypeRef: CfirTypeRef,
+    index: Int? = null,
+): Boolean {
+    val query = context.session.extendRuleQueryServiceOrNull ?: return false
+    val targetKey = query.targetKeyOf(this) ?: return false
+    val semanticKey = index
+        ?.let { query.inheritedInterfaceSemanticKeysOf(this).getOrNull(it) }
+        ?: superTypeRef.toSemanticStableKey()
+
+    if (semanticKey in query.targetOwnInterfacesOf(this).mapTo(linkedSetOf()) { it.semanticKey }) {
+        return true
+    }
+
+    val localInterfaceKey = (superTypeRef.coneTypeOrNull as? ConeClassifierType)?.instantiatedInterfaceKey()
+    if (localInterfaceKey != null && localInterfaceKey in instantiatedTargetInheritedInterfaceKeys()) {
+        return true
+    }
+
+    val targetType = extendedTypeRef.coneTypeOrNull
+    val superClassId = (superTypeRef.coneTypeOrNull as? ConeClassLikeType)?.classId
+    if (
+        targetType != null &&
+        superClassId in CfirExtendSemantics.implicitPrimitiveInterfaceClassIds(context, targetType)
+    ) {
+        return true
+    }
+
+    if (targetType is ConePrimitiveType) {
+        return semanticKey in query
+            .inheritedInterfaceSemanticKeysForTarget(targetKey, excludingDeclaration = this)
+            .toSet()
+    }
+    return false
+}
+
+context(context: CheckerContext)
+private fun org.cangnova.cangjie.cfir.types.CfirTypeRef.isResolvedInterfaceType(): Boolean {
+    val classifierType = coneTypeOrNull as? ConeClassifierType ?: return false
+    if (classifierType is ConeErrorType) return false
+    val symbol = classifierType.toSymbol(context.session) as? CfirClassLikeSymbol<*> ?: return false
+    return symbol.cfir is CfirInterface
+}
+
+context(context: CheckerContext)
+private fun CfirExtend.instantiatedTargetInheritedInterfaceKeys(): Set<String> {
+    val targetType = extendedTypeRef.coneTypeOrNull as? ConeClassifierType ?: return emptySet()
+    val targetDeclaration = (targetType.toSymbol(context.session) as? CfirClassLikeSymbol<*>)
+        ?.cfir as? CfirClassLikeDeclaration ?: return emptySet()
+    val substitutor = targetDeclaration.createDeclarationTypeSubstitutor(targetType)
+    val result = linkedSetOf<String>()
+    val visiting = linkedSetOf<String>()
+
+    for (superTypeRef in targetDeclaration.superTypeRefs) {
+        val supertype = superTypeRef.coneTypeOrNull ?: continue
+        collectInstantiatedInheritedInterfaceKeys(
+            classLikeType = substitutor.substituteOrSelf(supertype),
+            result = result,
+            visiting = visiting,
+        )
+    }
+    return result
+}
+
+context(context: CheckerContext)
+private fun collectInstantiatedInheritedInterfaceKeys(
+    classLikeType: ConeCangJieType,
+    result: MutableSet<String>,
+    visiting: MutableSet<String>,
+) {
+    val classifierType = classLikeType as? ConeClassifierType ?: return
+    val symbol = classifierType.toSymbol(context.session) as? CfirClassLikeSymbol<*> ?: return
+    val declaration = symbol.cfir as? CfirClassLikeDeclaration ?: return
+    val classLikeKey = classifierType.instantiatedInterfaceKey() ?: return
+    if (!visiting.add(classLikeKey)) return
+    if (declaration is CfirInterface) {
+        result += classLikeKey
+    }
+
+    val substitutor = declaration.createDeclarationTypeSubstitutor(classifierType)
+    for (superTypeRef in declaration.superTypeRefs) {
+        val supertype = superTypeRef.coneTypeOrNull ?: continue
+        collectInstantiatedInheritedInterfaceKeys(
+            classLikeType = substitutor.substituteOrSelf(supertype),
+            result = result,
+            visiting = visiting,
+        )
+    }
+    visiting.remove(classLikeKey)
 }
 
 object CfirExtendCheckSequenceChecker : CfirExtendChecker() {
@@ -228,17 +315,15 @@ object CfirExtendGenericUsageChecker : CfirExtendChecker() {
 object CfirExtendImmutableMutInterfaceChecker : CfirExtendChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(extend: CfirExtend) {
-        val targetConeType = (extend.extendedTypeRef as? CfirResolvedTypeRef)?.coneType ?: return
-        if (!CfirExtendSemantics.isImmutableTarget(targetConeType)) return
-
         for (superTypeRef in extend.superTypeRefs) {
-            val interfaceClassId = CfirExtendSemantics.run { superTypeRef.toClassIdOrNull() } ?: continue
-            val leak = CfirExtendSemantics.findMutPropertyLeak(context, interfaceClassId) ?: continue
+            val leak = CfirExtendSemantics.immutableMutInterfaceLeak(context, extend, superTypeRef) ?: continue
+            val diagnosticSource = extend.source?.let { source ->
+                CjOffsetsOnlySourceElement(source.startOffset, source.endOffset)
+            } ?: superTypeRef.source
             reporter.reportOn(
-                source = superTypeRef.source,
-                factory = CfirErrors.EXTEND_IMMUTABLE_MUT_INTERFACE,
+                source = diagnosticSource,
+                factory = CfirErrors.EXTEND_INTERFACE_NOT_EXTENDABLE,
                 a = leak.interfaceClassId.shortClassName,
-                b = leak.propertyName,
             )
         }
     }
@@ -364,8 +449,23 @@ object CfirExtendDefaultImplementationConflictChecker : CfirExtendChecker() {
 
 private fun org.cangnova.cangjie.cfir.types.CfirTypeRef.isDefinitelyNotInterfaceType(): Boolean = when (this) {
     is CfirBasicTypeRef,
-    is CfirImplicitTypeRef,
-    is CfirErrorTypeRef -> true
+    is CfirImplicitTypeRef -> true
+    is CfirResolvedTypeRef -> coneType.isDefinitelyNotExtendInterfaceType()
+    else -> false
+}
+
+private fun ConeCangJieType.isDefinitelyNotExtendInterfaceType(): Boolean = when (this) {
+    // extend 的接口类型检查对齐官方 PreCheckExtend：类型实例化失败时按 Ty 正确性决定是否派生
+    // EXTEND_NOT_INTERFACE。泛型实参数量错误已经有独立诊断，内部错误实参则仍会让整个接口实例无效。
+    is ConeErrorType -> when (diagnostic) {
+        is ConeUnmatchedTypeArgumentsError -> false
+        is ConeUnreportedDuplicateDiagnostic -> true
+        else -> false
+    }
+    is ConeClassLikeType -> !isInterface
+    is ConePrimitiveType,
+    is ConeStructType,
+    is ConeEnumType -> true
     else -> false
 }
 

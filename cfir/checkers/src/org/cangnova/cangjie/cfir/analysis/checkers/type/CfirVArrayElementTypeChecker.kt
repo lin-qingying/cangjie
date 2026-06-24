@@ -23,6 +23,7 @@ import org.cangnova.cangjie.cfir.types.ConeVArrayType
  * 某类声明 checker 上，这样变量、参数、typealias 使用处与构造器类型实参都能统一覆盖。
  */
 object CfirVArrayElementTypeChecker : CfirResolvedTypeRefChecker() {
+    /** 对已解析的 VArray 类型引用检查其元素类型是否含有禁止作为元素的引用类型。 */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(typeRef: CfirResolvedTypeRef) {
         val sourceTypeRef = typeRef.delegatedTypeRef.originalVArrayTypeRef() ?: return
@@ -39,6 +40,7 @@ object CfirVArrayElementTypeChecker : CfirResolvedTypeRefChecker() {
         )
     }
 
+    /** 沿 delegated type-ref 链回溯原始 VArray 类型引用，用于保留用户源码定位。 */
     private fun CfirTypeRef?.originalVArrayTypeRef(): CfirVArrayTypeRef? =
         when (this) {
             is CfirVArrayTypeRef -> this

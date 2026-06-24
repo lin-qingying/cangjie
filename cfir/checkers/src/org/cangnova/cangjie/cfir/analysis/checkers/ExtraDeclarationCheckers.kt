@@ -14,11 +14,13 @@ import org.cangnova.cangjie.cfir.analysis.checkers.declaration.DeclarationChecke
  * 由 low-level-api-cfir 根据 `DiagnosticCheckerFilter` 选择性挂载。
  */
 object ExtraDeclarationCheckers : DeclarationCheckers() {
+    /** 额外声明检查中面向 callable 声明的 checker 集合。 */
     override val callableDeclarationCheckers: Set<CfirCallableDeclarationChecker> = setOf(
         CfirVArrayExtraChecker,
         CfirDeprecatedDeclarationChecker,
     )
 
+    /** 额外声明检查中面向 `extend` 声明的 checker 集合。 */
     override val extendCheckers: Set<CfirExtendChecker> = setOf(
         CfirExtendExtraChecker,
     )

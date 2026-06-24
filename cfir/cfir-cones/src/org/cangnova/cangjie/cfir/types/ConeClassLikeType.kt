@@ -9,7 +9,9 @@ import org.cangnova.cangjie.name.ClassId
  * 具体语义由其子类分别表示 class/interface、struct、enum。
  */
 abstract class ConeLookupTagBasedType : ConeSimpleCangJieType() {
-    /** 用于在符号表中查找对应声明的 tag，是类型的"身份标识"。 */
+    /**
+     * 用于在符号表中查找对应声明的 tag，是类型的“身份标识”。
+     */
     abstract val lookupTag: ConeClassifierLookupTag
 
     /**
@@ -27,6 +29,15 @@ abstract class ConeLookupTagBasedType : ConeSimpleCangJieType() {
         return true
     }
 
+    /**
+     * lookupTag、类型实参与属性共同组成结构哈希。
+     */
+    /**
+     * 类/接口类型的结构哈希。
+     */
+    /**
+     * enum 类型的结构哈希。
+     */
     override fun hashCode(): Int {
         var result = lookupTag.hashCode()
         result = 31 * result + typeArguments.hashCode()
@@ -54,19 +65,31 @@ abstract class ConeClassifierType : ConeLookupTagBasedType() {
  * - 类内部的 `This` 类型视图
  */
 class ConeClassLikeType(
-    /** 携带 ClassId 的 lookup tag，用于唯一定位类/接口声明。 */
+    /**
+     * 携带 ClassId 的 lookup tag，用于唯一定位类/接口声明。
+     */
     override val lookupTag: ConeClassLikeLookupTag,
-    /** 泛型实参列表，非泛型类型时为空列表。 */
+    /**
+     * 泛型实参列表，非泛型类型时为空列表。
+     */
     override val typeArguments: List<ConeTypeProjection> = emptyList(),
-    /** 类型附加属性（如注解投影等），默认为空。 */
+    /**
+     * 类型附加属性（如注解投影等），默认为空。
+     */
     override val attributes: ConeAttributes = ConeAttributes.Empty,
-    /** 是否为 interface 类型实例。 */
+    /**
+     * 是否为 interface 类型实例。
+     */
     val isInterface: Boolean = false,
-    /** 是否为类体内部出现的 `This` 类型（即 ClassThisTy）。 */
+    /**
+     * 是否为类体内部出现的 `This` 类型（即 ClassThisTy）。
+     */
     val isThisType: Boolean = false,
 ) : ConeClassifierType() {
 
-    /** 从 lookupTag 中直接提取 ClassId，方便调用方使用。 */
+    /**
+     * 从 lookupTag 中直接提取 ClassId，方便调用方使用。
+     */
     val classId: ClassId get() = lookupTag.classId
 
     /**
@@ -81,6 +104,9 @@ class ConeClassLikeType(
                 isThisType == other.isThisType
     }
 
+    /**
+     * enum 类型的结构哈希。
+     */
     override fun hashCode(): Int {
         var result = super.hashCode()
         result = 31 * result + isInterface.hashCode()
@@ -107,15 +133,23 @@ fun ConeCangJieType.approximateThisTypeForDeclaration(): ConeCangJieType {
  * 赋值时复制整个结构体，而非共享引用。
  */
 class ConeStructType(
-    /** 携带 ClassId 的 lookup tag，用于唯一定位结构体声明。 */
+    /**
+     * 携带 ClassId 的 lookup tag，用于唯一定位结构体声明。
+     */
     override val lookupTag: ConeClassLikeLookupTag,
-    /** 泛型实参列表，非泛型结构体时为空列表。 */
+    /**
+     * 泛型实参列表，非泛型结构体时为空列表。
+     */
     override val typeArguments: List<ConeTypeProjection> = emptyList(),
-    /** 类型附加属性，默认为空。 */
+    /**
+     * 类型附加属性，默认为空。
+     */
     override val attributes: ConeAttributes = ConeAttributes.Empty,
 ) : ConeClassifierType() {
 
-    /** 从 lookupTag 中直接提取 ClassId，方便调用方使用。 */
+    /**
+     * 从 lookupTag 中直接提取 ClassId，方便调用方使用。
+     */
     val classId: ClassId get() = lookupTag.classId
 
 }
@@ -129,17 +163,27 @@ class ConeStructType(
  * - `true`：引用语义枚举（RefEnumTy），构造器存储在堆上。
  */
 class ConeEnumType(
-    /** 携带 ClassId 的 lookup tag，用于唯一定位枚举声明。 */
+    /**
+     * 携带 ClassId 的 lookup tag，用于唯一定位枚举声明。
+     */
     override val lookupTag: ConeClassLikeLookupTag,
-    /** 泛型实参列表，非泛型枚举时为空列表。 */
+    /**
+     * 泛型实参列表，非泛型枚举时为空列表。
+     */
     override val typeArguments: List<ConeTypeProjection> = emptyList(),
-    /** 类型附加属性，默认为空。 */
+    /**
+     * 类型附加属性，默认为空。
+     */
     override val attributes: ConeAttributes = ConeAttributes.Empty,
-    /** 是否为引用枚举类型（RefEnumTy）。 */
+    /**
+     * 是否为引用枚举类型（RefEnumTy）。
+     */
     val isRefEnum: Boolean = false,
 ) : ConeClassifierType() {
 
-    /** 从 lookupTag 中直接提取 ClassId，方便调用方使用。 */
+    /**
+     * 从 lookupTag 中直接提取 ClassId，方便调用方使用。
+     */
     val classId: ClassId get() = lookupTag.classId
 
     /**

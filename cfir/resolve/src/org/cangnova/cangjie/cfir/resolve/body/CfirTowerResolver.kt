@@ -50,18 +50,42 @@ import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
 import org.cangnova.cangjie.name.Name
 
+/**
+ * body resolve 阶段使用的 tower 调用解析入口。
+ *
+ * 该解析器负责把调用信息、tower data context、候选工厂和候选收集器串联起来，
+ * 并通过 [TowerResolveManager] 按 tower group 优先级调度各层查找任务。
+ */
 class CfirTowerResolver(
+    /**
+     * body resolve transformer 提供的会话、文件和 tower data 组件。
+     */
     private val components: CfirAbstractBodyResolveTransformer.BodyResolveTransformerComponents,
+    /**
+     * 候选阶段检查与约束系统推进器。
+     */
     private val resolutionStageRunner: ResolutionStageRunner,
+    /**
+     * 默认候选收集器。
+     */
     internal val collector: CfirCandidateCollector =
         CfirCandidateCollector(components, resolutionStageRunner),
 ) : SessionHolder {
 
+    /**
+     * 当前解析器所属的 CFIR 会话。
+     */
     override val session: CfirSession
         get() = components.session
 
+    /**
+     * 默认 tower resolve 调度器。
+     */
     private val manager = TowerResolveManager(collector)
 
+    /**
+     * 运行一次调用解析并返回收集到的候选。
+     */
     fun runResolver(
         info: CallInfo,
         context: ResolutionContext,
@@ -81,6 +105,9 @@ class CfirTowerResolver(
         return resultCollector
     }
 
+    /**
+     * 根据接收者形态注册 tower resolve 任务。
+     */
     private fun enqueueResolutionTasks(
         context: ResolutionContext,
         manager: TowerResolveManager,
@@ -117,6 +144,9 @@ class CfirTowerResolver(
         }
     }
 
+    /**
+     * 在当前 tower 可见作用域中查找非可调用调用形态的变量符号。
+     */
     fun findVariables(name: Name): List<CfirCallableSymbol<*>> {
         val scopes = components.towerDataContext.towerDataElements.asReversed().flatMap { it.getAvailableScopes() }
         for (scope in scopes) {
@@ -141,6 +171,9 @@ class CfirTowerResolver(
         return emptyList()
     }
 
+    /**
+     * 在当前 tower 可见作用域中查找函数符号。
+     */
     fun findFunctions(name: Name): List<CfirFunctionSymbol<*>> {
         val scopes = components.towerDataContext.towerDataElements.asReversed().flatMap { it.getAvailableScopes() }
         for (scope in scopes) {
@@ -151,6 +184,9 @@ class CfirTowerResolver(
         return emptyList()
     }
 
+    /**
+     * 在当前 tower 可见作用域中查找全部 callable 符号。
+     */
     fun findCallables(name: Name): List<CfirCallableSymbol<*>> {
         val scopes = components.towerDataContext.towerDataElements.asReversed().flatMap { it.getAvailableScopes() }
         for (scope in scopes) {
@@ -161,6 +197,9 @@ class CfirTowerResolver(
         return emptyList()
     }
 
+    /**
+     * 在当前 tower 可见作用域中查找分类器符号。
+     */
     fun findClassifiers(name: Name): List<CfirClassifierSymbol<*>> {
         val scopes = components.towerDataContext.towerDataElements.asReversed().flatMap { it.getAvailableScopes() }
         for (scope in scopes) {
@@ -171,6 +210,9 @@ class CfirTowerResolver(
         return emptyList()
     }
 
+    /**
+     * 在当前 tower 可见作用域中查找类型参数符号。
+     */
     fun findTypeParameters(name: Name): List<CfirTypeParameterSymbol> {
         val scopes = components.towerDataContext.towerDataElements.asReversed().flatMap { it.getAvailableScopes() }
         for (scope in scopes) {
@@ -182,6 +224,9 @@ class CfirTowerResolver(
         return emptyList()
     }
 
+    /**
+     * 在指定作用域列表中查找变量符号。
+     */
     fun findVariablesInScopes(name: Name, scopes: List<CfirScope>): List<CfirCallableSymbol<*>> {
         for (scope in scopes) {
             val result = mutableListOf<CfirCallableSymbol<*>>()
@@ -198,6 +243,9 @@ class CfirTowerResolver(
         return emptyList()
     }
 
+    /**
+     * 在指定作用域列表中查找函数符号。
+     */
     fun findFunctionsInScopes(name: Name, scopes: List<CfirScope>): List<CfirFunctionSymbol<*>> {
         for (scope in scopes) {
             val result = mutableListOf<CfirFunctionSymbol<*>>()
@@ -207,11 +255,17 @@ class CfirTowerResolver(
         return emptyList()
     }
 
+    /**
+     * 重置候选收集器和 tower 调度器状态。
+     */
     fun reset() {
         collector.newDataSet()
         manager.reset()
     }
 
+    /**
+     * 判断 callable 符号是否代表可直接调用的函数、构造器或 enum 构造器。
+     */
     private fun CfirCallableSymbol<*>.isInvokableSymbol(): Boolean {
         if (!isBound) return false
         return when (cfir) {

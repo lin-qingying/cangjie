@@ -23,6 +23,9 @@ import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
  * 但 common 自己的构造器不能赋值这类字段。
  */
 object CfirCommonCtorImmutableAssignChecker : CfirClassLikeChecker() {
+    /**
+     * 检查 common class/struct 构造器体内是否写入 common let 字段。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirClassLikeDeclaration) {
         if (declaration !is CfirClass && declaration !is CfirStruct) return

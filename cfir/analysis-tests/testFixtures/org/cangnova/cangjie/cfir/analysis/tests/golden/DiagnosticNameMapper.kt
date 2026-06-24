@@ -41,6 +41,7 @@ object DiagnosticNameMapper {
         "ARGUMENT_TYPE_MISMATCH" to "sema_mismatched_types",
         "ASSIGNMENT_TYPE_MISMATCH" to "sema_mismatched_types",
         "OVERRIDING_RETURN_TYPE_MISMATCH" to "sema_mismatched_types",
+        "RETURN_TYPE_INVARIANCE" to "sema_return_type_invariance",
         "PROPERTY_OVERRIDE_IMPLEMENT_TYPE_DIFF" to "sema_property_override_implement_type_diff",
         "MISSING_ENTRY" to "sema_missing_entry",
         "PATTERN_INITIALIZER_TYPE_MISMATCH" to "sema_mismatched_types",
@@ -62,11 +63,14 @@ object DiagnosticNameMapper {
         "AMBIGUOUS_CONSTRUCTOR_CALL" to "sema_ambiguous_constructor_call",
         "AMBIGUOUS_ARG_TYPE" to "sema_ambiguous_arg_type",
         "AMBIGUOUS_FUNCTION_REFERENCE" to "sema_ambiguous_function_reference",
+        "NO_MATCH_FUNCTION_DECLARATION_FOR_CALL" to "sema_no_match_function_declaration_for_call",
         "NO_MATCHING_OPERATOR_INVOKE" to "sema_no_matching_operator_invoke",
         "NO_MATCH_OPERATOR_FUNCTION_CALL" to "sema_no_match_operator_function_call",
         "ENUM_TYPE_CANNOT_BE_USED_AS_CONSTRUCTOR" to "sema_enum_type_cannot_be_used_as_constructor",
         "CANNOT_OVERRIDE_INVISIBLE_MEMBER" to "sema_cannot_override_invisible_member",
         "CANNOT_OVERRIDE" to "sema_cannot_override",
+        "STATIC_AND_NON_STATIC_MEMBER_CANNOT_HAVE_SAME_NAME" to "sema_static_and_non_static_member_cannot_have_same_name",
+        "EXTEND_MEMBER_CANNOT_SHADOW" to "sema_extend_member_cannot_shadow",
 
         // ── Imports ──
         "UNRESOLVED_IMPORT" to "package_import_not_found",
@@ -98,6 +102,7 @@ object DiagnosticNameMapper {
 
         // ── Inheritance ──
         "INTERFACE_CANNOT_INHERIT_CLASS" to "sema_interface_cannot_inherit_class",
+        "INHERITANCE_CYCLE" to "sema_inheritance_cycle",
         "MULTIPLE_CLASS_SUPER_TYPES" to "sema_multiple_class_inheritance",
         "OVERRIDE_STATIC_ERROR" to "sema_override_static_error",
         "SUPER_TYPES_DUPLICATE" to "sema_super_types_duplicate",
@@ -119,6 +124,7 @@ object DiagnosticNameMapper {
         "ILLEGAL_PLACE_OF_CALLING_THIS_PRIMARY_CONSTRUCTOR" to "sema_illegal_place_of_calling_this_primary_constructor",
         "NO_NON_PARAM_CONSTRUCTOR_IN_SUPER_CLASS" to "sema_no_non_param_constructor_in_super_class",
         "RECURSIVE_CONSTRUCTOR_CALL" to "sema_recursive_constructor_call",
+        "STATIC_MEMBERS_CANNOT_CALL_MEMBERS" to "sema_static_members_cannot_call_members",
         "VALUE_TYPE_RECURSIVE" to "sema_value_type_recursive",
 
         // ── Call / Arguments ──

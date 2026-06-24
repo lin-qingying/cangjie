@@ -9,7 +9,9 @@ import org.cangnova.cangjie.cfir.analysis.collectors.DiagnosticCollectorComponen
 import org.cangnova.cangjie.cfir.diagnostics.PendingDiagnosticReporter
 import org.cangnova.cangjie.cfir.session.CfirSession
 
+/** CLI 诊断收集器及其默认组件集合的工厂。 */
 object DiagnosticComponentsFactory {
+    /** 创建一次诊断收集所需的全部常规组件和提交组件。 */
     private fun createAllDiagnosticComponents(
         session: CfirSession,
         reporter: PendingDiagnosticReporter,
@@ -29,6 +31,7 @@ object DiagnosticComponentsFactory {
         )
     }
 
+    /** 为指定 session/scopeSession 创建 CLI 诊断收集器。 */
     fun create(
         session: CfirSession,
         scopeSession: ScopeSession,

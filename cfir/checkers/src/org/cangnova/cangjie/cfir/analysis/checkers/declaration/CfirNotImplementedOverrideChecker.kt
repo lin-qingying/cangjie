@@ -48,17 +48,22 @@ import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.name.Name
 
 /**
- * Alignment target: Kotlin FIR `FirNotImplementedOverrideChecker` core behavior.
+ * 未实现抽象成员检查器。
  *
- * For non-abstract class/struct declarations, report when inherited abstract members
- * remain without concrete implementation.
+ * 对齐 Kotlin FIR `FirNotImplementedOverrideChecker` 的核心行为：非 abstract class/struct
+ * 如果继承的抽象成员没有具体实现，则报告 `ABSTRACT_MEMBER_NOT_IMPLEMENTED`。
  *
- * 注意：extend 引入的接口不影响本体的抽象成员实现义务，因此这里使用
- * 不含 extendProvider 的 scope，只检查类/struct 自身声明的继承关系。
+ * 注意：extend 引入的接口不影响本体的抽象成员实现义务，因此这里使用仅基于本体继承关系的 scope。
  */
 object CfirNotImplementedOverrideChecker : CfirClassLikeChecker() {
+    /**
+     * ObjC CJMapping 注解名。
+     */
     private val OBJC_CJ_MAPPING = Name.identifier("ObjCCJMapping")
 
+    /**
+     * 检查 class/struct 是否仍有未实现的 inherited abstract member。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirClassLikeDeclaration) {
         if (declaration !is CfirClass && declaration !is CfirStruct) return
@@ -75,10 +80,6 @@ object CfirNotImplementedOverrideChecker : CfirClassLikeChecker() {
         )
     }
 
-    /**
-     * 创建仅包含本体声明的成员 scope（不含 extend 引入的接口/成员）。
-     * extend 是外部扩展，不应影响类/struct 本体的抽象成员实现检查。
-     */
     /**
      * 创建仅包含本体声明的成员 scope（不含 extend 引入的接口/成员）。
      * extend 是外部扩展，不应影响类/struct 本体的抽象成员实现检查。
@@ -111,6 +112,9 @@ object CfirNotImplementedOverrideChecker : CfirClassLikeChecker() {
     }
 }
 
+/**
+ * 判断 scope 中是否存在 owner 必须实现但尚未实现的抽象成员。
+ */
 private fun CfirTypeScope.hasUnimplementedAbstractMember(
     ownerDeclaration: CfirClassLikeDeclaration,
     context: CheckerContext,
@@ -131,6 +135,9 @@ private fun CfirTypeScope.hasUnimplementedAbstractMember(
     return false
 }
 
+/**
+ * 按 override signature 分组检查 callable 符号集合中是否存在未实现抽象成员。
+ */
 private fun <S : CfirCallableSymbol<*>> List<S>.hasUnimplementedAbstractBySignature(
     ownerDeclaration: CfirClassLikeDeclaration,
     context: CheckerContext,
@@ -166,6 +173,12 @@ private fun <S : CfirCallableSymbol<*>> List<S>.hasUnimplementedAbstractBySignat
     return false
 }
 
+/**
+ * 检查多个接口继承的 concrete 成员是否形成实现冲突。
+ *
+ * 当前类没有自己的 concrete 实现、但从多个不同接口继承同一签名 concrete 成员时，需要视为
+ * 抽象实现义务未满足。
+ */
 private fun <S : CfirCallableSymbol<*>> List<S>.hasConcreteInterfaceImplementationConflict(
     ownerDeclaration: CfirClassLikeDeclaration,
     context: CheckerContext,
@@ -187,6 +200,9 @@ private fun <S : CfirCallableSymbol<*>> List<S>.hasConcreteInterfaceImplementati
     return inheritedConcreteInterfaceOwners.size > 1
 }
 
+/**
+ * 判断候选 concrete 成员的可见性是否足以实现指定抽象成员。
+ */
 private fun CfirCallableSymbol<*>.canImplementAbstractMember(abstractSymbol: CfirCallableSymbol<*>): Boolean {
     val compareResult = Visibilities.compare(cfir.status.visibility, abstractSymbol.cfir.status.visibility)
     return compareResult != null && compareResult >= 0

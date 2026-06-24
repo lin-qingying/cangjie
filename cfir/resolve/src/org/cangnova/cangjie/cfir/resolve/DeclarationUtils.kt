@@ -13,9 +13,12 @@ import org.cangnova.cangjie.cfir.resolve.body.CfirTowerDataContext
  * tower data context，避免在主干里伪造并不存在的数据流模型。
  */
 interface CfirCodeFragmentContext {
+    /** code fragment 恢复解析时使用的 tower data context 快照。 */
     val towerDataContext: CfirTowerDataContext
 }
 
+/** code fragment context 在声明数据注册表中的 key。 */
 private object CodeFragmentContextDataKey : CfirDeclarationDataKey()
 
+/** code fragment 声明上挂载的解析上下文快照。 */
 var CfirCodeFragment.codeFragmentContext: CfirCodeFragmentContext? by CfirDeclarationDataRegistry.data(CodeFragmentContextDataKey)

@@ -14,7 +14,7 @@ extend<T> A<T> where T <: EQ {
 
 class B<E> <: A<E> { // generic-E does not satisfy the constraint T <: EQ
     func test(a: E) {
-        <!UNRESOLVED_REFERENCE!>s<!>oo()
-        <!UNRESOLVED_REFERENCE!>a<!>dd(a)
+        <!UNRESOLVED_REFERENCE!>soo<!>()
+        <!UNRESOLVED_REFERENCE!>add<!>(a)
     }
 }

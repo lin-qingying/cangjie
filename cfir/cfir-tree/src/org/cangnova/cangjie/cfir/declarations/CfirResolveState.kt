@@ -42,15 +42,26 @@ sealed class CfirResolveState {
 class CfirResolvedToPhaseState private constructor(
     override val resolvePhase: CfirResolvePhase,
 ) : CfirResolveState() {
+    /**
+     * 各 resolve phase 对应的完成状态缓存。
+     */
     companion object {
-        // 缓存所有阶段的状态对象，避免频繁创建
+        /**
+         * 缓存所有阶段的状态对象，避免每次阶段推进时重复分配小对象。
+         */
         private val phases: List<CfirResolvedToPhaseState> =
             CfirResolvePhase.entries.map(::CfirResolvedToPhaseState)
 
+        /**
+         * 返回指定 [phase] 对应的完成状态实例。
+         */
         operator fun invoke(phase: CfirResolvePhase): CfirResolvedToPhaseState =
             phases[phase.ordinal]
     }
 
+    /**
+     * 返回调试用的阶段状态文本。
+     */
     override fun toString(): String = "ResolvedTo($resolvePhase)"
 }
 
@@ -81,12 +92,23 @@ sealed class CfirInProcessOfResolvingToPhaseState : CfirResolveState() {
 class CfirInProcessOfResolvingToPhaseStateWithoutBarrier private constructor(
     override val resolvingTo: CfirResolvePhase,
 ) : CfirInProcessOfResolvingToPhaseState() {
+    /**
+     * 无等待屏障的 in-process 状态缓存。
+     */
     companion object {
+        /**
+         * 每个非首阶段对应一个正在解析状态；[CfirResolvePhase.RAW_CFIR] 不能作为解析目标。
+         */
         private val phases: List<CfirInProcessOfResolvingToPhaseState> =
             CfirResolvePhase.entries
                 .drop(1) // 跳过 RAW_CFIR，因为它是首阶段
                 .map(::CfirInProcessOfResolvingToPhaseStateWithoutBarrier)
 
+        /**
+         * 返回指定目标阶段的无屏障解析状态。
+         *
+         * [CfirResolvePhase.RAW_CFIR] 是初始状态，不能作为“正在解析到”的目标。
+         */
         operator fun invoke(phase: CfirResolvePhase): CfirInProcessOfResolvingToPhaseState {
             require(phase != CfirResolvePhase.RAW_CFIR) {
                 "Cannot resolve to ${CfirResolvePhase.RAW_CFIR} as it's the first phase"
@@ -95,6 +117,9 @@ class CfirInProcessOfResolvingToPhaseStateWithoutBarrier private constructor(
         }
     }
 
+    /**
+     * 返回调试用的目标阶段文本。
+     */
     override fun toString(): String = "ResolvingTo($resolvingTo)"
 }
 
@@ -118,6 +143,9 @@ class CfirInProcessOfResolvingToPhaseStateWithBarrier(
         }
     }
 
+    /**
+     * 返回包含等待屏障语义的调试文本。
+     */
     override fun toString(): String = "ResolvingToWithBarrier($resolvingTo)"
 }
 
@@ -144,6 +172,9 @@ class CfirInProcessOfResolvingToJumpingPhaseState(
     @Volatile
     var waitingFor: CfirInProcessOfResolvingToJumpingPhaseState? = null
 
+    /**
+     * 返回 jumping phase 状态的调试文本。
+     */
     override fun toString(): String = "ResolvingJumpingTo($resolvingTo)"
 }
 

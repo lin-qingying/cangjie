@@ -7,9 +7,16 @@ import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.name.ClassId
 
+/** 将 raw import 指令解析为结构化 import binding 的解析器。 */
 internal class CfirImportBindingResolver(
+    /** 当前解析 session，用于查询包、class-like 与顶层 callable。 */
     private val session: CfirSession,
 ) {
+    /**
+     * 解析单条 [CfirImport] 的有效导入名和候选目标集合。
+     *
+     * 目标可能同时包含 package、class-like 与 callable；all-under import 不在这里展开具体成员。
+     */
     fun resolveImportBinding(importDirective: CfirImport): CfirResolvedImportBinding {
         val importedFqName = importDirective.importedFqName
         val aliasName = importDirective.aliasName

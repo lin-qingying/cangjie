@@ -26,6 +26,7 @@ package org.cangnova.cangjie.cfir.scopes
 
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
+import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.types.*
@@ -38,7 +39,9 @@ import org.cangnova.cangjie.type.model.TypeConstructorMarker
  * 当前 CFIR 尚未抽出完整 override checker，因此 providers / checkers 共用这个签名入口，
  * 避免不同阶段各自用不同规则判断“同一成员签名”。
  */
-fun CfirCallableSymbol<*>.overrideSignatureKey(): String {
+fun CfirCallableSymbol<*>.overrideSignatureKey(
+    ownerSubstitutor: ConeSubstitutor = ConeSubstitutor.Empty,
+): String {
     if (!isBound) return callableIdAsString()
 
     return when (val declaration = cfir) {
@@ -52,7 +55,7 @@ fun CfirCallableSymbol<*>.overrideSignatureKey(): String {
                 postfix = ")",
                 separator = ",",
             ) { parameter ->
-                parameter.returnTypeRef.toOverrideSignatureComponent(ownTypeParameterIndices)
+                parameter.returnTypeRef.toOverrideSignatureComponent(ownTypeParameterIndices, ownerSubstitutor)
             }
             "fun:${name.asString()}$typeParameterPart$parameterPart"
         }
@@ -66,20 +69,35 @@ fun CfirCallableSymbol<*>.overrideSignatureKey(): String {
     }
 }
 
+/**
+ * 判断 callable 是否为 static 成员。
+ */
 fun CfirCallableSymbol<*>.isStaticMemberForOverride(): Boolean =
     isBound && cfir.status.isStatic
 
+/**
+ * 将 type ref 转换为 override 签名组成部分。
+ */
 private fun CfirTypeRef.toOverrideSignatureComponent(
     ownTypeParameterIndices: Map<TypeConstructorMarker, Int>,
+    ownerSubstitutor: ConeSubstitutor,
 ): String = when (this) {
-    is CfirResolvedTypeRef -> coneType.toOverrideSignatureComponent(ownTypeParameterIndices)
+    is CfirResolvedTypeRef -> ownerSubstitutor.substituteOrSelf(coneType)
+        .toOverrideSignatureComponent(ownTypeParameterIndices)
+
     else -> toString()
 }
 
+/**
+ * 将类型实参转换为 override 签名组成部分。
+ */
 private fun ConeTypeProjection.toOverrideSignatureComponent(
     ownTypeParameterIndices: Map<TypeConstructorMarker, Int>,
 ): String = type.toOverrideSignatureComponent(ownTypeParameterIndices)
 
+/**
+ * 将 cone type 转换为 override 签名组成部分。
+ */
 private fun ConeCangJieType.toOverrideSignatureComponent(
     ownTypeParameterIndices: Map<TypeConstructorMarker, Int>,
 ): String {
@@ -160,6 +178,9 @@ private fun ConeCangJieType.toOverrideSignatureComponent(
     }
 }
 
+/**
+ * 将类型实参列表转换为 override 签名组成部分。
+ */
 private fun List<ConeTypeProjection>.toOverrideSignatureComponent(
     ownTypeParameterIndices: Map<TypeConstructorMarker, Int>,
 ): String {

@@ -47,6 +47,12 @@ import org.cangnova.cangjie.type.model.TypeConstructorMarker
  * 解析阶段只负责把可见性失败保留在引用/候选上，不在这里反向改写解析语义。
  */
 object CfirOverrideChecker : CfirClassLikeChecker() {
+    /**
+     * 对单个 class-like 声明执行 override/redef 成员检查。
+     *
+     * 检查过程先收集可直接覆写的父成员候选，再依次验证目标存在性、目标可见性、
+     * 参数命名、泛型约束、可见性强弱和返回类型兼容性。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirClassLikeDeclaration) {
         val classScope = context.createUseSiteMemberScope(declaration)
@@ -92,16 +98,33 @@ object CfirOverrideChecker : CfirClassLikeChecker() {
         }
     }
 
+    /**
+     * 判断 callable 声明是否携带 override-like 修饰。
+     *
+     * 当前 CFIR 同时支持普通 override 和静态成员 redef，两者共用后续目标查找与兼容性规则。
+     */
     private fun CfirCallableDeclaration.hasOverrideLikeModifier(): Boolean {
         return status.isOverride || status.isRedef
     }
 
+    /**
+     * 过滤不合法的 override/redef 组合。
+     *
+     * 非 static 的 redef 和 static 的 override 不进入普通覆写检查，避免把修饰符本身的
+     * 合法性问题误报为继承目标缺失。
+     */
     private fun CfirCallableDeclaration.isValidOverrideLikeDeclaration(): Boolean {
         if (status.isRedef && !status.isStatic) return false
         if (status.isOverride && status.isStatic) return false
         return true
     }
 
+    /**
+     * 判断当前声明是否只因 static/redef 语义差异而存在同签名父成员。
+     *
+     * 这种情况说明名称与签名在继承层级中存在，但不应该报告 `NOTHING_TO_OVERRIDE`，
+     * 后续由静态/非静态冲突规则负责诊断。
+     */
     context(context: CheckerContext)
     private fun CfirCallableDeclaration.hasInheritedSignatureIgnoringStatic(
         classScope: org.cangnova.cangjie.cfir.scopes.CfirTypeScope,
@@ -120,6 +143,11 @@ object CfirOverrideChecker : CfirClassLikeChecker() {
         }
     }
 
+    /**
+     * 检查函数 override 时命名参数约束是否与父函数一致。
+     *
+     * 只比较函数声明；属性、构造器等 callable 不参与参数命名兼容性规则。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkParameterNamingCompatibility(
         declaration: CfirCallableDeclaration,
@@ -141,6 +169,11 @@ object CfirOverrideChecker : CfirClassLikeChecker() {
         )
     }
 
+    /**
+     * 检查 override 声明是否弱化了父成员可见性。
+     *
+     * 可见性比较结果为 null 或子声明可见性更弱时，报告第一个不兼容父成员。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkVisibilityCompatibility(
         declaration: CfirCallableDeclaration,
@@ -161,6 +194,12 @@ object CfirOverrideChecker : CfirClassLikeChecker() {
         )
     }
 
+    /**
+     * 检查 override 声明的返回类型与父成员返回类型是否兼容。
+     *
+     * 函数 override 使用子类型关系；属性 override 要求类型不变，并额外处理 `This`
+     * 返回类型不能被普通类型替代的约束。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkReturnTypeCompatibility(
         declaration: CfirCallableDeclaration,
@@ -224,6 +263,11 @@ object CfirOverrideChecker : CfirClassLikeChecker() {
         }
     }
 
+    /**
+     * 检查泛型 override 是否放宽而不是收紧父声明的类型参数约束。
+     *
+     * 父类型参数会先替换到子类型参数空间，再比较子声明 bounds 是否比父声明更严格。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkGenericConstraintCompatibility(
         declaration: CfirCallableDeclaration,
@@ -279,6 +323,9 @@ object CfirOverrideChecker : CfirClassLikeChecker() {
         }
     }
 
+    /**
+     * 构造从父声明类型参数到子声明类型参数的类型替换器。
+     */
     context(context: CheckerContext)
     private fun createParentToChildTypeParameterSubstitutor(
         parentTypeParameters: List<CfirTypeParameterRef>,
@@ -292,6 +339,11 @@ object CfirOverrideChecker : CfirClassLikeChecker() {
     )
 }
 
+/**
+ * 将父成员返回类型中的类型参数替换为 override 声明对应的类型参数。
+ *
+ * 该替换用于在比较父子返回类型时消除不同声明中类型参数符号不相等造成的误差。
+ */
 context(context: CheckerContext)
 private fun ConeCangJieType.substituteAllTypeParameters(
     overrideDeclaration: CfirCallableSymbol<*>,
@@ -317,9 +369,17 @@ private fun ConeCangJieType.substituteAllTypeParameters(
     ).substituteOrSelf(this)
 }
 
+/**
+ * 取得类型参数引用在类型替换器中使用的 type constructor。
+ */
 private fun CfirTypeParameterRef.typeConstructorForSubstitution(): TypeConstructorMarker =
     symbol.toLookupTag() as TypeConstructorMarker
 
+/**
+ * 取得泛型约束诊断应使用的源码位置。
+ *
+ * 优先返回声明属性中记录的类型约束 source，以便诊断落在具体 where/upper-bound 条目上。
+ */
 private fun CfirCallableDeclaration.genericConstraintDiagnosticSource(
     typeParameter: CfirTypeParameterRef,
 ) = attributes.typeConstraintDiagnosticData
@@ -327,15 +387,29 @@ private fun CfirCallableDeclaration.genericConstraintDiagnosticSource(
     ?.firstOrNull { it.parameterName == typeParameter.symbol.name }
     ?.constraintSource
 
+/**
+ * 过滤不能参与泛型约束比较的错误类型 bound。
+ */
 private fun List<CfirResolvedTypeRef>.filterUsableGenericConstraintBounds(): List<CfirResolvedTypeRef> =
     filterNot { it.coneType is ConeErrorType }
 
+/**
+ * 判断 bound 是否等价于 std.core.Any。
+ */
 private fun ConeCangJieType.isAnyBound(): Boolean =
     this == ConeAnyType || (this as? ConeClassLikeType)?.classId == StdlibClassIds.Any
 
+/**
+ * 判断 cone 类型是否是 class-like 的 `This` 类型。
+ */
 private val ConeCangJieType.isThisType: Boolean
     get() = (this as? ConeClassLikeType)?.isThisType == true
 
+/**
+ * 比较当前函数与父函数的命名参数形态是否不一致。
+ *
+ * 参数数量不同时交给签名匹配阶段处理；这里只比较一一对应参数的 named 标记和名称。
+ */
 private fun CfirFunction.hasMismatchedParameterNamingAgainst(overridden: CfirFunction): Boolean {
     if (valueParameters.size != overridden.valueParameters.size) return false
 

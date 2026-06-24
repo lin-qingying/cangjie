@@ -73,20 +73,25 @@ import org.cangnova.cangjie.cfir.expressions.builder.buildErrorExpression as bui
  *
  * 通过 `when(node.tokenType)` 手动分发代替 PSI Visitor 模式，
  * 遍历 LightTree 子节点构建 CFIR 表达式。
+ *
+ * @property declarationBuilder 声明转换器，用于 block 内声明和 pattern binding 等场景。
  */
 class LightTreeRawCfirExpressionBuilder(
     session: CfirSession,
     tree: FlyweightCapableTreeStructure<LighterASTNode>,
     source: CharSequence,
     context: Context<LighterASTNode>,
+    /** 声明转换器，用于 block 内声明和 pattern binding 等场景。 */
     private val declarationBuilder: LightTreeRawCfirDeclarationBuilder,
 ) : AbstractLightTreeRawCfirBuilder(session, tree, source, context) {
 
     // ===== 公共 API =====
 
+    /** 从 LightTree 表达式节点构建 raw CFIR 表达式。 */
     override fun buildExpression(expression: LighterASTNode): CfirExpression =
         convertExpression(expression)
 
+    /** 按 LightTree token type 分派到具体表达式转换函数。 */
     fun convertExpression(node: LighterASTNode): CfirExpression = when (node.tokenType) {
         CjNodeTypes.BLOCK, CjNodeTypes.CASE_BLOCK -> convertBlock(node)
 
@@ -172,6 +177,7 @@ class LightTreeRawCfirExpressionBuilder(
 
     // ===== Block =====
 
+    /** 将 LightTree 声明或表达式节点包装成可放入 block 的 CFIR statement。 */
     private inline fun LighterASTNode.toCfirStatement(errorReasonLazy: () -> String): CfirStatement {
         val cfir = when {
             isDeclarationToken(tokenType) -> declarationBuilder.convertDeclaration(this)
@@ -192,6 +198,7 @@ class LightTreeRawCfirExpressionBuilder(
         }
     }
 
+    /** 转换 block/case block，并展开无 annotation 的普通嵌套 block。 */
     fun convertBlock(node: LighterASTNode): CfirBlock {
         val statements = withLocalContext {
             val stmts = mutableListOf<CfirStatement>()
@@ -218,6 +225,7 @@ class LightTreeRawCfirExpressionBuilder(
 
     // ===== Literal =====
 
+    /** 转换基础 literal 表达式。 */
     private fun convertLiteral(node: LighterASTNode, kind: CfirLiteralKind): CfirLiteralExpression {
         val text = node.asText()
         return buildLiteralExpression {
@@ -227,6 +235,7 @@ class LightTreeRawCfirExpressionBuilder(
         }
     }
 
+    /** 转换布尔 literal。 */
     private fun convertBooleanLiteral(node: LighterASTNode): CfirLiteralExpression {
         val text = node.asText()
         return buildLiteralExpression {
@@ -236,6 +245,7 @@ class LightTreeRawCfirExpressionBuilder(
         }
     }
 
+    /** 转换字符串模板；有插值时构造 string interpolation。 */
     private fun convertStringTemplate(node: LighterASTNode): CfirExpression {
         val parts = mutableListOf<CfirExpression>()
         var hasInterpolation = false
@@ -276,6 +286,7 @@ class LightTreeRawCfirExpressionBuilder(
 
     // ===== Binary & Unary =====
 
+    /** 转换二元表达式、赋值表达式和可重载二元运算。 */
     private fun convertBinary(node: LighterASTNode): CfirExpression {
         var left: LighterASTNode? = null
         var right: LighterASTNode? = null
@@ -360,6 +371,7 @@ class LightTreeRawCfirExpressionBuilder(
         }
     }
 
+    /** 转换 range 表达式，保留起点、终点、步长与闭区间标志。 */
     private fun convertRange(node: LighterASTNode): CfirRangeExpression {
         var left: LighterASTNode? = null
         var right: LighterASTNode? = null
@@ -396,6 +408,7 @@ class LightTreeRawCfirExpressionBuilder(
         }
     }
 
+    /** 转换前缀一元表达式。 */
     private fun convertPrefix(node: LighterASTNode): CfirExpression {
         var opToken: IElementType? = null
         var opNode: LighterASTNode? = null
@@ -434,6 +447,7 @@ class LightTreeRawCfirExpressionBuilder(
         }
     }
 
+    /** 转换后缀一元表达式。 */
     private fun convertPostfix(node: LighterASTNode): CfirExpression {
         var opToken: IElementType? = null
         var opNode: LighterASTNode? = null
@@ -504,7 +518,8 @@ class LightTreeRawCfirExpressionBuilder(
 
     // ===== Call & Access =====
 
-      private fun convertCall(node: LighterASTNode): CfirExpression {
+    /** 转换普通调用表达式与尾随 lambda 调用。 */
+    private fun convertCall(node: LighterASTNode): CfirExpression {
           var calleeNode: LighterASTNode? = null
           val argNodes = mutableListOf<LighterASTNode>()
           val typeArgNodes = mutableListOf<LighterASTNode>()
@@ -685,6 +700,7 @@ class LightTreeRawCfirExpressionBuilder(
      * 1. 参数映射阶段可以从 block.source 恢复命名参数前缀；
      * 2. 诊断组件已经完整支持 block，不会像专用 wrapped expression 那样额外引入检查器分发分支。
      */
+    /** 转换单个调用实参，保留 named 与 inout 包装。 */
     private fun convertCallArgument(valueArgumentNode: LighterASTNode): CfirExpression? {
         val expressionNode = findFirstExpression(valueArgumentNode) ?: return null
         val convertedExpression = convertExpression(expressionNode)
@@ -706,6 +722,7 @@ class LightTreeRawCfirExpressionBuilder(
         }
     }
 
+    /** 尝试把基础类型调用直接构造成类型转换表达式。 */
     private fun tryBuildTypeConversion(
         callNode: LighterASTNode,
         calleeNode: LighterASTNode?,
@@ -739,6 +756,7 @@ class LightTreeRawCfirExpressionBuilder(
         }
     }
 
+    /** 识别可由调用语法触发的基础类型转换目标。 */
     private fun LighterASTNode.primitiveTypeConversionKindOrNull(): PrimitiveTypeKind? {
         if (tokenType != BASIC_REFERENCE_EXPRESSION) return null
         val rawName = referenceNameFromText(asText()).asString()
@@ -747,6 +765,7 @@ class LightTreeRawCfirExpressionBuilder(
         }
     }
 
+    /** 把 callee 节点拆成显式 receiver 与待解析的具名引用。 */
     private fun resolveCalleeReference(calleeNode: LighterASTNode?): Pair<CfirExpression?, org.cangnova.cangjie.cfir.references.CfirNamedReference> {
         if (calleeNode == null) {
             return null to buildNamedReference(Name.identifier("<error>"))
@@ -803,6 +822,7 @@ class LightTreeRawCfirExpressionBuilder(
         }
     }
 
+    /** 判断 callee 是否为 mock intrinsic 调用入口。 */
     private fun LighterASTNode?.isMockIntrinsicCallee(): Boolean {
         val rawName = when (this?.tokenType) {
             CjNodeTypes.REFERENCE_EXPRESSION -> asText()
@@ -824,6 +844,7 @@ class LightTreeRawCfirExpressionBuilder(
         return name == "createMock" || name == "createSpy"
     }
 
+    /** 转换 spawn 表达式。 */
     private fun convertSpawn(node: LighterASTNode): CfirExpression {
         val lambdaNode = tree.findChildByType(node, CjNodeTypes.LAMBDA_EXPRESSION)
         val body = if (lambdaNode != null) {
@@ -835,6 +856,7 @@ class LightTreeRawCfirExpressionBuilder(
         return buildSpawnExpression { source = node.toSource(); this.body = body }
     }
 
+    /** 转换点访问或安全访问表达式。 */
     private fun convertDotQualified(node: LighterASTNode): CfirExpression {
         var receiverNode: LighterASTNode? = null
         var selectorNode: LighterASTNode? = null
@@ -951,6 +973,7 @@ class LightTreeRawCfirExpressionBuilder(
         return buildErrorExpression(node.toSourceElement(), "Unsupported selector: ${selector.tokenType}")
     }
 
+    /** 转换裸名称引用和带类型实参的名称访问。 */
     private fun convertNameReference(node: LighterASTNode): CfirExpression {
         val referencedName = referenceNameFromText(node.asText())
         val typeArguments = collectReferenceTypeArguments(node)
@@ -986,6 +1009,7 @@ class LightTreeRawCfirExpressionBuilder(
         }
     }
 
+    /** 从名称引用节点收集类型实参。 */
     private fun collectReferenceTypeArguments(node: LighterASTNode): List<org.cangnova.cangjie.cfir.types.CfirTypeRef> {
         if (node.tokenType != CjNodeTypes.REFERENCE_EXPRESSION) return emptyList()
 
@@ -1007,6 +1031,7 @@ class LightTreeRawCfirExpressionBuilder(
         }
     }
 
+    /** 从 callee 节点收集调用类型实参。 */
     private fun collectTypeArgumentsFromCallee(calleeNode: LighterASTNode?): List<org.cangnova.cangjie.cfir.types.CfirTypeRef> {
         calleeNode ?: return emptyList()
         return when (calleeNode.tokenType) {
@@ -1029,6 +1054,7 @@ class LightTreeRawCfirExpressionBuilder(
         }
     }
 
+    /** 提取 `VArray` 调用携带的大小字面量。 */
     private fun extractVArraySizeLiteral(
         callNode: LighterASTNode,
         calleeNode: LighterASTNode?,
@@ -1037,11 +1063,13 @@ class LightTreeRawCfirExpressionBuilder(
         return findVArraySizeLiteral(callNode) ?: findVArraySizeLiteral(calleeNode)
     }
 
+    /** 判断 callee 是否为直接 `VArray` 名称。 */
     private fun LighterASTNode?.isDirectVArrayCallee(): Boolean {
         if (this?.tokenType != CjNodeTypes.REFERENCE_EXPRESSION && this?.tokenType != BASIC_REFERENCE_EXPRESSION) return false
         return referenceNameFromText(asText()).asString() == "VArray"
     }
 
+    /** 查找节点中的 VArray 大小字面量。 */
     private fun findVArraySizeLiteral(node: LighterASTNode?): String? {
         node ?: return null
         if (node.tokenType == CjNodeTypes.TYPE_ARGUMENT_LIST) {
@@ -1055,6 +1083,7 @@ class LightTreeRawCfirExpressionBuilder(
 
     // ===== Control Flow =====
 
+    /** 转换 if 表达式，支持 let-pattern condition。 */
     private fun convertIf(node: LighterASTNode): CfirIfExpression {
         var conditionNode: LighterASTNode? = null
         var thenNode: LighterASTNode? = null
@@ -1081,6 +1110,7 @@ class LightTreeRawCfirExpressionBuilder(
         }
     }
 
+    /** 转换 let-pattern 条件表达式。 */
     private fun convertLetPatternExpression(node: LighterASTNode): CfirLetPatternExpression {
         var patternNode: LighterASTNode? = null
         var initializerNode: LighterASTNode? = null
@@ -1113,6 +1143,7 @@ class LightTreeRawCfirExpressionBuilder(
         }
     }
 
+    /** 转换 match 表达式。 */
     private fun convertMatch(node: LighterASTNode): CfirMatchExpression {
         var subjectNode: LighterASTNode? = null
         val entryNodes = mutableListOf<LighterASTNode>()
@@ -1144,6 +1175,7 @@ class LightTreeRawCfirExpressionBuilder(
         }
     }
 
+    /** 转换单个 match entry。 */
     private fun convertMatchEntry(entry: LighterASTNode, hasSubject: Boolean): CfirMatchBranch {
         // 收集所有 condition/pattern 节点（| 分隔的多个）
         val conditionNodes = mutableListOf<LighterASTNode>()
@@ -1213,6 +1245,7 @@ class LightTreeRawCfirExpressionBuilder(
         }
     }
 
+    /** 将 match condition 转换为 CFIR pattern。 */
     private fun convertMatchCondition(node: LighterASTNode): CfirPattern {
         // 优先作为模式处理（对齐仓颉语义：case 后面是模式）
         if (isPatternToken(node.tokenType)) {
@@ -1237,6 +1270,7 @@ class LightTreeRawCfirExpressionBuilder(
 
     // ===== Pattern =====
 
+    /** 转换 LightTree pattern，并为具名绑定创建 binding variable。 */
     fun convertPattern(
         node: LighterASTNode,
         ownerStatus: CfirDeclarationStatus = declarationBuilder.cloneDeclarationStatus(CfirDeclarationStatusImpl.DEFAULT),
@@ -1279,7 +1313,8 @@ class LightTreeRawCfirExpressionBuilder(
         }
         CjNodeTypes.TYPE_PATTERN -> {
             val typeRef = tree.findChildByType(node, CjNodeTypes.TYPE_REFERENCE)
-            val nameNode = tree.findChildByType(node, CjTokens.IDENTIFIER)
+            val nameNode = tree.findChildByType(node, CjNodeTypes.REFERENCE_EXPRESSION)
+                ?: tree.findChildByType(node, CjTokens.IDENTIFIER)
             buildTypePattern {
                 source = node.toSource()
                 this.typeRef = convertTypeReference(typeRef, tree, this@LightTreeRawCfirExpressionBuilder.source) {
@@ -1288,7 +1323,7 @@ class LightTreeRawCfirExpressionBuilder(
                 bindingName = nameNode?.let { Name.identifier(it.asText()) }
                 bindingVariable = bindingName?.let { name ->
                     declarationBuilder.createPatternBindingVariable(
-                        source = node.toSource(),
+                        source = (nameNode ?: node).toSource(),
                         name = name,
                         status = ownerStatus,
                         isLocal = ownerIsLocal,
@@ -1342,6 +1377,7 @@ class LightTreeRawCfirExpressionBuilder(
 
     // ===== Loops =====
 
+    /** 转换 for-in 循环。 */
     private fun convertFor(node: LighterASTNode): CfirForInExpression {
         var patternNode: LighterASTNode? = null
         var rangeNode: LighterASTNode? = null
@@ -1407,6 +1443,7 @@ class LightTreeRawCfirExpressionBuilder(
         return loop
     }
 
+    /** 转换 while 循环。 */
     private fun convertWhile(node: LighterASTNode): CfirLoopExpression {
         var condNode: LighterASTNode? = null
         var bodyNode: LighterASTNode? = null
@@ -1433,6 +1470,7 @@ class LightTreeRawCfirExpressionBuilder(
         return loop
     }
 
+    /** 转换 do-while 循环。 */
     private fun convertDoWhile(node: LighterASTNode): CfirLoopExpression {
         var condNode: LighterASTNode? = null
         var bodyNode: LighterASTNode? = null
@@ -1461,6 +1499,7 @@ class LightTreeRawCfirExpressionBuilder(
 
     // ===== Jump & Exception =====
 
+    /** 转换 return 表达式并绑定当前函数 target。 */
     private fun convertReturn(node: LighterASTNode): CfirReturnExpression {
         val resultExpr = findFirstExpression(node)
         return buildReturnExpressionWithCurrentFunctionTarget(
@@ -1469,6 +1508,7 @@ class LightTreeRawCfirExpressionBuilder(
         )
     }
 
+    /** 转换 throw 表达式。 */
     private fun convertThrow(node: LighterASTNode): CfirThrowExpression {
         val exprNode = findFirstExpression(node)
         val exception = exprNode?.let { convertExpression(it) }
@@ -1479,6 +1519,7 @@ class LightTreeRawCfirExpressionBuilder(
         }
     }
 
+    /** 转换 effect perform 表达式。 */
     private fun convertPerform(node: LighterASTNode): CfirPerformExpression {
         val exprNode = findFirstExpression(node)
         val performedExpression = exprNode?.let { convertExpression(it) }
@@ -1489,6 +1530,7 @@ class LightTreeRawCfirExpressionBuilder(
         }
     }
 
+    /** 转换 effect resume 表达式。 */
     private fun convertResume(node: LighterASTNode): CfirResumeExpression {
         var payloadNode: LighterASTNode? = null
         var isThrowing = false
@@ -1512,6 +1554,7 @@ class LightTreeRawCfirExpressionBuilder(
         }
     }
 
+    /** 转换 try handle 分支中的 command type pattern。 */
     private fun convertCommandTypePattern(node: LighterASTNode): CfirCommandTypePattern {
         val bindingName = tree.findChildByType(node, CjTokens.IDENTIFIER)?.asText()?.let(Name::identifier)
         val isWildcard = tree.findChildByType(node, CjTokens.UNDERLINE) != null
@@ -1526,6 +1569,7 @@ class LightTreeRawCfirExpressionBuilder(
         }
     }
 
+    /** 转换 try-with-resource 资源声明。 */
     private fun convertTryResource(node: LighterASTNode): CfirFieldVariable {
         val parameterNode = tree.findChildByType(node, CjNodeTypes.VALUE_PARAMETER)
         val nameText = parameterNode?.let { tree.findChildByType(it, CjTokens.IDENTIFIER)?.asText() }
@@ -1561,6 +1605,7 @@ class LightTreeRawCfirExpressionBuilder(
         }
     }
 
+    /** 转换 try 表达式，包括 resource、handle、catch 与 finally。 */
     private fun convertTry(node: LighterASTNode): CfirTryExpression {
         var tryBlockNode: LighterASTNode? = null
         var resourceListNode: LighterASTNode? = null
@@ -1634,6 +1679,7 @@ class LightTreeRawCfirExpressionBuilder(
 
     // ===== Lambda =====
 
+    /** 转换 lambda 表达式及其匿名函数声明。 */
     private fun convertLambda(node: LighterASTNode): CfirAnonymousFunctionExpression {
         val functionSymbol = CfirAnonymousFunctionSymbol()
         val valueParams = mutableListOf<org.cangnova.cangjie.cfir.declarations.CfirValueParameter>()
@@ -1696,6 +1742,7 @@ class LightTreeRawCfirExpressionBuilder(
 
     // ===== Misc =====
 
+    /** 转换数组或下标访问表达式。 */
     private fun convertSubscript(node: LighterASTNode): CfirSubscriptExpression {
         var receiverNode: LighterASTNode? = null
         val indexNodes = mutableListOf<LighterASTNode>()
@@ -1726,6 +1773,7 @@ class LightTreeRawCfirExpressionBuilder(
         }
     }
 
+    /** 转换数组字面量。 */
     private fun convertArrayLiteral(node: LighterASTNode): CfirArrayLiteral {
         val elements = mutableListOf<CfirExpression>()
         tree.forEachChildren(node) { child ->
@@ -1739,6 +1787,7 @@ class LightTreeRawCfirExpressionBuilder(
         }
     }
 
+    /** 转换 tuple 字面量。 */
     private fun convertTupleLiteral(node: LighterASTNode): CfirTupleLiteral {
         val elements = mutableListOf<CfirExpression>()
         tree.forEachChildren(node) { child ->
@@ -1752,6 +1801,7 @@ class LightTreeRawCfirExpressionBuilder(
         }
     }
 
+    /** 转换 `is` 类型检查表达式。 */
     private fun convertTypeCheck(node: LighterASTNode): CfirTypeOperator {
         var argNode: LighterASTNode? = null
         var typeRefNode: LighterASTNode? = null
@@ -1779,6 +1829,7 @@ class LightTreeRawCfirExpressionBuilder(
         }
     }
 
+    /** 转换 catch clause 的绑定与类型 pattern。 */
     private fun convertCatchPattern(
         catchNode: LighterASTNode,
         parameterNode: LighterASTNode?,
@@ -1815,6 +1866,7 @@ class LightTreeRawCfirExpressionBuilder(
         }
     }
 
+    /** 转换 `as` 等带类型 RHS 的类型操作表达式。 */
     private fun convertTypeOperator(node: LighterASTNode): CfirTypeOperator {
         var argNode: LighterASTNode? = null
         var typeRefNode: LighterASTNode? = null
@@ -1853,6 +1905,7 @@ class LightTreeRawCfirExpressionBuilder(
         }
     }
 
+    /** 转换 synchronized 表达式。 */
     private fun convertSynchronized(node: LighterASTNode): CfirExpression {
         var exprNode: LighterASTNode? = null
         var blockNode: LighterASTNode? = null
@@ -1876,6 +1929,7 @@ class LightTreeRawCfirExpressionBuilder(
         }
     }
 
+    /** 转换 unsafe 表达式。 */
     private fun convertUnsafe(node: LighterASTNode): CfirExpression {
         val blockNode = tree.findChildByType(node, CjNodeTypes.BLOCK)
             ?: return buildErrorExpression(node.toSourceElement(), "Missing unsafe block")
@@ -1886,6 +1940,7 @@ class LightTreeRawCfirExpressionBuilder(
         }
     }
 
+    /** 转换 quote 表达式并保留插值表达式列表。 */
     private fun convertQuote(node: LighterASTNode): CfirExpression {
         val rawText = node.asText()
         val interpolations = mutableListOf<CfirExpression>()
@@ -1904,6 +1959,7 @@ class LightTreeRawCfirExpressionBuilder(
         }
     }
 
+    /** 转换表达式位置的 macro call，并收集 [MacroSurfaceExpr]。 */
     private fun convertMacroExpression(node: LighterASTNode): CfirExpression {
         val nameNode = tree.findChildByType(node, CjNodeTypes.REFERENCE_EXPRESSION)
         val inputNode = tree.findChildByType(node, CjNodeTypes.MACRO_INPUT)
@@ -1966,6 +2022,7 @@ class LightTreeRawCfirExpressionBuilder(
         return carrier
     }
 
+    /** 在 raw 文本中判断 macro input 是否显式包含括号。 */
     private fun String.hasMacroInputParentheses(): Boolean {
         val open = indexOf('(')
         return open >= 0 && indexOf(')', startIndex = open + 1) >= 0
@@ -1973,6 +2030,7 @@ class LightTreeRawCfirExpressionBuilder(
 
     // ===== 辅助方法 =====
 
+    /** 将任意表达式节点包装成 block。 */
     private fun toBlock(node: LighterASTNode): CfirBlock {
         if (node.tokenType == CjNodeTypes.BLOCK || node.tokenType == CjNodeTypes.CASE_BLOCK) {
             return convertBlock(node)
@@ -1991,6 +2049,7 @@ class LightTreeRawCfirExpressionBuilder(
         return null
     }
 
+    /** 使用 [symbol] 创建 source declaration，并保持符号与声明的类型关系。 */
     private inline fun <D : CfirDeclaration, S : CfirBasedSymbol<D>> buildSourceDeclaration(
         symbol: S,
         builder: (S) -> D,
@@ -2000,6 +2059,7 @@ class LightTreeRawCfirExpressionBuilder(
         return declaration
     }
 
+    /** 将引用文本转换为 [Name]，非法文本使用 special name。 */
     private fun referenceNameFromText(text: String): Name {
         val raw = text.trim()
         if (raw.isEmpty()) return Name.identifier("<error>")
@@ -2072,7 +2132,8 @@ class LightTreeRawCfirExpressionBuilder(
     }
 }
 
-private fun List<org.cangnova.cangjie.cfir.builder.macro.MacroPayloadToken>.toMacroSurfaceTokens(): List<MacroSurfaceToken> {
+    /** 将 raw-cfir-common 的 macro payload token 映射为 providers 层 macro surface token。 */
+    private fun List<org.cangnova.cangjie.cfir.builder.macro.MacroPayloadToken>.toMacroSurfaceTokens(): List<MacroSurfaceToken> {
     return map { token ->
         MacroSurfaceToken(
             text = token.text,

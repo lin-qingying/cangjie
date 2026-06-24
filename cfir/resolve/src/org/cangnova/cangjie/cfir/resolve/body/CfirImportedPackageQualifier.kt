@@ -19,15 +19,36 @@ import org.cangnova.cangjie.name.Name
  * 但把仓颉官方 `PackageDecl` lookup 语义映射为 package member scope。
  */
 internal data class CfirImportedPackageQualifier(
+    /**
+     * 源码中作为包限定符使用的短名或导入别名。
+     */
     val name: Name,
+    /**
+     * 该短名可解析到的包限定名集合。
+     */
     val packageFqNames: List<FqName>,
+    /**
+     * 是否存在同名但未成功解析目标的导入。
+     */
     val hasUnresolvedImport: Boolean = false,
 ) {
+    /**
+     * 当前包限定符是否同时命中多个包。
+     */
     val isAmbiguous: Boolean get() = packageFqNames.size > 1
+    /**
+     * 当前包限定符是否只来自未解析导入。
+     */
     val isUnresolved: Boolean get() = packageFqNames.isEmpty() && hasUnresolvedImport
+    /**
+     * 唯一解析成功的包限定名；歧义或未解析时为空。
+     */
     val packageFqName: FqName? get() = packageFqNames.singleOrNull()
 }
 
+/**
+ * 在文件导入表中解析可作为包限定符使用的短名。
+ */
 internal fun CfirFile.resolveImportedPackageQualifier(
     name: Name,
     session: CfirSession,
@@ -60,9 +81,15 @@ internal fun CfirFile.resolveImportedPackageQualifier(
     )
 }
 
+/**
+ * 从表达式的可解析引用中提取可能的导入包限定符短名。
+ */
 internal fun CfirExpression.importedPackageQualifierNameOrNull(): Name? =
     ((this as? CfirResolvable)?.calleeReference as? CfirNamedReference)?.name
 
+/**
+ * 将表达式解析为导入包限定符信息。
+ */
 internal fun CfirExpression.importedPackageQualifierOrNull(
     file: CfirFile,
     session: CfirSession,
@@ -71,6 +98,9 @@ internal fun CfirExpression.importedPackageQualifierOrNull(
     return file.resolveImportedPackageQualifier(name, session)
 }
 
+/**
+ * 为表达式命中的导入包限定符创建包成员作用域。
+ */
 internal fun CfirExpression.importedPackageQualifierScopeOrNull(
     file: CfirFile,
     session: CfirSession,

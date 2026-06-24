@@ -14,6 +14,11 @@ import org.cangnova.cangjie.type.model.supertypes
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 import org.cangnova.cangjie.utils.exceptions.withCfirEntry
 
+/**
+ * 复制 resolved type ref，并替换 source 与 cone type。
+ *
+ * 如果原 type ref 是错误 type ref，会保留诊断和部分解析 type ref 信息。
+ */
 fun CfirResolvedTypeRef.withReplacedSourceAndType(newSource: CjSourceElement?, newType: ConeCangJieType): CfirResolvedTypeRef {
     val originalPartiallyResolvedTypeRef = (this as? CfirErrorTypeRef)
         ?.partiallyResolvedTypeRef
@@ -56,6 +61,9 @@ fun CfirResolvedTypeRef.withReplacedSourceAndType(newSource: CjSourceElement?, n
     }
 }
 
+/**
+ * 收集类型参数类型的所有有效上界。
+ */
 fun ConeTypeParameterType.collectUpperBounds(typeContext: ConeTypeContext): Set<ConeCangJieType> {
     val upperBounds = linkedSetOf<ConeCangJieType>()
     val seen = linkedSetOf<ConeCangJieType>()
@@ -81,6 +89,9 @@ fun ConeTypeParameterType.collectUpperBounds(typeContext: ConeTypeContext): Set<
     return upperBounds
 }
 
+/**
+ * 判断当前类型或其父类型链中是否存在指定 [classId]。
+ */
 fun ConeCangJieType.hasSupertypeWithGivenClassId(classId: org.cangnova.cangjie.name.ClassId, typeContext: ConeTypeContext): Boolean {
     val seen = linkedSetOf<ConeCangJieType>()
 
@@ -120,15 +131,24 @@ fun ConeCangJieType.hasSupertypeWithGivenClassId(classId: org.cangnova.cangjie.n
     return visit(this)
 }
 
+/**
+ * 解析类型参数 lookup tag 的直接上界。
+ */
 private fun ConeTypeParameterLookupTag.collectUpperBounds(): List<ConeCangJieType> {
     typeParameterSymbol.lazyResolveToPhase(CfirResolvePhase.TYPES)
     return typeParameterSymbol.resolvedBounds.map { it.coneType }
 }
 
+/**
+ * 将类型参数上界逐个传给 [collect]。
+ */
 private inline fun ConeTypeParameterLookupTag.collectUpperBoundsTo(collect: (ConeCangJieType) -> Unit) {
     collectUpperBounds().forEach(collect)
 }
 
+/**
+ * 计算一组类型的公共父类型；空列表返回 `null`。
+ */
 fun ConeInferenceContext.commonSuperTypeOrNull(types: List<ConeCangJieType>): ConeCangJieType? {
     return when (types.size) {
         0 -> null
@@ -139,6 +159,9 @@ fun ConeInferenceContext.commonSuperTypeOrNull(types: List<ConeCangJieType>): Co
     }
 }
 
+/**
+ * 返回替换顶层 attributes 后的新类型。
+ */
 @Suppress("UNCHECKED_CAST")
 fun <T : ConeCangJieType> T.withAttributes(attributes: ConeAttributes): T {
     if (this.attributes == attributes) {
@@ -171,6 +194,9 @@ fun <T : ConeCangJieType> T.withAttributes(attributes: ConeAttributes): T {
     } as T
 }
 
+/**
+ * 给当前类型添加顶层 typealias abbreviation 属性。
+ */
 fun <T : ConeCangJieType> T.withAbbreviation(attribute: AbbreviatedTypeAttribute): T {
     val clearedAttributes = attributes.abbreviatedType?.let(attributes::remove) ?: attributes
     return withAttributes(clearedAttributes.add(attribute))
@@ -188,6 +214,9 @@ fun <T : ConeCangJieType> T.withoutAbbreviation(): T {
     return withAttributes(clearedAttributes)
 }
 
+/**
+ * 返回替换类型实参后的新类型。
+ */
 fun <T : ConeCangJieType> T.withArguments(arguments: List<ConeTypeProjection>): T {
     if (typeArguments == arguments) {
         return this
@@ -220,6 +249,9 @@ fun <T : ConeCangJieType> T.withArguments(arguments: List<ConeTypeProjection>): 
     } as T
 }
 
+/**
+ * 按 [replacement] 批量替换类型实参。
+ */
 inline fun <T : ConeCangJieType> T.withArguments(
     replacement: (ConeTypeProjection) -> ConeTypeProjection,
 ): T {

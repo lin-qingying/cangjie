@@ -45,6 +45,9 @@ import org.cangnova.cangjie.name.ClassId
  * - class、interface、ref enum 等引用语义类型不会构成值类型递归。
  */
 object CfirValueTypeRecursiveChecker : CfirClassLikeChecker() {
+    /**
+     * 检查当前值类型声明是否参与递归值类型环。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirClassLikeDeclaration) {
         if (!declaration.isValueTypeDeclaration()) return
@@ -58,6 +61,9 @@ object CfirValueTypeRecursiveChecker : CfirClassLikeChecker() {
         )
     }
 
+    /**
+     * 从当前值类型声明出发查找递归环。
+     */
     context(context: CheckerContext)
     private fun CfirClassLikeDeclaration.recursiveValueTypeCycleOrNull(): List<CfirClassLikeDeclaration>? {
         val target = valueTypeClassId() ?: return null
@@ -68,6 +74,9 @@ object CfirValueTypeRecursiveChecker : CfirClassLikeChecker() {
         )
     }
 
+    /**
+     * 递归遍历值类型成员图，查找回到 [target] 的声明路径。
+     */
     context(context: CheckerContext)
     private fun CfirClassLikeDeclaration.recursiveValueTypeCycleOrNull(
         target: ClassId,
@@ -93,6 +102,11 @@ object CfirValueTypeRecursiveChecker : CfirClassLikeChecker() {
         return null
     }
 
+    /**
+     * 沿类型结构继续查找值类型递归环。
+     *
+     * struct、非 ref enum、tuple、VArray 会继续展开；引用语义 class-like 类型直接停止。
+     */
     context(context: CheckerContext)
     private fun ConeCangJieType.recursiveValueTypeCycleOrNull(
         target: ClassId,
@@ -121,6 +135,9 @@ object CfirValueTypeRecursiveChecker : CfirClassLikeChecker() {
         }
     }
 
+    /**
+     * 收集当前值类型声明中会参与递归检查的成员类型。
+     */
     context(context: CheckerContext)
     private fun CfirClassLikeDeclaration.valueTypeMemberTypes(): List<ConeCangJieType> {
         return when (this) {
@@ -144,9 +161,15 @@ object CfirValueTypeRecursiveChecker : CfirClassLikeChecker() {
         }
     }
 
+    /**
+     * 判断声明是否为值语义类型声明。
+     */
     private fun CfirClassLikeDeclaration.isValueTypeDeclaration(): Boolean =
         this is CfirStruct || this is CfirEnum && !isRefEnum
 
+    /**
+     * 返回值语义类型声明的 ClassId。
+     */
     private fun CfirClassLikeDeclaration.valueTypeClassId(): ClassId? =
         when (this) {
             is CfirStruct -> symbol.classId
@@ -154,6 +177,9 @@ object CfirValueTypeRecursiveChecker : CfirClassLikeChecker() {
             else -> null
         }
 
+    /**
+     * 按 ClassId 查找值语义 class-like 声明。
+     */
     context(context: CheckerContext)
     private fun ClassId.valueTypeDeclarationOrNull(): CfirClassLikeDeclaration? {
         val declaration = context.session.symbolProvider.getClassLikeSymbolByClassId(this)?.cfir
@@ -161,9 +187,15 @@ object CfirValueTypeRecursiveChecker : CfirClassLikeChecker() {
         return declaration.takeIf { it.isValueTypeDeclaration() }
     }
 
+    /**
+     * 从类型引用中读取已解析 cone 类型。
+     */
     private fun org.cangnova.cangjie.cfir.types.CfirTypeRef.resolvedConeTypeOrNull(): ConeCangJieType? =
         (this as? CfirResolvedTypeRef)?.coneType
 
+    /**
+     * 从值参数返回类型引用中读取已解析 cone 类型。
+     */
     private fun CfirValueParameter.resolvedConeTypeOrNull(): ConeCangJieType? =
         returnTypeRef.resolvedConeTypeOrNull()
 }

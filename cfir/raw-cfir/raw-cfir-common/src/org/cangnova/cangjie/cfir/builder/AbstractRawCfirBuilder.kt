@@ -56,35 +56,58 @@ import org.cangnova.cangjie.cfir.expressions.builder.buildErrorExpression as bui
 import org.cangnova.cangjie.cfir.references.builder.buildNamedReference as buildNamedReferenceNode
 import org.cangnova.cangjie.cfir.types.builder.buildImplicitTypeRef as buildImplicitTypeRefNode
 
+/**
+ * PSI 与 LightTree raw CFIR builder 的共享基类。
+ *
+ * 本类只承载两种前端表示都需要的上下文管理、公共节点构造、目标绑定与
+ * 错误占位生成逻辑；具体语法树访问由子类通过 [buildFile]、[buildDeclaration]
+ * 和 [buildExpression] 等入口实现。
+ *
+ * @param T 子类处理的语法节点类型，例如 PSI 节点或 LightTree 节点包装。
+ * @property baseSession 当前 raw build 使用的 CFIR session。
+ * @property context raw CFIR 构建共享上下文。
+ */
 abstract class AbstractRawCfirBuilder<T : Any>(
+    /** 当前 raw build 使用的 CFIR session。 */
     val baseSession: CfirSession,
+    /** raw CFIR 构建共享上下文。 */
     val context: Context<T> = Context(),
 ) {
+    /** 从 [baseSession] 投影出的模块数据，写入所有 raw CFIR 声明。 */
     val baseModuleData: CfirModuleData = baseSession.moduleData
 
+    /** 当前构建文件的包名上下文。 */
     protected var packageFqName: FqName
         get() = context.packageFqName
         set(value) {
             context.packageFqName = value
         }
 
+    /** 在 [fqName] 包上下文中执行 [block]，结束后恢复先前包名。 */
     protected fun <R> withPackageContext(fqName: FqName, block: () -> R): R = context.withPackage(fqName, block)
 
+    /** 在局部声明上下文中执行 [block]，用于局部函数、lambda、块内声明等构建。 */
     protected fun <R> withLocalContext(block: () -> R): R = context.withLocalContext(block)
 
+    /** 当前是否处于局部声明上下文。 */
     protected val inLocalContext: Boolean
         get() = context.inLocalContext
 
+    /** 将 [symbol] 压入当前容器符号栈。 */
     protected fun pushContainerSymbol(symbol: CfirBasedSymbol<*>) = context.pushContainerSymbol(symbol)
 
+    /** 从当前容器符号栈弹出 [symbol] 对应的作用域层。 */
     protected fun popContainerSymbol(symbol: CfirBasedSymbol<*>) = context.popContainerSymbol(symbol)
 
+    /** 当前容器符号；不存在时返回 null。 */
     protected val containerSymbolIfAny: CfirBasedSymbol<*>?
         get() = context.containerSymbolIfAny
 
+    /** 当前容器符号；调用方必须保证容器栈非空。 */
     protected val containerSymbol: CfirBasedSymbol<*>
         get() = context.containerSymbol
 
+    /** 在 [symbol] 作为当前容器的上下文中执行 [block]。 */
     protected inline fun <R> withContainerSymbol(symbol: CfirBasedSymbol<*>, block: () -> R): R {
         pushContainerSymbol(symbol)
         return try {
@@ -94,6 +117,7 @@ abstract class AbstractRawCfirBuilder<T : Any>(
         }
     }
 
+    /** 在 [type] 作为当前 dispatch receiver self type 的上下文中执行 [block]。 */
     protected inline fun <R> withDispatchReceiverType(type: ConeSimpleCangJieType, block: () -> R): R {
         context.pushDispatchReceiverType(type)
         return try {
@@ -103,6 +127,7 @@ abstract class AbstractRawCfirBuilder<T : Any>(
         }
     }
 
+    /** 进入函数 target 作用域执行 [block]，用于绑定 return 目标与函数内 loop 边界。 */
     protected inline fun <R> withFunctionTarget(target: CfirFunctionTarget, block: () -> R): R {
         context.enterFunction(target)
         return try {
@@ -112,10 +137,12 @@ abstract class AbstractRawCfirBuilder<T : Any>(
         }
     }
 
+    /** 将 raw builder 构造出的 [function] 绑定到已创建的 [target]。 */
     protected open fun bindFunctionTarget(target: CfirFunctionTarget, function: CfirFunction) {
         target.bind(function)
     }
 
+    /** 进入循环 target 作用域执行 [block]，用于绑定 break/continue 目标。 */
     protected inline fun <R> withLoopTarget(target: CfirLoopTarget, block: () -> R): R {
         context.enterLoop(target)
         return try {
@@ -125,6 +152,7 @@ abstract class AbstractRawCfirBuilder<T : Any>(
         }
     }
 
+    /** 根据当前包、容器和局部语境构造 callable id。 */
     protected fun callableIdFor(name: Name): CallableId {
         if (context.inLocalContext) return CallableId(name)
 
@@ -155,6 +183,12 @@ abstract class AbstractRawCfirBuilder<T : Any>(
         return ClassId(packageFqName, name)
     }
 
+    /**
+     * 计算当前 class-like 容器的 dispatch receiver self type。
+     *
+     * 局部声明没有稳定 class-like receiver；若上下文已经显式压入 self type，
+     * 优先返回该类型以保留泛型实参。
+     */
     protected fun currentDispatchReceiverType(): ConeSimpleCangJieType? {
         if (context.inLocalContext) return null
         context.currentDispatchReceiverType()?.let { return it }
@@ -186,28 +220,41 @@ abstract class AbstractRawCfirBuilder<T : Any>(
 
 
 
+    /** 将语法节点转换为 CFIR source element。 */
     abstract fun T.toSourceElement(): AbstractCjSourceElement
 
+    /** 返回语法节点的 element type。 */
     abstract fun T.elementType(): IElementType
 
+    /** 返回语法节点的源码文本。 */
     abstract fun T.asText(): String
 
+    /** 从任意语法节点构建 CFIR 元素；默认表示该入口未被子类支持。 */
     open fun buildElement(element: T): CfirElement {
         error("Unsupported build element entry: ${element::class.qualifiedName}")
     }
 
+    /** 从文件节点构建 raw [CfirFile]。 */
     open fun buildFile(file: T): CfirFile {
         error("Unsupported build file entry: ${file::class.qualifiedName}")
     }
 
+    /** 从声明节点构建 raw [CfirDeclaration]。 */
     open fun buildDeclaration(declaration: T): CfirDeclaration {
         error("Unsupported build declaration entry: ${declaration::class.qualifiedName}")
     }
 
+    /** 从表达式节点构建 raw [CfirExpression]。 */
     open fun buildExpression(expression: T): CfirExpression {
         error("Unsupported build expression entry: ${expression::class.qualifiedName}")
     }
 
+    /**
+     * 按 raw builder 收集到的 modifier 标志构造声明状态。
+     *
+     * 该函数只做状态对象组装，不执行语义合法性检查；冲突 modifier、
+     * 可见性与开放性约束由后续 checker 处理。
+     */
     protected open fun buildDeclarationStatus(
         visibility: Visibility,
         isVisibilityExplicit: Boolean = false,
@@ -246,6 +293,7 @@ abstract class AbstractRawCfirBuilder<T : Any>(
         return status
     }
 
+    /** 构造尚未解析的具名引用。 */
     @Suppress("UNUSED_PARAMETER")
     protected fun buildNamedReference(name: Name, source: AbstractCjSourceElement? = null): CfirNamedReference {
         return buildNamedReferenceNode {
@@ -254,6 +302,7 @@ abstract class AbstractRawCfirBuilder<T : Any>(
         }
     }
 
+    /** 构造带 [reason] 的错误表达式节点。 */
     @Suppress("UNUSED_PARAMETER")
     protected fun buildErrorExpression(source: AbstractCjSourceElement? = null, reason: String): CfirErrorExpression {
         return buildErrorExpressionNode {
@@ -264,6 +313,7 @@ abstract class AbstractRawCfirBuilder<T : Any>(
         }
     }
 
+    /** 构造 raw 阶段使用的 implicit type ref。 */
     protected fun buildImplicitTypeRef(): CfirTypeRef {
         return buildImplicitTypeRefNode {
             customRenderer = false
@@ -302,6 +352,11 @@ abstract class AbstractRawCfirBuilder<T : Any>(
         }
     }
 
+    /**
+     * 构造绑定到当前函数内最近循环的 continue 表达式。
+     *
+     * 若当前函数体内没有可见循环，则构造带 `JumpOutsideLoop` 诊断的错误 loop target。
+     */
     protected fun buildContinueExpressionWithImplicitLoopTarget(
         source: CjSourceElement?,
     ): CfirContinueExpression {
@@ -337,6 +392,7 @@ abstract class AbstractRawCfirBuilder<T : Any>(
         return buildJump(target, diagnostic)
     }
 
+    /** 构造并绑定一个带 [diagnostic] 的错误循环 target。 */
     protected fun buildErrorLoopTarget(
         source: CjSourceElement?,
         diagnostic: ConeSimpleDiagnostic,
@@ -389,6 +445,7 @@ abstract class AbstractRawCfirBuilder<T : Any>(
         }
     }
 
+    /** 构造用于承载非法 return 的错误函数声明，并绑定到 synthetic function target。 */
     private fun buildErrorFunctionTarget(
         source: CjSourceElement?,
         diagnostic: ConeSimpleDiagnostic,

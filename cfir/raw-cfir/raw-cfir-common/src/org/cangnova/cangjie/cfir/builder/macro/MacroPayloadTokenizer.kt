@@ -7,11 +7,20 @@ import org.cangnova.cangjie.lexer.CangJieLexer
  *
  * 该类型不依赖 providers 层，调用方在 PSI/LightTree/frontend 装配边界
  * 显式映射为 construction core 的 `MacroSurfaceToken`。
+ *
+ * @property text token 原始文本。
+ * @property startOffset token 在宿主源文件中的起始偏移。
+ * @property endOffset token 在宿主源文件中的结束偏移。
+ * @property kindName lexer token type 字符串名。
  */
 data class MacroPayloadToken(
+    /** token 原始文本。 */
     val text: String,
+    /** token 在宿主源文件中的起始偏移。 */
     val startOffset: Int,
+    /** token 在宿主源文件中的结束偏移。 */
     val endOffset: Int,
+    /** lexer token type 字符串名。 */
     val kindName: String? = null,
 )
 
@@ -107,6 +116,7 @@ object MacroPayloadTokenizer {
         return current
     }
 
+    /** 比较两个 token 序列的文本和 kind 是否完全一致。 */
     private fun List<MacroPayloadToken>.sameSequence(other: List<MacroPayloadToken>): Boolean {
         if (size != other.size) return false
         for (i in indices) {

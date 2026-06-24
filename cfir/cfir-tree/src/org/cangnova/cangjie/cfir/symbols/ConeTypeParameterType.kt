@@ -13,7 +13,9 @@ import org.cangnova.cangjie.cfir.types.ConeTypeProjection
  * 类型参数类型**没有类型实参**（自身不是泛型容器），因此子类统一返回空列表。
  */
 abstract class ConeTypeParameterType : ConeLookupTagBasedType() {
-    /** lookup tag 收窄为 [ConeTypeParameterLookupTag]，可直接访问类型参数符号。 */
+    /**
+     * lookup tag 收窄为 [ConeTypeParameterLookupTag]，可直接访问类型参数符号。
+     */
     abstract override val lookupTag: ConeTypeParameterLookupTag
 }
 
@@ -28,10 +30,12 @@ abstract class ConeTypeParameterType : ConeLookupTagBasedType() {
  */
 class ConeTypeParameterTypeImpl(
     override val lookupTag: ConeTypeParameterLookupTag,
-    override val attributes: ConeAttributes = ConeAttributes.Empty
+    override val attributes: ConeAttributes = ConeAttributes.Empty,
 ) : ConeTypeParameterType() {
 
-    /** 类型参数不是泛型容器，始终返回空列表。 */
+    /**
+     * 类型参数不是泛型容器，始终返回空列表。
+     */
     override val typeArguments: List<ConeTypeProjection>
         get() = emptyList()
 }

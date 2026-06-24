@@ -36,20 +36,47 @@ import org.cangnova.cangjie.utils.StableHash
  *
  * **不在 cache key 里**：源码 PSI 节点 identity、line/column 等会因 IDE
  * 重排而漂移的字段；只把"足以让宏展开产物变化"的稳定维度纳入。
+ *
+ * @property sourceContentHash 源文件内容 hash。
+ * @property fileIdentity 文件稳定身份。
+ * @property macroSurfaceRangesHash macro surface 源码范围 hash。
+ * @property importsHash import、default import 与已解析 macro 绑定 hash。
+ * @property modulePackageIdentity 模块与包身份。
+ * @property sdkSignature SDK 与语言版本签名。
+ * @property macroDependencySignature stdlib 与 macro artifact 依赖签名。
+ * @property compilerOptionsHash 编译器与语言选项 hash。
+ * @property executorAbi executor ABI、协议与版本标识。
+ * @property constructionAlgorithmVersion macro construction 算法版本。
+ * @property tokenScannerVersion macro token scanner 版本。
+ * @property fragmentParserVersion fragment parser 解析模式与版本。
+ * @property runtimeFingerprint builtin registry、iteration limit 与结果 token 的运行期指纹。
  */
 data class MacroExpansionCacheKey(
+    /** 源文件内容 hash。 */
     val sourceContentHash: String,
+    /** 文件稳定身份。 */
     val fileIdentity: String,
+    /** macro surface 源码范围 hash。 */
     val macroSurfaceRangesHash: String,
+    /** import、default import 与已解析 macro 绑定 hash。 */
     val importsHash: String,
+    /** 模块与包身份。 */
     val modulePackageIdentity: String,
+    /** SDK 与语言版本签名。 */
     val sdkSignature: String,
+    /** stdlib 与 macro artifact 依赖签名。 */
     val macroDependencySignature: String,
+    /** 编译器与语言选项 hash。 */
     val compilerOptionsHash: String,
+    /** executor ABI、协议与版本标识。 */
     val executorAbi: String,
+    /** macro construction 算法版本。 */
     val constructionAlgorithmVersion: Int,
+    /** macro token scanner 版本。 */
     val tokenScannerVersion: Int,
+    /** fragment parser 解析模式与版本。 */
     val fragmentParserVersion: Int,
+    /** builtin registry、iteration limit 与结果 token 的运行期指纹。 */
     val runtimeFingerprint: String,
 ) {
     /** 13 维聚合成一个稳定 hash，用作上游 cache 的查找键。 */

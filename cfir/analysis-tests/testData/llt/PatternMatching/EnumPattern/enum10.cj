@@ -13,7 +13,7 @@ main(): Int64 {
     var time = Day(1, 2, 3)
     var d = match (time) {
         case Year(y) => y
-        case Year(<!VAR_IN_OR_PATTERN!>z<!>) | Month(<!VAR_IN_OR_PATTERN!>y<!>, _) => <!UNRESOLVED_REFERENCE!>z<!>
+        case Year(<!VAR_IN_OR_PATTERN!>z<!>) | Month(y, _) => <!UNRESOLVED_REFERENCE!>z<!>
         case _ => -1
     }
     return 0

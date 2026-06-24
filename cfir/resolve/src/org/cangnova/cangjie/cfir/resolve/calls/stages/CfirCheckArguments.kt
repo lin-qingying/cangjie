@@ -45,7 +45,16 @@ import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.type.AbstractTypeChecker
 
+/**
+ * 候选解析阶段中的实参适用性检查。
+ *
+ * 该阶段根据候选的参数映射为每个实参计算期望类型，并把实参表达式交给
+ * [ArgumentCheckingProcessor] 推进子表达式解析和约束写入。
+ */
 object CfirCheckArguments : ResolutionStage() {
+    /**
+     * 检查候选的所有普通实参。
+     */
     context(sink: CheckerSink, context: ResolutionContext)
     override suspend fun check(candidate: Candidate) {
         if (!candidate.argumentMappingInitialized) return
@@ -79,6 +88,9 @@ object CfirCheckArguments : ResolutionStage() {
         }
     }
 
+    /**
+     * 解析单个实参表达式并写入候选约束系统。
+     */
     context(sink: CheckerSink, context: ResolutionContext)
     private fun Candidate.resolveArgument(
         callInfo: CallInfo,
@@ -103,6 +115,11 @@ object CfirCheckArguments : ResolutionStage() {
     }
 }
 
+/**
+ * 为隐式整数转换预留的期望类型调整扩展点。
+ *
+ * 仓颉当前实参检查不启用该转换时返回空，调用侧会继续使用基础期望类型。
+ */
 private fun getExpectedTypeWithImplicitIntegerCoercion(
     session: CfirSession,
     argument: CfirExpression,
@@ -113,6 +130,12 @@ private fun getExpectedTypeWithImplicitIntegerCoercion(
 //    if (!session.languageVersionSettings.supportsFeature(LanguageFeature.ImplicitSignedToUnsignedIntegerConversion)) return null
 
 }
+
+/**
+ * 计算候选参数位置上的最终期望类型。
+ *
+ * 该过程会处理仓颉变长参数、显式类型实参约束和候选 substitutor。
+ */
 context(context: ResolutionContext)
 private fun Candidate.prepareExpectedType(
     session: CfirSession,
@@ -138,6 +161,9 @@ private fun Candidate.prepareExpectedType(
     return substituteExplicitTypeArgumentConstraints(substitutedExpectedType)
 }
 
+/**
+ * 根据仓颉变长参数规则选择当前实参的期望类型。
+ */
 context(context: ResolutionContext)
 private fun Candidate.selectVariadicExpectedType(
     session: CfirSession,

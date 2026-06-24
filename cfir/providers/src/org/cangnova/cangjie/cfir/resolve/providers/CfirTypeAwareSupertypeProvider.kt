@@ -11,5 +11,10 @@ import org.cangnova.cangjie.cfir.types.ConeCangJieType
  * 该接口专供类型系统使用，用来统一 declared supertype 与 extend 引入接口的语义。
  */
 interface CfirTypeAwareSupertypeProvider : CfirSessionComponent {
+    /**
+     * 返回 [type] 在当前 session 中可见的直接父类型。
+     *
+     * 返回值已经应用 [type] 的类型实参，并可包含 extend 语义补充的接口父类型。
+     */
     fun getDirectSupertypes(type: ConeCangJieType): List<ConeCangJieType>
 }

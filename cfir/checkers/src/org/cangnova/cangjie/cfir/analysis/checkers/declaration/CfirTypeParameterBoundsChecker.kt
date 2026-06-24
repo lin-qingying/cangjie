@@ -27,7 +27,16 @@ import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.type.AbstractTypeChecker
 
+/**
+ * 类型参数上界合法性检查器。
+ *
+ * 该检查器去重后检查上界是否为 class/interface，可忽略 Any/C 类型上界，并报告多个 class 上界
+ * 不在同一继承链中的冲突。
+ */
 object CfirTypeParameterBoundsChecker : CfirTypeParameterChecker() {
+    /**
+     * 检查单个类型参数的所有已解析上界。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirTypeParameter) {
         val nonErrorBounds = declaration.symbol.resolvedBounds.filterNot { it.coneType is ConeErrorType }
@@ -62,10 +71,18 @@ object CfirTypeParameterBoundsChecker : CfirTypeParameterChecker() {
     }
 }
 
+/**
+ * 生成上界去重使用的稳定 key。
+ */
 private fun CfirResolvedTypeRef.stableBoundKey(): String = coneType
     .fullyExpandTypeAlias()
     .renderForDebugging()
 
+/**
+ * 判断上界是否已经属于递归上界错误场景。
+ *
+ * 递归上界由 generic deep 检查器报告，本检查器不重复报告 class/interface 约束错误。
+ */
 context(context: CheckerContext)
 private fun CfirResolvedTypeRef.hasRecursiveBoundFailure(parameterName: Name): Boolean {
     val expandedType = coneType.fullyExpandTypeAlias()
@@ -74,10 +91,16 @@ private fun CfirResolvedTypeRef.hasRecursiveBoundFailure(parameterName: Name): B
     return expandedType.containsTypeParameterInArguments(parameterName)
 }
 
+/**
+ * 判断类型是否在展开后为 class-like 上界。
+ */
 context(context: CheckerContext)
 private fun ConeCangJieType.isClassLikeUpperBound(): Boolean =
     fullyExpandedType(context.session) is ConeClassLikeType
 
+/**
+ * 判断类型实参树中是否包含指定类型参数名称。
+ */
 private fun ConeCangJieType.containsTypeParameterInArguments(parameterName: Name): Boolean {
     for (argument in typeArguments) {
         val argumentType = argument.type ?: continue
@@ -87,6 +110,9 @@ private fun ConeCangJieType.containsTypeParameterInArguments(parameterName: Name
     return false
 }
 
+/**
+ * 分类类型参数上界在声明规则中的角色。
+ */
 context(context: CheckerContext)
 private fun CfirResolvedTypeRef.upperBoundKind(): UpperBoundKind {
     val expandedType = coneType.fullyExpandTypeAlias()
@@ -118,6 +144,9 @@ private fun CfirResolvedTypeRef.upperBoundKind(): UpperBoundKind {
     }
 }
 
+/**
+ * 将类型解析为对应 class-like 声明。
+ */
 context(context: CheckerContext)
 private fun ConeCangJieType.toResolvedClassLikeDeclaration(): CfirClassLikeDeclaration? =
     when (this) {
@@ -126,6 +155,9 @@ private fun ConeCangJieType.toResolvedClassLikeDeclaration(): CfirClassLikeDecla
         else -> null
     }
 
+/**
+ * 完全展开 typealias 类型。
+ */
 private fun ConeCangJieType.fullyExpandTypeAlias(): ConeCangJieType {
     var current = this
     while (current is ConeTypeAliasType && current.expandedType != null) {
@@ -134,6 +166,9 @@ private fun ConeCangJieType.fullyExpandTypeAlias(): ConeCangJieType {
     return current
 }
 
+/**
+ * 判断多个 class 上界是否位于同一继承链。
+ */
 context(context: CheckerContext)
 private fun List<ConeCangJieType>.areInOneInheritanceChain(): Boolean {
     for (leftIndex in indices) {
@@ -144,14 +179,35 @@ private fun List<ConeCangJieType>.areInOneInheritanceChain(): Boolean {
     return true
 }
 
+/**
+ * 判断两个类型是否存在任一方向的子类型关系。
+ */
 context(context: CheckerContext)
 private fun ConeCangJieType.isRelatedTo(other: ConeCangJieType): Boolean =
     AbstractTypeChecker.isSubtypeOf(context.session.typeContext, this, other) ||
             AbstractTypeChecker.isSubtypeOf(context.session.typeContext, other, this)
 
+/**
+ * 上界分类结果。
+ */
 private enum class UpperBoundKind {
+    /**
+     * Any 或 C 类型上界，当前规则忽略。
+     */
     IGNORED_TOP_OR_CTYPE,
+
+    /**
+     * class 上界。
+     */
     CLASS,
+
+    /**
+     * interface 上界。
+     */
     INTERFACE,
+
+    /**
+     * 非 class/interface 且不可忽略的非法上界。
+     */
     INVALID,
 }

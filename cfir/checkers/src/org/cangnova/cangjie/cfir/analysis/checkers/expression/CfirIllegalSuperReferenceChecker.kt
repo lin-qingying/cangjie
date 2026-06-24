@@ -20,6 +20,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirSuperReceiverExpression
  * 统一处理 `extend`、`struct`、`enum`、`interface` 中不允许出现的 `super`。
  */
 object CfirIllegalSuperReferenceChecker : CfirSuperReceiverExpressionChecker() {
+    /** 检查当前 `super` 接收者是否出现在不允许使用 super 的声明上下文中。 */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirSuperReceiverExpression) {
         if (!CfirExtendSemantics.isSuperReference(expression.calleeReference)) return
@@ -49,6 +50,7 @@ object CfirIllegalSuperReferenceChecker : CfirSuperReceiverExpressionChecker() {
     }
 }
 
+/** 判断当前位置是否位于构造器值参数默认值表达式内部。 */
 private fun CheckerContext.isInsideConstructorValueParameterDefaultValue(): Boolean {
     val valueParameter = findClosestDeclaration<CfirValueParameter>() ?: return false
     val constructor = findClosestDeclaration<CfirConstructor>() ?: return false

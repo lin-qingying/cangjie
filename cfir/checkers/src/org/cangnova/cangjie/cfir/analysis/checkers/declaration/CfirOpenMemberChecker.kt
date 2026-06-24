@@ -40,6 +40,9 @@ import org.cangnova.cangjie.lexer.CjTokens
  * `IGNORE_OPEN` 诊断名承载该官方语义。
  */
 object CfirOpenMemberChecker : CfirClassLikeChecker() {
+    /**
+     * 检查 final class 直接成员上显式写出的 `open` 修饰符。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirClassLikeDeclaration) {
         val klass = declaration as? CfirClass ?: return

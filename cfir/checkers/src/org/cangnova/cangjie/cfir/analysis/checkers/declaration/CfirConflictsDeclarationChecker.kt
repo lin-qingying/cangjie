@@ -35,7 +35,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirForInExpression
 import org.cangnova.cangjie.cfir.expressions.CfirMatchBranch
 import org.cangnova.cangjie.cfir.patterns.bindingOccurrences
-import org.cangnova.cangjie.cfir.patterns.bindingVariables
+import org.cangnova.cangjie.cfir.patterns.visibleBindingVariables
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.CfirSessionComponent
 import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
@@ -47,14 +47,29 @@ import org.cangnova.cangjie.source.CjFakeSourceElementKind
 import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.utils.SmartSet
 
+/**
+ * 平台可替换的声明冲突诊断分发器。
+ *
+ * 不同平台可以根据冲突符号类型选择专门诊断；默认实现覆盖函数重载冲突、classifier 重声明和
+ * 通用 redeclaration。
+ */
 interface CfirPlatformConflictDeclarationsDiagnosticDispatcher : CfirSessionComponent {
+    /**
+     * 为给定冲突声明和冲突符号集合选择诊断工厂。
+     */
     context(context: CheckerContext)
     fun getDiagnostic(
         conflictingDeclaration: CfirBasedSymbol<*>,
         symbols: SmartSet<CfirBasedSymbol<*>>,
     ): CjDiagnosticFactory1<Collection<String>>?
 
+    /**
+     * 默认声明冲突诊断分发器。
+     */
     object DEFAULT : CfirPlatformConflictDeclarationsDiagnosticDispatcher {
+        /**
+         * 根据冲突符号类型选择默认诊断。
+         */
         context(context: CheckerContext)
         override fun getDiagnostic(
             conflictingDeclaration: CfirBasedSymbol<*>,
@@ -81,10 +96,22 @@ interface CfirPlatformConflictDeclarationsDiagnosticDispatcher : CfirSessionComp
     }
 }
 
+/**
+ * 当前 session 中可选的平台声明冲突诊断分发器。
+ */
 val CfirSession.conflictDeclarationsDiagnosticDispatcher: CfirPlatformConflictDeclarationsDiagnosticDispatcher?
     by CfirSession.nullableSessionComponentAccessor()
 
+/**
+ * 声明冲突检查器。
+ *
+ * 该检查器在文件、class-like 和局部函数体三个层级收集同名/同签名冲突，并统一报告重声明或
+ * 函数重载冲突诊断。
+ */
 object CfirConflictsDeclarationChecker : CfirBasicDeclarationChecker() {
+    /**
+     * 按声明类型分发冲突检查。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirDeclaration) {
         when (declaration) {
@@ -123,6 +150,9 @@ object CfirConflictsDeclarationChecker : CfirBasicDeclarationChecker() {
         }
     }
 
+    /**
+     * 根据冲突图报告声明冲突诊断。
+     */
     context(reporter: DiagnosticReporter, context: CheckerContext)
     private fun reportConflicts(
         declarationConflictingSymbols: Map<CfirBasedSymbol<*>, SmartSet<CfirBasedSymbol<*>>>,
@@ -179,6 +209,9 @@ object CfirConflictsDeclarationChecker : CfirBasicDeclarationChecker() {
         }
     }
 
+    /**
+     * 收集单个文件的顶层声明冲突。
+     */
     context(context: CheckerContext)
     private fun checkFile(file: CfirFile, inspector: CfirDeclarationCollector<CfirBasedSymbol<*>>) {
         val packageMemberScope = context.session.cangjieScopeProvider.getPackageMemberScope(
@@ -191,6 +224,9 @@ object CfirConflictsDeclarationChecker : CfirBasicDeclarationChecker() {
     }
 }
 
+/**
+ * 检查函数体内部的局部重声明。
+ */
 context(reporter: DiagnosticReporter, context: CheckerContext)
 private fun checkLocalRedeclarationsInFunctionBody(function: CfirFunction) {
     val body = function.body ?: return
@@ -200,6 +236,9 @@ private fun checkLocalRedeclarationsInFunctionBody(function: CfirFunction) {
     }
 }
 
+/**
+ * 获取已绑定符号的源码位置。
+ */
 private fun CfirBasedSymbol<*>.boundSourceOrNull(): CjSourceElement? =
     if (isBound) cfir.source else null
 
@@ -225,18 +264,43 @@ private fun CfirBasedSymbol<*>.hasLaterFunctionConflictRepresentative(
     }
 }
 
+/**
+ * 渲染符号集合在 redeclaration 诊断中的名称列表。
+ */
 private fun Collection<CfirBasedSymbol<*>>.renderNames(): List<String> =
     asSequence().mapNotNull(CfirRedeclarationPresenter::diagnosticName).distinct().sorted().toList()
 
+/**
+ * 判断符号是否属于函数式重声明类别。
+ */
 private fun CfirBasedSymbol<*>.isFunctionLikeRedeclaration(): Boolean =
     this is CfirConstructorSymbol || this is CfirFunctionSymbol<*> || this is CfirEnumConstructorSymbol
 
+/**
+ * 函数体局部重声明 visitor。
+ *
+ * @property reporter 诊断报告器。
+ * @property context 当前检查上下文。
+ */
 private class LocalRedeclarationVisitor(
+    /**
+     * 诊断报告器。
+     */
     private val reporter: DiagnosticReporter,
+
+    /**
+     * 当前检查上下文。
+     */
     private val context: CheckerContext,
 ) : CfirDefaultVisitorVoid() {
+    /**
+     * 局部声明作用域栈。
+     */
     private val scopes = ArrayDeque<MutableMap<Name, MutableList<CfirBasedSymbol<*>>>>()
 
+    /**
+     * 以函数体作用域执行局部重声明检查。
+     */
     fun withFunctionBodyScope(function: CfirFunction, body: () -> Unit) {
         withScope {
             function.valueParameters.forEach { declare(it, report = false) }
@@ -244,16 +308,25 @@ private class LocalRedeclarationVisitor(
         }
     }
 
+    /**
+     * 默认访问子节点。
+     */
     override fun visitElement(element: CfirElement) {
         element.acceptChildren(this)
     }
 
+    /**
+     * block 引入新的局部作用域。
+     */
     override fun visitBlock(block: CfirBlock) {
         withScope {
             block.statements.forEach { it.accept(this) }
         }
     }
 
+    /**
+     * for-in 变量在循环体作用域中声明。
+     */
     override fun visitForInExpression(forInExpression: CfirForInExpression) {
         forInExpression.iterable.accept(this)
         withScope {
@@ -262,14 +335,20 @@ private class LocalRedeclarationVisitor(
         }
     }
 
+    /**
+     * match branch 的 pattern binding 在分支作用域中声明。
+     */
     override fun visitMatchBranch(matchBranch: CfirMatchBranch) {
         withScope {
-            matchBranch.pattern.accept(this)
+            declarePattern(matchBranch.pattern)
             matchBranch.guard?.accept(this)
             matchBranch.body.statements.forEach { it.accept(this) }
         }
     }
 
+    /**
+     * 记录局部函数声明。
+     */
     override fun visitFunction(function: CfirFunction) {
         if (function is CfirAnonymousFunction) {
             function.acceptChildren(this)
@@ -280,12 +359,18 @@ private class LocalRedeclarationVisitor(
         }
     }
 
+    /**
+     * 记录局部属性声明。
+     */
     override fun visitProperty(property: CfirProperty) {
         if (property.isLocal) {
             declare(property.symbol)
         }
     }
 
+    /**
+     * 记录局部变量或 pattern 变量声明。
+     */
     override fun visitVariable(variable: CfirVariable) {
         variable.initializer?.accept(this)
         if (variable is CfirPatternVariable) {
@@ -295,16 +380,32 @@ private class LocalRedeclarationVisitor(
         }
     }
 
+    /**
+     * 声明普通变量符号。
+     */
     private fun declare(variable: CfirVariable, report: Boolean = true) {
         declare(variable.symbol, report)
     }
 
+    /**
+     * 声明 pattern variable 中可见的 binding 变量。
+     */
     private fun declarePatternVariable(variable: CfirPatternVariable, report: Boolean = true) {
-        variable.pattern.bindingVariables().forEach { bindingVariable ->
+        declarePattern(variable.pattern, report)
+    }
+
+    /**
+     * 声明 pattern 中所有可见 binding 变量。
+     */
+    private fun declarePattern(pattern: org.cangnova.cangjie.cfir.patterns.CfirPattern, report: Boolean = true) {
+        pattern.visibleBindingVariables().forEach { bindingVariable ->
             declare(bindingVariable.symbol, report)
         }
     }
 
+    /**
+     * 在当前作用域注册符号并报告同作用域冲突。
+     */
     private fun declare(symbol: CfirBasedSymbol<*>, report: Boolean = true) {
         val name = CfirRedeclarationPresenter.diagnosticName(symbol)?.let(Name::identifier) ?: return
         if (name.isSpecial) return
@@ -325,6 +426,9 @@ private class LocalRedeclarationVisitor(
         }
     }
 
+    /**
+     * 判断两个局部声明符号是否互相冲突。
+     */
     private fun CfirBasedSymbol<*>.conflictsWithLocalDeclaration(other: CfirBasedSymbol<*>): Boolean {
         if (this is CfirFunctionSymbol<*> && other is CfirFunctionSymbol<*>) {
             return CfirRedeclarationPresenter.represent(this) == CfirRedeclarationPresenter.represent(other)
@@ -332,6 +436,9 @@ private class LocalRedeclarationVisitor(
         return true
     }
 
+    /**
+     * 建立并释放一个局部作用域。
+     */
     private inline fun withScope(body: () -> Unit) {
         scopes.addLast(linkedMapOf())
         try {

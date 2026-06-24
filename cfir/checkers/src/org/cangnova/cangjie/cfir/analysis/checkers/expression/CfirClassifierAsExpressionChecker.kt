@@ -18,6 +18,12 @@ import org.cangnova.cangjie.source.CjOffsetsOnlySourceElement
  * 暂存，因此在 qualified-access checker 层对齐官方仓颉 `sema_ref_not_be_type`。
  */
 object CfirClassifierAsExpressionChecker : CfirQualifiedAccessChecker() {
+    /**
+     * 检查 qualified access 是否把类型名当作表达式值使用。
+     *
+     * 函数调用和作为外层接收者的 qualifier 不在这里报告；其余解析到 class-like symbol 的访问
+     * 使用引用首字符范围对齐官方 `sema_ref_not_be_type` 诊断。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirQualifiedAccessExpression) {
         if (expression is CfirFunctionCall) return
@@ -33,6 +39,11 @@ object CfirClassifierAsExpressionChecker : CfirQualifiedAccessChecker() {
         )
     }
 
+    /**
+     * 判断当前访问是否只是外层 qualified access 的显式接收者。
+     *
+     * 这种形态承担限定名解析结构，不代表最终把类型名作为运行时值读取。
+     */
     context(context: CheckerContext)
     private fun CfirQualifiedAccessExpression.isUsedAsOuterReceiver(): Boolean {
         return context.callsOrAssignments.asReversed().drop(1).any { call ->

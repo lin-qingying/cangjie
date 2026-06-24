@@ -29,7 +29,9 @@ import org.cangnova.cangjie.cfir.resolve.renderStableSemanticKey
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.type.model.TypeConstructorMarker
 
+/** 为 extend 类型引用生成稳定语义 key 的归一化器。 */
 internal class CfirExtendTypeSemanticNormalizer(
+    /** 当前正在建立语义 key 的 extend 声明。 */
     extend: CfirExtend,
 ) {
     /**
@@ -66,11 +68,17 @@ internal class CfirExtendTypeSemanticNormalizer(
         CfirTypeSubstitutorByMap(boundFingerprints)
     }
 
+    /** 从已解析类型引用中生成语义 key；未解析类型返回 null。 */
     fun semanticKeyOrNull(typeRef: CfirTypeRef): String? {
         val coneType = (typeRef as? CfirResolvedTypeRef)?.coneType ?: return null
-        return canonicalize(coneType).renderStableSemanticKey()
+        return semanticKeyOrNull(coneType)
     }
 
+    /** 从 Cone 类型生成语义 key。 */
+    fun semanticKeyOrNull(type: ConeCangJieType): String =
+        canonicalize(type).renderStableSemanticKey()
+
+    /** 把 extend 类型参数替换为带 bounds fingerprint 的 placeholder 类型。 */
     private fun canonicalize(type: ConeCangJieType): ConeCangJieType {
         return substitutor.substituteOrSelf(type)
     }

@@ -67,6 +67,12 @@ import org.cangnova.cangjie.source.AbstractCjSourceElement
  * `subscript` 赋值仍交由独立的 `operator set` 语义链处理，这里暂不重复判定。
  */
 object CfirAssignmentLegalityChecker : CfirAssignmentChecker() {
+    /**
+     * 检查普通赋值表达式的左值是否可写。
+     *
+     * 下标赋值先按 VArray 内建下标规则分类；普通 qualified access 则统一交给
+     * [CfirMutationTargetClassifier] 判断可写、不可变或非左值名字，并在对应源码范围上报告诊断。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirAssignment) {
         val lValue = expression.lValue
@@ -137,6 +143,12 @@ object CfirAssignmentLegalityChecker : CfirAssignmentChecker() {
  * 只负责表达式自身是否能被修改，不在这一层处理数值类型或运算符类型检查。
  */
 object CfirIncrementDecrementLegalityChecker : CfirIncrementDecrementExpressionChecker() {
+    /**
+     * 检查 `++` / `--` 的目标是否可被修改。
+     *
+     * 该入口只验证目标可写性，诊断范围保持在自增自减表达式或被引用名字上，数值类型约束由
+     * [CfirIncrementDecrementTypeChecker] 负责。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirIncrementDecrementExpression) {
         val access = expression.expression as? CfirQualifiedAccessExpression ?: return
@@ -173,6 +185,12 @@ object CfirIncrementDecrementLegalityChecker : CfirIncrementDecrementExpressionC
  * `Unit`，这里仅补充操作数类型约束，避免把非整数目标误当作合法自增表达式。
  */
 object CfirIncrementDecrementTypeChecker : CfirIncrementDecrementExpressionChecker() {
+    /**
+     * 检查 `++` / `--` 操作数是否为整数类型。
+     *
+     * 错误类型和展开后的错误类型不重复报告；合法整数类型直接通过，其他类型统一报
+     * `TYPE_MISMATCH`，期望类型使用官方语义中的整数基准类型。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirIncrementDecrementExpression) {
         val source = expression.source as? AbstractCjSourceElement ?: return
@@ -193,7 +211,19 @@ object CfirIncrementDecrementTypeChecker : CfirIncrementDecrementExpressionCheck
     }
 }
 
+/**
+ * 表达式修改目标分类器。
+ *
+ * 该对象把“能否修改”的框架级判定集中在一处，供赋值、自增自减和 VArray 下标赋值复用。
+ * 分类结果只描述目标语义，不直接负责诊断上报。
+ */
 internal object CfirMutationTargetClassifier {
+    /**
+     * 按 VArray 内建下标赋值规则分类修改目标。
+     *
+     * 只有接收者展开类型为 VArray 时才介入；嵌套下标、函数调用结果等临时值被视为不可变，
+     * qualified access 接收者则继续复用普通赋值目标分类。
+     */
     context(context: CheckerContext)
     fun classifySubscriptAssignment(
         subscript: CfirSubscriptExpression,
@@ -215,6 +245,11 @@ internal object CfirMutationTargetClassifier {
         }
     }
 
+    /**
+     * 判断访问是否为 VArray 的只读 `size` 属性。
+     *
+     * VArray 的 `size` 是内建不可变成员，不应按普通属性 setter 或变量规则处理。
+     */
     context(context: CheckerContext)
     fun isVArraySizeAccess(access: CfirQualifiedAccessExpression): Boolean {
         val name = (access.calleeReference as? CfirNamedReference)?.name ?: return false
@@ -224,6 +259,11 @@ internal object CfirMutationTargetClassifier {
             ?.fullyExpandedType(context.session) is ConeVArrayType
     }
 
+    /**
+     * 分类普通赋值左侧 qualified access 的修改目标。
+     *
+     * [assignment] 用于区分未初始化局部 `let` 的首次初始化赋值与后续非法写入。
+     */
     context(context: CheckerContext)
     fun classifyAssignment(
         access: CfirQualifiedAccessExpression,
@@ -232,11 +272,22 @@ internal object CfirMutationTargetClassifier {
         return access.mutationTarget(assignment)
     }
 
+    /**
+     * 分类非赋值形态的修改目标。
+     *
+     * 自增、自减等语义没有初始化赋值上下文，因此这里不传入 [CfirAssignment]。
+     */
     context(context: CheckerContext)
     fun classifyMutation(access: CfirQualifiedAccessExpression): MutationTarget? {
         return access.mutationTarget(assignment = null)
     }
 
+    /**
+     * 解析 qualified access 背后的声明符号，并转换为统一的修改目标分类。
+     *
+     * 该函数同时处理字段、变量、属性、函数名、类型名以及不可变 struct 接收者链，保持所有
+     * 表达式修改入口使用同一套左值语义。
+     */
     context(context: CheckerContext)
     private fun CfirQualifiedAccessExpression.mutationTarget(assignment: CfirAssignment?): MutationTarget? {
         val resolvedSymbol = resolvedAssignableSymbolOrNull()
@@ -280,6 +331,11 @@ internal object CfirMutationTargetClassifier {
         return directTarget
     }
 
+    /**
+     * 从引用节点读取可作为赋值目标的解析符号。
+     *
+     * 已解析引用和候选引用都可能出现在诊断阶段，因此两类引用都需要纳入分类。
+     */
     private fun CfirQualifiedAccessExpression.resolvedAssignableSymbolOrNull(): CfirBasedSymbol<*>? {
         return when (val reference = calleeReference) {
             is CfirResolvedNamedReference -> reference.resolvedSymbol
@@ -313,6 +369,12 @@ internal object CfirMutationTargetClassifier {
         return propertySymbol.hasInheritedUsableSetter(ownerScope, linkedSetOf())
     }
 
+    /**
+     * 沿覆盖链查找当前属性可复用的父类 setter。
+     *
+     * 仓颉允许可变属性的 getter/setter 分布在继承链上；这里用 override signature 和静态性
+     * 过滤候选，避免把不同成员误当作同一个 setter 来源。
+     */
     private fun CfirPropertySymbol.hasInheritedUsableSetter(
         scope: CfirTypeScope,
         visited: MutableSet<CfirPropertySymbol>,
@@ -346,10 +408,21 @@ internal object CfirMutationTargetClassifier {
         return found
     }
 
+    /**
+     * 取得当前访问引用的名称，缺失时返回错误名占位。
+     *
+     * 非左值名字诊断需要一个稳定的 [Name]，即使引用节点尚未完整解析也不能中断分类流程。
+     */
     private fun CfirQualifiedAccessExpression.referenceNameOrFallback(): Name {
         return (calleeReference as? CfirNamedReference)?.name ?: Name.ERROR_NAME
     }
 
+    /**
+     * 判断字段写入是否违反不可变字段规则。
+     *
+     * `var` 字段始终可写；`let` 字段只允许构造阶段的合法初始化写入，已由主构造参数占用或
+     * 已有初始化器的字段不能再次赋值。
+     */
     context(context: CheckerContext)
     private fun CfirQualifiedAccessExpression.isImmutableFieldAssignmentForbidden(field: CfirFieldVariable): Boolean {
         if (field.isVar) return false
@@ -375,6 +448,11 @@ internal object CfirMutationTargetClassifier {
             .any { property -> property.name == targetName }
     }
 
+    /**
+     * 判断变量写入是否违反不可变变量规则。
+     *
+     * 局部无初始化器 `let` 可以通过初始化赋值完成一次赋值，其他不可变变量写入都需要报告。
+     */
     context(context: CheckerContext)
     private fun isImmutableVariableAssignmentForbidden(
         variable: CfirVariable,
@@ -387,6 +465,12 @@ internal object CfirMutationTargetClassifier {
         return true
     }
 
+    /**
+     * 判断通过不可变 struct 值接收者修改成员是否非法。
+     *
+     * 对值类型接收者而言，即使最终成员本身可写，只要接收者变量不可变，也不能通过成员访问链
+     * 修改其内部状态。
+     */
     context(context: CheckerContext)
     private fun CfirQualifiedAccessExpression.isImmutableStructReceiverMutationForbidden(): Boolean {
         val receiver = explicitReceiver ?: dispatchReceiver ?: return false
@@ -397,13 +481,37 @@ internal object CfirMutationTargetClassifier {
         return receiver.coneTypeOrNull.mayBeStructValueType()
     }
 
+    /**
+     * 修改目标分类结果。
+     *
+     * 该密封层级表达左值语义的三种结论：可写、不可变值、以及语法上是名字但不是可赋值实体。
+     */
     sealed interface MutationTarget {
+        /**
+         * 表示目标可以被当前表达式修改。
+         */
         data object Assignable : MutationTarget
+
+        /**
+         * 表示目标是合法值但不可写，例如 `let` 变量、只读属性或临时 VArray 值。
+         */
         data object ImmutableValue : MutationTarget
+
+        /**
+         * 表示引用解析到函数、类型等非左值名字。
+         *
+         * [name] 用于构造 `UNQUALIFIED_LEFT_VALUE_ASSIGNED` 诊断。
+         */
         data class NonAssignableName(val name: Name) : MutationTarget
     }
 }
 
+/**
+ * 判断类型是否可能是 struct 值类型。
+ *
+ * 类型参数通过已解析上界递归判断，接口类型按可能被 struct 实现处理；该判断用于不可变接收者
+ * 的保守左值语义，不负责类型展开或错误类型恢复。
+ */
 internal fun ConeCangJieType?.mayBeStructValueType(): Boolean = when (this) {
     is ConeStructType -> true
     is ConeTypeParameterType -> lookupTag.typeParameterSymbol.resolvedBounds.any { it.coneType.mayBeStructValueType() }

@@ -63,36 +63,93 @@ import org.cangnova.cangjie.type.model.TypeConstructorMarker
  * 这里保留 candidate 的 receiver 与 constraint-system 初始化规则，让 tower 层
  * 只负责作用域遍历，不把候选构造细节扩散到各个调用入口。
  */
+/**
+ * 内建 Array/VArray 构造器形态。
+ */
 internal enum class BuiltinArrayConstructorKind {
+    /**
+     * 空数组构造。
+     */
     EMPTY,
+    /**
+     * 从集合构造。
+     */
     COLLECTION,
+    /**
+     * 使用初始化函数构造。
+     */
     INIT_FUNCTION,
+    /**
+     * 使用重复元素构造。
+     */
     REPEAT_ELEMENT,
 }
 
+/**
+ * 内建构造器合成类型参数描述。
+ */
 internal data class BuiltinConstructorTypeParameter(
+    /**
+     * 合成类型参数名称。
+     */
     val name: Name,
+    /**
+     * 可选的原始类型参数符号，用于把已声明类型代入合成参数。
+     */
     val originalSymbol: CfirTypeParameterSymbol? = null,
 )
 
+/**
+ * 内建数组构造器目标。
+ */
 internal sealed class BuiltinArrayConstructorTarget {
+    /**
+     * 构造器目标暴露的类型参数。
+     */
     abstract val typeParameters: List<BuiltinConstructorTypeParameter>
+    /**
+     * 根据元素类型构造返回类型。
+     */
     abstract fun returnType(elementType: ConeCangJieType): ConeCangJieType
 
+    /**
+     * 标准库 `Array<T>` 构造目标。
+     */
     data object Array : BuiltinArrayConstructorTarget() {
+        /**
+         * `Array<T>` 的元素类型参数。
+         */
         override val typeParameters: List<BuiltinConstructorTypeParameter> =
             listOf(BuiltinConstructorTypeParameter(Name.identifier("T")))
 
+        /**
+         * 构造 `Array<elementType>` 返回类型。
+         */
         override fun returnType(elementType: ConeCangJieType): ConeCangJieType =
             ConeClassLikeType(StdlibClassIds.Array.toLookupTag(), typeArguments = listOf(elementType))
     }
 
+    /**
+     * `VArray<size, T>` 构造目标。
+     */
     data class VArray(
+        /**
+         * VArray 大小字面量。
+         */
         val sizeLiteral: String,
+        /**
+         * 已声明的元素类型；为空时由合成类型参数推断。
+         */
         val elementType: ConeCangJieType? = null,
+        /**
+         * VArray 构造目标的类型参数。
+         */
         override val typeParameters: List<BuiltinConstructorTypeParameter> =
             listOf(BuiltinConstructorTypeParameter(Name.identifier("T"))),
     ) : BuiltinArrayConstructorTarget() {
+        /**
+         * 构造 VArray 返回类型。
+         */
         override fun returnType(elementType: ConeCangJieType): ConeCangJieType {
             val size = CfirIntConstantEvalUtils.parseVArraySizeLiteral(sizeLiteral)
                 ?: return ConeErrorType(ConeSimpleDiagnostic("Invalid VArray size: $sizeLiteral"))
@@ -101,23 +158,61 @@ internal sealed class BuiltinArrayConstructorTarget {
     }
 }
 
+/**
+ * 内建指针构造器形态。
+ */
 internal enum class BuiltinPointerConstructorKind {
+    /**
+     * 空指针构造。
+     */
     EMPTY,
+    /**
+     * 指针转换构造。
+     */
     CONVERT_POINTER,
 }
 
+/**
+ * 内建指针构造器目标。
+ */
 internal data class BuiltinPointerConstructorTarget(
+    /**
+     * 指针指向类型；为空时由合成类型参数推断。
+     */
     val pointeeType: ConeCangJieType? = null,
+    /**
+     * 指针构造目标的类型参数。
+     */
     val typeParameters: List<BuiltinConstructorTypeParameter> =
         listOf(BuiltinConstructorTypeParameter(Name.identifier("T"))),
 )
 
+/**
+ * 候选工厂。
+ *
+ * 负责构造普通 callable 候选、函数类型 invoke 候选、内建构造器候选和错误候选。
+ */
 class CandidateFactory(
+    /**
+     * 当前调用解析上下文。
+     */
     private val context: ResolutionContext,
+    /**
+     * 新候选使用的基础约束系统。
+     */
     private val baseSystem: ConstraintStorage  ,
 ) {
+    /**
+     * 以调用信息构造候选工厂。
+     */
     constructor(context: ResolutionContext, callInfo: CallInfo) : this(context, buildBaseSystem(context, callInfo))
+    /**
+     * 候选工厂静态构造辅助。
+     */
     companion object {
+        /**
+         * 为 collection literal 或 callable reference 等含外层调用的场景构造基础系统。
+         */
         private fun buildBaseSystemForContainingCallAwareCases(
             context: ResolutionContext,
             containingCall: Candidate,
@@ -131,6 +226,9 @@ class CandidateFactory(
             }
             return system.asReadOnlyStorage()
         }
+        /**
+         * 构造普通调用候选的基础约束系统。
+         */
         private fun buildBaseSystem(context: ResolutionContext, callInfo: CallInfo): ConstraintStorage {
             callInfo.containingCandidateForCollectionLiteral?.let {
                 return buildBaseSystemForContainingCallAwareCases(context, it, callInfo)
@@ -143,6 +241,9 @@ class CandidateFactory(
             return system.asReadOnlyStorage()
         }
 
+        /**
+         * 创建 callable reference 候选工厂。
+         */
         fun createForCallableReferenceCandidate(
             context: ResolutionContext,
             containingCall: Candidate,
@@ -150,6 +251,9 @@ class CandidateFactory(
             CandidateFactory(context, buildBaseSystemForContainingCallAwareCases(context, containingCall, callInfo = null))
     }
 
+    /**
+     * 基于已有候选创建 callable reference 候选。
+     */
     fun createCallableReferenceCandidate(
         callInfo: CallInfo,
         originalCandidate: Candidate,
@@ -169,6 +273,9 @@ class CandidateFactory(
         )
     }
 
+    /**
+     * 创建普通 callable 候选。
+     */
     fun createCandidate(
         callInfo: CallInfo,
         symbol: CfirCallableSymbol<*>,
@@ -200,6 +307,9 @@ class CandidateFactory(
         )
     }
 
+    /**
+     * 为函数类型接收者创建 synthetic invoke 候选。
+     */
     fun createFunctionTypeInvokeCandidate(
         callInfo: CallInfo,
         functionType: ConeFunctionType,
@@ -261,6 +371,9 @@ class CandidateFactory(
         )
     }
 
+    /**
+     * 将函数类型 invoke 接收者的子系统并入基础系统。
+     */
     private fun ConstraintStorage.withSubsystemFromInvokeReceiver(receiverExpression: CfirExpression): ConstraintStorage {
         val receiverAtom = ConeResolutionAtom.createRawAtom(receiverExpression)
         val system = context.inferenceComponents.createConstraintSystem()
@@ -507,6 +620,9 @@ class CandidateFactory(
         )
     }
 
+    /**
+     * 计算内建数组构造器使用的合成元素类型。
+     */
     private fun BuiltinArrayConstructorTarget.syntheticElementType(
         syntheticTypeParameters: List<CfirTypeParameter>,
     ): ConeCangJieType {
@@ -528,6 +644,9 @@ class CandidateFactory(
         return CfirTypeSubstitutorByMap(originalToSynthetic).substituteOrSelf(declaredElementType)
     }
 
+    /**
+     * 计算内建指针构造器使用的合成 pointee 类型。
+     */
     private fun BuiltinPointerConstructorTarget.syntheticPointeeType(
         syntheticTypeParameters: List<CfirTypeParameter>,
     ): ConeCangJieType {
@@ -548,6 +667,9 @@ class CandidateFactory(
         return CfirTypeSubstitutorByMap(originalToSynthetic).substituteOrSelf(pointeeType)
     }
 
+    /**
+     * 为 synthetic builtin 构造器创建类型参数声明。
+     */
     private fun buildSyntheticTypeParameters(
         ownerSymbol: CfirNamedFunctionSymbol,
         parameters: List<BuiltinConstructorTypeParameter>,
@@ -567,6 +689,9 @@ class CandidateFactory(
         }
     }
 
+    /**
+     * 为 synthetic builtin 构造器创建值参数声明。
+     */
     private fun buildSyntheticValueParameter(
         ownerSymbol: CfirNamedFunctionSymbol,
         parameterName: Name,
@@ -594,6 +719,9 @@ class CandidateFactory(
         defaultValue = null
     }
 
+    /**
+     * 创建携带诊断的错误候选。
+     */
     fun createErrorCandidate(callInfo: CallInfo, diagnostic: ConeDiagnostic): Candidate {
         val errorSymbol = when(callInfo.callKind) {
             is CallKind.Function,
@@ -618,6 +746,9 @@ class CandidateFactory(
         return candidate
     }
 
+    /**
+     * 创建错误函数符号。
+     */
     private fun createErrorFunctionSymbol(diagnostic: ConeDiagnostic): CfirErrorFunctionSymbol {
         return CfirErrorFunctionSymbol().also {
             buildErrorFunction {
@@ -636,6 +767,9 @@ class CandidateFactory(
         }
     }
 
+    /**
+     * 创建错误 enum constructor 符号。
+     */
     private fun createErrorEnumConstructorSymbol(diagnostic: ConeDiagnostic): CfirErrorEnumConstructorSymbol {
         val callableId = CallableId(org.cangnova.cangjie.name.Name.special("<error-enum-constructor>"))
         return CfirErrorEnumConstructorSymbol(callableId, diagnostic).also {
@@ -653,6 +787,9 @@ class CandidateFactory(
         }
     }
 
+    /**
+     * 创建错误命名值符号。
+     */
     private fun createErrorNamedValueSymbol(
         callInfo: CallInfo,
         diagnostic: ConeDiagnostic,
@@ -673,9 +810,15 @@ class CandidateFactory(
     }
 }
 
+/**
+ * 将名称转换为错误命名值 callableId。
+ */
 private fun org.cangnova.cangjie.name.Name.asErrorNamedValueCallableId() =
     org.cangnova.cangjie.name.CallableId(this)
 
+/**
+ * 从 resolution atom 中提取并处理约束系统。
+ */
 private fun processConstraintStorageFromAtom(
     atom: ConeResolutionAtom,
     processor: (ConstraintStorage) -> Unit,
@@ -691,6 +834,10 @@ private fun processConstraintStorageFromAtom(
         else -> false
     }
 }
+
+/**
+ * 将 atom 中已有子系统并入 postponed arguments analyzer 上下文。
+ */
 fun PostponedArgumentsAnalyzerContext.addSubsystemFromAtom(atom: ConeResolutionAtom): Boolean {
     return processConstraintStorageFromAtom(atom) {
         // If a call inside a lambda uses outer CS,
@@ -701,9 +848,27 @@ fun PostponedArgumentsAnalyzerContext.addSubsystemFromAtom(atom: ConeResolutionA
     }
 }
 
+/**
+ * 内建 Array size 参数名。
+ */
 private val ARRAY_SIZE_PARAMETER_NAME = Name.identifier("size")
+/**
+ * 内建 Array collection 参数名。
+ */
 private val ARRAY_COLLECTION_PARAMETER_NAME = Name.identifier("elements")
+/**
+ * 内建 Array 初始化函数参数名。
+ */
 private val ARRAY_INIT_PARAMETER_NAME = Name.identifier("arrayInit")
+/**
+ * 内建 Array 重复元素参数名。
+ */
 private val ARRAY_REPEAT_PARAMETER_NAME = Name.identifier("repeat")
+/**
+ * 内建指针值参数名。
+ */
 private val POINTER_VALUE_PARAMETER_NAME = Name.identifier("value")
+/**
+ * 内建 CString 指针参数名。
+ */
 private val CSTRING_POINTER_PARAMETER_NAME = Name.identifier("pointer")

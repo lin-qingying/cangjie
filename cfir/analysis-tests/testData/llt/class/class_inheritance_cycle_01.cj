@@ -1,6 +1,6 @@
 
 
 
-open class <!RECURSIVE_CONSTRUCTOR_CALL!>A<!> <: <!SUPER_TYPES_SELF_REFERENCE!>AA<!> {}
+open <!INHERITANCE_CYCLE!>class <!RECURSIVE_CONSTRUCTOR_CALL!>A<!><!> <: AA {}
 
 type AA = A

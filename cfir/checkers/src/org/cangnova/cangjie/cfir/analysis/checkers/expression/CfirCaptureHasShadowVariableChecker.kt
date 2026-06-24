@@ -25,6 +25,12 @@ import org.cangnova.cangjie.name.Name
  * 任一函数作用域内存在同名变量声明，则在捕获引用处报告 warning。
  */
 object CfirCaptureHasShadowVariableChecker : CfirQualifiedAccessChecker() {
+    /**
+     * 检查无显式接收者变量访问是否命中捕获变量同名遮蔽场景。
+     *
+     * 只有捕获外层非参数变量时才继续分析；若当前函数到目标声明之间任一函数体内有同名局部变量，
+     * 则在捕获引用的首字符位置报告 warning。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirQualifiedAccessExpression) {
         if (expression.explicitReceiver != null) return
@@ -48,6 +54,11 @@ object CfirCaptureHasShadowVariableChecker : CfirQualifiedAccessChecker() {
         }
     }
 
+    /**
+     * 从 qualified access 的引用节点解析变量声明。
+     *
+     * 诊断阶段可能遇到正常解析、错误恢复解析或候选解析引用，三者都需要尝试取出变量声明。
+     */
     private fun CfirQualifiedAccessExpression.resolvedVariableOrNull(): CfirVariable? =
         when (val reference = calleeReference) {
             is CfirResolvedNamedReference -> reference.resolvedSymbol.cfir as? CfirVariable
@@ -56,9 +67,19 @@ object CfirCaptureHasShadowVariableChecker : CfirQualifiedAccessChecker() {
             else -> null
         }
 
+    /**
+     * 变量用于遮蔽比较的 callable 名称。
+     *
+     * 通过 symbol 的 callableId 读取，避免依赖不同变量子类的展示字段。
+     */
     private val CfirVariable.variableName: Name
         get() = symbol.callableId.callableName
 
+    /**
+     * 判断目标声明是否属于当前函数自身作用域。
+     *
+     * 一旦目标已经在当前函数内声明，后续外层函数不再构成捕获链，应停止遮蔽 warning 分析。
+     */
     private fun CfirFunction.containsDeclarationInOwnScope(target: CfirDeclaration): Boolean {
         if (valueParameters.any { it === target }) return true
 
@@ -82,6 +103,11 @@ object CfirCaptureHasShadowVariableChecker : CfirQualifiedAccessChecker() {
         return found
     }
 
+    /**
+     * 判断当前函数体内是否声明了与捕获目标同名的局部变量。
+     *
+     * 遍历仅进入当前函数本体，不进入嵌套函数，保证遮蔽判断只覆盖同一个函数作用域。
+     */
     private fun CfirFunction.hasShadowVariableDeclaration(name: Name, target: CfirDeclaration): Boolean {
         var found = false
         body?.accept(object : CfirDefaultVisitorVoid() {

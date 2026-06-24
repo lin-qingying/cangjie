@@ -5,14 +5,23 @@ import org.cangnova.cangjie.cfir.session.services.CfirExtendTargetKey
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.Name
 
+/**
+ * primitive 类型在符号层暴露时使用的合成 [ClassId]。
+ */
 val PrimitiveTypeKind.classId: ClassId
     get() = ClassId(StandardNames.BASIC_PACKAGE_FQ_NAME, Name.identifier(typeName))
 
+/**
+ * 将标准库 basic 包下的 [ClassId] 还原为 primitive 类型种类。
+ */
 fun ClassId.toPrimitiveTypeKindOrNull(): PrimitiveTypeKind? {
     if (packageFqName != StandardNames.BASIC_PACKAGE_FQ_NAME) return null
     return PrimitiveTypeKind.entries.firstOrNull { it.typeName == shortClassName.asString() }
 }
 
+/**
+ * 当前 primitive 是否作为可见内建 classifier 暴露给解析和 extend 查询。
+ */
 val PrimitiveTypeKind.isExposedBuiltinClassifier: Boolean
     get() = this != PrimitiveTypeKind.IDEAL_INT && this != PrimitiveTypeKind.IDEAL_FLOAT
 
@@ -44,9 +53,15 @@ val PrimitiveTypeKind.idealExtendLookupKinds: List<PrimitiveTypeKind>
         else -> emptyList()
     }
 
+/**
+ * 当前 primitive 在 extend 成员查找中需要尝试的真实 primitive 种类。
+ */
 val PrimitiveTypeKind.extendLookupKinds: List<PrimitiveTypeKind>
     get() = idealExtendLookupKinds.ifEmpty { listOf(this) }
 
+/**
+ * 当前类型为 ideal primitive 或 ideal literal 时对应的真实 extend 查找类型集合。
+ */
 val ConeCangJieType.idealExtendLookupTypes: List<ConePrimitiveType>
     get() = when (this) {
         is ConeIdealIntLiteralType -> PrimitiveTypeKind.IDEAL_INT.idealExtendLookupKinds.map(::ConePrimitiveType)
@@ -55,6 +70,9 @@ val ConeCangJieType.idealExtendLookupTypes: List<ConePrimitiveType>
         else -> emptyList()
     }
 
+/**
+ * 提取类型的 nominal [ClassId] 或 primitive 合成 [ClassId]。
+ */
 val ConeCangJieType.classIdOrPrimitiveClassId: ClassId?
     get() = when (this) {
         is ConePrimitiveType -> kind.classId
@@ -109,6 +127,9 @@ val ConeCangJieType.expandedClassIdOrPrimitiveClassId: ClassId?
         else -> classIdOrPrimitiveClassId
     }
 
+/**
+ * typealias 展开后的 extend 目标键。
+ */
 val ConeCangJieType.expandedExtendTargetKey: CfirExtendTargetKey?
     get() = when (this) {
         is ConeTypeAliasType -> expandedType?.expandedExtendTargetKey ?: CfirExtendTargetKey.ClassLike(classId)

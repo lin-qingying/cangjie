@@ -17,8 +17,9 @@ class CjoPackageHeader(
     val moduleName: String,
     /** 导入包列表，顺序与官方 C++ `importedFullPackageNames` 一致。 */
     val imports: List<String>,
-    /** package 涓墍鏈夋簮鏂囦欢鍚嶇О锛岀敤浜?decompiled facade/multifile 鎺ㄥ銆?*/
+    /** package 中所有源文件名称，用于 decompiled facade / multifile 推导。 */
     val allFiles: List<String>,
+    /** 文件级 import 条目，保留 public re-export 与 alias 信息。 */
     val fileImportEntries: List<CjoImportEntry>,
     /** 包类型（Normal/Macro/Foreign/Mock）。 */
     val kind: UByte,
@@ -50,6 +51,7 @@ class CjoPackageHeader(
      */
     val topLevelExtendIndices: List<Int>,
 ) {
+    /** 面向 decompiled 文本展示的 import 片段列表，优先使用结构化 file import 信息。 */
     val decompiledImportTexts: List<String>
         get() = if (fileImportEntries.isNotEmpty()) {
             fileImportEntries.map(CjoImportEntry::renderForDecompiledText)
@@ -58,6 +60,7 @@ class CjoPackageHeader(
         }
 
     companion object {
+        /** 能作为顶层 classifier 名称导出的声明种类。 */
         private val CLASSIFIER_KINDS = setOf(
             DeclKind.ClassDecl,
             DeclKind.InterfaceDecl,
@@ -66,12 +69,18 @@ class CjoPackageHeader(
             DeclKind.TypeAliasDecl,
         )
 
+        /** 能作为顶层 callable 名称导出的声明种类。 */
         private val CALLABLE_KINDS = setOf(
             DeclKind.FuncDecl,
             DeclKind.PropDecl,
             DeclKind.VarDecl,
         )
 
+        /**
+         * 从 FlatBuffers [Package] 中提取轻量包头。
+         *
+         * 这里只建立包名、导入、顶层声明名称和跨包引用索引，不反序列化声明体。
+         */
         fun fromPackage(pkg: Package): CjoPackageHeader {
             val fullPkgName = pkg.fullPkgName ?: ""
             val moduleName = pkg.moduleName ?: ""
@@ -144,13 +153,25 @@ class CjoPackageHeader(
     }
 }
 
+/**
+ * `.cjo` 文件中的单条 import 规格。
+ *
+ * 该结构保留前缀路径、成员名、alias 与 re-export 标志，用于 decompiled 文本和导出名称解析。
+ */
 data class CjoImportEntry(
+    /** import 的包路径或限定名前缀。 */
     val prefixPaths: List<String>,
+    /** import 的成员名；all-under import 使用 `*`。 */
     val identifier: String,
+    /** `as` 后的别名，没有 alias 时为 null。 */
     val aliasName: String?,
+    /** 是否为 `.*` all-under import。 */
     val isAllUnder: Boolean,
+    /** 是否使用 `::` 连接首段路径。 */
     val hasDoubleColon: Boolean,
+    /** 是否为 declaration import；只有 declaration import 才能参与 public re-export。 */
     val isDecl: Boolean,
+    /** 是否带隐式导出标记。 */
     val withImplicitExport: Boolean,
 ) {
     /**
@@ -193,6 +214,7 @@ data class CjoImportEntry(
     }
 
     companion object {
+        /** 从 FlatBuffers [ImportSpec] 转换为结构化 [CjoImportEntry]。 */
         fun fromImportSpec(importSpec: ImportSpec): CjoImportEntry {
             val prefixPaths = (0 until importSpec.prefixPathsLength)
                 .map { prefixIndex -> importSpec.prefixPaths(prefixIndex) ?: "" }

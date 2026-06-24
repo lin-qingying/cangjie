@@ -12,8 +12,11 @@ package org.cangnova.cangjie.cfir.resolve.providers.macro
  *
  * Evaluator 按 **child-first** 顺序展开（先展内层），并在 child 完成后
  * 用结果 token 流刷新 parent 的 args。
+ *
+ * @property roots 源文件中最外层 macro surface 对应的 forest root 列表。
  */
 class MacroCallForest internal constructor(
+    /** 源文件中最外层 macro surface 对应的 forest root 列表。 */
     val roots: List<MacroCallNode>,
 ) {
     /** 全部节点（按 child-first 拓扑顺序）。 */
@@ -24,6 +27,7 @@ class MacroCallForest internal constructor(
             return out
         }
 
+    /** 递归收集 [node] 子树的 child-first 拓扑顺序。 */
     private fun collectChildFirst(node: MacroCallNode, out: MutableList<MacroCallNode>) {
         for (child in node.children) collectChildFirst(child, out)
         out += node
@@ -32,17 +36,30 @@ class MacroCallForest internal constructor(
 
 /**
  * Forest 内单个节点：包装一个 [MacroSurface]，并维护父子关系。
+ *
+ * @property surface 当前节点代表的 macro surface。
+ * @property parent 直接父节点；root 节点为 null。
+ * @property children 构造时已有的子节点列表，后续由 builder 补边。
  */
 class MacroCallNode internal constructor(
+    /** 当前节点代表的 macro surface。 */
     val surface: MacroSurface,
+    /** 直接父节点；root 节点为 null。 */
     val parent: MacroCallNode?,
     children: List<MacroCallNode>,
 ) {
+    /** 可变子节点存储，供 forest builder 在扫线时增量建立父子关系。 */
     private val _children: MutableList<MacroCallNode> = children.toMutableList()
+    /** 与 [_children] 顺序对应的稳定替换边。 */
     private val _childEdges: MutableList<MacroCallEdge> = mutableListOf()
+
+    /** 直接子节点列表。 */
     val children: List<MacroCallNode> get() = _children
+
+    /** parent 到每个 direct child 的替换边列表。 */
     val childEdges: List<MacroCallEdge> get() = _childEdges
 
+    /** 把 [child] 及其对应 [edge] 挂到当前节点下。 */
     internal fun addChild(child: MacroCallNode, edge: MacroCallEdge) {
         _children += child
         _childEdges += edge
@@ -65,8 +82,11 @@ class MacroCallNode internal constructor(
  * Child surface 位于 parent payload 的哪条 token 通道。
  */
 enum class MacroPayloadChannel {
+    /** child surface 落在 parent attr token 通道内。 */
     ATTR,
+    /** child surface 落在 parent input token 通道内。 */
     INPUT,
+    /** 无法从 token 覆盖关系判定通道，后续必须按 unresolved 边处理。 */
     UNRESOLVED,
 }
 
@@ -76,11 +96,20 @@ enum class MacroPayloadChannel {
  * [replaceRange] 是 child macro surface 在宿主源码中的完整范围；[channel]
  * 由 parent 的 attr/input token 覆盖关系判定，用于后续只替换对应 payload
  * 通道中的 token 段，禁止退化为 flatten。
+ *
+ * @property parent 直接父节点。
+ * @property child 直接子节点。
+ * @property channel child 所在的 parent payload 通道。
+ * @property replaceRange child surface 在宿主源码中的完整范围。
  */
 data class MacroCallEdge(
+    /** 直接父节点。 */
     val parent: MacroCallNode,
+    /** 直接子节点。 */
     val child: MacroCallNode,
+    /** child 所在的 parent payload 通道。 */
     val channel: MacroPayloadChannel,
+    /** child surface 在宿主源码中的完整范围。 */
     val replaceRange: MacroSurfaceSourceRange?,
 )
 
@@ -95,6 +124,12 @@ data class MacroCallEdge(
  * 退到尾部（保持稳定，依赖 surfaceId 顺序）。
  */
 object MacroCallForestBuilder {
+    /**
+     * 根据 [surfaces] 的源码范围构造 macro call forest。
+     *
+     * 该函数只建立 construction 期拓扑关系，不做解析、执行或 splice；
+     * 结果供 [MacroForestEvaluator] 按 child-first 顺序调度。
+     */
     fun build(surfaces: List<MacroSurface>): MacroCallForest {
         if (surfaces.isEmpty()) return MacroCallForest(emptyList())
 
@@ -155,6 +190,7 @@ object MacroCallForestBuilder {
         return MacroCallForest(roots)
     }
 
+    /** 判定 [child] 的源码范围落在当前 surface 的 attr、input 还是未知通道。 */
     private fun MacroSurface.payloadChannelFor(child: MacroSurface): MacroPayloadChannel {
         val range = child.sourceRange ?: return MacroPayloadChannel.UNRESOLVED
         return when {
@@ -164,6 +200,7 @@ object MacroCallForestBuilder {
         }
     }
 
+    /** 判断 token 列表是否覆盖 [range] 对应的 surface 范围。 */
     private fun List<MacroSurfaceToken>.containsSurfaceRange(range: MacroSurfaceSourceRange): Boolean {
         return any { token -> token.startOffset >= range.startOffset && token.endOffset <= range.endOffset }
     }
@@ -174,14 +211,29 @@ object MacroCallForestBuilder {
  *
  * 一次展开循环出现的标志是"同一 fingerprint 在 forest evaluator 多次出现"。
  * Fingerprint = (qualifiedName, parentNames, normalized attr tokens, normalized input tokens)
+ *
+ * @property qualifiedName 当前节点 macro 调用的限定名。
+ * @property parentNames 从 root 到当前节点父级的 macro 名路径。
+ * @property attrTokensHash attr token 文本与 child 展开结果合并后的哈希。
+ * @property inputTokensHash input token 文本与 child 展开结果合并后的哈希。
  */
 data class MacroExpansionFingerprint(
+    /** 当前节点 macro 调用的限定名。 */
     val qualifiedName: String?,
+    /** 从 root 到当前节点父级的 macro 名路径。 */
     val parentNames: List<String>,
+    /** attr token 文本与 child 展开结果合并后的哈希。 */
     val attrTokensHash: Int,
+    /** input token 文本与 child 展开结果合并后的哈希。 */
     val inputTokensHash: Int,
 ) {
     companion object {
+        /**
+         * 为 [node] 构造一次 evaluator 可比较的循环检测指纹。
+         *
+         * [childResults] 会并入 token 哈希，确保 parent 在 child 展开结果变化时
+         * 不被误判为同一轮展开状态。
+         */
         fun of(
             node: MacroCallNode,
             childResults: Map<MacroCallNode, List<MacroSurfaceToken>> = emptyMap(),
@@ -195,6 +247,7 @@ data class MacroExpansionFingerprint(
             )
         }
 
+        /** 将 token 文本和已完成的 child 展开结果合并成稳定的文本哈希。 */
         private fun List<MacroSurfaceToken>.textHashWithChildResults(
             childResults: Map<MacroCallNode, List<MacroSurfaceToken>>,
         ): Int {
@@ -212,9 +265,14 @@ data class MacroExpansionFingerprint(
 
 /**
  * Macro forest 评估期可观察的循环。
+ *
+ * @property fingerprint 触发循环判定的展开指纹。
+ * @property nodes 产生同一指纹的节点历史。
  */
 data class MacroExpansionCycle(
+    /** 触发循环判定的展开指纹。 */
     val fingerprint: MacroExpansionFingerprint,
+    /** 产生同一指纹的节点历史。 */
     val nodes: List<MacroCallNode>,
 )
 
@@ -226,8 +284,11 @@ data class MacroExpansionCycle(
  *
  * Batch 7 阶段 evaluator 主体可见，真实 fragment parse / re-eval 留给 Batch 8：
  * 该入口的回调签名足以支撑 Batch 8 fragment parser 接入。
+ *
+ * @property maxIterations 同一 fingerprint 允许出现的最大次数，用于限制递归展开。
  */
 class MacroForestEvaluator(
+    /** 同一 fingerprint 允许出现的最大次数，用于限制递归展开。 */
     private val maxIterations: Int = 16,
 ) {
     /**

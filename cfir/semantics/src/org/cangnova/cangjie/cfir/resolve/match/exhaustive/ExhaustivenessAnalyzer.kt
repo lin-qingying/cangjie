@@ -43,12 +43,19 @@ import org.cangnova.cangjie.cfir.types.ConeErrorType
  * 从而可被 BODY_RESOLVE 与 CHECKERS 共同复用。
  */
 object ExhaustivenessAnalyzer {
+    /** 默认穷尽性 checker 分派器。 */
     private val dispatcher = HybridDispatcher.DEFAULT
 
+    /**
+     * 使用 session 检查 match 表达式穷尽性。
+     */
     fun checkMatch(match: CfirMatchExpression, session: CfirSession): ExhaustivenessResult {
         return checkMatch(match, MatchExhaustivenessContext.fromSession(session))
     }
 
+    /**
+     * 使用显式上下文检查 match 表达式穷尽性。
+     */
     fun checkMatch(
         match: CfirMatchExpression,
         context: MatchExhaustivenessContext,
@@ -67,6 +74,9 @@ object ExhaustivenessAnalyzer {
         return dispatcher.check(matrix, subjectType, context)
     }
 
+    /**
+     * 使用 session 检查单个模式对表达式类型是否穷尽。
+     */
     fun checkPattern(
         pattern: CfirPattern,
         expression: CfirExpression?,
@@ -75,6 +85,9 @@ object ExhaustivenessAnalyzer {
         return checkPattern(pattern, expression, MatchExhaustivenessContext.fromSession(session))
     }
 
+    /**
+     * 使用显式上下文检查单个模式对表达式类型是否穷尽。
+     */
     fun checkPattern(
         pattern: CfirPattern,
         expression: CfirExpression?,
@@ -94,6 +107,9 @@ object ExhaustivenessAnalyzer {
         return dispatcher.check(matrix, type, context)
     }
 
+    /**
+     * 使用 session 直接检查已构造的模式矩阵。
+     */
     fun checkMatrix(
         matrix: CfirMatrix,
         type: ConeCangJieType,
@@ -102,6 +118,9 @@ object ExhaustivenessAnalyzer {
         return checkMatrix(matrix, type, MatchExhaustivenessContext.fromSession(session))
     }
 
+    /**
+     * 使用显式上下文直接检查已构造的模式矩阵。
+     */
     fun checkMatrix(
         matrix: CfirMatrix,
         type: ConeCangJieType,
@@ -114,6 +133,11 @@ object ExhaustivenessAnalyzer {
         return dispatcher.check(matrix, type, context)
     }
 
+    /**
+     * 获取 match 表达式缺失模式。
+     *
+     * 已穷尽或无法分析时返回 `null`。
+     */
     fun getMissingPatterns(
         match: CfirMatchExpression,
         context: MatchExhaustivenessContext,
@@ -125,6 +149,9 @@ object ExhaustivenessAnalyzer {
         }
     }
 
+    /**
+     * 获取 match 表达式缺失模式文本。
+     */
     fun getMissingPatternTexts(
         match: CfirMatchExpression,
         context: MatchExhaustivenessContext,
@@ -135,6 +162,9 @@ object ExhaustivenessAnalyzer {
         }
     }
 
+    /**
+     * 使用 session 检查 match 并返回 checker 分派分析。
+     */
     fun checkWithAnalysis(
         match: CfirMatchExpression,
         session: CfirSession,
@@ -142,6 +172,9 @@ object ExhaustivenessAnalyzer {
         return checkWithAnalysis(match, MatchExhaustivenessContext.fromSession(session))
     }
 
+    /**
+     * 使用显式上下文检查 match 并返回 checker 分派分析。
+     */
     fun checkWithAnalysis(
         match: CfirMatchExpression,
         context: MatchExhaustivenessContext,

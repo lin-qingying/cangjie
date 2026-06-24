@@ -6,7 +6,7 @@ enum E {
     A | B | C
 
     func foo() {
-        <!UNRESOLVED_REFERENCE!>g<!>o()
+        <!UNRESOLVED_REFERENCE!>go<!>()
     }
 }
 

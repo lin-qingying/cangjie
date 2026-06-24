@@ -35,6 +35,8 @@ import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.resolve.CfirTypeResolutionConfiguration
 import org.cangnova.cangjie.cfir.resolve.ThisTypeResolutionContext
+import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
+import org.cangnova.cangjie.cfir.toCfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.resolvedTypeFromPrototype
 import org.cangnova.cangjie.cfir.scopes.CfirScope
 import org.cangnova.cangjie.cfir.scopes.defaultImportsProvider
@@ -50,6 +52,7 @@ import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.cfir.types.builder.buildImplicitTypeRef
 import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.SpecialNames
+import org.cangnova.cangjie.type.model.TypeConstructorMarker
 
 /**
  * TYPES 阶段处理器。
@@ -59,11 +62,16 @@ class CfirTypeResolveProcessor(
     session: CfirSession,
     scopeSession: ScopeSession,
 ) : CfirTransformerBasedResolveProcessor(session, scopeSession, CfirResolvePhase.TYPES) {
+    /** TYPES 阶段实际使用的树转换器实例。 */
     private val typeResolveTransformer = CfirTypeResolveTransformer(session, scopeSession)
 
+    /** 通用 resolve processor 暴露的 transformer 视图。 */
     @Suppress("UNCHECKED_CAST")
     override val transformer get() = typeResolveTransformer as org.cangnova.cangjie.cfir.visitors.CfirTransformer<Nothing?>
 
+    /**
+     * 推进单个文件的 TYPES 阶段。
+     */
     override fun processFile(file: CfirFile) {
         typeResolveTransformer.transformFile(file, CfirTypeResolutionConfiguration.EMPTY)
     }
@@ -74,15 +82,23 @@ class CfirTypeResolveProcessor(
  * 它遍历 CFIR 树，只处理声明头中的类型引用，不触碰函数体和隐式类型。
  */
 class CfirTypeResolveTransformer(
+    /** 当前 CFIR 会话，提供 symbol provider、import binding、默认导入和类型上下文。 */
     override val session: CfirSession,
+    /** 当前文件解析过程中复用的 scope session。 */
     private val scopeSession: ScopeSession,
 ) : CfirAbstractTreeTransformer<CfirTypeResolutionConfiguration>(CfirResolvePhase.TYPES) {
+    /** 单个类型引用解析器，负责把具体 `CfirTypeRef` 转为 resolved type ref。 */
     private val typeResolverTransformer = CfirSpecificTypeResolverTransformer(session)
+    /** 当前 use-site 文件，供 low-level TYPES 和导入 scope 构造复用。 */
     private var currentFile: CfirFile? = null
+    /** 当前 low-level 指定解析路径中的外围 class-like 栈。 */
     private val classDeclarationsStack: ArrayDeque<CfirClassLikeDeclaration> = ArrayDeque()
 
     // ---- 声明遍历 ----
 
+    /**
+     * 解析文件级 TYPES 阶段，并建立当前文件的导入与声明 scope。
+     */
     override fun transformFile(file: CfirFile, data: CfirTypeResolutionConfiguration): CfirFile {
         checkSessionConsistency(file)
         return withFileScope(file) {
@@ -90,6 +106,9 @@ class CfirTypeResolveTransformer(
         }
     }
 
+    /**
+     * 解析 class 声明头，包括隐式默认构造器、类型参数、父类型、注解和成员声明头。
+     */
     override fun transformClass(klass: CfirClass, data: CfirTypeResolutionConfiguration): CfirClass {
         ensureImplicitDefaultConstructorIfNeeded(klass)
 
@@ -98,24 +117,36 @@ class CfirTypeResolveTransformer(
         return klass
     }
 
+    /**
+     * 解析 interface 声明头。
+     */
     override fun transformInterface(interfaceDeclaration: CfirInterface, data: CfirTypeResolutionConfiguration): CfirInterface {
         transformClassLikeHeader(interfaceDeclaration, data)
         bumpPhase(interfaceDeclaration)
         return interfaceDeclaration
     }
 
+    /**
+     * 解析 struct 声明头。
+     */
     override fun transformStruct(struct: CfirStruct, data: CfirTypeResolutionConfiguration): CfirStruct {
         transformClassLikeHeader(struct, data)
         bumpPhase(struct)
         return struct
     }
 
+    /**
+     * 解析 enum 声明头。
+     */
     override fun transformEnum(enum: CfirEnum, data: CfirTypeResolutionConfiguration): CfirEnum {
         transformClassLikeHeader(enum, data)
         bumpPhase(enum)
         return enum
     }
 
+    /**
+     * 解析通用 class-like 声明头。
+     */
     private fun transformClassLikeHeader(
         declaration: CfirClassLikeDeclaration,
         data: CfirTypeResolutionConfiguration,
@@ -129,12 +160,16 @@ class CfirTypeResolveTransformer(
         declaration.transformDeclarations(this, configuration)
     }
 
+    /**
+     * 解析 extend 声明头，并在解析父类型前建立被扩展类型的 `This` 类型上下文。
+     */
     override fun transformExtend(extend: CfirExtend, data: CfirTypeResolutionConfiguration): CfirExtend {
         var configuration = data
             .withTopContainer(extend)
             .withAdditionalTypeParameters(extend.typeParameters)
         extend.transformTypeParameters(this, configuration)
         extend.transformExtendedTypeRef(this, configuration)
+        extend.exposeExtendedTypeAssumptionBounds()
         configuration = configuration.withThisTypeContext(thisTypeContextForExtend(extend))
         extend.transformSuperTypeRefs(this, configuration)
         extend.transformAnnotations(this, configuration)
@@ -143,30 +178,50 @@ class CfirTypeResolveTransformer(
         return extend
     }
 
+    /**
+     * 解析普通命名函数声明头。
+     */
     override fun transformNamedFunction(
         namedFunction: CfirNamedFunction,
         data: CfirTypeResolutionConfiguration,
     ): CfirNamedFunction = transformFunctionHeader(namedFunction, data) as CfirNamedFunction
 
+    /**
+     * 解析 `main` 函数声明头。
+     */
     override fun transformMainFunction(
         mainFunction: CfirMainFunction,
         data: CfirTypeResolutionConfiguration,
     ): CfirMainFunction = transformFunctionHeader(mainFunction, data) as CfirMainFunction
 
+    /**
+     * 解析宏声明头。
+     */
     override fun transformMacroDeclaration(
         macroDeclaration: CfirMacroDeclaration,
         data: CfirTypeResolutionConfiguration,
     ): CfirMacroDeclaration = transformFunctionHeader(macroDeclaration, data) as CfirMacroDeclaration
 
+    /**
+     * 解析 finalizer 声明头。
+     */
     override fun transformFinalizer(
         finalizer: CfirFinalizer,
         data: CfirTypeResolutionConfiguration,
     ): CfirFinalizer = transformFunctionHeader(finalizer, data) as CfirFinalizer
 
+    /**
+     * 解析通用函数声明头。
+     */
     override fun transformFunction(function: CfirFunction, data: CfirTypeResolutionConfiguration): CfirFunction {
         return transformFunctionHeader(function, data)
     }
 
+    /**
+     * 解析函数型声明的公共头部。
+     *
+     * TYPES 阶段只处理类型参数、返回类型、值参数和注解，不进入函数体。
+     */
     private fun transformFunctionHeader(function: CfirFunction, data: CfirTypeResolutionConfiguration): CfirFunction {
         val configuration = data
             .withTopContainer(function)
@@ -183,6 +238,11 @@ class CfirTypeResolveTransformer(
         return function
     }
 
+    /**
+     * 计算函数返回类型位置可见的 `This` 类型解析上下文。
+     *
+     * class 成员函数可在非 static 返回类型中使用 `This`；static 成员和 extend 语境下会保留诊断信息或禁用标记。
+     */
     private fun thisTypeContextForFunctionReturn(
         function: CfirFunction,
         data: CfirTypeResolutionConfiguration,
@@ -209,11 +269,17 @@ class CfirTypeResolveTransformer(
         }
     }
 
+    /**
+     * 为 extend 声明创建禁用状态的 `This` 类型解析上下文。
+     */
     private fun thisTypeContextForExtend(extend: CfirExtend): ThisTypeResolutionContext? {
         val extendedType = extend.extendedTypeRef.coneTypeOrNull ?: return null
         return ThisTypeResolutionContext(extendedType, isAllowed = false)
     }
 
+    /**
+     * 构造 class 内部 `This` 类型，类型实参使用该 class 自身的类型参数。
+     */
     private fun CfirClass.constructClassThisType(): ConeCangJieType? {
         val classSymbol = symbol as? CfirClassSymbol ?: return null
         val typeArguments = typeParameters.map { parameter ->
@@ -222,6 +288,9 @@ class CfirTypeResolveTransformer(
         return classSymbol.constructThisType(typeArguments)
     }
 
+    /**
+     * 解析普通构造器声明头，并为隐式返回类型写入 owner 构造类型。
+     */
     override fun transformConstructor(constructor: CfirConstructor, data: CfirTypeResolutionConfiguration): CfirConstructor {
         val configuration = data
             .withTopContainer(constructor)
@@ -243,6 +312,9 @@ class CfirTypeResolveTransformer(
         return constructor
     }
 
+    /**
+     * 解析 enum constructor 声明头，并为隐式返回类型写入 enum owner 构造类型。
+     */
     override fun transformEnumConstructor(
         enumConstructor: CfirEnumConstructor,
         data: CfirTypeResolutionConfiguration,
@@ -270,6 +342,9 @@ class CfirTypeResolveTransformer(
         return enumConstructor
     }
 
+    /**
+     * 解析属性声明头，包括类型参数、属性类型、访问器和注解。
+     */
     override fun transformProperty(property: CfirProperty, data: CfirTypeResolutionConfiguration): CfirProperty {
         val configuration = data
             .withTopContainer(property)
@@ -283,16 +358,25 @@ class CfirTypeResolveTransformer(
         return property
     }
 
+    /**
+     * 解析属性访问器声明头。
+     */
     override fun transformPropertyAccessor(
         propertyAccessor: CfirPropertyAccessor,
         data: CfirTypeResolutionConfiguration,
     ): CfirPropertyAccessor = transformFunctionHeader(propertyAccessor, data) as CfirPropertyAccessor
 
+    /**
+     * 普通局部变量在 TYPES 阶段不解析隐式类型，只推进阶段标记。
+     */
     override fun transformVariable(variable: CfirVariable, data: CfirTypeResolutionConfiguration): CfirVariable {
         bumpPhase(variable)
         return variable
     }
 
+    /**
+     * 解析字段变量的显式类型与注解。
+     */
     override fun transformFieldVariable(
         fieldVariable: CfirFieldVariable,
         data: CfirTypeResolutionConfiguration,
@@ -303,6 +387,9 @@ class CfirTypeResolveTransformer(
         return fieldVariable
     }
 
+    /**
+     * 解析模式绑定变量的显式类型与注解。
+     */
     override fun transformPatternBindingVariable(
         patternBindingVariable: CfirPatternBindingVariable,
         data: CfirTypeResolutionConfiguration,
@@ -313,6 +400,9 @@ class CfirTypeResolveTransformer(
         return patternBindingVariable
     }
 
+    /**
+     * 解析模式变量的显式类型与注解。
+     */
     override fun transformPatternVariable(patternVariable: CfirPatternVariable, data: CfirTypeResolutionConfiguration): CfirPatternVariable {
         patternVariable.transformReturnTypeRef(this, data)
         patternVariable.transformAnnotations(this, data)
@@ -320,12 +410,18 @@ class CfirTypeResolveTransformer(
         return patternVariable
     }
 
+    /**
+     * 解析值参数的类型引用和注解。
+     */
     override fun transformValueParameter(valueParameter: CfirValueParameter, data: CfirTypeResolutionConfiguration): CfirValueParameter {
         valueParameter.transformReturnTypeRef(this, data)
         valueParameter.transformAnnotations(this, data)
         return valueParameter
     }
 
+    /**
+     * 解析类型参数的注解与上界。
+     */
     override fun transformTypeParameter(typeParameter: CfirTypeParameter, data: CfirTypeResolutionConfiguration): CfirTypeParameter {
         typeParameter.transformAnnotations(this, data)
         typeParameter.transformBounds(this, data)
@@ -333,6 +429,9 @@ class CfirTypeResolveTransformer(
         return typeParameter
     }
 
+    /**
+     * 解析 typealias 的类型参数、展开类型和注解。
+     */
     override fun transformTypeAlias(typeAlias: CfirTypeAlias, data: CfirTypeResolutionConfiguration): CfirTypeAlias {
         val configuration = data
             .withTopContainer(typeAlias)
@@ -346,23 +445,38 @@ class CfirTypeResolveTransformer(
 
     // ---- 类型解析 ----
 
+    /**
+     * 解析任意类型引用。
+     */
     override fun transformTypeRef(typeRef: CfirTypeRef, data: CfirTypeResolutionConfiguration): CfirTypeRef {
         return typeResolverTransformer.transformTypeRef(typeRef, data)
     }
 
+    /**
+     * 解析用户书写的类型引用。
+     */
     override fun transformUserTypeRef(userTypeRef: CfirUserTypeRef, data: CfirTypeResolutionConfiguration): CfirTypeRef {
         return transformTypeRef(userTypeRef, data)
     }
 
+    /**
+     * 已解析类型引用在 TYPES 阶段保持不变。
+     */
     override fun transformResolvedTypeRef(resolvedTypeRef: CfirResolvedTypeRef, data: CfirTypeResolutionConfiguration): CfirTypeRef {
         return resolvedTypeRef
     }
 
+    /**
+     * 隐式类型引用留给 IMPLICIT_TYPES 阶段处理。
+     */
     override fun transformImplicitTypeRef(implicitTypeRef: CfirImplicitTypeRef, data: CfirTypeResolutionConfiguration): CfirTypeRef {
         // 隐式类型留给 IMPLICIT_TYPES 阶段处理
         return implicitTypeRef
     }
 
+    /**
+     * 基础类型引用统一交给类型解析器处理。
+     */
     override fun transformBasicTypeRef(basicTypeRef: CfirBasicTypeRef, data: CfirTypeResolutionConfiguration): CfirTypeRef {
         // 基础类型也统一走类型引用解析逻辑
         return transformTypeRef(basicTypeRef, data)
@@ -370,6 +484,9 @@ class CfirTypeResolveTransformer(
 
     // ---- 跳过函数体 ----
 
+    /**
+     * TYPES 阶段不进入函数体 block。
+     */
     override fun transformBlock(block: CfirBlock, data: CfirTypeResolutionConfiguration): CfirExpression {
         return block
     }
@@ -456,8 +573,131 @@ class CfirTypeResolveTransformer(
             .withAdditionalTypeParameters(extend.typeParameters)
         extend.transformTypeParameters(this, configuration)
         extend.transformExtendedTypeRef(this, configuration)
+        extend.exposeExtendedTypeAssumptionBounds()
         extend.transformSuperTypeRefs(this, configuration)
         extend.transformAnnotations(this, configuration)
+    }
+
+    /**
+     * 对齐官方 `AddAssumptionForExtendDecls`：
+     *
+     * `extend<R> A<R>` 必须把 `A<T> where T <: C` 投射成 `R <: C`，
+     * 否则 extend 体内的 `R.i` 这类上界静态访问和目标类型实参检查都会丢失依据。
+     */
+    private fun CfirExtend.exposeExtendedTypeAssumptionBounds() {
+        if (typeParameters.isEmpty()) return
+        val extendedType = (extendedTypeRef as? CfirResolvedTypeRef)?.coneType as? ConeLookupTagBasedType ?: return
+        val targetDeclaration = extendedType.toAssumptionTargetDeclaration() ?: return
+        val targetTypeParameters = targetDeclaration.typeParameters
+        if (targetTypeParameters.isEmpty() || extendedType.typeArguments.isEmpty()) return
+
+        val reverseMapping = linkedMapOf<TypeConstructorMarker, MutableSet<TypeConstructorMarker>>()
+        collectReverseTypeMapping(
+            parameterTypes = targetTypeParameters.map { it.symbol.constructType() },
+            argumentTypes = extendedType.typeArguments.map { it.type },
+            destination = reverseMapping,
+        )
+        if (reverseMapping.isEmpty()) return
+
+        val targetSubstitutor = CfirTypeSubstitutorByMap(
+            targetTypeParameters.zip(extendedType.typeArguments).associate { (parameter, argument) ->
+                parameter.symbol.toLookupTag() to argument.type
+            },
+        )
+        val assumptionBounds = collectAssumptionBounds(targetDeclaration)
+
+        for (typeParameter in typeParameters) {
+            val constraintConstructors = reverseMapping[typeParameter.symbol.toLookupTag()].orEmpty()
+            if (constraintConstructors.isEmpty()) continue
+
+            val projectedBounds = constraintConstructors
+                .flatMap { assumptionBounds[it].orEmpty() }
+                .map { targetSubstitutor.substituteOrSelf(it) }
+                .filter { it.isValidAssumptionUpperBound() }
+
+            typeParameter.appendAssumptionBounds(projectedBounds)
+        }
+    }
+
+    /**
+     * 递归构造官方 `GetRevTypeMapping` 的 CFIR 等价物。
+     *
+     * key 是 extend 自身类型参数，value 是它在目标类型实参结构中对应到的声明侧类型参数。
+     */
+    private fun collectReverseTypeMapping(
+        parameterTypes: List<ConeCangJieType>,
+        argumentTypes: List<ConeCangJieType>,
+        destination: MutableMap<TypeConstructorMarker, MutableSet<TypeConstructorMarker>>,
+    ) {
+        if (parameterTypes.size != argumentTypes.size) return
+        for (index in argumentTypes.indices) {
+            val parameterType = parameterTypes[index] as? ConeTypeParameterType ?: continue
+            when (val argumentType = argumentTypes[index]) {
+                is ConeTypeParameterType -> {
+                    destination.getOrPut(argumentType.lookupTag) { linkedSetOf() } += parameterType.lookupTag
+                }
+                is ConeLookupTagBasedType -> {
+                    val nestedDeclaration = argumentType.toAssumptionTargetDeclaration() ?: continue
+                    collectReverseTypeMapping(
+                        parameterTypes = nestedDeclaration.typeParameters.map { it.symbol.constructType() },
+                        argumentTypes = argumentType.typeArguments.map { it.type },
+                        destination = destination,
+                    )
+                }
+                else -> Unit
+            }
+        }
+    }
+
+    /**
+     * 收集目标声明及其上界中出现的声明侧泛型 assumptions。
+     */
+    private fun collectAssumptionBounds(
+        declaration: CfirTypeParameterRefsOwner,
+        destination: MutableMap<TypeConstructorMarker, MutableSet<ConeCangJieType>> = linkedMapOf(),
+        visitedDeclarations: MutableSet<CfirTypeParameterRefsOwner> = linkedSetOf(),
+    ): Map<TypeConstructorMarker, Set<ConeCangJieType>> {
+        if (!visitedDeclarations.add(declaration)) return destination
+
+        for (typeParameter in declaration.typeParameters) {
+            val key = typeParameter.symbol.toLookupTag()
+            val bounds = destination.getOrPut(key) { linkedSetOf() }
+            for (bound in typeParameter.symbol.resolvedBounds) {
+                val boundType = bound.coneType
+                bounds += boundType
+                (boundType as? ConeLookupTagBasedType)?.toAssumptionTargetDeclaration()?.let {
+                    collectAssumptionBounds(it, destination, visitedDeclarations)
+                }
+            }
+        }
+
+        return destination
+    }
+
+    /**
+     * assumption bound 只合成可参与上界成员/子类型推导的 class-like 类型。
+     *
+     * 非 class/interface 上界继续由声明侧 checker 报告，避免在同一个类型参数上制造级联诊断。
+     */
+    private fun ConeCangJieType.isValidAssumptionUpperBound(): Boolean {
+        if (this is ConeErrorType) return false
+        return fullyExpandedType(session) is ConeClassLikeType
+    }
+
+    private fun ConeLookupTagBasedType.toAssumptionTargetDeclaration(): CfirTypeParameterRefsOwner? {
+        val classId = classIdOrPrimitiveClassId ?: return null
+        return session.symbolProvider.getClassLikeSymbolByClassId(classId)?.cfir as? CfirTypeParameterRefsOwner
+    }
+
+    private fun CfirTypeParameter.appendAssumptionBounds(boundsToAdd: List<ConeCangJieType>) {
+        if (boundsToAdd.isEmpty()) return
+        if (this !is org.cangnova.cangjie.cfir.declarations.impl.CfirTypeParameterImpl) return
+
+        val existingBounds = bounds.mapNotNull { it.coneTypeOrNull }.toMutableSet()
+        for (boundType in boundsToAdd) {
+            if (!existingBounds.add(boundType)) continue
+            bounds += boundType.toCfirResolvedTypeRef()
+        }
     }
 
     /**
@@ -477,6 +717,11 @@ class CfirTypeResolveTransformer(
         declaration.replaceResolvePhase(CfirResolvePhase.TYPES)
     }
 
+    /**
+     * 为没有显式构造器的 class 补入隐式默认构造器。
+     *
+     * 该构造器在 TYPES 阶段获得 owner 类型作为返回类型，保证后续 low-level 阶段不会看到未完成声明头。
+     */
     private fun ensureImplicitDefaultConstructorIfNeeded(klass: CfirClass) {
         if (klass.declarations.any { it is CfirConstructor }) return
 
@@ -510,6 +755,9 @@ class CfirTypeResolveTransformer(
         return ownerSymbol.constructType(typeArguments)
     }
 
+    /**
+     * 基于当前文件和外围 class-like 栈构造类型解析配置。
+     */
     private fun buildConfiguration(topContainer: CfirDeclaration): CfirTypeResolutionConfiguration {
         var configuration = CfirTypeResolutionConfiguration.EMPTY.withTopContainer(topContainer)
 
@@ -530,6 +778,12 @@ class CfirTypeResolveTransformer(
         return configuration
     }
 
+    /**
+     * 构造 TYPES 阶段类型名查找使用的导入 scope 列表。
+     *
+     * 顺序从高到低排列：文件声明、当前包成员、显式 simple import、显式 star import、
+     * 默认 simple import、默认 star import。
+     */
     private fun createImportingScopes(file: CfirFile): List<CfirScope> {
         val symbolProvider = session.symbolProvider
         val imports = file.imports
@@ -558,6 +812,9 @@ class CfirTypeResolveTransformer(
         }
     }
 
+    /**
+     * 返回 class-like 声明在类型解析中可见的自身类型参数。
+     */
     private fun CfirClassLikeDeclaration.typeParametersForResolution(): List<CfirTypeParameter> = when (this) {
         is CfirClass -> typeParameters
         is org.cangnova.cangjie.cfir.declarations.CfirPrimitiveTypeDeclaration -> emptyList()

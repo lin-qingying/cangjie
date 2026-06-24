@@ -124,8 +124,15 @@ class PendingDiagnosticsReporterImpl(
                             iterator.remove()
                         }
                     }
+                    diagnostic.isCfirDceWarning() && !commitEverything -> {
+                        // CHIR DCE 类 warning 在官方编译器中位于 sema 成功之后。
+                        // 因此这里延迟到文件结束，再根据同文件是否存在 error 统一决定提交或丢弃。
+                    }
                     diagnosticElement == element || commitEverything -> {
                         iterator.remove()
+                        if (diagnostic.isCfirDceWarning() && hasErrorInFile(path, pendingList)) {
+                            continue
+                        }
                         commitDiagnostic(path, diagnostic, context)
                     }
                 }
@@ -173,6 +180,10 @@ class PendingDiagnosticsReporterImpl(
         delegate.report(diagnostic, context)
         committedDiagnostics?.add(diagnostic)
     }
+
+    private fun hasErrorInFile(filePath: String, pendingList: List<CjDiagnostic>): Boolean =
+        committedDiagnosticsByFilePath[filePath]?.any { it.severity.isError } == true ||
+            pendingList.any { it.severity.isError }
 }
 
 private fun CjDiagnostic.hasSameDiagnosticIdentity(other: CjDiagnostic): Boolean =
@@ -180,3 +191,6 @@ private fun CjDiagnostic.hasSameDiagnosticIdentity(other: CjDiagnostic): Boolean
         renderMessage() == other.renderMessage() &&
         firstRange.startOffset == other.firstRange.startOffset &&
         firstRange.endOffset == other.firstRange.endOffset
+
+private fun CjDiagnostic.isCfirDceWarning(): Boolean =
+    factoryName == "CFIR_UNUSED_VARIABLE" || factoryName == "CFIR_UNUSED_EXPRESSION"

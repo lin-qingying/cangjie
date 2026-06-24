@@ -32,6 +32,7 @@ import org.cangnova.cangjie.cfir.types.typeContext
  * `return ()`，不把普通尾表达式强制当作 Unit 返回值。
  */
 object CfirFunctionBodyTypeMismatchChecker : CfirBasicExpressionChecker() {
+    /** 检查函数体 block 尾表达式是否满足显式返回类型。 */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirStatement) {
         val block = expression as? CfirBlock ?: return

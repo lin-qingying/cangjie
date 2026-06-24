@@ -17,36 +17,48 @@ import org.cangnova.cangjie.cfir.session.CfirSession
  * 当前仓颉主干尚未把 CFA checker 家族正式拆入 `DeclarationCheckers` 主契约，
  * 因此该组件先承接统一入口与遍历边界，避免 low-level-api-cfir 继续私有绕开主干模块。
  * 具体 CFA checker 家族补齐后，只需要在 `analyze(...)` 中接入主干实现。
+ *
+ * @param session 当前组件所属的 CFIR session。
+ * @param reporter 当前诊断收集流程的 pending reporter。
+ * @property declarationCheckers 当前 CFA 入口将来要复用的声明 checker 聚合。
  */
 class ControlFlowAnalysisDiagnosticComponent(
     session: CfirSession,
     reporter: PendingDiagnosticReporter,
+    /** 当前 CFA 入口将来要复用的声明 checker 聚合。 */
     private val declarationCheckers: DeclarationCheckers,
 ) : AbstractDiagnosticCollectorComponent(session, reporter) {
+    /** CFA checker 家族的统一接入点；当前保留 declaration checker 聚合的依赖边界。 */
     private fun analyze() {
         declarationCheckers.hashCode()
     }
 
+    /** 在文件节点边界触发 CFA 入口。 */
     override fun visitFile(file: CfirFile, data: CheckerContext) {
         analyze()
     }
 
+    /** 在 class 节点边界触发 CFA 入口。 */
     override fun visitClass(klass: CfirClass, data: CheckerContext) {
         analyze()
     }
 
+    /** 在属性节点边界触发 CFA 入口。 */
     override fun visitProperty(property: CfirProperty, data: CheckerContext) {
         analyze()
     }
 
+    /** 在函数节点边界触发 CFA 入口。 */
     override fun visitFunction(function: CfirFunction, data: CheckerContext) {
         analyze()
     }
 
+    /** 在属性访问器节点边界触发 CFA 入口。 */
     override fun visitPropertyAccessor(propertyAccessor: CfirPropertyAccessor, data: CheckerContext) {
         analyze()
     }
 
+    /** 在构造器节点边界触发 CFA 入口。 */
     override fun visitConstructor(constructor: CfirConstructor, data: CheckerContext) {
         analyze()
     }

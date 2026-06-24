@@ -16,16 +16,23 @@ import org.cangnova.cangjie.LanguageVersionSettings
 import org.cangnova.cangjie.name.Name
 
 /**
- * Default concrete implementation of [CfirAbstractSessionFactory].
+ * [CfirAbstractSessionFactory] 的默认具体实现。
  *
- * This class mirrors Kotlin's concrete FIR session factories structure:
- * - creates shared/library/source sessions via public entrypoints
- * - keeps platform-dependent wiring customizable through [Context]
+ * 该实现对齐 Kotlin FIR session factory 的结构：公开入口分别创建共享库、普通库和源码会话；
+ * 平台相关的 provider 与组件注入通过 [Context] 保持可替换。
  */
 @OptIn(SessionConfiguration::class)
 open class CfirDefaultSessionFactory : CfirAbstractSessionFactory<CfirDefaultSessionFactory.Context>() {
     /**
-     * Extra wiring points for platform/environment-specific integrations.
+     * 默认工厂的宿主上下文。
+     *
+     * @property cjoManager CJO 依赖管理器；为空时库会话不会注册反序列化符号 provider。
+     * @property additionalSharedProviders 共享库会话的额外 provider 注入点。
+     * @property additionalLibraryProviders 普通库会话的额外 provider 注入点。
+     * @property additionalSourceProviders 源码会话的 source provider 注入点。
+     * @property additionalOptionalAnnotationsProvider 源码会话的可选注解 provider 注入点。
+     * @property registerLibrarySessionComponents 普通库会话的额外 session component 注册回调。
+     * @property registerSourceSessionComponents 源码会话的额外 session component 注册回调。
      */
     class Context(
         val cjoManager: CjoManager? = null,
@@ -51,6 +58,12 @@ open class CfirDefaultSessionFactory : CfirAbstractSessionFactory<CfirDefaultSes
         val registerSourceSessionComponents: CfirSession.() -> Unit = {},
     )
 
+    /**
+     * 创建默认共享库会话。
+     *
+     * 共享库会话承载 builtins 与平台额外共享 provider，作为所有普通库/源码会话的 fallback
+     * 符号来源。
+     */
     fun createSharedLibrarySession(
         mainModuleName: Name,
         extensionRegistrars: List<CfirExtensionRegistrar>,
@@ -65,6 +78,12 @@ open class CfirDefaultSessionFactory : CfirAbstractSessionFactory<CfirDefaultSes
         )
     }
 
+    /**
+     * 创建默认普通库会话。
+     *
+     * 默认实现始终注册 [CfirBuiltinSymbolProvider]；当 [Context.cjoManager] 存在时，同时注册
+     * [CfirDeserializedSymbolProvider] 用于读取 CJO 依赖符号。
+     */
     fun createLibrarySession(
         sharedLibrarySession: CfirSession,
         moduleDataProvider: ModuleDataProvider,
@@ -100,6 +119,12 @@ open class CfirDefaultSessionFactory : CfirAbstractSessionFactory<CfirDefaultSes
         )
     }
 
+    /**
+     * 创建默认源码会话。
+     *
+     * 源码会话通过基类完成公共 resolve/checker 组件注册，并由 [Context.additionalSourceProviders]
+     * 决定最终参与组合的源码 provider 列表。
+     */
     fun createSourceSession(
         moduleData: CfirModuleData,
         extensionRegistrars: List<CfirExtensionRegistrar>,
@@ -131,6 +156,11 @@ open class CfirDefaultSessionFactory : CfirAbstractSessionFactory<CfirDefaultSes
         )
     }
 
+    /**
+     * 创建默认共享库 provider。
+     *
+     * 默认 builtins provider 必须始终在列表首位，确保平台追加 provider 可以依赖内建符号已经可见。
+     */
     override fun createPlatformSpecificSharedProviders(
         session: CfirSession,
         moduleData: CfirModuleData,
@@ -143,14 +173,23 @@ open class CfirDefaultSessionFactory : CfirAbstractSessionFactory<CfirDefaultSes
         }
     }
 
+    /**
+     * 创建库会话使用的仓颉作用域提供器。
+     */
     override fun createCangJieScopeProviderForLibrarySession(): CfirCangJieScopeProvider {
         return CfirCangJieScopeProvider()
     }
 
+    /**
+     * 执行上下文提供的库会话组件注册回调。
+     */
     override fun CfirSession.registerLibrarySessionComponents(c: Context) {
         c.registerLibrarySessionComponents(this)
     }
 
+    /**
+     * 创建源码会话使用的仓颉作用域提供器。
+     */
     override fun createCangJieScopeProviderForSourceSession(
         moduleData: CfirModuleData,
         languageVersionSettings: LanguageVersionSettings,
@@ -158,14 +197,27 @@ open class CfirDefaultSessionFactory : CfirAbstractSessionFactory<CfirDefaultSes
         return CfirCangJieScopeProvider()
     }
 
+    /**
+     * 注册默认平台 checker。
+     *
+     * 默认平台没有额外 checker；子类可覆盖该方法补充目标平台语义检查。
+     */
     override fun CfirSessionConfigurator.registerPlatformCheckers() {
-        // Default platform is no-op; platform modules can subclass and register their own checkers.
+        // 默认平台无额外 checker；平台模块通过子类覆盖该钩子。
     }
 
+    /**
+     * 注册默认平台 extra checker。
+     *
+     * 默认平台没有额外 checker；子类可覆盖该方法补充非默认启用的诊断。
+     */
     override fun CfirSessionConfigurator.registerExtraPlatformCheckers() {
-        // Default platform is no-op; platform modules can subclass and register their own extra checkers.
+        // 默认平台无 extra checker；平台模块通过子类覆盖该钩子。
     }
 
+    /**
+     * 执行上下文提供的源码会话组件注册回调。
+     */
     override fun CfirSession.registerSourceSessionComponents(c: Context) {
         c.registerSourceSessionComponents(this)
     }

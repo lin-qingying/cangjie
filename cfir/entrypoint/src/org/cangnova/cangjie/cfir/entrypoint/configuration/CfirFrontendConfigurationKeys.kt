@@ -74,12 +74,24 @@ var CompilerConfiguration.diagnosticFactoriesStorage: CjRegisteredDiagnosticFact
         )
     }
 
+/**
+ * 是否关闭默认 prelude 注入。
+ *
+ * 该开关影响源码 session 初始化时注册的 [CfirPreludeSettingsComponent]，用于测试或特殊 CLI
+ * 场景显式屏蔽标准 prelude 声明。
+ */
 var CompilerConfiguration.noPrelude: Boolean
     get() = getBoolean(CfirFrontendConfigurationKeys.NO_PRELUDE)
     set(value) {
         put(CfirFrontendConfigurationKeys.NO_PRELUDE, value)
     }
 
+/**
+ * 当前项目声明的 API level。
+ *
+ * 返回 `null` 表示配置未显式提供 API level，后续由 syscap 配置或
+ * [CfirApiLevelProvider.DISABLED] 决定最终行为。
+ */
 var CompilerConfiguration.apiLevel: Int?
     get() = get(CfirFrontendConfigurationKeys.API_LEVEL)
     set(value) {
@@ -87,6 +99,12 @@ var CompilerConfiguration.apiLevel: Int?
         put(CfirFrontendConfigurationKeys.API_LEVEL, value)
     }
 
+/**
+ * API level 与 syscap 配置文件路径。
+ *
+ * 该路径由前端 session factory 解析为 [CfirApiLevelProvider]，用于统一生产入口与测试 facade
+ * 的 API/syscap 能力判断。
+ */
 var CompilerConfiguration.apiLevelSyscapConfigPath: String?
     get() = get(CfirFrontendConfigurationKeys.API_LEVEL_SYSCAP_CONFIG_PATH)
     set(value) {
@@ -94,6 +112,12 @@ var CompilerConfiguration.apiLevelSyscapConfigPath: String?
         put(CfirFrontendConfigurationKeys.API_LEVEL_SYSCAP_CONFIG_PATH, value)
     }
 
+/**
+ * 是否按可执行目标检查程序入口。
+ *
+ * 该配置最终进入 [CfirProgramEntrySettingsComponent]，由声明 checker 在完成 resolve 后决定是否
+ * 上报缺失入口诊断。
+ */
 var CompilerConfiguration.checkProgramEntry: Boolean
     get() = getBoolean(CfirFrontendConfigurationKeys.CHECK_PROGRAM_ENTRY)
     set(value) {

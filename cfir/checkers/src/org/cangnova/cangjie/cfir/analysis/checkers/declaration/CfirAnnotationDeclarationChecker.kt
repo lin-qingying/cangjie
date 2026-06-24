@@ -17,8 +17,10 @@ import org.cangnova.cangjie.source.text
  * 它不依赖调用点，而是约束“被标记为注解类型的声明自身”。
  */
 object CfirAnnotationDeclarationChecker : CfirClassLikeChecker() {
+    /** 内置 `Annotation` 注解短名。 */
     private val annotationName = Name.identifier("Annotation")
 
+    /** 检查被 `@Annotation` 标记的 class-like 声明是否拥有 const 构造器。 */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirClassLikeDeclaration) {
         if (!declaration.hasBuiltInAnnotation(annotationName)) return
@@ -34,6 +36,7 @@ object CfirAnnotationDeclarationChecker : CfirClassLikeChecker() {
     }
 }
 
+/** 判断 class-like 声明是否携带指定内置注解。 */
 private fun CfirClassLikeDeclaration.hasBuiltInAnnotation(annotationName: Name): Boolean {
     return annotations.any { annotation ->
         val annotationClassId = CfirExtendSemantics.run { annotation.typeRef.toClassIdOrNull() }

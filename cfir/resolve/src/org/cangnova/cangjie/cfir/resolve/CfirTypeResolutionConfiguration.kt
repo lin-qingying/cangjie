@@ -40,10 +40,24 @@ import org.cangnova.cangjie.cfir.types.ConeCangJieType
  * 避免把一个非法 `This` 级联成无关的成员找不到或类型推断失败。
  */
 data class ThisTypeResolutionContext(
+    /**
+     * 当前 `This` 可绑定到的接收者类型。
+     */
     val type: ConeCangJieType,
+    /**
+     * 当前语法位置是否允许直接使用 `This` 类型。
+     */
     val isAllowed: Boolean,
+    /**
+     * 禁止使用 `This` 时应报告的诊断种类。
+     */
     val disallowedDiagnosticKind: DiagnosticKind = DiagnosticKind.ThisTypeNotAllowed,
 ) {
+    /**
+     * 复用当前接收者类型创建“不允许使用”的语境。
+     *
+     * 解析器仍保留 [type] 以便后续成员绑定继续工作，诊断阶段通过 [isAllowed] 决定是否报告。
+     */
     fun asDisallowed(): ThisTypeResolutionContext =
         if (!isAllowed) this else copy(isAllowed = false)
 }
@@ -60,22 +74,54 @@ data class TypeResolutionConfiguration(
      * 否则默认导入会抢在当前文件声明之前被解析。
      */
     val scopes: Iterable<CfirScope> = emptyList(),
+    /**
+     * 当前类型位置外层包含的类声明，由内到外排列。
+     *
+     * 类型解析需要该链路识别嵌套类、`This` 语境以及类级类型参数的可见范围。
+     */
     val containingClassDeclarations: List<CfirClass> = emptyList(),
+    /**
+     * 当前可用的 `This` 类型语境；为 `null` 表示当前位置没有可绑定的类型接收者。
+     */
     val thisTypeContext: ThisTypeResolutionContext? = null,
+    /**
+     * 类型引用所在的使用点文件。
+     *
+     * 导入、可见性和同包规则都依赖使用点文件；合成解析场景允许为空。
+     */
     val useSiteFile: CfirFile?,
+    /**
+     * 当前类型引用所在的顶层容器声明。
+     *
+     * 该信息用于区分文件级、类级和局部声明下的类型解析边界。
+     */
     val topContainer: CfirDeclaration? = null,
+    /**
+     * 当前作用域额外暴露的类型参数索引，键为源码名称。
+     */
     val scopeTypeParameters: Map<String, CfirTypeParameter> = emptyMap(),
 ) {
+    /**
+     * 切换类型解析的使用点文件。
+     */
     fun withUseSiteFile(file: CfirFile): TypeResolutionConfiguration {
         if (useSiteFile === file) return this
         return copy(useSiteFile = file)
     }
 
+    /**
+     * 切换当前类型引用所在的顶层容器声明。
+     */
     fun withTopContainer(container: CfirDeclaration?): TypeResolutionConfiguration {
         if (topContainer === container) return this
         return copy(topContainer = container)
     }
 
+    /**
+     * 在现有类型参数索引之后追加新的类型参数声明。
+     *
+     * 后加入的同名参数会覆盖旧值，用于模拟内层作用域遮蔽外层同名类型参数的语义。
+     */
     fun withAdditionalTypeParameters(parameters: List<CfirTypeParameter>): TypeResolutionConfiguration {
         if (parameters.isEmpty()) return this
         val updated = LinkedHashMap(scopeTypeParameters)
@@ -85,24 +131,44 @@ data class TypeResolutionConfiguration(
         return copy(scopeTypeParameters = updated)
     }
 
+    /**
+     * 替换当前类型位置的外层类声明链。
+     */
     fun withContainingClassDeclarations(classes: List<CfirClass>): TypeResolutionConfiguration {
         if (containingClassDeclarations === classes) return this
         return copy(containingClassDeclarations = classes)
     }
 
+    /**
+     * 替换当前 `This` 类型解析语境。
+     */
     fun withThisTypeContext(context: ThisTypeResolutionContext?): TypeResolutionConfiguration {
         if (thisTypeContext == context) return this
         return copy(thisTypeContext = context)
     }
 
+    /**
+     * 替换类型解析作用域序列。
+     */
     fun withScopes(scopes: Iterable<CfirScope>): TypeResolutionConfiguration {
         if (this.scopes === scopes) return this
         return copy(scopes = scopes)
     }
 
+    /**
+     * 类型解析配置的共享空实例。
+     */
     companion object {
+        /**
+         * 不携带作用域、使用点和类型参数的空配置。
+         */
         val EMPTY: TypeResolutionConfiguration = TypeResolutionConfiguration(useSiteFile = null)
     }
 }
 
+/**
+ * CFIR 层保留的类型解析配置别名。
+ *
+ * 新代码应直接使用 [TypeResolutionConfiguration]；别名用于兼容既有 CFIR 命名和渐进迁移。
+ */
 typealias CfirTypeResolutionConfiguration = TypeResolutionConfiguration

@@ -22,4 +22,4 @@ enum Choice {
 
 extend bb <:  MutParent  {}
 extend Record <:  MutParent  {}
-extend Choice <: <!EXTEND_IMMUTABLE_MUT_INTERFACE!>MutCarrier<!> {}
+<!EXTEND_INTERFACE_NOT_EXTENDABLE!>extend Choice <: MutCarrier {}<!>

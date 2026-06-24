@@ -27,10 +27,13 @@ package org.cangnova.cangjie.cfir.types
 /**
  * 仓颉中的 `Array<T>` 是标准库名义类型，在 Cone 层直接用 [ConeClassLikeType] 表示即可。
  * 这里只有需要编译器显式建模的 `VArray<T, N>`，因为它携带编译期固定长度语义。
+ *
+ * @property elementType 数组元素类型。
+ * @property size 数组大小，必须是编译期常量。
+ * @property attributes VArray 类型附带的属性。
  */
 class ConeVArrayType(
     val elementType: ConeCangJieType,
-    /** 数组大小，必须是编译期常量。 */
     val size: Long,
     override val attributes: ConeAttributes = ConeAttributes.Empty,
 ) : ConeRigidType(), ConeTypeConstructorMarker {
@@ -40,12 +43,18 @@ class ConeVArrayType(
      */
     override val typeArguments: List<ConeTypeProjection> = listOf(elementType)
 
+    /**
+     * VArray 类型按元素类型与编译期大小判等。
+     */
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is ConeVArrayType) return false
         return elementType == other.elementType && size == other.size
     }
 
+    /**
+     * VArray 类型的结构哈希。
+     */
     override fun hashCode(): Int {
         var result = elementType.hashCode()
         result = 31 * result + size.hashCode()

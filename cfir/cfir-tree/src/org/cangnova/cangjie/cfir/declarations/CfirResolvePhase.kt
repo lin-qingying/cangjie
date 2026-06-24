@@ -237,11 +237,20 @@ enum class CfirResolvePhase(
         get() {
             val prevOrdinal = ordinal - 1
             return if (prevOrdinal >= 0) entries[prevOrdinal] else this
-        }
+    }
 
+    /**
+     * 常用阶段别名。
+     */
     companion object {
-        // Short-cut
+        /**
+         * 声明头信息达到可供声明查询消费的阶段。
+         */
         val DECLARATIONS: CfirResolvePhase = CfirResolvePhase.STATUS
+
+        /**
+         * 依赖声明达到 analysis 可消费的完整语义阶段。
+         */
         val ANALYZED_DEPENDENCIES: CfirResolvePhase = CfirResolvePhase.BODY_RESOLVE
     }
 }

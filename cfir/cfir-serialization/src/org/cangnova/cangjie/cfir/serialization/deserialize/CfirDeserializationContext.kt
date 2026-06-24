@@ -36,6 +36,7 @@ class CfirDeserializationContext(
      * 以保证同一个 `.cjo` 条目只会有一个共享结果进入缓存。
      */
     private val declMaterializationLocks = ConcurrentHashMap<Int, Any>()
+    /** `allTypes` 索引 -> materialization 锁，防止同一类型被多个线程同时构造。 */
     private val typeMaterializationLocks = ConcurrentHashMap<Int, Any>()
 
     /** 导入包索引 -> 包级声明索引。 */
@@ -52,19 +53,24 @@ class CfirDeserializationContext(
      */
     internal fun createTypeDeserializer(): CfirTypeDeserializer = CfirTypeDeserializer(this)
 
+    /** 创建一次性的声明反序列化器，并配套创建同上下文的类型反序列化器。 */
     internal fun createDeclDeserializer(): CfirDeclDeserializer =
         CfirDeclDeserializer(this, createTypeDeserializer())
 
+    /** 获取指定 `allDecls` 索引的声明 materialization 锁。 */
     internal fun declMaterializationLock(index: Int): Any =
         declMaterializationLocks.computeIfAbsent(index) { Any() }
 
+    /** 在声明 materialization 结束后释放对应锁对象。 */
     internal fun releaseDeclMaterializationLock(index: Int, lock: Any) {
         declMaterializationLocks.remove(index, lock)
     }
 
+    /** 获取指定 `allTypes` 索引的类型 materialization 锁。 */
     internal fun typeMaterializationLock(index: Int): Any =
         typeMaterializationLocks.computeIfAbsent(index) { Any() }
 
+    /** 在类型 materialization 结束后释放对应锁对象。 */
     internal fun releaseTypeMaterializationLock(index: Int, lock: Any) {
         typeMaterializationLocks.remove(index, lock)
     }

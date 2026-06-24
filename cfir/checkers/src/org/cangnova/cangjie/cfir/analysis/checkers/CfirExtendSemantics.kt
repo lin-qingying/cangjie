@@ -30,12 +30,14 @@ import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.CfirReference
 import org.cangnova.cangjie.cfir.references.CfirSuperReference
+import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.source.text
 
 /**
@@ -102,6 +104,27 @@ internal object CfirExtendSemantics {
     fun isCType(classId: ClassId?): Boolean =
         classId == cTypeClassId
 
+    /**
+     * 标准库以 builtin extend 形式为原始类型提供的隐式接口。
+     *
+     * 这些接口不是原始类型合成声明的普通 `superTypeRefs`，但官方
+     * `TypeManager::GetAllExtendInterfaceTy` 会把它们纳入继承/重复接口判断。
+     */
+    fun implicitPrimitiveInterfaceClassIds(
+        context: CheckerContext,
+        targetType: ConeCangJieType,
+    ): Set<ClassId> {
+        val semanticType = targetType.fullyExpandedType(context.session)
+        return when (semanticType) {
+            is ConePrimitiveType -> primitiveImplicitInterfaceClassIds
+            else -> emptySet()
+        }
+    }
+
+    private val primitiveImplicitInterfaceClassIds: Set<ClassId> = setOf(
+        StdlibClassIds.ToString,
+    )
+
     fun isSuperReference(reference: CfirReference): Boolean {
         if (reference is CfirSuperReference) return true
         val namedReference = reference as? CfirNamedReference ?: return false
@@ -120,6 +143,58 @@ internal object CfirExtendSemantics {
 
     fun findMutPropertyLeak(context: CheckerContext, interfaceClassId: ClassId): MutPropertyLeak? {
         return findMutPropertyLeak(context, interfaceClassId, linkedSetOf())
+    }
+
+    /**
+     * 官方 `CheckImmutExtendInhertMutSuper` 在 immutable extend 继承含 mut 属性接口时，
+     * 以整个 extend 声明报告 `sema_interface_is_not_extendable`，并把该错误作为该
+     * supertype 的主诊断处理。
+     */
+    fun immutableMutInterfaceLeak(context: CheckerContext, extend: CfirExtend, superTypeRef: CfirTypeRef): MutPropertyLeak? {
+        val targetType = (extend.extendedTypeRef as? CfirResolvedTypeRef)
+            ?.coneType
+            ?.fullyExpandedType(context.session)
+            ?: return null
+        if (!isImmutableTarget(targetType)) return null
+
+        val interfaceClassId = superTypeRef.toClassIdOrNull() ?: return null
+        return findMutPropertyLeak(context, interfaceClassId)
+    }
+
+    fun isInsideImmutableMutInterfaceSupertype(
+        context: CheckerContext,
+        extend: CfirExtend,
+        typeRef: CfirTypeRef,
+    ): Boolean {
+        val source = typeRef.source ?: return false
+        if (isSourceInsideImmutableMutInterfaceExtendHeader(context, source)) return true
+        return isSourceInsideImmutableMutInterfaceSupertype(context, extend, source)
+    }
+
+    fun isSourceInsideImmutableMutInterfaceExtendHeader(context: CheckerContext, source: CjSourceElement): Boolean {
+        val stackExtends = context.containingDeclarations.asSequence().filterIsInstance<CfirExtend>()
+        val fileExtends = context.containingFileSymbol
+            ?.cfir
+            ?.declarations
+            ?.asSequence()
+            ?.filterIsInstance<CfirExtend>()
+            ?: emptySequence()
+
+        return (stackExtends + fileExtends).distinct().any { extend ->
+            extend.headerSourceContains(source) &&
+                extend.superTypeRefs.any { superTypeRef -> immutableMutInterfaceLeak(context, extend, superTypeRef) != null }
+        }
+    }
+
+    fun isSourceInsideImmutableMutInterfaceSupertype(
+        context: CheckerContext,
+        extend: CfirExtend,
+        source: CjSourceElement,
+    ): Boolean {
+        return extend.superTypeRefs.any { superTypeRef ->
+            immutableMutInterfaceLeak(context, extend, superTypeRef) != null &&
+                (context.containingElements.any { it === superTypeRef } || superTypeRef.source.contains(source))
+        }
     }
 
     fun hasAnnotation(declaration: CfirClassLikeDeclaration, annotationName: Name): Boolean {
@@ -241,6 +316,23 @@ internal object CfirExtendSemantics {
         is CfirStruct -> superTypeRefs
         is CfirEnum -> superTypeRefs
         else -> emptyList()
+    }
+
+    private fun CjSourceElement?.contains(other: CjSourceElement): Boolean {
+        this ?: return false
+        return startOffset <= other.startOffset && other.endOffset <= endOffset
+    }
+
+    private fun CfirExtend.headerSourceContains(source: CjSourceElement): Boolean {
+        val extendSource = this.source ?: return false
+        if (!extendSource.contains(source)) return false
+        val bodyStartOffset = extendSource.text
+            ?.toString()
+            ?.indexOf('{')
+            ?.takeIf { it >= 0 }
+            ?.let { extendSource.startOffset + it }
+            ?: extendSource.endOffset
+        return source.endOffset <= bodyStartOffset
     }
 }
 

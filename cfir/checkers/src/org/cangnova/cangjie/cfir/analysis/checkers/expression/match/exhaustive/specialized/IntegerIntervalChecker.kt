@@ -12,16 +12,21 @@ import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
 
+/** 针对整数 primitive 的区间覆盖穷尽性 checker。 */
 class IntegerIntervalChecker : ExhaustivenessChecker {
+    /** 当前 checker 的来源标记。 */
     override val source: CheckSource = CheckSource.INTEGER_INTERVAL
+    /** 整数区间 checker 的调度优先级。 */
     override val priority: Int = 30
 
+    /** 仅处理整数 primitive 类型。 */
     override fun isApplicable(
         type: ConeCangJieType,
         patterns: List<CfirMatchPattern>,
         context: CheckerContext,
     ): Boolean = type is ConePrimitiveType && type.kind.isInteger
 
+    /** 通过常量区间合并和 gap 查找判断整数模式是否穷尽。 */
     override fun check(
         matrix: CfirMatrix,
         type: ConeCangJieType,
@@ -60,6 +65,7 @@ class IntegerIntervalChecker : ExhaustivenessChecker {
         }
     }
 
+    /** 返回 primitive 整数类型对应的可表达区间。 */
     private fun getTypeRange(kind: PrimitiveTypeKind): LongRange? = when (kind) {
         PrimitiveTypeKind.INT8 -> Byte.MIN_VALUE.toLong()..Byte.MAX_VALUE.toLong()
         PrimitiveTypeKind.INT16 -> Short.MIN_VALUE.toLong()..Short.MAX_VALUE.toLong()
@@ -73,12 +79,14 @@ class IntegerIntervalChecker : ExhaustivenessChecker {
         else -> null
     }
 
+    /** 将整数常量模型转换为 Long 值；非整数常量返回空。 */
     private fun toLong(value: CfirConstantValue): Long? = when (value) {
         is CfirConstantValue.SignedIntConst -> value.value
         is CfirConstantValue.UnsignedIntConst -> value.value.toLong()
         else -> null
     }
 
+    /** 合并排序后的整数区间，重叠或相邻区间会折叠为一个区间。 */
     private fun mergeIntervals(intervals: List<LongRange>): List<LongRange> {
         if (intervals.isEmpty()) return emptyList()
         val sorted = intervals.sortedBy { it.first }
@@ -102,6 +110,7 @@ class IntegerIntervalChecker : ExhaustivenessChecker {
         return result
     }
 
+    /** 在类型全集区间中找出当前已覆盖区间之间的缺口。 */
     private fun findGaps(intervals: List<LongRange>, typeRange: LongRange): List<LongRange> {
         if (intervals.isEmpty()) return listOf(typeRange)
         val gaps = mutableListOf<LongRange>()
@@ -124,6 +133,7 @@ class IntegerIntervalChecker : ExhaustivenessChecker {
         return gaps
     }
 
+    /** 从缺口区间采样少量缺失整数模式，限制诊断展示数量。 */
     private fun collectMissingPatterns(
         type: ConeCangJieType,
         gaps: List<LongRange>,
@@ -142,6 +152,7 @@ class IntegerIntervalChecker : ExhaustivenessChecker {
         return result
     }
 
+    /** 对缺口区间采样端点或全部小范围值。 */
     private fun sampleValues(gap: LongRange): LongArray {
         if (gap.first > gap.last) return LongArray(0)
         return if (safeSpanGreaterThan(gap, 10L)) {
@@ -156,11 +167,13 @@ class IntegerIntervalChecker : ExhaustivenessChecker {
         }
     }
 
+    /** 判断区间长度是否大于阈值，溢出时按大区间处理。 */
     private fun safeSpanGreaterThan(range: LongRange, limit: Long): Boolean {
         val span = safeSpan(range) ?: return true
         return span > limit
     }
 
+    /** 安全计算闭区间长度；溢出或非法区间返回空。 */
     private fun safeSpan(range: LongRange): Long? {
         val diff = range.last - range.first
         if (range.last >= range.first && diff < 0) return null
@@ -169,6 +182,7 @@ class IntegerIntervalChecker : ExhaustivenessChecker {
         return span
     }
 
+    /** 根据 primitive 有无符号性创建缺失整数常量模式。 */
     private fun createIntegerPattern(type: ConeCangJieType, value: Long): CfirMatchPattern {
         val const = when ((type as? ConePrimitiveType)?.kind) {
             PrimitiveTypeKind.UINT8,
@@ -183,6 +197,7 @@ class IntegerIntervalChecker : ExhaustivenessChecker {
     }
 
     companion object {
+        /** 默认整数区间 checker 单例。 */
         val INSTANCE = IntegerIntervalChecker()
     }
 }

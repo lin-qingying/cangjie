@@ -10,7 +10,7 @@ func foo(a: Unit) {
 }
 
 main() {
-    let a: Array<Int32>
+    let <!UNUSED_VARIABLE!>a<!>: Array<Int32>
     foo(());
     ().add()
     0

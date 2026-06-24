@@ -28,23 +28,64 @@ import org.cangnova.cangjie.name.Name
  * symbol lookup 统一由 [symbolProvider] 承担。
  */
 abstract class CfirProvider : CfirSessionComponent {
+    /**
+     * 与当前 provider 同源的符号查询入口。
+     *
+     * 声明级 provider 负责文件、宿主与归属信息；实际 symbol 查找必须委托给该属性，
+     * 以保证 source、library、builtin 与 composite provider 的查询边界一致。
+     */
     abstract val symbolProvider: CfirSymbolProvider
 
+    /**
+     * 当前 provider 是否允许在不同 resolve phase 下返回尚未完全解析的 CFIR。
+     *
+     * 默认关闭，只有能维护 phased declaration 生命周期的 provider 才应开启。
+     */
     open val isPhasedCfirAllowed: Boolean
         get() = false
 
+    /**
+     * 按 [classId] 查询 class-like 声明。
+     *
+     * 返回 `null` 表示该 provider 没有该声明，而不是声明解析失败。
+     */
     abstract fun getCfirClassifierByFqName(classId: ClassId): CfirClassLikeDeclaration?
 
+    /**
+     * 返回 [fqName] 对应 classifier 的容器文件。
+     *
+     * 调用方已确认声明存在时使用；找不到容器文件代表 provider 索引不完整。
+     */
     abstract fun getCfirClassifierContainerFile(fqName: ClassId): CfirFile
 
+    /**
+     * 尝试返回 [fqName] 对应 classifier 的容器文件。
+     *
+     * 与 [getCfirClassifierContainerFile] 相同但以 `null` 表达未命中，用于 composite provider 继续查询后续来源。
+     */
     abstract fun getCfirClassifierContainerFileIfAny(fqName: ClassId): CfirFile?
 
+    /**
+     * 返回 [symbol] 对应 classifier 的容器文件。
+     *
+     * 默认通过 symbol 的 [ClassId] 路由到 [getCfirClassifierContainerFile]。
+     */
     open fun getCfirClassifierContainerFile(symbol: CfirClassLikeSymbol<*>): CfirFile =
         getCfirClassifierContainerFile(symbol.classId)
 
+    /**
+     * 尝试返回 [symbol] 对应 classifier 的容器文件。
+     *
+     * 默认通过 symbol 的 [ClassId] 路由到 [getCfirClassifierContainerFileIfAny]。
+     */
     open fun getCfirClassifierContainerFileIfAny(symbol: CfirClassLikeSymbol<*>): CfirFile? =
         getCfirClassifierContainerFileIfAny(symbol.classId)
 
+    /**
+     * 返回 callable symbol 的容器文件。
+     *
+     * 对合成 callable、builtin callable 或跨来源 callable，可返回 `null` 表示没有稳定文件归属。
+     */
     abstract fun getCfirCallableContainerFile(symbol: CfirCallableSymbol<*>): CfirFile?
 
     /**
@@ -55,8 +96,16 @@ abstract class CfirProvider : CfirSessionComponent {
      */
     open fun getCfirPatternVariableForBinding(symbol: CfirPatternBindingSymbol): CfirPatternVariable? = null
 
+    /**
+     * 返回指定包下由该 provider 管理的 CFIR 文件。
+     */
     abstract fun getCfirFilesByPackage(fqName: FqName): List<CfirFile>
 
+    /**
+     * 返回指定包下已知的 class-like 短名集合。
+     *
+     * 该集合用于 scope 快速过滤，必须不能漏报当前 provider 确实拥有的 class-like 声明。
+     */
     abstract fun getClassNamesInPackage(fqName: FqName): Set<Name>
 
     /**

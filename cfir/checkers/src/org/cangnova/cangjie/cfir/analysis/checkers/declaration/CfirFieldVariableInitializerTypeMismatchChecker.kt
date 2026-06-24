@@ -9,11 +9,16 @@ import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.source.AbstractCjSourceElement
 
 /**
- * Field variable initializer type mismatch checker.
+ * 字段变量初始化器类型检查器。
  *
- * Validates `let/var/const name: T = expr` for member field variables.
+ * 检查成员字段 `let/var/const name: T = expr` 中初始化表达式是否可以赋给声明类型。
  */
 object CfirFieldVariableInitializerTypeMismatchChecker : CfirFieldVariableChecker() {
+    /**
+     * 检查字段声明的初始化器类型。
+     *
+     * 错误表达式和未解析类型不重复报告；实际诊断优先落在初始化器表达式源码上。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirFieldVariable) {
         val source = declaration.source as? AbstractCjSourceElement ?: return

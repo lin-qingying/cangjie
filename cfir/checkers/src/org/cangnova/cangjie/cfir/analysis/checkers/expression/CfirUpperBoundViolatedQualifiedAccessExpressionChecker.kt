@@ -28,6 +28,7 @@ import org.cangnova.cangjie.type.model.TypeConstructorMarker
  * use-site 替换，对齐官方 C++ `GenerateTypeMappingForBaseExpr` 的语义。
  */
 object CfirUpperBoundViolatedQualifiedAccessExpressionChecker : CfirQualifiedAccessChecker() {
+    /** 检查限定访问显式类型实参是否满足 callable 类型参数上界。 */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirQualifiedAccessExpression) {
         val typeArgumentRefs = expression.typeArguments
@@ -67,6 +68,7 @@ object CfirUpperBoundViolatedQualifiedAccessExpressionChecker : CfirQualifiedAcc
         )
     }
 
+    /** 从限定访问 calleeReference 中提取已解析 callable symbol。 */
     private fun CfirQualifiedAccessExpression.resolvedCallableSymbolOrNull(): CfirCallableSymbol<*>? =
         when (val reference = calleeReference) {
             is CfirResolvedErrorReference -> reference.resolvedSymbol as? CfirCallableSymbol<*>
@@ -75,6 +77,7 @@ object CfirUpperBoundViolatedQualifiedAccessExpressionChecker : CfirQualifiedAcc
             else -> null
         }
 
+    /** 根据显式或 dispatch receiver 类型构造 owner use-site 类型参数替换。 */
     context(context: CheckerContext)
     private fun CfirQualifiedAccessExpression.receiverTypeParameterSubstitutions(
         callableSymbol: CfirCallableSymbol<*>,

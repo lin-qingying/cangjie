@@ -17,6 +17,7 @@ import org.cangnova.cangjie.cfir.types.ConeFunctionType
  * 依赖 CfirFunctionCall.hasTrailingLambda 字段（由 PsiRawCfirBuilder 根据 PSI lambdaArguments 设置）。
  */
 object CfirTrailingLambdaChecker : CfirFunctionCallChecker() {
+    /** 检查带 trailing lambda 的调用接收者是否为函数类型。 */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirFunctionCall) {
         if (!expression.hasTrailingLambda) return

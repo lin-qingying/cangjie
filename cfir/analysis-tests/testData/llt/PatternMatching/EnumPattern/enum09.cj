@@ -12,7 +12,7 @@ enum TimeUnit {
 main(): Int64 {
     var time = Day(1, 2, 3)
     var d = match (time) {
-        case Year(<!VAR_IN_OR_PATTERN!>y<!>) | Month(<!VAR_IN_OR_PATTERN!>y<!>, <!VAR_IN_OR_PATTERN!>m<!>) => <!UNRESOLVED_REFERENCE!>y<!>
+        case Year(<!VAR_IN_OR_PATTERN!>y<!>) | Month(y, m) => <!UNRESOLVED_REFERENCE!>y<!>
         case _ => -1
     }
     return 0

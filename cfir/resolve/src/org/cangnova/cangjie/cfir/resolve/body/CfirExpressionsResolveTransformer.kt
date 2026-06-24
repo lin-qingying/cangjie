@@ -79,16 +79,29 @@ import org.cangnova.cangjie.type.AbstractTypeChecker
 open class CfirExpressionsResolveTransformer(
     transformer: CfirAbstractBodyResolveTransformerDispatcher,
 ) : CfirPartialBodyResolveTransformer(transformer) {
+    /**
+     * effect handler 解析过程中可恢复的 handler 上下文。
+     *
+     * 当前只需要记录 command/resume 之间传递的命令结果类型。
+     */
     private data class EffectHandlerContext(
+        /** 当前 handler 期望 resume 返回的 command result 类型。 */
         val commandResultType: ConeCangJieType,
     )
 
+    /** 当前会话的内建类型集合。 */
     private val builtinTypes get() = session.builtinTypes
+    /** 表达式中显式类型引用的专用解析器。 */
     private val specificTypeResolverTransformer = CfirSpecificTypeResolverTransformer(session)
+    /** 当前 body resolve 组件中的调用解析器。 */
     private val callResolver get() = components.callResolver
+    /** 嵌套 effect handler 上下文栈。 */
     private val effectHandlerStack = ArrayDeque<EffectHandlerContext>()
     // optional-chain 内部的 `?` 节点承担 Kotlin FIR checked safe-call subject 的角色。
+    /** 当前嵌套 optional-chain 解析深度。 */
     private var optionalChainResolveDepth: Int = 0
+
+    /** 构造表达式解析阶段使用的错误类型。 */
     private fun errorType(
         reason: String,
         kind: DiagnosticKind = DiagnosticKind.Other,
@@ -116,6 +129,11 @@ open class CfirExpressionsResolveTransformer(
 
     // ── Literals ─────────────────────────────────────────────────────────────
 
+    /**
+     * 通用表达式解析入口。
+     *
+     * 特殊表达式由具体 override 处理；没有专用类型计算的表达式会得到 inference error 类型。
+     */
     override fun transformExpression(expression: CfirExpression, data: ResolutionMode): CfirExpression {
         if (expression is CfirThisReceiverExpression) {
             return transformThisReceiverExpression(expression, data)
@@ -131,6 +149,7 @@ open class CfirExpressionsResolveTransformer(
         return (expression.transformChildren(transformer, data) as CfirExpression)
     }
 
+    /** 解析 wrapped expression，并把内部表达式类型提升到 wrapper。 */
     override fun transformWrappedExpression(
         wrappedExpression: CfirWrappedExpression,
         data: ResolutionMode,
@@ -141,6 +160,7 @@ open class CfirExpressionsResolveTransformer(
         return wrappedExpression
     }
 
+    /** 解析 optional 表达式；optional-chain 内部会临时使用 Option<T> 的元素类型。 */
     override fun transformOptionalExpression(
         optionalExpression: CfirOptionalExpression,
         data: ResolutionMode,
@@ -157,6 +177,7 @@ open class CfirExpressionsResolveTransformer(
         return optionalExpression
     }
 
+    /** 解析 optional-chain 表达式，并把 selector 结果重新提升为 Option<result>。 */
     override fun transformOptionalChainExpression(
         optionalChainExpression: CfirOptionalChainExpression,
         data: ResolutionMode,
@@ -191,6 +212,7 @@ open class CfirExpressionsResolveTransformer(
         return optionalChainExpression
     }
 
+    /** 解析 `this` receiver 表达式的绑定符号和结果类型。 */
     private fun transformThisReceiverExpression(
         thisReceiverExpression: CfirThisReceiverExpression,
         data: ResolutionMode,
@@ -213,6 +235,7 @@ open class CfirExpressionsResolveTransformer(
         return thisReceiverExpression
     }
 
+    /** 解析 `super` receiver 的显式或隐式 super type。 */
     override fun transformSuperReceiverExpression(
         superReceiverExpression: CfirSuperReceiverExpression,
         data: ResolutionMode,
@@ -236,6 +259,7 @@ open class CfirExpressionsResolveTransformer(
         return superReceiverExpression
     }
 
+    /** 解析字面量表达式，并按 expected type 对 ideal 类型做收敛。 */
     override fun transformLiteralExpression(
         literalExpression: CfirLiteralExpression,
         data: ResolutionMode,
@@ -252,6 +276,7 @@ open class CfirExpressionsResolveTransformer(
         return literalExpression
     }
 
+    /** 根据字面量种类合成初始类型。 */
     private fun synthesizeLiteralType(kind: CfirLiteralKind): ConeCangJieType = when (kind) {
         CfirLiteralKind.INT     -> ConePrimitiveType.IDEAL_INT
         CfirLiteralKind.FLOAT   -> ConePrimitiveType.IDEAL_FLOAT
@@ -263,6 +288,7 @@ open class CfirExpressionsResolveTransformer(
 
     // ── Named Access ─────────────────────────────────────────────────────────
 
+    /** 解析命名访问表达式。 */
     override fun transformNamedAccessExpression(
         namedAccessExpression: CfirNamedAccessExpression,
         data: ResolutionMode,
@@ -276,6 +302,7 @@ open class CfirExpressionsResolveTransformer(
 
     // ── Qualified Access ──────────────────────────────────────────────────────
 
+    /** 解析限定访问表达式。 */
     override fun transformQualifiedAccessExpression(
         qualifiedAccessExpression: CfirQualifiedAccessExpression,
         data: ResolutionMode,
@@ -287,6 +314,7 @@ open class CfirExpressionsResolveTransformer(
             isUsedAsGetClassReceiver = false,
         )
 
+    /** 限定访问解析的内部入口，可区分 receiver 解析和 getClass receiver 场景。 */
     private fun transformQualifiedAccessExpression(
         qualifiedAccessExpression: CfirQualifiedAccessExpression,
         data: ResolutionMode,
@@ -414,12 +442,14 @@ open class CfirExpressionsResolveTransformer(
 
     // ── Function Call ─────────────────────────────────────────────────────────
 
+    /** 解析普通函数调用表达式。 */
     override fun transformFunctionCall(
         functionCall: CfirFunctionCall,
         data: ResolutionMode,
     ): CfirExpression =
         transformFunctionCallInternal(functionCall, data, CallResolutionMode.REGULAR)
 
+    /** 解析 `++` / `--` 表达式，结果类型固定为 Unit。 */
     override fun transformIncrementDecrementExpression(
         incrementDecrementExpression: CfirIncrementDecrementExpression,
         data: ResolutionMode,
@@ -433,6 +463,12 @@ open class CfirExpressionsResolveTransformer(
             incrementDecrementExpression
         }
 
+    /**
+     * 函数调用解析的统一入口。
+     *
+     * 负责处理构造器委托、mock intrinsic、显式 receiver、实参、内建操作符、
+     * 普通调用候选选择、隐式 invoke 和最终调用补全。
+     */
     internal fun transformFunctionCallInternal(
         functionCall: CfirFunctionCall,
         data: ResolutionMode,
@@ -475,8 +511,10 @@ open class CfirExpressionsResolveTransformer(
 
                 withResolvedExplicitReceiver.also {
                     components.dataFlowAnalyzer.exitCallExplicitReceiver()
+                    val argumentResolutionMode = it.builtinExponentiationArgumentResolutionMode()
+                        ?: ResolutionMode.ContextDependent
                     it.replaceArgumentList(
-                        it.argumentList.transform(transformer, ResolutionMode.ContextDependent)
+                        it.argumentList.transform(transformer, argumentResolutionMode)
                     )
                     components.dataFlowAnalyzer.exitCallArguments()
                 }
@@ -514,6 +552,7 @@ open class CfirExpressionsResolveTransformer(
             result
         }
 
+    /** 尝试直接解析内建操作符调用，避免进入普通 overload resolution。 */
     private fun tryResolveBuiltinOperatorCall(
         functionCall: CfirFunctionCall,
         data: ResolutionMode,
@@ -525,25 +564,177 @@ open class CfirExpressionsResolveTransformer(
         val argumentTypes = functionCall.argumentList.arguments.map { argument ->
             argument.coneTypeOrNull ?: return null
         }
-        (receiverType.propagatedErrorTypeOrNull() ?: argumentTypes.firstNotNullOfOrNull { argumentType ->
+        val propagatedArgumentError = argumentTypes.firstNotNullOfOrNull { argumentType ->
             argumentType.propagatedErrorTypeOrNull()
-        })?.let { propagatedErrorType ->
+        }
+        if (
+            callee.name == OperatorNameConventions.EXPONENTIATION &&
+            propagatedArgumentError != null &&
+            BuiltinPrimitiveOperators.isBuiltinPrimitiveOperand(receiverType)
+        ) {
+            return functionCall.invalidExponentiationOperatorOrNull(callee, receiverType, argumentTypes)
+        }
+        (receiverType.propagatedErrorTypeOrNull() ?: propagatedArgumentError)?.let { propagatedErrorType ->
             functionCall.replaceConeTypeOrNull(propagatedErrorType)
             return functionCall
         }
-
+        if (functionCall.isInvalidFloatExponentiationCall(receiverType, argumentTypes)) {
+            return functionCall.invalidExponentiationOperatorOrNull(callee, receiverType, argumentTypes)
+        }
         val builtinMatch = CfirBuiltinOperatorResolver.tryResolveBuiltinOperator(
             callee.name,
             receiverType,
             argumentTypes,
-        ) ?: return null
-        val returnType = data.expectedTypeOrNull?.let { expectedType ->
-            IdealTypeResolver.resolveIfIdeal(builtinMatch.returnType, expectedType)
-        } ?: builtinMatch.returnType
+        ) ?: return functionCall.invalidExponentiationOperatorOrNull(callee, receiverType, argumentTypes)
+        val returnType = if (callee.name == OperatorNameConventions.EXPONENTIATION) {
+            builtinMatch.returnType
+        } else {
+            data.expectedTypeOrNull?.let { expectedType ->
+                IdealTypeResolver.resolveIfIdeal(builtinMatch.returnType, expectedType)
+            } ?: builtinMatch.returnType
+        }
         functionCall.replaceConeTypeOrNull(returnType)
         return functionCall
     }
 
+    /** 为内建幂运算选择实参解析模式。 */
+    private fun CfirFunctionCall.builtinExponentiationArgumentResolutionMode(): ResolutionMode? {
+        if (origin != CfirFunctionCallOrigin.Operator) return null
+        val callee = calleeReference as? CfirNamedReference ?: return null
+        if (callee.name != OperatorNameConventions.EXPONENTIATION) return null
+        val expectedKinds = BuiltinPrimitiveOperators.exponentiationArgumentExpectedKinds(explicitReceiver?.coneTypeOrNull)
+        if (expectedKinds.isEmpty()) return null
+        val argument = argumentList.arguments.singleOrNull() ?: return null
+        if (argument.looksLikeConstructorCall()) {
+            return ResolutionMode.ContextIndependent
+        }
+        if (expectedKinds.size == 1) {
+            val expectedKind = expectedKinds.single()
+            if (
+                expectedKind == PrimitiveTypeKind.UINT64 &&
+                CfirIntConstantEvalUtils.parseSignedIntExpression(argument)?.value?.let { it < BigInteger.ZERO } == true
+            ) {
+                return ResolutionMode.ContextIndependent
+            }
+            return withExpectedType(ConePrimitiveType(expectedKind))
+        }
+
+        val literalKind = argument.exponentiationLiteralKindOrNull()
+        if (literalKind == null) {
+            return if (PrimitiveTypeKind.FLOAT64 in expectedKinds) {
+                withExpectedType(ConePrimitiveType.FLOAT64)
+            } else {
+                null
+            }
+        }
+        val expectedKind = when {
+            literalKind == CfirLiteralKind.INT && PrimitiveTypeKind.INT64 in expectedKinds -> PrimitiveTypeKind.INT64
+            literalKind == CfirLiteralKind.FLOAT && PrimitiveTypeKind.FLOAT64 in expectedKinds -> PrimitiveTypeKind.FLOAT64
+            else -> return null
+        }
+        return withExpectedType(ConePrimitiveType(expectedKind))
+    }
+
+    /** 判断表达式形态是否像无参类型构造调用。 */
+    private fun CfirExpression.looksLikeConstructorCall(): Boolean {
+        val call = this as? CfirFunctionCall ?: return false
+        if (call.explicitReceiver != null || call.argumentList.arguments.isNotEmpty()) return false
+        val callee = call.calleeReference as? CfirNamedReference ?: return false
+        return callee.name.asString().firstOrNull()?.isUpperCase() == true
+    }
+
+    /** 提取幂运算实参中的字面量种类，支持一元正负包装。 */
+    private fun CfirExpression.exponentiationLiteralKindOrNull(): CfirLiteralKind? {
+        (this as? CfirLiteralExpression)?.let { return it.kind }
+        val call = this as? CfirFunctionCall ?: return null
+        if (call.argumentList.arguments.isNotEmpty()) return null
+        val reference = call.calleeReference as? CfirNamedReference ?: return null
+        if (
+            reference.name != OperatorNameConventions.UNARY_MINUS &&
+            reference.name != OperatorNameConventions.UNARY_PLUS
+        ) {
+            return null
+        }
+        return (call.explicitReceiver as? CfirLiteralExpression)?.kind
+    }
+
+    /** 幂运算非法时构造 unresolved operator 诊断并回写调用。 */
+    private fun CfirFunctionCall.invalidExponentiationOperatorOrNull(
+        callee: CfirNamedReference,
+        receiverType: ConeCangJieType,
+        argumentTypes: List<ConeCangJieType>,
+    ): CfirFunctionCall? {
+        if (callee.name != OperatorNameConventions.EXPONENTIATION) return null
+        if (argumentTypes.size != 1) return null
+        if (!BuiltinPrimitiveOperators.isBuiltinPrimitiveOperand(receiverType)) return null
+
+        val operatorToken = OperatorNameConventions.TOKENS_BY_OPERATOR_NAME[callee.name] ?: return null
+        val diagnostic = ConeUnresolvedNameError(
+            callee.name,
+            operatorToken,
+            explicitReceiver?.invalidBinaryOperatorOperandType(receiverType) ?: receiverType,
+            listOf(argumentList.arguments.single().invalidBinaryOperatorOperandType(argumentTypes.single())),
+        )
+        replaceCalleeReference(
+            buildErrorNamedReference {
+                source = callee.source
+                name = callee.name
+                this.diagnostic = diagnostic
+            }
+        )
+        replaceConeTypeOrNull(ConeErrorType(diagnostic))
+        argumentList.arguments.single().dropExponentiationExpectedTypeMismatch()
+        return this
+    }
+
+    /** 删除幂运算实参上由 expected type 造成的派生 type mismatch。 */
+    private fun CfirExpression.dropExponentiationExpectedTypeMismatch() {
+        val errorType = coneTypeOrNull as? ConeErrorType ?: return
+        val typeMismatch = errorType.diagnostic as? ConeTypeMismatchError ?: return
+        replaceConeTypeOrNull(typeMismatch.actualType)
+    }
+
+    /** 判断是否为 Float64 ** Float64 这类仓颉不允许的幂运算组合。 */
+    private fun CfirFunctionCall.isInvalidFloatExponentiationCall(
+        receiverType: ConeCangJieType,
+        argumentTypes: List<ConeCangJieType>,
+    ): Boolean {
+        val callee = calleeReference as? CfirNamedReference ?: return false
+        if (callee.name != OperatorNameConventions.EXPONENTIATION) return false
+        val receiverKind = (receiverType as? ConePrimitiveType)?.kind
+        if (receiverKind != PrimitiveTypeKind.FLOAT64 && receiverKind != PrimitiveTypeKind.IDEAL_FLOAT) return false
+        if ((argumentTypes.singleOrNull() as? ConePrimitiveType)?.kind != PrimitiveTypeKind.FLOAT64) return false
+
+        val argumentCall = argumentList.arguments.singleOrNull() as? CfirFunctionCall ?: return false
+        val argumentFunction = when (val argumentReference = argumentCall.calleeReference) {
+            is CfirNamedReferenceWithCandidateBase -> argumentReference.candidateSymbol
+            is CfirResolvedNamedReference -> argumentReference.resolvedSymbol
+            else -> return false
+        }.takeIf { it.isBound }?.cfir as? CfirFunction ?: return false
+        val parameterType = argumentFunction.valueParameters.singleOrNull()?.returnTypeRef?.coneTypeOrNull as? ConePrimitiveType
+            ?: return false
+        return parameterType.kind != PrimitiveTypeKind.INT64
+    }
+
+    /** 把 ideal 字面量类型规范化成二元操作诊断中应展示的具体操作数类型。 */
+    private fun CfirExpression.invalidBinaryOperatorOperandType(type: ConeCangJieType): ConeCangJieType {
+        val primitive = type as? ConePrimitiveType ?: return type
+        return when (primitive.kind) {
+            PrimitiveTypeKind.IDEAL_INT -> {
+                val value = CfirIntConstantEvalUtils.parseSignedIntExpression(this)?.value
+                if (value != null && value > BigInteger.valueOf(Long.MAX_VALUE)) {
+                    ConePrimitiveType.UINT64
+                } else {
+                    ConePrimitiveType.INT64
+                }
+            }
+
+            PrimitiveTypeKind.IDEAL_FLOAT -> ConePrimitiveType.FLOAT64
+            else -> type
+        }
+    }
+
+    /** 解析 `this(...)` / `super(...)` 构造器委托调用。 */
     private fun transformConstructorDelegationCall(
         functionCall: CfirFunctionCall,
         data: ResolutionMode,
@@ -608,17 +799,20 @@ open class CfirExpressionsResolveTransformer(
         return result
     }
 
+    /** 返回 class-like 的第一个直接具体父声明。 */
     private fun CfirClassLikeDeclaration.directConcreteSuperDeclarationOrNull(): CfirClassLikeDeclaration? =
         superTypeRefs
             .mapNotNull { superTypeRef -> superTypeRef.toResolvedSuperDeclarationOrNull() }
             .firstOrNull { superDeclaration -> superDeclaration !is CfirInterface }
 
+    /** 从 resolved super typeRef 解析对应声明。 */
     private fun CfirTypeRef.toResolvedSuperDeclarationOrNull(): CfirClassLikeDeclaration? {
         val resolvedTypeRef = this as? CfirResolvedTypeRef ?: return null
         if (resolvedTypeRef.coneType is ConeErrorType) return null
         return resolvedTypeRef.coneType.toResolvedSuperDeclarationOrNull()
     }
 
+    /** 从 cone type 解析对应 class-like 声明。 */
     private fun ConeCangJieType.toResolvedSuperDeclarationOrNull(): CfirClassLikeDeclaration? {
         val expanded = fullyExpandTypeAliasForConstructorDelegation()
         val classId = when (expanded) {
@@ -634,6 +828,7 @@ open class CfirExpressionsResolveTransformer(
             ?: session.symbolProvider.getClassLikeSymbolByClassId(classId)?.cfir
     }
 
+    /** 为构造器委托目标解析展开 typealias。 */
     private fun ConeCangJieType.fullyExpandTypeAliasForConstructorDelegation(): ConeCangJieType {
         var current = this
         while (current is ConeTypeAliasType && current.expandedType != null) {
@@ -675,6 +870,7 @@ open class CfirExpressionsResolveTransformer(
         return withResolvedExplicitReceiver
     }
 
+    /** 在普通调用失败后尝试把值访问改写为隐式 invoke 调用。 */
     private fun tryResolveImplicitInvokeCall(
         originalCalleeReference: CfirReference,
         originalCall: CfirFunctionCall,
@@ -775,12 +971,14 @@ open class CfirExpressionsResolveTransformer(
         return null
     }
 
+    /** 判断调用是否是 VArray 的 size 访问。 */
     private fun CfirFunctionCall.isVArraySizeCall(): Boolean {
         val callee = calleeReference as? CfirNamedReference ?: return false
         if (callee.name.asString() != "size") return false
         return explicitReceiver?.coneTypeOrNull?.fullyExpandedType(session) is ConeVArrayType
     }
 
+    /** 构造 enum value 访问诊断使用的合成 source。 */
     private fun CjSourceElement?.enumValueAccessSource(explicitReceiverSource: CjSourceElement?): CjSourceElement? {
         if (this == null || explicitReceiverSource == null) return this
         return realElement().fakeElement(
@@ -799,6 +997,8 @@ open class CfirExpressionsResolveTransformer(
      */
     private fun ConeDiagnostic?.isNoArgEnumValueCalledWithArguments(originalCall: CfirFunctionCall): Boolean {
         if (originalCall.argumentList.arguments.isEmpty()) return false
+
+        /** 判断候选是否绑定到无参 enum constructor，用于把调用错误改写成 enum 值的 `invoke` 错误。 */
         fun AbstractCandidate.isNoArgEnumConstructorCandidate(): Boolean {
             val enumConstructor = symbol.takeIf { it.isBound }?.cfir as? CfirEnumConstructor ?: return false
             return enumConstructor.valueParameters.isEmpty()
@@ -812,10 +1012,12 @@ open class CfirExpressionsResolveTransformer(
         }
     }
 
+    /** 从函数调用的 callee 写回结果类型。 */
     private fun storeTypeFromCallee(functionCall: CfirFunctionCall) {
         storeTypeFromCallee(functionCall as CfirQualifiedAccessExpression)
     }
 
+    /** 从限定访问的 callee 写回结果类型。 */
     internal fun storeTypeFromCallee(
         qualifiedAccessExpression: CfirQualifiedAccessExpression,
         @Suppress("UNUSED_PARAMETER") isLhsOfAssignment: Boolean = false,
@@ -823,6 +1025,7 @@ open class CfirExpressionsResolveTransformer(
         qualifiedAccessExpression.replaceConeTypeOrNull(components.typeFromCallee(qualifiedAccessExpression))
     }
 
+    /** 解析限定访问或调用的显式 receiver。 */
     fun <Q : CfirQualifiedAccessExpression> transformExplicitReceiverOf(qualifiedAccessExpression: Q): Q {
         if (qualifiedAccessExpression.explicitReceiver == null) return qualifiedAccessExpression
         qualifiedAccessExpression.transformExplicitReceiver(
@@ -849,12 +1052,14 @@ open class CfirExpressionsResolveTransformer(
         }
     }
 
+    /** 判断表达式是否是函数类型 `invoke` 接收者链条中仍需外层调用约束的嵌套调用。 */
     private fun CfirExpression.isNestedCallInvokeReceiver(): Boolean = when (this) {
         is CfirFunctionCall -> true
         is CfirWrappedExpression -> expression.isNestedCallInvokeReceiver()
         else -> false
     }
 
+    /** 执行命名值访问解析并选择候选。 */
     protected open fun resolveQualifiedAccessAndSelectCandidate(
         qualifiedAccessExpression: CfirQualifiedAccessExpression,
         isUsedAsReceiver: Boolean,
@@ -871,7 +1076,9 @@ open class CfirExpressionsResolveTransformer(
         )
     }
 
+    /** 函数调用解析模式。 */
     internal enum class CallResolutionMode {
+        /** 普通调用解析模式。 */
         REGULAR,
 
         /**
@@ -890,6 +1097,12 @@ open class CfirExpressionsResolveTransformer(
 
     // ── Block ─────────────────────────────────────────────────────────────────
 
+    /**
+     * 解析块表达式并把块类型同步为尾表达式类型。
+     *
+     * 非尾语句独立解析，尾语句继承外层 expected type；这保证 `if`、`try`、`match`
+     * 等把块作为结果表达式的结构能够把上下文类型继续下推到真正产生值的位置。
+     */
     override fun transformBlock(block: CfirBlock, data: ResolutionMode): CfirExpression {
         components.dataFlowAnalyzer.enterBlock(block)
         val statements = block.statements as? MutableList<CfirStatement>
@@ -925,6 +1138,12 @@ open class CfirExpressionsResolveTransformer(
 
     // ── Match ─────────────────────────────────────────────────────────────────
 
+    /**
+     * 解析 `match` 表达式的 subject、分支模式、guard 与分支体。
+     *
+     * subject 错误会以未上报重复诊断形式传播到整个表达式；正常路径中分支体会接收
+     * 外层 expected type，随后计算穷尽性和分支结果 Join 类型。
+     */
     override fun transformMatchExpression(
         matchExpression: CfirMatchExpression,
         data: ResolutionMode,
@@ -987,6 +1206,12 @@ open class CfirExpressionsResolveTransformer(
         }
     }
 
+    /**
+     * 在独立局部作用域中解析单个 `match` 分支。
+     *
+     * 分支解析包括延迟模式判定、模式绑定类型写回、绑定符号注册、guard 解析和分支体解析；
+     * 返回值是分支体的最终类型，用于外层 `match` 结果类型合成。
+     */
     private fun resolveBranch(
         branch: CfirMatchBranch,
         subjectType: ConeCangJieType?,
@@ -1081,6 +1306,12 @@ open class CfirExpressionsResolveTransformer(
         }
     }
 
+    /**
+     * 将裸名字模式解析为 enum 构造模式或绑定模式。
+     *
+     * 优先使用 subject expected type 中的 enum 声明消解歧义；没有 expected enum 类型时，
+     * 再走当前作用域的普通值解析以识别可见 enum constructor。
+     */
     private fun resolveVarOrEnumPattern(
         pattern: CfirVarOrEnumPattern,
         expectedType: ConeCangJieType?,
@@ -1108,6 +1339,11 @@ open class CfirExpressionsResolveTransformer(
         }
     }
 
+    /**
+     * 按 expected enum 类型查找无载荷 enum constructor，并构造已解析引用。
+     *
+     * 该路径只接受 payload arity 为 0 的构造项，因为裸名字模式不能携带 enum payload。
+     */
     private fun resolveExpectedEnumConstructorReferenceOrNull(
         pattern: CfirVarOrEnumPattern,
         expectedType: ConeCangJieType?,
@@ -1127,6 +1363,12 @@ open class CfirExpressionsResolveTransformer(
         }
     }
 
+    /**
+     * 为延迟解析后的 enum pattern 计算每个 payload pattern 对应的 expected type。
+     *
+     * 解析过程会根据 expected enum 类型、constructor 名称和实参个数定位 enum constructor，
+     * 并把构造项载荷参数类型按 enum 实例类型完成替换。
+     */
     private fun resolveEnumArgumentTypesForDeferredPattern(
         pattern: CfirEnumPattern,
         expectedType: ConeCangJieType?,
@@ -1147,6 +1389,12 @@ open class CfirExpressionsResolveTransformer(
         return enumConstructor.substitutedPayloadParameterTypes(enumDeclaration, enumType)
     }
 
+    /**
+     * 在当前作用域中按普通值访问规则解析裸 enum constructor 引用。
+     *
+     * 这里复用调用解析器的候选选择结果，并把候选引用统一规整成
+     * [CfirResolvedNamedReference]，供后续 enum pattern 节点直接持有。
+     */
     private fun resolveEnumConstructorReferenceOrNull(pattern: CfirVarOrEnumPattern): CfirReference? {
         val temporaryAccess = buildNamedAccessExpression {
             source = pattern.source
@@ -1187,6 +1435,12 @@ open class CfirExpressionsResolveTransformer(
         }
     }
 
+    /**
+     * 合成 `match` 表达式结果类型。
+     *
+     * 分支错误以未上报重复诊断传播；理想类型会结合外层 expected type 归一化；
+     * 当任一分支已等于 expected type 时按官方语义直接采用 expected type，否则计算公共父类型。
+     */
     private fun computeMatchResultType(
         branchTypes: List<ConeCangJieType>,
         expectedType: ConeCangJieType?,
@@ -1219,6 +1473,12 @@ open class CfirExpressionsResolveTransformer(
 
     // ── If ────────────────────────────────────────────────────────────────────
 
+    /**
+     * 解析 `if` 表达式的条件与分支，并合成整个表达式类型。
+     *
+     * 条件中包含 `let` pattern 时会为 then 分支建立局部绑定作用域；
+     * 普通条件按 `Bool` expected type 解析。分支类型错误只传播错误类型，不重复上报诊断。
+     */
     override fun transformIfExpression(
         ifExpression: CfirIfExpression,
         data: ResolutionMode,
@@ -1258,6 +1518,12 @@ open class CfirExpressionsResolveTransformer(
         return ifExpression
     }
 
+    /**
+     * 解析独立出现的 `let pattern` 条件表达式。
+     *
+     * 该入口只完成 initializer、pattern 和布尔结果类型的解析，不向外层作用域注册绑定；
+     * 条件控制流入口会在需要时调用 [resolveConditionWithPatternBindings] 完成注册。
+     */
     override fun transformLetPatternExpression(
         letPatternExpression: CfirLetPatternExpression,
         data: ResolutionMode,
@@ -1266,6 +1532,7 @@ open class CfirExpressionsResolveTransformer(
         return letPatternExpression
     }
 
+    /** 判断条件表达式中是否包含需要给分支引入绑定的 `let pattern`。 */
     private fun CfirExpression.containsLetPatternCondition(): Boolean = when (this) {
         is CfirLetPatternExpression -> true
         is CfirBinaryOp -> (kind == CfirBinaryOpKind.AND || kind == CfirBinaryOpKind.OR) &&
@@ -1273,6 +1540,12 @@ open class CfirExpressionsResolveTransformer(
         else -> false
     }
 
+    /**
+     * 解析条件表达式并注册其中的 pattern binding。
+     *
+     * `&&` / `||` 条件保持布尔结果类型，同时递归解析左右侧以保证嵌套 pattern 的绑定信息
+     * 能进入当前控制流作用域；非 pattern 条件退回普通 `Bool` expected type 解析。
+     */
     private fun resolveConditionWithPatternBindings(condition: CfirExpression): CfirExpression {
         return when (condition) {
             is CfirLetPatternExpression -> {
@@ -1292,6 +1565,12 @@ open class CfirExpressionsResolveTransformer(
         }
     }
 
+    /**
+     * 解析 `let pattern` 的 initializer、模式结构和绑定变量类型。
+     *
+     * 延迟的裸名字模式会在 initializer 类型已知后再决定是 enum pattern 还是 binding pattern；
+     * [registerBindings] 控制这些绑定是否写入当前局部作用域。
+     */
     private fun resolveLetPatternExpression(
         letPatternExpression: CfirLetPatternExpression,
         registerBindings: Boolean,
@@ -1317,6 +1596,11 @@ open class CfirExpressionsResolveTransformer(
 
     // ── Return / Throw ────────────────────────────────────────────────────────
 
+    /**
+     * 解析 `return` 表达式并把结果表达式按目标 callable 的返回类型检查。
+     *
+     * 解析完成后 `return` 自身类型固定为 `Nothing`，并通知数据流分析器完成 jump 边。
+     */
     override fun transformReturnExpression(
         returnExpression: CfirReturnExpression,
         data: ResolutionMode,
@@ -1332,6 +1616,11 @@ open class CfirExpressionsResolveTransformer(
         return returnExpression
     }
 
+    /**
+     * 解析抽象 loop jump 节点。
+     *
+     * 该入口服务于通用 visitor 分发；具体 `break`、`continue` 节点也会复用同一套类型与 CFG 处理。
+     */
     override fun transformLoopJump(
         jumpExpression: CfirLoopJump,
         data: ResolutionMode,
@@ -1339,6 +1628,7 @@ open class CfirExpressionsResolveTransformer(
         return transformLoopJumpLike(jumpExpression, data)
     }
 
+    /** 解析 `break` 表达式，并将其类型固定为 `Nothing`。 */
     override fun transformBreakExpression(
         breakExpression: CfirBreakExpression,
         data: ResolutionMode,
@@ -1346,6 +1636,7 @@ open class CfirExpressionsResolveTransformer(
         return transformLoopJumpLike(breakExpression, data)
     }
 
+    /** 解析 `continue` 表达式，并将其类型固定为 `Nothing`。 */
     override fun transformContinueExpression(
         continueExpression: CfirContinueExpression,
         data: ResolutionMode,
@@ -1371,6 +1662,11 @@ open class CfirExpressionsResolveTransformer(
         return jumpExpression
     }
 
+    /**
+     * 解析 `throw` 表达式。
+     *
+     * 子表达式独立解析，表达式本身类型为 `Nothing`，并在数据流图中关闭异常抛出边。
+     */
     override fun transformThrowExpression(
         throwExpression: CfirThrowExpression,
         data: ResolutionMode,
@@ -1381,6 +1677,12 @@ open class CfirExpressionsResolveTransformer(
         return throwExpression
     }
 
+    /**
+     * 解析 effect `perform` 表达式。
+     *
+     * feature 未启用时产生特性禁用错误；启用后要求 operand 类型最终能关联到
+     * `Command<T>`，并把 `perform` 的结果类型设为命令结果 `T`。
+     */
     override fun transformPerformExpression(
         performExpression: CfirPerformExpression,
         data: ResolutionMode,
@@ -1404,6 +1706,12 @@ open class CfirExpressionsResolveTransformer(
         return performExpression
     }
 
+    /**
+     * 解析 effect handler 中的 `resume` 表达式。
+     *
+     * 该入口校验 feature 开关、当前 handler 上下文、`throwing` 异常类型以及缺省 resume
+     * 是否允许省略 `with` 值；表达式静态类型保持 `Nothing`。
+     */
     override fun transformResumeExpression(
         resumeExpression: CfirResumeExpression,
         data: ResolutionMode,
@@ -1454,6 +1762,12 @@ open class CfirExpressionsResolveTransformer(
 
     // ── Assignment ────────────────────────────────────────────────────────────
 
+    /**
+     * 解析赋值表达式。
+     *
+     * 下标赋值会解糖到 `set` 操作符解析；普通赋值独立解析左右值并通知数据流分析器记录变量写入。
+     * 赋值表达式自身类型固定为 `Unit`。
+     */
     override fun transformAssignment(
         assignment: CfirAssignment,
         data: ResolutionMode,
@@ -1480,6 +1794,7 @@ open class CfirExpressionsResolveTransformer(
 
     // ── Tuple / Array / String Literals ──────────────────────────────────────
 
+    /** 解析 tuple 字面量，并按元素的解析后类型构造 [ConeTupleType]。 */
     override fun transformTupleLiteral(
         tupleLiteral: CfirTupleLiteral,
         data: ResolutionMode,
@@ -1492,6 +1807,12 @@ open class CfirExpressionsResolveTransformer(
         return tupleLiteral
     }
 
+    /**
+     * 解析数组字面量并推断 `Array<T>` 或 `VArray<T, N>` 类型。
+     *
+     * 当外层 expected type 提供元素类型时，会把该类型下推到每个元素并在元素级报告不匹配；
+     * 没有 expected type 时通过元素公共父类型推断，无法形成可接受公共类型则产生数组字面量错误。
+     */
     override fun transformArrayLiteral(
         arrayLiteral: CfirArrayLiteral,
         data: ResolutionMode,
@@ -1546,6 +1867,11 @@ open class CfirExpressionsResolveTransformer(
         return arrayLiteralWithElementDiagnostics
     }
 
+    /**
+     * 按 expected element type 为数组字面量元素补充类型不匹配错误节点。
+     *
+     * 已经是错误类型或缺失类型的元素保持原样，避免在同一元素上重复诊断。
+     */
     private fun CfirArrayLiteral.withElementTypeDiagnostics(expectedElementType: ConeCangJieType): CfirArrayLiteral {
         val checkedElements = elements.map { element ->
             val actualType = element.coneTypeOrNull
@@ -1560,6 +1886,11 @@ open class CfirExpressionsResolveTransformer(
         return replaceElementsIfNeeded(checkedElements)
     }
 
+    /**
+     * 从数组元素类型集合推断可接受的数组元素类型。
+     *
+     * 推断结果会先消解 ideal type，再过滤掉只能退到不可见/过宽 `Any` 的组合。
+     */
     private fun CfirArrayLiteral.inferredElementTypeOrNull(elementTypes: List<ConeCangJieType>): ConeCangJieType? {
         val commonType = session.typeContext.commonSuperTypeOrNull(elementTypes) ?: return null
         val resolvedType = IdealTypeResolver.resolveIfIdeal(commonType)
@@ -1577,10 +1908,16 @@ open class CfirExpressionsResolveTransformer(
         return elementTypes.any { it is ConeClassLikeType && !it.isAnyType() }
     }
 
+    /** 判断类型是否是仓颉顶层 `Any`，用于数组公共元素类型过滤。 */
     private fun ConeCangJieType.isAnyType(): Boolean {
         return this === ConeAnyType || (this is ConeClassLikeType && classId == StdlibClassIds.Any)
     }
 
+    /**
+     * 在数组元素列表发生改变时构造拷贝；未改变时复用原字面量节点。
+     *
+     * 这避免纯检查路径不必要地替换 CFIR 节点，同时保证错误元素包装能写回树。
+     */
     private fun CfirArrayLiteral.replaceElementsIfNeeded(newElements: List<CfirExpression>): CfirArrayLiteral {
         if (newElements == elements) return this
         return buildArrayLiteralCopy(this) {
@@ -1589,10 +1926,12 @@ open class CfirExpressionsResolveTransformer(
         }
     }
 
+    /** 判断实际类型是否可以作为 expected type 的元素值使用。 */
     private fun ConeCangJieType.isCompatibleWith(expectedType: ConeCangJieType): Boolean =
         AbstractTypeChecker.equalTypes(session.typeContext, this, expectedType) ||
                 AbstractTypeChecker.isSubtypeOf(session.typeContext, this, expectedType)
 
+    /** 将普通表达式包装成携带类型不匹配诊断的错误表达式。 */
     private fun CfirExpression.asTypeMismatchExpression(
         expectedType: ConeCangJieType,
         actualType: ConeCangJieType,
@@ -1602,11 +1941,17 @@ open class CfirExpressionsResolveTransformer(
         nonExpressionElement = this@asTypeMismatchExpression
     }
 
+    /** 为无法推断出统一元素类型的数组字面量构造错误表达式。 */
     private fun CfirArrayLiteral.asInconsistentElementTypeExpression(): CfirErrorExpression = buildErrorExpression {
         source = this@asInconsistentElementTypeExpression.source
         diagnostic = ConeInconsistentArrayLiteralElementTypeError()
     }
 
+    /**
+     * 在没有 expected type 时，根据当前元素类型合成数组类型。
+     *
+     * 该函数用于错误恢复路径，因此无法得到公共父类型时会返回携带简单诊断的错误元素类型。
+     */
     private fun CfirArrayLiteral.constructArrayTypeFromElements(): ConeCangJieType {
         val elementType = elements
             .mapNotNull { it.coneTypeOrNull }
@@ -1616,6 +1961,7 @@ open class CfirExpressionsResolveTransformer(
         return constructArrayType(elementType)
     }
 
+    /** 构造标准库 `Array<elementType>` 类型。 */
     private fun constructArrayType(elementType: ConeCangJieType): ConeCangJieType {
         return constructNamedType(
             classId = StdlibClassIds.Array,
@@ -1623,6 +1969,12 @@ open class CfirExpressionsResolveTransformer(
         )
     }
 
+    /**
+     * 根据 expected type 和元素个数构造数组字面量最终类型。
+     *
+     * expected type 为 `VArray` 时保留其属性并把 size 固定为字面量元素个数；
+     * 其他情况按普通 `Array<T>` 处理。
+     */
     private fun constructArrayLiteralType(
         expectedType: ConeCangJieType?,
         elementType: ConeCangJieType,
@@ -1638,6 +1990,7 @@ open class CfirExpressionsResolveTransformer(
         }
     }
 
+    /** 解析字符串插值表达式，子表达式独立解析，整体类型固定为标准库 `String`。 */
     override fun transformStringInterpolation(
         stringInterpolation: CfirStringInterpolation,
         data: ResolutionMode,
@@ -1649,6 +2002,12 @@ open class CfirExpressionsResolveTransformer(
 
     // ── Comparison / Binary / Type Operators ──────────────────────────────────
 
+    /**
+     * 解析比较表达式。
+     *
+     * 左右操作数先独立解析，再通过内建操作符或普通操作符调用解析确定结果类型；
+     * 比较表达式的正常结果类型应为 `Bool`，错误路径保留操作符解析诊断。
+     */
     override fun transformComparisonExpression(
         comparisonExpression: CfirComparisonExpression,
         data: ResolutionMode,
@@ -1658,6 +2017,12 @@ open class CfirExpressionsResolveTransformer(
         return comparisonExpression
     }
 
+    /**
+     * 计算比较表达式的结果类型。
+     *
+     * tuple 相等比较、内建操作符和用户定义操作符按优先级依次尝试；
+     * 候选选择或调用完成中的诊断会转换成带 `Bool` delegated type 的错误类型。
+     */
     private fun resolveComparisonExpressionType(
         comparisonExpression: CfirComparisonExpression,
         data: ResolutionMode,
@@ -1667,6 +2032,14 @@ open class CfirExpressionsResolveTransformer(
         if (leftType == null || rightType == null) return builtinTypes.boolType
 
         val operatorName = comparisonExpression.operation.toOperatorName()
+        if (
+            (operatorName == OperatorNameConventions.EQUALS || operatorName == OperatorNameConventions.NOT_EQUALS) &&
+            leftType is ConeTupleType &&
+            rightType is ConeTupleType &&
+            leftType.elementTypes.size == rightType.elementTypes.size
+        ) {
+            return builtinTypes.boolType
+        }
         CfirBuiltinOperatorResolver.tryResolveBuiltinOperator(
             operatorName,
             leftType,
@@ -1700,6 +2073,11 @@ open class CfirExpressionsResolveTransformer(
         return completedCall.coneTypeOrNull ?: builtinTypes.boolType
     }
 
+    /**
+     * 解析二元逻辑、合并、pipeline 和 composition 表达式。
+     *
+     * 逻辑运算固定为 `Bool`，`??` 走 Option 元素类型规则，flow 运算会解糖成普通函数调用。
+     */
     override fun transformBinaryOp(
         binaryOp: CfirBinaryOp,
         data: ResolutionMode,
@@ -1741,6 +2119,11 @@ open class CfirExpressionsResolveTransformer(
         return resolvedCall
     }
 
+    /**
+     * 将 pipeline 表达式 `a |> f` 构造成 `f.invoke(a)` 形式的函数调用节点。
+     *
+     * 构造后的节点交给统一调用解析流程处理函数类型、重载和泛型约束。
+     */
     private fun buildPipelineCall(binaryOp: CfirBinaryOp): CfirFunctionCall =
         buildFunctionCall {
             source = binaryOp.source
@@ -1756,6 +2139,11 @@ open class CfirExpressionsResolveTransformer(
             origin = CfirFunctionCallOrigin.Operator
         }
 
+    /**
+     * 将 composition 表达式 `f ~> g` 构造成标准库 `composition(f, g)` 调用。
+     *
+     * 该调用标记为编译器核心 intrinsic，后续解析仍复用普通调用候选和调用完成逻辑。
+     */
     private fun buildCompositionCall(binaryOp: CfirBinaryOp): CfirFunctionCall =
         buildFunctionCall {
             source = binaryOp.source
@@ -1791,8 +2179,14 @@ open class CfirExpressionsResolveTransformer(
         val resultType = coalescingResultType(leftElementType, data.expectedTypeOrNull)
         binaryOp.transformRight(transformer, withExpectedType(resultType))
         return resultType
-    }
+        }
 
+    /**
+     * 根据左操作数 Option 元素类型和外层 expected type 选择 `??` 的结果类型。
+     *
+     * 当元素类型可作为 expected type 使用时返回 expected type，以保持上下文驱动的类型收窄；
+     * 否则保留左侧元素类型。
+     */
     private fun coalescingResultType(
         leftElementType: ConeCangJieType,
         expectedType: ConeCangJieType?,
@@ -1805,6 +2199,11 @@ open class CfirExpressionsResolveTransformer(
         }
     }
 
+    /**
+     * 解析 `is` / `as` 类型操作表达式。
+     *
+     * `is` 固定返回 `Bool`；仓颉 `as` 为安全转换，静态结果类型为 `Option<T>`。
+     */
     override fun transformTypeOperator(
         typeOperator: CfirTypeOperator,
         data: ResolutionMode,
@@ -1828,6 +2227,12 @@ open class CfirExpressionsResolveTransformer(
         return typeOperator
     }
 
+    /**
+     * 解析基础数值类型转换表达式。
+     *
+     * 目标类型和实参先独立解析；随后校验目标必须是 primitive，实参必须符合官方数值转换规则，
+     * 最后再结合外层 expected type 报告上下文类型不匹配。
+     */
     override fun transformTypeConversion(
         typeConversion: CfirTypeConversion,
         data: ResolutionMode,
@@ -1909,6 +2314,12 @@ open class CfirExpressionsResolveTransformer(
 
     // ── For-In / Loop ─────────────────────────────────────────────────────────
 
+    /**
+     * 解析 `for-in` 表达式。
+     *
+     * 迭代对象先独立定型，再由 iterable 类型推断循环变量 pattern 的 expected type；
+     * pattern binding 会注册到循环体局部作用域，整个循环表达式类型固定为 `Unit`。
+     */
     override fun transformForInExpression(
         forInExpression: CfirForInExpression,
         data: ResolutionMode,
@@ -1952,6 +2363,12 @@ open class CfirExpressionsResolveTransformer(
         return forInExpression
     }
 
+    /**
+     * 从 iterable 类型推断 `for-in` 元素类型。
+     *
+     * 数组、VArray、Range 和泛型容器按已知结构提取元素类型；无法识别时返回错误类型，
+     * 使循环变量仍能继续以错误恢复类型参与后续解析。
+     */
     private fun inferIterableElementType(iterableType: ConeCangJieType?): ConeCangJieType {
         if (iterableType == null) return errorType("iterable has no type")
         iterableType.arrayElementType?.let { return it }
@@ -1973,6 +2390,12 @@ open class CfirExpressionsResolveTransformer(
         return errorType("cannot infer element type from: $iterableType")
     }
 
+    /**
+     * 解析 `while` / `do-while` 循环表达式。
+     *
+     * 入口负责按循环形态通知 CFG 分析器，并处理条件中的 `let pattern` 作用域；
+     * 循环表达式本身不产生值，类型固定为 `Unit`。
+     */
     override fun transformLoopExpression(
         loopExpression: CfirLoopExpression,
         data: ResolutionMode,
@@ -2006,6 +2429,12 @@ open class CfirExpressionsResolveTransformer(
 
     // ── Try / Catch ───────────────────────────────────────────────────────────
 
+    /**
+     * 解析 effect `handle` 子句。
+     *
+     * 命令模式类型引用先解析；feature 开启时根据 `Command<T>` 建立 handler 上下文，
+     * body 解析完成后以 body 类型作为 handle 子句类型，命令不匹配则保留 delegated body 类型。
+     */
     override fun transformHandleClause(
         handleClause: CfirHandleClause,
         data: ResolutionMode,
@@ -2050,6 +2479,12 @@ open class CfirExpressionsResolveTransformer(
         return handleClause
     }
 
+    /**
+     * 解析 `try` 表达式及其 resources、catch、handle、finally 子结构。
+     *
+     * 普通 try/catch 会把外层 expected type 下推到各结果 block；try-with-resources 固定为 `Unit`。
+     * 最终类型由 try block、catch block 和 handle block 逐步 Join 得到，并保留 handler 类型不匹配诊断。
+     */
     override fun transformTryExpression(
         tryExpression: CfirTryExpression,
         data: ResolutionMode,
@@ -2140,6 +2575,12 @@ open class CfirExpressionsResolveTransformer(
         return tryExpression
     }
 
+    /**
+     * 解析单个 `catch` 子句。
+     *
+     * catch pattern 的类型引用会先被解析并写回 binding variable，再在新的 block 作用域中解析子句体；
+     * catch 子句类型等于 body 类型，缺失时回退为 `Unit`。
+     */
     override fun transformCatch(
         catch: CfirCatch,
         data: ResolutionMode,
@@ -2156,6 +2597,12 @@ open class CfirExpressionsResolveTransformer(
 
     // ── Subscript ─────────────────────────────────────────────────────────────
 
+    /**
+     * 解析下标访问表达式。
+     *
+     * tuple 和 VArray 走结构化快速路径；普通数组和用户类型会解析内建 `[]` 或 `get` 操作符。
+     * 接收者或索引上的错误类型会优先传播，避免派生出重复的下标诊断。
+     */
     override fun transformSubscriptExpression(
         subscriptExpression: CfirSubscriptExpression,
         data: ResolutionMode,
@@ -2199,6 +2646,11 @@ open class CfirExpressionsResolveTransformer(
         return subscriptExpression
     }
 
+    /**
+     * 解析普通下标访问的结果类型。
+     *
+     * 优先匹配内建 `[]` 操作符；没有内建匹配时构造 `get` 调用并走统一调用解析与调用完成流程。
+     */
     private fun resolveSubscriptExpressionType(
         subscriptExpression: CfirSubscriptExpression,
         receiverType: ConeCangJieType,
@@ -2237,6 +2689,12 @@ open class CfirExpressionsResolveTransformer(
         return completedCall.coneTypeOrNull ?: errorType("no subscript operator for: $receiverType")
     }
 
+    /**
+     * 解析下标赋值的 `set` 操作符。
+     *
+     * VArray 赋值直接以元素类型作为下标表达式类型；其他接收者会构造 `set(receiver, indices, value)`
+     * 对应的操作符调用，并把调用完成结果写回下标表达式。
+     */
     private fun resolveSubscriptSetAssignment(
         assignment: CfirAssignment,
         subscriptExpression: CfirSubscriptExpression,
@@ -2277,6 +2735,11 @@ open class CfirExpressionsResolveTransformer(
         subscriptExpression.replaceConeTypeOrNull(completedCall.coneTypeOrNull ?: builtinTypes.unitType)
     }
 
+    /**
+     * 从下标表达式中提取非负 Int 范围内的编译期整数字面量索引。
+     *
+     * 该函数只接受无显式后缀或 `i64` 后缀的整数字面量，用于 tuple 静态下标检查。
+     */
     private fun extractConstantIntIndex(expr: CfirExpression?): Int? {
         val parsed = expr?.let(CfirIntConstantEvalUtils::parseSignedIntExpression) ?: return null
         if (parsed.explicitSuffix != null && parsed.explicitSuffix != "i64") return null
@@ -2286,6 +2749,12 @@ open class CfirExpressionsResolveTransformer(
 
     // ── Lambda ────────────────────────────────────────────────────────────────
 
+    /**
+     * 解析匿名函数表达式。
+     *
+     * 显式返回类型和形参类型先独立解析；上下文相关模式下只存储延迟解析上下文，
+     * 有 expected function type 时通过 synthetic outer call 完成参数和返回类型约束。
+     */
     override fun transformAnonymousFunctionExpression(
         anonymousFunctionExpression: CfirAnonymousFunctionExpression,
         data: ResolutionMode,
@@ -2354,6 +2823,11 @@ open class CfirExpressionsResolveTransformer(
 
     // ── Range ─────────────────────────────────────────────────────────────────
 
+    /**
+     * 解析 range 表达式并构造 `Range<T>` 类型。
+     *
+     * 当外层 expected type 已经是 `Range<T>` 时直接使用其元素类型；否则按起止表达式类型推断元素类型。
+     */
     override fun transformRangeExpression(
         rangeExpression: CfirRangeExpression,
         data: ResolutionMode,
@@ -2373,6 +2847,12 @@ open class CfirExpressionsResolveTransformer(
 
     // ── Spawn ─────────────────────────────────────────────────────────────────
 
+    /**
+     * 解析 `spawn` 表达式。
+     *
+     * spawn body 独立解析，表达式结果类型为标准库 `Future<bodyType>`，
+     * body 缺失类型时按 `Unit` 进行错误恢复。
+     */
     override fun transformSpawnExpression(
         spawnExpression: CfirSpawnExpression,
         data: ResolutionMode,
@@ -2388,6 +2868,11 @@ open class CfirExpressionsResolveTransformer(
         return spawnExpression
     }
 
+    /**
+     * 对已经完成候选选择的访问表达式补齐调用完成或 callee 类型。
+     *
+     * 带候选的引用交给 call completer；已解析命名引用但表达式类型缺失时，从 callee 元素合成类型。
+     */
     private fun <T> completeResolvedAccess(
         access: T,
         data: ResolutionMode,
@@ -2410,6 +2895,11 @@ open class CfirExpressionsResolveTransformer(
 
     // ── Stdlib / ClassId Helpers ──────────────────────────────────────────────
 
+    /**
+     * 构造标准库 `String` 类型。
+     *
+     * 优先使用当前 session 中可见的类符号以保留具体分类；符号缺失时构造 lookup-tag 类型用于恢复。
+     */
     private fun stdlibStringType(): ConeCangJieType {
         val symbol = components.symbolProvider.getClassLikeSymbolByClassId(StdlibClassIds.String)
         if (symbol != null) {
@@ -2418,6 +2908,12 @@ open class CfirExpressionsResolveTransformer(
         return ConeClassLikeType(StdlibClassIds.String.toLookupTag())
     }
 
+    /**
+     * 根据 [ClassId] 和类型实参构造分类器类型。
+     *
+     * 若符号可解析，则按实际声明种类构造 class/interface/struct/enum/typealias/primitive 类型；
+     * 否则保留 lookup tag 以便后续阶段继续错误恢复。
+     */
     private fun constructNamedType(
         classId: ClassId,
         typeArguments: List<ConeTypeProjection> = emptyList(),
@@ -2457,6 +2953,11 @@ open class CfirExpressionsResolveTransformer(
         else -> null
     }
 
+    /**
+     * 按已解析符号种类构造对应的 Cone 类型。
+     *
+     * 该函数集中维护标准库 helper 对 class-like、typealias、primitive、struct 和 enum 的类型映射。
+     */
     private fun constructClassLikeType(
         symbol: CfirClassLikeSymbol<*>,
         classId: ClassId,
@@ -2473,6 +2974,12 @@ open class CfirExpressionsResolveTransformer(
 
     // ── Common Supertype ──────────────────────────────────────────────────────
 
+    /**
+     * 计算表达式分支类型的公共父类型。
+     *
+     * `Nothing` 不参与非空分支 Join；所有分支均为 `Nothing` 时保持 `Nothing`，
+     * 类型上下文无法给出公共父类型时使用 `Any` 作为恢复类型。
+     */
     private fun commonSupertype(types: List<ConeCangJieType>): ConeCangJieType {
         if (types.isEmpty()) return builtinTypes.unitType
         val first = types.first()
@@ -2496,6 +3003,11 @@ open class CfirExpressionsResolveTransformer(
         return findCommandSupertype(commandType)?.typeArguments?.firstOrNull()?.type
     }
 
+    /**
+     * 解析 effect command pattern 中的类型引用。
+     *
+     * 配置会补充当前容器链上的类型参数，保证 handler 内的局部/成员类型参数能够被 pattern 类型引用看到。
+     */
     private fun resolveCommandPatternTypeRefs(commandPattern: CfirCommandTypePattern) {
         val additionalTypeParameters = context.containers
             .asSequence()
@@ -2511,6 +3023,11 @@ open class CfirExpressionsResolveTransformer(
         commandPattern.transformTypeRefs(specificTypeResolverTransformer, config)
     }
 
+    /**
+     * 解析 catch pattern 并把 catch binding 变量写入当前作用域。
+     *
+     * 多个 catch 类型会合成公共父类型；没有显式类型时使用标准库 `Exception` 作为绑定变量类型。
+     */
     private fun resolveCatchPattern(catchPattern: CfirCatchPattern) {
         resolveCatchPatternTypeRefs(catchPattern)
         catchPattern.transformBindingVariable(transformer, ResolutionMode.ContextIndependent)
@@ -2534,6 +3051,11 @@ open class CfirExpressionsResolveTransformer(
         }
     }
 
+    /**
+     * 解析 catch pattern 的异常类型引用。
+     *
+     * 与 command pattern 一样，这里显式补充当前容器的类型参数作用域，避免局部泛型 catch 类型解析失败。
+     */
     private fun resolveCatchPatternTypeRefs(catchPattern: CfirCatchPattern) {
         val additionalTypeParameters = context.containers
             .asSequence()
@@ -2549,6 +3071,7 @@ open class CfirExpressionsResolveTransformer(
         catchPattern.transformTypeRefs(specificTypeResolverTransformer, config)
     }
 
+    /** 提取 catch pattern 中已经解析成功的异常类型列表。 */
     private fun CfirCatchPattern.resolvedCatchTypes(): List<ConeCangJieType> {
         if (typeRefs.isEmpty()) return emptyList()
         return typeRefs.mapNotNull { typeRef ->
@@ -2556,6 +3079,7 @@ open class CfirExpressionsResolveTransformer(
         }
     }
 
+    /** 在类型的超类型链上查找标准库 effect `Command` 类型。 */
     private fun findCommandSupertype(type: ConeCangJieType?): ConeClassLikeType? {
         if (type == null) return null
         return collectSupertypeChain(type, session.typeContext)
@@ -2563,6 +3087,7 @@ open class CfirExpressionsResolveTransformer(
             .firstOrNull { it.lookupTag.classId == StdlibClassIds.Command }
     }
 
+    /** 判断类型是否可以作为 `resume throwing` 的异常类结果。 */
     private fun isExceptionLikeType(type: ConeCangJieType): Boolean {
         val exceptionType = constructNamedType(StdlibClassIds.Exception)
         val errorType = constructNamedType(StdlibClassIds.Error)
@@ -2570,6 +3095,12 @@ open class CfirExpressionsResolveTransformer(
                 AbstractTypeChecker.isSubtypeOf(session.typeContext, type, errorType) == true
     }
 
+    /**
+     * 归一化参与 Join 的类型。
+     *
+     * 错误类型如果携带 delegated type，则使用 delegated type 参与分支合成，
+     * 保留错误诊断的同时避免 Join 被错误包装阻断。
+     */
     private fun normalizeTypeForJoin(type: ConeCangJieType?): ConeCangJieType? {
         return when (type) {
             is ConeErrorType -> type.delegatedType ?: type
@@ -2577,6 +3108,12 @@ open class CfirExpressionsResolveTransformer(
         }
     }
 
+    /**
+     * 在解析匿名函数时暂时清空 effect handler 栈。
+     *
+     * handler 上下文不应跨越函数边界进入 lambda/body，因此这里保存外层快照，
+     * block 执行完成后再恢复。
+     */
     private inline fun <T> withClearedEffectHandlers(block: () -> T): T {
         if (effectHandlerStack.isEmpty()) return block()
 
@@ -2589,6 +3126,11 @@ open class CfirExpressionsResolveTransformer(
         }
     }
 
+    /**
+     * 广度优先收集一个类型的超类型闭包。
+     *
+     * 该 helper 服务于 effect command / exception-like 判定，使用 visited 集合避免递归继承环导致无限遍历。
+     */
     private fun collectSupertypeChain(
         type: ConeCangJieType,
         context: ConeInferenceContext,
@@ -2657,6 +3199,11 @@ open class CfirExpressionsResolveTransformer(
         return requestedType
     }
 
+    /**
+     * 提取当前 class 声明中已经解析成功的直接 class-like 父类型。
+     *
+     * 接口父类型会被过滤掉，因为 `super` 表达式只能绑定到直接 class/struct/enum 父实现类型。
+     */
     private fun CfirClass.directClassSuperTypes(): List<ConeCangJieType> {
         return superTypeRefs
             .filterIsInstance<CfirResolvedTypeRef>()
@@ -2664,6 +3211,7 @@ open class CfirExpressionsResolveTransformer(
             .filter { candidate -> candidate.isDirectClassSuperType() }
     }
 
+    /** 判断类型是否可作为 `super` 的直接实现父类型。 */
     private fun ConeCangJieType.isDirectClassSuperType(): Boolean = when (this) {
         is ConeClassLikeType -> !isInterface
         is ConeStructType, is ConeEnumType -> true
@@ -2672,14 +3220,21 @@ open class CfirExpressionsResolveTransformer(
 
     // ── Small Extension Utilities ─────────────────────────────────────────────
 
+    /** 按上下文无关模式解析当前表达式，用于 subject、iterable、receiver 等独立定型位置。 */
     private fun CfirExpression.resolveIndependently() {
         transform<CfirElement, ResolutionMode>(transformer, ResolutionMode.ContextIndependent)
     }
 
+    /** 在表达式已独立定型后，按上下文无关模式解析可选 block 体。 */
     private fun CfirExpression.resolveIndependently(body: CfirBlock?) {
         body?.transform<CfirElement, ResolutionMode>(transformer, ResolutionMode.ContextIndependent)
     }
 
+    /**
+     * 从解析模式中提取外层 expected type。
+     *
+     * 只有 [ResolutionMode.WithExpectedType] 携带 expected type；其他模式返回 `null`。
+     */
     private val ResolutionMode.expectedTypeOrNull: ConeCangJieType?
         get() = (this as? ResolutionMode.WithExpectedType)?.expectedTypeRef?.coneType
 
@@ -2705,6 +3260,11 @@ open class CfirExpressionsResolveTransformer(
         return ConePrimitiveType.INT64
     }
 
+    /**
+     * 归一化 range 元素类型。
+     *
+     * ideal integer 在没有更强上下文时按仓颉默认规则落到 `Int64`，其他 ideal type 通过统一 resolver 消解。
+     */
     private fun normalizeRangeElementType(type: ConeCangJieType): ConeCangJieType {
         val normalized = IdealTypeResolver.resolveIfIdeal(type, null)
         return if (normalized is ConePrimitiveType && normalized.kind == PrimitiveTypeKind.IDEAL_INT) {
@@ -2714,6 +3274,7 @@ open class CfirExpressionsResolveTransformer(
         }
     }
 
+    /** 判断类型是否是标准库 `Range`，并在 typealias 场景下沿展开类型继续查找。 */
     private fun ConeCangJieType.rangeTypeOrNull(): ConeClassifierType? = when (this) {
         is ConeClassLikeType -> takeIf { classId == StdlibClassIds.Range }
         is ConeStructType -> takeIf { classId == StdlibClassIds.Range }
@@ -2721,6 +3282,11 @@ open class CfirExpressionsResolveTransformer(
         else -> null
     }
 
+    /**
+     * 解析限定访问上的显式类型实参。
+     *
+     * 访问表达式可能出现在局部/成员泛型上下文中，因此这里补齐当前容器链类型参数后再解析 typeRef。
+     */
     private fun <T : CfirQualifiedAccessExpression> resolveAccessTypeArguments(access: T): T {
         if (access.typeArguments.isEmpty()) return access
 
@@ -2747,6 +3313,11 @@ open class CfirExpressionsResolveTransformer(
         return access
     }
 
+    /**
+     * 解析显式 `super<T>` 目标类型引用。
+     *
+     * 已解析或隐式 typeRef 直接复用；普通 typeRef 使用当前容器类型参数上下文完成解析。
+     */
     private fun resolveSuperTypeRef(typeRef: CfirTypeRef): CfirTypeRef {
         if (typeRef is CfirResolvedTypeRef || typeRef is CfirImplicitTypeRef) return typeRef
 
@@ -2764,6 +3335,12 @@ open class CfirExpressionsResolveTransformer(
         return specificTypeResolverTransformer.transformTypeRef(typeRef, config)
     }
 
+    /**
+     * 提取声明自身携带的类型参数列表。
+     *
+     * 该 helper 用于构造局部 typeRef 解析配置，覆盖 class、callable、extend、pattern variable
+     * 和宏声明等可能把类型参数暴露给表达式阶段的声明节点。
+     */
     private fun extractTypeParameters(declaration: CfirDeclaration): List<CfirTypeParameter> = when (declaration) {
         is CfirClass -> declaration.typeParameters
         is CfirInterface -> declaration.typeParameters

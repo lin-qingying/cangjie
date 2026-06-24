@@ -9,13 +9,13 @@ extend A {
     <!STATIC_AND_NON_STATIC_MEMBER_CANNOT_HAVE_SAME_NAME!>p<!>ublic func <!EXTEND_MEMBER_CANNOT_SHADOW!>f1<!>() {}
     public static func <!EXTEND_MEMBER_CANNOT_SHADOW!>f2<!>() {}
     public func <!EXTEND_MEMBER_CANNOT_SHADOW!>g1<!>() {}
-    public static func g2() {}
+    <!STATIC_AND_NON_STATIC_MEMBER_CANNOT_HAVE_SAME_NAME!>p<!>ublic static func <!EXTEND_MEMBER_CANNOT_SHADOW!>g2<!>() {}
 }
 
 extend A {
-    private func a() {}
-    public func b() {}
-    private func c() {}
+    private func <!EXTEND_MEMBER_CANNOT_SHADOW!>a<!>() {}
+    public func <!EXTEND_MEMBER_CANNOT_SHADOW!>b<!>() {}
+    private func <!EXTEND_MEMBER_CANNOT_SHADOW!>c<!>() {}
     public func d() {}
     private func e() {}
 }

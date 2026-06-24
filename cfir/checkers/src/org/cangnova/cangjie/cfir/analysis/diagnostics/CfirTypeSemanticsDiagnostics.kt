@@ -24,13 +24,18 @@ import org.cangnova.cangjie.type.AbstractTypeChecker
  * 这样可以避免 VArray 这类类型系统专门语义在多个入口重复实现。
  */
 internal sealed interface CfirSpecificTypeMismatch {
+    /** VArray 元素类型相同但长度不同导致的细分 type mismatch。 */
     data class VArraySizeMismatch(
+        /** 两个 VArray 共同的元素类型。 */
         val elementType: ConeCangJieType,
+        /** 期望类型中的 VArray 长度。 */
         val expectedSize: Long,
+        /** 实际类型中的 VArray 长度。 */
         val actualSize: Long,
     ) : CfirSpecificTypeMismatch
 }
 
+/** 在通用 type mismatch 的 expected/actual 类型对中识别 CFIR 专属的细分 mismatch。 */
 internal fun classifySpecificTypeMismatch(
     expectedType: ConeCangJieType,
     actualType: ConeCangJieType,
@@ -57,6 +62,7 @@ internal fun classifySpecificTypeMismatch(
     )
 }
 
+/** 根据细分 type mismatch 创建更精确的 CFIR 诊断；没有细分语义时返回空。 */
 internal fun specificTypeMismatchDiagnostic(
     source: AbstractCjSourceElement?,
     expectedType: ConeCangJieType,
@@ -75,6 +81,7 @@ internal fun specificTypeMismatchDiagnostic(
     }
 }
 
+/** 创建 VArray 长度不匹配的专用诊断。 */
 @OptIn(InternalDiagnosticFactoryMethod::class)
 private fun createVArraySizeMismatchDiagnostic(
     source: CjSourceElement,
@@ -91,10 +98,14 @@ private fun createVArraySizeMismatchDiagnostic(
     )
 }
 
+/** 为内部构造诊断提供最小 diagnostic context。 */
 private fun diagnosticContext(session: CfirSession): DiagnosticContext {
     return object : DiagnosticContext {
+        /** 诊断工厂渲染所需的语言版本设置。 */
         override val languageVersionSettings = session.languageVersionSettings
+        /** 该内部 context 不绑定具体文件路径。 */
         override val containingFilePath: String? = null
+        /** 内部构造阶段不应用 suppress 规则。 */
         override fun isDiagnosticSuppressed(diagnostic: CjDiagnostic): Boolean = false
     }
 }

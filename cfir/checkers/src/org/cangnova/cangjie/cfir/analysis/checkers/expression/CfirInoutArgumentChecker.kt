@@ -21,6 +21,7 @@ import org.cangnova.cangjie.cfir.types.ConeVArrayType
  * 调用 CFunc 时 VArray 类型的实参必须通过 `inout` 传入;否则报错。
  */
 object CfirInoutArgumentChecker : CfirFunctionCallChecker() {
+    /** 检查 CFunc 调用中 VArray 实参是否按 `inout` 形式传入。 */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirFunctionCall) {
         val ref = expression.calleeReference as? CfirResolvedNamedReference ?: return
@@ -48,6 +49,7 @@ object CfirInoutArgumentChecker : CfirFunctionCallChecker() {
         }
     }
 
+    /** 解开命名实参在 raw-cfir 中包裹出的单表达式 block。 */
     private fun unwrapArgument(argument: CfirExpression): CfirExpression {
         // 命名实参在 raw-cfir 中被包成单表达式 block（详见 PsiRawCfirBuilder.convertCallArgument）
         val inner = (argument as? CfirBlock)?.statements?.singleOrNull() as? CfirExpression ?: argument

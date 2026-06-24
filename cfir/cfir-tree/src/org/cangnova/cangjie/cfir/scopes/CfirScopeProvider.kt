@@ -5,7 +5,19 @@ import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.session.CfirSession
 
+/**
+ * 类成员 scope 的提供者。
+ *
+ * scope provider 把 class-like 声明、use-site session 和 [ScopeSession] 组合成可查询成员 scope。
+ * use-site scope、declaration-site scope 与 typealias 构造器 scope 的边界必须在这里保持清晰，
+ * 避免扩展成员、继承成员和类型别名构造语义互相污染。
+ */
 abstract class CfirScopeProvider {
+    /**
+     * 返回 use-site 成员 scope。
+     *
+     * use-site scope 用于调用解析和普通成员查询，允许包含从继承、扩展或替换规则引入的可见成员。
+     */
     abstract fun getUseSiteMemberScope(
         klass: CfirClass,
         useSiteSession: CfirSession,

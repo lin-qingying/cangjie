@@ -9,10 +9,19 @@ import org.cangnova.cangjie.cfir.resolve.match.exhaustive.ExhaustivenessResult
 import org.cangnova.cangjie.cfir.resolve.match.exhaustive.MatchExhaustivenessContext
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 
+/**
+ * 平凡穷尽性检查器。
+ *
+ * 空矩阵或顶层通配/绑定模式可以不进入复杂算法，直接产出结论或缺失通配模式。
+ */
 class TrivialChecker : ExhaustivenessChecker {
+    /** 当前 checker 来源。 */
     override val source: CheckSource = CheckSource.TRIVIAL
+
+    /** 当前 checker 优先级最高。 */
     override val priority: Int = 0
 
+    /** 判断是否存在可由平凡规则处理的模式。 */
     override fun isApplicable(
         type: ConeCangJieType,
         patterns: List<CfirMatchPattern>,
@@ -22,6 +31,7 @@ class TrivialChecker : ExhaustivenessChecker {
         return patterns.any(::isTopLevelWildcard)
     }
 
+    /** 执行平凡穷尽性检查。 */
     override fun check(
         matrix: CfirMatrix,
         type: ConeCangJieType,
@@ -39,6 +49,7 @@ class TrivialChecker : ExhaustivenessChecker {
         return ExhaustivenessResult.Skipped
     }
 
+    /** 判断模式是否为顶层通配或绑定模式。 */
     private fun isTopLevelWildcard(pattern: CfirMatchPattern): Boolean {
         return when (pattern.kind) {
             CfirMatchPatternKind.Wild, is CfirMatchPatternKind.Binding -> true
@@ -46,8 +57,9 @@ class TrivialChecker : ExhaustivenessChecker {
         }
     }
 
+    /** 单例实例。 */
     companion object {
+        /** 默认平凡检查器实例。 */
         val INSTANCE = TrivialChecker()
     }
 }
-

@@ -28,6 +28,12 @@ import org.cangnova.cangjie.type.AbstractTypeChecker
  * 按元素类型检查右值。
  */
 object CfirAssignmentTypeMismatchChecker : CfirAssignmentChecker() {
+    /**
+     * 检查赋值右值类型是否能赋给左值类型。
+     *
+     * VArray 下标赋值需要在这里按元素类型处理，普通下标赋值仍由 operator set 调用解析负责；
+     * 当 `this` / `super` 接收者参与不兼容赋值时额外报告接收者位置的类型不兼容诊断。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirAssignment) {
         val lValue = expression.lValue

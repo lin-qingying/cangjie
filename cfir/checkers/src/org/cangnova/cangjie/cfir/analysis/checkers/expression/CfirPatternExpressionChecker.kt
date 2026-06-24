@@ -15,6 +15,7 @@ import org.cangnova.cangjie.cfir.patterns.CfirTuplePattern
 import org.cangnova.cangjie.cfir.patterns.CfirTypePattern
 import org.cangnova.cangjie.cfir.patterns.CfirWildcardPattern
 import org.cangnova.cangjie.cfir.patterns.CfirVarOrEnumPattern
+import org.cangnova.cangjie.cfir.patterns.bindingOccurrences
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralKind
 import org.cangnova.cangjie.cfir.types.ConeErrorType
@@ -29,6 +30,9 @@ import org.cangnova.cangjie.cfir.types.coneTypeOrNull
  * - 常量模式中不能使用字符串插值
  */
 object CfirOrPatternVariableChecker : CfirMatchExpressionChecker() {
+    /**
+     * 检查 match 表达式中所有 pattern 的 or-pattern 附加约束。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirMatchExpression) {
         val subjectType = expression.subject?.coneTypeOrNull ?: return
@@ -52,17 +56,16 @@ object CfirOrPatternVariableChecker : CfirMatchExpressionChecker() {
     private fun checkOrPatternConstraints(pattern: CfirPattern) {
         when (pattern) {
             is CfirOrPattern -> {
-                // 检查变量引入
-                for (alt in pattern.alternatives) {
-                    if (containsBinding(alt)) {
-                        reporter.reportOn(
-                            source = alt.source,
-                            factory = CfirErrors.VAR_IN_OR_PATTERN,
-                        )
-                    }
+                val firstBinding = pattern.bindingOccurrences().firstOrNull()
+                if (firstBinding != null) {
+                    reporter.reportOn(
+                        source = firstBinding.source ?: pattern.source,
+                        factory = CfirErrors.VAR_IN_OR_PATTERN,
+                    )
+                } else {
+                    // 官方 ChkMatchCasePatterns 中变量绑定检查失败后会短路，不继续检查 kind 一致性。
+                    checkOrPatternKindConsistency(pattern)
                 }
-                // 检查子模式类型一致性
-                checkOrPatternKindConsistency(pattern)
                 // 递归检查子模式
                 for (alt in pattern.alternatives) {
                     checkOrPatternConstraints(alt)
@@ -88,19 +91,32 @@ object CfirOrPatternVariableChecker : CfirMatchExpressionChecker() {
         val alternatives = orPattern.alternatives
         if (alternatives.size < 2) return
 
-        val firstKind = patternKindName(alternatives.first())
+        val firstKind = patternKindKey(alternatives.first())
         for (i in 1 until alternatives.size) {
-            val altKind = patternKindName(alternatives[i])
+            val altKind = patternKindKey(alternatives[i])
             if (altKind != firstKind) {
                 reporter.reportOn(
                     source = alternatives[i].source,
                     factory = CfirErrors.DIFFERENT_OR_PATTERN,
-                    a = "expected '$firstKind' but found '$altKind'",
+                    a = "expected '${patternKindName(alternatives.first())}' but found '${patternKindName(alternatives[i])}'",
                 )
             }
         }
     }
 
+    /**
+     * 取得 pattern 用于 or-pattern 同类比较的类别键。
+     */
+    private fun patternKindKey(pattern: CfirPattern): String = when (pattern) {
+        is CfirEnumPattern,
+        is CfirVarOrEnumPattern,
+        -> "enum-or-variable"
+        else -> patternKindName(pattern)
+    }
+
+    /**
+     * 取得 pattern 类别的诊断展示名称。
+     */
     private fun patternKindName(pattern: CfirPattern): String = when (pattern) {
         is CfirEnumPattern -> "enum"
         is CfirConstPattern -> "constant"
@@ -111,14 +127,6 @@ object CfirOrPatternVariableChecker : CfirMatchExpressionChecker() {
         is CfirExpressionPattern -> "expression"
         is CfirVarOrEnumPattern -> "variable"
         else -> "unknown"
-    }
-
-    private fun containsBinding(pattern: CfirPattern): Boolean = when (pattern) {
-        is CfirBindingPattern -> true
-        is CfirVarOrEnumPattern -> true
-        is CfirTuplePattern -> pattern.elements.any { containsBinding(it) }
-        is CfirOrPattern -> pattern.alternatives.any { containsBinding(it) }
-        else -> false
     }
 }
 

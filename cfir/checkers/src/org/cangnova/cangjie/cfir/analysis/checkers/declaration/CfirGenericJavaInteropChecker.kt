@@ -33,8 +33,14 @@ import org.cangnova.cangjie.name.Name
  * 注册为 classLikeCheckers
  */
 object CfirGenericJavaInteropChecker : CfirClassLikeChecker() {
+    /**
+     * Java 互操作注解名。
+     */
     private val JAVA = Name.identifier("Java")
 
+    /**
+     * 检查带 `@Java` 的 class-like 声明的泛型互操作约束。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirClassLikeDeclaration) {
         if (!declaration.hasAnnotation(JAVA)) return
@@ -43,6 +49,9 @@ object CfirGenericJavaInteropChecker : CfirClassLikeChecker() {
         checkGenericUpperBoundsAreJava(declaration)
     }
 
+    /**
+     * 读取 class-like 声明直接拥有的类型参数列表。
+     */
     private fun CfirClassLikeDeclaration.typeParametersList(): List<CfirTypeParameter> = when (this) {
         is CfirClass -> typeParameters
         is CfirStruct -> typeParameters
@@ -119,6 +128,9 @@ object CfirGenericJavaInteropChecker : CfirClassLikeChecker() {
         }
     }
 
+    /**
+     * 判断类型树中是否引用了指定类型参数名称集合中的任意一个。
+     */
     private fun typeContainsAnyParam(type: ConeCangJieType, paramNames: Set<Name>): Boolean {
         if (type is ConeTypeParameterType && type.lookupTag.name in paramNames) return true
         for (arg in type.typeArguments) {

@@ -2,6 +2,7 @@ package org.cangnova.cangjie.cfir.resolve.providers
 
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
+import org.cangnova.cangjie.cfir.declarations.CfirTypeParameterRefsOwner
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.session.CfirSession
@@ -10,7 +11,9 @@ import org.cangnova.cangjie.cfir.session.extendProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.session.typeAwareSupertypeProviderOrNull
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
+import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.symbols.constructType
 import org.cangnova.cangjie.cfir.types.CfirTypeSubstitutorByMap
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
@@ -48,12 +51,44 @@ fun createCallableOwnerUseSiteSubstitutionMap(
         ?: return emptyMap()
     val concreteOwnerType = findConcreteOwnerType(session, receiverType, ownerClassId)
         ?: return emptyMap()
-    val ownerDeclaration = session.symbolProvider.getClassLikeSymbolByClassId(ownerClassId)?.cfir
+    val ownerSymbol = session.symbolProvider.getClassLikeSymbolByClassId(ownerClassId)
+    val ownerDeclaration = ownerSymbol?.cfir
         ?: session.cfirProvider.getCfirClassifierByFqName(ownerClassId)
         ?: return emptyMap()
+    if (
+        originalCallableSymbol !is CfirEnumConstructorSymbol &&
+        ownerSymbol != null &&
+        concreteOwnerType.isBareOrDeclarationSelfTypeOf(ownerSymbol)
+    ) {
+        return emptyMap()
+    }
     return createClassLikeOwnerSubstitutionMap(ownerDeclaration, concreteOwnerType)
 }
 
+/**
+ * 裸 classifier qualifier 会被构造成声明自身类型 `A<T>`，用于把 owner 类型参数交给调用推断。
+ *
+ * 这种类型不是用户显式提供的 use-site 实参，不能在 provider 层提前替换成已知实参；
+ * 否则 static 成员调用会在 fresh-variable 阶段之前失去可推断的 owner 类型参数。
+ */
+fun ConeCangJieType.isBareOrDeclarationSelfTypeOf(ownerSymbol: CfirClassLikeSymbol<*>): Boolean {
+    val ownerType = this as? ConeLookupTagBasedType ?: return false
+    if (ownerType.classIdOrPrimitiveClassId != ownerSymbol.classId) return false
+    if (ownerType.typeArguments.isEmpty()) return true
+
+    val ownerTypeParameters = (ownerSymbol.cfir as? CfirTypeParameterRefsOwner)?.typeParameters.orEmpty()
+    if (ownerTypeParameters.isEmpty()) return false
+    if (ownerType.typeArguments.size != ownerTypeParameters.size) return false
+
+    return ownerType.typeArguments.zip(ownerTypeParameters).all { (argument, typeParameter) ->
+        val argumentType = argument.type as? ConeTypeParameterType ?: return@all false
+        argumentType.lookupTag.typeParameterSymbol == typeParameter.symbol
+    }
+}
+
+/**
+ * 为 extend 成员构造 owner 类型参数到 use-site 实参的替换表。
+ */
 private fun createExtendOwnerSubstitutionMap(
     session: CfirSession,
     ownerExtend: org.cangnova.cangjie.cfir.declarations.CfirExtend,
@@ -71,6 +106,9 @@ private fun createExtendOwnerSubstitutionMap(
     }.toMap()
 }
 
+/**
+ * 当 callable 是 enum constructor 时，从 receiver 类型恢复 owner enum 的 [ClassId]。
+ */
 private fun enumConstructorOwnerClassId(
     callableSymbol: CfirCallableSymbol<*>,
     receiverType: ConeCangJieType,
@@ -80,6 +118,9 @@ private fun enumConstructorOwnerClassId(
     return receiverType.fullyExpandedType(session).expandedClassIdOrPrimitiveClassId
 }
 
+/**
+ * 创建 callable owner use-site 替换器。
+ */
 fun createCallableOwnerUseSiteSubstitutor(
     session: CfirSession,
     callableSymbol: CfirCallableSymbol<*>?,
@@ -90,6 +131,9 @@ fun createCallableOwnerUseSiteSubstitutor(
         ?: ConeSubstitutor.Empty
 }
 
+/**
+ * 在 receiver 类型及其直接父类型链中寻找实际声明 [ownerClassId] 的具体类型。
+ */
 private fun findConcreteOwnerType(
     session: CfirSession,
     receiverType: ConeCangJieType,
@@ -112,6 +156,9 @@ private fun findConcreteOwnerType(
     return null
 }
 
+/**
+ * 为 class-like owner 构造类型参数到具体 owner 类型实参的替换表。
+ */
 private fun createClassLikeOwnerSubstitutionMap(
     declaration: CfirClassLikeDeclaration,
     concreteOwnerType: ConeCangJieType,

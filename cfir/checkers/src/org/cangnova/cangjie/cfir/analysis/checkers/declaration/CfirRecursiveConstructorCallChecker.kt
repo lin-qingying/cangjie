@@ -49,6 +49,9 @@ import org.cangnova.cangjie.name.ClassId
  * - 同一个 cycle 只由源文件中最早的类型声明报告，保持官方全局 DFS 的单报语义。
  */
 object CfirRecursiveConstructorCallChecker : CfirClassLikeChecker() {
+    /**
+     * 检查 class/struct 声明是否存在递归构造调用闭环。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirClassLikeDeclaration) {
         if (declaration !is CfirClass && declaration !is CfirStruct) return
@@ -75,15 +78,44 @@ object CfirRecursiveConstructorCallChecker : CfirClassLikeChecker() {
  * 非递归构造器时不会被误判为回到当前类。
  */
 private class RecursiveConstructorGraph(
+    /**
+     * 当前检查上下文。
+     */
     private val context: CheckerContext,
 ) {
+    /**
+     * 已完成遍历的构造器集合。
+     */
     private val finishedConstructors = mutableSetOf<CfirConstructor>()
+
+    /**
+     * 当前 DFS 栈上的构造器集合。
+     */
     private val visitingConstructors = linkedSetOf<CfirConstructor>()
+
+    /**
+     * 已完成遍历的构造调用集合。
+     */
     private val finishedCalls = mutableSetOf<CfirFunctionCall>()
+
+    /**
+     * 当前 DFS 栈上的构造调用集合。
+     */
     private val visitingCalls = linkedSetOf<CfirFunctionCall>()
+
+    /**
+     * 当前 DFS 路径。
+     */
     private val path = mutableListOf<RecursiveConstructorNode>()
+
+    /**
+     * 按 class id 缓存的字段初始化器构造调用依赖。
+     */
     private val initializerCallsByClassId = mutableMapOf<ClassId, List<CfirFunctionCall>>()
 
+    /**
+     * 从指定 class-like 声明出发查找递归构造调用环。
+     */
     fun findCycleOrNull(declaration: CfirClassLikeDeclaration): RecursiveConstructorCycle? {
         for (member in declaration.declarations) {
             when (member) {
@@ -101,6 +133,9 @@ private class RecursiveConstructorGraph(
         return null
     }
 
+    /**
+     * 访问具体构造器节点。
+     */
     private fun visitConstructor(constructor: CfirConstructor): RecursiveConstructorCycle? {
         if (constructor in finishedConstructors) return null
 
@@ -122,6 +157,9 @@ private class RecursiveConstructorGraph(
         return null
     }
 
+    /**
+     * 访问构造器调用节点。
+     */
     private fun visitConstructorCall(call: CfirFunctionCall): RecursiveConstructorCycle? {
         if (call in finishedCalls) return null
         val targetConstructor = call.targetConstructorOrNull() ?: return null
@@ -144,6 +182,9 @@ private class RecursiveConstructorGraph(
         return null
     }
 
+    /**
+     * 以当前构造器节点构造递归环描述。
+     */
     private fun buildCycleFor(constructor: CfirConstructor): RecursiveConstructorCycle {
         val startIndex = path.indexOfFirst { node ->
             node is RecursiveConstructorNode.Constructor && node.declaration === constructor
@@ -155,6 +196,9 @@ private class RecursiveConstructorGraph(
         )
     }
 
+    /**
+     * 以当前构造调用节点构造递归环描述。
+     */
     private fun buildCycleFor(call: CfirFunctionCall): RecursiveConstructorCycle {
         val startIndex = path.indexOfFirst { node ->
             node is RecursiveConstructorNode.Call && node.call === call
@@ -166,12 +210,18 @@ private class RecursiveConstructorGraph(
         )
     }
 
+    /**
+     * 收集构造器依赖的构造调用。
+     */
     private fun CfirConstructor.dependencyCalls(): List<CfirFunctionCall> {
         val ownerInitializerCalls = ownerClassLikeDeclarationOrNull()?.initializerConstructorCalls().orEmpty()
         val bodyCalls = body?.collectConstructorDependencyCalls().orEmpty()
         return ownerInitializerCalls + bodyCalls
     }
 
+    /**
+     * 查找隐式 super() 构造依赖。
+     */
     private fun CfirConstructor.implicitSuperConstructorDependencyOrNull(): CfirConstructor? {
         if (body?.statements?.firstOrNull().constructorDelegationCallOrNull() != null) return null
         val owner = ownerClassLikeDeclarationOrNull() as? CfirClass ?: return null
@@ -184,6 +234,9 @@ private class RecursiveConstructorGraph(
             .firstOrNull { constructor -> constructor.requiredParameterCount() == 0 }
     }
 
+    /**
+     * 收集类型字段初始化器中的构造调用依赖。
+     */
     private fun CfirClassLikeDeclaration.initializerConstructorCalls(): List<CfirFunctionCall> {
         val classId = classIdOrNull() ?: return emptyList()
         return initializerCallsByClassId.getOrPut(classId) {
@@ -194,6 +247,9 @@ private class RecursiveConstructorGraph(
         }
     }
 
+    /**
+     * 从 CFIR 元素直接求值路径中收集构造调用依赖。
+     */
     private fun CfirElement.collectConstructorDependencyCalls(): List<CfirFunctionCall> {
         val result = mutableListOf<CfirFunctionCall>()
         accept(object : CfirVisitorVoid() {
@@ -219,22 +275,34 @@ private class RecursiveConstructorGraph(
         return result
     }
 
+    /**
+     * 解析函数调用对应的目标构造器。
+     */
     private fun CfirFunctionCall.targetConstructorOrNull(): CfirConstructor? {
         val symbol = resolvedConstructorSymbolOrNull() ?: return null
         return symbol.cfir as? CfirConstructor
     }
 
+    /**
+     * 从函数调用引用中解析构造器符号。
+     */
     private fun CfirFunctionCall.resolvedConstructorSymbolOrNull(): CfirConstructorSymbol? =
         when (val reference = calleeReference) {
             is CfirResolvedNamedReference -> reference.resolvedSymbol as? CfirConstructorSymbol
             else -> null
         }
 
+    /**
+     * 查找构造器所属 class-like 声明。
+     */
     private fun CfirConstructor.ownerClassLikeDeclarationOrNull(): CfirClassLikeDeclaration? {
         val classId = symbol.callableId.classId ?: return null
         return context.session.symbolProvider.getClassLikeSymbolByClassId(classId)?.cfir as? CfirClassLikeDeclaration
     }
 
+    /**
+     * 返回 class/struct 声明的 ClassId。
+     */
     private fun CfirClassLikeDeclaration.classIdOrNull(): ClassId? =
         when (this) {
             is CfirClass -> symbol.classId
@@ -242,6 +310,9 @@ private class RecursiveConstructorGraph(
             else -> null
         }
 
+    /**
+     * 从 DFS 路径中提取参与递归环的 owner 声明列表。
+     */
     private fun List<RecursiveConstructorNode>.ownerDeclarations(): List<CfirClassLikeDeclaration> =
         mapNotNullTo(mutableListOf()) { node ->
             when (node) {
@@ -253,25 +324,57 @@ private class RecursiveConstructorGraph(
 
 }
 
+/**
+ * 递归构造依赖图节点。
+ */
 private sealed class RecursiveConstructorNode {
+    /**
+     * 构造器声明节点。
+     */
     class Constructor(val declaration: CfirConstructor) : RecursiveConstructorNode()
+
+    /**
+     * 构造器调用节点。
+     */
     class Call(val call: CfirFunctionCall) : RecursiveConstructorNode()
 }
 
+/**
+ * 递归构造调用环。
+ *
+ * @property head 用于诊断定位的环头节点。
+ * @property declarations 参与环的 class-like 声明集合。
+ */
 private data class RecursiveConstructorCycle(
+    /**
+     * 用于诊断定位的环头节点。
+     */
     val head: RecursiveConstructorNode,
+
+    /**
+     * 参与环的 class-like 声明集合。
+     */
     val declarations: List<CfirClassLikeDeclaration>,
 )
 
+/**
+ * 取得递归构造诊断源码范围。
+ */
 private fun RecursiveConstructorNode.diagnosticSource(context: CheckerContext) = when (this) {
     is RecursiveConstructorNode.Constructor -> declaration.recursiveConstructorDiagnosticSource(context)
     is RecursiveConstructorNode.Call -> call.calleeReference.source ?: call.source
 }
 
+/**
+ * 取得构造器递归诊断源码范围。
+ */
 private fun CfirConstructor.recursiveConstructorDiagnosticSource(context: CheckerContext) =
     implicitPrimaryConstructorOwner(context)?.classLikeNameDiagnosticSource()
         ?: constructorNameDiagnosticSource()
 
+/**
+ * 判断构造器是否是隐式主构造器，并返回其 owner。
+ */
 private fun CfirConstructor.implicitPrimaryConstructorOwner(context: CheckerContext): CfirClassLikeDeclaration? {
     val owner = ownerClassLikeDeclarationOrNull(context) ?: return null
     val constructorSource = source ?: return null
@@ -282,11 +385,17 @@ private fun CfirConstructor.implicitPrimaryConstructorOwner(context: CheckerCont
     }
 }
 
+/**
+ * 查找构造器所属 class-like 声明。
+ */
 private fun CfirConstructor.ownerClassLikeDeclarationOrNull(context: CheckerContext): CfirClassLikeDeclaration? {
     val classId = symbol.callableId.classId ?: return null
     return context.session.symbolProvider.getClassLikeSymbolByClassId(classId)?.cfir as? CfirClassLikeDeclaration
 }
 
+/**
+ * 返回 class/struct 声明的 ClassId。
+ */
 private fun CfirClassLikeDeclaration.classIdOrNull(): ClassId? =
     when (this) {
         is CfirClass -> symbol.classId

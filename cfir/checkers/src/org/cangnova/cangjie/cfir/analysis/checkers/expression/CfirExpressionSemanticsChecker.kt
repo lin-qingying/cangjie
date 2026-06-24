@@ -72,6 +72,11 @@ import java.math.BigInteger
  * - FLOAT_LITERAL_TOO_SMALL: 小于目标类型最小正值（警告）
  */
 object CfirFloatLiteralRangeChecker : CfirLiteralExpressionChecker() {
+    /**
+     * 检查浮点字面量的特殊值和 Float32 目标范围。
+     *
+     * NaN/Infinity 直接按错误报告；解析类型为 Float32 时进一步区分过大和过小的 warning。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirLiteralExpression) {
         val value = expression.value
@@ -122,6 +127,12 @@ object CfirFloatLiteralRangeChecker : CfirLiteralExpressionChecker() {
  * Cone diagnostic -> CFIR diagnostic 映射产生。
  */
 object CfirExpressionWithErrorTypeChecker : CfirBasicExpressionChecker() {
+    /**
+     * 将表达式自身携带的 Cone 错误类型诊断映射到 CFIR 诊断。
+     *
+     * 该入口会跳过已经由子表达式、引用节点、显式错误类型引用或特殊控制流节点报告过的错误，
+     * 保证错误类型诊断不会重复落点。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirStatement) {
         if (expression !is CfirExpression) return
@@ -184,6 +195,9 @@ object CfirExpressionWithErrorTypeChecker : CfirBasicExpressionChecker() {
  * 对齐 C++ DiagKind::sema_use_mutable_func_alone
  */
 object CfirMutFuncReferenceChecker : CfirQualifiedAccessChecker() {
+    /**
+     * 检查 `mut` 函数是否被单独引用而非调用。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirQualifiedAccessExpression) {
         if (expression is CfirFunctionCall) return
@@ -198,6 +212,9 @@ object CfirMutFuncReferenceChecker : CfirQualifiedAccessChecker() {
         )
     }
 
+    /**
+     * 从 qualified access 中解析目标函数符号。
+     */
     private fun CfirQualifiedAccessExpression.resolvedFunctionSymbolOrNull(): CfirFunctionSymbol<*>? {
         return when (val reference = calleeReference) {
             is CfirResolvedNamedReference -> reference.resolvedSymbol as? CfirNamedFunctionSymbol
@@ -213,6 +230,9 @@ object CfirMutFuncReferenceChecker : CfirQualifiedAccessChecker() {
  * 对齐 C++ DiagKind::sema_unsafe_func_can_only_be_called
  */
 object CfirUnsafeFuncReferenceChecker : CfirQualifiedAccessChecker() {
+    /**
+     * 检查 `unsafe` 函数是否被单独引用而非调用。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirQualifiedAccessExpression) {
         if (expression is CfirFunctionCall) return
@@ -226,6 +246,9 @@ object CfirUnsafeFuncReferenceChecker : CfirQualifiedAccessChecker() {
         )
     }
 
+    /**
+     * 从 qualified access 中解析目标函数符号。
+     */
     private fun CfirQualifiedAccessExpression.resolvedFunctionSymbolOrNull(): CfirFunctionSymbol<*>? {
         return when (val reference = calleeReference) {
             is CfirResolvedNamedReference -> reference.resolvedSymbol as? CfirNamedFunctionSymbol
@@ -246,6 +269,11 @@ object CfirUnsafeFuncReferenceChecker : CfirQualifiedAccessChecker() {
  * basic expression 分发上，而不能挂在 qualified access 分发上。
  */
 object CfirFinalizerThisUsageChecker : CfirBasicExpressionChecker() {
+    /**
+     * 检查 finalizer 中裸 `this` 的非法使用。
+     *
+     * 作为成员访问显式接收者的 `this` 被允许，其余作为普通值流动的 `this` 报 finalizer 限制诊断。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirStatement) {
         if (expression !is CfirThisReceiverExpression) return
@@ -272,6 +300,12 @@ object CfirFinalizerThisUsageChecker : CfirBasicExpressionChecker() {
  * 仍继承外层构造器语义；`this.member` 只是成员访问接收者，不由本规则报告。
  */
 object CfirOpenConstructorThisUsageChecker : CfirBasicExpressionChecker() {
+    /**
+     * 检查 open/abstract class 构造器中的裸显式 `this`。
+     *
+     * 隐式 `this` 和成员访问接收者不由本规则报告；普通表达式位置的显式 `this` 使用构造器所属
+     * class kind 构造诊断消息。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirStatement) {
         if (expression !is CfirThisReceiverExpression) return
@@ -292,6 +326,31 @@ object CfirOpenConstructorThisUsageChecker : CfirBasicExpressionChecker() {
 }
 
 /**
+ * static 函数体中禁止引用实例 `this`。
+ *
+ * 官方 `TypeCheckReference.cpp::CheckUsageOfThis` 在当前函数体带 `static`
+ * 属性时报告 `sema_static_members_cannot_call_members`。这里挂在 basic
+ * expression checker 上，覆盖裸 `this` 与 `this.member` 接收者。
+ */
+object CfirStaticContextThisUsageChecker : CfirBasicExpressionChecker() {
+    /**
+     * 检查 static 函数体内的显式实例 `this`。
+     */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    override fun check(expression: CfirStatement) {
+        if (expression !is CfirThisReceiverExpression) return
+        if (expression.calleeReference.isImplicit) return
+        val containingFunction = context.findClosestDeclaration<CfirFunction>() ?: return
+        if (!containingFunction.status.isStatic) return
+
+        reporter.reportOn(
+            source = expression.calleeReference.source ?: expression.source,
+            factory = CfirErrors.STATIC_MEMBERS_CANNOT_CALL_MEMBERS,
+        )
+    }
+}
+
+/**
  * open/abstract class 构造器中禁止访问实例函数或属性。
  *
  * 官方 `TypeCheckExpr.cpp::CheckForbiddenFuncReferenceAccess` 对 class-like 与 extend
@@ -299,6 +358,11 @@ object CfirOpenConstructorThisUsageChecker : CfirBasicExpressionChecker() {
  * callable 的 dispatch receiver 判断实例成员，并覆盖调用、函数引用与属性访问。
  */
 object CfirOpenConstructorMemberAccessChecker : CfirQualifiedAccessChecker() {
+    /**
+     * 检查 open/abstract class 构造器中对实例成员的访问。
+     *
+     * 当前实例接收者上的实例函数和属性访问会被禁止；属性作为可写赋值左值时交由初始化/赋值规则处理。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirQualifiedAccessExpression) {
         val owner = context.openClassConstructorOwner() ?: return
@@ -324,11 +388,21 @@ object CfirOpenConstructorMemberAccessChecker : CfirQualifiedAccessChecker() {
         )
     }
 
+    /**
+     * 判断访问是否使用当前实例作为接收者。
+     *
+     * 无显式接收者表示隐式当前实例接收者，显式 `this` / `super` 也属于当前实例访问。
+     */
     private fun CfirQualifiedAccessExpression.usesCurrentInstanceReceiver(): Boolean {
         val receiver = explicitReceiver
         return receiver == null || receiver is CfirThisReceiverExpression || receiver is CfirSuperReceiverExpression
     }
 
+    /**
+     * 从引用节点解析 callable 声明目标。
+     *
+     * 正常引用、错误恢复引用、候选引用和携带单候选诊断的错误引用都可能提供真实 callable。
+     */
     private fun CfirQualifiedAccessExpression.resolvedCallableTarget(): CfirCallableDeclaration? {
         return when (val reference = calleeReference) {
             is CfirResolvedNamedReference -> reference.resolvedSymbol.cfir as? CfirCallableDeclaration
@@ -340,6 +414,12 @@ object CfirOpenConstructorMemberAccessChecker : CfirQualifiedAccessChecker() {
         }
     }
 
+    /**
+     * 判断 callable 是否属于 open 构造器中禁止访问的实例成员。
+     *
+     * 构造器、枚举构造器、static 成员不受限；普通成员通过 dispatch receiver 判断，extend 成员
+     * 通过 extend provider 判断其所属 extend 是否可访问。
+     */
     context(context: CheckerContext)
     private fun CfirCallableDeclaration.isForbiddenOpenConstructorMember(): Boolean {
         if (this is CfirConstructor || this is CfirEnumConstructor) return false
@@ -351,6 +431,11 @@ object CfirOpenConstructorMemberAccessChecker : CfirQualifiedAccessChecker() {
         return extendProvider.isExtendAccessible(ownerExtend)
     }
 
+    /**
+     * 判断当前 qualified access 是否作为可写属性赋值左值出现。
+     *
+     * 有 setter 的属性左值由赋值/初始化规则决定，不作为 open 构造器成员访问规则的直接错误。
+     */
     context(context: CheckerContext)
     private fun CfirQualifiedAccessExpression.isWritablePropertyAssignmentLValue(property: CfirProperty): Boolean {
         if (property.setter == null) return false
@@ -370,6 +455,9 @@ object CfirOpenConstructorMemberAccessChecker : CfirQualifiedAccessChecker() {
  * 这里在解析后的 qualified access 上检查目标函数状态，并把诊断落在 `super` 关键字。
  */
 object CfirAbstractSuperMemberAccessChecker : CfirQualifiedAccessChecker() {
+    /**
+     * 检查通过 `super` 直接访问抽象函数的场景。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirQualifiedAccessExpression) {
         val receiver = expression.explicitReceiver as? CfirSuperReceiverExpression ?: return
@@ -384,6 +472,9 @@ object CfirAbstractSuperMemberAccessChecker : CfirQualifiedAccessChecker() {
         )
     }
 
+    /**
+     * 从引用节点解析 callable 声明目标。
+     */
     private fun CfirQualifiedAccessExpression.resolvedCallableTarget(): CfirCallableDeclaration? {
         return when (val reference = calleeReference) {
             is CfirResolvedNamedReference -> reference.resolvedSymbol.cfir as? CfirCallableDeclaration
@@ -396,6 +487,11 @@ object CfirAbstractSuperMemberAccessChecker : CfirQualifiedAccessChecker() {
     }
 }
 
+/**
+ * 查找当前上下文中 open/abstract class 的构造器所属类。
+ *
+ * 只有调用栈中存在构造器且最近 class 为 open 或 abstract 时返回 owner。
+ */
 private fun CheckerContext.openClassConstructorOwner(): CfirClass? {
     containingDeclarations.asReversed().firstOrNull { it is CfirConstructor } ?: return null
     val owner = findClosestDeclaration<CfirClass>() ?: return null
@@ -410,6 +506,11 @@ private fun CheckerContext.openClassConstructorOwner(): CfirClass? {
  * - 这里只检查不依赖 operator resolve 的 subscript 语义。
  */
 object CfirSubscriptAssignmentChecker : CfirSubscriptExpressionChecker() {
+    /**
+     * 检查 VArray 下标表达式的内建语义。
+     *
+     * VArray 只允许单个 Int64 兼容索引，常量索引必须位于 `[0, size)` 范围内。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirSubscriptExpression) {
         val receiverType = expression.receiver.coneTypeOrNull
@@ -462,6 +563,9 @@ object CfirSubscriptAssignmentChecker : CfirSubscriptExpressionChecker() {
  * - `throw` 表达式本身在 resolve 阶段保持 `Nothing`，这里只负责诊断。
  */
 object CfirThrowExpressionTypeChecker : CfirThrowExpressionChecker() {
+    /**
+     * 检查 `throw` 后表达式是否为 Exception 或 Error 子类型。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirThrowExpression) {
         val thrownType = expression.exception.coneTypeOrNull ?: return
@@ -484,6 +588,11 @@ object CfirThrowExpressionTypeChecker : CfirThrowExpressionChecker() {
  * - 后续 catch 类型若已被前面的 catch 类型覆盖，报告 `USELESS_EXCEPTION_TYPE`。
  */
 object CfirCatchTypeChecker : CfirTryExpressionChecker() {
+    /**
+     * 检查 catch 类型合法性和覆盖关系。
+     *
+     * 每个 catch pattern 的类型必须是 Exception/Error 子类型，且不能被前面已经包含的 catch 类型覆盖。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirTryExpression) {
         val includedTypes = mutableListOf<ConeCangJieType>()
@@ -513,6 +622,11 @@ object CfirCatchTypeChecker : CfirTryExpressionChecker() {
     }
 }
 
+/**
+ * 解析 catch pattern 中声明的 catch 类型列表。
+ *
+ * 无显式类型时按官方默认 Exception 类型处理，并保留源码范围用于诊断定位。
+ */
 private fun CfirCatchPattern.resolvedCatchTypes(): List<Pair<ConeCangJieType, CjSourceElement?>> {
     if (typeRefs.isEmpty()) {
         return listOf(
@@ -533,6 +647,11 @@ private fun CfirCatchPattern.resolvedCatchTypes(): List<Pair<ConeCangJieType, Cj
  * 但即使类型不匹配，资源绑定名和 try body 仍继续分析。
  */
 object CfirTryResourceTypeChecker : CfirTryExpressionChecker() {
+    /**
+     * 检查 try-with-resources 资源表达式类型。
+     *
+     * 每个资源声明的返回类型必须是 `std.core.Resource` 子类型，错误类型不重复报告。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirTryExpression) {
         if (expression.resources.isEmpty()) return
@@ -554,6 +673,9 @@ object CfirTryResourceTypeChecker : CfirTryExpressionChecker() {
     }
 }
 
+/**
+ * 判断类型是否为 `std.core.Exception` 或 `std.core.Error` 的子类型。
+ */
 private fun ConeCangJieType.isSubtypeOfExceptionOrError(
     context: CheckerContext,
 ): Boolean {
@@ -562,6 +684,9 @@ private fun ConeCangJieType.isSubtypeOfExceptionOrError(
     return isSubtypeOf(exceptionType, context) || isSubtypeOf(errorType, context)
 }
 
+/**
+ * 使用当前会话类型上下文判断 this 是否为指定超类型的子类型。
+ */
 private fun ConeCangJieType.isSubtypeOf(
     superType: ConeCangJieType,
     context: CheckerContext,

@@ -22,12 +22,21 @@ import org.cangnova.cangjie.name.Name
  */
 class CfirExplicitSimpleImportingScope(
     imports: List<CfirImport>,
+    /**
+     * 用于按 import FQ name 查询 symbol 的 provider。
+     */
     private val symbolProvider: CfirSymbolProvider,
     resolvedImports: List<CfirResolvedImportBinding>? = null,
 ) : CfirImportScope() {
 
-    /** 按有效名称（别名或短名称）索引的导入条目 */
+    /**
+     * 按有效名称（别名或短名称）索引的导入条目。
+     */
     private val importsByName: Map<Name, List<CfirImport>>
+
+    /**
+     * 按有效名称索引的已解析导入绑定。
+     */
     private val resolvedImportsByName: Map<Name, List<CfirResolvedImportBinding>>?
 
     init {
@@ -44,6 +53,9 @@ class CfirExplicitSimpleImportingScope(
             ?.groupBy { it.effectiveName }
     }
 
+    /**
+     * 按名称处理精确导入的 classifier。
+     */
     override fun processClassifiersByName(name: Name, processor: (CfirClassLikeSymbol<*>) -> Unit) {
         val resolvedImports = resolvedImportsByName?.get(name)
         if (resolvedImports != null) {
@@ -60,6 +72,9 @@ class CfirExplicitSimpleImportingScope(
         }
     }
 
+    /**
+     * 按名称处理精确导入的函数。
+     */
     override fun processFunctionsByName(name: Name, processor: (CfirNamedFunctionSymbol) -> Unit) {
         val resolvedImports = resolvedImportsByName?.get(name)
         if (resolvedImports != null) {
@@ -76,6 +91,9 @@ class CfirExplicitSimpleImportingScope(
         }
     }
 
+    /**
+     * 按名称处理精确导入的 callable。
+     */
     override fun processCallablesByName(name: Name, processor: (CfirCallableSymbol<*>) -> Unit) {
         val resolvedImports = resolvedImportsByName?.get(name)
         if (resolvedImports != null) {
@@ -92,6 +110,9 @@ class CfirExplicitSimpleImportingScope(
         }
     }
 
+    /**
+     * 按名称处理精确导入的属性。
+     */
     override fun processPropertiesByName(name: Name, processor: (CfirPropertySymbol) -> Unit) {
         val resolvedImports = resolvedImportsByName?.get(name)
         if (resolvedImports != null) {
@@ -108,12 +129,18 @@ class CfirExplicitSimpleImportingScope(
         }
     }
 
+    /**
+     * 遍历已解析导入绑定中的指定目标类型。
+     */
     private inline fun <reified T : CfirResolvedImportTarget> List<CfirResolvedImportBinding>.forEachTarget(processor: (T) -> Unit) {
         for (import in this) {
             import.targets.filterIsInstance<T>().forEach(processor)
         }
     }
 
+    /**
+     * 遍历已解析导入绑定中的 callable 目标。
+     */
     private inline fun <reified S : CfirCallableSymbol<*>> List<CfirResolvedImportBinding>.forEachCallableTarget(
         processor: (S) -> Unit,
     ) {

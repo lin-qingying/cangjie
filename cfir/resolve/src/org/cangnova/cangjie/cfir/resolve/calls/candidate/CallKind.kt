@@ -12,13 +12,17 @@ import org.cangnova.cangjie.cfir.resolve.calls.stages.CfirMapArguments
 import org.cangnova.cangjie.cfir.resolve.calls.stages.CfirMapTypeArguments
 import org.cangnova.cangjie.cfir.resolve.calls.stages.ResolutionStage
 
+/** 调用种类及其候选检查阶段序列。 */
 sealed class CallKind(
+    /** 常规候选检查阶段序列。 */
     vararg val resolutionSequence: ResolutionStage,
     additionalStages: Array<ResolutionStage> = emptyArray(),
 ) {
+    /** 常规阶段追加额外阶段后的完整阶段序列。 */
     val resolutionSequenceWithAdditionalStages: Array<out ResolutionStage> =
         arrayOf(*resolutionSequence, *additionalStages)
 
+    /** 普通函数调用。 */
     data object Function : CallKind(
         CfirCheckVisibility,
         CfirMapArguments,
@@ -49,10 +53,9 @@ sealed class CallKind(
     )
 
     /**
-     * Variable/name access chain.
+     * 变量/名字访问链。
      *
-     * Align with Kotlin's `CallKind.VariableAccess` contract:
-     * argument map must be initialized even without argument checking.
+     * 对齐 Kotlin `CallKind.VariableAccess`：即使没有实参检查，也必须初始化 argument map。
      */
     data object NamedValueAccess : CallKind(
         CfirCheckVisibility,
@@ -64,6 +67,7 @@ sealed class CallKind(
         CfirCheckCallableReferenceExpectedType,
     )
 
+    /** enum constructor 调用。 */
     data object EnumConstructorCall : CallKind(
         CfirCheckVisibility,
         CfirMapArguments,

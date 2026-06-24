@@ -30,6 +30,9 @@ import org.cangnova.cangjie.type.AbstractTypeChecker
  * 注册为 classLikeCheckers
  */
 object CfirCommonSpecificChecker : CfirClassLikeChecker() {
+    /**
+     * 分发 common/specific class 声明的匹配、约束和注解检查。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirClassLikeDeclaration) {
         if (declaration !is CfirClass) return
@@ -652,6 +655,9 @@ object CfirCommonSpecificChecker : CfirClassLikeChecker() {
         }
     }
 
+    /**
+     * 取得声明在 common/specific 成员诊断中的名称。
+     */
     private fun memberName(decl: CfirDeclaration): Name? = when (decl) {
         is CfirNamedFunction -> decl.name
         is CfirProperty -> decl.name
@@ -659,6 +665,9 @@ object CfirCommonSpecificChecker : CfirClassLikeChecker() {
         else -> null
     }
 
+    /**
+     * 取得声明在 common/specific 成员诊断中的种类文本。
+     */
     private fun memberKind(decl: CfirDeclaration): String? = when (decl) {
         is CfirNamedFunction -> "function"
         is CfirProperty -> "property"
@@ -675,6 +684,9 @@ object CfirCommonSpecificChecker : CfirClassLikeChecker() {
  * 注册为 fileCheckers
  */
 object CfirCommonPackageMainChecker : CfirFileChecker() {
+    /**
+     * 检查 common 包中是否声明了 main 函数。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: org.cangnova.cangjie.cfir.declarations.CfirFile) {
         for (decl in declaration.declarations) {
@@ -694,6 +706,9 @@ object CfirCommonPackageMainChecker : CfirFileChecker() {
  * 注册为 classLikeCheckers
  */
 object CfirMockSemanticsChecker : CfirClassLikeChecker() {
+    /**
+     * 检查 class-like 声明中 mock 相关静态成员限制。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirClassLikeDeclaration) {
         // Mock 检查需要编译选项 API
@@ -715,11 +730,20 @@ object CfirMockSemanticsChecker : CfirClassLikeChecker() {
     }
 }
 
+/**
+ * 取得声明上的注解短名集合。
+ */
 private fun CfirDeclaration.annotationNames(): Set<Name> =
     annotations.mapNotNull { it.shortNameOrNull() }.toSet()
 
-// common/specific 相关工具常量
+/**
+ * Deprecated 注解名。
+ */
 private val DEPRECATED_NAME = Name.identifier("Deprecated")
+
+/**
+ * Frozen 注解名。
+ */
 private val FROZEN_NAME = Name.identifier("Frozen")
 
 /**

@@ -1,18 +1,31 @@
 package org.cangnova.cangjie.cfir.types
 
 /**
- * Stable placeholder type used when the call pipeline needs to keep an explicit
- * slot for a type argument before a real type is available.
+ * 稳定占位类型。
+ *
+ * 调用解析流水线在真实类型尚不可用时，用该类型保留一个显式类型实参槽位。
+ *
+ * @property debugName 调试输出中展示的占位名。
+ * @property attributes 占位类型携带的属性。
  */
 class ConePlaceholderType(
     val debugName: String = "_",
     override val attributes: ConeAttributes = ConeAttributes.Empty,
 ) : ConeSimpleCangJieType(), ConeTypeConstructorMarker {
+    /**
+     * 占位类型不携带类型实参。
+     */
     override val typeArguments: List<ConeTypeProjection>
         get() = emptyList()
 
+    /**
+     * 占位类型使用引用相等，避免不同占位槽被结构合并。
+     */
     override fun equals(other: Any?): Boolean = this === other
 
+    /**
+     * 与引用相等匹配的 identity hash。
+     */
     override fun hashCode(): Int = System.identityHashCode(this)
 
 }

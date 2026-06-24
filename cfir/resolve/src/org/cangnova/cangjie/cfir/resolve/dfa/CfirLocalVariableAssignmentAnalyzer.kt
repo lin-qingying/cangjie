@@ -45,10 +45,14 @@ class CfirLocalVariableAssignmentAnalyzer private constructor(
      * 当前分析根声明（包含代码块）的符号。
      */
     private var rootSymbol: CfirBasedSymbol<*>?,
+    /** 根声明中每个局部声明或循环对应的赋值分叉信息缓存。 */
     private var assignedLocalVariablesByDeclaration: Map<Any /* CfirBasedSymbol<*> | CfirLoopExpression */, Fork>?,
+    /** 每个局部 callable 声明对应的赋值记录列表。 */
     private var variableAssignments: Map<CfirCallableDeclaration, List<Assignment>>?,
+    /** 当前词法/控制流作用域栈，保存 scope 入口分叉与被禁止 smart-cast 的赋值集合。 */
     private val scopes: Stack<Pair<Fork?, VariableAssignments>>,
     // 与 CFG builder 的 postponed lambda 拓扑保持同构。
+    /** 当前函数调用链路中尚未按调用完成结果落地的 lambda 分叉。 */
     private val postponedLambdas: Stack<MutableMap<Fork, Boolean /* data-flow only */>>,
 ) {
     constructor() : this(
@@ -64,6 +68,9 @@ class CfirLocalVariableAssignmentAnalyzer private constructor(
      */
     @CfgInternals
     internal fun createSnapshot(firMapper: SnapshotCfirMapper): CfirLocalVariableAssignmentAnalyzer {
+        /**
+         * 深拷贝状态对象，并把其中的 CFIR symbol/element 映射到快照树。
+         */
         fun <T> clone(value: T): T {
             @Suppress("UNCHECKED_CAST")
             return when (value) {
@@ -92,6 +99,9 @@ class CfirLocalVariableAssignmentAnalyzer private constructor(
         )
     }
 
+    /**
+     * 清空当前分析根、缓存和作用域栈。
+     */
     fun reset() {
         rootSymbol = null
         assignedLocalVariablesByDeclaration = null
@@ -112,6 +122,9 @@ class CfirLocalVariableAssignmentAnalyzer private constructor(
         }
     }
 
+    /**
+     * 判断 callable 声明是否是可被重新赋值的局部变量。
+     */
     private fun CfirCallableDeclaration.isMutableLocalVariable(): Boolean {
         return when (this) {
             is CfirProperty -> status.isMut
@@ -120,6 +133,9 @@ class CfirLocalVariableAssignmentAnalyzer private constructor(
         }
     }
 
+    /**
+     * 判断当前已知赋值是否都保持在 smart-cast 类型集合以内。
+     */
     private fun allAssignmentsPreserveType(
         assignments: Set<Assignment>?,
         types: Set<ConeCangJieType>?,
@@ -134,6 +150,9 @@ class CfirLocalVariableAssignmentAnalyzer private constructor(
             )
     }
 
+    /**
+     * 查询某个声明或循环在当前根声明 mini CFG 中的分叉信息。
+     */
     private fun getInfoForDeclaration(symbol: Any): Fork? {
         val root = rootSymbol ?: return null
         if (root == symbol) return null
@@ -141,6 +160,9 @@ class CfirLocalVariableAssignmentAnalyzer private constructor(
         return cachedMap[symbol]
     }
 
+    /**
+     * 为根声明构造并缓存 mini CFG 赋值信息。
+     */
     private fun buildInfoForRoot(root: CfirBasedSymbol<*>): Map<Any, Fork> {
         assignedLocalVariablesByDeclaration?.let { return it }
 
@@ -152,6 +174,11 @@ class CfirLocalVariableAssignmentAnalyzer private constructor(
         return data.forks
     }
 
+    /**
+     * 进入一个新的分析作用域。
+     *
+     * 非原地求值的作用域会把内部赋值传播到外层 prohibition 集合，并把外层后续赋值传播回当前作用域。
+     */
     private fun enterScope(symbol: Any, evaluatedInPlace: Boolean): Pair<Fork?, VariableAssignments> {
         val currentInfo = getInfoForDeclaration(symbol)
         val prohibitInThisScope = scopes.top().second.copy()
@@ -165,6 +192,9 @@ class CfirLocalVariableAssignmentAnalyzer private constructor(
         return scopes.top()
     }
 
+    /**
+     * 进入函数分析作用域，并返回函数入口处已在内部赋值的符号集合。
+     */
     fun enterFunction(function: CfirFunction): Set<CfirBasedSymbol<*>> {
         if (rootSymbol == null) {
             rootSymbol = function.symbol
@@ -186,6 +216,9 @@ class CfirLocalVariableAssignmentAnalyzer private constructor(
         return scopes.top().first?.assignedInside?.getAssignedSymbols().orEmpty()
     }
 
+    /**
+     * 退出当前函数作用域。
+     */
     fun exitFunction() {
         scopes.pop()
         if (scopes.isEmpty) {
@@ -195,20 +228,32 @@ class CfirLocalVariableAssignmentAnalyzer private constructor(
         }
     }
 
+    /**
+     * 进入代码片段时按需建立新的顶层根作用域。
+     */
     fun enterCodeFragment(codeFragment: CfirCodeFragment) {
         enterNewTopLevelScopeIfNeeded(codeFragment)
     }
 
+    /**
+     * 退出代码片段时按需清理顶层根作用域。
+     */
     fun exitCodeFragment(codeFragment: CfirCodeFragment) {
         exitNewTopLevelScopeIfNeeded(codeFragment)
     }
 
+    /**
+     * 当前没有根声明时，把给定声明作为新的顶层分析根。
+     */
     private fun enterNewTopLevelScopeIfNeeded(declaration: CfirDeclaration) {
         if (rootSymbol != null) return
         rootSymbol = declaration.symbol
         scopes.push(null to VariableAssignments())
     }
 
+    /**
+     * 当前根声明正是给定声明时，退出并清空顶层分析根。
+     */
     private fun exitNewTopLevelScopeIfNeeded(declaration: CfirDeclaration) {
         if (rootSymbol == declaration.symbol) {
             rootSymbol = null
@@ -218,21 +263,33 @@ class CfirLocalVariableAssignmentAnalyzer private constructor(
         }
     }
 
+    /**
+     * 进入 class 作用域。
+     */
     fun enterClass(klass: CfirClass) {
         if (rootSymbol == null) return
         enterScope(klass.symbol, evaluatedInPlace = false)
     }
 
+    /**
+     * 退出 class 作用域。
+     */
     fun exitClass() {
         if (rootSymbol == null) return
         scopes.pop()
     }
 
+    /**
+     * 进入函数调用，记录当前调用的 lambda 参数分叉。
+     */
     fun enterFunctionCall(lambdaArgs: Collection<CfirAnonymousFunction>) {
         if (rootSymbol == null) return
         postponedLambdas.push(lambdaArgs.mapNotNull { getInfoForDeclaration(it.symbol) }.associateWithTo(mutableMapOf()) { false })
     }
 
+    /**
+     * 退出函数调用；未完成调用的 lambda 会作为 data-flow-only postponed lambda 传播到外层。
+     */
     fun exitFunctionCall(callCompleted: Boolean) {
         if (rootSymbol == null) return
         val lambdasInCall = postponedLambdas.pop()
@@ -241,18 +298,27 @@ class CfirLocalVariableAssignmentAnalyzer private constructor(
         }
     }
 
+    /**
+     * 进入循环作用域，并返回循环内部赋值的符号集合。
+     */
     fun enterLoop(loop: CfirLoopExpression): Set<CfirBasedSymbol<*>> {
         if (rootSymbol == null) return emptySet()
         val (info, _) = enterScope(loop, evaluatedInPlace = true)
         return info?.assignedInside?.getAssignedSymbols().orEmpty()
     }
 
+    /**
+     * 退出循环作用域，并返回循环内部赋值的符号集合。
+     */
     fun exitLoop(): Set<CfirBasedSymbol<*>> {
         if (rootSymbol == null) return emptySet()
         val (info, _) = scopes.pop()
         return info?.assignedInside?.getAssignedSymbols().orEmpty()
     }
 
+    /**
+     * 记录某个局部 callable 的一次真实赋值类型。
+     */
     fun visitAssignment(declaration: CfirCallableDeclaration, type: ConeCangJieType) {
         buildInfoForRoot(rootSymbol ?: return)
         val assignments = variableAssignments?.get(declaration) ?: return
@@ -261,34 +327,66 @@ class CfirLocalVariableAssignmentAnalyzer private constructor(
     }
 
     companion object {
+        /**
+         * mini CFG 中某个声明或循环的赋值分叉信息。
+         */
         private class Fork(
+            /** 分叉之后仍会发生的赋值集合。 */
             val assignedLater: VariableAssignments,
+            /** 分叉内部发生的赋值集合。 */
             val assignedInside: VariableAssignments,
         ) {
+            /**
+             * 为 fork 创建快照副本。
+             */
             @CfgInternals
             fun createSnapshot(firMapper: SnapshotCfirMapper): Fork {
                 return Fork(assignedLater.createSnapshot(firMapper), assignedInside.createSnapshot(firMapper))
             }
         }
 
+        /**
+         * 单次赋值记录。
+         */
         private class Assignment(
+            /** 是否来自复合/操作符赋值。 */
             val operatorAssignment: Boolean,
+            /** 赋值右侧推断出的类型；mini CFG 构造阶段可暂为空。 */
             var type: ConeCangJieType? = null,
         ) {
+            /**
+             * 创建赋值记录副本。
+             */
             fun createSnapshot(): Assignment = Assignment(operatorAssignment, type)
         }
 
+        /**
+         * 局部 callable 到赋值集合的映射。
+         */
         private class VariableAssignments {
+            /** 按局部声明聚合的赋值记录。 */
             private val assignments: MutableMap<CfirCallableDeclaration, MutableSet<Assignment>> = mutableMapOf()
 
+            /**
+             * 查询声明对应的赋值集合。
+             */
             operator fun get(declaration: CfirCallableDeclaration): Set<Assignment>? = assignments[declaration]
 
+            /**
+             * 判断声明是否已有赋值记录。
+             */
             operator fun contains(declaration: CfirCallableDeclaration): Boolean = declaration in assignments
 
+            /**
+             * 添加一次赋值记录。
+             */
             fun add(declaration: CfirCallableDeclaration, assignment: Assignment): Boolean {
                 return assignments.getOrPut(declaration) { mutableSetOf() }.add(assignment)
             }
 
+            /**
+             * 创建赋值映射快照。
+             */
             @CfgInternals
             fun createSnapshot(firMapper: SnapshotCfirMapper): VariableAssignments {
                 val copy = VariableAssignments()
@@ -298,12 +396,18 @@ class CfirLocalVariableAssignmentAnalyzer private constructor(
                 return copy
             }
 
+            /**
+             * 创建浅拷贝，复用赋值记录对象。
+             */
             fun copy(): VariableAssignments {
                 val copy = VariableAssignments()
                 copy.assignments += assignments
                 return copy
             }
 
+            /**
+             * 合并另一组赋值记录。
+             */
             fun merge(other: VariableAssignments?): Boolean {
                 if (other == null || other.assignments.isEmpty()) return false
                 var modified = false
@@ -313,10 +417,16 @@ class CfirLocalVariableAssignmentAnalyzer private constructor(
                 return modified
             }
 
+            /**
+             * 只保留给定声明集合内的赋值记录。
+             */
             fun retain(declarations: Set<CfirCallableDeclaration>) {
                 assignments.keys.retainAll(declarations)
             }
 
+            /**
+             * 返回发生过非操作符赋值的局部声明符号。
+             */
             fun getAssignedSymbols(): Set<CfirBasedSymbol<*>> {
                 return assignments.entries
                     .filter { (_, values) -> values.any { !it.operatorAssignment } }
@@ -324,12 +434,23 @@ class CfirLocalVariableAssignmentAnalyzer private constructor(
             }
         }
 
+        /**
+         * mini CFG 中的轻量控制流节点。
+         */
         private class MiniFlow(val parents: Set<MiniFlow>) {
+            /** 从该节点向后可见的赋值集合。 */
             val assignedLater = VariableAssignments()
 
+            /**
+             * 创建以当前节点为父节点的新分叉。
+             */
             fun fork(): MiniFlow = MiniFlow(setOf(this))
 
+            /**
+             * mini flow 工厂。
+             */
             companion object {
+                /** 创建无父节点的入口 flow。 */
                 fun start() = MiniFlow(emptySet())
             }
         }
@@ -340,10 +461,16 @@ class CfirLocalVariableAssignmentAnalyzer private constructor(
          * - 节点选择与遍历顺序对位 Kotlin FIR 的 `MiniCfgBuilder`，但仅使用仓颉真实节点。
          */
         private class MiniCfgBuilder : CfirVisitor<Unit, MiniCfgBuilder.MiniCfgData>() {
+            /**
+             * 默认递归访问子节点。
+             */
             override fun visitElement(element: CfirElement, data: MiniCfgData) {
                 element.acceptChildren(this, data)
             }
 
+            /**
+             * 在新的词法作用域中访问元素并返回该作用域内自由变量赋值集合。
+             */
             private fun visitElementWithLexicalScope(element: CfirElement, data: MiniCfgData): VariableAssignments {
                 val flow = MiniFlow.start()
                 val freeVariables = data.variableDeclarations.flatMapTo(mutableSetOf()) { it.values }
@@ -352,18 +479,33 @@ class CfirLocalVariableAssignmentAnalyzer private constructor(
                 return flow.assignedLater.apply { retain(freeVariables) }
             }
 
+            /**
+             * 匿名函数作为局部声明处理。
+             */
             override fun visitAnonymousFunction(anonymousFunction: CfirAnonymousFunction, data: MiniCfgData) =
                 visitLocalDeclaration(anonymousFunction, data)
 
+            /**
+             * 函数作为局部声明处理。
+             */
             override fun visitFunction(function: CfirFunction, data: MiniCfgData) =
                 visitLocalDeclaration(function, data)
 
+            /**
+             * class 作为局部声明处理。
+             */
             override fun visitClass(klass: CfirClass, data: MiniCfgData) =
                 visitLocalDeclaration(klass, data)
 
+            /**
+             * code fragment 作为局部声明处理。
+             */
             override fun visitCodeFragment(codeFragment: CfirCodeFragment, data: MiniCfgData) =
                 visitLocalDeclaration(codeFragment, data)
 
+            /**
+             * 访问局部声明，记录其内部赋值与后续赋值分叉。
+             */
             private fun visitLocalDeclaration(declaration: CfirDeclaration, data: MiniCfgData) {
                 val flow = data.flow
                 val assignedInside = visitElementWithLexicalScope(declaration, data)
@@ -372,6 +514,9 @@ class CfirLocalVariableAssignmentAnalyzer private constructor(
                 data.forks[declaration.symbol] = Fork(data.flow.assignedLater, assignedInside)
             }
 
+            /**
+             * 访问 match 表达式并合并所有分支的 mini flow。
+             */
             override fun visitMatchExpression(matchExpression: CfirMatchExpression, data: MiniCfgData) {
                 matchExpression.subject?.accept(this, data)
                 val flow = data.flow
@@ -382,6 +527,9 @@ class CfirLocalVariableAssignmentAnalyzer private constructor(
                 }.join()
             }
 
+            /**
+             * 访问 try/catch/handler/finally，并合并异常分支 flow。
+             */
             override fun visitTryExpression(tryExpression: CfirTryExpression, data: MiniCfgData) {
                 tryExpression.tryBlock.accept(this, data)
                 val flow = data.flow
@@ -401,8 +549,14 @@ class CfirLocalVariableAssignmentAnalyzer private constructor(
                 tryExpression.finallyBlock?.accept(this, data)
             }
 
+            /**
+             * 合并多个 mini flow。
+             */
             private fun Set<MiniFlow>.join(): MiniFlow = singleOrNull() ?: MiniFlow(this)
 
+            /**
+             * 访问循环表达式并记录循环体内部赋值。
+             */
             override fun visitLoopExpression(loopExpression: CfirLoopExpression, data: MiniCfgData) {
                 val entry = data.flow
                 val assignedInside = visitElementWithLexicalScope(loopExpression, data)
@@ -412,6 +566,9 @@ class CfirLocalVariableAssignmentAnalyzer private constructor(
                 data.forks[loopExpression] = Fork(data.flow.assignedLater, assignedInside)
             }
 
+            /**
+             * 按调用求值顺序访问函数调用，并将 lambda 参数作为 postponed 参数放在普通参数之后。
+             */
             override fun visitFunctionCall(functionCall: CfirFunctionCall, data: MiniCfgData) {
                 functionCall.explicitReceiver?.accept(this, data)
                 functionCall.dispatchReceiver?.accept(this, data)
@@ -424,12 +581,18 @@ class CfirLocalVariableAssignmentAnalyzer private constructor(
                 functionCall.calleeReference.accept(this, data)
             }
 
+            /**
+             * 进入 block 词法作用域并记录其中声明的局部变量。
+             */
             override fun visitBlock(block: CfirBlock, data: MiniCfgData) {
                 data.variableDeclarations.addLast(mutableMapOf())
                 visitElement(block, data)
                 data.variableDeclarations.removeLast()
             }
 
+            /**
+             * 访问属性声明并把局部属性注册到当前词法变量表。
+             */
             override fun visitProperty(property: CfirProperty, data: MiniCfgData) {
                 visitElement(property, data)
                 if (property.isLocal) {
@@ -437,6 +600,9 @@ class CfirLocalVariableAssignmentAnalyzer private constructor(
                 }
             }
 
+            /**
+             * 访问变量声明并把局部变量注册到当前词法变量表。
+             */
             override fun visitVariable(variable: CfirVariable, data: MiniCfgData) {
                 visitElement(variable, data)
                 if (variable.isLocal) {
@@ -444,6 +610,9 @@ class CfirLocalVariableAssignmentAnalyzer private constructor(
                 }
             }
 
+            /**
+             * 访问赋值表达式并记录对局部变量的赋值。
+             */
             override fun visitAssignment(assignment: CfirAssignment, data: MiniCfgData) {
                 visitElement(assignment, data)
                 val lValue = assignment.lValue as? CfirQualifiedAccessExpression ?: return
@@ -455,6 +624,9 @@ class CfirLocalVariableAssignmentAnalyzer private constructor(
                 data.recordAssignment(calleeReference, operatorAssignment = false)
             }
 
+            /**
+             * 将一次赋值写入 mini CFG 数据和当前 flow。
+             */
             private fun MiniCfgData.recordAssignment(reference: CfirNamedReference, operatorAssignment: Boolean) {
                 val declaration = resolveLocalDeclaration(reference) ?: return
                 val assignment = Assignment(operatorAssignment)
@@ -462,6 +634,9 @@ class CfirLocalVariableAssignmentAnalyzer private constructor(
                 flow.recordAssignment(declaration, assignment)
             }
 
+            /**
+             * 从引用解析结果或当前词法变量表中定位局部声明。
+             */
             private fun MiniCfgData.resolveLocalDeclaration(reference: CfirNamedReference): CfirCallableDeclaration? {
                 val resolved = (reference as? CfirResolvedNamedReference)?.resolvedSymbol?.cfir as? CfirCallableDeclaration
                 if (resolved != null && resolved.isLocal) {
@@ -472,21 +647,34 @@ class CfirLocalVariableAssignmentAnalyzer private constructor(
                 return variableDeclarations.lastOrNull { name in it }?.get(name)
             }
 
+            /**
+             * 记录当前 flow 上的单次赋值，并向父 flow 传播。
+             */
             private fun MiniFlow.recordAssignment(declaration: CfirCallableDeclaration, assignment: Assignment) {
                 if (!assignedLater.add(declaration, assignment)) return
                 parents.forEach { it.recordAssignment(declaration, assignment) }
             }
 
+            /**
+             * 批量记录赋值集合，并向父 flow 传播。
+             */
             private fun MiniFlow.recordAssignments(declarations: VariableAssignments) {
                 if (!assignedLater.merge(declarations)) return
                 parents.forEach { it.recordAssignments(declarations) }
             }
 
+            /**
+             * mini CFG 构造过程中共享的可变数据。
+             */
             class MiniCfgData {
+                /** 当前控制流位置。 */
                 var flow: MiniFlow = MiniFlow.start()
+                /** 词法作用域栈中的局部变量声明表。 */
                 val variableDeclarations: ArrayDeque<MutableMap<Name, CfirCallableDeclaration>> =
                     ArrayDeque(listOf(mutableMapOf()))
+                /** 每个局部声明的赋值记录列表。 */
                 val assignments: MutableMap<CfirCallableDeclaration, MutableList<Assignment>> = mutableMapOf()
+                /** 声明或循环到分叉信息的映射。 */
                 val forks: MutableMap<Any /* CfirBasedSymbol<*> | CfirLoopExpression */, Fork> = mutableMapOf()
             }
         }

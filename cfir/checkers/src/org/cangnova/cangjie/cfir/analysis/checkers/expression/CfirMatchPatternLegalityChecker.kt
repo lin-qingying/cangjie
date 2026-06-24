@@ -48,7 +48,14 @@ import org.cangnova.cangjie.source.CjOffsetsOnlySourceElement
 import org.cangnova.cangjie.source.text
 import org.cangnova.cangjie.type.AbstractTypeChecker
 
+/**
+ * 标准库 `Option.Some` 构造器名称。
+ */
 private val OPTION_SOME_CONSTRUCTOR_NAME = Name.identifier("Some")
+
+/**
+ * 标准库 `Option.None` 构造器名称。
+ */
 private val OPTION_NONE_CONSTRUCTOR_NAME = Name.identifier("None")
 
 /**
@@ -60,6 +67,9 @@ private val OPTION_NONE_CONSTRUCTOR_NAME = Name.identifier("None")
  * - 常量 / enum / type pattern 与 subject 类型不匹配。
  */
 object CfirMatchPatternLegalityChecker : CfirMatchExpressionChecker() {
+    /**
+     * 检查 selector-based match 中每个 pattern 与 subject 类型是否兼容。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirMatchExpression) {
         val subjectType = expression.subject?.coneTypeOrNull ?: return
@@ -70,6 +80,11 @@ object CfirMatchPatternLegalityChecker : CfirMatchExpressionChecker() {
         }
     }
 
+    /**
+     * 按 pattern 形态递归检查其与期望类型的合法性。
+     *
+     * tuple、enum、binding、type、const、expression 与 or pattern 各自对应不同的诊断规则。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkPattern(
         pattern: CfirPattern,
@@ -181,19 +196,30 @@ object CfirMatchPatternLegalityChecker : CfirMatchExpressionChecker() {
                 }
             }
 
-            is CfirOrPattern -> pattern.alternatives.forEach { alternative ->
-                checkPattern(alternative, expectedType)
+            is CfirOrPattern -> {
+                if (pattern.hasVariableBindingInOrPattern() || pattern.hasDifferentOrPatternKinds()) return
+                pattern.alternatives.forEach { alternative ->
+                    checkPattern(alternative, expectedType)
+                }
             }
         }
     }
 }
 
+/**
+ * 判断 match 表达式中是否存在会阻止穷尽性分析的 pattern 合法性问题。
+ *
+ * 该函数供穷尽性和不可达检查复用，避免在 pattern 已经不合法时继续运行覆盖算法。
+ */
 internal fun CfirMatchExpression.hasPatternLegalityProblem(context: CheckerContext): Boolean {
     val subjectType = subject?.coneTypeOrNull ?: return false
     if (subjectType is ConeErrorType) return false
     return branches.any { branch -> branch.pattern.hasPatternLegalityProblem(subjectType, context) }
 }
 
+/**
+ * 递归判断单个 pattern 是否与期望类型不兼容。
+ */
 private fun CfirPattern.hasPatternLegalityProblem(
     expectedType: ConeCangJieType,
     context: CheckerContext,
@@ -232,10 +258,52 @@ private fun CfirPattern.hasPatternLegalityProblem(
 
         is CfirConstPattern -> !isCompatibleWith(expectedType)
         is CfirExpressionPattern -> !isCompatibleWith(expectedType)
-        is CfirOrPattern -> alternatives.any { alternative -> alternative.hasPatternLegalityProblem(expectedType, context) }
+        is CfirOrPattern -> {
+            hasVariableBindingInOrPattern() ||
+                    hasDifferentOrPatternKinds() ||
+                    alternatives.any { alternative -> alternative.hasPatternLegalityProblem(expectedType, context) }
+        }
     }
 }
 
+/**
+ * 判断 or pattern 中是否包含变量绑定。
+ *
+ * 当前语义不允许 or pattern 绑定变量，因此这种情况本身就是合法性问题。
+ */
+private fun CfirOrPattern.hasVariableBindingInOrPattern(): Boolean =
+    bindingOccurrences().isNotEmpty()
+
+/**
+ * 判断 or pattern 的各分支是否混用了不同 pattern 类别。
+ */
+private fun CfirOrPattern.hasDifferentOrPatternKinds(): Boolean {
+    if (alternatives.size < 2) return false
+    val firstKind = alternatives.first().orPatternKindKey()
+    return alternatives.drop(1).any { alternative -> alternative.orPatternKindKey() != firstKind }
+}
+
+/**
+ * 取得 or pattern 分支用于同类比较的类别键。
+ */
+private fun CfirPattern.orPatternKindKey(): String = when (this) {
+    is CfirEnumPattern,
+    is CfirVarOrEnumPattern,
+    -> "enum-or-variable"
+    is CfirConstPattern -> "constant"
+    is CfirTypePattern -> "type"
+    is CfirTuplePattern -> "tuple"
+    is CfirWildcardPattern -> "wildcard"
+    is CfirBindingPattern -> "binding"
+    is CfirExpressionPattern -> "expression"
+    is CfirOrPattern -> "or"
+}
+
+/**
+ * 判断 pattern 类型与 subject 期望类型是否可能有交集。
+ *
+ * 两个方向任一方向存在子类型关系即可视为可能匹配。
+ */
 private fun typesMayOverlap(
     patternType: ConeCangJieType,
     expectedType: ConeCangJieType,
@@ -245,25 +313,44 @@ private fun typesMayOverlap(
             AbstractTypeChecker.isSubtypeOf(context.session.typeContext, expectedType, patternType) == true
 }
 
+/**
+ * 取得 pattern 的源码展示文本。
+ *
+ * 源码缺失时使用 pattern 类名作为稳定占位。
+ */
 private fun CfirPattern.patternText(): String =
     source?.text?.toString()?.trim().orEmpty().ifBlank { this::class.simpleName ?: "pattern" }
 
+/**
+ * 取得 enum pattern 构造器诊断使用的首字符范围。
+ */
 private fun CfirEnumPattern.enumConstructorDiagnosticSource(): AbstractCjSourceElement? {
     val source = constructorReference.source ?: source ?: return null
     return CjOffsetsOnlySourceElement(source.startOffset, source.startOffset + 1)
 }
 
+/**
+ * 取得类型在 pattern 诊断中的简短展示文本。
+ */
 private fun ConeCangJieType.patternTypeText(): String = when (this) {
     is ConePrimitiveType -> kind.typeName
     else -> classIdOrPrimitiveClassId?.shortClassName?.asString() ?: toString()
 }
 
+/**
+ * 从 enum pattern 构造器引用中提取构造器名称。
+ */
 private fun CfirEnumPattern.constructorName(): Name? = when (val reference = constructorReference) {
     is CfirResolvedNamedReference -> reference.name
     is CfirNamedReference -> reference.name
     else -> null
 }
 
+/**
+ * 解析 enum pattern 构造器的 payload 参数类型列表。
+ *
+ * 标准库 Option 先走专门语义，普通 enum 再通过 subject 类型展开和 enum 声明查找构造器。
+ */
 private fun CfirEnumPattern.enumConstructorArgumentTypes(
     expectedType: ConeCangJieType,
     context: CheckerContext,
@@ -299,6 +386,9 @@ private fun resolveStdlibOptionArgumentTypes(
     }
 }
 
+/**
+ * 判断常量 pattern 是否与期望类型兼容。
+ */
 private fun CfirConstPattern.isCompatibleWith(expectedType: ConeCangJieType): Boolean {
     val literal = expression as? CfirLiteralExpression ?: return true
     return literal.isCompatibleWith(expectedType)
@@ -324,11 +414,17 @@ private fun CfirConstPattern.shouldReportMissingEqualityOverload(
     return !hasEqualityOverload(expectedType, expressionType, context)
 }
 
+/**
+ * 判断表达式 pattern 是否与期望类型兼容。
+ */
 private fun CfirExpressionPattern.isCompatibleWith(expectedType: ConeCangJieType): Boolean {
     val literal = expression as? CfirLiteralExpression ?: return true
     return literal.isCompatibleWith(expectedType)
 }
 
+/**
+ * 判断字面量 pattern 是否可匹配期望类型。
+ */
 private fun CfirLiteralExpression.isCompatibleWith(expectedType: ConeCangJieType): Boolean = when (kind) {
     CfirLiteralKind.BOOLEAN -> expectedType is ConePrimitiveType && expectedType.kind == PrimitiveTypeKind.BOOLEAN
     CfirLiteralKind.INT -> expectedType is ConePrimitiveType && expectedType.kind != PrimitiveTypeKind.BOOLEAN && expectedType.kind != PrimitiveTypeKind.UNIT
@@ -338,11 +434,19 @@ private fun CfirLiteralExpression.isCompatibleWith(expectedType: ConeCangJieType
     else -> true
 }
 
+/**
+ * 判断类型是否具有 match const pattern 所需的内建相等比较。
+ */
 private fun ConeCangJieType.hasBuiltinMatchEquality(): Boolean {
     if (this is ConePrimitiveType) return true
     return classIdOrPrimitiveClassId?.shortClassName?.asString() == "String"
 }
 
+/**
+ * 在期望类型的 use-site scope 中查找可用于 match 比较的 `==` 重载。
+ *
+ * 只有单参数、参数类型与 const 表达式类型可能相交、返回 Boolean 的函数才算有效。
+ */
 private fun hasEqualityOverload(
     expectedType: ConeCangJieType,
     expressionType: ConeCangJieType,

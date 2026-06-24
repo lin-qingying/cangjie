@@ -9,7 +9,7 @@ interface C <: A {}
 
 interface B <: C {}
 
-<!INHERITANCE_CYCLE!>e<!>xtend D <: C {}
+<!INHERITANCE_CYCLE!>extend D<!> <: C {}
 
 main() {
     0

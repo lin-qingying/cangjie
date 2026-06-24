@@ -17,6 +17,11 @@ fun CfirComparisonOp.toFunctionName(): String = when (this) {
     CfirComparisonOp.GE -> "greaterEqual"
 }
 
+/**
+ * 将比较操作符转换为内建 operator 名称。
+ *
+ * 该名称用于按运算符约定查询 callable，而不是直接使用源码中的符号文本。
+ */
 fun CfirComparisonOp.toOperatorName(): Name = when (this) {
     CfirComparisonOp.EQ -> OperatorNameConventions.EQUALS
     CfirComparisonOp.NE -> OperatorNameConventions.NOT_EQUALS

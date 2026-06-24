@@ -15,6 +15,7 @@ import org.cangnova.cangjie.type.model.StubTypeMarker
  *
  * @param constructor 关联的类型变量构造器
  * @param kind 存根类型种类
+ * @param attributes 存根类型携带的属性
  */
 class ConeStubType(
     val constructor: ConeTypeVariableTypeConstructor,
@@ -22,22 +23,37 @@ class ConeStubType(
     override val attributes: ConeAttributes = ConeAttributes.Empty,
 ) : ConeRigidType()  , StubTypeMarker {
 
-    /** 存根类型种类 */
+    /**
+     * 存根类型种类。
+     */
     enum class Kind {
-        /** 用于子类型相关推断过渡 */
+        /**
+         * 用于子类型相关推断过渡。
+         */
         FOR_SUBTYPING,
-        /** 保留的过渡分支，后续将重新命名/整理职责 */
+        /**
+         * 保留的过渡分支，后续将重新命名/整理职责。
+         */
         FOR_BUILDER_INFERENCE,
     }
 
+    /**
+     * stub 类型不是错误类型。
+     */
     override val isError: Boolean get() = false
 
+    /**
+     * stub 类型按构造器身份和 stub 种类判等。
+     */
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is ConeStubType) return false
         return constructor === other.constructor && kind == other.kind
     }
 
+    /**
+     * stub 类型的结构哈希。
+     */
     override fun hashCode(): Int = constructor.hashCode() * 31 + kind.hashCode()
 
 }

@@ -15,10 +15,19 @@ import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
  */
 class CfirFunctionTarget(
     labelName: String? = null,
+    /**
+     * 当前 target 是否属于 lambda/匿名函数。
+     */
     val isLambda: Boolean,
 ) : CfirAbstractTarget<CfirFunction>(labelName) {
+    /**
+     * 延迟绑定的函数符号。
+     */
     private lateinit var targetSymbol: CfirFunctionSymbol<*>
 
+    /**
+     * 当前 target 绑定的函数声明。
+     */
     override var _labeledElement: CfirFunction
         get() = targetSymbol.cfir
         set(value) {

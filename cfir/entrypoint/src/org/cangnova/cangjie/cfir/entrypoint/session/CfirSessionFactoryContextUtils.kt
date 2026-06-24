@@ -71,6 +71,12 @@ fun createCfirApiLevelProvider(configuration: CompilerConfiguration): CfirApiLev
     }
 }
 
+/**
+ * 解析 syscap 顶层配置文件。
+ *
+ * 顶层配置可以同时给出 `apiLevel` 和若干以当前目录为基准的 syscap JSON 文件引用；
+ * 该方法会读取所有有效子文件，计算 union/intersection，并保留顶层 API level。
+ */
 private fun parseSyscapConfiguration(rawPath: String): ParsedSyscapConfiguration {
     val configFile = File(rawPath)
     if (!configFile.exists() || !configFile.isFile) {
@@ -110,6 +116,12 @@ private fun parseSyscapConfiguration(rawPath: String): ParsedSyscapConfiguration
     )
 }
 
+/**
+ * 解析单个 syscap 子文件中的能力名集合。
+ *
+ * 当前配置格式只需要提取 JSON 字符串值，调用方负责决定这些字符串如何参与 union/intersection。
+ * 返回 `null` 表示文件为空或没有有效能力名。
+ */
 private fun parseSyscapLeafFile(file: File): Set<String>? {
     val content = runCatching { file.readText(Charsets.UTF_8) }.getOrDefault("")
     if (content.isBlank()) return null
@@ -121,16 +133,34 @@ private fun parseSyscapLeafFile(file: File): Set<String>? {
     return values.takeIf { it.isNotEmpty() }
 }
 
+/**
+ * 已解析的 syscap 配置。
+ *
+ * @property apiLevel 顶层配置声明的 API level；为空表示配置文件没有给出。
+ * @property union 所有 syscap 子文件能力集合的并集。
+ * @property intersection 所有 syscap 子文件能力集合的交集。
+ */
 private data class ParsedSyscapConfiguration(
     val apiLevel: Int? = null,
     val union: Set<String> = emptySet(),
     val intersection: Set<String> = emptySet(),
 ) {
+    /**
+     * 解析失败、配置缺失或内容为空时使用的空配置。
+     */
     companion object {
+        /**
+         * 空 syscap 配置实例。
+         */
         val EMPTY = ParsedSyscapConfiguration()
     }
 }
 
+/** 顶层 syscap 配置中 `apiLevel` 数值字段的提取正则。 */
 private val API_LEVEL_REGEX = Pattern.compile("\"apiLevel\"\\s*:\\s*(\\d+)").toRegex()
+
+/** 顶层 syscap 配置中相对 syscap 子文件路径的提取正则。 */
 private val SYS_CAP_FILE_REGEX = Pattern.compile("\"(\\./[^\"]+\\.json)\"").toRegex()
+
+/** syscap 子文件中能力字符串值的提取正则。 */
 private val SYS_CAP_VALUE_REGEX = Pattern.compile("\"([^\"]+)\"").toRegex()

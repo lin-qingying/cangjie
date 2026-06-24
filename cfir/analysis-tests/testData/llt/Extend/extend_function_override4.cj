@@ -1,7 +1,7 @@
 
 
 main(): Int64 {
-    var a = B<Int32>().<!AMBIGUOUS_MATCH_PRIMITIVE_EXTEND!>f<!>oo()
+    var a = B<Int32>().<!AMBIGUOUS_FUNCTION_CALL!>foo<!>()
     return 0
 }
 

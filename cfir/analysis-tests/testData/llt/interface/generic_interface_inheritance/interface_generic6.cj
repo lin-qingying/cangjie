@@ -5,7 +5,7 @@ interface I<T> {
     func foo(a: T): T
 }
 
-class C<T> <: I<T> & <!SUPER_TYPES_DUPLICATE!>I<T><!> & I<Float64> {
+<!SUPER_TYPES_DUPLICATE!>class C<T><!> <: I<T> & I<T> & I<Float64> {
     public func foo(a: T): T {
         return a
     }

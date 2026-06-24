@@ -1,6 +1,7 @@
 ﻿package org.cangnova.cangjie.cfir.analysis.collectors.components
 
 import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.analysis.checkers.CfirExtendSemantics
 import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.isInvalidPrimitiveCompoundAssignmentCall
@@ -34,6 +35,7 @@ import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.diagnostic.ConeAmbiguityError
 import org.cangnova.cangjie.cfir.diagnostic.ConeCannotInferValueParameterType
 import org.cangnova.cangjie.cfir.diagnostic.ConeDiagnosticWithSingleCandidate
+import org.cangnova.cangjie.cfir.diagnostic.ConeGenericTypeArgumentNotMatchConstraintError
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
@@ -50,6 +52,7 @@ import org.cangnova.cangjie.cfir.references.CfirResolvedErrorReference
 import org.cangnova.cangjie.cfir.types.ConeDiagnostic
 import org.cangnova.cangjie.cfir.types.ConeUnreportedDuplicateDiagnostic
 import org.cangnova.cangjie.cfir.types.renderForDebugging
+import org.cangnova.cangjie.cfir.session.importBindingStoreOrNull
 import org.cangnova.cangjie.psi.CjNodeTypes
 
 /**
@@ -85,10 +88,12 @@ class ErrorNodeDiagnosticCollectorComponent(
     // ── visit 入口：针对各类可能携带错误的节点 ────────────────────────────────
 
 
+    /** 访问未解析命名引用，并把其携带的诊断转换为普通 CFIR 诊断。 */
     override fun visitErrorNamedReference(errorNamedReference: CfirErrorNamedReference, data: CheckerContext) {
         processErrorReference(errorNamedReference, errorNamedReference.diagnostic, data)
     }
 
+    /** 访问带候选的命名引用基类，并在其同时作为诊断 holder 时处理候选诊断。 */
     override fun visitNamedReferenceWithCandidateBase(
         namedReferenceWithCandidateBase: CfirNamedReferenceWithCandidateBase,
         data: CheckerContext,
@@ -118,9 +123,12 @@ class ErrorNodeDiagnosticCollectorComponent(
             "Instead use CfirErrorTypeRef for ${resolvedTypeRef.coneType.renderForDebugging()}"
         }
     }
+
+    /** 访问已解析但仍表示错误的引用，并处理其保留的解析诊断。 */
     override fun visitResolvedErrorReference(resolvedErrorReference: CfirResolvedErrorReference, data: CheckerContext) {
         processErrorReference(resolvedErrorReference, resolvedErrorReference.diagnostic, data)
     }
+
     /**
      * 访问错误类型引用（[CfirErrorTypeRef]）。
      *
@@ -133,6 +141,7 @@ class ErrorNodeDiagnosticCollectorComponent(
 //        if (errorTypeRef.isLambdaReturnTypeRefThatDoesntNeedReporting(data)) return
 //        if (errorTypeRef.hasExpandedTypeAliasDeclarationSiteError()) return
         if (errorTypeRef.isNestedTypeAliasDeclarationSiteCascade(data)) return
+        if (errorTypeRef.diagnostic.isUnresolvedCascadeAfterFailedImport(data)) return
 
         val source = errorTypeRef.source
         if (source != null) {
@@ -181,6 +190,7 @@ class ErrorNodeDiagnosticCollectorComponent(
      * `ConeUnreportedDuplicateDiagnostic`，该诊断在映射层会被跳过。
      */
     override fun visitErrorExpression(errorExpression: CfirErrorExpression, data: CheckerContext) {
+        if (errorExpression.diagnostic.isUnresolvedCascadeAfterFailedImport(data)) return
         val source = errorExpression.source as? CjSourceElement ?: return
         reportConeDiagnostic(errorExpression.diagnostic, source, data)
     }
@@ -213,6 +223,7 @@ class ErrorNodeDiagnosticCollectorComponent(
             }
             return
         }
+        if (diagnostic.isUnresolvedCascadeAfterFailedImport(context)) return
 
         // 注解项上的 unresolved 已由其类型引用报告，保持与 Kotlin FIR 的去重位置一致。
         if (source?.elementType == CjNodeTypes.ANNOTATION && diagnostic is ConeUnresolvedNameError) return
@@ -317,6 +328,19 @@ class ErrorNodeDiagnosticCollectorComponent(
 
         // 数组访问名称引用的 unresolved 错误交由 ArrayAccessChecker 负责。
         if (source.kind == CjFakeSourceElementKind.ArrayAccessNameReference && diagnostic is ConeUnresolvedNameError) return
+        if (diagnostic.isUnresolvedCascadeAfterFailedImport(context)) return
+        if (diagnostic is ConeGenericTypeArgumentNotMatchConstraintError) {
+            val containingExtend = context.findClosestDeclaration<CfirExtend>()
+            if (
+                CfirExtendSemantics.isSourceInsideImmutableMutInterfaceExtendHeader(context, source) ||
+                (
+                    containingExtend != null &&
+                        CfirExtendSemantics.isSourceInsideImmutableMutInterfaceSupertype(context, containingExtend, source)
+                    )
+            ) {
+                return
+            }
+        }
 
         // 构造去重 key：同一源码范围 + 同一宿主范围 + 相同错误原因 → 视为同一诊断。
         val key = ReportedConeDiagnosticKey(
@@ -387,8 +411,34 @@ class ErrorNodeDiagnosticCollectorComponent(
         }
     }
 
+    /** 解开用于去重占位的诊断包装，返回真正需要比较和分类的原始诊断。 */
     private fun ConeDiagnostic?.unwrapUnreportedDuplicateDiagnostic(): ConeDiagnostic? =
         (this as? ConeUnreportedDuplicateDiagnostic)?.original ?: this
+
+    /**
+     * 官方编译器在包导入失败后只报告 import 诊断，不继续把缺失包里的类型/引用扩散成
+     * 使用点 unresolved 噪声。导入诊断本身由 [CfirImportsChecker] 报告，这里只过滤
+     * 错误节点收集阶段从同一文件继续摘取到的 unresolved 级联。
+     */
+    private fun ConeDiagnostic.isUnresolvedCascadeAfterFailedImport(context: CheckerContext): Boolean {
+        if (!isUnresolvedCascadeDiagnostic()) return false
+        val file = context.containingFileSymbol?.takeIf { it.isBound }?.cfir ?: return false
+        val imports = context.session.importBindingStoreOrNull?.getBindings(file)?.imports ?: return false
+        return imports.any { binding ->
+            binding.targets.isEmpty() &&
+                binding.importDirective.source?.kind?.shouldSkipErrorTypeReporting != true
+        }
+    }
+
+    /** 判断诊断是否属于 unresolved 级联类别。 */
+    private fun ConeDiagnostic.isUnresolvedCascadeDiagnostic(): Boolean =
+        when (unwrapUnreportedDuplicateDiagnostic()) {
+            is ConeUnresolvedNameError,
+            is ConeUnresolvedReferenceError,
+            is ConeUnresolvedSymbolError,
+            is ConeUnresolvedTypeQualifierError -> true
+            else -> false
+        }
 
     /**
      * typealias 声明侧已经携带 unresolved 错误时，使用点不能继续扩散成员/调用错误。
@@ -402,6 +452,7 @@ class ErrorNodeDiagnosticCollectorComponent(
         return (current as? ConeErrorType)?.diagnostic
     }
 
+    /** 判断当前遍历位置是否处于构造器值参数默认值表达式内部。 */
     private fun CheckerContext.isInsideConstructorValueParameterDefaultValue(): Boolean {
         val valueParameter = findClosestDeclaration<CfirValueParameter>() ?: return false
         val constructor = findClosestDeclaration<CfirConstructor>() ?: return false
@@ -442,6 +493,7 @@ class ErrorNodeDiagnosticCollectorComponent(
         }
     }
 
+    /** 判断一个 source 范围是否完整包含另一个 source 范围。 */
     private fun CjSourceElement.contains(other: CjSourceElement): Boolean =
         startOffset <= other.startOffset && other.endOffset <= endOffset
 

@@ -30,6 +30,7 @@ import org.cangnova.cangjie.source.AbstractCjSourceElement
  * - 常量 step 不能是 0，诊断落在 step 表达式本身。
  */
 object CfirRangeSemanticsChecker : CfirBasicExpressionChecker() {
+    /** 检查 range 表达式起止点和 step 的类型语义。 */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: org.cangnova.cangjie.cfir.expressions.CfirStatement) {
         val rangeExpression = expression as? CfirRangeExpression ?: return
@@ -42,6 +43,7 @@ object CfirRangeSemanticsChecker : CfirBasicExpressionChecker() {
         checkStep(rangeExpression.step, ConePrimitiveType.INT64)
     }
 
+    /** 检查 range 起点或终点是否符合期望元素类型。 */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkEndpoint(expression: CfirExpression, expectedType: ConeCangJieType) {
         val source = expression.source as? AbstractCjSourceElement ?: return
@@ -57,6 +59,7 @@ object CfirRangeSemanticsChecker : CfirBasicExpressionChecker() {
         )
     }
 
+    /** 检查 range step 是否为 Int64 且常量值不为 0。 */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkStep(stepExpression: CfirExpression?, expectedType: ConeCangJieType) {
         val stepExpression = stepExpression ?: return
@@ -79,6 +82,7 @@ object CfirRangeSemanticsChecker : CfirBasicExpressionChecker() {
         }
     }
 
+    /** 根据起止表达式类型推导 range 元素类型。 */
     private fun inferRangeElementType(rangeExpression: CfirRangeExpression): ConeCangJieType {
         val startType = rangeExpression.start.coneTypeOrNull
         val useStartType = rangeExpression.start !is CfirLiteralExpression || rangeExpression.end is CfirLiteralExpression
@@ -98,6 +102,7 @@ object CfirRangeSemanticsChecker : CfirBasicExpressionChecker() {
         return ConePrimitiveType.INT64
     }
 
+    /** 将 ideal integer 类型归一化为 range 检查使用的 Int64。 */
     private fun normalizeRangeElementType(type: ConeCangJieType): ConeCangJieType {
         val normalized = IdealTypeResolver.resolveIfIdeal(type, null)
         return if (normalized is ConePrimitiveType && normalized.kind == PrimitiveTypeKind.IDEAL_INT) {
@@ -109,6 +114,7 @@ object CfirRangeSemanticsChecker : CfirBasicExpressionChecker() {
 
 }
 
+/** 从父调用形参类型中提取 range 表达式的期望元素类型。 */
 private fun CfirRangeExpression.expectedElementTypeFromParentCall(context: CheckerContext): ConeCangJieType? {
     val parentCall = context.callsOrAssignments.asReversed().firstOrNull() as? CfirFunctionCall ?: return null
     val argumentIndex = parentCall.argumentList.arguments.indexOfFirst { it === this }
@@ -118,6 +124,7 @@ private fun CfirRangeExpression.expectedElementTypeFromParentCall(context: Check
     return appliedReference.substitutedParameterTypes.getOrNull(argumentIndex)?.rangeElementTypeOrNull()
 }
 
+/** 从 Range<T> 类型或 typealias 展开结果中提取元素类型。 */
 private fun ConeCangJieType?.rangeElementTypeOrNull(): ConeCangJieType? = when (this) {
     is ConeClassLikeType -> if (classId == StdlibClassIds.Range) typeArguments.singleOrNull()?.type else null
     is ConeStructType -> if (classId == StdlibClassIds.Range) typeArguments.singleOrNull()?.type else null

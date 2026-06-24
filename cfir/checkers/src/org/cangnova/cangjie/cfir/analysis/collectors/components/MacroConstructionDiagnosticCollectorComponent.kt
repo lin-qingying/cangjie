@@ -22,13 +22,18 @@ import org.cangnova.cangjie.source.text
  * ordinary checker 仍只遍历 final CFIR；本组件只在文件入口读取 session
  * 上的 construction registry，并用 `originSurfaceId -> MacroSurface` 把诊断
  * 定位回原始 macro 调用位点。
+ *
+ * @param session 当前组件所属的 CFIR session。
+ * @param reporter 当前诊断收集流程的 pending reporter。
  */
 class MacroConstructionDiagnosticCollectorComponent(
     session: CfirSession,
     reporter: PendingDiagnosticReporter,
 ) : AbstractDiagnosticCollectorComponent(session, reporter) {
+    /** 本组件已经转发过的 construction 诊断，避免同一 session 中重复上报。 */
     private val reportedDiagnostics = mutableSetOf<MacroConstructionDiagnostic>()
 
+    /** 在文件入口转发与该文件 package/source 相关的 macro construction 诊断。 */
     override fun visitFile(file: CfirFile, data: CheckerContext) {
         val registry = session.macroExpansionRegistry ?: return
         for (diagnostic in registry.diagnostics) {
@@ -50,6 +55,7 @@ class MacroConstructionDiagnosticCollectorComponent(
         }
     }
 
+    /** 将单条 construction 诊断映射到普通 CFIR 诊断工厂并上报。 */
     private fun reportConstructionDiagnostic(
         diagnostic: MacroConstructionDiagnostic,
         surface: MacroSurface?,
@@ -226,6 +232,7 @@ class MacroConstructionDiagnosticCollectorComponent(
         }
     }
 
+    /** 判断 construction 诊断是否应该进入普通诊断流。 */
     private fun MacroConstructionDiagnostic.shouldReportToOrdinaryDiagnostics(): Boolean {
         if ((diagnosticOrigin == MacroConstructionDiagnostic.Origin.ARTIFACT_RESOLVER ||
                 diagnosticOrigin == MacroConstructionDiagnostic.Origin.ORCHESTRATION) &&
@@ -239,6 +246,7 @@ class MacroConstructionDiagnosticCollectorComponent(
             diagnosticOrigin == MacroConstructionDiagnostic.Origin.DIAG_REPORT
     }
 
+    /** 判断 artifact 级诊断是否落在 macro package 声明 source 上，从而需要普通诊断流跳过。 */
     private fun MacroConstructionDiagnostic.isPackageLevelArtifactDiagnosticOnMacroPackageSource(
         source: AbstractCjSourceElement,
     ): Boolean {
@@ -251,6 +259,7 @@ class MacroConstructionDiagnosticCollectorComponent(
         return text.startsWith("macro package")
     }
 
+    /** 判断 artifact 级诊断是否只指向当前 macro 自身包，避免在调用侧重复展示。 */
     private fun MacroConstructionDiagnostic.isArtifactDiagnosticForOwnPackage(surface: MacroSurface?): Boolean {
         if (surface == null) return false
         if (diagnosticOrigin != MacroConstructionDiagnostic.Origin.ARTIFACT_RESOLVER &&
@@ -261,6 +270,7 @@ class MacroConstructionDiagnosticCollectorComponent(
         return artifactPackage != null && artifactPackage == surface.scopeContext.packageFqName
     }
 
+    /** 从诊断消息中的反引号片段提取 macro 名称，作为缺少 surface 时的展示兜底。 */
     private fun MacroConstructionDiagnostic.extractBacktickedName(): String? {
         val first = message.indexOf('`')
         if (first < 0) return null

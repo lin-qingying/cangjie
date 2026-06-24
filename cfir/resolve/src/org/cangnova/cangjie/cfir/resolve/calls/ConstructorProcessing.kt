@@ -12,11 +12,13 @@ import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirTypeAliasSymbol
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 
+/** 构造器候选过滤模式。 */
 internal enum class ConstructorFilter {
     OnlyNested,
     Both,
     ;
 
+    /** 判断 class-like 声明是否允许作为当前构造器查找模式的候选。 */
     fun accepts(@Suppress("UNUSED_PARAMETER") declaration: CfirClassLikeDeclaration): Boolean {
         // Cangjie currently has no language-level inner-class constructor split, so every
         // constructible classifier is treated as nested for tower lookup purposes.
@@ -24,6 +26,7 @@ internal enum class ConstructorFilter {
     }
 }
 
+/** 同时按名称处理普通函数和构造器候选。 */
 internal fun CfirScope.processFunctionsAndConstructorsByName(
     callInfo: CallInfo,
     bodyResolveComponents: BodyResolveComponents,
@@ -34,6 +37,7 @@ internal fun CfirScope.processFunctionsAndConstructorsByName(
     processFunctionsByName(callInfo.name, processor)
 }
 
+/** 从当前 scope 中按名称收集 class-like 构造器候选。 */
 private fun CfirScope.processConstructorsByName(
     callInfo: CallInfo,
     bodyResolveComponents: BodyResolveComponents,

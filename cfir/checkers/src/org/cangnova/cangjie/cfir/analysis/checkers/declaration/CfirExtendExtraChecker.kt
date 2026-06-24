@@ -312,6 +312,7 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
             val interfaceModuleData = superDecl.moduleData
             val extendModuleData = extend.moduleData
             if (interfaceModuleData != extendModuleData) {
+                if (extend.duplicatesInheritedTargetInterface(superTypeRef)) continue
                 reporter.reportOn(
                     source = superTypeRef.source ?: extend.source,
                     factory = CfirErrors.TYPE_CANNOT_EXTEND_IMPORTED_INTERFACE,

@@ -33,7 +33,20 @@ import org.cangnova.cangjie.source.psi
 import org.cangnova.cangjie.source.toCjLightSourceElement
 import org.cangnova.cangjie.source.toCjPsiSourceElement
 
+/**
+ * CFIR 文件级导入检查器。
+ *
+ * 该检查器负责基于导入解析阶段产出的 binding 检查 import 的可解析性、命名冲突、
+ * 别名冲突以及未使用导入，并把所有诊断统一落在原始 import 指令或其具体路径片段上。
+ */
 object CfirImportsChecker : CfirFileChecker() {
+    /**
+     * 对单个 CFIR 文件执行导入相关诊断检查。
+     *
+     * 检查流程先从当前 session 的 import binding store 取得解析事实，再区分普通导入、
+     * 别名导入、重复导入和 unresolved 导入，最后把重复导入集合传给 unused-import 检查，
+     * 避免同一条 import 同时报告冲突和未使用。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirFile) {
         val resolvedImports = context.session.importBindingStoreOrNull?.getBindings(declaration)?.imports.orEmpty()
@@ -75,6 +88,12 @@ object CfirImportsChecker : CfirFileChecker() {
         reportUnusedImports(declaration, duplicateImports)
     }
 
+    /**
+     * 收集当前文件内所有需要作为重复导入处理的冲突 import。
+     *
+     * 普通导入和别名导入分开分组，包目标导入不参与冲突判定；同名但目标签名不同的
+     * import 会被视为真正冲突并进入返回集合。
+     */
     private fun List<CfirResolvedImportBinding>.allCurrentConflictingImports(): Set<CfirImport> {
         val conflictingNameImports = filter { it.importDirective.aliasName == null }
             .filterNot { it.hasOnlyPackageTargets() }
@@ -87,9 +106,20 @@ object CfirImportsChecker : CfirFileChecker() {
         return conflictingNameImports + conflictingAliasImports
     }
 
+    /**
+     * 判断某条解析后的导入是否只解析到包目标。
+     *
+     * 纯包导入不会引入具体类或可调用符号，因此不参与导入冲突诊断。
+     */
     private fun CfirResolvedImportBinding.hasOnlyPackageTargets(): Boolean =
         targets.isNotEmpty() && targets.all { it is CfirResolvedImportTarget.Package }
 
+    /**
+     * 从按有效名称分组的 import binding 中收集全部冲突 import。
+     *
+     * 该方法用于构造重复导入集合，因此同一名称组内只要存在多个稳定目标签名，
+     * 组内所有 import 都会被纳入冲突集合。
+     */
     private fun Map<Name, List<CfirResolvedImportBinding>>.collectAllCurrentConflictingImports(): Set<CfirImport> {
         val result = linkedSetOf<CfirImport>()
         for (bindings in values) {
@@ -100,6 +130,12 @@ object CfirImportsChecker : CfirFileChecker() {
         return result
     }
 
+    /**
+     * 报告单条 import 的解析失败诊断。
+     *
+     * 父路径片段无法解析时，诊断优先落在最早失败的路径片段；父路径可解析但终端目标
+     * 不存在时，诊断落在整条 import 上并报告终端简单名。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun reportImportResolutionDiagnostic(
         import: CfirImport,
@@ -158,6 +194,12 @@ object CfirImportsChecker : CfirFileChecker() {
         }
     }
 
+    /**
+     * 收集文件正文中真实引用过的简单名。
+     *
+     * 收集范围覆盖命名引用和用户类型引用中的限定名片段；只有带 source 的引用会被认为
+     * 来自用户源码，从而避免把合成节点或 import 指令本身误计为使用。
+     */
     private fun CfirFile.collectReferencedNames(): Set<Name> {
         val result = linkedSetOf<Name>()
         accept(object : CfirDefaultVisitorVoid() {
@@ -207,6 +249,12 @@ object CfirImportsChecker : CfirFileChecker() {
         return canResolveTerminalImportTarget(importedFqName)
     }
 
+    /**
+     * 收集文件正文中通过可调用符号间接引用到的所属类 ID。
+     *
+     * 该集合用于识别只通过成员调用触达的类导入，避免成员解析已经证明导入被使用时
+     * 仍把对应类导入报告为未使用。
+     */
     private fun CfirFile.collectReferencedClassIds(): Set<ClassId> {
         val result = linkedSetOf<ClassId>()
         accept(object : CfirDefaultVisitorVoid() {
@@ -223,6 +271,12 @@ object CfirImportsChecker : CfirFileChecker() {
         return result
     }
 
+    /**
+     * 判断当前 import 是否解析到了正文引用集合中的任一类目标。
+     *
+     * 该检查只使用 import binding store 中记录的类目标，确保 unused-import 判定与
+     * 导入解析阶段看到的真实目标保持一致。
+     */
     private fun CfirImport.referencesAnyClassId(
         referencedClassIds: Set<ClassId>,
         importBindingsByImport: Map<CfirImport, CfirResolvedImportBinding>,
@@ -235,6 +289,11 @@ object CfirImportsChecker : CfirFileChecker() {
             .any { it.classId in bindings }
     }
 
+    /**
+     * 查找 import 父路径中第一个无法解析为包前缀的片段下标。
+     *
+     * 对星号导入会把完整路径都视为父路径；对普通导入则只检查终端名称之前的路径片段。
+     */
     context(context: CheckerContext)
     private fun findUnresolvedParentSegmentIndex(pathSegments: List<Name>, isAllUnderImport: Boolean): Int? {
         val parentSegmentCount = if (isAllUnderImport) pathSegments.size else pathSegments.size - 1
@@ -247,6 +306,12 @@ object CfirImportsChecker : CfirFileChecker() {
         return null
     }
 
+    /**
+     * 判断给定路径片段是否可以作为 import 的包前缀解析。
+     *
+     * 当前实现使用 session 的 symbol provider 查询包存在性，保证前缀解析与文件导入解析
+     * 使用同一套符号提供入口。
+     */
     context(context: CheckerContext)
     private fun canResolvePackageOrClassPrefix(prefixSegments: List<Name>): Boolean {
         val symbolProvider = context.session.symbolProvider
@@ -255,6 +320,12 @@ object CfirImportsChecker : CfirFileChecker() {
         return symbolProvider.hasPackage(packageFqName)
     }
 
+    /**
+     * 判断普通 import 的终端目标是否可以解析。
+     *
+     * 终端目标可以是类符号、顶层可调用符号或包；当父包本身不存在时直接返回 false，
+     * 避免把不存在路径上的终端名称误判为可解析。
+     */
     context(context: CheckerContext)
     private fun canResolveTerminalImportTarget(importedFqName: FqName): Boolean {
         val symbolProvider = context.session.symbolProvider
@@ -267,6 +338,12 @@ object CfirImportsChecker : CfirFileChecker() {
         return classLike != null || callableSymbols.isNotEmpty() || symbolProvider.hasPackage(importedFqName)
     }
 
+    /**
+     * 取得 import 路径中从末尾倒数指定位置的源码元素。
+     *
+     * 该方法同时支持 PSI source 和 light-tree source，用于把 unresolved-import 诊断
+     * 精确定位到失败的限定名片段。
+     */
     private fun CfirImport.getSourceForImportSegment(indexFromLast: Int): CjSourceElement? {
         var segmentSource: CjSourceElement = source ?: return null
         repeat(indexFromLast + 1) {
@@ -280,6 +357,12 @@ object CfirImportsChecker : CfirFileChecker() {
         }
     }
 
+    /**
+     * 在 source element 的直接或限定深度子树中查找指定类型的子 source。
+     *
+     * PSI 与 light-tree 两种 source 表示会走不同的子节点遍历路径，但返回值统一包装为
+     * CangJie source element，供诊断定位层直接使用。
+     */
     private fun CjSourceElement.getChild(
         types: Set<IElementType>,
         index: Int = 0,
@@ -325,6 +408,12 @@ object CfirImportsChecker : CfirFileChecker() {
         return result
     }
 
+    /**
+     * 根据 light-tree 子节点构造与当前 source element 对齐的子 source。
+     *
+     * light-tree 节点的偏移以原始树为基准，因此需要叠加当前 source 与根节点之间的
+     * offset delta，才能得到诊断系统期望的文件内偏移。
+     */
     private fun CjLightSourceElement.buildChildSourceElement(childNode: LighterASTNode): CjLightSourceElement {
         val offsetDelta = startOffset - lighterASTNode.startOffset
         return childNode.toCjLightSourceElement(
@@ -335,12 +424,21 @@ object CfirImportsChecker : CfirFileChecker() {
         )
     }
 
+    /**
+     * 从 IntelliJ flyweight light-tree 结构中读取当前节点的非空子节点列表。
+     */
     private fun LighterASTNode.childrenOf(tree: FlyweightCapableTreeStructure<LighterASTNode>): List<LighterASTNode> {
         val childrenRef = Ref<Array<LighterASTNode?>>()
         tree.getChildren(this, childrenRef)
         return childrenRef.get()?.filterNotNull().orEmpty()
     }
 
+    /**
+     * 以非递归深度优先方式遍历子树，并处理匹配指定 token 类型的节点。
+     *
+     * reverse 控制同一层子节点的访问方向，depth 控制最大下探深度；根节点本身不会被
+     * 作为匹配结果处理，因此调用方可以直接以当前 source 或 PSI 作为遍历根。
+     */
     private fun <T> forEachChildOfType(
         root: T,
         types: Set<IElementType>,
@@ -370,11 +468,20 @@ object CfirImportsChecker : CfirFileChecker() {
         }
     }
 
+    /**
+     * import 路径向父级回退时允许穿过的语法节点类型集合。
+     */
     private val IMPORT_PARENT_TOKEN_TYPES = setOf(
         CjNodeTypes.DOT_QUALIFIED_EXPRESSION,
         CjNodeTypes.REFERENCE_EXPRESSION,
     )
 
+    /**
+     * 从按名称分组的 binding 中收集当前应立即报告的冲突 import。
+     *
+     * 与全量重复集合不同，该方法保留第一个目标签名作为基准，只把后续解析到不同目标的
+     * import 加入结果，从而让冲突诊断集中落在真正引入冲突的 import 指令上。
+     */
     private fun Map<Name, List<CfirResolvedImportBinding>>.collectCurrentConflictingImports(): Set<CfirImport> {
         val result = linkedSetOf<CfirImport>()
         for (bindings in values) {
@@ -390,6 +497,12 @@ object CfirImportsChecker : CfirFileChecker() {
         return result
     }
 
+    /**
+     * 为 import binding 构造稳定的目标签名。
+     *
+     * 签名包含 import 文本目标、是否星号导入以及排序后的解析目标集合，用于同名 import
+     * 冲突判定时消除目标顺序差异。
+     */
     private fun CfirResolvedImportBinding.stableTargetSignature(): String {
         val targetSignatures = targets.map { target -> target.toString() }.sorted()
         return buildString {

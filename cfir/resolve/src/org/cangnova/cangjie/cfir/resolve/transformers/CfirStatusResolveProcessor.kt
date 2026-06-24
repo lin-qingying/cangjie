@@ -41,6 +41,12 @@ import org.cangnova.cangjie.descriptors.Modality
 import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.util.PrivateForInline
 
+/**
+ * CFIR STATUS 阶段的主处理器。
+ *
+ * 该处理器把类型阶段之后的声明交给 [CfirStatusResolveTransformer]，
+ * 统一补全可见性、模态以及 callable 覆盖关系相关的 resolved status。
+ */
 internal class CfirStatusResolveProcessor(
     session: CfirSession,
     scopeSession: ScopeSession,
@@ -49,30 +55,62 @@ internal class CfirStatusResolveProcessor(
     scopeSession = scopeSession,
     phase = CfirResolvePhase.STATUS,
 ) {
+    /**
+     * STATUS 阶段实际使用的树转换器。
+     *
+     * 每个处理器实例持有独立的 [CfirStatusComputationSession]，
+     * 用于记录本次遍历中的递归计算状态并避免 class-like 超类型解析环。
+     */
     override val transformer: CfirStatusResolveTransformer = run {
         val statusComputationSession = CfirStatusComputationSession(session, scopeSession)
         CfirStatusResolveTransformer(statusComputationSession)
     }
 }
 
+/**
+ * 一次 STATUS 计算中的共享状态。
+ *
+ * 它记录声明的 status 推进进度，并提供超类型 class-like 声明的强制解析入口。
+ * 主干实现只面向当前 use-site session，low-level resolver 可以通过继承扩展多 session 搜索。
+ */
 open class CfirStatusComputationSession(
+    /** 当前 STATUS 解析读取符号、scope 与 platform 服务时使用的会话。 */
     val useSiteSession: CfirSession,
+    /** 当前 STATUS 解析复用的 scope 缓存会话。 */
     val useSiteScopeSession: ScopeSession,
 ) {
+    /**
+     * 声明到 STATUS 计算状态的缓存表。
+     *
+     * 默认值为 [StatusComputationStatus.NotComputed]，避免每次读取前显式初始化。
+     */
     private val statusMap: MutableMap<CfirDeclaration, StatusComputationStatus> =
         hashMapOf<CfirDeclaration, StatusComputationStatus>()
             .withDefault { StatusComputationStatus.NotComputed }
 
+    /** 返回指定声明在当前 STATUS 计算会话中的推进状态。 */
     operator fun get(declaration: CfirDeclaration): StatusComputationStatus = statusMap.getValue(declaration)
 
+    /**
+     * 标记指定声明开始进行 STATUS 计算。
+     *
+     * 如果声明已有状态则返回原状态，调用方据此判断是否需要短路递归。
+     */
     fun startComputing(declaration: CfirDeclaration): StatusComputationStatus {
         return statusMap.getOrPut(declaration) { StatusComputationStatus.Computing }
     }
 
+    /** 标记指定声明的 STATUS 已完整计算完成。 */
     fun endComputing(declaration: CfirDeclaration) {
         statusMap[declaration] = StatusComputationStatus.Computed
     }
 
+    /**
+     * 标记指定声明只完成了自身 declaration status 的计算。
+     *
+     * 该状态用于低阶 lazy resolve：声明自身 status 可先发布，
+     * 但后续成员或子树仍允许继续推进到完整 STATUS。
+     */
     fun computeOnlyDeclarationStatus(declaration: CfirDeclaration) {
         val existedStatus = statusMap.getValue(declaration)
         if (existedStatus < StatusComputationStatus.ComputedOnlyDeclarationStatus) {
@@ -80,10 +118,19 @@ open class CfirStatusComputationSession(
         }
     }
 
+    /**
+     * 单个声明在 STATUS 计算中的生命周期状态。
+     *
+     * [requiresComputation] 表示再次遇到该声明时是否仍需继续进入真实计算。
+     */
     enum class StatusComputationStatus(val requiresComputation: Boolean) {
+        /** 声明尚未进入 STATUS 计算。 */
         NotComputed(true),
+        /** 声明正在计算中，用于打断递归环。 */
         Computing(false),
+        /** 声明自身 status 已计算，但子树或成员仍可继续解析。 */
         ComputedOnlyDeclarationStatus(true),
+        /** 声明及其 STATUS 子任务均已完成。 */
         Computed(false),
     }
 
@@ -113,6 +160,11 @@ open class CfirStatusComputationSession(
         return listOfNotNull(useSiteSession.symbolProvider.getClassLikeSymbolByClassId(classId))
     }
 
+    /**
+     * 对一个超类型符号对应的 class-like 声明执行 STATUS 强制推进。
+     *
+     * typealias 会继续展开其 expanded type，直到落到真实 class-like 声明。
+     */
     private fun forceResolveStatusOfCorrespondingClass(classLikeSymbol: CfirClassLikeSymbol<*>) {
         when (classLikeSymbol) {
             is CfirClassSymbol -> forceResolveStatusesOfClassLike(classLikeSymbol.cfir)
@@ -128,6 +180,12 @@ open class CfirStatusComputationSession(
         }
     }
 
+    /**
+     * 强制推进 class-like 声明自身及其超类型的 STATUS。
+     *
+     * source 声明会重新进入目标 class 子树，非 source 声明只维护计算状态，
+     * 因为它们通常已经由 provider / deserializer 提供稳定状态。
+     */
     private fun forceResolveStatusesOfClassLike(classLikeDeclaration: CfirClassLikeDeclaration) {
         if (classLikeDeclaration.origin != CfirDeclarationOrigin.Source) {
             val computationStatus = this[classLikeDeclaration]
@@ -163,18 +221,34 @@ open class CfirStatusComputationSession(
     open fun additionalSuperTypes(classLikeDeclaration: CfirClassLikeDeclaration): List<CfirTypeRef> = emptyList()
 }
 
+/**
+ * STATUS 阶段树转换器的公共骨架。
+ *
+ * 该类负责维护当前 class-like 容器栈、声明 phase 推进和 resolved status 发布顺序；
+ * 具体 status 默认值和覆盖关系计算委托给 [CfirStatusResolver]。
+ */
 open class AbstractCfirStatusResolveTransformer(
+    /** 本次 STATUS 转换共享的计算状态与 use-site 会话信息。 */
     val statusComputationSession: CfirStatusComputationSession,
 ) : CfirAbstractTreeTransformer<Nothing?>(CfirResolvePhase.STATUS) {
+    /** 当前转换路径上的 class-like 容器栈。 */
     @PrivateForInline
     val classes: MutableList<CfirClassLikeDeclaration> = mutableListOf()
+    /** 根据声明形态、容器和覆盖关系计算 resolved status 的服务对象。 */
     val statusResolver: CfirStatusResolver = CfirStatusResolver(session, statusComputationSession.useSiteScopeSession)
+    /** 当前 STATUS 转换使用的 use-site session。 */
     override val session: CfirSession
         get() = statusComputationSession.useSiteSession
+    /** 当前声明所在的最内层 class-like 容器。 */
     @OptIn(PrivateForInline::class)
     val containingClass: CfirClassLikeDeclaration?
         get() = classes.lastOrNull()
 
+    /**
+     * 在 class-like 容器栈中临时压入 [klass] 并执行 [computeResult]。
+     *
+     * 该 helper 保证子声明解析期间能读取正确的外层 class 上下文。
+     */
     @OptIn(PrivateForInline::class)
     inline fun storeClass(
         klass: CfirClassLikeDeclaration,
@@ -185,6 +259,7 @@ open class AbstractCfirStatusResolveTransformer(
         classes.removeAt(classes.lastIndex)
     }
 
+    /** 将所有声明节点转入 STATUS 专用路径，其它元素继续使用默认树遍历。 */
     override fun <E : CfirElement> transformElement(element: E, data: Nothing?): E {
         if (element is CfirDeclaration) {
             @Suppress("UNCHECKED_CAST")
@@ -193,6 +268,7 @@ open class AbstractCfirStatusResolveTransformer(
         return super.transformElement(element, data)
     }
 
+    /** 为通用声明建立 STATUS phase guard 后继续遍历其子节点。 */
     override fun transformDeclaration(declaration: CfirDeclaration, data: Nothing?): CfirDeclaration {
         return withResolvedStatusPhase(declaration) {
             declaration.transformChildren(this, data)
@@ -229,6 +305,11 @@ open class AbstractCfirStatusResolveTransformer(
         return target
     }
 
+    /**
+     * 按 STATUS 阶段顺序转换 class-like 成员。
+     *
+     * 非 class-like 成员先处理，嵌套 class-like 后处理，避免成员解析读取未稳定的外层状态。
+     */
     protected fun transformClassLikeMembers(classLike: CfirClassLikeDeclaration) {
         val declarations = classLike.declarations
         declarations.forEach { declaration ->
@@ -243,6 +324,11 @@ open class AbstractCfirStatusResolveTransformer(
         }
     }
 
+    /**
+     * 按 STATUS 阶段顺序转换 extend 容器成员。
+     *
+     * extend 与 class-like 一样拥有成员列表，因此复用“普通成员优先、嵌套类型后置”的发布顺序。
+     */
     protected fun transformExtendMembers(extend: CfirExtend) {
         val declarations = extend.declarations
         declarations.forEach { declaration ->
@@ -257,6 +343,7 @@ open class AbstractCfirStatusResolveTransformer(
         }
     }
 
+    /** 推进 class 声明 STATUS，并在其容器上下文内处理类型参数和成员。 */
     override fun transformClass(klass: CfirClass, data: Nothing?): CfirClass {
         val outerClass = containingClass
         return withResolvedStatusPhase(klass) {
@@ -269,6 +356,7 @@ open class AbstractCfirStatusResolveTransformer(
         }
     }
 
+    /** 推进 interface 声明 STATUS，并在其容器上下文内处理类型参数和成员。 */
     override fun transformInterface(interfaceDeclaration: CfirInterface, data: Nothing?): CfirInterface {
         val outerClass = containingClass
         return withResolvedStatusPhase(interfaceDeclaration) {
@@ -281,6 +369,7 @@ open class AbstractCfirStatusResolveTransformer(
         }
     }
 
+    /** 推进 struct 声明 STATUS，并在其容器上下文内处理类型参数和成员。 */
     override fun transformStruct(struct: CfirStruct, data: Nothing?): CfirStruct {
         val outerClass = containingClass
         return withResolvedStatusPhase(struct) {
@@ -293,6 +382,7 @@ open class AbstractCfirStatusResolveTransformer(
         }
     }
 
+    /** 推进 enum 声明 STATUS，并在其容器上下文内处理类型参数和成员。 */
     override fun transformEnum(enum: CfirEnum, data: Nothing?): CfirEnum {
         val outerClass = containingClass
         return withResolvedStatusPhase(enum) {
@@ -357,6 +447,7 @@ open class AbstractCfirStatusResolveTransformer(
         enum.replaceStatus(statusResolver.resolveStatus(enum, containingClass, isLocal = false))
     }
 
+    /** 推进 typealias 声明 STATUS。 */
     override fun transformTypeAlias(typeAlias: CfirTypeAlias, data: Nothing?): CfirTypeAlias {
         return withResolvedStatusPhase(typeAlias) {
             transformTypeAliasStatusWithoutPhaseGuard(typeAlias)
@@ -375,6 +466,7 @@ open class AbstractCfirStatusResolveTransformer(
         typeAlias.replaceStatus(statusResolver.resolveStatus(typeAlias, containingClass, isLocal = false))
     }
 
+    /** 推进 extend 容器 STATUS，并继续处理其成员状态。 */
     override fun transformExtend(extend: CfirExtend, data: Nothing?): CfirExtend {
         return withResolvedStatusPhase(extend) {
             transformExtendStatusWithoutPhaseGuard(extend)
@@ -393,18 +485,22 @@ open class AbstractCfirStatusResolveTransformer(
         extend.replaceStatus(statusResolver.resolveStatus(extend, containingClass, isLocal = false))
     }
 
+    /** 推进普通函数节点的 STATUS。 */
     override fun transformFunction(function: CfirFunction, data: Nothing?): CfirFunction {
         return transformFunctionStatus(function)
     }
 
+    /** 推进 main 函数节点的 STATUS。 */
     override fun transformMainFunction(mainFunction: CfirMainFunction, data: Nothing?): CfirMainFunction {
         return transformFunctionStatus(mainFunction) as CfirMainFunction
     }
 
+    /** 推进宏声明函数节点的 STATUS。 */
     override fun transformMacroDeclaration(macroDeclaration: CfirMacroDeclaration, data: Nothing?): CfirMacroDeclaration {
         return transformFunctionStatus(macroDeclaration) as CfirMacroDeclaration
     }
 
+    /** 推进 finalizer 函数节点的 STATUS。 */
     override fun transformFinalizer(finalizer: CfirFinalizer, data: Nothing?): CfirFinalizer {
         return transformFunctionStatus(finalizer) as CfirFinalizer
     }
@@ -432,6 +528,7 @@ open class AbstractCfirStatusResolveTransformer(
         function.valueParameters.forEach(::transformValueParameterStatusWithoutPhaseGuard)
     }
 
+    /** 推进具名函数 STATUS，并在解析前收集直接覆盖的函数状态。 */
     override fun transformNamedFunction(namedFunction: CfirNamedFunction, data: Nothing?): CfirNamedFunction {
         return withResolvedStatusPhase(namedFunction) {
             val overriddenFunctions = statusResolver.getOverriddenFunctions(namedFunction, containingClass)
@@ -439,6 +536,11 @@ open class AbstractCfirStatusResolveTransformer(
         }
     }
 
+    /**
+     * 根据已确定的覆盖函数列表计算具名函数 STATUS。
+     *
+     * 该入口供普通树遍历和 low-level 专用路径复用，避免重复查询 override scope。
+     */
     fun transformNamedFunction(
         namedFunction: CfirNamedFunction,
         overriddenFunctions: List<CfirNamedFunction>,
@@ -455,6 +557,7 @@ open class AbstractCfirStatusResolveTransformer(
         namedFunction.valueParameters.forEach(::transformValueParameterStatusWithoutPhaseGuard)
     }
 
+    /** 推进普通构造器 STATUS，并同步发布构造器参数状态。 */
     override fun transformConstructor(constructor: CfirConstructor, data: Nothing?): CfirConstructor {
         return withResolvedStatusPhase(constructor) {
             constructor.replaceStatus(statusResolver.resolveStatus(constructor, containingClass, isLocal = false))
@@ -462,6 +565,7 @@ open class AbstractCfirStatusResolveTransformer(
         }
     }
 
+    /** 推进 enum constructor STATUS，并同步发布构造器参数状态。 */
     override fun transformEnumConstructor(enumConstructor: CfirEnumConstructor, data: Nothing?): CfirEnumConstructor {
         return withResolvedStatusPhase(enumConstructor) {
             enumConstructor.replaceStatus(statusResolver.resolveStatus(enumConstructor, containingClass, isLocal = false))
@@ -469,6 +573,7 @@ open class AbstractCfirStatusResolveTransformer(
         }
     }
 
+    /** 推进属性 STATUS，并在解析前收集直接覆盖的属性状态。 */
     override fun transformProperty(property: CfirProperty, data: Nothing?): CfirProperty {
         return withResolvedStatusPhase(property) {
             val overriddenProperties = statusResolver.getOverriddenProperties(property, containingClass)
@@ -476,6 +581,11 @@ open class AbstractCfirStatusResolveTransformer(
         }
     }
 
+    /**
+     * 根据已确定的覆盖属性列表计算属性及访问器 STATUS。
+     *
+     * setter 会单独继承被覆盖 setter 的状态集合，getter 使用属性自身 resolved status。
+     */
     fun transformProperty(
         property: CfirProperty,
         overriddenProperties: List<CfirProperty>,
@@ -498,6 +608,11 @@ open class AbstractCfirStatusResolveTransformer(
         property.setter?.let { transformPropertyAccessor(it, property, overriddenSetters) }
     }
 
+    /**
+     * 计算并发布属性访问器 STATUS。
+     *
+     * 访问器默认继承所属属性的可见性和模态上下文，setter 可额外接收覆盖链中的访问器状态。
+     */
     protected fun transformPropertyAccessor(
         propertyAccessor: CfirPropertyAccessor,
         containingProperty: CfirProperty,
@@ -515,17 +630,20 @@ open class AbstractCfirStatusResolveTransformer(
         propertyAccessor.valueParameters.forEach(::transformValueParameterStatusWithoutPhaseGuard)
     }
 
+    /** 访问器被单独访问时，回到所属属性统一发布属性与访问器状态。 */
     override fun transformPropertyAccessor(propertyAccessor: CfirPropertyAccessor, data: Nothing?): CfirPropertyAccessor {
         transformProperty(propertyAccessor.propertySymbol.cfir, data)
         return propertyAccessor
     }
 
+    /** 推进字段变量 STATUS。 */
     override fun transformFieldVariable(fieldVariable: CfirFieldVariable, data: Nothing?): CfirFieldVariable {
         return withResolvedStatusPhase(fieldVariable) {
             transformVariableStatusWithoutPhaseGuard(fieldVariable)
         }
     }
 
+    /** 推进模式绑定变量 STATUS。 */
     override fun transformPatternBindingVariable(
         patternBindingVariable: CfirPatternBindingVariable,
         data: Nothing?,
@@ -535,6 +653,7 @@ open class AbstractCfirStatusResolveTransformer(
         }
     }
 
+    /** 推进模式变量 STATUS。 */
     override fun transformPatternVariable(
         patternVariable: CfirPatternVariable,
         data: Nothing?,
@@ -544,6 +663,7 @@ open class AbstractCfirStatusResolveTransformer(
         }
     }
 
+    /** value parameter 的通用遍历入口；参数状态由 callable 专用路径集中发布。 */
     override fun transformValueParameter(valueParameter: CfirValueParameter, data: Nothing?): CfirValueParameter {
         return withResolvedStatusPhase(valueParameter) {}
     }
@@ -571,6 +691,7 @@ open class AbstractCfirStatusResolveTransformer(
         variable.replaceStatus(statusResolver.resolveStatus(variable, containingClass, isLocal = false))
     }
 
+    /** 推进类型参数 bounds 并发布类型参数 STATUS phase。 */
     override fun transformTypeParameter(typeParameter: CfirTypeParameter, data: Nothing?): CfirTypeParameter {
         if (typeParameter.resolvePhase < CfirResolvePhase.TYPES || typeParameter.resolvePhase >= CfirResolvePhase.STATUS) {
             return typeParameter
@@ -581,12 +702,22 @@ open class AbstractCfirStatusResolveTransformer(
     }
 }
 
+/**
+ * 主干 STATUS 阶段使用的具体转换器。
+ *
+ * 当前没有额外状态，只固定继承 [AbstractCfirStatusResolveTransformer] 的完整行为。
+ */
 open class CfirStatusResolveTransformer(
     statusComputationSession: CfirStatusComputationSession,
 ) : AbstractCfirStatusResolveTransformer(
     statusComputationSession = statusComputationSession,
 ) 
 
+/**
+ * 在声明仍持有 raw status 时发布 resolved status。
+ *
+ * 该 helper 保留 raw status 中已经解析出的显式标志，只补齐 STATUS 阶段必须稳定的 modality。
+ */
 private fun CfirMemberDeclaration.publishResolvedStatusIfNeeded() {
     val currentStatus = status
     if (currentStatus is CfirResolvedDeclarationStatus) return
@@ -632,9 +763,16 @@ private fun CfirMemberDeclaration.publishResolvedStatusIfNeeded() {
  * `isVisibilityExplicit / isModalityExplicit` 重新解释 raw status，把真正的默认决策放回 STATUS 阶段。
  */
 class CfirStatusResolver(
+    /** 查询符号、scope 和可见性规则时使用的会话。 */
     private val session: CfirSession,
+    /** 查询成员 scope 时复用的 scope 缓存会话。 */
     private val scopeSession: ScopeSession,
 ) {
+    /**
+     * 查询属性在当前 class-like 容器中的直接覆盖属性。
+     *
+     * 返回值只包含直接 override 边，用于属性 status 继承可见性和 setter 状态。
+     */
     fun getOverriddenProperties(
         property: CfirProperty,
         containingClass: CfirClassLikeDeclaration?,
@@ -654,6 +792,11 @@ class CfirStatusResolver(
         return result.toList()
     }
 
+    /**
+     * 查询具名函数在当前 class-like 容器中的直接覆盖函数。
+     *
+     * STATUS 阶段只需要直接覆盖声明的 resolved status，完整 override 图由 scope 负责维护。
+     */
     fun getOverriddenFunctions(
         function: CfirNamedFunction,
         containingClass: CfirClassLikeDeclaration?,
@@ -673,6 +816,7 @@ class CfirStatusResolver(
         return result.toList()
     }
 
+    /** 计算 class 声明的 resolved status。 */
     fun resolveStatus(
         declaration: CfirClass,
         containingClass: CfirClassLikeDeclaration?,
@@ -687,6 +831,7 @@ class CfirStatusResolver(
         )
     }
 
+    /** 计算 interface 声明的 resolved status。 */
     fun resolveStatus(
         declaration: CfirInterface,
         containingClass: CfirClassLikeDeclaration?,
@@ -701,6 +846,7 @@ class CfirStatusResolver(
         )
     }
 
+    /** 计算 struct 声明的 resolved status。 */
     fun resolveStatus(
         declaration: CfirStruct,
         containingClass: CfirClassLikeDeclaration?,
@@ -715,6 +861,7 @@ class CfirStatusResolver(
         )
     }
 
+    /** 计算 enum 声明的 resolved status。 */
     fun resolveStatus(
         declaration: CfirEnum,
         containingClass: CfirClassLikeDeclaration?,
@@ -729,6 +876,7 @@ class CfirStatusResolver(
         )
     }
 
+    /** 计算 typealias 声明的 resolved status。 */
     fun resolveStatus(
         declaration: CfirTypeAlias,
         containingClass: CfirClassLikeDeclaration?,
@@ -743,6 +891,7 @@ class CfirStatusResolver(
         )
     }
 
+    /** 计算非具名函数类声明的 resolved status。 */
     fun resolveStatus(
         declaration: CfirFunction,
         containingClass: CfirClassLikeDeclaration?,
@@ -757,6 +906,7 @@ class CfirStatusResolver(
         )
     }
 
+    /** 根据覆盖函数状态计算具名函数的 resolved status。 */
     fun resolveStatus(
         declaration: CfirNamedFunction,
         containingClass: CfirClassLikeDeclaration?,
@@ -773,6 +923,7 @@ class CfirStatusResolver(
         )
     }
 
+    /** 计算普通构造器声明的 resolved status。 */
     fun resolveStatus(
         declaration: CfirConstructor,
         containingClass: CfirClassLikeDeclaration?,
@@ -787,6 +938,7 @@ class CfirStatusResolver(
         )
     }
 
+    /** 计算 enum constructor 声明的 resolved status。 */
     fun resolveStatus(
         declaration: CfirEnumConstructor,
         containingClass: CfirClassLikeDeclaration?,
@@ -801,6 +953,7 @@ class CfirStatusResolver(
         )
     }
 
+    /** 根据覆盖属性状态计算属性声明的 resolved status。 */
     fun resolveStatus(
         declaration: CfirProperty,
         containingClass: CfirClassLikeDeclaration?,
@@ -817,6 +970,7 @@ class CfirStatusResolver(
         )
     }
 
+    /** 根据所属属性和覆盖访问器状态计算属性访问器的 resolved status。 */
     fun resolveStatus(
         declaration: CfirPropertyAccessor,
         containingClass: CfirClassLikeDeclaration?,
@@ -834,6 +988,7 @@ class CfirStatusResolver(
         )
     }
 
+    /** 计算变量类声明的 resolved status。 */
     fun resolveStatus(
         declaration: CfirVariable,
         containingClass: CfirClassLikeDeclaration?,
@@ -848,6 +1003,7 @@ class CfirStatusResolver(
         )
     }
 
+    /** 计算 extend 容器声明的 resolved status。 */
     fun resolveStatus(
         declaration: CfirExtend,
         containingClass: CfirClassLikeDeclaration?,
@@ -862,6 +1018,11 @@ class CfirStatusResolver(
         )
     }
 
+    /**
+     * resolved status 的统一构造入口。
+     *
+     * 该函数保留 raw status 中的显式修饰符标志，并按声明种类、容器和覆盖状态补齐默认可见性与模态。
+     */
     private fun resolveStatus(
         declaration: CfirDeclaration,
         status: CfirDeclarationStatus,
@@ -910,6 +1071,11 @@ class CfirStatusResolver(
         }
     }
 
+    /**
+     * 解析默认可见性。
+     *
+     * 局部声明固定为 local，访问器继承所属属性，override 声明使用直接覆盖链中最宽的可见性。
+     */
     private fun resolveVisibility(
         declaration: CfirDeclaration,
         containingProperty: CfirProperty?,
@@ -927,6 +1093,11 @@ class CfirStatusResolver(
         else -> declaration.statusOrNull()?.visibility ?: Visibilities.Public
     }
 
+    /**
+     * 解析默认模态。
+     *
+     * class-like、顶层 callable、interface 成员和 override 成员各自遵循不同默认规则。
+     */
     private fun resolveModality(
         declaration: CfirDeclaration,
         containingProperty: CfirProperty?,
@@ -958,6 +1129,11 @@ class CfirStatusResolver(
     }
 }
 
+/**
+ * 读取声明当前 status，如果该声明类型本身不携带 status 则返回 null。
+ *
+ * 该函数仅作为默认可见性回退使用，不负责发布或推进 STATUS phase。
+ */
 private fun CfirDeclaration.statusOrNull(): CfirDeclarationStatus? {
     return when (this) {
         is CfirClass -> status
@@ -974,6 +1150,11 @@ private fun CfirDeclaration.statusOrNull(): CfirDeclarationStatus? {
     }
 }
 
+/**
+ * 判断 callable 是否拥有自身实现体或属性访问器实现体。
+ *
+ * interface 成员默认模态需要区分抽象成员与带默认实现的成员。
+ */
 private fun CfirDeclaration.hasOwnBodyOrAccessorBody(): Boolean {
     return when (this) {
         is CfirFunction -> body != null

@@ -12,8 +12,10 @@ import org.cangnova.cangjie.cfir.analysis.checkers.expression.ExpressionCheckers
  * 因此先按现有主干 checker 归位到 extra 分组。
  */
 object ExtraExpressionCheckers : ExpressionCheckers() {
+    /** 额外表达式检查中面向基础表达式节点的 checker 集合。 */
     override val basicExpressionCheckers: Set<CfirBasicExpressionChecker> = emptySet()
 
+    /** 额外表达式检查中面向 `try` 表达式节点的 checker 集合。 */
     override val tryExpressionCheckers: Set<CfirTryExpressionChecker> = setOf(
         CfirTryHandleReturnChecker,
     )

@@ -20,7 +20,15 @@ interface MacroFragmentParser {
      */
     fun parse(input: MacroFragmentInput): MacroFragmentResult
 
-    enum class Mode { EXPRESSION, DECLARATION, CUSTOM_ANNOTATION }
+    /** Fragment parser 的解析入口模式。 */
+    enum class Mode {
+        /** 将 token 流解析为表达式 fragment。 */
+        EXPRESSION,
+        /** 将 token 流解析为声明 fragment。 */
+        DECLARATION,
+        /** 将 annotation slot snapshot 重新解析为 custom annotation。 */
+        CUSTOM_ANNOTATION,
+    }
 
     companion object {
         /**
@@ -34,13 +42,23 @@ interface MacroFragmentParser {
 
 /**
  * fragment parser 的完整输入。
+ *
+ * @property node 当前正在解析的 macro forest 节点。
+ * @property tokens executor 或 builtin evaluator 产出的 token 流。
+ * @property decision 当前 surface 的最终 routing 决策。
+ * @property annotationSnapshot custom annotation 模式所需的原始 annotation 槽位 snapshot。
  */
 data class MacroFragmentInput(
+    /** 当前正在解析的 macro forest 节点。 */
     val node: MacroCallNode,
+    /** executor 或 builtin evaluator 产出的 token 流。 */
     val tokens: List<MacroSurfaceToken>,
+    /** 当前 surface 的最终 routing 决策。 */
     val decision: FinalMacroSurfaceDecision,
+    /** custom annotation 模式所需的原始 annotation 槽位 snapshot。 */
     val annotationSnapshot: CfirAnnotationSlotSnapshot? = null,
 ) {
+    /** 从最终 routing 决策投影出的解析模式。 */
     val mode: MacroFragmentParser.Mode
         get() = decision.parserMode
 }
@@ -59,24 +77,54 @@ data class MacroFragmentInput(
  *   为 annotation，而不是 macro call。
  */
 sealed class MacroFragmentResult {
+    /** 产生该 fragment 结果的原始 macro forest 节点。 */
     abstract val originNode: MacroCallNode
 
+    /**
+     * fragment 解析成功。
+     *
+     * @property originNode 产生该结果的原始 macro forest 节点。
+     * @property tokens re-evaluation 后稳定的 token 流。
+     * @property mode 本次 fragment 解析模式。
+     * @property payload raw builder 返回的 construction-only payload。
+     */
     data class Success(
+        /** 产生该结果的原始 macro forest 节点。 */
         override val originNode: MacroCallNode,
+        /** re-evaluation 后稳定的 token 流。 */
         val tokens: List<MacroSurfaceToken>,
+        /** 本次 fragment 解析模式。 */
         val mode: MacroFragmentParser.Mode,
         /** raw builder 重新解析得到的 construction-only payload，由 stable splicer 消费。 */
         val payload: Any? = null,
     ) : MacroFragmentResult()
 
+    /**
+     * custom annotation fallback 解析成功。
+     *
+     * @property originNode 产生该结果的原始 macro forest 节点。
+     * @property payload 重新解析得到的新 annotation 调用。
+     * @property tokens re-evaluation 后稳定的 token 流。
+     */
     data class CustomAnnotation(
+        /** 产生该结果的原始 macro forest 节点。 */
         override val originNode: MacroCallNode,
+        /** 重新解析得到的新 annotation 调用。 */
         val payload: org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall,
+        /** re-evaluation 后稳定的 token 流。 */
         val tokens: List<MacroSurfaceToken>,
     ) : MacroFragmentResult()
 
+    /**
+     * fragment 解析失败。
+     *
+     * @property originNode 产生该结果的原始 macro forest 节点。
+     * @property reason 失败原因，供 construction diagnostic 转换使用。
+     */
     data class Failure(
+        /** 产生该结果的原始 macro forest 节点。 */
         override val originNode: MacroCallNode,
+        /** 失败原因，供 construction diagnostic 转换使用。 */
         val reason: String,
     ) : MacroFragmentResult()
 }
@@ -108,10 +156,17 @@ interface BuiltinNonMacroDesugarer {
  *
  * Batch 8 阶段 slot 仅保存 handle id 与待 splice 的 fragment；
  * Batch 10 接通 owner / source / scope / symbol 修复时会在此扩展。
+ *
+ * @property handle stable splice 必须使用的 replace handle。
+ * @property origin 产生该替换槽位的原始 macro surface。
+ * @property fragment 将要写入槽位的 fragment 结果。
  */
 data class MacroReplaceSlot(
+    /** stable splice 必须使用的 replace handle。 */
     val handle: CfirReplaceHandle,
+    /** 产生该替换槽位的原始 macro surface。 */
     val origin: MacroSurface,
+    /** 将要写入槽位的 fragment 结果。 */
     val fragment: MacroFragmentResult,
 )
 
@@ -172,6 +227,7 @@ object MacroTokenReEvaluator {
         return current
     }
 
+    /** 比较两个 token 序列的文本与 token kind 是否完全一致。 */
     private fun List<MacroSurfaceToken>.sameSequence(other: List<MacroSurfaceToken>): Boolean {
         if (size != other.size) return false
         for (i in indices) {

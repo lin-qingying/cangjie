@@ -9,6 +9,9 @@ import org.cangnova.cangjie.cfir.types.ConeClassLikeLookupTag
 import org.cangnova.cangjie.cfir.types.ConeClassifierLookupTag
 import org.cangnova.cangjie.utils.exceptions.ExceptionAttachmentBuilder
 
+/**
+ * 向异常附件中写入 CFIR symbol 的稳定标识。
+ */
 fun ExceptionAttachmentBuilder.withCfirSymbolIdEntry(name: String, symbol: CfirBasedSymbol<*>?) {
     when (symbol) {
         is CfirClassifierSymbol -> withCfirLookupTagEntry(name, symbol.toLookupTag())
@@ -17,6 +20,9 @@ fun ExceptionAttachmentBuilder.withCfirSymbolIdEntry(name: String, symbol: CfirB
     }
 }
 
+/**
+ * 向异常附件中写入 lookup tag 的可读标识。
+ */
 fun ExceptionAttachmentBuilder.withCfirLookupTagEntry(name: String, lookupTag: ConeClassifierLookupTag?) {
     withEntry(name, lookupTag) { tag ->
         when (tag) {
@@ -26,6 +32,9 @@ fun ExceptionAttachmentBuilder.withCfirLookupTagEntry(name: String, lookupTag: C
     }
 }
 
+/**
+ * 向异常附件中写入 Cone 类型的调试文本。
+ */
 fun ExceptionAttachmentBuilder.withConeTypeEntry(name: String, coneType: ConeCangJieType?) {
     withEntry(name, coneType) {
         buildString { ConeTypeRendererForDebugging(this).render(it) }

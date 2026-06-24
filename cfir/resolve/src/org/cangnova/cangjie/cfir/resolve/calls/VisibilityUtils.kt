@@ -3,6 +3,7 @@ package org.cangnova.cangjie.cfir.resolve.calls
 import org.cangnova.cangjie.cfir.common.moduleData
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration
 import org.cangnova.cangjie.cfir.resolve.SupertypeSupplier
@@ -11,11 +12,25 @@ import org.cangnova.cangjie.cfir.resolve.calls.visibility.CfirVisibilityChecker
 import org.cangnova.cangjie.cfir.resolve.calls.visibility.getOwnerClassId
 import org.cangnova.cangjie.cfir.resolve.calls.visibility.moduleVisibilityChecker
 import org.cangnova.cangjie.cfir.resolve.providers.canAccessPackageInternalDeclaration
+import org.cangnova.cangjie.cfir.resolve.providers.canAccessPackageProtectedDeclaration
 import org.cangnova.cangjie.cfir.resolve.providers.getContainingFile
+import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.cfirProvider
+import org.cangnova.cangjie.cfir.session.extendProviderOrNull
+import org.cangnova.cangjie.cfir.session.typeAwareSupertypeProviderOrNull
+import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
+import org.cangnova.cangjie.cfir.symbols.constructType
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
+import org.cangnova.cangjie.cfir.types.coneTypeOrNull
+import org.cangnova.cangjie.cfir.unwrapSubstitutionOverrides
 import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.name.ClassId
 
+/**
+ * 判断成员声明对当前调用候选是否可见。
+ */
 fun isVisible(
     visibilityChecker: CfirVisibilityChecker,
     declaration: CfirMemberDeclaration,
@@ -32,6 +47,11 @@ fun isVisible(
             canSeePackageInternalDeclaration(useSiteFile, declarationContainingFile)
         }
         Visibilities.Private -> {
+            val ownerExtend = declaration.containingExtendOrNull(session)
+            if (ownerExtend != null) {
+                return canSeePrivateExtendMemberOf(ownerExtend, containingDeclarations)
+            }
+
             val ownerClassId = declaration.symbol.getOwnerClassId(session.cfirProvider)
             // 对齐官方 TypeCheckUtil::IsLegalAccess：
             // 顶层 private 按同文件可见，成员 private 只能在同一 nominal 声明内部访问。
@@ -41,14 +61,41 @@ fun isVisible(
             }
         }
         Visibilities.Protected -> {
-            declaration.moduleData == session.moduleData ||
-                    session.moduleVisibilityChecker?.isInFriendModule(declaration) == true ||
-                    declaration.symbol.getOwnerClassId(session.cfirProvider)?.let { ownerClassId ->
-                        canSeeProtectedMemberOf(ownerClassId, containingDeclarations)
+            canSeePackageProtectedDeclaration(useSiteFile, declarationContainingFile) ||
+                    declaration.protectedOwnerClassId(session)?.let { ownerClassId ->
+                        canSeeProtectedMemberOf(ownerClassId, containingDeclarations, session)
+                    } == true ||
+                    declaration.containingExtendOrNull(session)?.let { ownerExtend ->
+                        canSeePrivateExtendMemberOf(ownerExtend, containingDeclarations)
                     } == true
         }
         else -> visibilityChecker.platformVisibilityCheck(declaration.status.visibility, declaration, candidate)
     }
+}
+
+/**
+ * extend 私有成员的 owner 是 extend 声明体本身，不是目标类型，也不是所在文件。
+ *
+ * 官方 `TypeCheckUtil::IsLegalAccess` 对成员 private 要求当前 composite
+ * 与目标 outer decl 相同；仓颉 extend body 在 CFIR 中以 [CfirExtend] 容器表达，
+ * 因此这里直接用 provider 的 owner extend 索引判断同一声明体。
+ */
+private fun CfirMemberDeclaration.containingExtendOrNull(
+    session: CfirSession,
+): CfirExtend? {
+    val callableSymbol = symbol as? CfirCallableSymbol<*> ?: return null
+    val extendProvider = session.extendProviderOrNull ?: return null
+    return extendProvider.getContainingExtend(callableSymbol.unwrapSubstitutionOverrides())
+}
+
+/**
+ * 判断当前位置是否处于指定 extend 声明体内部。
+ */
+private fun canSeePrivateExtendMemberOf(
+    ownerExtend: CfirExtend,
+    containingDeclarations: List<CfirDeclaration>,
+): Boolean {
+    return containingDeclarations.any { it === ownerExtend }
 }
 
 /**
@@ -66,6 +113,23 @@ private fun canSeePackageInternalDeclaration(
     return canAccessPackageInternalDeclaration(useSitePackage, declarationPackage)
 }
 
+/**
+ * protected 的包级关系使用官方 Modules::GetPackageRelation 语义，
+ * 不能退化成 CFIR session/moduleData 等构建系统概念。
+ */
+private fun canSeePackageProtectedDeclaration(
+    useSiteFile: CfirFile,
+    declarationContainingFile: CfirFile?,
+): Boolean {
+    declarationContainingFile ?: return false
+    val declarationPackage = declarationContainingFile.packageDirective.packageFqName
+    val useSitePackage = useSiteFile.packageDirective.packageFqName
+    return canAccessPackageProtectedDeclaration(useSitePackage, declarationPackage)
+}
+
+/**
+ * 判断顶层 private 声明是否与使用点位于同一文件。
+ */
 private fun canSeePrivateTopLevelDeclarationFromFile(
     useSiteFile: CfirFile,
     declarationContainingFile: CfirFile?,
@@ -73,6 +137,9 @@ private fun canSeePrivateTopLevelDeclarationFromFile(
     return useSiteFile == declarationContainingFile
 }
 
+/**
+ * 判断当前位置是否处于指定 owner class 内部。
+ */
 private fun canSeePrivateMemberOf(
     ownerClassId: ClassId,
     containingDeclarations: List<CfirDeclaration>,
@@ -83,12 +150,51 @@ private fun canSeePrivateMemberOf(
         .any { it == ownerClassId }
 }
 
+/**
+ * 返回 protected 成员可见性检查使用的 owner classId。
+ */
+private fun CfirMemberDeclaration.protectedOwnerClassId(session: CfirSession): ClassId? {
+    symbol.getOwnerClassId(session.cfirProvider)?.let { return it }
+    return containingExtendOrNull(session)
+        ?.extendedTypeRef
+        ?.coneTypeOrNull
+        ?.classIdOrPrimitiveClassId
+}
+
+/**
+ * 判断当前位置是否可以通过继承关系访问 protected 成员。
+ */
 private fun canSeeProtectedMemberOf(
     ownerClassId: ClassId,
     containingDeclarations: List<CfirDeclaration>,
+    session: CfirSession,
 ): Boolean {
-    return containingDeclarations.asSequence()
+    return containingDeclarations.asReversed().asSequence()
         .filterIsInstance<CfirClassLikeDeclaration>()
-        .map { it.symbol.classId }
-        .any { it == ownerClassId }
+        .mapNotNull { it.symbol as? CfirClassLikeSymbol<*> }
+        .any { currentClass ->
+            currentClass.classId == ownerClassId ||
+                    currentClass.constructType().hasSupertypeWithClassId(ownerClassId, session)
+        }
+}
+
+/**
+ * 判断类型是否具有指定 classId 的父类型。
+ */
+private fun ConeCangJieType.hasSupertypeWithClassId(
+    ownerClassId: ClassId,
+    session: CfirSession,
+): Boolean {
+    val supertypeProvider = session.typeAwareSupertypeProviderOrNull ?: return false
+    val visited = linkedSetOf<ConeCangJieType>()
+    val queue = ArrayDeque<ConeCangJieType>()
+    queue += this
+
+    while (queue.isNotEmpty()) {
+        val current = queue.removeFirst()
+        if (!visited.add(current)) continue
+        if (current.classIdOrPrimitiveClassId == ownerClassId) return true
+        queue.addAll(supertypeProvider.getDirectSupertypes(current))
+    }
+    return false
 }

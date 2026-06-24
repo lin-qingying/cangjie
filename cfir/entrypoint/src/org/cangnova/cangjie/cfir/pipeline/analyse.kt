@@ -141,6 +141,12 @@ fun CfirSession.buildRecordableCfirViaLightTree(
     return finalizeIdentity(pre)
 }
 
+/**
+ * 对无宏 construction 结果执行 identity 收尾。
+ *
+ * 该方法使用 [MacroConstructionService.Identity] 产出可注册文件，并通过
+ * [recordExpandedRawFilesOnce] 完成 source provider 注册，保证历史入口也不绕过宏构造边界。
+ */
 private fun CfirSession.finalizeIdentity(pre: PreMacroRawBuildResult): RecordableRawCfirFiles {
     val provider = cfirProvider as CfirProviderImpl
     val result = MacroConstructionService.Identity.expandWithDefaultContext(
@@ -153,6 +159,11 @@ private fun CfirSession.finalizeIdentity(pre: PreMacroRawBuildResult): Recordabl
     return success.recordableFiles
 }
 
+/**
+ * 将通用源文件列表转换为 PSI 文件列表。
+ *
+ * 该工具只服务 PSI raw CFIR 构建入口，调用方必须保证集合中的源文件实际为 [CjPsiSourceFile]。
+ */
 fun List<CjSourceFile>.asCjFilesList(): List<CjFile> {
     return map { (it as CjPsiSourceFile).psiFile as CjFile }
 }
@@ -183,7 +194,8 @@ private fun CfirSession.runResolutionFiles(cfirFiles: List<CfirFile>): Pair<Scop
  * 诊断结果通过 [diagnosticReporter] 收集。
  *
  * @param scopeSession 作用域缓存会话
- * @param cfirFiles 待检查的 CFIR 文件
+ * @param firFiles 待检查的 CFIR 文件
+ * @param diagnosticsCollector 诊断收集器，checker 产生的诊断会写入该对象。
  */
 fun CfirSession.runCheckers(
     scopeSession: ScopeSession,

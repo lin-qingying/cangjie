@@ -66,20 +66,55 @@ import org.cangnova.cangjie.type.model.SimpleTypeMarker
 sealed class ConeCangJieType : CangJieTypeMarker ,ConeCangJieTypeProjection(){
     /** 泛型类型实参。仓颉泛型是不变的，类型实参只能是具体类型。 */
     abstract val typeArguments: List<ConeTypeProjection>
+
+    /**
+     * 附加在该类型上的 Cone 属性集合。
+     */
     abstract val attributes: ConeAttributes
+
+    /**
+     * 使用调试渲染器输出类型文本。
+     */
     final override fun toString(): String {
         return renderForDebugging()
     }
+
+    /**
+     * 类型投影视图下的自身类型。
+     */
     @Deprecated("Useless call. Receiver is already a ConeCangJieType.", level = DeprecationLevel.ERROR)
     final override val type: ConeCangJieType
         get() = this
+
+    /**
+     * 当前类型是否是 `Unit`。
+     */
     open val isUnit: Boolean get() = false
+
+    /**
+     * 当前类型是否是 `Nothing`。
+     */
     open val isNothing: Boolean get() = false
+
+    /**
+     * 当前类型是否表示错误类型。
+     */
     open val isError: Boolean get() = false
 
+    /**
+     * Cone 类型的结构相等实现。
+     */
     abstract override fun equals(other: Any?): Boolean
+
+    /**
+     * Cone 类型的结构哈希实现。
+     */
     abstract override fun hashCode(): Int
 }
+
+/**
+ * 仓颉 simple type 标记层。
+ */
 sealed class ConeSimpleCangJieType : ConeRigidType(), SimpleTypeMarker
 
 /**
@@ -89,9 +124,13 @@ sealed class ConeSimpleCangJieType : ConeRigidType(), SimpleTypeMarker
  * 因此所有刚性类型也都直接视为 simple type。
  */
 sealed class ConeRigidType : ConeCangJieType(), RigidTypeMarker, SimpleTypeMarker {
-    /** 默认无泛型实参，子类按需覆盖 */
+    /**
+     * 默认无泛型实参，子类按需覆盖。
+     */
     override val typeArguments: List<ConeTypeProjection> get() = emptyList()
 }
 
-/** 将抽象类型系统中的 marker 还原为当前 CFIR 使用的 Cone 类型。 */
+/**
+ * 将抽象类型系统中的 marker 还原为当前 CFIR 使用的 Cone 类型。
+ */
 inline fun CangJieTypeMarker.asCone(): ConeCangJieType = this as ConeCangJieType

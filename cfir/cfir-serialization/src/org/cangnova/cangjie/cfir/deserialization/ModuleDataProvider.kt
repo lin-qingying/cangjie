@@ -52,13 +52,18 @@ abstract class LibraryPathFilter {
     /** 判定是否接受给定路径。 */
     abstract fun accepts(path: Path?): Boolean
 
+    /** 接受所有库路径的过滤器，用于单模块或无需路径隔离的反序列化场景。 */
     object TakeAll : LibraryPathFilter() {
+        /** 始终返回 true，表示当前模块数据对任意库路径可见。 */
         override fun accepts(path: Path?): Boolean = true
     }
 
+    /** 仅接受给定路径集合中的库文件，路径比较前会进行标准化。 */
     class LibraryList(
+        /** 当前模块数据允许绑定的库路径集合。 */
         private val paths: Set<Path>,
     ) : LibraryPathFilter() {
+        /** 标准化输入路径并检查其是否属于 [paths]。 */
         override fun accepts(path: Path?): Boolean {
             val normalizedPath = path?.normalize() ?: return false
             return normalizedPath in paths
