@@ -20,15 +20,25 @@ import org.cangnova.cangjie.cfir.resolve.transformers.ReturnTypeCalculator
 import org.cangnova.cangjie.cfir.scopes.CfirScope
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 
+/** 只持有 session 与 scope session 的轻量实现。 */
 data class SessionHolderImpl(
+    /** 当前 CFIR session。 */
     override val session: CfirSession,
+    /** 当前解析使用的 scope session。 */
     override val scopeSession: ScopeSession,
 ) : SessionAndScopeSessionHolder {
     companion object {
+        /** 使用新的空 [ScopeSession] 为指定 session 创建 holder。 */
         fun createWithEmptyScopeSession(session: CfirSession): SessionHolderImpl = SessionHolderImpl(session, ScopeSession())
     }
 }
 
+/**
+ * body resolve 阶段共享组件集合。
+ *
+ * transformer、call resolver、type resolver 与 data-flow analyzer 都从这里读取当前文件、容器、
+ * tower data、局部作用域和候选检查组件，确保同一次 body resolve 使用一致上下文。
+ */
 abstract class BodyResolveComponents : SessionAndScopeSessionHolder {
     abstract val returnTypeCalculator: ReturnTypeCalculator
     abstract val implicitValueStorage: ImplicitValueStorage

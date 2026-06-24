@@ -20,6 +20,7 @@ import org.cangnova.cangjie.cfir.types.coneTypeOrNull
  * 所以此 checker 需要在 check 方法中手动过滤类型。
  */
 object CfirSpawnSemanticsChecker : CfirBasicExpressionChecker() {
+    /** 过滤 spawn 表达式并执行 spawn body 类型与参数有效性检查。 */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirStatement) {
         if (expression !is CfirSpawnExpression) return

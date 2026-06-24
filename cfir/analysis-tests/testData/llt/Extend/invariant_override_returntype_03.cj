@@ -2,7 +2,7 @@
 
 
 public interface I {
-    func append(_: String): Any
+    func <!RETURN_TYPE_INVARIANCE!>append<!>(_: String): Any
 }
 
 extend StringBuilder <: I {}

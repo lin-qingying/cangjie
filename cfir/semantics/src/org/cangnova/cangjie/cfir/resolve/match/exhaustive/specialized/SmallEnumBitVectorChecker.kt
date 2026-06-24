@@ -35,11 +35,22 @@ import org.cangnova.cangjie.cfir.resolve.match.exhaustive.ExhaustivenessResult
 import org.cangnova.cangjie.cfir.resolve.match.exhaustive.MatchExhaustivenessContext
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 
+/**
+ * 小 enum 类型的位图穷尽性检查器。
+ *
+ * enum 构造器数量不超过 [maxVariants] 时，用 Long bit mask 记录已覆盖 entry。
+ */
 class SmallEnumBitVectorChecker : ExhaustivenessChecker {
+    /** 当前 checker 来源。 */
     override val source: CheckSource = CheckSource.ENUM_BITVECTOR
+
+    /** 当前 checker 优先级。 */
     override val priority: Int = 20
+
+    /** 当前位图实现可表示的最大 enum entry 数量。 */
     private val maxVariants = 64
 
+    /** 只处理可展开且 entry 数量在位图范围内的 enum 类型。 */
     override fun isApplicable(
         type: ConeCangJieType,
         patterns: List<CfirMatchPattern>,
@@ -50,6 +61,7 @@ class SmallEnumBitVectorChecker : ExhaustivenessChecker {
         return variantCount in 1..maxVariants
     }
 
+    /** 执行 enum bit-vector 覆盖检查。 */
     override fun check(
         matrix: CfirMatrix,
         type: ConeCangJieType,
@@ -96,7 +108,9 @@ class SmallEnumBitVectorChecker : ExhaustivenessChecker {
         }
     }
 
+    /** 单例实例。 */
     companion object {
+        /** 默认小 enum bit-vector checker 实例。 */
         val INSTANCE = SmallEnumBitVectorChecker()
     }
 }

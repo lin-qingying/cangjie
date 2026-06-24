@@ -16,8 +16,10 @@ enum class PackageIndex(val value: Int) {
     ;
 
     companion object {
+        /** 将原始 `pkgId` 数值映射为保留包索引枚举。 */
         fun fromValue(value: Int): PackageIndex? = entries.firstOrNull { it.value == value }
 
+        /** 判断原始 `pkgId` 是否指向导入包数组中的普通下标。 */
         fun isImportedPackage(value: Int): Boolean = value >= 0
     }
 }

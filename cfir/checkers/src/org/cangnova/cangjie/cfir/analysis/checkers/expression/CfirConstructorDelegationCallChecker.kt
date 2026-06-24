@@ -17,6 +17,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirFunctionCallOrigin
  * 这里负责更外层的入口约束：如果最近的函数级声明不是 constructor，就直接报非法位置。
  */
 object CfirConstructorDelegationCallChecker : CfirFunctionCallChecker() {
+    /** 检查 `this(...)`/`super(...)` 构造器委托调用是否位于构造器声明内部。 */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirFunctionCall) {
         val delegationName = expression.origin.constructorDelegationKeyword() ?: return
@@ -39,6 +40,7 @@ object CfirConstructorDelegationCallChecker : CfirFunctionCallChecker() {
     }
 }
 
+/** 将函数调用 origin 转换为构造器委托关键字；非委托调用返回空。 */
 private fun CfirFunctionCallOrigin.constructorDelegationKeyword(): String? {
     return when (this) {
         CfirFunctionCallOrigin.ConstructorDelegationThis -> "this"
@@ -47,6 +49,7 @@ private fun CfirFunctionCallOrigin.constructorDelegationKeyword(): String? {
     }
 }
 
+/** 查找当前上下文中最近的函数级声明。 */
 private fun CheckerContext.closestFunctionLikeDeclaration(): CfirFunction? {
     return containingDeclarations
         .asReversed()

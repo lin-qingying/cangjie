@@ -9,6 +9,7 @@ import org.cangnova.cangjie.cfir.resolve.inference.InferenceComponents
 import org.cangnova.cangjie.cfir.types.createTypeSubstitutorByTypeConstructor
 import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeParameterBasedTypeVariable
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
+import org.cangnova.cangjie.cfir.session.extendProvider
 import org.cangnova.cangjie.cfir.session.ProcessorAction
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.types.*
@@ -21,14 +22,29 @@ import org.cangnova.cangjie.type.model.TypeParameterMarker
 import org.cangnova.cangjie.type.model.TypeSubstitutorMarker
 import org.cangnova.cangjie.type.model.TypeSystemInferenceExtensionContext
 
+/**
+ * 参与重载消歧的候选平铺签名。
+ */
 typealias CandidateSignature = FlatSignature<Candidate>
 
+/**
+ * CFIR 重载冲突解析器。
+ *
+ * 该实现保持 Kotlin FIR `ConeOverloadConflictResolver` 的控制流骨架，同时接入仓颉特有的
+ * 变参、extend、quest fallback、理想数值类型和公共类型变元比较规则。
+ */
 class ConeOverloadConflictResolver(
+    /** 通用类型特异性比较器。 */
     private val specificityComparator: TypeSpecificityComparator,
+    /** 推断组件集合，用于构造临时约束系统和访问 session 类型上下文。 */
     private val inferenceComponents: InferenceComponents,
+    /** body resolve 组件，保留为与 resolver 构造协议一致的依赖。 */
     @Suppress("unused") private val transformerComponents: BodyResolveComponents,
 ) : ConeCallConflictResolver() {
 
+    /**
+     * 从候选集合中选择最大特异候选集合。
+     */
     override fun chooseMaximallySpecificCandidates(
         candidates: Set<Candidate>,
     ): Set<Candidate> = chooseMaximallySpecificCandidates(
@@ -71,6 +87,9 @@ class ConeOverloadConflictResolver(
         )
     }
 
+    /**
+     * 移除被同一 scope 中更具体 override 候选覆盖的候选。
+     */
     private fun filterOverrides(candidateSet: Set<Candidate>): Set<Candidate> {
         if (candidateSet.size <= 1) return candidateSet
 
@@ -94,11 +113,15 @@ class ConeOverloadConflictResolver(
         return result
     }
 
+    /**
+     * 判断当前候选是否 override 另一个候选。
+     */
     private fun Candidate.overrides(other: Candidate): Boolean {
         val candidateSymbol = symbol as? CfirCallableSymbol<*> ?: return false
         val otherSymbol = other.symbol as? CfirCallableSymbol<*> ?: return false
 
         val otherOriginal = otherSymbol.unwrapSubstitutionOverrides()
+        if (otherOriginal.isExtendMemberForConflictFiltering()) return false
         if (candidateSymbol.unwrapSubstitutionOverrides() == otherOriginal) return true
 
         val scope = originScope as? CfirTypeScope ?: return false
@@ -125,6 +148,18 @@ class ConeOverloadConflictResolver(
         }
     }
 
+    /**
+     * 父类型 extend 成员不能在 overload conflict 阶段被普通子类成员按 override 关系删除。
+     *
+     * 官方会保留两者并报告调用歧义；声明侧另由继承检查报告
+     * `EXTEND_FUNCTION_CANNOT_OVERRIDDEN`。
+     */
+    private fun CfirCallableSymbol<*>.isExtendMemberForConflictFiltering(): Boolean =
+        inferenceComponents.session.extendProvider.getContainingExtend(this) != null
+
+    /**
+     * 选择拥有最具体 invoke receiver 的候选。
+     */
     private fun chooseCandidatesWithMostSpecificInvokeReceiver(candidates: Set<Candidate>): Set<Candidate> {
         // Kotlin FIR has a dedicated `candidateForCommonInvokeReceiver` slot for property+invoke groups.
         // The current CFIR call model does not carry that structure yet, so this hook is intentionally
@@ -132,15 +167,27 @@ class ConeOverloadConflictResolver(
         return candidates
     }
 
+    /**
+     * 重载消歧各个歧视步骤是否仍启用的标志集合。
+     */
     private data class DiscriminationFlags(
+        /** 是否使用低优先级 SAM 过滤。 */
         val lowPrioritySAMs: Boolean,
+        /** 是否使用 postponed atom adaptation 过滤。 */
         val adaptationsInPostponedAtoms: Boolean,
+        /** 是否启用泛型候选歧视。 */
         val generics: Boolean,
+        /** 是否启用 SAM 转换过滤。 */
         val SAMs: Boolean,
+        /** 是否启用函数种类转换过滤。 */
         val suspendConversions: Boolean,
+        /** 是否按 smart-cast 原始类型过滤。 */
         val byUnwrappedSmartCastOrigin: Boolean,
     )
 
+    /**
+     * 按歧视标志逐层收敛候选集合。
+     */
     private fun chooseMaximallySpecificCandidates(
         candidates: Set<Candidate>,
         discriminationFlags: DiscriminationFlags,
@@ -205,6 +252,9 @@ class ConeOverloadConflictResolver(
         return candidates
     }
 
+    /**
+     * 根据单个歧视标志过滤候选；过滤后仍有多候选时关闭当前标志递归比较。
+     */
     private inline fun filterCandidatesByDiscriminationFlag(
         candidates: Set<Candidate>,
         filter: (Candidate) -> Boolean,
@@ -218,6 +268,9 @@ class ConeOverloadConflictResolver(
         }
     }
 
+    /**
+     * 应用仓颉特有的候选优先级规则。
+     */
     private fun chooseByCangjieSpecificity(candidates: Set<Candidate>): Set<Candidate>? {
         // 官方 ChkCallExpr 只有在普通匹配没有结果时才进入变参解糖；
         // 若同一候选集合中已有普通调用候选成功，实际变参候选不能继续参与冲突。
@@ -228,6 +281,9 @@ class ConeOverloadConflictResolver(
         return null
     }
 
+    /**
+     * 保留满足偏好条件的候选。
+     */
     private inline fun preferCandidates(
         candidates: Set<Candidate>,
         predicate: (Candidate) -> Boolean,
@@ -239,17 +295,26 @@ class ConeOverloadConflictResolver(
         }
     }
 
+    /**
+     * 判断候选是否应因 SAM 而降低优先级。
+     */
     private fun Candidate.shouldHaveLowPriorityDueToSAM(): Boolean {
         // Kotlin FIR threads this signal from dedicated resolution stages.
         // The current Cangjie pipeline keeps SAM conversion data but not the low-priority stage marker.
         return false
     }
 
+    /**
+     * 判断候选的 postponed atom 中是否发生 adaptation。
+     */
     private fun Candidate.hasPostponedAtomWithAdaptation(): Boolean {
         // Callable-reference postponed atoms have not been introduced in the local CFIR atom hierarchy yet.
         return false
     }
 
+    /**
+     * 在候选集合中查找唯一最大特异调用。
+     */
     private fun findMaximallySpecificCall(
         candidates: Set<Candidate>,
         discriminateGenerics: Boolean,
@@ -272,6 +337,9 @@ class ConeOverloadConflictResolver(
         return bestCandidatesByParameterTypes.exactMaxWith()?.origin
     }
 
+    /**
+     * 比较两个候选签名在实参映射下是否前者不弱于后者。
+     */
     private fun isEquallyOrMoreSpecificCallWithArgumentMapping(
         call1: CandidateSignature,
         call2: CandidateSignature,
@@ -281,6 +349,9 @@ class ConeOverloadConflictResolver(
         return compareCallsByUsedArguments(call1, call2, discriminateGenerics, useOriginalSamTypes)
     }
 
+    /**
+     * 返回列表中唯一的最大特异签名。
+     */
     private fun List<CandidateSignature>.exactMaxWith(): CandidateSignature? {
         var result: CandidateSignature? = null
         for (candidate in this) {
@@ -297,6 +368,9 @@ class ConeOverloadConflictResolver(
         return result
     }
 
+    /**
+     * 比较两个签名的 expect/shape 层面优先级。
+     */
     private fun checkExpectAndEquallyOrMoreSpecificShape(
         call1: CandidateSignature,
         call2: CandidateSignature,
@@ -309,6 +383,9 @@ class ConeOverloadConflictResolver(
         return true
     }
 
+    /**
+     * 使用参数类型、泛型歧视和 SAM 原始类型规则比较两个签名。
+     */
     private fun compareCallsByUsedArguments(
         call1: CandidateSignature,
         call2: CandidateSignature,
@@ -378,25 +455,45 @@ class ConeOverloadConflictResolver(
         }
     }
 
+    /**
+     * 类型参数出现位置的方差。
+     */
     private enum class TypePositionVariance {
+        /** 协变位置。 */
         COVARIANT,
+        /** 逆变位置。 */
         CONTRAVARIANT,
+        /** 不变位置。 */
         INVARIANT;
 
+        /**
+         * 进入函数参数位置时翻转方差。
+         */
         fun flip(): TypePositionVariance = when (this) {
             COVARIANT -> CONTRAVARIANT
             CONTRAVARIANT -> COVARIANT
             INVARIANT -> INVARIANT
         }
 
+        /**
+         * 强制转换为不变位置。
+         */
         fun invariant(): TypePositionVariance = INVARIANT
     }
 
+    /**
+     * 公共类型变元在 specific 候选参数类型中的一次出现。
+     */
     private data class CommonTypeVariableOccurrence(
+        /** specific 候选对应位置提供的类型。 */
         val specificType: ConeCangJieType,
+        /** 该出现位置的方差。 */
         val variance: TypePositionVariance,
     )
 
+    /**
+     * 递归收集 general 候选中被跟踪类型参数的出现位置。
+     */
     private fun collectCommonTypeVariableOccurrences(
         specificType: ConeCangJieType,
         generalType: ConeCangJieType,
@@ -467,6 +564,9 @@ class ConeOverloadConflictResolver(
         }
     }
 
+    /**
+     * 按不变位置递归收集普通类型实参中的公共类型变元出现。
+     */
     private fun collectInvariantTypeArgumentOccurrences(
         specificType: ConeCangJieType,
         generalType: ConeCangJieType,
@@ -488,6 +588,9 @@ class ConeOverloadConflictResolver(
         }
     }
 
+    /**
+     * 从 Cone 类型中提取直接表示类型参数的 lookup tag。
+     */
     private fun ConeCangJieType.typeParameterLookupTagOrNull(): ConeTypeParameterLookupTag? {
         return when (this) {
             is ConeTypeParameterType -> lookupTag
@@ -540,12 +643,18 @@ class ConeOverloadConflictResolver(
         )
     }
 
+    /**
+     * 判断类型是否直接是被跟踪的公共类型参数。
+     */
     private fun ConeCangJieType.isDirectTrackedTypeParameter(
         trackedParameters: Set<ConeTypeParameterLookupTag>,
     ): Boolean {
         return typeParameterLookupTagOrNull() in trackedParameters
     }
 
+    /**
+     * 将上下文类型变量提升为声明上界，用于官方公共类型变元统一规则。
+     */
     private fun ConeTypeParameterType.contextTypeVariableUpperBoundForComparison(): ConeCangJieType {
         lookupTag.typeParameterSymbol.lazyResolveToPhase(CfirResolvePhase.TYPES)
         val bounds = lookupTag.typeParameterSymbol.resolvedBounds
@@ -559,6 +668,9 @@ class ConeOverloadConflictResolver(
         }
     }
 
+    /**
+     * 判断同一个公共类型变元的多次出现能否选择出一致目标类型。
+     */
     private fun hasConsistentCommonTypeVariableTarget(
         occurrences: List<CommonTypeVariableOccurrence>,
     ): Boolean {
@@ -584,17 +696,29 @@ class ConeOverloadConflictResolver(
         }
     }
 
+    /**
+     * 判断两个仓颉类型是否相同。
+     */
     private fun isSameCangjieType(first: ConeCangJieType, second: ConeCangJieType): Boolean {
         return AbstractTypeChecker.equalTypes(inferenceComponents.session.typeContext, first, second)
     }
 
+    /**
+     * 判断 `subType` 是否可视为 `superType` 的仓颉子类型，包含数值特异性补充规则。
+     */
     private fun isCangjieSubtypeOf(subType: ConeCangJieType, superType: ConeCangJieType): Boolean {
         return AbstractTypeChecker.isSubtypeOf(inferenceComponents.session.typeContext, subType, superType) ||
             SpecificityComparisonWithNumerics.isNonSubtypeEquallyOrMoreSpecific(subType, superType)
     }
 
+    /**
+     * 带仓颉数值特异性补充规则的签名比较回调。
+     */
     @Suppress("PrivatePropertyName")
     private val SpecificityComparisonWithNumerics = object : SpecificityComparisonCallbacks {
+        /**
+         * 判断非子类型场景下的数值类型是否仍可视为 equally-or-more-specific。
+         */
         override fun isNonSubtypeEquallyOrMoreSpecific(
             specific: CangJieTypeMarker,
             general: CangJieTypeMarker,
@@ -608,6 +732,9 @@ class ConeOverloadConflictResolver(
         }
     }
 
+    /**
+     * 为候选创建平铺签名。
+     */
     private fun createFlatSignature(call: Candidate): FlatSignature<Candidate> {
         if (!call.symbol.isBound) {
             return FlatSignature(
@@ -635,6 +762,9 @@ class ConeOverloadConflictResolver(
         }
     }
 
+    /**
+     * 为函数声明候选创建平铺签名。
+     */
     private fun createFlatSignature(call: Candidate, declaration: CfirFunction): FlatSignature<Candidate> {
         return FlatSignature(
             origin = call,
@@ -649,6 +779,9 @@ class ConeOverloadConflictResolver(
         )
     }
 
+    /**
+     * 为普通构造器候选创建平铺签名。
+     */
     private fun createFlatSignature(call: Candidate, declaration: CfirConstructor): FlatSignature<Candidate> {
         return FlatSignature(
             origin = call,
@@ -663,6 +796,9 @@ class ConeOverloadConflictResolver(
         )
     }
 
+    /**
+     * 为 enum constructor 候选创建平铺签名。
+     */
     private fun createFlatSignature(call: Candidate, declaration: CfirEnumConstructor): FlatSignature<Candidate> {
         return FlatSignature(
             origin = call,
@@ -677,6 +813,9 @@ class ConeOverloadConflictResolver(
         )
     }
 
+    /**
+     * 为属性候选创建平铺签名。
+     */
     private fun createFlatSignature(call: Candidate, declaration: CfirProperty): FlatSignature<Candidate> {
         return FlatSignature(
             origin = call,
@@ -691,6 +830,9 @@ class ConeOverloadConflictResolver(
         )
     }
 
+    /**
+     * 为变量候选创建平铺签名。
+     */
     private fun createFlatSignature(call: Candidate, declaration: CfirVariable): FlatSignature<Candidate> {
         return FlatSignature(
             origin = call,
@@ -705,6 +847,9 @@ class ConeOverloadConflictResolver(
         )
     }
 
+    /**
+     * 为 class-like 候选创建平铺签名。
+     */
     private fun createFlatSignature(call: Candidate, declaration: CfirClassLikeDeclaration): FlatSignature<Candidate> {
         return FlatSignature(
             origin = call,
@@ -719,6 +864,9 @@ class ConeOverloadConflictResolver(
         )
     }
 
+    /**
+     * 根据候选实际实参映射或声明参数计算签名参数类型列表。
+     */
     private fun computeSignatureTypes(
         call: Candidate,
         called: CfirCallableDeclaration,
@@ -754,6 +902,9 @@ class ConeOverloadConflictResolver(
         }
     }
 
+    /**
+     * 返回 callable 声明中的值参数列表。
+     */
     private fun declaredParametersFor(called: CfirCallableDeclaration): List<CfirValueParameter> {
         return when (called) {
             is CfirConstructor -> called.valueParameters
@@ -764,6 +915,9 @@ class ConeOverloadConflictResolver(
         }
     }
 
+    /**
+     * 把值参数转换为签名比较使用的类型及转换信息。
+     */
     private fun CfirValueParameter.toTypeWithConversion(
         argument: org.cangnova.cangjie.cfir.resolve.calls.ConeResolutionAtom,
         session: org.cangnova.cangjie.cfir.session.CfirSession,
@@ -778,6 +932,9 @@ class ConeOverloadConflictResolver(
         }
     }
 
+    /**
+     * 查询 SAM 转换实参对应的函数类型。
+     */
     private fun CfirValueParameter.toFunctionTypeForSamOrNull(
         argument: org.cangnova.cangjie.cfir.resolve.calls.ConeResolutionAtom,
         call: Candidate,
@@ -786,6 +943,9 @@ class ConeOverloadConflictResolver(
         return functionTypesOfSamConversions[argument.expression]?.functionalType
     }
 
+    /**
+     * 准备签名比较中的参数类型。
+     */
     private fun ConeCangJieType.prepareType(
         session: org.cangnova.cangjie.cfir.session.CfirSession,
         candidate: Candidate,
@@ -799,6 +959,9 @@ class ConeOverloadConflictResolver(
         }
     }
 
+    /**
+     * 递归展开 typealias 类型。
+     */
     private fun ConeCangJieType.fullyExpandedType(): ConeCangJieType {
         return when (this) {
             is ConeTypeAliasType -> expandedType?.fullyExpandedType() ?: this
@@ -806,16 +969,25 @@ class ConeOverloadConflictResolver(
         }
     }
 
+    /**
+     * 收集候选签名中用于 fresh variable 的类型参数。
+     */
     private fun Candidate.typeParametersForSignature(declaration: Any?): List<TypeParameterMarker> {
         return CfirCreateFreshTypeVariableSubstitutorStage
             .collectCandidateTypeParametersForFreshVariables(inferenceComponents.session, this, declaration)
             .toTypeParameterMarkers()
     }
 
+    /**
+     * 将 CFIR 类型参数引用转换为通用类型系统 marker。
+     */
     private fun List<CfirTypeParameterRef>.toTypeParameterMarkers(): List<TypeParameterMarker> {
         return mapNotNull { it.symbol.toLookupTag() as? TypeParameterMarker }
     }
 
+    /**
+     * 返回 class-like 声明自身的类型参数列表。
+     */
     private fun CfirClassLikeDeclaration.typeParameters(): List<CfirTypeParameter> {
         return when (this) {
             is CfirClass -> typeParameters
@@ -827,10 +999,16 @@ class ConeOverloadConflictResolver(
         }
     }
 
+    /**
+     * 创建用于签名比较的空约束系统。
+     */
     private fun createEmptyConstraintSystem(): SimpleConstraintSystem {
         return ConeSimpleConstraintSystemImpl(inferenceComponents.createConstraintSystem(), inferenceComponents)
     }
 
+    /**
+     * 判断 primitive 数值类型在仓颉重载特异性规则下是否不弱于目标类型。
+     */
     private fun isPrimitiveEquallyOrMoreSpecific(
         specific: PrimitiveTypeKind,
         general: PrimitiveTypeKind,
@@ -858,12 +1036,23 @@ class ConeOverloadConflictResolver(
         }
     }
 
+    /**
+     * 带原始 base scope 的成员符号。
+     */
     private data class MemberWithBaseScope<S : CfirCallableSymbol<*>>(
+        /** 当前成员符号。 */
         val symbol: S,
+        /** 产生当前成员的类型 scope。 */
         val scope: CfirTypeScope,
     )
 
+    /**
+     * 遍历直接 overridden 成员的函数式接口。
+     */
     private fun interface ProcessAllOverridden<S : CfirCallableSymbol<*>> {
+        /**
+         * 处理指定成员的直接 overridden 符号。
+         */
         fun process(
             scope: CfirTypeScope,
             symbol: S,
@@ -871,6 +1060,9 @@ class ConeOverloadConflictResolver(
         ): ProcessorAction
     }
 
+    /**
+     * 递归判断成员是否 override 目标符号。
+     */
     private fun <S : CfirCallableSymbol<*>> overrides(
         member: MemberWithBaseScope<S>,
         target: CfirCallableSymbol<*>,
@@ -878,6 +1070,9 @@ class ConeOverloadConflictResolver(
     ): Boolean {
         val visited = linkedSetOf<S>()
 
+        /**
+         * 深度遍历 overridden 链。
+         */
         fun visit(current: MemberWithBaseScope<S>): Boolean {
             if (!visited.add(current.symbol)) return false
 
@@ -905,14 +1100,25 @@ class ConeOverloadConflictResolver(
 
 }
 
+/**
+ * 从 resolved type ref 中读取 Cone 类型。
+ */
 private fun CfirTypeRef.coneTypeOrNull(): ConeCangJieType? {
     return (this as? CfirResolvedTypeRef)?.coneType
 }
 
+/**
+ * 签名比较使用的简化约束系统实现。
+ */
 private class ConeSimpleConstraintSystemImpl(
+    /** 底层约束系统实现。 */
     private val system: ConstraintSystemImpl,
+    /** 推断组件集合。 */
     private val inferenceComponents: InferenceComponents,
 ) : SimpleConstraintSystem {
+    /**
+     * 为签名比较注册类型变量，并返回类型参数到 fresh 变量默认类型的 substitutor。
+     */
     override fun registerTypeVariables(typeParameters: Collection<TypeParameterMarker>): TypeSubstitutorMarker {
         val builder = system.getBuilder()
         val substitutionMap = linkedMapOf<org.cangnova.cangjie.type.model.TypeConstructorMarker, ConeCangJieType>()
@@ -947,17 +1153,24 @@ private class ConeSimpleConstraintSystemImpl(
         return substitutor
     }
 
+    /**
+     * 添加 subtype 约束。
+     */
     override fun addSubtypeConstraint(subType: CangJieTypeMarker, superType: CangJieTypeMarker) {
         system.addSubtypeConstraint(subType, superType, SimpleConstraintSystemConstraintPosition)
     }
 
+    /**
+     * 当前约束系统是否存在矛盾。
+     */
     override fun hasContradiction(): Boolean = system.hasContradiction
 
 
-
+    /** 类型系统推断扩展上下文。 */
     override val context: TypeSystemInferenceExtensionContext
         get() = system
 
+    /** 通用约束系统 marker 视图。 */
     override val constraintSystemMarker: org.cangnova.cangjie.resolve.calls.inference.components.ConstraintSystemMarker
         get() = system
 }

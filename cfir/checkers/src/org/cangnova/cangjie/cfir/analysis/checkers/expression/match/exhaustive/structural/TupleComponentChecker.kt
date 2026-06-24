@@ -13,12 +13,18 @@ import org.cangnova.cangjie.cfir.analysis.checkers.expression.match.exhaustive.t
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeTupleType
 
+/** 将 tuple 模式拆分为按分量独立检查的结构化穷尽性 checker。 */
 class TupleComponentChecker(
+    /** 用于分析每个 tuple 分量的专项 checker 列表，按传入顺序尝试。 */
     private val componentCheckers: List<ExhaustivenessChecker>,
 ) : ExhaustivenessChecker {
+    /** 当前 checker 在穷尽性结果中使用的来源标记。 */
     override val source: CheckSource = CheckSource.TUPLE_COMPONENT
+
+    /** tuple 分量 checker 的调度优先级。 */
     override val priority: Int = 40
 
+    /** 仅当目标类型是 tuple 且每个模式都可独立拆分时启用。 */
     override fun isApplicable(
         type: ConeCangJieType,
         patterns: List<CfirMatchPattern>,
@@ -34,6 +40,7 @@ class TupleComponentChecker(
         }
     }
 
+    /** 把矩阵按 tuple 分量拆成多列，分别检查后再合成一个缺失 tuple 模式。 */
     override fun check(
         matrix: CfirMatrix,
         type: ConeCangJieType,
@@ -66,6 +73,7 @@ class TupleComponentChecker(
         return combineResults(columnResults, elementTypes, type)
     }
 
+    /** 从矩阵首列中抽取指定 tuple 分量对应的模式列。 */
     private fun extractColumnPatterns(
         matrix: CfirMatrix,
         columnIndex: Int,
@@ -81,9 +89,11 @@ class TupleComponentChecker(
         }
     }
 
+    /** 判断每个 tuple 分量列是否都有可分析模式。 */
     private fun canAnalyzeIndependently(columnPatterns: List<List<CfirMatchPattern>>): Boolean =
         columnPatterns.all { it.isNotEmpty() }
 
+    /** 对单个 tuple 分量列选择第一个可用 checker 并返回其穷尽性结果。 */
     private fun checkColumn(
         columnMatrix: CfirMatrix,
         columnType: ConeCangJieType,
@@ -99,6 +109,7 @@ class TupleComponentChecker(
         return ExhaustivenessResult.Skipped
     }
 
+    /** 将各分量结果合成为 tuple 级别结果，并构造首个缺失 tuple witness。 */
     private fun combineResults(
         columnResults: List<ExhaustivenessResult>,
         elementTypes: List<ConeCangJieType>,
@@ -120,6 +131,7 @@ class TupleComponentChecker(
         return ExhaustivenessResult.NonExhaustive(listOf(missingTuple), source)
     }
 
+    /** 判断模式是否足够简单，可在 tuple 分量维度独立分析。 */
     private fun isSimplePattern(pattern: CfirMatchPattern): Boolean = when (val kind = pattern.kind) {
         CfirMatchPatternKind.Wild, is CfirMatchPatternKind.Binding -> true
         is CfirMatchPatternKind.Const -> true
@@ -128,7 +140,9 @@ class TupleComponentChecker(
         else -> false
     }
 
+    /** tuple 分量 checker 的默认实例工厂与共享单例容器。 */
     companion object {
+        /** 创建使用基础、布尔和小型 enum checker 的默认 tuple 分量 checker。 */
         fun createDefault(): TupleComponentChecker {
             return TupleComponentChecker(
                 listOf(
@@ -139,7 +153,7 @@ class TupleComponentChecker(
             )
         }
 
+        /** 默认 tuple 分量 checker 单例。 */
         val INSTANCE by lazy { createDefault() }
     }
 }
-

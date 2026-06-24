@@ -10,6 +10,9 @@ package org.cangnova.cangjie.cfir.types
  * 额外引入一套独立规则。
  */
 object ConeTypeIntersector {
+    /**
+     * 对 [types] 做轻量交叉规范化并返回交叉结果。
+     */
     fun intersectTypes(context: ConeTypeContext, types: Collection<ConeCangJieType>): ConeCangJieType {
         val normalized = linkedSetOf<ConeCangJieType>()
 

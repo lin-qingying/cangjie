@@ -18,6 +18,9 @@ import org.cangnova.cangjie.cfir.types.forEachType
  * 以别名 RHS 类型树中的类型实参递归为准，按声明顺序报告未出现的类型参数。
  */
 object CfirTypeAliasUnusedTypeParameterChecker : CfirTypeAliasChecker() {
+    /**
+     * 检查 typealias 声明的类型参数是否在 RHS 展开类型中被使用。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirTypeAlias) {
         if (declaration.typeParameters.isEmpty()) return

@@ -25,6 +25,7 @@ internal fun Candidate.cangjieVariadicParameterForMapping(
     return parameters.cangjieVariadicParameterOrNull(declaration)
 }
 
+/** 从参数列表和声明形态中识别仓颉普通变参参数。 */
 internal fun List<CfirValueParameter>.cangjieVariadicParameterOrNull(
     declaration: CfirDeclaration?,
 ): CfirValueParameter? {
@@ -38,9 +39,11 @@ internal fun List<CfirValueParameter>.cangjieVariadicParameterOrNull(
     return parameter.takeIf { it.cangjieVariadicElementTypeOrNull() != null }
 }
 
+/** 如果参数类型是 `Array<T>`，返回其元素类型 `T`。 */
 internal fun CfirValueParameter.cangjieVariadicElementTypeOrNull(): ConeCangJieType? =
     returnTypeRef.coneTypeOrNull?.arrayElementType
 
+/** 判断 operator 函数是否明确不允许按普通变参规则处理。 */
 private fun CfirFunction.isNonVariadicOperator(): Boolean {
     if (!status.isOperator) return false
     if (this !is CfirNamedFunction) return false

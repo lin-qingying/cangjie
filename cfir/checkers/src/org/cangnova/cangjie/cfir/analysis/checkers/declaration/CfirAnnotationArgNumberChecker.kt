@@ -19,15 +19,18 @@ import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
  * 参数数量不匹配时报 `ANNOTATION_ERROR_ARG_NUM`。
  */
 object CfirAnnotationArgNumberChecker {
+    /** 不允许携带实参的内置注解短名到诊断描述的映射。 */
     private val NO_ARG_ANNOTATIONS = mapOf(
         "C" to "no",
         "FastNative" to "no",
         "Frozen" to "no",
     )
+    /** 必须携带一个实参的内置注解短名到诊断描述的映射。 */
     private val ONE_ARG_ANNOTATIONS = mapOf(
         "CallingConv" to "one",
     )
 
+    /** 检查声明上的内置注解参数数量是否符合规则。 */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     fun check(declaration: CfirDeclaration) {
         for (annotation in declaration.annotations) {
@@ -60,6 +63,7 @@ object CfirAnnotationArgNumberChecker {
 
 /** 面向 CfirClassLikeDeclaration 的分发。 */
 object CfirAnnotationArgNumberClassChecker : CfirClassLikeChecker() {
+    /** 对 class-like 声明分发内置注解参数数量检查。 */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirClassLikeDeclaration) {
         CfirAnnotationArgNumberChecker.check(declaration)
@@ -68,6 +72,7 @@ object CfirAnnotationArgNumberClassChecker : CfirClassLikeChecker() {
 
 /** 面向 CfirCallableDeclaration 的分发。 */
 object CfirAnnotationArgNumberCallableChecker : CfirCallableDeclarationChecker() {
+    /** 对 callable 声明分发内置注解参数数量检查。 */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirCallableDeclaration) {
         CfirAnnotationArgNumberChecker.check(declaration)

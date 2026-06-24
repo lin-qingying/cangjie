@@ -58,23 +58,36 @@ import org.cangnova.cangjie.name.OperatorNameConventions.asOperatorName
  */
 @OptIn(CfirImplementationDetail::class, ResolveStateAccess::class)
 class CfirDeclDeserializer(
+    /** 当前 `.cjo` 包的反序列化上下文、缓存与跨包解析入口。 */
     private val context: CfirDeserializationContext,
+    /** 与当前声明反序列化器配套的类型反序列化器。 */
     private val typeDeserializer: CfirTypeDeserializer,
 ) {
+    /** 当前正在反序列化的 enum owner 上下文。 */
     private data class EnumOwnerContext(
+        /** enum 声明的 classId，用于构造 enum constructor callable id 与返回类型。 */
         val classId: ClassId,
+        /** enum 声明自身的类型参数，enum constructor 返回类型需要复用这些 symbol。 */
         val typeParameters: List<CfirTypeParameter>,
+        /** 是否为 ref enum，用于恢复 [ConeEnumType] 语义。 */
         val isRefEnum: Boolean,
     )
 
+    /** 当前正在反序列化的 class-like owner 上下文。 */
     private data class ClassLikeOwnerContext(
+        /** class-like 声明的 classId，用于构造构造器返回类型。 */
         val classId: ClassId,
+        /** class-like 声明自身的类型参数，构造器返回类型需要复用这些 symbol。 */
         val typeParameters: List<CfirTypeParameter>,
     )
 
+    /** 当前包完整包名。 */
     private val packageFqName: FqName = FqName(context.header.fullPkgName)
+    /** 当前调用栈正在反序列化的 `allDecls` 索引集合，用于避免声明递归重入。 */
     private val declsUnderDeserialization = HashSet<Int>()
+    /** enum owner 栈，用于 enum constructor 和 enum 成员反序列化。 */
     private val enumOwnerStack = mutableListOf<EnumOwnerContext>()
+    /** class-like owner 栈，用于构造器返回类型和成员 callableId 构造。 */
     private val classLikeOwnerStack = mutableListOf<ClassLikeOwnerContext>()
     /**
      * 记录“当前正在为哪个声明反序列化子声明”。
@@ -114,6 +127,7 @@ class CfirDeclDeserializer(
         }
     }
 
+    /** 按 FlatBuffers [Decl.kind] 分派到具体 CFIR 声明转换器。 */
     private fun convertDecl(decl: Decl): CfirDeclaration? {
         return when (decl.kind) {
             DeclKind.ClassDecl -> convertClass(decl)
@@ -141,25 +155,43 @@ class CfirDeclDeserializer(
      * 不能套用 CHIR 的 `Attribute::VIRTUAL` 等另一套位布局。
      */
     private object AttrBit {
+        /** `static` 修饰符在 AST AttributePack 中的 bit 下标。 */
         val STATIC = Attribute.STATIC.ordinal
+        /** `public` 可见性在 AST AttributePack 中的 bit 下标。 */
         val PUBLIC = Attribute.PUBLIC.ordinal
+        /** `private` 可见性在 AST AttributePack 中的 bit 下标。 */
         val PRIVATE = Attribute.PRIVATE.ordinal
+        /** `protected` 可见性在 AST AttributePack 中的 bit 下标。 */
         val PROTECTED = Attribute.PROTECTED.ordinal
+        /** `internal` 可见性在 AST AttributePack 中的 bit 下标。 */
         val INTERNAL = Attribute.INTERNAL.ordinal
+        /** `override` 修饰符在 AST AttributePack 中的 bit 下标。 */
         val OVERRIDE = Attribute.OVERRIDE.ordinal
+        /** `redef` 修饰符在 AST AttributePack 中的 bit 下标。 */
         val REDEF = Attribute.REDEF.ordinal
+        /** `abstract` 修饰符在 AST AttributePack 中的 bit 下标。 */
         val ABSTRACT = Attribute.ABSTRACT.ordinal
+        /** `sealed` 修饰符在 AST AttributePack 中的 bit 下标。 */
         val SEALED = Attribute.SEALED.ordinal
+        /** `open` 修饰符在 AST AttributePack 中的 bit 下标。 */
         val OPEN = Attribute.OPEN.ordinal
+        /** `operator` 修饰符在 AST AttributePack 中的 bit 下标。 */
         val OPERATOR = Attribute.OPERATOR.ordinal
+        /** `foreign` 修饰符在 AST AttributePack 中的 bit 下标。 */
         val FOREIGN = Attribute.FOREIGN.ordinal
+        /** `unsafe` 修饰符在 AST AttributePack 中的 bit 下标。 */
         val UNSAFE = Attribute.UNSAFE.ordinal
+        /** `mut` 修饰符在 AST AttributePack 中的 bit 下标。 */
         val MUT = Attribute.MUT.ordinal
+        /** 主构造器标记在 AST AttributePack 中的 bit 下标。 */
         val PRIMARY_CONSTRUCTOR = Attribute.PRIMARY_CONSTRUCTOR.ordinal
+        /** 构造器标记在 AST AttributePack 中的 bit 下标。 */
         val CONSTRUCTOR = Attribute.CONSTRUCTOR.ordinal
+        /** enum constructor 标记在 AST AttributePack 中的 bit 下标。 */
         val ENUM_CONSTRUCTOR = Attribute.ENUM_CONSTRUCTOR.ordinal
     }
 
+    /** 测试 [decl] 的原始 AttributePack 中是否包含指定 bit。 */
     private fun testAttr(decl: Decl, bit: Int): Boolean {
         val wordIndex = bit / 64
         val bitIndex = bit % 64
@@ -168,8 +200,9 @@ class CfirDeclDeserializer(
     }
 
     /**
-     * PackageFormat uses 1-based formatted decl index.
-     * 0 and UInt.MAX_VALUE are treated as invalid references.
+     * 解码 PackageFormat 中 1-based 的声明引用索引。
+     *
+     * `0` 与 [UInt.MAX_VALUE] 都表示无效引用；返回值是 `allDecls` 的 0-based 下标。
      */
     private fun decodeDeclRef(rawIndex: UInt): Int? {
         if (rawIndex == 0u || rawIndex == UInt.MAX_VALUE) return null
@@ -178,6 +211,11 @@ class CfirDeclDeserializer(
         return decoded
     }
 
+    /**
+     * 解码 PackageFormat 中 1-based 的表达式引用索引。
+     *
+     * `0` 与 [UInt.MAX_VALUE] 都表示无效引用；返回值是 `allExprs` 的 0-based 下标。
+     */
     private fun decodeExprRef(rawIndex: UInt): Int? {
         if (rawIndex == 0u || rawIndex == UInt.MAX_VALUE) return null
         val decoded = rawIndex.toInt() - 1
@@ -185,6 +223,7 @@ class CfirDeclDeserializer(
         return decoded
     }
 
+    /** 判断声明是否被官方 AST AttributePack 标记为 enum constructor。 */
     private fun isEnumConstructorDecl(decl: Decl): Boolean =
         testAttr(decl, AttrBit.ENUM_CONSTRUCTOR)
 
@@ -321,7 +360,7 @@ class CfirDeclDeserializer(
         }
     }
 
-    /** 设置声明的 resolve 状态为 BODY_RESOLVE（库声明已完全解析） */
+    /** 在 enum 声明反序列化期间压入 owner 上下文。 */
     private inline fun <R> withEnumOwner(owner: EnumOwnerContext, block: () -> R): R {
         enumOwnerStack += owner
         return try {
@@ -331,9 +370,11 @@ class CfirDeclDeserializer(
         }
     }
 
+    /** 当前 enum owner；不在 enum 声明内部时为 null。 */
     private val currentEnumOwner: EnumOwnerContext?
         get() = enumOwnerStack.lastOrNull()
 
+    /** 在 class-like 声明反序列化期间压入 owner 上下文。 */
     private inline fun <R> withClassLikeOwner(owner: ClassLikeOwnerContext, block: () -> R): R {
         classLikeOwnerStack += owner
         return try {
@@ -343,9 +384,15 @@ class CfirDeclDeserializer(
         }
     }
 
+    /** 当前 class-like owner；不在 class/interface/struct/enum 内部时为 null。 */
     private val currentClassLikeOwner: ClassLikeOwnerContext?
         get() = classLikeOwnerStack.lastOrNull()
 
+    /**
+     * 在反序列化子声明期间压入真实宿主声明符号。
+     *
+     * 类型参数和值参数在二进制里是独立 Decl，但 CFIR 必须把它们绑定回函数、构造器或 class-like symbol。
+     */
     private inline fun <R> withContainingDeclarationSymbol(
         symbol: CfirBasedSymbol<*>,
         block: () -> R,
@@ -358,9 +405,11 @@ class CfirDeclDeserializer(
         }
     }
 
+    /** 当前子声明应绑定到的宿主声明符号。 */
     private val currentContainingDeclarationSymbol: CfirBasedSymbol<*>?
         get() = containingDeclarationSymbolStack.lastOrNull()
 
+    /** 设置声明的 resolve 状态为 BODY_RESOLVE（库声明已完全解析）。 */
     private fun CfirDeclaration.markResolved() {
         initDefaultResolveState()
         replaceResolvePhase(CfirResolvePhase.BODY_RESOLVE)
@@ -619,6 +668,7 @@ class CfirDeclDeserializer(
         }
     }
 
+    /** 读取函数声明所有参数列表中的原始参数 Decl。 */
     private fun functionValueParameterDecls(decl: Decl): List<Decl> {
         val funcInfo = decl.info(FuncInfo()) as? FuncInfo ?: return emptyList()
         val funcBody = funcInfo.funcBody ?: return emptyList()
@@ -640,12 +690,14 @@ class CfirDeclDeserializer(
         return parameterDecls
     }
 
+    /** 判断参数 Decl 是否为命名参数 `value!`，用于区分 `[]` 的 get/set operator。 */
     private fun Decl?.isNamedValueParameter(): Boolean {
         val param = this ?: return false
         val info = param.info(ParamInfo()) as? ParamInfo ?: return false
         return info.isNamedParam && param.identifier == "value"
     }
 
+    /** 根据当前 owner 上下文构造 callable id，成员 callable 使用 classId，顶层 callable 使用包名。 */
     private fun callableIdForCurrentOwner(name: Name): CallableId {
         val containingClass = currentContainingDeclarationSymbol as? CfirClassLikeSymbol<*>
         return containingClass?.let { CallableId(it.classId, name) } ?: CallableId(packageFqName, name)
@@ -832,6 +884,11 @@ class CfirDeclDeserializer(
         return cfirVar
     }
 
+    /**
+     * 反序列化不可反驳模式。
+     *
+     * 支持变量、tuple、类型、enum 与 wildcard 模式；缺失或未知模式使用绑定模式恢复声明骨架。
+     */
     private fun deserializeIrrefutablePattern(
         fbPattern: Pattern?,
         fallbackName: Name,
@@ -948,6 +1005,11 @@ class CfirDeclDeserializer(
         }
     }
 
+    /**
+     * 反序列化模式绑定变量。
+     *
+     * 如果模式引用了独立 binding Decl，则优先使用该 Decl 的名称、状态和类型；否则继承外层变量声明信息。
+     */
     private fun deserializePatternBindingVariable(
         rawDeclRef: UInt?,
         fallbackName: Name,
@@ -987,6 +1049,11 @@ class CfirDeclDeserializer(
         ).also(symbol::bind)
     }
 
+    /**
+     * 深复制声明状态。
+     *
+     * 模式绑定变量需要继承外层变量状态，但每个绑定变量必须拥有独立的可变 status 实例。
+     */
     private fun cloneStatus(status: CfirDeclarationStatus): CfirDeclarationStatusImpl {
         return CfirDeclarationStatusImpl(
             visibility = status.visibility,
@@ -1011,6 +1078,7 @@ class CfirDeclDeserializer(
         }
     }
 
+    /** 从 `allExprs` 中的 reference expression 读取原始引用文本。 */
     private fun extractReferenceName(exprIndex: Int): String? {
         val expr = context.pkg.allExprs(exprIndex) ?: return null
         if (expr.infoType != ExprInfo.ReferenceInfo) return null
@@ -1018,6 +1086,11 @@ class CfirDeclDeserializer(
         return referenceInfo.reference
     }
 
+    /**
+     * 将 ExtendDecl 反序列化为 [CfirExtend]。
+     *
+     * extend 的目标类型来自 `Decl.type`，继承类型和成员声明来自 [ExtendInfo]。
+     */
     private fun convertExtend(decl: Decl): CfirExtend {
         val symbol = CfirExtendSymbol()
         val status = buildStatus(decl)
@@ -1120,7 +1193,7 @@ class CfirDeclDeserializer(
         return cfirParam
     }
 
-    /** FuncParam → CfirValueParameter */
+    /** 将 VarDecl 形式的 enum constructor 反序列化为 [CfirEnumConstructor]。 */
     private fun convertEnumConstructorFromVariableDecl(decl: Decl): CfirEnumConstructor {
         val name = Name.identifier(decl.identifier ?: "???")
         val owner = currentEnumOwner
@@ -1150,6 +1223,7 @@ class CfirDeclDeserializer(
         return enumCtor
     }
 
+    /** 将 FuncDecl 形式的 enum constructor 反序列化为 [CfirEnumConstructor]。 */
     private fun convertEnumConstructorFromFunctionDecl(decl: Decl): CfirEnumConstructor {
         val name = Name.identifier(decl.identifier ?: "???")
         val owner = currentEnumOwner
@@ -1184,6 +1258,7 @@ class CfirDeclDeserializer(
         return enumCtor
     }
 
+    /** 反序列化函数、构造器或 enum constructor 的值参数列表。 */
     private fun deserializeFunctionParameters(decl: Decl): MutableList<CfirValueParameter> {
         val funcInfo = decl.info(FuncInfo()) as? FuncInfo ?: return mutableListOf()
         val funcBody = funcInfo.funcBody ?: return mutableListOf()
@@ -1201,6 +1276,7 @@ class CfirDeclDeserializer(
         return valueParameters
     }
 
+    /** 构造 enum constructor 的返回类型引用，位于 enum owner 内时返回对应 enum 类型。 */
     private fun buildEnumConstructorReturnTypeRef(owner: EnumOwnerContext?): CfirTypeRef {
         owner ?: return buildImplicitTypeRef {
             customRenderer = false
@@ -1219,6 +1295,7 @@ class CfirDeclDeserializer(
         }
     }
 
+    /** 构造 class-like 构造器返回类型引用，位于 owner 内时返回当前 class-like 类型。 */
     private fun buildClassConstructorReturnTypeRef(owner: ClassLikeOwnerContext?): CfirTypeRef {
         owner ?: return buildImplicitTypeRef {
             customRenderer = false
@@ -1236,16 +1313,19 @@ class CfirDeclDeserializer(
         }
     }
 
+    /** 根据当前包名和声明名解析 class-like 声明的 [ClassId]。 */
     private fun resolveClassId(decl: Decl, fallbackName: Name): ClassId {
         val name = decl.classLikeName(fallbackName)
         return ClassId(packageFqName, name)
     }
 
+    /** 提取 class-like 声明名，缺失时使用稳定 fallback。 */
     private fun Decl.classLikeName(fallback: Name = Name.identifier("___missing_class_name___")): Name {
         val rawName = identifier?.takeIf { it.isNotBlank() }
         return rawName?.let(Name::identifier) ?: fallback
     }
 
+    /** 将 FuncParam 声明反序列化为 [CfirValueParameter]。 */
     private fun convertValueParameter(decl: Decl): CfirValueParameter {
         val info = decl.info(ParamInfo()) as? ParamInfo
 

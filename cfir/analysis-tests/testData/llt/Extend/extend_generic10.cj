@@ -12,7 +12,7 @@ func boo(x: Foo) {}
 
 main(): Int64 {
     let a = A<Int32>()
-    boo(<!TYPE_MISMATCH!>a<!>)
+    boo(<!ARGUMENT_TYPE_MISMATCH!>a<!>)
     a.<!NOT_MEMBER_OF!>foo<!>()
     return 0
 }

@@ -100,35 +100,45 @@ import kotlin.collections.toList
  * script / REPL / context parameter 等 Kotlin 特有概念）。
  */
 class BodyResolveContext(
+    /** 当前上下文使用的返回类型计算器。 */
     @set:PrivateForInline
     var returnTypeCalculator: ReturnTypeCalculator,
+    /** body resolve 共享的数据流分析上下文。 */
     val dataFlowAnalyzerContext: CfirDataFlowAnalyzerContext,
+    /** 是否处于仅收集上下文、暂不执行完整解析的模式。 */
     private val isContextCollectorMode: Boolean = false,
 ) {
     // ── Imports & file ──────────────────────────────────────────────────────
 
+    /** 当前文件已构造的导入 scope 列表。 */
     val fileImportsScope: MutableList<CfirScope> = mutableListOf()
 
+    /** 当前正在进行 body resolve 的文件。 */
     @set:PrivateForInline
     lateinit var file: CfirFile
 
     // ── Tower data contexts ────────────────────────────────────────────────
 
+    /** 普通 tower data context 集合，按 [CfirTowerDataMode] 区分。 */
     @PrivateForInline
     var regularTowerDataContexts: CfirRegularTowerDataContexts =
         CfirRegularTowerDataContexts(regular = CfirTowerDataContext())
 
+    /** 匿名函数和 callable reference 等特殊上下文缓存。 */
     @PrivateForInline
     val specialTowerDataContexts: CfirSpecialTowerDataContexts = CfirSpecialTowerDataContexts()
 
+    /** 当前 [towerDataMode] 对应的活跃 tower data context。 */
     @OptIn(PrivateForInline::class)
     val towerDataContext: CfirTowerDataContext
         get() = regularTowerDataContexts.currentContext
             ?: throw AssertionError("No regular data context found, towerDataMode = $towerDataMode")
 
+    /** 当前 tower data context 中的隐式值存储。 */
     val implicitValueStorage: ImplicitValueStorage
         get() = towerDataContext.implicitValueStorage
 
+    /** 当前 body resolve 使用的 tower data 模式。 */
     @OptIn(PrivateForInline::class)
     var towerDataMode: CfirTowerDataMode
         get() = regularTowerDataContexts.activeMode
@@ -138,29 +148,38 @@ class BodyResolveContext(
 
     // ── Containers & inference state ───────────────────────────────────────
 
+    /** 当前声明容器栈，文件和声明进入/退出时同步维护。 */
     @set:PrivateForInline
     var containers: ArrayDeque<CfirDeclaration> = ArrayDeque()
 
+    /** 当前最内层声明容器；没有容器时返回 null。 */
     val containerIfAny: CfirDeclaration?
         get() = containers.lastOrNull()
 
+    /** 当前最内层 regular class 容器。 */
     @set:PrivateForInline
     var containingRegularClass: CfirClass? = null
 
+    /** 当前调用推断会话。 */
     @set:PrivateForInline
     var inferenceSession: CfirInferenceSession = CfirInferenceSession.DEFAULT
 
+    /** overload-by-lambda 解析过程中待报告诊断的候选栈。 */
     private val overloadByLambdaCandidateStack: ArrayDeque<Candidate> = ArrayDeque()
 
+    /** 当前是否正在解析赋值表达式右侧。 */
     @set:PrivateForInline
     var isInsideAssignmentRhs: Boolean = false
 
+    /** 当前 public API inline 函数上下文。 */
     @set:PrivateForInline
     var publicApiInlineFunction: CfirFunction? = null
 
+    /** 当前声明路径上可用于类型解析配置的 class 容器栈。 */
     @set:PrivateForInline
     var containingClassDeclarations: ArrayDeque<CfirClass> = ArrayDeque()
 
+    /** 当前 designated resolve 目标中的局部 class 声明集合。 */
     @set:PrivateForInline
     var targetedLocalClasses: Set<CfirDeclaration> = emptySet()
 
@@ -170,11 +189,17 @@ class BodyResolveContext(
     /** 对齐 K2：嵌套的本地 class-like 声明追溯外层所属。 */
     val outerLocalClassForNested: MutableMap<CfirClassLikeSymbol<*>, CfirClassLikeSymbol<*>> = hashMapOf()
 
+    /** 当前是否处于 annotation class 参数或默认值解析上下文。 */
     @set:PrivateForInline
     var isInsideAnnotationContext: Boolean = false
 
     // ── File entry ─────────────────────────────────────────────────────────
 
+    /**
+     * 在指定文件上下文中执行 body resolve。
+     *
+     * 该函数会重置并恢复文件导入 scope，同时把文件压入容器栈。
+     */
     @OptIn(PrivateForInline::class)
     inline fun <T> withFile(file: CfirFile, f: () -> T): T {
         val oldFile = if (::file.isInitialized) this.file else null
@@ -194,22 +219,26 @@ class BodyResolveContext(
 
     // ── Storage: variables / functions / class-likes ──────────────────────
 
+    /** 把局部变量写入当前 tower data context。 */
     @OptIn(PrivateForInline::class)
     fun storeVariable(variable: CfirVariable, session: CfirSession) {
         replaceTowerDataContext(towerDataContext.addLocalVariable(variable, session))
     }
 
+    /** 把局部属性写入当前 tower data context。 */
     @OptIn(PrivateForInline::class)
     fun storeProperty(property: CfirProperty, session: CfirSession) {
         replaceTowerDataContext(towerDataContext.addLocalProperty(property, session))
     }
 
+    /** 在参数不是下划线占位符时把 value parameter 写入局部变量 scope。 */
     fun storeValueParameterIfNeeded(valueParameter: CfirValueParameter, session: CfirSession) {
         if (valueParameter.name != UNDERSCORE_FOR_UNUSED_VAR) {
             storeVariable(valueParameter, session)
         }
     }
 
+    /** 把局部函数写入当前最后一个局部 scope。 */
     @OptIn(PrivateForInline::class)
     fun storeFunction(function: CfirNamedFunction, session: CfirSession) {
         val lastScope = towerDataContext.localScopes.lastOrNull() ?: return
@@ -217,6 +246,7 @@ class BodyResolveContext(
         replaceTowerDataContext(towerDataContext.setLastLocalScope(newLastScope))
     }
 
+    /** 把非嵌套局部 class/typealias 写入当前最后一个局部 scope。 */
     @OptIn(PrivateForInline::class)
     fun storeClassOrTypealiasIfNotNested(classLike: CfirClassLikeDeclaration, session: CfirSession) {
         // 嵌套类/类型别名不进局部作用域，由外层 class scope 承载。
@@ -228,11 +258,13 @@ class BodyResolveContext(
 
     // ── Tower data mutation primitives ────────────────────────────────────
 
+    /** 替换当前活跃 tower data context。 */
     @OptIn(PrivateForInline::class)
     fun replaceTowerDataContext(newContext: CfirTowerDataContext) {
         regularTowerDataContexts = regularTowerDataContexts.replaceCurrentlyActiveContext(newContext)
     }
 
+    /** 清理当前 body resolve 上下文中的可复用状态。 */
     @OptIn(PrivateForInline::class)
     fun clear() {
         specialTowerDataContexts.clear()
@@ -240,36 +272,44 @@ class BodyResolveContext(
         dataFlowAnalyzerContext.reset()
     }
 
+    /** 向当前 tower data context 添加一个非局部 scope。 */
     fun addNonLocalScope(scope: CfirScope) {
         addNonLocalTowerDataElement(scope.asTowerDataElement(isLocal = false))
     }
 
+    /** 向当前 tower data context 批量添加非局部 scope。 */
     fun addNonLocalScopes(scopes: List<CfirScope>) {
         if (scopes.isEmpty()) return
         addNonLocalTowerDataElements(scopes.map { it.asTowerDataElement(isLocal = false) })
     }
 
+    /** scope 非空时添加到当前非局部 tower data。 */
     fun addNonLocalScopeIfNotNull(scope: CfirScope?) {
         if (scope == null) return
         addNonLocalScope(scope)
     }
 
+    /** 添加一个非局部 tower data element。 */
     fun addNonLocalTowerDataElement(element: CfirTowerDataElement) {
         replaceTowerDataContext(towerDataContext.addNonLocalTowerDataElements(listOf(element)))
     }
 
+    /** 批量添加非局部 tower data element。 */
     fun addNonLocalTowerDataElements(newElements: List<CfirTowerDataElement>) {
         replaceTowerDataContext(towerDataContext.addNonLocalTowerDataElements(newElements))
     }
 
+    /** 添加一个局部 scope。 */
     fun addLocalScope(localScope: CfirLocalScope) {
         replaceTowerDataContext(towerDataContext.addLocalScope(localScope))
     }
 
+    /** 添加一个隐式接收者。 */
     fun addReceiver(name: Name?, implicitReceiverValue: ImplicitReceiverValue<*>) {
         replaceTowerDataContext(towerDataContext.addReceiver(name, implicitReceiverValue))
     }
 
+    /** 接收者非空时添加到当前 tower data context。 */
     fun addReceiverIfNotNull(name: Name?, implicitReceiverValue: ImplicitReceiverValue<*>?) {
         if (implicitReceiverValue == null) return
         addReceiver(name, implicitReceiverValue)
@@ -277,6 +317,7 @@ class BodyResolveContext(
 
     // ── Container stack ───────────────────────────────────────────────────
 
+    /** 在声明容器栈中临时压入 [declaration] 并执行 [f]。 */
     @OptIn(PrivateForInline::class)
     inline fun <T> withContainer(declaration: CfirDeclaration, f: () -> T): T {
         containers.addLast(declaration)
@@ -303,6 +344,7 @@ class BodyResolveContext(
         }
     }
 
+    /** 在 containing class 栈中临时压入 [declaration] 并执行 [f]。 */
     inline fun <T> withContainingClass(declaration: CfirClass, f: () -> T): T {
         containingClassDeclarations.addLast(declaration)
         return try {
@@ -314,6 +356,7 @@ class BodyResolveContext(
 
     // ── Tower data with/cleanup combinators ───────────────────────────────
 
+    /** 临时替换整组 regular tower data contexts。 */
     @OptIn(PrivateForInline::class)
     inline fun <T> withTowerDataContexts(newContexts: CfirRegularTowerDataContexts, f: () -> T): T {
         val old = regularTowerDataContexts
@@ -325,6 +368,7 @@ class BodyResolveContext(
         }
     }
 
+    /** 临时替换当前活跃 tower data context。 */
     inline fun <T> withTowerDataContext(newContext: CfirTowerDataContext, f: () -> T): T {
         val initialContext = towerDataContext
         return try {
@@ -335,6 +379,7 @@ class BodyResolveContext(
         }
     }
 
+    /** 执行 [l] 后恢复进入前的 tower data context。 */
     inline fun <R> withTowerDataCleanup(l: () -> R): R {
         val initialContext = towerDataContext
         return try {
@@ -344,6 +389,7 @@ class BodyResolveContext(
         }
     }
 
+    /** 在指定 tower data mode 下执行 [f]，结束后恢复旧模式。 */
     inline fun <T> withTowerDataMode(mode: CfirTowerDataMode?, f: () -> T): T {
         val oldMode = towerDataMode
         if (mode != null) {
@@ -356,6 +402,7 @@ class BodyResolveContext(
         }
     }
 
+    /** 执行 [l] 后恢复进入前的 tower data mode。 */
     inline fun <R> withTowerDataModeCleanup(l: () -> R): R {
         val initialMode = towerDataMode
         return try {
@@ -365,6 +412,11 @@ class BodyResolveContext(
         }
     }
 
+    /**
+     * 在代码片段携带的上下文中执行 body resolve。
+     *
+     * 代码片段复用原上下文的 tower data，并额外叠加当前文件导入 scope。
+     */
     fun <T> withCodeFragment(
         codeFragment: CfirCodeFragment,
         holder: SessionAndScopeSessionHolder,
@@ -410,6 +462,11 @@ class BodyResolveContext(
 
     // ── Class body ────────────────────────────────────────────────────────
 
+    /**
+     * 为 class-like 声明体安装成员解析所需的 tower data contexts。
+     *
+     * 该函数分别构造成员、嵌套类、静态成员、构造器头、enum constructor 和 finalizer 的上下文。
+     */
     fun <T> withScopesForClass(
         owner: CfirClassLikeDeclaration,
         holder: SessionAndScopeSessionHolder,
@@ -578,11 +635,13 @@ class BodyResolveContext(
         }
     }
 
+    /** 返回主构造器纯参数 scope。 */
     fun getPrimaryConstructorPureParametersScope(): CfirLocalScope? {
         @OptIn(PrivateForInline::class)
         return regularTowerDataContexts.primaryConstructorPureParametersScope
     }
 
+    /** 返回主构造器全部参数 scope。 */
     fun getPrimaryConstructorAllParametersScope(): CfirLocalScope? {
         @OptIn(PrivateForInline::class)
         return regularTowerDataContexts.primaryConstructorAllParametersScope
@@ -685,6 +744,7 @@ class BodyResolveContext(
         withFunctionLocalScope(finalizer, holder.session, f)
     }
 
+    /** 在函数体局部 scope 中执行 [f]，并把函数 value parameters 写入该 scope。 */
     @PublishedApi
     internal inline fun <T> withFunctionLocalScope(
         function: CfirFunction,
@@ -698,6 +758,7 @@ class BodyResolveContext(
         f()
     }
 
+    /** 存储 value parameter 并在其容器上下文中执行 [f]。 */
     @OptIn(PrivateForInline::class)
     inline fun <T> withValueParameter(
         valueParameter: CfirValueParameter,
@@ -710,6 +771,7 @@ class BodyResolveContext(
         }
     }
 
+    /** 为匿名函数建立参数局部 scope 和容器上下文。 */
     @OptIn(PrivateForInline::class)
     inline fun <T> withAnonymousFunction(
         anonymousFunction: CfirFunction,
@@ -723,6 +785,7 @@ class BodyResolveContext(
         withContainer(anonymousFunction, f)
     }
 
+    /** 记录当前 lambda 正在依赖候选上下文分析，结束后移除标记。 */
     inline fun <R> withLambdaBeingAnalyzedInDependentContext(
         lambda: CfirFunctionSymbol<*>,
         l: () -> R,
@@ -737,12 +800,14 @@ class BodyResolveContext(
 
     // ── Constructor ───────────────────────────────────────────────────────
 
+    /** 在构造器 header tower data mode 下解析构造器声明。 */
     @OptIn(PrivateForInline::class)
     inline fun <T> forConstructor(constructor: CfirConstructor, f: () -> T): T =
         withTowerDataMode(CfirTowerDataMode.CONSTRUCTOR_HEADER) {
             withContainer(constructor, f)
         }
 
+    /** 解析构造器参数默认值，并安装构造器参数 scope。 */
     @OptIn(PrivateForInline::class)
     inline fun <T> forConstructorParameters(
         constructor: CfirConstructor,
@@ -755,6 +820,7 @@ class BodyResolveContext(
         return forConstructorParametersOrDelegatedConstructorCallChildren(constructor, owningClass, holder, f)
     }
 
+    /** 解析委托构造调用的子表达式，并复用构造器参数上下文。 */
     @OptIn(PrivateForInline::class)
     inline fun <T> forDelegatedConstructorCallChildren(
         constructor: CfirConstructor,
@@ -774,6 +840,7 @@ class BodyResolveContext(
         return withTowerDataMode(CfirTowerDataMode.REGULAR) { f() }
     }
 
+    /** 构造器参数默认值和委托构造调用子表达式共享的参数 scope 安装入口。 */
     @OptIn(PrivateForInline::class)
     inline fun <T> forConstructorParametersOrDelegatedConstructorCallChildren(
         constructor: CfirConstructor,
@@ -819,6 +886,7 @@ class BodyResolveContext(
         }
     }
 
+    /** 构造包含构造器 value parameters 的局部 scope。 */
     fun buildConstructorParametersScope(
         constructor: CfirConstructor,
         session: CfirSession,
@@ -865,16 +933,19 @@ class BodyResolveContext(
 
     // ── Lambda / callable reference postponed contexts ────────────────────
 
+    /** 使用缓存的匿名函数 postponed context 执行 [f]。 */
     @OptIn(PrivateForInline::class)
     inline fun <T> withAnonymousFunctionTowerDataContext(symbol: CfirFunctionSymbol<*>, f: () -> T): T {
         return withTemporaryRegularContext(specialTowerDataContexts.getAnonymousFunctionContext(symbol), f)
     }
 
+    /** 使用缓存的 callable reference postponed context 执行 [f]。 */
     @OptIn(PrivateForInline::class)
     inline fun <T> withCallableReferenceTowerDataContext(access: CfirExpression, f: () -> T): T {
         return withTemporaryRegularContext(specialTowerDataContexts.getCallableReferenceContext(access), f)
     }
 
+    /** 临时切换到 postponed atoms 保存的 regular context 和 inference session。 */
     @OptIn(PrivateForInline::class)
     inline fun <T> withTemporaryRegularContext(newContext: CfirPostponedAtomsResolutionContext?, f: () -> T): T {
         val context = newContext ?: return f()
@@ -887,18 +958,21 @@ class BodyResolveContext(
         }
     }
 
+    /** 保存匿名函数当前 postponed context。 */
     @OptIn(PrivateForInline::class)
     fun storeContextForAnonymousFunction(anonymousFunction: CfirFunction) {
         val symbol = anonymousFunction.symbol as? CfirFunctionSymbol<*> ?: return
         specialTowerDataContexts.storeAnonymousFunctionContext(symbol, towerDataContext, inferenceSession)
     }
 
+    /** 删除匿名函数已保存的 postponed context。 */
     @OptIn(PrivateForInline::class)
     fun dropContextForAnonymousFunction(anonymousFunction: CfirFunction) {
         val symbol = anonymousFunction.symbol as? CfirFunctionSymbol<*> ?: return
         specialTowerDataContexts.dropAnonymousFunctionContext(symbol)
     }
 
+    /** 保存 callable reference 当前 postponed context。 */
     @OptIn(PrivateForInline::class)
     fun storeCallableReferenceContext(callableReferenceAccess: CfirExpression) {
         specialTowerDataContexts.storeCallableReferenceContext(
@@ -908,6 +982,7 @@ class BodyResolveContext(
         )
     }
 
+    /** 删除 callable reference 已保存的 postponed context。 */
     @OptIn(PrivateForInline::class)
     fun dropCallableReferenceContext(callableReferenceAccess: CfirExpression) {
         specialTowerDataContexts.dropCallableReferenceContext(callableReferenceAccess)
@@ -923,6 +998,7 @@ class BodyResolveContext(
     fun capturePostponedAtomsResolutionContexts(): CfirSpecialTowerDataContextsSnapshot =
         specialTowerDataContexts.capture()
 
+    /** 从快照恢复延迟参数解析上下文。 */
     @OptIn(PrivateForInline::class)
     fun restorePostponedAtomsResolutionContexts(snapshot: CfirSpecialTowerDataContextsSnapshot) {
         specialTowerDataContexts.restore(snapshot)
@@ -937,12 +1013,14 @@ class BodyResolveContext(
     fun captureDataFlowAnalyzerContext(): CfirDataFlowAnalyzerContextSnapshot =
         dataFlowAnalyzerContext.createSnapshot(IdentitySnapshotCfirMapper)
 
+    /** 从快照恢复 DFA/CFG 上下文。 */
     fun restoreDataFlowAnalyzerContext(snapshot: CfirDataFlowAnalyzerContextSnapshot) {
         dataFlowAnalyzerContext.resetFrom(snapshot.context)
     }
 
     // ── Inference / expectations ──────────────────────────────────────────
 
+    /** 在指定推断会话中执行 [block]，结束后恢复旧会话。 */
     @OptIn(PrivateForInline::class)
     inline fun <T> withInferenceSession(
         inferenceSession: CfirInferenceSession,
@@ -972,9 +1050,11 @@ class BodyResolveContext(
         }
     }
 
+    /** 是否仍应缩减 overload-by-lambda 候选集合。 */
     fun shouldReduceOverloadByLambdaCandidates(): Boolean =
         overloadByLambdaCandidateStack.lastOrNull()?.isSuccessful != false
 
+    /** 把 overload-by-lambda 试跑诊断写入当前候选。 */
     fun reportOverloadByLambdaCandidateDiagnostic(diagnostic: ResolutionDiagnostic) {
         val candidate = overloadByLambdaCandidateStack.lastOrNull() ?: return
         if (candidate.isSuccessful) {
@@ -982,6 +1062,7 @@ class BodyResolveContext(
         }
     }
 
+    /** 在赋值右侧上下文中执行 [block]。 */
     @OptIn(PrivateForInline::class)
     inline fun <R> withAssignmentRhs(block: () -> R): R {
         val old = isInsideAssignmentRhs
@@ -993,6 +1074,7 @@ class BodyResolveContext(
         }
     }
 
+    /** 在指定 public API inline 函数上下文中执行 [block]。 */
     @OptIn(PrivateForInline::class)
     inline fun <T> withPublicApiInlineFunction(function: CfirFunction?, block: () -> T): T {
         val old = publicApiInlineFunction
@@ -1004,6 +1086,7 @@ class BodyResolveContext(
         }
     }
 
+    /** 临时替换返回类型计算器。 */
     @OptIn(PrivateForInline::class)
     inline fun <T> withReturnTypeCalculator(
         returnTypeCalculator: ReturnTypeCalculator,
@@ -1018,6 +1101,7 @@ class BodyResolveContext(
         }
     }
 
+    /** 为 designated local class resolve 临时设置返回类型计算器和目标局部类集合。 */
     @OptIn(PrivateForInline::class)
     inline fun <T> forLocalClasses(
         returnTypeCalculator: ReturnTypeCalculator,
@@ -1037,21 +1121,46 @@ class BodyResolveContext(
     }
 }
 
+/**
+ * body resolve 可切换的 tower data 模式。
+ *
+ * 不同模式对应 class body 内不同语义位置可见的 receiver 与 scope 集合。
+ */
 enum class CfirTowerDataMode {
+    /** 普通成员和表达式解析模式。 */
     REGULAR,
+    /** 嵌套 class-like 声明解析模式。 */
     NESTED_CLASS,
+    /** 静态成员解析模式。 */
     STATIC_MEMBER,
+    /** 构造器头和主构造器参数默认值解析模式。 */
     CONSTRUCTOR_HEADER,
+    /** enum constructor 解析模式。 */
     ENUM_CONSTRUCTOR,
+    /** finalizer 解析模式。 */
     FINALIZER,
 }
 
+/**
+ * 一组按 [CfirTowerDataMode] 区分的 regular tower data contexts。
+ *
+ * 该类型不可变；切换模式或替换 context 时返回新的实例，避免嵌套解析污染外层状态。
+ */
 class CfirRegularTowerDataContexts private constructor(
+    /** tower data mode 到 context 的映射。 */
     private val modeMap: EnumMap<CfirTowerDataMode, CfirTowerDataContext>,
+    /** 主构造器中未提升为属性的参数 scope。 */
     val primaryConstructorPureParametersScope: CfirLocalScope? = null,
+    /** 主构造器全部参数 scope。 */
     val primaryConstructorAllParametersScope: CfirLocalScope? = null,
+    /** 当前活跃 tower data mode。 */
     val activeMode: CfirTowerDataMode = CfirTowerDataMode.REGULAR,
 ) {
+    /**
+     * 从各语义位置的 context 构造 regular tower data contexts。
+     *
+     * 缺失的专用 context 会回退到 [regular]。
+     */
     constructor(
         regular: CfirTowerDataContext,
         forNestedClasses: CfirTowerDataContext? = null,
@@ -1068,9 +1177,11 @@ class CfirRegularTowerDataContexts private constructor(
         CfirTowerDataMode.REGULAR,
     )
 
+    /** 当前活跃模式对应的 tower data context。 */
     val currentContext: CfirTowerDataContext?
         get() = modeMap[activeMode]
 
+    /** 返回切换到 [newMode] 后的新 contexts 对象。 */
     fun replaceTowerDataMode(newMode: CfirTowerDataMode): CfirRegularTowerDataContexts =
         if (newMode == activeMode) this
         else CfirRegularTowerDataContexts(
@@ -1080,6 +1191,7 @@ class CfirRegularTowerDataContexts private constructor(
             newMode,
         )
 
+    /** 返回替换当前活跃模式 context 后的新 contexts 对象。 */
     fun replaceCurrentlyActiveContext(newContext: CfirTowerDataContext): CfirRegularTowerDataContexts {
         val newModeMap = EnumMap<CfirTowerDataMode, CfirTowerDataContext>(CfirTowerDataMode::class.java)
         newModeMap.putAll(modeMap)
@@ -1092,6 +1204,7 @@ class CfirRegularTowerDataContexts private constructor(
         )
     }
 
+    /** 返回替换 REGULAR context 并切换到 REGULAR 模式后的新 contexts 对象。 */
     fun replaceAndSetActiveRegularContext(newContext: CfirTowerDataContext): CfirRegularTowerDataContexts {
         val newModeMap = EnumMap<CfirTowerDataMode, CfirTowerDataContext>(CfirTowerDataMode::class.java)
         newModeMap.putAll(modeMap)
@@ -1105,6 +1218,7 @@ class CfirRegularTowerDataContexts private constructor(
     }
 
     companion object {
+        /** 构造完整的 mode -> context 映射。 */
         private fun enumMap(
             regular: CfirTowerDataContext,
             forNestedClasses: CfirTowerDataContext?,
@@ -1125,23 +1239,38 @@ class CfirRegularTowerDataContexts private constructor(
     }
 }
 
+/**
+ * postponed atom 后续恢复所需的上下文快照。
+ */
 data class CfirPostponedAtomsResolutionContext(
+    /** 保存时的 tower data context。 */
     val towerDataContext: CfirTowerDataContext,
+    /** 保存时的推断会话。 */
     val inferenceSession: CfirInferenceSession,
 )
 
+/**
+ * 特殊 postponed atom 的 tower data context 存储。
+ *
+ * 匿名函数按符号存储，callable reference 按表达式对象身份存储。
+ */
 class CfirSpecialTowerDataContexts {
+    /** 匿名函数符号到 postponed context 的映射。 */
     private val anonymousFunctionContexts = LinkedHashMap<CfirFunctionSymbol<*>, CfirPostponedAtomsResolutionContext>()
+    /** callable reference 表达式对象到 postponed context 的映射。 */
     private val callableReferenceContexts = IdentityHashMap<CfirExpression, CfirPostponedAtomsResolutionContext>()
 
+    /** 清空所有特殊 postponed context。 */
     fun clear() {
         anonymousFunctionContexts.clear()
         callableReferenceContexts.clear()
     }
 
+    /** 获取匿名函数保存的 postponed context。 */
     fun getAnonymousFunctionContext(symbol: CfirFunctionSymbol<*>): CfirPostponedAtomsResolutionContext? =
         anonymousFunctionContexts[symbol]
 
+    /** 保存匿名函数 postponed context。 */
     fun storeAnonymousFunctionContext(
         symbol: CfirFunctionSymbol<*>,
         towerDataContext: CfirTowerDataContext,
@@ -1150,13 +1279,16 @@ class CfirSpecialTowerDataContexts {
         anonymousFunctionContexts[symbol] = CfirPostponedAtomsResolutionContext(towerDataContext, inferenceSession)
     }
 
+    /** 删除匿名函数 postponed context。 */
     fun dropAnonymousFunctionContext(symbol: CfirFunctionSymbol<*>) {
         anonymousFunctionContexts.remove(symbol)
     }
 
+    /** 获取 callable reference 保存的 postponed context。 */
     fun getCallableReferenceContext(access: CfirExpression): CfirPostponedAtomsResolutionContext? =
         callableReferenceContexts[access]
 
+    /** 保存 callable reference postponed context。 */
     fun storeCallableReferenceContext(
         access: CfirExpression,
         towerDataContext: CfirTowerDataContext,
@@ -1165,15 +1297,18 @@ class CfirSpecialTowerDataContexts {
         callableReferenceContexts[access] = CfirPostponedAtomsResolutionContext(towerDataContext, inferenceSession)
     }
 
+    /** 删除 callable reference postponed context。 */
     fun dropCallableReferenceContext(access: CfirExpression) {
         callableReferenceContexts.remove(access)
     }
 
+    /** 捕获当前全部特殊 postponed context。 */
     fun capture(): CfirSpecialTowerDataContextsSnapshot = CfirSpecialTowerDataContextsSnapshot(
         anonymousFunctionContexts = LinkedHashMap(anonymousFunctionContexts),
         callableReferenceContexts = IdentityHashMap(callableReferenceContexts),
     )
 
+    /** 从快照恢复特殊 postponed context。 */
     fun restore(snapshot: CfirSpecialTowerDataContextsSnapshot) {
         anonymousFunctionContexts.clear()
         anonymousFunctionContexts.putAll(snapshot.anonymousFunctionContexts)
@@ -1182,26 +1317,40 @@ class CfirSpecialTowerDataContexts {
     }
 }
 
+/** 特殊 postponed context 存储的快照对象。 */
 class CfirSpecialTowerDataContextsSnapshot(
+    /** 匿名函数 postponed context 快照。 */
     val anonymousFunctionContexts: LinkedHashMap<CfirFunctionSymbol<*>, CfirPostponedAtomsResolutionContext>,
+    /** callable reference postponed context 快照。 */
     val callableReferenceContexts: IdentityHashMap<CfirExpression, CfirPostponedAtomsResolutionContext>,
 )
 
+/** DFA/CFG 快照恢复时使用的恒等映射器。 */
 private object IdentitySnapshotCfirMapper : SnapshotCfirMapper {
+    /** 符号快照恢复保持原符号对象。 */
     override fun <T : CfirBasedSymbol<*>> mapSymbol(symbol: T): T = symbol
 
+    /** 元素快照恢复保持原元素对象。 */
     override fun <T : CfirElement> mapElement(element: T): T = element
 }
 
+/**
+ * body resolve 期间可插拔的调用推断会话。
+ *
+ * 默认实现不共享约束系统；PCLA 等高级模式通过子类改写候选基础约束和 lambda 完成策略。
+ */
 abstract class CfirInferenceSession {
+    /** 返回指定候选应复用的基础约束存储。 */
     open fun baseConstraintStorageForCandidate(
         candidate: org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate,
         bodyResolveContext: BodyResolveContext,
     ): ConstraintStorage? = null
 
+    /** 返回指定调用应使用的自定义完成模式；null 表示执行普通 full completion。 */
     open fun customCompletionModeInsteadOfFull(call: org.cangnova.cangjie.cfir.expressions.CfirResolvable): ConstraintSystemCompletionMode? =
         null
 
+    /** 处理一次部分解析调用的回调。 */
     open fun <T> processPartiallyResolvedCall(
         call: T,
         resolutionMode: org.cangnova.cangjie.cfir.resolve.ResolutionMode,
@@ -1209,6 +1358,7 @@ abstract class CfirInferenceSession {
     ) where T : org.cangnova.cangjie.cfir.expressions.CfirResolvable, T : org.cangnova.cangjie.cfir.expressions.CfirExpression {
     }
 
+    /** 在当前推断会话内执行 lambda completion。 */
     open fun runLambdaCompletion(
         candidate: org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate,
         forOverloadByLambdaReturnType: Boolean,
@@ -1218,6 +1368,7 @@ abstract class CfirInferenceSession {
         return null
     }
 
+    /** 在兼容时向指定系统添加 subtype 约束。 */
     open fun addSubtypeConstraintIfCompatible(
         lowerType: org.cangnova.cangjie.cfir.types.ConeCangJieType,
         upperType: org.cangnova.cangjie.cfir.types.ConeCangJieType,
@@ -1226,8 +1377,10 @@ abstract class CfirInferenceSession {
     }
 
     companion object {
+        /** 默认推断会话，不改变普通调用解析行为。 */
         val DEFAULT: CfirInferenceSession = object : CfirInferenceSession() {}
 
+        /** 基于外层系统构造一个共享基础约束系统。 */
         @JvmStatic
         protected fun prepareSharedBaseSystem(
             outerSystem: ConstraintSystemImpl,
@@ -1240,12 +1393,22 @@ abstract class CfirInferenceSession {
     }
 }
 
+/**
+ * PCLA 推断会话。
+ *
+ * 该会话维护一个与外层候选共享的 common constraint system，
+ * 让 postponed call / lambda body 能在候选试跑期间累积并最终提交约束。
+ */
 class CfirPCLAInferenceSession(
+    /** 外层候选，最终会接收 PCLA 推断结果。 */
     private val outerCandidate: Candidate,
+    /** 构造约束系统和访问会话类型上下文所需的推断组件。 */
     private val inferenceComponents: InferenceComponents,
 ) : CfirInferenceSession() {
+    /** 当前 PCLA 共享 common constraint system。 */
     private var currentCommonSystem: ConstraintSystemImpl = prepareSharedBaseSystem(outerCandidate.system, inferenceComponents)
 
+    /** 返回当前候选应使用的共享基础约束存储。 */
     override fun baseConstraintStorageForCandidate(
         candidate: Candidate,
         bodyResolveContext: BodyResolveContext,
@@ -1254,6 +1417,7 @@ class CfirPCLAInferenceSession(
         return currentCommonSystem.currentStorage()
     }
 
+    /** 对使用外层约束系统的 postponed call 改用 PCLA postponed completion。 */
     override fun customCompletionModeInsteadOfFull(
         call: CfirResolvable,
     ): ConstraintSystemCompletionMode? = when {
@@ -1261,6 +1425,7 @@ class CfirPCLAInferenceSession(
         else -> null
     }
 
+    /** 处理部分解析调用，并在需要时把候选系统写回 common system。 */
     override fun <T> processPartiallyResolvedCall(
         call: T,
         resolutionMode: org.cangnova.cangjie.cfir.resolve.ResolutionMode,
@@ -1278,6 +1443,7 @@ class CfirPCLAInferenceSession(
         }
     }
 
+    /** 在 PCLA 共享系统或候选系统中运行 lambda completion。 */
     override fun runLambdaCompletion(
         candidate: Candidate,
         forOverloadByLambdaReturnType: Boolean,
@@ -1296,6 +1462,7 @@ class CfirPCLAInferenceSession(
         return null
     }
 
+    /** 临时切换当前 common system 执行 [block]。 */
     private fun <T> runWithSpecifiedCurrentCommonSystem(newSystem: ConstraintSystemImpl, block: () -> T): T {
         val previous = currentCommonSystem
         return try {
@@ -1306,10 +1473,12 @@ class CfirPCLAInferenceSession(
         }
     }
 
+    /** 将 PCLA common system 的最终结果提交回外层候选。 */
     fun applyResultsToMainCandidate() {
         outerCandidate.system.replaceContentWith(currentCommonSystem.currentStorage())
     }
 
+    /** 把 expected-type subtype 约束加入当前 common system。 */
     override fun addSubtypeConstraintIfCompatible(
         lowerType: ConeCangJieType,
         upperType: ConeCangJieType,
@@ -1322,6 +1491,7 @@ class CfirPCLAInferenceSession(
         )
     }
 
+    /** 使用当前约束系统 substitutor 更新表达式返回类型。 */
     private fun CfirExpression.updateReturnTypeWithCurrentSubstitutor(
         resolutionMode: org.cangnova.cangjie.cfir.resolve.ResolutionMode,
     ) {
@@ -1334,9 +1504,11 @@ class CfirPCLAInferenceSession(
         replaceConeTypeOrNull(updatedType)
     }
 
+    /** 从可解析表达式上读取当前候选。 */
     private fun CfirResolvable.candidate(): Candidate? =
         (calleeReference as? CfirNamedReferenceWithCandidate)?.candidate
 
+    /** 判断候选是否可以脱离 PCLA common system 独立分析并完成。 */
     private fun Candidate.mightBeAnalyzedAndCompletedIndependently(bodyResolveContext: BodyResolveContext): Boolean {
         when (val mode = callInfo.resolutionMode) {
             is org.cangnova.cangjie.cfir.resolve.ResolutionMode.WithExpectedType -> {
@@ -1371,6 +1543,7 @@ class CfirPCLAInferenceSession(
         return true
     }
 
+    /** 判断表达式是否是不会向 PCLA common system 注入新约束的简单实参。 */
     private fun CfirExpression.isTrivialArgument(): Boolean = when (this) {
         is CfirArrayLiteral -> false
         is CfirResolvable -> when (val candidate = candidate()) {
@@ -1389,6 +1562,7 @@ class CfirPCLAInferenceSession(
         else -> false
     }
 
+    /** 判断接收者表达式是否仍依赖 postponed 或未固定类型变量。 */
     private fun CfirExpression.isReceiverPostponed(): Boolean {
         return when {
             coneTypeOrNull?.containsNotFixedTypeVariables() == true -> true
@@ -1397,11 +1571,13 @@ class CfirPCLAInferenceSession(
         }
     }
 
+    /** 判断类型中是否包含当前 common system 尚未固定的类型变量。 */
     private fun ConeCangJieType.containsNotFixedTypeVariables(): Boolean =
         contains {
             it is ConeTypeVariableType && it.typeConstructor in currentCommonSystem.allTypeVariables
         }
 }
 
+/** 把普通 scope 包装成 tower data element。 */
 private fun CfirScope.asTowerDataElement(isLocal: Boolean): CfirTowerDataElement =
     CfirTowerDataElement(scope = this, implicitReceiver = null, isLocal = isLocal)

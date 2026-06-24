@@ -12,21 +12,38 @@ import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
 
+/**
+ * Rune 类型的 Unicode 区间穷尽性检查器。
+ *
+ * 该 checker 跳过 surrogate 区间，只在合法 Unicode code point 范围内检查缺口。
+ */
 class CharIntervalChecker : ExhaustivenessChecker {
+    /** 当前 checker 来源。 */
     override val source: CheckSource = CheckSource.CHAR_INTERVAL
+
+    /** 当前 checker 优先级。 */
     override val priority: Int = 35
 
+    /** Unicode code point 下界。 */
     private val unicodeMin = 0
+
+    /** Unicode code point 上界。 */
     private val unicodeMax = 0x10FFFF
+
+    /** surrogate 区间起点。 */
     private val surrogateStart = 0xD800
+
+    /** surrogate 区间终点。 */
     private val surrogateEnd = 0xDFFF
 
+    /** Rune primitive 类型适用该 checker。 */
     override fun isApplicable(
         type: ConeCangJieType,
         patterns: List<CfirMatchPattern>,
         context: MatchExhaustivenessContext,
     ): Boolean = type is ConePrimitiveType && type.kind == PrimitiveTypeKind.RUNE
 
+    /** 执行 Rune 区间覆盖检查。 */
     override fun check(
         matrix: CfirMatrix,
         type: ConeCangJieType,
@@ -62,6 +79,7 @@ class CharIntervalChecker : ExhaustivenessChecker {
         }
     }
 
+    /** 合并相交或相邻 Rune 区间。 */
     private fun mergeIntervals(intervals: List<IntRange>): List<IntRange> {
         if (intervals.isEmpty()) return emptyList()
         val sorted = intervals.sortedBy { it.first }
@@ -80,6 +98,7 @@ class CharIntervalChecker : ExhaustivenessChecker {
         return result
     }
 
+    /** 在合法 Unicode 范围内查找未覆盖区间。 */
     private fun findGaps(intervals: List<IntRange>): List<IntRange> {
         val validRanges = listOf(
             unicodeMin until surrogateStart,
@@ -101,7 +120,9 @@ class CharIntervalChecker : ExhaustivenessChecker {
         return gaps
     }
 
+    /** 单例实例。 */
     companion object {
+        /** 默认 Rune 区间 checker 实例。 */
         val INSTANCE = CharIntervalChecker()
     }
 }

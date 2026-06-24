@@ -15,6 +15,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirEnum
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
+import org.cangnova.cangjie.cfir.declarations.CfirTypeParameterRefsOwner
 import org.cangnova.cangjie.cfir.declarations.callableNameOrNull
 import org.cangnova.cangjie.cfir.resolve.CfirTypeResolver
 import org.cangnova.cangjie.cfir.session.CfirSessionComponent
@@ -26,30 +27,54 @@ import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeEnumType
+import org.cangnova.cangjie.cfir.types.ConeLookupTagBasedType
 import org.cangnova.cangjie.cfir.types.ConeStructType
 import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
 import org.cangnova.cangjie.cfir.types.ConeTypeProjection
+import org.cangnova.cangjie.cfir.types.CfirTypeSubstitutorByMap
 import org.cangnova.cangjie.cfir.types.abbreviatedType
 import org.cangnova.cangjie.cfir.types.arrayElementType
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
+import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.declaredExtendTargetKey
 import org.cangnova.cangjie.cfir.types.expandedClassIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.type.model.TypeConstructorMarker
 
+/**
+ * CFIR extend 语义索引仓库。
+ *
+ * 该服务把文件中的 `CfirExtend` 声明归一化为稳定的语义模型，并缓存目标类型、包、
+ * 来源、接口闭包、默认成员和成员 owner 等索引，供 checker、scope、可见性和规则查询服务共享。
+ */
 class CfirExtendIndexStore : CfirSessionComponent {
+    /** 当前 session 内所有 extend 语义模型，按稳定比较器排序。 */
     private var models: List<CfirExtendSemanticModel> = emptyList()
+    /** 按被扩展目标键分组的 extend 模型。 */
     private var modelsByTargetKey: Map<CfirExtendTargetKey, List<CfirExtendSemanticModel>> = emptyMap()
+    /** 按声明所在包分组的 extend 模型。 */
     private var modelsByPackage: Map<FqName, List<CfirExtendSemanticModel>> = emptyMap()
+    /** 按语义来源分组的 extend 模型。 */
     private var modelsByOrigin: Map<CfirExtendSemanticOrigin, List<CfirExtendSemanticModel>> = emptyMap()
+    /** extend 声明节点到其语义模型的索引。 */
     private var modelByDeclaration: Map<CfirExtend, CfirExtendSemanticModel> = emptyMap()
+    /** extend 成员符号到 owner extend 声明的索引。 */
     private var containingExtendByCallableSymbol: Map<CfirCallableSymbol<*>, CfirExtend> = emptyMap()
+    /** 默认实现不依赖接口类型参数的接口成员索引。 */
     private var defaultIndependentMembersByInterface: Map<ClassId, List<Name>> = emptyMap()
+    /** 接口 ClassId 到“自身 + 传递父接口”闭包的缓存。 */
     private var interfaceClosureByClassId: Map<ClassId, Set<ClassId>> = emptyMap()
+    /** extend 目标类自身继承接口集合的缓存。 */
     private var targetClassOwnInterfacesByClassId: Map<ClassId, Set<ClassId>> = emptyMap()
 
+    /**
+     * 基于当前文件集合重建所有 extend 语义索引。
+     *
+     * 该方法是同步入口，保证模型列表与各类派生索引在同一批文件快照下更新。
+     */
     @Synchronized
     fun rebuild(files: List<CfirFile>, resolver: CfirTypeResolver) {
         val collected = buildList {
@@ -73,25 +98,52 @@ class CfirExtendIndexStore : CfirSessionComponent {
         targetClassOwnInterfacesByClassId = buildTargetClassOwnInterfacesMap(next, resolver)
     }
 
+    /**
+     * 返回当前已索引的全部 extend 语义模型。
+     */
     fun allModels(): List<CfirExtendSemanticModel> = models
 
+    /**
+     * 按原始 extend 声明查询语义模型。
+     */
     fun modelForDeclaration(declaration: Any): CfirExtendSemanticModel? = modelByDeclaration[declaration]
 
+    /**
+     * 查询指定目标键上的所有 extend 模型。
+     */
     fun modelsForTarget(targetKey: CfirExtendTargetKey): List<CfirExtendSemanticModel> =
         modelsByTargetKey[targetKey].orEmpty()
 
+    /**
+     * 查询指定 class-like 目标上的所有 extend 模型。
+     */
     fun modelsForClass(classId: ClassId): List<CfirExtendSemanticModel> =
         modelsForTarget(CfirExtendTargetKey.ClassLike(classId))
 
+    /**
+     * 查询指定包内声明的所有 extend 模型。
+     */
     fun modelsInPackage(packageFqName: FqName): List<CfirExtendSemanticModel> = modelsByPackage[packageFqName].orEmpty()
 
+    /**
+     * 查询指定语义来源的所有 extend 模型。
+     */
     fun modelsByOrigin(origin: CfirExtendSemanticOrigin): List<CfirExtendSemanticModel> = modelsByOrigin[origin].orEmpty()
 
+    /**
+     * 查询某个 callable 符号所属的 extend 声明。
+     */
     fun containingExtendOf(symbol: CfirCallableSymbol<*>): CfirExtend? = containingExtendByCallableSymbol[symbol]
 
+    /**
+     * 返回接口中默认实现且不依赖接口类型参数的成员名。
+     */
     fun defaultIndependentMembersOfInterface(interfaceClassId: ClassId): List<Name> =
         defaultIndependentMembersByInterface[interfaceClassId].orEmpty()
 
+    /**
+     * 返回目标类自身声明或继承到的接口 ClassId 集合。
+     */
     fun targetClassOwnInterfaceClassIds(targetClassId: ClassId): Set<ClassId> =
         targetClassOwnInterfacesByClassId[targetClassId].orEmpty()
 
@@ -123,6 +175,9 @@ class CfirExtendIndexStore : CfirSessionComponent {
             hasDirectInterfaceInheritedFrom(second, first)
     }
 
+    /**
+     * 判断 `child` 的直接接口中是否存在继承自 `parent` 直接接口的接口。
+     */
     private fun hasDirectInterfaceInheritedFrom(
         child: CfirExtendSemanticModel,
         parent: CfirExtendSemanticModel,
@@ -150,6 +205,9 @@ class CfirExtendIndexStore : CfirSessionComponent {
         }
     }
 
+    /**
+     * 判断两个同目标 extend 之间是否存在无法决定的接口检查顺序。
+     */
     private fun hasUndecidableExtendCheckSequence(
         current: CfirExtendSemanticModel,
         other: CfirExtendSemanticModel,
@@ -177,12 +235,21 @@ class CfirExtendIndexStore : CfirSessionComponent {
         return false
     }
 
+    /**
+     * 判断当前接口是否严格继承自指定接口。
+     */
     private fun ClassId.isStrictSubtypeOfInterface(superInterface: ClassId): Boolean =
         this != superInterface && superInterface in interfaceClosureByClassId[this].orEmpty()
 
+    /**
+     * 查询其他包对指定 class-like 目标扩展过的接口闭包集合。
+     */
     fun otherPackageExtendedInterfaceClassIds(targetClassId: ClassId, currentPackage: FqName): Set<ClassId> =
         otherPackageExtendedInterfaceClassIds(CfirExtendTargetKey.ClassLike(targetClassId), currentPackage)
 
+    /**
+     * 查询其他包对指定目标键扩展过的接口闭包集合。
+     */
     fun otherPackageExtendedInterfaceClassIds(targetKey: CfirExtendTargetKey, currentPackage: FqName): Set<ClassId> {
         return modelsForTarget(targetKey)
             .asSequence()
@@ -195,16 +262,25 @@ class CfirExtendIndexStore : CfirSessionComponent {
             .toSet()
     }
 
+    /**
+     * 判断声明是否是指定 class-like 目标的第一条 extend。
+     */
     fun isFirstExtendForTarget(declaration: Any, targetClassId: ClassId): Boolean {
         return isFirstExtendForTarget(declaration, CfirExtendTargetKey.ClassLike(targetClassId))
     }
 
+    /**
+     * 判断声明是否是指定目标键的第一条 extend。
+     */
     fun isFirstExtendForTarget(declaration: Any, targetKey: CfirExtendTargetKey): Boolean {
         val myModel = modelByDeclaration[declaration] ?: return true
         val allModels = modelsForTarget(targetKey)
         return allModels.firstOrNull() === myModel
     }
 
+    /**
+     * 构造保持插入顺序的 ClassId 集合。
+     */
     private inline fun buildLinkedSet(build: LinkedHashSet<ClassId>.() -> Unit): Set<ClassId> =
         linkedSetOf<ClassId>().apply(build)
 
@@ -227,6 +303,9 @@ class CfirExtendIndexStore : CfirSessionComponent {
         return result
     }
 
+    /**
+     * 将单条 extend 声明转换为索引层使用的语义模型。
+     */
     private fun CfirExtend.toSemanticModel(
         file: CfirFile,
         declarationIndexInFile: Int,
@@ -242,6 +321,8 @@ class CfirExtendIndexStore : CfirSessionComponent {
         }
         val inheritedInterfaceClassIds = inheritedInterfaces.mapNotNull { it.classId }
         val inheritedInterfaceSemanticKeys = inheritedInterfaces.map { it.semanticKey }
+        val targetOwnInterfaces = targetClass.collectTargetOwnInterfaceSemantics(extendedTypeRef, semanticNormalizer, resolver)
+        val targetOwnInterfaceSemanticKeys = targetOwnInterfaces.map { it.semanticKey }
         return CfirExtendSemanticModel(
             declaration = this,
             packageFqName = file.packageDirective.packageFqName,
@@ -253,10 +334,15 @@ class CfirExtendIndexStore : CfirSessionComponent {
             inheritedInterfaces = inheritedInterfaces,
             inheritedInterfaceClassIds = inheritedInterfaceClassIds,
             inheritedInterfaceSemanticKeys = inheritedInterfaceSemanticKeys,
+            targetOwnInterfaces = targetOwnInterfaces,
+            targetOwnInterfaceSemanticKeys = targetOwnInterfaceSemanticKeys,
             origin = origin.toExtendSemanticOrigin(),
         )
     }
 
+    /**
+     * extend 模型稳定排序器。
+     */
     private val semanticModelComparator = compareBy<CfirExtendSemanticModel>(
         { it.packageFqName.asString() },
         { it.fileName },
@@ -288,6 +374,11 @@ class CfirExtendIndexStore : CfirSessionComponent {
         return memo
     }
 
+    /**
+     * 构建默认实现不依赖接口类型参数的成员索引。
+     *
+     * 该索引用于判断 extend 默认接口成员合并时是否存在可跨类型实参复用的成员。
+     */
     private fun buildDefaultIndependentMembersMap(
         models: List<CfirExtendSemanticModel>,
         resolver: CfirTypeResolver,
@@ -339,6 +430,100 @@ class CfirExtendIndexStore : CfirSessionComponent {
     }
 
     /**
+     * 当前 extend 声明与目标类已继承接口比较时，必须先把目标类型模式代入目标类接口闭包。
+     *
+     * 例如 `class B<T> <: I<T>` 与 `extend<T> B<T> <: I<T>` 比较时，
+     * 目标类的 `I<T>` 要先变成 extend 声明侧的 `I<__EXT_TP_0>`，否则只能按 ClassId
+     * 比较会把 `I<Int32>` / `I<Int64>` 这类不同实例误判成重复接口。
+     *
+     * 这里的“已继承接口”包含父类链上的接口，官方 `GetDupSuperInterface`
+     * 会穿过 `B <: A <: Foo` 的 `A` 继续收集 `Foo`，不能只看目标类直接接口。
+     */
+    private fun CfirClassLikeDeclaration?.collectTargetOwnInterfaceSemantics(
+        targetTypeRef: CfirTypeRef,
+        semanticNormalizer: CfirExtendTypeSemanticNormalizer,
+        resolver: CfirTypeResolver,
+    ): List<CfirExtendInheritedInterfaceSemantic> {
+        val declaration = this ?: return emptyList()
+        val targetType = targetTypeRef.coneTypeOrNull ?: return emptyList()
+        val substitutor = declaration.createDeclarationTypeSubstitutor(targetType)
+        val result = linkedMapOf<String, CfirExtendInheritedInterfaceSemantic>()
+        val visiting = linkedSetOf<String>()
+
+        for (superTypeRef in declaration.superTypeRefsOrEmpty()) {
+            val supertype = superTypeRef.coneTypeOrNull ?: continue
+            collectInterfaceSemantics(
+                interfaceType = substitutor.substituteOrSelf(supertype),
+                semanticNormalizer = semanticNormalizer,
+                resolver = resolver,
+                result = result,
+                visiting = visiting,
+            )
+        }
+        return result.values.toList()
+    }
+
+    /**
+     * 递归收集目标类自身接口及其父接口的语义键。
+     */
+    private fun collectInterfaceSemantics(
+        interfaceType: ConeCangJieType,
+        semanticNormalizer: CfirExtendTypeSemanticNormalizer,
+        resolver: CfirTypeResolver,
+        result: MutableMap<String, CfirExtendInheritedInterfaceSemantic>,
+        visiting: MutableSet<String>,
+    ) {
+        val semanticKey = semanticNormalizer.semanticKeyOrNull(interfaceType)
+        if (!visiting.add(semanticKey)) return
+
+        val lookupType = interfaceType as? ConeLookupTagBasedType
+        val classId = lookupType?.classIdOrPrimitiveClassId
+        val declaration = classId?.let(resolver::resolveClass)
+        if (classId != null && declaration?.classKindOrNull() == CfirClassKind.INTERFACE) {
+            result.putIfAbsent(
+                semanticKey,
+                CfirExtendInheritedInterfaceSemantic(
+                    classId = classId,
+                    semanticKey = semanticKey,
+                ),
+            )
+        }
+
+        if (lookupType == null || declaration == null) {
+            visiting.remove(semanticKey)
+            return
+        }
+        val substitutor = declaration.createDeclarationTypeSubstitutor(lookupType)
+        for (superTypeRef in declaration.superTypeRefsOrEmpty()) {
+            val supertype = superTypeRef.coneTypeOrNull ?: continue
+            collectInterfaceSemantics(
+                interfaceType = substitutor.substituteOrSelf(supertype),
+                semanticNormalizer = semanticNormalizer,
+                resolver = resolver,
+                result = result,
+                visiting = visiting,
+            )
+        }
+        visiting.remove(semanticKey)
+    }
+
+    /**
+     * 为声明类型参数和具体使用类型实参创建替换器。
+     */
+    private fun CfirTypeParameterRefsOwner.createDeclarationTypeSubstitutor(
+        type: ConeCangJieType,
+    ): CfirTypeSubstitutorByMap {
+        val lookupType = type as? ConeLookupTagBasedType ?: return CfirTypeSubstitutorByMap(emptyMap())
+        if (typeParameters.isEmpty() || typeParameters.size != lookupType.typeArguments.size) {
+            return CfirTypeSubstitutorByMap(emptyMap())
+        }
+        val substitutions = typeParameters.zip(lookupType.typeArguments).associate { (typeParameter, argument) ->
+            typeParameter.symbol.toLookupTag() as TypeConstructorMarker to argument.type
+        }
+        return CfirTypeSubstitutorByMap(substitutions)
+    }
+
+    /**
      * 递归收集一个声明的所有超类型中的接口 ClassId（含传递）
      */
     private fun collectOwnInterfaceClassIds(
@@ -354,6 +539,9 @@ class CfirExtendIndexStore : CfirSessionComponent {
         return result
     }
 
+    /**
+     * 递归收集指定接口的“自身 + 父接口”闭包。
+     */
     private fun collectInterfaceClosure(
         classId: ClassId,
         resolver: CfirTypeResolver,
@@ -379,6 +567,9 @@ class CfirExtendIndexStore : CfirSessionComponent {
         return result
     }
 
+    /**
+     * 从已解析类型引用中抽取 class id，优先保留 typealias 的别名 class id。
+     */
     private fun CfirTypeRef.toClassIdOrNull(resolver: CfirTypeResolver): ClassId? {
         val coneType = (this as? CfirResolvedTypeRef)?.coneType ?: return null
         val abbreviatedTypeAlias = coneType.abbreviatedType as? ConeTypeAliasType
@@ -387,11 +578,17 @@ class CfirExtendIndexStore : CfirSessionComponent {
         return coneType.classIdOrPrimitiveClassId
     }
 
+    /**
+     * 从已解析类型引用中抽取声明层 extend 目标键。
+     */
     private fun CfirTypeRef.toExtendTargetKeyOrNull(): CfirExtendTargetKey? {
         val coneType = (this as? CfirResolvedTypeRef)?.coneType ?: return null
         return coneType.declaredExtendTargetKey
     }
 
+    /**
+     * 展开 typealias 后抽取 class-like 或 primitive class id。
+     */
     private fun ConeCangJieType.expandedClassIdOrPrimitiveClassId(resolver: CfirTypeResolver): ClassId? {
         if (this !is ConeTypeAliasType) return classIdOrPrimitiveClassId
 
@@ -403,18 +600,27 @@ class CfirExtendIndexStore : CfirSessionComponent {
     }
 }
 
+/**
+ * 判断声明是否提供了可被 extend 默认成员合并逻辑考虑的默认实现。
+ */
 private fun org.cangnova.cangjie.cfir.declarations.CfirDeclaration.hasDefaultImplementation(): Boolean = when (this) {
     is CfirFunction -> !status.isAbstract
     is CfirProperty -> !status.isAbstract
     else -> false
 }
 
+/**
+ * 提取 callable/property 成员名。
+ */
 private fun org.cangnova.cangjie.cfir.declarations.CfirDeclaration.memberNameOrNull(): Name? = when (this) {
     is CfirFunction -> callableNameOrNull()
     is CfirProperty -> name
     else -> null
 }
 
+/**
+ * 判断声明类型是否不依赖给定接口类型参数。
+ */
 private fun org.cangnova.cangjie.cfir.declarations.CfirDeclaration.doesNotDependOnTypeParameters(
     typeParameters: List<CfirTypeParameter>,
 ): Boolean {
@@ -436,11 +642,17 @@ private fun org.cangnova.cangjie.cfir.declarations.CfirDeclaration.doesNotDepend
     return !depends
 }
 
+/**
+ * 判断类型引用中是否出现指定类型参数名集合。
+ */
 private fun CfirTypeRef.containsAnyTypeParameter(parameterNames: Set<String>): Boolean {
     val coneType = (this as? CfirResolvedTypeRef)?.coneType ?: return false
     return coneType.containsAnyTypeParameter(parameterNames)
 }
 
+/**
+ * 在 Cone 类型结构中递归查找指定类型参数名。
+ */
 private fun org.cangnova.cangjie.cfir.types.ConeCangJieType.containsAnyTypeParameter(parameterNames: Set<String>): Boolean = when (this) {
     is ConeTypeParameterType -> lookupTag.name.asString() in parameterNames
     is ConeClassLikeType -> typeArguments.any { it.containsAnyTypeParameter(parameterNames) }
@@ -458,10 +670,16 @@ private fun org.cangnova.cangjie.cfir.types.ConeCangJieType.containsAnyTypeParam
     else -> arrayElementType?.containsAnyTypeParameter(parameterNames) == true
 }
 
+/**
+ * 在类型投影中递归查找指定类型参数名。
+ */
 private fun ConeTypeProjection.containsAnyTypeParameter(parameterNames: Set<String>): Boolean {
     return type.containsAnyTypeParameter(parameterNames)
 }
 
+/**
+ * 抽取 class-like 声明在 extend 语义中使用的类别。
+ */
 private fun CfirClassLikeDeclaration.classKindOrNull(): CfirClassKind? = when (this) {
     is CfirPrimitiveTypeDeclaration -> CfirClassKind.CLASS
     is CfirClass -> CfirClassKind.CLASS
@@ -471,6 +689,9 @@ private fun CfirClassLikeDeclaration.classKindOrNull(): CfirClassKind? = when (t
     else -> null
 }
 
+/**
+ * 返回 class-like 声明的类型参数列表；不携带类型参数的声明返回空列表。
+ */
 private fun CfirClassLikeDeclaration.typeParametersOrEmpty(): List<CfirTypeParameter> = when (this) {
     is CfirPrimitiveTypeDeclaration -> emptyList()
     is CfirClass -> typeParameters
@@ -480,6 +701,9 @@ private fun CfirClassLikeDeclaration.typeParametersOrEmpty(): List<CfirTypeParam
     else -> emptyList()
 }
 
+/**
+ * 返回 class-like 声明的父类型引用列表；空声明或不支持父类型的声明返回空列表。
+ */
 private fun CfirClassLikeDeclaration?.superTypeRefsOrEmpty(): List<CfirTypeRef> = when (this) {
     is CfirClass -> superTypeRefs
     is CfirInterface -> superTypeRefs

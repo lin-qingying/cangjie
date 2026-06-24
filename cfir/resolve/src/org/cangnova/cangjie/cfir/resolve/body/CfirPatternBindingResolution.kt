@@ -25,6 +25,7 @@
 package org.cangnova.cangjie.cfir.resolve.body
 
 import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.patterns.*
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
@@ -35,7 +36,13 @@ import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.name.Name
 
+/**
+ * 标准库 `Option.Some` 构造器名称。
+ */
 private val OPTION_SOME_CONSTRUCTOR_NAME = Name.identifier("Some")
+/**
+ * 标准库 `Option.None` 构造器名称。
+ */
 private val OPTION_NONE_CONSTRUCTOR_NAME = Name.identifier("None")
 
 /**
@@ -105,13 +112,37 @@ internal fun CfirPartialBodyResolveTransformer.resolvePatternBindingTypes(
     }
 }
 
+/**
+ * 将 pattern 中所有当前作用域可见的 binding variable 注册到局部变量上下文。
+ */
 internal fun CfirPartialBodyResolveTransformer.registerPatternBindings(pattern: CfirPattern) {
-    if (pattern is CfirOrPattern) return
-    for (bindingVariable in pattern.bindingVariables()) {
+    for (bindingVariable in pattern.visibleBindingVariables()) {
         context.storeVariable(bindingVariable, session)
     }
 }
 
+/**
+ * 简单 `let/var x = initializer` 中，名字解析指向内层 binding variable，
+ * 但 initializer 归属于外层 pattern variable。这里把“整个绑定值”的来源同步到
+ * 内层变量，供后续数据流、可达性和诊断按普通局部变量读取。
+ */
+internal fun propagateWholeInitializerToSimplePatternBinding(
+    pattern: CfirPattern,
+    initializer: CfirExpression?,
+) {
+    if (initializer == null) return
+    val binding = when (pattern) {
+        is CfirBindingPattern if pattern.nestedPattern == null -> pattern.bindingVariable
+        is CfirVarOrEnumPattern -> pattern.bindingVariable
+        is CfirTypePattern -> pattern.bindingVariable
+        else -> null
+    } ?: return
+    binding.replaceInitializer(initializer)
+}
+
+/**
+ * 解析 pattern 显式类型引用；已解析或隐式类型引用直接复用。
+ */
 private fun CfirPartialBodyResolveTransformer.resolvePatternTypeRefIfNeeded(
     typeRef: CfirTypeRef,
     typeResolver: CfirSpecificTypeResolverTransformer,
@@ -120,6 +151,9 @@ private fun CfirPartialBodyResolveTransformer.resolvePatternTypeRefIfNeeded(
     return typeResolver.transformTypeRef(typeRef, patternTypeResolutionConfiguration())
 }
 
+/**
+ * 构造 pattern 内部类型引用解析所需的配置。
+ */
 private fun CfirPartialBodyResolveTransformer.patternTypeResolutionConfiguration(): CfirTypeResolutionConfiguration {
     return CfirTypeResolutionConfiguration(
         useSiteFile = context.file,
@@ -127,6 +161,9 @@ private fun CfirPartialBodyResolveTransformer.patternTypeResolutionConfiguration
     )
 }
 
+/**
+ * 根据 enum pattern 和期望类型计算每个 payload 参数的期望类型。
+ */
 private fun CfirPartialBodyResolveTransformer.resolveEnumArgumentTypes(
     pattern: CfirEnumPattern,
     expectedType: ConeCangJieType?,
@@ -171,6 +208,9 @@ private fun resolveStdlibOptionArgumentTypes(
     }
 }
 
+/**
+ * 提取 enum pattern 中使用的构造器名称。
+ */
 private fun extractEnumConstructorName(pattern: CfirEnumPattern): Name? {
     return when (val reference = pattern.constructorReference) {
         is CfirResolvedNamedReference -> reference.name
@@ -179,6 +219,9 @@ private fun extractEnumConstructorName(pattern: CfirEnumPattern): Name? {
     }
 }
 
+/**
+ * 将推导出的绑定类型写回 pattern binding variable。
+ */
 private fun CfirPatternBindingVariable.replaceBindingType(type: ConeCangJieType?) {
     if (type == null) return
     val currentTypeRef = returnTypeRef

@@ -15,15 +15,24 @@ open class ConeTypeRendererForDebugInfo protected constructor(
     renderCapturedDetails: Boolean = false,
     coneAttributeRendererForReadability: ConeAttributeRenderer = ConeAttributeRenderer.ForReadability,
 ) : ConeTypeRenderer(coneAttributeRendererForReadability, renderCapturedDetails) {
+    /**
+     * 使用既有 [builder] 初始化 debug-info 渲染器。
+     */
     constructor(builder: StringBuilder, renderCapturedDetails: Boolean = false) : this(renderCapturedDetails) {
         this.builder = builder
         idRenderer = ConeFullyQualifiedIdRenderer().also { it.builder = builder }
     }
 
+    /**
+     * debug-info 文本只渲染非编译器内部属性。
+     */
     override fun ConeCangJieType.renderAttributes() {
         renderNonCompilerAttributes()
     }
 
+    /**
+     * 渲染 typealias 时追加展开后的真实类型。
+     */
     override fun renderTypeAliasType(type: ConeTypeAliasType) {
         super.renderTypeAliasType(type)
         type.expandedType?.let { expanded ->

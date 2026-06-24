@@ -12,18 +12,19 @@ import org.cangnova.cangjie.cfir.types.IdealTypeResolver
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 
 /**
- * Minimal local approximation transformer for the current call-completion seam.
+ * 整数字面量与基础运算符类型近似 transformer。
  *
- * The upstream transformer also handles wrapped integer operators and more receiver shapes.
- * The local tree currently reaches only expression-result rewriting plus explicit receivers,
- * so we keep the collaborator narrow and only normalize ideal literal result types here.
+ * 上游 Kotlin transformer 还处理包装整数运算符和更多 receiver 形态；当前 CFIR 路径只需要表达式结果类型重写
+ * 与显式 receiver 场景，因此此处只归一化 ideal literal 结果类型。
  */
 class IntegerLiteralAndOperatorApproximationTransformer(
     override val session: CfirSession,
     override val scopeSession: ScopeSession,
 ) : CfirTransformer<ConeCangJieType?>(), SessionAndScopeSessionHolder {
+    /** 默认不递归未知元素，保持该 transformer 只处理表达式节点。 */
     override fun <E : CfirElement> transformElement(element: E, data: ConeCangJieType?): E = element
 
+    /** 递归处理表达式子节点，并按期望类型近似当前表达式结果类型。 */
     override fun transformExpression(expression: CfirExpression, data: ConeCangJieType?): CfirExpression {
         expression.transformChildren(this, data)
         val approximatedType = expression.coneTypeOrNull?.approximateIntegerLiteralType(data)
@@ -33,10 +34,12 @@ class IntegerLiteralAndOperatorApproximationTransformer(
         return expression
     }
 
+    /** 对外提供单个类型的 ideal literal 近似入口。 */
     fun approximateType(type: ConeCangJieType?, expectedType: ConeCangJieType? = null): ConeCangJieType? {
         return type?.approximateIntegerLiteralType(expectedType)
     }
 
+    /** 根据期望类型把 ideal literal 或 primitive ideal 类型近似为具体类型。 */
     private fun ConeCangJieType.approximateIntegerLiteralType(expectedType: ConeCangJieType?): ConeCangJieType {
         return when (this) {
             is ConeIdealLiteralType -> expectedType ?: getApproximatedType()

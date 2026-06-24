@@ -49,7 +49,14 @@ open class ConeTypeRenderer(
     private val attributeRenderer: ConeAttributeRenderer = ConeAttributeRenderer.ToString,
     private var renderCapturedDetails: Boolean = false,
 ) {
+    /**
+     * 当前渲染输出缓冲区。
+     */
     lateinit var builder: StringBuilder
+
+    /**
+     * 当前类型渲染器使用的 ID 渲染策略。
+     */
     lateinit var idRenderer: ConeIdRenderer
 
     /**
@@ -177,6 +184,9 @@ open class ConeTypeRenderer(
             else -> builder.append(type.toString())
         }
     }
+    /**
+     * 渲染分类器类型自身携带的类型实参。
+     */
     private fun ConeClassifierType.renderTypeArguments() {
         if (typeArguments.isEmpty()) return
         builder.append("<")
@@ -189,6 +199,11 @@ open class ConeTypeRenderer(
         builder.append(">")
     }
 
+    /**
+     * 渲染普通 simple type。
+     *
+     * 默认实现先渲染类型构造器，再为 class-like 类型补充类型实参。
+     */
     protected open fun renderSimpleType(type: ConeSimpleCangJieType, ) {
         val hasTypeArguments = type is ConeClassLikeType && type.typeArguments.isNotEmpty()
         renderConstructor(type.getConstructor())
@@ -352,6 +367,9 @@ open class ConeTypeRenderer(
         builder.append(")")
     }
 
+    /**
+     * 渲染类型实参列表。
+     */
     private fun renderTypeArguments(typeArguments: List<ConeTypeProjection>) {
         if (typeArguments.isEmpty()) return
         builder.append("<")
@@ -362,6 +380,9 @@ open class ConeTypeRenderer(
         builder.append(">")
     }
 
+    /**
+     * 在当前 renderer 上渲染单个类型投影。
+     */
     protected fun ConeTypeProjection.render() {
         when (this) {
             is ConeCangJieType -> {
@@ -370,6 +391,9 @@ open class ConeTypeRenderer(
         }
     }
 
+    /**
+     * 确保 renderer 拥有可用的输出缓冲区和 ID 渲染器。
+     */
     private fun ensureState() {
         if (!::builder.isInitialized) {
             builder = StringBuilder()

@@ -36,8 +36,14 @@ import org.cangnova.cangjie.source.toCjPsiSourceElement
  * 注册为 classLikeCheckers
  */
 object CfirCJMappingChecker : CfirClassLikeChecker() {
+    /**
+     * CJMapping 注解名。
+     */
     private val CJ_MAPPING = Name.identifier("CJMapping")
 
+    /**
+     * 检查带 `@CJMapping` 的声明及其成员类型限制。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirClassLikeDeclaration) {
         if (!declaration.hasAnnotation(CJ_MAPPING)) return
@@ -108,8 +114,14 @@ object CfirCJMappingChecker : CfirClassLikeChecker() {
  * 注册为 classLikeCheckers
  */
 object CfirObjCCJMappingChecker : CfirClassLikeChecker() {
+    /**
+     * ObjC CJMapping 注解名。
+     */
     private val OBJC_CJ_MAPPING = Name.identifier("ObjCCJMapping")
 
+    /**
+     * 检查带 `@ObjCCJMapping` 的声明是否包含非法继承或泛型参数。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirClassLikeDeclaration) {
         if (!declaration.hasAnnotation(OBJC_CJ_MAPPING)) return
@@ -138,6 +150,9 @@ object CfirObjCCJMappingChecker : CfirClassLikeChecker() {
     }
 }
 
+/**
+ * 取得 class-like 声明名称或名称加类型参数的诊断范围。
+ */
 private fun CfirClassLikeDeclaration.nameDiagnosticSource(
     includeTypeParameters: Boolean = false,
 ): AbstractCjSourceElement? {
@@ -152,6 +167,9 @@ private fun CfirClassLikeDeclaration.nameDiagnosticSource(
     return (source as? CjSourceElement)?.findClassLikeNameSource(symbol.name, includeTypeParameters) ?: source
 }
 
+/**
+ * 从 PSI class-like 声明中取得名称诊断范围。
+ */
 private fun CjPsiClassLikeDeclaration.classLikeNameSource(
     includeTypeParameters: Boolean,
 ): AbstractCjSourceElement? {
@@ -166,6 +184,9 @@ private fun CjPsiClassLikeDeclaration.classLikeNameSource(
     )
 }
 
+/**
+ * 从轻量 AST 源码中查找 class-like 名称诊断范围。
+ */
 private fun CjSourceElement.findClassLikeNameSource(
     name: Name,
     includeTypeParameters: Boolean,
@@ -211,6 +232,9 @@ private fun CjSourceElement.findClassLikeNameSource(
     return null
 }
 
+/**
+ * 可引入 class-like 声明名称的关键字集合。
+ */
 private val classLikeDeclarationKeywords = setOf(
     CjTokens.CLASS_KEYWORD,
     CjTokens.STRUCT_KEYWORD,
@@ -218,6 +242,9 @@ private val classLikeDeclarationKeywords = setOf(
     CjTokens.ENUM_KEYWORD,
 )
 
+/**
+ * 读取轻量 AST 节点的子节点列表。
+ */
 private fun FlyweightCapableTreeStructure<LighterASTNode>.children(
     node: LighterASTNode,
 ): List<LighterASTNode> {

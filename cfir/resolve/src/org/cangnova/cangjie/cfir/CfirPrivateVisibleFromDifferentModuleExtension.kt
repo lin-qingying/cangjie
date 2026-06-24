@@ -12,10 +12,13 @@ import org.cangnova.cangjie.cfir.session.CfirSessionComponent
  * 例如 dangling file 需要看见其上下文文件中的 private 顶层声明。
  */
 abstract class CfirPrivateVisibleFromDifferentModuleExtension : CfirSessionComponent {
+    /** 判断当前 session 是否可以读取 [otherModuleData] 中的 private 声明。 */
     abstract fun canSeePrivateDeclarationsOfModule(otherModuleData: CfirModuleData): Boolean
 
+    /** 判断 [useSiteFile] 是否可以读取 [targetFile] 中的 private 顶层声明。 */
     abstract fun canSeePrivateTopLevelDeclarationsFromFile(useSiteFile: CfirFile, targetFile: CfirFile): Boolean
 }
 
+/** 当前 session 注册的跨模块 private 可见性扩展；未注册时为 null。 */
 val CfirSession.privateVisibleFromDifferentModulesExtension: CfirPrivateVisibleFromDifferentModuleExtension?
     by CfirSession.nullableSessionComponentAccessor()

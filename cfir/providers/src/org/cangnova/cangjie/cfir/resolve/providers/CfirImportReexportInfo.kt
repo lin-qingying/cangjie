@@ -14,6 +14,11 @@ import org.cangnova.cangjie.source.CjSourceElement
  *
  * 这里只表达“本包可见名 -> 被导入包真实名”的映射，
  * 后续 provider 再决定去 source 还是 delegated provider 取 symbol。
+ *
+ * @property importedPackageFqName 被导入声明真实所在包。
+ * @property importedName 被导入声明短名；星号导入时为 `null`。
+ * @property exportedName 当前包对外暴露的短名；星号导入时为 `null`。
+ * @property isAllUnder 是否为星号导入。
  */
 internal data class CfirReexportImportInfo(
     val importedPackageFqName: FqName,
@@ -29,6 +34,9 @@ internal data class CfirReexportImportInfo(
 fun CfirImport.isReexportingSourceImport(): Boolean =
     source.importVisibilityKeyword() in REEXPORTING_IMPORT_VISIBILITIES
 
+/**
+ * 将当前 import 转换为 source provider 可使用的 reexport 信息。
+ */
 internal fun CfirImport.reexportInfoOrNull(): CfirReexportImportInfo? {
     if (!isReexportingSourceImport()) return null
 
@@ -44,6 +52,9 @@ internal fun CfirImport.reexportInfoOrNull(): CfirReexportImportInfo? {
     )
 }
 
+/**
+ * 从 PSI 或 light tree source 中解析 import 可见性关键字。
+ */
 private fun CjSourceElement?.importVisibilityKeyword(): String? {
     val directiveText = when (this) {
         is CjPsiSourceElement -> psi.findImportDirectiveText()
@@ -56,6 +67,9 @@ private fun CjSourceElement?.importVisibilityKeyword(): String? {
     return match.groupValues[1]
 }
 
+/**
+ * 沿 PSI 父链查找 import directive 源文本。
+ */
 private fun PsiElement.findImportDirectiveText(): String? {
     var current: PsiElement? = this
     while (current != null) {
@@ -67,6 +81,9 @@ private fun PsiElement.findImportDirectiveText(): String? {
     return null
 }
 
+/**
+ * 沿 light tree 父链查找 import directive 源文本。
+ */
 private fun LighterASTNode.findImportDirectiveText(source: CjLightSourceElement): String? {
     var current: LighterASTNode? = this
     while (current != null) {
@@ -78,12 +95,21 @@ private fun LighterASTNode.findImportDirectiveText(source: CjLightSourceElement)
     return null
 }
 
+/**
+ * 匹配显式 import 可见性关键字的正则。
+ */
 private val IMPORT_VISIBILITY_PATTERN = Regex("^(public|protected|internal|private)\\s+import\\b")
 
+/**
+ * 会产生 reexport 的 import 可见性集合。
+ */
 private val REEXPORTING_IMPORT_VISIBILITIES = setOf(
     "public",
     "protected",
     "internal",
 )
 
+/**
+ * PSI/light tree 中 import directive 节点的调试名。
+ */
 private const val IMPORT_DIRECTIVE_DEBUG_NAME = "IMPORT_DIRECTIVE"

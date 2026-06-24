@@ -15,6 +15,9 @@ import org.cangnova.cangjie.type.model.TypeVariableMarker
 import java.util.ArrayDeque
 import java.util.Queue
 
+/**
+ * 根据候选当前约束系统和返回类型计算调用完成模式。
+ */
 fun Candidate.computeCompletionMode(
     components: InferenceComponents,
     resolutionMode: ResolutionMode,
@@ -34,22 +37,62 @@ fun Candidate.computeCompletionMode(
     }
 }
 
+/**
+ * 约束系统完成上下文别名。
+ */
 private typealias CsCompleterContext = ConstraintSystemCompletionContext
 
+/**
+ * 嵌套调用完成模式计算器。
+ */
 private class CalculatorForNestedCall(
+    /**
+     * 当前候选。
+     */
     private val candidate: Candidate,
+    /**
+     * 候选当前返回类型。
+     */
     private val returnType: ConeCangJieType,
+    /**
+     * 候选约束系统完成上下文。
+     */
     private val context: CsCompleterContext,
+    /**
+     * trivial constraint 推断 oracle。
+     */
     private val oracle: TrivialConstraintTypeInferenceOracle,
 ) {
+    /**
+     * 类型变量固定方向。
+     */
     private enum class FixationDirection {
-        TO_SUBTYPE, EQUALITY
+        /**
+         * 需要可作为 subtype 方向固定的约束。
+         */
+        TO_SUBTYPE,
+        /**
+         * 需要等式约束才能固定。
+         */
+        EQUALITY
     }
 
+    /**
+     * 类型变量到所需固定方向的映射。
+     */
     private val fixationDirectionsForVariables: MutableMap<VariableWithConstraints, FixationDirection> = linkedMapOf()
+    /**
+     * 已经把约束类型加入处理队列的类型变量集合。
+     */
     private val variablesWithQueuedConstraints = mutableSetOf<TypeVariableMarker>()
+    /**
+     * 等待分析的类型队列。
+     */
     private val typesToProcess: Queue<CangJieTypeMarker> = ArrayDeque()
 
+    /**
+     * 当前候选中尚未分析的 postponed atom。
+     */
     private val postponedAtoms by lazy {
         ConstraintSystemCompleter.getOrderedNotAnalyzedPostponedArguments(candidate)
     }
@@ -72,6 +115,9 @@ private class CalculatorForNestedCall(
         return ConstraintSystemCompletionMode.PARTIAL
     }
 
+    /**
+     * 从返回类型开始传播类型变量固定方向。
+     */
     private fun CsCompleterContext.computeDirections() {
         while (typesToProcess.isNotEmpty()) {
             val type = typesToProcess.poll() ?: break
@@ -88,9 +134,15 @@ private class CalculatorForNestedCall(
         }
     }
 
+    /**
+     * 判断类型中是否包含未固定类型变量。
+     */
     private fun CsCompleterContext.containsNotFixedTypeVariable(type: CangJieTypeMarker): Boolean =
         type.contains { it.typeConstructor() in notFixedTypeVariables }
 
+    /**
+     * 将类型变量已有约束中的类型加入待处理队列。
+     */
     private fun enqueueTypesFromConstraints(variableWithConstraints: VariableWithConstraints) {
         val variable = variableWithConstraints.typeVariable
         if (variable in variablesWithQueuedConstraints) return
@@ -102,6 +154,9 @@ private class CalculatorForNestedCall(
         variablesWithQueuedConstraints.add(variable)
     }
 
+    /**
+     * 判断所有要求的固定方向是否已经具备 proper 约束。
+     */
     private fun CsCompleterContext.directionRequirementsForVariablesHold(): Boolean {
         for ((variable, fixationDirection) in fixationDirectionsForVariables) {
             if (!hasProperConstraint(variable, fixationDirection)) return false
@@ -109,6 +164,9 @@ private class CalculatorForNestedCall(
         return true
     }
 
+    /**
+     * 合并单个类型变量的固定方向要求。
+     */
     private fun updateDirection(directionForVariable: FixationDirectionForVariable) {
         val (variable, newDirection) = directionForVariable
         fixationDirectionsForVariables[variable]?.let { oldDirection ->
@@ -120,21 +178,50 @@ private class CalculatorForNestedCall(
         }
     }
 
+    /**
+     * 类型变量及其所需固定方向。
+     */
     private data class FixationDirectionForVariable(
+        /**
+         * 带约束的类型变量。
+         */
         val variable: VariableWithConstraints,
+        /**
+         * 该变量需要满足的固定方向。
+         */
         val direction: FixationDirection,
     )
 
+    /**
+     * 类型位置方差。
+     */
     private enum class PositionVariance {
-        IN, OUT, INV
+        /**
+         * 输入位置。
+         */
+        IN,
+        /**
+         * 输出位置。
+         */
+        OUT,
+        /**
+         * 不变位置。
+         */
+        INV
     }
 
+    /**
+     * 返回反向方差。
+     */
     private fun PositionVariance.reversed(): PositionVariance = when (this) {
         PositionVariance.IN -> PositionVariance.OUT
         PositionVariance.OUT -> PositionVariance.IN
         PositionVariance.INV -> PositionVariance.INV
     }
 
+    /**
+     * 从类型结构中收集类型变量所需固定方向。
+     */
     private fun CsCompleterContext.collectRequiredDirectionsForVariables(
         type: CangJieTypeMarker,
         outerVariance: PositionVariance,
@@ -166,6 +253,9 @@ private class CalculatorForNestedCall(
         }
     }
 
+    /**
+     * 处理没有可展开类型参数的类型位置。
+     */
     private fun CsCompleterContext.processTypeWithoutParameters(
         type: CangJieTypeMarker,
         compositeVariance: PositionVariance,
@@ -180,6 +270,9 @@ private class CalculatorForNestedCall(
         newRequirementsCollector.add(FixationDirectionForVariable(variableWithConstraints, direction))
     }
 
+    /**
+     * 判断类型变量是否具备指定方向所需的 proper 约束。
+     */
     private fun CsCompleterContext.hasProperConstraint(
         variableWithConstraints: VariableWithConstraints,
         direction: FixationDirection,
@@ -208,11 +301,17 @@ private class CalculatorForNestedCall(
         return !iltConstraintPresent || nonNothingProperConstraintPresent
     }
 
+    /**
+     * 判断约束种类是否满足固定方向要求。
+     */
     private fun Constraint.hasRequiredKind(direction: FixationDirection): Boolean = when (direction) {
         FixationDirection.TO_SUBTYPE -> kind.isLower() || kind.isEqual()
         FixationDirection.EQUALITY -> kind.isEqual()
     }
 
+    /**
+     * 判断约束是否只是部分分析延迟变量的 lower 约束。
+     */
     private fun CsCompleterContext.isLowerConstraintForPartiallyAnalyzedVariable(
         constraint: Constraint,
         variable: TypeVariableMarker,

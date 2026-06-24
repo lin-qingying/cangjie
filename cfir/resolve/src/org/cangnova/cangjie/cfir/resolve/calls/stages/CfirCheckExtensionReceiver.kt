@@ -20,6 +20,7 @@ import org.cangnova.cangjie.cfir.unwrapSubstitutionOverrides
  */
 object CfirCheckExtensionReceiver : ResolutionStage() {
     context(sink: CheckerSink, context: ResolutionContext)
+    /** 检查候选的给定 extension receiver 是否可转换为 owner extend 要求的接收者类型。 */
     override suspend fun check(candidate: Candidate) {
         val receiver = candidate.givenExtensionReceiver ?: return
         val expectedReceiverType = candidate.expectedExtensionReceiverType() ?: return
@@ -43,6 +44,7 @@ object CfirCheckExtensionReceiver : ResolutionStage() {
     }
 
     context(context: ResolutionContext)
+    /** 计算候选在当前 use-site 下实际期望的 extend receiver 类型。 */
     private fun Candidate.expectedExtensionReceiverType(): ConeCangJieType? {
         val callableSymbol = symbol as? CfirCallableSymbol<*> ?: return null
         val originalSymbol = callableSymbol.unwrapSubstitutionOverrides()

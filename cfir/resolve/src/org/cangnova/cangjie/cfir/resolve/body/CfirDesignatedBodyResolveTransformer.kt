@@ -14,6 +14,7 @@ import org.cangnova.cangjie.cfir.session.CfirSession
  * 沿指定 declaration iterator 逐层进入目标声明，并记录最后一次目标变换结果。
  */
 open class CfirDesignatedBodyResolveTransformerForReturnTypeCalculator(
+    /** 从外层到目标声明的指定路径迭代器。 */
     private val designation: Iterator<CfirElement>,
     session: CfirSession,
     scopeSession: ScopeSession,
@@ -27,8 +28,14 @@ open class CfirDesignatedBodyResolveTransformerForReturnTypeCalculator(
     implicitTypeOnly = true,
     returnTypeCalculator = returnTypeCalculator,
 ) {
+    /** 指定路径上最后一个目标声明的变换结果。 */
     var lastResult: CfirElement? = null
 
+    /**
+     * 按 designation 路径进入下一层声明内容。
+     *
+     * 到达路径末端后才执行普通 declaration content 转换，并记录目标声明结果。
+     */
     override fun transformDeclarationContent(
         declaration: CfirDeclaration,
         data: ResolutionMode,

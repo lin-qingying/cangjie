@@ -48,14 +48,37 @@ import org.cangnova.cangjie.cfir.symbols.constructType
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.name.Name
 
+/**
+ * body resolve 中的 tower data 上下文。
+ *
+ * 该上下文以 persistent 结构保存当前可见的局部作用域、非局部作用域和隐式接收者。
+ */
 @ConsistentCopyVisibility
 data class CfirTowerDataContext private constructor(
+    /**
+     * 当前完整 tower data 元素列表。
+     */
     val towerDataElements: PersistentList<CfirTowerDataElement>,
+    /**
+     * 隐式接收者存储。
+     */
     val implicitValueStorage: ImplicitValueStorage,
+    /**
+     * 当前局部作用域栈。
+     */
     val localScopes: CfirLocalScopes,
+    /**
+     * 非局部 tower data 元素列表。
+     */
     val nonLocalTowerDataElements: PersistentList<CfirTowerDataElement>,
+    /**
+     * 局部变量符号作用域存储。
+     */
     val localVariableScopeStorage: LocalVariableScopeStorage,
 ) {
+    /**
+     * 创建空 tower data 上下文。
+     */
     constructor() : this(
         towerDataElements = persistentListOf(),
         implicitValueStorage = ImplicitValueStorage(),
@@ -63,6 +86,9 @@ data class CfirTowerDataContext private constructor(
         nonLocalTowerDataElements = persistentListOf(),
         localVariableScopeStorage = LocalVariableScopeStorage(),
     )
+    /**
+     * 将局部变量加入最后一个局部作用域。
+     */
     fun addLocalVariable(variable: CfirVariable, session: CfirSession): CfirTowerDataContext {
         val oldLastScope = localScopes.lastOrNull() ?: return this
         val indexOfLastLocalScope = towerDataElements.indexOfLast { it.scope === oldLastScope }
@@ -75,6 +101,9 @@ data class CfirTowerDataContext private constructor(
         )
     }
 
+    /**
+     * 将局部属性加入最后一个局部作用域。
+     */
     fun addLocalProperty(property: CfirProperty, session: CfirSession): CfirTowerDataContext {
         val oldLastScope = localScopes.lastOrNull() ?: return this
         val indexOfLastLocalScope = towerDataElements.indexOfLast { it.scope === oldLastScope }
@@ -88,6 +117,9 @@ data class CfirTowerDataContext private constructor(
     }
 
 
+    /**
+     * 替换最后一个局部作用域。
+     */
     fun setLastLocalScope(newLastScope: CfirLocalScope): CfirTowerDataContext {
         val oldLastScope = localScopes.last()
         val indexOfLastLocalScope = towerDataElements.indexOfLast { it.scope === oldLastScope }
@@ -98,6 +130,9 @@ data class CfirTowerDataContext private constructor(
         )
     }
 
+    /**
+     * 追加一组非局部 tower data 元素。
+     */
     fun addNonLocalTowerDataElements(newElements: List<CfirTowerDataElement>): CfirTowerDataContext {
         return copy(
             towerDataElements = towerDataElements.addAll(newElements),
@@ -106,6 +141,9 @@ data class CfirTowerDataContext private constructor(
         )
     }
 
+    /**
+     * 追加一个局部作用域。
+     */
     fun addLocalScope(localScope: CfirLocalScope): CfirTowerDataContext {
         return copy(
             towerDataElements = towerDataElements.add(localScope.asTowerDataElement(isLocal = true)),
@@ -113,6 +151,9 @@ data class CfirTowerDataContext private constructor(
         )
     }
 
+    /**
+     * 追加隐式接收者。
+     */
     fun addReceiver(name: Name?, implicitReceiverValue: ImplicitReceiverValue<*>): CfirTowerDataContext {
         val element = implicitReceiverValue.asTowerDataElement()
         return copy(
@@ -122,16 +163,25 @@ data class CfirTowerDataContext private constructor(
         )
     }
 
+    /**
+     * 非空时追加隐式接收者。
+     */
     fun addReceiverIfNotNull(name: Name?, implicitReceiverValue: ImplicitReceiverValue<*>?): CfirTowerDataContext {
         if (implicitReceiverValue == null) return this
         return addReceiver(name, implicitReceiverValue)
     }
 
+    /**
+     * 非空时追加非局部作用域。
+     */
     fun addNonLocalScopeIfNotNull(scope: CfirScope?): CfirTowerDataContext {
         if (scope == null) return this
         return addNonLocalScope(scope)
     }
 
+    /**
+     * 按顺序追加最多两个非局部作用域。
+     */
     fun addNonLocalScopesIfNotNull(scope1: CfirScope?, scope2: CfirScope?): CfirTowerDataContext {
         return if (scope1 != null) {
             if (scope2 != null) {
@@ -146,6 +196,9 @@ data class CfirTowerDataContext private constructor(
         }
     }
 
+    /**
+     * 追加一个非局部作用域。
+     */
     fun addNonLocalScope(scope: CfirScope): CfirTowerDataContext {
         val element = scope.asTowerDataElement(isLocal = false)
         return copy(
@@ -154,6 +207,9 @@ data class CfirTowerDataContext private constructor(
         )
     }
 
+    /**
+     * 追加多个非局部作用域元素。
+     */
     private fun addNonLocalScopeElements(elements: List<CfirTowerDataElement>): CfirTowerDataContext {
         return copy(
             towerDataElements = towerDataElements.addAll(elements),
@@ -161,10 +217,14 @@ data class CfirTowerDataContext private constructor(
         )
     }
 
+    /**
+     * 创建 tower data 快照。
+     */
     fun createSnapshot(keepMutable: Boolean): CfirTowerDataContext {
         val implicitValueMapper = object : ImplicitValueMapper {
             private val implicitValueCache = HashMap<ImplicitValue<*>, ImplicitValue<*>>()
 
+            /** 为隐式值创建或复用快照，保证同一原始 receiver 在快照中仍保持引用一致性。 */
             override fun <S : org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol<*>, T : ImplicitValue<S>> invoke(value: T): T {
                 @Suppress("UNCHECKED_CAST")
                 return implicitValueCache.getOrPut(value) { value.createSnapshot(keepMutable) } as T
@@ -180,6 +240,9 @@ data class CfirTowerDataContext private constructor(
         )
     }
 
+    /**
+     * 替换完整 tower data 元素列表。
+     */
     fun replaceTowerDataElements(
         towerDataElements: PersistentList<CfirTowerDataElement>,
         nonLocalTowerDataElements: PersistentList<CfirTowerDataElement>,
@@ -191,12 +254,30 @@ data class CfirTowerDataContext private constructor(
     }
 }
 
+/**
+ * 单个 tower data 元素。
+ */
 class CfirTowerDataElement(
+    /**
+     * 元素提供的作用域。
+     */
     val scope: CfirScope?,
+    /**
+     * 元素提供的隐式接收者。
+     */
     val implicitReceiver: ImplicitReceiverValue<*>?,
+    /**
+     * 元素是否来自局部作用域。
+     */
     val isLocal: Boolean,
+    /**
+     * 静态作用域的 owner 符号。
+     */
     val staticScopeOwnerSymbol: CfirClassLikeSymbol<*>? = null,
 ) {
+    /**
+     * 创建 tower data 元素快照。
+     */
     internal fun createSnapshot(keepMutable: Boolean, mapper: ImplicitValueMapper): CfirTowerDataElement =
         CfirTowerDataElement(
             scope = scope,
@@ -205,6 +286,9 @@ class CfirTowerDataElement(
             staticScopeOwnerSymbol = staticScopeOwnerSymbol,
         )
 
+    /**
+     * 获取该 tower data 元素当前可用的作用域列表。
+     */
     fun getAvailableScopes(
         processTypeScope: CfirTypeScope.(ConeCangJieType) -> CfirTypeScope = { this },
     ): List<CfirScope> = when {
@@ -213,6 +297,9 @@ class CfirTowerDataElement(
         else -> error("Tower data element is expected to have either scope or implicit receiver.")
     }
 
+    /**
+     * 从隐式接收者创建可查找作用域。
+     */
     private fun ImplicitReceiverValue<*>.getImplicitScope(
         processTypeScope: CfirTypeScope.(ConeCangJieType) -> CfirTypeScope,
     ): CfirScope {
@@ -222,21 +309,45 @@ class CfirTowerDataElement(
     }
 }
 
+/**
+ * 将隐式接收者包装为 tower data 元素。
+ */
 fun ImplicitReceiverValue<*>.asTowerDataElement(): CfirTowerDataElement =
     CfirTowerDataElement(scope = null, implicitReceiver = this, isLocal = false)
 
+/**
+ * 将作用域包装为 tower data 元素。
+ */
 fun CfirScope.asTowerDataElement(isLocal: Boolean): CfirTowerDataElement =
     CfirTowerDataElement(scope = this, implicitReceiver = null, isLocal = isLocal)
 
+/**
+ * 将静态作用域包装为 tower data 元素。
+ */
 fun CfirScope.asTowerDataElementForStaticScope(staticScopeOwnerSymbol: CfirClassLikeSymbol<*>?): CfirTowerDataElement =
     CfirTowerDataElement(scope = this, implicitReceiver = null, isLocal = false, staticScopeOwnerSymbol = staticScopeOwnerSymbol)
 
+/**
+ * class-like 声明参与 tower resolve 的元素集合。
+ */
 class CfirTowerElementsForClass(
+    /**
+     * 当前类的 `this` 隐式接收者。
+     */
     val thisReceiver: ImplicitReceiverValue<*>,
+    /**
+     * 当前类的静态作用域。
+     */
     val staticScope: CfirScope?,
+    /**
+     * 父类链上的静态作用域元素。
+     */
     val superClassesStaticScopes: List<CfirTowerDataElement>,
 )
 
+/**
+ * 收集 class-like 声明进入 body resolve 时需要加入 tower 的元素。
+ */
 fun SessionAndScopeSessionHolder.collectTowerDataElementsForClass(
     owner: CfirClassLikeDeclaration,
     defaultType: ConeCangJieType,
@@ -256,9 +367,15 @@ fun SessionAndScopeSessionHolder.collectTowerDataElementsForClass(
     )
 }
 
+/**
+ * 使用 holder 中的会话和作用域会话获取 class-like 静态作用域。
+ */
 fun CfirClassLikeDeclaration.staticScope(sessionHolder: SessionAndScopeSessionHolder): CfirContainingNamesAwareScope? =
     staticScope(sessionHolder.session, sessionHolder.scopeSession)
 
+/**
+ * 获取 class-like 声明的静态作用域。
+ */
 fun CfirClassLikeDeclaration.staticScope(
     session: CfirSession,
     scopeSession: ScopeSession,
@@ -268,6 +385,9 @@ fun CfirClassLikeDeclaration.staticScope(
     return symbol.staticScopeForQualifierType(session, scopeSession, qualifierType ?: symbol.constructType())
 }
 
+/**
+ * 返回 class-like 声明在 tower 中暴露的类型参数。
+ */
 fun CfirClassLikeDeclaration.typeParametersForTower(): List<CfirTypeParameter> = when (this) {
     is CfirClass -> typeParameters
     is org.cangnova.cangjie.cfir.declarations.CfirPrimitiveTypeDeclaration -> emptyList()
@@ -277,6 +397,9 @@ fun CfirClassLikeDeclaration.typeParametersForTower(): List<CfirTypeParameter> =
     else -> emptyList()
 }
 
+/**
+ * 递归收集父类链上的静态作用域。
+ */
 private fun collectSuperClassesStaticScopes(
     owner: CfirClassLikeDeclaration,
     session: CfirSession,

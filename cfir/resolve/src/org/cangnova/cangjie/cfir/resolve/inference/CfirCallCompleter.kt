@@ -91,17 +91,35 @@ import org.cangnova.cangjie.type.model.TypeConstructorMarker
 import org.cangnova.cangjie.types.TypeApproximatorConfiguration
 import org.cangnova.cangjie.utils.runIf
 
+/**
+ * CFIR 调用完成器。
+ *
+ * 该组件位于函数体解析与约束系统之间，负责把候选调用在 tower resolve 阶段收集到的约束
+ * 推进到完整或部分完成状态，并把最终替换结果写回调用表达式、lambda 参数、返回类型以及 lookup tracker。
+ */
 class CfirCallCompleter(
+    /** 当前函数体解析调度器，用于访问 body resolve 上下文、声明转换器和当前推断会话。 */
     private val transformer: CfirAbstractBodyResolveTransformerDispatcher,
+    /** 调用完成所依赖的 body resolve 组件集合，包括 session、scope、数据流分析器与类型近似器。 */
     private val components: CfirAbstractBodyResolveTransformer.BodyResolveTransformerComponents,
 ) : SessionHolder {
+    /** 当前 CFIR 会话，作为类型上下文、provider、lookup tracker 和推断组件的统一入口。 */
     override val session: CfirSession = components.session
 
+    /** 当前 body resolve 上下文中的推断会话，用于处理 PCLA 与部分完成调用。 */
     private val inferenceSession
         get() = transformer.context.inferenceSession
 
+    /** 约束系统完成器，执行固定类型变量、分析 postponed atom 与构造最终 substitutor 的核心流程。 */
     val completer: ConstraintSystemCompleter = ConstraintSystemCompleter(components)
 
+    /**
+     * 完成一个已经选出候选的 CFIR 调用表达式。
+     *
+     * 方法会先写入候选初始返回类型，再根据期望类型、enum sugar、typealias 构造器、
+     * synthetic function 和 PCLA 场景补充约束；随后按候选计算出的完成模式执行完整或部分完成。
+     * 返回值保持原表达式类型，必要时通过 completion writer 原地替换其中的类型引用。
+     */
     fun <T> completeCall(
         call: T,
         resolutionMode: ResolutionMode,
@@ -168,9 +186,21 @@ class CfirCallCompleter(
         }
     }
 
+    /**
+     * 判断候选是否是承载顶层 lambda 语义的 synthetic call。
+     *
+     * 这类调用在仓颉中用于让无上下文 lambda 继续通过成员访问和外层调用反推参数类型，
+     * 因此部分完成后也需要写回当前 substitutor。
+     */
     private fun Candidate.isSyntheticCallForTopLevelLambda(): Boolean =
         callInfo.callSite is CfirAnonymousFunctionExpression
 
+    /**
+     * 从解析模式中的期望类型向候选约束系统注入外层上下文约束。
+     *
+     * 这里统一处理普通 subtype 约束、cast 语境、synthetic function 的 equality 约束、
+     * 最后一条 Unit 语句、内建数组/指针构造器、enum constructor 以及 typealias 构造器的错误抑制边界。
+     */
     private fun addConstraintFromExpectedType(
         candidate: Candidate,
         initialType: ConeCangJieType,
@@ -253,6 +283,12 @@ class CfirCallCompleter(
         return true
     }
 
+    /**
+     * 检测 typealias 构造器展开后的真实 class 类型实参是否已经违反声明上界。
+     *
+     * 显式类型实参先映射到 typealias 暴露的参数，再展开到真实构造器 owner；
+     * 该检查用于在 expected-type 约束进入前识别已经由显式类型实参 checker 负责的上界错误。
+     */
     private fun Candidate.hasTypeAliasConstructorExpansionUpperBoundViolation(): Boolean {
         val constructorSymbol = symbol as? CfirConstructorSymbol ?: return false
         val typeAliasConstructorInfo = constructorSymbol.typeAliasConstructorInfo ?: return false
@@ -382,6 +418,11 @@ class CfirCallCompleter(
         return CfirTypeSubstitutorByMap(targetSubstitution)
     }
 
+    /**
+     * 根据 enum constructor 初始类型与目标类型构造 fresh 变量到目标 owner 实参的替换表。
+     *
+     * 返回 `null` 表示初始 owner 与目标 owner 无法按同一个 enum 结构匹配，调用完成应继续走普通约束路径。
+     */
     private fun Candidate.createNoArgEnumConstructorTargetSubstitution(
         initialType: ConeCangJieType,
         targetType: ConeCangJieType,
@@ -494,18 +535,34 @@ class CfirCallCompleter(
         return initialEnumClassId == expectedEnumClassId
     }
 
+    /**
+     * 返回能够作为 enum constructor owner 的 class id。
+     *
+     * 普通 enum 使用自身 class id；标准库 `Option` 作为 enum sugar 的 class-like 载体在此被统一识别。
+     */
     private fun ConeCangJieType.enumConstructorOwnerClassIdOrNull(): ClassId? = when (this) {
         is ConeEnumType -> classId
         is ConeClassLikeType -> classId.takeIf { it == StdlibClassIds.Option }
         else -> null
     }
 
+    /**
+     * 在类型确实代表指定 enum owner 时抽取 owner 的类型实参。
+     *
+     * 该函数同时支持 `ConeEnumType` 和用于 `Option` sugar 的 class-like 类型表示。
+     */
     private fun ConeCangJieType.enumTypeArgumentsForClassId(classId: ClassId): List<ConeCangJieType>? = when (this) {
         is ConeEnumType -> typeArguments.map { it.type }.takeIf { this.classId == classId }
         is ConeClassLikeType -> typeArguments.map { it.type }.takeIf { this.classId == classId }
         else -> null
     }
 
+    /**
+     * 判断 synthetic fake function 是否应把期望类型作为 equality 约束参与完成。
+     *
+     * 赋值右侧保留初始化表达式自己的类型检查路径；非赋值场景下 fake function 需要 equality
+     * 来避免把目标类型仅作为宽松 subtype 约束而丢失表达式精确类型。
+     */
     private fun Candidate.isSyntheticFunctionCallThatShouldUseEqualityConstraint(
         expectedType: ConeCangJieType,
     ): Boolean {
@@ -514,12 +571,21 @@ class CfirCallCompleter(
         return symbol.origin == CfirDeclarationOrigin.Synthetic.FakeFunction && !expectedType.isUnitOrAny()
     }
 
+    /**
+     * 判断类型是否为不应驱动 synthetic fake function equality 约束的顶层类型。
+     */
     private fun ConeCangJieType.isUnitOrAny(): Boolean {
         return with(session.typeContext) {
             this@isUnitOrAny.isUnit() || this@isUnitOrAny == ConeAnyType
         }
     }
 
+    /**
+     * 对指定候选执行约束系统完成。
+     *
+     * 调用方可复用已创建的 postponed analyzer；未提供时会基于当前 resolution context 创建新的 analyzer。
+     * 完成期间发现的 postponed atom 会回调 analyzer 解析 lambda、callable reference 等上下文依赖表达式。
+     */
     fun <T> runCompletionForCall(
         candidate: Candidate,
         completionMode: ConstraintSystemCompletionMode,
@@ -539,6 +605,11 @@ class CfirCallCompleter(
         }
     }
 
+    /**
+     * 为 factory pattern 场景把 lambda 的返回类型替换为新的返回类型变量。
+     *
+     * 该类型变量作为 lambda 返回值和外层候选之间的桥接约束，允许 lambda body 的返回表达式继续反推工厂调用。
+     */
     fun prepareLambdaAtomForFactoryPattern(
         atom: ConeResolvedLambdaAtom,
         candidate: Candidate,
@@ -569,6 +640,12 @@ class CfirCallCompleter(
         atom.replaceTypeVariableForLambdaReturnType(returnVariable)
     }
 
+    /**
+     * 创建把完成结果写回 CFIR 树的 transformer。
+     *
+     * writer 会应用最终 substitutor，并同步处理 return type 计算、数据流分析结果、
+     * 整数字面量/操作符近似以及 body resolve 上下文中的完成模式。
+     */
     fun createCompletionResultsWriter(
         substitutor: ConeSubstitutor,
         mode: CfirCallCompletionResultsWriterTransformer.Mode = CfirCallCompletionResultsWriterTransformer.Mode.Normal,
@@ -586,8 +663,16 @@ class CfirCallCompleter(
         )
     }
 
+    /**
+     * 返回候选在当前替换状态下的完成后结果类型。
+     */
     fun completedResultType(candidate: Candidate): ConeCangJieType = candidate.substitutedReturnType()
 
+    /**
+     * 为当前调用上下文创建 postponed argument 分析器。
+     *
+     * analyzer 将 lambda 分析器、推断组件和 call resolver 组合起来，供约束完成器在需要时解析延迟表达式。
+     */
     fun createPostponedArgumentsAnalyzer(context: ResolutionContext): PostponedArgumentsAnalyzer {
         return PostponedArgumentsAnalyzer(
             context,
@@ -597,7 +682,19 @@ class CfirCallCompleter(
         )
     }
 
+    /**
+     * 约束系统完成期间使用的 lambda 分析器实现。
+     *
+     * 它负责按推断出的函数类型重写 lambda 参数、返回类型引用，解析 lambda body，
+     * 并把返回表达式重新包装成可继续进入约束系统的 resolution atom。
+     */
     private inner class LambdaAnalyzerImpl : LambdaAnalyzer {
+        /**
+         * 分析 lambda body 并返回可作为返回值约束来源的 atom 集合。
+         *
+         * 当 PCLA 会话启用时，lambda body 在独立的 PCLA inference session 中解析；
+         * 否则解析期间产生的额外约束会被收集并返回给外层约束系统。
+         */
         override fun analyzeAndGetLambdaReturnArguments(
             lambdaAtom: ConeResolvedLambdaAtom,
             parameters: List<ConeCangJieType>,
@@ -691,6 +788,12 @@ class CfirCallCompleter(
             return ReturnArgumentsAnalysisResult(returnArguments, additionalConstraints)
         }
 
+        /**
+         * 用推断出的输入类型重写 lambda 形参类型引用。
+         *
+         * 缺失的输入类型会写入 `ConeCannotInferValueParameterType`，其余类型会先按 lambda 输入位点近似，
+         * 再根据原始形参是否显式写类型决定是创建新 resolved type ref 还是沿用原型 source/delegation。
+         */
         private fun rewriteLambdaParameterTypes(
             parameters: List<CfirValueParameter>,
             inferredTypes: List<ConeCangJieType>,
@@ -728,6 +831,12 @@ class CfirCallCompleter(
         }
     }
 
+    /**
+     * 将 lambda 输入类型近似为可安全写回形参声明的类型。
+     *
+     * 如果输入仍是不可报告为真实参数类型的 fresh type variable，则转成错误类型；
+     * 否则使用类型近似器向上近似，避免把内部推断变量泄漏到 CFIR 形参类型引用。
+     */
     private fun ConeCangJieType.approximateLambdaInputType(
         valueParameter: CfirValueParameterSymbol?,
         isRootLambdaForPCLASession: Boolean,
@@ -749,6 +858,12 @@ class CfirCallCompleter(
         ) ?: this
     }
 
+    /**
+     * 判断 lambda 形参类型中的 fresh type variable 是否应立即错误化。
+     *
+     * 普通无上下文 lambda 不应把内部推断变量暴露给形参类型；PCLA 根 lambda 和当前 PCLA 会话只错误化
+     * 没有关联源码类型参数的变量。synthetic 顶层 lambda 按仓颉官方语义延后到 completion 阶段统一处理。
+     */
     private fun ConeCangJieType.useErrorTypeInsteadOfTypeVariableForParameterType(
         isRootLambdaForPCLASession: Boolean,
         containingCandidate: Candidate,
@@ -772,12 +887,22 @@ class CfirCallCompleter(
     }
 }
 
+/**
+ * 判断候选函数是否属于 cast 期望类型特性可使用的简单泛型函数。
+ *
+ * 该函数要求无显式类型实参、唯一类型参数直接作为返回类型，并且该类型参数不出现在任何值参数类型中。
+ */
 private fun Candidate.isFunctionForExpectTypeFromCastFeature(): Boolean {
     if (typeArgumentMapping != TypeArgumentMapping.NoExplicitArguments) return false
     val cfir = symbol.cfir as? CfirFunction ?: return false
     return cfir.isFunctionForExpectTypeFromCastFeature()
 }
 
+/**
+ * 判断函数声明是否符合 cast 期望类型驱动返回类型推断的结构条件。
+ *
+ * 条件成立时，调用完成可以把 cast 目标类型作为返回类型 subtype 约束加入，而不会反向污染入参类型。
+ */
 internal fun CfirFunction.isFunctionForExpectTypeFromCastFeature(): Boolean {
     val typeParameter = typeParameters.singleOrNull() ?: return false
     val returnType = returnTypeRef.coneTypeSafe<ConeCangJieType>() ?: return false
@@ -795,6 +920,12 @@ internal fun CfirFunction.isFunctionForExpectTypeFromCastFeature(): Boolean {
 
     return valueParameters.none { it.returnTypeRef.isBadType() }
 }
+
+/**
+ * 记录 class-like 类型解析 lookup。
+ *
+ * 当前实现保留接口入口，实际记录逻辑仍等待基本类型过滤策略收敛后启用。
+ */
 fun CfirLookupTrackerComponent.recordClassLikeLookup(classId: ClassId, source: CjSourceElement?, fileSource: CjSourceElement?) {
 //TODO 排除基本类型
 //    if ( classId !in StandardClassIds.allBuiltinTypes) {
@@ -802,6 +933,12 @@ fun CfirLookupTrackerComponent.recordClassLikeLookup(classId: ClassId, source: C
 //        recordLookup(classFqName.shortName().asString(), classFqName.parent().asString(), source, fileSource)
 //    }
 }
+
+/**
+ * 递归记录类型解析产生的 class-like lookup。
+ *
+ * 错误类型和缺失 source 的类型不会记录；普通类型会记录自身 class id，并继续递归记录所有类型实参。
+ */
 fun CfirLookupTrackerComponent.recordTypeResolveAsLookup(
     type: ConeCangJieType?,
     source: CjSourceElement?,
@@ -818,6 +955,11 @@ fun CfirLookupTrackerComponent.recordTypeResolveAsLookup(
     }
 }
 
+/**
+ * 基于既有类型引用原型创建 resolved/error type ref。
+ *
+ * 新引用继承原型的 source 和 delegation 信息，并在目标类型为 `ConeErrorType` 时保留其诊断。
+ */
 private fun CfirTypeRef.resolvedTypeFromPrototype(
     type: ConeCangJieType,
     source: CjSourceElement?,
@@ -838,6 +980,11 @@ private fun CfirTypeRef.resolvedTypeFromPrototype(
     }
 }
 
+/**
+ * 将 Cone 类型直接包装为新的 resolved/error type ref。
+ *
+ * 该路径用于隐式 lambda 形参等没有可复用原型引用的位置。
+ */
 private fun ConeCangJieType.toResolvedTypeRef(source: CjSourceElement?): CfirResolvedTypeRef {
     return when (this) {
         is ConeErrorType -> buildErrorTypeRef {
@@ -853,4 +1000,9 @@ private fun ConeCangJieType.toResolvedTypeRef(source: CjSourceElement?): CfirRes
     }
 }
 
+/**
+ * 将当前类型断言为简单 Cone 类型。
+ *
+ * 调用点已经限定在类型参数包装判定路径，若结构不满足说明上游类型模型不符合该路径的不变量。
+ */
 private fun ConeCangJieType.unwrap(): ConeSimpleCangJieType = this as ConeSimpleCangJieType

@@ -51,6 +51,9 @@ import org.cangnova.cangjie.name.Name
  * 2. 调用当前实例上的 mut 成员函数。
  */
 object CfirImmutableFunctionCannotModifyFieldChecker : CfirAssignmentChecker() {
+    /**
+     * 检查不可变 struct 成员函数中是否写入当前实例的可变字段。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirAssignment) {
         context.currentImmutableStructFunction() ?: return
@@ -70,7 +73,13 @@ object CfirImmutableFunctionCannotModifyFieldChecker : CfirAssignmentChecker() {
     }
 }
 
+/**
+ * 不可变 struct 成员函数中禁止调用当前实例的 mut 成员函数。
+ */
 object CfirImmutableFunctionCannotAccessMutableFunctionChecker : CfirFunctionCallChecker() {
+    /**
+     * 检查当前实例接收者上的 mut 函数调用。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirFunctionCall) {
         val currentFunction = context.currentImmutableStructFunction() ?: return
@@ -96,6 +105,9 @@ object CfirImmutableFunctionCannotAccessMutableFunctionChecker : CfirFunctionCal
  * 的 struct 值、属性值以及非 class-like 的临时值，不能作为 mut 函数调用的接收者。
  */
 object CfirImmutableValueCannotAccessMutableFunctionChecker : CfirFunctionCallChecker() {
+    /**
+     * 检查不可变 struct 值作为接收者调用 mut 成员函数的场景。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirFunctionCall) {
         val receiver = expression.explicitReceiver ?: return
@@ -113,6 +125,11 @@ object CfirImmutableValueCannotAccessMutableFunctionChecker : CfirFunctionCallCh
     }
 }
 
+/**
+ * 查找当前所在的不可变 struct 成员函数。
+ *
+ * 当前函数必须位于 struct 中且自身没有 `mut` 标记。
+ */
 private fun CheckerContext.currentImmutableStructFunction(): CfirNamedFunction? {
     val function = findClosestDeclaration<CfirNamedFunction>() ?: return null
     if (function.status.isMut) return null
@@ -120,10 +137,16 @@ private fun CheckerContext.currentImmutableStructFunction(): CfirNamedFunction? 
     return function
 }
 
+/**
+ * 判断 qualified access 是否访问当前 struct 实例。
+ */
 private fun CfirQualifiedAccessExpression.isCurrentStructReceiverAccess(): Boolean {
     return explicitReceiver == null || explicitReceiver is CfirThisReceiverExpression
 }
 
+/**
+ * 从 qualified access 中解析字段符号。
+ */
 private fun CfirQualifiedAccessExpression.resolvedFieldSymbolOrNull(): CfirFieldVariableSymbol? {
     return when (val reference = calleeReference) {
         is CfirResolvedNamedReference -> reference.resolvedSymbol as? CfirFieldVariableSymbol
@@ -132,6 +155,9 @@ private fun CfirQualifiedAccessExpression.resolvedFieldSymbolOrNull(): CfirField
     }
 }
 
+/**
+ * 从函数调用中解析目标函数符号。
+ */
 private fun CfirFunctionCall.resolvedFunctionSymbolOrNull(): CfirFunctionSymbol<*>? {
     return when (val reference = calleeReference) {
         is CfirResolvedNamedReference -> reference.resolvedSymbol as? CfirFunctionSymbol<*>
@@ -140,6 +166,9 @@ private fun CfirFunctionCall.resolvedFunctionSymbolOrNull(): CfirFunctionSymbol<
     }
 }
 
+/**
+ * 从 qualified access 中解析变量或属性符号。
+ */
 private fun CfirQualifiedAccessExpression.resolvedVariableOrPropertySymbolOrNull(): org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol<*>? {
     return when (val reference = calleeReference) {
         is CfirResolvedNamedReference -> reference.resolvedSymbol
@@ -148,6 +177,11 @@ private fun CfirQualifiedAccessExpression.resolvedVariableOrPropertySymbolOrNull
     }
 }
 
+/**
+ * 判断表达式是否表示不可变 struct 值访问。
+ *
+ * `this`/`super` 不视为不可变值；变量、属性和临时值按类型及声明可变性递归判断。
+ */
 private fun CfirExpression.isImmutableStructValueAccess(): Boolean {
     if (this is CfirThisReceiverExpression || this is CfirSuperReceiverExpression) return false
     if (!coneTypeOrNull.mayBeStructValueType()) return false
@@ -167,6 +201,9 @@ private fun CfirExpression.isImmutableStructValueAccess(): Boolean {
     }
 }
 
+/**
+ * 取得不可变值诊断中用于展示的接收者名称。
+ */
 private fun CfirExpression.diagnosticNameOr(defaultName: Name): Name {
     val access = this as? CfirQualifiedAccessExpression ?: return defaultName
     return when (val symbol = access.resolvedVariableOrPropertySymbolOrNull()) {

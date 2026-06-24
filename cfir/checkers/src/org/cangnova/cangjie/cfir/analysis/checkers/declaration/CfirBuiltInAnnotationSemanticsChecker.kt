@@ -40,6 +40,12 @@ import org.cangnova.cangjie.type.AbstractTypeChecker
  *   保持规则集中在 declaration checker 层，而不是散落到解析器或测试侧。
  */
 object CfirBuiltInAnnotationDeclarationChecker : CfirBasicDeclarationChecker() {
+    /**
+     * 对所有基础声明执行内建注解和平台注解规则。
+     *
+     * 入口按互不依赖的规则簇顺序调用：注解元规则、平台注解语法、CallingConv 使用范围、
+     * 以及 ForeignName 相关冲突。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirDeclaration) {
         checkAnnotationMetaRules(declaration)
@@ -55,6 +61,11 @@ object CfirBuiltInAnnotationDeclarationChecker : CfirBasicDeclarationChecker() {
  * 这组规则依赖 class-like 声明的父类型关系与成员签名，因此集中放在 classLike checker。
  */
 object CfirInteropAnnotationChecker : CfirClassLikeChecker() {
+    /**
+     * 对 class-like 声明执行 Java/Objective-C 互操作注解语义检查。
+     *
+     * 该入口会分别处理基础继承约束、类型级成员签名约束和额外互操作平台规则。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirClassLikeDeclaration) {
         checkJavaInteropSemantics(declaration)
@@ -65,6 +76,11 @@ object CfirInteropAnnotationChecker : CfirClassLikeChecker() {
     }
 }
 
+/**
+ * 检查 `@Annotation` 自身的元注解规则。
+ *
+ * 该规则覆盖 target 参数形态、注解声明可见性以及禁止定义 Java 注解的基础约束。
+ */
 context(context: CheckerContext, reporter: DiagnosticReporter)
 private fun checkAnnotationMetaRules(
     declaration: CfirDeclaration,
@@ -107,6 +123,12 @@ private fun checkAnnotationMetaRules(
     }
 }
 
+/**
+ * 检查 APILevel、IfAvailable 和 Hide 等平台注解的声明级语法规则。
+ *
+ * 这里处理参数命名、字面量限制、多重注解限制、Hide 位置以及 override 继承关系等
+ * 仅依赖声明与注解文本即可判断的约束。
+ */
 context(context: CheckerContext, reporter: DiagnosticReporter)
 private fun checkPlatformAnnotationSyntax(
     declaration: CfirDeclaration,
@@ -239,6 +261,12 @@ private fun checkPlatformAnnotationSyntax(
     }
 }
 
+/**
+ * 检查 `@CallingConv` 的合法使用范围。
+ *
+ * 目前只允许没有 dispatch receiver 的顶层 foreign 函数使用；成员函数或其他声明会分别
+ * 报告作用域错误或 C 函数限制错误。
+ */
 context(context: CheckerContext, reporter: DiagnosticReporter)
 private fun checkCallingConventionRules(declaration: CfirDeclaration) {
     val callingConvEntries = declaration.findAnnotations(Name.identifier("CallingConv"))
@@ -265,6 +293,12 @@ private fun checkCallingConventionRules(declaration: CfirDeclaration) {
     }
 }
 
+/**
+ * 在直接父类型中查找与当前函数同名的被覆写声明。
+ *
+ * 该辅助用于 Hide override 规则，只需要判断父声明是否携带 `@Hide`，因此按名称在
+ * 直接父声明列表中做轻量查找。
+ */
 context(context: CheckerContext)
 private fun findOverriddenInSupers(declaration: CfirNamedFunction): CfirDeclaration? {
     val ownerClassId = declaration.symbol.callableId.classId ?: return null
@@ -282,6 +316,12 @@ private fun findOverriddenInSupers(declaration: CfirNamedFunction): CfirDeclarat
     return null
 }
 
+/**
+ * 检查 `@JavaMirror` 与 `@JavaImpl` 的基础继承语义。
+ *
+ * 规则覆盖镜像类型继承限制、实现类型必须继承镜像类型、禁止继承纯仓颉类型以及
+ * JavaMirror 成员签名类型约束。
+ */
 context(context: CheckerContext, reporter: DiagnosticReporter)
 private fun checkJavaInteropSemantics(declaration: CfirClassLikeDeclaration) {
     val hasJavaMirror = declaration.hasAnnotation(JAVA_MIRROR)
@@ -354,6 +394,12 @@ private fun checkJavaInteropSemantics(declaration: CfirClassLikeDeclaration) {
     }
 }
 
+/**
+ * 检查 `@JavaMirror` 类型的成员参数、返回值和属性类型。
+ *
+ * Java mirror 成员只能暴露 primitive、JavaMirror 或 JavaImpl 兼容类型；同时检查
+ * `@JavaHasDefault` 在接口默认方法上的使用位置和参数限制。
+ */
 context(context: CheckerContext, reporter: DiagnosticReporter)
 private fun checkJavaMirrorMemberTypes(declaration: CfirClassLikeDeclaration) {
     for (member in declaration.declarations) {
@@ -562,6 +608,12 @@ private fun isJTypeCompatible(type: org.cangnova.cangjie.cfir.types.ConeCangJieT
     return targetDecl.hasAnnotation(JAVA) || targetDecl.hasAnnotation(JAVA_MIRROR) || targetDecl.hasAnnotation(JAVA_IMPL)
 }
 
+/**
+ * 检查 `@ObjCMirror` 与 `@ObjCImpl` 的基础继承和成员类型语义。
+ *
+ * 规则覆盖 ObjC 抽象类限制、镜像/实现继承链约束、多重继承限制、ForeignName 要求、
+ * 成员参数/返回值/属性/字段的 ObjC 类型兼容性，以及 setter 名称在不可变属性上的限制。
+ */
 context(context: CheckerContext, reporter: DiagnosticReporter)
 private fun checkObjCInteropSemantics(declaration: CfirClassLikeDeclaration) {
     val hasObjCMirror = declaration.hasAnnotation(OBJC_MIRROR)
@@ -732,9 +784,18 @@ private fun isObjCTypeCompatible(type: org.cangnova.cangjie.cfir.types.ConeCangJ
     return targetDecl.hasAnnotation(OBJC_MIRROR) || targetDecl.hasAnnotation(OBJC_IMPL)
 }
 
+/**
+ * 判断声明是否携带给定注解集合中的任一注解。
+ */
 private fun CfirDeclaration.hasAnyAnnotation(vararg annotationNames: Name): Boolean =
     annotationNames.any(::hasAnnotation)
 
+/**
+ * 解析 class-like 声明的直接父声明列表。
+ *
+ * 优先使用已经绑定好的 superTypeRefs；只有在 CFIR 父类型缺失且 PSI 中也没有父类型项时
+ * 返回空列表，避免用 PSI 文本重新实现父类型解析。
+ */
 context(context: CheckerContext)
 private fun CfirClassLikeDeclaration.superDeclarations(): List<CfirClassLikeDeclaration> {
     val typeStatement = source?.psi as? CjTypeStatement
@@ -750,6 +811,12 @@ private fun CfirClassLikeDeclaration.superDeclarations(): List<CfirClassLikeDecl
     return emptyList()
 }
 
+/**
+ * 判断类型引用是否满足指定互操作镜像注解集合。
+ *
+ * primitive、未解析类型和无法定位声明的类型保持宽松通过；可定位 class-like 声明时，
+ * 必须携带调用方要求的 Java/ObjC mirror 或 impl 注解之一。
+ */
 context(context: CheckerContext)
 private fun CfirTypeRef.isInteropMirrorCompatible(
     vararg requiredAnnotations: Name,
@@ -761,23 +828,51 @@ private fun CfirTypeRef.isInteropMirrorCompatible(
     return declaration.hasAnyAnnotation(*requiredAnnotations)
 }
 
+/**
+ * 判断 class-like 声明是否具有平台注解要求的 public-like 可见性。
+ */
 private fun CfirClassLikeDeclaration.isPublicLike(): Boolean =
     status.visibility.externalDisplayName == "public"
 
+/**
+ * 取得注解本身的 source，缺失时回退到所属声明 source。
+ */
 private fun CfirAnnotation.toSourceOrDeclarationSource(declaration: CfirDeclaration): org.cangnova.cangjie.source.CjSourceElement? =
     this.source ?: declaration.source
 
+/** 内建注解声明标记名称。 */
 private val ANNOTATION = Name.identifier("Annotation")
+
+/** Java 互操作基础注解名称。 */
 private val JAVA = Name.identifier("Java")
+
+/** Java 镜像类型注解名称。 */
 private val JAVA_MIRROR = Name.identifier("JavaMirror")
+
+/** Java 实现类型注解名称。 */
 private val JAVA_IMPL = Name.identifier("JavaImpl")
+
+/** Objective-C 镜像类型注解名称。 */
 private val OBJC_MIRROR = Name.identifier("ObjCMirror")
+
+/** Objective-C 实现类型注解名称。 */
 private val OBJC_IMPL = Name.identifier("ObjCImpl")
+
+/** 外部符号名称映射注解名称。 */
 private val FOREIGN_NAME = Name.identifier("ForeignName")
+
+/** API 可用等级注解名称。 */
 private val API_LEVEL = Name.identifier("APILevel")
+
+/** 条件可用性注解名称。 */
 private val IF_AVAILABLE = Name.identifier("IfAvailable")
+
+/** 编译期隐藏注解名称。 */
 private val HIDE = Name.identifier("Hide")
 
+/**
+ * `@IfAvailable` 允许出现的命名参数集合。
+ */
 private val allowedIfAvailableArgumentNames: Set<String> = setOf(
     "level",
     "since",
@@ -813,6 +908,12 @@ private fun checkObjCInitMethodReturnType(
     )
 }
 
+/**
+ * 检查 `@ForeignName` 及其 getter/setter 派生注解的冲突规则。
+ *
+ * 覆写声明不能重新声明 foreign name；同一声明上多个 ForeignName 或 ForeignName 与
+ * ForeignGetterName/ForeignSetterName 组合使用都会产生冲突诊断。
+ */
 context(context: CheckerContext, reporter: DiagnosticReporter)
 private fun checkForeignNameRules(
     declaration: CfirDeclaration,
@@ -1067,6 +1168,12 @@ private fun checkObjCInteropExtraSemantics(declaration: CfirClassLikeDeclaration
     }
 }
 
+/**
+ * 检查 ObjCPointer 与 ObjCFunc 类型参数的 ObjC 兼容性。
+ *
+ * 该规则在函数参数层面展开泛型实参，确保指针和函数桥接类型不会携带无法映射到
+ * Objective-C 运行时的仓颉类型。
+ */
 context(context: CheckerContext, reporter: DiagnosticReporter)
 private fun checkObjCPointerAndFuncTypeArgs(
     function: CfirNamedFunction,
@@ -1106,6 +1213,12 @@ private fun checkObjCPointerAndFuncTypeArgs(
     }
 }
 
+/**
+ * 检查 ObjCFunc 类型属性的调用限制。
+ *
+ * 声明级 checker 无法看到具体调用表达式，这里先把 ObjCFunc 属性声明作为诊断入口，
+ * 表达式级 qualified access checker 后续可复用同一语义边界。
+ */
 context(context: CheckerContext, reporter: DiagnosticReporter)
 private fun checkObjCFuncPropertyCallOnly(
     property: CfirProperty,

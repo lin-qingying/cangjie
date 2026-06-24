@@ -14,7 +14,7 @@ class Son <: Father {
 main(): Int64 {
     var target = Father()
     var res = match (target) {
-        case <!VAR_IN_OR_PATTERN!>son<!>: Son | <!VAR_IN_OR_PATTERN!>father<!>: Father => 0
+        case <!VAR_IN_OR_PATTERN!>son<!>: Son | father: Father => 0
         case _ => -1
     }
     if (res == 20) {

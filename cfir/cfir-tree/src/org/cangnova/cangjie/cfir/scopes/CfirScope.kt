@@ -37,6 +37,9 @@ import org.cangnova.cangjie.name.Name
  * 参考 K2 FirScope。
  */
 abstract class CfirScope {
+    /**
+     * 按名称处理 classifier 符号，并同时暴露该符号对应的类型替换器。
+     */
     open fun processClassifiersByNameWithSubstitution(
         name: Name,
         processor: (CfirClassifierSymbol<*>, ConeSubstitutor) -> Unit
@@ -45,27 +48,60 @@ abstract class CfirScope {
             processor(classifier, ConeSubstitutor.Empty)
         }
     }
+
+    /**
+     * 当前 scope owner 的查找名集合，用于调试、缓存 key 或 scope 链追踪。
+     */
     open val scopeOwnerLookupNames: List<String> get() = emptyList()
 
-    /** 按名称处理类/接口/结构体/枚举符号 */
+    /**
+     * 按名称处理类、接口、结构体、枚举等 class-like 符号。
+     */
     open fun processClassifiersByName(name: Name, processor: (CfirClassLikeSymbol<*>) -> Unit) {}
+
+    /**
+     * 处理当前 scope 直接声明的构造器符号。
+     */
     open fun processDeclaredConstructors(
         processor: (CfirConstructorSymbol) -> Unit
     ) {
     }
-    /** 按名称处理函数符号 */
+
+    /**
+     * 按名称处理函数符号。
+     */
     open fun processFunctionsByName(name: Name, processor: (CfirNamedFunctionSymbol) -> Unit) {}
 
+    /**
+     * 按名称处理变量类符号。
+     */
     open fun processVariablesByName(
         name: Name,
         processor: (CfirVariableSymbol<*>) -> Unit
     ) {
     }
+
+    /**
+     * 当前 scope 是否可能包含指定名称。
+     *
+     * 返回 `false` 可让调用方跳过更昂贵的按名查找。
+     */
     open fun mayContainName(name: Name): Boolean = true
 
-    /** 按名称处理属性符号 */
+    /**
+     * 按名称处理属性符号。
+     */
     open fun processPropertiesByName(name: Name, processor: (CfirPropertySymbol) -> Unit) {}
+
+    /**
+     * 在新 session / scope session 下替换当前 scope。
+     *
+     * 返回 `null` 表示该 scope 不能安全迁移到新的 session 上。
+     */
     abstract fun withReplacedSessionOrNull(newSession: CfirSession, newScopeSession: ScopeSession): CfirScope?
 
+    /**
+     * 按名称处理所有 callable 符号，包括函数、属性和其他 callable 声明。
+     */
     open fun processCallablesByName(name: Name, processor: (CfirCallableSymbol<*>) -> Unit) {}
 }

@@ -23,9 +23,14 @@ import org.cangnova.cangjie.cfir.session.phaseResolverRegistry
  * val resolvedFiles = processor.process(cfirFiles)
  * val scopeSession = processor.scopeSession
  * ```
+ *
+ * @property session 当前要执行 resolve 的 session。
  */
 class CfirTotalResolveProcessor(private val session: CfirSession) {
 
+    /**
+     * 本次 total resolve 使用的 scope 缓存 session。
+     */
     val scopeSession: ScopeSession = ScopeSession()
 
     /**
@@ -39,6 +44,7 @@ class CfirTotalResolveProcessor(private val session: CfirSession) {
      *    - [CfirTransformerBasedResolveProcessor]: 逐文件处理
      * 3. 调用 processor.afterPhase()
      *
+     * @param files 待执行 total resolve 的 CFIR 文件列表。
      * @return 经过所有阶段处理后的文件列表（可能因文件替换型处理器而与输入不同）
      */
     fun process(files: List<CfirFile>): List<CfirFile> {

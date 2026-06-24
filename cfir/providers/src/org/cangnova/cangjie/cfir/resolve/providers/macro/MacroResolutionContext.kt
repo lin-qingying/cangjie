@@ -25,10 +25,17 @@ data class MacroImportBinding(
  * Macro alias 冲突诊断（baseline 第 12 节 Batch 5）。
  *
  * 当同一 alias 短名被多个 import 用于不同 fqn 时，应当在 construction 期上报。
+ *
+ * @property alias 发生冲突的 alias 名称。
+ * @property targets 该 alias 绑定到的不同目标 FQN 集合。
+ * @property source alias 声明的源码位置，用于诊断定位。
  */
 data class MacroAliasConflict(
+    /** 发生冲突的 alias 名称。 */
     val alias: Name,
+    /** 该 alias 绑定到的不同目标 FQN 集合。 */
     val targets: List<FqName>,
+    /** alias 声明的源码位置，用于诊断定位。 */
     val source: CjSourceElement?,
 )
 
@@ -37,12 +44,20 @@ data class MacroAliasConflict(
  *
  * 这些名称参与 [MacroResolutionContext.resolveMacroCall] 的优先级判定，
  * 默认通过 [bindMacroImports] 注入。
+ *
+ * @property macros 内建 macro 名称集合。
+ * @property annotations 内建普通 annotation 名称集合，不送 macro executor。
+ * @property nonMacros 内建 non-macro surface 名称集合。
  */
 data class MacroBuiltinRegistries(
+    /** 内建 macro 名称集合。 */
     val macros: Set<Name>,
+    /** 内建普通 annotation 名称集合，不送 macro executor。 */
     val annotations: Set<Name>,
+    /** 内建 non-macro surface 名称集合。 */
     val nonMacros: Set<Name>,
 ) {
+    /** 默认 builtin registry 与版本常量。 */
     companion object {
         /**
          * Builtin registry 版本（baseline §11 cache key 第 12/13 维之一）。
@@ -52,6 +67,7 @@ data class MacroBuiltinRegistries(
          */
         const val VERSION: Int = 2
 
+        /** 生产路径默认 builtin macro / annotation / non-macro 注册表。 */
         val DEFAULT: MacroBuiltinRegistries = MacroBuiltinRegistries(
             macros = BuiltinMacroRegistry.all.toSet(),
             // 仓颉内建/互操作 annotation 是普通 annotation site，不参与 macro executor 解析。
@@ -76,6 +92,7 @@ data class MacroBuiltinRegistries(
             ),
         )
 
+        /** 空 builtin registry，供测试或禁用 builtin 的 construction 路径使用。 */
         val EMPTY: MacroBuiltinRegistries = MacroBuiltinRegistries(emptySet(), emptySet(), emptySet())
     }
 }
@@ -94,9 +111,18 @@ data class MacroBuiltinRegistries(
  *   能够看到完整的 source provider 与 final CFIR；
  * - `MacroResolutionContext` 仅在 macro construction step 内使用，
  *   严禁读取 source provider。
+ *
+ * @property symbolIndex macro construction 期离线符号索引。
+ * @property importBindings macro-related import 的绑定结果列表。
+ * @property packageAliases alias 短名到真实包名的映射。
+ * @property aliasConflicts 同名 alias 绑到多个目标时的冲突列表。
+ * @property defaultMacroImports 默认隐式 macro import 包列表。
+ * @property builtinRegistries builtin macro / annotation / non-macro 注册表。
  */
 class MacroResolutionContext internal constructor(
+    /** macro construction 期离线符号索引。 */
     val symbolIndex: MacroSymbolIndex,
+    /** macro-related import 的绑定结果列表。 */
     val importBindings: List<MacroImportBinding>,
     /** alias 短名 → 真实 fqn */
     val packageAliases: Map<Name, FqName>,
@@ -252,35 +278,75 @@ class MacroResolutionContext internal constructor(
     }
 }
 
+/**
+ * Macro 调用解析结果。
+ *
+ * 每个分支都只表达 construction routing 所需的信息，不直接触发 executor、
+ * fragment parser 或 splice。
+ */
 sealed class MacroResolution {
-    /** 正常 import / qualifier 路径找到的 macro 定义。 */
+    /**
+     * 正常 import / qualifier 路径找到的 macro 定义。
+     *
+     * @property entry 被解析到的宏定义条目。
+     */
     data class Resolved(val entry: MacroDefinitionEntry) : MacroResolution()
 
-    /** 内建 macro（不送 external executor）。 */
+    /**
+     * 内建 macro（不送 external executor）。
+     *
+     * @property entry 内建宏定义条目。
+     */
     data class Builtin(val entry: MacroDefinitionEntry) : MacroResolution()
 
-    /** builtin non-macro surface（如 `@IfAvailable`），需在 splice 前 desugar。 */
+    /**
+     * builtin non-macro surface（如 `@IfAvailable`），需在 splice 前 desugar。
+     *
+     * @property name builtin non-macro 名称。
+     */
     data class BuiltinNonMacro(val name: Name) : MacroResolution()
 
-    /** 同包 macro def/call 非法形态。 */
+    /**
+     * 同包 macro def/call 非法形态。
+     *
+     * @property sourceEntry 同包中命中的源宏定义条目。
+     */
     data class SamePackage(val sourceEntry: MacroDefinitionEntry) : MacroResolution()
 
-    /** Fallback 到 custom annotation reclassify 路径。 */
+    /**
+     * Fallback 到 custom annotation reclassify 路径。
+     *
+     * @property name 被重新分类为普通 annotation 的名称。
+     */
     data class CustomAnnotation(val name: Name) : MacroResolution()
 
-    /** target 不支持调用方使用的 [MacroSurface.Kind]（如 `@!` 形式）。 */
+    /**
+     * target 不支持调用方使用的 [MacroSurface.Kind] 或 attr 形态。
+     *
+     * @property entry 形态不匹配的目标宏定义。
+     * @property reason 不匹配原因。
+     */
     data class KindMismatch(
+        /** 形态不匹配的目标宏定义。 */
         val entry: MacroDefinitionEntry,
+        /** 不匹配原因。 */
         val reason: Reason,
     ) : MacroResolution()
     {
+        /** 宏调用形态不匹配原因。 */
         enum class Reason {
+            /** 调用点使用 `@!`，但目标不支持 forced kind。 */
             FORCED_KIND_NOT_SUPPORTED,
+            /** 调用点省略括号，但目标不支持 plain-attr overload。 */
             PLAIN_ATTR_OVERLOAD_NOT_SUPPORTED,
         }
     }
 
-    /** 找不到任何匹配。 */
+    /**
+     * 找不到任何匹配。
+     *
+     * @property name 未解析到目标的 macro 名称。
+     */
     data class Unresolved(val name: Name) : MacroResolution()
 }
 

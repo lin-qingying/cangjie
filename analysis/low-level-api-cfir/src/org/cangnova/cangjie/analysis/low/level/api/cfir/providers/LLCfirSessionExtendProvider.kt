@@ -8,6 +8,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.resolve.providers.CfirExtendProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSessionExtendProvider
 import org.cangnova.cangjie.cfir.resolve.services.CfirExtendIndexStore
+import org.cangnova.cangjie.cfir.session.services.CfirExtendTargetKey
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.session.typeResolver
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
@@ -32,7 +33,10 @@ internal class LLCfirSessionExtendProvider(
 
     @Volatile
     private var indexedFiles: Set<CfirFile> = emptySet()
-
+    override fun getExtendsForTarget(targetKey: CfirExtendTargetKey): List<CfirExtend> {
+        ensureIndexIsFresh()
+        return delegate.getExtendsForTarget(targetKey)
+    }
     override fun getExtendsForClass(classId: ClassId): List<CfirExtend> {
         ensureIndexIsFresh()
         return delegate.getExtendsForClass(classId)
@@ -51,6 +55,11 @@ internal class LLCfirSessionExtendProvider(
     override fun getContainingExtend(symbol: CfirCallableSymbol<*>): CfirExtend? {
         ensureIndexIsFresh()
         return delegate.getContainingExtend(symbol)
+    }
+
+    override fun getPackageFqName(extend: CfirExtend): FqName? {
+        ensureIndexIsFresh()
+        return delegate.getPackageFqName(extend)
     }
 
     override fun isExtendAccessible(extend: CfirExtend): Boolean {

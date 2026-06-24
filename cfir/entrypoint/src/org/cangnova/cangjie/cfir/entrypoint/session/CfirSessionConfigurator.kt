@@ -57,7 +57,9 @@ class CfirSessionConfigurator(
 
     }
     /**
-     * Must only be used in CLI compiler mode.
+     * 注册语言版本相关 checker。
+     *
+     * 该入口只能在 CLI compiler 模式使用，因为它依赖 CLI session 中已经注册的语言版本组件。
      */
     @OptIn(SessionConfiguration::class)
     fun useCheckers(checkers: LanguageVersionSettingsCheckers) {
@@ -118,6 +120,11 @@ class BunchOfRegisteredExtensions(
 ) {
     /** 空批次构造。 */
     companion object {
+        /**
+         * 创建空扩展批次。
+         *
+         * 空批次作为 configurator 的初始值，保证后续批次合并逻辑不需要处理空列表特例。
+         */
         fun empty(): BunchOfRegisteredExtensions = BunchOfRegisteredExtensions(
             registrars = emptyList(),
             diagnosticsContainers = emptyList(),

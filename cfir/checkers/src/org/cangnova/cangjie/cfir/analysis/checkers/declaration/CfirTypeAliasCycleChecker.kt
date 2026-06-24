@@ -15,8 +15,16 @@ import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
  * 对环上的每个 type alias 声明节点报告 `sema_typealias_cycle`。
  */
 object CfirTypeAliasCycleChecker : CfirTypeAliasChecker() {
+    /**
+     * 解析阶段用于标识递归 typealias 展开的错误文本前缀。
+     */
     private const val RECURSIVE_TYPEALIAS_PREFIX = "Recursive typealias expansion"
 
+    /**
+     * 检查 typealias 展开结果是否携带递归展开错误。
+     *
+     * 只有展开类型引用已经是对应递归错误时才报告 `TYPEALIAS_CYCLE`，避免把普通错误类型误判为环。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirTypeAlias) {
         val errorTypeRef = declaration.expandedTypeRef as? CfirErrorTypeRef ?: return

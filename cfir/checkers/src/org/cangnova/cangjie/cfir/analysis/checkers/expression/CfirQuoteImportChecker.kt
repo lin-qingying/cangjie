@@ -15,8 +15,10 @@ import org.cangnova.cangjie.name.FqName
  * 未导入 `std.ast` 时 `quote {...}` 报错,提示需要的包名。
  */
 object CfirQuoteImportChecker : CfirBasicExpressionChecker() {
+    /** `quote` 表达式所需导入的标准库包名。 */
     private val STD_AST = FqName("std.ast")
 
+    /** 检查 `quote` 表达式所在文件是否已经导入 `std.ast`。 */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirStatement) {
         if (expression !is CfirQuoteExpression) return

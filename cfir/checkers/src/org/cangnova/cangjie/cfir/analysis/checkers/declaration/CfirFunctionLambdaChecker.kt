@@ -25,6 +25,9 @@ import org.cangnova.cangjie.cfir.types.ConeErrorType
  * 注册为 anonymousFunctionCheckers
  */
 object CfirLambdaParameterTypeChecker : CfirAnonymousFunctionChecker() {
+    /**
+     * 检查显式参数列表 lambda 中未能从上下文推断出的参数类型。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirAnonymousFunction) {
         if (!declaration.isLambda) return
@@ -64,11 +67,17 @@ object CfirLambdaParameterTypeChecker : CfirAnonymousFunctionChecker() {
         }
     }
 
+    /**
+     * 从错误诊断中提取唯一候选。
+     */
     private fun CfirFunctionCall.singleDiagnosticCandidateOrNull(): AbstractCallCandidate<*>? {
         val diagnostic = (calleeReference as? CfirDiagnosticHolder)?.diagnostic
         return (diagnostic as? ConeDiagnosticWithSingleCandidate)?.candidate
     }
 
+    /**
+     * 判断表达式是否承载指定匿名函数。
+     */
     private fun CfirExpression.isExpressionForAnonymousFunction(
         anonymousFunction: CfirAnonymousFunction,
     ): Boolean {

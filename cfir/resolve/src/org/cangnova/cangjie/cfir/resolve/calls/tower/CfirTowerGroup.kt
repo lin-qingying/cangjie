@@ -40,6 +40,7 @@ data class CfirTowerGroup(
         PACKAGE,
     }
 
+    /** 按 tower 优先级比较两个候选分组。 */
     override fun compareTo(other: CfirTowerGroup): Int {
         // kind ordinal 越小，优先级越高
         val kindComparison = this.kind.ordinal.compareTo(other.kind.ordinal)
@@ -49,15 +50,24 @@ data class CfirTowerGroup(
     }
 
     companion object {
+        /** tower resolve 调度的起始分组，优先级最低并带最大深度。 */
         val Start = CfirTowerGroup(Kind.PACKAGE, Int.MAX_VALUE)
+        /** 显式 receiver 成员候选的固定分组。 */
         val EXPLICIT_MEMBER = CfirTowerGroup(Kind.EXPLICIT_MEMBER)
+        /** 隐式 receiver 成员候选的固定分组。 */
         val IMPLICIT_MEMBER = CfirTowerGroup(Kind.IMPLICIT_MEMBER)
+        /** extend 成员候选的固定分组。 */
         val EXTEND = CfirTowerGroup(Kind.EXTEND)
+        /** 普通非局部候选的固定分组。 */
         val NON_LOCAL = CfirTowerGroup(Kind.NON_LOCAL)
+        /** 包级候选的固定分组。 */
         val PACKAGE = CfirTowerGroup(Kind.PACKAGE)
 
+        /** 构造指定深度的局部候选分组。 */
         fun local(depth: Int) = CfirTowerGroup(Kind.LOCAL, depth)
+        /** 构造指定深度的非局部候选分组。 */
         fun nonLocal(depth: Int) = CfirTowerGroup(Kind.NON_LOCAL, depth)
+        /** 构造指定深度的 import 候选分组。 */
         fun imported(depth: Int) = CfirTowerGroup(Kind.IMPORTED, depth)
     }
 }

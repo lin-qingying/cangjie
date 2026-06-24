@@ -12,16 +12,26 @@ import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
 
+/**
+ * Bool 类型专用穷尽性检查器。
+ *
+ * 只需要跟踪 `true` 与 `false` 两个常量是否被覆盖。
+ */
 class BooleanChecker : ExhaustivenessChecker {
+    /** 当前 checker 来源。 */
     override val source: CheckSource = CheckSource.BOOLEAN_FLAG
+
+    /** 当前 checker 优先级。 */
     override val priority: Int = 10
 
+    /** Bool primitive 类型适用该 checker。 */
     override fun isApplicable(
         type: ConeCangJieType,
         patterns: List<CfirMatchPattern>,
         context: MatchExhaustivenessContext,
     ): Boolean = type is ConePrimitiveType && type.kind == PrimitiveTypeKind.BOOLEAN
 
+    /** 检查 Bool 模式是否同时覆盖 true 和 false。 */
     override fun check(
         matrix: CfirMatrix,
         type: ConeCangJieType,
@@ -74,7 +84,9 @@ class BooleanChecker : ExhaustivenessChecker {
         }
     }
 
+    /** 单例实例。 */
     companion object {
+        /** 默认 Bool checker 实例。 */
         val INSTANCE = BooleanChecker()
     }
 }

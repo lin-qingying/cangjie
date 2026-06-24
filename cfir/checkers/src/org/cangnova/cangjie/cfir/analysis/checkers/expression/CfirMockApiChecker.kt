@@ -35,11 +35,29 @@ import org.cangnova.cangjie.name.Name
  * - 其余未显式启用的路径统一落到 mock feature gate。
  */
 object CfirMockApiChecker : CfirFunctionCallChecker() {
+    /**
+     * mock intrinsic `createMock` 函数名。
+     */
     private val createMockName = Name.identifier("createMock")
+
+    /**
+     * mock intrinsic `createSpy` 函数名。
+     */
     private val createSpyName = Name.identifier("createSpy")
+
+    /**
+     * 标记冻结声明或冻结泛型包装函数的注解名。
+     */
     private val frozenAnnotationName = Name.identifier("Frozen")
+
+    /**
+     * 标记声明已准备好被 mock 的注解名。
+     */
     private val preparedToMockAnnotationName = Name.identifier("EnsurePreparedToMock")
 
+    /**
+     * 检查 mock intrinsic 调用是否满足目标类型、测试模式、冻结声明和准备注解约束。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirFunctionCall) {
         if (expression.origin != CfirFunctionCallOrigin.MockIntrinsic) return
@@ -94,6 +112,11 @@ object CfirMockApiChecker : CfirFunctionCallChecker() {
         reporter.reportOn(source, CfirErrors.MOCK_DISABLED, "--mock")
     }
 
+    /**
+     * 取得函数用于 mock 诊断的展示名称。
+     *
+     * 匿名函数使用稳定占位名，避免诊断构造依赖可空名称。
+     */
     private fun CfirFunction.callableName(): Name {
         return (this as? org.cangnova.cangjie.cfir.declarations.CfirNamedFunction)?.name
             ?: Name.identifier("anonymous")

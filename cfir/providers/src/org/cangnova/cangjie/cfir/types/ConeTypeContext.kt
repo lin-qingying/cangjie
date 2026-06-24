@@ -34,6 +34,7 @@ import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.type.model.*
 import org.cangnova.cangjie.types.TypeSystemCommonBackendContext
+import java.util.ArrayDeque
 
 /**
  * CFIR 层的 Cone 类型系统上下文。
@@ -70,6 +71,9 @@ interface ConeTypeContext :
     fun isSameTypeConstructor(a: ConeCangJieType, b: ConeCangJieType): Boolean =
         a.typeConstructor() == b.typeConstructor()
 
+    /**
+     * 判断两个 rigid type 的类型实参是否完全相同。
+     */
     override fun identicalArguments(a: RigidTypeMarker, b: RigidTypeMarker): Boolean {
         require(a is ConeRigidType)
         require(b is ConeRigidType)
@@ -94,42 +98,69 @@ interface ConeTypeContext :
         }
     }
 
+    /**
+     * 判断类型是否为错误类型。
+     */
     override fun CangJieTypeMarker.isError(): Boolean = (this as? ConeCangJieType)?.isError == true
 
+    /**
+     * 判断类型是否为 class-like 类型。
+     */
     override fun CangJieTypeMarker.isClassLikeType(): Boolean {
         return asRigidType() is ConeClassLikeType
     }
 
+    /**
+     * 判断类型是否代表尚未推断出的类型参数。
+     */
     override fun CangJieTypeMarker.isUninferredParameter(): Boolean {
         return this is ConeErrorType && this.isUninferredParameter
     }
 
 
 
+    /**
+     * 返回类型实参数量。
+     */
     override fun CangJieTypeMarker.argumentsCount(): Int {
         require(this is ConeCangJieType)
         return typeArguments.size
     }
 
+    /**
+     * 返回指定索引处的类型实参。
+     */
     override fun CangJieTypeMarker.getArgument(index: Int): ConeTypeProjection {
         require(this is ConeCangJieType)
         return this.typeArguments[index]
     }
 
+    /**
+     * 返回当前类型的全部类型实参。
+     */
     override fun CangJieTypeMarker.getArguments(): List<ConeTypeProjection> {
         require(this is ConeCangJieType)
         return this.typeArguments.toList()
     }
 
+    /**
+     * 判断类型是否为函数类型。
+     */
     override fun CangJieTypeMarker.isFunctionType(): Boolean {
         return this is ConeFunctionType
     }
 
+    /**
+     * 提取函数类型的参数类型和返回类型。
+     */
     override fun CangJieTypeMarker.extractArgumentsForFunctionType(): List<CangJieTypeMarker> {
         require(this is ConeFunctionType)
         return parameterTypes + returnType
     }
 
+    /**
+     * 判断两个函数类型的函数种类是否一致。
+     */
     override fun areEqualFunctionTypeKinds(subType: CangJieTypeMarker, superType: CangJieTypeMarker): Boolean {
         require(subType is ConeFunctionType)
         require(superType is ConeFunctionType)
@@ -137,37 +168,64 @@ interface ConeTypeContext :
                 subType.hasVariableLenArg == superType.hasVariableLenArg
     }
 
+    /**
+     * 判断类型是否为元组类型。
+     */
     override fun CangJieTypeMarker.isTupleType(): Boolean {
         return this is ConeTupleType
     }
 
+    /**
+     * 提取元组元素类型。
+     */
     override fun CangJieTypeMarker.extractElementsForTupleType(): List<CangJieTypeMarker> {
         require(this is ConeTupleType)
         return elementTypes
     }
 
+    /**
+     * 判断类型是否为 VArray 类型。
+     */
     override fun CangJieTypeMarker.isVArrayType(): Boolean {
         return this is ConeVArrayType
     }
 
+    /**
+     * 提取 VArray 元素类型。
+     */
     override fun CangJieTypeMarker.extractElementTypeForVArrayType(): CangJieTypeMarker {
         require(this is ConeVArrayType)
         return elementType
     }
 
+    /**
+     * 提取 VArray 固定长度。
+     */
     override fun CangJieTypeMarker.extractSizeForVArrayType(): Long {
         require(this is ConeVArrayType)
         return size
     }
 
+    /**
+     * 判断 rigid type 是否为 stub type。
+     */
     override fun RigidTypeMarker.isStubType(): Boolean = this is ConeStubType
 
+    /**
+     * 判断 stub type 是否用于子类型检查中的类型变量占位。
+     */
     override fun RigidTypeMarker.isStubTypeForVariableInSubtyping(): Boolean =
         this is ConeStubType && kind == ConeStubType.Kind.FOR_SUBTYPING
 
+    /**
+     * 判断 stub type 是否用于 builder inference。
+     */
     override fun RigidTypeMarker.isStubTypeForBuilderInference(): Boolean =
         this is ConeStubType && kind == ConeStubType.Kind.FOR_BUILDER_INFERENCE
 
+    /**
+     * 从 stub type constructor 中取回真实类型变量 constructor。
+     */
     override fun TypeConstructorMarker.unwrapStubTypeVariableConstructor(): ConeTypeConstructorMarker {
         require(this is ConeTypeConstructorMarker)
         if (this !is ConeStubTypeConstructor) return this
@@ -176,55 +234,103 @@ interface ConeTypeContext :
         return this.variable.typeConstructor
     }
 
+    /**
+     * 将类型本身作为类型实参 marker。
+     */
     override fun CangJieTypeMarker.asTypeArgument(): TypeArgumentMarker {
         require(this is ConeCangJieType)
         return this
     }
 
+    /**
+     * 从类型实参 marker 中取出类型。
+     */
     override fun TypeArgumentMarker.getType(): CangJieTypeMarker? {
         require(this is ConeTypeProjection)
         return type
     }
 
+    /**
+     * 返回替换为 [newType] 后的类型实参。
+     */
     override fun TypeArgumentMarker.replaceType(newType: CangJieTypeMarker): TypeArgumentMarker {
         require(newType is ConeCangJieType)
         return newType
     }
 
+    /**
+     * 提取 Option 类型的装箱元素类型。
+     */
     override fun CangJieTypeMarker.optionBoxedElementType(): CangJieTypeMarker? {
         val coneType = this as? ConeCangJieType ?: return null
         if (coneType.classId != StdlibClassIds.Option) return null
         return coneType.typeArguments.singleOrNull()?.type
     }
 
+    /**
+     * 返回类型构造器参数数量。
+     */
     override fun TypeConstructorMarker.parametersCount(): Int = getParameters().size
 
+    /**
+     * 返回指定索引处的类型构造器参数。
+     */
     override fun TypeConstructorMarker.getParameter(index: Int): TypeParameterMarker = getParameters()[index]
 
+    /**
+     * 当前仓颉 cone 类型系统未使用 Kotlin 的 integer literal constant constructor 标记。
+     */
     override fun TypeConstructorMarker.isIntegerLiteralConstantTypeConstructor(): Boolean = false
 
+    /**
+     * 当前仓颉 cone 类型系统未使用 integer constant operator constructor 标记。
+     */
     override fun TypeConstructorMarker.isIntegerConstantOperatorTypeConstructor(): Boolean = false
 
+    /**
+     * 仓颉当前没有匿名类型构造器。
+     */
     override fun TypeConstructorMarker.isAnonymous(): Boolean = false
 
+    /**
+     * 若构造器来自类型参数，则返回类型参数 marker。
+     */
     override fun TypeConstructorMarker.getTypeParameterClassifier(): TypeParameterMarker? =
         this as? ConeTypeParameterLookupTag
 
+    /**
+     * 判断构造器是否是类型参数构造器。
+     */
     override fun TypeConstructorMarker.isTypeParameterTypeConstructor(): Boolean =
         this is ConeTypeParameterLookupTag
 
+    /**
+     * 当前类型变量 constructor 不直接携带来源类型参数。
+     */
     override val TypeVariableTypeConstructorMarker.typeParameter: TypeParameterMarker?
         get() = null
 
+    /**
+     * 返回类型参数上界数量。
+     */
     override fun TypeParameterMarker.upperBoundCount(): Int = getUpperBounds().size
 
+    /**
+     * 返回指定索引的类型参数上界。
+     */
     override fun TypeParameterMarker.getUpperBound(index: Int): CangJieTypeMarker = getUpperBounds()[index]
 
+    /**
+     * 返回类型参数自身的类型构造器。
+     */
     override fun TypeParameterMarker.getTypeConstructor(): TypeConstructorMarker {
         require(this is ConeTypeParameterLookupTag)
         return this
     }
 
+    /**
+     * 判断类型参数是否包含递归上界。
+     */
     override fun TypeParameterMarker.hasRecursiveBounds(selfConstructor: TypeConstructorMarker?): Boolean {
         require(this is ConeTypeParameterLookupTag)
         this.typeParameterSymbol.lazyResolveToPhase(CfirResolvePhase.TYPES)
@@ -233,25 +339,50 @@ interface ConeTypeContext :
                     && (selfConstructor == null || typeRef.coneType.typeConstructor() == selfConstructor)
         }
     }
+
+    /**
+     * 返回类型参数已解析上界。
+     */
     @Suppress("NOTHING_TO_INLINE")
     private inline fun ConeTypeParameterLookupTag.bounds(): List<CfirTypeRef> = symbol.resolvedBounds
 
+    /**
+     * 判断两个类型构造器是否相同。
+     */
     override fun areEqualTypeConstructors(c1: TypeConstructorMarker, c2: TypeConstructorMarker): Boolean = c1 == c2
 
+    /**
+     * 快速查找当前 rigid type 中与 [constructor] 对应的父类型。
+     */
     override fun RigidTypeMarker.fastCorrespondingSupertypes(constructor: TypeConstructorMarker): List<SimpleTypeMarker>? {
         val type = this as? ConeCangJieType ?: return null
         cTypeCorrespondingSupertype(type, constructor)?.let { return listOf(it) }
 
-        val correspondingSupertypes = session.typeAwareSupertypeProviderOrNull
-            ?.getDirectSupertypes(type)
-            .orEmpty()
-            .mapNotNull { supertype ->
-                val rigidSupertype = supertype as? ConeRigidType ?: return@mapNotNull null
-                rigidSupertype.takeIf { areEqualTypeConstructors(it.typeConstructor(), constructor) }
+        val supertypeProvider = session.typeAwareSupertypeProviderOrNull ?: return null
+        val correspondingSupertypes = mutableListOf<SimpleTypeMarker>()
+        val visitedTypes = linkedSetOf<ConeCangJieType>()
+        val queue = ArrayDeque<ConeCangJieType>()
+        queue += type
+
+        while (queue.isNotEmpty()) {
+            val current = queue.removeFirst()
+            if (!visitedTypes.add(current)) continue
+
+            for (supertype in supertypeProvider.getDirectSupertypes(current)) {
+                val rigidSupertype = supertype as? ConeRigidType ?: continue
+                if (areEqualTypeConstructors(rigidSupertype.typeConstructor(), constructor)) {
+                    correspondingSupertypes += rigidSupertype
+                }
+                queue += rigidSupertype
             }
+        }
+
         return correspondingSupertypes.takeIf { it.isNotEmpty() }
     }
 
+    /**
+     * 如果 [type] 满足 `CType`，为其合成标准库 `CType` 接口父类型。
+     */
     private fun cTypeCorrespondingSupertype(
         type: ConeCangJieType,
         constructor: TypeConstructorMarker,
@@ -262,6 +393,9 @@ interface ConeTypeContext :
         return ConeClassLikeType(lookupTag = lookupTag, isInterface = true)
     }
 
+    /**
+     * 返回 ideal/integer literal 类型可能对应的具体类型集合。
+     */
     override fun RigidTypeMarker.possibleIntegerTypes(): Collection<CangJieTypeMarker> =
         when (this) {
             is ConeIdealLiteralType -> possibleTypes
@@ -274,6 +408,9 @@ interface ConeTypeContext :
         }
 
 
+    /**
+     * 解析声明侧直接父类型。
+     */
     private fun resolveDeclaredSupertypes(classId: ClassId): List<ConeCangJieType> {
         val classSymbol = runCatching { session.symbolProvider.getClassLikeSymbolByClassId(classId) }.getOrNull()
             ?: return emptyList()

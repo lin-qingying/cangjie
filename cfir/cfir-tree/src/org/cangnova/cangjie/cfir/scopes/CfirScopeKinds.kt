@@ -33,35 +33,62 @@ import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
 import org.cangnova.cangjie.name.Name
 
-/** 包级 scope，解析包内的顶级声明 */
+/**
+ * 包级 scope，解析包内的顶级声明。
+ */
 abstract class CfirPackageScope : CfirContainingNamesAwareScope() {
+    /**
+     * 包级 scope 默认不能迁移 session。
+     */
     override fun withReplacedSessionOrNull(newSession: CfirSession, newScopeSession: ScopeSession): CfirPackageScope? = null
 }
 
-/** 类级 scope，解析类内部的成员声明 */
+/**
+ * 类级 scope，解析类内部的成员声明。
+ */
 abstract class CfirClassScope : CfirContainingNamesAwareScope() {
+    /**
+     * 类级 scope 默认不能迁移 session。
+     */
     override fun withReplacedSessionOrNull(
         newSession: CfirSession,
         newScopeSession: ScopeSession,
     ): CfirContainingNamesAwareScope? = null
 }
 
-/** import scope，解析通过 import 引入的声明 */
+/**
+ * import scope，解析通过 import 引入的声明。
+ */
 abstract class CfirImportScope : CfirScope() {
+    /**
+     * import scope 默认不能迁移 session。
+     */
     override fun withReplacedSessionOrNull(newSession: CfirSession, newScopeSession: ScopeSession): CfirScope? = null
 }
 
 
-/** extend scope，解析 extend 声明引入的成员 */
+/**
+ * extend scope，解析 extend 声明引入的成员。
+ */
 abstract class CfirExtendScope : CfirScope() {
+    /**
+     * extend scope 默认不能迁移 session。
+     */
     override fun withReplacedSessionOrNull(newSession: CfirSession, newScopeSession: ScopeSession): CfirScope? = null
 }
 
-/** 类型参数 scope，解析泛型类/函数中的类型参数名称 */
+/**
+ * 类型参数 scope，解析泛型类/函数中的类型参数名称。
+ */
 abstract class CfirTypeParameterScope : CfirContainingNamesAwareScope() {
-    /** 按名称处理类型参数符号 */
+    /**
+     * 按名称处理类型参数符号。
+     */
     open fun processTypeParametersByName(name: Name, processor: (CfirTypeParameterSymbol) -> Unit) {}
 
+    /**
+     * 类型参数 scope 默认不能迁移 session。
+     */
     override fun withReplacedSessionOrNull(
         newSession: CfirSession,
         newScopeSession: ScopeSession,
@@ -70,27 +97,47 @@ abstract class CfirTypeParameterScope : CfirContainingNamesAwareScope() {
 
 /**
  * 组合 scope，将多个 scope 合并为一个。
+ *
+ * @property scopes 按查询顺序排列的子 scope 列表。
  */
 class CfirCompositeScope(private val scopes: List<CfirScope>) : CfirScope() {
 
+    /**
+     * 使用 vararg 子 scope 创建组合 scope。
+     */
     constructor(vararg scopes: CfirScope) : this(scopes.toList())
 
+    /**
+     * 依次在所有子 scope 中处理 classifier 查询。
+     */
     override fun processClassifiersByName(name: Name, processor: (CfirClassLikeSymbol<*>) -> Unit) {
         for (scope in scopes) scope.processClassifiersByName(name, processor)
     }
 
+    /**
+     * 依次在所有子 scope 中处理函数查询。
+     */
     override fun processFunctionsByName(name: Name, processor: (CfirNamedFunctionSymbol) -> Unit) {
         for (scope in scopes) scope.processFunctionsByName(name, processor)
     }
 
+    /**
+     * 依次在所有子 scope 中处理属性查询。
+     */
     override fun processPropertiesByName(name: Name, processor: (CfirPropertySymbol) -> Unit) {
         for (scope in scopes) scope.processPropertiesByName(name, processor)
     }
 
+    /**
+     * 依次在所有子 scope 中处理 callable 查询。
+     */
     override fun processCallablesByName(name: Name, processor: (CfirCallableSymbol<*>) -> Unit) {
         for (scope in scopes) scope.processCallablesByName(name, processor)
     }
 
+    /**
+     * 尝试迁移所有子 scope；任一子 scope 不能迁移时返回 `null`。
+     */
     override fun withReplacedSessionOrNull(newSession: CfirSession, newScopeSession: ScopeSession): CfirScope? {
         val newScopes = scopes.mapNotNull { it.withReplacedSessionOrNull(newSession, newScopeSession) }
         return if (newScopes.size == scopes.size) CfirCompositeScope(newScopes) else null

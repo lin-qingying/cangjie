@@ -37,6 +37,12 @@ import org.cangnova.cangjie.cfir.types.typeContext
  * 检查 `return expr` 中 `expr` 的类型是否为所在函数返回类型的子类型。
  */
 object CfirReturnTypeMismatchChecker : CfirReturnExpressionChecker( ) {
+    /**
+     * 检查 `return` 表达式结果类型是否兼容目标函数返回类型。
+     *
+     * 错误函数、main、macro、隐式返回和 lambda 的 Unit 兼容场景会提前跳过；其余类型不兼容
+     * 通过专门诊断或通用返回类型 mismatch 诊断报告。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirReturnExpression) {
         val result = expression.result ?: return
@@ -117,6 +123,11 @@ object CfirReturnTypeMismatchChecker : CfirReturnExpressionChecker( ) {
     }
 }
 
+/**
+ * 提取 Range 类型的元素类型。
+ *
+ * class-like、struct 和 typealias 三种表示都可能承载标准库 Range。
+ */
 private fun org.cangnova.cangjie.cfir.types.ConeCangJieType?.rangeElementTypeOrNull(): org.cangnova.cangjie.cfir.types.ConeCangJieType? = when (this) {
     is ConeClassLikeType -> if (classId == StdlibClassIds.Range) typeArguments.singleOrNull()?.type else null
     is ConeStructType -> if (classId == StdlibClassIds.Range) typeArguments.singleOrNull()?.type else null

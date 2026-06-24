@@ -34,7 +34,6 @@ import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
-import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.name.SpecialNames
@@ -61,27 +60,43 @@ object CfirFunctionOverloadChecker : CfirSimpleFunctionChecker() {
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkStaticNonStaticOverloadConflict(function: CfirNamedFunction) {
-        val ownerClassId = function.symbol.callableId.classId ?: return
-        val owner = context.session.symbolProvider
-            .getClassLikeSymbolByClassId(ownerClassId)?.cfir as? CfirClassLikeDeclaration ?: return
+        if (!function.status.isStatic) return
 
-        val isStatic = function.status.isStatic
+        val ownerDeclarations = functionOwnerDeclarations() ?: return
         val functionName = function.name
 
-        // 在同一类型的声明中查找同名但 static 属性不同的函数
-        val hasConflict = owner.declarations.any { sibling ->
-            sibling is CfirNamedFunction &&
-                    sibling !== function &&
-                    sibling.name == functionName &&
-                    sibling.status.isStatic != isStatic
-        }
+        val firstNonStatic = ownerDeclarations
+            .filterIsInstance<CfirNamedFunction>()
+            .firstOrNull { sibling ->
+                sibling.name == functionName &&
+                    !sibling.status.isStatic
+            }
 
-        if (hasConflict) {
+        if (firstNonStatic != null) {
             reporter.reportOn(
                 source = function.source,
                 factory = CfirErrors.STATIC_FUNCTION_OVERLOAD_CONFLICTS,
                 a = functionName,
             )
+        }
+    }
+
+    /**
+     * static/non-static 重载冲突按声明作用域分组。
+     *
+     * extend 成员不是被扩展类型的物理 class member，不能通过 callableId.classId 回查 owner；
+     * 这里使用 checker 上下文中的最近类型/extend 声明，和官方 PreCheck 的 scopeName 分组一致。
+     */
+    context(context: CheckerContext)
+    private fun functionOwnerDeclarations(): List<CfirDeclaration>? {
+        val owner = context.findClosestDeclaration<CfirDeclaration> { declaration ->
+            declaration is CfirClassLikeDeclaration || declaration is CfirExtend
+        } ?: return null
+
+        return when (owner) {
+            is CfirClassLikeDeclaration -> owner.declarations
+            is CfirExtend -> owner.declarations
+            else -> null
         }
     }
 }
@@ -306,20 +321,22 @@ object CfirPropertyAccessorDeclarationChecker : CfirPropertyAccessorChecker() {
 object CfirDefaultParameterChecker : CfirSimpleFunctionChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirNamedFunction) {
-        val hasDefaultParam = declaration.valueParameters.any { it.defaultValue != null }
-        if (!hasDefaultParam) return
-
+        val defaultParameters = declaration.valueParameters.filter { it.defaultValue != null }
+        if (defaultParameters.isEmpty()) return
+        val ownerIsInterface = context.findClosestDeclaration<CfirInterface>() != null
         val kind = when {
             declaration.status.isOperator -> "operator overloading"
             declaration.status.isForeign -> "foreign"
             declaration.status.isOpen -> "'open'"
-            declaration.status.isAbstract -> "abstract"
+            declaration.status.isAbstract || ownerIsInterface -> "abstract"
             else -> return
         }
-        reporter.reportOn(
-            source = declaration.source,
-            factory = CfirErrors.CANNOT_HAVE_DEFAULT_PARAM,
-            a = kind,
-        )
+        for (parameter in defaultParameters) {
+            reporter.reportOn(
+                source = parameter.source ?: declaration.source,
+                factory = CfirErrors.CANNOT_HAVE_DEFAULT_PARAM,
+                a = kind,
+            )
+        }
     }
 }

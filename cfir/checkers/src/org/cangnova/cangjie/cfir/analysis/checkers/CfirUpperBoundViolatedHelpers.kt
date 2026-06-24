@@ -16,11 +16,15 @@ import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.CfirUserTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.ConeAnyType
+import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeClassifierType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
 import org.cangnova.cangjie.cfir.types.ConeTypeContext
+import org.cangnova.cangjie.cfir.types.StdlibClassIds
 import org.cangnova.cangjie.cfir.types.abbreviatedType
+import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.createTypeSubstitutorByTypeConstructor
 import org.cangnova.cangjie.cfir.types.type
@@ -232,9 +236,23 @@ private fun checkUpperBoundViolated(
     }
 }
 
+context(context: CheckerContext)
 private fun ConeCangJieType.isGenericTypeWithInvalidUpperBound(): Boolean {
     val typeParameterType = this as? ConeTypeParameterType ?: return false
-    return typeParameterType.lookupTag.typeParameterSymbol.resolvedBounds.any { it.coneType is ConeErrorType }
+    return typeParameterType.lookupTag.typeParameterSymbol.resolvedBounds.any { bound ->
+        val boundType = bound.coneType
+        if (boundType is ConeErrorType) return@any true
+        !boundType.isLegalGenericUpperBound()
+    }
+}
+
+context(context: CheckerContext)
+private fun ConeCangJieType.isLegalGenericUpperBound(): Boolean {
+    val expandedType = fullyExpandedType(context.session)
+    if (expandedType is ConeClassLikeType || expandedType == ConeAnyType) return true
+
+    val classId = expandedType.classIdOrPrimitiveClassId
+    return classId == StdlibClassIds.Any || classId != null && CfirExtendSemantics.isCType(classId)
 }
 
 private fun CfirTypeRef?.originalUserTypeRef(): CfirUserTypeRef? =

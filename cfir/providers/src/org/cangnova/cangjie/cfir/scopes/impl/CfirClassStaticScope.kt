@@ -27,12 +27,15 @@ package org.cangnova.cangjie.cfir.scopes.impl
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.ScopeSessionKey
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
+import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityFileScope
+import org.cangnova.cangjie.cfir.resolve.providers.isBareOrDeclarationSelfTypeOf
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.scopes.CfirContainingNamesAwareScope
 import org.cangnova.cangjie.cfir.scopes.scopeSessionKey
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
 import org.cangnova.cangjie.cfir.session.extendProvider
+import org.cangnova.cangjie.cfir.session.services.CfirExtendTargetKey
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
@@ -42,8 +45,10 @@ import org.cangnova.cangjie.cfir.types.ConeLookupTagBasedType
 import org.cangnova.cangjie.cfir.types.ConeTypeVariableType
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.types.collectUpperBounds
+import org.cangnova.cangjie.cfir.types.extendTargetKey
 import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.name.ClassId
+import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 
 /**
@@ -54,20 +59,41 @@ import org.cangnova.cangjie.name.Name
  * `CfirClassSubstitutionScope`。
  */
 class CfirClassStaticScope(
+    /**
+     * 已完成 use-site 和类型替换的委托 scope。
+     */
     private val delegateScope: CfirContainingNamesAwareScope,
 ) : CfirContainingNamesAwareScope() {
+    /**
+     * 返回委托 scope 的 callable 名称集合。
+     */
     override fun getCallableNames(): Set<Name> = delegateScope.getCallableNames()
 
+    /**
+     * 返回委托 scope 的 classifier 名称集合。
+     */
     override fun getClassifierNames(): Set<Name> = delegateScope.getClassifierNames()
 
+    /**
+     * 判断委托 scope 是否可能包含指定名称。
+     */
     override fun mayContainName(name: Name): Boolean = delegateScope.mayContainName(name)
 
+    /**
+     * 返回委托 scope owner lookup 名称。
+     */
     override val scopeOwnerLookupNames: List<String>
         get() = delegateScope.scopeOwnerLookupNames
 
+    /**
+     * 返回委托 scope 是否确定没有静态成员。
+     */
     override val hasDefinitelyNoStaticMembers: Boolean
         get() = delegateScope.hasDefinitelyNoStaticMembers
 
+    /**
+     * 透传 classifier + substitutor 查询。
+     */
     override fun processClassifiersByNameWithSubstitution(
         name: Name,
         processor: (CfirClassifierSymbol<*>, ConeSubstitutor) -> Unit,
@@ -75,10 +101,16 @@ class CfirClassStaticScope(
         delegateScope.processClassifiersByNameWithSubstitution(name, processor)
     }
 
+    /**
+     * 透传 classifier 查询。
+     */
     override fun processClassifiersByName(name: Name, processor: (CfirClassLikeSymbol<*>) -> Unit) {
         delegateScope.processClassifiersByName(name, processor)
     }
 
+    /**
+     * 只处理静态函数。
+     */
     override fun processFunctionsByName(name: Name, processor: (CfirNamedFunctionSymbol) -> Unit) {
         delegateScope.processFunctionsByName(name) { function ->
             if (function.isStaticCallableForClassQualifier()) {
@@ -87,6 +119,9 @@ class CfirClassStaticScope(
         }
     }
 
+    /**
+     * 只处理静态属性。
+     */
     override fun processPropertiesByName(name: Name, processor: (CfirPropertySymbol) -> Unit) {
         delegateScope.processPropertiesByName(name) { property ->
             if (property.isStaticCallableForClassQualifier()) {
@@ -95,6 +130,9 @@ class CfirClassStaticScope(
         }
     }
 
+    /**
+     * 只处理静态 callable。
+     */
     override fun processCallablesByName(name: Name, processor: (CfirCallableSymbol<*>) -> Unit) {
         delegateScope.processCallablesByName(name) { callable ->
             if (callable.isStaticCallableForClassQualifier()) {
@@ -103,6 +141,9 @@ class CfirClassStaticScope(
         }
     }
 
+    /**
+     * 替换委托 scope 的 session 后重建 static scope。
+     */
     override fun withReplacedSessionOrNull(
         newSession: CfirSession,
         newScopeSession: ScopeSession,
@@ -110,6 +151,9 @@ class CfirClassStaticScope(
         delegateScope.withReplacedSessionOrNull(newSession, newScopeSession)?.let(::CfirClassStaticScope)
 }
 
+/**
+ * 返回类型参数 qualifier 的静态 scope。
+ */
 fun CfirTypeParameterSymbol.staticScopeForQualifierType(
     session: CfirSession,
     scopeSession: ScopeSession,
@@ -127,17 +171,21 @@ fun CfirTypeParameterSymbol.staticScopeForQualifierType(
         }
     }
 
+/**
+ * 返回 class-like qualifier 的静态 scope。
+ */
 fun CfirClassLikeSymbol<*>.staticScopeForQualifierType(
     session: CfirSession,
     scopeSession: ScopeSession,
     qualifierType: ConeCangJieType = constructType(),
 ): CfirContainingNamesAwareScope {
     val expandedQualifierType = qualifierType.fullyExpandedType(session)
-    val cacheKey = StaticScopeForQualifierTypeKey(classId, expandedQualifierType)
+    val useSitePackage = CfirAccessibilityFileScope.currentPackageFqName()
+    val cacheKey = StaticScopeForQualifierTypeKey(classId, expandedQualifierType, useSitePackage)
     return scopeSession.getOrBuild(cacheKey, StaticScopeForQualifierTypeScopeKey) {
         val allowBareGenericStaticQualifierExtends =
             expandedQualifierType is ConeLookupTagBasedType &&
-                    expandedQualifierType.typeArguments.isEmpty() &&
+                    expandedQualifierType.isBareOrDeclarationSelfTypeOf(this) &&
                     cfir.typeParameters.isNotEmpty()
         val useSiteScope = CfirClassUseSiteMemberScope(
             session = session,
@@ -149,11 +197,44 @@ fun CfirClassLikeSymbol<*>.staticScopeForQualifierType(
             dispatchReceiverType = expandedQualifierType,
             scopeKind = CfirClassMemberScopeKind.USE_SITE,
             allowBareGenericStaticQualifierExtends = allowBareGenericStaticQualifierExtends,
+            useSitePackage = useSitePackage,
         )
         CfirClassStaticScope(CfirClassSubstitutionScope(session, useSiteScope, expandedQualifierType))
     }
 }
 
+/**
+ * 返回没有 class-like symbol 的内建类型 qualifier 的静态 scope。
+ *
+ * `CPointer<T>` / `CString` 在官方前端通过 `builtinTyToExtendMap`
+ * 查询 extend 成员；它们没有 ClassId，不能复用 class-like static scope。
+ */
+fun ConeCangJieType.staticScopeForBuiltinQualifierType(
+    session: CfirSession,
+    scopeSession: ScopeSession,
+): CfirContainingNamesAwareScope? {
+    val expandedQualifierType = fullyExpandedType(session)
+    val targetKey = expandedQualifierType.extendTargetKey ?: return null
+    if (targetKey is CfirExtendTargetKey.ClassLike) return null
+
+    val useSitePackage = CfirAccessibilityFileScope.currentPackageFqName()
+    val cacheKey = StaticScopeForBuiltinQualifierTypeKey(targetKey, expandedQualifierType, useSitePackage)
+    return scopeSession.getOrBuild(cacheKey, StaticScopeForBuiltinQualifierTypeScopeKey) {
+        CfirClassStaticScope(
+            CfirExtendMemberScope(
+                targetKey = targetKey,
+                extendProvider = session.extendProvider,
+                session = session,
+                receiverType = expandedQualifierType,
+                useSitePackage = useSitePackage,
+            )
+        )
+    }
+}
+
+/**
+ * 根据类型参数上界恢复可用于静态查询的 scope。
+ */
 private fun ConeCangJieType.staticScopeForUpperBound(
     session: CfirSession,
     scopeSession: ScopeSession,
@@ -180,41 +261,83 @@ private fun ConeCangJieType.staticScopeForUpperBound(
     }
 }
 
+/**
+ * 空的 containing-names-aware scope。
+ */
 private object CfirEmptyContainingNamesAwareScope : CfirContainingNamesAwareScope() {
+    /**
+     * 空 scope 没有 callable 名称。
+     */
     override fun getCallableNames(): Set<Name> = emptySet()
 
+    /**
+     * 空 scope 没有 classifier 名称。
+     */
     override fun getClassifierNames(): Set<Name> = emptySet()
 
+    /**
+     * 空 scope 确定没有静态成员。
+     */
     override val hasDefinitelyNoStaticMembers: Boolean
         get() = true
 
+    /**
+     * 空 scope 不包含任何名称。
+     */
     override fun mayContainName(name: Name): Boolean = false
 
+    /**
+     * 空 scope 跨 session 替换仍返回自身。
+     */
     override fun withReplacedSessionOrNull(
         newSession: CfirSession,
         newScopeSession: ScopeSession,
     ): CfirContainingNamesAwareScope = this
 }
 
+/**
+ * 多个 containing-names-aware scope 的组合。
+ */
 private class CfirCompositeContainingNamesAwareScope(
+    /**
+     * 被组合的 scope 列表。
+     */
     private val scopes: List<CfirContainingNamesAwareScope>,
 ) : CfirContainingNamesAwareScope() {
+    /**
+     * 返回 callable 名称并集。
+     */
     override fun getCallableNames(): Set<Name> = buildSet {
         scopes.forEach { addAll(it.getCallableNames()) }
     }
 
+    /**
+     * 返回 classifier 名称并集。
+     */
     override fun getClassifierNames(): Set<Name> = buildSet {
         scopes.forEach { addAll(it.getClassifierNames()) }
     }
 
+    /**
+     * 所有子 scope 都确定无静态成员时为 `true`。
+     */
     override val hasDefinitelyNoStaticMembers: Boolean
         get() = scopes.all { it.hasDefinitelyNoStaticMembers }
 
+    /**
+     * 合并所有子 scope owner lookup 名称。
+     */
     override val scopeOwnerLookupNames: List<String>
         get() = scopes.flatMap { it.scopeOwnerLookupNames }
 
+    /**
+     * 任意子 scope 可能包含指定名称时为 `true`。
+     */
     override fun mayContainName(name: Name): Boolean = scopes.any { it.mayContainName(name) }
 
+    /**
+     * 在所有子 scope 中处理 classifier + substitutor。
+     */
     override fun processClassifiersByNameWithSubstitution(
         name: Name,
         processor: (CfirClassifierSymbol<*>, ConeSubstitutor) -> Unit,
@@ -222,22 +345,37 @@ private class CfirCompositeContainingNamesAwareScope(
         scopes.forEach { it.processClassifiersByNameWithSubstitution(name, processor) }
     }
 
+    /**
+     * 在所有子 scope 中处理 classifier。
+     */
     override fun processClassifiersByName(name: Name, processor: (CfirClassLikeSymbol<*>) -> Unit) {
         scopes.forEach { it.processClassifiersByName(name, processor) }
     }
 
+    /**
+     * 在所有子 scope 中处理函数。
+     */
     override fun processFunctionsByName(name: Name, processor: (CfirNamedFunctionSymbol) -> Unit) {
         scopes.forEach { it.processFunctionsByName(name, processor) }
     }
 
+    /**
+     * 在所有子 scope 中处理属性。
+     */
     override fun processPropertiesByName(name: Name, processor: (CfirPropertySymbol) -> Unit) {
         scopes.forEach { it.processPropertiesByName(name, processor) }
     }
 
+    /**
+     * 在所有子 scope 中处理 callable。
+     */
     override fun processCallablesByName(name: Name, processor: (CfirCallableSymbol<*>) -> Unit) {
         scopes.forEach { it.processCallablesByName(name, processor) }
     }
 
+    /**
+     * 替换所有子 scope 的 session 后重建组合 scope。
+     */
     override fun withReplacedSessionOrNull(
         newSession: CfirSession,
         newScopeSession: ScopeSession,
@@ -251,6 +389,9 @@ private class CfirCompositeContainingNamesAwareScope(
     }
 }
 
+/**
+ * 判断 callable 是否可通过 class qualifier 作为静态成员访问。
+ */
 private fun CfirCallableSymbol<*>.isStaticCallableForClassQualifier(): Boolean {
     if (this is CfirEnumConstructorSymbol) return true
     if (this !is CfirNamedFunctionSymbol && this !is CfirPropertySymbol && this !is CfirFieldVariableSymbol) {
@@ -261,13 +402,42 @@ private fun CfirCallableSymbol<*>.isStaticCallableForClassQualifier(): Boolean {
     return cfir.status.isStatic
 }
 
+/**
+ * class-like qualifier static scope 的缓存 key。
+ *
+ * @property classId qualifier class id。
+ * @property qualifierType qualifier 的具体类型。
+ * @property useSitePackage 当前 use-site 包名。
+ */
 private data class StaticScopeForQualifierTypeKey(
     val classId: ClassId,
     val qualifierType: ConeCangJieType,
+    val useSitePackage: FqName?,
 )
 
+/**
+ * non-class built-in qualifier static scope 的缓存 key。
+ */
+private data class StaticScopeForBuiltinQualifierTypeKey(
+    val targetKey: CfirExtendTargetKey,
+    val qualifierType: ConeCangJieType,
+    val useSitePackage: FqName?,
+)
+
+/**
+ * class-like qualifier static scope 的 ScopeSession key。
+ */
 private val StaticScopeForQualifierTypeScopeKey: ScopeSessionKey<StaticScopeForQualifierTypeKey, CfirContainingNamesAwareScope> =
     scopeSessionKey()
 
+/**
+ * non-class built-in qualifier static scope 的 ScopeSession key。
+ */
+private val StaticScopeForBuiltinQualifierTypeScopeKey: ScopeSessionKey<StaticScopeForBuiltinQualifierTypeKey, CfirContainingNamesAwareScope> =
+    scopeSessionKey()
+
+/**
+ * 类型参数 qualifier static scope 的 ScopeSession key。
+ */
 private val StaticScopeForTypeParameterQualifierScopeKey: ScopeSessionKey<CfirTypeParameterSymbol, CfirContainingNamesAwareScope> =
     scopeSessionKey()

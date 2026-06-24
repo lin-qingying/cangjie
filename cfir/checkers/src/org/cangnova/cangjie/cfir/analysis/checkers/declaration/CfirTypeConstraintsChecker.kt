@@ -8,7 +8,16 @@ import org.cangnova.cangjie.cfir.declarations.typeConstraintDiagnosticData
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 
+/**
+ * 泛型 where 约束声明检查器。
+ *
+ * 该检查器处理 raw/build 阶段记录的 type constraint 诊断数据，确保约束中的名字必须来自当前
+ * 声明的类型参数列表。
+ */
 object CfirTypeConstraintsChecker : CfirBasicDeclarationChecker() {
+    /**
+     * 检查声明是否带有悬空 type constraint。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirDeclaration) {
         val owner = declaration as? CfirTypeParameterRefsOwner ?: return
@@ -17,6 +26,9 @@ object CfirTypeConstraintsChecker : CfirBasicDeclarationChecker() {
         reportDanglingTypeConstraints(owner, diagnosticData)
     }
 
+    /**
+     * 报告约束中引用了非类型参数名字的错误。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun reportDanglingTypeConstraints(
         owner: CfirTypeParameterRefsOwner,

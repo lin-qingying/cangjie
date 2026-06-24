@@ -26,6 +26,7 @@ package org.cangnova.cangjie.cfir.analysis.diagnostics
 
 import com.intellij.psi.PsiElement
 import com.intellij.psi.util.PsiTreeUtil
+import org.cangnova.cangjie.cfir.analysis.checkers.declaration.inheritanceCycleDiagnosticSource
 import org.cangnova.cangjie.cfir.calls.resolvedQualifierClassifier
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.diagnostic.*
@@ -51,7 +52,9 @@ import org.cangnova.cangjie.cfir.session.languageVersionSettings
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.types.*
+import org.cangnova.cangjie.cfir.unwrapSubstitutionOverrides
 import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
+import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.OperatorNameConventions
 import org.cangnova.cangjie.psi.*
@@ -78,9 +81,35 @@ fun ConeDiagnostic.toCfirDiagnostics(
         is ConeInapplicableCandidateError -> mapInapplicableCandidateError(session, source, callOrAssignmentSource)
         is ConeAmbiguityError -> mapConeAmbiguityError(source, callOrAssignmentSource, session)
         is ConeUnresolvedNameError -> mapConeUnresolvedNameError(source, callOrAssignmentSource, session)
+        is ConeHiddenCandidateError -> mapConeHiddenCandidateError(source, callOrAssignmentSource, session)
         is ConeVisibilityError -> listOfNotNull(mapConeVisibilityError(source, callOrAssignmentSource, session))
         else -> listOfNotNull(mapOtherDiagnostic(source, valueParameter, callOrAssignmentSource, session))
     }
+}
+
+/**
+ * 不可见函数候选在官方调用流程中会被过滤出可调用集合，
+ * 最终表现为普通函数调用 no-match；属性/变量访问不走这条映射。
+ */
+private fun ConeHiddenCandidateError.mapConeHiddenCandidateError(
+    source: CjSourceElement?,
+    callOrAssignmentSource: CjSourceElement?,
+    session: CfirSession,
+): List<CjDiagnostic> {
+    if (candidate.callInfo.callSite !is CfirFunctionCall) {
+        return emptyList()
+    }
+
+    val diagnosticSource = source
+        ?: callOrAssignmentSource
+        ?: candidate.callInfo.callSite.source
+        ?: return emptyList()
+    return listOfNotNull(
+        CfirErrors.NO_MATCH_FUNCTION_DECLARATION_FOR_CALL.on(
+            diagnosticSource.firstCharacterDiagnosticSource(),
+            session,
+        )
+    )
 }
 
 private fun ConstraintSystemError.mapConstraintSystemError(
@@ -733,6 +762,16 @@ private fun argumentTypeMismatch(
         )
     }
 
+    if (source.isTupleEqualityExpression()) {
+        return CfirErrors.TYPE_MISMATCH.on(
+            source,
+            expectedType,
+            actualType,
+            isMismatchDueToNullability,
+            session,
+        )
+    }
+
     return CfirErrors.ARGUMENT_TYPE_MISMATCH.on(
         source,
         expectedType,
@@ -740,6 +779,30 @@ private fun argumentTypeMismatch(
         isMismatchDueToNullability,
         session,
     )
+}
+
+private fun CjSourceElement.isTupleEqualityExpression(): Boolean {
+    val binaryExpression = psi as? CjBinaryExpression
+    if (binaryExpression != null) {
+        if (binaryExpression.operationToken != CjTokens.EQEQ &&
+            binaryExpression.operationToken != CjTokens.EXCLEQ
+        ) {
+            return false
+        }
+        return binaryExpression.left is CjTupleExpression && binaryExpression.right is CjTupleExpression
+    }
+
+    val sourceText = text?.toString()?.trim() ?: return false
+    val operator = when {
+        "==" in sourceText -> "=="
+        "!=" in sourceText -> "!="
+        else -> return false
+    }
+    val operands = sourceText.split(operator, limit = 2)
+    return operands.size == 2 && operands.all { operand ->
+        val trimmed = operand.trim()
+        trimmed.startsWith("(") && trimmed.endsWith(")") && "," in trimmed
+    }
 }
 
 /**
@@ -850,6 +913,10 @@ private fun ConeAmbiguityError.mapConeAmbiguityError(
     val psi = diagnosticSource.psi
     val isCallLikeContext = psi is CjCallExpression || PsiTreeUtil.getParentOfType(psi, CjCallExpression::class.java, false) != null
 
+    invalidBinaryOperatorDiagnosticForOperatorAmbiguity(source, diagnosticSource, session)?.let { diagnostic ->
+        return listOf(diagnostic)
+    }
+
     // 检查是否为基本类型扩展歧义
     if (isCallLike || isCallLikeContext) {
         val extendOriginNames = candidateSymbols
@@ -873,6 +940,29 @@ private fun ConeAmbiguityError.mapConeAmbiguityError(
 
     val factory = if (isCallLike || isCallLikeContext) CfirErrors.AMBIGUOUS_FUNCTION_CALL else CfirErrors.AMBIGUOUS_USE
     return listOfNotNull(factory.on(diagnosticSource, name, session))
+}
+
+private fun ConeAmbiguityError.invalidBinaryOperatorDiagnosticForOperatorAmbiguity(
+    source: CjSourceElement?,
+    diagnosticSource: CjSourceElement,
+    session: CfirSession,
+): CjDiagnostic? {
+    val operatorToken = OperatorNameConventions.TOKENS_BY_OPERATOR_NAME[name] ?: return null
+    val candidate = candidates.filterIsInstance<AbstractCallCandidate<*>>()
+        .firstOrNull { candidate ->
+            candidate.callInfo.origin == CfirFunctionCallOrigin.Operator &&
+                    candidate.callInfo.arguments.size == 1
+        } ?: return null
+    val leftType = candidate.callInfo.explicitReceiver?.coneTypeOrNull ?: return null
+    val rightType = candidate.callInfo.arguments.singleOrNull()?.coneTypeOrNull ?: return null
+    if (leftType !is ConePrimitiveType || rightType !is ConePrimitiveType) return null
+    return CfirErrors.INVALID_BINARY_OPERATOR.on(
+        source ?: diagnosticSource,
+        operatorToken,
+        leftType.renderInvalidBinaryOperatorType(session),
+        rightType.renderInvalidBinaryOperatorType(session),
+        session,
+    )
 }
 
 private fun CfirCallableSymbol<*>.primitiveExtendReceiverName(session: CfirSession): Name? {
@@ -930,7 +1020,7 @@ private fun ConeUnresolvedNameError.mapConeUnresolvedNameError(
         return listOf(diagnostic)
     }
 
-    // 当有明确接收者类型但成员未找到时，优先报告 NOT_MEMBER_OF
+    // 当有明确名义接收者类型但成员未找到时，优先报告 NOT_MEMBER_OF
     mapNotMemberOfDiagnostic(source, callOrAssignmentSource, session)?.let { diagnostic ->
         return listOf(diagnostic)
     }
@@ -1015,9 +1105,10 @@ private fun ConeUnresolvedNameError.mapGenericUpperBoundAccessDiagnostic(
 }
 
 /**
- * 当接收者类型存在且非类型参数时，将 unresolved name 映射为 NOT_MEMBER_OF。
+ * 当接收者类型存在、非类型参数且是名义类型时，将 unresolved name 映射为 NOT_MEMBER_OF。
  *
- * 对齐 C++ sema_not_member_of: 'xxx' is not a member of 'Yyy'。
+ * 对齐官方 `DiagMemberAccessNotFound`：只有 `baseExpr->ty->IsNominal()` 时才报告
+ * `sema_not_member_of`；primitive、tuple、function 等非名义类型继续报告 unresolved。
  */
 private fun ConeUnresolvedNameError.mapNotMemberOfDiagnostic(
     source: CjSourceElement?,
@@ -1030,8 +1121,16 @@ private fun ConeUnresolvedNameError.mapNotMemberOfDiagnostic(
     // 二元运算符已由 buildInvalidBinaryOperatorDiagnostic 处理
     if (operator != null) return null
 
+    val nominalReceiver = receiver.fullyExpandedType(session)
+    if (nominalReceiver !is ConeClassLikeType &&
+        nominalReceiver !is ConeStructType &&
+        nominalReceiver !is ConeEnumType
+    ) {
+        return null
+    }
+
     val diagnosticSource = source ?: callOrAssignmentSource ?: return null
-    val typeName = receiver.classIdOrPrimitiveClassId?.shortClassName ?: return null
+    val typeName = nominalReceiver.classIdOrPrimitiveClassId?.shortClassName ?: return null
     val kind = if (argumentTypes.isNotEmpty()) "method" else "member"
 
     return CfirErrors.NOT_MEMBER_OF.on(
@@ -1127,7 +1226,10 @@ private fun ConeVisibilityError.mapConeVisibilityError(
         else -> "invisible"
     }
     val isMemberAccess = when (invisibleSymbol) {
-        is CfirCallableSymbol<*> -> session.cfirProvider.getContainingClass(invisibleSymbol) != null
+        is CfirCallableSymbol<*> -> {
+            session.cfirProvider.getContainingClass(invisibleSymbol) != null ||
+                    session.extendProvider.getContainingExtend(invisibleSymbol.unwrapSubstitutionOverrides()) != null
+        }
         else -> false
     }
 
@@ -1279,6 +1381,9 @@ private fun ConeDiagnostic.mapOtherDiagnostic(
             }
 
             DiagnosticKind.LoopInSupertype ->
+                CfirErrors.INHERITANCE_CYCLE.on(diagnosticSource.inheritanceCycleDiagnosticSource(), session)
+
+            DiagnosticKind.SupertypeSelfReference ->
                 CfirErrors.SUPER_TYPES_SELF_REFERENCE.on(diagnosticSource, diagnosticSource.toApproxTypeName(), session)
 
             DiagnosticKind.DuplicateSupertype -> null

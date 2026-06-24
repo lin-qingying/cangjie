@@ -8,15 +8,24 @@ import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.lazyDeclarationResolver
 
 /**
- * Coordinates diagnostic collection by creating a visitor and running it on declarations.
- * The structure follows Kotlin FIR's AbstractDiagnosticCollector while keeping the reporter
- * threaded through the context for the current CFIR pipeline.
+ * CFIR 诊断收集器基类，负责创建 visitor 并驱动声明树遍历。
+ *
+ * 结构对齐 Kotlin FIR `AbstractDiagnosticCollector`，但 reporter 会沿当前 CFIR
+ * checker context 传递，保证 pending 诊断在同一流水线中提交。
+ *
+ * @property session 当前诊断收集所属的 CFIR session。
+ * @property scopeSession 本次诊断收集使用的作用域缓存 session。
+ * @property createComponents 根据 pending reporter 创建诊断组件集合的工厂。
  */
 abstract class AbstractDiagnosticCollector(
+    /** 当前诊断收集所属的 CFIR session。 */
     override val session: CfirSession,
+    /** 本次诊断收集使用的作用域缓存 session。 */
     override val scopeSession: ScopeSession = ScopeSession(),
+    /** 根据 pending reporter 创建诊断组件集合的工厂。 */
     protected val createComponents: (PendingDiagnosticReporter) -> DiagnosticCollectorComponents,
 ) : SessionAndScopeSessionHolder {
+    /** 对一个 CFIR 声明子树执行完整诊断收集流程。 */
     fun collectDiagnostics(cfirDeclaration: CfirDeclaration, reporter: PendingDiagnosticReporter) {
         val components = createComponents(reporter)
         val visitor = createVisitor(components, reporter)
@@ -26,11 +35,13 @@ abstract class AbstractDiagnosticCollector(
         }
     }
 
+    /** 仅执行不依赖具体声明节点的 session/语言设置诊断检查。 */
     fun collectDiagnosticsInSettings(reporter: PendingDiagnosticReporter) {
         val visitor = createVisitor(createComponents(reporter), reporter)
         visitor.checkSettings()
     }
 
+    /** 为当前诊断收集创建实际遍历 CFIR 树的 visitor。 */
     protected abstract fun createVisitor(
         components: DiagnosticCollectorComponents,
         reporter: PendingDiagnosticReporter,

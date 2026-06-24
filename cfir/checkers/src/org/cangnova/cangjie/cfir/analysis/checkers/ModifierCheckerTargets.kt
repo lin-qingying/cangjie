@@ -34,6 +34,12 @@ import org.cangnova.cangjie.lexer.CjTokens.*
 import org.cangnova.cangjie.source.CjFakeSourceElementKind
 import java.util.*
 
+/**
+ * 修饰符和注解目标检查使用的仓颉声明目标分类。
+ *
+ * @property description 诊断消息中展示的目标描述。
+ * @property isDefault 该目标是否可作为默认目标参与诊断展示。
+ */
 internal enum class CangJieTarget(val description: String, val isDefault: Boolean = true) {
     CLASS("class"),
     EXTEND("extend"),
@@ -82,16 +88,26 @@ internal enum class CangJieTarget(val description: String, val isDefault: Boolea
     TYPE("type usage", false),
     ;
 
+    /** 常用目标组合和 class-like 实际目标分类工具。 */
     companion object {
+        /** class 声明默认目标组合。 */
         val CLASS_LIST = listOf(CLASS_ONLY, CLASS)
+        /** struct 声明默认目标组合。 */
         val STRUCT_LIST = listOf(STRUCT, CLASS)
+        /** interface 声明默认目标组合。 */
         val INTERFACE_LIST = listOf(INTERFACE, CLASS)
+        /** enum 声明默认目标组合。 */
         val ENUM_LIST = listOf(ENUM, CLASS)
+        /** enum 构造器默认目标组合。 */
         val ENUM_ENTRY_LIST = listOf(ENUM_ENTRY, PROPERTY, VARIABLE, FIELD)
+        /** extend 声明默认目标组合。 */
         val EXTEND_LIST = listOf(EXTEND)
+        /** 函数默认目标组合。 */
         val FUNCTION_LIST = listOf(FUNCTION)
+        /** 文件默认目标组合。 */
         val FILE_LIST = listOf(FILE)
 
+        /** 根据 class-like 声明的具体种类返回其实际目标组合。 */
         fun classActualTargets(owner: CfirClassLikeDeclaration): List<CangJieTarget> = when (owner) {
             is CfirClass -> CLASS_LIST
             is CfirStruct -> STRUCT_LIST
@@ -102,6 +118,7 @@ internal enum class CangJieTarget(val description: String, val isDefault: Boolea
     }
 }
 
+/** visibility 修饰符默认允许出现的声明目标集合。 */
 private val defaultVisibilityTargets: Set<CangJieTarget> = EnumSet.of(
     CangJieTarget.CLASS_ONLY,
     CangJieTarget.STRUCT,
@@ -118,8 +135,10 @@ private val defaultVisibilityTargets: Set<CangJieTarget> = EnumSet.of(
     CangJieTarget.TYPEALIAS,
 )
 
+/** 已弃用的父目标约束表；当前仓颉主干没有启用项。 */
 internal val deprecatedParentTargetMap: Map<CjKeywordToken, Set<CangJieTarget>> = emptyMap()
 
+/** 每个修饰符允许出现的直接声明目标集合。 */
 internal val possibleTargetMap: Map<CjKeywordToken, Set<CangJieTarget>> = mapOf(
     STATIC_KEYWORD to EnumSet.of(
         CangJieTarget.MEMBER_FUNCTION,
@@ -217,25 +236,32 @@ internal val possibleTargetMap: Map<CjKeywordToken, Set<CangJieTarget>> = mapOf(
     ),
 )
 
+/** 已弃用的直接目标约束表；当前仓颉主干没有启用项。 */
 internal val deprecatedTargetMap: Map<CjKeywordToken, Set<CangJieTarget>> = emptyMap()
 
+/** 在允许目标内仍然属于冗余的修饰符目标表。 */
 internal val redundantTargetMap: Map<CjKeywordToken, Set<CangJieTarget>> = mapOf(
     OPEN_KEYWORD to EnumSet.of(CangJieTarget.INTERFACE),
 )
 
+/** 需要结合父目标和语言版本设置判定的修饰符目标谓词。 */
 internal interface TargetAllowedPredicate {
+    /** 判断修饰符是否允许出现在指定父目标下。 */
     fun isAllowed(target: CangJieTarget, languageVersionSettings: LanguageVersionSettings): Boolean
 }
 
+/** 创建一个只允许给定目标集合的父目标谓词。 */
 private fun always(target: CangJieTarget, vararg targets: CangJieTarget): TargetAllowedPredicate {
     val targetSet = EnumSet.of(target, *targets)
     return object : TargetAllowedPredicate {
+        /** 判断目标是否属于构造时捕获的允许集合。 */
         override fun isAllowed(target: CangJieTarget, languageVersionSettings: LanguageVersionSettings): Boolean {
             return target in targetSet
         }
     }
 }
 
+/** 每个修饰符允许出现的父声明目标谓词表。 */
 internal val possibleParentTargetPredicateMap: Map<CjKeywordToken, TargetAllowedPredicate> = mapOf(
     OVERRIDE_KEYWORD to always(
         CangJieTarget.CLASS_ONLY,
@@ -268,6 +294,7 @@ internal val possibleParentTargetPredicateMap: Map<CjKeywordToken, TargetAllowed
     ),
 )
 
+/** 根据当前声明节点和外层 context 推导实际修饰符目标列表。 */
 internal fun CheckerContext.actualTargetsFor(declaration: CfirDeclaration): List<CangJieTarget> = when (declaration) {
     is CfirClassLikeDeclaration -> CangJieTarget.classActualTargets(declaration)
     is CfirExtend -> CangJieTarget.EXTEND_LIST
@@ -313,6 +340,7 @@ internal fun CheckerContext.actualTargetsFor(declaration: CfirDeclaration): List
     else -> AnnotationTargetLists.EMPTY.defaultTargets
 }
 
+/** 根据当前声明栈推导修饰符所在父级声明的目标列表。 */
 internal fun CheckerContext.actualParentTargets(): List<CangJieTarget> = when (val parent = closestModifierContainingDeclaration()) {
     is CfirClassLikeDeclaration -> CangJieTarget.classActualTargets(parent)
     is CfirExtend -> CangJieTarget.EXTEND_LIST
@@ -322,6 +350,7 @@ internal fun CheckerContext.actualParentTargets(): List<CangJieTarget> = when (v
     else -> CangJieTarget.FILE_LIST
 }
 
+/** 查找对修饰符归属有意义的最近外层声明。 */
 private fun CheckerContext.closestModifierContainingDeclaration(): CfirDeclaration? =
     containingDeclarations.asReversed().firstOrNull { declaration ->
         // 对齐 Kotlin FirModifierChecker：属性参数修饰符的包含声明应越过主构造和 fake property，落到外层类型。
@@ -330,13 +359,16 @@ private fun CheckerContext.closestModifierContainingDeclaration(): CfirDeclarati
                 declaration.source?.kind !is CjFakeSourceElementKind
     }
 
+/** 返回目标列表的首个描述；列表为空时使用通用 `this` 描述。 */
 internal fun List<CangJieTarget>.firstOrThisDescription(): String = firstOrNull()?.description ?: "this"
 
+/** 查找最近的 class-like 或 extend 声明。 */
 private fun CheckerContext.closestContainingTypeDeclaration(): CfirDeclaration? =
     findClosestDeclaration<CfirDeclaration> { declaration ->
         declaration is CfirClassLikeDeclaration || declaration is CfirExtend
     }
 
+/** 根据函数所处位置区分顶层、局部、匿名和各类成员函数目标。 */
 private fun CheckerContext.classifyFunctionTargets(function: CfirFunction): List<CangJieTarget> = when {
     function is CfirAnonymousFunction -> AnnotationTargetLists.T_FUNCTION_EXPRESSION.defaultTargets
     function.isLocal -> AnnotationTargetLists.T_LOCAL_FUNCTION.defaultTargets
@@ -349,23 +381,39 @@ private fun CheckerContext.classifyFunctionTargets(function: CfirFunction): List
     else -> AnnotationTargetLists.T_TOP_LEVEL_FUNCTION.defaultTargets
 }
 
+/** 一个声明形态对应的默认目标和附加目标列表。 */
 private class AnnotationTargetList(
+    /** 该声明形态直接拥有的默认目标。 */
     val defaultTargets: List<CangJieTarget>,
+    /** 可被 use-site 或属性展开替换的附加目标。 */
     val canBeSubstituted: List<CangJieTarget> = emptyList(),
+    /** 只能通过显式 use-site target 使用的目标。 */
     val onlyWithUseSiteTarget: List<CangJieTarget> = emptyList(),
 )
 
+/** 仓颉各类声明形态到注解/修饰符目标列表的集中定义。 */
 private object AnnotationTargetLists {
+    /** 成员字段变量的目标列表。 */
     val T_MEMBER_VARIABLE = targetList(CangJieTarget.MEMBER_VARIABLE, CangJieTarget.VARIABLE)
+    /** 普通成员属性的目标列表。 */
     val T_MEMBER_PROPERTY = targetList(CangJieTarget.MEMBER_PROPERTY, CangJieTarget.PROPERTY)
+    /** struct 成员属性的目标列表。 */
     val T_STRUCT_MEMBER_PROPERTY = targetList(CangJieTarget.STRUCT_MEMBER_PROPERTY, *T_MEMBER_PROPERTY.defaultTargets.toTypedArray())
+    /** class 成员属性的目标列表。 */
     val T_CLASS_MEMBER_PROPERTY = targetList(CangJieTarget.CLASS_MEMBER_PROPERTY, *T_MEMBER_PROPERTY.defaultTargets.toTypedArray())
+    /** enum 成员属性的目标列表。 */
     val T_ENUM_MEMBER_PROPERTY = targetList(CangJieTarget.ENUM_MEMBER_PROPERTY, *T_MEMBER_PROPERTY.defaultTargets.toTypedArray())
+    /** extend 成员属性的目标列表。 */
     val T_EXTEND_MEMBER_PROPERTY = targetList(CangJieTarget.EXTEND_MEMBER_PROPERTY, *T_MEMBER_PROPERTY.defaultTargets.toTypedArray())
+    /** interface 成员属性的目标列表。 */
     val T_INTERFACE_MEMBER_PROPERTY = targetList(CangJieTarget.INTERFACE_MEMBER_PROPERTY, *T_MEMBER_PROPERTY.defaultTargets.toTypedArray())
+    /** 局部变量的目标列表。 */
     val T_LOCAL_VARIABLE = targetList(CangJieTarget.LOCAL_VARIABLE)
+    /** 顶层变量的目标列表。 */
     val T_TOP_LEVEL_VARIABLE = targetList(CangJieTarget.TOP_LEVEL_VARIABLE, CangJieTarget.VARIABLE)
+    /** 不带 `let` 对应属性的值参数目标列表。 */
     val T_VALUE_PARAMETER_WITHOUT_LET = targetList(CangJieTarget.VALUE_PARAMETER)
+    /** 带 `let` 对应属性的值参数目标列表。 */
     val T_VALUE_PARAMETER_WITH_LET = targetList(
         CangJieTarget.VALUE_PARAMETER,
         CangJieTarget.VARIABLE,
@@ -373,45 +421,68 @@ private object AnnotationTargetLists {
     ) {
         extraTargets(CangJieTarget.FIELD)
     }
+    /** 普通构造器目标列表。 */
     val T_CONSTRUCTOR = targetList(CangJieTarget.CONSTRUCTOR)
+    /** 静态初始化器目标列表。 */
     val T_STATIC_INITIALIZER = targetList(CangJieTarget.STATIC_INITIALIZER)
+    /** macro 声明目标列表。 */
     val T_MACRO = targetList(CangJieTarget.MACRO)
+    /** 函数表达式目标列表。 */
     val T_FUNCTION_EXPRESSION = targetList(
         CangJieTarget.ANONYMOUS_FUNCTION,
         CangJieTarget.FUNCTION,
         CangJieTarget.EXPRESSION,
     )
+    /** 局部函数目标列表。 */
     val T_LOCAL_FUNCTION = targetList(CangJieTarget.LOCAL_FUNCTION, CangJieTarget.FUNCTION)
+    /** 普通成员函数目标列表。 */
     val T_MEMBER_FUNCTION = targetList(CangJieTarget.MEMBER_FUNCTION, CangJieTarget.FUNCTION)
+    /** 顶层函数目标列表。 */
     val T_TOP_LEVEL_FUNCTION = targetList(CangJieTarget.TOP_LEVEL_FUNCTION, CangJieTarget.FUNCTION)
+    /** struct 成员函数目标列表。 */
     val T_STRUCT_MEMBER_FUNCTION = targetList(CangJieTarget.STRUCT_MEMBER_FUNCTION, *T_MEMBER_FUNCTION.defaultTargets.toTypedArray())
+    /** class 成员函数目标列表。 */
     val T_CLASS_MEMBER_FUNCTION = targetList(CangJieTarget.CLASS_MEMBER_FUNCTION, *T_MEMBER_FUNCTION.defaultTargets.toTypedArray())
+    /** enum 成员函数目标列表。 */
     val T_ENUM_MEMBER_FUNCTION = targetList(CangJieTarget.ENUM_MEMBER_FUNCTION, *T_MEMBER_FUNCTION.defaultTargets.toTypedArray())
+    /** interface 成员函数目标列表。 */
     val T_INTERFACE_MEMBER_FUNCTION = targetList(CangJieTarget.INTERFACE_MEMBER_FUNCTION, *T_MEMBER_FUNCTION.defaultTargets.toTypedArray())
+    /** extend 成员函数目标列表。 */
     val T_EXTEND_MEMBER_FUNCTION = targetList(CangJieTarget.EXTEND_MEMBER_FUNCTION, *T_MEMBER_FUNCTION.defaultTargets.toTypedArray())
+    /** 类型别名目标列表。 */
     val T_TYPEALIAS = targetList(CangJieTarget.TYPEALIAS)
+    /** 文件目标列表。 */
     val T_FILE = targetList(CangJieTarget.FILE)
+    /** 类型参数目标列表。 */
     val T_TYPE_PARAMETER = targetList(CangJieTarget.TYPE_PARAMETER)
+    /** 空目标列表，用于不支持修饰符目标的声明。 */
     val EMPTY = targetList()
 
+    /** 创建一个目标列表并应用额外目标配置。 */
     private fun targetList(vararg targets: CangJieTarget, otherTargets: TargetListBuilder.() -> Unit = {}): AnnotationTargetList {
         val builder = TargetListBuilder(*targets)
         builder.otherTargets()
         return builder.build()
     }
 
+    /** 目标列表构造器，用于记录默认目标和可替换目标。 */
     private class TargetListBuilder(vararg val defaultTargets: CangJieTarget) {
+        /** 可被替换出的附加目标。 */
         private var canBeSubstituted: List<CangJieTarget> = emptyList()
+        /** 只能通过显式 use-site target 使用的目标。 */
         private var onlyWithUseSiteTarget: List<CangJieTarget> = emptyList()
 
+        /** 注册可被替换出的附加目标。 */
         fun extraTargets(vararg targets: CangJieTarget) {
             canBeSubstituted = targets.toList()
         }
 
+        /** 注册只能通过显式 use-site target 使用的目标。 */
         fun onlyWithUseSiteTarget(vararg targets: CangJieTarget) {
             onlyWithUseSiteTarget = targets.toList()
         }
 
+        /** 构造不可变的目标列表。 */
         fun build(): AnnotationTargetList = AnnotationTargetList(defaultTargets.toList(), canBeSubstituted, onlyWithUseSiteTarget)
     }
 }

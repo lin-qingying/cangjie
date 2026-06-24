@@ -33,5 +33,5 @@ extend<<!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>T<!>> A<T> where T <: String {
 }
 
 class C<<!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>T<!>> where T <: Int64 {
-    public static var a: <!STATIC_VARIABLE_USE_GENERIC_PARAMETER!>A<T><!> = A<T>()
+    public static var a: <!STATIC_VARIABLE_USE_GENERIC_PARAMETER!>A<T><!> = <!STATIC_VARIABLE_USE_GENERIC_PARAMETER!>A<T>()<!>
 }

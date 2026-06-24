@@ -12,20 +12,28 @@ import org.cangnova.cangjie.cfir.types.ConeCangJieType
  * 从而可在 resolve/checkers 间共享实现。
  */
 interface ExhaustivenessChecker {
+    /**
+     * 对模式矩阵执行穷尽性检查。
+     */
     fun check(
         matrix: CfirMatrix,
         type: ConeCangJieType,
         context: MatchExhaustivenessContext,
     ): ExhaustivenessResult
 
+    /**
+     * 判断当前 checker 是否适用于给定类型与模式集合。
+     */
     fun isApplicable(
         type: ConeCangJieType,
         patterns: List<CfirMatchPattern>,
         context: MatchExhaustivenessContext,
     ): Boolean
 
+    /** 当前 checker 的来源标识。 */
     val source: CheckSource
 
+    /** 当前 checker 在混合调度中的优先级。 */
     val priority: Int
         get() = when (source) {
             CheckSource.TRIVIAL -> 0
@@ -40,6 +48,17 @@ interface ExhaustivenessChecker {
         }
 }
 
+/**
+ * 模式复杂度统计结果。
+ *
+ * @property maxNestingDepth 最大模式嵌套深度。
+ * @property hasOrPattern 是否包含 or-pattern。
+ * @property hasGuard 是否包含 guard。
+ * @property hasSlicePattern 是否包含 slice 模式。
+ * @property hasRangePattern 是否包含 range 模式。
+ * @property totalPatterns 模式总数。
+ * @property distinctConstructors 不同构造器数量。
+ */
 data class PatternComplexity(
     val maxNestingDepth: Int,
     val hasOrPattern: Boolean,
@@ -49,19 +68,27 @@ data class PatternComplexity(
     val totalPatterns: Int,
     val distinctConstructors: Int,
 ) {
+    /** 是否可由轻量专用 checker 处理。 */
     val isSimple: Boolean
         get() = maxNestingDepth <= 2 &&
             !hasOrPattern &&
             !hasGuard &&
             !hasSlicePattern
 
+    /** 是否需要完整 Maranget 算法处理。 */
     val needsFullMaranget: Boolean
         get() = maxNestingDepth > 3 ||
             hasGuard ||
             hasSlicePattern ||
             (hasOrPattern && maxNestingDepth > 1)
 
+    /**
+     * 模式复杂度分析工具。
+     */
     companion object {
+        /**
+         * 分析模式集合复杂度。
+         */
         fun analyze(patterns: List<CfirMatchPattern>): PatternComplexity {
             var maxDepth = 0
             var hasOr = false
@@ -70,6 +97,9 @@ data class PatternComplexity(
             var hasRange = false
             val constructors = mutableSetOf<Any>()
 
+            /**
+             * 递归分析单个模式。
+             */
             fun analyzePattern(pattern: CfirMatchPattern, depth: Int) {
                 maxDepth = maxOf(maxDepth, depth)
                 pattern.constructors.forEach { constructors.add(it) }

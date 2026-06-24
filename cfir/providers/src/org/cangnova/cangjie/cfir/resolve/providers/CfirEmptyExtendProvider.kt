@@ -10,11 +10,23 @@ import org.cangnova.cangjie.name.FqName
  * 最小可用的 extend provider。
  */
 class CfirEmptyExtendProvider : CfirExtendProvider {
+    /**
+     * 空 provider 不包含任何目标 key 匹配的 extend。
+     */
     override fun getExtendsForTarget(targetKey: CfirExtendTargetKey): List<CfirExtend> = emptyList()
 
+    /**
+     * 空 provider 不包含任何 class extend。
+     */
     override fun getExtendsForClass(classId: ClassId): List<CfirExtend> = emptyList()
 
+    /**
+     * 空 provider 不包含任何包内 extend。
+     */
     override fun getExtendsInPackage(packageFqName: FqName): List<CfirExtend> = emptyList()
 
+    /**
+     * 空 provider 不包含任何 builtin primitive extend。
+     */
     override fun getExtendsForBuiltinType(kind: PrimitiveTypeKind): List<CfirExtend> = emptyList()
 }

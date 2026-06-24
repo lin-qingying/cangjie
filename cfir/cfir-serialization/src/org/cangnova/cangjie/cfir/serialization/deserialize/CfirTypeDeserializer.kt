@@ -39,24 +39,33 @@ import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.cfir.types.impl.CfirResolvedTypeRefImpl
 import org.cangnova.cangjie.name.Name
 
+/** 构造最小 Cone 诊断对象，用于反序列化无法恢复类型时保留错误原因。 */
 private fun simpleDiagnostic(reason: String): ConeDiagnostic = object : ConeDiagnostic {
     override val reason: String = reason
 }
 
+/** 构造错误类型，并可选择保留被代理的原始类型。 */
 private fun errorType(reason: String, delegatedType: ConeCangJieType? = null): ConeErrorType =
     ConeErrorType(simpleDiagnostic(reason), delegatedType = delegatedType)
 
 /**
- * Deserializes flatbuffer SemaTy into ConeCangJieType.
+ * 将 FlatBuffers 中的 [SemaTy] 反序列化为 CFIR Cone 类型。
+ *
+ * 类型反序列化必须复用当前包中已经 materialized 的类型参数 symbol，
+ * 否则 callable 签名中的泛型参数会和声明列表中的类型参数失去身份一致性。
  */
 @OptIn(CfirImplementationDetail::class)
 class CfirTypeDeserializer(
+    /** 当前 `.cjo` 包的反序列化上下文与共享缓存。 */
     private val context: CfirDeserializationContext,
 ) {
+    /** 当前调用栈正在反序列化的 `allTypes` 索引集合，用于检测递归类型引用。 */
     private val typesUnderDeserialization = HashSet<Int>()
 
     /**
-     * Deserialize one type index from `allTypes`.
+     * 从 `allTypes` 中反序列化单个类型索引。
+     *
+     * 该入口负责缓存复用、并发锁定与递归引用降级；真正的类型 kind 分派在 [convertSemaTy] 中完成。
      */
     fun deserializeType(typeIndex: Int): ConeCangJieType {
         context.typeCache[typeIndex]?.let { return it }
@@ -82,13 +91,16 @@ class CfirTypeDeserializer(
     }
 
     /**
-     * Deserialize type from 1-based type field.
+     * 从 `.cjo` 中 1-based 类型字段反序列化类型。
+     *
+     * 官方二进制格式用 `0` 表示 Unit/缺省类型，非零值需要减一后进入 `allTypes`。
      */
     fun deserializeTypeFromField(typeFieldValue: UInt): ConeCangJieType {
         if (typeFieldValue == 0u) return ConePrimitiveType.UNIT
         return deserializeType((typeFieldValue - 1u).toInt())
     }
 
+    /** 按 [SemaTy.kind] 分派具体类型反序列化逻辑。 */
     private fun convertSemaTy(semaTy: SemaTy): ConeCangJieType {
         return when (semaTy.kind) {
             TypeKind.Unit -> ConePrimitiveType.UNIT
@@ -130,6 +142,7 @@ class CfirTypeDeserializer(
         }
     }
 
+    /** 反序列化 [SemaTy] 携带的类型实参数组。 */
     private fun deserializeTypeArgs(semaTy: SemaTy): List<ConeTypeProjection> {
         val len = semaTy.typeArgsLength
         if (len == 0) return emptyList()
@@ -138,6 +151,7 @@ class CfirTypeDeserializer(
         }
     }
 
+    /** 反序列化 class/interface 类型，并通过 [FullId] 解析其 [org.cangnova.cangjie.name.ClassId]。 */
     private fun convertClassType(semaTy: SemaTy, isInterface: Boolean): ConeCangJieType {
         val info = semaTy.info(CompositeTyInfo()) as? CompositeTyInfo
             ?: return errorType("Class/Interface missing CompositeTyInfo")
@@ -153,6 +167,7 @@ class CfirTypeDeserializer(
         )
     }
 
+    /** 反序列化 struct 类型。 */
     private fun convertStructType(semaTy: SemaTy): ConeCangJieType {
         val info = semaTy.info(CompositeTyInfo()) as? CompositeTyInfo
             ?: return errorType("Struct missing CompositeTyInfo")
@@ -166,6 +181,7 @@ class CfirTypeDeserializer(
         )
     }
 
+    /** 反序列化 enum 类型。 */
     private fun convertEnumType(semaTy: SemaTy): ConeCangJieType {
         val info = semaTy.info(CompositeTyInfo()) as? CompositeTyInfo
             ?: return errorType("Enum missing CompositeTyInfo")
@@ -179,6 +195,7 @@ class CfirTypeDeserializer(
         )
     }
 
+    /** 反序列化函数类型，保留 C 函数与变长参数标志。 */
     private fun convertFuncType(semaTy: SemaTy): ConeCangJieType {
         val info = semaTy.info(FuncTyInfo()) as? FuncTyInfo
             ?: return errorType("Func missing FuncTyInfo")
@@ -192,10 +209,12 @@ class CfirTypeDeserializer(
         )
     }
 
+    /** 反序列化 tuple 类型。 */
     private fun convertTupleType(semaTy: SemaTy): ConeCangJieType {
         return ConeTupleType(elementTypes = deserializeTypeArgs(semaTy).map { it.type })
     }
 
+    /** 反序列化 Array 类型，并映射到标准库 `Array` class-like 类型。 */
     private fun convertArrayType(semaTy: SemaTy): ConeCangJieType {
         val elementProjection = deserializeTypeArgs(semaTy).singleOrNull()
             ?: errorType("Array missing element type")
@@ -205,6 +224,7 @@ class CfirTypeDeserializer(
         )
     }
 
+    /** 反序列化定长 VArray 类型，保留元素类型与尺寸。 */
     private fun convertVArrayType(semaTy: SemaTy): ConeCangJieType {
         val elementType = deserializeTypeArgs(semaTy).singleOrNull()?.type
             ?: errorType("VArray missing element type")
@@ -213,11 +233,17 @@ class CfirTypeDeserializer(
         return ConeVArrayType(elementType = elementType, size = size)
     }
 
+    /** 反序列化 C pointer 类型，缺失 pointee 时使用 Unit 维持错误恢复。 */
     private fun convertPointerType(semaTy: SemaTy): ConeCangJieType {
         val pointeeType = deserializeTypeArgs(semaTy).singleOrNull()?.type ?: ConePrimitiveType.UNIT
         return ConePointerType(pointeeType = pointeeType)
     }
 
+    /**
+     * 反序列化泛型类型参数引用。
+     *
+     * 当前包类型参数必须复用声明缓存中的 symbol；跨包或尚未 materialized 的类型参数才创建 synthetic symbol。
+     */
     private fun convertGenericType(semaTy: SemaTy): ConeCangJieType {
         val info = semaTy.info(GenericTyInfo()) as? GenericTyInfo
             ?: return errorType("Generic missing GenericTyInfo")
@@ -247,6 +273,11 @@ class CfirTypeDeserializer(
         return declaration.symbol
     }
 
+    /**
+     * 为递归类型引用创建可继续传播的 fallback 类型。
+     *
+     * 泛型参数递归优先恢复类型参数 symbol，其他递归形态退化为带原因的错误类型。
+     */
     private fun createRecursiveTypeFallback(typeIndex: Int): ConeCangJieType {
         val semaTy = context.pkg.allTypes(typeIndex)
             ?: return errorType("Recursive type reference: $typeIndex")
@@ -280,6 +311,11 @@ class CfirTypeDeserializer(
         return declaration.symbol
     }
 
+    /**
+     * 为无法直接复用声明缓存的泛型参数创建 synthetic symbol。
+     *
+     * 该 symbol 会立即绑定一个最小 [CfirTypeParameter] 声明，使 Cone lookup tag 可被后续类型系统使用。
+     */
     private fun createSyntheticTypeParameterSymbol(
         name: Name,
         upperBounds: List<ConeCangJieType>,

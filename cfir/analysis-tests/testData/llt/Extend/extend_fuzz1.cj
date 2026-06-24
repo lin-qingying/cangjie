@@ -13,7 +13,7 @@ struct Point {
     }
 }
 
-extend Point <: <!EXTEND_NOT_INTERFACE!>Add<Point, <!UNDECLARED_TYPE_NAME!>P<!>oit><!> {
+extend Point <: <!EXTEND_NOT_INTERFACE!>Add<Point, <!UNDECLARED_TYPE_NAME!>Poit<!>><!> {
     public operator func +(right: Point): Point {
         Point(this.x + right.x, this.y + right.y)
     }

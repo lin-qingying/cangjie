@@ -59,18 +59,43 @@ fun reportMissingProgramEntryIfNeeded(
     )
 }
 
+/**
+ * 判断文件中是否包含程序入口函数。
+ */
 private fun CfirFile.hasProgramEntry(): Boolean =
     declarations.any { it is CfirMainFunction }
 
+/**
+ * 程序入口缺失诊断使用的最小上下文。
+ *
+ * @property session 当前 CFIR session，用于读取语言版本设置。
+ * @property file 诊断所在的第一个源码文件。
+ */
 private class ProgramEntryDiagnosticContext(
+    /**
+     * 当前 CFIR session。
+     */
     private val session: CfirSession,
+
+    /**
+     * 用于诊断定位的源码文件。
+     */
     private val file: CfirFile,
 ) : DiagnosticContext {
+    /**
+     * 当前会话的语言版本设置。
+     */
     override val languageVersionSettings: LanguageVersionSettings
         get() = session.languageVersionSettings
 
+    /**
+     * 当前文件路径。
+     */
     override val containingFilePath: String?
         get() = file.sourceFile?.path
 
+    /**
+     * 程序入口缺失诊断不在该上下文中做额外 suppress。
+     */
     override fun isDiagnosticSuppressed(diagnostic: CjDiagnostic): Boolean = false
 }

@@ -25,6 +25,7 @@
 package org.cangnova.cangjie.cfir.resolve.body
 
 import org.cangnova.cangjie.ImportPath
+import org.cangnova.cangjie.builtins.StandardNames
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.SessionHolder
 import org.cangnova.cangjie.cfir.calls.qualifierScopeOrNull
@@ -91,31 +92,52 @@ import org.cangnova.cangjie.type.AbstractTypeChecker
 import org.cangnova.cangjie.type.model.safeSubstitute
 import org.cangnova.cangjie.utils.runIf
 
+/**
+ * CFIR body resolve 阶段的统一调用解析入口。
+ *
+ * 该 resolver 负责把函数调用、命名值访问、构造调用、内建 Array/VArray/Pointer/CString
+ * 构造形式和 callable reference 候选都规整到同一套 tower resolve、candidate stage、
+ * overload reduction 和错误引用构造流程中。
+ */
 class CfirCallResolver(
+    /** Body resolve 阶段共享组件，提供 session、scope、候选阶段运行器和上下文状态。 */
     private val components: CfirAbstractBodyResolveTransformer.BodyResolveTransformerComponents,
+    /** 负责按 tower scope 收集候选的底层解析器，默认使用当前组件创建。 */
     private val towerResolver: CfirTowerResolver =
         CfirTowerResolver(components, components.resolutionStageRunner),
 ) : SessionHolder {
 
+    /** 当前解析 session。 */
     override val session: CfirSession get() = components.session
 
+    /** 表达式 transformer 由外部在构造后注入，用于递归解析 receiver、实参和局部表达式。 */
     private lateinit var transformer: CfirExpressionsResolveTransformer
 
+    /** 初始化与当前调用解析器互相递归依赖的表达式 transformer。 */
     fun initTransformer(transformer: CfirExpressionsResolveTransformer) {
         this.transformer = transformer
     }
 
+    /** 负责候选冲突规约和最具体候选选择的语义组件。 */
     val conflictResolver: ConeCallConflictResolver =
         session.callConflictResolverFactory.create(session.inferenceComponents, components)
 
+    /** 仅在需要根据 lambda body 进一步规约重载时延迟创建。 */
     private val overloadByLambdaBodyResolver: CfirOverloadByLambdaBodyResolver by lazy(LazyThreadSafetyMode.NONE) {
         CfirOverloadByLambdaBodyResolver(components, conflictResolver)
     }
 
+    /** 将 [ResolutionResult] 的适用性规约为候选收集是否成功。 */
     @ApplicabilityDetail
     private val ResolutionResult.isSuccess: Boolean
         get() = applicability.isSuccess
 
+    /**
+     * 解析函数调用并把最终候选或错误诊断写回 callee reference。
+     *
+     * 该入口覆盖普通函数、enum constructor、class constructor、同文件 classifier fallback、
+     * 内建 Array/VArray/Pointer/CString 构造以及 collection literal 外层候选语境。
+     */
     fun resolveCallAndSelectCandidate(
         functionCall: CfirFunctionCall,
         resolutionMode: ResolutionMode,
@@ -252,6 +274,12 @@ class CfirCallResolver(
         return functionCall
     }
 
+    /**
+     * 解析 `this(...)` / `super(...)` 委托构造调用。
+     *
+     * 目标 class-like 声明先 lazy resolve 到 TYPES，然后只从目标声明的构造器集合创建候选；
+     * 最终候选或构造器诊断会写回调用 callee。
+     */
     fun resolveDelegatingConstructorCallAndSelectCandidate(
         functionCall: CfirFunctionCall,
         targetDeclaration: CfirClassLikeDeclaration,
@@ -303,11 +331,18 @@ class CfirCallResolver(
         return functionCall
     }
 
+    /** 判断 classifier 或其 typealias 展开结果是否为标准库 `Array`。 */
     private fun CfirClassLikeSymbol<*>?.isStdlibArrayClassifier(): Boolean {
         val actualClassifier = (this as? CfirTypeAliasSymbol)?.fullyExpandedClass(session) ?: this
         return actualClassifier?.classId == StdlibClassIds.Array
     }
 
+    /**
+     * 解析命名值访问并选择候选。
+     *
+     * 该入口用于变量、属性、enum value、classifier 作为 receiver、package qualifier
+     * 以及函数名作为值的访问场景；返回值可能是原访问节点或带诊断的访问表达式。
+     */
     fun resolveNamedValueAccessAndSelectCandidate(
         qualifiedAccess: CfirQualifiedAccessExpression,
         isUsedAsReceiver: Boolean,
@@ -330,6 +365,7 @@ class CfirCallResolver(
             "resolveNamedValueAccessAndSelectCandidate(qualifiedAccess, isUsedAsReceiver, isUsedAsGetClassReceiver, callSite, resolutionMode)"
         ),
     )
+    /** 兼容旧命名的变量访问解析入口，实际委托到 [resolveNamedValueAccessAndSelectCandidate]。 */
     fun resolveVariableAccessAndSelectCandidate(
         qualifiedAccess: CfirQualifiedAccessExpression,
         isUsedAsReceiver: Boolean,
@@ -345,6 +381,12 @@ class CfirCallResolver(
             resolutionMode = resolutionMode,
         )
 
+    /**
+     * 命名值访问解析的实际实现。
+     *
+     * 这里统一处理显式 receiver、package qualifier、VArray.size、classifier/type parameter
+     * fallback、enum value fallback、候选过滤回调、错误引用构造和结果类型写回。
+     */
     @OptIn(ApplicabilityDetail::class)
     private fun resolveNamedValueAccessAndSelectCandidateImpl(
         qualifiedAccess: CfirQualifiedAccessExpression,
@@ -454,6 +496,10 @@ class CfirCallResolver(
                     return transformedAccess
                 }
             }
+
+            if (isUsedAsReceiver && !result.isSuccess) {
+                tryResolveSpecialBuiltinTypeQualifier(transformedAccess, callee)?.let { return it }
+            }
         }
 
         val shouldTryEnumValueAccess =
@@ -514,6 +560,38 @@ class CfirCallResolver(
         return transformedAccess
     }
 
+    /**
+     * 将没有 class-like symbol 的官方内建类型名解析为 qualifier carrier。
+     *
+     * `CString` 与 `CPointer<T>` 的 extend 成员由 built-in type key 查询；
+     * 若同名普通值、类型参数或 class-like 声明已解析成功，则调用方不会进入这里。
+     */
+    private fun tryResolveSpecialBuiltinTypeQualifier(
+        access: CfirQualifiedAccessExpression,
+        callee: CfirNamedReference,
+    ): CfirQualifiedAccessExpression? {
+        if (access.explicitReceiver != null) return null
+        val builtinType = when (callee.name) {
+            StandardNames.CSTRING -> {
+                if (access.typeArguments.isNotEmpty()) return null
+                ConeCStringType()
+            }
+            StandardNames.CPOINTER -> {
+                val pointeeTypeRef = access.typeArguments.singleOrNull() as? CfirResolvedTypeRef ?: return null
+                ConePointerType(pointeeTypeRef.coneType)
+            }
+            else -> return null
+        }
+        access.replaceConeTypeOrNull(builtinType)
+        return access
+    }
+
+    /**
+     * 将 body resolve 阶段的调用错误同步给 overload-by-lambda 上下文。
+     *
+     * 当 callee 已经是错误引用或选中候选未成功时，lambda body 规约需要知道当前候选含错误参数，
+     * 以避免后续把错误候选当成可继续推断的正常候选。
+     */
     private fun reportBodyResolutionErrorToOverloadByLambdaCandidate(
         reference: CfirReference,
         selectedCandidate: Candidate?,
@@ -523,6 +601,12 @@ class CfirCallResolver(
         }
     }
 
+    /**
+     * 收集一个访问表达式的全部候选，并标记哪些候选属于当前最佳候选集合。
+     *
+     * 该入口用于 IDE/分析 API 等需要展示完整 overload set 的场景；普通值访问无结果时，
+     * 会额外尝试函数调用 kind 以覆盖函数名作为值的候选。
+     */
     fun collectAllCandidates(
         qualifiedAccess: CfirQualifiedAccessExpression,
         name: Name,
@@ -560,10 +644,17 @@ class CfirCallResolver(
         }
     }
 
+    /**
+     * 在外层调用候选的约束系统中解析 postponed callable reference 参数。
+     *
+     * 每个 callable reference atom 可能有多种候选选择；这里逐 atom 扩展约束系统快照，
+     * 只有最终唯一组合成功时才把约束系统和表达式 callee reference 正式回写。
+     */
     internal fun resolveCallableReferenceArguments(
         containingCallCandidate: Candidate,
         atoms: List<ConeResolvedCallableReferenceAtom>,
     ): Boolean {
+        /** 一条 callable reference 部分解析路径的约束系统快照与已选候选。 */
         data class PartialResolution(
             val storage: ConstraintStorage,
             val choices: List<CallableReferenceChoice>,
@@ -604,12 +695,18 @@ class CfirCallResolver(
         return true
     }
 
+    /**
+     * 单个 callable reference atom 的候选选择结果。
+     *
+     * 该结构保存临时候选、表达式节点和结果函数类型，只有整组 callable reference 唯一成功后才会 apply。
+     */
     private data class CallableReferenceChoice(
         val atom: ConeResolvedCallableReferenceAtom,
         val expression: CfirNamedAccessExpression,
         val candidate: Candidate,
         val resultingType: ConeCangJieType,
     ) {
+        /** 将 callable reference 候选正式写回表达式和 atom 状态。 */
         fun apply() {
             val reference = expression.calleeReference as? CfirNamedReference ?: return
             candidate.updateSourcesOfReceivers()
@@ -626,6 +723,11 @@ class CfirCallResolver(
         }
     }
 
+    /**
+     * 为一个 callable reference atom 枚举在当前约束系统快照下可成功的候选选择。
+     *
+     * expected type 会先按外层候选约束系统替换，再用 candidate factory 复制原候选并完整跑 stages。
+     */
     private fun callableReferenceChoices(
         containingCallCandidate: Candidate,
         atom: ConeResolvedCallableReferenceAtom,
@@ -649,6 +751,11 @@ class CfirCallResolver(
         }
     }
 
+    /**
+     * 计算 callable reference 的当前 expected type。
+     *
+     * revised expected type 优先于原始 expected type，并会通过外层约束系统当前 substitutor 替换。
+     */
     private fun ConeResolvedCallableReferenceAtom.expectedTypeForCallableReference(
         baseSystem: ConstraintStorage,
     ): ConeCangJieType? {
@@ -659,6 +766,11 @@ class CfirCallResolver(
         return substitutor.substituteOrSelf(rawExpectedType)
     }
 
+    /**
+     * 从 callable reference 表达式已有 callee reference 中提取候选。
+     *
+     * 已选候选直接复用；歧义错误只保留函数声明候选，避免把非 callable 值混入 callable reference 解析。
+     */
     private fun CfirNamedAccessExpression.callableReferenceCandidates(): List<Candidate> {
         return when (val reference = calleeReference) {
             is CfirNamedReferenceWithCandidate -> listOf(reference.candidate)
@@ -672,6 +784,11 @@ class CfirCallResolver(
         }
     }
 
+    /**
+     * 为 callable reference 候选重跑构造 call info。
+     *
+     * callable reference 在这里按 named value access 处理，实参为空，expected type 作为解析模式传入。
+     */
     private fun CfirNamedAccessExpression.callableReferenceCallInfo(
         expectedType: ConeCangJieType,
     ): CallInfo {
@@ -691,6 +808,12 @@ class CfirCallResolver(
         )
     }
 
+    /**
+     * 从 CFIR 访问表达式构造 [CallInfo] 并收集候选。
+     *
+     * call kind 可由调用节点、强制参数或 collection literal 外层上下文决定；
+     * 该函数只负责构造解析输入，实际 tower resolve 与候选规约委托给另一个 overload。
+     */
     private fun collectCandidates(
         qualifiedAccess: CfirQualifiedAccessExpression,
         name: Name,
@@ -734,6 +857,12 @@ class CfirCallResolver(
         return collectCandidates(info = info, resolutionContext = resolutionContext, collector = collector)
     }
 
+    /**
+     * 运行 tower resolver 并规约候选集合。
+     *
+     * 规约顺序为 tower 收集、适用性分组、函数值 expected type 过滤、
+     * overload-by-lambda 过滤，最终返回候选集合、适用性与转发诊断。
+     */
     private fun collectCandidates(
         info: CallInfo,
         resolutionContext: ResolutionContext,
@@ -782,6 +911,7 @@ class CfirCallResolver(
         return matchingCandidates.ifEmpty { candidates }
     }
 
+    /** 判断调用信息中是否包含尾随 lambda 实参。 */
     private fun CallInfo.hasTrailingLambdaArgument(): Boolean {
         return (callSite as? CfirFunctionCall)?.hasTrailingLambda == true ||
             arguments.any { argument ->
@@ -820,6 +950,12 @@ class CfirCallResolver(
         }
     }
 
+    /**
+     * 对 tower collector 的最佳候选进行完整 stage 处理和最具体候选规约。
+     *
+     * 函数名作为值且没有 expected type 时会保留函数 overload set；其他路径会按适用性、
+     * 尾随 lambda、expected return type 和 fresh receiver 规则逐步收窄。
+     */
     private fun reduceCandidates(
         collector: CfirCandidateCollector,
         info: CallInfo,
@@ -848,13 +984,31 @@ class CfirCallResolver(
                     return@reduceCollectedCandidates candidates
                 }
                 val syntaxFilteredCandidates = reduceTrailingLambdaCandidatesByParameterType(info, candidates)
-                reduceFreshTypeVariableReceiverCandidates(syntaxFilteredCandidates)?.let {
+                val expectedTypeFilteredCandidates = reduceCandidatesByExpectedReturnType(info, syntaxFilteredCandidates)
+                reduceFreshTypeVariableReceiverCandidates(expectedTypeFilteredCandidates)?.let {
                     return@reduceCollectedCandidates it
                 }
-                syntaxFilteredCandidates.singleOrNull()?.let(::setOf)
-                    ?: conflictResolver.chooseMaximallySpecificCandidates(syntaxFilteredCandidates)
+                expectedTypeFilteredCandidates.singleOrNull()?.let(::setOf)
+                    ?: conflictResolver.chooseMaximallySpecificCandidates(expectedTypeFilteredCandidates)
             },
         )
+    }
+
+    /**
+     * 仓颉 check-mode 会让表达式目标类型参与重载选择。这里在候选已经完成参数适用性检查后，
+     * 用候选返回类型过滤 expected type 不可能满足的重载，避免后续 completion 才发现返回类型不匹配。
+     */
+    private fun reduceCandidatesByExpectedReturnType(
+        info: CallInfo,
+        candidates: Set<Candidate>,
+    ): Set<Candidate> {
+        if (candidates.size <= 1) return candidates
+        val expectedType = info.resolutionMode.expectedType?.fullyExpandedType() ?: return candidates
+        val matchingCandidates = candidates.filterTo(linkedSetOf()) { candidate ->
+            val candidateReturnType = components.initialTypeOfCandidate(candidate).fullyExpandedType()
+            AbstractTypeChecker.isSubtypeOf(session.typeContext, candidateReturnType, expectedType)
+        }
+        return matchingCandidates.ifEmpty { candidates }
     }
 
     /**
@@ -884,12 +1038,22 @@ class CfirCallResolver(
         return null
     }
 
+    /**
+     * fresh receiver 候选的可调用形状。
+     *
+     * 当多个候选只是在为同一个 fresh receiver 类型变量提供约束时，
+     * 用值参数类型和返回类型判断这些候选是否语义等价。
+     */
     private data class FreshReceiverCallableShape(
+        /** 代表该形状的原始候选。 */
         val candidate: Candidate,
+        /** 经过当前约束系统归一化后的值参数类型。 */
         val valueParameterTypes: List<ConeCangJieType>,
+        /** 经过当前约束系统归一化后的返回类型。 */
         val returnType: ConeCangJieType,
     )
 
+    /** 判断两个 fresh receiver callable shape 是否有完全相同的参数和返回类型。 */
     private fun FreshReceiverCallableShape.isEquivalentTo(other: FreshReceiverCallableShape): Boolean {
         if (valueParameterTypes.size != other.valueParameterTypes.size) return false
         if (!returnType.isSameTypeAs(other.returnType)) return false
@@ -898,9 +1062,16 @@ class CfirCallResolver(
         }
     }
 
+    /** 使用当前 session type context 判断两个 Cone 类型是否相等。 */
     private fun ConeCangJieType.isSameTypeAs(other: ConeCangJieType): Boolean =
         AbstractTypeChecker.equalTypes(session.typeContext, this, other)
 
+    /**
+     * 从候选中抽取 fresh receiver 规约需要比较的 callable shape。
+     *
+     * 参数类型来自已完成的 argument mapping，返回类型来自 return type calculator，
+     * 两者都会按候选 substitutor 和约束系统当前状态归一化。
+     */
     private fun Candidate.freshReceiverCallableShape(): FreshReceiverCallableShape? {
         if (!symbol.isBound || !argumentMappingInitialized) return null
         val declaration = symbol.cfir as? CfirCallableDeclaration ?: return null
@@ -919,6 +1090,11 @@ class CfirCallResolver(
         return FreshReceiverCallableShape(this, valueParameterTypes, returnType)
     }
 
+    /**
+     * 将候选签名类型归一化到 fresh receiver 规约可比较的代表类型。
+     *
+     * 先应用候选 substitutor，再应用约束系统当前 substitutor，最后把未固定类型变量替换为代表约束类型。
+     */
     private fun Candidate.normalizeFreshReceiverShapeType(type: ConeCangJieType): ConeCangJieType {
         val substituted = substitutor.substituteOrSelf(type)
         val currentSubstitutor = system.buildCurrentSubstitutor()
@@ -926,6 +1102,11 @@ class CfirCallResolver(
         return representativeConstraintType(currentType)
     }
 
+    /**
+     * 为未固定类型变量选择可比较的代表约束类型。
+     *
+     * 没有下界/等式约束时保留类型变量；单个约束直接使用；多个约束取交集以表达共同要求。
+     */
     private fun Candidate.representativeConstraintType(type: ConeCangJieType): ConeCangJieType {
         if (type !is ConeTypeVariableType) return type
 
@@ -946,12 +1127,23 @@ class CfirCallResolver(
         }
     }
 
+    /**
+     * 返回候选 dispatch receiver 上的 fresh type variable constructor。
+     *
+     * 只接受非声明类型参数产生的 fresh 变量，用于识别 lambda receiver placeholder 的成员访问。
+     */
     private fun Candidate.freshTypeVariableDispatchReceiverConstructor(): org.cangnova.cangjie.type.model.TypeConstructorMarker? {
         val receiverType = dispatchReceiverExpression()?.coneTypeOrNull as? ConeTypeVariableType ?: return null
         if (receiverType.typeConstructor.originalTypeParameter != null) return null
         return receiverType.typeConstructor
     }
 
+    /**
+     * 根据候选规约结果构造最终 callee reference。
+     *
+     * 该函数集中处理未解析、候选错误、歧义、classifier 被当成函数调用、
+     * 命名值成功引用和需要保留 candidate 的调用引用。
+     */
     private fun createResolvedNamedReference(
         reference: CfirReference,
         name: Name,
@@ -1133,6 +1325,7 @@ class CfirCallResolver(
         return CfirNamedReferenceWithCandidate(source, name, candidate)
     }
 
+    /** 从表达式 callee reference 中提取已携带的诊断，用于避免 receiver 错误重复上报。 */
     private fun CfirExpression.diagnosticFromCalleeReference(): ConeDiagnostic? =
         ((this as? CfirResolvable)?.calleeReference as? CfirDiagnosticHolder)?.diagnostic
 
@@ -1239,23 +1432,31 @@ class CfirCallResolver(
         return owner.typeParameters
     }
 
+    /** 若 qualifier 是已解析 typealias，则返回对应 typealias 符号。 */
     private fun CfirQualifiedAccessExpression.resolvedQualifierTypeAliasSymbol(): CfirTypeAliasSymbol? {
         val resolvedReference = calleeReference as? CfirResolvedNamedReference ?: return null
         return resolvedReference.resolvedSymbol as? CfirTypeAliasSymbol
     }
 
+    /** 判断类型内部是否直接或间接引用指定类型参数符号。 */
     private fun ConeCangJieType.referencesTypeParameter(
         symbol: CfirTypeParameterSymbol,
     ): Boolean = contains { type ->
         type is ConeTypeParameterType && type.lookupTag.typeParameterSymbol == symbol
     }
 
+    /** 判断类型内部是否引用给定类型参数符号集合中的任意一个。 */
     private fun ConeCangJieType.referencesAnyTypeParameter(
         symbols: Set<CfirTypeParameterSymbol>,
     ): Boolean = contains { type ->
         type is ConeTypeParameterType && type.lookupTag.typeParameterSymbol in symbols
     }
 
+    /**
+     * 识别源码直接写出的 `VArray<T, $N>(...)` 构造目标。
+     *
+     * 只有 callee 名称为 `VArray` 且调用节点带有尺寸字面量时才合成 VArray 内建构造目标。
+     */
     private fun CfirFunctionCall.directVArrayConstructorTargetOrNull(
         name: Name,
     ): BuiltinArrayConstructorTarget.VArray? {
@@ -1264,6 +1465,11 @@ class CfirCallResolver(
         return BuiltinArrayConstructorTarget.VArray(sizeLiteral = sizeLiteral)
     }
 
+    /**
+     * 将展开到 `VArray` 的 typealias 调用识别为内建 VArray 构造。
+     *
+     * 展开后会保留别名类型参数，用于后续候选阶段把显式 typealias 实参映射到元素类型。
+     */
     private fun CfirTypeAliasSymbol.typeAliasVArrayConstructorTarget(
         typeArgumentRefs: List<CfirTypeRef>,
     ): BuiltinArrayConstructorTarget.VArray? {
@@ -1289,6 +1495,11 @@ class CfirCallResolver(
         )
     }
 
+    /**
+     * 将展开到 `CPointer` 的 typealias 调用识别为内建 pointer 构造。
+     *
+     * 返回目标携带 pointee 类型和 typealias 类型参数，供候选创建阶段完成约束映射。
+     */
     private fun CfirTypeAliasSymbol.typeAliasPointerConstructorTarget(
         typeArgumentRefs: List<CfirTypeRef>,
     ): BuiltinPointerConstructorTarget? {
@@ -1313,12 +1524,18 @@ class CfirCallResolver(
         )
     }
 
+    /** 判断 typealias 展开结果是否为内建 `CString` 构造目标。 */
     private fun CfirTypeAliasSymbol.isTypeAliasCStringConstructorTarget(): Boolean {
         lazyResolveToPhase(CfirResolvePhase.SUPER_TYPES)
         val aliasType: ConeCangJieType = ConeTypeAliasType(classId = classId)
         return aliasType.fullyExpandedType(session) is ConeCStringType
     }
 
+    /**
+     * 解析 `VArray` 实例的合成 `size` 属性访问。
+     *
+     * VArray size 是类型尺寸参数对应的内建只读属性，这里合成局部 property 符号并把访问类型写为 `Int64`。
+     */
     private fun tryResolveVArraySizeAccess(
         qualifiedAccess: CfirQualifiedAccessExpression,
         callee: CfirNamedReference,
@@ -1359,6 +1576,12 @@ class CfirCallResolver(
         return qualifiedAccess
     }
 
+    /**
+     * 为 class-like 调用收集构造候选。
+     *
+     * 该入口先识别 typealias 到 VArray/Pointer/CString 的内建构造，再处理普通 class/typealias
+     * 构造器 scope；enum 被当成函数调用时不创建构造候选，交由诊断路径报告。
+     */
     private fun collectClassConstructorCandidates(
         functionCall: CfirFunctionCall,
         classifier: CfirClassLikeSymbol<*>,
@@ -1643,6 +1866,12 @@ class CfirCallResolver(
         )
     }
 
+    /**
+     * 根据目标数组种类和实参数量给出内建 Array/VArray 构造候选形状。
+     *
+     * 普通 Array 区分空数组、collection 构造、init 函数和重复元素；
+     * VArray 的单实参命名形式代表重复元素，否则优先按 init 函数处理。
+     */
     private fun builtinArrayConstructorKinds(
         functionCall: CfirFunctionCall,
         target: BuiltinArrayConstructorTarget,
@@ -1671,6 +1900,11 @@ class CfirCallResolver(
         }
     }
 
+    /**
+     * 判断表达式对应的源实参是否显式写了参数名。
+     *
+     * PSI 可用时直接读取 [CjValueArgument]；轻树/合成源不可用时通过源文本中的 `name:` 形态做保守识别。
+     */
     private fun CfirExpression.hasExplicitArgumentName(): Boolean {
         val source = when (this) {
             is CfirBlock -> source?.takeIf { statements.size == 1 }
@@ -1686,6 +1920,7 @@ class CfirCallResolver(
         return Name.identifierIfValid(rawText.substring(0, separatorIndex).trim()) != null
     }
 
+    /** 为 class-like 构造调用创建统一 [CallInfo]。 */
     private fun createClassifierCallInfo(
         functionCall: CfirFunctionCall,
         classifier: CfirClassLikeSymbol<*>,
@@ -1705,6 +1940,11 @@ class CfirCallResolver(
         resolutionMode = resolutionMode,
     )
 
+    /**
+     * 为 Array/VArray 内建构造创建 [CallInfo]。
+     *
+     * VArray 直写尺寸参数会在 type arguments 中剔除 `$N`，typealias VArray 构造则保留别名实参。
+     */
     private fun createBuiltinArrayConstructorCallInfo(
         functionCall: CfirFunctionCall,
         name: Name,
@@ -1725,6 +1965,7 @@ class CfirCallResolver(
         resolutionMode = resolutionMode,
     )
 
+    /** 为 Pointer/CString 等非数组内建构造创建 [CallInfo]。 */
     private fun createBuiltinConstructorCallInfo(
         functionCall: CfirFunctionCall,
         name: Name,
@@ -1758,6 +1999,7 @@ class CfirCallResolver(
         return typeArguments
     }
 
+    /** 为委托构造调用创建只面向目标声明构造器集合的 [CallInfo]。 */
     private fun createDelegatingConstructorCallInfo(
         functionCall: CfirFunctionCall,
         targetDeclaration: CfirClassLikeDeclaration,
@@ -1777,6 +2019,12 @@ class CfirCallResolver(
         resolutionMode = resolutionMode,
     )
 
+    /**
+     * 查找可能被当前调用语法当成构造调用目标的 classifier。
+     *
+     * 有显式 receiver 时只在 qualifier 的静态 scope 中查找；裸名调用会先走 tower classifier，
+     * 再按同文件、显式 import、默认 import 兜底查找顶层 classifier。
+     */
     private fun findClassifierForCall(
         qualifiedAccess: CfirQualifiedAccessExpression,
         name: Name,
@@ -1792,6 +2040,12 @@ class CfirCallResolver(
         }
     }
 
+    /**
+     * 按短名解析顶层 class-like 符号。
+     *
+     * 查找顺序为同文件声明、显式 import / star import、当前包、默认 import；
+     * 该逻辑补足 tower 在某些构造调用 fallback 中无法直接拿到 classifier 的场景。
+     */
     private fun resolveTopLevelClassifierByShortName(name: Name): CfirClassLikeSymbol<*>? {
         val file = components.file
         val packageCandidates = LinkedHashSet<ClassId>()
@@ -1830,6 +2084,7 @@ class CfirCallResolver(
             .firstNotNullOfOrNull(components.symbolProvider::getClassLikeSymbolByClassId)
     }
 
+    /** 在当前文件顶层声明中按短名查找 class-like 声明。 */
     private fun findSameFileTopLevelClassifier(
         file: org.cangnova.cangjie.cfir.declarations.CfirFile,
         shortName: Name,
@@ -1841,6 +2096,11 @@ class CfirCallResolver(
             .firstOrNull()
     }
 
+    /**
+     * 将默认导入路径转换成指定短名可能对应的 [ClassId] 候选。
+     *
+     * star import 追加包下短名；普通 import 需要短名或别名与目标短名一致。
+     */
     private fun addDefaultImportCandidates(
         candidates: MutableSet<ClassId>,
         imports: List<ImportPath>,
@@ -1860,6 +2120,11 @@ class CfirCallResolver(
         }
     }
 
+    /**
+     * 在 qualifier 的静态作用域中按名称查找嵌套 classifier。
+     *
+     * receiver 会先去掉 smartcast 包装，再通过 qualifier scope 访问静态 class-like 成员。
+     */
     private fun findClassifierInQualifierScope(
         receiver: CfirExpression,
         name: Name,
@@ -1875,9 +2140,16 @@ class CfirCallResolver(
         return result
     }
 
+    /** 判断 classifier 是否能作为表达式出现；type parameter 只允许在 receiver 语境中使用。 */
     private fun CfirClassifierSymbol<*>.isValidClassifierExpression(isUsedAsReceiver: Boolean): Boolean =
         this is CfirClassLikeSymbol<*> || (isUsedAsReceiver && this is CfirTypeParameterSymbol)
 
+    /**
+     * 为单个候选或空候选构造错误 callee reference。
+     *
+     * 未解析/隐藏候选会创建错误候选以承载诊断；已有候选上的适用性错误则保留原候选，
+     * 让后续阶段仍能读取候选信息。
+     */
     private fun createErrorReferenceForSingleCandidate(
         candidate: Candidate?,
         diagnostic: ConeDiagnostic,
@@ -1915,17 +2187,28 @@ class CfirCallResolver(
         }
     }
 
+    /** 调用候选收集与规约的结果包。 */
     private data class ResolutionResult(
+        /** 当前调用的结构化解析输入。 */
         val info: CallInfo,
+        /** 候选集合整体适用性。 */
         val applicability: CandidateApplicability,
+        /** 已按适用性和最具体规则规约后的候选集合。 */
         val candidates: Collection<Candidate>,
+        /** tower resolver 转发出的非候选诊断。 */
         val forwardedDiagnostics: List<ResolutionDiagnostic>,
     )
 }
 
-/** A candidate in the overload candidate set. */
+/** overload candidate set 中的一个候选及其是否属于当前最佳候选集合。 */
 data class OverloadCandidate(val candidate: Candidate, val isInBestCandidates: Boolean)
 
+/**
+ * 通用候选集合规约工具。
+ *
+ * 调用方提供候选成功判定、适用性读取、完整 stage 处理和最具体候选选择逻辑；
+ * 本函数负责按 collector 适用性、候选适用性分组和错误成功状态返回最终集合。
+ */
 @OptIn(ApplicabilityDetail::class)
 internal fun <T> reduceCollectedCandidates(
     candidates: Collection<T>,
@@ -1964,6 +2247,12 @@ internal fun <T> reduceCollectedCandidates(
     return chooseMostSpecific(selectedGroup.value.toSet()) to selectedGroup.key
 }
 
+/**
+ * 归一化候选规约后的适用性。
+ *
+ * 候选 stage 报告成功或原适用性本身失败时保持原值；否则把“已解析但内部有错误”
+ * 标记成 [CandidateApplicability.RESOLVED_WITH_ERROR]。
+ */
 @OptIn(ApplicabilityDetail::class)
 private fun normalizeReductionApplicability(
     isSuccessful: Boolean,
@@ -1976,6 +2265,12 @@ private fun normalizeReductionApplicability(
     return CandidateApplicability.RESOLVED_WITH_ERROR
 }
 
+/**
+ * 收集所有候选的 tower collector。
+ *
+ * 与普通 collector 不同，该 collector 不在某个 tower group 停止，而是把每个 symbol 的首个候选保存下来，
+ * 供 IDE/分析 API 查看完整 overload set。
+ */
 class AllCandidatesCollector(
     components: BodyResolveComponents,
     resolutionStageRunner: ResolutionStageRunner
@@ -1983,8 +2278,10 @@ class AllCandidatesCollector(
     components as CfirAbstractBodyResolveTransformer.BodyResolveTransformerComponents,
     resolutionStageRunner
 ) {
+    /** 按符号去重保存所有被 tower 访问到的候选。 */
     private val allCandidatesMap = mutableMapOf<CfirBasedSymbol<*>, Candidate>()
 
+    /** 记录候选后继续执行普通 collector 的适用性处理。 */
     override fun consumeCandidate(
         group: CfirTowerGroup,
         candidate: Candidate,
@@ -1994,8 +2291,10 @@ class AllCandidatesCollector(
         return super.consumeCandidate(group, candidate, context)
     }
 
+    /** 收集全部候选时永不在当前 tower group 提前停止。 */
     override fun shouldStopAtTheGroup(group: CfirTowerGroup): Boolean = false
 
+    /** 返回按符号去重后的全部候选集合。 */
     val allCandidates: Collection<Candidate>
         get() = allCandidatesMap.values
 }

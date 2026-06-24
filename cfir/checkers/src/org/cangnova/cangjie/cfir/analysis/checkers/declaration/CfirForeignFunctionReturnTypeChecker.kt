@@ -22,6 +22,9 @@ import org.cangnova.cangjie.name.Name
  * - 不是某个调用点或表达式上下文里的局部类型不匹配。
  */
 object CfirForeignFunctionReturnTypeChecker : CfirFunctionChecker() {
+    /**
+     * 检查 foreign 函数返回类型是否满足 C 互操作类型规则。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirFunction) {
         if (!declaration.status.isForeign) return
@@ -53,6 +56,9 @@ object CfirForeignFunctionReturnTypeChecker : CfirFunctionChecker() {
  * - `CFunc` 还要递归检查参数/返回类型是否满足 CType。
  */
 object CfirForeignFunctionParameterTypeChecker : CfirFunctionChecker() {
+    /**
+     * 检查 foreign 函数每个值参数类型是否满足 C 互操作类型规则。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirFunction) {
         if (!declaration.status.isForeign) return
@@ -76,6 +82,9 @@ object CfirForeignFunctionParameterTypeChecker : CfirFunctionChecker() {
     }
 }
 
+/**
+ * 判断解析类型引用是否来自指向 CFunc 的 typealias。
+ */
 context(context: CheckerContext)
 private fun isTypeAliasToCFunc(typeRef: CfirResolvedTypeRef): Boolean {
     val originalTypeRef = typeRef.delegatedTypeRef as? CfirUserTypeRef ?: return false
@@ -114,6 +123,9 @@ internal object CfirForeignFunctionCTypeSemantics {
         PrimitiveTypeKind.FLOAT64,
     )
 
+    /**
+     * 判断类型是否满足 foreign C 互操作的 CType 规则。
+     */
     context(context: CheckerContext)
     fun isMetCType(type: ConeCangJieType): Boolean {
         return when (val expandedType = type.fullyExpandedType(context.session)) {
@@ -131,6 +143,9 @@ internal object CfirForeignFunctionCTypeSemantics {
         }
     }
 
+    /**
+     * 判断 struct 类型是否是 C 互操作边界结构体。
+     */
     context(context: CheckerContext)
     private fun isCStructType(type: ConeStructType): Boolean {
         val symbol = context.session.symbolProvider.getClassLikeSymbolByClassId(type.classId) ?: return false
@@ -147,8 +162,16 @@ internal object CfirForeignFunctionCTypeSemantics {
  * - `type Bad = CFunc<(String) -> CType>`
  */
 internal object CfirCFuncTypeLegalityReporter {
+    /**
+     * CFunc 类型名。
+     */
     private val cFuncName = Name.identifier("CFunc")
 
+    /**
+     * 如果类型引用是 CFunc 语法，则递归报告其内部非法参数/返回类型。
+     *
+     * 返回 `true` 表示调用方已进入 CFunc 语义，不应再按外层普通 CType 继续检查。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     fun reportNestedDiagnosticsIfCFunc(typeRef: CfirTypeRef): Boolean {
         val originalTypeRef = when (typeRef) {
@@ -158,6 +181,9 @@ internal object CfirCFuncTypeLegalityReporter {
         return reportNestedDiagnosticsIfCFuncSyntax(originalTypeRef)
     }
 
+    /**
+     * 对原始 CFunc 语法类型引用执行内部诊断报告。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun reportNestedDiagnosticsIfCFuncSyntax(typeRef: CfirTypeRef): Boolean {
         val cFuncFunctionType = extractCFuncFunctionType(typeRef)
@@ -167,11 +193,17 @@ internal object CfirCFuncTypeLegalityReporter {
         return true
     }
 
+    /**
+     * 判断类型引用是否是 CFunc 语法。
+     */
     context(context: CheckerContext)
     fun isCFuncSyntax(typeRef: CfirTypeRef): Boolean = extractCFuncFunctionType(
         (typeRef as? CfirResolvedTypeRef)?.delegatedTypeRef ?: typeRef
     ) != null
 
+    /**
+     * 检查 CFunc 函数类型的参数与返回类型。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkFunctionType(functionTypeRef: CfirFunctionTypeRef) {
         for (parameterTypeRef in functionTypeRef.parameterTypeRefs) {
@@ -202,6 +234,9 @@ internal object CfirCFuncTypeLegalityReporter {
         )
     }
 
+    /**
+     * 将类型引用还原为函数类型引用。
+     */
     private fun CfirTypeRef?.toResolvedFunctionTypeRef(): CfirFunctionTypeRef? {
         return when (this) {
             is CfirFunctionTypeRef -> this
@@ -210,6 +245,9 @@ internal object CfirCFuncTypeLegalityReporter {
         }
     }
 
+    /**
+     * 从 `CFunc<...>` 用户类型引用中提取内部函数类型。
+     */
     private fun extractCFuncFunctionType(typeRef: CfirTypeRef): CfirFunctionTypeRef? {
         return (typeRef as? CfirUserTypeRef)
             ?.qualifier

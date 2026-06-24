@@ -46,8 +46,15 @@ import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 
 /**
- * 鐎靛綊缍?Kotlin `FirTypeResolver` 閻ㄥ嫪绱扮拠婵堢矋娴犺埖濞婄挒鈽呮嫹? */
+ * CFIR 类型解析器抽象。
+ *
+ * 对齐 Kotlin `FirTypeResolver` 的职责：把语法层类型引用解析为 cone 类型，
+ * 并提供 class-like 声明查找入口供类型转换器和 supertype 阶段复用。
+ */
 abstract class CfirTypeResolver : CfirSessionComponent {
+    /**
+     * 解析类型引用并返回类型与可选诊断。
+     */
     abstract fun resolveType(
         typeRef: CfirTypeRef,
         configuration: TypeResolutionConfiguration,
@@ -58,39 +65,90 @@ abstract class CfirTypeResolver : CfirSessionComponent {
         expandTypeAliases: Boolean = true,
     ): CfirTypeResolutionResult
 
+    /**
+     * 从类型引用解析 class-like 声明。
+     */
     abstract fun resolveClass(typeRef: CfirTypeRef): CfirClassLikeDeclaration?
 
+    /**
+     * 按 classId 解析 class-like 声明。
+     */
     abstract fun resolveClass(classId: ClassId): CfirClassLikeDeclaration?
 }
 
+/**
+ * 类型解析结果。
+ */
 data class CfirTypeResolutionResult(
+    /**
+     * 解析得到的 cone 类型。
+     */
     val type: ConeCangJieType,
+    /**
+     * 类型解析产生的诊断；成功解析时为空。
+     */
     val diagnostic: ConeDiagnostic?,
 )
 
+/**
+ * `This` 类型出现在非法位置时的默认说明。
+ */
 private const val THIS_TYPE_NOT_ALLOWED_REASON = "This type is only allowed as an instance member function return type"
 
 /**
- * Supertype supplier hook used by the SUPER_TYPES phase.
+ * SUPER_TYPES 阶段使用的超类型供应扩展点。
  */
 fun interface SupertypeSupplier {
+    /**
+     * 返回指定 classId 的超类型列表。
+     */
     fun getSupertypes(classId: ClassId): List<ConeCangJieType>
 
+    /**
+     * 默认超类型供应器集合。
+     */
     companion object {
+        /**
+         * 不提供额外超类型的默认供应器。
+         */
         val Default: SupertypeSupplier = SupertypeSupplier { emptyList() }
     }
 }
 
+/**
+ * 默认 CFIR 类型解析器实现。
+ */
 class CfirTypeResolverImpl(
+    /**
+     * 当前解析会话。
+     */
     private val session: CfirSession,
 ) : CfirTypeResolver() {
+    /**
+     * CFunc 内建类型名。
+     */
     private val cFuncName = Name.identifier("CFunc")
+    /**
+     * CPointer 内建类型名。
+     */
     private val cPointerName = StandardNames.CPOINTER
+    /**
+     * CString 内建类型名。
+     */
     private val cStringName = StandardNames.CSTRING
+    /**
+     * This 类型名。
+     */
     private val thisTypeName = Name.identifier("This")
+    /**
+     * 类型别名展开是否被语言设置全局禁用。
+     */
     private val aliasedTypeExpansionGloballyDisabled: Boolean =
         !session.languageVersionSettings.getFlag(AnalysisFlags.expandTypeAliasesInTypeResolution)
 
+    /**
+     * 解析各种 CFIR 类型引用节点。
+     */
     override fun resolveType(
         typeRef: CfirTypeRef,
         configuration: TypeResolutionConfiguration,
@@ -129,11 +187,17 @@ class CfirTypeResolverImpl(
         }
     }
 
+    /**
+     * 以 cone 类型构造类型解析结果。
+     */
     private fun result(type: ConeCangJieType): CfirTypeResolutionResult = CfirTypeResolutionResult(
         type = type,
         diagnostic = (type as? ConeErrorType)?.diagnostic,
     )
 
+    /**
+     * 从 user type ref 解析 class-like 声明。
+     */
     override fun resolveClass(typeRef: CfirTypeRef): CfirClassLikeDeclaration? {
         val userTypeRef = typeRef as? CfirUserTypeRef ?: return null
         if (userTypeRef.qualifier.isEmpty()) return null
@@ -144,11 +208,17 @@ class CfirTypeResolverImpl(
         return resolveClass(ClassId(packageFqName, className))
     }
 
+    /**
+     * 从 session provider 中按 classId 解析 class-like 声明。
+     */
     override fun resolveClass(classId: ClassId): CfirClassLikeDeclaration? {
         session.cfirProvider.getCfirClassifierByFqName(classId)?.let { return it }
         return session.symbolProvider.getClassLikeSymbolByClassId(classId)?.cfir
     }
 
+    /**
+     * 解析基础类型或当前作用域中的类型参数。
+     */
     private fun resolveBasicType(
         typeRef: CfirBasicTypeRef,
         configuration: TypeResolutionConfiguration,
@@ -159,6 +229,9 @@ class CfirTypeResolverImpl(
         return primitiveType ?: ConeErrorType(ConeSimpleDiagnostic("Unknown basic type: ${typeRef.name.asString()}"))
     }
 
+    /**
+     * 解析用户书写的 class-like、typealias、类型参数或特殊内建类型。
+     */
     private fun resolveUserType(
         typeRef: CfirUserTypeRef,
         configuration: TypeResolutionConfiguration,
@@ -273,6 +346,9 @@ class CfirTypeResolverImpl(
         return null
     }
 
+    /**
+     * 解析 `This` 类型。
+     */
     private fun resolveThisType(
         qualifierPart: CfirQualifierPart,
         configuration: TypeResolutionConfiguration,
@@ -295,6 +371,9 @@ class CfirTypeResolverImpl(
         }
     }
 
+    /**
+     * 构造 `This` 类型非法使用的错误类型。
+     */
     private fun thisTypeNotAllowedError(
         reason: String = THIS_TYPE_NOT_ALLOWED_REASON,
         delegatedType: ConeCangJieType? = null,
@@ -303,6 +382,9 @@ class CfirTypeResolverImpl(
         return ConeErrorType(ConeSimpleDiagnostic(reason, kind), delegatedType = delegatedType)
     }
 
+    /**
+     * 解析 `CFunc<fn>` 内建函数指针类型。
+     */
     private fun resolveCFuncUserType(
         qualifierPart: CfirQualifierPart,
         configuration: TypeResolutionConfiguration,
@@ -388,6 +470,9 @@ class CfirTypeResolverImpl(
         )
     }
 
+    /**
+     * 按短名解析简单 classId。
+     */
     private fun resolveSimpleClassId(
         shortName: Name,
         configuration: TypeResolutionConfiguration,
@@ -448,6 +533,9 @@ class CfirTypeResolverImpl(
             .firstOrNull { resolveClass(it) != null }
     }
 
+    /**
+     * 解析限定 class-like 名称。
+     */
     private fun resolveQualifiedClassLike(
         typeRef: CfirUserTypeRef,
         configuration: TypeResolutionConfiguration,
@@ -481,6 +569,9 @@ class CfirTypeResolverImpl(
         )
     }
 
+    /**
+     * 根据 class-like 声明种类构造最终 cone 类型。
+     */
     private fun createResolvedClassLikeType(
         resolvedClass: CfirClassLikeDeclaration,
         classId: ClassId,
@@ -536,15 +627,24 @@ class CfirTypeResolverImpl(
         }
     }
 
+    /**
+     * 将名称列表转换为限定名。
+     */
     private fun List<Name>.toFqName(): FqName =
         if (isEmpty()) FqName.ROOT else FqName(joinToString(".") { it.asString() })
 
+    /**
+     * 判断包是否存在。
+     */
     private fun packageExists(packageFqName: FqName): Boolean {
         if (packageFqName.isRoot) return true
         val packageNames = session.symbolProvider.symbolNamesProvider.getPackageNames() ?: return true
         return packageFqName.asString() in packageNames
     }
 
+    /**
+     * 在当前文件顶层声明中查找同名 class-like。
+     */
     private fun findSameFileTopLevelClassifier(
         file: CfirFile,
         shortName: Name,
@@ -556,6 +656,9 @@ class CfirTypeResolverImpl(
             .firstOrNull()
     }
 
+    /**
+     * 根据默认导入列表追加可能的 classId 候选。
+     */
     private fun addDefaultImportCandidates(
         candidates: MutableSet<ClassId>,
         imports: List<ImportPath>,
@@ -574,9 +677,21 @@ class CfirTypeResolverImpl(
         }
     }
 
+    /**
+     * 限定 class-like 解析中间结果。
+     */
     private data class QualifiedClassLikeResolution(
+        /**
+         * 解析出的 classId；完全无法定位时为空。
+         */
         val classId: ClassId?,
+        /**
+         * 解析出的 class-like 声明。
+         */
         val declaration: CfirClassLikeDeclaration?,
+        /**
+         * 解析失败时携带的诊断。
+         */
         val diagnostic: ConeDiagnostic?,
     )
 }

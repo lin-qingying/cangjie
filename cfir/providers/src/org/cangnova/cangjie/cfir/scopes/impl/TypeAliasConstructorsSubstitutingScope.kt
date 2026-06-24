@@ -29,16 +29,32 @@ import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRefCopy
 import org.cangnova.cangjie.cfir.types.withAbbreviation
 
+/**
+ * typealias 构造器合成信息属性 key。
+ */
 private object TypeAliasConstructorInfoKey : CfirDeclarationDataKey()
 
+/**
+ * typealias 构造器合成信息。
+ *
+ * @property originalConstructor 展开类型上的原始构造器。
+ * @property typeAliasSymbol 触发构造器合成的 typealias symbol。
+ * @property substitutor 展开类型 scope 使用的类型替换器。
+ */
 data class TypeAliasConstructorInfo<T : CfirFunction>(
     val originalConstructor: T,
     val typeAliasSymbol: CfirTypeAliasSymbol,
     val substitutor: ConeSubstitutor?,
 )
 
+/**
+ * 构造器声明上携带的 typealias 构造器合成信息。
+ */
 var <T : CfirFunction> T.typeAliasConstructorInfo: TypeAliasConstructorInfo<T>? by CfirDeclarationDataRegistry.data(TypeAliasConstructorInfoKey)
 
+/**
+ * 构造器 symbol 对应的 typealias 构造器合成信息。
+ */
 val CfirConstructorSymbol.typeAliasConstructorInfo: TypeAliasConstructorInfo<*>?
     get() = cfir.typeAliasConstructorInfo
 
@@ -51,11 +67,26 @@ val CfirConstructorSymbol.typeAliasConstructorInfo: TypeAliasConstructorInfo<*>?
  * 约束系统和诊断都以 typealias 使用点为入口，同时语义仍落到展开类构造器。
  */
 class TypeAliasConstructorsSubstitutingScope private constructor(
+    /**
+     * 当前 typealias symbol。
+     */
     private val typeAliasSymbol: CfirTypeAliasSymbol,
+    /**
+     * 展开类型的构造器来源 scope。
+     */
     private val delegatingScope: CfirScope,
+    /**
+     * 当前 use-site session。
+     */
     private val session: CfirSession,
 ) : CfirScope() {
+    /**
+     * typealias 构造器替换 scope 工厂。
+     */
     companion object {
+        /**
+         * 为 [typeAliasSymbol] 创建构造器替换 scope。
+         */
         fun initialize(
             typeAliasSymbol: CfirTypeAliasSymbol,
             session: CfirSession,
@@ -84,8 +115,14 @@ class TypeAliasConstructorsSubstitutingScope private constructor(
         }
     }
 
+    /**
+     * 原始构造器到合成 typealias 构造器的缓存。
+     */
     private val constructorCache = mutableMapOf<CfirConstructorSymbol, CfirConstructorSymbol>()
 
+    /**
+     * 处理展开类型构造器，并映射为 typealias 构造器。
+     */
     override fun processDeclaredConstructors(processor: (CfirConstructorSymbol) -> Unit) {
         delegatingScope.processDeclaredConstructors { originalConstructorSymbol ->
             processor(constructorCache.getOrPut(originalConstructorSymbol) {
@@ -94,6 +131,9 @@ class TypeAliasConstructorsSubstitutingScope private constructor(
         }
     }
 
+    /**
+     * 基于展开类型原始构造器创建 typealias 构造器副本。
+     */
     private fun createTypealiasConstructor(originalConstructorSymbol: CfirConstructorSymbol): CfirConstructorSymbol {
         val typeAlias = typeAliasSymbol.cfir
         val originalConstructor = originalConstructorSymbol.cfir
@@ -143,6 +183,9 @@ class TypeAliasConstructorsSubstitutingScope private constructor(
         }
     }
 
+    /**
+     * 替换委托 scope 的 session 后重建 typealias 构造器 scope。
+     */
     override fun withReplacedSessionOrNull(newSession: CfirSession, newScopeSession: ScopeSession): CfirScope? {
         return delegatingScope.withReplacedSessionOrNull(newSession, newScopeSession)?.let {
             TypeAliasConstructorsSubstitutingScope(typeAliasSymbol, it, newSession)

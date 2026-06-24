@@ -18,16 +18,31 @@ import org.cangnova.cangjie.parsing.CangJieParserDefinition
 import org.cangnova.cangjie.source.CjSourceFileLinesMapping
 import org.cangnova.cangjie.source.readSourceFileWithMapping
 
+/**
+ * LightTree 到 raw CFIR 的文件级入口。
+ *
+ * 该类负责从文件、源码文本或已解析 LightTree 构造 [CfirFile]，并在需要时返回
+ * raw 构建期间收集到的 macro surface 列表。
+ *
+ * @property session 当前 CFIR session。
+ * @property scopeProvider class-like 声明使用的 scope provider。
+ * @property bodyBuildingMode body 构建策略。
+ */
 class LightTree2Cfir(
+    /** 当前 CFIR session。 */
     val session: CfirSession,
+    /** class-like 声明使用的 scope provider。 */
     private val scopeProvider: CfirScopeProvider,
 
+    /** body 构建策略。 */
     private val bodyBuildingMode: BodyBuildingMode = BodyBuildingMode.NORMAL,
 ) {
+    /** 从磁盘路径读取源码并构造 CFIR 文件。 */
     fun buildCfirFile(path: Path): CfirFile {
         return buildCfirFile(path.toFile())
     }
 
+    /** 从磁盘文件读取源码并构造 CFIR 文件。 */
     fun buildCfirFile(file: File): CfirFile {
         val sourceFile = CjIoFileSourceFile(file)
         val (code, linesMapping) = file.inputStream().reader(Charsets.UTF_8).use {
@@ -36,6 +51,7 @@ class LightTree2Cfir(
         return buildCfirFile(code, sourceFile, linesMapping)
     }
 
+    /** 从已解析 LightTree 构造 CFIR 文件。 */
     fun buildCfirFile(
         lightTree: FlyweightCapableTreeStructure<LighterASTNode>,
         sourceFile: CjSourceFile,
@@ -65,12 +81,14 @@ class LightTree2Cfir(
         return file to surfaces
     }
 
+    /** 从源码文本解析 LightTree 并构造 CFIR 文件。 */
     fun buildCfirFile(
         code: CharSequence,
         sourceFile: CjSourceFile,
         linesMapping: CjSourceFileLinesMapping,
     ): CfirFile = buildCfirFileWithSurfaces(code, sourceFile, linesMapping).first
 
+    /** 从源码文本解析 LightTree，构造 CFIR 文件并返回 macro surface 列表。 */
     fun buildCfirFileWithSurfaces(
         code: CharSequence,
         sourceFile: CjSourceFile,

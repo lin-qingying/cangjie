@@ -24,6 +24,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
  * - 该规则只基于已经解析完成的函数符号，不做额外候选决议。
  */
 object CfirFunctionReferenceLegalityChecker : CfirQualifiedAccessChecker() {
+    /** 检查函数名作为值访问时是否违反 mut/unsafe 或 enum 构造器参数规则。 */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirQualifiedAccessExpression) {
         if (expression is CfirFunctionCall) return
@@ -58,6 +59,7 @@ object CfirFunctionReferenceLegalityChecker : CfirQualifiedAccessChecker() {
         }
     }
 
+    /** 从限定访问的 calleeReference 中提取函数 symbol。 */
     private fun CfirQualifiedAccessExpression.resolvedFunctionSymbolOrNull(): CfirFunctionSymbol<*>? {
         return when (val reference = calleeReference) {
             is CfirResolvedNamedReference -> reference.resolvedSymbol as? CfirFunctionSymbol<*>

@@ -14,11 +14,22 @@ import org.cangnova.cangjie.name.Name
  */
 class CfirCompositeSymbolProvider(
     session: CfirSession,
+    /**
+     * 按查询优先级排列的符号 provider。
+     *
+     * class-like 查询返回第一个命中项，顶层 callable 查询追加所有来源的结果。
+     */
     val providers: List<CfirSymbolProvider>,
 ) : CfirSymbolProvider(session) {
+    /**
+     * 聚合后的名称过滤 provider。
+     */
     override val symbolNamesProvider: CfirSymbolNamesProvider =
         CfirCompositeSymbolNamesProvider.fromSymbolProviders(providers)
 
+    /**
+     * 按 provider 顺序返回第一个 class-like symbol 命中项。
+     */
     override fun getClassLikeSymbolByClassId(classId: ClassId): CfirClassLikeSymbol<*>? {
         for (provider in providers) {
             provider.getClassLikeSymbolByClassId(classId)?.let { return it }
@@ -26,6 +37,9 @@ class CfirCompositeSymbolProvider(
         return null
     }
 
+    /**
+     * 将所有子 provider 命中的顶层 callable symbol 追加到 [destination]。
+     */
     @CfirSymbolProviderInternals
     override fun getTopLevelCallableSymbolsTo(
         destination: MutableList<CfirCallableSymbol<*>>,
@@ -37,6 +51,9 @@ class CfirCompositeSymbolProvider(
         }
     }
 
+    /**
+     * 将所有子 provider 命中的顶层函数 symbol 追加到 [destination]。
+     */
     @CfirSymbolProviderInternals
     override fun getTopLevelFunctionSymbolsTo(
         destination: MutableList<CfirNamedFunctionSymbol>,
@@ -48,6 +65,9 @@ class CfirCompositeSymbolProvider(
         }
     }
 
+    /**
+     * 将所有子 provider 命中的顶层属性 symbol 追加到 [destination]。
+     */
     @CfirSymbolProviderInternals
     override fun getTopLevelPropertySymbolsTo(
         destination: MutableList<CfirPropertySymbol>,
@@ -59,6 +79,9 @@ class CfirCompositeSymbolProvider(
         }
     }
 
+    /**
+     * 任意子 provider 拥有指定包时返回 `true`。
+     */
     override fun hasPackage(fqName: FqName): Boolean =
         providers.any { it.hasPackage(fqName) }
 }

@@ -2,6 +2,11 @@ package org.cangnova.cangjie.cfir.resolve.calls.candidate
 
 import org.cangnova.cangjie.cfir.resolve.calls.*
 
+/**
+ * 遍历 resolution atom 图中的候选与 postponed atom。
+ *
+ * 该入口用于 completion 或诊断收集路径，在同一遍 DFS 中分别处理候选节点和 lambda/callable-reference 等 postponed 节点。
+ */
 fun ConeResolutionAtom.processCandidatesAndPostponedAtoms(
     candidateProcessor: (Candidate) -> Unit,
     postponedAtomsProcessor: (ConePostponedResolvedAtom) -> Unit,
@@ -10,6 +15,7 @@ fun ConeResolutionAtom.processCandidatesAndPostponedAtoms(
     processAtomRecursively(visited, candidateProcessor, postponedAtomsProcessor)
 }
 
+/** 递归遍历 atom 子图，并用 [visited] 防止同一 atom 被重复处理。 */
 private fun ConeResolutionAtom.processAtomRecursively(
     visited: MutableSet<ConeResolutionAtom>,
     candidateProcessor: (Candidate) -> Unit,

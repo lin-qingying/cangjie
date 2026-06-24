@@ -12,21 +12,34 @@ import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
 
+/** 针对 `Rune`/字符模式的 Unicode 区间穷尽性 checker。 */
 class CharIntervalChecker : ExhaustivenessChecker {
+    /** 当前 checker 在调度结果中使用的来源标记。 */
     override val source: CheckSource = CheckSource.CHAR_INTERVAL
+
+    /** 字符区间 checker 的调度优先级，位于布尔、枚举和整数专项检查之后。 */
     override val priority: Int = 35
 
+    /** Unicode 标量值空间的最小码点。 */
     private val unicodeMin = 0
+
+    /** Unicode 标量值空间的最大码点。 */
     private val unicodeMax = 0x10FFFF
+
+    /** UTF-16 代理区间起始码点，Rune 穷尽性检查需要排除该区间。 */
     private val surrogateStart = 0xD800
+
+    /** UTF-16 代理区间结束码点，Rune 穷尽性检查需要排除该区间。 */
     private val surrogateEnd = 0xDFFF
 
+    /** 仅对 primitive `RUNE` 类型启用字符区间穷尽性分析。 */
     override fun isApplicable(
         type: ConeCangJieType,
         patterns: List<CfirMatchPattern>,
         context: CheckerContext,
     ): Boolean = type is ConePrimitiveType && type.kind == PrimitiveTypeKind.RUNE
 
+    /** 合并已出现的字符常量区间，并根据有效 Unicode 标量值区间判断是否仍存在缺口。 */
     override fun check(
         matrix: CfirMatrix,
         type: ConeCangJieType,
@@ -61,6 +74,7 @@ class CharIntervalChecker : ExhaustivenessChecker {
         }
     }
 
+    /** 对字符常量区间做排序合并，重叠或相邻区间会折叠为一个区间。 */
     private fun mergeIntervals(intervals: List<IntRange>): List<IntRange> {
         if (intervals.isEmpty()) return emptyList()
         val sorted = intervals.sortedBy { it.first }
@@ -79,6 +93,7 @@ class CharIntervalChecker : ExhaustivenessChecker {
         return result
     }
 
+    /** 在排除 UTF-16 代理区的 Unicode 有效范围内查找未覆盖的字符区间。 */
     private fun findGaps(intervals: List<IntRange>): List<IntRange> {
         val validRanges = listOf(
             unicodeMin until surrogateStart,
@@ -100,8 +115,9 @@ class CharIntervalChecker : ExhaustivenessChecker {
         return gaps
     }
 
+    /** 字符区间 checker 的共享单例容器。 */
     companion object {
+        /** 默认字符区间 checker 单例。 */
         val INSTANCE = CharIntervalChecker()
     }
 }
-

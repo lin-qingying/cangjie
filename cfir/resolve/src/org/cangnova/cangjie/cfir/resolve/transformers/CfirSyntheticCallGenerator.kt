@@ -65,10 +65,17 @@ import org.cangnova.cangjie.source.CjSourceElement
  * postponed lambda completion 与结果写回，而不是在 lambda checker 中放行。
  */
 class CfirSyntheticCallGenerator(
+    /** body resolve transformer 共享组件。 */
     private val components: CfirAbstractBodyResolveTransformer.BodyResolveTransformerComponents,
 ) {
+    /** 当前解析 session。 */
     private val session get() = components.session
 
+    /**
+     * 用合成外层调用解析匿名函数表达式。
+     *
+     * 匿名函数会作为单个实参传入 synthetic accept 函数，使普通调用完成逻辑负责 expected type 与 lambda body。
+     */
     fun resolveAnonymousFunctionExpressionWithSyntheticOuterCall(
         anonymousFunctionExpression: CfirAnonymousFunctionExpression,
         expectedTypeData: ResolutionMode.WithExpectedType?,
@@ -103,6 +110,7 @@ class CfirSyntheticCallGenerator(
         return resultingCall.argumentList.arguments.single()
     }
 
+    /** 构造接受单个指定类型参数的合成函数候选引用。 */
     private fun generateCalleeReferenceToFunctionWithSingleParameterOfSpecifiedType(
         callSite: CfirExpression,
         argument: CfirExpression,
@@ -157,6 +165,7 @@ class CfirSyntheticCallGenerator(
         return CfirNamedReferenceWithCandidate(source, name, candidate)
     }
 
+    /** 构造合成 accept 函数的唯一值参数。 */
     private fun buildSyntheticValueParameter(
         ownerSymbol: CfirNamedFunctionSymbol,
         parameterName: Name,
@@ -182,6 +191,7 @@ class CfirSyntheticCallGenerator(
         defaultValue = null
     }
 
+    /** 为合成 accept 函数调用构造 [CallInfo]。 */
     private fun generateCallInfo(
         callSite: CfirExpression,
         name: Name,
@@ -201,6 +211,7 @@ class CfirSyntheticCallGenerator(
         resolutionMode = ResolutionMode.ContextIndependent,
     )
 
+    /** 判断类型是否为 Unit 或 Any，作为 synthetic 参数类型时无需保留具体期望类型。 */
     private fun ConeCangJieType.isUnitOrAny(): Boolean =
         this == ConeAnyType || with(session.typeContext) { this@isUnitOrAny.isUnit() }
 

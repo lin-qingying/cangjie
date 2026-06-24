@@ -15,6 +15,11 @@ import org.cangnova.cangjie.source.AbstractCjSourceElement
  * 默认值表达式按参数类型作为期望类型检查，诊断落在默认值表达式上。
  */
 object CfirValueParameterDefaultValueTypeMismatchChecker : CfirValueParameterChecker() {
+    /**
+     * 检查值参数默认值表达式是否兼容参数声明类型。
+     *
+     * 默认值为错误表达式时跳过，避免重复上报解析阶段已经产生的诊断。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirValueParameter) {
         val expectedType = (declaration.returnTypeRef as? CfirResolvedTypeRef)?.coneType ?: return

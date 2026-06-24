@@ -18,6 +18,22 @@ import org.cangnova.cangjie.name.Name
  * 一个 [MacroDefinitionEntry] 描述 "在哪个包下有一个叫这个名字的宏"。
  * `source` 标识来源类别，决定该 entry 是否能作为合法的宏调用查找目标
  * （baseline 第 4 节："合法宏调用目标来自 imported macro package / macro artifact / builtins"）。
+ *
+ * @property packageFqName 宏在调用方可见的包路径。
+ * @property name 宏在调用方可见的名称。
+ * @property executablePackageFqName executor 实际调用的宏定义包路径。
+ * @property executableName executor 实际调用的宏定义名称。
+ * @property source entry 来源类别。
+ * @property declaration 源码宏声明，仅 source package entry 使用。
+ * @property libPath 动态 macro 库路径。
+ * @property executorAbi executor ABI 版本。
+ * @property artifactSignature 宏 artifact 稳定签名。
+ * @property cjoHash `.cjo` 内容 hash。
+ * @property dynamicLibHash 动态库内容 hash。
+ * @property dependenciesArtifactHash 依赖产物内容 hash 聚合。
+ * @property resolverAlgorithmVersion artifact resolver 算法版本。
+ * @property supportsForcedKind 是否支持 `@!` 强制形式。
+ * @property supportsPlainAttrOverload 是否支持无括号 attr 调用形态。
  */
 data class MacroDefinitionEntry(
     /** 宏所在包的完整路径；builtin 没有归属包时为 [FqName.ROOT]。 */
@@ -66,6 +82,7 @@ data class MacroDefinitionEntry(
     /** 若该宏支持 `plain-attr overload`（无括号 attr 形式），则为 true。 */
     val supportsPlainAttrOverload: Boolean = false,
 ) {
+    /** Macro definition entry 的来源分类。 */
     enum class Source {
         /** 由本次 build 中的源包内 `macro func ...` / `macro Name` 提供。不能作为合法宏调用目标。 */
         SOURCE_PACKAGE,
@@ -83,7 +100,10 @@ data class MacroDefinitionEntry(
         BUILTIN_MACRO,
     }
 
+    /** 调用方可见的宏全限定名。 */
     val fqName: FqName get() = if (packageFqName.isRoot) FqName.topLevel(name) else packageFqName.child(name)
+
+    /** executor 实际调用的宏全限定名。 */
     val executableFqName: FqName
         get() = if (executablePackageFqName.isRoot) {
             FqName.topLevel(executableName)
@@ -102,10 +122,17 @@ data class MacroDefinitionEntry(
  *
  * 该索引完全离线（不读取 [org.cangnova.cangjie.cfir.resolve.providers.CfirProviderImpl]），
  * 因此满足 baseline 硬性边界 #2（construction 前 source provider 必为空）。
+ *
+ * @property sourceEntries 源包内宏定义条目。
+ * @property foreignEntriesByName 可合法 lookup 的宏定义短名索引。
+ * @property foreignEntriesByFqName 可合法 lookup 的宏定义 FQN 索引。
  */
 class MacroSymbolIndex internal constructor(
+    /** 源包内宏定义条目。 */
     private val sourceEntries: List<MacroDefinitionEntry>,
+    /** 可合法 lookup 的宏定义短名索引。 */
     private val foreignEntriesByName: Map<Name, List<MacroDefinitionEntry>>,
+    /** 可合法 lookup 的宏定义 FQN 索引。 */
     private val foreignEntriesByFqName: Map<FqName, MacroDefinitionEntry>,
 ) {
     /** 源包内宏定义条目（不能作为合法 lookup 目标）。 */
@@ -130,7 +157,9 @@ class MacroSymbolIndex internal constructor(
     fun lookupByShortName(name: Name): List<MacroDefinitionEntry> =
         foreignEntriesByName[name].orEmpty()
 
+    /** 空 macro symbol index。 */
     companion object {
+        /** 不包含 source 或 foreign 宏定义的空索引实例。 */
         val EMPTY: MacroSymbolIndex = MacroSymbolIndex(emptyList(), emptyMap(), emptyMap())
     }
 }
@@ -142,10 +171,16 @@ class MacroSymbolIndex internal constructor(
  * 由 evaluator 内建生成 tokens，不走 dynamic lib / external executor"。
  */
 object BuiltinMacroRegistry {
+    /** 返回当前源码包名的内建宏名。 */
     val sourcePackage: Name = Name.identifier("sourcePackage")
+
+    /** 返回当前源码文件名的内建宏名。 */
     val sourceFile: Name = Name.identifier("sourceFile")
+
+    /** 返回当前源码行号的内建宏名。 */
     val sourceLine: Name = Name.identifier("sourceLine")
 
+    /** 所有内建 macro 名称，按稳定注册顺序排列。 */
     val all: List<Name> = listOf(sourcePackage, sourceFile, sourceLine)
 }
 
@@ -159,6 +194,13 @@ object BuiltinMacroRegistry {
  *
  * 该入口禁止读取 source final provider，函数内部也不会触碰
  * [org.cangnova.cangjie.cfir.resolve.providers.CfirProviderImpl] 的任何状态。
+ *
+ * @param pre pre-macro raw build 结果。
+ * @param libraryDefinitions 从普通库反序列化得到的宏定义。
+ * @param sharedBuiltinDefinitions 共享基础库提供的宏定义。
+ * @param macroArtifactDefinitions 独立 macro artifact 提供的宏定义。
+ * @param builtinMacros evaluator 内建 macro 名称列表。
+ * @return construction 期离线 macro symbol index。
  */
 fun buildMacroSymbolIndex(
     pre: PreMacroRawBuildResult,
@@ -205,6 +247,7 @@ private fun collectSourceMacroDefinitions(pre: PreMacroRawBuildResult): List<Mac
     return result
 }
 
+/** 递归遍历声明树，把 public source macro 声明加入 [out]。 */
 private fun collectMacroDeclarationsInto(
     declarations: List<CfirDeclaration>,
     packageFqName: FqName,

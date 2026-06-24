@@ -52,29 +52,74 @@ import org.cangnova.cangjie.name.OperatorNameConventions
 import org.cangnova.cangjie.resolve.calls.tasks.ExplicitReceiverKind
 import org.cangnova.cangjie.resolve.calls.tower.CandidateApplicability
 
+/**
+ * 候选工厂与结果收集器组合。
+ */
 internal data class CandidateFactoriesAndCollectors(
+    /**
+     * 当前 tower level 使用的候选工厂。
+     */
     val candidateFactory: CandidateFactory,
+    /**
+     * 当前 tower level 写入的候选收集器。
+     */
     val resultCollector: CfirCandidateCollector,
 )
 
+/**
+ * tower level 处理结果。
+ */
 internal enum class ProcessResult {
+    /**
+     * 当前作用域没有可处理候选。
+     */
     SCOPE_EMPTY,
+    /**
+     * 当前作用域找到至少一个候选。
+     */
     FOUND,
     ;
 
+    /**
+     * 合并两个 tower level 处理结果。
+     */
     operator fun plus(other: ProcessResult): ProcessResult =
         if (this == FOUND || other == FOUND) FOUND else SCOPE_EMPTY
 }
 
+/**
+ * 单个 tower level 的查找接口。
+ */
 internal interface CfirTowerLevel {
+    /**
+     * 按名称处理 callable 候选。
+     */
     fun processCallablesByName(info: CallInfo, processor: TowerLevelProcessor): ProcessResult
+    /**
+     * 按名称处理函数或构造器候选。
+     */
     fun processFunctionsByName(info: CallInfo, processor: TowerLevelProcessor): ProcessResult
 }
 
+/**
+ * 基于普通作用域的 tower level。
+ */
 internal class ScopeBasedTowerLevel(
+    /**
+     * 当前 body resolve 组件。
+     */
     private val components: BodyResolveComponents,
+    /**
+     * 要查询的作用域。
+     */
     private val scope: CfirScope,
+    /**
+     * 可选 dispatch receiver。
+     */
     private val dispatchReceiver: ReceiverValue? = null,
+    /**
+     * 可选 extension receiver。
+     */
     private val givenExtensionReceiver: ReceiverValue? = null,
 ) : CfirTowerLevel {
     /**
@@ -92,6 +137,9 @@ internal class ScopeBasedTowerLevel(
         processor.consumeCandidate(symbol, scope, dispatchReceiver, givenExtensionReceiver)
     }
 
+    /**
+     * 从作用域中处理 callable 候选。
+     */
     override fun processCallablesByName(info: CallInfo, processor: TowerLevelProcessor): ProcessResult {
         var result = ProcessResult.SCOPE_EMPTY
         scope.processCallablesByName(info.name) { symbol ->
@@ -107,6 +155,9 @@ internal class ScopeBasedTowerLevel(
         return result
     }
 
+    /**
+     * 从作用域中处理函数、构造器或函数值候选。
+     */
     override fun processFunctionsByName(info: CallInfo, processor: TowerLevelProcessor): ProcessResult {
         if (info.callKind == CallKind.EnumConstructorCall) {
             var result = ProcessResult.SCOPE_EMPTY
@@ -152,6 +203,9 @@ internal class ScopeBasedTowerLevel(
         return result
     }
 
+    /**
+     * 判断变量符号是否可以作为直接 callable value 调用。
+     */
     private fun CfirCallableSymbol<*>.isDirectCallableValueCandidate(): Boolean {
         if (!isBound) return false
         val declaration = cfir as? CfirVariable ?: return false
@@ -159,16 +213,40 @@ internal class ScopeBasedTowerLevel(
     }
 }
 
+/**
+ * 基于 dispatch receiver 成员作用域的 tower level。
+ */
 internal class DispatchReceiverMemberScopeTowerLevel(
+    /**
+     * 当前 body resolve 组件。
+     */
     private val components: BodyResolveComponents,
+    /**
+     * dispatch receiver。
+     */
     private val dispatchReceiver: ReceiverValue,
+    /**
+     * 可选 extension receiver。
+     */
     private val givenExtensionReceiver: ReceiverValue? = null,
 ) : CfirTowerLevel {
+    /**
+     * receiver 成员作用域及有效 dispatch receiver。
+     */
     private data class MemberScopeData(
+        /**
+         * receiver 成员作用域。
+         */
         val scope: CfirScope,
+        /**
+         * 实际写入候选的 dispatch receiver。
+         */
         val dispatchReceiver: ReceiverValue?,
     )
 
+    /**
+     * 计算 receiver 的成员作用域。
+     */
     private fun memberScope(): MemberScopeData? {
         val scope = dispatchReceiver.scope(components) ?: return null
         val effectiveDispatchReceiver = dispatchReceiver.takeUnless {
@@ -177,6 +255,9 @@ internal class DispatchReceiverMemberScopeTowerLevel(
         return MemberScopeData(scope, effectiveDispatchReceiver)
     }
 
+    /**
+     * 从 receiver 成员作用域处理 callable 候选。
+     */
     override fun processCallablesByName(info: CallInfo, processor: TowerLevelProcessor): ProcessResult {
         val scopeData = memberScope() ?: return ProcessResult.SCOPE_EMPTY
         return ScopeBasedTowerLevel(
@@ -187,6 +268,9 @@ internal class DispatchReceiverMemberScopeTowerLevel(
         ).processCallablesByName(info, processor)
     }
 
+    /**
+     * 从 receiver 成员作用域处理函数候选。
+     */
     override fun processFunctionsByName(info: CallInfo, processor: TowerLevelProcessor): ProcessResult {
         val scopeData = memberScope() ?: return ProcessResult.SCOPE_EMPTY
         return ScopeBasedTowerLevel(
@@ -198,7 +282,13 @@ internal class DispatchReceiverMemberScopeTowerLevel(
     }
 }
 
+/**
+ * tower level 处理入口。
+ */
 internal class TowerLevelHandler {
+    /**
+     * 按调用种类将 tower level 处理结果写入候选收集器。
+     */
     fun handleLevel(
         collector: CfirCandidateCollector,
         candidateFactory: CandidateFactory,
@@ -227,14 +317,38 @@ internal class TowerLevelHandler {
     }
 }
 
+/**
+ * tower level 中消费符号并创建候选的处理器。
+ */
 internal class TowerLevelProcessor(
+    /**
+     * 当前调用信息。
+     */
     val callInfo: CallInfo,
+    /**
+     * 显式接收者种类。
+     */
     val explicitReceiverKind: ExplicitReceiverKind,
+    /**
+     * 结果候选收集器。
+     */
     val resultCollector: CfirCandidateCollector,
+    /**
+     * 候选工厂。
+     */
     val candidateFactory: CandidateFactory,
+    /**
+     * 当前 tower group。
+     */
     val group: CfirTowerGroup,
+    /**
+     * 当前解析上下文。
+     */
     val context: ResolutionContext,
 ) {
+    /**
+     * 消费普通 callable 符号并创建候选。
+     */
     fun consumeCandidate(
         symbol: CfirCallableSymbol<*>,
         scope: CfirScope?,
@@ -255,6 +369,9 @@ internal class TowerLevelProcessor(
         )
     }
 
+    /**
+     * 消费函数类型接收者的 synthetic invoke 候选。
+     */
     fun consumeFunctionTypeInvokeCandidate(
         receiverExpression: org.cangnova.cangjie.cfir.expressions.CfirExpression,
         dispatchReceiver: ReceiverValue,
@@ -275,12 +392,24 @@ internal class TowerLevelProcessor(
     }
 }
 
+/**
+ * 函数类型接收者的 `invoke` tower level。
+ */
 internal class FunctionTypeInvokeTowerLevel(
+    /**
+     * 函数类型接收者表达式。
+     */
     private val receiverExpression: org.cangnova.cangjie.cfir.expressions.CfirExpression,
 ) : CfirTowerLevel {
+    /**
+     * callable 访问委托到函数调用处理。
+     */
     override fun processCallablesByName(info: CallInfo, processor: TowerLevelProcessor): ProcessResult =
         processFunctionsByName(info, processor)
 
+    /**
+     * 当名称为 `invoke` 且 receiver 类型为函数类型时创建 synthetic invoke 候选。
+     */
     override fun processFunctionsByName(info: CallInfo, processor: TowerLevelProcessor): ProcessResult {
         if (info.callKind != CallKind.Function || info.name != OperatorNameConventions.INVOKE) {
             return ProcessResult.SCOPE_EMPTY
@@ -293,6 +422,9 @@ internal class FunctionTypeInvokeTowerLevel(
     }
 }
 
+/**
+ * 判断作用域是否可能包含指定名称。
+ */
 internal fun CfirScope.mayContainName(name: org.cangnova.cangjie.name.Name): Boolean {
     if (this is CfirContainingNamesAwareScope) {
         if (name in getCallableNames() || name in getClassifierNames()) return true

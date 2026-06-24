@@ -43,6 +43,7 @@ import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
  */
 object CfirMapTypeArguments : ResolutionStage() {
     context(sink: CheckerSink, context: ResolutionContext)
+    /** 解析显式类型实参并写入候选，同时检查数量是否匹配声明泛型参数。 */
     override suspend fun check(candidate: Candidate) {
         val mapping = buildTypeArgumentMapping(candidate)
         candidate.typeArgumentMapping = mapping
@@ -50,6 +51,7 @@ object CfirMapTypeArguments : ResolutionStage() {
         checkTypeArgumentCount(candidate, context)
     }
 
+    /** 从候选调用信息构造类型实参映射。 */
     private fun buildTypeArgumentMapping(candidate: Candidate): TypeArgumentMapping {
         val explicitTypeArguments = candidate.resolvedExplicitTypeArguments()
 
@@ -84,6 +86,7 @@ object CfirMapTypeArguments : ResolutionStage() {
         }
     }
 
+    /** 读取候选显式类型实参，优先使用 callInfo，必要时回退到 call-site。 */
     private fun Candidate.resolvedExplicitTypeArguments(): List<CfirResolvedTypeRef> {
         val fromCallInfo = callInfo.typeArguments.mapNotNull { it as? CfirResolvedTypeRef }
         if (fromCallInfo.isNotEmpty()) return fromCallInfo

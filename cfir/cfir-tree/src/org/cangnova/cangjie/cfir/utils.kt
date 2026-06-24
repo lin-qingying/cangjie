@@ -43,6 +43,9 @@ import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 import org.cangnova.cangjie.utils.exceptions.withCfirEntry
 import kotlin.reflect.KClass
 
+/**
+ * 在分析 [element] 时运行 [block]，并通过 session 异常处理器包装异常。
+ */
 inline fun <R> whileAnalysing(session: CfirSession, element: CfirElement, block: () -> R): R {
     return try {
         block()
@@ -50,10 +53,21 @@ inline fun <R> whileAnalysing(session: CfirSession, element: CfirElement, block:
         session.exceptionHandler.handleExceptionOnElementAnalysis(element, throwable)
     }
 }
+
+/**
+ * 使用默认 CFIR renderer 渲染元素。
+ */
 fun CfirElement.render(): String =
    CfirRenderer().renderElementAsString(this)
+
+/**
+ * 当前 CFIR 元素对应的 PSI。
+ */
 val CfirElement.psi: PsiElement? get() = (source as? CjPsiSourceElement)?.psi
 
+/**
+ * 在分析 [file] 时运行 [block]，并通过文件级异常处理器包装异常。
+ */
 inline fun <R> withFileAnalysisExceptionWrapping(file: CfirFile, block: () -> R): R {
     return try {
         block()
@@ -61,11 +75,21 @@ inline fun <R> withFileAnalysisExceptionWrapping(file: CfirFile, block: () -> R)
         file.moduleData.session.exceptionHandler.handleExceptionOnFileAnalysis(file, throwable)
     }
 }
+
+/**
+ * CLI 环境使用的 CFIR 异常处理器。
+ */
 object CfirCliExceptionHandler : CfirExceptionHandler() {
+    /**
+     * 把元素分析异常包装为源码分析异常后抛出。
+     */
     override fun handleExceptionOnElementAnalysis(element: CfirElement, throwable: Throwable): Nothing {
         throw throwable.wrapIntoSourceCodeAnalysisExceptionIfNeeded(element.source)
     }
 
+    /**
+     * 把文件分析异常包装为文件分析异常后抛出。
+     */
     override fun handleExceptionOnFileAnalysis(file: CfirFile, throwable: Throwable): Nothing {
         throw throwable.wrapIntoFileAnalysisExceptionIfNeeded(
             file.sourceFile?.path,
@@ -73,13 +97,30 @@ object CfirCliExceptionHandler : CfirExceptionHandler() {
         ) { file.sourceFileLinesMapping?.getLineAndColumnByOffset(it) }
     }
 }
+
+/**
+ * CFIR 分析异常处理器基类。
+ */
 abstract class CfirExceptionHandler : CfirSessionComponent {
+    /**
+     * 处理单个 [element] 分析期间抛出的异常。
+     */
     abstract fun handleExceptionOnElementAnalysis(element: CfirElement, throwable: Throwable): Nothing
+
+    /**
+     * 处理 [file] 分析期间抛出的异常。
+     */
     abstract fun handleExceptionOnFileAnalysis(file: CfirFile, throwable: Throwable): Nothing
 }
 
+/**
+ * 从 session 中读取 CFIR 异常处理器。
+ */
 val CfirSession.exceptionHandler: CfirExceptionHandler by CfirSession.sessionComponentAccessor()
 
+/**
+ * 复制当前 type ref，并替换 source。
+ */
 @Suppress("UNCHECKED_CAST")
 @OptIn(CfirImplementationDetail::class)
 fun <R : CfirTypeRef> R.copyWithNewSource(newSource: CjSourceElement): R {
@@ -153,6 +194,9 @@ fun <R : CfirTypeRef> R.copyWithNewSource(newSource: CjSourceElement): R {
     } as R
 }
 
+/**
+ * 将 Cone 类型包装成已解析 type ref。
+ */
 fun ConeCangJieType.toCfirResolvedTypeRef(
     source: CjSourceElement? = null,
     delegatedTypeRef: CfirTypeRef? = null,
@@ -173,9 +217,15 @@ fun ConeCangJieType.toCfirResolvedTypeRef(
     }
 }
 
+/**
+ * 当前 CFIR 元素对应的真实 PSI。
+ */
 val CfirElement.realPsi: PsiElement? get() = (source as? CjRealPsiSourceElement)?.psi
 
 
+/**
+ * 在 lazy resolve 中报告实际类型与期望类型不一致的错误。
+ */
 internal fun CfirBasedSymbol<*>.errorInLazyResolve(name: String, actualClass: KClass<*>, expected: KClass<*>): Nothing {
     errorWithAttachment("Unexpected $name. Expected is ${expected.simpleName}, but was ${actualClass.simpleName}") {
         withCfirEntry("cfirElement", cfir)
@@ -184,6 +234,9 @@ internal fun CfirBasedSymbol<*>.errorInLazyResolve(name: String, actualClass: KC
 }
 
 
+/**
+ * 强制 lazy resolve 到 STATUS 阶段并返回已解析声明状态。
+ */
 internal fun CfirMemberDeclaration.resolvedStatus(): CfirResolvedDeclarationStatus {
     lazyResolveToPhase(CfirResolvePhase.STATUS)
 

@@ -25,6 +25,9 @@ import org.cangnova.cangjie.name.Name
  * 将在 resolve 管线就绪后补充。
  */
 object CfirGenericDeepChecker : CfirTypeParameterChecker() {
+    /**
+     * 检查类型参数直接和间接递归上界。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirTypeParameter) {
         checkDirectRecursiveBound(declaration)

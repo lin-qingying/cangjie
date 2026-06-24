@@ -16,6 +16,7 @@ import org.cangnova.cangjie.cfir.types.CfirVArrayTypeRef
  * 范围错误，随后该 VArray 类型进入错误类型路径。
  */
 object CfirVArraySizeLiteralChecker : CfirTypeRefChecker() {
+    /** 检查一个类型引用是否为 VArray，并在长度字面量越界时报告数值溢出诊断。 */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(typeRef: CfirTypeRef) {
         val varrayTypeRef = typeRef as? CfirVArrayTypeRef ?: return

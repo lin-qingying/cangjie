@@ -41,6 +41,11 @@ import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 open class CfirImplicitAwareBodyResolveTransformer(
     session: CfirSession,
     scopeSession: ScopeSession,
+    /**
+     * 隐式 body resolve 的跨声明计算状态。
+     *
+     * 该状态负责缓存已计算声明并阻断递归 implicit type 解析。
+     */
     private val implicitBodyResolveComputationSession: CfirImplicitBodyResolveComputationSession,
     phase: CfirResolvePhase,
     implicitTypeOnly: Boolean,
@@ -55,6 +60,9 @@ open class CfirImplicitAwareBodyResolveTransformer(
     implicitTypeOnly = implicitTypeOnly,
 ) {
 
+    /**
+     * 解析普通函数声明，并在需要时复用隐式返回类型缓存。
+     */
     override fun transformFunction(function: CfirFunction, data: ResolutionMode): CfirFunction {
         @Suppress("UNCHECKED_CAST")
         return computeCachedTransformationResult(function) {
@@ -62,6 +70,9 @@ open class CfirImplicitAwareBodyResolveTransformer(
         } as CfirFunction
     }
 
+    /**
+     * 解析具名函数声明，并在跨声明隐式类型计算中登记结果。
+     */
     override fun transformNamedFunction(namedFunction: CfirNamedFunction, data: ResolutionMode): CfirNamedFunction {
         @Suppress("UNCHECKED_CAST")
         return computeCachedTransformationResult(namedFunction) {
@@ -69,6 +80,9 @@ open class CfirImplicitAwareBodyResolveTransformer(
         } as CfirNamedFunction
     }
 
+    /**
+     * 解析主函数声明。
+     */
     override fun transformMainFunction(mainFunction: CfirMainFunction, data: ResolutionMode): CfirMainFunction {
         @Suppress("UNCHECKED_CAST")
         return computeCachedTransformationResult(mainFunction) {
@@ -76,6 +90,9 @@ open class CfirImplicitAwareBodyResolveTransformer(
         } as CfirMainFunction
     }
 
+    /**
+     * 解析宏声明的函数体与隐式返回类型。
+     */
     override fun transformMacroDeclaration(
         macroDeclaration: CfirMacroDeclaration,
         data: ResolutionMode,
@@ -86,6 +103,9 @@ open class CfirImplicitAwareBodyResolveTransformer(
         } as CfirMacroDeclaration
     }
 
+    /**
+     * 解析 finalizer 声明，并复用可调用声明的隐式 body 缓存机制。
+     */
     override fun transformFinalizer(finalizer: CfirFinalizer, data: ResolutionMode): CfirFinalizer {
         @Suppress("UNCHECKED_CAST")
         return computeCachedTransformationResult(finalizer) {
@@ -93,6 +113,9 @@ open class CfirImplicitAwareBodyResolveTransformer(
         } as CfirFinalizer
     }
 
+    /**
+     * 解析属性声明的初始化器、访问器和隐式类型。
+     */
     override fun transformProperty(property: CfirProperty, data: ResolutionMode): CfirProperty {
         @Suppress("UNCHECKED_CAST")
         return computeCachedTransformationResult(property) {
@@ -100,6 +123,9 @@ open class CfirImplicitAwareBodyResolveTransformer(
         } as CfirProperty
     }
 
+    /**
+     * 解析字段变量；局部字段变量不进入跨声明隐式类型缓存。
+     */
     override fun transformFieldVariable(fieldVariable: CfirFieldVariable, data: ResolutionMode): CfirFieldVariable {
         if (!fieldVariable.shouldUseImplicitBodyCache()) {
             return super.transformFieldVariable(fieldVariable, data)
@@ -110,6 +136,9 @@ open class CfirImplicitAwareBodyResolveTransformer(
         } as CfirFieldVariable
     }
 
+    /**
+     * 解析模式绑定变量；局部模式变量由当前 body resolve 直接处理。
+     */
     override fun transformPatternVariable(patternVariable: CfirPatternVariable, data: ResolutionMode): CfirPatternVariable {
         if (!patternVariable.shouldUseImplicitBodyCache()) {
             return super.transformPatternVariable(patternVariable, data)
@@ -120,6 +149,9 @@ open class CfirImplicitAwareBodyResolveTransformer(
         } as CfirPatternVariable
     }
 
+    /**
+     * 解析普通变量声明；只有声明边界变量参与隐式类型缓存。
+     */
     override fun transformVariable(variable: CfirVariable, data: ResolutionMode): CfirVariable {
         if (!variable.shouldUseImplicitBodyCache()) {
             return super.transformVariable(variable, data)

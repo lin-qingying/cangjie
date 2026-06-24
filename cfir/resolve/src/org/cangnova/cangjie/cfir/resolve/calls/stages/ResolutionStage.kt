@@ -13,5 +13,6 @@ import org.cangnova.cangjie.cfir.resolve.calls.candidate.CheckerSink
  */
 abstract class ResolutionStage {
     context(sink: CheckerSink, context: ResolutionContext)
+    /** 在当前 checker sink 与 resolution context 下检查单个候选。 */
     abstract suspend fun check(candidate: Candidate)
 }

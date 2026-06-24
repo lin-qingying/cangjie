@@ -45,6 +45,9 @@ class CfirTypeParameterScopeImpl(
     typeParameters: List<CfirTypeParameter>,
 ) : CfirTypeParameterScope() {
 
+    /**
+     * 类型参数名称到 symbol 列表的索引。
+     */
     private val typeParametersByName: Map<Name, List<CfirTypeParameterSymbol>>
 
     init {
@@ -56,7 +59,9 @@ class CfirTypeParameterScopeImpl(
         typeParametersByName = map
     }
 
-    /** 按名称查找类型参数符号 */
+    /**
+     * 按名称查找类型参数符号。
+     */
     override fun processTypeParametersByName(name: Name, processor: (CfirTypeParameterSymbol) -> Unit) {
         typeParametersByName[name]?.forEach(processor)
     }
@@ -74,14 +79,34 @@ class CfirTypeParameterScopeImpl(
         }
     }
 
+    /**
+     * 类型参数 scope 不包含 callable。
+     */
     override fun getCallableNames(): Set<Name> = emptySet()
 
+    /**
+     * 返回类型参数名称集合。
+     */
     override fun getClassifierNames(): Set<Name> = typeParametersByName.keys
 
+    /**
+     * 判断 scope 是否可能包含指定类型参数名。
+     */
     override fun mayContainName(name: Name): Boolean = name in typeParametersByName
 
     // 类型参数不是 class-like/functions/variables。
+    /**
+     * 类型参数不是 class-like classifier，保持空实现。
+     */
     override fun processClassifiersByName(name: Name, processor: (CfirClassLikeSymbol<*>) -> Unit) {}
+
+    /**
+     * 类型参数 scope 不包含函数。
+     */
     override fun processFunctionsByName(name: Name, processor: (CfirNamedFunctionSymbol) -> Unit) {}
+
+    /**
+     * 类型参数 scope 不包含属性。
+     */
     override fun processPropertiesByName(name: Name, processor: (CfirPropertySymbol) -> Unit) {}
 }

@@ -1,7 +1,7 @@
 
 
 package problem
-public import stdx.encoding.json.*
+public import <!UNRESOLVED_IMPORT!>stdx<!>.encoding.json.*
 
 public class JsonTypeMismatch <: Exception {
     public init(expectType: String, actualType: String) {

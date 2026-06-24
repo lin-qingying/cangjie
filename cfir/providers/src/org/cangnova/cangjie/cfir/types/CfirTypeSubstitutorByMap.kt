@@ -39,8 +39,14 @@ import org.cangnova.cangjie.type.model.TypeConstructorMarker
  * use-site scope 和调用解析共享，而不是局限在 resolve 某个阶段。
  */
 class CfirTypeSubstitutorByMap(
+    /**
+     * 类型构造器到替换目标类型的映射。
+     */
     private val replacements: Map<TypeConstructorMarker, ConeCangJieType>,
 ) : ConeSubstitutor() {
+    /**
+     * 替换 [type] 或其结构字段；返回 `null` 表示没有发生变化。
+     */
     override fun substituteOrNull(type: ConeCangJieType): ConeCangJieType? {
         return when (type) {
             is ConeTypeParameterType -> replacements[type.lookupTag]
@@ -86,10 +92,16 @@ class CfirTypeSubstitutorByMap(
         }
     }
 
+    /**
+     * 替换类型实参中的类型。
+     */
     override fun substituteArgument(projection: ConeTypeProjection, index: Int): ConeTypeProjection? {
         return substituteOrNull(projection.type)
     }
 
+    /**
+     * 替换函数类型的参数类型与返回类型。
+     */
     private fun substituteFunction(type: ConeFunctionType): ConeFunctionType? {
         val parameterTypes = substituteTypes(type.parameterTypes)
         val returnType = substituteOrNull(type.returnType)
@@ -104,6 +116,9 @@ class CfirTypeSubstitutorByMap(
         )
     }
 
+    /**
+     * 替换 typealias 的 expanded type 与类型实参。
+     */
     private fun substituteTypeAlias(type: ConeTypeAliasType): ConeTypeAliasType? {
         val expandedType = type.expandedType?.let { substituteOrNull(it) ?: it }
         val typeArguments = substituteArguments(type.typeArguments)
@@ -116,6 +131,9 @@ class CfirTypeSubstitutorByMap(
         )
     }
 
+    /**
+     * 替换交叉类型组成项和近似上界。
+     */
     private fun substituteIntersectionType(type: ConeIntersectionType): ConeIntersectionType? {
         val intersectedTypes = substituteTypes(type.intersectedTypes)
         val upperBoundForApproximation = type.upperBoundForApproximation?.let { substituteOrNull(it) ?: it }
@@ -128,6 +146,9 @@ class CfirTypeSubstitutorByMap(
         )
     }
 
+    /**
+     * 替换类型实参列表；只有至少一个实参变化时返回新列表。
+     */
     private fun substituteArguments(arguments: List<ConeTypeProjection>): List<ConeTypeProjection>? {
         var changed = false
         val substituted = arguments.mapIndexed { index, projection ->
@@ -136,6 +157,9 @@ class CfirTypeSubstitutorByMap(
         return substituted.takeIf { changed }
     }
 
+    /**
+     * 替换类型集合；只有至少一个元素变化时返回新列表。
+     */
     private fun substituteTypes(types: Collection<ConeCangJieType>): List<ConeCangJieType>? {
         var changed = false
         val substituted = types.map { type ->

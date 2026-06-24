@@ -22,6 +22,7 @@ import org.cangnova.cangjie.source.psi
  * - 调用标记了 @Deprecated 的声明时发出警告
  */
 object CfirDeprecatedCallChecker : CfirFunctionCallChecker() {
+    /** 检查函数调用目标是否被 `@Deprecated` 标记，并按注解等级报告 warning/error。 */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirFunctionCall) {
         val symbol = expression.resolvedCallableSymbol() ?: return
@@ -45,6 +46,7 @@ object CfirDeprecatedCallChecker : CfirFunctionCallChecker() {
         )
     }
 
+    /** 从函数调用 calleeReference 中提取已经解析到的 callable symbol。 */
     private fun CfirFunctionCall.resolvedCallableSymbol(): CfirCallableSymbol<*>? {
         return when (val reference = calleeReference) {
             is CfirResolvedNamedReference -> reference.resolvedSymbol as? CfirCallableSymbol<*>
@@ -53,6 +55,7 @@ object CfirDeprecatedCallChecker : CfirFunctionCallChecker() {
         }
     }
 
+    /** 在声明注解中查找解析为 `Deprecated` class-like 的注解。 */
     private fun findDeprecatedAnnotation(declaration: CfirDeclaration): CfirAnnotation? {
         return declaration.annotations.firstOrNull { annotation ->
             val resolvedType = (annotation.typeRef as? CfirResolvedTypeRef)?.coneType
@@ -61,6 +64,7 @@ object CfirDeprecatedCallChecker : CfirFunctionCallChecker() {
         }
     }
 
+    /** 提取用于弃用诊断展示的声明名。 */
     private fun extractDeclarationName(declaration: CfirDeclaration): Name {
         return when (declaration) {
             is org.cangnova.cangjie.cfir.declarations.CfirNamedFunction -> declaration.name

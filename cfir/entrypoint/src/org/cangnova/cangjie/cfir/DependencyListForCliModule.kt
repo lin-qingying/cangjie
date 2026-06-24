@@ -10,22 +10,34 @@ import java.nio.file.Path
 import java.nio.file.Paths
 
 /**
- * Describes dependency module data for a CLI source module.
+ * CLI 源模块的依赖模块数据。
  *
- * Cangjie keeps Kotlin's regular/depends-on split, but intentionally omits
- * friend dependencies because the language/module model in this repository
- * does not expose Kotlin's friend-module semantics.
+ * 仓颉保留 Kotlin 的 regular / depends-on 依赖划分，但有意省略 friend dependencies，
+ * 因为当前语言和模块模型不暴露 Kotlin friend-module 语义。
+ *
+ * @property regularDependencies 普通依赖模块。
+ * @property dependsOnDependencies depends-on 依赖模块。
+ * @property moduleDataProvider 按库路径查找模块数据的 provider。
  */
 class DependencyListForCliModule internal constructor(
     val regularDependencies: List<CfirModuleData>,
     val dependsOnDependencies: List<CfirModuleData>,
     val moduleDataProvider: ModuleDataProvider,
 ) {
+    /**
+     * 依赖列表构建入口。
+     */
     companion object {
+        /**
+         * 使用 builder DSL 构建依赖列表。
+         */
         inline fun build(init: Builder.() -> Unit = {}): DependencyListForCliModule {
             return Builder().apply(init).build()
         }
 
+        /**
+         * 使用默认 regular / depends-on 依赖模块构建依赖列表。
+         */
         inline fun build(
             mainModuleName: Name,
             init: Builder.BuilderForDefaultDependenciesModule.() -> Unit = {},
@@ -34,19 +46,42 @@ class DependencyListForCliModule internal constructor(
         }
     }
 
+    /**
+     * CLI 依赖列表 builder。
+     */
     class Builder {
+        /**
+         * 已注册的普通依赖模块。
+         */
         private val allRegularDependencies: MutableSet<CfirBinaryDependenciesModuleData> = linkedSetOf()
+
+        /**
+         * 已注册的 depends-on 依赖模块。
+         */
         private val allDependsOnDependencies: MutableSet<CfirBinaryDependenciesModuleData> = linkedSetOf()
+
+        /**
+         * 依赖模块到库路径过滤器输入的映射。
+         */
         private val filtersMap: MutableMap<CfirBinaryDependenciesModuleData, MutableSet<Path>> = linkedMapOf()
 
+        /**
+         * 注册普通依赖模块及其可见路径。
+         */
         fun dependencies(moduleData: CfirBinaryDependenciesModuleData, paths: Collection<String>) {
             dependencies(moduleData, paths, allRegularDependencies)
         }
 
+        /**
+         * 注册 depends-on 依赖模块及其可见路径。
+         */
         fun dependsOnDependencies(moduleData: CfirBinaryDependenciesModuleData, paths: Collection<String>) {
             dependencies(moduleData, paths, allDependsOnDependencies)
         }
 
+        /**
+         * 创建并注册默认 regular / depends-on 依赖模块集合。
+         */
         inline fun defaultDependenciesSet(
             mainModuleName: Name,
             init: BuilderForDefaultDependenciesModule.() -> Unit,
@@ -57,10 +92,19 @@ class DependencyListForCliModule internal constructor(
             ).apply(init)
         }
 
+        /**
+         * 创建二进制依赖模块数据。
+         */
         fun createData(name: String): CfirBinaryDependenciesModuleData {
             return CfirBinaryDependenciesModuleData(Name.special(name))
         }
 
+        /**
+         * 默认依赖模块 DSL。
+         *
+         * @property regular 默认普通依赖模块。
+         * @property dependsOn 默认 depends-on 依赖模块。
+         */
         inner class BuilderForDefaultDependenciesModule(
             val regular: CfirBinaryDependenciesModuleData,
             val dependsOn: CfirBinaryDependenciesModuleData,
@@ -70,15 +114,24 @@ class DependencyListForCliModule internal constructor(
                 allDependsOnDependencies += dependsOn
             }
 
+            /**
+             * 为默认普通依赖模块注册路径。
+             */
             fun dependencies(paths: Collection<String>) {
                 dependencies(regular, paths)
             }
 
+            /**
+             * 为默认 depends-on 依赖模块注册路径。
+             */
             fun dependsOnDependencies(paths: Collection<String>) {
                 dependsOnDependencies(dependsOn, paths)
             }
         }
 
+        /**
+         * 将依赖模块和路径写入指定目标集合。
+         */
         private fun dependencies(
             moduleData: CfirBinaryDependenciesModuleData,
             paths: Collection<String>,
@@ -91,6 +144,9 @@ class DependencyListForCliModule internal constructor(
             paths.mapTo(filterSet) { Paths.get(it) }
         }
 
+        /**
+         * 构建不可变依赖列表。
+         */
         fun build(): DependencyListForCliModule {
             val pathFiltersMap = filtersMap
                 .filterValues { it.isNotEmpty() }
@@ -120,6 +176,9 @@ class DependencyListForCliModule internal constructor(
             )
         }
 
+        /**
+         * 过滤出拥有路径过滤器的依赖模块。
+         */
         private fun Collection<CfirBinaryDependenciesModuleData>.filterUsedModules(
             pathFiltersMap: Map<CfirModuleData, LibraryPathFilter>,
         ): MutableList<CfirBinaryDependenciesModuleData> {

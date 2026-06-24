@@ -40,10 +40,17 @@ import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
  *
  * 从 [CjNodeTypes.MODIFIER_LIST] 子树中提取修饰符关键字 Token，
  * 判断可见性、抽象性、静态、可变等修饰符。
+ *
+ * @property tree 当前 LightTree 树结构。
+ * @property modifierListNode modifier list 节点；声明没有 modifier list 时为 null。
+ * @property annotations 声明或参数上采集到的 annotation 节点列表。
  */
 class LightTreeModifierList(
+    /** 当前 LightTree 树结构。 */
     private val tree: FlyweightCapableTreeStructure<LighterASTNode>,
+    /** modifier list 节点；声明没有 modifier list 时为 null。 */
     private val modifierListNode: LighterASTNode?,
+    /** 声明或参数上采集到的 annotation 节点列表。 */
     val annotations: List<LighterASTNode>,
 ) {
     /** 修饰符 Token 类型集合（用于快速查找） */
@@ -56,11 +63,13 @@ class LightTreeModifierList(
         tokens
     }
 
+    /** 判断 modifier list 是否包含指定 [token]。 */
     fun hasModifier(token: com.intellij.psi.tree.IElementType): Boolean =
         token in modifierTokens
 
     // ===== 可见性 =====
 
+    /** 声明显式可见性；没有显式可见性时返回 internal。 */
     val visibility: Visibility
         get() = when {
             hasModifier(CjTokens.PUBLIC_KEYWORD) -> Visibilities.Public
@@ -70,6 +79,7 @@ class LightTreeModifierList(
             else -> Visibilities.Internal // 默认 internal
         }
 
+    /** 当前 modifier list 是否显式声明了可见性。 */
     val isVisibilityExplicit: Boolean
         get() = hasModifier(CjTokens.PUBLIC_KEYWORD)
                 || hasModifier(CjTokens.PRIVATE_KEYWORD)
@@ -78,22 +88,34 @@ class LightTreeModifierList(
 
     // ===== 模态（modality） =====
 
+    /** 是否包含 abstract modifier。 */
     val isAbstract: Boolean get() = hasModifier(CjTokens.ABSTRACT_KEYWORD)
+    /** 是否包含 open modifier。 */
     val isOpen: Boolean get() = hasModifier(CjTokens.OPEN_KEYWORD)
+    /** 是否包含 sealed modifier。 */
     val isSealed: Boolean get() = hasModifier(CjTokens.SEALED_KEYWORD)
 
+    /** 是否显式声明了 modality。 */
     val isModalityExplicit: Boolean
         get() = isAbstract || isOpen || isSealed
 
     // ===== 其他修饰符 =====
 
+    /** 是否包含 static modifier。 */
     val isStatic: Boolean get() = hasModifier(CjTokens.STATIC_KEYWORD)
+    /** 是否包含 const modifier。 */
     val isConst: Boolean get() = hasModifier(CjTokens.CONST_KEYWORD)
+    /** 是否包含 mut modifier。 */
     val isMut: Boolean get() = hasModifier(CjTokens.MUT_KEYWORD)
+    /** 是否包含 override modifier。 */
     val isOverride: Boolean get() = hasModifier(CjTokens.OVERRIDE_KEYWORD)
+    /** 是否包含 redef modifier。 */
     val isRedef: Boolean get() = hasModifier(CjTokens.REDEF_KEYWORD)
+    /** 是否包含 operator modifier。 */
     val isOperator: Boolean get() = hasModifier(CjTokens.OPERATOR_KEYWORD)
+    /** 是否包含 unsafe modifier。 */
     val isUnsafe: Boolean get() = hasModifier(CjTokens.UNSAFE_KEYWORD)
+    /** 是否包含 foreign modifier。 */
     val isForeign: Boolean get() = hasModifier(CjTokens.FOREIGN_KEYWORD)
 
     /** 按源码顺序暴露声明/参数修饰符文本，供 construction-only surface 携带。 */
@@ -146,6 +168,7 @@ class LightTreeModifierList(
         return status
     }
 
+    /** [LightTreeModifierList] 构造与 annotation 收集工具。 */
     companion object {
         /** 从声明节点中提取 MODIFIER_LIST 子节点并构建 [LightTreeModifierList]。 */
         fun from(
@@ -162,6 +185,7 @@ class LightTreeModifierList(
             return LightTreeModifierList(tree, modifierList, annotations)
         }
 
+        /** 从 [node] 的直接子树中收集 annotation 与 macro expression annotation 包装。 */
         private fun collectAnnotationsFrom(
             tree: FlyweightCapableTreeStructure<LighterASTNode>,
             node: LighterASTNode,
@@ -184,6 +208,7 @@ class LightTreeModifierList(
             }
         }
 
+        /** 返回第一个直接子节点 token type 为 [tokenType] 的起始偏移。 */
         private fun LighterASTNode.firstDirectChildOffset(
             tree: FlyweightCapableTreeStructure<LighterASTNode>,
             tokenType: com.intellij.psi.tree.IElementType,

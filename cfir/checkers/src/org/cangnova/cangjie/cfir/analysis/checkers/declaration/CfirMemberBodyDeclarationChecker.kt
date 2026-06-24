@@ -39,6 +39,9 @@ import org.cangnova.cangjie.name.Name
  * `sema_missing_func_body`，诊断位置为声明起始 token 的首字符。
  */
 object CfirMemberBodyDeclarationChecker : CfirDeclarationChecker<CfirMemberDeclaration>() {
+    /**
+     * 检查 class 直接成员是否缺少必需的函数体或属性访问器实现。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirMemberDeclaration) {
         val member = declaration.bodyRequiredMemberInfo() ?: return
@@ -59,6 +62,9 @@ object CfirMemberBodyDeclarationChecker : CfirDeclarationChecker<CfirMemberDecla
         )
     }
 
+    /**
+     * 将需要函数体/访问器的成员声明转换为统一检查数据。
+     */
     private fun CfirMemberDeclaration.bodyRequiredMemberInfo(): BodyRequiredMemberInfo? {
         return when (this) {
             is CfirNamedFunction -> BodyRequiredMemberInfo(
@@ -77,6 +83,13 @@ object CfirMemberBodyDeclarationChecker : CfirDeclarationChecker<CfirMemberDecla
         }
     }
 
+    /**
+     * 缺失 body 检查所需的成员摘要。
+     *
+     * @property status 成员声明状态。
+     * @property kind 诊断展示的成员种类。
+     * @property name 诊断展示的成员名称。
+     */
     private data class BodyRequiredMemberInfo(
         val status: CfirDeclarationStatus,
         val kind: String,

@@ -17,6 +17,9 @@ internal fun CfirBasedSymbol<*>.unwrapForDeclarationMetadataLookup(): CfirBasedS
     return (this as? CfirCallableSymbol<*>)?.unwrapOriginalForSubstitutionOverride() ?: this
 }
 
+/**
+ * 将 callable symbol 归一化为声明元数据查询使用的原始 callable symbol。
+ */
 internal fun CfirCallableSymbol<*>.unwrapCallableForDeclarationMetadataLookup(): CfirCallableSymbol<*> {
     return unwrapOriginalForSubstitutionOverride()
 }

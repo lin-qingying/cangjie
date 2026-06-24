@@ -36,6 +36,7 @@ fun convertTypeReference(
     return convertTypeElement(element, typeRefNode, tree, source, toSource)
 }
 
+/** 查找 TYPE_REFERENCE 或括号类型节点内部的直接类型元素子节点。 */
 private fun findDirectTypeElement(
     node: LighterASTNode,
     tree: FlyweightCapableTreeStructure<LighterASTNode>,
@@ -222,6 +223,7 @@ private fun collectTypeArguments(
     }
 }
 
+/** 将 LightTree 类型节点映射为 [CjSourceElement]，无法映射时说明 source 管线损坏。 */
 private fun LighterASTNode.toCjSourceElement(
     toSource: (LighterASTNode) -> AbstractCjSourceElement,
 ): CjSourceElement =

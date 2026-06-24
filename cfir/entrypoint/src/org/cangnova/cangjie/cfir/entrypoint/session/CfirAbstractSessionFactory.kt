@@ -98,6 +98,12 @@ abstract class CfirAbstractSessionFactory<CONTEXT> {
         }
     }
 
+    /**
+     * 汇总共享库会话的 provider 列表。
+     *
+     * 当前基类只委托平台钩子创建 provider，保留独立方法是为了把“共享 provider 汇总”与
+     * “平台 provider 选择”两个职责分开，后续新增公共共享 provider 时不会影响平台实现。
+     */
     private fun createSharedProviders(
         session: CfirSession,
         moduleData: CfirModuleData,
@@ -109,6 +115,18 @@ abstract class CfirAbstractSessionFactory<CONTEXT> {
         }
     }
 
+    /**
+     * 创建共享库会话的宿主平台符号提供器。
+     *
+     * 共享库会话只承载内建、合成或平台级全局符号，不绑定具体源码模块；平台实现可在这里追加
+     * 标准库、内建类型或工具链合成声明的 provider。
+     *
+     * @param session 正在构造的共享库会话。
+     * @param moduleData 共享依赖模块数据。
+     * @param scopeProvider 共享库会话使用的仓颉作用域提供器。
+     * @param context 宿主工厂传入的平台上下文。
+     * @return 需要注册到共享库会话的符号 provider 列表。
+     */
     protected abstract fun createPlatformSpecificSharedProviders(
         session: CfirSession,
         moduleData: CfirModuleData,
@@ -185,7 +203,22 @@ abstract class CfirAbstractSessionFactory<CONTEXT> {
         }
     }
 
+    /**
+     * 为普通库会话创建仓颉作用域提供器。
+     *
+     * 库会话负责反序列化依赖声明并提供跨模块符号查询，因此它的 scope provider 必须与
+     * deserialized provider 使用同一套作用域模型。
+     */
     protected abstract fun createCangJieScopeProviderForLibrarySession(): CfirCangJieScopeProvider
+
+    /**
+     * 注册普通库会话的宿主平台组件。
+     *
+     * 该钩子运行在公共组件注册之后、provider 装配之前，用于平台实现注入库解析需要的额外
+     * session component。
+     *
+     * @param c 宿主工厂上下文。
+     */
     abstract fun CfirSession.registerLibrarySessionComponents(c: CONTEXT)
 
     // ==================================== 平台源码会话 ====================================
@@ -310,21 +343,60 @@ abstract class CfirAbstractSessionFactory<CONTEXT> {
         }
     }
 
+    /**
+     * 源码会话 provider 构造结果。
+     *
+     * @property sourceProviders 当前源码模块自身声明的 provider，包括源码 provider 与插件生成 provider。
+     * @property additionalOptionalAnnotationsProvider 额外可选注解 provider；为空表示没有平台补充注解来源。
+     */
     protected data class SourceProviders(
         val sourceProviders: List<CfirSymbolProvider>,
         val additionalOptionalAnnotationsProvider: CfirSymbolProvider? = null,
     )
 
+    /**
+     * 为源码会话创建仓颉作用域提供器。
+     *
+     * 源码会话的作用域提供器参与源码声明构建、import resolve 和后续成员查询，必须绑定当前
+     * [moduleData] 与语言版本配置的语义。
+     */
     protected abstract fun createCangJieScopeProviderForSourceSession(
         moduleData: CfirModuleData, languageVersionSettings: LanguageVersionSettings
     ): CfirCangJieScopeProvider
 
+    /**
+     * 注册平台默认 checker。
+     *
+     * 该钩子在公共 checker 注册之后执行，用于 JVM、Native 或 IDE 等宿主追加平台语义检查。
+     */
     abstract fun CfirSessionConfigurator.registerPlatformCheckers()
+
+    /**
+     * 注册平台额外 checker。
+     *
+     * 仅当配置开启 extra checkers 时调用，适合放置成本较高或非默认启用的诊断规则。
+     */
     abstract fun CfirSessionConfigurator.registerExtraPlatformCheckers()
+
+    /**
+     * 注册源码会话的宿主平台组件。
+     *
+     * 该钩子在公共 session 组件注册之后执行，用于平台实现注入源码 resolve/checker 阶段需要的
+     * 自定义服务。
+     *
+     * @param c 宿主工厂上下文。
+     */
     abstract fun CfirSession.registerSourceSessionComponents(c: CONTEXT)
 
     // ==================================== 工具方法 ====================================
 
+    /**
+     * 根据当前模块依赖计算源码会话可见的结构化 provider。
+     *
+     * 依赖 session 分为库 session 与源码 session：库依赖贡献 dependency provider，源码依赖贡献
+     * source provider。共享 provider 从第一个库依赖继承，保持所有源码模块共用同一套 builtins 与
+     * 合成声明来源。
+     */
     private fun computeDependencyProviderList(
         session: CfirSession,
         moduleData: CfirModuleData,
@@ -353,8 +425,12 @@ abstract class CfirAbstractSessionFactory<CONTEXT> {
         )
     }
 
-    /* 该逻辑会在扁平化时剔除多余依赖/组合提供器，避免重复与解析错误。
-    *  扁平化过程中会根据顶层提供器的会话类型过滤掉其他模块的库/源码提供器。 */
+    /**
+     * 展开组合 provider，并按当前顶层 provider 的会话边界保留本会话可见 provider。
+     *
+     * 源码会话只保留同一源码 session 的 provider；库会话只保留库 provider。这样可以避免依赖
+     * provider 在组合 provider 中重复出现，也避免跨源码模块错误地共享当前模块声明。
+     */
     fun CfirSymbolProvider.flattenAndFilterOwnProviders(): List<CfirSymbolProvider> {
         val originalSession = session.takeIf { it.kind == CfirSession.Kind.Source }
         return flatten { provider ->
@@ -363,6 +439,12 @@ abstract class CfirAbstractSessionFactory<CONTEXT> {
         }
     }
 
+    /**
+     * 递归展开 [CfirCompositeSymbolProvider]。
+     *
+     * @param predicate 过滤最终叶子 provider 的谓词。
+     * @return 按原组合顺序收集的叶子 provider 列表。
+     */
     private fun CfirSymbolProvider.flatten(predicate: (CfirSymbolProvider) -> Boolean): List<CfirSymbolProvider> {
         val result = mutableListOf<CfirSymbolProvider>()
 
@@ -388,6 +470,12 @@ abstract class CfirAbstractSessionFactory<CONTEXT> {
 
 }
 
+/**
+ * 从库符号 provider 列表中构造 extend provider。
+ *
+ * 只有反序列化 provider 能提供二进制依赖中的 extend 元数据；当依赖中没有这类 provider 时返回
+ * 空实现，避免库会话暴露不存在的 extend 查询能力。
+ */
 private fun createLibraryExtendProvider(providers: List<CfirSymbolProvider>): CfirExtendProvider {
     val deserializedProviders = providers
         .flatMap(CfirSymbolProvider::flattenDeserializedProviders)
@@ -399,6 +487,12 @@ private fun createLibraryExtendProvider(providers: List<CfirSymbolProvider>): Cf
     }
 }
 
+/**
+ * 合并当前会话与依赖会话的 extend provider。
+ *
+ * 当前会话 provider 始终位于第一位，依赖 provider 去重后追加，保证源码 extend 查询优先使用
+ * 当前模块索引，再回退到依赖模块。
+ */
 private fun combineExtendProviders(
     ownProvider: CfirExtendProvider,
     dependencyProviders: List<CfirExtendProvider>,
@@ -410,6 +504,11 @@ private fun combineExtendProviders(
     return if (providers.size == 1) providers.single() else CfirCompositeExtendProvider(providers)
 }
 
+/**
+ * 展开 provider 树中的反序列化 provider。
+ *
+ * 该工具仅用于构造库 extend provider，确保 extend 元数据来源与二进制符号 provider 保持一致。
+ */
 private fun CfirSymbolProvider.flattenDeserializedProviders(): List<AbstractCfirDeserializedSymbolProvider> {
     return when (this) {
         is CfirCompositeSymbolProvider -> providers.flatMap(CfirSymbolProvider::flattenDeserializedProviders)

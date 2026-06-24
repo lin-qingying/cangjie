@@ -27,16 +27,32 @@ import kotlin.math.max
  * TypeStatement 的 and/or 组合，只把类型系统 API 适配到仓颉。
  */
 abstract class LogicSystem(private val context: ConeInferenceContext) {
+    /** 当前逻辑系统绑定的 CFIR session。 */
     val session: CfirSession get() = context.session
+
+    /** DFA 中 `null` 判断对应的 Nothing 类型。 */
     private val nullableNothingType = session.builtinTypes.nothingType
+
+    /** DFA 中未知但可存在的顶层 Any 类型。 */
     private val anyType = session.typeContext.anyType() as ConeCangJieType
 
+    /** 当前逻辑系统使用的数据流变量存储。 */
     abstract val variableStorage: VariableStorage
 
+    /**
+     * 判断类型是否适合作为 smart cast 结果。
+     */
     protected open fun ConeCangJieType.isAcceptableForSmartcast(): Boolean {
         return this != nullableNothingType
     }
 
+    /**
+     * 合并多个持久化 flow。
+     *
+     * @param flows 待合并的控制流分支。
+     * @param statementFlows 用于合并类型陈述与蕴含的 flow 集合。
+     * @param union 是否按 union 语义合并分支；否则按 common 语义合并。
+     */
     fun joinFlow(flows: Collection<PersistentFlow>, statementFlows: Collection<PersistentFlow>, union: Boolean): MutableFlow {
         when (flows.size) {
             0 -> return MutableFlow()
@@ -58,6 +74,13 @@ abstract class LogicSystem(private val context: ConeInferenceContext) {
         return result
     }
 
+    /**
+     * 为局部变量登记别名。
+     *
+     * @param flow 要写入的可变 flow。
+     * @param alias 别名变量。
+     * @param underlyingVariable 别名指向的底层变量。
+     */
     fun addLocalVariableAlias(flow: MutableFlow, alias: RealVariable, underlyingVariable: RealVariable) {
         if (underlyingVariable == alias) return
         flow.directAliasMap[alias] = underlyingVariable
@@ -65,6 +88,11 @@ abstract class LogicSystem(private val context: ConeInferenceContext) {
             flow.backwardsAliasMap[underlyingVariable]?.add(alias) ?: persistentSetOf(alias)
     }
 
+    /**
+     * 将类型陈述加入 flow。
+     *
+     * 已存在陈述时会合并上下界；如果没有产生新信息则返回 `null`。
+     */
     fun addTypeStatement(flow: MutableFlow, statement: TypeStatement): TypeStatement? {
         if (statement.isEmpty) return null
         val variable = statement.variable
@@ -78,9 +106,19 @@ abstract class LogicSystem(private val context: ConeInferenceContext) {
             .also { flow.approvedTypeStatements[variable] = it }
     }
 
+    /**
+     * 批量加入类型陈述。
+     *
+     * @return 实际写入并产生新信息的陈述列表。
+     */
     fun addTypeStatements(flow: MutableFlow, statements: TypeStatements): List<TypeStatement> =
         statements.values.mapNotNull { addTypeStatement(flow, it) }
 
+    /**
+     * 将条件蕴含加入 flow。
+     *
+     * 空效果、重复效果或对无法追踪合成变量的冗余效果会被跳过。
+     */
     fun addImplication(flow: MutableFlow, implication: Implication) {
         val effect = implication.effect
         val redundant = effect == implication.condition || when (effect) {
@@ -92,11 +130,19 @@ abstract class LogicSystem(private val context: ConeInferenceContext) {
         flow.implications[variable] = flow.implications[variable]?.add(implication) ?: persistentListOf(implication)
     }
 
+    /**
+     * 判断指定类型陈述是否已经被当前 flow 完全包含。
+     */
     private fun MutableFlow.containsAlready(effect: TypeStatement): Boolean {
         val approved = approvedTypeStatements[effect.variable] ?: return false
         return approved.upperTypes.containsAll(effect.upperTypes) && approved.lowerTypes.containsAll(effect.lowerTypes)
     }
 
+    /**
+     * 将 implication 条件中的变量从旧变量迁移到新变量。
+     *
+     * 常用于 smart cast、别名替换或合成变量落到真实变量后，把已记录的条件继续挂到可追踪变量上。
+     */
     fun translateVariableFromConditionInStatements(
         flow: MutableFlow,
         originalVariable: DataFlowVariable,
@@ -115,10 +161,18 @@ abstract class LogicSystem(private val context: ConeInferenceContext) {
         }.build()
     }
 
+    /**
+     * 在持久化 flow 上批准一个操作陈述，并计算其推出的类型陈述。
+     */
     fun approveOperationStatement(flow: PersistentFlow, statement: OperationStatement): TypeStatements {
         return approveOperationStatement(flow.implications.toMutableMap(), statement, removeApprovedOrImpossible = false)
     }
 
+    /**
+     * 在可变 flow 上批准一个操作陈述，并计算其推出的类型陈述。
+     *
+     * @param removeApprovedOrImpossible 是否从 implication 表中移除已确定或不可能成立的蕴含。
+     */
     fun approveOperationStatement(
         flow: MutableFlow,
         statement: OperationStatement,
@@ -127,19 +181,33 @@ abstract class LogicSystem(private val context: ConeInferenceContext) {
         return approveOperationStatement(flow.implications, statement, removeApprovedOrImpossible)
     }
 
+    /**
+     * 记录真实变量的新赋值。
+     *
+     * 赋值会使变量旧别名和依赖该变量的陈述失效。
+     */
     fun recordNewAssignment(flow: MutableFlow, variable: RealVariable, index: Int) {
         flow.replaceVariable(variable, null)
         flow.assignmentIndex[variable] = index
     }
 
+    /**
+     * 判断变量在两个持久化 flow 中是否仍是同一次赋值。
+     */
     fun isSameValueIn(left: PersistentFlow, right: PersistentFlow, variable: RealVariable): Boolean {
         return left.assignmentIndex[variable] == right.assignmentIndex[variable]
     }
 
+    /**
+     * 判断变量在持久化 flow 与可变 flow 中是否仍是同一次赋值。
+     */
     fun isSameValueIn(left: PersistentFlow, right: MutableFlow, variable: RealVariable): Boolean {
         return left.assignmentIndex[variable] == right.assignmentIndex[variable]
     }
 
+    /**
+     * 合并各分支中的赋值序号，并让发生重赋值的变量失效。
+     */
     private fun MutableFlow.mergeAssignments(flows: Collection<PersistentFlow>) {
         val reassignedVariables = mutableMapOf<RealVariable, Int>()
         for (flow in flows) {
@@ -154,6 +222,9 @@ abstract class LogicSystem(private val context: ConeInferenceContext) {
         }
     }
 
+    /**
+     * 复制所有分支共同拥有的别名。
+     */
     private fun MutableFlow.copyCommonAliases(flows: Collection<PersistentFlow>) {
         for ((from, to) in flows.first().directAliasMap) {
             if (directAliasMap[from] != to && flows.all { it.unwrapVariable(from) == to }) {
@@ -162,6 +233,9 @@ abstract class LogicSystem(private val context: ConeInferenceContext) {
         }
     }
 
+    /**
+     * 在 union 合并中复制没有冲突的别名。
+     */
     private fun MutableFlow.copyNonConflictingAliases(flows: Collection<PersistentFlow>, commonFlow: PersistentFlow) {
         val candidates = mutableMapOf<RealVariable, RealVariable?>()
         for (flow in flows) {
@@ -178,6 +252,9 @@ abstract class LogicSystem(private val context: ConeInferenceContext) {
         }
     }
 
+    /**
+     * 从分支 flow 中复制并合并类型陈述。
+     */
     private fun MutableFlow.copyStatements(flows: Collection<PersistentFlow>, commonFlow: PersistentFlow, union: Boolean) {
         flows.flatMapTo(mutableSetOf()) { it.knownVariables }.forEach computeStatement@{ variable ->
             val statement = if (variable in directAliasMap) {
@@ -198,6 +275,9 @@ abstract class LogicSystem(private val context: ConeInferenceContext) {
         }
     }
 
+    /**
+     * 复制分支 flow 中仍然可用的 implication。
+     */
     private fun MutableFlow.copyImplications(flows: Collection<PersistentFlow>) {
         when (flows.size) {
             0 -> Unit
@@ -206,6 +286,11 @@ abstract class LogicSystem(private val context: ConeInferenceContext) {
         }
     }
 
+    /**
+     * 替换或移除 flow 中变量的所有引用。
+     *
+     * 该方法同时更新别名表、成员变量 receiver 引用、implication 和已批准的类型陈述。
+     */
     private fun MutableFlow.replaceVariable(variable: RealVariable, replacement: RealVariable?) {
         val original = directAliasMap.remove(variable)
         if (original != null) {
@@ -243,6 +328,12 @@ abstract class LogicSystem(private val context: ConeInferenceContext) {
         }
     }
 
+    /**
+     * 执行操作陈述批准的共享实现。
+     *
+     * 该过程会沿 implication 图传播条件，生成对应的类型陈述，并可按需清理已经确定或不可能成立的
+     * implication。
+     */
     private fun approveOperationStatement(
         logicStatements: Map<DataFlowVariable, PersistentList<Implication>>,
         approvedStatement: OperationStatement,
@@ -288,6 +379,9 @@ abstract class LogicSystem(private val context: ConeInferenceContext) {
         return result
     }
 
+    /**
+     * 判断当前 flow 是否已经批准指定类型陈述。
+     */
     fun approveTypeStatement(flow: Flow, statement: TypeStatement): Boolean {
         val variable = statement.variable
         val known = flow.getTypeStatement(variable)
@@ -306,6 +400,9 @@ abstract class LogicSystem(private val context: ConeInferenceContext) {
             && (statementLower == null || approvedUpper == null || !AbstractTypeChecker.isSubtypeOf(context, approvedUpper, statementLower))
     }
 
+    /**
+     * 对两组类型陈述执行 or 合并。
+     */
     fun orForTypeStatements(left: TypeStatements, right: TypeStatements): TypeStatements = when {
         left.isEmpty() -> left
         right.isEmpty() -> right
@@ -316,6 +413,9 @@ abstract class LogicSystem(private val context: ConeInferenceContext) {
         }
     }
 
+    /**
+     * 对两组类型陈述执行 and 合并。
+     */
     fun andForTypeStatements(left: TypeStatements, right: TypeStatements): TypeStatements = when {
         left.isEmpty() -> right
         right.isEmpty() -> left
@@ -326,15 +426,24 @@ abstract class LogicSystem(private val context: ConeInferenceContext) {
         }
     }
 
+    /**
+     * 将另一个类型陈述并入当前可变陈述。
+     */
     private operator fun MutableTypeStatement.plusAssign(other: TypeStatement) {
         upperTypes += other.upperTypes
         lowerTypes += other.lowerTypes
     }
 
+    /**
+     * 对两个类型陈述执行 and 合并。
+     */
     fun and(left: TypeStatement?, right: TypeStatement): TypeStatement {
         return left?.toMutable()?.apply { this += right } ?: right
     }
 
+    /**
+     * 对一组类型陈述执行 and 合并。
+     */
     fun and(statements: Collection<TypeStatement>): TypeStatement? {
         when (statements.size) {
             0 -> return null
@@ -348,6 +457,9 @@ abstract class LogicSystem(private val context: ConeInferenceContext) {
         return result
     }
 
+    /**
+     * 对一组类型陈述执行 or 合并。
+     */
     fun or(statements: Collection<TypeStatement>): TypeStatement? {
         when (statements.size) {
             0 -> return null
@@ -372,6 +484,9 @@ abstract class LogicSystem(private val context: ConeInferenceContext) {
         }
     }
 
+    /**
+     * 计算类型陈述集合的统一上界。
+     */
     private fun Collection<TypeStatement>.getUnifiedUpperType(): ConeCangJieType? {
         val intersectedUpperTypes = map { statement ->
             statement.upperTypesOrNull?.toList()?.let { ConeTypeIntersector.intersectTypes(context, it) }
@@ -380,6 +495,9 @@ abstract class LogicSystem(private val context: ConeInferenceContext) {
         return context.commonSuperTypeOrNull(intersectedUpperTypes)
     }
 
+    /**
+     * 计算类型陈述集合下界中的相交类型。
+     */
     private fun Collection<TypeStatement>.getIntersectedLowerType(): ConeCangJieType? =
         flatMap { statement ->
             statement.lowerTypes.mapNotNull { (it as? DfaType.Cone)?.type }.takeIf { it.isNotEmpty() }
@@ -388,6 +506,9 @@ abstract class LogicSystem(private val context: ConeInferenceContext) {
             ConeTypeIntersector.intersectTypes(context, it)
         }.takeUnless { it == session.builtinTypes.nothingType }
 
+    /**
+     * 找出所有分支共同排除的符号值。
+     */
     private fun Collection<TypeStatement>.getCommonExcludedValues(): Set<DfaType.Symbol> =
         flatMap { it.lowerTypes.filterIsInstance<DfaType.Symbol>() }
             .groupingBy { it }
@@ -396,6 +517,9 @@ abstract class LogicSystem(private val context: ConeInferenceContext) {
             .keys
 }
 
+/**
+ * 在已批准类型陈述表中替换变量。
+ */
 @JvmName("replaceVariableInStatements")
 private fun MutableMap<DataFlowVariable, PersistentTypeStatement>.replaceVariable(from: DataFlowVariable, to: DataFlowVariable?) {
     val existing = remove(from) ?: return
@@ -404,6 +528,9 @@ private fun MutableMap<DataFlowVariable, PersistentTypeStatement>.replaceVariabl
     }
 }
 
+/**
+ * 在 implication 表中替换变量。
+ */
 @JvmName("replaceVariableInImplications")
 private fun MutableMap<DataFlowVariable, PersistentList<Implication>>.replaceVariable(from: RealVariable, to: RealVariable?) {
     val existing = remove(from)
@@ -427,6 +554,9 @@ private fun MutableMap<DataFlowVariable, PersistentList<Implication>>.replaceVar
     }
 }
 
+/**
+ * 对持久化列表中的每个元素执行替换。
+ */
 private inline fun <T> PersistentList<T>.replaceAll(block: (T) -> T): PersistentList<T> {
     return mutate { result ->
         val iterator = result.listIterator()
@@ -436,12 +566,18 @@ private inline fun <T> PersistentList<T>.replaceAll(block: (T) -> T): Persistent
     }
 }
 
+/**
+ * 替换 implication 中出现的真实变量。
+ */
 private fun Implication.replaceVariable(from: RealVariable, to: RealVariable): Implication = when {
     condition.variable == from -> Implication(condition.copy(variable = to), effect.replaceVariable(from, to))
     effect.variable == from -> Implication(condition, effect.replaceVariable(from, to))
     else -> this
 }
 
+/**
+ * 替换 statement 中出现的真实变量。
+ */
 private fun Statement.replaceVariable(from: RealVariable, to: RealVariable): Statement {
     if (variable != from) return this
     return when (this) {
@@ -451,10 +587,16 @@ private fun Statement.replaceVariable(from: RealVariable, to: RealVariable): Sta
     }
 }
 
+/**
+ * 判断类型在 DFA 语义下是否可能为空。
+ */
 private fun ConeCangJieType.canBeNullInDfa(): Boolean {
     return isOption
 }
 
+/**
+ * 判断类型是否为 `Option<Any>`。
+ */
 private fun ConeCangJieType.isOptionalAny(): Boolean {
     return isOption && typeArguments.singleOrNull()?.type == ConeAnyType
 }

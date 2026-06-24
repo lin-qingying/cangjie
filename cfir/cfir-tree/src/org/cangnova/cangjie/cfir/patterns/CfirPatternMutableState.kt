@@ -14,9 +14,18 @@ import org.cangnova.cangjie.cfir.types.CfirTypeRef
  * 会丢失原始 pattern binding。
  */
 interface CfirPatternMutableState {
+    /**
+     * 恢复捕获时记录的 pattern 可变字段。
+     */
     fun restore()
 
+    /**
+     * pattern 可变状态捕获工厂。
+     */
     companion object {
+        /**
+         * 捕获指定 pattern 当前可恢复状态。
+         */
         fun capture(pattern: CfirPattern): CfirPatternMutableState? = when (pattern) {
             is CfirBindingPattern -> {
                 val impl = pattern as? CfirBindingPatternImpl
@@ -53,12 +62,18 @@ interface CfirPatternMutableState {
     }
 }
 
+/**
+ * binding pattern 的可恢复状态。
+ */
 private class CfirBindingPatternMutableState(
     private val pattern: CfirBindingPatternImpl,
     private val typeRef: CfirTypeRef?,
     private val bindingVariable: CfirPatternBindingVariable?,
     private val nestedPattern: CfirPattern?,
 ) : CfirPatternMutableState {
+    /**
+     * 恢复 binding pattern 的类型引用、绑定变量和嵌套 pattern。
+     */
     override fun restore() {
         pattern.typeRef = typeRef
         pattern.bindingVariable = bindingVariable
@@ -66,21 +81,33 @@ private class CfirBindingPatternMutableState(
     }
 }
 
+/**
+ * type pattern 的可恢复状态。
+ */
 private class CfirTypePatternMutableState(
     private val pattern: CfirTypePatternImpl,
     private val typeRef: CfirTypeRef,
     private val bindingVariable: CfirPatternBindingVariable?,
 ) : CfirPatternMutableState {
+    /**
+     * 恢复 type pattern 的类型引用和绑定变量。
+     */
     override fun restore() {
         pattern.typeRef = typeRef
         pattern.bindingVariable = bindingVariable
     }
 }
 
+/**
+ * var-or-enum pattern 的可恢复状态。
+ */
 private class CfirVarOrEnumPatternMutableState(
     private val pattern: CfirVarOrEnumPatternImpl,
     private val bindingVariable: CfirPatternBindingVariable?,
 ) : CfirPatternMutableState {
+    /**
+     * 恢复 var-or-enum pattern 的绑定变量。
+     */
     override fun restore() {
         pattern.bindingVariable = bindingVariable
     }

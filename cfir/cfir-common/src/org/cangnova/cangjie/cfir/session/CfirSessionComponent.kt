@@ -12,11 +12,17 @@ interface CfirSessionComponent
 
 
 /**
- * Marker interface for session components which could have different implementations depending
- * on the target (e.g. different implementations for JVM and Native). Such components should be
- * able to be composed with each other in case of metadata compilation for several targets.
+ * 可组合 session component 的基接口。
+ *
+ * 这类组件允许不同目标平台提供不同实现；当一次编译需要同时承载多个目标的
+ * metadata 时，session 构造流程会把多个实现组合成一个组件实例。
  */
 interface CfirComposableSessionComponent<T : CfirComposableSessionComponent<T>> : CfirSessionComponent {
+    /**
+     * 将当前组件与 [other] 组合为一个组件。
+     *
+     * 若去重后只剩一个组件，直接返回该组件；否则交给 [createComposed] 创建组合实现。
+     */
     @SessionConfiguration
     fun compose(other: T): T {
         val components = buildList {
@@ -28,14 +34,26 @@ interface CfirComposableSessionComponent<T : CfirComposableSessionComponent<T>> 
         return createComposed(components) as T
     }
 
+    /**
+     * 当前组件展开后的原始组件列表。
+     */
     @Suppress("UNCHECKED_CAST")
     val components: List<T>
         get() = listOf(this as T)
 
+    /**
+     * 根据 [components] 创建组合组件实例。
+     */
     @SessionConfiguration
     fun createComposed(components: List<T>): Composed<T>
 
+    /**
+     * 表示多个同类 session component 的组合结果。
+     */
     interface Composed<T : CfirComposableSessionComponent<T>> : CfirComposableSessionComponent<T> {
+        /**
+         * 组合中包含的原始组件列表。
+         */
         override val components: List<T>
     }
 }

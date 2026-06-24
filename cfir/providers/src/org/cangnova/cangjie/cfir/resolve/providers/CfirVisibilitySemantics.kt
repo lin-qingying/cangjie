@@ -17,6 +17,21 @@ fun canAccessPackageInternalDeclaration(
 }
 
 /**
+ * 仓颉 `protected` 的包级可见性对应官方 `Modules::PackageRelation != NONE`。
+ *
+ * 同包、子包、父包以及首段 module 相同的包可见；root 包与非 root 包没有
+ * 共同 module，不能互相访问 protected 声明。
+ */
+fun canAccessPackageProtectedDeclaration(
+    useSitePackage: FqName,
+    declarationPackage: FqName,
+): Boolean {
+    if (useSitePackage == declarationPackage) return true
+    if (useSitePackage.isRoot || declarationPackage.isRoot) return false
+    return useSitePackage.pathSegments().firstOrNull() == declarationPackage.pathSegments().firstOrNull()
+}
+
+/**
  * 判断当前包是否是目标包本身，或者位于其子包树中。
  */
 fun FqName.isSubpackageOf(parent: FqName): Boolean {

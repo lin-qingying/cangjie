@@ -63,8 +63,10 @@ import org.cangnova.cangjie.cfir.diagnostics.rendering.CjDiagnosticRenderers.REN
 import org.cangnova.cangjie.cfir.diagnostics.rendering.CjDiagnosticRenderers.RENDER_STRING
 import org.cangnova.cangjie.cfir.diagnostics.rendering.CjDiagnosticRenderers.RENDER_STRING_LIST
 
+/** CFIR 诊断工厂到默认英文诊断消息和 renderer 的映射表。 */
 object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
 
+    /** 供诊断渲染层查找的 CFIR 默认消息表。 */
     override val MAP: CjDiagnosticFactoryToRendererMap by CjDiagnosticFactoryToRendererMap("FIR") { map ->
         map.put(NO_CONSTRUCTOR, "No constructor available for this type.")
         map.put(REF_NOT_BE_TYPE, "type name cannot be used as an expression")
@@ -82,6 +84,7 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
         map.put(CfirErrors.IMPORT_ALIAS_CONFLICT, "alias conflict for ''{0}''", RENDER_NAME)
         map.put(CfirErrors.UNRESOLVED_IMPORT, "unresolved import ''{0}''", RENDER_STRING)
         map.put(CfirErrors.SUPER_TYPES_SELF_REFERENCE, "type ''{0}'' cannot inherit from itself", RENDER_NAME)
+        map.put(CfirErrors.INHERITANCE_CYCLE, "inheritance cycle detected")
         map.put(CfirErrors.SUPER_TYPES_DUPLICATE, "duplicate super type ''{0}''", RENDER_NAME)
         map.put(CfirErrors.ILLEGAL_EXTENDED_TYPE, "illegal extended type ''{0}''", RENDER_NAME)
         map.put(CfirErrors.EXTEND_DUPLICATE_INTERFACE, "duplicate extend interface ''{0}''", RENDER_NAME)
@@ -167,6 +170,12 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
             RENDER_TYPE,
             RENDER_TYPE,
             RENDER_NAME,
+        )
+        map.put(
+            CfirErrors.RETURN_TYPE_INVARIANCE,
+            "return type of ''{0}'' can only be class/interface type which implements or inherits the interface type ''{1}''",
+            RENDER_NAME,
+            RENDER_TYPE,
         )
         map.put(
             CfirErrors.PROPERTY_OVERRIDE_IMPLEMENT_TYPE_DIFF,
@@ -287,6 +296,7 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
             "'this' cannot be used as an expression in the {0}",
             RENDER_STRING,
         )
+        map.put(CfirErrors.STATIC_MEMBERS_CANNOT_CALL_MEMBERS, "non-static variable 'this' cannot be referenced from a static context")
         map.put(
             CfirErrors.EXPLICIT_SUPER_CALL_REQUIRED,
             "Explicit super constructor call is required.",
@@ -495,6 +505,10 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
             "no matching function for operator ''()'' on type ''{1}''",
             RENDER_STRING,
             RENDER_TYPE,
+        )
+        map.put(
+            CfirErrors.NO_MATCH_FUNCTION_DECLARATION_FOR_CALL,
+            "no matching function declaration for function call",
         )
         map.put(
             CfirErrors.NO_MATCH_OPERATOR_FUNCTION_CALL,
@@ -716,6 +730,14 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
         // InheritanceDeep
         // ================================================================
         map.put(CfirErrors.INHERIT_MEMBER_KIND_INCONSISTENT, "{0} member ''{1}'' cannot have the same name with {2} member in {3}", RENDER_STRING, RENDER_NAME, RENDER_STRING, RENDER_NAME)
+        map.put(
+            CfirErrors.STATIC_AND_NON_STATIC_MEMBER_CANNOT_HAVE_SAME_NAME,
+            "{0} member ''{1}'' cannot have the same name with {2} member in {3}",
+            RENDER_STRING,
+            RENDER_NAME,
+            RENDER_STRING,
+            RENDER_STRING,
+        )
         map.put(
             CfirErrors.MEMBER_VARIABLE_CAN_NOT_SHADOW,
             "the variable ''{0}'' must not shadow a member variable of the supertype",
@@ -1014,6 +1036,8 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
         // ================================================================
         map.put(CfirErrors.UNUSED_IMPORT, "unused import ''{0}''", RENDER_NULLABLE_FQNAME)
         map.put(CfirErrors.UNUSED_EXPRESSION, "unused expression")
+        map.put(CfirErrors.UNUSED_VARIABLE, "unused variable")
+        map.put(CfirErrors.UNUSED_FUNCTION, "unused function")
         map.put(CfirErrors.TYPEALIAS_UNUSED_TYPE_PARAMETERS, "type arg(s) {0} are not used", RENDER_STRING)
         map.put(CfirErrors.TYPEALIAS_CYCLE, "type cycle detected: ''{0}''", RENDER_STRING)
 

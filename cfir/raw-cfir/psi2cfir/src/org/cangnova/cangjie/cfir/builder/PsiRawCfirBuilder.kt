@@ -78,13 +78,19 @@ import org.cangnova.cangjie.cfir.expressions.builder.buildErrorExpression as bui
  * - 所有类型引用都保持为 `CfirUserTypeRef`，尚未解析
  * - 所有符号引用都保持为 `CfirNamedReference`，尚未绑定
  * - 不做类型推断和重载解析，这些工作留给 `CFIR_RESOLVE`
+ *
+ * @property baseScopeProvider PSI raw 构建使用的基础 scope provider。
+ * @property bodyBuildingMode body 构建策略，用于普通构建与 lazy body 构建分流。
  */
 class PsiRawCfirBuilder(
     session: CfirSession,
     @Suppress("unused")
+    /** PSI raw 构建使用的基础 scope provider。 */
     val baseScopeProvider: CfirScopeProvider = session.cangjieScopeProvider,
+    /** body 构建策略，用于普通构建与 lazy body 构建分流。 */
     private val bodyBuildingMode: BodyBuildingMode = BodyBuildingMode.NORMAL,
 ) : AbstractRawCfirBuilder<PsiElement>(session) {
+    /** 只覆盖 body 构建模式的便捷构造函数。 */
     constructor(
         session: CfirSession,
         bodyBuildingMode: BodyBuildingMode,
@@ -116,16 +122,22 @@ class PsiRawCfirBuilder(
 
     // ===== AbstractRawCfirBuilder 抽象方法实现 =====
 
+    /** 将 PSI 元素包装为真实 PSI source element。 */
     override fun PsiElement.toSourceElement(): AbstractCjSourceElement {
         return CjRealPsiSourceElement(this)
     }
 
+    /** 返回 PSI 节点 element type。 */
     override fun PsiElement.elementType(): IElementType = node.elementType
 
+    /** 返回 PSI 元素源码文本。 */
     override fun PsiElement.asText(): String = text
+
+    /** 当前 body 构建模式；由构造参数初始化，对外只读。 */
     var mode: BodyBuildingMode = bodyBuildingMode
         private set
 
+    /** 在当前 [mode] 下执行 [body]，lazy body 模式会禁止 AST 加载。 */
     private inline fun <T> runOnStubs(crossinline body: () -> T): T {
         return when (mode) {
             BodyBuildingMode.NORMAL -> body()
@@ -135,6 +147,7 @@ class PsiRawCfirBuilder(
         }
     }
 
+    /** 按当前 [mode] 在立即构建与 lazy 构建之间选择。 */
     private inline fun <T> buildOrLazy(build: () -> T, noinline lazy: () -> T): T {
         return when (mode) {
             BodyBuildingMode.NORMAL -> build()
@@ -142,17 +155,24 @@ class PsiRawCfirBuilder(
         }
     }
 
+    /** 构建 body block；lazy body 模式下返回 lazy block 占位。 */
     private inline fun buildOrLazyBlock(buildBlock: () -> CfirBlock?): CfirBlock? {
         return buildOrLazy(buildBlock) { buildLazyBlock() }
     }
 
+    /** annotation macro surface 附着的语义目标。 */
     private enum class AnnotationSurfaceTarget {
+        /** annotation 附着到声明。 */
         DECLARATION,
+        /** annotation 附着到参数。 */
         PARAMETER,
     }
 
+    /** PSI raw builder 的常量集合。 */
     private companion object {
+        /** 内建 non-macro annotation `IfAvailable` 的短名。 */
         private const val IF_AVAILABLE_ANNOTATION_NAME: String = "IfAvailable"
+        /** 不应送入 macro executor 的内建普通 annotation 名称集合。 */
         private val builtinAnnotationMacroNames: Set<Name> = setOf(
             Name.identifier("C"),
             Name.identifier("CallingConv"),
@@ -181,9 +201,13 @@ class PsiRawCfirBuilder(
 
     // ===== Visitor（私有访问器类型，对齐 Kotlin 的 PsiRawFirBuilder.Visitor）=====
 
+    /** PSI visitor 分派器实例。 */
     private val visitor = Visitor()
+
+    /** PSI 到 CFIR 的具体转换器实例。 */
     private val converter = Converter()
 
+    /** 从通用 PSI 元素构建 CFIR 元素。 */
     override fun buildElement(element: PsiElement): CfirElement {
         val cjElement = element as? CjElement
             ?: error("Expected CjElement but was ${element::class.qualifiedName}")
@@ -191,11 +215,13 @@ class PsiRawCfirBuilder(
             ?: error("Unsupported PSI element: ${element::class.qualifiedName}")
     }
 
+    /** 从通用 PSI 元素构建 CFIR 文件。 */
     override fun buildFile(file: PsiElement): CfirFile {
         val cjFile = file as? CjFile ?: error("Expected CjFile but was ${file::class.qualifiedName}")
         return buildFile(cjFile)
     }
 
+    /** 从通用 PSI 元素构建 CFIR 声明。 */
     override fun buildDeclaration(declaration: PsiElement): CfirDeclaration {
         val cjDeclaration = declaration as? CjDeclaration
             ?: error("Expected CjDeclaration but was ${declaration::class.qualifiedName}")
@@ -214,6 +240,7 @@ class PsiRawCfirBuilder(
         }
     }
 
+    /** 从通用 PSI 元素构建 CFIR 表达式。 */
     override fun buildExpression(expression: PsiElement): CfirExpression {
         val cjExpression = expression as? CjExpression
             ?: error("Expected CjExpression but was ${expression::class.qualifiedName}")
@@ -274,6 +301,7 @@ class PsiRawCfirBuilder(
         }
     }
 
+    /** 使用 [symbol] 创建 source declaration，并保持符号与声明的类型关系。 */
     private inline fun <D : CfirDeclaration, S : CfirBasedSymbol<D>> buildSourceDeclaration(
         symbol: S,
         builder: (S) -> D,
@@ -282,6 +310,7 @@ class PsiRawCfirBuilder(
         return declaration
     }
 
+    /** 构建文件级 raw CFIR 根节点，并收集 package、import 与顶层声明。 */
     private fun buildFile(file: CjFile): CfirFile {
         return withPackageContext(file.packageFqName) {
             val symbol = CfirFileSymbol()
@@ -314,17 +343,27 @@ class PsiRawCfirBuilder(
      * 对齐 Kotlin 的 `PsiRawFirBuilder.Visitor : KtVisitor<FirElement, FirElement?>`。
      */
     protected open inner class Visitor : CjVisitor<CfirElement, Unit?>() {
+        /** 构建文件节点。 */
         override fun visitCjFile(file: CjFile, data: Unit?): CfirElement = buildFile(file)
 
+        /** 构建声明节点。 */
         override fun visitDeclaration(dcl: CjDeclaration, data: Unit?): CfirElement = buildDeclaration(dcl)
 
+        /** 构建表达式节点。 */
         override fun visitExpression(expression: CjExpression, data: Unit?): CfirElement = buildExpression(expression)
     }
 
+    /**
+     * PSI 到 raw CFIR 的主体转换器。
+     *
+     * 该类按语法类别拆分声明、表达式、类型、annotation、pattern 和辅助结构转换，
+     * 所有输出都停留在 `RAW_CFIR` 阶段，不做符号解析或类型推断。
+     */
     protected open inner class Converter {
 
         // ===== 声明转换 =====
 
+        /** 转换文件中的顶层声明与顶层 macro declaration surface。 */
         fun convertFileDeclarations(file: CjFile): List<CfirDeclaration> {
             return buildList {
                 for (child in file.children) {
@@ -337,6 +376,7 @@ class PsiRawCfirBuilder(
             }
         }
 
+        /** 转换 IDE code fragment，按 fragment 类型构造对应的 raw block。 */
         fun convertCodeFragment(file: CjCodeFragment): CfirCodeFragment {
             val symbol = CfirCodeFragmentSymbol()
             return buildCodeFragment {
@@ -381,6 +421,7 @@ class PsiRawCfirBuilder(
             }
         }
 
+        /** 按 PSI 声明具体类型分派为对应 raw CFIR 声明。 */
         fun convertDeclaration(psi: CjDeclaration): CfirDeclaration {
             val declaration = when (psi) {
                 is CjClass -> convertClass(psi, CfirClassKind.CLASS)
@@ -451,6 +492,12 @@ class PsiRawCfirBuilder(
             return null
         }
 
+        /**
+         * 将顶层 [CjMacroExpression] 回放为 declaration macro surface。
+         *
+         * 该函数先确保 builtin annotation macro 已经走普通 annotation 路径，
+         * 其余 macro expression 才建立 [MacroSurfaceDecl] 与 stable replace handle。
+         */
         private fun applyTopLevelMacroExpression(
             psi: CjMacroExpression,
             carrier: CfirDeclaration,
@@ -551,6 +598,7 @@ class PsiRawCfirBuilder(
             return CjPsiFactory.contextual(this).createAnnotations(rawAnnotation).entries.singleOrNull()
         }
 
+        /** 转换完全由 builtin annotation macro 组成的顶层 wrapper 链。 */
         private fun convertBuiltinAnnotationMacroDeclaration(psi: CjMacroExpression): CfirDeclaration? {
             val chain = resolveMacroDeclarationChain(psi) ?: return null
             val (declaration, macroExpressions) = chain
@@ -563,11 +611,13 @@ class PsiRawCfirBuilder(
             return carrier
         }
 
+        /** 判定 [CjMacroExpression] 是否只是内建普通 annotation 的语法包装。 */
         private fun CjMacroExpression.isBuiltinAnnotationMacroExpression(): Boolean {
             val shortName = shortName ?: return false
             return !text.orEmpty().trimStart().startsWith("@!") && shortName in builtinAnnotationMacroNames
         }
 
+        /** 把 builtin annotation macro expression 作为普通 annotation 写入 [carrier]。 */
         private fun applyBuiltinAnnotationMacroExpression(
             psi: CjMacroExpression,
             carrier: CfirDeclaration,
@@ -590,6 +640,7 @@ class PsiRawCfirBuilder(
             return true
         }
 
+        /** 转换 class、interface、struct、enum 等 class-like 声明。 */
         private fun convertClass(psi: CjClassLikeDeclaration, classKind: CfirClassKind): CfirDeclaration {
             val name = psi.nameAsSafeName
             if (!canDeclareTopLevelClassLike()) {
@@ -755,6 +806,7 @@ class PsiRawCfirBuilder(
             }
         }
 
+        /** 为一个带 `let/var` 的主构造参数创建对应成员属性，并回填 parameter 关联。 */
         private fun convertPrimaryConstructorParameterProperty(
             psi: CjParameter,
             valueParameter: CfirValueParameter,
@@ -808,6 +860,7 @@ class PsiRawCfirBuilder(
             return property
         }
 
+        /** 构造主构造参数属性的合成 getter 或 setter。 */
         private fun buildPrimaryConstructorParameterPropertyAccessor(
             source: CjSourceElement?,
             accessorName: Name,
@@ -863,6 +916,7 @@ class PsiRawCfirBuilder(
             }
         }
 
+        /** 转换仓颉 extend 声明，保留扩展目标类型、约束与成员声明。 */
         private fun convertExtend(psi: CjExtend): CfirExtend {
             val extendedTypeRef = convertTypeRef(psi.receiverTypeReceiver)
             val superTypes = psi.superTypeListEntries.map { convertTypeRef(it.typeReference) }
@@ -887,6 +941,7 @@ class PsiRawCfirBuilder(
             }
         }
 
+        /** 转换普通命名函数声明。 */
         fun convertFunction(psi: CjNamedFunction): CfirFunction {
             val name = psi.nameAsSafeName
             val returnTypeRef = convertTypeRef(psi.typeReference)
@@ -918,6 +973,7 @@ class PsiRawCfirBuilder(
             }.also { bindFunctionTarget(functionTarget, it) }
         }
 
+        /** 转换属性声明；无有效名称时显式构造 invalid declaration。 */
         private fun convertProperty(psi: CjProperty): CfirDeclaration {
             if (psi.name == null) {
                 return buildSourceDeclaration(CfirInvalidDeclarationSymbol()) { symbol ->
@@ -1019,6 +1075,7 @@ class PsiRawCfirBuilder(
             }.also { bindFunctionTarget(functionTarget, it) }
         }
 
+        /** 转换字段变量声明。 */
         private fun convertFieldVariable(psi: CjFieldVariable): CfirFieldVariable {
             val name = psi.nameAsSafeName
             return buildSourceDeclaration(CfirFieldVariableSymbol(callableIdFor(name))) { symbol ->
@@ -1045,6 +1102,7 @@ class PsiRawCfirBuilder(
             }
         }
 
+        /** 转换仓颉入口 main 函数声明。 */
         fun convertMainFunction(psi: CjMainFunction): CfirMainFunction {
             val mainFunctionSymbol = CfirMainFunctionSymbol(callableIdFor(Name.identifier("main")))
             val valueParams = psi.valueParameters.map { convertValueParameter(it, mainFunctionSymbol) }
@@ -1070,6 +1128,7 @@ class PsiRawCfirBuilder(
             }.also { bindFunctionTarget(functionTarget, it) }
         }
 
+        /** 转换 macro declaration；该声明只进入 macro symbol index，不进入最终 source provider。 */
         fun convertMacroDeclaration(psi: CjMacroDeclaration): CfirMacroDeclaration {
             val name = psi.nameAsSafeName
             val macroSymbol = CfirMacroDeclarationSymbol(callableIdFor(name))
@@ -1097,6 +1156,7 @@ class PsiRawCfirBuilder(
             }.also { bindFunctionTarget(functionTarget, it) }
         }
 
+        /** 转换 finalizer 声明，返回类型固定为 Unit。 */
         fun convertFinalizer(psi: CjFinalizer): CfirFinalizer {
             val finalizerSymbol = CfirFinalizerSymbol(callableIdFor(SpecialNames.END_INIT))
             val typeParametersForFinalizer = convertFunctionTypeParameters(psi, finalizerSymbol)
@@ -1124,6 +1184,7 @@ class PsiRawCfirBuilder(
             }.also { bindFunctionTarget(functionTarget, it) }
         }
 
+        /** 转换 pattern variable 声明，保留 pattern 与 initializer。 */
         private fun convertPatternVariable(psi: CjPatternVariable): CfirPatternVariable {
             val status = convertDeclarationStatus(psi)
             val returnTypeRef = convertTypeRef(psi.typeReference)
@@ -1155,6 +1216,7 @@ class PsiRawCfirBuilder(
             }
         }
 
+        /** 转换主构造或次构造函数声明。 */
         private fun convertConstructor(psi: CjConstructor<*>, isPrimary: Boolean): CfirConstructor {
             val constructorSymbol = CfirConstructorSymbol(callableIdFor(SpecialNames.INIT))
             val typeParametersForConstructor = convertFunctionTypeParameters(psi, constructorSymbol)
@@ -1203,6 +1265,7 @@ class PsiRawCfirBuilder(
             }.also { bindFunctionTarget(functionTarget, it) }
         }
 
+        /** 转换 typealias 声明；非法嵌套时显式构造 invalid declaration。 */
         private fun convertTypeAlias(psi: CjTypeAlias): CfirDeclaration {
             val name = psi.nameAsSafeName
             val expandedType = convertTypeRef(psi.getTypeReference())
@@ -1234,6 +1297,7 @@ class PsiRawCfirBuilder(
             }
         }
 
+        /** 转换枚举构造项及其 payload 类型参数。 */
         private fun convertEnumConstructor(
             psi: CjEnumConstructor,
         ): CfirEnumConstructor {
@@ -1266,6 +1330,7 @@ class PsiRawCfirBuilder(
             }
         }
 
+        /** 为没有显式构造函数的 class-like 声明构造隐式主构造。 */
         private fun buildImplicitPrimaryConstructor(psi: CjClassLikeDeclaration): CfirConstructor {
             return buildSourceDeclaration(CfirConstructorSymbol(callableIdFor(SpecialNames.INIT))) { symbol ->
                 buildPrimaryConstructor {
@@ -1286,6 +1351,7 @@ class PsiRawCfirBuilder(
 
         // ===== 参数转换 =====
 
+        /** 转换函数、构造函数、宏或 lambda 的值参数。 */
         fun convertValueParameter(
             psi: CjParameter,
             containingSymbol: CfirBasedSymbol<*>,
@@ -1335,6 +1401,7 @@ class PsiRawCfirBuilder(
             )
         }
 
+        /** 使用显式 annotation 列表采集 macro annotation surface。 */
         private fun collectMacroAnnotationSurfaces(
             annotated: CjAnnotated,
             entries: List<CjAnnotation>,
@@ -1385,6 +1452,7 @@ class PsiRawCfirBuilder(
             }
         }
 
+        /** 转换单个 annotation call，供普通 annotation 与 macro custom annotation reparse 共用。 */
         fun convertAnnotationCall(
             annotation: CjAnnotation,
             containingSymbol: CfirBasedSymbol<*>,
@@ -1410,6 +1478,7 @@ class PsiRawCfirBuilder(
             }
         }
 
+        /** 从 declaration macro expression 直接构造 annotation type ref override。 */
         private fun CjMacroExpression.toAnnotationTypeRefOverride(): CfirTypeRef? {
             val rawName = referenceExpression?.text?.trim()?.takeIf(String::isNotEmpty) ?: return null
             val parts = rawName.split('.').filter(String::isNotBlank)
@@ -1426,6 +1495,7 @@ class PsiRawCfirBuilder(
             }
         }
 
+        /** 为 annotation type reference 构造不经普通类型解析的 user type ref。 */
         fun buildAnnotationTypeRef(typeReference: CjTypeReference, sourceOffsetDelta: Int = 0): CfirTypeRef {
             val rawName = typeReference.text.trim().takeIf(String::isNotEmpty) ?: return buildImplicitTypeRef()
             val parts = rawName.split('.').filter(String::isNotBlank)
@@ -1442,6 +1512,7 @@ class PsiRawCfirBuilder(
             }
         }
 
+        /** 转换 annotation 参数；CallingConv 特殊语法转换为字符串 literal 参数。 */
         private fun convertAnnotationArguments(annotation: CjAnnotation): List<CfirExpression> {
             val valueArguments = annotation.valueArguments.mapNotNull(::convertCallArgument)
             if (valueArguments.isNotEmpty()) return valueArguments
@@ -1458,6 +1529,7 @@ class PsiRawCfirBuilder(
             return emptyList()
         }
 
+        /** 基于 carrier 推导 containing symbol，并构造 raw annotation call。 */
         private fun buildRawAnnotationCall(
             annotation: CjAnnotation,
             carrier: CfirDeclaration,
@@ -1469,6 +1541,7 @@ class PsiRawCfirBuilder(
             return convertAnnotationCall(annotation, containingSymbol)
         }
 
+        /** 构造 annotation-site macro surface，并区分 declaration、parameter 与 builtin non-macro。 */
         private fun buildMacroAnnotationSurface(
             annotation: CjAnnotation,
             target: AnnotationSurfaceTarget,
@@ -1559,12 +1632,14 @@ class PsiRawCfirBuilder(
             }
         }
 
+        /** 提取 annotation 的 macro surface 限定名。 */
         private fun annotationQualifiedName(annotation: CjAnnotation): FqName? {
             val rawName = annotation.typeReference?.text?.trim()?.takeIf(String::isNotEmpty)
             if (rawName != null && rawName.contains('.')) return FqName(rawName)
             return annotation.shortName?.let(::macroSurfaceQualifiedName)
         }
 
+        /** 把短名按当前包上下文提升为 surface 使用的 FQN。 */
         private fun macroSurfaceQualifiedName(name: Name): FqName {
             return if (context.packageFqName.isRoot) {
                 FqName.topLevel(name)
@@ -1573,12 +1648,14 @@ class PsiRawCfirBuilder(
             }
         }
 
+        /** 从 modifier list 中按稳定顺序采集 modifier 名称。 */
         private fun collectModifierNames(modifierList: CjModifierList): List<String> {
             return CjTokens.MODIFIER_KEYWORDS_ARRAY
                 .filter { modifierList.hasModifier(it) }
                 .map { it.value }
         }
 
+        /** 构造 macro surface 所需的语法容器上下文。 */
         private fun macroContainerContext(
             annotated: CjAnnotated,
             target: AnnotationSurfaceTarget,
@@ -1591,6 +1668,7 @@ class PsiRawCfirBuilder(
             )
         }
 
+        /** 根据当前 raw builder 上下文推导 macro surface 的外层声明种类。 */
         private fun macroOuterDeclarationKind(target: AnnotationSurfaceTarget): MacroSurfaceContainerContext.OuterDeclarationKind {
             if (context.inLocalContext) {
                 return MacroSurfaceContainerContext.OuterDeclarationKind.FUNCTION_BODY
@@ -1608,6 +1686,7 @@ class PsiRawCfirBuilder(
             }
         }
 
+        /** 返回当前容器函数名，用于 macro surface scope context。 */
         private fun enclosingFunctionName(): Name? {
             return when (val symbol = containerSymbolIfAny) {
                 is CfirNamedFunctionSymbol -> symbol.callableId.callableName
@@ -1618,6 +1697,7 @@ class PsiRawCfirBuilder(
             }
         }
 
+        /** 判断当前 PSI 元素是否拥有指定类型的父节点。 */
         private inline fun <reified T : PsiElement> PsiElement.hasParentOfType(): Boolean {
             var current = parent
             while (current != null) {
@@ -1627,6 +1707,7 @@ class PsiRawCfirBuilder(
             return false
         }
 
+        /** 转换单个类型参数，并合并 where/type constraint 收集到的额外上界。 */
         private fun convertTypeParameter(
             psi: CjTypeParameter,
             containingDeclarationSymbol: CfirBasedSymbol<*>,
@@ -1653,6 +1734,7 @@ class PsiRawCfirBuilder(
 
         // ===== 琛ㄨ揪寮忚浆鎹?=====
 
+        /** 按 PSI 表达式具体类型分派到对应 raw CFIR 表达式构建函数。 */
         fun convertExpression(psi: CjExpression): CfirExpression = when (psi) {
             is CjBlockExpression -> convertBlock(psi)
             is CjConstantExpression -> convertLiteral(psi)
@@ -1666,7 +1748,7 @@ class PsiRawCfirBuilder(
             is CjOptionalChainExpression -> convertOptionalChainExpression(psi)
             is CjDotQualifiedExpression -> convertDotQualified(psi)
             is CjSafeQualifiedExpression -> convertDotQualified(psi)
-            is CjNameReferenceExpression -> convertNameReference(psi)
+            is CjSimpleNameExpression -> convertNameReference(psi)
             is CjIfExpression -> convertIf(psi)
             is CjMatchExpression -> convertMatch(psi)
             is CjForExpression -> convertFor(psi)
@@ -1741,6 +1823,7 @@ class PsiRawCfirBuilder(
             }
         }
 
+        /** 把声明或表达式 PSI 包装成可放入 block 的 CFIR statement。 */
         private inline fun CjElement.toCfirStatement(errorReasonLazy: () -> String): CfirStatement {
             val cfir = when (this) {
                 is CjDeclaration -> convertDeclaration(this)
@@ -1761,6 +1844,7 @@ class PsiRawCfirBuilder(
             }
         }
 
+        /** 转换 block 表达式，并展开无 annotation 的普通嵌套 block。 */
         fun convertBlock(psi: CjBlockExpression): CfirBlock {
             val statements = withLocalContext {
                 buildList {
@@ -1785,6 +1869,7 @@ class PsiRawCfirBuilder(
 
         // ---- Literal ----
 
+        /** 转换基础常量 literal 表达式。 */
         private fun convertLiteral(psi: CjConstantExpression): CfirLiteralExpression {
             val text = psi.text
             val elementType = psi.node.elementType
@@ -1803,6 +1888,7 @@ class PsiRawCfirBuilder(
             }
         }
 
+        /** 转换字符串模板；有插值时构造 string interpolation 表达式。 */
         private fun convertStringTemplate(psi: CjStringTemplateExpression): CfirExpression {
             if (!psi.hasInterpolation()) {
                 return buildLiteralExpression {
@@ -1831,6 +1917,7 @@ class PsiRawCfirBuilder(
 
         // ---- Binary & Unary ----
 
+        /** 转换二元表达式、赋值表达式和可重载二元运算。 */
         private fun convertBinary(psi: CjBinaryExpression): CfirExpression {
             if (psi is CjRangeExpression) return convertRange(psi)
 
@@ -1897,6 +1984,7 @@ class PsiRawCfirBuilder(
             }
         }
 
+        /** 转换 range 表达式，保留起点、终点、步长与闭区间标志。 */
         private fun convertRange(psi: CjRangeExpression): CfirRangeExpression {
             val start = psi.left?.let { convertExpression(it) }
                 ?: buildErrorExpression(reason = "Missing range start")
@@ -1912,6 +2000,7 @@ class PsiRawCfirBuilder(
             }
         }
 
+        /** 转换前缀一元表达式，递增/递减使用专用节点，其余转为 operator call。 */
         private fun convertPrefix(psi: CjPrefixExpression): CfirExpression {
             val base = psi.baseExpression?.let { convertExpression(it) }
                 ?: return buildErrorExpression(psi.toSourceElement(), "Missing prefix operand")
@@ -1934,6 +2023,7 @@ class PsiRawCfirBuilder(
             }
         }
 
+        /** 转换后缀一元表达式，递增/递减使用专用节点，其余转为 operator call。 */
         private fun convertPostfix(psi: CjPostfixExpression): CfirExpression {
             val base = psi.baseExpression?.let { convertExpression(it) }
                 ?: return buildErrorExpression(psi.toSourceElement(), "Missing postfix operand")
@@ -1958,6 +2048,7 @@ class PsiRawCfirBuilder(
 
         // ---- Call & Access ----
 
+        /** 转换调用表达式、spawn 表达式和仅带类型实参的 named access。 */
         private fun convertCall(psi: CjCallExpression): CfirExpression {
             if (psi is CjSpawnExpression) {
                 val lambda = psi.lambdaExpression
@@ -2102,6 +2193,7 @@ class PsiRawCfirBuilder(
             }
         }
 
+        /** 尝试把 `Int(x)` 等基础类型调用直接构造成类型转换表达式。 */
         private fun tryBuildTypeConversion(
             psi: CjCallExpression,
             callee: CjExpression?,
@@ -2135,11 +2227,13 @@ class PsiRawCfirBuilder(
             }
         }
 
+        /** 识别可由调用语法触发的基础类型转换目标。 */
         private fun CjNameBasicReferenceExpression.primitiveTypeConversionKindOrNull(): PrimitiveTypeKind? =
             PrimitiveTypeKind.entries.firstOrNull {
                 it.isExposedBuiltinClassifier && it.typeName == referencedName
             }
 
+        /** 把 callee 表达式拆成显式 receiver 与待解析的具名引用。 */
         private fun resolveCalleeReference(callee: CjExpression?): Pair<CfirExpression?, CfirNamedReference> {
             return when (callee) {
                 is CjSimpleNameExpression -> null to buildNamedReference(
@@ -2209,6 +2303,7 @@ class PsiRawCfirBuilder(
             else -> CfirFunctionCallOrigin.Regular
         }
 
+        /** 从调用表达式或 callee selector 中提取显式类型实参。 */
         private fun extractCallTypeArguments(
             callExpression: CjCallExpression,
             calleeExpression: CjExpression?,
@@ -2230,6 +2325,7 @@ class PsiRawCfirBuilder(
             return calleeTypeArguments
         }
 
+        /** 提取 `VArray` 构造调用携带的字面量大小。 */
         private fun extractVArraySizeLiteral(
             callExpression: CjCallExpression,
             calleeExpression: CjExpression?,
@@ -2239,6 +2335,7 @@ class PsiRawCfirBuilder(
                 ?: calleeExpression.getTypeArgumentList()?.varrayLiteral?.text
         }
 
+        /** 转换点访问或安全访问表达式。 */
         private fun convertDotQualified(psi: CjQualifiedExpression): CfirExpression {
             val receiver = convertExpression(psi.receiverExpression)
             val selector = psi.selectorExpression
@@ -2289,9 +2386,11 @@ class PsiRawCfirBuilder(
             return buildErrorExpression(psi.toSourceElement(), "Unsupported selector: ${selector.javaClass.simpleName}")
         }
 
-        private fun convertNameReference(psi: CjNameReferenceExpression): CfirExpression {
+        /** 转换裸名称引用和带类型实参的名称访问。 */
+        private fun convertNameReference(psi: CjSimpleNameExpression): CfirExpression {
             val referencedName = psi.referencedNameAsName
-            if (referencedName.asString() == "this" && psi.typeArguments.isEmpty()) {
+            val typeArguments = psi.getTypeArguments()
+            if (referencedName.asString() == "this" && typeArguments.isEmpty()) {
                 return buildThisReceiverExpression {
                     source = psi.toCjPsiSourceElement()
                     calleeReference = buildThisReference {
@@ -2304,12 +2403,13 @@ class PsiRawCfirBuilder(
             return buildNamedAccessExpression {
                 source = psi.toCjPsiSourceElement()
                 calleeReference = buildNamedReference(referencedName, psi.toCjPsiSourceElement())
-                typeArguments.addAll(psi.typeArguments.map { convertTypeRef(it.typeReference) })
+                this.typeArguments.addAll(typeArguments.map { convertTypeRef(it.typeReference) })
             }
         }
 
         // ---- Control Flow ----
 
+        /** 转换 if 表达式，支持 let-pattern condition。 */
         private fun convertIf(psi: CjIfExpression): CfirIfExpression {
             val condition = psi.letExpression?.let { convertLetPatternExpression(it) }
                 ?: psi.condition?.let { convertExpression(it) }
@@ -2327,6 +2427,7 @@ class PsiRawCfirBuilder(
             }
         }
 
+        /** 转换 if/while 条件中的 let-pattern 表达式。 */
         private fun convertLetPatternExpression(psi: CjLetExpression): CfirLetPatternExpression {
             val status = cloneDeclarationStatus(CfirDeclarationStatusImpl.DEFAULT)
             val pattern = convertCasePattern(
@@ -2345,6 +2446,7 @@ class PsiRawCfirBuilder(
             }
         }
 
+        /** 转换 match 表达式，区分有主语模式匹配与无主语条件分支。 */
         private fun convertMatch(psi: CjMatchExpression): CfirMatchExpression {
             val subject = psi.subjectExpression?.let { convertExpression(it) }
             val hasSubject = subject != null
@@ -2423,6 +2525,7 @@ class PsiRawCfirBuilder(
         }
         // ---- Loops ----
 
+        /** 转换 for-in 循环，构造模式变量、iterable 与 loop target。 */
         private fun convertFor(psi: CjForExpression): CfirForInExpression {
             val loopStatus = cloneDeclarationStatus(CfirDeclarationStatusImpl.DEFAULT)
             val loopPattern = psi.pattern?.let { pattern ->
@@ -2476,6 +2579,7 @@ class PsiRawCfirBuilder(
             return loop
         }
 
+        /** 转换 while 循环，支持 let-pattern condition。 */
         private fun convertWhile(psi: CjWhileExpression): CfirLoopExpression {
             val condition = psi.letExpression?.let { convertLetPatternExpression(it) }
                 ?: psi.condition?.let { convertExpression(it) }
@@ -2495,6 +2599,7 @@ class PsiRawCfirBuilder(
             return loop
         }
 
+        /** 转换 do-while 循环，并绑定其 loop target。 */
         private fun convertDoWhile(psi: CjDoWhileExpression): CfirLoopExpression {
             val target = CfirLoopTarget(labelName = null)
             val loop = withLoopTarget(target) {
@@ -2515,6 +2620,7 @@ class PsiRawCfirBuilder(
 
         // ---- Jump & Exception ----
 
+        /** 转换 return 表达式，并绑定当前函数 target。 */
         private fun convertReturn(psi: CjReturnExpression): CfirReturnExpression {
             return buildReturnExpressionWithCurrentFunctionTarget(
                 source = psi.toCjPsiSourceElement(),
@@ -2522,6 +2628,7 @@ class PsiRawCfirBuilder(
             )
         }
 
+        /** 转换 throw 表达式。 */
         private fun convertThrow(psi: CjThrowExpression): CfirThrowExpression {
             val exception = psi.thrownExpression?.let { convertExpression(it) }
                 ?: buildErrorExpression(psi.toSourceElement(), "Missing thrown expression")
@@ -2531,6 +2638,7 @@ class PsiRawCfirBuilder(
             }
         }
 
+        /** 转换 effect perform 表达式。 */
         private fun convertPerform(psi: CjPerformExpression): CfirPerformExpression {
             val effectExpression = psi.expression?.let { convertExpression(it) }
                 ?: buildErrorExpression(psi.toSourceElement(), "Missing performed expression")
@@ -2540,6 +2648,7 @@ class PsiRawCfirBuilder(
             }
         }
 
+        /** 转换 effect resume 表达式。 */
         private fun convertResume(psi: CjResumeExpression): CfirResumeExpression {
             return buildResumeExpression {
                 source = psi.toCjPsiSourceElement()
@@ -2548,6 +2657,7 @@ class PsiRawCfirBuilder(
             }
         }
 
+        /** 转换 try handle 分支中的 command type pattern。 */
         private fun convertCommandTypePattern(psi: CjCommandTypePattern): CfirCommandTypePattern {
             return buildCommandTypePattern {
                 source = psi.toCjPsiSourceElement()
@@ -2557,6 +2667,7 @@ class PsiRawCfirBuilder(
             }
         }
 
+        /** 转换 try-with-resource 资源声明为局部 field variable。 */
         private fun convertTryResource(psi: CjTryResource): CfirFieldVariable {
             val parameter = psi.parameter
             val resourceName = parameter?.nameAsSafeName ?: Name.special("<error>")
@@ -2580,6 +2691,7 @@ class PsiRawCfirBuilder(
             }
         }
 
+        /** 转换 try 表达式，包括 resource、handle、catch 与 finally 分支。 */
         private fun convertTry(psi: CjTryExpression): CfirTryExpression {
             val resources = psi.tryResourceList?.resources?.map(::convertTryResource).orEmpty()
             val tryBlock = convertBlock(psi.tryBlock)
@@ -2628,6 +2740,7 @@ class PsiRawCfirBuilder(
 
         // ---- Lambda ----
 
+        /** 转换 lambda 表达式及其匿名函数声明。 */
         private fun convertLambda(psi: CjLambdaExpression): CfirAnonymousFunctionExpression {
             val anonymousFunctionSymbol = CfirAnonymousFunctionSymbol()
             val valueParams = psi.valueParameters.map {
@@ -2669,6 +2782,7 @@ class PsiRawCfirBuilder(
 
         // ---- Misc ----
 
+        /** 转换数组或下标访问表达式。 */
         private fun convertSubscript(psi: CjArrayAccessExpression): CfirSubscriptExpression {
             val receiver = psi.arrayExpression?.let { convertExpression(it) }
                 ?: buildErrorExpression(psi.toSourceElement(), "Missing subscript receiver")
@@ -2679,6 +2793,7 @@ class PsiRawCfirBuilder(
             }
         }
 
+        /** 转换数组字面量。 */
         private fun convertArrayLiteral(psi: CjCollectionLiteralExpression): CfirArrayLiteral {
             return buildArrayLiteral {
                 source = psi.toCjPsiSourceElement()
@@ -2686,6 +2801,7 @@ class PsiRawCfirBuilder(
             }
         }
 
+        /** 转换 tuple 字面量。 */
         private fun convertTupleLiteral(psi: CjTupleExpression): CfirTupleLiteral {
             return buildTupleLiteral {
                 source = psi.toCjPsiSourceElement()
@@ -2693,6 +2809,7 @@ class PsiRawCfirBuilder(
             }
         }
 
+        /** 转换 `is` 类型检查表达式。 */
         private fun convertTypeCheck(psi: CjIsExpression): CfirTypeOperator {
             val argument = psi.leftHandSide.let { convertExpression(it) }
                 ?: buildErrorExpression(psi.toSourceElement(), "Missing is-check operand")
@@ -2704,6 +2821,7 @@ class PsiRawCfirBuilder(
             }
         }
 
+        /** 转换 `as` 等带类型 RHS 的类型操作表达式。 */
         private fun convertTypeOperator(psi: CjBinaryExpressionWithTypeRHS): CfirTypeOperator {
             val operation = when (psi.operationReference.referencedNameElementType) {
                 CjTokens.AS_KEYWORD -> CfirTypeOperationKind.AS
@@ -2717,6 +2835,7 @@ class PsiRawCfirBuilder(
             }
         }
 
+        /** 转换 catch clause 的绑定与类型 pattern。 */
         private fun convertCatchPattern(clause: CjCatchClause): CfirCatchPattern {
             val parameter = clause.catchParameter
             val bindingName = parameter?.name?.let(Name::identifier)
@@ -2741,6 +2860,7 @@ class PsiRawCfirBuilder(
             }
         }
 
+        /** 转换 synchronized 表达式。 */
         private fun convertSynchronized(psi: CjSynchronizedExpression): CfirExpression {
             val mutex = psi.expression?.let { convertExpression(it) }
                 ?: buildErrorExpression(psi.toSourceElement(), "Missing synchronized mutex expression")
@@ -2754,6 +2874,7 @@ class PsiRawCfirBuilder(
             }
         }
 
+        /** 转换 unsafe 表达式。 */
         private fun convertUnsafe(psi: CjUnsafeExpression): CfirExpression {
             val block = psi.block
                 ?: return buildErrorExpression(psi.toSourceElement(), "Missing unsafe block")
@@ -2767,6 +2888,7 @@ class PsiRawCfirBuilder(
             }
         }
 
+        /** 转换 quote 表达式并保留插值表达式列表。 */
         private fun convertQuote(psi: CjQuoteExpression): CfirExpression {
             return buildQuoteExpression {
                 source = psi.toCjPsiSourceElement()
@@ -2779,6 +2901,7 @@ class PsiRawCfirBuilder(
             }
         }
 
+        /** 转换表达式位置的 macro call，并收集 [MacroSurfaceExpr]。 */
         private fun convertMacroExpression(psi: CjMacroExpression): CfirExpression {
             val surfaceId = MacroSurfaceIdGenerator.next()
             val text = psi.text.orEmpty()
@@ -2831,6 +2954,7 @@ class PsiRawCfirBuilder(
             return carrier
         }
 
+        /** 在 raw 文本中判断 macro input 是否显式包含括号。 */
         private fun String.hasMacroInputParentheses(): Boolean {
             val open = indexOf('(')
             return open >= 0 && indexOf(')', startIndex = open + 1) >= 0
@@ -2868,7 +2992,7 @@ class PsiRawCfirBuilder(
                     bindingName = pattern.nameAsName
                     bindingVariable = pattern.nameAsName?.let { name ->
                         createPatternBindingVariable(
-                            source = pattern.toCjPsiSourceElement(),
+                            source = (pattern.nameIdentifier ?: pattern.reference ?: pattern).toCjPsiSourceElement(),
                             name = name,
                             status = ownerStatus,
                             isLocal = ownerIsLocal,
@@ -2925,6 +3049,7 @@ class PsiRawCfirBuilder(
             }
         }
 
+        /** 为 pattern 中的具名绑定创建独立 binding variable 声明。 */
         private fun createPatternBindingVariable(
             source: CjSourceElement?,
             name: Name,
@@ -2953,6 +3078,7 @@ class PsiRawCfirBuilder(
             }
         }
 
+        /** 深拷贝声明状态，避免复用可变 status 对象造成后续阶段串改。 */
         private fun cloneDeclarationStatus(status: CfirDeclarationStatus): CfirDeclarationStatusImpl {
             return CfirDeclarationStatusImpl(
                 visibility = status.visibility,
@@ -2979,6 +3105,7 @@ class PsiRawCfirBuilder(
 
         // ===== 辅助方法 =====
 
+        /** 构建带 body 声明的函数体 block，并绑定函数 target 与容器符号。 */
         private fun CjDeclarationWithBody.buildCfirBody(
             functionTarget: CfirFunctionTarget,
             containingDeclarationSymbol: CfirBasedSymbol<*>,
@@ -2994,6 +3121,7 @@ class PsiRawCfirBuilder(
             }
         }
 
+        /** 将任意表达式包装成 block；block 表达式直接复用 [convertBlock]。 */
         private fun toBlock(psi: CjExpression): CfirBlock {
             if (psi is CjBlockExpression) return convertBlock(psi)
             return buildBlock {
@@ -3002,10 +3130,12 @@ class PsiRawCfirBuilder(
             }
         }
 
+        /** 转换类型引用；缺失时生成 implicit type ref。 */
         private fun convertTypeRef(psi: CjTypeReference?): CfirTypeRef {
             return psi.toCfirOrImplicitTypeRef { it.toSourceElement() }
         }
 
+        /** 收集 where/type constraint 语法中每个类型参数的额外上界。 */
         private fun collectTypeConstraintBounds(owner: CjTypeParameterListOwner): Map<Name, List<CfirTypeRef>> {
             if (owner.typeConstraints.isEmpty()) return emptyMap()
 
@@ -3022,6 +3152,7 @@ class PsiRawCfirBuilder(
             return boundsByParameter
         }
 
+        /** 收集 type constraint 诊断定位数据，供 checker 报告重复/非法约束。 */
         private fun collectTypeConstraintDiagnosticData(owner: CjTypeParameterListOwner): CfirTypeConstraintDiagnosticData? {
             val typeConstraints = owner.typeConstraints.mapNotNull { constraint ->
                 val parameterName = constraint.subjectTypeParameterName?.referencedNameAsName ?: return@mapNotNull null
@@ -3041,6 +3172,7 @@ class PsiRawCfirBuilder(
             )
         }
 
+        /** 收集函数体中额外参数列表的诊断定位数据。 */
         private fun collectFunctionBodyDiagnosticData(owner: CjElement): CfirFunctionBodyDiagnosticData? {
             val parameterLists = owner.children
                 .filterIsInstance<CjParameterList>()
@@ -3057,6 +3189,7 @@ class PsiRawCfirBuilder(
             )
         }
 
+        /** 汇总声明附加属性，包括 type constraint 与函数体诊断定位数据。 */
         private fun declarationAttributes(owner: CjElement?): CfirDeclarationAttributes {
             var hasAttributes = false
             val attributes = CfirDeclarationAttributes()
@@ -3085,6 +3218,7 @@ class PsiRawCfirBuilder(
             return if (hasAttributes) attributes else CfirDeclarationAttributes.EMPTY
         }
 
+        /** 转换 class-like 声明的类型参数列表。 */
         private fun convertTypeParameters(
             psi: CjClassLikeDeclaration,
             containingSymbol: CfirBasedSymbol<*>,
@@ -3100,6 +3234,7 @@ class PsiRawCfirBuilder(
             }
         }
 
+        /** 转换 extend 声明的类型参数列表。 */
         private fun convertTypeParameters(
             psi: CjExtend,
             containingSymbol: CfirBasedSymbol<*>,
@@ -3115,6 +3250,7 @@ class PsiRawCfirBuilder(
             }
         }
 
+        /** 转换 typealias 声明的类型参数列表。 */
         private fun convertTypeAliasTypeParameters(
             psi: CjTypeAlias,
             containingSymbol: CfirBasedSymbol<*>,
@@ -3130,6 +3266,7 @@ class PsiRawCfirBuilder(
             }
         }
 
+        /** 转换函数、构造、finalizer、macro declaration 的类型参数列表。 */
         private fun convertFunctionTypeParameters(
             psi: CjFunction,
             containingDeclarationSymbol: CfirBasedSymbol<*>,
@@ -3144,11 +3281,13 @@ class PsiRawCfirBuilder(
             }
         }
 
+        /** 转换 class-like 声明的直接父类型引用列表。 */
         private fun convertSuperTypeRefs(psi: CjClassLikeDeclaration): List<CfirTypeRef> {
             val typeStatement = psi as? CjTypeStatement ?: return emptyList()
             return typeStatement.superTypeListEntries.map { convertTypeRef(it.typeReference) }
         }
 
+        /** 转换 class-like body 内成员，并处理分离 annotation 与 builtin annotation macro。 */
         private fun convertClassMembers(psi: CjClassLikeDeclaration): List<CfirDeclaration> {
             val typeStatement = psi as? CjTypeStatement ?: return emptyList()
             val body = typeStatement.body ?: return emptyList()
@@ -3178,6 +3317,7 @@ class PsiRawCfirBuilder(
             return declarations
         }
 
+        /** 将 class body 中与声明分离的 annotation 回挂到对应 carrier 声明。 */
         private fun collectDetachedClassMemberAnnotations(
             annotated: CjDeclaration,
             pendingAnnotations: List<CjAnnotation>,
@@ -3218,32 +3358,34 @@ class PsiRawCfirBuilder(
             }
         }
 
+        /** 转换普通声明的 status，非 modifier owner 使用默认 status。 */
         private fun convertDeclarationStatus(psi: CjDeclaration): CfirDeclarationStatus {
             val owner = psi as? CjModifierListOwner ?: return CfirDeclarationStatusImpl.DEFAULT
             return convertDeclarationStatus(owner, psi)
         }
 
+        /** 转换 main 函数 status，默认可见性为 public。 */
         private fun convertMainFunctionStatus(psi: CjMainFunction): CfirDeclarationStatus {
             return convertDeclarationStatus(psi, psi, defaultVisibility = Visibilities.Public)
         }
 
+        /** 根据 modifier list、声明种类和上下文构造声明 status。 */
         private fun convertDeclarationStatus(
             owner: CjModifierListOwner,
             declaration: CjDeclaration,
             defaultVisibility: Visibility? = null,
         ): CfirDeclarationStatus {
-            val modifiers = owner.modifierList
-            val isVisibilityExplicit = modifiers?.let {
-                it.hasModifier(CjTokens.PUBLIC_KEYWORD) ||
-                        it.hasModifier(CjTokens.PRIVATE_KEYWORD) ||
-                        it.hasModifier(CjTokens.PROTECTED_KEYWORD) ||
-                        it.hasModifier(CjTokens.INTERNAL_KEYWORD)
-            } == true
-            val isModalityExplicit = modifiers?.let {
-                it.hasModifier(CjTokens.ABSTRACT_KEYWORD) ||
-                        it.hasModifier(CjTokens.OPEN_KEYWORD) ||
-                        it.hasModifier(CjTokens.SEALED_KEYWORD)
-            } == true
+            fun hasModifier(token: org.cangnova.cangjie.lexer.CjKeywordToken): Boolean = owner.hasModifier(token)
+
+            val isVisibilityExplicit =
+                hasModifier(CjTokens.PUBLIC_KEYWORD) ||
+                        hasModifier(CjTokens.PRIVATE_KEYWORD) ||
+                        hasModifier(CjTokens.PROTECTED_KEYWORD) ||
+                        hasModifier(CjTokens.INTERNAL_KEYWORD)
+            val isModalityExplicit =
+                hasModifier(CjTokens.ABSTRACT_KEYWORD) ||
+                        hasModifier(CjTokens.OPEN_KEYWORD) ||
+                        hasModifier(CjTokens.SEALED_KEYWORD)
             val effectiveDefaultVisibility = defaultVisibility ?: when {
                 context.inLocalContext -> Visibilities.Local
                 containerSymbolIfAny is CfirInterfaceSymbol -> Visibilities.Public
@@ -3252,31 +3394,32 @@ class PsiRawCfirBuilder(
 
             return buildDeclarationStatus(
                 visibility = when {
-                    modifiers?.hasModifier(CjTokens.PUBLIC_KEYWORD) == true -> Visibilities.Public
-                    modifiers?.hasModifier(CjTokens.PRIVATE_KEYWORD) == true -> Visibilities.Private
-                    modifiers?.hasModifier(CjTokens.PROTECTED_KEYWORD) == true -> Visibilities.Protected
-                    modifiers?.hasModifier(CjTokens.INTERNAL_KEYWORD) == true -> Visibilities.Internal
+                    hasModifier(CjTokens.PUBLIC_KEYWORD) -> Visibilities.Public
+                    hasModifier(CjTokens.PRIVATE_KEYWORD) -> Visibilities.Private
+                    hasModifier(CjTokens.PROTECTED_KEYWORD) -> Visibilities.Protected
+                    hasModifier(CjTokens.INTERNAL_KEYWORD) -> Visibilities.Internal
                     else -> effectiveDefaultVisibility
                 },
                 isVisibilityExplicit = isVisibilityExplicit,
                 isModalityExplicit = isModalityExplicit,
-                isAbstract = modifiers?.hasModifier(CjTokens.ABSTRACT_KEYWORD) == true ||
-                        isImplicitAbstractClassLikeMember(declaration, modifiers),
-                isOpen = modifiers?.hasModifier(CjTokens.OPEN_KEYWORD) == true,
-                isSealed = modifiers?.hasModifier(CjTokens.SEALED_KEYWORD) == true,
-                isStatic = modifiers?.hasModifier(CjTokens.STATIC_KEYWORD) == true,
-                isConst = modifiers?.hasModifier(CjTokens.CONST_KEYWORD) == true ||
+                isAbstract = hasModifier(CjTokens.ABSTRACT_KEYWORD) ||
+                        isImplicitAbstractClassLikeMember(declaration, owner),
+                isOpen = hasModifier(CjTokens.OPEN_KEYWORD),
+                isSealed = hasModifier(CjTokens.SEALED_KEYWORD),
+                isStatic = hasModifier(CjTokens.STATIC_KEYWORD),
+                isConst = hasModifier(CjTokens.CONST_KEYWORD) ||
                         declaration.hasConstDeclarationKeyword(),
-                isMut = modifiers?.hasModifier(CjTokens.MUT_KEYWORD) == true,
-                isOverride = modifiers?.hasModifier(CjTokens.OVERRIDE_KEYWORD) == true,
-                isRedef = modifiers?.hasModifier(CjTokens.REDEF_KEYWORD) == true,
-                isOperator = modifiers?.hasModifier(CjTokens.OPERATOR_KEYWORD) == true,
-                isUnsafe = modifiers?.hasModifier(CjTokens.UNSAFE_KEYWORD) == true,
-                isForeign = modifiers?.hasModifier(CjTokens.FOREIGN_KEYWORD) == true,
+                isMut = hasModifier(CjTokens.MUT_KEYWORD),
+                isOverride = hasModifier(CjTokens.OVERRIDE_KEYWORD),
+                isRedef = hasModifier(CjTokens.REDEF_KEYWORD),
+                isOperator = hasModifier(CjTokens.OPERATOR_KEYWORD),
+                isUnsafe = hasModifier(CjTokens.UNSAFE_KEYWORD),
+                isForeign = hasModifier(CjTokens.FOREIGN_KEYWORD),
                 isDefault = isDefaultInterfaceMember(declaration),
             )
         }
 
+        /** 判断声明语法本身是否带 const 声明关键字。 */
         private fun CjDeclaration.hasConstDeclarationKeyword(): Boolean = when (this) {
             is CjPatternVariable -> isConst
             is CjFieldVariable -> isConst
@@ -3289,10 +3432,10 @@ class PsiRawCfirBuilder(
          */
         private fun isImplicitAbstractClassLikeMember(
             declaration: CjDeclaration,
-            modifiers: CjModifierList?,
+            owner: CjModifierListOwner,
         ): Boolean {
             if (containerSymbolIfAny !is CfirClassSymbol && containerSymbolIfAny !is CfirInterfaceSymbol) return false
-            if (modifiers?.hasModifier(CjTokens.FOREIGN_KEYWORD) == true) return false
+            if (owner.hasModifier(CjTokens.FOREIGN_KEYWORD)) return false
 
             return when (declaration) {
                 is CjNamedFunction -> !declaration.hasBody()
@@ -3301,6 +3444,7 @@ class PsiRawCfirBuilder(
             }
         }
 
+        /** 判断 interface 成员是否应标记为 default 实现。 */
         private fun isDefaultInterfaceMember(declaration: CjDeclaration): Boolean {
             if (containerSymbolIfAny !is CfirInterfaceSymbol) return false
 
@@ -3315,6 +3459,7 @@ class PsiRawCfirBuilder(
 
     // ===== 文件级构建辅助 =====
 
+    /** 构造文件 package directive，缺失时使用 root package。 */
     private fun buildPackageDirective(psi: CjPackageDirective?): CfirPackageDirective {
         val fqName = psi?.fqName ?: FqName.ROOT
         return buildPackageDirective {
@@ -3324,6 +3469,7 @@ class PsiRawCfirBuilder(
         }
     }
 
+    /** 构造文件 import 列表。 */
     private fun buildImports(file: CjFile): List<CfirImport> {
         val importDirectives = file.importDirectives
         return importDirectives.flatMap { directive ->
@@ -3339,6 +3485,7 @@ class PsiRawCfirBuilder(
         }
     }
 
+    /** 规范化 PSI 中可能重复包前缀的 import FQN。 */
     private fun normalizeImportFqName(fqName: FqName): FqName {
         val segments = fqName.pathSegments().map { it.asString() }
         for (prefixLength in 1..(segments.size / 2)) {
@@ -3354,10 +3501,12 @@ class PsiRawCfirBuilder(
 
 }
 
+/** 计算 reparse 后 PSI 与原始 source override 之间的偏移差。 */
 private fun sourceOffsetDelta(sourceOverride: CjSourceElement?, reparsedPsi: PsiElement): Int {
     return sourceOverride?.let { it.startOffset - reparsedPsi.textRange.startOffset } ?: 0
 }
 
+/** 将 PSI source element 按 [delta] 平移，用于 macro fragment reparse 后恢复原始位置。 */
 private fun PsiElement.shiftedBy(delta: Int): CjSourceElement {
     val source = toCjPsiSourceElement()
     if (delta == 0) return source
@@ -3370,6 +3519,7 @@ private fun PsiElement.shiftedBy(delta: Int): CjSourceElement {
     )
 }
 
+/** 将 raw-cfir-common 的 macro payload token 映射为 providers 层 macro surface token。 */
 private fun List<org.cangnova.cangjie.cfir.builder.macro.MacroPayloadToken>.toMacroSurfaceTokens(): List<MacroSurfaceToken> {
     return map { token ->
         MacroSurfaceToken(

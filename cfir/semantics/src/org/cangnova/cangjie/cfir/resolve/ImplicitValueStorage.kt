@@ -19,6 +19,13 @@ import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.name.Name
 
+/**
+ * 隐式 receiver 与隐式值的持久化存储。
+ *
+ * @property implicitReceiverStack 按进入作用域顺序保存的隐式 receiver 栈。
+ * @property implicitReceiversByLabel 按标签名索引的隐式 receiver 集合。
+ * @property implicitValuesBySymbol 按绑定符号索引的隐式值集合。
+ */
 class ImplicitValueStorage private constructor(
     private val implicitReceiverStack: PersistentList<ImplicitReceiverValue<*>>,
     private val implicitReceiversByLabel: PersistentMap<Name, PersistentSet<ImplicitReceiverValue<*>>>,
@@ -30,18 +37,36 @@ class ImplicitValueStorage private constructor(
         persistentHashMapOf(),
     )
 
+    /**
+     * 当前可见的隐式 receiver 列表。
+     */
     val implicitReceivers: List<ImplicitReceiverValue<*>>
         get() = implicitReceiverStack
 
+    /**
+     * 当前可见的全部隐式值。
+     */
     val implicitValues: Collection<ImplicitValue<*>>
         get() = implicitValuesBySymbol.values
 
+    /**
+     * 批量追加隐式 receiver。
+     *
+     * @return 包含追加 receiver 的新存储实例。
+     */
     fun addAllImplicitReceivers(receivers: List<ImplicitReceiverValue<*>>): ImplicitValueStorage {
         return receivers.fold(this) { acc, receiver ->
             acc.addImplicitReceiver(name = null, value = receiver)
         }
     }
 
+    /**
+     * 追加单个隐式 receiver。
+     *
+     * @param name receiver 标签名；为空表示只加入无标签 receiver 栈。
+     * @param value 要追加的隐式 receiver 值。
+     * @return 包含该 receiver 的新存储实例。
+     */
     fun addImplicitReceiver(name: Name?, value: ImplicitReceiverValue<*>): ImplicitValueStorage {
         val updatedReceiversByLabel = if (name != null) {
             val receivers = implicitReceiversByLabel[name] ?: persistentHashSetOf()
@@ -57,6 +82,12 @@ class ImplicitValueStorage private constructor(
         )
     }
 
+    /**
+     * 按标签查询隐式 receiver。
+     *
+     * 未指定标签时返回最近且可适用的 receiver；如果全部不可适用，则返回最近 receiver 以便生成
+     * 正确诊断。
+     */
     operator fun get(name: String?): Set<ImplicitReceiverValue<*>> {
         if (name == null) {
             val best = implicitReceiverStack.lastOrNull { !it.producesInapplicableCandidate() }
@@ -72,18 +103,35 @@ class ImplicitValueStorage private constructor(
         }
     }
 
+    /**
+     * 按绑定符号查询隐式值。
+     */
     fun getBySymbol(symbol: CfirBasedSymbol<*>): ImplicitValue<*>? = implicitValuesBySymbol[symbol]
 
+    /**
+     * 返回最近的 dispatch receiver。
+     */
     fun lastDispatchReceiver(): ImplicitDispatchReceiverValue? =
         implicitReceiverStack.filterIsInstance<ImplicitDispatchReceiverValue>().lastOrNull()
 
+    /**
+     * 以从内到外的顺序返回隐式 receiver。
+     */
     fun receiversAsReversed(): List<ImplicitReceiverValue<*>> = implicitReceiverStack.asReversed()
 
+    /**
+     * 用 smart cast 后的类型替换指定隐式值类型。
+     */
     @ImplicitValue.ImplicitValueInternals
     fun replaceImplicitValueType(symbol: CfirBasedSymbol<*>, type: ConeCangJieType) {
         implicitValuesBySymbol[symbol]?.updateTypeFromSmartcast(type)
     }
 
+    /**
+     * 创建隐式值存储快照。
+     *
+     * [mapper] 可替换 receiver 和隐式值实例，用于 DFA 分支复制或作用域快照。
+     */
     fun createSnapshot(mapper: ImplicitValueMapper): ImplicitValueStorage = ImplicitValueStorage(
         implicitReceiverStack = implicitReceiverStack.map { mapper(it) }.toPersistentList(),
         implicitReceiversByLabel = implicitReceiversByLabel.mapValues { (_, values) ->
@@ -93,11 +141,20 @@ class ImplicitValueStorage private constructor(
     )
 }
 
+/**
+ * 隐式值快照映射器。
+ */
 interface ImplicitValueMapper {
+    /**
+     * 映射单个隐式值。
+     */
     operator fun <S, T> invoke(value: T): T
         where S : CfirBasedSymbol<*>, T : ImplicitValue<S>
 }
 
+/**
+ * 为一组同名隐式 receiver 生成歧义诊断。
+ */
 fun Set<ImplicitReceiverValue<*>>.ambiguityDiagnosticFor(labelName: String?): ConeSimpleDiagnostic {
     val reason = if (labelName == null) {
         "Ambiguous implicit receiver"

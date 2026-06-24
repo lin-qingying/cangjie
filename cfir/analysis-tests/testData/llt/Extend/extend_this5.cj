@@ -3,7 +3,7 @@
 
 extend Int64 {
     public static func foo() {
-        return <!STATIC_MEMBERS_CANNOT_CALL_MEMBERS!>t<!>his
+        return <!STATIC_MEMBERS_CANNOT_CALL_MEMBERS!>this<!>
     }
 }
 
@@ -13,7 +13,7 @@ class A {
 
 extend A {
     public static func foo() {
-        return <!STATIC_MEMBERS_CANNOT_CALL_MEMBERS!>t<!>his.f()
+        return <!STATIC_MEMBERS_CANNOT_CALL_MEMBERS!>this<!>.f()
     }
 }
 
@@ -23,6 +23,6 @@ struct B {
 
 extend B {
     public static func foo() {
-        return <!STATIC_MEMBERS_CANNOT_CALL_MEMBERS!>t<!>his.item
+        return <!STATIC_MEMBERS_CANNOT_CALL_MEMBERS!>this<!>.item
     }
 }

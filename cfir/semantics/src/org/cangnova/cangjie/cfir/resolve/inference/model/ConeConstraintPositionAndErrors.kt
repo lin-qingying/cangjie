@@ -32,27 +32,48 @@ import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.type.model.TypeVariableMarker
 
 /**
- * 仓颉版约束位置类型，对齐 K2 FirConstraintPositionAndErrors。
+ * 固定类型变量时使用的约束位置。
  *
- * 将 resolution.common 中的通用约束位置抽象类具化为 CFIR 层使用的具体类型。
+ * @param variable 需要固定的类型变量。
  */
-
 class ConeFixVariableConstraintPosition(
     variable: TypeVariableMarker,
 ) : FixVariableConstraintPosition<Nothing?>(variable, null)
 
+/**
+ * 普通调用实参产生的约束位置。
+ *
+ * @param argument 触发类型约束的 CFIR 元素。
+ */
 class ConeArgumentConstraintPosition(
     argument: CfirElement,
 ) : RegularArgumentConstraintPosition<CfirElement>(argument)
 
+/**
+ * 期望类型产生的约束位置。
+ */
 object ConeExpectedTypeConstraintPosition : ExpectedTypeConstraintPosition<Nothing?>(null)
 
+/**
+ * 声明侧上界产生的约束位置。
+ */
 object ConeDeclaredUpperBoundConstraintPosition : DeclaredUpperBoundConstraintPosition<Nothing?>(null)
 
+/**
+ * 显式类型实参产生的约束位置。
+ *
+ * @param typeArgument 源码中写出的类型实参引用。
+ */
 class ConeExplicitTypeParameterConstraintPosition(
     typeArgument: CfirTypeRef,
 ) : ExplicitTypeParameterConstraintPosition<CfirTypeRef>(typeArgument)
 
+/**
+ * 接收者类型约束位置。
+ *
+ * @param receiver 触发约束的接收者表达式。
+ * @param source 保留的源码位置参数，当前实现仅用于保持与公共约束模型签名对齐。
+ */
 class ConeReceiverConstraintPosition(
     receiver: CfirExpression,
     @Suppress("UNUSED_PARAMETER") source: CjSourceElement? = null,

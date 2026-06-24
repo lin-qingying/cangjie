@@ -4,10 +4,21 @@ import org.cangnova.cangjie.cfir.render.ConeTypeRenderer
 import org.cangnova.cangjie.cfir.render.ConeTypeRendererForDebugging
 import org.cangnova.cangjie.cfir.expressions.*
 
+/**
+ * 单行表达式渲染器。
+ *
+ * 该渲染器用于参数、属性值和模式中的紧凑调试输出，不承担完整 CFIR 树 pretty print。
+ *
+ * @property referenceRenderer 引用渲染器。
+ * @property typeRenderer 类型渲染器。
+ */
 open class CfirInlineExpressionRenderer(
     protected val referenceRenderer: CfirReferenceRenderer,
     protected val typeRenderer: ConeTypeRenderer = ConeTypeRendererForDebugging(),
 ) {
+    /**
+     * 将表达式渲染为单行文本。
+     */
     open fun render(expression: CfirExpression): String = when (expression) {
         is CfirLiteralExpression -> when (expression.kind) {
             CfirLiteralKind.STRING -> "\"${expression.value}\""

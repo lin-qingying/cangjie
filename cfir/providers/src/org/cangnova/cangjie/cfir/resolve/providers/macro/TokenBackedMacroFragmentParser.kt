@@ -19,6 +19,9 @@ import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
  *
  * 该类内部不依赖 PSI / LightTree，只承担 token 重组 + 错误模式分派，
  * 因此可以保持在 `cfir:providers` 模块。
+ *
+ * @property reparse raw builder 注入的 fragment reparse 回调。
+ * @property reTokenize lexer/token-stage 复扫回调。
  */
 class TokenBackedMacroFragmentParser(
     /**
@@ -36,6 +39,12 @@ class TokenBackedMacroFragmentParser(
     private val reTokenize: (List<MacroSurfaceToken>) -> List<MacroSurfaceToken>,
 ) : MacroFragmentParser {
 
+    /**
+     * 解析单个 macro fragment 输入。
+     *
+     * 本实现先根据 [MacroFragmentInput.mode] 选择 token 来源，再执行 token-stage
+     * re-evaluation，最后调用注入的 [reparse] 生成 construction-only payload。
+     */
     override fun parse(input: MacroFragmentInput): MacroFragmentResult {
         val node = input.node
         val mode = input.mode
@@ -106,10 +115,12 @@ class TokenBackedMacroFragmentParser(
         }
     }
 
+    /** 测试哨兵属性；生产逻辑不读取该值。 */
     @Suppress("UNUSED")
     val lastReparseSentinel: Any? get() = null
 }
 
+/** 将 `@!Anno` custom annotation 语法恢复为普通 annotation reparse 可接受的 `@Anno`。 */
 private fun String.normalizeForcedCustomAnnotationSyntax(): String {
     val atExcl = indexOf("@!")
     if (atExcl < 0) return this
@@ -128,6 +139,7 @@ private fun String.normalizeForcedCustomAnnotationSyntax(): String {
  * [CfirReplaceHandle] 接入，不能由本占位对象宣称完成。
  */
 object IdentityMacroStableSplicer : MacroStableSplicer {
+    /** 占位 splice：返回原文件列表，不宣称完成节点级替换。 */
     override fun applySlices(files: List<CfirFile>, slots: List<MacroReplaceSlot>): List<CfirFile> = files
 }
 
@@ -138,6 +150,7 @@ object IdentityMacroStableSplicer : MacroStableSplicer {
  * 在 stable splice / construction desugar 接入阶段完成。
  */
 object IdentityBuiltinNonMacroDesugarer : BuiltinNonMacroDesugarer {
+    /** 占位 desugar：返回原 fragment，真实 builtin non-macro 转换由后续 splice 阶段接入。 */
     override fun desugar(surface: BuiltinNonMacroSurface, fragment: MacroFragmentResult.Success): MacroFragmentResult? {
         return fragment
     }

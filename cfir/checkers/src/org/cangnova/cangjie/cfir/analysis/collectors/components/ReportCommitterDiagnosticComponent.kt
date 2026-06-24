@@ -19,10 +19,12 @@ class  ReportCommitterDiagnosticComponent(
     reporter: PendingDiagnosticReporter,
 ) : AbstractDiagnosticCollectorComponent(session, reporter) {
 
+    /** 在单个元素检查完成后提交该元素 source 范围内的 pending 诊断。 */
     override fun visitElement(element: CfirElement, data: CheckerContext) {
         checkAndCommitReportsOn(element, data, commitEverything = false)
     }
 
+    /** 在文件遍历结束时使用可定位的文件 source 提交剩余全部 pending 诊断。 */
     fun endOfFile(file: CfirFile, context: CheckerContext) {
         val commitSource = file.commitSourceElement() ?: return
         reporter.checkAndCommitReportsOn(commitSource, context, commitEverything = true)

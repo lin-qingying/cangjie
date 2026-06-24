@@ -18,6 +18,7 @@ import org.cangnova.cangjie.type.AbstractTypeChecker
  * `for-in` 没有用户可写的布尔条件，因此直接跳过。
  */
 object CfirLoopConditionTypeMismatchChecker : CfirBasicExpressionChecker() {
+    /** 检查循环条件表达式类型是否可作为 `Bool` 使用。 */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirStatement) {
         val loopExpression = expression as? CfirLoopExpression ?: return

@@ -13,12 +13,27 @@ package org.cangnova.cangjie.cfir.session
  *   携带原始路径,checker 根据此标志发诊断。
  */
 interface CfirCJMappingConfigProvider : CfirSessionComponent {
+    /**
+     * CJMapping 泛型方法实例化配置文件路径。
+     */
     val configPath: String? get() = null
+
+    /**
+     * 配置文件是否已被驱动成功解析。
+     */
     val isValid: Boolean get() = true
 }
 
+/**
+ * 未配置 CJMapping interop 时使用的默认提供方。
+ */
 object DefaultCfirCJMappingConfigProvider : CfirCJMappingConfigProvider
 
+/**
+ * 从 session 中读取 CJMapping interop 配置提供方。
+ *
+ * 未显式注册时返回 [DefaultCfirCJMappingConfigProvider]。
+ */
 val CfirSession.cjMappingConfigProvider: CfirCJMappingConfigProvider by CfirSession.sessionComponentAccessorWithDefault(
     DefaultCfirCJMappingConfigProvider
 )

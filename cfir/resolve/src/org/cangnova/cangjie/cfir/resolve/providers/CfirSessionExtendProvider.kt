@@ -20,24 +20,47 @@ import org.cangnova.cangjie.name.FqName
  * extend 成员的语义归属判定，而不是把 owner 反推逻辑泄漏到解析阶段。
  */
 class CfirSessionExtendProvider(
+    /**
+     * 当前 provider 所属的解析会话。
+     */
     private val session: CfirSession,
+    /**
+     * extend 语义模型与索引的会话级存储。
+     */
     private val indexStore: CfirExtendIndexStore,
 ) : CfirExtendProvider {
 
+    /**
+     * 按当前使用点文件懒构造的 extend 可访问性检查器。
+     */
     private val accessibilityChecker by lazy { CfirExtendAccessibilityChecker(session) }
 
+    /**
+     * 查询目标键对应的所有 extend 声明。
+     */
     override fun getExtendsForTarget(targetKey: CfirExtendTargetKey): List<CfirExtend> {
         return indexStore.modelsForTarget(targetKey).map(CfirExtendSemanticModel::declaration)
     }
 
+    /**
+     * 查询指定类或接口目标上的 extend 声明。
+     */
     override fun getExtendsForClass(classId: ClassId): List<CfirExtend> {
         return getExtendsForTarget(CfirExtendTargetKey.ClassLike(classId))
     }
 
+    /**
+     * 查询指定包内声明的 extend。
+     */
     override fun getExtendsInPackage(packageFqName: FqName): List<CfirExtend> {
         return indexStore.modelsInPackage(packageFqName).map(CfirExtendSemanticModel::declaration)
     }
 
+    /**
+     * 查询内建基础类型可匹配的 extend 声明。
+     *
+     * 基础类型可能同时具有语言层类型和运行时类标识，因此需要遍历所有可用于 extend 查找的目标种类。
+     */
     override fun getExtendsForBuiltinType(kind: PrimitiveTypeKind): List<CfirExtend> {
         return kind.extendLookupKinds
             .flatMap { indexStore.modelsForTarget(CfirExtendTargetKey.ClassLike(it.classId)) }
@@ -45,10 +68,23 @@ class CfirSessionExtendProvider(
             .distinct()
     }
 
+    /**
+     * 返回成员符号所属的 extend 声明。
+     */
     override fun getContainingExtend(symbol: CfirCallableSymbol<*>): CfirExtend? {
         return indexStore.containingExtendOf(symbol)
     }
 
+    /**
+     * 返回 extend 声明所在包名。
+     */
+    override fun getPackageFqName(extend: CfirExtend): FqName? {
+        return indexStore.modelForDeclaration(extend)?.packageFqName
+    }
+
+    /**
+     * 判断 extend 在当前文件使用点是否可访问。
+     */
     override fun isExtendAccessible(extend: CfirExtend): Boolean {
         val file = CfirAccessibilityFileScope.get() ?: return true
         return accessibilityChecker.isAccessible(file, extend)

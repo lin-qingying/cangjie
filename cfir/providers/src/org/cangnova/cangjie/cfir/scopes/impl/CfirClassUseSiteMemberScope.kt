@@ -25,14 +25,13 @@
 package org.cangnova.cangjie.cfir.scopes.impl
 
 import org.cangnova.cangjie.cfir.ScopeSession
-import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
-import org.cangnova.cangjie.cfir.declarations.CfirFunction
-import org.cangnova.cangjie.cfir.declarations.callableNameOrNull
+import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityFileScope
 import org.cangnova.cangjie.cfir.resolve.providers.CfirDirectSupertypeProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirExtendProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
-import org.cangnova.cangjie.cfir.resolve.providers.createExtendDeclarationSubstitution
+import org.cangnova.cangjie.cfir.resolve.providers.createCallableOwnerUseSiteSubstitutor
+import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.scopes.isStaticMemberForOverride
 import org.cangnova.cangjie.cfir.scopes.overrideSignatureKey
@@ -40,14 +39,17 @@ import org.cangnova.cangjie.cfir.session.*
 import org.cangnova.cangjie.cfir.session.services.CfirExtendTargetKey
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.types.*
+import org.cangnova.cangjie.cfir.unwrapSubstitutionOverrides
 import org.cangnova.cangjie.name.ClassId
+import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.type.AbstractTypeChecker
 import org.cangnova.cangjie.type.model.TypeConstructorMarker
 
 /**
- * Use-site member scope for class-like receivers. Declared members win over
- * extend members for classifier/property hiding, while functions are merged.
+ * class-like receiver 的 use-site 成员 scope。
+ *
+ * 声明成员在 classifier/property 隐藏规则中优先于 extend 成员，函数成员则与 extend 成员合并。
  */
 enum class CfirClassMemberScopeKind {
     /**
@@ -73,6 +75,11 @@ enum class CfirClassMemberScopeKind {
     DECLARATION_SITE,
 }
 
+/**
+ * class-like 类型 use-site 成员 scope。
+ *
+ * 该 scope 统一处理声明成员、extend 成员、父类型成员、泛型 owner 替换和直接覆盖查询。
+ */
 class CfirClassUseSiteMemberScope private constructor(
     private val session: CfirSession,
     private val classSymbol: CfirClassLikeSymbol<*>,
@@ -84,8 +91,12 @@ class CfirClassUseSiteMemberScope private constructor(
     private val scopeKind: CfirClassMemberScopeKind = CfirClassMemberScopeKind.USE_SITE,
     private val allowBareGenericStaticQualifierExtends: Boolean = false,
     private val excludingExtend: CfirExtend? = null,
+    private val useSitePackage: FqName? = CfirAccessibilityFileScope.currentPackageFqName(),
     private val supertypePath: CfirSupertypePath = CfirSupertypePath.root(classSymbol.classId),
 ) : CfirTypeScope() {
+    /**
+     * 创建 class-like use-site 成员 scope。
+     */
     constructor(
         session: CfirSession,
         classSymbol: CfirClassLikeSymbol<*>,
@@ -97,6 +108,7 @@ class CfirClassUseSiteMemberScope private constructor(
         scopeKind: CfirClassMemberScopeKind = CfirClassMemberScopeKind.USE_SITE,
         allowBareGenericStaticQualifierExtends: Boolean = false,
         excludingExtend: CfirExtend? = null,
+        useSitePackage: FqName? = CfirAccessibilityFileScope.currentPackageFqName(),
     ) : this(
         session = session,
         classSymbol = classSymbol,
@@ -108,9 +120,13 @@ class CfirClassUseSiteMemberScope private constructor(
         scopeKind = scopeKind,
         allowBareGenericStaticQualifierExtends = allowBareGenericStaticQualifierExtends,
         excludingExtend = excludingExtend,
+        useSitePackage = useSitePackage,
         supertypePath = CfirSupertypePath.root(classSymbol.classId),
     )
 
+    /**
+     * 兼容旧调用点的构造器，session 从 [symbolProvider] 取得。
+     */
     constructor(
         classSymbol: CfirClassLikeSymbol<*>,
         symbolProvider: CfirSymbolProvider,
@@ -125,10 +141,18 @@ class CfirClassUseSiteMemberScope private constructor(
         ownerType = declarationSelfType(classSymbol),
         dispatchReceiverType = declarationSelfType(classSymbol),
         scopeKind = CfirClassMemberScopeKind.USE_SITE,
+        useSitePackage = CfirAccessibilityFileScope.currentPackageFqName(),
         supertypePath = CfirSupertypePath.root(classSymbol.classId),
     )
 
+    /**
+     * 声明成员 scope。
+     */
     private val declaredScope = CfirClassDeclaredMemberScope(classSymbol)
+
+    /**
+     * 当前 receiver 可见的 extend 成员 scope。
+     */
     private val extendScope = takeIf { scopeKind == CfirClassMemberScopeKind.USE_SITE }
         ?.let {
             val provider = extendProvider ?: return@let null
@@ -141,15 +165,55 @@ class CfirClassUseSiteMemberScope private constructor(
                 receiverType = receiverType,
                 allowBareGenericStaticQualifierExtends = allowBareGenericStaticQualifierExtends,
                 excludingExtend = excludingExtend,
+                useSitePackage = useSitePackage,
             )
         }
+
+    /**
+     * 直接父类型 scope 缓存。
+     */
     private val parentScopes: List<CfirTypeScope> by lazy { buildParentScopes() }
+
+    /**
+     * 按名称缓存的函数结果。
+     */
     private val functions = hashMapOf<Name, Collection<CfirNamedFunctionSymbol>>()
+
+    /**
+     * 按名称缓存的属性结果。
+     */
     private val properties = hashMapOf<Name, Collection<CfirPropertySymbol>>()
+
+    /**
+     * 父 scope 函数候选缓存。
+     */
     private val functionsFromParents = hashMapOf<Name, List<MemberWithBaseScope<CfirNamedFunctionSymbol>>>()
+
+    /**
+     * 父 scope 属性候选缓存。
+     */
     private val propertiesFromParents = hashMapOf<Name, List<MemberWithBaseScope<CfirPropertySymbol>>>()
+
+    /**
+     * 直接覆盖函数缓存。
+     */
     private val directOverriddenFunctions = hashMapOf<CfirNamedFunctionSymbol, List<MemberWithBaseScope<CfirNamedFunctionSymbol>>>()
+
+    /**
+     * 直接覆盖属性缓存。
+     */
     private val directOverriddenProperties = hashMapOf<CfirPropertySymbol, List<MemberWithBaseScope<CfirPropertySymbol>>>()
+
+    /**
+     * owner 类型参数替换器。
+     */
+    private val ownerSubstitutor: ConeSubstitutor by lazy(LazyThreadSafetyMode.PUBLICATION) {
+        ownerType?.let { classSymbol.createDeclarationSubstitutor(it) } ?: ConeSubstitutor.Empty
+    }
+
+    /**
+     * 当前 scope 可见 callable 名称缓存。
+     */
     private val callableNamesCached by lazy(LazyThreadSafetyMode.PUBLICATION) {
         buildSet {
             addAll(declaredScope.getCallableNames())
@@ -157,6 +221,10 @@ class CfirClassUseSiteMemberScope private constructor(
             addAll(parentCallableNames())
         }
     }
+
+    /**
+     * 当前 scope 可见 classifier 名称缓存。
+     */
     private val classifierNamesCached by lazy(LazyThreadSafetyMode.PUBLICATION) {
         buildSet {
             addAll(declaredScope.getClassifierNames())
@@ -165,10 +233,19 @@ class CfirClassUseSiteMemberScope private constructor(
         }
     }
 
+    /**
+     * 返回可见 callable 名称集合。
+     */
     override fun getCallableNames(): Set<Name> = callableNamesCached
 
+    /**
+     * 返回可见 classifier 名称集合。
+     */
     override fun getClassifierNames(): Set<Name> = classifierNamesCached
 
+    /**
+     * 处理指定函数的直接覆盖成员。
+     */
     override fun processDirectOverriddenFunctionsWithBaseScope(
         functionSymbol: CfirNamedFunctionSymbol,
         processor: (CfirNamedFunctionSymbol, CfirTypeScope) -> ProcessorAction
@@ -189,6 +266,9 @@ class CfirClassUseSiteMemberScope private constructor(
         return ProcessorAction.NONE
     }
 
+    /**
+     * 处理指定属性的直接覆盖成员。
+     */
     override fun processDirectOverriddenPropertiesWithBaseScope(
         propertySymbol: CfirPropertySymbol,
         processor: (CfirPropertySymbol, CfirTypeScope) -> ProcessorAction,
@@ -210,6 +290,9 @@ class CfirClassUseSiteMemberScope private constructor(
     }
 
     // direct-overridden 查询可能先于按名称收集成员发生；这里按需建立与 collectFunctions/collectProperties 相同的缓存。
+    /**
+     * 若 [functionSymbol] 是当前 scope 自有函数，则计算其直接覆盖成员。
+     */
     private fun computeDirectOverriddenForOwnFunctionIfAny(
         functionSymbol: CfirNamedFunctionSymbol,
     ): List<MemberWithBaseScope<CfirNamedFunctionSymbol>>? {
@@ -219,6 +302,9 @@ class CfirClassUseSiteMemberScope private constructor(
         }
     }
 
+    /**
+     * 若 [propertySymbol] 是当前 scope 自有属性，则计算其直接覆盖成员。
+     */
     private fun computeDirectOverriddenForOwnPropertyIfAny(
         propertySymbol: CfirPropertySymbol,
     ): List<MemberWithBaseScope<CfirPropertySymbol>>? {
@@ -228,6 +314,9 @@ class CfirClassUseSiteMemberScope private constructor(
         }
     }
 
+    /**
+     * 判断函数是否来自当前声明成员或当前 extend scope。
+     */
     private fun containsOwnFunction(functionSymbol: CfirNamedFunctionSymbol): Boolean {
         var found = false
         declaredScope.processFunctionsByName(functionSymbol.name) {
@@ -241,6 +330,9 @@ class CfirClassUseSiteMemberScope private constructor(
         return found
     }
 
+    /**
+     * 判断属性是否来自当前声明成员或当前 extend scope。
+     */
     private fun containsOwnProperty(propertySymbol: CfirPropertySymbol): Boolean {
         var declaredPropertyWithSameName = false
         var found = false
@@ -256,6 +348,9 @@ class CfirClassUseSiteMemberScope private constructor(
         return found
     }
 
+    /**
+     * 使用新的 session 重建当前 scope。
+     */
     override fun withReplacedSessionOrNull(
         newSession: CfirSession,
         newScopeSession: ScopeSession,
@@ -270,9 +365,13 @@ class CfirClassUseSiteMemberScope private constructor(
         scopeKind = scopeKind,
         allowBareGenericStaticQualifierExtends = allowBareGenericStaticQualifierExtends,
         excludingExtend = excludingExtend,
+        useSitePackage = useSitePackage,
         supertypePath = supertypePath,
     )
 
+    /**
+     * 按名称处理可见 classifier。
+     */
     override fun processClassifiersByName(name: Name, processor: (CfirClassLikeSymbol<*>) -> Unit) {
         if (name !in getClassifierNames()) return
 
@@ -290,10 +389,16 @@ class CfirClassUseSiteMemberScope private constructor(
         }
     }
 
+    /**
+     * 处理当前声明的构造器。
+     */
     override fun processDeclaredConstructors(processor: (CfirConstructorSymbol) -> Unit) {
         declaredScope.processDeclaredConstructors(processor)
     }
 
+    /**
+     * 按名称处理可见函数。
+     */
     override fun processFunctionsByName(name: Name, processor: (CfirNamedFunctionSymbol) -> Unit) {
         if (name !in getCallableNames()) return
 
@@ -302,6 +407,9 @@ class CfirClassUseSiteMemberScope private constructor(
         }.forEach(processor)
     }
 
+    /**
+     * 收集本 scope 与父 scope 中的可见函数。
+     */
     private fun collectFunctions(name: Name): Collection<CfirNamedFunctionSymbol> = buildList {
         val local = mutableListOf<CfirNamedFunctionSymbol>()
         declaredScope.processFunctionsByName(name) { local += it }
@@ -312,11 +420,18 @@ class CfirClassUseSiteMemberScope private constructor(
         }
 
         for (candidate in getFunctionsFromParentsByName(name)) {
-            if (local.any { it.overridesFunctionCandidate(candidate.symbol) }) continue
+            if (local.any { it.overridesFunctionCandidate(candidate.symbol, it.overrideSubstitutorForOwnFunction()) } &&
+                !candidate.symbol.isExtendMemberForOverrideResolution()
+            ) {
+                continue
+            }
             add(candidate.symbol)
         }
     }
 
+    /**
+     * 按名称处理可见属性。
+     */
     override fun processPropertiesByName(name: Name, processor: (CfirPropertySymbol) -> Unit) {
         if (name !in getCallableNames()) return
 
@@ -325,6 +440,9 @@ class CfirClassUseSiteMemberScope private constructor(
         }.forEach(processor)
     }
 
+    /**
+     * 收集本 scope 与父 scope 中的可见属性。
+     */
     private fun collectProperties(name: Name): Collection<CfirPropertySymbol> = buildList {
         val local = mutableListOf<CfirPropertySymbol>()
         declaredScope.processPropertiesByName(name) { local += it }
@@ -343,13 +461,19 @@ class CfirClassUseSiteMemberScope private constructor(
         }
     }
 
+    /**
+     * 计算声明函数覆盖的父函数集合。
+     */
     private fun computeDirectOverriddenForDeclaredFunction(
         functionSymbol: CfirNamedFunctionSymbol,
     ): List<MemberWithBaseScope<CfirNamedFunctionSymbol>> {
         return getFunctionsFromParentsByName(functionSymbol.name)
-            .filter { functionSymbol.overridesFunctionCandidate(it.symbol) }
+            .filter { functionSymbol.overridesFunctionCandidate(it.symbol, functionSymbol.overrideSubstitutorForOwnFunction()) }
     }
 
+    /**
+     * 计算声明属性覆盖的父属性集合。
+     */
     private fun computeDirectOverriddenForDeclaredProperty(
         propertySymbol: CfirPropertySymbol,
     ): List<MemberWithBaseScope<CfirPropertySymbol>> {
@@ -357,6 +481,9 @@ class CfirClassUseSiteMemberScope private constructor(
             .filter { propertySymbol.overridesPropertyCandidate(it.symbol) }
     }
 
+    /**
+     * 返回指定名称的父函数候选。
+     */
     private fun getFunctionsFromParentsByName(name: Name): List<MemberWithBaseScope<CfirNamedFunctionSymbol>> {
         return functionsFromParents.getOrPut(name) {
             val parentCandidates = mutableListOf<MemberWithBaseScope<CfirNamedFunctionSymbol>>()
@@ -372,6 +499,9 @@ class CfirClassUseSiteMemberScope private constructor(
         }
     }
 
+    /**
+     * 返回指定名称的父属性候选。
+     */
     private fun getPropertiesFromParentsByName(name: Name): List<MemberWithBaseScope<CfirPropertySymbol>> {
         return propertiesFromParents.getOrPut(name) {
             val parentCandidates = mutableListOf<MemberWithBaseScope<CfirPropertySymbol>>()
@@ -387,6 +517,9 @@ class CfirClassUseSiteMemberScope private constructor(
         }
     }
 
+    /**
+     * 判断当前属性是否可以实现父属性候选。
+     */
     private fun CfirPropertySymbol.canImplementPropertyCandidate(
         candidate: CfirPropertySymbol,
     ): Boolean {
@@ -398,6 +531,9 @@ class CfirClassUseSiteMemberScope private constructor(
         return AbstractTypeChecker.equalTypes(session.typeContext, ownType, candidateType)
     }
 
+    /**
+     * 按名称处理所有可见 callable。
+     */
     override fun processCallablesByName(name: Name, processor: (CfirCallableSymbol<*>) -> Unit) {
         if (name !in getCallableNames()) return
 
@@ -410,7 +546,11 @@ class CfirClassUseSiteMemberScope private constructor(
         }
         val localFunctions = local.filterIsInstance<CfirNamedFunctionSymbol>()
         for (candidate in getFunctionsFromParentsByName(name)) {
-            if (localFunctions.any { it.overridesFunctionCandidate(candidate.symbol) }) continue
+            if (localFunctions.any { it.overridesFunctionCandidate(candidate.symbol, it.overrideSubstitutorForOwnFunction()) } &&
+                !candidate.symbol.isExtendMemberForOverrideResolution()
+            ) {
+                continue
+            }
             processor(candidate.symbol)
         }
         for (candidate in getPropertiesFromParentsByName(name)) {
@@ -424,9 +564,39 @@ class CfirClassUseSiteMemberScope private constructor(
         }
     }
 
+    /**
+     * 判断 callable 是否按值成员规则隐藏后续父 callable。
+     */
     private fun CfirCallableSymbol<*>.isValueLikeCallable(): Boolean =
         this is CfirPropertySymbol || this is CfirVariableSymbol<*> || this is CfirEnumConstructorSymbol
 
+    /**
+     * 父类型 extend 函数不能被子类同签名函数吞掉。
+     *
+     * 官方继承检查会继续把它当作 extend member 冲突处理；调用解析也需要同时看到
+     * 本类函数和父类型 extend 函数，才能形成普通歧义而不是静默选择本类函数。
+     */
+    private fun CfirNamedFunctionSymbol.isExtendMemberForOverrideResolution(): Boolean {
+        val original = unwrapSubstitutionOverrides()
+        return extendProvider?.getContainingExtend(original) != null
+    }
+
+    /**
+     * extend 成员的 owner 类型参数来自 extend 声明本身，而不是目标 class 声明。
+     * 因此判断它是否实现接口成员时，必须用成员访问 receiver 推导出的 extend-owner
+     * substitution；否则 `extend<T> A<T> <: I<T>` 会把 `test(T)` 和 `test(Int32)`
+     * 视为不同签名。
+     */
+    private fun CfirNamedFunctionSymbol.overrideSubstitutorForOwnFunction(): ConeSubstitutor {
+        val original = unwrapSubstitutionOverrides()
+        if (extendProvider?.getContainingExtend(original) == null) return ownerSubstitutor
+        val receiverType = dispatchReceiverType ?: ownerType ?: return ConeSubstitutor.Empty
+        return createCallableOwnerUseSiteSubstitutor(session, original, receiverType)
+    }
+
+    /**
+     * 构造所有直接父类型对应的成员 scope。
+     */
     private fun buildParentScopes(): List<CfirTypeScope> {
         val rootType = ownerType ?: return emptyList()
         return directParentTypesOf(rootType).mapNotNull { supertype ->
@@ -444,90 +614,26 @@ class CfirClassUseSiteMemberScope private constructor(
                 scopeKind = parentScopeKind(),
                 allowBareGenericStaticQualifierExtends = allowBareGenericStaticQualifierExtends,
                 excludingExtend = excludingExtend,
+                useSitePackage = useSitePackage,
                 supertypePath = supertypePath.child(classId),
             )
             parentScope.substitutionScopeForSupertype(parentSymbol, supertype)
         }
     }
 
-    private fun extendCallableNames(): Set<Name> = buildSet {
-        for (extend in extendsForCurrentClass()) {
-            for (declaration in extend.declarations) {
-                when (declaration) {
-                    is CfirFunction -> declaration.callableNameOrNull()?.let(::add)
-                    is org.cangnova.cangjie.cfir.declarations.CfirProperty -> add(declaration.name)
-                    is org.cangnova.cangjie.cfir.declarations.CfirFieldVariable -> add(declaration.name)
-                    is org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor -> add(declaration.name)
-                    else -> Unit
-                }
-            }
-        }
-    }
+    /**
+     * 返回当前 extend scope 的 callable 名称。
+     */
+    private fun extendCallableNames(): Set<Name> = extendScope?.getCallableNames().orEmpty()
 
-    private fun extendClassifierNames(): Set<Name> = buildSet {
-        for (extend in extendsForCurrentClass()) {
-            for (declaration in extend.declarations) {
-                if (declaration is CfirClassLikeDeclaration) {
-                    add((declaration.symbol as CfirClassLikeSymbol<*>).name)
-                }
-            }
-        }
-    }
+    /**
+     * 返回当前 extend scope 的 classifier 名称。
+     */
+    private fun extendClassifierNames(): Set<Name> = extendScope?.getClassifierNames().orEmpty()
 
-    private fun extendsForCurrentClass() = buildList {
-        if (scopeKind != CfirClassMemberScopeKind.USE_SITE) return@buildList
-        val provider = extendProvider ?: return@buildList
-        val receiverType = ownerType ?: return@buildList
-        val targetKey = receiverType.expandedExtendTargetKey
-            ?: CfirExtendTargetKey.ClassLike(classSymbol.classId)
-        addAll(provider.getExtendsForTarget(targetKey).map { ExtendLookupCandidate(it, receiverType) })
-        targetKey.classIdOrNull?.toPrimitiveTypeKindOrNull()?.let { kind ->
-            val concreteReceiverTypes = receiverType.idealExtendLookupTypes.ifEmpty {
-                listOf(ConePrimitiveType(kind))
-            }
-            for (concreteReceiverType in concreteReceiverTypes) {
-                addAll(provider.getExtendsForBuiltinType(concreteReceiverType.kind).map {
-                    ExtendLookupCandidate(it, concreteReceiverType)
-                })
-            }
-        }
-    }.distinctBy { it.extend }.filter { (extend, concreteReceiverType) ->
-        extend !== excludingExtend &&
-        isExtendApplicableToCurrentOwner(extend, concreteReceiverType)
-    }.map { it.extend }
-
-    private fun isExtendApplicableToCurrentOwner(
-        extend: CfirExtend,
-        concreteReceiverType: ConeCangJieType,
-    ): Boolean {
-        val provider = extendProvider ?: return false
-        if (!provider.isExtendAccessible(extend)) return false
-        val targetPattern = extend.extendedTypeRef.coneTypeOrNull ?: return false
-        if (createExtendDeclarationSubstitution(
-            session = session,
-            extend = extend,
-            targetPattern = targetPattern,
-            concreteReceiverType = concreteReceiverType,
-        ) != null) {
-            return true
-        }
-
-        return canDeferBareGenericStaticQualifierApplicability(targetPattern, concreteReceiverType)
-    }
-
-    private fun canDeferBareGenericStaticQualifierApplicability(
-        targetPattern: ConeCangJieType,
-        concreteReceiverType: ConeCangJieType,
-    ): Boolean {
-        if (!allowBareGenericStaticQualifierExtends) return false
-        val bareReceiverType = concreteReceiverType as? ConeLookupTagBasedType ?: return false
-        if (bareReceiverType.typeArguments.isNotEmpty()) return false
-
-        val patternType = targetPattern as? ConeLookupTagBasedType ?: return false
-        if (patternType.typeArguments.isEmpty()) return false
-        return patternType.classIdOrPrimitiveClassId == bareReceiverType.classIdOrPrimitiveClassId
-    }
-
+    /**
+     * 返回父类型链上的 callable 名称集合。
+     */
     private fun parentCallableNames(): Set<Name> = buildSet {
         collectParentNames(
             ownerType = ownerType ?: return@buildSet,
@@ -538,6 +644,9 @@ class CfirClassUseSiteMemberScope private constructor(
         )
     }
 
+    /**
+     * 返回父类型链上的 classifier 名称集合。
+     */
     private fun parentClassifierNames(): Set<Name> = buildSet {
         collectParentNames(
             ownerType = ownerType ?: return@buildSet,
@@ -576,6 +685,7 @@ class CfirClassUseSiteMemberScope private constructor(
                 scopeKind = parentScopeKind(),
                 allowBareGenericStaticQualifierExtends = allowBareGenericStaticQualifierExtends,
                 excludingExtend = excludingExtend,
+                useSitePackage = useSitePackage,
                 supertypePath = supertypePath.child(classId),
             )
             addNames(parentScope.declaredScope.collectDeclaredNames())
@@ -590,6 +700,9 @@ class CfirClassUseSiteMemberScope private constructor(
         }
     }
 
+    /**
+     * 返回 [type] 的直接父类型。
+     */
     private fun directParentTypesOf(type: ConeCangJieType): List<ConeCangJieType> {
         if (scopeKind == CfirClassMemberScopeKind.DECLARATION_SITE ||
             scopeKind == CfirClassMemberScopeKind.BODY_LOOKUP
@@ -616,11 +729,17 @@ class CfirClassUseSiteMemberScope private constructor(
             }
     }
 
+    /**
+     * 根据当前 scope 模式选择父 scope 模式。
+     */
     private fun parentScopeKind(): CfirClassMemberScopeKind = when (scopeKind) {
         CfirClassMemberScopeKind.BODY_LOOKUP -> CfirClassMemberScopeKind.USE_SITE
         else -> scopeKind
     }
 
+    /**
+     * 对父类型 scope 应用 supertype 所需的类型替换。
+     */
     private fun CfirTypeScope.substitutionScopeForSupertype(
         parentSymbol: CfirClassLikeSymbol<*>,
         supertype: ConeCangJieType,
@@ -632,6 +751,9 @@ class CfirClassUseSiteMemberScope private constructor(
         return CfirClassSubstitutionScope(session, this, receiverType, substitutionOwnerType = supertype)
     }
 
+    /**
+     * 根据声明 self type 创建 owner 类型参数替换器。
+     */
     private fun CfirClassLikeSymbol<*>.createDeclarationSubstitutor(type: ConeCangJieType): CfirTypeSubstitutorByMap? {
         if (type !is ConeLookupTagBasedType) return null
         if (!isBound || cfir.typeParameters.isEmpty()) return null
@@ -644,6 +766,9 @@ class CfirClassUseSiteMemberScope private constructor(
         return replacements.takeIf { it.isNotEmpty() }?.let(::CfirTypeSubstitutorByMap)
     }
 
+    /**
+     * 返回调试文本。
+     */
     override fun toString(): String {
         return "Use site scope of ${classSymbol.classId}"
     }
@@ -660,6 +785,9 @@ private class CfirSupertypePath private constructor(
     private val classId: ClassId,
     private val parent: CfirSupertypePath?,
 ) {
+    /**
+     * 判断路径中是否已经包含 [candidate]。
+     */
     fun contains(candidate: ClassId): Boolean {
         var current: CfirSupertypePath? = this
         while (current != null) {
@@ -669,23 +797,36 @@ private class CfirSupertypePath private constructor(
         return false
     }
 
+    /**
+     * 返回追加 [classId] 后的子路径。
+     */
     fun child(classId: ClassId): CfirSupertypePath = CfirSupertypePath(classId, this)
 
+    /**
+     * 父类型路径工厂。
+     */
     companion object {
+        /**
+         * 创建根路径。
+         */
         fun root(classId: ClassId): CfirSupertypePath = CfirSupertypePath(classId, parent = null)
     }
 }
 
+/**
+ * 携带来源 base scope 的成员候选。
+ *
+ * @property symbol 候选 callable symbol。
+ * @property scope 该候选来自的类型 scope。
+ */
 private data class MemberWithBaseScope<S : CfirCallableSymbol<*>>(
     val symbol: S,
     val scope: CfirTypeScope,
 )
 
-private data class ExtendLookupCandidate(
-    val extend: CfirExtend,
-    val concreteReceiverType: ConeCangJieType,
-)
-
+/**
+ * 在 base scope 中处理指定成员的直接覆盖成员的函数类型。
+ */
 private typealias ProcessOverriddenWithBaseScope<S> =
         CfirTypeScope.(S, (S, CfirTypeScope) -> ProcessorAction) -> ProcessorAction
 
@@ -756,17 +897,27 @@ private fun <S : CfirCallableSymbol<*>> overrides(
     return visit(member)
 }
 
+/**
+ * 判断 callable 是否按交叉父类型解析规则视为抽象成员。
+ */
 private fun CfirCallableSymbol<*>.isAbstractForIntersectionResolution(): Boolean =
     isBound && cfir.status.isAbstract
 
+/**
+ * 判断当前函数是否覆盖候选函数。
+ */
 private fun CfirNamedFunctionSymbol.overridesFunctionCandidate(
     candidate: CfirNamedFunctionSymbol,
+    ownerSubstitutor: ConeSubstitutor = ConeSubstitutor.Empty,
 ): Boolean {
     if (this == candidate) return true
     if (isStaticMemberForOverride() != candidate.isStaticMemberForOverride()) return false
-    return overrideSignatureKey() == candidate.overrideSignatureKey()
+    return overrideSignatureKey(ownerSubstitutor) == candidate.overrideSignatureKey()
 }
 
+/**
+ * 判断当前属性是否覆盖候选属性。
+ */
 private fun CfirPropertySymbol.overridesPropertyCandidate(
     candidate: CfirPropertySymbol,
 ): Boolean {

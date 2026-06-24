@@ -6,6 +6,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
+import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityFileScope
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
 import org.cangnova.cangjie.cfir.scopes.impl.CfirScopeWithCallableCopyReturnTypeUpdater
 import org.cangnova.cangjie.cfir.scopes.CallableCopyTypeCalculator
@@ -28,13 +29,17 @@ import org.cangnova.cangjie.name.FqName
  * 仓颉语言的 scope 提供者，对标 K2 FirKotlinScopeProvider。
  */
 open class CfirCangJieScopeProvider : CfirScopeProvider(), CfirSessionComponent {
+    /**
+     * 返回 class 在 use-site 场景下的成员 scope。
+     */
     override fun getUseSiteMemberScope(
         klass: CfirClass,
         useSiteSession: CfirSession,
         scopeSession: ScopeSession,
     ): CfirTypeScope {
         val classSymbol = klass.symbol as? CfirClassSymbol ?: return CfirTypeScope.Empty
-        return scopeSession.getOrBuild(useSiteSession to classSymbol, USE_SITE) {
+        val useSitePackage = CfirAccessibilityFileScope.currentPackageFqName()
+        return scopeSession.getOrBuild(CfirUseSiteMemberScopeKey(useSiteSession, classSymbol, useSitePackage), USE_SITE) {
             val rawScope = CfirClassUseSiteMemberScope(
                 session = useSiteSession,
                 classSymbol = classSymbol,
@@ -42,11 +47,15 @@ open class CfirCangJieScopeProvider : CfirScopeProvider(), CfirSessionComponent 
                 extendProvider = useSiteSession.extendProvider,
                 directSupertypeProvider = useSiteSession.directSupertypeProviderOrNull,
                 scopeKind = CfirClassMemberScopeKind.USE_SITE,
+                useSitePackage = useSitePackage,
             )
             CfirClassSubstitutionScope(useSiteSession, rawScope, classSymbol.constructType())
         }
     }
 
+    /**
+     * 返回 typealias 构造器替换 scope。
+     */
     override fun getTypealiasConstructorScope(
         typeAlias: CfirTypeAlias,
         useSiteSession: CfirSession,
@@ -57,6 +66,9 @@ open class CfirCangJieScopeProvider : CfirScopeProvider(), CfirSessionComponent 
         }
     }
 
+    /**
+     * 返回声明站点成员 scope。
+     */
     override fun getDeclarationSiteMemberScope(
         klass: CfirClass,
         useSiteSession: CfirSession,
@@ -73,6 +85,9 @@ open class CfirCangJieScopeProvider : CfirScopeProvider(), CfirSessionComponent 
         )
     }
 
+    /**
+     * 返回包成员 scope。
+     */
     fun getPackageMemberScope(
         packageFqName: FqName,
         symbolProvider: CfirSymbolProvider,
@@ -85,15 +100,27 @@ open class CfirCangJieScopeProvider : CfirScopeProvider(), CfirSessionComponent 
         }
     }
 
+    /**
+     * 包成员 scope 缓存 key。
+     *
+     * @property packageFqName 被查询的包名。
+     * @property useSiteSession 查询发生的 session。
+     */
     private data class PackageMemberScopeKey(
         val packageFqName: FqName,
         val useSiteSession: CfirSession,
     )
 }
 
+/**
+ * typealias constructor scope 的 ScopeSession key。
+ */
 private val TYPEALIAS_CONSTRUCTOR: ScopeSessionKey<Pair<CfirSession, org.cangnova.cangjie.cfir.symbols.CfirTypeAliasSymbol>, CfirScope> =
     scopeSessionKey()
 
+/**
+ * 返回 class-like 声明未经外部类型替换的成员 scope。
+ */
 fun CfirClassLikeDeclaration.unsubstitutedScope(
     useSiteSession: CfirSession,
     scopeSession: ScopeSession,
@@ -111,6 +138,7 @@ fun CfirClassLikeDeclaration.unsubstitutedScope(
                 extendProvider = useSiteSession.extendProvider,
                 directSupertypeProvider = useSiteSession.directSupertypeProviderOrNull,
                 scopeKind = CfirClassMemberScopeKind.USE_SITE,
+                useSitePackage = CfirAccessibilityFileScope.currentPackageFqName(),
             )
         }
     }

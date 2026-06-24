@@ -41,10 +41,25 @@ import org.cangnova.cangjie.utils.Printer
 // Printer
 // ─────────────────────────────────────────────────────────────────────────────
 
+/**
+ * CFIR 渲染使用的轻量 printer。
+ *
+ * @property builder 承载输出文本的 StringBuilder。
+ */
 open class CfirPrinter(private val builder: StringBuilder = StringBuilder()) {
+    /**
+     * 底层带缩进 printer。
+     */
     private var printer = Printer(builder)
+
+    /**
+     * 当前输出位置是否在行首。
+     */
     private var lineBeginning = true
 
+    /**
+     * 输出对象并遵循当前行首缩进规则。
+     */
     fun print(vararg objects: Any) {
         if (lineBeginning) {
             lineBeginning = false
@@ -54,15 +69,28 @@ open class CfirPrinter(private val builder: StringBuilder = StringBuilder()) {
         }
     }
 
+    /**
+     * 输出对象并换行。
+     */
     fun println(vararg objects: Any) {
         print(*objects)
         printer.printlnWithNoIndent()
         lineBeginning = true
     }
 
+    /**
+     * 增加缩进层级。
+     */
     internal fun pushIndent() = printer.pushIndent()
+
+    /**
+     * 降低缩进层级。
+     */
     internal fun popIndent() = printer.popIndent()
 
+    /**
+     * 输出空行。
+     */
     fun newLine() = println()
 
     /**
@@ -77,6 +105,9 @@ open class CfirPrinter(private val builder: StringBuilder = StringBuilder()) {
         lineBeginning = true
     }
 
+    /**
+     * 在花括号块中渲染内容。
+     */
     fun renderInBraces(leftBrace: String = "{", rightBrace: String = "}", block: () -> Unit) {
         println(" ", leftBrace)
         pushIndent()
@@ -85,6 +116,9 @@ open class CfirPrinter(private val builder: StringBuilder = StringBuilder()) {
         println(rightBrace)
     }
 
+    /**
+     * 返回当前 printer 输出文本。
+     */
     override fun toString(): String = printer.toString()
 }
 
@@ -92,18 +126,40 @@ open class CfirPrinter(private val builder: StringBuilder = StringBuilder()) {
 // Error expression renderer
 // ─────────────────────────────────────────────────────────────────────────────
 
+/**
+ * 错误表达式渲染器基类。
+ */
 abstract class CfirErrorExpressionRenderer {
+    /**
+     * 当前 renderer 共享组件。
+     */
     internal lateinit var components: CfirRendererComponents
+
+    /**
+     * 当前输出 printer。
+     */
     protected val printer: CfirPrinter get() = components.printer
 
+    /**
+     * 渲染错误表达式诊断。
+     */
     fun renderDiagnostic(diagnostic: ConeDiagnostic) {
         printer.println("ERROR_EXPR(${diagnostic.reason})")
     }
 
+    /**
+     * 渲染错误表达式节点。
+     */
     abstract fun renderErrorExpression(errorExpression: CfirErrorExpression)
 }
 
+/**
+ * 只输出错误诊断的错误表达式渲染器。
+ */
 class CfirErrorExpressionOnlyErrorRenderer : CfirErrorExpressionRenderer() {
+    /**
+     * 渲染错误表达式及特定 fake source 下保留的原始表达式。
+     */
     override fun renderErrorExpression(errorExpression: CfirErrorExpression) {
         renderDiagnostic(errorExpression.diagnostic)
         errorExpression.expression?.let {
@@ -118,29 +174,98 @@ class CfirErrorExpressionOnlyErrorRenderer : CfirErrorExpressionRenderer() {
 // Component interfaces
 // ─────────────────────────────────────────────────────────────────────────────
 
+/**
+ * CFIR renderer 组件集合。
+ */
 interface CfirRendererComponents {
+    /**
+     * 当前 visitor。
+     */
     val visitor: CfirRenderer.Visitor
+
+    /**
+     * 当前 printer。
+     */
     val printer: CfirPrinter
+
+    /**
+     * 注解渲染器。
+     */
     val annotationRenderer: CfirAnnotationRenderer?
+
+    /**
+     * 调用实参渲染器。
+     */
     val callArgumentsRenderer: CfirCallArgumentsRenderer?
 
+    /**
+     * 声明渲染器。
+     */
     val declarationRenderer: CfirDeclarationRenderer?
+
+    /**
+     * 包指令渲染器。
+     */
     val packageDirectiveRenderer: CfirPackageDirectiveRenderer?
+
+    /**
+     * resolve phase 渲染器。
+     */
     val resolvePhaseRenderer: CfirResolvePhaseRenderer?
+
+    /**
+     * 引用渲染器。
+     */
     val referenceRenderer: CfirReferenceRenderer
+
+    /**
+     * 修饰符渲染器。
+     */
     val modifierRenderer: CfirModifierRenderer?
+
+    /**
+     * 模式渲染器。
+     */
     val patternRenderer: CfirPatternRenderer?
+
+    /**
+     * 错误表达式渲染器。
+     */
     val errorExpressionRenderer: CfirErrorExpressionRenderer?
+
+    /**
+     * cone 类型渲染器。
+     */
     val typeRenderer: ConeTypeRenderer
+
+    /**
+     * callable 签名渲染器。
+     */
     val callableSignatureRenderer: CfirCallableSignatureRenderer?
+
+    /**
+     * 表达式单行渲染器。
+     */
     val inlineExpressionRenderer: CfirInlineExpressionRenderer?
 }
 
+/**
+ * 包指令渲染器。
+ */
 open class CfirPackageDirectiveRenderer {
+    /**
+     * 渲染包指令。
+     */
     open fun render(packageDirective: CfirPackageDirective) = Unit
 }
 
+/**
+ * CFIR 引用渲染器。
+ */
 open class CfirReferenceRenderer {
+    /**
+     * 将引用渲染为单行文本。
+     */
     open fun render(reference: CfirReference): String = when (reference) {
         is CfirNamedReference -> reference.name.asString()
         is CfirResolvedNamedReference -> "${reference.name.asString()} -> ${reference.resolvedSymbol}"
@@ -160,23 +285,67 @@ open class CfirReferenceRenderer {
 // Main renderer
 // ─────────────────────────────────────────────────────────────────────────────
 
+/**
+ * CFIR 主渲染器。
+ *
+ * 该类组合各类子 renderer，并通过 [Visitor] 遍历 CFIR 树输出调试文本。
+ */
 class CfirRenderer(
+    /**
+     * 输出文本 builder。
+     */
     builder: StringBuilder = StringBuilder(),
+    /**
+     * 注解渲染器。
+     */
     override val annotationRenderer: CfirAnnotationRenderer? = CfirAnnotationRenderer(),
 
+    /**
+     * 声明渲染器。
+     */
     override val declarationRenderer: CfirDeclarationRenderer? = CfirDeclarationRenderer(),
+    /**
+     * 包指令渲染器。
+     */
     override val packageDirectiveRenderer: CfirPackageDirectiveRenderer? = CfirPackageDirectiveRenderer(),
+    /**
+     * resolve phase 渲染器。
+     */
     override val resolvePhaseRenderer: CfirResolvePhaseRenderer? = null,
+    /**
+     * 错误表达式渲染器。
+     */
     override val errorExpressionRenderer: CfirErrorExpressionRenderer? = CfirErrorExpressionOnlyErrorRenderer(),
+    /**
+     * cone 类型渲染器。
+     */
     override val typeRenderer: ConeTypeRenderer = ConeTypeRendererForDebugging(),
+    /**
+     * callable 签名渲染器。
+     */
     override val callableSignatureRenderer: CfirCallableSignatureRenderer? = CfirCallableSignatureRenderer(),
+    /**
+     * 调用实参渲染器。
+     */
     override val callArgumentsRenderer: CfirCallArgumentsRenderer? = CfirCallArgumentsRenderer(),
+    /**
+     * 引用渲染器。
+     */
     override val referenceRenderer: CfirReferenceRenderer = CfirReferenceRenderer(),
+    /**
+     * 修饰符渲染器。
+     */
     override val modifierRenderer: CfirModifierRenderer? = CfirModifierRenderer(),
+    /**
+     * 表达式单行渲染器。
+     */
     override val inlineExpressionRenderer: CfirInlineExpressionRenderer? = CfirInlineExpressionRenderer(
         referenceRenderer = CfirReferenceRenderer(),
         typeRenderer = ConeTypeRendererForDebugging(),
     ),
+    /**
+     * 模式渲染器。
+     */
     override val patternRenderer: CfirPatternRenderer? = CfirPatternRenderer(
         typeRenderer = ConeTypeRendererForDebugging(),
         referenceRenderer = CfirReferenceRenderer(),
@@ -187,7 +356,14 @@ class CfirRenderer(
     ),
 ) : CfirRendererComponents {
 
+    /**
+     * 主 CFIR visitor。
+     */
     override val visitor: Visitor = Visitor()
+
+    /**
+     * 共享 printer。
+     */
     override val printer: CfirPrinter = CfirPrinter(builder)
 
     init {
@@ -202,14 +378,34 @@ class CfirRenderer(
         modifierRenderer?.components = this
     }
 
+    /**
+     * 便捷工厂与静态渲染入口。
+     */
     companion object {
+        /**
+         * 创建 golden 兼容渲染器。
+         */
         fun withGoldenCompat(): CfirRenderer = CfirRenderer()
+
+        /**
+         * 创建 debug 渲染器。
+         */
         fun withDebug(): CfirRenderer = CfirRenderer()
+
+        /**
+         * 创建可读性优先渲染器。
+         */
         fun withReadability(): CfirRenderer = CfirRenderer()
 
+        /**
+         * 使用 golden 兼容渲染器渲染单个元素。
+         */
         fun render(element: CfirElement): String = withGoldenCompat().renderElementAsString(element)
     }
 
+    /**
+     * 渲染单个 CFIR 元素为字符串。
+     */
     fun renderElementAsString(element: CfirElement, trim: Boolean = true): String {
         printer.reset()
         element.accept(visitor)
@@ -219,12 +415,20 @@ class CfirRenderer(
 
     // ── Core print helpers ────────────────────────────────────────────────────
 
+    /**
+     * 向共享 printer 输出对象。
+     */
     private fun print(vararg objects: Any) = printer.print(*objects)
+
+    /**
+     * 向共享 printer 输出对象并换行。
+     */
     private fun println(vararg objects: Any) = printer.println(*objects)
 
     /**
-     * Renders a type directly into the shared printer/builder.
-     * Output format:  R|<type>|
+     * 直接把 cone 类型渲染到共享 printer。
+     *
+     * 输出格式：`R|<type>|`。
      */
     private fun renderType(type: ConeCangJieType?) {
         if (type == null) return
@@ -245,12 +449,21 @@ class CfirRenderer(
         }
     }
 
+    /**
+     * 渲染引用为单行文本。
+     */
     private fun renderReference(reference: CfirReference): String =
         referenceRenderer.render(reference)
 
+    /**
+     * 渲染模式为单行文本。
+     */
     private fun renderPattern(pattern: CfirPattern): String =
         patternRenderer?.render(pattern) ?: "<pattern>"
 
+    /**
+     * 渲染模式变量的可读名称。
+     */
     private fun renderPatternVariableName(variable: CfirPatternVariable): String {
         val pattern = variable.pattern
         return if (pattern is CfirBindingPattern) pattern.name.asString() else "<anonymous>"
@@ -259,10 +472,9 @@ class CfirRenderer(
     // ── Shared structural helpers ─────────────────────────────────────────────
 
     /**
-     * Prints a comma-separated list of super-types using the printer.
-     * Nothing is printed when [superTypeRefs] is empty.
+     * 使用共享 printer 输出逗号分隔的父类型列表。
      *
-     * Example output:  ` <: R|Foo|, R|Bar|`
+     * [superTypeRefs] 为空时不输出任何内容。
      */
     private fun printSuperTypes(superTypeRefs: List<CfirTypeRef>) {
         if (superTypeRefs.isEmpty()) return
@@ -274,8 +486,9 @@ class CfirRenderer(
     }
 
     /**
-     * Prints `<T1, T2, …>` type-parameter list (names only).
-     * Nothing is printed when the list is empty.
+     * 输出类型参数名列表。
+     *
+     * 列表为空时不输出任何内容。
      */
     private fun printTypeParams(typeParameters: List<CfirTypeParameter>) {
         if (typeParameters.isEmpty()) return
@@ -289,6 +502,9 @@ class CfirRenderer(
 
     // ── Class-like declaration header helper ──────────────────────────────────
 
+    /**
+     * 输出 class-like 声明头。
+     */
     private fun printClassLikeHeader(
         keyword: String,
         name: String,
@@ -309,8 +525,14 @@ class CfirRenderer(
     // Visitor
     // ─────────────────────────────────────────────────────────────────────────
 
+    /**
+     * 主 CFIR 树 visitor。
+     */
     inner class Visitor internal constructor() : CfirVisitorVoid() {
 
+        /**
+         * 渲染未知元素兜底文本。
+         */
         override fun visitElement(element: CfirElement) {
             val className = element::class.simpleName.orEmpty()
             println("<element: ${className.removeSuffix("Impl")}>")
@@ -318,6 +540,9 @@ class CfirRenderer(
 
         // ── Top-level ─────────────────────────────────────────────────────────
 
+        /**
+         * 渲染 CFIR 文件。
+         */
         override fun visitFile(file: CfirFile) {
             resolvePhaseRenderer?.render(file)
             print("FILE: ")
@@ -333,6 +558,9 @@ class CfirRenderer(
             printer.popIndent()
         }
 
+        /**
+         * 渲染包指令。
+         */
         override fun visitPackageDirective(packageDirective: CfirPackageDirective) {
             packageDirectiveRenderer?.render(packageDirective)
             if (!packageDirective.packageFqName.isRoot) {
@@ -340,6 +568,9 @@ class CfirRenderer(
             }
         }
 
+        /**
+         * 渲染 import 指令。
+         */
         override fun visitImport(import_: CfirImport) {
             val suffix = if (import_.isAllUnder) ".*" else ""
             val alias = import_.aliasName?.let { " as ${it.asString()}" } ?: ""
@@ -349,6 +580,9 @@ class CfirRenderer(
 
         // ── Type declarations ─────────────────────────────────────────────────
 
+        /**
+         * 渲染 class 声明。
+         */
         override fun visitClass(klass: CfirClass) {
             resolvePhaseRenderer?.render(klass)
             annotationRenderer?.render(klass)
@@ -360,6 +594,9 @@ class CfirRenderer(
             println("}")
         }
 
+        /**
+         * 渲染 interface 声明。
+         */
         override fun visitInterface(iface: CfirInterface) {
             resolvePhaseRenderer?.render(iface)
             annotationRenderer?.render(iface)
@@ -371,6 +608,9 @@ class CfirRenderer(
             println("}")
         }
 
+        /**
+         * 渲染 struct 声明。
+         */
         override fun visitStruct(struct: CfirStruct) {
             resolvePhaseRenderer?.render(struct)
             annotationRenderer?.render(struct)
@@ -382,6 +622,9 @@ class CfirRenderer(
             println("}")
         }
 
+        /**
+         * 渲染 enum 声明。
+         */
         override fun visitEnum(enum_: CfirEnum) {
             resolvePhaseRenderer?.render(enum_)
             annotationRenderer?.render(enum_)
@@ -399,6 +642,9 @@ class CfirRenderer(
             println("}")
         }
 
+        /**
+         * 渲染 extend 声明。
+         */
         override fun visitExtend(extend: CfirExtend) {
             resolvePhaseRenderer?.render(extend)
             annotationRenderer?.render(extend)
@@ -417,6 +663,9 @@ class CfirRenderer(
 
         // ── Callables ─────────────────────────────────────────────────────────
 
+        /**
+         * 渲染函数类声明。
+         */
         override fun visitFunction(function: CfirFunction) {
             resolvePhaseRenderer?.render(function)
             annotationRenderer?.render(function)
@@ -456,6 +705,9 @@ class CfirRenderer(
             }
         }
 
+        /**
+         * 渲染构造器声明。
+         */
         override fun visitConstructor(constructor: CfirConstructor) {
             resolvePhaseRenderer?.render(constructor)
             annotationRenderer?.render(constructor)
@@ -473,12 +725,18 @@ class CfirRenderer(
             }
         }
 
+        /**
+         * 渲染具名函数声明。
+         */
         override fun visitNamedFunction(namedFunction: CfirNamedFunction) {
             visitFunction(namedFunction)
         }
 
         // ── Variables / properties ────────────────────────────────────────────
 
+        /**
+         * 渲染属性声明。
+         */
         override fun visitProperty(property: CfirProperty) {
             resolvePhaseRenderer?.render(property)
             annotationRenderer?.render(property)
@@ -490,6 +748,9 @@ class CfirRenderer(
             println()
         }
 
+        /**
+         * 渲染字段变量声明。
+         */
         override fun visitFieldVariable(variable: CfirFieldVariable) {
             resolvePhaseRenderer?.render(variable)
             annotationRenderer?.render(variable)
@@ -511,6 +772,9 @@ class CfirRenderer(
             }
         }
 
+        /**
+         * 渲染模式变量声明。
+         */
         override fun visitPatternVariable(variable: CfirPatternVariable) {
             resolvePhaseRenderer?.render(variable)
             annotationRenderer?.render(variable)
@@ -534,16 +798,25 @@ class CfirRenderer(
 
         // ── Type-system declarations ──────────────────────────────────────────
 
+        /**
+         * 渲染值参数声明。
+         */
         override fun visitValueParameter(valueParameter: CfirValueParameter) {
             callableSignatureRenderer?.renderParameter(valueParameter)
         }
 
+        /**
+         * 渲染类型参数声明。
+         */
         override fun visitTypeParameter(typeParameter: CfirTypeParameter) {
             resolvePhaseRenderer?.render(typeParameter)
             annotationRenderer?.render(typeParameter)
             println("type-param ${typeParameter.name.asString()}")
         }
 
+        /**
+         * 渲染 typealias 声明。
+         */
         override fun visitTypeAlias(typeAlias: CfirTypeAlias) {
             resolvePhaseRenderer?.render(typeAlias)
             annotationRenderer?.render(typeAlias)
@@ -556,6 +829,9 @@ class CfirRenderer(
             println()
         }
 
+        /**
+         * 渲染 enum constructor 声明。
+         */
         override fun visitEnumConstructor(enumConstructor: CfirEnumConstructor) {
             resolvePhaseRenderer?.render(enumConstructor)
             annotationRenderer?.render(enumConstructor)
@@ -566,22 +842,34 @@ class CfirRenderer(
             println()
         }
 
+        /**
+         * 渲染注解。
+         */
         override fun visitAnnotation(annotation: CfirAnnotation) {
             annotationRenderer?.renderAnnotation(annotation)
         }
 
+        /**
+         * 渲染注解调用。
+         */
         override fun visitAnnotationCall(annotationCall: CfirAnnotationCall) {
             annotationRenderer?.renderAnnotation(annotationCall)
         }
 
         // ── Statements ────────────────────────────────────────────────────────
 
+        /**
+         * 渲染代码块。
+         */
         override fun visitBlock(block: CfirBlock) {
             block.statements.forEach { it.accept(this) }
         }
 
         // ── Expressions ───────────────────────────────────────────────────────
 
+        /**
+         * 渲染字面量表达式。
+         */
         override fun visitLiteralExpression(literal: CfirLiteralExpression) {
             val value = when (literal.kind) {
                 CfirLiteralKind.STRING -> "\"${literal.value}\""
@@ -592,6 +880,9 @@ class CfirRenderer(
             println("${literal.kind.name}($value)")
         }
 
+        /**
+         * 渲染字符串插值表达式。
+         */
         override fun visitStringInterpolation(interpolation: CfirStringInterpolation) {
             println("STRING_INTERPOLATION {")
             printer.pushIndent()
@@ -600,6 +891,9 @@ class CfirRenderer(
             println("}")
         }
 
+        /**
+         * 渲染函数调用表达式。
+         */
         override fun visitFunctionCall(call: CfirFunctionCall) {
             val ref = renderReference(call.calleeReference)
             print("FUNCTION_CALL($ref")
@@ -634,6 +928,9 @@ class CfirRenderer(
             println("}")
         }
 
+        /**
+         * 渲染具名访问表达式。
+         */
         override fun visitNamedAccessExpression(access: CfirNamedAccessExpression) {
             val ref = renderReference(access.calleeReference)
             if (access.explicitReceiver != null) {
@@ -650,6 +947,9 @@ class CfirRenderer(
             }
         }
 
+        /**
+         * 渲染限定访问表达式。
+         */
         override fun visitQualifiedAccessExpression(access: CfirQualifiedAccessExpression) {
             val ref = renderReference(access.calleeReference)
             if (access.explicitReceiver != null) {
@@ -666,6 +966,9 @@ class CfirRenderer(
             }
         }
 
+        /**
+         * 渲染可选表达式。
+         */
         override fun visitOptionalExpression(optionalExpression: CfirOptionalExpression) {
             println("OPTIONAL_EXPRESSION {")
             printer.pushIndent()
@@ -674,6 +977,9 @@ class CfirRenderer(
             println("}")
         }
 
+        /**
+         * 渲染可选链表达式。
+         */
         override fun visitOptionalChainExpression(optionalChainExpression: CfirOptionalChainExpression) {
             println("OPTIONAL_CHAIN_EXPRESSION {")
             printer.pushIndent()
@@ -682,10 +988,16 @@ class CfirRenderer(
             println("}")
         }
 
+        /**
+         * 渲染 super receiver 表达式。
+         */
         override fun visitSuperReceiverExpression(superReceiverExpression: CfirSuperReceiverExpression) {
             visitQualifiedAccessExpression(superReceiverExpression)
         }
 
+        /**
+         * 渲染赋值表达式。
+         */
         override fun visitAssignment(assignment: CfirAssignment) {
             println("ASSIGNMENT {")
             printer.pushIndent()
@@ -701,6 +1013,9 @@ class CfirRenderer(
             println("}")
         }
 
+        /**
+         * 渲染二元操作表达式。
+         */
         override fun visitBinaryOp(binaryOp: CfirBinaryOp) {
             println("BINARY_OP(${binaryOp.kind.name}) {")
             printer.pushIndent()
@@ -710,6 +1025,9 @@ class CfirRenderer(
             println("}")
         }
 
+        /**
+         * 渲染比较表达式。
+         */
         override fun visitComparisonExpression(comparison: CfirComparisonExpression) {
             println("COMPARISON(${comparison.operation.name}) {")
             printer.pushIndent()
@@ -719,6 +1037,9 @@ class CfirRenderer(
             println("}")
         }
 
+        /**
+         * 渲染类型操作表达式。
+         */
         override fun visitTypeOperator(typeOperator: CfirTypeOperator) {
             print("TYPE_OP(${typeOperator.operation.name}, ")
             renderType(typeOperator.typeRef)
@@ -729,6 +1050,9 @@ class CfirRenderer(
             println("}")
         }
 
+        /**
+         * 渲染类型转换表达式。
+         */
         override fun visitTypeConversion(typeConversion: CfirTypeConversion) {
             print("TYPE_CONVERSION(")
             renderType(typeConversion.targetTypeRef)
@@ -739,6 +1063,9 @@ class CfirRenderer(
             println("}")
         }
 
+        /**
+         * 渲染 if 表达式。
+         */
         override fun visitIfExpression(ifExpression: CfirIfExpression) {
             println("IF {")
             printer.pushIndent()
@@ -760,6 +1087,9 @@ class CfirRenderer(
             println("}")
         }
 
+        /**
+         * 渲染 match 表达式。
+         */
         override fun visitMatchExpression(matchExpression: CfirMatchExpression) {
             println("MATCH {")
             printer.pushIndent()
@@ -774,6 +1104,9 @@ class CfirRenderer(
             println("}")
         }
 
+        /**
+         * 渲染 match 分支。
+         */
         override fun visitMatchBranch(matchBranch: CfirMatchBranch) {
             val guardSuffix = matchBranch.guard
                 ?.let { " where ${inlineExpressionRenderer?.render(it) ?: "<guard>"}" }
@@ -785,6 +1118,9 @@ class CfirRenderer(
             println("}")
         }
 
+        /**
+         * 渲染 while / do-while 循环表达式。
+         */
         override fun visitLoopExpression(loop: CfirLoopExpression) {
             val kind = if (loop.isDoWhile) "DO_WHILE" else "WHILE"
             println("$kind {")
@@ -801,6 +1137,9 @@ class CfirRenderer(
             println("}")
         }
 
+        /**
+         * 渲染 for-in 表达式。
+         */
         override fun visitForInExpression(forIn: CfirForInExpression) {
             val variableName = renderPatternVariableName(forIn.variable)
             print("FOR_IN($variableName: ")
@@ -819,6 +1158,9 @@ class CfirRenderer(
             println("}")
         }
 
+        /**
+         * 渲染 return 表达式。
+         */
         override fun visitReturnExpression(returnExpression: CfirReturnExpression) {
             if (returnExpression.result != null) {
                 println("RETURN {")
@@ -831,14 +1173,23 @@ class CfirRenderer(
             }
         }
 
+        /**
+         * 渲染 break 表达式。
+         */
         override fun visitBreakExpression(breakExpression: CfirBreakExpression) {
             println("BREAK")
         }
 
+        /**
+         * 渲染 continue 表达式。
+         */
         override fun visitContinueExpression(continueExpression: CfirContinueExpression) {
             println("CONTINUE")
         }
 
+        /**
+         * 渲染 throw 表达式。
+         */
         override fun visitThrowExpression(throwExpression: CfirThrowExpression) {
             println("THROW {")
             printer.pushIndent()
@@ -847,6 +1198,9 @@ class CfirRenderer(
             println("}")
         }
 
+        /**
+         * 渲染 try 表达式。
+         */
         override fun visitTryExpression(tryExpression: CfirTryExpression) {
             println("TRY {")
             printer.pushIndent()
@@ -884,6 +1238,9 @@ class CfirRenderer(
             println("}")
         }
 
+        /**
+         * 渲染匿名函数表达式。
+         */
         override fun visitAnonymousFunctionExpression(anonymousFunctionExpression: CfirAnonymousFunctionExpression) {
             val lambda = anonymousFunctionExpression
             print("LAMBDA(")
@@ -900,6 +1257,9 @@ class CfirRenderer(
             println("}")
         }
 
+        /**
+         * 渲染区间表达式。
+         */
         override fun visitRangeExpression(range: CfirRangeExpression) {
             val op = if (range.isInclusive) "..=" else ".."
             println("RANGE($op) {")
@@ -910,6 +1270,9 @@ class CfirRenderer(
             println("}")
         }
 
+        /**
+         * 渲染数组字面量。
+         */
         override fun visitArrayLiteral(array: CfirArrayLiteral) {
             println("ARRAY_LITERAL {")
             printer.pushIndent()
@@ -918,6 +1281,9 @@ class CfirRenderer(
             println("}")
         }
 
+        /**
+         * 渲染元组字面量。
+         */
         override fun visitTupleLiteral(tuple: CfirTupleLiteral) {
             println("TUPLE_LITERAL {")
             printer.pushIndent()
@@ -926,6 +1292,9 @@ class CfirRenderer(
             println("}")
         }
 
+        /**
+         * 渲染 spawn 表达式。
+         */
         override fun visitSpawnExpression(spawn: CfirSpawnExpression) {
             println("SPAWN {")
             printer.pushIndent()
@@ -934,6 +1303,9 @@ class CfirRenderer(
             println("}")
         }
 
+        /**
+         * 渲染 synchronized 表达式。
+         */
         override fun visitSynchronizedExpression(synchronizedExpression: CfirSynchronizedExpression) {
             println("SYNCHRONIZED {")
             printer.pushIndent()
@@ -949,6 +1321,9 @@ class CfirRenderer(
             println("}")
         }
 
+        /**
+         * 渲染 unsafe 表达式。
+         */
         override fun visitUnsafeExpression(unsafeExpression: CfirUnsafeExpression) {
             println("UNSAFE {")
             printer.pushIndent()
@@ -957,6 +1332,9 @@ class CfirRenderer(
             println("}")
         }
 
+        /**
+         * 渲染 quote 表达式。
+         */
         override fun visitQuoteExpression(quoteExpression: CfirQuoteExpression) {
             println("QUOTE(\"${quoteExpression.rawText}\") {")
             printer.pushIndent()
@@ -970,6 +1348,9 @@ class CfirRenderer(
             println("}")
         }
 
+        /**
+         * 渲染下标表达式。
+         */
         override fun visitSubscriptExpression(subscript: CfirSubscriptExpression) {
             println("SUBSCRIPT {")
             printer.pushIndent()
@@ -985,42 +1366,72 @@ class CfirRenderer(
             println("}")
         }
 
+        /**
+         * 渲染 Option 类型引用。
+         */
         override fun visitOptionTypeRef(optionTypeRef: CfirOptionTypeRef) {
             renderType(optionTypeRef)
         }
 
+        /**
+         * 渲染已解析类型引用。
+         */
         override fun visitResolvedTypeRef(resolvedTypeRef: CfirResolvedTypeRef) {
             renderType(resolvedTypeRef)
         }
 
+        /**
+         * 渲染基础类型引用。
+         */
         override fun visitBasicTypeRef(basicTypeRef: CfirBasicTypeRef) {
             renderType(basicTypeRef)
         }
 
+        /**
+         * 渲染用户类型引用。
+         */
         override fun visitUserTypeRef(userTypeRef: CfirUserTypeRef) {
             renderType(userTypeRef)
         }
 
+        /**
+         * 渲染函数类型引用。
+         */
         override fun visitFunctionTypeRef(functionTypeRef: CfirFunctionTypeRef) {
             renderType(functionTypeRef)
         }
 
+        /**
+         * 渲染隐式类型引用。
+         */
         override fun visitImplicitTypeRef(implicitTypeRef: CfirImplicitTypeRef) {
             renderType(implicitTypeRef)
         }
 
+        /**
+         * 渲染元组类型引用。
+         */
         override fun visitTupleTypeRef(tupleTypeRef: CfirTupleTypeRef) {
             renderType(tupleTypeRef)
         }
 
+        /**
+         * 渲染 VArray 类型引用。
+         */
         override fun visitVArrayTypeRef(varrayTypeRef: CfirVArrayTypeRef) {
             renderType(varrayTypeRef)
         }
 
+        /**
+         * 渲染错误类型引用。
+         */
         override fun visitErrorTypeRef(errorTypeRef: CfirErrorTypeRef) {
             renderType(errorTypeRef)
         }
 
+        /**
+         * 渲染错误表达式。
+         */
         override fun visitErrorExpression(errorExpression: CfirErrorExpression) {
             errorExpressionRenderer?.renderErrorExpression(errorExpression)
         }

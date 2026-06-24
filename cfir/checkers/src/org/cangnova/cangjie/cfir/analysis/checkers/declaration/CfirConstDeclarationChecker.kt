@@ -50,6 +50,9 @@ import org.cangnova.cangjie.source.CjOffsetsOnlySourceElement
  * 规则处理，因此这里跳过已由 const 函数体接管的局部声明，避免重复诊断。
  */
 object CfirConstVariableInitializerChecker : CfirCallableDeclarationChecker() {
+    /**
+     * 检查 const 变量初始化器是否为 strong const 表达式。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration) {
         val variable = declaration as? CfirVariable ?: return
@@ -68,6 +71,9 @@ object CfirConstVariableInitializerChecker : CfirCallableDeclarationChecker() {
  * 函数体中的 `var`、非 const 局部函数、赋值、调用等由同一个表达式递归器处理。
  */
 object CfirConstFunctionBodyChecker : CfirFunctionChecker() {
+    /**
+     * 检查 const 函数体与参数默认值。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirFunction) {
         if (!declaration.status.isConst) return
@@ -87,6 +93,9 @@ object CfirConstFunctionBodyChecker : CfirFunctionChecker() {
  * 注意：官方 `ChkClassDeclHasConstInitNoVarMember` 只作用于 class，不作用于 struct。
  */
 object CfirConstDeclarationChecker : CfirClassLikeChecker() {
+    /**
+     * 检查 class/struct 的 const init 聚合规则。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirClassLikeDeclaration) {
         if (declaration !is CfirClass && declaration !is CfirStruct) return
@@ -106,6 +115,9 @@ object CfirConstDeclarationChecker : CfirClassLikeChecker() {
         }
     }
 
+    /**
+     * 报告 class 拥有 const init 但同时声明 var 字段的错误。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun reportClassConstInitWithVarMembers(
         declaration: CfirClassLikeDeclaration,
@@ -122,6 +134,9 @@ object CfirConstDeclarationChecker : CfirClassLikeChecker() {
         }
     }
 
+    /**
+     * 按 static/non-static const init 类型检查对应字段初始化器。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkConstInitializers(
         declaration: CfirClassLikeDeclaration,
@@ -149,6 +164,9 @@ object CfirConstDeclarationChecker : CfirClassLikeChecker() {
  * extend 内不能定义 const 实例成员函数。
  */
 object CfirConstExtendDeclarationChecker : CfirExtendChecker() {
+    /**
+     * 检查 extend 中 const 实例函数是否拥有目标类型 const init 支撑。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirExtend) {
         val target = CfirExtendSemantics.targetDeclaration(context, declaration) ?: return
@@ -159,6 +177,9 @@ object CfirConstExtendDeclarationChecker : CfirExtendChecker() {
     }
 }
 
+/**
+ * 报告没有 const init 支撑的 const 实例成员函数。
+ */
 context(context: CheckerContext, reporter: DiagnosticReporter)
 private fun reportConstMemberFunctionsWithoutConstInit(declarations: List<CfirDeclaration>) {
     for (function in declarations.filterIsInstance<CfirNamedFunction>()) {
@@ -170,6 +191,9 @@ private fun reportConstMemberFunctionsWithoutConstInit(declarations: List<CfirDe
     }
 }
 
+/**
+ * 创建 const 表达式递归检查器。
+ */
 context(context: CheckerContext, reporter: DiagnosticReporter)
 private fun CheckerContext.constEvaluator(
     owner: CfirClassLikeDeclaration? = findClosestDeclaration(),
@@ -184,35 +208,84 @@ private fun CheckerContext.constEvaluator(
         inConstInit = inConstInit,
     )
 
+/**
+ * const 表达式递归检查器。
+ *
+ * 该 evaluator 持有当前 owner、是否处于 const this 上下文、是否处于 const init 以及 weak const
+ * 符号集合，用于在函数体和初始化器之间复用同一套递归规则。
+ */
 private class CfirConstExpressionEvaluator(
+    /**
+     * 当前检查上下文。
+     */
     private val context: CheckerContext,
+
+    /**
+     * 诊断报告器。
+     */
     private val reporter: DiagnosticReporter,
+
+    /**
+     * 当前 class-like owner。
+     */
     private val owner: CfirClassLikeDeclaration?,
+
+    /**
+     * 当前 `this` 是否处于 const 函数语义中。
+     */
     private val thisIsConst: Boolean,
+
+    /**
+     * 当前是否正在检查 const init。
+     */
     private val inConstInit: Boolean,
+
+    /**
+     * weak const 语义中已允许引用的符号集合。
+     */
     private val weakSymbols: MutableSet<CfirBasedSymbol<*>> = linkedSetOf(),
 ) {
+    /**
+     * owner 的非 static 字段符号集合。
+     */
     private val memberFieldSymbols: Set<CfirBasedSymbol<*>> =
         owner?.declarations
             ?.filterIsInstance<CfirFieldVariable>()
             ?.filterNot { it.status.isStatic }
             ?.mapTo(linkedSetOf()) { it.symbol }
             .orEmpty()
+
+    /**
+     * owner 非 static 字段的 callable id 集合。
+     */
     private val memberFieldSymbolIds: Set<CallableId> =
         memberFieldSymbols.mapNotNullTo(linkedSetOf()) { it.callableIdOrNull() }
 
+    /**
+     * owner 的非 static 成员符号集合。
+     */
     private val instanceMemberSymbols: Set<CfirBasedSymbol<*>> =
         owner?.declarations
             ?.filterIsInstance<CfirCallableDeclaration>()
             ?.filterNot { it.status.isStatic }
             ?.mapTo(linkedSetOf()) { it.symbol }
             .orEmpty()
+
+    /**
+     * owner 非 static 成员的 callable id 集合。
+     */
     private val instanceMemberSymbolIds: Set<CallableId> =
         instanceMemberSymbols.mapNotNullTo(linkedSetOf()) { it.callableIdOrNull() }
 
+    /**
+     * weak const 符号的 callable id 集合。
+     */
     private val weakSymbolIds: MutableSet<CallableId> =
         weakSymbols.mapNotNullTo(linkedSetOf()) { it.callableIdOrNull() }
 
+    /**
+     * 检查函数参数默认值与函数体是否满足 const 函数语义。
+     */
     fun checkFunctionBody(
         function: CfirFunction,
         requireConstDeclaration: Boolean,
@@ -236,6 +309,9 @@ private class CfirConstExpressionEvaluator(
         return result
     }
 
+    /**
+     * 检查任意表达式是否可作为 const 表达式。
+     */
     fun checkExpression(
         expression: CfirExpression,
         isWeak: Boolean,
@@ -309,6 +385,9 @@ private class CfirConstExpressionEvaluator(
         }
     }
 
+    /**
+     * 检查字面量表达式。
+     */
     private fun checkLiteralExpression(expression: CfirLiteralExpression, isWeak: Boolean): Boolean {
         if (expression.coneTypeOrNull.isStdArray()) {
             reportExpectExpression(expression, isWeak)
@@ -317,6 +396,9 @@ private class CfirConstExpressionEvaluator(
         return true
     }
 
+    /**
+     * 检查数组字面量表达式。
+     */
     private fun checkArrayLiteral(
         expression: CfirArrayLiteral,
         isWeak: Boolean,
@@ -329,6 +411,9 @@ private class CfirConstExpressionEvaluator(
         return checkExpressions(expression.elements, isWeak, allowReturn)
     }
 
+    /**
+     * 检查 return 表达式。
+     */
     private fun checkReturnExpression(
         expression: CfirReturnExpression,
         isWeak: Boolean,
@@ -341,6 +426,9 @@ private class CfirConstExpressionEvaluator(
         return checkExpression(expression.result, isWeak, allowReturn)
     }
 
+    /**
+     * 检查 if 表达式。
+     */
     private fun checkIfExpression(
         expression: CfirIfExpression,
         isWeak: Boolean,
@@ -352,6 +440,9 @@ private class CfirConstExpressionEvaluator(
         return result
     }
 
+    /**
+     * 检查 match 表达式。
+     */
     private fun checkMatchExpression(
         expression: CfirMatchExpression,
         isWeak: Boolean,
@@ -366,6 +457,9 @@ private class CfirConstExpressionEvaluator(
         return result
     }
 
+    /**
+     * 检查 try 表达式。
+     */
     private fun checkTryExpression(
         expression: CfirTryExpression,
         isWeak: Boolean,
@@ -387,6 +481,9 @@ private class CfirConstExpressionEvaluator(
         return result
     }
 
+    /**
+     * 检查函数调用表达式。
+     */
     private fun checkFunctionCall(
         expression: CfirFunctionCall,
         isWeak: Boolean,
@@ -406,6 +503,9 @@ private class CfirConstExpressionEvaluator(
         return checkExpressions(expression.argumentList.arguments, isWeak, allowReturn)
     }
 
+    /**
+     * 检查 qualified access 是否引用 const 允许的符号。
+     */
     private fun checkQualifiedAccess(
         expression: CfirQualifiedAccessExpression,
         isWeak: Boolean,
@@ -443,6 +543,9 @@ private class CfirConstExpressionEvaluator(
         return false
     }
 
+    /**
+     * 检查成员访问接收者是否满足 const 要求。
+     */
     private fun checkReceiverForMemberAccess(
         receiver: CfirExpression,
         isWeak: Boolean,
@@ -453,6 +556,9 @@ private class CfirConstExpressionEvaluator(
         return checkExpression(receiver, isWeak)
     }
 
+    /**
+     * 取得非 const receiver 诊断应使用的表达式节点。
+     */
     private fun CfirQualifiedAccessExpression.nonConstReceiverDiagnosticExpression(
         receiver: CfirExpression,
     ): CfirExpression {
@@ -460,6 +566,9 @@ private class CfirConstExpressionEvaluator(
         return receiver.takeIf { it.source != null } ?: this
     }
 
+    /**
+     * 检查下标表达式。
+     */
     private fun checkSubscriptExpression(
         expression: CfirSubscriptExpression,
         isWeak: Boolean,
@@ -478,6 +587,9 @@ private class CfirConstExpressionEvaluator(
         return result
     }
 
+    /**
+     * 检查赋值表达式。
+     */
     private fun checkAssignment(
         expression: CfirAssignment,
         isWeak: Boolean,
@@ -499,6 +611,9 @@ private class CfirConstExpressionEvaluator(
         return false
     }
 
+    /**
+     * 判断赋值目标是否已由赋值合法性检查器拥有诊断。
+     */
     private fun assignmentTargetDiagnosticOwns(expression: CfirAssignment): Boolean {
         val access = expression.lValue as? CfirQualifiedAccessExpression ?: return false
         val assignmentTarget = context(context) {
@@ -515,6 +630,9 @@ private class CfirConstExpressionEvaluator(
         }
     }
 
+    /**
+     * 检查自增自减表达式。
+     */
     private fun checkIncrementDecrementExpression(
         expression: CfirIncrementDecrementExpression,
         isWeak: Boolean,
@@ -561,6 +679,9 @@ private class CfirConstExpressionEvaluator(
         else -> null
     }
 
+    /**
+     * 检查 block 中的所有语句。
+     */
     private fun checkBlock(
         block: CfirBlock,
         isWeak: Boolean,
@@ -573,6 +694,9 @@ private class CfirConstExpressionEvaluator(
         return result
     }
 
+    /**
+     * 检查单条语句。
+     */
     private fun checkStatement(
         statement: CfirStatement,
         isWeak: Boolean,
@@ -584,6 +708,9 @@ private class CfirConstExpressionEvaluator(
         else -> true
     }
 
+    /**
+     * 检查 const 函数体内的局部变量声明。
+     */
     private fun checkVariableDeclaration(variable: CfirVariable): Boolean {
         if (variable.isVar) {
             context(context) {
@@ -601,6 +728,9 @@ private class CfirConstExpressionEvaluator(
         return checkExpression(initializer, isWeak = !variable.status.isConst, allowReturn = false)
     }
 
+    /**
+     * 检查表达式列表。
+     */
     private fun checkExpressions(
         expressions: List<CfirExpression>,
         isWeak: Boolean,
@@ -613,11 +743,17 @@ private class CfirConstExpressionEvaluator(
         return result
     }
 
+    /**
+     * 收集函数参数和函数体中 weak const 允许引用的符号。
+     */
     private fun collectWeakSymbols(function: CfirFunction) {
         function.valueParameters.forEach { addWeakSymbol(it.symbol) }
         function.body?.statements?.forEach(::collectWeakSymbols)
     }
 
+    /**
+     * 收集语句中 weak const 允许引用的符号。
+     */
     private fun collectWeakSymbols(statement: CfirStatement) {
         when (statement) {
             is CfirVariable -> addWeakVariable(statement)
@@ -646,6 +782,9 @@ private class CfirConstExpressionEvaluator(
         }
     }
 
+    /**
+     * 添加变量及其 pattern binding 变量到 weak const 符号集合。
+     */
     private fun addWeakVariable(variable: CfirVariable) {
         addWeakSymbol(variable.symbol)
         if (variable is CfirPatternVariable) {
@@ -653,11 +792,17 @@ private class CfirConstExpressionEvaluator(
         }
     }
 
+    /**
+     * 添加单个符号到 weak const 符号集合。
+     */
     private fun addWeakSymbol(symbol: CfirBasedSymbol<*>) {
         weakSymbols += symbol
         symbol.callableIdOrNull()?.let { weakSymbolIds += it }
     }
 
+    /**
+     * 为嵌套函数体创建新的 evaluator。
+     */
     private fun childForFunctionBody(): CfirConstExpressionEvaluator =
         CfirConstExpressionEvaluator(
             context = context,
@@ -668,6 +813,9 @@ private class CfirConstExpressionEvaluator(
             weakSymbols = linkedSetOf(),
         )
 
+    /**
+     * 报告函数必须为 const 的诊断。
+     */
     private fun reportExpectFunction(function: CfirFunction) {
         context(context) {
             reporter.reportOn(
@@ -678,6 +826,9 @@ private class CfirConstExpressionEvaluator(
         }
     }
 
+    /**
+     * 报告表达式必须为 const 的诊断。
+     */
     private fun reportExpectExpression(expression: CfirExpression, isWeak: Boolean) {
         context(context) {
             reporter.reportOn(
@@ -688,6 +839,9 @@ private class CfirConstExpressionEvaluator(
         }
     }
 
+    /**
+     * 判断访问是否是 class/file receiver 上的 static const 成员访问。
+     */
     private fun isStaticConstAccess(receiver: CfirExpression, target: CfirBasedSymbol<*>): Boolean {
         val receiverSymbol = receiver.resolvedSymbolOrNull()
         if (receiverSymbol !is CfirClassLikeSymbol<*> && receiverSymbol !is CfirFileSymbol) return false
@@ -696,6 +850,9 @@ private class CfirConstExpressionEvaluator(
         return callable.cfir.status.isConst && callable.cfir.status.isStatic
     }
 
+    /**
+     * 判断符号是否是 const receiver 上可访问的 const 成员。
+     */
     private fun CfirBasedSymbol<*>.isConstMemberOnConstReceiver(): Boolean = when (this) {
         is CfirEnumConstructorSymbol -> true
         is CfirVariableSymbol<*> -> true
@@ -703,21 +860,36 @@ private class CfirConstExpressionEvaluator(
         else -> false
     }
 
+    /**
+     * 判断符号自身是否是 const 引用。
+     */
     private fun CfirBasedSymbol<*>.isConstReference(): Boolean = when (this) {
         is CfirEnumConstructorSymbol -> true
         is CfirCallableSymbol<*> -> cfir.status.isConst
         else -> false
     }
 
+    /**
+     * 判断符号是否是 owner 的实例字段。
+     */
     private fun CfirBasedSymbol<*>.isMemberFieldSymbol(): Boolean =
         this in memberFieldSymbols || callableIdOrNull()?.let { it in memberFieldSymbolIds } == true
 
+    /**
+     * 判断符号是否是 owner 的实例成员。
+     */
     private fun CfirBasedSymbol<*>.isOwnerInstanceMemberSymbol(): Boolean =
         this in instanceMemberSymbols || callableIdOrNull()?.let { it in instanceMemberSymbolIds } == true
 
+    /**
+     * 判断符号是否属于 weak const 允许引用集合。
+     */
     private fun CfirBasedSymbol<*>.isWeakConstSymbol(): Boolean =
         this in weakSymbols || callableIdOrNull()?.let { it in weakSymbolIds } == true
 
+    /**
+     * 判断符号访问是否需要 const receiver。
+     */
     private fun CfirBasedSymbol<*>.requiresConstReceiver(): Boolean {
         if (this is CfirConstructorSymbol || this is CfirEnumConstructorSymbol) return false
         if (isOwnerInstanceMemberSymbol()) return true
@@ -730,6 +902,9 @@ private class CfirConstExpressionEvaluator(
     }
 }
 
+/**
+ * 判断函数调用是否是 String 内建二元 operator 调用。
+ */
 private fun CfirFunctionCall.isStringBinaryOperatorCall(): Boolean {
     if (origin != CfirFunctionCallOrigin.Operator) return false
     val receiver = explicitReceiver ?: return false
@@ -739,6 +914,9 @@ private fun CfirFunctionCall.isStringBinaryOperatorCall(): Boolean {
     return target.callableId.packageName == StdlibClassIds.String.packageFqName
 }
 
+/**
+ * 取得函数级 EXPECT_CONST 诊断源码。
+ */
 private fun CfirFunction.expectConstFunctionSource(): AbstractCjSourceElement? =
     when (this) {
         is CfirNamedFunction -> functionNameDiagnosticSource()
@@ -746,6 +924,9 @@ private fun CfirFunction.expectConstFunctionSource(): AbstractCjSourceElement? =
         else -> source
     }
 
+/**
+ * 从 qualified access 解析目标符号。
+ */
 private fun CfirQualifiedAccessExpression.resolvedSymbolOrNull(): CfirBasedSymbol<*>? =
     when (val reference = calleeReference) {
         is CfirResolvedNamedReference -> reference.resolvedSymbol
@@ -753,9 +934,15 @@ private fun CfirQualifiedAccessExpression.resolvedSymbolOrNull(): CfirBasedSymbo
         else -> null
     }
 
+/**
+ * 从表达式解析目标符号。
+ */
 private fun CfirExpression.resolvedSymbolOrNull(): CfirBasedSymbol<*>? =
     (this as? CfirQualifiedAccessExpression)?.resolvedSymbolOrNull()
 
+/**
+ * 取得 EXPECT_CONST 诊断源码范围。
+ */
 private fun CfirExpression.expectConstDiagnosticSource(): AbstractCjSourceElement? {
     val access = this as? CfirQualifiedAccessExpression ?: return source
     val calleeSource = access.calleeReference.source ?: return source
@@ -766,20 +953,37 @@ private fun CfirExpression.expectConstDiagnosticSource(): AbstractCjSourceElemen
     )
 }
 
+/**
+ * 读取符号的 callable id。
+ */
 private fun CfirBasedSymbol<*>.callableIdOrNull(): CallableId? =
     (this as? CfirCallableSymbol<*>)?.callableId
 
+/**
+ * 判断类型是否是 std.core.Array。
+ *
+ * varray 在 CFIR 中也可能表现为带元素类型的容器类型，但 const 规则需要把它与标准
+ * Array 区分开，因此这里显式排除 ConeVArrayType。
+ */
 private fun ConeCangJieType?.isStdArray(): Boolean {
     if (this == null) return false
     if (this is ConeVArrayType) return false
     return classIdOrPrimitiveClassId == StdlibClassIds.Array
 }
 
+/**
+ * 判断类型是否是 std.core.String。
+ */
 private fun ConeCangJieType?.isStdString(): Boolean {
     if (this == null) return false
     return classIdOrPrimitiveClassId == StdlibClassIds.String
 }
 
+/**
+ * 判断类型是否是元组或 varray。
+ *
+ * 这两类复合值类型在 const 求值与成员访问规则中需要按容器值处理。
+ */
 private fun ConeCangJieType?.isTupleOrVArray(): Boolean {
     if (this == null) return false
     return this is ConeTupleType || this is ConeVArrayType

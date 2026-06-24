@@ -23,8 +23,14 @@ import org.cangnova.cangjie.name.Name
  * 注册为 classLikeCheckers
  */
 object CfirInheritanceThreadContextChecker : CfirClassLikeChecker() {
+    /**
+     * `ThreadContext` 类型的短名。
+     */
     private val THREAD_CONTEXT = Name.identifier("ThreadContext")
 
+    /**
+     * 检查 class 的直接父类型中是否包含 ThreadContext，并验证相关继承限制。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirClassLikeDeclaration) {
         if (declaration !is CfirClass) return

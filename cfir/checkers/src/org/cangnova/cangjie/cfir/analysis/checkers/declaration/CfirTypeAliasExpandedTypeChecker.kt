@@ -19,8 +19,17 @@ import org.cangnova.cangjie.cfir.types.CfirUserTypeRef
  * 会把内层错误包装成外层 [CfirErrorTypeRef]，这里负责补齐声明侧根诊断。
  */
 object CfirTypeAliasExpandedTypeChecker : CfirTypeAliasChecker() {
+    /**
+     * 递归 typealias 展开错误的诊断文本前缀。
+     */
     private const val RECURSIVE_TYPEALIAS_PREFIX = "Recursive typealias expansion"
 
+    /**
+     * 检查 typealias RHS 根类型是否应补报 `NOT_A_TYPE`。
+     *
+     * unresolved qualifier 和递归 typealias 已有专门诊断时跳过，其他错误类型引用取根 qualifier
+     * 作为声明侧错误位置。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirTypeAlias) {
         val expandedTypeRef = declaration.expandedTypeRef as? CfirErrorTypeRef ?: return
@@ -36,11 +45,17 @@ object CfirTypeAliasExpandedTypeChecker : CfirTypeAliasChecker() {
         )
     }
 
+    /**
+     * 从错误类型引用保留的委托类型中提取根用户类型 qualifier。
+     */
     private fun CfirErrorTypeRef.rootTypeQualifier(): CfirQualifierPart? {
         return (delegatedTypeRef ?: partiallyResolvedTypeRef)
             ?.rootTypeQualifier()
     }
 
+    /**
+     * 从类型引用中提取最末级用户类型 qualifier。
+     */
     private fun CfirTypeRef.rootTypeQualifier(): CfirQualifierPart? {
         return when (this) {
             is CfirUserTypeRef -> qualifier.lastOrNull()

@@ -21,6 +21,7 @@ import org.cangnova.cangjie.cfir.types.coneTypeOrNull
  */
 object CfirCheckDispatchReceiver : ResolutionStage() {
     context(sink: CheckerSink, context: ResolutionContext)
+    /** 检查 dispatch receiver 的实际类型是否满足成员声明要求的接收者类型。 */
     override suspend fun check(candidate: Candidate) {
         val receiver = candidate.dispatchReceiver ?: return
         val expectedReceiverType = candidate.expectedDispatchReceiverType() ?: return
@@ -58,6 +59,7 @@ object CfirCheckDispatchReceiver : ResolutionStage() {
         sink.yieldIfNeed()
     }
 
+    /** 读取候选 callable symbol 声明的 dispatch receiver 类型。 */
     private fun Candidate.expectedDispatchReceiverType(): ConeCangJieType? {
         val callableSymbol = symbol as? CfirCallableSymbol<*> ?: return null
         return callableSymbol.dispatchReceiverType
@@ -78,6 +80,7 @@ object CfirCheckDispatchReceiver : ResolutionStage() {
         return receiverExpression.resolvedQualifierSymbol(session) != null
     }
 
+    /** 判断类型是否为无上下文 lambda receiver 使用的 fresh type variable。 */
     private fun ConeCangJieType.isFreshLambdaReceiverTypeVariable(): Boolean =
         this is ConeTypeVariableType && typeConstructor.originalTypeParameter == null
 }

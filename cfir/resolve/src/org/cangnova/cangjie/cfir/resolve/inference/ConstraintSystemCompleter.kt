@@ -50,10 +50,27 @@ import org.cangnova.cangjie.utils.runIf
  * 8. 报告无法推断的类型变量错误
  * 9. 强制分析剩余未分析的延迟参数
  */
-class ConstraintSystemCompleter(components: BodyResolveComponents) {
+class ConstraintSystemCompleter(
+    /**
+     * 调用完成阶段依赖的 body resolve 组件。
+     */
+    components: BodyResolveComponents,
+) {
+    /**
+     * 当前会话的推断组件集合。
+     */
     private val inferenceComponents = components.session.inferenceComponents
+    /**
+     * 类型变量固定选择器。
+     */
     private val variableFixationFinder = inferenceComponents.variableFixationFinder
+    /**
+     * 延迟实参输入类型解析器。
+     */
     private val postponedArgumentsInputTypesResolver = inferenceComponents.postponedArgumentInputTypesResolver
+    /**
+     * 当前语言版本设置。
+     */
     private val languageVersionSettings = components.session.languageVersionSettings
 
     /**
@@ -64,12 +81,18 @@ class ConstraintSystemCompleter(components: BodyResolveComponents) {
      * lambda 体内的约束需要反向传播到外层推断系统。
      */
     fun interface PostponedAtomAnalyzer {
+        /**
+         * 分析一个延迟解析 atom。
+         */
         fun analyzeInternal(
             postponedResolvedAtom: ConePostponedResolvedAtom,
             withPCLASession: Boolean,
         )
     }
 
+    /**
+     * 调用延迟 atom 分析器，默认不启用 PCLA 会话。
+     */
     private fun PostponedAtomAnalyzer.analyze(
         postponedResolvedAtom: ConePostponedResolvedAtom,
         withPCLASession: Boolean = false,
@@ -77,6 +100,9 @@ class ConstraintSystemCompleter(components: BodyResolveComponents) {
         return analyzeInternal(postponedResolvedAtom, withPCLASession)
     }
 
+    /**
+     * 对外暴露的约束系统完成入口。
+     */
     fun complete(
         c: ConstraintSystemCompletionContext,
         completionMode: ConstraintSystemCompletionMode,
@@ -88,6 +114,9 @@ class ConstraintSystemCompleter(components: BodyResolveComponents) {
         c.runCompletion(completionMode, topLevelAtoms, candidateReturnType, context, analyzer)
     }
 
+    /**
+     * 在指定完成模式下驱动约束系统完成循环。
+     */
     private fun ConstraintSystemCompletionContext.runCompletion(
         completionMode: ConstraintSystemCompletionMode,
         topLevelAtoms: List<ConeResolutionAtom>,
@@ -214,6 +243,9 @@ class ConstraintSystemCompleter(components: BodyResolveComponents) {
         }
     }
 
+    /**
+     * 查找当前约束系统中下一个应固定的类型变量。
+     */
     private fun ConstraintSystemCompletionContext.findFirstVariableForFixation(
         topLevelAtoms: List<ConeResolutionAtom>,
         postponedArguments: List<ConePostponedResolvedAtom>,
@@ -335,6 +367,9 @@ class ConstraintSystemCompleter(components: BodyResolveComponents) {
         return wasAny
     }
 
+    /**
+     * 当类型变量已满足固定条件时执行固定。
+     */
     private fun ConstraintSystemCompletionContext.fixVariableIfReady(
         variableForFixation: VariableFixationFinder.VariableForFixation,
         completionMode: ConstraintSystemCompletionMode,
@@ -480,6 +515,9 @@ class ConstraintSystemCompleter(components: BodyResolveComponents) {
         return result.toList()
     }
 
+    /**
+     * 根据当前约束计算类型变量结果类型并固定该变量。
+     */
     private fun fixVariable(
         c: ConstraintSystemCompletionContext,
         variableWithConstraints: VariableWithConstraints,
@@ -495,7 +533,13 @@ class ConstraintSystemCompleter(components: BodyResolveComponents) {
         c.fixVariable(variable, resultType, ConeFixVariableConstraintPosition(variable))
     }
 
+    /**
+     * 约束系统完成器的静态辅助入口。
+     */
     companion object {
+        /**
+         * 收集候选中尚未分析的延迟 atom。
+         */
         internal fun getOrderedNotAnalyzedPostponedArguments(
             candidate: Candidate,
         ): List<ConePostponedResolvedAtom> {
@@ -619,4 +663,7 @@ class ConstraintSystemCompleter(components: BodyResolveComponents) {
     }
 }
 
+/**
+ * 候选当前约束系统 builder 视图。
+ */
 val Candidate.csBuilder: ConstraintSystemImpl get() = system.getBuilder()

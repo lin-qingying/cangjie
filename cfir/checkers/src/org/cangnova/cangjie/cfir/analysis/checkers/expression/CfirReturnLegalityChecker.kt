@@ -23,6 +23,7 @@ import org.cangnova.cangjie.source.CjRealSourceElementKind
  * - 仅对真实源码中的显式 `return` 报告，避免对 fake source 的隐式返回产生噪音。
  */
 object CfirReturnLegalityChecker : CfirReturnExpressionChecker() {
+    /** 检查 `return` 语句是否出现在允许返回的位置。 */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirReturnExpression) {
         val source = expression.source ?: return

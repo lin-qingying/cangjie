@@ -60,6 +60,12 @@ open class ReturnTypeCalculatorWithJump(
 ) : ReturnTypeCalculator() {
     override val callableCopyTypeCalculator: CallableCopyTypeCalculator = CallableCopyTypeCalculatorWithJump()
 
+    /**
+     * 尝试计算 callable 声明的返回类型。
+     *
+     * 本入口优先复用已解析类型，处理 pattern binding 与局部声明特殊路径，
+     * 对可延迟计算的 callable copy 则委托 [callableCopyTypeCalculator]。
+     */
     override fun tryCalculateReturnTypeOrNull(declaration: CfirCallableDeclaration): CfirResolvedTypeRef {
         if (declaration is CfirPatternBindingVariable) {
             calculatePatternBindingReturnTypeOrNull(declaration)?.let { return it }
@@ -98,6 +104,7 @@ open class ReturnTypeCalculatorWithJump(
         return computeReturnTypeRef(declaration)
     }
 
+    /** 构造递归隐式类型错误，并把参与递归的符号记录到计算会话。 */
     protected fun recursionInImplicitTypeRef(declaration: CfirCallableDeclaration): CfirResolvedTypeRef =
         buildErrorTypeRef {
             diagnostic = ConeSimpleDiagnostic("Recursive implicit type", DiagnosticKind.RecursionInImplicitTypes)
@@ -105,6 +112,7 @@ open class ReturnTypeCalculatorWithJump(
             implicitBodyResolveComputationSession.calculateAndStoreNonTrivialLoop(declaration.symbol)
         }
 
+    /** 执行普通隐式返回类型计算，并处理计算状态缓存和递归检测。 */
     private fun computeReturnTypeRef(declaration: CfirCallableDeclaration): CfirResolvedTypeRef {
         val symbol = declaration.symbol
         val computedReturnType = when (val status = implicitBodyResolveComputationSession.getStatus(symbol)) {
@@ -126,6 +134,11 @@ open class ReturnTypeCalculatorWithJump(
             }
     }
 
+    /**
+     * 通过 designated body resolve 推进声明并解析返回类型。
+     *
+     * 该方法先恢复文件和外层 class-like designation，再只解析目标 callable 的必要路径。
+     */
     protected open fun resolveDeclaration(declaration: CfirCallableDeclaration): CfirResolvedTypeRef {
         val file = session.cfirProvider.getContainingFile(declaration.symbol)
         val containingClassLookupTag = declaration.symbol.containingClassLookupTag()
@@ -182,6 +195,7 @@ open class ReturnTypeCalculatorWithJump(
     }
 
     private inner class CallableCopyTypeCalculatorWithJump : CallableCopyTypeCalculator.DeferredCallableCopyTypeCalculator() {
+        /** callable copy 需要解析返回类型时回到外层 jump calculator 的计算路径。 */
         override fun CfirCallableDeclaration.getResolvedTypeRef(): CfirResolvedTypeRef {
             return this@ReturnTypeCalculatorWithJump.computeReturnTypeRef(this)
         }

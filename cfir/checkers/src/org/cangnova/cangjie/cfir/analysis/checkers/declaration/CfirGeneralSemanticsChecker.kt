@@ -24,22 +24,30 @@
 
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
+import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
+import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
 import org.cangnova.cangjie.cfir.isCatchParameter
+import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.session.cjMappingConfigProvider
 import org.cangnova.cangjie.cfir.session.noPrelude
 import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.types.*
+import org.cangnova.cangjie.cfir.visitors.CfirDefaultVisitorVoid
 import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.descriptors.Visibility
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.source.AbstractCjSourceElement
 import org.cangnova.cangjie.source.CjFakeSourceElementKind
+import org.cangnova.cangjie.source.CjSourceElement
 
 /**
  * 通用语义检查器（General 分组）
@@ -466,31 +474,175 @@ object CfirClassStructSemanticsChecker : CfirClassLikeChecker() {
         }
     }
 
+    /**
+     * static var / prop 不能依赖所属 class-like 的泛型参数。
+     *
+     * 官方 Sema 在 static 成员内部遍历 `RefType` / `RefExpr` 节点，并把诊断报在实际依赖
+     * 泛型参数的类型或表达式节点上；因此这里不能把 source 挂在整个字段/属性声明上。
+    */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkStaticVariableGenericParameterDependency(classLike: CfirClassLikeDeclaration) {
-        val typeParameterNames = when (classLike) {
-            is CfirClass -> classLike.typeParameters.map { it.name }.toSet()
-            is CfirStruct -> classLike.typeParameters.map { it.name }.toSet()
-            is CfirEnum -> classLike.typeParameters.map { it.name }.toSet()
-            is CfirInterface -> classLike.typeParameters.map { it.name }.toSet()
-            else -> return
-        }
+        val typeParameterNames = classLike.staticGenericDependencyParameterNames()
         if (typeParameterNames.isEmpty()) return
         for (member in classLike.declarations) {
-            val fieldVariable = member as? CfirFieldVariable ?: continue
-            if (!fieldVariable.status.isStatic) continue
-            val resolvedType = (fieldVariable.returnTypeRef as? CfirResolvedTypeRef)?.coneType ?: continue
-            for (typeParamName in typeParameterNames) {
-                if (resolvedType.containsTypeParameter(typeParamName)) {
-                    reporter.reportOn(
-                        source = fieldVariable.source,
-                        factory = CfirErrors.STATIC_VARIABLE_USE_GENERIC_PARAMETER,
-                        a = typeParamName,
-                    )
-                    break
-                }
+            if (member is CfirFieldVariable && member.status.isStatic) {
+                val reported = mutableSetOf<StaticGenericDependencyReportKey>()
+                member.returnTypeRef.reportStaticGenericDependency(typeParameterNames, reported)
+                member.initializer?.reportStaticGenericDependency(typeParameterNames, reported)
+            }
+            if (member is CfirProperty && member.status.isStatic) {
+                val reported = mutableSetOf<StaticGenericDependencyReportKey>()
+                member.returnTypeRef.reportStaticGenericDependency(typeParameterNames, reported)
+                member.getter?.body?.reportStaticGenericDependency(typeParameterNames, reported)
+                member.setter?.body?.reportStaticGenericDependency(typeParameterNames, reported)
             }
         }
+    }
+
+    /** 检查类型引用本身是否依赖 static 成员所属 class-like 的类型参数。 */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun CfirTypeRef.reportStaticGenericDependency(
+        typeParameterNames: Set<Name>,
+        reported: MutableSet<StaticGenericDependencyReportKey>,
+    ): Boolean {
+        return coneTypeOrNull.reportStaticGenericDependency(source, typeParameterNames, reported)
+    }
+
+    /** 遍历表达式及其嵌套类型引用，查找 static 成员中对 class-like 类型参数的依赖。 */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun CfirExpression.reportStaticGenericDependency(
+        typeParameterNames: Set<Name>,
+        reported: MutableSet<StaticGenericDependencyReportKey>,
+    ) {
+        accept(object : CfirDefaultVisitorVoid() {
+            private var currentQualifiedAccessSource: CjSourceElement? = null
+
+            override fun visitElement(element: CfirElement) {
+                element.acceptChildren(this, null)
+            }
+
+            override fun visitFunctionCall(functionCall: CfirFunctionCall) {
+                visitQualifiedAccessWithStaticGenericDependency(functionCall)
+            }
+
+            override fun visitQualifiedAccessExpression(qualifiedAccessExpression: CfirQualifiedAccessExpression) {
+                visitQualifiedAccessWithStaticGenericDependency(qualifiedAccessExpression)
+            }
+
+            override fun visitExpression(expression: CfirExpression) {
+                if (expression is CfirQualifiedAccessExpression) {
+                    visitQualifiedAccessWithStaticGenericDependency(expression)
+                    return
+                }
+                if (expression.coneTypeOrNull.reportStaticGenericDependency(expression.source, typeParameterNames, reported)) {
+                    return
+                }
+                expression.acceptChildren(this, null)
+            }
+
+            override fun visitTypeRef(typeRef: CfirTypeRef) {
+                val diagnosticSource = currentQualifiedAccessSource ?: typeRef.source
+                if (typeRef.coneTypeOrNull.reportStaticGenericDependency(diagnosticSource, typeParameterNames, reported)) {
+                    return
+                }
+                typeRef.acceptChildren(this, null)
+            }
+
+            private fun visitQualifiedAccessWithStaticGenericDependency(expression: CfirQualifiedAccessExpression) {
+                if (expression.typeArguments.reportStaticGenericDependencyOn(
+                        source = expression.source,
+                        typeParameterNames = typeParameterNames,
+                        reported = reported,
+                    )
+                ) {
+                    return
+                }
+                if (expression.reportStaticGenericOwnerDependency(reported)) {
+                    return
+                }
+                val previousQualifiedAccessSource = currentQualifiedAccessSource
+                currentQualifiedAccessSource = expression.source
+                expression.acceptChildren(this, null)
+                currentQualifiedAccessSource = previousQualifiedAccessSource
+            }
+        }, null)
+    }
+
+    /** 将调用/访问类型实参中的外层泛型依赖提升到整个调用/访问表达式。 */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun List<CfirTypeRef>.reportStaticGenericDependencyOn(
+        source: CjSourceElement?,
+        typeParameterNames: Set<Name>,
+        reported: MutableSet<StaticGenericDependencyReportKey>,
+    ): Boolean {
+        val typeParameterName = firstNotNullOfOrNull { typeRef ->
+            typeParameterNames.firstOrNull { typeRef.coneTypeOrNull?.containsTypeParameter(it) == true }
+        } ?: return false
+        return typeParameterName.reportStaticGenericDependency(source, reported)
+    }
+
+    /**
+     * static 成员引用若解析到泛型 class-like 的 static 函数/属性，官方在该引用节点上报告。
+     */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun CfirQualifiedAccessExpression.reportStaticGenericOwnerDependency(
+        reported: MutableSet<StaticGenericDependencyReportKey>,
+    ): Boolean {
+        val callableSymbol = (calleeReference as? CfirResolvedNamedReference)?.resolvedSymbol as? CfirCallableSymbol<*>
+            ?: return false
+        val callable = callableSymbol.takeIf { it.isBound }?.cfir ?: return false
+        if (callable !is CfirNamedFunction && callable !is CfirProperty) return false
+        if (!callable.status.isStatic) return false
+        val ownerClassId = callableSymbol.callableId.classId ?: return false
+        val ownerDeclaration = context.session.symbolProvider.getClassLikeSymbolByClassId(ownerClassId)?.cfir
+            as? CfirClassLikeDeclaration ?: return false
+        val typeParameterName = ownerDeclaration.staticGenericDependencyParameterNames().firstOrNull() ?: return false
+        return typeParameterName.reportStaticGenericDependency(source, reported)
+    }
+
+    /** 对单个 Cone 类型执行泛型参数依赖判断，并按 source/type-parameter 去重上报。 */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun ConeCangJieType?.reportStaticGenericDependency(
+        source: CjSourceElement?,
+        typeParameterNames: Set<Name>,
+        reported: MutableSet<StaticGenericDependencyReportKey>,
+    ): Boolean {
+        val typeParameterName = typeParameterNames.firstOrNull { this?.containsTypeParameter(it) == true } ?: return false
+        return typeParameterName.reportStaticGenericDependency(source, reported)
+    }
+
+    /** 按 source/type-parameter 去重上报 static 泛型参数依赖。 */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun Name.reportStaticGenericDependency(
+        source: CjSourceElement?,
+        reported: MutableSet<StaticGenericDependencyReportKey>,
+    ): Boolean {
+        val typeParameterName = this
+        val key = StaticGenericDependencyReportKey(source, typeParameterName)
+        if (!reported.add(key)) return true
+        reporter.reportOn(
+            source = source,
+            factory = CfirErrors.STATIC_VARIABLE_USE_GENERIC_PARAMETER,
+            a = typeParameterName,
+        )
+        return true
+    }
+
+    /** static 泛型参数依赖诊断的去重键。 */
+    private data class StaticGenericDependencyReportKey(
+        /** 已报告诊断对应的 source。 */
+        val source: CjSourceElement?,
+        /** 已报告诊断对应的类型参数名。 */
+        val typeParameterName: Name,
+    )
+
+    /** class-like 可作为 static 成员外层泛型依赖的类型参数名集合。 */
+    private fun CfirClassLikeDeclaration.staticGenericDependencyParameterNames(): Set<Name> = when (this) {
+        is CfirClass -> typeParameters.map { it.name }.toSet()
+        is CfirStruct -> typeParameters.map { it.name }.toSet()
+        is CfirEnum -> typeParameters.map { it.name }.toSet()
+        is CfirInterface -> typeParameters.map { it.name }.toSet()
+        else -> emptySet()
     }
 }
 

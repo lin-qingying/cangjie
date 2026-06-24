@@ -4,6 +4,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.resolve.providers.canAccessPackageInternalDeclaration
+import org.cangnova.cangjie.cfir.resolve.providers.canAccessPackageProtectedDeclaration
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.extendIndexStoreOrNull
 import org.cangnova.cangjie.cfir.session.importBindingStoreOrNull
@@ -23,8 +24,16 @@ import org.cangnova.cangjie.name.FqName
  * 同包直接放行；跨包时先要求 extend 可导出，再按“同包 direct extend 看目标可见性，
  * 异包 interface extend 看接口/目标类型可访问性”的官方路径判断。
  */
-class CfirExtendAccessibilityChecker(private val session: CfirSession) {
+class CfirExtendAccessibilityChecker(
+    /**
+     * 当前解析会话。
+     */
+    private val session: CfirSession,
+) {
 
+    /**
+     * 判断 extend 声明在指定文件使用点是否可访问。
+     */
     fun isAccessible(file: CfirFile, extend: CfirExtend): Boolean {
         val filePackage = file.packageDirective.packageFqName
         val model = session.extendIndexStoreOrNull?.modelForDeclaration(extend) ?: return true
@@ -46,6 +55,9 @@ class CfirExtendAccessibilityChecker(private val session: CfirSession) {
         }
     }
 
+    /**
+     * 判断 extend 声明是否满足跨包导出的最低条件。
+     */
     private fun CfirExtend.isExported(model: CfirExtendSemanticModel): Boolean {
         val targetClassId = model.targetClassId
         val isTargetInSamePackageAsExtend = model.isTargetInSamePackageAsExtend()
@@ -63,26 +75,44 @@ class CfirExtendAccessibilityChecker(private val session: CfirSession) {
         return model.inheritedInterfaceClassIds.any(::isClassIdExported) && allUpperBoundsExported()
     }
 
+    /**
+     * 判断 extend 目标是否与 extend 声明处于同一包。
+     */
     private fun CfirExtendSemanticModel.isTargetInSamePackageAsExtend(): Boolean =
         targetClassId?.packageFqName == packageFqName ||
             targetClassId == null && targetKey != null && packageFqName.asString() == STDLIB_CORE_PACKAGE
 
+    /**
+     * 判断 extend 类型参数上界是否全部可导出。
+     */
     private fun CfirExtend.allUpperBoundsExported(): Boolean =
         typeParameters.all { typeParameter -> typeParameter.bounds.all(::isTypeRefExported) }
 
+    /**
+     * 判断 extend 类型参数上界在当前导入上下文中是否全部可访问。
+     */
     private fun CfirExtend.allUpperBoundsAccessible(imports: ImportAccessibility): Boolean =
         typeParameters.all { typeParameter -> typeParameter.bounds.all(imports::isTypeAccessible) }
 
+    /**
+     * 判断类型引用指向的 classId 是否可导出。
+     */
     private fun isTypeRefExported(typeRef: CfirTypeRef): Boolean {
         val classId = typeRef.classIdOrNull() ?: return true
         return isClassIdExported(classId)
     }
 
+    /**
+     * 判断 classId 对应声明是否具备导出可见性。
+     */
     private fun isClassIdExported(classId: ClassId): Boolean {
         val declaration = classId.classLikeDeclarationOrNull() ?: return true
         return declaration.status.visibility.isExportedVisibility()
     }
 
+    /**
+     * 判断 classId 对应声明是否可从指定包访问。
+     */
     private fun isClassIdVisibleFromPackage(classId: ClassId, useSitePackage: FqName): Boolean {
         val declaration = classId.classLikeDeclarationOrNull() ?: return true
         return isVisibilityVisibleFromPackage(
@@ -92,6 +122,9 @@ class CfirExtendAccessibilityChecker(private val session: CfirSession) {
         )
     }
 
+    /**
+     * 按仓颉包级 public/protected/internal 规则判断可见性。
+     */
     private fun isVisibilityVisibleFromPackage(
         visibility: Visibility,
         useSitePackage: FqName,
@@ -100,12 +133,15 @@ class CfirExtendAccessibilityChecker(private val session: CfirSession) {
         if (useSitePackage == declarationPackage) return true
         return when (visibility) {
             Visibilities.Public -> true
-            Visibilities.Protected -> useSitePackage.hasSameRootModuleAs(declarationPackage)
+            Visibilities.Protected -> canAccessPackageProtectedDeclaration(useSitePackage, declarationPackage)
             Visibilities.Internal -> canAccessPackageInternalDeclaration(useSitePackage, declarationPackage)
             else -> false
         }
     }
 
+    /**
+     * 判断声明可见性是否允许跨包导出。
+     */
     private fun Visibility.isExportedVisibility(): Boolean = when (this) {
         Visibilities.Public,
         Visibilities.Protected -> true
@@ -113,17 +149,35 @@ class CfirExtendAccessibilityChecker(private val session: CfirSession) {
         else -> false
     }
 
+    /**
+     * 解析 classId 对应的 class-like 声明。
+     */
     private fun ClassId.classLikeDeclarationOrNull(): CfirClassLikeDeclaration? {
         val symbol = session.symbolProvider.getClassLikeSymbolByClassId(this) ?: return null
         return symbol.cfir as? CfirClassLikeDeclaration
     }
 
+    /**
+     * 从已解析类型引用中提取 classId。
+     */
     private fun CfirTypeRef.classIdOrNull(): ClassId? =
         (this as? CfirResolvedTypeRef)?.coneType?.classIdOrPrimitiveClassId
 
+    /**
+     * 当前文件导入语境下的类型可访问性查询器。
+     */
     private inner class ImportAccessibility(file: CfirFile) {
+        /**
+         * 当前文件包名。
+         */
         private val filePackage = file.packageDirective.packageFqName
+        /**
+         * 当前文件显式导入的 classId 集合。
+         */
         private val importedClassIds: Set<ClassId>
+        /**
+         * 当前文件通过包导入暴露的包集合。
+         */
         private val importedPackages: Set<FqName>
 
         init {
@@ -138,11 +192,17 @@ class CfirExtendAccessibilityChecker(private val session: CfirSession) {
                 }
         }
 
+        /**
+         * 判断类型引用在当前文件中是否可访问。
+         */
         fun isTypeAccessible(typeRef: CfirTypeRef): Boolean {
             val classId = typeRef.classIdOrNull() ?: return true
             return isTypeAccessible(classId)
         }
 
+        /**
+         * 判断 classId 在当前文件中是否可访问。
+         */
         fun isTypeAccessible(classId: ClassId): Boolean {
             if (!isClassIdVisibleFromPackage(classId, filePackage)) return false
             if (classId.packageFqName == filePackage) return true
@@ -152,12 +212,13 @@ class CfirExtendAccessibilityChecker(private val session: CfirSession) {
         }
     }
 
-    private fun FqName.hasSameRootModuleAs(other: FqName): Boolean {
-        if (isRoot || other.isRoot) return false
-        return pathSegments().firstOrNull() == other.pathSegments().firstOrNull()
-    }
-
+    /**
+     * 本检查中需要特殊视作核心内建包的包名。
+     */
     private companion object {
+        /**
+         * 标准库核心包名。
+         */
         const val STDLIB_CORE_PACKAGE: String = "std.core"
     }
 }

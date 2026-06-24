@@ -32,11 +32,18 @@ import org.cangnova.cangjie.LanguageVersionSettings
  * 承载编译器特性开关、目标平台配置、实验性功能控制等。
  * 对齐 K2 的 FirLanguageSettingsComponent，但移除了 isMetadataCompilation
  * （仓颉没有独立的 metadata 编译模式）。
+ *
+ * @property languageVersionSettings 当前 session 使用的语言版本配置。
  */
 class CfirLanguageSettingsComponent(
     val languageVersionSettings: LanguageVersionSettings,
 ) : CfirSessionComponent
 
+/**
+ * prelude 导入策略 session 组件。
+ *
+ * @property noPrelude 为 `true` 时禁用默认 prelude 注入。
+ */
 class CfirPreludeSettingsComponent(
     val noPrelude: Boolean,
 ) : CfirSessionComponent
@@ -45,25 +52,45 @@ class CfirPreludeSettingsComponent(
  * 程序入口检查配置。
  *
  * 仓颉官方编译器只在可执行编译目标中检查缺失 `main`，IDE/type-check 场景不启用。
+ *
+ * @property checkProgramEntry 是否执行程序入口检查。
  */
 class CfirProgramEntrySettingsComponent(
     val checkProgramEntry: Boolean,
 ) : CfirSessionComponent
 
+/**
+ * 当前 session 的语言配置组件。
+ */
 private val CfirSession.languageSettingsComponent: CfirLanguageSettingsComponent
     by CfirSession.sessionComponentAccessor()
 
+/**
+ * 当前 session 的 prelude 配置组件；未注册时表示采用默认 prelude 行为。
+ */
 private val CfirSession.preludeSettingsComponent: CfirPreludeSettingsComponent?
     by CfirSession.nullableSessionComponentAccessor()
 
+/**
+ * 当前 session 的程序入口检查配置组件；未注册时表示不检查入口。
+ */
 private val CfirSession.programEntrySettingsComponent: CfirProgramEntrySettingsComponent?
         by CfirSession.nullableSessionComponentAccessor()
 
+/**
+ * 当前 session 的语言版本设置。
+ */
 val CfirSession.languageVersionSettings: LanguageVersionSettings
     get() = languageSettingsComponent.languageVersionSettings
 
+/**
+ * 当前 session 是否禁用默认 prelude。
+ */
 val CfirSession.noPrelude: Boolean
     get() = preludeSettingsComponent?.noPrelude == true
 
+/**
+ * 当前 session 是否检查程序入口。
+ */
 val CfirSession.checkProgramEntry: Boolean
     get() = programEntrySettingsComponent?.checkProgramEntry == true

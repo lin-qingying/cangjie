@@ -22,6 +22,7 @@ import org.cangnova.cangjie.cfir.types.contains
  * 而不是继续等待后续阶段退化成普通 unresolved。
  */
 object CfirGenericBareClassifierAccessChecker : CfirQualifiedAccessChecker() {
+    /** 检查裸泛型 classifier 访问是否缺少必须显式提供的类型实参。 */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirQualifiedAccessExpression) {
         if (expression.typeArguments.isNotEmpty()) return
@@ -56,11 +57,13 @@ object CfirGenericBareClassifierAccessChecker : CfirQualifiedAccessChecker() {
         }
     }
 
+    /** 判断类型中是否直接或间接引用了指定类型参数 symbol。 */
     private fun ConeCangJieType.referencesTypeParameter(symbol: CfirTypeParameterSymbol): Boolean =
         contains { type ->
             type is ConeTypeParameterType && type.lookupTag.typeParameterSymbol == symbol
         }
 
+    /** 判断当前限定访问是否只是 enum 构造器访问链中的限定符。 */
     context(context: CheckerContext)
     private fun CfirQualifiedAccessExpression.isQualifierOfEnumConstructorAccess(): Boolean {
         return context.callsOrAssignments.asReversed().drop(1).any { outer ->
@@ -70,6 +73,7 @@ object CfirGenericBareClassifierAccessChecker : CfirQualifiedAccessChecker() {
         }
     }
 
+    /** 判断引用是否解析到 enum 构造器。 */
     private fun org.cangnova.cangjie.cfir.references.CfirReference.resolvesToEnumConstructor(): Boolean = when (this) {
         is CfirResolvedNamedReference -> resolvedSymbol.takeIf { it.isBound }?.cfir is CfirEnumConstructor
         is CfirResolvedAppliedCallableReference -> resolvedSymbol.takeIf { it.isBound }?.cfir is CfirEnumConstructor

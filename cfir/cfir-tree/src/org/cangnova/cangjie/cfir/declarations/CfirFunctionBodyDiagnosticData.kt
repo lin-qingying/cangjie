@@ -35,21 +35,45 @@ import org.cangnova.cangjie.source.CjSourceElement
  * 这里仅保存源码参数列表位置，供 checker 按官方语义报告诊断。
  */
 data class CfirFunctionBodyDiagnosticData(
+    /**
+     * 源码中出现的函数体参数列表引用。
+     *
+     * 第一个列表通常对应真实 CFIR 签名，其余列表仅用于非法柯里化形态的诊断定位。
+     */
     val valueParameterLists: List<CfirValueParameterListReference>,
 ) {
+    /**
+     * 函数体诊断数据的空值对象。
+     */
     companion object {
+        /**
+         * 不包含任何额外参数列表位置的诊断数据。
+         */
         val EMPTY = CfirFunctionBodyDiagnosticData(
             valueParameterLists = emptyList(),
         )
     }
 }
 
+/**
+ * 函数体参数列表在源码中的位置引用。
+ *
+ * @property source 参数列表整体的源码元素，用于把非法函数体形态诊断报告到官方语义要求的位置。
+ */
 data class CfirValueParameterListReference(
     val source: CjSourceElement,
 )
 
+/**
+ * [CfirFunctionBodyDiagnosticData] 在声明属性表中的键。
+ */
 private object FunctionBodyDiagnosticDataKey : CfirDeclarationDataKey()
 
+/**
+ * 声明属性上的函数体诊断数据。
+ *
+ * 该属性由 raw CFIR 构建阶段写入，checker 在函数体语义检查时读取。
+ */
 var CfirDeclarationAttributes.functionBodyDiagnosticData: CfirFunctionBodyDiagnosticData? by CfirDeclarationDataRegistry.attributesAccessor(
     FunctionBodyDiagnosticDataKey
 )

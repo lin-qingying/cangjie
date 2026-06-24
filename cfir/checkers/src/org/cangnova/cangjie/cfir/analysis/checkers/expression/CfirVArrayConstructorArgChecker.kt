@@ -28,6 +28,7 @@ import org.cangnova.cangjie.source.CjSourceElement
  * `CheckVArrayType` 相同的元素类型限制入口。
  */
 object CfirVArrayConstructorArgChecker : CfirFunctionCallChecker() {
+    /** 检查 VArray synthetic 构造器调用的长度字面量、元素类型和实参数量。 */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirFunctionCall) {
         if (!expression.isBuiltinVArrayConstructorCall()) return
@@ -43,6 +44,7 @@ object CfirVArrayConstructorArgChecker : CfirFunctionCallChecker() {
         )
     }
 
+    /** 检查 VArray 构造器调用中携带的 `$N` 长度字面量是否越界。 */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun CfirFunctionCall.checkSizeLiteral() {
         val sizeLiteral = varraySizeLiteral ?: return
@@ -55,6 +57,7 @@ object CfirVArrayConstructorArgChecker : CfirFunctionCallChecker() {
         )
     }
 
+    /** 检查 VArray 构造器显式元素类型是否包含禁止作为元素的引用类型。 */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun CfirFunctionCall.checkExplicitElementType() {
         val elementTypeRef = typeArguments.firstOrNull() as? CfirResolvedTypeRef ?: return
@@ -66,6 +69,7 @@ object CfirVArrayConstructorArgChecker : CfirFunctionCallChecker() {
         )
     }
 
+    /** 判断函数调用是否为内建 VArray 构造器调用。 */
     context(context: CheckerContext)
     private fun CfirFunctionCall.isBuiltinVArrayConstructorCall(): Boolean {
         if (varraySizeLiteral != null) return true
@@ -83,6 +87,7 @@ object CfirVArrayConstructorArgChecker : CfirFunctionCallChecker() {
             ?.origin == CfirDeclarationOrigin.Synthetic.BuiltinArrayConstructor
     }
 
+    /** 沿 resolved type-ref 链回溯用户源码中的原始类型 source。 */
     private fun CfirTypeRef.originalSource(): CjSourceElement? =
         when (this) {
             is CfirResolvedTypeRef -> delegatedTypeRef?.originalSource() ?: source

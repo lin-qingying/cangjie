@@ -35,7 +35,16 @@ import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.lexer.CjTokens
 
+/**
+ * 源码修饰符目标、父声明和组合兼容性检查器。
+ *
+ * 该检查器从真实源码修饰符列表出发，统一处理修饰符目标、包含声明目标、兼容性以及
+ * `redef`/`override` 相关的额外声明规则。
+ */
 object CfirModifierChecker : CfirBasicDeclarationChecker() {
+    /**
+     * 检查声明上的所有真实源码修饰符。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirDeclaration) {
         val source = declaration.source ?: return
@@ -62,6 +71,9 @@ object CfirModifierChecker : CfirBasicDeclarationChecker() {
         checkOverrideAndRedef(declaration, modifiers)
     }
 
+    /**
+     * 检查修饰符是否允许出现在当前声明目标上。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkTarget(
         modifier: SourceModifier,
@@ -106,6 +118,9 @@ object CfirModifierChecker : CfirBasicDeclarationChecker() {
         return true
     }
 
+    /**
+     * 检查修饰符是否允许出现在当前声明的父声明上下文中。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkParent(
         modifier: SourceModifier,
@@ -138,6 +153,9 @@ object CfirModifierChecker : CfirBasicDeclarationChecker() {
         return false
     }
 
+    /**
+     * 检查 `redef` 与实例成员覆盖语义的额外限制。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkOverrideAndRedef(
         declaration: CfirDeclaration,
@@ -162,6 +180,9 @@ object CfirModifierChecker : CfirBasicDeclarationChecker() {
 
     }
 
+    /**
+     * 判断当前 callable 是否存在忽略 static 差异后的继承非 static 签名。
+     */
     context(context: CheckerContext)
     private fun CfirCallableDeclaration.hasInheritedNonStaticSignatureIgnoringStatic(): Boolean {
         val owner = context.findClosestDeclaration<CfirClassLikeDeclaration>() ?: return false
@@ -179,6 +200,9 @@ object CfirModifierChecker : CfirBasicDeclarationChecker() {
         }
     }
 
+    /**
+     * 返回 callable 在诊断中的成员种类名称。
+     */
     private fun CfirCallableDeclaration.declarationKindName(): String = when (this) {
         is CfirNamedFunction -> "function"
         is CfirProperty -> "property"

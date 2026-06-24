@@ -27,18 +27,28 @@ package org.cangnova.cangjie.cfir.analysis.checkers
 import org.cangnova.cangjie.lexer.CjKeywordToken
 import org.cangnova.cangjie.lexer.CjTokens.*
 
+/** 两个修饰符同时出现时的兼容性分类。 */
 internal enum class Compatibility {
+    /** 两个修饰符可以同时出现。 */
     COMPATIBLE,
+    /** 第二个修饰符被第一个修饰符覆盖，属于冗余。 */
     REDUNDANT,
+    /** 第一个修饰符被第二个修饰符覆盖，属于反向冗余。 */
     REVERSE_REDUNDANT,
+    /** 两个修饰符是同一个 token，属于重复。 */
     REPEATED,
+    /** 该修饰符组合仍可接受，但需要报告弃用组合。 */
     DEPRECATED,
+    /** 两个修饰符不能同时出现。 */
     INCOMPATIBLE,
+    /** 该组合只允许出现在 class-like 声明上。 */
     COMPATIBLE_FOR_CLASSES_ONLY,
 }
 
+/** 全量互斥/冗余/兼容特例表。 */
 private val mutualCompatibility = buildCompatibilityMap()
 
+/** 构建修饰符两两兼容性表。 */
 private fun buildCompatibilityMap(): Map<Pair<CjKeywordToken, CjKeywordToken>, Compatibility> {
     val result = hashMapOf<Pair<CjKeywordToken, CjKeywordToken>, Compatibility>()
 
@@ -64,6 +74,7 @@ private fun buildCompatibilityMap(): Map<Pair<CjKeywordToken, CjKeywordToken>, C
     return result
 }
 
+/** 查询两个修饰符 token 的兼容性分类。 */
 internal fun compatibility(first: CjKeywordToken, second: CjKeywordToken): Compatibility {
     return if (first == second) {
         Compatibility.REPEATED
@@ -72,10 +83,12 @@ internal fun compatibility(first: CjKeywordToken, second: CjKeywordToken): Compa
     }
 }
 
+/** 注册只在 class-like 声明上允许共存的修饰符组合。 */
 private fun compatibilityForClassesRegister(vararg list: CjKeywordToken): Map<Pair<CjKeywordToken, CjKeywordToken>, Compatibility> {
     return compatibilityRegister(Compatibility.COMPATIBLE_FOR_CLASSES_ONLY, *list)
 }
 
+/** 为给定修饰符列表中的任意两个不同 token 注册同一种兼容性分类。 */
 private fun compatibilityRegister(
     compatibility: Compatibility,
     vararg list: CjKeywordToken,
@@ -91,10 +104,12 @@ private fun compatibilityRegister(
     return result
 }
 
+/** 注册一组两两不兼容的修饰符。 */
 private fun incompatibilityRegister(vararg list: CjKeywordToken): Map<Pair<CjKeywordToken, CjKeywordToken>, Compatibility> {
     return compatibilityRegister(Compatibility.INCOMPATIBLE, *list)
 }
 
+/** 注册一个有方向的冗余关系。 */
 private fun redundantRegister(
     sufficient: CjKeywordToken,
     redundant: CjKeywordToken,
@@ -105,6 +120,7 @@ private fun redundantRegister(
     )
 }
 
+/** 注册一个对称的弃用修饰符组合。 */
 private fun deprecatedRegister(
     first: CjKeywordToken,
     second: CjKeywordToken,

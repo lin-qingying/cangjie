@@ -32,11 +32,23 @@ import org.cangnova.cangjie.name.Name
  * 继续走统一 call-resolution 管线。
  */
 internal class CfirTypeVariableReceiverMemberScopeTowerLevel(
+    /**
+     * 构造成员作用域所需的 body resolve 组件集合。
+     */
     private val components: BodyResolveComponents,
+    /**
+     * 当前调用的 dispatch receiver，类型必须是 fresh type variable 才会启用该 tower level。
+     */
     private val dispatchReceiver: ReceiverValue,
 ) : CfirTowerLevel {
+    /**
+     * 按成员名缓存候选接收者类型作用域的 provider。
+     */
     private val memberScopeProvider = CfirTypeVariableReceiverMemberScopeProvider(components)
 
+    /**
+     * 处理可调用成员查找。
+     */
     override fun processCallablesByName(info: CallInfo, processor: TowerLevelProcessor): ProcessResult {
         if (!dispatchReceiver.type.isFreshTypeVariable()) return ProcessResult.SCOPE_EMPTY
         return processScopes(info.name) { scope ->
@@ -48,6 +60,9 @@ internal class CfirTypeVariableReceiverMemberScopeTowerLevel(
         }
     }
 
+    /**
+     * 处理函数成员查找。
+     */
     override fun processFunctionsByName(info: CallInfo, processor: TowerLevelProcessor): ProcessResult {
         if (!dispatchReceiver.type.isFreshTypeVariable()) return ProcessResult.SCOPE_EMPTY
         return processScopes(info.name) { scope ->
@@ -59,6 +74,9 @@ internal class CfirTypeVariableReceiverMemberScopeTowerLevel(
         }
     }
 
+    /**
+     * 依次在所有可能包含目标成员名的接收者作用域中执行处理。
+     */
     private inline fun processScopes(
         name: Name,
         processScope: (CfirTypeScope) -> ProcessResult,
@@ -70,18 +88,36 @@ internal class CfirTypeVariableReceiverMemberScopeTowerLevel(
         return result
     }
 
+    /**
+     * 判断类型是否为尚未绑定原始类型参数的 fresh type variable。
+     */
     private fun ConeCangJieType.isFreshTypeVariable(): Boolean =
         this is ConeTypeVariableType && typeConstructor.originalTypeParameter == null
 }
 
+/**
+ * 为 fresh type variable 接收者按成员名收集可用的 use-site member scope。
+ */
 private class CfirTypeVariableReceiverMemberScopeProvider(
+    /**
+     * 访问符号 provider、session 和类型作用域构造依赖的组件集合。
+     */
     private val components: BodyResolveComponents,
 ) {
+    /**
+     * 成员名到候选类型作用域列表的缓存。
+     */
     private val scopesByName = hashMapOf<Name, List<CfirTypeScope>>()
 
+    /**
+     * 返回可能包含指定成员名的所有类型作用域。
+     */
     fun memberScopesForName(name: Name): List<CfirTypeScope> =
         scopesByName.getOrPut(name) { collectMemberScopesForName(name) }
 
+    /**
+     * 扫描顶层分类器索引，收集声明了指定成员名的 use-site member scope。
+     */
     private fun collectMemberScopesForName(name: Name): List<CfirTypeScope> {
         val packageNames = components.symbolProvider.symbolNamesProvider
             .getPackageNamesWithTopLevelClassifiers()
@@ -108,6 +144,9 @@ private class CfirTypeVariableReceiverMemberScopeProvider(
         return result
     }
 
+    /**
+     * 为类样符号创建带 use-site 替换的成员作用域。
+     */
     private fun createUseSiteMemberScope(classSymbol: CfirClassLikeSymbol<*>): CfirTypeScope? {
         if (!classSymbol.isBound) return null
         classSymbol.lazyResolveToPhase(CfirResolvePhase.TYPES)
@@ -130,6 +169,9 @@ private class CfirTypeVariableReceiverMemberScopeProvider(
         )
     }
 
+    /**
+     * 构造分类器声明自身对应的 owner type。
+     */
     private fun CfirClassLikeSymbol<*>.declarationSelfType(): ConeLookupTagBasedType {
         val typeArguments: List<ConeTypeProjection> = cfir.typeParameters.map { typeParameter ->
             ConeTypeParameterTypeImpl(typeParameter.symbol.toLookupTag())

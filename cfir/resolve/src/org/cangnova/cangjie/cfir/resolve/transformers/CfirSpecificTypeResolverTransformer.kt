@@ -27,16 +27,37 @@ import org.cangnova.cangjie.name.FqName
  * 自身不做类型求解，只委托 `session.typeResolver.resolveType(...)`。
  */
 class CfirSpecificTypeResolverTransformer(
+    /**
+     * 当前类型解析所属的 CFIR 会话。
+     */
     override val session: CfirSession,
+    /**
+     * 错误类型是否仍写入 resolved type ref 的 coneType。
+     */
     private val errorTypeAsResolved: Boolean = true,
+    /**
+     * 类型解析时是否解析废弃信息。
+     */
     private val resolveDeprecations: Boolean = true,
+    /**
+     * supertype 解析时使用的超类型供应器。
+     */
     private val supertypeSupplier: SupertypeSupplier = SupertypeSupplier.Default,
+    /**
+     * 是否展开类型别名。
+     */
     private val expandTypeAliases: Boolean = true,
 ) : CfirAbstractTreeTransformer<TypeResolutionConfiguration>(phase = CfirResolvePhase.SUPER_TYPES) {
 
+    /**
+     * 当前类型解析是否允许 bare type。
+     */
     @set:Suppress("MemberVisibilityCanBePrivate")
     var areBareTypesAllowed: Boolean = false
 
+    /**
+     * 在指定作用域内临时切换 bare type 允许状态。
+     */
     inline fun <R> withBareTypes(allowed: Boolean = true, block: () -> R): R {
         val oldValue = areBareTypesAllowed
         areBareTypesAllowed = allowed
@@ -47,9 +68,15 @@ class CfirSpecificTypeResolverTransformer(
         }
     }
 
+    /**
+     * 当前类型引用是否位于 `is` 操作符操作数位置。
+     */
     @set:Suppress("MemberVisibilityCanBePrivate")
     var isOperandOfIsOperator: Boolean = false
 
+    /**
+     * 在指定作用域内按 `is` 操作符操作数规则解析类型。
+     */
     inline fun <R> withIsOperandOfIsOperator(block: () -> R): R {
         val oldValue = isOperandOfIsOperator
         isOperandOfIsOperator = true
@@ -60,6 +87,9 @@ class CfirSpecificTypeResolverTransformer(
         }
     }
 
+    /**
+     * 解析普通类型引用并替换为 resolved/error 类型引用。
+     */
     override fun transformTypeRef(typeRef: CfirTypeRef, data: TypeResolutionConfiguration): CfirTypeRef {
         withBareTypes(allowed = false) {
             typeRef.transformChildren(this, data)
@@ -77,6 +107,9 @@ class CfirSpecificTypeResolverTransformer(
         return transformType(typeRef, resolution.type, resolution.diagnostic, data)
     }
 
+    /**
+     * 根据类型解析结果构造最终类型引用节点。
+     */
     private fun transformType(
         typeRef: CfirTypeRef,
         resolvedType: ConeCangJieType,
@@ -104,6 +137,9 @@ class CfirSpecificTypeResolverTransformer(
         }
     }
 
+    /**
+     * 构造错误类型引用，并尽量保留部分可解析前缀。
+     */
     private fun buildErrorType(
         typeRef: CfirTypeRef,
         resolvedType: ConeCangJieType,
@@ -217,19 +253,31 @@ class CfirSpecificTypeResolverTransformer(
         return 0
     }
 
+    /**
+     * 已解析类型引用不再重复解析。
+     */
     override fun transformResolvedTypeRef(resolvedTypeRef: CfirResolvedTypeRef, data: TypeResolutionConfiguration): CfirTypeRef {
         return resolvedTypeRef
     }
 
+    /**
+     * 错误类型引用只递归修正其中的部分解析类型引用。
+     */
     override fun transformErrorTypeRef(errorTypeRef: CfirErrorTypeRef, data: TypeResolutionConfiguration): CfirTypeRef {
         errorTypeRef.transformPartiallyResolvedTypeRef(this, data)
         return errorTypeRef
     }
 
+    /**
+     * 隐式类型引用由 body resolve 或推断阶段处理，类型解析阶段直接保留。
+     */
     override fun transformImplicitTypeRef(implicitTypeRef: CfirImplicitTypeRef, data: TypeResolutionConfiguration): CfirTypeRef {
         return implicitTypeRef
     }
 
+    /**
+     * Option 类型引用按普通类型引用路径解析。
+     */
     override fun transformOptionTypeRef(optionTypeRef: CfirOptionTypeRef, data: TypeResolutionConfiguration): CfirTypeRef {
         return transformTypeRef(optionTypeRef, data)
     }

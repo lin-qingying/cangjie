@@ -35,11 +35,18 @@ import org.cangnova.cangjie.cfir.analysis.checkers.expression.match.exhaustive.E
 import org.cangnova.cangjie.cfir.declarations.expandedPatternEnumType
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 
+/** 使用位向量快速判断小型 enum 构造器覆盖情况的穷尽性 checker。 */
 class SmallEnumBitVectorChecker : ExhaustivenessChecker {
+    /** 当前 checker 在穷尽性结果中使用的来源标记。 */
     override val source: CheckSource = CheckSource.ENUM_BITVECTOR
+
+    /** 小型 enum 位向量 checker 的调度优先级。 */
     override val priority: Int = 20
+
+    /** 位向量实现可直接表达的最大 enum 构造器数量。 */
     private val maxVariants = 64
 
+    /** 仅对构造器数量位于位向量容量内的 enum 类型启用。 */
     override fun isApplicable(
         type: ConeCangJieType,
         patterns: List<CfirMatchPattern>,
@@ -50,6 +57,7 @@ class SmallEnumBitVectorChecker : ExhaustivenessChecker {
         return variantCount in 1..maxVariants
     }
 
+    /** 将已匹配的 enum 构造器映射为位掩码，并据此生成缺失构造器模式。 */
     override fun check(
         matrix: CfirMatrix,
         type: ConeCangJieType,
@@ -95,7 +103,9 @@ class SmallEnumBitVectorChecker : ExhaustivenessChecker {
         }
     }
 
+    /** 小型 enum 位向量 checker 的共享单例容器。 */
     companion object {
+        /** 默认小型 enum 位向量 checker 单例。 */
         val INSTANCE = SmallEnumBitVectorChecker()
     }
 }

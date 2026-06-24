@@ -50,7 +50,21 @@ internal fun CfirClassLikeDeclaration.classLikeNameDiagnosticSource(
             else -> PsiTreeUtil.getParentOfType(psi, CjPsiClassLikeDeclaration::class.java, false)
                 ?: PsiTreeUtil.findChildOfType(psi, CjPsiClassLikeDeclaration::class.java)
         }
-        classLikePsi?.nameIdentifier?.toCjPsiSourceElement()?.let { return it }
+        val nameIdentifier = classLikePsi?.nameIdentifier
+        if (nameIdentifier != null) {
+            if (includeTypeParameters) {
+                val typeParameterList = (classLikePsi as? CjTypeParameterListOwner)?.typeParameterList
+                if (typeParameterList != null &&
+                    typeParameterList.textRange.endOffset > nameIdentifier.textRange.endOffset
+                ) {
+                    return CjOffsetsOnlySourceElement(
+                        startOffset = nameIdentifier.textRange.startOffset,
+                        endOffset = typeParameterList.textRange.endOffset,
+                    )
+                }
+            }
+            return nameIdentifier.toCjPsiSourceElement()
+        }
     }
     return (source as? CjSourceElement)?.findClassLikeNameSource(symbol.name, includeTypeParameters) ?: source
 }
@@ -68,6 +82,47 @@ internal fun CfirClassLikeDeclaration.classLikeDeclarationHeaderDiagnosticSource
         startOffset = declarationSource.startOffset,
         endOffset = nameSource.endOffset,
     )
+}
+
+/**
+ * 继承环是声明级错误，IDE 侧按项目范围策略标到声明头：
+ * class/interface/struct/enum 从关键字到名称，extend 从关键字到接收者类型。
+ */
+internal fun CjSourceElement.inheritanceCycleDiagnosticSource(): AbstractCjSourceElement {
+    psi?.let { psi ->
+        val extendPsi = when (psi) {
+            is CjExtend -> psi
+            else -> PsiTreeUtil.getParentOfType(psi, CjExtend::class.java, false)
+                ?: PsiTreeUtil.findChildOfType(psi, CjExtend::class.java)
+        }
+        if (extendPsi != null) {
+            val keyword = extendPsi.declarationKeyword
+            val endElement = extendPsi.receiverTypeReceiver ?: extendPsi.nameIdentifier
+            if (endElement != null) {
+                return CjOffsetsOnlySourceElement(
+                    startOffset = keyword?.textRange?.startOffset ?: startOffset,
+                    endOffset = endElement.textRange.endOffset,
+                )
+            }
+        }
+
+        val classLikePsi = when (psi) {
+            is CjPsiClassLikeDeclaration -> psi
+            else -> PsiTreeUtil.getParentOfType(psi, CjPsiClassLikeDeclaration::class.java, false)
+                ?: PsiTreeUtil.findChildOfType(psi, CjPsiClassLikeDeclaration::class.java)
+        }
+        val endElement = (classLikePsi as? CjTypeParameterListOwner)?.typeParameterList
+            ?: classLikePsi?.nameIdentifier
+        if (endElement != null) {
+            val keyword = (classLikePsi as? CjTypeStatement)?.declarationKeyword
+            return CjOffsetsOnlySourceElement(
+                startOffset = keyword?.textRange?.startOffset ?: startOffset,
+                endOffset = endElement.textRange.endOffset,
+            )
+        }
+    }
+
+    return findInheritanceCycleHeaderSource() ?: this
 }
 
 /**
@@ -106,6 +161,12 @@ internal fun AbstractCjSourceElement.firstCharacterDiagnosticSource(): AbstractC
         endOffset = (startOffset + 1).coerceAtMost(endOffset),
     )
 
+/**
+ * 取得命名函数名称的诊断 source。
+ *
+ * PSI 可用时直接使用函数名或 operator name；light-tree source 则通过 token 扫描定位
+ * `func` 关键字后的函数名，失败时回退到声明 source。
+ */
 internal fun CfirNamedFunction.functionNameDiagnosticSource(): AbstractCjSourceElement? =
     source?.psi?.let { psi ->
         val functionPsi = when (psi) {
@@ -120,6 +181,12 @@ internal fun CfirNamedFunction.functionNameDiagnosticSource(): AbstractCjSourceE
         ?: (source as? CjSourceElement)?.findFunctionNameSource(name)
         ?: source
 
+/**
+ * 取得构造器名称或 `init` 关键字的诊断 source。
+ *
+ * includeConstKeyword 为 true 时会把前置 `const` 关键字一并纳入范围，用于需要标记
+ * `const init` 整体的构造器诊断。
+ */
 internal fun CfirConstructor.constructorNameDiagnosticSource(
     includeConstKeyword: Boolean = false,
 ): AbstractCjSourceElement? =
@@ -148,6 +215,9 @@ internal fun CfirConstructor.constructorNameDiagnosticSource(
         ?: (source as? CjSourceElement)?.findConstructorNameSource(includeConstKeyword)
         ?: source
 
+/**
+ * 取得字段变量名称的诊断 source。
+ */
 internal fun CfirFieldVariable.fieldVariableNameDiagnosticSource(): AbstractCjSourceElement? =
     source?.psi?.let { psi ->
         val fieldPsi = when (psi) {
@@ -160,6 +230,9 @@ internal fun CfirFieldVariable.fieldVariableNameDiagnosticSource(): AbstractCjSo
         ?: (source as? CjSourceElement)?.findFieldVariableNameSource(name)
         ?: source
 
+/**
+ * 取得属性名称的诊断 source。
+ */
 internal fun CfirProperty.propertyNameDiagnosticSource(): AbstractCjSourceElement? =
     source?.psi?.let { psi ->
         val propertyPsi = when (psi) {
@@ -172,6 +245,11 @@ internal fun CfirProperty.propertyNameDiagnosticSource(): AbstractCjSourceElemen
         ?: (source as? CjSourceElement)?.findPropertyNameSource(name)
         ?: source
 
+/**
+ * 取得 finalizer 名称区域的诊断 source。
+ *
+ * finalizer 在语法上由 `~init` 表示，因此优先返回从 `~` 到 `init` 的连续范围。
+ */
 internal fun CfirFinalizer.finalizerNameDiagnosticSource(): AbstractCjSourceElement? =
     source?.psi?.let { psi ->
         val finalizerPsi = when (psi) {
@@ -193,6 +271,11 @@ internal fun CfirFinalizer.finalizerNameDiagnosticSource(): AbstractCjSourceElem
         ?: (source as? CjSourceElement)?.findFinalizerNameSource()
         ?: source
 
+/**
+ * 在 light-tree source 中查找 class-like 声明名称。
+ *
+ * includeTypeParameters 为 true 时返回名称到类型参数列表末尾的范围；否则只返回名称 token。
+ */
 private fun CjSourceElement.findClassLikeNameSource(
     name: Name,
     includeTypeParameters: Boolean,
@@ -227,6 +310,36 @@ private fun CjSourceElement.findClassLikeNameSource(
     return null
 }
 
+/**
+ * 在 light-tree source 中查找继承环诊断使用的声明头范围。
+ *
+ * class-like 声明使用关键字到名称/类型参数，extend 声明使用 extend 关键字到接收者类型。
+ */
+private fun CjSourceElement.findInheritanceCycleHeaderSource(): AbstractCjSourceElement? {
+    val tokens = collectLeafTokens()
+
+    for ((index, token) in tokens.withIndex()) {
+        if (token.tokenType !in inheritanceCycleDeclarationKeywords) continue
+        val endToken = tokens.asSequence()
+            .drop(index + 1)
+            .takeWhile { it.tokenType != CjTokens.LTCOLON && it.tokenType != CjTokens.LBRACE }
+            .filter { treeStructure.toString(it).toString().isNotBlank() }
+            .lastOrNull()
+            ?: token
+        return CjOffsetsOnlySourceElement(
+            startOffset = treeStructure.getStartOffset(token),
+            endOffset = treeStructure.getEndOffset(endToken),
+        )
+    }
+
+    return null
+}
+
+/**
+ * 在 light-tree source 中查找 typealias 声明头范围。
+ *
+ * 范围从 `type` 关键字开始，到别名名称或类型参数列表结束，排除右侧展开类型。
+ */
 private fun CjSourceElement.findTypeAliasHeaderSource(name: Name): AbstractCjSourceElement? {
     val tokens = collectLeafTokens()
 
@@ -253,6 +366,9 @@ private fun CjSourceElement.findTypeAliasHeaderSource(name: Name): AbstractCjSou
     return null
 }
 
+/**
+ * 在 light-tree source 中查找函数名称 token。
+ */
 private fun CjSourceElement.findFunctionNameSource(name: Name): AbstractCjSourceElement? {
     val tokens = collectSourceNodes()
 
@@ -275,6 +391,9 @@ private fun CjSourceElement.findFunctionNameSource(name: Name): AbstractCjSource
     return null
 }
 
+/**
+ * 在 light-tree source 中查找字段变量名称 token。
+ */
 private fun CjSourceElement.findFieldVariableNameSource(name: Name): AbstractCjSourceElement? {
     val tokens = collectSourceNodes()
 
@@ -297,6 +416,9 @@ private fun CjSourceElement.findFieldVariableNameSource(name: Name): AbstractCjS
     return null
 }
 
+/**
+ * 在 light-tree source 中查找属性名称 token。
+ */
 private fun CjSourceElement.findPropertyNameSource(name: Name): AbstractCjSourceElement? {
     val tokens = collectSourceNodes()
 
@@ -319,6 +441,12 @@ private fun CjSourceElement.findPropertyNameSource(name: Name): AbstractCjSource
     return null
 }
 
+/**
+ * 在 light-tree source 中查找构造器名称区域。
+ *
+ * 普通构造器优先返回 `init` 关键字；主构造器没有 init token 时返回声明头中的最后一个
+ * 标识符作为构造器名称位置。
+ */
 private fun CjSourceElement.findConstructorNameSource(
     includeConstKeyword: Boolean,
 ): AbstractCjSourceElement? {
@@ -354,6 +482,9 @@ private fun CjSourceElement.findConstructorNameSource(
     return null
 }
 
+/**
+ * 在 light-tree source 中查找 finalizer 的 `~init` 范围。
+ */
 private fun CjSourceElement.findFinalizerNameSource(): AbstractCjSourceElement? {
     val tokens = collectLeafTokens()
 
@@ -372,27 +503,45 @@ private fun CjSourceElement.findFinalizerNameSource(): AbstractCjSourceElement? 
     return null
 }
 
+/**
+ * 函数名称可接受的 light-tree token 类型集合。
+ */
 private val functionNameTokenTypes = setOf(
     CjTokens.IDENTIFIER,
     CjNodeTypes.OPERATION_NAME,
 )
 
+/**
+ * 字段变量声明关键字 token 集合。
+ */
 private val fieldVariableDeclarationKeywords = setOf(
     CjTokens.LET_KEYWORD,
     CjTokens.CONST_KEYWORD,
     CjTokens.VAR_KEYWORD,
 )
 
+/**
+ * 字段变量名称可接受的 light-tree token 类型集合。
+ */
 private val fieldVariableNameTokenTypes = setOf(
     CjTokens.IDENTIFIER,
     CjTokens.FIELD_IDENTIFIER,
 )
 
+/**
+ * 属性名称可接受的 light-tree token 类型集合。
+ */
 private val propertyNameTokenTypes = setOf(
     CjTokens.IDENTIFIER,
     CjTokens.FIELD_IDENTIFIER,
 )
 
+/**
+ * 收集 source 对应 light-tree 子树中的所有节点。
+ *
+ * 与 leaf-token 收集不同，该方法保留中间语法节点，用于函数/属性等可能由复合节点
+ * 表示名称的诊断定位。
+ */
 private fun CjSourceElement.collectSourceNodes(): List<LighterASTNode> {
     val nodes = mutableListOf<LighterASTNode>()
 
@@ -405,6 +554,9 @@ private fun CjSourceElement.collectSourceNodes(): List<LighterASTNode> {
     return nodes
 }
 
+/**
+ * 收集 source 对应 light-tree 子树中的叶子 token。
+ */
 private fun CjSourceElement.collectLeafTokens(): List<LighterASTNode> {
     val tokens = mutableListOf<LighterASTNode>()
 
@@ -421,6 +573,9 @@ private fun CjSourceElement.collectLeafTokens(): List<LighterASTNode> {
     return tokens
 }
 
+/**
+ * class-like 声明关键字 token 集合。
+ */
 private val classLikeDeclarationKeywords = setOf(
     CjTokens.CLASS_KEYWORD,
     CjTokens.STRUCT_KEYWORD,
@@ -428,6 +583,14 @@ private val classLikeDeclarationKeywords = setOf(
     CjTokens.ENUM_KEYWORD,
 )
 
+/**
+ * 继承环诊断允许作为声明头起点的关键字 token 集合。
+ */
+private val inheritanceCycleDeclarationKeywords = classLikeDeclarationKeywords + CjTokens.EXTEND_KEYWORD
+
+/**
+ * 读取 flyweight light-tree 节点的非空子节点列表。
+ */
 private fun FlyweightCapableTreeStructure<LighterASTNode>.children(
     node: LighterASTNode,
 ): List<LighterASTNode> {

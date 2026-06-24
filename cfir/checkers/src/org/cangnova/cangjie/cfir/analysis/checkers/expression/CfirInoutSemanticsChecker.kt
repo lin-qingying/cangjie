@@ -36,6 +36,11 @@ import org.cangnova.cangjie.source.AbstractCjSourceElement
  * `inout` 只能用于 foreign/CFunc 调用，实参必须是由 `var` 定义的可变左值。
  */
 object CfirInoutSemanticsChecker : CfirFunctionCallChecker() {
+    /**
+     * 检查函数调用中的所有 `inout` 实参。
+     *
+     * 入口先确认被调函数是否为 foreign/CFunc，再逐个检查实参左值可变性和 C 类型兼容性。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirFunctionCall) {
         val inoutArguments = expression.argumentList.arguments.mapNotNull { argument ->
@@ -62,6 +67,11 @@ object CfirInoutSemanticsChecker : CfirFunctionCallChecker() {
         }
     }
 
+    /**
+     * 检查 `inout` 实参是否是可解析的变量访问。
+     *
+     * 非 qualified access 或无法解析为变量的表达式都不满足 inout 的可变左值要求。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkInoutTarget(
         argument: CfirExpression,
@@ -86,6 +96,11 @@ object CfirInoutSemanticsChecker : CfirFunctionCallChecker() {
         checkVariableAccess(access, variable, access.source ?: argumentSource)
     }
 
+    /**
+     * 递归检查接收者链上的变量访问。
+     *
+     * `inout a.b.c` 需要保证链上的每一层变量访问都不会穿过不可变变量。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkReceiverChain(access: CfirQualifiedAccessExpression) {
         val receiver = access.explicitReceiver as? CfirQualifiedAccessExpression ?: return
@@ -94,6 +109,9 @@ object CfirInoutSemanticsChecker : CfirFunctionCallChecker() {
         checkVariableAccess(receiver, variable, receiver.source)
     }
 
+    /**
+     * 检查变量访问是否来自 `var` 声明。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkVariableAccess(
         access: CfirQualifiedAccessExpression,
@@ -108,6 +126,11 @@ object CfirInoutSemanticsChecker : CfirFunctionCallChecker() {
         }
     }
 
+    /**
+     * 检查 inout 实参类型是否满足 C 互操作修改约束。
+     *
+     * CString、非 C 类型和堆对象接收者分别对应不同官方诊断。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkInoutTypeConstraints(argument: CfirExpression) {
         val argType = argument.coneTypeOrNull ?: return
@@ -141,10 +164,16 @@ object CfirInoutSemanticsChecker : CfirFunctionCallChecker() {
         }
     }
 
+    /**
+     * 去掉 raw builder 为实参包裹的单表达式 block。
+     */
     private fun CfirExpression.unwrapArgument(): CfirExpression {
         return (this as? CfirBlock)?.statements?.singleOrNull() as? CfirExpression ?: this
     }
 
+    /**
+     * 从 qualified access 中解析变量声明。
+     */
     private fun CfirQualifiedAccessExpression.resolvedVariable(): CfirVariable? {
         val resolvedSymbol = when (val reference = calleeReference) {
             is CfirResolvedNamedReference -> reference.resolvedSymbol
@@ -154,6 +183,9 @@ object CfirInoutSemanticsChecker : CfirFunctionCallChecker() {
         return (resolvedSymbol as? CfirVariableSymbol<*>)?.takeIf { it.isBound }?.cfir
     }
 
+    /**
+     * 从函数调用引用中解析被调函数符号。
+     */
     private fun CfirFunctionCall.resolvedFunctionSymbol(): CfirFunctionSymbol<*>? {
         return when (val reference = calleeReference) {
             is CfirResolvedNamedReference -> reference.resolvedSymbol as? CfirFunctionSymbol<*>
@@ -162,6 +194,9 @@ object CfirInoutSemanticsChecker : CfirFunctionCallChecker() {
         }
     }
 
+    /**
+     * 判断类型是否可作为 inout 的 C 兼容类型。
+     */
     private fun ConeCangJieType.isCTypeCompatible(): Boolean {
         return this is ConePrimitiveType ||
             this is ConeStructType ||
@@ -169,6 +204,9 @@ object CfirInoutSemanticsChecker : CfirFunctionCallChecker() {
             this is ConePointerType
     }
 
+    /**
+     * 提取 class-like、struct 或 enum 类型的 ClassId。
+     */
     private fun ConeCangJieType.classIdOrNull(): ClassId? {
         return when (this) {
             is ConeClassLikeType -> classId

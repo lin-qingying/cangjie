@@ -14,40 +14,46 @@ import org.cangnova.cangjie.source.CjFakeSourceElementKind
 import org.cangnova.cangjie.source.fakeElement
 
 /**
- * A utility class that, depending on the implementation, calculates the return type of callable copies,
- * (substitution/intersection overrides, delegated members, and enhanced Java declarations) and returns it.
+ * callable copy 返回类型计算器。
  *
- * See [CfirDeclarationAttributes.deferredCallableCopyReturnType].
+ * 不同实现可用于 substitution override、intersection override、委托成员和增强声明等场景，
+ * 返回值通过 [CfirDeclarationAttributes.deferredCallableCopyReturnType] 与声明属性关联。
  */
 abstract class CallableCopyTypeCalculator {
     /**
-     * Returns the [CfirTypeRef] for [CfirCallableDeclaration.returnTypeRef] of the [declaration].
+     * 计算 [declaration] 的返回类型 type ref。
      *
-     * Depending on the implementation, this call might invoke a deferred computation of the return type
-     * (see [CfirDeclarationAttributes.deferredCallableCopyReturnType]).
-     *
-     * A return value of `null` signifies that the calculation has failed or that no deferred computation was stored
-     * and the return type could not be resolved ordinarily.
+     * 实现可以触发 [CfirDeclarationAttributes.deferredCallableCopyReturnType] 中保存的延迟计算；
+     * 返回 `null` 表示计算失败，或没有可用的普通 resolved return type。
      */
     abstract fun computeReturnType(declaration: CfirCallableDeclaration): CfirTypeRef?
 
+    /**
+     * 计算 callable copy 返回类型；失败时返回 `null`。
+     */
     fun computeReturnTypeOrNull(declaration: CfirCallableDeclaration): ConeCangJieType? {
         return computeReturnType(declaration)?.coneTypeOrNull
     }
 
     /**
-     * Doesn't perform any calculation and returns [CfirCallableDeclaration.returnTypeRef].
+     * 不执行额外计算，直接返回 [CfirCallableDeclaration.returnTypeRef]。
      */
     object DoNothing : CallableCopyTypeCalculator() {
+        /**
+         * 返回声明当前保存的 return type ref。
+         */
         override fun computeReturnType(declaration: CfirCallableDeclaration): CfirTypeRef {
             return declaration.returnTypeRef
         }
     }
 
     /**
-     * If necessary, runs the computation saved in [CfirDeclarationAttributes.deferredCallableCopyReturnType] and returns a [CfirResolvedTypeRef].
+     * 在必要时执行 [CfirDeclarationAttributes.deferredCallableCopyReturnType] 中保存的延迟计算。
      */
     abstract class DeferredCallableCopyTypeCalculator : CallableCopyTypeCalculator() {
+        /**
+         * 计算并写回 callable copy 的 resolved return type ref。
+         */
         override fun computeReturnType(declaration: CfirCallableDeclaration): CfirResolvedTypeRef? {
             val callableCopyDeferredTypeCalculation = declaration.attributes.deferredCallableCopyReturnType
                 ?: return declaration.getResolvedTypeRef()
@@ -74,28 +80,37 @@ abstract class CallableCopyTypeCalculator {
             }
         }
 
+        /**
+         * 返回声明当前已解析的 return type ref。
+         */
         protected abstract fun CfirCallableDeclaration.getResolvedTypeRef(): CfirResolvedTypeRef?
     }
 
     /**
-     * Run deferred return types calculations and forces lazy resolution of overridden declarations.
+     * 执行延迟返回类型计算，并强制 lazy resolve 被覆盖声明。
      *
      * @see DeferredCallableCopyTypeCalculator
      * @see CfirDeclarationAttributes.deferredCallableCopyReturnType
      */
     object CalculateDeferredForceLazyResolution : DeferredCallableCopyTypeCalculator() {
+        /**
+         * 通过 symbol 强制取得 resolved return type ref。
+         */
         override fun CfirCallableDeclaration.getResolvedTypeRef(): CfirResolvedTypeRef? {
             return symbol.resolvedReturnTypeRef
         }
     }
 
     /**
-     * Run deferred return types calculations but doesn't force lazy resolution of overridden declarations.
+     * 执行延迟返回类型计算，但不强制 lazy resolve 被覆盖声明。
      *
      * @see DeferredCallableCopyTypeCalculator
      * @see CfirDeclarationAttributes.deferredCallableCopyReturnType
      */
     object CalculateDeferredWhenPossible : DeferredCallableCopyTypeCalculator() {
+        /**
+         * 仅在 return type ref 已解析时返回。
+         */
         override fun CfirCallableDeclaration.getResolvedTypeRef(): CfirResolvedTypeRef? {
             return returnTypeRef as? CfirResolvedTypeRef
         }
@@ -104,19 +119,26 @@ abstract class CallableCopyTypeCalculator {
 
 // ---------------------------------------------------------------------------------------------------------------------------------------
 
+/**
+ * 延迟 callable copy 返回类型属性 key。
+ */
 private object DeferredCallableCopyReturnTypeKey : CfirDeclarationDataKey()
 
+/**
+ * callable copy 返回类型的延迟计算属性。
+ */
 var CfirDeclarationAttributes.deferredCallableCopyReturnType: DeferredCallableCopyReturnType? by CfirDeclarationDataRegistry.attributesAccessor(
     DeferredCallableCopyReturnTypeKey
 )
 
+/**
+ * 延迟 callable copy 返回类型计算。
+ */
 abstract class DeferredCallableCopyReturnType {
     /**
-     * Performs a deferred computation some declaration's return type.
+     * 执行某个声明返回类型的延迟计算。
      *
-     * [calc] must be used for the return type calculation of overridden members which might recursively trigger the computation of
-     * deferred return types.
+     * 计算覆盖成员返回类型时必须通过 [calc]，以便递归触发其他延迟返回类型计算。
      */
     abstract fun computeReturnType(calc: CallableCopyTypeCalculator): ConeCangJieType?
 }
-

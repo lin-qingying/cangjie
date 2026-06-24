@@ -21,6 +21,7 @@ import org.cangnova.cangjie.cfir.session.importBindingStoreOrNull
  */
 internal class CfirImportResolveProcessor(
     @Suppress("unused")
+    /** IMPORTS 阶段使用的诊断报告器。 */
     private val diagnosticReporter: CfirDiagnosticReporter,
     session: CfirSession,
     scopeSession: ScopeSession,
@@ -43,8 +44,10 @@ internal typealias CfirImportsResolveProcessor = CfirImportResolveProcessor
 class CfirImportResolveTransformer(
     override val session: CfirSession,
     @Suppress("unused")
+    /** IMPORTS 阶段使用的诊断报告器。 */
     private val diagnosticReporter: CfirDiagnosticReporter,
 ) : CfirAbstractTreeTransformer<Nothing?>(CfirResolvePhase.IMPORTS) {
+    /** 对非声明元素继续递归转换；声明元素转交 [transformDeclaration] 控制阶段推进。 */
     override fun <E : CfirElement> transformElement(element: E, data: Nothing?): E {
         if (element is CfirDeclaration) {
             @Suppress("UNCHECKED_CAST")
@@ -53,6 +56,7 @@ class CfirImportResolveTransformer(
         return super.transformElement(element, data)
     }
 
+    /** 解析文件 import binding，并将声明推进到 IMPORTS 阶段。 */
     override fun transformDeclaration(declaration: CfirDeclaration, data: Nothing?): CfirDeclaration {
         if (declaration is CfirFile && declaration.resolvePhase >= CfirResolvePhase.IMPORTS) {
             recordImportBindingsIfNeeded(declaration)
