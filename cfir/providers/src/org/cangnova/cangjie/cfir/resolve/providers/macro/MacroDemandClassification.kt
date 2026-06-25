@@ -156,7 +156,13 @@ class MacroDemandClassification private constructor(
     val pre: PreMacroRawBuildResult,
     /** artifact preparation 前冻结的 demand snapshot。 */
     val preArtifactSnapshot: PreArtifactDemandSnapshot,
+    /**
+     * 默认隐式 macro import 包列表，参与 artifact 前后的宏名解析。
+     */
     private val defaultMacroImports: List<FqName>,
+    /**
+     * builtin macro、annotation 与 non-macro 注册表。
+     */
     private val builtinRegistries: MacroBuiltinRegistries,
 ) : CfirSessionComponent {
     /** artifact definitions 回填后的最终决策快照；null 表示尚未冻结。 */

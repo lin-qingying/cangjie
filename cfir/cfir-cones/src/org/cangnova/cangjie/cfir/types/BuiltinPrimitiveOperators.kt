@@ -12,9 +12,13 @@ import org.cangnova.cangjie.name.OperatorNameConventions
  * @property returnKind 运算结果 primitive 类型。
  */
 data class BuiltinPrimitiveOperatorSignature(
+    /** 运算符函数名。 */
     val name: Name,
+    /** 接收者 primitive 类型。 */
     val receiverKind: PrimitiveTypeKind,
+    /** 参数 primitive 类型列表；一元运算为空列表。 */
     val parameterKinds: List<PrimitiveTypeKind>,
+    /** 运算结果 primitive 类型。 */
     val returnKind: PrimitiveTypeKind,
 )
 
@@ -24,6 +28,7 @@ data class BuiltinPrimitiveOperatorSignature(
  * @property signature 命中的内建运算签名。
  */
 data class BuiltinPrimitiveOperatorMatch(
+    /** 命中的内建运算签名。 */
     val signature: BuiltinPrimitiveOperatorSignature,
 ) {
     /**

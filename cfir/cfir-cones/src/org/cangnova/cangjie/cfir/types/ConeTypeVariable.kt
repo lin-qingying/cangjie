@@ -40,7 +40,9 @@ open class ConeTypeVariable(name: String, originalTypeParameter: TypeParameterMa
  * @property attributes 类型变量引用携带的属性。
  */
 class ConeTypeVariableType(
+    /** 类型变量构造器身份。 */
     val typeConstructor: ConeTypeVariableTypeConstructor,
+    /** 类型变量引用携带的属性。 */
     override val attributes: ConeAttributes = ConeAttributes.Empty,
 ) : ConeSimpleCangJieType() {
     /**

@@ -31,6 +31,9 @@ sealed class CfirResolveState {
      */
     abstract val resolvePhase: CfirResolvePhase
 
+    /**
+     * 返回当前 resolve state 的调试文本。
+     */
     abstract override fun toString(): String
 }
 
@@ -40,6 +43,9 @@ sealed class CfirResolveState {
  * 表示：元素完全解析到 [resolvePhase]，当前没有任何线程在处理它。
  */
 class CfirResolvedToPhaseState private constructor(
+    /**
+     * 元素已经完全解析到的阶段。
+     */
     override val resolvePhase: CfirResolvePhase,
 ) : CfirResolveState() {
     /**
@@ -90,6 +96,9 @@ sealed class CfirInProcessOfResolvingToPhaseState : CfirResolveState() {
  * 直接返回当前不完整的结果，以避免死锁。
  */
 class CfirInProcessOfResolvingToPhaseStateWithoutBarrier private constructor(
+    /**
+     * 当前线程正在解析到的目标阶段。
+     */
     override val resolvingTo: CfirResolvePhase,
 ) : CfirInProcessOfResolvingToPhaseState() {
     /**
@@ -130,6 +139,9 @@ class CfirInProcessOfResolvingToPhaseStateWithoutBarrier private constructor(
  * 唤醒所有等待线程。
  */
 class CfirInProcessOfResolvingToPhaseStateWithBarrier(
+    /**
+     * 当前线程正在解析到的目标阶段。
+     */
     override val resolvingTo: CfirResolvePhase,
 ) : CfirInProcessOfResolvingToPhaseState() {
     /**
@@ -158,6 +170,9 @@ class CfirInProcessOfResolvingToPhaseStateWithBarrier(
  * 此状态通过 [waitingFor] 链记录这种依赖关系，用于检测和打破循环。
  */
 class CfirInProcessOfResolvingToJumpingPhaseState(
+    /**
+     * 当前 jumping phase 解析的目标阶段。
+     */
     override val resolvingTo: CfirResolvePhase,
 ) : CfirInProcessOfResolvingToPhaseState() {
     /**
@@ -254,4 +269,7 @@ val CfirElement.resolvePhaseOrNull: CfirResolvePhase?
         "lazy resolve system. Use public APIs where possible.",
     level = RequiresOptIn.Level.WARNING,
 )
+/**
+ * 标记允许直接访问 resolve state 的内部 API。
+ */
 annotation class ResolveStateAccess

@@ -12,9 +12,11 @@ object CjoConstants {
     /** .cjo 文件扩展名 */
     const val FILE_EXTENSION = ".cjo"
 
-    /** 当前支持的 .cjo 格式版本 */
+    /** 当前支持的 .cjo 格式主版本。 */
     const val VERSION_MAJOR: Int = 1
+    /** 当前支持的 .cjo 格式次版本。 */
     const val VERSION_MINOR: Int = 0
+    /** 当前支持的 .cjo 格式补丁版本。 */
     const val VERSION_PATCH: Int = 5
 
     /** 包名分隔符（仓颉用 '.' 分隔包路径） */

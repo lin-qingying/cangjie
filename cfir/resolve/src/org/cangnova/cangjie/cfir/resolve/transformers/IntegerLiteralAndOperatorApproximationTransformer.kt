@@ -18,7 +18,9 @@ import org.cangnova.cangjie.cfir.visitors.CfirTransformer
  * 与显式 receiver 场景，因此此处只归一化 ideal literal 结果类型。
  */
 class IntegerLiteralAndOperatorApproximationTransformer(
+    /** 当前 CFIR session。 */
     override val session: CfirSession,
+    /** 当前 scope session。 */
     override val scopeSession: ScopeSession,
 ) : CfirTransformer<ConeCangJieType?>(), SessionAndScopeSessionHolder {
     /** 默认不递归未知元素，保持该 transformer 只处理表达式节点。 */

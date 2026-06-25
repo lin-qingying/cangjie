@@ -12,7 +12,9 @@ import org.cangnova.cangjie.cfir.types.ConeCangJieType
  * 声明放在这里是为了让依赖边界对齐 Kotlin body-resolve 架构，而不是隐藏在 Candidate 的局部 stub 中。
  */
 class CfirSamResolver(
+    /** 当前 CFIR session。 */
     override val session: CfirSession,
+    /** 当前 scope session。 */
     override val scopeSession: ScopeSession,
 ) : SessionAndScopeSessionHolder {
     /** 单次 SAM 转换的源函数类型与目标 SAM 类型。 */

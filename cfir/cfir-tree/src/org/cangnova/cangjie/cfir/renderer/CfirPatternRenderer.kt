@@ -11,8 +11,17 @@ import org.cangnova.cangjie.cfir.render.ConeTypeRenderer
  * @property inlineExpressionRenderer 表达式单行渲染器。
  */
 open class CfirPatternRenderer(
+    /**
+     * 模式中类型部分使用的 cone 类型渲染器。
+     */
     protected val typeRenderer: ConeTypeRenderer,
+    /**
+     * 模式中构造器或 callable 引用使用的引用渲染器。
+     */
     protected val referenceRenderer: CfirReferenceRenderer,
+    /**
+     * 模式中常量表达式或表达式模式使用的单行表达式渲染器。
+     */
     protected val inlineExpressionRenderer: CfirInlineExpressionRenderer,
 ) {
     /**

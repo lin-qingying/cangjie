@@ -39,12 +39,33 @@ import org.cangnova.cangjie.name.Name
  * ClassId 的 built-in target 也能进入和普通类型相同的成员查询流程。
  */
 class CfirExtendMemberScope(
+    /**
+     * 当前 scope 查询的 extend 目标 key，可以是 class-like 或 non-class built-in 类型。
+     */
     private val targetKey: CfirExtendTargetKey,
+    /**
+     * 提供 extend 索引、可见性和包归属信息的 provider。
+     */
     private val extendProvider: CfirExtendProvider,
+    /**
+     * 当前 use-site session。
+     */
     private val session: CfirSession,
+    /**
+     * 成员查找时的实际 receiver 类型。
+     */
     private val receiverType: ConeCangJieType,
+    /**
+     * 是否允许裸泛型静态 qualifier 暂缓 extend 泛型适用性判断。
+     */
     private val allowBareGenericStaticQualifierExtends: Boolean = false,
+    /**
+     * 构造 extend 体内成员 scope 时需要排除的当前 extend 声明。
+     */
     private val excludingExtend: CfirExtend? = null,
+    /**
+     * 当前 use-site 包名，用于 private extend 成员导出过滤。
+     */
     private val useSitePackage: FqName? = CfirAccessibilityFileScope.currentPackageFqName(),
 ) : CfirTypeScope() {
 
@@ -130,9 +151,21 @@ class CfirExtendMemberScope(
      * @property variables 字段变量成员索引。
      */
     private class MemberIndex(
+        /**
+         * extend classifier 成员索引。
+         */
         val classifiers: Map<Name, List<CfirClassLikeSymbol<*>>>,
+        /**
+         * extend 函数成员索引。
+         */
         val functions: Map<Name, List<CfirNamedFunctionSymbol>>,
+        /**
+         * extend 属性成员索引。
+         */
         val properties: Map<Name, List<CfirPropertySymbol>>,
+        /**
+         * extend 字段变量成员索引。
+         */
         val variables: Map<Name, List<CfirVariableSymbol<*>>>,
     )
 
@@ -293,7 +326,13 @@ class CfirExtendMemberScope(
      * @property concreteReceiverType 用于匹配该 extend 的具体 receiver 类型。
      */
     private data class ExtendLookupCandidate(
+        /**
+         * 当前查询命中的 extend 声明。
+         */
         val extend: CfirExtend,
+        /**
+         * 用于匹配该 extend 的具体 receiver 类型。
+         */
         val concreteReceiverType: ConeCangJieType,
     )
 }

@@ -41,6 +41,7 @@ internal class CfirImplicitTypesResolveProcessor(
     )
 
     @Suppress("UNCHECKED_CAST")
+    /** IMPLICIT_TYPES 阶段暴露给通用 phase processor 的 transformer。 */
     override val transformer get() = implicitTypesTransformer as org.cangnova.cangjie.cfir.visitors.CfirTransformer<Nothing?>
 
     /** 以 context-independent 模式处理文件的隐式类型。 */
@@ -69,6 +70,7 @@ internal class CfirBodyResolveProcessor(
     )
 
     @Suppress("UNCHECKED_CAST")
+    /** BODY_RESOLVE 阶段暴露给通用 phase processor 的 transformer。 */
     override val transformer get() = bodyResolveTransformer as org.cangnova.cangjie.cfir.visitors.CfirTransformer<Nothing?>
 
     /** 以 context-independent 模式处理文件 body。 */

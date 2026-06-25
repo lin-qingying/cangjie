@@ -81,17 +81,53 @@ enum class CfirClassMemberScopeKind {
  * 该 scope 统一处理声明成员、extend 成员、父类型成员、泛型 owner 替换和直接覆盖查询。
  */
 class CfirClassUseSiteMemberScope private constructor(
+    /**
+     * 当前成员查找发生的 use-site session。
+     */
     private val session: CfirSession,
+    /**
+     * 被查询成员的 class-like symbol。
+     */
     private val classSymbol: CfirClassLikeSymbol<*>,
+    /**
+     * 用于解析父类型与关联 class-like symbol 的 symbol provider。
+     */
     private val symbolProvider: CfirSymbolProvider,
+    /**
+     * 提供当前类型可见 extend 成员的 provider。
+     */
     private val extendProvider: CfirExtendProvider? = null,
+    /**
+     * 提供声明侧直接父类型的 provider。
+     */
     private val directSupertypeProvider: CfirDirectSupertypeProvider? = null,
+    /**
+     * 当前 scope 所代表 owner 的具体类型，泛型 owner 替换从这里提取实参。
+     */
     private val ownerType: ConeCangJieType? = declarationSelfType(classSymbol),
+    /**
+     * 调用点 dispatch receiver 类型，父 scope substitution override 需要保留原始 receiver。
+     */
     private val dispatchReceiverType: ConeCangJieType? = ownerType,
+    /**
+     * 当前成员查找模式，决定是否纳入 extend 成员以及父类型是否使用 use-site 语义。
+     */
     private val scopeKind: CfirClassMemberScopeKind = CfirClassMemberScopeKind.USE_SITE,
+    /**
+     * 是否允许裸泛型静态 qualifier 暂缓 extend 泛型适用性判断。
+     */
     private val allowBareGenericStaticQualifierExtends: Boolean = false,
+    /**
+     * 在 extend 声明体内构造 scope 时需要排除的当前 extend。
+     */
     private val excludingExtend: CfirExtend? = null,
+    /**
+     * 当前 use-site 文件包名，用于 private/protected extend 成员可见性。
+     */
     private val useSitePackage: FqName? = CfirAccessibilityFileScope.currentPackageFqName(),
+    /**
+     * 当前父类型展开路径，用于阻断继承图中的递归 class id。
+     */
     private val supertypePath: CfirSupertypePath = CfirSupertypePath.root(classSymbol.classId),
 ) : CfirTypeScope() {
     /**
@@ -782,7 +818,13 @@ class CfirClassUseSiteMemberScope private constructor(
  * 避免递归层级较深时反复复制完整 `Set<ClassId>` 导致 O(n^2) 内存增长。
  */
 private class CfirSupertypePath private constructor(
+    /**
+     * 当前路径节点代表的 class id。
+     */
     private val classId: ClassId,
+    /**
+     * 父路径节点；根路径为 `null`。
+     */
     private val parent: CfirSupertypePath?,
 ) {
     /**
@@ -820,7 +862,13 @@ private class CfirSupertypePath private constructor(
  * @property scope 该候选来自的类型 scope。
  */
 private data class MemberWithBaseScope<S : CfirCallableSymbol<*>>(
+    /**
+     * 候选 callable symbol。
+     */
     val symbol: S,
+    /**
+     * 该候选来自的类型 scope。
+     */
     val scope: CfirTypeScope,
 )
 
@@ -865,6 +913,9 @@ private fun <S : CfirCallableSymbol<*>> Collection<MemberWithBaseScope<S>>.filte
     }
 }
 
+/**
+ * 通过 direct-overridden 链判断 [member] 是否覆盖目标 [target]。
+ */
 private fun <S : CfirCallableSymbol<*>> overrides(
     member: MemberWithBaseScope<S>,
     target: S,

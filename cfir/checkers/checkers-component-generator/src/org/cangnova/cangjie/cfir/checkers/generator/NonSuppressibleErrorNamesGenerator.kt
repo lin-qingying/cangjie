@@ -12,6 +12,9 @@ import org.cangnova.cangjie.generators.util.printCopyright
 import org.cangnova.cangjie.generators.util.printGeneratedMessage
 import java.io.File
 
+/**
+ * 根据诊断列表生成不可 suppress 的错误名称集合文件。
+ */
 fun generateNonSuppressibleErrorNamesFile(generationPath: File, packageName: String) {
     getGenerationPath(generationPath, packageName).resolve("CfirNonSuppressibleErrorNames.kt")
         .writeToFileUsingSmartPrinterIfFileContentChanged {
@@ -33,5 +36,4 @@ fun generateNonSuppressibleErrorNamesFile(generationPath: File, packageName: Str
             println(")")
         }
 }
-
 

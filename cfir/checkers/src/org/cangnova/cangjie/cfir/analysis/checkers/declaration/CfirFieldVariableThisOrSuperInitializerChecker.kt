@@ -62,6 +62,9 @@ import org.cangnova.cangjie.cfir.visitors.CfirDefaultVisitorVoid
  * 这样的声明检查入口统一处理；本 checker 因此挂在 `CfirFieldVariableChecker`。
  */
 object CfirFieldVariableThisOrSuperInitializerChecker : CfirFieldVariableChecker() {
+    /**
+     * 检查字段初始化器中的显式 this/super 引用。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirFieldVariable) {
         val initializer = declaration.initializer ?: return
@@ -77,6 +80,9 @@ object CfirFieldVariableThisOrSuperInitializerChecker : CfirFieldVariableChecker
  * 普通函数默认参数不属于该规则，保持由普通名称解析和类型检查处理。
  */
 object CfirConstructorParameterThisOrSuperDefaultValueChecker : CfirValueParameterChecker() {
+    /**
+     * 检查构造器参数默认值中的构造前成员访问。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirValueParameter) {
         val constructor = context.closestFunctionLikeDeclaration() as? CfirConstructor ?: return
@@ -98,23 +104,47 @@ object CfirConstructorParameterThisOrSuperDefaultValueChecker : CfirValueParamet
  * 对象完成初始化前，不能读取当前对象或父对象的实例成员；`super(...)` 只禁止父类实例成员。
  */
 internal enum class ConstructorMemberAccessPlace(
+    /**
+     * 当前场景是否需要报告 `this` 相关访问。
+     */
     val reportThis: Boolean,
+
+    /**
+     * 诊断消息中展示的构造器求值位置描述。
+     */
     val diagnosticContext: String,
 ) {
+    /**
+     * 构造器默认参数表达式。
+     */
     DEFAULT_PARAMETER_VALUE(
         reportThis = true,
         diagnosticContext = "default parameter value of the constructor",
     ),
+
+    /**
+     * `this(...)` 构造器委托实参表达式。
+     */
     THIS_DELEGATION_ARGUMENT(
         reportThis = true,
         diagnosticContext = "arguments of constructor call",
     ),
+
+    /**
+     * `super(...)` 构造器委托实参表达式。
+     */
     SUPER_DELEGATION_ARGUMENT(
         reportThis = false,
         diagnosticContext = "arguments of constructor call",
     ),
 }
 
+/**
+ * 在构造器初始化完成前访问检查规则下扫描表达式。
+ *
+ * 调用方传入具体场景、当前构造器和当前参数后，visitor 会统一报告 this/super 引用、
+ * 实例成员访问以及成员参数 shadow 捕获问题。
+ */
 context(context: CheckerContext, reporter: DiagnosticReporter)
 internal fun CfirExpression.checkConstructorMemberAccessBeforeInitialization(
     owner: CfirClassLikeDeclaration?,
@@ -134,13 +164,35 @@ internal fun CfirExpression.checkConstructorMemberAccessBeforeInitialization(
     )
 }
 
+/**
+ * 字段初始化器中的 this/super 引用 visitor。
+ *
+ * 该 visitor 只处理字段初始化器的直接求值路径，嵌套函数和匿名函数体不属于当前初始化器语义。
+ */
 private class FieldInitializerReferenceVisitor(
+    /**
+     * 当前正在检查的字段声明。
+     */
     private val field: CfirFieldVariable,
+
+    /**
+     * 当前 checker 上下文。
+     */
     private val context: CheckerContext,
+
+    /**
+     * 诊断报告器。
+     */
     private val reporter: DiagnosticReporter,
 ) : CfirDefaultVisitorVoid() {
+    /**
+     * 当前遍历路径上的 qualified access 栈，用于判断 `this` 是否只是成员访问 receiver。
+     */
     private val qualifiedAccessStack = ArrayDeque<CfirQualifiedAccessExpression>()
 
+    /**
+     * 默认元素访问：检查显式 this 并继续遍历子节点。
+     */
     override fun visitElement(element: CfirElement) {
         if (element is CfirThisReceiverExpression) {
             checkThisReceiver(element)
@@ -148,6 +200,9 @@ private class FieldInitializerReferenceVisitor(
         element.acceptChildren(this)
     }
 
+    /**
+     * 访问 qualified access 并维护 receiver 判断所需的访问栈。
+     */
     override fun visitQualifiedAccessExpression(qualifiedAccessExpression: CfirQualifiedAccessExpression) {
         if (qualifiedAccessExpression is CfirSuperReceiverExpression) {
             reportIllegalReference(qualifiedAccessExpression, "super")
@@ -161,26 +216,41 @@ private class FieldInitializerReferenceVisitor(
         }
     }
 
+    /**
+     * 跳过字段初始化器内的具名函数体。
+     */
     override fun visitFunction(function: CfirFunction) {
         // 字段初始化器内的嵌套函数体有自己的函数上下文，官方规则中不属于 initializer 引用。
     }
 
+    /**
+     * 跳过字段初始化器内的匿名函数表达式 body。
+     */
     override fun visitAnonymousFunctionExpression(anonymousFunctionExpression: CfirAnonymousFunctionExpression) {
         // lambda/匿名函数体在官方 `curFuncBody` 语义下不属于字段初始化器直接引用。
     }
 
+    /**
+     * 按字段 static 状态检查显式 this receiver。
+     */
     private fun checkThisReceiver(expression: CfirThisReceiverExpression) {
         if (expression.calleeReference.isImplicit) return
         if (!field.status.isStatic && expression.isReceiverOfQualifiedAccess()) return
         reportIllegalReference(expression, "this")
     }
 
+    /**
+     * 判断表达式是否作为当前访问栈中某个 qualified access 的 receiver。
+     */
     private fun CfirExpression.isReceiverOfQualifiedAccess(): Boolean {
         return qualifiedAccessStack.any { parent ->
             parent.explicitReceiver === this || parent.dispatchReceiver === this
         }
     }
 
+    /**
+     * 报告非法 super 引用。
+     */
     private fun reportIllegalReference(expression: CfirSuperReceiverExpression, keyword: String) {
         with(context) {
             reporter.reportOn(
@@ -191,6 +261,9 @@ private class FieldInitializerReferenceVisitor(
         }
     }
 
+    /**
+     * 报告非法 this 引用。
+     */
     private fun reportIllegalReference(expression: CfirThisReceiverExpression, keyword: String) {
         with(context) {
             reporter.reportOn(
@@ -202,14 +275,46 @@ private class FieldInitializerReferenceVisitor(
     }
 }
 
+/**
+ * 构造器默认参数与委托实参中的构造前成员访问 visitor。
+ *
+ * visitor 按场景区分是否报告当前对象 `this`，并对解析到的实例成员、父类成员和后序
+ * 主构造成员参数进行统一诊断。
+ */
 private class ConstructorMemberAccessBeforeInitializationVisitor(
+    /**
+     * 当前构造器所属的 class-like 声明。
+     */
     private val owner: CfirClassLikeDeclaration?,
+
+    /**
+     * 当前检查场景。
+     */
     private val place: ConstructorMemberAccessPlace,
+
+    /**
+     * 当前构造器声明；默认参数检查需要用它判断参数顺序。
+     */
     private val constructor: CfirConstructor?,
+
+    /**
+     * 当前正在检查默认值的构造器参数。
+     */
     private val currentParameter: CfirValueParameter?,
+
+    /**
+     * 当前 checker 上下文。
+     */
     private val context: CheckerContext,
+
+    /**
+     * 诊断报告器。
+     */
     private val reporter: DiagnosticReporter,
 ) : CfirDefaultVisitorVoid() {
+    /**
+     * 默认元素访问：在需要时报告显式 this，并继续遍历子节点。
+     */
     override fun visitElement(element: CfirElement) {
         if (element is CfirThisReceiverExpression && place.reportThis && !element.calleeReference.isImplicit) {
             reportIllegalReference(element, "this")
@@ -217,14 +322,23 @@ private class ConstructorMemberAccessBeforeInitializationVisitor(
         element.acceptChildren(this)
     }
 
+    /**
+     * 函数调用也可能是成员访问，因此进入构造前成员访问检查。
+     */
     override fun visitFunctionCall(functionCall: CfirFunctionCall) {
         visitConstructorMemberAccessExpression(functionCall)
     }
 
+    /**
+     * 检查普通 qualified access 的构造前成员访问。
+     */
     override fun visitQualifiedAccessExpression(qualifiedAccessExpression: CfirQualifiedAccessExpression) {
         visitConstructorMemberAccessExpression(qualifiedAccessExpression)
     }
 
+    /**
+     * 检查单个 qualified access 是否触发 this/super 或实例成员访问限制。
+     */
     private fun visitConstructorMemberAccessExpression(expression: CfirQualifiedAccessExpression) {
         if (expression is CfirSuperReceiverExpression) {
             reportIllegalReference(expression, "super")
@@ -251,6 +365,9 @@ private class ConstructorMemberAccessBeforeInitializationVisitor(
         expression.acceptChildren(this)
     }
 
+    /**
+     * 只遍历匿名函数，跳过具名函数体的独立求值上下文。
+     */
     override fun visitFunction(function: CfirFunction) {
         if (function is CfirAnonymousFunction) {
             function.acceptChildren(this)
@@ -258,10 +375,16 @@ private class ConstructorMemberAccessBeforeInitializationVisitor(
         // 具名嵌套函数体有独立函数上下文，不属于构造前直接求值路径。
     }
 
+    /**
+     * 匿名函数表达式仍属于当前表达式树，继续遍历其子节点。
+     */
     override fun visitAnonymousFunctionExpression(anonymousFunctionExpression: CfirAnonymousFunctionExpression) {
         anonymousFunctionExpression.acceptChildren(this)
     }
 
+    /**
+     * 检查表达式解析到的实例成员或后序成员参数访问。
+     */
     private fun checkInstanceMemberAccess(expression: CfirQualifiedAccessExpression) {
         if (expression.explicitReceiver != null && expression.explicitReceiver !is CfirThisReceiverExpression) return
 
@@ -281,6 +404,12 @@ private class ConstructorMemberAccessBeforeInitializationVisitor(
         reportIllegalMemberAccess(expression, name)
     }
 
+    /**
+     * 解析 qualified access 的 callable 目标声明。
+     *
+     * 兼容成功引用、错误恢复引用以及带单候选诊断的错误引用，确保语义检查不会因为
+     * 前面阶段产生可恢复错误而丢失构造前访问诊断。
+     */
     private fun CfirQualifiedAccessExpression.resolvedCallableTarget(): CfirCallableDeclaration? {
         return when (val reference = calleeReference) {
             is CfirResolvedNamedReference -> reference.resolvedSymbol.cfir as? CfirCallableDeclaration
@@ -292,6 +421,9 @@ private class ConstructorMemberAccessBeforeInitializationVisitor(
         }
     }
 
+    /**
+     * 判断 callable 声明是否应作为构造前实例成员访问报告。
+     */
     private fun CfirCallableDeclaration.shouldReportConstructorMemberAccess(): Boolean {
         if (this is CfirConstructor || this is CfirEnumConstructor) return false
         if (status.isStatic || dispatchReceiverType == null) return false
@@ -316,6 +448,9 @@ private class ConstructorMemberAccessBeforeInitializationVisitor(
         return currentIndex >= 0 && targetIndex > currentIndex
     }
 
+    /**
+     * 判断构造器参数名是否遮蔽当前 owner 中的实例成员。
+     */
     private fun CfirValueParameter.shadowsInstanceMemberInOwner(): Boolean {
         val owner = owner ?: return false
         return owner.declarations.any { declaration ->
@@ -328,6 +463,9 @@ private class ConstructorMemberAccessBeforeInitializationVisitor(
         }
     }
 
+    /**
+     * 报告构造前读取实例成员的诊断。
+     */
     private fun reportIllegalMemberAccess(expression: CfirQualifiedAccessExpression, memberName: String) {
         with(context) {
             reporter.reportOn(
@@ -340,6 +478,9 @@ private class ConstructorMemberAccessBeforeInitializationVisitor(
         }
     }
 
+    /**
+     * 报告构造器参数默认值捕获到后序 shadow 成员参数的问题。
+     */
     private fun reportCaptureHasShadowVariable(expression: CfirQualifiedAccessExpression, parameter: CfirValueParameter) {
         with(context) {
             reporter.reportOn(
@@ -351,6 +492,9 @@ private class ConstructorMemberAccessBeforeInitializationVisitor(
         }
     }
 
+    /**
+     * 报告构造前非法 super 引用。
+     */
     private fun reportIllegalReference(expression: CfirSuperReceiverExpression, keyword: String) {
         with(context) {
             reporter.reportOn(
@@ -362,6 +506,9 @@ private class ConstructorMemberAccessBeforeInitializationVisitor(
         }
     }
 
+    /**
+     * 报告构造前非法 this 引用。
+     */
     private fun reportIllegalReference(expression: CfirThisReceiverExpression, keyword: String) {
         with(context) {
             reporter.reportOn(
@@ -374,6 +521,9 @@ private class ConstructorMemberAccessBeforeInitializationVisitor(
     }
 }
 
+/**
+ * 取得当前 checker 上下文中最近的函数类声明。
+ */
 private fun CheckerContext.closestFunctionLikeDeclaration(): CfirFunction? {
     return containingDeclarations
         .asReversed()

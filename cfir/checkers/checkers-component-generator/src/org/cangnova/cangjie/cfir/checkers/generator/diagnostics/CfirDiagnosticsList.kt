@@ -485,6 +485,9 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
         }
     }
 
+    /**
+     * 注解声明和注解使用相关诊断。
+     */
     val ANNOTATION by object : DiagnosticGroup("Annotation") {
         val ANNOTATION_NO_CONST_INIT by error<PsiElement>(PositioningStrategy.ACTUAL_DECLARATION_NAME)
     }
@@ -593,6 +596,9 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
         // 无 selector 的 match 中，某个 case 的结果类型无法计算
         val MATCH_CASE_HAS_NO_TYPE by error<PsiElement>()
     }
+    /**
+     * where 约束和泛型上界相关诊断。
+     */
     val CONSTRAINT by object : DiagnosticGroup("Constraint") {
         val NAME_IN_CONSTRAINT_IS_NOT_A_TYPE_PARAMETER by error<PsiElement>(PositioningStrategy.REFERENCED_NAME_BY_QUALIFIED) {
             parameter<Name>("name")
@@ -835,6 +841,9 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
 
         // 函数调用没有可访问的匹配声明，对齐官方 sema_no_match_function_declaration_for_call。
         val NO_MATCH_FUNCTION_DECLARATION_FOR_CALL by error<PsiElement>(PositioningStrategy.DEFAULT)
+
+        // 函数引用没有可访问的匹配声明，对齐官方 sema_no_match_function_declaration_for_ref。
+        val NO_MATCH_FUNCTION_DECLARATION_FOR_REF by error<PsiElement>(PositioningStrategy.DEFAULT)
 
         // 非函数表达式使用 `()` 调用，对齐官方 sema_no_match_operator_function_call。
         val NO_MATCH_OPERATOR_FUNCTION_CALL by error<PsiElement>(PositioningStrategy.DEFAULT)

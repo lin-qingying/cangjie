@@ -16,8 +16,17 @@ import kotlin.contracts.contract
  * @property lowerTypes 变量已知排除的下界集合。
  */
 data class PersistentTypeStatement(
+    /**
+     * 被约束的数据流变量。
+     */
     override val variable: DataFlowVariable,
+    /**
+     * 变量已知满足的上界类型集合。
+     */
     override val upperTypes: PersistentSet<ConeCangJieType>,
+    /**
+     * 变量已知排除的下界集合。
+     */
     override val lowerTypes: PersistentSet<DfaType>,
 ) : TypeStatement()
 
@@ -29,8 +38,17 @@ data class PersistentTypeStatement(
  * @property lowerTypes 可写的下界集合。
  */
 class MutableTypeStatement(
+    /**
+     * 被约束的数据流变量。
+     */
     override val variable: DataFlowVariable,
+    /**
+     * 可写的上界类型集合。
+     */
     override val upperTypes: MutableSet<ConeCangJieType> = linkedSetOf(),
+    /**
+     * 可写的下界集合。
+     */
     override val lowerTypes: MutableSet<DfaType> = linkedSetOf(),
 ) : TypeStatement()
 

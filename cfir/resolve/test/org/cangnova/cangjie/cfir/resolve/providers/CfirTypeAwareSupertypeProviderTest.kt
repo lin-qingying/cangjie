@@ -38,6 +38,7 @@ import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.type.AbstractTypeChecker
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertIterableEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -189,6 +190,69 @@ class CfirTypeAwareSupertypeProviderTest {
             )
         )
     }
+
+    @Test
+    fun `constrained generic extend uses concrete receiver arguments for subtype traversal`() {
+        val packageFqName = FqName("sample.constrained")
+        val eqClassId = ClassId(packageFqName, Name.identifier("EQ"))
+        val aClassId = ClassId(packageFqName, Name.identifier("A"))
+        val bClassId = ClassId(packageFqName, Name.identifier("B"))
+
+        val (session, moduleData) = ExtendTestFixtures.newSessionAndModule()
+        val eqInterface = newInterface(moduleData, eqClassId)
+        val typeParameter = ExtendTestFixtures.newTypeParameter(
+            moduleData = moduleData,
+            name = "T",
+            bounds = listOf(ExtendTestFixtures.classTypeRef(eqClassId, isInterface = true)),
+        )
+        val aClass = newClass(
+            moduleData = moduleData,
+            classId = aClassId,
+            typeParameters = listOf(typeParameter),
+        )
+        val bInterface = newInterface(
+            moduleData = moduleData,
+            classId = bClassId,
+            typeParameters = listOf(typeParameter),
+        )
+        val int32EqExtend = ExtendTestFixtures.newExtend(
+            moduleData = moduleData,
+            extendedTypeRef = primitiveTypeRef(ConePrimitiveType.INT32),
+            superTypeRefs = listOf(ExtendTestFixtures.classTypeRef(eqClassId, isInterface = true)),
+        )
+        val constrainedAExtend = ExtendTestFixtures.newExtend(
+            moduleData = moduleData,
+            typeParameters = listOf(typeParameter),
+            extendedTypeRef = ExtendTestFixtures.classTypeRef(
+                classId = aClassId,
+                typeArguments = listOf(typeParameterType(typeParameter)),
+            ),
+            superTypeRefs = listOf(
+                ExtendTestFixtures.classTypeRef(
+                    classId = bClassId,
+                    typeArguments = listOf(typeParameterType(typeParameter)),
+                    isInterface = true,
+                )
+            ),
+        )
+
+        val typeContext = session.registerTestTypeContext(
+            declarations = listOf(eqInterface, aClass, bInterface),
+            extends = listOf(int32EqExtend, constrainedAExtend),
+        )
+
+        val aInt32 = classType(aClassId, ConePrimitiveType.INT32)
+        val aInt64 = classType(aClassId, ConePrimitiveType.INT64)
+        val bInt32 = interfaceType(bClassId, ConePrimitiveType.INT32)
+        val bInt64 = interfaceType(bClassId, ConePrimitiveType.INT64)
+
+        assertIterableEquals(
+            listOf(bInt32),
+            session.typeAwareSupertypeProviderOrNull?.getDirectSupertypes(aInt32),
+        )
+        assertTrue(AbstractTypeChecker.isSubtypeOf(typeContext, aInt32, bInt32))
+        assertFalse(AbstractTypeChecker.isSubtypeOf(typeContext, aInt64, bInt64))
+    }
 }
 
 private fun CfirSession.registerTestTypeContext(
@@ -305,4 +369,12 @@ private fun interfaceType(classId: ClassId, vararg typeArguments: ConeCangJieTyp
         lookupTag = classId.toLookupTag(),
         typeArguments = typeArguments.map(::ConeTypeProjection),
         isInterface = true,
+    )
+
+private fun primitiveTypeRef(type: ConePrimitiveType): CfirTypeRef =
+    org.cangnova.cangjie.cfir.types.impl.CfirResolvedTypeRefImpl(
+        source = null,
+        annotations = emptyList(),
+        coneType = type,
+        delegatedTypeRef = null,
     )

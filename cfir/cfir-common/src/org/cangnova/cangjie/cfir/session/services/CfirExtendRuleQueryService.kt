@@ -12,7 +12,9 @@ import org.cangnova.cangjie.name.Name
  * @property semanticKey 经过 extend 类型语义归一化后的接口键，用于区分泛型实参不同的接口实例。
  */
 data class CfirExtendInheritedInterfaceSemantic(
+    /** 可解析到 nominal 接口声明时的接口 [ClassId]。 */
     val classId: ClassId?,
+    /** 经过 extend 类型语义归一化后的接口键，用于区分泛型实参不同的接口实例。 */
     val semanticKey: String,
 )
 

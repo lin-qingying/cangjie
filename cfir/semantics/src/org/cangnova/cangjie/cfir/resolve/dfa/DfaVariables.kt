@@ -36,10 +36,25 @@ sealed class DataFlowVariable {
  * @property originalType 进入数据流分析前的原始类型。
  */
 class RealVariable(
+    /**
+     * 变量对应的 CFIR 符号。
+     */
     val symbol: CfirBasedSymbol<*>,
+    /**
+     * 是否为隐式 receiver 变量。
+     */
     val isImplicit: Boolean,
+    /**
+     * 成员访问的 dispatch receiver。
+     */
     val dispatchReceiver: RealVariable?,
+    /**
+     * 成员访问的 extension receiver。
+     */
     val extensionReceiver: RealVariable?,
+    /**
+     * 进入数据流分析前的原始类型。
+     */
     override val originalType: ConeCangJieType,
 ) : DataFlowVariable() {
     /**

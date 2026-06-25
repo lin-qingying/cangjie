@@ -16,7 +16,13 @@ sealed class ExhaustivenessResult {
      * @property source 产出该结果的 checker 来源。
      */
     data class NonExhaustive(
+        /**
+         * 可用于诊断展示的缺失模式列表。
+         */
         val missingPatterns: List<CfirMatchPattern>,
+        /**
+         * 产出该结果的 checker 来源。
+         */
         val source: CheckSource = CheckSource.UNKNOWN,
     ) : ExhaustivenessResult() {
         /**

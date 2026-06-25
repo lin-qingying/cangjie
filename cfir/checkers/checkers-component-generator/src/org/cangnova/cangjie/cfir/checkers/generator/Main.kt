@@ -32,6 +32,9 @@ import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.types.*
 import java.io.File
 
+/**
+ * checker 与诊断生成器命令行入口。
+ */
 fun main(args: Array<String>) {
     val basePackage = "org.cangnova.cangjie.cfir.analysis"
     val packageName = "$basePackage.diagnostics"

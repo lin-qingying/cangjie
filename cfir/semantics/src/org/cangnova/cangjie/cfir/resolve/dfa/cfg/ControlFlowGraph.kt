@@ -13,8 +13,17 @@ import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
  * @property kind 控制流图所属结构种类。
  */
 class ControlFlowGraph(
+    /**
+     * 该控制流图对应的声明；文件级或合成图可为空。
+     */
     val declaration: CfirDeclaration?,
+    /**
+     * 控制流图在调试和断言消息中的名称。
+     */
     val name: String,
+    /**
+     * 控制流图所属结构种类。
+     */
     val kind: Kind,
 ) {
     /** 当前图已经创建的节点数量，同时作为新节点 id 分配器。 */
@@ -57,6 +66,9 @@ class ControlFlowGraph(
         }
     }
 
+    /**
+     * 标记图构造完成，并按稳定控制流顺序冻结节点列表。
+     */
     @CfgInternals
     fun complete() {
         nodes = orderNodes(isComplete = true)
@@ -143,7 +155,13 @@ class ControlFlowGraph(
  * @property kind 边在 DFA/CFA 中的使用方式。
  */
 data class Edge(
+    /**
+     * 边标签，用于区分正常路径、异常路径、延期 lambda 路径等。
+     */
     val label: EdgeLabel,
+    /**
+     * 边在 DFA/CFA 中的使用方式。
+     */
     val kind: EdgeKind,
 ) {
     /**
@@ -209,21 +227,33 @@ sealed interface EdgeLabel {
 
 /** 普通控制流路径。 */
 object NormalPath : EdgeLabel {
+    /**
+     * 普通路径没有额外渲染标签。
+     */
     override val label: String? get() = null
 }
 
 /** 未捕获异常路径。 */
 object UncaughtExceptionPath : EdgeLabel {
+    /**
+     * 未捕获异常边在 CFG 渲染中的标签文本。
+     */
     override val label: String get() = "onUncaughtException"
 }
 
 /** 延期执行路径。 */
 object PostponedPath : EdgeLabel {
+    /**
+     * 延期执行边在 CFG 渲染中的标签文本。
+     */
     override val label: String get() = "Postponed"
 }
 
 /** 按值捕获路径。 */
 data object CapturedByValue : EdgeLabel {
+    /**
+     * 按值捕获边在 CFG 渲染中的标签文本。
+     */
     override val label: String get() = "CapturedByValue"
 }
 
@@ -237,10 +267,25 @@ data object CapturedByValue : EdgeLabel {
  * @property isDead 是否为死亡边。
  */
 enum class EdgeKind(
+    /**
+     * 是否参与普通 DFA。
+     */
     val usedInDfa: Boolean,
+    /**
+     * 是否参与死代码 DFA。
+     */
     val usedInDeadDfa: Boolean,
+    /**
+     * 是否参与控制流可达性分析。
+     */
     val usedInCfa: Boolean,
+    /**
+     * 是否为回边。
+     */
     val isBack: Boolean,
+    /**
+     * 是否为死亡边。
+     */
     val isDead: Boolean,
 ) {
     /** 同时参与 DFA 与 CFA 的正常前向边。 */

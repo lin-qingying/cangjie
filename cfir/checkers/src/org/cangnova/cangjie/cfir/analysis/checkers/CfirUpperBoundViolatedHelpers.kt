@@ -65,6 +65,12 @@ internal fun checkUpperBoundViolated(
     )
 }
 
+/**
+ * 检查一个已解析类型在使用点上的泛型实参是否满足声明上界。
+ *
+ * 调用方可以提供原始 source type ref，用于把诊断精确落到用户写出的类型实参；
+ * 当 source 不可用时使用 fallback source 作为兜底位置。
+ */
 context(context: CheckerContext, reporter: DiagnosticReporter)
 internal fun checkUpperBoundViolated(
     type: ConeCangJieType,
@@ -112,6 +118,12 @@ internal fun checkUpperBoundViolated(
     )
 }
 
+/**
+ * 检查类型别名展开后的实际泛型类型是否违反上界。
+ *
+ * 诊断中仍保留未展开的 typealias 类型作为展示对象，避免把用户写出的别名
+ * 直接替换成内部展开类型。
+ */
 context(context: CheckerContext, reporter: DiagnosticReporter)
 internal fun checkUpperBoundViolatedForTypealiasExpansion(
     notExpandedType: ConeTypeAliasType,
@@ -144,6 +156,9 @@ internal fun checkUpperBoundViolatedForTypealiasExpansion(
     )
 }
 
+/**
+ * 按声明侧类型参数、源码 type argument refs 和调用方提供的替换器检查上界。
+ */
 context(context: CheckerContext, reporter: DiagnosticReporter)
 internal fun checkUpperBoundViolated(
     typeParameters: List<CfirTypeParameterRef>,
@@ -162,6 +177,11 @@ internal fun checkUpperBoundViolated(
     )
 }
 
+/**
+ * 为泛型使用点创建类型参数到实际类型实参的替换器。
+ *
+ * [additionalSubstitutions] 用于调用方先注入外层声明或类型别名展开时已经确定的替换。
+ */
 internal fun createGenericUseSiteSubstitutor(
     typeParameters: List<CfirTypeParameterRef>,
     resolvedArguments: List<ConeCangJieType>,
@@ -179,6 +199,12 @@ internal fun createGenericUseSiteSubstitutor(
     )
 }
 
+/**
+ * 泛型上界检查的核心实现。
+ *
+ * 该函数同时处理当前层实参的上界验证，以及嵌套泛型实参的递归验证；
+ * 诊断位置按源码 type argument、泛型整体 source、fallback source 的顺序选择。
+ */
 context(context: CheckerContext, reporter: DiagnosticReporter)
 private fun checkUpperBoundViolated(
     typeParameters: List<CfirTypeParameterRef>,
@@ -236,6 +262,11 @@ private fun checkUpperBoundViolated(
     }
 }
 
+/**
+ * 判断类型参数自身是否携带非法上界。
+ *
+ * 当实参对应的类型参数定义已经有非法上界时，使用点不再重复报告普通上界不匹配。
+ */
 context(context: CheckerContext)
 private fun ConeCangJieType.isGenericTypeWithInvalidUpperBound(): Boolean {
     val typeParameterType = this as? ConeTypeParameterType ?: return false
@@ -246,6 +277,9 @@ private fun ConeCangJieType.isGenericTypeWithInvalidUpperBound(): Boolean {
     }
 }
 
+/**
+ * 判断类型是否允许作为泛型类型参数上界。
+ */
 context(context: CheckerContext)
 private fun ConeCangJieType.isLegalGenericUpperBound(): Boolean {
     val expandedType = fullyExpandedType(context.session)
@@ -255,6 +289,9 @@ private fun ConeCangJieType.isLegalGenericUpperBound(): Boolean {
     return classId == StdlibClassIds.Any || classId != null && CfirExtendSemantics.isCType(classId)
 }
 
+/**
+ * 从 resolved type ref 链中还原用户源码写出的 type ref。
+ */
 private fun CfirTypeRef?.originalUserTypeRef(): CfirUserTypeRef? =
     when (this) {
         is CfirUserTypeRef -> this
@@ -262,6 +299,11 @@ private fun CfirTypeRef?.originalUserTypeRef(): CfirUserTypeRef? =
         else -> null
     }
 
+/**
+ * 为类型引用诊断创建只覆盖首字符的 source。
+ *
+ * 上界错误通常应该定位到具体类型实参起点，而不是整个复杂 type ref。
+ */
 internal fun CjSourceElement.firstCharacterDiagnosticSource(): CjSourceElement =
     fakeElement(
         CjFakeSourceElementKind.ErrorTypeRef,

@@ -18,6 +18,7 @@ class CheckerSinkImpl(
 ) : CheckerSink() {
 
 
+    /** 当前 sink 是否需要暂停后续阶段执行。 */
     override val needYielding: Boolean
         get() = stopOnFirstError && !candidate.isSuccessful
     /** 将诊断追加到候选。 */

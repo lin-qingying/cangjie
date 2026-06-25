@@ -4,6 +4,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
 import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirNamedAccessExpression
 import org.cangnova.cangjie.cfir.expressions.CfirResolvable
 import org.cangnova.cangjie.cfir.references.CfirErrorNamedReference
@@ -75,6 +76,12 @@ sealed class ConeResolutionAtom : AbstractConeResolutionAtom() {
          * 判断命名访问是否是因函数引用参数歧义而需要 postponed 处理的表达式。
          */
         private fun CfirNamedAccessExpression.shouldBeResolvedAsFunctionReferenceArgument(): Boolean {
+            if (this is CfirFunctionCall) return false
+            val resolvedCandidate = (calleeReference as? CfirNamedReferenceWithCandidate)?.candidate
+            if (resolvedCandidate?.symbol?.takeIf { it.isBound }?.cfir is CfirFunction) {
+                return true
+            }
+
             val diagnostic = (calleeReference as? CfirErrorNamedReference)?.diagnostic as? ConeAmbiguityError
                 ?: return false
             return diagnostic.candidates.isNotEmpty() &&

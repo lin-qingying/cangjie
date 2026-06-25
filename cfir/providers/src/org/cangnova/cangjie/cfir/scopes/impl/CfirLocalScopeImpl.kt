@@ -41,10 +41,25 @@ import org.cangnova.cangjie.utils.PersistentMultimap
  * @property useSiteSession 当前 scope 所属 use-site session。
  */
 class CfirLocalScope private constructor(
+    /**
+     * 局部变量符号索引。
+     */
     val variables: PersistentMap<Name, CfirVariableSymbol<*>>,
+    /**
+     * 局部属性符号索引。
+     */
     val properties: PersistentMap<Name, CfirPropertySymbol>,
+    /**
+     * 局部函数符号索引，允许同名函数重载。
+     */
     val functions: PersistentMultimap<Name, CfirNamedFunctionSymbol>,
+    /**
+     * 局部 class-like 符号索引。
+     */
     val classLikeSymbols: PersistentMap<Name, CfirClassLikeSymbol<*>>,
+    /**
+     * 当前局部 scope 所属的 use-site session。
+     */
     val useSiteSession: CfirSession,
 ) : CfirContainingNamesAwareScope() {
 

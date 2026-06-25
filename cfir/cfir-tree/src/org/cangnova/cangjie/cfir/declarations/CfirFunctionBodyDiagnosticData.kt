@@ -61,6 +61,9 @@ data class CfirFunctionBodyDiagnosticData(
  * @property source 参数列表整体的源码元素，用于把非法函数体形态诊断报告到官方语义要求的位置。
  */
 data class CfirValueParameterListReference(
+    /**
+     * 参数列表整体的源码元素，用于把非法函数体形态诊断报告到官方语义要求的位置。
+     */
     val source: CjSourceElement,
 )
 

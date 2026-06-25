@@ -28,6 +28,9 @@ import org.cangnova.cangjie.utils.exceptions.withCfirEntry
  * 参考 K2 `ReturnTypeCalculator` / `ReturnTypeCalculatorForFullBodyResolve`。
  */
 abstract class ReturnTypeCalculator {
+    /**
+     * substitution override 等 callable copy 在返回类型尚未解析时使用的延迟计算器。
+     */
     abstract val callableCopyTypeCalculator: CallableCopyTypeCalculator
 
     /**
@@ -38,6 +41,9 @@ abstract class ReturnTypeCalculator {
     abstract fun tryCalculateReturnTypeOrNull(declaration: CfirCallableDeclaration): CfirResolvedTypeRef?
 
 
+    /**
+     * 计算 [declaration] 的返回类型；失败时携带 CFIR 声明附件抛出内部错误。
+     */
     fun tryCalculateReturnType(declaration: CfirCallableDeclaration): CfirResolvedTypeRef {
         return tryCalculateReturnTypeOrNull(declaration)
             ?: errorWithAttachment("${this::class.simpleName}: Return type cannot be calculated for ${declaration::class.simpleName}") {
@@ -46,10 +52,16 @@ abstract class ReturnTypeCalculator {
     }
 
     companion object {
+        /**
+         * 默认返回类型计算器，供未注入特殊阶段计算器的路径使用。
+         */
         val Default: ReturnTypeCalculator = ReturnTypeCalculatorForFullBodyResolve.Default
     }
 }
 
+/**
+ * 提取不同 callable 声明形态上的显式 return type ref；无返回类型语义的变量返回 `null`。
+ */
 private val CfirCallableDeclaration.returnTypeRefOrNull: CfirTypeRef?
     get() = when (this) {
         is CfirValueParameter -> returnTypeRef

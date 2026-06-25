@@ -8,11 +8,26 @@ package org.cangnova.cangjie.cfir.checkers.generator
 import kotlin.reflect.KClass
 import kotlin.reflect.full.allSuperclasses
 
+/**
+ * checker 组件生成器的完整配置快照。
+ */
 class CheckersConfiguration(
+    /**
+     * CFIR 元素类型到 checker 别名及是否生成 visit 方法的映射。
+     */
     val aliases: Map<KClass<*>, Pair<String, Boolean>>,
+    /**
+     * 额外 checker 集合字段名到 checker 类型全限定名的映射。
+     */
     val additionalCheckers: MutableMap<String, String>,
+    /**
+     * 需要复用其他 visit 入口的 CFIR 元素类型映射。
+     */
     val visitAlso: Map<KClass<*>, String>,
 ) {
+    /**
+     * 每个已注册 CFIR 元素类型对应的已注册父类型列表。
+     */
     val parentsMap: Map<KClass<*>, List<KClass<*>>>
 
     init {
@@ -34,6 +49,9 @@ class CheckersConfiguration(
     }
 }
 
+/**
+ * 对类型层级执行广度优先遍历，并在 [process] 返回 false 时停止继续下探更深层级。
+ */
 private fun <T> bfs(start: T, childrenExtractor: (T) -> Collection<T>, process: (T) -> Boolean) {
     val queue = ArrayDeque<T>()
     val visited = mutableSetOf<T>()
@@ -57,4 +75,3 @@ private fun <T> bfs(start: T, childrenExtractor: (T) -> Collection<T>, process: 
         }
     }
 }
-

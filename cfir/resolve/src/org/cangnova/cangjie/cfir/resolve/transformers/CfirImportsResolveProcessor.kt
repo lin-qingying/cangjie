@@ -30,6 +30,7 @@ internal class CfirImportResolveProcessor(
     scopeSession = scopeSession,
     phase = CfirResolvePhase.IMPORTS,
 ) {
+    /** IMPORTS 阶段使用的 transformer。 */
     override val transformer: CfirImportResolveTransformer =
         CfirImportResolveTransformer(session, diagnosticReporter)
 }
@@ -42,6 +43,7 @@ internal typealias CfirImportsResolveProcessor = CfirImportResolveProcessor
  * 它只处理文件级 import 绑定，并在完成后推进 resolve phase。
  */
 class CfirImportResolveTransformer(
+    /** 当前 CFIR session。 */
     override val session: CfirSession,
     @Suppress("unused")
     /** IMPORTS 阶段使用的诊断报告器。 */

@@ -64,8 +64,17 @@ object CfirIntConstantEvalUtils {
      * @property explicitSuffix 显式整数后缀；为空表示源码未写后缀。
      */
     data class ParsedIntLiteral(
+        /**
+         * 保留后缀和下划线前的原始字面量文本。
+         */
         val originalText: String,
+        /**
+         * 按进制解析出的非负整数值。
+         */
         val value: BigInteger,
+        /**
+         * 显式整数后缀；为空表示源码未写后缀。
+         */
         val explicitSuffix: String?,
     )
 
@@ -77,8 +86,17 @@ object CfirIntConstantEvalUtils {
      * @property explicitSuffix 原始字面量上的显式整数后缀。
      */
     data class ParsedSignedIntExpression(
+        /**
+         * 包含一元正负号的表达式文本。
+         */
         val originalText: String,
+        /**
+         * 应用一元正负号后的整数值。
+         */
         val value: BigInteger,
+        /**
+         * 原始字面量上的显式整数后缀。
+         */
         val explicitSuffix: String?,
     )
 
@@ -89,7 +107,13 @@ object CfirIntConstantEvalUtils {
      * @property max 范围上界，闭区间。
      */
     data class IntegerRange(
+        /**
+         * 范围下界，闭区间。
+         */
         val min: BigInteger,
+        /**
+         * 范围上界，闭区间。
+         */
         val max: BigInteger,
     ) {
         /**

@@ -38,6 +38,9 @@ abstract class ConeClassifierLookupTagWithFixedSymbol : ConeClassifierLookupTag(
  *   携带名称、variance、上界等完整声明信息。
  */
 data class ConeTypeParameterLookupTag(
+    /**
+     * 该 lookup tag 绑定的类型参数符号。
+     */
     val typeParameterSymbol: CfirTypeParameterSymbol,
 ) : ConeClassifierLookupTagWithFixedSymbol(), TypeParameterMarker {
 

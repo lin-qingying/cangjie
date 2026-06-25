@@ -19,6 +19,9 @@ import org.cangnova.cangjie.cfir.types.ConeTupleType
  * @property componentCheckers 用于逐列检查元组分量的轻量 checker 列表。
  */
 class TupleComponentChecker(
+    /**
+     * 用于逐列检查元组分量的轻量 checker 列表。
+     */
     private val componentCheckers: List<ExhaustivenessChecker>,
 ) : ExhaustivenessChecker {
     /** 当前 checker 来源。 */

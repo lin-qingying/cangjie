@@ -65,6 +65,9 @@ sealed class ConeIdealLiteralType : ConeSimpleCangJieType(), ConeTypeConstructor
  */
 sealed class ConeIdealIntLiteralType : ConeIdealLiteralType() {
 
+    /**
+     * IdealInt 可近似到的所有具体整数 primitive 类型。
+     */
     override val possibleTypes: Collection<ConePrimitiveType>
         get() = POSSIBLE_INT_TYPES
 
@@ -161,6 +164,9 @@ class ConeIdealIntOperatorType : ConeIdealIntLiteralType() {
  */
 sealed class ConeIdealFloatLiteralType : ConeIdealLiteralType() {
 
+    /**
+     * IdealFloat 可近似到的所有具体浮点 primitive 类型。
+     */
     override val possibleTypes: Collection<ConePrimitiveType>
         get() = POSSIBLE_FLOAT_TYPES
 

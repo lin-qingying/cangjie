@@ -8,7 +8,9 @@ package org.cangnova.cangjie.cfir.types
  * @property attributes 元组类型附带的属性。
  */
 class ConeTupleType(
+    /** 元组元素类型列表。 */
     val elementTypes: List<ConeCangJieType>,
+    /** 元组类型附带的属性。 */
     override val attributes: ConeAttributes = ConeAttributes.Empty,
 ) : ConeRigidType(), ConeTypeConstructorMarker {
     /**

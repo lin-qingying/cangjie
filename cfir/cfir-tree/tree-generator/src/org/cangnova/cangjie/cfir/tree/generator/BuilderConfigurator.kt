@@ -29,13 +29,25 @@ import org.cangnova.cangjie.cfir.tree.generator.model.Field
 import org.cangnova.cangjie.cfir.tree.generator.model.Implementation
 import org.cangnova.cangjie.generators.tree.config.AbstractBuilderConfigurator
 
+/**
+ * CFIR tree builder 生成配置器。
+ */
 class BuilderConfigurator(model: Model) : AbstractBuilderConfigurator<Element, Implementation, Field>(model) {
+    /**
+     * 生成 builder 名称使用的统一前缀。
+     */
     override val namePrefix: String
         get() = "Cfir"
 
+    /**
+     * 默认 builder 输出包名。
+     */
     override val defaultBuilderPackage: String
         get() = "org.cangnova.cangjie.cfir.tree.builder"
 
+    /**
+     * 配置所有 CFIR 元素 builder、默认字段值和复制策略。
+     */
     override fun configureBuilders() = with(CfirTree) {
         concreteElements().forEach { element ->
             builder(element) {
@@ -128,6 +140,9 @@ class BuilderConfigurator(model: Model) : AbstractBuilderConfigurator<Element, I
         }
     }
 
+    /**
+     * 需要生成公开 builder 的具体 CFIR 元素列表。
+     */
     private fun CfirTree.concreteElements(): List<Element> = listOf(
         packageDirective,
         // importDirective 已改为抽象基类，由 resolvedImportDirective 替代
@@ -166,6 +181,9 @@ class BuilderConfigurator(model: Model) : AbstractBuilderConfigurator<Element, I
         namedReference, resolvedNamedReference, errorReference, thisReference,
     )
 
+    /**
+     * 为访问/调用类 builder 配置默认 receiver 字段。
+     */
     protected fun BuilderConfigurationContext.defaultNoReceivers(notNullExplicitReceiver: Boolean = false) {
         if (!notNullExplicitReceiver) {
             defaultNull("explicitReceiver")

@@ -41,7 +41,6 @@ import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.name.ClassId
-import org.cangnova.cangjie.type.AbstractTypeChecker
 
 /**
  * match 穷尽性算法使用的模式矩阵。
@@ -62,8 +61,17 @@ private const val OPTION_NONE_CONSTRUCTOR_NAME = "None"
  * @property cfirPattern 原始 CFIR 模式；为空表示合成模式。
  */
 data class CfirMatchPattern(
+    /**
+     * 当前模式匹配的目标类型。
+     */
     val type: ConeCangJieType,
+    /**
+     * 模式的规范化种类。
+     */
     val kind: CfirMatchPatternKind,
+    /**
+     * 原始 CFIR 模式；为空表示合成模式。
+     */
     val cfirPattern: CfirPattern? = null,
 ) {
     /**
@@ -160,8 +168,17 @@ sealed class CfirMatchPatternKind {
      * @property subPatterns 构造器 payload 子模式。
      */
     data class Enum(
+        /**
+         * enum 类型 classId。
+         */
         val enumClassId: ClassId,
+        /**
+         * enum 构造器名称。
+         */
         val entryName: String,
+        /**
+         * 构造器 payload 子模式。
+         */
         val subPatterns: List<CfirMatchPattern>,
     ) : CfirMatchPatternKind()
 }
@@ -378,9 +395,21 @@ sealed class CfirConstructor {
      * @property arityHint 构造器 payload 元数。
      */
     data class Enum(
+        /**
+         * enum 类型 classId。
+         */
         val enumClassId: ClassId,
+        /**
+         * enum entry 名称。
+         */
         val entryName: String,
+        /**
+         * 构造器 payload 元数提示。
+         */
         val arityHint: Int = 0,
+        /**
+         * 当前 enum use-site 类型下替换后的 payload 类型。
+         */
         val payloadTypes: List<ConeCangJieType> = emptyList(),
     ) : CfirConstructor()
 
@@ -597,7 +626,7 @@ fun isSameType(a: ConeCangJieType, b: ConeCangJieType): Boolean {
  */
 private fun ConeCangJieType.coversExpectedType(expectedType: ConeCangJieType, session: CfirSession): Boolean {
     if (isNothing) return false
-    return AbstractTypeChecker.isSubtypeOf(session.typeContext, expectedType, this) == true
+    return expectedType.isMatchSubtypeOf(this, session)
 }
 
 /**

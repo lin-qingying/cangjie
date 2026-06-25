@@ -46,7 +46,16 @@ import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.OperatorNameConventions
 import org.cangnova.cangjie.source.CjOffsetsOnlySourceElement
 
+/**
+ * extend 目标类型合法性检查器。
+ *
+ * 该检查器负责过滤不能作为 extend 接收者的类型，包括接口、函数类型、元组、varray、
+ * 交叉/联合类型以及外部互操作边界类型。
+ */
 object CfirExtendTargetLegalityChecker : CfirExtendChecker() {
+    /**
+     * 检查单个 extend 声明的目标类型是否合法。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(extend: CfirExtend) {
         val targetTypeRef = extend.extendedTypeRef
@@ -90,7 +99,13 @@ object CfirExtendTargetLegalityChecker : CfirExtendChecker() {
     }
 }
 
+/**
+ * extend 所实现接口的类型种类检查器。
+ */
 object CfirExtendInterfaceKindChecker : CfirExtendChecker() {
+    /**
+     * 检查 extend super type 列表中的每个接口类型是否合法且可扩展。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(extend: CfirExtend) {
         for (superTypeRef in extend.superTypeRefs) {
@@ -130,7 +145,16 @@ object CfirExtendInterfaceKindChecker : CfirExtendChecker() {
     }
 }
 
+/**
+ * extend 重复实现接口检查器。
+ *
+ * 同一 extend 内、同一目标的多个 extend 之间、目标类型本身已继承接口之间都需要检查
+ * 重复接口关系。
+ */
 object CfirExtendDuplicateInterfaceChecker : CfirExtendChecker() {
+    /**
+     * 检查当前 extend 声明是否重复引入接口。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirExtend) {
         val query = context.session.extendRuleQueryServiceOrNull ?: return
@@ -163,6 +187,9 @@ object CfirExtendDuplicateInterfaceChecker : CfirExtendChecker() {
     }
 }
 
+/**
+ * 判断当前 extend 的某个接口是否已经由目标类型或同目标其它 extend 继承。
+ */
 context(context: CheckerContext)
 internal fun CfirExtend.duplicatesInheritedTargetInterface(
     superTypeRef: CfirTypeRef,
@@ -200,6 +227,9 @@ internal fun CfirExtend.duplicatesInheritedTargetInterface(
     return false
 }
 
+/**
+ * 判断类型引用是否已经解析为接口类型。
+ */
 context(context: CheckerContext)
 private fun org.cangnova.cangjie.cfir.types.CfirTypeRef.isResolvedInterfaceType(): Boolean {
     val classifierType = coneTypeOrNull as? ConeClassifierType ?: return false
@@ -208,6 +238,9 @@ private fun org.cangnova.cangjie.cfir.types.CfirTypeRef.isResolvedInterfaceType(
     return symbol.cfir is CfirInterface
 }
 
+/**
+ * 收集 extend 目标类型在实际类型实参替换后的已继承接口 key。
+ */
 context(context: CheckerContext)
 private fun CfirExtend.instantiatedTargetInheritedInterfaceKeys(): Set<String> {
     val targetType = extendedTypeRef.coneTypeOrNull as? ConeClassifierType ?: return emptySet()
@@ -228,6 +261,9 @@ private fun CfirExtend.instantiatedTargetInheritedInterfaceKeys(): Set<String> {
     return result
 }
 
+/**
+ * 递归收集 class-like 类型及其父类型中实例化后的接口 key。
+ */
 context(context: CheckerContext)
 private fun collectInstantiatedInheritedInterfaceKeys(
     classLikeType: ConeCangJieType,
@@ -255,7 +291,13 @@ private fun collectInstantiatedInheritedInterfaceKeys(
     visiting.remove(classLikeKey)
 }
 
+/**
+ * extend 检查顺序不可判定诊断检查器。
+ */
 object CfirExtendCheckSequenceChecker : CfirExtendChecker() {
+    /**
+     * 检查当前 extend 是否处于无法决定检查顺序的规则集合中。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(extend: CfirExtend) {
         val query = context.session.extendRuleQueryServiceOrNull ?: return
@@ -268,7 +310,15 @@ object CfirExtendCheckSequenceChecker : CfirExtendChecker() {
     }
 }
 
+/**
+ * extend orphan rule 检查器。
+ *
+ * 当 extend 不在目标类型声明包中时，不能引入新的外部接口闭包。
+ */
 object CfirExtendOrphanRuleChecker : CfirExtendChecker() {
+    /**
+     * 检查当前 extend 是否违反 orphan rule。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(extend: CfirExtend) {
         val query = context.session.extendRuleQueryServiceOrNull ?: return
@@ -293,7 +343,13 @@ object CfirExtendOrphanRuleChecker : CfirExtendChecker() {
     }
 }
 
+/**
+ * extend 泛型参数使用检查器。
+ */
 object CfirExtendGenericUsageChecker : CfirExtendChecker() {
+    /**
+     * 检查 extend 声明的类型参数是否至少出现在目标类型中。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(extend: CfirExtend) {
         if (extend.typeParameters.isEmpty()) return
@@ -312,7 +368,13 @@ object CfirExtendGenericUsageChecker : CfirExtendChecker() {
     }
 }
 
+/**
+ * 不可变目标泄漏 mut 接口检查器。
+ */
 object CfirExtendImmutableMutInterfaceChecker : CfirExtendChecker() {
+    /**
+     * 检查不可变目标是否通过 extend super interface 泄漏 mut 接口能力。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(extend: CfirExtend) {
         for (superTypeRef in extend.superTypeRefs) {
@@ -329,7 +391,13 @@ object CfirExtendImmutableMutInterfaceChecker : CfirExtendChecker() {
     }
 }
 
+/**
+ * 不可变目标上的 extend 成员合法性检查器。
+ */
 object CfirExtendImmutableMemberChecker : CfirExtendChecker() {
+    /**
+     * 检查不可变目标不能声明 mut 属性或 index assignment operator。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(extend: CfirExtend) {
         val targetConeType = (extend.extendedTypeRef as? CfirResolvedTypeRef)?.coneType ?: return
@@ -360,7 +428,13 @@ object CfirExtendImmutableMemberChecker : CfirExtendChecker() {
     }
 }
 
+/**
+ * 泛型目标 extend 特化冲突检查器。
+ */
 object CfirExtendSpecializationConflictChecker : CfirExtendChecker() {
+    /**
+     * 检查泛型目标不同特化 extend 之间的接口冲突。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirExtend) {
         if (!declaration.requiresSpecializationConflictCheck(context)) return
@@ -414,7 +488,15 @@ object CfirExtendSpecializationConflictChecker : CfirExtendChecker() {
     }
 }
 
+/**
+ * extend 默认实现冲突检查器。
+ *
+ * 当同一目标的多个 extend 引入相同接口且该接口含有独立默认成员时，需要报告默认实现冲突。
+ */
 object CfirExtendDefaultImplementationConflictChecker : CfirExtendChecker() {
+    /**
+     * 检查当前 extend 与同目标其它 extend 引入接口默认实现是否冲突。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirExtend) {
         val query = context.session.extendRuleQueryServiceOrNull ?: return
@@ -447,6 +529,9 @@ object CfirExtendDefaultImplementationConflictChecker : CfirExtendChecker() {
     }
 }
 
+/**
+ * 判断类型引用是否确定不是接口类型。
+ */
 private fun org.cangnova.cangjie.cfir.types.CfirTypeRef.isDefinitelyNotInterfaceType(): Boolean = when (this) {
     is CfirBasicTypeRef,
     is CfirImplicitTypeRef -> true
@@ -454,6 +539,9 @@ private fun org.cangnova.cangjie.cfir.types.CfirTypeRef.isDefinitelyNotInterface
     else -> false
 }
 
+/**
+ * 判断 cone 类型是否确定不能作为 extend super interface。
+ */
 private fun ConeCangJieType.isDefinitelyNotExtendInterfaceType(): Boolean = when (this) {
     // extend 的接口类型检查对齐官方 PreCheckExtend：类型实例化失败时按 Ty 正确性决定是否派生
     // EXTEND_NOT_INTERFACE。泛型实参数量错误已经有独立诊断，内部错误实参则仍会让整个接口实例无效。
@@ -469,12 +557,20 @@ private fun ConeCangJieType.isDefinitelyNotExtendInterfaceType(): Boolean = when
     else -> false
 }
 
+/**
+ * 判断 extend 目标类型引用是否在未能恢复语义类型时仍确定非法。
+ */
 private fun org.cangnova.cangjie.cfir.types.CfirTypeRef.isDefinitelyIllegalExtendedType(): Boolean = when (this) {
     is CfirImplicitTypeRef -> true
     is CfirErrorTypeRef -> this.diagnostic !is ConeUnresolvedTypeQualifierError
     else -> false
 }
 
+/**
+ * 取得 extend 目标语义类型。
+ *
+ * 错误类型若携带 delegated type 会优先恢复 delegated type，再执行 typealias 展开。
+ */
 context(context: CheckerContext)
 private fun org.cangnova.cangjie.cfir.types.CfirTypeRef.extendSemanticType(): ConeCangJieType? {
     val coneType = (this as? CfirResolvedTypeRef)?.coneType ?: return null
@@ -482,16 +578,25 @@ private fun org.cangnova.cangjie.cfir.types.CfirTypeRef.extendSemanticType(): Co
     return recoverableType.fullyExpandedType(context.session)
 }
 
+/**
+ * 为接口重复检查构造稳定语义 key。
+ */
 private fun org.cangnova.cangjie.cfir.types.CfirTypeRef.toSemanticStableKey(): String {
     val coneType = (this as? CfirResolvedTypeRef)?.coneType
     return coneType?.toString() ?: toString()
 }
 
+/**
+ * 判断类型引用中是否包含指定 extend 类型参数。
+ */
 private fun org.cangnova.cangjie.cfir.types.CfirTypeRef.containsTypeParameter(parameterName: String): Boolean {
     val coneType = (this as? CfirResolvedTypeRef)?.coneType ?: return false
     return coneType.containsTypeParameter(parameterName)
 }
 
+/**
+ * 判断类型引用中是否包含当前 extend 的任一类型参数。
+ */
 private fun org.cangnova.cangjie.cfir.types.CfirTypeRef.containsAnyExtendTypeParameter(extend: CfirExtend): Boolean {
     val parameterNames = extend.typeParameters.mapTo(linkedSetOf()) { it.name.asString() }
     if (parameterNames.isEmpty()) return false
@@ -499,9 +604,15 @@ private fun org.cangnova.cangjie.cfir.types.CfirTypeRef.containsAnyExtendTypePar
     return parameterNames.any { parameterName -> coneType.containsTypeParameter(parameterName) }
 }
 
+/**
+ * 判断 cone 类型或其 abbreviated type 中是否包含指定类型参数。
+ */
 private fun ConeCangJieType.containsTypeParameter(parameterName: String): Boolean =
     abbreviatedType?.containsTypeParameter(parameterName) == true || containsTypeParameterInConstructor(parameterName)
 
+/**
+ * 判断 cone 类型构造内部是否包含指定类型参数。
+ */
 private fun ConeCangJieType.containsTypeParameterInConstructor(parameterName: String): Boolean = when (this) {
     is ConeTypeParameterType -> lookupTag.name.asString() == parameterName
     is ConeClassLikeType -> typeArguments.any { it.type.containsTypeParameter(parameterName) }
@@ -519,6 +630,9 @@ private fun ConeCangJieType.containsTypeParameterInConstructor(parameterName: St
     else -> arrayElementType?.containsTypeParameter(parameterName) == true
 }
 
+/**
+ * 为诊断构造类型引用的近似名称。
+ */
 private fun org.cangnova.cangjie.cfir.types.CfirTypeRef.toApproxName(): Name {
     val classId = CfirExtendSemantics.run { toClassIdOrNull() }
     if (classId != null) return classId.shortClassName

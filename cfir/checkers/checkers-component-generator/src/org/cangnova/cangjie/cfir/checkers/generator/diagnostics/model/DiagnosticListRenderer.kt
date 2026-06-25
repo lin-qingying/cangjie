@@ -2,7 +2,13 @@
 
 import java.io.File
 
+/**
+ * 诊断列表源码渲染器抽象基类。
+ */
 abstract class DiagnosticListRenderer {
+    /**
+     * 将诊断列表渲染到目标文件。
+     */
     abstract fun render(
         file: File,
         diagnosticList: DiagnosticList,
@@ -10,6 +16,5 @@ abstract class DiagnosticListRenderer {
         starImportsToAdd: Set<String>,
     )
 }
-
 
 

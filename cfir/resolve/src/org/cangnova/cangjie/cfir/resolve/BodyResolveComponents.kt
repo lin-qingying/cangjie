@@ -40,26 +40,45 @@ data class SessionHolderImpl(
  * tower data、局部作用域和候选检查组件，确保同一次 body resolve 使用一致上下文。
  */
 abstract class BodyResolveComponents : SessionAndScopeSessionHolder {
+    /** 当前 body resolve 使用的返回类型计算器。 */
     abstract val returnTypeCalculator: ReturnTypeCalculator
+    /** 隐式接收者和值的存储。 */
     abstract val implicitValueStorage: ImplicitValueStorage
+    /** 当前声明栈，从文件/容器到正在解析的声明。 */
     abstract val containingDeclarations: List<CfirDeclaration>
+    /** 当前文件 imports 构造出的可见 scope 列表。 */
     abstract val fileImportsScope: List<CfirScope>
+    /** 当前 tower data 元素栈。 */
     abstract val towerDataElements: List<CfirTowerDataElement>
+    /** 当前 tower data 上下文。 */
     abstract val towerDataContext: CfirTowerDataContext
+    /** 当前局部作用域集合。 */
     abstract val localScopes: CfirLocalScopes
+    /** 表示无期望类型的共享 type ref。 */
     abstract val noExpectedType: CfirTypeRef
+    /** 当前 session 的符号提供器。 */
     abstract val symbolProvider: CfirSymbolProvider
+    /** 正在解析的文件。 */
     abstract val file: CfirFile
+    /** 当前 body resolve 容器声明。 */
     abstract val container: CfirDeclaration
+    /** 调用解析阶段 runner。 */
     abstract val resolutionStageRunner: ResolutionStageRunner
+    /** SAM 转换解析器。 */
     abstract val samResolver: CfirSamResolver
+    /** 普通调用解析器。 */
     abstract val callResolver: CfirCallResolver
+    /** 调用完成器，负责约束系统 completion。 */
     abstract val callCompleter: CfirCallCompleter
 //    abstract val doubleColonExpressionResolver: CfirDoubleColonExpressionResolver
+    /** 合成调用生成器。 */
     abstract val syntheticCallGenerator: CfirSyntheticCallGenerator
+    /** body resolve 使用的数据流分析器。 */
     abstract val dataFlowAnalyzer: CfirDataFlowAnalyzer
 //    abstract val outerClassManager: CfirOuterClassManager
+    /** 整数字面量与 primitive operator 近似 transformer。 */
     abstract val integerLiteralAndOperatorApproximationTransformer: IntegerLiteralAndOperatorApproximationTransformer
+    /** 当前 inline 函数上下文；非 inline 路径为 null。 */
     abstract val inlineFunction: CfirFunction?
 }
 

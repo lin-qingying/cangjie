@@ -47,6 +47,9 @@ import org.cangnova.cangjie.source.CjOffsetsOnlySourceElement
  * 对齐 C++ TypeChecker 中 sema_static_function_overload_conflicts 检查。
  */
 object CfirFunctionOverloadChecker : CfirSimpleFunctionChecker() {
+    /**
+     * 检查单个命名函数的 static / non-static 重载冲突。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirNamedFunction) {
         checkStaticNonStaticOverloadConflict(declaration)
@@ -110,12 +113,21 @@ object CfirFunctionOverloadChecker : CfirSimpleFunctionChecker() {
  * - 当真实源码修饰符已经由通用 modifier checker 诊断时，本 checker 不重复报函数名级诊断。
  */
 object CfirFunctionDeclarationStatusChecker : CfirSimpleFunctionChecker() {
+    /**
+     * 检查命名函数声明状态组合的合法性。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirNamedFunction) {
         checkMutFunction(declaration)
         checkStaticFunctionStatus(declaration)
     }
 
+    /**
+     * 检查 `mut func` 的声明位置。
+     *
+     * `mut` 只允许出现在 struct 或 interface 的非局部成员函数上；源码显式修饰符已经由
+     * 通用 modifier checker 处理时，这里避免重复报告。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkMutFunction(function: CfirNamedFunction) {
         if (!function.status.isMut) return
@@ -130,6 +142,11 @@ object CfirFunctionDeclarationStatusChecker : CfirSimpleFunctionChecker() {
         )
     }
 
+    /**
+     * 检查 static 函数不能同时承载实例分派状态。
+     *
+     * 只在冲突状态来自非源码修饰符或尚未由 modifier checker 成对处理时报告函数名级诊断。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkStaticFunctionStatus(function: CfirNamedFunction) {
         if (!function.status.isStatic) return
@@ -152,11 +169,17 @@ object CfirFunctionDeclarationStatusChecker : CfirSimpleFunctionChecker() {
         )
     }
 
+    /**
+     * 取得当前函数最近的类型或 extend 容器声明。
+     */
     private fun CheckerContext.closestContainingTypeDeclaration() =
         findClosestDeclaration<org.cangnova.cangjie.cfir.declarations.CfirDeclaration> { declaration ->
             declaration is CfirClassLikeDeclaration || declaration is CfirExtend
         }
 
+    /**
+     * 判断函数源码上是否显式出现指定关键字修饰符。
+     */
     private fun CfirNamedFunction.hasSourceModifier(token: org.cangnova.cangjie.lexer.CjKeywordToken): Boolean =
         source?.realSourceModifiers()?.modifierByToken(token) != null
 }
@@ -167,6 +190,9 @@ object CfirFunctionDeclarationStatusChecker : CfirSimpleFunctionChecker() {
  * 对齐 C++ DiagKind::sema_unable_to_infer_return_type
  */
 object CfirFunctionReturnTypeInferenceChecker : CfirFunctionChecker() {
+    /**
+     * 检查函数返回类型是否因真正的推断失败而保留错误类型。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirFunction) {
         val returnTypeRef = declaration.returnTypeRef
@@ -208,6 +234,9 @@ object CfirFunctionReturnTypeInferenceChecker : CfirFunctionChecker() {
  * - `TypeChecker::CheckFinalizer` 中 `sema_forbid_generic_finalizer` / `sema_cannot_currying`
  */
 object CfirFinalizerDeclarationChecker : CfirFunctionChecker() {
+    /**
+     * 检查 finalizer 声明的所有声明级限制。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirFunction) {
         val finalizer = declaration as? CfirFinalizer ?: return
@@ -217,6 +246,9 @@ object CfirFinalizerDeclarationChecker : CfirFunctionChecker() {
         checkCurriedFinalizer(finalizer)
     }
 
+    /**
+     * 检查 open / abstract class 中禁止声明 finalizer 的规则。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkFinalizerInInheritableClass(finalizer: CfirFinalizer) {
         val owner = context.findClosestDeclaration<CfirClass>() ?: return
@@ -234,6 +266,9 @@ object CfirFinalizerDeclarationChecker : CfirFunctionChecker() {
         )
     }
 
+    /**
+     * 检查 finalizer 不能声明类型参数。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkGenericFinalizer(finalizer: CfirFinalizer) {
         if (finalizer.typeParameters.isEmpty()) return
@@ -245,6 +280,9 @@ object CfirFinalizerDeclarationChecker : CfirFunctionChecker() {
         )
     }
 
+    /**
+     * 检查 finalizer 不能使用多参数列表柯里化形式。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkCurriedFinalizer(finalizer: CfirFinalizer) {
         val parameterLists = finalizer.attributes.functionBodyDiagnosticData?.valueParameterLists.orEmpty()
@@ -257,6 +295,9 @@ object CfirFinalizerDeclarationChecker : CfirFunctionChecker() {
         )
     }
 
+    /**
+     * 将参数列表 source 收窄到左括号首字符。
+     */
     private fun AbstractCjSourceElement.leftParenthesisSource(): CjOffsetsOnlySourceElement {
         return CjOffsetsOnlySourceElement(
             startOffset = startOffset,
@@ -264,6 +305,9 @@ object CfirFinalizerDeclarationChecker : CfirFunctionChecker() {
         )
     }
 
+    /**
+     * 取得 finalizer 的 `~` 首字符诊断 source。
+     */
     private fun CfirFinalizer.tildeSource(): AbstractCjSourceElement? {
         val source = source ?: return null
         return CjOffsetsOnlySourceElement(
@@ -281,6 +325,9 @@ object CfirFinalizerDeclarationChecker : CfirFunctionChecker() {
  * - getter / setter 不能拥有多个参数列表：`sema_cannot_currying`
  */
 object CfirPropertyAccessorDeclarationChecker : CfirPropertyAccessorChecker() {
+    /**
+     * 检查单个属性访问器声明的参数列表限制。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirPropertyAccessor) {
         val declarationKind = if (declaration.isGetter) "getter" else "setter"
@@ -303,6 +350,9 @@ object CfirPropertyAccessorDeclarationChecker : CfirPropertyAccessorChecker() {
         }
     }
 
+    /**
+     * 取得 getter/setter 关键字首字符诊断 source。
+     */
     private fun CfirPropertyAccessor.accessorKeywordSource(): AbstractCjSourceElement? {
         val source = source ?: return null
         return CjOffsetsOnlySourceElement(
@@ -319,6 +369,9 @@ object CfirPropertyAccessorDeclarationChecker : CfirPropertyAccessorChecker() {
  * operator / foreign / open / abstract 函数不能有默认参数。
  */
 object CfirDefaultParameterChecker : CfirSimpleFunctionChecker() {
+    /**
+     * 检查函数默认参数是否出现在被禁止的函数种类上。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirNamedFunction) {
         val defaultParameters = declaration.valueParameters.filter { it.defaultValue != null }

@@ -17,6 +17,7 @@ import org.cangnova.cangjie.cfir.types.ConeLookupTagBasedType
 import org.cangnova.cangjie.cfir.types.ConePointerType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
+import org.cangnova.cangjie.cfir.types.ConeTypeVariableType
 import org.cangnova.cangjie.cfir.types.abbreviatedType
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
@@ -37,7 +38,13 @@ import org.cangnova.cangjie.type.model.TypeConstructorMarker
  * @property substitutedReceiverType 应用替换后的 receiver 类型。
  */
 data class CfirExtendDeclarationSubstitution(
+    /**
+     * 从 extend 声明类型参数到当前 use-site receiver 实参的替换器。
+     */
     val substitutor: ConeSubstitutor,
+    /**
+     * 将替换器应用到 extend 目标模式后得到的实际 receiver 类型。
+     */
     val substitutedReceiverType: ConeCangJieType,
 )
 
@@ -222,6 +229,15 @@ private fun ConeCangJieType.satisfiesUpperBound(
     substitutor: ConeSubstitutor,
 ): Boolean {
     if (AbstractTypeChecker.isSubtypeOf(session.typeContext, this, upperBound)) {
+        return true
+    }
+
+    if (this is ConeTypeVariableType) {
+        /*
+         * fresh inference type variable 还不是最终实例化类型。
+         * 这里必须先暴露 extend 父类型，让约束系统从 expected type、显式类型实参和实参类型共同求解；
+         * 最终写回后的 concrete/type-parameter 类型仍会在同一入口用真实上界重新过滤。
+         */
         return true
     }
 

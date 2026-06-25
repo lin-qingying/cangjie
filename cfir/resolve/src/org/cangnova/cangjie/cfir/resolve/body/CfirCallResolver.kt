@@ -668,6 +668,7 @@ class CfirCallResolver(
         )
 
         for (atom in atoms) {
+            /** 当前 atom 展开后形成的下一批部分解析路径。 */
             val nextPartials = mutableListOf<PartialResolution>()
             for (partial in partials) {
                 for (choice in callableReferenceChoices(containingCallCandidate, atom, partial.storage)) {
@@ -701,9 +702,13 @@ class CfirCallResolver(
      * 该结构保存临时候选、表达式节点和结果函数类型，只有整组 callable reference 唯一成功后才会 apply。
      */
     private data class CallableReferenceChoice(
+        /** 被解析的 callable reference atom。 */
         val atom: ConeResolvedCallableReferenceAtom,
+        /** 对应的命名访问表达式。 */
         val expression: CfirNamedAccessExpression,
+        /** 当前选择的候选。 */
         val candidate: Candidate,
+        /** callable reference 解析后的函数类型。 */
         val resultingType: ConeCangJieType,
     ) {
         /** 将 callable reference 候选正式写回表达式和 atom 状态。 */

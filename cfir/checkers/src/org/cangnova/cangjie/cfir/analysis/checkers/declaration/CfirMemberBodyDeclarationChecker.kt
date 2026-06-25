@@ -91,8 +91,19 @@ object CfirMemberBodyDeclarationChecker : CfirDeclarationChecker<CfirMemberDecla
      * @property name 诊断展示的成员名称。
      */
     private data class BodyRequiredMemberInfo(
+        /**
+         * 成员声明状态。
+         */
         val status: CfirDeclarationStatus,
+
+        /**
+         * 诊断展示的成员种类。
+         */
         val kind: String,
+
+        /**
+         * 诊断展示的成员名称。
+         */
         val name: Name,
     )
 }

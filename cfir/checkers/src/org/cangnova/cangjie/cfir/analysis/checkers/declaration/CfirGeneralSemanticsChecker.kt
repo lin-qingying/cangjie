@@ -66,6 +66,9 @@ import org.cangnova.cangjie.source.CjSourceElement
  * 属于 resolve 管线和表达式检查器的职责，此处只处理声明层面可判断的部分。
  */
 object CfirGeneralSemanticsChecker : CfirFileChecker() {
+    /**
+     * 对单个文件执行通用声明语义检查。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirFile) {
         checkAccessibilityInFile(declaration)
@@ -324,6 +327,12 @@ object CfirGeneralSemanticsChecker : CfirFileChecker() {
         }
     }
 
+    /**
+     * 查找声明签名中第一个暴露了更低可见性类型的位置。
+     *
+     * 检查范围包括类型参数上界、函数返回值和参数类型、属性/字段类型以及 typealias
+     * 展开类型。
+     */
     context(context: CheckerContext)
     private fun CfirDeclaration.findFirstSignatureExposure(
         declarationVisibility: Visibility,
@@ -347,6 +356,9 @@ object CfirGeneralSemanticsChecker : CfirFileChecker() {
         }
     }
 
+    /**
+     * 查找类型参数上界中第一个可见性暴露问题。
+     */
     context(context: CheckerContext)
     private fun CfirTypeParameterRefsOwner.findFirstTypeParameterBoundExposure(
         declarationVisibility: Visibility,
@@ -372,8 +384,14 @@ object CfirGeneralSemanticsChecker : CfirFileChecker() {
  * - EXPORT_SAME_PRIVATE_DECL: 同名 private 导出限制
  */
 object CfirClassStructSemanticsChecker : CfirClassLikeChecker() {
+    /**
+     * C 互操作结构体注解名称。
+     */
     private val C_ANNOTATION = Name.identifier("C")
 
+    /**
+     * 对 class/struct/enum/interface 执行通用类型声明语义检查。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirClassLikeDeclaration) {
         if (declaration is CfirClass) {
@@ -396,6 +414,9 @@ object CfirClassStructSemanticsChecker : CfirClassLikeChecker() {
         }
     }
 
+    /**
+     * 检查 sealed class 必须同时是 abstract class。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkSealedOnlyOnAbstract(classDecl: CfirClass) {
         if (!classDecl.status.isSealed) return
@@ -656,6 +677,9 @@ object CfirClassStructSemanticsChecker : CfirClassLikeChecker() {
  * - PROPERTY_MUST_IMPLEMENT_BOTH: 接口属性的 getter/setter 都必须实现
  */
 object CfirPropertySemanticsChecker : CfirPropertyChecker() {
+    /**
+     * 对单个属性声明执行属性语义检查。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirProperty) {
         checkPropertyAccessors(declaration)
@@ -664,6 +688,9 @@ object CfirPropertySemanticsChecker : CfirPropertyChecker() {
         checkPropertyMustImplementBoth(declaration)
     }
 
+    /**
+     * 检查非接口、非抽象、非构造参数来源属性必须具有访问器。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkPropertyAccessors(property: CfirProperty) {
         if (property.isCatchParameter == true) return
@@ -678,6 +705,9 @@ object CfirPropertySemanticsChecker : CfirPropertyChecker() {
         }
     }
 
+    /**
+     * 检查不可变属性不能声明 setter。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkImmutablePropertySetter(property: CfirProperty) {
         if (!property.status.isMut && property.setter != null) {
@@ -779,21 +809,33 @@ object CfirPropertySemanticsChecker : CfirPropertyChecker() {
 
 // ──────────── 工具函数 ────────────
 
+/**
+ * 取得声明用于访问级别检查的可见性。
+ */
 private fun CfirDeclaration.accessLevelVisibility(): Visibility? =
     (this as? CfirMemberDeclaration)?.status?.visibility
 
+/**
+ * 计算成员在外层声明可见性约束下的有效可见性。
+ */
 private fun Visibility.effectiveInside(containingAccessLevel: Visibility?): Visibility {
     val ownRank = cangjieAccessLevelRank() ?: return this
     val containingRank = containingAccessLevel?.cangjieAccessLevelRank() ?: return this
     return if (containingRank < ownRank) containingAccessLevel else this
 }
 
+/**
+ * 判断当前声明可见性是否允许暴露给定类型可见性。
+ */
 private fun Visibility.canExpose(typeVisibility: Visibility): Boolean {
     val declarationRank = cangjieAccessLevelRank() ?: return true
     val typeRank = typeVisibility.cangjieAccessLevelRank() ?: return true
     return declarationRank <= typeRank
 }
 
+/**
+ * 将仓颉访问级别映射为可比较的访问等级。
+ */
 private fun Visibility.cangjieAccessLevelRank(): Int? = when (this) {
     Visibilities.Private, Visibilities.PrivateToThis -> 0
     Visibilities.Internal -> 1
@@ -802,18 +844,30 @@ private fun Visibility.cangjieAccessLevelRank(): Int? = when (this) {
     else -> null
 }
 
+/**
+ * 取得访问级别诊断应使用的声明 source。
+ */
 private fun CfirDeclaration.accessibilityDiagnosticSource(): AbstractCjSourceElement? = when (this) {
     is CfirClassLikeDeclaration -> classLikeNameDiagnosticSource()
     is CfirNamedFunction -> functionNameDiagnosticSource()
     else -> source
 }
 
+/**
+ * 在类型引用上查找第一个可见性暴露问题。
+ */
 context(context: CheckerContext)
 private fun CfirTypeRef.findFirstExposure(declarationVisibility: Visibility): Visibility? {
     val resolvedType = (this as? CfirResolvedTypeRef)?.coneType ?: return null
     return resolvedType.findFirstExposure(declarationVisibility)
 }
 
+/**
+ * 在 cone 类型结构中递归查找第一个可见性暴露问题。
+ *
+ * 遍历范围覆盖类型实参、函数类型、元组、varray、指针、交叉/联合类型以及类型别名展开，
+ * visitedTypes 用于避免递归类型结构导致无限遍历。
+ */
 context(context: CheckerContext)
 private fun ConeCangJieType.findFirstExposure(
     declarationVisibility: Visibility,
@@ -873,6 +927,9 @@ private fun ConeCangJieType.findFirstExposure(
     return null
 }
 
+/**
+ * 取得声明的语义名称。
+ */
 private fun CfirDeclaration.declarationName(): Name? = when (this) {
     is CfirClass -> name
     is CfirInterface -> name
@@ -885,6 +942,9 @@ private fun CfirDeclaration.declarationName(): Name? = when (this) {
     else -> null
 }
 
+/**
+ * 判断 cone 类型结构中是否引用了指定类型参数名。
+ */
 private fun ConeCangJieType.containsTypeParameter(name: Name): Boolean {
     if (this is ConeTypeParameterType && this.lookupTag.name == name) return true
     for (arg in this.typeArguments) {
@@ -894,6 +954,9 @@ private fun ConeCangJieType.containsTypeParameter(name: Name): Boolean {
     return false
 }
 
+/**
+ * 从 cone 类型中提取 class-like 或 typealias 的 classId。
+ */
 private fun ConeCangJieType.classIdOrNull(): org.cangnova.cangjie.name.ClassId? {
     return when (this) {
         is ConeClassLikeType -> classId

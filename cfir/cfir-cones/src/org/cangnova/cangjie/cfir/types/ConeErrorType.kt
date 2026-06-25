@@ -10,7 +10,9 @@ import org.cangnova.cangjie.name.ClassId
  * @property delegatedType 与该错误类型相关的原始类型，例如未推断出的类型参数类型。
  */
 class ConeClassLikeErrorLookupTag(
+    /** 错误类型对外暴露的占位 ClassId。 */
     override val classId: ClassId,
+    /** 该错误类型携带的结构化诊断。 */
     val diagnostic: ConeDiagnostic,
     /**
      * A type the error type is somehow related to, e.g., a type parameter type that is uninferred.
@@ -29,11 +31,15 @@ class ConeClassLikeErrorLookupTag(
  */
 class ConeErrorType(
     diagnostic: ConeDiagnostic,
+    /** 是否表示未推断出的类型参数。 */
     val isUninferredParameter: Boolean = false,
     delegatedType: ConeCangJieType? = null,
+    /** 错误类型保留的类型实参。 */
     override val typeArguments: List<  ConeTypeProjection> = emptyList(),
+    /** 错误类型附带的属性。 */
     override val attributes: ConeAttributes = ConeAttributes.Empty,
 
+    /** 错误类型的 lookup tag，保存诊断和委托类型。 */
     override val lookupTag: ConeClassLikeErrorLookupTag =
         ConeClassLikeErrorLookupTag(delegatedType?.classId ?: ClassId.fromString("<error>"), diagnostic, delegatedType)
 )  : ConeClassifierType() {
@@ -71,6 +77,7 @@ class ConeErrorType(
  * @property attributes 不确定类型携带的属性。
  */
 class ConeQuestType(
+    /** 不确定类型携带的属性。 */
     override val attributes: ConeAttributes = ConeAttributes.Empty,
 ) : ConeRigidType(), ConeTypeConstructorMarker {
 

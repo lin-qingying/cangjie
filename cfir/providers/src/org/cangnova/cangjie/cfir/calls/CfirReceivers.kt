@@ -79,6 +79,9 @@ sealed interface ReceiverValue {
  * @property receiverExpression 原始表达式 receiver。
  */
 class ExpressionReceiverValue(
+    /**
+     * 调用点显式写出的 receiver 表达式，后续类型与 qualifier scope 都从该表达式读取。
+     */
     override val receiverExpression: CfirExpression,
 ) : ReceiverValue {
     /**
@@ -111,12 +114,24 @@ class ExpressionReceiverValue(
  * @property scopeSession 成员 scope 缓存会话。
  */
 sealed class ImplicitReceiverValue<S : CfirThisOwnerSymbol<*>>(
+    /**
+     * 隐式 receiver 绑定的 this owner symbol，用于构造 implicit-this 引用和成员归属。
+     */
     override val boundSymbol: S,
     type: ConeCangJieType,
     originalType: ConeCangJieType,
+    /**
+     * 当前 receiver 参与查找时使用的 use-site session。
+     */
     override val session: CfirSession,
+    /**
+     * 成员 scope 缓存所属的 scope session。
+     */
     override val scopeSession: ScopeSession,
     mutable: Boolean,
+    /**
+     * 不可访问 receiver 的诊断分类；为 `null` 表示普通隐式 receiver。
+     */
     private val inaccessibleReceiverKind: InaccessibleReceiverKind? = null,
 ) : ImplicitValue<S>(type, originalType, mutable), ReceiverValue, SessionAndScopeSessionHolder {
 
@@ -291,6 +306,9 @@ class InaccessibleImplicitReceiverValue private constructor(
     useSiteSession: CfirSession,
     scopeSession: ScopeSession,
     mutable: Boolean,
+    /**
+     * 当前 receiver 不可访问的具体原因，调用候选诊断会据此决定适用性与错误文本。
+     */
     val kind: InaccessibleReceiverKind,
 ) : ImplicitReceiverValue<CfirClassLikeSymbol<*>>(
     boundSymbol = boundSymbol,

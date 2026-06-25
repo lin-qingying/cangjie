@@ -29,7 +29,10 @@ import org.cangnova.cangjie.cfir.references.CfirSuperReference
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.source.AbstractCjSourceElement
 import org.cangnova.cangjie.source.CjFakeSourceElementKind
+import org.cangnova.cangjie.source.CjSourceElementOffsetStrategy
 import org.cangnova.cangjie.source.CjSourceElement
+import org.cangnova.cangjie.source.fakeElement
+import org.cangnova.cangjie.source.realElement
 import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.diagnostic.ConeAmbiguityError
@@ -45,7 +48,6 @@ import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedReferenceError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedSymbolError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedTypeQualifierError
 import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
-import org.cangnova.cangjie.cfir.expressions.toReference
 import org.cangnova.cangjie.cfir.references.CfirErrorNamedReference
 import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
 import org.cangnova.cangjie.cfir.references.CfirResolvedErrorReference
@@ -208,10 +210,9 @@ class ErrorNodeDiagnosticCollectorComponent(
      */
     private fun processErrorReference(reference: CfirReference, diagnostic: ConeDiagnostic, context: CheckerContext) {
         var source = reference.source
-        val callOrAssignment = context.callsOrAssignments.lastOrNull()?.takeIf {
-            // Use the source of the enclosing FirQualifiedAccess if it is exactly the call to the erroneous callee.
-            it.toReference(session) == reference
-        }
+        val callOrAssignment =
+            context.callsOrAssignments.lastOrNull { it.toReferenceOrNull() == reference }
+                ?: context.containingElements.asReversed().firstOrNull { it.toReferenceOrNull() == reference }
         if (((reference is CfirNamedReference && reference.name.asString() == "<super>") || reference is CfirSuperReference) &&
             context.findClosestDeclaration<CfirExtend>() != null
         ) {
@@ -256,7 +257,36 @@ class ErrorNodeDiagnosticCollectorComponent(
 //            source = source?.delegatedPropertySourceOrThis()
 //        }
 
-        reportCfirDiagnostic(diagnostic, source, context, callOrAssignment?.source)
+        reportCfirDiagnostic(
+            diagnostic,
+            source,
+            context,
+            callOrAssignment.qualifiedAmbiguitySource(reference, diagnostic),
+        )
+    }
+
+    /**
+     * qualified access 的歧义诊断应标完整访问表达式，例如 `Int64.test`，而不是只标 selector。
+     */
+    private fun CfirElement?.qualifiedAmbiguitySource(
+        reference: CfirReference,
+        diagnostic: ConeDiagnostic,
+    ): CjSourceElement? {
+        val defaultSource = this?.source as? CjSourceElement
+        if (diagnostic !is ConeAmbiguityError) return defaultSource
+        val access = this as? CfirQualifiedAccessExpression ?: return defaultSource
+        val referenceSource = reference.source ?: return defaultSource
+        val receiverSource = access.explicitReceiver?.source as? CjSourceElement
+            ?: access.dispatchReceiver?.source as? CjSourceElement
+            ?: return defaultSource
+        if (receiverSource.startOffset >= referenceSource.startOffset) return defaultSource
+        return referenceSource.realElement().fakeElement(
+            CjFakeSourceElementKind.ReferenceInAtomicQualifiedAccess,
+            CjSourceElementOffsetStrategy.Custom.Delegated(
+                startOffsetAnchor = receiverSource,
+                endOffsetAnchor = referenceSource,
+            ),
+        )
     }
 
     // ── ConeErrorType 诊断处理 ────────────────────────────────────────────────
@@ -506,10 +536,15 @@ class ErrorNodeDiagnosticCollectorComponent(
      * 宿主调用位置为可选，缺失时（即错误不在任何调用内）以 null 参与比较。
      */
     private data class ReportedConeDiagnosticKey(
+        /** Cone diagnostic 的原因文本。 */
         val reason: String,
+        /** 诊断 source 起始偏移。 */
         val sourceStart: Int,
+        /** 诊断 source 结束偏移。 */
         val sourceEnd: Int,
+        /** 宿主调用 source 起始偏移；没有宿主调用时为 null。 */
         val callStart: Int?,
+        /** 宿主调用 source 结束偏移；没有宿主调用时为 null。 */
         val callEnd: Int?,
     )
 

@@ -31,5 +31,8 @@ interface MatchExhaustivenessContext {
  * @property session 当前分析使用的 CFIR session。
  */
 data class SessionMatchExhaustivenessContext(
+    /**
+     * 当前分析使用的 CFIR session。
+     */
     override val session: CfirSession,
 ) : MatchExhaustivenessContext

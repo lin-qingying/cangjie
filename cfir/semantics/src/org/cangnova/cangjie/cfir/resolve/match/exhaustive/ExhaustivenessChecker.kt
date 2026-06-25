@@ -60,12 +60,33 @@ interface ExhaustivenessChecker {
  * @property distinctConstructors 不同构造器数量。
  */
 data class PatternComplexity(
+    /**
+     * 最大模式嵌套深度。
+     */
     val maxNestingDepth: Int,
+    /**
+     * 是否包含 or-pattern。
+     */
     val hasOrPattern: Boolean,
+    /**
+     * 是否包含 guard。
+     */
     val hasGuard: Boolean,
+    /**
+     * 是否包含 slice 模式。
+     */
     val hasSlicePattern: Boolean,
+    /**
+     * 是否包含 range 模式。
+     */
     val hasRangePattern: Boolean,
+    /**
+     * 模式总数。
+     */
     val totalPatterns: Int,
+    /**
+     * 不同构造器数量。
+     */
     val distinctConstructors: Int,
 ) {
     /** 是否可由轻量专用 checker 处理。 */

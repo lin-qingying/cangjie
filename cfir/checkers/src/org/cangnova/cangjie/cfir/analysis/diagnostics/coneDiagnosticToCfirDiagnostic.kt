@@ -26,6 +26,7 @@ package org.cangnova.cangjie.cfir.analysis.diagnostics
 
 import com.intellij.psi.PsiElement
 import com.intellij.psi.util.PsiTreeUtil
+import com.intellij.lang.LighterASTNode
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.inheritanceCycleDiagnosticSource
 import org.cangnova.cangjie.cfir.calls.resolvedQualifierClassifier
 import org.cangnova.cangjie.cfir.declarations.*
@@ -69,6 +70,12 @@ import org.cangnova.cangjie.type.AbstractTypeChecker
 import org.cangnova.cangjie.type.model.TypeConstructorMarker
 import org.cangnova.cangjie.type.model.TypeParameterMarker
 
+/**
+ * 将 resolve/type inference 阶段产生的 Cone diagnostic 映射为用户可见 CFIR 诊断。
+ *
+ * 该入口负责按照 diagnostic 的精确子类型选择专用映射路径，并把调用表达式、
+ * 赋值表达式、值参数等 source 上下文传递给下游，以保持诊断位置与官方语义一致。
+ */
 fun ConeDiagnostic.toCfirDiagnostics(
     session: CfirSession,
     source: CjSourceElement?,
@@ -112,6 +119,12 @@ private fun ConeHiddenCandidateError.mapConeHiddenCandidateError(
     )
 }
 
+/**
+ * 将单个约束系统错误映射为对应 CFIR 诊断。
+ *
+ * 该函数处理实参约束、期望类型约束、类型信息不足、空交类型推断和 builder inference
+ * 限制等细粒度错误，并在存在更具体诊断时避免退化为泛化的类型不匹配。
+ */
 private fun ConstraintSystemError.mapConstraintSystemError(
     source: CjSourceElement?,
     qualifiedAccessSource: CjSourceElement?,
@@ -236,11 +249,20 @@ private fun ConstraintSystemError.mapConstraintSystemError(
     }
 }
 
+/**
+ * 将候选调用的约束系统矛盾映射为用户可见诊断列表。
+ *
+ * 映射顺序按根因优先级排列：先处理参数映射和显式类型实参上界，再处理泛型推断，
+ * 最后才使用约束 mismatch 或通用 inference error 作为兜底诊断。
+ */
 private fun ConeConstraintSystemHasContradiction.mapSystemHasContradictionError(
     session: CfirSession,
     source: CjSourceElement?,
     qualifiedAccessSource: CjSourceElement?,
 ): List<CjDiagnostic> {
+    candidate.unsuccessfulCallableReferenceArgumentDiagnostic(session, source, qualifiedAccessSource)
+        ?.let { return listOf(it) }
+
     candidate.cangjieVariadicRegularCallDiagnostics
         .mapCangjieVariadicRegularCallDiagnostics(session, source, qualifiedAccessSource)
         .takeIf { it.isNotEmpty() }
@@ -363,6 +385,9 @@ private fun ConeConstraintSystemHasContradiction.mapSystemHasContradictionError(
     }
 }
 
+/**
+ * 判断错误是否来自 bare static generic qualifier 的类型参数推断失败。
+ */
 private fun ConeConstraintSystemHasContradiction.isBareStaticGenericQualifierInferenceError(
     session: CfirSession,
 ): Boolean {
@@ -383,6 +408,9 @@ private fun ConeConstraintSystemHasContradiction.isBareStaticGenericQualifierInf
     return !candidate.hasExplicitTypeArgumentsForBareStaticQualifier(ownerTypeParameterSymbols, explicitCount)
 }
 
+/**
+ * 判断调用是否为 bare static generic qualifier 提供了覆盖 owner 类型参数的显式类型实参。
+ */
 private fun AbstractCallCandidate<*>.hasExplicitTypeArgumentsForBareStaticQualifier(
     ownerTypeParameterSymbols: Set<CfirTypeParameterSymbol>,
     explicitCount: Int,
@@ -399,11 +427,17 @@ private fun AbstractCallCandidate<*>.hasExplicitTypeArgumentsForBareStaticQualif
     return explicitlyMappedSymbols.containsAll(ownerTypeParameterSymbols)
 }
 
+/**
+ * 将不可适用候选错误映射为调用、实参、泛型推断或 unresolved reference 诊断。
+ */
 private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
     session: CfirSession,
     source: CjSourceElement?,
     qualifiedAccessSource: CjSourceElement?,
 ): List<CjDiagnostic> {
+    candidate.unsuccessfulCallableReferenceArgumentDiagnostic(session, source, qualifiedAccessSource)
+        ?.let { return listOf(it) }
+
     candidate.cangjieVariadicRegularCallDiagnostics
         .mapCangjieVariadicRegularCallDiagnostics(session, source, qualifiedAccessSource)
         .takeIf { it.isNotEmpty() }
@@ -434,6 +468,8 @@ private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
                 suppressedErrorTypeInArguments = true
                 null
             }
+
+            is UnsuccessfulCallableReferenceArgument -> null
 
             is ArgumentPassedTwice -> CfirErrors.ARGUMENT_PASSED_TWICE.on(
                 rootCause.argument.source ?: source ?: qualifiedAccessSource ?: return@mapNotNull null,
@@ -580,6 +616,27 @@ private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
     return listOfNotNull(CfirErrors.UNRESOLVED_REFERENCE.on(diagnosticSource, candidateSymbol.debugName, null, session))
 }
 
+/**
+ * callable reference 实参解析失败时，保留函数引用自己的 no-match 诊断，
+ * 不能把同一根因继续泛化成外层调用的 TYPE_MISMATCH。
+ */
+private fun AbstractCallCandidate<*>.unsuccessfulCallableReferenceArgumentDiagnostic(
+    session: CfirSession,
+    source: CjSourceElement?,
+    qualifiedAccessSource: CjSourceElement?,
+): CjDiagnostic? {
+    val diagnostic = diagnostics.filterIsInstance<UnsuccessfulCallableReferenceArgument>().firstOrNull()
+        ?: return null
+    val diagnosticSource = diagnostic.argument.source ?: source ?: qualifiedAccessSource ?: callInfo.callSite.source ?: return null
+    return CfirErrors.NO_MATCH_FUNCTION_DECLARATION_FOR_REF.on(
+        diagnosticSource.firstCharacterDiagnosticSource(),
+        session,
+    )
+}
+
+/**
+ * 映射仓颉普通可变参数调用中的参数映射诊断。
+ */
 private fun List<ResolutionDiagnostic>.mapCangjieVariadicRegularCallDiagnostics(
     session: CfirSession,
     source: CjSourceElement?,
@@ -644,6 +701,9 @@ private fun List<ResolutionDiagnostic>.coalesceArgumentMappingDiagnostics(): Lis
     }
 }
 
+/**
+ * 提取 builder inference 多 lambda 限制相关诊断。
+ */
 private fun ConeConstraintSystemHasContradiction.multiLambdaBuilderInferenceDiagnostics(
     session: CfirSession,
     source: CjSourceElement?,
@@ -665,6 +725,9 @@ private fun ConeConstraintSystemHasContradiction.multiLambdaBuilderInferenceDiag
         }
 }
 
+/**
+ * 针对指定 lambda 实参查找并映射 multi-lambda builder inference 限制。
+ */
 private fun AbstractCallCandidate<*>.multiLambdaBuilderInferenceDiagnosticFor(
     argument: org.cangnova.cangjie.cfir.CfirElement,
     source: CjSourceElement?,
@@ -684,6 +747,9 @@ private fun AbstractCallCandidate<*>.multiLambdaBuilderInferenceDiagnosticFor(
     )
 }
 
+/**
+ * 在不可适用候选上构造泛型推断失败诊断。
+ */
 private fun ConeInapplicableCandidateError.genericInferenceInapplicableDiagnostic(
     session: CfirSession,
     source: CjSourceElement?,
@@ -702,6 +768,9 @@ private fun ConeInapplicableCandidateError.genericInferenceInapplicableDiagnosti
     return contradiction.genericInferenceErrorDiagnostic(source, qualifiedAccessSource, session)
 }
 
+/**
+ * 将 `invoke` operator 候选不可适用映射为 no matching invoke 诊断。
+ */
 private fun ConeInapplicableCandidateError.mapNoMatchingInvokeOperatorDiagnostic(
     session: CfirSession,
     source: CjSourceElement?,
@@ -719,6 +788,9 @@ private fun ConeInapplicableCandidateError.mapNoMatchingInvokeOperatorDiagnostic
     )
 }
 
+/**
+ * 根据实参类型不匹配上下文选择最具体的实参诊断。
+ */
 private fun argumentTypeMismatch(
     source: CjSourceElement?,
     expectedType: ConeCangJieType,
@@ -781,6 +853,9 @@ private fun argumentTypeMismatch(
     )
 }
 
+/**
+ * 判断 source 是否表示 tuple 之间的 `==` 或 `!=` 表达式。
+ */
 private fun CjSourceElement.isTupleEqualityExpression(): Boolean {
     val binaryExpression = psi as? CjBinaryExpression
     if (binaryExpression != null) {
@@ -830,6 +905,9 @@ private fun AbstractCallCandidate<*>.invalidBinaryOperatorDiagnosticForOperatorC
     )
 }
 
+/**
+ * 提取标准库 Range 类型的元素类型。
+ */
 private fun ConeCangJieType.rangeElementTypeOrNull(): ConeCangJieType? = when (this) {
     is ConeClassLikeType -> if (classId == StdlibClassIds.Range) typeArguments.singleOrNull()?.type else null
     is ConeStructType -> if (classId == StdlibClassIds.Range) typeArguments.singleOrNull()?.type else null
@@ -848,6 +926,9 @@ private fun ConeCangJieType.isFunctionTypeLike(): Boolean = when (this) {
     else -> false
 }
 
+/**
+ * 将候选歧义错误映射为构造器歧义、函数调用歧义、operator 歧义或基础类型 extend 歧义。
+ */
 private fun ConeAmbiguityError.mapConeAmbiguityError(
     source: CjSourceElement?,
     callOrAssignmentSource: CjSourceElement?,
@@ -910,7 +991,8 @@ private fun ConeAmbiguityError.mapConeAmbiguityError(
     }
 
     val diagnosticSource = callOrAssignmentSource ?: source ?: return emptyList()
-    val psi = diagnosticSource.psi
+    val callLikeProbeSource = source ?: callOrAssignmentSource ?: diagnosticSource
+    val psi = callLikeProbeSource.psi
     val isCallLikeContext = psi is CjCallExpression || PsiTreeUtil.getParentOfType(psi, CjCallExpression::class.java, false) != null
 
     invalidBinaryOperatorDiagnosticForOperatorAmbiguity(source, diagnosticSource, session)?.let { diagnostic ->
@@ -939,9 +1021,112 @@ private fun ConeAmbiguityError.mapConeAmbiguityError(
     }
 
     val factory = if (isCallLike || isCallLikeContext) CfirErrors.AMBIGUOUS_FUNCTION_CALL else CfirErrors.AMBIGUOUS_USE
-    return listOfNotNull(factory.on(diagnosticSource, name, session))
+    val ambiguitySource = if (factory == CfirErrors.AMBIGUOUS_USE) {
+        callOrAssignmentSource
+            ?.takeIf { source == null || it.startOffset < source.startOffset || it.endOffset > source.endOffset }
+            ?.offsetRangeSourceWhenPsiElementIsNarrower()
+            ?: source?.qualifiedAmbiguousUseSource()
+            ?: callOrAssignmentSource?.qualifiedAmbiguousUseSource()
+            ?: diagnosticSource
+    } else {
+        source ?: diagnosticSource
+    }
+    return listOfNotNull(factory.on(ambiguitySource, name, session))
 }
 
+/**
+ * 歧义的裸 qualified access 按官方位置和 IDE 诊断策略标整条访问表达式。
+ */
+private fun CjSourceElement.qualifiedAmbiguousUseSource(): AbstractCjSourceElement? {
+    qualifiedAmbiguousUsePsiSource()?.let { return it }
+    qualifiedAmbiguousUseLightTreeSource()?.let { return it }
+    return qualifiedAmbiguousUseTextSource()
+}
+
+/**
+ * PSI fake source 可能用 selector PSI 携带整条 qualified access 的自定义 offsets。
+ * 渲染诊断时必须尊重 offsets，否则会退回只标 selector。
+ */
+private fun CjSourceElement.offsetRangeSourceWhenPsiElementIsNarrower(): AbstractCjSourceElement {
+    val psi = psi ?: return this
+    val range = psi.textRange
+    if (startOffset == range.startOffset && endOffset == range.endOffset) return this
+    return CjOffsetsOnlySourceElement(startOffset, endOffset)
+}
+
+/**
+ * PSI 路径：若当前 source 是 qualified access 的 selector，扩展到顶层 selector qualified expression。
+ */
+private fun CjSourceElement.qualifiedAmbiguousUsePsiSource(): AbstractCjSourceElement? {
+    val sourcePsi = psi ?: return null
+    val sourceStart = startOffset
+    val sourceEnd = endOffset
+
+    fun CjQualifiedExpression.containsSourceAnchor(): Boolean =
+        textRange.containsRange(sourceStart, sourceEnd) &&
+            selectorExpression?.textRange?.containsRange(sourceStart, sourceEnd) == true
+
+    var selected = (sourcePsi as? CjQualifiedExpression)?.takeIf { it.containsSourceAnchor() }
+    var current = PsiTreeUtil.getParentOfType(sourcePsi, CjQualifiedExpression::class.java, false)
+    while (current != null && current.containsSourceAnchor()) {
+        selected = current
+        current = PsiTreeUtil.getParentOfType(current, CjQualifiedExpression::class.java, true)
+    }
+    return (selected as? PsiElement)?.toCjPsiSourceElement()
+}
+
+/**
+ * Light-tree 路径：沿 source 的父链寻找覆盖当前 selector 的 DOT_QUALIFIED_EXPRESSION。
+ */
+private fun CjSourceElement.qualifiedAmbiguousUseLightTreeSource(): AbstractCjSourceElement? {
+    var node = lighterASTNode
+    var selected: LighterASTNode? = null
+    while (true) {
+        if (node.tokenType == CjNodeTypes.DOT_QUALIFIED_EXPRESSION &&
+            treeStructure.getStartOffset(node) < startOffset &&
+            treeStructure.getEndOffset(node) >= endOffset
+        ) {
+            selected = node
+        }
+        val parent = treeStructure.getParent(node) ?: break
+        node = parent
+    }
+    val qualifiedNode = selected ?: return null
+    return CjOffsetsOnlySourceElement(
+        startOffset = treeStructure.getStartOffset(qualifiedNode),
+        endOffset = treeStructure.getEndOffset(qualifiedNode),
+    )
+}
+
+/**
+ * 最后兜住 offsets-only selector source：从文件文本中向左扩到限定访问起点。
+ */
+private fun CjSourceElement.qualifiedAmbiguousUseTextSource(): AbstractCjSourceElement? {
+    val fileText = treeStructure.toString(treeStructure.root).toString()
+    if (startOffset <= 1 || endOffset > fileText.length) return null
+    if (fileText[startOffset - 1] != '.') return null
+
+    var index = startOffset - 2
+    while (index >= 0 && fileText[index].isQualifiedNamePart()) {
+        index--
+    }
+    val qualifiedStart = index + 1
+    if (qualifiedStart >= startOffset) return null
+    return CjOffsetsOnlySourceElement(
+        startOffset = qualifiedStart,
+        endOffset = endOffset,
+    )
+}
+
+/**
+ * 判断字符是否可以出现在限定名片段中。
+ */
+private fun Char.isQualifiedNamePart(): Boolean =
+    isLetterOrDigit() || this == '_' || this == '$' || this == '.'
+
+/**
+ * 将二元 operator 候选歧义中特定的 primitive operator 情况映射为 invalid binary operator。
+ */
 private fun ConeAmbiguityError.invalidBinaryOperatorDiagnosticForOperatorAmbiguity(
     source: CjSourceElement?,
     diagnosticSource: CjSourceElement,
@@ -965,6 +1150,9 @@ private fun ConeAmbiguityError.invalidBinaryOperatorDiagnosticForOperatorAmbigui
     )
 }
 
+/**
+ * 获取 primitive extend 候选的接收者类型名称。
+ */
 private fun CfirCallableSymbol<*>.primitiveExtendReceiverName(session: CfirSession): Name? {
     val ownerExtend = session.extendProvider.getContainingExtend(this) ?: return null
     val receiverType = ownerExtend.extendedTypeRef.coneTypeOrNull as? ConePrimitiveType ?: return null
@@ -972,19 +1160,44 @@ private fun CfirCallableSymbol<*>.primitiveExtendReceiverName(session: CfirSessi
     return receiverType.kind.classId.shortClassName
 }
 
+/**
+ * 诊断去重使用的完整身份 key。
+ *
+ * @property factoryName 诊断工厂名称。
+ * @property message 渲染后的诊断消息。
+ * @property startOffset 首个诊断范围起始偏移。
+ * @property endOffset 首个诊断范围结束偏移。
+ */
 private data class DiagnosticIdentityKey(
+    /** 诊断工厂名称。 */
     val factoryName: String,
+    /** 渲染后的诊断消息。 */
     val message: String,
+    /** 首个诊断范围起始偏移。 */
     val startOffset: Int,
+    /** 首个诊断范围结束偏移。 */
     val endOffset: Int,
 )
 
+/**
+ * 诊断锚点去重 key，只比较工厂和 source 范围。
+ *
+ * @property factoryName 诊断工厂名称。
+ * @property startOffset 首个诊断范围起始偏移。
+ * @property endOffset 首个诊断范围结束偏移。
+ */
 private data class DiagnosticAnchorKey(
+    /** 诊断工厂名称。 */
     val factoryName: String,
+    /** 首个诊断范围起始偏移。 */
     val startOffset: Int,
+    /** 首个诊断范围结束偏移。 */
     val endOffset: Int,
 )
 
+/**
+ * 构造当前诊断的完整身份 key。
+ */
 private fun CjDiagnostic.diagnosticIdentityKey(): DiagnosticIdentityKey =
     DiagnosticIdentityKey(
         factoryName = factoryName,
@@ -993,6 +1206,9 @@ private fun CjDiagnostic.diagnosticIdentityKey(): DiagnosticIdentityKey =
         endOffset = firstRange.endOffset,
     )
 
+/**
+ * 构造当前诊断的锚点 key。
+ */
 private fun CjDiagnostic.diagnosticAnchorKey(): DiagnosticAnchorKey =
     DiagnosticAnchorKey(
         factoryName = factoryName,
@@ -1000,6 +1216,9 @@ private fun CjDiagnostic.diagnosticAnchorKey(): DiagnosticAnchorKey =
         endOffset = firstRange.endOffset,
     )
 
+/**
+ * 将 unresolved name 错误映射为成员缺失、operator 错误、extend super 或普通 unresolved reference。
+ */
 private fun ConeUnresolvedNameError.mapConeUnresolvedNameError(
     source: CjSourceElement?,
     callOrAssignmentSource: CjSourceElement?,
@@ -1166,6 +1385,9 @@ private fun ConeUnresolvedNameError.mapInvalidUnaryExprDiagnostic(
     )
 }
 
+/**
+ * 将 extend 中的 `super` 解析失败映射为专用诊断。
+ */
 private fun ConeUnresolvedNameError.mapExtendSuperDiagnostic(
     source: CjSourceElement?,
     callOrAssignmentSource: CjSourceElement?,
@@ -1185,6 +1407,9 @@ private fun ConeUnresolvedNameError.mapExtendSuperDiagnostic(
     return CfirErrors.EXTEND_SUPER_NOT_ALLOWED.on(diagnosticSource, session)
 }
 
+/**
+ * 构造二元运算符解析失败时的 invalid binary operator 诊断。
+ */
 private fun ConeUnresolvedNameError.buildInvalidBinaryOperatorDiagnostic(
     diagnosticSource: CjSourceElement,
     session: CfirSession,
@@ -1202,6 +1427,9 @@ private fun ConeUnresolvedNameError.buildInvalidBinaryOperatorDiagnostic(
     )
 }
 
+/**
+ * 将可见性错误映射为构造器缺失、成员访问控制或不可见引用诊断。
+ */
 private fun ConeVisibilityError.mapConeVisibilityError(
     source: CjSourceElement?,
     callOrAssignmentSource: CjSourceElement?,
@@ -1241,6 +1469,9 @@ private fun ConeVisibilityError.mapConeVisibilityError(
     }
 }
 
+/**
+ * 获取 class-like symbol 对应声明的外部可见性展示文本。
+ */
 private fun CfirClassLikeSymbol<*>.visibilityDisplayName(): String {
     return when (val declaration = cfir) {
         is CfirClass -> declaration.status.visibility.externalDisplayName
@@ -1252,6 +1483,12 @@ private fun CfirClassLikeSymbol<*>.visibilityDisplayName(): String {
     }
 }
 
+/**
+ * 映射未被专用分支处理的 Cone diagnostic。
+ *
+ * 这里承接简单诊断、类型名解析、泛型参数、effect、类型不匹配等通用路径，
+ * 并在可能时选择比 unresolved 或 inference error 更具体的 CFIR 诊断。
+ */
 private fun ConeDiagnostic.mapOtherDiagnostic(
     source: CjSourceElement?,
     valueParameter: CfirValueParameter?,
@@ -1604,6 +1841,9 @@ private fun mapSimpleDiagnosticByReason(
     }
 }
 
+/**
+ * 使用候选约束系统最终替换器替换类型变量。
+ */
 private fun ConeCangJieType.substituteTypeVariableTypes(
     candidate: AbstractCallCandidate<*>,
     session: CfirSession,
@@ -1614,6 +1854,9 @@ private fun ConeCangJieType.substituteTypeVariableTypes(
     return substitutor.substituteOrSelf(this)
 }
 
+/**
+ * 判断约束系统矛盾是否应归类为隐式泛型调用的约束不匹配。
+ */
 private fun ConeConstraintSystemHasContradiction.hasGenericInferenceConstraintMismatch(): Boolean {
     val candidateSymbol = candidate.symbol as? CfirCallableSymbol<*> ?: return false
     if (candidateSymbol.cfir.typeParameters.isEmpty()) return false
@@ -1622,17 +1865,26 @@ private fun ConeConstraintSystemHasContradiction.hasGenericInferenceConstraintMi
     return candidate.errors.any { it is ConstraintMismatch }
 }
 
+/**
+ * 判断候选是否为 typealias constructor 候选。
+ */
 private fun AbstractCallCandidate<*>.isTypeAliasConstructorCandidate(): Boolean {
     val constructorSymbol = symbol as? CfirConstructorSymbol ?: return false
     return constructorSymbol.typeAliasConstructorInfo != null
 }
 
+/**
+ * 判断约束错误集合中是否包含显式类型实参约束不匹配。
+ */
 private fun List<ConstraintSystemError>.hasExplicitTypeArgumentConstraintMismatch(): Boolean =
     any { error ->
         error is ConstraintMismatch &&
             error.position.from is ConeExplicitTypeParameterConstraintPosition
     }
 
+/**
+ * 判断 typealias constructor 展开后是否触发实际构造类型的上界违例。
+ */
 private fun AbstractCallCandidate<*>.hasTypeAliasConstructorExpansionUpperBoundViolation(
     session: CfirSession,
 ): Boolean {
@@ -1685,6 +1937,9 @@ private fun AbstractCallCandidate<*>.hasTypeAliasConstructorExpansionUpperBoundV
     return false
 }
 
+/**
+ * 判断 typealias constructor 候选的约束系统中是否存在上界相关 mismatch。
+ */
 private fun AbstractCallCandidate<*>.hasTypeAliasConstructorUpperBoundConstraintMismatch(): Boolean {
     if (!isTypeAliasConstructorCandidate()) return false
     if (!hasExplicitTypeArgumentsInCall()) return false
@@ -1701,10 +1956,16 @@ private fun AbstractCallCandidate<*>.hasTypeAliasConstructorUpperBoundConstraint
     }
 }
 
+/**
+ * 解析调用中显式类型实参的实际类型。
+ */
 private fun AbstractCallCandidate<*>.resolvedExplicitTypeArgumentTypes(): List<ConeCangJieType> {
     return callInfo.typeArguments.mapNotNull { it.coneTypeOrNull }
 }
 
+/**
+ * 构造 callable 候选在约束系统中的 owner 类型视图。
+ */
 private fun AbstractCallCandidate<*>.callableConstraintOwnerType(session: CfirSession): ConeCangJieType? {
     val callable = symbol as? CfirCallableSymbol<*> ?: return null
     val declaration = callable.cfir
@@ -1722,6 +1983,9 @@ private fun AbstractCallCandidate<*>.callableConstraintOwnerType(session: CfirSe
     }
 }
 
+/**
+ * 判断隐式泛型调用是否因实参类型涉及声明类型参数而产生推断不匹配。
+ */
 private fun AbstractCallCandidate<*>.hasGenericInferenceArgumentMismatch(session: CfirSession): Boolean {
     val declaredTypeParameters = genericInferenceDeclaredTypeParameters(session)
     if (declaredTypeParameters.isEmpty()) return false
@@ -1734,6 +1998,9 @@ private fun AbstractCallCandidate<*>.hasGenericInferenceArgumentMismatch(session
     } || argumentMismatches.size >= 2
 }
 
+/**
+ * 构造泛型调用推断约束不匹配诊断。
+ */
 private fun ConeConstraintSystemHasContradiction.genericInferenceErrorDiagnostic(
     source: CjSourceElement?,
     qualifiedAccessSource: CjSourceElement?,
@@ -1764,6 +2031,9 @@ private fun ConeConstraintSystemHasContradiction.genericInferenceErrorDiagnostic
     )
 }
 
+/**
+ * 构造泛型函数类型实参无法推断诊断。
+ */
 private fun ConeConstraintSystemHasContradiction.unableToInferGenericFunctionDiagnostic(
     source: CjSourceElement?,
     qualifiedAccessSource: CjSourceElement?,
@@ -1786,6 +2056,9 @@ private fun ConeConstraintSystemHasContradiction.unableToInferGenericFunctionDia
     )
 }
 
+/**
+ * 从实参表达式自身恢复隐式泛型调用的推断不匹配诊断。
+ */
 private fun org.cangnova.cangjie.cfir.expressions.CfirExpression.genericInferenceArgumentMismatchDiagnostic(
     session: CfirSession,
 ): CjDiagnostic? {
@@ -1815,6 +2088,9 @@ private fun org.cangnova.cangjie.cfir.expressions.CfirExpression.genericInferenc
     )
 }
 
+/**
+ * 从调用表达式错误类型恢复隐式泛型调用的类型不匹配诊断。
+ */
 private fun org.cangnova.cangjie.cfir.expressions.CfirExpression.genericInferenceCallTypeMismatchDiagnostic(
     session: CfirSession,
 ): CjDiagnostic? {
@@ -1839,6 +2115,9 @@ private fun org.cangnova.cangjie.cfir.expressions.CfirExpression.genericInferenc
     )
 }
 
+/**
+ * 渲染 invalid binary operator 诊断中使用的类型文本。
+ */
 private fun ConeCangJieType.renderInvalidBinaryOperatorType(session: CfirSession): String {
     val classId = classIdOrPrimitiveClassId ?: return toString()
     val declaration = runCatching { session.symbolProvider.getClassLikeSymbolByClassId(classId)?.cfir }.getOrNull()
@@ -1853,6 +2132,9 @@ private fun ConeCangJieType.renderInvalidBinaryOperatorType(session: CfirSession
     return if (kind != null) "$kind-${classId.shortClassName.asString()}" else classId.shortClassName.asString()
 }
 
+/**
+ * 根据 source 所在语义位置选择普通类型不匹配或返回类型不匹配诊断。
+ */
 private fun typeMismatchDiagnostic(
     source: CjSourceElement?,
     callOrAssignmentSource: CjSourceElement? = null,
@@ -1900,6 +2182,9 @@ private fun typeMismatchDiagnostic(
     }
 }
 
+/**
+ * 映射类型变量被推断为空交类型或可能为空交类型的诊断。
+ */
 private fun inferredIntoEmptyIntersection(
     source: CjSourceElement?,
     typeVariable: org.cangnova.cangjie.type.model.TypeVariableMarker,
@@ -1942,11 +2227,17 @@ private fun inferredIntoEmptyIntersection(
     }
 }
 
+/**
+ * 将空交类型种类渲染为诊断描述文本。
+ */
 private fun EmptyIntersectionTypeKind.toDiagnosticDescription(): String = when (this) {
     EmptyIntersectionTypeKind.MULTIPLE_CLASSES -> "multiple concrete class or struct bounds are incompatible"
     EmptyIntersectionTypeKind.FINAL_CLASS_AND_INTERFACE -> "a final concrete bound is combined with an interface bound"
 }
 
+/**
+ * 在调用树中定位引用指定类型变量的被调用符号 source。
+ */
 private fun AbstractCallCandidate<*>.sourceOfCallToSymbolWith(typeVariable: org.cangnova.cangjie.type.model.TypeVariableMarker): CjSourceElement? {
     val declaredTypeParameter = (typeVariable as? ConeTypeParameterBasedTypeVariable)?.typeParameterSymbol ?: return null
     var narrowedSource: CjSourceElement? = null
@@ -1970,11 +2261,17 @@ private fun AbstractCallCandidate<*>.sourceOfCallToSymbolWith(typeVariable: org.
     return narrowedSource
 }
 
+/**
+ * 获取泛型推断诊断应使用的 callee source。
+ */
 private fun org.cangnova.cangjie.cfir.CfirElement.genericInferenceCalleeSource(): CjSourceElement? {
     val qualifiedAccess = this as? CfirQualifiedAccessExpression ?: return source
     return qualifiedAccess.calleeReference.source ?: qualifiedAccess.source
 }
 
+/**
+ * 从 PSI source 中提取调用表达式的 callee source。
+ */
 private fun CjSourceElement.genericInferenceCallCalleeSource(): CjSourceElement? {
     val psiSource = when (this) {
         is CjPsiSourceElement -> this
@@ -1986,6 +2283,9 @@ private fun CjSourceElement.genericInferenceCallCalleeSource(): CjSourceElement?
     return callExpression.calleeExpression?.toCjPsiSourceElement() ?: this
 }
 
+/**
+ * 获取泛型推断诊断需要覆盖的完整调用表达式 source。
+ */
 private fun CjSourceElement.genericInferenceWholeCallSource(): CjSourceElement {
     val psiSource = when (this) {
         is CjPsiSourceElement -> this
@@ -1996,6 +2296,9 @@ private fun CjSourceElement.genericInferenceWholeCallSource(): CjSourceElement {
     return psiSource.psi.containingCallExpressionOrNull()?.toCjPsiSourceElement() ?: this
 }
 
+/**
+ * 判断 source 所在调用是否为未写显式类型实参的隐式泛型调用。
+ */
 private fun CjSourceElement.isImplicitGenericCallWithoutTypeArguments(): Boolean {
     val psiSource = when (this) {
         is CjPsiSourceElement -> this
@@ -2007,6 +2310,9 @@ private fun CjSourceElement.isImplicitGenericCallWithoutTypeArguments(): Boolean
     return callExpression.typeArguments.isEmpty()
 }
 
+/**
+ * 判断 source 所在调用是否包含显式类型实参。
+ */
 private fun CjSourceElement?.hasExplicitTypeArgumentsInSource(): Boolean {
     val psiSource = when (this) {
         is CjPsiSourceElement -> this
@@ -2018,6 +2324,9 @@ private fun CjSourceElement?.hasExplicitTypeArgumentsInSource(): Boolean {
     return callExpression.typeArguments.isNotEmpty()
 }
 
+/**
+ * 判断候选调用是否显式写出了类型实参。
+ */
 private fun AbstractCallCandidate<*>.hasExplicitTypeArgumentsInCall(): Boolean {
     return callInfo.hasExplicitTypeArguments ||
         callInfo.callSite.source.hasExplicitTypeArgumentsInSource() ||
@@ -2037,12 +2346,21 @@ private fun AbstractCallCandidate<*>.hasExplicitTypeArgumentError(): Boolean {
     }
 }
 
+/**
+ * 枚举调用中显式类型实参 type refs。
+ */
 private fun AbstractCallCandidate<*>.explicitTypeArgumentRefsInCall(): Sequence<CfirTypeRef> =
     callInfo.typeArguments.asSequence()
 
+/**
+ * 从 PSI 元素向上查找所在调用表达式。
+ */
 private fun PsiElement.containingCallExpressionOrNull(): CjCallExpression? =
     this as? CjCallExpression ?: PsiTreeUtil.getParentOfType(this, CjCallExpression::class.java, false)
 
+/**
+ * 从 qualified access 的 callee reference 中提取可参与泛型推断诊断的 callable symbol。
+ */
 private fun CfirQualifiedAccessExpression.genericInferenceCallableSymbolOrNull(): CfirCallableSymbol<*>? {
     return when (val reference = calleeReference) {
         is CfirResolvedNamedReference -> reference.resolvedSymbol as? CfirCallableSymbol<*>
@@ -2053,6 +2371,9 @@ private fun CfirQualifiedAccessExpression.genericInferenceCallableSymbolOrNull()
     }
 }
 
+/**
+ * 判断匿名函数签名中是否含错误类型。
+ */
 private fun CfirAnonymousFunction.containsErrorType(): Boolean {
     return returnTypeRef is CfirErrorTypeRef ||
         valueParameters.any { it.returnTypeRef is CfirErrorTypeRef }
@@ -2067,6 +2388,9 @@ private fun ConeCangJieType.containsErrorType(): Boolean {
     return typeArguments.any { it.type.containsErrorType() }
 }
 
+/**
+ * 判断实参表达式子树中是否已经包含错误诊断。
+ */
 private fun org.cangnova.cangjie.cfir.expressions.CfirExpression.containsErrorDiagnosticInArgument(): Boolean {
     if (coneTypeOrNull is ConeErrorType) return true
     if (this is CfirDiagnosticHolder) return true
@@ -2154,22 +2478,34 @@ private val ResolutionDiagnostic.isArgumentMappingDiagnostic: Boolean
         else -> false
     }
 
+/**
+ * 将类型参数 marker 还原为声明侧 CFIR 类型参数符号。
+ */
 private fun TypeParameterMarker.asDeclaredTypeParameterSymbolOrNull(): CfirTypeParameterSymbol? = when (this) {
     is ConeTypeParameterLookupTag -> typeParameterSymbol
     else -> null
 }
 
+/**
+ * 将类型变量 marker 还原为声明侧 CFIR 类型参数符号。
+ */
 private fun org.cangnova.cangjie.type.model.TypeVariableMarker.asDeclaredTypeParameterSymbolOrNull(): CfirTypeParameterSymbol? = when (this) {
     is ConeTypeParameterBasedTypeVariable -> typeParameterSymbol
     else -> null
 }
 
+/**
+ * 获取符号对应的成员或 class-like 声明名称。
+ */
 private fun CfirBasedSymbol<*>.memberDeclarationNameOrNull(): Name? = when (this) {
     is CfirCallableSymbol<*> -> name
     is CfirClassLikeSymbol<*> -> classId.shortClassName
     else -> null
 }
 
+/**
+ * 判断类型内部是否引用了指定声明类型参数集合。
+ */
 private fun ConeCangJieType.referencesDeclaredTypeParameter(
     declaredTypeParameters: Set<CfirTypeParameterSymbol>,
 ): Boolean {
@@ -2184,6 +2520,9 @@ private fun ConeCangJieType.referencesDeclaredTypeParameter(
     }
 }
 
+/**
+ * 判断候选是否存在泛型调用类型信息不足错误。
+ */
 private fun AbstractCallCandidate<*>.hasGenericCallNotEnoughTypeInformation(session: CfirSession): Boolean {
     val declaredTypeParameters = genericInferenceDeclaredTypeParameters(session)
     if (declaredTypeParameters.isEmpty()) return false
@@ -2196,6 +2535,9 @@ private fun AbstractCallCandidate<*>.hasGenericCallNotEnoughTypeInformation(sess
     }
 }
 
+/**
+ * 收集候选调用可由泛型推断诊断负责的声明类型参数。
+ */
 private fun AbstractCallCandidate<*>.genericInferenceDeclaredTypeParameters(
     session: CfirSession,
 ): Set<CfirTypeParameterSymbol> {
@@ -2216,17 +2558,26 @@ private fun AbstractCallCandidate<*>.genericInferenceDeclaredTypeParameters(
     return result
 }
 
+/**
+ * 判断候选是否为未写显式类型实参的泛型调用。
+ */
 private fun AbstractCallCandidate<*>.isImplicitGenericCallWithTypeParameters(): Boolean {
     val callableSymbol = symbol as? CfirCallableSymbol<*> ?: return false
     return callableSymbol.cfir.typeParameters.isNotEmpty() && !hasExplicitTypeArgumentsInCall()
 }
 
+/**
+ * 判断候选是否为隐式 builtin array constructor 调用。
+ */
 private fun AbstractCallCandidate<*>.isImplicitBuiltinArrayConstructorCall(): Boolean {
     val callableSymbol = symbol as? CfirCallableSymbol<*> ?: return false
     return callableSymbol.cfir.origin == CfirDeclarationOrigin.Synthetic.BuiltinArrayConstructor &&
         !hasExplicitTypeArgumentsInCall()
 }
 
+/**
+ * 根据 source 形态判断当前错误是否像隐式泛型调用推断失败。
+ */
 private fun AbstractCallCandidate<*>.looksLikeImplicitGenericCallInferenceFailure(
     source: CjSourceElement?,
     qualifiedAccessSource: CjSourceElement?,
@@ -2241,27 +2592,42 @@ private fun AbstractCallCandidate<*>.looksLikeImplicitGenericCallInferenceFailur
         calleeSource.endOffset <= callSource.endOffset
 }
 
+/**
+ * 去掉 CFIR wrapped expression，取得实际表达式。
+ */
 private tailrec fun org.cangnova.cangjie.cfir.expressions.CfirExpression.unwrapWrappedExpression():
     org.cangnova.cangjie.cfir.expressions.CfirExpression = when (this) {
     is CfirWrappedExpression -> expression.unwrapWrappedExpression()
     else -> this
 }
 
+/**
+ * 从 source 文本近似提取类型名，用于错误恢复诊断参数。
+ */
 private fun CjSourceElement.toApproxTypeName(): Name {
     val rawText = text?.toString().orEmpty()
     val simplified = rawText.substringAfterLast('.').substringBefore('<').substringBefore('&').trim()
     return Name.identifierIfValid(simplified) ?: Name.ERROR_NAME
 }
 
+/**
+ * 构造只覆盖 source 首字符的诊断 source。
+ */
 private fun CjSourceElement.firstCharacterDiagnosticSource(): CjOffsetsOnlySourceElement {
     return CjOffsetsOnlySourceElement(startOffset, (startOffset + 1).coerceAtMost(endOffset))
 }
 
+/**
+ * 判断 source 是否表示赋值表达式。
+ */
 private fun CjSourceElement?.isAssignmentExpression(): Boolean {
     val psi = this?.psi
     return psi is CjBinaryExpression && CjPsiUtil.isAssignment(psi)
 }
 
+/**
+ * 判断 source 是否位于赋值表达式左侧。
+ */
 private fun CjSourceElement?.isAssignmentLeftHandSide(): Boolean {
     val psiExpression = this?.psi as? CjExpression ?: return false
     if (psiExpression.getAssignmentByLHS() != null) return true
@@ -2273,11 +2639,23 @@ private fun CjSourceElement?.isAssignmentLeftHandSide(): Boolean {
     return lhsRange.startOffset <= sourceRange.startOffset && sourceRange.endOffset <= lhsRange.endOffset
 }
 
+/**
+ * 类型不匹配诊断的语义目标位置。
+ */
 private sealed interface TypeMismatchTarget {
+    /**
+     * return 表达式中的返回值类型不匹配。
+     *
+     * @property expressionSource returned expression 的 source。
+     */
     data class ReturnExpression(val expressionSource: AbstractCjSourceElement) : TypeMismatchTarget
+    /** 字段初始化器类型不匹配，由字段初始化专用检查器负责。 */
     data object FieldInitializer : TypeMismatchTarget
 }
 
+/**
+ * 在 PSI 树中定位当前 source 所属的类型不匹配语义目标。
+ */
 private fun CjPsiSourceElement.findTypeMismatchTarget(): TypeMismatchTarget? {
     var current: com.intellij.psi.PsiElement? = psi
     while (current != null) {
@@ -2299,6 +2677,9 @@ private fun CjPsiSourceElement.findTypeMismatchTarget(): TypeMismatchTarget? {
     return null
 }
 
+/**
+ * 将 source 转换为类型不匹配语义目标。
+ */
 private fun CjSourceElement?.typeMismatchTarget(): TypeMismatchTarget? {
     val psiSource = when (this) {
         is CjPsiSourceElement -> this
@@ -2308,12 +2689,21 @@ private fun CjSourceElement?.typeMismatchTarget(): TypeMismatchTarget? {
     return psiSource?.findTypeMismatchTarget()
 }
 
+/**
+ * 约束不匹配中的实际类型 Cone 表示。
+ */
 private val ConstraintMismatch.lowerConeType: ConeCangJieType
     get() = lowerType.asCone()
 
+/**
+ * 约束不匹配中的期望上界类型 Cone 表示。
+ */
 private val ConstraintMismatch.upperConeType: ConeCangJieType
     get() = upperType.asCone()
 
+/**
+ * 为诊断工厂构造最小诊断上下文。
+ */
 private fun diagnosticContext(session: CfirSession): DiagnosticContext {
     return object : DiagnosticContext {
         override val languageVersionSettings = session.languageVersionSettings
@@ -2322,6 +2712,9 @@ private fun diagnosticContext(session: CfirSession): DiagnosticContext {
     }
 }
 
+/**
+ * 使用当前 session 上下文创建一参数诊断。
+ */
 @OptIn(InternalDiagnosticFactoryMethod::class)
 private fun <A> CjDiagnosticFactory1<A>.on(
     source: AbstractCjSourceElement,
@@ -2329,12 +2722,18 @@ private fun <A> CjDiagnosticFactory1<A>.on(
     session: CfirSession,
 ): CjDiagnostic? = on(source, a, null, diagnosticContext(session))
 
+/**
+ * 使用当前 session 上下文创建零参数诊断。
+ */
 @OptIn(InternalDiagnosticFactoryMethod::class)
 private fun CjDiagnosticFactory0.on(
     source: AbstractCjSourceElement,
     session: CfirSession,
 ): CjDiagnostic? = on(source, null, diagnosticContext(session))
 
+/**
+ * 使用当前 session 上下文创建二参数诊断。
+ */
 @OptIn(InternalDiagnosticFactoryMethod::class)
 private fun <A, B> CjDiagnosticFactory2<A, B>.on(
     source: AbstractCjSourceElement,
@@ -2343,6 +2742,9 @@ private fun <A, B> CjDiagnosticFactory2<A, B>.on(
     session: CfirSession,
 ): CjDiagnostic? = on(source, a, b, null, diagnosticContext(session))
 
+/**
+ * 使用当前 session 上下文创建 unresolved-reference 风格的二参数字符串诊断。
+ */
 @OptIn(InternalDiagnosticFactoryMethod::class)
 private fun CjDiagnosticFactory2<String, String?>.on(
     source: AbstractCjSourceElement,
@@ -2351,6 +2753,9 @@ private fun CjDiagnosticFactory2<String, String?>.on(
     session: CfirSession,
 ): CjDiagnostic? = on(source, a, b, null, diagnosticContext(session))
 
+/**
+ * 使用可空 source 创建二参数字符串诊断，source 必须在调用点已保证存在。
+ */
 @OptIn(InternalDiagnosticFactoryMethod::class)
 private fun CjDiagnosticFactory2<String, String?>.createOn(
     source: AbstractCjSourceElement?,
@@ -2359,6 +2764,9 @@ private fun CjDiagnosticFactory2<String, String?>.createOn(
     session: CfirSession,
 ): CjDiagnostic? = on(source.requireNotNull(), a, b, null, diagnosticContext(session))
 
+/**
+ * 使用当前 session 上下文创建三参数诊断。
+ */
 @OptIn(InternalDiagnosticFactoryMethod::class)
 private fun <A, B, C> CjDiagnosticFactory3<A, B, C>.on(
     source: AbstractCjSourceElement,
@@ -2368,6 +2776,9 @@ private fun <A, B, C> CjDiagnosticFactory3<A, B, C>.on(
     session: CfirSession,
 ): CjDiagnostic? = on(source, a, b, c, null, diagnosticContext(session))
 
+/**
+ * 使用当前 session 上下文创建四参数诊断。
+ */
 @OptIn(InternalDiagnosticFactoryMethod::class)
 private fun <A, B, C, D> CjDiagnosticFactory4<A, B, C, D>.on(
     source: AbstractCjSourceElement,

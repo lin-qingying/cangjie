@@ -10,6 +10,9 @@ import org.cangnova.cangjie.generators.tree.ImplementationKind
 import java.io.File
 
 @Suppress("unused")
+/**
+ * 输出 CFIR 元素继承层级的 Graphviz dot 文件。
+ */
 fun printHierarchyGraph(model: Model) {
     fun ImplementationKind.toColor(): String = when (this) {
         ImplementationKind.Interface -> "green"
@@ -18,7 +21,13 @@ fun printHierarchyGraph(model: Model) {
 
     val elements = model.elements
 
+    /**
+     * 继承图中的有向边。
+     */
     data class Edge(val from: String, val to: String) {
+        /**
+         * 渲染为 dot 边语句。
+         */
         override fun toString(): String {
             return "$from -> $to"
         }
@@ -50,4 +59,3 @@ fun printHierarchyGraph(model: Model) {
         }
     }
 }
-

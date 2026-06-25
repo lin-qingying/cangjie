@@ -16,6 +16,7 @@ import kotlin.reflect.KClass
  * @property kind 当前 session 的输入来源与解析模式。
  */
 abstract class CfirSession(
+    /** 当前 session 的输入来源与解析模式。 */
     val kind: Kind,
 ) : ComponentArrayOwner<CfirSessionComponent, CfirSessionComponent>() {
 

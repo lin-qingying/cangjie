@@ -9,7 +9,9 @@ package org.cangnova.cangjie.cfir.types
  * @property attributes 占位类型携带的属性。
  */
 class ConePlaceholderType(
+    /** 调试输出中展示的占位名。 */
     val debugName: String = "_",
+    /** 占位类型携带的属性。 */
     override val attributes: ConeAttributes = ConeAttributes.Empty,
 ) : ConeSimpleCangJieType(), ConeTypeConstructorMarker {
     /**

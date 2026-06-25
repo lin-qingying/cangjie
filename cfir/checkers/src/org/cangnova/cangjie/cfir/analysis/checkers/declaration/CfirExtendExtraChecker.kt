@@ -42,6 +42,8 @@ import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
+import org.cangnova.cangjie.cfir.types.ConePrimitiveType
+import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.name.Name
 
@@ -57,9 +59,19 @@ import org.cangnova.cangjie.name.Name
  * - TYPE_CANNOT_EXTEND_IMPORTED_INTERFACE: 不能 extend 导入的接口
  */
 object CfirExtendExtraChecker : CfirExtendChecker() {
+    /**
+     * Java 互操作基础注解名称。
+     */
     private val JAVA = Name.identifier("Java")
+
+    /**
+     * Java 实现类型注解名称。
+     */
     private val JAVA_IMPL = Name.identifier("JavaImpl")
 
+    /**
+     * 对单个 extend 声明执行额外语义检查。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirExtend) {
         checkIllegalMembers(declaration)
@@ -261,6 +273,12 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
         }
     }
 
+    /**
+     * 判断目标 callable 符号是否会被当前 extend 成员遮蔽。
+     *
+     * 过滤未绑定符号、当前成员自身的 substitution override、private 成员以及接口抽象需求，
+     * 剩余成员通过 override 签名 key 判断是否真正同签名。
+     */
     private fun org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol<*>.canShadowThis(
         currentMember: CfirDeclaration,
         currentSignature: String,
@@ -275,6 +293,11 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
         return overrideSignatureKey() == currentSignature
     }
 
+    /**
+     * 判断目标符号是否只是接口需求成员。
+     *
+     * 接口抽象需求不构成 extend 成员对已有实现成员的遮蔽，因此 shadow 检查需要排除。
+     */
     private fun org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol<*>.isInterfaceRequirementMember(
         context: CheckerContext,
     ): Boolean {
@@ -288,6 +311,9 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
         }
     }
 
+    /**
+     * 取得可参与 extend shadow 检查的声明名称。
+     */
     private fun CfirDeclaration.shadowableName(): Name? = when (this) {
         is CfirNamedFunction -> name
         is CfirProperty -> name
@@ -301,6 +327,8 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkExtendImportedInterface(extend: CfirExtend) {
+        if (!extend.hasImportedOrBuiltinTarget(context)) return
+
         for (superTypeRef in extend.superTypeRefs) {
             val superType = (superTypeRef as? CfirResolvedTypeRef)?.coneType as? ConeClassLikeType ?: continue
             if (CfirExtendSemantics.isProtectedInterface(superType.classId)) continue
@@ -314,12 +342,23 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
             if (interfaceModuleData != extendModuleData) {
                 if (extend.duplicatesInheritedTargetInterface(superTypeRef)) continue
                 reporter.reportOn(
-                    source = superTypeRef.source ?: extend.source,
+                    source = extend.extendedTypeRef.source ?: extend.source,
                     factory = CfirErrors.TYPE_CANNOT_EXTEND_IMPORTED_INTERFACE,
                     a = "extend",
                     b = superType.classId.shortClassName,
                 )
             }
         }
+    }
+
+    /**
+     * 官方 orphan rule 只在 extend 目标本身来自外部包或 builtin/primitive 时，
+     * 才禁止继续引入新的外部接口；本包声明扩展外部接口是允许的。
+     */
+    private fun CfirExtend.hasImportedOrBuiltinTarget(context: CheckerContext): Boolean {
+        val targetType = extendedTypeRef.coneTypeOrNull ?: return false
+        if (targetType is ConePrimitiveType) return true
+        val targetDeclaration = CfirExtendSemantics.targetDeclaration(context, this) ?: return false
+        return targetDeclaration.moduleData != moduleData
     }
 }

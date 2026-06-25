@@ -12,9 +12,13 @@ import org.cangnova.cangjie.name.ClassId
  * @property attributes 类型别名类型附带的属性。
  */
 class ConeTypeAliasType(
+    /** 类型别名声明的 ClassId。 */
     val classId: ClassId,
+    /** 展开后的实际类型（解析后设置）。 */
     val expandedType: ConeCangJieType? = null,
+    /** 类型别名实参。 */
     override val typeArguments: List<ConeTypeProjection> = emptyList(),
+    /** 类型别名类型附带的属性。 */
     override val attributes: ConeAttributes = ConeAttributes.Empty,
 ) : ConeRigidType(), ConeTypeConstructorMarker {
 

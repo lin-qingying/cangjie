@@ -11,10 +11,22 @@ import kotlin.reflect.KType
 import kotlin.reflect.KTypeProjection
 import kotlin.reflect.KVariance
 
+/**
+ * 将诊断 DSL 元数据渲染成 `CfirErrors` 风格错误列表源码。
+ */
 object ErrorListDiagnosticListRenderer : DiagnosticListRenderer() {
+    /**
+     * 生成错误列表所在的基础包名。
+     */
     const val BASE_PACKAGE = "org.cangnova.cangjie.cfir.analysis.diagnostics"
+    /**
+     * 诊断运行时 API 所在包名。
+     */
     const val DIAGNOSTICS_PACKAGE = "org.cangnova.cangjie.cfir.diagnostics"
 
+    /**
+     * 渲染诊断列表到目标文件。
+     */
     override fun render(
         file: File,
         diagnosticList: DiagnosticList,
@@ -26,6 +38,9 @@ object ErrorListDiagnosticListRenderer : DiagnosticListRenderer() {
         }
     }
 
+    /**
+     * 打印完整诊断列表文件。
+     */
     private fun SmartPrinter.render(
         diagnosticList: DiagnosticList,
         packageName: String,
@@ -39,6 +54,9 @@ object ErrorListDiagnosticListRenderer : DiagnosticListRenderer() {
         printErrorsObject(diagnosticList)
     }
 
+    /**
+     * 根据诊断锚点类型和参数类型收集 import。
+     */
     private fun SmartPrinter.printImports(diagnosticList: DiagnosticList, starImportsToAdd: Set<String>) {
         val importSet = sortedSetOf<String>()
         importSet += "org.cangnova.cangjie.cfir.diagnostics.*"
@@ -55,6 +73,9 @@ object ErrorListDiagnosticListRenderer : DiagnosticListRenderer() {
         println()
     }
 
+    /**
+     * 打印包含所有诊断工厂的错误对象。
+     */
     private fun SmartPrinter.printErrorsObject(diagnosticList: DiagnosticList) {
         println("@Suppress(\"IncorrectFormatting\")")
         println("object ${diagnosticList.objectName} : CjDiagnosticsContainer() {")
@@ -71,6 +92,9 @@ object ErrorListDiagnosticListRenderer : DiagnosticListRenderer() {
         println("}")
     }
 
+    /**
+     * 打印单个诊断工厂声明。
+     */
     private fun SmartPrinter.printDiagnostic(diagnostic: DiagnosticData) {
         val type = diagnostic.getFactoryTypeName()
         val arguments = buildList {
@@ -91,6 +115,9 @@ object ErrorListDiagnosticListRenderer : DiagnosticListRenderer() {
         println(")")
     }
 
+    /**
+     * 打印诊断工厂泛型实参列表。
+     */
     private fun SmartPrinter.printTypeArguments(typeArguments: List<KType>) {
         print("<")
         typeArguments.forEachIndexed { index, typeArgument ->
@@ -100,6 +127,9 @@ object ErrorListDiagnosticListRenderer : DiagnosticListRenderer() {
         print(">")
     }
 
+    /**
+     * 打印 Kotlin 反射类型对应的源码类型文本。
+     */
     private fun SmartPrinter.printType(type: KType) {
         print(type.kClass.simpleName!!)
         if (type.arguments.isNotEmpty()) {
@@ -113,6 +143,9 @@ object ErrorListDiagnosticListRenderer : DiagnosticListRenderer() {
         if (type.isMarkedNullable) print("?")
     }
 
+    /**
+     * 打印带 variance 的泛型实参。
+     */
     private fun SmartPrinter.printTypeArgument(typeArgument: KTypeProjection) {
         val typeArgumentType = typeArgument.type
         if (typeArgumentType == null) {
@@ -127,12 +160,17 @@ object ErrorListDiagnosticListRenderer : DiagnosticListRenderer() {
         printType(typeArgumentType)
     }
 
+    /**
+     * 将反射类型的 classifier 收窄为 KClass。
+     */
     private val KType.kClass: KClass<*>
         get() = classifier as KClass<*>
 
+    /**
+     * 根据诊断元数据选择对应的诊断工厂类型名。
+     */
     private fun DiagnosticData.getFactoryTypeName(): String = when (this) {
         is RegularDiagnosticData -> "CjDiagnosticFactory"
         is DeprecationDiagnosticData -> "CjDiagnosticFactoryForDeprecation"
     } + parameters.size
 }
-

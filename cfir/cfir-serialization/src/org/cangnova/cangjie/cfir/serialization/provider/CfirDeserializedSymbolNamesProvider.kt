@@ -22,6 +22,7 @@ class CfirDeserializedSymbolNamesProvider(
     override fun getPackageNames(): Set<String>? =
         cjoManager.getAvailablePackageNames().mapTo(linkedSetOf()) { it.asString() }
 
+    /** `.cjo` 名称提供器不按 classifier 查询提前缩小包名集合。 */
     override val hasSpecificClassifierPackageNamesComputation: Boolean
         get() = false
 
@@ -30,6 +31,7 @@ class CfirDeserializedSymbolNamesProvider(
         return exportedTopLevelNamesResolver.resolve(packageFqName).classifierNames
     }
 
+    /** `.cjo` 名称提供器不按 callable 查询提前缩小包名集合。 */
     override val hasSpecificCallablePackageNamesComputation: Boolean
         get() = false
 

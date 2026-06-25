@@ -21,9 +21,13 @@ import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
  * 不再保留旧的 frame-only 兼容层。
  */
 class CfirDataFlowAnalyzerContext(
+    /** CFG 构造器。 */
     var graphBuilder: ControlFlowGraphBuilder = ControlFlowGraphBuilder(),
+    /** 局部变量赋值分析器。 */
     var variableAssignmentAnalyzer: CfirLocalVariableAssignmentAnalyzer = CfirLocalVariableAssignmentAnalyzer(),
+    /** 数据流变量承载存储。 */
     var variableStorage: VariableStorage = VariableStorage(),
+    /** 赋值编号计数器。 */
     var assignmentCounter: Int = 0,
 ) {
     /**

@@ -27,8 +27,17 @@ import org.cangnova.cangjie.name.Name
  * @property implicitValuesBySymbol 按绑定符号索引的隐式值集合。
  */
 class ImplicitValueStorage private constructor(
+    /**
+     * 按进入作用域顺序保存的隐式 receiver 栈。
+     */
     private val implicitReceiverStack: PersistentList<ImplicitReceiverValue<*>>,
+    /**
+     * 按标签名索引的隐式 receiver 集合。
+     */
     private val implicitReceiversByLabel: PersistentMap<Name, PersistentSet<ImplicitReceiverValue<*>>>,
+    /**
+     * 按绑定符号索引的隐式值集合。
+     */
     private val implicitValuesBySymbol: PersistentMap<CfirBasedSymbol<*>, ImplicitValue<*>>,
 ) {
     constructor() : this(

@@ -18,7 +18,13 @@ import org.cangnova.cangjie.name.Name
  * @property diagnostic 产生该错误符号的诊断。
  */
 open class CfirErrorNamedValueSymbol(
+    /**
+     * 错误 named value 仍然暴露的 callable id。
+     */
     override val callableId: CallableId,
+    /**
+     * 产生该错误符号的诊断信息。
+     */
     val diagnostic: ConeDiagnostic
 ) : CfirNamedValueSymbol<CfirErrorNamedValue>(callableId), CfirErrorCallableSymbol<CfirErrorNamedValue> {
     /**

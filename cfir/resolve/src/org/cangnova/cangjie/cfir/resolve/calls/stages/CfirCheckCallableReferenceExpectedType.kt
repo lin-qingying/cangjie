@@ -2,6 +2,7 @@ package org.cangnova.cangjie.cfir.resolve.calls.stages
 
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.diagnostic.InapplicableCandidate
+import org.cangnova.cangjie.cfir.diagnostic.UnsuccessfulCallableReferenceArgument
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
@@ -77,6 +78,9 @@ object CfirEagerResolveOfCallableReferences : ResolutionStage() {
         if (callableReferenceAtoms.isEmpty()) return
 
         if (!context.bodyResolveComponents.callResolver.resolveCallableReferenceArguments(candidate, callableReferenceAtoms)) {
+            callableReferenceAtoms.forEach { atom ->
+                sink.reportDiagnostic(UnsuccessfulCallableReferenceArgument(atom.expression))
+            }
             sink.yieldDiagnostic(InapplicableCandidate)
         }
     }

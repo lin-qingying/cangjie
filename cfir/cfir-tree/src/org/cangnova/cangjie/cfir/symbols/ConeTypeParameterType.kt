@@ -29,7 +29,13 @@ abstract class ConeTypeParameterType : ConeLookupTagBasedType() {
  * @param attributes 类型附加属性，默认为空。
  */
 class ConeTypeParameterTypeImpl(
+    /**
+     * 指向类型参数符号的 lookup tag。
+     */
     override val lookupTag: ConeTypeParameterLookupTag,
+    /**
+     * 类型参数类型携带的类型属性。
+     */
     override val attributes: ConeAttributes = ConeAttributes.Empty,
 ) : ConeTypeParameterType() {
 

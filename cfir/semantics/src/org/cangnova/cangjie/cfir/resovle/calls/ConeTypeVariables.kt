@@ -30,5 +30,8 @@ class ConeTypeVariableForLambdaReturnType(val argument: CfirDeclaration, name: S
  * @property typeParameterSymbol 被转换为类型变量的类型参数符号。
  */
 class ConeTypeParameterBasedTypeVariable(
+    /**
+     * 被转换为约束系统类型变量的类型参数符号。
+     */
     val typeParameterSymbol: CfirTypeParameterSymbol
 ) : ConeTypeVariable(SpecialNames.safeIdentifier(typeParameterSymbol.name).identifier, typeParameterSymbol.toLookupTag())

@@ -8,7 +8,9 @@ package org.cangnova.cangjie.cfir.types
  * @property attributes 指针类型附带的属性。
  */
 class ConePointerType(
+    /** 指针指向的元素类型。 */
     val pointeeType: ConeCangJieType,
+    /** 指针类型附带的属性。 */
     override val attributes: ConeAttributes = ConeAttributes.Empty,
 ) : ConeRigidType(), ConeTypeConstructorMarker {
 
@@ -32,6 +34,7 @@ class ConePointerType(
  * @property attributes CString 类型附带的属性。
  */
 class ConeCStringType(
+    /** CString 类型附带的属性。 */
     override val attributes: ConeAttributes = ConeAttributes.Empty,
 ) : ConeRigidType(), ConeTypeConstructorMarker {
 

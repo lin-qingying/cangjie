@@ -107,7 +107,13 @@ open class CfirCangJieScopeProvider : CfirScopeProvider(), CfirSessionComponent 
      * @property useSiteSession 查询发生的 session。
      */
     private data class PackageMemberScopeKey(
+        /**
+         * 被查询的包名。
+         */
         val packageFqName: FqName,
+        /**
+         * 查询发生的 use-site session。
+         */
         val useSiteSession: CfirSession,
     )
 }

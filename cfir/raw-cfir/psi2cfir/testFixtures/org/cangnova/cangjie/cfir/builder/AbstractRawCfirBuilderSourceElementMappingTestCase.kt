@@ -14,7 +14,13 @@ import org.cangnova.cangjie.psi.CjElement
 import org.cangnova.cangjie.psi.CjFile
 import java.io.File
 
+/**
+ * raw CFIR source element 映射 golden 测试基类。
+ */
 abstract class AbstractRawCfirBuilderSourceElementMappingTestCase : AbstractRawCfirBuilderTestCase() {
+    /**
+     * 执行带 `<expr>` 标记的 source element 映射测试。
+     */
     override fun doRawCfirTest(filePath: String) {
         val resolvedFilePath = resolveTestDataPath(filePath).path
         val fileTextWithTags = loadFile(resolvedFilePath)
@@ -49,7 +55,13 @@ abstract class AbstractRawCfirBuilderSourceElementMappingTestCase : AbstractRawC
         private const val END_EXPRESSION_TAG = "</expr>"
     }
 
+    /**
+     * 在 CFIR 树中查找覆盖指定 PSI 区间的最小元素。
+     */
     private object FindElementVisitor : CfirVisitor<Unit, ElementFindingResult>() {
+        /**
+         * 收集 source 覆盖目标 PSI 的 CFIR 元素。
+         */
         override fun visitElement(element: CfirElement, data: ElementFindingResult) {
             val source = element.source
             if (source != null &&
@@ -61,16 +73,31 @@ abstract class AbstractRawCfirBuilderSourceElementMappingTestCase : AbstractRawC
             element.transformChildren(TraversingTransformer(this, data), data)
         }
 
+        /**
+         * 在指定 CFIR 文件中查找覆盖 [element] 的所有元素。
+         */
         fun find(cfirFile: CfirFile, element: CjElement): Set<CfirElement> {
             return ElementFindingResult(element, mutableSetOf()).also { cfirFile.accept(this, it) }.result
         }
     }
 
+    /**
+     * source element 查找过程的可变结果。
+     */
     private data class ElementFindingResult(
+        /**
+         * 目标 PSI 元素。
+         */
         val psi: CjElement,
+        /**
+         * 已找到的 CFIR 元素集合。
+         */
         val result: MutableSet<CfirElement>,
     )
 
+    /**
+     * 根据精确文本区间查找仓颉 PSI 元素。
+     */
     private fun findElementByExactRange(file: CjFile, range: TextRange): CjElement? {
         val startLeaf = file.findElementAt(range.startOffset) ?: return null
         var current: PsiElement? = startLeaf
@@ -85,10 +112,22 @@ abstract class AbstractRawCfirBuilderSourceElementMappingTestCase : AbstractRawC
         return all.singleOrNull { it.textRange == range }
     }
 
+    /**
+     * 通过 transformer 遍历 CFIR 子树并委托 visitor 处理每个元素。
+     */
     private class TraversingTransformer(
+        /**
+         * 实际执行查找逻辑的 visitor。
+         */
         private val visitor: CfirVisitor<Unit, ElementFindingResult>,
+        /**
+         * 查找过程共享的数据对象。
+         */
         private val data: ElementFindingResult,
     ) : CfirTransformer<ElementFindingResult>() {
+        /**
+         * 访问元素后继续保持原节点不变。
+         */
         override fun <E : CfirElement> transformElement(element: E, data: ElementFindingResult): E {
             element.accept(visitor, this@TraversingTransformer.data)
             return element

@@ -21,11 +21,17 @@ import org.cangnova.cangjie.generators.util.GeneratorsFileUtil
 import org.cangnova.cangjie.utils.SmartPrinter
 import java.io.File
 
+/**
+ * 使用 [SmartPrinter] 构造文件内容，并仅在内容变化时写入目标文件。
+ */
 inline fun File.writeToFileUsingSmartPrinterIfFileContentChanged(block: SmartPrinter.() -> Unit) {
     val newText = buildString { SmartPrinter(this).block() }
     GeneratorsFileUtil.writeFileIfContentChanged(this, newText, logNotChanged = false)
 }
 
+/**
+ * 计算字段在实现类或 builder 中应使用的可变类型。
+ */
 fun Field.getMutableType(forBuilder: Boolean = false): TypeRefWithNullability = when (this) {
     is ListField -> when {
         forBuilder -> StandardTypes.mutableList
@@ -37,6 +43,9 @@ fun Field.getMutableType(forBuilder: Boolean = false): TypeRefWithNullability = 
 }
 
 
+/**
+ * 打印字段 replace 方法声明。
+ */
 fun ImportCollectingPrinter.replaceFunctionDeclaration(
     field: Field,
     override: Boolean,

@@ -18,8 +18,11 @@ sealed interface ConeTypeConstructorMarker : TypeConstructorMarker
  * @property isForFixation 当前存根是否用于类型变量固定阶段。
  */
 data class ConeStubTypeConstructor(
+    /** 该存根关联的类型变量。 */
     val variable:  ConeTypeVariable,
+    /** 当前存根是否来自子类型关系中的类型变量。 */
     val isTypeVariableInSubtyping: Boolean,
+    /** 当前存根是否用于类型变量固定阶段。 */
     val isForFixation: Boolean = false,
 ) : ConeTypeConstructorMarker {
     /**

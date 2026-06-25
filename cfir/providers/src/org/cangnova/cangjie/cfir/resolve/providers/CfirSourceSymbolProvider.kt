@@ -52,7 +52,13 @@ import org.cangnova.cangjie.name.Name
  * @property cangjieScopeProvider 为源码声明创建成员作用域时使用的 scope provider。
  */
 class CfirProviderImpl(
+    /**
+     * 当前 source provider 绑定的 CFIR session。
+     */
     val session: CfirSession,
+    /**
+     * 为源码声明创建成员作用域时使用的 scope provider。
+     */
     val cangjieScopeProvider: CfirCangJieScopeProvider = CfirCangJieScopeProvider(),
 ) : CfirProvider() {
 
@@ -935,7 +941,13 @@ class CfirProviderImpl(
      * @property name 目标声明真实短名。
      */
     private data class SourceExportedTopLevelTarget(
+        /**
+         * 目标声明真实所在包名。
+         */
         val packageFqName: FqName,
+        /**
+         * 目标声明真实短名。
+         */
         val name: Name,
     )
 
@@ -948,9 +960,21 @@ class CfirProviderImpl(
      * @property classifierTargets 可见 classifier 短名到真实声明目标的映射。
      */
     private data class SourceExportedTopLevelNames(
+        /**
+         * 对调用方可见的 callable 短名集合。
+         */
         val callableNames: Set<Name>,
+        /**
+         * 对调用方可见的 classifier 短名集合。
+         */
         val classifierNames: Set<Name>,
+        /**
+         * 可见 callable 短名到真实声明目标的映射。
+         */
         val callableTargets: Map<Name, SourceExportedTopLevelTarget> = emptyMap(),
+        /**
+         * 可见 classifier 短名到真实声明目标的映射。
+         */
         val classifierTargets: Map<Name, SourceExportedTopLevelTarget> = emptyMap(),
     )
 

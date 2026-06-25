@@ -27,27 +27,54 @@ import org.cangnova.cangjie.generators.tree.printer.printTransformChildrenMethod
 import org.cangnova.cangjie.generators.util.printBlock
 import org.cangnova.cangjie.utils.withIndent
 
+/**
+ * CFIR 实现类字段源码打印器。
+ */
 private class ImplementationFieldPrinter(printer: ImportCollectingPrinter) : AbstractFieldPrinter<Field>(printer) {
+    /**
+     * 判断字段在实现类中是否必须生成为可变属性。
+     */
     override fun forceMutable(field: Field): Boolean = field.isMutable && (field !is ListField || field.isMutableOrEmptyList)
 
+    /**
+     * 返回实现类字段使用的实际类型。
+     */
     override fun actualTypeOfField(field: Field) = field.getMutableType()
 
+    /**
+     * 是否为字段访问包裹 opt-in 注解。
+     */
     override val wrapOptInAnnotations
         get() = true
 }
 
+/**
+ * CFIR 具体实现类源码打印器。
+ */
 internal class ImplementationPrinter(
     printer: ImportCollectingPrinter,
 ) : AbstractImplementationPrinter<Implementation, Element, Field>(printer) {
 
+    /**
+     * 实现类使用的内部实现 opt-in 注解。
+     */
     override val implementationOptInAnnotation: ClassRef<*>
         get() = cfirImplementationDetailType
 
+    /**
+     * 返回纯抽象 CFIR 元素基类类型。
+     */
     override fun getPureAbstractElementType(implementation: Implementation): ClassRef<*> =
         pureAbstractElementType
 
+    /**
+     * 创建实现类字段打印器。
+     */
     override fun makeFieldPrinter(printer: ImportCollectingPrinter): AbstractFieldPrinter<Field> = ImplementationFieldPrinter(printer)
 
+    /**
+     * 判断当前实现的任一父元素是否满足条件。
+     */
     private inline fun Implementation.anyParent(condition: (Element) -> Boolean): Boolean {
         val visited = mutableSetOf<Element>()
         val stack = this.allParents.toMutableList()
@@ -65,6 +92,9 @@ internal class ImplementationPrinter(
         return false
     }
 
+    /**
+     * 打印实现类的初始化、acceptChildren、transformChildren、replace 等附加方法。
+     */
     override fun ImportCollectingPrinter.printAdditionalMethods(implementation: Implementation) {
         fun Field.transform() {
             when (this) {
@@ -366,5 +396,8 @@ internal class ImplementationPrinter(
     }
 }
 
+/**
+ * 判断字段类型是否为 symbol 类型。
+ */
 private val Field.hasSymbolType: Boolean
     get() = (typeRef as? ClassRef<*>)?.simpleName?.contains("Symbol") ?: false

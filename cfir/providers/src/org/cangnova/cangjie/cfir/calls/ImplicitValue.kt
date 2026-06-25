@@ -27,7 +27,13 @@ import org.cangnova.cangjie.source.fakeElement
  */
 sealed class ImplicitValue<S : CfirBasedSymbol<*>>(
     type: ConeCangJieType,
+    /**
+     * 隐式值进入解析时的原始类型，smartcast 回退与表达式重建都以它作为基准。
+     */
     val originalType: ConeCangJieType,
+    /**
+     * 是否允许当前隐式值在数据流分析中被 smartcast 更新。
+     */
     protected val mutable: Boolean,
 ) {
     /**

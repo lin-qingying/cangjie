@@ -7,6 +7,9 @@ package org.cangnova.cangjie.cfir
  * 后续若补显式 label 语义，可直接在现有结构上扩展。
  */
 abstract class CfirAbstractTarget<E : CfirTargetElement>(
+    /**
+     * target 绑定的标签名；当前 raw builder 路径保留为 `null`。
+     */
     override val labelName: String?,
 ) : CfirTarget<E> {
     /**

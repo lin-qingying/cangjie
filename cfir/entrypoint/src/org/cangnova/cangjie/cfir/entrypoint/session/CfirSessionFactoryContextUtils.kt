@@ -141,8 +141,17 @@ private fun parseSyscapLeafFile(file: File): Set<String>? {
  * @property intersection 所有 syscap 子文件能力集合的交集。
  */
 private data class ParsedSyscapConfiguration(
+    /**
+     * 顶层 syscap 配置声明的 API level。
+     */
     val apiLevel: Int? = null,
+    /**
+     * 所有 syscap 子文件中能力名的并集。
+     */
     val union: Set<String> = emptySet(),
+    /**
+     * 所有 syscap 子文件中能力名的交集。
+     */
     val intersection: Set<String> = emptySet(),
 ) {
     /**

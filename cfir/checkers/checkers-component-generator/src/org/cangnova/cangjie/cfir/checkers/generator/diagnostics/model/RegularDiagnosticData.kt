@@ -4,38 +4,113 @@ import org.cangnova.cangjie.LanguageFeature
 import org.cangnova.cangjie.cfir.diagnostics.Severity
 import kotlin.reflect.KType
 
+/**
+ * 诊断生成器使用的诊断元数据基类。
+ */
 sealed class DiagnosticData {
+    /**
+     * 诊断所属顶层对象名。
+     */
     abstract val containingObjectName: String
+    /**
+     * 诊断工厂名称。
+     */
     abstract val name: String
+    /**
+     * 诊断锚定的 PSI 元素类型。
+     */
     abstract val psiType: KType
+    /**
+     * 诊断携带的渲染参数列表。
+     */
     abstract val parameters: List<DiagnosticParameter>
+    /**
+     * 诊断源码定位策略。
+     */
     abstract val positioningStrategy: PositioningStrategy
 }
 
+/**
+ * 普通错误或警告诊断的生成元数据。
+ */
 data class RegularDiagnosticData(
+    /**
+     * 诊断所属顶层对象名。
+     */
     override val containingObjectName: String,
+    /**
+     * 诊断严重级别。
+     */
     val severity: Severity,
+    /**
+     * 诊断工厂名称。
+     */
     override val name: String,
+    /**
+     * 诊断锚定的 PSI 元素类型。
+     */
     override val psiType: KType,
+    /**
+     * 诊断携带的渲染参数列表。
+     */
     override val parameters: List<DiagnosticParameter>,
+    /**
+     * 诊断源码定位策略。
+     */
     override val positioningStrategy: PositioningStrategy,
+    /**
+     * 该诊断是否允许通过 suppress 机制屏蔽。
+     */
     val isSuppressible: Boolean,
 ) : DiagnosticData()
 
+/**
+ * 与语言特性弃用阶段绑定的诊断元数据。
+ */
 data class DeprecationDiagnosticData(
+    /**
+     * 诊断所属顶层对象名。
+     */
     override val containingObjectName: String,
+    /**
+     * 控制该弃用诊断升为错误的语言特性。
+     */
     val featureForError: LanguageFeature,
+    /**
+     * 诊断工厂名称。
+     */
     override val name: String,
+    /**
+     * 诊断锚定的 PSI 元素类型。
+     */
     override val psiType: KType,
+    /**
+     * 诊断携带的渲染参数列表。
+     */
     override val parameters: List<DiagnosticParameter>,
+    /**
+     * 诊断源码定位策略。
+     */
     override val positioningStrategy: PositioningStrategy,
 ) : DiagnosticData()
 
+/**
+ * 单个诊断参数的名称和类型。
+ */
 data class DiagnosticParameter(
+    /**
+     * 参数在诊断工厂和渲染器中的名称。
+     */
     val name: String,
+    /**
+     * 参数的 Kotlin 反射类型。
+     */
     val type: KType
 )
 
+/**
+ * 诊断源码范围定位策略枚举。
+ */
 enum class PositioningStrategy {
     DEFAULT,
     SYNTAX_ERROR,
@@ -134,9 +209,18 @@ enum class PositioningStrategy {
     DEPRECATION,
     ;
 
+    /**
+     * 生成错误列表时引用对应定位策略的表达式。
+     */
     val expressionToCreate get() = "SourceElementPositioningStrategies.$name"
 
+    /**
+     * 定位策略枚举的生成辅助常量。
+     */
     companion object {
+        /**
+         * 生成错误列表时需要导入的定位策略对象全限定名。
+         */
         const val importToAdd = "org.cangnova.cangjie.cfir.diagnostics.SourceElementPositioningStrategies"
     }
 }

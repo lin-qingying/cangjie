@@ -42,8 +42,17 @@ private object TypeAliasConstructorInfoKey : CfirDeclarationDataKey()
  * @property substitutor 展开类型 scope 使用的类型替换器。
  */
 data class TypeAliasConstructorInfo<T : CfirFunction>(
+    /**
+     * 展开类型上的原始构造器声明。
+     */
     val originalConstructor: T,
+    /**
+     * 触发构造器合成的 typealias symbol。
+     */
     val typeAliasSymbol: CfirTypeAliasSymbol,
+    /**
+     * 展开类型 scope 使用的类型替换器。
+     */
     val substitutor: ConeSubstitutor?,
 )
 

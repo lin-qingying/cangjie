@@ -85,11 +85,29 @@ class CfirClassDeclaredMemberScope(
      * class-like 声明成员索引。
      */
     private class MemberIndex(
+        /**
+         * classifier 短名到 class-like symbol 列表的索引。
+         */
         val classifiers: Map<Name, List<CfirClassLikeSymbol<*>>>,
+        /**
+         * 当前 class-like 直接声明的构造器列表。
+         */
         val constructors: List<CfirConstructorSymbol>,
+        /**
+         * enum constructor 短名到 symbol 列表的索引。
+         */
         val enumConstructors: Map<Name, List<CfirEnumConstructorSymbol>>,
+        /**
+         * 函数短名到函数 symbol 列表的索引。
+         */
         val functions: Map<Name, List<CfirNamedFunctionSymbol>>,
+        /**
+         * 属性短名到属性 symbol 列表的索引。
+         */
         val properties: Map<Name, List<CfirPropertySymbol>>,
+        /**
+         * 字段变量短名到变量 symbol 列表的索引。
+         */
         val variables: Map<Name, List<CfirVariableSymbol<*>>>,
     ) {
         /**
@@ -209,8 +227,17 @@ class CfirClassDeclaredMemberScope(
      * 带声明顺序信息的值成员。
      */
     private data class IndexedValueMember(
+        /**
+         * 参与同名值成员选择的 callable symbol。
+         */
         val symbol: CfirCallableSymbol<*>,
+        /**
+         * 值成员分类，用于在同偏移时稳定选择属性或变量。
+         */
         val kind: ValueMemberKind,
+        /**
+         * 同一分类内的声明顺序下标。
+         */
         val index: Int,
     )
 

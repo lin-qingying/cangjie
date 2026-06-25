@@ -66,9 +66,21 @@ interface CfirPatternMutableState {
  * binding pattern 的可恢复状态。
  */
 private class CfirBindingPatternMutableState(
+    /**
+     * 被恢复的 binding pattern 实现节点。
+     */
     private val pattern: CfirBindingPatternImpl,
+    /**
+     * 捕获时的类型引用。
+     */
     private val typeRef: CfirTypeRef?,
+    /**
+     * 捕获时的绑定变量。
+     */
     private val bindingVariable: CfirPatternBindingVariable?,
+    /**
+     * 捕获时的嵌套 pattern。
+     */
     private val nestedPattern: CfirPattern?,
 ) : CfirPatternMutableState {
     /**
@@ -85,8 +97,17 @@ private class CfirBindingPatternMutableState(
  * type pattern 的可恢复状态。
  */
 private class CfirTypePatternMutableState(
+    /**
+     * 被恢复的 type pattern 实现节点。
+     */
     private val pattern: CfirTypePatternImpl,
+    /**
+     * 捕获时的类型引用。
+     */
     private val typeRef: CfirTypeRef,
+    /**
+     * 捕获时的绑定变量。
+     */
     private val bindingVariable: CfirPatternBindingVariable?,
 ) : CfirPatternMutableState {
     /**
@@ -102,7 +123,13 @@ private class CfirTypePatternMutableState(
  * var-or-enum pattern 的可恢复状态。
  */
 private class CfirVarOrEnumPatternMutableState(
+    /**
+     * 被恢复的 var-or-enum pattern 实现节点。
+     */
     private val pattern: CfirVarOrEnumPatternImpl,
+    /**
+     * 捕获时的绑定变量。
+     */
     private val bindingVariable: CfirPatternBindingVariable?,
 ) : CfirPatternMutableState {
     /**

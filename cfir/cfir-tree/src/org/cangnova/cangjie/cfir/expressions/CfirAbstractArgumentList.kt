@@ -110,6 +110,9 @@ abstract class CfirResolvedArgumentList : CfirArgumentList() {
  * @property mappingIncludingContextArguments 包含显式 context 实参的完整映射。
  */
 internal class CfirResolvedArgumentListImpl(
+    /**
+     * 解析前的原始参数列表。
+     */
     override val originalArgumentList: CfirArgumentList?,
     mapping: LinkedHashMap<CfirExpression, CfirValueParameter>,
     mappingIncludingContextArguments: LinkedHashMap<CfirExpression, CfirValueParameter> = mapping,

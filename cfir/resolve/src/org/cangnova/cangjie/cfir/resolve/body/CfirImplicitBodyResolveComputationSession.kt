@@ -43,7 +43,9 @@ sealed class CfirImplicitBodyResolveComputationStatus {
 
     /** 已完成计算，并缓存解析后的类型与声明。 */
     class Computed(
+        /** 已解析返回类型引用。 */
         val resolvedTypeRef: CfirResolvedTypeRef,
+        /** body resolve 后的 callable 声明。 */
         val transformedDeclaration: CfirCallableDeclaration,
     ) : CfirImplicitBodyResolveComputationStatus()
 }

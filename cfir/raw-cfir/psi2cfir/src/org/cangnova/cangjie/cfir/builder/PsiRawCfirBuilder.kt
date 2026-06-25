@@ -2455,7 +2455,15 @@ class PsiRawCfirBuilder(
                 val (pattern, guard) = when {
                     // ── case _ ────────────────────────────────────────────────────────
                     entry.isElse -> {
-                        val p = buildWildcardPattern { source = entry.toCjPsiSourceElement() }
+                        val conditions = entry.conditions.toList()
+                        val p = if (hasSubject && conditions.size == 1) {
+                            convertCasePattern(conditions.first())
+                        } else {
+                            buildWildcardPattern {
+                                source = conditions.firstOrNull()?.toCjPsiSourceElement()
+                                    ?: entry.toCjPsiSourceElement()
+                            }
+                        }
                         val g = entry.patternGuard
                             ?.children?.filterIsInstance<CjExpression>()?.firstOrNull()
                             ?.let { convertExpression(it) }

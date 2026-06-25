@@ -173,80 +173,154 @@ abstract class ControlFlowGraphVisitorVoid : ControlFlowGraphVisitor<Unit, Nothi
         visitNode(node)
     }
 
+    /** 桥接函数入口节点的双参数访问到无 data 访问。 */
     final override fun visitFunctionEnterNode(node: FunctionEnterNode, data: Nothing?) = visitFunctionEnterNode(node)
+    /** 桥接函数出口节点的双参数访问到无 data 访问。 */
     final override fun visitFunctionExitNode(node: FunctionExitNode, data: Nothing?) = visitFunctionExitNode(node)
+    /** 桥接局部函数声明节点的双参数访问到无 data 访问。 */
     final override fun visitLocalFunctionDeclarationNode(node: LocalFunctionDeclarationNode, data: Nothing?) = visitLocalFunctionDeclarationNode(node)
+    /** 桥接值参数入口节点的双参数访问到无 data 访问。 */
     final override fun visitEnterValueParameterNode(node: EnterValueParameterNode, data: Nothing?) = visitEnterValueParameterNode(node)
+    /** 桥接默认参数入口节点的双参数访问到无 data 访问。 */
     final override fun visitEnterDefaultArgumentsNode(node: EnterDefaultArgumentsNode, data: Nothing?) = visitEnterDefaultArgumentsNode(node)
+    /** 桥接默认参数出口节点的双参数访问到无 data 访问。 */
     final override fun visitExitDefaultArgumentsNode(node: ExitDefaultArgumentsNode, data: Nothing?) = visitExitDefaultArgumentsNode(node)
+    /** 桥接值参数出口节点的双参数访问到无 data 访问。 */
     final override fun visitExitValueParameterNode(node: ExitValueParameterNode, data: Nothing?) = visitExitValueParameterNode(node)
+    /** 桥接延期 lambda 拆分节点的双参数访问到无 data 访问。 */
     final override fun visitSplitPostponedLambdasNode(node: SplitPostponedLambdasNode, data: Nothing?) = visitSplitPostponedLambdasNode(node)
+    /** 桥接延期 lambda 出口节点的双参数访问到无 data 访问。 */
     final override fun visitPostponedLambdaExitNode(node: PostponedLambdaExitNode, data: Nothing?) = visitPostponedLambdaExitNode(node)
+    /** 桥接延期 lambda 出口合并节点的双参数访问到无 data 访问。 */
     final override fun visitMergePostponedLambdaExitsNode(node: MergePostponedLambdaExitsNode, data: Nothing?) = visitMergePostponedLambdaExitsNode(node)
+    /** 桥接匿名函数捕获节点的双参数访问到无 data 访问。 */
     final override fun visitAnonymousFunctionCaptureNode(node: AnonymousFunctionCaptureNode, data: Nothing?) = visitAnonymousFunctionCaptureNode(node)
+    /** 桥接匿名函数表达式节点的双参数访问到无 data 访问。 */
     final override fun visitAnonymousFunctionExpressionNode(node: AnonymousFunctionExpressionNode, data: Nothing?) = visitAnonymousFunctionExpressionNode(node)
+    /** 桥接文件入口节点的双参数访问到无 data 访问。 */
     final override fun visitFileEnterNode(node: FileEnterNode, data: Nothing?) = visitFileEnterNode(node)
+    /** 桥接文件出口节点的双参数访问到无 data 访问。 */
     final override fun visitFileExitNode(node: FileExitNode, data: Nothing?) = visitFileExitNode(node)
+    /** 桥接类入口节点的双参数访问到无 data 访问。 */
     final override fun visitClassEnterNode(node: ClassEnterNode, data: Nothing?) = visitClassEnterNode(node)
+    /** 桥接类出口节点的双参数访问到无 data 访问。 */
     final override fun visitClassExitNode(node: ClassExitNode, data: Nothing?) = visitClassExitNode(node)
+    /** 桥接局部类出口节点的双参数访问到无 data 访问。 */
     final override fun visitLocalClassExitNode(node: LocalClassExitNode, data: Nothing?) = visitLocalClassExitNode(node)
+    /** 桥接代码片段入口节点的双参数访问到无 data 访问。 */
     final override fun visitCodeFragmentEnterNode(node: CodeFragmentEnterNode, data: Nothing?) = visitCodeFragmentEnterNode(node)
+    /** 桥接代码片段出口节点的双参数访问到无 data 访问。 */
     final override fun visitCodeFragmentExitNode(node: CodeFragmentExitNode, data: Nothing?) = visitCodeFragmentExitNode(node)
 
+    /** 桥接字段初始化入口节点的双参数访问到无 data 访问。 */
     final override fun visitFieldInitializerEnterNode(node: FieldInitializerEnterNode, data: Nothing?) = visitFieldInitializerEnterNode(node)
+    /** 桥接字段初始化出口节点的双参数访问到无 data 访问。 */
     final override fun visitFieldInitializerExitNode(node: FieldInitializerExitNode, data: Nothing?) = visitFieldInitializerExitNode(node)
 
+    /** 桥接 spawn 表达式节点的双参数访问到无 data 访问。 */
     final override fun visitSpawnExpressionNode(node: SpawnExpressionNode, data: Nothing?) = visitSpawnExpressionNode(node)
+    /** 桥接 synchronized 入口节点的双参数访问到无 data 访问。 */
     final override fun visitSynchronizedEnterNode(node: SynchronizedEnterNode, data: Nothing?) = visitSynchronizedEnterNode(node)
+    /** 桥接 synchronized 出口节点的双参数访问到无 data 访问。 */
     final override fun visitSynchronizedExitNode(node: SynchronizedExitNode, data: Nothing?) = visitSynchronizedExitNode(node)
+    /** 桥接 unsafe 入口节点的双参数访问到无 data 访问。 */
     final override fun visitUnsafeEnterNode(node: UnsafeEnterNode, data: Nothing?) = visitUnsafeEnterNode(node)
+    /** 桥接 unsafe 出口节点的双参数访问到无 data 访问。 */
     final override fun visitUnsafeExitNode(node: UnsafeExitNode, data: Nothing?) = visitUnsafeExitNode(node)
+    /** 桥接代码块入口节点的双参数访问到无 data 访问。 */
     final override fun visitBlockEnterNode(node: BlockEnterNode, data: Nothing?) = visitBlockEnterNode(node)
+    /** 桥接代码块出口节点的双参数访问到无 data 访问。 */
     final override fun visitBlockExitNode(node: BlockExitNode, data: Nothing?) = visitBlockExitNode(node)
+    /** 桥接 match 入口节点的双参数访问到无 data 访问。 */
     final override fun visitMatchEnterNode(node: MatchEnterNode, data: Nothing?) = visitMatchEnterNode(node)
+    /** 桥接 match 出口节点的双参数访问到无 data 访问。 */
     final override fun visitMatchExitNode(node: MatchExitNode, data: Nothing?) = visitMatchExitNode(node)
+    /** 桥接 match 分支条件入口节点的双参数访问到无 data 访问。 */
     final override fun visitMatchBranchConditionEnterNode(node: MatchBranchConditionEnterNode, data: Nothing?) = visitMatchBranchConditionEnterNode(node)
+    /** 桥接 match 分支条件出口节点的双参数访问到无 data 访问。 */
     final override fun visitMatchBranchConditionExitNode(node: MatchBranchConditionExitNode, data: Nothing?) = visitMatchBranchConditionExitNode(node)
+    /** 桥接 match 分支结果入口节点的双参数访问到无 data 访问。 */
     final override fun visitMatchBranchResultEnterNode(node: MatchBranchResultEnterNode, data: Nothing?) = visitMatchBranchResultEnterNode(node)
+    /** 桥接 match 分支结果出口节点的双参数访问到无 data 访问。 */
     final override fun visitMatchBranchResultExitNode(node: MatchBranchResultExitNode, data: Nothing?) = visitMatchBranchResultExitNode(node)
+    /** 桥接 match 合成 else 节点的双参数访问到无 data 访问。 */
     final override fun visitMatchSyntheticElseBranchNode(node: MatchSyntheticElseBranchNode, data: Nothing?) = visitMatchSyntheticElseBranchNode(node)
+    /** 桥接 if 入口节点的双参数访问到无 data 访问。 */
     final override fun visitIfEnterNode(node: IfEnterNode, data: Nothing?) = visitIfEnterNode(node)
+    /** 桥接 if 出口节点的双参数访问到无 data 访问。 */
     final override fun visitIfExitNode(node: IfExitNode, data: Nothing?) = visitIfExitNode(node)
+    /** 桥接循环入口节点的双参数访问到无 data 访问。 */
     final override fun visitLoopEnterNode(node: LoopEnterNode, data: Nothing?) = visitLoopEnterNode(node)
+    /** 桥接循环体入口节点的双参数访问到无 data 访问。 */
     final override fun visitLoopBlockEnterNode(node: LoopBlockEnterNode, data: Nothing?) = visitLoopBlockEnterNode(node)
+    /** 桥接循环体出口节点的双参数访问到无 data 访问。 */
     final override fun visitLoopBlockExitNode(node: LoopBlockExitNode, data: Nothing?) = visitLoopBlockExitNode(node)
+    /** 桥接循环条件入口节点的双参数访问到无 data 访问。 */
     final override fun visitLoopConditionEnterNode(node: LoopConditionEnterNode, data: Nothing?) = visitLoopConditionEnterNode(node)
+    /** 桥接循环条件出口节点的双参数访问到无 data 访问。 */
     final override fun visitLoopConditionExitNode(node: LoopConditionExitNode, data: Nothing?) = visitLoopConditionExitNode(node)
+    /** 桥接循环出口节点的双参数访问到无 data 访问。 */
     final override fun visitLoopExitNode(node: LoopExitNode, data: Nothing?) = visitLoopExitNode(node)
+    /** 桥接 try 表达式入口节点的双参数访问到无 data 访问。 */
     final override fun visitTryExpressionEnterNode(node: TryExpressionEnterNode, data: Nothing?) = visitTryExpressionEnterNode(node)
+    /** 桥接 try 主体块入口节点的双参数访问到无 data 访问。 */
     final override fun visitTryMainBlockEnterNode(node: TryMainBlockEnterNode, data: Nothing?) = visitTryMainBlockEnterNode(node)
+    /** 桥接 try 主体块出口节点的双参数访问到无 data 访问。 */
     final override fun visitTryMainBlockExitNode(node: TryMainBlockExitNode, data: Nothing?) = visitTryMainBlockExitNode(node)
+    /** 桥接 catch 子句入口节点的双参数访问到无 data 访问。 */
     final override fun visitCatchClauseEnterNode(node: CatchClauseEnterNode, data: Nothing?) = visitCatchClauseEnterNode(node)
+    /** 桥接 catch 子句出口节点的双参数访问到无 data 访问。 */
     final override fun visitCatchClauseExitNode(node: CatchClauseExitNode, data: Nothing?) = visitCatchClauseExitNode(node)
+    /** 桥接 handle 子句入口节点的双参数访问到无 data 访问。 */
     final override fun visitHandleClauseEnterNode(node: HandleClauseEnterNode, data: Nothing?) = visitHandleClauseEnterNode(node)
+    /** 桥接 handle 子句出口节点的双参数访问到无 data 访问。 */
     final override fun visitHandleClauseExitNode(node: HandleClauseExitNode, data: Nothing?) = visitHandleClauseExitNode(node)
+    /** 桥接 finally 块入口节点的双参数访问到无 data 访问。 */
     final override fun visitFinallyBlockEnterNode(node: FinallyBlockEnterNode, data: Nothing?) = visitFinallyBlockEnterNode(node)
+    /** 桥接 finally 块出口节点的双参数访问到无 data 访问。 */
     final override fun visitFinallyBlockExitNode(node: FinallyBlockExitNode, data: Nothing?) = visitFinallyBlockExitNode(node)
+    /** 桥接 try 表达式出口节点的双参数访问到无 data 访问。 */
     final override fun visitTryExpressionExitNode(node: TryExpressionExitNode, data: Nothing?) = visitTryExpressionExitNode(node)
+    /** 桥接短路布尔运算入口节点的双参数访问到无 data 访问。 */
     final override fun visitBooleanOperatorEnterNode(node: BooleanOperatorEnterNode, data: Nothing?) = visitBooleanOperatorEnterNode(node)
+    /** 桥接短路布尔运算左操作数出口节点的双参数访问到无 data 访问。 */
     final override fun visitBooleanOperatorExitLeftOperandNode(node: BooleanOperatorExitLeftOperandNode, data: Nothing?) = visitBooleanOperatorExitLeftOperandNode(node)
+    /** 桥接短路布尔运算右操作数入口节点的双参数访问到无 data 访问。 */
     final override fun visitBooleanOperatorEnterRightOperandNode(node: BooleanOperatorEnterRightOperandNode, data: Nothing?) = visitBooleanOperatorEnterRightOperandNode(node)
+    /** 桥接短路布尔运算出口节点的双参数访问到无 data 访问。 */
     final override fun visitBooleanOperatorExitNode(node: BooleanOperatorExitNode, data: Nothing?) = visitBooleanOperatorExitNode(node)
+    /** 桥接类型操作节点的双参数访问到无 data 访问。 */
     final override fun visitTypeOperatorCallNode(node: TypeOperatorCallNode, data: Nothing?) = visitTypeOperatorCallNode(node)
+    /** 桥接比较表达式节点的双参数访问到无 data 访问。 */
     final override fun visitComparisonExpressionNode(node: ComparisonExpressionNode, data: Nothing?) = visitComparisonExpressionNode(node)
+    /** 桥接跳转节点的双参数访问到无 data 访问。 */
     final override fun visitJumpNode(node: JumpNode, data: Nothing?) = visitJumpNode(node)
+    /** 桥接字面量表达式节点的双参数访问到无 data 访问。 */
     final override fun visitLiteralExpressionNode(node: LiteralExpressionNode, data: Nothing?) = visitLiteralExpressionNode(node)
+    /** 桥接限定访问节点的双参数访问到无 data 访问。 */
     final override fun visitQualifiedAccessNode(node: QualifiedAccessNode, data: Nothing?) = visitQualifiedAccessNode(node)
+    /** 桥接函数调用参数入口节点的双参数访问到无 data 访问。 */
     final override fun visitFunctionCallArgumentsEnterNode(node: FunctionCallArgumentsEnterNode, data: Nothing?) = visitFunctionCallArgumentsEnterNode(node)
+    /** 桥接函数调用参数出口节点的双参数访问到无 data 访问。 */
     final override fun visitFunctionCallArgumentsExitNode(node: FunctionCallArgumentsExitNode, data: Nothing?) = visitFunctionCallArgumentsExitNode(node)
+    /** 桥接函数调用入口节点的双参数访问到无 data 访问。 */
     final override fun visitFunctionCallEnterNode(node: FunctionCallEnterNode, data: Nothing?) = visitFunctionCallEnterNode(node)
+    /** 桥接函数调用出口节点的双参数访问到无 data 访问。 */
     final override fun visitFunctionCallExitNode(node: FunctionCallExitNode, data: Nothing?) = visitFunctionCallExitNode(node)
+    /** 桥接 throw 节点的双参数访问到无 data 访问。 */
     final override fun visitThrowExceptionNode(node: ThrowExceptionNode, data: Nothing?) = visitThrowExceptionNode(node)
+    /** 桥接变量声明入口节点的双参数访问到无 data 访问。 */
     final override fun visitVariableDeclarationEnterNode(node: VariableDeclarationEnterNode, data: Nothing?) = visitVariableDeclarationEnterNode(node)
+    /** 桥接变量声明出口节点的双参数访问到无 data 访问。 */
     final override fun visitVariableDeclarationExitNode(node: VariableDeclarationExitNode, data: Nothing?) = visitVariableDeclarationExitNode(node)
+    /** 桥接变量赋值节点的双参数访问到无 data 访问。 */
     final override fun visitVariableAssignmentNode(node: VariableAssignmentNode, data: Nothing?) = visitVariableAssignmentNode(node)
+    /** 桥接 optional chain 入口节点的双参数访问到无 data 访问。 */
     final override fun visitEnterOptionalChainNode(node: EnterOptionalChainNode, data: Nothing?) = visitEnterOptionalChainNode(node)
+    /** 桥接 optional chain 出口节点的双参数访问到无 data 访问。 */
     final override fun visitExitOptionalChainNode(node: ExitOptionalChainNode, data: Nothing?) = visitExitOptionalChainNode(node)
+    /** 桥接包装表达式节点的双参数访问到无 data 访问。 */
     final override fun visitWrappedExpressionNode(node: WrappedExpressionNode, data: Nothing?) = visitWrappedExpressionNode(node)
+    /** 桥接 stub 节点的双参数访问到无 data 访问。 */
     final override fun visitStubNode(node: StubNode, data: Nothing?) = visitStubNode(node)
 }

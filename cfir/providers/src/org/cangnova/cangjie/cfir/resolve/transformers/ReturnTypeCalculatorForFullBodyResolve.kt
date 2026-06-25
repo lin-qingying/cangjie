@@ -15,9 +15,15 @@ import org.cangnova.cangjie.cfir.types.builder.buildErrorTypeRef
  * 参考 K2 `ReturnTypeCalculatorForFullBodyResolve`。
  */
 class ReturnTypeCalculatorForFullBodyResolve : ReturnTypeCalculator() {
+    /**
+     * full body resolve 阶段用于强制推进延迟 callable copy 返回类型的计算器。
+     */
     override val callableCopyTypeCalculator: CallableCopyTypeCalculator.DeferredCallableCopyTypeCalculator
         get() = CallableCopyTypeCalculator.CalculateDeferredForceLazyResolution
 
+    /**
+     * 从已解析 return type ref 读取返回类型，或对允许延迟计算的 callable 触发 copy 返回类型计算。
+     */
     override fun tryCalculateReturnTypeOrNull(declaration: CfirCallableDeclaration): CfirResolvedTypeRef? {
         val returnTypeRef = declaration.returnTypeRef
         if (returnTypeRef is CfirResolvedTypeRef) {
@@ -37,6 +43,9 @@ class ReturnTypeCalculatorForFullBodyResolve : ReturnTypeCalculator() {
     }
 
     companion object {
+        /**
+         * full-body resolve 返回类型计算器的共享默认实例。
+         */
         val Default = ReturnTypeCalculatorForFullBodyResolve()
     }
 }
