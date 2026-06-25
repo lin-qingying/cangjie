@@ -18,6 +18,9 @@ import org.cangnova.cangjie.source.CjSourceElement
  * @property typeRef 已知的已解析类型引用。
  */
 class ResolvedImplicitTypeRef(
+    /**
+     * 已经解析完成、被包装为隐式类型引用的真实类型引用。
+     */
     val typeRef: CfirResolvedTypeRef,
 ) : CfirImplicitTypeRef() {
     /**

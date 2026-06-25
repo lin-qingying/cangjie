@@ -40,6 +40,7 @@ import org.cangnova.cangjie.cfir.resolve.transformers.ReturnTypeCalculatorForFul
 import org.cangnova.cangjie.cfir.scopes.CallableCopyTypeCalculator
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.cfirProvider
+import org.cangnova.cangjie.cfir.session.extendProviderOrNull
 import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.builder.buildErrorTypeRef
@@ -54,10 +55,14 @@ import org.cangnova.cangjie.utils.exceptions.withCfirEntry
  * 按需推进；callable copy 的延迟返回类型通过 [CallableCopyTypeCalculator] 委托回同一条计算路径。
  */
 open class ReturnTypeCalculatorWithJump(
+    /** 当前 CFIR session。 */
     protected val session: CfirSession,
+    /** 当前 scope session。 */
     protected val scopeSession: ScopeSession,
+    /** 隐式 body resolve 计算会话。 */
     val implicitBodyResolveComputationSession: CfirImplicitBodyResolveComputationSession,
 ) : ReturnTypeCalculator() {
+    /** callable copy 延迟返回类型计算器。 */
     override val callableCopyTypeCalculator: CallableCopyTypeCalculator = CallableCopyTypeCalculatorWithJump()
 
     /**
@@ -137,10 +142,11 @@ open class ReturnTypeCalculatorWithJump(
     /**
      * 通过 designated body resolve 推进声明并解析返回类型。
      *
-     * 该方法先恢复文件和外层 class-like designation，再只解析目标 callable 的必要路径。
+     * 该方法先恢复文件、外层 class-like 和 extend designation，再只解析目标 callable 的必要路径。
      */
     protected open fun resolveDeclaration(declaration: CfirCallableDeclaration): CfirResolvedTypeRef {
         val file = session.cfirProvider.getContainingFile(declaration.symbol)
+        val containingExtend = session.extendProviderOrNull?.getContainingExtend(declaration.symbol)
         val containingClassLookupTag = declaration.symbol.containingClassLookupTag()
         val outerClasses = generateSequence(containingClassLookupTag) { lookupTag ->
             lookupTag.toSymbol(session)?.getContainingClassSymbol()?.toLookupTag()
@@ -157,7 +163,7 @@ open class ReturnTypeCalculatorWithJump(
             }
         }
 
-        val designation = listOf(file) + outerClasses.filterNotNull().asReversed()
+        val designation = listOf(file) + outerClasses.filterNotNull().asReversed() + listOfNotNull(containingExtend)
         val transformer = CfirDesignatedBodyResolveTransformerForReturnTypeCalculator(
             designation = (designation.drop(1) + declaration).iterator(),
             session = session,

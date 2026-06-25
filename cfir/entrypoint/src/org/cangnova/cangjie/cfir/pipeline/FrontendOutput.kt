@@ -17,8 +17,17 @@ import org.cangnova.cangjie.cfir.session.CfirSession
  * @property fir 已解析的 CFIR 文件列表。
  */
 data class SingleModuleFrontendOutput(
+    /**
+     * 当前模块完成前端分析时使用的 CFIR session。
+     */
     val session: CfirSession,
+    /**
+     * 当前模块的作用域缓存 session。
+     */
     val scopeSession: ScopeSession,
+    /**
+     * 当前模块最终输出的 CFIR 文件列表。
+     */
     val fir: List<CfirFile>,
 )
 

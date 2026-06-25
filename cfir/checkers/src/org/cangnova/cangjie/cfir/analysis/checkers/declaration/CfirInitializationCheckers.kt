@@ -62,11 +62,29 @@ import org.cangnova.cangjie.name.Name
  * 3. 构造器结束时“仍有实例字段未初始化”。
  */
 private class CfirInitializationFlowAnalyzer(
+    /**
+     * 当前 checker 上下文。
+     */
     private val context: CheckerContext,
+
+    /**
+     * 诊断报告器。
+     */
     private val reporter: DiagnosticReporter,
+
+    /**
+     * 是否在分析过程中报告读取未初始化变量的诊断。
+     */
     private val reportReadDiagnostics: Boolean = true,
+
+    /**
+     * 可选的初始化赋值收集集合，用于只分类赋值而不报告诊断的调用路径。
+     */
     private val initializationAssignments: MutableSet<CfirAssignment>? = null,
 ) {
+    /**
+     * 检查函数或构造器体内的初始化读取语义。
+     */
     fun checkFunction(function: CfirFunction) {
         val body = function.body ?: return
         val owner = if (function is CfirConstructor && function.isInstanceConstructor) {
@@ -77,6 +95,9 @@ private class CfirInitializationFlowAnalyzer(
         analyzeFunctionBody(function, body, owner)
     }
 
+    /**
+     * 收集函数体中会完成初始化的赋值表达式。
+     */
     fun collectInitializationAssignments(function: CfirFunction): Set<CfirAssignment> {
         val body = function.body ?: return emptySet()
         val owner = if (function is CfirConstructor && function.isInstanceConstructor) {
@@ -88,6 +109,9 @@ private class CfirInitializationFlowAnalyzer(
         return initializationAssignments.orEmpty()
     }
 
+    /**
+     * 检查 class-like 成员初始化器按声明顺序读取实例字段的语义。
+     */
     fun checkClassLikeMemberInitialization(classLike: CfirClassLikeDeclaration) {
         val trackedFields = classLike.instanceFieldInfos(context, includeInherited = true)
         if (trackedFields.isEmpty()) return
@@ -111,6 +135,9 @@ private class CfirInitializationFlowAnalyzer(
         reportFieldsLeftUninitializedByDefaultConstructor(classLike, state)
     }
 
+    /**
+     * 检查实例构造器结束时是否已初始化所有必要实例字段。
+     */
     fun checkConstructorCompleteness(
         owner: CfirClassLikeDeclaration,
         constructor: CfirConstructor,
@@ -136,6 +163,9 @@ private class CfirInitializationFlowAnalyzer(
             }
     }
 
+    /**
+     * 建立函数体初始化分析的初始状态并分析语句序列。
+     */
     private fun analyzeFunctionBody(
         function: CfirFunction,
         body: CfirBlock,
@@ -169,6 +199,9 @@ private class CfirInitializationFlowAnalyzer(
         return analyzeStatements(body.statements, initialState)
     }
 
+    /**
+     * 顺序分析语句列表，遇到已终止状态时提前结束。
+     */
     private fun analyzeStatements(
         statements: List<CfirElement>,
         initialState: InitializationState,
@@ -181,6 +214,9 @@ private class CfirInitializationFlowAnalyzer(
         return currentState
     }
 
+    /**
+     * 分析单条 CFIR 语句。
+     */
     private fun analyzeStatement(
         statement: CfirElement,
         state: InitializationState,
@@ -191,6 +227,9 @@ private class CfirInitializationFlowAnalyzer(
         else -> state
     }
 
+    /**
+     * 分析 pattern variable 声明及其 initializer。
+     */
     private fun analyzePatternVariable(
         variable: CfirPatternVariable,
         state: InitializationState,
@@ -218,6 +257,9 @@ private class CfirInitializationFlowAnalyzer(
         }
     }
 
+    /**
+     * 分析字段变量声明及其 initializer。
+     */
     private fun analyzeFieldVariable(
         variable: CfirFieldVariable,
         state: InitializationState,
@@ -239,6 +281,9 @@ private class CfirInitializationFlowAnalyzer(
         return if (variable.initializer != null) afterInitializer.markInitialized(variable.symbol) else afterInitializer
     }
 
+    /**
+     * 分析表达式对初始化状态的影响。
+     */
     private fun analyzeExpression(
         expression: CfirExpression,
         state: InitializationState,
@@ -277,6 +322,9 @@ private class CfirInitializationFlowAnalyzer(
         else -> analyzeChildrenSequentially(expression, state)
     }
 
+    /**
+     * 分析赋值表达式。
+     */
     private fun analyzeAssignment(
         assignment: CfirAssignment,
         state: InitializationState,
@@ -285,6 +333,9 @@ private class CfirInitializationFlowAnalyzer(
         return analyzeAssignmentTarget(assignment, assignment.lValue, afterRightValue)
     }
 
+    /**
+     * 分析赋值左值。
+     */
     private fun analyzeAssignmentTarget(
         assignment: CfirAssignment,
         lValue: CfirExpression,
@@ -330,6 +381,12 @@ private class CfirInitializationFlowAnalyzer(
         }
     }
 
+    /**
+     * 在当前赋值确实是首次初始化写入时记录赋值表达式。
+     *
+     * 该信息供外部分类器判断赋值是否属于初始化赋值；同名主构造成员属性已经占用的字段
+     * 不再作为字段首次初始化处理。
+     */
     private fun recordInitializationAssignmentIfNeeded(
         symbol: CfirBasedSymbol<*>,
         state: InitializationState,
@@ -356,6 +413,9 @@ private class CfirInitializationFlowAnalyzer(
             .any { property -> property.name == targetName }
     }
 
+    /**
+     * 在没有显式构造器体的类型中，报告仍未初始化的实例字段。
+     */
     private fun reportFieldsLeftUninitializedByDefaultConstructor(
         classLike: CfirClassLikeDeclaration,
         state: InitializationState,
@@ -378,6 +438,9 @@ private class CfirInitializationFlowAnalyzer(
             }
     }
 
+    /**
+     * 分析 if 表达式并合并 then/else 两个分支的初始化状态。
+     */
     private fun analyzeIfExpression(
         expression: CfirIfExpression,
         state: InitializationState,
@@ -394,6 +457,9 @@ private class CfirInitializationFlowAnalyzer(
         return mergeBranchStates(thenState, elseState)
     }
 
+    /**
+     * 分析 match 表达式，并把每个分支 pattern binding 作为已初始化局部变量引入。
+     */
     private fun analyzeMatchExpression(
         expression: CfirMatchExpression,
         state: InitializationState,
@@ -416,6 +482,9 @@ private class CfirInitializationFlowAnalyzer(
         return branchStates.reduceOrNull(::mergeBranchStates) ?: afterSubject
     }
 
+    /**
+     * 分析 try/catch/finally 表达式。
+     */
     private fun analyzeTryExpression(
         expression: CfirTryExpression,
         state: InitializationState,
@@ -431,6 +500,9 @@ private class CfirInitializationFlowAnalyzer(
         return if (mergedWithoutFinally.terminated) afterFinally.terminate() else afterFinally
     }
 
+    /**
+     * 分析循环表达式。
+     */
     private fun analyzeLoopExpression(
         expression: CfirLoopExpression,
         state: InitializationState,
@@ -446,6 +518,9 @@ private class CfirInitializationFlowAnalyzer(
         }
     }
 
+    /**
+     * 分析 for-in 表达式及其循环变量绑定。
+     */
     private fun analyzeForInExpression(
         expression: CfirForInExpression,
         state: InitializationState,
@@ -465,6 +540,9 @@ private class CfirInitializationFlowAnalyzer(
         return afterIterable
     }
 
+    /**
+     * 分析函数调用表达式。
+     */
     private fun analyzeFunctionCall(
         expression: CfirFunctionCall,
         state: InitializationState,
@@ -503,6 +581,9 @@ private class CfirInitializationFlowAnalyzer(
         return currentState
     }
 
+    /**
+     * 分析命名访问表达式中的变量读取或成员访问。
+     */
     private fun analyzeVariableRead(
         expression: CfirNamedAccessExpression,
         state: InitializationState,
@@ -536,6 +617,9 @@ private class CfirInitializationFlowAnalyzer(
         }
     }
 
+    /**
+     * 分析 qualified access 表达式中的变量读取或成员访问。
+     */
     private fun analyzeQualifiedAccess(
         expression: CfirQualifiedAccessExpression,
         state: InitializationState,
@@ -567,6 +651,9 @@ private class CfirInitializationFlowAnalyzer(
         }
     }
 
+    /**
+     * 按子节点顺序分析普通元素。
+     */
     private fun analyzeChildrenSequentially(
         element: CfirElement,
         state: InitializationState,
@@ -585,6 +672,9 @@ private class CfirInitializationFlowAnalyzer(
         return currentState
     }
 
+    /**
+     * 分析作用域块，并在退出块时丢弃块内声明的局部变量跟踪。
+     */
     private fun analyzeScopedBlock(
         block: CfirBlock,
         state: InitializationState,
@@ -594,6 +684,9 @@ private class CfirInitializationFlowAnalyzer(
         return analyzedState.retainOnly(visibleBeforeBlock)
     }
 
+    /**
+     * 合并两个控制流分支的初始化状态。
+     */
     private fun mergeBranchStates(
         left: InitializationState,
         right: InitializationState,
@@ -604,6 +697,9 @@ private class CfirInitializationFlowAnalyzer(
         return left.intersect(right)
     }
 
+    /**
+     * 如有必要，报告读取未初始化变量。
+     */
     private fun reportReadIfNeeded(
         symbol: CfirVariableSymbol<*>,
         diagnosticName: Name,
@@ -646,7 +742,15 @@ private class CfirInitializationFlowAnalyzer(
     }
 }
 
+/**
+ * 初始化赋值分类器。
+ *
+ * 该入口复用初始化流分析器，但关闭诊断报告，只判断某个赋值是否属于初始化赋值。
+ */
 internal object CfirInitializationAssignmentClassifier {
+    /**
+     * 判断赋值表达式是否完成了当前函数上下文中的变量或字段初始化。
+     */
     fun isInitializationAssignment(
         assignment: CfirAssignment,
         context: CheckerContext,
@@ -663,30 +767,94 @@ internal object CfirInitializationAssignmentClassifier {
     }
 }
 
+/**
+ * 空诊断报告器。
+ *
+ * 用于只收集初始化赋值事实、不产生诊断的分析路径。
+ */
 private object EmptyDiagnosticReporter : DiagnosticReporter() {
+    /**
+     * 忽略所有诊断。
+     */
     override fun report(diagnostic: CjDiagnostic?, context: DiagnosticContext) = Unit
+
+    /**
+     * 空报告器永远不含 error。
+     */
     override val hasErrors: Boolean get() = false
+
+    /**
+     * 空报告器永远不含会被 -Werror 提升的 warning。
+     */
     override val hasWarningsForWError: Boolean get() = false
 }
 
+/**
+ * 初始化分析中访问表达式的角色。
+ */
 private enum class InitializationAccessMode {
+    /**
+     * 普通读取访问。
+     */
     READ,
+
+    /**
+     * 赋值目标访问。
+     */
     WRITE_TARGET,
 }
 
+/**
+ * 初始化分析中被跟踪的变量或字段信息。
+ */
 private data class TrackedVariableInfo(
+    /**
+     * 被跟踪的 CFIR 符号。
+     */
     val symbol: CfirBasedSymbol<*>,
+
+    /**
+     * 诊断中展示的名称。
+     */
     val diagnosticName: Name,
+
+    /**
+     * 该符号是否表示实例字段或主构造成员属性。
+     */
     val isInstanceField: Boolean,
 )
 
+/**
+ * 初始化流分析状态。
+ */
 private data class InitializationState(
+    /**
+     * 当前作用域可见且需要跟踪的符号表。
+     */
     val tracked: Map<CfirBasedSymbol<*>, TrackedVariableInfo>,
+
+    /**
+     * 已经完成初始化的符号集合。
+     */
     val initialized: Set<CfirBasedSymbol<*>>,
+
+    /**
+     * 当前控制流是否已经终止。
+     */
     val terminated: Boolean,
+
+    /**
+     * 当前是否处于成员初始化器求值上下文。
+     */
     val inMemberInitializer: Boolean,
 ) {
+    /**
+     * 初始化状态工厂。
+     */
     companion object {
+        /**
+         * 创建空初始化状态。
+         */
         fun empty(): InitializationState = InitializationState(
             tracked = emptyMap(),
             initialized = emptySet(),
@@ -695,6 +863,9 @@ private data class InitializationState(
         )
     }
 
+    /**
+     * 声明一个新的跟踪变量并设置初始初始化状态。
+     */
     fun declare(
         trackedVariable: TrackedVariableInfo,
         initialized: Boolean,
@@ -710,6 +881,9 @@ private data class InitializationState(
         return copy(tracked = nextTracked, initialized = nextInitialized)
     }
 
+    /**
+     * 批量声明跟踪变量。
+     */
     fun declareAll(
         trackedVariables: Collection<TrackedVariableInfo>,
         initializedSymbols: Set<CfirBasedSymbol<*>>,
@@ -725,28 +899,49 @@ private data class InitializationState(
         return currentState
     }
 
+    /**
+     * 标记指定符号已经初始化。
+     */
     fun markInitialized(symbol: CfirBasedSymbol<*>): InitializationState {
         val normalizedSymbol = symbol.initializationSymbol()
         if (normalizedSymbol !in tracked) return this
         return copy(initialized = initialized + normalizedSymbol)
     }
 
+    /**
+     * 判断指定符号是否被当前状态跟踪。
+     */
     fun isTracked(symbol: CfirBasedSymbol<*>): Boolean = symbol.initializationSymbol() in tracked
 
+    /**
+     * 判断指定符号是否已经初始化。
+     */
     fun isInitialized(symbol: CfirBasedSymbol<*>): Boolean = symbol.initializationSymbol() in initialized
 
+    /**
+     * 判断当前状态中是否仍有未初始化的实例字段。
+     */
     fun hasUninitializedInstanceFields(): Boolean {
         return tracked.any { (symbol, variableInfo) ->
             variableInfo.isInstanceField && symbol !in initialized
         }
     }
 
+    /**
+     * 进入成员初始化器上下文。
+     */
     fun withMemberInitializerContext(): InitializationState =
         if (inMemberInitializer) this else copy(inMemberInitializer = true)
 
+    /**
+     * 离开成员初始化器上下文。
+     */
     fun withoutMemberInitializerContext(): InitializationState =
         if (!inMemberInitializer) this else copy(inMemberInitializer = false)
 
+    /**
+     * 取两个分支状态的交集。
+     */
     fun intersect(other: InitializationState): InitializationState {
         val sharedTrackedSymbols = tracked.keys.intersect(other.tracked.keys)
         return InitializationState(
@@ -759,6 +954,9 @@ private data class InitializationState(
         )
     }
 
+    /**
+     * 只保留指定可见符号集合。
+     */
     fun retainOnly(visibleSymbols: Set<CfirBasedSymbol<*>>): InitializationState {
         val normalizedVisibleSymbols = visibleSymbols.mapTo(linkedSetOf()) { it.initializationSymbol() }
         return copy(
@@ -767,11 +965,20 @@ private data class InitializationState(
         )
     }
 
+    /**
+     * 标记当前控制流已终止。
+     */
     fun terminate(): InitializationState = if (terminated) this else copy(terminated = true)
 
+    /**
+     * 清除当前控制流终止标记。
+     */
     fun withoutTermination(): InitializationState = if (!terminated) this else copy(terminated = false)
 }
 
+/**
+ * 将访问器、属性和 substitution override 符号归一化为初始化分析使用的存储符号。
+ */
 private fun CfirBasedSymbol<*>.initializationSymbol(): CfirBasedSymbol<*> = when {
     this is CfirVariableSymbol<*> && isBound -> unwrapSubstitutionOverrides()
     this is CfirPropertySymbol && isBound -> unwrapSubstitutionOverrides()
@@ -779,30 +986,61 @@ private fun CfirBasedSymbol<*>.initializationSymbol(): CfirBasedSymbol<*> = when
     else -> this
 }
 
+/**
+ * 构造器委托调用种类。
+ */
 private enum class ConstructorDelegationKind {
+    /**
+     * `this(...)` 委托。
+     */
     THIS,
+
+    /**
+     * `super(...)` 委托。
+     */
     SUPER,
 }
 
 // 仓颉 AST 中 `static init` 同时带 STATIC 与 CONSTRUCTOR 属性，但它不是实例构造器。
+/**
+ * 判断构造器是否是实例构造器。
+ */
 private val CfirConstructor.isInstanceConstructor: Boolean
     get() = !status.isStatic
 
+/**
+ * 函数体初始化读取检查器。
+ */
 object CfirFunctionInitializationChecker : CfirFunctionChecker() {
+    /**
+     * 检查函数或构造器体内的初始化语义。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirFunction) {
         CfirInitializationFlowAnalyzer(context, reporter).checkFunction(declaration)
     }
 }
 
+/**
+ * class-like 成员初始化器声明顺序检查器。
+ */
 object CfirClassLikeInitializationChecker : CfirClassLikeChecker() {
+    /**
+     * 检查 class-like 声明的成员初始化器。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirClassLikeDeclaration) {
         CfirInitializationFlowAnalyzer(context, reporter).checkClassLikeMemberInitialization(declaration)
     }
 }
 
+/**
+ * 构造器完成实例字段初始化检查器。
+ */
 object CfirConstructorInitializationChecker : CfirConstructorChecker() {
+    /**
+     * 检查构造器结束时实例字段是否全部初始化。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirConstructor) {
         val owner = context.findClosestDeclaration<CfirClassLikeDeclaration>() ?: return
@@ -830,6 +1068,9 @@ private fun CfirClassLikeDeclaration.instanceFieldInfos(
     addAll(declaredInstanceFieldInfos())
 }
 
+/**
+ * 收集当前 class-like 自身声明的实例字段和主构造成员属性。
+ */
 private fun CfirClassLikeDeclaration.declaredInstanceFieldInfos(): List<TrackedVariableInfo> {
     return buildList {
         declarations
@@ -840,6 +1081,9 @@ private fun CfirClassLikeDeclaration.declaredInstanceFieldInfos(): List<TrackedV
     }
 }
 
+/**
+ * 收集可见父类实例字段和主构造成员属性。
+ */
 private fun CfirClassLikeDeclaration.inheritedInstanceFieldInfos(
     context: CheckerContext,
     visitedClasses: MutableSet<ClassId>,
@@ -869,6 +1113,9 @@ private fun CfirClassLikeDeclaration.inheritedInstanceFieldInfos(
     }
 }
 
+/**
+ * 将字段变量转换为初始化跟踪信息。
+ */
 private fun CfirFieldVariable.toTrackedInstanceFieldInfo(): TrackedVariableInfo =
     TrackedVariableInfo(
         symbol = symbol,
@@ -899,12 +1146,18 @@ private fun CfirClassLikeDeclaration.primaryConstructorPropertyInfos(): List<Tra
     }
 }
 
+/**
+ * 收集带 initializer 的实例字段。
+ */
 private fun CfirClassLikeDeclaration.instanceFieldsWithInitializer(): List<CfirFieldVariable> {
     return declarations
         .filterIsInstance<CfirFieldVariable>()
         .filter { field -> !field.status.isStatic && field.initializer != null }
 }
 
+/**
+ * 收集主构造器参数已经初始化的成员属性。
+ */
 private fun CfirClassLikeDeclaration.primaryConstructorInitializedPropertiesFor(constructor: CfirConstructor): List<CfirProperty> {
     if (!constructor.isPrimary) return emptyList()
     return constructor.valueParameters
@@ -919,6 +1172,9 @@ private fun CfirClassLikeDeclaration.primaryConstructorInitializedPropertiesFor(
         .toList()
 }
 
+/**
+ * 枚举主构造器参数及其生成的成员属性。
+ */
 private fun CfirClassLikeDeclaration.primaryConstructorParametersWithProperties(): Sequence<Pair<CfirValueParameter, CfirProperty>> {
     return declarations
         .asSequence()
@@ -928,6 +1184,9 @@ private fun CfirClassLikeDeclaration.primaryConstructorParametersWithProperties(
         .mapNotNull { parameter -> parameter.correspondingProperty?.let { property -> parameter to property } }
 }
 
+/**
+ * 判断主构造成员属性名称是否唯一。
+ */
 private fun CfirClassLikeDeclaration.isUniquePrimaryConstructorProperty(property: CfirProperty): Boolean {
     val propertyName = property.name
     return primaryConstructorParametersWithProperties()
@@ -935,6 +1194,9 @@ private fun CfirClassLikeDeclaration.isUniquePrimaryConstructorProperty(property
         .none { candidate -> candidate !== property && candidate.name == propertyName }
 }
 
+/**
+ * 判断属性是否是同名存储声明中最早出现的声明。
+ */
 private fun CfirClassLikeDeclaration.isEarliestStorageDeclaration(property: CfirProperty): Boolean {
     val propertyOffset = property.source?.startOffset ?: Int.MAX_VALUE
     val propertyName = property.name
@@ -945,16 +1207,25 @@ private fun CfirClassLikeDeclaration.isEarliestStorageDeclaration(property: Cfir
         .none { declaration -> (declaration.source?.startOffset ?: Int.MAX_VALUE) < propertyOffset }
 }
 
+/**
+ * 取得可作为存储声明参与初始化检查的声明名称。
+ */
 private fun CfirDeclaration.storageDeclarationNameOrNull(): Name? = when (this) {
     is CfirFieldVariable -> name
     is CfirProperty -> name
     else -> null
 }
 
+/**
+ * 取得 pattern variable 诊断使用的主要绑定名称。
+ */
 private fun CfirPatternVariable.primaryDiagnosticName(): Name {
     return pattern.primaryBindingNameOrNull() ?: symbol.name
 }
 
+/**
+ * 取得构造器体第一条语句的委托调用种类。
+ */
 private fun CfirConstructor.firstDelegationKind(): ConstructorDelegationKind? {
     val firstStatement = body?.statements?.firstOrNull() as? CfirFunctionCall ?: return null
     return when (firstStatement.origin) {
@@ -978,6 +1249,9 @@ private fun CfirConstructor.isRedundantPrimaryConstructor(owner: CfirClassLikeDe
     return firstPrimary != null && firstPrimary !== this
 }
 
+/**
+ * 从函数调用中解析 callable 符号。
+ */
 private fun CfirFunctionCall.resolvedCallableSymbolOrNull(): CfirBasedSymbol<*>? {
     return when (val calleeReference = calleeReference) {
         is CfirResolvedNamedReference -> calleeReference.resolvedSymbol
@@ -987,6 +1261,9 @@ private fun CfirFunctionCall.resolvedCallableSymbolOrNull(): CfirBasedSymbol<*>?
     }
 }
 
+/**
+ * 从 qualified access 中解析访问目标符号。
+ */
 private fun CfirQualifiedAccessExpression.resolvedAccessSymbolOrNull(): CfirBasedSymbol<*>? {
     return when (val calleeReference = calleeReference) {
         is CfirResolvedNamedReference -> calleeReference.resolvedSymbol
@@ -996,6 +1273,9 @@ private fun CfirQualifiedAccessExpression.resolvedAccessSymbolOrNull(): CfirBase
     }
 }
 
+/**
+ * 判断符号是否表示实例函数、实例属性或实例属性访问器。
+ */
 private fun CfirBasedSymbol<*>.isInstanceMemberFunctionOrProperty(): Boolean {
     return when (this) {
         is CfirPropertyAccessorSymbol -> isBound && propertySymbol.callableId.classId != null && !propertySymbol.cfir.status.isStatic
@@ -1005,6 +1285,9 @@ private fun CfirBasedSymbol<*>.isInstanceMemberFunctionOrProperty(): Boolean {
     }
 }
 
+/**
+ * 取得符号用于诊断展示的名称。
+ */
 private fun CfirBasedSymbol<*>.nameOrNull(): Name? {
     return when (this) {
         is CfirVariableSymbol<*> -> name
@@ -1015,6 +1298,9 @@ private fun CfirBasedSymbol<*>.nameOrNull(): Name? {
     }
 }
 
+/**
+ * 取得引用中的命名引用名称。
+ */
 private fun org.cangnova.cangjie.cfir.references.CfirReference.referenceNameOrNull(): Name? {
     return when (this) {
         is org.cangnova.cangjie.cfir.references.CfirNamedReference -> name

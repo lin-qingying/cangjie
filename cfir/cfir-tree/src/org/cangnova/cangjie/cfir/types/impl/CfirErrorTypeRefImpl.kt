@@ -28,11 +28,26 @@ import org.cangnova.cangjie.source.CjSourceElement
  * @property partiallyResolvedTypeRef 已完成部分解析的类型引用，用于错误恢复和诊断上下文。
  */
 class CfirErrorTypeRefImpl @CfirImplementationDetail constructor(
+    /**
+     * 错误类型引用在源码中的位置。
+     */
     override val source: CjSourceElement?,
+    /**
+     * 错误类型引用携带的类型注解。
+     */
     override var annotations: MutableOrEmptyList<CfirAnnotation>,
     typeOrNull: ConeCangJieType?,
+    /**
+     * 触发错误前保留下来的原始或委托类型引用。
+     */
     override var delegatedTypeRef: CfirTypeRef?,
+    /**
+     * 描述错误原因的 cone 诊断。
+     */
     override val diagnostic: ConeDiagnostic,
+    /**
+     * 错误恢复过程中已经局部解析完成的类型引用。
+     */
     override var partiallyResolvedTypeRef: CfirTypeRef? = null,
 ) : CfirErrorTypeRef() {
 

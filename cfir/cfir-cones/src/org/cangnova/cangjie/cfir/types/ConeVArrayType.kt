@@ -33,8 +33,11 @@ package org.cangnova.cangjie.cfir.types
  * @property attributes VArray 类型附带的属性。
  */
 class ConeVArrayType(
+    /** 数组元素类型。 */
     val elementType: ConeCangJieType,
+    /** 数组大小，必须是编译期常量。 */
     val size: Long,
+    /** VArray 类型附带的属性。 */
     override val attributes: ConeAttributes = ConeAttributes.Empty,
 ) : ConeRigidType(), ConeTypeConstructorMarker {
     /**

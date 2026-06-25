@@ -11,12 +11,14 @@ import org.cangnova.cangjie.type.model.IntersectionTypeConstructorMarker
  * @property attributes 交叉类型附带的属性。
  */
 class ConeIntersectionType(
+    /** 参与交叉的类型集合。 */
     val intersectedTypes: Collection<ConeCangJieType>,
     /**
      * 当约束系统已经知道交叉结果的稳定上界时，按 Kotlin FIR 主干把它挂在交叉类型本身，
      * 供近似阶段消费，而不是在近似时重新拼接一个“交叉 + 上界”的伪结果。
      */
     val upperBoundForApproximation: ConeCangJieType? = null,
+    /** 交叉类型附带的属性。 */
     override val attributes: ConeAttributes = intersectedTypes.intersectedAttributes(),
 ) : ConeSimpleCangJieType(), IntersectionTypeConstructorMarker, ConeTypeConstructorMarker {
     /**
@@ -41,7 +43,9 @@ class ConeIntersectionType(
  * @property attributes 联合类型附带的属性。
  */
 class ConeUnionType(
+    /** 参与联合的类型集合。 */
     val unionTypes: Set<ConeCangJieType>,
+    /** 联合类型附带的属性。 */
     override val attributes: ConeAttributes = ConeAttributes.Empty,
 ) : ConeRigidType(), ConeTypeConstructorMarker {
     /**

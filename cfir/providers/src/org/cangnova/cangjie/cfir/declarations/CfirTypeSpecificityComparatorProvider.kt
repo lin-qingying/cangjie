@@ -26,6 +26,9 @@ sealed class CfirTypeSpecificityComparatorProvider :
      * @property components 参与组合的 provider 列表。
      */
     class Composed(
+        /**
+         * 参与当前 session 组合的所有类型特异性比较器 provider。
+         */
         override val components: List<CfirTypeSpecificityComparatorProvider>,
     ) : CfirTypeSpecificityComparatorProvider(), CfirComposableSessionComponent.Composed<CfirTypeSpecificityComparatorProvider> {
         /**

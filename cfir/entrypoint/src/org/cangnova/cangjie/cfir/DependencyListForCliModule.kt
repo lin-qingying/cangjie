@@ -20,8 +20,17 @@ import java.nio.file.Paths
  * @property moduleDataProvider 按库路径查找模块数据的 provider。
  */
 class DependencyListForCliModule internal constructor(
+    /**
+     * CLI 模块可见的普通二进制依赖模块。
+     */
     val regularDependencies: List<CfirModuleData>,
+    /**
+     * CLI 模块通过 depends-on 关系继承的依赖模块。
+     */
     val dependsOnDependencies: List<CfirModuleData>,
+    /**
+     * 根据库路径和模块数据查询依赖模块的 provider。
+     */
     val moduleDataProvider: ModuleDataProvider,
 ) {
     /**
@@ -106,7 +115,13 @@ class DependencyListForCliModule internal constructor(
          * @property dependsOn 默认 depends-on 依赖模块。
          */
         inner class BuilderForDefaultDependenciesModule(
+            /**
+             * 默认创建的普通依赖模块数据。
+             */
             val regular: CfirBinaryDependenciesModuleData,
+            /**
+             * 默认创建的 depends-on 依赖模块数据。
+             */
             val dependsOn: CfirBinaryDependenciesModuleData,
         ) {
             init {

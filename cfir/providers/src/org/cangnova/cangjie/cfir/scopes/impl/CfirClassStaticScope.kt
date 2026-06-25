@@ -410,8 +410,17 @@ private fun CfirCallableSymbol<*>.isStaticCallableForClassQualifier(): Boolean {
  * @property useSitePackage 当前 use-site 包名。
  */
 private data class StaticScopeForQualifierTypeKey(
+    /**
+     * qualifier 对应的 class id。
+     */
     val classId: ClassId,
+    /**
+     * qualifier 在当前 use-site 的具体类型。
+     */
     val qualifierType: ConeCangJieType,
+    /**
+     * 当前 use-site 包名，用于过滤 extend 静态成员可见性。
+     */
     val useSitePackage: FqName?,
 )
 
@@ -419,8 +428,17 @@ private data class StaticScopeForQualifierTypeKey(
  * non-class built-in qualifier static scope 的缓存 key。
  */
 private data class StaticScopeForBuiltinQualifierTypeKey(
+    /**
+     * non-class built-in qualifier 对应的 extend 目标 key。
+     */
     val targetKey: CfirExtendTargetKey,
+    /**
+     * qualifier 在当前 use-site 的具体类型。
+     */
     val qualifierType: ConeCangJieType,
+    /**
+     * 当前 use-site 包名，用于过滤 extend 静态成员可见性。
+     */
     val useSitePackage: FqName?,
 )
 

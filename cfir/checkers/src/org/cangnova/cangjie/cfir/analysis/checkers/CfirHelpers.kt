@@ -41,6 +41,13 @@ fun isSubtypeForTypeMismatch(
     )
 }
 
+/**
+ * 根据期望返回类型选择返回值类型不匹配诊断工厂。
+ *
+ * 普通返回类型使用 [CfirErrors.RETURN_TYPE_MISMATCH]；当期望类型是 `This`
+ * 时，官方语义要求使用通用 [CfirErrors.TYPE_MISMATCH]，避免把 `This`
+ * 约束降级为普通类实例返回类型不匹配。
+ */
 fun diagnosticFactoryForReturnTypeMismatch(
     session: CfirSession,
     expectedType: ConeCangJieType,

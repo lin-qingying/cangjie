@@ -473,7 +473,13 @@ class CfirClassSubstitutionScope(
      * @property deferredReturnType 若原返回类型未解析，则保存延迟替换任务。
      */
     private data class ReturnTypeData(
+        /**
+         * 替换后的 return type ref。
+         */
         val typeRef: CfirTypeRef,
+        /**
+         * 原返回类型尚未解析时保留的延迟替换任务。
+         */
         val deferredReturnType: DeferredReturnTypeOfSubstitution?,
     )
 
@@ -484,7 +490,13 @@ class CfirClassSubstitutionScope(
      * @property substitutor 同时覆盖 callable 类型参数和 owner 类型参数的替换器。
      */
     private data class TypeParameterSubstitutionData(
+        /**
+         * 为 substitution override 新建的 callable 类型参数列表。
+         */
         val typeParameters: List<CfirTypeParameter>,
+        /**
+         * 同时覆盖 callable 自身类型参数与 owner 类型参数的替换器。
+         */
         val substitutor: ConeSubstitutor,
     )
 
@@ -736,7 +748,13 @@ internal inline fun <reified S : CfirCallableSymbol<*>> S.unwrapOriginalForSubst
  * 后续由当前阶段的 [CallableCopyTypeCalculator] 推进原始声明并完成替换。
  */
 private class DeferredReturnTypeOfSubstitution(
+    /**
+     * use-site substitution override 需要应用到原始返回类型上的替换器。
+     */
     private val substitutor: ConeSubstitutor,
+    /**
+     * 原始 callable symbol，延迟计算时通过它推进真实返回类型。
+     */
     private val baseSymbol: CfirCallableSymbol<*>,
 ) : DeferredCallableCopyReturnType() {
     /**

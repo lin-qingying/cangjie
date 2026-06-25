@@ -35,6 +35,9 @@ sealed class CfirDefaultImportsProviderHolder : CfirComposableSessionComponent<C
      * @property components 参与组合的 holder 列表。
      */
     class Composed(
+        /**
+         * 参与组合的默认导入 provider holder 列表。
+         */
         override val components: List<CfirDefaultImportsProviderHolder>
     ) : CfirDefaultImportsProviderHolder(), CfirComposableSessionComponent.Composed<CfirDefaultImportsProviderHolder> {
         /**

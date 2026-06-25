@@ -40,6 +40,9 @@ sealed class CfirMatchExhaustivenessStatus {
      * 尚未计算，或当前阶段无法给出可信结论。
      */
     data object Unknown : CfirMatchExhaustivenessStatus() {
+        /**
+         * 未知状态的来源固定为 unknown。
+         */
         override val source: Source = Source.Unknown
     }
 
@@ -60,7 +63,13 @@ sealed class CfirMatchExhaustivenessStatus {
      * @property source 穷尽性结论来源。
      */
     data class NonExhaustive(
+        /**
+         * 缺失 case 的可读文本列表。
+         */
         val missingCaseTexts: List<String>,
+        /**
+         * 穷尽性结论来源。
+         */
         override val source: Source = Source.Unknown,
     ) : CfirMatchExhaustivenessStatus()
 
@@ -71,7 +80,13 @@ sealed class CfirMatchExhaustivenessStatus {
      * @property source 错误状态来源。
      */
     data class Error(
+        /**
+         * 计算失败原因。
+         */
         val reason: String,
+        /**
+         * 错误状态来源。
+         */
         override val source: Source = Source.Unknown,
     ) : CfirMatchExhaustivenessStatus()
 }

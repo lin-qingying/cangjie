@@ -13,8 +13,17 @@ import org.cangnova.cangjie.name.FqName
  * @property useSitePackage 当前 use-site 文件包名，用于 private/protected extend 可见性。
  */
 data class CfirUseSiteMemberScopeKey(
+    /**
+     * 查询发生的 use-site session。
+     */
     val useSiteSession: CfirSession,
+    /**
+     * 被查询成员的 class symbol。
+     */
     val classSymbol: CfirClassSymbol,
+    /**
+     * 当前 use-site 文件包名，用于 private/protected extend 可见性。
+     */
     val useSitePackage: FqName?,
 )
 

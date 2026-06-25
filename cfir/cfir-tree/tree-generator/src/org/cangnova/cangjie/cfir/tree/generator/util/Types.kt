@@ -10,13 +10,22 @@ import org.cangnova.cangjie.generators.tree.ClassRef
 import org.cangnova.cangjie.generators.tree.PositionTypeParameterRef
 import org.cangnova.cangjie.generators.tree.TypeKind
 
+/**
+ * 构造位于 CFIR 基础包下的生成类型引用。
+ */
 fun generatedType(type: String, kind: TypeKind = TypeKind.Class): ClassRef<PositionTypeParameterRef> = generatedType("", type, kind)
 
+/**
+ * 构造位于 CFIR 指定子包下的生成类型引用。
+ */
 fun generatedType(packageName: String, type: String, kind: TypeKind = TypeKind.Class): ClassRef<PositionTypeParameterRef> {
     val realPackage = BASE_PACKAGE + if (packageName.isNotBlank()) ".$packageName" else ""
     return type(realPackage, type, exactPackage = true, kind = kind)
 }
 
+/**
+ * 构造生成器可使用的普通类型引用。
+ */
 fun type(
     packageName: String,
     type: String,
@@ -27,4 +36,7 @@ fun type(
     return org.cangnova.cangjie.generators.tree.type(realPackage, type, kind)
 }
 
+/**
+ * 通过 reified 类型创建生成器类型引用。
+ */
 inline fun <reified T : Any> type() = org.cangnova.cangjie.generators.tree.type<T>()

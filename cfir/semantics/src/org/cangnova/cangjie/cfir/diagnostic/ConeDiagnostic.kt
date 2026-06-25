@@ -30,6 +30,9 @@ sealed interface ConeUnresolvedError : ConeDiagnostic
  * @property qualifiers 已成功拆分出的限定名片段序列。
  */
 class ConeUnresolvedTypeQualifierError(
+    /**
+     * 已成功拆分出的限定名片段序列。
+     */
     val qualifiers: List<CfirQualifierPart>,
 ) : ConeUnresolvedError {
     /** 用于诊断消息展示的点分限定名。 */
@@ -49,6 +52,9 @@ class ConeUnresolvedTypeQualifierError(
  * @property name 未能解析到符号的名称。
  */
 data class ConeUnresolvedReferenceError(
+    /**
+     * 未能解析到符号的名称。
+     */
     val name: Name,
 ) : ConeUnresolvedError {
     /** 面向普通诊断渲染的失败原因。 */
@@ -61,6 +67,9 @@ data class ConeUnresolvedReferenceError(
  * @property candidate 触发矛盾的调用候选。
  */
 class ConeConstraintSystemHasContradiction(
+    /**
+     * 触发约束系统矛盾的调用候选。
+     */
     override val candidate: AbstractCallCandidate<*>,
 ) : ConeDiagnosticWithSingleCandidate {
     /** 面向普通诊断渲染的失败原因。 */
@@ -81,6 +90,9 @@ class ConeConstraintSystemHasContradiction(
  * @property classId 未能解析到声明的 classId。
  */
 data class ConeUnresolvedSymbolError(
+    /**
+     * 未能解析到声明的 classId。
+     */
     val classId: ClassId,
 ) : ConeUnresolvedError {
     /** 面向普通诊断渲染的失败原因。 */
@@ -96,9 +108,21 @@ data class ConeUnresolvedSymbolError(
  * @property providedTypeArguments 调用侧提供的类型实参引用。
  */
 data class ConeUnmatchedTypeArgumentsError(
+    /**
+     * 已解析到的类型声明符号。
+     */
     val symbol: CfirClassLikeSymbol<*>,
+    /**
+     * 声明侧要求的类型实参数量。
+     */
     val expectedCount: Int,
+    /**
+     * 调用侧实际提供的类型实参数量。
+     */
     val actualCount: Int,
+    /**
+     * 调用侧提供的类型实参引用。
+     */
     val providedTypeArguments: List<CfirTypeRef>,
 ) : ConeDiagnostic {
     /** 面向普通诊断渲染的失败原因。 */
@@ -126,9 +150,21 @@ interface ConeDiagnosticWithCandidates : ConeDiagnostic {
  * @property isCallLike 是否来自调用形式的引用。
  */
 class ConeAmbiguityError(
+    /**
+     * 被解析的调用名。
+     */
     val name: Name,
+    /**
+     * 歧义候选所在的适用性层级。
+     */
     val applicability: CandidateApplicability,
+    /**
+     * 候选及其附带的结构化错误。
+     */
     val candidatesWithErrors: Map<out AbstractCandidate, ConeDiagnostic?>,
+    /**
+     * 是否来自调用形式的引用。
+     */
     val isCallLike: Boolean = false,
 ) : ConeDiagnosticWithCandidates {
     /** 面向普通诊断渲染的失败原因。 */
@@ -162,7 +198,13 @@ interface ConeDiagnosticWithSingleCandidate : ConeDiagnosticWithCandidates {
  * @property candidate 不可适用的调用候选。
  */
 class ConeInapplicableCandidateError(
+    /**
+     * 候选失败后的适用性分类。
+     */
     val applicability: CandidateApplicability,
+    /**
+     * 不可适用的调用候选。
+     */
     override val candidate: AbstractCallCandidate<*>,
 ) : ConeDiagnosticWithSingleCandidate {
     /** 面向普通诊断渲染的失败原因。 */
@@ -175,6 +217,9 @@ class ConeInapplicableCandidateError(
  * @property candidate 被隐藏的调用候选。
  */
 class ConeHiddenCandidateError(
+    /**
+     * 被隐藏的调用候选。
+     */
     override val candidate: AbstractCallCandidate<*>,
 ) : ConeDiagnosticWithSingleCandidate {
     /** 面向普通诊断渲染的失败原因。 */
@@ -187,6 +232,9 @@ class ConeHiddenCandidateError(
  * @property symbol 触发可见性错误的符号。
  */
 class ConeVisibilityError(
+    /**
+     * 触发可见性错误的符号。
+     */
     val symbol: CfirBasedSymbol<*>,
 ) : ConeDiagnostic {
     /** 面向普通诊断渲染的失败原因。 */
@@ -203,9 +251,21 @@ class ConeVisibilityError(
  * @property argumentTypes 调用实参类型列表。
  */
 data class ConeUnresolvedNameError(
+    /**
+     * 未能解析的名称。
+     */
     val name: Name,
+    /**
+     * 参与解析的运算符名称；为空表示普通名称解析。
+     */
     val operator: String? = null,
+    /**
+     * 接收者类型；为空表示无显式接收者或接收者未知。
+     */
     val receiverType: ConeCangJieType? = null,
+    /**
+     * 调用实参类型列表。
+     */
     val argumentTypes: List<ConeCangJieType> = emptyList(),
 ) : ConeUnresolvedError {
     /** 面向普通诊断渲染的失败原因。 */
@@ -237,8 +297,17 @@ data class ConeUnresolvedNameError(
  * @property candidates 已解析到但不能作为函数调用的候选。
  */
 data class ConeFunctionCallExpectedError(
+    /**
+     * 被调用的名称。
+     */
     val name: Name,
+    /**
+     * 调用语法是否携带值参数。
+     */
     val hasValueParameters: Boolean,
+    /**
+     * 已解析到但不能作为函数调用的候选集合。
+     */
     override val candidates: Collection<AbstractCallCandidate<*>>,
 ) : ConeDiagnosticWithCandidates {
     /** 面向普通诊断渲染的失败原因。 */
@@ -253,7 +322,13 @@ data class ConeFunctionCallExpectedError(
  * @property type 表达式实际类型。
  */
 data class ConeFunctionExpectedError(
+    /**
+     * 表达式在诊断中展示的名称。
+     */
     val expressionName: String,
+    /**
+     * 表达式实际类型。
+     */
     val type: ConeCangJieType,
 ) : ConeDiagnostic {
     /** 面向普通诊断渲染的失败原因。 */
@@ -277,7 +352,13 @@ object ConeNoMatchOperatorFunctionCallError : ConeDiagnostic {
  * @property classifier 被解析到的分类器符号。
  */
 data class ConeResolutionToClassifierError(
+    /**
+     * 触发错误的调用候选。
+     */
     override val candidate: AbstractCallCandidate<*>,
+    /**
+     * 被解析到的分类器符号。
+     */
     val classifier: CfirClassLikeSymbol<*>,
 ) : ConeDiagnosticWithSingleCandidate {
     /** 面向普通诊断渲染的失败原因。 */
@@ -301,6 +382,9 @@ object ConeNoConstructorError : ConeDiagnostic {
  * @property enumName 被错误当作构造器调用的 enum 类型名。
  */
 data class ConeEnumTypeCannotBeUsedAsConstructorError(
+    /**
+     * 被错误当作构造器调用的 enum 类型名。
+     */
     val enumName: Name,
 ) : ConeDiagnostic {
     /** 面向普通诊断渲染的失败原因。 */
@@ -315,6 +399,9 @@ data class ConeEnumTypeCannotBeUsedAsConstructorError(
  * @property constructName 被 feature gate 拦截的构造名称。
  */
 data class ConeEffectsFeatureDisabledError(
+    /**
+     * 被 feature gate 拦截的构造名称。
+     */
     val constructName: String,
 ) : ConeDiagnostic {
     /** 面向普通诊断渲染的失败原因。 */
@@ -327,6 +414,9 @@ data class ConeEffectsFeatureDisabledError(
  * @property actualType 实际解析到的命令表达式类型；为空表示类型未知。
  */
 data class ConeCommandIncompatibleTypeError(
+    /**
+     * 实际解析到的命令表达式类型；为空表示类型未知。
+     */
     val actualType: ConeCangJieType?,
 ) : ConeDiagnostic {
     /** 面向普通诊断渲染的失败原因。 */
@@ -340,6 +430,9 @@ data class ConeCommandIncompatibleTypeError(
  * @property actualType 实际句柄类型；为空表示类型未知。
  */
 data class ConeCommandHandleTypeError(
+    /**
+     * 实际句柄类型；为空表示类型未知。
+     */
     val actualType: ConeCangJieType?,
 ) : ConeDiagnostic {
     /** 面向普通诊断渲染的失败原因。 */
@@ -361,6 +454,9 @@ object ConeImplicitResumeOutsideHandlerError : ConeDiagnostic {
  * @property resumptionType 需要恢复的非 Unit 类型。
  */
 data class ConeResumeNoWithError(
+    /**
+     * 需要恢复的非 Unit 类型。
+     */
     val resumptionType: ConeCangJieType,
 ) : ConeDiagnostic {
     /** 面向普通诊断渲染的失败原因。 */
@@ -374,6 +470,9 @@ data class ConeResumeNoWithError(
  * @property actualType 实际 throwing 表达式类型；为空表示类型未知。
  */
 data class ConeResumeThrowingMismatchTypeError(
+    /**
+     * 实际 throwing 表达式类型；为空表示类型未知。
+     */
     val actualType: ConeCangJieType?,
 ) : ConeDiagnostic {
     /** 面向普通诊断渲染的失败原因。 */
@@ -388,7 +487,13 @@ data class ConeResumeThrowingMismatchTypeError(
  * @property expectedType 之前分支计算出的最小公共父类型。
  */
 data class ConeMismatchingHandleBlockError(
+    /**
+     * 当前 handle block 的实际类型。
+     */
     val actualType: ConeCangJieType,
+    /**
+     * 之前分支计算出的最小公共父类型。
+     */
     val expectedType: ConeCangJieType,
 ) : ConeDiagnostic {
     /** 面向普通诊断渲染的失败原因。 */
@@ -424,7 +529,13 @@ private fun describeSymbol(symbol: CfirBasedSymbol<*>): String {
  * @property reason 面向普通诊断渲染的失败原因。
  */
 class ConeCannotInferTypeParameterType(
+    /**
+     * 无法推断类型的类型参数符号。
+     */
     val typeParameter: CfirTypeParameterSymbol,
+    /**
+     * 面向普通诊断渲染的失败原因。
+     */
     override val reason: String = "Cannot infer type for parameter ${typeParameter.name}"
 ) : ConeCannotInferType() {
     /** 面向类型构造器错误渲染的可读描述。 */
@@ -439,7 +550,13 @@ class ConeCannotInferTypeParameterType(
  * @property reason 面向普通诊断渲染的失败原因。
  */
 class ConeCannotInferGenericFunctionTypeParameterType(
+    /**
+     * 无法推断类型的泛型函数类型参数。
+     */
     val typeParameter: CfirTypeParameterSymbol,
+    /**
+     * 面向普通诊断渲染的失败原因。
+     */
     override val reason: String = "Cannot infer type arguments for generic function"
 ) : ConeCannotInferType() {
     /** 面向类型构造器错误渲染的可读描述。 */
@@ -459,8 +576,14 @@ abstract class ConeCannotInferType : ConeDiagnostic
  * @property isTopLevelLambda 是否来自顶层 lambda 参数。
  */
 class ConeCannotInferValueParameterType(
+    /**
+     * 无法推断类型的值参数符号；为空时表示隐式 `it`。
+     */
     val valueParameter: CfirValueParameterSymbol?,
     reason: String? = null,
+    /**
+     * 是否来自顶层 lambda 参数。
+     */
     val isTopLevelLambda: Boolean = false,
 ) : ConeCannotInferType() {
     /** 外部传入的原因文本；为空时按参数名生成默认消息。 */
@@ -491,7 +614,13 @@ class ConeTypeParameterInQualifiedAccess(val symbol: CfirTypeParameterSymbol) : 
  * @property receiverType 接收者实际类型。
  */
 data class ConeNoMatchingInvokeOperatorError(
+    /**
+     * 被调用的名称。
+     */
     val name: Name,
+    /**
+     * 接收者实际类型。
+     */
     val receiverType: ConeCangJieType,
 ) : ConeDiagnostic {
     /** 面向普通诊断渲染的失败原因。 */
@@ -513,6 +642,9 @@ data class ConeNoMatchingInvokeOperatorError(
  * @property packageFqName 被独立引用的包全名。
  */
 data class ConeCannotRefToPackageNameError(
+    /**
+     * 被独立引用的包全名。
+     */
     val packageFqName: org.cangnova.cangjie.name.FqName,
 ) : ConeDiagnostic {
     /** 面向普通诊断渲染的失败原因。 */
@@ -527,6 +659,9 @@ data class ConeCannotRefToPackageNameError(
  * @property packageName 出现歧义的包短名或导入别名。
  */
 data class ConePackageNameConflictError(
+    /**
+     * 出现歧义的包短名或导入别名。
+     */
     val packageName: Name,
 ) : ConeDiagnostic {
     /** 面向普通诊断渲染的失败原因。 */
@@ -541,6 +676,9 @@ data class ConePackageNameConflictError(
  * @property typeParameterName 替换不一致的泛型参数名。
  */
 data class ConeGenericTypeInconsistentError(
+    /**
+     * 替换不一致的泛型参数名。
+     */
     val typeParameterName: Name,
 ) : ConeDiagnostic {
     /** 面向普通诊断渲染的失败原因。 */
@@ -556,7 +694,13 @@ data class ConeGenericTypeInconsistentError(
  * @property actualCount 调用侧实际提供的泛型实参数量。
  */
 data class ConeGenericArgumentNoMatchError(
+    /**
+     * 声明侧期望的泛型实参数量。
+     */
     val expectedCount: Int,
+    /**
+     * 调用侧实际提供的泛型实参数量。
+     */
     val actualCount: Int,
 ) : ConeDiagnostic {
     /** 面向普通诊断渲染的失败原因。 */
@@ -573,8 +717,17 @@ data class ConeGenericArgumentNoMatchError(
  * @property upperBound 声明侧要求的上界。
  */
 data class ConeGenericTypeArgumentNotMatchConstraintError(
+    /**
+     * 声明侧泛型类型。
+     */
     val genericType: ConeCangJieType,
+    /**
+     * 实际传入的类型实参。
+     */
     val actualType: ConeCangJieType,
+    /**
+     * 声明侧要求的上界。
+     */
     val upperBound: ConeCangJieType,
 ) : ConeDiagnostic {
     /** 面向普通诊断渲染的失败原因。 */
@@ -601,7 +754,13 @@ class ConeGenericConstraintNotLooserError : ConeDiagnostic {
  * @property functionName 因实例化产生歧义的函数名。
  */
 data class ConeGenericInstantiationCausesAmbiguousFunctionsError(
+    /**
+     * 触发歧义的泛型实例化名称。
+     */
     val instantiation: Name,
+    /**
+     * 因实例化产生歧义的函数名。
+     */
     val functionName: Name,
 ) : ConeDiagnostic {
     /** 面向普通诊断渲染的失败原因。 */
@@ -628,8 +787,17 @@ class ConeMeetConstraintIndirectlyError : ConeDiagnostic {
  * @property typeName 目标类型名。
  */
 data class ConeNotMemberOfError(
+    /**
+     * 被查询的成员名。
+     */
     val memberName: Name,
+    /**
+     * 成员种类描述。
+     */
     val kind: String,
+    /**
+     * 目标类型名。
+     */
     val typeName: Name,
 ) : ConeDiagnostic {
     /** 面向普通诊断渲染的失败原因。 */
@@ -644,6 +812,9 @@ data class ConeNotMemberOfError(
  * @property memberName 未被导入的成员名。
  */
 data class ConeMemberNotImportedError(
+    /**
+     * 未被导入的成员名。
+     */
     val memberName: Name,
 ) : ConeDiagnostic {
     /** 面向普通诊断渲染的失败原因。 */
@@ -659,7 +830,13 @@ data class ConeMemberNotImportedError(
  * @property type 操作数类型。
  */
 data class ConeInvalidUnaryExprError(
+    /**
+     * 一元运算符文本。
+     */
     val operator: String,
+    /**
+     * 操作数类型。
+     */
     val type: ConeCangJieType,
 ) : ConeDiagnostic {
     /** 面向普通诊断渲染的失败原因。 */
@@ -676,8 +853,17 @@ data class ConeInvalidUnaryExprError(
  * @property returnType 运算符期望返回类型。
  */
 data class ConeInvalidUnaryExprWithTargetError(
+    /**
+     * 一元运算符文本。
+     */
     val operator: String,
+    /**
+     * 操作数类型。
+     */
     val type: ConeCangJieType,
+    /**
+     * 运算符期望返回类型。
+     */
     val returnType: ConeCangJieType,
 ) : ConeDiagnostic {
     /** 面向普通诊断渲染的失败原因。 */
@@ -692,6 +878,9 @@ data class ConeInvalidUnaryExprWithTargetError(
  * @property type optional chaining 接收者的实际类型。
  */
 data class ConeOptionalChainNonOptionalError(
+    /**
+     * optional chaining 接收者的实际类型。
+     */
     val type: ConeCangJieType,
 ) : ConeDiagnostic {
     /** 面向普通诊断渲染的失败原因。 */
@@ -728,7 +917,13 @@ class ConeInvalidNodeAfterCheckError : ConeDiagnostic {
  * @property actualType 实际解析到的类型。
  */
 data class ConeTypeMismatchError(
+    /**
+     * 语义上下文期望类型。
+     */
     val expectedType: ConeCangJieType,
+    /**
+     * 实际解析到的类型。
+     */
     val actualType: ConeCangJieType,
 ) : ConeDiagnostic {
     /** 面向普通诊断渲染的失败原因。 */
@@ -755,8 +950,17 @@ class ConeInconsistentArrayLiteralElementTypeError : ConeDiagnostic {
  * @property because 附加原因说明。
  */
 data class ConeMismatchedTypesBecauseError(
+    /**
+     * 语义上下文期望类型。
+     */
     val expectedType: ConeCangJieType,
+    /**
+     * 实际解析到的类型。
+     */
     val actualType: ConeCangJieType,
+    /**
+     * 附加原因说明。
+     */
     val because: String,
 ) : ConeDiagnostic {
     /** 面向普通诊断渲染的失败原因。 */
@@ -771,6 +975,9 @@ data class ConeMismatchedTypesBecauseError(
  * @property actualType 多重赋值右侧或分量的实际类型。
  */
 data class ConeMismatchedTypesMultipleAssignError(
+    /**
+     * 多重赋值右侧或分量的实际类型。
+     */
     val actualType: ConeCangJieType,
 ) : ConeDiagnostic {
     /** 面向普通诊断渲染的失败原因。 */
@@ -786,7 +993,13 @@ data class ConeMismatchedTypesMultipleAssignError(
  * @property actual 实际参数数量。
  */
 data class ConeParamCountMismatchError(
+    /**
+     * 期望参数数量。
+     */
     val expected: Int,
+    /**
+     * 实际参数数量。
+     */
     val actual: Int,
 ) : ConeDiagnostic {
     /** 面向普通诊断渲染的失败原因。 */
@@ -801,6 +1014,9 @@ data class ConeParamCountMismatchError(
  * @property variableName 被过早捕获的变量名。
  */
 data class ConeCaptureBeforeInitializationError(
+    /**
+     * 被过早捕获的变量名。
+     */
     val variableName: Name,
 ) : ConeDiagnostic {
     /** 面向普通诊断渲染的失败原因。 */

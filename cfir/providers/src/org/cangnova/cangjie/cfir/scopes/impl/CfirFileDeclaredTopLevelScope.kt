@@ -23,6 +23,9 @@ import org.cangnova.cangjie.name.Name
  * @property file 当前文件。
  */
 class CfirFileDeclaredTopLevelScope(
+    /**
+     * 当前文件 scope 暴露的 CFIR 文件。
+     */
     private val file: CfirFile,
 ) : CfirPackageScope() {
     /**

@@ -12,11 +12,17 @@ package org.cangnova.cangjie.cfir.types
  * @property attributes 函数类型附带的属性。
  */
 class ConeFunctionType(
+    /** 参数类型列表。 */
     val parameterTypes: List<ConeCangJieType>,
+    /** 返回类型。 */
     val returnType: ConeCangJieType,
+    /** 是否为 CFunc（C 互操作函数类型）。 */
     val isCFunc: Boolean = false,
+    /** 是否为闭包类型。 */
     val isClosureType: Boolean = false,
+    /** 是否含有变长参数。 */
     val hasVariableLenArg: Boolean = false,
+    /** 函数类型附带的属性。 */
     override val attributes: ConeAttributes = ConeAttributes.Empty,
 ) : ConeRigidType(), ConeTypeConstructorMarker {
     /**

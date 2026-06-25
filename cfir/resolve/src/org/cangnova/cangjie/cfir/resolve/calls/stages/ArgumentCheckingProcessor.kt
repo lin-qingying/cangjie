@@ -6,13 +6,17 @@ import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.diagnostic.AmbiguousArgumentType
 import org.cangnova.cangjie.cfir.diagnostic.ArgumentTypeMismatch
 import org.cangnova.cangjie.cfir.diagnostic.InapplicableWrongReceiver
+import org.cangnova.cangjie.cfir.diagnostic.UnsuccessfulCallableReferenceArgument
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
 import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.expressions.CfirArrayLiteral
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirNamedAccessExpression
 import org.cangnova.cangjie.cfir.references.CfirErrorNamedReference
+import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
+import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.references.builder.buildErrorNamedReference
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.resolve.calls.*
@@ -365,7 +369,29 @@ internal object ArgumentCheckingProcessor {
             reportDiagnostic(InapplicableWrongReceiver(expectedType, argumentType))
             return
         }
+        if (expression.isFunctionDeclarationReferenceArgument()) {
+            val expandedArgumentType = argumentType.fullyExpandedType(session)
+            val expandedExpectedType = expectedType.fullyExpandedType(session)
+            if (expandedArgumentType is ConeFunctionType && expandedExpectedType is ConeFunctionType) {
+                reportDiagnostic(UnsuccessfulCallableReferenceArgument(expression))
+                return
+            }
+        }
         reportDiagnostic(subtypeError(expectedType))
+    }
+
+    /**
+     * 函数声明名在函数类型上下文中作为引用实参时，签名不适用应归入 callable-reference 诊断。
+     */
+    private fun CfirExpression.isFunctionDeclarationReferenceArgument(): Boolean {
+        if (this is CfirFunctionCall) return false
+        val access = this as? CfirNamedAccessExpression ?: return false
+        val symbol = when (val reference = access.calleeReference) {
+            is CfirNamedReferenceWithCandidateBase -> reference.candidateSymbol
+            is CfirResolvedNamedReference -> reference.resolvedSymbol
+            else -> null
+        }
+        return symbol?.takeIf { it.isBound }?.cfir is CfirFunction
     }
 
     /**

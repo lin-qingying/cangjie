@@ -350,7 +350,13 @@ abstract class CfirAbstractSessionFactory<CONTEXT> {
      * @property additionalOptionalAnnotationsProvider 额外可选注解 provider；为空表示没有平台补充注解来源。
      */
     protected data class SourceProviders(
+        /**
+         * 当前源码模块自身声明的 provider 列表。
+         */
         val sourceProviders: List<CfirSymbolProvider>,
+        /**
+         * 平台或宿主额外提供的可选注解 provider。
+         */
         val additionalOptionalAnnotationsProvider: CfirSymbolProvider? = null,
     )
 

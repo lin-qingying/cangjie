@@ -246,6 +246,23 @@ internal fun CfirProperty.propertyNameDiagnosticSource(): AbstractCjSourceElemen
         ?: source
 
 /**
+ * 取得值参数名称的诊断 source。
+ *
+ * 参数声明 source 通常覆盖 `name: Type` 整体；unused-variable 等名称级诊断必须收窄到参数名。
+ */
+internal fun CfirValueParameter.valueParameterNameDiagnosticSource(): AbstractCjSourceElement? =
+    source?.psi?.let { psi ->
+        val parameterPsi = when (psi) {
+            is CjParameter -> psi
+            else -> PsiTreeUtil.getParentOfType(psi, CjParameter::class.java, false)
+                ?: PsiTreeUtil.findChildOfType(psi, CjParameter::class.java)
+        }
+        parameterPsi?.nameIdentifier?.toCjPsiSourceElement()
+    }
+        ?: (source as? CjSourceElement)?.findValueParameterNameSource(name)
+        ?: source
+
+/**
  * 取得 finalizer 名称区域的诊断 source。
  *
  * finalizer 在语法上由 `~init` 表示，因此优先返回从 `~` 到 `init` 的连续范围。
@@ -439,6 +456,25 @@ private fun CjSourceElement.findPropertyNameSource(name: Name): AbstractCjSource
     }
 
     return null
+}
+
+/**
+ * 在 light-tree source 中查找值参数名称 token。
+ */
+private fun CjSourceElement.findValueParameterNameSource(name: Name): AbstractCjSourceElement? {
+    val tokens = collectSourceNodes()
+
+    val nameToken = tokens.asSequence()
+        .takeWhile { it.tokenType != CjTokens.COLON && it.tokenType != CjTokens.EQ && it.tokenType != CjTokens.COMMA }
+        .firstOrNull { node ->
+            node.tokenType == CjTokens.IDENTIFIER &&
+                    treeStructure.toString(node).toString() == name.asString()
+        }
+        ?: return null
+    return CjOffsetsOnlySourceElement(
+        startOffset = treeStructure.getStartOffset(nameToken),
+        endOffset = treeStructure.getEndOffset(nameToken),
+    )
 }
 
 /**

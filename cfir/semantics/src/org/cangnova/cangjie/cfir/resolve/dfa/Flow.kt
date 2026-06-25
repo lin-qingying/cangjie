@@ -49,11 +49,29 @@ abstract class Flow {
  * @property backwardsAliasMap 别名目标到引用它的变量集合。
  */
 class PersistentFlow internal constructor(
+    /**
+     * 当前 flow 的父快照。
+     */
     private val previousFlow: PersistentFlow?,
+    /**
+     * 已确认的变量类型陈述。
+     */
     private val approvedTypeStatements: PersistentMap<DataFlowVariable, PersistentTypeStatement>,
+    /**
+     * 条件到效果的蕴含集合。
+     */
     internal val implications: PersistentMap<DataFlowVariable, PersistentList<Implication>>,
+    /**
+     * 真实变量最后赋值序号。
+     */
     internal val assignmentIndex: PersistentMap<RealVariable, Int>,
+    /**
+     * 真实变量到直接别名目标的映射。
+     */
     internal val directAliasMap: PersistentMap<RealVariable, RealVariable>,
+    /**
+     * 别名目标到引用它的变量集合。
+     */
     private val backwardsAliasMap: PersistentMap<RealVariable, PersistentSet<RealVariable>>,
 ) : Flow() {
     /** 当前 flow 在快照链中的深度。 */
@@ -120,11 +138,29 @@ class PersistentFlow internal constructor(
  * @property backwardsAliasMap 可写的反向别名 builder。
  */
 class MutableFlow internal constructor(
+    /**
+     * 可变 flow 所基于的父快照。
+     */
     private val previousFlow: PersistentFlow?,
+    /**
+     * 可写的类型陈述 builder。
+     */
     internal val approvedTypeStatements: PersistentMap.Builder<DataFlowVariable, PersistentTypeStatement>,
+    /**
+     * 可写的逻辑蕴含 builder。
+     */
     internal val implications: PersistentMap.Builder<DataFlowVariable, PersistentList<Implication>>,
+    /**
+     * 可写的赋值序号 builder。
+     */
     internal val assignmentIndex: PersistentMap.Builder<RealVariable, Int>,
+    /**
+     * 可写的直接别名 builder。
+     */
     internal val directAliasMap: PersistentMap.Builder<RealVariable, RealVariable>,
+    /**
+     * 可写的反向别名 builder。
+     */
     internal val backwardsAliasMap: PersistentMap.Builder<RealVariable, PersistentSet<RealVariable>>,
 ) : Flow() {
     constructor() : this(

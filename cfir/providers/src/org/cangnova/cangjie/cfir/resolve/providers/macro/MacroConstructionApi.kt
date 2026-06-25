@@ -375,6 +375,9 @@ class MacroExpansionRegistry : org.cangnova.cangjie.cfir.session.CfirSessionComp
     fun registerGeneratedCfirElement(element: CfirElement, originSurfaceId: Long) {
         element.accept(
             object : CfirDefaultVisitor<Unit, Unit>() {
+                /**
+                 * 访问展开产物中的每个 CFIR 节点，记录其 source 到原始 macro surface 的映射。
+                 */
                 override fun visitElement(element: CfirElement, data: Unit) {
                     registerGeneratedSource(element.source, originSurfaceId)
                     element.acceptChildren(this, data)

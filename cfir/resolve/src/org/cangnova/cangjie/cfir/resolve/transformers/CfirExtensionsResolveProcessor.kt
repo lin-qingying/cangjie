@@ -20,6 +20,7 @@ internal class CfirExtensionsResolveProcessor(
     scopeSession = scopeSession,
     phase = CfirResolvePhase.EXTENSIONS,
 ) {
+    /** EXTENSIONS 阶段使用的 transformer。 */
     override val transformer: CfirExtensionsResolveTransformer =
         CfirExtensionsResolveTransformer(session)
 
@@ -36,6 +37,7 @@ internal class CfirExtensionsResolveProcessor(
 
 /** EXTENSIONS 阶段 transformer，负责推进声明 resolve phase。 */
 internal class CfirExtensionsResolveTransformer(
+    /** 当前 CFIR session。 */
     override val session: CfirSession,
 ) : CfirAbstractTreeTransformer<Nothing?>(CfirResolvePhase.EXTENSIONS) {
     /** 对已完成 STATUS 且尚未进入 EXTENSIONS 的声明推进阶段。 */

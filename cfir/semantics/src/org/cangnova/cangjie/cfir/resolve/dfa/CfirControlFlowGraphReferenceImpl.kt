@@ -15,6 +15,9 @@ import org.cangnova.cangjie.source.CjSourceElement
  * @property controlFlowGraph 被引用的控制流图。
  */
 class CfirControlFlowGraphReferenceImpl(
+    /**
+     * 被引用的控制流图。
+     */
     val controlFlowGraph: ControlFlowGraph,
 ) : CfirControlFlowGraphReference() {
     /** CFG 引用是合成节点，不直接绑定源码位置。 */

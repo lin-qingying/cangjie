@@ -18,8 +18,11 @@ import org.cangnova.cangjie.type.model.StubTypeMarker
  * @param attributes 存根类型携带的属性
  */
 class ConeStubType(
+    /** 关联的类型变量构造器。 */
     val constructor: ConeTypeVariableTypeConstructor,
+    /** 存根类型种类。 */
     val kind: Kind,
+    /** 存根类型携带的属性。 */
     override val attributes: ConeAttributes = ConeAttributes.Empty,
 ) : ConeRigidType()  , StubTypeMarker {
 

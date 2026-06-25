@@ -76,6 +76,9 @@ import org.cangnova.cangjie.type.model.TypeConstructorMarker
 import java.util.ArrayDeque
 import java.util.IdentityHashMap
 
+/**
+ * 类型结构递归遍历的最大深度，防止病态递归类型导致无限遍历。
+ */
 private const val TYPE_KEY_MAX_DEPTH = 64
 
 /**
@@ -91,23 +94,62 @@ private const val TYPE_KEY_MAX_DEPTH = 64
  * 边的环，诊断归属仍由 Cangjie 官方实例化触发点规则决定。
  */
 object CfirGenericInstantiationChecker : CfirFileChecker() {
+    /**
+     * 对单个文件执行泛型实例化无限展开和实例化成员冲突检查。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirFile) {
         GenericInstantiationAnalyzer(context, reporter).checkFile(declaration)
     }
 }
 
+/**
+ * 文件级泛型实例化分析器。
+ */
 private class GenericInstantiationAnalyzer(
+    /**
+     * 当前 checker 上下文。
+     */
     private val checkerContext: CheckerContext,
+
+    /**
+     * 诊断报告器。
+     */
     private val reporter: DiagnosticReporter,
 ) {
+    /**
+     * 每个声明预收集的实例化触发点缓存。
+     */
     private val triggersByDeclaration = IdentityHashMap<CfirDeclaration, List<InstantiationTrigger>>()
+
+    /**
+     * 已经处理过的声明实例化 key 集合。
+     */
     private val checkedInstantiations = linkedSetOf<DeclarationInstantiationKey>()
+
+    /**
+     * 已经报告过无限实例化的源码范围集合。
+     */
     private val reportedSources = linkedSetOf<SourceKey>()
+
+    /**
+     * 已经报告过成员实例化冲突的源码和函数名集合。
+     */
     private val reportedMemberInstantiationSources = linkedSetOf<MemberInstantiationReportKey>()
+
+    /**
+     * 当前递归处理中的声明实例化栈。
+     */
     private val activeInstantiations = mutableListOf<DeclarationInstantiationFrame>()
+
+    /**
+     * 是否已经报告过无限实例化诊断。
+     */
     private var infiniteInstantiationOccurred: Boolean = false
 
+    /**
+     * 从文件顶层声明开始执行实例化分析。
+     */
     fun checkFile(file: CfirFile) {
         for (declaration in file.declarations) {
             if (infiniteInstantiationOccurred) return
@@ -115,6 +157,9 @@ private class GenericInstantiationAnalyzer(
         }
     }
 
+    /**
+     * 在给定类型实参替换下处理一个声明。
+     */
     private fun processDeclaration(
         declaration: CfirDeclaration,
         substitutions: Map<CfirTypeParameterSymbol, ConeCangJieType>,
@@ -140,6 +185,9 @@ private class GenericInstantiationAnalyzer(
         }
     }
 
+    /**
+     * 处理单个实例化触发点。
+     */
     private fun processTrigger(
         trigger: InstantiationTrigger,
         substitutions: Map<CfirTypeParameterSymbol, ConeCangJieType>,
@@ -199,6 +247,9 @@ private class GenericInstantiationAnalyzer(
         processDeclaration(targetDeclaration, nestedSubstitutions, memberInstantiationContext)
     }
 
+    /**
+     * 处理内建 extend 目标产生的实例化成员签名检查。
+     */
     private fun processBuiltinExtendTrigger(
         trigger: InstantiationTrigger,
         substitutions: Map<CfirTypeParameterSymbol, ConeCangJieType>,
@@ -211,6 +262,9 @@ private class GenericInstantiationAnalyzer(
         checkInstantiatedBuiltinExtendMemberSignatures(targetKey, concreteType, reportSource)
     }
 
+    /**
+     * 取得声明内部的实例化触发点。
+     */
     private fun triggersFor(declaration: CfirDeclaration): List<InstantiationTrigger> =
         triggersByDeclaration.getOrPut(declaration) {
             val collector = InstantiationTriggerCollector()
@@ -419,8 +473,11 @@ private class GenericInstantiationAnalyzer(
             )
             typeArguments.forEach { collectTypeTriggers(it, source, isNestedTypeArgument = true) }
         }
-    }
+        }
 
+    /**
+     * 使用当前声明实例化替换批量替换类型实参。
+     */
     private fun substitute(
         types: List<ConeCangJieType>,
         substitutions: Map<CfirTypeParameterSymbol, ConeCangJieType>,
@@ -434,6 +491,9 @@ private class GenericInstantiationAnalyzer(
         return types.map { substitutor.substituteOrSelf(it) }
     }
 
+    /**
+     * 使用当前声明实例化替换单个类型。
+     */
     private fun substitute(
         type: ConeCangJieType,
         substitutions: Map<CfirTypeParameterSymbol, ConeCangJieType>,
@@ -447,6 +507,9 @@ private class GenericInstantiationAnalyzer(
         return substitutor.substituteOrSelf(type)
     }
 
+    /**
+     * 判断类型参数到类型实参映射是否形成带扩张边的循环。
+     */
     private fun hasCyclicInstantiation(
         typeParameters: List<CfirTypeParameterRef>,
         typeArguments: List<ConeCangJieType>,
@@ -465,6 +528,9 @@ private class GenericInstantiationAnalyzer(
         return graph.hasExpansiveCycle()
     }
 
+    /**
+     * 检查实例化后的成员函数签名是否产生冲突。
+     */
     private fun checkInstantiatedMemberSignatures(
         declaration: CfirClassLikeDeclaration,
         substitutions: Map<CfirTypeParameterSymbol, ConeCangJieType>,
@@ -516,6 +582,9 @@ private class GenericInstantiationAnalyzer(
         }
     }
 
+    /**
+     * 检查内建目标 extend 在具体目标类型上的成员签名冲突。
+     */
     private fun checkInstantiatedBuiltinExtendMemberSignatures(
         targetKey: CfirExtendTargetKey,
         instantiatedType: ConeCangJieType,
@@ -530,6 +599,9 @@ private class GenericInstantiationAnalyzer(
         )
     }
 
+    /**
+     * 报告实例化成员签名冲突。
+     */
     private fun reportInstantiatedMemberSignatureConflicts(
         membersByName: Map<Name, List<InstantiatedMemberSignature>>,
         triggerSource: CjSourceElement?,
@@ -560,6 +632,9 @@ private class GenericInstantiationAnalyzer(
         }
     }
 
+    /**
+     * 收集指定内建 extend 目标在具体实例化类型上的成员函数签名。
+     */
     private fun collectBuiltinExtendMemberSignatures(
         targetKey: CfirExtendTargetKey,
         instantiatedType: ConeCangJieType,
@@ -582,6 +657,9 @@ private class GenericInstantiationAnalyzer(
         return signatures.groupBy { it.name }
     }
 
+    /**
+     * 收集当前 extend 自身声明的函数签名。
+     */
     private fun CfirExtend.collectOwnFunctionSignatures(
         substitutor: ConeSubstitutor,
     ): List<InstantiatedMemberSignature> {
@@ -594,6 +672,9 @@ private class GenericInstantiationAnalyzer(
             .toList()
     }
 
+    /**
+     * 收集当前 extend 从接口继承的默认函数签名。
+     */
     private fun CfirExtend.collectInheritedDefaultFunctionSignatures(
         ownerExtend: CfirExtend,
         substitutor: ConeSubstitutor,
@@ -612,6 +693,9 @@ private class GenericInstantiationAnalyzer(
         return signatures
     }
 
+    /**
+     * 递归收集接口默认函数签名。
+     */
     private fun collectDefaultInterfaceFunctionSignatures(
         ownerExtend: CfirExtend?,
         interfaceType: ConeCangJieType,
@@ -645,6 +729,9 @@ private class GenericInstantiationAnalyzer(
         }
     }
 
+    /**
+     * 收集 class-like 声明实例化后的所有函数成员签名。
+     */
     private fun CfirClassLikeDeclaration.collectInstantiatedMemberSignatures(
         substitutions: Map<CfirTypeParameterSymbol, ConeCangJieType>,
     ): Map<Name, List<InstantiatedMemberSignature>> {
@@ -677,6 +764,9 @@ private class GenericInstantiationAnalyzer(
         return signatures.groupBy { it.name }
     }
 
+    /**
+     * 收集 class-like 实例化类型可见的 extend 成员签名。
+     */
     private fun collectClassLikeExtendMemberSignatures(
         instantiatedType: ConeCangJieType,
     ): List<InstantiatedMemberSignature> {
@@ -699,6 +789,9 @@ private class GenericInstantiationAnalyzer(
         return signatures
     }
 
+    /**
+     * 收集继承接口中的函数签名。
+     */
     private fun collectInheritedInterfaceFunctionSignatures(
         superTypeRefs: List<CfirTypeRef>,
         substitutor: ConeSubstitutor,
@@ -719,6 +812,9 @@ private class GenericInstantiationAnalyzer(
         return signatures
     }
 
+    /**
+     * 递归收集接口及其父接口中的函数签名。
+     */
     private fun collectInterfaceFunctionSignatures(
         interfaceType: ConeCangJieType,
         genericInterfaceType: ConeCangJieType,
@@ -759,6 +855,9 @@ private class GenericInstantiationAnalyzer(
         }
     }
 
+    /**
+     * 收集父接口默认函数签名。
+     */
     private fun collectInheritedDefaultFunctionSignatures(
         superTypeRefs: List<CfirTypeRef>,
         ownerExtend: CfirExtend?,
@@ -778,6 +877,9 @@ private class GenericInstantiationAnalyzer(
         return signatures
     }
 
+    /**
+     * 构造当前 class-like 声明在替换器作用下的 self type。
+     */
     private fun CfirClassLikeDeclaration.instantiatedSelfType(
         substitutor: ConeSubstitutor,
     ): ConeCangJieType? {
@@ -785,6 +887,9 @@ private class GenericInstantiationAnalyzer(
         return substitutor.substituteOrSelf(selfType)
     }
 
+    /**
+     * 构造当前 class-like 声明以自身类型参数为实参的 self type。
+     */
     private fun CfirClassLikeDeclaration.declarationSelfTypeForInstantiation(): ConeCangJieType? {
         val classLikeSymbol = symbol as? CfirClassLikeSymbol<*> ?: return null
         val arguments = typeParameters.map { typeParameter ->
@@ -812,6 +917,9 @@ private class GenericInstantiationAnalyzer(
         }
     }
 
+    /**
+     * 将函数声明转换为实例化成员签名。
+     */
     private fun CfirFunction.toInstantiatedMemberSignature(
         ownerName: Name,
         substitutor: ConeSubstitutor,
@@ -840,6 +948,9 @@ private class GenericInstantiationAnalyzer(
         )
     }
 
+    /**
+     * 把类型参数替换表转换为 cone substitutor。
+     */
     private fun Map<CfirTypeParameterSymbol, ConeCangJieType>.toConeSubstitutor(): ConeSubstitutor {
         if (isEmpty()) return ConeSubstitutor.Empty
         return createTypeSubstitutorByTypeConstructor(
@@ -849,6 +960,9 @@ private class GenericInstantiationAnalyzer(
         )
     }
 
+    /**
+     * 根据 class-like 实例化类型创建声明类型参数替换器。
+     */
     private fun CfirTypeParameterRefsOwner.createDeclarationTypeSubstitutor(
         type: ConeCangJieType,
     ): ConeSubstitutor {
@@ -866,9 +980,15 @@ private class GenericInstantiationAnalyzer(
         )
     }
 
+    /**
+     * 取得实例化成员冲突诊断使用的成员名称。
+     */
     private fun CfirFunction.instantiationMemberName(ownerName: Name): Name =
         if (this is CfirConstructor) ownerName else symbol.name
 
+    /**
+     * 判断两个实例化成员签名是否冲突。
+     */
     private fun InstantiatedMemberSignature.conflictsWith(other: InstantiatedMemberSignature): Boolean {
         if (function === other.function) return false
         if (isStatic != other.isStatic) return false
@@ -878,11 +998,17 @@ private class GenericInstantiationAnalyzer(
         }
     }
 
+    /**
+     * 判断冲突双方是否都是继承来的接口默认实现。
+     */
     private fun InstantiatedMemberSignature.isInheritedDefaultInterfaceConflictWith(
         other: InstantiatedMemberSignature,
     ): Boolean =
         inheritedDefaultOwnerExtend != null && other.inheritedDefaultOwnerExtend != null
 
+    /**
+     * 渲染 class-like 声明的实例化名称。
+     */
     private fun CfirClassLikeDeclaration.renderInstantiationName(
         substitutions: Map<CfirTypeParameterSymbol, ConeCangJieType>,
     ): Name {
@@ -893,6 +1019,9 @@ private class GenericInstantiationAnalyzer(
         return Name.identifier("${name.asString()}<$arguments>")
     }
 
+    /**
+     * 构造当前声明的活动实例化栈帧。
+     */
     private fun CfirDeclaration.instantiationFrameOrNull(
         substitutions: Map<CfirTypeParameterSymbol, ConeCangJieType>,
     ): DeclarationInstantiationFrame? {
@@ -904,6 +1033,9 @@ private class GenericInstantiationAnalyzer(
         return DeclarationInstantiationFrame(this, arguments)
     }
 
+    /**
+     * 判断目标声明当前是否已经在活动栈中以会扩张的类型实参出现。
+     */
     private fun hasExpandingActiveInstantiation(
         declaration: CfirDeclaration,
         typeArguments: List<ConeCangJieType>,
@@ -924,6 +1056,9 @@ private class GenericInstantiationAnalyzer(
         return false
     }
 
+    /**
+     * 判断类型参数依赖图中是否存在带扩张边的环。
+     */
     private fun Map<CfirTypeParameterSymbol, List<TypeParameterEdge>>.hasExpansiveCycle(): Boolean {
         for ((from, edges) in this) {
             for (edge in edges) {
@@ -941,6 +1076,9 @@ private class GenericInstantiationAnalyzer(
         return false
     }
 
+    /**
+     * 在类型参数依赖图中判断 current 是否可达 target。
+     */
     private fun Map<CfirTypeParameterSymbol, List<TypeParameterEdge>>.reaches(
         current: CfirTypeParameterSymbol,
         target: CfirTypeParameterSymbol,
@@ -955,6 +1093,9 @@ private class GenericInstantiationAnalyzer(
         return false
     }
 
+    /**
+     * 从类型结构中收集允许集合内出现的类型参数符号。
+     */
     private fun ConeCangJieType.collectTypeParameterSymbols(
         allowed: Set<CfirTypeParameterSymbol>,
     ): Set<CfirTypeParameterSymbol> {
@@ -980,6 +1121,9 @@ private class GenericInstantiationAnalyzer(
         return result
     }
 
+    /**
+     * 判断类型结构中是否包含任意类型参数。
+     */
     private fun ConeCangJieType.containsTypeParameterSymbol(): Boolean {
         val visited = IdentityHashMap<ConeCangJieType, Unit>()
         val workList = ArrayDeque<TypeTraversalItem>()
@@ -999,6 +1143,9 @@ private class GenericInstantiationAnalyzer(
         return false
     }
 
+    /**
+     * 取得类型结构遍历时需要继续下探的嵌套类型集合。
+     */
     private fun ConeCangJieType.nestedTypesForTraversal(): Collection<ConeCangJieType> =
         when (this) {
             is ConeFunctionType -> parameterTypes + listOf(returnType)
@@ -1010,6 +1157,9 @@ private class GenericInstantiationAnalyzer(
             else -> typeArguments.mapNotNull { it.type }
         }
 
+    /**
+     * 判断当前类型结构中是否包含指定声明的某个实例化形式。
+     */
     private fun ConeCangJieType.containsInstantiationOf(
         declaration: CfirDeclaration,
         typeArguments: List<ConeCangJieType>,
@@ -1031,6 +1181,9 @@ private class GenericInstantiationAnalyzer(
         }
     }
 
+    /**
+     * 判断两个类型列表是否结构相等。
+     */
     private fun List<ConeCangJieType>.structurallyEqual(other: List<ConeCangJieType>): Boolean {
         if (size != other.size) return false
         val visited = mutableSetOf<TypePairKey>()
@@ -1039,6 +1192,9 @@ private class GenericInstantiationAnalyzer(
         }
     }
 
+    /**
+     * 判断两个类型结构是否相等。
+     */
     private fun ConeCangJieType.structurallyEqual(
         other: ConeCangJieType,
         visited: MutableSet<TypePairKey>,
@@ -1105,6 +1261,9 @@ private class GenericInstantiationAnalyzer(
         }
     }
 
+    /**
+     * 在共享 visited 集合下判断两个类型列表是否结构相等。
+     */
     private fun List<ConeCangJieType>.structurallyEqual(
         other: List<ConeCangJieType>,
         visited: MutableSet<TypePairKey>,
@@ -1116,6 +1275,9 @@ private class GenericInstantiationAnalyzer(
         }
     }
 
+    /**
+     * 渲染实例化诊断中展示的类型文本。
+     */
     private fun ConeCangJieType.renderForInstantiationDiagnostic(
         visited: MutableSet<ConeCangJieType> = java.util.Collections.newSetFromMap(IdentityHashMap()),
         depth: Int = 0,
@@ -1158,9 +1320,15 @@ private class GenericInstantiationAnalyzer(
         }
     }
 
+    /**
+     * 判断类型是否正好是指定类型参数。
+     */
     private fun ConeCangJieType.isExactlyTypeParameter(symbol: CfirTypeParameterSymbol): Boolean =
         (this as? ConeTypeParameterType)?.lookupTag?.typeParameterSymbol == symbol
 
+    /**
+     * 报告泛型无限实例化诊断。
+     */
     private fun reportInfiniteInstantiation(source: CjSourceElement?) {
         val diagnosticSource = source?.firstCharacterDiagnosticSource() ?: return
         val sourceKey = diagnosticSource.sourceKeyOrNull() ?: return
@@ -1171,6 +1339,9 @@ private class GenericInstantiationAnalyzer(
         }
     }
 
+    /**
+     * 把类型构造器 source 收窄到构造器名称。
+     */
     private fun CjSourceElement.typeConstructorNameDiagnosticSource(name: Name): CjOffsetsOnlySourceElement {
         val sourceText = text?.toString()
         val nameText = name.asString()
@@ -1185,6 +1356,9 @@ private class GenericInstantiationAnalyzer(
         )
     }
 
+    /**
+     * 报告泛型实例化导致成员函数调用歧义的诊断。
+     */
     private fun reportGenericInstantiationCausesAmbiguousFunctions(
         source: CjSourceElement?,
         sourceKey: SourceKey,
@@ -1204,6 +1378,9 @@ private class GenericInstantiationAnalyzer(
         }
     }
 
+    /**
+     * 构造声明实例化去重 key。
+     */
     private fun CfirDeclaration.instantiationKey(
         substitutions: Map<CfirTypeParameterSymbol, ConeCangJieType>,
     ): DeclarationInstantiationKey {
@@ -1218,12 +1395,18 @@ private class GenericInstantiationAnalyzer(
         return DeclarationInstantiationKey(symbol, arguments)
     }
 
+    /**
+     * 构造单个类型实参的实例化 key。
+     */
     private fun ConeCangJieType.instantiationKey(): String =
         when (this) {
             is ConeTypeParameterType -> "P@${System.identityHashCode(lookupTag.typeParameterSymbol)}"
             else -> "${javaClass.name}@${System.identityHashCode(this)}"
         }
 
+    /**
+     * 从 qualified access 解析 callable 符号。
+     */
     private fun CfirQualifiedAccessExpression.resolvedCallableSymbolOrNull(): CfirCallableSymbol<*>? =
         when (val reference = calleeReference) {
             is CfirResolvedErrorReference -> reference.resolvedSymbol as? CfirCallableSymbol<*>
@@ -1232,6 +1415,9 @@ private class GenericInstantiationAnalyzer(
             else -> null
         }
 
+    /**
+     * 判断 callable 符号是否表示构造器形式的实例化调用。
+     */
     private fun CfirCallableSymbol<*>.isConstructorLikeInstantiationCall(): Boolean {
         if (this is CfirConstructorSymbol) return true
         return when (cfir.origin) {
@@ -1244,9 +1430,15 @@ private class GenericInstantiationAnalyzer(
         }
     }
 
+    /**
+     * 取得无限实例化诊断的根触发 source。
+     */
     private fun InstantiationTrigger.infiniteInstantiationSource(): CjSourceElement? =
         source.takeIf { propagateSourceAsRoot }
 
+    /**
+     * 取得循环实例化诊断应使用的 source。
+     */
     private fun InstantiationTrigger.cyclicInstantiationSource(
         instantiationContext: InstantiationContext?,
         targetDeclaration: CfirDeclaration?,
@@ -1275,78 +1467,238 @@ private class GenericInstantiationAnalyzer(
     }
 }
 
+/**
+ * 泛型实例化触发点。
+ */
 private data class InstantiationTrigger(
+    /**
+     * 触发点解析到的符号。
+     */
     val symbol: CfirBasedSymbol<*>?,
+
+    /**
+     * 被实例化的类型参数拥有者。
+     */
     val declaration: CfirTypeParameterRefsOwner?,
+
+    /**
+     * 本次实例化使用的类型实参。
+     */
     val typeArguments: List<ConeCangJieType>,
+
+    /**
+     * 诊断归属的源码位置。
+     */
     val source: CjSourceElement?,
+
+    /**
+     * 触发点是否位于嵌套类型实参中。
+     */
     val isNestedTypeArgument: Boolean,
+
+    /**
+     * 是否允许把 source 作为根实例化触发点传播。
+     */
     val propagateSourceAsRoot: Boolean = true,
+
+    /**
+     * 实例化重复父类型检查是否需要纳入 extend 接口。
+     */
     val checkExtendInterfaces: Boolean = false,
+
+    /**
+     * 重复父接口诊断优先使用的 source。
+     */
     val duplicateSuperInterfaceSource: CjSourceElement? = source,
+
+    /**
+     * 内建 extend 目标 key。
+     */
     val builtinTargetKey: CfirExtendTargetKey? = null,
+
+    /**
+     * 内建 extend 的具体实例化类型。
+     */
     val builtinInstantiatedType: ConeCangJieType? = null,
 ) {
+    /**
+     * 当前触发点对应的源码声明目标。
+     */
     val targetDeclaration: CfirDeclaration?
         get() = (declaration as? CfirDeclaration)
             ?.takeIf { it.origin == CfirDeclarationOrigin.Source }
 }
 
+/**
+ * 类型参数依赖图中的边。
+ */
 private data class TypeParameterEdge(
+    /**
+     * 边指向的类型参数。
+     */
     val to: CfirTypeParameterSymbol,
+
+    /**
+     * 该边是否表示扩张依赖。
+     */
     val expansive: Boolean,
 )
 
+/**
+ * 类型遍历 worklist 条目。
+ */
 private data class TypeTraversalItem(
+    /**
+     * 待遍历类型。
+     */
     val type: ConeCangJieType,
+
+    /**
+     * 当前递归深度。
+     */
     val depth: Int,
 )
 
+/**
+ * 活动声明实例化栈帧。
+ */
 private data class DeclarationInstantiationFrame(
+    /**
+     * 当前正在处理的声明。
+     */
     val declaration: CfirDeclaration,
+
+    /**
+     * 当前声明实例化类型实参。
+     */
     val typeArguments: List<ConeCangJieType>,
 )
 
+/**
+ * 成员实例化诊断上下文。
+ */
 private data class InstantiationContext(
+    /**
+     * 触发实例化的源码位置。
+     */
     val source: CjSourceElement,
+
+    /**
+     * 当前实例化目标声明。
+     */
     val targetDeclaration: CfirDeclaration?,
 )
 
+/**
+ * 用对象身份比较的一对类型 key。
+ */
 private class TypePairKey(
+    /**
+     * 左侧类型对象。
+     */
     private val left: ConeCangJieType,
+
+    /**
+     * 右侧类型对象。
+     */
     private val right: ConeCangJieType,
 ) {
+    /**
+     * 基于左右类型对象身份比较 key。
+     */
     override fun equals(other: Any?): Boolean =
         other is TypePairKey && left === other.left && right === other.right
 
+    /**
+     * 基于左右类型对象身份计算 hash。
+     */
     override fun hashCode(): Int =
         31 * System.identityHashCode(left) + System.identityHashCode(right)
 }
 
+/**
+ * 实例化后的成员函数签名。
+ */
 private data class InstantiatedMemberSignature(
+    /**
+     * 原始函数声明。
+     */
     val function: CfirFunction,
+
+    /**
+     * 签名名称，构造器使用 owner 名称。
+     */
     val name: Name,
+
+    /**
+     * 函数是否为 static。
+     */
     val isStatic: Boolean,
+
+    /**
+     * 替换后的参数类型列表。
+     */
     val parameterTypes: List<ConeCangJieType>,
+
+    /**
+     * 签名中是否仍含有泛型类型。
+     */
     val hasGenericTypes: Boolean,
+
+    /**
+     * 该签名是否来自某个 extend 继承的接口默认实现。
+     */
     val inheritedDefaultOwnerExtend: CfirExtend?,
 )
 
+/**
+ * 声明实例化去重 key。
+ */
 private data class DeclarationInstantiationKey(
+    /**
+     * 声明符号。
+     */
     val symbol: CfirBasedSymbol<*>,
+
+    /**
+     * 类型实参 key 列表。
+     */
     val arguments: List<String>,
 )
 
+/**
+ * 成员实例化冲突诊断去重 key。
+ */
 private data class MemberInstantiationReportKey(
+    /**
+     * 触发 source key。
+     */
     val sourceKey: SourceKey,
+
+    /**
+     * 冲突函数名。
+     */
     val functionName: Name,
 )
 
+/**
+ * 源码范围去重 key。
+ */
 private data class SourceKey(
+    /**
+     * 起始偏移。
+     */
     val startOffset: Int,
+
+    /**
+     * 结束偏移。
+     */
     val endOffset: Int,
 )
 
+/**
+ * 将 source 转换为范围 key。
+ */
 private fun CjSourceElement?.sourceKeyOrNull(): SourceKey? {
     val source = this ?: return null
     return SourceKey(source.startOffset, source.endOffset)

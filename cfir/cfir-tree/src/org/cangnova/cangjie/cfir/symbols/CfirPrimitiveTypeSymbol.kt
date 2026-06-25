@@ -15,7 +15,13 @@ import org.cangnova.cangjie.name.Name
  * @property kind primitive 类型种类。
  */
 class CfirPrimitiveTypeSymbol(
+    /**
+     * primitive 类型在内建包中的稳定 class id。
+     */
     override val classId: ClassId,
+    /**
+     * primitive 类型的语义种类。
+     */
     val kind: PrimitiveTypeKind,
 ) : CfirClassLikeSymbol<CfirPrimitiveTypeDeclaration>(classId) {
     /**

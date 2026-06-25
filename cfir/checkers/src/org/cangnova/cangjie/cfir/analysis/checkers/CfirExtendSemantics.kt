@@ -49,12 +49,18 @@ import org.cangnova.cangjie.source.text
  * 所有判断均基于 CFIR 节点完成，不依赖 PSI。
  */
 internal object CfirExtendSemantics {
+    /** 标准库 `Any` 的 ClassId，用于 extend 受保护接口判断。 */
     private val anyClassId: ClassId = ClassId.topLevel(StandardNames.FqNames.anyFqName)
+    /** 标准库 `CType` 的 ClassId，用于 FFI/受保护接口判断。 */
     private val cTypeClassId: ClassId = ClassId.topLevel(
         StandardNames.STD_CORE_PACKAGE_FQ_NAME.child(StandardNames.CTYPE),
     )
+    /** CFIR super 引用在 named-reference 退化路径中的特殊名称。 */
     private val superReferenceName: Name = Name.special("<super>")
 
+    /**
+     * 将已解析类型引用转换为 class-like 或 primitive 对应的 ClassId。
+     */
     fun CfirTypeRef.toClassIdOrNull(): ClassId? =
         (this as? CfirResolvedTypeRef)?.coneType?.classIdOrPrimitiveClassId
 
@@ -87,20 +93,30 @@ internal object CfirExtendSemantics {
     fun isImmutableNonEnumTarget(coneType: ConeCangJieType): Boolean =
         isImmutableTarget(coneType) && !coneType.isEnumTarget()
 
+    /** 官方语义中按 struct-like 处理但属于 immutable extend 目标的标准库类型。 */
     private val immutableStructLikeClassIds: Set<ClassId> = setOf(
         StdlibClassIds.String,
         StdlibClassIds.Range,
     )
 
+    /**
+     * 判断类型是否为 enum 目标，类型别名会展开到最终目标继续判断。
+     */
     private fun ConeCangJieType.isEnumTarget(): Boolean = when (this) {
         is ConeEnumType -> true
         is ConeTypeAliasType -> expandedType?.isEnumTarget() == true
         else -> false
     }
 
+    /**
+     * 判断接口是否属于 extend 规则中受保护的内置接口。
+     */
     fun isProtectedInterface(classId: ClassId?): Boolean =
         classId == anyClassId || classId == cTypeClassId
 
+    /**
+     * 判断 ClassId 是否指向标准库 `CType`。
+     */
     fun isCType(classId: ClassId?): Boolean =
         classId == cTypeClassId
 
@@ -121,26 +137,44 @@ internal object CfirExtendSemantics {
         }
     }
 
+    /** 原始类型默认隐式扩展的标准库接口集合。 */
     private val primitiveImplicitInterfaceClassIds: Set<ClassId> = setOf(
         StdlibClassIds.ToString,
     )
 
+    /**
+     * 判断引用是否表示 `super`。
+     *
+     * 正常路径使用 [CfirSuperReference]；部分错误恢复或候选引用路径会退化为
+     * 带特殊名称的 named reference，因此这里同时检查两种表示。
+     */
     fun isSuperReference(reference: CfirReference): Boolean {
         if (reference is CfirSuperReference) return true
         val namedReference = reference as? CfirNamedReference ?: return false
         return namedReference.name == superReferenceName
     }
 
+    /**
+     * 按 ClassId 解析 CFIR class-like 声明。
+     *
+     * 先查 cfirProvider 保留同文件/当前 session 的声明，再退回 symbolProvider。
+     */
     fun resolveDeclaration(context: CheckerContext, classId: ClassId): CfirClassLikeDeclaration? {
         return context.session.cfirProvider.getCfirClassifierByFqName(classId)
             ?: context.session.symbolProvider.getClassLikeSymbolByClassId(classId)?.cfir
     }
 
+    /**
+     * 解析 extend 目标类型对应的 class-like 声明。
+     */
     fun targetDeclaration(context: CheckerContext, extend: CfirExtend): CfirClassLikeDeclaration? {
         val targetClassId = extend.extendedTypeRef.toClassIdOrNull() ?: return null
         return resolveDeclaration(context, targetClassId)
     }
 
+    /**
+     * 在接口及其父接口闭包中查找 mut 属性泄漏。
+     */
     fun findMutPropertyLeak(context: CheckerContext, interfaceClassId: ClassId): MutPropertyLeak? {
         return findMutPropertyLeak(context, interfaceClassId, linkedSetOf())
     }
@@ -161,6 +195,9 @@ internal object CfirExtendSemantics {
         return findMutPropertyLeak(context, interfaceClassId)
     }
 
+    /**
+     * 判断 type ref source 是否位于 immutable target 继承 mut interface 的 supertype 区域。
+     */
     fun isInsideImmutableMutInterfaceSupertype(
         context: CheckerContext,
         extend: CfirExtend,
@@ -171,6 +208,9 @@ internal object CfirExtendSemantics {
         return isSourceInsideImmutableMutInterfaceSupertype(context, extend, source)
     }
 
+    /**
+     * 判断 source 是否位于任意当前可见 extend 头部中触发 immutable-mut-interface 错误的 supertype。
+     */
     fun isSourceInsideImmutableMutInterfaceExtendHeader(context: CheckerContext, source: CjSourceElement): Boolean {
         val stackExtends = context.containingDeclarations.asSequence().filterIsInstance<CfirExtend>()
         val fileExtends = context.containingFileSymbol
@@ -186,6 +226,9 @@ internal object CfirExtendSemantics {
         }
     }
 
+    /**
+     * 判断 source 是否位于指定 extend 的 immutable-mut-interface supertype 节点内。
+     */
     fun isSourceInsideImmutableMutInterfaceSupertype(
         context: CheckerContext,
         extend: CfirExtend,
@@ -197,6 +240,11 @@ internal object CfirExtendSemantics {
         }
     }
 
+    /**
+     * 判断 class-like 声明是否带有指定短名注解。
+     *
+     * 注解系统尚不完整时，同时从已建模 annotation typeRef 和原始 source 文本兜底识别。
+     */
     fun hasAnnotation(declaration: CfirClassLikeDeclaration, annotationName: Name): Boolean {
         return declaration.annotations.any { annotation ->
             val annotationClassId = annotation.typeRef.toClassIdOrNull()
@@ -255,6 +303,9 @@ internal object CfirExtendSemantics {
         return targetDeclaration.symbol.classId.packageFqName == currentPackage
     }
 
+    /**
+     * 递归扫描接口继承闭包，查找第一个 mut 属性泄漏。
+     */
     private fun findMutPropertyLeak(
         context: CheckerContext,
         interfaceClassId: ClassId,
@@ -282,8 +333,12 @@ internal object CfirExtendSemantics {
         return null
     }
 
+    /** 当前作为 FFI 边界识别依据的注解短名集合。 */
     private val ffiBoundaryAnnotationNames: Set<Name> = setOf(Name.identifier("C"))
 
+    /**
+     * 从 source 文本中提取注解短名。
+     */
     private fun org.cangnova.cangjie.source.CjSourceElement?.annotationShortNameOrNull(): Name? {
         val rawText = this?.text?.toString()?.trim().orEmpty()
         if (!rawText.startsWith("@")) return null
@@ -296,11 +351,17 @@ internal object CfirExtendSemantics {
         return Name.identifierIfValid(shortName)
     }
 
+    /**
+     * 判断 source 文本是否包含指定短名注解。
+     */
     private fun org.cangnova.cangjie.source.CjSourceElement?.containsAnnotation(annotationName: Name): Boolean {
         val rawText = this?.text?.toString().orEmpty()
         return rawText.contains("@${annotationName.asString()}")
     }
 
+    /**
+     * 返回 class-like 声明的语义 class kind。
+     */
     private fun CfirClassLikeDeclaration.classKindOrNull(): CfirClassKind? = when (this) {
         is CfirPrimitiveTypeDeclaration -> CfirClassKind.CLASS
         is CfirClass -> CfirClassKind.CLASS
@@ -310,6 +371,9 @@ internal object CfirExtendSemantics {
         else -> null
     }
 
+    /**
+     * 读取 class-like 声明显式写出的父类型列表。
+     */
     private fun CfirClassLikeDeclaration.superTypeRefsOrEmpty(): List<CfirTypeRef> = when (this) {
         is CfirClass -> superTypeRefs
         is CfirInterface -> superTypeRefs
@@ -318,11 +382,17 @@ internal object CfirExtendSemantics {
         else -> emptyList()
     }
 
+    /**
+     * 判断当前 source 范围是否包含另一个 source 范围。
+     */
     private fun CjSourceElement?.contains(other: CjSourceElement): Boolean {
         this ?: return false
         return startOffset <= other.startOffset && other.endOffset <= endOffset
     }
 
+    /**
+     * 判断 source 是否位于 extend 声明头部范围内，不包含 extend body。
+     */
     private fun CfirExtend.headerSourceContains(source: CjSourceElement): Boolean {
         val extendSource = this.source ?: return false
         if (!extendSource.contains(source)) return false
@@ -336,7 +406,15 @@ internal object CfirExtendSemantics {
     }
 }
 
+/**
+ * immutable extend 继承 mut interface 时定位到的泄漏成员。
+ *
+ * @property interfaceClassId 声明 mut 属性或继承到 mut 属性的接口 ClassId。
+ * @property propertyName 泄漏 mut 语义的属性名称。
+ */
 internal data class MutPropertyLeak(
+    /** 声明 mut 属性或继承到 mut 属性的接口 ClassId。 */
     val interfaceClassId: ClassId,
+    /** 泄漏 mut 语义的属性名称。 */
     val propertyName: Name,
 )

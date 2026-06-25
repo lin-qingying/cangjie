@@ -38,14 +38,23 @@ abstract class AbstractRawCfirBuilderTestCase : CjParsingTestCase(
     CangJieParserDefinition(),
 ) {
 
+    /**
+     * JUnit 生成测试调用的统一入口。
+     */
     protected fun runTest(testDataFilePath: String) {
         doRawCfirTest(testDataFilePath)
     }
 
+    /**
+     * 从文本创建仓颉 PSI 文件。
+     */
     protected fun createCjFile(name: String, text: String = ""): CjFile {
         return createPsiFile("$name.cj", text) as CjFile
     }
 
+    /**
+     * 创建 raw CFIR 测试使用的最小 source session。
+     */
     protected fun createTestSession(): CfirSession {
         return object : CfirSession(Kind.Source) {}.also { session ->
             val moduleData = CfirSourceModuleData(
@@ -77,6 +86,9 @@ abstract class AbstractRawCfirBuilderTestCase : CjParsingTestCase(
         }
     }
 
+    /**
+     * 将 PSI 文件转换为 CFIR 文件并注册到测试 provider。
+     */
     protected fun CjFile.toCfirFile(
         session: CfirSession = createTestSession(),
         bodyBuildingMode: BodyBuildingMode = BodyBuildingMode.NORMAL,
@@ -86,6 +98,9 @@ abstract class AbstractRawCfirBuilderTestCase : CjParsingTestCase(
         }
     }
 
+    /**
+     * 将 raw CFIR 文件注册进测试 session provider。
+     */
     private fun CfirSession.recordRawCfirFile(cfirFile: CfirFile) {
         val provider = cfirProvider as CfirProviderImpl
         val pre = buildPreMacroRawFiles(this, listOf(cfirFile))
@@ -98,10 +113,16 @@ abstract class AbstractRawCfirBuilderTestCase : CjParsingTestCase(
         recordExpandedRawFilesOnce(provider, success.recordableFiles, success.registry)
     }
 
+    /**
+     * 使用 golden 兼容 renderer 输出 CFIR 文件文本。
+     */
     protected fun dumpCfirFile(cfirFile: CfirFile): String {
         return CfirRenderer.withGoldenCompat().renderElementAsString(cfirFile)
     }
 
+    /**
+     * 校验当前生成测试类覆盖了测试数据目录下所有 `.cj` 文件。
+     */
     protected fun assertAllFilesPresentByMetadata(testDataRootRelativePath: String) {
         val testDataDir = resolveTestDataPath(testDataRootRelativePath)
         require(testDataDir.isDirectory) { "testData dir not found: ${testDataDir.path}" }
@@ -121,6 +142,9 @@ abstract class AbstractRawCfirBuilderTestCase : CjParsingTestCase(
         validateRawBuilderConventionsIfNeeded(testDataDir)
     }
 
+    /**
+     * 根据当前测试类元数据计算测试数据目录。
+     */
     private fun currentClassTestDataDir(rootTestDataDir: File): File {
         val classMetadata = this::class.java.getAnnotation(org.cangnova.cangjie.test.TestMetadata::class.java)
         if (classMetadata != null) {
@@ -133,6 +157,9 @@ abstract class AbstractRawCfirBuilderTestCase : CjParsingTestCase(
         return rootTestDataDir
     }
 
+    /**
+     * 收集生成测试已经覆盖的相对测试数据路径。
+     */
     private fun collectCoveredRelativePaths(testDataDir: File): Set<String> {
         val annotationRegex = "@TestMetadata\\(\"([^\"]+\\.cj)\"\\)".toRegex()
         val runTestRegex = "runTest\\(\"([^\"]+\\.cj)\"\\)".toRegex()
@@ -168,6 +195,9 @@ abstract class AbstractRawCfirBuilderTestCase : CjParsingTestCase(
         return covered
     }
 
+    /**
+     * 从当前测试类及嵌套类的 TestMetadata 中收集覆盖路径。
+     */
     private fun collectCoveredFromClass(
         klass: Class<*>,
         rootTestDataDir: File,
@@ -188,6 +218,9 @@ abstract class AbstractRawCfirBuilderTestCase : CjParsingTestCase(
         }
     }
 
+    /**
+     * 计算指定测试类对应的实际测试数据目录。
+     */
     private fun classScopedDir(
         klass: Class<*>,
         rootTestDataDir: File,
@@ -205,12 +238,18 @@ abstract class AbstractRawCfirBuilderTestCase : CjParsingTestCase(
         return inheritedDir
     }
 
+    /**
+     * 判断当前文件是否位于 [parent] 目录下。
+     */
     private fun File.isUnder(parent: File): Boolean {
         val parentPath = parent.canonicalFile.toPath()
         val childPath = canonicalFile.toPath()
         return childPath.startsWith(parentPath)
     }
 
+    /**
+     * 校验 rawBuilder 测试数据命名、golden 文件和覆盖矩阵约定。
+     */
     private fun validateRawBuilderConventionsIfNeeded(testDataDir: File) {
         val rawBuilderRoot = testDataDir.findAncestorNamed("rawBuilder") ?: return
         if (!rawBuilderRoot.isDirectory) return
@@ -242,6 +281,9 @@ abstract class AbstractRawCfirBuilderTestCase : CjParsingTestCase(
         validateCoverageMatrix(rawBuilderRoot, allCjFiles)
     }
 
+    /**
+     * 校验 coverage-matrix.md 覆盖所有 rawBuilder `.cj` 文件。
+     */
     private fun validateCoverageMatrix(rawBuilderRoot: File, allCjFiles: List<File>) {
         val matrixFile = File(rawBuilderRoot, "coverage-matrix.md")
         check(matrixFile.exists()) {
@@ -288,6 +330,9 @@ abstract class AbstractRawCfirBuilderTestCase : CjParsingTestCase(
         }
     }
 
+    /**
+     * 向上查找指定名称的祖先目录。
+     */
     private fun File.findAncestorNamed(dirName: String): File? {
         var current: File? = this
         while (current != null) {
@@ -297,6 +342,9 @@ abstract class AbstractRawCfirBuilderTestCase : CjParsingTestCase(
         return null
     }
 
+    /**
+     * 执行单个 raw CFIR golden 测试。
+     */
     open fun doRawCfirTest(filePath: String) {
         val file = resolveTestDataPath(filePath)
         val sourceText = loadFile(file.path).trim()
@@ -307,6 +355,9 @@ abstract class AbstractRawCfirBuilderTestCase : CjParsingTestCase(
         assertEqualsToFile(File(expectedPath), actual)
     }
 
+    /**
+     * 将测试数据路径解析为真实文件。
+     */
     protected fun resolveTestDataPath(path: String): File {
         val direct = Path.of(path).toFile()
         if (direct.isAbsolute) return direct

@@ -75,6 +75,13 @@ import org.cangnova.cangjie.type.model.TypeConstructorMarker
  * 注册为 classLikeCheckers
  */
 object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
+    /**
+     * 对 class-like 声明执行继承深层语义检查。
+     *
+     * 该入口负责把类、接口、结构等声明统一接入继承成员一致性流水线；
+     * 其中类声明额外承担 sealed 继承范围、抽象 static 成员实现、
+     * 以及可继承成员可见性约束。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirClassLikeDeclaration) {
         if (declaration is CfirClass) {
@@ -87,6 +94,12 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         checkInheritedMemberTypeConsistency(declaration)
     }
 
+    /**
+     * 对 `extend` 声明执行与 class-like 声明共享的继承成员一致性检查。
+     *
+     * `extend` 没有自身 class symbol，因此通过 [memberInheritanceSubject]
+     * 构造临时继承主体，并额外检查目标类型既有成员是否满足接口约束。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     internal fun checkExtend(declaration: CfirExtend) {
         checkInheritedMemberKindConsistency(declaration.memberInheritanceSubject())
@@ -319,6 +332,12 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         }
     }
 
+    /**
+     * 在默认接口成员冲突检查中按当前 receiver 类型重放 extend 声明。
+     *
+     * 泛型 extend 需要先把声明中的目标类型形参替换为实际 receiver 类型，
+     * 再收集其 super interface 中带默认实现的成员。
+     */
     context(context: CheckerContext)
     private fun CfirExtend.collectDefaultInterfaceMemberOccurrencesAtReceiver(
         receiverType: ConeCangJieType,
@@ -338,6 +357,12 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         }
     }
 
+    /**
+     * 使用 extend 声明替换关系替换父类型引用。
+     *
+     * 如果替换后类型没有变化，则保留原始 type ref，避免制造无意义的
+     * fake source 或破坏后续诊断位置。
+     */
     private fun CfirTypeRef.substituteForDefaultConflict(substitutor: ConeSubstitutor): CfirTypeRef {
         val resolvedTypeRef = this as? CfirResolvedTypeRef ?: return this
         val substitutedType = substitutor.substituteOrSelf(resolvedTypeRef.coneType)
@@ -345,6 +370,12 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         return resolvedTypeRef.withReplacedSourceAndType(resolvedTypeRef.source, substitutedType)
     }
 
+    /**
+     * 判断同一默认接口成员签名是否需要当前 extend 显式实现。
+     *
+     * 该逻辑区分同一 extend 内部重复默认实现、具体 extend 与泛型 extend
+     * 的实例化重叠、以及互不继承的独立 extend 默认实现冲突。
+     */
     private fun List<DefaultInterfaceMemberOccurrence>.hasDefaultImplementationConflictFor(
         extend: CfirExtend,
         currentOccurrences: List<DefaultInterfaceMemberOccurrence>,
@@ -371,6 +402,11 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         return false
     }
 
+    /**
+     * 判断目标类型、直接 extend 成员或当前 extend 自身是否已经提供具体实现。
+     *
+     * 只有非 abstract 且非 interface default 的成员才算作这里的 concrete implementation。
+     */
     context(context: CheckerContext)
     private fun hasConcreteImplementation(
         superInfo: InheritedMemberInfo,
@@ -398,6 +434,11 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         return false
     }
 
+    /**
+     * 判断 extend 目标类型是否引用了当前 extend 自己声明的类型参数。
+     *
+     * 该信息用于区分泛型 extend 和具体 extend 的默认接口成员冲突传播规则。
+     */
     private fun CfirExtend.extendedTypeUsesOwnTypeParameter(): Boolean {
         val parameterNames = typeParameters.mapTo(linkedSetOf()) { it.name.asString() }
         if (parameterNames.isEmpty()) return false
@@ -405,9 +446,15 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         return parameterNames.any { parameterName -> coneType.containsTypeParameter(parameterName) }
     }
 
+    /**
+     * 判断类型或其缩略类型中是否包含指定名称的类型参数。
+     */
     private fun ConeCangJieType.containsTypeParameter(parameterName: String): Boolean =
         abbreviatedType?.containsTypeParameter(parameterName) == true || containsTypeParameterInConstructor(parameterName)
 
+    /**
+     * 在具体类型构造器及类型实参中递归查找指定类型参数。
+     */
     private fun ConeCangJieType.containsTypeParameterInConstructor(parameterName: String): Boolean = when (this) {
         is ConeTypeParameterType -> lookupTag.name.asString() == parameterName
         is ConeClassLikeType -> typeArguments.any { it.type.containsTypeParameter(parameterName) }
@@ -425,6 +472,9 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         else -> arrayElementType?.containsTypeParameter(parameterName) == true
     }
 
+    /**
+     * 判断成员是否可以作为某个接口/父类型要求的具体实现。
+     */
     private fun InheritedMemberInfo.isConcreteImplementationOf(
         superInfo: InheritedMemberInfo,
         context: CheckerContext,
@@ -444,6 +494,9 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         return owner is CfirClass && owner.status.isAbstract
     }
 
+    /**
+     * 生成默认接口实现冲突的签名 key。
+     */
     private fun InheritedMemberInfo.defaultImplementationConflictKey(): String =
         requirementDiagnosticKey()
 
@@ -462,6 +515,9 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
             }
         }.values.toList()
 
+    /**
+     * 从 use-site scope 中收集所有可作为继承成员参与检查的 callable 信息。
+     */
     private fun CfirTypeScope.collectInheritedMemberInfos(context: CheckerContext): List<InheritedMemberInfo> =
         buildList {
             for (name in getCallableNames()) {
@@ -560,6 +616,12 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         return false
     }
 
+    /**
+     * 获取函数符号的解析后返回类型。
+     *
+     * 优先读取已解析 type ref；当返回类型仍需懒计算时，通过当前 checker context
+     * 的 return type calculator 计算，保持与其他 CFIR 检查器一致。
+     */
     private fun CfirFunctionSymbol<*>.resolvedReturnTypeOrNull(
         context: CheckerContext,
     ): ConeCangJieType? {
@@ -568,6 +630,9 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         return context.returnTypeCalculator.tryCalculateReturnType(cfir).coneType
     }
 
+    /**
+     * 判断一组继承函数返回类型是否存在既不相等也不存在子类型关系的冲突。
+     */
     private fun List<ConeCangJieType>.hasInconsistentInheritedTypes(context: CheckerContext): Boolean {
         val typeCheckerState = context.session.typeContext
         for (i in indices) {
@@ -696,13 +761,28 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         }
     }
 
+    /**
+     * 记录成员可见性检查所需的最小诊断信息。
+     *
+     * @property visibility 成员声明的实际可见性。
+     * @property modifier 触发约束的继承相关修饰符，例如 `abstract` 或 `open`。
+     * @property kind 诊断中展示的成员种类。
+     * @property source 优先用于报错的成员名称级 source。
+     */
     private data class InvalidVisibilityMemberInfo(
+        /** 成员声明的实际可见性。 */
         val visibility: Visibility,
+        /** 触发约束的继承相关修饰符，未触发时为 null。 */
         val modifier: String?,
+        /** 诊断中展示的成员种类。 */
         val kind: String,
+        /** 优先用于报错的成员名称级 source。 */
         val source: AbstractCjSourceElement?,
     )
 
+    /**
+     * 返回函数在当前类继承语义下需要满足可见性约束的修饰符。
+     */
     private fun CfirNamedFunction.invalidVisibilityModifier(
         classIsAbstract: Boolean,
         classIsInheritable: Boolean,
@@ -713,6 +793,9 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         return null
     }
 
+    /**
+     * 返回属性在当前类继承语义下需要满足可见性约束的修饰符。
+     */
     private fun CfirProperty.invalidVisibilityModifier(
         classIsAbstract: Boolean,
         classIsInheritable: Boolean,
@@ -950,6 +1033,13 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         }
     }
 
+    /**
+     * 判断当前成员实现父成员时是否存在函数返回类型冲突。
+     *
+     * 普通 override 要求实现返回类型可以作为父返回类型的子类型；
+     * 官方对 extend/boxing 关系还有返回类型不变性约束，因此这里先检查
+     * [hasOfficialReturnTypeInvarianceAgainst]，再执行普通子类型检查。
+     */
     private fun InheritedMemberInfo.functionReturnTypeConflict(
         superInfo: InheritedMemberInfo,
         context: CheckerContext,
@@ -1007,9 +1097,18 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         return false
     }
 
+    /**
+     * 判断类型或其缩略类型中是否包含任意类型参数。
+     *
+     * 泛型返回类型在官方实现中存在单独的替换和约束路径，这里不把它简化为
+     * 普通 concrete type 的返回类型不一致诊断。
+     */
     private fun ConeCangJieType.containsAnyTypeParameter(): Boolean =
         abbreviatedType?.containsAnyTypeParameter() == true || containsAnyTypeParameterInConstructor()
 
+    /**
+     * 在类型构造器、类型实参、展开类型以及复合类型内部递归查找任意类型参数。
+     */
     private fun ConeCangJieType.containsAnyTypeParameterInConstructor(): Boolean = when (this) {
         is ConeTypeParameterType -> true
         is ConeClassLikeType -> typeArguments.any { it.type.containsAnyTypeParameter() }
@@ -1027,6 +1126,11 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         else -> arrayElementType?.containsAnyTypeParameter() == true
     }
 
+    /**
+     * 将 CFIR 声明转换为继承检查使用的成员信息。
+     *
+     * 该入口只返回可继承成员；private 等不应继承的成员会由 symbol 侧过滤。
+     */
     private fun CfirDeclaration.inheritedMemberInfoOrNull(context: CheckerContext): InheritedMemberInfo? =
         when (this) {
             is CfirNamedFunction -> symbol?.inheritedMemberInfoOrNull(context)
@@ -1035,6 +1139,11 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
             else -> null
         }
 
+    /**
+     * 将当前声明转换为直接成员信息。
+     *
+     * direct member 用于 extend 自身声明成员候选，不做“只能继承成员”的过滤。
+     */
     private fun CfirDeclaration.directMemberInfoOrNull(context: CheckerContext): InheritedMemberInfo? =
         when (this) {
             is CfirNamedFunction -> symbol?.directMemberInfoOrNull(context)
@@ -1043,6 +1152,11 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
             else -> null
         }
 
+    /**
+     * 将声明转换为可继承的直接成员信息。
+     *
+     * 该方法保留给需要表达“从声明出发但仍应用继承过滤”的调用点。
+     */
     private fun CfirDeclaration.inheritableDirectMemberInfoOrNull(context: CheckerContext): InheritedMemberInfo? =
         when (this) {
             is CfirNamedFunction -> symbol?.inheritedMemberInfoOrNull(context)
@@ -1051,13 +1165,25 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
             else -> null
         }
 
+    /**
+     * 将 callable symbol 转换为 direct member 信息，不过滤 private 等不可继承成员。
+     */
     private fun CfirCallableSymbol<*>.directMemberInfoOrNull(context: CheckerContext): InheritedMemberInfo? =
         memberInfoOrNull(context, inheritOnly = false)
 
+    /**
+     * 将 callable symbol 转换为 inherited member 信息，并应用继承可见性过滤。
+     */
     private fun CfirCallableSymbol<*>.inheritedMemberInfoOrNull(context: CheckerContext): InheritedMemberInfo? {
         return memberInfoOrNull(context, inheritOnly = true)
     }
 
+    /**
+     * 抽取继承检查使用的统一成员模型。
+     *
+     * 函数、属性和字段变量在 CFIR 中是不同声明形态，但继承规则只关心名称、
+     * 成员种类、static/const/mut/default/abstract 状态、可见性和来源位置。
+     */
     private fun CfirCallableSymbol<*>.memberInfoOrNull(
         context: CheckerContext,
         inheritOnly: Boolean,
@@ -1117,6 +1243,11 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         }
     }
 
+    /**
+     * 判断 callable 是否需要作为接口要求由实现方提供实现。
+     *
+     * 接口中没有函数体或访问器体的默认成员在继承检查中等价于 abstract requirement。
+     */
     private fun CfirCallableDeclaration.requiresInterfaceImplementation(
         ownerDeclaration: CfirClassLikeDeclaration?,
     ): Boolean {
@@ -1125,6 +1256,9 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         return !hasOwnBodyOrAccessorBody()
     }
 
+    /**
+     * 判断声明自身是否已经提供函数体或属性访问器体。
+     */
     private fun CfirCallableDeclaration.hasOwnBodyOrAccessorBody(): Boolean =
         when (this) {
             is CfirFunction -> body != null
@@ -1229,6 +1363,9 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         return inheritedOwnerType.hasEffectiveExtendInterface(interfaceClassId, context)
     }
 
+    /**
+     * 判断类型自身或其非接口父类型链上是否存在指向目标接口的有效 extend。
+     */
     private fun ConeCangJieType.hasEffectiveExtendInterface(
         targetInterfaceClassId: ClassId,
         context: CheckerContext,
@@ -1247,6 +1384,9 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         return visit(this)
     }
 
+    /**
+     * 判断当前类型是否直接通过可见 extend 关系扩展到目标接口。
+     */
     private fun ConeCangJieType.hasDirectExtendInterface(
         targetInterfaceClassId: ClassId,
         context: CheckerContext,
@@ -1256,6 +1396,11 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         }
     }
 
+    /**
+     * 收集继承所有者类型通过有效 extend 接口暴露的默认接口成员。
+     *
+     * 该集合用于检测类成员覆盖 extend 引入的 interface default implementation。
+     */
     private fun collectEffectiveExtendInterfaceMemberInfos(
         inheritedOwnerType: ConeCangJieType,
         name: Name,
@@ -1277,6 +1422,9 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         }
     }
 
+    /**
+     * 收集当前类型及其非接口父类型链上所有有效 extend 接口类型。
+     */
     private fun ConeCangJieType.collectEffectiveExtendInterfaceTypes(
         context: CheckerContext,
     ): List<ConeCangJieType> {
@@ -1295,6 +1443,11 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         return result.toList()
     }
 
+    /**
+     * 收集当前具体 receiver 类型通过直接 extend 声明获得的接口类型。
+     *
+     * 泛型 extend 会先根据 receiver 类型创建声明替换，再判断替换后的父类型是否为接口。
+     */
     private fun ConeCangJieType.collectDirectExtendInterfaceTypes(
         context: CheckerContext,
     ): List<ConeCangJieType> {
@@ -1320,11 +1473,20 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         return result
     }
 
+    /**
+     * 判断类型对应的 class-like 声明是否为接口。
+     */
     private fun ConeCangJieType.isInterfaceType(context: CheckerContext): Boolean {
         val classId = classIdOrPrimitiveClassId ?: return false
         return context.session.symbolProvider.getClassLikeSymbolByClassId(classId)?.cfir is CfirInterface
     }
 
+    /**
+     * 收集声明在源码中写出的非接口父类型，并按当前具体类型实参替换父类型。
+     *
+     * 只沿非接口父类型传播 extend-interface 关系，避免把接口继承链误当作
+     * 类/结构继承链上的 extend 目标。
+     */
     private fun ConeCangJieType.declaredNonInterfaceSupertypes(context: CheckerContext): List<ConeCangJieType> {
         val classId = classIdOrPrimitiveClassId ?: return emptyList()
         val symbol = context.session.symbolProvider.getClassLikeSymbolByClassId(classId) ?: return emptyList()
@@ -1337,12 +1499,18 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         }
     }
 
+    /**
+     * 判断类型是否允许继续传播 extend-interface 关系。
+     */
     private fun ConeCangJieType.shouldPropagateExtendInterfaceRelation(context: CheckerContext): Boolean {
         val classId = classIdOrPrimitiveClassId ?: return false
         val declaration = context.session.symbolProvider.getClassLikeSymbolByClassId(classId)?.cfir ?: return false
         return declaration !is CfirInterface
     }
 
+    /**
+     * 根据 class-like 声明的类型形参和当前实际类型实参创建声明替换器。
+     */
     private fun CfirClassLikeDeclaration.createDeclarationSubstitutor(type: ConeCangJieType): ConeSubstitutor? {
         if (type !is ConeLookupTagBasedType) return null
         if (typeParameters.isEmpty()) return ConeSubstitutor.Empty
@@ -1355,6 +1523,12 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         return replacements.takeIf { it.isNotEmpty() }?.let(::CfirTypeSubstitutorByMap) ?: ConeSubstitutor.Empty
     }
 
+    /**
+     * 判断两个成员是否拥有相同 override 签名。
+     *
+     * 属性在当前继承诊断中只按名称和 kind 合并；函数则使用 scope 层生成的
+     * override signature key 区分重载。
+     */
     private fun InheritedMemberInfo.hasSameOverrideSignature(superInfo: InheritedMemberInfo): Boolean {
         if (kind == "property") return true
         val ownSymbol = symbol ?: return false
@@ -1362,6 +1536,9 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         return ownSymbol.overrideSignatureKey() == superSymbol.overrideSignatureKey()
     }
 
+    /**
+     * 判断当前成员能否作为父成员的实现候选。
+     */
     private fun InheritedMemberInfo.canImplement(superInfo: InheritedMemberInfo): Boolean {
         if (kind != superInfo.kind) return false
         if (isStatic != superInfo.isStatic) return false
@@ -1369,12 +1546,18 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         return hasSameOverrideSignature(superInfo)
     }
 
+    /**
+     * 判断实现成员可见性是否弱于被实现的父成员。
+     */
     private fun InheritedMemberInfo.hasWeakVisibilityComparedTo(superInfo: InheritedMemberInfo): Boolean {
         if (!canImplement(superInfo)) return false
         val compareResult = Visibilities.compare(visibility, superInfo.visibility)
         return compareResult == null || compareResult < 0
     }
 
+    /**
+     * 判断属性实现与接口/父属性之间是否存在类型不一致。
+     */
     context(context: CheckerContext)
     private fun InheritedMemberInfo.propertyTypeMismatch(
         superInfo: InheritedMemberInfo,
@@ -1395,6 +1578,9 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         )
     }
 
+    /**
+     * 判断属性实现与接口/父属性之间是否存在 mut/immut 可变性冲突。
+     */
     private fun InheritedMemberInfo.propertyMutabilityConflict(
         superInfo: InheritedMemberInfo,
     ): PropertyMutabilityConflict? {
@@ -1408,18 +1594,27 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         }
     }
 
+    /**
+     * 判断非 const 函数是否试图实现同签名 const 函数。
+     */
     private fun InheritedMemberInfo.hasConstFunctionConflict(superInfo: InheritedMemberInfo): Boolean {
         if (kind != "function" || superInfo.kind != "function") return false
         if (isConst || !superInfo.isConst) return false
         return hasSameOverrideSignature(superInfo)
     }
 
+    /**
+     * 判断同签名函数之间是否存在 mut 修饰符不一致。
+     */
     private fun InheritedMemberInfo.hasMutFunctionConflict(superInfo: InheritedMemberInfo): Boolean {
         if (kind != "function" || superInfo.kind != "function") return false
         if (isMut == superInfo.isMut) return false
         return hasSameOverrideSignature(superInfo)
     }
 
+    /**
+     * 生成实现/覆盖类诊断的去重 key。
+     */
     private fun InheritedMemberInfo.overrideDiagnosticKey(superInfo: InheritedMemberInfo): String =
         buildString {
             append(kind)
@@ -1431,6 +1626,9 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
             append(superInfo.symbol?.overrideSignatureKey().orEmpty())
         }
 
+    /**
+     * 生成接口实现要求类诊断的去重 key。
+     */
     private fun InheritedMemberInfo.requirementDiagnosticKey(): String =
         buildString {
             append(kind)
@@ -1442,62 +1640,145 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
             append(symbol?.overrideSignatureKey().orEmpty())
         }
 
+    /**
+     * 判断成员是否为接口中的 default 成员。
+     */
     private fun InheritedMemberInfo.isDefaultInterfaceMember(context: CheckerContext): Boolean {
         if (!isDefault) return false
         val owner = symbol?.let { context.ownerClassSymbol(it)?.cfir }
         return owner is CfirInterface
     }
 
+    /**
+     * 构造 extend 目标在诊断中的展示名称。
+     */
     context(context: CheckerContext)
     private fun CfirExtend.targetDisplayName(): String =
         "extend " + ((extendedTypeRef as? CfirResolvedTypeRef)?.coneType?.let { type ->
             type.classIdOrPrimitiveClassId?.shortClassName?.asString() ?: type.toString()
         } ?: "<unknown>")
 
+    /**
+     * 继承检查使用的统一成员描述。
+     *
+     * @property name 成员名称。
+     * @property kind 成员类别，当前包括 `function`、`property`、`variable`。
+     * @property isStatic 成员是否为 static。
+     * @property isConst 函数或属性是否带 const 语义。
+     * @property isMut 函数或属性是否带 mut 语义。
+     * @property isDefault 是否为接口 default 成员。
+     * @property isAbstract 是否仍需要实现方提供实现。
+     * @property visibility 成员声明可见性。
+     * @property source 成员声明 source，用于声明级诊断。
+     * @property nameSource 成员名称 source，用于名称级诊断。
+     * @property ownerName 成员所属 class-like 名称。
+     * @property symbol 成员绑定后的 callable symbol。
+     */
     private data class InheritedMemberInfo(
+        /** 成员名称。 */
         val name: Name,
+        /** 成员类别，当前包括 `function`、`property`、`variable`。 */
         val kind: String,
+        /** 成员是否为 static。 */
         val isStatic: Boolean,
+        /** 函数或属性是否带 const 语义。 */
         val isConst: Boolean,
+        /** 函数或属性是否带 mut 语义。 */
         val isMut: Boolean,
+        /** 是否为接口 default 成员。 */
         val isDefault: Boolean,
+        /** 是否仍需要实现方提供实现。 */
         val isAbstract: Boolean,
+        /** 成员声明可见性。 */
         val visibility: Visibility,
+        /** 成员声明 source，用于声明级诊断。 */
         val source: CjSourceElement?,
+        /** 成员名称 source，用于名称级诊断。 */
         val nameSource: AbstractCjSourceElement?,
+        /** 成员所属 class-like 名称。 */
         val ownerName: Name?,
+        /** 成员绑定后的 callable symbol。 */
         val symbol: CfirCallableSymbol<*>?,
     ) {
+        /**
+         * 返回 static/non-static 的诊断展示文本。
+         */
         val staticKind: String get() = if (isStatic) "static" else "non-static"
     }
 
+    /**
+     * extend 接口实现检查中的实现候选。
+     *
+     * @property info 候选成员的统一继承信息。
+     * @property diagnosticSource 默认诊断位置，通常来自被检查的 type ref 或成员名称。
+     * @property declarationSource 候选来自当前 extend 声明时的声明 source。
+     */
     private data class ExtendImplementationCandidate(
+        /** 候选成员的统一继承信息。 */
         val info: InheritedMemberInfo,
+        /** 默认诊断位置，通常来自被检查的 type ref 或成员名称。 */
         val diagnosticSource: AbstractCjSourceElement?,
+        /** 候选来自当前 extend 声明时的声明 source。 */
         val declarationSource: CjSourceElement?,
     )
 
+    /**
+     * 一个默认接口成员在某个 extend 声明中的出现记录。
+     *
+     * @property ownerExtend 引入该默认成员的 extend 声明。
+     * @property info 默认接口成员信息。
+     */
     private data class DefaultInterfaceMemberOccurrence(
+        /** 引入该默认成员的 extend 声明。 */
         val ownerExtend: CfirExtend,
+        /** 默认接口成员信息。 */
         val info: InheritedMemberInfo,
     )
 
+    /**
+     * 属性实现与父属性之间的类型不一致信息。
+     *
+     * @property implementationType 实现方属性类型。
+     * @property baseType 被实现的父属性类型。
+     */
     private data class PropertyTypeMismatch(
+        /** 实现方属性类型。 */
         val implementationType: ConeCangJieType,
+        /** 被实现的父属性类型。 */
         val baseType: ConeCangJieType,
     )
 
+    /**
+     * 函数返回类型实现冲突。
+     */
     private sealed class FunctionReturnTypeConflict {
+        /**
+         * 普通 override 返回类型不满足父返回类型。
+         *
+         * @property implementationType 实现方返回类型。
+         * @property baseType 被实现的父返回类型。
+         */
         data class Mismatch(
+            /** 实现方返回类型。 */
             val implementationType: ConeCangJieType,
+            /** 被实现的父返回类型。 */
             val baseType: ConeCangJieType,
         ) : FunctionReturnTypeConflict()
 
+        /**
+         * 官方 extend/boxing 返回类型不变性冲突。
+         *
+         * @property interfaceType 触发不变性约束的接口类型。
+         */
         data class Invariance(
+            /** 触发不变性约束的接口类型。 */
             val interfaceType: ConeCangJieType,
         ) : FunctionReturnTypeConflict()
     }
 
+    /**
+     * 把返回类型冲突转换为对应 CFIR 诊断。
+     */
     context(context: CheckerContext)
     private fun FunctionReturnTypeConflict.report(
         source: AbstractCjSourceElement?,
@@ -1522,8 +1803,13 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         }
     }
 
+    /**
+     * 属性 mutability 实现冲突的分类。
+     */
     private enum class PropertyMutabilityConflict {
+        /** 父属性要求 mut，实现方不是 mut。 */
         MutExpected,
+        /** 父属性要求 immut，实现方声明为 mut。 */
         ImmutExpected,
     }
 
@@ -1534,20 +1820,46 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
     private fun CfirProperty.inheritanceMemberKind(): String =
         if (source?.kind == CjFakeSourceElementKind.PropertyFromParameter) "variable" else "property"
 
+    /**
+     * 继承成员一致性检查的统一主体。
+     *
+     * @property declarations 当前主体直接声明的成员。
+     * @property inheritedSources 当前主体需要对比的继承来源。
+     * @property source 主体声明 source，用作兜底诊断位置。
+     * @property classLikeDeclaration class-like 主体；extend 主体为 null。
+     */
     private data class MemberInheritanceSubject(
+        /** 当前主体直接声明的成员。 */
         val declarations: List<CfirDeclaration>,
+        /** 当前主体需要对比的继承来源。 */
         val inheritedSources: List<InheritedMemberSource>,
+        /** 主体声明 source，用作兜底诊断位置。 */
         val source: CjSourceElement?,
+        /** class-like 主体；extend 主体为 null。 */
         val classLikeDeclaration: CfirClassLikeDeclaration?,
     ) {
+        /**
+         * 当前主体是否来自 extend 声明。
+         */
         val isExtendSubject: Boolean get() = classLikeDeclaration == null
     }
 
+    /**
+     * 一个需要纳入继承成员对比的父类型来源。
+     *
+     * @property typeRef 父类型或 extend 目标类型引用。
+     * @property includeDirectExtends 是否额外收集该类型上的直接 extend 成员。
+     */
     private data class InheritedMemberSource(
+        /** 父类型或 extend 目标类型引用。 */
         val typeRef: CfirTypeRef,
+        /** 是否额外收集该类型上的直接 extend 成员。 */
         val includeDirectExtends: Boolean,
     )
 
+    /**
+     * 将 class-like 声明适配为继承成员一致性检查主体。
+     */
     private fun CfirClassLikeDeclaration.memberInheritanceSubject(): MemberInheritanceSubject =
         MemberInheritanceSubject(
             declarations = declarations,
@@ -1556,6 +1868,12 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
             classLikeDeclaration = this,
         )
 
+    /**
+     * 将 extend 声明适配为继承成员一致性检查主体。
+     *
+     * extend 需要同时对比目标类型成员和 super interface 成员，但不再重复把
+     * 这些来源上的直接 extend 成员并入。
+     */
     private fun CfirExtend.memberInheritanceSubject(): MemberInheritanceSubject =
         MemberInheritanceSubject(
             declarations = declarations,
@@ -1567,6 +1885,9 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
             classLikeDeclaration = null,
         )
 
+    /**
+     * 解析类型引用指向的 class-like 声明。
+     */
     context(context: CheckerContext)
     private fun CfirTypeRef.resolvedClassLikeDeclaration(): CfirClassLikeDeclaration? {
         val classId = (this as? CfirResolvedTypeRef)?.coneType?.expandedClassIdOrPrimitiveClassId ?: return null
@@ -1574,12 +1895,21 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         return symbol.cfir as? CfirClassLikeDeclaration
     }
 
+    /**
+     * 从类型引用创建 use-site member scope。
+     */
     context(context: CheckerContext)
     private fun CfirTypeRef.resolvedUseSiteMemberScope(excludingExtend: CfirExtend? = null): CfirTypeScope? {
         val coneType = (this as? CfirResolvedTypeRef)?.coneType ?: return null
         return coneType.resolvedUseSiteMemberScope(excludingExtend)
     }
 
+    /**
+     * 为具体类型创建继承检查使用的 use-site member scope。
+     *
+     * class-like 类型使用 declaration-site scope 再套 substitution scope；
+     * 内建/非 class target 则由 extend member scope 与直接父类型 scope 组合而成。
+     */
     context(context: CheckerContext)
     private fun ConeCangJieType.resolvedUseSiteMemberScope(excludingExtend: CfirExtend? = null): CfirTypeScope? {
         val classId = expandedClassIdOrPrimitiveClassId
@@ -1638,6 +1968,9 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
  * extend 声明也属于官方 `InheritableDecl`，需要进入同一组继承成员一致性检查。
  */
 object CfirExtendInheritanceDeepChecker : CfirExtendChecker() {
+    /**
+     * 将 extend 声明转发到继承深层检查器。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirExtend) {
         CfirInheritanceDeepChecker.checkExtend(declaration)

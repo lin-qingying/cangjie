@@ -22,7 +22,13 @@ import org.cangnova.cangjie.platform.TargetPlatform
  * @property files 分配给该 session 的源文件列表。
  */
 data class SessionWithSources<F>(
+    /**
+     * 源文件集合对应的 CFIR 源码 session。
+     */
     val session: CfirSession,
+    /**
+     * 分配给该 session 的源文件列表。
+     */
     val files: List<F>,
 )
 

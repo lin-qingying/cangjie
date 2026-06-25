@@ -115,7 +115,13 @@ object CfirDeclarationDataRegistry : ConeTypeRegistry<CfirDeclarationDataKey, An
      * @property key 当前委托绑定的属性键类型。
      */
     class DeclarationDataAccessor(
+        /**
+         * 底层数组访问器。
+         */
         private val dataAccessor: NullableArrayMapAccessor<CfirDeclarationDataKey, Any, *>,
+        /**
+         * 当前委托绑定的属性键类型。
+         */
         val key: KClass<out CfirDeclarationDataKey>,
     ) {
         /**
@@ -141,7 +147,13 @@ object CfirDeclarationDataRegistry : ConeTypeRegistry<CfirDeclarationDataKey, An
      * @property key 当前委托绑定的属性键类型。
      */
     class SymbolDataAccessor(
+        /**
+         * 底层数组访问器。
+         */
         private val dataAccessor: NullableArrayMapAccessor<CfirDeclarationDataKey, Any, *>,
+        /**
+         * 当前委托绑定的属性键类型。
+         */
         val key: KClass<out CfirDeclarationDataKey>,
     ) {
         /**
@@ -160,7 +172,13 @@ object CfirDeclarationDataRegistry : ConeTypeRegistry<CfirDeclarationDataKey, An
      * @property key 当前委托绑定的属性键类型。
      */
     private class AttributeDataAccessor<V : Any>(
+        /**
+         * 底层数组访问器。
+         */
         val dataAccessor: NullableArrayMapAccessor<CfirDeclarationDataKey, Any, V>,
+        /**
+         * 当前委托绑定的属性键类型。
+         */
         val key: KClass<out CfirDeclarationDataKey>,
     ) : ReadWriteProperty<CfirDeclarationAttributes, V?> {
         /**

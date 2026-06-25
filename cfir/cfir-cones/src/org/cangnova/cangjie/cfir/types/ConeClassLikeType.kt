@@ -38,6 +38,9 @@ abstract class ConeLookupTagBasedType : ConeSimpleCangJieType() {
     /**
      * enum 类型的结构哈希。
      */
+    /**
+     * class-like 类型的结构哈希，包含 interface 与 This 视图标记。
+     */
     override fun hashCode(): Int {
         var result = lookupTag.hashCode()
         result = 31 * result + typeArguments.hashCode()
@@ -53,6 +56,9 @@ abstract class ConeLookupTagBasedType : ConeSimpleCangJieType() {
  * [ConeClassifierLookupTag]，明确表达"这是一个分类器类型"的语义。
  */
 abstract class ConeClassifierType : ConeLookupTagBasedType() {
+    /**
+     * 指向具名分类器声明的 lookup tag。
+     */
     abstract override val lookupTag: ConeClassLikeLookupTag
 }
 
@@ -106,6 +112,9 @@ class ConeClassLikeType(
 
     /**
      * enum 类型的结构哈希。
+     */
+    /**
+     * enum 类型的结构哈希，包含引用枚举标记。
      */
     override fun hashCode(): Int {
         var result = super.hashCode()
@@ -197,6 +206,9 @@ class ConeEnumType(
                 isRefEnum == other.isRefEnum
     }
 
+    /**
+     * enum 类型的结构哈希，包含引用枚举标记。
+     */
     override fun hashCode(): Int {
         var result = super.hashCode()
         // 将 isRefEnum 混入哈希，避免值枚举和引用枚举哈希碰撞

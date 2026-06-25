@@ -37,6 +37,9 @@ import org.cangnova.cangjie.source.CjSourceElement
  * @property typeConstraints 声明上的 where 约束源码引用列表。
  */
 data class CfirTypeConstraintDiagnosticData(
+    /**
+     * 声明上的 where 约束源码引用列表。
+     */
     val typeConstraints: List<CfirTypeConstraintReference>,
 ) {
     /**
@@ -60,8 +63,17 @@ data class CfirTypeConstraintDiagnosticData(
  * @property constraintSource 整条 where 约束位置，对齐官方 generic constraint 诊断节点。
  */
 data class CfirTypeConstraintReference(
+    /**
+     * 约束左侧声明的类型参数名。
+     */
     val parameterName: Name,
+    /**
+     * 约束中的类型参数名位置，用于“不是类型参数名”一类诊断。
+     */
     val source: CjSourceElement,
+    /**
+     * 整条 where 约束位置，对齐官方 generic constraint 诊断节点。
+     */
     val constraintSource: CjSourceElement = source,
 )
 

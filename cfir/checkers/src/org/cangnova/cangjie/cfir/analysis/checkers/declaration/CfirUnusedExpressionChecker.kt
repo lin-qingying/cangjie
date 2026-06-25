@@ -4,6 +4,7 @@ import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.diagnostic.ConeAmbiguityError
 import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
@@ -367,7 +368,7 @@ object CfirDceUnusedDeclarationChecker : CfirFileChecker() {
             for (parameter in function.valueParameters) {
                 if (parameter.name.asString().startsWith("_")) continue
                 if (parameter.symbol in usage.usedVariableSymbols) continue
-                reporter.reportOn(parameter.source, CfirErrors.UNUSED_VARIABLE)
+                reporter.reportOn(parameter.valueParameterNameDiagnosticSource(), CfirErrors.UNUSED_VARIABLE)
             }
         }
     }
@@ -384,6 +385,7 @@ object CfirDceUnusedDeclarationChecker : CfirFileChecker() {
         if (status.isAbstract || status.isForeign || status.isOverride) return false
         if (status.visibility.isPublicAPI) return false
         if (typeParameters.isNotEmpty() || info.isInsideGenericOwner) return false
+        if (info.hasStaticNonStaticOverloadConflict) return false
         return true
     }
 
@@ -400,6 +402,11 @@ object CfirDceUnusedDeclarationChecker : CfirFileChecker() {
          * 函数是否位于带类型参数的类、接口、结构、枚举、扩展或函数内部。
          */
         val isInsideGenericOwner: Boolean,
+
+        /**
+         * 同一声明作用域内是否存在同名 non-static 函数。
+         */
+        val hasStaticNonStaticOverloadConflict: Boolean,
     )
 
     /**
@@ -450,6 +457,11 @@ object CfirDceUnusedDeclarationChecker : CfirFileChecker() {
         private var genericOwnerDepth = 0
 
         /**
+         * 当前声明作用域内的直接成员函数栈。extend 成员必须按 extend 自身作用域分组。
+         */
+        private val ownerFunctionStack = mutableListOf<List<CfirNamedFunction>>()
+
+        /**
          * 默认遍历当前元素的所有子元素。
          */
         override fun visitElement(element: CfirElement) {
@@ -459,34 +471,42 @@ object CfirDceUnusedDeclarationChecker : CfirFileChecker() {
         /**
          * 访问类声明并在带类型参数时进入泛型所有者上下文。
          */
-        override fun visitClass(klass: CfirClass) = visitGenericOwner(klass.typeParameters.isNotEmpty(), klass)
+        override fun visitClass(klass: CfirClass) =
+            visitDeclarationOwner(klass.typeParameters.isNotEmpty(), klass.declarations, klass)
 
         /**
          * 访问接口声明并在带类型参数时进入泛型所有者上下文。
          */
         override fun visitInterface(`interface`: CfirInterface) =
-            visitGenericOwner(`interface`.typeParameters.isNotEmpty(), `interface`)
+            visitDeclarationOwner(`interface`.typeParameters.isNotEmpty(), `interface`.declarations, `interface`)
 
         /**
          * 访问结构声明并在带类型参数时进入泛型所有者上下文。
          */
-        override fun visitStruct(struct: CfirStruct) = visitGenericOwner(struct.typeParameters.isNotEmpty(), struct)
+        override fun visitStruct(struct: CfirStruct) =
+            visitDeclarationOwner(struct.typeParameters.isNotEmpty(), struct.declarations, struct)
 
         /**
          * 访问枚举声明并在带类型参数时进入泛型所有者上下文。
          */
-        override fun visitEnum(enum: CfirEnum) = visitGenericOwner(enum.typeParameters.isNotEmpty(), enum)
+        override fun visitEnum(enum: CfirEnum) =
+            visitDeclarationOwner(enum.typeParameters.isNotEmpty(), enum.declarations, enum)
 
         /**
          * 访问扩展声明并在带类型参数时进入泛型所有者上下文。
          */
-        override fun visitExtend(extend: CfirExtend) = visitGenericOwner(extend.typeParameters.isNotEmpty(), extend)
+        override fun visitExtend(extend: CfirExtend) =
+            visitDeclarationOwner(extend.typeParameters.isNotEmpty(), extend.declarations, extend)
 
         /**
          * 记录命名函数候选，并继续遍历函数体中的使用关系。
          */
         override fun visitNamedFunction(namedFunction: CfirNamedFunction) {
-            functions += FunctionDceInfo(namedFunction, isInsideGenericOwner = genericOwnerDepth > 0)
+            functions += FunctionDceInfo(
+                function = namedFunction,
+                isInsideGenericOwner = genericOwnerDepth > 0,
+                hasStaticNonStaticOverloadConflict = namedFunction.hasStaticNonStaticOverloadConflictInCurrentOwner(),
+            )
             visitGenericOwner(namedFunction.typeParameters.isNotEmpty(), namedFunction)
         }
 
@@ -512,6 +532,7 @@ object CfirDceUnusedDeclarationChecker : CfirFileChecker() {
         private fun collectUsage(expression: CfirQualifiedAccessExpression) {
             expression.resolvedFunctionSymbolOrNull()?.let { usedFunctionSymbols += it }
             expression.resolvedVariableSymbolOrNull()?.let { usedVariableSymbols += it }
+            expression.ambiguousFunctionSymbolsOrEmpty().forEach { usedFunctionSymbols += it }
         }
 
         /**
@@ -523,6 +544,33 @@ object CfirDceUnusedDeclarationChecker : CfirFileChecker() {
                 element.acceptChildren(this)
             } finally {
                 if (isGenericOwner) genericOwnerDepth--
+            }
+        }
+
+        /**
+         * 在声明 owner 作用域中遍历，同时保存直接成员函数列表供 PreCheck 冲突分组复用。
+         */
+        private fun visitDeclarationOwner(
+            isGenericOwner: Boolean,
+            declarations: List<CfirDeclaration>,
+            element: CfirElement,
+        ) {
+            ownerFunctionStack += declarations.filterIsInstance<CfirNamedFunction>()
+            try {
+                visitGenericOwner(isGenericOwner, element)
+            } finally {
+                ownerFunctionStack.removeAt(ownerFunctionStack.lastIndex)
+            }
+        }
+
+        /**
+         * 当前直接 owner 内同名 static/non-static 混用判断。
+         */
+        private fun CfirNamedFunction.hasStaticNonStaticOverloadConflictInCurrentOwner(): Boolean {
+            if (!status.isStatic) return false
+            val ownerFunctions = ownerFunctionStack.lastOrNull() ?: return false
+            return ownerFunctions.any { sibling ->
+                sibling.name == name && !sibling.status.isStatic
             }
         }
 
@@ -568,6 +616,14 @@ private fun CfirQualifiedAccessExpression.resolvedFunctionSymbolOrNull(): CfirNa
         is CfirNamedReferenceWithCandidateBase -> reference.candidateSymbol as? CfirNamedFunctionSymbol
         else -> null
     }?.takeIf { it.isBound }
+
+/**
+ * 从歧义引用中收集全部函数候选。被引用但未能消解的函数不应再作为 unused-function 报告。
+ */
+private fun CfirQualifiedAccessExpression.ambiguousFunctionSymbolsOrEmpty(): List<CfirNamedFunctionSymbol> {
+    val diagnostic = (calleeReference as? CfirDiagnosticHolder)?.diagnostic as? ConeAmbiguityError ?: return emptyList()
+    return diagnostic.candidateSymbols.filterIsInstance<CfirNamedFunctionSymbol>()
+}
 
 /**
  * 判断表达式是否是 DCE 阶段跳过 unused variable 诊断的 `this` 初始化器形态。

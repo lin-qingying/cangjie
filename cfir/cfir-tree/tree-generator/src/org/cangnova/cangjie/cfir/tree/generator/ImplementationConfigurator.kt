@@ -31,8 +31,14 @@ import org.cangnova.cangjie.cfir.tree.generator.model.Implementation
 import org.cangnova.cangjie.generators.tree.ImplementationKind
 import org.cangnova.cangjie.generators.tree.config.AbstractImplementationConfigurator
 
+/**
+ * CFIR tree 具体实现类生成配置器。
+ */
 object ImplementationConfigurator : AbstractCfirTreeImplementationConfigurator() {
 
+    /**
+     * 配置各类 CFIR 元素是否生成实现类以及实现类字段默认行为。
+     */
     override fun configure(model: Model) = with(CfirTree) {
         // ---------- 抽象节点：不生成具体实现类 ----------
         noImpl(elementWithResolveState)
@@ -122,6 +128,9 @@ object ImplementationConfigurator : AbstractCfirTreeImplementationConfigurator()
 
             additionalImports(visibilitiesImport)
         }
+        /**
+         * 配置 value parameter 与相关节点共享的字段默认值。
+         */
         fun AbstractImplementationConfigurator<Implementation, Element, Field>.ImplementationContext.configureCommonValueParameter() {
             defaultFalse("isVar", withGetter = true)
             defaultNull(
@@ -178,6 +187,9 @@ object ImplementationConfigurator : AbstractCfirTreeImplementationConfigurator()
         }
     }
 
+    /**
+     * 配置所有实现类共同继承的字段默认值和内部 API opt-in。
+     */
     override fun configureAllImplementations(model: Model) {
 
 
@@ -217,6 +229,9 @@ object ImplementationConfigurator : AbstractCfirTreeImplementationConfigurator()
         }
     }
 
+    /**
+     * 需要生成公开实现类的具体 CFIR 元素列表。
+     */
     private fun CfirTree.concreteElements(): List<Element> = listOf(
 
         // -------- 顶层结构 --------

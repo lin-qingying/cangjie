@@ -12,6 +12,9 @@ import org.cangnova.cangjie.resolve.calls.inference.model.OnlyInputTypeConstrain
  */
 class ConeRegularLambdaArgumentConstraintPosition(
     anonymousFunction: CfirAnonymousFunction,
+    /**
+     * lambda 返回表达式，用于把返回类型约束定位回具体表达式。
+     */
     override val anonymousFunctionReturnExpression: CfirExpression,
 ) : ConeLambdaArgumentConstraintPosition(anonymousFunction), OnlyInputTypeConstraintPosition
 

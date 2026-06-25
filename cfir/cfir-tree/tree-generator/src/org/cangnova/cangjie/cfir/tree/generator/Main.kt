@@ -6,6 +6,9 @@ import org.cangnova.cangjie.generators.tree.InterfaceAndAbstractClassConfigurato
 import org.cangnova.cangjie.generators.tree.printer.TreeGenerator
 import java.io.File
 
+/**
+ * CFIR tree 生成器命令行入口。
+ */
 fun main(args: Array<String>) {
     val generationPath = args.firstOrNull()?.let(::File) ?: File("../../gen").canonicalFile
 

@@ -13,9 +13,21 @@ package org.cangnova.cangjie.cfir.declarations
  * @property fromSource 当前声明是否直接来自用户源码。
  */
 sealed class CfirDeclarationOrigin(
+    /**
+     * 调试输出使用的稳定显示名；为 `null` 时使用对象或类名。
+     */
     private val displayName: String? = null,
+    /**
+     * 当前声明是否来自父类型成员合成。
+     */
     val fromSupertypes: Boolean = false,
+    /**
+     * 当前声明是否由编译器生成，而不是源码直接声明。
+     */
     val generated: Boolean = false,
+    /**
+     * 当前声明是否直接来自用户源码。
+     */
     val fromSource: Boolean = false,
 ) {
     /**

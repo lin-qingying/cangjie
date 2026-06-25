@@ -21,12 +21,14 @@ val CfirSession.lazyDeclarationResolverOrNull: CfirLazyDeclarationResolver? by C
 
 /** 诊断上报器组件。 */
 private val CfirSession.diagnosticReporterComponent: CfirDiagnosticReporterComponent by CfirSession.sessionComponentAccessor()
+/** 诊断上报器组件的可空访问器。 */
 private val CfirSession.nullableDiagnosticReporterComponent: CfirDiagnosticReporterComponent? by CfirSession.nullableSessionComponentAccessor()
 
 /** 诊断上报器，对齐 Kotlin `DiagnosticReporter`。 */
 val CfirSession.diagnosticReporter: CfirDiagnosticReporter
     get() = diagnosticReporterComponent.reporter
 
+/** 诊断上报器的可空访问入口。 */
 val CfirSession.diagnosticReporterOrNull: CfirDiagnosticReporter?
     get() = nullableDiagnosticReporterComponent?.reporter
 

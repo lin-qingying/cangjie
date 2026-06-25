@@ -7,6 +7,9 @@ import java.io.File
  */
 object TestGeneratorForPsi2Cfir {
     @JvmStatic
+    /**
+     * Psi2Cfir raw builder 测试套件生成入口。
+     */
     fun main(args: Array<String>) {
         val projectRoot = if (args.isNotEmpty()) File(args[0]) else File(System.getProperty("user.dir"))
         generateSuite(
@@ -38,6 +41,9 @@ object TestGeneratorForPsi2Cfir {
         )
     }
 
+    /**
+     * 生成指定测试数据根对应的测试套件文件。
+     */
     private fun generateSuite(
         projectRoot: File,
         modelRelativePath: String,
@@ -55,6 +61,9 @@ object TestGeneratorForPsi2Cfir {
         println("Generated: ${outputFile.path}")
     }
 
+    /**
+     * 渲染测试套件源码文本。
+     */
     private fun render(
         testDataRoot: File,
         projectRoot: File,
@@ -108,6 +117,9 @@ object TestGeneratorForPsi2Cfir {
         return sb.toString()
     }
 
+    /**
+     * 渲染测试数据目录对应的嵌套测试类。
+     */
     private fun renderDirectoryClass(
         sb: StringBuilder,
         dir: File,
@@ -148,6 +160,9 @@ object TestGeneratorForPsi2Cfir {
         sb.appendLine()
     }
 
+    /**
+     * 将目录名转换为合法测试类名。
+     */
     private fun toClassName(name: String): String {
         return name
             .split(Regex("[^A-Za-z0-9]+"))
@@ -155,6 +170,9 @@ object TestGeneratorForPsi2Cfir {
             .joinToString("") { it.replaceFirstChar { ch -> ch.uppercaseChar() } }
     }
 
+    /**
+     * 将文件名转换为合法测试方法名。
+     */
     private fun toTestMethodName(base: String): String {
         val raw = toClassName(base)
         return "test$raw"

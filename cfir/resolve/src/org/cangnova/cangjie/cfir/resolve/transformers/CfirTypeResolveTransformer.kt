@@ -684,11 +684,17 @@ class CfirTypeResolveTransformer(
         return fullyExpandedType(session) is ConeClassLikeType
     }
 
+    /**
+     * 将 lookup-tag 类型解析为可继续收集 assumption bound 的声明。
+     */
     private fun ConeLookupTagBasedType.toAssumptionTargetDeclaration(): CfirTypeParameterRefsOwner? {
         val classId = classIdOrPrimitiveClassId ?: return null
         return session.symbolProvider.getClassLikeSymbolByClassId(classId)?.cfir as? CfirTypeParameterRefsOwner
     }
 
+    /**
+     * 把推导出的 assumption bounds 追加到当前类型参数声明。
+     */
     private fun CfirTypeParameter.appendAssumptionBounds(boundsToAdd: List<ConeCangJieType>) {
         if (boundsToAdd.isEmpty()) return
         if (this !is org.cangnova.cangjie.cfir.declarations.impl.CfirTypeParameterImpl) return

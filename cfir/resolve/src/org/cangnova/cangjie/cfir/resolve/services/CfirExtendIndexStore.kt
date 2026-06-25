@@ -51,6 +51,11 @@ import org.cangnova.cangjie.type.model.TypeConstructorMarker
  * 来源、接口闭包、默认成员和成员 owner 等索引，供 checker、scope、可见性和规则查询服务共享。
  */
 class CfirExtendIndexStore : CfirSessionComponent {
+    /** extend 索引版本号；每次 rebuild 完成后递增，供依赖方失效本地缓存。 */
+    @Volatile
+    var modificationCount: Long = 0
+        private set
+
     /** 当前 session 内所有 extend 语义模型，按稳定比较器排序。 */
     private var models: List<CfirExtendSemanticModel> = emptyList()
     /** 按被扩展目标键分组的 extend 模型。 */
@@ -96,6 +101,7 @@ class CfirExtendIndexStore : CfirSessionComponent {
         defaultIndependentMembersByInterface = buildDefaultIndependentMembersMap(next, resolver)
         interfaceClosureByClassId = buildInterfaceClosureMap(next, resolver)
         targetClassOwnInterfacesByClassId = buildTargetClassOwnInterfacesMap(next, resolver)
+        modificationCount++
     }
 
     /**

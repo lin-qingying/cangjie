@@ -62,6 +62,12 @@ internal fun findUnsupportedVArrayElementType(
     }
 }
 
+/**
+ * 读取 struct 字段的实际类型，并按当前 struct 类型实参替换字段类型中的类型参数。
+ *
+ * VArray 元素限制需要递归进入 struct 字段；泛型 struct 必须使用实例化后的字段类型，
+ * 否则会把声明侧类型参数误判为实际元素类型。
+ */
 context(context: CheckerContext)
 private fun ConeStructType.structFieldTypes(typeContext: ConeTypeContext): List<ConeCangJieType> {
     val struct = context.session.symbolProvider.getClassLikeSymbolByClassId(classId)?.cfir as? CfirStruct

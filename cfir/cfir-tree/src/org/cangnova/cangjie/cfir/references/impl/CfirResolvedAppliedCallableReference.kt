@@ -22,10 +22,25 @@ import org.cangnova.cangjie.source.CjSourceElement
  * @property substitutedParameterTypes 替换后的参数类型列表。
  */
 class CfirResolvedAppliedCallableReference @CfirImplementationDetail constructor(
+    /**
+     * 引用表达式在源码中的位置。
+     */
     override val source: CjSourceElement?,
+    /**
+     * 源码中被解析的 callable 名称。
+     */
     override val name: Name,
+    /**
+     * 解析命中的目标符号。
+     */
     override val resolvedSymbol: CfirBasedSymbol<*>,
+    /**
+     * 按 use-site 类型实参替换后的返回类型。
+     */
     val substitutedReturnType: ConeCangJieType?,
+    /**
+     * 按 use-site 类型实参替换后的参数类型列表。
+     */
     val substitutedParameterTypes: List<ConeCangJieType>,
 ) : CfirResolvedNamedReference {
 

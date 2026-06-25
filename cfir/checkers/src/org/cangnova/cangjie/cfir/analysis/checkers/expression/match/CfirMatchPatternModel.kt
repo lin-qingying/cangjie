@@ -118,8 +118,11 @@ sealed class CfirMatchPatternKind {
     data class Tuple(val subPatterns: List<CfirMatchPattern>) : CfirMatchPatternKind()
     /** enum / Option 构造器模式，按 payload 顺序保存子模式。 */
     data class Enum(
+        /** enum 类的 ClassId。 */
         val enumClassId: ClassId,
+        /** enum entry 的名称文本。 */
         val entryName: String,
+        /** 构造器 payload 对应的子模式列表。 */
         val subPatterns: List<CfirMatchPattern>,
     ) : CfirMatchPatternKind()
 }

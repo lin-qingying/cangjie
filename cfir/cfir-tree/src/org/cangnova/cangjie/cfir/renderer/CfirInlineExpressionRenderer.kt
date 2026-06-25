@@ -13,7 +13,13 @@ import org.cangnova.cangjie.cfir.expressions.*
  * @property typeRenderer 类型渲染器。
  */
 open class CfirInlineExpressionRenderer(
+    /**
+     * 用于渲染 callee reference 与符号引用的组件。
+     */
     protected val referenceRenderer: CfirReferenceRenderer,
+    /**
+     * 用于在单行表达式中渲染类型引用的 cone 类型渲染器。
+     */
     protected val typeRenderer: ConeTypeRenderer = ConeTypeRendererForDebugging(),
 ) {
     /**

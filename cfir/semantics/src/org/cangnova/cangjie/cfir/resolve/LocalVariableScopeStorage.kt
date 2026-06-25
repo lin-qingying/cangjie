@@ -12,6 +12,9 @@ import org.cangnova.cangjie.cfir.types.ConeCangJieType
  * @property map 按局部变量符号和 smart cast 类型索引的作用域缓存。
  */
 class LocalVariableScopeStorage private constructor(
+    /**
+     * 按局部变量符号和 smart cast 类型索引的作用域缓存。
+     */
     private val map: PersistentMap<CfirCallableSymbol<*>, MutableMap<ConeCangJieType, CfirTypeScope?>>,
 ) {
     constructor() : this(persistentHashMapOf())

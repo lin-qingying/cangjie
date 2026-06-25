@@ -28,7 +28,13 @@ sealed class DeclarationPredicate : AbstractPredicate<DeclarationPredicate> {
      * @property b 右侧谓词。
      */
     class Or(
+        /**
+         * 逻辑或左侧声明谓词。
+         */
         override val a: DeclarationPredicate,
+        /**
+         * 逻辑或右侧声明谓词。
+         */
         override val b: DeclarationPredicate,
     ) : DeclarationPredicate(), AbstractPredicate.Or<DeclarationPredicate> {
         /**
@@ -56,7 +62,13 @@ sealed class DeclarationPredicate : AbstractPredicate<DeclarationPredicate> {
      * @property b 右侧谓词。
      */
     class And(
+        /**
+         * 逻辑与左侧声明谓词。
+         */
         override val a: DeclarationPredicate,
+        /**
+         * 逻辑与右侧声明谓词。
+         */
         override val b: DeclarationPredicate,
     ) : DeclarationPredicate(), AbstractPredicate.And<DeclarationPredicate> {
         /**
@@ -162,7 +174,13 @@ sealed class DeclarationPredicate : AbstractPredicate<DeclarationPredicate> {
      * @property includeItself 是否把声明自身注解也纳入匹配。
      */
     class MetaAnnotatedWith(
+        /**
+         * 当前谓词匹配的元注解集合。
+         */
         override val metaAnnotations: Set<AnnotationFqn>,
+        /**
+         * 是否把声明自身携带的注解纳入元注解匹配。
+         */
         override val includeItself: Boolean,
     ) : DeclarationPredicate(), AbstractPredicate.MetaAnnotatedWith<DeclarationPredicate> {
         init {

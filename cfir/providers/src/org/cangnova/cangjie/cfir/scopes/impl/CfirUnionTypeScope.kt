@@ -20,6 +20,9 @@ import org.cangnova.cangjie.name.Name
  * @property scopes 参与并集查询的候选类型 scope。
  */
 class CfirUnionTypeScope(
+    /**
+     * 参与并集查询的候选类型 scope 列表。
+     */
     private val scopes: List<CfirTypeScope>,
 ) : CfirTypeScope() {
 

@@ -214,6 +214,7 @@ object CfirErrors : CjDiagnosticsContainer() {
     val INVALID_BINARY_OPERATOR: CjDiagnosticFactory3<String, String, String> = CjDiagnosticFactory3("CFIR_INVALID_BINARY_OPERATOR", Severity.ERROR, SourceElementPositioningStrategies.OPERATOR, PsiElement::class, getRendererFactory())
     val NO_MATCHING_OPERATOR_INVOKE: CjDiagnosticFactory2<String, ConeCangJieType> = CjDiagnosticFactory2("CFIR_NO_MATCHING_OPERATOR_INVOKE", Severity.ERROR, SourceElementPositioningStrategies.REFERENCED_NAME_BY_QUALIFIED, PsiElement::class, getRendererFactory())
     val NO_MATCH_FUNCTION_DECLARATION_FOR_CALL: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_NO_MATCH_FUNCTION_DECLARATION_FOR_CALL", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
+    val NO_MATCH_FUNCTION_DECLARATION_FOR_REF: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_NO_MATCH_FUNCTION_DECLARATION_FOR_REF", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val NO_MATCH_OPERATOR_FUNCTION_CALL: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_NO_MATCH_OPERATOR_FUNCTION_CALL", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
 
     // General

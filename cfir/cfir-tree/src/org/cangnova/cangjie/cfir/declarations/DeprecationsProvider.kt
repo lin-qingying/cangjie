@@ -36,7 +36,13 @@ abstract class DeprecationsProvider {
  */
 class DeprecationsProviderImpl(
     cfirCachesFactory: CfirCachesFactory,
+    /**
+     * 作用于整个声明的弃用信息计算器列表。
+     */
     private val all: List<DeprecationInfoProvider>?,
+    /**
+     * 按 use-site target 拆分的弃用信息计算器列表。
+     */
     private val bySpecificSite: Map<AnnotationUseSiteTarget, List<DeprecationInfoProvider>>?,
 ) : DeprecationsProvider() {
     /**

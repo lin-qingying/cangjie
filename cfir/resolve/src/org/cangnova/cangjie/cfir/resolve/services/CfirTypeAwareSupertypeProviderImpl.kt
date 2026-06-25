@@ -35,6 +35,7 @@ import org.cangnova.cangjie.cfir.resolve.providers.CfirExtendProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirTypeAwareSupertypeProvider
 import org.cangnova.cangjie.cfir.resolve.providers.createExtendDeclarationSubstitution
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.extendIndexStoreOrNull
 import org.cangnova.cangjie.cfir.session.extendProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.session.typeResolver
@@ -64,9 +65,18 @@ class CfirTypeAwareSupertypeProviderImpl(
     private val directSupertypesCache = mutableMapOf<ConeCangJieType, List<ConeCangJieType>>()
 
     /**
+     * 缓存对应的 extend 索引版本。
+     *
+     * 类型系统可能在 EXTENSIONS 阶段之前查询父类型；这时 extend 索引尚未完成，
+     * 不能把空结果带到后续 BODY_RESOLVE。索引 rebuild 后必须整体失效。
+     */
+    private var cachedExtendIndexVersion: Long = Long.MIN_VALUE
+
+    /**
      * 获取具体类型的直接父类型列表。
      */
     override fun getDirectSupertypes(type: ConeCangJieType): List<ConeCangJieType> {
+        ensureCacheFresh()
         synchronized(directSupertypesCache) {
             directSupertypesCache[type]?.let { return it }
         }
@@ -75,6 +85,18 @@ class CfirTypeAwareSupertypeProviderImpl(
 
         synchronized(directSupertypesCache) {
             return directSupertypesCache.getOrPut(type) { computed }
+        }
+    }
+
+    /**
+     * 根据 session 级 extend 索引版本清理本地父类型缓存。
+     */
+    private fun ensureCacheFresh() {
+        val currentVersion = session.extendIndexStoreOrNull?.modificationCount ?: Long.MIN_VALUE
+        synchronized(directSupertypesCache) {
+            if (cachedExtendIndexVersion == currentVersion) return
+            directSupertypesCache.clear()
+            cachedExtendIndexVersion = currentVersion
         }
     }
 

@@ -12,6 +12,7 @@ import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.BodyResolveCo
  * 参考 K2 `FirPartialBodyResolveTransformer`。
  */
 abstract class CfirPartialBodyResolveTransformer(
+    /** 所属的完整 body resolve dispatcher。 */
     val transformer: CfirAbstractBodyResolveTransformerDispatcher,
 ) : CfirAbstractBodyResolveTransformer(transformer.transformerPhase) {
     final override var implicitTypeOnly: Boolean

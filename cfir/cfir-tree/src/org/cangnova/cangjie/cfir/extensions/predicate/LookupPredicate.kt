@@ -28,7 +28,13 @@ sealed class LookupPredicate : AbstractPredicate<LookupPredicate> {
      * lookup 谓词逻辑或节点。
      */
     class Or(
+        /**
+         * 逻辑或左侧 lookup 谓词。
+         */
         override val a: LookupPredicate,
+        /**
+         * 逻辑或右侧 lookup 谓词。
+         */
         override val b: LookupPredicate,
     ) : LookupPredicate(), AbstractPredicate.Or<LookupPredicate> {
         /**
@@ -48,7 +54,13 @@ sealed class LookupPredicate : AbstractPredicate<LookupPredicate> {
      * lookup 谓词逻辑与节点。
      */
     class And(
+        /**
+         * 逻辑与左侧 lookup 谓词。
+         */
         override val a: LookupPredicate,
+        /**
+         * 逻辑与右侧 lookup 谓词。
+         */
         override val b: LookupPredicate,
     ) : LookupPredicate(), AbstractPredicate.And<LookupPredicate> {
         /**

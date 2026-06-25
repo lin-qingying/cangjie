@@ -13,8 +13,17 @@ import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
  * @property sharedProvider 跨 session 共享的 provider，用于 fallback builtins、synthetic provider 等共享声明。
  */
 class StructuredProviders(
+    /**
+     * 当前 session 自身声明与生成声明对应的 provider 列表。
+     */
     val sourceProviders: List<CfirSymbolProvider>,
+    /**
+     * 当前 session 依赖模块对应的 provider 列表。
+     */
     val dependencyProviders: List<CfirSymbolProvider>,
+    /**
+     * 跨 session 共享的 fallback provider。
+     */
     val sharedProvider: CfirSymbolProvider
 ) : CfirSessionComponent
 

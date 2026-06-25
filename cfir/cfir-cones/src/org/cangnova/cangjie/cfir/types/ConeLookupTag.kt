@@ -78,7 +78,9 @@ abstract class ConeClassLikeLookupTag : ConeClassifierLookupTag() {
  * @param originalTypeParameter 该类型变量所对应的原始类型参数，可为 null。
  */
 class ConeTypeVariableTypeConstructor(
+    /** 调试用名称，通常来自对应类型参数的名字。 */
     val debugName: String,
+    /** 该类型变量所对应的原始类型参数，可为 null。 */
     val originalTypeParameter: TypeParameterMarker?,
 ) : TypeVariableTypeConstructorMarker, ConeTypeConstructorMarker {
 

@@ -104,6 +104,9 @@ abstract class CfirRegisteredPluginAnnotations : CfirSessionComponent {
  * @property session 当前注册表所属 session。
  */
 abstract class AbstractCfirRegisteredPluginAnnotations(
+    /**
+     * 当前注册表所属的 CFIR session。
+     */
     protected val session: CfirSession,
 ) : CfirRegisteredPluginAnnotations() {
     /**

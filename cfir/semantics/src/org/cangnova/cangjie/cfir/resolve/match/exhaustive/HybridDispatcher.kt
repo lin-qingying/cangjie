@@ -24,6 +24,9 @@ import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
  * @property checkers 按优先级排序后的候选检查器列表。
  */
 class HybridDispatcher private constructor(
+    /**
+     * 按优先级排序后的候选检查器列表。
+     */
     private val checkers: List<ExhaustivenessChecker>,
 ) {
     /**
@@ -116,11 +119,29 @@ class HybridDispatcher private constructor(
  * @property result 穷尽性检查结果。
  */
 data class DispatchAnalysis(
+    /**
+     * 被分析类型文本。
+     */
     val typeName: String,
+    /**
+     * 模式数量。
+     */
     val patternCount: Int,
+    /**
+     * 模式复杂度。
+     */
     val complexity: PatternComplexity,
+    /**
+     * 按类型推荐的 checker。
+     */
     val recommendedSource: CheckSource,
+    /**
+     * 实际产出结果的 checker。
+     */
     val actualSource: CheckSource?,
+    /**
+     * 穷尽性检查结果。
+     */
     val result: ExhaustivenessResult,
 )
 

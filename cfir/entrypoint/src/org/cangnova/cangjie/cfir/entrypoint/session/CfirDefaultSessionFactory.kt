@@ -35,11 +35,23 @@ open class CfirDefaultSessionFactory : CfirAbstractSessionFactory<CfirDefaultSes
      * @property registerSourceSessionComponents 源码会话的额外 session component 注册回调。
      */
     class Context(
+        /**
+         * 当前 session factory 使用的 CJO 依赖管理器。
+         */
         val cjoManager: CjoManager? = null,
+        /**
+         * 共享库会话创建时追加的符号 provider 工厂。
+         */
         val additionalSharedProviders: (CfirSession, CfirModuleData, CfirCangJieScopeProvider) -> List<CfirSymbolProvider> =
             { _, _, _ -> emptyList() },
+        /**
+         * 普通库会话创建时追加的符号 provider 工厂。
+         */
         val additionalLibraryProviders: (CfirSession, ModuleDataProvider, CfirCangJieScopeProvider) -> List<CfirSymbolProvider> =
             { _, _, _ -> emptyList() },
+        /**
+         * 源码会话创建时追加或重排 source provider 的工厂。
+         */
         val additionalSourceProviders: (
             CfirSession,
             CfirCangJieScopeProvider,
@@ -48,13 +60,22 @@ open class CfirDefaultSessionFactory : CfirAbstractSessionFactory<CfirDefaultSes
         ) -> List<CfirSymbolProvider> = { _, _, mainProvider, generatedProvider ->
             listOfNotNull(mainProvider, generatedProvider)
         },
+        /**
+         * 源码会话创建时追加的可选注解 provider 工厂。
+         */
         val additionalOptionalAnnotationsProvider: (
             CfirSession,
             CfirCangJieScopeProvider,
             CfirSymbolProvider,
             CfirSwitchableExtensionDeclarationsSymbolProvider?,
         ) -> CfirSymbolProvider? = { _, _, _, _ -> null },
+        /**
+         * 普通库会话组件注册完成后的宿主扩展回调。
+         */
         val registerLibrarySessionComponents: CfirSession.() -> Unit = {},
+        /**
+         * 源码会话组件注册完成后的宿主扩展回调。
+         */
         val registerSourceSessionComponents: CfirSession.() -> Unit = {},
     )
 

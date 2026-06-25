@@ -344,6 +344,9 @@ sealed class CFGNodeWithCfgOwner<out E : CfirControlFlowGraphOwner>(owner: Contr
 
 /** 函数控制流图入口节点。 */
 class FunctionEnterNode(owner: ControlFlowGraph, override val fir: CfirFunction, level: Int) : CFGNode<CfirFunction>(owner, level), GraphEnterNodeMarker {
+    /**
+     * 将函数入口节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitFunctionEnterNode(this, data)
 }
 
@@ -353,31 +356,49 @@ class FunctionExitNode(owner: ControlFlowGraph, override val fir: CfirFunction, 
     override val label: String
         get() = "return@${fir.symbol.callableId}"
 
+    /**
+     * 将函数出口节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitFunctionExitNode(this, data)
 }
 
 /** 局部函数声明节点，节点自身持有局部函数子图。 */
 class LocalFunctionDeclarationNode(owner: ControlFlowGraph, override val fir: CfirFunction, level: Int) : CFGNodeWithCfgOwner<CfirFunction>(owner, level) {
+    /**
+     * 将局部函数声明节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitLocalFunctionDeclarationNode(this, data)
 }
 
 /** 值参数默认值或子图进入节点。 */
 class EnterValueParameterNode(owner: ControlFlowGraph, override val fir: CfirValueParameter, level: Int) : CFGNodeWithCfgOwner<CfirValueParameter>(owner, level) {
+    /**
+     * 将值参数入口节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitEnterValueParameterNode(this, data)
 }
 
 /** 默认参数表达式子图入口节点。 */
 class EnterDefaultArgumentsNode(owner: ControlFlowGraph, override val fir: CfirValueParameter, level: Int) : CFGNode<CfirValueParameter>(owner, level), GraphEnterNodeMarker {
+    /**
+     * 将默认参数入口节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitEnterDefaultArgumentsNode(this, data)
 }
 
 /** 默认参数表达式子图出口节点。 */
 class ExitDefaultArgumentsNode(owner: ControlFlowGraph, override val fir: CfirValueParameter, level: Int) : CFGNode<CfirValueParameter>(owner, level), GraphExitNodeMarker {
+    /**
+     * 将默认参数出口节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitExitDefaultArgumentsNode(this, data)
 }
 
 /** 值参数处理结束节点。 */
 class ExitValueParameterNode(owner: ControlFlowGraph, override val fir: CfirValueParameter, level: Int) : CFGNode<CfirValueParameter>(owner, level) {
+    /**
+     * 将值参数出口节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitExitValueParameterNode(this, data)
 }
 
@@ -392,23 +413,35 @@ class SplitPostponedLambdasNode(owner: ControlFlowGraph, override val fir: CfirS
     override val subGraphs: List<ControlFlowGraph>
         get() = lambdas.mapNotNull { it.controlFlowGraphReference?.controlFlowGraph }
 
+    /**
+     * 将延期 lambda 拆分节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitSplitPostponedLambdasNode(this, data)
 }
 
 /** 延期 lambda 子图出口节点。 */
 class PostponedLambdaExitNode(owner: ControlFlowGraph, override val fir: CfirAnonymousFunctionExpression, level: Int) :
     CFGNode<CfirAnonymousFunctionExpression>(owner, level) {
+    /**
+     * 将延期 lambda 出口节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitPostponedLambdaExitNode(this, data)
 }
 
 /** 合并所有延期 lambda 出口的节点。 */
 class MergePostponedLambdaExitsNode(owner: ControlFlowGraph, override val fir: CfirElement, level: Int) : CFGNode<CfirElement>(owner, level) {
+    /**
+     * 将延期 lambda 出口合并节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitMergePostponedLambdaExitsNode(this, data)
 }
 
 /** 匿名函数捕获节点。 */
 class AnonymousFunctionCaptureNode(owner: ControlFlowGraph, override val fir: CfirAnonymousFunctionExpression, level: Int) :
     CFGNode<CfirAnonymousFunctionExpression>(owner, level) {
+    /**
+     * 将匿名函数捕获节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitAnonymousFunctionCaptureNode(this, data)
 }
 
@@ -419,56 +452,89 @@ class AnonymousFunctionExpressionNode(owner: ControlFlowGraph, override val fir:
     override val subGraphs: List<ControlFlowGraph>
         get() = listOfNotNull(fir.anonymousFunction.controlFlowGraphReference?.controlFlowGraph)
 
+    /**
+     * 将匿名函数表达式节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitAnonymousFunctionExpressionNode(this, data)
 }
 
 /** 文件控制流图入口节点。 */
 class FileEnterNode(owner: ControlFlowGraph, override val fir: CfirFile, level: Int) : CFGNodeWithExplicitSubgraphs<CfirFile>(owner, level), GraphEnterNodeMarker {
+    /**
+     * 将文件入口节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitFileEnterNode(this, data)
 }
 
 /** 文件控制流图出口节点。 */
 class FileExitNode(owner: ControlFlowGraph, override val fir: CfirFile, level: Int) : CFGNode<CfirFile>(owner, level), GraphExitNodeMarker {
+    /**
+     * 将文件出口节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitFileExitNode(this, data)
 }
 
 /** 类控制流图入口节点。 */
 class ClassEnterNode(owner: ControlFlowGraph, override val fir: CfirClass, level: Int) : CFGNodeWithExplicitSubgraphs<CfirClass>(owner, level), GraphEnterNodeMarker {
+    /**
+     * 将类入口节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitClassEnterNode(this, data)
 }
 
 /** 类控制流图出口节点。 */
 class ClassExitNode(owner: ControlFlowGraph, override val fir: CfirClass, level: Int) : CFGNodeWithExplicitSubgraphs<CfirClass>(owner, level), GraphExitNodeMarker {
+    /**
+     * 将类出口节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitClassExitNode(this, data)
 }
 
 /** 局部类声明结束节点，节点通过类声明 owner 引用子图。 */
 class LocalClassExitNode(owner: ControlFlowGraph, override val fir: CfirClass, level: Int) : CFGNodeWithCfgOwner<CfirClass>(owner, level) {
+    /**
+     * 将局部类出口节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitLocalClassExitNode(this, data)
 }
 
 /** 代码片段控制流图入口节点。 */
 class CodeFragmentEnterNode(owner: ControlFlowGraph, override val fir: CfirCodeFragment, level: Int) : CFGNode<CfirCodeFragment>(owner, level), GraphEnterNodeMarker {
+    /**
+     * 将代码片段入口节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitCodeFragmentEnterNode(this, data)
 }
 
 /** 代码片段控制流图出口节点。 */
 class CodeFragmentExitNode(owner: ControlFlowGraph, override val fir: CfirCodeFragment, level: Int) : CFGNode<CfirCodeFragment>(owner, level), GraphExitNodeMarker {
+    /**
+     * 将代码片段出口节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitCodeFragmentExitNode(this, data)
 }
 
 /** 代码块入口节点。 */
 class BlockEnterNode(owner: ControlFlowGraph, override val fir: CfirBlock, level: Int) : CFGNode<CfirBlock>(owner, level), EnterNodeMarker {
+    /**
+     * 将代码块入口节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitBlockEnterNode(this, data)
 }
 
 /** 代码块出口节点。 */
 class BlockExitNode(owner: ControlFlowGraph, override val fir: CfirBlock, level: Int) : CFGNode<CfirBlock>(owner, level), ExitNodeMarker {
+    /**
+     * 将代码块出口节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitBlockExitNode(this, data)
 }
 
 /** match 表达式入口节点。 */
 class MatchEnterNode(owner: ControlFlowGraph, override val fir: CfirMatchExpression, level: Int) : CFGNode<CfirMatchExpression>(owner, level), EnterNodeMarker {
+    /**
+     * 将 match 入口节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitMatchEnterNode(this, data)
 }
 
@@ -478,36 +544,57 @@ class MatchExitNode(owner: ControlFlowGraph, override val fir: CfirMatchExpressi
     override val isUnion: Boolean
         get() = true
 
+    /**
+     * 将 match 出口节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitMatchExitNode(this, data)
 }
 
 /** match 分支条件入口节点。 */
 class MatchBranchConditionEnterNode(owner: ControlFlowGraph, override val fir: CfirMatchBranch, level: Int) : CFGNode<CfirMatchBranch>(owner, level), EnterNodeMarker {
+    /**
+     * 将 match 分支条件入口节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitMatchBranchConditionEnterNode(this, data)
 }
 
 /** match 分支条件出口节点。 */
 class MatchBranchConditionExitNode(owner: ControlFlowGraph, override val fir: CfirMatchBranch, level: Int) : CFGNode<CfirMatchBranch>(owner, level), ExitNodeMarker {
+    /**
+     * 将 match 分支条件出口节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitMatchBranchConditionExitNode(this, data)
 }
 
 /** match 分支结果入口节点。 */
 class MatchBranchResultEnterNode(owner: ControlFlowGraph, override val fir: CfirMatchBranch, level: Int) : CFGNode<CfirMatchBranch>(owner, level) {
+    /**
+     * 将 match 分支结果入口节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitMatchBranchResultEnterNode(this, data)
 }
 
 /** match 分支结果出口节点。 */
 class MatchBranchResultExitNode(owner: ControlFlowGraph, override val fir: CfirMatchBranch, level: Int) : CFGNode<CfirMatchBranch>(owner, level), TailrecExitNodeMarker {
+    /**
+     * 将 match 分支结果出口节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitMatchBranchResultExitNode(this, data)
 }
 
 /** match 合成 else 分支节点。 */
 class MatchSyntheticElseBranchNode(owner: ControlFlowGraph, override val fir: CfirMatchExpression, level: Int) : CFGNode<CfirMatchExpression>(owner, level) {
+    /**
+     * 将 match 合成 else 节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitMatchSyntheticElseBranchNode(this, data)
 }
 
 /** if 表达式入口节点。 */
 class IfEnterNode(owner: ControlFlowGraph, override val fir: CfirIfExpression, level: Int) : CFGNode<CfirIfExpression>(owner, level), EnterNodeMarker {
+    /**
+     * 将 if 入口节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitIfEnterNode(this, data)
 }
 
@@ -517,21 +604,33 @@ class IfExitNode(owner: ControlFlowGraph, override val fir: CfirIfExpression, le
     override val isUnion: Boolean
         get() = true
 
+    /**
+     * 将 if 出口节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitIfExitNode(this, data)
 }
 
 /** 循环表达式入口节点。 */
 class LoopEnterNode(owner: ControlFlowGraph, override val fir: CfirExpression, level: Int) : CFGNode<CfirExpression>(owner, level), EnterNodeMarker {
+    /**
+     * 将循环入口节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitLoopEnterNode(this, data)
 }
 
 /** 循环体入口节点。 */
 class LoopBlockEnterNode(owner: ControlFlowGraph, override val fir: CfirExpression, level: Int) : CFGNode<CfirExpression>(owner, level), EnterNodeMarker {
+    /**
+     * 将循环体入口节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitLoopBlockEnterNode(this, data)
 }
 
 /** 循环体出口节点。 */
 class LoopBlockExitNode(owner: ControlFlowGraph, override val fir: CfirExpression, level: Int) : CFGNode<CfirExpression>(owner, level), ExitNodeMarker {
+    /**
+     * 将循环体出口节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitLoopBlockExitNode(this, data)
 }
 
@@ -544,6 +643,9 @@ class LoopConditionEnterNode(owner: ControlFlowGraph, override val fir: CfirExpr
     CFGNode<CfirExpression>(owner, level), EnterNodeMarker, EdgeLabel {
     /** continue 路径标签。 */
     override val label: String get() = "continue"
+    /**
+     * 将循环条件入口节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitLoopConditionEnterNode(this, data)
 }
 
@@ -554,6 +656,9 @@ class LoopConditionEnterNode(owner: ControlFlowGraph, override val fir: CfirExpr
  */
 class LoopConditionExitNode(owner: ControlFlowGraph, override val fir: CfirExpression, val loop: CfirExpression, level: Int) :
     CFGNode<CfirExpression>(owner, level), ExitNodeMarker {
+    /**
+     * 将循环条件出口节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitLoopConditionExitNode(this, data)
 }
 
@@ -561,46 +666,73 @@ class LoopConditionExitNode(owner: ControlFlowGraph, override val fir: CfirExpre
 class LoopExitNode(owner: ControlFlowGraph, override val fir: CfirExpression, level: Int) : CFGNode<CfirExpression>(owner, level), ExitNodeMarker, EdgeLabel {
     /** break 路径标签。 */
     override val label: String get() = "break"
+    /**
+     * 将循环出口节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitLoopExitNode(this, data)
 }
 
 /** try 表达式入口节点。 */
 class TryExpressionEnterNode(owner: ControlFlowGraph, override val fir: CfirTryExpression, level: Int) : CFGNode<CfirTryExpression>(owner, level), EnterNodeMarker {
+    /**
+     * 将 try 表达式入口节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitTryExpressionEnterNode(this, data)
 }
 
 /** try 主体块入口节点。 */
 class TryMainBlockEnterNode(owner: ControlFlowGraph, override val fir: CfirTryExpression, level: Int) : CFGNode<CfirTryExpression>(owner, level), EnterNodeMarker {
+    /**
+     * 将 try 主体块入口节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitTryMainBlockEnterNode(this, data)
 }
 
 /** try 主体块出口节点。 */
 class TryMainBlockExitNode(owner: ControlFlowGraph, override val fir: CfirTryExpression, level: Int) : CFGNode<CfirTryExpression>(owner, level), ExitNodeMarker {
+    /**
+     * 将 try 主体块出口节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitTryMainBlockExitNode(this, data)
 }
 
 /** catch 子句入口节点。 */
 class CatchClauseEnterNode(owner: ControlFlowGraph, override val fir: CfirCatch, level: Int) : CFGNode<CfirCatch>(owner, level), EnterNodeMarker {
+    /**
+     * 将 catch 子句入口节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitCatchClauseEnterNode(this, data)
 }
 
 /** catch 子句出口节点。 */
 class CatchClauseExitNode(owner: ControlFlowGraph, override val fir: CfirCatch, level: Int) : CFGNode<CfirCatch>(owner, level), ExitNodeMarker {
+    /**
+     * 将 catch 子句出口节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitCatchClauseExitNode(this, data)
 }
 
 /** effect handle 子句入口节点。 */
 class HandleClauseEnterNode(owner: ControlFlowGraph, override val fir: CfirHandleClause, level: Int) : CFGNode<CfirHandleClause>(owner, level), EnterNodeMarker {
+    /**
+     * 将 effect handle 子句入口节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitHandleClauseEnterNode(this, data)
 }
 
 /** effect handle 子句出口节点。 */
 class HandleClauseExitNode(owner: ControlFlowGraph, override val fir: CfirHandleClause, level: Int) : CFGNode<CfirHandleClause>(owner, level), ExitNodeMarker {
+    /**
+     * 将 effect handle 子句出口节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitHandleClauseExitNode(this, data)
 }
 
 /** finally 块入口节点。 */
 class FinallyBlockEnterNode(owner: ControlFlowGraph, override val fir: CfirTryExpression, level: Int) : CFGNode<CfirTryExpression>(owner, level), EnterNodeMarker {
+    /**
+     * 将 finally 块入口节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitFinallyBlockEnterNode(this, data)
 }
 
@@ -611,26 +743,41 @@ class FinallyBlockEnterNode(owner: ControlFlowGraph, override val fir: CfirTryEx
  */
 class FinallyBlockExitNode(owner: ControlFlowGraph, override val fir: CfirTryExpression, val enterNode: FinallyBlockEnterNode, level: Int) :
     CFGNode<CfirTryExpression>(owner, level), ExitNodeMarker {
+    /**
+     * 将 finally 块出口节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitFinallyBlockExitNode(this, data)
 }
 
 /** try 表达式整体出口节点。 */
 class TryExpressionExitNode(owner: ControlFlowGraph, override val fir: CfirTryExpression, level: Int) : CFGNode<CfirTryExpression>(owner, level), ExitNodeMarker {
+    /**
+     * 将 try 表达式出口节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitTryExpressionExitNode(this, data)
 }
 
 /** 短路布尔运算入口节点。 */
 class BooleanOperatorEnterNode(owner: ControlFlowGraph, override val fir: CfirBinaryOp, level: Int) : CFGNode<CfirBinaryOp>(owner, level), EnterNodeMarker {
+    /**
+     * 将短路布尔运算入口节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitBooleanOperatorEnterNode(this, data)
 }
 
 /** 短路布尔运算左操作数出口节点。 */
 class BooleanOperatorExitLeftOperandNode(owner: ControlFlowGraph, override val fir: CfirBinaryOp, level: Int) : CFGNode<CfirBinaryOp>(owner, level) {
+    /**
+     * 将短路布尔运算左操作数出口节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitBooleanOperatorExitLeftOperandNode(this, data)
 }
 
 /** 短路布尔运算右操作数入口节点。 */
 class BooleanOperatorEnterRightOperandNode(owner: ControlFlowGraph, override val fir: CfirBinaryOp, level: Int) : CFGNode<CfirBinaryOp>(owner, level) {
+    /**
+     * 将短路布尔运算右操作数入口节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitBooleanOperatorEnterRightOperandNode(this, data)
 }
 
@@ -642,36 +789,57 @@ class BooleanOperatorEnterRightOperandNode(owner: ControlFlowGraph, override val
  */
 class BooleanOperatorExitNode(owner: ControlFlowGraph, override val fir: CfirBinaryOp, val leftOperandNode: CFGNode<*>, val rightOperandNode: CFGNode<*>, level: Int) :
     CFGNode<CfirBinaryOp>(owner, level), ExitNodeMarker, TailrecExitNodeMarker {
+    /**
+     * 将短路布尔运算出口节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitBooleanOperatorExitNode(this, data)
 }
 
 /** 类型操作表达式节点。 */
 class TypeOperatorCallNode(owner: ControlFlowGraph, override val fir: CfirTypeOperator, level: Int) : CFGNode<CfirTypeOperator>(owner, level) {
+    /**
+     * 将类型操作表达式节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitTypeOperatorCallNode(this, data)
 }
 
 /** 比较表达式节点。 */
 class ComparisonExpressionNode(owner: ControlFlowGraph, override val fir: CfirComparisonExpression, level: Int) : CFGNode<CfirComparisonExpression>(owner, level) {
+    /**
+     * 将比较表达式节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitComparisonExpressionNode(this, data)
 }
 
 /** 跳转表达式节点。 */
 class JumpNode(owner: ControlFlowGraph, override val fir: CfirJump<*>, level: Int) : CFGNode<CfirJump<*>>(owner, level), TailrecExitNodeMarker {
+    /**
+     * 将跳转表达式节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitJumpNode(this, data)
 }
 
 /** 字面量表达式节点。 */
 class LiteralExpressionNode(owner: ControlFlowGraph, override val fir: CfirLiteralExpression, level: Int) : CFGNode<CfirLiteralExpression>(owner, level) {
+    /**
+     * 将字面量表达式节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitLiteralExpressionNode(this, data)
 }
 
 /** 限定访问表达式节点。 */
 class QualifiedAccessNode(owner: ControlFlowGraph, override val fir: CfirQualifiedAccessExpression, level: Int) : CFGNode<CfirQualifiedAccessExpression>(owner, level) {
+    /**
+     * 将限定访问表达式节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitQualifiedAccessNode(this, data)
 }
 
 /** 函数调用参数求值入口节点。 */
 class FunctionCallArgumentsEnterNode(owner: ControlFlowGraph, override val fir: CfirFunctionCall, level: Int) : CFGNode<CfirFunctionCall>(owner, level), EnterNodeMarker {
+    /**
+     * 将函数调用参数入口节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitFunctionCallArgumentsEnterNode(this, data)
 }
 
@@ -682,11 +850,17 @@ class FunctionCallArgumentsEnterNode(owner: ControlFlowGraph, override val fir: 
  */
 class FunctionCallArgumentsExitNode(owner: ControlFlowGraph, override val fir: CfirFunctionCall, var explicitReceiverExitNode: CFGNode<*>, level: Int) :
     CFGNode<CfirFunctionCall>(owner, level), ExitNodeMarker {
+    /**
+     * 将函数调用参数出口节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitFunctionCallArgumentsExitNode(this, data)
 }
 
 /** 函数调用执行入口节点。 */
 class FunctionCallEnterNode(owner: ControlFlowGraph, override val fir: CfirFunctionCall, level: Int) : CFGNode<CfirFunctionCall>(owner, level) {
+    /**
+     * 将函数调用执行入口节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitFunctionCallEnterNode(this, data)
 }
 
@@ -696,41 +870,65 @@ class FunctionCallExitNode(owner: ControlFlowGraph, override val fir: CfirFuncti
     override val isUnion: Boolean
         get() = true
 
+    /**
+     * 将函数调用执行出口节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitFunctionCallExitNode(this, data)
 }
 
 /** throw 表达式节点。 */
 class ThrowExceptionNode(owner: ControlFlowGraph, override val fir: CfirThrowExpression, level: Int) : CFGNode<CfirThrowExpression>(owner, level) {
+    /**
+     * 将 throw 表达式节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitThrowExceptionNode(this, data)
 }
 
 /** 变量声明入口节点。 */
 class VariableDeclarationEnterNode(owner: ControlFlowGraph, override val fir: CfirVariable, level: Int) : CFGNode<CfirVariable>(owner, level) {
+    /**
+     * 将变量声明入口节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitVariableDeclarationEnterNode(this, data)
 }
 
 /** 变量声明出口节点。 */
 class VariableDeclarationExitNode(owner: ControlFlowGraph, override val fir: CfirVariable, level: Int) : CFGNode<CfirVariable>(owner, level) {
+    /**
+     * 将变量声明出口节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitVariableDeclarationExitNode(this, data)
 }
 
 /** 变量赋值节点。 */
 class VariableAssignmentNode(owner: ControlFlowGraph, override val fir: CfirAssignment, level: Int) : CFGNode<CfirAssignment>(owner, level) {
+    /**
+     * 将变量赋值节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitVariableAssignmentNode(this, data)
 }
 
 /** optional chain 入口节点。 */
 class EnterOptionalChainNode(owner: ControlFlowGraph, override val fir: CfirOptionalChainExpression, level: Int) : CFGNode<CfirOptionalChainExpression>(owner, level) {
+    /**
+     * 将 optional chain 入口节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitEnterOptionalChainNode(this, data)
 }
 
 /** optional chain 出口节点。 */
 class ExitOptionalChainNode(owner: ControlFlowGraph, override val fir: CfirOptionalChainExpression, level: Int) : CFGNode<CfirOptionalChainExpression>(owner, level), TailrecExitNodeMarker {
+    /**
+     * 将 optional chain 出口节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitExitOptionalChainNode(this, data)
 }
 
 /** 包装表达式节点。 */
 class WrappedExpressionNode(owner: ControlFlowGraph, override val fir: CfirWrappedExpression, level: Int) : CFGNode<CfirWrappedExpression>(owner, level) {
+    /**
+     * 将包装表达式节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitWrappedExpressionNode(this, data)
 }
 
@@ -740,26 +938,47 @@ class StubNode(owner: ControlFlowGraph, level: Int) : CFGNode<CfirStub>(owner, l
         isDead = true
     }
 
+    /**
+     * stub 节点绑定的合成 CFIR 表达式。
+     */
     override val fir: CfirStub get() = CfirStub
 
+    /**
+     * stub 节点复用第一个前驱节点的 flow 初始化状态。
+     */
     override val flowInitialized: Boolean
         get() = firstPreviousNode.flowInitialized
 
+    /**
+     * stub 节点透传第一个前驱节点的主 flow。
+     */
     override var flow: PersistentFlow
         get() = firstPreviousNode.flow
         @CfgInternals
         set(_) = throw IllegalStateException("Cannot set flow for stub node")
 
+    /**
+     * stub 节点透传第一个前驱节点的备用 flow 路径集合。
+     */
     override val alternateFlowPaths: Set<FlowPath>
         get() = firstPreviousNode.alternateFlowPaths
 
+    /**
+     * 从第一个前驱节点读取指定备用 flow。
+     */
     override fun getAlternateFlow(path: FlowPath): PersistentFlow? = firstPreviousNode.getAlternateFlow(path)
 
+    /**
+     * 将备用 flow 写入透传给第一个前驱节点。
+     */
     @CfgInternals
     override fun addAlternateFlow(path: FlowPath, flow: PersistentFlow) {
         firstPreviousNode.addAlternateFlow(path, flow)
     }
 
+    /**
+     * 将 stub 节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitStubNode(this, data)
 }
 
@@ -790,8 +1009,14 @@ class FakeExpressionEnterNode(owner: ControlFlowGraph, level: Int) : CFGNode<Cfi
         isDead = true
     }
 
+    /**
+     * 假表达式入口节点绑定的合成 stub 表达式。
+     */
     override val fir: CfirStub get() = CfirStub
 
+    /**
+     * 将假表达式入口节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitFakeExpressionEnterNode(this, data)
 }
 
@@ -802,18 +1027,30 @@ class FakeExpressionEnterNode(owner: ControlFlowGraph, level: Int) : CFGNode<Cfi
 /** 字段初始化子图入口节点。 */
 class FieldInitializerEnterNode(
     owner: ControlFlowGraph,
+    /**
+     * 该字段初始化子图对应的字段变量声明。
+     */
     override val fir: org.cangnova.cangjie.cfir.declarations.CfirFieldVariable,
     level: Int,
 ) : CFGNode<org.cangnova.cangjie.cfir.declarations.CfirFieldVariable>(owner, level), GraphEnterNodeMarker {
+    /**
+     * 将字段初始化入口节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitFieldInitializerEnterNode(this, data)
 }
 
 /** 字段初始化子图出口节点。 */
 class FieldInitializerExitNode(
     owner: ControlFlowGraph,
+    /**
+     * 该字段初始化子图对应的字段变量声明。
+     */
     override val fir: org.cangnova.cangjie.cfir.declarations.CfirFieldVariable,
     level: Int,
 ) : CFGNode<org.cangnova.cangjie.cfir.declarations.CfirFieldVariable>(owner, level), GraphExitNodeMarker {
+    /**
+     * 将字段初始化出口节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitFieldInitializerExitNode(this, data)
 }
 
@@ -824,9 +1061,15 @@ class FieldInitializerExitNode(
 /** 仓颉 `spawn` 表达式节点。 */
 class SpawnExpressionNode(
     owner: ControlFlowGraph,
+    /**
+     * 当前节点代表的 spawn 表达式。
+     */
     override val fir: CfirSpawnExpression,
     level: Int,
 ) : CFGNode<CfirSpawnExpression>(owner, level) {
+    /**
+     * 将 spawn 表达式节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitSpawnExpressionNode(this, data)
 }
 
@@ -837,18 +1080,30 @@ class SpawnExpressionNode(
 /** 仓颉 `synchronized` 表达式入口节点。 */
 class SynchronizedEnterNode(
     owner: ControlFlowGraph,
+    /**
+     * 当前节点代表的 synchronized 表达式。
+     */
     override val fir: CfirSynchronizedExpression,
     level: Int,
 ) : CFGNode<CfirSynchronizedExpression>(owner, level), EnterNodeMarker {
+    /**
+     * 将 synchronized 入口节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitSynchronizedEnterNode(this, data)
 }
 
 /** 仓颉 `synchronized` 表达式出口节点。 */
 class SynchronizedExitNode(
     owner: ControlFlowGraph,
+    /**
+     * 当前节点代表的 synchronized 表达式。
+     */
     override val fir: CfirSynchronizedExpression,
     level: Int,
 ) : CFGNode<CfirSynchronizedExpression>(owner, level), ExitNodeMarker {
+    /**
+     * 将 synchronized 出口节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitSynchronizedExitNode(this, data)
 }
 
@@ -859,17 +1114,29 @@ class SynchronizedExitNode(
 /** 仓颉 `unsafe` 表达式入口节点。 */
 class UnsafeEnterNode(
     owner: ControlFlowGraph,
+    /**
+     * 当前节点代表的 unsafe 表达式。
+     */
     override val fir: CfirUnsafeExpression,
     level: Int,
 ) : CFGNode<CfirUnsafeExpression>(owner, level), EnterNodeMarker {
+    /**
+     * 将 unsafe 入口节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitUnsafeEnterNode(this, data)
 }
 
 /** 仓颉 `unsafe` 表达式出口节点。 */
 class UnsafeExitNode(
     owner: ControlFlowGraph,
+    /**
+     * 当前节点代表的 unsafe 表达式。
+     */
     override val fir: CfirUnsafeExpression,
     level: Int,
 ) : CFGNode<CfirUnsafeExpression>(owner, level), ExitNodeMarker {
+    /**
+     * 将 unsafe 出口节点分派给 CFG visitor。
+     */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitUnsafeExitNode(this, data)
 }

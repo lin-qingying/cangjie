@@ -149,7 +149,9 @@ enum class PrimitiveTypeKind(val typeName: String) {
  * @property attributes 类型附带的属性。
  */
 class ConePrimitiveType(
+    /** 原始类型种类。 */
     val kind: PrimitiveTypeKind,
+    /** 类型附带的属性。 */
     override val attributes: ConeAttributes = ConeAttributes.Empty,
 ) : ConeRigidType(), ConeTypeConstructorMarker {
 

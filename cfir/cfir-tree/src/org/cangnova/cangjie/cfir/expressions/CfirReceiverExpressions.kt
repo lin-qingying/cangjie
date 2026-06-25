@@ -73,9 +73,21 @@ enum class CfirSmartcastStability {
  * @property calleeReference `this` 引用。
  */
 open class CfirThisReceiverExpression(
+    /**
+     * 源码位置。
+     */
     override val source: CjSourceElement?,
+    /**
+     * 表达式注解。
+     */
     override var annotations: List<CfirAnnotation>,
+    /**
+     * 表达式类型。
+     */
     override var coneTypeOrNull: ConeCangJieType?,
+    /**
+     * `this` 引用。
+     */
     open var calleeReference: CfirThisReference,
 ) : CfirExpression() {
     /**
@@ -139,6 +151,9 @@ class CfirInaccessibleReceiverExpression(
     annotations: List<CfirAnnotation>,
     coneTypeOrNull: ConeCangJieType?,
     calleeReference: CfirThisReference,
+    /**
+     * inaccessible receiver 种类。
+     */
     var kind: InaccessibleReceiverKind,
 ) : CfirThisReceiverExpression(source, annotations, coneTypeOrNull, calleeReference)
 
@@ -155,13 +170,37 @@ class CfirInaccessibleReceiverExpression(
  * @property smartcastStability smartcast 稳定性。
  */
 class CfirSmartCastExpression(
+    /**
+     * 源码位置。
+     */
     override val source: CjSourceElement?,
+    /**
+     * 表达式注解。
+     */
     override var annotations: List<CfirAnnotation>,
+    /**
+     * 表达式类型。
+     */
     override var coneTypeOrNull: ConeCangJieType?,
+    /**
+     * smartcast 前的原始表达式。
+     */
     var originalExpression: CfirExpression,
+    /**
+     * smartcast 后的类型引用。
+     */
     var smartcastType: CfirTypeRef,
+    /**
+     * smartcast 推导出的上界类型集合。
+     */
     var upperTypesFromSmartCast: List<ConeCangJieType>,
+    /**
+     * smartcast 推导出的下界类型集合。
+     */
     var lowerTypesFromSmartCast: List<ConeCangJieType>,
+    /**
+     * smartcast 稳定性。
+     */
     var smartcastStability: CfirSmartcastStability,
 
 ) : CfirExpression() {

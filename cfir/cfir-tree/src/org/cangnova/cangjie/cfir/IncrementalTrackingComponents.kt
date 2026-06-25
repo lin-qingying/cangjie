@@ -80,8 +80,17 @@ val CfirSession.sourcesToPathsMapper: SourcesToPathsMapper by CfirSession.sessio
  * 把 CFIR lookup 事件透传到增量编译 [LookupTracker]。
  */
 class IncrementalPassThroughLookupTrackerComponent(
+    /**
+     * 增量编译使用的底层 lookup tracker。
+     */
     private val lookupTracker: LookupTracker,
+    /**
+     * 编译器插件 dirty declaration 到源文件的映射 tracker。
+     */
     private val fileMappingTracker: ICFileMappingTracker?,
+    /**
+     * 将 CFIR source element 解析成源文件路径的函数。
+     */
     private val sourceToFilePath: (CjSourceElement) -> String?,
 ) : CfirLookupTrackerComponent() {
     /**
@@ -165,6 +174,9 @@ fun CfirEnumMatchTrackerComponent.reportEnumUsageInMatch(path: String?, subjectT
  * 把 enum match 事件透传到增量编译 [EnumMatchTracker]。
  */
 class IncrementalPassThroughEnumMatchTrackerComponent(
+    /**
+     * 增量编译使用的 enum match tracker。
+     */
     private val enumMatchTracker: EnumMatchTracker,
 ) : CfirEnumMatchTrackerComponent() {
     /**
@@ -202,6 +214,9 @@ fun CfirImportTrackerComponent.reportImportDirectives(filePath: String?, importe
  * 把 import 事件透传到增量编译 [ImportTracker]。
  */
 class IncrementalPassThroughImportTrackerComponent(
+    /**
+     * 增量编译使用的 import tracker。
+     */
     private val importTracker: ImportTracker,
 ) : CfirImportTrackerComponent() {
     /**

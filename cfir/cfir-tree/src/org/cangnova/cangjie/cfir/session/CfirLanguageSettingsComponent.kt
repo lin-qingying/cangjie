@@ -36,6 +36,9 @@ import org.cangnova.cangjie.LanguageVersionSettings
  * @property languageVersionSettings 当前 session 使用的语言版本配置。
  */
 class CfirLanguageSettingsComponent(
+    /**
+     * 当前 session 生效的语言版本与语言特性配置。
+     */
     val languageVersionSettings: LanguageVersionSettings,
 ) : CfirSessionComponent
 
@@ -45,6 +48,9 @@ class CfirLanguageSettingsComponent(
  * @property noPrelude 为 `true` 时禁用默认 prelude 注入。
  */
 class CfirPreludeSettingsComponent(
+    /**
+     * 是否禁用默认 prelude 注入。
+     */
     val noPrelude: Boolean,
 ) : CfirSessionComponent
 
@@ -56,6 +62,9 @@ class CfirPreludeSettingsComponent(
  * @property checkProgramEntry 是否执行程序入口检查。
  */
 class CfirProgramEntrySettingsComponent(
+    /**
+     * 是否在当前编译 session 中执行程序入口检查。
+     */
     val checkProgramEntry: Boolean,
 ) : CfirSessionComponent
 

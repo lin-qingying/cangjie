@@ -24,10 +24,22 @@ import org.cangnova.cangjie.name.Name
  * @property session 当前 use-site session。
  */
 class CfirPackageMemberScope(
+    /**
+     * 被查询的包名。
+     */
     private val packageFqName: FqName,
+    /**
+     * 当前 use-site session。
+     */
     val session: CfirSession,
 
+    /**
+     * 执行包级 symbol 查询的 provider。
+     */
     private val symbolProvider: CfirSymbolProvider = session.symbolProvider,
+    /**
+     * 当前 scope 查询时需要排除的短名集合。
+     */
     private val excludedNames: Set<Name> = emptySet(),
 
 ) : CfirPackageScope() {

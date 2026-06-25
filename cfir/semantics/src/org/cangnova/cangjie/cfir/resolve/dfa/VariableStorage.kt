@@ -14,7 +14,13 @@ import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
  * @property memberVariables 按 receiver 记录的成员变量集合，用于 receiver 别名替换时同步成员引用。
  */
 class VariableStorage private constructor(
+    /**
+     * 已知真实变量的规范实例表。
+     */
     private val realVariables: MutableMap<RealVariable, RealVariable>,
+    /**
+     * 按 receiver 记录的成员变量集合，用于 receiver 别名替换时同步成员引用。
+     */
     private val memberVariables: MutableMap<RealVariable, MutableSet<RealVariable>>,
 ) {
     constructor() : this(

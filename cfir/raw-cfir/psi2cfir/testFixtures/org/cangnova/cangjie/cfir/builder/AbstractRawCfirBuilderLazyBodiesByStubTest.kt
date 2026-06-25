@@ -14,6 +14,9 @@ import java.io.File
  * 对齐 Kotlin 的 stub-backed lazy bodies 测试类别。
  */
 abstract class AbstractRawCfirBuilderLazyBodiesByStubTest : AbstractRawCfirBuilderLazyBodiesTestCase() {
+    /**
+     * 执行 stub-backed lazy bodies golden 测试。
+     */
     override fun doRawCfirTest(filePath: String) {
         val resolvedFilePath = resolveTestDataPath(filePath).path
         val sourceText = File(resolvedFilePath).readText()
@@ -40,6 +43,9 @@ abstract class AbstractRawCfirBuilderLazyBodiesByStubTest : AbstractRawCfirBuild
         assertEquals("The tree access is not detected. 'IGNORE_TREE_ACCESS' have to be dropped", ignoreTreeAccess, treeAccessFound)
     }
 
+    /**
+     * 创建带文件 stub 的测试文件。
+     */
     override fun createFileForLazyMode(filePath: String): CjFile {
         val originalFile = super.createFileForLazyMode(filePath)
         val sourceText = File(filePath).readText()
@@ -88,6 +94,9 @@ abstract class AbstractRawCfirBuilderLazyBodiesByStubTest : AbstractRawCfirBuild
         return fileWithStub
     }
 
+    /**
+     * 判断测试文件中是否声明了指定指令。
+     */
     private fun isDirectiveDefined(text: String, directive: String): Boolean {
         return text.lineSequence().any { line ->
             val normalized = line.trimStart('\uFEFF').trim()
@@ -95,6 +104,9 @@ abstract class AbstractRawCfirBuilderLazyBodiesByStubTest : AbstractRawCfirBuild
         }
     }
 
+    /**
+     * 在 EDT 上同步执行测试动作并传播异常。
+     */
     private fun runOnEdt(action: () -> Unit) {
         var error: Throwable? = null
         ApplicationManager.getApplication().invokeAndWait {

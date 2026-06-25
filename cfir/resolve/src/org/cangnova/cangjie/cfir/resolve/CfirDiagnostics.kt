@@ -47,9 +47,11 @@ class CfirDiagnosticCollector : DiagnosticReporter() {
             )
         }
 
+    /** 当前收集器中是否存在 error 级诊断。 */
     override val hasErrors: Boolean
         get() = storage.any { it.severity.isError }
 
+    /** 当前收集器中是否存在 `-Werror` 下会视为 error 的 warning。 */
     override val hasWarningsForWError: Boolean
         get() = storage.any { it.severity.isErrorWhenWError }
 

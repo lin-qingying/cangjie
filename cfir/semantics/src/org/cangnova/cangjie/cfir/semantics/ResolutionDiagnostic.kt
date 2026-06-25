@@ -14,6 +14,9 @@ import org.cangnova.cangjie.resolve.calls.tower.isSuccess
  * @property applicability 该诊断对候选适用性造成的影响。
  */
 abstract class ResolutionDiagnostic(
+    /**
+     * 该诊断对候选适用性造成的影响。
+     */
     val applicability: CandidateApplicability,
 )
 
@@ -35,9 +38,21 @@ object ErrorTypeInArguments : ResolutionDiagnostic(CandidateApplicability.INAPPL
  * @property isImplicitInvokeReceiver 是否来自隐式 invoke 接收者。
  */
 class UnstableSmartCast(
+    /**
+     * 发生 smart cast 的表达式。
+     */
     val argument: CfirSmartCastExpression,
+    /**
+     * smart cast 目标类型。
+     */
     val targetType: ConeCangJieType,
+    /**
+     * 是否是非空性 smart cast。
+     */
     val isCastToNotNull: Boolean,
+    /**
+     * 是否来自隐式 invoke 接收者。
+     */
     val isImplicitInvokeReceiver: Boolean,
 ) :
     ResolutionDiagnostic(CandidateApplicability.UNSTABLE_SMARTCAST)

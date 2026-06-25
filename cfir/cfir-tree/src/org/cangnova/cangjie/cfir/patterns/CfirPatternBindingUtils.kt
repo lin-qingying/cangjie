@@ -15,8 +15,17 @@ import org.cangnova.cangjie.source.CjSourceElement
  * @property variable 绑定变量声明实体；无法形成变量实体时为 `null`。
  */
 data class CfirPatternBindingOccurrence(
+    /**
+     * 模式绑定引入的名称。
+     */
     val name: Name,
+    /**
+     * 绑定名称或绑定节点对应的源码位置。
+     */
     val source: CjSourceElement?,
+    /**
+     * 绑定名称对应的 CFIR 变量声明；无法形成变量声明时为 null。
+     */
     val variable: CfirPatternBindingVariable?,
 )
 

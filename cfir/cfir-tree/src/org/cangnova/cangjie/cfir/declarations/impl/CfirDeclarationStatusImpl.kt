@@ -45,7 +45,13 @@ import org.cangnova.cangjie.source.CjSourceElement
  * @property modality 声明 modality；为 `null` 时表示声明尚未或无需拥有 modality。
  */
 open class CfirDeclarationStatusImpl(
+    /**
+     * 声明可见性。
+     */
     override val visibility: Visibility = Visibilities.Public,
+    /**
+     * 声明 modality；为 `null` 时表示声明尚未或无需拥有 modality。
+     */
     override val modality: Modality? = null,
 ) : CfirPureAbstractElement(), CfirDeclarationStatus {
     /**

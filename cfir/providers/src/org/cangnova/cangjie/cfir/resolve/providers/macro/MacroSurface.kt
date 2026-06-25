@@ -219,69 +219,121 @@ object MacroSurfaceIdGenerator {
  * Macro surface declaration 形态：`@MyAnnot class Foo {}` / `@MyMacro func bar() {}` 等。
  */
 data class MacroSurfaceDecl(
+    /** declaration surface 的 construction 期唯一 id。 */
     override val surfaceId: Long,
+    /** declaration macro 调用限定名；语法或解析缺失时为 `null`。 */
     override val qualifiedName: FqName?,
+    /** declaration macro 的调用形式。 */
     override val kind: MacroSurface.Kind,
+    /** declaration macro 调用点是否显式携带参数括号。 */
     override val hasParenthesis: Boolean,
+    /** declaration macro 的 attr payload token 流。 */
     override val attrTokens: List<MacroSurfaceToken>,
+    /** declaration macro 的 input payload token 流。 */
     override val inputTokens: List<MacroSurfaceToken>,
+    /** declaration surface 在宿主源码中的范围。 */
     override val sourceRange: MacroSurfaceSourceRange?,
+    /** declaration surface 所在的包、类和函数上下文。 */
     override val scopeContext: MacroSurfaceScopeContext,
+    /** declaration surface 携带的 modifier 文本。 */
     override val modifiers: List<String>,
+    /** declaration surface 携带或覆盖的 annotation 文本。 */
     override val carriedAnnotations: List<String>,
+    /** declaration raw builder 捕获的原始语法文本。 */
     override val capturedRawSyntax: String?,
+    /** declaration surface 所在的语法容器上下文。 */
     override val containerContext: MacroSurfaceContainerContext,
+    /** declaration surface 对应最终 CFIR splice 的稳定替换句柄。 */
     override val replaceHandle: CfirReplaceHandle,
 ) : MacroSurface()
 
 /** Macro surface expression 形态：`@DebugLog(...)` 出现在 expression 位置。 */
 data class MacroSurfaceExpr(
+    /** expression surface 的 construction 期唯一 id。 */
     override val surfaceId: Long,
+    /** expression macro 调用限定名；语法或解析缺失时为 `null`。 */
     override val qualifiedName: FqName?,
+    /** expression macro 的调用形式。 */
     override val kind: MacroSurface.Kind,
+    /** expression macro 调用点是否显式携带参数括号。 */
     override val hasParenthesis: Boolean,
+    /** expression macro 的 attr payload token 流。 */
     override val attrTokens: List<MacroSurfaceToken>,
+    /** expression macro 的 input payload token 流。 */
     override val inputTokens: List<MacroSurfaceToken>,
+    /** expression surface 在宿主源码中的范围。 */
     override val sourceRange: MacroSurfaceSourceRange?,
+    /** expression surface 所在的包、类和函数上下文。 */
     override val scopeContext: MacroSurfaceScopeContext,
+    /** expression surface 携带的 modifier 文本。 */
     override val modifiers: List<String>,
+    /** expression surface 携带或覆盖的 annotation 文本。 */
     override val carriedAnnotations: List<String>,
+    /** expression raw builder 捕获的原始语法文本。 */
     override val capturedRawSyntax: String?,
+    /** expression surface 所在的语法容器上下文。 */
     override val containerContext: MacroSurfaceContainerContext,
+    /** expression surface 对应最终 CFIR splice 的稳定替换句柄。 */
     override val replaceHandle: CfirReplaceHandle,
 ) : MacroSurface()
 
 /** Macro surface parameter 形态：`func f(@MyAttr x: Int) {}` 等。 */
 data class MacroSurfaceParam(
+    /** parameter surface 的 construction 期唯一 id。 */
     override val surfaceId: Long,
+    /** parameter macro 调用限定名；语法或解析缺失时为 `null`。 */
     override val qualifiedName: FqName?,
+    /** parameter macro 的调用形式。 */
     override val kind: MacroSurface.Kind,
+    /** parameter macro 调用点是否显式携带参数括号。 */
     override val hasParenthesis: Boolean,
+    /** parameter macro 的 attr payload token 流。 */
     override val attrTokens: List<MacroSurfaceToken>,
+    /** parameter macro 的 input payload token 流。 */
     override val inputTokens: List<MacroSurfaceToken>,
+    /** parameter surface 在宿主源码中的范围。 */
     override val sourceRange: MacroSurfaceSourceRange?,
+    /** parameter surface 所在的包、类和函数上下文。 */
     override val scopeContext: MacroSurfaceScopeContext,
+    /** parameter surface 携带的 modifier 文本。 */
     override val modifiers: List<String>,
+    /** parameter surface 携带或覆盖的 annotation 文本。 */
     override val carriedAnnotations: List<String>,
+    /** parameter raw builder 捕获的原始语法文本。 */
     override val capturedRawSyntax: String?,
+    /** parameter surface 所在的语法容器上下文。 */
     override val containerContext: MacroSurfaceContainerContext,
+    /** parameter surface 对应最终 CFIR splice 的稳定替换句柄。 */
     override val replaceHandle: CfirReplaceHandle,
 ) : MacroSurface()
 
 /** 通用 surface 节点（暂未确定 decl/expr/param 时使用）。 */
 data class MacroSurfaceNode(
+    /** 通用 surface 的 construction 期唯一 id。 */
     override val surfaceId: Long,
+    /** 通用 macro 调用限定名；语法或解析缺失时为 `null`。 */
     override val qualifiedName: FqName?,
+    /** 通用 macro 的调用形式。 */
     override val kind: MacroSurface.Kind,
+    /** 通用 macro 调用点是否显式携带参数括号。 */
     override val hasParenthesis: Boolean,
+    /** 通用 macro 的 attr payload token 流。 */
     override val attrTokens: List<MacroSurfaceToken>,
+    /** 通用 macro 的 input payload token 流。 */
     override val inputTokens: List<MacroSurfaceToken>,
+    /** 通用 surface 在宿主源码中的范围。 */
     override val sourceRange: MacroSurfaceSourceRange?,
+    /** 通用 surface 所在的包、类和函数上下文。 */
     override val scopeContext: MacroSurfaceScopeContext,
+    /** 通用 surface 携带的 modifier 文本。 */
     override val modifiers: List<String>,
+    /** 通用 surface 携带或覆盖的 annotation 文本。 */
     override val carriedAnnotations: List<String>,
+    /** 通用 raw builder 捕获的原始语法文本。 */
     override val capturedRawSyntax: String?,
+    /** 通用 surface 所在的语法容器上下文。 */
     override val containerContext: MacroSurfaceContainerContext,
+    /** 通用 surface 对应最终 CFIR splice 的稳定替换句柄。 */
     override val replaceHandle: CfirReplaceHandle,
 ) : MacroSurface()
 
@@ -296,18 +348,31 @@ sealed class BuiltinNonMacroSurface : MacroSurface()
 
 /** `@IfAvailable(...)` 形态的 builtin non-macro。 */
 data class IfAvailableSurface(
+    /** builtin non-macro surface 的 construction 期唯一 id。 */
     override val surfaceId: Long,
+    /** builtin non-macro 的限定名；语法或解析缺失时为 `null`。 */
     override val qualifiedName: FqName?,
+    /** builtin non-macro 的调用形式。 */
     override val kind: MacroSurface.Kind,
+    /** builtin non-macro 调用点是否显式携带参数括号。 */
     override val hasParenthesis: Boolean,
+    /** builtin non-macro 的 attr payload token 流。 */
     override val attrTokens: List<MacroSurfaceToken>,
+    /** builtin non-macro 的 input payload token 流。 */
     override val inputTokens: List<MacroSurfaceToken>,
+    /** builtin non-macro surface 在宿主源码中的范围。 */
     override val sourceRange: MacroSurfaceSourceRange?,
+    /** builtin non-macro surface 所在的包、类和函数上下文。 */
     override val scopeContext: MacroSurfaceScopeContext,
+    /** builtin non-macro surface 携带的 modifier 文本。 */
     override val modifiers: List<String>,
+    /** builtin non-macro surface 携带或覆盖的 annotation 文本。 */
     override val carriedAnnotations: List<String>,
+    /** builtin non-macro raw builder 捕获的原始语法文本。 */
     override val capturedRawSyntax: String?,
+    /** builtin non-macro surface 所在的语法容器上下文。 */
     override val containerContext: MacroSurfaceContainerContext,
+    /** builtin non-macro surface 对应最终 CFIR splice 的稳定替换句柄。 */
     override val replaceHandle: CfirReplaceHandle,
     /** 条件分支主体 token，用于 desugar 前的简单评估。 */
     val branchTokens: List<MacroSurfaceToken>,

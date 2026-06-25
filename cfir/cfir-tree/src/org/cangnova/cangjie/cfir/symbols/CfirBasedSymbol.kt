@@ -182,6 +182,9 @@ sealed class CfirClassLikeSymbol<D : CfirClassLikeDeclaration>(
  * 不再承载任何嵌套 class-like 语义。
  */
 class CfirClassSymbol(
+    /**
+     * class 声明在符号表中的稳定 class id。
+     */
     override val classId: ClassId ,
 ) : CfirClassLikeSymbol<CfirClass>(classId) {
 
@@ -207,6 +210,9 @@ class CfirClassSymbol(
  * 字段而非通用 declarations 列表来静态保证。
  */
 class CfirInterfaceSymbol(
+    /**
+     * interface 声明在符号表中的稳定 class id。
+     */
     override val classId: ClassId ,
 ) : CfirClassLikeSymbol<CfirInterface>(classId) {
 
@@ -230,6 +236,9 @@ class CfirInterfaceSymbol(
  * 与 [CfirClassSymbol] 结构对称，但在类型系统中区分值语义和引用语义。
  */
 class CfirStructSymbol(
+    /**
+     * struct 声明在符号表中的稳定 class id。
+     */
     override val classId: ClassId ,
 ) : CfirClassLikeSymbol<CfirStruct>(classId) {
 
@@ -254,6 +263,9 @@ class CfirStructSymbol(
  * 决定构造器实例的内存分配方式。
  */
 class CfirEnumSymbol(
+    /**
+     * enum 声明在符号表中的稳定 class id。
+     */
     override val classId: ClassId ,
     /**
      * 是否为引用枚举（RefEnumTy）。
@@ -468,6 +480,9 @@ private fun CfirCallableSymbol<*>.deprecationsAreDefinitelyEmpty(): Boolean {
  * 属性、字段、参数和模式绑定都通过该层共享 [callableId]。
  */
 sealed class CfirNamedValueSymbol<out D : CfirCallableDeclaration>(
+    /**
+     * 具名值声明在 callable 符号空间中的稳定 id。
+     */
     override val callableId: CallableId,
 ) : CfirCallableSymbol<D>() {
 
@@ -638,6 +653,9 @@ sealed class CfirVariableSymbol<out D : CfirVariable>(
  * 字段变量符号。
  */
 class CfirFieldVariableSymbol(
+    /**
+     * 字段变量声明在 callable 符号空间中的稳定 id。
+     */
     override val callableId: CallableId,
 ) : CfirVariableSymbol<CfirFieldVariable>(callableId) {
     /**
@@ -771,6 +789,9 @@ class CfirExtendSymbol : CfirThisOwnerSymbol<CfirExtend>() {
 
 /** enum 构造器符号，对应枚举中带参数的构造器，如 `case Foo(Int)`。 */
 class CfirEnumConstructorSymbol(
+    /**
+     * enum 构造器在 callable 符号空间中的稳定 id。
+     */
     override val callableId: CallableId,
 ) : CfirCallableSymbol<CfirEnumConstructor>() {
     /**

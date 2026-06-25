@@ -14,7 +14,13 @@ import org.cangnova.cangjie.cfir.render.ConeTypeRenderer
  * @property renderVerboseAccessors 是否以详细形式渲染 property accessor。
  */
 open class CfirDeclarationRenderer(
+    /**
+     * 局部变量渲染时使用的前缀。
+     */
     private val localVariablePrefix: String = "l",
+    /**
+     * 是否渲染 property accessor 的详细结构。
+     */
     private val renderVerboseAccessors: Boolean = false
 ) {
 

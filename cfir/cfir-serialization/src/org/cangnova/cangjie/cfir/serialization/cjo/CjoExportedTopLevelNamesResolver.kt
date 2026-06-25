@@ -10,7 +10,9 @@ import java.util.concurrent.ConcurrentHashMap
  * 对 `public import` / alias 重导出，visible name 与真实声明可能不是同一个 fqName。
  */
 data class CjoExportedTopLevelTarget(
+    /** 真实声明所在包名。 */
     val packageFqName: FqName,
+    /** 真实声明名称。 */
     val name: Name,
 )
 
@@ -22,9 +24,13 @@ data class CjoExportedTopLevelTarget(
  * 2. 通过 `public import` 重新导出的 callable / classifier 需要在读取阶段补齐。
  */
 data class CjoExportedTopLevelNames(
+    /** 对外可见的顶层 callable 名称集合。 */
     val callableNames: Set<Name>,
+    /** 对外可见的顶层 classifier 名称集合。 */
     val classifierNames: Set<Name>,
+    /** callable 可见名称到真实声明目标的映射。 */
     val callableTargets: Map<Name, CjoExportedTopLevelTarget> = emptyMap(),
+    /** classifier 可见名称到真实声明目标的映射。 */
     val classifierTargets: Map<Name, CjoExportedTopLevelTarget> = emptyMap(),
 )
 

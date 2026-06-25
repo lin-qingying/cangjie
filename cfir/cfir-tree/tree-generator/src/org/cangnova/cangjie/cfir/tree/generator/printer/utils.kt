@@ -10,6 +10,9 @@ import org.cangnova.cangjie.generators.tree.printer.FunctionParameter
 import org.cangnova.cangjie.generators.tree.printer.ImportCollectingPrinter
 import org.cangnova.cangjie.generators.tree.printer.printFunctionDeclaration
 
+/**
+ * 打印指定字段对应的 transformXxx 方法声明。
+ */
 fun ImportCollectingPrinter.transformFunctionDeclaration(
     field: Field,
     returnType: TypeRef,
@@ -19,6 +22,9 @@ fun ImportCollectingPrinter.transformFunctionDeclaration(
     transformFunctionDeclaration(field.name.replaceFirstChar(Char::uppercaseChar), returnType, override, implementationKind)
 }
 
+/**
+ * 打印 transformOtherChildren 方法声明。
+ */
 fun ImportCollectingPrinter.transformOtherChildrenFunctionDeclaration(
     element: TypeRef,
     override: Boolean,
@@ -27,6 +33,9 @@ fun ImportCollectingPrinter.transformOtherChildrenFunctionDeclaration(
     transformFunctionDeclaration("OtherChildren", element, override, implementationKind)
 }
 
+/**
+ * 打印通用 transform 方法声明。
+ */
 private fun ImportCollectingPrinter.transformFunctionDeclaration(
     transformName: String,
     returnType: TypeRef,

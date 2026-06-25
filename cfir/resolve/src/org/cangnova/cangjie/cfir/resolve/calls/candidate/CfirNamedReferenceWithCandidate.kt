@@ -19,9 +19,11 @@ open class CfirNamedReferenceWithCandidate(
     /** 与该引用绑定的候选。 */
     val candidate: Candidate
 ) : CfirNamedReferenceWithCandidateBase() {
+    /** 当前候选对应的符号。 */
     override val candidateSymbol: CfirBasedSymbol<*>
         get() = candidate.symbol
 
+    /** 当前引用是否表示错误候选。 */
     open val isError: Boolean get() = false
 
     /** 候选引用没有子节点需要访问。 */
@@ -41,6 +43,7 @@ class CfirErrorReferenceWithCandidate(
     /** 该错误引用对应的诊断。 */
     override val diagnostic: ConeDiagnostic
 ) : CfirNamedReferenceWithCandidate(source, name, candidate), CfirDiagnosticHolder {
+    /** 错误候选引用固定返回 true。 */
     override val isError: Boolean get() = true
 
     /** 访问错误候选引用节点。 */

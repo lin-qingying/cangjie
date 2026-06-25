@@ -21,14 +21,29 @@ import org.cangnova.cangjie.generators.tree.printer.printAcceptVoidMethod
 import org.cangnova.cangjie.generators.tree.printer.printTransformChildrenMethod
 import org.cangnova.cangjie.generators.tree.printer.printTransformMethod
 
+/**
+ * source 字段 replace 方法不沿父字段强制 override 的元素集合。
+ */
 private val elementsWithReplaceSource = setOf(
     CfirTree.qualifiedAccessExpression,
 )
 
+/**
+ * CFIR 元素接口/抽象类源码打印器。
+ */
 internal class ElementPrinter(printer: ImportCollectingPrinter) : AbstractElementPrinter<Element, Field>(printer) {
+    /**
+     * 创建元素字段打印器。
+     */
     override fun makeFieldPrinter(printer: ImportCollectingPrinter): AbstractFieldPrinter<Field> =
+        /**
+         * 元素接口字段使用通用字段打印逻辑。
+         */
         object : AbstractFieldPrinter<Field>(printer) {}
 
+    /**
+     * 打印 CFIR 元素额外的 visitor、transform、replace 方法。
+     */
     override fun ImportCollectingPrinter.printAdditionalMethods(element: Element) {
         val kind = element.kind ?: error("Expected non-null element kind")
         with(element) {

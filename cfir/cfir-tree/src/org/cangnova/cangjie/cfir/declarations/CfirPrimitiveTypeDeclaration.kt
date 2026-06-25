@@ -39,18 +39,57 @@ import org.cangnova.cangjie.source.CjSourceElement
  */
 @OptIn(ResolveStateAccess::class, CfirImplementationDetail::class)
 class CfirPrimitiveTypeDeclaration(
+    /**
+     * 声明所属模块。
+     */
     override val moduleData: CfirModuleData,
+    /**
+     * 绑定该 primitive 声明的符号。
+     */
     override val symbol: CfirPrimitiveTypeSymbol,
+    /**
+     * primitive 类型名称。
+     */
     override val name: Name,
+    /**
+     * primitive 类型分类，用于连接内建类型表与语义规则。
+     */
     val kind: PrimitiveTypeKind,
+    /**
+     * primitive 类型成员 scope 的提供者。
+     */
     override val scopeProvider: CfirScopeProvider,
+    /**
+     * 声明上的注解列表。
+     */
     override var annotations: MutableOrEmptyList<CfirAnnotation> = MutableOrEmptyList.empty(),
+    /**
+     * 声明来源，默认视为编译器 synthetic。
+     */
     override val origin: CfirDeclarationOrigin = CfirDeclarationOrigin.Synthetic.Default,
+    /**
+     * 声明扩展属性容器。
+     */
     override val attributes: CfirDeclarationAttributes = CfirDeclarationAttributes.EMPTY,
+    /**
+     * primitive 类型声明携带的类型参数列表。
+     */
     override var typeParameters: MutableList<CfirTypeParameterRef> = mutableListOf(),
+    /**
+     * 声明状态与修饰符信息。
+     */
     override var status: CfirDeclarationStatus = org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl(),
+    /**
+     * 弃用信息提供者。
+     */
     override var deprecationsProvider: DeprecationsProvider = UnresolvedDeprecationProvider,
+    /**
+     * primitive 类型内部声明。
+     */
     override var declarations: MutableList<CfirDeclaration> = mutableListOf(),
+    /**
+     * primitive 类型父类型引用。
+     */
     override var superTypeRefs: MutableList<CfirTypeRef> = mutableListOf(),
 ) : CfirClassLikeDeclaration() {
     /**

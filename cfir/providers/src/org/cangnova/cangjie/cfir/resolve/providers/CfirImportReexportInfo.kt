@@ -21,9 +21,21 @@ import org.cangnova.cangjie.source.CjSourceElement
  * @property isAllUnder 是否为星号导入。
  */
 internal data class CfirReexportImportInfo(
+    /**
+     * 被重导出声明真实所在的包名。
+     */
     val importedPackageFqName: FqName,
+    /**
+     * 被重导出的具体短名；星号导入会保持为 `null`，由目标包名称集合决定。
+     */
     val importedName: Name?,
+    /**
+     * 当前包向外暴露的短名；别名导入时等于 alias，星号导入时为 `null`。
+     */
     val exportedName: Name?,
+    /**
+     * 是否为 all-under import，决定 provider 是否合并目标包的完整顶层名称集合。
+     */
     val isAllUnder: Boolean,
 )
 

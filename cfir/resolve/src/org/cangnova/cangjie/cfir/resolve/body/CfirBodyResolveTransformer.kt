@@ -18,14 +18,17 @@ open class CfirBodyResolveTransformer(
     returnTypeCalculator: ReturnTypeCalculator = ReturnTypeCalculator.Default,
     outerBodyResolveContext: BodyResolveContext? = null,
     phase: CfirResolvePhase = CfirResolvePhase.BODY_RESOLVE,
+    /** 当前 dispatcher 是否只解析隐式类型所需路径。 */
     override var implicitTypeOnly: Boolean = false,
 ) : CfirAbstractBodyResolveTransformerDispatcher(phase, implicitTypeOnly) {
 
+    /** 当前 body resolve 上下文。 */
     override val context: BodyResolveContext = outerBodyResolveContext ?: BodyResolveContext(
         returnTypeCalculator = returnTypeCalculator,
         dataFlowAnalyzerContext = CfirDataFlowAnalyzerContext(),
     )
 
+    /** 当前 dispatcher 暴露给子 transformer 的组件集合。 */
     override val components: BodyResolveTransformerComponents =
         BodyResolveTransformerComponents(
             session = session,

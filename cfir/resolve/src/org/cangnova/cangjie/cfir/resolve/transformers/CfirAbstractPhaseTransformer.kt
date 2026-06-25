@@ -17,6 +17,7 @@ abstract class CfirAbstractPhaseTransformer<D>(
     /** transformer 默认执行的解析阶段。 */
     val baseTransformerPhase: CfirResolvePhase,
 ) : CfirDefaultTransformer<D>(), SessionHolder {
+    /** 当前 transformer 绑定的 CFIR session。 */
     abstract override val session: CfirSession
 
     init {
@@ -25,6 +26,7 @@ abstract class CfirAbstractPhaseTransformer<D>(
         }
     }
 
+    /** 当前 transformer 实际推进的 resolve phase。 */
     open val transformerPhase: CfirResolvePhase
         get() = baseTransformerPhase
 

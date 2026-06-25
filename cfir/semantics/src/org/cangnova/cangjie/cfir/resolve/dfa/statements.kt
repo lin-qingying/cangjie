@@ -18,7 +18,13 @@ sealed class Statement {
  * @property operation 对变量应用的操作。
  */
 data class OperationStatement(
+    /**
+     * 被判断的数据流变量。
+     */
     override val variable: DataFlowVariable,
+    /**
+     * 对变量应用的布尔或空值操作。
+     */
     val operation: Operation,
 ) : Statement() {
     /** 陈述的调试文本。 */
@@ -75,7 +81,13 @@ sealed class TypeStatement : Statement() {
  * @property effect 条件成立后可加入 flow 的效果陈述。
  */
 class Implication(
+    /**
+     * 条件陈述。
+     */
     val condition: OperationStatement,
+    /**
+     * 条件成立后可加入 flow 的效果陈述。
+     */
     val effect: Statement,
 ) {
     /** 蕴含关系的调试文本。 */

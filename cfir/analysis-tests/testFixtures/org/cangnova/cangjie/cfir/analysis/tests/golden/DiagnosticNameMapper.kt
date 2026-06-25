@@ -64,6 +64,7 @@ object DiagnosticNameMapper {
         "AMBIGUOUS_ARG_TYPE" to "sema_ambiguous_arg_type",
         "AMBIGUOUS_FUNCTION_REFERENCE" to "sema_ambiguous_function_reference",
         "NO_MATCH_FUNCTION_DECLARATION_FOR_CALL" to "sema_no_match_function_declaration_for_call",
+        "NO_MATCH_FUNCTION_DECLARATION_FOR_REF" to "sema_no_match_function_declaration_for_ref",
         "NO_MATCHING_OPERATOR_INVOKE" to "sema_no_matching_operator_invoke",
         "NO_MATCH_OPERATOR_FUNCTION_CALL" to "sema_no_match_operator_function_call",
         "ENUM_TYPE_CANNOT_BE_USED_AS_CONSTRUCTOR" to "sema_enum_type_cannot_be_used_as_constructor",

@@ -1464,18 +1464,31 @@ class LightTreeRawCfirDeclarationBuilder(
      * @property replaceHandle stable splice 句柄。
      */
     private data class MacroSurfaceCommon(
+        /** construction 期唯一 surface id。 */
         val surfaceId: Long,
+        /** surface 限定名。 */
         val qualifiedName: FqName?,
+        /** macro 调用形态。 */
         val kind: MacroSurface.Kind,
+        /** surface 语法中是否带括号。 */
         val hasParenthesis: Boolean,
+        /** attribute token 流。 */
         val attrTokens: List<MacroSurfaceToken>,
+        /** input payload token 流。 */
         val inputTokens: List<MacroSurfaceToken>,
+        /** surface 源码范围。 */
         val sourceRange: MacroSurfaceSourceRange,
+        /** surface 作用域上下文。 */
         val scopeContext: MacroSurfaceScopeContext,
+        /** surface 上携带的修饰符文本。 */
         val modifiers: List<String>,
+        /** 随 surface 携带的 annotation 文本。 */
         val carriedAnnotations: List<String>,
+        /** 捕获到的原始语法文本。 */
         val capturedRawSyntax: String,
+        /** surface 所处容器上下文。 */
         val containerContext: MacroSurfaceContainerContext,
+        /** stable splice 句柄。 */
         val replaceHandle: CfirReplaceHandle,
     )
 
@@ -1522,10 +1535,14 @@ class LightTreeRawCfirDeclarationBuilder(
      * @property segmentSources 限定名每一段对应的 source。
      */
     private data class AnnotationNameInfo(
+        /** annotation 原始限定名文本。 */
         val rawName: String,
+        /** annotation 名称整体 source。 */
         val nameSource: CjSourceElement,
+        /** 限定名每一段对应的 source。 */
         val segmentSources: List<CjSourceElement>,
     ) {
+        /** callee reference 的 source，优先使用最后一段名称。 */
         val calleeReferenceSource: CjSourceElement
             get() = segmentSources.lastOrNull() ?: nameSource
     }

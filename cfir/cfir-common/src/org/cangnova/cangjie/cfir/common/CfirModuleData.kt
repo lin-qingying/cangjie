@@ -115,11 +115,17 @@ abstract class CfirModuleData : CfirSessionComponent {
  * @property isCommon 是否是 common 模块。
  */
 class CfirSourceModuleData(
+    /** 模块的逻辑名称。 */
     override val name: Name,
+    /** 直接依赖模块。 */
     override val dependencies: List<CfirModuleData>,
+    /** common/refinement 依赖模块。 */
     override val refinementDependencies: List<CfirModuleData>,
+    /** 前端高层目标平台。 */
     override val targetPlatform: TargetPlatform,
+    /** CFIR 当前保留的底层平台细节。 */
     override val platform: CfirPlatform,
+    /** 是否是 common 模块。 */
     override val isCommon: Boolean = targetPlatform.isCommon(),
 ) : CfirModuleData() {
     /**
@@ -148,7 +154,9 @@ class CfirSourceModuleData(
  * @property capabilities 二进制依赖模块携带的能力集合。
  */
 class CfirBinaryDependenciesModuleData(
+    /** 合成依赖模块的逻辑名称。 */
     override val name: Name,
+    /** 二进制依赖模块携带的能力集合。 */
     override val capabilities: CfirModuleCapabilities = CfirModuleCapabilities.Empty,
 ) : CfirModuleData() {
     /**

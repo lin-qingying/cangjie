@@ -511,6 +511,10 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
             "no matching function declaration for function call",
         )
         map.put(
+            CfirErrors.NO_MATCH_FUNCTION_DECLARATION_FOR_REF,
+            "no matching function declaration for function reference",
+        )
+        map.put(
             CfirErrors.NO_MATCH_OPERATOR_FUNCTION_CALL,
             "no matching function for operator ''()'' function call",
         )

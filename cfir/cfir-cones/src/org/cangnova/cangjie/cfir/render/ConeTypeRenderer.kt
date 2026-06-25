@@ -46,7 +46,9 @@ import org.cangnova.cangjie.type.model.TypeConstructorMarker
  * 3. 对推断期内部类型（captured/stub/type-variable）给出明确的调试可读输出。
  */
 open class ConeTypeRenderer(
+    /** 类型属性渲染策略。 */
     private val attributeRenderer: ConeAttributeRenderer = ConeAttributeRenderer.ToString,
+    /** 是否渲染 captured 类型的内部细节。 */
     private var renderCapturedDetails: Boolean = false,
 ) {
     /**

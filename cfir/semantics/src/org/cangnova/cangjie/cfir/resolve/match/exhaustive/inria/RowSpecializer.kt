@@ -3,10 +3,9 @@ package org.cangnova.cangjie.cfir.resolve.match.exhaustive.inria
 import org.cangnova.cangjie.cfir.resolve.match.CfirConstructor
 import org.cangnova.cangjie.cfir.resolve.match.CfirMatchPattern
 import org.cangnova.cangjie.cfir.resolve.match.CfirMatchPatternKind
+import org.cangnova.cangjie.cfir.resolve.match.isMatchSubtypeOf
 import org.cangnova.cangjie.cfir.resolve.match.exhaustive.MatchExhaustivenessContext
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
-import org.cangnova.cangjie.cfir.types.typeContext
-import org.cangnova.cangjie.type.AbstractTypeChecker
 
 /**
  * Maranget 算法中的行特化器。
@@ -73,11 +72,14 @@ object RowSpecializer {
 
     /**
      * 官方 `Constructor::IsCoveredBy` 对 TYPE 构造器使用 `candidateTy <: patternTy`。
-     * 这让 `case _: Collection<T>` 覆盖后续 `case _: Array<T>`，但不会把开放父类型
-     * 的 selector 提前收窄成同型判断。
+     *
+     * Cangjie 的 subtype 关系还包含 `extend B <: I` 这类 boxed/extend interface
+     * 关系；当前通用 [AbstractTypeChecker] 尚未吸收 extend 索引，因此 pattern
+     * usefulness 在普通 subtype 失败后需要补读同一 session 的 extend 语义模型。
      */
     private fun ConeCangJieType.isCoveredByTypePattern(
         patternType: ConeCangJieType,
         context: MatchExhaustivenessContext,
-    ): Boolean = AbstractTypeChecker.isSubtypeOf(context.session.typeContext, this, patternType) == true
+    ): Boolean =
+        isMatchSubtypeOf(patternType, context.session)
 }

@@ -12,6 +12,7 @@ import kotlin.reflect.KClass
  * @property coneType 缩写视图中的 typealias 类型。
  */
 class AbbreviatedTypeAttribute(
+    /** 缩写视图中的 typealias 类型。 */
     override val coneType: ConeCangJieType,
 ) : ConeAttributeWithConeType<AbbreviatedTypeAttribute>() {
     /**
