@@ -1,7 +1,7 @@
 
 
 
-<!INTERFACE_CANNOT_INHERIT_CLASS!>p<!>ublic interface Strbase <: Collection<Byte> & Equatable<String> & Comparable<String> & Hashable & <!UNDECLARED_TYPE_NAME!>T<!> & String {}
+public interface <!INTERFACE_CANNOT_INHERIT_CLASS!>Strbase<!> <: Collection<Byte> & Equatable<String> & Comparable<String> & Hashable & <!UNDECLARED_TYPE_NAME!>T<!> & String {}
 
 extend String <: Strbase {}
 

@@ -13,12 +13,26 @@ import org.opentest4j.FileInfo
 import java.io.File
 import java.nio.charset.StandardCharsets
 
+/**
+ * after-analysis 阶段的 CFIR 内联诊断检查器。
+ *
+ * 该检查器读取 CFIR 前端诊断产物，并逐个源文件调用 [CfirInlineDiagnosticsDiff]
+ * 生成结构化 mismatch。
+ */
 class CfirInlineDiagnosticsChecker(
     testServices: TestServices,
 ) : AfterAnalysisChecker(testServices) {
+    /**
+     * 检查器执行顺序。
+     *
+     * P1 让内联诊断 diff 尽早报告，避免被后续 suppressor 吞掉上下文。
+     */
     override val order: Order
         get() = Order.P1
 
+    /**
+     * 检查所有非附加源文件的 CFIR 诊断是否与内联标记一致。
+     */
     override fun check(failedAssertions: List<org.cangnova.cangjie.test.WrappedException>) {
         val mismatches = buildList {
             for (module in testServices.moduleStructure.modules) {
@@ -43,6 +57,11 @@ class CfirInlineDiagnosticsChecker(
         throw StructuredInlineDiagnosticsAssertionError(mismatches)
     }
 
+    /**
+     * 提取指定测试文件对应的 CFIR 前端诊断。
+     *
+     * 路径过滤同时接受真实临时文件路径和原始 testData 路径，以兼容测试框架的文件映射。
+     */
     private fun diagnosticsForFile(
         artifact: org.cangnova.cangjie.test.frontend.CfirOutputArtifact,
         file: org.cangnova.cangjie.test.model.TestFile,
@@ -60,12 +79,23 @@ class CfirInlineDiagnosticsChecker(
             }
     }
 
+    /**
+     * 规范化路径分隔符与 canonical path。
+     */
     private fun normalizePath(path: String): String {
         return File(path).canonicalPath.replace('\\', '/')
     }
 }
 
+/**
+ * 结构化内联诊断断言错误。
+ *
+ * 继承 [AssertionFailedError] 以便 IDE/test runner 能展示 expected/actual 文本差异。
+ */
 class StructuredInlineDiagnosticsAssertionError(
+    /**
+     * 当前断言错误包含的文件级诊断差异。
+     */
     private val mismatches: List<CfirInlineDiagnosticsDiff.StructuredDiagnosticMismatch>,
 ) : AssertionFailedError(
     render(mismatches),

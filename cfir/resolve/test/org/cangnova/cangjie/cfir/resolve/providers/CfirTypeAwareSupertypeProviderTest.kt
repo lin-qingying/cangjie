@@ -43,7 +43,13 @@ import org.junit.jupiter.api.Assertions.assertIterableEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
+/**
+ * [CfirTypeAwareSupertypeProvider] 与类型检查器集成的超类型查询测试。
+ */
 class CfirTypeAwareSupertypeProviderTest {
+    /**
+     * 验证泛型 extend 会按接收者具体类型实参实例化并参与子类型遍历。
+     */
     @Test
     fun `generic extend is instantiated for concrete type and subtype traversal`() {
         val packageFqName = FqName("sample.generic")
@@ -101,6 +107,9 @@ class CfirTypeAwareSupertypeProviderTest {
         )
     }
 
+    /**
+     * 验证父类上的 extend 会被具体子类继承。
+     */
     @Test
     fun `extends on superclass are inherited by concrete child type`() {
         val packageFqName = FqName("sample.inherited")
@@ -162,6 +171,9 @@ class CfirTypeAwareSupertypeProviderTest {
         assertTrue(AbstractTypeChecker.isSubtypeOf(typeContext, childType, markerInt))
     }
 
+    /**
+     * 验证类型比较通过 extend provider 而非声明图获得跨文件扩展父类型。
+     */
     @Test
     fun `type comparison uses extend provider instead of declaration graph`() {
         val packageFqName = FqName("sample.crossfile")
@@ -191,6 +203,9 @@ class CfirTypeAwareSupertypeProviderTest {
         )
     }
 
+    /**
+     * 验证受上界约束的泛型 extend 使用接收者具体类型实参做子类型遍历。
+     */
     @Test
     fun `constrained generic extend uses concrete receiver arguments for subtype traversal`() {
         val packageFqName = FqName("sample.constrained")
@@ -255,6 +270,9 @@ class CfirTypeAwareSupertypeProviderTest {
     }
 }
 
+/**
+ * 为测试 session 注册 symbol、extend 和 type-aware supertype provider。
+ */
 private fun CfirSession.registerTestTypeContext(
     declarations: List<CfirClassLikeDeclaration>,
     extends: List<CfirExtend>,
@@ -268,25 +286,46 @@ private fun CfirSession.registerTestTypeContext(
     }
 }
 
+/**
+ * 基于内存声明表的测试 symbol provider。
+ */
 private class TestSymbolProvider(
     session: CfirSession,
     declarations: List<CfirClassLikeDeclaration>,
 ) : CfirSymbolProvider(session) {
+    /**
+     * 按 ClassId 索引的测试声明表。
+     */
     private val declarationsByClassId = declarations.associateBy { it.symbol.classId }
 
+    /**
+     * 按 ClassId 返回测试 class-like symbol。
+     */
     override fun getClassLikeSymbolByClassId(classId: ClassId): CfirClassLikeSymbol<*>? =
         declarationsByClassId[classId]?.symbol
 
+    /**
+     * 测试 provider 不暴露 callable symbol。
+     */
     override fun getTopLevelCallableSymbols(packageFqName: FqName, name: Name): List<CfirCallableSymbol<*>> =
         emptyList()
 
+    /**
+     * 当内存声明表中存在对应包声明时认为包存在。
+     */
     override fun hasPackage(fqName: FqName): Boolean =
         declarationsByClassId.keys.any { it.packageFqName == fqName }
 }
 
+/**
+ * 基于内存 extend 列表的测试 extend provider。
+ */
 private class TestExtendProvider(
     extends: List<CfirExtend>,
 ) : CfirExtendProvider {
+    /**
+     * 按扩展目标 ClassId 分组的 extend 列表。
+     */
     private val extendsByClassId: Map<ClassId, List<CfirExtend>> = extends.groupBy { extend ->
         val extendedType = extend.extendedTypeRef as? org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
             ?: error("extend target must already be resolved in test fixtures")
@@ -294,19 +333,31 @@ private class TestExtendProvider(
             ?: error("extend target must be classifier type in test fixtures")
     }
 
+    /**
+     * 返回指定 class 的 extend 列表。
+     */
     override fun getExtendsForClass(classId: ClassId): List<CfirExtend> =
         extendsByClassId[classId].orEmpty()
 
+    /**
+     * 返回指定包内所有 extend。
+     */
     override fun getExtendsInPackage(packageFqName: FqName): List<CfirExtend> =
         extendsByClassId
             .filterKeys { it.packageFqName == packageFqName }
             .values
             .flatten()
 
+    /**
+     * 返回指定 primitive builtin 类型的 extend。
+     */
     override fun getExtendsForBuiltinType(kind: org.cangnova.cangjie.cfir.types.PrimitiveTypeKind): List<CfirExtend> =
         extendsByClassId[kind.classId].orEmpty()
 }
 
+/**
+ * 构造测试 class 声明。
+ */
 private fun newClass(
     moduleData: CfirModuleData,
     classId: ClassId,
@@ -331,6 +382,9 @@ private fun newClass(
     ).also { it.initDefaultResolveState() }
 }
 
+/**
+ * 构造测试 interface 声明。
+ */
 private fun newInterface(
     moduleData: CfirModuleData,
     classId: ClassId,
@@ -355,15 +409,24 @@ private fun newInterface(
     ).also { it.initDefaultResolveState() }
 }
 
+/**
+ * 将测试类型参数声明转换为 cone 类型参数类型。
+ */
 private fun typeParameterType(typeParameter: CfirTypeParameter): ConeCangJieType =
     ConeTypeParameterTypeImpl(typeParameter.symbol.toLookupTag())
 
+/**
+ * 构造 class-like 类型。
+ */
 private fun classType(classId: ClassId, vararg typeArguments: ConeCangJieType): ConeClassLikeType =
     ConeClassLikeType(
         lookupTag = classId.toLookupTag(),
         typeArguments = typeArguments.map(::ConeTypeProjection),
     )
 
+/**
+ * 构造 interface class-like 类型。
+ */
 private fun interfaceType(classId: ClassId, vararg typeArguments: ConeCangJieType): ConeClassLikeType =
     ConeClassLikeType(
         lookupTag = classId.toLookupTag(),
@@ -371,6 +434,9 @@ private fun interfaceType(classId: ClassId, vararg typeArguments: ConeCangJieTyp
         isInterface = true,
     )
 
+/**
+ * 构造 primitive resolved type ref。
+ */
 private fun primitiveTypeRef(type: ConePrimitiveType): CfirTypeRef =
     org.cangnova.cangjie.cfir.types.impl.CfirResolvedTypeRefImpl(
         source = null,

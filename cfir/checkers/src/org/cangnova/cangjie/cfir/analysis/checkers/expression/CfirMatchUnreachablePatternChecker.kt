@@ -234,7 +234,9 @@ object CfirMatchUnreachablePatternChecker : CfirMatchExpressionChecker() {
             knownStdlibOptionSomePatternOrNull(expectedType, context, visitedVariables)?.let { return it }
         }
 
-        knownConstructedTypePatternOrNull(expectedType, context)?.let { return it }
+        if (allowNarrowTypePattern) {
+            knownConstructedTypePatternOrNull(expectedType, context)?.let { return it }
+        }
         (this as? CfirTupleLiteral)?.knownTuplePatternOrNull(expectedType, context, visitedVariables)?.let { return it }
         knownEnumConstructorPatternOrNull(expectedType, context, visitedVariables)?.let { return it }
         knownLiteralPatternOrNull(expectedType)?.let { return it }

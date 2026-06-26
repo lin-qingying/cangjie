@@ -13,6 +13,11 @@ import org.cangnova.cangjie.test.directives.DiagnosticsDirectives
  * 3. 真实 CFIR vs CJC 对比由 [CfirCjcLlTDiagnosticsChecker] 在 after-analysis 阶段完成。
  */
 abstract class AbstractCjcLlTDiagnosticsConsistencyTest : AbstractCfirLightTreeDiagnosticsTest() {
+    /**
+     * 配置 LLT 与官方 cjc 的一致性检查。
+     *
+     * 默认关闭内联诊断渲染，只保留 after-analysis 阶段的真实诊断集合对比。
+     */
     override fun configure(builder: TestConfigurationBuilder) = with(builder) {
         super.configure(builder)
 

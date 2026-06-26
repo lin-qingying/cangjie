@@ -6,7 +6,13 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
+/**
+ * 验证基于 token 的宏片段解析器在重新 token 化、重新解析和失败路径上的行为。
+ */
 class TokenBackedMacroFragmentParserTest {
+    /**
+     * 验证空 token 流会直接失败，并且不会触发重解析回调。
+     */
     @Test
     fun `empty token stream returns failure without invoking reparse`() {
         var reparseCalls = 0
@@ -28,6 +34,9 @@ class TokenBackedMacroFragmentParserTest {
         assertEquals(0, reparseCalls)
     }
 
+    /**
+     * 验证表达式模式下成功重解析会返回 construction-only 的成功片段。
+     */
     @Test
     fun `successful expression parse returns construction-only success`() {
         val received = mutableListOf<Pair<String, MacroFragmentParser.Mode>>()
@@ -52,6 +61,9 @@ class TokenBackedMacroFragmentParserTest {
         assertEquals(listOf("1 + 2" to MacroFragmentParser.Mode.EXPRESSION), received)
     }
 
+    /**
+     * 验证自定义注解模式必须携带完整注解槽位快照。
+     */
     @Test
     fun `custom annotation mode requires full annotation slot snapshot`() {
         var reparseCalls = 0
@@ -80,6 +92,9 @@ class TokenBackedMacroFragmentParserTest {
         assertEquals(0, reparseCalls)
     }
 
+    /**
+     * 验证解析器会先消费 token 阶段重新求值结果，再交给重解析回调。
+     */
     @Test
     fun `parser consumes token-stage re-evaluation output before reparse`() {
         val received = mutableListOf<String>()
@@ -108,6 +123,9 @@ class TokenBackedMacroFragmentParserTest {
         assertEquals("normalized(42)", (result as MacroFragmentResult.Success).tokens.joinToString(separator = "") { it.text })
     }
 
+    /**
+     * 构造宏片段解析输入。
+     */
     private fun input(
         node: MacroCallNode,
         tokens: List<MacroSurfaceToken>,
@@ -141,6 +159,9 @@ class TokenBackedMacroFragmentParserTest {
         )
     }
 
+    /**
+     * 构造没有父子关系的测试宏调用节点。
+     */
     private fun node(name: String): MacroCallNode {
         return MacroCallNode(
             surface = MacroSurfaceExpr(
@@ -176,6 +197,9 @@ class TokenBackedMacroFragmentParserTest {
         )
     }
 
+    /**
+     * 构造测试宏 surface token。
+     */
     private fun token(text: String): MacroSurfaceToken = MacroSurfaceToken(
         text = text,
         startOffset = 0,

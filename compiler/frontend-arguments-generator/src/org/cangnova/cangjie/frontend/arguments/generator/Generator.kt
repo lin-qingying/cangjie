@@ -6,6 +6,13 @@ import org.cangnova.cangjie.arguments.dsl.base.ExperimentalArgumentApi
 import org.cangnova.cangjie.arguments.dsl.types.*
 import java.io.File
 
+/**
+ * 为指定编译器参数层级生成前端使用的参数类源码。
+ *
+ * @param genDir 生成源码根目录。
+ * @param level 需要生成的参数层级。
+ * @param parent 当前层级的父参数层级；为空时生成根参数类。
+ */
 fun generateArgumentsClass(
     genDir: File,
     level: CangJieCompilerArgumentsLevel,
@@ -23,6 +30,9 @@ fun generateArgumentsClass(
     file.writeText(newText)
 }
 
+/**
+ * 生成单个参数类文件内容。
+ */
 private fun StringBuilder.generateArgumentsClassContent(
     level: CangJieCompilerArgumentsLevel,
     parent: CangJieCompilerArgumentsLevel?,
@@ -63,6 +73,9 @@ private fun StringBuilder.generateArgumentsClassContent(
     appendLine("}")
 }
 
+/**
+ * 收集生成参数类所需的 import 列表。
+ */
 private fun collectImports(info: ArgumentsInfo): List<String> {
     val imports = mutableSetOf<String>()
     if (info.isCommonToolsArgs) {
@@ -71,6 +84,9 @@ private fun collectImports(info: ArgumentsInfo): List<String> {
     return imports.sorted()
 }
 
+/**
+ * 生成不是 DSL 参数声明、但前端参数类需要持有的合成属性。
+ */
 private fun StringBuilder.generateAdditionalSyntheticArguments(info: ArgumentsInfo) {
     for (argument in info.additionalSyntheticArguments) {
         appendLine("    var $argument: Boolean = true")
@@ -83,6 +99,9 @@ private fun StringBuilder.generateAdditionalSyntheticArguments(info: ArgumentsIn
 }
 
 @OptIn(ExperimentalArgumentApi::class)
+/**
+ * 根据参数 DSL 描述生成一个可冻结检查的可变属性。
+ */
 private fun StringBuilder.generateProperty(argument: CangJieCompilerArgument) {
     val name = argument.calculateName()
     val type = when (val argType = argument.argumentType) {
@@ -105,12 +124,18 @@ private fun StringBuilder.generateProperty(argument: CangJieCompilerArgument) {
     appendLine("        }")
 }
 
+/**
+ * 计算参数在生成类中的 Kotlin 属性名。
+ */
 fun CangJieCompilerArgument.calculateName(): String = compilerName ?: name
     .removePrefix("X").removePrefix("X")
     .split("-").joinToString("") { it.replaceFirstChar(Char::uppercaseChar) }
     .replaceFirstChar(Char::lowercaseChar)
 
 @OptIn(ExperimentalArgumentApi::class)
+/**
+ * 计算参数在生成类中的默认值源码表达式。
+ */
 private val CangJieCompilerArgument.defaultValueInArgs: String
     get() {
         @Suppress("UNCHECKED_CAST")

@@ -172,6 +172,11 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
             RENDER_NAME,
         )
         map.put(
+            CfirErrors.RETURN_TYPE_INCOMPATIBLE,
+            "return type of ''{0}'' is not identical or not a subtype of the overridden/redefined/implement function",
+            RENDER_NAME,
+        )
+        map.put(
             CfirErrors.RETURN_TYPE_INVARIANCE,
             "return type of ''{0}'' can only be class/interface type which implements or inherits the interface type ''{1}''",
             RENDER_NAME,
@@ -420,6 +425,19 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
         map.put(
             INVALID_OPERATOR_PARAMETER_COUNT,
             "invalid number of parameters for operator ''{0}'': expected {1}, but found {2}",
+            RENDER_STRING,
+            RENDER_STRING,
+            RENDER_STRING,
+        )
+        map.put(
+            CfirErrors.OPERATOR_OVERLOAD_BUILT_IN_UNARY_OPERATOR,
+            "operator func ''{0}''() of type ''{1}'' is a built-in function and cannot be overridden",
+            RENDER_STRING,
+            RENDER_STRING,
+        )
+        map.put(
+            CfirErrors.OPERATOR_OVERLOAD_BUILT_IN_BINARY_OPERATOR,
+            "operator func ''{0}''({2}) of type ''{1}'' is a built-in function and cannot be overridden",
             RENDER_STRING,
             RENDER_STRING,
             RENDER_STRING,

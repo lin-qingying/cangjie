@@ -19,11 +19,20 @@ import java.nio.file.Path
 @Disabled("LLT 官方一致性测试不作为当前 CFIR analysis-tests 门禁执行")
 class CjcLlTTest : AbstractCjcLlTDiagnosticsConsistencyTest() {
 
+    /**
+     * LLT 全量测试数据根目录。
+     */
     private val testDataDir = File("cfir/analysis-tests/testData/llt")
 
+    /**
+     * 官方 cjc 编译器路径。
+     */
     private val cjcPath: Path by lazy { CjcProcessRunner.findCjcPath() }
 
     @TestFactory
+    /**
+     * 为 LLT 目录下每个 `.cj` 文件创建一个动态一致性测试。
+     */
     fun lltDiagnosticsConsistencyTests(): List<DynamicTest> {
         check(testDataDir.isDirectory) {
             "Test data directory not found: ${testDataDir.absolutePath}"

@@ -47,7 +47,13 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 @OptIn(CfirImplementationDetail::class)
+/**
+ * 验证 CFIR renderer 对声明注解、类型注解和注解实参的渲染格式。
+ */
 class CfirRendererAnnotationRenderingTest {
+    /**
+     * 验证文件、类、属性、函数和值参数上的注解都会被 golden renderer 输出。
+     */
     @Test
     fun `renders annotations on file declarations and value parameters`() {
         val fileSymbol = CfirFileSymbol()
@@ -139,6 +145,9 @@ class CfirRendererAnnotationRenderingTest {
         assertTrue(rendered.contains("input: R|Int|"))
     }
 
+    /**
+     * 验证注解调用的普通实参和嵌套注解实参会以内联形式渲染。
+     */
     @Test
     fun `renders annotation call arguments and nested annotation arguments inline`() {
         val rendered = CfirRenderer.withGoldenCompat().renderElementAsString(
@@ -154,6 +163,9 @@ class CfirRendererAnnotationRenderingTest {
         assertEquals("""@R|OuterAnn|(1, @R|InnerAnn|("nested"))""", rendered)
     }
 
+    /**
+     * 验证函数类型和用户类型引用上的注解会出现在类型渲染文本中。
+     */
     @Test
     fun `renders annotations on function type and user type refs`() {
         val functionType = buildFunctionTypeRef {
@@ -177,6 +189,9 @@ class CfirRendererAnnotationRenderingTest {
         assertEquals("@R|UserAnn|() R|demo.Box<R|Int|>|", CfirRenderer.withGoldenCompat().renderElementAsString(userType))
     }
 
+    /**
+     * 验证同一个 renderer 实例重复渲染不同元素时不会串联上一次状态。
+     */
     @Test
     fun `reused renderer renders each element independently`() {
         val renderer = CfirRenderer.withGoldenCompat()
@@ -187,6 +202,9 @@ class CfirRendererAnnotationRenderingTest {
         assertEquals("@R|SecondAnn|()", second)
     }
 
+    /**
+     * 构造测试注解调用表达式。
+     */
     private fun annotation(name: String, arguments: List<CfirElement> = emptyList()): CfirAnnotationCall =
         buildAnnotationCall {
             source = TestBinarySourceElement("@$name")
@@ -201,27 +219,48 @@ class CfirRendererAnnotationRenderingTest {
             containingDeclarationSymbol = CfirFileSymbol()
         }
 
+    /**
+     * 构造测试基础类型引用。
+     */
     private fun basicType(name: String) = buildBasicTypeRef {
         source = TestBinarySourceElement("type $name")
         this.name = Name.identifier(name)
     }
 
+    /**
+     * 构造测试字面量表达式。
+     */
     private fun literal(value: Any, kind: CfirLiteralKind) = buildLiteralExpression {
         this.value = value
         this.kind = kind
     }
 
+    /**
+     * 注解 renderer 测试使用的源码 session。
+     */
     private object TestSession : CfirSession(Kind.Source) {
+        /**
+         * 返回稳定的测试 session 名称。
+         */
         override fun toString(): String = "CfirRendererAnnotationRenderingTestSession"
     }
 
+    /**
+     * 返回空类型作用域的测试 scope provider。
+     */
     private object TestScopeProvider : CfirScopeProvider() {
+        /**
+         * 类使用点 member scope 在本测试中为空。
+         */
         override fun getUseSiteMemberScope(
             klass: org.cangnova.cangjie.cfir.declarations.CfirClass,
             useSiteSession: CfirSession,
             scopeSession: ScopeSession,
         ): CfirTypeScope = CfirTypeScope.Empty
 
+        /**
+         * 类声明点 member scope 在本测试中为空。
+         */
         override fun getDeclarationSiteMemberScope(
             klass: org.cangnova.cangjie.cfir.declarations.CfirClass,
             useSiteSession: CfirSession,
@@ -229,16 +268,49 @@ class CfirRendererAnnotationRenderingTest {
         ): CfirTypeScope = CfirTypeScope.Empty
     }
 
+    /**
+     * 注解 renderer 测试使用的模块数据。
+     */
     private object TestModuleData : CfirModuleData() {
+        /**
+         * 测试模块名。
+         */
         override val name: Name = Name.identifier("cfir-renderer-annotation-test")
+        /**
+         * 测试模块无普通依赖。
+         */
         override val dependencies: List<CfirModuleData> = emptyList()
+        /**
+         * 测试模块无 refinement 依赖。
+         */
         override val refinementDependencies: List<CfirModuleData> = emptyList()
+        /**
+         * 测试模块无传递 refinement 依赖。
+         */
         override val allRefinementDependencies: List<CfirModuleData> = emptyList()
+        /**
+         * 使用默认仓颉平台。
+         */
         override val targetPlatform = CangJiePlatforms.defaultCangJiePlatform
+        /**
+         * 使用默认 CFIR 平台。
+         */
         override val platform: CfirPlatform = CfirPlatform.DEFAULT
+        /**
+         * 标记模块是否为 common 平台。
+         */
         override val isCommon: Boolean = targetPlatform.isCommon()
+        /**
+         * 测试模块不声明额外能力。
+         */
         override val capabilities: CfirModuleCapabilities = CfirModuleCapabilities.Empty
+        /**
+         * 稳定模块名。
+         */
         override val stableModuleName: String = "cfir-renderer-annotation-test"
+        /**
+         * 绑定到测试源码 session。
+         */
         override val session: CfirSession
             get() = TestSession
 
@@ -247,6 +319,9 @@ class CfirRendererAnnotationRenderingTest {
         }
     }
 
+    /**
+     * 带稳定 debug 文本的测试二进制源码元素。
+     */
     private class TestBinarySourceElement(identity: String) : CjBinarySourceElement(
         debugText = identity,
         binaryFilePath = null,

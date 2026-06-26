@@ -35,7 +35,7 @@ import org.cangnova.cangjie.cfir.resolve.SupertypeSupplier
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.resolve.providers.CfirProviderImpl
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
-import org.cangnova.cangjie.cfir.resolve.services.CfirSuperTypeGraphEdge
+import org.cangnova.cangjie.cfir.resolve.providers.CfirSuperTypeGraphEdge
 import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.LocalClassesNavigationInfo
 import org.cangnova.cangjie.cfir.scopes.CfirScope
 import org.cangnova.cangjie.cfir.scopes.defaultImportsProvider
@@ -496,7 +496,10 @@ open class SupertypeComputationSession {
             is CfirTypeAlias -> listOf(getResolvedExpandedTypeRef(declaration))
             else -> getResolvedSupertypeRefs(declaration)
         }
-        return refs.mapNotNull { it.toReferencedDeclaration(session) }
+        return refs.mapNotNull { ref ->
+            ref.toReferencedDeclaration(session)
+                ?.takeIf { ref.isSemanticallyValidDeclaredSupertypeEdge(declaration, session) }
+        }
     }
 }
 
@@ -947,15 +950,37 @@ private class CfirApplySupertypesTransformer(
         resolvedRefs: List<CfirResolvedTypeRef>,
     ) {
         val graphStore = session.superTypeGraphStoreOrNull ?: return
-        graphStore.recordDeclared(classLikeDeclaration, resolvedRefs.map { ref ->
-            CfirSuperTypeGraphEdge(
-                typeRef = ref,
-                renderedType = ref.renderReadable(),
-                resolvedClassSymbol = ref.toReferencedDeclaration(session)?.symbol
-                    as? org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol<*>,
-            )
-        })
+        graphStore.recordDeclared(
+            classLikeDeclaration,
+            resolvedRefs.mapNotNull { ref ->
+                if (!ref.isSemanticallyValidDeclaredSupertypeEdge(classLikeDeclaration, session)) {
+                    return@mapNotNull null
+                }
+                CfirSuperTypeGraphEdge(
+                    typeRef = ref,
+                    renderedType = ref.renderReadable(),
+                    resolvedClassSymbol = ref.toReferencedDeclaration(session)?.symbol
+                        as? org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol<*>,
+                )
+            },
+        )
     }
+}
+
+/**
+ * 判断声明超类型是否能进入继承图。
+ *
+ * 非法继承关系仍由 declaration checker 负责报告；继承图只保留语义上有效的边，
+ * 避免错误恢复阶段把 `interface <: class` 这类已非法的关系再解释成继承环。
+ */
+private fun CfirResolvedTypeRef.isSemanticallyValidDeclaredSupertypeEdge(
+    owner: CfirClassLikeDeclaration,
+    session: CfirSession,
+): Boolean {
+    if (coneType is ConeErrorType) return false
+    val target = toReferencedDeclaration(session) ?: return false
+    if (owner is CfirInterface && target !is CfirInterface) return false
+    return true
 }
 
 /**

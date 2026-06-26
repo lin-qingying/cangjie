@@ -139,6 +139,9 @@ class CfirMapArgumentsTest {
         }
     }
 
+    /**
+     * 构造参数映射测试使用的最小 resolution context。
+     */
     private fun stubContext(): CfirResolutionContext {
         return CfirResolutionContext(
             session = StubSessionForTest,
@@ -150,18 +153,39 @@ class CfirMapArgumentsTest {
 
 // ---- 测试用 Stub 对象 ----
 
+/**
+ * 参数映射测试使用的最小 session。
+ */
 private object StubSessionForTest : org.cangnova.cangjie.cfir.session.CfirSession(Kind.Source) {
+    /**
+     * 返回稳定的调试名称。
+     */
     override fun toString(): String = "StubSession"
 }
 
+/**
+ * 参数映射测试复用的 body resolve context。
+ */
 private val StubBodyResolveContext = org.cangnova.cangjie.cfir.resolve.body.CfirBodyResolveContext(
     ReturnTypeCalculator.Default,
     org.cangnova.cangjie.cfir.resolve.body.CfirDataFlowAnalyzerContext(),
 )
 
+/**
+ * 参数映射测试使用的最小类型关系服务。
+ */
 private val StubTypeRelations = CfirTypeRelations(
+    /**
+     * 不提供继承关系、只做结构相等的测试类型上下文。
+     */
     object : org.cangnova.cangjie.cfir.types.ConeTypeContext {
+        /**
+         * 测试上下文不提供额外父类型。
+         */
         override fun supertypes(type: org.cangnova.cangjie.cfir.types.ConeCangJieType) = emptyList<org.cangnova.cangjie.cfir.types.ConeCangJieType>()
+        /**
+         * 使用结构相等判断类型构造器一致性。
+         */
         override fun isSameTypeConstructor(a: org.cangnova.cangjie.cfir.types.ConeCangJieType, b: org.cangnova.cangjie.cfir.types.ConeCangJieType) = a == b
     },
 )

@@ -29,23 +29,46 @@ import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.unwrapSubstitutionOverrides
 import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
+import org.cangnova.cangjie.cfir.declarations.CfirPrimitiveTypeDeclaration
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
+import org.cangnova.cangjie.cfir.resolve.providers.createExtendDeclarationSubstitution
+import org.cangnova.cangjie.cfir.resolve.providers.CfirSuperTypeGraphEdge
+import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassMemberScopeKind
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassSubstitutionScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
+import org.cangnova.cangjie.cfir.scopes.impl.CfirCompositeTypeScope
+import org.cangnova.cangjie.cfir.scopes.impl.CfirExtendMemberScope
 import org.cangnova.cangjie.cfir.scopes.overrideSignatureKey
 import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
 import org.cangnova.cangjie.cfir.session.extendProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
+import org.cangnova.cangjie.cfir.symbols.toLookupTag
+import org.cangnova.cangjie.cfir.types.BuiltinPrimitiveOperators
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
+import org.cangnova.cangjie.cfir.types.ConeEnumType
+import org.cangnova.cangjie.cfir.types.ConeLookupTagBasedType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
+import org.cangnova.cangjie.cfir.types.ConeStructType
+import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
+import org.cangnova.cangjie.cfir.types.StdlibClassIds
+import org.cangnova.cangjie.cfir.types.CfirTypeSubstitutorByMap
+import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
+import org.cangnova.cangjie.cfir.types.expandedClassIdOrPrimitiveClassId
+import org.cangnova.cangjie.cfir.types.expandedExtendTargetKey
+import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.descriptors.Visibilities
+import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.name.OperatorNameConventions
+import org.cangnova.cangjie.type.model.TypeConstructorMarker
 
 /**
  * Extend 补充检查器（ExtendExtra 分组）
@@ -68,6 +91,19 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
      * Java 实现类型注解名称。
      */
     private val JAVA_IMPL = Name.identifier("JavaImpl")
+
+    /**
+     * 官方 primitive equality 特例：Bool/Unit 的 `==`/`!=` 同时保留 shadow 诊断。
+     */
+    private val primitiveEqualityShadowKinds = setOf(PrimitiveTypeKind.BOOLEAN, PrimitiveTypeKind.UNIT)
+
+    /**
+     * 会参与 primitive equality shadow 特例的 operator 名称。
+     */
+    private val primitiveEqualityShadowNames = setOf(
+        OperatorNameConventions.EQUALS,
+        OperatorNameConventions.NOT_EQUALS,
+    )
 
     /**
      * 对单个 extend 声明执行额外语义检查。
@@ -173,17 +209,14 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkMemberShadowing(extend: CfirExtend) {
         val targetTypeRef = extend.extendedTypeRef
-        val targetType = (targetTypeRef as? CfirResolvedTypeRef)?.coneType as? ConeClassLikeType ?: return
-        val targetDecl = context.session.symbolProvider
-            .getClassLikeSymbolByClassId(targetType.classId)?.cfir as? org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
-            ?: return
-        val targetScope = createTargetShadowScope(targetDecl, targetType, extend)
+        val targetType = (targetTypeRef as? CfirResolvedTypeRef)?.coneType ?: return
+        val targetScope = targetType.createTargetShadowScope(extend) ?: return
 
         for (member in extend.declarations) {
             val memberName = member.shadowableName() ?: continue
-            if (!member.shadowsExistingMember(targetScope, context)) continue
+            if (!member.shadowsExistingMember(targetScope, context, extend, targetType)) continue
 
-            val typeName = targetType.classId.shortClassName
+            val typeName = targetType.classIdOrPrimitiveClassId?.shortClassName ?: continue
             val source = when (member) {
                 is CfirNamedFunction -> member.functionNameDiagnosticSource()
                 is CfirProperty -> member.propertyNameDiagnosticSource()
@@ -210,28 +243,188 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
      * 会被误判为不同签名，也看不到同一目标上的其它 extend 成员。
      */
     context(context: CheckerContext)
-    private fun createTargetShadowScope(
-        targetDecl: org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration,
-        targetType: ConeClassLikeType,
+    private fun ConeCangJieType.createTargetShadowScope(
         excludingExtend: CfirExtend,
-    ): CfirTypeScope {
-        val targetSymbol = targetDecl.symbol as? CfirClassLikeSymbol<*> ?: return CfirTypeScope.Empty
+    ): CfirTypeScope? {
+        return createTargetShadowScope(
+            excludingExtend = excludingExtend,
+            visited = linkedSetOf(),
+        )
+    }
+
+    /**
+     * 递归构造 shadow scope。
+     *
+     * 当前 extend 声明自己引入的接口成员是实现目标，不是 shadow 来源；但目标类型原本
+     * 声明/继承来的接口成员仍然是已有成员，必须保留。这里消费 resolve 阶段记录的
+     * supertype graph edge，按 edge.sourceExtend 跳过当前 extend 自己贡献的接口边，
+     * 同时用 visited 阻止非法继承环导致递归爆栈。
+     */
+    context(context: CheckerContext)
+    private fun ConeCangJieType.createTargetShadowScope(
+        excludingExtend: CfirExtend,
+        visited: MutableSet<ConeCangJieType>,
+    ): CfirTypeScope? {
+        if (!visited.add(this)) return null
+        val scopes = buildList {
+            classTargetShadowScope(excludingExtend)?.let(::add)
+            extendTargetShadowScope(excludingExtend)?.let(::add)
+            for (supertype in directShadowSuperTypes(excludingExtend)) {
+                supertype.createTargetShadowScope(
+                    excludingExtend = excludingExtend,
+                    visited = visited,
+                )?.let(::add)
+            }
+        }
+        return when (scopes.size) {
+            0 -> null
+            1 -> scopes.single()
+            else -> CfirCompositeTypeScope(scopes)
+        }
+    }
+
+    /**
+     * 取得 shadow 检查应递归进入的直接父类型。
+     *
+     * resolve 阶段的 supertype graph edge 保留了父类型来源：声明头父类型的
+     * `sourceExtend` 为空，extend 注入父类型的 `sourceExtend` 指向来源 extend。
+     * 这比按实例化后的类型做相等比较更精确，能区分 `class B <: I<String>` 这类
+     * 目标原有接口和 `extend B <: I<Int64>` 当前声明正在实现的接口。
+     */
+    context(context: CheckerContext)
+    private fun ConeCangJieType.directShadowSuperTypes(excludingExtend: CfirExtend): List<ConeCangJieType> {
+        val ownerClassId = classIdOrPrimitiveClassId ?: return emptyList()
+        val ownerDeclaration = context.session.symbolProvider
+            .getClassLikeSymbolByClassId(ownerClassId)
+            ?.cfir as? CfirClassLikeDeclaration
+        val declarationSubstitutor = ownerDeclaration?.createDeclarationSubstitutor(this)
+        val graphEdges = context.session.directSupertypeProviderOrNull
+            ?.getDirectSuperTypeEdges(ownerClassId)
+            .orEmpty()
+
+        val directSupertypes = graphEdges.mapNotNull { edge ->
+            if (edge.sourceExtend === excludingExtend) return@mapNotNull null
+            edge.toUseSiteSupertype(
+                ownerType = this,
+                declarationSubstitutor = declarationSubstitutor,
+            )
+        }
+        return directSupertypes.withImplicitObjectSuperclass(ownerDeclaration)
+    }
+
+    /**
+     * 将 graph edge 还原为当前 owner type 上的 use-site 父类型。
+     */
+    context(context: CheckerContext)
+    private fun CfirSuperTypeGraphEdge.toUseSiteSupertype(
+        ownerType: ConeCangJieType,
+        declarationSubstitutor: ConeSubstitutor?,
+    ): ConeCangJieType? {
+        val supertype = typeRef.coneType
+        val extend = sourceExtend
+        if (extend != null) {
+            val targetPattern = extend.extendedTypeRef.coneTypeOrNull ?: return null
+            val substitution = createExtendDeclarationSubstitution(
+                session = context.session,
+                extend = extend,
+                targetPattern = targetPattern,
+                concreteReceiverType = ownerType,
+            ) ?: return null
+            return substitution.substitutor.substituteOrSelf(supertype)
+        }
+        return declarationSubstitutor?.substituteOrSelf(supertype) ?: supertype
+    }
+
+    /**
+     * 官方会为没有显式 concrete superclass 的 class 补 `Object`。
+     *
+     * shadow scope 递归使用 graph edge 时需要显式恢复这一隐式父类，
+     * 否则从 `Object` 继承来的既有成员不会进入 extend shadow 检查。
+     */
+    private fun List<ConeCangJieType>.withImplicitObjectSuperclass(
+        declaration: CfirClassLikeDeclaration?,
+    ): List<ConeCangJieType> {
+        if (declaration !is CfirClass) return this
+        if (declaration.symbol.classId == StdlibClassIds.Any) return this
+        if (any { it.isConcreteSuperclassCandidate() }) return this
+
+        val implicitSuperclass = if (declaration.symbol.classId == StdlibClassIds.Object) {
+            ConeClassLikeType(StdlibClassIds.Any.toLookupTag(), isInterface = true)
+        } else {
+            ConeClassLikeType(StdlibClassIds.Object.toLookupTag())
+        }
+        return (this + implicitSuperclass).distinct()
+    }
+
+    /**
+     * 判断类型是否占用 class 的 concrete superclass 槽位。
+     */
+    private fun ConeCangJieType.isConcreteSuperclassCandidate(): Boolean = when (this) {
+        is ConeClassLikeType -> !isInterface
+        is ConeStructType, is ConeEnumType -> true
+        else -> false
+    }
+
+    /**
+     * 根据 class-like 声明类型参数与当前 owner type 实参创建声明替换器。
+     */
+    private fun CfirClassLikeDeclaration.createDeclarationSubstitutor(type: ConeCangJieType): ConeSubstitutor? {
+        if (type !is ConeLookupTagBasedType) return null
+        if (typeParameters.isEmpty()) return ConeSubstitutor.Empty
+        if (typeParameters.size != type.typeArguments.size) return null
+
+        val replacements: Map<TypeConstructorMarker, ConeCangJieType> =
+            typeParameters.zip(type.typeArguments).associate { (typeParameter, argument) ->
+                typeParameter.symbol.toLookupTag() to argument.type
+            }
+        return replacements.takeIf { it.isNotEmpty() }?.let(::CfirTypeSubstitutorByMap) ?: ConeSubstitutor.Empty
+    }
+
+    /**
+     * 为 class-like/primitive classifier 目标构造 use-site 成员 scope。
+     */
+    context(context: CheckerContext)
+    private fun ConeCangJieType.classTargetShadowScope(excludingExtend: CfirExtend): CfirTypeScope? {
+        val targetClassId = expandedClassIdOrPrimitiveClassId ?: return null
+        val targetSymbol = context.session.symbolProvider.getClassLikeSymbolByClassId(targetClassId)
+            as? CfirClassLikeSymbol<*> ?: return null
         val rawScope = CfirClassUseSiteMemberScope(
             session = context.session,
             classSymbol = targetSymbol,
             symbolProvider = context.session.symbolProvider,
             extendProvider = context.session.extendProvider,
             directSupertypeProvider = context.session.directSupertypeProviderOrNull,
-            ownerType = targetType,
-            dispatchReceiverType = targetType,
+            ownerType = this,
+            dispatchReceiverType = this,
             scopeKind = CfirClassMemberScopeKind.USE_SITE,
             excludingExtend = excludingExtend,
         )
         return CfirClassSubstitutionScope(
             session = context.session,
             useSiteMemberScope = rawScope,
-            dispatchReceiverType = targetType,
-            substitutionOwnerType = targetType,
+            dispatchReceiverType = this,
+            substitutionOwnerType = this,
+        )
+    }
+
+    /**
+     * 为同一 extend 目标上已有的扩展成员构造 shadow 查询 scope。
+     */
+    context(context: CheckerContext)
+    private fun ConeCangJieType.extendTargetShadowScope(excludingExtend: CfirExtend): CfirTypeScope? {
+        val targetKey = expandedExtendTargetKey ?: return null
+        val rawScope = CfirExtendMemberScope(
+            targetKey = targetKey,
+            extendProvider = context.session.extendProvider,
+            session = context.session,
+            receiverType = this,
+            excludingExtend = excludingExtend,
+        )
+        return CfirClassSubstitutionScope(
+            session = context.session,
+            useSiteMemberScope = rawScope,
+            dispatchReceiverType = this,
+            substitutionOwnerType = this,
         )
     }
 
@@ -245,13 +438,15 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
     private fun CfirDeclaration.shadowsExistingMember(
         targetScope: org.cangnova.cangjie.cfir.scopes.CfirTypeScope,
         context: CheckerContext,
+        extend: CfirExtend,
+        targetType: ConeCangJieType,
     ): Boolean {
         return when (this) {
             is CfirNamedFunction -> {
                 val signature = symbol.overrideSignatureKey()
                 var found = false
                 targetScope.processFunctionsByName(name) { candidate ->
-                    if (candidate.canShadowThis(this, signature, context)) {
+                    if (candidate.canShadowThis(this, signature, context, extend, targetType)) {
                         found = true
                     }
                 }
@@ -262,7 +457,7 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
                 val signature = symbol.overrideSignatureKey()
                 var found = false
                 targetScope.processPropertiesByName(name) { candidate ->
-                    if (candidate.canShadowThis(this, signature, context)) {
+                    if (candidate.canShadowThis(this, signature, context, extend, targetType)) {
                         found = true
                     }
                 }
@@ -283,14 +478,91 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
         currentMember: CfirDeclaration,
         currentSignature: String,
         context: CheckerContext,
+        currentExtend: CfirExtend,
+        targetType: ConeCangJieType,
     ): Boolean {
         if (!isBound) return false
         if (unwrapSubstitutionOverrides().cfir === currentMember) return false
 
         // 官方 RemoveMembersShouldNotInherit / IsInvisibleMember 会排除 private 成员。
         if (cfir.status.visibility == Visibilities.Private) return false
+        if (isSyntheticPrimitiveBuiltinOperatorExcludedFromShadow(context)) return false
+        if (isCurrentExtendImplementationTarget(context, currentExtend, targetType)) return false
         if (isInterfaceRequirementMember(context)) return false
         return overrideSignatureKey() == currentSignature
+    }
+
+    /**
+     * primitive 的语言内建 operator 由专门的 built-in overload 规则处理。
+     *
+     * 官方 `IsBuiltInOperatorFuncInExtend` 会把这些内建签名作为特殊实现/诊断入口，
+     * 它们不是普通目标成员，不能再次参与 `extend member cannot shadow`。
+     */
+    private fun org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol<*>.isSyntheticPrimitiveBuiltinOperatorExcludedFromShadow(
+        context: CheckerContext,
+    ): Boolean {
+        val function = cfir as? CfirNamedFunction ?: return false
+        if (function.origin != CfirDeclarationOrigin.Synthetic.FakeFunction) return false
+        if (!function.status.isOperator) return false
+        val owner = context.ownerClassSymbol(this)?.cfir as? CfirPrimitiveTypeDeclaration ?: return false
+        val argumentTypes = function.valueParameters.map { parameter ->
+            parameter.returnTypeRef.coneTypeOrNull ?: return false
+        }
+        BuiltinPrimitiveOperators.resolve(
+            name = function.name,
+            receiverType = ConePrimitiveType(owner.kind),
+            argumentTypes = argumentTypes,
+        ) ?: return false
+        if (function.isPrimitiveEqualityShadowException(owner.kind)) return false
+        return true
+    }
+
+    /**
+     * `Bool`/`Unit` 的 equality/inequality 在官方实现中仍作为 `extend Bool/Unit`
+     * 既有成员参与 shadow 检查，不能按普通 synthetic builtin operator 过滤掉。
+     */
+    private fun CfirNamedFunction.isPrimitiveEqualityShadowException(kind: PrimitiveTypeKind): Boolean =
+        kind in primitiveEqualityShadowKinds && name in primitiveEqualityShadowNames
+
+    /**
+     * 判断候选是否来自当前 extend 正在实现的接口。
+     *
+     * 当前 extend 的 super interface 是实现目标，不是“目标类型已有成员”；但如果
+     * 目标类型在排除当前 extend 后已经声明/继承了同一个接口，则该接口成员仍是
+     * 已有成员，必须保留为 shadow 来源。
+     */
+    private fun org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol<*>.isCurrentExtendImplementationTarget(
+        context: CheckerContext,
+        currentExtend: CfirExtend,
+        targetType: ConeCangJieType,
+    ): Boolean {
+        val ownerSymbol = context.ownerClassSymbol(this) ?: return false
+        if (ownerSymbol.cfir !is org.cangnova.cangjie.cfir.declarations.CfirInterface) return false
+        val ownerClassId = ownerSymbol.classId
+        if (!currentExtend.superTypeRefs.any { it.coneTypeOrNull?.classIdOrPrimitiveClassId == ownerClassId }) {
+            return false
+        }
+        return !targetType.hasExistingSuperInterface(ownerClassId, currentExtend, context, linkedSetOf())
+    }
+
+    /**
+     * 在排除当前 extend 自己贡献的 edge 后，检查目标类型是否已经继承指定接口。
+     */
+    private fun ConeCangJieType.hasExistingSuperInterface(
+        interfaceClassId: ClassId,
+        excludingExtend: CfirExtend,
+        context: CheckerContext,
+        visited: MutableSet<ConeCangJieType>,
+    ): Boolean {
+        if (!visited.add(this)) return false
+        val directSupertypes = with(context) {
+            directShadowSuperTypes(excludingExtend)
+        }
+        for (supertype in directSupertypes) {
+            if (supertype.classIdOrPrimitiveClassId == interfaceClassId) return true
+            if (supertype.hasExistingSuperInterface(interfaceClassId, excludingExtend, context, visited)) return true
+        }
+        return false
     }
 
     /**

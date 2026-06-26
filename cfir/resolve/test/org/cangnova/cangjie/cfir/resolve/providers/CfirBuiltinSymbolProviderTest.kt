@@ -13,7 +13,13 @@ import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
+/**
+ * [CfirBuiltinSymbolProvider] 内建符号暴露行为测试。
+ */
 class CfirBuiltinSymbolProviderTest {
+    /**
+     * 验证 provider 将 primitive 类型暴露为 class-like symbol。
+     */
     @Test
     fun `builtin provider exposes primitive types as class-like symbols`() {
         val (session, _) = ExtendTestFixtures.newSessionAndModule()
@@ -31,6 +37,9 @@ class CfirBuiltinSymbolProviderTest {
         assertTrue(provider.hasPackage(StandardNames.BASIC_PACKAGE_FQ_NAME))
     }
 
+    /**
+     * 验证 primitive 类型可通过 session builtinTypes 组件解析。
+     */
     @Test
     fun `primitive types are resolved from builtinTypes component`() {
         val (session, _) = ExtendTestFixtures.newSessionAndModule()
@@ -39,6 +48,9 @@ class CfirBuiltinSymbolProviderTest {
         assertEquals(PrimitiveTypeKind.INT64, primitive?.kind)
     }
 
+    /**
+     * 验证 primitive symbol 暴露内建 operator 成员。
+     */
     @Test
     fun `primitive symbol exposes builtin operator members`() {
         val (session, _) = ExtendTestFixtures.newSessionAndModule()

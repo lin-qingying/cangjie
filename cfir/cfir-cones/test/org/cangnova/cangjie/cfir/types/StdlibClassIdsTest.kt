@@ -4,8 +4,14 @@ import org.cangnova.cangjie.builtins.StandardNames
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
+/**
+ * 验证标准库类标识集合的包名、短名和聚合列表内容。
+ */
 class StdlibClassIdsTest {
 
+    /**
+     * 验证所有标准库类标识都位于 std.core 或 stdx.effect 包。
+     */
     @Test
     fun `all ClassIds belong to std-core or stdx-effect packages`() {
         val corePackage = StandardNames.FqNames.core
@@ -18,16 +24,25 @@ class StdlibClassIdsTest {
         }
     }
 
+    /**
+     * 验证 Object 标准库类标识的短名。
+     */
     @Test
     fun `Object ClassId has correct short name`() {
         assertEquals("Object", StdlibClassIds.Object.shortClassName.asString())
     }
 
+    /**
+     * 验证 String 标准库类标识的短名。
+     */
     @Test
     fun `String ClassId has correct short name`() {
         assertEquals("String", StdlibClassIds.String.shortClassName.asString())
     }
 
+    /**
+     * 验证 allClassIds 聚合列表包含当前声明的所有标准库类标识。
+     */
     @Test
     fun `allClassIds contains all declared ClassIds`() {
         val all = StdlibClassIds.allClassIds
@@ -51,6 +66,9 @@ class StdlibClassIdsTest {
         assertEquals(17, all.size)
     }
 
+    /**
+     * 验证标准库类标识集合不混入由 PrimitiveTypeKind 表示的原始类型。
+     */
     @Test
     fun `StdlibClassIds does not contain primitive types`() {
         // Primitive types (Int64, Bool etc.) are represented by PrimitiveTypeKind, not ClassIds

@@ -29,6 +29,9 @@ sealed class CaLightDeclarationBase(
     final override val kind: CaLightDeclarationKind,
     final override val name: String?,
     final override val module: CaModule?,
+    /**
+     * 按需恢复注解列表的工厂。
+     */
     private val annotationsFactory: () -> List<CaAnnotation>,
     final override val origin: CaLightDeclarationOrigin,
     final override val token: CaLifetimeToken,
@@ -41,15 +44,30 @@ sealed class CaLightDeclarationBase(
     }
 }
 
+/**
+ * Class-like 声明视图实现，覆盖 class、interface、struct、enum 与 typealias 的公共只读投影。
+ */
 class CaLightClassLikeDeclarationImpl(
     name: String?,
     module: CaModule?,
     annotationsFactory: () -> List<CaAnnotation>,
     origin: CaLightDeclarationOrigin,
     token: CaLifetimeToken,
+    /**
+     * 按需恢复 classId 的工厂。
+     */
     private val classIdFactory: () -> ClassId?,
+    /**
+     * 按需恢复类型参数名称列表的工厂。
+     */
     private val typeParametersFactory: () -> List<Name>,
+    /**
+     * 按需恢复直接父类型列表的工厂。
+     */
     private val superTypesFactory: () -> List<CaType>,
+    /**
+     * 按需恢复成员 light declaration 列表的工厂。
+     */
     private val membersFactory: () -> List<CaLightDeclaration>,
 ) : CaLightDeclarationBase(
     kind = CaLightDeclarationKind.CLASS_LIKE,
@@ -59,14 +77,23 @@ class CaLightClassLikeDeclarationImpl(
     origin = origin,
     token = token,
 ), CaLightClassLikeDeclaration {
+    /**
+     * 声明的 classId；source、decompiled 和 synthetic 来源均允许为空。
+     */
     override val classId: ClassId? by lazy(LazyThreadSafetyMode.NONE) {
         classIdFactory()
     }
 
+    /**
+     * 声明的类型参数名称列表。
+     */
     override val typeParameters: List<Name> by lazy(LazyThreadSafetyMode.NONE) {
         typeParametersFactory()
     }
 
+    /**
+     * 声明的直接父类型列表。
+     */
     override val superTypes: List<CaType> by lazy(LazyThreadSafetyMode.NONE) {
         superTypesFactory()
     }
@@ -105,17 +132,38 @@ class CaLightClassLikeDeclarationImpl(
 
 }
 
+/**
+ * extend 声明视图实现。
+ */
 class CaLightExtendDeclarationImpl(
     name: String?,
     module: CaModule?,
     annotationsFactory: () -> List<CaAnnotation>,
     origin: CaLightDeclarationOrigin,
     token: CaLifetimeToken,
+    /**
+     * extend 声明的稳定标识。
+     */
     override val extendId: String,
+    /**
+     * 按需恢复目标 classId 的工厂。
+     */
     private val targetClassIdFactory: () -> ClassId?,
+    /**
+     * 按需恢复被扩展类型的工厂。
+     */
     private val extendedTypeFactory: () -> CaType,
+    /**
+     * 按需恢复类型参数名称列表的工厂。
+     */
     private val typeParametersFactory: () -> List<Name>,
+    /**
+     * 按需恢复父类型列表的工厂。
+     */
     private val superTypesFactory: () -> List<CaType>,
+    /**
+     * 按需恢复 extend 成员列表的工厂。
+     */
     private val membersFactory: () -> List<CaLightDeclaration>,
 ) : CaLightDeclarationBase(
     kind = CaLightDeclarationKind.EXTEND,
@@ -125,18 +173,30 @@ class CaLightExtendDeclarationImpl(
     origin = origin,
     token = token,
 ), CaLightExtendDeclaration {
+    /**
+     * extend 目标类型对应的 classId。
+     */
     override val targetClassId: ClassId? by lazy(LazyThreadSafetyMode.NONE) {
         targetClassIdFactory()
     }
 
+    /**
+     * extend 实际扩展的类型。
+     */
     override val extendedType: CaType by lazy(LazyThreadSafetyMode.NONE) {
         extendedTypeFactory()
     }
 
+    /**
+     * extend 声明的类型参数名称列表。
+     */
     override val typeParameters: List<Name> by lazy(LazyThreadSafetyMode.NONE) {
         typeParametersFactory()
     }
 
+    /**
+     * extend 声明的父类型列表。
+     */
     override val superTypes: List<CaType> by lazy(LazyThreadSafetyMode.NONE) {
         superTypesFactory()
     }
@@ -176,13 +236,22 @@ class CaLightExtendDeclarationImpl(
 
 }
 
+/**
+ * 可调用声明视图实现，覆盖函数、属性、构造器等 callable 投影。
+ */
 class CaLightCallableDeclarationImpl(
     name: String?,
     module: CaModule?,
     annotationsFactory: () -> List<CaAnnotation>,
     origin: CaLightDeclarationOrigin,
     token: CaLifetimeToken,
+    /**
+     * 按需恢复 callableId 的工厂。
+     */
     private val callableIdFactory: () -> CallableId?,
+    /**
+     * 按需恢复 callable 签名的工厂。
+     */
     private val signatureFactory: () -> CaCallableSignature<*>?,
 ) : CaLightDeclarationBase(
     kind = CaLightDeclarationKind.CALLABLE,
@@ -192,10 +261,16 @@ class CaLightCallableDeclarationImpl(
     origin = origin,
     token = token,
 ), CaLightCallableDeclaration {
+    /**
+     * 可调用声明 ID；decompiled 或 synthetic 来源可为空。
+     */
     override val callableId: CallableId? by lazy(LazyThreadSafetyMode.NONE) {
         callableIdFactory()
     }
 
+    /**
+     * 可调用签名；当来源无法恢复完整语义时可为空。
+     */
     override val signature: CaCallableSignature<*>? by lazy(LazyThreadSafetyMode.NONE) {
         signatureFactory()
     }
@@ -220,13 +295,30 @@ class CaLightCallableDeclarationImpl(
 
 }
 
+/**
+ * Light declaration 缓存键。
+ *
+ * @property stableKey provider 层生成的稳定字符串键。
+ */
 data class CaLightDeclarationCacheKey(
+    /**
+     * provider 层生成的稳定字符串键。
+     */
     val stableKey: String,
 )
 
+/**
+ * 单次 provider 构建过程中复用 light declaration 实例的缓存。
+ */
 class CaLightDeclarationCache {
+    /**
+     * 按稳定 key 记录的声明实例。
+     */
     private val declarations = linkedMapOf<CaLightDeclarationCacheKey, CaLightDeclaration>()
 
+    /**
+     * 获取已有声明实例，或创建并缓存一个新实例。
+     */
     fun <T : CaLightDeclaration> getOrPut(
         key: CaLightDeclarationCacheKey,
         create: () -> T,
@@ -236,6 +328,9 @@ class CaLightDeclarationCache {
     }
 }
 
+/**
+ * 根据 source element 与 containing file 构造 light declaration 来源信息。
+ */
 fun sourceOrigin(
     description: String,
     containingFile: CjFile?,

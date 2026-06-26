@@ -14,6 +14,9 @@ import org.cangnova.cangjie.test.directives.ConfigurationDirectives
 open class AbstractCfirLightTreeDiagnosticsWithoutAliasExpansionTest :
     AbstractCfirPhasedDiagnosticTest(CfirParser.LightTree) {
 
+    /**
+     * 配置禁用 typealias expansion 的 LightTree phased 诊断测试。
+     */
     override fun configure(builder: TestConfigurationBuilder) {
         super.configure(builder)
         with(builder) {

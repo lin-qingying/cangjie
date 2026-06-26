@@ -25,12 +25,16 @@
 package org.cangnova.cangjie.cfir.scopes.impl
 
 import org.cangnova.cangjie.cfir.ScopeSession
+import org.cangnova.cangjie.cfir.declarations.CfirClass
+import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityFileScope
 import org.cangnova.cangjie.cfir.resolve.providers.CfirDirectSupertypeProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirExtendProvider
+import org.cangnova.cangjie.cfir.resolve.providers.CfirSuperTypeGraphEdge
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
 import org.cangnova.cangjie.cfir.resolve.providers.createCallableOwnerUseSiteSubstitutor
+import org.cangnova.cangjie.cfir.resolve.providers.createExtendDeclarationSubstitution
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.scopes.isStaticMemberForOverride
@@ -752,6 +756,10 @@ class CfirClassUseSiteMemberScope private constructor(
         }
 
         val classId = type.classIdOrPrimitiveClassId ?: classSymbol.classId
+        if (excludingExtend != null && directSupertypeProvider != null) {
+            return directParentTypesFromEdges(type, classId, excludingExtend)
+        }
+
         return session.typeAwareSupertypeProviderOrNull
             ?.getDirectSupertypes(type)
             ?.takeIf { it.isNotEmpty() }
@@ -763,6 +771,76 @@ class CfirClassUseSiteMemberScope private constructor(
                 val resolvedRef = superTypeRef as? CfirResolvedTypeRef ?: return@mapNotNull null
                 resolvedRef.coneType
             }
+    }
+
+    /**
+     * 在 extend 声明体内查询父类型时按 graph edge 来源跳过当前 extend 自己贡献的接口。
+     */
+    private fun directParentTypesFromEdges(
+        type: ConeCangJieType,
+        classId: ClassId,
+        excludedExtend: CfirExtend,
+    ): List<ConeCangJieType> {
+        val ownerSymbol = symbolProvider.getClassLikeSymbolByClassId(classId)
+        val ownerDeclaration = ownerSymbol?.cfir as? CfirClassLikeDeclaration
+        val declarationSubstitutor = ownerSymbol?.createDeclarationSubstitutor(type)
+        val directSupertypes = directSupertypeProvider
+            ?.getDirectSuperTypeEdges(classId)
+            .orEmpty()
+            .mapNotNull { edge ->
+                if (edge.sourceExtend === excludedExtend) return@mapNotNull null
+                edge.toUseSiteSupertype(type, declarationSubstitutor)
+            }
+        return directSupertypes.withImplicitObjectSuperclass(ownerDeclaration)
+    }
+
+    /**
+     * 将 supertype graph edge 还原为当前 owner type 上的 use-site 父类型。
+     */
+    private fun CfirSuperTypeGraphEdge.toUseSiteSupertype(
+        ownerType: ConeCangJieType,
+        declarationSubstitutor: ConeSubstitutor?,
+    ): ConeCangJieType? {
+        val supertype = typeRef.coneType
+        val extend = sourceExtend
+        if (extend != null) {
+            val targetPattern = extend.extendedTypeRef.coneTypeOrNull ?: return null
+            val substitution = createExtendDeclarationSubstitution(
+                session = session,
+                extend = extend,
+                targetPattern = targetPattern,
+                concreteReceiverType = ownerType,
+            ) ?: return null
+            return substitution.substitutor.substituteOrSelf(supertype)
+        }
+        return declarationSubstitutor?.substituteOrSelf(supertype) ?: supertype
+    }
+
+    /**
+     * graph edge 不包含官方隐式 `Object` 父类；edge 路径需要显式补回。
+     */
+    private fun List<ConeCangJieType>.withImplicitObjectSuperclass(
+        declaration: CfirClassLikeDeclaration?,
+    ): List<ConeCangJieType> {
+        if (declaration !is CfirClass) return this
+        if (declaration.symbol.classId == StdlibClassIds.Any) return this
+        if (any { it.isConcreteSuperclassCandidate() }) return this
+
+        val implicitSuperclass = if (declaration.symbol.classId == StdlibClassIds.Object) {
+            ConeClassLikeType(StdlibClassIds.Any.toLookupTag(), isInterface = true)
+        } else {
+            ConeClassLikeType(StdlibClassIds.Object.toLookupTag())
+        }
+        return (this + implicitSuperclass).distinct()
+    }
+
+    /**
+     * 判断类型是否占用 class 的 concrete superclass 槽位。
+     */
+    private fun ConeCangJieType.isConcreteSuperclassCandidate(): Boolean = when (this) {
+        is ConeClassLikeType -> !isInterface
+        is ConeStructType, is ConeEnumType -> true
+        else -> false
     }
 
     /**

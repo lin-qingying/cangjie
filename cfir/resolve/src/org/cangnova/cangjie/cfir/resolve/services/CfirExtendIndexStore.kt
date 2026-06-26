@@ -39,6 +39,7 @@ import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.declaredExtendTargetKey
 import org.cangnova.cangjie.cfir.types.expandedClassIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.types.type
+import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
@@ -321,7 +322,7 @@ class CfirExtendIndexStore : CfirSessionComponent {
         val targetClass = resolver.resolveClass(extendedTypeRef)
         val inheritedInterfaces = superTypeRefs.map { superTypeRef ->
             CfirExtendInheritedInterfaceSemantic(
-                classId = superTypeRef.toClassIdOrNull(resolver),
+                classId = superTypeRef.toDirectInterfaceClassIdOrNull(resolver),
                 semanticKey = semanticNormalizer.semanticKeyOrNull(superTypeRef) ?: superTypeRef.toString(),
             )
         }
@@ -374,8 +375,9 @@ class CfirExtendIndexStore : CfirSessionComponent {
         if (interfaceIds.isEmpty()) return emptyMap()
 
         val memo = linkedMapOf<ClassId, Set<ClassId>>()
+        val validityMemo = linkedMapOf<ClassId, Boolean>()
         for (interfaceId in interfaceIds) {
-            collectInterfaceClosure(interfaceId, resolver, memo, linkedSetOf())
+            collectInterfaceClosure(interfaceId, resolver, memo, linkedSetOf(), validityMemo)
         }
         return memo
     }
@@ -455,6 +457,7 @@ class CfirExtendIndexStore : CfirSessionComponent {
         val substitutor = declaration.createDeclarationTypeSubstitutor(targetType)
         val result = linkedMapOf<String, CfirExtendInheritedInterfaceSemantic>()
         val visiting = linkedSetOf<String>()
+        val validityMemo = linkedMapOf<ClassId, Boolean>()
 
         for (superTypeRef in declaration.superTypeRefsOrEmpty()) {
             val supertype = superTypeRef.coneTypeOrNull ?: continue
@@ -464,6 +467,7 @@ class CfirExtendIndexStore : CfirSessionComponent {
                 resolver = resolver,
                 result = result,
                 visiting = visiting,
+                validityMemo = validityMemo,
             )
         }
         return result.values.toList()
@@ -478,6 +482,7 @@ class CfirExtendIndexStore : CfirSessionComponent {
         resolver: CfirTypeResolver,
         result: MutableMap<String, CfirExtendInheritedInterfaceSemantic>,
         visiting: MutableSet<String>,
+        validityMemo: MutableMap<ClassId, Boolean>,
     ) {
         val semanticKey = semanticNormalizer.semanticKeyOrNull(interfaceType)
         if (!visiting.add(semanticKey)) return
@@ -485,6 +490,13 @@ class CfirExtendIndexStore : CfirSessionComponent {
         val lookupType = interfaceType as? ConeLookupTagBasedType
         val classId = lookupType?.classIdOrPrimitiveClassId
         val declaration = classId?.let(resolver::resolveClass)
+        if (
+            declaration?.classKindOrNull() == CfirClassKind.INTERFACE &&
+            !declaration.isSemanticallyValidInterfaceForClosure(resolver, validityMemo, linkedSetOf())
+        ) {
+            visiting.remove(semanticKey)
+            return
+        }
         if (classId != null && declaration?.classKindOrNull() == CfirClassKind.INTERFACE) {
             result.putIfAbsent(
                 semanticKey,
@@ -508,6 +520,7 @@ class CfirExtendIndexStore : CfirSessionComponent {
                 resolver = resolver,
                 result = result,
                 visiting = visiting,
+                validityMemo = validityMemo,
             )
         }
         visiting.remove(semanticKey)
@@ -538,9 +551,10 @@ class CfirExtendIndexStore : CfirSessionComponent {
     ): Set<ClassId> {
         val result = linkedSetOf<ClassId>()
         val memo = linkedMapOf<ClassId, Set<ClassId>>()
+        val validityMemo = linkedMapOf<ClassId, Boolean>()
         for (superTypeRef in declaration.superTypeRefsOrEmpty()) {
             val classId = superTypeRef.toClassIdOrNull(resolver) ?: continue
-            result.addAll(collectInterfaceClosure(classId, resolver, memo, linkedSetOf()))
+            result.addAll(collectInterfaceClosure(classId, resolver, memo, linkedSetOf(), validityMemo))
         }
         return result
     }
@@ -553,19 +567,30 @@ class CfirExtendIndexStore : CfirSessionComponent {
         resolver: CfirTypeResolver,
         memo: MutableMap<ClassId, Set<ClassId>>,
         visiting: MutableSet<ClassId>,
+        validityMemo: MutableMap<ClassId, Boolean>,
     ): Set<ClassId> {
         memo[classId]?.let { cached -> return cached }
         if (!visiting.add(classId)) return emptySet()
 
         val declaration = resolver.resolveClass(classId)
         val result = linkedSetOf<ClassId>()
-        if (declaration?.classKindOrNull() == CfirClassKind.INTERFACE) {
+        val declarationKind = declaration?.classKindOrNull()
+        if (declarationKind == CfirClassKind.INTERFACE) {
+            if (!declaration.isSemanticallyValidInterfaceForClosure(resolver, validityMemo, linkedSetOf())) {
+                visiting.remove(classId)
+                memo[classId] = emptySet()
+                return emptySet()
+            }
             result += classId
         }
 
         for (superTypeRef in declaration.superTypeRefsOrEmpty()) {
-            val superClassId = superTypeRef.toClassIdOrNull(resolver) ?: continue
-            result += collectInterfaceClosure(superClassId, resolver, memo, visiting)
+            val superClassId = if (declarationKind == CfirClassKind.INTERFACE) {
+                superTypeRef.toDirectInterfaceClassIdOrNull(resolver)
+            } else {
+                superTypeRef.toClassIdOrNull(resolver)
+            } ?: continue
+            result += collectInterfaceClosure(superClassId, resolver, memo, visiting, validityMemo)
         }
 
         visiting.remove(classId)
@@ -582,6 +607,68 @@ class CfirExtendIndexStore : CfirSessionComponent {
         if (abbreviatedTypeAlias != null) return abbreviatedTypeAlias.classId
         if (coneType is ConeTypeAliasType) return coneType.classId
         return coneType.classIdOrPrimitiveClassId
+    }
+
+    /**
+     * 从 extend 直接 supertype 中抽取可参与接口规则的 ClassId。
+     *
+     * 只有已经解析成接口形状的类型才能进入 extend 规则索引；非接口或错误类型仍由
+     * declaration checker 报告主诊断，索引层不能把它们扩散成 orphan/duplicate 等派生规则。
+     */
+    private fun CfirTypeRef.toDirectInterfaceClassIdOrNull(resolver: CfirTypeResolver): ClassId? {
+        val coneType = (this as? CfirResolvedTypeRef)?.coneType ?: return null
+        if (coneType is ConeErrorType) return null
+
+        val classId = toClassIdOrNull(resolver) ?: return null
+        val declaration = resolver.resolveClass(classId)
+        if (declaration?.classKindOrNull() == CfirClassKind.INTERFACE) return classId
+        if (declaration != null && declaration.classKindOrNull() != null) return null
+        return classId.takeIf { coneType.isInterfaceTypeShape() }
+    }
+
+    /**
+     * 判断已解析类型自身是否携带接口形状。
+     *
+     * 索引单测和部分懒解析路径可能只有 resolved cone type，还没有完整 resolver 声明；
+     * 因此直接接口判定需要保留 cone type 中的 interface 标记。
+     */
+    private fun ConeCangJieType.isInterfaceTypeShape(): Boolean = when (this) {
+        is ConeClassLikeType -> isInterface
+        is ConeTypeAliasType -> expandedType?.isInterfaceTypeShape() == true
+        else -> false
+    }
+
+    /**
+     * 判断接口声明的父接口列表是否可作为 extend 规则闭包继续传播。
+     *
+     * 官方 `CheckExtendDecl` 会删除 `Ty::IsTyCorrect` 为假的 inherited type；
+     * `TypeManager::GetAllSuperTys` 也会在错误类型上返回空集合。这里在索引层复用同一原则，
+     * 避免非法接口继承关系继续污染 orphan rule、重复接口和默认实现冲突等共享规则。
+     */
+    private fun CfirClassLikeDeclaration.isSemanticallyValidInterfaceForClosure(
+        resolver: CfirTypeResolver,
+        memo: MutableMap<ClassId, Boolean>,
+        visiting: MutableSet<ClassId>,
+    ): Boolean {
+        if (classKindOrNull() != CfirClassKind.INTERFACE) return false
+
+        val classId = symbol.classId
+        memo[classId]?.let { return it }
+        if (!visiting.add(classId)) {
+            memo[classId] = false
+            return false
+        }
+
+        val isValid = superTypeRefsOrEmpty().all { superTypeRef ->
+            val superClassId = superTypeRef.toDirectInterfaceClassIdOrNull(resolver) ?: return@all false
+            val superDeclaration = resolver.resolveClass(superClassId)
+            superDeclaration == null ||
+                superDeclaration.isSemanticallyValidInterfaceForClosure(resolver, memo, visiting)
+        }
+
+        visiting.remove(classId)
+        memo[classId] = isValid
+        return isValid
     }
 
     /**

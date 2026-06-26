@@ -29,15 +29,39 @@ import java.nio.ByteOrder
  */
 object MacroMsgCodec {
 
+    /**
+     * DefLib 消息类型：请求宏服务端加载动态库。
+     */
     const val TYPE_DEF_LIB: UByte = 1u
+    /**
+     * MultiMacroCalls 消息类型：发送一批宏调用。
+     */
     const val TYPE_MULTI_CALLS: UByte = 2u
+    /**
+     * MacroResult 消息类型：宏服务端返回展开结果。
+     */
     const val TYPE_MACRO_RESULT: UByte = 3u
+    /**
+     * ExitTask 消息类型：请求服务端重置或退出。
+     */
     const val TYPE_EXIT_TASK: UByte = 4u
 
     // MacroEvalStatus
+    /**
+     * 宏调用已经执行、结果需要按 token 判断是否失败的状态。
+     */
     const val STATUS_EVAL: UByte = 2u
+    /**
+     * 宏展开成功状态。
+     */
     const val STATUS_SUCCESS: UByte = 3u
+    /**
+     * 宏展开失败状态。
+     */
     const val STATUS_FAIL: UByte = 4u
+    /**
+     * 宏服务端完成当前展开批次的状态。
+     */
     const val STATUS_FINISH: UByte = 6u
 
     // ─── 消息构建 ─────────────────────────────────────────────────────────────
@@ -137,6 +161,9 @@ object MacroMsgCodec {
         return b.sizedByteArray()
     }
 
+    /**
+     * 将公共 token 数据模型写入 FlatBuffers builder，并返回 token 对象偏移。
+     */
     private fun buildToken(b: FlatBufferBuilder, tok: TokenInfo): Int {
         val valOff = b.createString(tok.value)
         Token.startToken(b)
@@ -242,6 +269,9 @@ object MacroMsgCodec {
     private fun macroExpandFailed(tokens: List<TokenInfo>): Boolean =
         tokens.size == 1 && tokens.single().kind == TOKEN_ILLEGAL
 
+    /**
+     * 将协议层位置对象转换为公共源码位置模型。
+     */
     private fun Position?.toSourcePosition(): SourcePosition {
         return SourcePosition(
             fileId = this?.fileId?.toInt() ?: 0,
@@ -278,11 +308,23 @@ object MacroMsgCodec {
         return sb.toString()
     }
 
+    /**
+     * 这些 token 后面不插入空格。
+     */
     private val noSpaceAfter = setOf("(", "[", ".", "@", "#", "!")
+    /**
+     * 这些 token 前面不插入空格。
+     */
     private val noSpaceBefore = setOf(")", "]", ",", ";", ".", "(")
 
+    /**
+     * 官方宏协议中表示非法 token 的 kind 编码。
+     */
     private val TOKEN_ILLEGAL: UByte = 0u
 
+    /**
+     * 基于相邻 token 文本判断重建展开文本时是否需要插入空格。
+     */
     private fun needsSpaceBetween(prevValue: String, currValue: String): Boolean {
         if (prevValue.contains('\n') || prevValue.contains('\r')) return false
         if (prevValue in noSpaceAfter) return false

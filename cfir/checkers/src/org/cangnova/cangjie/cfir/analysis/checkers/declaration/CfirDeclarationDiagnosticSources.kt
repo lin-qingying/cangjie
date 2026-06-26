@@ -31,6 +31,7 @@ import com.intellij.util.diff.FlyweightCapableTreeStructure
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.name.OperatorNameConventions.asOperatorString
 import org.cangnova.cangjie.psi.*
 import org.cangnova.cangjie.source.*
 import org.cangnova.cangjie.psi.CjClassLikeDeclaration as CjPsiClassLikeDeclaration
@@ -388,6 +389,7 @@ private fun CjSourceElement.findTypeAliasHeaderSource(name: Name): AbstractCjSou
  */
 private fun CjSourceElement.findFunctionNameSource(name: Name): AbstractCjSourceElement? {
     val tokens = collectSourceNodes()
+    val acceptedTexts = setOf(name.asString(), name.asOperatorString())
 
     for ((index, token) in tokens.withIndex()) {
         if (token.tokenType != CjTokens.FUNC_KEYWORD) continue
@@ -396,7 +398,7 @@ private fun CjSourceElement.findFunctionNameSource(name: Name): AbstractCjSource
             .takeWhile { it.tokenType != CjTokens.LPAR && it.tokenType != CjTokens.COLON && it.tokenType != CjTokens.LBRACE }
             .firstOrNull { node ->
                 node.tokenType in functionNameTokenTypes &&
-                    treeStructure.toString(node).toString() == name.asString()
+                    treeStructure.toString(node).toString() in acceptedTexts
             }
             ?: continue
         return CjOffsetsOnlySourceElement(

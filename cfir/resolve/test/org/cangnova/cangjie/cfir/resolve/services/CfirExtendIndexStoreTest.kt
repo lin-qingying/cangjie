@@ -13,7 +13,13 @@ import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
 
+/**
+ * [CfirExtendIndexStore] 索引构建与查询服务测试。
+ */
 class CfirExtendIndexStoreTest {
+    /**
+     * 验证 rebuild 会合并多个文件中的 extend。
+     */
     @Test
     fun `rebuild indexes extends from multiple files`() {
         val (_, moduleData) = ExtendTestFixtures.newSessionAndModule()
@@ -43,6 +49,9 @@ class CfirExtendIndexStoreTest {
         assertEquals(listOf(interfaceB), store.modelForDeclaration(extend2)?.inheritedInterfaceClassIds)
     }
 
+    /**
+     * 验证查询重复接口时可以排除当前 extend 声明。
+     */
     @Test
     fun `query service excludes current declaration when collecting duplicates`() {
         val (_, moduleData) = ExtendTestFixtures.newSessionAndModule()
@@ -82,6 +91,9 @@ class CfirExtendIndexStoreTest {
         assertEquals(interfaceA, query.inheritedInterfacesOf(extend1).single().classId)
     }
 
+    /**
+     * 验证语义 key 会规范化 extend 类型参数名称。
+     */
     @Test
     fun `semantic keys normalize extend type parameter names`() {
         val (_, moduleData) = ExtendTestFixtures.newSessionAndModule()
@@ -130,6 +142,9 @@ class CfirExtendIndexStoreTest {
         )
     }
 
+    /**
+     * 验证同一 target 的模型返回顺序不受输入文件顺序影响。
+     */
     @Test
     fun `models for same target are returned in stable order regardless of input file order`() {
         val (_, moduleData) = ExtendTestFixtures.newSessionAndModule()
@@ -169,6 +184,9 @@ class CfirExtendIndexStoreTest {
         assertEquals(listOf(interfaceA, interfaceB), ordered)
     }
 
+    /**
+     * 验证语义 key 规范化时包含类型参数上界。
+     */
     @Test
     fun `semantic keys include type parameter bounds when normalizing extend interfaces`() {
         val (_, moduleData) = ExtendTestFixtures.newSessionAndModule()
@@ -227,6 +245,9 @@ class CfirExtendIndexStoreTest {
         )
     }
 
+    /**
+     * 验证目标类自身接口集合包含父类链继承的接口。
+     */
     @Test
     fun `target own interface ids include interfaces inherited through superclass chain`() {
         val (_, moduleData) = ExtendTestFixtures.newSessionAndModule()
@@ -273,6 +294,9 @@ class CfirExtendIndexStoreTest {
         )
     }
 
+    /**
+     * 验证其他包扩展接口集合包含传递父接口。
+     */
     @Test
     fun `other package extended interface ids include transitive parent interfaces`() {
         val (_, moduleData) = ExtendTestFixtures.newSessionAndModule()
@@ -317,6 +341,9 @@ class CfirExtendIndexStoreTest {
         )
     }
 
+    /**
+     * 验证单个 extend 声明的接口闭包包含传递父接口。
+     */
     @Test
     fun `declaration interface closure includes transitive parent interfaces`() {
         val (_, moduleData) = ExtendTestFixtures.newSessionAndModule()
@@ -352,6 +379,51 @@ class CfirExtendIndexStoreTest {
         )
     }
 
+    /**
+     * 验证非法接口父类型不会污染 extend 规则闭包。
+     */
+    @Test
+    fun `invalid interface supertypes are excluded from declaration closure`() {
+        val (_, moduleData) = ExtendTestFixtures.newSessionAndModule()
+        val localPackage = FqName("local.pkg")
+        val remotePackage = FqName("remote.pkg")
+        val targetClassId = ClassId(remotePackage, Name.identifier("Target"))
+        val remoteInterfaceId = ClassId(remotePackage, Name.identifier("IRemote"))
+        val invalidInterfaceId = ClassId(localPackage, Name.identifier("InvalidInterface"))
+        val concreteClassId = ClassId(remotePackage, Name.identifier("Concrete"))
+
+        val declarations = linkedMapOf(
+            targetClassId to ExtendTestFixtures.newClass(moduleData, "Target"),
+            remoteInterfaceId to ExtendTestFixtures.newInterface(moduleData, "IRemote"),
+            concreteClassId to ExtendTestFixtures.newClass(moduleData, "Concrete"),
+            invalidInterfaceId to ExtendTestFixtures.newInterface(
+                moduleData = moduleData,
+                name = "InvalidInterface",
+                superTypeRefs = listOf(
+                    ExtendTestFixtures.classTypeRef(remoteInterfaceId, isInterface = true),
+                    ExtendTestFixtures.classTypeRef(concreteClassId),
+                ),
+            ),
+        )
+
+        val extend = ExtendTestFixtures.newExtend(
+            moduleData = moduleData,
+            extendedTypeRef = ExtendTestFixtures.classTypeRef(targetClassId),
+            superTypeRefs = listOf(ExtendTestFixtures.classTypeRef(invalidInterfaceId, isInterface = true)),
+        )
+        val file = ExtendTestFixtures.newFile(moduleData, localPackage, listOf(extend))
+
+        val store = CfirExtendIndexStore()
+        store.rebuild(listOf(file), MapBackedTypeResolver(declarations))
+
+        val query = CfirExtendRuleQueryServiceImpl(store)
+        assertEquals(listOf(invalidInterfaceId), query.inheritedInterfaceClassIdsOf(extend))
+        assertEquals(emptySet<ClassId>(), query.inheritedInterfaceClosureClassIdsOf(extend))
+    }
+
+    /**
+     * 验证重复接口不会改变声明接口闭包语义。
+     */
     @Test
     fun `duplicate interfaces do not change declaration closure semantics`() {
         val (_, moduleData) = ExtendTestFixtures.newSessionAndModule()
@@ -391,7 +463,13 @@ class CfirExtendIndexStoreTest {
     }
 }
 
+/**
+ * 不执行真实类型解析的测试 resolver。
+ */
 private object NoopTypeResolver : CfirTypeResolver() {
+    /**
+     * 返回固定错误类型，当前测试只依赖已解析 type ref。
+     */
     override fun resolveType(
         typeRef: org.cangnova.cangjie.cfir.types.CfirTypeRef,
         configuration: org.cangnova.cangjie.cfir.resolve.TypeResolutionConfiguration,
@@ -409,14 +487,29 @@ private object NoopTypeResolver : CfirTypeResolver() {
         )
     }
 
+    /**
+     * 不从 type ref 解析 class。
+     */
     override fun resolveClass(typeRef: org.cangnova.cangjie.cfir.types.CfirTypeRef): CfirClassLikeDeclaration? = null
 
+    /**
+     * 不从 ClassId 解析 class。
+     */
     override fun resolveClass(classId: ClassId): CfirClassLikeDeclaration? = null
 }
 
+/**
+ * 基于内存声明表解析 class 的测试 resolver。
+ */
 private class MapBackedTypeResolver(
+    /**
+     * 按 ClassId 索引的测试声明表。
+     */
     private val declarationsByClassId: Map<ClassId, CfirClassLikeDeclaration>,
 ) : CfirTypeResolver() {
+    /**
+     * 返回固定错误类型；测试仅使用 class 解析能力。
+     */
     override fun resolveType(
         typeRef: org.cangnova.cangjie.cfir.types.CfirTypeRef,
         configuration: org.cangnova.cangjie.cfir.resolve.TypeResolutionConfiguration,
@@ -434,12 +527,18 @@ private class MapBackedTypeResolver(
         )
     }
 
+    /**
+     * 从 resolved type ref 的 ClassId 查找声明。
+     */
     override fun resolveClass(typeRef: org.cangnova.cangjie.cfir.types.CfirTypeRef): CfirClassLikeDeclaration? {
         val resolvedTypeRef = typeRef as? CfirResolvedTypeRef ?: return null
         val classId = resolvedTypeRef.coneType.classIdOrPrimitiveClassId ?: return null
         return declarationsByClassId[classId]
     }
 
+    /**
+     * 从 ClassId 查找声明。
+     */
     override fun resolveClass(classId: ClassId): CfirClassLikeDeclaration? =
         declarationsByClassId[classId]
 }

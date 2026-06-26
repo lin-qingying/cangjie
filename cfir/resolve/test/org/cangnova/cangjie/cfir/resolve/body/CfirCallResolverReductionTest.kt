@@ -7,6 +7,9 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
+/**
+ * [reduceCollectedCandidates] 候选集合规约行为测试。
+ */
 class CfirCallResolverReductionTest {
 
     @Nested
@@ -127,9 +130,21 @@ class CfirCallResolverReductionTest {
     }
 }
 
+/**
+ * 候选规约测试使用的轻量候选模型。
+ *
+ * @property name 候选名称，用于断言和调试。
+ * @property isSuccessful 是否代表成功候选。
+ * @property applicability 候选自身适用性。
+ * @property processed 是否已经执行完整处理。
+ */
 private data class FakeCandidate(
+    /** 候选名称，用于断言和调试。 */
     val name: String,
+    /** 是否代表成功候选。 */
     val isSuccessful: Boolean,
+    /** 候选自身适用性。 */
     val applicability: CandidateApplicability,
+    /** 是否已经执行完整处理。 */
     var processed: Boolean = false,
 )

@@ -12,7 +12,13 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlin.test.fail
 
+/**
+ * 使用随测试资源携带的 SDK CJO fixture 验证真实包格式可被当前反序列化入口读取。
+ */
 class CjoSdkDeserializationIntegrationTest {
+    /**
+     * 验证 SDK CJO fixture 具有合法标识符、包名和不高于当前支持范围的 CJO 版本。
+     */
     @Test
     fun `sdk cjo fixtures can be deserialized with expected version`() {
         val fixtures = listOf(
@@ -47,6 +53,9 @@ class CjoSdkDeserializationIntegrationTest {
         }
     }
 
+    /**
+     * 验证 CJO manager 能从标准 SDK 搜索路径布局中加载指定包头和完整包。
+     */
     @Test
     fun `cjo manager loads sdk package in canonical search path layout`() {
         val fixture = "cjo-sdk/windows_x86_64_cjnative/std/std.objectpool.cjo"
@@ -85,16 +94,34 @@ class CjoSdkDeserializationIntegrationTest {
         }
     }
 
+    /**
+     * 从测试 classpath 读取指定 CJO fixture 字节。
+     */
     private fun resourceBytes(path: String): ByteArray {
         return javaClass.classLoader.getResourceAsStream(path)?.use { it.readBytes() }
             ?: fail("fixture not found in test resources: $path (classpath lookup failed)")
     }
 
+    /**
+     * 用于比较 CJO fixture 版本和当前支持版本的语义化版本值。
+     */
     private data class Version(
+        /**
+         * 主版本号。
+         */
         val major: Int,
+        /**
+         * 次版本号。
+         */
         val minor: Int,
+        /**
+         * 补丁版本号。
+         */
         val patch: Int,
     ) : Comparable<Version> {
+        /**
+         * 按 major、minor、patch 顺序比较版本大小。
+         */
         override fun compareTo(other: Version): Int {
             return compareValuesBy(this, other, Version::major, Version::minor, Version::patch)
         }

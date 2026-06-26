@@ -10,7 +10,13 @@ import org.cangnova.cangjie.name.Name
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
+/**
+ * [CfirExtensionsResolveTransformer] resolve phase 推进测试。
+ */
 class CfirExtensionsResolveProcessorTest {
+    /**
+     * 验证 STATUS 阶段 extend 会推进到 EXTENSIONS，RAW_CFIR 阶段声明保持不变。
+     */
     @Test
     fun `transformDeclaration advances STATUS declarations to EXTENSIONS`() {
         val (session, moduleData) = ExtendTestFixtures.newSessionAndModule()

@@ -10,7 +10,13 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
+/**
+ * 验证 CJO 包写入器产出的 FlatBuffers 数据可被包头读取器消费。
+ */
 class CjoPackageWriterTest {
+    /**
+     * 验证宏包元数据写入后能被包头读取器还原。
+     */
     @Test
     fun `writes macro package metadata readable by package header`() {
         val bytes = CjoPackageWriter.toByteArray(
@@ -47,6 +53,9 @@ class CjoPackageWriterTest {
         assertEquals(1, header.fullIdReferenceKeyToIndex["macros.pkg.Alpha"])
     }
 
+    /**
+     * 验证分类器声明和文件导入元数据会写入 CJO 包。
+     */
     @Test
     fun `writes classifier declarations and file import metadata`() {
         val bytes = CjoPackageWriter.toByteArray(
@@ -84,6 +93,9 @@ class CjoPackageWriterTest {
         assertEquals(setOf("makeBox"), header.topLevelCallableNames.mapTo(mutableSetOf()) { it.asString() })
     }
 
+    /**
+     * 验证写入器会创建目标路径并把 CJO 文件写到指定位置。
+     */
     @Test
     fun `writes cjo file to target path`() {
         val dir = Files.createTempDirectory("cjo-writer-test")

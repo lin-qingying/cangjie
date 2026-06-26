@@ -41,17 +41,32 @@ import org.cangnova.cangjie.platform.CangJiePlatforms
  * 提供构建 `CfirFunction`、`CfirValueParameter`、`CfirCandidate` 等测试 fixture 的工厂方法。
  */
 object CallResolutionTestFixtures {
+    /**
+     * 调用解析测试使用的 body resolve 上下文。
+     */
     private val STUB_BODY_RESOLVE_CONTEXT = CfirBodyResolveContext(
         ReturnTypeCalculator.Default,
         CfirDataFlowAnalyzerContext(),
     )
 
+    /**
+     * 调用解析测试使用的最小类型关系服务。
+     */
     private val STUB_TYPE_RELATIONS = CfirTypeRelations(object : ConeTypeContext {
+        /**
+         * 测试上下文不提供额外父类型。
+         */
         override fun supertypes(type: ConeCangJieType): Collection<ConeCangJieType> = emptyList()
 
+        /**
+         * 使用结构相等判断类型构造器一致性。
+         */
         override fun isSameTypeConstructor(a: ConeCangJieType, b: ConeCangJieType): Boolean = a == b
     })
 
+    /**
+     * 候选构造时复用的 resolution context。
+     */
     private val STUB_RESOLUTION_CONTEXT = CfirResolutionContext(
         session = StubCfirSession,
         bodyResolveContext = STUB_BODY_RESOLVE_CONTEXT,
@@ -59,6 +74,9 @@ object CallResolutionTestFixtures {
     )
 
 
+    /**
+     * 调用解析测试使用的模块数据。
+     */
     val TEST_MODULE_DATA: CfirModuleData = CfirSourceModuleData(
         name = Name.identifier("test-module"),
         dependencies = emptyList(),
@@ -185,5 +203,8 @@ object CallResolutionTestFixtures {
  * 最小化的 `CfirSession` stub，仅用于测试。
  */
 private object StubCfirSession : org.cangnova.cangjie.cfir.session.CfirSession(Kind.Source) {
+    /**
+     * 返回稳定的调试名称。
+     */
     override fun toString(): String = "StubCfirSession"
 }

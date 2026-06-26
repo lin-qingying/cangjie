@@ -12,10 +12,19 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
+/**
+ * [CfirConstraintCompletion] 变量固定和边界合并测试。
+ */
 class CfirConstraintCompletionTest {
 
+    /**
+     * 测试使用的 completion 实例。
+     */
     private val completion = CfirConstraintCompletion(CfirTypeRelations(CompletionTypeContext()))
 
+    /**
+     * 验证只有下界时变量会固定为该下界。
+     */
     @Test
     fun `completion fixes variable from lower bounds`() {
         val store = CfirConstraintStore()
@@ -33,6 +42,9 @@ class CfirConstraintCompletionTest {
         assertTrue(store.issues.isEmpty())
     }
 
+    /**
+     * 验证下界满足上界时优先采用下界作为固定类型。
+     */
     @Test
     fun `completion prefers lower bound when it fits upper bound`() {
         val store = CfirConstraintStore()
@@ -50,6 +62,9 @@ class CfirConstraintCompletionTest {
         assertEquals(ConePrimitiveType.INT32, variable.fixedType)
     }
 
+    /**
+     * 验证冲突边界会先报告 issue 并阻止变量固定。
+     */
     @Test
     fun `completion reports conflict before fixing`() {
         val store = CfirConstraintStore()
@@ -68,6 +83,9 @@ class CfirConstraintCompletionTest {
         assertNull(variable.fixedType)
     }
 
+    /**
+     * 验证 ideal int 会终结为 Int64。
+     */
     @Test
     fun `completion finalizes ideal int to Int64`() {
         val store = CfirConstraintStore()
@@ -84,6 +102,9 @@ class CfirConstraintCompletionTest {
         assertEquals(ConePrimitiveType.INT64, variable.fixedType)
     }
 
+    /**
+     * 验证 ideal float 会终结为 Float64。
+     */
     @Test
     fun `completion finalizes ideal float to Float64`() {
         val store = CfirConstraintStore()
@@ -100,6 +121,9 @@ class CfirConstraintCompletionTest {
         assertEquals(ConePrimitiveType.FLOAT64, variable.fixedType)
     }
 
+    /**
+     * 验证多个下界通过 join 合并后固定变量。
+     */
     @Test
     fun `completion joins multiple lower bounds`() {
         val store = CfirConstraintStore()
@@ -117,6 +141,9 @@ class CfirConstraintCompletionTest {
         assertEquals(ConePrimitiveType.INT64, variable.fixedType)
     }
 
+    /**
+     * 验证多个上界通过 meet 合并后固定变量。
+     */
     @Test
     fun `completion meets multiple upper bounds`() {
         val store = CfirConstraintStore()
@@ -134,6 +161,9 @@ class CfirConstraintCompletionTest {
         assertEquals(ConePrimitiveType.INT32, variable.fixedType)
     }
 
+    /**
+     * 验证 ideal 下界和具体上界共存时采用非 ideal 具体类型。
+     */
     @Test
     fun `completion prefers non-ideal join over ideal`() {
         val store = CfirConstraintStore()
@@ -153,8 +183,17 @@ class CfirConstraintCompletionTest {
     }
 }
 
+/**
+ * completion 测试使用的最小类型上下文。
+ */
 private class CompletionTypeContext : ConeTypeContext {
+    /**
+     * 测试上下文不提供额外继承关系。
+     */
     override fun supertypes(type: ConeCangJieType): Collection<ConeCangJieType> = emptyList()
 
+    /**
+     * 使用结构相等判断类型构造器是否相同。
+     */
     override fun isSameTypeConstructor(a: ConeCangJieType, b: ConeCangJieType): Boolean = a == b
 }

@@ -13,8 +13,14 @@ import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
+/**
+ * [CfirConstraintStore] 变量、约束和 issue 存储行为测试。
+ */
 class CfirConstraintStoreTest {
 
+    /**
+     * 验证 store 能保存注册变量和新增约束。
+     */
     @Test
     fun `store keeps registered variables and constraints`() {
         val store = CfirConstraintStore()
@@ -38,6 +44,9 @@ class CfirConstraintStoreTest {
         assertNotNull(store.findTypeVariable("T"))
     }
 
+    /**
+     * 验证 store 能跟踪并清空约束 issue。
+     */
     @Test
     fun `store tracks and clears issues`() {
         val store = CfirConstraintStore()
@@ -64,6 +73,9 @@ class CfirConstraintStoreTest {
         assertTrue(store.issues.isEmpty())
     }
 
+    /**
+     * 验证变量查找使用索引进行 O(1) 命中。
+     */
     @Test
     fun `findTypeVariable uses index for O(1) lookup`() {
         val store = CfirConstraintStore()

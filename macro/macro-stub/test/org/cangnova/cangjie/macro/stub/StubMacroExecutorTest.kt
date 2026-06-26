@@ -15,8 +15,14 @@ import org.cangnova.cangjie.macro.MacroExpansionResult
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
+/**
+ * 覆盖 [StubMacroExecutor] 的注册展开、默认展开、调用记录、重置和可用性行为。
+ */
 class StubMacroExecutorTest {
 
+    /**
+     * 验证已注册的固定展开文本会转换为成功的宏展开结果。
+     */
     @Test
     fun `registered expansion returns success`() {
         val executor = StubMacroExecutor()
@@ -31,6 +37,9 @@ class StubMacroExecutorTest {
         assertEquals("let x = 42", (result as MacroExpansionResult.Success).expandedText)
     }
 
+    /**
+     * 验证没有注册处理器且没有默认结果时，桩执行器返回失败结果。
+     */
     @Test
     fun `unregistered macro returns failure`() {
         val executor = StubMacroExecutor()
@@ -42,6 +51,9 @@ class StubMacroExecutorTest {
         assertTrue(results[0] is MacroExpansionResult.Failure)
     }
 
+    /**
+     * 验证默认展开结果会处理所有未显式注册的宏调用。
+     */
     @Test
     fun `default result is used when no handler registered`() {
         val executor = StubMacroExecutor()
@@ -57,6 +69,9 @@ class StubMacroExecutorTest {
         assertEquals("default", result.expandedText)
     }
 
+    /**
+     * 验证每次执行传入的宏调用都会按原顺序记录到 [StubMacroExecutor.executedCalls]。
+     */
     @Test
     fun `executed calls are recorded`() {
         val executor = StubMacroExecutor()
@@ -74,6 +89,9 @@ class StubMacroExecutorTest {
         assertEquals("B", executor.executedCalls[1].idName)
     }
 
+    /**
+     * 验证 [StubMacroExecutor.reset] 会清空执行调用记录。
+     */
     @Test
     fun `reset clears executed calls`() {
         val executor = StubMacroExecutor()
@@ -85,12 +103,18 @@ class StubMacroExecutorTest {
         assertEquals(0, executor.executedCalls.size)
     }
 
+    /**
+     * 验证桩执行器不依赖外部运行时，因此始终报告可用。
+     */
     @Test
     fun `isAvailable returns true`() {
         val executor = StubMacroExecutor()
         assertTrue(executor.isAvailable())
     }
 
+    /**
+     * 验证自定义处理器能够读取完整的 [MacroCallInfo] 并据此生成展开文本。
+     */
     @Test
     fun `custom handler receives call info`() {
         val executor = StubMacroExecutor()

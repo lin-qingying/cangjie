@@ -12,8 +12,14 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
+/**
+ * [CfirInferenceLogger] 日志块、origin 和 item 收集行为测试。
+ */
 class CfirInferenceLoggerTest {
 
+    /**
+     * 验证 logStage 会创建 unknown owner 的顶层 block。
+     */
     @Test
     fun `log stage creates top-level block with unknown owner`() {
         val logger = CfirInferenceLogger()
@@ -28,6 +34,9 @@ class CfirInferenceLoggerTest {
         assertTrue(block.items.isEmpty())
     }
 
+    /**
+     * 验证 logger 能把变量、约束、错误和 fixed variable 写入当前 block。
+     */
     @Test
     fun `logger collects variable constraint error and fix-variable items into current block`() {
         val logger = CfirInferenceLogger()
@@ -56,6 +65,9 @@ class CfirInferenceLoggerTest {
         assertEquals(resultType, fixVariableElement.resultType)
     }
 
+    /**
+     * 验证 withOrigin 会把缓存的 initial constraint 作为派生约束 origin。
+     */
     @Test
     fun `withOrigin attaches cached initial constraint as origin for derived constraint`() {
         val logger = CfirInferenceLogger()
@@ -76,6 +88,9 @@ class CfirInferenceLoggerTest {
         assertEquals(listOf(initialElement), derivedElement.origins)
     }
 
+    /**
+     * 验证回到已知 constraint system 时创建 continuation block。
+     */
     @Test
     fun `revisiting known system creates continuation block`() {
         val logger = CfirInferenceLogger()
@@ -98,6 +113,9 @@ class CfirInferenceLoggerTest {
         assertTrue(continuation.items.single() is CfirInferenceLogger.ConstraintElement)
     }
 
+    /**
+     * 验证注册新阶段时会丢弃尾部空 block。
+     */
     @Test
     fun `registering a new stage drops trailing empty block`() {
         val logger = CfirInferenceLogger()
@@ -114,21 +132,48 @@ class CfirInferenceLoggerTest {
     }
 }
 
+/**
+ * 推断日志测试使用的 constraint system marker。
+ */
 private data class FakeConstraintSystemMarker(val debugName: String) : org.cangnova.cangjie.resolve.calls.inference.components.ConstraintSystemMarker {
+    /**
+     * 返回 marker 调试名称。
+     */
     override fun toString(): String = debugName
 }
 
+/**
+ * 推断日志测试使用的类型变量 marker。
+ */
 private data class FakeTypeVariable(private val debugName: String) : TypeVariableMarker {
+    /**
+     * 与变量名对应的 fake lookup tag。
+     */
     val lookupTag = FakeLookupTag(debugName)
+    /**
+     * 返回变量调试名称。
+     */
     override fun toString(): String = debugName
 }
 
+/**
+ * 推断日志测试使用的 lookup tag。
+ */
 private data class FakeLookupTag(val name: String)
 
+/**
+ * 推断日志测试使用的类型 marker。
+ */
 private data class FakeType(private val debugName: String) : CangJieTypeMarker {
+    /**
+     * 返回类型调试名称。
+     */
     override fun toString(): String = debugName
 }
 
+/**
+ * 构造带稳定调试名称的 fake constraint。
+ */
 private fun FakeConstraint(debugName: String): Constraint = Constraint(
     kind = ConstraintKind.UPPER,
     type = FakeType(debugName),
@@ -137,5 +182,8 @@ private fun FakeConstraint(debugName: String): Constraint = Constraint(
     isNoInfer = false,
 )
 
+/**
+ * 构造日志 origin 使用的初始约束。
+ */
 private fun fakeInitialConstraint(): InitialConstraint =
     InitialConstraint(FakeType("A"), FakeType("B"), ConstraintKind.UPPER, SimpleConstraintSystemConstraintPosition)

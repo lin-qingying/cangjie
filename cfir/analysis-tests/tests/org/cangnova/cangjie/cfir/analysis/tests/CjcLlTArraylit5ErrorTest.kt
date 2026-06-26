@@ -11,6 +11,9 @@ import org.junit.jupiter.api.Test
 @Disabled("LLT 官方一致性测试不作为当前 CFIR analysis-tests 门禁执行")
 class CjcLlTArraylit5ErrorTest : AbstractCjcLlTDiagnosticsConsistencyTest() {
     @Test
+    /**
+     * 执行 `arraylit5_error.cj` 的官方 cjc 一致性回归测试。
+     */
     fun testArraylit5Error() {
         runTest("cfir/analysis-tests/testData/llt/array/arraylit5_error.cj")
     }

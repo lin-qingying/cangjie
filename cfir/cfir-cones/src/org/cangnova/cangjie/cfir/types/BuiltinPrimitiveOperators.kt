@@ -220,23 +220,37 @@ object BuiltinPrimitiveOperators {
         receiverType: ConeCangJieType?,
         argumentTypes: List<ConeCangJieType>,
     ): BuiltinPrimitiveOperatorMatch? {
-        val receiverKind = receiverType?.toBuiltinOperatorKind() ?: return null
+        val receiverKind = primitiveOperandKind(receiverType) ?: return null
         val argumentKinds = argumentTypes.map { it.toBuiltinOperatorKind() ?: return null }
         val signature = resolveSignature(name, receiverKind, argumentKinds) ?: return null
         return BuiltinPrimitiveOperatorMatch(signature)
     }
 
     /**
+     * 将源码、stub 或 primitive classifier 视图统一规约为内建 operator 操作数类型。
+     */
+    fun normalizePrimitiveOperand(type: ConeCangJieType?): ConePrimitiveType? {
+        val kind = primitiveOperandKind(type) ?: return null
+        return ConePrimitiveType(kind)
+    }
+
+    /**
+     * 提取类型在内建 operator 规则中的 primitive 种类。
+     */
+    fun primitiveOperandKind(type: ConeCangJieType?): PrimitiveTypeKind? =
+        type?.toBuiltinOperatorKind()
+
+    /**
      * 判断 [type] 是否可作为 primitive 内建运算操作数。
      */
     fun isBuiltinPrimitiveOperand(type: ConeCangJieType?): Boolean =
-        type?.toBuiltinOperatorKind() != null
+        primitiveOperandKind(type) != null
 
     /**
      * 根据幂运算接收者类型返回允许的参数 primitive 种类。
      */
     fun exponentiationArgumentExpectedKinds(receiverType: ConeCangJieType?): List<PrimitiveTypeKind> {
-        val receiverKind = receiverType?.toBuiltinOperatorKind()?.defaultedIdealKind() ?: return emptyList()
+        val receiverKind = primitiveOperandKind(receiverType)?.defaultedIdealKind() ?: return emptyList()
         return when (receiverKind) {
             PrimitiveTypeKind.INT64 -> listOf(PrimitiveTypeKind.UINT64)
             PrimitiveTypeKind.FLOAT64 -> listOf(PrimitiveTypeKind.INT64, PrimitiveTypeKind.FLOAT64)
@@ -387,7 +401,11 @@ object BuiltinPrimitiveOperators {
         is ConePrimitiveType -> kind
         is ConeIdealIntLiteralType -> PrimitiveTypeKind.IDEAL_INT
         is ConeIdealFloatLiteralType -> PrimitiveTypeKind.IDEAL_FLOAT
-        else -> null
+        is ConeClassLikeType -> classId.toPrimitiveTypeKindOrNull()
+        is ConeStructType -> classId.toPrimitiveTypeKindOrNull()
+        is ConeEnumType -> classId.toPrimitiveTypeKindOrNull()
+        is ConeTypeAliasType -> expandedClassIdOrPrimitiveClassId?.toPrimitiveTypeKindOrNull()
+        else -> classIdOrPrimitiveClassId?.toPrimitiveTypeKindOrNull()
     }
 
     /**

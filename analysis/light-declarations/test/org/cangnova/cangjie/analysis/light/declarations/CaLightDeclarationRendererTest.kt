@@ -25,6 +25,9 @@ import org.junit.jupiter.api.Test
  * 2. 缓存键会复用同一声明实例。
  */
 class CaLightDeclarationRendererTest {
+    /**
+     * 验证 class-like 与 callable 的树形渲染保留声明层级。
+     */
     @Test
     fun renderTreeKeepsDeclarationShape() {
         val token = TestLifetimeToken()
@@ -68,6 +71,9 @@ class CaLightDeclarationRendererTest {
         assertTrue(renderedTree.contains("callable sample/peripheral/topLevel"))
     }
 
+    /**
+     * 验证 extend 声明及其成员的树形渲染格式。
+     */
     @Test
     fun renderTreeKeepsExtendShape() {
         val token = TestLifetimeToken()
@@ -102,6 +108,9 @@ class CaLightDeclarationRendererTest {
         assertTrue(renderedTree.contains("  callable sample/peripheral/Display.render"))
     }
 
+    /**
+     * 验证相同缓存键会返回同一个 light declaration 实例。
+     */
     @Test
     fun cacheReturnsStableDeclarationInstance() {
         val cache = CaLightDeclarationCache()
@@ -124,36 +133,90 @@ class CaLightDeclarationRendererTest {
         assertSame(first, second)
     }
 
+    /**
+     * 测试用 lifetime token，始终处于有效且可访问状态。
+     */
     private class TestLifetimeToken : CaLifetimeToken() {
+        /**
+         * 测试 token 始终有效。
+         */
         override fun isValid(): Boolean = true
 
+        /**
+         * 返回测试 token 的稳定有效性说明。
+         */
         override fun getInvalidationReason(): String = "valid in tests"
 
+        /**
+         * 测试 token 始终可访问。
+         */
         override fun isAccessible(): Boolean = true
 
+        /**
+         * 返回测试 token 的稳定可访问性说明。
+         */
         override fun getInaccessibilityReason(): String = "accessible in tests"
     }
 
+    /**
+     * 测试用类型实现，只提供 renderer 需要的展示文本和注解列表。
+     */
     private class TestType(
+        /**
+         * 类型展示文本。
+         */
         override val presentation: String,
+        /**
+         * 类型绑定的测试 token。
+         */
         override val token: CaLifetimeToken,
     ) : CaType {
+        /**
+         * 测试类型没有缩写类型。
+         */
         override val abbreviation: CaUsualClassType? = null
+        /**
+         * 测试类型没有注解。
+         */
         override val annotations: CaAnnotationList = EmptyAnnotationList(token)
 
+        /**
+         * 创建可恢复为当前测试类型实例的类型指针。
+         */
         override fun createPointer(): CaTypePointer<CaType> = object : CaTypePointer<CaType> {
             @OptIn(CaImplementationDetail::class)
             override fun restore(session: CaSession): CaType = this@TestType
         }
     }
 
+    /**
+     * 空注解列表测试实现。
+     */
     private class EmptyAnnotationList(
+        /**
+         * 注解列表绑定的测试 token。
+         */
         override val token: CaLifetimeToken,
     ) : AbstractList<CaAnnotation>(), CaAnnotationList {
+        /**
+         * 空注解列表大小固定为 0。
+         */
         override val size: Int = 0
+        /**
+         * 空列表读取任意下标都会失败。
+         */
         override fun get(index: Int): CaAnnotation = throw IndexOutOfBoundsException("Index $index out of bounds")
+        /**
+         * 空列表不包含任何注解 classId。
+         */
         override fun contains(classId: ClassId): Boolean = false
+        /**
+         * 空列表按 classId 查询始终返回空集合。
+         */
         override fun get(classId: ClassId): List<CaAnnotation> = emptyList()
+        /**
+         * 空列表没有注解 classId 集合。
+         */
         override val classIds: Collection<ClassId> = emptyList()
     }
 }

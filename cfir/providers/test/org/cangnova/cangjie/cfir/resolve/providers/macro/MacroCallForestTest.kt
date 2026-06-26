@@ -5,7 +5,13 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Test
 
+/**
+ * 验证宏调用森林构建和求值顺序，确保嵌套宏按子节点优先的构造流程执行。
+ */
 class MacroCallForestTest {
+    /**
+     * 验证根节点按照源码范围和 surfaceId 形成稳定顺序。
+     */
     @Test
     fun `roots are sorted deterministically by source range and surface id`() {
         val later = surface(id = 30, name = "Later", start = 40, end = 50)
@@ -23,6 +29,9 @@ class MacroCallForestTest {
         )
     }
 
+    /**
+     * 验证求值器先展开嵌套子节点，并把直接子节点结果传递给父节点。
+     */
     @Test
     fun `evaluator visits nested forest child first and passes direct child results to parent`() {
         val outer = surface(id = 1, name = "Outer", start = 0, end = 100)
@@ -47,6 +56,9 @@ class MacroCallForestTest {
         assertEquals(listOf("innerResult", "middleResult", "outerResult"), results.values.flatten().map { it.text })
     }
 
+    /**
+     * 验证父节点通过输入 token 与属性 token 覆盖范围记录子节点 payload 通道。
+     */
     @Test
     fun `forest records child payload channel from parent token coverage`() {
         val inputChild = surface(id = 2, name = "InputChild", start = 20, end = 30)
@@ -70,6 +82,9 @@ class MacroCallForestTest {
         assertEquals(MacroPayloadChannel.ATTR, edges.getValue("AttrChild"))
     }
 
+    /**
+     * 验证直接子节点没有展开结果时父节点不会继续执行。
+     */
     @Test
     fun `evaluator skips parent when a direct child has no expansion result`() {
         val outer = surface(id = 1, name = "Outer", start = 0, end = 100)
@@ -90,6 +105,9 @@ class MacroCallForestTest {
         assertEquals(emptyMap<MacroCallNode, List<MacroSurfaceToken>>(), results)
     }
 
+    /**
+     * 验证重复指纹超过迭代上限时会通过回调报告宏展开循环。
+     */
     @Test
     fun `evaluator reports fingerprint cycle through callback`() {
         val first = surface(id = 1, name = "Loop", start = 0, end = 10, inputTokens = listOf(token("same")))
@@ -109,6 +127,9 @@ class MacroCallForestTest {
         assertSame(second, cycles.single().nodes.last().surface)
     }
 
+    /**
+     * 构造带源码范围、输入 token 和标准上下文的宏 surface。
+     */
     private fun surface(
         id: Long,
         name: String,
@@ -146,8 +167,14 @@ class MacroCallForestTest {
         )
     }
 
+    /**
+     * 构造覆盖完整文本范围的测试 token。
+     */
     private fun token(text: String): MacroSurfaceToken = token(text, 0, text.length)
 
+    /**
+     * 构造指定源码范围的测试 token。
+     */
     private fun token(text: String, startOffset: Int, endOffset: Int): MacroSurfaceToken = MacroSurfaceToken(
         text = text,
         startOffset = startOffset,

@@ -10,7 +10,13 @@ import org.cangnova.cangjie.name.Name
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
+/**
+ * [CfirSessionExtendProvider] 基于 extend index 查询扩展声明的测试。
+ */
 class CfirSessionExtendProviderTest {
+    /**
+     * 验证 provider 不会在 EXTENSIONS 阶段前隐式重建索引。
+     */
     @Test
     fun `provider does not rebuild index implicitly before extensions phase`() {
         val (session, _) = ExtendTestFixtures.newSessionAndModule()
@@ -23,6 +29,9 @@ class CfirSessionExtendProviderTest {
         assertEquals(emptyList<CfirExtend>(), provider.getExtendsForClass(targetClassId))
     }
 
+    /**
+     * 验证 provider 从 index store 读取 class 和 package 级 extend。
+     */
     @Test
     fun `provider reads extends for class and package from index store`() {
         val (session, moduleData) = ExtendTestFixtures.newSessionAndModule()
@@ -49,6 +58,9 @@ class CfirSessionExtendProviderTest {
         assertEquals(listOf(targetExtend, otherExtend), provider.getExtendsInPackage(packageFqName))
     }
 
+    /**
+     * 验证 provider 可通过内建类型短名查找 primitive extend。
+     */
     @Test
     fun `provider resolves builtin extends by builtin short name`() {
         val (session, moduleData) = ExtendTestFixtures.newSessionAndModule()
@@ -69,7 +81,13 @@ class CfirSessionExtendProviderTest {
     }
 }
 
+/**
+ * extend index 测试使用的空 type resolver。
+ */
 private object NoopTypeResolver : CfirTypeResolver() {
+    /**
+     * 返回固定错误类型，测试不依赖真实类型解析。
+     */
     override fun resolveType(
         typeRef: org.cangnova.cangjie.cfir.types.CfirTypeRef,
         configuration: org.cangnova.cangjie.cfir.resolve.TypeResolutionConfiguration,
@@ -85,7 +103,13 @@ private object NoopTypeResolver : CfirTypeResolver() {
         )
     }
 
+    /**
+     * 不解析 type ref 到 class。
+     */
     override fun resolveClass(typeRef: org.cangnova.cangjie.cfir.types.CfirTypeRef): org.cangnova.cangjie.cfir.declarations.CfirClass? = null
 
+    /**
+     * 不解析 ClassId 到 class。
+     */
     override fun resolveClass(classId: ClassId): org.cangnova.cangjie.cfir.declarations.CfirClass? = null
 }

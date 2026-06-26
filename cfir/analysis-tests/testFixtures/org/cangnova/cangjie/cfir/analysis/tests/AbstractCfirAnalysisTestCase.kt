@@ -29,16 +29,34 @@ import org.cangnova.cangjie.test.testFramework.CjParsingTestCase
 import java.io.File
 import java.nio.file.Path
 
+/**
+ * CFIR analysis 测试的基础用例。
+ *
+ * 该基类统一提供 PSI 文件创建、最小 CFIR session 组装、Raw CFIR 构建、
+ * 宏构造记录以及 golden 文件断言能力，使 analysis-tests 中的解析、
+ * resolve 与诊断测试共享同一套测试环境。
+ */
 abstract class AbstractCfirAnalysisTestCase : CjParsingTestCase(
     "",
     "cj",
     CangJieFileType.INSTANCE,
     CangJieParserDefinition(),
 ) {
+    /**
+     * 基于给定源码文本创建一个 `.cj` PSI 文件。
+     *
+     * 返回值固定为 [CjFile]，用于后续 Raw CFIR builder 直接消费。
+     */
     protected fun createCjFile(name: String, text: String = ""): CjFile {
         return createPsiFile("$name.cj", text) as CjFile
     }
 
+    /**
+     * 创建 analysis-tests 使用的最小 source session。
+     *
+     * Session 内注册 module data、scope provider、source provider 与 builtin symbol provider，
+     * 保证单文件测试也能按正式 CFIR provider 链路解析源码与内建符号。
+     */
     protected fun createTestSession(): CfirSession {
         return object : CfirSession(Kind.Source) {}.also { session ->
             val moduleData = CfirSourceModuleData(
@@ -69,6 +87,11 @@ abstract class AbstractCfirAnalysisTestCase : CjParsingTestCase(
         }
     }
 
+    /**
+     * 将当前 PSI 文件转换为 [CfirFile]，并把 Raw CFIR 文件记录进 session provider。
+     *
+     * 记录过程会经过 identity macro construction，保持测试路径与正式宏构造入口一致。
+     */
     protected fun CjFile.toCfirFile(
         session: CfirSession = createTestSession(),
         bodyBuildingMode: BodyBuildingMode = BodyBuildingMode.NORMAL,
@@ -78,6 +101,12 @@ abstract class AbstractCfirAnalysisTestCase : CjParsingTestCase(
         }
     }
 
+    /**
+     * 将 Raw CFIR 文件写入 session 的 CFIR provider。
+     *
+     * 该方法只使用 identity 宏服务，不展开外部宏进程；它的职责是生成可被后续
+     * provider、scope 与 resolve 阶段查询的 recordable file 集合。
+     */
     private fun CfirSession.recordRawCfirFile(cfirFile: CfirFile) {
         val provider = cfirProvider as CfirProviderImpl
         val pre = buildPreMacroRawFiles(this, listOf(cfirFile))
@@ -90,10 +119,21 @@ abstract class AbstractCfirAnalysisTestCase : CjParsingTestCase(
         recordExpandedRawFilesOnce(provider, success.recordableFiles, success.registry)
     }
 
+    /**
+     * 使用 golden 兼容渲染器输出 CFIR 文件文本。
+     *
+     * 输出格式用于 `.cfir.txt` golden 文件比对，必须与测试生成器期望保持一致。
+     */
     protected fun dumpCfirFile(cfirFile: CfirFile): String {
         return CfirRenderer.withGoldenCompat().renderElementAsString(cfirFile)
     }
 
+    /**
+     * 解析测试数据路径。
+     *
+     * 绝对路径直接返回；相对路径会先按当前工作目录查找，随后逐级向上搜索，
+     * 以兼容 IDE、Gradle 子项目和仓库根目录下的不同运行入口。
+     */
     protected fun resolveTestDataPath(path: String): File {
         val direct = Path.of(path).toFile()
         if (direct.isAbsolute) return direct
@@ -109,6 +149,11 @@ abstract class AbstractCfirAnalysisTestCase : CjParsingTestCase(
         return direct
     }
 
+    /**
+     * 断言当前测试类覆盖其 `@TestMetadata` 指向目录下的所有 `.cj` 测试数据。
+     *
+     * 该检查用于发现测试生成器漏生成的方法，避免新增 testData 后没有对应测试入口。
+     */
     protected fun assertAllFilesPresentByMetadata(testDataRootRelativePath: String) {
         val testDataDir = resolveTestDataPath(testDataRootRelativePath)
         require(testDataDir.isDirectory) { "testData dir not found: ${testDataDir.path}" }
@@ -126,6 +171,11 @@ abstract class AbstractCfirAnalysisTestCase : CjParsingTestCase(
         }
     }
 
+    /**
+     * 根据当前测试类的 `@TestMetadata` 定位实际负责的 testData 目录。
+     *
+     * 当注解值既不是直接目录也不是根目录下的子目录时，回退到传入的根目录。
+     */
     private fun currentClassTestDataDir(rootTestDataDir: File): File {
         val classMetadata = this::class.java.getAnnotation(org.cangnova.cangjie.test.TestMetadata::class.java)
         if (classMetadata != null) {
@@ -138,12 +188,18 @@ abstract class AbstractCfirAnalysisTestCase : CjParsingTestCase(
         return rootTestDataDir
     }
 
+    /**
+     * 收集当前测试类及其嵌套类中已经由 `@TestMetadata` 方法覆盖的相对路径。
+     */
     private fun collectCoveredRelativePaths(testDataDir: File): Set<String> {
         val covered = linkedSetOf<String>()
         collectCoveredFromClass(this::class.java, testDataDir, testDataDir, covered)
         return covered
     }
 
+    /**
+     * 递归遍历测试类层级，按类级 `@TestMetadata` 继承规则收集方法覆盖的 `.cj` 文件。
+     */
     private fun collectCoveredFromClass(
         klass: Class<*>,
         rootTestDataDir: File,
@@ -164,6 +220,11 @@ abstract class AbstractCfirAnalysisTestCase : CjParsingTestCase(
         }
     }
 
+    /**
+     * 计算指定测试类在 testData 树中的作用域目录。
+     *
+     * 类级 metadata 可以是绝对/仓库相对目录，也可以是相对父测试目录的嵌套目录。
+     */
     private fun classScopedDir(
         klass: Class<*>,
         rootTestDataDir: File,
@@ -180,6 +241,11 @@ abstract class AbstractCfirAnalysisTestCase : CjParsingTestCase(
         return inheritedDir
     }
 
+    /**
+     * 判断当前文件是否位于给定父目录之下。
+     *
+     * 使用 canonical path 消除 `..`、符号链接等路径差异，避免 metadata 越界。
+     */
     private fun File.isUnder(parent: File): Boolean {
         val parentPath = parent.canonicalFile.toPath()
         val childPath = canonicalFile.toPath()
