@@ -105,8 +105,16 @@ object CjcProcessRunner {
         return CjcCompilationResult(output, exitCode)
     }
 
+    /**
+     * cjc 进程执行结果。
+     *
+     * @property output 合并 stdout/stderr 后的文本输出。
+     * @property exitCode 进程退出码。
+     */
     data class CjcCompilationResult(
+        /** 合并 stdout/stderr 后的文本输出。 */
         val output: String,
+        /** cjc 进程退出码。 */
         val exitCode: Int,
     )
 }

@@ -37,11 +37,23 @@ import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.platform.CangJiePlatforms
 
+/**
+ * extend 相关测试共享的 CFIR 声明与 session 构造工具。
+ */
 internal object ExtendTestFixtures {
+    /**
+     * extend 测试使用的最小 source session。
+     */
     class TestSession : CfirSession(Kind.Source) {
+        /**
+         * 返回稳定的调试名称。
+         */
         override fun toString(): String = "ExtendTestSession"
     }
 
+    /**
+     * 创建绑定了 module data 的测试 session。
+     */
     fun newSessionAndModule(moduleName: String = "extend-test"): Pair<TestSession, CfirModuleData> {
         val session = TestSession()
         val moduleData = CfirSourceModuleData(
@@ -56,6 +68,9 @@ internal object ExtendTestFixtures {
         return session to moduleData
     }
 
+    /**
+     * 构造无类型实参的 class-like resolved type ref。
+     */
     fun classTypeRef(classId: ClassId, isInterface: Boolean = false): CfirResolvedTypeRefImpl {
         return CfirResolvedTypeRefImpl(
             source = null,
@@ -68,6 +83,9 @@ internal object ExtendTestFixtures {
         )
     }
 
+    /**
+     * 构造带类型实参的 class-like resolved type ref。
+     */
     fun classTypeRef(
         classId: ClassId,
         typeArguments: List<org.cangnova.cangjie.cfir.types.ConeCangJieType>,
@@ -85,10 +103,16 @@ internal object ExtendTestFixtures {
         )
     }
 
+    /**
+     * 构造类型参数类型。
+     */
     fun typeParameterType(name: String): ConeTypeParameterType {
         return ConeTypeParameterType(ConeTypeParameterLookupTag(name))
     }
 
+    /**
+     * 构造并绑定测试用 extend 声明。
+     */
     fun newExtend(
         moduleData: CfirModuleData,
         extendedTypeRef: CfirTypeRef,
@@ -115,6 +139,9 @@ internal object ExtendTestFixtures {
         return declaration
     }
 
+    /**
+     * 构造并绑定测试用类型参数声明。
+     */
     fun newTypeParameter(
         moduleData: CfirModuleData,
         name: String,
@@ -138,6 +165,9 @@ internal object ExtendTestFixtures {
         return typeParameter
     }
 
+    /**
+     * 构造包含给定声明的测试 CFIR 文件。
+     */
     fun newFile(
         moduleData: CfirModuleData,
         packageFqName: FqName,
@@ -163,6 +193,9 @@ internal object ExtendTestFixtures {
         return file
     }
 
+    /**
+     * 构造测试 class 声明。
+     */
     fun newClass(
         moduleData: CfirModuleData,
         name: String,
@@ -189,6 +222,9 @@ internal object ExtendTestFixtures {
         return klass
     }
 
+    /**
+     * 构造测试 interface 声明。
+     */
     fun newInterface(
         moduleData: CfirModuleData,
         name: String,

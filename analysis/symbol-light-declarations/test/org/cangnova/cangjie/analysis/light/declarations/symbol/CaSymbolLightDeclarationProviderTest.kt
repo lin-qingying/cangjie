@@ -41,11 +41,20 @@ import org.junit.jupiter.api.Test
 class CaSymbolLightDeclarationProviderTest : AbstractAnalysisApiExecutionTest(
     "analysis/symbol-light-declarations/testData/provider",
 ) {
+    /**
+     * 使用 standalone CFIR Analysis API 测试环境。
+     */
     override val configurator = CaCfirStandaloneAnalysisApiTestConfigurator
 
+    /**
+     * 注册 symbol-light-declarations provider 的测试服务。
+     */
     override val additionalServiceRegistrars: List<AnalysisApiServiceRegistrar<TestServices>> =
         listOf(SymbolLightDeclarationsTestServiceRegistrar)
 
+    /**
+     * 验证源码文件中的 class-like、typealias、extend 和 callable light declarations。
+     */
     @Test
     fun sourceLightDeclarations(mainFile: CjFile, mainModule: CjTestModule) {
         val provider = CaLightDeclarationProvider.getInstance(mainFile.project)
@@ -83,6 +92,9 @@ class CaSymbolLightDeclarationProviderTest : AbstractAnalysisApiExecutionTest(
         }
     }
 
+    /**
+     * 验证同一个 light declaration 实例上的成员树会稳定缓存。
+     */
     @Test
     fun sourceLightDeclarationCaching(mainFile: CjFile, mainModule: CjTestModule) {
         val provider = CaLightDeclarationProvider.getInstance(mainFile.project)
@@ -108,6 +120,9 @@ class CaSymbolLightDeclarationProviderTest : AbstractAnalysisApiExecutionTest(
         }
     }
 
+    /**
+     * 验证 builtins 反编译文件可以投影为带 decompiled 来源的 light declarations。
+     */
     @Test
     fun decompiledBuiltinsLightDeclarations(mainFile: CjFile, mainModule: CjTestModule) {
         val provider = CaLightDeclarationProvider.getInstance(mainFile.project)
@@ -141,14 +156,26 @@ class CaSymbolLightDeclarationProviderTest : AbstractAnalysisApiExecutionTest(
     }
 }
 
+/**
+ * symbol-light-declarations 测试使用的 Analysis API 服务注册器。
+ */
 internal object SymbolLightDeclarationsTestServiceRegistrar : org.cangnova.cangjie.analysis.test.framework.test.configurators.AnalysisApiTestServiceRegistrar() {
+    /**
+     * 测试加载的 plugin XML 路径。
+     */
     private const val SYMBOL_LIGHT_DECLARATIONS_PLUGIN_XML = "META-INF/analysis-api/cangjie-symbol-light-declarations.xml"
 
+    /**
+     * 注册应用级反编译与 symbol-light-declarations 服务。
+     */
     override fun registerApplicationServices(application: MockApplication, testServices: TestServices) {
         CaAnalysisApiDecompiledTestServiceRegistrar.registerApplicationServices(application)
         PluginStructureProvider.registerApplicationServices(application, SYMBOL_LIGHT_DECLARATIONS_PLUGIN_XML)
     }
 
+    /**
+     * 注册项目级反编译与 symbol-light-declarations 服务。
+     */
     override fun registerProjectServices(project: MockProject, testServices: TestServices) {
         CaAnalysisApiDecompiledTestServiceRegistrar.registerProjectServices(project)
         PluginStructureProvider.registerProjectServices(project, SYMBOL_LIGHT_DECLARATIONS_PLUGIN_XML)

@@ -318,6 +318,15 @@ object AbstractTypeChecker {
 
         // 查找对应超类型
         val correspondingSupertypes = findCorrespondingSupertypes(state, subType, superConstructor)
+        if (correspondingSupertypes.size > 1) {
+            return state.runForkingPoint {
+                for (correspondingSupertype in correspondingSupertypes) {
+                    fork {
+                        isSubtypeForSameConstructor(state, correspondingSupertype, superType)
+                    }
+                }
+            }
+        }
         for (correspondingSupertype in correspondingSupertypes) {
             if (isSubtypeForSameConstructor(state, correspondingSupertype, superType)) return true
         }

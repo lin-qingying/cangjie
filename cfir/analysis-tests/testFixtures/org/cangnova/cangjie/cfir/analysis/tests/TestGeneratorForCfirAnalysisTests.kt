@@ -47,6 +47,11 @@ object TestGeneratorForCfirAnalysisTests {
         PER_PACKAGE,
     }
 
+    /**
+     * 生成 CFIR analysis diagnostics 全部测试套件入口。
+     *
+     * 第一个参数可指定仓库根目录；未提供时使用当前工作目录。
+     */
     @JvmStatic
     fun main(args: Array<String>) {
         val projectRoot = if (args.isNotEmpty()) File(args[0]) else File(System.getProperty("user.dir"))
@@ -121,6 +126,11 @@ object TestGeneratorForCfirAnalysisTests {
         )
     }
 
+    /**
+     * 生成指定 testData 根目录对应的诊断测试套件。
+     *
+     * 该入口负责选择单文件或按包生成模式，并把根目录文件与子目录分发给具体 renderer。
+     */
     private fun generateDiagnosticsSuite(
         projectRoot: File,
         relativeTestDataRoot: String,
@@ -271,6 +281,9 @@ object TestGeneratorForCfirAnalysisTests {
         )
     }
 
+    /**
+     * 递归生成 PER_PACKAGE 模式下的子目录测试文件。
+     */
     private fun generatePerPackageSubdirs(
         projectRoot: File,
         rootRel: String,
@@ -482,6 +495,9 @@ object TestGeneratorForCfirAnalysisTests {
         appendLine("${indent}// Package: ${dir.name} -> $className")
     }
 
+    /**
+     * 在 SINGLE_CLASS 模式下追加一个嵌套目录测试类。
+     */
     private fun StringBuilder.appendNestedDirectoryClass(
         dir: File,
         rootRel: String,
@@ -531,6 +547,9 @@ object TestGeneratorForCfirAnalysisTests {
         appendLine("${indent}}")
     }
 
+    /**
+     * 为单个 `.cj` 测试数据追加测试方法。
+     */
     private fun StringBuilder.appendTestMethod(
         file: File,
         projectRoot: File,
@@ -545,14 +564,23 @@ object TestGeneratorForCfirAnalysisTests {
         appendLine("${indent}}")
     }
 
+    /**
+     * 将文件名转换为生成测试方法名。
+     */
     private fun fileNameToTestName(nameWithoutExtension: String): String {
         return "test" + nameToPascalCase(nameWithoutExtension)
     }
 
+    /**
+     * 将目录名转换为可用作 Kotlin 类名的 PascalCase。
+     */
     private fun dirNameToPascalCase(dirName: String): String {
         return nameToKotlinIdentifier(nameToPascalCase(dirName))
     }
 
+    /**
+     * 将任意测试数据名称转换为 PascalCase 片段。
+     */
     private fun nameToPascalCase(name: String): String {
         return name
             .split(Regex("[^A-Za-z0-9]+"))
@@ -561,6 +589,9 @@ object TestGeneratorForCfirAnalysisTests {
             .ifEmpty { "Generated" }
     }
 
+    /**
+     * 将相对目录路径转换为 Kotlin package path。
+     */
     private fun String.toPackagePath(): String =
         split('/')
             .filter(String::isNotBlank)
@@ -581,6 +612,9 @@ object TestGeneratorForCfirAnalysisTests {
         return if (identifier in kotlinHardKeywords) "_$identifier" else identifier
     }
 
+    /**
+     * Kotlin 硬关键字集合，用于避免生成非法 package segment。
+     */
     private val kotlinHardKeywords = setOf(
         "as",
         "break",
@@ -648,6 +682,9 @@ object TestGeneratorForCfirAnalysisTests {
         }
     }
 
+    /**
+     * 判断文件名是否为 LLT 包 companion 文件名。
+     */
     private fun File.isPackageCompanionName(): Boolean =
         name == "pkg.cj" || name.endsWith(".pkg.cj")
 }

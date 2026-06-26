@@ -6,8 +6,14 @@ import org.cangnova.cangjie.cfir.types.*
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
+/**
+ * [CfirConstraintGraph] 变量依赖拓扑排序和替换传播测试。
+ */
 class CfirConstraintGraphTest {
 
+    /**
+     * 构造带固定 lookup name 的测试类型变量。
+     */
     private fun makeVariable(name: String, id: Int = 1): CfirTypeVariable {
         return CfirTypeVariable(
             typeParameter = CfirTypeParameterSymbol(),
@@ -16,6 +22,9 @@ class CfirConstraintGraphTest {
         )
     }
 
+    /**
+     * 验证互不依赖的变量会在同一批次返回。
+     */
     @Test
     fun `independent variables returned in single batch`() {
         val store = CfirConstraintStore()
@@ -33,6 +42,9 @@ class CfirConstraintGraphTest {
         assertFalse(graph.hasNext())
     }
 
+    /**
+     * 验证依赖其他变量的变量会在依赖变量求解后返回。
+     */
     @Test
     fun `dependent variable returned after dependency`() {
         val store = CfirConstraintStore()
@@ -60,6 +72,9 @@ class CfirConstraintGraphTest {
         assertEquals("U", batch2.first().lookupTag.name)
     }
 
+    /**
+     * 验证链式依赖按 T、U、V 的顺序逐批求解。
+     */
     @Test
     fun `chain dependency T-U-V solved in order`() {
         val store = CfirConstraintStore()
@@ -94,6 +109,9 @@ class CfirConstraintGraphTest {
         assertFalse(graph.hasNext())
     }
 
+    /**
+     * 验证嵌套类型实参中的类型变量引用可以被收集。
+     */
     @Test
     fun `collectVariableNames finds nested references`() {
         val classType = ConeClassLikeType(
@@ -110,6 +128,9 @@ class CfirConstraintGraphTest {
         assertEquals(setOf("T"), vars)
     }
 
+    /**
+     * 验证类型变量替换能把 placeholder 替换为具体类型。
+     */
     @Test
     fun `substituteVariables replaces type parameter`() {
         val original = ConeTypeParameterType(ConeTypeParameterLookupTag("T"))

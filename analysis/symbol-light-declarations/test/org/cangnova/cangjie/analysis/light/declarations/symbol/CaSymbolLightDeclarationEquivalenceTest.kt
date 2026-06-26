@@ -31,11 +31,20 @@ import org.junit.jupiter.api.Test
 class CaSymbolLightDeclarationEquivalenceTest : AbstractAnalysisApiExecutionTest(
     "analysis/symbol-light-declarations/testData/equivalence",
 ) {
+    /**
+     * 使用 standalone CFIR Analysis API 测试环境。
+     */
     override val configurator = CaCfirStandaloneAnalysisApiTestConfigurator
 
+    /**
+     * 注册 symbol-light-declarations provider 的测试服务。
+     */
     override val additionalServiceRegistrars: List<AnalysisApiServiceRegistrar<TestServices>> =
         listOf(SymbolLightDeclarationsTestServiceRegistrar)
 
+    /**
+     * 验证 file view 和 symbol view 渲染出的 light declaration 树一致。
+     */
     @Test
     fun symbolAndFileViewsRenderSameTree(mainFile: CjFile, mainModule: CjTestModule) {
         val provider = CaLightDeclarationProvider.getInstance(mainFile.project)
@@ -67,6 +76,9 @@ class CaSymbolLightDeclarationEquivalenceTest : AbstractAnalysisApiExecutionTest
         }
     }
 
+    /**
+     * 验证 file view 与 symbol view 中的注解 payload 一致。
+     */
     @Test
     fun annotationPayloadMatchesBetweenFileAndSymbolViews(
         mainFile: CjFile,
@@ -92,11 +104,17 @@ class CaSymbolLightDeclarationEquivalenceTest : AbstractAnalysisApiExecutionTest
         }
     }
 
+    /**
+     * 渲染单个 light declaration 树。
+     */
     private fun renderTree(declaration: CaLightDeclaration?): String {
         requireNotNull(declaration) { "Light declaration should not be null." }
         return CaLightDeclarationRenderer.renderTree(listOf(declaration))
     }
 
+    /**
+     * 渲染 light declaration 上的注解列表。
+     */
     private fun renderAnnotations(declaration: CaLightDeclaration?): List<String> {
         requireNotNull(declaration) { "Light declaration should not be null." }
         return declaration.annotations.map { annotation ->
@@ -113,6 +131,9 @@ class CaSymbolLightDeclarationEquivalenceTest : AbstractAnalysisApiExecutionTest
         }
     }
 
+    /**
+     * 渲染注解实参值，供 file view 与 symbol view 做稳定文本比较。
+     */
     private fun renderAnnotationValue(value: CaAnnotationValue): String {
         return when (value) {
             is CaAnnotationValue.ConstantValue -> value.value.render()
@@ -145,30 +166,45 @@ class CaSymbolLightDeclarationEquivalenceTest : AbstractAnalysisApiExecutionTest
     }
 }
 
+/**
+ * 在文件顶层查找指定名称的 class-like 声明。
+ */
 private fun CjFile.classDeclaration(name: String): CjTypeStatement {
     return declarations.filterIsInstance<CjTypeStatement>().singleOrNull { declaration ->
         declaration !is CjExtend && declaration.name == name
     } ?: error("Cannot find class declaration `$name` in `${this.name}`.")
 }
 
+/**
+ * 在文件顶层查找指定名称的 typealias 声明。
+ */
 private fun CjFile.typeAliasDeclaration(name: String): CjTypeAlias {
     return declarations.filterIsInstance<CjTypeAlias>().singleOrNull { declaration ->
         declaration.name == name
     } ?: error("Cannot find typealias declaration `$name` in `${this.name}`.")
 }
 
+/**
+ * 在文件顶层查找指定名称的函数声明。
+ */
 private fun CjFile.namedFunction(name: String): CjNamedFunction {
     return declarations.filterIsInstance<CjNamedFunction>().singleOrNull { declaration ->
         declaration.name == name
     } ?: error("Cannot find top-level function `$name` in `${this.name}`.")
 }
 
+/**
+ * 在 class-like 声明内部查找指定名称的函数声明。
+ */
 private fun CjTypeStatement.namedFunction(name: String): CjNamedFunction {
     return declarations.filterIsInstance<CjNamedFunction>().singleOrNull { declaration ->
         declaration.name == name
     } ?: error("Cannot find member function `$name` in `${this.name}`.")
 }
 
+/**
+ * 在文件顶层查找唯一的 extend 声明。
+ */
 private fun CjFile.extendDeclaration(): CjExtend {
     return declarations.filterIsInstance<CjExtend>().singleOrNull()
         ?: error("Cannot find extend declaration in `${this.name}`.")

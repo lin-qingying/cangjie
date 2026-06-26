@@ -9,6 +9,7 @@ import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.analysis.diagnostics.toCfirDiagnostics
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
+import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
@@ -19,6 +20,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirAssignment
 import org.cangnova.cangjie.cfir.expressions.CfirErrorExpression
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
+import org.cangnova.cangjie.cfir.expressions.CfirFunctionCallOrigin
 import org.cangnova.cangjie.cfir.expressions.CfirNamedAccessExpression
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
 import org.cangnova.cangjie.cfir.expressions.CfirSuperReceiverExpression
@@ -225,6 +227,13 @@ class ErrorNodeDiagnosticCollectorComponent(
             return
         }
         if (diagnostic.isUnresolvedCascadeAfterFailedImport(context)) return
+        if (
+            diagnostic is ConeAmbiguityError &&
+            diagnostic.isFunctionCandidateAmbiguity() &&
+            reference.isCompositionRightOperandFunctionReference(context)
+        ) {
+            return
+        }
 
         // 注解项上的 unresolved 已由其类型引用报告，保持与 Kotlin FIR 的去重位置一致。
         if (source?.elementType == CjNodeTypes.ANNOTATION && diagnostic is ConeUnresolvedNameError) return
@@ -264,6 +273,33 @@ class ErrorNodeDiagnosticCollectorComponent(
             callOrAssignment.qualifiedAmbiguitySource(reference, diagnostic),
         )
     }
+
+    /**
+     * 官方 `ChkFlowExpr` 会把 composition 右操作数标记为 flow 函数引用语境。
+     * 在该语境中重载函数引用由外层 `composition(f, g)` 解析决定，不再作为普通引用独立报告歧义。
+     */
+    private fun CfirReference.isCompositionRightOperandFunctionReference(context: CheckerContext): Boolean =
+        context.callsOrAssignments.asReversed().any { it.isCompositionCallRightArgument(this) } ||
+            context.containingElements.asReversed().any { it.isCompositionCallRightArgument(this) }
+
+    /**
+     * 判断当前节点是否是 `f ~> g` 解糖得到的 core intrinsic `composition(f, g)`，
+     * 且给定引用来自第二个实参 `g`。
+     */
+    private fun CfirElement.isCompositionCallRightArgument(reference: CfirReference): Boolean {
+        val call = this as? CfirFunctionCall ?: return false
+        if (call.origin != CfirFunctionCallOrigin.CompilerCoreIntrinsic) return false
+        val calleeName = (call.calleeReference as? CfirNamedReference)?.name?.asString()
+        if (calleeName != "composition") return false
+        return call.argumentList.arguments.getOrNull(1)?.toReferenceOrNull() == reference
+    }
+
+    /**
+     * flow 函数引用语境只抑制函数候选之间的歧义；普通值/类型歧义仍必须按原位置报告。
+     */
+    private fun ConeAmbiguityError.isFunctionCandidateAmbiguity(): Boolean =
+        candidateSymbols.isNotEmpty() &&
+            candidateSymbols.all { symbol -> symbol.takeIf { it.isBound }?.cfir is CfirFunction }
 
     /**
      * qualified access 的歧义诊断应标完整访问表达式，例如 `Int64.test`，而不是只标 selector。

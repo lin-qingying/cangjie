@@ -28,9 +28,18 @@ import java.nio.file.Path
 class LltCompanionSourceFilesProvider(
     testServices: TestServices,
 ) : AdditionalSourceProvider(testServices) {
+    /**
+     * 该 provider 使用的指令容器。
+     */
     override val directiveContainers: List<DirectivesContainer>
         get() = listOf(CfirDiagnosticsDirectives)
 
+    /**
+     * 为 LLT 测试生成附加源文件。
+     *
+     * 返回值包含显式 sibling companions、包 companion、目录型多文件 companion
+     * 以及父级聚合文件中的虚拟 companion。
+     */
     override fun produceAdditionalFiles(
         globalDirectives: RegisteredDirectives,
         module: TestModule,
@@ -56,6 +65,9 @@ class LltCompanionSourceFilesProvider(
         return fileCompanions + virtualCompanions
     }
 
+    /**
+     * 收集同目录下除当前测试数据外的所有 `.cj` sibling 文件。
+     */
     private fun collectAllSiblingCjFiles(testDataFile: File): List<File> {
         val directory = testDataFile.parentFile ?: return emptyList()
         return directory.listFiles().orEmpty()
@@ -66,6 +78,11 @@ class LltCompanionSourceFilesProvider(
             .toList()
     }
 
+    /**
+     * 收集官方 LLT 约定的包 companion 文件。
+     *
+     * 包括 `<主文件名>.pkg.cj` 与 `pkg.cj`。
+     */
     private fun collectPackageCompanionFiles(testDataFile: File): List<File> {
         if (!testDataFile.invariantSeparatorsPath.contains("cfir/analysis-tests/testData/llt/")) return emptyList()
         if (testDataFile.isPackageCompanionFile()) return emptyList()
@@ -78,6 +95,9 @@ class LltCompanionSourceFilesProvider(
             .sortedBy { it.name }
     }
 
+    /**
+     * 从当前聚合文件的 `// FILE:` 声明目录中收集未显式声明的物理 companion 文件。
+     */
     private fun collectMultiFileDirectoryCompanions(testDataFile: File): List<File> {
         if (!testDataFile.invariantSeparatorsPath.contains("cfir/analysis-tests/testData/llt/")) return emptyList()
 
@@ -106,6 +126,9 @@ class LltCompanionSourceFilesProvider(
         }
     }
 
+    /**
+     * 从父级聚合文件中收集属于当前目录的虚拟 companion 源文件。
+     */
     private fun collectParentMultiFileCompanions(testDataFile: File): List<VirtualCompanionFile> {
         if (!testDataFile.invariantSeparatorsPath.contains("cfir/analysis-tests/testData/llt/")) return emptyList()
 
@@ -126,6 +149,9 @@ class LltCompanionSourceFilesProvider(
         }
     }
 
+    /**
+     * 向上查找包含 `// FILE:` 声明的 LLT 聚合文件。
+     */
     private fun collectAncestorAggregateFiles(testDataFile: File): List<File> {
         val lltRootMarker = Path.of("cfir", "analysis-tests", "testData", "llt").toString().replace('\\', '/')
         val result = mutableListOf<File>()
@@ -143,6 +169,9 @@ class LltCompanionSourceFilesProvider(
         return result
     }
 
+    /**
+     * 解析聚合文件中的 `// FILE:` 片段为虚拟 companion 文件。
+     */
     private fun parseFileDirectiveFragments(aggregateFile: File): List<VirtualCompanionFile> {
         val fragments = mutableListOf<VirtualCompanionFile>()
         var currentName: String? = null
@@ -180,6 +209,9 @@ class LltCompanionSourceFilesProvider(
         return fragments
     }
 
+    /**
+     * 将虚拟 companion 文件转换为测试框架的附加源文件。
+     */
     private fun VirtualCompanionFile.toTestFile(): TestFile {
         return TestFile(
             relativePath = relativePath,
@@ -191,18 +223,36 @@ class LltCompanionSourceFilesProvider(
         )
     }
 
+    /**
+     * 判断当前文件是否为 LLT 包 companion 文件。
+     */
     private fun File.isPackageCompanionFile(): Boolean {
         return name == "pkg.cj" || name.endsWith(".pkg.cj")
     }
 
+    /**
+     * 父级聚合文件中声明的虚拟 companion 源文件。
+     *
+     * @property relativePath 虚拟文件相对路径。
+     * @property content 虚拟文件内容。
+     * @property ownerFile 声明该虚拟文件的聚合文件。
+     * @property startLineNumber 虚拟文件在聚合文件中的起始行号。
+     */
     private data class VirtualCompanionFile(
+        /** 虚拟文件相对路径。 */
         val relativePath: String,
+        /** 虚拟文件内容。 */
         val content: String,
+        /** 声明该虚拟文件的聚合文件。 */
         val ownerFile: File,
+        /** 虚拟文件在聚合文件中的起始行号。 */
         val startLineNumber: Int,
     )
 
     companion object {
+        /**
+         * 匹配官方多文件测试中的 `// FILE:` 指令。
+         */
         private val FILE_DIRECTIVE = Regex("""(?m)^\s*//\s*FILE:\s*(.+)$""")
     }
 }

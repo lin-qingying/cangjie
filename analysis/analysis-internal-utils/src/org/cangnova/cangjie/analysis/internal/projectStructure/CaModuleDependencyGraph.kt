@@ -10,6 +10,9 @@ import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
  * 不再分别手写 regular / dependsOn / friend 三类边的遍历。
  */
 object CaModuleDependencyGraph {
+    /**
+     * 从单个入口模块收集包含自身在内的可达模块闭包。
+     */
     fun collectReachableModules(root: CaModule): List<CaModule> {
         return collectReachableModules(listOf(root))
     }
@@ -27,6 +30,9 @@ object CaModuleDependencyGraph {
         return visited.toList()
     }
 
+    /**
+     * 深度优先遍历模块依赖边，并保持首次访问顺序。
+     */
     private fun visit(module: CaModule, visited: LinkedHashSet<CaModule>) {
         if (!visited.add(module)) return
 
@@ -34,8 +40,14 @@ object CaModuleDependencyGraph {
     }
 }
 
+/**
+ * 从当前模块收集包含自身在内的依赖闭包。
+ */
 fun CaModule.collectReachableModules(): List<CaModule> =
     CaModuleDependencyGraph.collectReachableModules(this)
 
+/**
+ * 从多个入口模块收集合并后的依赖闭包。
+ */
 fun Collection<CaModule>.collectReachableModules(): List<CaModule> =
     CaModuleDependencyGraph.collectReachableModules(this)

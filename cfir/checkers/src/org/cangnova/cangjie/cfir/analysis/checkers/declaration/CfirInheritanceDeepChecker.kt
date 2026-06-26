@@ -134,6 +134,17 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         for (superTypeRef in extend.superTypeRefs) {
             val superDecl = superTypeRef.resolvedClassLikeDeclaration() ?: continue
             for (superInfo in superTypeRef.collectInterfaceRequirementMemberInfos(superDecl)) {
+                val builtinOperatorImplementation = extend.builtinPrimitiveOperatorImplementation(superInfo, context)
+                if (
+                    builtinOperatorImplementation is BuiltinPrimitiveOperatorImplementation.ReturnTypeMismatch &&
+                    reportedFunctionReturnTypeConflicts.add(superInfo.requirementDiagnosticKey())
+                ) {
+                    reporter.reportOn(
+                        source = extend.source,
+                        factory = CfirErrors.RETURN_TYPE_INCOMPATIBLE,
+                        a = superInfo.name,
+                    )
+                }
 
                 val implementationCandidates = buildList {
                     targetScope.processCallablesByName(superInfo.name) { symbol ->
@@ -199,7 +210,11 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                     }
 
                     if (candidate.declarationSource == null) {
-                        val functionReturnTypeConflict = implementationInfo.functionReturnTypeConflict(superInfo, context)
+                        val functionReturnTypeConflict = if (builtinOperatorImplementation == null) {
+                            implementationInfo.functionReturnTypeConflict(superInfo, context)
+                        } else {
+                            null
+                        }
                         if (functionReturnTypeConflict != null) {
                             val key = implementationInfo.overrideDiagnosticKey(superInfo)
                             if (reportedFunctionReturnTypeConflicts.add(key)) {
@@ -236,7 +251,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                     val implementationInfo = candidate.info
                     implementationInfo.canImplement(superInfo) &&
                         implementationInfo.satisfiesExtendInterfaceRequirement(context)
-                }
+                } || builtinOperatorImplementation != null
                 if (hasSatisfiedImplementation) continue
 
                 if (superInfo.isAbstract) {
@@ -1063,6 +1078,42 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
     }
 
     /**
+     * primitive 目标实现接口时，内建 operator 可作为接口抽象 operator 的实现。
+     *
+     * 对齐官方 `StructInheritanceChecker::IsBuiltInOperatorFuncInExtend`：
+     * 如果接口抽象 operator 的参数与 extend 目标组成内建 primitive operator，
+     * 则返回类型正确时视为已实现；返回类型错误时在 extend 声明上报告
+     * `RETURN_TYPE_INCOMPATIBLE`，并且不再把该接口成员当作未实现成员。
+     */
+    private fun CfirExtend.builtinPrimitiveOperatorImplementation(
+        superInfo: InheritedMemberInfo,
+        context: CheckerContext,
+    ): BuiltinPrimitiveOperatorImplementation? {
+        if (superInfo.kind != "function" || !superInfo.isAbstract) return null
+        val superSymbol = superInfo.symbol as? CfirFunctionSymbol<*> ?: return null
+        val superFunction = superSymbol.cfir as? CfirNamedFunction ?: return null
+        if (!superFunction.status.isOperator) return null
+
+        val receiverType = BuiltinPrimitiveOperators.normalizePrimitiveOperand(extendedTypeRef.coneTypeOrNull)
+            ?: return null
+        val parameterTypes = superFunction.valueParameters.map { parameter ->
+            BuiltinPrimitiveOperators.normalizePrimitiveOperand(parameter.returnTypeRef.coneTypeOrNull) ?: return null
+        }
+        val builtinMatch = BuiltinPrimitiveOperators.resolve(
+            name = superInfo.name,
+            receiverType = receiverType,
+            argumentTypes = parameterTypes,
+        ) ?: return null
+        val interfaceReturnType = superSymbol.resolvedReturnTypeOrNull(context) ?: return null
+        if (interfaceReturnType is ConeErrorType) return null
+        return if (AbstractTypeChecker.equalTypes(context.session.typeContext, builtinMatch.returnType, interfaceReturnType)) {
+            BuiltinPrimitiveOperatorImplementation.Compatible
+        } else {
+            BuiltinPrimitiveOperatorImplementation.ReturnTypeMismatch
+        }
+    }
+
+    /**
      * 对齐官方 `TypeManager::HasExtensionRelation` 在返回类型 override 中的特殊分支：
      * extend/boxing 关系不能作为 override/implement 返回类型协变依据。
      */
@@ -1734,6 +1785,17 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         /** 默认接口成员信息。 */
         val info: InheritedMemberInfo,
     )
+
+    /**
+     * primitive 内建 operator 满足接口 operator 要求的分类。
+     */
+    private sealed class BuiltinPrimitiveOperatorImplementation {
+        /** 内建 operator 返回类型与接口要求一致。 */
+        data object Compatible : BuiltinPrimitiveOperatorImplementation()
+
+        /** 内建 operator 返回类型与接口要求不一致。 */
+        data object ReturnTypeMismatch : BuiltinPrimitiveOperatorImplementation()
+    }
 
     /**
      * 属性实现与父属性之间的类型不一致信息。

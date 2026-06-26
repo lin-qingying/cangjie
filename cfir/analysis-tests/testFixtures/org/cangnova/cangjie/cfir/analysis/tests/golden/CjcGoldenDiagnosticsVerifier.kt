@@ -25,6 +25,7 @@ object CjcGoldenDiagnosticsVerifier {
 
     /** `<!TAG!>` 与 `<!>` 标记的简单模式 */
     private val openMarkerRegex = Regex("""<!([^!>]*?)!>""")
+    /** 内联诊断结束标记 `<!>` 的匹配模式。 */
     private val closeMarkerRegex = Regex("""<!>""")
 
     /**
@@ -54,8 +55,12 @@ object CjcGoldenDiagnosticsVerifier {
         }
     }
 
-    // ========== 单文件验证 ==========
-
+    /**
+     * 使用官方 cjc 验证单文件测试数据。
+     *
+     * 方法会把清理后的源码写入临时目录，避免原始 testData 被修改，并把 cjc
+     * JSON 输出交给统一结果分析流程。
+     */
     private fun verifySingleFile(
         cjcPath: Path,
         fileName: String,
@@ -183,8 +188,11 @@ object CjcGoldenDiagnosticsVerifier {
         }
     }
 
-    // ========== 结果分析 ==========
-
+    /**
+     * 分析单次 cjc 编译结果并转换为 golden verifier 结果。
+     *
+     * 该方法负责解析 JSON、识别未标注 parse 错误，并将单文件诊断映射到原始行号。
+     */
     private fun analyzeResult(
         fileName: String,
         originalText: String,
@@ -223,6 +231,12 @@ object CjcGoldenDiagnosticsVerifier {
         )
     }
 
+    /**
+     * 按行号比较期望诊断与 cjc 实际诊断。
+     *
+     * 当前 verifier 做行级模糊匹配：同一行存在任意期望诊断与任意实际诊断即视为覆盖，
+     * 只报告整行缺失或整行多余的诊断集合。
+     */
     private fun compareByLine(
         fileName: String,
         originalText: String,
@@ -304,6 +318,11 @@ object CjcGoldenDiagnosticsVerifier {
         return result
     }
 
+    /**
+     * 按顶层逗号切分内联诊断负载。
+     *
+     * 括号内逗号属于诊断参数，不参与分割。
+     */
     private fun splitTopLevelByComma(raw: String): List<String> {
         val result = mutableListOf<String>()
         var depth = 0
@@ -322,6 +341,12 @@ object CjcGoldenDiagnosticsVerifier {
         return result
     }
 
+    /**
+     * 从 cjc 进程输出中解析诊断 JSON。
+     *
+     * cjc 可能在 JSON 前输出额外文本，因此先截取第一个 `{` 后的内容；
+     * 空输出按“无诊断”处理。
+     */
     private fun parseJsonOutput(output: String): List<CjcDiag>? {
         // cjc 可能输出非 JSON 内容（比如崩溃栈、警告前缀），尝试在 `{` 起始处截取
         val start = output.indexOf('{')
@@ -447,20 +472,48 @@ object CjcGoldenDiagnosticsVerifier {
     )
 
     sealed class VerificationResult {
+        /**
+         * 当前验证结果对应的原始测试文件名。
+         */
         abstract val fileName: String
 
+        /**
+         * 诊断 golden 验证通过。
+         *
+         * @property fileName 原始测试文件名。
+         * @property totalDiagnostics cjc 输出的诊断总数。
+         */
         data class Ok(
+            /** 原始测试文件名。 */
             override val fileName: String,
+            /** cjc 输出的诊断总数。 */
             val totalDiagnostics: Int,
         ) : VerificationResult()
 
+        /**
+         * 测试标记与 cjc 诊断不一致。
+         *
+         * @property fileName 原始测试文件名。
+         * @property originalText 带内联标记的原始源码。
+         * @property missing 测试标记存在但 cjc 未报告的行。
+         * @property unexpected cjc 报告但测试未标注的行。
+         * @property rawCjcDiagnostics cjc 原始诊断列表。
+         */
         data class Mismatch(
+            /** 原始测试文件名。 */
             override val fileName: String,
+            /** 带内联标记的原始源码。 */
             val originalText: String,
+            /** 测试标记存在但 cjc 未报告的行。 */
             val missing: List<LineMismatch>,
+            /** cjc 报告但测试未标注的行。 */
             val unexpected: List<LineMismatch>,
+            /** cjc 原始诊断列表。 */
             val rawCjcDiagnostics: List<CjcDiag>,
         ) : VerificationResult() {
+            /**
+             * 渲染适合断言失败输出的 mismatch 文本。
+             */
             fun render(): String = buildString {
                 appendLine("=== MISMATCH: $fileName ===")
                 if (unexpected.isNotEmpty()) {
@@ -478,8 +531,16 @@ object CjcGoldenDiagnosticsVerifier {
             }
         }
 
+        /**
+         * 测试源码与官方 cjc 语法或输出格式存在分歧，无法进行普通诊断对比。
+         *
+         * @property fileName 原始测试文件名。
+         * @property reason 分歧原因。
+         */
         data class SyntaxDivergence(
+            /** 原始测试文件名。 */
             override val fileName: String,
+            /** 分歧原因。 */
             val reason: String,
         ) : VerificationResult()
     }

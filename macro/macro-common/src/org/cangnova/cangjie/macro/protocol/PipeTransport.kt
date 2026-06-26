@@ -30,7 +30,13 @@ import java.nio.ByteOrder
  * 管道缓冲区限制为 4096 字节，写入时自动分片；读取时按帧长度完整接收。
  */
 class PipeTransport(
+    /**
+     * 从宏服务端读取 length-prefixed 消息的输入流。
+     */
     private val inputStream: InputStream,
+    /**
+     * 向宏服务端写入 length-prefixed 消息的输出流。
+     */
     private val outputStream: OutputStream,
 ) : AutoCloseable {
     companion object {
@@ -91,6 +97,9 @@ class PipeTransport(
         }
     }
 
+    /**
+     * 关闭底层输入输出流；关闭失败会被吞掉以保证宏执行器清理路径幂等。
+     */
     override fun close() {
         runCatching { outputStream.close() }
         runCatching { inputStream.close() }

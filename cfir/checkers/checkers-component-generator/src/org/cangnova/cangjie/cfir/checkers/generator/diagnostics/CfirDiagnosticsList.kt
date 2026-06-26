@@ -255,6 +255,19 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
             parameter<String>("actualCount")
         }
 
+        // primitive 内建一元 operator 已由语言内建提供，用户 extend 不能重新定义。
+        val OPERATOR_OVERLOAD_BUILT_IN_UNARY_OPERATOR by error<PsiElement> {
+            parameter<String>("operator")
+            parameter<String>("receiverType")
+        }
+
+        // primitive 内建二元 operator 已由语言内建提供，用户 extend 不能重新定义。
+        val OPERATOR_OVERLOAD_BUILT_IN_BINARY_OPERATOR by error<PsiElement> {
+            parameter<String>("operator")
+            parameter<String>("receiverType")
+            parameter<String>("parameterType")
+        }
+
         val REPEATED_MODIFIER by error<PsiElement> {
             parameter<CjKeywordToken>("modifier")
         }
@@ -745,6 +758,11 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
             parameter<ConeCangJieType>("actualType")
             parameter<ConeCangJieType>("expectedType")
             parameter<Name>("overriddenName")
+        }
+
+        // 官方 sema_return_type_incompatible：实现/重定义/内建 operator 合成时返回类型不兼容。
+        val RETURN_TYPE_INCOMPATIBLE by error<PsiElement> {
+            parameter<Name>("functionName")
         }
 
         // extend 关系不能作为 override/implement 返回类型协变依据。

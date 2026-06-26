@@ -8,10 +8,19 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Path
 
+/**
+ * 验证 CJO 导出顶层名称解析器对物理声明和公开重导出的处理。
+ */
 class CjoExportedTopLevelNamesResolverTest {
+    /**
+     * 测试用 CJO 搜索根目录。
+     */
     @TempDir
     lateinit var tempDir: Path
 
+    /**
+     * 验证解析器保留包内物理声明，并跟随 public import 重导出目标。
+     */
     @Test
     fun `resolver keeps physical declarations and follows public import reexports`() {
         writeCjo(
@@ -81,6 +90,9 @@ class CjoExportedTopLevelNamesResolverTest {
         )
     }
 
+    /**
+     * 写入带指定声明和文件导入元数据的测试 CJO 文件。
+     */
     private fun writeCjo(
         fileName: String,
         packageFqName: String,

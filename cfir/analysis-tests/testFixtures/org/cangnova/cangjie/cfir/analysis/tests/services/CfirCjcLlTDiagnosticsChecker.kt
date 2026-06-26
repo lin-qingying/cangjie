@@ -36,11 +36,24 @@ class CfirCjcLlTDiagnosticsChecker(
     testServices: TestServices,
 ) : AfterAnalysisChecker(testServices) {
 
+    /**
+     * 检查器执行顺序。
+     *
+     * P1 保证 CFIR 与 CJC 的真实诊断差异尽早暴露。
+     */
     override val order: Order
         get() = Order.P1
 
+    /**
+     * 官方 cjc 可执行文件路径。
+     *
+     * lazy 初始化避免普通测试配置阶段强制要求本机安装 cjc。
+     */
     private val cjcPath: Path by lazy { CjcProcessRunner.findCjcPath() }
 
+    /**
+     * 对当前测试模块的每个非附加源文件执行 CFIR 与 CJC ERROR 诊断一致性比对。
+     */
     override fun check(failedAssertions: List<WrappedException>) {
         check(cjcPath.toFile().exists()) {
             "cjc not found at $cjcPath. Set CANGJIE_HOME or cjc.home."
@@ -69,6 +82,11 @@ class CfirCjcLlTDiagnosticsChecker(
         throw AssertionError(renderMismatchReport(mismatches))
     }
 
+    /**
+     * 收集指定文件的 CFIR ERROR 诊断。
+     *
+     * 诊断上下文路径可能指向临时真实文件或原始 testData 文件，二者都会被接受。
+     */
     private fun collectCfirDiagnostics(
         artifact: org.cangnova.cangjie.test.frontend.CfirOutputArtifact,
         realFile: File,
@@ -90,6 +108,9 @@ class CfirCjcLlTDiagnosticsChecker(
             }
     }
 
+    /**
+     * 调用官方 cjc 编译指定测试文件并收集 ERROR 诊断。
+     */
     private fun collectCjcDiagnostics(realFile: File, testFile: TestFile, module: TestModule): List<CjcDiag> {
         val result = CjcProcessRunner.compileSingleFile(
             cjcPath = cjcPath,
@@ -105,6 +126,11 @@ class CfirCjcLlTDiagnosticsChecker(
         return parsed.filter { it.severity.equals("error", ignoreCase = true) }
     }
 
+    /**
+     * 从 cjc 输出中解析诊断 JSON。
+     *
+     * 标准解析失败时回退到宽松解析；空输出表示没有诊断，非空非 JSON 输出表示失败。
+     */
     private fun parseJsonOutput(output: String): List<CjcDiag>? {
         val start = output.indexOf('{')
         if (start < 0) {
@@ -118,6 +144,12 @@ class CfirCjcLlTDiagnosticsChecker(
             .getOrNull()
     }
 
+    /**
+     * 比较单个文件的 CFIR 与 CJC 诊断集合。
+     *
+     * CFIR 诊断名先映射到官方 cjc kind，随后按 kind、文件路径和起始行列配对；
+     * 未映射、缺失、多余和结束位置差异都会记录到报告中。
+     */
     private fun compareDiagnostics(
         originalFile: File,
         cfirDiagnostics: List<CjDiagnostic>,
@@ -243,6 +275,9 @@ class CfirCjcLlTDiagnosticsChecker(
         )
     }
 
+    /**
+     * 渲染多个文件的诊断不一致报告。
+     */
     private fun renderMismatchReport(reports: List<FileComparisonReport>): String = buildString {
         appendLine("CFIR vs CJC diagnostics mismatch in LLT tests: ${reports.size} file(s).")
         for ((index, report) in reports.withIndex()) {
@@ -292,16 +327,25 @@ class CfirCjcLlTDiagnosticsChecker(
         }
     }.trimEnd()
 
+    /**
+     * 规范化项目内部诊断名称。
+     */
     private fun normalizeProjectDiagnosticName(name: String): String {
         return name.removePrefix("CFIR_").trim()
     }
 
+    /**
+     * 规范化文件路径，统一使用 `/` 分隔符。
+     */
     private fun normalizePath(path: String): String {
         return runCatching { File(path).canonicalPath }
             .getOrDefault(path)
             .replace('\\', '/')
     }
 
+    /**
+     * 将源码偏移转换为一基行列坐标。
+     */
     private fun toLineColumn(text: String, offset: Int): LineColumn {
         val safeOffset = offset.coerceIn(0, text.length)
         var line = 1
@@ -329,6 +373,9 @@ class CfirCjcLlTDiagnosticsChecker(
         val positionMismatch: List<PositionMismatch>,
         val unmapped: List<UnmappedDiagnostic>,
     ) {
+        /**
+         * 判断报告是否包含任何差异。
+         */
         fun hasIssues(): Boolean {
             return missing.isNotEmpty() ||
                 unexpected.isNotEmpty() ||
@@ -347,6 +394,9 @@ class CfirCjcLlTDiagnosticsChecker(
         val endLine: Int,
         val endColumn: Int,
     ) {
+        /**
+         * 构造诊断配对使用的起始位置键。
+         */
         fun startKey(): StartKey {
             return StartKey(
                 mappedKind = mappedKind,
@@ -356,6 +406,9 @@ class CfirCjcLlTDiagnosticsChecker(
             )
         }
 
+        /**
+         * 渲染诊断完整位置。
+         */
         fun renderPosition(): String {
             return "$filePath:$startLine:$startColumn..$endLine:$endColumn"
         }
@@ -385,6 +438,9 @@ class CfirCjcLlTDiagnosticsChecker(
         val startLine: Int,
         val startColumn: Int,
     ) : Comparable<StartKey> {
+        /**
+         * 按文件、起始行列和诊断 kind 排序。
+         */
         override fun compareTo(other: StartKey): Int {
             return compareValuesBy(
                 this,

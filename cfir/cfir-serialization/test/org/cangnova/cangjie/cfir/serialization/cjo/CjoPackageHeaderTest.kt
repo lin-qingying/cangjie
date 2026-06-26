@@ -16,7 +16,13 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
+/**
+ * 验证 CJO 包头读取逻辑对声明索引、文件列表和导入文本的解析。
+ */
 class CjoPackageHeaderTest {
+    /**
+     * 验证顶层匿名 extend 按独立索引记录，不污染具名声明索引。
+     */
     @Test
     fun `top level anonymous extend is indexed independently from declaration names`() {
         val builder = FlatBufferBuilder(256)
@@ -74,6 +80,9 @@ class CjoPackageHeaderTest {
         )
     }
 
+    /**
+     * 验证所有源文件路径都会保留，供反编译多文件推断使用。
+     */
     @Test
     fun `all files are preserved for decompiled multifile inference`() {
         val builder = FlatBufferBuilder(128)
@@ -96,6 +105,9 @@ class CjoPackageHeaderTest {
         assertEquals(listOf("src/sample/pkg/alpha.cj", "src/sample/pkg/beta.cj"), header.allFiles)
     }
 
+    /**
+     * 验证文件级导入条目会保留别名导入和星号导入文本。
+     */
     @Test
     fun `file import entries preserve alias and star imports`() {
         val builder = FlatBufferBuilder(256)
@@ -150,6 +162,9 @@ class CjoPackageHeaderTest {
         assertEquals(listOf("sample.dep.Thing as AliasThing", "sample.star.*"), header.decompiledImportTexts)
     }
 
+    /**
+     * 验证导入前缀中的双冒号组织分隔符会被正确还原。
+     */
     @Test
     fun `file import entries preserve double colon organization separator`() {
         val builder = FlatBufferBuilder(256)

@@ -8,7 +8,13 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
+/**
+ * 验证 CJO 搜索路径对标准库目录和普通库目录的优先级规则。
+ */
 class CjoSearchPathTest {
+    /**
+     * 验证非 std 包不能从 CANGJIE_STDLIB_MODULE 路径加载。
+     */
     @Test
     fun `non std package must not be loaded from CANGJIE_STDLIB_MODULE`() {
         val stdlibDir = Files.createTempDirectory("cjo-stdlib-")
@@ -39,6 +45,9 @@ class CjoSearchPathTest {
         }
     }
 
+    /**
+     * 验证 std 包优先从 CANGJIE_STDLIB_MODULE 路径加载。
+     */
     @Test
     fun `std package loads from CANGJIE_STDLIB_MODULE with higher priority`() {
         val stdlibDir = Files.createTempDirectory("cjo-stdlib-")

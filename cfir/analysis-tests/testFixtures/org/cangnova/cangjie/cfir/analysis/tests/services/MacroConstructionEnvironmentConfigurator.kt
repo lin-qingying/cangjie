@@ -38,6 +38,12 @@ import java.nio.charset.StandardCharsets
  * `cjc -p <root> --compile-macro -o <dir>` 生成真实 artifact。
  */
 class MacroConstructionEnvironmentConfigurator(testServices: TestServices) : EnvironmentConfigurator(testServices) {
+    /**
+     * 配置宏构造端到端测试所需的编译器选项。
+     *
+     * 方法会收集测试文件中的 `macro package`，物化为临时 source root，
+     * 并在缺少 executor factory 时注册 LSPMacroServer executor。
+     */
     override fun configureCompilerConfiguration(configuration: CompilerConfiguration, module: TestModule) {
         configuration.macroBackgroundAutoCompilationEnabled = false
         configuration.macroExpansionDemandAutoCompilationEnabled =
@@ -78,6 +84,9 @@ class MacroConstructionEnvironmentConfigurator(testServices: TestServices) : Env
         configuration.macroConstructionMode = MacroConstructionService.Mode.DEGRADED
     }
 
+    /**
+     * 将一个宏源码包写入测试临时目录。
+     */
     private fun materializeSourcePackage(testCaseId: String, sourcePackage: SourceMacroPackage): File {
         val root = testServices.getOrCreateTempDirectory(
             "macro-source-$testCaseId-${sourcePackage.packageFqName.asString().sanitizeFileName()}",
@@ -90,6 +99,9 @@ class MacroConstructionEnvironmentConfigurator(testServices: TestServices) : Env
         return root
     }
 
+    /**
+     * 从测试模块中收集所有 `macro package` 源文件并按包名分组。
+     */
     private fun collectSourceMacroPackages(module: TestModule): List<SourceMacroPackage> {
         val result = linkedMapOf<FqName, MutableList<TestFile>>()
         for (file in module.files) {
@@ -101,17 +113,34 @@ class MacroConstructionEnvironmentConfigurator(testServices: TestServices) : Env
         }
     }
 
+    /**
+     * 端到端测试中的宏源码包。
+     *
+     * @property packageFqName 宏包全限定名。
+     * @property files 属于该宏包的测试源文件。
+     */
     private data class SourceMacroPackage(
+        /** 宏包全限定名。 */
         val packageFqName: FqName,
+        /** 属于该宏包的测试源文件。 */
         val files: List<TestFile>,
     )
 
     private companion object {
+        /**
+         * 匹配测试源码中的 `macro package` 声明。
+         */
         val macroPackageRegex = Regex("""(?m)^\s*macro\s+package\s+([A-Za-z_][A-Za-z0-9_.]*)\s*$""")
     }
 }
 
+/**
+ * 将任意字符串转换为可用于临时文件名的片段。
+ */
 private fun String.sanitizeFileName(): String =
     replace(Regex("""[^A-Za-z0-9_.-]"""), "_")
 
+/**
+ * 判断当前运行平台是否为 Windows。
+ */
 private fun isWindows(): Boolean = System.getProperty("os.name").contains("Windows", ignoreCase = true)

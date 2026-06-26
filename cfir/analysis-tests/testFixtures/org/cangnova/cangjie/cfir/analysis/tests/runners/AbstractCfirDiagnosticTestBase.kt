@@ -45,12 +45,24 @@ import org.cangnova.cangjie.test.services.sourceProviders.SpecHelpersSourceFiles
  * 对应 Kotlin K2 的 AbstractFirDiagnosticTestBase
  */
 abstract class AbstractCfirDiagnosticTestBase(val parser: CfirParser) : AbstractCangjieCompilerTest() {
+    /**
+     * 配置标准 CFIR 诊断测试管线。
+     *
+     * 该配置由 parser 参数决定 PSI 或 LightTree 前端入口。
+     */
     override fun configure(builder: TestConfigurationBuilder) = with(builder) {
         configureDiagnosticTest(parser)
     }
 }
 
+/**
+ * 使用 PSI parser 的 CFIR 规格诊断测试基类。
+ */
 abstract class AbstractCfirPsiDiagnosticTest : AbstractCfirDiagnosticTestSpecBase(CfirParser.Psi)
+
+/**
+ * 使用 LightTree parser 的 CFIR 规格诊断测试基类。
+ */
 abstract class AbstractCfirLightTreeDiagnosticsTest : AbstractCfirDiagnosticTestSpecBase(CfirParser.LightTree)
 
 /**
@@ -61,6 +73,9 @@ abstract class AbstractCfirLightTreeDiagnosticsTest : AbstractCfirDiagnosticTest
  */
 abstract class AbstractCfirLightTreeLlTDiagnosticsTest : AbstractCfirLightTreeDiagnosticsTest()
 
+/**
+ * 使用 PSI parser 的 LLT 诊断测试基类。
+ */
 abstract class AbstractCfirPsiLlTDiagnosticsTest : AbstractCfirPsiDiagnosticTest()
 
 /**
@@ -70,6 +85,9 @@ abstract class AbstractCfirPsiLlTDiagnosticsTest : AbstractCfirPsiDiagnosticTest
  * 会由 [MacroConstructionEnvironmentConfigurator] 自动识别并接入宏包编译请求。
  */
 abstract class AbstractCfirLightTreeMacroDiagnosticsTest : AbstractCfirLightTreeDiagnosticsTest() {
+    /**
+     * 配置 LightTree 宏诊断测试所需的指令、环境配置器和宏展开 dump handler。
+     */
     override fun configure(builder: TestConfigurationBuilder) {
         super.configure(builder)
         with(builder) {
@@ -89,6 +107,9 @@ abstract class AbstractCfirLightTreeMacroDiagnosticsTest : AbstractCfirLightTree
  * 仅前端 parser 切换为 [CfirParser.Psi]。
  */
 abstract class AbstractCfirPsiMacroDiagnosticsTest : AbstractCfirPsiDiagnosticTest() {
+    /**
+     * 配置 PSI 宏诊断测试所需的指令、环境配置器和宏展开 dump handler。
+     */
     override fun configure(builder: TestConfigurationBuilder) {
         super.configure(builder)
         with(builder) {
@@ -101,7 +122,15 @@ abstract class AbstractCfirPsiMacroDiagnosticsTest : AbstractCfirPsiDiagnosticTe
     }
 }
 
+/**
+ * CFIR 规格诊断测试公共基类。
+ *
+ * 在标准诊断测试管线之外附加 LLT/spec helpers、stdlib 与一致性检查器。
+ */
 abstract class AbstractCfirDiagnosticTestSpecBase(parser: CfirParser) : AbstractCfirDiagnosticTestBase(parser) {
+    /**
+     * 配置 CFIR 规格诊断测试所需的公共 source providers 与 after-analysis checkers。
+     */
     override fun configure(builder: TestConfigurationBuilder) {
         super.configure(builder)
         with(builder) {
@@ -109,6 +138,13 @@ abstract class AbstractCfirDiagnosticTestSpecBase(parser: CfirParser) : Abstract
         }
     }
 }
+
+/**
+ * 为 CFIR 规格诊断测试追加共享配置。
+ *
+ * 该扩展函数集中启用 spec helper 源文件、LLT companion 文件发现、
+ * testData 覆盖检查以及 failing-test 抑制器。
+ */
 fun TestConfigurationBuilder.baseCfirSpecDiagnosticTestConfiguration() {
     defaultDirectives {
         +SPEC_HELPERS

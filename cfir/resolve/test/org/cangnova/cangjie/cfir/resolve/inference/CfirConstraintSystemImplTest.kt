@@ -31,10 +31,19 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
+/**
+ * [CfirConstraintSystemImpl] 在 inference 包中的端到端求解测试。
+ */
 class CfirConstraintSystemImplTest {
 
+    /**
+     * 测试使用的类型关系服务。
+     */
     private val typeRelations = CfirTypeRelations(ConstraintTestTypeContext())
 
+    /**
+     * 验证 invariant class 类型实参可以分解并推断类型变量。
+     */
     @Test
     fun `decompose invariant class type arguments and infer type variable`() {
         val system = CfirConstraintSystemImpl(typeRelations)
@@ -51,6 +60,9 @@ class CfirConstraintSystemImplTest {
         assertTrue(system.errors.isEmpty())
     }
 
+    /**
+     * 验证函数参数逆变位置可以参与类型变量推断。
+     */
     @Test
     fun `function subtype constraints should infer from contravariant parameter`() {
         val system = CfirConstraintSystemImpl(typeRelations)
@@ -72,6 +84,9 @@ class CfirConstraintSystemImplTest {
         assertTrue(system.errors.isEmpty())
     }
 
+    /**
+     * 验证变量固定按依赖顺序传播。
+     */
     @Test
     fun `fixation should respect variable dependency order`() {
         val system = CfirConstraintSystemImpl(typeRelations)
@@ -90,6 +105,9 @@ class CfirConstraintSystemImplTest {
         assertTrue(system.errors.isEmpty())
     }
 
+    /**
+     * 验证一个变量的 bound 会通过其他变量 bound 继续传播。
+     */
     @Test
     fun `bound should be propagated through other variable bounds`() {
         val system = CfirConstraintSystemImpl(typeRelations)
@@ -108,6 +126,9 @@ class CfirConstraintSystemImplTest {
         assertTrue(u.upperBounds.any { it == propagated })
     }
 
+    /**
+     * 验证冲突约束会记录错误。
+     */
     @Test
     fun `conflicting constraints should be reported`() {
         val system = CfirConstraintSystemImpl(typeRelations)
@@ -121,6 +142,9 @@ class CfirConstraintSystemImplTest {
         assertTrue(system.hasErrors)
     }
 
+    /**
+     * 构造并注册测试类型变量。
+     */
     private fun newTypeVariable(system: CfirConstraintSystemImpl, name: String): CfirTypeVariable {
         val symbol = CfirTypeParameterSymbol()
         val typeParameter = CfirTypeParameterImpl(
@@ -143,9 +167,18 @@ class CfirConstraintSystemImplTest {
     }
 }
 
+/**
+ * constraint system 测试使用的类型上下文。
+ */
 private class ConstraintTestTypeContext : ConeTypeContext {
+    /**
+     * 测试上下文不提供额外父类型。
+     */
     override fun supertypes(type: ConeCangJieType): Collection<ConeCangJieType> = emptyList()
 
+    /**
+     * 按 primitive kind 或 class id 判断类型构造器一致性。
+     */
     override fun isSameTypeConstructor(a: ConeCangJieType, b: ConeCangJieType): Boolean {
         if (a is ConePrimitiveType && b is ConePrimitiveType) return a.kind == b.kind
         if (a is ConeClassLikeType && b is ConeClassLikeType) return a.classId == b.classId

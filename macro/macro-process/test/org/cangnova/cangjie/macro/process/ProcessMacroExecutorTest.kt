@@ -34,16 +34,28 @@ import java.nio.file.Path
 import java.util.ArrayDeque
 import java.util.logging.Logger
 
+/**
+ * 覆盖进程宏执行器的协议编排、库加载缓存、连接关闭和 LSPMacroServer 可用性判断。
+ */
 class ProcessMacroExecutorTest {
+    /**
+     * 当前测试用例使用的临时目录，用于构造可执行文件探测场景。
+     */
     @TempDir
     lateinit var tempDir: Path
 
+    /**
+     * 验证进程宏执行器保持抽象基类形态，并由 LSPMacroServer 执行器继承。
+     */
     @Test
     fun processMacroExecutorIsAbstractAndLspMacroServerExecutorInheritsIt() {
         assertTrue(Modifier.isAbstract(ProcessMacroExecutor::class.java.modifiers))
         assertTrue(ProcessMacroExecutor::class.java.isAssignableFrom(LspMacroServerMacroExecutor::class.java))
     }
 
+    /**
+     * 验证 LSPMacroServer 执行器的可用性只由配置文件是否存在且可执行决定。
+     */
     @Test
     fun lspMacroServerExecutorAvailabilityFollowsExecutableFileState() {
         val missing = LspMacroServerMacroExecutor(tempDir.resolve("missing-LSPMacroServer").toString())
@@ -62,6 +74,9 @@ class ProcessMacroExecutorTest {
         assertEquals(executable.toFile().canExecute(), available.isAvailable())
     }
 
+    /**
+     * 验证抽象进程执行器负责发送 DefLib、发送 MacroCall 并解析返回 token。
+     */
     @Test
     fun abstractProcessExecutorOwnsProtocolAndParsesExpansionTokens() {
         val executor = TestProcessMacroExecutor(
@@ -101,6 +116,9 @@ class ProcessMacroExecutorTest {
         )
     }
 
+    /**
+     * 验证库加载请求会去重，并且已经成功加载的库不会重复发送给服务端。
+     */
     @Test
     fun loadLibrariesDeduplicatesRequestsAndCachesLoadedLibraries() {
         val executor = TestProcessMacroExecutor(
@@ -120,6 +138,9 @@ class ProcessMacroExecutorTest {
         assertEquals(MacroMsgCodec.TYPE_DEF_LIB, MacroMsgCodec.getMsgType(executor.transport.sent.single()))
     }
 
+    /**
+     * 验证 FlatBuffers DefLib ack 中的失败路径会映射为无法打开动态库错误。
+     */
     @Test
     fun loadLibrariesMapsDefLibAckFailedPathsToCannotOpenLibFailures() {
         val executor = TestProcessMacroExecutor(
@@ -135,6 +156,9 @@ class ProcessMacroExecutorTest {
         assertEquals(MacroLibraryLoadFailureKind.CANNOT_OPEN_LIB, failure.kind)
     }
 
+    /**
+     * 验证官方文本 DefLib ack 能被兼容解析为动态库加载失败。
+     */
     @Test
     fun loadLibrariesAcceptsOfficialTextDefLibAck() {
         val executor = TestProcessMacroExecutor(
@@ -150,6 +174,9 @@ class ProcessMacroExecutorTest {
         assertEquals(MacroLibraryLoadFailureKind.CANNOT_OPEN_LIB, failure.kind)
     }
 
+    /**
+     * 验证库加载阶段收到非 DefLib ack 时会返回协议错误。
+     */
     @Test
     fun loadLibrariesReportsProtocolErrorForUnexpectedAckType() {
         val executor = TestProcessMacroExecutor(
@@ -165,6 +192,9 @@ class ProcessMacroExecutorTest {
         assertEquals(MacroLibraryLoadFailureKind.PROTOCOL_ERROR, failure.kind)
     }
 
+    /**
+     * 验证宏展开阶段收到非 MacroResult 响应时会返回协议错误。
+     */
     @Test
     fun executeReportsProtocolErrorForUnexpectedResponseType() {
         val executor = TestProcessMacroExecutor(
@@ -180,6 +210,9 @@ class ProcessMacroExecutorTest {
         assertEquals(MacroExpansionFailureKind.PROTOCOL_ERROR, result.kind)
     }
 
+    /**
+     * 验证 reset 会清空已加载库缓存，并向服务端发送 ResetStage 任务。
+     */
     @Test
     fun resetClearsLoadedLibraryCacheAndSendsResetStageTask() {
         val executor = TestProcessMacroExecutor(
@@ -200,6 +233,9 @@ class ProcessMacroExecutorTest {
         )
     }
 
+    /**
+     * 验证未启动连接时 close 不产生副作用，已启动连接时 close 会发送退出任务并关闭连接。
+     */
     @Test
     fun closeSendsExitTaskAndClosesConnection() {
         val executor = TestProcessMacroExecutor(responses = ArrayDeque())
@@ -220,16 +256,40 @@ class ProcessMacroExecutorTest {
         assertEquals(MacroMsgCodec.TYPE_EXIT_TASK, MacroMsgCodec.getMsgType(startedExecutor.transport.sent.last()))
     }
 
+    /**
+     * 可控的进程宏执行器测试替身。
+     */
     private class TestProcessMacroExecutor(
+        /**
+         * 传输层按顺序返回的服务端响应队列。
+         */
         responses: ArrayDeque<ByteArray>,
     ) : ProcessMacroExecutor() {
+        /**
+         * 测试替身日志器。
+         */
         override val logger: Logger = Logger.getLogger(TestProcessMacroExecutor::class.java.name)
+        /**
+         * 内存队列传输层，用于记录发送消息并返回预置响应。
+         */
         val transport = QueueMacroProcessTransport(responses)
+        /**
+         * 记录后端连接是否已经执行关闭回调。
+         */
         var closed: Boolean = false
+        /**
+         * 模拟后端连接存活状态。
+         */
         private var alive: Boolean = false
 
+        /**
+         * 测试替身始终声明后端可用。
+         */
         override fun isBackendAvailable(): Boolean = true
 
+        /**
+         * 建立基于内存队列传输层的测试连接。
+         */
         override fun startConnection(): ProcessMacroConnection {
             alive = true
             return ProcessMacroConnection(
@@ -243,22 +303,46 @@ class ProcessMacroExecutorTest {
         }
     }
 
+    /**
+     * 使用内存队列模拟宏进程传输层。
+     */
     private class QueueMacroProcessTransport(
+        /**
+         * 接收时依次弹出的预置响应。
+         */
         private val responses: ArrayDeque<ByteArray>,
     ) : MacroProcessTransport {
+        /**
+         * 记录测试期间发送给服务端的所有消息。
+         */
         val sent: MutableList<ByteArray> = mutableListOf()
 
+        /**
+         * 记录一条发送消息。
+         */
         override fun send(payload: ByteArray) {
             sent += payload
         }
 
+        /**
+         * 返回下一条预置响应。
+         */
         override fun receive(): ByteArray = responses.removeFirst()
 
+        /**
+         * 内存传输层无需释放外部资源。
+         */
         override fun close() = Unit
     }
 
+    /**
+     * 构造成功的 DefLib ack 消息。
+     */
     private fun ackPayload(): ByteArray = MacroMsgCodec.buildDefLib(emptyList())
 
+    /**
+     * 构造包含指定 token 的成功 MacroResult 消息。
+     */
     private fun macroResultPayload(vararg tokens: TokenInfo): ByteArray {
         val builder = FlatBufferBuilder(256)
         val tokenOffsets = tokens.map { token -> buildToken(builder, token) }.toIntArray()
@@ -277,6 +361,9 @@ class ProcessMacroExecutorTest {
         return builder.sizedByteArray()
     }
 
+    /**
+     * 将测试 token 写入 FlatBuffers builder，并返回 token 偏移。
+     */
     private fun buildToken(builder: FlatBufferBuilder, token: TokenInfo): Int {
         val value = builder.createString(token.value)
         Token.startToken(builder)

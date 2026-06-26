@@ -260,8 +260,8 @@ private fun ConeConstraintSystemHasContradiction.mapSystemHasContradictionError(
     source: CjSourceElement?,
     qualifiedAccessSource: CjSourceElement?,
 ): List<CjDiagnostic> {
-    candidate.unsuccessfulCallableReferenceArgumentDiagnostic(session, source, qualifiedAccessSource)
-        ?.let { return listOf(it) }
+    candidate.unsuccessfulCallableReferenceArgumentDiagnostics(session, source, qualifiedAccessSource)
+        ?.let { return it }
 
     candidate.cangjieVariadicRegularCallDiagnostics
         .mapCangjieVariadicRegularCallDiagnostics(session, source, qualifiedAccessSource)
@@ -435,8 +435,8 @@ private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
     source: CjSourceElement?,
     qualifiedAccessSource: CjSourceElement?,
 ): List<CjDiagnostic> {
-    candidate.unsuccessfulCallableReferenceArgumentDiagnostic(session, source, qualifiedAccessSource)
-        ?.let { return listOf(it) }
+    candidate.unsuccessfulCallableReferenceArgumentDiagnostics(session, source, qualifiedAccessSource)
+        ?.let { return it }
 
     candidate.cangjieVariadicRegularCallDiagnostics
         .mapCangjieVariadicRegularCallDiagnostics(session, source, qualifiedAccessSource)
@@ -620,18 +620,33 @@ private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
  * callable reference 实参解析失败时，保留函数引用自己的 no-match 诊断，
  * 不能把同一根因继续泛化成外层调用的 TYPE_MISMATCH。
  */
-private fun AbstractCallCandidate<*>.unsuccessfulCallableReferenceArgumentDiagnostic(
+private fun AbstractCallCandidate<*>.unsuccessfulCallableReferenceArgumentDiagnostics(
     session: CfirSession,
     source: CjSourceElement?,
     qualifiedAccessSource: CjSourceElement?,
-): CjDiagnostic? {
+): List<CjDiagnostic>? {
     val diagnostic = diagnostics.filterIsInstance<UnsuccessfulCallableReferenceArgument>().firstOrNull()
         ?: return null
+
+    // 如果函数引用节点本身已经解析成歧义，主诊断属于该引用的 AMBIGUOUS_USE。
+    // 不能再把同一失败从外层候选降级成 no-match-ref 或 unresolved 级联。
+    if (diagnostic.argument.hasAmbiguousCalleeReference()) return emptyList()
+
     val diagnosticSource = diagnostic.argument.source ?: source ?: qualifiedAccessSource ?: callInfo.callSite.source ?: return null
-    return CfirErrors.NO_MATCH_FUNCTION_DECLARATION_FOR_REF.on(
-        diagnosticSource.firstCharacterDiagnosticSource(),
-        session,
+    return listOfNotNull(
+        CfirErrors.NO_MATCH_FUNCTION_DECLARATION_FOR_REF.on(
+            diagnosticSource.firstCharacterDiagnosticSource(),
+            session,
+        )
     )
+}
+
+/**
+ * 判断作为函数引用使用的表达式是否已经携带歧义引用诊断。
+ */
+private fun CfirExpression.hasAmbiguousCalleeReference(): Boolean {
+    val reference = (this as? CfirResolvable)?.calleeReference as? CfirErrorNamedReference ?: return false
+    return reference.diagnostic is ConeAmbiguityError
 }
 
 /**

@@ -23,8 +23,14 @@ import org.junit.jupiter.api.Test
  */
 class CfirOverloadConflictResolverTest {
 
+    /**
+     * 每个测试前重新创建的重载冲突解析器。
+     */
     private lateinit var resolver: CfirOverloadConflictResolver
 
+    /**
+     * 初始化支持 `Child <: Parent` 的重载解析器。
+     */
     @BeforeEach
     fun setUp() {
         resolver = CfirOverloadConflictResolver(CfirTypeRelations(OverloadTestTypeContext()))
@@ -116,6 +122,9 @@ class CfirOverloadConflictResolverTest {
 
     // ---- 辅助方法 ----
 
+    /**
+     * 基于函数名和参数类型构造测试候选。
+     */
     private fun makeCandidate(name: String, paramTypes: List<ConeCangJieType>): CfirCandidate {
         val symbol = buildFunctionSymbol(name, parameterTypes = paramTypes)
         val callInfo = buildCallInfo(name, paramTypes.map { buildTypedExpression(it) })
@@ -123,6 +132,9 @@ class CfirOverloadConflictResolverTest {
     }
 
     @OptIn(org.cangnova.cangjie.cfir.CfirImplementationDetail::class, org.cangnova.cangjie.cfir.declarations.ResolveStateAccess::class)
+    /**
+     * 构造已经绑定并处于 BODY_RESOLVE 阶段的测试类型参数。
+     */
     private fun makeStubTypeParameter(name: String): org.cangnova.cangjie.cfir.declarations.CfirTypeParameter {
         val symbol = org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol()
         val tp = org.cangnova.cangjie.cfir.declarations.impl.CfirTypeParameterImpl(
@@ -145,6 +157,9 @@ class CfirOverloadConflictResolverTest {
  * 测试用 `TypeContext`，支持 `Child <: Parent`。
  */
 private class OverloadTestTypeContext : ConeTypeContext {
+    /**
+     * 为 Child 提供 Parent 作为直接父类型。
+     */
     override fun supertypes(type: ConeCangJieType): Collection<ConeCangJieType> {
         // Child 的直接超类型包含 Parent
         if (type is ConeClassLikeType && type.classId == TYPE_CHILD.classId) {
@@ -153,6 +168,9 @@ private class OverloadTestTypeContext : ConeTypeContext {
         return emptyList()
     }
 
+    /**
+     * 按 primitive kind 或 class id 判断类型构造器一致性。
+     */
     override fun isSameTypeConstructor(a: ConeCangJieType, b: ConeCangJieType): Boolean {
         if (a is ConePrimitiveType && b is ConePrimitiveType) return a.kind == b.kind
         if (a is ConeClassLikeType && b is ConeClassLikeType) return a.classId == b.classId
@@ -162,4 +180,5 @@ private class OverloadTestTypeContext : ConeTypeContext {
 
 /** 测试用类型：`Child <: Parent`。 */
 private val TYPE_PARENT = ConeClassLikeType(ConeClassLookupTagImpl(ClassId(FqName("test"), Name.identifier("Parent"))))
+/** 测试用子类型：`Child <: Parent`。 */
 private val TYPE_CHILD = ConeClassLikeType(ConeClassLookupTagImpl(ClassId(FqName("test"), Name.identifier("Child"))))

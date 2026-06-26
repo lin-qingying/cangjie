@@ -36,6 +36,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirLiteralKind
 import org.cangnova.cangjie.cfir.expressions.CfirMatchExpression
 import org.cangnova.cangjie.cfir.patterns.*
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
+import org.cangnova.cangjie.cfir.resolve.constants.CfirIntConstantEvalUtils
 import org.cangnova.cangjie.cfir.resolve.match.exhaustive.MatchExhaustivenessContext
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.symbolProvider
@@ -321,29 +322,14 @@ sealed class CfirConstantValue : Comparable<CfirConstantValue> {
                 PrimitiveTypeKind.UINT64,
                 PrimitiveTypeKind.UINT_NATIVE,
             )
+            val parsed = CfirIntConstantEvalUtils.parseIntLiteralValue(value) ?: return null
             return if (unsigned) {
-                when (value) {
-                    is UByte -> UnsignedIntConst(value.toULong())
-                    is UShort -> UnsignedIntConst(value.toULong())
-                    is UInt -> UnsignedIntConst(value.toULong())
-                    is ULong -> UnsignedIntConst(value)
-                    is Byte -> UnsignedIntConst(value.toULong())
-                    is Short -> UnsignedIntConst(value.toULong())
-                    is Int -> UnsignedIntConst(value.toULong())
-                    is Long -> UnsignedIntConst(value.toULong())
-                    else -> null
-                }
+                parsed.value.toString().toULongOrNull()?.let(::UnsignedIntConst)
             } else {
-                when (value) {
-                    is Byte -> SignedIntConst(value.toLong())
-                    is Short -> SignedIntConst(value.toLong())
-                    is Int -> SignedIntConst(value.toLong())
-                    is Long -> SignedIntConst(value)
-                    is UByte -> SignedIntConst(value.toLong())
-                    is UShort -> SignedIntConst(value.toLong())
-                    is UInt -> SignedIntConst(value.toLong())
-                    is ULong -> SignedIntConst(value.toLong())
-                    else -> null
+                try {
+                    SignedIntConst(parsed.value.longValueExact())
+                } catch (_: ArithmeticException) {
+                    null
                 }
             }
         }

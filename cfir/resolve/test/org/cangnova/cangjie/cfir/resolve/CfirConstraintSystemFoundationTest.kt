@@ -21,10 +21,19 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
+/**
+ * [CfirConstraintSystemImpl] 基础约束传播测试。
+ */
 class CfirConstraintSystemFoundationTest {
 
+    /**
+     * 测试使用的类型关系服务。
+     */
     private val typeRelations = CfirTypeRelations(FoundationTypeContext())
 
+    /**
+     * 验证 subtype 约束会把实际类型记录为类型变量下界。
+     */
     @Test
     fun `subtype constraint binds lower bound for type variable`() {
         val system = CfirConstraintSystemImpl(typeRelations)
@@ -44,6 +53,9 @@ class CfirConstraintSystemFoundationTest {
         assertEquals(listOf(ConePrimitiveType.INT32), variable.lowerBounds)
     }
 
+    /**
+     * 验证 class-like 类型相等时会继续分解并传播匹配的类型实参。
+     */
     @Test
     fun `class like equality propagates to matching type arguments`() {
         val system = CfirConstraintSystemImpl(typeRelations)
@@ -63,6 +75,9 @@ class CfirConstraintSystemFoundationTest {
         assertTrue(variable.lowerBounds.contains(ConePrimitiveType.INT32) || variable.upperBounds.contains(ConePrimitiveType.INT32))
     }
 
+    /**
+     * 验证 expected type 约束按 subtype 规则传播。
+     */
     @Test
     fun `expected type constraint propagates like subtype`() {
         val system = CfirConstraintSystemImpl(typeRelations)
@@ -83,6 +98,9 @@ class CfirConstraintSystemFoundationTest {
         assertEquals(listOf(ConePrimitiveType.INT32), variable.lowerBounds)
     }
 
+    /**
+     * 验证 upper bound 约束会写入变量上界。
+     */
     @Test
     fun `upper bound constraint records bound on variable`() {
         val system = CfirConstraintSystemImpl(typeRelations)
@@ -103,6 +121,9 @@ class CfirConstraintSystemFoundationTest {
         assertEquals(listOf(ConePrimitiveType.INT32), variable.upperBounds)
     }
 
+    /**
+     * 验证兼容性检查失败时会记录 incompatible issue。
+     */
     @Test
     fun `compatible constraint records incompatibility issue when relation fails`() {
         val system = CfirConstraintSystemImpl(typeRelations)
@@ -118,6 +139,9 @@ class CfirConstraintSystemFoundationTest {
         assertTrue(system.errors.any { it is CfirConstraintIssue.IncompatibleTypes })
     }
 
+    /**
+     * 验证 quest fallback 兼容关系不会产生 issue。
+     */
     @Test
     fun `compatible constraint allows quest fallback without issue`() {
         val system = CfirConstraintSystemImpl(typeRelations)
@@ -133,6 +157,9 @@ class CfirConstraintSystemFoundationTest {
         assertTrue(system.errors.isEmpty())
     }
 
+    /**
+     * 验证 expected type 不兼容时会报告 incompatible issue。
+     */
     @Test
     fun `expected type incompatible relation reports issue`() {
         val system = CfirConstraintSystemImpl(typeRelations)
@@ -148,6 +175,9 @@ class CfirConstraintSystemFoundationTest {
         assertTrue(system.errors.any { it is CfirConstraintIssue.IncompatibleTypes })
     }
 
+    /**
+     * 验证 id 函数调用场景的端到端类型变量固定。
+     */
     @Test
     fun `end to end id function inference`() {
         // fun id<T>(x: T): T  调用 id(42)
@@ -173,6 +203,9 @@ class CfirConstraintSystemFoundationTest {
         assertEquals(ConePrimitiveType.INT64, variable.fixedType)
     }
 
+    /**
+     * 验证函数类型参数位置的逆变传播会记录变量上界。
+     */
     @Test
     fun `function type propagation with type variable`() {
         val system = CfirConstraintSystemImpl(typeRelations)
@@ -197,9 +230,18 @@ class CfirConstraintSystemFoundationTest {
     }
 }
 
+/**
+ * foundation 测试使用的最小类型上下文。
+ */
 private class FoundationTypeContext : ConeTypeContext {
+    /**
+     * 测试上下文不提供额外父类型。
+     */
     override fun supertypes(type: ConeCangJieType): Collection<ConeCangJieType> = emptyList()
 
+    /**
+     * 按 primitive kind 或 class id 判断类型构造器是否相同。
+     */
     override fun isSameTypeConstructor(a: ConeCangJieType, b: ConeCangJieType): Boolean {
         if (a is ConePrimitiveType && b is ConePrimitiveType) return a.kind == b.kind
         if (a is ConeClassLikeType && b is ConeClassLikeType) return a.classId == b.classId

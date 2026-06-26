@@ -23,8 +23,14 @@ import org.junit.jupiter.api.Test
  */
 class CfirCheckArgumentsTest {
 
+    /**
+     * 参数检查阶段测试使用的 resolution context。
+     */
     private lateinit var context: CfirResolutionContext
 
+    /**
+     * 初始化支持 ideal 类型兼容判断的测试上下文。
+     */
     @BeforeEach
     fun setUp() {
         context = CfirResolutionContext(
@@ -146,13 +152,25 @@ class CfirCheckArgumentsTest {
 
 // ---- Stub 对象 ----
 
+/**
+ * 参数检查测试使用的最小 session。
+ */
 private object StubSession : org.cangnova.cangjie.cfir.session.CfirSession(Kind.Source) {
+    /**
+     * 返回稳定的调试名称。
+     */
     override fun toString(): String = "StubSession"
 }
 
 /** 支持 `IdealInt` / `IdealFloat` 子类型判定的测试 `TypeContext`。 */
 private class TestTypeContext : ConeTypeContext {
+    /**
+     * 测试上下文不提供额外父类型。
+     */
     override fun supertypes(type: ConeCangJieType): Collection<ConeCangJieType> = emptyList()
+    /**
+     * 按 primitive kind 或结构相等判断类型构造器一致性。
+     */
     override fun isSameTypeConstructor(a: ConeCangJieType, b: ConeCangJieType): Boolean {
         if (a is ConePrimitiveType && b is ConePrimitiveType) return a.kind == b.kind
         return a == b

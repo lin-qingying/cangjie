@@ -155,6 +155,13 @@ object ConeConstraintSystemUtilContext : ConstraintSystemUtilContext {
             PostponedArgumentInputTypesResolver.TYPE_VARIABLE_NAME_PREFIX_FOR_CR_PARAMETER_TYPE + index,
         )
     }
+
+    /**
+     * 对齐 Kotlin FIR 的约束系统：同一构造器存在多条父类型候选时，必须用 fork
+     * 隔离每条候选派生出的约束，避免第一条可派生约束的父类型错误污染后续显式实参。
+     */
+    override val isForcedAllowForkingInferenceSystem: Boolean
+        get() = true
 }
 
 /**

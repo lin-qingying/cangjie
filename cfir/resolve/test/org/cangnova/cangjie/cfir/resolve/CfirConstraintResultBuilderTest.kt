@@ -11,8 +11,14 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
+/**
+ * [CfirConstraintResultBuilder] 约束求解结果构造测试。
+ */
 class CfirConstraintResultBuilderTest {
 
+    /**
+     * 验证结果构造器会区分已固定变量和未解析变量。
+     */
     @Test
     fun `result builder separates fixed and unresolved variables`() {
         val store = CfirConstraintStore()
@@ -49,6 +55,9 @@ class CfirConstraintResultBuilderTest {
         assertEquals(emptyList<String>(), result.upperBoundsOf("T"))
     }
 
+    /**
+     * 验证结果构造器按 issue kind 统计约束问题。
+     */
     @Test
     fun `result builder counts issues by kind`() {
         val store = CfirConstraintStore()
@@ -73,6 +82,9 @@ class CfirConstraintResultBuilderTest {
         assertTrue(result.hasErrors)
     }
 
+    /**
+     * 验证结果构造器会在 substitution 中终结 ideal 类型。
+     */
     @Test
     fun `result builder finalizes ideal types in substitution`() {
         val store = CfirConstraintStore()

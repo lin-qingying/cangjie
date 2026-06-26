@@ -2,19 +2,19 @@
 
 
 extend Int64 {
-    <!OPERATOR_OVERLOAD_BUILT_IN_BINARY_OPERATOR!>p<!>ublic operator func +(right: Int64) {
+    <!OPERATOR_OVERLOAD_BUILT_IN_BINARY_OPERATOR!>public<!> operator func +(right: Int64) {
         return this
     }
-    <!OPERATOR_OVERLOAD_BUILT_IN_BINARY_OPERATOR!>p<!>ublic operator func <!RETURN_TYPE_INCOMPATIBLE!>==<!>(right: Int64) {
+    <!OPERATOR_OVERLOAD_BUILT_IN_BINARY_OPERATOR!>public<!> operator func <!RETURN_TYPE_INCOMPATIBLE!>==<!>(right: Int64) {
         return this
     }
-    <!OPERATOR_OVERLOAD_BUILT_IN_BINARY_OPERATOR!>p<!>ublic operator func <<(right: Int64) {
+    <!OPERATOR_OVERLOAD_BUILT_IN_BINARY_OPERATOR!>public<!> operator func <<(right: Int64) {
         return this
     }
-    <!OPERATOR_OVERLOAD_BUILT_IN_BINARY_OPERATOR!>p<!>ublic operator func -(right: Int64) {
+    <!OPERATOR_OVERLOAD_BUILT_IN_BINARY_OPERATOR!>public<!> operator func -(right: Int64) {
         return this
     }
-    <!OPERATOR_OVERLOAD_BUILT_IN_UNARY_OPERATOR!>p<!>ublic operator func -() {
+    <!OPERATOR_OVERLOAD_BUILT_IN_UNARY_OPERATOR!>public<!> operator func -() {
         return this
     }
     public operator func [](right: Int64) { // OK
@@ -26,7 +26,7 @@ extend Int64 {
 }
 
 extend Bool {
-    <!OPERATOR_OVERLOAD_BUILT_IN_BINARY_OPERATOR!>p<!>ublic operator func <!EXTEND_MEMBER_CANNOT_SHADOW!>==<!>(right: Bool) {
+    <!OPERATOR_OVERLOAD_BUILT_IN_BINARY_OPERATOR!>public<!> operator func <!EXTEND_MEMBER_CANNOT_SHADOW!>==<!>(right: Bool) {
         return true
     }
     public operator func +(right: Bool) { // OK

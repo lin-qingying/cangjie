@@ -39,10 +39,22 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
+/**
+ * [CfirMapTypeArguments] 泛型类型实参推断阶段测试。
+ */
 class CfirMapTypeArgumentsTest {
+    /**
+     * 当前测试使用的 resolution context。
+     */
     private lateinit var context: CfirResolutionContext
+    /**
+     * 支持 Parent/Child 关系的推断测试类型上下文。
+     */
     private val inferenceTypeContext = InferenceStageTypeContext()
 
+    /**
+     * 初始化包含 inference components 的测试上下文。
+     */
     @BeforeEach
     fun setUp() {
         context = CfirResolutionContext(
@@ -53,6 +65,9 @@ class CfirMapTypeArgumentsTest {
         )
     }
 
+    /**
+     * 验证从 invariant class 类型实参中推断类型变量。
+     */
     @Test
     fun `infer from invariant class type argument`() {
         val boxId = ClassId(FqName("test"), Name.identifier("Box"))
@@ -79,6 +94,9 @@ class CfirMapTypeArgumentsTest {
         assertTrue(candidate.constraintSystem?.errors?.isEmpty() == true)
     }
 
+    /**
+     * 验证声明上界参与类型变量求解。
+     */
     @Test
     fun `declaration upper bound should participate in solving`() {
         val parentId = ClassId(FqName("test"), Name.identifier("Parent"))
@@ -107,6 +125,9 @@ class CfirMapTypeArgumentsTest {
         assertTrue(candidate.constraintSystem?.errors?.isEmpty() == true)
     }
 
+    /**
+     * 验证违反声明上界会把候选标记为不可用。
+     */
     @Test
     fun `conflicting declaration bound should mark candidate inapplicable`() {
         val parentId = ClassId(FqName("test"), Name.identifier("Parent"))
@@ -133,6 +154,9 @@ class CfirMapTypeArgumentsTest {
         assertTrue(candidate.diagnostics.any { it is ArgumentTypeMismatch })
     }
 
+    /**
+     * 验证 expected return type 可以反向约束泛型返回类型推断。
+     */
     @Test
     fun `expected return type should constrain generic return inference`() {
         val boxId = ClassId(FqName("test"), Name.identifier("Box"))
@@ -168,6 +192,9 @@ class CfirMapTypeArgumentsTest {
         assertTrue(candidate.constraintSystem?.buildResult()?.isFullyResolved == true)
     }
 
+    /**
+     * 验证 identity 形态函数的参数和返回类型推断为同一具体类型。
+     */
     @Test
     fun `identity should infer same type for parameter and return`() {
         val typeParameter = makeTypeParameter("T")
@@ -192,6 +219,9 @@ class CfirMapTypeArgumentsTest {
         assertTrue(candidate.constraintSystem?.errors?.isEmpty() == true)
     }
 
+    /**
+     * 构造带可选上界的测试类型参数。
+     */
     private fun makeTypeParameter(
         name: String,
         bounds: List<ConeCangJieType> = emptyList(),
@@ -221,15 +251,30 @@ class CfirMapTypeArgumentsTest {
     }
 }
 
+/**
+ * 泛型推断阶段测试使用的最小 session。
+ */
 private object InferStubSession : org.cangnova.cangjie.cfir.session.CfirSession(Kind.Source) {
+    /**
+     * 返回稳定的调试名称。
+     */
     override fun toString(): String = "StubSession"
 }
 
+/**
+ * 泛型推断阶段测试使用的类型上下文。
+ */
 private class InferenceStageTypeContext : ConeTypeContext {
+    /**
+     * Child 的父类型。
+     */
     private val parent = ConeClassLikeType(
         lookupTag = ConeClassLookupTagImpl(ClassId(FqName("test"), Name.identifier("Parent"))),
     )
 
+    /**
+     * 为名为 Child 的 class-like 类型提供 Parent 父类型。
+     */
     override fun supertypes(type: ConeCangJieType): Collection<ConeCangJieType> {
         if (type is ConeClassLikeType && type.classId.shortClassName.asString() == "Child") {
             return listOf(parent)
@@ -237,6 +282,9 @@ private class InferenceStageTypeContext : ConeTypeContext {
         return emptyList()
     }
 
+    /**
+     * 按 primitive kind 或 class id 判断类型构造器一致性。
+     */
     override fun isSameTypeConstructor(a: ConeCangJieType, b: ConeCangJieType): Boolean {
         if (a is ConePrimitiveType && b is ConePrimitiveType) return a.kind == b.kind
         if (a is ConeClassLikeType && b is ConeClassLikeType) return a.classId == b.classId

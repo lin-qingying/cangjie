@@ -98,6 +98,9 @@ fun collectCoveredRelativePaths(rootClass: Class<*>, testDataDir: File): Set<Str
     return covered
 }
 
+/**
+ * 递归遍历生成测试类和嵌套类，收集所有方法级 `@TestMetadata` 覆盖的 `.cj` 文件。
+ */
 private fun collectCoveredFromClass(
     klass: Class<*>,
     rootTestDataDir: File,
@@ -118,6 +121,12 @@ private fun collectCoveredFromClass(
     }
 }
 
+/**
+ * 计算测试类在 testData 树中的有效目录。
+ *
+ * 该规则与生成测试的嵌套类结构一致：类级 metadata 优先作为直接路径，
+ * 其次作为根目录或继承目录下的相对路径。
+ */
 private fun classScopedDir(
     klass: Class<*>,
     rootTestDataDir: File,
@@ -134,6 +143,11 @@ private fun classScopedDir(
     return inheritedDir
 }
 
+/**
+ * 判断当前文件是否处于给定父目录下。
+ *
+ * 使用 canonical path 规整路径，避免相对路径片段影响覆盖关系判断。
+ */
 private fun File.isUnder(parent: File): Boolean {
     val parentPath = parent.canonicalFile.toPath()
     val childPath = canonicalFile.toPath()
@@ -155,5 +169,10 @@ fun File.isGeneratedTestDataFile(): Boolean {
     }
 }
 
+/**
+ * 判断文件名是否为 LLT 包 companion 源文件。
+ *
+ * 这类文件提供同包补充声明，默认附加到同目录主测试文件而不单独生成测试入口。
+ */
 fun File.isPackageCompanionName(): Boolean =
     name == "pkg.cj" || name.endsWith(".pkg.cj")

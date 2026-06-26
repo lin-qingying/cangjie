@@ -30,7 +30,13 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
 @OptIn(CfirImplementationDetail::class)
+/**
+ * 验证 CFIR 声明的 toString 输出委托给可读性 renderer，而不是对象默认表示。
+ */
 class CfirDeclarationToStringTest {
+    /**
+     * 验证类声明的 toString 与可读性 renderer 输出一致。
+     */
     @Test
     fun `class toString delegates to readability renderer`() {
         val classId = org.cangnova.cangjie.name.ClassId(FqName("sample"), Name.identifier("Box"))
@@ -51,6 +57,9 @@ class CfirDeclarationToStringTest {
         assertMatchesReadabilityRenderer(declaration)
     }
 
+    /**
+     * 验证具名函数声明的 toString 与可读性 renderer 输出一致。
+     */
     @Test
     fun `named function toString delegates to readability renderer`() {
         val callableId = CallableId(FqName("sample"), Name.identifier("compute"))
@@ -90,6 +99,9 @@ class CfirDeclarationToStringTest {
         assertMatchesReadabilityRenderer(declaration)
     }
 
+    /**
+     * 验证文件声明的 toString 与可读性 renderer 输出一致。
+     */
     @Test
     fun `file toString delegates to readability renderer`() {
         val file = buildFile {
@@ -111,28 +123,49 @@ class CfirDeclarationToStringTest {
         assertMatchesReadabilityRenderer(file)
     }
 
+    /**
+     * 断言声明 toString 与 CfirRenderer.withReadability 渲染结果一致。
+     */
     private fun assertMatchesReadabilityRenderer(declaration: CfirDeclaration) {
         val expected = CfirRenderer.withReadability().renderElementAsString(declaration)
         assertEquals(expected, declaration.toString())
     }
 
+    /**
+     * toString 测试使用的源码 session。
+     */
     private object TestSession : CfirSession(Kind.Source) {
+        /**
+         * 返回稳定的测试 session 名称。
+         */
         override fun toString(): String = "CfirDeclarationToStringTestSession"
     }
 
+    /**
+     * 带稳定 debug 文本的测试二进制源码元素。
+     */
     private class TestBinarySourceElement(identity: String) : CjBinarySourceElement(
         debugText = identity,
         binaryFilePath = null,
         stableIdentity = identity,
     )
 
+    /**
+     * 返回空类型作用域的测试 scope provider。
+     */
     private object TestScopeProvider : CfirScopeProvider() {
+        /**
+         * 类使用点 member scope 在本测试中为空。
+         */
         override fun getUseSiteMemberScope(
             klass: CfirClass,
             useSiteSession: CfirSession,
             scopeSession: ScopeSession,
         ): CfirTypeScope = CfirTypeScope.Empty
 
+        /**
+         * 类声明点 member scope 在本测试中为空。
+         */
         override fun getDeclarationSiteMemberScope(
             klass: CfirClass,
             useSiteSession: CfirSession,
@@ -140,16 +173,49 @@ class CfirDeclarationToStringTest {
         ): CfirTypeScope = CfirTypeScope.Empty
     }
 
+    /**
+     * toString 测试使用的模块数据。
+     */
     private object TestModuleData : CfirModuleData() {
+        /**
+         * 测试模块名。
+         */
         override val name: Name = Name.identifier("cfir-tree-test")
+        /**
+         * 测试模块无普通依赖。
+         */
         override val dependencies: List<CfirModuleData> = emptyList()
+        /**
+         * 测试模块无 refinement 依赖。
+         */
         override val refinementDependencies: List<CfirModuleData> = emptyList()
+        /**
+         * 测试模块无传递 refinement 依赖。
+         */
         override val allRefinementDependencies: List<CfirModuleData> = emptyList()
+        /**
+         * 使用默认仓颉平台。
+         */
         override val targetPlatform = CangJiePlatforms.defaultCangJiePlatform
+        /**
+         * 使用默认 CFIR 平台。
+         */
         override val platform: CfirPlatform = CfirPlatform.DEFAULT
+        /**
+         * 标记模块是否为 common 平台。
+         */
         override val isCommon: Boolean = targetPlatform.isCommon()
+        /**
+         * 测试模块不声明额外能力。
+         */
         override val capabilities: CfirModuleCapabilities = CfirModuleCapabilities.Empty
+        /**
+         * 稳定模块名。
+         */
         override val stableModuleName: String = "cfir-tree-test"
+        /**
+         * 绑定到测试源码 session。
+         */
         override val session: CfirSession
             get() = TestSession
 

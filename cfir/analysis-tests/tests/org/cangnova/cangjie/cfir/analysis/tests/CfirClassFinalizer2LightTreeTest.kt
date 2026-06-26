@@ -9,6 +9,9 @@ import org.junit.jupiter.api.Test
  */
 class CfirClassFinalizer2LightTreeTest : AbstractCfirLightTreeDiagnosticsTest() {
     @Test
+    /**
+     * 执行 LightTree finalizer 回归测试数据。
+     */
     fun testClassFinalizer2() {
         runTest("cfir/analysis-tests/testData/llt/class/class_finalizer/class_finalizer2.cj")
     }

@@ -16,7 +16,13 @@ import org.junit.jupiter.api.Assertions.assertNotSame
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Test
 
+/**
+ * [CfirDataFlowAnalyzerContext] 快照、重置和引用接管行为测试。
+ */
 class CfirDataFlowAnalyzerContextTest {
+    /**
+     * 验证快照会复制 builder 状态并保留 assignment 计数器。
+     */
     @Test
     fun `createSnapshot copies builder state and keeps assignment counter`() {
         val context = CfirDataFlowAnalyzerContext()
@@ -39,6 +45,9 @@ class CfirDataFlowAnalyzerContextTest {
         assertEquals(2, snapshot.context.newAssignmentIndex())
     }
 
+    /**
+     * 验证 reset 不会清零 assignment 计数器。
+     */
     @Test
     fun `reset does not zero assignment counter`() {
         val context = CfirDataFlowAnalyzerContext()
@@ -49,6 +58,9 @@ class CfirDataFlowAnalyzerContextTest {
         assertEquals(1, context.newAssignmentIndex())
     }
 
+    /**
+     * 验证 resetFrom 会接管源上下文中的共享引用。
+     */
     @Test
     fun `resetFrom takes over source references`() {
         val source = CfirDataFlowAnalyzerContext()
@@ -70,6 +82,9 @@ class CfirDataFlowAnalyzerContextTest {
         assertEquals(1, target.newAssignmentIndex())
     }
 
+    /**
+     * 构造包含单个 literal 的 code fragment，用于 data-flow 图构建测试。
+     */
     private fun buildCodeFragmentWithLiteral(): Pair<org.cangnova.cangjie.cfir.declarations.CfirCodeFragment, CfirLiteralExpression> {
         val literal = buildLiteralExpression {
             kind = CfirLiteralKind.INT
@@ -90,9 +105,18 @@ class CfirDataFlowAnalyzerContextTest {
         return fragment to literal
     }
 
+    /**
+     * 不改变 symbol 与 element 身份的快照 mapper。
+     */
     private object IdentitySnapshotCfirMapper : SnapshotCfirMapper {
+        /**
+         * 原样返回传入 symbol。
+         */
         override fun <T : org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol<*>> mapSymbol(symbol: T): T = symbol
 
+        /**
+         * 原样返回传入 element。
+         */
         override fun <T : org.cangnova.cangjie.cfir.CfirElement> mapElement(element: T): T = element
     }
 }

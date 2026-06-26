@@ -13,7 +13,13 @@ import org.cangnova.cangjie.name.Name
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
+/**
+ * CFIR type reference 稳定 key 渲染测试。
+ */
 class CfirTypeRefExtensionsTest {
+    /**
+     * 验证 typealias 的 expandedType 不影响稳定 key。
+     */
     @Test
     fun `renderStableKey ignores typealias expandedType details`() {
         val aliasClassId = ClassId(FqName("sample.pkg"), Name.identifier("Alias"))
@@ -33,6 +39,9 @@ class CfirTypeRefExtensionsTest {
         assertEquals(typeWithIntExpanded.renderStableKey(), typeWithFloatExpanded.renderStableKey())
     }
 
+    /**
+     * 验证 userType 的类型实参按语义结构规范化。
+     */
     @Test
     fun `renderStableKey normalizes userType arguments semantically`() {
         val aliasClassId = ClassId(FqName("sample.pkg"), Name.identifier("Alias"))
@@ -65,6 +74,9 @@ class CfirTypeRefExtensionsTest {
         assertEquals(userTypeRef1.renderStableKey(), userTypeRef2.renderStableKey())
     }
 
+    /**
+     * 验证 union type 的稳定 key 不受集合顺序影响。
+     */
     @Test
     fun `renderStableKey of union type is deterministic regardless set order`() {
         val unionA = CfirResolvedTypeRefImpl(
@@ -83,4 +95,3 @@ class CfirTypeRefExtensionsTest {
         assertEquals(unionA.renderStableKey(), unionB.renderStableKey())
     }
 }
-

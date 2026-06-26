@@ -31,19 +31,37 @@ import org.cangnova.cangjie.psi.CjFile
  * 4. 三视图一致性检查
  */
 class CaAnalysisInspectorTools(
+    /**
+     * 提供 PSI、索引和 light declaration 服务的 IntelliJ project。
+     */
     private val project: Project,
 ) {
+    /**
+     * 负责把虚拟文件解析为 PSI 文件的 project 级 PSI 管理器。
+     */
     private val psiManager: PsiManager = PsiManager.getInstance(project)
 
+    /**
+     * 反编译二进制索引，用于从 library/builtins module 定位 CJO 反编译文件。
+     */
     private val decompiledBinaryIndex: CaDecompiledBinaryIndex
         get() = CaDecompiledBinaryIndex.getInstance(project)
 
+    /**
+     * Stub 索引门面，用于读取文件级、包级和类成员 stub 名称。
+     */
     private val stubIndexFacade: CaStubIndexFacade
         get() = CaStubIndexFacade.getInstance(project)
 
+    /**
+     * Light declaration provider，用于把源码或反编译 PSI 投影成 Analysis API 声明视图。
+     */
     private val lightDeclarationProvider: CaLightDeclarationProvider
         get() = CaLightDeclarationProvider.getInstance(project)
 
+    /**
+     * dump library module 中指定包的反编译文本。
+     */
     fun dumpDecompiledText(module: CaLibraryModule, packageFqName: FqName): String {
         val binaryFile = decompiledBinaryIndex.findBinaryFile(module, packageFqName)
             ?: return "<missing decompiled text for ${packageFqName.asString()}>"
@@ -51,6 +69,9 @@ class CaAnalysisInspectorTools(
             ?: "<missing decompiled text for ${packageFqName.asString()}>"
     }
 
+    /**
+     * dump builtins module 中指定包的反编译文本。
+     */
     fun dumpDecompiledText(module: CaBuiltinsModule, packageFqName: FqName): String {
         val binaryFile = decompiledBinaryIndex.findBinaryFile(module, packageFqName)
             ?: return "<missing decompiled text for ${packageFqName.asString()}>"
@@ -58,6 +79,9 @@ class CaAnalysisInspectorTools(
             ?: "<missing decompiled text for ${packageFqName.asString()}>"
     }
 
+    /**
+     * dump 单个 CangJie 文件的 stub 类型和顶层声明名称。
+     */
     fun dumpStubFile(file: CjFile): String {
         val kind = stubIndexFacade.fileProvider.getFileStubKind(file)
         val classifiers = stubIndexFacade.fileProvider.getTopLevelClassifierNames(file)
@@ -71,6 +95,9 @@ class CaAnalysisInspectorTools(
         }.trimEnd()
     }
 
+    /**
+     * dump 指定包在 stub 包索引中的顶层分类器和可调用名称。
+     */
     fun dumpStubPackage(packageFqName: FqName): String {
         val classifiers = stubIndexFacade.packageIndex.getTopLevelClassifierNames(packageFqName)
         val callables = stubIndexFacade.packageIndex.getTopLevelCallableNames(packageFqName)
@@ -81,37 +108,58 @@ class CaAnalysisInspectorTools(
         }.trimEnd()
     }
 
+    /**
+     * dump 指定类标识在 stub 索引中的成员名称集合。
+     */
     fun dumpClassMemberStubNames(classId: ClassId): String {
         val names = stubIndexFacade.getClassMemberNames(classId).map { it.asString() }.sorted()
         return "class=${classId.asString()} members=$names"
     }
 
+    /**
+     * dump module 可见的源码和反编译 light declarations。
+     */
     fun dumpLightDeclarations(module: CaModule): String {
         val declarations = collectLightDeclarationFiles(module)
             .flatMap { file -> lightDeclarationProvider.getLightDeclarations(file, module) }
         return CaLightDeclarationRenderer.renderTree(declarations)
     }
 
+    /**
+     * dump 单个文件在指定 use-site module 下的 light declarations。
+     */
     fun dumpLightDeclarations(file: CjFile, useSiteModule: CaModule? = null): String {
         return CaLightDeclarationRenderer.renderTree(lightDeclarationProvider.getLightDeclarations(file, useSiteModule))
     }
 
+    /**
+     * dump library module 中指定包的反编译 light declarations。
+     */
     fun dumpDecompiledLightDeclarations(module: CaLibraryModule, packageFqName: FqName): String {
         val file = findDecompiledFile(module, packageFqName)
             ?: return "<missing decompiled file for ${packageFqName.asString()}>"
         return dumpLightDeclarations(file, module)
     }
 
+    /**
+     * dump builtins module 中指定包的反编译 light declarations。
+     */
     fun dumpDecompiledLightDeclarations(module: CaBuiltinsModule, packageFqName: FqName): String {
         val file = findDecompiledFile(module, packageFqName)
             ?: return "<missing decompiled file for ${packageFqName.asString()}>"
         return dumpLightDeclarations(file, module)
     }
 
+    /**
+     * 检查 library module 中指定包的 stub 视图和 light declaration 视图是否一致。
+     */
     fun checkViewConsistency(module: CaLibraryModule, packageFqName: FqName): List<CaAnalysisViewConsistencyIssue> {
         return checkViewConsistencyInternal(module, findDecompiledFile(module, packageFqName), packageFqName)
     }
 
+    /**
+     * 检查 builtins module 中指定包的 stub 视图和 light declaration 视图是否一致。
+     */
     fun checkViewConsistency(module: CaBuiltinsModule, packageFqName: FqName): List<CaAnalysisViewConsistencyIssue> {
         return checkViewConsistencyInternal(module, findDecompiledFile(module, packageFqName), packageFqName)
     }
@@ -215,6 +263,9 @@ class CaAnalysisInspectorTools(
         }
     }
 
+    /**
+     * 收集 module 内所有可用于 light declaration dump 的源码文件和反编译文件。
+     */
     private fun collectLightDeclarationFiles(module: CaModule): List<CjFile> {
         val declarationProvider = project.createDeclarationProvider(module.contentScope, module)
         val sourceFiles = declarationProvider.computePackageNames()
@@ -227,6 +278,9 @@ class CaAnalysisInspectorTools(
         return (sourceFiles + decompiledFiles).distinctBy { file -> file.virtualFile ?: file }
     }
 
+    /**
+     * 根据 declaration provider 收集指定包中承载顶层声明的源码文件。
+     */
     private fun collectPackageSourceFiles(
         declarationProvider: org.cangnova.cangjie.analysis.api.platform.declarations.CangJieDeclarationProvider,
         packageFqName: FqName,
@@ -247,6 +301,9 @@ class CaAnalysisInspectorTools(
         }.distinctBy { file -> file.virtualFile ?: file }
     }
 
+    /**
+     * 收集 library/builtins module 中所有可解析为 [CjFile] 的反编译文件。
+     */
     private fun collectDecompiledFiles(module: CaModule): List<CjFile> {
         return when (module) {
             is CaLibraryModule -> decompiledBinaryIndex.getBinaryFiles(module).mapNotNull(psiManager::findFile).filterIsInstance<CjFile>()
@@ -255,24 +312,45 @@ class CaAnalysisInspectorTools(
         }
     }
 
+    /**
+     * 查找 library module 中指定包对应的反编译 PSI 文件。
+     */
     private fun findDecompiledFile(module: CaLibraryModule, packageFqName: FqName): CjFile? {
         val binaryFile = decompiledBinaryIndex.findBinaryFile(module, packageFqName) ?: return null
         return psiManager.findFile(binaryFile) as? CjFile
     }
 
+    /**
+     * 查找 builtins module 中指定包对应的反编译 PSI 文件。
+     */
     private fun findDecompiledFile(module: CaBuiltinsModule, packageFqName: FqName): CjFile? {
         val binaryFile = decompiledBinaryIndex.findBinaryFile(module, packageFqName) ?: return null
         return psiManager.findFile(binaryFile) as? CjFile
     }
 }
 
+/**
+ * Analysis 多视图一致性问题分类。
+ */
 enum class CaAnalysisViewConsistencyIssueKind {
     MISSING_DECOMPILED_FILE,
     MISSING_LIGHT_DECLARATION,
     UNEXPECTED_LIGHT_DECLARATION,
 }
 
+/**
+ * Analysis 多视图一致性检查发现的问题。
+ *
+ * @property kind 问题分类。
+ * @property message 稳定、可用于 golden 输出的说明文本。
+ */
 data class CaAnalysisViewConsistencyIssue(
+    /**
+     * 问题分类。
+     */
     val kind: CaAnalysisViewConsistencyIssueKind,
+    /**
+     * 稳定、可用于 golden 输出的说明文本。
+     */
     val message: String,
 )

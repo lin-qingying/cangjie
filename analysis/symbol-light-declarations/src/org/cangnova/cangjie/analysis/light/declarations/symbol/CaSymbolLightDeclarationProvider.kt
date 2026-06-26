@@ -44,11 +44,20 @@ import org.cangnova.cangjie.psi.CjTypeStatement
  * 3. 用 `analysis:light-declarations` 的只读模型投影 class-like、extend 与 callable。
  */
 class CaSymbolLightDeclarationProvider(
+    /**
+     * 提供 project structure 与 PSI 服务的 IntelliJ project。
+     */
     private val project: Project,
 ) : CaLightDeclarationProvider {
+    /**
+     * Analysis project structure 服务，用于从 PSI 文件恢复 use-site module。
+     */
     private val projectStructure: CangJieProjectStructureProvider
         get() = CangJieProjectStructureProvider.getInstance(project)
 
+    /**
+     * 根据公开 symbol 构造对应的 light declaration。
+     */
     override fun getLightDeclaration(symbol: CaSymbol): CaLightDeclaration? {
         val pointer = symbol.createPointer()
         return analyze(symbol.containingModule) {
@@ -57,6 +66,9 @@ class CaSymbolLightDeclarationProvider(
         }
     }
 
+    /**
+     * 根据 PSI 文件构造文件内所有顶层 light declarations。
+     */
     override fun getLightDeclarations(file: CjFile, useSiteModule: CaModule?): List<CaLightDeclaration> {
         val module = useSiteModule ?: projectStructure.getModule(file, useSiteModule = null)
         return analyze(module) {
@@ -65,7 +77,13 @@ class CaSymbolLightDeclarationProvider(
     }
 
     private inner class LightDeclarationBuilder(
+        /**
+         * 当前 analysis session 的 lifetime token。
+         */
         private val token: CaLifetimeToken,
+        /**
+         * 构造 light declaration 时使用的 use-site module。
+         */
         private val useSiteModule: CaModule,
     ) {
         private val cache = CaLightDeclarationCache()
@@ -297,8 +315,24 @@ class CaSymbolLightDeclarationProvider(
     }
 }
 
+/**
+ * 从 source callable symbol 提取出的 light declaration 稳定数据。
+ *
+ * @property callableId 可调用声明 ID。
+ * @property signature 可调用签名。
+ * @property annotations 可调用声明注解列表。
+ */
 private data class CallableLightDeclarationData(
+    /**
+     * 可调用声明 ID。
+     */
     val callableId: CallableId?,
+    /**
+     * 可调用签名。
+     */
     val signature: CaCallableSignature<*>?,
+    /**
+     * 可调用声明注解列表。
+     */
     val annotations: CaAnnotationList,
 )

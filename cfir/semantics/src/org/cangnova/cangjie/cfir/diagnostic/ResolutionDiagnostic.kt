@@ -152,6 +152,9 @@ object InapplicableCandidate : ResolutionDiagnostic(CandidateApplicability.INAPP
  * @property argument 作为函数引用使用、但没有匹配声明的实参表达式。
  */
 class UnsuccessfulCallableReferenceArgument(
+    /**
+     * 作为函数引用使用、但没有匹配声明的实参表达式。
+     */
     val argument: CfirExpression,
 ) : ResolutionDiagnostic(CandidateApplicability.INAPPLICABLE)
 

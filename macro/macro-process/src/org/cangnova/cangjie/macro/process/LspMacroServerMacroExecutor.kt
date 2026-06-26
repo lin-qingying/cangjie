@@ -36,16 +36,31 @@ import java.util.logging.Logger
  * @param enableParallel 是否启用服务端并行宏展开模式。
  */
 class LspMacroServerMacroExecutor(
+    /**
+     * LSPMacroServer 可执行文件路径。
+     */
     private val macroServerPath: String,
+    /**
+     * 是否向服务端传入并行宏展开开关。
+     */
     private val enableParallel: Boolean = true,
 ) : ProcessMacroExecutor() {
+    /**
+     * LSPMacroServer 执行器日志器。
+     */
     override val logger: Logger = Logger.getLogger(LspMacroServerMacroExecutor::class.java.name)
 
+    /**
+     * 检查配置的 LSPMacroServer 文件是否存在且可执行。
+     */
     override fun isBackendAvailable(): Boolean {
         val executable = File(macroServerPath)
         return executable.exists() && executable.canExecute()
     }
 
+    /**
+     * 启动 LSPMacroServer 并建立平台对应的宏协议传输连接。
+     */
     override fun startConnection(): ProcessMacroConnection {
         val executable = File(macroServerPath)
         check(executable.exists()) { "LSPMacroServer 不存在: $macroServerPath" }
@@ -67,6 +82,9 @@ class LspMacroServerMacroExecutor(
         )
     }
 
+    /**
+     * 构造非 Windows 平台下启动 LSPMacroServer 所需的命令行参数。
+     */
     private fun buildCommand(executable: File): List<String> {
         return buildList {
             add(executable.absolutePath)
@@ -98,6 +116,9 @@ class LspMacroServerMacroExecutor(
         )
     }
 
+    /**
+     * 等待非 Windows LSPMacroServer 正常退出，超时后强制终止。
+     */
     private fun closeProcess(process: Process) {
         if (!process.isAlive) return
         process.waitFor(3, TimeUnit.SECONDS)
@@ -107,18 +128,39 @@ class LspMacroServerMacroExecutor(
         }
     }
 
+    /**
+     * 判断当前 JVM 是否运行在 Windows 系统上。
+     */
     private fun isWindows(): Boolean =
         System.getProperty("os.name").contains("Windows", ignoreCase = true)
 }
 
+/**
+ * Windows 平台下启动后的 LSPMacroServer 进程和匿名管道连接。
+ */
 private class WindowsLspMacroServerConnection(
+    /**
+     * 父进程侧读写宏协议消息的 Windows 管道传输。
+     */
     val transport: WindowsPipeMacroProcessTransport,
+    /**
+     * CreateProcessW 返回的进程和主线程句柄。
+     */
     private val processInfo: WinBase.PROCESS_INFORMATION,
+    /**
+     * 进程生命周期日志器。
+     */
     private val logger: Logger,
 ) {
+    /**
+     * 检查 LSPMacroServer 进程是否仍在运行。
+     */
     fun isAlive(): Boolean =
         Kernel32.INSTANCE.WaitForSingleObject(processInfo.hProcess, 0) == WAIT_TIMEOUT
 
+    /**
+     * 关闭管道并等待 LSPMacroServer 退出，必要时终止进程并释放句柄。
+     */
     fun close() {
         transport.close()
         if (isAlive()) {
@@ -133,6 +175,9 @@ private class WindowsLspMacroServerConnection(
     }
 
     companion object {
+        /**
+         * 创建 Windows 匿名管道、启动 LSPMacroServer，并返回父进程侧连接对象。
+         */
         fun start(
             executable: File,
             enableParallel: Boolean,
@@ -206,6 +251,9 @@ private class WindowsLspMacroServerConnection(
             )
         }
 
+        /**
+         * 构造 Windows LSPMacroServer 官方参数格式的命令行。
+         */
         private fun buildCommandLine(
             executable: File,
             childRead: WinNT.HANDLE,
@@ -223,9 +271,15 @@ private class WindowsLspMacroServerConnection(
             append(quoteCommandArgument(executable.parent))
         }
 
+        /**
+         * 将 Windows HANDLE 转成命令行可传递的整数句柄值。
+         */
         private fun handleValue(handle: WinNT.HANDLE): String =
             Pointer.nativeValue(handle.pointer).toString()
 
+        /**
+         * 构造 LSPMacroServer 运行所需的 Windows 环境变量块。
+         */
         private fun buildWindowsEnvironment(executable: File): Pointer {
             val sdkHome = executable.parentFile?.parentFile?.parentFile
             val pathEntries = buildList {
@@ -257,12 +311,27 @@ private class WindowsLspMacroServerConnection(
     }
 }
 
+/**
+ * 使用 Windows HANDLE 实现的宏协议传输层。
+ */
 private class WindowsPipeMacroProcessTransport(
+    /**
+     * 父进程用于读取服务端消息的管道句柄。
+     */
     private val readHandle: WinNT.HANDLE,
+    /**
+     * 父进程用于写入服务端消息的管道句柄。
+     */
     private val writeHandle: WinNT.HANDLE,
 ) : MacroProcessTransport {
+    /**
+     * 标记底层 HANDLE 是否已经关闭，保证 close 幂等。
+     */
     private var closed: Boolean = false
 
+    /**
+     * 向服务端写入带 8 字节长度前缀的宏协议消息。
+     */
     override fun send(payload: ByteArray) {
         val lenBuf = ByteBuffer.allocate(SIZE_PREFIX_BYTES).order(ByteOrder.LITTLE_ENDIAN)
         lenBuf.putLong(payload.size.toLong())
@@ -276,6 +345,9 @@ private class WindowsPipeMacroProcessTransport(
         }
     }
 
+    /**
+     * 从服务端读取带 8 字节长度前缀的宏协议消息。
+     */
     override fun receive(): ByteArray {
         val lenBuf = ByteArray(SIZE_PREFIX_BYTES)
         readFully(lenBuf)
@@ -287,6 +359,9 @@ private class WindowsPipeMacroProcessTransport(
         return payload
     }
 
+    /**
+     * 关闭父进程侧读写 HANDLE。
+     */
     override fun close() {
         if (closed) return
         closed = true
@@ -294,6 +369,9 @@ private class WindowsPipeMacroProcessTransport(
         closeHandle(writeHandle)
     }
 
+    /**
+     * 使用 WriteFile 循环写完整个字节数组。
+     */
     private fun writeFully(bytes: ByteArray) {
         var offset = 0
         while (offset < bytes.size) {
@@ -306,6 +384,9 @@ private class WindowsPipeMacroProcessTransport(
         }
     }
 
+    /**
+     * 使用 ReadFile 循环读满目标字节数组。
+     */
     private fun readFully(bytes: ByteArray) {
         var offset = 0
         while (offset < bytes.size) {
@@ -320,12 +401,21 @@ private class WindowsPipeMacroProcessTransport(
     }
 }
 
+/**
+ * 按 Windows 命令行规则为单个参数添加引号。
+ */
 private fun quoteCommandArgument(value: String): String =
     "\"" + value.replace("\"", "\\\"") + "\""
 
+/**
+ * 将字符串转换为 Windows API 需要的 NUL 结尾字符数组。
+ */
 private fun String.toCharArrayWithTerminator(): CharArray =
     (this + "\u0000").toCharArray()
 
+/**
+ * 将字符串编码到 JNA 宽字符内存块。
+ */
 private fun String.toWideCharMemory(): Memory {
     val memory = Memory(((length + 1) * Native.WCHAR_SIZE).toLong())
     memory.clear()
@@ -333,17 +423,38 @@ private fun String.toWideCharMemory(): Memory {
     return memory
 }
 
+/**
+ * 执行 Windows API 调用并在失败时附带 GetLastError。
+ */
 private fun checkWindows(operation: String, action: () -> Boolean) {
     if (!action()) error("$operation failed: ${Native.getLastError()}")
 }
 
+/**
+ * 安全关闭 Windows HANDLE。
+ */
 private fun closeHandle(handle: WinNT.HANDLE?) {
     if (handle == null || WinBase.INVALID_HANDLE_VALUE == handle) return
     Kernel32.INSTANCE.CloseHandle(handle)
 }
 
+/**
+ * Windows 管道分片写入大小。
+ */
 private const val CHUNK_SIZE: Int = 4096
+/**
+ * 官方协议固定使用 64 位 size_t 长度前缀。
+ */
 private const val SIZE_PREFIX_BYTES: Int = 8
+/**
+ * CreateProcessW 的 Unicode 环境变量块标志。
+ */
 private const val CREATE_UNICODE_ENVIRONMENT: Int = 0x00000400
+/**
+ * WaitForSingleObject 表示等待超时的返回值。
+ */
 private const val WAIT_TIMEOUT: Int = 0x00000102
+/**
+ * 关闭服务端时等待进程自然退出的超时时间。
+ */
 private const val CLOSE_TIMEOUT_MILLIS: Int = 3000

@@ -49,6 +49,9 @@ import org.junit.jupiter.api.Test
  * 不能在底层把声明侧 typealias 直接抹平成展开后的基础类型。
  */
 class CfirTypeResolverTypeAliasExpansionTest {
+    /**
+     * 验证调用方关闭 typealias 展开时保留 [ConeTypeAliasType]。
+     */
     @Test
     fun `resolveType preserves typealias when expansion is disabled`() {
         val aliasClassId = ClassId(FqName("sample.lib"), Name.identifier("RemoteAlias"))
@@ -99,6 +102,9 @@ class CfirTypeResolverTypeAliasExpansionTest {
         assertFalse(expandedType is ConeErrorType, "展开后的真实类型不能退化成错误类型。")
     }
 
+    /**
+     * 验证全局禁用 typealias 展开会覆盖局部展开请求。
+     */
     @Test
     fun `global no alias expansion flag overrides local expansion request`() {
         val aliasClassId = ClassId(FqName("sample.lib"), Name.identifier("RemoteAlias"))
@@ -139,6 +145,9 @@ class CfirTypeResolverTypeAliasExpansionTest {
         assertEquals(ConePrimitiveType.INT64, aliasType.expandedType)
     }
 
+    /**
+     * 构造只包含一个 typealias 声明的测试 type resolver。
+     */
     private fun createResolverForTypeAlias(
         aliasClassId: ClassId,
         languageVersionSettings: LanguageVersionSettings = LanguageVersionSettings.DEFAULT,
@@ -176,12 +185,24 @@ class CfirTypeResolverTypeAliasExpansionTest {
         return CfirTypeResolverImpl(session)
     }
 
+    /**
+     * 为测试 typealias 提供 class-like symbol 查询能力。
+     */
     private class TestTypeAliasSymbolProvider(
         session: CfirSession,
+        /**
+         * 当前 provider 暴露的 typealias 声明。
+         */
         private val typeAlias: CfirTypeAlias,
     ) : CfirSymbolProvider(session) {
+        /**
+         * 测试 typealias 的 ClassId。
+         */
         private val aliasClassId: ClassId = typeAlias.symbol.classId
 
+        /**
+         * 仅暴露测试 typealias 所在包和短名的 symbol names provider。
+         */
         override val symbolNamesProvider = object : CfirSymbolNamesProviderWithoutCallables() {
             override fun getPackageNames(): Set<String> = setOf(aliasClassId.packageFqName.asString())
 
@@ -199,9 +220,15 @@ class CfirTypeResolverTypeAliasExpansionTest {
                 }
         }
 
+        /**
+         * 按 ClassId 返回测试 typealias symbol。
+         */
         override fun getClassLikeSymbolByClassId(classId: ClassId) =
             typeAlias.symbol.takeIf { classId == aliasClassId }
 
+        /**
+         * 测试 provider 不暴露 callable symbol。
+         */
         override fun getTopLevelCallableSymbolsTo(
             destination: MutableList<CfirCallableSymbol<*>>,
             packageFqName: FqName,
@@ -209,6 +236,9 @@ class CfirTypeResolverTypeAliasExpansionTest {
         ) {
         }
 
+        /**
+         * 测试 provider 不暴露函数 symbol。
+         */
         override fun getTopLevelFunctionSymbolsTo(
             destination: MutableList<CfirNamedFunctionSymbol>,
             packageFqName: FqName,
@@ -216,6 +246,9 @@ class CfirTypeResolverTypeAliasExpansionTest {
         ) {
         }
 
+        /**
+         * 测试 provider 不暴露属性 symbol。
+         */
         override fun getTopLevelPropertySymbolsTo(
             destination: MutableList<CfirPropertySymbol>,
             packageFqName: FqName,
@@ -223,16 +256,28 @@ class CfirTypeResolverTypeAliasExpansionTest {
         ) {
         }
 
+        /**
+         * 只承认 typealias 所在包存在。
+         */
         override fun hasPackage(fqName: FqName): Boolean = fqName == aliasClassId.packageFqName
     }
 
+    /**
+     * typealias 测试不需要成员 scope，统一返回空 scope。
+     */
     private object TestScopeProvider : CfirScopeProvider() {
+        /**
+         * 返回空的 use-site 成员 scope。
+         */
         override fun getUseSiteMemberScope(
             klass: CfirClass,
             useSiteSession: CfirSession,
             scopeSession: ScopeSession,
         ): CfirTypeScope = CfirTypeScope.Empty
 
+        /**
+         * 返回空的 declaration-site 成员 scope。
+         */
         override fun getDeclarationSiteMemberScope(
             klass: CfirClass,
             useSiteSession: CfirSession,
@@ -240,6 +285,9 @@ class CfirTypeResolverTypeAliasExpansionTest {
         ): CfirTypeScope = CfirTypeScope.Empty
     }
 
+    /**
+     * 带稳定 debug identity 的二进制 source element。
+     */
     private class TestBinarySourceElement(identity: String) : CjBinarySourceElement(
         debugText = identity,
         binaryFilePath = null,

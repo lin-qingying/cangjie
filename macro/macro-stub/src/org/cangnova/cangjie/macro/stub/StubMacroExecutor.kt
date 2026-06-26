@@ -81,6 +81,12 @@ class StubMacroExecutor : MacroExecutor {
         }
     }
 
+    /**
+     * 记录宏执行环境请求加载的库路径，并按测试注入的失败策略返回加载结果。
+     *
+     * @param libPaths 本次加载请求传入的宏库路径列表。
+     * @return 当 [loadFailure] 产生失败项时返回失败结果，否则返回成功加载的路径快照。
+     */
     override fun loadLibraries(libPaths: List<String>): MacroLibraryLoadResult {
         loadFailure?.invoke(libPaths)?.takeIf { it.isNotEmpty() }?.let {
             return MacroLibraryLoadResult.Failure(it)
@@ -89,6 +95,12 @@ class StubMacroExecutor : MacroExecutor {
         return MacroLibraryLoadResult.Success(loadedLibPaths = libPaths.toList())
     }
 
+    /**
+     * 根据已注册处理器或默认处理器展开宏调用，并把调用记录写入 [executedCalls]。
+     *
+     * @param calls 待模拟执行的宏调用序列。
+     * @return 与 [calls] 一一对应的宏展开结果。
+     */
     override fun execute(calls: List<MacroCallInfo>): List<MacroExpansionResult> {
         executedCalls.addAll(calls)
         return calls.map { call ->
@@ -99,13 +111,22 @@ class StubMacroExecutor : MacroExecutor {
         }
     }
 
+    /**
+     * 清空已加载库路径和已执行调用记录，使桩对象回到可复用的初始观测状态。
+     */
     override fun reset() {
         libraries.clear()
         executedCalls.clear()
     }
 
+    /**
+     * 表示该桩执行器始终可用，因为它不依赖外部宏进程或运行时库。
+     */
     override fun isAvailable(): Boolean = true
 
+    /**
+     * 关闭桩执行器并清空内部观测状态。
+     */
     override fun close() {
         reset()
     }

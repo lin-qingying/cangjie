@@ -11,6 +11,9 @@ import org.cangnova.cangjie.analysis.api.lightDeclarations.CaLightExtendDeclarat
  * `analysis-tools` 与测试都会复用它，保证导出文本和断言口径一致。
  */
 object CaLightDeclarationRenderer {
+    /**
+     * 渲染单个 light declaration 的一行文本。
+     */
     fun render(declaration: CaLightDeclaration): String {
         return when (declaration) {
             is CaLightClassLikeDeclaration -> buildString {
@@ -45,12 +48,18 @@ object CaLightDeclarationRenderer {
         }
     }
 
+    /**
+     * 渲染一组 light declarations 的树形文本。
+     */
     fun renderTree(declarations: Collection<CaLightDeclaration>): String {
         return declarations.joinToString(separator = System.lineSeparator()) { declaration ->
             renderNode(declaration, 0)
         }
     }
 
+    /**
+     * 递归渲染单个节点及其成员子树。
+     */
     private fun renderNode(
         declaration: CaLightDeclaration,
         indent: Int,

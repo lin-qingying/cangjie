@@ -28,8 +28,19 @@ import java.io.File
  */
 abstract class AbstractCfirAnalysisResolveTest : AbstractCfirAnalysisTestCase() {
 
+    /**
+     * 当前 resolve 测试推进到的目标阶段。
+     *
+     * 默认覆盖完整 body resolve；子类可覆盖该属性以验证中间阶段的 CFIR 形态。
+     */
     protected open val targetPhase: CfirResolvePhase = CfirResolvePhase.BODY_RESOLVE
 
+    /**
+     * 执行单个 CFIR resolve golden 测试。
+     *
+     * 方法读取 `.cj` 测试数据，构建并 resolve CFIR，随后与同名 `.cfir.txt`
+     * golden 文件比较。
+     */
     protected fun runAnalysisTest(testDataFilePath: String) {
         val sourceFile = resolveTestDataPath(testDataFilePath)
         val sourceText = loadFile(sourceFile.path).trim()
@@ -44,6 +55,12 @@ abstract class AbstractCfirAnalysisResolveTest : AbstractCfirAnalysisTestCase() 
         assertEqualsToFile(expectedFile, actual)
     }
 
+    /**
+     * 将指定 CFIR 文件推进到目标 resolve 阶段。
+     *
+     * 该入口集中注册 builtin types、checker component、diagnostic reporter、resolve
+     * components 与 extend provider，确保 analysis-tests 使用完整的 CFIR resolve 管线。
+     */
     protected fun resolveToPhase(
         cfirFile: CfirFile,
         session: CfirSession,

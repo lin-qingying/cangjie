@@ -73,6 +73,11 @@ object CfirUnusedExpressionChecker : CfirBasicDeclarationChecker() {
          * Unit 返回位置的表达式结果被丢弃。
          */
         UnusedUnitReturn,
+
+        /**
+         * 表达式位于当前 CFIR 可确认没有执行前驱的分支中。
+         */
+        Unreachable,
         ;
 
         /**
@@ -127,6 +132,16 @@ object CfirUnusedExpressionChecker : CfirBasicDeclarationChecker() {
                 functionCall.resolvedVariableSymbolOrNull()?.let { usedVariables += it }
                 functionCall.acceptChildren(this)
             }
+
+            override fun visitTryExpression(tryExpression: CfirTryExpression) {
+                tryExpression.resources.forEach { it.accept(this) }
+                tryExpression.tryBlock.accept(this)
+                if (tryExpression.tryBlock.mayThrowException()) {
+                    tryExpression.catches.forEach { it.accept(this) }
+                }
+                tryExpression.handlers.forEach { it.accept(this) }
+                tryExpression.finallyBlock?.accept(this)
+            }
         })
 
         for ((symbol, variable) in declaredVariables) {
@@ -172,7 +187,8 @@ object CfirUnusedExpressionChecker : CfirBasicDeclarationChecker() {
             if (element is CfirExpression && element.source != null) {
                 checkExpression(element, data)
             }
-            element.acceptChildren(this, UsageState.Used)
+            val childUsage = if (data == UsageState.Unreachable) UsageState.Unreachable else UsageState.Used
+            element.acceptChildren(this, childUsage)
         }
 
         /**
@@ -228,8 +244,9 @@ object CfirUnusedExpressionChecker : CfirBasicDeclarationChecker() {
         override fun visitTryExpression(tryExpression: CfirTryExpression, data: UsageState) {
             checkExpression(tryExpression, data)
             tryExpression.tryBlock.accept(this, data)
+            val catchUsage = if (tryExpression.tryBlock.mayThrowException()) data else UsageState.Unreachable
             tryExpression.catches.forEach { catchClause ->
-                catchClause.body.accept(this, data)
+                catchClause.body.accept(this, catchUsage)
             }
             tryExpression.finallyBlock?.accept(this, UsageState.Unused)
         }
@@ -634,4 +651,54 @@ private fun CfirExpression.isDceSkippedThisInitializer(): Boolean =
         is CfirWrappedExpression -> expression.isDceSkippedThisInitializer()
         is CfirSmartCastExpression -> originalExpression.isDceSkippedThisInitializer()
         else -> false
+    }
+
+/**
+ * 保守判断表达式求值是否可能抛出异常。
+ *
+ * 官方 unused 诊断来自 CHIR DCE，catch 块只有在 try 主体存在可抛异常路径时才有
+ * 可执行前驱。CFIR 这里只识别确定不抛的基础表达式；调用、运算和未知节点一律按
+ * 可能抛处理，避免把真实可执行的 catch 误判为不可达。
+ */
+private fun CfirExpression.mayThrowException(): Boolean =
+    when (this) {
+        is CfirLiteralExpression,
+        is CfirThisReceiverExpression,
+        is CfirAnonymousFunctionExpression,
+            -> false
+
+        is CfirWrappedExpression -> expression.mayThrowException()
+        is CfirOptionalExpression -> expression.mayThrowException()
+        is CfirSmartCastExpression -> originalExpression.mayThrowException()
+        is CfirTupleLiteral -> elements.any { it.mayThrowException() }
+
+        is CfirBlock -> statements.any { statement ->
+            (statement as? CfirExpression)?.mayThrowException() == true
+        }
+
+        is CfirReturnExpression -> result.mayThrowException()
+        is CfirBreakExpression,
+        is CfirContinueExpression,
+            -> false
+
+        is CfirThrowExpression -> true
+        is CfirIfExpression ->
+            condition.mayThrowException() ||
+                thenBranch.mayThrowException() ||
+                elseBranch?.mayThrowException() == true
+
+        is CfirMatchExpression ->
+            subject?.mayThrowException() == true ||
+                branches.any { branch ->
+                    branch.guard?.mayThrowException() == true || branch.body.mayThrowException()
+                }
+
+        is CfirTryExpression ->
+            resources.any { it.initializer?.mayThrowException() == true } ||
+                tryBlock.mayThrowException() ||
+                catches.any { it.body.mayThrowException() } ||
+                handlers.any { it.body.mayThrowException() } ||
+                finallyBlock?.mayThrowException() == true
+
+        else -> true
     }
