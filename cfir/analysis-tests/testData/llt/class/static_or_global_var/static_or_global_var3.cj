@@ -1,7 +1,7 @@
 
 
 class A {
-    <!CLASS_UNINITIALIZED_FIELD!>public init() {}<!>
+    <!CLASS_UNINITIALIZED_FIELD!>public init()<!> {}
 
     public var a: UInt
     public mut static prop v: UInt64 {
@@ -16,7 +16,7 @@ class A {
             b = Value
         }
     }
-    <!TYPE_UNINITIALIZED_STATIC_FIELD!>static var b: UInt64<!>
+    static var <!TYPE_UNINITIALIZED_STATIC_FIELD!>b<!>: UInt64
     static init() {}
     // Should not report error bellow
     func goo() {

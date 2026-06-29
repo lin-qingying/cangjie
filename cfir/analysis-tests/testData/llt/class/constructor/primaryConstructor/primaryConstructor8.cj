@@ -3,7 +3,7 @@
 class Data {
     var b: Int32
     public let p0: Int32
-    <!CLASS_UNINITIALIZED_FIELD!>p<!>ublic Data(x: Int32, var <!REDECLARATION!>p0<!>: Int32) {
+    <!CLASS_UNINITIALIZED_FIELD!>public Data(x: Int32, var <!REDECLARATION!>p0<!>: Int32)<!> {
         <!CANNOT_ASSIGN_TO_IMMUTABLE!>this.p0 = 3<!>
     }
 }

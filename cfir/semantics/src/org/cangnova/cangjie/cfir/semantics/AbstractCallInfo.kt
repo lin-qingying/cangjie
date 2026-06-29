@@ -7,6 +7,19 @@ import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.name.Name
 
 /**
+ * 调用形态的跨模块语义分类。
+ *
+ * resolve 模块可以在内部维护更具体的 `CallKind` 与阶段序列，但诊断层只能依赖
+ * semantics 模块的稳定抽象，避免 checkers 反向依赖 resolve 实现细节。
+ */
+enum class AbstractCallKind {
+    Function,
+    DelegatingConstructorCall,
+    NamedValueAccess,
+    EnumConstructorCall,
+}
+
+/**
  * 调用信息的跨模块抽象。
  *
  * 诊断层、候选层和 resolve 具体实现之间通过该对象传递调用语义，避免诊断映射反向依赖
@@ -18,6 +31,9 @@ abstract class AbstractCallInfo {
 
     /** 当前调用解析使用的名称。 */
     abstract val name: Name
+
+    /** 当前调用形态的跨模块语义分类。 */
+    abstract val semanticCallKind: AbstractCallKind
 
     /** 当前调用是否由隐式 `invoke` 形式产生。 */
     abstract val isImplicitInvoke: Boolean

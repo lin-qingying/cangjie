@@ -96,7 +96,7 @@ fun Project.generatedSourcesTask(
     val generationRoot = layout.projectDirectory.dir("gen")
     val task = tasks.register<CacheableJavaExec>(taskName) {
         workingDirectory.set(rootProject.layout.projectDirectory)
-        classpath.from(generatorClasspath)
+        classpath.from(dependencyRuntimeClasspathWithoutProjectJars(generatorClasspath.get()))
         mainClass.set(generatorMainClass)
         systemProperties.put("line.separator", "\n")
         arguments.set(argsProvider(generationRoot))

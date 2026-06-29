@@ -1,7 +1,7 @@
 
 
 public func foo(): Bool {
-    <!TYPE_MISMATCH!>while (let a <- 0) {
+    <!RETURN_TYPE_MISMATCH!>while (let a <- 0) {
     }<!>
 }
 

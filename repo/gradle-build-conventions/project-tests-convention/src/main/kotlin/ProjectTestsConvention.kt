@@ -75,10 +75,9 @@ open class ProjectTestsExtension(
 
         testTaskProvider.configure {
             val sourceSets = project.extensions.getByType<JavaPluginExtension>().sourceSets
-            if (taskName != "test" && classpath.isEmpty) {
-                classpath = sourceSets.getByName("test").runtimeClasspath
-                testClassesDirs = sourceSets.getByName("test").output.classesDirs
-            }
+            val testSourceSet = sourceSets.getByName("test")
+            classpath = project.runtimeClasspathWithoutProjectJars(testSourceSet)
+            testClassesDirs = testSourceSet.output.classesDirs
 
             when (jUnitMode) {
                 JUnitMode.JUnit4 -> useJUnit()
@@ -169,9 +168,9 @@ open class ProjectTestsExtension(
                  */
                 val dependencyRuntimeClasspath: Configuration =
                     project.configurations.getByName(classpathSourceSet.runtimeClasspathConfigurationName)
-                dependencyRuntimeClasspath
+                project.dependencyRuntimeClasspathWithoutProjectJars(dependencyRuntimeClasspath)
             } else {
-                classpathSourceSet.runtimeClasspath
+                project.runtimeClasspathWithoutProjectJars(classpathSourceSet)
             }
             classpath.from(generatorClasspath)
 
