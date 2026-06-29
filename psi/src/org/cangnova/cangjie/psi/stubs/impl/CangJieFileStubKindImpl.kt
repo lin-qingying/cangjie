@@ -41,6 +41,9 @@ import kotlin.reflect.KProperty1
      * 普通源文件。
      */
     data class File(override val packageFqName: FqName) : CangJieFileStubKindImpl(), CangJieFileStubKind.WithPackage.File {
+        /**
+         * 实现 `toString` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+         */
         override fun toString(): String = toStringGenerator(File::packageFqName)
     }
 
@@ -48,12 +51,24 @@ import kotlin.reflect.KProperty1
      * 简单的 Facade 文件。
      */
     data class Facade(
+        /**
+         * 暴露 `packageFqName`，实现PSI Stub节点对上层接口的属性契约。
+         */
         override val packageFqName: FqName,
+        /**
+         * 暴露 `facadeFqName`，实现PSI Stub节点对上层接口的属性契约。
+         */
         override val facadeFqName: FqName,
     ) : CangJieFileStubKindImpl(), CangJieFileStubKind.WithPackage.Facade.Simple {
+        /**
+         * 暴露 `partSimpleName`，实现PSI Stub节点对上层接口的属性契约。
+         */
         override val partSimpleName: String
             get() = facadeFqName.shortName().asString()
 
+        /**
+         * 实现 `toString` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+         */
         override fun toString(): String = toStringGenerator(Facade::packageFqName, Facade::facadeFqName)
     }
 
@@ -61,10 +76,22 @@ import kotlin.reflect.KProperty1
      * 多文件类的 Facade。
      */
     data class MultifileClass(
+        /**
+         * 暴露 `packageFqName`，实现PSI Stub节点对上层接口的属性契约。
+         */
         override val packageFqName: FqName,
+        /**
+         * 暴露 `facadeFqName`，实现PSI Stub节点对上层接口的属性契约。
+         */
         override val facadeFqName: FqName,
+        /**
+         * 暴露 `facadePartSimpleNames`，实现PSI Stub节点对上层接口的属性契约。
+         */
         override val facadePartSimpleNames: List<String>,
     ) : CangJieFileStubKindImpl(), CangJieFileStubKind.WithPackage.Facade.MultifileClass {
+        /**
+         * 实现 `toString` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+         */
         override fun toString(): String = toStringGenerator(
             MultifileClass::packageFqName,
             MultifileClass::facadeFqName,
@@ -76,6 +103,9 @@ import kotlin.reflect.KProperty1
      * 无效的文件 Stub。
      */
     data class Invalid(override val errorMessage: String) : CangJieFileStubKindImpl(), CangJieFileStubKind.Invalid {
+        /**
+         * 实现 `toString` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+         */
         override fun toString(): String = toStringGenerator(Invalid::errorMessage)
     }
 

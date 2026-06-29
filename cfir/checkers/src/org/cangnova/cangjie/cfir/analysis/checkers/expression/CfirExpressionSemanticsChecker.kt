@@ -29,10 +29,12 @@ import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaratio
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.firstCharacterDiagnosticSource
 import org.cangnova.cangjie.cfir.analysis.collectors.components.ErrorNodeDiagnosticCollectorComponent
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
+import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
+import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
 import org.cangnova.cangjie.cfir.declarations.CfirFinalizer
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
@@ -53,9 +55,13 @@ import org.cangnova.cangjie.cfir.references.CfirSuperReference
 import org.cangnova.cangjie.cfir.resolve.constants.CfirIntConstantEvalUtils
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.session.extendProviderOrNull
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirPropertyAccessorSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
+import org.cangnova.cangjie.cfir.symbols.CfirVariableSymbol
 import org.cangnova.cangjie.cfir.symbols.toLookupTag
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.cfir.unwrapSubstitutionOverrides
@@ -201,8 +207,10 @@ object CfirMutFuncReferenceChecker : CfirQualifiedAccessChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirQualifiedAccessExpression) {
         if (expression is CfirFunctionCall) return
-        val symbol = expression.resolvedFunctionSymbolOrNull() ?: return
-        val function = symbol.takeIf { it.isBound }?.cfir as? CfirNamedFunction ?: return
+        val resolvedFunction = expression.resolvedFunctionSymbolOrNull()
+            ?.takeIf { it.isBound }
+            ?.cfir as? CfirNamedFunction
+        val function = resolvedFunction ?: expression.declaredUpperBoundMutFunctionOrNull() ?: return
         if (!function.status.isMut) return
 
         reporter.reportOn(
@@ -348,6 +356,128 @@ object CfirStaticContextThisUsageChecker : CfirBasicExpressionChecker() {
             factory = CfirErrors.STATIC_MEMBERS_CANNOT_CALL_MEMBERS,
         )
     }
+}
+
+/**
+ * static 函数体和 static lambda 体中禁止隐式访问实例成员。
+ *
+ * 官方 `TypeCheckExpr.cpp::CheckRefExprOfCurStruct` 按当前函数体区分：
+ * 有 static 函数声明时报告 static function 诊断；当前函数体来自 lambda
+ * 时报告 static lambda 诊断。这里基于已解析 symbol 判断目标成员，避免重复名字查找。
+ */
+object CfirStaticContextNonStaticMemberAccessChecker : CfirQualifiedAccessChecker() {
+    /**
+     * 检查 static 上下文中对当前实例成员的隐式访问。
+     */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    override fun check(expression: CfirQualifiedAccessExpression) {
+        if (expression.explicitReceiver != null) return
+        val accessKind = context.staticNonStaticAccessKind() ?: return
+        val memberName = expression.resolvedAccessSymbolOrNull()
+            ?.nonStaticMemberNameForStaticContext()
+            ?: return
+
+        when (accessKind) {
+            StaticNonStaticAccessKind.FUNCTION -> reporter.reportOn(
+                source = expression.calleeReference.source?.firstCharacterDiagnosticSource()
+                    ?: expression.source?.firstCharacterDiagnosticSource(),
+                factory = CfirErrors.STATIC_FUNCTION_CANNOT_ACCESS_NON_STATIC_MEMBER,
+                a = memberName,
+            )
+
+            StaticNonStaticAccessKind.LAMBDA -> reporter.reportOn(
+                source = expression.calleeReference.source?.firstCharacterDiagnosticSource()
+                    ?: expression.source?.firstCharacterDiagnosticSource(),
+                factory = CfirErrors.STATIC_LAMBDA_CANNOT_ACCESS_NON_STATIC,
+                a = memberName,
+            )
+        }
+    }
+
+    /**
+     * 识别当前表达式所在的 static 函数或 static lambda 上下文。
+     */
+    private fun CheckerContext.staticNonStaticAccessKind(): StaticNonStaticAccessKind? {
+        val closestFunction = containingDeclarations.asReversed()
+            .filterIsInstance<CfirFunction>()
+            .firstOrNull()
+            ?: return null
+
+        if (closestFunction is CfirAnonymousFunction) {
+            if (!closestFunction.isLambda) return null
+            return if (hasStaticEnclosingDeclarationAfter(closestFunction)) {
+                StaticNonStaticAccessKind.LAMBDA
+            } else {
+                null
+            }
+        }
+
+        return if (closestFunction.status.isStatic) StaticNonStaticAccessKind.FUNCTION else null
+    }
+
+    /**
+     * lambda 本身不带 static 状态；它从外层 static 函数或 static 存储成员继承 static 语境。
+     */
+    private fun CheckerContext.hasStaticEnclosingDeclarationAfter(function: CfirFunction): Boolean {
+        return containingDeclarations.asReversed()
+            .dropWhile { declaration -> declaration !== function }
+            .drop(1)
+            .any { declaration -> declaration is CfirCallableDeclaration && declaration.status.isStatic }
+    }
+
+    /**
+     * 只把当前类型的非 static 成员作为 static 上下文非法访问目标。
+     */
+    private fun CfirBasedSymbol<*>.nonStaticMemberNameForStaticContext(): org.cangnova.cangjie.name.Name? {
+        return when (this) {
+            is CfirVariableSymbol<*> -> if (isBound && callableId.classId != null && cfir is CfirFieldVariable && !cfir.status.isStatic) {
+                name
+            } else {
+                null
+            }
+
+            is CfirPropertySymbol -> if (isBound && callableId.classId != null && !cfir.status.isStatic) {
+                name
+            } else {
+                null
+            }
+
+            is CfirPropertyAccessorSymbol -> if (isBound) {
+                propertySymbol.nonStaticMemberNameForStaticContext()
+            } else {
+                null
+            }
+
+            is CfirNamedFunctionSymbol -> if (isBound && callableId.classId != null && !cfir.status.isStatic) {
+                name
+            } else {
+                null
+            }
+
+            else -> null
+        }
+    }
+
+    /**
+     * 从 qualified access 中解析访问目标符号。
+     */
+    private fun CfirQualifiedAccessExpression.resolvedAccessSymbolOrNull(): CfirBasedSymbol<*>? {
+        return when (val reference = calleeReference) {
+            is CfirResolvedNamedReference -> reference.resolvedSymbol
+            is CfirResolvedErrorReference -> reference.resolvedSymbol
+            is CfirNamedReferenceWithCandidateBase -> reference.candidateSymbol
+            is CfirErrorNamedReference -> (reference.diagnostic as? ConeDiagnosticWithSingleCandidate)?.candidateSymbol
+            else -> null
+        }
+    }
+}
+
+/**
+ * static 上下文中实例成员访问的诊断类别。
+ */
+private enum class StaticNonStaticAccessKind {
+    FUNCTION,
+    LAMBDA,
 }
 
 /**

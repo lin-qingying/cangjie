@@ -18,7 +18,13 @@ import org.cangnova.cangjie.codegen.api.CodegenOptions
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
+/**
+ * memory 操作和 data layout 输出的集成测试。
+ */
 class MemoryDataLayoutIntegrationTest {
+    /**
+     * 验证 typed memory 操作和 align 属性会正确发射到 LLVM IR。
+     */
     @Test
     fun `emits typed memory operations and alignment`() {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)

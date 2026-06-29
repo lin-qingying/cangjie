@@ -49,6 +49,9 @@ import java.util.*
 //        this is CjParameter -> ownerFunction?.isExpectDeclaration() == true
 //        else -> containingTypeStatement?.isExpectDeclaration() == true
 //    }
+/**
+ * 提供 `effectiveDeclarations` 操作，封装PSI 工具节点的访问、构造或判断逻辑。
+ */
 fun CjTypeStatement.effectiveDeclarations(): List<CjDeclaration> {
     return when (this) {
         is CjStruct -> declarations + primaryConstructorParameters.filter { p -> p.hasLetOrVar() }
@@ -58,6 +61,9 @@ fun CjTypeStatement.effectiveDeclarations(): List<CjDeclaration> {
     }
 }
 
+/**
+ * 提供 `getCallNameExpression` 操作，封装PSI 工具节点的访问、构造或判断逻辑。
+ */
 fun CjCallElement.getCallNameExpression(): CjSimpleNameExpression? {
     val calleeExpression = calleeExpression ?: return null
 
@@ -68,6 +74,9 @@ fun CjCallElement.getCallNameExpression(): CjSimpleNameExpression? {
     }
 }
 
+/**
+ * 提供 `getImportedSimpleNameByImportAlias` 操作，封装PSI 工具节点的访问、构造或判断逻辑。
+ */
 fun getImportedSimpleNameByImportAlias(file: CjFile, aliasName: String): String? {
     val importInfo = file.findImportByAlias(aliasName) ?: return null
 
@@ -89,9 +98,15 @@ fun getImportedSimpleNameByImportAlias(file: CjFile, aliasName: String): String?
     return null
 }
 
+/**
+ * 提供 `lastBlockStatementOrThis` 操作，封装PSI 工具节点的访问、构造或判断逻辑。
+ */
 fun CjExpression.lastBlockStatementOrThis(): CjExpression =
     (this as? CjBlockExpression)?.statements?.lastOrNull() ?: this
 
+/**
+ * 提供 `findLabelAndCall` 操作，封装PSI 工具节点的访问、构造或判断逻辑。
+ */
 fun CjFunctionLiteral.findLabelAndCall(): Pair<Name?, CjCallExpression?> {
     val literalParent = (this.parent as CjLambdaExpression).parent
 
@@ -119,6 +134,9 @@ fun CjFunctionLiteral.findLabelAndCall(): Pair<Name?, CjCallExpression?> {
 }
 
 // Annotations on labeled expression lies on it's base expression
+/**
+ * 提供 `getAnnotationEntries` 操作，封装PSI 工具节点的访问、构造或判断逻辑。
+ */
 fun CjExpression.getAnnotationEntries(): List<CjAnnotation> {
     return when (val parent = parent) {
 //        is CjAnnotatedExpression -> parent.annotationEntries
@@ -127,6 +145,9 @@ fun CjExpression.getAnnotationEntries(): List<CjAnnotation> {
     }
 }
 
+/**
+ * 提供 `getOutermostParenthesizerOrThis` 操作，封装PSI 工具节点的访问、构造或判断逻辑。
+ */
 fun CjExpression.getOutermostParenthesizerOrThis(): CjExpression {
     return (parentsWithSelf.zip(parents)).firstOrNull {
         val (element, parent) = it
@@ -138,30 +159,51 @@ fun CjExpression.getOutermostParenthesizerOrThis(): CjExpression {
     }?.first as CjExpression? ?: this
 }
 
+/**
+ * 提供 `isAbstract` 操作，封装PSI 工具节点的访问、构造或判断逻辑。
+ */
 fun CjTypeStatement.isAbstract(): Boolean =
     this is CjInterface || this is CjClass && hasModifier(CjTokens.ABSTRACT_KEYWORD)
 
+/**
+ * 提供 `isPropertyParameter` 操作，封装PSI 工具节点的访问、构造或判断逻辑。
+ */
 fun CjParameter.isPropertyParameter() = ownerFunction is CjPrimaryConstructor && hasLetOrVar()
+/**
+ * 提供 `isPackageDirectiveExpression` 操作，封装PSI 工具节点的访问、构造或判断逻辑。
+ */
 fun CjSimpleNameExpression.isPackageDirectiveExpression(): Boolean {
     val parent = parent
     return parent is CjPackageDirective || parent.parent is CjPackageDirective
 }
 
+/**
+ * 提供 `isImportDirectiveExpression` 操作，封装PSI 工具节点的访问、构造或判断逻辑。
+ */
 fun CjSimpleNameExpression.isImportDirectiveExpression(): Boolean {
     val parent = parent
     return parent is CjImportItem ||
             parent!!.parent is CjImportItem
 }
 
+/**
+ * 提供 `getQualifiedElementOrCallableRef` 操作，封装PSI 工具节点的访问、构造或判断逻辑。
+ */
 fun CjSimpleNameExpression.getQualifiedElementOrCallableRef(): CjElement {
     return getQualifiedElement()
 }
 
+/**
+ * 提供 `getQualifiedExpressionForReceiver` 操作，封装PSI 工具节点的访问、构造或判断逻辑。
+ */
 fun CjExpression.getQualifiedExpressionForReceiver(): CjQualifiedExpression? {
     val parent = parent
     return if (parent is CjQualifiedExpression && parent.receiverExpression == this) parent else null
 }
 
+/**
+ * 保存 `BAD_NEIGHBOUR_FOR_SIMPLE_TEMPLATE_ENTRY_PATTERN` 的内部状态，供PSI 工具实现维护节点缓存或解析上下文。
+ */
 private val BAD_NEIGHBOUR_FOR_SIMPLE_TEMPLATE_ENTRY_PATTERN = Regex("([a-zA-Z0-9_]|[^\\p{ASCII}]).*")
 
 /**
@@ -177,13 +219,22 @@ fun CjSimpleNameExpression.getQualifiedElement(): CjElement {
     }
 }
 
+/**
+ * 提供 `isPrivate` 操作，封装PSI 工具节点的访问、构造或判断逻辑。
+ */
 fun CjModifierListOwner.isPrivate(): Boolean = hasModifier(CjTokens.PRIVATE_KEYWORD)
 
+/**
+ * 提供 `canPlaceAfterSimpleNameEntry` 操作，封装PSI 工具节点的访问、构造或判断逻辑。
+ */
 fun canPlaceAfterSimpleNameEntry(element: PsiElement?): Boolean {
     val entryText = element?.text ?: return true
     return !BAD_NEIGHBOUR_FOR_SIMPLE_TEMPLATE_ENTRY_PATTERN.matches(entryText)
 }
 
+/**
+ * 提供 `getReceiverExpression` 操作，封装PSI 工具节点的访问、构造或判断逻辑。
+ */
 fun CjSimpleNameExpression.getReceiverExpression(): CjExpression? {
     val parent = parent
     when {
@@ -221,15 +272,27 @@ fun CjSimpleNameExpression.getReceiverExpression(): CjExpression? {
     return null
 }
 
+/**
+ * 提供 `isFunctionalExpression` 操作，封装PSI 工具节点的访问、构造或判断逻辑。
+ */
 fun PsiElement.isFunctionalExpression(): Boolean = this is CjNamedFunction && nameIdentifier == null
+/**
+ * 提供 `containingClass` 操作，封装PSI 工具节点的访问、构造或判断逻辑。
+ */
 fun CjElement.containingClass(): CjClass? = getStrictParentOfType()
 
+/**
+ * 保存 `CjAbstractClassBody.containingClass`，供PSI 工具流程读取节点结构或语义信息。
+ */
 val CjAbstractClassBody.containingClass: CjTypeStatement?
     get() = when (val parent = parent) {
         is CjTypeStatement -> parent
         else -> null
     }
 
+/**
+ * 提供 `getTopmostParentQualifiedExpressionForSelector` 操作，封装PSI 工具节点的访问、构造或判断逻辑。
+ */
 fun CjSimpleNameExpression.getTopmostParentQualifiedExpressionForSelector(): CjQualifiedExpression? {
     return generateSequence<CjExpression>(this) {
         val parentQualified = it.parent as? CjQualifiedExpression
@@ -237,7 +300,13 @@ fun CjSimpleNameExpression.getTopmostParentQualifiedExpressionForSelector(): CjQ
     }.last() as? CjQualifiedExpression
 }
 
+/**
+ * 提供 `visibilityModifier` 操作，封装PSI 工具节点的访问、构造或判断逻辑。
+ */
 fun CjModifierListOwner.visibilityModifier() = modifierList?.modifierFromTokenSet(CjTokens.VISIBILITY_MODIFIERS)
+/**
+ * 执行 `modifierFromTokenSet` 内部辅助逻辑，支撑PSI 工具节点的结构解析与访问。
+ */
 private fun CjModifierList.modifierFromTokenSet(set: TokenSet): PsiElement? {
     return set.types
         .asSequence()
@@ -245,12 +314,21 @@ private fun CjModifierList.modifierFromTokenSet(set: TokenSet): PsiElement? {
         .firstOrNull { it != null }
 }
 
+/**
+ * 提供 `visibilityModifierType` 操作，封装PSI 工具节点的访问、构造或判断逻辑。
+ */
 fun CjModifierListOwner.visibilityModifierType(): CjModifierKeywordToken? =
     visibilityModifier()?.node?.elementType as CjModifierKeywordToken?
 
+/**
+ * 提供 `referenceExpression` 操作，封装PSI 工具节点的访问、构造或判断逻辑。
+ */
 fun CjExpression.referenceExpression(): CjReferenceExpression? =
     (if (this is CjCallExpression) calleeExpression else this) as? CjReferenceExpression
 
+/**
+ * 提供 `isContractPresentPsiCheck` 操作，封装PSI 工具节点的访问、构造或判断逻辑。
+ */
 fun CjNamedFunction.isContractPresentPsiCheck(isAllowedOnMembers: Boolean): Boolean {
     val contractAllowedHere =
         (isAllowedOnMembers || isTopLevel) &&
@@ -263,9 +341,15 @@ fun CjNamedFunction.isContractPresentPsiCheck(isAllowedOnMembers: Boolean): Bool
     return firstExpression.isContractDescriptionCallPsiCheck()
 }
 
+/**
+ * 提供 `isContractDescriptionCallPsiCheck` 操作，封装PSI 工具节点的访问、构造或判断逻辑。
+ */
 fun CjExpression.isContractDescriptionCallPsiCheck(): Boolean =
     (this is CjCallExpression && calleeExpression?.text == "contract") || (this is CjQualifiedExpression && isContractDescriptionCallPsiCheck())
 
+/**
+ * 提供 `visitChildren` 操作，封装PSI 工具节点的访问、构造或判断逻辑。
+ */
 fun <D> visitChildren(element: CjElement, visitor: CjVisitor<Void, D>, data: D) {
     var child = element.firstChild
     while (child != null) {
@@ -276,6 +360,9 @@ fun <D> visitChildren(element: CjElement, visitor: CjVisitor<Void, D>, data: D) 
     }
 }
 
+/**
+ * 执行 `StubElement` 内部辅助逻辑，支撑PSI 工具节点的结构解析与访问。
+ */
 private fun StubElement<*>.collectAnnotationEntriesFromStubElement(): List<CjAnnotation> {
     return childrenStubs.flatMap { child ->
         when (child.stubType) {
@@ -286,6 +373,9 @@ private fun StubElement<*>.collectAnnotationEntriesFromStubElement(): List<CjAnn
     }
 }
 
+/**
+ * 执行 `collectAnnotationEntriesFromPsi` 内部辅助逻辑，支撑PSI 工具节点的结构解析与访问。
+ */
 private fun CjAnnotationsContainer.collectAnnotationEntriesFromPsi(): List<CjAnnotation> {
     return children.flatMap { child ->
         when (child) {
@@ -296,6 +386,9 @@ private fun CjAnnotationsContainer.collectAnnotationEntriesFromPsi(): List<CjAnn
     }
 }
 
+/**
+ * 提供 `collectAnnotationEntriesFromStubOrPsi` 操作，封装PSI 工具节点的访问、构造或判断逻辑。
+ */
 fun CjAnnotationsContainer.collectAnnotationEntriesFromStubOrPsi(): List<CjAnnotation> {
     return when (this) {
         is StubBasedPsiElementBase<*> -> stub?.collectAnnotationEntriesFromStubElement()
@@ -305,6 +398,9 @@ fun CjAnnotationsContainer.collectAnnotationEntriesFromStubOrPsi(): List<CjAnnot
     }
 }
 
+/**
+ * 提供 `getSuperNames` 操作，封装PSI 工具节点的访问、构造或判断逻辑。
+ */
 fun StubBasedPsiElementBase<out CangJieTypeStatementStub<out CjTypeStatement>>.getSuperNames(): List<String> {
     fun addSuperName(result: MutableList<String>, referencedName: String) {
         result.add(referencedName)
@@ -352,44 +448,68 @@ fun StubBasedPsiElementBase<out CangJieTypeStatementStub<out CjTypeStatement>>.g
     return result
 }
 
+/**
+ * 提供 `isComment` 操作，封装PSI 工具节点的访问、构造或判断逻辑。
+ */
 fun isComment(element: PsiElement): Boolean {
     return CommentUtilCore.isComment(element)
 }
 
+/**
+ * 提供 `safeNameForLazyResolve` 操作，封装PSI 工具节点的访问、构造或判断逻辑。
+ */
 fun CjEnumConstructor.safeNameForLazyResolve(): Name {
     return name?.let { Name.identifier(it) }?.safeNameForLazyResolve() ?: SpecialNames.NO_NAME_PROVIDED
 }
 
+/**
+ * 提供 `safeFqNameForLazyResolveByParent` 操作，封装PSI 工具节点的访问、构造或判断逻辑。
+ */
 fun CjEnumConstructor.safeFqNameForLazyResolveByParent(): FqName? {
     // 应该只为包级声明创建特殊名称，这样就可以安全地依赖于父级的真实fq名称
     val parentFqName = (this.parent?.parent as CjEnum).safeFqNameForLazyResolve()
     return parentFqName?.child(safeNameForLazyResolve())
 }
 
+/**
+ * 提供 `safeFqNameForLazyResolve` 操作，封装PSI 工具节点的访问、构造或判断逻辑。
+ */
 fun CjEnumConstructor.safeFqNameForLazyResolve(): FqName? {
     // 应该只为包级声明创建特殊名称，这样就可以安全地依赖于父级的真实fq名称
     val parentFqName = CjNamedDeclarationUtil.getParentFqName(this.parent?.parent as CjEnum)
     return parentFqName?.child(safeNameForLazyResolve())
 }
 
+/**
+ * 提供 `safeFqNameForLazyResolve` 操作，封装PSI 工具节点的访问、构造或判断逻辑。
+ */
 fun CjNamedDeclaration.safeFqNameForLazyResolve(name: Name): FqName? {
     // 应该只为包级声明创建特殊名称，这样就可以安全地依赖于父级的真实fq名称
     val parentFqName = CjNamedDeclarationUtil.getParentFqName(this)
     return parentFqName?.child(name)
 }
 
+/**
+ * 提供 `safeFqNameForLazyResolve` 操作，封装PSI 工具节点的访问、构造或判断逻辑。
+ */
 fun CjNamedDeclaration.safeFqNameForLazyResolve(name: String?): FqName? {
     // 应该只为包级声明创建特殊名称，这样就可以安全地依赖于父级的真实fq名称
     val parentFqName = CjNamedDeclarationUtil.getParentFqName(this)
     return parentFqName?.child(Name.identifier(name ?: ""))
 }
 
+/**
+ * 提供 `safeFqNameForLazyResolve` 操作，封装PSI 工具节点的访问、构造或判断逻辑。
+ */
 fun CjNamedDeclaration.safeFqNameForLazyResolve(): FqName? {
     // 应该只为包级声明创建特殊名称，这样就可以安全地依赖于父级的真实fq名称
     val parentFqName = CjNamedDeclarationUtil.getParentFqName(this)
     return parentFqName?.child(safeNameForLazyResolve())
 }
 
+/**
+ * 提供 `safeNameForLazyResolve` 操作，封装PSI 工具节点的访问、构造或判断逻辑。
+ */
 fun CjNamedDeclaration.safeNameForLazyResolve(): Name {
     return nameAsName.safeNameForLazyResolve()
 }
@@ -407,21 +527,36 @@ fun CjNamedDeclaration.safeNameForLazyResolve(): Name {
 // fun CjExpression.isContractDescriptionCallPsiCheck(): Boolean =
 //    (this is CjCallExpression && calleeExpression?.text == "contract") || (this is CjQualifiedExpression && isContractDescriptionCallPsiCheck())
 
+/**
+ * 提供 `safeNameForLazyResolve` 操作，封装PSI 工具节点的访问、构造或判断逻辑。
+ */
 fun Name?.safeNameForLazyResolve(): Name = this?.takeUnless(Name::isSpecial) ?: SpecialNames.NO_NAME_PROVIDED
 
+/**
+ * 提供 `getAssignmentByLHS` 操作，封装PSI 工具节点的访问、构造或判断逻辑。
+ */
 fun CjExpression.getAssignmentByLHS(): CjBinaryExpression? {
     val parent = parent as? CjBinaryExpression ?: return null
     return if (CjPsiUtil.isAssignment(parent) && parent.left == this) parent else null
 }
 
+/**
+ * 提供 `getQualifiedExpressionForSelectorOrThis` 操作，封装PSI 工具节点的访问、构造或判断逻辑。
+ */
 fun CjExpression.getQualifiedExpressionForSelectorOrThis(): CjExpression {
     return getQualifiedExpressionForSelector() ?: this
 }
 
+/**
+ * 提供 `copied` 操作，封装PSI 工具节点的访问、构造或判断逻辑。
+ */
 inline fun <reified T : PsiElement> T.copied(): T {
     return copy() as T
 }
 
+/**
+ * 提供 `getTrailingCommaByClosingElement` 操作，封装PSI 工具节点的访问、构造或判断逻辑。
+ */
 fun getTrailingCommaByClosingElement(closingElement: PsiElement?): PsiElement? {
     val elementBeforeClosingElement =
         closingElement?.getPrevSiblingIgnoringWhitespaceAndComments() ?: return null
@@ -429,11 +564,23 @@ fun getTrailingCommaByClosingElement(closingElement: PsiElement?): PsiElement? {
     return elementBeforeClosingElement.run { if (node.elementType == CjTokens.COMMA) this else null }
 }
 
+/**
+ * 保存 `CjQualifiedExpression.callExpression`，供PSI 工具流程读取节点结构或语义信息。
+ */
 val CjQualifiedExpression.callExpression: CjCallExpression?
     get() = selectorExpression as? CjCallExpression
 
+/**
+ * 保存 `CjElement.parentSubstitute`，供PSI 工具流程读取节点结构或语义信息。
+ */
 var CjElement.parentSubstitute: PsiElement? by UserDataProperty(Key.create<PsiElement>("PARENT_SUBSTITUTE"))
+/**
+ * 提供 `quoteIfNeeded` 操作，封装PSI 工具节点的访问、构造或判断逻辑。
+ */
 fun String.quoteIfNeeded(): String = if (this.isIdentifier()) this else "`$this`"
+/**
+ * 提供 `isIdentifier` 操作，封装PSI 工具节点的访问、构造或判断逻辑。
+ */
 fun String?.isIdentifier(): Boolean {
     if (this == null || isEmpty()) return false
 
@@ -444,7 +591,13 @@ fun String?.isIdentifier(): Boolean {
     return lexer.tokenType == null
 }
 
+/**
+ * 提供 `astReplace` 操作，封装PSI 工具节点的访问、构造或判断逻辑。
+ */
 fun PsiElement.astReplace(newElement: PsiElement) = parent.node.replaceChild(node, newElement.node)
+/**
+ * 提供 `getQualifiedElementSelector` 操作，封装PSI 工具节点的访问、构造或判断逻辑。
+ */
 fun CjElement.getQualifiedElementSelector(): CjElement? {
     return when (this) {
         is CjSimpleNameExpression -> this
@@ -459,6 +612,9 @@ fun CjElement.getQualifiedElementSelector(): CjElement? {
     }
 }
 
+/**
+ * 保存 `CjTypeElement.qualifier`，供PSI 工具流程读取节点结构或语义信息。
+ */
 val CjTypeElement.qualifier: CjTypeElement?
     get() {
         return when (this) {
@@ -468,11 +624,17 @@ val CjTypeElement.qualifier: CjTypeElement?
         }
     }
 
+/**
+ * 提供 `getQualifiedExpressionForSelector` 操作，封装PSI 工具节点的访问、构造或判断逻辑。
+ */
 fun CjElement.getQualifiedExpressionForSelector(): CjQualifiedExpression? {
     val parent = parent
     return if (parent is CjQualifiedExpression && parent.selectorExpression == this) parent else null
 }
 
+/**
+ * 保存 `CjDeclaration.containingTypeStatement`，供PSI 工具流程读取节点结构或语义信息。
+ */
 val CjDeclaration.containingTypeStatement: CjTypeStatement?
     get() = parent.let {
         when (it) {
@@ -483,12 +645,18 @@ val CjDeclaration.containingTypeStatement: CjTypeStatement?
         }
     }
 
+/**
+ * 提供 `getTrailingCommaByElementsList` 操作，封装PSI 工具节点的访问、构造或判断逻辑。
+ */
 fun getTrailingCommaByElementsList(elementList: PsiElement?): PsiElement? {
     val lastChild =
         elementList?.lastChild?.let { if (it !is PsiComment) it else it.getPrevSiblingIgnoringWhitespaceAndComments() }
     return lastChild?.takeIf { it.node.elementType == CjTokens.COMMA }
 }
 
+/**
+ * 提供 `getContentRange` 操作，封装PSI 工具节点的访问、构造或判断逻辑。
+ */
 fun CjStringTemplateExpression.getContentRange(): TextRange {
     val start = node.firstChildNode.textLength
     val lastChild = node.lastChildNode
@@ -499,13 +667,28 @@ fun CjStringTemplateExpression.getContentRange(): TextRange {
     )
 }
 
+/**
+ * 提供 `isSingleQuoted` 操作，封装PSI 工具节点的访问、构造或判断逻辑。
+ */
 fun CjStringTemplateExpression.isSingleQuoted(): Boolean = node.firstChildNode.textLength == 1
+/**
+ * 提供 `isPlain` 操作，封装PSI 工具节点的访问、构造或判断逻辑。
+ */
 fun CjStringTemplateExpression.isPlain() = entries.all { it is CjLiteralStringTemplateEntry }
 
 
+/**
+ * 提供 `modalityModifier` 操作，封装PSI 工具节点的访问、构造或判断逻辑。
+ */
 fun CjDeclaration.modalityModifier() = modifierFromTokenSet(CjTokens.MODALITY_MODIFIERS)
+/**
+ * 执行 `modifierFromTokenSet` 内部辅助逻辑，支撑PSI 工具节点的结构解析与访问。
+ */
 private fun CjModifierListOwner.modifierFromTokenSet(set: TokenSet) = modifierList?.modifierFromTokenSet(set)
 
+/**
+ * 提供 `findElementOfAdditionalResolve` 操作，封装PSI 工具节点的访问、构造或判断逻辑。
+ */
 fun CjElement.findElementOfAdditionalResolve(): CjElement? {
     val elementOfAdditionalResolve = findTopmostParentInFile {
         it is CjFunction ||
@@ -552,6 +735,9 @@ fun CjElement.findElementOfAdditionalResolve(): CjElement? {
     }
 }
 
+/**
+ * 提供 `unwrapOptional` 操作，封装PSI 工具节点的访问、构造或判断逻辑。
+ */
 tailrec fun CjTypeElement.unwrapOptional(): CjTypeElement? {
     return when (this) {
         is CjOptionType -> this.getInnerType()?.unwrapOptional()
@@ -559,6 +745,9 @@ tailrec fun CjTypeElement.unwrapOptional(): CjTypeElement? {
     }
 }
 
+/**
+ * 提供 `quoteIfNeeded` 操作，封装PSI 工具节点的访问、构造或判断逻辑。
+ */
 fun FqName.quoteIfNeeded(): FqName {
     return FqName(pathSegments().joinToString(".") { it.asString().quoteIfNeeded() })
 }

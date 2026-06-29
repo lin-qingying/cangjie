@@ -33,16 +33,34 @@ import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.psi.packgae.CangJiePackage
 
 
+/**
+ * 表示 `CangJiePsiFacade`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 abstract class CangJiePsiFacade {
 
+    /**
+     * 提供 `findPackage` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun findPackage(fqName: String,searchScope: GlobalSearchScope): CangJiePackage? {
         return findPackage(FqName(fqName),searchScope)
     }
 
+    /**
+     * 提供 `findPackage` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     abstract fun findPackage(fqName: FqName,searchScope: GlobalSearchScope): CangJiePackage?
+    /**
+     * 提供 `findPackage` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     abstract fun findPackage(fqName: FqName ): CangJiePackage?
+    /**
+     * 提供 `findPackage` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     abstract fun findPackage(fqName: String ): CangJiePackage?
 
+    /**
+     * 提供 `processPackageDirectories` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     abstract fun processPackageDirectories(
         psiPackage: CangJiePackage,
         scope: GlobalSearchScope,

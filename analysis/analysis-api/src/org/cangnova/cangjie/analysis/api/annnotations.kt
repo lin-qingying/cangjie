@@ -14,6 +14,9 @@ package org.cangnova.cangjie.analysis.api
     AnnotationTarget.TYPEALIAS,
 )
 @RequiresOptIn("Internal API which should not be used outside the Analysis API implementation modules as it does not have any compatibility guarantees")
+/**
+ * 需要显式 opt-in 的 Analysis API 实现细节标记。
+ */
 annotation class CaImplementationDetail
 
 /**
@@ -30,6 +33,9 @@ annotation class CaImplementationDetail
     AnnotationTarget.TYPEALIAS,
 )
 @RequiresOptIn("Internal API which is intended for IDE and Analysis API internal use only and does not provide compatibility guarantees")
+/**
+ * 需要显式 opt-in 的非公开 Analysis API 标记。
+ */
 annotation class CaNonPublicApi
 
 /**
@@ -46,6 +52,9 @@ annotation class CaNonPublicApi
     AnnotationTarget.TYPEALIAS,
 )
 @RequiresOptIn("Internal API which is used only from the IntelliJ Cangjie plugin. Such an API should not be used in other places since it has no compatibility guarantees")
+/**
+ * 需要显式 opt-in 的 IDE 专用 Analysis API 标记。
+ */
 annotation class CaIdeApi
 
 /**
@@ -61,6 +70,9 @@ annotation class CaIdeApi
     AnnotationTarget.TYPEALIAS,
 )
 @RequiresOptIn("Experimental API with no compatibility guarantees")
+/**
+ * 需要显式 opt-in 的实验性 Analysis API 标记。
+ */
 annotation class CaExperimentalApi
 
 /**
@@ -77,6 +89,9 @@ annotation class CaExperimentalApi
     AnnotationTarget.TYPEALIAS,
 )
 @RequiresOptIn("An API intended for Analysis API implementations and platforms. The API is neither stable nor intended for user consumption.")
+/**
+ * 需要显式 opt-in 的 Analysis API 平台 SPI 标记。
+ */
 annotation class CaPlatformInterface
 
 /**

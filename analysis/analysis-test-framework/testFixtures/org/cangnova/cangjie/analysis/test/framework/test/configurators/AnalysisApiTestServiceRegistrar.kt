@@ -19,15 +19,30 @@ import org.cangnova.cangjie.test.services.TestServices
  */
 @Suppress("PARAMETER_NAME_CHANGED_ON_OVERRIDE")
 abstract class AnalysisApiTestServiceRegistrar : AnalysisApiServiceRegistrar<TestServices> {
+    /**
+     * 注册测试 application 级服务；默认没有额外注册。
+     */
     override fun registerApplicationServices(application: MockApplication, testServices: TestServices) {}
 
+    /**
+     * 注册测试 project 扩展点；默认没有额外注册。
+     */
     override fun registerProjectExtensionPoints(project: MockProject, testServices: TestServices) {}
 
+    /**
+     * 注册测试 project 级服务；默认没有额外注册。
+     */
     override fun registerProjectServices(project: MockProject, testServices: TestServices) {}
 
+    /**
+     * 注册依赖测试 root disposable 生命周期的 project-model 服务；默认没有额外注册。
+     */
     override fun registerProjectModelServices(project: MockProject, disposable: Disposable, testServices: TestServices) {}
 }
 
+/**
+ * 使用测试配置中的 root disposable 执行一组 registrar 的 project-model 服务注册。
+ */
 @OptIn(TestInfrastructureInternals::class)
 fun List<AnalysisApiServiceRegistrar<TestServices>>.registerProjectModelServices(
     project: MockProject,
@@ -36,6 +51,9 @@ fun List<AnalysisApiServiceRegistrar<TestServices>>.registerProjectModelServices
     forEach { it.registerProjectModelServices(project, testServices.testConfiguration.rootDisposable, testServices) }
 }
 
+/**
+ * 按 application、project extension point、project service、project-model service 的顺序注册全部测试服务。
+ */
 fun List<AnalysisApiServiceRegistrar<TestServices>>.registerAllServices(
     application: MockApplication,
     project: MockProject,

@@ -41,7 +41,13 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 @OptIn(CompilerConfiguration.Internals::class)
+/**
+ * 覆盖前端宏构造服务在 strict/degraded 模式下的表面占位行为。
+ */
 class FrontendMacroConstructionServiceTest {
+    /**
+     * 验证 degraded 模式会为声明宏表面登记原始 surface 占位映射。
+     */
     @Test
     fun degradedModeRegistersDeclarationSurfacePlaceholderWithoutFinalSurfaceNode() {
         val fixture = macroDeclarationSurfaceFixture()
@@ -63,6 +69,9 @@ class FrontendMacroConstructionServiceTest {
         )
     }
 
+    /**
+     * 验证 strict 模式在没有稳定 splice 时拒绝声明宏表面。
+     */
     @Test
     fun strictModeRejectsDeclarationSurfaceWithoutStableSplice() {
         val fixture = macroDeclarationSurfaceFixture()
@@ -76,6 +85,9 @@ class FrontendMacroConstructionServiceTest {
         assertTrue(result is MacroConstructionResult.Failed)
     }
 
+    /**
+     * 构造一个带声明宏 surface 的最小 pre-macro fixture。
+     */
     private fun macroDeclarationSurfaceFixture(): MacroDeclarationSurfaceFixture {
         val session = object : CfirSession(Kind.Source) {}
         val moduleData = TestModuleData(session)
@@ -147,13 +159,31 @@ class FrontendMacroConstructionServiceTest {
         )
     }
 
+    /**
+     * 声明宏 surface 测试夹具。
+     */
     private data class MacroDeclarationSurfaceFixture(
+        /**
+         * 承载宏声明 surface 的 CFIR 文件。
+         */
         val file: CfirFile,
+        /**
+         * 被测试的声明宏 surface。
+         */
         val surface: MacroSurfaceDecl,
+        /**
+         * 预宏 raw 构建结果。
+         */
         val pre: PreMacroRawBuildResult,
+        /**
+         * 与 [pre] 对应的宏解析上下文。
+         */
         val context: MacroResolutionContext,
     )
 
+    /**
+     * 使用默认分类快照执行宏构造服务。
+     */
     private fun FrontendMacroConstructionService.expandWithClassification(
         pre: PreMacroRawBuildResult,
         context: MacroResolutionContext,
@@ -164,16 +194,49 @@ class FrontendMacroConstructionServiceTest {
         return expand(pre, context, classification, mode)
     }
 
+    /**
+     * 测试用最小 CFIR module data。
+     */
     private class TestModuleData(session: CfirSession) : CfirModuleData() {
+        /**
+         * 测试模块名称。
+         */
         override val name: Name = Name.identifier("frontend-macro-construction-test")
+        /**
+         * 测试模块不声明普通依赖。
+         */
         override val dependencies: List<CfirModuleData> = emptyList()
+        /**
+         * 测试模块不声明 refinement 依赖。
+         */
         override val refinementDependencies: List<CfirModuleData> = emptyList()
+        /**
+         * 测试模块的全部 refinement 依赖为空。
+         */
         override val allRefinementDependencies: List<CfirModuleData> = emptyList()
+        /**
+         * 测试模块使用默认仓颉平台。
+         */
         override val targetPlatform = CangJiePlatforms.defaultCangJiePlatform
+        /**
+         * 测试模块使用默认 CFIR 平台。
+         */
         override val platform: CfirPlatform = CfirPlatform.DEFAULT
+        /**
+         * 测试模块是否为 common 模块。
+         */
         override val isCommon: Boolean = targetPlatform.isCommon()
+        /**
+         * 测试模块能力集合。
+         */
         override val capabilities: CfirModuleCapabilities = CfirModuleCapabilities.Empty
+        /**
+         * 测试模块稳定名称。
+         */
         override val stableModuleName: String = "frontend-macro-construction-test"
+        /**
+         * 与该 module data 绑定的 session。
+         */
         override val session: CfirSession = session
 
         init {

@@ -26,6 +26,9 @@ package org.cangnova.cangjie.lexer.cdoc.parser
 
 import org.cangnova.cangjie.utils.toUpperCaseAsciiOnly
 
+/**
+ * 表示 `CDocKnownTag`，承载仓颉词法与文档注释中的语法节点、索引桩或辅助模型。
+ */
 enum class CDocKnownTag(val isReferenceRequired: Boolean, val isSectionStart: Boolean) {
     AUTHOR(false, false),
     THROWS(true, false),

@@ -20,6 +20,9 @@ import org.cangnova.cangjie.cfir.declarations.CfirFile
  * All of them are going to be resolved.
  */
 internal class LLCfirWholeElementResolveTarget(designation: CfirDesignation) : LLCfirResolveTarget(designation) {
+    /**
+     * 递归访问目标声明及其所有声明子节点。
+     */
     override fun visitTargetElement(
         element: CfirElementWithResolveState,
         visitor: LLCfirResolveTargetVisitor,
@@ -53,5 +56,8 @@ internal class LLCfirWholeElementResolveTarget(designation: CfirDesignation) : L
         }
     }
 
+    /**
+     * 在调试输出中标记该 target 是递归全量元素 target。
+     */
     override fun toStringAdditionalSuffix(): String = "*"
 }

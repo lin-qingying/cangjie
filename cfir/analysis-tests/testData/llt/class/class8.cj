@@ -7,8 +7,8 @@ open class A {
         this.a = a
     }
     public func test() {
-        var res = <!ILLEGAL_THIS_OR_SUPER_CALL!>this<!>(1)
+        var res = <!INVALID_THIS_CALL_OUTSIDE_CTOR!>this<!>(1)
     }
     public var a: Int64 = 1
-    public var b = <!ILLEGAL_THIS_OR_SUPER_CALL!>this<!>()
+    public var b = <!INVALID_THIS_CALL_OUTSIDE_CTOR!>this<!>()
 }

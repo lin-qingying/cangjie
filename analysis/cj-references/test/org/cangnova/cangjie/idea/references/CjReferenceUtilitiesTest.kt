@@ -36,11 +36,20 @@ import org.junit.jupiter.api.Test
 class CjReferenceUtilitiesTest : AbstractAnalysisApiExecutionTest(
     "analysis/cj-references/testData/referenceUtils",
 ) {
+    /**
+     * 使用 standalone CFIR 分析 API 配置运行 reference utility 测试。
+     */
     override val configurator = CaCfirStandaloneAnalysisApiTestConfigurator
 
+    /**
+     * 注入测试专用 reference providers service，避免依赖真实扩展点注册状态。
+     */
     override val additionalServiceRegistrars: List<AnalysisApiServiceRegistrar<TestServices>> =
         listOf(TestReferenceServiceRegistrar)
 
+    /**
+     * 验证不同 PSI 家族的 `mainReference` 扩展属性都能返回预期主引用。
+     */
     @Test
     fun mainReferenceFamilies(mainFile: CjFile) {
         val basicType = PsiTreeUtil.findChildrenOfType(mainFile, CjBasicType::class.java).first { it.text == "Int64" }
@@ -87,6 +96,9 @@ class CjReferenceUtilitiesTest : AbstractAnalysisApiExecutionTest(
         assertEquals(cdocReference.canonicalText, elementMainReference.canonicalText)
     }
 
+    /**
+     * 验证 CDoc reference 的 rename、range、名称预过滤和多目标解析契约。
+     */
     @Test
     fun cdocReferenceContract(mainFile: CjFile) {
         val cdocName = PsiTreeUtil.findChildrenOfType(mainFile, CDocName::class.java).single { it.getNameText() == "Document" }
@@ -111,6 +123,9 @@ class CjReferenceUtilitiesTest : AbstractAnalysisApiExecutionTest(
         assertEquals(targetOne, reference.resolve(), "默认策略应选择 multiResolve 的首个结果")
     }
 
+    /**
+     * 验证 `this` / `super` 这类 CDoc 特殊名称不会进入普通名称搜索集合。
+     */
     @Test
     fun cdocReferenceForbiddenNames(mainFile: CjFile) {
         val docName = createLocalDocName(mainFile, "/** @see [this] */\nclass Anchor {}\n")
@@ -118,6 +133,9 @@ class CjReferenceUtilitiesTest : AbstractAnalysisApiExecutionTest(
         assertTrue(reference.resolvesByNames.isEmpty(), "`this` / `super` 这类特殊名不应伪装成普通可解析名字")
     }
 
+    /**
+     * 验证普通单目标 `PsiReference` 的 `unwrappedTargets` 只包含 resolve 结果。
+     */
     @Test
     fun unwrappedTargetsForSingleReference(mainFile: CjFile) {
         val element = PsiTreeUtil.findChildrenOfType(mainFile, CjBasicType::class.java).single { it.text == "UInt8" }
@@ -129,48 +147,102 @@ class CjReferenceUtilitiesTest : AbstractAnalysisApiExecutionTest(
         assertEquals(setOf(target), reference.unwrappedTargets)
     }
 
+    /**
+     * 在当前测试项目内创建一个临时 CDoc 名称节点。
+     */
     private fun createLocalDocName(mainFile: CjFile, text: String): CDocName {
         val docFile = org.cangnova.cangjie.psi.CjPsiFactory(mainFile.project, markGenerated = false).createFile("doc-temp.cj", text)
         return PsiTreeUtil.findChildrenOfType(docFile, CDocName::class.java).single()
     }
 }
 
+/**
+ * 将测试项目的 reference provider service 替换为可控实现的注册器。
+ */
 private object TestReferenceServiceRegistrar : org.cangnova.cangjie.analysis.test.framework.test.configurators.AnalysisApiTestServiceRegistrar() {
+    /**
+     * 注册测试专用 [CangJieReferenceProvidersService]。
+     */
     override fun registerProjectServices(project: MockProject, testServices: TestServices) {
         project.picoContainer.unregisterComponent(CangJieReferenceProvidersService::class.java.name)
         project.registerService(CangJieReferenceProvidersService::class.java, TestReferenceProvidersService())
     }
 }
 
+/**
+ * 可由测试动态替换 reference 生产逻辑的 provider service。
+ */
 private class TestReferenceProvidersService : CangJieReferenceProvidersService() {
+    /**
+     * 当前测试场景使用的 reference 工厂。
+     */
     var referenceFactory: (PsiElement) -> Array<PsiReference> = { PsiReference.EMPTY_ARRAY }
 
+    /**
+     * 返回 [referenceFactory] 为指定 PSI 元素创建的引用集合。
+     */
     override fun getReferences(psiElement: PsiElement): Array<PsiReference> = referenceFactory(psiElement)
 }
 
+/**
+ * 测试用普通 PSI reference。
+ */
 private open class TestPsiReference(
     element: PsiElement,
+    /**
+     * 便于断言引用来源的标签。
+     */
     val label: String,
+    /**
+     * 当前测试引用解析出的目标元素。
+     */
     private val target: PsiElement? = null,
 ) : PsiReferenceBase<PsiElement>(element) {
+    /**
+     * 返回测试预设的解析目标。
+     */
     override fun resolve(): PsiElement? = target
 }
 
+/**
+ * 测试用 simple-name reference。
+ */
 private class TestSimpleNameReference(
     expression: CjSimpleNameExpression,
+    /**
+     * 当前测试引用解析出的目标元素。
+     */
     private val target: PsiElement? = null,
 ) : CjSimpleNameReference(expression) {
+    /**
+     * 复用基类默认 resolver。
+     */
     override val resolver: ResolveCache.PolyVariantResolver<CjReference>
         get() = super.resolver
 
+    /**
+     * 测试引用不绑定 import alias。
+     */
     override fun getImportAlias() = null
 
+    /**
+     * 返回测试预设的解析目标集合。
+     */
     override fun resolveTargetElements(): Collection<PsiElement> = listOfNotNull(target)
 }
 
+/**
+ * 测试用 CDoc reference。
+ */
 private class TestCDocReference(
     element: CDocName,
+    /**
+     * 当前测试 CDoc reference 的多目标解析结果。
+     */
     private val targets: List<PsiElement> = emptyList(),
 ) : CDocReference(element) {
+    /**
+     * 返回测试预设的解析目标集合。
+     */
     override fun resolveTargetElements(): Collection<PsiElement> = targets
 }

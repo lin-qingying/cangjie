@@ -15,6 +15,9 @@ import org.gradle.kotlin.dsl.*
 import org.gradle.kotlin.dsl.getByType
 import org.gradle.plugins.ide.idea.model.IdeaModel
 
+/**
+ * 注册 CFIR checker component 与诊断容器生成任务。
+ */
 fun Project.generatedDiagnosticContainersAndCheckerComponents(): TaskProvider<CacheableJavaExec> {
     return generatedSourcesTask(
         taskName = "generateCheckersComponents",

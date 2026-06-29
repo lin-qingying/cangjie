@@ -25,26 +25,63 @@ public class CaBaseAnnotationImpl(
     psi: CjCallElement?,
     lazyArguments: Lazy<List<CaNamedAnnotationValue>>,
     constructorSymbol: CaConstructorSymbol?,
+    /**
+     * 该注解对象绑定的 lifetime token。
+     */
     override val token: CaLifetimeToken,
 ) : CaAnnotation {
+    /**
+     * 注解类型的稳定 classId。
+     */
     private val backingClassId: ClassId? = classId
+
+    /**
+     * 注解类型的短名。
+     */
     private val backingShortName: Name? = shortName
+
+    /**
+     * 源码中的注解调用 PSI。
+     */
     private val backingPsi: CjCallElement? = psi
+
+    /**
+     * 惰性解析后的注解参数列表。
+     */
     private val backingArguments: List<CaNamedAnnotationValue> by lazyArguments
+
+    /**
+     * 注解构造器符号。
+     */
     private val backingConstructorSymbol: CaConstructorSymbol? = constructorSymbol
 
+    /**
+     * 返回注解类型的 classId。
+     */
     override val classId: ClassId?
         get() = withValidityAssertion { backingClassId }
 
+    /**
+     * 返回注解类型的短名。
+     */
     override val shortName: Name?
         get() = withValidityAssertion { backingShortName }
 
+    /**
+     * 返回注解调用 PSI。
+     */
     override val psi: CjCallElement?
         get() = withValidityAssertion { backingPsi }
 
+    /**
+     * 返回注解参数列表。
+     */
     override val arguments: List<CaNamedAnnotationValue>
         get() = withValidityAssertion { backingArguments }
 
+    /**
+     * 返回注解构造器符号。
+     */
     override val constructorSymbol: CaConstructorSymbol?
         get() = withValidityAssertion { backingConstructorSymbol }
 }

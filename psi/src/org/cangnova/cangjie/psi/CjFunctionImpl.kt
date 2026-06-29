@@ -35,6 +35,9 @@ import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.util.IncorrectOperationException
 import org.cangnova.cangjie.psi.stubs.CangJieFunctionStub
 
+/**
+ * 表示 `CjFunctionImpl`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 abstract class CjFunctionImpl<Stub: CangJieFunctionStub<F>,F: CjFunction> :
     CjTypeParameterListOwnerStub<Stub>,
     CjFunction,
@@ -43,15 +46,27 @@ abstract class CjFunctionImpl<Stub: CangJieFunctionStub<F>,F: CjFunction> :
 
     constructor(stub: Stub, nodeType: IStubElementType<*, *>) : super(stub, nodeType)
 
+    /**
+     * 暴露 `valueParameterList`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val valueParameterList: CjParameterList?
         get() = getStubOrPsiChild(CjStubElementTypes.VALUE_PARAMETER_LIST)
 
+    /**
+     * 实现 `toString` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun toString(): String {
         return node.elementType.toString()
     }
 
 //    是否需要推断返回值类型
+    /**
+     * 保存 `isInferReturnType`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     open val isInferReturnType: Boolean get() = typeReference == null
+    /**
+     * 提供 `hasTypeParameterListBeforeFunctionName` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     open fun hasTypeParameterListBeforeFunctionName(): Boolean {
         val stub = stub
         if (stub != null) {
@@ -60,6 +75,9 @@ abstract class CjFunctionImpl<Stub: CangJieFunctionStub<F>,F: CjFunction> :
         return hasTypeParameterListBeforeFunctionNameByTree()
     }
 
+    /**
+     * 执行 `hasTypeParameterListBeforeFunctionNameByTree` 内部辅助逻辑，支撑仓颉 PSI节点的结构解析与访问。
+     */
     private fun hasTypeParameterListBeforeFunctionNameByTree(): Boolean {
         val typeParameterList = typeParameterList ?: return false
         val nameIdentifier = nameIdentifier ?: return true
@@ -67,8 +85,14 @@ abstract class CjFunctionImpl<Stub: CangJieFunctionStub<F>,F: CjFunction> :
     }
 
 
+    /**
+     * 保存 `originalTypeParameterList`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val originalTypeParameterList: CjTypeParameterList? get() = super.typeParameterList
 
+    /**
+     * 暴露 `typeParameterList`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val typeParameterList: CjTypeParameterList?
         get() {
 
@@ -78,6 +102,9 @@ abstract class CjFunctionImpl<Stub: CangJieFunctionStub<F>,F: CjFunction> :
 
             return null
         }
+    /**
+     * 保存 `receiverTypeRefByTree` 的内部状态，供仓颉 PSI实现维护节点缓存或解析上下文。
+     */
     private val receiverTypeRefByTree: CjTypeReference?
         get() {
             val parent = this.getStrictParentOfType<CjExtend>()
@@ -85,6 +112,9 @@ abstract class CjFunctionImpl<Stub: CangJieFunctionStub<F>,F: CjFunction> :
             return parent?.receiverTypeReceiver
         }
 
+    /**
+     * 暴露 `typeReference`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val typeReference: CjTypeReference?
         get() {
             val stub = stub
@@ -104,12 +134,21 @@ abstract class CjFunctionImpl<Stub: CangJieFunctionStub<F>,F: CjFunction> :
             return getTypeReference(this)
         }
 
+    /**
+     * 实现 `setTypeReference` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun setTypeReference(typeRef: CjTypeReference?): CjTypeReference? {
         return setTypeReference(this, valueParameterList, typeRef)
     }
 
+    /**
+     * 暴露 `colon`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val colon: PsiElement?
         get() = findChildByType(CjTokens.COLON)
+    /**
+     * 暴露 `bodyExpression`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val bodyExpression: CjExpression?
         get() {
             val stub = stub
@@ -125,10 +164,19 @@ abstract class CjFunctionImpl<Stub: CangJieFunctionStub<F>,F: CjFunction> :
             return findChildByClass(CjExpression::class.java)
         }
 
+    /**
+     * 暴露 `keyword`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val keyword: PsiElement?
         get() = findChildByType(CjTokens.FUNC_KEYWORD)
+    /**
+     * 暴露 `equalsToken`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val equalsToken: PsiElement?
         get() = findChildByType(CjTokens.EQ)
+    /**
+     * 暴露 `bodyBlockExpression`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val bodyBlockExpression: CjBlockExpression?
         get() {
 
@@ -152,6 +200,9 @@ abstract class CjFunctionImpl<Stub: CangJieFunctionStub<F>,F: CjFunction> :
             return null
         }
 
+    /**
+     * 实现 `hasBlockBody` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun hasBlockBody(): Boolean {
         val stub = stub
         if (stub != null) {
@@ -160,6 +211,9 @@ abstract class CjFunctionImpl<Stub: CangJieFunctionStub<F>,F: CjFunction> :
         return equalsToken == null
     }
 
+    /**
+     * 实现 `hasBody` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun hasBody(): Boolean {
         val stub = stub
         if (stub != null) {
@@ -168,10 +222,16 @@ abstract class CjFunctionImpl<Stub: CangJieFunctionStub<F>,F: CjFunction> :
         return bodyExpression != null
     }
 
+    /**
+     * 实现 `hasDeclaredReturnType` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun hasDeclaredReturnType(): Boolean {
         return false
     }
 
+    /**
+     * 暴露 `valueParameters`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val valueParameters: List<CjParameter>
         get() {
 
@@ -179,18 +239,33 @@ abstract class CjFunctionImpl<Stub: CangJieFunctionStub<F>,F: CjFunction> :
             return list?.parameters ?: emptyList()
         }
 
+    /**
+     * 暴露 `isLocal`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val isLocal: Boolean
         get() {
             val parent = parent
             return !(parent is CjFile || parent is CjAbstractClassBody)
         }
+    /**
+     * 暴露 `isUnsafe`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val isUnsafe
         get() = hasModifier(CjTokens.UNSAFE_KEYWORD)
+    /**
+     * 暴露 `isStatic`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val isStatic: Boolean
         get() = hasModifier(CjTokens.STATIC_KEYWORD)
+    /**
+     * 暴露 `isOperator`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val isOperator: Boolean
         get() = hasModifier(CjTokens.OPERATOR_KEYWORD)
 
+    /**
+     * 暴露 `initializer`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val initializer: CjExpression?
         //    public bool mayHaveContract() {
         get() = PsiTreeUtil.getNextSiblingOfType(

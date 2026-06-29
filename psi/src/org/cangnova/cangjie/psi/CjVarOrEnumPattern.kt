@@ -18,26 +18,47 @@ class CjVarOrEnumPattern : CjCasePattern<CangJieVarOrEnumPatternStub>, PsiNameId
     constructor(node: ASTNode) : super(node)
     constructor(stub: CangJieVarOrEnumPatternStub) : super(stub, CjStubElementTypes.VAR_OR_ENUM_PATTERN)
 
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitPatternByVarOrEnum(this, data)
     }
 
+    /**
+     * 保存 `reference`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val reference: CjSimpleNameExpression?
         get() = findChildByType(CjNodeTypes.REFERENCE_EXPRESSION)
 
+    /**
+     * 保存 `identifier`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val identifier: PsiElement?
         get() = findChildByType(org.cangnova.cangjie.lexer.CjTokens.IDENTIFIER)
 
+    /**
+     * 保存 `nameAsSafeName`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val nameAsSafeName: Name
         get() = reference?.referencedNameAsName ?: Name.identifier(identifier?.text ?: "")
 
+    /**
+     * 实现 `getName` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getName(): String? {
         val stub = stub
         if (stub != null) return stub.name
         return nameAsSafeName.asString().takeIf { it.isNotEmpty() }
     }
 
+    /**
+     * 实现 `getNameIdentifier` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getNameIdentifier(): PsiElement? = identifier
 
+    /**
+     * 实现 `setName` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun setName(name: String): PsiElement = this
 }

@@ -17,8 +17,17 @@ import org.cangnova.cangjie.cfir.diagnostics.PendingDiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.CjSimpleDiagnostic
 import org.cangnova.cangjie.source.AbstractCjSourceElement
 
+/**
+ * 支持延迟提交和 suppress 二次判断的诊断 reporter 实现。
+ */
 class PendingDiagnosticsReporterImpl(
+    /**
+     * 最终接收已提交诊断的 reporter。
+     */
     private val delegate: DiagnosticReporter,
+    /**
+     * 可选的源码元素映射函数，用于把诊断重定向到 offset-only 元素。
+     */
     private val sourceMapper: (AbstractCjSourceElement) -> AbstractCjSourceElement? = { null },
 ) : PendingDiagnosticReporter() {
     private val pendingDiagnosticsByFilePath: MutableMap<String, MutableList<CjDiagnostic>> = mutableMapOf()
@@ -186,11 +195,17 @@ class PendingDiagnosticsReporterImpl(
             pendingList.any { it.severity.isError }
 }
 
+/**
+ * 判断两个诊断是否在名称、消息和首范围上等价。
+ */
 private fun CjDiagnostic.hasSameDiagnosticIdentity(other: CjDiagnostic): Boolean =
     factoryName == other.factoryName &&
         renderMessage() == other.renderMessage() &&
         firstRange.startOffset == other.firstRange.startOffset &&
         firstRange.endOffset == other.firstRange.endOffset
 
+/**
+ * 判断诊断是否是 CFIR DCE 产生的 unused warning。
+ */
 private fun CjDiagnostic.isCfirDceWarning(): Boolean =
     factoryName == "CFIR_UNUSED_VARIABLE" || factoryName == "CFIR_UNUSED_EXPRESSION"

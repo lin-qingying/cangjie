@@ -35,10 +35,18 @@ import org.cangnova.cangjie.source.SuspiciousFakeSourceCheck
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 import org.cangnova.cangjie.utils.exceptions.withPsiEntry
 
+/**
+ * 将 CFIR PSI 诊断转换成 Analysis API 公开诊断对象。
+ */
 internal fun CjPsiDiagnostic.asCaDiagnostic(analysisSession: CaCfirSession): CaDiagnosticWithPsi<*> {
     return CJ_DIAGNOSTIC_CONVERTER.convert(analysisSession, this as CjDiagnostic)
 }
 
+/**
+ * 允许从 fake source element 恢复 PSI 的 CFIR fake element 种类。
+ *
+ * 这些 fake element 对公开 API 来说有稳定的源码锚点，其他 fake source 仍保持不可见。
+ */
 private val allowedFakeElementKinds = setOf(
     CjFakeSourceElementKind.FromUseSiteTarget,
     CjFakeSourceElementKind.PropertyFromParameter,
@@ -52,6 +60,11 @@ private val allowedFakeElementKinds = setOf(
     CjFakeSourceElementKind.PatternBindingVariable,
 )
 
+/**
+ * 从 CFIR 元素恢复允许暴露给 Analysis API 的 PSI。
+ *
+ * 真实 PSI 会直接恢复到当前 compiled view；fake PSI 仅在白名单种类中暴露。
+ */
 @OptIn(SuspiciousFakeSourceCheck::class)
 internal fun CfirElement.getAllowedPsi(preferredProject: Project? = null): PsiElement? = when (val source = source) {
     null -> null
@@ -60,6 +73,9 @@ internal fun CfirElement.getAllowedPsi(preferredProject: Project? = null): PsiEl
     else -> null
 }
 
+/**
+ * 查找 CFIR 元素对应的公开 PSI。
+ */
 internal fun CfirElement.findPsi(preferredProject: Project? = null): PsiElement? = getAllowedPsi(preferredProject)
 
 /**
@@ -101,6 +117,9 @@ internal val CjDeclaration.caSymbolModalityByModifiers: CaSymbolModality?
         else -> null
     }
 
+/**
+ * 按 PSI 结构推导公开符号的声明位置。
+ */
 internal val CjDeclaration.location: CaSymbolLocation
     get() {
         // Note: a declaration can be nested inside a modifier list (for example, in the case of dangling annotations or context parameters)
@@ -223,15 +242,27 @@ internal fun CjCallableDeclaration.psiBasedDefaultCaModality(
         isOverride() -> CaSymbolModality.OPEN
         else -> CaSymbolModality.FINAL
     }
-}
+    }
 
+/**
+ * 判断接口上下文中的 open 模态是否来自接口成员默认规则。
+ */
 context(callable: CjCallableDeclaration)
 internal val CaSymbolModality.isOpenFromInterface: Boolean
     get() = this == CaSymbolModality.OPEN && callable.containingTypeStatement?.isInterface() == true
 
+/**
+ * 从公开 CFIR 符号恢复当前分析范围内的 PSI。
+ */
 internal fun CaCfirSymbol<*>.findPsi(): PsiElement? {
     return cfirSymbol.findPsi(analysisSession.analysisScope, analysisSession.project)
 }
+
+/**
+ * 从 CFIR 符号恢复当前作用域可见的 PSI。
+ *
+ * callable 会先剥离 fake override 或 delegated 包装，再限制结果必须落在给定搜索范围内。
+ */
 fun CfirBasedSymbol<*>.findPsi(scope: GlobalSearchScope, preferredProject: Project? = null): PsiElement? {
     return (if (this is CfirCallableSymbol<*>) {
         cfir.unwrapFakeOverridesOrDelegated().findPsi(preferredProject)

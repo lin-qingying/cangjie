@@ -35,6 +35,9 @@ import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 import com.intellij.lang.ASTNode
 import com.intellij.psi.PsiElement
 
+/**
+ * 表示 `CjValueArgumentList`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjValueArgumentList : CjElementImplStub<CangJiePlaceHolderStub<CjValueArgumentList>> {
     constructor(node: ASTNode) : super(node)
 
@@ -43,25 +46,40 @@ class CjValueArgumentList : CjElementImplStub<CangJiePlaceHolderStub<CjValueArgu
         CjStubElementTypes.VALUE_ARGUMENT_LIST,
     )
 
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitValueArgumentList(this, data)
     }
 
+    /**
+     * 保存 `arguments`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val arguments: List<CjValueArgument>
         get() = getStubOrPsiChildrenAsList(
             CjStubElementTypes.VALUE_ARGUMENT,
         )
 
+    /**
+     * 保存 `rightParenthesis`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val rightParenthesis: PsiElement?
         get() {
             return findChildByType(CjTokens.RPAR)
         }
 
+    /**
+     * 保存 `leftParenthesis`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val leftParenthesis: PsiElement?
         get() {
             return findChildByType(CjTokens.LPAR)
         }
 
+    /**
+     * 提供 `addArgument` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun addArgument(argument: CjValueArgument): CjValueArgument {
         return addItem(
             this,
@@ -70,6 +88,9 @@ class CjValueArgumentList : CjElementImplStub<CangJiePlaceHolderStub<CjValueArgu
         )
     }
 
+    /**
+     * 提供 `addArgumentAfter` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun addArgumentAfter(argument: CjValueArgument, anchor: CjValueArgument?): CjValueArgument {
         return addItemAfter(
             this,
@@ -79,6 +100,9 @@ class CjValueArgumentList : CjElementImplStub<CangJiePlaceHolderStub<CjValueArgu
         )
     }
 
+    /**
+     * 提供 `addArgumentBefore` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun addArgumentBefore(argument: CjValueArgument, anchor: CjValueArgument?): CjValueArgument {
         return addItemBefore(
             this,
@@ -88,15 +112,24 @@ class CjValueArgumentList : CjElementImplStub<CangJiePlaceHolderStub<CjValueArgu
         )
     }
 
+    /**
+     * 提供 `removeArgument` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun removeArgument(argument: CjValueArgument) {
         assert(argument.parent === this)
         removeItem(argument)
     }
 
+    /**
+     * 提供 `removeArgument` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun removeArgument(index: Int) {
         removeArgument(arguments[index])
     }
 
+    /**
+     * 保存 `trailingComma`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val trailingComma: PsiElement?
         get() {
             return getTrailingCommaByClosingElement(rightParenthesis)

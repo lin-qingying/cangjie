@@ -47,10 +47,19 @@ interface CaSubstitutor : CaLifetimeOwner {
      * 用作默认值/占位,显式表达 “当前没有可应用的类型参数映射” 这一公开语义。
      */
     class Empty(
+        /**
+         * 空替换器所属 session 的生命周期 token。
+         */
         override val token: CaLifetimeToken,
     ) : CaSubstitutor {
+        /**
+         * 空替换器总是原样返回输入类型。
+         */
         override fun substitute(type: CaType): CaType = withValidityAssertion { type }
 
+        /**
+         * 空替换器不会产生替换结果。
+         */
         override fun substituteOrNull(type: CaType): CaType? = withValidityAssertion { null }
     }
 }

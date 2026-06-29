@@ -8,9 +8,18 @@ import org.junit.jupiter.api.Test
 import java.io.File
 import java.nio.charset.StandardCharsets
 
+/**
+ * 将本项目生成的 LLVM IR 与预生成官方 LLVM baseline 对比的测试。
+ */
 class OfficialCompilerLlvmIrComparisonTest {
+    /**
+     * 暂时跳过的官方样例名称集合。
+     */
     private val temporarilyUnsupportedSamples = emptySet<String>()
 
+    /**
+     * 样例名到官方 IR 中主函数名的映射。
+     */
     private val sampleToOfficialFunction = mapOf(
         "floatCompare" to "cmpMain",
         "floatCastChain" to "castMain",
@@ -18,6 +27,9 @@ class OfficialCompilerLlvmIrComparisonTest {
         "unsignedChain" to "unsignedMain",
     )
 
+    /**
+     * 官方比较使用的 LLVM IR comparator。
+     */
     private val comparator = LlvmIrParityComparator(
         LlvmIrNormalizationOptions(
             sortTopLevelDeclarations = false,
@@ -26,6 +38,9 @@ class OfficialCompilerLlvmIrComparisonTest {
         ),
     )
 
+    /**
+     * 对比本项目生成 IR 与官方预生成 IR 的 canonical main 函数。
+     */
     @Test
     fun `compare project llvm ir against pre-generated official llvm txt`() {
         val repoRoot = detectRepoRoot() ?: run {
@@ -40,6 +55,9 @@ class OfficialCompilerLlvmIrComparisonTest {
         compareAgainstOfficialRoot(testDataRoot, officialRoot)
     }
 
+    /**
+     * 验证优化级官方 baseline 目录覆盖所有 CHIR parity fixture。
+     */
     @Test
     fun `optimized official baseline sets should cover all fixtures`() {
         val repoRoot = detectRepoRoot() ?: run {
@@ -80,6 +98,9 @@ class OfficialCompilerLlvmIrComparisonTest {
         }
     }
 
+    /**
+     * 在指定官方 baseline 根目录下逐文件执行 IR 对比。
+     */
     private fun compareAgainstOfficialRoot(testDataRoot: File, officialRoot: File) {
         val runner = Runner()
         var compared = 0
@@ -152,15 +173,39 @@ class OfficialCompilerLlvmIrComparisonTest {
         require(compared > 0) { "no official baseline files under $officialRoot" }
     }
 
+    /**
+     * 从 LLVM IR 中抽取出的 canonical main 函数信息。
+     */
     private data class CanonicalMainFunction(
+        /**
+         * 函数返回类型。
+         */
         val returnType: String,
+        /**
+         * 函数参数类型列表。
+         */
         val parameterTypes: List<String>,
+        /**
+         * canonical return 指令签名集合。
+         */
         val returnSignatures: Set<String>,
+        /**
+         * canonical 化后的函数体文本。
+         */
         val canonicalText: String,
+        /**
+         * 函数体指令 opcode 序列。
+         */
         val opcodeSequence: List<String>,
+        /**
+         * 函数体指令文本序列。
+         */
         val instructionSequence: List<String>,
     )
 
+    /**
+     * 从 LLVM IR 中提取指定 main 函数的 canonical 表示。
+     */
     private fun extractCanonicalFunction(
         ir: String,
         preferredName: String,
@@ -191,6 +236,9 @@ class OfficialCompilerLlvmIrComparisonTest {
         )
     }
 
+    /**
+     * 在正则匹配结果中查找指定函数名的无参函数。
+     */
     private fun findMatchingFunction(matches: List<MatchResult>, functionName: String): MatchResult? {
         val signatureName = "<$functionName>"
         return matches.firstOrNull { match ->
@@ -206,6 +254,9 @@ class OfficialCompilerLlvmIrComparisonTest {
         }
     }
 
+    /**
+     * 格式化 opcode 计数和首个 opcode 序列差异摘要。
+     */
     private fun formatOpcodeDiffSummary(expected: CanonicalMainFunction, actual: CanonicalMainFunction): String {
         val expectedCounts = expected.opcodeSequence.groupingBy { it }.eachCount()
         val actualCounts = actual.opcodeSequence.groupingBy { it }.eachCount()
@@ -240,8 +291,14 @@ class OfficialCompilerLlvmIrComparisonTest {
         }.trimEnd()
     }
 
+    /**
+     * opcode 序列首个差异位置。
+     */
     private data class OpcodeMismatch(val index: Int, val expected: String?, val actual: String?)
 
+    /**
+     * 查找两个 opcode 序列的首个差异。
+     */
     private fun findFirstSequenceMismatch(expected: List<String>, actual: List<String>): OpcodeMismatch? {
         val max = maxOf(expected.size, actual.size)
         for (i in 0 until max) {
@@ -252,6 +309,9 @@ class OfficialCompilerLlvmIrComparisonTest {
         return null
     }
 
+    /**
+     * 格式化首个 opcode 差异附近的指令窗口。
+     */
     private fun formatInstructionWindowSummary(expected: CanonicalMainFunction, actual: CanonicalMainFunction): String {
         val center = findFirstSequenceMismatch(expected.opcodeSequence, actual.opcodeSequence)?.index
             ?: findFirstSequenceMismatch(expected.instructionSequence, actual.instructionSequence)?.index
@@ -273,6 +333,9 @@ class OfficialCompilerLlvmIrComparisonTest {
         }.trimEnd()
     }
 
+    /**
+     * 格式化指定区间的指令窗口行。
+     */
     private fun formatWindowLines(lines: List<String>, start: Int, endExclusive: Int): String {
         if (start >= endExclusive) return "<empty>"
         return (start until endExclusive).joinToString("\n") { index ->
@@ -281,6 +344,9 @@ class OfficialCompilerLlvmIrComparisonTest {
         }
     }
 
+    /**
+     * 从 LLVM 函数参数文本中抽取参数类型列表。
+     */
     private fun parseParameterTypes(rawParameters: String): List<String> {
         val text = rawParameters.trim()
         if (text.isEmpty()) return emptyList()
@@ -292,6 +358,9 @@ class OfficialCompilerLlvmIrComparisonTest {
             }
     }
 
+    /**
+     * 校验外部互操作相关样例必须保留的 IR 模式。
+     */
     private fun assertExternalInteropInvariants(sample: String, projectIr: String) {
         when (sample) {
             "importedCall" -> {
@@ -335,10 +404,16 @@ class OfficialCompilerLlvmIrComparisonTest {
         }
     }
 
+    /**
+     * 断言文本匹配指定正则模式。
+     */
     private fun assertPattern(text: String, pattern: Regex, message: String) {
         assertTrue(pattern.containsMatchIn(text), message)
     }
 
+    /**
+     * 将 main 函数体规范化为可与官方 baseline 比较的行序列。
+     */
     private fun canonicalizeMainBodyLines(functionBody: String): List<String> {
         val literalByPointer = mutableMapOf<String, String>()
         val literalByRegister = mutableMapOf<String, String>()
@@ -390,6 +465,9 @@ class OfficialCompilerLlvmIrComparisonTest {
         return canonical
     }
 
+    /**
+     * 从原始函数体中抽取 return 指令签名。
+     */
     private fun extractReturnSignatures(functionBody: String): List<String> {
         return functionBody.lineSequence()
             .map { it.trim() }
@@ -404,10 +482,16 @@ class OfficialCompilerLlvmIrComparisonTest {
             .toList()
     }
 
+    /**
+     * 从 canonical 行中抽取 return 指令签名。
+     */
     private fun extractCanonicalReturnSignatures(canonicalLines: List<String>): List<String> {
         return canonicalLines.filter { it.startsWith("ret ") }
     }
 
+    /**
+     * 抽取函数体中所有指令 opcode。
+     */
     private fun extractOpcodeSequence(functionBody: String): List<String> {
         return functionBody.lineSequence()
             .map { it.trim() }
@@ -423,6 +507,9 @@ class OfficialCompilerLlvmIrComparisonTest {
             .toList()
     }
 
+    /**
+     * 抽取函数体中所有指令文本。
+     */
     private fun extractInstructionSequence(functionBody: String): List<String> {
         return functionBody.lineSequence()
             .map { it.trim() }
@@ -434,6 +521,9 @@ class OfficialCompilerLlvmIrComparisonTest {
             .toList()
     }
 
+    /**
+     * 从当前工作目录向上查找仓库根目录。
+     */
     private fun detectRepoRoot(): File? {
         var current = File(System.getProperty("user.dir")).absoluteFile
         while (true) {
@@ -443,7 +533,13 @@ class OfficialCompilerLlvmIrComparisonTest {
         }
     }
 
+    /**
+     * 测试内部复用 `AbstractCodegenParityTestCase` 生成 fixture IR 的 runner。
+     */
     private class Runner : AbstractCodegenParityTestCase() {
+        /**
+         * 直接从 fixture 文本生成 LLVM IR。
+         */
         fun generateIrFromFixtureText(fixtureText: String): String = generateFixtureIr(fixtureText)
     }
 }

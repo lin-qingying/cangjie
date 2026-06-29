@@ -39,6 +39,9 @@ class CangJieMatchConditionStubImpl(
     parent: StubElement<out PsiElement>?,
 ) : CangJieStubBaseImpl<CjMatchConditionWithExpression>(parent, CjStubElementTypes.MATCH_CONDITION),
     CangJieMatchConditionStub {
+    /**
+     * 实现 `copyInto` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun copyInto(newParent: StubElement<*>?): CangJieMatchConditionStubImpl = CangJieMatchConditionStubImpl(
         parent = newParent,
     )

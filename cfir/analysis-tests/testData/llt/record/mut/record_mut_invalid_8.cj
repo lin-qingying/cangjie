@@ -10,6 +10,6 @@ struct R1 {
 
 main() {
     let obj = R1()
-    <!IMMUTABLE_FUNCTION_CANNOT_ACCESS_MUTABLE_FUNCTION!>obj.foo()<!>
+    obj.<!IMMUTABLE_FUNCTION_CANNOT_ACCESS_MUTABLE_FUNCTION!>foo<!>()
     return 0
 }

@@ -38,6 +38,12 @@ class CangJieReferencesSearchExecutor :
     QueryExecutorBase<PsiReference, ReferencesSearch.SearchParameters>(true),
     DumbAware {
 
+    /**
+     * 执行仓颉 references 搜索。
+     *
+     * Local scope 直接遍历给定 PSI roots；Global scope 从项目结构 source files 出发，
+     * 并在文件文本和 reference 名称层面先裁剪，再做解析目标复核。
+     */
     override fun processQuery(
         queryParameters: ReferencesSearch.SearchParameters,
         consumer: Processor<in PsiReference>,
@@ -79,6 +85,9 @@ class CangJieReferencesSearchExecutor :
         }
     }
 
+    /**
+     * 计算实际搜索作用域。
+     */
     private fun effectiveScope(
         queryParameters: ReferencesSearch.SearchParameters,
         target: PsiElement,
@@ -91,6 +100,9 @@ class CangJieReferencesSearchExecutor :
         }
     }
 
+    /**
+     * 为局部搜索根计算包含 import alias 的搜索名集合。
+     */
     private fun localSearchNames(
         root: PsiElement,
         target: PsiElement,
@@ -100,6 +112,9 @@ class CangJieReferencesSearchExecutor :
         return CangJieReferenceSearchSupport.searchNamesForFile(file, target, baseSearchNames)
     }
 
+    /**
+     * 处理 project structure 暴露的单个 source item。
+     */
     private fun processSourceItem(
         item: PsiFileSystemItem,
         psiManager: PsiManager,
@@ -147,6 +162,9 @@ class CangJieReferencesSearchExecutor :
         }
     }
 
+    /**
+     * 递归遍历 PSI 子树并向 consumer 输出匹配目标的 references。
+     */
     private fun processElementTree(
         element: PsiElement,
         target: PsiElement,
@@ -172,6 +190,9 @@ class CangJieReferencesSearchExecutor :
         return true
     }
 
+    /**
+     * 通过文件文本快速判断文件中是否可能出现任一搜索名。
+     */
     private fun CjFile.mayContainAnyName(names: Set<String>): Boolean {
         return names.any(text::contains)
     }

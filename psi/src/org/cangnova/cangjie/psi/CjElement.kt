@@ -176,8 +176,17 @@ fun <E : CjElement> E.requireCurrentCjElement(): E {
     }
 }
 
+/**
+ * 表示 `CjCompiledStubPathSegment`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 private data class CjCompiledStubPathSegment(
+    /**
+     * 保存 `childIndex`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val childIndex: Int,
+    /**
+     * 保存 `stubType`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val stubType: Any?,
 )
 
@@ -194,6 +203,9 @@ private fun CjElement.restoreCurrentCompiledStubPsi(currentFile: CjFile): CjElem
     return currentFile.findCompiledPsiByStubPath(pathFromFile)
 }
 
+/**
+ * 执行 `StubElement` 内部辅助逻辑，支撑仓颉 PSI节点的结构解析与访问。
+ */
 private fun StubElement<*>.buildCompiledStubPathFromFile(): List<CjCompiledStubPathSegment>? {
     val path = ArrayDeque<CjCompiledStubPathSegment>()
     var current: StubElement<*> = this
@@ -218,6 +230,9 @@ private fun StubElement<*>.buildCompiledStubPathFromFile(): List<CjCompiledStubP
     }
 }
 
+/**
+ * 执行 `findCompiledPsiByStubPath` 内部辅助逻辑，支撑仓颉 PSI节点的结构解析与访问。
+ */
 private fun CjFile.findCompiledPsiByStubPath(path: List<CjCompiledStubPathSegment>): CjElement? {
     var currentStub: StubElement<*> = stub ?: calcStubTree().root
 
@@ -342,10 +357,16 @@ open class CjElementImpl(node: ASTNode) : ASTWrapperPsiElement(node), CjElement 
         return CangJieReferenceProvidersService.getReferencesFromProviders(this)
     }
 
+    /**
+     * 实现 `getOwnReferences` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getOwnReferences(): Collection<PsiSymbolReference> {
         return cangJieOwnReferences()
     }
 
+    /**
+     * 实现 `getOwnDeclarations` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getOwnDeclarations(): Collection<PsiSymbolDeclaration> {
         return cangJieOwnDeclarations()
     }

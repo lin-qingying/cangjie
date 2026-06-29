@@ -35,49 +35,57 @@ import org.cangnova.cangjie.psi.CjBindingPattern
 import org.cangnova.cangjie.psi.CjPatternVariable
 
 /**
- * This class represents the resolver for each [CfirResolvePhase].
+ * 单个 [CfirResolvePhase] 的低阶目标解析器基类。
  *
- * Usually such the resolver extends the corresponding compiler phase transformer or delegates to it.
+ * 各阶段实现通常继承或委托对应的编译器阶段 transformer，但 low-level 解析必须按声明级锁粒度执行变更。
+ * 与普通编译器 transformer 最大的差异是：不能在 class 锁下直接转换成员声明，而必须拿到成员自己的声明锁，避免并发修改和
+ * lazy resolve 契约冲突。
  *
- * The main difference with original compiler transformers is that we can transform declarations
- * only under the lock of the declaration (see [LLCfirLockProvider] for locks implementation).
- * E.g., to avoid [contract violations][org.cangnova.cangjie.analysis.low.level.api.cfir.lazy.resolve.LLCfirLazyResolveContractChecker]
- * we cannot transform class member declaration under the class lock – we have to take the corresponding declaration lock
- * to avoid concurrent issues.
+ * 懒解析还需要显式维护解析顺序，因为依赖声明或外层声明并不一定已经先于当前目标完成解析。[resolveDependencies] 描述通用声明依赖，
+ * 每个 [LLCfirResolveTarget] 也可以通过 visitor 路径定义阶段特定规则。
  *
- * So, at least we have a different implementation for transformations of such declarations as [CfirFile] and [CfirClass].
- *
- * Due to lazy resolution, we have to maintain the resolution order explicitly in some cases as we are not guaranteed by default that all
- * dependencies or outer declarations are resolved before the target one.
- * We have [resolveDependencies] method which describes common dependencies between declarations.
- * Also, each [LLCfirResolveTarget] can define phase-specific rules.
- *
- * Implementations:
- * - [SUPER_TYPES][CfirResolvePhase.SUPER_TYPES] – [LLCfirSuperTypeTargetResolver]
- * - [TYPES][CfirResolvePhase.TYPES] – [LLCfirTypeTargetResolver]
- * - [STATUS][CfirResolvePhase.STATUS] – [LLCfirStatusTargetResolver]
- * - [EXTENSIONS][CfirResolvePhase.EXTENSIONS] – [LLCfirExtensionsTargetResolver]
- * - [IMPLICIT_TYPES][CfirResolvePhase.IMPLICIT_TYPES] – [LLCfirImplicitBodyTargetResolver]
- * - [BODY_RESOLVE][CfirResolvePhase.BODY_RESOLVE] – [LLCfirBodyTargetResolver]
+ * 支持的阶段实现包括 SUPER_TYPES、TYPES、STATUS、EXTENSIONS、IMPLICIT_TYPES 和 BODY_RESOLVE。
  *
  * @see LLCfirLockProvider
  * @see CfirResolvePhase
  */
 internal sealed class LLCfirTargetResolver(
+    /**
+     * 当前 resolver 需要解析的 low-level 目标。
+     */
     protected val resolveTarget: LLCfirResolveTarget,
+    /**
+     * 当前 resolver 负责推进到的 CFIR 解析阶段。
+     */
     val resolverPhase: CfirResolvePhase,
 ) : LLCfirResolveTargetVisitor {
+    /**
+     * 当前解析目标所属的 low-level CFIR 会话。
+     */
     val resolveTargetSession: LLCfirSession get() = resolveTarget.session
+    /**
+     * 当前会话的作用域会话。
+     */
     val resolveTargetScopeSession: ScopeSession get() = resolveTargetSession.getScopeSession()
+    /**
+     * 当前会话的声明锁提供器。
+     */
     private val lockProvider: LLCfirLockProvider get() = LLCfirGlobalResolveComponents.getInstance(resolveTargetSession).lockProvider
+    /**
+     * 当前阶段是否允许跳转式锁解析同一阶段依赖。
+     */
     private val requiresJumpingLock: Boolean get() = resolverPhase.isItAllowedToCallLazyResolveToTheSamePhase
 
+    /**
+     * 解析 visitor 当前经过的外围声明栈。
+     */
     val containingDeclarations: List<CfirDeclaration>
         field = mutableListOf<CfirDeclaration>()
 
     /**
-     * @param context used as a context in the case of exception
-     * @return the last class-like declaration from [containingDeclarations]
+     * 返回 [containingDeclarations] 中最近的 class-like 声明。
+     *
+     * @param context 异常附件中使用的上下文声明。
      */
     fun containingClassLike(context: CfirDeclaration): CfirClassLikeDeclaration {
         val containingDeclaration = containingDeclarations.lastOrNull() ?: errorWithAttachment("Containing declaration is not found") {
@@ -111,6 +119,9 @@ internal sealed class LLCfirTargetResolver(
         return containingDeclarations.lastOrNull { it is CfirClassLikeDeclaration } as? CfirClassLikeDeclaration
     }
 
+    /**
+     * 在 [declaration] 作为当前外围声明的上下文中执行 [action]。
+     */
     protected inline fun withContainingDeclaration(declaration: CfirDeclaration, action: () -> Unit) {
         containingDeclarations += declaration
         try {
@@ -125,21 +136,20 @@ internal sealed class LLCfirTargetResolver(
     }
 
     /**
-     * Dependency target resolution can be skipped to optimize the resolution if this phase does not require any dependencies.
+     * 当前阶段是否可以跳过依赖目标解析步骤。
      *
-     * For instance, [LLCfirBodyTargetResolver] skips it as no one should depend on body resolution of another declaration.
+     * BODY_RESOLVE 等阶段不会被其他声明依赖，可以跳过该步骤以减少额外 lazy resolve。
      *
-     * @return **true** if [resolveDependencies] step should be skipped
+     * @return 如果应跳过 [resolveDependencies] 则返回 `true`。
      *
      * @see resolveDependencies
      */
     open val skipDependencyTargetResolutionStep: Boolean get() = false
 
     /**
-     * Requests the resolution for dependencies to avoid race in the case of CFIR instance sharing.
-     * Will be executed before resolution without a lock.
+     * 解析 [target] 共享 CFIR 实例所依赖的声明，避免并发解析同一份类型或注解状态。
      *
-     * @see skipDependencyTargetResolutionStep
+     * 该步骤在无锁解析之前执行；阶段不需要依赖解析时可通过 [skipDependencyTargetResolutionStep] 跳过。
      */
     private fun resolveDependencies(target: CfirElementWithResolveState) {
         if (skipDependencyTargetResolutionStep) return
@@ -169,6 +179,9 @@ internal sealed class LLCfirTargetResolver(
         }
     }
 
+    /**
+     * 以 [cfirFile] 为当前文件容器访问解析目标。
+     */
     final override fun withFile(cfirFile: CfirFile, action: () -> Unit) {
         withContainingDeclaration(cfirFile) {
             @Suppress("DEPRECATION_ERROR")
@@ -176,25 +189,40 @@ internal sealed class LLCfirTargetResolver(
         }
     }
 
+    /**
+     * 在文件容器上下文中执行 [action]，供阶段子类覆写。
+     */
     @Deprecated("Should never be called directly, only for override purposes, please use withFile", level = DeprecationLevel.ERROR)
     protected open fun withContainingFile(cfirFile: CfirFile, action: () -> Unit) {
         action()
     }
 
+    /**
+     * 在 class-like 容器上下文中执行 [action]，供阶段子类覆写。
+     */
     @Deprecated("Should never be called directly, only for override purposes, please use withClassLike", level = DeprecationLevel.ERROR)
     protected open fun withContainingClassLike(cfirClassLike: CfirClassLikeDeclaration, action: () -> Unit) {
         action()
     }
 
+    /**
+     * 在 extend 容器上下文中执行 [action]，供阶段子类覆写。
+     */
     @Deprecated("Should never be called directly, only for override purposes, please use withExtend", level = DeprecationLevel.ERROR)
     protected open fun withContainingExtend(cfirExtend: CfirExtend, action: () -> Unit) {
         action()
     }
 
+    /**
+     * 以 [cfirClass] 作为 class-like 容器访问解析目标。
+     */
     final override fun withClass(cfirClass: CfirClass, action: () -> Unit) {
         withClassLike(cfirClass, action)
     }
 
+    /**
+     * 以 [cfirClassLike] 作为当前 class-like 容器访问解析目标。
+     */
     final override fun withClassLike(cfirClassLike: CfirClassLikeDeclaration, action: () -> Unit) {
         withContainingDeclaration(cfirClassLike) {
             @Suppress("DEPRECATION_ERROR")
@@ -202,6 +230,9 @@ internal sealed class LLCfirTargetResolver(
         }
     }
 
+    /**
+     * 兼容旧调用点的 class 容器入口。
+     */
     @Deprecated("Use withClassLike instead", level = DeprecationLevel.HIDDEN)
     protected fun withContainingClass(cfirClass: CfirClass, action: () -> Unit) {
         withContainingDeclaration(cfirClass) {
@@ -210,6 +241,9 @@ internal sealed class LLCfirTargetResolver(
         }
     }
 
+    /**
+     * 以 [cfirExtend] 作为当前 extend 容器访问解析目标。
+     */
     final override fun withExtend(cfirExtend: CfirExtend, action: () -> Unit) {
         withContainingDeclaration(cfirExtend) {
             @Suppress("DEPRECATION_ERROR")
@@ -217,20 +251,18 @@ internal sealed class LLCfirTargetResolver(
         }
     }
 
+    /**
+     * 校验阶段子类内部使用的 transformer 与 [resolverPhase] 是否一致。
+     */
     protected open fun checkResolveConsistency() {}
 
     /**
-     * This method executes **not under the lock** of [target].
-     * Any unsafe reads from [target] declaration have to be done under [withReadLock].
-     * [performCustomResolveUnderLock] have to be used for modifications.
+     * 在 [target] 的目标锁之外执行阶段特定的预解析。
      *
-     * This method can be useful to resolve some dependencies (like [resolveDependencies] in general),
-     * but with some phase-specific rules.
+     * 如果需要不加目标锁地解析依赖或提前解析外围结构，可以覆写该方法。任何不安全读取必须通过 [withReadLock] 完成，
+     * 对 [target] 的修改必须通过 [performCustomResolveUnderLock] 完成。
      *
-     * For instance, to pre-resolve [CfirClass] members before the class itself as it is required
-     * to build the [CFG][org.cangnova.cangjie.cfir.resolve.dfa.cfg.ControlFlowGraph].
-     *
-     * @return **true** if [performCustomResolveUnderLock] has been called
+     * @return 如果方法内部已经调用 [performCustomResolveUnderLock] 完成目标解析，则返回 `true`。
      *
      * @see withReadLock
      * @see performCustomResolveUnderLock
@@ -238,25 +270,29 @@ internal sealed class LLCfirTargetResolver(
     protected open fun doResolveWithoutLock(target: CfirElementWithResolveState): Boolean = false
 
     /**
-     * This method executes **under the lock** of [target].
+     * 在 [target] 的目标锁内执行真实懒解析。
      */
     protected abstract fun doLazyResolveUnderLock(target: CfirElementWithResolveState)
 
     /**
-     * Executes the resolution.
+     * 执行当前 designation 的解析。
      */
     fun resolveDesignation() {
         checkResolveConsistency()
         resolveTarget.visit(this)
     }
 
+    /**
+     * 对 visitor 当前命中的 [element] 执行解析。
+     */
     final override fun performAction(element: CfirElementWithResolveState) {
         performResolve(element)
     }
 
     /**
-     * Performs the resolution of [target].
-     * The [target] element have to be at least in [resolverPhase].[previous][CfirResolvePhase.previous] phase.
+     * 执行 [target] 的阶段解析。
+     *
+     * [target] 必须至少已经达到 [resolverPhase] 的前一阶段。
      *
      * @see resolveDependencies
      * @see doResolveWithoutLock
@@ -300,11 +336,11 @@ internal sealed class LLCfirTargetResolver(
     }
 
     /**
-     * Will be executed in the case of detected cycle between elements during jumping resolve.
+     * 在 jumping resolve 检测到元素间循环时调用。
      *
-     * **There is no guaranties that [target] is guarded by the lock of the current thread**
+     * 不能假定 [target] 已由当前线程持有锁保护。
      *
-     * @param target an element with detected cycle
+     * @param target 检测到循环的目标元素。
      *
      * @see LLCfirLockProvider.withJumpingLock
      */
@@ -313,9 +349,9 @@ internal sealed class LLCfirTargetResolver(
     }
 
     /**
-     * Execute [action] under the write lock in the context of [target].
+     * 在 [target] 的写锁下执行 [action]。
      *
-     * Allowed only for non-jumping phases.
+     * 该方法只允许非 jumping 阶段使用。
      *
      * @see requiresJumpingLock
      */
@@ -331,6 +367,9 @@ internal sealed class LLCfirTargetResolver(
         }
     }
 
+    /**
+     * 将 [target] 内部声明内容推进到 [resolverPhase]。
+     */
     private fun updatePhaseForDeclarationInternals(target: CfirElementWithResolveState) {
         LLCfirPhaseUpdater.updateDeclarationContent(
             target = target,
@@ -339,15 +378,18 @@ internal sealed class LLCfirTargetResolver(
     }
 
     /**
-     * Execute action under a declaration lock.
-     * [action] will be executed only once in case of successful lock.
-     * If some another thread is already resolved [target] declaration to [resolverPhase] then [action] won't be executed.
+     * 在 [target] 的声明读锁下执行 [action]。
+     *
+     * 如果其他线程已经把 [target] 解析到 [resolverPhase]，则 [action] 不会再次执行。
      */
     protected inline fun withReadLock(target: CfirElementWithResolveState, action: () -> Unit) {
         checkThatResolvedAtLeastToPreviousPhase(target)
         lockProvider.withReadLock(target, resolverPhase, action)
     }
 
+    /**
+     * 校验 [target] 至少已经达到当前阶段的前一阶段。
+     */
     private fun checkThatResolvedAtLeastToPreviousPhase(target: CfirElementWithResolveState) {
         when (val previousPhase = resolverPhase.previous) {
             CfirResolvePhase.IMPORTS -> {}
@@ -358,6 +400,11 @@ internal sealed class LLCfirTargetResolver(
     }
 }
 
+/**
+ * 返回属性对应的主构造参数。
+ *
+ * 主构造参数和属性会共享部分类型状态，懒解析属性前需要先推进该参数。
+ */
 private val CfirProperty.correspondingValueParameterFromPrimaryConstructor: CfirValueParameter?
     get() {
         val ownerClassLike = symbol.callableId.classId?.let(moduleData.session.symbolProvider::getClassLikeSymbolByClassId)?.cfir as? CfirClassLikeDeclaration
@@ -367,6 +414,11 @@ private val CfirProperty.correspondingValueParameterFromPrimaryConstructor: Cfir
         return primaryConstructor.valueParameters.firstOrNull { it.correspondingProperty === this }
     }
 
+/**
+ * 返回 pattern binding 变量所属的外层 pattern 变量。
+ *
+ * pattern binding 变量的隐式类型状态由所属 pattern 变量承载，解析前需要先推进 owner。
+ */
 private val CfirPatternBindingVariable.owningPatternVariable: CfirPatternVariable?
     get() {
         val containingFile = moduleData.session.cfirProvider.getContainingFile(symbol) ?: return null

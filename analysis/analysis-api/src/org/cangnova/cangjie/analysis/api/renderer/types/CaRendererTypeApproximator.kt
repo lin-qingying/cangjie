@@ -21,6 +21,9 @@ fun interface CaRendererTypeApproximator {
      * 适用于内部诊断/debug 等需要看见真实类型的场景。
      */
     object NO_APPROXIMATION : CaRendererTypeApproximator {
+        /**
+         * 直接返回输入类型，不执行任何近似化。
+         */
         override fun approximateType(analysisSession: CaSession, type: CaType): CaType {
             return type
         }

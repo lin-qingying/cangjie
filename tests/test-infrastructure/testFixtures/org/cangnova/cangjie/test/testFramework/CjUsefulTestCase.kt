@@ -2,6 +2,9 @@ package org.cangnova.cangjie.test.testFramework
 
 import junit.framework.TestCase
 
+/**
+ * 表示 `CjUsefulTestCase`，承载测试基础设施中的配置数据、测试产物或处理步骤。
+ */
 open class CjUsefulTestCase : TestCase() {
     companion object {
         init {

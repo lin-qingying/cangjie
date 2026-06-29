@@ -1,6 +1,16 @@
 package org.cangnova.cangjie.utils
 
+/**
+ * 面向图结构的广度优先遍历工具。
+ *
+ * 该对象与 [DFS] 共用邻接点和访问标记接口，便于调用方在 BFS 与 DFS 之间切换遍历策略。
+ */
 object BFS {
+    /**
+     * 从多个起点执行广度优先遍历。
+     *
+     * [visited] 控制去重策略，[handler] 控制节点访问和最终结果聚合。
+     */
     fun <N, R> bfs(
         nodes: Collection<N>,
         neighbors: DFS.Neighbors<N>,
@@ -25,12 +35,18 @@ object BFS {
         return handler.result()
     }
 
+    /**
+     * 使用默认 visited 集合从多个起点执行广度优先遍历。
+     */
     fun <N, R> bfs(
         nodes: Collection<N>,
         neighbors: DFS.Neighbors<N>,
         handler: NodeHandler<N, R>,
     ): R = bfs(nodes, neighbors, DFS.VisitedWithSet(), handler)
 
+    /**
+     * 从单个起点执行广度优先遍历，并使用调用方提供的 visited 策略。
+     */
     fun <N, R> bfsFromNode(
         node: N,
         neighbors: DFS.Neighbors<N>,
@@ -38,6 +54,9 @@ object BFS {
         handler: NodeHandler<N, R>,
     ): R = bfs(listOf(node), neighbors, visited, handler)
 
+    /**
+     * 从单个起点执行广度优先遍历，并使用默认 visited 集合。
+     */
     fun <N, R> bfsFromNode(
         node: N,
         neighbors: DFS.Neighbors<N>,
@@ -75,13 +94,27 @@ object BFS {
     // Handler interfaces / base classes
     // -------------------------------------------------------------------------
 
+    /**
+     * BFS 节点访问回调。
+     *
+     * 调用方通过该接口决定是否继续遍历，并在遍历完成后返回聚合结果。
+     */
     interface NodeHandler<N, R> {
         /** 访问节点时调用；返回 false 则立即终止整个遍历。 */
         fun onVisit(current: N): Boolean
+        /**
+         * 返回遍历完成后的聚合结果。
+         */
         fun result(): R
     }
 
+    /**
+     * BFS 节点访问回调的默认基类。
+     */
     abstract class AbstractNodeHandler<N, R> : NodeHandler<N, R> {
+        /**
+         * 默认访问所有节点并继续遍历。
+         */
         override fun onVisit(current: N): Boolean = true
     }
 }
@@ -90,6 +123,9 @@ object BFS {
 // Cycle detection — shared between DFS and BFS callers
 // =============================================================================
 
+/**
+ * 图环检测与带环感知拓扑排序工具。
+ */
 object CycleDetector {
 
     // -------------------------------------------------------------------------
@@ -238,12 +274,38 @@ object CycleDetector {
     // Supporting types
     // -------------------------------------------------------------------------
 
+    /**
+     * DFS 三色标记法中的访问状态。
+     */
     private enum class Color { GRAY, BLACK }
 
+    /**
+     * Kahn 拓扑排序的结果。
+     */
     sealed class TopologicalResult<N> {
-        data class Success<N>(val order: List<N>) : TopologicalResult<N>()
-        data class HasCycle<N>(val cycleNodes: Set<N>) : TopologicalResult<N>()
+        /**
+         * 拓扑排序成功，包含排好序的节点列表。
+         */
+        data class Success<N>(
+            /**
+             * 拓扑排序后的节点顺序。
+             */
+            val order: List<N>,
+        ) : TopologicalResult<N>()
+
+        /**
+         * 拓扑排序失败，图中存在环。
+         */
+        data class HasCycle<N>(
+            /**
+             * 入度无法归零的环相关节点集合。
+             */
+            val cycleNodes: Set<N>,
+        ) : TopologicalResult<N>()
     }
 
+    /**
+     * 图中存在环时抛出的异常。
+     */
     class CycleException(message: String) : IllegalStateException(message)
 }

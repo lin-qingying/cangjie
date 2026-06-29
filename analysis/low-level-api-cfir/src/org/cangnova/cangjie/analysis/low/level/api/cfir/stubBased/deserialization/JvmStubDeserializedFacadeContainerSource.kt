@@ -13,10 +13,29 @@ import org.cangnova.cangjie.serialization.deserialization.descriptors.PreRelease
  * 不再暴露 JVM internal name。
  */
 internal class PackageFacadeDeserializedContainerSource(
+    /**
+     * package facade 所属包名。
+     */
     val packageFqName: FqName,
+
+    /**
+     * facade 声明全限定名。
+     */
     val facadeFqName: FqName,
+
+    /**
+     * 当前 part 简名；单文件 facade 或无法恢复时可为 `null`。
+     */
     val partSimpleName: String?,
+
+    /**
+     * facade 下所有 part 简名。
+     */
     val partSimpleNames: List<String>,
+
+    /**
+     * 当前 facade 是否代表 multifile facade。
+     */
     val isMultifile: Boolean,
     binaryFilePath: String?,
 ) : DeserializedContainerSource(

@@ -11,9 +11,20 @@ import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.psi.stubs.impl.CangJieFileStubImpl
 import org.junit.jupiter.api.Assertions.assertEquals
 
+/**
+ * compiled `.cjo` stub 测试共用引擎。
+ *
+ * 该对象负责从二进制直接计算 file stub、校验反编译 PSI stub 与二进制 stub 一致，并渲染 stub 树。
+ */
 internal object CjoCompiledStubsTestEngine {
+    /**
+     * golden 中用于标记已知临时 stub 差异的固定文本。
+     */
     const val INCONSISTENT_TREE: String = "INCONSISTENT_TREE"
 
+    /**
+     * 从 compiled PSI 文件对应的 `.cjo` 二进制直接计算文件 stub。
+     */
     fun compute(file: CjFile): CangJieFileStubImpl {
         requireIsInstance<CjDecompiledFile>(file)
         val virtualFile = file.viewProvider.virtualFile
@@ -28,6 +39,9 @@ internal object CjoCompiledStubsTestEngine {
         return fileStub
     }
 
+    /**
+     * 校验反编译 PSI 计算出的 stub 树与二进制直接计算出的 stub 树一致。
+     */
     fun validate(file: CjFile, fileStub: CangJieFileStubImpl) {
         requireIsInstance<CjDecompiledFile>(file)
         val decompiledStub = try {
@@ -56,10 +70,16 @@ internal object CjoCompiledStubsTestEngine {
         )
     }
 
+    /**
+     * 将文件 stub 树渲染为稳定的缩进文本。
+     */
     fun render(fileStub: CangJieFileStubImpl): String = buildString {
         renderStub(fileStub, indent = "")
     }.trimEnd()
 
+    /**
+     * 递归渲染单个 stub 节点及其子节点。
+     */
     private fun StringBuilder.renderStub(stub: StubElement<*>, indent: String) {
         append(indent)
         appendLine(stub.toString())

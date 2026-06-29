@@ -41,12 +41,18 @@ import org.jetbrains.annotations.NonNls
 import java.io.IOException
 import org.cangnova.cangjie.name.*
 
+/**
+ * 表示 `CjMacroElementType`，承载PSI Stub中的语法节点、索引桩或辅助模型。
+ */
 class CjMacroElementType(debugName: String) :
     CjStubElementType<CangJieMacroStub, CjMacroDeclaration>(
         debugName,
         CjMacroDeclaration::class.java,
         CangJieMacroStub::class.java,
     ) {
+    /**
+     * 实现 `createStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createStub(psi: CjMacroDeclaration, parentStub: StubElement<out PsiElement?>): CangJieMacroStub {
         val isTopLevel = psi.parent is CjFile
         val fqName = psi.safeFqNameForLazyResolve()
@@ -60,6 +66,9 @@ class CjMacroElementType(debugName: String) :
         )
     }
 
+    /**
+     * 实现 `serialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     @Throws(IOException::class)
     override fun serialize(stub: CangJieMacroStub, dataStream: StubOutputStream) {
         dataStream.writeName(stub.name)
@@ -78,10 +87,16 @@ class CjMacroElementType(debugName: String) :
         }
     }
 
+    /**
+     * 实现 `indexStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun indexStub(stub: CangJieMacroStub, sink: IndexSink) {
         getInstance().indexMacroFunction(stub, sink)
     }
 
+    /**
+     * 实现 `deserialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     @Throws(IOException::class)
     override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>): CangJieMacroStub {
         val name = dataStream.readName()

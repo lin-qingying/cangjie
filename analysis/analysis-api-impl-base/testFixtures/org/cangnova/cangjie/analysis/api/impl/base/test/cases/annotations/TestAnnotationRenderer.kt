@@ -17,20 +17,40 @@ import org.cangnova.cangjie.name.ClassId
  * - 嵌套 meta-annotations
  */
 object TestAnnotationRenderer {
+    /**
+     * 渲染普通注解列表。
+     *
+     * 输出只包含当前 `CaAnnotationList` 的直接注解，不递归展开注解类上的 meta-annotations。
+     */
     fun renderAnnotations(analysisSession: CaSession, annotations: CaAnnotationList): String = buildString {
         renderAnnotationsRecursive(analysisSession, annotations, currentMetaAnnotations = null, indent = 0)
     }
 
+    /**
+     * 渲染单个注解为标准注解列表片段。
+     *
+     * 该方法服务按 ClassId 访问的测试，使直接访问和解析访问得到完全相同的文本比较面。
+     */
     fun renderSingleAnnotation(annotation: CaAnnotation): String = buildString {
         appendLine("annotations: [")
         appendLine(indent(renderAnnotation(annotation), 2))
         appendLine("]")
     }
 
+    /**
+     * 渲染注解列表并递归展开 meta-annotations。
+     *
+     * 渲染过程中会记录当前递归链上的 `ClassId`，避免自递归或环形 meta-annotation 造成无限展开。
+     */
     fun renderAnnotationsWithMeta(analysisSession: CaSession, annotations: CaAnnotationList): String = buildString {
         renderAnnotationsRecursive(analysisSession, annotations, currentMetaAnnotations = linkedSetOf(), indent = 0)
     }
 
+    /**
+     * 递归渲染注解列表及其可选 meta-annotations。
+     *
+     * `currentMetaAnnotations == null` 表示只渲染直接注解；非空集合表示启用递归并携带当前访问栈。
+     */
     private fun StringBuilder.renderAnnotationsRecursive(
         analysisSession: CaSession,
         annotations: CaAnnotationList,
@@ -71,6 +91,11 @@ object TestAnnotationRenderer {
         appendLine(indent("]", indent))
     }
 
+    /**
+     * 渲染单个 `CaAnnotation` 的 class id、短名和实参。
+     *
+     * 未解析注解会显式输出占位文本，保证解析缺失在 golden 中可见。
+     */
     private fun renderAnnotation(annotation: CaAnnotation): String = buildString {
         append("@")
         append(annotation.classId?.asFqNameString() ?: annotation.shortName?.asString() ?: "<unresolved>")
@@ -81,10 +106,21 @@ object TestAnnotationRenderer {
         }
     }
 
+    /**
+     * 渲染具名注解实参。
+     *
+     * 输出格式固定为 `name = value`，由上层 annotation renderer 负责拼接多个参数。
+     */
     private fun renderNamedArgument(argument: CaNamedAnnotationValue): String {
         return "${argument.name.asString()} = ${renderValue(argument.expression)}"
     }
 
+    /**
+     * 渲染公开注解值模型。
+     *
+     * 覆盖常量、枚举、元组、class instance 和 struct instance，确保所有公开 `CaAnnotationValue`
+     * 子类型都有稳定 golden 表达。
+     */
     private fun renderValue(value: CaAnnotationValue): String {
         return when (value) {
             is CaAnnotationValue.ConstantValue -> value.value.render()
@@ -116,5 +152,10 @@ object TestAnnotationRenderer {
         }
     }
 
+    /**
+     * 为单行文本添加指定数量的前导空格。
+     *
+     * 注解 renderer 用它保持嵌套 meta-annotation 输出的层级缩进稳定。
+     */
     private fun indent(text: String, indent: Int): String = " ".repeat(indent) + text
 }

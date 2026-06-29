@@ -278,14 +278,23 @@ interface ConeTypeContext :
     override fun TypeConstructorMarker.getParameter(index: Int): TypeParameterMarker = getParameters()[index]
 
     /**
-     * 当前仓颉 cone 类型系统未使用 Kotlin 的 integer literal constant constructor 标记。
+     * CFIR 的 ideal literal 自身就是类型构造器。
+     *
+     * Kotlin K2 通过 IntegerLiteralConstantType / IntegerConstantOperatorType 区分字面量与
+     * 运算结果；仓颉对应为 [ConeIdealIntConstantType] / [ConeIdealFloatConstantType] 和
+     * [ConeIdealIntOperatorType] / [ConeIdealFloatOperatorType]。这里把它们暴露给公共
+     * type approximator，否则推断完成阶段不会按 expected type 收束 IdealInt/IdealFloat。
      */
-    override fun TypeConstructorMarker.isIntegerLiteralConstantTypeConstructor(): Boolean = false
+    override fun TypeConstructorMarker.isIntegerLiteralConstantTypeConstructor(): Boolean =
+        this is ConeIdealIntConstantType ||
+                this is ConeIdealFloatConstantType ||
+                this is ConePrimitiveType && kind.isIdeal
 
     /**
-     * 当前仓颉 cone 类型系统未使用 integer constant operator constructor 标记。
+     * 判断由 ideal 数字运算产生的构造器。
      */
-    override fun TypeConstructorMarker.isIntegerConstantOperatorTypeConstructor(): Boolean = false
+    override fun TypeConstructorMarker.isIntegerConstantOperatorTypeConstructor(): Boolean =
+        this is ConeIdealIntOperatorType || this is ConeIdealFloatOperatorType
 
     /**
      * 仓颉当前没有匿名类型构造器。

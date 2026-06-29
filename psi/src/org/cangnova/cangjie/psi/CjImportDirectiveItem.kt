@@ -39,6 +39,9 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.util.PsiTreeUtil
 import org.cangnova.cangjie.ImportPath
 
+/**
+ * 表示 `CjImportDirective`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjImportDirective : CjDeclarationStub<CangJieImportDirectiveStub> {
     constructor(node: ASTNode) : super(node)
 
@@ -47,6 +50,9 @@ class CjImportDirective : CjDeclarationStub<CangJieImportDirectiveStub> {
         CjStubElementTypes.IMPORT_DIRECTIVE,
     )
 
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitImportDirective(this, data)
     }
@@ -62,6 +68,9 @@ class CjImportDirective : CjDeclarationStub<CangJieImportDirectiveStub> {
 
 
 
+    /**
+     * 提供 `getModifier` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun getModifier(tokenType: CjKeywordToken): PsiElement? {
         return findChildByType(tokenType)
     }
@@ -84,6 +93,9 @@ class CjImportDirective : CjDeclarationStub<CangJieImportDirectiveStub> {
             return null
         }
 
+    /**
+     * 实现 `hasModifier` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun hasModifier(modifier: CjKeywordToken): Boolean {
         return getModifier(modifier) != null
     }
@@ -140,13 +152,22 @@ class CjImportDirective : CjDeclarationStub<CangJieImportDirectiveStub> {
  * - import a.{b, c}  -> 两个 CjImportItem
  */
 class CjImportItem(node: ASTNode) : CjElementImpl(node), CjImportInfo {
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitImportItem(this, data)
     }
 
+    /**
+     * 保存 `_importedFqName` 的内部状态，供仓颉 PSI实现维护节点缓存或解析上下文。
+     */
     @Volatile
     private var _importedFqName: FqName? = null
 
+    /**
+     * 实现 `subtreeChanged` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun subtreeChanged() {
         super.subtreeChanged()
         _importedFqName = null
@@ -267,10 +288,24 @@ class CjImportItem(node: ASTNode) : CjElementImpl(node), CjImportInfo {
 
 
 
+/**
+ * 表示 `CangJieImportField`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 data class CangJieImportField(
+    /**
+     * 暴露 `isAllUnder`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val isAllUnder: Boolean,
+    /**
+     * 暴露 `importContent`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val importContent: CjImportInfo.ImportContent?,
+    /**
+     * 暴露 `importedFqName`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val importedFqName: FqName?,
+    /**
+     * 暴露 `aliasName`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val aliasName: String?
 ) : CjImportInfo
-

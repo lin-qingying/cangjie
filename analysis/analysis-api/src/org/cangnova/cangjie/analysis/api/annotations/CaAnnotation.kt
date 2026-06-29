@@ -66,11 +66,13 @@ sealed interface CaConstantValue {
 
     /** 表示一个仓颉 [Bool] 类型常量值。 */
     interface BoolValue : CaConstantValue {
+        /** Bool 常量的布尔值。 */
         override val value: Boolean
     }
 
     /** 表示一个仓颉 [Rune] 类型常量值，载荷为 Unicode 码点。 */
     interface RuneValue : CaConstantValue {
+        /** Rune 常量的 Unicode 码点值。 */
         override val value: Int  // Unicode code point
     }
 
@@ -78,26 +80,31 @@ sealed interface CaConstantValue {
 
     /** 表示一个仓颉 [Int8] 类型常量值。 */
     interface Int8Value : CaConstantValue {
+        /** Int8 常量值。 */
         override val value: Byte
     }
 
     /** 表示一个仓颉 [Int16] 类型常量值。 */
     interface Int16Value : CaConstantValue {
+        /** Int16 常量值。 */
         override val value: Short
     }
 
     /** 表示一个仓颉 [Int32] 类型常量值。 */
     interface Int32Value : CaConstantValue {
+        /** Int32 常量值。 */
         override val value: Int
     }
 
     /** 表示一个仓颉 [Int64] 类型常量值。 */
     interface Int64Value : CaConstantValue {
+        /** Int64 常量值。 */
         override val value: Long
     }
 
     /** 表示一个仓颉 [IntNative] 类型常量值。 */
     interface IntNativeValue : CaConstantValue {
+        /** IntNative 常量值，使用 Long 承载平台相关宽度。 */
         override val value: Long  // 平台相关，用 Long 兜底
     }
 
@@ -105,26 +112,31 @@ sealed interface CaConstantValue {
 
     /** 表示一个仓颉 [UInt8] 类型常量值。 */
     interface UInt8Value : CaConstantValue {
+        /** UInt8 常量值。 */
         override val value: UByte
     }
 
     /** 表示一个仓颉 [UInt16] 类型常量值。 */
     interface UInt16Value : CaConstantValue {
+        /** UInt16 常量值。 */
         override val value: UShort
     }
 
     /** 表示一个仓颉 [UInt32] 类型常量值。 */
     interface UInt32Value : CaConstantValue {
+        /** UInt32 常量值。 */
         override val value: UInt
     }
 
     /** 表示一个仓颉 [UInt64] 类型常量值。 */
     interface UInt64Value : CaConstantValue {
+        /** UInt64 常量值。 */
         override val value: ULong
     }
 
     /** 表示一个仓颉 [UIntNative] 类型常量值。 */
     interface UIntNativeValue : CaConstantValue {
+        /** UIntNative 常量值，使用 ULong 承载平台相关宽度。 */
         override val value: ULong  // 平台相关，用 ULong 兜底
     }
 
@@ -132,16 +144,19 @@ sealed interface CaConstantValue {
 
     /** 表示一个仓颉 [Float16] 类型常量值。 */
     interface Float16Value : CaConstantValue {
+        /** Float16 常量值，当前 JVM 表示中使用 Float 承载。 */
         override val value: Float  // JVM 无 Float16，用 Float 兜底
     }
 
     /** 表示一个仓颉 [Float32] 类型常量值。 */
     interface Float32Value : CaConstantValue {
+        /** Float32 常量值。 */
         override val value: Float
     }
 
     /** 表示一个仓颉 [Float64] 类型常量值。 */
     interface Float64Value : CaConstantValue {
+        /** Float64 常量值。 */
         override val value: Double
     }
 
@@ -149,6 +164,7 @@ sealed interface CaConstantValue {
 
     /** 表示一个仓颉 [String] 类型常量值。 */
     interface StringValue : CaConstantValue {
+        /** String 常量值。 */
         override val value: String
     }
 
@@ -161,6 +177,7 @@ sealed interface CaConstantValue {
         /** 求值错误的描述信息。 */
         val errorMessage: String
 
+        /** ErrorValue 没有可用常量载荷，访问该属性表示不可达值。 */
         override val value: Nothing
     }
 }

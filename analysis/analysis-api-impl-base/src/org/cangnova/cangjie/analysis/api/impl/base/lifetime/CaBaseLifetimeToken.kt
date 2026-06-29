@@ -22,19 +22,40 @@ import kotlin.reflect.KClass
  * 又管理 analysis context accessibility 的职责保持一致。
  */
 internal class CaBaseLifetimeToken(
+    /**
+     * token 所属 project。
+     */
     private val project: Project,
+    /**
+     * 用于判断 token 是否失效的修改计数器。
+     */
     private val modificationTracker: ModificationTracker,
 ) : CaLifetimeToken() {
+    /**
+     * token 创建时捕获的修改计数。
+     */
     private val onCreatedTimeStamp = modificationTracker.modificationCount
 
+    /**
+     * 当前 project 的分析权限检查服务。
+     */
     @CaCachedService
     private val permissionChecker = CaAnalysisPermissionChecker.getInstance(project)
 
+    /**
+     * 当前 project 的 lifetime tracker。
+     */
     @CaCachedService
     private val lifetimeTracker = CaLifetimeTracker.getInstance(project)
 
+    /**
+     * 判断 token 对应 session 是否仍未被修改计数失效。
+     */
     override fun isValid(): Boolean = onCreatedTimeStamp == modificationTracker.modificationCount
 
+    /**
+     * 返回 token 失效原因。
+     */
     @OptIn(CaImplementationDetail::class)
     override fun getInvalidationReason(): String {
         if (onCreatedTimeStamp != modificationTracker.modificationCount) {
@@ -49,11 +70,17 @@ internal class CaBaseLifetimeToken(
         error("Cannot get an invalidation reason for a valid lifetime token.")
     }
 
+    /**
+     * 判断当前线程是否允许访问该 token 绑定的 lifetime owner。
+     */
     override fun isAccessible(): Boolean {
         if (!permissionChecker.isAnalysisAllowed()) return false
         return lifetimeTracker.currentToken === this
     }
 
+    /**
+     * 返回当前 token 不可访问的原因。
+     */
     override fun getInaccessibilityReason(): String {
         if (!permissionChecker.isAnalysisAllowed()) {
             return permissionChecker.getRejectionReason()
@@ -67,10 +94,19 @@ internal class CaBaseLifetimeToken(
     }
 }
 
+/**
+ * 创建 [CaBaseLifetimeToken] 的平台 token factory。
+ */
 @OptIn(CaPlatformInterface::class)
 internal class CaBaseLifetimeTokenFactory : org.cangnova.cangjie.analysis.api.platform.lifetime.CaLifetimeTokenFactory {
+    /**
+     * 该 factory 创建的 token 类型标识。
+     */
     override val identifier: KClass<out CaLifetimeToken> = CaBaseLifetimeToken::class
 
+    /**
+     * 为给定 project 与修改计数器创建 lifetime token。
+     */
     override fun create(project: Project, modificationTracker: ModificationTracker): CaLifetimeToken {
         return CaBaseLifetimeToken(project, modificationTracker)
     }

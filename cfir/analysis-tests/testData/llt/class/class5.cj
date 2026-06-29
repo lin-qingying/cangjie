@@ -1,5 +1,5 @@
 
 
 class B {
-    public var b = <!ILLEGAL_THIS_OR_SUPER_CALL!>super<!>.<!UNRESOLVED_REFERENCE!>a<!>
+    public var b = <!THIS_OR_SUPER_NOT_ALLOWED_TO_INITIALIZE_NON_STATIC_MEMBER!>super<!>.<!UNRESOLVED_REFERENCE!>a<!>
 }

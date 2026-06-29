@@ -1,11 +1,12 @@
 // RUN_PIPELINE_TILL: FRONTEND
+// WITH_EXTRA_CHECKERS
 func tryFinallyTypeStable(flag: Bool): Int64 {
     try {
         if (flag) {
             return 1
         }
     } finally {
-        let cleanup = 0
+        let <!UNUSED_VARIABLE!>cleanup<!> = 0
     }
     return 2
 }

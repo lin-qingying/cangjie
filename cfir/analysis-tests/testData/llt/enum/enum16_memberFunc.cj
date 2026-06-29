@@ -31,9 +31,9 @@ main() {
     let e1: ET = ET.A
     let e2: ET = ET.B("one")
     e1.<!NO_MATCH_FUNCTION_DECLARATION_FOR_CALL!>f<!>oo2()
-    <!OBJECT_CANNOT_ACCESS_STATIC_MEMBER!>e<!>2.foo3()
-    <!ILLEGAL_ACCESS_NON_STATIC_MEMBER!>E<!>T.foo1()
-    <!ILLEGAL_ACCESS_NON_STATIC_MEMBER!>E<!>T.foo1(1)
+    <!OBJECT_CANNOT_ACCESS_STATIC_MEMBER!>e2<!>.foo3()
+    <!ILLEGAL_ACCESS_NON_STATIC_MEMBER!>ET<!>.foo1()
+    <!ILLEGAL_ACCESS_NON_STATIC_MEMBER!>ET<!>.foo1(1)
 
     return 0
 }

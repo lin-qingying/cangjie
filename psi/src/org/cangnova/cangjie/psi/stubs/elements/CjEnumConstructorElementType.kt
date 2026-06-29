@@ -36,20 +36,32 @@ import com.intellij.psi.stubs.StubOutputStream
 import com.intellij.util.io.StringRef
 import java.io.IOException
 
+/**
+ * 表示 `CjEnumConstructorElementType`，承载PSI Stub中的语法节点、索引桩或辅助模型。
+ */
 class CjEnumConstructorElementType(debugName: String) : CjStubElementType<CangJieEnumConstructorStub, CjEnumConstructor>(
     debugName,
     CjEnumConstructor::class.java,
     CangJieEnumConstructorStub::class.java,
 ) {
 
+    /**
+     * 实现 `createPsi` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createPsi(stub: CangJieEnumConstructorStub): CjEnumConstructor {
         return CjEnumConstructor(stub)
     }
 
+    /**
+     * 实现 `createPsiFromAst` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createPsiFromAst(node: ASTNode): CjEnumConstructor {
         return CjEnumConstructor(node)
     }
 
+    /**
+     * 实现 `createStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createStub(psi: CjEnumConstructor, parentStub: StubElement<*>?): CangJieEnumConstructorStub {
         // 提取参数类型数量
         val typeCount = psi.typeReferences.size
@@ -67,6 +79,9 @@ class CjEnumConstructorElementType(debugName: String) : CjStubElementType<CangJi
         )
     }
 
+    /**
+     * 实现 `serialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     @Throws(IOException::class)
     override fun serialize(stub: CangJieEnumConstructorStub, dataStream: StubOutputStream) {
         dataStream.writeName(stub.name)
@@ -74,6 +89,9 @@ class CjEnumConstructorElementType(debugName: String) : CjStubElementType<CangJi
         dataStream.writeName(stub.getEnumFqName()?.asString())
     }
 
+    /**
+     * 实现 `deserialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     @Throws(IOException::class)
     override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>?): CangJieEnumConstructorStub {
         val name = dataStream.readName()
@@ -89,6 +107,9 @@ class CjEnumConstructorElementType(debugName: String) : CjStubElementType<CangJi
         )
     }
 
+    /**
+     * 实现 `indexStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun indexStub(stub: CangJieEnumConstructorStub, sink: IndexSink) {
         getInstance().indexEnumConstructor(stub, sink)
     }

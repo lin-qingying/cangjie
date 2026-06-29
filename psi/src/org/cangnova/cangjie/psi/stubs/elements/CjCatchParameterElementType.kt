@@ -35,18 +35,27 @@ import com.intellij.psi.stubs.StubInputStream
 import com.intellij.psi.stubs.StubOutputStream
 import com.intellij.util.io.StringRef
 
+/**
+ * 表示 `CjCatchParameterElementType`，承载PSI Stub中的语法节点、索引桩或辅助模型。
+ */
 class CjCatchParameterElementType(debugName: String) : CjStubElementType<CangJieCatchParameterStub, CjCatchParameter>(
 
     debugName,
     CjCatchParameter::class.java,
     CangJieCatchParameterStub::class.java,
 ) {
+    /**
+     * 实现 `serialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun serialize(stub: CangJieCatchParameterStub, dataStream: StubOutputStream) {
         dataStream.writeName(stub.name)
         val name = stub.getFqName()
         dataStream.writeName(name?.asString())
     }
 
+    /**
+     * 实现 `deserialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>?): CangJieCatchParameterStub {
         val name = dataStream.readName()
 
@@ -55,10 +64,16 @@ class CjCatchParameterElementType(debugName: String) : CjStubElementType<CangJie
         return CangJieCatchParameterStubImpl(fqName, name, parentStub)
     }
 
+    /**
+     * 实现 `indexStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun indexStub(stub: CangJieCatchParameterStub, sink: IndexSink) {
         getInstance().indexParameter(stub, sink)
     }
 
+    /**
+     * 实现 `createStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createStub(
         psi: CjCatchParameter,
         parentStub: StubElement<out PsiElement>?,

@@ -11,6 +11,7 @@ import org.gradle.kotlin.dsl.project
  *   Kotlin 参考实现</a>
  */
 
+/** 当前构建使用的 IntelliJ Platform SDK 版本。 */
 val Project.intellijSdkVersion: String
     get() = property("intellijSdkVersion") as String
 
@@ -19,9 +20,15 @@ fun Project.intellijCore() = dependencies.project(":dependencies:intellij-core")
 
 // ===== 单独引用（用于只需要部分依赖的模块） =====
 
+/** IntelliJ Platform util 依赖坐标。 */
 fun Project.intellijPlatformUtil() = "com.jetbrains.intellij.platform:util:$intellijSdkVersion"
+/** IntelliJ Platform util-base 依赖坐标。 */
 fun Project.intellijPlatformUtilBase() = "com.jetbrains.intellij.platform:util-base:$intellijSdkVersion"
+/** IntelliJ Platform util-rt 依赖坐标。 */
 fun Project.intellijUtilRt() = "com.jetbrains.intellij.platform:util-rt:$intellijSdkVersion"
+/** IntelliJ Platform analysis 依赖坐标。 */
 fun Project.intellijAnalysis() = "com.jetbrains.intellij.platform:analysis:$intellijSdkVersion"
+/** IntelliJ Platform JDOM 依赖坐标。 */
 fun Project.intellijJDom() = "com.jetbrains.intellij.platform:util-jdom:$intellijSdkVersion"
+/** IntelliJ Platform test-framework 依赖坐标。 */
 fun Project.intellijTestFramework() = "com.jetbrains.intellij.platform:test-framework:$intellijSdkVersion"

@@ -28,7 +28,13 @@ import org.cangnova.cangjie.psi.CjBlockExpression
 import org.cangnova.cangjie.psi.CjExpression
 import org.cangnova.cangjie.psi.CjPsiUtil
 
+/**
+ * 表示 `StatementFilter`，承载PSI 模块中的语法节点、索引桩或辅助模型。
+ */
 open class StatementFilter {
+    /**
+     * 保存 `filter`，供PSI 模块流程读取节点结构或语义信息。
+     */
     open val filter: ((CjExpression) -> Boolean)?
         get() = null
 
@@ -40,9 +46,15 @@ open class StatementFilter {
     }
 }
 
+/**
+ * 提供 `filterStatements` 操作，封装PSI 模块节点的访问、构造或判断逻辑。
+ */
 fun StatementFilter.filterStatements(block: CjBlockExpression): List<CjExpression> {
     if (filter == null || block is CjPsiUtil.CjExpressionWrapper) return block.statements
     return block.statements.filter { filter!!(it) }
 }
 
+/**
+ * 提供 `getLastStatementInABlock` 操作，封装PSI 模块节点的访问、构造或判断逻辑。
+ */
 fun StatementFilter.getLastStatementInABlock(block: CjBlockExpression) = filterStatements(block).lastOrNull()

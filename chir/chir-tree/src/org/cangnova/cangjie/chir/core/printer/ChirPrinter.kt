@@ -26,7 +26,13 @@ import org.cangnova.cangjie.chir.core.value.ChirLocalValue
 import org.cangnova.cangjie.chir.core.value.ChirParameterValue
 import org.cangnova.cangjie.chir.core.value.ChirValue
 
+/**
+ * CHIR 包稳定文本打印器。
+ */
 object ChirPrinter {
+    /**
+     * 打印完整 CHIR 包。
+     */
     fun print(chirPackage: ChirPackage): String {
         return buildString {
             appendLine(
@@ -57,6 +63,9 @@ object ChirPrinter {
         }.trimEnd()
     }
 
+    /**
+     * 追加单个声明的文本表示。
+     */
     private fun StringBuilder.appendDeclaration(declaration: ChirDeclaration, prefix: String = "    ") {
         val function = declaration as? ChirFunctionDeclaration
         if (function == null) {
@@ -83,6 +92,9 @@ object ChirPrinter {
             }
     }
 
+    /**
+     * 打印表达式节点。
+     */
     private fun printExpression(expression: ChirExpression): String {
         return when (expression) {
             is ChirUnaryExpression -> "unary id=${expression.semanticId} op=${expression.operator} operand=${printValue(expression.operand)} type=${expression.resultType.renderName}"
@@ -94,6 +106,9 @@ object ChirPrinter {
         }
     }
 
+    /**
+     * 打印终结指令节点。
+     */
     private fun printTerminator(terminator: ChirTerminator): String {
         return when (terminator) {
             is ChirReturnTerminator -> "return id=${terminator.semanticId} value=${terminator.returnValue?.let(::printValue) ?: "_"}"
@@ -105,6 +120,9 @@ object ChirPrinter {
         }
     }
 
+    /**
+     * 打印值节点。
+     */
     private fun printValue(value: ChirValue): String {
         return when (value) {
             is ChirConstantValue -> "const(id=${value.semanticId},type=${value.type.renderName},literal=${value.literal})"

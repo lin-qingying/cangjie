@@ -17,6 +17,11 @@ import org.cangnova.cangjie.test.services.assertions
  * 但只覆盖仓颉当前公开 API 已明确支持的 `CjCallExpression`。
  */
 abstract class AbstractResolveCallByFileTest : AbstractResolveCallTest() {
+    /**
+     * 执行文件级调用解析快照测试。
+     *
+     * 方法遍历文件内所有 `CjCallExpression`，渲染每个调用的 call info、参数类型和成功解析 symbol。
+     */
     override fun doTestByMainFile(mainFile: CjFile, mainModule: CjTestModule, testServices: TestServices) {
         val calls = mainFile.collectDescendantsOfType<CjCallExpression>()
 

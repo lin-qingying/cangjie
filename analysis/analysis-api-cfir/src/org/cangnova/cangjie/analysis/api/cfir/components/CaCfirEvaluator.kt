@@ -27,8 +27,14 @@ import org.cangnova.cangjie.psi.psiUtil.isPlain
  * 公开组件与内部求值 helper 放在同一文件中，职责边界更稳定。
  */
 internal class CaCfirEvaluator(
+    /**
+     * 延迟取得当前 CFIR Analysis session，保证求值入口在有效会话内执行。
+     */
     override val analysisSessionProvider: () -> CaCfirSession,
 ) : CaBaseSessionComponent<CaCfirSession>(), CaEvaluator {
+    /**
+     * 对表达式执行 Analysis API 层面的编译期值求值。
+     */
     override fun CjExpression.evaluate(): CaCompileTimeValue? = withValidityAssertion {
         analysisSession.evaluateCompileTimeValue(this@evaluate)
     }
@@ -43,23 +49,56 @@ internal class CaCfirEvaluator(
  * - 结构化编译期值
  */
 internal class CaCfirScalarCompileTimeValueImpl(
+    /**
+     * 标量值的公开分类。
+     */
     override val kind: CaScalarValueKind,
+    /**
+     * 可稳定展示给调用方的源码文本或规范化文本。
+     */
     override val renderedText: String,
+    /**
+     * 约束标量值对象生命周期的会话 token。
+     */
     override val token: CaLifetimeToken,
 ) : CaScalarCompileTimeValue
 
+/**
+ * 元组字面量编译期值的 CFIR 实现。
+ */
 internal class CaCfirTupleCompileTimeValueImpl(
+    /**
+     * 元组中按源码顺序排列的子编译期值。
+     */
     override val elements: List<CaCompileTimeValue>,
+    /**
+     * 约束元组值对象生命周期的会话 token。
+     */
     override val token: CaLifetimeToken,
 ) : CaTupleCompileTimeValue {
+    /**
+     * 按元组字面量形态渲染的编译期值文本。
+     */
     override val renderedText: String
         get() = elements.joinToString(prefix = "(", postfix = ")") { it.renderedText }
 }
 
+/**
+ * 集合字面量编译期值的 CFIR 实现。
+ */
 internal class CaCfirCollectionCompileTimeValueImpl(
+    /**
+     * 集合中按源码顺序排列的子编译期值。
+     */
     override val elements: List<CaCompileTimeValue>,
+    /**
+     * 约束集合值对象生命周期的会话 token。
+     */
     override val token: CaLifetimeToken,
 ) : CaCollectionCompileTimeValue {
+    /**
+     * 按集合字面量形态渲染的编译期值文本。
+     */
     override val renderedText: String
         get() = elements.joinToString(prefix = "[", postfix = "]") { it.renderedText }
 }
@@ -92,6 +131,9 @@ internal fun CaCfirSession.evaluateCompileTimeValue(expression: CjExpression): C
     }
 }
 
+/**
+ * 将常量表达式包装为公开标量编译期值。
+ */
 private fun CjConstantExpression.asCompileTimeScalar(token: CaLifetimeToken): CaScalarCompileTimeValue {
     val renderedText = text
     return CaCfirScalarCompileTimeValueImpl(
@@ -101,6 +143,9 @@ private fun CjConstantExpression.asCompileTimeScalar(token: CaLifetimeToken): Ca
     )
 }
 
+/**
+ * 将无插值的普通字符串模板转换为字符串编译期值。
+ */
 private fun CjStringTemplateExpression.asCompileTimeString(token: CaLifetimeToken): CaScalarCompileTimeValue? {
     if (hasInterpolation() || !isPlain()) return null
     return CaCfirScalarCompileTimeValueImpl(
@@ -110,6 +155,9 @@ private fun CjStringTemplateExpression.asCompileTimeString(token: CaLifetimeToke
     )
 }
 
+/**
+ * 递归求值元组字面量中的每个元素。
+ */
 private fun CjTupleExpression.asCompileTimeTuple(
     session: CaCfirSession,
     token: CaLifetimeToken,
@@ -123,6 +171,9 @@ private fun CjTupleExpression.asCompileTimeTuple(
     )
 }
 
+/**
+ * 递归求值集合字面量中的每个元素。
+ */
 private fun CjCollectionLiteralExpression.asCompileTimeCollection(
     session: CaCfirSession,
     token: CaLifetimeToken,
@@ -136,6 +187,9 @@ private fun CjCollectionLiteralExpression.asCompileTimeCollection(
     )
 }
 
+/**
+ * 根据字面量文本推断标量编译期值分类。
+ */
 private fun detectScalarKind(renderedText: String): CaScalarValueKind {
     return when {
         renderedText == "true" || renderedText == "false" -> CaScalarValueKind.BOOLEAN

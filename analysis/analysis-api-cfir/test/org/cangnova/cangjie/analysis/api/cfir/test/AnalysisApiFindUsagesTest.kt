@@ -38,8 +38,14 @@ import org.junit.jupiter.api.Test
 class AnalysisApiFindUsagesTest : AbstractAnalysisApiExecutionTest(
     "analysis/analysis-api-cfir/testData/findUsages",
 ) {
+    /**
+     * 使用 standalone CFIR 配置运行 Find Usages 主链测试。
+     */
     override val configurator = CaCfirStandaloneAnalysisApiTestConfigurator
 
+    /**
+     * 验证顶层函数声明的 references-search 结果覆盖所有测试用例内调用位。
+     */
     @Test
     fun topLevelFunctionUsages(mainFile: CjFile) {
         val declaration = PsiTreeUtil.findChildrenOfType(mainFile, CjNamedFunction::class.java)
@@ -53,6 +59,9 @@ class AnalysisApiFindUsagesTest : AbstractAnalysisApiExecutionTest(
         )
     }
 
+    /**
+     * 验证 extend 成员函数可以通过统一 references-search executor 找到成员调用位。
+     */
     @Test
     fun extendMemberUsages(mainFile: CjFile) {
         val declaration = PsiTreeUtil.findChildrenOfType(mainFile, CjNamedFunction::class.java)
@@ -66,6 +75,9 @@ class AnalysisApiFindUsagesTest : AbstractAnalysisApiExecutionTest(
         )
     }
 
+    /**
+     * 验证 import alias 自身和原始被导入声明都能覆盖 alias 引入的使用点。
+     */
     @Test
     fun importAliasUsages(mainFile: CjFile, testServices: TestServices) {
         val alias = PsiTreeUtil.findChildrenOfType(mainFile, CjImportAlias::class.java)
@@ -88,6 +100,9 @@ class AnalysisApiFindUsagesTest : AbstractAnalysisApiExecutionTest(
         )
     }
 
+    /**
+     * 验证 pattern binding 的 usages 仅在其局部作用域内返回。
+     */
     @Test
     fun patternBindingUsages(mainFile: CjFile) {
         val bindingPattern = PsiTreeUtil.findChildrenOfType(mainFile, CjBindingPattern::class.java)
@@ -98,6 +113,9 @@ class AnalysisApiFindUsagesTest : AbstractAnalysisApiExecutionTest(
         assertReferencesStayInsideLocalScope(bindingPattern, references)
     }
 
+    /**
+     * 通过仓颉 references-search executor 收集目标 PSI 的全部引用。
+     */
     private fun findUsages(target: PsiElement): List<PsiReference> {
         val references = mutableListOf<PsiReference>()
         val executor = CangJieReferencesSearchExecutor()
@@ -117,6 +135,9 @@ class AnalysisApiFindUsagesTest : AbstractAnalysisApiExecutionTest(
         return references
     }
 
+    /**
+     * 断言局部声明的引用结果没有逃逸出声明自身的 `LocalSearchScope`。
+     */
     private fun assertReferencesStayInsideLocalScope(
         target: PsiElement,
         references: List<PsiReference>,

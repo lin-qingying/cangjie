@@ -42,11 +42,17 @@ import com.intellij.psi.stubs.StubInputStream
 import com.intellij.psi.stubs.StubOutputStream
 import com.intellij.util.io.StringRef
 
+/**
+ * 表示 `CjEnumElementType`，承载PSI Stub中的语法节点、索引桩或辅助模型。
+ */
 class CjEnumElementType(debugName: String) : CjStubElementType<CangJieEnumStub, CjEnum>(
     debugName,
     CjEnum::class.java,
     CangJieEnumStub::class.java,
 ) {
+    /**
+     * 实现 `serialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun serialize(stub: CangJieEnumStub, dataStream: StubOutputStream) {
         dataStream.writeName(stub.name)
 
@@ -69,6 +75,9 @@ class CjEnumElementType(debugName: String) : CjStubElementType<CangJieEnumStub, 
             return CjStubElementTypes.ENUM
         }
     }
+    /**
+     * 实现 `deserialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>?): CangJieEnumStub {
         val name = dataStream.readName()
         val qualifiedName = dataStream.readName()
@@ -93,6 +102,9 @@ class CjEnumElementType(debugName: String) : CjStubElementType<CangJieEnumStub, 
         )
     }
 
+    /**
+     * 实现 `createStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createStub(psi: CjEnum, parentStub: StubElement<out PsiElement>?): CangJieEnumStub {
         val fqName = psi.safeFqNameForLazyResolve()
 
@@ -110,14 +122,23 @@ class CjEnumElementType(debugName: String) : CjStubElementType<CangJieEnumStub, 
         )
     }
 
+    /**
+     * 实现 `createPsi` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createPsi(stub: CangJieEnumStub): CjEnum {
         return CjEnum(stub)
     }
 
+    /**
+     * 实现 `indexStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun indexStub(stub: CangJieEnumStub, sink: IndexSink) {
         getInstance().indexEnum(stub, sink)
     }
 
+    /**
+     * 实现 `createPsiFromAst` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createPsiFromAst(node: ASTNode): CjEnum {
         return CjEnum(node)
     }

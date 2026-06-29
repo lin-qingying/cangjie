@@ -2,11 +2,11 @@
 
 
 main(): Int64 {
-    if (<!ILLEGAL_ACCESS_NON_STATIC_MEMBER!>D<!>ata.n != 1) {
+    if (<!ILLEGAL_ACCESS_NON_STATIC_MEMBER!>Data<!>.n != 1) {
         return 1
     }
-    <!ILLEGAL_ACCESS_NON_STATIC_MEMBER!>D<!>ata.m = 10
-    if (<!ILLEGAL_ACCESS_NON_STATIC_MEMBER!>D<!>ata.m != 2) {
+    <!ILLEGAL_ACCESS_NON_STATIC_MEMBER!>Data<!>.m = 10
+    if (<!ILLEGAL_ACCESS_NON_STATIC_MEMBER!>Data<!>.m != 2) {
         return 2
     }
     return 0

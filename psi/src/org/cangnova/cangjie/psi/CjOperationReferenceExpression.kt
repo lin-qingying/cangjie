@@ -31,8 +31,14 @@ import com.intellij.lang.ASTNode
 import com.intellij.psi.PsiElement
 import com.intellij.psi.impl.source.tree.TreeElement
 
+/**
+ * 表示 `CjOperationReferenceExpression`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjOperationReferenceExpression(node: ASTNode) : CjSimpleNameExpressionImpl(node) {
 
+    /**
+     * 暴露 `referencedNameElement`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val referencedNameElement get() = CangJieExpressionParsing.ALL_OPERATIONS?.let {
         findChildByType<PsiElement>(
             it,
@@ -40,10 +46,16 @@ class CjOperationReferenceExpression(node: ASTNode) : CjSimpleNameExpressionImpl
     }
         ?: this
 
+    /**
+     * 提供 `isConventionOperator` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun isConventionOperator(): Boolean {
         val tokenType = operationSignTokenType ?: return false
         return OperatorConventions.getNameForOperationSymbol(tokenType) != null
     }
+    /**
+     * 保存 `operationSignTokenType`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val operationSignTokenType: CjSingleValueToken?
         get() = (firstChild as? TreeElement)?.elementType as? CjSingleValueToken
 }

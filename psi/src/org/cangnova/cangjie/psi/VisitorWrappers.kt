@@ -23,35 +23,80 @@
  */
 
 package org.cangnova.cangjie.psi
+/**
+ * 提供 `importDirectiveVisitor` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+ */
 fun importDirectiveVisitor(block: (CjImportDirective) -> Unit) =
+    /**
+     * 提供 `declaration` 单例，集中承载仓颉 PSI的共享状态、工厂或工具行为。
+     */
     object : CjVisitorUnit() {
+        /**
+         * 实现 `visitImportDirective` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+         */
         override fun visitImportDirective(importDirective: CjImportDirective) {
             block(importDirective)
         }
     }
 
+/**
+ * 提供 `visitDotQualifiedExpression` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+ */
 fun visitDotQualifiedExpression(block: (CjDotQualifiedExpression) -> Unit) =
+    /**
+     * 提供 `declaration` 单例，集中承载仓颉 PSI的共享状态、工厂或工具行为。
+     */
     object : CjVisitorUnit() {
+        /**
+         * 实现 `visitDotQualifiedExpression` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+         */
         override fun visitDotQualifiedExpression(expression: CjDotQualifiedExpression) {
             block(expression)
         }
     }
 
+/**
+ * 提供 `packageDirectiveVisitor` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+ */
 fun packageDirectiveVisitor(block: (CjPackageDirective) -> Unit) =
+    /**
+     * 提供 `declaration` 单例，集中承载仓颉 PSI的共享状态、工厂或工具行为。
+     */
     object : CjVisitorUnit() {
+        /**
+         * 实现 `visitPackageDirective` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+         */
         override fun visitPackageDirective(packageDirective: CjPackageDirective) {
             block(packageDirective)
         }
     }
+/**
+ * 提供 `namedDeclarationVisitor` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+ */
 fun namedDeclarationVisitor(block: (CjNamedDeclaration) -> Unit) =
+    /**
+     * 提供 `declaration` 单例，集中承载仓颉 PSI的共享状态、工厂或工具行为。
+     */
     object : CjVisitorUnit() {
+        /**
+         * 实现 `visitNamedDeclaration` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+         */
         override fun visitNamedDeclaration(declaration: CjNamedDeclaration) {
             block(declaration)
         }
     }
 
+/**
+ * 提供 `declarationVisitor` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+ */
 fun declarationVisitor(block: (CjDeclaration) -> Unit) =
+    /**
+     * 提供 `declaration` 单例，集中承载仓颉 PSI的共享状态、工厂或工具行为。
+     */
     object : CjVisitorUnit() {
+        /**
+         * 实现 `visitDeclaration` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+         */
         override fun visitDeclaration(dcl: CjDeclaration) {
             block(dcl)
         }

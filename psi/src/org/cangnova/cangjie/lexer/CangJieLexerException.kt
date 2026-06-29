@@ -31,8 +31,14 @@ package org.cangnova.cangjie.lexer
  */
 class CangJieLexerException @JvmOverloads constructor(
     message: String,
+    /**
+     * 保存 `position`，供仓颉词法与文档注释流程读取节点结构或语义信息。
+     */
     val position: Int? = null
 ) : RuntimeException(message) {
+    /**
+     * 实现 `toString` 的仓颉词法与文档注释协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun toString(): String {
         return "CangJieLexerException: $message at position $position"
     }

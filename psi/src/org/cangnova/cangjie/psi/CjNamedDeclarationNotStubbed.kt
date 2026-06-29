@@ -32,9 +32,15 @@ import com.intellij.psi.PsiElement
 import com.intellij.util.IncorrectOperationException
 import org.jetbrains.annotations.NonNls
 
+/**
+ * 表示 `CjNamedDeclarationNotStubbed`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 abstract class CjNamedDeclarationNotStubbed(node: ASTNode) :
     CjDeclarationImpl(node),
     CjNamedDeclaration {
+    /**
+     * 实现 `getName` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getName(): String? {
         val identifier = nameIdentifier
         if (identifier != null) {
@@ -45,19 +51,31 @@ abstract class CjNamedDeclarationNotStubbed(node: ASTNode) :
         }
     }
 
+    /**
+     * 暴露 `nameAsName`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val nameAsName: Name?
         get() {
             val name = name
             return if (name != null) identifier(name) else null
         }
 
+    /**
+     * 暴露 `nameAsSafeName`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val nameAsSafeName: Name
         get() = CjPsiUtil.safeName(name)
 
+    /**
+     * 实现 `getNameIdentifier` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getNameIdentifier(): PsiElement? {
         return findChildByType(CjTokens.IDENTIFIER)
     }
 
+    /**
+     * 实现 `setName` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     @Throws(IncorrectOperationException::class)
     override fun setName(name: String): PsiElement {
         val identifier = nameIdentifier ?: throw IncorrectOperationException()
@@ -65,6 +83,9 @@ abstract class CjNamedDeclarationNotStubbed(node: ASTNode) :
         return identifier.replace(CjPsiFactory(project).createNameIdentifier(name))
     }
 
+    /**
+     * 实现 `getTextOffset` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getTextOffset(): Int {
         val identifier = nameIdentifier
         return identifier?.textRange?.startOffset ?: textRange.startOffset

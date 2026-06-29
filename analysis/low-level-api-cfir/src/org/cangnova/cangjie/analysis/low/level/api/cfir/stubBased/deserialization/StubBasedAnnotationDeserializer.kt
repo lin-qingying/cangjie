@@ -37,6 +37,9 @@ import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 import org.cangnova.cangjie.utils.exceptions.requireWithAttachment
 import org.cangnova.cangjie.utils.exceptions.withPsiEntry
 
+/**
+ * 从 compiled PSI/stub 中反序列化 CFIR 注解和注解常量参数。
+ */
 internal class StubBasedAnnotationDeserializer(private val session: CfirSession) {
     companion object {
         fun getAnnotationClassId(annotation: CjAnnotation): ClassId {
@@ -88,6 +91,9 @@ internal class StubBasedAnnotationDeserializer(private val session: CfirSession)
         return property.initializer?.let(::deserializeExpression)
     }
 
+    /**
+     * 将单个 PSI 注解反序列化为 [CfirAnnotation]。
+     */
     private fun deserializeAnnotation(annotation: CjAnnotation, owner: CfirBasedSymbol<*>): CfirAnnotation {
         val source = CjRealPsiSourceElement(annotation)
         val classId = getAnnotationClassId(annotation)
@@ -129,6 +135,9 @@ internal class StubBasedAnnotationDeserializer(private val session: CfirSession)
         }
     }
 
+    /**
+     * 反序列化注解实参表达式。
+     */
     private fun deserializeExpression(expression: CjExpression): CfirExpression {
         return when (expression) {
             is CjConstantExpression -> deserializeConstantExpression(expression)
@@ -141,6 +150,9 @@ internal class StubBasedAnnotationDeserializer(private val session: CfirSession)
         }
     }
 
+    /**
+     * 反序列化常量表达式为 CFIR literal。
+     */
     private fun deserializeConstantExpression(expression: CjConstantExpression): CfirExpression {
         val literalKind = when (expression.node.elementType) {
             org.cangnova.cangjie.psi.CjNodeTypes.INTEGER_CONSTANT -> CfirLiteralKind.INT
@@ -164,6 +176,9 @@ internal class StubBasedAnnotationDeserializer(private val session: CfirSession)
         }
     }
 
+    /**
+     * 反序列化无插值字符串模板。
+     */
     private fun deserializeStringTemplate(expression: CjStringTemplateExpression): CfirExpression {
         if (expression.hasInterpolation()) {
             return buildUnsupportedExpression(expression)
@@ -176,6 +191,9 @@ internal class StubBasedAnnotationDeserializer(private val session: CfirSession)
         }
     }
 
+    /**
+     * 为当前 stub 反序列化不支持的表达式构造错误表达式。
+     */
     private fun buildUnsupportedExpression(expression: CjExpression): CfirExpression {
         return buildErrorExpression {
             source = CjRealPsiSourceElement(expression)

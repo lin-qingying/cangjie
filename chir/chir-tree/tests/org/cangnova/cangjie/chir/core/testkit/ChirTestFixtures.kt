@@ -22,7 +22,13 @@ import org.cangnova.cangjie.chir.core.value.ChirConstantValue
 import org.cangnova.cangjie.chir.core.value.ChirImportedFunctionValue
 import org.cangnova.cangjie.chir.core.value.ChirLocalValue
 
+/**
+ * CHIR 测试夹具集合。
+ */
 object ChirTestFixtures {
+    /**
+     * 构造覆盖 codec 往返所需表达式、值和控制流的测试包。
+     */
     fun codecPackage(): ChirPackage {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
         val boolType = ChirResolvedTypeRef(ChirPrimitiveType.BOOL)

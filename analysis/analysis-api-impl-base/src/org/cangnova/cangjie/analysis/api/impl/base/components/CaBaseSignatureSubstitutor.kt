@@ -23,22 +23,37 @@ import org.cangnova.cangjie.analysis.api.types.CaSubstitutor
 abstract class CaBaseSignatureSubstitutor<T : CaSession> :
     CaBaseSessionComponent<T>(),
     CaSignatureSubstitutor {
+    /**
+     * 将函数符号转换为函数签名。
+     */
     abstract override fun <S : CaFunctionSymbol> S.asSignature(): CaFunctionSignature<S>
 
+    /**
+     * 将变量符号转换为变量签名。
+     */
     abstract override fun <S : CaVariableSymbol> S.asSignature(): CaVariableSignature<S>
 
+    /**
+     * 对函数符号签名应用类型替换。
+     */
     @OptIn(CaExperimentalApi::class)
     override fun <S : CaFunctionSymbol> S.substitute(substitutor: CaSubstitutor): CaFunctionSignature<S> = withValidityAssertion {
         if (substitutor is CaSubstitutor.Empty) return asSignature()
         return asSignature().substitute(substitutor)
     }
 
+    /**
+     * 对变量符号签名应用类型替换。
+     */
     @OptIn(CaExperimentalApi::class)
     override fun <S : CaVariableSymbol> S.substitute(substitutor: CaSubstitutor): CaVariableSignature<S> = withValidityAssertion {
         if (substitutor is CaSubstitutor.Empty) return asSignature()
         return asSignature().substitute(substitutor)
     }
 
+    /**
+     * 对 callable 符号签名应用类型替换，并按函数/变量符号分派。
+     */
     @OptIn(CaExperimentalApi::class)
     override fun <S : CaCallableSymbol> S.substitute(substitutor: CaSubstitutor): CaCallableSignature<S> = withValidityAssertion {
         when (this) {
@@ -48,6 +63,9 @@ abstract class CaBaseSignatureSubstitutor<T : CaSession> :
         }
     }
 
+    /**
+     * 将 callable 符号转换为签名，并按函数/变量符号分派。
+     */
     override fun <S : CaCallableSymbol> S.asSignature(): CaCallableSignature<S> = withValidityAssertion {
         when (this) {
             is CaFunctionSymbol -> asSignature()

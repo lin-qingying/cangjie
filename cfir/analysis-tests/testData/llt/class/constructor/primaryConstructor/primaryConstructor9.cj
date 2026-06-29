@@ -57,5 +57,5 @@ class B {
 }
 
 class C {
-    public C(var xa!: Bool = true, let ai!: Bool = xa && true, var c!: Int32 = 3, var x!: Int32 = 2 + Date2().v + <!ASSIGNMENT_OF_MEMBER_VARIABLE_CANNOT_USE_THIS_OR_SUPER!>t<!>his.c) {}
+    public C(var xa!: Bool = true, let ai!: Bool = xa && true, var c!: Int32 = 3, var x!: Int32 = 2 + Date2().v + <!ASSIGNMENT_OF_MEMBER_VARIABLE_CANNOT_USE_THIS_OR_SUPER!>this<!>.c) {}
 }

@@ -17,6 +17,11 @@ import org.junit.jupiter.api.Assertions.assertEquals
  * 4. 是否需要补 import。
  */
 abstract class AbstractReferenceShorteningPlanTest : AbstractAnalysisApiComponentTest() {
+    /**
+     * 执行文件级引用缩短计划测试。
+     *
+     * 方法只比较公开 plan 中的 operations，不执行真实 PSI 改写。
+     */
     override fun doTestByMainFile(mainFile: CjFile, mainModule: CjTestModule, testServices: TestServices) {
         val directives = directivesForMainFile(mainFile, mainModule)
         val expectedOperations = directives[AnalysisApiComponentTestDirectives.EXPECTED_REFERENCE_SHORTENING_OPERATION].sorted()

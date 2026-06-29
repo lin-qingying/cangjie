@@ -14,14 +14,26 @@ import org.cangnova.cangjie.analysis.api.projectStructure.CaSourceModule
  */
 @CaPlatformInterface
 interface CangJieAnchorModuleProvider : CaOptionalPlatformComponent {
+    /**
+     * 返回库模块对应的源码 anchor module。
+     */
     fun getAnchorModule(libraryModule: CaLibraryModule): CaSourceModule?
 
+    /**
+     * 返回所有 anchor module。
+     */
     fun getAllAnchorModules(): Collection<CaSourceModule>
 
+    /**
+     * 在已计算时返回所有 anchor module，否则返回 null。
+     */
     fun getAllAnchorModulesIfComputed(): Collection<CaSourceModule>?
 
     @CaPlatformInterface
     companion object {
+        /**
+         * 获取可选的项目级 anchor module provider 服务。
+         */
         fun getInstance(project: Project): CangJieAnchorModuleProvider? = project.serviceOrNull()
     }
 }

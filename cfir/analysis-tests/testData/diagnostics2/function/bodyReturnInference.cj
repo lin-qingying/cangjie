@@ -1,4 +1,5 @@
 // RUN_PIPELINE_TILL: FRONTEND
+// WITH_EXTRA_CHECKERS
 
 func acceptInt(x: Int64) {
     let _ = x
@@ -49,14 +50,14 @@ func declaredBoolMismatch(): Bool {
 }
 
 func declaredUnitTailExpression(): Unit {
-    <!UNUSED_EXPRESSION!>1<!>
+    1
 }
 
 main(): Unit {
     acceptInt(inferTail())
     acceptInt(inferReturn())
     acceptInt(inferJoined(true))
-    acceptInt(<!NEW_INFERENCE_ERROR!>unreachableTail<!>())
+    acceptInt(unreachableTail())
     acceptUnit(inferUnit())
     acceptInt(declaredOk())
 }

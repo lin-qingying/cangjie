@@ -24,40 +24,106 @@ interface CjSourceFile {
     fun getContentsAsStream(): InputStream
 }
 
-class CjPsiSourceFile(val psiFile: PsiFile) : CjSourceFile {
+/**
+ * 基于 PSI 文件的源文件实现。
+ */
+class CjPsiSourceFile(
+    /**
+     * 被包装的 PSI 文件。
+     */
+    val psiFile: PsiFile,
+) : CjSourceFile {
+    /**
+     * PSI 文件名。
+     */
     override val name: String
         get() = psiFile.name
 
+    /**
+     * PSI 文件关联虚拟文件的路径。
+     */
     override val path: String?
         get() = psiFile.virtualFile?.path
 
+    /**
+     * 读取 PSI 关联虚拟文件的内容流。
+     */
     override fun getContentsAsStream(): InputStream = psiFile.virtualFile.inputStream
 }
 
-class CjVirtualFileSourceFile(val virtualFile: VirtualFile) : CjSourceFile {
+/**
+ * 基于 IntelliJ VirtualFile 的源文件实现。
+ */
+class CjVirtualFileSourceFile(
+    /**
+     * 被包装的虚拟文件。
+     */
+    val virtualFile: VirtualFile,
+) : CjSourceFile {
+    /**
+     * 虚拟文件名。
+     */
     override val name: String
         get() = virtualFile.name
 
+    /**
+     * 虚拟文件路径。
+     */
     override val path: String
         get() = virtualFile.path
 
+    /**
+     * 读取虚拟文件内容流。
+     */
     override fun getContentsAsStream(): InputStream = virtualFile.inputStream
 }
 
-class CjIoFileSourceFile(val file: File) : CjSourceFile {
+/**
+ * 基于本地 IO 文件的源文件实现。
+ */
+class CjIoFileSourceFile(
+    /**
+     * 被包装的本地文件。
+     */
+    val file: File,
+) : CjSourceFile {
+    /**
+     * 本地文件名。
+     */
     override val name: String
         get() = file.name
 
+    /**
+     * 使用系统无关分隔符表示的本地文件路径。
+     */
     override val path: String
         get() = FileUtilRt.toSystemIndependentName(file.path)
 
+    /**
+     * 读取本地文件内容流。
+     */
     override fun getContentsAsStream(): InputStream = file.inputStream()
 }
 
+/**
+ * 基于内存文本的源文件实现。
+ */
 class CjInMemoryTextSourceFile(
+    /**
+     * 内存源文件名。
+     */
     override val name: String,
+    /**
+     * 内存源文件路径；没有稳定路径时为 null。
+     */
     override val path: String?,
+    /**
+     * 内存源文件文本。
+     */
     val text: CharSequence,
 ) : CjSourceFile {
+    /**
+     * 将内存文本转换为输入流。
+     */
     override fun getContentsAsStream(): InputStream = ByteArrayInputStream(text.toString().toByteArray())
 }

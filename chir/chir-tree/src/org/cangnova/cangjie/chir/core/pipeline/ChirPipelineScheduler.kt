@@ -1,10 +1,22 @@
 ﻿package org.cangnova.cangjie.chir.core.pipeline
 
+/**
+ * CHIR pipeline pass 调度器。
+ */
 class ChirPipelineScheduler(
+    /**
+     * 待调度的 pass 列表。
+     */
     private val passes: List<ChirPipelinePass>,
 ) {
+    /**
+     * pass 名称到 pass 实例的索引。
+     */
     private val passByName = passes.associateBy { it.metadata.name }
 
+    /**
+     * 按依赖关系拓扑排序 pass。
+     */
     fun sortedPasses(): List<ChirPipelinePass> {
         val inDegree = LinkedHashMap<String, Int>()
         val outgoing = LinkedHashMap<String, MutableSet<String>>()
@@ -50,6 +62,9 @@ class ChirPipelineScheduler(
         return sortedNames.map { passByName.getValue(it) }
     }
 
+    /**
+     * 按拓扑顺序执行 pass，并根据元数据失效分析缓存。
+     */
     fun execute(
         context: ChirPassContext,
         cache: ChirAnalysisCache,

@@ -25,10 +25,15 @@
 
 package org.cangnova.cangjie.formatter
 
+/**
+ * import 布局中的一个包匹配项。
+ */
 class CangJiePackageEntry(
     packageName: String,
+    /** 是否匹配该包的子包。 */
     val withSubpackages: Boolean
 ) {
+    /** 去掉通配后缀后的包名。 */
     val packageName = packageName.removeSuffix(".*")
 
     companion object {
@@ -39,6 +44,9 @@ class CangJiePackageEntry(
         val ALL_OTHER_ALIAS_IMPORTS_ENTRY = CangJiePackageEntry("<all other alias imports>", withSubpackages = true)
     }
 
+    /**
+     * 判断给定包名是否匹配当前条目。
+     */
     fun matchesPackageName(otherPackageName: String): Boolean {
         if (otherPackageName.startsWith(packageName)) {
             if (otherPackageName.length == packageName.length) return true
@@ -49,12 +57,21 @@ class CangJiePackageEntry(
         return false
     }
 
+    /**
+     * 是否为 import layout 中的特殊“其他 imports”占位项。
+     */
     val isSpecial: Boolean get() = this == ALL_OTHER_IMPORTS_ENTRY || this == ALL_OTHER_ALIAS_IMPORTS_ENTRY
 
+    /**
+     * 返回用于 UI 和 XML 的包名文本。
+     */
     override fun toString(): String {
         return packageName
     }
 
+    /**
+     * 比较包名和是否包含子包两个匹配维度。
+     */
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is CangJiePackageEntry) return false
@@ -62,5 +79,8 @@ class CangJiePackageEntry(
         return withSubpackages == other.withSubpackages && packageName == other.packageName
     }
 
+    /**
+     * 使用包名作为条目的 hash code。
+     */
     override fun hashCode(): Int = packageName.hashCode()
 }

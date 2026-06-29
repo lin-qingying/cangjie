@@ -37,24 +37,39 @@ import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.declarations.util.classId
 import org.cangnova.cangjie.utils.exceptions.shouldIjPlatformExceptionBeRethrown
 
+/**
+ * low-level 代码分析 JFR 事件分类名。
+ */
 private const val CANGJIE_CODE_ANALYSIS_EVENT_CATEGORY = "CangJie Code Analysis"
 
 
+/**
+ * low-level CFIR 分析的 JFR 事件记录器。
+ */
 object LLFlightRecorder {
+    /**
+     * 是否记录带堆栈的阶段事件。
+     */
     private val includePhaseTraces: Boolean by lazy(LazyThreadSafetyMode.PUBLICATION) {
         System.getProperty("cangjie.analysis.jfr.includePhaseTraces") == "true"
                 || System.getenv("CANGJIE_ANALYSIS_JFR_INCLUDE_PHASE_TRACES") == "true"
     }
 
+    /**
+     * 不带堆栈的阶段执行事件类型。
+     */
     private val phaseEventType = EventType.getEventType(LLPhaseEvent::class.java)
+    /**
+     * 带堆栈的阶段执行事件类型。
+     */
     private val phaseWithTraceEventType = EventType.getEventType(LLPhaseWithTraceEvent::class.java)
 
     /**
-     * Notify that the [target] declaration was successfully analyzed up to the given [phase] (possibly partially).
+     * 记录 [target] 开始推进到 [requestedPhase] 的阶段事件。
      *
-     * @param target The declaration being analyzed.
-     * @param containingDeclarations The list of declarations enclosing [target] starting from the [CfirFile].
-     * @param phase The phase the declaration was analyzed to.
+     * @param target 正在分析的声明或元素。
+     * @param containingDeclarations 从文件开始包围 [target] 的声明列表。
+     * @param requestedPhase 目标解析阶段。
      */
     internal fun phase(
         target: CfirElementWithResolveState,
@@ -90,13 +105,16 @@ object LLFlightRecorder {
         }
     }
 
+    /**
+     * 局部 body 分析事件类型。
+     */
     private val partialBodyAnalysisEventType = EventType.getEventType(LLPartialBodyAnalysisEvent::class.java)
 
     /**
-     * Notify that the [declaration]'s body is analyzed partially.
+     * 记录 [declaration] 的 body 完成一次局部分析。
      *
-     * @param declaration The declaration analyzed partially.
-     * @param state The current partial analysis state of the [declaration].
+     * @param declaration 被局部分析的声明。
+     * @param state 当前局部分析状态。
      */
     internal fun partialBodyAnalyzed(declaration: CfirElementWithResolveState, state: LLPartialBodyAnalysisState) {
         if (!partialBodyAnalysisEventType.isEnabled) {
@@ -110,17 +128,15 @@ object LLFlightRecorder {
         ).commit()
     }
 
+    /**
+     * 已就绪阶段事件类型。
+     */
     private val readyPhaseEventType = EventType.getEventType(LLReadyPhaseEvent::class.java)
 
     /**
-     * Notify that the [target] declaration was required to be analyzed up to the given [phase].
-     * However, the declaration already reached it, so no work has been performed.
+     * 记录 [target] 被请求推进到 [requestedPhase]，但目标已经处于该阶段或更高阶段。
      *
-     * Use `readyPhase(target, containingDeclarations, requestedPhase, withCallableMembers)` when you have the list of containing
-     * declarations, e.g., from a [org.cangnova.cangjie.analysis.low.level.api.cfir.api.CfirDesignation].
-     *
-     * @param target The declaration being analyzed.
-     * @param phase The phase the declaration is already analyzed to.
+     * 当调用方已经持有 containing declarations 时，应使用另一个重载以避免重新收集 designation。
      */
     internal fun readyPhase(target: CfirElementWithResolveState, requestedPhase: CfirResolvePhase) {
         if (!readyPhaseEventType.isEnabled) {
@@ -138,12 +154,9 @@ object LLFlightRecorder {
     }
 
     /**
-     * Notify that the [target] declaration was required to be analyzed up to the given [phase].
-     * However, the declaration already reached it, so no work has been performed.
+     * 记录 [target] 被请求推进到 [requestedPhase]，但目标已经处于该阶段或更高阶段。
      *
-     * @param target The declaration being analyzed.
-     * @param containingDeclarations The list of declarations enclosing [target] starting from the [CfirFile].
-     * @param phase The phase the declaration is already analyzed to.
+     * @param containingDeclarations 从文件开始包围 [target] 的声明列表。
      */
     internal fun readyPhase(
         target: CfirElementWithResolveState,
@@ -162,14 +175,15 @@ object LLFlightRecorder {
         ).commit()
     }
 
+    /**
+     * 阶段挂起事件类型。
+     */
     private val phaseSuspensionEventType = EventType.getEventType(LLPhaseSuspensionEvent::class.java)
 
     /**
-     * Notify that the current thread acknowledged the [declaration] is either finished analyzing up to [phase],
-     * or got an exception, such as [com.intellij.openapi.progress.ProcessCanceledException].
+     * 记录当前线程等待其他线程完成 [declaration] 的 [requestedPhase] 阶段分析。
      *
-     * @param declaration The analyzed declaration.
-     * @param phase The phase the [declaration] is being analyzed to.
+     * 返回的 completer 用于在等待结束时提交事件。
      */
     internal fun phaseSuspension(declaration: CfirElementWithResolveState, requestedPhase: CfirResolvePhase): LLPhaseSuspensionEventCompleter? {
         if (!phaseSuspensionEventType.isEnabled) {
@@ -184,22 +198,28 @@ object LLFlightRecorder {
         }
     }
 
+    /**
+     * stop-the-world 失效事件类型。
+     */
     private val stopWorldInvalidationEventType = EventType.getEventType(LLStopWorldInvalidation::class.java)
 
     /**
-     * Notify that a stop-the-world session invalidation has been scheduled.
+     * 记录 stop-the-world 会话失效已经被调度。
      */
     fun stopWorldSessionInvalidationScheduled() {
         stopWorldSessionInvalidation(newState = true)
     }
 
     /**
-     * Notify that a stop-the-world session invalidation has been completed (either after being scheduled, or immediately).
+     * 记录 stop-the-world 会话失效已经完成。
      */
     fun stopWorldSessionInvalidationComplete() {
         stopWorldSessionInvalidation(newState = false)
     }
 
+    /**
+     * 提交 stop-the-world 会话失效状态事件。
+     */
     private fun stopWorldSessionInvalidation(newState: Boolean) {
         if (!stopWorldInvalidationEventType.isEnabled) {
             return
@@ -208,6 +228,9 @@ object LLFlightRecorder {
         LLStopWorldInvalidation(state = newState).commit()
     }
 
+    /**
+     * 计算 [declaration] 在 JFR 事件路径中的短名称。
+     */
     private fun name(declaration: CfirElementWithResolveState): String {
         /**
          * As [name] is used as a component of [path], names must not contain colons.
@@ -236,10 +259,16 @@ object LLFlightRecorder {
         }
     }
 
+    /**
+     * 计算函数参数签名文本。
+     */
     private fun signature(declaration: CfirFunction): String {
         return declaration.valueParameters.joinToString(",") { it.name.asString() }
     }
 
+    /**
+     * 计算 [target] 的 designation 路径文本。
+     */
     private fun path(containingDeclarations: List<CfirDeclaration>, target: CfirElementWithResolveState): String = buildString {
         for (entry in containingDeclarations) {
             append(name(entry))
@@ -249,6 +278,9 @@ object LLFlightRecorder {
     }
 }
 
+/**
+ * 计算 [target] 所属 Analysis API 模块的紧凑类别编号。
+ */
 private fun computeModuleKind(target: CfirElementWithResolveState): Byte {
     val moduleData = target.moduleData as LLCfirModuleData
     return when (moduleData.caModule) {
@@ -268,6 +300,9 @@ private fun computeModuleKind(target: CfirElementWithResolveState): Byte {
  * When adding or removing phases, use unused numbers.
  * Never change existing mappings!
  */
+/**
+ * 解析阶段到稳定 JFR 编号的映射表。
+ */
 private val PHASE_COMPACT_NAMES = run {
     val phases = CfirResolvePhase.entries
     ByteArray(phases.size) {
@@ -286,8 +321,17 @@ private val PHASE_COMPACT_NAMES = run {
     }
 }
 
+/**
+ * 阶段执行事件的完成回调。
+ */
 internal interface LLPhaseEventCompleter {
+    /**
+     * 标记阶段执行成功完成。
+     */
     fun notifyCompleted()
+    /**
+     * 标记阶段执行以 [throwable] 失败或取消。
+     */
     fun notifyCompletedWithFailure(throwable: Throwable)
 }
 
@@ -297,21 +341,39 @@ internal interface LLPhaseEventCompleter {
 @Label("CangJie Declaration Phase Execution")
 @Description("A CangJie declaration is analyzed to the specified CFIR resolution phase (either successfully or with an error)")
 @StackTrace(false)
+/**
+ * 不记录堆栈的声明阶段执行 JFR 事件。
+ */
 private class LLPhaseEvent(
     @Label("Designation Path")
+    /**
+     * 目标声明的 designation 路径。
+     */
     private val path: String,
 
     @Label("Declaration Hash")
+    /**
+     * 目标声明对象的 identity hash。
+     */
     private val hash: Int,
 
     @Label("Phase")
+    /**
+     * 目标解析阶段的紧凑编号。
+     */
     private val phase: Byte,
 
     @Label("Module Kind")
+    /**
+     * 目标所属模块的紧凑类别编号。
+     */
     private val moduleKind: Byte
 ) : LLAbstractPhaseEvent() {
     @Label("Execution Result")
     @Description("0 - Success, 1 - Cancellation, 2 - Exception")
+    /**
+     * 阶段执行结果编号。
+     */
     override var result: Byte = -1
 }
 
@@ -321,33 +383,63 @@ private class LLPhaseEvent(
 @Label("CangJie Declaration Phase Execution")
 @Description("A CangJie declaration is analyzed to the specified CFIR resolution phase (either successfully or with an error)")
 @StackTrace(true)
+/**
+ * 记录堆栈的声明阶段执行 JFR 事件。
+ */
 private class LLPhaseWithTraceEvent(
     @Label("Designation Path")
+    /**
+     * 目标声明的 designation 路径。
+     */
     private val path: String,
 
     @Label("Declaration Hash")
+    /**
+     * 目标声明对象的 identity hash。
+     */
     private val hash: Int,
 
     @Label("Phase")
+    /**
+     * 目标解析阶段的紧凑编号。
+     */
     private val phase: Byte,
 
     @Label("Module Kind")
+    /**
+     * 目标所属模块的紧凑类别编号。
+     */
     private val moduleKind: Byte
 ) : LLAbstractPhaseEvent() {
     @Label("Execution Result")
     @Description("0 - Success, 1 - Cancellation, 2 - Exception")
+    /**
+     * 阶段执行结果编号。
+     */
     override var result: Byte = -1
 }
 
+/**
+ * 阶段执行事件的公共基类。
+ */
 private abstract class LLAbstractPhaseEvent : Event(), LLPhaseEventCompleter {
+    /**
+     * 阶段执行结果编号。
+     */
     protected abstract var result: Byte
 
+    /**
+     * 标记事件成功完成并提交。
+     */
     override fun notifyCompleted() {
         result = 0
         end()
         commit()
     }
 
+    /**
+     * 根据 [throwable] 类型标记事件结果并提交。
+     */
     override fun notifyCompletedWithFailure(throwable: Throwable) {
         result = when {
             throwable is PartialBodyAnalysisSuspendedException -> 0
@@ -365,14 +457,26 @@ private abstract class LLAbstractPhaseEvent : Event(), LLPhaseEventCompleter {
 @Label("CangJie Declaration Partial Body Analysis")
 @Description("A CangJie declaration's body is analyzed up to the specified PSI statement number (inclusive)")
 @StackTrace(false)
+/**
+ * 局部 body 分析进度 JFR 事件。
+ */
 private class LLPartialBodyAnalysisEvent(
     @Label("Declaration Hash")
+    /**
+     * 被分析声明对象的 identity hash。
+     */
     private val hash: Int,
 
     @Label("Analyzed Statement Count")
+    /**
+     * 已分析 PSI 语句数量。
+     */
     private val count: Int,
 
     @Label("Analysis Attempt Number")
+    /**
+     * 当前声明的局部分析尝试次数。
+     */
     private val attempt: Int
 ) : Event()
 
@@ -383,21 +487,42 @@ private class LLPartialBodyAnalysisEvent(
 @Label("Ready CangJie Declaration Analysis")
 @Description("A CangJie declaration is requested to be analyzed, yet the analysis have been already done")
 @StackTrace(false)
+/**
+ * 请求阶段已经就绪时提交的 JFR 事件。
+ */
 private class LLReadyPhaseEvent(
     @Label("Designation path")
+    /**
+     * 目标声明的 designation 路径。
+     */
     private val path: String,
 
     @Label("Declaration Hash")
+    /**
+     * 目标声明对象的 identity hash。
+     */
     private val hash: Int,
 
     @Label("Module Kind")
+    /**
+     * 目标所属模块的紧凑类别编号。
+     */
     private val moduleKind: Byte,
 
     @Label("Phase")
+    /**
+     * 已就绪解析阶段的紧凑编号。
+     */
     private val phase: Byte
 ) : Event()
 
+/**
+ * 阶段挂起事件的完成回调。
+ */
 internal interface LLPhaseSuspensionEventCompleter {
+    /**
+     * 标记挂起等待完成。
+     */
     fun notifyCompleted()
 }
 
@@ -407,13 +532,25 @@ internal interface LLPhaseSuspensionEventCompleter {
 @Label("Suspended CangJie Declaration Analysis")
 @Description("A CangJie declaration analysis was suspended, as the other thread was already progressing with the same analysis")
 @StackTrace(false)
+/**
+ * 等待其他线程推进同一阶段时提交的挂起事件。
+ */
 private class LLPhaseSuspensionEvent(
     @Label("Declaration Hash")
+    /**
+     * 被等待声明对象的 identity hash。
+     */
     private val hash: Int,
 
     @Label("Phase")
+    /**
+     * 等待阶段的紧凑编号。
+     */
     private val phase: Byte
 ) : Event(), LLPhaseSuspensionEventCompleter {
+    /**
+     * 结束并提交挂起等待事件。
+     */
     override fun notifyCompleted() {
         end()
         commit()
@@ -426,8 +563,14 @@ private class LLPhaseSuspensionEvent(
 @Label("Stop-the-world Session Invalidation")
 @Description("Stop-the-world session invalidation either has been requested, or it has just completed")
 @StackTrace(false)
+/**
+ * stop-the-world 会话失效状态事件。
+ */
 private class LLStopWorldInvalidation(
     @Label("Invalidation State")
     @Description("If true, the invalidation has been requested, otherwise it has completed")
+    /**
+     * `true` 表示失效已请求，`false` 表示失效已完成。
+     */
     private val state: Boolean
 ) : Event()

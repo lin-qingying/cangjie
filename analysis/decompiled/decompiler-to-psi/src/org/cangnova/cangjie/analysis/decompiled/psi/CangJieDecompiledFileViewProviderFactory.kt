@@ -12,6 +12,12 @@ import com.intellij.psi.PsiManager
  * 这里作为 file type 层入口，只委托仓颉自己的 [CjoFileDecompilers] 协议。
  */
 class CangJieDecompiledFileViewProviderFactory : FileViewProviderFactory {
+    /**
+     * 为 `.cjo` 文件创建反编译 view provider。
+     *
+     * 工厂只查找已注册的 full decompiler 并委托创建，避免在 file type 层直接依赖具体
+     * metadata stub builder 或 PSI 文件实现。
+     */
     override fun createFileViewProvider(
         file: VirtualFile,
         language: Language?,

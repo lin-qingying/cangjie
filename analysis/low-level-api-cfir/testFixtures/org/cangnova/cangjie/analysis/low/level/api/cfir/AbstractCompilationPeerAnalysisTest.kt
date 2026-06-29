@@ -18,8 +18,14 @@ import org.cangnova.cangjie.test.services.assertions
  * `CompilationPeerCollector` 在真实仓颉语义下返回的源文件集合。
  */
 abstract class AbstractCompilationPeerAnalysisTest : AbstractAnalysisApiBasedTest() {
+    /**
+     * 使用源码 low-level CFIR 测试配置。
+     */
     override val configurator = analysisApiCfirSourceTestConfigurator(analyseInDependentSession = false)
 
+    /**
+     * 构建主文件 CFIR 并渲染编译同伴收集结果。
+     */
     override fun doTestByMainFile(mainFile: CjFile, mainModule: CjTestModule, testServices: TestServices) {
         val resolutionFacade = mainFile.getResolutionFacadeForTest()
         val cfirFile = mainFile.getOrBuildCfirFile(resolutionFacade)

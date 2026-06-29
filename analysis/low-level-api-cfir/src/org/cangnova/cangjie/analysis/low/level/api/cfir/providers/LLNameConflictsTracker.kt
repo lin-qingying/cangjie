@@ -10,13 +10,39 @@ import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.name.ClassId
 
-internal class LLNameConflictsTracker(private val session: LLCfirSession) : CfirNameConflictsTracker() {
-    private data class LLClassifierRedeclaration(override val classifierSymbol: CfirClassLikeSymbol<*>) : ClassifierRedeclaration() {
+/**
+ * Analysis API 模式下的 classifier 名称冲突查询器。
+ *
+ * 与主编译器注册式 tracker 不同，low-level API 按需从当前 session 的 symbol provider 查询同名 class-like symbol。
+ */
+internal class LLNameConflictsTracker(
+    /**
+     * 当前查询器所属的低阶 CFIR session。
+     */
+    private val session: LLCfirSession
+) : CfirNameConflictsTracker() {
+    /**
+     * low-level API 返回的 classifier 重声明记录。
+     */
+    private data class LLClassifierRedeclaration(
+        /**
+         * 参与重声明冲突的 classifier symbol。
+         */
+        override val classifierSymbol: CfirClassLikeSymbol<*>
+    ) : ClassifierRedeclaration() {
         // Grabbing the containing file via the symbol provider is non-trivial. Specifying it is optional, and it can later be retrieved
         // separately.
+        /**
+         * low-level 查询路径不在重声明记录中保存容器文件。
+         */
         override val containingFile: CfirFile? get() = null
     }
 
+    /**
+     * 返回 [classId] 对应的 classifier 重声明集合。
+     *
+     * 只有同一 class id 下找到至少两个 CFIR classifier symbol 时才产生重声明记录。
+     */
     override fun getClassifierRedeclarations(classId: ClassId): Collection<ClassifierRedeclaration> {
         // As noted in the KDoc of `getClassifierRedeclarations`, Java redeclarations should not be returned by this component. As such,
         // we limit the scope to Kotlin symbols by taking the CFIR provider's symbol provider.
@@ -32,6 +58,11 @@ internal class LLNameConflictsTracker(private val session: LLCfirSession) : Cfir
             .map { LLClassifierRedeclaration(it) }
     }
 
+    /**
+     * Analysis API 不使用注册式重声明收集。
+     *
+     * 注册式 tracker 需要提前分析整个模块；这里保持空实现，所有查询都走 [getClassifierRedeclarations] 的按需 provider 路径。
+     */
     override fun registerClassifierRedeclaration(
         classId: ClassId,
         newSymbol: CfirClassLikeSymbol<*>,

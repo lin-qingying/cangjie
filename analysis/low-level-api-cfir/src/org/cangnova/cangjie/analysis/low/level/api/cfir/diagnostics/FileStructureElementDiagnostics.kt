@@ -10,19 +10,39 @@ import com.intellij.util.SmartList
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.DiagnosticCheckerFilter
 import org.cangnova.cangjie.cfir.diagnostics.CjPsiDiagnostic
 
-internal class FileStructureElementDiagnostics(private val retriever: FileStructureElementDiagnosticRetriever) {
+/**
+ * 单个文件结构元素按 checker filter 懒加载并组合 diagnostics 的包装。
+ */
+internal class FileStructureElementDiagnostics(
+    /**
+     * 实际执行 diagnostics 重新收集的 retriever。
+     */
+    private val retriever: FileStructureElementDiagnosticRetriever,
+) {
+    /**
+     * 默认 checker 产生的 diagnostics。
+     */
     private val diagnosticByDefaultCheckers: FileStructureElementDiagnosticList by lazy {
         retriever.retrieve(DiagnosticCheckerFilter.ONLY_DEFAULT_CHECKERS)
     }
 
+    /**
+     * extra checker 产生的 diagnostics。
+     */
     private val diagnosticByExtraCheckers: FileStructureElementDiagnosticList by lazy {
         retriever.retrieve(DiagnosticCheckerFilter.ONLY_EXTRA_CHECKERS)
     }
 
+    /**
+     * experimental checker 产生的 diagnostics。
+     */
     private val diagnosticByExperimentalCheckers: FileStructureElementDiagnosticList by lazy {
         retriever.retrieve(DiagnosticCheckerFilter.ONLY_EXPERIMENTAL_CHECKERS)
     }
 
+    /**
+     * 按 filter 聚合指定 PSI 元素上的 diagnostics。
+     */
     fun diagnosticsFor(filter: DiagnosticCheckerFilter, element: PsiElement): List<CjPsiDiagnostic> =
         SmartList<CjPsiDiagnostic>().apply {
             if (filter.runDefaultCheckers) {
@@ -37,6 +57,9 @@ internal class FileStructureElementDiagnostics(private val retriever: FileStruct
         }
 
 
+    /**
+     * 按 filter 遍历所有已收集 diagnostics 列表。
+     */
     inline fun forEach(filter: DiagnosticCheckerFilter, action: (List<CjPsiDiagnostic>) -> Unit) {
         if (filter.runDefaultCheckers) {
             diagnosticByDefaultCheckers.forEach(action)

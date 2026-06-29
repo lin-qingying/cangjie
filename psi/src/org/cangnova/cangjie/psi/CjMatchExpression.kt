@@ -28,13 +28,25 @@ import org.cangnova.cangjie.lexer.CjTokens
 import com.intellij.lang.ASTNode
 import com.intellij.psi.PsiElement
 
+/**
+ * 表示 `CjMatchExpression`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjMatchExpression(node: ASTNode) : CjExpressionImpl(node) {
+    /**
+     * 保存 `entries`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val entries
         get() = findChildrenByType<CjMatchEntry>(CjNodeTypes.MATCH_ENTRY)
 
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitMatchExpression(this, data)
     }
+    /**
+     * 保存 `elseExpression`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val elseExpression: CjExpression? get() {
         for (entry in entries) {
             if (entry.isElse) {
@@ -43,18 +55,39 @@ class CjMatchExpression(node: ASTNode) : CjExpressionImpl(node) {
         }
         return null
     }
+    /**
+     * 保存 `condition`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val condition: CjContainerNode?
         get() = findChildByType(CjNodeTypes.CONDITION)
+    /**
+     * 保存 `subjectExpression`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val subjectExpression: CjExpression?
         get() = condition?.expression
+    /**
+     * 保存 `matchKeyword`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val matchKeyword: PsiElement
         get() = findChildByType(CjTokens.MATCH_KEYWORD)!!
+    /**
+     * 保存 `closeBrace`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val closeBrace: PsiElement?
         get() = findChildByType(CjTokens.RBRACE)
+    /**
+     * 保存 `openBrace`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val openBrace: PsiElement?
         get() = findChildByType(CjTokens.LBRACE)
+    /**
+     * 保存 `leftParenthesis`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val leftParenthesis: PsiElement?
         get() = findChildByType(CjTokens.LPAR)
+    /**
+     * 保存 `rightParenthesis`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val rightParenthesis: PsiElement?
         get() = findChildByType(CjTokens.RPAR)
 }

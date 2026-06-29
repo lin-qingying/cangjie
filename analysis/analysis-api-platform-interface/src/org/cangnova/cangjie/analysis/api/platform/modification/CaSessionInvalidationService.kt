@@ -12,9 +12,15 @@ import org.cangnova.cangjie.analysis.api.session.CaSessionProvider
  * 清理缓存、重建低层 facade 或刷新快照。
  */
 interface CaSessionInvalidationService {
+    /**
+     * 使指定模块集合相关的 Analysis session 失效。
+     */
     fun invalidate(modules: Set<CaModule>)
 
     companion object {
+        /**
+         * 获取项目级 session 失效服务；若 session provider 本身实现该接口则复用它。
+         */
         fun getInstance(project: Project): CaSessionInvalidationService? =
             project.serviceOrNull()
                 ?: (CaSessionProvider.getInstance(project) as? CaSessionInvalidationService)

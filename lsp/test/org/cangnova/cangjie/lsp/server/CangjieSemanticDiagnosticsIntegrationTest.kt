@@ -11,9 +11,20 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
+/**
+ * 校验 LSP 诊断能力与真实 Analysis API 工作区的集成。
+ *
+ * 该测试覆盖标准库路径、overlay 依赖刷新、push/pull diagnostics 和新增工作区目录诊断。
+ */
 class CangjieSemanticDiagnosticsIntegrationTest : AbstractLspIntegrationTest() {
+    /**
+     * 禁用默认会话，测试按不同工作区配置手动创建会话。
+     */
     override val autoCreateDefaultSession: Boolean = false
 
+    /**
+     * 校验通过 LSP 配置的标准库路径可以解析默认导入 String。
+     */
     @Test
     fun `stdlib default imports resolve String through configured stdlib path`() {
         LspWorkspaceFixtureBuilder()
@@ -39,6 +50,9 @@ class CangjieSemanticDiagnosticsIntegrationTest : AbstractLspIntegrationTest() {
             }
     }
 
+    /**
+     * 校验 overlay 依赖变更会刷新依赖文档的 push 和 pull diagnostics。
+     */
     @Test
     fun `overlay dependency changes refresh push and pull diagnostics for dependent document`() {
         overlayWorkspace().use { fixture ->
@@ -89,6 +103,9 @@ class CangjieSemanticDiagnosticsIntegrationTest : AbstractLspIntegrationTest() {
         }
     }
 
+    /**
+     * 校验工作区诊断包含新加入 workspace folder 下未打开的磁盘源码文件。
+     */
     @Test
     fun `workspace diagnostics include unopened disk files from newly added workspace folders`() {
         LspWorkspaceFixtureBuilder()
@@ -148,6 +165,9 @@ class CangjieSemanticDiagnosticsIntegrationTest : AbstractLspIntegrationTest() {
             }
     }
 
+    /**
+     * 构造 overlay 依赖诊断测试使用的两文件工作区。
+     */
     private fun overlayWorkspace(): LspWorkspaceFixture {
         return LspWorkspaceFixtureBuilder()
             .source(
@@ -175,6 +195,9 @@ class CangjieSemanticDiagnosticsIntegrationTest : AbstractLspIntegrationTest() {
             .build()
     }
 
+    /**
+     * 返回指定 URI 最近一次发布的诊断列表。
+     */
     private fun diagnosticsFor(
         session: org.cangnova.cangjie.lsp.framework.LspIntegrationTestSession,
         uri: String,

@@ -12,6 +12,9 @@ import org.cangnova.cangjie.cfir.psi
 import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.psi.CjFile
 
+/**
+ * 查找当前 CFIR 元素所属的 [CfirFile]。
+ */
 fun CfirElementWithResolveState.getContainingFile(): CfirFile? {
     val provider = moduleData.session.cfirProvider
     return when (this) {

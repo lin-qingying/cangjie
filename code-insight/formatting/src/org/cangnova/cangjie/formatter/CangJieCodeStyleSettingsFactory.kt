@@ -22,31 +22,55 @@ import org.cangnova.cangjie.lang.CangJieLanguage
  * code style settings 注册到临时 `CodeStyleSettings` 容器中。
  */
 object CangJieCodeStyleSettingsFactory {
+    /**
+     * 创建带仓颉 common/custom settings 的默认代码风格配置。
+     */
     fun createDefaultSettings(): CodeStyleSettings =
         HeadlessCangJieCodeStyleSettings().also { settings ->
             ensureCodeStyleSettingsServiceRegistered()
             registerCangJieSettings(settings)
         }
 
+    /**
+     * 将仓颉 common/custom settings 注册到指定配置容器。
+     */
     fun registerCangJieSettings(settings: CodeStyleSettings) {
         settings.registerCommonSettings(CangJieHeadlessLanguageCodeStyleProvider)
         settings.registerCustomSettings(CangJieHeadlessLanguageCodeStyleProvider)
     }
 
+    /**
+     * Headless 环境中提供仓颉代码风格设置实例的轻量 provider。
+     */
     private object CangJieHeadlessLanguageCodeStyleProvider : LanguageCodeStyleProvider {
+        /**
+         * 返回该 provider 覆盖的语言。
+         */
         override fun getLanguage(): Language = CangJieLanguage
 
+        /**
+         * 创建仓颉 common settings 默认实例。
+         */
         override fun getDefaultCommonSettings(): CommonCodeStyleSettings =
             CangJieCommonCodeStyleSettings().apply {
                 initIndentOptions()
             }
 
+        /**
+         * 创建仓颉 custom settings 默认实例。
+         */
         override fun createCustomSettings(settings: CodeStyleSettings): CustomCodeStyleSettings =
             CangJieCodeStyleSettings(settings)
 
+        /**
+         * 仓颉当前复用 IntelliJ 默认文档注释设置。
+         */
         override fun getDocCommentSettings(settings: CodeStyleSettings): DocCommentSettings =
             DocCommentSettings.DEFAULTS
 
+        /**
+         * Headless provider 不暴露 UI 字段集合。
+         */
         override fun getSupportedFields(): Set<String> = emptySet()
     }
 
@@ -73,15 +97,30 @@ object CangJieCodeStyleSettingsFactory {
         }
     }
 
+    /**
+     * Headless formatter 使用的最小 CodeStyleSettingsService。
+     */
     private class HeadlessCodeStyleSettingsService : CodeStyleSettingsService {
+        /**
+         * Headless 服务不维护设置监听器。
+         */
         override fun addListener(listener: CodeStyleSettingsServiceListener, parentDisposable: Disposable?) {
         }
 
+        /**
+         * 不提供文件类型级缩进选项工厂。
+         */
         override fun getFileTypeIndentOptionsFactories(): List<FileTypeIndentOptionsFactory> = emptyList()
 
+        /**
+         * 返回仓颉 custom settings provider。
+         */
         override fun getCustomCodeStyleSettingsFactories(): List<LanguageCodeStyleProvider> =
             listOf(CangJieHeadlessLanguageCodeStyleProvider)
 
+        /**
+         * 返回仓颉 language code style provider。
+         */
         override fun getLanguageCodeStyleProviders(): List<LanguageCodeStyleProvider> =
             listOf(CangJieHeadlessLanguageCodeStyleProvider)
     }

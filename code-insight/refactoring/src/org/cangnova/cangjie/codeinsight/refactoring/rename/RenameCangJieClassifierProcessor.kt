@@ -14,5 +14,8 @@ import org.cangnova.cangjie.psi.CjClassLikeDeclaration
  * class / struct / interface / enum 等 classifier 声明的 rename processor。
  */
 class RenameCangJieClassifierProcessor : RenameCangJiePsiProcessor() {
+    /**
+     * 只处理仓颉 class-like 声明。
+     */
     override fun canProcessElement(element: PsiElement): Boolean = element is CjClassLikeDeclaration
 }

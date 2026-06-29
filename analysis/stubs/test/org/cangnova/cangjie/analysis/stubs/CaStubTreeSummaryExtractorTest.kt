@@ -34,7 +34,13 @@ import org.cangnova.cangjie.psi.stubs.impl.*
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
+/**
+ * 验证 [CaStubTreeSummaryExtractor] 从手工 stub 树提取摘要的规则。
+ */
 class CaStubTreeSummaryExtractorTest {
+    /**
+     * 验证 classifier、callable、模式变量和 class member 都能从手工 stub 树中被正确提取。
+     */
     @Test
     fun extractSummaryFromManualStubTree() {
         val packageFqName = FqName("sample.manual")

@@ -204,8 +204,13 @@ private class RecursiveConstructorGraph(
             node is RecursiveConstructorNode.Call && node.call === call
         }.takeIf { it >= 0 } ?: 0
         val cyclePath = path.drop(startIndex)
+        val head = call.targetConstructorOrNull()
+            ?.takeIf { call.constructorDelegationKindOrNull() == ConstructorDelegationCallKind.THIS }
+            ?.let(RecursiveConstructorNode::Constructor)
+            ?: RecursiveConstructorNode.Call(call)
         return RecursiveConstructorCycle(
-            head = RecursiveConstructorNode.Call(call),
+            // `this(...)` 构造器委托环的官方主诊断落在构造器声明，普通构造表达式仍落在调用点。
+            head = head,
             declarations = cyclePath.ownerDeclarations(),
         )
     }

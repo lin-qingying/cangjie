@@ -38,9 +38,18 @@ import java.util.ArrayList
 import java.util.HashMap
 import java.util.LinkedHashMap
 
+/**
+ * 表示 `PlainTextArgumentType`，承载PSI 工具中的语法节点、索引桩或辅助模型。
+ */
 private class PlainTextArgumentType<T : Any>(klass: Class<T>, val toPlainText: (T) -> String) : ArgumentType<T>(klass)
+/**
+ * 提供 `PsiChildRangeArgumentType` 单例，集中承载PSI 工具的共享状态、工厂或工具行为。
+ */
 private object PsiChildRangeArgumentType :
     PsiElementPlaceholderArgumentType<PsiChildRange, CjElement>(PsiChildRange::class.java, CjElement::class.java) {
+    /**
+     * 实现 `replacePlaceholderElement` 的PSI 工具协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun replacePlaceholderElement(placeholder: CjElement, argument: PsiChildRange, reformat: Boolean): PsiChildRange {
         val project = placeholder.project
 
@@ -66,10 +75,19 @@ private object PsiChildRangeArgumentType :
     }
 }
 
+/**
+ * 保存 `CREATE_BY_PATTERN_MAY_NOT_REFORMAT`，供PSI 工具流程读取节点结构或语义信息。
+ */
 @get:TestOnly
 @set:TestOnly
 var CREATE_BY_PATTERN_MAY_NOT_REFORMAT = false
+/**
+ * 表示 `PsiElementArgumentType`，承载PSI 工具中的语法节点、索引桩或辅助模型。
+ */
 private class PsiElementArgumentType<T : PsiElement>(klass: Class<T>) : PsiElementPlaceholderArgumentType<T, T>(klass, klass) {
+    /**
+     * 实现 `replacePlaceholderElement` 的PSI 工具协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun replacePlaceholderElement(placeholder: T, argument: T, reformat: Boolean): PsiChildRange {
         var result = if (placeholder is CjExpressionImplStub<*>) {
             CjExpressionImpl.replaceExpression(placeholder, argument, reformat, placeholder::rawReplace)
@@ -84,6 +102,9 @@ private class PsiElementArgumentType<T : PsiElement>(klass: Class<T>) : PsiEleme
         return PsiChildRange.singleElement(result)
     }
 }
+/**
+ * 保存 `SUPPORTED_ARGUMENT_TYPES` 的内部状态，供PSI 工具实现维护节点缓存或解析上下文。
+ */
 private val SUPPORTED_ARGUMENT_TYPES = listOf(
     PsiElementArgumentType(CjExpression::class.java),
     PsiElementArgumentType(CjTypeReference::class.java),
@@ -91,17 +112,41 @@ private val SUPPORTED_ARGUMENT_TYPES = listOf(
     PlainTextArgumentType(Name::class.java, toPlainText = Name::render),
     PsiChildRangeArgumentType,
 )
+/**
+ * 表示 `Placeholder`，承载PSI 工具中的语法节点、索引桩或辅助模型。
+ */
 private data class Placeholder(val range: TextRange, val text: String)
+/**
+ * 表示 `PsiElementPlaceholderArgumentType`，承载PSI 工具中的语法节点、索引桩或辅助模型。
+ */
 private abstract class PsiElementPlaceholderArgumentType<T : Any, TPlaceholder : PsiElement>(
     klass: Class<T>,
+    /**
+     * 保存 `placeholderClass`，供PSI 工具流程读取节点结构或语义信息。
+     */
     val placeholderClass: Class<TPlaceholder>,
 ) : ArgumentType<T>(klass) {
+    /**
+     * 提供 `replacePlaceholderElement` 操作，封装PSI 工具节点的访问、构造或判断逻辑。
+     */
     abstract fun replacePlaceholderElement(placeholder: TPlaceholder, argument: T, reformat: Boolean): PsiChildRange
 }
+/**
+ * 表示 `ArgumentType`，承载PSI 工具中的语法节点、索引桩或辅助模型。
+ */
 private abstract class ArgumentType<T : Any>(val klass: Class<T>)
+/**
+ * 表示 `PatternData`，承载PSI 工具中的语法节点、索引桩或辅助模型。
+ */
 private data class PatternData(val processedText: String, val placeholders: Map<Int, List<Placeholder>>)
+/**
+ * 提供 `createExpressionByPattern` 操作，封装PSI 工具节点的访问、构造或判断逻辑。
+ */
 fun CjPsiFactory.createExpressionByPattern(pattern: String, vararg args: Any, reformat: Boolean = true): CjExpression =
     createByPattern(pattern, *args, reformat = reformat) { createExpression(it) }
+/**
+ * 执行 `processPattern` 内部辅助逻辑，支撑PSI 工具节点的结构解析与访问。
+ */
 private fun processPattern(pattern: String, args: List<Any>): PatternData {
     val ranges = LinkedHashMap<Int, MutableList<Placeholder>>()
 
@@ -169,6 +214,9 @@ private fun processPattern(pattern: String, args: List<Any>): PatternData {
 
     return PatternData(text, ranges)
 }
+/**
+ * 提供 `createByPattern` 操作，封装PSI 工具节点的访问、构造或判断逻辑。
+ */
 fun <TElement : CjElement> createByPattern(
     pattern: String,
     vararg args: Any,

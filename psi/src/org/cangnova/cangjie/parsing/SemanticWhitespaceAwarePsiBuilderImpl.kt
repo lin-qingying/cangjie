@@ -32,14 +32,26 @@ import com.intellij.psi.TokenType
 import com.intellij.psi.tree.IElementType
 import com.intellij.util.containers.Stack
 
+/**
+ * 表示 `SemanticWhitespaceAwarePsiBuilderImpl`，承载仓颉语法解析中的语法节点、索引桩或辅助模型。
+ */
 class SemanticWhitespaceAwarePsiBuilderImpl(delegate: PsiBuilder) :
     PsiBuilderAdapter(
         delegate,
     ),
     SemanticWhitespaceAwarePsiBuilder {
 
+    /**
+     * 保存 `joinComplexTokens` 的内部状态，供仓颉语法解析实现维护节点缓存或解析上下文。
+     */
     private val joinComplexTokens = Stack<Boolean>()
+    /**
+     * 保存 `newlinesEnabled` 的内部状态，供仓颉语法解析实现维护节点缓存或解析上下文。
+     */
     private val newlinesEnabled = Stack<Boolean>()
+    /**
+     * 保存 `delegateImpl` 的内部状态，供仓颉语法解析实现维护节点缓存或解析上下文。
+     */
     private val delegateImpl: PsiBuilderImpl?
 
     init {
@@ -49,11 +61,17 @@ class SemanticWhitespaceAwarePsiBuilderImpl(delegate: PsiBuilder) :
             findPsiBuilderImpl(delegate)
     }
 
+    /**
+     * 实现 `isWhitespaceOrComment` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun isWhitespaceOrComment(elementType: IElementType): Boolean {
         assert(delegateImpl != null) { "PsiBuilderImpl not found" }
         return delegateImpl!!.whitespaceOrComment(elementType)
     }
 
+    /**
+     * 实现 `newlineBeforeCurrentToken` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun newlineBeforeCurrentToken(): Boolean {
         if (!newlinesEnabled.peek()) return false
 
@@ -80,39 +98,66 @@ class SemanticWhitespaceAwarePsiBuilderImpl(delegate: PsiBuilder) :
         return false
     }
 
+    /**
+     * 实现 `disableNewlines` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun disableNewlines() {
         newlinesEnabled.push(false)
     }
 
+    /**
+     * 实现 `enableNewlines` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun enableNewlines() {
         newlinesEnabled.push(true)
     }
 
+    /**
+     * 实现 `restoreNewlinesState` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun restoreNewlinesState() {
         assert(newlinesEnabled.size > 1)
         newlinesEnabled.pop()
     }
 
+    /**
+     * 执行 `joinComplexTokens` 内部辅助逻辑，支撑仓颉语法解析节点的结构解析与访问。
+     */
     private fun joinComplexTokens(): Boolean {
         return joinComplexTokens.peek()
     }
 
+    /**
+     * 实现 `restoreJoiningComplexTokensState` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun restoreJoiningComplexTokensState() {
         joinComplexTokens.pop()
     }
 
+    /**
+     * 实现 `enableJoiningComplexTokens` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun enableJoiningComplexTokens() {
         joinComplexTokens.push(true)
     }
 
+    /**
+     * 实现 `disableJoiningComplexTokens` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun disableJoiningComplexTokens() {
         joinComplexTokens.push(false)
     }
 
+    /**
+     * 实现 `getTokenType` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getTokenType(): IElementType? {
         return if (!joinComplexTokens()) super.getTokenType() else getJoinedTokenType(super.getTokenType(), 1)
     }
 
+    /**
+     * 执行 `getJoinedTokenType` 内部辅助逻辑，支撑仓颉语法解析节点的结构解析与访问。
+     */
     private fun getJoinedTokenType(rawTokenType: IElementType?, rawLookupSteps: Int): IElementType? {
 //        if (rawTokenType === CjTokens.QUEST) {
 //            val nextRawToken = rawLookup(rawLookupSteps)
@@ -124,6 +169,9 @@ class SemanticWhitespaceAwarePsiBuilderImpl(delegate: PsiBuilder) :
         return rawTokenType
     }
 
+    /**
+     * 实现 `advanceLexer` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun advanceLexer() {
         if (!joinComplexTokens()) {
             super.advanceLexer()
@@ -134,12 +182,18 @@ class SemanticWhitespaceAwarePsiBuilderImpl(delegate: PsiBuilder) :
         super.advanceLexer()
     }
 
+    /**
+     * 实现 `getTokenText` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getTokenText(): String? {
         if (!joinComplexTokens()) return super.getTokenText()
 
         return super.getTokenText()
     }
 
+    /**
+     * 实现 `lookAhead` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun lookAhead(steps: Int): IElementType? {
         if (!joinComplexTokens()) return super.lookAhead(steps)
         return getJoinedTokenType(super.lookAhead(steps), 2)

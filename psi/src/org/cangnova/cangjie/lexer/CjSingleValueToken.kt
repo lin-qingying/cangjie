@@ -26,7 +26,13 @@ package org.cangnova.cangjie.lexer
 import org.jetbrains.annotations.NonNls
 
 
+/**
+ * 表示 `CjSingleValueToken`，承载仓颉词法与文档注释中的语法节点、索引桩或辅助模型。
+ */
 open class CjSingleValueToken : CjToken {
+    /**
+     * 保存 `value`，供仓颉词法与文档注释流程读取节点结构或语义信息。
+     */
     val value: String
 
     @Deprecated("")

@@ -17,8 +17,14 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.file.structure.LLCfirDec
  */
 @OptIn(LLCfirInternals::class, CaPlatformInterface::class)
 internal class CaCfirSourceModificationService(
+    /**
+     * 需要查询 low-level 修改服务的 IntelliJ 项目。
+     */
     private val project: Project,
 ) : CaSourceModificationService {
+    /**
+     * 委托 low-level CFIR 判断源码修改的局部性。
+     */
     override fun detectLocality(
         element: PsiElement,
         modificationType: CaElementModificationType,
@@ -26,6 +32,9 @@ internal class CaCfirSourceModificationService(
         return LLCfirDeclarationModificationService.getInstance(project).detectLocality(element, modificationType)
     }
 
+    /**
+     * 委托 low-level CFIR 执行对应修改局部性的失效处理。
+     */
     override fun handleInvalidation(
         element: PsiElement,
         modificationLocality: CaSourceModificationLocality,
@@ -33,6 +42,9 @@ internal class CaCfirSourceModificationService(
         LLCfirDeclarationModificationService.getInstance(project).handleInvalidation(element, modificationLocality)
     }
 
+    /**
+     * 委托 low-level CFIR 查找块内修改影响的祖先元素。
+     */
     override fun ancestorAffectedByInBlockModification(element: PsiElement): PsiElement? {
         return LLCfirDeclarationModificationService.getInstance(project).ancestorAffectedByInBlockModification(element)
     }

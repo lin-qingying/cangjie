@@ -66,10 +66,21 @@ import java.util.logging.Logger
  * 这样文档生命周期、Analysis snapshot、push diagnostics 三条链就始终围绕同一份平台状态工作。
  */
 class CangjieTextDocumentService(
+    /**
+     * 文本服务共享的 LSP 运行时上下文。
+     */
     private val serverContext: CangjieServerContext,
 ) : TextDocumentService {
+    /**
+     * 文本服务日志记录器。
+     */
     private val logger = Logger.getLogger(CangjieTextDocumentService::class.java.name)
 
+    /**
+     * 处理 textDocument/didOpen 通知。
+     *
+     * 方法写入文档存储、通知分析层、刷新项目结构，并在诊断启用时重发打开文档诊断。
+     */
     override fun didOpen(params: DidOpenTextDocumentParams) {
         logger.info("====> didOpen: ${params.textDocument.uri}")
         val document = serverContext.documentStore.open(params.textDocument)
@@ -81,6 +92,11 @@ class CangjieTextDocumentService(
         }
     }
 
+    /**
+     * 处理 textDocument/didChange 通知。
+     *
+     * 方法按 LSP 变更列表更新文档快照，并刷新依赖该文档的语义状态。
+     */
     override fun didChange(params: DidChangeTextDocumentParams) {
         logger.info("====> didChange: ${params.textDocument.uri}")
         val document = serverContext.documentStore.applyChanges(params)
@@ -92,6 +108,11 @@ class CangjieTextDocumentService(
         }
     }
 
+    /**
+     * 处理 textDocument/didClose 通知。
+     *
+     * 方法移除文档快照，向客户端清空该文档诊断，并重发其他打开文档诊断。
+     */
     override fun didClose(params: DidCloseTextDocumentParams) {
         logger.info("====> didClose: ${params.textDocument.uri}")
         val document = serverContext.documentStore.close(params.textDocument.uri) ?: return
@@ -104,6 +125,11 @@ class CangjieTextDocumentService(
         }
     }
 
+    /**
+     * 处理 textDocument/didSave 通知。
+     *
+     * 保存不会改变内存文本，但会通知分析层并刷新项目结构相关诊断。
+     */
     override fun didSave(params: DidSaveTextDocumentParams) {
         logger.info("====> didSave: ${params.textDocument.uri}")
         val document = serverContext.documentStore.get(params.textDocument.uri) ?: return
@@ -115,6 +141,11 @@ class CangjieTextDocumentService(
         }
     }
 
+    /**
+     * 处理补全请求。
+     *
+     * 文档缺失或能力关闭时返回空补全；启用时转发到分析 facade。
+     */
     override fun completion(params: CompletionParams): CompletableFuture<Either<List<CompletionItem>, CompletionList>> {
         logger.info("====> completion: ${params.textDocument.uri}")
         val document = serverContext.documentStore.get(params.textDocument.uri)
@@ -125,6 +156,11 @@ class CangjieTextDocumentService(
         }.also { it.thenAccept { logger.info("<==== completion") } }
     }
 
+    /**
+     * 处理悬停请求。
+     *
+     * 文档缺失或能力关闭时返回空 hover；启用时转发到分析 facade。
+     */
     override fun hover(params: HoverParams): CompletableFuture<Hover> {
         logger.info("====> hover: ${params.textDocument.uri}")
         val document = serverContext.documentStore.get(params.textDocument.uri)
@@ -135,6 +171,9 @@ class CangjieTextDocumentService(
         }.also { it.thenAccept { logger.info("<==== hover") } }
     }
 
+    /**
+     * 处理签名帮助请求。
+     */
     override fun signatureHelp(params: SignatureHelpParams): CompletableFuture<SignatureHelp> {
         logger.info("====> signatureHelp: ${params.textDocument.uri}")
         val document = serverContext.documentStore.get(params.textDocument.uri)
@@ -146,6 +185,9 @@ class CangjieTextDocumentService(
         }.also { it.thenAccept { logger.info("<==== signatureHelp") } }
     }
 
+    /**
+     * 处理声明跳转请求。
+     */
     override fun declaration(params: DeclarationParams): CompletableFuture<Either<List<Location>, List<LocationLink>>> {
         logger.info("====> declaration: ${params.textDocument.uri}")
         val document = serverContext.documentStore.get(params.textDocument.uri)
@@ -156,6 +198,9 @@ class CangjieTextDocumentService(
         }.also { it.thenAccept { logger.info("<==== declaration") } }
     }
 
+    /**
+     * 处理定义跳转请求。
+     */
     override fun definition(params: DefinitionParams): CompletableFuture<Either<List<Location>, List<LocationLink>>> {
         logger.info("====> definition: ${params.textDocument.uri}")
         val document = serverContext.documentStore.get(params.textDocument.uri)
@@ -166,6 +211,9 @@ class CangjieTextDocumentService(
         }.also { it.thenAccept { logger.info("<==== definition") } }
     }
 
+    /**
+     * 处理类型定义跳转请求。
+     */
     override fun typeDefinition(params: TypeDefinitionParams): CompletableFuture<Either<List<Location>, List<LocationLink>>> {
         logger.info("====> typeDefinition: ${params.textDocument.uri}")
         val document = serverContext.documentStore.get(params.textDocument.uri)
@@ -176,6 +224,9 @@ class CangjieTextDocumentService(
         }.also { it.thenAccept { logger.info("<==== typeDefinition") } }
     }
 
+    /**
+     * 处理实现跳转请求。
+     */
     override fun implementation(params: ImplementationParams): CompletableFuture<Either<List<Location>, List<LocationLink>>> {
         logger.info("====> implementation: ${params.textDocument.uri}")
         val document = serverContext.documentStore.get(params.textDocument.uri)
@@ -186,6 +237,9 @@ class CangjieTextDocumentService(
         }.also { it.thenAccept { logger.info("<==== implementation") } }
     }
 
+    /**
+     * 处理引用查找请求。
+     */
     override fun references(params: ReferenceParams): CompletableFuture<List<Location>> {
         logger.info("====> references: ${params.textDocument.uri}")
         val document = serverContext.documentStore.get(params.textDocument.uri)
@@ -196,6 +250,9 @@ class CangjieTextDocumentService(
         }.also { it.thenAccept { logger.info("<==== references") } }
     }
 
+    /**
+     * 处理文档高亮请求。
+     */
     override fun documentHighlight(params: DocumentHighlightParams): CompletableFuture<List<DocumentHighlight>> {
         logger.info("====> documentHighlight: ${params.textDocument.uri}")
         val document = serverContext.documentStore.get(params.textDocument.uri)
@@ -206,6 +263,9 @@ class CangjieTextDocumentService(
         }.also { it.thenAccept { logger.info("<==== documentHighlight") } }
     }
 
+    /**
+     * 处理文档符号请求。
+     */
     override fun documentSymbol(params: DocumentSymbolParams): CompletableFuture<List<Either<SymbolInformation, DocumentSymbol>>> {
         logger.info("====> documentSymbol: ${params.textDocument.uri}")
         val document = serverContext.documentStore.get(params.textDocument.uri)
@@ -216,6 +276,9 @@ class CangjieTextDocumentService(
         }.also { it.thenAccept { logger.info("<==== documentSymbol") } }
     }
 
+    /**
+     * 处理 code action 请求。
+     */
     override fun codeAction(params: CodeActionParams): CompletableFuture<List<Either<Command, CodeAction>>> {
         logger.info("====> codeAction: ${params.textDocument.uri}")
         val document = serverContext.documentStore.get(params.textDocument.uri)
@@ -226,6 +289,9 @@ class CangjieTextDocumentService(
         }.also { it.thenAccept { logger.info("<==== codeAction") } }
     }
 
+    /**
+     * 处理整篇文档格式化请求。
+     */
     override fun formatting(params: DocumentFormattingParams): CompletableFuture<List<TextEdit>> {
         logger.info("====> formatting: ${params.textDocument.uri}")
         val document = serverContext.documentStore.get(params.textDocument.uri)
@@ -236,11 +302,19 @@ class CangjieTextDocumentService(
         }.also { it.thenAccept { logger.info("<==== formatting") } }
     }
 
+    /**
+     * 处理范围格式化请求。
+     *
+     * 当前范围格式化尚未接入，返回空编辑列表。
+     */
     override fun rangeFormatting(params: org.eclipse.lsp4j.DocumentRangeFormattingParams): CompletableFuture<List<TextEdit>> {
         logger.info("====> rangeFormatting: ${params.textDocument.uri}")
         return completed(emptyList())
     }
 
+    /**
+     * 处理重命名请求。
+     */
     override fun rename(params: RenameParams): CompletableFuture<WorkspaceEdit> {
         logger.info("====> rename: ${params.textDocument.uri}")
         val document = serverContext.documentStore.get(params.textDocument.uri)
@@ -251,6 +325,9 @@ class CangjieTextDocumentService(
         }.also { it.thenAccept { logger.info("<==== rename") } }
     }
 
+    /**
+     * 处理 prepareRename 请求。
+     */
     override fun prepareRename(
         params: PrepareRenameParams,
     ): CompletableFuture<Either3<Range, PrepareRenameResult, PrepareRenameDefaultBehavior>> {
@@ -267,6 +344,9 @@ class CangjieTextDocumentService(
         }.also { it.thenAccept { logger.info("<==== prepareRename") } }
     }
 
+    /**
+     * 处理折叠范围请求。
+     */
     override fun foldingRange(params: FoldingRangeRequestParams): CompletableFuture<List<FoldingRange>> {
         logger.info("====> foldingRange: ${params.textDocument.uri}")
         val document = serverContext.documentStore.get(params.textDocument.uri)
@@ -277,6 +357,9 @@ class CangjieTextDocumentService(
         }.also { it.thenAccept { logger.info("<==== foldingRange") } }
     }
 
+    /**
+     * 处理选择范围请求。
+     */
     override fun selectionRange(params: SelectionRangeParams): CompletableFuture<List<SelectionRange>> {
         logger.info("====> selectionRange: ${params.textDocument.uri}")
         val document = serverContext.documentStore.get(params.textDocument.uri)
@@ -287,6 +370,9 @@ class CangjieTextDocumentService(
         }.also { it.thenAccept { logger.info("<==== selectionRange") } }
     }
 
+    /**
+     * 处理整篇文档语义 token 请求。
+     */
     override fun semanticTokensFull(params: SemanticTokensParams): CompletableFuture<SemanticTokens> {
         logger.info("====> semanticTokensFull: ${params.textDocument.uri}")
         val document = serverContext.documentStore.get(params.textDocument.uri)
@@ -298,6 +384,9 @@ class CangjieTextDocumentService(
         }.also { it.thenAccept { logger.info("<==== semanticTokensFull") } }
     }
 
+    /**
+     * 处理指定范围语义 token 请求。
+     */
     override fun semanticTokensRange(params: SemanticTokensRangeParams): CompletableFuture<SemanticTokens> {
         logger.info("====> semanticTokensRange: ${params.textDocument.uri}")
         val document = serverContext.documentStore.get(params.textDocument.uri)
@@ -309,6 +398,9 @@ class CangjieTextDocumentService(
         }.also { it.thenAccept { logger.info("<==== semanticTokensRange") } }
     }
 
+    /**
+     * 处理 inlay hint 请求。
+     */
     override fun inlayHint(params: InlayHintParams): CompletableFuture<List<InlayHint>> {
         logger.info("====> inlayHint: ${params.textDocument.uri}")
         val document = serverContext.documentStore.get(params.textDocument.uri)
@@ -319,6 +411,9 @@ class CangjieTextDocumentService(
         }.also { it.thenAccept { logger.info("<==== inlayHint") } }
     }
 
+    /**
+     * 处理 pull diagnostics 请求。
+     */
     override fun diagnostic(params: DocumentDiagnosticParams): CompletableFuture<DocumentDiagnosticReport> {
         logger.info("====> diagnostic: ${params.textDocument.uri}")
         val document = serverContext.documentStore.get(params.textDocument.uri)
@@ -332,9 +427,15 @@ class CangjieTextDocumentService(
         }.also { it.thenAccept { logger.info("<==== diagnostic") } }
     }
 
+    /**
+     * 构造表示不可重命名位置的空 prepareRename 结果。
+     */
     private fun emptyPrepareRenameResult(): Either3<Range, PrepareRenameResult, PrepareRenameDefaultBehavior> {
         return Either3.forFirst(Range(Position(0, 0), Position(0, 0)))
     }
 
+    /**
+     * 创建已经完成的 `CompletableFuture`。
+     */
     private fun <T> completed(value: T): CompletableFuture<T> = CompletableFuture.completedFuture(value)
 }

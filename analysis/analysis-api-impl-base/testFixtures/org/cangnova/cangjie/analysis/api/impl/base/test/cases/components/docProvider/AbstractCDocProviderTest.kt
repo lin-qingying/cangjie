@@ -30,7 +30,17 @@ import org.junit.jupiter.api.Assertions.assertNotNull
     CjNonPublicApi::class,
     CjImplementationDetail::class,
 )
+/**
+ * CDoc provider 的具体抽象测试类。
+ *
+ * 该声明处的 KDoc 紧贴类声明，避免多行 `@OptIn` 注解影响文档覆盖扫描。
+ */
 abstract class AbstractCDocProviderTest : AbstractAnalysisApiComponentTest() {
+    /**
+     * 执行 CDoc provider 测试。
+     *
+     * 方法同时校验声明 PSI 上的 CDoc、声明 symbol 的 CDoc descriptor，以及引用解析后 symbol 的 CDoc descriptor。
+     */
     override fun doTestByMainFile(
         mainFile: CjFile,
         mainModule: org.cangnova.cangjie.analysis.test.framework.projectStructure.CjTestModule,

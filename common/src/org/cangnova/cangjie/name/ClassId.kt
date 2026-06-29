@@ -11,7 +11,13 @@ package org.cangnova.cangjie.name
  * 它不再承载任何层级化的类型声明结构。
  */
 data class ClassId(
+    /**
+     * class-like 声明所在包。
+     */
     val packageFqName: FqName,
+    /**
+     * 顶层 class-like 声明名称。
+     */
     val relativeClassName: FqName,
 ) {
     constructor(packageFqName: FqName, topLevelName: Name) : this(
@@ -28,15 +34,27 @@ data class ClassId(
         }
     }
 
+    /**
+     * class-like 声明的短名称。
+     */
     val shortClassName: Name
         get() = relativeClassName.shortName()
 
+    /**
+     * 将包名和相对类名合成为点分隔 FqName。
+     */
     fun asSingleFqName(): FqName =
         if (packageFqName.isRoot) relativeClassName
         else FqName(packageFqName.asString() + "." + relativeClassName.asString())
 
+    /**
+     * 判断包名是否以指定片段开头。
+     */
     fun startsWith(segment: Name): Boolean = packageFqName.startsWith(segment)
 
+    /**
+     * 渲染为包路径加声明名的稳定字符串。
+     */
     fun asString(): String =
         if (packageFqName.isRoot) {
             relativeClassName.asString()
@@ -48,6 +66,9 @@ data class ClassId(
             }
         }
 
+    /**
+     * 渲染为点分隔完整限定名字符串。
+     */
     fun asFqNameString(): String =
         if (packageFqName.isRoot) {
             relativeClassName.asString()
@@ -59,14 +80,23 @@ data class ClassId(
             }
         }
 
+    /**
+     * 返回调试展示字符串。
+     */
     override fun toString(): String =
         if (packageFqName.isRoot) "/$relativeClassName" else asString()
 
     companion object {
+        /**
+         * 从顶层声明完整限定名构造 ClassId。
+         */
         @JvmStatic
         fun topLevel(topLevelFqName: FqName): ClassId =
             ClassId(topLevelFqName.parent(), topLevelFqName.shortName())
 
+        /**
+         * 从 `package/path/ClassName` 形式字符串解析 ClassId。
+         */
         @JvmStatic
         fun fromString(string: String): ClassId {
             val lastSlashIndex = string.lastIndexOf("/")

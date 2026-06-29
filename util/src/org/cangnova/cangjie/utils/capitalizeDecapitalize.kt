@@ -26,6 +26,11 @@ package org.cangnova.cangjie.utils
 
 import java.lang.StringBuilder
 
+/**
+ * 仅对 ASCII 小写字母执行大写转换。
+ *
+ * 非 ASCII 字符保持原样，避免不同 Locale 对编译器内部标识符处理产生影响。
+ */
 fun String.toUpperCaseAsciiOnly(): String {
     val builder = StringBuilder(length)
     for (c in this) {
@@ -34,6 +39,9 @@ fun String.toUpperCaseAsciiOnly(): String {
     return builder.toString()
 }
 
+/**
+ * 仅在首字符是 ASCII 小写字母时将其大写。
+ */
 fun String.capitalizeAsciiOnly(): String {
     if (isEmpty()) return this
     val c = this[0]
@@ -47,6 +55,9 @@ fun String.capitalizeAsciiOnly(): String {
     }
 }
 
+/**
+ * 仅对 ASCII 大写字母执行小写转换。
+ */
 fun String.toLowerCaseAsciiOnly(): String {
     val builder = StringBuilder(length)
     for (c in this) {
@@ -95,10 +106,16 @@ private fun decapitalizeWithUnderscores(str: String, asciiOnly: Boolean): String
     return builder.toString()
 }
 
+/**
+ * 按 [asciiOnly] 策略对完整字符串执行小写转换。
+ */
 private fun toLowerCase(string: String, asciiOnly: Boolean): String {
     return if (asciiOnly) string.toLowerCaseAsciiOnly() else string.lowercase()
 }
 
+/**
+ * 按 [asciiOnly] 策略对完整字符串执行大写转换。
+ */
 private fun toUpperCase(string: String, asciiOnly: Boolean): String {
     return if (asciiOnly) string.toUpperCaseAsciiOnly() else string.uppercase()
 }
@@ -122,10 +139,17 @@ fun String.decapitalizeSmartForCompiler(asciiOnly: Boolean = false): String {
     return toLowerCase(substring(0, secondWordStart), asciiOnly) + substring(secondWordStart)
 }
 
+/**
+ * 判断指定下标处字符是否为大写字符。
+ */
 private fun String.isUpperCaseCharAt(index: Int, asciiOnly: Boolean): Boolean {
     val c = this[index]
     return if (asciiOnly) c in 'A'..'Z' else c.isUpperCase()
 }
+
+/**
+ * 仅在首字符是 ASCII 大写字母时将其小写。
+ */
 fun String.decapitalizeAsciiOnly(): String {
     if (isEmpty()) return this
     val c = this[0]

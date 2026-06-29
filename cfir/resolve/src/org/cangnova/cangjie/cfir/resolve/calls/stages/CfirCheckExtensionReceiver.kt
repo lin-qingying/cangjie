@@ -1,5 +1,8 @@
 package org.cangnova.cangjie.cfir.resolve.calls.stages
 
+import org.cangnova.cangjie.cfir.calls.qualifierScopeOrNull
+import org.cangnova.cangjie.cfir.diagnostic.IllegalAccessNonStaticMember
+import org.cangnova.cangjie.cfir.expressions.CfirFunctionCallOrigin
 import org.cangnova.cangjie.cfir.resolve.providers.findExtendDeclarationSubstitution
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
@@ -10,6 +13,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.unwrapSubstitutionOverrides
+import org.cangnova.cangjie.name.OperatorNameConventions
 
 /**
  * 检查仓颉 extend receiver。
@@ -23,6 +27,11 @@ object CfirCheckExtensionReceiver : ResolutionStage() {
     /** 检查候选的给定 extension receiver 是否可转换为 owner extend 要求的接收者类型。 */
     override suspend fun check(candidate: Candidate) {
         val receiver = candidate.givenExtensionReceiver ?: return
+        candidate.typeQualifierAccessedNonStaticExtensionMember(context)?.let { memberName ->
+            sink.reportDiagnostic(IllegalAccessNonStaticMember(memberName))
+            sink.yieldIfNeed()
+            return
+        }
         val expectedReceiverType = candidate.expectedExtensionReceiverType() ?: return
         val expectedType = candidate.substitutor.substituteOrSelf(expectedReceiverType)
         val actualType = receiver.expression.coneTypeOrNull ?: return
@@ -59,5 +68,31 @@ object CfirCheckExtensionReceiver : ResolutionStage() {
                 ?.let { return it }
         }
         return ownerExtend.extendedTypeRef.coneTypeOrNull
+    }
+
+    /**
+     * 类型名不能通过 extend receiver 访问实例 extend 成员。
+     *
+     * `Data.n` 这类 extend 属性不会作为 dispatch receiver 候选进入检查，
+     * 因此必须在 extension receiver 阶段产出与普通成员一致的官方诊断。
+     */
+    private fun Candidate.typeQualifierAccessedNonStaticExtensionMember(context: ResolutionContext): org.cangnova.cangjie.name.Name? {
+        val callableSymbol = symbol as? CfirCallableSymbol<*> ?: return null
+        if (callableSymbol.cfir.status.isStatic) return null
+        if (callInfo.explicitReceiver == null) return null
+        if (!callInfo.isMemberSyntaxOrSubscriptAccess()) return null
+        val receiverExpression = givenExtensionReceiver?.expression ?: return null
+        if (receiverExpression.qualifierScopeOrNull(context.session, context.bodyResolveComponents.scopeSession) == null) {
+            return null
+        }
+        return callableSymbol.name
+    }
+
+    /**
+     * 普通成员访问和下标 get/set 才对应官方的非静态成员访问诊断。
+     */
+    private fun org.cangnova.cangjie.cfir.resolve.calls.candidate.CallInfo.isMemberSyntaxOrSubscriptAccess(): Boolean {
+        if (origin != CfirFunctionCallOrigin.Operator) return true
+        return name == OperatorNameConventions.GET || name == OperatorNameConventions.SET
     }
 }

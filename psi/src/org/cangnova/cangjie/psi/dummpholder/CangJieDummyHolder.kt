@@ -31,6 +31,9 @@ import com.intellij.psi.impl.source.DummyHolder
 import com.intellij.psi.impl.source.tree.TreeElement
 import com.intellij.util.CharTable
 
+/**
+ * 表示 `CangJieDummyHolder`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CangJieDummyHolder : DummyHolder {
 
   

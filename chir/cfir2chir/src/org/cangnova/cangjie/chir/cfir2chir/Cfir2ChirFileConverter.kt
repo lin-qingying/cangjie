@@ -46,13 +46,32 @@ import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
 
+/**
+ * 负责单个 CFIR 文件的声明 header 登记和顶层声明转换。
+ */
 internal class Cfir2ChirFileConverter(
+    /**
+     * 本次 package 转换共享的组件集合。
+     */
     private val components: Cfir2ChirComponents,
+    /**
+     * 当前转换所属的包名。
+     */
     private val packageName: String,
 ) {
+    /**
+     * 共享声明存储，负责跨文件/跨函数查询 CHIR header。
+     */
     private val storage: Cfir2ChirDeclarationStorage = components.declarationStorage
+
+    /**
+     * 共享类型映射器。
+     */
     private val typeMapper: Cfir2ChirTypeMapper = components.typeMapper
 
+    /**
+     * 注册文件 module 骨架以及该文件内所有可引用声明 header。
+     */
     fun registerFileAndDeclarations(file: CfirFile) {
         storage.registerModule(
             file,
@@ -65,6 +84,9 @@ internal class Cfir2ChirFileConverter(
         file.declarations.forEach(::registerDeclarationHeaders)
     }
 
+    /**
+     * 将已经登记 header 的 CFIR 文件转换为完整 CHIR module。
+     */
     fun convertFile(file: CfirFile): ChirModule {
         val declarations = file.declarations.map(::convertDeclaration)
         return ChirModule(
@@ -74,6 +96,9 @@ internal class Cfir2ChirFileConverter(
         )
     }
 
+    /**
+     * 递归登记声明 header，保证函数体转换前所有可调用/变量符号已经可查。
+     */
     private fun registerDeclarationHeaders(declaration: CfirDeclaration) {
         when (declaration) {
             is CfirFunction -> registerFunctionHeader(declaration)
@@ -91,6 +116,9 @@ internal class Cfir2ChirFileConverter(
         }
     }
 
+    /**
+     * 登记普通 CFIR 函数的 CHIR 函数 header。
+     */
     internal fun registerFunctionHeader(function: CfirFunction) {
         if (storage.hasFunctionHeader(function.symbol)) return
         val functionId = Cfir2ChirIds.callableId(function)
@@ -107,6 +135,9 @@ internal class Cfir2ChirFileConverter(
         storage.registerFunctionHeader(function.symbol, header)
     }
 
+    /**
+     * 登记 enum constructor 的 CHIR 函数 header。
+     */
     private fun registerEnumConstructorHeader(constructor: CfirEnumConstructor) {
         if (storage.hasFunctionHeader(constructor.symbol)) return
         val functionId = Cfir2ChirIds.declarationId(constructor.symbol)
@@ -125,6 +156,9 @@ internal class Cfir2ChirFileConverter(
         )
     }
 
+    /**
+     * 登记属性、字段或局部变量的 CHIR 变量 header。
+     */
     private fun registerVariableHeader(variable: CfirCallableDeclaration) {
         val declaration = when (variable) {
             is CfirProperty -> variable.toChirPropertyDeclaration()
@@ -138,6 +172,9 @@ internal class Cfir2ChirFileConverter(
         storage.registerVariable(variable.symbol, ChirVariableHeader(declaration))
     }
 
+    /**
+     * 将 CFIR 值参数转换为 CHIR 变量声明并登记参数 header。
+     */
     private fun convertValueParameter(
         ownerFunctionId: org.cangnova.cangjie.chir.core.identity.ChirSemanticId,
         parameter: CfirValueParameter,
@@ -158,6 +195,9 @@ internal class Cfir2ChirFileConverter(
         return declaration
     }
 
+    /**
+     * 将单个 CFIR 声明转换为 CHIR 声明。
+     */
     private fun convertDeclaration(declaration: CfirDeclaration): ChirDeclaration {
         return when (declaration) {
             is CfirErrorFunction -> throw Cfir2ChirConversionException(
@@ -248,9 +288,15 @@ internal class Cfir2ChirFileConverter(
         }
     }
 
+    /**
+     * 转换 class-like 或 extend 的成员声明，enum constructor 已在 enum case 列表中表达。
+     */
     private fun convertMemberDeclaration(declaration: CfirDeclaration): ChirDeclaration? =
         if (declaration is CfirEnumConstructor) null else convertDeclaration(declaration)
 
+    /**
+     * 将 CFIR 函数及其 body 转换为 CHIR 函数声明。
+     */
     private fun convertFunction(function: CfirFunction): DefaultChirFunctionDeclaration {
         val header = storage.getFunctionHeader(function.symbol)
         val declaration = Cfir2ChirFunctionBodyConverter(
@@ -263,6 +309,9 @@ internal class Cfir2ChirFileConverter(
         return declaration
     }
 
+    /**
+     * 将 CFIR code fragment 转换为合成 CHIR 函数声明。
+     */
     private fun convertCodeFragment(codeFragment: CfirCodeFragment): DefaultChirFunctionDeclaration {
         val returnType = codeFragment.block.coneTypeOrNull?.let(typeMapper::mapConeTypeRef)
             ?: throw Cfir2ChirConversionException("code fragment block must carry resolved Cone type before CHIR lowering", codeFragment.block)
@@ -283,6 +332,9 @@ internal class Cfir2ChirFileConverter(
         )
     }
 
+    /**
+     * 为不同 CFIR 函数形态生成 CHIR 函数名。
+     */
     private fun CfirFunction.nameForChir(): String {
         return when (this) {
             is org.cangnova.cangjie.cfir.declarations.CfirNamedFunction -> name.asString()
@@ -299,6 +351,9 @@ internal class Cfir2ChirFileConverter(
         }
     }
 
+    /**
+     * 将 CFIR 变量声明转换为 CHIR 变量声明。
+     */
     private fun CfirVariable.toChirVariableDeclaration(): DefaultChirVariableDeclaration =
         DefaultChirVariableDeclaration(
             semanticId = Cfir2ChirIds.declarationId(symbol),
@@ -312,6 +367,9 @@ internal class Cfir2ChirFileConverter(
             mutable = isVar,
         )
 
+    /**
+     * 将 CFIR property 转换为 CHIR property 声明。
+     */
     private fun CfirProperty.toChirPropertyDeclaration(): DefaultChirPropertyDeclaration =
         DefaultChirPropertyDeclaration(
             semanticId = Cfir2ChirIds.declarationId(symbol),
@@ -320,6 +378,9 @@ internal class Cfir2ChirFileConverter(
             mutable = setter != null,
         )
 
+    /**
+     * 将 enum constructor 转换为返回 enum case value 的 CHIR 函数。
+     */
     private fun convertEnumConstructor(constructor: CfirEnumConstructor): DefaultChirFunctionDeclaration {
         val header = storage.getFunctionHeader(constructor.symbol)
         val expressionId = Cfir2ChirIds.generatedId("enum_ctor", header.semanticId, 0)
@@ -363,6 +424,9 @@ internal class Cfir2ChirFileConverter(
         )
     }
 
+    /**
+     * 将 CFIR 类型引用渲染为声明属性中可读的类型名称。
+     */
     private fun org.cangnova.cangjie.cfir.types.CfirTypeRef.renderNameForDeclaration(): String =
         typeMapper.mapTypeRef(this).renderName
 }

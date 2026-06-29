@@ -23,8 +23,14 @@ import org.cangnova.cangjie.psi.*
 import org.cangnova.cangjie.psi.psiUtil.containingTypeStatement
 import org.cangnova.cangjie.utils.exceptions.requireWithAttachment
 
+/**
+ * 在已构建的 [CfirFile] 中按 PSI、class ID 或声明对象查找非局部 CFIR 元素的工具。
+ */
 internal class CfirElementFinder : CfirSessionComponent {
     companion object {
+        /**
+         * 在 [cfirFile] 中查找 [classId] 对应的 class-like 声明。
+         */
         fun findClassifierWithClassId(
             cfirFile: CfirFile,
             classId: ClassId,
@@ -35,6 +41,9 @@ internal class CfirElementFinder : CfirSessionComponent {
             expectedDeclarationAcceptor = { it is CfirClassLikeDeclaration },
         )?.target?.let { it as CfirClassLikeDeclaration }
 
+        /**
+         * 为 [targetMemberDeclaration] 收集 designation 路径。
+         */
         fun collectDesignationPath(
             cfirFile: CfirFile,
             declarationContainerClassId: ClassId?,
@@ -46,11 +55,17 @@ internal class CfirElementFinder : CfirSessionComponent {
             expectedDeclarationAcceptor = { it == targetMemberDeclaration },
         )
 
+        /**
+         * 在 [cfirFile] 中查找 [nonLocalDeclaration] 对应的 CFIR 声明。
+         */
         fun findDeclaration(cfirFile: CfirFile, nonLocalDeclaration: CjDeclaration): CfirDeclaration? = collectDesignationPath(
             cfirFile = cfirFile,
             nonLocalDeclaration = nonLocalDeclaration,
         )?.declarationTarget
 
+        /**
+         * 返回 [nonLocalDeclaration] 的完整声明路径，包含目标本身。
+         */
         fun findPathToDeclarationWithTarget(
             cfirFile: CfirFile,
             nonLocalDeclaration: CjDeclaration,
@@ -59,6 +74,9 @@ internal class CfirElementFinder : CfirSessionComponent {
             nonLocalDeclaration = nonLocalDeclaration,
         )?.let { it.path + it.declarationTarget }
 
+        /**
+         * 为 [nonLocalDeclaration] 收集 designation 路径。
+         */
         fun collectDesignationPath(
             cfirFile: CfirFile,
             nonLocalDeclaration: CjDeclaration,
@@ -69,6 +87,9 @@ internal class CfirElementFinder : CfirSessionComponent {
             expectedDeclarationAcceptor = { it.psi == nonLocalDeclaration },
         )
 
+        /**
+         * 在 [container] 子树中查找满足 [predicate] 的第一个 [E] 类型元素。
+         */
         inline fun <reified E : CfirElement> findElementIn(
             container: CfirElement,
             crossinline canGoInside: (E) -> Boolean = { true },
@@ -90,12 +111,16 @@ internal class CfirElementFinder : CfirSessionComponent {
         }
 
         /**
+         * designation 目标声明的类型安全访问入口。
+         *
          * @see collectDesignationPath
          */
         private val CfirDesignation.declarationTarget: CfirDeclaration get() = target as CfirDeclaration
 
         /**
-         * @return [CfirDesignation] where [CfirDesignation.target] is [CfirDeclaration]
+         * 收集目标声明的 designation 路径。
+         *
+         * @return [CfirDesignation.target] 为 [CfirDeclaration] 的 designation；未找到时返回 `null`。
          *
          * @see declarationTarget
          */
@@ -134,13 +159,22 @@ internal class CfirElementFinder : CfirSessionComponent {
         }
     }
 
+    /**
+     * 根文件结构节点缓存，键为 [CfirFile]，值为该文件的非局部声明树。
+     */
     private val cache = ContainerUtil.createConcurrentWeakKeySoftValueMap<CfirFile, CfirFileStructureNode>()
 
+    /**
+     * 构建或读取 [cfirFile] 的根文件结构节点。
+     */
     private fun buildRootFileStructureNode(cfirFile: CfirFile): CfirFileStructureNode = cache.getOrPut(cfirFile) {
         CfirFileStructureNode.build(cfirFile)
     }
 }
 
+/**
+ * 当前 [CfirSession] 绑定的 [CfirElementFinder] 组件。
+ */
 private val CfirSession.cfirElementFinder: CfirElementFinder by CfirSession.sessionComponentAccessor()
 
 /**

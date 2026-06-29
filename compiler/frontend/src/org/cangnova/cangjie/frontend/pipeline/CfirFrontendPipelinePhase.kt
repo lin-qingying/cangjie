@@ -81,10 +81,19 @@ import org.cangnova.cangjie.source.psi
 import org.cangnova.cangjie.source.readSourceFileWithMapping
 import java.io.File
 
+/**
+ * CFIR 前端管线阶段。
+ *
+ * 该阶段负责创建 VFS 环境、收集源码、构建 CFIR session、执行宏构造前 raw CFIR 构建，
+ * 再完成宏构造、resolve 与 check，并产出所有模块的前端输出。
+ */
 object CfirFrontendPipelinePhase : PipelinePhase<ConfigurationPipelineArtifact, DefaultCfirFrontendPipelineArtifact>(
     name = "CfirFrontendPipelinePhase",
     postActions = setOf(CheckCompilationErrors.CheckDiagnosticCollector),
 ) {
+    /**
+     * 执行 CFIR 前端阶段。
+     */
     override fun executePhase(input: ConfigurationPipelineArtifact): DefaultCfirFrontendPipelineArtifact? {
         val (configuration, rootDisposable) = input
         configuration.initializeCfirFrontendMacroCompilationConfiguration()
@@ -174,16 +183,37 @@ object CfirFrontendPipelinePhase : PipelinePhase<ConfigurationPipelineArtifact, 
         )
     }
 
+    /**
+     * 单个 session 对应的 pre-macro raw build 结果。
+     */
     private data class SessionPreMacroResult(
+        /**
+         * 参与后续 resolve/check 的 CFIR session。
+         */
         val session: CfirSession,
+        /**
+         * 该 session 下源文件构建出的 pre-macro raw 结果。
+         */
         val pre: PreMacroRawBuildResult,
     )
 
+    /**
+     * VFS 项目环境和延迟源码收集器。
+     */
     private data class EnvironmentAndSources(
+        /**
+         * 当前阶段使用的项目环境。
+         */
         val environment: VfsBasedProjectEnvironment,
+        /**
+         * 延迟执行的源码收集函数。
+         */
         val sources: () -> CollectedCjSources,
     )
 
+    /**
+     * 根据 light tree/PSI 配置创建项目环境和源码收集入口。
+     */
     private fun createEnvironmentAndSources(
         configuration: CompilerConfiguration,
         rootDisposable: Disposable,
@@ -205,6 +235,9 @@ object CfirFrontendPipelinePhase : PipelinePhase<ConfigurationPipelineArtifact, 
         }.takeUnless { CheckCompilationErrors.CheckDiagnosticCollector.checkHasErrors(configuration) }
     }
 
+    /**
+     * 在 PSI 模式下收集仓颉源文件。
+     */
     private fun collectPsiSources(
         configuration: CompilerConfiguration,
         environment: VfsBasedProjectEnvironment,
@@ -234,6 +267,9 @@ object CfirFrontendPipelinePhase : PipelinePhase<ConfigurationPipelineArtifact, 
         )
     }
 
+    /**
+     * 将 core environment 转换为前端 VFS 项目环境。
+     */
     private fun CangJieCoreEnvironment.toVfsBasedProjectEnvironment(): VfsBasedProjectEnvironment {
         return VfsBasedProjectEnvironment(
             project = project,
@@ -241,6 +277,9 @@ object CfirFrontendPipelinePhase : PipelinePhase<ConfigurationPipelineArtifact, 
         )
     }
 
+    /**
+     * 根据模块分组构建 CFIR sessions。
+     */
     private fun buildSessions(
         configuration: CompilerConfiguration,
         rootModuleName: Name,
@@ -295,6 +334,9 @@ object CfirFrontendPipelinePhase : PipelinePhase<ConfigurationPipelineArtifact, 
         }
     }
 
+    /**
+     * 将源码按 root module 和 HMPP module 分组。
+     */
     private fun buildModuleGroups(
         groupedSources: GroupedCjSources,
         rootModuleName: Name,
@@ -315,6 +357,9 @@ object CfirFrontendPipelinePhase : PipelinePhase<ConfigurationPipelineArtifact, 
         return result
     }
 
+    /**
+     * 按 light tree/PSI 模式构建 pre-macro raw CFIR。
+     */
     private fun buildPreMacroFromSources(
         session: CfirSession,
         sources: List<CjSourceFile>,
@@ -328,6 +373,9 @@ object CfirFrontendPipelinePhase : PipelinePhase<ConfigurationPipelineArtifact, 
         }
     }
 
+    /**
+     * 将宏构造失败结果报告到 message collector。
+     */
     private fun reportConstructionFailure(
         configuration: CompilerConfiguration,
         result: MacroConstructionResult,
@@ -355,6 +403,9 @@ object CfirFrontendPipelinePhase : PipelinePhase<ConfigurationPipelineArtifact, 
         }
     }
 
+    /**
+     * 将源元素位置转换为编译器消息位置。
+     */
     private fun CjSourceElement?.toCompilerMessageLocation(): CompilerMessageSourceLocation? {
         val psi = this?.psi ?: return null
         val containingFile = psi.containingFile ?: return null
@@ -378,6 +429,9 @@ object CfirFrontendPipelinePhase : PipelinePhase<ConfigurationPipelineArtifact, 
         )
     }
 
+    /**
+     * 将源文件抽象转换为 PSI [CjFile] 列表。
+     */
     private fun List<CjSourceFile>.toCjFiles(environment: VfsBasedProjectEnvironment): List<CjFile> {
         return mapNotNull { sourceFile ->
             when (sourceFile) {

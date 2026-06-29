@@ -17,13 +17,34 @@ import org.cangnova.cangjie.codegen.ir.parseLlvmSignature
 import org.cangnova.cangjie.codegen.ir.sanitizeIdentifier
 import org.cangnova.cangjie.codegen.types.collectLlvmTypeDeclarations
 
+/**
+ * 单个 CHIR module 到 LLVM module 的 lowering 单元。
+ */
 class CGModule(
+    /**
+     * 当前 codegen 共享上下文。
+     */
     private val context: CGContext,
+    /**
+     * 待降低的 CHIR module。
+     */
     private val module: ChirModule,
+    /**
+     * LLVM 后端 API，用于按选项生成 bitcode/object code。
+     */
     private val backendApi: LlvmBackendApi,
+    /**
+     * 函数体表达式 lowering 分派器。
+     */
     private val dispatcher: ExpressionLoweringDispatcher = ExpressionLoweringDispatcher(),
+    /**
+     * 当前 module 是否负责发射包级全局定义。
+     */
     private val emitPackageDefinitions: Boolean = true,
 ) {
+    /**
+     * 降低当前 CHIR module 并返回 LLVM module 产物。
+     */
     fun lower(): LlvmModuleArtifact {
         val lines = mutableListOf<String>()
         if (context.options.emitModuleHeader) {
@@ -75,10 +96,16 @@ class CGModule(
         )
     }
 
+    /**
+     * 收集当前 module 需要的 LLVM identified type 声明。
+     */
     private fun emitTypeDeclarations(): List<String> {
         return collectLlvmTypeDeclarations(context.inputPackage, module, context.typeLowering)
     }
 
+    /**
+     * 发射包级全局变量、导入变量和导入函数声明。
+     */
     private fun emitGlobalDeclarations(): List<String> {
         val declarations = mutableListOf<String>()
         if (emitPackageDefinitions) {
@@ -115,6 +142,9 @@ class CGModule(
         return declarations
     }
 
+    /**
+     * 发射运行时符号声明。
+     */
     private fun emitRuntimeDeclarations(): List<String> {
         if (!context.options.emitRuntimeDeclarations) return emptyList()
         return context.runtimeSymbols.allSymbols().map { symbol ->
@@ -127,6 +157,9 @@ class CGModule(
         }
     }
 
+    /**
+     * 发射包初始化函数与包字面量初始化函数到运行时入口符号的映射。
+     */
     private fun emitRuntimeEntryMappings(): List<String> {
         if (!emitPackageDefinitions) return emptyList()
         val localFunctionsById = (context.inputPackage.members.globalFunctions + context.inputPackage.modules.flatMap { it.declarations }
@@ -150,6 +183,9 @@ class CGModule(
         return mappings
     }
 
+    /**
+     * 返回当前 module 需要一并 lowering 的包级函数。
+     */
     private fun packageFunctionsToLower(): List<ChirFunctionDeclaration> {
         return if (emitPackageDefinitions) {
             context.inputPackage.members.globalFunctions
@@ -158,6 +194,9 @@ class CGModule(
         }
     }
 
+    /**
+     * 为未显式指定 initializer 的基础类型全局变量生成默认 initializer。
+     */
     private fun defaultGlobalInitializer(
         variableName: String,
         llvmType: String,
@@ -175,6 +214,9 @@ class CGModule(
         }
     }
 
+    /**
+     * 渲染导入函数的 LLVM `declare` 行。
+     */
     private fun renderImportedFunctionDeclaration(function: ChirFunctionDeclaration): String {
         val name = sanitizeIdentifier(function.name, "imported_fn")
         val returnType = context.typeLowering.lower(function.returnType)
@@ -211,6 +253,9 @@ class CGModule(
         }
     }
 
+    /**
+     * 收集可直接打印到 LLVM IR 的属性 token。
+     */
     private fun collectAttributeTokens(attributes: Set<ChirAttribute>): List<String> {
         val tokens = mutableListOf<String>()
         attributes.forEach { attribute ->
@@ -230,6 +275,9 @@ class CGModule(
         return tokens
     }
 
+    /**
+     * 从属性集合中读取指定字符串属性值。
+     */
     private fun attributeValue(attributes: Set<ChirAttribute>, key: String): String? {
         return attributes.asSequence()
             .filterIsInstance<ChirStringAttribute>()

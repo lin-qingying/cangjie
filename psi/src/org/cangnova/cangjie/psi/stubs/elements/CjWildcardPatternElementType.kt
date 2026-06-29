@@ -46,20 +46,32 @@ class CjWildcardPatternElementType(debugName: String) :
         CangJieWildcardPatternStub::class.java,
     ) {
 
+    /**
+     * 实现 `createStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createStub(psi: CjWildcardPattern, parentStub: StubElement<*>?): CangJieWildcardPatternStub {
         return CangJieWildcardPatternStubImpl(parentStub)
     }
 
+    /**
+     * 实现 `serialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     @Throws(IOException::class)
     override fun serialize(stub: CangJieWildcardPatternStub, dataStream: StubOutputStream) {
         // 通配符模式没有额外数据
     }
 
+    /**
+     * 实现 `deserialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     @Throws(IOException::class)
     override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>): CangJieWildcardPatternStub {
         return CangJieWildcardPatternStubImpl(parentStub)
     }
 
+    /**
+     * 实现 `indexStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun indexStub(stub: CangJieWildcardPatternStub, sink: IndexSink) {
         // 通配符模式不需要索引
     }

@@ -18,10 +18,12 @@ import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.types.ConeAllowsDelegatedScopeTraversalDiagnostic
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeEnumType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
+import org.cangnova.cangjie.cfir.types.ConeIntersectionType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.ConeStructType
 import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
@@ -112,14 +114,16 @@ object CfirSupertypesChecker : CfirClassLikeChecker() {
     private fun checkInterfaceSupertypes(declaration: CfirInterface) {
         val ownerName = declaration.classLikeName()
         for (superTypeRef in declaration.superTypeRefs) {
-            val superDeclaration = superTypeRef.toResolvedSuperDeclaration(context) ?: continue
-            if (superDeclaration.classKindOrNull() == CfirClassKind.INTERFACE) continue
+            val superType = superTypeRef.toResolvedSupertypeForInterfaceLegality() ?: continue
+            if (superType.toResolvedSuperDeclaration(context)?.classKindOrNull() == CfirClassKind.INTERFACE) {
+                continue
+            }
 
             reporter.reportOn(
                 source = declaration.source,
                 factory = CfirErrors.INTERFACE_CANNOT_INHERIT_CLASS,
                 a = ownerName,
-                b = superDeclaration.classLikeName(),
+                b = superType.supertypeDiagnosticName(context),
             )
         }
     }
@@ -194,8 +198,34 @@ private data class ConcreteSupertype(
  */
 private fun CfirTypeRef.toResolvedSuperDeclaration(context: CheckerContext): CfirClassLikeDeclaration? {
     val resolvedTypeRef = this as? CfirResolvedTypeRef ?: return null
-    if (resolvedTypeRef.coneType is ConeErrorType) return null
-    return resolvedTypeRef.coneType.toResolvedSuperDeclaration(context)
+    return resolvedTypeRef.coneType.effectiveNominalSupertypeOrNull()?.toResolvedSuperDeclaration(context)
+}
+
+/**
+ * interface 直接父类型必须是单一 nominal interface。
+ *
+ * 解析失败的错误类型不继续级联；但实参数量错误这类已解析到 nominal owner 的错误类型，
+ * 可以按 delegated type 继续参与父类型合法性检查。
+ */
+private fun CfirTypeRef.toResolvedSupertypeForInterfaceLegality(): ConeCangJieType? {
+    val resolvedTypeRef = this as? CfirResolvedTypeRef ?: return null
+    return resolvedTypeRef.coneType.effectiveNominalSupertypeOrNull() ?: resolvedTypeRef.coneType
+}
+
+private fun ConeCangJieType.effectiveNominalSupertypeOrNull(): ConeCangJieType? =
+    if (this is ConeErrorType) {
+        if (diagnostic is ConeAllowsDelegatedScopeTraversalDiagnostic) delegatedType else null
+    } else {
+        this
+    }
+
+private fun ConeCangJieType.supertypeDiagnosticName(context: CheckerContext): Name {
+    toResolvedSuperDeclaration(context)?.classLikeName()?.let { return it }
+    return when (this) {
+        is ConePrimitiveType -> Name.identifier(kind.typeName)
+        is ConeIntersectionType -> Name.identifier("intersection")
+        else -> Name.identifier("supertype")
+    }
 }
 
 /**

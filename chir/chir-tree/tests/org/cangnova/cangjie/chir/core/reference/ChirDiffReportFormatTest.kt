@@ -6,8 +6,14 @@ import org.cangnova.cangjie.chir.core.testkit.ChirDiffStatus
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
+/**
+ * CHIR diff 报告格式测试。
+ */
 class ChirDiffReportFormatTest {
 
+    /**
+     * 验证 PASS、FAIL 和 ACCEPTED_DIFF 记录按稳定格式渲染。
+     */
     @Test
     fun `diff report renders pass fail and accepted records in stable format`() {
         val report = ChirDiffReportFormatter.render(

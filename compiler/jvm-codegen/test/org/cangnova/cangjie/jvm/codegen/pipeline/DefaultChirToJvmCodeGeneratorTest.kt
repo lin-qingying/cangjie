@@ -58,7 +58,16 @@ import java.lang.reflect.Modifier
 import java.nio.file.Path
 import java.util.jar.JarFile
 
+/**
+ * `DefaultChirToJvmCodeGenerator` 的 JVM classfile 生成契约测试。
+ *
+ * 测试直接构造 CHIR 输入，验证生成的 class 能通过 ASM verifier、可被自定义 classloader 加载，
+ * 并覆盖 ABI 属性、调用、内存、数组、异常、phi、类型声明、包 facade、main bridge 与 jar manifest。
+ */
 class DefaultChirToJvmCodeGeneratorTest {
+    /**
+     * 验证最小静态函数能生成可校验、可加载并可执行的 JVM class。
+     */
     @Test
     fun `generates verifier-loadable class and executable static function`() {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
@@ -97,6 +106,9 @@ class DefaultChirToJvmCodeGeneratorTest {
         assertEquals(3, generatedClass.getMethod("sum").invoke(null))
     }
 
+    /**
+     * 验证同一个 module facade 内的静态函数调用会解析到同一生成类上的目标方法。
+     */
     @Test
     fun `generates same-facade static function calls`() {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
@@ -156,6 +168,9 @@ class DefaultChirToJvmCodeGeneratorTest {
         assertEquals(40, generatedClass.getMethod("caller").invoke(null))
     }
 
+    /**
+     * 验证本地函数与全局字段的显式 JVM ABI 名称会覆盖默认命名策略。
+     */
     @Test
     fun `uses explicit JVM ABI names on local declarations`() {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
@@ -226,6 +241,9 @@ class DefaultChirToJvmCodeGeneratorTest {
         assertEquals(31, generatedClass.getField("abi_field").getInt(null))
     }
 
+    /**
+     * 验证跨模块显式 owner ABI 的本地静态 JVM 函数调用会指向正确 facade。
+     */
     @Test
     fun `calls local static JVM functions through explicit owner ABI across modules`() {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
@@ -310,6 +328,9 @@ class DefaultChirToJvmCodeGeneratorTest {
         assertEquals(66, betaClass.getMethod("crossModuleCaller").invoke(null))
     }
 
+    /**
+     * 验证生成器在遇到重复 JVM class artifact 时报告错误，而不是静默覆盖。
+     */
     @Test
     fun `rejects duplicate JVM class artifacts instead of silently dropping one`() {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
@@ -350,6 +371,9 @@ class DefaultChirToJvmCodeGeneratorTest {
         assertTrue(requireNotNull(exception.message).contains("duplicate JVM class artifact 'demo/pkg/DemoCj'"))
     }
 
+    /**
+     * 验证 module facade 内重复 JVM 方法签名会被前置诊断。
+     */
     @Test
     fun `rejects duplicate JVM method signatures in module facade`() {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
@@ -372,6 +396,9 @@ class DefaultChirToJvmCodeGeneratorTest {
         assertTrue(requireNotNull(exception.message).contains("duplicate JVM method 'collision()I' in class 'demo/pkg/DemoCj'"))
     }
 
+    /**
+     * 验证类型 classfile 内重复 JVM 字段签名会被前置诊断。
+     */
     @Test
     fun `rejects duplicate JVM field signatures in generated type class`() {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
@@ -401,6 +428,9 @@ class DefaultChirToJvmCodeGeneratorTest {
         assertTrue(requireNotNull(exception.message).contains("duplicate JVM field 'slotI' in class 'demo/pkg/DuplicateFields'"))
     }
 
+    /**
+     * 验证本地声明和调用可以使用显式 JVM descriptor 覆盖 CHIR 推导 descriptor。
+     */
     @Test
     fun `uses explicit JVM ABI descriptors on local declarations and calls`() {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
@@ -503,6 +533,9 @@ class DefaultChirToJvmCodeGeneratorTest {
         assertEquals(4, generatedClass.getMethod("abiDescriptorCaller").invoke(null))
     }
 
+    /**
+     * 验证本地调用实参会按显式 JVM ABI descriptor 的 carrier 类型进行适配。
+     */
     @Test
     fun `adapts explicit JVM ABI descriptor argument carrier on local calls`() {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
@@ -593,6 +626,9 @@ class DefaultChirToJvmCodeGeneratorTest {
         assertEquals(17, generatedClass.getMethod("abiArgumentDescriptorCaller", CharSequence::class.java).invoke(null, "text"))
     }
 
+    /**
+     * 验证显式 JVM ABI descriptor 的返回 carrier 会适配回 CHIR 结果类型。
+     */
     @Test
     fun `adapts explicit JVM ABI descriptor return carrier to CHIR result type`() {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
@@ -688,6 +724,9 @@ class DefaultChirToJvmCodeGeneratorTest {
         assertEquals(7, generatedClass.getMethod("abiReturnDescriptorCaller").invoke(null))
     }
 
+    /**
+     * 验证函数返回值会按显式 JVM descriptor 的返回 carrier 适配。
+     */
     @Test
     fun `adapts explicit JVM ABI descriptor carrier on function returns`() {
         val charSequenceType = ChirResolvedTypeRef(ChirNamedType("java.lang.CharSequence"))
@@ -731,6 +770,9 @@ class DefaultChirToJvmCodeGeneratorTest {
         assertEquals("text", generatedClass.getMethod("abiReturnValueDescriptor", CharSequence::class.java).invoke(null, "text"))
     }
 
+    /**
+     * 验证静态字段读写会按显式 JVM descriptor 的字段 carrier 适配。
+     */
     @Test
     fun `adapts explicit JVM ABI descriptor carrier on static fields`() {
         val charSequenceType = ChirResolvedTypeRef(ChirNamedType("java.lang.CharSequence"))
@@ -810,6 +852,9 @@ class DefaultChirToJvmCodeGeneratorTest {
         assertEquals("text", generatedClass.getField("slot").get(null))
     }
 
+    /**
+     * 验证显式 JVM ABI descriptor 下 primitive carrier 的装箱与拆箱路径。
+     */
     @Test
     fun `boxes and unboxes primitive carriers for explicit JVM ABI descriptors`() {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
@@ -950,6 +995,9 @@ class DefaultChirToJvmCodeGeneratorTest {
         assertEquals(84, generatedClass.getMethod("primitiveCarrierBridge").invoke(null))
     }
 
+    /**
+     * 验证 CHIR ref memory alloca/load/store 会降低为 JVM local slot 读写。
+     */
     @Test
     fun `lowers CHIR memory local slots to JVM locals`() {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
@@ -1007,6 +1055,9 @@ class DefaultChirToJvmCodeGeneratorTest {
         assertEquals(9, generatedClass.getMethod("localValue").invoke(null))
     }
 
+    /**
+     * 验证 CHIR 无符号整数除法、取余和比较会降低为 JVM/运行时支持的 intrinsic。
+     */
     @Test
     fun `lowers CHIR unsigned integer operations to JVM intrinsics`() {
         val uintType = ChirResolvedTypeRef(ChirPrimitiveType.UINT32)
@@ -1073,6 +1124,9 @@ class DefaultChirToJvmCodeGeneratorTest {
         assertEquals(Int.MAX_VALUE, generatedClass.getMethod("unsignedDiv").invoke(null))
     }
 
+    /**
+     * 验证 CHIR 浮点比较遵循 JVM NaN 有序比较语义。
+     */
     @Test
     fun `lowers CHIR floating comparisons with JVM NaN ordered semantics`() {
         data class FloatingOperandCase(
@@ -1139,6 +1193,9 @@ class DefaultChirToJvmCodeGeneratorTest {
         }
     }
 
+    /**
+     * 验证无符号整数最大值字面量会按 JVM carrier 正确物化。
+     */
     @Test
     fun `materializes CHIR unsigned integer max literals as JVM carrier values`() {
         val uint32Type = ChirResolvedTypeRef(ChirPrimitiveType.UINT32)
@@ -1165,6 +1222,9 @@ class DefaultChirToJvmCodeGeneratorTest {
         assertEquals(-1L, generatedClass.getMethod("uint64Max").invoke(null))
     }
 
+    /**
+     * 验证 CHIR 无符号数值转换中的零扩展语义。
+     */
     @Test
     fun `lowers CHIR unsigned numeric casts with zero extension`() {
         val uint8Type = ChirResolvedTypeRef(ChirPrimitiveType.UINT8)
@@ -1237,6 +1297,9 @@ class DefaultChirToJvmCodeGeneratorTest {
         assertEquals(18_446_744_073_709_551_615.0, generatedClass.getMethod("ulongToDouble").invoke(null) as Double, 0.0)
     }
 
+    /**
+     * 验证浮点到无符号整数转换会通过 JVM unsigned runtime 辅助方法降低。
+     */
     @Test
     fun `lowers CHIR floating point to unsigned integer casts through JVM runtime`() {
         val uint8Type = ChirResolvedTypeRef(ChirPrimitiveType.UINT8)
@@ -1295,6 +1358,9 @@ class DefaultChirToJvmCodeGeneratorTest {
         assertEquals(Long.MIN_VALUE, generatedClass.getMethod("longFromDouble").invoke(null))
     }
 
+    /**
+     * 验证一元 bitnot 与 select 表达式的 JVM 降低结果。
+     */
     @Test
     fun `lowers CHIR unary bitnot and select expressions`() {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
@@ -1363,6 +1429,9 @@ class DefaultChirToJvmCodeGeneratorTest {
         assertEquals(7, generatedClass.getMethod("selectValue").invoke(null))
     }
 
+    /**
+     * 验证导入 JVM 函数和静态字段会按显式 ABI 属性生成访问字节码。
+     */
     @Test
     fun `lowers imported JVM functions and static fields from explicit ABI attributes`() {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
@@ -1429,6 +1498,9 @@ class DefaultChirToJvmCodeGeneratorTest {
         assertEquals(Int.MAX_VALUE, generatedClass.getMethod("integerMaxValue").invoke(null))
     }
 
+    /**
+     * 验证显式 ABI 属性描述的导入 JVM 构造器调用会生成 new/invokespecial 序列。
+     */
     @Test
     fun `lowers imported JVM constructor calls from explicit ABI attributes`() {
         val stringType = ChirResolvedTypeRef(ChirNamedType("String"))
@@ -1464,6 +1536,9 @@ class DefaultChirToJvmCodeGeneratorTest {
         assertEquals("constructed", exception.message)
     }
 
+    /**
+     * 验证 CHIR 函数值会物化为 MethodHandle 并支持动态调用。
+     */
     @Test
     fun `materializes CHIR function values as JVM method handles and invokes them dynamically`() {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
@@ -1527,6 +1602,9 @@ class DefaultChirToJvmCodeGeneratorTest {
         assertEquals(29, generatedClass.getMethod("callSelected").invoke(null))
     }
 
+    /**
+     * 验证导入 JVM 函数值会按 ABI 属性物化为 MethodHandle。
+     */
     @Test
     fun `materializes imported JVM function values as method handles`() {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
@@ -1564,6 +1642,9 @@ class DefaultChirToJvmCodeGeneratorTest {
         assertEquals(17, handle.invokeWithArguments(3, 17))
     }
 
+    /**
+     * 验证导入 JVM 构造器函数值会物化为构造器 MethodHandle。
+     */
     @Test
     fun `materializes imported JVM constructor values as method handles`() {
         val stringType = ChirResolvedTypeRef(ChirNamedType("String"))
@@ -1603,6 +1684,9 @@ class DefaultChirToJvmCodeGeneratorTest {
         assertEquals("from-handle", exception.message)
     }
 
+    /**
+     * 验证带 receiver 的 CHIR 函数值会降低为 JVM 实例方法调用。
+     */
     @Test
     fun `invokes CHIR receiver function values as JVM instance methods`() {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
@@ -1683,6 +1767,9 @@ class DefaultChirToJvmCodeGeneratorTest {
         assertEquals(42, facadeClass.getMethod("callReceiver").invoke(null))
     }
 
+    /**
+     * 验证带 receiver 的 CHIR 函数值可物化为实例 MethodHandle 并动态调用。
+     */
     @Test
     fun `materializes CHIR receiver function values as JVM method handles and invokes them dynamically`() {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
@@ -1780,6 +1867,9 @@ class DefaultChirToJvmCodeGeneratorTest {
         assertEquals(51, facadeClass.getMethod("callReceiverHandle").invoke(null))
     }
 
+    /**
+     * 验证导入 virtual JVM MethodHandle 的动态调用路径。
+     */
     @Test
     fun `invokes imported virtual JVM method handles dynamically`() {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
@@ -1847,6 +1937,9 @@ class DefaultChirToJvmCodeGeneratorTest {
         assertEquals(7, generatedClass.getMethod("dynamicStringLength").invoke(null))
     }
 
+    /**
+     * 验证 CHIR class、struct 与 enum 声明会生成可加载的 JVM class。
+     */
     @Test
     fun `generates CHIR class struct and enum declarations as JVM classes`() {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
@@ -1954,6 +2047,9 @@ class DefaultChirToJvmCodeGeneratorTest {
         assertEquals(5, colorClass.getMethod("code").invoke(red))
     }
 
+    /**
+     * 验证嵌套 CHIR 自定义类型成员声明会生成为独立 JVM class artifact。
+     */
     @Test
     fun `generates nested CHIR custom type member declarations as JVM classes`() {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
@@ -1986,6 +2082,9 @@ class DefaultChirToJvmCodeGeneratorTest {
         assertTrue(Modifier.isFinal(nestedClass.getField("value").modifiers))
     }
 
+    /**
+     * 验证 CHIR 对象构造、实例字段读取和实例字段写入的 JVM 降低。
+     */
     @Test
     fun `lowers CHIR object construction and instance field access`() {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
@@ -2055,6 +2154,9 @@ class DefaultChirToJvmCodeGeneratorTest {
         assertEquals(13, facadeClass.getMethod("boxField").invoke(null))
     }
 
+    /**
+     * 验证 CHIR 成员构造器声明会生成 JVM `<init>` 方法。
+     */
     @Test
     fun `lowers CHIR member constructor declarations to JVM init methods`() {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
@@ -2162,6 +2264,9 @@ class DefaultChirToJvmCodeGeneratorTest {
         assertEquals(21, facadeClass.getMethod("boxConstructorValue").invoke(null))
     }
 
+    /**
+     * 验证 class 成员访问 module 全局变量和顶层函数时使用 facade owner。
+     */
     @Test
     fun `lowers class member access to module globals and top level functions through facade owner`() {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
@@ -2294,6 +2399,9 @@ class DefaultChirToJvmCodeGeneratorTest {
         assertEquals(12, facadeClass.getMethod("callMemberFacadeAccess").invoke(null))
     }
 
+    /**
+     * 验证 CHIR 引用相等与不等会降低为 JVM 引用比较。
+     */
     @Test
     fun `lowers CHIR reference equality to JVM reference comparison`() {
         val boolType = ChirResolvedTypeRef(ChirPrimitiveType.BOOL)
@@ -2386,6 +2494,9 @@ class DefaultChirToJvmCodeGeneratorTest {
         assertEquals(true, facadeClass.getMethod("distinctReferences").invoke(null))
     }
 
+    /**
+     * 验证 CHIR raw array 分配、元素读写和 length intrinsic 的 JVM 降低。
+     */
     @Test
     fun `lowers CHIR raw array allocation element access and length`() {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
@@ -2458,6 +2569,9 @@ class DefaultChirToJvmCodeGeneratorTest {
         assertEquals(80, generatedClass.getMethod("arrayRoundTrip").invoke(null))
     }
 
+    /**
+     * 验证对象数组元素访问时引用 carrier 的适配逻辑。
+     */
     @Test
     fun `adapts reference carriers for CHIR object array element access`() {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
@@ -2536,6 +2650,9 @@ class DefaultChirToJvmCodeGeneratorTest {
         assertEquals(4, generatedClass.getMethod("objectArrayStringLength").invoke(null))
     }
 
+    /**
+     * 验证多维 varray 分配与嵌套元素访问的 JVM 降低。
+     */
     @Test
     fun `lowers CHIR multidimensional varray allocation and nested element access`() {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
@@ -2608,6 +2725,9 @@ class DefaultChirToJvmCodeGeneratorTest {
         assertEquals(34, generatedClass.getMethod("matrixRoundTrip").invoke(null))
     }
 
+    /**
+     * 验证 long carrier 可作为数组大小和下标输入并被适配为 JVM int。
+     */
     @Test
     fun `lowers CHIR long array size and index operands`() {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
@@ -2667,6 +2787,9 @@ class DefaultChirToJvmCodeGeneratorTest {
         assertEquals(91, generatedClass.getMethod("longArrayIndex").invoke(null))
     }
 
+    /**
+     * 验证对象 null 常量会生成为 null 引用，同时字符串字面量 `null` 不被重写。
+     */
     @Test
     fun `lowers CHIR object null constants without rewriting string null literals`() {
         val boolType = ChirResolvedTypeRef(ChirPrimitiveType.BOOL)
@@ -2728,6 +2851,9 @@ class DefaultChirToJvmCodeGeneratorTest {
         assertEquals(4, facadeClass.getMethod("stringNullLength").invoke(null))
     }
 
+    /**
+     * 验证 JVM checkcast、instanceof 与 throw 终结符的降低。
+     */
     @Test
     fun `lowers CHIR JVM type checks and throw terminator`() {
         val boolType = ChirResolvedTypeRef(ChirPrimitiveType.BOOL)
@@ -2804,6 +2930,9 @@ class DefaultChirToJvmCodeGeneratorTest {
         assertTrue(thrown.cause is RuntimeException)
     }
 
+    /**
+     * 验证 CHIR phi 表达式会在 JVM 控制流边上发射赋值。
+     */
     @Test
     fun `lowers CHIR phi assignments on JVM control-flow edges`() {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
@@ -2881,6 +3010,9 @@ class DefaultChirToJvmCodeGeneratorTest {
         assertEquals(41, generatedClass.getMethod("phiValue").invoke(null))
     }
 
+    /**
+     * 验证 throw 的 unwind 边会降低为 JVM exception handler 控制流。
+     */
     @Test
     fun `lowers CHIR throw unwind edge to JVM exception handler`() {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
@@ -2954,6 +3086,9 @@ class DefaultChirToJvmCodeGeneratorTest {
         assertEquals(77, generatedClass.getMethod("throwUnwind").invoke(null))
     }
 
+    /**
+     * 验证 CHIR unwind terminator 会降低为普通 JVM 控制流跳转。
+     */
     @Test
     fun `lowers CHIR unwind terminator to JVM control-flow edge`() {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
@@ -3013,6 +3148,9 @@ class DefaultChirToJvmCodeGeneratorTest {
         assertEquals(93, generatedClass.getMethod("unwindTerminator").invoke(null))
     }
 
+    /**
+     * 验证 CHIR C pointer memory 与指针/整数互转的 JVM runtime 降低。
+     */
     @Test
     fun `lowers CHIR C pointer memory and pointer integer round trip`() {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
@@ -3080,6 +3218,9 @@ class DefaultChirToJvmCodeGeneratorTest {
         assertEquals(123, generatedClass.getMethod("pointerRoundTrip").invoke(null))
     }
 
+    /**
+     * 验证指针 GEP 会按 pointee 元素字节宽度移动 ByteBuffer 位置。
+     */
     @Test
     fun `lowers CHIR pointer gep by pointee element size`() {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
@@ -3160,6 +3301,9 @@ class DefaultChirToJvmCodeGeneratorTest {
         assertEquals(33, generatedClass.getMethod("pointerGep").invoke(null))
     }
 
+    /**
+     * 验证 facade 全局变量和 extend 声明的 JVM classfile 生成。
+     */
     @Test
     fun `lowers CHIR facade globals and extend declarations`() {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
@@ -3234,6 +3378,9 @@ class DefaultChirToJvmCodeGeneratorTest {
         assertEquals(64, extendClass.getMethod("extensionAnswer").invoke(null))
     }
 
+    /**
+     * 验证 CHIR package init 函数会生成 JVM class initializer。
+     */
     @Test
     fun `generates JVM class initializer from CHIR package init function`() {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
@@ -3310,6 +3457,9 @@ class DefaultChirToJvmCodeGeneratorTest {
         assertEquals(45, generatedClass.getMethod("readInitialized").invoke(null))
     }
 
+    /**
+     * 验证 CHIR package members 会生成包级 JVM facade。
+     */
     @Test
     fun `generates JVM package facade for CHIR package members`() {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
@@ -3358,6 +3508,9 @@ class DefaultChirToJvmCodeGeneratorTest {
         assertEquals(88, generatedClass.getMethod("readShared").invoke(null))
     }
 
+    /**
+     * 验证包级 main 函数会生成 Java main bridge，并在 jar manifest 中登记入口类。
+     */
     @Test
     fun `generates Java main bridge and jar manifest for package-level main`(@TempDir tempDir: Path) {
         val unitType = ChirResolvedTypeRef(ChirPrimitiveType.UNIT)
@@ -3400,6 +3553,9 @@ class DefaultChirToJvmCodeGeneratorTest {
         }
     }
 
+    /**
+     * 验证多个可生成 Java main bridge 的模块会被拒绝，避免 manifest 入口不确定。
+     */
     @Test
     fun `rejects multiple generated Java main bridges`() {
         fun mainFunction(moduleName: String): DefaultChirFunctionDeclaration {
@@ -3447,6 +3603,9 @@ class DefaultChirToJvmCodeGeneratorTest {
         assertTrue(message.contains("demo/pkg/BetaCj"))
     }
 
+    /**
+     * 验证默认输入下的 Java main bridge 和 jar manifest 生成路径。
+     */
     @Test
     fun `generates Java main bridge and jar manifest`(@TempDir tempDir: Path) {
         val unitType = ChirResolvedTypeRef(ChirPrimitiveType.UNIT)
@@ -3481,6 +3640,9 @@ class DefaultChirToJvmCodeGeneratorTest {
         }
     }
 
+    /**
+     * 构造只包含单个 demo 模块和给定函数列表的 JVM codegen 输入。
+     */
     private fun inputWith(vararg functions: DefaultChirFunctionDeclaration): ChirJvmCodegenInput {
         return ChirJvmCodegenInput(
             chirPackage = ChirPackage(
@@ -3497,6 +3659,9 @@ class DefaultChirToJvmCodeGeneratorTest {
         )
     }
 
+    /**
+     * 构造一个无参、单入口块、返回指定 value 的 CHIR 函数。
+     */
     private fun functionReturningValue(
         name: String,
         returnType: ChirResolvedTypeRef,
@@ -3523,6 +3688,9 @@ class DefaultChirToJvmCodeGeneratorTest {
         )
     }
 
+    /**
+     * 构造导入 JVM 函数所需的 owner/name/invokeKind/descriptor ABI 属性集合。
+     */
     private fun jvmImport(
         owner: String,
         name: String,
@@ -3536,15 +3704,24 @@ class DefaultChirToJvmCodeGeneratorTest {
             descriptor?.let { ChirStringAttribute(JvmAbiAttributes.DESCRIPTOR, it) },
         ).toSet()
 
+    /**
+     * 构造 JVM 字段名称与可选 descriptor ABI 属性集合。
+     */
     private fun jvmField(name: String, descriptor: String? = null): Set<ChirStringAttribute> =
         listOfNotNull(
             ChirStringAttribute(JvmAbiAttributes.NAME, name),
             descriptor?.let { ChirStringAttribute(JvmAbiAttributes.DESCRIPTOR, it) },
         ).toSet()
 
+    /**
+     * 构造 JVM 类型 internal name ABI 属性集合。
+     */
     private fun jvmType(typeInternalName: String): Set<ChirStringAttribute> =
         setOf(ChirStringAttribute(JvmAbiAttributes.TYPE, typeInternalName))
 
+    /**
+     * 构造只包含单个 demo 模块和任意 CHIR 声明列表的 JVM codegen 输入。
+     */
     private fun inputWithDeclarations(vararg declarations: ChirDeclaration): ChirJvmCodegenInput {
         return ChirJvmCodegenInput(
             chirPackage = ChirPackage(
@@ -3561,12 +3738,18 @@ class DefaultChirToJvmCodeGeneratorTest {
         )
     }
 
+    /**
+     * 使用 ASM CheckClassAdapter 验证单个生成 classfile。
+     */
     private fun verifyClass(artifact: JvmClassFileArtifact) {
         val output = StringWriter()
         CheckClassAdapter.verify(ClassReader(artifact.bytes), false, PrintWriter(output))
         assertTrue(output.toString().isBlank(), output.toString())
     }
 
+    /**
+     * 使用指定 classloader 上下文验证一组生成 classfile。
+     */
     private fun verifyClasses(artifacts: List<JvmClassFileArtifact>, classLoader: ClassLoader) {
         artifacts.forEach { artifact ->
             val output = StringWriter()
@@ -3575,17 +3758,32 @@ class DefaultChirToJvmCodeGeneratorTest {
         }
     }
 
+    /**
+     * 测试专用 classloader，用于从内存中的 `JvmClassFileArtifact` 定义和加载生成类。
+     */
     private class GeneratedClassLoader(
+        /**
+         * 以 JVM internal name 索引的待加载 class artifact。
+         */
         private val artifactsByName: Map<String, JvmClassFileArtifact> = emptyMap(),
     ) : ClassLoader(DefaultChirToJvmCodeGeneratorTest::class.java.classLoader) {
+        /**
+         * 直接把 artifact 字节定义为 JVM class。
+         */
         fun define(artifact: JvmClassFileArtifact): Class<*> {
             return defineClass(artifact.internalName.replace('/', '.'), artifact.bytes, 0, artifact.bytes.size)
         }
 
+        /**
+         * 通过标准 classloader 解析流程加载 artifact 对应的类名。
+         */
         fun load(artifact: JvmClassFileArtifact): Class<*> {
             return loadClass(artifact.internalName.replace('/', '.'))
         }
 
+        /**
+         * 当父加载器找不到类时，从 artifact 映射中按 internal name 定义生成类。
+         */
         override fun findClass(name: String): Class<*> {
             val artifact = artifactsByName[name.replace('.', '/')] ?: return super.findClass(name)
             return define(artifact)

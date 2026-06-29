@@ -120,6 +120,8 @@ object CommonExpressionCheckers : ExpressionCheckers() {
             CfirMutFuncReferenceChecker,
             CfirUnsafeFuncReferenceChecker,
             CfirAbstractSuperMemberAccessChecker,
+            CfirInterfaceCallWithUnimplementedCallChecker,
+            CfirStaticContextNonStaticMemberAccessChecker,
             CfirOpenConstructorMemberAccessChecker,
         )
 

@@ -26,11 +26,20 @@ package org.cangnova.cangjie.psi
 
 import com.intellij.lang.ASTNode
 
+/**
+ * 表示 `CjCatchClause`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjCatchClause(node: ASTNode) : CjElementImpl(node) {
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitCatchSection(this, data)
     }
 
+    /**
+     * 保存 `catchParameter`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     @get:IfNotParsed
     val catchParameter: CjCatchParameter?
         get() {
@@ -38,6 +47,9 @@ class CjCatchClause(node: ASTNode) : CjElementImpl(node) {
             return findChildByType(CjNodeTypes.CATCH_PARAMETER)
         }
 
+    /**
+     * 保存 `catchBody`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     @get:IfNotParsed
     val catchBody: CjExpression?
         get() = findChildByClass(CjBlockExpression::class.java)

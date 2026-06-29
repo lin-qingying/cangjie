@@ -43,8 +43,14 @@ import org.cangnova.cangjie.type.model.TypeConstructorMarker
  * 统一提供 Analysis API 可见的公开替换器构造入口。
  */
 internal class CaCfirSubstitutorProvider(
+    /**
+     * 延迟取得当前 CFIR Analysis session，替换器构造需要复用其中的类型符号构建器。
+     */
     override val analysisSessionProvider: () -> CaCfirSession,
 ) : CaBaseSessionComponent<CaCfirSession>(), CaSubstitutorProvider {
+    /**
+     * 根据公开类型参数到公开类型的映射构造 CFIR 支撑的公开替换器。
+     */
     override fun createSubstitutor(mappings: Map<CaTypeParameterSymbol, CaType>): CaSubstitutor = withValidityAssertion {
         if (mappings.isEmpty()) return CaSubstitutor.Empty(token)
 

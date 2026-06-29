@@ -13,6 +13,9 @@ import org.cangnova.cangjie.analysis.api.symbols.pointers.CaSymbolPointer
  * 基类只负责把 `CaSession` 归一化为 `CaCfirSession`，不再引入统一 restore-key 协议。
  */
 internal abstract class CaCfirSymbolPointerBase<out S : CaSymbol> : CaSymbolPointer<S> {
+    /**
+     * 将通用 Analysis session 转换为 CFIR Analysis session。
+     */
     protected fun restoreSession(session: CaSession): CaCfirSession? = session as? CaCfirSession
 }
 
@@ -25,8 +28,14 @@ internal abstract class CaCfirSymbolPointerBase<out S : CaSymbol> : CaSymbolPoin
 internal abstract class CaCfirCachedSymbolPointer<S : CaSymbol>(
     originalSymbol: S?,
 ) : CaBaseCachedSymbolPointer<S>(originalSymbol) {
+    /**
+     * 在没有可复用原始符号时执行后端恢复。
+     */
     protected abstract override fun restoreIfNotCached(session: CaSession): S?
 }
 
+/**
+ * 对恢复出的公开符号执行类型安全转换。
+ */
 internal fun <S : CaSymbol> Class<S>.castOrNull(symbol: CaSymbol?): S? =
     if (symbol != null && isInstance(symbol)) cast(symbol) else null

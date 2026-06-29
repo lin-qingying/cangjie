@@ -16,6 +16,9 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.AbstractModuleS
 import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.combined.AbstractCombinedPackageDelegationSymbolProviderTest
 import org.jetbrains.kotlin.generators.dsl.junit5.generateTestGroupSuiteWithJUnit5
 
+/**
+ * 生成 low-level CFIR 相关测试类。
+ */
 fun main(args: Array<String>) {
     generateTestGroupSuiteWithJUnit5(args) {
         testGroup("analysis/low-level-api-cfir/tests-gen", "analysis/low-level-api-cfir/testData") {

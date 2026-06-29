@@ -7,7 +7,7 @@ interface I0 {
     }
 
     func foo1(): Int64 {
-        var res = <!OBJECT_CANNOT_ACCESS_STATIC_MEMBER!>t<!>his.foo()
+        var res = <!OBJECT_CANNOT_ACCESS_STATIC_MEMBER!>this<!>.foo()
         return res
     }
 }

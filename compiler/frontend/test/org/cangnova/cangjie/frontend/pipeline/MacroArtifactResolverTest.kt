@@ -16,10 +16,19 @@ import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Files
 import java.nio.file.Path
 
+/**
+ * 覆盖宏 artifact resolver 的文件校验、定义投影和缓存签名规则。
+ */
 class MacroArtifactResolverTest {
+    /**
+     * 每个测试独占的 artifact 临时目录。
+     */
     @TempDir
     lateinit var tempDir: Path
 
+    /**
+     * 验证合法宏 artifact 会按导出名称生成 artifact 宏定义。
+     */
     @Test
     fun validMacroArtifactEmitsArtifactDefinitionsWithDynamicLibraryAndAbi() {
         val cjo = writeCjo("macro.cjo", "macros.pkg", PackageKind.Macro, listOf("Beta", "Alpha"))
@@ -50,6 +59,9 @@ class MacroArtifactResolverTest {
         assertTrue(result.definitions.all { it.resolverAlgorithmVersion == MacroArtifactResolver.ALGORITHM_VERSION })
     }
 
+    /**
+     * 验证 orchestration 提供的显式 artifact 签名会原样进入定义。
+     */
     @Test
     fun explicitArtifactSignatureIsPreservedForCacheKey() {
         val cjo = writeCjo("macro.cjo", "macros.pkg", PackageKind.Macro, listOf("Generated"))
@@ -69,6 +81,9 @@ class MacroArtifactResolverTest {
         assertEquals("orchestration-signature", result.definitions.single().artifactSignature)
     }
 
+    /**
+     * 验证缺失 `.cjo`、动态库和 BCHIR 时产生结构化诊断且不生成定义。
+     */
     @Test
     fun missingArtifactFilesReportStructuredDiagnosticsAndEmitNoDefinitions() {
         val missingCjo = tempDir.resolve("missing.cjo")
@@ -98,6 +113,9 @@ class MacroArtifactResolverTest {
         assertTrue(result.diagnostics.all { it.diagnosticOrigin == MacroConstructionDiagnostic.Origin.ARTIFACT_RESOLVER })
     }
 
+    /**
+     * 验证 orchestration artifact 失败诊断保留 invocation 和原始诊断引用。
+     */
     @Test
     fun orchestrationArtifactFailureKeepsCompileInvocationDiagnosticsReference() {
         val result = MacroArtifactResolver().resolve(
@@ -119,6 +137,9 @@ class MacroArtifactResolverTest {
         assertTrue(result.diagnostics.all { it.sourceDiagnosticsRef == "diagnostics://macros.pkg" })
     }
 
+    /**
+     * 验证普通包和空宏包都会被拒绝为宏定义错误。
+     */
     @Test
     fun nonMacroPackageAndEmptyMacroPackageAreRejectedAsMacroDefinitionErrors() {
         val normalCjo = writeCjo("normal.cjo", "macros.normal", PackageKind.Normal, listOf("NotMacro"))
@@ -142,6 +163,9 @@ class MacroArtifactResolverTest {
         )
     }
 
+    /**
+     * 验证 `.cjo` 内包名与期望包名不一致时报 undefined package。
+     */
     @Test
     fun packageNameMismatchReportsUndefinedPackageAndSkipsDefinitions() {
         val cjo = writeCjo("macro.cjo", "actual.pkg", PackageKind.Macro, listOf("Generated"))
@@ -157,6 +181,9 @@ class MacroArtifactResolverTest {
         assertEquals(cjo.toString(), result.diagnostics.single().artifactPath)
     }
 
+    /**
+     * 验证 artifact ABI 与 executor ABI 不一致时拒绝定义。
+     */
     @Test
     fun abiMismatchReportsArtifactErrorAndSkipsDefinitions() {
         val cjo = writeCjo("macro.cjo", "macros.pkg", PackageKind.Macro, listOf("Generated"))
@@ -185,6 +212,9 @@ class MacroArtifactResolverTest {
         )
     }
 
+    /**
+     * 验证 public import 重导出的宏定义可见且使用真实 executable artifact。
+     */
     @Test
     fun publicImportReexportedMacroDefinitionsAreVisibleToResolver() {
         val executablePackage = "upstream.deriving"
@@ -228,6 +258,9 @@ class MacroArtifactResolverTest {
         assertEquals(executableDylib.toString(), result.definitions.single().libPath)
     }
 
+    /**
+     * 构造测试用宏 artifact 包。
+     */
     private fun artifact(
         packageFqName: String,
         cjoPath: Path,
@@ -251,12 +284,18 @@ class MacroArtifactResolverTest {
         sourceDiagnosticsRef = sourceDiagnosticsRef,
     )
 
+    /**
+     * 写入测试用普通二进制文件。
+     */
     private fun writeFile(name: String): Path {
         val path = tempDir.resolve(name)
         Files.write(path, byteArrayOf(1))
         return path
     }
 
+    /**
+     * 写入带指定包元数据的 `.cjo` 文件。
+     */
     private fun writeCjo(
         name: String,
         packageFqName: String,

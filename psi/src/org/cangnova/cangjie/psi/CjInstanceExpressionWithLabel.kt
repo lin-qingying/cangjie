@@ -28,7 +28,13 @@ import org.cangnova.cangjie.psi.CjNodeTypes
 import com.intellij.lang.ASTNode
 import com.intellij.psi.PsiElement
 
+/**
+ * 表示 `CjInstanceExpressionWithLabel`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 abstract class CjInstanceExpressionWithLabel(node: ASTNode) : CjExpressionWithLabel(node) {
+    /**
+     * 保存 `instanceReference`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val instanceReference: CjReferenceExpression
         get() = findChildByType<PsiElement>(CjNodeTypes.REFERENCE_EXPRESSION) as CjReferenceExpression
 }

@@ -26,7 +26,13 @@ package org.cangnova.cangjie.lexer
 import org.jetbrains.annotations.NonNls
 
 
+/**
+ * 表示 `CjKeywordToken`，承载仓颉词法与文档注释中的语法节点、索引桩或辅助模型。
+ */
 open class CjKeywordToken : CjSingleValueToken {
+    /**
+     * 保存 `isSoft`，供仓颉词法与文档注释流程读取节点结构或语义信息。
+     */
     val isSoft: Boolean
 
     protected constructor(debugName: String, value: String, isSoft: Boolean) : super(debugName, value) {

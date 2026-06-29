@@ -31,16 +31,28 @@ import org.cangnova.cangjie.psi.stubs.impl.ModifierMaskUtils.maskHasModifier
 import org.cangnova.cangjie.psi.stubs.impl.ModifierMaskUtils.maskToString
 import com.intellij.psi.stubs.StubElement
 
+/**
+ * 表示 `CangJieModifierListStubImpl`，承载PSI Stub中的语法节点、索引桩或辅助模型。
+ */
 class CangJieModifierListStubImpl(parent: StubElement<*>?, @JvmField val mask: Long, elementType: CjModifierListElementType<*>) :
     CangJieStubBaseImpl<CjDeclarationModifierList>(parent, elementType), CangJieModifierListStub {
+    /**
+     * 实现 `hasModifier` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun hasModifier(modifierToken: CjKeywordToken): Boolean {
         return maskHasModifier(mask, modifierToken)
     }
 
+    /**
+     * 实现 `toString` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun toString(): String {
         return super.toString() + maskToString(mask)
     }
 
+    /**
+     * 实现 `copyInto` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun copyInto(newParent: StubElement<*>?): CangJieModifierListStubImpl = CangJieModifierListStubImpl(
         parent = newParent,
         mask = mask,

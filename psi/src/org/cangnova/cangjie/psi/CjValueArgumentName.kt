@@ -30,6 +30,9 @@ import org.cangnova.cangjie.psi.stubs.CangJiePlaceHolderStub
 import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 import com.intellij.lang.ASTNode
 
+/**
+ * 表示 `CjValueArgumentName`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjValueArgumentName : CjElementImplStub<CangJiePlaceHolderStub<CjValueArgumentName>>, ValueArgumentName {
     constructor(node: ASTNode) : super(node)
 
@@ -38,9 +41,15 @@ class CjValueArgumentName : CjElementImplStub<CangJiePlaceHolderStub<CjValueArgu
         CjStubElementTypes.VALUE_ARGUMENT_NAME,
     )
 
+    /**
+     * 暴露 `referenceExpression`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val referenceExpression: CjSimpleNameExpression
         get() = getStubOrPsiChild(CjStubElementTypes.REFERENCE_EXPRESSION)!!
 
+    /**
+     * 暴露 `asName`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val asName: Name
         get() = referenceExpression.referencedNameAsName
 }

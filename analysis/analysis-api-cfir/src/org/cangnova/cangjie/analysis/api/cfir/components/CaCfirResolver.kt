@@ -72,8 +72,14 @@ import org.cangnova.cangjie.utils.exceptions.withPsiEntry
  * 不再直接接触 low-level facade。
  */
 internal class CaCfirResolver(
+    /**
+     * 延迟取得当前 CFIR Analysis session，解析请求通过该 session 访问引用、符号和类型构建器。
+     */
     override val analysisSessionProvider: () -> CaCfirSession,
 ) : CaBaseSessionComponent<CaCfirSession>(), CaResolver, CaCfirSessionComponent {
+    /**
+     * 将仓颉引用表达式解析为公开符号集合。
+     */
     override fun CjReferenceExpression.resolveToSymbols(): Collection<CaSymbol> = withValidityAssertion {
         if (this is org.cangnova.cangjie.psi.CjCallExpression) {
             resolveCallExpressionToSymbol(this)?.let { return@withValidityAssertion listOf(it) }
@@ -101,6 +107,9 @@ internal class CaCfirResolver(
         return successfulCall.symbol
     }
 
+    /**
+     * 通过 main reference 的 CFIR 引用实现执行符号解析。
+     */
     private fun doResolveToSymbols(referenceExpression: CjReferenceExpression): Collection<CaSymbol> {
         val reference = referenceExpression.mainReference ?: return emptyList()
         checkWithAttachment(
@@ -115,6 +124,9 @@ internal class CaCfirResolver(
         }
     }
 
+    /**
+     * 将调用 PSI 解析为公开调用信息模型。
+     */
     override fun CjElement.resolveToCall(): CaCallInfo? = withValidityAssertion {
         val callExpression = this as? org.cangnova.cangjie.psi.CjCallExpression ?: return@withValidityAssertion null
         val resolutionTarget = callExpression.getQualifiedExpressionForSelectorOrThis()
@@ -153,6 +165,9 @@ internal class CaCfirResolver(
         )
     }
 
+    /**
+     * 从不同 CFIR 引用实现中提取已解析的函数符号。
+     */
     private fun CfirReference.resolvedFunctionSymbol(): CfirFunctionSymbol<*>? {
         return when (this) {
             is CfirResolvedAppliedCallableReference -> resolvedSymbol as? CfirFunctionSymbol<*>
@@ -162,11 +177,23 @@ internal class CaCfirResolver(
         }
     }
 
+    /**
+     * 调用类型实参在公开 API 中的映射和可选 substitutor。
+     */
     private data class CallTypeArguments(
+        /**
+         * 公开类型参数符号到实际类型实参的映射。
+         */
         val publicMapping: Map<CaTypeParameterSymbol, CaType>,
+        /**
+         * 可直接作用于公开签名的类型替换器。
+         */
         val publicSubstitutor: org.cangnova.cangjie.analysis.api.types.CaSubstitutor?,
     )
 
+    /**
+     * 从 CFIR 调用类型实参构建公开类型实参映射和签名替换器。
+     */
     private fun buildCallTypeArguments(
         resolvedSymbol: CfirFunctionSymbol<*>,
         publicFunctionSymbol: CaFunctionSymbol,
@@ -201,6 +228,9 @@ internal class CaCfirResolver(
         )
     }
 
+    /**
+     * 把解析后的实参到形参关系转换为公开 PSI 表达式到参数签名的映射。
+     */
     private fun buildValueArgumentMapping(
         functionCall: CfirFunctionCall,
         valueParameters: List<CfirValueParameter>,
@@ -219,6 +249,9 @@ internal class CaCfirResolver(
         }
     }
 
+    /**
+     * 将 CFIR receiver 表达式转换为公开 receiver value。
+     */
     private fun CfirExpression.toPublicReceiverValue(): CaReceiverValue {
         return CaBaseReceiverValue(analysisSession.cfirSymbolBuilder.typeBuilder.buildType(resolvedType))
     }
@@ -254,12 +287,18 @@ internal class CaCfirResolver(
             .toList()
     }
 
+    /**
+     * 使用公开缓存键或对象身份对符号集合去重。
+     */
     private fun Collection<CaSymbol>.distinctSymbols(): List<CaSymbol> {
         return distinctBy { symbol ->
             symbol.publicSymbolCacheKeyOrNull() ?: "${symbol::class.qualifiedName}@${System.identityHashCode(symbol)}"
         }
     }
 
+    /**
+     * 从模式绑定 PSI 恢复对应的公开 pattern binding 符号。
+     */
     private fun resolvePatternBindingSymbolByPsi(psi: com.intellij.psi.PsiElement): CaPatternBindingSymbol? {
         val cfirDeclaration = (psi as? CjElement)
             ?.getOrBuildCfir(analysisSession.resolutionFacade) as? CfirDeclaration
@@ -269,6 +308,9 @@ internal class CaCfirResolver(
             .firstOrNull()
     }
 
+    /**
+     * 使用当前 session 的符号构建器将底层 CFIR 符号提升为公开符号。
+     */
     private fun buildPublicSymbol(symbol: CfirBasedSymbol<*>): CaSymbol {
         return analysisSession.cfirSymbolBuilder.buildSymbol(symbol)
     }

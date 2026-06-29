@@ -34,6 +34,9 @@ import com.intellij.psi.tree.TokenSet
 import com.intellij.util.IncorrectOperationException
 import java.util.regex.Pattern
 
+/**
+ * 表示 `CjStringTemplateExpression`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjStringTemplateExpression :
     CjElementImplStub<CangJiePlaceHolderStub<CjStringTemplateExpression>>,
     CjExpression,
@@ -46,6 +49,9 @@ class CjStringTemplateExpression :
         CjStubElementTypes.STRING_TEMPLATE,
     )
 
+    /**
+     * 实现 `replace` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     @Throws(IncorrectOperationException::class)
     override fun replace(newElement: PsiElement): PsiElement {
         return replaceExpression(this, newElement, true) { newElement: PsiElement? ->
@@ -55,16 +61,25 @@ class CjStringTemplateExpression :
         }
     }
 
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitStringTemplateExpression(this, data)
     }
 
+    /**
+     * 保存 `isDoubleQuote`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val isDoubleQuote: Boolean
         /**
          * 是否双引号
          */
         get() = node.firstChildNode.text.startsWith("\"")
 
+    /**
+     * 保存 `isMultiLine`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val isMultiLine: Boolean
         /**
          * 是否是多行字符串
@@ -72,6 +87,9 @@ class CjStringTemplateExpression :
         get() = node.firstChildNode.text == "\"\"\"" || node.firstChildNode
             .text == "'''"
 
+    /**
+     * 保存 `isRawString`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val isRawString: Boolean
         /**
          * 是否为原始字符串
@@ -80,6 +98,9 @@ class CjStringTemplateExpression :
          */
         get() = Pattern.matches("^#+[\"']", node.firstChildNode.text)
 
+    /**
+     * 保存 `stringContent`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val stringContent: String
         /**
          * 获取字符串内容
@@ -105,26 +126,41 @@ class CjStringTemplateExpression :
             return content.toString()
         }
 
+    /**
+     * 保存 `entries`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val entries: Array<CjStringTemplateEntry>
         get() = getStubOrPsiChildren(
             STRING_ENTRIES_TYPES,
             CjStringTemplateEntry.EMPTY_ARRAY,
         )
 
+    /**
+     * 实现 `isValidHost` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun isValidHost(): Boolean {
         return node.getChildren(CLOSE_QUOTE_TOKEN_SET).isNotEmpty()
     }
 
+    /**
+     * 实现 `updateText` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun updateText(text: String): PsiLanguageInjectionHost {
         val newExpression = CjPsiFactory(project).createExpressionIfPossible(text)
         if (newExpression is CjStringTemplateExpression) return replace(newExpression) as CjStringTemplateExpression
         return ElementManipulators.handleContentChange(this, text)
     }
 
+    /**
+     * 实现 `createLiteralTextEscaper` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createLiteralTextEscaper(): LiteralTextEscaper<out PsiLanguageInjectionHost> {
         return CangJieStringLiteralTextEscaper(this)
     }
 
+    /**
+     * 提供 `hasInterpolation` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun hasInterpolation(): Boolean {
         for (child in children) {
             if (child is CjSimpleNameStringTemplateEntry || child is CjBlockStringTemplateEntry) {

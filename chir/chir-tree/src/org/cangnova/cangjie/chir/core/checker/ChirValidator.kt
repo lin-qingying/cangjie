@@ -48,11 +48,23 @@ import org.cangnova.cangjie.chir.core.type.ChirUnresolvedTypeRef
 import org.cangnova.cangjie.chir.core.type.ChirVArrayType
 import org.cangnova.cangjie.chir.core.value.ChirValue
 
+/**
+ * CHIR 图校验器接口。
+ */
 interface ChirValidator {
+    /**
+     * 校验完整 CHIR 包。
+     */
     fun validatePackage(chirPackage: ChirPackage, context: ChirReadOnlyContext? = null): ChirValidationReport
 }
 
+/**
+ * 默认 CHIR 图校验器实现。
+ */
 class DefaultChirValidator : ChirValidator {
+    /**
+     * 校验包内声明、函数控制流、表达式类型、包初始化函数和上下文符号引用。
+     */
     override fun validatePackage(chirPackage: ChirPackage, context: ChirReadOnlyContext?): ChirValidationReport {
         val issues = mutableListOf<ChirValidationIssue>()
         val allDeclarations = chirPackage.allDeclarations
@@ -122,6 +134,9 @@ class DefaultChirValidator : ChirValidator {
         return ChirValidationReport(issues)
     }
 
+    /**
+     * 校验函数声明的 CFG、表达式、终结指令和返回类型一致性。
+     */
     private fun validateFunction(function: ChirFunctionDeclaration, issues: MutableList<ChirValidationIssue>) {
         val cfgErrors = validateMinimalControlFlow(function)
         cfgErrors.forEach { message ->
@@ -358,6 +373,9 @@ class DefaultChirValidator : ChirValidator {
         }
     }
 
+    /**
+     * 校验内存操作地址是否是 ref 或 C pointer，并返回被访问目标类型。
+     */
     private fun validateMemoryAddress(
         address: ChirValue,
         expression: ChirMemoryExpression,
@@ -378,6 +396,9 @@ class DefaultChirValidator : ChirValidator {
         }
     }
 
+    /**
+     * 校验本地 alloca 使用 ref 地址承载分配目标。
+     */
     private fun validateLocalAllocaAddress(
         address: ChirValue,
         expression: ChirMemoryExpression,
@@ -393,6 +414,9 @@ class DefaultChirValidator : ChirValidator {
         }
     }
 
+    /**
+     * 校验指针 alloca 的结果类型和 size 操作数类型。
+     */
     private fun validatePointerAlloca(
         expression: ChirMemoryExpression,
         issues: MutableList<ChirValidationIssue>,
@@ -415,11 +439,17 @@ class DefaultChirValidator : ChirValidator {
         }
     }
 
+    /**
+     * 判断类型引用是否可作为内存 size 操作数。
+     */
     private fun ChirTypeRef.isIntegerLikeMemorySize(): Boolean {
         val primitive = (this as? ChirResolvedTypeRef)?.type as? ChirPrimitiveType ?: return false
         return primitive in integerLikeMemorySizeTypes
     }
 
+    /**
+     * 校验包初始化函数引用是否指向包内函数。
+     */
     private fun validatePackageInitFunction(
         functionId: ChirSemanticId?,
         code: String,
@@ -437,6 +467,9 @@ class DefaultChirValidator : ChirValidator {
         }
     }
 
+    /**
+     * 校验声明中出现的类型引用。
+     */
     private fun validateDeclarationTypes(declaration: ChirDeclaration, issues: MutableList<ChirValidationIssue>) {
         when (declaration) {
             is ChirVariableDeclaration -> validateTypeRef(
@@ -490,6 +523,9 @@ class DefaultChirValidator : ChirValidator {
         }
     }
 
+    /**
+     * 校验单个类型引用是否已解析且内部类型结构有效。
+     */
     private fun validateTypeRef(
         typeRef: ChirTypeRef,
         nodeId: ChirSemanticId,
@@ -510,6 +546,9 @@ class DefaultChirValidator : ChirValidator {
         }
     }
 
+    /**
+     * 递归校验具体类型结构中的嵌套类型引用。
+     */
     private fun validateType(
         type: ChirType,
         nodeId: ChirSemanticId,
@@ -575,7 +614,13 @@ class DefaultChirValidator : ChirValidator {
         }
     }
 
+    /**
+     * 默认校验器使用的静态常量。
+     */
     private companion object {
+        /**
+         * 可作为内存分配大小的整数类原始类型集合。
+         */
         val integerLikeMemorySizeTypes = setOf(
             ChirPrimitiveType.INT8,
             ChirPrimitiveType.INT16,

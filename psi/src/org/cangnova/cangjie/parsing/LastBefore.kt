@@ -24,15 +24,33 @@
 package org.cangnova.cangjie.parsing
 
 
+/**
+ * 表示 `LastBefore`，承载仓颉语法解析中的语法节点、索引桩或辅助模型。
+ */
 class LastBefore private constructor(
+    /**
+     * 保存 `lookFor` 的内部状态，供仓颉语法解析实现维护节点缓存或解析上下文。
+     */
     private val lookFor: TokenStreamPredicate,
+    /**
+     * 保存 `stopAt` 的内部状态，供仓颉语法解析实现维护节点缓存或解析上下文。
+     */
     private val stopAt: TokenStreamPredicate,
+    /**
+     * 保存 `dontStopRightAfterOccurrence` 的内部状态，供仓颉语法解析实现维护节点缓存或解析上下文。
+     */
     private val dontStopRightAfterOccurrence: Boolean
 ) : AbstractTokenStreamPattern() {
+    /**
+     * 保存 `previousLookForResult` 的内部状态，供仓颉语法解析实现维护节点缓存或解析上下文。
+     */
     private var previousLookForResult = false
 
     constructor(lookFor: TokenStreamPredicate, stopAt: TokenStreamPredicate) : this(lookFor, stopAt, false)
 
+    /**
+     * 实现 `processToken` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun processToken(offset: Int, topLevel: Boolean): Boolean {
         val lookForResult = lookFor.matching(topLevel)
         if (lookForResult) {
@@ -48,6 +66,9 @@ class LastBefore private constructor(
         return false
     }
 
+    /**
+     * 实现 `reset` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun reset() {
         super.reset()
         previousLookForResult = false

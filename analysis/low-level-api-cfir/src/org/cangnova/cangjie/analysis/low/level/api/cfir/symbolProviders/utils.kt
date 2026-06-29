@@ -15,17 +15,17 @@ import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.name.ClassId
 
 /**
- * Checks if this [CfirBasedSymbol] has the given PSI element as a source.
+ * 判断当前 [CfirBasedSymbol] 的 CFIR 来源 PSI 是否为 [element]。
  *
- * [hasPsi] exists to ensure a consistent approach to compare PSI in symbol providers, e.g. by [LLPsiAwareSymbolProvider].
+ * 该扩展为符号提供器内部的 PSI 比较提供统一入口，避免各实现重复书写来源比较逻辑。
  */
 internal fun CfirBasedSymbol<*>.hasPsi(element: PsiElement): Boolean = cfir.psi == element
 
 /**
- * Returns a [CfirClassLikeSymbol] with the given [classId] that matches [declaration].
+ * 返回 [classId] 对应且来源 PSI 匹配 [declaration] 的 class-like 符号。
  *
- * If the symbol provider is not an [LLPsiAwareSymbolProvider], the function falls back to [CfirSymbolProvider.getClassLikeSymbolByClassId],
- * but still ensures that the resulting symbol matches [declaration].
+ * 当接收者实现 [LLPsiAwareSymbolProvider] 时直接使用 PSI 精确查询；否则回退到 [CfirSymbolProvider.getClassLikeSymbolByClassId]，
+ * 并在返回前确认符号来源 PSI 与 [declaration] 一致。
  */
 @LLModuleSpecificSymbolProviderAccess
 internal fun CfirSymbolProvider.getClassLikeSymbolMatchingPsi(classId: ClassId, declaration: PsiElement): CfirClassLikeSymbol<*>? {
@@ -40,12 +40,18 @@ internal fun CfirSymbolProvider.getClassLikeSymbolMatchingPsi(classId: ClassId, 
     }
 }
 
+/**
+ * 查询 [classId] 对应的 class-like 符号，但在模块级组合提供器上排除依赖。
+ */
 internal fun CfirSymbolProvider.getClassLikeSymbolByClassIdWithoutDependencies(classId: ClassId): CfirClassLikeSymbol<*>? =
     when (this) {
         is LLModuleWithDependenciesSymbolProvider -> getClassLikeSymbolByClassIdWithoutDependencies(classId)
         else -> getClassLikeSymbolByClassId(classId)
     }
 
+/**
+ * 按 [declaration] PSI 查询 [classId] 对应的 class-like 符号，但在模块级组合提供器上排除依赖。
+ */
 @LLModuleSpecificSymbolProviderAccess
 internal fun CfirSymbolProvider.getClassLikeSymbolByPsiWithoutDependencies(
     classId: ClassId,
@@ -56,17 +62,28 @@ internal fun CfirSymbolProvider.getClassLikeSymbolByPsiWithoutDependencies(
         else -> getClassLikeSymbolMatchingPsi(classId, declaration)
     }
 
+/**
+ * 查询 [classId] 对应的全部 class-like 符号；不支持多声明的提供器返回单个命中结果。
+ */
 internal fun CfirSymbolProvider.getAllClassLikeSymbolsByClassIdOrSingle(classId: ClassId): List<CfirClassLikeSymbol<*>> =
     when (this) {
         is LLMultiClassLikeSymbolProvider -> getAllClassLikeSymbolsByClassId(classId)
         else -> listOfNotNull(getClassLikeSymbolByClassId(classId))
     }
 
+/**
+ * 根据名称索引判断指定 [classId] 的顶层 classifier 是否可能存在。
+ */
 internal fun CfirSymbolNamesProvider.mayHaveTopLevelClassifier(classId: ClassId): Boolean {
     val names = getTopLevelClassifierNamesInPackage(classId.packageFqName) ?: return true
     return classId.shortClassName in names
 }
 
+/**
+ * 递归物化符号提供器中的顶层扩展文件。
+ *
+ * 对组合提供器会展开内部提供器；对非仓颉源码提供器返回空列表。
+ */
 internal fun CfirSymbolProvider.materializeTopLevelExtendFiles(): List<CfirFile> =
     when (this) {
         is LLCangJieSymbolProvider -> materializeTopLevelExtendFiles()

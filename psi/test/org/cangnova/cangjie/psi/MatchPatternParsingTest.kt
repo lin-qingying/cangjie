@@ -9,6 +9,9 @@ import org.cangnova.cangjie.test.testFramework.CjParsingTestCase
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 
+/**
+ * 表示 `MatchPatternParsingTest`，承载PSI 测试中的语法节点、索引桩或辅助模型。
+ */
 class MatchPatternParsingTest : CjParsingTestCase(
     dataPath = "",
     fileExt = "cj",
@@ -16,16 +19,25 @@ class MatchPatternParsingTest : CjParsingTestCase(
     CangJieParserDefinition(),
 ) {
 
+    /**
+     * 提供 `setUpFixture` 操作，封装PSI 测试节点的访问、构造或判断逻辑。
+     */
     @BeforeEach
     fun setUpFixture() {
         setUp()
     }
 
+    /**
+     * 提供 `tearDownFixture` 操作，封装PSI 测试节点的访问、构造或判断逻辑。
+     */
     @AfterEach
     fun tearDownFixture() {
         tearDown()
     }
 
+    /**
+     * 提供 `testBareIdentifierPatternsStayDeferred` 操作，封装PSI 测试节点的访问、构造或判断逻辑。
+     */
     @Test
     fun testBareIdentifierPatternsStayDeferred() {
         val file = createPsiFile(
@@ -55,6 +67,9 @@ class MatchPatternParsingTest : CjParsingTestCase(
         assertIs<CjVarOrEnumPattern>(entries[2].conditions.single())
     }
 
+    /**
+     * 提供 `testNegativeLiteralPatternStaysConstantPattern` 操作，封装PSI 测试节点的访问、构造或判断逻辑。
+     */
     @Test
     fun testNegativeLiteralPatternStaysConstantPattern() {
         val file = createPsiFile(

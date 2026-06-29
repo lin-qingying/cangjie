@@ -5,6 +5,9 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.caches
 import org.cangnova.cangjie.cfir.caches.CfirCache
 import org.cangnova.cangjie.utils.exceptions.ExceptionAttachmentBuilder
 
+/**
+ * 支持在发现不一致值时主动修正缓存条目的 CFIR cache 扩展契约。
+ */
 internal interface CfirCacheWithInvalidation<K : Any, V, CONTEXT> {
     /**
      * Drops the incorrect value from the cache and add a new value instead.

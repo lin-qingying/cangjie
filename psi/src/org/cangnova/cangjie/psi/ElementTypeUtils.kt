@@ -37,7 +37,13 @@ import com.intellij.lang.LighterASTNode
 import com.intellij.psi.tree.IElementType
 import com.intellij.psi.tree.IErrorCounterReparseableElementType
 
+/**
+ * 提供 `ElementTypeUtils` 单例，集中承载仓颉 PSI的共享状态、工厂或工具行为。
+ */
 object ElementTypeUtils {
+    /**
+     * 提供 `getCangJieBlockImbalanceCount` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     @JvmStatic
     fun getCangJieBlockImbalanceCount(seq: CharSequence): Int {
         val lexer = CangJieLexer()
@@ -61,6 +67,9 @@ object ElementTypeUtils {
         return balance
     }
 
+    /**
+     * 提供 `getOperationSymbol` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun String.getOperationSymbol(): IElementType {
         CangJieExpressionParsing.ALL_OPERATIONS?.types?.forEach {
             if (it is CjSingleValueToken && it.value == this) return it
@@ -69,6 +78,9 @@ object ElementTypeUtils {
         return CjTokens.IDENTIFIER
     }
 
+    /**
+     * 保存 `expressionSet` 的内部状态，供仓颉 PSI实现维护节点缓存或解析上下文。
+     */
     private val expressionSet = listOf(
         REFERENCE_EXPRESSION,
         DOT_QUALIFIED_EXPRESSION,
@@ -78,6 +90,9 @@ object ElementTypeUtils {
         FUNC,
     )
 
+    /**
+     * 提供 `isExpression` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun LighterASTNode.isExpression(): Boolean {
         return when (this.tokenType) {
             is CjNodeType,

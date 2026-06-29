@@ -4,10 +4,16 @@ import org.cangnova.cangjie.test.CfirParser
 import org.cangnova.cangjie.test.directives.model.SimpleDirectivesContainer
 
 
+/**
+ * 表示 `TestPhase`，承载测试配置中的配置数据、测试产物或处理步骤。
+ */
 enum class TestPhase {
     FRONTEND,
     BACKEND,
 }
+/**
+ * 提供 `TestPhaseDirectives` 单例，集中承载测试配置的共享状态、常量或默认行为。
+ */
 object TestPhaseDirectives : SimpleDirectivesContainer() {
     /**
      * See: [TestPhase] for the list of values.

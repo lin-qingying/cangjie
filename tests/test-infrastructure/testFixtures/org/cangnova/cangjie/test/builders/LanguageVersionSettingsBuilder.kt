@@ -13,6 +13,9 @@ import org.cangnova.cangjie.test.directives.model.singleOrZeroValue
 import org.cangnova.cangjie.test.services.AbstractEnvironmentConfigurator
 import org.cangnova.cangjie.test.services.DefaultsDsl
 
+/**
+ * 表示 `LanguageVersionSettingsBuilder`，承载测试配置构建中的配置数据、测试产物或处理步骤。
+ */
 @DefaultsDsl
 class LanguageVersionSettingsBuilder {
     companion object {
@@ -25,19 +28,37 @@ class LanguageVersionSettingsBuilder {
         }
     }
 
+    /**
+     * 维护 `languageVersion`，供测试配置构建在测试执行期间读取或传递。
+     */
     var languageVersion: LanguageVersion = LanguageVersions.LATEST_STABLE
 
+    /**
+     * 保存 `enabledFeatures`，供测试配置构建在测试执行期间读取或传递。
+     */
     private val enabledFeatures: MutableSet<LanguageFeature> = mutableSetOf()
+    /**
+     * 保存 `analysisFlags`，供测试配置构建在测试执行期间读取或传递。
+     */
     private val analysisFlags: MutableMap<AnalysisFlag<*>, Any?> = mutableMapOf()
 
+    /**
+     * 执行 `enable` 对应的测试配置构建流程，维持测试框架的阶段契约。
+     */
     fun enable(feature: LanguageFeature) {
         enabledFeatures += feature
     }
 
+    /**
+     * 执行 `disable` 对应的测试配置构建流程，维持测试框架的阶段契约。
+     */
     fun disable(feature: LanguageFeature) {
         enabledFeatures -= feature
     }
 
+    /**
+     * 执行 `withFlag` 对应的测试配置构建流程，维持测试框架的阶段契约。
+     */
     fun <T> withFlag(flag: AnalysisFlag<T>, value: T) {
         if (value == flag.defaultValue) {
             analysisFlags.remove(flag)
@@ -46,6 +67,9 @@ class LanguageVersionSettingsBuilder {
         }
     }
 
+    /**
+     * 执行 `configureUsingDirectives` 对应的测试配置构建流程，维持测试框架的阶段契约。
+     */
     fun configureUsingDirectives(
         directives: RegisteredDirectives,
         environmentConfigurators: List<AbstractEnvironmentConfigurator>,
@@ -74,6 +98,9 @@ class LanguageVersionSettingsBuilder {
         }
     }
 
+    /**
+     * 提供 `parseLanguageFeature` 对应的测试配置构建流程，维持测试框架的阶段契约。
+     */
     private fun parseLanguageFeature(featureString: String) {
         val trimmed = featureString.trim()
         if (trimmed.isEmpty()) return
@@ -90,6 +117,9 @@ class LanguageVersionSettingsBuilder {
         }
     }
 
+    /**
+     * 执行 `build` 对应的测试配置构建流程，维持测试框架的阶段契约。
+     */
     fun build(): LanguageVersionSettings {
         return LanguageVersionSettings(
             languageVersion = languageVersion,

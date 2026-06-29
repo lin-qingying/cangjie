@@ -21,12 +21,18 @@ import java.lang.ref.WeakReference
 abstract class CaBaseCachedSymbolPointer<out S : CaSymbol>(
     originalSymbol: S?,
 ) : CaSymbolPointer<S> {
+    /**
+     * 缓存的符号弱引用、未缓存标记或空状态。
+     */
     private var cachedSymbol: Any? = null
 
     init {
         originalSymbol?.let(::cacheWithIsCacheableCheck)
     }
 
+    /**
+     * 从缓存恢复符号，缓存不可用时委托具体 pointer 重新恢复。
+     */
     final override fun restoreSymbol(session: CaSession): S? = when (val cachedSymbol = cachedSymbol) {
         is WeakReference<*> -> {
             val value = cachedSymbol.get()
@@ -45,15 +51,27 @@ abstract class CaBaseCachedSymbolPointer<out S : CaSymbol>(
         else -> error("Unexpected cached symbol holder: ${cachedSymbol::class.simpleName}")
     }
 
+    /**
+     * 根据符号是否具备稳定身份决定是否写入弱缓存。
+     */
     private fun cacheWithIsCacheableCheck(symbol: S) {
         cachedSymbol = if (symbol.isCacheable) WeakReference(symbol) else NOT_CACHED
     }
 
+    /**
+     * 在没有可用缓存时执行具体 pointer 的恢复逻辑。
+     */
     protected abstract fun restoreIfNotCached(session: CaSession): S?
 
     private companion object {
+        /**
+         * 表示该 pointer 不应缓存符号的哨兵对象。
+         */
         private val NOT_CACHED = Any()
 
+        /**
+         * 判断符号是否具有可安全跨调用缓存的稳定身份。
+         */
         private val CaSymbol.isCacheable: Boolean
             get() = when (this) {
                 is CaConstructorSymbol -> this.containingClassId != null

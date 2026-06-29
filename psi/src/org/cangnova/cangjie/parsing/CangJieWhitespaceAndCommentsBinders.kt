@@ -29,7 +29,13 @@ import com.intellij.lang.WhitespacesAndCommentsBinder
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.psi.tree.IElementType
 
+/**
+ * 提供 `PrecedingCommentsBinder` 单例，集中承载仓颉语法解析的共享状态、工厂或工具行为。
+ */
 object PrecedingCommentsBinder : WhitespacesAndCommentsBinder {
+    /**
+     * 实现 `getEdgePosition` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getEdgePosition(
         tokens: List<IElementType>,
         atStreamEdge: Boolean,
@@ -63,7 +69,13 @@ object PrecedingCommentsBinder : WhitespacesAndCommentsBinder {
     }
 }
 
+/**
+ * 提供 `PrecedingDocCommentsBinder` 单例，集中承载仓颉语法解析的共享状态、工厂或工具行为。
+ */
 object PrecedingDocCommentsBinder : WhitespacesAndCommentsBinder {
+    /**
+     * 实现 `getEdgePosition` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getEdgePosition(
         tokens: List<IElementType>,
         atStreamEdge: Boolean,
@@ -80,7 +92,13 @@ object PrecedingDocCommentsBinder : WhitespacesAndCommentsBinder {
 }
 
 // 绑定行注释
+/**
+ * 提供 `TrailingCommentsBinder` 单例，集中承载仓颉语法解析的共享状态、工厂或工具行为。
+ */
 object TrailingCommentsBinder : WhitespacesAndCommentsBinder {
+    /**
+     * 实现 `getEdgePosition` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getEdgePosition(
         tokens: List<IElementType>,
         atStreamEdge: Boolean,
@@ -104,7 +122,13 @@ object TrailingCommentsBinder : WhitespacesAndCommentsBinder {
     }
 }
 
+/**
+ * 表示 `AllCommentsBinder`，承载仓颉语法解析中的语法节点、索引桩或辅助模型。
+ */
 private class AllCommentsBinder(val isTrailing: Boolean) : WhitespacesAndCommentsBinder {
+    /**
+     * 实现 `getEdgePosition` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getEdgePosition(
         tokens: List<IElementType>,
         atStreamEdge: Boolean,
@@ -121,13 +145,25 @@ private class AllCommentsBinder(val isTrailing: Boolean) : WhitespacesAndComment
     }
 }
 
+/**
+ * 保存 `PRECEDING_ALL_COMMENTS_BINDER`，供仓颉语法解析流程读取节点结构或语义信息。
+ */
 @JvmField
 val PRECEDING_ALL_COMMENTS_BINDER: WhitespacesAndCommentsBinder = AllCommentsBinder(false)
 
+/**
+ * 保存 `TRAILING_ALL_COMMENTS_BINDER`，供仓颉语法解析流程读取节点结构或语义信息。
+ */
 @JvmField
 val TRAILING_ALL_COMMENTS_BINDER: WhitespacesAndCommentsBinder = AllCommentsBinder(true)
 
+/**
+ * 提供 `DoNotBindAnything` 单例，集中承载仓颉语法解析的共享状态、工厂或工具行为。
+ */
 object DoNotBindAnything : WhitespacesAndCommentsBinder {
+    /**
+     * 实现 `getEdgePosition` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getEdgePosition(
         tokens: List<IElementType>,
         atStreamEdge: Boolean,
@@ -137,7 +173,13 @@ object DoNotBindAnything : WhitespacesAndCommentsBinder {
     }
 }
 
+/**
+ * 提供 `BindFirstShebangWithWhitespaceOnly` 单例，集中承载仓颉语法解析的共享状态、工厂或工具行为。
+ */
 object BindFirstShebangWithWhitespaceOnly : WhitespacesAndCommentsBinder {
+    /**
+     * 实现 `getEdgePosition` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getEdgePosition(
         tokens: List<IElementType>,
         atStreamEdge: Boolean,
@@ -151,7 +193,13 @@ object BindFirstShebangWithWhitespaceOnly : WhitespacesAndCommentsBinder {
     }
 }
 
+/**
+ * 表示 `BindAll`，承载仓颉语法解析中的语法节点、索引桩或辅助模型。
+ */
 class BindAll(val isTrailing: Boolean) : WhitespacesAndCommentsBinder {
+    /**
+     * 实现 `getEdgePosition` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getEdgePosition(
         tokens: List<IElementType>,
         atStreamEdge: Boolean,
@@ -161,8 +209,14 @@ class BindAll(val isTrailing: Boolean) : WhitespacesAndCommentsBinder {
     }
 }
 
+/**
+ * 保存 `PRECEDING_ALL_BINDER`，供仓颉语法解析流程读取节点结构或语义信息。
+ */
 @JvmField
 val PRECEDING_ALL_BINDER: WhitespacesAndCommentsBinder = BindAll(false)
 
+/**
+ * 保存 `TRAILING_ALL_BINDER`，供仓颉语法解析流程读取节点结构或语义信息。
+ */
 @JvmField
 val TRAILING_ALL_BINDER: WhitespacesAndCommentsBinder = BindAll(true)

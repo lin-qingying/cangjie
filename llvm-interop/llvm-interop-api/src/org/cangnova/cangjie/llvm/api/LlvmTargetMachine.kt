@@ -40,11 +40,29 @@ enum class LlvmCodeModel {
  * LLVM 目标机器创建参数。
  */
 data class LlvmTargetMachineOptions(
+    /**
+     * 目标平台三元组。
+     */
     val targetTriple: String,
+    /**
+     * 目标 CPU 名称。
+     */
     val cpu: String = "generic",
+    /**
+     * LLVM target features 字符串。
+     */
     val features: String = "",
+    /**
+     * 代码生成优化级别。
+     */
     val optimizationLevel: LlvmCodeGenOptimizationLevel = LlvmCodeGenOptimizationLevel.DEFAULT,
+    /**
+     * 目标文件重定位模式。
+     */
     val relocationMode: LlvmRelocationMode = LlvmRelocationMode.DEFAULT,
+    /**
+     * LLVM code model。
+     */
     val codeModel: LlvmCodeModel = LlvmCodeModel.DEFAULT,
 )
 
@@ -52,7 +70,13 @@ data class LlvmTargetMachineOptions(
  * LLVM 目标机器抽象。
  */
 class LlvmTargetMachine internal constructor(
+    /**
+     * LLVMTargetMachine 原生句柄。
+     */
     val ref: LlvmTargetMachineRef,
+    /**
+     * 负责目标机器操作的 LLVM 绑定实现。
+     */
     private val bindings: LlvmBindings,
 ) : AutoCloseable {
     /** 将模块生成目标文件。 */
@@ -64,6 +88,9 @@ class LlvmTargetMachine internal constructor(
     fun emitObjectBytes(module: LlvmModule): ByteArray =
         bindings.targetMachineEmitObjectBytes(ref, module.ref)
 
+    /**
+     * 释放目标机器原生资源。
+     */
     override fun close() {
         bindings.targetDisposeMachine(ref)
     }

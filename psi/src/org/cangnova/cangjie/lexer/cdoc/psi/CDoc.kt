@@ -29,11 +29,32 @@ import org.cangnova.cangjie.lexer.cdoc.psi.impl.CDocSection
 import org.cangnova.cangjie.psi.CjDeclaration
 import com.intellij.psi.PsiDocCommentBase
 
+/**
+ * 定义 `CDoc` 接口，约束仓颉词法与文档注释节点或服务需要暴露的结构能力。
+ */
 interface CDoc : PsiDocCommentBase, CDocElement {
+    /**
+     * 实现 `getOwner` 的仓颉词法与文档注释协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getOwner(): CjDeclaration?
+    /**
+     * 提供 `getDefaultSection` 操作，封装仓颉词法与文档注释节点的访问、构造或判断逻辑。
+     */
     fun getDefaultSection(): CDocSection
+    /**
+     * 提供 `getAllSections` 操作，封装仓颉词法与文档注释节点的访问、构造或判断逻辑。
+     */
     fun getAllSections(): List<CDocSection>
+    /**
+     * 提供 `findSectionByName` 操作，封装仓颉词法与文档注释节点的访问、构造或判断逻辑。
+     */
     fun findSectionByName(name: String): CDocSection?
+    /**
+     * 提供 `findSectionByTag` 操作，封装仓颉词法与文档注释节点的访问、构造或判断逻辑。
+     */
     fun findSectionByTag(tag: CDocKnownTag): CDocSection?
+    /**
+     * 提供 `findSectionByTag` 操作，封装仓颉词法与文档注释节点的访问、构造或判断逻辑。
+     */
     fun findSectionByTag(tag: CDocKnownTag, subjectName: String): CDocSection?
 }

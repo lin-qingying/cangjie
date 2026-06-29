@@ -4,6 +4,7 @@ import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.checkTypeMismatch
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
+import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
@@ -96,6 +97,8 @@ private fun CfirTryExpression.expectedTypeFromContext(context: CheckerContext): 
     val parentBlock = parentStatement as? CfirBlock
     if (parentBlock != null && parentBlock.statements.lastOrNull() === this) {
         val containingFunction = context.findClosestDeclaration<CfirFunction> { it.body === parentBlock } ?: return null
+        // 构造器体没有尾表达式返回语义，不能用构造器 returnTypeRef 反向约束 body 尾部 try。
+        if (containingFunction is CfirConstructor) return null
         return (containingFunction.returnTypeRef as? CfirResolvedTypeRef)?.coneType
     }
 

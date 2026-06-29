@@ -43,6 +43,9 @@ import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes.ANNOTATIONS
 import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes.CONSTRUCTOR_CALLEE
 
 
+/**
+ * 表示 `CangJieParsing`，承载仓颉语法解析中的语法节点、索引桩或辅助模型。
+ */
 class CangJieParsing private constructor(
     builder: SemanticWhitespaceAwarePsiBuilder, isTopLevel: Boolean, isLazy: Boolean
 ) : AbstractCangJieParsing(
@@ -153,6 +156,9 @@ class CangJieParsing private constructor(
 
     }
 
+    /**
+     * 保存 `expressionParsing`，供仓颉语法解析流程读取节点结构或语义信息。
+     */
     val expressionParsing: CangJieExpressionParsing =
         if (isTopLevel) CangJieExpressionParsing(builder, this, isLazy) else object :
             CangJieExpressionParsing(builder, this@CangJieParsing, isLazy) {
@@ -162,34 +168,94 @@ class CangJieParsing private constructor(
         }
 
 
+    /**
+     * 表示 `ModifierKind`，承载仓颉语法解析中的语法节点、索引桩或辅助模型。
+     */
     enum class ModifierKind {
         ABSTRACT, MUT, PUBLIC, PRIVATE, PROTECTED, OPERATOR, FOREIGN, CONST, UNSAFE, SEALED, REDEF, OPEN, STATIC
     }
 
+    /**
+     * 表示 `ModifierDetector`，承载仓颉语法解析中的语法节点、索引桩或辅助模型。
+     */
     public class ModifierDetector : ((IElementType?) -> Unit) {
+        /**
+         * 保存 `modifiers` 的内部状态，供仓颉语法解析实现维护节点缓存或解析上下文。
+         */
         private val modifiers = mutableSetOf<ModifierKind>()
 
+        /**
+         * 保存 `count`，供仓颉语法解析流程读取节点结构或语义信息。
+         */
         val count: Int get() = modifiers.size
 
+        /**
+         * 提供 `has` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
+         */
         fun has(kind: ModifierKind): Boolean = modifiers.contains(kind)
 
+        /**
+         * 保存 `isAbstractDetected`，供仓颉语法解析流程读取节点结构或语义信息。
+         */
         val isAbstractDetected: Boolean get() = has(ModifierKind.ABSTRACT)
+        /**
+         * 保存 `isMutDetected`，供仓颉语法解析流程读取节点结构或语义信息。
+         */
         val isMutDetected: Boolean get() = has(ModifierKind.MUT)
+        /**
+         * 保存 `isPublicDetected`，供仓颉语法解析流程读取节点结构或语义信息。
+         */
         val isPublicDetected: Boolean get() = has(ModifierKind.PUBLIC)
+        /**
+         * 保存 `isPrivateDetected`，供仓颉语法解析流程读取节点结构或语义信息。
+         */
         val isPrivateDetected: Boolean get() = has(ModifierKind.PRIVATE)
+        /**
+         * 保存 `isProtectedDetected`，供仓颉语法解析流程读取节点结构或语义信息。
+         */
         val isProtectedDetected: Boolean get() = has(ModifierKind.PROTECTED)
+        /**
+         * 保存 `isOperatorDetected`，供仓颉语法解析流程读取节点结构或语义信息。
+         */
         val isOperatorDetected: Boolean get() = has(ModifierKind.OPERATOR)
+        /**
+         * 保存 `isForeignDetected`，供仓颉语法解析流程读取节点结构或语义信息。
+         */
         val isForeignDetected: Boolean get() = has(ModifierKind.FOREIGN)
+        /**
+         * 保存 `isConstDetected`，供仓颉语法解析流程读取节点结构或语义信息。
+         */
         val isConstDetected: Boolean get() = has(ModifierKind.CONST)
+        /**
+         * 保存 `isUnsafeDetected`，供仓颉语法解析流程读取节点结构或语义信息。
+         */
         val isUnsafeDetected: Boolean get() = has(ModifierKind.UNSAFE)
+        /**
+         * 保存 `isSealedDetected`，供仓颉语法解析流程读取节点结构或语义信息。
+         */
         val isSealedDetected: Boolean get() = has(ModifierKind.SEALED)
+        /**
+         * 保存 `isRedefDetected`，供仓颉语法解析流程读取节点结构或语义信息。
+         */
         val isRedefDetected: Boolean get() = has(ModifierKind.REDEF)
+        /**
+         * 保存 `isOpenDetected`，供仓颉语法解析流程读取节点结构或语义信息。
+         */
         val isOpenDetected: Boolean get() = has(ModifierKind.OPEN)
+        /**
+         * 保存 `isStaticDetected`，供仓颉语法解析流程读取节点结构或语义信息。
+         */
         val isStaticDetected: Boolean get() = has(ModifierKind.STATIC)
 
+        /**
+         * 提供 `getSize` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
+         */
         @Deprecated("Use count property", ReplaceWith("count"))
         fun getSize(): Int = count
 
+        /**
+         * 实现 `invoke` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+         */
         override fun invoke(item: IElementType?) {
             when (item) {
                 PUBLIC_KEYWORD -> modifiers.add(ModifierKind.PUBLIC)
@@ -210,6 +276,9 @@ class CangJieParsing private constructor(
     }
 
 
+    /**
+     * 保存 `lastDotAfterReceiverNotLParPattern` 的内部状态，供仓颉语法解析实现维护节点缓存或解析上下文。
+     */
     private val lastDotAfterReceiverNotLParPattern = LastBefore(
         AtSet(RECEIVER_TYPE_TERMINATORS), object : AbstractTokenStreamPredicate() {
             override fun matching(topLevel: Boolean): Boolean {
@@ -224,6 +293,9 @@ class CangJieParsing private constructor(
             }
         })
 
+    /**
+     * 保存 `lastDotAfterReceiverLParPattern` 的内部状态，供仓颉语法解析实现维护节点缓存或解析上下文。
+     */
     private val lastDotAfterReceiverLParPattern = FirstBefore(
         AtSet(RECEIVER_TYPE_TERMINATORS), object : AbstractTokenStreamPredicate() {
             override fun matching(topLevel: Boolean): Boolean {
@@ -274,6 +346,9 @@ class CangJieParsing private constructor(
     }
 
 
+    /**
+     * 提供 `create` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
+     */
     public override fun create(builder: SemanticWhitespaceAwarePsiBuilder): CangJieParsing {
         return createForTopLevel(builder)
     }
@@ -427,6 +502,9 @@ class CangJieParsing private constructor(
 //    }
 
 
+    /**
+     * 执行 `parsePackageName` 内部辅助逻辑，支撑仓颉语法解析节点的结构解析与访问。
+     */
     context(parseContext: ParsingContext)
     private fun parsePackageName() {
         // 先解析第一个标识符
@@ -496,6 +574,9 @@ class CangJieParsing private constructor(
         lhs.drop()
     }
 
+    /**
+     * 执行 `parsePreamble` 内部辅助逻辑，支撑仓颉语法解析节点的结构解析与访问。
+     */
     context(parseContext: ParsingContext)
     private fun parsePreamble() {
         // 解析包声明
@@ -504,6 +585,9 @@ class CangJieParsing private constructor(
         parseImportDirectives()
     }
 
+    /**
+     * 执行 `parsePackageDirective` 内部辅助逻辑，支撑仓颉语法解析节点的结构解析与访问。
+     */
     context(parseContext: ParsingContext)
     private fun parsePackageDirective() {
         // 先探测是否有包声明，决定走哪条路径
@@ -653,6 +737,9 @@ class CangJieParsing private constructor(
         importList.done(IMPORT_LIST)
     }
 
+    /**
+     * 提供 `isWhenAnnotation` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
+     */
     fun isWhenAnnotation(): Boolean {
         if (at(AT) && CjBuiltInAnnotation.fromName(
                 rawTokenText(builder, 1).toString()
@@ -736,6 +823,9 @@ class CangJieParsing private constructor(
         }
     }
 
+    /**
+     * 执行 `parseAttributeAnnotation` 内部辅助逻辑，支撑仓颉语法解析节点的结构解析与访问。
+     */
     context(parseContext: ParsingContext)
     private fun parseAttributeAnnotation(
 
@@ -1084,6 +1174,9 @@ class CangJieParsing private constructor(
 
 
 
+    /**
+     * 提供 `parseOnlyAnnotationFile` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
+     */
     fun parseOnlyAnnotationFile() {
 
         with(ParsingContext.ANNOTATION_ONLY) {
@@ -1278,6 +1371,9 @@ class CangJieParsing private constructor(
         return false
     }
 
+    /**
+     * 执行 `isConstModifierStart` 内部辅助逻辑，支撑仓颉语法解析节点的结构解析与访问。
+     */
     context(parseContext: ParsingContext)
     private fun isConstModifierStart(parseConstBeforePrimaryConstructor: Boolean): Boolean {
         if (!at(CONST_KEYWORD)) return false
@@ -1453,6 +1549,9 @@ class CangJieParsing private constructor(
         mark.done(ANNOTATION)
     }
 
+    /**
+     * 提供 `parseAnnotations` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
+     */
     context(parseContext: ParsingContext)
     fun parseAnnotations() {
         val set = if (parseContext.disableMacroParsing) {
@@ -1712,6 +1811,9 @@ class CangJieParsing private constructor(
     }
 
 
+    /**
+     * 提供 `parseConstructorCallee` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
+     */
     context(parseContext: ParsingContext)
     fun parseConstructorCallee() {
         val reference = mark()
@@ -2163,9 +2265,18 @@ class CangJieParsing private constructor(
         marker.done(BLOCK_CODE_FRAGMENT)
     }
 
+    /**
+     * 定义 `DeclarationParser` 接口，约束仓颉语法解析节点或服务需要暴露的结构能力。
+     */
     private interface DeclarationParser {
+        /**
+         * 提供 `isValidInScope` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
+         */
         fun isValidInScope(scope: DeclarationParsingMode): Boolean
 
+        /**
+         * 提供 `parse` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
+         */
         context(parseContext: ParsingContext)
         fun parse(
             parser: CangJieParsing,
@@ -2175,13 +2286,25 @@ class CangJieParsing private constructor(
         ): IElementType?
     }
 
+    /**
+     * 表示 `ScopedDeclarationParser`，承载仓颉语法解析中的语法节点、索引桩或辅助模型。
+     */
     private abstract class ScopedDeclarationParser(
+        /**
+         * 保存 `validScopes` 的内部状态，供仓颉语法解析实现维护节点缓存或解析上下文。
+         */
         private val validScopes: Set<DeclarationParsingMode>
     ) : DeclarationParser {
+        /**
+         * 实现 `isValidInScope` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+         */
         override fun isValidInScope(scope: DeclarationParsingMode): Boolean {
             return validScopes.contains(scope)
         }
 
+        /**
+         * 实现 `parse` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+         */
         context(parseContext: ParsingContext)
         override fun parse(
             parser: CangJieParsing,
@@ -2196,6 +2319,9 @@ class CangJieParsing private constructor(
             return type
         }
 
+        /**
+         * 提供 `doParse` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
+         */
         context(parseContext: ParsingContext)
         protected abstract fun doParse(
             parser: CangJieParsing,
@@ -2205,9 +2331,15 @@ class CangJieParsing private constructor(
         ): IElementType?
     }
 
+    /**
+     * 表示 `TypeAliasParser`，承载仓颉语法解析中的语法节点、索引桩或辅助模型。
+     */
     private class TypeAliasParser : ScopedDeclarationParser(
         setOf(DeclarationParsingMode.ALL, DeclarationParsingMode.TOPLEVEL)
     ) {
+        /**
+         * 实现 `doParse` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+         */
         context(parseContext: ParsingContext)
         override fun doParse(
             parser: CangJieParsing,
@@ -2219,9 +2351,15 @@ class CangJieParsing private constructor(
         }
     }
 
+    /**
+     * 表示 `ForeignParser`，承载仓颉语法解析中的语法节点、索引桩或辅助模型。
+     */
     private class ForeignParser : ScopedDeclarationParser(
         setOf(DeclarationParsingMode.ALL, DeclarationParsingMode.TOPLEVEL)
     ) {
+        /**
+         * 实现 `doParse` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+         */
         context(parseContext: ParsingContext)
         override fun doParse(
             parser: CangJieParsing,
@@ -2233,9 +2371,15 @@ class CangJieParsing private constructor(
         }
     }
 
+    /**
+     * 表示 `MainFuncParser`，承载仓颉语法解析中的语法节点、索引桩或辅助模型。
+     */
     private class MainFuncParser : ScopedDeclarationParser(
         setOf(DeclarationParsingMode.ALL, DeclarationParsingMode.TOPLEVEL)
     ) {
+        /**
+         * 实现 `doParse` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+         */
         context(parseContext: ParsingContext)
         override fun doParse(
             parser: CangJieParsing,
@@ -2247,9 +2391,15 @@ class CangJieParsing private constructor(
         }
     }
 
+    /**
+     * 表示 `ClassParser`，承载仓颉语法解析中的语法节点、索引桩或辅助模型。
+     */
     private class ClassParser : ScopedDeclarationParser(
         setOf(DeclarationParsingMode.ALL, DeclarationParsingMode.TOPLEVEL)
     ) {
+        /**
+         * 实现 `doParse` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+         */
         context(parseContext: ParsingContext)
         override fun doParse(
             parser: CangJieParsing,
@@ -2263,9 +2413,18 @@ class CangJieParsing private constructor(
 
     }
 
+    /**
+     * 表示 `MacroParser`，承载仓颉语法解析中的语法节点、索引桩或辅助模型。
+     */
     private class MacroParser : DeclarationParser {
+        /**
+         * 实现 `isValidInScope` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+         */
         override fun isValidInScope(scope: DeclarationParsingMode): Boolean = true
 
+        /**
+         * 实现 `parse` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+         */
         context(parseContext: ParsingContext)
         override fun parse(
             parser: CangJieParsing,
@@ -2280,9 +2439,18 @@ class CangJieParsing private constructor(
         }
     }
 
+    /**
+     * 表示 `FunctionParser`，承载仓颉语法解析中的语法节点、索引桩或辅助模型。
+     */
     private class FunctionParser : DeclarationParser {
+        /**
+         * 实现 `isValidInScope` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+         */
         override fun isValidInScope(scope: DeclarationParsingMode): Boolean = true
 
+        /**
+         * 实现 `parse` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+         */
         context(parseContext: ParsingContext)
         override fun parse(
             parser: CangJieParsing,
@@ -2294,10 +2462,19 @@ class CangJieParsing private constructor(
         }
     }
 
+    /**
+     * 表示 `VariableParser`，承载仓颉语法解析中的语法节点、索引桩或辅助模型。
+     */
     private class VariableParser : DeclarationParser {
+        /**
+         * 实现 `isValidInScope` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+         */
         override fun isValidInScope(scope: DeclarationParsingMode): Boolean =
             scope != DeclarationParsingMode.MEMBER // 成员字段由 FieldParser 处理
 
+        /**
+         * 实现 `parse` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+         */
         context(parseContext: ParsingContext)
         override fun parse(
             parser: CangJieParsing,
@@ -2309,10 +2486,19 @@ class CangJieParsing private constructor(
         }
     }
 
+    /**
+     * 表示 `FieldParser`，承载仓颉语法解析中的语法节点、索引桩或辅助模型。
+     */
     private class FieldParser : DeclarationParser {
+        /**
+         * 实现 `isValidInScope` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+         */
         override fun isValidInScope(scope: DeclarationParsingMode): Boolean =
             scope == DeclarationParsingMode.MEMBER
 
+        /**
+         * 实现 `parse` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+         */
         context(parseContext: ParsingContext)
         override fun parse(
             parser: CangJieParsing,
@@ -2324,9 +2510,18 @@ class CangJieParsing private constructor(
         }
     }
 
+    /**
+     * 表示 `MacroExpressionParser`，承载仓颉语法解析中的语法节点、索引桩或辅助模型。
+     */
     private class MacroExpressionParser(private val expressionParsing: CangJieExpressionParsing) : DeclarationParser {
+        /**
+         * 实现 `isValidInScope` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+         */
         override fun isValidInScope(scope: DeclarationParsingMode): Boolean = true
 
+        /**
+         * 实现 `parse` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+         */
         context(parseContext: ParsingContext)
         override fun parse(
             parser: CangJieParsing,
@@ -2342,6 +2537,9 @@ class CangJieParsing private constructor(
         }
     }
 
+    /**
+     * 保存 `declarationParsers` 的内部状态，供仓颉语法解析实现维护节点缓存或解析上下文。
+     */
     private val declarationParsers: Map<Int, DeclarationParser> by lazy {
         mapOf(
             TYPE_KEYWORD_Id to TypeAliasParser(),

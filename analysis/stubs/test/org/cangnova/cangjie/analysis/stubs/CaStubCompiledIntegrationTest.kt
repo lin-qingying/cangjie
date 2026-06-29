@@ -25,12 +25,21 @@ import org.junit.jupiter.api.Test
  * 3. `analysis:stubs` 的 summary / facade 查询与 compiled PSI 对齐。
  */
 class CaStubCompiledIntegrationTest : AbstractAnalysisApiBasedTest() {
+    /**
+     * 使用 standalone CFIR 分析 API 测试配置执行 compiled stub integration 流程。
+     */
     override val configurator = CaCfirStandaloneAnalysisApiTestConfigurator
 
+    /**
+     * 注册 compiled `.cjo` 集成测试所需服务。
+     */
     override val additionalServiceRegistrars: List<AnalysisApiServiceRegistrar<TestServices>> = listOf(
         CjoCompiledStubsTestServiceRegistrar,
     )
 
+    /**
+     * 验证 builtins compiled 文件能进入 analysis:stubs 的文件、包和 facade 查询索引。
+     */
     @Test
     fun builtinsCompiledFileParticipatesInStubIndex() {
         CjoCompiledTestEnvironment.withSlimStdlibFixture(

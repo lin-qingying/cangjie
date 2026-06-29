@@ -20,20 +20,38 @@ import kotlin.reflect.KClass
 @CaPlatformInterface
 class CaReadActionConfinementLifetimeToken(
     project: Project,
+    /**
+     * 与当前 analysis session 绑定的修改追踪器。
+     */
     private val modificationTracker: ModificationTracker,
 ) : CaLifetimeToken() {
+    /**
+     * token 创建时记录的修改计数。
+     */
     private val onCreatedTimeStamp = modificationTracker.modificationCount
 
+    /**
+     * 平台分析权限检查器。
+     */
     @CaCachedService
     private val permissionChecker = CaAnalysisPermissionChecker.getInstance(project)
 
+    /**
+     * 当前 analyze 上下文的 lifetime tracker。
+     */
     @CaCachedService
     private val lifetimeTracker = CaLifetimeTracker.getInstance(project)
 
+    /**
+     * 修改计数未变化时 token 有效。
+     */
     override fun isValid(): Boolean {
         return onCreatedTimeStamp == modificationTracker.modificationCount
     }
 
+    /**
+     * 返回 token 因底层修改而失效的原因。
+     */
     @OptIn(CaImplementationDetail::class)
     override fun getInvalidationReason(): String {
         if (onCreatedTimeStamp != modificationTracker.modificationCount) {
@@ -48,6 +66,9 @@ class CaReadActionConfinementLifetimeToken(
         error("Cannot get an invalidation reason for a valid lifetime token.")
     }
 
+    /**
+     * 检查当前线程是否处于 read action、平台是否允许分析且当前 analyze 上下文匹配该 token。
+     */
     override fun isAccessible(): Boolean {
         if (!ApplicationManager.getApplication().isReadAccessAllowed) return false
         if (!permissionChecker.isAnalysisAllowed()) return false
@@ -55,6 +76,9 @@ class CaReadActionConfinementLifetimeToken(
         return lifetimeTracker.currentToken == this
     }
 
+    /**
+     * 返回当前 token 不可访问的具体原因。
+     */
     override fun getInaccessibilityReason(): String {
         if (!ApplicationManager.getApplication().isReadAccessAllowed) return "Called outside a read action."
         if (!permissionChecker.isAnalysisAllowed()) return permissionChecker.getRejectionReason()
@@ -67,10 +91,19 @@ class CaReadActionConfinementLifetimeToken(
     }
 }
 
+/**
+ * IDE read-action confinement lifetime token 工厂。
+ */
 @CaPlatformInterface
 class CaReadActionConfinementLifetimeTokenFactory : CaLifetimeTokenFactory {
+    /**
+     * 该工厂创建的 token 类型标识。
+     */
     override val identifier: KClass<out CaLifetimeToken> = CaReadActionConfinementLifetimeToken::class
 
+    /**
+     * 创建 read-action confinement token。
+     */
     override fun create(project: Project, modificationTracker: ModificationTracker): CaLifetimeToken =
         CaReadActionConfinementLifetimeToken(project, modificationTracker)
 }

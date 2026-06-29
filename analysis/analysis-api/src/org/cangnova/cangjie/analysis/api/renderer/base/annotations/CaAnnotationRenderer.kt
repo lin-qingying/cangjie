@@ -24,8 +24,13 @@ import org.cangnova.cangjie.analysis.api.renderer.base.annotations.renderers.CaA
  * 因此本层不引入 Kotlin 才有的 use-site target/filter 等语义。
  */
 class CaAnnotationRenderer internal constructor(
+    /** 控制注解列表整体排列方式的 renderer。 */
     val annotationListRenderer: CaAnnotationListRenderer,
+
+    /** 控制单个注解限定名写法的 renderer。 */
     val annotationQualifierRenderer: CaAnnotationQualifierRenderer,
+
+    /** 控制注解实参列表写法的 renderer。 */
     val annotationArgumentsRenderer: CaAnnotationArgumentsRenderer,
 ) {
     /**

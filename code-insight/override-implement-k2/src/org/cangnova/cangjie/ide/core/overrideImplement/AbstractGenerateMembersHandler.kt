@@ -30,8 +30,14 @@ import org.cangnova.cangjie.psi.psiUtil.getNonStrictParentOfType
  * - 提交文档并转交具体生成器。
  */
 internal abstract class AbstractGenerateMembersHandler<T : ClassMember> : LanguageCodeInsightActionHandler {
+    /**
+     * 是否为“实现抽象成员”模式；为 true 时 chooser 默认全选候选成员。
+     */
     abstract val toImplement: Boolean
 
+    /**
+     * 在同步进度窗口中读取可生成成员。
+     */
     fun collectMembersToGenerateUnderProgress(typeStatement: CjTypeStatement): Collection<T> {
         return ProgressManager.getInstance().runProcessWithProgressSynchronously<Collection<T>, RuntimeException>(
             { runReadAction { collectMembersToGenerate(typeStatement) } },
@@ -41,9 +47,15 @@ internal abstract class AbstractGenerateMembersHandler<T : ClassMember> : Langua
         )
     }
 
+    /**
+     * 在读动作中收集当前类型可生成的成员。
+     */
     @RequiresBackgroundThread(generateAssertion = false)
     protected abstract fun collectMembersToGenerate(typeStatement: CjTypeStatement): Collection<T>
 
+    /**
+     * 将用户选择的成员生成到目标类型声明中。
+     */
     protected abstract fun generateMembers(
         editor: Editor?,
         typeStatement: CjTypeStatement,
@@ -51,22 +63,40 @@ internal abstract class AbstractGenerateMembersHandler<T : ClassMember> : Langua
         copyDoc: Boolean
     )
 
+    /**
+     * 成员选择对话框标题。
+     */
     @NlsContexts.DialogTitle
     protected abstract fun getChooserTitle(): String
 
+    /**
+     * 没有可生成成员时展示的提示文本。
+     */
     @NlsContexts.HintText
     protected abstract fun getNoMembersFoundHint(): String
 
+    /**
+     * 判断目标类型声明是否允许当前 handler 执行。
+     */
     protected open fun isValidForClass(typeStatement: CjTypeStatement): Boolean = true
 
+    /**
+     * 判断 chooser 节点是否应作为父类/接口分组节点显示。
+     */
     protected open fun isClassNode(key: MemberChooserObject): Boolean = false
 
+    /**
+     * 根据当前编辑器光标定位需要生成成员的仓颉类型声明。
+     */
     protected open fun resolveTargetTypeStatement(editor: Editor?, file: PsiFile): CjTypeStatement? {
         val cjFile = file as? CjFile ?: return null
         val offset = editor?.caretModel?.offset ?: return null
         return cjFile.findElementAt(offset)?.getNonStrictParentOfType<CjTypeStatement>()
     }
 
+    /**
+     * 弹出成员选择器并返回用户选择的成员集合。
+     */
     private fun showMemberChooser(project: Project, members: Collection<T>): MemberChooser<T>? {
         @Suppress("UNCHECKED_CAST")
         val memberArray = members.toTypedArray<ClassMember>() as Array<T>
@@ -85,15 +115,24 @@ internal abstract class AbstractGenerateMembersHandler<T : ClassMember> : Langua
         return chooser
     }
 
+    /**
+     * IntelliJ action 可用性检查入口。
+     */
     override fun isValidFor(editor: Editor, file: PsiFile): Boolean {
         val typeStatement = resolveTargetTypeStatement(editor, file) ?: return false
         return isValidForClass(typeStatement)
     }
 
+    /**
+     * IntelliJ action 执行入口。
+     */
     override fun invoke(project: Project, editor: Editor, file: PsiFile) {
         invokeWithTarget(project, editor as Editor?, file, ApplicationManager.getApplication().isUnitTestMode)
     }
 
+    /**
+     * 对指定目标文件执行成员收集、选择和生成。
+     */
     protected fun invokeWithTarget(project: Project, editor: Editor?, file: PsiFile, implementAll: Boolean) {
         val typeStatement = resolveTargetTypeStatement(editor, file) ?: return
         if (!isValidForClass(typeStatement)) return
@@ -121,5 +160,8 @@ internal abstract class AbstractGenerateMembersHandler<T : ClassMember> : Langua
         generateMembers(editor, typeStatement, selectedElements, copyDoc)
     }
 
+    /**
+     * 成员生成需要先完成 chooser 与读动作，因此不在 action 初始写动作中启动。
+     */
     override fun startInWriteAction(): Boolean = false
 }

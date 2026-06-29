@@ -110,9 +110,104 @@ private class CfirInitializationFlowAnalyzer(
     }
 
     /**
-     * 检查 class-like 成员初始化器按声明顺序读取实例字段的语义。
+     * 检查 class-like 成员初始化器按声明顺序读取字段的语义。
      */
     fun checkClassLikeMemberInitialization(classLike: CfirClassLikeDeclaration) {
+        checkClassLikeStaticMemberInitialization(classLike)
+        checkClassLikeInstanceMemberInitialization(classLike)
+    }
+
+    /**
+     * 检查同一文件内 static/global 变量按源码顺序初始化的语义。
+     */
+    fun checkFileStaticGlobalInitialization(file: CfirFile) {
+        val trackedDeclarations = file.staticGlobalInitializerDeclarations()
+        if (trackedDeclarations.isEmpty()) return
+
+        val trackedBySymbol = trackedDeclarations
+            .flatMap { declaration -> declaration.variables }
+            .associateBy { variable -> variable.symbol.initializationSymbol() }
+        val trackedInfos = trackedBySymbol.values.map { variable ->
+            TrackedVariableInfo(
+                symbol = variable.symbol,
+                diagnosticName = variable.diagnosticName,
+                isInstanceField = false,
+            )
+        }
+        val recursiveStaticFunctionReads = mutableListOf<StaticGlobalUseEdge>()
+        var state = InitializationState.empty().declareAll(trackedInfos, emptySet())
+        var nextVisitOrder = 0
+
+        for (declaration in trackedDeclarations) {
+            when (declaration.kind) {
+                StaticGlobalInitializerKind.VARIABLE -> {
+                    declaration.variables.forEach { variable ->
+                        if (variable.visitOrder < 0) {
+                            variable.visitOrder = nextVisitOrder++
+                        }
+                    }
+                    declaration.initializer?.let { initializer ->
+                        reportStaticGlobalReadsBeforeInitialization(
+                            currentDeclaration = declaration,
+                            initializer = initializer,
+                            trackedBySymbol = trackedBySymbol,
+                            initialized = state.initialized,
+                        )
+                        state = declaration.markVariablesInitialized(state)
+                    }
+                }
+
+                StaticGlobalInitializerKind.STATIC_INIT -> {
+                    val result = processStaticInitializerBody(
+                        declaration = declaration,
+                        initialState = state,
+                        trackedBySymbol = trackedBySymbol,
+                        nextVisitOrder = nextVisitOrder,
+                        recursiveStaticFunctionReads = recursiveStaticFunctionReads,
+                    )
+                    state = result.state
+                    nextVisitOrder = result.nextVisitOrder
+                }
+            }
+        }
+
+        reportRecursiveStaticFunctionReadsBeforeInitialization(recursiveStaticFunctionReads)
+        reportUninitializedStaticFields(trackedBySymbol.values)
+    }
+
+    /**
+     * 检查 static 字段初始化器。
+     *
+     * 官方 `CollectToDeclsInfo` 会在遍历类成员时立即检查 static 非函数声明；
+     * static 字段按声明顺序初始化，而实例字段在 static 初始化上下文中不可视为已初始化。
+     */
+    private fun checkClassLikeStaticMemberInitialization(classLike: CfirClassLikeDeclaration) {
+        val trackedFields = classLike.staticInitializerFieldInfos()
+        if (trackedFields.isEmpty()) return
+
+        var state = InitializationState.empty().declareAll(
+            trackedVariables = trackedFields,
+            initializedSymbols = emptySet(),
+        )
+
+        for (declaration in classLike.declarations) {
+            val field = declaration as? CfirFieldVariable ?: continue
+            if (!field.status.isStatic) continue
+
+            val initializer = field.initializer
+            if (initializer != null) {
+                reportStaticVariableNonStaticMemberAccesses(field, initializer)
+                state = analyzeExpression(initializer, state.withMemberInitializerContext(classLike))
+                    .withoutMemberInitializerContext()
+                state = state.markInitialized(field.symbol)
+            }
+        }
+    }
+
+    /**
+     * 检查实例字段初始化器。
+     */
+    private fun checkClassLikeInstanceMemberInitialization(classLike: CfirClassLikeDeclaration) {
         val trackedFields = classLike.instanceFieldInfos(context, includeInherited = true)
         if (trackedFields.isEmpty()) return
 
@@ -127,7 +222,7 @@ private class CfirInitializationFlowAnalyzer(
 
             val initializer = field.initializer
             if (initializer != null) {
-                state = analyzeExpression(initializer, state.withMemberInitializerContext())
+                state = analyzeExpression(initializer, state.withMemberInitializerContext(classLike))
                     .withoutMemberInitializerContext()
                 state = state.markInitialized(field.symbol)
             }
@@ -155,7 +250,7 @@ private class CfirInitializationFlowAnalyzer(
             .forEach { fieldInfo ->
                 with(context) {
                     reporter.reportOn(
-                        source = constructor.source?.firstCharacterDiagnosticSource(),
+                        source = constructor.constructorDeclarationDiagnosticSource(),
                         factory = CfirErrors.CLASS_UNINITIALIZED_FIELD,
                         a = fieldInfo.diagnosticName,
                     )
@@ -368,7 +463,7 @@ private class CfirInitializationFlowAnalyzer(
                 afterReceiver.markInitialized(symbol)
             }
 
-            afterReceiver.inMemberInitializer && access.explicitReceiver is CfirSuperReceiverExpression -> afterReceiver
+            access.shouldSkipIllegalMemberAccessInMemberInitializer(afterReceiver) -> afterReceiver
 
             else -> reportIllegalMemberAccessIfNeeded(
                 symbol = symbol,
@@ -557,14 +652,16 @@ private class CfirInitializationFlowAnalyzer(
                 ?: callableSymbol.nameOrNull()
                 ?: Name.ERROR_NAME
             currentState = when (callableSymbol) {
-                is CfirVariableSymbol<*> -> reportReadIfNeeded(
+                is CfirVariableSymbol<*> -> if (expression.shouldSkipIllegalMemberAccessInMemberInitializer(currentState)) {
+                    currentState
+                } else reportReadIfNeeded(
                     symbol = callableSymbol,
                     diagnosticName = diagnosticName,
                     source = expression.calleeReference.source ?: expression.source,
                     state = currentState,
                 )
 
-                else -> if (currentState.inMemberInitializer && expression.explicitReceiver is CfirSuperReceiverExpression) {
+                else -> if (expression.shouldSkipIllegalMemberAccessInMemberInitializer(currentState)) {
                     currentState
                 } else reportIllegalMemberAccessIfNeeded(
                     symbol = callableSymbol,
@@ -596,7 +693,9 @@ private class CfirInitializationFlowAnalyzer(
         if (accessMode != InitializationAccessMode.READ) return afterReceiver
 
         return when (val symbol = expression.resolvedAccessSymbolOrNull()) {
-            is CfirVariableSymbol<*> -> reportReadIfNeeded(
+            is CfirVariableSymbol<*> -> if (expression.shouldSkipIllegalMemberAccessInMemberInitializer(afterReceiver)) {
+                afterReceiver
+            } else reportReadIfNeeded(
                 symbol = symbol,
                 diagnosticName = expression.calleeReference.referenceNameOrNull() ?: symbol.name,
                 source = expression.calleeReference.source ?: expression.source,
@@ -604,7 +703,7 @@ private class CfirInitializationFlowAnalyzer(
             )
 
             null -> afterReceiver
-            else -> if (afterReceiver.inMemberInitializer && expression.explicitReceiver is CfirSuperReceiverExpression) {
+            else -> if (expression.shouldSkipIllegalMemberAccessInMemberInitializer(afterReceiver)) {
                 afterReceiver
             } else reportIllegalMemberAccessIfNeeded(
                 symbol = symbol,
@@ -632,7 +731,9 @@ private class CfirInitializationFlowAnalyzer(
         if (accessMode != InitializationAccessMode.READ) return afterReceiver
 
         return when (val symbol = expression.resolvedAccessSymbolOrNull()) {
-            is CfirVariableSymbol<*> -> reportReadIfNeeded(
+            is CfirVariableSymbol<*> -> if (expression.shouldSkipIllegalMemberAccessInMemberInitializer(afterReceiver)) {
+                afterReceiver
+            } else reportReadIfNeeded(
                 symbol = symbol,
                 diagnosticName = expression.calleeReference.referenceNameOrNull() ?: symbol.name,
                 source = expression.calleeReference.source ?: expression.source,
@@ -640,7 +741,9 @@ private class CfirInitializationFlowAnalyzer(
             )
 
             null -> afterReceiver
-            else -> reportIllegalMemberAccessIfNeeded(
+            else -> if (expression.shouldSkipIllegalMemberAccessInMemberInitializer(afterReceiver)) {
+                afterReceiver
+            } else reportIllegalMemberAccessIfNeeded(
                 symbol = symbol,
                 diagnosticName = expression.calleeReference.referenceNameOrNull()
                     ?: symbol.nameOrNull()
@@ -650,6 +753,24 @@ private class CfirInitializationFlowAnalyzer(
             )
         }
     }
+
+    /**
+     * 字段初始化器中非法 `super.member` 与 struct `this.member` 已由专门的 this/super checker 分类。
+     * 初始化流分析不再追加 `USED_BEFORE_INITIALIZATION`，避免同一根因产生级联诊断。
+     */
+    private fun CfirQualifiedAccessExpression.shouldSkipIllegalMemberAccessInMemberInitializer(
+        state: InitializationState,
+    ): Boolean {
+        if (!state.inMemberInitializer) return false
+        if (hasSuperReceiver()) return true
+        return state.memberInitializerOwner is CfirStruct && hasThisReceiver()
+    }
+
+    private fun CfirQualifiedAccessExpression.hasSuperReceiver(): Boolean =
+        explicitReceiver is CfirSuperReceiverExpression || dispatchReceiver is CfirSuperReceiverExpression
+
+    private fun CfirQualifiedAccessExpression.hasThisReceiver(): Boolean =
+        explicitReceiver is CfirThisReceiverExpression || dispatchReceiver is CfirThisReceiverExpression
 
     /**
      * 按子节点顺序分析普通元素。
@@ -715,6 +836,307 @@ private class CfirInitializationFlowAnalyzer(
             )
         }
         return state
+    }
+
+    /**
+     * static 变量初始化器不能直接读取当前类型的实例存储成员。
+     *
+     * 官方 `TypeCheckerImpl::CheckStaticVarAccessNonStatic` 挂在 static `VarDecl`
+     * 上，并只扫描 initializer 中的简单引用；成员访问和嵌套函数体交给各自
+     * 的访问规则，避免把 `A.b` 或 lambda 体误判成 static 变量直接访问。
+     */
+    private fun reportStaticVariableNonStaticMemberAccesses(
+        staticField: CfirFieldVariable,
+        initializer: CfirExpression,
+    ) {
+        initializer.accept(object : org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid() {
+            override fun visitElement(element: CfirElement) {
+                element.acceptChildren(this, null)
+            }
+
+            override fun visitFunction(function: CfirFunction) = Unit
+
+            override fun visitAnonymousFunctionExpression(anonymousFunctionExpression: CfirAnonymousFunctionExpression) = Unit
+
+            override fun visitFunctionCall(functionCall: CfirFunctionCall) {
+                for (argument in functionCall.argumentList.arguments) {
+                    argument.accept(this, null)
+                }
+            }
+
+            override fun visitQualifiedAccessExpression(qualifiedAccessExpression: CfirQualifiedAccessExpression) = Unit
+
+            override fun visitNamedAccessExpression(namedAccessExpression: CfirNamedAccessExpression) {
+                if (namedAccessExpression.explicitReceiver != null) return
+                val memberName = namedAccessExpression
+                    .resolvedAccessSymbolOrNull()
+                    ?.nonStaticMemberNameForStaticVariableDiagnostic()
+                    ?: return
+
+                with(context) {
+                    reporter.reportOn(
+                        source = staticField.source?.firstCharacterDiagnosticSource(),
+                        factory = CfirErrors.STATIC_VARIABLE_CANNOT_ACCESS_NON_STATIC_MEMBER,
+                        a = memberName,
+                    )
+                }
+            }
+        }, null)
+    }
+
+    /**
+     * 处理 static init 中对 static/global 变量的直接读取与直接初始化赋值。
+     */
+    private fun processStaticInitializerBody(
+        declaration: StaticGlobalInitializerDeclaration,
+        initialState: InitializationState,
+        trackedBySymbol: Map<CfirBasedSymbol<*>, StaticGlobalInitializerVariable>,
+        nextVisitOrder: Int,
+        recursiveStaticFunctionReads: MutableList<StaticGlobalUseEdge>,
+    ): StaticInitializerProcessingResult {
+        val body = declaration.body ?: return StaticInitializerProcessingResult(initialState, nextVisitOrder)
+        var state = initialState
+        var order = nextVisitOrder
+
+        fun CfirQualifiedAccessExpression.trackedStaticGlobalVariableOrNull(): StaticGlobalInitializerVariable? {
+            val symbol = resolvedAccessSymbolOrNull()?.initializationSymbol() ?: return null
+            return trackedBySymbol[symbol]
+        }
+
+        fun reportStaticGlobalReadIfNeeded(access: CfirQualifiedAccessExpression) {
+            val variable = access.trackedStaticGlobalVariableOrNull() ?: return
+            if (state.isInitialized(variable.symbol)) return
+            with(context) {
+                reporter.reportOn(
+                    source = access.calleeReference.source ?: access.source,
+                    factory = CfirErrors.USED_BEFORE_INITIALIZATION,
+                    a = variable.diagnosticName,
+                )
+            }
+        }
+
+        fun markStaticGlobalAssignmentTarget(lValue: CfirExpression) {
+            val access = lValue as? CfirQualifiedAccessExpression ?: return
+            val variable = access.trackedStaticGlobalVariableOrNull() ?: return
+            if (!variable.initialized) {
+                variable.initialized = true
+                variable.visitOrder = order++
+            }
+            state = state.markInitialized(variable.symbol)
+        }
+
+        val visitor = object : org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid() {
+            override fun visitElement(element: CfirElement) {
+                element.acceptChildren(this, null)
+            }
+
+            override fun visitBlock(block: CfirBlock) {
+                for (statement in block.statements) {
+                    statement.accept(this, null)
+                }
+            }
+
+            override fun visitAnonymousFunctionExpression(anonymousFunctionExpression: CfirAnonymousFunctionExpression) = Unit
+
+            override fun visitPatternVariable(patternVariable: CfirPatternVariable) {
+                val initializer = patternVariable.initializer ?: return
+                if (initializer is CfirAnonymousFunctionExpression) return
+                initializer.accept(this, null)
+            }
+
+            override fun visitAssignment(assignment: CfirAssignment) {
+                assignment.rValue.accept(this, null)
+                markStaticGlobalAssignmentTarget(assignment.lValue)
+            }
+
+            override fun visitFunctionCall(functionCall: CfirFunctionCall) {
+                functionCall.explicitReceiver?.accept(this, null)
+                for (argument in functionCall.argumentList.arguments) {
+                    argument.accept(this, null)
+                }
+            }
+
+            override fun visitQualifiedAccessExpression(qualifiedAccessExpression: CfirQualifiedAccessExpression) {
+                qualifiedAccessExpression.explicitReceiver?.accept(this, null)
+                reportStaticGlobalReadIfNeeded(qualifiedAccessExpression)
+            }
+
+            override fun visitNamedAccessExpression(namedAccessExpression: CfirNamedAccessExpression) {
+                namedAccessExpression.explicitReceiver?.accept(this, null)
+                reportStaticGlobalReadIfNeeded(namedAccessExpression)
+            }
+        }
+
+        body.accept(visitor, null)
+        declaration.visitOrder = order++
+        collectRecursiveStaticFunctionReads(body, declaration.visitOrder, trackedBySymbol, recursiveStaticFunctionReads)
+        return StaticInitializerProcessingResult(state, order)
+    }
+
+    /**
+     * 收集 static init 可达 static 函数体里的 static/global 变量读取。
+     */
+    private fun collectRecursiveStaticFunctionReads(
+        body: CfirBlock,
+        ownerVisitOrder: Int,
+        trackedBySymbol: Map<CfirBasedSymbol<*>, StaticGlobalInitializerVariable>,
+        destination: MutableList<StaticGlobalUseEdge>,
+    ) {
+        val visitedFunctions = linkedSetOf<CfirFunction>()
+
+        fun collectFromFunction(function: CfirFunction) {
+            if (!visitedFunctions.add(function)) return
+            val functionBody = function.body ?: return
+            functionBody.accept(object : org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid() {
+                override fun visitElement(element: CfirElement) {
+                    element.acceptChildren(this, null)
+                }
+
+                override fun visitAnonymousFunctionExpression(anonymousFunctionExpression: CfirAnonymousFunctionExpression) = Unit
+
+                override fun visitAssignment(assignment: CfirAssignment) {
+                    assignment.rValue.accept(this, null)
+                }
+
+                override fun visitFunctionCall(functionCall: CfirFunctionCall) {
+                    functionCall.resolvedStaticOrGlobalFunctionOrNull()?.let(::collectFromFunction)
+                    functionCall.explicitReceiver?.accept(this, null)
+                    for (argument in functionCall.argumentList.arguments) {
+                        argument.accept(this, null)
+                    }
+                }
+
+                override fun visitQualifiedAccessExpression(qualifiedAccessExpression: CfirQualifiedAccessExpression) {
+                    qualifiedAccessExpression.explicitReceiver?.accept(this, null)
+                    collectUseEdge(qualifiedAccessExpression)
+                }
+
+                override fun visitNamedAccessExpression(namedAccessExpression: CfirNamedAccessExpression) {
+                    namedAccessExpression.explicitReceiver?.accept(this, null)
+                    collectUseEdge(namedAccessExpression)
+                }
+
+                private fun collectUseEdge(access: CfirQualifiedAccessExpression) {
+                    val symbol = access.resolvedAccessSymbolOrNull()?.initializationSymbol() ?: return
+                    val variable = trackedBySymbol[symbol] ?: return
+                    destination += StaticGlobalUseEdge(
+                        ownerVisitOrder = ownerVisitOrder,
+                        usedVariable = variable,
+                        source = access.calleeReference.source ?: access.source,
+                        diagnosticName = access.calleeReference.referenceNameOrNull() ?: variable.diagnosticName,
+                    )
+                }
+            }, null)
+        }
+
+        body.accept(object : org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid() {
+            override fun visitElement(element: CfirElement) {
+                element.acceptChildren(this, null)
+            }
+
+            override fun visitAnonymousFunctionExpression(anonymousFunctionExpression: CfirAnonymousFunctionExpression) = Unit
+
+            override fun visitPatternVariable(patternVariable: CfirPatternVariable) {
+                val initializer = patternVariable.initializer ?: return
+                if (initializer is CfirAnonymousFunctionExpression) return
+                initializer.accept(this, null)
+            }
+
+            override fun visitFunctionCall(functionCall: CfirFunctionCall) {
+                functionCall.resolvedStaticOrGlobalFunctionOrNull()?.let(::collectFromFunction)
+                functionCall.explicitReceiver?.accept(this, null)
+                for (argument in functionCall.argumentList.arguments) {
+                    argument.accept(this, null)
+                }
+            }
+        }, null)
+    }
+
+    /**
+     * 报告 static init 可达静态函数体中读取尚未初始化的 static/global 变量。
+     */
+    private fun reportRecursiveStaticFunctionReadsBeforeInitialization(edges: List<StaticGlobalUseEdge>) {
+        for (edge in edges) {
+            if (edge.usedVariable.visitOrder < edge.ownerVisitOrder) continue
+            with(context) {
+                reporter.reportOn(
+                    source = edge.source,
+                    factory = CfirErrors.USED_BEFORE_INITIALIZATION,
+                    a = edge.diagnosticName,
+                )
+            }
+        }
+    }
+
+    /**
+     * 报告最终仍未初始化的 static 字段。
+     */
+    private fun reportUninitializedStaticFields(variables: Collection<StaticGlobalInitializerVariable>) {
+        for (variable in variables) {
+            val field = variable.field ?: continue
+            if (!field.status.isStatic) continue
+            if (variable.initialized) continue
+            with(context) {
+                reporter.reportOn(
+                    source = field.source,
+                    factory = CfirErrors.TYPE_UNINITIALIZED_STATIC_FIELD,
+                    a = field.name,
+                )
+            }
+        }
+    }
+
+    /**
+     * static/global 字段初始化顺序检查。
+     *
+     * 官方 `IsVarUsedBeforeDefinition` 对同一文件中的 static/global 变量按源码位置判断；
+     * 这里复用 resolved symbol，而不是重新做名字查找。
+     */
+    private fun reportStaticGlobalReadsBeforeInitialization(
+        currentDeclaration: StaticGlobalInitializerDeclaration,
+        initializer: CfirExpression,
+        trackedBySymbol: Map<CfirBasedSymbol<*>, StaticGlobalInitializerVariable>,
+        initialized: Set<CfirBasedSymbol<*>>,
+    ) {
+        initializer.accept(object : org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid() {
+            override fun visitElement(element: CfirElement) {
+                element.acceptChildren(this, null)
+            }
+
+            override fun visitFunction(function: CfirFunction) {
+                function.body?.accept(this, null)
+            }
+
+            override fun visitFunctionCall(functionCall: CfirFunctionCall) {
+                reportAccessIfNeeded(functionCall)
+                functionCall.acceptChildren(this, null)
+            }
+
+            override fun visitQualifiedAccessExpression(qualifiedAccessExpression: CfirQualifiedAccessExpression) {
+                reportAccessIfNeeded(qualifiedAccessExpression)
+                qualifiedAccessExpression.acceptChildren(this, null)
+            }
+
+            override fun visitNamedAccessExpression(namedAccessExpression: CfirNamedAccessExpression) {
+                reportAccessIfNeeded(namedAccessExpression)
+                namedAccessExpression.acceptChildren(this, null)
+            }
+
+            private fun reportAccessIfNeeded(access: CfirQualifiedAccessExpression) {
+                val symbol = access.resolvedAccessSymbolOrNull()?.initializationSymbol() ?: return
+                if (symbol in initialized) return
+                val targetVariable = trackedBySymbol[symbol] ?: return
+                if (currentDeclaration.hasSameNominalOwnerAs(targetVariable)) return
+
+                with(context) {
+                    reporter.reportOn(
+                        source = access.calleeReference.source ?: access.source,
+                        factory = CfirErrors.USED_BEFORE_INITIALIZATION,
+                        a = targetVariable.diagnosticName,
+                    )
+                }
+            }
+        }, null)
     }
 
     /**
@@ -847,6 +1269,11 @@ private data class InitializationState(
      * 当前是否处于成员初始化器求值上下文。
      */
     val inMemberInitializer: Boolean,
+
+    /**
+     * 当前成员初始化器所属的 class-like；用于区分 struct 字段初始化器中的 `this.member`。
+     */
+    val memberInitializerOwner: CfirClassLikeDeclaration?,
 ) {
     /**
      * 初始化状态工厂。
@@ -860,6 +1287,7 @@ private data class InitializationState(
             initialized = emptySet(),
             terminated = false,
             inMemberInitializer = false,
+            memberInitializerOwner = null,
         )
     }
 
@@ -930,14 +1358,18 @@ private data class InitializationState(
     /**
      * 进入成员初始化器上下文。
      */
-    fun withMemberInitializerContext(): InitializationState =
-        if (inMemberInitializer) this else copy(inMemberInitializer = true)
+    fun withMemberInitializerContext(owner: CfirClassLikeDeclaration? = null): InitializationState =
+        if (inMemberInitializer && memberInitializerOwner == owner) {
+            this
+        } else {
+            copy(inMemberInitializer = true, memberInitializerOwner = owner)
+        }
 
     /**
      * 离开成员初始化器上下文。
      */
     fun withoutMemberInitializerContext(): InitializationState =
-        if (!inMemberInitializer) this else copy(inMemberInitializer = false)
+        if (!inMemberInitializer) this else copy(inMemberInitializer = false, memberInitializerOwner = null)
 
     /**
      * 取两个分支状态的交集。
@@ -951,7 +1383,13 @@ private data class InitializationState(
             },
             terminated = terminated && other.terminated,
             inMemberInitializer = inMemberInitializer && other.inMemberInitializer,
+            memberInitializerOwner = commonMemberInitializerOwner(other),
         )
+    }
+
+    private fun commonMemberInitializerOwner(other: InitializationState): CfirClassLikeDeclaration? {
+        if (!inMemberInitializer || !other.inMemberInitializer) return null
+        return memberInitializerOwner.takeIf { it == other.memberInitializerOwner }
     }
 
     /**
@@ -1009,6 +1447,12 @@ private val CfirConstructor.isInstanceConstructor: Boolean
     get() = !status.isStatic
 
 /**
+ * 判断构造器是否是 static init。
+ */
+private val CfirConstructor.isStaticConstructor: Boolean
+    get() = status.isStatic
+
+/**
  * 函数体初始化读取检查器。
  */
 object CfirFunctionInitializationChecker : CfirFunctionChecker() {
@@ -1018,6 +1462,19 @@ object CfirFunctionInitializationChecker : CfirFunctionChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirFunction) {
         CfirInitializationFlowAnalyzer(context, reporter).checkFunction(declaration)
+    }
+}
+
+/**
+ * 文件级 static/global 初始化顺序检查器。
+ */
+object CfirFileStaticGlobalInitializationChecker : CfirFileChecker() {
+    /**
+     * 检查同一文件中的顶层变量和 static 成员字段初始化顺序。
+     */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    override fun check(declaration: CfirFile) {
+        CfirInitializationFlowAnalyzer(context, reporter).checkFileStaticGlobalInitialization(declaration)
     }
 }
 
@@ -1066,6 +1523,286 @@ private fun CfirClassLikeDeclaration.instanceFieldInfos(
         addAll(inheritedInstanceFieldInfos(context, visitedClasses = linkedSetOf()))
     }
     addAll(declaredInstanceFieldInfos())
+}
+
+/**
+ * 收集 static 初始化器需要跟踪的当前 class-like 字段。
+ *
+ * static 字段会按声明顺序推进初始化状态；实例字段也要进入跟踪集合，
+ * 但在 static 初始化路径中不会被标记为已初始化，用于统一报告 static
+ * 初始化器读取实例存储成员的非法初始化语义。
+ */
+private fun CfirClassLikeDeclaration.staticInitializerFieldInfos(): List<TrackedVariableInfo> {
+    return declarations
+        .filterIsInstance<CfirFieldVariable>()
+        .map { field ->
+            if (field.status.isStatic) {
+                field.toTrackedStaticFieldInfo()
+            } else {
+                field.toTrackedInstanceFieldInfo()
+            }
+        }
+}
+
+/**
+ * 文件级 static/global 初始化声明。
+ *
+ * 顶层 pattern variable 可能一次声明多个绑定变量；初始化顺序按外层声明推进，
+ * 但读取检测必须跟踪每一个真正进入作用域的存储符号。
+ */
+private data class StaticGlobalInitializerDeclaration(
+    /**
+     * 当前初始化声明向同一文件作用域暴露的所有存储变量。
+     */
+    val variables: List<StaticGlobalInitializerVariable>,
+    /**
+     * 变量声明或字段声明上的显式初始化表达式；`static init` 块没有该表达式。
+     */
+    val initializer: CfirExpression?,
+    /**
+     * `static init` 声明体；普通变量或字段初始化声明没有该块。
+     */
+    val body: CfirBlock?,
+    /**
+     * 声明在源文件中的起始偏移量，用于按照源码顺序稳定排序初始化条目。
+     */
+    val sourceOffset: Int,
+    /**
+     * 名义上拥有该 static 字段或初始化块的 class-like 标识；顶层全局变量为空。
+     */
+    val nominalOwnerClassId: ClassId?,
+    /**
+     * 当前条目在 static/global 初始化顺序模型中的声明种类。
+     */
+    val kind: StaticGlobalInitializerKind,
+    /**
+     * 初始化遍历分配的访问序号，未进入遍历前保持为 `-1`。
+     */
+    var visitOrder: Int = -1,
+)
+
+/**
+ * 文件级 static/global 初始化中可被读取的存储变量。
+ */
+private class StaticGlobalInitializerVariable(
+    /**
+     * 被初始化顺序检查跟踪的字段、顶层变量或 pattern binding 对应的 CFIR symbol。
+     */
+    val symbol: CfirBasedSymbol<*>,
+    /**
+     * 报告诊断时使用的变量名称，保留 pattern binding 等声明的用户可见名称。
+     */
+    val diagnosticName: Name,
+    /**
+     * 名义上拥有该 static 字段的 class-like 标识；顶层全局变量为空。
+     */
+    val nominalOwnerClassId: ClassId?,
+    /**
+     * 变量来源的字段声明；顶层 pattern/global 变量没有字段节点。
+     */
+    val field: CfirFieldVariable?,
+    /**
+     * 该变量在当前初始化顺序遍历中是否已经完成初始化。
+     */
+    var initialized: Boolean = false,
+    /**
+     * 初始化遍历分配给该变量的访问序号，未访问前保持为 `-1`。
+     */
+    var visitOrder: Int = -1,
+)
+
+/**
+ * 文件级 static/global 初始化条目种类。
+ */
+private enum class StaticGlobalInitializerKind {
+    VARIABLE,
+    STATIC_INIT,
+}
+
+/**
+ * static init 处理后的初始化状态。
+ */
+private data class StaticInitializerProcessingResult(
+    /**
+     * `static init` 块处理完成后得到的初始化状态快照。
+     */
+    val state: InitializationState,
+    /**
+     * 下一条初始化声明应该使用的访问序号。
+     */
+    val nextVisitOrder: Int,
+)
+
+/**
+ * static init 经由 static/global 函数间接读取变量形成的使用边。
+ */
+private data class StaticGlobalUseEdge(
+    /**
+     * 发起读取的初始化条目访问序号。
+     */
+    val ownerVisitOrder: Int,
+    /**
+     * 被间接读取的 static/global 存储变量。
+     */
+    val usedVariable: StaticGlobalInitializerVariable,
+    /**
+     * 触发读取的源码位置；没有精确位置时为空。
+     */
+    val source: org.cangnova.cangjie.source.CjSourceElement?,
+    /**
+     * 报告诊断时展示的被读取变量名称。
+     */
+    val diagnosticName: Name,
+)
+
+/**
+ * 收集同一文件内参与 static/global 初始化顺序检查的声明。
+ */
+private fun CfirFile.staticGlobalInitializerDeclarations(): List<StaticGlobalInitializerDeclaration> {
+    return buildList {
+        for (declaration in declarations) {
+            collectStaticGlobalInitializerDeclarations(declaration)
+        }
+    }
+}
+
+/**
+ * 递归收集顶层变量声明和 class-like static 字段。
+ */
+private fun MutableList<StaticGlobalInitializerDeclaration>.collectStaticGlobalInitializerDeclarations(
+    declaration: CfirDeclaration,
+) {
+    when (declaration) {
+        is CfirFieldVariable -> if (declaration.isStaticOrGlobalInitializerField()) {
+            add(declaration.toStaticGlobalInitializerDeclaration())
+        }
+
+        is CfirPatternVariable -> if (!declaration.isLocal && declaration.symbol.callableId.classId == null) {
+            add(declaration.toStaticGlobalInitializerDeclaration())
+        }
+
+        is CfirClassLikeDeclaration -> collectClassLikeStaticGlobalInitializerDeclarations(declaration)
+
+        else -> Unit
+    }
+}
+
+/**
+ * 按官方 GlobalVarChecker 的顺序收集 class-like static 成员：
+ * 先收集所有 static 字段，再收集 static init。
+ */
+private fun MutableList<StaticGlobalInitializerDeclaration>.collectClassLikeStaticGlobalInitializerDeclarations(
+    classLike: CfirClassLikeDeclaration,
+) {
+    for (member in classLike.declarations) {
+        when (member) {
+            is CfirFieldVariable -> if (member.status.isStatic) {
+                add(member.toStaticGlobalInitializerDeclaration())
+            }
+
+            is CfirClassLikeDeclaration -> collectClassLikeStaticGlobalInitializerDeclarations(member)
+
+            else -> Unit
+        }
+    }
+    for (member in classLike.declarations) {
+        if (member is CfirConstructor && member.isStaticConstructor) {
+            add(member.toStaticGlobalInitializerDeclaration(classLike))
+        }
+    }
+}
+
+/**
+ * 顶层字段或 static 成员字段都参与同文件初始化顺序。
+ */
+private fun CfirFieldVariable.isStaticOrGlobalInitializerField(): Boolean =
+    status.isStatic || symbol.callableId.classId == null
+
+/**
+ * 将字段变量转换成文件级 static/global 初始化声明条目。
+ */
+private fun CfirFieldVariable.toStaticGlobalInitializerDeclaration(): StaticGlobalInitializerDeclaration {
+    return StaticGlobalInitializerDeclaration(
+        variables = listOf(
+            StaticGlobalInitializerVariable(
+                symbol = symbol,
+                diagnosticName = name,
+                nominalOwnerClassId = symbol.callableId.classId,
+                field = this,
+            )
+        ),
+        initializer = initializer,
+        body = null,
+        sourceOffset = source?.startOffset ?: Int.MAX_VALUE,
+        nominalOwnerClassId = symbol.callableId.classId,
+        kind = StaticGlobalInitializerKind.VARIABLE,
+    )
+}
+
+/**
+ * 将顶层 pattern variable 转换成文件级 static/global 初始化声明条目。
+ *
+ * 顶层 `var a = ...` 在 CFIR 中通过 [CfirPatternVariable] 容器和内部
+ * binding variable 暴露名称；初始化顺序必须跟踪真正进入作用域的绑定符号。
+ */
+private fun CfirPatternVariable.toStaticGlobalInitializerDeclaration(): StaticGlobalInitializerDeclaration {
+    val variables = pattern.bindingVariables().map { bindingVariable ->
+        StaticGlobalInitializerVariable(
+            symbol = bindingVariable.symbol,
+            diagnosticName = bindingVariable.name,
+            nominalOwnerClassId = bindingVariable.symbol.callableId.classId,
+            field = null,
+        )
+    }
+
+    return StaticGlobalInitializerDeclaration(
+        variables = variables,
+        initializer = initializer,
+        body = null,
+        sourceOffset = source?.startOffset ?: Int.MAX_VALUE,
+        nominalOwnerClassId = symbol.callableId.classId,
+        kind = StaticGlobalInitializerKind.VARIABLE,
+    )
+}
+
+/**
+ * 将 static init 转换成文件级 static/global 初始化声明条目。
+ */
+private fun CfirConstructor.toStaticGlobalInitializerDeclaration(
+    owner: CfirClassLikeDeclaration,
+): StaticGlobalInitializerDeclaration {
+    return StaticGlobalInitializerDeclaration(
+        variables = emptyList(),
+        initializer = null,
+        body = body,
+        sourceOffset = source?.startOffset ?: Int.MAX_VALUE,
+        nominalOwnerClassId = owner.symbol.classId,
+        kind = StaticGlobalInitializerKind.STATIC_INIT,
+    )
+}
+
+/**
+ * 判断当前初始化声明和目标变量是否属于同一个 nominal owner。
+ *
+ * 同一 class-like 内的 static 字段顺序由 class-like 初始化检查器处理，文件级
+ * 检查器只负责 top-level 与跨 class-like 的 static/global 顺序。
+ */
+private fun StaticGlobalInitializerDeclaration.hasSameNominalOwnerAs(
+    other: StaticGlobalInitializerVariable,
+): Boolean = nominalOwnerClassId != null && nominalOwnerClassId == other.nominalOwnerClassId
+
+/**
+ * 将同一个初始化声明包含的所有存储符号标记为已初始化。
+ */
+private fun StaticGlobalInitializerDeclaration.markVariablesInitialized(
+    state: InitializationState,
+): InitializationState {
+    var current = state
+    for (variable in variables) {
+        variable.initialized = true
+        current = current.markInitialized(variable.symbol)
+    }
+    return current
 }
 
 /**
@@ -1121,6 +1858,16 @@ private fun CfirFieldVariable.toTrackedInstanceFieldInfo(): TrackedVariableInfo 
         symbol = symbol,
         diagnosticName = name,
         isInstanceField = true,
+    )
+
+/**
+ * 将 static 字段变量转换为初始化跟踪信息。
+ */
+private fun CfirFieldVariable.toTrackedStaticFieldInfo(): TrackedVariableInfo =
+    TrackedVariableInfo(
+        symbol = symbol,
+        diagnosticName = name,
+        isInstanceField = false,
     )
 
 /**
@@ -1262,6 +2009,22 @@ private fun CfirFunctionCall.resolvedCallableSymbolOrNull(): CfirBasedSymbol<*>?
 }
 
 /**
+ * 解析 static init 可递归进入的 static/global 函数。
+ */
+private fun CfirFunctionCall.resolvedStaticOrGlobalFunctionOrNull(): CfirFunction? {
+    val function = when (val symbol = resolvedCallableSymbolOrNull()) {
+        is CfirNamedFunctionSymbol -> if (symbol.isBound) symbol.cfir else null
+        else -> null
+    } ?: return null
+
+    return if (function.symbol.callableId.classId == null || function.status.isStatic) {
+        function
+    } else {
+        null
+    }
+}
+
+/**
  * 从 qualified access 中解析访问目标符号。
  */
 private fun CfirQualifiedAccessExpression.resolvedAccessSymbolOrNull(): CfirBasedSymbol<*>? {
@@ -1282,6 +2045,36 @@ private fun CfirBasedSymbol<*>.isInstanceMemberFunctionOrProperty(): Boolean {
         is CfirPropertySymbol -> isBound && callableId.classId != null && !cfir.status.isStatic
         is CfirNamedFunctionSymbol -> isBound && callableId.classId != null && !cfir.status.isStatic
         else -> false
+    }
+}
+
+/**
+ * static 变量初始化器专用的非 static 成员分类。
+ *
+ * 官方 `CheckStaticVarAccessNonStatic` 明确跳过函数声明，只把非 static、
+ * 非全局、带 nominal owner 的存储成员/属性作为 static 变量非法访问。
+ */
+private fun CfirBasedSymbol<*>.nonStaticMemberNameForStaticVariableDiagnostic(): Name? {
+    return when (this) {
+        is CfirVariableSymbol<*> -> if (isBound && callableId.classId != null && cfir is CfirFieldVariable && !cfir.status.isStatic) {
+            name
+        } else {
+            null
+        }
+
+        is CfirPropertySymbol -> if (isBound && callableId.classId != null && !cfir.status.isStatic) {
+            name
+        } else {
+            null
+        }
+
+        is CfirPropertyAccessorSymbol -> if (isBound) {
+            propertySymbol.nonStaticMemberNameForStaticVariableDiagnostic()
+        } else {
+            null
+        }
+
+        else -> null
     }
 }
 

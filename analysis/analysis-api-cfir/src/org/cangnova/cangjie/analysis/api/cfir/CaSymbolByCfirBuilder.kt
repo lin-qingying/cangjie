@@ -143,30 +143,78 @@ import org.cangnova.cangjie.utils.exceptions.requireWithAttachment
  * 而不是继续散落在中心化的 symbol factory / query 入口中。
  */
 internal class CaSymbolByCfirBuilder(
+    /**
+     * 公开符号所属的 IntelliJ 项目。
+     */
     private val project: Project,
+    /**
+     * 当前 CFIR Analysis API 会话。
+     */
     val analysisSession: CaCfirSession,
+    /**
+     * 构造出的公开符号共享的生命周期令牌。
+     */
     val token: CaLifetimeToken,
 ) {
+/**
+ * 符号构造过程中的共享错误处理工具。
+ */
 companion object{
+    /**
+     * 报告无法映射到公开 Analysis API 符号的 CFIR 符号。
+     */
     private fun throwUnexpectedElementError(element: CfirBasedSymbol<*>): Nothing {
         errorWithAttachment("Unexpected ${element::class.simpleName}") {
             withCfirSymbolEntry("cfirSymbol", element)
         }
     }
 }
+    /**
+     * 当前会话的 use-site 模块。
+     */
     private val useSiteModule: CaModule
         get() = analysisSession.useSiteModule
+
+    /**
+     * 当前 use-site 范围内的包 provider。
+     */
     @OptIn(CaPlatformInterface::class)
     private val packageProvider: CangJiePackageProvider
         get() = analysisSession.useSitePackageProvider
 
+    /**
+     * class-like 与 type parameter 符号构造器。
+     */
     val classifierBuilder = ClassifierSymbolBuilder()
+
+    /**
+     * 函数、构造器、访问器等函数类符号构造器。
+     */
     val functionBuilder = FunctionSymbolBuilder()
+
+    /**
+     * 属性、字段、模式绑定和值参数等变量类符号构造器。
+     */
     val variableBuilder = VariableSymbolBuilder()
+
+    /**
+     * callable 符号的统一分派构造器。
+     */
     val callableBuilder = CallableSymbolBuilder()
+
+    /**
+     * CFIR 类型到 Analysis API 公开类型的构造器。
+     */
     val typeBuilder = TypeBuilder()
+
+    /**
+     * 从 CFIR 声明构造公开 Analysis API 符号。
+     */
     fun buildSymbol(cfir: CfirDeclaration): CaSymbol = buildSymbol(cfir.symbol)
 
+    /**
+     * 按 CFIR 符号实际种类分派构造公开 Analysis API 符号。
+     */
     fun buildSymbol(symbol: CfirBasedSymbol<*>): CaSymbol = when (symbol) {
         is CfirClassLikeSymbol<*> -> classifierBuilder.buildClassLikeSymbol(symbol)
         is CfirCallableSymbol<*> -> callableBuilder.buildCallableSymbol(symbol)
@@ -176,8 +224,14 @@ companion object{
         else -> error("Unsupported public symbol mapping for `${symbol::class.simpleName}`")
     }
 
+    /**
+     * 从 CFIR 文件符号构造公开文件符号。
+     */
     fun buildFileSymbol(symbol: CfirFileSymbol): CaFileSymbol = CaCfirFileSymbol(symbol, analysisSession)
 
+    /**
+     * 仅当包真实存在时构造公开包符号。
+     */
     @OptIn(CaPlatformInterface::class)
     fun createPackageSymbolIfOneExists(packageFqName: FqName): CaPackageSymbol? {
         if (!packageProvider.doesPackageExist(packageFqName)) {
@@ -187,9 +241,15 @@ companion object{
         return createPackageSymbol(packageFqName)
     }
 
+    /**
+     * 为指定包名构造公开包符号。
+     */
     fun createPackageSymbol(packageFqName: FqName): CaPackageSymbol =
         CaCfirPackageSymbol(packageFqName, analysisSession.useSiteModule, token)
 
+    /**
+     * 从 CFIR extend 符号构造公开 extend 符号，并附带稳定身份信息。
+     */
     fun buildExtendSymbol(symbol: CfirExtendSymbol): CaExtendSymbol {
         val identity = analysisSession.resolveExtendIdentity(symbol)
             return CaCfirExtendSymbol(
@@ -202,42 +262,77 @@ companion object{
         )
     }
 
+    /**
+     * class-like、typealias 和 type parameter 符号构造器。
+     */
     inner class ClassifierSymbolBuilder {
+        /**
+         * 按 CFIR class-like 符号实际类型构造公开 class-like 符号。
+         */
         fun buildClassLikeSymbol(symbol: CfirClassLikeSymbol<*>): CaClassLikeSymbol = when (symbol) {
             is CfirTypeAliasSymbol -> CaCfirTypeAliasSymbol(symbol, analysisSession)
             is CfirClassSymbol -> CaCfirClassSymbol(symbol, analysisSession)
             else -> CaCfirClassSymbol(symbol, analysisSession)
         }
 
+        /**
+         * 构造公开 class 符号。
+         */
         fun buildClassSymbol(symbol: CfirClassSymbol): CaClassSymbol =
             CaCfirClassSymbol(symbol, analysisSession)
 
+        /**
+         * 构造公开 typealias 符号。
+         */
         fun buildTypeAliasSymbol(symbol: CfirTypeAliasSymbol): CaTypeAliasSymbol =
             CaCfirTypeAliasSymbol(symbol, analysisSession)
 
+        /**
+         * 按 CFIR classifier 符号实际类型构造公开 classifier 符号。
+         */
         fun buildClassifierSymbol(firSymbol: CfirClassifierSymbol<*>): CaClassifierSymbol = when (firSymbol) {
             is CfirClassLikeSymbol<*> -> classifierBuilder.buildClassLikeSymbol(firSymbol)
             is CfirTypeParameterSymbol -> buildTypeParameterSymbol(firSymbol)
         }
+
+        /**
+         * 构造公开 type parameter 符号。
+         */
         fun buildTypeParameterSymbol(symbol: CfirTypeParameterSymbol): CaTypeParameterSymbol =
             CaCfirTypeParameterSymbol(symbol, analysisSession)
 
+        /**
+         * 通过 ClassId 从当前 session 的符号 provider 查找并构造 class-like 符号。
+         */
         fun buildClassLikeSymbolByClassId(classId: ClassId): CaClassLikeSymbol? {
             val symbol = analysisSession.cfirSession.symbolProvider.getClassLikeSymbolByClassId(classId) ?: return null
             return buildClassLikeSymbol(symbol)
         }
 
+        /**
+         * 通过 Cone lookup tag 恢复并构造 class-like 符号。
+         */
         fun buildClassLikeSymbolByLookupTag(lookupTag: ConeClassLikeLookupTag): CaClassLikeSymbol? {
             val symbol = lookupTag.toSymbol(analysisSession.cfirSession) ?: return null
             return buildClassLikeSymbol(symbol)
         }
     }
 
+    /**
+     * 函数类公开符号构造器。
+     */
     inner class FunctionSymbolBuilder {
+        /**
+         * 构造构造器符号，并在需要时剥离 substitution override 包装。
+         */
         fun buildConstructorSymbol(cfirSymbol: CfirConstructorSymbol): CaConstructorSymbol {
             val unwrapped = cfirSymbol.cfir.unwrapSubstitutionOverrideIfNeeded()?.symbol ?: cfirSymbol
             return CaCfirConstructorSymbol(unwrapped, analysisSession)
         }
+
+        /**
+         * 构造命名函数符号，并处理 fake override 与 stub type 特殊情况。
+         */
         fun buildNamedFunctionSymbol(cfirSymbol: CfirNamedFunctionSymbol): CaNamedFunctionSymbol {
             cfirSymbol.cfir.unwrapSubstitutionOverrideIfNeeded()?.let {
                 return buildNamedFunctionSymbol(it.symbol)
@@ -255,6 +350,9 @@ companion object{
             return CaCfirNamedFunctionSymbol(cfirSymbol, analysisSession)
         }
 
+        /**
+         * 从 CFIR 属性访问器符号恢复对应公开属性访问器符号。
+         */
         fun buildPropertyAccessorSymbol(cfirSymbol: CfirPropertyAccessorSymbol): CaPropertyAccessorSymbol {
             val propertySymbol = variableBuilder.buildVariableSymbol(cfirSymbol.propertySymbol)
             requireWithAttachment(
@@ -279,6 +377,9 @@ companion object{
             return accessorSymbol
         }
 
+        /**
+         * 根据拥有者属性和访问器种类构造公开属性访问器符号。
+         */
         fun buildPropertyAccessorSymbol(
             backingSymbol: CfirCallableSymbol<*>,
             ownerSymbol: CaPropertySymbol,
@@ -291,6 +392,9 @@ companion object{
                 CaCfirPropertySetterSymbol(ownerSymbol)
         }
 
+        /**
+         * 按 CFIR callable 符号实际类型构造公开函数类符号。
+         */
         fun buildFunctionSymbol(symbol: CfirCallableSymbol<*>): CaFunctionSymbol = when (symbol) {
             is CfirAnonymousFunctionSymbol -> CaCfirAnonymousFunctionSymbol(symbol, analysisSession)
             is CfirMainFunctionSymbol -> CaCfirMainFunctionSymbol(symbol, analysisSession, useSiteModule, analysisSession.token)
@@ -302,6 +406,9 @@ companion object{
             else -> error("Unsupported function public symbol mapping for `${symbol::class.simpleName}`")
         }
 
+        /**
+         * 构造公开函数签名。
+         */
         fun buildFunctionSignature(symbol: CfirFunctionSymbol<*>): org.cangnova.cangjie.analysis.api.signatures.CaFunctionSignature<org.cangnova.cangjie.analysis.api.symbols.CaFunctionSymbol> {
             return with(analysisSession) {
                 functionBuilder.buildFunctionSymbol(symbol).asSignature()
@@ -375,7 +482,14 @@ companion object{
         val originalDeclaration = originalForSubstitutionOverride ?: return null
         return originalDeclaration.takeIf { this.origin is CfirDeclarationOrigin.SubstitutionOverride.CallSite }
     }
+
+    /**
+     * 变量类公开符号构造器。
+     */
     inner class VariableSymbolBuilder {
+        /**
+         * 按 CFIR callable 符号实际类型构造公开变量类符号。
+         */
         fun buildVariableSymbol(symbol: CfirCallableSymbol<*>): CaVariableSymbol = when (symbol) {
             is CfirPropertySymbol -> CaCfirPropertySymbol(symbol, analysisSession)
             is CfirFieldVariableSymbol -> CaCfirFieldSymbol(symbol, analysisSession)
@@ -385,6 +499,9 @@ companion object{
             else -> error("Unsupported variable public symbol mapping for `${symbol::class.simpleName}`")
         }
 
+        /**
+         * 构造值参数符号，并在参数来自 substitution override 时映射回原始参数。
+         */
         fun buildValueParameterSymbol(symbol: CfirValueParameterSymbol): CaValueParameterSymbol {
 
             val functionSymbol = symbol.containingDeclarationSymbol
@@ -409,6 +526,9 @@ companion object{
             }
         }
 
+        /**
+         * 为指定 owner 构造带稳定索引和值参数 PSI 的公开值参数符号。
+         */
         fun buildOwnedValueParameterSymbol(
             ownerSymbol: CaValueParameterOwnerSymbol,
             parameter: CfirValueParameter,
@@ -426,12 +546,18 @@ companion object{
                     },
             )
 
+        /**
+         * 构造变量类符号签名。
+         */
         fun buildVariableLikeSignature(symbol: CfirVariableSymbol<*>): org.cangnova.cangjie.analysis.api.signatures.CaVariableSignature<org.cangnova.cangjie.analysis.api.symbols.CaVariableSymbol> {
             return with(analysisSession) {
                 variableBuilder.buildVariableSymbol(symbol).asSignature()
             }
         }
 
+        /**
+         * 构造属性符号签名。
+         */
         fun buildVariableLikeSignature(symbol: CfirPropertySymbol): org.cangnova.cangjie.analysis.api.signatures.CaVariableSignature<org.cangnova.cangjie.analysis.api.symbols.CaVariableSymbol> {
             return with(analysisSession) {
                 variableBuilder.buildVariableSymbol(symbol).asSignature()
@@ -439,7 +565,13 @@ companion object{
         }
     }
 
+    /**
+     * callable 符号统一分派构造器。
+     */
     inner class CallableSymbolBuilder {
+        /**
+         * 按 CFIR callable 符号实际类型分派到函数或变量构造器。
+         */
         fun buildCallableSymbol(cfirSymbol: CfirCallableSymbol<*>): CaCallableSymbol = when (cfirSymbol) {
             is CfirFunctionSymbol<*> -> functionBuilder.buildFunctionSymbol(cfirSymbol)
             is CfirEnumConstructorSymbol -> CaCfirEnumConstructorSymbol(cfirSymbol, analysisSession)
@@ -454,8 +586,14 @@ companion object{
      * 类型公共叶子的构造统一收敛到 builder，而不是分散在各个 helper 顶层函数里。
      */
     inner class TypeBuilder {
+        /**
+         * 从 CFIR type ref 构造公开类型。
+         */
         fun buildType(coneType: CfirTypeRef): CaType = buildType(coneType.coneType)
 
+        /**
+         * 从 Cone 类型构造公开 Analysis API 类型。
+         */
         fun buildType(coneType: ConeCangJieType): CaType {
             val publicConeType = coneType
                 .fullyExpandedType(analysisSession.cfirSession)
@@ -495,6 +633,9 @@ companion object{
             }
         }
 
+        /**
+         * 构造 class-like Cone 类型的公开类型实参列表。
+         */
         fun buildTypeProjections(coneType: ConeCangJieType): List<CaTypeProjection> {
             val coneArguments: List<ConeTypeProjection> = when (coneType) {
                 is ConeClassLikeType -> coneType.typeArguments
@@ -508,6 +649,9 @@ companion object{
         }
 
 
+        /**
+         * 从 CFIR substitutor 构造公开 substitutor。
+         */
         fun buildSubstitutor(substitutor: ConeSubstitutor): CaSubstitutor = when (substitutor) {
             ConeSubstitutor.Empty -> CaSubstitutor.Empty(analysisSession.token)
             is CfirTypeSubstitutorByMap -> CaCfirGenericSubstitutor(substitutor, this@CaSymbolByCfirBuilder)
@@ -519,10 +663,24 @@ companion object{
 
 
 
+/**
+ * 尝试从 CFIR 元素中提取声明并构造公开符号。
+ */
 internal fun CfirElement.buildSymbol(builder: CaSymbolByCfirBuilder): CaSymbol? = (this as? CfirDeclaration)?.symbol?.let(builder::buildSymbol)
+
+/**
+ * 从 CFIR 声明构造公开符号。
+ */
 internal fun CfirDeclaration.buildSymbol(builder: CaSymbolByCfirBuilder): CaSymbol = builder.buildSymbol(symbol)
+
+/**
+ * 从 CFIR 符号构造公开符号。
+ */
 internal fun CfirBasedSymbol<*>.buildSymbol(builder: CaSymbolByCfirBuilder): CaSymbol = builder.buildSymbol(this)
 
+/**
+ * 收集 callable 声明签名中实际引用到的类型参数。
+ */
 private fun collectReferencedTypeParameters(declaration: CfirCallableDeclaration): Set<ConeTypeParameterLookupTag> {
     val allUsedTypeParameters = mutableSetOf<ConeTypeParameterLookupTag>()
     declaration.accept(object : CfirVisitorVoid(){

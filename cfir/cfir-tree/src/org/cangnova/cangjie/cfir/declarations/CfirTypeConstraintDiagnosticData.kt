@@ -25,6 +25,7 @@
 package org.cangnova.cangjie.cfir.declarations
 
 import org.cangnova.cangjie.cfir.CfirDeclarationDataKey
+import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.source.CjSourceElement
 
@@ -60,6 +61,7 @@ data class CfirTypeConstraintDiagnosticData(
  *
  * @property parameterName 约束左侧声明的类型参数名。
  * @property source 约束中的类型参数名位置，用于“不是类型参数名”一类诊断。
+ * @property boundTypeRefs 约束右侧的上界类型引用，即使左侧不是当前 owner 的类型参数也保留。
  * @property constraintSource 整条 where 约束位置，对齐官方 generic constraint 诊断节点。
  */
 data class CfirTypeConstraintReference(
@@ -71,6 +73,10 @@ data class CfirTypeConstraintReference(
      * 约束中的类型参数名位置，用于“不是类型参数名”一类诊断。
      */
     val source: CjSourceElement,
+    /**
+     * 约束右侧的上界类型引用。
+     */
+    val boundTypeRefs: List<CfirTypeRef> = emptyList(),
     /**
      * 整条 where 约束位置，对齐官方 generic constraint 诊断节点。
      */

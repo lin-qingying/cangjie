@@ -10,7 +10,13 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsS
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsService
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.getMeter
 
+/**
+ * symbol provider 相关缓存统计域。
+ */
 internal class LLSymbolProviderStatistics(statisticsService: LLStatisticsService) : LLStatisticsDomain {
+    /**
+     * symbol provider 统计域的 OpenTelemetry meter。
+     */
     private val meter = statisticsService.openTelemetry.getMeter(LLStatisticsScopes.SymbolProviders)
 
     /**

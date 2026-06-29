@@ -11,8 +11,14 @@ import java.util.concurrent.ConcurrentMap
 @CaPlatformInterface
 @JvmInline
 value class NullableConcurrentCache<K : Any, V>(
+    /**
+     * 底层并发 map，内部使用 [NullValue] 哨兵保存可空结果。
+     */
     val map: ConcurrentMap<K, Any> = ConcurrentHashMap(),
 ) {
+    /**
+     * 获取或写入 [key] 对应的可空值。
+     */
     @OptIn(CaImplementationDetail::class)
     inline fun getOrPut(
         key: K,

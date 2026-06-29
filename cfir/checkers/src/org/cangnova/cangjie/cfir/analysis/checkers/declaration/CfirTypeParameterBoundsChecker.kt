@@ -2,19 +2,31 @@ package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.analysis.checkers.CfirExtendSemantics
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.declaredUpperBoundTypesInCurrentContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirClass
+import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirInterface
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
+import org.cangnova.cangjie.cfir.declarations.CfirTypeParameterRefsOwner
+import org.cangnova.cangjie.cfir.declarations.typeConstraintDiagnosticData
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
+import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
+import org.cangnova.cangjie.cfir.scopes.overrideSignatureKey
+import org.cangnova.cangjie.cfir.scopes.impl.CfirClassMemberScopeKind
+import org.cangnova.cangjie.cfir.scopes.impl.CfirClassSubstitutionScope
+import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
+import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
+import org.cangnova.cangjie.cfir.session.extendProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
-import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
+import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.cfir.types.ConeAnyType
-import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
@@ -22,9 +34,9 @@ import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
 import org.cangnova.cangjie.cfir.types.StdlibClassIds
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.types.renderForDebugging
-import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.type.AbstractTypeChecker
 
 /**
@@ -39,23 +51,25 @@ object CfirTypeParameterBoundsChecker : CfirTypeParameterChecker() {
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirTypeParameter) {
-        val nonErrorBounds = declaration.symbol.resolvedBounds.filterNot { it.coneType is ConeErrorType }
+        if (with(context.session) { declaration.findFirstGenericUpperBoundRecursionIssueInOwner() } != null) return
+
+        val nonErrorBounds = declaration
+            .declaredUpperBoundTypesInCurrentContext()
+            .filterNot { it is ConeErrorType }
         if (nonErrorBounds.isEmpty()) return
 
-        val uniqueBounds = linkedMapOf<String, CfirResolvedTypeRef>()
+        val uniqueBounds = linkedMapOf<String, ConeCangJieType>()
         nonErrorBounds.forEach { bound ->
             uniqueBounds.putIfAbsent(bound.stableBoundKey(), bound)
         }
 
-        if (uniqueBounds.values.any { it.hasRecursiveBoundFailure(declaration.name) }) return
-
         val invalidBounds = uniqueBounds.values
             .mapNotNull { bound -> bound.takeIf { it.upperBoundKind() == UpperBoundKind.INVALID } }
-        invalidBounds.forEach { bound ->
+        invalidBounds.firstOrNull()?.let { bound ->
             reporter.reportOn(
                 source = declaration.source,
                 factory = CfirErrors.UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE,
-                a = bound.coneType.fullyExpandTypeAlias(),
+                a = bound.fullyExpandTypeAlias(),
                 b = declaration.name,
             )
         }
@@ -63,59 +77,236 @@ object CfirTypeParameterBoundsChecker : CfirTypeParameterChecker() {
 
         val classBounds = uniqueBounds.values
             .filter { it.upperBoundKind() == UpperBoundKind.CLASS }
-            .map { it.coneType.fullyExpandTypeAlias() }
+            .map { it.fullyExpandTypeAlias() }
 
         if (classBounds.size > 1 && !classBounds.areInOneInheritanceChain()) {
             reporter.reportOn(declaration.source, CfirErrors.CONFLICTING_UPPER_BOUNDS)
+        }
+
+        declaration.reportUpperBoundInheritedMemberTypeConsistency(uniqueBounds.values)
+    }
+}
+
+/**
+ * 检查泛型上界交集继承到的同签名成员返回类型/属性类型是否一致。
+ *
+ * 对齐官方 `GenericInheritanceChecker::CheckUpperBoundsConfliction`：接口上界先合并，
+ * 再用最具体 class 上界的 inherited member 表更新，冲突诊断落在整条 where 约束上。
+ */
+context(context: CheckerContext, reporter: DiagnosticReporter)
+private fun CfirTypeParameter.reportUpperBoundInheritedMemberTypeConsistency(
+    bounds: Collection<ConeCangJieType>,
+) {
+    val interfaceBounds = bounds
+        .filter { it.upperBoundKind() == UpperBoundKind.INTERFACE }
+        .map { it.fullyExpandTypeAlias() }
+    val classBound = bounds
+        .filter { it.upperBoundKind() == UpperBoundKind.CLASS }
+        .map { it.fullyExpandTypeAlias() }
+        .smallestClassUpperBoundOrNull()
+
+    val memberTypes = buildList {
+        for (interfaceBound in interfaceBounds) {
+            interfaceBound.upperBoundMemberScope()?.collectUpperBoundMemberTypes()?.let(::addAll)
+        }
+        classBound?.upperBoundMemberScope()?.collectUpperBoundMemberTypes()?.let(::addAll)
+    }
+    if (memberTypes.size < 2) return
+
+    val source = upperBoundConstraintDiagnosticSource()
+    val reported = mutableSetOf<String>()
+    for ((key, members) in memberTypes.groupBy { it.conflictKey }) {
+        if (!reported.add(key)) continue
+        val types = members.map { it.type }.filterNot { it is ConeErrorType }
+        if (types.size < 2 || !types.hasInconsistentUpperBoundTypes()) continue
+        val first = members.first()
+        reporter.reportOn(
+            source = source,
+            factory = CfirErrors.INHERIT_MEMBER_TYPE_INCONSISTENT,
+            a = if (first.kind == UpperBoundMemberKind.PROPERTY) "types" else "return types",
+            b = if (first.kind == UpperBoundMemberKind.PROPERTY) "property" else "function",
+            c = first.name,
+        )
+    }
+}
+
+/**
+ * 选择官方用于 generic upper-bound 合并的最具体 class 上界。
+ */
+context(context: CheckerContext)
+private fun List<ConeCangJieType>.smallestClassUpperBoundOrNull(): ConeCangJieType? {
+    var smallest: ConeCangJieType? = null
+    for (bound in this) {
+        val current = smallest
+        if (current == null || AbstractTypeChecker.isSubtypeOf(context.session.typeContext, bound, current)) {
+            smallest = bound
+        }
+    }
+    return smallest
+}
+
+/**
+ * 为 class/interface 上界创建声明侧成员 scope。
+ */
+context(context: CheckerContext)
+private fun ConeCangJieType.upperBoundMemberScope(): CfirTypeScope? {
+    val expandedType = fullyExpandTypeAlias()
+    val classId = expandedType.classIdOrPrimitiveClassId ?: return null
+    val symbol = context.session.symbolProvider.getClassLikeSymbolByClassId(classId) ?: return null
+    val rawScope = CfirClassUseSiteMemberScope(
+        session = context.session,
+        classSymbol = symbol,
+        symbolProvider = context.session.symbolProvider,
+        extendProvider = context.session.extendProvider,
+        directSupertypeProvider = context.session.directSupertypeProviderOrNull,
+        ownerType = expandedType,
+        dispatchReceiverType = expandedType,
+        scopeKind = CfirClassMemberScopeKind.DECLARATION_SITE,
+    )
+    return CfirClassSubstitutionScope(
+        session = context.session,
+        useSiteMemberScope = rawScope,
+        dispatchReceiverType = expandedType,
+        substitutionOwnerType = expandedType,
+    )
+}
+
+/**
+ * 收集上界成员 scope 中用于类型一致性比较的函数与属性类型。
+ */
+context(context: CheckerContext)
+private fun CfirTypeScope.collectUpperBoundMemberTypes(): List<UpperBoundMemberType> = buildList {
+    for (name in getCallableNames()) {
+        processFunctionsByName(name) { symbol ->
+            symbol.upperBoundFunctionMemberTypeOrNull()?.let(::add)
+        }
+        processPropertiesByName(name) { symbol ->
+            symbol.upperBoundPropertyMemberTypeOrNull()?.let(::add)
         }
     }
 }
 
 /**
- * 生成上界去重使用的稳定 key。
- */
-private fun CfirResolvedTypeRef.stableBoundKey(): String = coneType
-    .fullyExpandTypeAlias()
-    .renderForDebugging()
-
-/**
- * 判断上界是否已经属于递归上界错误场景。
- *
- * 递归上界由 generic deep 检查器报告，本检查器不重复报告 class/interface 约束错误。
+ * 转换函数成员为上界一致性比较项。
  */
 context(context: CheckerContext)
-private fun CfirResolvedTypeRef.hasRecursiveBoundFailure(parameterName: Name): Boolean {
-    val expandedType = coneType.fullyExpandTypeAlias()
-    if (expandedType is ConeTypeParameterType && expandedType.lookupTag.name == parameterName) return true
-    if (expandedType.isClassLikeUpperBound()) return false
-    return expandedType.containsTypeParameterInArguments(parameterName)
+private fun CfirNamedFunctionSymbol.upperBoundFunctionMemberTypeOrNull(): UpperBoundMemberType? {
+    if (!isBound) return null
+    val returnType = resolvedReturnTypeOrNull() ?: return null
+    if (returnType is ConeErrorType) return null
+    return UpperBoundMemberType(
+        name = name,
+        kind = UpperBoundMemberKind.FUNCTION,
+        isStatic = cfir.status.isStatic,
+        signature = overrideSignatureKey(),
+        type = returnType,
+    )
 }
 
 /**
- * 判断类型是否在展开后为 class-like 上界。
+ * 转换属性成员为上界一致性比较项。
  */
 context(context: CheckerContext)
-private fun ConeCangJieType.isClassLikeUpperBound(): Boolean =
-    fullyExpandedType(context.session) is ConeClassLikeType
+private fun CfirPropertySymbol.upperBoundPropertyMemberTypeOrNull(): UpperBoundMemberType? {
+    if (!isBound) return null
+    val propertyType = resolvedReturnTypeOrNull() ?: return null
+    if (propertyType is ConeErrorType) return null
+    return UpperBoundMemberType(
+        name = name,
+        kind = UpperBoundMemberKind.PROPERTY,
+        isStatic = cfir.status.isStatic,
+        signature = overrideSignatureKey(),
+        type = propertyType,
+    )
+}
 
 /**
- * 判断类型实参树中是否包含指定类型参数名称。
+ * 计算 callable 的返回/属性类型。
  */
-private fun ConeCangJieType.containsTypeParameterInArguments(parameterName: Name): Boolean {
-    for (argument in typeArguments) {
-        val argumentType = argument.type ?: continue
-        if (argumentType is ConeTypeParameterType && argumentType.lookupTag.name == parameterName) return true
-        if (argumentType.containsTypeParameterInArguments(parameterName)) return true
+context(context: CheckerContext)
+private fun CfirCallableSymbol<*>.resolvedReturnTypeOrNull(): ConeCangJieType? {
+    if (!isBound) return null
+    return context.returnTypeCalculator.tryCalculateReturnType(cfir).coneType
+}
+
+/**
+ * 判断一组成员类型是否存在既不相等也不存在子类型关系的冲突。
+ */
+context(context: CheckerContext)
+private fun List<ConeCangJieType>.hasInconsistentUpperBoundTypes(): Boolean {
+    for (i in indices) {
+        for (j in i + 1 until size) {
+            val first = this[i]
+            val second = this[j]
+            if (AbstractTypeChecker.equalTypes(context.session.typeContext, first, second)) continue
+            val related = AbstractTypeChecker.isSubtypeOf(context.session.typeContext, first, second) ||
+                    AbstractTypeChecker.isSubtypeOf(context.session.typeContext, second, first)
+            if (!related) return true
+        }
     }
     return false
 }
 
 /**
+ * 返回该类型参数对应 where 约束的整条 source，找不到时退回类型参数 source。
+ */
+context(context: CheckerContext)
+private fun CfirTypeParameter.upperBoundConstraintDiagnosticSource(): CjSourceElement? {
+    for (containingDeclaration in context.containingDeclarations.asReversed()) {
+        val owner = containingDeclaration as? CfirTypeParameterRefsOwner ?: continue
+        if (owner.typeParameters.none { it.symbol == symbol }) continue
+        val ownerDeclaration = containingDeclaration as? CfirDeclaration ?: continue
+        return ownerDeclaration.attributes.typeConstraintDiagnosticData
+            ?.typeConstraints
+            ?.firstOrNull { it.parameterName == name }
+            ?.constraintSource
+            ?: source
+    }
+    return source
+}
+
+/**
+ * 上界成员类型一致性比较项。
+ */
+private data class UpperBoundMemberType(
+    /** 成员名。 */
+    val name: Name,
+    /** 成员种类。 */
+    val kind: UpperBoundMemberKind,
+    /** 成员是否为 static。 */
+    val isStatic: Boolean,
+    /** override 签名，不包含返回类型。 */
+    val signature: String,
+    /** 用于一致性比较的返回类型或属性类型。 */
+    val type: ConeCangJieType,
+) {
+    /** 合并同签名成员的稳定 key。 */
+    val conflictKey: String = "${kind.name}:$isStatic:$signature"
+}
+
+/**
+ * 上界成员种类。
+ */
+private enum class UpperBoundMemberKind {
+    /** 函数成员。 */
+    FUNCTION,
+    /** 属性成员。 */
+    PROPERTY,
+}
+
+/**
+ * 生成上界去重使用的稳定 key。
+ */
+private fun ConeCangJieType.stableBoundKey(): String = this
+    .fullyExpandTypeAlias()
+    .renderForDebugging()
+
+/**
  * 分类类型参数上界在声明规则中的角色。
  */
 context(context: CheckerContext)
-private fun CfirResolvedTypeRef.upperBoundKind(): UpperBoundKind {
-    val expandedType = coneType.fullyExpandTypeAlias()
+private fun ConeCangJieType.upperBoundKind(): UpperBoundKind {
+    val expandedType = fullyExpandTypeAlias()
     return when (expandedType) {
         ConeAnyType -> UpperBoundKind.IGNORED_TOP_OR_CTYPE
         is ConeClassLikeType -> {

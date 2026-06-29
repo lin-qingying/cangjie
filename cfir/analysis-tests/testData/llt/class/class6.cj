@@ -8,10 +8,10 @@ class A {
         1
     }
     public init(a: Int64) {
-        get(<!ILLEGAL_THIS_OR_SUPER_CALL!>this<!>)
+        get(this)
     }
     public init(a: Bool) {
-        this(<!ILLEGAL_THIS_OR_SUPER_CALL!>this<!>)
+        this(<!ASSIGNMENT_OF_MEMBER_VARIABLE_CANNOT_USE_THIS_OR_SUPER!>this<!>)
     }
     public init(a: A) {}
 }

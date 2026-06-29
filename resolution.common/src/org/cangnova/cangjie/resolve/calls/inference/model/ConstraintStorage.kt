@@ -104,20 +104,79 @@ interface ConstraintStorage {
 
     /** 空约束存储单例，所有属性均返回空集合/默认值，用于无约束的初始状态 */
     object Empty : ConstraintStorage {
+        /**
+         * 空存储没有注册类型变量。
+         */
         override val allTypeVariables: Map<TypeConstructorMarker, TypeVariableMarker> get() = emptyMap()
+
+        /**
+         * 空存储没有未固定类型变量。
+         */
         override val notFixedTypeVariables: Map<TypeConstructorMarker, VariableWithConstraints> get() = emptyMap()
+
+        /**
+         * 空存储没有初始约束。
+         */
         override val initialConstraints: List<InitialConstraint> get() = emptyList()
+
+        /**
+         * 空存储使用最小初始类型深度。
+         */
         override val maxTypeDepthFromInitialConstraints: Int get() = 1
+
+        /**
+         * 空存储没有错误。
+         */
         override val errors: List<ConstraintSystemError> get() = emptyList()
+
+        /**
+         * 空存储不存在矛盾。
+         */
         override val hasContradiction: Boolean get() = false
+
+        /**
+         * 空存储没有已固定变量。
+         */
         override val fixedTypeVariables: Map<TypeConstructorMarker, CangJieTypeMarker> get() = emptyMap()
+
+        /**
+         * 空存储没有 postponed 类型变量。
+         */
         override val postponedTypeVariables: List<TypeVariableMarker> get() = emptyList()
+
+        /**
+         * 空存储没有按顶层类型变量缓存的函数期望类型。
+         */
         override val builtFunctionalTypesForPostponedArgumentsByTopLevelTypeVariables: Map<Pair<TypeConstructorMarker, List<Pair<TypeConstructorMarker, Int>>>, CangJieTypeMarker> = emptyMap()
+
+        /**
+         * 空存储没有按期望类型变量缓存的函数期望类型。
+         */
         override val builtFunctionalTypesForPostponedArgumentsByExpectedTypeVariables: Map<TypeConstructorMarker, CangJieTypeMarker> = emptyMap()
+
+        /**
+         * 空存储没有 fork point 约束。
+         */
         override val constraintsFromAllForkPoints: List<Pair<IncorporationConstraintPosition, ForkPointData>> = emptyList()
+
+        /**
+         * 空存储没有类型变量依赖关系。
+         */
         override val typeVariableDependencies: Map<TypeConstructorMarker, Set<TypeConstructorMarker>> get() = emptyMap()
+
+        /**
+         * 空存储不包含外层约束系统变量前缀。
+         */
         override val outerSystemVariablesPrefixSize: Int get() = 0
+
+        /**
+         * 空存储不使用外层约束系统。
+         */
         override val usesOuterCs: Boolean get() = false
+
+        /**
+         * 空存储创建独立的类型近似缓存容器。
+         */
         override val approximatorCaches: TypeApproximatorCachesPerConfiguration get() = mutableMapOf()
     }
 }
@@ -173,14 +232,44 @@ enum class ConstraintKind {
  *   用于 @OnlyInputTypes 注解的推断逻辑。
  */
 class Constraint(
+    /**
+     * 约束方向。
+     */
     val kind: ConstraintKind,
+
+    /**
+     * 约束涉及的类型。
+     */
     val type: CangJieTypeMarker,
+
+    /**
+     * 约束来源位置。
+     */
     val position: IncorporationConstraintPosition,
+
+    /**
+     * [type] 的哈希值，用于快速去重。
+     */
     val typeHashCode: Int = type.hashCode(),
+
+    /**
+     * 通过 incorporation 传播时参与推导的原始类型变量集合。
+     */
     val derivedFrom: Set<TypeVariableMarker>,
+
+    /**
+     * 是否携带 `@NoInfer` 语义。
+     */
     val isNoInfer: Boolean,
+
+    /**
+     * incorporation 前的 OnlyInputType 位置。
+     */
     val inputTypePositionBeforeIncorporation: OnlyInputTypeConstraintPosition? = null,
 ) {
+    /**
+     * 按约束方向、来源位置与约束类型判断结构相等。
+     */
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other?.javaClass != javaClass) return false
@@ -195,8 +284,14 @@ class Constraint(
         return true
     }
 
+    /**
+     * 返回约束类型的预计算哈希值。
+     */
     override fun hashCode() = typeHashCode
 
+    /**
+     * 返回包含约束方向、类型和来源位置的调试字符串。
+     */
     override fun toString() = "$kind($type) from $position"
 }
 
@@ -226,11 +321,29 @@ interface VariableWithConstraints {
  * - EQUALITY：a 与 b 类型相同
  */
 class InitialConstraint(
+    /**
+     * 初始约束左侧类型。
+     */
     val a: CangJieTypeMarker,
+
+    /**
+     * 初始约束右侧类型。
+     */
     val b: CangJieTypeMarker,
+
+    /**
+     * 初始约束方向。
+     */
     val constraintKind: ConstraintKind,
+
+    /**
+     * 初始约束来源位置。
+     */
     val position: ConstraintPosition
 ) {
+    /**
+     * 返回包含来源位置的初始约束字符串。
+     */
     override fun toString(): String = "${asStringWithoutPosition()} from $position"
 
     /** 返回不含位置信息的约束字符串表示，便于调试输出 */

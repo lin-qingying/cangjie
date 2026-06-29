@@ -18,6 +18,9 @@ import org.cangnova.cangjie.codeinsight.refactoring.safeDelete.canDeleteElement
  * 同一套 code-insight 重构能力，避免在宿主侧各自实现一份语言语义。
  */
 class CangJieRefactoringSupportProvider : RefactoringSupportProvider() {
+    /**
+     * 根据仓颉 PSI 语义判断元素是否支持 safe delete。
+     */
     override fun isSafeDeleteAvailable(element: PsiElement): Boolean = element.canDeleteElement()
 
     /**

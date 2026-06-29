@@ -11,9 +11,15 @@ import org.cangnova.cangjie.analysis.api.CaPlatformInterface
  */
 @CaPlatformInterface
 class CaDefaultAnalysisPermissionOptions : CaAnalysisPermissionOptions {
+    /**
+     * 默认不允许在 EDT 中执行分析。
+     */
     override val defaultIsAnalysisAllowedOnEdt: Boolean
         get() = false
 
+    /**
+     * 默认不允许在 write action 中执行分析。
+     */
     override val defaultIsAnalysisAllowedInWriteAction: Boolean
         get() = false
 }

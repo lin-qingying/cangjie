@@ -39,16 +39,25 @@ import com.intellij.psi.stubs.StubInputStream
 import com.intellij.psi.stubs.StubOutputStream
 import com.intellij.util.io.StringRef
 
+/**
+ * 表示 `CjExtendElementType`，承载PSI Stub中的语法节点、索引桩或辅助模型。
+ */
 class CjExtendElementType(debugName: String) : CjStubElementType<CangJieExtendStub, CjExtend>(
     debugName,
     CjExtend::class.java,
     CangJieExtendStub::class.java,
 ) {
 
+    /**
+     * 实现 `indexStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun indexStub(stub: CangJieExtendStub, sink: IndexSink) {
         getInstance().indexExtend(stub, sink)
     }
 
+    /**
+     * 实现 `serialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun serialize(stub: CangJieExtendStub, dataStream: StubOutputStream) {
         dataStream.writeName(stub.name)
         dataStream.writeName(stub.extendId)
@@ -67,6 +76,9 @@ class CjExtendElementType(debugName: String) : CjStubElementType<CangJieExtendSt
 
     }
 
+    /**
+     * 实现 `deserialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>?): CangJieExtendStub {
         val name = dataStream.readName()
         val extendId = dataStream.readName()
@@ -95,6 +107,9 @@ class CjExtendElementType(debugName: String) : CjStubElementType<CangJieExtendSt
         )
     }
 
+    /**
+     * 实现 `createStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createStub(psi: CjExtend, parentStub: StubElement<out PsiElement>?): CangJieExtendStub {
         // 获取被扩展类型的名称
         val receiverTypeName = psi.getReceiverTypeTextForStub() ?: psi.nameAsName.asString()
@@ -115,10 +130,16 @@ class CjExtendElementType(debugName: String) : CjStubElementType<CangJieExtendSt
         )
     }
 
+    /**
+     * 实现 `createPsi` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createPsi(stub: CangJieExtendStub): CjExtend {
         return CjExtend(stub)
     }
 
+    /**
+     * 实现 `createPsiFromAst` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createPsiFromAst(node: ASTNode): CjExtend {
         return CjExtend(node)
     }

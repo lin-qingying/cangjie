@@ -37,11 +37,20 @@ import org.junit.jupiter.api.Test
 class StandaloneBehaviorTest : AbstractAnalysisApiExecutionTest(
     "analysis/analysis-api-standalone/testData/behavior",
 ) {
+    /**
+     * 使用 CFIR standalone Analysis API 配置执行本组行为测试。
+     */
     override val configurator = CaCfirStandaloneAnalysisApiTestConfigurator
 
+    /**
+     * 为手写 standalone builder 测试补充平台服务注册器。
+     */
     override val additionalServiceRegistrars: List<AnalysisApiServiceRegistrar<TestServices>> =
         listOf(StandaloneBuilderPlatformTestServiceRegistrar)
 
+    /**
+     * 验证源码 package provider 能合并 standalone 模块闭包中的源码包。
+     */
     @Test
     fun sourcePackageProviderSeesMergedSourcePackages(
         mainFile: CjFile,
@@ -65,6 +74,9 @@ class StandaloneBehaviorTest : AbstractAnalysisApiExecutionTest(
         }
     }
 
+    /**
+     * 验证跨层级 typealias 展开后仍能定位到最终 class-like 类型。
+     */
     @Test
     fun transitiveTypeAliasExpandedType(
         mainFile: CjFile,
@@ -87,6 +99,9 @@ class StandaloneBehaviorTest : AbstractAnalysisApiExecutionTest(
         }
     }
 
+    /**
+     * 验证 standalone source stub 能通过公开 Analysis API 还原注解实参。
+     */
     @Test
     fun stubbedAnnotationArguments(
         mainFile: CjFile,

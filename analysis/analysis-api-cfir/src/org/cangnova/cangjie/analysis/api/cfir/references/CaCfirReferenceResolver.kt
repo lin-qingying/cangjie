@@ -16,11 +16,23 @@ import org.cangnova.cangjie.utils.exceptions.buildErrorWithAttachment
 import org.cangnova.cangjie.utils.exceptions.withPsiEntry
 import org.cangnova.cangjie.utils.rethrowIntellijPlatformExceptionIfNeeded
 
+/**
+ * CFIR 引用的 IntelliJ ResolveCache 多结果解析器。
+ */
 internal object CaCfirReferenceResolver : ResolveCache.PolyVariantResolver<CjReference>{
+    /**
+     * 引用解析失败时使用的日志入口。
+     */
     private val LOG = Logger.getInstance(CaCfirReferenceResolver::class.java)
 
+    /**
+     * 仓颉引用解析结果包装。
+     */
     class CangJieResolveResult(element: PsiElement) : PsiElementResolveResult(element)
 
+    /**
+     * 使用 Analysis API 解析引用并转换为 IntelliJ resolve result。
+     */
     @OptIn(CaAllowAnalysisOnEdt::class, CaAllowAnalysisFromWriteAction::class)
     override fun resolve(ref: CjReference, incompleteCode: Boolean): Array<ResolveResult> {
         check(ref is CaCfirReference) { "reference should be CfirCjReference, but was ${ref::class}" }

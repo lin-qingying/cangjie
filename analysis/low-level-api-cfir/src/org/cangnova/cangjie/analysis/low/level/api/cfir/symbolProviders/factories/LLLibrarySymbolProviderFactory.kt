@@ -9,6 +9,9 @@ import org.cangnova.cangjie.analysis.api.platform.CaPlatformSettings
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
 
+/**
+ * 仓颉当前没有真实 JVM package-part provider，暂以占位对象保持工厂签名。
+ */
 internal typealias LLPackagePartProvider = Any
 
 /**
@@ -16,12 +19,18 @@ internal typealias LLPackagePartProvider = Any
  * Its implementations should be lightweight as the factory is neither a service nor cached.
  */
 internal interface LLLibrarySymbolProviderFactory {
+    /**
+     * 创建 JVM library symbol provider。
+     */
     fun createJvmLibrarySymbolProvider(
         session: LLCfirSession,
         packagePartProvider: LLPackagePartProvider,
         scope: GlobalSearchScope,
     ): List<CfirSymbolProvider>
 
+    /**
+     * 创建 common library symbol provider。
+     */
     fun createCommonLibrarySymbolProvider(
         session: LLCfirSession,
         packagePartProvider: LLPackagePartProvider,

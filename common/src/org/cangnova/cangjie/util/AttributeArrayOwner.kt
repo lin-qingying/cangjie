@@ -17,12 +17,21 @@ import kotlin.reflect.KClass
 abstract class AttributeArrayOwner<K : Any, T : Any> protected constructor(
     arrayMap: ArrayMap<T>,
 ) : AbstractArrayMapOwner<K, T>() {
+    /**
+     * 当前属性实例的数组映射，会根据元素数量在空、一元素和通用实现之间切换。
+     */
     final override var arrayMap: ArrayMap<T> = arrayMap
         private set
 
+    /**
+     * 创建空属性容器，初始使用共享的空数组映射。
+     */
     @Suppress("UNCHECKED_CAST")
     constructor() : this(EmptyArrayMap as ArrayMap<T>)
 
+    /**
+     * 按属性类型的限定名注册或替换属性实例。
+     */
     final override fun registerComponent(keyQualifiedName: String, value: T) {
         val id = typeRegistry.getId(keyQualifiedName)
         when (arrayMap.size) {
@@ -61,6 +70,9 @@ abstract class AttributeArrayOwner<K : Any, T : Any> protected constructor(
         arrayMap[id] = value
     }
 
+    /**
+     * 构造数组映射实现与元素数量不一致时的诊断文本。
+     */
     private fun buildDiagnosticMessage(map: ArrayMap<T>, expectedSize: Int, expectedImplementation: String): String {
         return buildString {
             appendLine("Race condition happened, the size of ArrayMap is $expectedSize but it isn't an `$expectedImplementation`")
@@ -78,6 +90,9 @@ abstract class AttributeArrayOwner<K : Any, T : Any> protected constructor(
         }
     }
 
+    /**
+     * 移除指定类型的属性，并在元素数量降低后收缩底层数组映射实现。
+     */
     protected fun removeComponent(tClass: KClass<out K>) {
         val id = typeRegistry.getId(tClass)
         if (arrayMap[id] == null) return

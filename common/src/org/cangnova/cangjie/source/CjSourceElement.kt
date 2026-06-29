@@ -14,16 +14,40 @@ import com.intellij.util.diff.FlyweightCapableTreeStructure
 import org.cangnova.cangjie.utils.getElementTextWithContext
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater
 
+/**
+ * 源元素种类的根分类。
+ *
+ * 真实源元素直接对应用户源码，fake 源元素对应前端脱糖、隐式声明或错误恢复过程中合成出的语义节点。
+ */
 sealed class CjSourceElementKind {
+    /**
+     * 是否跳过由错误类型引发的二次诊断上报。
+     */
     abstract val shouldSkipErrorTypeReporting: Boolean
 }
 
+/**
+ * 真实源码元素种类，表示语义节点与用户源码位置一一对应。
+ */
 object CjRealSourceElementKind : CjSourceElementKind() {
+    /**
+     * 真实源码元素需要正常参与错误类型诊断上报。
+     */
     override val shouldSkipErrorTypeReporting: Boolean
         get() = false
 }
 
-sealed class CjFakeSourceElementKind(final override val shouldSkipErrorTypeReporting: Boolean = false) : CjSourceElementKind() {
+/**
+ * 合成源码元素种类的基类。
+ *
+ * fake source 保留原始源码锚点，但声明该语义节点是由前端转换、补全或错误恢复生成的。
+ */
+sealed class CjFakeSourceElementKind(
+    /**
+     * 该 fake source 是否应屏蔽错误类型传播导致的级联诊断。
+     */
+    final override val shouldSkipErrorTypeReporting: Boolean = false,
+) : CjSourceElementKind() {
     /**
      * for some fir expression implicit return typeRef is generated
      * some of them are: break, continue, return, throw, string concat,
@@ -121,11 +145,20 @@ sealed class CjFakeSourceElementKind(final override val shouldSkipErrorTypeRepor
      * with a fake sources which refers to the return target
      */
     sealed class ImplicitReturn : CjFakeSourceElementKind() {
+        /**
+         * 表达式函数体生成隐式 return 语句时使用的 fake source。
+         */
         object FromExpressionBody : ImplicitReturn()
 
+        /**
+         * 代码块最后一条语句生成隐式 return 语句时使用的 fake source。
+         */
         object FromLastStatement : ImplicitReturn()
     }
 
+    /**
+     * 表示前端为无值返回或语句表达式补出的隐式 Unit。
+     */
     sealed class ImplicitUnit : CjFakeSourceElementKind() {
         /** this source is used for implicit returns from empty lambdas {}
          * fake source refers to the lambda expression
@@ -163,6 +196,9 @@ sealed class CjFakeSourceElementKind(final override val shouldSkipErrorTypeRepor
      */
     object DesugaredForLoop : CjFakeSourceElementKind()
 
+    /**
+     * 隐式 invoke 调用生成的 fake source。
+     */
     object ImplicitInvokeCall : CjFakeSourceElementKind()
 
     /**
@@ -234,16 +270,34 @@ sealed class CjFakeSourceElementKind(final override val shouldSkipErrorTypeRepor
      * `x = x++` -> `x = { val <unary> = x; x = <unary>.inc(); <unary> }`
      */
     sealed class DesugaredIncrementOrDecrement : CjFakeSourceElementKind()
+    /**
+     * 前缀自增 `++x` 脱糖生成节点的 fake source。
+     */
     object DesugaredPrefixInc : DesugaredIncrementOrDecrement()
+    /**
+     * 前缀自减 `--x` 脱糖生成节点的 fake source。
+     */
     object DesugaredPrefixDec : DesugaredIncrementOrDecrement()
+    /**
+     * 后缀自增 `x++` 脱糖生成节点的 fake source。
+     */
     object DesugaredPostfixInc : DesugaredIncrementOrDecrement()
+    /**
+     * 后缀自减 `x--` 脱糖生成节点的 fake source。
+     */
     object DesugaredPostfixDec : DesugaredIncrementOrDecrement()
 
     /**
      * In `++a[1]`, `a.get(1)` will be called twice. This kind is used for the second call reference.
      */
     sealed class DesugaredPrefixSecondGetReference : CjFakeSourceElementKind()
+    /**
+     * 前缀自增数组访问中第二次 get 调用引用的 fake source。
+     */
     object DesugaredPrefixIncSecondGetReference : DesugaredPrefixSecondGetReference()
+    /**
+     * 前缀自减数组访问中第二次 get 调用引用的 fake source。
+     */
     object DesugaredPrefixDecSecondGetReference : DesugaredPrefixSecondGetReference()
 
     /**
@@ -268,6 +322,9 @@ sealed class CjFakeSourceElementKind(final override val shouldSkipErrorTypeRepor
      */
     object ArrayTypeFromVarargParameter : CjFakeSourceElementKind()
 
+    /**
+     * 解构声明脱糖过程中生成节点的 fake source 基类。
+     */
     sealed class DestructuringInitializer : CjFakeSourceElementKind()
 
     /**
@@ -323,12 +380,30 @@ sealed class CjFakeSourceElementKind(final override val shouldSkipErrorTypeRepor
      * `=`, `+`, and `plusAssign` will have a fake source element
      */
     sealed class DesugaredAugmentedAssign : CjFakeSourceElementKind()
+    /**
+     * `+=` 脱糖生成节点的 fake source。
+     */
     object DesugaredPlusAssign : DesugaredAugmentedAssign()
+    /**
+     * `-=` 脱糖生成节点的 fake source。
+     */
     object DesugaredMinusAssign : DesugaredAugmentedAssign()
+    /**
+     * `*=` 脱糖生成节点的 fake source。
+     */
     object DesugaredTimesAssign : DesugaredAugmentedAssign()
+    /**
+     * `/=` 脱糖生成节点的 fake source。
+     */
     object DesugaredDivAssign : DesugaredAugmentedAssign()
+    /**
+     * `%=` 脱糖生成节点的 fake source。
+     */
     object DesugaredRemAssign : DesugaredAugmentedAssign()
 
+    /**
+     * 赋值插件改写后生成节点的 fake source。
+     */
     object AssignmentPluginAltered : CjFakeSourceElementKind()
 
     /**
@@ -595,10 +670,24 @@ sealed class CjFakeSourceElementKind(final override val shouldSkipErrorTypeRepor
     object CalleeReferenceForOperatorOfCall : CjFakeSourceElementKind()
 }
 
+/**
+ * 仓颉源码元素的最小抽象。
+ *
+ * 该层只承载文本区间，供诊断排序、范围映射和不依赖具体语法树的源码定位使用。
+ */
 sealed class AbstractCjSourceElement {
+    /**
+     * 源元素在文件文本中的起始偏移。
+     */
     abstract val startOffset: Int
+    /**
+     * 源元素在文件文本中的结束偏移。
+     */
     abstract val endOffset: Int
 
+    /**
+     * 按源码区间判断两个抽象源元素是否相等。
+     */
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is AbstractCjSourceElement) return false
@@ -607,6 +696,9 @@ sealed class AbstractCjSourceElement {
         return true
     }
 
+    /**
+     * 返回基于源码起止偏移的哈希值。
+     */
     override fun hashCode(): Int {
         var result = startOffset
         result = 31 * result + endOffset
@@ -614,24 +706,65 @@ sealed class AbstractCjSourceElement {
     }
 }
 
+/**
+ * 仅包含偏移范围、不绑定 PSI 或 LightTree 节点的源码元素。
+ */
 class CjOffsetsOnlySourceElement(
+    /**
+     * 源元素在文件文本中的起始偏移。
+     */
     override val startOffset: Int,
+    /**
+     * 源元素在文件文本中的结束偏移。
+     */
     override val endOffset: Int,
 ) : AbstractCjSourceElement()
 
+/**
+ * 绑定到具体语法结构的仓颉源码元素。
+ *
+ * 该层统一暴露元素类型、源码种类、轻量树节点和调试文本。
+ */
 sealed class CjSourceElement : AbstractCjSourceElement() {
+    /**
+     * 源元素对应的语法元素类型；无法取得时为 null。
+     */
     abstract val elementType: IElementType?
+    /**
+     * 当前源元素是真实源码还是某种 fake source。
+     */
     abstract val kind: CjSourceElementKind
+    /**
+     * 当前源元素对应的轻量树节点。
+     */
     abstract val lighterASTNode: LighterASTNode
+    /**
+     * 轻量树节点所属的树结构。
+     */
     abstract val treeStructure: FlyweightCapableTreeStructure<LighterASTNode>
 
+    /**
+     * 返回带上下文的调试文本，用于诊断和异常消息。
+     */
     abstract fun getElementTextInContextForDebug(): String
 
+    /**
+     * 具体源元素必须按自身锚点实现稳定哈希。
+     */
     abstract override fun hashCode(): Int
+    /**
+     * 具体源元素必须按自身锚点实现相等性。
+     */
     abstract override fun equals(other: Any?): Boolean
 }
 
+/**
+ * 基于 IntelliJ PSI 的仓颉源码元素。
+ */
 sealed class CjPsiSourceElement(
+    /**
+     * 当前源码元素锚定的 PSI 元素。
+     */
     val psi: PsiElement,
 ) : CjSourceElement() {
     companion object {
@@ -650,17 +783,32 @@ sealed class CjPsiSourceElement(
         )
     }
 
+    /**
+     * PSI 节点的元素类型。
+     */
     override val elementType: IElementType?
         get() = psi.node?.elementType
 
+    /**
+     * PSI 文本范围的起始偏移。
+     */
     override val startOffset: Int
         get() = psi.textRange.startOffset
 
+    /**
+     * PSI 文本范围的结束偏移。
+     */
     override val endOffset: Int
         get() = psi.textRange.endOffset
 
+    /**
+     * 延迟构造并缓存的轻量树节点包装。
+     */
     @Volatile
     private var _lighterASTNode: LighterASTNode? = null
+    /**
+     * 当前 PSI 元素对应的轻量树节点。
+     */
     final override val lighterASTNode: LighterASTNode
         get() {
             _lighterASTNode?.let { return it }
@@ -672,8 +820,14 @@ sealed class CjPsiSourceElement(
             return _lighterASTNode!!
         }
 
+    /**
+     * 延迟构造并缓存的 PSI 包装树结构。
+     */
     @Volatile
     private var _treeStructure: FlyweightCapableTreeStructure<LighterASTNode>? = null
+    /**
+     * 当前 PSI 文件的轻量树结构视图。
+     */
     final override val treeStructure: FlyweightCapableTreeStructure<LighterASTNode>
         get() {
             _treeStructure?.let { return it }
@@ -685,20 +839,44 @@ sealed class CjPsiSourceElement(
             return _treeStructure!!
         }
 
+    /**
+     * 返回当前 PSI 元素及其上下文文本。
+     */
     override fun getElementTextInContextForDebug(): String = getElementTextWithContext(psi)
 
+    /**
+     * 将 PSI 文件包装成 LightTree 接口所需的树结构。
+     */
     internal class WrappedTreeStructure(file: PsiFile) : FlyweightCapableTreeStructure<LighterASTNode> {
+        /**
+         * 基于 PSI 文件节点创建的轻量树适配器。
+         */
         private val lighterAST = TreeBackedLighterAST(file.node)
 
+        /**
+         * 将轻量树节点还原为底层 PSI AST 节点包装。
+         */
         fun unwrap(node: LighterASTNode) = lighterAST.unwrap(node)
 
+        /**
+         * 返回节点对应 PSI 的文本。
+         */
         override fun toString(node: LighterASTNode): CharSequence = unwrap(node).text
 
+        /**
+         * 返回当前文件轻量树根节点。
+         */
         override fun getRoot(): LighterASTNode = lighterAST.root
 
+        /**
+         * 返回节点父级的轻量树包装。
+         */
         override fun getParent(node: LighterASTNode): LighterASTNode? =
             unwrap(node).psi.parent?.node?.let { TreeBackedLighterAST.wrap(it) }
 
+        /**
+         * 收集节点的直接子 PSI 元素并转换为轻量树节点数组。
+         */
         override fun getChildren(node: LighterASTNode, nodesRef: Ref<Array<LighterASTNode>>): Int {
             val psi = unwrap(node).psi
             val children = mutableListOf<PsiElement>()
@@ -715,10 +893,19 @@ sealed class CjPsiSourceElement(
             return children.size
         }
 
+        /**
+         * PSI 包装树不持有需要释放的子节点资源。
+         */
         override fun disposeChildren(children: Array<out LighterASTNode>?, count: Int) {}
 
+        /**
+         * 返回节点去除前导空白和注释后的起始偏移。
+         */
         override fun getStartOffset(node: LighterASTNode): Int = getStartOffset(unwrap(node).psi)
 
+        /**
+         * 递归计算 PSI 元素的有效起始偏移。
+         */
         private fun getStartOffset(element: PsiElement): Int {
             var child = element.firstChild
             if (child != null) {
@@ -732,8 +919,14 @@ sealed class CjPsiSourceElement(
             return element.textRange.startOffset
         }
 
+        /**
+         * 返回节点去除尾随空白和注释后的结束偏移。
+         */
         override fun getEndOffset(node: LighterASTNode): Int = getEndOffset(unwrap(node).psi)
 
+        /**
+         * 递归计算 PSI 元素的有效结束偏移。
+         */
         private fun getEndOffset(element: PsiElement): Int {
             var child = element.lastChild
             if (child != null) {
@@ -748,6 +941,9 @@ sealed class CjPsiSourceElement(
         }
     }
 
+    /**
+     * PSI 源元素按具体实现类型和底层 PSI 元素判断相等。
+     */
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
@@ -755,22 +951,45 @@ sealed class CjPsiSourceElement(
         return psi == other.psi
     }
 
+    /**
+     * 返回底层 PSI 元素的哈希值。
+     */
     override fun hashCode(): Int = psi.hashCode()
 }
 
+/**
+ * 真实 PSI 源元素，表示语义节点直接锚定用户源码 PSI。
+ */
 class CjRealPsiSourceElement(psi: PsiElement) : CjPsiSourceElement(psi) {
+    /**
+     * 真实 PSI 源元素固定使用真实源元素种类。
+     */
     override val kind: CjSourceElementKind
         get() = CjRealSourceElementKind
 }
 
+/**
+ * 标记需要显式确认 fake source 使用点的 opt-in 注解。
+ */
 @RequiresOptIn
 annotation class SuspiciousFakeSourceCheck
 
+/**
+ * 基于 PSI 的 fake source 元素。
+ *
+ * 它复用真实 PSI 作为锚点，但通过 [kind] 说明该语义节点来自隐式生成、脱糖或错误恢复。
+ */
 @SuspiciousFakeSourceCheck
 open class CjFakePsiSourceElement(
     psi: PsiElement,
+    /**
+     * 当前 fake source 的具体来源种类。
+     */
     override val kind: CjFakeSourceElementKind,
 ) : CjPsiSourceElement(psi) {
+    /**
+     * fake PSI 源元素按底层 PSI 和 fake kind 共同判断相等。
+     */
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
@@ -779,6 +998,9 @@ open class CjFakePsiSourceElement(
         return kind == other.kind
     }
 
+    /**
+     * 返回底层 PSI 哈希与 fake kind 哈希组合后的值。
+     */
     override fun hashCode(): Int {
         var result = super.hashCode()
         result = 31 * result + kind.hashCode()
@@ -786,65 +1008,139 @@ open class CjFakePsiSourceElement(
     }
 }
 
+/**
+ * 使用自定义 offset 策略的 fake PSI 源元素。
+ */
 @SuspiciousFakeSourceCheck
 class CjFakePsiSourceElementWithCustomOffsetStrategy(
     psi: PsiElement,
     kind: CjFakeSourceElementKind,
+    /**
+     * 覆盖默认 PSI 文本范围的自定义 offset 策略。
+     */
     val strategy: CjSourceElementOffsetStrategy.Custom,
 ) : CjFakePsiSourceElement(psi, kind) {
+    /**
+     * 自定义策略给出的起始偏移。
+     */
     override val startOffset: Int
         get() = strategy.startOffset
 
+    /**
+     * 自定义策略给出的结束偏移。
+     */
     override val endOffset: Int
         get() = strategy.endOffset
 
+    /**
+     * 同时比较底层 fake PSI 元素和自定义 offset 策略。
+     */
     override fun equals(other: Any?): Boolean = this === other ||
             other is CjFakePsiSourceElementWithCustomOffsetStrategy &&
             super.equals(other) &&
             strategy == other.strategy
 
+    /**
+     * 返回底层 fake PSI 哈希与策略哈希组合后的值。
+     */
     override fun hashCode(): Int = 31 * super.hashCode() + strategy.hashCode()
 }
 
+/**
+ * fake source 的 offset 计算策略。
+ */
 sealed class CjSourceElementOffsetStrategy {
+    /**
+     * 使用源元素自身默认文本范围。
+     */
     data object Default : CjSourceElementOffsetStrategy()
 
+    /**
+     * 显式覆盖默认文本范围的 offset 策略基类。
+     */
     sealed class Custom : CjSourceElementOffsetStrategy() {
+        /**
+         * 自定义起始偏移。
+         */
         abstract val startOffset: Int
+        /**
+         * 自定义结束偏移。
+         */
         abstract val endOffset: Int
 
+        /**
+         * 直接用固定起止偏移初始化的自定义策略。
+         */
         class Initialized(
+            /**
+             * 固定起始偏移。
+             */
             override val startOffset: Int,
+            /**
+             * 固定结束偏移。
+             */
             override val endOffset: Int,
         ) : Custom() {
+            /**
+             * 按固定起止偏移判断策略相等。
+             */
             override fun equals(other: Any?): Boolean = this === other ||
                     other is Initialized &&
                     startOffset == other.startOffset &&
                     endOffset == other.endOffset
 
+            /**
+             * 返回固定起止偏移组合后的哈希值。
+             */
             override fun hashCode(): Int = 31 * startOffset.hashCode() + endOffset.hashCode()
         }
 
+        /**
+         * 从两个源元素锚点代理获取起止偏移的自定义策略。
+         */
         class Delegated(
+            /**
+             * 提供起始偏移的源元素锚点。
+             */
             val startOffsetAnchor: CjSourceElement,
+            /**
+             * 提供结束偏移的源元素锚点。
+             */
             val endOffsetAnchor: CjSourceElement,
         ) : Custom() {
+            /**
+             * 起始锚点的起始偏移。
+             */
             override val startOffset: Int
                 get() = startOffsetAnchor.startOffset
 
+            /**
+             * 结束锚点的结束偏移。
+             */
             override val endOffset: Int
                 get() = endOffsetAnchor.endOffset
 
+            /**
+             * 按两个锚点判断代理策略相等。
+             */
             override fun equals(other: Any?): Boolean = this === other ||
                     other is Delegated &&
                     startOffsetAnchor == other.startOffsetAnchor &&
                     endOffsetAnchor == other.endOffsetAnchor
 
+            /**
+             * 返回两个锚点哈希组合后的值。
+             */
             override fun hashCode(): Int = 31 * startOffsetAnchor.hashCode() + endOffsetAnchor.hashCode()
         }
     }
 }
 
+/**
+ * 基于当前源元素创建指定 fake kind 的源元素。
+ *
+ * 对 LightTree 和 PSI 源元素会保留原始锚点，对二进制源元素直接返回自身。
+ */
 fun CjSourceElement.fakeElement(
     newKind: CjFakeSourceElementKind,
     offsetStrategy: CjSourceElementOffsetStrategy = CjSourceElementOffsetStrategy.Default,
@@ -868,6 +1164,9 @@ fun CjSourceElement.fakeElement(
     }
 }
 
+/**
+ * 将 fake 源元素还原为真实源元素视图。
+ */
 fun CjSourceElement.realElement(): CjSourceElement = when (this) {
     is CjBinarySourceElement -> this
     is CjRealPsiSourceElement -> this
@@ -875,24 +1174,54 @@ fun CjSourceElement.realElement(): CjSourceElement = when (this) {
     is CjPsiSourceElement -> CjRealPsiSourceElement(psi)
 }
 
+/**
+ * 基于 LightTree 节点的仓颉源码元素。
+ */
 class CjLightSourceElement(
+    /**
+     * 当前源元素锚定的轻量树节点。
+     */
     override val lighterASTNode: LighterASTNode,
+    /**
+     * 轻量树节点对应的起始偏移。
+     */
     override val startOffset: Int,
+    /**
+     * 轻量树节点对应的结束偏移。
+     */
     override val endOffset: Int,
+    /**
+     * 轻量树节点所属的树结构。
+     */
     override val treeStructure: FlyweightCapableTreeStructure<LighterASTNode>,
+    /**
+     * 当前源元素是真实源码还是 fake source。
+     */
     override val kind: CjSourceElementKind = CjRealSourceElementKind,
 ) : CjSourceElement() {
+    /**
+     * 轻量树节点的 token 类型。
+     */
     override val elementType: IElementType
         get() = lighterASTNode.tokenType
 
+    /**
+     * 当轻量树来自 PSI 包装结构时，将当前节点还原为 PSI 源元素。
+     */
     fun unwrapToCjPsiSourceElement(): CjPsiSourceElement? {
         if (treeStructure !is CjPsiSourceElement.WrappedTreeStructure) return null
         val node = treeStructure.unwrap(lighterASTNode)
         return node.psi?.toCjPsiSourceElement(kind)
     }
 
+    /**
+     * 返回轻量树节点对应的调试文本。
+     */
     override fun getElementTextInContextForDebug(): String = treeStructure.toString(lighterASTNode).toString()
 
+    /**
+     * 按轻量树节点、范围、树结构和 kind 判断相等。
+     */
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
@@ -905,6 +1234,9 @@ class CjLightSourceElement(
         return true
     }
 
+    /**
+     * 返回轻量树节点、范围、树结构和 kind 组合后的哈希值。
+     */
     override fun hashCode(): Int {
         var result = lighterASTNode.hashCode()
         result = 31 * result + startOffset
@@ -915,9 +1247,15 @@ class CjLightSourceElement(
     }
 }
 
+/**
+ * 若抽象源元素实际为 PSI 源元素，则返回其底层 PSI。
+ */
 val AbstractCjSourceElement?.psi: PsiElement?
     get() = (this as? CjPsiSourceElement)?.psi
 
+/**
+ * 返回源元素可直接取得的文本内容。
+ */
 val CjSourceElement?.text: CharSequence?
     get() = when (this) {
         is CjBinarySourceElement -> getElementTextInContextForDebug()
@@ -926,6 +1264,9 @@ val CjSourceElement?.text: CharSequence?
         else -> null
     }
 
+/**
+ * 将 PSI 元素包装为仓颉 PSI 源元素。
+ */
 @Suppress("NOTHING_TO_INLINE")
 inline fun PsiElement.toCjPsiSourceElement(
     kind: CjSourceElementKind = CjRealSourceElementKind,
@@ -934,6 +1275,9 @@ inline fun PsiElement.toCjPsiSourceElement(
     is CjFakeSourceElementKind -> CjFakePsiSourceElement(this, kind)
 }
 
+/**
+ * 将轻量树节点包装为仓颉 LightTree 源元素。
+ */
 @Suppress("NOTHING_TO_INLINE")
 inline fun LighterASTNode.toCjLightSourceElement(
     tree: FlyweightCapableTreeStructure<LighterASTNode>,

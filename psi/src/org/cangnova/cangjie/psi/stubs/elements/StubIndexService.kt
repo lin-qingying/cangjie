@@ -34,67 +34,130 @@ import org.cangnova.cangjie.psi.stubs.impl.CangJieFileStubImpl
 import org.cangnova.cangjie.psi.stubs.impl.CangJieFileStubKindImpl
 import java.io.IOException
 
+/**
+ * 表示 `StubIndexService`，承载PSI Stub中的语法节点、索引桩或辅助模型。
+ */
 open class StubIndexService protected constructor() {
+    /**
+     * 提供 `indexFile` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
+     */
     open fun indexFile(stub: CangJieFileStub, sink: IndexSink) {
     }
 
+    /**
+     * 提供 `indexEnumConstructor` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
+     */
     open fun indexEnumConstructor(stub: CangJieEnumConstructorStub, sink: IndexSink) {
     }
 
+    /**
+     * 提供 `indexEnum` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
+     */
     open fun indexEnum(stub: CangJieEnumStub, sink: IndexSink) {
     }
 
+    /**
+     * 提供 `indexImports` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
+     */
     open fun indexImports(stub: CangJieImportDirectiveStub, sink: IndexSink) {
     }
 
+    /**
+     * 提供 `indexClass` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
+     */
     open fun indexClass(stub: CangJieClassStub, sink: IndexSink) {
     }
 
+    /**
+     * 提供 `indexExtend` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
+     */
     open fun indexExtend(stub: CangJieExtendStub, sink: IndexSink) {
     }
 
+    /**
+     * 提供 `indexMacroFunction` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
+     */
     open fun indexMacroFunction(stub: CangJieMacroStub, sink: IndexSink) {
     }
 
+    /**
+     * 提供 `indexFunction` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
+     */
     open fun indexFunction(stub: CangJieNamedFunctionStub, sink: IndexSink) {
     }
 
+    /**
+     * 提供 `indexMainFunction` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
+     */
     open fun indexMainFunction(stub: CangJieMainFunctionStub, sink: IndexSink) {
     }
 
+    /**
+     * 提供 `indexTypeAlias` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
+     */
     open fun indexTypeAlias(stub: CangJieTypeAliasStub, sink: IndexSink) {
     }
 
+    /**
+     * 提供 `indexStruct` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
+     */
     open fun indexStruct(stub: CangJieStructStub, sink: IndexSink) {
     }
 
+    /**
+     * 提供 `indexPatternVariable` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
+     */
     open fun indexPatternVariable(stub: CangJieVariableStub, sink: IndexSink) {
     }
 
+    /**
+     * 提供 `indexFieldVariable` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
+     */
     open fun indexFieldVariable(stub: CangJieFieldStub, sink: IndexSink) {
     }
 
+    /**
+     * 提供 `indexProperty` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
+     */
     open fun indexProperty(stub: CangJiePropertyStub, sink: IndexSink) {
     }
 
+    /**
+     * 提供 `indexParameter` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
+     */
     open fun indexParameter(stub: CangJieParameterStubBase<*>, sink: IndexSink) {
     }
 
+    /**
+     * 提供 `indexInterface` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
+     */
     open fun indexInterface(stub: CangJieInterfaceStub, sink: IndexSink) {
     }
 
+    /**
+     * 提供 `indexAnnotation` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
+     */
     open fun indexAnnotation(stub: CangJieAnnotationStub, sink: IndexSink) {
     }
 
+    /**
+     * 提供 `createFileStub` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
+     */
     open fun createFileStub(file: CjFile): CangJieFileStub {
         return CangJieFileStubImpl(file, file.packageFqNameByTree.asString())
     }
 
+    /**
+     * 提供 `serializeFileStub` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
+     */
     @Throws(IOException::class)
     open fun serializeFileStub(stub: CangJieFileStub, dataStream: StubOutputStream) {
         CangJieFileStubKindImpl.serialize(stub.kind, dataStream)
     }
 
+    /**
+     * 提供 `deserializeFileStub` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
+     */
     @Throws(IOException::class)
     open fun deserializeFileStub(dataStream: StubInputStream): CangJieFileStub {
         val kind = CangJieFileStubKindImpl.deserialize(dataStream)

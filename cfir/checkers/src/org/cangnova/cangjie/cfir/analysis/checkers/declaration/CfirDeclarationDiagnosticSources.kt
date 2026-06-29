@@ -217,6 +217,20 @@ internal fun CfirConstructor.constructorNameDiagnosticSource(
         ?: source
 
 /**
+ * 取得显式构造器声明整体的诊断 source。
+ *
+ * `CLASS_UNINITIALIZED_FIELD` 的诊断工厂默认会按声明名定位；对构造器完成性错误，
+ * 需要保留构造器声明本身的完整范围，因此这里转为 offsets-only source。
+ */
+internal fun CfirConstructor.constructorDeclarationDiagnosticSource(): AbstractCjSourceElement? {
+    val declarationSource = source ?: return null
+    return CjOffsetsOnlySourceElement(
+        startOffset = declarationSource.startOffset,
+        endOffset = declarationSource.endOffset,
+    )
+}
+
+/**
  * 取得字段变量名称的诊断 source。
  */
 internal fun CfirFieldVariable.fieldVariableNameDiagnosticSource(): AbstractCjSourceElement? =

@@ -32,19 +32,34 @@ import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 import com.intellij.lang.ASTNode
 import com.intellij.psi.PsiElement
 
+/**
+ * 表示 `CjTypeArgumentList`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjTypeArgumentList : CjElementImplStub<CangJiePlaceHolderStub<CjTypeArgumentList>> {
     constructor(node: ASTNode) : super(node)
 
     constructor(stub: CangJiePlaceHolderStub<CjTypeArgumentList>) : super(stub, CjStubElementTypes.TYPE_ARGUMENT_LIST)
 
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitTypeArgumentList(this, data)
     }
 
+    /**
+     * 保存 `arguments`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val arguments: List<CjTypeProjection>
         get() = getStubOrPsiChildrenAsList(CjStubElementTypes.TYPE_PROJECTION)
 
+    /**
+     * 保存 `varrayLiteral`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val varrayLiteral: PsiElement? get() = findChildByType(CjTokens.INTEGER_LITERAL)
+    /**
+     * 提供 `addArgument` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun addArgument(typeArgument: CjTypeProjection): CjTypeProjection {
         return addItem(
             this,
@@ -54,6 +69,9 @@ class CjTypeArgumentList : CjElementImplStub<CangJiePlaceHolderStub<CjTypeArgume
         )
     }
 
+    /**
+     * 保存 `trailingComma`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val trailingComma: PsiElement?
         get() = getTrailingCommaByClosingElement(findChildByType(CjTokens.GT))
 }

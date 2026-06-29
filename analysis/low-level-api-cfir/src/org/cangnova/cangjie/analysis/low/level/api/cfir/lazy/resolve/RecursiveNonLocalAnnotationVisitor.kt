@@ -16,12 +16,18 @@ import org.cangnova.cangjie.cfir.declarations.CfirFile
  * @see NonLocalAnnotationVisitor
  */
 internal abstract class RecursiveNonLocalAnnotationVisitor<T> : NonLocalAnnotationVisitor<T>() {
+    /**
+     * 访问文件级注解后继续递归处理文件中的所有顶层声明。
+     */
     override fun visitFile(file: CfirFile, data: T) {
         super.visitFile(file, data)
 
         file.forEachDeclaration { it.accept(this, data) }
     }
 
+    /**
+     * 访问类声明自身注解后继续递归处理类中的嵌套声明。
+     */
     override fun visitClass(klass: CfirClass, data: T) {
         super.visitClass(klass, data)
 

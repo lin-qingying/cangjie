@@ -39,10 +39,16 @@ interface CangJieAnnotationsResolverFactory : CaPlatformComponent {
 
     @CaPlatformInterface
     companion object {
+        /**
+         * 获取项目级注解解析器工厂服务。
+         */
         fun getInstance(project: Project): CangJieAnnotationsResolverFactory = project.service()
     }
 }
 
+/**
+ * 使用项目平台注册的工厂创建注解解析器。
+ */
 @CaPlatformInterface
 fun Project.createAnnotationResolver(searchScope: GlobalSearchScope): CangJieAnnotationsResolver =
     CangJieAnnotationsResolverFactory.getInstance(this).createAnnotationResolver(searchScope)

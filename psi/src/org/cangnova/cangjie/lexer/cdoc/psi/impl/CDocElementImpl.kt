@@ -31,10 +31,19 @@ import com.intellij.lang.ASTNode
 import com.intellij.lang.Language
 import org.jetbrains.annotations.NotNull
 
+/**
+ * 表示 `CDocElementImpl`，承载仓颉词法与文档注释中的语法节点、索引桩或辅助模型。
+ */
 abstract class CDocElementImpl(node: ASTNode) : ASTWrapperPsiElement(node), CDocElement {
 
+    /**
+     * 实现 `getLanguage` 的仓颉词法与文档注释协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     @NotNull
     override fun getLanguage(): Language = CangJieLanguage
 
+    /**
+     * 实现 `toString` 的仓颉词法与文档注释协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun toString(): String = node.elementType.toString()
 }

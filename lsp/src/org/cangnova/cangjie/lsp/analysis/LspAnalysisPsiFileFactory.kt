@@ -17,6 +17,11 @@ import java.nio.file.Path
  * 3. 工作区 overlay 需要用真实 URI 挂接到同一份源码身份，而不是匿名内存副本。
  */
 internal object LspAnalysisPsiFileFactory {
+    /**
+     * 为指定 LSP 文档创建仓颉 PSI 文件。
+     *
+     * 返回的 PSI 绑定自定义 light virtual file，其路径和 URL 与 LSP 文档 URI 保持一致。
+     */
     fun createFile(
         project: Project,
         documentUri: String,
@@ -41,17 +46,31 @@ internal object LspAnalysisPsiFileFactory {
  * 这里显式把 `path/url` 绑定到 LSP 文档 URI，使 overlay PSI 仍然能按真实工作区路径参与分析。
  */
 private class LspAnalysisVirtualFile(
+    /**
+     * LSP 文档的原始 URI。
+     */
     private val documentUri: String,
     fileName: String,
     text: CharSequence,
 ) : LightVirtualFile(fileName, CangJieFileType.INSTANCE, text) {
+    /**
+     * 从文档 URI 解析得到的本地路径表示。
+     *
+     * URI 无法转换为标准路径时退回 URI path 或文件名，保证 scope 计算始终有稳定路径。
+     */
     private val resolvedPath: String =
         runCatching { Path.of(URI(documentUri)).normalize().toString() }
             .getOrElse {
                 runCatching { URI(documentUri).path }.getOrDefault(fileName).ifBlank { fileName }
             }
 
+    /**
+     * 返回供 IntelliJ scope 和模块判定使用的稳定路径。
+     */
     override fun getPath(): String = resolvedPath
 
+    /**
+     * 返回与 LSP 文档身份一致的 URL。
+     */
     override fun getUrl(): String = documentUri
 }

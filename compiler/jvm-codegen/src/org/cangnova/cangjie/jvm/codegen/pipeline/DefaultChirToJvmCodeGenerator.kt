@@ -13,7 +13,13 @@ import org.cangnova.cangjie.jvm.codegen.context.JvmBackendContext
 import org.cangnova.cangjie.jvm.codegen.diagnostics.JvmCodegenException
 import org.cangnova.cangjie.jvm.codegen.module.JvmModuleCodegen
 
+/**
+ * 默认 CHIR 到 JVM codegen 管线。
+ */
 class DefaultChirToJvmCodeGenerator : ChirToJvmCodeGenerator {
+    /**
+     * 执行 CHIR 验证、module codegen、class artifact 合并和 main class 解析。
+     */
     override fun generate(input: ChirJvmCodegenInput): ChirJvmCodegenOutput {
         if (!input.options.enabled) {
             return ChirJvmCodegenOutput(emptyList())
@@ -90,6 +96,9 @@ class DefaultChirToJvmCodeGenerator : ChirToJvmCodeGenerator {
         return merged.values.toList()
     }
 
+    /**
+     * 构造需要进行 JVM codegen 的 module 列表，并为 package-level members 合成 facade module。
+     */
     private fun ChirPackage.jvmCodegenModules(): List<ChirModule> = buildList {
         addAll(modules)
         val packageLevelDeclarations =
@@ -107,6 +116,9 @@ class DefaultChirToJvmCodeGenerator : ChirToJvmCodeGenerator {
         }
     }
 
+    /**
+     * 生成 package-level members 对应的 facade module 名称。
+     */
     private fun ChirPackage.packageFacadeModuleName(): String {
         val simplePackageName = name.split('.').lastOrNull { it.isNotBlank() } ?: "package"
         return "${simplePackageName}Package"

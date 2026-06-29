@@ -24,5 +24,10 @@ internal fun LLCfirSession.createLookupDefaultStarImportsInSourcesSettingHolder(
     return CfirLookupDefaultStarImportsInSourcesSettingHolder(value)
 }
 
+/**
+ * 判断当前 session 是否用于分析库源码模块。
+ *
+ * 库源码以源码 session 形态参与分析，但在默认星号导入查找策略上需要按库依赖处理。
+ */
 private fun LLCfirSession.isLibrarySourceAnalysisSession(): Boolean =
     this is LLCfirLibraryOrLibrarySourceResolvableModuleSession && caModule is CaLibrarySourceModule

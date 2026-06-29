@@ -20,5 +20,8 @@ annotation class CjImplementationDetail
     AnnotationTarget.FUNCTION,
     AnnotationTarget.TYPEALIAS,
 )
+/**
+ * 表示 `CjNonPublicApi`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 @RequiresOptIn("Internal API which is used in projects developed around the Cangjie compiler and IDE")
 annotation class CjNonPublicApi

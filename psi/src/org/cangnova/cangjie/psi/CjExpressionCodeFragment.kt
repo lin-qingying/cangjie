@@ -42,9 +42,15 @@ open class CjExpressionCodeFragment(
     context: PsiElement?,
 ) : CjCodeFragment(project, name, text, imports, CjNodeTypes.EXPRESSION_CODE_FRAGMENT, context) {
 
+    /**
+     * 实现 `getContentElement` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getContentElement() = findChildByClass(CjExpression::class.java)
 }
 
+/**
+ * 表示 `CjBlockCodeFragment`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjBlockCodeFragment(
     viewProvider: FileViewProvider,
     imports: String?, // Should be separated by CjCodeFragment.IMPORT_SEPARATOR
@@ -63,6 +69,9 @@ class CjBlockCodeFragment(
         context,
     )
 
+    /**
+     * 实现 `getContentElement` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getContentElement() = findChildByClass(CjBlockExpression::class.java)
         ?: throw IllegalStateException("Block expression should be parsed for BlockCodeFragment")
 }

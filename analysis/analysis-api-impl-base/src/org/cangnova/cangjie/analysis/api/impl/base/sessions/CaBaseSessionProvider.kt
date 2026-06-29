@@ -35,34 +35,58 @@ import org.cangnova.cangjie.psi.CjElement
  */
 abstract class CaBaseSessionProvider(project: Project) : CaSessionProvider(project) {
 
+    /**
+     * 当前 project 的分析权限检查器。
+     */
     private val permissionChecker by lazy(LazyThreadSafetyMode.PUBLICATION) {
         CaAnalysisPermissionChecker.getInstance(project)
     }
 
+    /**
+     * 当前 project 的 lifetime tracker。
+     */
     private val lifetimeTracker by lazy(LazyThreadSafetyMode.PUBLICATION) {
         CaBaseLifetimeTracker.getInstance(project)
     }
 
+    /**
+     * 当前 project 的受限分析服务。
+     */
     private val restrictedAnalysisService by lazy(LazyThreadSafetyMode.PUBLICATION) {
         CaRestrictedAnalysisService.getInstance(project)
     }
 
+    /**
+     * 当前 project 注册的 lifetime token factory。
+     */
     @OptIn(CaPlatformInterface::class)
     protected val tokenFactory by lazy(LazyThreadSafetyMode.PUBLICATION) {
         CaLifetimeTokenFactory.getInstance(project)
     }
 
+    /**
+     * 当前 project 的 Analysis API 平台设置。
+     */
     private val platformSettings by lazy(LazyThreadSafetyMode.PUBLICATION) {
         CaPlatformSettings.getInstance(project)
     }
 
+    /**
+     * 分析上下文内写动作启动检查器。
+     */
     private val writeActionStartedChecker = CaBaseWriteActionStartedChecker(this)
 
+    /**
+     * 以 PSI 元素为 use-site 进入分析前执行通用校验。
+     */
     override fun beforeEnteringAnalysis(session: CaSession, useSiteElement: CjElement) {
         PsiUtilCore.ensureValid(useSiteElement)
         beforeEnteringAnalysis(session)
     }
 
+    /**
+     * 以模块为 use-site 进入分析前执行通用校验。
+     */
     override fun beforeEnteringAnalysis(session: CaSession, useSiteModule: CaModule) {
         beforeEnteringAnalysis(session)
     }
@@ -143,6 +167,9 @@ abstract class CaBaseSessionProvider(project: Project) : CaSessionProvider(proje
         return results.map { it as R }
     }
 
+    /**
+     * 执行进入分析上下文前的权限、取消、受限分析、lifetime 和写动作检查。
+     */
     private fun beforeEnteringAnalysis(session: CaSession) {
         if (!permissionChecker.isAnalysisAllowed()) {
             throw ProhibitedAnalysisException("Analysis is not allowed: ${permissionChecker.getRejectionReason()}")
@@ -160,14 +187,23 @@ abstract class CaBaseSessionProvider(project: Project) : CaSessionProvider(proje
         writeActionStartedChecker.beforeEnteringAnalysis()
     }
 
+    /**
+     * 处理以 PSI 元素为 use-site 的分析异常。
+     */
     override fun handleAnalysisException(throwable: Throwable, session: CaSession, useSiteElement: CjElement): Nothing {
         handleAnalysisException(throwable)
     }
 
+    /**
+     * 处理以模块为 use-site 的分析异常。
+     */
     override fun handleAnalysisException(throwable: Throwable, session: CaSession, useSiteModule: CaModule): Nothing {
         handleAnalysisException(throwable)
     }
 
+    /**
+     * 在受限分析模式下把普通异常包装为受限分析异常。
+     */
     private fun handleAnalysisException(throwable: Throwable): Nothing {
         if (restrictedAnalysisService?.isAnalysisRestricted == true && throwable !is Error) {
             throw CaBaseRestrictedAnalysisException(cause = throwable)
@@ -176,14 +212,23 @@ abstract class CaBaseSessionProvider(project: Project) : CaSessionProvider(proje
         throw throwable
     }
 
+    /**
+     * 以 PSI 元素为 use-site 离开分析后清理上下文。
+     */
     override fun afterLeavingAnalysis(session: CaSession, useSiteElement: CjElement) {
         afterLeavingAnalysis(session)
     }
 
+    /**
+     * 以模块为 use-site 离开分析后清理上下文。
+     */
     override fun afterLeavingAnalysis(session: CaSession, useSiteModule: CaModule) {
         afterLeavingAnalysis(session)
     }
 
+    /**
+     * 离开分析上下文后清理写动作检查器与 lifetime tracker。
+     */
     private fun afterLeavingAnalysis(session: CaSession) {
         try {
             writeActionStartedChecker.afterLeavingAnalysis()
@@ -193,4 +238,7 @@ abstract class CaBaseSessionProvider(project: Project) : CaSessionProvider(proje
     }
 }
 
+/**
+ * 当前线程不允许进入 Analysis API 分析时抛出的异常。
+ */
 private class ProhibitedAnalysisException(override val message: String) : IllegalStateException()

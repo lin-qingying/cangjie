@@ -23,6 +23,11 @@ import org.junit.jupiter.api.Assertions.assertTrue
  * testData 同时声明目标调用和目标 simple-name，验证两条公开入口是否收敛到同一 callable 语义。
  */
 abstract class AbstractResolveSymbolTest : AbstractAnalysisApiComponentTest() {
+    /**
+     * 执行单个调用和 simple-name 的 symbol 解析一致性测试。
+     *
+     * 方法分别从调用表达式与名称引用解析 symbol，并确认二者指向同一 callable 身份。
+     */
     override fun doTestByMainFile(mainFile: CjFile, mainModule: CjTestModule, testServices: TestServices) {
         val directives = directivesForMainFile(mainFile, mainModule)
         val callExpression = PsiTreeUtil.findChildrenOfType(mainFile, CjCallExpression::class.java)

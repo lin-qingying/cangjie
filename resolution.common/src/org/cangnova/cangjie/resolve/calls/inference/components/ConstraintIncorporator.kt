@@ -49,10 +49,14 @@ import java.util.*
  * @param inferenceLoggerParameter 可选的推断日志记录器，用于调试。
  */
 class ConstraintIncorporator(
+    /** 类型近似器，用于合并时处理上下界近似。 */
     val typeApproximator: AbstractTypeApproximator,
 
+    /** 判断派生约束是否平凡的推断 oracle。 */
     val trivialConstraintTypeInferenceOracle: TrivialConstraintTypeInferenceOracle,
+    /** 约束系统工具方法上下文。 */
     val utilContext: ConstraintSystemUtilContext,
+    /** 当前语言版本配置。 */
     private val languageVersionSettings: LanguageVersionSettings,
     inferenceLoggerParameter: InferenceLogger? = null,
 ) {

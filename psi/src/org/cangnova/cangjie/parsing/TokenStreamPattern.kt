@@ -26,15 +26,30 @@ package org.cangnova.cangjie.parsing
 import com.intellij.psi.tree.IElementType
 
 
+/**
+ * 定义 `TokenStreamPattern` 接口，约束仓颉语法解析节点或服务需要暴露的结构能力。
+ */
 interface TokenStreamPattern {
+    /**
+     * 提供 `processToken` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
+     */
     fun processToken(offset: Int, topLevel: Boolean): Boolean
 
 
+    /**
+     * 提供 `result` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
+     */
     fun result(): Int
 
 
+    /**
+     * 提供 `isTopLevel` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
+     */
     fun isTopLevel(openAngleBrackets: Int, openBrackets: Int, openBraces: Int, openParentheses: Int): Boolean
 
 
+    /**
+     * 提供 `handleUnmatchedClosing` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
+     */
     fun handleUnmatchedClosing(token: IElementType?): Boolean
 }

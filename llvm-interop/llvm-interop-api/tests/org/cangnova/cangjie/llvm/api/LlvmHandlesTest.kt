@@ -8,6 +8,9 @@ import org.junit.jupiter.api.Test
  * LLVM 句柄类型测试。
  */
 class LlvmHandlesTest {
+    /**
+     * 验证所有 LLVM 句柄类型都暴露 null 哨兵和空句柄判断。
+     */
     @Test
     fun `all handles expose null sentinel and null check`() {
         assertTrue(LlvmContextRef.NULL.isNull)

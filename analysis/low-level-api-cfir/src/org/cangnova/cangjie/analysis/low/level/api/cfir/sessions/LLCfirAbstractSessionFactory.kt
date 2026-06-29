@@ -50,25 +50,48 @@ import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 import org.cangnova.cangjie.utils.exceptions.requireWithAttachment
 import org.cangnova.cangjie.utils.exceptions.withPsiEntry
 
+/**
+ * 低阶 CFIR session 工厂基类。
+ *
+ * 该工厂集中封装源码模块、可解析库模块、二进制库模块、dangling file 模块和非内容根模块的 session 创建流程，
+ * 子类只负责提供平台相关的 symbol provider 与具体 session 入口。
+ *
+ * @param project 当前工厂所属工程。
+ */
 @OptIn(PrivateSessionConstructor::class, SessionConfiguration::class)
 internal abstract class LLCfirAbstractSessionFactory(protected val project: Project) {
     @CaCachedService
+    /**
+     * 工程级全局解析组件，包含 lock provider 等跨 session 共享设施。
+     */
     private val globalResolveComponents: LLCfirGlobalResolveComponents by lazy(LazyThreadSafetyMode.PUBLICATION) {
         LLCfirGlobalResolveComponents.getInstance(project)
     }
 
     @CaCachedService
+    /**
+     * resolution scope 提供器，用于把 analysis module 映射到对应搜索范围。
+     */
     private val resolutionScopeProvider: CaResolutionScopeProvider by lazy(LazyThreadSafetyMode.PUBLICATION) {
         CaResolutionScopeProvider.getInstance(project)
     }
 
     @CaCachedService
+    /**
+     * 项目结构提供器，用于读取模块依赖、语言版本设置和库语言设置。
+     */
     private val projectStructureProvider: CangJieProjectStructureProvider by lazy(LazyThreadSafetyMode.PUBLICATION) {
         CangJieProjectStructureProvider.getInstance(project)
     }
 
+    /**
+     * 创建源码模块的可解析 low-level CFIR session。
+     */
     abstract fun createSourcesSession(module: CaSourceModule): LLCfirSourcesSession
 
+    /**
+     * 创建库或库源码模块的可解析 low-level CFIR session。
+     */
     abstract fun createResolvableLibrarySession(module: CaModule): LLCfirLibraryOrLibrarySourceResolvableModuleSession
 
     /**
@@ -79,11 +102,19 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
      */
     abstract fun createBinaryLibrarySession(module: CaModule): LLCfirLibrarySession
 
+    /**
+     * 为给定 [scope] 创建当前工程库符号 provider。
+     */
     abstract fun createProjectLibraryProvidersForScope(
         session: LLCfirSession,
         scope: GlobalSearchScope,
     ): List<CfirSymbolProvider>
 
+    /**
+     * 创建不在内容根内的源码文件模块 session。
+     *
+     * 该 session 仍按源码模块注册 resolver、provider 和扩展索引，但依赖集合来自模块本身的项目结构信息。
+     */
     fun createNotUnderContentRootResolvableSession(module: CaNotUnderContentRootModule): LLCfirNotUnderContentRootResolvableModuleSession {
         val builtinsSession = LLCfirBuiltinsSessionFactory.getInstance(project).getBuiltinsSession(module.targetPlatform)
         val languageVersionSettings = projectStructureProvider.globalLanguageVersionSettings
@@ -146,12 +177,32 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
         }
     }
 
+    /**
+     * 源码 session 创建完成后传给额外配置回调的上下文。
+     */
     protected class SourceSessionCreationContext(
+        /**
+         * 源码模块内容搜索范围。
+         */
         val contentScope: GlobalSearchScope,
+
+        /**
+         * 当前源码 session 的主 CFIR provider。
+         */
         val cfirProvider: LLCfirProvider,
+
+        /**
+         * 当前源码 session 的依赖 symbol provider。
+         */
         val dependencyProvider: LLDependenciesSymbolProvider,
     )
 
+    /**
+     * 创建并配置源码模块 session 的模板方法。
+     *
+     * 方法负责注册通用组件、源码 provider、lazy resolver、extend provider、插件服务和依赖 provider；
+     * [additionalSessionConfiguration] 可在完整注册后追加平台相关配置。
+     */
     protected fun doCreateSourcesSession(
         module: CaSourceModule,
         scopeProvider: CfirCangJieScopeProvider = CfirCangJieScopeProvider(),
@@ -217,12 +268,31 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
         }
     }
 
+    /**
+     * 可解析库 session 创建完成后传给额外配置回调的上下文。
+     */
     protected class LibrarySessionCreationContext(
+        /**
+         * 库二进制内容搜索范围。
+         */
         val contentScope: GlobalSearchScope,
+
+        /**
+         * 当前可解析库 session 的主 CFIR provider。
+         */
         val cfirProvider: LLCfirProvider,
+
+        /**
+         * 当前可解析库 session 的依赖 symbol provider。
+         */
         val dependencyProvider: LLDependenciesSymbolProvider,
     )
 
+    /**
+     * 创建库或库源码模块的可解析 session。
+     *
+     * 库源码模块使用其二进制库模块的内容范围；库 session 本身仍允许 lazy resolve，以支持源码附加和库源码分析。
+     */
     protected fun doCreateResolvableLibrarySession(
         module: CaModule,
         additionalSessionConfiguration: LLCfirLibraryOrLibrarySourceResolvableModuleSession.(context: LibrarySessionCreationContext) -> Unit,
@@ -306,8 +376,16 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
         }
     }
 
+    /**
+     * 二进制库 session 额外配置回调的上下文。
+     */
     protected class BinaryLibrarySessionCreationContext
 
+    /**
+     * 创建二进制库或 fallback dependency 模块的 session。
+     *
+     * 二进制库 session 不做源码 lazy resolve，符号来自库 provider，并且除 builtins 外不直接持有模块依赖。
+     */
     protected fun doCreateBinaryLibrarySession(
         module: CaModule,
         additionalSessionConfiguration: LLCfirLibrarySession.(context: BinaryLibrarySessionCreationContext) -> Unit,
@@ -355,8 +433,18 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
         }
     }
 
+    /**
+     * 创建 dangling file session。
+     *
+     * [contextSession] 提供上下文模块的可见依赖和语言设置基础。
+     */
     abstract fun createDanglingFileSession(module: CaDanglingFileModule, contextSession: LLCfirSession): LLCfirSession
 
+    /**
+     * 创建 dangling file session 的模板方法。
+     *
+     * dangling session 以临时文件集合为源码来源，同时根据 context module 复用或过滤上下文依赖 provider。
+     */
     protected fun doCreateDanglingFileSession(
         module: CaDanglingFileModule,
         contextSession: LLCfirSession,
@@ -465,11 +553,26 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
         }
     }
 
+    /**
+     * dangling file session 创建完成后传给额外配置回调的上下文。
+     */
     protected class DanglingFileSessionCreationContext(
+        /**
+         * dangling session 绑定的 module data。
+         */
         val moduleData: LLCfirModuleData,
+
+        /**
+         * dangling session 的依赖 symbol provider。
+         */
         val dependencyProvider: LLDependenciesSymbolProvider,
     )
 
+    /**
+     * 为 low-level session 包装语言版本设置，确保 DFA warning 特性开启。
+     *
+     * IDE 分析需要该特性参与诊断与控制流相关逻辑；如果原设置已开启则直接复用。
+     */
     private fun wrapLanguageVersionSettings(original: LanguageVersionSettings): LanguageVersionSettings {
         return if (original.supportsFeature(LanguageFeature.EnableDfaWarnings)) {
             original
@@ -478,11 +581,17 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
         }
     }
 
+    /**
+     * 计算 [module] 的依赖模块对应 session 列表。
+     */
     private fun computeDependencySessions(module: CaModule): List<LLCfirSession> {
         val dependencyModules = computeAggregatedModuleDependencies(module)
         return computeDependencySessionsFromDependencyModules(dependencyModules, module)
     }
 
+    /**
+     * 聚合 [module] 的直接常规依赖、friend 依赖和传递 dependsOn 依赖。
+     */
     private fun computeAggregatedModuleDependencies(module: CaModule): Set<CaModule> {
         // Please update KmpModuleSorterTest#buildDependenciesToTest if the logic of collecting dependencies changes
         return buildSet {
@@ -495,6 +604,11 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
         }
     }
 
+    /**
+     * 将 [dependencyModules] 转换为 [module] 可使用的依赖 session 列表。
+     *
+     * Builtins 由调用方单独加入；unstable dangling module 不能作为依赖。
+     */
     private fun computeDependencySessionsFromDependencyModules(dependencyModules: Set<CaModule>, module: CaModule): List<LLCfirSession> {
         val sessionCache = LLCfirSessionCache.getInstance(project)
 
@@ -527,9 +641,15 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
         return orderedDependencyModules.mapNotNull(::getOrCreateSessionForDependency)
     }
 
+    /**
+     * 计算 [module] 的依赖 symbol provider 列表。
+     */
     private fun computeDependencySymbolProviders(module: CaModule): List<CfirSymbolProvider> =
         computeDependencySymbolProviders(computeDependencySessions(module))
 
+    /**
+     * 从依赖 session 中抽取可合并的底层 symbol provider。
+     */
     private fun computeDependencySymbolProviders(dependencySessions: List<LLCfirSession>): List<CfirSymbolProvider> =
         buildList {
             dependencySessions.forEach { session ->
@@ -540,6 +660,11 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
             }
         }
 
+    /**
+     * 将当前 provider 展平写入 [destination]。
+     *
+     * composite provider 会递归展开，以便后续同类 provider 合并。
+     */
     private fun CfirSymbolProvider.flattenTo(destination: MutableList<CfirSymbolProvider>) {
         when (this) {
             is CfirCompositeSymbolProvider -> providers.forEach { it.flattenTo(destination) }
@@ -547,10 +672,16 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
         }
     }
 
+    /**
+     * 为 [session] 创建并绑定低阶 CFIR module data。
+     */
     private fun createModuleData(session: LLCfirSession): LLCfirModuleData {
         return LLCfirModuleData(session)
     }
 
+    /**
+     * 注册所有 session 类型共享的 IDE 与 CFIR 公共组件。
+     */
     private fun LLCfirSession.registerAllCommonComponents(
         languageVersionSettings: LanguageVersionSettings,
         module: CaModule,
@@ -561,6 +692,9 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
         registerResolveComponents(CjRegisteredDiagnosticFactoriesStorage())
     }
 
+    /**
+     * 注册源码类 session 需要的额外组件。
+     */
     private fun LLCfirSession.registerSourceLikeComponents() {
         register(CfirNameConflictsTracker::class, LLNameConflictsTracker(this))
     }

@@ -33,9 +33,17 @@ import org.junit.jupiter.api.Assertions.assertEquals
  * `buildClassType(symbol, ...)` 结果一致，避免两个公开入口语义漂移。
  */
 abstract class AbstractTypeCreatorTest : AbstractAnalysisApiComponentTest() {
+    /**
+     * 当前 type creator 测试额外注册的类型构造指令集合。
+     */
     override val additionalDirectives: List<DirectivesContainer>
         get() = super.additionalDirectives + AnalysisApiTypeCreatorTestDirectives
 
+    /**
+     * 执行公开 type creator 构造测试。
+     *
+     * 方法按指令恢复输入 symbol，构造目标类型，并比较 qualified 与 short renderer 输出。
+     */
     override fun doTestByMainFile(mainFile: CjFile, mainModule: CjTestModule, testServices: TestServices) {
         val directives = directivesForMainFile(mainFile, mainModule)
 

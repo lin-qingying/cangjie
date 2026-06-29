@@ -51,6 +51,9 @@ import org.cangnova.cangjie.utils.checkWithAttachment
  */
 class CangJieFileStubImpl(
     file: CjFile?,
+    /**
+     * 暴露 `kind`，实现PSI Stub节点对上层接口的属性契约。
+     */
     override val kind: CangJieFileStubKind,
 ) : PsiFileStubImpl<CjFile>(file), CangJieFileStub {
 
@@ -62,17 +65,32 @@ class CangJieFileStubImpl(
         kind = CangJieFileStubKindImpl.File(FqName(packageName)),
     )
 
+    /**
+     * 执行 `relativeToPackage` 内部辅助逻辑，支撑PSI Stub节点的结构解析与访问。
+     */
     private fun String.relativeToPackage() = getPackageFqName().child(Name.identifier(this))
 
 
+    /**
+     * 实现 `getPackageFqName` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getPackageFqName(): FqName = when (val k = kind) {
         is CangJieFileStubKind.WithPackage -> k.packageFqName
         is CangJieFileStubKind.Invalid -> FqName.ROOT
     }
 
+    /**
+     * 实现 `getType` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getType(): IStubFileElementType<CangJieFileStub> = CjFileElementType.INSTANCE
 
+    /**
+     * 实现 `toString` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun toString(): String = "CangJieFileStubImpl[$kind]"
+    /**
+     * 实现 `copyInto` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun copyInto(newParent: StubElement<*>?): CangJieFileStubImpl = CangJieFileStubImpl(
         file = null, // no psi should be copied
         kind = kind,
@@ -124,11 +142,17 @@ class CangJieFileStubImpl(
     }
 }
 
+/**
+ * 提供 `deepCopy` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
+ */
 fun CangJieFileStubImpl.deepCopy(): CangJieFileStubImpl = copyStubRecursively(
     originalStub = this,
     newParentStub = null,
 ) as CangJieFileStubImpl
 
+/**
+ * 执行 `copyStubRecursively` 内部辅助逻辑，支撑PSI Stub节点的结构解析与访问。
+ */
 private fun <T : PsiElement> copyStubRecursively(
     originalStub: StubElement<T>,
     newParentStub: StubElement<*>?,

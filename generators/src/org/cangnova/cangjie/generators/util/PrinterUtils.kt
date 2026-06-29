@@ -18,6 +18,9 @@ import kotlin.reflect.KType
  */
 // -------------------------------- 导入相关 --------------------------------
 
+/**
+ * 打印 Kotlin import 列表。
+ */
 fun SmartPrinter.printImports(
     packageName: String,
     importableTypes: Collection<KType>,
@@ -30,6 +33,9 @@ fun SmartPrinter.printImports(
     println()
 }
 
+/**
+ * 收集需要打印的 import 字符串。
+ */
 private fun collectImports(
     packageName: String,
     importableTypes: Collection<KType>,
@@ -50,6 +56,9 @@ private fun collectImports(
     }
 }
 
+/**
+ * 递归收集 KType 中出现的类名。
+ */
 private fun KType.collectClassNamesTo(set: MutableSet<String>) {
     (classifier as? KClass<*>)?.qualifiedName?.let(set::add)
     for (argument in arguments) {
@@ -57,6 +66,9 @@ private fun KType.collectClassNamesTo(set: MutableSet<String>) {
     }
 }
 
+/**
+ * 打印已经收集完成的 import 字符串集合。
+ */
 private fun SmartPrinter.printImports(imports: Collection<String>) {
     val importsToPrint = imports.filterNot { it.isDefaultImport() }.distinct().sorted()
     for (import in importsToPrint) {
@@ -64,10 +76,16 @@ private fun SmartPrinter.printImports(imports: Collection<String>) {
     }
 }
 
+/**
+ * 判断 import 是否属于 Kotlin 默认导入包。
+ */
 private fun String.isDefaultImport(): Boolean {
     return substringBeforeLast('.') in defaultImportedPackages
 }
 
+/**
+ * Kotlin 默认导入包集合。
+ */
 private val defaultImportedPackages = setOf(
     "kotlin",
     "kotlin.annotation",
@@ -80,13 +98,22 @@ private val defaultImportedPackages = setOf(
 
 // -------------------------------- 说明头相关 --------------------------------
 
+/**
+ * 仓库版权头文本。
+ */
 private val COPYRIGHT = File("license/COPYRIGHT_HEADER.txt").readText()
 
+/**
+ * 打印版权头。
+ */
 fun SmartPrinter.printCopyright() {
     println(COPYRIGHT)
     println()
 }
 
+/**
+ * 打印自动生成文件提示。
+ */
 fun SmartPrinter.printGeneratedMessage() {
     println(GeneratorsFileUtil.GENERATED_MESSAGE)
     println()
@@ -94,6 +121,9 @@ fun SmartPrinter.printGeneratedMessage() {
 
 // -------------------------------- 其他工具 --------------------------------
 
+/**
+ * 根据根目录和包名计算生成输出目录，并确保目录存在。
+ */
 fun getGenerationPath(rootPath: File, packageName: String): File {
     return packageName
         .split(".")
@@ -101,6 +131,9 @@ fun getGenerationPath(rootPath: File, packageName: String): File {
         .apply { mkdirs() }
 }
 
+/**
+ * 打印带缩进的代码块。
+ */
 inline fun IndentingPrinter.printBlock(header: String = "", body: () -> Unit) {
     println("$header {")
     withIndent(body)

@@ -20,6 +20,9 @@ enum class Variance(val label: String, val allowsInPosition: Boolean, val allows
     IN_VARIANCE("in", true, false),
     OUT_VARIANCE("out", false, true);
 
+    /**
+     * 返回相反方向的型变；不变型保持不变。
+     */
     fun opposite(): Variance = when (this) {
         INVARIANT -> INVARIANT
         IN_VARIANCE -> OUT_VARIANCE

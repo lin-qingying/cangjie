@@ -34,13 +34,22 @@ import java.util.concurrent.ConcurrentHashMap
 
 internal class CaCfirInternalCacheStorage(private val analysisSession: CaCfirSession) {
     @CaCachedService
+    /**
+     * 统计服务，用于把 Analysis API 缓存命中信息接入 low-level 统计系统。
+     */
     private val statisticsService by lazy(LazyThreadSafetyMode.PUBLICATION) {
         LLStatisticsService.getInstance(project)
     }
 
+    /**
+     * 当前 analysis session 所属项目。
+     */
     private val project get() = analysisSession.project
 
     @OptIn(CaPlatformInterface::class)
+    /**
+     * PSI 元素到调用解析结果的可空缓存。
+     */
     val resolveCallCache: CachedValue<NullableCaffeineCache<CjElement, CaCallResolutionAttempt>> by lazy {
         softCachedValueWithPsiKey {
             NullableCaffeineCache {
@@ -50,6 +59,9 @@ internal class CaCfirInternalCacheStorage(private val analysisSession: CaCfirSes
     }
 
     @OptIn(CaPlatformInterface::class)
+    /**
+     * PSI 元素到单符号解析结果的可空缓存。
+     */
     val resolveSymbolCache: CachedValue<NullableCaffeineCache<CjElement, CaSymbolResolutionAttempt>> by lazy {
         softCachedValueWithPsiKey {
             NullableCaffeineCache {
@@ -59,6 +71,9 @@ internal class CaCfirInternalCacheStorage(private val analysisSession: CaCfirSes
     }
 
     @OptIn(CaPlatformInterface::class)
+    /**
+     * CFIR 引用到公开符号集合的缓存。
+     */
     val resolveToSymbolsCache: CachedValue<Cache<CaCfirReference, Collection<CaSymbol>>> by lazy {
         softCachedValueWithPsiKey {
             Caffeine.newBuilder()

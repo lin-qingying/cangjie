@@ -120,12 +120,23 @@ object DiagnosticNameMapper {
 
         // ── Constructor ──
         "ILLEGAL_THIS_OR_SUPER_CALL" to "sema_illegal_this_or_super_call",
+        "THIS_OR_SUPER_NOT_ALLOWED_TO_INITIALIZE_NON_STATIC_MEMBER" to "sema_this_or_super_not_allowed_to_initialize_non_static_member",
+        "THIS_OR_SUPER_NOT_ALLOWED_TO_INITIALIZE_STATIC_MEMBER" to "sema_this_or_super_not_allowed_to_initialize_static_member",
+        "THIS_SUPER_USE_ERROR_OUTSIDE_CLASS" to "sema_this_super_use_error_outside_class",
+        "INVALID_THIS_CALL_OUTSIDE_CTOR" to "sema_invalid_this_call_outside_ctor",
+        "ILLEGAL_SUPER_ALONE" to "sema_illegal_super_alone",
+        "ILLEGAL_THIS_OUTSIDE_STRUCT_CONSTRUCTOR" to "sema_illegal_this_outside_struct_constructor",
         "MULTIPLE_PRIMARY_CONSTRUCTORS" to "sema_multiple_primary_constructors",
         "ILLEGAL_PLACE_OF_CALLING_THIS_OR_SUPER" to "sema_illegal_place_of_calling_this_or_super",
         "ILLEGAL_PLACE_OF_CALLING_THIS_PRIMARY_CONSTRUCTOR" to "sema_illegal_place_of_calling_this_primary_constructor",
         "NO_NON_PARAM_CONSTRUCTOR_IN_SUPER_CLASS" to "sema_no_non_param_constructor_in_super_class",
         "RECURSIVE_CONSTRUCTOR_CALL" to "sema_recursive_constructor_call",
         "STATIC_MEMBERS_CANNOT_CALL_MEMBERS" to "sema_static_members_cannot_call_members",
+        "ILLEGAL_ACCESS_NON_STATIC_MEMBER" to "sema_illegal_access_non_static_member",
+        "STATIC_FUNCTION_CANNOT_ACCESS_NON_STATIC_MEMBER" to "sema_static_function_cannot_access_non_static_member",
+        "STATIC_LAMBDA_CANNOT_ACCESS_NON_STATIC" to "sema_static_lambdaExpr_cannot_access_non_static",
+        "STATIC_VARIABLE_CANNOT_ACCESS_NON_STATIC_MEMBER" to "sema_static_variable_cannot_access_non_static_member",
+        "OBJECT_CANNOT_ACCESS_STATIC_MEMBER" to "sema_object_cannot_access_static_member",
         "VALUE_TYPE_RECURSIVE" to "sema_value_type_recursive",
 
         // ── Call / Arguments ──

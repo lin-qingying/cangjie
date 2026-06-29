@@ -13,8 +13,15 @@ import org.cangnova.cangjie.test.services.assertions
 
 /**
  * `typeProvider.defaultType` 的抽象测试。
+ *
+ * 该测试验证 class-like symbol 的公开 `defaultType` 与稳定渲染结果。
  */
 abstract class AbstractDefaultTypeTest : AbstractAnalysisApiComponentTest() {
+    /**
+     * 执行 default type 快照测试。
+     *
+     * 方法定位目标 class-like 声明，读取 symbol.defaultType 并输出 qualified renderer 文本。
+     */
     override fun doTestByMainFile(mainFile: CjFile, mainModule: CjTestModule, testServices: TestServices) {
         val classDeclaration = testServices.expressionMarkerProvider
             .getTopmostSelectedElementOfTypeByDirectiveOrNull(mainFile, mainModule, CjClass::class)

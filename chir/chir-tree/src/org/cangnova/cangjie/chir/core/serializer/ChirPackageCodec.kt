@@ -22,11 +22,31 @@ import org.cangnova.cangjie.chir.core.value.ChirParameterValue
 import org.cangnova.cangjie.chir.core.value.ChirValue
 import java.nio.ByteBuffer
 
+/**
+ * CHIR 包 FlatBuffers 编解码器。
+ *
+ * 该对象负责在项目内部 CHIR 模型和 `PackageFormat` 生成结构之间转换，并保留必要的
+ * 语义标识与操作名元数据以支持往返校验。
+ */
 object ChirPackageCodec {
+    /**
+     * 模块元数据在附加字符串中的前缀。
+     */
     private const val MODULE_META_PREFIX = "mod::"
+
+    /**
+     * 基本块名称元数据在附加字符串中的前缀。
+     */
     private const val BLOCK_NAME_PREFIX = "block_name::"
+
+    /**
+     * FlatBuffers 中表示无值结果的 Unit 类型引用。
+     */
     private val unitType = ChirResolvedTypeRef(ChirPrimitiveType.UNIT)
 
+    /**
+     * 将 [chirPackage] 序列化为当前 CHIR FlatBuffers schema 的二进制 payload。
+     */
     @OptIn(ExperimentalUnsignedTypes::class)
     fun serialize(chirPackage: ChirPackage): ByteArray {
         val builder = FlatBufferBuilder(4096)
@@ -93,6 +113,9 @@ object ChirPackageCodec {
         return builder.sizedByteArray()
     }
 
+    /**
+     * 从当前 CHIR FlatBuffers schema 的二进制 payload 反序列化 CHIR 包。
+     */
     fun deserialize(bytes: ByteArray): ChirPackage {
         val root = CHIRPackage.getRootAsCHIRPackage(ByteBuffer.wrap(bytes))
         if (root.phase.toInt() != ChirSerializationSchema.CURRENT_VERSION) {
@@ -163,12 +186,18 @@ object ChirPackageCodec {
         )
     }
 
+    /**
+     * 将包访问级别编码为 FlatBuffers 中的无符号字节值。
+     */
     private fun encodeAccessLevel(accessLevel: ChirPackageAccessLevel): UByte = when (accessLevel) {
         ChirPackageAccessLevel.PRIVATE -> 0u
         ChirPackageAccessLevel.INTERNAL -> 1u
         ChirPackageAccessLevel.PUBLIC -> 2u
     }
 
+    /**
+     * 将 FlatBuffers 中的访问级别字节解码为 CHIR 包访问级别。
+     */
     private fun decodeAccessLevel(encoded: UByte): ChirPackageAccessLevel = when (encoded.toInt()) {
         0 -> ChirPackageAccessLevel.PRIVATE
         1 -> ChirPackageAccessLevel.INTERNAL
@@ -176,6 +205,9 @@ object ChirPackageCodec {
         else -> throw ChirSerializationException("unsupported package access level: $encoded")
     }
 
+    /**
+     * 编码单个类型引用并返回 union tag 与 table offset。
+     */
     private fun encodeType(builder: FlatBufferBuilder, id: UInt, ref: ChirTypeRef): Pair<UByte, Int> {
         val kind = when ((ref as? ChirResolvedTypeRef)?.type) {
             ChirPrimitiveType.BOOL -> CHIRTypeKind.BOOLEAN
@@ -231,6 +263,9 @@ object ChirPackageCodec {
         }
     }
 
+    /**
+     * 编码单个值节点并返回 union tag 与 table offset。
+     */
     @OptIn(ExperimentalUnsignedTypes::class)
     private fun encodeValue(builder: FlatBufferBuilder, v: EncValue, ctx: EncodeContext): Pair<UByte, Int> {
         return when (v.kind) {
@@ -345,6 +380,9 @@ object ChirPackageCodec {
         }
     }
 
+    /**
+     * 编码单个表达式或终结指令节点并返回 union tag 与 table offset。
+     */
     @OptIn(ExperimentalUnsignedTypes::class)
     private fun encodeExpr(builder: FlatBufferBuilder, e: EncExpr, ctx: EncodeContext): Pair<UByte, Int> {
         val operation = e.node
@@ -469,6 +507,9 @@ object ChirPackageCodec {
     }
 
     @OptIn(ExperimentalUnsignedTypes::class)
+    /**
+     * 编码表达式公共基类字段。
+     */
     private fun encodeBaseExpression(
         builder: FlatBufferBuilder,
         e: EncExpr,
@@ -491,6 +532,9 @@ object ChirPackageCodec {
         )
     }
 
+    /**
+     * 将一元操作符映射为 FlatBuffers 表达式 kind。
+     */
     private fun encodeUnaryExprKind(operator: ChirUnaryOperator): UByte = when (operator) {
         ChirUnaryOperator.INT_NEG,
         ChirUnaryOperator.FLOAT_NEG,
@@ -500,6 +544,9 @@ object ChirPackageCodec {
         ChirUnaryOperator.IDENTITY -> CHIRExprKind.DEBUGEXPR
     }
 
+    /**
+     * 将二元操作符映射为 FlatBuffers 表达式 kind。
+     */
     private fun encodeBinaryExprKind(operator: ChirBinaryOperator): UByte = when (operator) {
         ChirBinaryOperator.ADD -> CHIRExprKind.ADD
         ChirBinaryOperator.SUB -> CHIRExprKind.SUB
@@ -541,6 +588,9 @@ object ChirPackageCodec {
         -> CHIRExprKind.GE
     }
 
+    /**
+     * 将内存操作映射为 FlatBuffers 表达式 kind。
+     */
     private fun encodeMemoryExprKind(operation: ChirMemoryOperation): UByte = when (operation) {
         ChirMemoryOperation.LOAD -> CHIRExprKind.LOAD
         ChirMemoryOperation.STORE -> CHIRExprKind.STORE
@@ -550,6 +600,9 @@ object ChirPackageCodec {
         -> CHIRExprKind.GET_ELEMENT_REF
     }
 
+    /**
+     * 将其他表达式操作映射为 FlatBuffers 表达式 kind。
+     */
     private fun encodeOtherExprKind(operation: ChirOtherOperation): UByte = when (operation) {
         ChirOtherOperation.SELECT -> CHIRExprKind.IF
         ChirOtherOperation.PHI -> CHIRExprKind.DEBUGEXPR
@@ -569,6 +622,9 @@ object ChirPackageCodec {
         else -> CHIRExprKind.DEBUGEXPR
     }
 
+    /**
+     * 从 FlatBuffers 根节点解码全部类型引用。
+     */
     private fun decodeTypes(root: CHIRPackage): Map<UInt, ChirTypeRef> {
         val result = linkedMapOf<UInt, ChirTypeRef>()
         for (i in 0 until root.typesLength) {
@@ -621,6 +677,9 @@ object ChirPackageCodec {
         return result
     }
 
+    /**
+     * 将 FlatBuffers 类型 kind 解码为 CHIR 原始类型。
+     */
     private fun decodePrimitiveType(kind: UByte): ChirPrimitiveType = when (kind) {
         CHIRTypeKind.BOOLEAN -> ChirPrimitiveType.BOOL
         CHIRTypeKind.UNIT -> ChirPrimitiveType.UNIT
@@ -642,6 +701,9 @@ object ChirPackageCodec {
         else -> throw ChirSerializationException("cannot decode primitive type kind $kind")
     }
 
+    /**
+     * 从 FlatBuffers 根节点解码值表，并建立函数、参数和基本块索引。
+     */
     private fun decodeValues(root: CHIRPackage, typeById: Map<UInt, ChirTypeRef>): DecodedValues {
         val out = DecodedValues()
         fun typeOf(id: UInt) = typeById[id]
@@ -747,6 +809,9 @@ object ChirPackageCodec {
         return out
     }
 
+    /**
+     * 从 FlatBuffers 根节点解码表达式和终结指令表。
+     */
     private fun decodeExpressions(
         root: CHIRPackage,
         typeById: Map<UInt, ChirTypeRef>,
@@ -918,6 +983,9 @@ object ChirPackageCodec {
         return out
     }
 
+    /**
+     * 将 FlatBuffers 一元表达式 kind 解码为 CHIR 操作名。
+     */
     private fun decodeUnaryExprKind(kind: UByte): String = when (kind) {
         CHIRExprKind.NEG -> ChirUnaryOperator.INT_NEG.canonicalName
         CHIRExprKind.BITNOT -> ChirUnaryOperator.BIT_NOT.canonicalName
@@ -925,6 +993,9 @@ object ChirPackageCodec {
         else -> throw ChirSerializationException("cannot decode unary expression kind $kind without operation metadata")
     }
 
+    /**
+     * 将 FlatBuffers 二元表达式 kind 解码为 CHIR 操作名。
+     */
     private fun decodeBinaryExprKind(kind: UByte): String = when (kind) {
         CHIRExprKind.ADD -> ChirBinaryOperator.ADD.canonicalName
         CHIRExprKind.SUB -> ChirBinaryOperator.SUB.canonicalName
@@ -945,7 +1016,14 @@ object ChirPackageCodec {
         else -> throw ChirSerializationException("cannot decode binary expression kind $kind without operation metadata")
     }
 
+    /**
+     * 序列化阶段登记的类型引用。
+     */
     private data class EncType(val id: UInt, val ref: ChirTypeRef)
+
+    /**
+     * 序列化阶段登记的值节点分类。
+     */
     private enum class EncValueKind {
         Function,
         Parameter,
@@ -956,25 +1034,93 @@ object ChirPackageCodec {
         ImportedFunction,
         ImportedVariable,
     }
+    /**
+     * 序列化阶段登记的值节点及其所属上下文。
+     */
     private data class EncValue(
+        /**
+         * FlatBuffers 值表中的本地编号。
+         */
         val id: UInt,
+
+        /**
+         * 值节点编码分类。
+         */
         val kind: EncValueKind,
+
+        /**
+         * 所属模块语义标识。
+         */
         val moduleSemanticId: String? = null,
+
+        /**
+         * 所属模块名称。
+         */
         val moduleName: String? = null,
+
+        /**
+         * 所属函数语义标识。
+         */
         val ownerFunctionSemanticId: String? = null,
+
+        /**
+         * 函数值对应的 CHIR 函数声明。
+         */
         val function: ChirFunctionDeclaration? = null,
+
+        /**
+         * 参数值对应的 CHIR 变量声明。
+         */
         val parameter: org.cangnova.cangjie.chir.core.declaration.ChirVariableDeclaration? = null,
+
+        /**
+         * 基本块值对应的 CHIR 基本块。
+         */
         val block: ChirBlock? = null,
+
+        /**
+         * 普通值节点。
+         */
         val value: ChirValue? = null,
     )
+
+    /**
+     * 序列化阶段登记的表达式或终结指令节点。
+     */
     private data class EncExpr(val id: UInt, val parentBlockSemanticId: String, val semanticId: String, val node: Any)
 
+    /**
+     * 序列化上下文，负责为类型、值和表达式分配稳定编号。
+     */
     private class EncodeContext(pkg: ChirPackage) {
+        /**
+         * 已登记类型列表。
+         */
         val types = mutableListOf<EncType>()
+
+        /**
+         * 已登记值列表。
+         */
         val values = mutableListOf<EncValue>()
+
+        /**
+         * 已登记表达式列表。
+         */
         val exprs = mutableListOf<EncExpr>()
+
+        /**
+         * 类型渲染名到本地编号的索引。
+         */
         private val typeByName = linkedMapOf<String, UInt>()
+
+        /**
+         * 值语义标识到本地编号的索引。
+         */
         private val valueBySemantic = linkedMapOf<String, UInt>()
+
+        /**
+         * 表达式语义标识到本地编号的索引。
+         */
         private val exprBySemantic = linkedMapOf<String, UInt>()
         init {
             pkg.modules.forEach { m ->
@@ -990,21 +1136,44 @@ object ChirPackageCodec {
                 }
             }
         }
+        /**
+         * 返回类型引用的本地编号，不存在时自动登记。
+         */
         fun typeIdOf(type: ChirTypeRef): UInt = typeByName.getOrPut(type.renderName) { val id = (typeByName.size + 1).toUInt(); types += EncType(id, type); id }
+
+        /**
+         * 按值语义标识读取本地编号。
+         */
         fun valueIdOf(semantic: String): UInt = valueBySemantic[semantic] ?: throw ChirSerializationException("missing value id: $semantic")
+
+        /**
+         * 按表达式语义标识读取本地编号。
+         */
         fun exprIdOf(semantic: String): UInt = exprBySemantic[semantic] ?: throw ChirSerializationException("missing expr id: $semantic")
+
+        /**
+         * 登记一个值节点。
+         */
         private fun registerValue(semantic: String, kind: EncValueKind, moduleSid: String?, moduleName: String?, ownerFn: String?, fn: ChirFunctionDeclaration?, p: org.cangnova.cangjie.chir.core.declaration.ChirVariableDeclaration?, b: ChirBlock?, value: ChirValue?) {
             if (valueBySemantic.containsKey(semantic)) return
             val id = (valueBySemantic.size + 1).toUInt()
             valueBySemantic[semantic] = id
             values += EncValue(id, kind, moduleSid, moduleName, ownerFn, fn, p, b, value)
         }
+
+        /**
+         * 登记一个表达式或终结指令节点。
+         */
         private fun registerExpr(semantic: String, parentBlockSemanticId: String, node: Any) {
             if (exprBySemantic.containsKey(semantic)) return
             val id = (exprBySemantic.size + 1).toUInt()
             exprBySemantic[semantic] = id
             exprs += EncExpr(id, parentBlockSemanticId, semantic, node)
         }
+
+        /**
+         * 收集表达式或终结指令引用到的值节点和类型引用。
+         */
         private fun collectValues(node: Any) {
             val valuesToAdd = when (node) {
                 is ChirUnaryExpression -> listOf(node.operand)
@@ -1032,19 +1201,64 @@ object ChirPackageCodec {
         }
     }
 
+    /**
+     * 反序列化阶段累积的值表和辅助索引。
+     */
     private class DecodedValues {
+        /**
+         * 值编号到 CHIR 值节点的映射。
+         */
         val values = linkedMapOf<UInt, ChirValue>()
+
+        /**
+         * 解码出的函数值记录。
+         */
         val functions = mutableListOf<DecodedFunc>()
+
+        /**
+         * 参数值编号到参数记录的映射。
+         */
         val parameters = linkedMapOf<UInt, DecodedParam>()
+
+        /**
+         * 基本块值编号到基本块记录的映射。
+         */
         val blocks = linkedMapOf<UInt, DecodedBlock>()
+
+        /**
+         * 基本块值编号到语义标识的映射。
+         */
         val blockSemanticByValueId = linkedMapOf<UInt, ChirSemanticId>()
+
+        /**
+         * 函数值编号到语义标识的映射。
+         */
         val functionSemanticByValueId = linkedMapOf<UInt, ChirSemanticId>()
     }
+
+    /**
+     * 反序列化阶段的函数值记录。
+     */
     private data class DecodedFunc(val valueId: UInt, val semanticId: ChirSemanticId, val name: String, val returnType: ChirTypeRef, val moduleSemanticId: ChirSemanticId, val moduleName: String, val paramValueIds: List<UInt>, val entryBlockValueId: UInt)
+
+    /**
+     * 反序列化阶段的参数值记录。
+     */
     private data class DecodedParam(val semanticId: ChirSemanticId, val name: String, val type: ChirTypeRef, val mutable: Boolean)
+
+    /**
+     * 反序列化阶段的基本块值记录。
+     */
     private data class DecodedBlock(val semanticId: ChirSemanticId, val name: String, val parentFunctionValueId: UInt, val exprIds: List<UInt>)
+
+    /**
+     * 表达式元数据记录。
+     */
     private data class DecodedExprMetadata(val semanticId: String, val operation: String?)
 
+    /**
+     * 拆分值标识符中的语义标识和显示名称。
+     */
     private fun valueIdentifierParts(identifier: String): List<String> {
         val parts = identifier.split("|", limit = 2)
         if (parts[0].isBlank()) {
@@ -1053,6 +1267,9 @@ object ChirPackageCodec {
         return parts
     }
 
+    /**
+     * 解析包路径字段中附带的包语义标识和表达式元数据。
+     */
     private fun parsePathMetadata(path: String?): Pair<ChirSemanticId, Map<UInt, DecodedExprMetadata>> {
         if (path.isNullOrBlank()) {
             throw ChirSerializationException("damaged payload: package path metadata is missing")
@@ -1081,6 +1298,9 @@ object ChirPackageCodec {
         return pkg to map
     }
 
+    /**
+     * 获取需要写入表达式元数据的操作名称。
+     */
     private fun expressionOperationName(node: Any): String? = when (node) {
         is ChirUnaryExpression -> node.operator
         is ChirBinaryExpression -> node.operator

@@ -33,25 +33,36 @@ import org.cangnova.cangjie.psi.psiUtil.endOffset
 import org.cangnova.cangjie.psi.psiUtil.startOffset
 import com.intellij.psi.PsiElement
 
+/**
+ * 尾逗号在指定 PSI 元素上的状态。
+ */
 enum class TrailingCommaState {
 
+    /** 多行元素已经存在尾逗号。 */
     EXISTS,
 
 
+    /** 多行元素缺少尾逗号。 */
     MISSING,
 
 
 
+    /** 单行元素没有尾逗号。 */
     NOT_EXISTS,
 
 
+    /** 单行元素存在冗余尾逗号。 */
     REDUNDANT,
 
 
+    /** 元素类型不适用尾逗号规则。 */
     NOT_APPLICABLE,
     ;
 
     companion object {
+        /**
+         * 根据元素类型、多行状态和现有逗号计算尾逗号状态。
+         */
         fun stateForElement(element: PsiElement): TrailingCommaState = when {
             element !is CjElement || !element.canAddTrailingComma() -> NOT_APPLICABLE
             isMultiline(element) ->
@@ -68,6 +79,9 @@ enum class TrailingCommaState {
     }
 }
 
+/**
+ * 判断尾逗号候选元素是否跨多行。
+ */
 private fun isMultiline(cjElement: CjElement): Boolean = when {
     cjElement.parent is CjFunctionLiteral -> isMultiline(cjElement.parent as CjElement)
 
@@ -86,6 +100,9 @@ private fun isMultiline(cjElement: CjElement): Boolean = when {
     else -> cjElement.isMultiline()
 }
 
+/**
+ * 使用自定义起止偏移判断 PSI 元素内部是否跨行。
+ */
 private fun <T : PsiElement> T.isMultiline(
     startOffsetGetter: T.() -> Int?,
     endOffsetGetter: T.() -> Int?,

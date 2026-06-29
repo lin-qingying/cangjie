@@ -36,8 +36,14 @@ import org.junit.jupiter.api.Test
 class AnalysisApiRendererPresetTest : AbstractAnalysisApiExecutionTest(
     "analysis/analysis-api-cfir/testData/rendererPresets",
 ) {
+    /**
+     * 使用 standalone CFIR 配置运行 renderer preset 回归测试。
+     */
     override val configurator = CaCfirStandaloneAnalysisApiTestConfigurator
 
+    /**
+     * 验证声明 renderer 与类型 renderer 的常用 preset 输出保持稳定。
+     */
     @Test
     fun presetRendering(mainFile: CjFile, mainModule: CjTestModule) {
         val cachedValueReference = PsiTreeUtil.findChildrenOfType(mainFile, CjSimpleNameExpression::class.java)

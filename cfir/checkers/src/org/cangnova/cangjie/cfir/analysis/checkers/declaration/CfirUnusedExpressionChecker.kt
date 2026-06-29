@@ -12,21 +12,29 @@ import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.patterns.bindingVariables
 import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.cfir.symbols.CfirVariableSymbol
-import org.cangnova.cangjie.cfir.types.ConePrimitiveType
+import org.cangnova.cangjie.cfir.types.CfirBasicTypeRef
+import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
+import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.types.CfirTupleTypeRef
+import org.cangnova.cangjie.cfir.types.CfirUserTypeRef
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
+import org.cangnova.cangjie.cfir.types.impl.ResolvedImplicitTypeRef
 import org.cangnova.cangjie.cfir.visitors.CfirDefaultVisitor
 import org.cangnova.cangjie.cfir.visitors.CfirDefaultVisitorVoid
+import org.cangnova.cangjie.source.CjFakeSourceElementKind
+import org.cangnova.cangjie.source.text
 
 /**
  * 对齐 Kotlin `FirUnusedExpressionChecker/FirUnusedCheckerBase` 的声明级 visitor 入口。
  *
- * 当前 analysis-tests 只注册 `CommonDeclarationCheckers`，因此这里直接挂在 common
- * declaration checker 流里，让 `try/finally` 中“结果被丢弃”的纯表达式走统一的 unused
- * 诊断路径，而不是在具体 expression checker 里做特判。
+ * unused/local-DCE 类诊断属于附加 warning 检查，统一由 `ExtraDeclarationCheckers`
+ * 按测试或 IDE 诊断过滤配置挂载，避免污染主干 type-check 诊断集合。
  */
 object CfirUnusedExpressionChecker : CfirBasicDeclarationChecker() {
     /**
@@ -51,8 +59,7 @@ object CfirUnusedExpressionChecker : CfirBasicDeclarationChecker() {
      * 根据函数返回类型决定函数体最后一个表达式的使用状态。
      */
     private fun CfirFunction.bodyUsageState(): UsageState {
-        val returnType = returnTypeRef.coneTypeOrNull
-        return if (returnType == ConePrimitiveType.UNIT) UsageState.UnusedUnitReturn else UsageState.Used
+        return if (returnTypeRef.isUnitReturnTypeRef()) UsageState.UnusedUnitReturn else UsageState.Used
     }
 
     /**
@@ -208,10 +215,18 @@ object CfirUnusedExpressionChecker : CfirBasicDeclarationChecker() {
         }
 
         /**
-         * return 表达式的结果始终按 used 访问。
+         * 显式 return 的结果被使用；Unit 函数体的 fake implicit return 保留尾表达式丢弃语义。
          */
         override fun visitReturnExpression(returnExpression: CfirReturnExpression, data: UsageState) {
-            returnExpression.result.accept(this, UsageState.Used)
+            val resultUsage = if (
+                data == UsageState.UnusedUnitReturn &&
+                returnExpression.source?.kind == CjFakeSourceElementKind.ImplicitReturn.FromLastStatement
+            ) {
+                UsageState.UnusedUnitReturn
+            } else {
+                UsageState.Used
+            }
+            returnExpression.result.accept(this, resultUsage)
         }
 
         /**
@@ -248,6 +263,9 @@ object CfirUnusedExpressionChecker : CfirBasicDeclarationChecker() {
             tryExpression.catches.forEach { catchClause ->
                 catchClause.body.accept(this, catchUsage)
             }
+            tryExpression.handlers.forEach { handleClause ->
+                handleClause.body.accept(this, data)
+            }
             tryExpression.finallyBlock?.accept(this, UsageState.Unused)
         }
 
@@ -278,8 +296,9 @@ object CfirUnusedExpressionChecker : CfirBasicDeclarationChecker() {
         private fun checkExpression(expression: CfirExpression, data: UsageState) {
             if (!data.isUnused()) return
             // 官方 cjc 只在 Unit 返回位置的非 Unit 表达式上报 unused expression，尾部 `()` 是有效返回值。
-            if (data == UsageState.UnusedUnitReturn && expression.coneTypeOrNull == ConePrimitiveType.UNIT) return
+            if (data == UsageState.UnusedUnitReturn && expression.coneTypeOrNull?.isUnit == true) return
             if (expression.hasSideEffect()) return
+            if (expression is CfirQualifiedAccessExpression && expression.isBareVariableAccess()) return
             if (expression is CfirAnonymousFunctionExpression) return
             if (expression is CfirThisReceiverExpression && declaration is CfirFinalizer) return
             with(context) {
@@ -291,7 +310,7 @@ object CfirUnusedExpressionChecker : CfirBasicDeclarationChecker() {
          * 计算 match/if 分支结果的使用状态。
          */
         private fun UsageState.branchResultUsage(body: CfirExpression): UsageState =
-            if (isUnused() && body.coneTypeOrNull == ConePrimitiveType.UNIT) UsageState.UnusedUnitReturn else this
+            if (isUnused() && body.coneTypeOrNull?.isUnit == true) UsageState.UnusedUnitReturn else this
 
         /**
          * 判断表达式求值是否可能产生副作用。
@@ -308,13 +327,12 @@ object CfirUnusedExpressionChecker : CfirBasicDeclarationChecker() {
                 is CfirSmartCastExpression -> originalExpression.hasSideEffect()
                 is CfirTupleLiteral -> elements.any { it.hasSideEffect() }
 
-                is CfirFunctionCall -> true
+                is CfirFunctionCall -> !isPureEnumConstructorCall()
 
                 is CfirQualifiedAccessExpression -> {
                     /*
-                     * 官方 unused 诊断来自 CHIR DCE：LOAD/FIELD/GET_ELEMENT_REF 这类取值
-                     * 表达式在结果无用户时可被报告。CFIR 中非调用的 qualified access
-                     * 对应这类取值；只有 receiver 求值本身有副作用时才阻止报告。
+                     * 官方 unused 诊断来自 CHIR DCE：字段/枚举构造等取值表达式在结果无用户时可报告。
+                     * 裸局部变量访问不作为 unused expression 报告；其死代码结果归入 unused variable。
                      */
                     hasAccessReceiverSideEffect()
                 }
@@ -337,10 +355,32 @@ object CfirUnusedExpressionChecker : CfirBasicDeclarationChecker() {
          * 判断 qualified access 是否只是取值访问。
          */
         private fun CfirQualifiedAccessExpression.isValueLikeAccess(): Boolean {
-            val symbol = (calleeReference as? CfirResolvedNamedReference)?.resolvedSymbol ?: return false
-            return symbol is CfirVariableSymbol<*> ||
-                    symbol is CfirPropertySymbol ||
+            val symbol = resolvedSymbolOrNull() ?: return false
+            return symbol is CfirPropertySymbol ||
+                    symbol is CfirVariableSymbol<*> ||
                     symbol is CfirEnumConstructorSymbol
+        }
+
+        /**
+         * 裸局部变量访问没有副作用，但官方 DCE 不把它作为 unused expression 报告；
+         * 该场景由 unused variable 诊断覆盖。
+         */
+        private fun CfirQualifiedAccessExpression.isBareVariableAccess(): Boolean {
+            val symbol = resolvedSymbolOrNull() ?: return false
+            if (symbol !is CfirVariableSymbol<*>) return false
+            return explicitReceiver == null && dispatchReceiver == null
+        }
+
+        /**
+         * enum constructor 只是构造枚举值；当接收者和 payload 都无副作用时，
+         * 与官方 CHIR DCE 一样可作为未使用表达式报告。
+         */
+        private fun CfirFunctionCall.isPureEnumConstructorCall(): Boolean {
+            val symbol = resolvedSymbolOrNull() ?: return false
+            if (symbol !is CfirEnumConstructorSymbol) return false
+            if (explicitReceiver?.hasSideEffect() == true) return false
+            if (dispatchReceiver !== explicitReceiver && dispatchReceiver?.hasSideEffect() == true) return false
+            return argumentList.arguments.none { it.hasSideEffect() }
         }
 
         /**
@@ -352,10 +392,38 @@ object CfirUnusedExpressionChecker : CfirBasicDeclarationChecker() {
                 is CfirBlock -> statements.singleOrNull() as? CfirExpression
                 else -> this
             }
-            return singleResult is CfirLiteralExpression && singleResult.coneTypeOrNull == ConePrimitiveType.UNIT
+            return singleResult is CfirLiteralExpression && singleResult.coneTypeOrNull?.isUnit == true
         }
     }
 }
+
+/**
+ * 读取函数返回类型，同时覆盖 `ResolvedImplicitTypeRef` 包装节点。
+ */
+private fun CfirTypeRef.resolvedReturnTypeOrNull(): ConeCangJieType? =
+    when (this) {
+        is CfirResolvedTypeRef -> coneType
+        is ResolvedImplicitTypeRef -> typeRef.coneType
+        else -> coneTypeOrNull
+    }
+
+/**
+ * 判断函数返回类型引用是否语义上表示 `Unit`。
+ *
+ * 当前诊断阶段可能拿到已解析类型、resolved implicit 包装或仍保留源码形态的显式
+ * `Unit` type ref；unused expression 需要保留这三种入口的一致语义。
+ */
+private fun CfirTypeRef.isUnitReturnTypeRef(): Boolean =
+    resolvedReturnTypeOrNull()?.isUnit == true || when (this) {
+        is CfirResolvedTypeRef -> delegatedTypeRef?.isUnitReturnTypeRef() == true
+        is ResolvedImplicitTypeRef -> typeRef.isUnitReturnTypeRef()
+        is CfirBasicTypeRef -> name.asString() == "Unit"
+        is CfirTupleTypeRef -> elementTypeRefs.isEmpty()
+        is CfirUserTypeRef -> qualifier.singleOrNull()?.let { part ->
+            part.name.asString() == "Unit" && part.typeArguments.isEmpty()
+        } == true
+        else -> source.text?.toString()?.trim() == "Unit"
+    }
 
 /**
  * 对齐官方 CHIR DCE 的声明级 warning 入口。
@@ -621,6 +689,16 @@ private fun CfirQualifiedAccessExpression.resolvedVariableSymbolOrNull(): CfirVa
     when (val reference = calleeReference) {
         is CfirResolvedNamedReference -> reference.resolvedSymbol as? CfirVariableSymbol<*>
         is CfirNamedReferenceWithCandidateBase -> reference.candidateSymbol as? CfirVariableSymbol<*>
+        else -> null
+    }?.takeIf { it.isBound }
+
+/**
+ * 从 qualified access 中解析已绑定符号。
+ */
+private fun CfirQualifiedAccessExpression.resolvedSymbolOrNull(): CfirBasedSymbol<*>? =
+    when (val reference = calleeReference) {
+        is CfirResolvedNamedReference -> reference.resolvedSymbol
+        is CfirNamedReferenceWithCandidateBase -> reference.candidateSymbol
         else -> null
     }?.takeIf { it.isBound }
 

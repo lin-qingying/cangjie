@@ -26,17 +26,41 @@ package org.cangnova.cangjie.psi
 
 import com.intellij.psi.PsiElement
 
+/**
+ * 定义 `CjVariableDeclaration` 接口，约束仓颉 PSI节点或服务需要暴露的结构能力。
+ */
 interface CjVariableDeclaration : CjCallableDeclaration, CjDeclarationWithInitializer, CjLetVarKeywordOwner {
+    /**
+     * 保存 `isVar`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val isVar: Boolean
+    /**
+     * 保存 `isStatic`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val isStatic: Boolean get() = false
 }
 
+/**
+ * 定义 `CjLetVarKeywordOwner` 接口，约束仓颉 PSI节点或服务需要暴露的结构能力。
+ */
 interface CjLetVarKeywordOwner : PsiElement {
+    /**
+     * 保存 `letOrVarKeyword`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val letOrVarKeyword: PsiElement?
 }
 
+/**
+ * 定义 `CjDeclarationWithInitializer` 接口，约束仓颉 PSI节点或服务需要暴露的结构能力。
+ */
 interface CjDeclarationWithInitializer : CjDeclaration {
+    /**
+     * 保存 `initializer`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val initializer: CjExpression?
 
+    /**
+     * 提供 `hasInitializer` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun hasInitializer(): Boolean
 }

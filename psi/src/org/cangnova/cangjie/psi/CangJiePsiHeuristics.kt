@@ -30,7 +30,13 @@ import org.cangnova.cangjie.name.OperatorConventions
 import com.google.common.collect.HashMultimap
 import kotlin.collections.orEmpty
 
+/**
+ * 提供 `CangJiePsiHeuristics` 单例，集中承载仓颉 PSI的共享状态、工厂或工具行为。
+ */
 object CangJiePsiHeuristics {
+    /**
+     * 提供 `isPossibleOperator` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     @JvmStatic
     fun isPossibleOperator(declaration: CjNamedFunction): Boolean {
         if (declaration.hasModifier(CjTokens.OPERATOR_KEYWORD)) {
@@ -43,6 +49,9 @@ object CangJiePsiHeuristics {
         val name = declaration.name ?: return false
         return OperatorConventions.isConventionName(Name.identifier(name))
     }
+    /**
+     * 提供 `isProbablyNothing` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     @JvmStatic
     fun isProbablyNothing(type: CjBasicType): Boolean {
         val referencedName = type.text
@@ -58,6 +67,9 @@ object CangJiePsiHeuristics {
         if (!file.hasImportAlias()) return false
         return file.aliasImportMap[referencedName].contains("Nothing")
     }
+    /**
+     * 提供 `isProbablyNothing` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     @JvmStatic
     fun isProbablyNothing(typeReference: CjTypeReference): Boolean {
         return false
@@ -65,6 +77,9 @@ object CangJiePsiHeuristics {
         return isProbablyNothing(userType)
     }
 
+    /**
+     * 保存 `CjFile.aliasImportMap` 的内部状态，供仓颉 PSI实现维护节点缓存或解析上下文。
+     */
     private val CjFile.aliasImportMap by userDataCached("ALIAS_IMPORT_MAP_KEY") { file ->
         HashMultimap.create<String, String>().apply {
             for (directive in file.importDirectives) {

@@ -28,14 +28,29 @@ import org.cangnova.cangjie.name.*
 
 import com.intellij.psi.impl.source.tree.LeafPsiElement
 
+/**
+ * 定义 `ValueArgument` 接口，约束仓颉 PSI节点或服务需要暴露的结构能力。
+ */
 interface ValueArgument {
+    /**
+     * 提供 `getArgumentExpression` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     @IfNotParsed
     fun getArgumentExpression(): CjExpression?
 
+    /**
+     * 提供 `getArgumentName` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun getArgumentName(): ValueArgumentName?
 
+    /**
+     * 提供 `isNamed` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun isNamed(): Boolean
 
+    /**
+     * 提供 `asElement` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun asElement(): CjElement
 
     /* 例如foo(*arr)中的‘*’，即将数组作为多个var arg参数传递*/
@@ -47,11 +62,26 @@ interface ValueArgument {
     companion object
 }
 
+/**
+ * 定义 `ValueArgumentName` 接口，约束仓颉 PSI节点或服务需要暴露的结构能力。
+ */
 interface ValueArgumentName {
+    /**
+     * 保存 `asName`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val asName: Name
+    /**
+     * 保存 `referenceExpression`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val referenceExpression: CjSimpleNameExpression?
 }
 
+/**
+ * 定义 `LambdaArgument` 接口，约束仓颉 PSI节点或服务需要暴露的结构能力。
+ */
 interface LambdaArgument : ValueArgument {
+    /**
+     * 提供 `getLambdaExpression` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun getLambdaExpression(): CjLambdaExpression?
 }

@@ -27,8 +27,14 @@ import org.junit.jupiter.api.Test
 class AnalysisApiExtendProviderTest : AbstractAnalysisApiExecutionTest(
     "analysis/analysis-api-cfir/testData/extendProvider",
 ) {
+    /**
+     * 使用 standalone CFIR 配置运行 extend provider 查询测试。
+     */
     override val configurator = CaCfirStandaloneAnalysisApiTestConfigurator
 
+    /**
+     * 验证按包、按目标类和按 PSI 恢复得到的 extend symbol 指向同一个扩展声明。
+     */
     @Test
     fun extendQueries(mainFile: CjFile) {
         val extendDeclaration = mainFile.declarations.filterIsInstance<CjExtend>().single()

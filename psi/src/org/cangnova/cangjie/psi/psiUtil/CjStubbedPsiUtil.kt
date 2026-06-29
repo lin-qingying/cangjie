@@ -32,6 +32,9 @@ import com.intellij.psi.tree.TokenSet
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.util.ArrayFactory
 
+/**
+ * 提供 `CjStubbedPsiUtil` 单例，集中承载PSI 工具的共享状态、工厂或工具行为。
+ */
 object CjStubbedPsiUtil {
     /**
      * 获取包含给定元素的声明

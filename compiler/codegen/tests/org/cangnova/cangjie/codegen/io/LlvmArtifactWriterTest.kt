@@ -10,7 +10,13 @@ import org.junit.jupiter.api.assertThrows
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 
+/**
+ * `LlvmArtifactWriter` 的文件写出契约测试。
+ */
 class LlvmArtifactWriterTest {
+    /**
+     * 验证 LLVM IR、bitcode 和 object code 文件都会按请求写出。
+     */
     @Test
     fun `writes llvm ir and bitcode files`() {
         val tempDir = Files.createTempDirectory("llvm-writer")
@@ -39,6 +45,9 @@ class LlvmArtifactWriterTest {
         assertArrayEquals(byteArrayOf(0x7F, 0x45), Files.readAllBytes(paths.objectPath))
     }
 
+    /**
+     * 验证 module 名称会被规整为安全文件名。
+     */
     @Test
     fun `sanitizes module name for output path`() {
         val tempDir = Files.createTempDirectory("llvm-writer")
@@ -58,6 +67,9 @@ class LlvmArtifactWriterTest {
         assertEquals("mod_with_space.ll", llvmIrPath.fileName.toString())
     }
 
+    /**
+     * 验证请求 bitcode 但 module 没有 bitcode 字节时会失败。
+     */
     @Test
     fun `fails when bitcode requested but module has none`() {
         val tempDir = Files.createTempDirectory("llvm-writer")
@@ -77,6 +89,9 @@ class LlvmArtifactWriterTest {
         }
     }
 
+    /**
+     * 验证请求 object code 但 module 没有 object 字节时会失败。
+     */
     @Test
     fun `fails when object code requested but module has none`() {
         val tempDir = Files.createTempDirectory("llvm-writer")

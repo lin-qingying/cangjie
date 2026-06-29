@@ -15,19 +15,45 @@ import org.cangnova.cangjie.source.CjFakePsiSourceElement
 import org.cangnova.cangjie.source.CjPsiSourceElement
 import org.cangnova.cangjie.source.SuspiciousFakeSourceCheck
 
+/**
+ * low-level CFIR diagnostics 收集使用的 pending reporter。
+ */
 internal class LLCfirDiagnosticReporter(
+    /**
+     * 将宏展开等生成源码位置映射回原始源码位置的函数。
+     */
     private val sourceMapper: (AbstractCjSourceElement) -> AbstractCjSourceElement? = { null },
 ) : PendingDiagnosticReporter() {
+    /**
+     * 尚未提交到最终结果的 diagnostics，按 PSI 元素归组。
+     */
     private val pendingDiagnostics = mutableMapOf<PsiElement, MutableList<CjPsiDiagnostic>>()
+
+    /**
+     * 已经提交给调用方的 diagnostics，按 PSI 元素归组。
+     */
     private val _committedDiagnostics = mutableMapOf<PsiElement, MutableList<CjPsiDiagnostic>>()
 
+    /**
+     * 当前已提交 diagnostics 的只读 map。
+     */
     val committedDiagnostics get() = _committedDiagnostics.ifEmpty { emptyMap() }
+
+    /**
+     * 已提交 diagnostics 中是否存在 error。
+     */
     override val hasErrors: Boolean
         get() = committedDiagnostics.any { (_, diagnostics) -> diagnostics.any { it.severity.isError } }
 
+    /**
+     * 已提交 diagnostics 中是否存在 `-Werror` 下会提升为 error 的 warning。
+     */
     override val hasWarningsForWError: Boolean
         get() = committedDiagnostics.any { (_, diagnostics) -> diagnostics.any { it.severity.isErrorWhenWError } }
 
+    /**
+     * 接收 checker 报告的 diagnostic，过滤 suppressed 和隐式 import 相关诊断后进入 pending 集合。
+     */
     override fun report(diagnostic: CjDiagnostic?, context: DiagnosticContext) {
         if (diagnostic == null) return
         if (context.isDiagnosticSuppressed(diagnostic)) return
@@ -40,6 +66,9 @@ internal class LLCfirDiagnosticReporter(
         pendingDiagnostics.addValueFor(psiDiagnostic.psiElement, psiDiagnostic)
     }
 
+    /**
+     * 将任意 CFIR diagnostic 转换为 PSI diagnostic，并应用 source mapper。
+     */
     private fun CjDiagnostic.toPsiDiagnostic(): CjPsiDiagnostic {
         val currentElement = when (this) {
             is CjPsiDiagnostic -> element
@@ -57,6 +86,9 @@ internal class LLCfirDiagnosticReporter(
         }
     }
 
+    /**
+     * 提交指定 source element 上的 pending diagnostics，或在需要时提交全部 pending diagnostics。
+     */
     override fun checkAndCommitReportsOn(element: AbstractCjSourceElement, context: DiagnosticContext, commitEverything: Boolean) {
         for ((diagnosticElement, pendingList) in pendingDiagnostics) {
             val committedList = _committedDiagnostics.getOrPut(diagnosticElement) { mutableListOf() }
@@ -81,6 +113,9 @@ internal class LLCfirDiagnosticReporter(
     }
 }
 
+/**
+ * 判断 diagnostic 是否来自脚本隐式 import 的 fake source。
+ */
 @OptIn(SuspiciousFakeSourceCheck::class)
 private fun CjDiagnostic.isAboutImplicitImport(): Boolean {
     if (this !is CjPsiDiagnostic) return false
@@ -88,12 +123,18 @@ private fun CjDiagnostic.isAboutImplicitImport(): Boolean {
 }
 
 
+/**
+ * 将 light diagnostic 解包为 IDE 路径需要的 PSI diagnostic。
+ */
 private fun CjLightDiagnostic.toPsiDiagnosticFromLight(): CjPsiDiagnostic {
     val psiSourceElement = element.unwrapToCjPsiSourceElement()
         ?: error("Diagnostic should be created from PSI in IDE")
     return (this as CjDiagnostic).toPsiDiagnosticAt(psiSourceElement)
 }
 
+/**
+ * 在指定 PSI source element 上重新创建保持原 factory 和参数的 PSI diagnostic。
+ */
 @Suppress("UNCHECKED_CAST")
 private fun CjDiagnostic.toPsiDiagnosticAt(psiSourceElement: CjPsiSourceElement): CjPsiDiagnostic {
     @Suppress("UNCHECKED_CAST")

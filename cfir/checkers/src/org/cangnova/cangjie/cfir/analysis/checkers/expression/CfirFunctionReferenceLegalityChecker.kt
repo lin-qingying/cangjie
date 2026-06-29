@@ -29,7 +29,18 @@ object CfirFunctionReferenceLegalityChecker : CfirQualifiedAccessChecker() {
     override fun check(expression: CfirQualifiedAccessExpression) {
         if (expression is CfirFunctionCall) return
 
-        val targetSymbol = expression.resolvedFunctionSymbolOrNull() ?: return
+        val targetSymbol = expression.resolvedFunctionSymbolOrNull()
+        if (targetSymbol == null) {
+            val recoveredMutFunction = expression.declaredUpperBoundMutFunctionOrNull() ?: return
+            val diagnosticSource = expression.calleeReference.source ?: expression.source ?: return
+            reporter.reportOn(
+                source = diagnosticSource,
+                factory = CfirErrors.USE_MUTABLE_FUNC_ALONE,
+                a = recoveredMutFunction.name,
+            )
+            return
+        }
+
         val targetDeclaration = targetSymbol.takeIf { it.isBound }?.cfir ?: return
         val diagnosticSource = expression.calleeReference.source ?: expression.source ?: return
 

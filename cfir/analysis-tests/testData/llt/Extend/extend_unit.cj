@@ -1,4 +1,4 @@
-
+// WITH_EXTRA_CHECKERS
 
 extend Unit {
     public func add() {

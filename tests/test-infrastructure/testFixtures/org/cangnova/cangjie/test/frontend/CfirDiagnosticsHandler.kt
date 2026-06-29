@@ -73,6 +73,9 @@ import java.io.File
 import kotlin.properties.ReadOnlyProperty
 import kotlin.reflect.KProperty
 
+/**
+ * 表示 `CfirAnalysisHandler`，承载CFIR 前端测试中的配置数据、测试产物或处理步骤。
+ */
 abstract class CfirAnalysisHandler(
     testServices: TestServices,
     failureDisablesNextSteps: Boolean = false,
@@ -83,34 +86,64 @@ abstract class CfirAnalysisHandler(
     failureDisablesNextSteps,
     doNotRunIfThereWerePreviousFailures,
 ) {
+    /**
+     * 保存 `File.nameWithoutFirExtension`，供CFIR 前端测试在测试执行期间读取或传递。
+     */
     protected val File.nameWithoutFirExtension: String
         get() = nameWithoutExtension.removeSuffix(".fir")
 }
 
+/**
+ * 表示 `CfirDiagnosticsHandler`，承载CFIR 前端测试中的配置数据、测试产物或处理步骤。
+ */
 class CfirDiagnosticsHandler(
     testServices: TestServices,
 ) : CfirAnalysisHandler(testServices) {
+    /**
+     * 保存 `globalMetadataInfoHandler`，供CFIR 前端测试在测试执行期间读取或传递。
+     */
     private val globalMetadataInfoHandler: GlobalMetadataInfoHandler
         get() = testServices.globalMetadataInfoHandler
 
+    /**
+     * 保存 `diagnosticsService`，供CFIR 前端测试在测试执行期间读取或传递。
+     */
     private val diagnosticsService: DiagnosticsService
         get() = testServices.diagnosticsService
 
+    /**
+     * 保存 `directiveContainers`，供CFIR 前端测试在测试执行期间读取或传递。
+     */
     override val directiveContainers: List<DirectivesContainer>
         get() = listOf(DiagnosticsDirectives, CfirDiagnosticsDirectives)
 
+    /**
+     * 保存 `additionalServices`，供CFIR 前端测试在测试执行期间读取或传递。
+     */
     override val additionalServices: List<ServiceRegistrationData>
         get() = listOf(service(::DiagnosticsService), service(::CfirDiagnosticCollectorService))
 
+    /**
+     * 保存 `additionalAfterAnalysisCheckers`，供CFIR 前端测试在测试执行期间读取或传递。
+     */
     override val additionalAfterAnalysisCheckers: List<Constructor<AfterAnalysisChecker>>
         get() = emptyList()
 
+    /**
+     * 保存 `fullDiagnosticsRenderer`，供CFIR 前端测试在测试执行期间读取或传递。
+     */
     private val fullDiagnosticsRenderer = FullDiagnosticsRenderer(DiagnosticsDirectives.RENDER_DIAGNOSTICS_FULL_TEXT)
 
+    /**
+     * 执行 `processAfterAllModules` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     override fun processAfterAllModules(someAssertionWasFailed: Boolean) {
         fullDiagnosticsRenderer.assertCollectedDiagnostics(testServices, ".cfir.diag.txt")
     }
 
+    /**
+     * 执行 `processModule` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     override fun processModule(module: TestModule, info: CfirOutputArtifact) {
         val frontendDiagnosticsPerFile = testServices.cfirDiagnosticCollectorService.getFrontendDiagnosticsForModule(info)
 
@@ -156,6 +189,9 @@ class CfirDiagnosticsHandler(
         }
     }
 
+    /**
+     * 提供 `collectDebugInfoDiagnostics` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     private fun collectDebugInfoDiagnostics(
         module: TestModule,
         testFile: TestFile,
@@ -173,6 +209,9 @@ class CfirDiagnosticsHandler(
         val shouldRenderDynamic = DiagnosticsDirectives.MARK_DYNAMIC_CALLS in module.directives
 
         object : CfirDefaultVisitorVoid() {
+            /**
+             * 执行 `visitElement` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+             */
             override fun visitElement(element: CfirElement) {
                 if (element is CfirExpression) {
                     consumer.reportExpressionTypeDiagnostic(element)
@@ -183,6 +222,9 @@ class CfirDiagnosticsHandler(
                 element.acceptChildren(this)
             }
 
+            /**
+             * 提供 `reportDynamic` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+             */
             private fun reportDynamic(element: CfirResolvable) {
                 val reference = element.calleeReference as? CfirNamedReference ?: return
                 val resolved = reference as? CfirResolvedNamedReference ?: return
@@ -192,6 +234,9 @@ class CfirDiagnosticsHandler(
                 }
             }
 
+            /**
+             * 执行 `visitFunctionCall` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+             */
             override fun visitFunctionCall(functionCall: CfirFunctionCall) {
                 val reference = functionCall.calleeReference as? CfirNamedReference ?: return
                 consumer.reportCallDiagnostic(functionCall, reference)
@@ -199,6 +244,9 @@ class CfirDiagnosticsHandler(
                 super.visitFunctionCall(functionCall)
             }
 
+            /**
+             * 执行 `visitNamedAccessExpression` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+             */
             override fun visitNamedAccessExpression(propertyAccess: CfirNamedAccessExpression) {
                 val reference = propertyAccess.calleeReference as? CfirNamedReference ?: return
                 consumer.reportContainingCallableOwner(propertyAccess, reference)
@@ -220,12 +268,18 @@ class CfirDiagnosticsHandler(
         globalMetadataInfoHandler.addMetadataInfosForFile(testFile, codeMetaInfos)
     }
 
+    /**
+     * 提供 `reportExpressionTypeDiagnostic` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     private fun DebugDiagnosticConsumer.reportExpressionTypeDiagnostic(element: CfirExpression) {
         report(CjDebugInfoDiagnostics.EXPRESSION_TYPE, element) {
             element.coneTypeOrNull?.toString() ?: "<unknown type>"
         }
     }
 
+    /**
+     * 提供 `reportCallDiagnostic` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     private fun DebugDiagnosticConsumer.reportCallDiagnostic(element: CfirElement, reference: CfirNamedReference) {
         report(CjDebugInfoDiagnostics.CALL, element) {
             val resolvedSymbol = (reference as? CfirResolvedNamedReference)?.resolvedSymbol
@@ -234,6 +288,9 @@ class CfirDiagnosticsHandler(
         }
     }
 
+    /**
+     * 提供 `reportContainingCallableOwner` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     private fun DebugDiagnosticConsumer.reportContainingCallableOwner(element: CfirElement, reference: CfirNamedReference) {
         report(CjDebugInfoDiagnostics.CALLABLE_OWNER, element) {
             val resolvedSymbol = (reference as? CfirResolvedNamedReference)?.resolvedSymbol
@@ -242,6 +299,9 @@ class CfirDiagnosticsHandler(
         }
     }
 
+    /**
+     * 提供 `getTypeOfCall` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     private fun getTypeOfCall(reference: CfirNamedReference, resolvedSymbol: CfirBasedSymbol<*>?): String {
         if (resolvedSymbol == null) return TypeOfCall.UNRESOLVED.nameToRender
 
@@ -262,11 +322,17 @@ class CfirDiagnosticsHandler(
         }
     }
 
+    /**
+     * 提供 `CfirBasedSymbol` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     private fun CfirBasedSymbol<*>.fqNameForDebug(): String? = when (this) {
         is CfirCallableSymbol<*> -> callableNameForDebug(cfir)
         else -> cfir.toString()
     }
 
+    /**
+     * 提供 `callableNameForDebug` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     private fun callableNameForDebug(callable: CfirCallableDeclaration): String = when (callable) {
         is CfirFunction -> callable.symbol.name.asString()
         is CfirProperty -> callable.name.asString()
@@ -281,9 +347,18 @@ class CfirDiagnosticsHandler(
     }
 }
 
+/**
+ * 表示 `FullDiagnosticsRenderer`，承载CFIR 前端测试中的配置数据、测试产物或处理步骤。
+ */
 class FullDiagnosticsRenderer(private val directive: org.cangnova.cangjie.test.directives.model.SimpleDirective) {
+    /**
+     * 保存 `dumper`，供CFIR 前端测试在测试执行期间读取或传递。
+     */
     private val dumper: MultiModuleInfoDumper = MultiModuleInfoDumper(moduleHeaderTemplate = "// -- Module: <%s> --")
 
+    /**
+     * 执行 `assertCollectedDiagnostics` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     fun assertCollectedDiagnostics(testServices: TestServices, expectedExtension: String) {
         val directives = testServices.moduleStructure.allDirectives
         val testDataFile = testServices.moduleStructure.originalTestDataFiles.first()
@@ -303,6 +378,9 @@ class FullDiagnosticsRenderer(private val directive: org.cangnova.cangjie.test.d
         testServices.assertions.assertEqualsToFile(expectedFile, dumper.generateResultingDump())
     }
 
+    /**
+     * 执行 `storeFullDiagnosticRender` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     fun storeFullDiagnosticRender(module: TestModule, diagnostics: List<CjDiagnostic>, file: TestFile) {
         if (directive !in module.directives) return
         if (diagnostics.isEmpty()) return
@@ -330,14 +408,32 @@ class FullDiagnosticsRenderer(private val directive: org.cangnova.cangjie.test.d
         )
     }
 
+    /**
+     * 表示 `RenderedDiagnostic`，承载CFIR 前端测试中的配置数据、测试产物或处理步骤。
+     */
     private data class RenderedDiagnostic(
+        /**
+         * 保存 `start`，供CFIR 前端测试在测试执行期间读取或传递。
+         */
         val start: Int,
+        /**
+         * 保存 `end`，供CFIR 前端测试在测试执行期间读取或传递。
+         */
         val end: Int,
+        /**
+         * 保存 `severity`，供CFIR 前端测试在测试执行期间读取或传递。
+         */
         val severity: String,
+        /**
+         * 保存 `message`，供CFIR 前端测试在测试执行期间读取或传递。
+         */
         val message: String,
     )
 }
 
+/**
+ * 执行 `diagnosticCodeMetaInfos` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+ */
 fun List<CjDiagnostic>.diagnosticCodeMetaInfos(
     module: TestModule,
     file: TestFile,
@@ -363,6 +459,9 @@ fun List<CjDiagnostic>.diagnosticCodeMetaInfos(
     }
 }
 
+/**
+ * 执行 `toMetaInfos` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+ */
 fun CjDiagnostic.toMetaInfos(
     module: TestModule,
     file: TestFile,
@@ -397,6 +496,9 @@ fun CjDiagnostic.toMetaInfos(
     }
 }
 
+/**
+ * 提供 `diagnosticRanges` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+ */
 private fun diagnosticRanges(diagnostic: CjDiagnostic): List<com.intellij.openapi.util.TextRange> {
     return when (diagnostic) {
         is CjDiagnosticWithSource -> diagnostic.textRanges
@@ -404,14 +506,26 @@ private fun diagnosticRanges(diagnostic: CjDiagnostic): List<com.intellij.openap
     }
 }
 
+/**
+ * 提供 `CfirMetaInfoUtils` 单例，集中承载CFIR 前端测试的共享状态、常量或默认行为。
+ */
 private object CfirMetaInfoUtils {
+    /**
+     * 保存 `renderDiagnosticNoArgs`，供CFIR 前端测试在测试执行期间读取或传递。
+     */
     val renderDiagnosticNoArgs: DiagnosticCodeMetaInfoRenderConfiguration =
         DiagnosticCodeMetaInfoRenderConfiguration().apply { renderParams = false }
 
+    /**
+     * 保存 `renderDiagnosticWithArgs`，供CFIR 前端测试在测试执行期间读取或传递。
+     */
     val renderDiagnosticWithArgs: DiagnosticCodeMetaInfoRenderConfiguration =
         DiagnosticCodeMetaInfoRenderConfiguration().apply { renderParams = true }
 }
 
+/**
+ * 表示 `TypeOfCall`，承载CFIR 前端测试中的配置数据、测试产物或处理步骤。
+ */
 private enum class TypeOfCall(val nameToRender: String) {
     UNRESOLVED("unresolved"),
     VARIABLE_THROUGH_INVOKE("variable&invoke"),
@@ -420,12 +534,24 @@ private enum class TypeOfCall(val nameToRender: String) {
     OTHER("other"),
 }
 
+/**
+ * 提供 `renderCallInfo` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+ */
 private fun renderCallInfo(fqName: String?, typeCall: String): String {
     return "fqName: ${fqName ?: "fqName is unknown"}; typeCall: $typeCall"
 }
 
+/**
+ * 表示 `DebugDiagnosticConsumer`，承载CFIR 前端测试中的配置数据、测试产物或处理步骤。
+ */
 private class DebugDiagnosticConsumer(
+    /**
+     * 保存 `result`，供CFIR 前端测试在测试执行期间读取或传递。
+     */
     private val result: MutableList<CjDiagnostic>,
+    /**
+     * 保存 `diagnosedRangesToDiagnosticNames`，供CFIR 前端测试在测试执行期间读取或传递。
+     */
     private val diagnosedRangesToDiagnosticNames: Map<IntRange, Set<String>>,
 ) {
     private companion object {
@@ -447,6 +573,9 @@ private class DebugDiagnosticConsumer(
         )
     }
 
+    /**
+     * 执行 `report` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     @OptIn(InternalDiagnosticFactoryMethod::class)
     fun report(factory: CjDiagnosticFactory0, sourceElement: CjSourceElement?) {
         if (sourceElement == null || sourceElement.kind !in allowedKindsForDebugInfo) return
@@ -459,6 +588,9 @@ private class DebugDiagnosticConsumer(
         result.add(diagnostic)
     }
 
+    /**
+     * 执行 `report` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     @OptIn(InternalDiagnosticFactoryMethod::class)
     fun report(factory: CjDiagnosticFactory1<String>, element: CfirElement, argumentFactory: () -> String) {
         val sourceElement = element.source?.takeIf { it.kind in allowedKindsForDebugInfo } ?: return
@@ -472,6 +604,9 @@ private class DebugDiagnosticConsumer(
         result.add(diagnostic)
     }
 
+    /**
+     * 提供 `getPositionedElement` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     private fun CjDiagnosticFactory1<String>.getPositionedElement(sourceElement: CjSourceElement): CjSourceElement {
         val elementType = sourceElement.elementType
         if (this === CjDebugInfoDiagnostics.CALL &&
@@ -489,15 +624,39 @@ private class DebugDiagnosticConsumer(
     }
 }
 
+/**
+ * 提供 `CjDebugInfoDiagnostics` 单例，集中承载CFIR 前端测试的共享状态、常量或默认行为。
+ */
 private object CjDebugInfoDiagnostics : CjDiagnosticsContainer() {
+    /**
+     * 保存 `DYNAMIC`，供CFIR 前端测试在测试执行期间读取或传递。
+     */
     val DYNAMIC by debugInfo0()
+    /**
+     * 保存 `EXPRESSION_TYPE`，供CFIR 前端测试在测试执行期间读取或传递。
+     */
     val EXPRESSION_TYPE by debugInfo1()
+    /**
+     * 保存 `CALL`，供CFIR 前端测试在测试执行期间读取或传递。
+     */
     val CALL by debugInfo1()
+    /**
+     * 保存 `CALLABLE_OWNER`，供CFIR 前端测试在测试执行期间读取或传递。
+     */
     val CALLABLE_OWNER by debugInfo1()
 
+    /**
+     * 执行 `getRendererFactory` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     override fun getRendererFactory(): BaseDiagnosticRendererFactory = Renderers
 
+    /**
+     * 提供 `Renderers` 单例，集中承载CFIR 前端测试的共享状态、常量或默认行为。
+     */
     private object Renderers : BaseDiagnosticRendererFactory() {
+        /**
+         * 保存 `MAP`，供CFIR 前端测试在测试执行期间读取或传递。
+         */
         override val MAP: CjDiagnosticFactoryToRendererMap by CjDiagnosticFactoryToRendererMap("DebugInfo") { map ->
             map.put(DYNAMIC, "")
             map.put(EXPRESSION_TYPE, "{0}", TO_STRING)
@@ -506,6 +665,9 @@ private object CjDebugInfoDiagnostics : CjDiagnosticsContainer() {
         }
     }
 
+    /**
+     * 提供 `debugInfo0` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     private fun debugInfo0() = object {
         operator fun provideDelegate(thisRef: Any?, prop: KProperty<*>): ReadOnlyProperty<Any?, CjDiagnosticFactory0> {
             return DummyDelegate(
@@ -520,6 +682,9 @@ private object CjDebugInfoDiagnostics : CjDiagnosticsContainer() {
         }
     }
 
+    /**
+     * 提供 `debugInfo1` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     private fun debugInfo1() = object {
         operator fun provideDelegate(thisRef: Any?, prop: KProperty<*>): ReadOnlyProperty<Any?, CjDiagnosticFactory1<String>> {
             return DummyDelegate(
@@ -535,6 +700,9 @@ private object CjDebugInfoDiagnostics : CjDiagnosticsContainer() {
     }
 }
 
+/**
+ * 提供 `toCjPsiSourceElement` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+ */
 private fun CjSourceElement.toCjPsiSourceElement(kind: org.cangnova.cangjie.source.CjSourceElementKind): CjPsiSourceElement? {
     return (this as? CjPsiSourceElement)?.psi?.toCjPsiSourceElement(kind)
 }

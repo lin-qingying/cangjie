@@ -26,6 +26,12 @@ package org.cangnova.cangjie.psi
 
 import com.intellij.lang.ASTNode
 
+/**
+ * 表示 `CjLabelReferenceExpression`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjLabelReferenceExpression(node: ASTNode) : CjSimpleNameExpressionImpl(node) {
+    /**
+     * 暴露 `referencedNameElement`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val referencedNameElement get() = identifier ?: this
 }

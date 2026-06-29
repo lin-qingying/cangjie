@@ -46,22 +46,64 @@ import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
  */
 class CangJieFieldStubImpl(
     parent: StubElement<out PsiElement>?,
+    /**
+     * 保存 `name` 的内部状态，供PSI Stub实现维护节点缓存或解析上下文。
+     */
     private val name: StringRef?,
+    /**
+     * 保存 `fqName` 的内部状态，供PSI Stub实现维护节点缓存或解析上下文。
+     */
     private val fqName: FqName?,
+    /**
+     * 保存 `isVar` 的内部状态，供PSI Stub实现维护节点缓存或解析上下文。
+     */
     private val isVar: Boolean,
+    /**
+     * 保存 `isConst` 的内部状态，供PSI Stub实现维护节点缓存或解析上下文。
+     */
     private val isConst: Boolean,
+    /**
+     * 保存 `hasInitializer` 的内部状态，供PSI Stub实现维护节点缓存或解析上下文。
+     */
     private val hasInitializer: Boolean,
+    /**
+     * 保存 `hasReturnTypeRef` 的内部状态，供PSI Stub实现维护节点缓存或解析上下文。
+     */
     private val hasReturnTypeRef: Boolean,
+    /**
+     * 保存 `origin`，供PSI Stub流程读取节点结构或语义信息。
+     */
     val origin: CangJieStubOrigin?,
 ) : CangJieStubBaseImpl<CjFieldVariable>(parent, CjStubElementTypes.FIELD), CangJieFieldStub {
 
+    /**
+     * 实现 `getFqName` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getFqName(): FqName? = fqName
+    /**
+     * 实现 `isVar` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun isVar(): Boolean = isVar
+    /**
+     * 实现 `isConst` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun isConst(): Boolean = isConst
+    /**
+     * 实现 `hasInitializer` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun hasInitializer(): Boolean = hasInitializer
+    /**
+     * 实现 `hasReturnTypeRef` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun hasReturnTypeRef(): Boolean = hasReturnTypeRef
+    /**
+     * 实现 `getName` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getName(): String? = StringRef.toString(name)
 
+    /**
+     * 实现 `copyInto` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun copyInto(newParent: StubElement<*>?): CangJieFieldStubImpl = CangJieFieldStubImpl(
         parent = newParent,
         name = name,

@@ -28,6 +28,9 @@ import org.cangnova.cangjie.psi.stubs.CangJiePlaceHolderWithTextStub
 import com.intellij.lang.ASTNode
 import com.intellij.psi.stubs.IStubElementType
 
+/**
+ * 表示 `CjStringTemplateEntry`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 abstract class CjStringTemplateEntry : CjElementImplStub<CangJiePlaceHolderWithTextStub<out CjStringTemplateEntry>> {
     constructor(node: ASTNode) : super(node)
 
@@ -36,6 +39,9 @@ abstract class CjStringTemplateEntry : CjElementImplStub<CangJiePlaceHolderWithT
         elementType: IStubElementType<*, *>,
     ) : super(stub, elementType)
 
+    /**
+     * 保存 `expression`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val expression: CjExpression?
         get() = findChildByClass(CjExpression::class.java)
 

@@ -28,8 +28,14 @@ import org.cangnova.cangjie.psi.CjDotQualifiedExpression
 import com.intellij.lang.ASTNode
 import org.jetbrains.annotations.NonNls
 
+/**
+ * 表示 `CjDotQualifiedExpressionElementType`，承载PSI Stub中的语法节点、索引桩或辅助模型。
+ */
 class CjDotQualifiedExpressionElementType(debugName: String) :
     CjPlaceHolderStubElementType<CjDotQualifiedExpression>(debugName, CjDotQualifiedExpression::class.java) {
+    /**
+     * 实现 `shouldCreateStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun shouldCreateStub(node: ASTNode): Boolean {
         val treeParent = node.treeParent ?: return false
 

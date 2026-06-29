@@ -32,21 +32,33 @@ import com.intellij.psi.stubs.StubOutputStream
 import org.jetbrains.annotations.NonNls
 import java.io.IOException
 
+/**
+ * 表示 `CjTypeProjectionElementType`，承载PSI Stub中的语法节点、索引桩或辅助模型。
+ */
 class CjTypeProjectionElementType(debugName: String) :
     CjStubElementType<CangJieTypeProjectionStub, CjTypeProjection>(
         debugName,
         CjTypeProjection::class.java,
         CangJieTypeProjectionStub::class.java,
     ) {
+    /**
+     * 实现 `createStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createStub(psi: CjTypeProjection, parentStub: StubElement<*>): CangJieTypeProjectionStub {
         return CangJieTypeProjectionStubImpl(parentStub, psi.projectionKind.ordinal)
     }
 
+    /**
+     * 实现 `serialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     @Throws(IOException::class)
     override fun serialize(stub: CangJieTypeProjectionStub, dataStream: StubOutputStream) {
         dataStream.writeVarInt(stub.getProjectionKind().ordinal)
     }
 
+    /**
+     * 实现 `deserialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     @Throws(IOException::class)
     override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>): CangJieTypeProjectionStub {
         val projectionKindOrdinal = dataStream.readVarInt()

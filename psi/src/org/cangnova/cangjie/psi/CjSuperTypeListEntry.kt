@@ -32,6 +32,9 @@ import com.intellij.psi.stubs.IStubElementType
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.util.ArrayFactory
 
+/**
+ * 表示 `CjSuperTypeListEntry`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 open class CjSuperTypeListEntry : CjElementImplStub<CangJiePlaceHolderStub<out CjSuperTypeListEntry>> {
     constructor(node: ASTNode) : super(node)
 
@@ -40,23 +43,38 @@ open class CjSuperTypeListEntry : CjElementImplStub<CangJiePlaceHolderStub<out C
         nodeType: IStubElementType<*, *>,
     ) : super(stub, nodeType)
 
+    /**
+     * 保存 `parentDeclaration`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val parentDeclaration: PsiElement?
         get() = PsiTreeUtil.getParentOfType(
             this,
             CjTypeStatement::class.java,
         )
 
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitSuperTypeListEntry(this, data)
     }
 
+    /**
+     * 实现 `toString` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun toString(): String {
         return node.elementType.toString()
     }
 
+    /**
+     * 保存 `typeReference`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     open val typeReference: CjTypeReference?
         get() = getStubOrPsiChild(CjStubElementTypes.TYPE_REFERENCE)
 
+    /**
+     * 保存 `typeAsUserType`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val typeAsUserType: CjUserType?
         get() {
             val reference = typeReference

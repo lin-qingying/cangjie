@@ -22,6 +22,9 @@ import org.cangnova.cangjie.test.services.assertions
  * 可视化 source file 对应的 [FileStructure] 插入点。
  */
 abstract class AbstractFileStructureTest : AbstractAnalysisApiBasedTest() {
+    /**
+     * 生成包含 FileStructureElement 注释的文件文本并与 golden 比较。
+     */
     override fun doTestByMainFile(mainFile: CjFile, mainModule: CjTestModule, testServices: TestServices) {
         val fileStructure = mainFile.getFileStructure()
         val allStructureElements = fileStructure.getAllStructureElements()
@@ -74,14 +77,26 @@ abstract class AbstractFileStructureTest : AbstractAnalysisApiBasedTest() {
         }
     }
 
+    /**
+     * 为结构元素创建插入到源码中的块注释。
+     */
     private fun FileStructureElement.createComment(): String = """/* ${this::class.simpleName} */"""
 
+    /**
+     * 从当前文件所属可解析 session 中读取 [FileStructure]。
+     */
     private fun CjFile.getFileStructure(): FileStructure {
         val session = getResolvableSessionForTest()
         return session.moduleComponents.fileStructureCache.getFileStructure(this)
     }
 }
 
+/**
+ * source 配置下的文件结构测试基类。
+ */
 abstract class AbstractSourceFileStructureTest : AbstractFileStructureTest() {
+    /**
+     * 使用源码 low-level CFIR 测试配置。
+     */
     override val configurator = analysisApiCfirSourceTestConfigurator(analyseInDependentSession = false)
 }

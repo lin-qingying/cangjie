@@ -18,7 +18,17 @@ import org.eclipse.lsp4j.TextDocumentSyncOptions
 import org.eclipse.lsp4j.WorkspaceFoldersOptions
 import org.eclipse.lsp4j.WorkspaceServerCapabilities
 
+/**
+ * 根据服务器描述和客户端能力协商结果构造 LSP 初始化能力。
+ *
+ * 该工厂集中维护服务端对文本同步、语义功能、诊断通道和工作区能力的声明。
+ */
 object CangjieServerCapabilitiesFactory {
+    /**
+     * 创建初始化响应对象。
+     *
+     * 响应包含服务端能力和服务端名称/版本信息，是 `initialize` 请求返回给客户端的协议根对象。
+     */
     fun createInitializeResult(
         descriptor: CangjieLanguageServerDescriptor,
         negotiation: CangjieClientCapabilityNegotiation,
@@ -29,6 +39,11 @@ object CangjieServerCapabilitiesFactory {
         }
     }
 
+    /**
+     * 根据协商后的功能集合创建 `ServerCapabilities`。
+     *
+     * 该方法只暴露客户端支持且服务器描述允许的能力，避免客户端收到无法处理或服务端未实现的 provider。
+     */
     fun createCapabilities(
         descriptor: CangjieLanguageServerDescriptor,
         negotiation: CangjieClientCapabilityNegotiation,

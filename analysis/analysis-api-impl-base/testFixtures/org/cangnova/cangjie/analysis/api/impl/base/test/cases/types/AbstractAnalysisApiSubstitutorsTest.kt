@@ -14,8 +14,16 @@ import org.cangnova.cangjie.test.services.assertions
 
 /**
  * public `CaSubstitutor` 的类型替换抽象测试。
+ *
+ * 测试构造一个类型参数到目标 class 默认类型的替换器，并比较 `substitute` 与 `substituteOrNull`
+ * 在公开类型渲染上的结果。
  */
 abstract class AbstractAnalysisApiSubstitutorsTest : AbstractAnalysisApiComponentTest() {
+    /**
+     * 执行公开 substitutor 行为测试。
+     *
+     * 方法按 testData 定位替换目标类型和泛型函数，构造替换器后输出原始类型与替换后的类型文本。
+     */
     override fun doTestByMainFile(mainFile: CjFile, mainModule: CjTestModule, testServices: TestServices) {
         val directives = directivesForMainFile(mainFile, mainModule)
         val actual = analyzeForTest(mainFile) {

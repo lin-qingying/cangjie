@@ -45,9 +45,17 @@ import org.cangnova.cangjie.utils.exceptions.withPsiEntry
  * 负责收集并后处理某次调用的全部重载候选项，用于 IDE 的重载提示等场景。
  */
 class AllCandidatesResolver(private val firSession: CfirSession) {
+    /**
+     * 候选收集期间使用的作用域会话。
+     */
     private val scopeSession = ScopeSession()
 
     // 该 transformer 仅用于访问解析组件，不实际参与树的变换
+    /**
+     * 用于构造 body resolve 组件的占位 transformer。
+     *
+     * 该 transformer 不直接变换 CFIR 树，只提供 resolver、context 和 call completer 等组件入口。
+     */
     private val stubBodyResolveTransformer = CfirBodyResolveTransformer(
         session = firSession,
         phase = CfirResolvePhase.BODY_RESOLVE,
@@ -55,6 +63,11 @@ class AllCandidatesResolver(private val firSession: CfirSession) {
         scopeSession = scopeSession,
     )
 
+    /**
+     * 用于收集全部候选的 body resolve 组件集合。
+     *
+     * 这里替换 call resolver，使调用解析阶段保留所有 overload candidate，而不是只保留最终选择结果。
+     */
     private val bodyResolveComponents = object : StubBodyResolveTransformerComponents(
         firSession,
         scopeSession,
@@ -72,6 +85,9 @@ class AllCandidatesResolver(private val firSession: CfirSession) {
         }
     }
 
+    /**
+     * 候选后处理阶段使用的解析上下文。
+     */
     private val resolutionContext = ResolutionContext(firSession, bodyResolveComponents, bodyResolveComponents.transformer.context)
 
     /**

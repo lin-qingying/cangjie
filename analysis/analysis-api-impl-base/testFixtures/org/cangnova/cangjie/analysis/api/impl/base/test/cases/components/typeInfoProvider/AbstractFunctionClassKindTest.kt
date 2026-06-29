@@ -12,8 +12,15 @@ import org.cangnova.cangjie.test.services.assertions
 
 /**
  * `typeInfoProvider.functionClassKind` 的抽象测试。
+ *
+ * 该测试验证期望类型为函数类型时公开 `CaFunctionType` 标志位是否稳定。
  */
 abstract class AbstractFunctionClassKindTest : AbstractAnalysisApiComponentTest() {
+    /**
+     * 执行函数类型种类信息测试。
+     *
+     * 方法读取选中表达式的 expected type，并输出 C 函数、闭包和变长参数等公开标志。
+     */
     override fun doTestByMainFile(mainFile: CjFile, mainModule: CjTestModule, testServices: TestServices) {
         val expression = testServices.expressionMarkerProvider
             .getTopmostSelectedElementOfType<CjExpression>(mainFile)

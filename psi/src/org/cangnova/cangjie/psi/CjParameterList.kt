@@ -35,27 +35,45 @@ import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 import com.intellij.lang.ASTNode
 import com.intellij.psi.PsiElement
 
+/**
+ * 表示 `CjParameterList`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjParameterList : CjElementImplStub<CangJiePlaceHolderStub<CjParameterList>> {
     constructor(node: ASTNode) : super(node)
 
     constructor(stub: CangJiePlaceHolderStub<CjParameterList>) : super(stub, CjStubElementTypes.VALUE_PARAMETER_LIST)
 
+    /**
+     * 实现 `toString` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun toString(): String {
         return node.elementType.toString()
     }
 
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitParameterList(this, data)
     }
 
+    /**
+     * 实现 `getParent` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getParent(): PsiElement? {
         val stub: CangJiePlaceHolderStub<CjParameterList>? = stub
         return if (stub != null) stub.parentStub.psi else super.getParent()
     }
 
+    /**
+     * 保存 `parameters`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val parameters: List<CjParameter>
         get() = getStubOrPsiChildrenAsList(CjStubElementTypes.VALUE_PARAMETER)
 
+    /**
+     * 提供 `addParameter` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun addParameter(parameter: CjParameter): CjParameter {
         return addItem(
             this,
@@ -64,6 +82,9 @@ class CjParameterList : CjElementImplStub<CangJiePlaceHolderStub<CjParameterList
         )
     }
 
+    /**
+     * 提供 `addParameterBefore` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun addParameterBefore(parameter: CjParameter, anchor: CjParameter?): CjParameter {
         return addItemBefore(
             this,
@@ -73,6 +94,9 @@ class CjParameterList : CjElementImplStub<CangJiePlaceHolderStub<CjParameterList
         )
     }
 
+    /**
+     * 提供 `addParameterAfter` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun addParameterAfter(parameter: CjParameter, anchor: CjParameter?): CjParameter {
         return addItemAfter(
             this,
@@ -82,29 +106,50 @@ class CjParameterList : CjElementImplStub<CangJiePlaceHolderStub<CjParameterList
         )
     }
 
+    /**
+     * 提供 `removeParameter` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun removeParameter(parameter: CjParameter) {
         removeItem(parameter)
     }
 
+    /**
+     * 提供 `removeParameter` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun removeParameter(index: Int) {
         removeParameter(parameters[index])
     }
 
+    /**
+     * 保存 `ownerFunction`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val ownerFunction: CjDeclarationWithBody?
         get() {
             val parent = parentByStub as? CjDeclarationWithBody ?: return null
             return parent
         }
 
+    /**
+     * 保存 `rightParenthesis`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val rightParenthesis: PsiElement?
         get() = findChildByType(CjTokens.RPAR)
 
+    /**
+     * 保存 `leftParenthesis`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val leftParenthesis: PsiElement?
         get() = findChildByType(CjTokens.LPAR)
 
+    /**
+     * 保存 `firstComma`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val firstComma: PsiElement?
         get() = findChildByType(CjTokens.COMMA)
 
+    /**
+     * 保存 `trailingComma`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val trailingComma: PsiElement?
         get() {
             val parentElement = parent

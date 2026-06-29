@@ -12,10 +12,16 @@ import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
  */
 @CaPlatformInterface
 interface CaContentScopeProvider : CaEngineService {
+    /**
+     * 返回模块经过平台修正后的内容搜索范围。
+     */
     fun getRefinedContentScope(module: CaModule): GlobalSearchScope
 
     @CaPlatformInterface
     companion object {
+        /**
+         * 获取项目级内容范围 provider 服务。
+         */
         fun getInstance(project: Project): CaContentScopeProvider = project.service()
     }
 }

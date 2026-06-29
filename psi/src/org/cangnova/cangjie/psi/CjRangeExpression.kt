@@ -28,15 +28,27 @@ import org.cangnova.cangjie.lexer.CjTokens
 import com.intellij.lang.ASTNode
 import com.intellij.psi.PsiElement
 
+/**
+ * 表示 `CjRangeExpression`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjRangeExpression(node: ASTNode) : CjBinaryExpression(node), CjReferenceExpression {
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitRangeExpression(this, data)
     }
 
+    /**
+     * 提供 `getInnerExpressions` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun getInnerExpressions(): List<CjExpression> {
         return listOfNotNull(left, right, step)
     }
 
+    /**
+     * 保存 `step`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val step: CjExpression?
         get() {
             val colon = findChildByType<PsiElement>(CjTokens.COLON) ?: return null

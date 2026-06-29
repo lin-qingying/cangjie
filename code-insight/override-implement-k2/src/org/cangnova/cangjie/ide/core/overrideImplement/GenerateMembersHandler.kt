@@ -28,10 +28,19 @@ import org.cangnova.cangjie.psi.CjDeclaration
 import org.cangnova.cangjie.psi.CjPsiFactory
 import org.cangnova.cangjie.psi.CjTypeStatement
 
+/**
+ * 基于 analysis API symbol 的成员生成处理器。
+ */
 internal abstract class GenerateMembersHandler(
+    /**
+     * 是否以实现抽象成员模式运行。
+     */
     final override val toImplement: Boolean
 ) : AbstractGenerateMembersHandler<CangJieOverrideMemberChooserObject>() {
 
+    /**
+     * 从目标类型声明解析 class symbol，并收集可生成成员。
+     */
     override fun collectMembersToGenerate(typeStatement: CjTypeStatement): Collection<CangJieOverrideMemberChooserObject> {
         return analyze(typeStatement) {
             val classSymbol = typeStatement.symbol as? CaClassSymbol ?: return@analyze emptyList()
@@ -39,12 +48,18 @@ internal abstract class GenerateMembersHandler(
         }
     }
 
+    /**
+     * 在 analysis session 中收集指定 class symbol 可生成的成员。
+     */
     context(_: CaSession)
     protected abstract fun collectMembersToGenerate(
         classSymbol: CaClassSymbol,
         project: Project
     ): Collection<CangJieOverrideMemberChooserObject>
 
+    /**
+     * 将选中的 analysis symbol 渲染为源码声明并插入目标类型。
+     */
     override fun generateMembers(
         editor: Editor?,
         typeStatement: CjTypeStatement,
@@ -80,6 +95,9 @@ internal abstract class GenerateMembersHandler(
         )
     }
 
+    /**
+     * 将 callable symbol 转换为可插入的生成成员模型。
+     */
     context(_: CaSession)
     private fun CaCallableSymbol.toGeneratedMember(): GeneratedMember = when (this) {
         is CaNamedFunctionSymbol -> GeneratedMember.Function(buildFunctionText(this))
@@ -87,6 +105,9 @@ internal abstract class GenerateMembersHandler(
         else -> error("Unsupported callable for override/implement generation: ${this::class.qualifiedName}")
     }
 
+    /**
+     * 渲染函数 override/implement 声明文本。
+     */
     context(_: CaSession)
     private fun buildFunctionText(symbol: CaNamedFunctionSymbol): String {
         val signature = normalizeOverrideSignature(
@@ -100,6 +121,9 @@ internal abstract class GenerateMembersHandler(
         }
     }
 
+    /**
+     * 渲染属性 override/implement 声明文本。
+     */
     context(_: CaSession)
     private fun buildPropertyText(symbol: CaPropertySymbol): String {
         val signature = normalizeOverrideSignature(
@@ -139,14 +163,32 @@ internal abstract class GenerateMembersHandler(
         return normalized
     }
 
+    /**
+     * 可插入到 PSI 的生成成员文本模型。
+     */
     private sealed interface GeneratedMember {
+        /**
+         * 使用 PSI factory 把成员文本解析为声明。
+         */
         fun toDeclaration(factory: CjPsiFactory): CjDeclaration
 
+        /**
+         * 函数成员文本。
+         */
         data class Function(private val text: String) : GeneratedMember {
+            /**
+             * 将函数文本解析为函数声明。
+             */
             override fun toDeclaration(factory: CjPsiFactory): CjDeclaration = factory.createFunction(text)
         }
 
+        /**
+         * 属性成员文本。
+         */
         data class Property(private val text: String) : GeneratedMember {
+            /**
+             * 将属性文本解析为属性声明。
+             */
             override fun toDeclaration(factory: CjPsiFactory): CjDeclaration = factory.createProperty(text)
         }
     }
@@ -211,19 +253,31 @@ private fun CaClassSymbol.collectImplementationRelevantCallables(): List<CaCalla
     }
 }
 
+/**
+ * 渲染 callable 的稳定 override 签名键。
+ */
 context(session: CaSession)
 private fun CaCallableSymbol.overrideSignatureKey(): String =
     render(CaDeclarationRendererForSource.WITH_QUALIFIED_NAMES_RAW_SIGNATURES)
 
+/**
+ * 判断 callable 是否仍是抽象义务。
+ */
 private fun CaCallableSymbol.isAbstractLike(): Boolean =
     modality == CaSymbolModality.ABSTRACT
 
+/**
+ * 判断 concrete callable 是否可实现指定抽象 callable。
+ */
 private fun CaCallableSymbol.canImplementAbstractMember(abstractSymbol: CaCallableSymbol): Boolean {
     val actual = visibility.overrideRank() ?: return false
     val expected = abstractSymbol.visibility.overrideRank() ?: return false
     return actual >= expected
 }
 
+/**
+ * 将可见性转换为 override 兼容性排序。
+ */
 private fun CaSymbolVisibility.overrideRank(): Int? = when (this) {
     CaSymbolVisibility.PRIVATE_TO_THIS -> 0
     CaSymbolVisibility.PRIVATE -> 1
@@ -234,6 +288,9 @@ private fun CaSymbolVisibility.overrideRank(): Int? = when (this) {
     CaSymbolVisibility.UNKNOWN -> null
 }
 
+/**
+ * 将 callable symbol 转换为 chooser 展示节点。
+ */
 context(_: CaSession)
 internal fun CaCallableSymbol.toChooserObject(): CangJieOverrideMemberChooserObject {
     val renderedText = render(CaDeclarationRendererForSource.WITH_SHORT_NAMES)
@@ -245,11 +302,23 @@ internal fun CaCallableSymbol.toChooserObject(): CangJieOverrideMemberChooserObj
     )
 }
 
+/**
+ * 成员 chooser 中展示的仓颉 override/implement 候选项。
+ */
 internal class CangJieOverrideMemberChooserObject(
+    /**
+     * 可跨 analysis session 恢复 callable symbol 的指针。
+     */
     val symbolPointer: CaSymbolPointer<CaCallableSymbol>,
     presentableText: String,
+    /**
+     * 候选成员所属父类型的展示文本。
+     */
     private val parentNodeText: String?
 ) : MemberChooserObjectBase(presentableText, null), ClassMember {
+    /**
+     * 返回 chooser 中的父类型分组节点。
+     */
     override fun getParentNodeDelegate(): MemberChooserObject? {
         val text = parentNodeText ?: return null
         return MemberChooserObjectBase(text, null)

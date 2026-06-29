@@ -28,16 +28,34 @@ import org.cangnova.cangjie.lexer.CjTokens
 import com.intellij.lang.ASTNode
 import com.intellij.psi.PsiElement
 
+/**
+ * 表示 `CjTryExpression`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjTryExpression(node: ASTNode) : CjExpressionImpl(node) {
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitTryExpression(this, data)
     }
 
+    /**
+     * 保存 `tryResourceList`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val tryResourceList: CjTryResourceList? get() = findChildByClass(CjTryResourceList::class.java)
+    /**
+     * 保存 `catchBody`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val catchBody: CjExpression?
         get() = findChildByClass(CjExpression::class.java)
+    /**
+     * 保存 `tryBlock`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val tryBlock: CjBlockExpression
         get() = findChildByType<PsiElement>(CjNodeTypes.BLOCK) as CjBlockExpression
+    /**
+     * 保存 `catchClauses`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val catchClauses: List<CjCatchClause>
         get() = findChildrenByType(CjNodeTypes.CATCH)
     /**
@@ -46,8 +64,14 @@ class CjTryExpression(node: ASTNode) : CjExpressionImpl(node) {
      */
     val handleClauses: List<CjHandleClause>
         get() = findChildrenByType(CjNodeTypes.HANDLE)
+    /**
+     * 保存 `finallyBlock`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val finallyBlock: CjFinallySection?
         get() = findChildByType<PsiElement>(CjNodeTypes.FINALLY) as CjFinallySection?
+    /**
+     * 保存 `tryKeyword`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val tryKeyword: PsiElement?
         get() = findChildByType(CjTokens.TRY_KEYWORD)
 }

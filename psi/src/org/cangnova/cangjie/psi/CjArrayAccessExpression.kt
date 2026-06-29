@@ -32,21 +32,36 @@ import com.intellij.psi.util.PsiTreeUtil
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.psi.psiUtil.getTrailingCommaByClosingElement
 
+/**
+ * 表示 `CjArrayAccessExpression`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjArrayAccessExpression(node: ASTNode) : CjExpressionImpl(node), CjReferenceExpression {
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitArrayAccessExpression(this, data)
     }
 
+    /**
+     * 保存 `arrayExpression`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     @get:IfNotParsed
     val arrayExpression: CjExpression?
         get() = findChildByClass(CjExpression::class.java)
 
+    /**
+     * 保存 `indexExpressions`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val indexExpressions: List<CjExpression>
         get() = PsiTreeUtil.getChildrenOfTypeAsList(
             indicesNode,
             CjExpression::class.java,
         )
 
+    /**
+     * 保存 `indicesNode`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val indicesNode: CjContainerNode
         get() {
             val indicesNode =
@@ -54,6 +69,9 @@ class CjArrayAccessExpression(node: ASTNode) : CjExpressionImpl(node), CjReferen
             return indicesNode
         }
 
+    /**
+     * 保存 `bracketRanges`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val bracketRanges: List<TextRange>
         get() {
             val lBracket = leftBracket
@@ -67,12 +85,21 @@ class CjArrayAccessExpression(node: ASTNode) : CjExpressionImpl(node), CjReferen
             )
         }
 
+    /**
+     * 保存 `leftBracket`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val leftBracket: PsiElement?
         get() = indicesNode.findChildByType(CjTokens.LBRACKET)
 
+    /**
+     * 保存 `rightBracket`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val rightBracket: PsiElement?
         get() = indicesNode.findChildByType(CjTokens.RBRACKET)
 
+    /**
+     * 保存 `trailingComma`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val trailingComma: PsiElement?
         get() = getTrailingCommaByClosingElement(rightBracket)
 }

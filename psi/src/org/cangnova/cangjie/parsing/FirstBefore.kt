@@ -24,8 +24,14 @@
 package org.cangnova.cangjie.parsing
 
 
+/**
+ * 表示 `FirstBefore`，承载仓颉语法解析中的语法节点、索引桩或辅助模型。
+ */
 class FirstBefore(private val lookFor: TokenStreamPredicate, private val stopAt: TokenStreamPredicate) :
     AbstractTokenStreamPattern() {
+    /**
+     * 实现 `processToken` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun processToken(offset: Int, topLevel: Boolean): Boolean {
         if (lookFor.matching(topLevel)) {
             lastOccurrence = offset

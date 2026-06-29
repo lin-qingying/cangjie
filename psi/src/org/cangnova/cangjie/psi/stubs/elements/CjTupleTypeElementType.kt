@@ -32,19 +32,31 @@ import com.intellij.psi.stubs.StubElement
 import com.intellij.psi.stubs.StubInputStream
 import com.intellij.psi.stubs.StubOutputStream
 
+/**
+ * 表示 `CjTupleTypeElementType`，承载PSI Stub中的语法节点、索引桩或辅助模型。
+ */
 class CjTupleTypeElementType(debugName: String) : CjStubElementType<CangJieTupleTypeStub, CjTupleType>(
     debugName,
     CjTupleType::class.java,
     CangJieTupleTypeStub::class.java,
 ) {
+    /**
+     * 实现 `serialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun serialize(stub: CangJieTupleTypeStub, dataStream: StubOutputStream) {
 //        dataStream.writeName(name)
     }
 
+    /**
+     * 实现 `deserialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>?): CangJieTupleTypeStub {
         return CangJieTupleTypeStubImpl(parentStub)
     }
 
+    /**
+     * 实现 `createStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createStub(psi: CjTupleType, parentStub: StubElement<out PsiElement>?): CangJieTupleTypeStub {
         return CangJieTupleTypeStubImpl(parentStub)
     }

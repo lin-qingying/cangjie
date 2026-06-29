@@ -73,9 +73,21 @@ internal data class LLPartialBodyAnalysisState(
     }
 }
 
+/**
+ * partial body analysis 后续增量解析需要恢复的控制流与作用域上下文快照。
+ */
 internal class LLPartialBodyAnalysisSnapshot(
+    /**
+     * 已解析语句和默认参数值的结果集合。
+     */
     val result: LLPartialBodyAnalysisResult,
+    /**
+     * partial analysis 停止位置对应的 tower data 上下文。
+     */
     val towerDataContext: CfirTowerDataContext,
+    /**
+     * partial analysis 停止位置对应的数据流分析上下文。
+     */
     val dataFlowAnalyzerContext: CfirDataFlowAnalyzerContext
 )
 

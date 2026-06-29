@@ -28,6 +28,11 @@ import org.junit.jupiter.api.Assertions.assertNotNull
  * 3. 公开类型渲染。
  */
 abstract class AbstractRendererTest : AbstractAnalysisApiComponentTest() {
+    /**
+     * 执行 renderer 基础契约测试。
+     *
+     * 方法恢复 class-like symbol、callable symbol 和表达式类型，分别比较显式 source preset 与默认 render 入口。
+     */
     override fun doTestByMainFile(mainFile: CjFile, mainModule: CjTestModule, testServices: TestServices) {
         val directives = directivesForMainFile(mainFile, mainModule)
         val targetClass = PsiTreeUtil.findChildrenOfType(mainFile, CjClass::class.java)

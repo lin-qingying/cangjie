@@ -22,23 +22,53 @@ import java.security.MessageDigest
  * 不在当前使用方 frontend invocation 中调度源码宏包编译。
  */
 data class MacroArtifactPackage(
+    /**
+     * artifact 对应的宏包全限定名。
+     */
     val packageFqName: FqName,
+    /**
+     * artifact 包类型。
+     */
     val kind: Kind,
+    /**
+     * 已编译 `.cjo` 文件路径。
+     */
     val cjoPath: String,
+    /**
+     * 宏执行需要加载的动态库路径。
+     */
     val dynamicLibPath: String,
+    /**
+     * 宏包依赖的 BCHIR 文件路径列表。
+     */
     val dependenciesBchirPaths: List<String> = emptyList(),
+    /**
+     * artifact 期望的宏执行器 ABI 版本。
+     */
     val abiVersion: String? = null,
+    /**
+     * 外部提供的 artifact 签名；为空时由 resolver 根据文件内容计算。
+     */
     val signature: String? = null,
+    /**
+     * artifact 的来源。
+     */
     val origin: Origin,
     /** 产生该 artifact 的独立宏包编译 invocation。 */
     val compileInvocationId: String? = null,
     /** 独立宏包编译原始诊断引用，由 orchestration/CLI 层维护生命周期。 */
     val sourceDiagnosticsRef: String? = null,
 ) {
+    /**
+     * 已编译 artifact 包的类别。
+     */
     enum class Kind {
         MACRO,
     }
 
+    /**
+     * artifact 被发现或产出的来源。
+     */
     enum class Origin {
         SDK_STDLIB,
         EXTERNAL_PATH,
@@ -46,10 +76,22 @@ data class MacroArtifactPackage(
     }
 }
 
+/**
+ * 宏 artifact resolver 的输出结果。
+ */
 data class MacroArtifactResolverResult(
+    /**
+     * 从已校验 artifact 中投影出的宏定义。
+     */
     val definitions: List<MacroDefinitionEntry>,
+    /**
+     * artifact 校验与解析过程中产生的结构化诊断。
+     */
     val diagnostics: List<MacroConstructionDiagnostic>,
 ) {
+    /**
+     * 当前结果是否包含错误级诊断。
+     */
     val hasErrors: Boolean
         get() = diagnostics.any { it.severity == MacroConstructionDiagnostic.Severity.ERROR }
 }
@@ -66,6 +108,9 @@ class MacroArtifactResolver {
         const val ALGORITHM_VERSION: Int = 2
     }
 
+    /**
+     * 校验已定位 artifact 并解析出可供宏调用绑定的定义。
+     */
     fun resolve(
         packages: List<MacroArtifactPackage>,
         expectedExecutorAbiVersion: String? = null,
@@ -222,6 +267,9 @@ class MacroArtifactResolver {
             }
     }
 
+    /**
+     * 构建用于解析 `.cjo` 物理声明和 public import 重导出名称的 resolver。
+     */
     private fun buildExportedTopLevelNamesResolver(
         packages: List<MacroArtifactPackage>,
         searchRoots: List<String>,
@@ -247,6 +295,9 @@ class MacroArtifactResolver {
         return CjoExportedTopLevelNamesResolver(manager)
     }
 
+    /**
+     * 校验 artifact 的必要文件、依赖文件和 ABI 信息。
+     */
     private fun validateFiles(
         artifact: MacroArtifactPackage,
         expectedExecutorAbiVersion: String?,
@@ -289,6 +340,9 @@ class MacroArtifactResolver {
         return diagnostics
     }
 
+    /**
+     * 为重导出的宏解析真正执行宏的 artifact 包。
+     */
     private fun resolveExecutableArtifact(
         exportedMacro: ResolvedExportedMacro,
         ownerArtifact: MacroArtifactPackage,
@@ -316,6 +370,9 @@ class MacroArtifactResolver {
         return located
     }
 
+    /**
+     * 校验重导出宏的可执行 artifact 是否存在且与声明目标匹配。
+     */
     private fun validateExecutableArtifact(
         ownerArtifact: MacroArtifactPackage,
         ownerMacro: ResolvedExportedMacro,
@@ -400,6 +457,9 @@ class MacroArtifactResolver {
         return diagnostics
     }
 
+    /**
+     * 读取 `.cjo` 文件头部元数据。
+     */
     private fun readCjoHeader(file: File): CjoPackageHeader {
         val bytes = file.readBytes()
         val buffer = ByteBuffer.allocate(bytes.size)
@@ -408,6 +468,9 @@ class MacroArtifactResolver {
         return CjoPackageHeader.fromPackage(Package.getRootAsPackage(buffer))
     }
 
+    /**
+     * 计算文件 SHA-256，并在同一次解析中复用缓存。
+     */
     private fun hashFile(path: String, cache: MutableMap<String, String>): String =
         cache.getOrPut(path) {
             val file = File(path)
@@ -416,6 +479,9 @@ class MacroArtifactResolver {
                 .joinToString(separator = "") { byte -> "%02x".format(byte) }
         }
 
+    /**
+     * 基于当前 artifact 构造 artifact resolver 诊断。
+     */
     private fun MacroArtifactPackage.error(
         kind: MacroConstructionDiagnostic.Kind,
         message: String,
@@ -437,14 +503,32 @@ class MacroArtifactResolver {
         )
     }
 
+    /**
+     * 组合包名和宏名得到宏全限定名。
+     */
     private fun macroFqName(packageFqName: FqName, name: Name): FqName =
         if (packageFqName.isRoot) FqName.topLevel(name) else packageFqName.child(name)
 
+    /**
+     * 已解析的导出宏信息。
+     */
     private data class ResolvedExportedMacro(
+        /**
+         * 当前包对外可见的宏名称。
+         */
         val visibleName: Name,
+        /**
+         * 真正执行宏所在的包。
+         */
         val executablePackageFqName: FqName,
+        /**
+         * 真正执行宏的名称。
+         */
         val executableName: Name,
     ) {
+        /**
+         * 真正执行宏的全限定名。
+         */
         val executableFqName: FqName
             get() = if (executablePackageFqName.isRoot) {
                 FqName.topLevel(executableName)

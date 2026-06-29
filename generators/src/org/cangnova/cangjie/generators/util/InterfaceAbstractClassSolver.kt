@@ -6,7 +6,13 @@ package org.cangnova.cangjie.generators.util
  * 图节点抽象，用于“类/接口”求解问题。
  */
 interface Node {
+    /**
+     * 当前节点的直接父节点。
+     */
     val parents: List<Node>
+    /**
+     * 当前节点对应的原始节点。
+     */
     val origin: Node
 }
 
@@ -24,20 +30,41 @@ fun solveGraphForClassVsInterface(
     return solution
 }
 
+/**
+ * 将节点与 2-SAT 变量下标互相映射的辅助结构。
+ */
 private class ElementMapping(val elements: Collection<Node>) {
+    /**
+     * 变量下标到节点的映射。
+     */
     private val varToElements: Map<Int, Node> =
         elements.mapIndexed { index, element -> 2 * index to element.origin }.toMap() +
                 elements.mapIndexed { index, element -> 2 * index + 1 to element }.toMap()
 
+    /**
+     * 节点到变量下标的映射。
+     */
     private val elementsToVar: Map<Node, Int> =
         elements.mapIndexed { index, element -> element.origin to index }.toMap()
 
+    /**
+     * 返回节点对应的变量下标。
+     */
     operator fun get(element: Node): Int = elementsToVar.getValue(element)
+    /**
+     * 返回变量下标对应的节点。
+     */
     operator fun get(index: Int): Node = varToElements.getValue(index)
 
+    /**
+     * 参与求解的节点数量。
+     */
     val size: Int = elements.size
 }
 
+/**
+ * 将显式要求的接口/类约束应用到 2-SAT 初始解上。
+ */
 private fun processRequirementsFromConfig(
     solution: MutableList<Boolean>,
     elementMapping: ElementMapping,
@@ -72,6 +99,9 @@ private fun processRequirementsFromConfig(
     requiredClasses.forEach(::forceInheritorsToBeClasses)
 }
 
+/**
+ * 使用强连通分量求解类/接口分配的 2-SAT 问题。
+ */
 private fun solve2sat(elements: Collection<Node>, elementsToVar: ElementMapping): MutableList<Boolean> {
     val (g, gt) = buildGraphs(elements, elementsToVar)
 
@@ -115,6 +145,9 @@ private fun solve2sat(elements: Collection<Node>, elementsToVar: ElementMapping)
     return res
 }
 
+/**
+ * 根据继承关系构造 2-SAT 图和反图。
+ */
 private fun buildGraphs(
     elements: Collection<Node>,
     elementMapping: ElementMapping,

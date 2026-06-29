@@ -28,6 +28,9 @@ import org.cangnova.cangjie.psi.stubs.CangJieModifierListStub
 import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 import com.intellij.lang.ASTNode
 
+/**
+ * 表示 `CjDeclarationModifierList`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjDeclarationModifierList : CjModifierList {
     constructor(node: ASTNode) : super(node)
 

@@ -48,6 +48,9 @@ class CfirDesignation(
      * @see fileOrNull
      */
     val path: List<CfirDeclaration>,
+    /**
+     * designation 最终要解析或处理的 CFIR 目标元素。
+     */
     val target: CfirElementWithResolveState,
 ) {
     constructor(target: CfirElementWithResolveState) : this(emptyList(), target)
@@ -72,18 +75,30 @@ class CfirDesignation(
         }
     }
 
+    /**
+     * designation 所属的 CFIR 文件；当路径中无法确定文件时抛出带附件的错误。
+     */
     val file: CfirFile
         get() = fileOrNull ?: errorWithAttachment("File is not found") {
             withCfirDesignationEntry("designation", this@CfirDesignation)
         }
 
+    /**
+     * designation 所属的 CFIR 文件；适用于允许无文件上下文的低层恢复路径。
+     */
     val fileOrNull: CfirFile? get() = path.firstOrNull() as? CfirFile ?: target as? CfirFile
 
+    /**
+     * 以路径到目标的顺序输出 designation，便于异常附件和调试日志定位解析路径。
+     */
     override fun toString(): String = path.plus(target).joinToString(separator = " -> ") {
         it::class.simpleName ?: it.toString()
     }
 }
 
+/**
+ * 将 designation 的路径和目标元素写入异常附件。
+ */
 fun ExceptionAttachmentBuilder.withCfirDesignationEntry(name: String, designation: CfirDesignation) {
     withEntryGroup(name) {
         for ((index, declaration) in designation.path.withIndex()) {
@@ -94,11 +109,17 @@ fun ExceptionAttachmentBuilder.withCfirDesignationEntry(name: String, designatio
     }
 }
 
+/**
+ * 按路径顺序遍历 designation，按需包含最终目标元素。
+ */
 fun CfirDesignation.toSequence(includeTarget: Boolean): Sequence<CfirElementWithResolveState> = sequence {
     yieldAll(path)
     if (includeTarget) yield(target)
 }
 
+/**
+ * 尝试为非局部 CFIR 声明收集可 lazy resolve 的 designation。
+ */
 private fun tryCollectDesignation(providedFile: CfirFile?, target: CfirElementWithResolveState): CfirDesignation? {
     if (target !is CfirDeclaration) {
         unexpectedElementError<CfirDeclaration>(target)
@@ -150,6 +171,9 @@ private fun tryCollectDesignation(providedFile: CfirFile?, target: CfirElementWi
     }
 }
 
+/**
+ * 在已知可选文件和包含类 ID 的情况下构造目标声明的 designation 路径。
+ */
 private fun collectDesignationPathWithContainingClass(
     providedFile: CfirFile?,
     target: CfirDeclaration,
@@ -194,6 +218,9 @@ private val LLCfirSession.requiresDependenciesSearch: Boolean
         else -> false
     }
 
+/**
+ * 当文件内直接查找失败时，按包含类 ID 通过当前 session 的 provider 恢复包含类路径。
+ */
 private fun collectDesignationPathWithContainingClassFallback(
     target: CfirDeclaration,
     containingClassId: ClassId,
@@ -263,6 +290,9 @@ private fun collectDesignationPathWithContainingClassFallback(
     return containingClasses.asReversed()
 }
 
+/**
+ * 取得目标声明应使用的 low-level session，合成 callable 优先使用其包含类的 session。
+ */
 private fun getTargetSession(target: CfirDeclaration): LLCfirSession {
     if (target is CfirCallableDeclaration) {
         val containingSymbol = target.getContainingClassSymbol()
@@ -275,6 +305,9 @@ private fun getTargetSession(target: CfirDeclaration): LLCfirSession {
     return target.llCfirSession
 }
 
+/**
+ * 在目标所在文件内按 class ID 查找 class-like 声明，跳过 primitive class ID。
+ */
 internal fun findInContainingFileIfApplicable(classId: ClassId, target: CfirDeclaration?): CfirClassLikeDeclaration? {
     if (classId.toPrimitiveTypeKindOrNull() != null) {
         return null
@@ -342,10 +375,16 @@ fun CfirElementWithResolveState.tryCollectDesignation(providedFile: CfirFile? = 
     return designation?.takeIf { it.fileOrNull != null }
 }
 
+/**
+ * 对 dangling copy 等特殊场景修正 designation 路径，普通声明路径保持原样。
+ */
 internal fun patchDesignationPathIfNeeded(target: CfirElementWithResolveState, targetPath: List<CfirDeclaration>): List<CfirDeclaration> {
     return patchDesignationPathForCopy(target, targetPath) ?: targetPath
 }
 
+/**
+ * 将 ignore-self dangling 文件中的复制 PSI 路径映射回上下文模块的原始 CFIR 路径。
+ */
 private fun patchDesignationPathForCopy(target: CfirElementWithResolveState, targetPath: List<CfirDeclaration>): List<CfirDeclaration>? {
     val targetModule = target.llCfirModuleData.caModule
 

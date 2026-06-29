@@ -60,9 +60,15 @@ import org.cangnova.cangjie.utils.exceptions.withPsiEntry
  * 不混入类型关系、类型构造等其他职责。
  */
 internal class CaCfirExpressionTypeProvider(
+    /**
+     * 延迟取得当前 CFIR Analysis session，类型查询通过该 session 访问解析门面和类型构建器。
+     */
     override val analysisSessionProvider: () -> CaCfirSession,
 ) : CaBaseSessionComponent<CaCfirSession>(), CaExpressionTypeProvider, CaCfirSessionComponent {
     @OptIn(CaImplementationDetail::class)
+    /**
+     * 返回表达式在当前解析上下文中的实际类型。
+     */
     override val CjExpression.expressionType: CaType?
         get() = with(this@CaCfirExpressionTypeProvider as CaBaseSessionComponent<CaCfirSession>) {
             this@expressionType.withPsiValidityAssertion {
@@ -78,6 +84,9 @@ internal class CaCfirExpressionTypeProvider(
             }
         }
 
+    /**
+     * 返回 PSI 位置在当前上下文中被期望的类型。
+     */
     override val PsiElement.expectedType: CaType?
         get() = with(this@CaCfirExpressionTypeProvider as CaBaseSessionComponent<CaCfirSession>) {
             this@expectedType.withPsiValidityAssertion {
@@ -87,6 +96,9 @@ internal class CaCfirExpressionTypeProvider(
             }
         }
 
+    /**
+     * 将已构建的 CFIR 元素转换为公开表达式类型。
+     */
     private fun getCjExpressionType(expression: CjExpression, cfir: CfirElement): CaType? = when (cfir) {
         is CfirFunctionCall -> cfir.resolvedType.asCaType()
         is CfirSuperReceiverExpression -> cfir.resolvedType.asCaType()
@@ -105,6 +117,9 @@ internal class CaCfirExpressionTypeProvider(
     }
 
     @OptIn(CaImplementationDetail::class)
+    /**
+     * 返回 callable 声明的公开返回类型。
+     */
     override val CjCallableDeclaration.returnType: CaType?
         get() = with(this@CaCfirExpressionTypeProvider as CaBaseSessionComponent<CaCfirSession>) {
             this@returnType.withPsiValidityAssertion {
@@ -136,6 +151,9 @@ internal class CaCfirExpressionTypeProvider(
         return call.valueArgumentMapping[argumentExpression]?.returnType
     }
 
+    /**
+     * 当元素是 return 表达式的返回值时，返回所属函数的返回类型。
+     */
     private fun getExpectedTypeByReturnExpression(element: PsiElement): CaType? {
         val returnedExpression = element as? CjExpression ?: return null
         val returnExpression = returnedExpression.parent as? CjReturnExpression ?: return null
@@ -170,6 +188,9 @@ internal class CaCfirExpressionTypeProvider(
         else -> null
     }
 
+    /**
+     * 基于常量表达式的 token/stub 种类快速推断内建类型。
+     */
     private fun inferConstantTypeByPsi(expression: CjConstantExpression): CaType? {
         val constantKind = expression.stub?.kind() ?: when (expression.node.elementType) {
             CjStubElementTypes.BOOLEAN_CONSTANT -> ConstantValueKind.BOOLEAN_CONSTANT
@@ -201,6 +222,9 @@ internal class CaCfirExpressionTypeProvider(
     private fun CfirNamedReference.getCorrespondingTypeIfPossible() =
         findOuterNamedAccessExpression()?.resolvedType
 
+    /**
+     * 查找名字引用外层真正承载取值语义的 CFIR 表达式。
+     */
     private fun CfirNamedReference.findOuterNamedAccessExpression(): CfirExpression? {
         val referenceExpression = psi as? CjExpression ?: return null
         val outerExpression = referenceExpression.getOutermostParenthesizerOrThis().parent as? CjElement ?: return null
@@ -213,6 +237,9 @@ internal class CaCfirExpressionTypeProvider(
         }
     }
 
+    /**
+     * 从当前 PSI 的父级开始查找指定类型的严格父节点。
+     */
     private inline fun <reified T : PsiElement> PsiElement.getStrictParentOfType(): T? {
         var current = parent
         while (current != null) {
@@ -222,6 +249,9 @@ internal class CaCfirExpressionTypeProvider(
         return null
     }
 
+    /**
+     * 去除不改变期望类型目标的轻量 PSI 包装。
+     */
     private fun PsiElement.unwrapExpectedTypeTarget(): PsiElement = when (this) {
         is CjParenthesizedExpression -> expression ?: this
         is CjPrefixExpression -> baseExpression ?: this

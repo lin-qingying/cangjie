@@ -27,8 +27,14 @@ import org.cangnova.cangjie.name.Name
 class AnalysisApiLightDeclarationDocumentationTest : AbstractAnalysisApiExecutionTest(
     "analysis/analysis-api-cfir/testData/lightDeclarationDocs",
 ) {
+    /**
+     * 使用 standalone CFIR 配置运行 source-backed light declaration 文档测试。
+     */
     override val configurator = CaCfirStandaloneAnalysisApiTestConfigurator
 
+    /**
+     * 验证源码 light declaration 可通过 origin 恢复文档，而无 source 的反编译 light declaration 返回空文档。
+     */
     @Test
     fun sourceLightDeclarationDocs(mainFile: CjFile, mainModule: CjTestModule) {
         val provider = CaLightDeclarationProvider.getInstance(mainFile.project)

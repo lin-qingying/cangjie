@@ -31,20 +31,38 @@ import org.cangnova.cangjie.cfir.diagnostics.DiagnosticContext
  * Standard implementation of [BaseDiagnosticsCollector]
  */
 class DiagnosticsCollectorImpl : BaseDiagnosticsCollector() {
+    /**
+     * 按文件路径存储的可变诊断列表。
+     */
     private val diagnosticsByFilePathStorage: MutableMap<String?, MutableList<CjDiagnostic>> = mutableMapOf()
 
+    /**
+     * 所有已收集诊断的扁平列表。
+     */
     override val diagnostics: List<CjDiagnostic>
         get() = diagnosticsByFilePath.flatMap { it.value }
 
+    /**
+     * 按文件路径分组的诊断视图。
+     */
     override val diagnosticsByFilePath: Map<String?, List<CjDiagnostic>>
         get() = diagnosticsByFilePathStorage
 
+    /**
+     * 是否已收集错误级诊断。
+     */
     override var hasErrors = false
         private set
 
+    /**
+     * 是否已收集会在 Werror 下视为错误的警告。
+     */
     override var hasWarningsForWError = false
         private set
 
+    /**
+     * 收集未被 suppress 的诊断，并更新错误状态。
+     */
     override fun report(diagnostic: CjDiagnostic?, context: DiagnosticContext) {
         if (diagnostic != null && !context.isDiagnosticSuppressed(diagnostic)) {
             diagnosticsByFilePathStorage.getOrPut(context.containingFilePath) { mutableListOf() }.run {

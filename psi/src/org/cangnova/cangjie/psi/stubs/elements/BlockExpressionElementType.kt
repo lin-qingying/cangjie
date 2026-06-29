@@ -37,7 +37,13 @@ import com.intellij.lang.PsiBuilderFactory
 import com.intellij.openapi.project.Project
 import com.intellij.psi.tree.ICompositeElementType
 import com.intellij.psi.tree.IErrorCounterReparseableElementType
+/**
+ * 表示 `CaseBlockExpressionElementType`，承载PSI Stub中的语法节点、索引桩或辅助模型。
+ */
 class CaseBlockExpressionElementType : BlockExpressionElementType("CASE_BLOCK") {
+    /**
+     * 实现 `parseContents` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun parseContents(chameleon: ASTNode): ASTNode {
         val project = chameleon.psi.project
         val builder = PsiBuilderFactory.getInstance().createBuilder(
@@ -51,11 +57,20 @@ class CaseBlockExpressionElementType : BlockExpressionElementType("CASE_BLOCK") 
         return CangJieParser.parseBlockExpression(builder).firstChildNode
     }
 
+    /**
+     * 实现 `createCompositeNode` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createCompositeNode() = CjCaseBlockExpression(null)
 
+    /**
+     * 实现 `createNode` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createNode(text: CharSequence?) = CjCaseBlockExpression(text)
 }
 
+/**
+ * 表示 `BlockExpressionElementType`，承载PSI Stub中的语法节点、索引桩或辅助模型。
+ */
 open class BlockExpressionElementType(debugName: String = "BLOCK") :
     IErrorCounterReparseableElementType(debugName, CangJieLanguage),
     ICompositeElementType {
@@ -64,19 +79,34 @@ open class BlockExpressionElementType(debugName: String = "BLOCK") :
 //            DummyHolderFactory.setFactory(CangJieDummyHolderFactory())
     }
 
+    /**
+     * 实现 `createCompositeNode` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createCompositeNode() = CjBlockExpression(null)
 
+    /**
+     * 实现 `createNode` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createNode(text: CharSequence?) = CjBlockExpression(text)
 
+    /**
+     * 实现 `isParsable` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun isParsable(parent: ASTNode?, buffer: CharSequence, fileLanguage: Language, project: Project) =
         fileLanguage == CangJieLanguage &&
             isAllowedParentNode(parent) &&
             isReparseableBlock(buffer) &&
             super.isParsable(buffer, fileLanguage, project)
 
+    /**
+     * 实现 `getErrorsCount` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getErrorsCount(seq: CharSequence, fileLanguage: Language, project: Project) =
         ElementTypeUtils.getCangJieBlockImbalanceCount(seq)
 
+    /**
+     * 实现 `parseContents` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun parseContents(chameleon: ASTNode): ASTNode {
 
         val project = chameleon.psi.project

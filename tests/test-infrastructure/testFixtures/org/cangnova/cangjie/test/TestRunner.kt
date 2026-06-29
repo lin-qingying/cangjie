@@ -13,9 +13,18 @@ import java.io.IOException
 sealed class
 
 TestRunner<Step : TestStep<*, *>, Configuration : TestConfiguration<Step>>(val testConfiguration: Configuration) {
+    /**
+     * 保存 `testServices`，供测试基础设施在测试执行期间读取或传递。
+     */
     val testServices: TestServices get() = testConfiguration.testServices
+    /**
+     * 保存 `allFailedExceptions`，供测试基础设施在测试执行期间读取或传递。
+     */
     protected val allFailedExceptions = mutableListOf<WrappedException>()
 
+    /**
+     * 提供 `runTestPreprocessing` 对应的测试基础设施流程，维持测试框架的阶段契约。
+     */
     open fun runTestPreprocessing() {
         val moduleStructure = testServices.moduleStructure
 
@@ -34,6 +43,9 @@ TestRunner<Step : TestStep<*, *>, Configuration : TestConfiguration<Step>>(val t
         }
     }
 
+    /**
+     * 执行 `reportFailures` 对应的测试基础设施流程，维持测试框架的阶段契约。
+     */
     fun reportFailures() {
         val filteredFailedAssertions = filterFailedExceptions(allFailedExceptions)
         filteredFailedAssertions.firstIsInstanceOrNull<WrappedException.FromFacade>()?.let {
@@ -42,6 +54,9 @@ TestRunner<Step : TestStep<*, *>, Configuration : TestConfiguration<Step>>(val t
         testServices.assertions.failAll(filteredFailedAssertions)
     }
 
+    /**
+     * 执行 `finalizeAndDispose` 对应的测试基础设施流程，维持测试框架的阶段契约。
+     */
     fun finalizeAndDispose(beforeDispose: (Configuration) -> Unit = {}) {
         try {
             testConfiguration.testServices.temporaryDirectoryManager.cleanupTemporaryDirectories()
@@ -53,6 +68,9 @@ TestRunner<Step : TestStep<*, *>, Configuration : TestConfiguration<Step>>(val t
         // TODO: disposeRootInWriteAction(testConfiguration.rootDisposable)
     }
 
+    /**
+     * 提供 `interface` 对应的测试基础设施流程，维持测试框架的阶段契约。
+     */
     protected fun interface RunStep<Step : TestStep<*, *>> {
         fun run(
             step: Step,
@@ -61,6 +79,9 @@ TestRunner<Step : TestStep<*, *>, Configuration : TestConfiguration<Step>>(val t
         ): TestStep.StepResult<*>
     }
 
+    /**
+     * 提供 `runPipelineOnSingleUnit` 对应的测试基础设施流程，维持测试框架的阶段契约。
+     */
     protected fun runPipelineOnSingleUnit(
         produceStartingArtifact: () -> ResultingArtifact<*>,
         shouldRunStep: (Step, ResultingArtifact<*>) -> Boolean,
@@ -98,6 +119,9 @@ TestRunner<Step : TestStep<*, *>, Configuration : TestConfiguration<Step>>(val t
         return true
     }
 
+    /**
+     * 提供 `filterFailedExceptions` 对应的测试基础设施流程，维持测试框架的阶段契约。
+     */
     protected fun filterFailedExceptions(failedExceptions: List<WrappedException>): List<Throwable> {
         return testConfiguration.afterAnalysisCheckers
             .fold(failedExceptions) { assertions, checker ->
@@ -107,6 +131,9 @@ TestRunner<Step : TestStep<*, *>, Configuration : TestConfiguration<Step>>(val t
             .map { it.cause }
     }
 
+    /**
+     * 提供 `withAssertionCatching` 对应的测试基础设施流程，维持测试框架的阶段契约。
+     */
     protected inline fun withAssertionCatching(exceptionWrapper: (Throwable) -> WrappedException, block: () -> Unit): Boolean {
         return try {
             block()

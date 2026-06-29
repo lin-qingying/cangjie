@@ -4,6 +4,9 @@ import org.cangnova.cangjie.cfir.diagnostics.Severity
 import org.cangnova.cangjie.test.directives.DiagnosticsDirectives
 import org.cangnova.cangjie.test.model.TestModule
 
+/**
+ * 表示 `DiagnosticsService`，承载测试服务中的配置数据、测试产物或处理步骤。
+ */
 class DiagnosticsService(val testServices: TestServices) : TestService {
     companion object {
         private val severityNameMapping = mapOf(
@@ -13,14 +16,32 @@ class DiagnosticsService(val testServices: TestServices) : TestService {
         )
     }
 
+    /**
+     * 保存 `conditionsPerModule`，供测试服务在测试执行期间读取或传递。
+     */
     private val conditionsPerModule: MutableMap<TestModule, DiagnosticConditions> = mutableMapOf()
 
+    /**
+     * 表示 `DiagnosticConditions`，承载测试服务中的配置数据、测试产物或处理步骤。
+     */
     private data class DiagnosticConditions(
+        /**
+         * 保存 `allowedDiagnostics`，供测试服务在测试执行期间读取或传递。
+         */
         val allowedDiagnostics: Set<String>,
+        /**
+         * 保存 `disabledDiagnostics`，供测试服务在测试执行期间读取或传递。
+         */
         val disabledDiagnostics: Set<String>,
+        /**
+         * 保存 `severityMap`，供测试服务在测试执行期间读取或传递。
+         */
         val severityMap: Map<Severity, Boolean>,
     )
 
+    /**
+     * 执行 `shouldRenderDiagnostic` 对应的测试服务流程，维持测试框架的阶段契约。
+     */
     fun shouldRenderDiagnostic(module: TestModule, name: String, severity: Severity): Boolean {
         val conditions = conditionsPerModule.getOrPut(module) {
             computeDiagnosticConditionForModule(module)
@@ -34,6 +55,9 @@ class DiagnosticsService(val testServices: TestServices) : TestService {
         }
     }
 
+    /**
+     * 提供 `computeDiagnosticConditionForModule` 对应的测试服务流程，维持测试框架的阶段契约。
+     */
     private fun computeDiagnosticConditionForModule(module: TestModule): DiagnosticConditions {
         val diagnosticsInDirective = module.directives[DiagnosticsDirectives.DIAGNOSTICS]
         val enabledNames = mutableSetOf<String>()
@@ -65,4 +89,7 @@ class DiagnosticsService(val testServices: TestServices) : TestService {
     }
 }
 
+/**
+ * 保存 `TestServices.diagnosticsService`，供测试服务在测试执行期间读取或传递。
+ */
 val TestServices.diagnosticsService: DiagnosticsService by TestServices.testServiceAccessor()

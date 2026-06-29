@@ -31,11 +31,25 @@ import org.cangnova.cangjie.psi.CjElement
 import com.intellij.psi.PsiElement
 
 
-class TrailingCommaContext private constructor(val element: PsiElement, val state: TrailingCommaState) {
+/**
+ * 描述某个 PSI 元素的尾逗号适用状态。
+ */
+class TrailingCommaContext private constructor(
+    /** 被检查的 PSI 元素。 */
+    val element: PsiElement,
+    /** 元素当前的尾逗号状态。 */
+    val state: TrailingCommaState
+) {
 
+    /**
+     * 当状态适用时返回仓颉 PSI 元素。
+     */
     val cjElement: CjElement get() = element as? CjElement ?: error("State is NOT_APPLICABLE")
 
     companion object {
+        /**
+         * 根据 PSI 元素计算尾逗号上下文。
+         */
         fun create(element: PsiElement): TrailingCommaContext = TrailingCommaContext(
             element,
             TrailingCommaState.stateForElement(element),
@@ -43,6 +57,9 @@ class TrailingCommaContext private constructor(val element: PsiElement, val stat
     }
 }
 
+/**
+ * 判断尾逗号已经存在，或根据当前代码风格允许补充。
+ */
 fun TrailingCommaContext.commaExistsOrMayExist(settings: CangJieCodeStyleSettings): Boolean = when (state) {
     TrailingCommaState.EXISTS -> true
     TrailingCommaState.MISSING -> settings.addTrailingCommaIsAllowedFor(element)

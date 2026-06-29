@@ -31,6 +31,9 @@ import com.intellij.lang.ASTNode
  * 它只负责保存 quest 后缀，后续链式访问由 OPTIONAL_CHAIN_EXPRESSION 统一承接。
  */
 class CjOptionalExpression(node: ASTNode) : CjExpressionImpl(node) {
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitOptionalExpression(this, data)
     }

@@ -8,6 +8,9 @@ import org.cangnova.cangjie.source.AbstractCjSourceElement
 
 // #### KtSourcelessFactory ####
 
+/**
+ * 在 context receiver 提供的诊断上下文中上报无源码诊断。
+ */
 context(context: DiagnosticContext)
 fun DiagnosticReporter.report(
     factory: CjSourcelessDiagnosticFactory,
@@ -19,6 +22,9 @@ fun DiagnosticReporter.report(
 
 // #### CjDiagnosticFactory0 ####
 
+/**
+ * 使用显式诊断上下文上报无参数源码诊断。
+ */
 fun DiagnosticReporter.reportOn(
     source: AbstractCjSourceElement?,
     factory: CjDiagnosticFactory0,
@@ -28,6 +34,9 @@ fun DiagnosticReporter.reportOn(
     report(factory.on(source.requireNotNull(), positioningStrategy, context), context)
 }
 
+/**
+ * 使用 context receiver 提供的诊断上下文上报无参数源码诊断。
+ */
 context(context: DiagnosticContext)
 fun DiagnosticReporter.reportOn(
     source: AbstractCjSourceElement?,
@@ -39,6 +48,9 @@ fun DiagnosticReporter.reportOn(
 
 // #### CjDiagnosticFactory1 ####
 
+/**
+ * 使用显式诊断上下文上报一参数源码诊断。
+ */
 fun <A> DiagnosticReporter.reportOn(
     source: AbstractCjSourceElement?,
     factory: CjDiagnosticFactory1<A>,
@@ -49,6 +61,9 @@ fun <A> DiagnosticReporter.reportOn(
     report(factory.on(source.requireNotNull(), a, positioningStrategy, context), context)
 }
 
+/**
+ * 使用 context receiver 提供的诊断上下文上报一参数源码诊断。
+ */
 context(context: DiagnosticContext)
 fun <A> DiagnosticReporter.reportOn(
     source: AbstractCjSourceElement?,
@@ -61,6 +76,9 @@ fun <A> DiagnosticReporter.reportOn(
 
 // #### CjDiagnosticFactory2 ####
 
+/**
+ * 使用显式诊断上下文上报二参数源码诊断。
+ */
 fun <A, B> DiagnosticReporter.reportOn(
     source: AbstractCjSourceElement?,
     factory: CjDiagnosticFactory2<A, B>,
@@ -72,6 +90,9 @@ fun <A, B> DiagnosticReporter.reportOn(
     report(factory.on(source.requireNotNull(), a, b, positioningStrategy, context), context)
 }
 
+/**
+ * 使用 context receiver 提供的诊断上下文上报二参数源码诊断。
+ */
 context(context: DiagnosticContext)
 fun <A, B> DiagnosticReporter.reportOn(
     source: AbstractCjSourceElement?,
@@ -85,6 +106,9 @@ fun <A, B> DiagnosticReporter.reportOn(
 
 // #### CjDiagnosticFactory3 ####
 
+/**
+ * 使用显式诊断上下文上报三参数源码诊断。
+ */
 fun <A, B, C> DiagnosticReporter.reportOn(
     source: AbstractCjSourceElement?,
     factory: CjDiagnosticFactory3<A, B, C>,
@@ -97,6 +121,9 @@ fun <A, B, C> DiagnosticReporter.reportOn(
     report(factory.on(source.requireNotNull(), a, b, c, positioningStrategy, context), context)
 }
 
+/**
+ * 使用 context receiver 提供的诊断上下文上报三参数源码诊断。
+ */
 context(context: DiagnosticContext)
 fun <A, B, C> DiagnosticReporter.reportOn(
     source: AbstractCjSourceElement?,
@@ -111,6 +138,9 @@ fun <A, B, C> DiagnosticReporter.reportOn(
 
 // #### CjDiagnosticFactory4 ####
 
+/**
+ * 使用显式诊断上下文上报四参数源码诊断。
+ */
 fun <A, B, C, D> DiagnosticReporter.reportOn(
     source: AbstractCjSourceElement?,
     factory: CjDiagnosticFactory4<A, B, C, D>,
@@ -124,6 +154,9 @@ fun <A, B, C, D> DiagnosticReporter.reportOn(
     report(factory.on(source.requireNotNull(), a, b, c, d, positioningStrategy, context), context)
 }
 
+/**
+ * 使用 context receiver 提供的诊断上下文上报四参数源码诊断。
+ */
 context(context: DiagnosticContext)
 fun <A, B, C, D> DiagnosticReporter.reportOn(
     source: AbstractCjSourceElement?,
@@ -137,11 +170,17 @@ fun <A, B, C, D> DiagnosticReporter.reportOn(
     report(factory.on(source.requireNotNull(), a, b, c, d, positioningStrategy, context), context)
 }
 
+/**
+ * 要求源码元素非空，并在缺失时报告诊断调用错误。
+ */
 fun AbstractCjSourceElement?.requireNotNull(): AbstractCjSourceElement =
     requireNotNull(this) { "source must not be null" }
 
 // #### CjDiagnosticFactoryForDeprecation0 ####
 
+/**
+ * 使用显式诊断上下文上报无参数退化特性诊断。
+ */
 fun DiagnosticReporter.reportOn(
     source: AbstractCjSourceElement?,
     factory: CjDiagnosticFactoryForDeprecation0,
@@ -151,6 +190,9 @@ fun DiagnosticReporter.reportOn(
     reportOn(source, factory.chooseFactory(context), context, positioningStrategy)
 }
 
+/**
+ * 使用 context receiver 提供的诊断上下文上报无参数退化特性诊断。
+ */
 context(context: DiagnosticContext)
 fun DiagnosticReporter.reportOn(
     source: AbstractCjSourceElement?,
@@ -162,6 +204,9 @@ fun DiagnosticReporter.reportOn(
 
 // #### CjDiagnosticFactoryForDeprecation1 ####
 
+/**
+ * 使用显式诊断上下文上报一参数退化特性诊断。
+ */
 fun <A> DiagnosticReporter.reportOn(
     source: AbstractCjSourceElement?,
     factory: CjDiagnosticFactoryForDeprecation1<A>,
@@ -172,6 +217,9 @@ fun <A> DiagnosticReporter.reportOn(
     reportOn(source, factory.chooseFactory(context), a, context, positioningStrategy)
 }
 
+/**
+ * 使用 context receiver 提供的诊断上下文上报一参数退化特性诊断。
+ */
 context(context: DiagnosticContext)
 fun <A> DiagnosticReporter.reportOn(
     source: AbstractCjSourceElement?,
@@ -184,6 +232,9 @@ fun <A> DiagnosticReporter.reportOn(
 
 // #### CjDiagnosticFactoryForDeprecation2 ####
 
+/**
+ * 使用显式诊断上下文上报二参数退化特性诊断。
+ */
 fun <A, B> DiagnosticReporter.reportOn(
     source: AbstractCjSourceElement?,
     factory: CjDiagnosticFactoryForDeprecation2<A, B>,
@@ -195,6 +246,9 @@ fun <A, B> DiagnosticReporter.reportOn(
     reportOn(source, factory.chooseFactory(context), a, b, context, positioningStrategy)
 }
 
+/**
+ * 使用 context receiver 提供的诊断上下文上报二参数退化特性诊断。
+ */
 context(context: DiagnosticContext)
 fun <A, B> DiagnosticReporter.reportOn(
     source: AbstractCjSourceElement?,
@@ -208,6 +262,9 @@ fun <A, B> DiagnosticReporter.reportOn(
 
 // #### CjDiagnosticFactoryForDeprecation3 ####
 
+/**
+ * 使用显式诊断上下文上报三参数退化特性诊断。
+ */
 fun <A, B, C> DiagnosticReporter.reportOn(
     source: AbstractCjSourceElement?,
     factory: CjDiagnosticFactoryForDeprecation3<A, B, C>,
@@ -220,6 +277,9 @@ fun <A, B, C> DiagnosticReporter.reportOn(
     reportOn(source, factory.chooseFactory(context), a, b, c, context, positioningStrategy)
 }
 
+/**
+ * 使用 context receiver 提供的诊断上下文上报三参数退化特性诊断。
+ */
 context(context: DiagnosticContext)
 fun <A, B, C> DiagnosticReporter.reportOn(
     source: AbstractCjSourceElement?,
@@ -234,6 +294,9 @@ fun <A, B, C> DiagnosticReporter.reportOn(
 
 // #### CjDiagnosticFactoryForDeprecation4 ####
 
+/**
+ * 使用显式诊断上下文上报四参数退化特性诊断。
+ */
 fun <A, B, C, D> DiagnosticReporter.reportOn(
     source: AbstractCjSourceElement?,
     factory: CjDiagnosticFactoryForDeprecation4<A, B, C, D>,
@@ -247,6 +310,9 @@ fun <A, B, C, D> DiagnosticReporter.reportOn(
     reportOn(source, factory.chooseFactory(context), a, b, c, d, context, positioningStrategy)
 }
 
+/**
+ * 使用 context receiver 提供的诊断上下文上报四参数退化特性诊断。
+ */
 context(context: DiagnosticContext)
 fun <A, B, C, D> DiagnosticReporter.reportOn(
     source: AbstractCjSourceElement?,
@@ -260,6 +326,9 @@ fun <A, B, C, D> DiagnosticReporter.reportOn(
     reportOn(source, factory.chooseFactory(context), a, b, c, d, positioningStrategy)
 }
 
+/**
+ * 根据当前语言版本特性支持情况选择 warning 或 error 诊断工厂。
+ */
 fun <F : CjDiagnosticFactoryN> CjDiagnosticFactoryForDeprecation<F>.chooseFactory(context: DiagnosticContext): F {
     return if (context.languageVersionSettings.supportsFeature(deprecatingFeature)) {
         errorFactory
@@ -267,6 +336,5 @@ fun <F : CjDiagnosticFactoryN> CjDiagnosticFactoryForDeprecation<F>.chooseFactor
         warningFactory
     }
 }
-
 
 

@@ -19,7 +19,13 @@ import org.cangnova.cangjie.psi.CjFile
  * 采用统一查询和统一缓存，因此这里直接保存公开 Analysis API 视图。
  */
 internal data class CaCfirTopLevelPublicSymbolQueryValue(
+    /**
+     * 查询命中的公开 class-like 符号列表。
+     */
     val classLikeSymbols: List<CaClassLikeSymbol>,
+    /**
+     * 查询命中的公开 callable 符号列表。
+     */
     val callableSymbols: List<CaCallableSymbol>,
 )
 
@@ -30,7 +36,13 @@ internal data class CaCfirTopLevelPublicSymbolQueryValue(
  * public symbol 的构造和缓存仍然留在 `cfir.symbols` 层。
  */
 internal data class CaCfirTopLevelSymbolQueryResult(
+    /**
+     * low-level 查询命中的 CFIR class-like 符号列表。
+     */
     val classLikeSymbols: List<CfirClassLikeSymbol<*>>,
+    /**
+     * low-level 查询命中的 CFIR callable 符号列表。
+     */
     val callableSymbols: List<CfirCallableSymbol<*>>,
 )
 
@@ -41,7 +53,13 @@ internal data class CaCfirTopLevelSymbolQueryResult(
  * 不能夹带任何兜底上下文或临时 PSI 状态。
  */
 internal data class CaCfirTopLevelPublicSymbolQueryKey(
+    /**
+     * 顶层声明所在包名。
+     */
     val packageFqName: FqName,
+    /**
+     * 顶层声明短名。
+     */
     val name: Name,
 )
 
@@ -51,7 +69,13 @@ internal data class CaCfirTopLevelPublicSymbolQueryKey(
  * 诊断快照同时受目标元素与诊断过滤器影响，因此两者必须共同参与缓存命中。
  */
 internal data class CaCfirDiagnosticsQueryKey(
+    /**
+     * 要收集诊断的 PSI 元素。
+     */
     val element: PsiElement,
+    /**
+     * 诊断收集过滤器。
+     */
     val filter: DiagnosticCheckerFilter,
 )
 
@@ -61,7 +85,13 @@ internal data class CaCfirDiagnosticsQueryKey(
  * 文件诊断会随着过滤器维度变化而变化，不能仅按文件缓存。
  */
 internal data class CaCfirFileDiagnosticsQueryKey(
+    /**
+     * 要收集诊断的仓颉 PSI 文件。
+     */
     val file: CjFile,
+    /**
+     * 诊断收集过滤器。
+     */
     val filter: DiagnosticCheckerFilter,
 )
 
@@ -72,6 +102,12 @@ internal data class CaCfirFileDiagnosticsQueryKey(
  * “补全中的符号身份”和“触发位置”两个维度。
  */
 internal data class CaCfirCompletionDecisionKey(
+    /**
+     * 补全候选符号的稳定身份键。
+     */
     val symbolKey: CaCfirCompletionSymbolKey,
+    /**
+     * 触发补全决策的 PSI 位置。
+     */
     val position: PsiElement,
 )

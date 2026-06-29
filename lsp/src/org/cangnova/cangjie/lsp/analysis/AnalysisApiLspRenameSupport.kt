@@ -26,8 +26,16 @@ import java.util.concurrent.atomic.AtomicReference
  * LSP `WorkspaceEdit`。LSP 不再维护独立引用扫描或手写 target-key rename。
  */
 internal class AnalysisApiLspRenameSupport(
+    /**
+     * 提供 PSI 快照分析、目标元素查找和文档 URI 反查的语义支持对象。
+     */
     private val semanticSupport: AnalysisApiLspSemanticSupport,
 ) {
+    /**
+     * 执行 LSP rename 请求并返回工作区编辑。
+     *
+     * 方法先解析当前位置可重命名目标，再调用 headless renamer 修改 PSI，最后把所有受影响文件的文本差异转换为 LSP edit。
+     */
     fun rename(
         context: CangjieAnalysisRequestContext,
         document: LspTextDocument,
@@ -76,6 +84,11 @@ internal class AnalysisApiLspRenameSupport(
         }
     }
 
+    /**
+     * 执行 prepareRename 请求并返回可重命名名称范围。
+     *
+     * 返回值包含客户端可展示的占位文本和精确范围；当前位置不可重命名时返回 null。
+     */
     fun prepareRename(
         document: LspTextDocument,
         params: RenameParams,
@@ -91,6 +104,11 @@ internal class AnalysisApiLspRenameSupport(
         }
     }
 
+    /**
+     * 收集 prepareRename 需要的目标名称和范围。
+     *
+     * 方法同时确认当前位置存在可重命名 PSI 元素，避免只在普通标识符文本上返回误导性范围。
+     */
     private fun collectRenameTarget(
         document: LspTextDocument,
         file: CjFile,
@@ -108,6 +126,9 @@ internal class AnalysisApiLspRenameSupport(
         )
     }
 
+    /**
+     * 在指定位置查找可由 headless renamer 处理的 PSI 元素。
+     */
     private fun collectRenameTargetElement(
         document: LspTextDocument,
         file: CjFile,
@@ -117,6 +138,11 @@ internal class AnalysisApiLspRenameSupport(
             .firstOrNull(CangJieHeadlessRenamer::canRename)
     }
 
+    /**
+     * 查找用于 prepareRename 展示范围的名称 PSI 元素。
+     *
+     * 优先选择声明的 nameIdentifier，其次选择简单名表达式的 referencedNameElement，最后回退到当前位置叶子。
+     */
     private fun findRenameNameElement(
         document: LspTextDocument,
         file: CjFile,
@@ -142,11 +168,24 @@ internal class AnalysisApiLspRenameSupport(
         return leaf.takeIf { it.textRange.containsOffset(offset) }
     }
 
+    /**
+     * prepareRename 阶段返回给客户端的目标信息。
+     */
     private data class RenameTarget(
+        /**
+         * 客户端重命名输入框中的原始名称占位文本。
+         */
         val placeholder: String,
+
+        /**
+         * 原始名称在文档中的 LSP 范围。
+         */
         val range: Range,
     )
 
+    /**
+     * 从当前 PSI 元素向父节点方向遍历自身和祖先。
+     */
     private fun PsiElement.parentsWithSelf(): Sequence<PsiElement> = generateSequence(this) { current ->
         current.parent as? PsiElement
     }

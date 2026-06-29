@@ -17,15 +17,27 @@ import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaResolutionS
  */
 @OptIn(CaImplementationDetail::class, CaPlatformInterface::class)
 internal class CaCfirAnalysisScopeProvider(
+    /**
+     * 延迟取得当前 CFIR Analysis session。
+     */
     override val analysisSessionProvider: () -> CaCfirSession,
+    /**
+     * 当前 session 对应模块可被分析的解析作用域。
+     */
     private val resolutionScope: CaResolutionScope,
 
 ) : CaBaseSessionComponent<CaCfirSession>(), CaBaseAnalysisScopeProviderEx {
 
     @OptIn(CaPlatformInterface::class)
+    /**
+     * 暴露给 Analysis API 调用方的全局搜索作用域。
+     */
     override val analysisScope: GlobalSearchScope
         get() = withValidityAssertion { resolutionScope }
 
+    /**
+     * 判断 PSI 元素是否处于当前解析作用域内。
+     */
     override fun canBeAnalysedImpl(element: PsiElement): Boolean {
         return resolutionScope.contains(element)
 

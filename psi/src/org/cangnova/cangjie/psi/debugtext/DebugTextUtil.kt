@@ -32,6 +32,9 @@ import org.cangnova.cangjie.psi.CjVisitor
 // invoke this instead of getText() when you need debug text to identify some place in PSI without storing the element itself
 // this is need to avoid unnecessary file parses
 // this defaults to get text if the element is not stubbed
+/**
+ * 提供 `getDebugText` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+ */
 fun CjElement.getDebugText(): String {
     if (this !is CjElementImplStub<*> || this.stub == null) {
         return text
@@ -46,4 +49,7 @@ fun CjElement.getDebugText(): String {
     return accept(DebugTextBuildingVisitor, Unit).toString()
 }
 
+/**
+ * 提供 `DebugTextBuildingVisitor` 单例，集中承载仓颉 PSI的共享状态、工厂或工具行为。
+ */
 private object DebugTextBuildingVisitor : CjVisitor<String, Unit>()

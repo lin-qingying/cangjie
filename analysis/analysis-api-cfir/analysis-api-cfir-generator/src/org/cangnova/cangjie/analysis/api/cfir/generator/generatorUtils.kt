@@ -9,6 +9,11 @@ import org.cangnova.cangjie.utils.SmartPrinter
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
 
+/**
+ * 以短名形式输出反射类型。
+ *
+ * 当 [shouldRenderFqName] 返回 true 时保留全限定名，用于规避生成源码中的简单名冲突。
+ */
 internal fun SmartPrinter.printTypeWithShortNames(type: KType, shouldRenderFqName: (KType) -> Boolean = { false }) {
     fun typeConversion(type: KType): String {
         val nullableSuffix = if (type.isMarkedNullable) "?" else ""
@@ -28,8 +33,14 @@ internal fun SmartPrinter.printTypeWithShortNames(type: KType, shouldRenderFqNam
     print(typeConversion(type))
 }
 
+/**
+ * 反射类型对应分类器的简单名。
+ */
 val KType.simpleName: String
     get() = (classifier as KClass<*>).simpleName!!
 
+/**
+ * 反射类型对应分类器的全限定名。
+ */
 val KType.qualifiedName: String
     get() = (classifier as KClass<*>).qualifiedName!!

@@ -28,14 +28,26 @@ import com.intellij.lang.ASTNode
 import com.intellij.psi.PsiElement
 import com.intellij.psi.tree.IElementType
 
+/**
+ * 表示 `CjContainerNode`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 open class CjContainerNode(node: ASTNode) : CjElementImpl(node) {
+    /**
+     * 提供 `findChildByClass` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     public override fun <T> findChildByClass(aClass: Class<T>): T? {
         return super.findChildByClass(aClass)
     }
 
+    /**
+     * 提供 `findChildByType` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     public override fun <T : PsiElement> findChildByType(type: IElementType): T? {
         return super.findChildByType(type)
     }
 
+    /**
+     * 保存 `expression`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val expression get() = findChildByClass(CjExpression::class.java)
 }

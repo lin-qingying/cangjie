@@ -11,6 +11,9 @@ import org.cangnova.cangjie.test.services.TestServices
  * 不把 low-level 或 analysis-api 的平台策略硬编码到生产服务里。
  */
 class AnalysisApiIndexingConfiguration(
+    /**
+     * 当前测试运行中 binary library 的索引模式。
+     */
     val binaryLibraryIndexingMode: AnalysisApiBinaryLibraryIndexingMode,
 ) : TestService
 
@@ -31,5 +34,8 @@ enum class AnalysisApiBinaryLibraryIndexingMode {
     NO_INDEXING,
 }
 
+/**
+ * 当前测试服务容器中的 Analysis API library 索引配置。
+ */
 val TestServices.libraryIndexingConfiguration: AnalysisApiIndexingConfiguration?
     by TestServices.nullableTestServiceAccessor()

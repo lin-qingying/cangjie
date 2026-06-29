@@ -13,6 +13,9 @@ import java.util.function.Predicate
  * 需要的字段比较能力直接下沉到这里。
  */
 object ReflectionUtil {
+    /**
+     * 比较两个对象公开且非 final 的字段，跳过带 [SkipInEquals] 的字段。
+     */
     @JvmStatic
     fun comparePublicNonFinalFieldsWithSkip(first: Any, second: Any): Boolean {
         return comparePublicNonFinalFields(
@@ -22,6 +25,9 @@ object ReflectionUtil {
         )
     }
 
+    /**
+     * 按过滤谓词比较两个对象共有的公开非 final 字段。
+     */
     private fun comparePublicNonFinalFields(
         first: Any,
         second: Any,
@@ -45,10 +51,19 @@ object ReflectionUtil {
         return true
     }
 
+    /**
+     * 判断字段是否为 public。
+     */
     private fun isPublic(field: Field): Boolean = (field.modifiers and Modifier.PUBLIC) != 0
 
+    /**
+     * 判断字段是否为 final。
+     */
     private fun isFinal(field: Field): Boolean = (field.modifiers and Modifier.FINAL) != 0
 
+    /**
+     * 标记字段不参与 formatter settings 的 equals 比较。
+     */
     @Retention(AnnotationRetention.RUNTIME)
     annotation class SkipInEquals
 }

@@ -25,9 +25,18 @@ import org.cangnova.cangjie.cfir.types.ConeCangJieType
  */
 @OptIn(CaSessionComponentImplementationDetail::class)
 internal interface CaCfirSessionComponent : CaSessionComponent {
+    /**
+     * 当前组件绑定的 CFIR Analysis session。
+     */
     val analysisSession: CaCfirSession
 
+    /**
+     * 当前 session 所属 IntelliJ project。
+     */
     val project: Project get() = analysisSession.project
+    /**
+     * 当前 session 使用的 low-level 解析门面。
+     */
     val resolutionFacade: LLResolutionFacade get() = analysisSession.resolutionFacade
 
     /**
@@ -35,10 +44,13 @@ internal interface CaCfirSessionComponent : CaSessionComponent {
      * 并转换成公开 [CaType]。
      */
     fun ConeCangJieType.asPublicType(): CaType = asCaType(analysisSession)
+    /**
+     * 将 low-level PSI 诊断转换成当前组件生命周期下的公开诊断对象。
+     */
     fun CjPsiDiagnostic.asCaDiagnostic(): CaDiagnosticWithPsi<*> = asCaDiagnostic(analysisSession)
 
     /**
-     * 将 low-level 诊断转换成当前组件生命周期下的公开诊断对象。
+     * 将 low-level Cone 类型转换成当前组件生命周期下的公开类型对象。
      */
     fun ConeCangJieType.asCaType(): CaType = asCaType(analysisSession)
 

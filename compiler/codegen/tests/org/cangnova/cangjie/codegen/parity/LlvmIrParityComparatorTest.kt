@@ -5,9 +5,18 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
+/**
+ * `LlvmIrParityComparator` 的规范化和差异报告测试。
+ */
 class LlvmIrParityComparatorTest {
+    /**
+     * 测试使用的默认 parity comparator。
+     */
     private val comparator = LlvmIrParityComparator()
 
+    /**
+     * 验证规范化会排序顶层声明。
+     */
     @Test
     fun `normalization sorts top-level declarations`() {
         val ir = """
@@ -26,6 +35,9 @@ declare void @foo()
         assertEquals("declare void @foo()", lines[4])
     }
 
+    /**
+     * 验证比较结果会记录首个不同行。
+     */
     @Test
     fun `compare finds first mismatch`() {
         val expected = """
@@ -49,6 +61,9 @@ entry:
         assertEquals("  ret i32 1", result.firstDiff?.actual)
     }
 
+    /**
+     * 验证差异报告包含行号、期望行和实际行。
+     */
     @Test
     fun `format report includes line and values`() {
         val result = comparator.compare(
@@ -63,6 +78,9 @@ entry:
         assertTrue(report.contains("actual  :   ret i32 2"))
     }
 
+    /**
+     * 验证默认规范化会忽略 LLVM 注释行。
+     */
     @Test
     fun `normalization ignores comment lines`() {
         val expected = """

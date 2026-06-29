@@ -16,6 +16,9 @@ import kotlin.reflect.KProperty
  * 例如可新增中间 Builder、或为生成属性设置默认值。
  */
 abstract class AbstractBuilderConfigurator<Element, Implementation, ElementField>(
+    /**
+     * 已构建完成并等待配置 Builder 的树模型。
+     */
     val model: Model<Element>
 ) where Element : AbstractElement<Element, ElementField, Implementation>,
         Implementation : AbstractImplementation<Implementation, Element, ElementField>,
@@ -43,6 +46,9 @@ abstract class AbstractBuilderConfigurator<Element, Implementation, ElementField
      */
     abstract fun configureBuilders()
 
+    /**
+     * 当前配置器新增的全部中间层 Builder。
+     */
     val intermediateBuilders = mutableListOf<IntermediateBuilder<ElementField, Element>>()
 
     /**
@@ -73,6 +79,11 @@ abstract class AbstractBuilderConfigurator<Element, Implementation, ElementField
         implementation.builder = null
     }
 
+    /**
+     * 从元素中解析需要配置的具体实现类。
+     *
+     * 未指定 [type] 时要求元素只有一个可生成叶子 Builder 的实现；指定 [type] 时按实现类类型名精确匹配。
+     */
     private fun Element.extractImplementation(type: String?): Implementation {
         return if (type == null) {
             implementations.singleOrNull { it.kind?.hasLeafBuilder == true } ?: this@AbstractBuilderConfigurator.run {
@@ -115,9 +126,12 @@ abstract class AbstractBuilderConfigurator<Element, Implementation, ElementField
                 if (implementation.element == element) return@mapNotNullTo null
                 val hasElementInParents = implementation.element.isSubclassOf(element)
                 implementation.takeIf { hasElementInParents }
-            }
+        }
     }
 
+    /**
+     * 当前模型中所有仍启用的叶子 Builder。
+     */
     private val allLeafBuilders: List<LeafBuilder<ElementField, Element, Implementation>>
         get() = model.elements.flatMap { it.implementations }.mapNotNull { it.builder }
 
@@ -158,6 +172,9 @@ abstract class AbstractBuilderConfigurator<Element, Implementation, ElementField
      * 用于配置一个或多个中间/叶子 Builder 的 DSL 基类。
      */
     protected abstract inner class BuilderConfigurationContext {
+        /**
+         * 当前 DSL 上下文正在配置的 Builder。
+         */
         protected abstract val builder: Builder<ElementField, Element>
 
         private fun getField(name: String): ElementField {
@@ -244,6 +261,9 @@ abstract class AbstractBuilderConfigurator<Element, Implementation, ElementField
              */
             var value: String? = null
 
+            /**
+             * 将默认值配置写入字段模型。
+             */
             fun applyConfiguration() {
                 if (value != null) field.defaultValueInBuilder = value
             }
@@ -261,6 +281,9 @@ abstract class AbstractBuilderConfigurator<Element, Implementation, ElementField
      * ```
      */
     protected inner class IntermediateBuilderConfigurationContext(
+        /**
+         * 当前正在配置的中间层 Builder。
+         */
         override val builder: IntermediateBuilder<ElementField, Element>
     ) : BuilderConfigurationContext() {
         inner class Fields {
@@ -306,6 +329,9 @@ abstract class AbstractBuilderConfigurator<Element, Implementation, ElementField
         val parents: MutableList<IntermediateBuilder<ElementField, Element>>
             get() = builder.parents
 
+        /**
+         * 当前中间 Builder 是否生成 sealed interface。
+         */
         var isSealed: Boolean
             get() = builder.isSealed
             set(value) {
@@ -313,11 +339,23 @@ abstract class AbstractBuilderConfigurator<Element, Implementation, ElementField
             }
     }
 
+    /**
+     * 支持 `val xxx by builder { ... }` 语法的委托提供器。
+     */
     protected inner class IntermediateBuilderDelegateProvider(
+        /**
+         * 延迟应用到新建中间 Builder 上的配置块。
+         */
         private val block: IntermediateBuilderConfigurationContext.() -> Unit
     ) {
+        /**
+         * 由委托属性名推导并创建出的中间 Builder。
+         */
         lateinit var builder: IntermediateBuilder<ElementField, Element>
 
+        /**
+         * 根据被委托属性名创建中间 Builder 并注册配置。
+         */
         operator fun provideDelegate(
             thisRef: Nothing?,
             prop: KProperty<*>
@@ -335,6 +373,9 @@ abstract class AbstractBuilderConfigurator<Element, Implementation, ElementField
      * 用于配置一个或多个叶子 Builder 的 DSL。
      */
     protected inner class LeafBuilderConfigurationContext(
+        /**
+         * 当前正在配置的叶子 Builder。
+         */
         override val builder: LeafBuilder<ElementField, Element, Implementation>
     ) : BuilderConfigurationContext() {
 

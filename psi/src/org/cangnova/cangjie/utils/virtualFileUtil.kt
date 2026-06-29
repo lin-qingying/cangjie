@@ -28,6 +28,9 @@ import com.intellij.openapi.fileTypes.FileTypeRegistry
 import com.intellij.openapi.vfs.VirtualFile
 import org.cangnova.cangjie.lang.CangJieFileType
 
+/**
+ * 提供 `isCangJieFileType` 操作，封装PSI 模块节点的访问、构造或判断逻辑。
+ */
 fun VirtualFile.isCangJieFileType(): Boolean {
     val nameSequence = nameSequence
     if (nameSequence.endsWith(CangJieFileType.DOT_DEFAULT_EXTENSION)) return true

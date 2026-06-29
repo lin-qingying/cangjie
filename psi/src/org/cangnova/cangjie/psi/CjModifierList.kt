@@ -31,15 +31,24 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.stubs.IStubElementType
 import com.intellij.psi.tree.TokenSet
 
+/**
+ * 表示 `CjModifierList`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 abstract class CjModifierList : CjElementImplStub<CangJieModifierListStub>{
     constructor(stub: CangJieModifierListStub, nodeType: IStubElementType<*, *>) : super(stub, nodeType)
 
     constructor(node: ASTNode) : super(node)
 
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitModifierList(this, data)
     }
 
+    /**
+     * 提供 `hasModifier` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun hasModifier(tokenType: CjKeywordToken): Boolean {
         val stub = stub
         if (stub != null) {
@@ -48,17 +57,29 @@ abstract class CjModifierList : CjElementImplStub<CangJieModifierListStub>{
         return getModifier(tokenType) != null
     }
 
+    /**
+     * 提供 `getModifier` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun getModifier(tokenType: CjKeywordToken): PsiElement? {
         return findChildByType(tokenType)
     }
 
+    /**
+     * 提供 `getModifier` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun getModifier(tokenTypes: TokenSet): PsiElement? {
         return findChildByType(tokenTypes)
     }
 
+    /**
+     * 保存 `owner`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val owner: PsiElement
         get() = parentByStub
 
+    /**
+     * 实现 `deleteChildInternal` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun deleteChildInternal(child: ASTNode) {
         super.deleteChildInternal(child)
         if (firstChild == null) {

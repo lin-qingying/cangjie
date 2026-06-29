@@ -51,6 +51,9 @@ interface CangJiePackage :
     PsiQualifiedNamedElement
 
 
+/**
+ * 表示 `AbstractCangJiePackage`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 abstract class AbstractCangJiePackage(
 
     manager: PsiManager,
@@ -58,17 +61,32 @@ abstract class AbstractCangJiePackage(
 ) : PsiPackageBase(
     manager, qualifiedName
 ), CangJiePackage, Queryable {
+    /**
+     * 实现 `getLanguage` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getLanguage(): Language = CangJieLanguage
+    /**
+     * 保存 `facade` 的内部状态，供仓颉 PSI实现维护节点缓存或解析上下文。
+     */
     private val facade: CangJiePsiFacade
         get() {
             return CangJiePsiFacade.getInstance(project)
         }
 
+    /**
+     * 保存 `myDirectoriesWithLibSources`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     @Volatile
     private lateinit var myDirectoriesWithLibSources: CachedValue<Collection<PsiDirectory>>
 
+    /**
+     * 保存 `myDirectories`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     @Volatile
     private lateinit var myDirectories: CachedValue<Collection<PsiDirectory>>
+    /**
+     * 执行 `createCachedDirectories` 内部辅助逻辑，支撑仓颉 PSI节点的结构解析与访问。
+     */
     private fun createCachedDirectories(includeLibrarySources: Boolean): CachedValue<Collection<PsiDirectory>> {
         return CachedValuesManager.getManager(project).createCachedValue({
             val result: Collection<PsiDirectory> = ArrayList()
@@ -82,11 +100,17 @@ abstract class AbstractCangJiePackage(
         }, false)
     }
 
+    /**
+     * 实现 `navigate` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun navigate(requestFocus: Boolean) {
 
     }
 
 
+    /**
+     * 提供 `allScope` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     protected fun allScope(): GlobalSearchScope {
         return GlobalSearchScope.allScope(
             project
@@ -94,6 +118,9 @@ abstract class AbstractCangJiePackage(
 
     }
 
+    /**
+     * 实现 `getAllDirectories` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getAllDirectories(scope: GlobalSearchScope): MutableCollection<PsiDirectory> {
         if (scope.isForceSearchingInLibrarySources) {
             if (!::myDirectoriesWithLibSources.isInitialized) {
@@ -112,6 +139,9 @@ abstract class AbstractCangJiePackage(
         }
     }
 
+    /**
+     * 实现 `findPackage` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun findPackage(qName: String): AbstractCangJiePackage? {
 
         return facade.findPackage(qName) as? AbstractCangJiePackage

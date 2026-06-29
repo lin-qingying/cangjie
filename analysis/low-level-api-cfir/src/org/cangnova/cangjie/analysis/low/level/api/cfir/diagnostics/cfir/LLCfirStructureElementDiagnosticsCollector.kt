@@ -13,14 +13,23 @@ import org.cangnova.cangjie.cfir.analysis.collectors.DiagnosticCollectorComponen
 import org.cangnova.cangjie.cfir.diagnostics.PendingDiagnosticReporter
 import org.cangnova.cangjie.cfir.session.CfirSession
 
+/**
+ * 针对文件结构元素创建 checker-running visitor 的 diagnostics collector。
+ */
 internal class LLCfirStructureElementDiagnosticsCollector(
     session: CfirSession,
+    /**
+     * 根据 diagnostics 组件创建实际 checker-running visitor 的工厂。
+     */
     private val doCreateVisitor: (components: DiagnosticCollectorComponents) -> CheckerRunningDiagnosticCollectorVisitor,
     filter: DiagnosticCheckerFilter,
 ) : AbstractLLCfirDiagnosticsCollector(
     session,
     filter,
 ) {
+    /**
+     * 使用外部注入的 visitor 工厂创建 diagnostics visitor。
+     */
     override fun createVisitor(
         components: DiagnosticCollectorComponents,
         reporter: PendingDiagnosticReporter,

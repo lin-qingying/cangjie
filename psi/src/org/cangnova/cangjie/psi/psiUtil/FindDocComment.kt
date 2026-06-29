@@ -29,6 +29,9 @@ import org.cangnova.cangjie.psi.CjDeclaration
 import org.cangnova.cangjie.psi.CjDeclarationModifierList
 import org.cangnova.cangjie.psi.CjFile
 
+/**
+ * 提供 `findDocComment` 操作，封装PSI 工具节点的访问、构造或判断逻辑。
+ */
 fun findDocComment(declaration: CjDeclaration): CDoc? {
     val containingFile = declaration.containingFile
     if (containingFile is CjFile && containingFile.isCompiled) {

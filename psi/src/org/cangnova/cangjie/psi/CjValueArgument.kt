@@ -33,6 +33,9 @@ import com.intellij.psi.impl.source.tree.LeafPsiElement
 import com.intellij.psi.stubs.IStubElementType
 import org.cangnova.cangjie.lexer.CjTokens
 
+/**
+ * 表示 `CjValueArgument`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 open class CjValueArgument :
     CjElementImplStub<CangJieValueArgumentStub<out CjValueArgument>>,
     ValueArgument {
@@ -45,6 +48,9 @@ open class CjValueArgument :
         nodeType: IStubElementType<*, *>,
     ) : super(stub, nodeType)
 
+    /**
+     * 实现 `getArgumentExpression` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getArgumentExpression(): CjExpression? {
         val stub: CangJiePlaceHolderStub<out CjValueArgument>? = stub
         if (stub != null) {
@@ -64,26 +70,44 @@ open class CjValueArgument :
         return findChildByClass(CjExpression::class.java)
     }
 
+    /**
+     * 实现 `getArgumentName` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getArgumentName(): ValueArgumentName? {
         return getStubOrPsiChild(CjStubElementTypes.VALUE_ARGUMENT_NAME)
     }
 
+    /**
+     * 实现 `isNamed` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun isNamed(): Boolean {
         return getArgumentName() != null
     }
 
+    /**
+     * 实现 `asElement` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun asElement(): CjValueArgument {
         return this
     }
 
+    /**
+     * 实现 `getSpreadElement` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getSpreadElement(): LeafPsiElement? {
         return null
     }
 
+    /**
+     * 实现 `isExternal` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun isExternal(): Boolean {
         return false
     }
 
+    /**
+     * 保存 `isSpread`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val isSpread: Boolean
         get() {
             val stub = stub

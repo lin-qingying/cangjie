@@ -11,6 +11,14 @@ import org.cangnova.cangjie.analysis.api.CaPlatformInterface
  * 是为了后续即使底层 message bus 不再直接等于 project.messageBus，平台 API 形状也无需变化。
  */
 @CaPlatformInterface
-class CangJieProjectMessageBusProvider(private val project: Project) : CangJieMessageBusProvider {
+class CangJieProjectMessageBusProvider(
+    /**
+     * 提供默认 message bus 的 IntelliJ 项目。
+     */
+    private val project: Project,
+) : CangJieMessageBusProvider {
+    /**
+     * 返回 IntelliJ 项目自带的 message bus。
+     */
     override fun getMessageBus(): MessageBus = project.messageBus
 }

@@ -84,6 +84,9 @@ fun CjCasePatternElement?.toPatternKind(): PatternKind {
     }
 }
 
+/**
+ * 表示 `CjPatternVariableElementType`，承载PSI Stub中的语法节点、索引桩或辅助模型。
+ */
 class CjPatternVariableElementType(debugName: String) :
     CjStubElementType<CangJieVariableStub, CjPatternVariable>(
         debugName,
@@ -91,6 +94,9 @@ class CjPatternVariableElementType(debugName: String) :
         CangJieVariableStub::class.java,
     ) {
 
+    /**
+     * 实现 `createStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createStub(psi: CjPatternVariable, parentStub: StubElement<*>?): CangJieVariableStub {
         val patternKind = psi.pattern.toPatternKind()
 
@@ -143,16 +149,25 @@ class CjPatternVariableElementType(debugName: String) :
         }
     }
 
+    /**
+     * 实现 `serialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     @Throws(IOException::class)
     override fun serialize(stub: CangJieVariableStub, dataStream: StubOutputStream) {
         Companion.serialize(stub, dataStream)
     }
 
+    /**
+     * 实现 `deserialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     @Throws(IOException::class)
     override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>): CangJieVariableStub {
         return Companion.deserialize(dataStream, parentStub)
     }
 
+    /**
+     * 实现 `indexStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun indexStub(stub: CangJieVariableStub, sink: IndexSink) {
         getInstance().indexPatternVariable(stub, sink)
     }

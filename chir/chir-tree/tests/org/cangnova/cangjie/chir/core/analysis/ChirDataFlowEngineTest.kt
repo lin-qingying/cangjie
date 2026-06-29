@@ -11,8 +11,18 @@ import org.cangnova.cangjie.chir.core.type.ChirResolvedTypeRef
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
+/**
+ * 校验 CHIR 数据流引擎在前向和后向方向上的收敛行为。
+ *
+ * 该测试使用小型分支控制流图验证 lattice、入口/出口种子和 transfer 函数的组合契约。
+ */
 class ChirDataFlowEngineTest {
 
+    /**
+     * 校验前向数据流分析能够收敛并传播入口可达状态。
+     *
+     * 该用例使用布尔 lattice 表示可达性，确认分析至少完成一次迭代且输出状态包含真值。
+     */
     @Test
     fun `forward engine converges and marks reachable flow`() {
         val function = sampleFunction()
@@ -33,6 +43,11 @@ class ChirDataFlowEngineTest {
         assertTrue(result.outState.values.any { it })
     }
 
+    /**
+     * 校验后向数据流分析能够从出口种子反向传播到所有块。
+     *
+     * 该用例使用整数 lattice 累积传播深度，确认入口状态在收敛后都至少接收到出口信息。
+     */
     @Test
     fun `backward engine converges`() {
         val function = sampleFunction()
@@ -53,6 +68,11 @@ class ChirDataFlowEngineTest {
         assertTrue(result.inState.values.all { it >= 1 })
     }
 
+    /**
+     * 构造具有条件分支和汇合出口的控制流样本函数。
+     *
+     * 样本为前向和后向分析提供同一张 CFG，覆盖 entry、then、else、exit 四类基础块关系。
+     */
     private fun sampleFunction(): DefaultChirFunctionDeclaration {
         val unitType = ChirResolvedTypeRef(ChirPrimitiveType.UNIT)
         return DefaultChirFunctionDeclaration(

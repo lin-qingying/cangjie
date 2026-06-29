@@ -40,13 +40,13 @@ open class D {
 class E <: D {
     public E(<!MEMBER_VARIABLE_CAN_NOT_SHADOW!>v<!>ar z!: Int64 = 3) {
         var c: Int64 = 2
-        <!ILLEGAL_PLACE_OF_CALLING_THIS_OR_SUPER!>s<!>uper()
+        <!ILLEGAL_PLACE_OF_CALLING_THIS_OR_SUPER!>super<!>()
     }
 }
 
 class L <: D {
     public L(<!MEMBER_VARIABLE_CAN_NOT_SHADOW!>v<!>ar z!: Int64 = 3) {
-        <!ILLEGAL_PLACE_OF_CALLING_THIS_PRIMARY_CONSTRUCTOR!>t<!>his(<!NEED_NAMED_ARGUMENT!>"ww"<!>)
+        <!ILLEGAL_PLACE_OF_CALLING_THIS_PRIMARY_CONSTRUCTOR!>this<!>(<!NEED_NAMED_ARGUMENT!>"ww"<!>)
     }
     public init(a!: String = "1") {
         <!TYPE_INCOMPATIBLE!>t<!>his.z = <!TYPE_MISMATCH!>"a"<!>

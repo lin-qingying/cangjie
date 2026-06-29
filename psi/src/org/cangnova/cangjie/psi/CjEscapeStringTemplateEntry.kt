@@ -29,6 +29,9 @@ import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 import com.intellij.lang.ASTNode
 import com.intellij.openapi.util.text.StringUtil
 
+/**
+ * 表示 `CjEscapeStringTemplateEntry`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjEscapeStringTemplateEntry : CjStringTemplateEntry {
     constructor(node: ASTNode) : super(node)
 
@@ -37,10 +40,16 @@ class CjEscapeStringTemplateEntry : CjStringTemplateEntry {
         CjStubElementTypes.ESCAPE_STRING_TEMPLATE_ENTRY,
     )
 
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitEscapeStringTemplateEntry(this, data)
     }
 
+    /**
+     * 保存 `unescapedValue`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val unescapedValue: String
         get() = StringUtil.unescapeStringCharacters(text)
 }

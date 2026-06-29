@@ -10,6 +10,9 @@ import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
  * advantage over naively querying the list of individual symbol providers, such as caching or a single index access with a combined scope.
  */
 internal abstract class LLCombinedSymbolProvider<P : CfirSymbolProvider>(session: CfirSession) : CfirSymbolProvider(session) {
+    /**
+     * 当前 combined provider 聚合的底层 provider 列表。
+     */
     abstract val providers: List<P>
 
     /**

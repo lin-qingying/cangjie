@@ -15,6 +15,9 @@ import org.cangnova.cangjie.test.services.TestServices
  * 通过 caret 位置的 reference 先恢复 declaration，再验证该 declaration 的 lazy resolve 行为。
  */
 abstract class AbstractCfirLazyDeclarationResolveByReferenceTest : AbstractCfirLazyDeclarationResolveOverAllPhasesTest() {
+    /**
+     * 通过 caret 引用恢复目标声明，并对该声明执行全阶段 lazy resolve golden 测试。
+     */
     override fun doTestByMainFile(mainFile: CjFile, mainModule: CjTestModule, testServices: TestServices) {
         doLazyResolveTest(
             cjFile = mainFile,
@@ -36,6 +39,12 @@ abstract class AbstractCfirLazyDeclarationResolveByReferenceTest : AbstractCfirL
     }
 }
 
+/**
+ * source 配置下的 by-reference lazy declaration resolve 测试基类。
+ */
 abstract class AbstractCfirSourceLazyDeclarationResolveByReferenceTest : AbstractCfirLazyDeclarationResolveByReferenceTest() {
+    /**
+     * 使用源码 low-level CFIR 测试配置。
+     */
     override val configurator = analysisApiCfirSourceTestConfigurator(analyseInDependentSession = false)
 }

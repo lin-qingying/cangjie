@@ -21,12 +21,18 @@ import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 import org.cangnova.cangjie.utils.exceptions.requireWithAttachment
 import org.cangnova.cangjie.utils.exceptions.withCfirEntry
 
+/**
+ * 沿 designation 路径运行 diagnostics visitor，以恢复目标声明处的 checker context。
+ */
 private class ContextCollectingDiagnosticCollectorVisitor private constructor(
     sessionHolder: SessionAndScopeSessionHolder,
     designation: CfirDesignation,
 ) : AbstractDiagnosticCollectorVisitor(
     PersistentCheckerContextFactory.createEmptyPersistenceCheckerContext(sessionHolder)
 ) {
+    /**
+     * 根据 designation 路径推进 visitor 并在目标位置快照 checker context。
+     */
     private val contextCollector = object : ContextByDesignationCollector<CheckerContextForProvider>(designation) {
         override fun getCurrentContext(): CheckerContextForProvider =
             PersistentCheckerContextFactory.createPersistenceCheckerContextSnapshot(context)
@@ -39,6 +45,9 @@ private class ContextCollectingDiagnosticCollectorVisitor private constructor(
         }
     }
 
+    /**
+     * 进入嵌套声明时推进 designation collector，否则继续普通子节点遍历。
+     */
     override fun visitNestedElements(element: CfirElement) {
         if (element is CfirDeclaration) {
             contextCollector.nextStep()
@@ -47,8 +56,14 @@ private class ContextCollectingDiagnosticCollectorVisitor private constructor(
         }
     }
 
+    /**
+     * 上下文收集阶段不实际运行 checker。
+     */
     override fun checkElement(element: CfirElement) {}
 
+    /**
+     * 触发 context collector 并返回目标声明处的 checker context。
+     */
     fun collect(): CheckerContextForProvider {
         // Trigger the collector
         contextCollector.nextStep()
@@ -67,7 +82,13 @@ private class ContextCollectingDiagnosticCollectorVisitor private constructor(
     }
 }
 
+/**
+ * 对外提供持久 checker context 收集能力的入口。
+ */
 internal object PersistenceContextCollector {
+    /**
+     * 收集指定非局部声明在给定 CFIR 文件中的 checker context。
+     */
     fun collectContext(
         sessionHolder: SessionAndScopeSessionHolder,
         cfirFile: CfirFile,

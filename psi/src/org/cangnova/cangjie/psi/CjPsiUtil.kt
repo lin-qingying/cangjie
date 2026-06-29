@@ -41,11 +41,20 @@ import com.intellij.psi.tree.IElementType
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.util.codeInsight.CommentUtilCore
 
+/**
+ * 提供 `CjPsiUtil` 单例，集中承载仓颉 PSI的共享状态、工厂或工具行为。
+ */
 object CjPsiUtil {
+    /**
+     * 提供 `isAbstract` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun isAbstract(declaration: CjDeclarationWithBody): Boolean {
         return declaration.bodyExpression == null
     }
 
+    /**
+     * 提供 `isDeprecated` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun isDeprecated(owner: CjModifierListOwner): Boolean {
 
             val annotationEntries = owner.annotationEntries
@@ -59,10 +68,16 @@ object CjPsiUtil {
         return false
     }
 
+    /**
+     * 提供 `isStatement` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun isStatement(element: PsiElement): Boolean {
         return isStatementContainer(element.parent)
     }
 
+    /**
+     * 提供 `isBooleanConstant` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun isBooleanConstant(condition: CjExpression?): Boolean {
         return condition != null && condition.node.elementType === CjNodeTypes.BOOLEAN_CONSTANT
     }
@@ -80,6 +95,9 @@ object CjPsiUtil {
         return CommentUtilCore.isComment(element) || element is CDocElement
     }
 
+    /**
+     * 提供 `getExpressionOrLastStatementInBlock` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun getExpressionOrLastStatementInBlock(expression: CjExpression?): CjExpression? {
         if (expression is CjBlockExpression) {
             return getLastStatementInABlock(expression)
@@ -87,12 +105,18 @@ object CjPsiUtil {
         return expression
     }
 
+    /**
+     * 提供 `isLHSOfDot` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun isLHSOfDot(expression: CjExpression): Boolean {
         val parent = expression.parent
         if (parent !is CjQualifiedExpression) return false
         return parent.receiverExpression === expression || isLHSOfDot(parent)
     }
 
+    /**
+     * 提供 `findRootExpressions` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun findRootExpressions(unreachableElements: Collection<CjElement>): MutableSet<CjElement> {
         val rootElements: MutableSet<CjElement> = HashSet()
         val shadowedElements: MutableSet<CjElement> = HashSet<CjElement>()
@@ -114,16 +138,25 @@ object CjPsiUtil {
         return rootElements
     }
 
+    /**
+     * 提供 `isTrueConstant` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun isTrueConstant(condition: CjExpression?): Boolean {
         return isBooleanConstant(condition) && condition!!.node.findChildByType(CjTokens.TRUE_KEYWORD) != null
     }
 
+    /**
+     * 提供 `isSelectorInQualified` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun isSelectorInQualified(nameExpression: CjSimpleNameExpression): Boolean {
         val qualifiedElement = nameExpression.getQualifiedElement()
         return qualifiedElement is CjQualifiedExpression
                 || ((qualifiedElement is CjUserType) && qualifiedElement.qualifier != null)
     }
 
+    /**
+     * 提供 `areParenthesesUseless` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     @Suppress("unused") // used in intellij repo
     fun areParenthesesUseless(expression: CjParenthesizedExpression): Boolean {
         val innerExpression = expression.expression
@@ -133,12 +166,18 @@ object CjPsiUtil {
         return !areParenthesesNecessary(innerExpression, expression, parent)
     }
 
+    /**
+     * 提供 `getLastStatementInABlock` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun getLastStatementInABlock(blockExpression: CjBlockExpression?): CjExpression? {
         if (blockExpression == null) return null
         val statements = blockExpression.statements
         return if (statements.isEmpty()) null else statements[statements.size - 1]
     }
 
+    /**
+     * 提供 `getLastElementDeparenthesized` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun getLastElementDeparenthesized(
         expression: CjExpression?,
         statementFilter: StatementFilter
@@ -157,6 +196,9 @@ object CjPsiUtil {
         return deparenthesizedExpression
     }
 
+    /**
+     * 提供 `deparenthesizeOnce` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     @JvmOverloads
     fun deparenthesizeOnce(
         expression: CjExpression?, keepAnnotations: Boolean = false
@@ -176,6 +218,9 @@ object CjPsiUtil {
         return expression
     }
 
+    /**
+     * 提供 `deparenthesize` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     @JvmOverloads
     fun deparenthesize(expression: CjExpression?, keepAnnotations: Boolean = false): CjExpression? {
         var expression = expression
@@ -187,30 +232,48 @@ object CjPsiUtil {
         }
     }
 
+    /**
+     * 提供 `safeDeparenthesize` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     @JvmOverloads
     fun safeDeparenthesize(expression: CjExpression, keepAnnotations: Boolean = false): CjExpression {
         val deparenthesized = deparenthesize(expression, keepAnnotations)
         return deparenthesized ?: expression
     }
 
+    /**
+     * 提供 `isStatementContainer` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun isStatementContainer(container: PsiElement?): Boolean {
         return container is CjBlockExpression ||
                 container is CjContainerNodeForControlStructureBody
     }
 
+    /**
+     * 提供 `isAssignment` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun isAssignment(element: PsiElement): Boolean {
         return element is CjBinaryExpression &&
                 CjTokens.ALL_ASSIGNMENTS.contains(element.operationToken)
     }
 
+    /**
+     * 提供 `isLocal` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun isLocal(declaration: CjDeclaration): Boolean {
         return getEnclosingElementForLocalDeclaration(declaration) != null
     }
 
+    /**
+     * 提供 `getEnclosingElementForLocalDeclaration` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun getEnclosingElementForLocalDeclaration(declaration: CjDeclaration): CjElement? {
         return getEnclosingElementForLocalDeclaration(declaration, true)
     }
 
+    /**
+     * 提供 `unquoteIdentifierOrFieldReference` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun unquoteIdentifierOrFieldReference(quoted: String): String {
         if (quoted.indexOf('`') < 0) {
             return quoted
@@ -223,6 +286,9 @@ object CjPsiUtil {
         }
     }
 
+    /**
+     * 提供 `getClassIfParameterIsProperty` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun getClassIfParameterIsProperty(cjParameter: CjParameter): CjTypeStatement? {
         if (cjParameter.hasLetOrVar()) {
             var grandParent: PsiElement? = null
@@ -237,15 +303,24 @@ object CjPsiUtil {
         return null
     }
 
+    /**
+     * 提供 `safeName` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun safeName(name: String?): Name {
         return name?.asOperatorName() ?: SpecialNames.NO_NAME_PROVIDED
     }
 
+    /**
+     * 提供 `getLastReference` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun getLastReference(importedReference: CjExpression): CjSimpleNameExpression? {
         val selector = importedReference.getQualifiedElementSelector()
         return selector as? CjSimpleNameExpression
     }
 
+    /**
+     * 执行 `isNonLocalCallable` 内部辅助逻辑，支撑仓颉 PSI节点的结构解析与访问。
+     */
     private fun isNonLocalCallable(declaration: CjDeclaration?): Boolean {
         if (declaration is CjPatternVariable) {
             return !declaration.isLocal
@@ -254,6 +329,9 @@ object CjPsiUtil {
         return false
     }
 
+    /**
+     * 提供 `visitChildren` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun <D> visitChildren(element: CjElement, visitor: CjVisitor<Unit, D>, data: D) {
         var child = element.firstChild
         while (child != null) {
@@ -264,6 +342,9 @@ object CjPsiUtil {
         }
     }
 
+    /**
+     * 执行 `getOperation` 内部辅助逻辑，支撑仓颉 PSI节点的结构解析与访问。
+     */
     private fun getOperation(expression: CjExpression): IElementType? {
         if (expression is CjQualifiedExpression) {
             return expression.operationSign
@@ -273,6 +354,9 @@ object CjPsiUtil {
         return null
     }
 
+    /**
+     * 执行 `getPriority` 内部辅助逻辑，支撑仓颉 PSI节点的结构解析与访问。
+     */
     private fun getPriority(expression: CjExpression): Int {
         val maxPriority = CangJieExpressionParsing.Precedence.entries.size + 1
 
@@ -303,6 +387,9 @@ object CjPsiUtil {
         return maxPriority
     }
 
+    /**
+     * 提供 `areParenthesesNecessary` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun areParenthesesNecessary(
         innerExpression: CjExpression,
         currentInner: CjExpression,
@@ -354,6 +441,9 @@ object CjPsiUtil {
         return innerPriority < parentPriority
     }
 
+    /**
+     * 提供 `getEnclosingElementForLocalDeclaration` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun getEnclosingElementForLocalDeclaration(declaration: CjDeclaration, skipParameters: Boolean): CjElement? {
         var declaration = declaration
         if (declaration is CjTypeParameter && skipParameters) {
@@ -419,6 +509,9 @@ object CjPsiUtil {
         return null
     }
 
+    /**
+     * 提供 `unquoteIdentifier` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun unquoteIdentifier(quoted: String): String {
         if (quoted.indexOf('`') < 0) {
             return quoted
@@ -431,9 +524,14 @@ object CjPsiUtil {
         }
     }
 
+    /**
+     * 定义 `CjExpressionWrapper` 接口，约束仓颉 PSI节点或服务需要暴露的结构能力。
+     */
     interface CjExpressionWrapper {
+        /**
+         * 保存 `baseExpression`，供仓颉 PSI流程读取节点结构或语义信息。
+         */
         val baseExpression: CjExpression?
     }
 }
-
 

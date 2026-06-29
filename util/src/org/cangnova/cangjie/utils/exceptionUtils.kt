@@ -14,6 +14,9 @@ fun rethrow(e: Throwable): RuntimeException {
     throw e
 }
 
+/**
+ * 安静关闭资源，忽略关闭过程中抛出的任何异常。
+ */
 fun closeQuietly(closeable: Closeable?) {
     if (closeable != null) {
         try {
@@ -25,6 +28,9 @@ fun closeQuietly(closeable: Closeable?) {
     }
 }
 
+/**
+ * 判断当前异常类型链是否为 IntelliJ 平台的 ProcessCanceledException。
+ */
 fun Throwable.isProcessCanceledException(): Boolean {
     var klass: Class<out Any?> = this.javaClass
     while (true) {

@@ -28,11 +28,17 @@ import org.cangnova.cangjie.psi.stubs.CangJiePlaceHolderStub
 import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 import com.intellij.lang.ASTNode
 
+/**
+ * 表示 `CjThisType`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjThisType : CjElementImplStub<CangJiePlaceHolderStub<CjThisType>>, CjTypeElement {
 
     constructor(node: ASTNode) : super(node)
     constructor(stub: CangJiePlaceHolderStub<CjThisType>) : super(stub, CjStubElementTypes.THIS_TYPE)
 
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitThisType(this, data)
     }

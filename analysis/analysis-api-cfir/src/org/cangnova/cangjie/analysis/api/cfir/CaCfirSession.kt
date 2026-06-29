@@ -61,7 +61,13 @@ import org.cangnova.cangjie.cfir.session.CfirSession
  */
 @OptIn(CaPlatformInterface::class, CaImplementationDetail::class)
 internal class CaCfirSession private constructor(
+    /**
+     * 当前 Analysis API 会话所属的 IntelliJ 项目。
+     */
     val project: Project,
+    /**
+     * CFIR low-level 解析入口，提供 use-site session、作用域和模块信息。
+     */
     val resolutionFacade: LLResolutionFacade,
     token: CaLifetimeToken,
     analysisSessionProvider: () -> CaCfirSession,
@@ -96,15 +102,28 @@ internal class CaCfirSession private constructor(
     cInteropComponent = CaCfirCInteropComponent(analysisSessionProvider),
     cDocProvider = CaCfirCDocProvider(analysisSessionProvider),
 ) {
+    /**
+     * 当前会话的 use-site 模块。
+     */
     override val useSiteModule: CaModule
         get() = resolutionFacade.useSiteModule
 
+    /**
+     * 当前 use-site 模块对应的 CFIR session。
+     */
     internal val cfirSession: CfirSession
         get() = resolutionFacade.useSiteCfirSession
 
 
 
+    /**
+     * 当前 use-site 范围内的声明 provider。
+     */
     val useSiteScopeDeclarationProvider: CangJieDeclarationProvider
+
+    /**
+     * 当前 use-site 范围内的包 provider。
+     */
     val useSitePackageProvider: CangJiePackageProvider
 
 
@@ -131,6 +150,10 @@ internal class CaCfirSession private constructor(
     internal val cfirSymbolBuilder: CaSymbolByCfirBuilder by lazy {
         CaSymbolByCfirBuilder(project, this, token)
     }
+
+    /**
+     * 获取指定 CFIR session 对应的作用域 session。
+     */
     fun getScopeSessionFor(session: CfirSession): ScopeSession = withValidityAssertion { resolutionFacade.getScopeSessionFor(session) }
 
     /**
@@ -145,6 +168,9 @@ internal class CaCfirSession private constructor(
 
 
     companion object {
+        /**
+         * 从 low-level resolution facade 创建 CFIR Analysis API 会话。
+         */
         @OptIn(CaImplementationDetail::class)
         internal fun createAnalysisSessionByResolutionFacade(
             resolutionFacade: LLResolutionFacade,

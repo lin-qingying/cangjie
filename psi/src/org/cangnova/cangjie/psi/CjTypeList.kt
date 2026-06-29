@@ -28,6 +28,9 @@ import org.cangnova.cangjie.psi.stubs.CangJiePlaceHolderStub
 import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 import com.intellij.lang.ASTNode
 
+/**
+ * 表示 `CjTypeList`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjTypeList : CjElementImplStub<CangJiePlaceHolderStub<CjTypeList>> {
 
     constructor(node: ASTNode) : super(node)

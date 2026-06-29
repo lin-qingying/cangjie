@@ -40,12 +40,21 @@ import org.cangnova.cangjie.psi.CjFile
  */
 @OptIn(CaPlatformInterface::class, CaExperimentalApi::class)
 internal class CaCfirScopeProvider(
+    /**
+     * 延迟取得当前 CFIR Analysis session，作用域查询需要复用其中的 scope session 与符号构建器。
+     */
     override val analysisSessionProvider: () -> CaCfirSession,
 ) : CaBaseSessionComponent<CaCfirSession>(), CaScopeProvider, CaCfirSessionComponent {
+    /**
+     * 取得当前 CFIR session 对应的作用域缓存会话。
+     */
     private fun getScopeSession(): ScopeSession {
         return analysisSession.getScopeSessionFor(analysisSession.cfirSession)
     }
 
+    /**
+     * 将公开声明容器符号还原为可用于底层作用域查询的 CFIR class-like 声明。
+     */
     private fun CaDeclarationContainerSymbol.getCfirForScope(): CfirClassLikeDeclaration = when (this) {
         is CaCfirClassSymbol -> cfirSymbol.cfir
         else -> error(
@@ -54,6 +63,9 @@ internal class CaCfirScopeProvider(
         )
     }
 
+    /**
+     * 返回声明容器的可见成员作用域。
+     */
     override val CaDeclarationContainerSymbol.memberScope: CaScope
         get() = withValidityAssertion {
             val cfirScope = getCfirForScope().unsubstitutedScope(
@@ -65,15 +77,24 @@ internal class CaCfirScopeProvider(
             CaCfirDelegatingNamesAwareScope(cfirScope, analysisSession.cfirSymbolBuilder)
         }
 
+    /**
+     * 返回文件级作用域，包含文件导入和包内短名解析视图。
+     */
     override fun CjFile.getFileScope(): CaScope = withValidityAssertion {
         CaCfirFileScope(CaCfirFileSymbol(this@getFileScope, analysisSession), analysisSession.cfirSymbolBuilder)
     }
 
+    /**
+     * 按包名返回包级作用域，包不存在时返回 null。
+     */
     override fun getPackageScope(packageFqName: FqName): CaScope? = withValidityAssertion {
         if (!analysisSession.useSitePackageProvider.doesPackageExist(packageFqName)) return@withValidityAssertion null
         CaCfirPackageScope(packageFqName, analysisSession)
     }
 
+    /**
+     * 返回包符号自身对应的包级作用域。
+     */
     override val CaPackageSymbol.packageScope: CaScope
         get() = withValidityAssertion {
             val packageSymbol = this@packageScope as? CaCfirPackageSymbol
@@ -81,6 +102,9 @@ internal class CaCfirScopeProvider(
             CaCfirPackageScope(packageSymbol.fqName, analysisSession)
         }
 
+    /**
+     * 返回声明容器显式声明成员的组合视图。
+     */
     override val CaDeclarationContainerSymbol.combinedDeclaredMemberScope: CaScope
         get() = withValidityAssertion {
             when (this@combinedDeclaredMemberScope) {
@@ -95,6 +119,9 @@ internal class CaCfirScopeProvider(
             }
         }
 
+    /**
+     * 返回 class-like 符号直接声明的成员作用域。
+     */
     override val CaClassLikeSymbol.declaredMemberScope: CaScope
         get() = withValidityAssertion {
             val classSymbol = requireClassLikeSymbol(this@declaredMemberScope)
@@ -104,6 +131,9 @@ internal class CaCfirScopeProvider(
             )
         }
 
+    /**
+     * 返回 extend 声明直接贡献的成员作用域。
+     */
     override val org.cangnova.cangjie.analysis.api.symbols.CaExtendSymbol.declaredMemberScope: CaScope
         get() = withValidityAssertion {
             val extendSymbol = this@declaredMemberScope as? CaCfirExtendSymbol
@@ -114,6 +144,9 @@ internal class CaCfirScopeProvider(
             )
         }
 
+    /**
+     * 返回 class-like 符号包含继承成员在内的成员作用域。
+     */
     override val CaClassLikeSymbol.memberScope: CaScope
         get() = withValidityAssertion {
             val classSymbol = requireClassLikeSymbol(this@memberScope)
@@ -126,6 +159,9 @@ internal class CaCfirScopeProvider(
             CaCfirDelegatingNamesAwareScope(cfirScope, analysisSession.cfirSymbolBuilder)
         }
 
+    /**
+     * 返回类型对应 class-like 声明的成员作用域。
+     */
     override val org.cangnova.cangjie.analysis.api.types.CaType.scope: CaScope?
         get() = withValidityAssertion {
             val classLikeSymbol = this@scope.requireCfirConeType("成员作用域查询")
@@ -140,6 +176,9 @@ internal class CaCfirScopeProvider(
             CaCfirDelegatingNamesAwareScope(cfirScope, analysisSession.cfirSymbolBuilder)
         }
 
+    /**
+     * 校验公开 class-like 符号确实由 CFIR 符号承载。
+     */
     private fun requireClassLikeSymbol(symbol: CaClassLikeSymbol): CaCfirSymbol<CfirClassLikeSymbol<*>> {
         return symbol as? CaCfirSymbol<CfirClassLikeSymbol<*>>
             ?: error("仅 CFIR class-like 符号支持成员作用域查询：${symbol::class.simpleName}")

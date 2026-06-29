@@ -26,47 +26,88 @@ import org.cangnova.cangjie.name.FqName
  * [CfirExtendIndexStore]，然后复用主干 [CfirSessionExtendProvider] 的语义查询。
  */
 internal class LLCfirSessionExtendProvider(
+    /**
+     * 当前源码可解析模块 session。
+     */
     private val session: LLCfirResolvableModuleSession,
+
+    /**
+     * 保存 extend 索引的 session 级存储。
+     */
     private val indexStore: CfirExtendIndexStore,
 ) : CfirExtendProvider {
+    /**
+     * 复用主干 extend provider 的查询语义。
+     */
     private val delegate = CfirSessionExtendProvider(session, indexStore)
 
     @Volatile
+    /**
+     * 已经写入 [indexStore] 的 CFIR 文件集合。
+     */
     private var indexedFiles: Set<CfirFile> = emptySet()
+
+    /**
+     * 查询目标 key 对应的扩展声明。
+     */
     override fun getExtendsForTarget(targetKey: CfirExtendTargetKey): List<CfirExtend> {
         ensureIndexIsFresh()
         return delegate.getExtendsForTarget(targetKey)
     }
+
+    /**
+     * 查询作用于指定 class id 的扩展声明。
+     */
     override fun getExtendsForClass(classId: ClassId): List<CfirExtend> {
         ensureIndexIsFresh()
         return delegate.getExtendsForClass(classId)
     }
 
+    /**
+     * 查询指定包中的扩展声明。
+     */
     override fun getExtendsInPackage(packageFqName: FqName): List<CfirExtend> {
         ensureIndexIsFresh()
         return delegate.getExtendsInPackage(packageFqName)
     }
 
+    /**
+     * 查询作用于内建基本类型的扩展声明。
+     */
     override fun getExtendsForBuiltinType(kind: PrimitiveTypeKind): List<CfirExtend> {
         ensureIndexIsFresh()
         return delegate.getExtendsForBuiltinType(kind)
     }
 
+    /**
+     * 查询 [symbol] 所属的扩展声明。
+     */
     override fun getContainingExtend(symbol: CfirCallableSymbol<*>): CfirExtend? {
         ensureIndexIsFresh()
         return delegate.getContainingExtend(symbol)
     }
 
+    /**
+     * 查询 [extend] 所在包名。
+     */
     override fun getPackageFqName(extend: CfirExtend): FqName? {
         ensureIndexIsFresh()
         return delegate.getPackageFqName(extend)
     }
 
+    /**
+     * 判断 [extend] 在当前 session 中是否可访问。
+     */
     override fun isExtendAccessible(extend: CfirExtend): Boolean {
         ensureIndexIsFresh()
         return delegate.isExtendAccessible(extend)
     }
 
+    /**
+     * 确保当前 session 已缓存的顶层 extend 文件全部进入 [indexStore]。
+     *
+     * 方法先物化顶层 extend 文件，再比较缓存文件集合；集合发生变化时在同步块内解析 extend 头部类型并重建索引。
+     */
     private fun ensureIndexIsFresh() {
         session.symbolProvider.materializeTopLevelExtendFiles()
         val files = session.moduleComponents.cache.getAllCachedCfirFilesForResolution().toList()
@@ -87,6 +128,9 @@ internal class LLCfirSessionExtendProvider(
         }
     }
 
+    /**
+     * 将 [file] 中的顶层 extend 声明推进到 [CfirResolvePhase.TYPES]。
+     */
     private fun resolveTopLevelExtendsToTypes(file: CfirFile) {
         for (declaration in file.declarations) {
             if (declaration is CfirExtend) {

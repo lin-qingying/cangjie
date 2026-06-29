@@ -1,5 +1,5 @@
 
-
+// WITH_EXTRA_CHECKERS
 
 extend Int64 {
     static func test() {

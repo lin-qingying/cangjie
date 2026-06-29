@@ -2,7 +2,13 @@ package org.cangnova.cangjie.codegen.parity
 
 import java.io.File
 
+/**
+ * Codegen parity 测试的生成器入口。
+ */
 object TestGeneratorForCodegenParity {
+    /**
+     * 从 `compiler/codegen/testData/chirParity` 扫描 `.chir.json` fixture 并生成测试类。
+     */
     @JvmStatic
     fun main(args: Array<String>) {
         val projectRoot = if (args.isNotEmpty()) File(args[0]) else File(System.getProperty("user.dir"))
@@ -18,6 +24,9 @@ object TestGeneratorForCodegenParity {
         println("Generated: ${outputFile.path}")
     }
 
+    /**
+     * 渲染生成测试类的 Kotlin 源码文本。
+     */
     private fun render(projectRoot: File, testDataRoot: File, rootRelativePath: String): String {
         val methods = mutableListOf<String>()
         val usedNames = linkedSetOf<String>()
@@ -57,6 +66,9 @@ object TestGeneratorForCodegenParity {
         }
     }
 
+    /**
+     * 为生成测试方法分配唯一方法名。
+     */
     private fun uniqueMethodName(base: String, usedNames: MutableSet<String>): String {
         if (usedNames.add(base)) return base
         var index = 2

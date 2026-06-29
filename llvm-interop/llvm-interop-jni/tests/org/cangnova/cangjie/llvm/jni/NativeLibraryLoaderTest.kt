@@ -13,6 +13,9 @@ import kotlin.io.path.writeText
  * 原生库加载器测试。
  */
 class NativeLibraryLoaderTest {
+    /**
+     * 验证显式系统属性路径拥有最高加载优先级。
+     */
     @Test
     fun `loads from system property path with highest priority`() {
         val calls = mutableListOf<String>()
@@ -35,6 +38,9 @@ class NativeLibraryLoaderTest {
         }
     }
 
+    /**
+     * 验证没有显式路径时可以从 classpath 资源解压并加载原生库。
+     */
     @Test
     fun `loads from classpath resource when property is missing`() {
         val calls = mutableListOf<String>()
@@ -52,6 +58,9 @@ class NativeLibraryLoaderTest {
         }
     }
 
+    /**
+     * 验证 native home 目录加载时会按 deps.order 预加载依赖。
+     */
     @Test
     fun `loads from native home and preloads deps order`() {
         val calls = mutableListOf<String>()
@@ -81,6 +90,9 @@ class NativeLibraryLoaderTest {
         }
     }
 
+    /**
+     * 验证所有加载策略失败时返回可读诊断信息。
+     */
     @Test
     fun `returns diagnostics when all loading strategies fail`() {
         withSystemProperty("cangjie.llvm.native.library.path", null) {
@@ -97,6 +109,9 @@ class NativeLibraryLoaderTest {
         }
     }
 
+    /**
+     * 根据平台标识生成当前测试期望的主库文件名。
+     */
     private fun libraryFileName(platformId: String): String {
         return when {
             platformId.startsWith("windows-") -> "cangjie_llvm_jni.dll"

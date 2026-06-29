@@ -31,25 +31,40 @@ import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 import org.cangnova.cangjie.psi.stubs.elements.CjTokenSets
 import com.intellij.lang.ASTNode
 
+/**
+ * 表示 `CjOptionType`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjOptionType : CjElementImplStub<CangJiePlaceHolderStub<CjOptionType>>, CjTypeElement {
 
     constructor(node: ASTNode) : super(node)
     constructor(stub: CangJiePlaceHolderStub<CjOptionType>) : super(stub, CjStubElementTypes.OPTIONAL_TYPE)
 
+    /**
+     * 提供 `getQuestionMarkNode` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun getQuestionMarkNode(): ASTNode {
         return node.findChildByType(QUEST)!!
     }
 
+    /**
+     * 暴露 `typeArgumentsAsTypes`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val typeArgumentsAsTypes: List<CjTypeReference>
         get() {
 
             val innerType = getInnerType()
             return innerType?.typeArgumentsAsTypes ?: emptyList()
         }
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitOptionType(this, data)
     }
 
+    /**
+     * 提供 `getInnerType` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     @IfNotParsed
     fun getInnerType(): CjTypeElement? {
         return CjStubbedPsiUtil.getStubOrPsiChild(
@@ -59,6 +74,9 @@ class CjOptionType : CjElementImplStub<CangJiePlaceHolderStub<CjOptionType>>, Cj
         )
     }
 
+    /**
+     * 提供 `getModifierList` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun getModifierList(): CjModifierList? {
         return getStubOrPsiChild(CjStubElementTypes.MODIFIER_LIST)
     }

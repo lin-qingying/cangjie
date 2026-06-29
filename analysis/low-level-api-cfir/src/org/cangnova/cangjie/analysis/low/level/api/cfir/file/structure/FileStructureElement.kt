@@ -30,10 +30,19 @@ import org.cangnova.cangjie.psi.*
  * @see org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics.cfir.LLCfirStructureElementDiagnosticsCollector
  */
 internal sealed class FileStructureElement(
+    /**
+     * 当前结构元素所代表的 CFIR 声明。
+     */
     val declaration: CfirDeclaration,
+    /**
+     * 当前结构元素的 diagnostics 懒加载包装。
+     */
     val diagnostics: FileStructureElementDiagnostics,
     elementMapper: LLElementMapper = LLEagerElementMapper(declaration)
 ) {
+    /**
+     * 当前结构元素的 PSI 到 CFIR 映射入口。
+     */
     val mappings: CjToCfirMapping = CjToCfirMapping(elementMapper)
 
     companion object {
@@ -46,7 +55,13 @@ internal sealed class FileStructureElement(
     }
 }
 
+/**
+ * 对外暴露的 PSI 到 CFIR 元素映射包装。
+ */
 internal class CjToCfirMapping(private val elementMapper: LLElementMapper) {
+    /**
+     * 返回指定 PSI 元素对应的 CFIR 元素。
+     */
     fun get(element: CjElement): CfirElement? {
         return elementMapper(element)
     }
@@ -131,6 +146,9 @@ internal class CjToCfirMapping(private val elementMapper: LLElementMapper) {
     }
 }
 
+/**
+ * class-like 声明对应的文件结构元素。
+ */
 internal class ClassDeclarationStructureElement(
     file: CfirFile,
     clazz: CfirClassLikeDeclaration,
@@ -145,12 +163,18 @@ internal class ClassDeclarationStructureElement(
         )
     ),
 ) {
+    /**
+     * 只记录属于 class-like structure element 的 CFIR 子树。
+     */
     class Recorder(firClass: CfirClassLikeDeclaration) : CfirElementContainerRecorder(
         container = firClass,
         declarationsToIgnore = firClass.declarationsToIgnore,
     )
 }
 
+/**
+ * extend 声明对应的文件结构元素。
+ */
 internal class ExtendDeclarationStructureElement(
     file: CfirFile,
     extend: CfirExtend,
@@ -165,6 +189,9 @@ internal class ExtendDeclarationStructureElement(
         )
     ),
 ) {
+    /**
+     * 只记录属于 extend structure element 的 CFIR 子树。
+     */
     class Recorder(firExtend: CfirExtend) : CfirElementContainerRecorder(
         container = firExtend,
         declarationsToIgnore = firExtend.declarationsToIgnore,
@@ -175,6 +202,9 @@ internal class ExtendDeclarationStructureElement(
 internal val CfirClassLikeDeclaration.declarationsToIgnore: Set<CfirDeclaration>
     get() = declarations.filterNot(CfirDeclaration::isPartOfClassStructureElement).toSet()
 
+/**
+ * extend structure element 当前不忽略其成员声明。
+ */
 internal val CfirExtend.declarationsToIgnore: Set<CfirDeclaration>
     get() = emptySet()
 
@@ -184,9 +214,18 @@ internal val CfirExtend.declarationsToIgnore: Set<CfirDeclaration>
  * For instance, it should visit annotations, but not regular declarations.
  */
 internal abstract class CfirElementContainerRecorder(
+    /**
+     * 当前 recorder 所属的容器声明。
+     */
     private val container: CfirDeclaration,
+    /**
+     * 当前容器映射时需要跳过的嵌套声明集合。
+     */
     private val declarationsToIgnore: Set<CfirDeclaration>,
 ) : CfirElementsRecorder() {
+    /**
+     * 只记录属于容器的元素；嵌套声明交给声明结构 recorder 处理。
+     */
     override fun visitElement(element: CfirElement, data: MutableMap<CjElement, CfirElement>) {
         // Entry point to the visitor
         if (element === container) {
@@ -227,6 +266,9 @@ internal val CfirDeclaration.isPartOfClassStructureElement: Boolean
         else -> false
     }
 
+/**
+ * 普通非局部声明对应的文件结构元素。
+ */
 internal class DeclarationStructureElement(
     file: CfirFile,
     declaration: CfirDeclaration,
@@ -247,6 +289,9 @@ internal class DeclarationStructureElement(
             Registry.`is`("kotlin.analysis.partialBodyAnalysis", true)
         }
 
+        /**
+         * 为声明创建 eager 或 partial body PSI->CFIR mapper。
+         */
         private fun createMapper(declaration: CfirDeclaration): LLElementMapper {
             val partialBodyMapper = createPartialBodyMapperIfApplicable(declaration)
             if (partialBodyMapper != null) {
@@ -257,6 +302,9 @@ internal class DeclarationStructureElement(
             return LLEagerElementMapper(declaration)
         }
 
+        /**
+         * 如果声明支持 partial body analysis，则创建 partial body mapper。
+         */
         private fun createPartialBodyMapperIfApplicable(declaration: CfirDeclaration): LLElementMapper? {
             if (!IS_PARTIAL_RESOLVE_ENABLED) {
                 return null
@@ -294,6 +342,9 @@ internal class DeclarationStructureElement(
         }
     }
 
+    /**
+     * 普通声明的 eager recorder。
+     */
     object Recorder : AbstractRecorder()
 
     /**
@@ -304,9 +355,15 @@ internal class DeclarationStructureElement(
      * For other usages, the behavior is unspecified.
      */
     class SignatureRecorder(private val declaration: CfirDeclaration) : AbstractRecorder() {
+        /**
+         * 当前遍历节点的父 CFIR 元素，用于过滤 body/default value/delegation call。
+         */
         private var parent: CfirElement? = null
 
         // Sic! The declaration might be resolved to 'BODY_RESOLVE' in some other thread while we traverse over it.
+        /**
+         * 记录 signature 相关元素，跳过 body、默认值和构造委托调用。
+         */
         override fun visitElement(element: CfirElement, data: MutableMap<CjElement, CfirElement>) {
             // Skip elements only directly nested in the declaration.
             // Note that annotation values technically can contain arbitrary code that we don't want to filter out here.
@@ -338,9 +395,18 @@ internal class DeclarationStructureElement(
         }
     }
 
+    /**
+     * body block 子树 recorder，跳过已经由顶层 statement 直接记录的元素。
+     */
     class BodyBlockRecorder(block: CfirBlock) : AbstractRecorder() {
+        /**
+         * body block 的顶层语句集合。
+         */
         private val statements = block.statements.toSet()
 
+        /**
+         * 跳过顶层 statement 自身，继续记录 statement 内部元素。
+         */
         override fun visitElement(element: CfirElement, data: MutableMap<CjElement, CfirElement>) {
             // Statements are already registered
             if (element !in statements) {
@@ -349,7 +415,13 @@ internal class DeclarationStructureElement(
         }
     }
 
+    /**
+     * 声明 structure element recorder 的公共基类。
+     */
     abstract class AbstractRecorder : CfirElementsRecorder() {
+        /**
+         * 主构造器访问时额外记录构造参数对应属性。
+         */
         override fun visitConstructor(constructor: CfirConstructor, data: MutableMap<CjElement, CfirElement>) {
             super.visitConstructor(constructor, data)
 
@@ -364,6 +436,9 @@ internal class DeclarationStructureElement(
     }
 }
 
+/**
+ * 整个文件根结构元素。
+ */
 internal class RootStructureElement(
     file: CfirFile,
     moduleComponents: LLCfirModuleResolveComponents,
@@ -376,6 +451,9 @@ internal class RootStructureElement(
         )
     ),
 ) {
+    /**
+     * 只记录属于文件根结构元素的 CFIR 子树。
+     */
     class Recorder(file: CfirFile) : CfirElementContainerRecorder(
         container = file,
         declarationsToIgnore = file.declarationsToIgnore,

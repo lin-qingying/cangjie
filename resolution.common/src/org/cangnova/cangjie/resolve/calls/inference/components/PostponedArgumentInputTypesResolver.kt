@@ -11,7 +11,13 @@ import org.cangnova.cangjie.type.model.*
 import org.cangnova.cangjie.utils.SmartSet
 import java.util.Stack
 
+/**
+ * 本文件中 completion context 的简写。
+ */
 private typealias Context = ConstraintSystemCompletionContext
+/**
+ * 根据类型变量提供已解析 atom 的查询函数。
+ */
 private typealias ResolvedAtomProvider = (TypeVariableMarker) -> Any?
 
 /**
@@ -24,8 +30,11 @@ private typealias ResolvedAtomProvider = (TypeVariableMarker) -> Any?
  * 通过约束中的函数类型实参直接提取参数类型，无需 Kotlin 内置函数类型反射。
  */
 class PostponedArgumentInputTypesResolver(
+    /** 推断结果类型解析器。 */
     private val resultTypeResolver: ResultTypeResolver,
+    /** 类型变量固定候选查找器。 */
     private val variableFixationFinder: VariableFixationFinder,
+    /** 解析输入类型所需的约束系统工具上下文。 */
     private val resolutionTypeSystemContext: ConstraintSystemUtilContext,
 ) {
     /**
@@ -37,9 +46,13 @@ class PostponedArgumentInputTypesResolver(
      * @param annotations 函数类型上的注解列表。
      */
     private class ParameterTypesInfo(
+        /** lambda 声明中显式指定的参数类型列表。 */
         val parametersFromDeclaration: List<CangJieTypeMarker?>?,
+        /** 相关 lambda 声明中显式指定的参数类型集合。 */
         val parametersFromDeclarationOfRelatedLambdas: Set<List<CangJieTypeMarker?>>?,
+        /** 从约束中提取的参数类型集合。 */
         val parametersFromConstraints: Set<List<TypeWithKind>>?,
+        /** 函数类型上的注解列表。 */
         val annotations: List<AnnotationMarker>?,
     )
 
@@ -62,7 +75,9 @@ class PostponedArgumentInputTypesResolver(
      * @param direction 约束方向，默认为上界（UPPER）。
      */
     data class TypeWithKind(
+        /** 参数类型。 */
         val type: CangJieTypeMarker,
+        /** 该类型来自约束的方向。 */
         val direction: ConstraintKind = ConstraintKind.UPPER,
     )
 
@@ -162,10 +177,15 @@ class PostponedArgumentInputTypesResolver(
      * @return 相关 lambda 的参数类型集合，以及所有来源中的最大参数数量。
      */
     private data class ParameterInfoFromRelatedLambdas(
+        /** 相关 lambda 声明中提取到的参数类型集合。 */
         val parameterTypesFromDeclarationOfRelatedLambdas: Set<List<CangJieTypeMarker?>>?,
+        /** 所有输入来源中的最大参数数量。 */
         val maxParameterCount: Int,
     )
 
+    /**
+     * 从相关 lambda 和约束中计算参数类型信息。
+     */
     context(c: Context)
     private fun computeParameterInfoFromRelatedLambdas(
         argument: PostponedAtomWithRevisableExpectedType,
@@ -523,6 +543,9 @@ class PostponedArgumentInputTypesResolver(
         return collectedVariables
     }
 
+    /**
+     * 递归收集类型中所有深度相关类型变量。
+     */
     context(c: Context)
     private fun CangJieTypeMarker.getAllDeeplyRelatedTypeVariables(
         variableDependencyProvider: TypeVariableDependencyInformationProvider,

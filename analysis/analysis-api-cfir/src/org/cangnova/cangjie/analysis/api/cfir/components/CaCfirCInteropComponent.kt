@@ -36,12 +36,21 @@ import com.intellij.psi.util.PsiTreeUtil
  * 互操作语义直接由组件文件内的私有 helper 承载，并统一复用 session 缓存。
  */
 internal class CaCfirCInteropComponent(
+    /**
+     * 延迟取得当前 CFIR Analysis session，互操作信息查询复用其中的缓存和 token。
+     */
     override val analysisSessionProvider: () -> CaCfirSession,
 ) : CaBaseSessionComponent<CaCfirSession>(), CaCInteropComponent {
+    /**
+     * 返回源码元素归属声明的 C/FFI 互操作信息。
+     */
     override fun CjElement.getInteropInfo(): CaInteropInfo? = withValidityAssertion {
         analysisSession.getInteropInfo(this@getInteropInfo)
     }
 
+    /**
+     * 返回符号底层源码声明的 C/FFI 互操作信息。
+     */
     override fun CaSymbol.getInteropInfo(): CaInteropInfo? = withValidityAssertion {
         analysisSession.getInteropInfo(this@getInteropInfo)
     }
@@ -54,19 +63,46 @@ internal class CaCfirCInteropComponent(
  * 因此这里统一落在 session 缓存里，而不是让不同组件重复扫描 PSI。
  */
 internal class CaCfirInteropInfoImpl(
+    /**
+     * 声明显式标记的互操作后端集合。
+     */
     override val backends: List<CaInteropBackend>,
+    /**
+     * 声明是否带有 foreign 修饰符。
+     */
     override val isForeignDeclaration: Boolean,
+    /**
+     * 声明是否带有 fast native 互操作标记。
+     */
     override val isFastNative: Boolean,
+    /**
+     * 通过 ForeignName 等注解指定的外部符号名。
+     */
     override val externalName: String?,
+    /**
+     * 互操作调用约定。
+     */
     override val callingConvention: CaInteropCallingConvention?,
+    /**
+     * 参与互操作判定的 FFI 注解短名集合。
+     */
     override val ffiAnnotationNames: List<String>,
+    /**
+     * 约束互操作快照生命周期的会话 token。
+     */
     override val token: CaLifetimeToken,
 ) : CaInteropInfo
 
+/**
+ * 从 PSI 元素查询其所属声明的互操作信息。
+ */
 internal fun CaCfirSession.getInteropInfo(element: CjElement): CaInteropInfo? {
     return resolveInteropOwner(element)?.let(::buildInteropInfo)
 }
 
+/**
+ * 从公开符号查询底层源码声明的互操作信息。
+ */
 internal fun CaCfirSession.getInteropInfo(symbol: CaSymbol): CaInteropInfo? {
     val sourcePsi = when (symbol) {
         is CaCfirSymbol<*> -> symbol.cfirSymbol.backingPsiIfApplicable
@@ -176,6 +212,9 @@ private fun CjModifierListOwner.collectInteropAnnotations(): List<CjAnnotation> 
     }
 }
 
+/**
+ * 从 ForeignName 风格注解中提取外部符号名。
+ */
 private fun CjAnnotation.extractForeignName(): String? {
     val rawExpression = valueArguments
         .firstOrNull { argument -> argument.getArgumentName()?.asName?.asString() == "name" }
@@ -193,6 +232,9 @@ private fun CjAnnotation.extractForeignName(): String? {
     }
 }
 
+/**
+ * 将 PSI 层调用约定转换为 Analysis API 调用约定枚举。
+ */
 private fun CallingConvention.asPublicCallingConvention(): CaInteropCallingConvention = when (this) {
     CallingConvention.CDECL -> CaInteropCallingConvention.CDECL
     CallingConvention.STDCALL -> CaInteropCallingConvention.STDCALL

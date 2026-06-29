@@ -36,11 +36,20 @@ import org.cangnova.cangjie.psi.psiUtil.getChildrenOfType
 import org.cangnova.cangjie.psi.psiUtil.isPropertyParameter
 import org.cangnova.cangjie.utils.toLowerCaseAsciiOnly
 
+/**
+ * 基于 PSI 与符号关系查找 CDoc 的 impl-base provider。
+ */
 @CaImplementationDetail
 @OptIn(CjNonPublicApi::class, CjImplementationDetail::class, CaNonPublicApi::class)
 abstract class CaBaseCDocProvider<T : CaSession> : CaBaseSessionComponent<T>(), CaCDocProvider {
+    /**
+     * 查找声明自身或父级容器中与该声明关联的 CDoc。
+     */
     override fun CjDeclaration.findCDoc(): CDocCommentDescriptor? = this.lookupOwnedCDoc() ?: this.lookupCDocInParent()
 
+    /**
+     * 查找符号对应声明的 CDoc，并在 override/expect/accessor 等语义关系上回退。
+     */
     override fun CaDeclarationSymbol.findCDoc(): CDocCommentDescriptor? = with(analysisSession) {
         val cjElement = psi?.navigationElement as? CjDeclaration
         cjElement?.findCDoc()?.let { return it }
@@ -75,6 +84,10 @@ abstract class CaBaseCDocProvider<T : CaSession> : CaBaseSessionComponent<T>(), 
 
         null
     }
+
+    /**
+     * 从 PSI 声明自身直接读取 CDoc。
+     */
     private fun CjElement.lookupOwnedCDoc(): CDocCommentDescriptor? {
         val psiDeclaration = when (this) {
             is CjPrimaryConstructor -> getContainingTypeStatement()
@@ -99,11 +112,17 @@ abstract class CaBaseCDocProvider<T : CaSession> : CaBaseSessionComponent<T>(), 
         return null
     }
 
+    /**
+     * 查找包含指定 tag 的全部 CDoc section。
+     */
     private fun CDoc.findSectionsContainingTag(tag: CDocKnownTag): List<CDocSection> {
         return getChildrenOfType<CDocSection>()
             .filter { it.findTagByName(tag.name.toLowerCaseAsciiOnly()) != null }
     }
 
+    /**
+     * 从父级声明 CDoc 的 `@param` / `@property` section 中恢复当前声明文档。
+     */
     private fun CjDeclaration.lookupCDocInParent(): CDocCommentDescriptor? {
         val subjectName = name
         val containingDeclaration = PsiTreeUtil.findFirstParent(this, true) {

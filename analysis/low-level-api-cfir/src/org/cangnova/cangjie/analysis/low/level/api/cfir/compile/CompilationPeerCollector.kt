@@ -40,12 +40,29 @@ class CompilationPeerCollector private constructor() {
         }
     }
 
+    /**
+     * 按模块归组的待提交源码文件列表。
+     */
     private val peers = LinkedHashMap<CaModule, MutableList<CjFile>>()
+
+    /**
+     * inline 语义下需要携带的本地 class 集合；仓颉当前主线保持为空。
+     */
     private val inlinedClasses = LinkedHashSet<CjTypeStatement>()
 
+    /**
+     * 已访问过的 CFIR 文件，防止递归收集时重复处理。
+     */
     private val visited = HashSet<CfirFile>()
+
+    /**
+     * 当前递归收集路径上的模块栈，用于检测跨模块循环。
+     */
     private val moduleStack = ArrayDeque<CaModule>()
 
+    /**
+     * 处理单个 CFIR 文件并递归收集它依赖的 peer 文件。
+     */
     private fun process(file: CfirFile) {
         ProgressManager.checkCanceled()
 
@@ -86,6 +103,9 @@ class CompilationPeerCollector private constructor() {
         peers.getOrPut(module, ::ArrayList).add(cjFile)
     }
 
+    /**
+     * 在模块栈中进入指定模块并执行收集动作。
+     */
     private inline fun withModule(module: CaModule, block: () -> Unit) {
         if (moduleStack.lastOrNull() == module) {
             block()
@@ -102,6 +122,9 @@ class CompilationPeerCollector private constructor() {
 }
 
 
+/**
+ * 编译 peer 收集结果，包含按模块归组的源码文件和需要附带的本地 class。
+ */
 class CompilationPeerData(
     /**
      * The original file and all files that contain inline functions/variables called from that file or any other files from the list.
@@ -124,40 +147,70 @@ class CompilationPeerData(
     val inlinedClasses: Set<CjTypeStatement>,
 )
 
+/**
+ * 遍历 CFIR 文件并收集需要一起提交的 peer 文件和 inline 本地 class。
+ */
 private class CompilationPeerCollectingVisitor(
+    /**
+     * 当前遍历文件所属 project。
+     */
     val project: Project,
 ) : CfirDefaultVisitorVoid() {
+    /**
+     * 遍历过程中发现的 peer CFIR 文件集合。
+     */
     val files: Set<CfirFile>
         field = LinkedHashSet<CfirFile>()
 
+    /**
+     * 遍历过程中发现的 inline 本地 class 集合。
+     */
     val inlinedClasses: Set<CjTypeStatement>
         field = LinkedHashSet<CjTypeStatement>()
 
+    /**
+     * 默认继续访问子节点。
+     */
     override fun visitElement(element: CfirElement) {
         element.acceptChildren(this)
     }
 
+    /**
+     * 访问构造器前先推进到 body resolve，确保调用关系可见。
+     */
     override fun visitConstructor(constructor: CfirConstructor) {
         constructor.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE)
 
         super.visitConstructor(constructor)
     }
 
+    /**
+     * 访问命名函数前先推进到 body resolve，确保函数体调用可见。
+     */
     override fun visitNamedFunction(namedFunction: CfirNamedFunction) {
         namedFunction.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE)
         super.visitFunction(namedFunction)
     }
 
+    /**
+     * 访问属性访问器；当前仓颉 peer 收集不在访问器层增加额外逻辑。
+     */
     override fun visitPropertyAccessor(propertyAccessor: CfirPropertyAccessor) {
         super.visitPropertyAccessor(propertyAccessor)
     }
 
+    /**
+     * 访问属性前先推进到 body resolve，确保 initializer/accessor 调用可见。
+     */
     override fun visitProperty(property: CfirProperty) {
         property.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE)
 
         super.visitProperty(property)
     }
 
+    /**
+     * 访问 class；当前仓颉 peer 收集不在 class 层增加额外 inline class 逻辑。
+     */
     override fun visitClass(klass: CfirClass) {
         super.visitClass(klass)
     }

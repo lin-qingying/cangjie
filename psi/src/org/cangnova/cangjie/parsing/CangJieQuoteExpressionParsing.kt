@@ -24,14 +24,23 @@
 
 package org.cangnova.cangjie.parsing
 
+/**
+ * 表示 `CangJieQuoteExpressionParsing`，承载仓颉语法解析中的语法节点、索引桩或辅助模型。
+ */
 class CangJieQuoteExpressionParsing(
     builder: SemanticWhitespaceAwarePsiBuilder,
+    /**
+     * 保存 `expressionParsing` 的内部状态，供仓颉语法解析实现维护节点缓存或解析上下文。
+     */
     private val expressionParsing: CangJieExpressionParsing,
     isLazy: Boolean,
 ) : AbstractCangJieParsing(
     builder,
     isLazy,
 ) {
+    /**
+     * 实现 `create` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun create(builder: SemanticWhitespaceAwarePsiBuilder): CangJieParsing {
         return expressionParsing.create(builder)
     }

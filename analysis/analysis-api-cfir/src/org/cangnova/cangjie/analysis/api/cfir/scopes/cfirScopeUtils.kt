@@ -10,6 +10,9 @@ import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.name.Name
 
 
+/**
+ * 从 CFIR scope 中按名称集合收集公开 callable 符号。
+ */
 internal fun CfirScope.getCallableSymbols(
     callableNames: Collection<Name>,
     builder: CaSymbolByCfirBuilder
@@ -40,6 +43,9 @@ internal fun CfirScope.getCallableSymbols(
     }
 }
 
+/**
+ * 从 CFIR scope 中按名称集合收集公开 callable 签名。
+ */
 internal fun CfirScope.getCallableSignatures(
     callableNames: Collection<Name>,
     builder: CaSymbolByCfirBuilder
@@ -58,6 +64,9 @@ internal fun CfirScope.getCallableSignatures(
     }
 }
 
+/**
+ * 从 CFIR scope 中按 class-like 名称集合收集公开 classifier 符号。
+ */
 internal fun CfirScope.getClassifierSymbols(classLikeNames: Collection<Name>, builder: CaSymbolByCfirBuilder): Sequence<CaClassifierSymbol> =
     sequence {
         classLikeNames.forEach { name ->
@@ -69,6 +78,9 @@ internal fun CfirScope.getClassifierSymbols(classLikeNames: Collection<Name>, bu
         }
     }
 
+/**
+ * 从 CFIR scope 中收集构造器符号。
+ */
 internal fun CfirScope.getConstructors(builder: CaSymbolByCfirBuilder): Sequence<CaConstructorSymbol> =
     sequence {
         yieldList {
@@ -78,6 +90,9 @@ internal fun CfirScope.getConstructors(builder: CaSymbolByCfirBuilder): Sequence
         }
     }
 
+/**
+ * 将临时 list 构造结果逐项产出到 sequence。
+ */
 private suspend inline fun <T> SequenceScope<T>.yieldList(listBuilder: MutableList<T>.() -> Unit) {
     yieldAll(buildList(listBuilder))
 }

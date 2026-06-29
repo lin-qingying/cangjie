@@ -28,6 +28,9 @@ import org.cangnova.cangjie.psi.stubs.elements.CjFunctionElementType
  * 该类只产出与宿主无关的折叠区域；IDE 与 LSP 分别负责把区域转换为各自协议对象。
  */
 object CangJieFoldingRangeCollector {
+    /**
+     * 收集文件内所有共享折叠区域。
+     */
     fun collect(file: CjFile, document: Document): List<CangJieFoldingRegion> {
         val regions = mutableListOf<CangJieFoldingRegion>()
         collectImports(file, regions)
@@ -47,6 +50,9 @@ object CangJieFoldingRangeCollector {
         else -> "{...}"
     }
 
+    /**
+     * 将连续多个 import 合并成单个 imports 折叠区域。
+     */
     private fun collectImports(file: CjFile, regions: MutableList<CangJieFoldingRegion>) {
         val importList = file.importList ?: return
         val firstImport = importList.imports.firstOrNull() ?: return
@@ -64,6 +70,9 @@ object CangJieFoldingRangeCollector {
         )
     }
 
+    /**
+     * 深度遍历 AST，并为需要折叠的节点追加区域。
+     */
     private fun appendRegions(
         node: ASTNode,
         document: Document,
@@ -93,6 +102,9 @@ object CangJieFoldingRangeCollector {
         }
     }
 
+    /**
+     * 判断 AST 节点是否属于仓颉折叠规则覆盖的结构。
+     */
     private fun needFolding(node: ASTNode, document: Document): Boolean {
         val type = node.elementType
         val parentType = node.treeParent?.elementType
@@ -113,12 +125,18 @@ object CangJieFoldingRangeCollector {
                 node.shouldFoldCall(document)
     }
 
+    /**
+     * 判断多行调用表达式是否应折叠参数列表。
+     */
     private fun ASTNode.shouldFoldCall(document: Document): Boolean {
         val call = (psi as? CjCallExpression)?.takeUnless { it.valueArguments.size < 2 } ?: return false
         if (call.startLine(document) == call.endLine(document)) return false
         return call.referenceExpression() != null
     }
 
+    /**
+     * 计算节点内真正需要折叠的文本范围。
+     */
     private fun getRangeToFold(node: ASTNode, document: Document): TextRange {
         when (node.elementType) {
             is CjFunctionElementType -> {
@@ -167,6 +185,9 @@ object CangJieFoldingRangeCollector {
         return node.textRange
     }
 
+    /**
+     * 将语法节点映射为共享折叠类别。
+     */
     private fun kindOf(node: ASTNode): CangJieFoldingKind {
         return when (node.elementType) {
             CjTokens.BLOCK_COMMENT, CDocTokens.CDOC -> CangJieFoldingKind.COMMENT
@@ -174,6 +195,9 @@ object CangJieFoldingRangeCollector {
         }
     }
 
+    /**
+     * 去掉注释定界符和行首星号，得到占位文本可用内容。
+     */
     private fun getCommentContents(line: String): String {
         return line.trim()
             .removePrefix("/**")
@@ -183,6 +207,9 @@ object CangJieFoldingRangeCollector {
             .trim()
     }
 
+    /**
+     * 取块注释或文档注释中第一个非空内容行。
+     */
     private fun getFirstLineOfComment(node: ASTNode): String {
         val targetCommentLine = node.text.split("\n").firstOrNull {
             getCommentContents(it).isNotEmpty()
@@ -190,12 +217,18 @@ object CangJieFoldingRangeCollector {
         return " ${getCommentContents(targetCommentLine)} "
     }
 
+    /**
+     * 取多行字符串第一个非空内容行，供折叠占位符展示。
+     */
     private fun getTrimmedFirstLineOfString(node: ASTNode): String {
         val lines = node.text.split("\n")
         val firstLine = lines.asSequence().map { it.replace("\"\"\"", "").trim() }.firstOrNull(String::isNotEmpty)
         return firstLine ?: ""
     }
 
+    /**
+     * 为非空占位片段补一个尾随空格，使省略号与内容分隔。
+     */
     private fun String.addSpaceIfNeeded(): String {
         if (isEmpty() || endsWith(" ")) return this
         return "$this "

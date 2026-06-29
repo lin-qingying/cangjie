@@ -11,9 +11,20 @@ import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
+/**
+ * 校验 LSP 语义能力在真实 Analysis API 工作区上的集成效果。
+ *
+ * 该测试覆盖编辑辅助、跳转、引用、符号、语义 token 和选择范围等核心能力。
+ */
 class CangjieSemanticFeatureIntegrationTest : AbstractLspIntegrationTest() {
+    /**
+     * 禁用默认会话，测试使用包含多文件语义关系的工作区夹具。
+     */
     override val autoCreateDefaultSession: Boolean = false
 
+    /**
+     * 校验补全、hover、签名帮助和选择范围能基于真实分析工作区解析。
+     */
     @Test
     fun `editor assist requests resolve against real analysis workspace`() {
         semanticWorkspace().use { fixture ->
@@ -48,6 +59,9 @@ class CangjieSemanticFeatureIntegrationTest : AbstractLspIntegrationTest() {
         }
     }
 
+    /**
+     * 校验导航、引用、符号和语义 token 能跨工作区文件解析。
+     */
     @Test
     fun `navigation and symbol requests resolve across workspace files`() {
         semanticWorkspace().use { fixture ->
@@ -116,6 +130,9 @@ class CangjieSemanticFeatureIntegrationTest : AbstractLspIntegrationTest() {
         }
     }
 
+    /**
+     * 构造语义能力测试使用的两文件工作区。
+     */
     private fun semanticWorkspace(): LspWorkspaceFixture {
         return LspWorkspaceFixtureBuilder()
             .source(
@@ -158,6 +175,9 @@ class CangjieSemanticFeatureIntegrationTest : AbstractLspIntegrationTest() {
             .build()
     }
 
+    /**
+     * 计算夹具文件中指定 token 的 LSP 位置。
+     */
     private fun positionOf(
         fixture: LspWorkspaceFixture,
         relativePath: String,

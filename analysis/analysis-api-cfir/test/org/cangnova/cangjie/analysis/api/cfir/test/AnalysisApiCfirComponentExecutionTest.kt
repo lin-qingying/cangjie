@@ -38,8 +38,14 @@ import org.junit.jupiter.api.Test
 class AnalysisApiCfirComponentExecutionTest : AbstractAnalysisApiExecutionTest(
     "analysis/analysis-api-cfir/testData/components",
 ) {
+    /**
+     * 使用 standalone CFIR 配置运行组件级 Analysis API 用例。
+     */
     override val configurator = CaCfirStandaloneAnalysisApiTestConfigurator
 
+    /**
+     * 验证补全候选、引用缩短计划和 import 优化计划在同一测试文件中的协同结果。
+     */
     @Test
     fun completionCandidateDecisions(mainFile: CjFile, testServices: TestServices) {
         val functions = testServices.allNamedFunctions()
@@ -78,6 +84,9 @@ class AnalysisApiCfirComponentExecutionTest : AbstractAnalysisApiExecutionTest(
         }
     }
 
+    /**
+     * 验证 CFIR 编译期求值器能返回标量、元组和集合等 Analysis API 值对象。
+     */
     @Test
     fun compileTimeEvaluator(mainFile: CjFile) {
         analyzeForTest(mainFile) {
@@ -112,6 +121,9 @@ class AnalysisApiCfirComponentExecutionTest : AbstractAnalysisApiExecutionTest(
         }
     }
 
+    /**
+     * 验证 obsolete original PSI provider 只记录显式写入的拷贝来源，不污染原始 PSI。
+     */
     @Test
     fun originalPsiProvider(mainFile: CjFile) {
         val originalDeclaration = mainFile.namedFunction("tracked")
@@ -135,6 +147,9 @@ class AnalysisApiCfirComponentExecutionTest : AbstractAnalysisApiExecutionTest(
         }
     }
 
+    /**
+     * 验证 C 互操作信息在 PSI 入口和 symbol 入口上保持一致。
+     */
     @Test
     fun cInteropInfo(mainFile: CjFile) {
         val nativeStruct = mainFile.typeStatement("NativeBox")
@@ -173,22 +188,34 @@ class AnalysisApiCfirComponentExecutionTest : AbstractAnalysisApiExecutionTest(
     }
 }
 
+/**
+ * 收集当前测试模块结构中的全部命名函数 PSI。
+ */
 private fun TestServices.allNamedFunctions(): List<CjNamedFunction> {
     return cjTestModuleStructure.allCjFiles.flatMap { file ->
         PsiTreeUtil.findChildrenOfType(file, CjNamedFunction::class.java)
     }
 }
 
+/**
+ * 在文件中按名称查找唯一的命名函数。
+ */
 private fun CjFile.namedFunction(name: String): CjNamedFunction {
     return PsiTreeUtil.findChildrenOfType(this, CjNamedFunction::class.java)
         .single { it.name == name }
 }
 
+/**
+ * 在文件中按名称查找唯一的类型声明。
+ */
 private fun CjFile.typeStatement(name: String): CjTypeStatement {
     return PsiTreeUtil.findChildrenOfType(this, CjTypeStatement::class.java)
         .single { it.name == name }
 }
 
+/**
+ * 查找指定绑定模式变量的初始化表达式。
+ */
 private fun CjFile.initializerByBinding(name: String): CjExpression {
     val variable = PsiTreeUtil.findChildrenOfType(this, CjPatternVariable::class.java)
         .single { variable -> (variable.pattern as? CjBindingPattern)?.name == name }
@@ -196,6 +223,9 @@ private fun CjFile.initializerByBinding(name: String): CjExpression {
         ?: error("Binding `$name` has no initializer.")
 }
 
+/**
+ * 断言表达式的编译期求值结果为指定种类的标量值。
+ */
 private fun CaSession.assertScalar(
     expression: CjExpression,
     expectedKind: CaScalarValueKind,
@@ -205,6 +235,9 @@ private fun CaSession.assertScalar(
     assertEquals(expectedKind, value.kind)
 }
 
+/**
+ * 断言表达式能求值为指定 Analysis API 编译期值类型，并返回该类型实例继续做结构断言。
+ */
 private inline fun <reified T : CaCompileTimeValue> CaSession.assertCompileTimeValue(
     expression: CjExpression,
     expectedRenderedText: String,

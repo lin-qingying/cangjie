@@ -32,11 +32,20 @@ import org.junit.jupiter.api.Assertions.assertTrue
  * 因此这里只校验顶层 class / typealias / function 的 file-based 查询。
  */
 abstract class AbstractFileBasedCangJieDeclarationProviderTest : AbstractAnalysisApiBasedTest() {
+    /**
+     * 使用源码 low-level CFIR 测试配置。
+     */
     override val configurator = analysisApiCfirSourceTestConfigurator(analyseInDependentSession = false)
 
+    /**
+     * file-based declaration provider 测试支持的额外指令。
+     */
     override val additionalDirectives: List<DirectivesContainer>
         get() = super.additionalDirectives + listOf(Directives)
 
+    /**
+     * 构建 file-based provider 并分别按指令和 PSI visitor 校验索引结果。
+     */
     override fun doTestByMainFile(mainFile: CjFile, mainModule: CjTestModule, testServices: TestServices) {
         val provider = CangJieFileBasedDeclarationProvider(mainFile)
         assertContains(
@@ -49,6 +58,9 @@ abstract class AbstractFileBasedCangJieDeclarationProviderTest : AbstractAnalysi
         checkByVisitor(mainFile, provider)
     }
 
+    /**
+     * 根据测试指令校验 provider 查询结果。
+     */
     private fun checkByDirectives(moduleStructure: TestModuleStructure, provider: CangJieFileBasedDeclarationProvider) {
         for (directive in moduleStructure.allDirectives[Directives.CLASS]) {
             val classId = ClassId.fromString(directive)
@@ -69,6 +81,9 @@ abstract class AbstractFileBasedCangJieDeclarationProviderTest : AbstractAnalysi
 
     }
 
+    /**
+     * 遍历 [cjFile] PSI 并校验 provider 能返回对应顶层声明。
+     */
     private fun checkByVisitor(cjFile: CjFile, provider: CangJieFileBasedDeclarationProvider) {
         cjFile.accept(object : CjVisitorUnit() {
             override fun visitElement(element: com.intellij.psi.PsiElement) {
@@ -136,13 +151,28 @@ abstract class AbstractFileBasedCangJieDeclarationProviderTest : AbstractAnalysi
         })
     }
 
+    /**
+     * file-based declaration provider 测试指令。
+     */
     private object Directives : SimpleDirectivesContainer() {
+        /**
+         * 需要通过 ClassId 命中的顶层 class。
+         */
         val CLASS by stringDirective("需要通过 ClassId 命中的顶层 class。")
+        /**
+         * 需要通过 ClassId 命中的顶层 typealias。
+         */
         val TYPE_ALIAS by stringDirective("需要通过 ClassId 命中的顶层 typealias。")
+        /**
+         * 需要通过 CallableId 命中的顶层 function。
+         */
         val FUNCTION by stringDirective("需要通过 CallableId 命中的顶层 function。")
     }
 }
 
+/**
+ * 从指令文本解析 [CallableId]。
+ */
 private fun parseCallableId(rawString: String): CallableId {
     val chunks = rawString.split('#')
     require(chunks.size == 2) { "Invalid CallableId string format: $rawString" }
@@ -157,8 +187,14 @@ private fun parseCallableId(rawString: String): CallableId {
     }
 }
 
+/**
+ * source 配置下的 file-based declaration provider 测试基类。
+ */
 abstract class AbstractSourceFileBasedCangJieDeclarationProviderTest : AbstractFileBasedCangJieDeclarationProviderTest()
 
+/**
+ * 断言 [elements] 包含 [expected]。
+ */
 private fun <T> assertContains(elements: Collection<T>, expected: T, message: String) {
     assertTrue(elements.contains(expected), "$message Actual elements: $elements")
 }

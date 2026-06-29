@@ -31,14 +31,23 @@ import org.cangnova.cangjie.test.directives.model.singleOrZeroValue
  * 3. 明确事件目标模块，而不是在抽象测试里手写模块名。
  */
 object ModificationEventDirectives : SimpleDirectivesContainer() {
+    /**
+     * 当前测试模块应发布的具体修改事件种类。
+     */
     val MODIFICATION_EVENT by enumDirective<KotlinModificationEventKind>(
         description = "当前测试模块应发布的修改事件种类。",
     )
 
+    /**
+     * 标记当前测试会发布由 generated test 参数指定的修改事件。
+     */
     val WILDCARD_MODIFICATION_EVENT by directive(
         description = "测试数据声明会发布修改事件，但具体事件种类由 generated test 固定。",
     )
 
+    /**
+     * 模块级修改事件实际作用的目标模块。
+     */
     val MODIFICATION_EVENT_TARGET by enumDirective<ModificationEventDirectiveTarget>(
         description = "模块级修改事件的目标模块。",
         applicability = DirectiveApplicability.Module,
@@ -53,6 +62,9 @@ enum class ModificationEventDirectiveTarget {
     FALLBACK_DEPENDENCIES,
 }
 
+/**
+ * 根据模块上的 `MODIFICATION_EVENT` 指令发布修改事件。
+ */
 fun CjTestModule.publishModificationEventByDirective(isOptional: Boolean = false) {
     val modificationEventKinds = testModule.directives[ModificationEventDirectives.MODIFICATION_EVENT]
     val modificationEventKind = when (modificationEventKinds.size) {
@@ -68,12 +80,18 @@ fun CjTestModule.publishModificationEventByDirective(isOptional: Boolean = false
     publishModificationEvent(modificationEventKind)
 }
 
+/**
+ * 若模块声明了 wildcard 修改事件，则按给定事件种类发布模块事件。
+ */
 fun CjTestModule.publishWildcardModificationEventByDirectiveIfPresent(modificationEventKind: KotlinModificationEventKind) {
     if (ModificationEventDirectives.WILDCARD_MODIFICATION_EVENT in testModule.directives) {
         publishModificationEvent(modificationEventKind)
     }
 }
 
+/**
+ * 在测试模块结构范围内发布 wildcard 修改事件。
+ */
 fun CjTestModuleStructure.publishWildcardModificationEventsByDirective(modificationEventKind: KotlinModificationEventKind) {
     if (modificationEventKind.isModuleLevel) {
         mainModules.forEach { module ->
@@ -88,6 +106,9 @@ fun CjTestModuleStructure.publishWildcardModificationEventsByDirective(modificat
     }
 }
 
+/**
+ * 向当前测试模块的指令目标发布指定修改事件。
+ */
 private fun CjTestModule.publishModificationEvent(modificationEventKind: KotlinModificationEventKind) {
     val targetModule = when (modificationEventDirectiveTarget) {
         ModificationEventDirectiveTarget.SELF -> caModule
@@ -97,10 +118,16 @@ private fun CjTestModule.publishModificationEvent(modificationEventKind: KotlinM
     publishModificationEventByKind(modificationEventKind, targetModule)
 }
 
+/**
+ * 当前测试模块声明的修改事件目标。
+ */
 private val CjTestModule.modificationEventDirectiveTarget: ModificationEventDirectiveTarget
     get() = testModule.directives.singleOrZeroValue(ModificationEventDirectives.MODIFICATION_EVENT_TARGET)
         ?: ModificationEventDirectiveTarget.SELF
 
+/**
+ * 返回库模块上的 fallback dependencies 模块。
+ */
 private fun CaModule.getFallbackDependenciesModule(): CaModule {
     require(this is CaLibraryModule || this is CaLibrarySourceModule) {
         "MODIFICATION_EVENT_TARGET=${ModificationEventDirectiveTarget.FALLBACK_DEPENDENCIES.name} " +
@@ -111,6 +138,9 @@ private fun CaModule.getFallbackDependenciesModule(): CaModule {
         ?: error("Module `$moduleDescription` does not expose a fallback dependencies module.")
 }
 
+/**
+ * 在 project 级别发布全局修改事件。
+ */
 private fun CjTestModuleStructure.publishGlobalModificationEvent(modificationEventKind: KotlinModificationEventKind) {
     val application = ApplicationManager.getApplication()
     application.runWriteAction {
@@ -132,6 +162,9 @@ private fun CjTestModuleStructure.publishGlobalModificationEvent(modificationEve
     }
 }
 
+/**
+ * 按事件种类把修改事件发布到指定模块。
+ */
 private fun publishModificationEventByKind(
     modificationEventKind: KotlinModificationEventKind,
     module: CaModule,

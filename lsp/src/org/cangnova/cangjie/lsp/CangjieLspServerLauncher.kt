@@ -11,8 +11,18 @@ import java.util.concurrent.ExecutionException
 import java.util.logging.Level
 import java.util.logging.Logger
 
+/**
+ * 仓颉 LSP 服务端的进程级启动入口。
+ *
+ * 该对象负责创建语言服务器、绑定 lsp4j launcher、启动监听以及 socket/stdio 两种传输模式。
+ */
 object CangjieLspServerLauncher {
 
+    /**
+     * 启动器日志记录器。
+     *
+     * 日志写入 LSP 日志流，用于观察连接建立、监听结束和启动失败。
+     */
     private val logger = Logger.getLogger(CangjieLspServerLauncher::class.java.name)
 
     /**
@@ -95,9 +105,19 @@ object CangjieLspServerLauncher {
         }
     }
 
+    /**
+     * 创建协议 trace 写出器。
+     *
+     * trace 输出到 LSP 日志流而非 stdout，避免破坏 JSON-RPC 协议通道。
+     */
     private fun protocolTraceWriter(): PrintWriter = PrintWriter(LspIoManager.logStream, true)
 }
 
+/**
+ * 独立进程模式的 LSP 主入口。
+ *
+ * 入口先隔离标准 I/O，再以 stdio 方式启动服务端；启动失败时只向日志流写入错误并退出进程。
+ */
 fun main(args: Array<String>) {
     LspIoManager.setupStandardIo()
 

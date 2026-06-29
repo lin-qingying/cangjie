@@ -17,6 +17,11 @@ import org.cangnova.cangjie.test.services.TestServices
  * 同名 `.fragment.cj` 文件提供待分析片段文本。
  */
 abstract class AbstractCodeFragmentCollectDiagnosticsTest : AbstractCollectDiagnosticsTest() {
+    /**
+     * 执行 code fragment 诊断收集测试。
+     *
+     * 方法从主文件定位上下文元素，读取 `.fragment.cj` 片段文本，构造对应 code fragment 后收集诊断。
+     */
     override fun doTest(testServices: TestServices) {
         val (mainFile, mainModule) = findMainFileAndModule(testServices)
         if (mainFile == null) {
@@ -53,6 +58,11 @@ abstract class AbstractCodeFragmentCollectDiagnosticsTest : AbstractCollectDiagn
         doTestByPreparedFiles(listOf(preparedFile), testServices)
     }
 
+    /**
+     * 移除 fragment 文件开头的 `// FILE:` 指令行。
+     *
+     * 片段 PSI 只需要真实代码文本，测试框架文件指令不应进入 fragment 内容。
+     */
     private fun String.removeFileDirectiveLine(): String {
         if (!startsWith("// FILE:")) return this
         val lineEnd = indexOf('\n')

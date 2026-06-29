@@ -30,18 +30,30 @@ import com.intellij.lang.ASTNode
 import com.intellij.psi.stubs.IStubElementType
 import org.cangnova.cangjie.psi.stubs.CangJieMainFunctionStub
 
+/**
+ * 表示 `CjMainFunction`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjMainFunction : CjFunctionImpl<CangJieMainFunctionStub, CjMainFunction> {
     constructor(stub: CangJieMainFunctionStub) : super(stub, CjStubElementTypes.MAIN_FUNC)
     constructor(node: ASTNode) : super(node)
     constructor(stub: CangJieMainFunctionStub, nodeType: IStubElementType<*, *>) : super(stub, nodeType)
 
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitMainFunction(this, data)
     }
+    /**
+     * 实现 `hasDeclaredReturnType` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun hasDeclaredReturnType(): Boolean {
         return typeReference != null
     }
 
+    /**
+     * 实现 `getName` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getName(): String {
         return "main"
     }

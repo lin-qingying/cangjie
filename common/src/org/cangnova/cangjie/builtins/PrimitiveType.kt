@@ -27,6 +27,9 @@ package org.cangnova.cangjie.builtins
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 
+/**
+ * 仓颉内置 primitive 类型枚举。
+ */
 enum class PrimitiveType(typeName: String) {
     BOOL("Bool"),
     Rune("Rune"),
@@ -50,16 +53,28 @@ enum class PrimitiveType(typeName: String) {
     Nothing("Nothing")
     ;
 
+    /**
+     * primitive 类型的标准短名称。
+     */
     val typeName: Name = Name.identifier(typeName)
 
+    /**
+     * primitive 数组类型的标准短名称。
+     */
     val arrayTypeName: Name = Name.identifier("${typeName}Array")
 
+    /**
+     * primitive 类型在基础包中的 FqName。
+     */
     val typeFqName: FqName by lazy(LazyThreadSafetyMode.PUBLICATION) {
         StandardNames.BASIC_PACKAGE_FQ_NAME.child(
             this.typeName,
         )
     }
 
+    /**
+     * primitive 数组类型在基础包中的 FqName。
+     */
     val arrayTypeFqName: FqName by lazy(LazyThreadSafetyMode.PUBLICATION) {
         StandardNames.BASIC_PACKAGE_FQ_NAME.child(
             arrayTypeName,
@@ -79,9 +94,15 @@ enum class PrimitiveType(typeName: String) {
     }
 
     companion object {
+        /**
+         * 所有数值 primitive 类型集合。
+         */
         @JvmField
         val NUMBER_TYPES = setOf(Rune, INT64, INT32, INT16, INT8, FLOAT64, FLOAT32, FLOAT16)
 
+        /**
+         * 根据标准短名称查找 primitive 类型。
+         */
         @JvmStatic
         fun getByShortName(name: String): PrimitiveType? = when (name) {
             "Bool" -> BOOL

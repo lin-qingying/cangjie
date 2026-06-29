@@ -28,6 +28,9 @@ import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.psi.CjClassLikeDeclaration
 import org.cangnova.cangjie.psi.CjFile
 
+/**
+ * 提供 `ClassIdCalculator` 单例，集中承载PSI 工具的共享状态、工厂或工具行为。
+ */
 internal object ClassIdCalculator {
     /**
      * 仅为顶层 class-like 声明计算 `ClassId`。

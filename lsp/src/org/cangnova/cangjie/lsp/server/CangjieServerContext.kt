@@ -21,16 +21,45 @@ import org.eclipse.lsp4j.services.LanguageClient
  * 并把 diagnostics、project structure、request context 这些平台级公共能力收口为单一协议入口。
  */
 class CangjieServerContext(
+    /**
+     * 当前服务端的静态能力描述。
+     */
     val descriptor: CangjieLanguageServerDescriptor,
+
+    /**
+     * 当前 LSP 会话绑定的编译器和 IntelliJ 运行环境。
+     */
     val environment: CangjieLspEnvironment,
+
+    /**
+     * 当前打开文档的协议层快照存储。
+     */
     val documentStore: LspDocumentStore = LspDocumentStore(),
+
+    /**
+     * 当前工作区初始化参数、目录和项目配置状态。
+     */
     val workspaceState: LspWorkspaceState = LspWorkspaceState(),
+
+    /**
+     * 串行执行语义请求的请求执行器。
+     */
     val requestExecutor: CangjieRequestExecutor = CangjieRequestExecutor(),
     analysisFacadeFactory: (CangjieAnalysisLifecycleContext) -> CangjieAnalysisFacade,
 ) : AutoCloseable {
+    /**
+     * 当前连接的 LSP 客户端代理。
+     *
+     * 初始化完成后由语言服务器写入，诊断发布等 server-to-client 通知通过该代理发送。
+     */
     @Volatile
     var client: LanguageClient? = null
 
+    /**
+     * 当前服务端使用的语义分析 facade。
+     *
+     * facade 根据生命周期上下文创建，负责连接协议请求与 Analysis API 或测试替身。
+     */
     val analysisFacade: CangjieAnalysisFacade = analysisFacadeFactory(
         CangjieAnalysisLifecycleContext(
             environment = environment,
@@ -40,6 +69,11 @@ class CangjieServerContext(
         ),
     )
 
+    /**
+     * 当前真正启用的 LSP 功能集合。
+     *
+     * 该集合是静态 descriptor 能力与 analysis facade 支持能力的交集。
+     */
     val enabledFeatures: CangjieLspFeatureSet
         get() = descriptor.features.intersect(analysisFacade.supportedFeatures)
 
@@ -52,6 +86,11 @@ class CangjieServerContext(
     val projectStructureState: AnalysisApiLspProjectStructureState
         get() = AnalysisApiLspProjectStructureState.getInstance(environment.project)
 
+    /**
+     * 构造一次请求所需的 Analysis 上下文。
+     *
+     * 请求上下文使用当前 workspace/document 状态，确保每个协议请求看到最新快照。
+     */
     fun requestContext(): CangjieAnalysisRequestContext {
         return CangjieAnalysisRequestContext(
             environment = environment,
@@ -112,6 +151,11 @@ class CangjieServerContext(
         }
     }
 
+    /**
+     * 构造 publishDiagnostics 通知参数。
+     *
+     * 该方法按客户端协商决定是否写入 version 字段，避免诊断发布路径各自处理版本兼容逻辑。
+     */
     fun createPublishDiagnosticsParams(
         document: LspTextDocument,
         diagnostics: List<Diagnostic>,
@@ -123,6 +167,11 @@ class CangjieServerContext(
         }
     }
 
+    /**
+     * 关闭 analysis facade、请求执行器和 LSP 环境。
+     *
+     * 关闭顺序保证上层语义资源先释放，再释放承载它们的执行器和平台环境。
+     */
     override fun close() {
         analysisFacade.close()
         requestExecutor.close()

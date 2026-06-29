@@ -47,27 +47,90 @@ import org.objectweb.asm.Type
  * JVM method 生成器。函数参数与表达式结果通过 CHIR semanticId 绑定到 JVM local slot。
  */
 class JvmFunctionCodegen(
+    /**
+     * JVM 后端共享上下文，提供类型映射、命名策略、ABI 属性读取与生成选项。
+     */
     private val context: JvmBackendContext,
+    /**
+     * 当前函数所在的 CHIR 模块，用于解析同模块函数调用与模块 facade 成员访问。
+     */
     private val module: ChirModule,
+    /**
+     * 当前方法所属 JVM class 的 internal name。
+     */
     private val ownerInternalName: String,
+    /**
+     * 接收当前方法字节码的 ASM class writer。
+     */
     private val classWriter: ClassWriter,
+    /**
+     * 正在生成为 JVM method 的 CHIR 函数声明。
+     */
     private val function: ChirFunctionDeclaration,
+    /**
+     * 写入 JVM method 时使用的访问标记。
+     */
     private val methodAccess: Int = Opcodes.ACC_PUBLIC or Opcodes.ACC_STATIC,
+    /**
+     * 指示当前方法是否按静态方法布局 local slot。
+     */
     private val isStaticMethod: Boolean = true,
+    /**
+     * 指示当前 CHIR 函数是否按 JVM 构造器 `<init>` 生成。
+     */
     private val isConstructor: Boolean = false,
+    /**
+     * 构造器生成时需要调用的父类 internal name；非构造器路径为空。
+     */
     private val superInternalName: String? = null,
+    /**
+     * 当前模块 facade 的 internal name，函数体访问包级函数和全局变量时使用。
+     */
     private val moduleFacadeInternalName: String = ownerInternalName,
 ) {
+    /**
+     * 当前方法在 JVM classfile 中的最终名称。
+     */
     private val methodName: String = jvmMethodName(function)
+    /**
+     * CHIR 声明返回类型映射到 JVM 后的类型，构造器合法性校验会使用它。
+     */
     private val declaredReturnType: Type = context.typeMapper.mapReturnType(function.returnType)
+    /**
+     * 当前方法的 JVM descriptor，优先来自显式 ABI 属性。
+     */
     private val methodDescriptor: String = jvmMethodDescriptor(function)
+    /**
+     * 从 method descriptor 解析出的 JVM 参数类型列表。
+     */
     private val parameterTypes: List<Type> = Type.getArgumentTypes(methodDescriptor).toList()
+    /**
+     * 从 method descriptor 解析出的 JVM 返回类型。
+     */
     private val returnType: Type = Type.getReturnType(methodDescriptor)
+    /**
+     * CHIR 基本块 semanticId 到 ASM label 的稳定映射。
+     */
     private val blockLabels: Map<ChirSemanticId, Label> = function.blocks.associate { it.semanticId to Label() }
+    /**
+     * 以 CHIR semanticId 索引的 JVM local slot 绑定表。
+     */
     private val localSlots = linkedMapOf<ChirSemanticId, LocalSlot>()
+    /**
+     * 以规范化 CHIR 名称索引的 JVM local slot 绑定表，用于恢复按名称引用的局部值。
+     */
     private val localSlotsByName = linkedMapOf<String, LocalSlot>()
+    /**
+     * 下一个可分配 JVM local slot 下标，按 JVM 类型 size 递增。
+     */
     private var nextLocalSlot: Int = 0
 
+    /**
+     * 生成当前 CHIR 函数对应的 JVM method。
+     *
+     * 生成顺序为函数形状校验、方法头写入、参数 slot 初始化、可选父构造器调用、
+     * 基本块按入口优先顺序发射，以及终结符控制流发射。
+     */
     fun generate() {
         verifyFunctionShape()
         val method = classWriter.visitMethod(
@@ -93,6 +156,11 @@ class JvmFunctionCodegen(
         method.visitEnd()
     }
 
+    /**
+     * 为无参 Unit `main` 生成 Java 入口桥接方法。
+     *
+     * 桥接方法固定签名为 `main(String[]): void`，直接调用当前无参 JVM 方法并返回。
+     */
     fun generateMainBridge() {
         val bridge = classWriter.visitMethod(
             Opcodes.ACC_PUBLIC or Opcodes.ACC_STATIC,
@@ -108,6 +176,11 @@ class JvmFunctionCodegen(
         bridge.visitEnd()
     }
 
+    /**
+     * 根据当前方法布局初始化参数 local slot。
+     *
+     * 实例方法先绑定 `this`/`self` 到 slot 0；随后按 method descriptor 中的 JVM 参数类型绑定 CHIR 参数。
+     */
     private fun initializeParameterSlots() {
         if (!isStaticMethod) {
             val thisSlot = LocalSlot(0, Type.getObjectType(ownerInternalName))
@@ -128,6 +201,9 @@ class JvmFunctionCodegen(
         }
     }
 
+    /**
+     * 分派发射 CHIR 表达式到对应 JVM 字节码生成路径。
+     */
     private fun emitExpression(method: MethodVisitor, expression: ChirExpression) {
         when (expression) {
             is ChirUnaryExpression -> emitUnaryExpression(method, expression)
@@ -139,6 +215,11 @@ class JvmFunctionCodegen(
         }
     }
 
+    /**
+     * 发射 CHIR 一元表达式。
+     *
+     * 支持数值取负、位取反、逻辑非和无操作复制，并将结果写回表达式 semanticId 对应的 local slot。
+     */
     private fun emitUnaryExpression(method: MethodVisitor, expression: ChirUnaryExpression) {
         val resultType = context.typeMapper.mapValueType(expression.resultType)
         emitValue(method, expression.operand)
@@ -167,6 +248,11 @@ class JvmFunctionCodegen(
         storeExpressionResult(method, expression.semanticId, resultType)
     }
 
+    /**
+     * 发射 CHIR 二元表达式。
+     *
+     * 根据操作符选择 JVM 算术、位运算、移位、有符号比较、无符号比较或相等性比较指令。
+     */
     private fun emitBinaryExpression(method: MethodVisitor, expression: ChirBinaryExpression) {
         val resultType = context.typeMapper.mapValueType(expression.resultType)
         val operandType = context.typeMapper.mapValueType(expression.left.type)
@@ -207,6 +293,12 @@ class JvmFunctionCodegen(
         storeExpressionResult(method, expression.semanticId, resultType)
     }
 
+    /**
+     * 发射 CHIR 调用表达式。
+     *
+     * 本地函数、带 receiver 的本地函数、导入 JVM 函数和动态 MethodHandle 调用分别走不同路径；
+     * 调用结果会按 CHIR 目标类型进行栈值适配后写入表达式结果 slot。
+     */
     private fun emitCallExpression(method: MethodVisitor, expression: ChirCallExpression) {
         val callee = expression.callee
         val functionType = (callee.type as? ChirResolvedTypeRef)?.type as? ChirFunctionType
@@ -249,6 +341,12 @@ class JvmFunctionCodegen(
         storeExpressionResult(method, expression.semanticId, resultType)
     }
 
+    /**
+     * 发射动态函数值调用。
+     *
+     * 动态调用统一将实参装箱为 `Object[]`，通过 `MethodHandle.invokeWithArguments` 调用，
+     * 再把 `Object` 结果还原为 CHIR 期望的 JVM carrier。
+     */
     private fun emitDynamicFunctionCall(
         method: MethodVisitor,
         expression: ChirCallExpression,
@@ -283,6 +381,11 @@ class JvmFunctionCodegen(
         }
     }
 
+    /**
+     * 发射带接收者的本地函数调用。
+     *
+     * receiverType 决定实例调用的 owner，第一实参作为 receiver，其余实参按 JVM descriptor 发射。
+     */
     private fun emitLocalReceiverFunctionCall(
         method: MethodVisitor,
         expression: ChirCallExpression,
@@ -388,6 +491,11 @@ class JvmFunctionCodegen(
         }
     }
 
+    /**
+     * 发射导入 JVM 构造器调用。
+     *
+     * 该路径负责 `new`、`dup`、构造器实参发射和 `invokespecial <init>`，并返回新对象的 JVM 类型。
+     */
     private fun emitImportedConstructorCall(
         method: MethodVisitor,
         expression: ChirCallExpression,
@@ -418,6 +526,9 @@ class JvmFunctionCodegen(
         return Type.getObjectType(owner)
     }
 
+    /**
+     * 校验导入实例方法调用携带 receiverType 且实参列表包含 receiver。
+     */
     private fun requireImportedReceiver(
         receiverType: ChirTypeRef?,
         expression: ChirCallExpression,
@@ -431,6 +542,9 @@ class JvmFunctionCodegen(
         }
     }
 
+    /**
+     * 校验导入实例方法句柄携带 receiverType。
+     */
     private fun requireImportedReceiver(
         receiverType: ChirTypeRef?,
         nodeId: ChirSemanticId,
@@ -441,6 +555,11 @@ class JvmFunctionCodegen(
         }
     }
 
+    /**
+     * 发射 CHIR memory 表达式。
+     *
+     * CHIR ref 类型映射到 JVM local slot；CHIR cpointer 类型映射到 ByteBuffer 运行时访问。
+     */
     private fun emitMemoryExpression(method: MethodVisitor, expression: ChirMemoryExpression) {
         when (val operation = expression.operation.lowercase().trim()) {
             "alloca" -> {
@@ -500,6 +619,11 @@ class JvmFunctionCodegen(
         }
     }
 
+    /**
+     * 发射指针 alloca。
+     *
+     * 该实现以 `ByteBuffer.allocate(size)` 作为 JVM 指针 carrier，并把结果绑定到表达式 semanticId。
+     */
     private fun emitPointerAlloca(method: MethodVisitor, expression: ChirMemoryExpression) {
         val resultTypeRef = expression.resultType
             ?: throw JvmCodegenException("JVM pointer alloca requires result type", expression.semanticId)
@@ -524,6 +648,11 @@ class JvmFunctionCodegen(
         storeExpressionResult(method, expression.semanticId, resultType)
     }
 
+    /**
+     * 发射指针 GEP。
+     *
+     * 通过 duplicate、按元素字节宽度调整 position、再 slice 形成新的 ByteBuffer 视图。
+     */
     private fun emitPointerGep(method: MethodVisitor, expression: ChirMemoryExpression) {
         val resultTypeRef = expression.resultType
             ?: throw JvmCodegenException("JVM pointer gep requires result type", expression.semanticId)
@@ -570,6 +699,9 @@ class JvmFunctionCodegen(
         storeExpressionResult(method, expression.semanticId, byteBufferType)
     }
 
+    /**
+     * 从 ByteBuffer 指针 carrier 的当前位置读取目标类型值。
+     */
     private fun emitPointerLoad(
         method: MethodVisitor,
         address: ChirValue,
@@ -593,6 +725,9 @@ class JvmFunctionCodegen(
         storeExpressionResult(method, nodeId, targetType)
     }
 
+    /**
+     * 将值写入 ByteBuffer 指针 carrier 的当前位置。
+     */
     private fun emitPointerStore(
         method: MethodVisitor,
         address: ChirValue,
@@ -614,6 +749,11 @@ class JvmFunctionCodegen(
         method.visitInsn(Opcodes.POP)
     }
 
+    /**
+     * 发射 CHIR other 表达式中 JVM 后端支持的扩展操作。
+     *
+     * 这里覆盖 select、JVM field/array/type intrinsic、数值转换、指针整数互转等非基础表达式。
+     */
     private fun emitOtherExpression(method: MethodVisitor, expression: ChirOtherExpression) {
         when (val operation = expression.operation.lowercase().trim()) {
             "select" -> emitSelectExpression(method, expression)
@@ -652,6 +792,11 @@ class JvmFunctionCodegen(
         }
     }
 
+    /**
+     * 发射三元 select 表达式。
+     *
+     * 条件必须是 bool，两个分支值必须与 resultType 完全一致；结果通过条件跳转选择后落到结果 slot。
+     */
     private fun emitSelectExpression(method: MethodVisitor, expression: ChirOtherExpression) {
         if (expression.operands.size != 3 || expression.resultType == null) {
             throw JvmCodegenException("malformed JVM select expression", expression.semanticId)
@@ -679,6 +824,11 @@ class JvmFunctionCodegen(
         storeExpressionResult(method, expression.semanticId, context.typeMapper.mapValueType(resultType))
     }
 
+    /**
+     * 发射 JVM bitcast。
+     *
+     * 当前 JVM 后端只允许 carrier 类型完全一致的 bitcast，避免在字节码层伪造不可验证转换。
+     */
     private fun emitJvmBitcast(method: MethodVisitor, expression: ChirOtherExpression) {
         val source = expression.singleOperand("bitcast")
         val targetTypeRef = expression.resultType
@@ -695,6 +845,11 @@ class JvmFunctionCodegen(
         storeExpressionResult(method, expression.semanticId, targetType)
     }
 
+    /**
+     * 发射 CHIR 数值转换表达式。
+     *
+     * 该方法统一处理符号/零扩展、浮点扩展/截断、整数浮点互转以及无符号辅助转换。
+     */
     private fun emitNumericCast(method: MethodVisitor, expression: ChirOtherExpression) {
         val source = expression.singleOperand(expression.operation)
         val targetTypeRef = expression.resultType
@@ -711,6 +866,9 @@ class JvmFunctionCodegen(
         storeExpressionResult(method, expression.semanticId, targetType)
     }
 
+    /**
+     * 发射 `ptrtoint`，将 ByteBuffer 指针 carrier 转为整数地址表示。
+     */
     private fun emitPointerToInt(method: MethodVisitor, expression: ChirOtherExpression) {
         val source = expression.singleOperand("ptrtoint")
         val targetTypeRef = expression.resultType
@@ -732,6 +890,9 @@ class JvmFunctionCodegen(
         storeExpressionResult(method, expression.semanticId, targetType)
     }
 
+    /**
+     * 发射 `inttoptr`，将整数地址表示恢复为 ByteBuffer 指针 carrier。
+     */
     private fun emitIntToPointer(method: MethodVisitor, expression: ChirOtherExpression) {
         val source = expression.singleOperand("inttoptr")
         val targetTypeRef = expression.resultType
@@ -753,6 +914,11 @@ class JvmFunctionCodegen(
         storeExpressionResult(method, expression.semanticId, byteBufferType)
     }
 
+    /**
+     * 发射 `jvm.new` intrinsic。
+     *
+     * 根据 ABI owner/descriptor 或 resultType 推导构造目标，生成 `new + dup + invokespecial <init>`。
+     */
     private fun emitJvmNew(method: MethodVisitor, expression: ChirOtherExpression) {
         val resultTypeRef = expression.resultType
             ?: throw JvmCodegenException("JVM new expression requires result type", expression.semanticId)
@@ -771,6 +937,9 @@ class JvmFunctionCodegen(
         storeExpressionResult(method, expression.semanticId, resultType)
     }
 
+    /**
+     * 发射 `jvm.getfield` intrinsic，并把字段值适配到 CHIR resultType。
+     */
     private fun emitJvmGetField(method: MethodVisitor, expression: ChirOtherExpression) {
         val receiver = expression.requireOperandCount("jvm.getField", 1)[0]
         val resultTypeRef = expression.resultType
@@ -795,6 +964,11 @@ class JvmFunctionCodegen(
         storeExpressionResult(method, expression.semanticId, resultType)
     }
 
+    /**
+     * 发射 `jvm.putfield` intrinsic。
+     *
+     * receiver 与写入值都会按字段 owner 和 descriptor 做栈值适配。
+     */
     private fun emitJvmPutField(method: MethodVisitor, expression: ChirOtherExpression) {
         val operands = expression.requireOperandCount("jvm.putField", 2)
         val receiver = operands[0]
@@ -825,6 +999,9 @@ class JvmFunctionCodegen(
         method.visitFieldInsn(Opcodes.PUTFIELD, owner, name, descriptor)
     }
 
+    /**
+     * 发射 `jvm.getstatic` intrinsic，并把静态字段值适配到 CHIR resultType。
+     */
     private fun emitJvmGetStatic(method: MethodVisitor, expression: ChirOtherExpression) {
         expression.requireOperandCount("jvm.getStatic", 0)
         val resultTypeRef = expression.resultType
@@ -840,6 +1017,9 @@ class JvmFunctionCodegen(
         storeExpressionResult(method, expression.semanticId, resultType)
     }
 
+    /**
+     * 发射 `jvm.putstatic` intrinsic。
+     */
     private fun emitJvmPutStatic(method: MethodVisitor, expression: ChirOtherExpression) {
         val value = expression.requireOperandCount("jvm.putStatic", 1)[0]
         expression.requireNoResultType("jvm.putStatic")
@@ -859,6 +1039,11 @@ class JvmFunctionCodegen(
         method.visitFieldInsn(Opcodes.PUTSTATIC, owner, name, descriptor)
     }
 
+    /**
+     * 发射 `jvm.newarray` intrinsic。
+     *
+     * 支持基本类型数组、对象数组、数组数组以及多维数组创建。
+     */
     private fun emitJvmNewArray(method: MethodVisitor, expression: ChirOtherExpression) {
         val sizes = expression.operands
         val resultTypeRef = expression.resultType
@@ -899,6 +1084,9 @@ class JvmFunctionCodegen(
         storeExpressionResult(method, expression.semanticId, arrayType)
     }
 
+    /**
+     * 发射 `jvm.arrayload` intrinsic。
+     */
     private fun emitJvmArrayLoad(method: MethodVisitor, expression: ChirOtherExpression) {
         val operands = expression.requireOperandCount("jvm.arrayLoad", 2)
         val resultTypeRef = expression.resultType
@@ -911,6 +1099,9 @@ class JvmFunctionCodegen(
         storeExpressionResult(method, expression.semanticId, resultType)
     }
 
+    /**
+     * 发射 `jvm.arraystore` intrinsic。
+     */
     private fun emitJvmArrayStore(method: MethodVisitor, expression: ChirOtherExpression) {
         val operands = expression.requireOperandCount("jvm.arrayStore", 3)
         expression.requireNoResultType("jvm.arrayStore")
@@ -922,6 +1113,9 @@ class JvmFunctionCodegen(
         method.visitInsn(elementType.getOpcode(Opcodes.IASTORE))
     }
 
+    /**
+     * 发射 `jvm.arraylength` intrinsic，结果固定为 JVM int carrier。
+     */
     private fun emitJvmArrayLength(method: MethodVisitor, expression: ChirOtherExpression) {
         val array = expression.requireOperandCount("jvm.arrayLength", 1)[0]
         val resultTypeRef = expression.resultType
@@ -939,6 +1133,9 @@ class JvmFunctionCodegen(
         storeExpressionResult(method, expression.semanticId, resultType)
     }
 
+    /**
+     * 发射 `jvm.checkcast` intrinsic。
+     */
     private fun emitJvmCheckCast(method: MethodVisitor, expression: ChirOtherExpression) {
         val source = expression.singleOperand("jvm.checkCast")
         val resultTypeRef = expression.resultType
@@ -951,6 +1148,9 @@ class JvmFunctionCodegen(
         storeExpressionResult(method, expression.semanticId, targetType)
     }
 
+    /**
+     * 发射 `jvm.instanceof` intrinsic，结果必须映射为 bool carrier。
+     */
     private fun emitJvmInstanceOf(method: MethodVisitor, expression: ChirOtherExpression) {
         val source = expression.singleOperand("jvm.instanceOf")
         val resultTypeRef = expression.resultType
@@ -965,6 +1165,11 @@ class JvmFunctionCodegen(
         storeExpressionResult(method, expression.semanticId, resultType)
     }
 
+    /**
+     * 发射 CHIR 基本块终结符。
+     *
+     * 分支和 unwind 在跳转前会为目标块 phi 表达式发射边赋值，return/throw 则走各自专用路径。
+     */
     private fun emitTerminator(method: MethodVisitor, block: ChirBlock, terminator: Any) {
         when (terminator) {
             is ChirReturnTerminator -> emitReturn(method, terminator)
@@ -994,6 +1199,11 @@ class JvmFunctionCodegen(
         }
     }
 
+    /**
+     * 在控制流边上为目标块 phi 表达式发射 incoming 值赋值。
+     *
+     * 每个 phi operand 通过 `pred` 属性声明来源前驱块，匹配当前前驱后写入 phi 结果 slot。
+     */
     private fun emitPhiAssignmentsForEdge(
         method: MethodVisitor,
         predecessorBlock: ChirBlock,
@@ -1024,6 +1234,11 @@ class JvmFunctionCodegen(
             }
     }
 
+    /**
+     * 发射 return 终结符。
+     *
+     * 构造器和 void 方法只能无值返回；非 void 方法必须发射返回值并适配到 method descriptor 的返回类型。
+     */
     private fun emitReturn(method: MethodVisitor, terminator: ChirReturnTerminator) {
         val returnValue = terminator.returnValue
         if (isConstructor) {
@@ -1054,6 +1269,12 @@ class JvmFunctionCodegen(
         method.visitInsn(returnType.getOpcode(Opcodes.IRETURN))
     }
 
+    /**
+     * 发射 throw 终结符。
+     *
+     * 没有 unwind 目标时直接 `athrow`；存在 unwind 目标时生成保护区和 catch-all handler，
+     * 在 handler 中执行 phi 边赋值并跳转到 unwind 目标块。
+     */
     private fun emitThrow(method: MethodVisitor, block: ChirBlock, terminator: ChirThrowTerminator) {
         val exceptionType = context.typeMapper.mapValueType(terminator.exceptionValue.type)
         objectInternalName(exceptionType, terminator.semanticId, "throw exception")
@@ -1078,6 +1299,9 @@ class JvmFunctionCodegen(
         method.visitJumpInsn(Opcodes.GOTO, labelFor(unwindTargetBlockId))
     }
 
+    /**
+     * 将 CHIR value 物化为 JVM 操作数栈上的值。
+     */
     private fun emitValue(method: MethodVisitor, value: ChirValue) {
         when (value) {
             is ChirConstantValue -> emitConstant(method, value)
@@ -1094,6 +1318,11 @@ class JvmFunctionCodegen(
         }
     }
 
+    /**
+     * 发射全局变量读取。
+     *
+     * 默认从模块 facade 的静态字段读取，也允许 ABI 属性指定外部 owner/name/descriptor。
+     */
     private fun emitGlobalValue(method: MethodVisitor, value: ChirGlobalValue) {
         val owner = JvmAbiAttributes.optionalString(value.attributes, JvmAbiAttributes.OWNER) ?: moduleFacadeInternalName
         val name = JvmAbiAttributes.optionalString(value.attributes, JvmAbiAttributes.NAME)
@@ -1106,6 +1335,9 @@ class JvmFunctionCodegen(
         adaptStackValue(method, value.semanticId, fieldType, valueType, "global value")
     }
 
+    /**
+     * 将本地函数值发射为 JVM `MethodHandle`。
+     */
     private fun emitFunctionHandle(method: MethodVisitor, value: ChirFunctionValue) {
         val functionType = (value.type as? ChirResolvedTypeRef)?.type as? ChirFunctionType
             ?: throw JvmCodegenException("JVM function value '${value.name}' must carry ChirFunctionType", value.semanticId)
@@ -1127,6 +1359,11 @@ class JvmFunctionCodegen(
         )
     }
 
+    /**
+     * 将导入 JVM 函数值发射为 `MethodHandle`。
+     *
+     * 导入函数必须携带 owner/name/invokeKind ABI 属性，descriptor 可选。
+     */
     private fun emitImportedFunctionHandle(method: MethodVisitor, value: ChirImportedFunctionValue) {
         val functionType = (value.type as? ChirResolvedTypeRef)?.type as? ChirFunctionType
             ?: throw JvmCodegenException("JVM imported function value '${value.name}' must carry ChirFunctionType", value.semanticId)
@@ -1144,6 +1381,12 @@ class JvmFunctionCodegen(
         )
     }
 
+    /**
+     * 发射 MethodHandles.Lookup 查找逻辑。
+     *
+     * 根据 invokeKind 选择 findConstructor、findStatic、findVirtual 或 findSpecial，
+     * 并按 CHIR 函数类型或显式 descriptor 构建 MethodType。
+     */
     private fun emitMethodHandleLookup(
         method: MethodVisitor,
         nodeId: ChirSemanticId,
@@ -1237,6 +1480,9 @@ class JvmFunctionCodegen(
         }
     }
 
+    /**
+     * 从 CHIR 函数类型构造 JVM 构造器 descriptor。
+     */
     private fun constructorDescriptor(functionType: ChirFunctionType): String {
         return Type.getMethodDescriptor(
             Type.VOID_TYPE,
@@ -1244,6 +1490,9 @@ class JvmFunctionCodegen(
         )
     }
 
+    /**
+     * 规范化 ABI 中的 JVM 调用种类别名。
+     */
     private fun normalizeInvokeKind(invokeKind: String): String {
         return when (val normalized = invokeKind.lowercase().trim()) {
             "constructor", "newspecial", "new-special", "new_special" -> "constructor"
@@ -1251,6 +1500,9 @@ class JvmFunctionCodegen(
         }
     }
 
+    /**
+     * 发射导入 JVM 静态变量读取。
+     */
     private fun emitImportedVariable(method: MethodVisitor, value: ChirImportedVariableValue) {
         val owner = JvmAbiAttributes.requireString(value.attributes, JvmAbiAttributes.OWNER, value.semanticId)
         val name = JvmAbiAttributes.requireString(value.attributes, JvmAbiAttributes.NAME, value.semanticId)
@@ -1267,6 +1519,11 @@ class JvmFunctionCodegen(
         adaptStackValue(method, value.semanticId, fieldType, valueType, "imported variable")
     }
 
+    /**
+     * 发射 CHIR 常量到 JVM 操作数栈。
+     *
+     * 支持 null/nullptr、布尔、整数、浮点与字符串常量，整数常量会按有符号/无符号 carrier 解析。
+     */
     private fun emitConstant(method: MethodVisitor, value: ChirConstantValue) {
         val type = context.typeMapper.mapValueType(value.type)
         val normalizedLiteral = value.literal.lowercase()
@@ -1288,6 +1545,9 @@ class JvmFunctionCodegen(
         }
     }
 
+    /**
+     * 将整数常量解析为 JVM int carrier。
+     */
     private fun parseIntCarrierLiteral(value: ChirConstantValue): Int {
         return when (resolvedPrimitiveType(value.type)) {
             ChirPrimitiveType.UINT8,
@@ -1299,6 +1559,9 @@ class JvmFunctionCodegen(
         }
     }
 
+    /**
+     * 将整数常量解析为 JVM long carrier。
+     */
     private fun parseLongCarrierLiteral(value: ChirConstantValue): Long {
         return when (resolvedPrimitiveType(value.type)) {
             ChirPrimitiveType.UINT64 -> parseUnsignedIntegerLiteral(value.literal)
@@ -1306,12 +1569,18 @@ class JvmFunctionCodegen(
         }
     }
 
+    /**
+     * 解析有符号整数字面量，支持正负号、下划线和常见进制前缀。
+     */
     private fun parseSignedIntegerLiteral(literal: String): Long {
         val (negative, digits, radix) = splitIntegerLiteral(literal)
         val parsed = java.lang.Long.parseLong(digits, radix)
         return if (negative) -parsed else parsed
     }
 
+    /**
+     * 解析无符号整数字面量，负数字面量仍按有符号路径保持 JVM carrier 语义。
+     */
     private fun parseUnsignedIntegerLiteral(literal: String): Long {
         val (negative, digits, radix) = splitIntegerLiteral(literal)
         if (negative) {
@@ -1320,6 +1589,9 @@ class JvmFunctionCodegen(
         return java.lang.Long.parseUnsignedLong(digits, radix)
     }
 
+    /**
+     * 拆分整数字面量的符号、数字主体和进制。
+     */
     private fun splitIntegerLiteral(literal: String): ParsedIntegerLiteral {
         val trimmed = literal.trim().replace("_", "")
         val negative = trimmed.startsWith("-")
@@ -1333,6 +1605,11 @@ class JvmFunctionCodegen(
         return ParsedIntegerLiteral(negative, digits, radix)
     }
 
+    /**
+     * 将表达式结果从 JVM 操作数栈存入与 semanticId 绑定的 local slot。
+     *
+     * 首次写入会分配 slot，并额外以结果 id 的规范化名称建立查找入口。
+     */
     private fun storeExpressionResult(method: MethodVisitor, id: ChirSemanticId, type: Type) {
         val slot = localSlots.getOrPut(id) {
             LocalSlot(nextLocalSlot, type).also {
@@ -1346,6 +1623,11 @@ class JvmFunctionCodegen(
         method.visitVarInsn(type.getOpcode(Opcodes.ISTORE), slot.index)
     }
 
+    /**
+     * 从 local slot 读取 CHIR value。
+     *
+     * 查找顺序为 semanticId、规范化名称、结果 id 名称；slot 类型与期望类型不一致时执行栈值适配。
+     */
     private fun loadSlot(method: MethodVisitor, id: ChirSemanticId, name: String, expectedType: ChirTypeRef) {
         val slot = localSlots[id]
             ?: localSlotsByName[normalizeLocalName(name)]
@@ -1360,6 +1642,11 @@ class JvmFunctionCodegen(
         adaptStackValue(method, id, slot.type, type, "local load")
     }
 
+    /**
+     * 确保 CHIR ref 地址拥有可读写的 JVM local slot。
+     *
+     * 对还没有绑定的地址分配新 slot，并用地址 semanticId 与名称同时登记。
+     */
     private fun ensureAddressSlot(address: ChirValue, nodeId: ChirSemanticId): LocalSlot {
         val targetType = refTargetType(address, nodeId)
         val type = context.typeMapper.mapValueType(targetType)
@@ -1378,6 +1665,11 @@ class JvmFunctionCodegen(
         }
     }
 
+    /**
+     * 解析 memory 操作目标值类型。
+     *
+     * CHIR ref 返回 referencedType，CHIR cpointer 返回 pointeeType。
+     */
     private fun memoryTargetType(address: ChirValue, nodeId: ChirSemanticId): ChirTypeRef {
         val resolvedAddressType = (address.type as? ChirResolvedTypeRef)?.type
             ?: throw JvmCodegenException("JVM memory address must have resolved type, actual ${address.type.renderName}", nodeId)
@@ -1388,26 +1680,43 @@ class JvmFunctionCodegen(
         }
     }
 
+    /**
+     * 解析 CHIR ref 地址引用的目标类型。
+     */
     private fun refTargetType(address: ChirValue, nodeId: ChirSemanticId): ChirTypeRef {
         val referenceType = (address.type as? ChirResolvedTypeRef)?.type as? ChirRefType
             ?: throw JvmCodegenException("JVM memory address must have CHIR ref type, actual ${address.type.renderName}", nodeId)
         return referenceType.referencedType
     }
 
+    /**
+     * 判断地址值是否为 CHIR cpointer。
+     */
     private fun isPointerAddress(address: ChirValue): Boolean {
         return ((address.type as? ChirResolvedTypeRef)?.type as? ChirCPointerType) != null
     }
 
+    /**
+     * 要求给定类型引用是 CHIR cpointer，并返回解析后的指针类型。
+     */
     private fun requirePointerType(typeRef: ChirTypeRef, nodeId: ChirSemanticId, location: String): ChirCPointerType {
         return (typeRef as? ChirResolvedTypeRef)?.type as? ChirCPointerType
             ?: throw JvmCodegenException("JVM $location must have CHIR cpointer type, actual ${typeRef.renderName}", nodeId)
     }
 
+    /**
+     * 发射 JVM 数值算术指令。
+     */
     private fun emitArithmetic(method: MethodVisitor, id: ChirSemanticId, type: Type, intOpcode: Int) {
         requireArithmeticType(type, id)
         method.visitInsn(type.getOpcode(intOpcode))
     }
 
+    /**
+     * 发射无符号除法或取余。
+     *
+     * long 使用 `Long.*Unsigned`；较窄整数先扩展到 int 后使用 `Integer.*Unsigned`。
+     */
     private fun emitUnsignedDivRem(method: MethodVisitor, id: ChirSemanticId, type: Type, methodName: String) {
         requireIntLikeType(type, id)
         when (type) {
@@ -1438,11 +1747,19 @@ class JvmFunctionCodegen(
         }
     }
 
+    /**
+     * 发射整数类位运算指令。
+     */
     private fun emitIntLike(method: MethodVisitor, id: ChirSemanticId, type: Type, intOpcode: Int) {
         requireIntLikeType(type, id)
         method.visitInsn(type.getOpcode(intOpcode))
     }
 
+    /**
+     * 发射 JVM 移位指令。
+     *
+     * long 移位前会把右操作数规约为 int，符合 JVM shift 指令的栈形状。
+     */
     private fun emitShift(method: MethodVisitor, id: ChirSemanticId, type: Type, intOpcode: Int) {
         requireIntLikeType(type, id)
         if (type == Type.LONG_TYPE) {
@@ -1451,6 +1768,9 @@ class JvmFunctionCodegen(
         method.visitInsn(type.getOpcode(intOpcode))
     }
 
+    /**
+     * 发射有符号数值比较，并在栈顶留下 0/1 布尔 carrier。
+     */
     private fun emitComparison(
         method: MethodVisitor,
         type: Type,
@@ -1482,7 +1802,11 @@ class JvmFunctionCodegen(
         method.visitLabel(endLabel)
     }
 
-    // JVM 浮点比较必须按操作符选择 *CMPL/*CMPG，保证 NaN 下有序比较为 false。
+    /**
+     * 选择 float 比较使用的 `FCMPL` 或 `FCMPG` 指令。
+     *
+     * JVM 浮点比较必须按操作符选择 *CMPL/*CMPG，保证 NaN 下有序比较为 false。
+     */
     private fun floatingComparisonOpcode(zeroCompareOpcode: Int): Int {
         return when (zeroCompareOpcode) {
             Opcodes.IFLT, Opcodes.IFLE -> Opcodes.FCMPG
@@ -1491,6 +1815,9 @@ class JvmFunctionCodegen(
         }
     }
 
+    /**
+     * 将 float 比较指令映射为 double 比较指令。
+     */
     private fun doubleComparisonOpcode(floatComparisonOpcode: Int): Int {
         return when (floatComparisonOpcode) {
             Opcodes.FCMPL -> Opcodes.DCMPL
@@ -1499,6 +1826,11 @@ class JvmFunctionCodegen(
         }
     }
 
+    /**
+     * 发射相等性比较。
+     *
+     * 引用类型使用 `if_acmp*`，其他类型复用数值比较路径。
+     */
     private fun emitEqualityComparison(
         method: MethodVisitor,
         type: Type,
@@ -1513,6 +1845,9 @@ class JvmFunctionCodegen(
         }
     }
 
+    /**
+     * 发射引用相等或不等比较，并在栈顶留下 0/1。
+     */
     private fun emitReferenceComparison(method: MethodVisitor, referenceCompareOpcode: Int) {
         val trueLabel = Label()
         val endLabel = Label()
@@ -1524,6 +1859,9 @@ class JvmFunctionCodegen(
         method.visitLabel(endLabel)
     }
 
+    /**
+     * 发射无符号整数比较，并在栈顶留下 0/1。
+     */
     private fun emitUnsignedComparison(method: MethodVisitor, id: ChirSemanticId, type: Type, zeroCompareOpcode: Int) {
         requireIntLikeType(type, id)
         when (type) {
@@ -1555,6 +1893,9 @@ class JvmFunctionCodegen(
         emitIntZeroComparison(method, zeroCompareOpcode)
     }
 
+    /**
+     * 将栈顶 int 与 0 比较，并把跳转结果规范化为 0/1。
+     */
     private fun emitIntZeroComparison(method: MethodVisitor, zeroCompareOpcode: Int) {
         val trueLabel = Label()
         val endLabel = Label()
@@ -1566,6 +1907,9 @@ class JvmFunctionCodegen(
         method.visitLabel(endLabel)
     }
 
+    /**
+     * 发射 JVM 原始类型之间的转换。
+     */
     private fun emitPrimitiveCast(method: MethodVisitor, id: ChirSemanticId, source: Type, target: Type) {
         if (source == target) return
         when (source) {
@@ -1581,6 +1925,11 @@ class JvmFunctionCodegen(
         }
     }
 
+    /**
+     * 发射无符号整数零扩展。
+     *
+     * 对较窄无符号整数使用掩码；`uint32` 到 long 时额外清理高位。
+     */
     private fun emitZeroExtension(
         method: MethodVisitor,
         id: ChirSemanticId,
@@ -1615,6 +1964,9 @@ class JvmFunctionCodegen(
         }
     }
 
+    /**
+     * 发射无符号整数到浮点或其他数值类型的转换。
+     */
     private fun emitUnsignedToFloatingCast(
         method: MethodVisitor,
         id: ChirSemanticId,
@@ -1668,6 +2020,11 @@ class JvmFunctionCodegen(
         }
     }
 
+    /**
+     * 发射浮点到无符号整数的转换。
+     *
+     * 该路径委托运行时辅助方法处理 JVM 本身缺失的无符号浮点截断语义。
+     */
     private fun emitFloatingToUnsignedCast(
         method: MethodVisitor,
         id: ChirSemanticId,
@@ -1698,6 +2055,9 @@ class JvmFunctionCodegen(
         )
     }
 
+    /**
+     * 发射 int 到 float/double 的 JVM 转换指令。
+     */
     private fun emitIntToFloating(method: MethodVisitor, targetType: Type) {
         when (targetType) {
             Type.FLOAT_TYPE -> method.visitInsn(Opcodes.I2F)
@@ -1705,6 +2065,9 @@ class JvmFunctionCodegen(
         }
     }
 
+    /**
+     * 发射 long 到 float/double 的 JVM 转换指令。
+     */
     private fun emitLongToFloating(method: MethodVisitor, targetType: Type) {
         when (targetType) {
             Type.FLOAT_TYPE -> method.visitInsn(Opcodes.L2F)
@@ -1712,10 +2075,16 @@ class JvmFunctionCodegen(
         }
     }
 
+    /**
+     * 从 CHIR 类型引用中提取已解析的原始类型。
+     */
     private fun resolvedPrimitiveType(typeRef: ChirTypeRef): ChirPrimitiveType? {
         return (typeRef as? ChirResolvedTypeRef)?.type as? ChirPrimitiveType
     }
 
+    /**
+     * 发射 int carrier 到目标原始类型的转换。
+     */
     private fun emitIntToPrimitiveCast(method: MethodVisitor, id: ChirSemanticId, target: Type) {
         when (target) {
             Type.BYTE_TYPE -> method.visitInsn(Opcodes.I2B)
@@ -1728,6 +2097,9 @@ class JvmFunctionCodegen(
         }
     }
 
+    /**
+     * 发射 long carrier 到目标原始类型的转换。
+     */
     private fun emitLongToPrimitiveCast(method: MethodVisitor, id: ChirSemanticId, target: Type) {
         when (target) {
             Type.BYTE_TYPE -> {
@@ -1745,6 +2117,9 @@ class JvmFunctionCodegen(
         }
     }
 
+    /**
+     * 发射 float carrier 到目标原始类型的转换。
+     */
     private fun emitFloatToPrimitiveCast(method: MethodVisitor, id: ChirSemanticId, target: Type) {
         when (target) {
             Type.BYTE_TYPE -> {
@@ -1762,6 +2137,9 @@ class JvmFunctionCodegen(
         }
     }
 
+    /**
+     * 发射 double carrier 到目标原始类型的转换。
+     */
     private fun emitDoubleToPrimitiveCast(method: MethodVisitor, id: ChirSemanticId, target: Type) {
         when (target) {
             Type.BYTE_TYPE -> {
@@ -1779,6 +2157,9 @@ class JvmFunctionCodegen(
         }
     }
 
+    /**
+     * 向栈顶压入与指定整数 carrier 匹配的 -1 常量。
+     */
     private fun emitMinusOne(method: MethodVisitor, type: Type) {
         when (type) {
             Type.LONG_TYPE -> method.visitLdcInsn(-1L)
@@ -1790,6 +2171,9 @@ class JvmFunctionCodegen(
         }
     }
 
+    /**
+     * 将栈顶值暂存到新的 JVM local slot。
+     */
     private fun storeTemp(method: MethodVisitor, type: Type): LocalSlot {
         val slot = LocalSlot(nextLocalSlot, type)
         nextLocalSlot += type.size
@@ -1797,6 +2181,9 @@ class JvmFunctionCodegen(
         return slot
     }
 
+    /**
+     * 从临时 slot 读取无符号 int-like carrier，并按位宽清理高位。
+     */
     private fun emitUnsignedIntLikeFromSlot(method: MethodVisitor, slot: LocalSlot, type: Type) {
         method.visitVarInsn(type.getOpcode(Opcodes.ILOAD), slot.index)
         when (type) {
@@ -1813,6 +2200,9 @@ class JvmFunctionCodegen(
         }
     }
 
+    /**
+     * 要求 `ChirOtherExpression` 恰好只有一个操作数，并返回该操作数。
+     */
     private fun ChirOtherExpression.singleOperand(operation: String): ChirValue {
         if (operands.size != 1) {
             throw JvmCodegenException("JVM $operation expression requires exactly one operand", semanticId)
@@ -1820,6 +2210,9 @@ class JvmFunctionCodegen(
         return operands.single()
     }
 
+    /**
+     * 校验 `ChirOtherExpression` 的操作数数量。
+     */
     private fun ChirOtherExpression.requireOperandCount(operation: String, expected: Int): List<ChirValue> {
         if (operands.size != expected) {
             throw JvmCodegenException(
@@ -1830,16 +2223,27 @@ class JvmFunctionCodegen(
         return operands
     }
 
+    /**
+     * 校验 `ChirOtherExpression` 不声明结果类型。
+     */
     private fun ChirOtherExpression.requireNoResultType(operation: String) {
         if (resultType != null) {
             throw JvmCodegenException("JVM $operation expression must not declare result type", semanticId)
         }
     }
 
+    /**
+     * 判断表达式是否为 CFG phi 节点。
+     */
     private fun isPhiExpression(expression: ChirExpression): Boolean {
         return expression is ChirOtherExpression && expression.operation.lowercase().trim() == "phi"
     }
 
+    /**
+     * 判断 phi incoming value 是否来源于给定前驱块。
+     *
+     * 匹配依据是 value 上的 `pred` 字符串属性，可使用前驱块 semanticId 或块名。
+     */
     private fun ChirValue.matchesPhiPredecessor(predecessorBlock: ChirBlock): Boolean {
         val predecessor = attributes
             .asSequence()
@@ -1853,6 +2257,9 @@ class JvmFunctionCodegen(
         return predecessor == predecessorBlock.semanticId.value || predecessor == predecessorBlock.name
     }
 
+    /**
+     * 获取 ByteBuffer 指针 carrier 对指定元素类型的 get/put 方法描述。
+     */
     private fun pointerAccessor(type: Type, nodeId: ChirSemanticId): PointerAccessor {
         return when (type) {
             Type.BOOLEAN_TYPE, Type.BYTE_TYPE -> PointerAccessor("get", "(I)B", "put", "(IB)Ljava/nio/ByteBuffer;")
@@ -1865,6 +2272,9 @@ class JvmFunctionCodegen(
         }
     }
 
+    /**
+     * 计算指针元素类型在 ByteBuffer 中占用的字节数。
+     */
     private fun pointerElementByteSize(typeRef: ChirTypeRef, nodeId: ChirSemanticId): Int {
         val type = context.typeMapper.mapValueType(typeRef)
         return when (type) {
@@ -1876,6 +2286,11 @@ class JvmFunctionCodegen(
         }
     }
 
+    /**
+     * 从 JVM descriptor 字符串构建 `MethodType`。
+     *
+     * 运行时使用当前线程 context classloader 解析 descriptor 中的引用类型。
+     */
     private fun emitMethodTypeFromDescriptor(method: MethodVisitor, descriptor: String) {
         method.visitLdcInsn(descriptor)
         method.visitMethodInsn(
@@ -1901,6 +2316,9 @@ class JvmFunctionCodegen(
         )
     }
 
+    /**
+     * 根据 CHIR 函数返回类型和参数类型构建 JVM `MethodType`。
+     */
     private fun emitMethodType(
         method: MethodVisitor,
         returnTypeRef: ChirTypeRef,
@@ -1924,6 +2342,11 @@ class JvmFunctionCodegen(
         )
     }
 
+    /**
+     * 发射 JVM class literal。
+     *
+     * void 与 primitive 使用对应 wrapper 的 `TYPE` 字段，引用和数组类型直接用 ASM `Type` 常量。
+     */
     private fun emitClassLiteral(method: MethodVisitor, type: Type) {
         if (type == Type.VOID_TYPE) {
             method.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/Void", "TYPE", "Ljava/lang/Class;")
@@ -1936,6 +2359,9 @@ class JvmFunctionCodegen(
         }
     }
 
+    /**
+     * 将一组 CHIR value 装箱为 `Object[]`。
+     */
     private fun emitObjectArray(method: MethodVisitor, values: List<ChirValue>) {
         method.visitLdcInsn(values.size)
         method.visitTypeInsn(Opcodes.ANEWARRAY, "java/lang/Object")
@@ -1947,6 +2373,9 @@ class JvmFunctionCodegen(
         }
     }
 
+    /**
+     * 发射 value 并在需要时装箱为 JVM wrapper 对象。
+     */
     private fun emitBoxedValue(method: MethodVisitor, value: ChirValue) {
         val type = context.typeMapper.mapValueType(value.type)
         emitValue(method, value)
@@ -1960,6 +2389,9 @@ class JvmFunctionCodegen(
         )
     }
 
+    /**
+     * 将动态调用返回的 `Object` 还原为目标 JVM carrier。
+     */
     private fun emitCoerceObjectResult(method: MethodVisitor, nodeId: ChirSemanticId, targetType: Type) {
         val boxing = primitiveBoxing(targetType)
         if (boxing != null) {
@@ -1980,6 +2412,9 @@ class JvmFunctionCodegen(
         }
     }
 
+    /**
+     * 发射实例调用的 receiver 与普通实参，并按 descriptor 进行类型适配。
+     */
     private fun emitReceiverAndArgumentsForDescriptor(
         method: MethodVisitor,
         receiver: ChirValue,
@@ -1999,6 +2434,11 @@ class JvmFunctionCodegen(
         emitArgumentsForDescriptor(method, arguments, descriptor, nodeId)
     }
 
+    /**
+     * 按 JVM method descriptor 发射调用实参。
+     *
+     * 参数数量必须与 descriptor 完全一致，每个实参都会按目标 JVM 类型适配。
+     */
     private fun emitArgumentsForDescriptor(
         method: MethodVisitor,
         arguments: List<ChirValue>,
@@ -2024,10 +2464,18 @@ class JvmFunctionCodegen(
         }
     }
 
+    /**
+     * 将栈顶值适配到调用结果的目标 JVM 类型。
+     */
     private fun adaptStackValue(method: MethodVisitor, nodeId: ChirSemanticId, actualType: Type, targetType: Type) {
         adaptStackValue(method, nodeId, actualType, targetType, "call result")
     }
 
+    /**
+     * 将 JVM 操作数栈顶的实际类型适配为目标类型。
+     *
+     * 支持原始类型转换、装箱、拆箱、引用 checkcast；不兼容组合会报告包含位置的后端异常。
+     */
     private fun adaptStackValue(
         method: MethodVisitor,
         nodeId: ChirSemanticId,
@@ -2079,6 +2527,9 @@ class JvmFunctionCodegen(
         )
     }
 
+    /**
+     * 丢弃栈顶值，按 JVM slot size 选择 `pop` 或 `pop2`。
+     */
     private fun popStackValue(method: MethodVisitor, actualType: Type) {
         when {
             actualType == Type.VOID_TYPE -> Unit
@@ -2087,6 +2538,9 @@ class JvmFunctionCodegen(
         }
     }
 
+    /**
+     * 获取 JVM 原始类型对应的 wrapper 与拆箱方法信息。
+     */
     private fun primitiveBoxing(type: Type): PrimitiveBoxing? {
         return when (type) {
             Type.BOOLEAN_TYPE -> PrimitiveBoxing("java/lang/Boolean", "booleanValue")
@@ -2100,6 +2554,9 @@ class JvmFunctionCodegen(
         }
     }
 
+    /**
+     * 发射数组值与索引值，并返回数组 JVM 类型。
+     */
     private fun emitArrayAndIndex(
         method: MethodVisitor,
         array: ChirValue,
@@ -2119,6 +2576,9 @@ class JvmFunctionCodegen(
         return arrayType
     }
 
+    /**
+     * 发射数组长度或下标值，并强制适配为 JVM int。
+     */
     private fun emitArrayIndexValue(method: MethodVisitor, value: ChirValue, nodeId: ChirSemanticId) {
         val valueType = context.typeMapper.mapValueType(value.type)
         if (valueType !in intArraySizeTypes) {
@@ -2128,6 +2588,9 @@ class JvmFunctionCodegen(
         emitPrimitiveCast(method, nodeId, valueType, Type.INT_TYPE)
     }
 
+    /**
+     * 从 JVM 数组类型中解析元素类型。
+     */
     private fun arrayElementType(arrayType: Type, nodeId: ChirSemanticId): Type {
         if (arrayType.sort != Type.ARRAY) {
             throw JvmCodegenException("JVM value is not an array type: ${arrayType.descriptor}", nodeId)
@@ -2135,6 +2598,9 @@ class JvmFunctionCodegen(
         return Type.getType(arrayType.descriptor.substring(1))
     }
 
+    /**
+     * 要求 JVM 类型是对象类型，并返回 internal name。
+     */
     private fun objectInternalName(type: Type, nodeId: ChirSemanticId, location: String): String {
         if (type.sort != Type.OBJECT) {
             throw JvmCodegenException("JVM $location must be object type, actual ${type.descriptor}", nodeId)
@@ -2142,6 +2608,9 @@ class JvmFunctionCodegen(
         return type.internalName
     }
 
+    /**
+     * 要求 JVM 类型是对象或数组类型，并返回可用于 `checkcast`/type 指令的名称。
+     */
     private fun objectOrArrayInternalName(type: Type, nodeId: ChirSemanticId, location: String): String {
         return when (type.sort) {
             Type.OBJECT -> type.internalName
@@ -2150,8 +2619,14 @@ class JvmFunctionCodegen(
         }
     }
 
+    /**
+     * 判断 ASM 类型是否为 JVM 引用 carrier。
+     */
     private fun Type.isReferenceCarrier(): Boolean = sort == Type.OBJECT || sort == Type.ARRAY
 
+    /**
+     * 计算 CHECKCAST 指令接受的类型操作数。
+     */
     private fun checkcastTypeOperand(type: Type): String {
         return when (type.sort) {
             Type.OBJECT -> type.internalName
@@ -2160,6 +2635,11 @@ class JvmFunctionCodegen(
         }
     }
 
+    /**
+     * 返回当前函数的基本块生成顺序。
+     *
+     * 入口块优先，其余块保持 CHIR 原始顺序，保证 label 已分配且控制流边可跳转。
+     */
     private fun orderedBlocks(): List<ChirBlock> = buildList {
         val entry = function.blocks.firstOrNull { it.semanticId == function.entryBlockId }
         if (entry != null) add(entry)
@@ -2168,10 +2648,16 @@ class JvmFunctionCodegen(
         }
     }
 
+    /**
+     * 取得基本块对应的 ASM label。
+     */
     private fun labelFor(id: ChirSemanticId): Label {
         return blockLabels[id] ?: throw JvmCodegenException("missing JVM block label", id)
     }
 
+    /**
+     * 在当前模块中按名称和 JVM descriptor 解析本地函数声明。
+     */
     private fun resolveLocalFunction(name: String, descriptor: String, nodeId: ChirSemanticId): ChirFunctionDeclaration {
         return module.declarations
             .filterIsInstance<ChirFunctionDeclaration>()
@@ -2182,11 +2668,19 @@ class JvmFunctionCodegen(
             ?: throw JvmCodegenException("unresolved local JVM function '$name$descriptor'", nodeId)
     }
 
+    /**
+     * 计算函数的 JVM 方法名。
+     */
     private fun jvmMethodName(function: ChirFunctionDeclaration): String {
         return JvmAbiAttributes.optionalString(function.attributes, JvmAbiAttributes.NAME)
             ?: context.namePolicy.functionJvmName(function)
     }
 
+    /**
+     * 计算函数的 JVM method descriptor。
+     *
+     * 当前函数为构造器时返回类型固定为 void；其他函数按 CHIR 返回类型映射。
+     */
     private fun jvmMethodDescriptor(function: ChirFunctionDeclaration): String {
         return JvmAbiAttributes.optionalString(function.attributes, JvmAbiAttributes.DESCRIPTOR)
             ?: Type.getMethodDescriptor(
@@ -2195,6 +2689,9 @@ class JvmFunctionCodegen(
             )
     }
 
+    /**
+     * 校验当前函数是否满足 JVM method 生成的结构约束。
+     */
     private fun verifyFunctionShape() {
         if (isConstructor) {
             if (methodName != "<init>") {
@@ -2215,6 +2712,9 @@ class JvmFunctionCodegen(
         }
     }
 
+    /**
+     * 在构造器开头发射对父类无参构造器的调用。
+     */
     private fun emitSuperConstructorCall(method: MethodVisitor) {
         val targetSuperInternalName = superInternalName
             ?: throw JvmCodegenException("JVM constructor requires an owner super class", function.semanticId)
@@ -2222,63 +2722,141 @@ class JvmFunctionCodegen(
         method.visitMethodInsn(Opcodes.INVOKESPECIAL, targetSuperInternalName, "<init>", "()V", false)
     }
 
+    /**
+     * 校验类型是否支持 JVM 算术操作。
+     */
     private fun requireArithmeticType(type: Type, id: ChirSemanticId) {
         if (type !in arithmeticTypes) {
             throw JvmCodegenException("JVM arithmetic does not support type ${type.descriptor}", id)
         }
     }
 
+    /**
+     * 校验类型是否支持 JVM 整数类操作。
+     */
     private fun requireIntLikeType(type: Type, id: ChirSemanticId) {
         if (type !in intLikeTypes) {
             throw JvmCodegenException("JVM integer operation does not support type ${type.descriptor}", id)
         }
     }
 
+    /**
+     * 校验类型是否为 JVM boolean carrier。
+     */
     private fun requireBoolean(type: Type, id: ChirSemanticId) {
         if (type != Type.BOOLEAN_TYPE) {
             throw JvmCodegenException("JVM boolean operation requires boolean type, actual ${type.descriptor}", id)
         }
     }
 
+    /**
+     * 将 CHIR semanticId 与规范化名称绑定到同一个 JVM local slot。
+     */
     private fun bindLocal(id: ChirSemanticId, name: String, slot: LocalSlot) {
         localSlots[id] = slot
         localSlotsByName[normalizeLocalName(name)] = slot
     }
 
+    /**
+     * 将表达式 semanticId 转为结果 local 名称。
+     */
     private fun resultLocalName(id: ChirSemanticId): String = normalizeLocalName(id.value)
 
+    /**
+     * 将 CHIR 名称规范化为可作为 JVM local 查找键的稳定字符串。
+     */
     private fun normalizeLocalName(raw: String): String {
         val sanitized = raw.replace(Regex("[^A-Za-z0-9_.$]"), "_").trim('_')
         if (sanitized.isBlank()) return "local"
         return if (sanitized.first().isDigit()) "local_$sanitized" else sanitized
     }
 
+    /**
+     * JVM local slot 绑定信息。
+     */
     private data class LocalSlot(val index: Int, val type: Type)
 
+    /**
+     * ByteBuffer 指针访问方法描述。
+     */
     private data class PointerAccessor(
+        /**
+         * 读取元素值的 ByteBuffer 方法名。
+         */
         val getMethodName: String,
+        /**
+         * 读取元素值的 JVM descriptor。
+         */
         val getDescriptor: String,
+        /**
+         * 写入元素值的 ByteBuffer 方法名。
+         */
         val putMethodName: String,
+        /**
+         * 写入元素值的 JVM descriptor。
+         */
         val putDescriptor: String,
     )
 
+    /**
+     * JVM 原始类型装箱/拆箱所需的 wrapper 信息。
+     */
     private data class PrimitiveBoxing(
+        /**
+         * wrapper class 的 JVM internal name。
+         */
         val wrapperInternalName: String,
+        /**
+         * wrapper 实例拆箱为原始类型的方法名。
+         */
         val unboxMethodName: String,
     )
 
+    /**
+     * 规范化后的整数字面量结构。
+     */
     private data class ParsedIntegerLiteral(
+        /**
+         * 字面量是否带负号。
+         */
         val negative: Boolean,
+        /**
+         * 去除符号、进制前缀和下划线后的数字主体。
+         */
         val digits: String,
+        /**
+         * 数字主体使用的进制。
+         */
         val radix: Int,
     )
 
+    /**
+     * JVM 函数字节码生成共享常量。
+     */
     private companion object {
+        /**
+         * `java.lang.String` 的 ASM 类型常量。
+         */
         val stringObjectType: Type = Type.getObjectType("java/lang/String")
+        /**
+         * `java.nio.ByteBuffer` 的 ASM 类型常量，用作 CHIR cpointer carrier。
+         */
         val byteBufferType: Type = Type.getObjectType("java/nio/ByteBuffer")
+        /**
+         * 支持普通算术操作的 JVM 类型集合。
+         */
         val arithmeticTypes = setOf(Type.BYTE_TYPE, Type.SHORT_TYPE, Type.INT_TYPE, Type.LONG_TYPE, Type.FLOAT_TYPE, Type.DOUBLE_TYPE)
+        /**
+         * 支持整数类位运算、移位和无符号操作的 JVM 类型集合。
+         */
         val intLikeTypes = setOf(Type.BYTE_TYPE, Type.SHORT_TYPE, Type.INT_TYPE, Type.LONG_TYPE)
+        /**
+         * 可作为 JVM 数组大小或下标输入的类型集合。
+         */
         val intArraySizeTypes = setOf(Type.BYTE_TYPE, Type.SHORT_TYPE, Type.INT_TYPE, Type.LONG_TYPE)
+        /**
+         * 需要通过 wrapper `TYPE` 字段获取 class literal 的 primitive sort 集合。
+         */
         val primitiveClassLiteralSorts = setOf(
             Type.BOOLEAN,
             Type.BYTE,

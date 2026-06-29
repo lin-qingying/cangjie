@@ -14,9 +14,15 @@ import kotlin.io.path.*
  * 生成器文件 I/O 工具。
  */
 object GeneratorsFileUtil {
+    /**
+     * 当前进程是否运行在 TeamCity 构建环境中。
+     */
     private val isTeamCityBuild: Boolean =
         System.getProperty("teamcity", "false").toBoolean() || System.getenv("TEAMCITY_VERSION") != null
 
+    /**
+     * 写入到生成文件头部的块注释。
+     */
     val GENERATED_MESSAGE = """
     /*
      * 本文件由生成器自动生成
@@ -24,9 +30,20 @@ object GeneratorsFileUtil {
      */
      """.trimIndent()
 
+    /**
+     * 单行自动生成提示的前缀，用于识别历史生成文件。
+     */
     const val GENERATED_MESSAGE_PREFIX = "// 本文件由生成器自动生成。参见 "
+    /**
+     * 单行自动生成提示的后缀，用于识别历史生成文件。
+     */
     const val GENERATED_MESSAGE_SUFFIX = "// 请勿手动修改。"
 
+    /**
+     * 仅在文件内容变化时写入目标文件。
+     *
+     * 内容比较会忽略行分隔符差异；在 TeamCity 上默认拒绝真实写入并报告需要重新生成。
+     */
     @OptIn(ExperimentalPathApi::class)
     @JvmStatic
     @JvmOverloads
@@ -64,6 +81,9 @@ object GeneratorsFileUtil {
         return true
     }
 
+    /**
+     * 在 TeamCity 上将生成动作转为 build problem。
+     */
     private fun failOnTeamCity(message: String): Boolean {
         if (!isTeamCityBuild) return false
 
@@ -90,6 +110,9 @@ object GeneratorsFileUtil {
         return true
     }
 
+    /**
+     * 判断文件内容与给定文本是否不同，比较时忽略行分隔符差异。
+     */
     fun isFileContentChangedIgnoringLineSeparators(file: File, content: String): Boolean {
         val currentContent: String = try {
             StringUtil.convertLineSeparators(file.readText(Charsets.UTF_8))
@@ -99,12 +122,18 @@ object GeneratorsFileUtil {
         return StringUtil.convertLineSeparators(content) != currentContent
     }
 
+    /**
+     * 收集指定目录下带自动生成标记的历史生成文件。
+     */
     fun collectPreviouslyGeneratedFiles(generationPath: File): List<File> {
         return generationPath.walkTopDown().filter {
             it.isFile && it.readText().let { GENERATED_MESSAGE_PREFIX in it && GENERATED_MESSAGE_SUFFIX in it }
         }.toList()
     }
 
+    /**
+     * 删除上次生成存在但本次没有重新生成的多余文件。
+     */
     fun removeExtraFilesFromPreviousGeneration(previouslyGeneratedFiles: List<File>, generatedFiles: List<File>) {
         val generatedFilesPath = generatedFiles.mapTo(mutableSetOf()) { it.absolutePath }
 

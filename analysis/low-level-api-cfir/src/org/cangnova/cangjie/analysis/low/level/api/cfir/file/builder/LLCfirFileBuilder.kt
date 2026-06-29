@@ -17,8 +17,14 @@ import org.cangnova.cangjie.utils.exceptions.checkWithAttachment
  */
 @ThreadSafe
 internal class LLCfirFileBuilder(val moduleComponents: LLCfirModuleResolveComponents) {
+    /**
+     * 用于校验待构建文件实际所属模块的项目结构 provider。
+     */
     private val projectStructureProvider by lazy { CangJieProjectStructureProvider.getInstance(moduleComponents.session.project) }
 
+    /**
+     * 构建或复用指定 PSI 文件的 raw CFIR 文件，并校验 contextual module 与实际文件模块一致。
+     */
     fun buildRawCfirFileWithCaching(cjFile: CjFile): CfirFile = moduleComponents.cache.fileCached(cjFile) {
         val contextualModule = moduleComponents.module
         val actualFileModule = projectStructureProvider.getModule(cjFile, contextualModule)

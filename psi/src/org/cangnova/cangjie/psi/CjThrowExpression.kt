@@ -26,11 +26,20 @@ package org.cangnova.cangjie.psi
 
 import com.intellij.lang.ASTNode
 
+/**
+ * 表示 `CjThrowExpression`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjThrowExpression(node: ASTNode) : CjExpressionImpl(node), CjStatementExpression {
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitThrowExpression(this, data)
     }
 
+    /**
+     * 保存 `thrownExpression`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     @get:IfNotParsed
     val thrownExpression: CjExpression?
         get() = findChildByClass<CjExpression>(CjExpression::class.java)

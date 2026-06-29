@@ -23,6 +23,8 @@ import org.cangnova.cangjie.cfir.expressions.CfirWrappedExpression
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
+import org.cangnova.cangjie.cfir.resolve.providers.canAccessPackageInternalDeclaration
+import org.cangnova.cangjie.cfir.resolve.providers.getContainingFile
 import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
@@ -34,6 +36,7 @@ import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.ConeStructType
 import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
 import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
+import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.Name
 
@@ -59,16 +62,29 @@ object CfirConstructorDelegationChecker : CfirConstructorChecker() {
 
         val delegationCalls = body?.collectDelegationCalls().orEmpty()
         val firstStatementDelegation = body?.statements?.firstOrNull().asDelegationCallOrNull()
+        val hasExplicitSuperDelegation = delegationCalls.any { delegation ->
+            delegation.kind == ConstructorDelegationCallKind.SUPER
+        }
 
         delegationCalls
             .filter { delegation -> delegation.call !== firstStatementDelegation?.call }
             .forEach { delegation ->
+                if (delegation.kind == ConstructorDelegationCallKind.THIS && declaration.isPrimary) {
+                    reporter.reportOn(
+                        source = delegation.call.delegationDiagnosticSource()
+                            ?: declaration.source?.firstCharacterDiagnosticSource(),
+                        factory = CfirErrors.ILLEGAL_PLACE_OF_CALLING_THIS_PRIMARY_CONSTRUCTOR,
+                    )
+                    return@forEach
+                }
+
                 reporter.reportOn(
-                    source = delegation.call.delegationDiagnosticSource()?.firstCharacterDiagnosticSource()
+                    source = delegation.call.delegationDiagnosticSource()
                         ?: declaration.source?.firstCharacterDiagnosticSource(),
                     factory = CfirErrors.ILLEGAL_PLACE_OF_CALLING_THIS_OR_SUPER,
                     a = delegation.kind.keyword,
                 )
+                delegation.checkExplicitDelegationTarget(owner, declaration)
             }
 
         firstStatementDelegation?.checkArgumentMemberAccessBeforeInitialization(owner)
@@ -77,16 +93,25 @@ object CfirConstructorDelegationChecker : CfirConstructorChecker() {
             ConstructorDelegationCallKind.THIS -> {
                 if (declaration.isPrimary) {
                     reporter.reportOn(
-                        source = firstStatementDelegation.call.delegationDiagnosticSource()?.firstCharacterDiagnosticSource()
+                        source = firstStatementDelegation.call.delegationDiagnosticSource()
                             ?: declaration.source?.firstCharacterDiagnosticSource(),
                         factory = CfirErrors.ILLEGAL_PLACE_OF_CALLING_THIS_PRIMARY_CONSTRUCTOR,
                     )
                     return
                 }
-                checkThisDelegation(owner, declaration, firstStatementDelegation.call)
+                firstStatementDelegation.checkExplicitDelegationTarget(owner, declaration)
             }
-            ConstructorDelegationCallKind.SUPER -> checkSuperDelegation(owner, declaration, firstStatementDelegation.call)
-            null -> checkImplicitSuperRequirement(owner, declaration)
+            ConstructorDelegationCallKind.SUPER -> firstStatementDelegation.checkExplicitDelegationTarget(owner, declaration)
+            null -> {
+                /*
+                 * 官方只在缺失显式 `super(...)` 时诊断合成的隐式 `super()`。
+                 * 非首语句 `super(...)` 仍是显式父构造调用：它要报告位置非法，但不能再叠加
+                 * `NO_NON_PARAM_CONSTRUCTOR_IN_SUPER_CLASS`。
+                 */
+                if (!hasExplicitSuperDelegation) {
+                    checkImplicitSuperRequirement(owner, declaration)
+                }
+            }
         }
     }
 
@@ -151,6 +176,23 @@ object CfirConstructorDelegationChecker : CfirConstructorChecker() {
     }
 
     /**
+     * 检查显式 `this(...)` / `super(...)` 委托的目标与实参数量。
+     *
+     * 官方会把非首语句委托调用同时当作普通构造器调用继续检查，因此这里不能在
+     * 报告位置非法后提前截断目标解析诊断。
+     */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun ConstructorDelegationCall.checkExplicitDelegationTarget(
+        owner: CfirClassLikeDeclaration,
+        declaration: CfirConstructor,
+    ) {
+        when (kind) {
+            ConstructorDelegationCallKind.THIS -> checkThisDelegation(owner, declaration, call)
+            ConstructorDelegationCallKind.SUPER -> checkSuperDelegation(owner, declaration, call)
+        }
+    }
+
+    /**
      * 检查构造器的 `super(...)` 委托目标。
      *
      * 只有存在实际非接口父类时才检查父类构造器；无父类场景保持官方语义，不额外产生
@@ -202,16 +244,65 @@ object CfirConstructorDelegationChecker : CfirConstructorChecker() {
         if (owner !is CfirClass) return
 
         val superDeclaration = owner.directConcreteSuperDeclaration(context) ?: return
-        val hasImplicitSuper = superDeclaration.declarations
+        val implicitSuperConstructors = superDeclaration.declarations
             .filterIsInstance<CfirConstructor>()
-            .any { constructor -> constructor.requiredParameterCount() == 0 }
-        if (hasImplicitSuper) return
+            .filter { constructor -> constructor.requiredParameterCount() == 0 }
+        if (implicitSuperConstructors.any { constructor -> constructor.isVisibleForImplicitSuperCall() }) return
+
+        if (implicitSuperConstructors.isNotEmpty()) {
+            reporter.reportOn(
+                source = declaration.constructorNameDiagnosticSource()?.firstCharacterDiagnosticSource(),
+                factory = CfirErrors.NO_MATCH_FUNCTION_DECLARATION_FOR_CALL,
+            )
+            return
+        }
 
         reporter.reportOn(
             source = declaration.constructorNameDiagnosticSource(),
             factory = CfirErrors.NO_NON_PARAM_CONSTRUCTOR_IN_SUPER_CLASS,
         )
     }
+}
+
+/**
+ * 判断父类无参构造器能否作为当前构造器的隐式 `super()` 目标。
+ *
+ * 官方会为没有显式 `this(...)` / `super(...)` 的 class 构造器合成 `super()`，
+ * 然后通过普通候选可访问性过滤；因此这里不能只看父类是否存在无参构造器。
+ */
+context(context: CheckerContext)
+private fun CfirConstructor.isVisibleForImplicitSuperCall(): Boolean {
+    return when (status.visibility) {
+        Visibilities.Public -> true
+        Visibilities.Internal -> canSeePackageInternalConstructor()
+        // 当前检查点已经确认目标是直接父类构造器；protected 允许继承链访问。
+        Visibilities.Protected -> true
+        Visibilities.Private -> canSeePrivateConstructorOwner()
+        else -> true
+    }
+}
+
+/** 判断 internal 构造器是否对当前文件包可见。 */
+context(context: CheckerContext)
+private fun CfirConstructor.canSeePackageInternalConstructor(): Boolean {
+    val useSiteFile = context.containingFileSymbol?.cfir ?: return false
+    val declarationFile = context.session.cfirProvider.getContainingFile(symbol) ?: return false
+    return canAccessPackageInternalDeclaration(
+        useSitePackage = useSiteFile.packageDirective.packageFqName,
+        declarationPackage = declarationFile.packageDirective.packageFqName,
+    )
+}
+
+/** 判断 private 构造器 owner 是否等于当前声明栈中的 nominal owner。 */
+context(context: CheckerContext)
+private fun CfirConstructor.canSeePrivateConstructorOwner(): Boolean {
+    val ownerClassId = context.session.cfirProvider.getContainingClass(symbol)?.classId
+        ?: symbol.callableId.classId
+        ?: return false
+    return context.containingDeclarations
+        .asSequence()
+        .filterIsInstance<CfirClassLikeDeclaration>()
+        .any { declaration -> declaration.symbol.classId == ownerClassId }
 }
 
 /**

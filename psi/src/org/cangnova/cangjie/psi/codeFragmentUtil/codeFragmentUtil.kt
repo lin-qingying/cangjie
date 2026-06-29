@@ -54,6 +54,9 @@ fun CjElement.suppressDiagnosticsInDebugMode(): Boolean {
     }
 }
 
+/**
+ * 保存 `CjFile.suppressDiagnosticsInDebugMode`，供仓颉 PSI流程读取节点结构或语义信息。
+ */
 var CjFile.suppressDiagnosticsInDebugMode: Boolean
     get() = when (this) {
         is CjCodeFragment -> true
@@ -63,5 +66,11 @@ var CjFile.suppressDiagnosticsInDebugMode: Boolean
         putUserData(SUPPRESS_DIAGNOSTICS_IN_DEBUG_MODE, skip)
     }
 
+/**
+ * 保存 `DEBUG_TYPE_REFERENCE_STRING`，供仓颉 PSI流程读取节点结构或语义信息。
+ */
 val DEBUG_TYPE_REFERENCE_STRING: String = "DebugTypeCangJieRulezzzz"
+/**
+ * 保存 `SUPPRESS_DIAGNOSTICS_IN_DEBUG_MODE`，供仓颉 PSI流程读取节点结构或语义信息。
+ */
 val SUPPRESS_DIAGNOSTICS_IN_DEBUG_MODE: Key<Boolean> = Key.create<Boolean>("SUPPRESS_DIAGNOSTICS_IN_DEBUG_MODE")

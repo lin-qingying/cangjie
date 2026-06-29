@@ -23,7 +23,13 @@
  */
 package org.cangnova.cangjie.parsing
 
+/**
+ * 表示 `AbstractTokenStreamPredicate`，承载仓颉语法解析中的语法节点、索引桩或辅助模型。
+ */
 abstract class AbstractTokenStreamPredicate : TokenStreamPredicate {
+    /**
+     * 实现 `or` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun or(other: TokenStreamPredicate): TokenStreamPredicate {
         return object : AbstractTokenStreamPredicate() {
             override fun matching(topLevel: Boolean): Boolean {

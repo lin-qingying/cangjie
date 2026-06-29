@@ -32,11 +32,17 @@ import com.intellij.psi.PsiComment
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiWhiteSpace
 
+/**
+ * 提供 `Sequence` 操作，封装PSI 工具节点的访问、构造或判断逻辑。
+ */
 inline fun <reified T : Any> Sequence<*>.firstIsInstanceOrNull(): T? {
     for (element in this) if (element is T) return element
     return null
 }
 
+/**
+ * 提供 `addModifier` 操作，封装PSI 工具节点的访问、构造或判断逻辑。
+ */
 fun addModifier(owner: CjModifierListOwner, modifier: CjKeywordToken) {
     val modifierList = owner.modifierList
     if (modifierList == null) {
@@ -46,6 +52,9 @@ fun addModifier(owner: CjModifierListOwner, modifier: CjKeywordToken) {
     }
 }
 
+/**
+ * 执行 `addModifierList` 内部辅助逻辑，支撑PSI 工具节点的结构解析与访问。
+ */
 private fun CjModifierListOwner.addModifierList(newModifierList: CjModifierList): CjModifierList {
     val anchor = firstChild!!
         .siblings(forward = true)
@@ -54,10 +63,16 @@ private fun CjModifierListOwner.addModifierList(newModifierList: CjModifierList)
     return addBefore(newModifierList, anchor) as CjModifierList
 }
 
+/**
+ * 执行 `createModifierList` 内部辅助逻辑，支撑PSI 工具节点的结构解析与访问。
+ */
 private fun createModifierList(text: String, owner: CjModifierListOwner): CjModifierList {
     return owner.addModifierList(CjPsiFactory(owner.project).createModifierList(text))
 }
 
+/**
+ * 提供 `addModifier` 操作，封装PSI 工具节点的访问、构造或判断逻辑。
+ */
 internal fun addModifier(modifierList: CjModifierList, modifier: CjKeywordToken) {
     if (modifierList.hasModifier(modifier)) return
 
@@ -100,6 +115,9 @@ internal fun addModifier(modifierList: CjModifierList, modifier: CjKeywordToken)
     }
 }
 
+/**
+ * 提供 `removeModifier` 操作，封装PSI 工具节点的访问、构造或判断逻辑。
+ */
 fun removeModifier(owner: CjModifierListOwner, modifier: CjKeywordToken) {
     owner.modifierList?.let {
         it.getModifier(modifier)?.delete()
@@ -115,6 +133,9 @@ fun removeModifier(owner: CjModifierListOwner, modifier: CjKeywordToken) {
     }
 }
 
+/**
+ * 提供 `sortModifiers` 操作，封装PSI 工具节点的访问、构造或判断逻辑。
+ */
 fun sortModifiers(modifiers: List<CjModifierKeywordToken>): List<CjModifierKeywordToken> {
     return modifiers.sortedBy {
         val index = MODIFIERS_ORDER.indexOf(it)
@@ -122,6 +143,9 @@ fun sortModifiers(modifiers: List<CjModifierKeywordToken>): List<CjModifierKeywo
     }
 }
 
+/**
+ * 保存 `MODIFIERS_TO_REPLACE` 的内部状态，供PSI 工具实现维护节点缓存或解析上下文。
+ */
 private val MODIFIERS_TO_REPLACE = mapOf(
     OVERRIDE_KEYWORD to listOf(OPEN_KEYWORD),
     ABSTRACT_KEYWORD to listOf(OPEN_KEYWORD),
@@ -133,6 +157,9 @@ private val MODIFIERS_TO_REPLACE = mapOf(
     INTERNAL_KEYWORD to listOf(PUBLIC_KEYWORD, PROTECTED_KEYWORD, PRIVATE_KEYWORD),
 
 )
+/**
+ * 保存 `MODIFIERS_ORDER`，供PSI 工具流程读取节点结构或语义信息。
+ */
 val MODIFIERS_ORDER = listOf(
     PUBLIC_KEYWORD, PROTECTED_KEYWORD, PRIVATE_KEYWORD, INTERNAL_KEYWORD,
 

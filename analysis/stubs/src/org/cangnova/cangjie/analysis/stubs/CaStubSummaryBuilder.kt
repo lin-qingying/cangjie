@@ -34,9 +34,19 @@ import org.cangnova.cangjie.psi.stubs.elements.CjFileStubBuilder
  * 这样 source / compiled 都走同一套摘要提取规则，而测试也可以直接喂手工 stub 树。
  */
 internal class CaStubSummaryBuilder(
+    /**
+     * 当 PSI 文件没有现成 stub 时用于构建文件 stub 树的 builder。
+     */
     private val fileStubBuilder: CjFileStubBuilder = CjFileStubBuilder(),
+
+    /**
+     * 从文件 stub 树提取 analysis 摘要的共享提取器。
+     */
     private val extractor: CaStubTreeSummaryExtractor = CaStubTreeSummaryExtractor(),
 ) {
+    /**
+     * 为单个仓颉 PSI 文件构建 analysis stub 摘要。
+     */
     fun build(file: CjFile): CaStubFileSummary {
         val fileStub = resolveFileStub(file)
         val fileKey = file.virtualFile?.url ?: file.name
@@ -47,6 +57,11 @@ internal class CaStubSummaryBuilder(
         )
     }
 
+    /**
+     * 解析文件可用的仓颉文件 stub。
+     *
+     * 优先复用 PSI 已持有的 stub；没有时才通过 [fileStubBuilder] 构建，确保 source 与 compiled 路径统一。
+     */
     private fun resolveFileStub(file: CjFile): CangJieFileStub {
         return (file.stub as? CangJieFileStub)
             ?: (fileStubBuilder.buildStubTree(file) as? CangJieFileStub)
@@ -73,6 +88,9 @@ internal class CaStubSummaryBuilder(
  * 这层是整个模块的语义核心，必须保证 source 和 compiled 看到的是同一套规则。
  */
 internal class CaStubTreeSummaryExtractor {
+    /**
+     * 从文件 stub 树中提取单文件摘要。
+     */
     fun extract(
         fileKey: String,
         fallbackPackageFqName: FqName,
@@ -133,6 +151,9 @@ internal class CaStubTreeSummaryExtractor {
         collectClassMemberNamesFromChildren(classStub.childrenStubs, destination, memberNames)
     }
 
+    /**
+     * 递归遍历 class-like body 子 stub，收集成员名称并为嵌套 class-like 建立独立成员索引。
+     */
     private fun collectClassMemberNamesFromChildren(
         children: List<StubElement<*>>,
         destination: MutableMap<ClassId, MutableSet<Name>>,

@@ -25,7 +25,13 @@ package org.cangnova.cangjie.psi.stubs.elements
 
 import com.intellij.psi.tree.TokenSet
 
+/**
+ * 提供 `CjTokenSets` 单例，集中承载PSI Stub的共享状态、工厂或工具行为。
+ */
 object CjTokenSets {
+    /**
+     * 保存 `SUPER_TYPE_LIST_ENTRIES`，供PSI Stub流程读取节点结构或语义信息。
+     */
     val SUPER_TYPE_LIST_ENTRIES: TokenSet =
         TokenSet.create(CjStubElementTypes.SUPER_TYPE_CALL_ENTRY, CjStubElementTypes.SUPER_TYPE_ENTRY)
 
@@ -83,10 +89,16 @@ object CjTokenSets {
 
     )
 
+    /**
+     * 保存 `INSIDE_DIRECTIVE_EXPRESSIONS`，供PSI Stub流程读取节点结构或语义信息。
+     */
     val INSIDE_DIRECTIVE_EXPRESSIONS: TokenSet = TokenSet.create( //            IMPORT_DIRECTIVE_ITEM,
         CjStubElementTypes.DOT_QUALIFIED_EXPRESSION,
         CjStubElementTypes.REFERENCE_EXPRESSION,
     )
+    /**
+     * 保存 `TYPE_ELEMENT_TYPES`，供PSI Stub流程读取节点结构或语义信息。
+     */
     val TYPE_ELEMENT_TYPES: TokenSet = TokenSet.create(
         CjStubElementTypes.THIS_TYPE,
         CjStubElementTypes.VARRAY_TYPE,

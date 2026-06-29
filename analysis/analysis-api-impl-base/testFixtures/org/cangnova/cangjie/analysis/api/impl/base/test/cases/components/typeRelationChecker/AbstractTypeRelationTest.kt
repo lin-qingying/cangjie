@@ -28,9 +28,17 @@ import org.junit.jupiter.api.Assertions.assertEquals
  * - `semanticallyEquals`
  */
 abstract class AbstractTypeRelationTest : AbstractAnalysisApiComponentTest() {
+    /**
+     * 当前 type relation 测试额外注册的左右类型构造与期望结果指令。
+     */
     override val additionalDirectives: List<DirectivesContainer>
         get() = super.additionalDirectives + AnalysisApiTypeRelationTestDirectives
 
+    /**
+     * 执行公开类型关系测试。
+     *
+     * 方法构造左右两侧 `CaType`，并断言 subtype 与 semantic equality 查询结果。
+     */
     override fun doTestByMainFile(mainFile: CjFile, mainModule: CjTestModule, testServices: TestServices) {
         val directives = directivesForMainFile(mainFile, mainModule)
 

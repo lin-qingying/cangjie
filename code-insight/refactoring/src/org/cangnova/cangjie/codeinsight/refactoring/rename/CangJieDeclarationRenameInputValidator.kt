@@ -22,8 +22,14 @@ import org.cangnova.cangjie.psi.psiUtil.quoteIfNeeded
  * 标识符语法包裹后成立的名称，具体合法性仍交给 PSI lexer 判断。
  */
 class CangJieDeclarationRenameInputValidator : RenameInputValidator {
+    /**
+     * 仅对仓颉命名声明启用该输入校验器。
+     */
     override fun getPattern() = PlatformPatterns.psiElement(CjNamedDeclaration::class.java)
 
+    /**
+     * 校验 rename 新名称是否能作为普通或转义后的仓颉标识符。
+     */
     override fun isInputValid(newName: String, element: PsiElement, context: ProcessingContext): Boolean =
         newName.quoteIfNeeded().isIdentifier()
 }

@@ -7,11 +7,20 @@ import org.cangnova.cangjie.test.services.TestServices
 import org.cangnova.cangjie.test.services.assertions
 import org.junit.jupiter.api.Test
 
+/**
+ * 验证源码文件经过 analysis:stubs 摘要构建后的 golden 输出。
+ */
 class CaStubSourceGoldenTest : AbstractAnalysisApiExecutionTest(
     "analysis/stubs/testData/source",
 ) {
+    /**
+     * 使用 standalone CFIR 分析 API 配置执行 source stub golden 测试。
+     */
     override val configurator = CaCfirStandaloneAnalysisApiTestConfigurator
 
+    /**
+     * 验证主测试文件的顶层声明和成员摘要与 golden 文件一致。
+     */
     @Test
     fun topLevelDeclarations(mainFile: CjFile, testServices: TestServices) {
         val summary = CaStubSummaryBuilder().build(mainFile)
@@ -21,6 +30,9 @@ class CaStubSourceGoldenTest : AbstractAnalysisApiExecutionTest(
         )
     }
 
+    /**
+     * 将单文件 stub 摘要渲染为稳定的 golden 文本。
+     */
     private fun renderSummary(summary: CaStubFileSummary): String {
         return buildString {
             appendLine("fileKey=${summary.fileKey.substringAfterLast('/').substringAfterLast('\\')}")
@@ -39,5 +51,8 @@ class CaStubSourceGoldenTest : AbstractAnalysisApiExecutionTest(
         }.trimEnd()
     }
 
+    /**
+     * 将 Windows 换行统一为测试 golden 使用的 LF。
+     */
     private fun String.normalizeLineSeparators(): String = replace("\r\n", "\n")
 }

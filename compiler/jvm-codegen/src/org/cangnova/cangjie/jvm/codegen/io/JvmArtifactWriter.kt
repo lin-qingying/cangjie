@@ -8,7 +8,13 @@ import java.util.jar.JarEntry
 import java.util.jar.JarOutputStream
 import java.util.jar.Manifest
 
+/**
+ * 将 JVM codegen artifact 写入文件系统或 jar 的工具。
+ */
 class JvmArtifactWriter {
+    /**
+     * 把所有 class artifact 写入指定输出目录，并返回写出的文件路径。
+     */
     fun writeClasses(output: ChirJvmCodegenOutput, outputDirectory: Path): List<Path> {
         Files.createDirectories(outputDirectory)
         return output.classes.map { artifact ->
@@ -19,6 +25,9 @@ class JvmArtifactWriter {
         }
     }
 
+    /**
+     * 把所有 class artifact 打包为 jar，并在存在 main class 时写入 manifest。
+     */
     fun writeJar(output: ChirJvmCodegenOutput, jarPath: Path): Path {
         jarPath.parent?.let(Files::createDirectories)
         val manifest = Manifest().apply {
@@ -39,6 +48,9 @@ class JvmArtifactWriter {
     }
 
     private companion object {
+        /**
+         * 当前宿主文件系统路径分隔符，用于将 JVM internal path 映射为本地路径。
+         */
         val targetSeparator: Char = java.io.File.separatorChar
     }
 }

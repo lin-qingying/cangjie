@@ -3169,6 +3169,7 @@ class PsiRawCfirBuilder(
                 CfirTypeConstraintReference(
                     parameterName = parameterName,
                     source = parameterSource,
+                    boundTypeRefs = constraint.boundTypeReferences.map(::convertTypeRef),
                     constraintSource = constraint.toCjPsiSourceElement(),
                 )
             }

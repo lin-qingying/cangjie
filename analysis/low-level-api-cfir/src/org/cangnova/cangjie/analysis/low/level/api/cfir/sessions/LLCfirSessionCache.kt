@@ -25,9 +25,21 @@ import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.platform.CangJiePlatforms
 import org.cangnova.cangjie.utils.exceptions.requireWithAttachment
 
+/**
+ * 工程级 low-level CFIR session 缓存。
+ *
+ * 缓存按模块类型拆分存储，负责复用有效 session、创建新 session，并在返回前校验 session 有效性。
+ */
 @LLCfirInternals
 class LLCfirSessionCache(
+    /**
+     * 当前缓存所属工程。
+     */
     private val project: Project,
+
+    /**
+     * session 缓存底层存储集合。
+     */
     val storage: LLCfirSessionCacheStorage,
 ) : Disposable {
     constructor(project: Project) : this(
@@ -37,6 +49,9 @@ class LLCfirSessionCache(
 
     @OptIn(CaPlatformInterface::class)
     @CaCachedService
+    /**
+     * 模块信息提供器，用于跳过空模块依赖 session 创建。
+     */
     private val moduleInformationProvider by lazy(LazyThreadSafetyMode.PUBLICATION) {
         CangJieModuleInformationProvider.getInstance(project)
     }
@@ -73,11 +88,19 @@ class LLCfirSessionCache(
         return getSession(module, preferBinary = true)
     }
 
+    /**
+     * 从 [storage] 中取得或创建二进制库 session。
+     */
     private fun getBinaryLibraryCachedSession(module: CaModule, storage: SessionStorage): LLCfirSession =
         getCachedSession(module, storage) {
             createPlatformAwareSessionFactory(module).createBinaryLibrarySession(module)
         }
 
+    /**
+     * 取得 dangling file session。
+     *
+     * stable dangling module 使用普通缓存；unstable dangling module 需要检查文件修改戳，内容变化时重新创建 session。
+     */
     private fun getDanglingFileCachedSession(module: CaDanglingFileModule): LLCfirSession {
         if (module.isStable) {
             return getCachedSession(module, storage.danglingFileSessionCache, ::createSession)
@@ -99,6 +122,11 @@ class LLCfirSessionCache(
         return session
     }
 
+    /**
+     * 从指定 [storage] 中取得 [module] 的 session，不存在时通过 [factory] 创建。
+     *
+     * 对不能隔离创建的模块，先在 compute 外部创建 session，避免递归访问同一缓存导致更新异常。
+     */
     private fun <T : CaModule> getCachedSession(module: T, storage: SessionStorage, factory: (T) -> LLCfirSession): LLCfirSession {
         checkCanceled()
 
@@ -117,6 +145,9 @@ class LLCfirSessionCache(
         return session
     }
 
+    /**
+     * 校验缓存返回的 [session] 仍处于有效状态。
+     */
     private fun checkSessionValidity(session: LLCfirSession) {
         requireWithAttachment(session.isValid, { "A session acquired via `getSession` should always be valid." }) {
             withCaModuleEntry("module", session.caModule)
@@ -131,6 +162,9 @@ class LLCfirSessionCache(
     private val CaModule.supportsIsolatedSessionCreation: Boolean
         get() = this !is CaDanglingFileModule
 
+    /**
+     * 根据 [module] 类型创建对应 low-level CFIR session。
+     */
     private fun createSession(module: CaModule): LLCfirSession {
         val sessionFactory = createPlatformAwareSessionFactory(module)
         return when (module) {
@@ -149,18 +183,32 @@ class LLCfirSessionCache(
         }
     }
 
+    /**
+     * 创建适用于 [module] 的平台感知 session 工厂。
+     */
     private fun createPlatformAwareSessionFactory(module: CaModule): LLCfirAbstractSessionFactory {
         return LLCfirCommonSessionFactory(project)
     }
 
+    /**
+     * 释放 session cache 服务。
+     *
+     * 实际 session 清理由缓存存储和 invalidator 驱动，这里没有额外状态需要处理。
+     */
     override fun dispose() {
     }
 
     companion object {
+        /**
+         * 取得工程级 session cache 服务。
+         */
         fun getInstance(project: Project): LLCfirSessionCache = project.service()
     }
 }
 
+/**
+ * 应用所有通过 extension point 注册的 session 配置器。
+ */
 internal fun LLCfirSessionConfigurator.Companion.configure(session: LLCfirSession) {
     val project = session.project
     for (extension in extensionPointName.getExtensionList(project)) {
@@ -173,6 +221,9 @@ internal fun LLCfirSessionConfigurator.Companion.configure(session: LLCfirSessio
     level = DeprecationLevel.ERROR
 )
 @OptIn(PrivateSessionConstructor::class)
+/**
+ * 创建只用于 stub-based PSI 构建场景的空 CFIR session。
+ */
 fun createEmptySession(): CfirSession {
     return object : CfirSession(Kind.Source) {}.apply {
         val moduleData = CfirSourceModuleData(

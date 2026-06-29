@@ -27,8 +27,14 @@ import org.junit.jupiter.api.Test
 class AnalysisApiReferenceServiceTest : AbstractAnalysisApiExecutionTest(
     "analysis/analysis-api-cfir/testData/references",
 ) {
+    /**
+     * 使用 standalone CFIR 配置运行 contributor-based reference service 测试。
+     */
     override val configurator = CaCfirStandaloneAnalysisApiTestConfigurator
 
+    /**
+     * 验证 simple-name 引用通过统一 provider 解析到同名函数声明。
+     */
     @Test
     fun simpleReference(mainFile: CjFile) {
         val referenceExpression = PsiTreeUtil.findChildrenOfType(mainFile, CjSimpleNameExpression::class.java)
@@ -52,6 +58,9 @@ class AnalysisApiReferenceServiceTest : AbstractAnalysisApiExecutionTest(
         assertEquals("greet", resolvedDeclaration?.name)
     }
 
+    /**
+     * 验证 `mainReference` 入口与 contributor-based 引用服务解析结果一致。
+     */
     @Test
     fun simpleReferenceMainReference(mainFile: CjFile) {
         val referenceExpression = PsiTreeUtil.findChildrenOfType(mainFile, CjSimpleNameExpression::class.java)
@@ -62,6 +71,9 @@ class AnalysisApiReferenceServiceTest : AbstractAnalysisApiExecutionTest(
         assertEquals("greet", resolvedDeclaration?.name)
     }
 
+    /**
+     * 验证类型位置 simple-name 节点也能通过引用服务解析到类型声明。
+     */
     @Test
     fun typePositionReference(mainFile: CjFile) {
         val referenceExpression = PsiTreeUtil.findChildrenOfType(mainFile, CjSimpleNameExpression::class.java)
@@ -78,6 +90,9 @@ class AnalysisApiReferenceServiceTest : AbstractAnalysisApiExecutionTest(
         assertEquals("Box", resolvedDeclaration?.name)
     }
 
+    /**
+     * 验证声明名位置不会被 simple-name reference provider 误识别为引用。
+     */
     @Test
     fun declarationNamesDoNotProduceReferences(mainFile: CjFile) {
         val declarationOffset = mainFile.text.indexOf("result")

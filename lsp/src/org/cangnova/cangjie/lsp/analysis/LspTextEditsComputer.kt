@@ -10,6 +10,11 @@ import org.eclipse.lsp4j.TextEdit
  * 仓颉这里保持同一职责边界：refactoring 层只负责修改 PSI，LSP 适配层负责协议编辑表示。
  */
 internal object LspTextEditsComputer {
+    /**
+     * 计算旧文本到新文本之间的 LSP 文本编辑列表。
+     *
+     * 该方法按 token 粒度寻找公共前后缀和 LCS 锚点，尽量生成局部编辑而不是整文件替换。
+     */
     fun computeTextEdits(
         document: LspTextDocument,
         oldText: String,
@@ -40,6 +45,11 @@ internal object LspTextEditsComputer {
         return edits
     }
 
+    /**
+     * 在两个锚点之间存在差异时追加一个文本编辑。
+     *
+     * 编辑范围使用旧 token 的 analysis offset，替换文本由新 token 中间段拼接得到。
+     */
     private fun addEditIfNeeded(
         document: LspTextDocument,
         oldTokens: List<Token>,
@@ -65,6 +75,11 @@ internal object LspTextEditsComputer {
         edits += TextEdit(document.analysisRangeOf(startOffset, endOffset), replacement)
     }
 
+    /**
+     * 计算两段 token 序列的最长公共子序列锚点。
+     *
+     * 返回值中的 pair 表示旧序列和新序列中内容相同、可作为差异切分锚点的 token 下标。
+     */
     private fun lcsAnchors(
         oldTokens: List<Token>,
         newTokens: List<Token>,
@@ -103,6 +118,9 @@ internal object LspTextEditsComputer {
         return anchors
     }
 
+    /**
+     * 计算两段 token 序列从开头开始完全相同的长度。
+     */
     private fun commonPrefixLength(
         oldTokens: List<Token>,
         newTokens: List<Token>,
@@ -115,6 +133,9 @@ internal object LspTextEditsComputer {
         return index
     }
 
+    /**
+     * 计算两段 token 序列在指定公共前缀之后仍然相同的后缀长度。
+     */
     private fun commonSuffixLength(
         oldTokens: List<Token>,
         newTokens: List<Token>,
@@ -133,6 +154,11 @@ internal object LspTextEditsComputer {
         return suffix
     }
 
+    /**
+     * 将文本切分为重命名差异计算使用的 token 序列。
+     *
+     * 标识符字符连续合并为一个 token，其他字符按单字符 token 保留，以便精确恢复空白和标点。
+     */
     private fun tokenize(text: String): List<Token> {
         if (text.isEmpty()) return emptyList()
 
@@ -153,11 +179,28 @@ internal object LspTextEditsComputer {
         return tokens
     }
 
+    /**
+     * 判断字符是否属于标识符风格的单词 token。
+     */
     private fun Char.isWordPart(): Boolean = isLetterOrDigit() || this == '_'
 
+    /**
+     * 表示差异算法中的一个文本 token。
+     */
     private data class Token(
+        /**
+         * token 的原始文本。
+         */
         val text: String,
+
+        /**
+         * token 在原文本中的起始 offset。
+         */
         val start: Int,
+
+        /**
+         * token 在原文本中的结束 offset。
+         */
         val end: Int,
     )
 }

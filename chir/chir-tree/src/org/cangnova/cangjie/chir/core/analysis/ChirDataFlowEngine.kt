@@ -7,29 +7,81 @@ import org.cangnova.cangjie.chir.core.controlflow.ChirUnwindTerminator
 import org.cangnova.cangjie.chir.core.declaration.ChirFunctionDeclaration
 import org.cangnova.cangjie.chir.core.identity.ChirSemanticId
 
+/**
+ * 数据流分析方向。
+ */
 enum class ChirDataFlowDirection {
     FORWARD,
     BACKWARD,
 }
 
+/**
+ * 数据流分析使用的格接口。
+ */
 interface ChirLattice<S> {
+    /**
+     * 返回格的 top 状态。
+     */
     fun top(): S
+
+    /**
+     * 合并两个状态。
+     */
     fun join(left: S, right: S): S
 }
 
+/**
+ * 数据流分析结果。
+ */
 data class ChirDataFlowResult<S>(
+    /**
+     * 每个基本块入口状态。
+     */
     val inState: Map<ChirSemanticId, S>,
+
+    /**
+     * 每个基本块出口状态。
+     */
     val outState: Map<ChirSemanticId, S>,
+
+    /**
+     * 收敛所需迭代次数。
+     */
     val iterations: Int,
 )
 
+/**
+ * 通用 CHIR 数据流分析引擎。
+ */
 class ChirDataFlowEngine<S>(
+    /**
+     * 分析方向。
+     */
     private val direction: ChirDataFlowDirection,
+
+    /**
+     * 状态格。
+     */
     private val lattice: ChirLattice<S>,
+
+    /**
+     * 单个基本块上的 transfer 函数。
+     */
     private val transfer: (ChirBlock, S) -> S,
+
+    /**
+     * 前向分析入口种子状态。
+     */
     private val entrySeed: S? = null,
+
+    /**
+     * 后向分析出口种子状态。
+     */
     private val exitSeed: S? = null,
 ) {
+    /**
+     * 对 [function] 执行数据流分析直到收敛。
+     */
     fun analyze(function: ChirFunctionDeclaration): ChirDataFlowResult<S> {
         require(function.blocks.isNotEmpty()) { "function ${function.name} has no blocks" }
 
@@ -110,6 +162,9 @@ class ChirDataFlowEngine<S>(
         )
     }
 
+    /**
+     * 构建基本块后继映射。
+     */
     private fun buildSuccessorMap(blocks: List<ChirBlock>): Map<ChirSemanticId, Set<ChirSemanticId>> {
         return blocks.associate { block ->
             val next = when (val terminator = block.terminator) {
@@ -122,6 +177,9 @@ class ChirDataFlowEngine<S>(
         }
     }
 
+    /**
+     * 根据后继映射构建基本块前驱映射。
+     */
     private fun buildPredecessorMap(
         blocks: List<ChirBlock>,
         successors: Map<ChirSemanticId, Set<ChirSemanticId>>,
@@ -135,6 +193,9 @@ class ChirDataFlowEngine<S>(
         return mutable
     }
 
+    /**
+     * 对状态列表执行 join；列表为空时返回 [seed]。
+     */
     private fun List<S>.foldOptionalJoin(seed: S, lattice: ChirLattice<S>): S {
         if (isEmpty()) return seed
         return drop(1).fold(first()) { acc, state -> lattice.join(acc, state) }

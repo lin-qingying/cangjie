@@ -26,6 +26,10 @@ import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 internal abstract class LLSelectingCombinedSymbolProvider<PROVIDER : CfirSymbolProvider>(
     session: CfirSession,
     project: Project,
+
+    /**
+     * 按 classpath 顺序排列的候选 provider。
+     */
     override val providers: List<PROVIDER>,
 ) : LLCombinedSymbolProvider<PROVIDER>(session) {
     /**
@@ -50,8 +54,14 @@ internal abstract class LLSelectingCombinedSymbolProvider<PROVIDER : CfirSymbolP
     @CaCachedService
     private val projectStructureProvider: CangJieProjectStructureProvider = CangJieProjectStructureProvider.getInstance(project)
 
+    /**
+     * 当前 combined provider 所属 session 的上下文模块。
+     */
     private val contextualModule = session.llCfirModuleData.caModule
 
+    /**
+     * 根据当前上下文模块解析 [element] 所属模块。
+     */
     protected fun getModule(element: PsiElement): CaModule {
         return projectStructureProvider.getModule(element, contextualModule)
     }
@@ -94,6 +104,9 @@ internal abstract class LLSelectingCombinedSymbolProvider<PROVIDER : CfirSymbolP
         return Pair(candidate, provider)
     }
 
+    /**
+     * 返回 [module] 对应的底层 provider。
+     */
     protected fun getProviderByModule(module: CaModule): PROVIDER? =
         moduleToIndex[module]?.let { providers[it] }
 }

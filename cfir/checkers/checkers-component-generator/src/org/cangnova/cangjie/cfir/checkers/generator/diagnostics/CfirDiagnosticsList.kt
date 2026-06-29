@@ -399,6 +399,38 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
             parameter<String>("calleeName")
         }
 
+        // 字段初始化器中 this/super 初始化非 static 成员，对齐官方 sema_this_or_super_not_allowed_to_initialize_non_static_member。
+        val THIS_OR_SUPER_NOT_ALLOWED_TO_INITIALIZE_NON_STATIC_MEMBER by error<PsiElement>(
+            PositioningStrategy.REFERENCED_NAME_BY_QUALIFIED
+        ) {
+            parameter<String>("calleeName")
+        }
+
+        // 字段初始化器中 this/super 初始化 static 成员，对齐官方 sema_this_or_super_not_allowed_to_initialize_static_member。
+        val THIS_OR_SUPER_NOT_ALLOWED_TO_INITIALIZE_STATIC_MEMBER by error<PsiElement>(
+            PositioningStrategy.REFERENCED_NAME_BY_QUALIFIED
+        ) {
+            parameter<String>("calleeName")
+        }
+
+        // this/super 出现在 class/struct/interface 外部，对齐官方 sema_this_super_use_error_outside_class。
+        val THIS_SUPER_USE_ERROR_OUTSIDE_CLASS by error<PsiElement>(PositioningStrategy.REFERENCED_NAME_BY_QUALIFIED) {
+            parameter<String>("calleeName")
+        }
+
+        // this(...)/super(...) 出现在构造器外部，对齐官方 sema_invalid_this_call_outside_ctor。
+        val INVALID_THIS_CALL_OUTSIDE_CTOR by error<PsiElement>(PositioningStrategy.REFERENCED_NAME_BY_QUALIFIED) {
+            parameter<String>("calleeName")
+        }
+
+        // 裸 super 不能作为普通表达式，对齐官方 sema_illegal_super_alone。
+        val ILLEGAL_SUPER_ALONE by error<PsiElement>(PositioningStrategy.REFERENCED_NAME_BY_QUALIFIED)
+
+        // struct 构造器或成员函数外使用 this，对齐官方 sema_illegal_this_outside_struct_constructor。
+        val ILLEGAL_THIS_OUTSIDE_STRUCT_CONSTRUCTOR by error<PsiElement>(
+            PositioningStrategy.REFERENCED_NAME_BY_QUALIFIED
+        )
+
         // this/super 构造器委托调用不是构造器第一条语句，对齐官方 sema_illegal_place_of_calling_this_or_super。
         val ILLEGAL_PLACE_OF_CALLING_THIS_OR_SUPER by error<PsiElement>() {
             parameter<String>("calleeName")
@@ -434,6 +466,31 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
 
         // static 函数体中禁止引用实例 this。
         val STATIC_MEMBERS_CANNOT_CALL_MEMBERS by error<PsiElement>()
+
+        // 类型名不能访问实例成员，对齐官方 sema_illegal_access_non_static_member。
+        val ILLEGAL_ACCESS_NON_STATIC_MEMBER by error<PsiElement>() {
+            parameter<Name>("memberName")
+        }
+
+        // static 函数体中禁止引用实例成员。
+        val STATIC_FUNCTION_CANNOT_ACCESS_NON_STATIC_MEMBER by error<PsiElement>() {
+            parameter<Name>("memberName")
+        }
+
+        // static 上下文中的 lambda 体禁止引用实例成员。
+        val STATIC_LAMBDA_CANNOT_ACCESS_NON_STATIC by error<PsiElement>() {
+            parameter<Name>("memberName")
+        }
+
+        // static 变量初始化器中禁止引用实例成员。
+        val STATIC_VARIABLE_CANNOT_ACCESS_NON_STATIC_MEMBER by error<PsiElement>() {
+            parameter<Name>("memberName")
+        }
+
+        // 对象不能访问 static 成员，对齐官方 sema_object_cannot_access_static_member。
+        val OBJECT_CANNOT_ACCESS_STATIC_MEMBER by error<PsiElement>() {
+            parameter<Name>("memberName")
+        }
 
         // 父类不存在可隐式调用的无参构造器，要求显式 super(...)
         val EXPLICIT_SUPER_CALL_REQUIRED by error<PsiElement>(PositioningStrategy.ACTUAL_DECLARATION_NAME)

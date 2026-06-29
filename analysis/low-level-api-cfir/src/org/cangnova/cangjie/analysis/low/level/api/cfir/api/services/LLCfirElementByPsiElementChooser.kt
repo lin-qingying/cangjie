@@ -25,10 +25,19 @@ import org.cangnova.cangjie.psi.CjTypeParameter
  * Standalone mode, deserialized symbols do not have sources and require more sophisticated choosing logic.
  */
 abstract class LLCfirElementByPsiElementChooser {
+    /**
+     * 判断 PSI value parameter 是否对应候选 CFIR value parameter。
+     */
     abstract fun isMatchingValueParameter(psi: CjParameter, fir: CfirValueParameter): Boolean
 
+    /**
+     * 判断 PSI type parameter 是否对应候选 CFIR type parameter。
+     */
     abstract fun isMatchingTypeParameter(psi: CjTypeParameter, fir: CfirTypeParameter): Boolean
 
+    /**
+     * 判断 PSI callable 声明是否对应候选 CFIR callable 声明。
+     */
     abstract fun isMatchingCallableDeclaration(psi: CjCallableDeclaration, fir: CfirCallableDeclaration): Boolean
 
     companion object {

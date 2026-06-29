@@ -16,8 +16,15 @@ import org.cangnova.cangjie.psi.CjFile
  *  对于反编译或合成产物,该字段可能为 `null`。
  */
 data class CaLightDeclarationOrigin(
+    /** Light declaration 的来源类别。 */
     val kind: CaLightDeclarationOriginKind,
+
+    /** 来源的人类可读描述。 */
     val description: String,
+
+    /** 来源声明所在的仓颉文件，纯合成来源可为 `null`。 */
     val containingFile: CjFile?,
+
+    /** 与 light declaration 对齐的原始 PSI 元素。 */
     val sourceElement: PsiElement?,
 )

@@ -1,4 +1,5 @@
 // LANGUAGE: +EffectHandlers
+// WITH_EXTRA_CHECKERS
 // FILE: effect_defs.cj
 package stdx.effect
 
@@ -14,7 +15,7 @@ class GoodCommand <: Command<Int64> {}
 
 func mismatchHandleBlockInIntTry(): Unit {
     try {
-        <!UNUSED_EXPRESSION!>1<!>
+        1
     } handle (cmd: GoodCommand) <!MISMATCHING_HANDLE_BLOCK!>{
         false
     }<!>
@@ -22,7 +23,7 @@ func mismatchHandleBlockInIntTry(): Unit {
 
 func mismatchHandleBlockInBoolTry(): Unit {
     try {
-        <!UNUSED_EXPRESSION!>true<!>
+        true
     } handle (cmd: GoodCommand) <!MISMATCHING_HANDLE_BLOCK!>{
         1
     }<!>

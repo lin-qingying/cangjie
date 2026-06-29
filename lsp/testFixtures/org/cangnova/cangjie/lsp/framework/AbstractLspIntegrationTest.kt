@@ -23,11 +23,20 @@ import org.junit.jupiter.api.BeforeEach
  * 具体测试只保留交互动作和断言。
  */
 abstract class AbstractLspIntegrationTest {
+    /**
+     * 默认创建的 LSP 集成测试会话。
+     */
     protected lateinit var session: LspIntegrationTestSession
         private set
 
+    /**
+     * 是否在每个测试前自动创建默认会话。
+     */
     protected open val autoCreateDefaultSession: Boolean = true
 
+    /**
+     * 在测试前创建默认 LSP 会话。
+     */
     @BeforeEach
     fun setUpLspSession() {
         if (autoCreateDefaultSession) {
@@ -35,6 +44,9 @@ abstract class AbstractLspIntegrationTest {
         }
     }
 
+    /**
+     * 在测试后关闭自动创建的默认 LSP 会话。
+     */
     @AfterEach
     fun tearDownLspSession() {
         if (autoCreateDefaultSession && ::session.isInitialized) {
@@ -42,6 +54,9 @@ abstract class AbstractLspIntegrationTest {
         }
     }
 
+    /**
+     * 使用给定服务端选项创建并初始化 LSP 会话。
+     */
     protected open fun createSession(
         options: CangjieLspServerOptions = defaultServerOptions(),
     ): LspIntegrationTestSession {
@@ -51,6 +66,9 @@ abstract class AbstractLspIntegrationTest {
         return LspIntegrationTestSession(connection)
     }
 
+    /**
+     * 使用完整 initialize 参数创建并初始化 LSP 会话。
+     */
     protected open fun createSession(
         params: InitializeParams,
         options: CangjieLspServerOptions = defaultServerOptions(),
@@ -61,6 +79,9 @@ abstract class AbstractLspIntegrationTest {
         return LspIntegrationTestSession(connection)
     }
 
+    /**
+     * 使用根 URI 和客户端能力创建并初始化 LSP 会话。
+     */
     protected fun createSession(
         rootUri: String,
         capabilities: ClientCapabilities,
@@ -75,8 +96,14 @@ abstract class AbstractLspIntegrationTest {
         )
     }
 
+    /**
+     * 返回全功能客户端能力配置。
+     */
     protected fun fullFeaturedCapabilities(): ClientCapabilities = LspClientCapabilitiesBuilder.fullFeatured()
 
+    /**
+     * 构造测试默认服务端选项。
+     */
     protected open fun defaultServerOptions(): CangjieLspServerOptions {
         return CangjieLspServerOptions(
             descriptor = defaultDescriptor(),
@@ -88,5 +115,8 @@ abstract class AbstractLspIntegrationTest {
         )
     }
 
+    /**
+     * 构造测试默认服务端静态能力描述。
+     */
     protected open fun defaultDescriptor(): CangjieLanguageServerDescriptor = CangjieLanguageServerDescriptor()
 }

@@ -80,6 +80,9 @@ internal object ErrorClassTypeQualifierBuilder {
         return createQualifiersByClassSymbol(diagnostic.symbol, builder)
     }
 
+    /**
+     * 沿 CFIR class-like 符号的外层类链构造已解析 qualifier。
+     */
     private fun createQualifiersByClassSymbol(
         symbol: CfirClassLikeSymbol<*>,
         builder: CaSymbolByCfirBuilder,

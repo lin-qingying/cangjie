@@ -43,6 +43,9 @@ import java.nio.file.Paths
  * 这些测试不验证具体宏语义，只防止旧 ordinary resolve / text patch 通道回流。
  */
 class MacroConstructionArchitectureGuardTest {
+    /**
+     * 验证普通 CFIR resolve phase 枚举中不会重新引入 MACRO_EXPAND。
+     */
     @Test
     fun resolvePhaseModelDoesNotContainMacroExpandPhase() {
         assertFalse(
@@ -57,6 +60,9 @@ class MacroConstructionArchitectureGuardTest {
         )
     }
 
+    /**
+     * 验证 ordinary resolve 路径不再引用旧宏展开 phase 或 processor。
+     */
     @Test
     fun ordinaryResolveSourcesDoNotReferenceRemovedMacroExpandPhase() {
         val forbiddenPatterns = listOf(
@@ -80,6 +86,9 @@ class MacroConstructionArchitectureGuardTest {
         )
     }
 
+    /**
+     * 验证 source provider 不暴露 recordFile 旁路 API。
+     */
     @Test
     fun sourceProviderDoesNotExposeRecordFile() {
         val publicMethodNames = CfirProviderImpl::class.java.methods.mapTo(mutableSetOf()) { it.name }
@@ -95,6 +104,9 @@ class MacroConstructionArchitectureGuardTest {
         )
     }
 
+    /**
+     * 验证 runResolution 入口不接受裸 CfirFile 列表。
+     */
     @Test
     fun runResolutionDoesNotAcceptBareCfirFileList() {
         val analyseSource = readRepoFile("cfir/entrypoint/src/org/cangnova/cangjie/cfir/pipeline/analyse.kt")
@@ -109,6 +121,9 @@ class MacroConstructionArchitectureGuardTest {
         )
     }
 
+    /**
+     * 验证语义宏路径不再引用 text patch 宏展开实现。
+     */
     @Test
     fun semanticMacroPathDoesNotReferenceTextPatchExpansion() {
         val forbiddenTokens = listOf(
@@ -136,6 +151,9 @@ class MacroConstructionArchitectureGuardTest {
         )
     }
 
+    /**
+     * 验证 source provider 注册只能走最终 registrar。
+     */
     @Test
     fun sourceProviderRegistrationUsesFinalRegistrarOnly() {
         val forbiddenPatterns = listOf(
@@ -158,6 +176,9 @@ class MacroConstructionArchitectureGuardTest {
             )
     }
 
+    /**
+     * 验证 PSI 和 LightTree raw builder 覆盖所有宏 surface 形态。
+     */
     @Test
     fun rawBuildersCoverAllMacroSurfaceShapes() {
         val requiredMacroSurfaceConstructions = listOf(
@@ -213,6 +234,9 @@ class MacroConstructionArchitectureGuardTest {
         )
     }
 
+    /**
+     * 验证表达式宏 raw builder 不再创建旧 CfirMacroExpression carrier。
+     */
     @Test
     fun rawExpressionMacroBuildersDoNotCreateLegacyCfirMacroExpressionCarrier() {
         val builderSources = listOf(
@@ -240,6 +264,9 @@ class MacroConstructionArchitectureGuardTest {
         )
     }
 
+    /**
+     * 验证前端稳定 splicer 使用 replace handle carrier 身份匹配。
+     */
     @Test
     fun frontendStableSplicerUsesReplaceHandleCarrierIdentity() {
         val source = readRepoFile("compiler/frontend/src/org/cangnova/cangjie/frontend/pipeline/MacroExpandPhase.kt")
@@ -254,6 +281,9 @@ class MacroConstructionArchitectureGuardTest {
         )
     }
 
+    /**
+     * 验证宏构造 API 支持 forest、executor、fragment parser 和 splice 主链路。
+     */
     @Test
     fun macroConstructionApiSupportsExecutableForestExecutorFragmentSpliceChain() {
         val surface = macroSurface(
@@ -325,6 +355,9 @@ class MacroConstructionArchitectureGuardTest {
         assertEquals(surface.replaceHandle, splicer.slots.single().handle)
     }
 
+    /**
+     * 验证前端宏构造服务主流程仍显式串联 forest/evaluator/executor/parser/splicer。
+     */
     @Test
     fun frontendMacroConstructionServiceMainFlowReferencesForestExecutorFragmentAndSplice() {
         val source = readRepoFile("compiler/frontend/src/org/cangnova/cangjie/frontend/pipeline/MacroExpandPhase.kt")
@@ -344,6 +377,9 @@ class MacroConstructionArchitectureGuardTest {
         )
     }
 
+    /**
+     * 验证内建 sourceFile/sourceLine 宏使用真实源文件元数据。
+     */
     @Test
     fun frontendMacroConstructionServiceDoesNotUseDebugSourceForBuiltinMacroPosition() {
         val source = readRepoFile("compiler/frontend/src/org/cangnova/cangjie/frontend/pipeline/MacroExpandPhase.kt")
@@ -362,6 +398,9 @@ class MacroConstructionArchitectureGuardTest {
         )
     }
 
+    /**
+     * 验证前端宏构造默认使用真实仓颉内建非宏 desugarer。
+     */
     @Test
     fun frontendMacroConstructionServiceUsesRealBuiltinNonMacroDesugarerByDefault() {
         val source = readRepoFile("compiler/frontend/src/org/cangnova/cangjie/frontend/pipeline/MacroExpandPhase.kt")
@@ -377,6 +416,9 @@ class MacroConstructionArchitectureGuardTest {
         )
     }
 
+    /**
+     * 验证宏构造诊断携带 alias conflict 的结构化 payload。
+     */
     @Test
     fun macroConstructionDiagnosticsUseStructuredAliasConflictPayload() {
         val apiSource = readRepoFile("cfir/providers/src/org/cangnova/cangjie/cfir/resolve/providers/macro/MacroConstructionApi.kt")
@@ -410,6 +452,9 @@ class MacroConstructionArchitectureGuardTest {
         )
     }
 
+    /**
+     * 验证 ordinary checker 诊断通过宏 registry 重映射到原始宏位置。
+     */
     @Test
     fun ordinaryCheckerDiagnosticsAreRemappedThroughMacroRegistry() {
         val apiSource = readRepoFile("cfir/providers/src/org/cangnova/cangjie/cfir/resolve/providers/macro/MacroConstructionApi.kt")
@@ -454,6 +499,9 @@ class MacroConstructionArchitectureGuardTest {
         )
     }
 
+    /**
+     * 验证 resolve/check 主流程保持构造先于 provider 注册和 ordinary resolve。
+     */
     @Test
     fun resolveAndCheckMainFlowKeepsConstructionBeforeProviderRegistrationAndOrdinaryResolve() {
         val source = readRepoFile("cfir/entrypoint/src/org/cangnova/cangjie/cfir/pipeline/analyse.kt")
@@ -495,6 +543,9 @@ class MacroConstructionArchitectureGuardTest {
         )
     }
 
+    /**
+     * 验证 token 重评估会迭代到稳定状态。
+     */
     @Test
     fun tokenReEvaluatorReachesFixedPoint() {
         val initial = listOf(MacroSurfaceToken(text = "foo  42", startOffset = 0, endOffset = 7))
@@ -516,6 +567,9 @@ class MacroConstructionArchitectureGuardTest {
         assertEquals(2, calls, "Stable iteration must verify with one extra tokenizer call after the first split.")
     }
 
+    /**
+     * 验证 token-backed fragment parser 在 reparse 失败时返回 Failure。
+     */
     @Test
     fun tokenBackedFragmentParserReportsFailureWhenReparseReturnsNull() {
         val surface = macroSurface(
@@ -543,6 +597,9 @@ class MacroConstructionArchitectureGuardTest {
         )
     }
 
+    /**
+     * 验证宏展开 cache key 暴露 baseline 要求的十三个维度。
+     */
     @Test
     fun macroExpansionCacheKeyExposesThirteenDimensions() {
         val properties = org.cangnova.cangjie.cfir.resolve.providers.macro.MacroExpansionCacheKey::class
@@ -560,6 +617,9 @@ class MacroConstructionArchitectureGuardTest {
         )
     }
 
+    /**
+     * 验证前端宏构造服务会为每个文件注册 cache key。
+     */
     @Test
     fun frontendMacroConstructionServiceRegistersCacheKeyPerFile() {
         val source = readRepoFile("compiler/frontend/src/org/cangnova/cangjie/frontend/pipeline/MacroExpandPhase.kt")
@@ -590,6 +650,9 @@ class MacroConstructionArchitectureGuardTest {
         )
     }
 
+    /**
+     * 验证前端管线在 artifact resolver 前运行 expansion-demand 宏包编译。
+     */
     @Test
     fun frontendPipelineRunsExpansionDemandedMacroPackageCompilationBeforeArtifactResolution() {
         val pipelineSource = readRepoFile("compiler/frontend/src/org/cangnova/cangjie/frontend/pipeline/CfirFrontendPipelinePhase.kt")
@@ -645,9 +708,15 @@ class MacroConstructionArchitectureGuardTest {
         )
     }
 
+    /**
+     * 从仓库根目录读取指定源码文件。
+     */
     private fun readRepoFile(relativePath: String): String =
         Files.readString(root.resolve(relativePath), UTF_8)
 
+    /**
+     * 收集指定顶层目录下的 Kotlin 源文件。
+     */
     private fun sourceFilesUnder(vararg topLevelDirs: String): List<Path> =
         topLevelDirs.flatMap { dir ->
             val start = root.resolve(dir)
@@ -665,6 +734,9 @@ class MacroConstructionArchitectureGuardTest {
             }
         }
 
+    /**
+     * 判断路径是否位于生成目录或构建输出目录。
+     */
     private fun isGeneratedOrBuildOutput(path: Path): Boolean {
         val relative = root.relativize(path)
         return relative.any { part ->
@@ -672,6 +744,9 @@ class MacroConstructionArchitectureGuardTest {
         }
     }
 
+    /**
+     * 构造测试用表达式宏 surface。
+     */
     private fun macroSurface(
         surfaceId: Long,
         name: String,
@@ -706,14 +781,29 @@ class MacroConstructionArchitectureGuardTest {
         )
     }
 
+    /**
+     * 记录执行调用并返回固定 token 的宏执行器。
+     */
     private class RecordingMacroExecutor(
+        /**
+         * 每次执行返回的 token 列表。
+         */
         private val resultTokens: List<TokenInfo>,
     ) : MacroExecutor {
+        /**
+         * 已执行的宏调用记录。
+         */
         val executedCalls: MutableList<MacroCallInfo> = mutableListOf()
 
+        /**
+         * 测试执行器假定动态库加载成功。
+         */
         override fun loadLibraries(libPaths: List<String>) =
             org.cangnova.cangjie.macro.MacroLibraryLoadResult.Success(libPaths.toList())
 
+        /**
+         * 记录调用并返回固定成功结果。
+         */
         override fun execute(calls: List<MacroCallInfo>): List<MacroExpansionResult> {
             executedCalls += calls
             return calls.map {
@@ -724,18 +814,39 @@ class MacroConstructionArchitectureGuardTest {
             }
         }
 
+        /**
+         * 测试执行器无状态重置。
+         */
         override fun reset() {}
 
+        /**
+         * 测试执行器始终可用。
+         */
         override fun isAvailable(): Boolean = true
 
+        /**
+         * 测试执行器关闭时不释放资源。
+         */
         override fun close() {}
     }
 
+    /**
+     * raw builder 源码组。
+     */
     private data class BuilderSourceGroup(
+        /**
+         * 用于错误消息展示的分组名。
+         */
         val displayName: String,
+        /**
+         * 参与该分组检查的源码相对路径。
+         */
         val relativePaths: List<String>,
     )
 
+    /**
+     * 构造表达式宏 surface 对应的最终决策。
+     */
     private fun expressionDecision(surface: MacroSurface): FinalMacroSurfaceDecision =
         FinalMacroSurfaceDecision(
             surface = surface,
@@ -751,9 +862,18 @@ class MacroConstructionArchitectureGuardTest {
             blockedDiagnostic = null,
         )
 
+    /**
+     * 测试类共享的仓库根。
+     */
     private companion object {
+        /**
+         * 当前 checkout 根目录。
+         */
         val root: Path = findRepoRoot()
 
+        /**
+         * 从当前工作目录向上查找仓库根。
+         */
         private fun findRepoRoot(): Path {
             var current = Paths.get("").toAbsolutePath()
             while (current.parent != null) {

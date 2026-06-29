@@ -46,10 +46,16 @@ class CjEnumConstructor : CjModifierListOwnerStub<CangJieEnumConstructorStub>,Cj
 
     constructor(stub: CangJieEnumConstructorStub) : super(stub, CjStubElementTypes.ENUM_CONSTRUCTOR)
 
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitEnumConstructor(this, data)
     }
 
+    /**
+     * 实现 `getName` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getName(): String? {
         val stub = greenStub
         if (stub != null) {
@@ -58,11 +64,17 @@ class CjEnumConstructor : CjModifierListOwnerStub<CangJieEnumConstructorStub>,Cj
         return nameIdentifier?.text
     }
 
+    /**
+     * 实现 `setName` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun setName(name: String): PsiElement {
         // 枚举构造器名称通常不支持重命名
         return this
     }
 
+    /**
+     * 实现 `getNameIdentifier` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getNameIdentifier(): PsiElement? {
         return findChildByType(CjTokens.IDENTIFIER)
     }
@@ -118,6 +130,9 @@ class CjEnumConstructor : CjModifierListOwnerStub<CangJieEnumConstructorStub>,Cj
      */
     override val annotations: CjAnnotations?
         get() = getStubOrPsiChild(CjStubElementTypes.ANNOTATIONS)
+    /**
+     * 暴露 `annotationEntries`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val annotationEntries: List<CjAnnotation>
         get() = annotations?.entries ?: emptyList()
 
@@ -127,19 +142,31 @@ class CjEnumConstructor : CjModifierListOwnerStub<CangJieEnumConstructorStub>,Cj
     override val modifierList: CjDeclarationModifierList?
         get() = getStubOrPsiChild(CjStubElementTypes.MODIFIER_LIST)
 
+    /**
+     * 实现 `hasModifier` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun hasModifier(modifier: CjKeywordToken): Boolean {
         val modifierList = modifierList
         return modifierList != null && modifierList.hasModifier(modifier)
     }
 
+    /**
+     * 实现 `addModifier` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun addModifier(modifier: CjKeywordToken) {
         org.cangnova.cangjie.psi.psiUtil.addModifier(this, modifier)
     }
 
+    /**
+     * 实现 `removeModifier` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun removeModifier(modifier: CjKeywordToken) {
         org.cangnova.cangjie.psi.psiUtil.removeModifier(this, modifier)
     }
 
+    /**
+     * 实现 `toString` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun toString(): String {
         return "CjEnumConstructor(${name ?: "<anonymous>"})"
     }

@@ -72,8 +72,17 @@ import org.cangnova.cangjie.utils.exceptions.withPsiEntry
  * 符号关系组件。
  */
 internal class CaCfirSymbolRelationProvider(
+    /**
+     * 延迟取得当前 CFIR Analysis session，保证组件访问始终落在有效生命周期内。
+     */
     override val analysisSessionProvider: () -> CaCfirSession,
 ) : CaBaseSessionComponent<CaCfirSession>(), CaSymbolRelationProvider {
+    /**
+     * 返回符号的语义包含声明。
+     *
+     * 该属性优先处理 accessor、参数、类型参数等依赖所属声明的符号，
+     * 再回退到 CFIR owner 或 PSI 父级，确保源码符号、悬空文件符号和合成符号拥有一致的公开父子关系。
+     */
     override val CaSymbol.containingDeclaration: CaDeclarationSymbol?
         get() = withValidityAssertion {
             if (!hasParentSymbol(this@containingDeclaration)) {
@@ -120,6 +129,9 @@ internal class CaCfirSymbolRelationProvider(
             return@withValidityAssertion getContainingDeclarationByPsi(this@containingDeclaration)
         }
 
+    /**
+     * 解析必须依附其他声明存在的符号的直接宿主声明。
+     */
     private fun getContainingDeclarationForDependentDeclaration(symbol: CaSymbol): CaDeclarationSymbol? {
         return when (symbol) {
             is CaPropertyAccessorSymbol -> symbol.owningProperty
@@ -135,6 +147,9 @@ internal class CaCfirSymbolRelationProvider(
         }
     }
 
+    /**
+     * 判断符号是否理论上应该拥有公开的父声明。
+     */
     private fun hasParentSymbol(symbol: CaSymbol): Boolean {
         return when (symbol) {
             is CaPackageSymbol,
@@ -146,11 +161,17 @@ internal class CaCfirSymbolRelationProvider(
         }
     }
 
+    /**
+     * 通过源码 PSI 父级恢复符号的公开包含声明。
+     */
     private fun getContainingDeclarationByPsi(symbol: CaSymbol): CaDeclarationSymbol? {
         val containingDeclaration = getContainingPsi(symbol) ?: return null
         return with(analysisSession) { containingDeclaration.symbol }
     }
 
+    /**
+     * 从 CFIR source 信息中取得用于推导包含关系的 PSI 声明。
+     */
     private fun getContainingPsi(symbol: CaSymbol): CjDeclaration? {
         val source = (symbol as? CaCfirSymbol<*>)?.cfirSymbol?.cfir?.source
             ?: errorWithAttachment("PSI should present for declaration built by CangJie code") {
@@ -160,6 +181,9 @@ internal class CaCfirSymbolRelationProvider(
         return getContainingPsi(symbol, source)
     }
 
+    /**
+     * 根据 source kind 将真实源码、假 source 和合成声明映射为包含声明 PSI。
+     */
     private fun getContainingPsi(symbol: CaSymbol, source: CjSourceElement): CjDeclaration? {
         getContainingPsiForFakeSource(source)?.let { return it }
 
@@ -201,6 +225,9 @@ internal class CaCfirSymbolRelationProvider(
         }
     }
 
+    /**
+     * 判断符号是否携带足够的 PSI 信息来恢复父级声明。
+     */
     private fun hasParentPsi(symbol: CaSymbol): Boolean {
         val source = (symbol as? CaCfirSymbol<*>)?.cfirSymbol?.cfir?.source?.takeIf { it.psi is CjElement } ?: return false
 
@@ -209,16 +236,25 @@ internal class CaCfirSymbolRelationProvider(
             isOrdinarySymbolWithSource(symbol)
     }
 
+    /**
+     * 判断合成符号是否可以直接把 source PSI 视为包含声明。
+     */
     private fun isSyntheticSymbolWithParentSource(symbol: CaSymbol): Boolean {
         return when (symbol.origin) {
             else -> false
         }
     }
 
+    /**
+     * 判断符号是否是普通源码声明，可按 PSI 父链寻找包含声明。
+     */
     private fun isOrdinarySymbolWithSource(symbol: CaSymbol): Boolean {
         return symbol.origin == CaSymbolOrigin.SOURCE
     }
 
+    /**
+     * 为 CFIR 假 source kind 恢复它们在公开 API 中应呈现的源码容器。
+     */
     private fun getContainingPsiForFakeSource(source: CjSourceElement): CjDeclaration? {
         return when (source.kind) {
             CjFakeSourceElementKind.ImplicitConstructor -> source.psi as CjDeclaration
@@ -239,6 +275,9 @@ internal class CaCfirSymbolRelationProvider(
         }
     }
 
+    /**
+     * 沿 PSI 父链查找最近的仓颉声明，并优先返回原始声明。
+     */
     private fun PsiElement.getContainingPsiDeclaration(): CjDeclaration? {
         for (parent in parents) {
             if (parent is CjDeclaration) {
@@ -249,12 +288,18 @@ internal class CaCfirSymbolRelationProvider(
         return null
     }
 
+    /**
+     * 比较两个公开符号是否代表同一个底层声明实体。
+     */
     override fun CaSymbol.isEquivalentTo(other: CaSymbol): Boolean = withValidityAssertion {
         this@isEquivalentTo === other ||
             (this@isEquivalentTo.publicSymbolCacheKeyOrNull() != null &&
                 this@isEquivalentTo.publicSymbolCacheKeyOrNull() == other.publicSymbolCacheKeyOrNull())
     }
 
+    /**
+     * 计算 callable 直接覆盖的父级 callable 符号序列。
+     */
     override val CaCallableSymbol.directlyOverriddenSymbols: Sequence<CaCallableSymbol>
         get() = withValidityAssertion {
             if (!mayHaveOverriddenSymbols()) {
@@ -272,9 +317,15 @@ internal class CaCfirSymbolRelationProvider(
                 .asSequence()
         }
 
+    /**
+     * 返回交叉类型或多继承合并产生的覆盖符号。
+     */
     override val CaCallableSymbol.intersectionOverriddenSymbols: List<CaCallableSymbol>
         get() = withValidityAssertion { emptyList() }
 
+    /**
+     * 广度遍历 callable 的完整覆盖链，并按稳定身份去重。
+     */
     override val CaCallableSymbol.allOverriddenSymbols: Sequence<CaCallableSymbol>
         get() = withValidityAssertion {
             if (!mayHaveOverriddenSymbols()) {
@@ -296,33 +347,54 @@ internal class CaCfirSymbolRelationProvider(
             result.asSequence()
         }
 
+    /**
+     * 判断当前类是否直接或间接继承指定父类。
+     */
     override fun CaClassSymbol.isSubClassOf(superClass: CaClassSymbol): Boolean = withValidityAssertion {
         isSubclassOf(superClass, allowIndirect = true)
     }
 
+    /**
+     * 判断当前类是否把指定类列为直接父类。
+     */
     override fun CaClassSymbol.isDirectSubClassOf(superClass: CaClassSymbol): Boolean = withValidityAssertion {
         isSubclassOf(superClass, allowIndirect = false)
     }
 
+    /**
+     * 返回 actual 声明对应的 expect 声明集合。
+     */
     override fun CaDeclarationSymbol.getExpectsForActual(): List<CaDeclarationSymbol> = withValidityAssertion {
         emptyList()
     }
 
+    /**
+     * 快速过滤语义上可能参与 override 关系的 callable 类型。
+     */
     private fun CaCallableSymbol.mayHaveOverriddenSymbols(): Boolean {
         return this is org.cangnova.cangjie.analysis.api.symbols.CaNamedFunctionSymbol ||
             this is org.cangnova.cangjie.analysis.api.symbols.CaPropertySymbol
     }
 
+    /**
+     * 使用公开缓存键或 callableId 对覆盖结果做稳定去重。
+     */
     private fun List<CaCallableSymbol>.distinctStableCallables(): List<CaCallableSymbol> {
         return distinctBy { callable ->
             callable.stableCallableIdentity() ?: "${callable::class.qualifiedName}@${System.identityHashCode(callable)}"
         }
     }
 
+    /**
+     * 生成 callable 在覆盖关系中可复用的稳定身份字符串。
+     */
     private fun CaCallableSymbol.stableCallableIdentity(): String? {
         return publicSymbolCacheKeyOrNull()?.toString() ?: callableId?.toString()
     }
 
+    /**
+     * 在直接或传递模式下执行类继承关系遍历。
+     */
     private fun CaClassSymbol.isSubclassOf(
         superClass: CaClassSymbol,
         allowIndirect: Boolean,
@@ -374,6 +446,9 @@ internal class CaCfirSymbolRelationProvider(
         return thisPsi != null && otherPsi != null && thisPsi == otherPsi
     }
 
+    /**
+     * 生成继承遍历去重使用的类身份。
+     */
     private fun CaClassSymbol.classRelationIdentity(): String {
         classId?.let { return "classId:${it.asString()}" }
 
@@ -386,6 +461,9 @@ internal class CaCfirSymbolRelationProvider(
         return "${this::class.qualifiedName}@${System.identityHashCode(this)}"
     }
 
+    /**
+     * 通过 CFIR owner scope 收集底层 callable 的直接 overridden 符号。
+     */
     private fun CaCfirSession.collectDirectlyOverriddenCallableSymbols(
         backingSymbol: org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol<*>,
     ): List<org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol<*>> {
@@ -412,6 +490,9 @@ internal class CaCfirSymbolRelationProvider(
         }
     }
 
+    /**
+     * 取得用于查询 override 关系的 owner scope。
+     */
     private fun CaCfirSession.overrideOwnerScope(
         backingSymbol: org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol<*>,
     ): CfirTypeScope? {
@@ -466,6 +547,9 @@ internal class CaCfirSymbolRelationProvider(
         return CfirClassSubstitutionScope(cfirSession, rawScope, extendedType)
     }
 
+    /**
+     * 预热 scope 中与声明同名的 callable 查询路径。
+     */
     private fun CfirTypeScope.processCallableByName(
         declaration: org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration,
     ) {

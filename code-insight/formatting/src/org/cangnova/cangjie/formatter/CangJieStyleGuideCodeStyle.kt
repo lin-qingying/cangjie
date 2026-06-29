@@ -33,15 +33,30 @@ import com.intellij.psi.codeStyle.CodeStyleSettings
 import com.intellij.psi.codeStyle.CommonCodeStyleSettings
 import com.intellij.psi.codeStyle.PredefinedCodeStyle
 
+/**
+ * 仓颉预定义代码风格的公共基类。
+ */
 abstract class CangJiePredefinedCodeStyle(@NlsContexts.ListItem name: String, language: Language) :
     PredefinedCodeStyle(name, language) {
+    /**
+     * 预定义代码风格的稳定标识。
+     */
     abstract val codeStyleId: String
 }
 
+/**
+ * 仓颉官方代码风格预设。
+ */
 class CangJieStyleGuideCodeStyle :
     CangJiePredefinedCodeStyle(CangJieFormatterBundle.message("list.item.cangjie.style.guide"), CangJieLanguage) {
+    /**
+     * 官方代码风格预设的稳定标识。
+     */
     override val codeStyleId: String = CODE_STYLE_ID
 
+    /**
+     * 将官方格式化设置写入 IDE 代码风格配置。
+     */
     override fun apply(settings: CodeStyleSettings) {
         Companion.apply(settings)
     }

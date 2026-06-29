@@ -11,12 +11,21 @@ import org.cangnova.cangjie.test.services.AdditionalSourceProvider
 import org.cangnova.cangjie.test.services.TestServices
 import java.io.File
 
+/**
+ * 表示 `SpecHelpersSourceFilesProvider`，承载测试服务中的配置数据、测试产物或处理步骤。
+ */
 class SpecHelpersSourceFilesProvider(
     testServices: TestServices,
 ) : AdditionalSourceProvider(testServices) {
+    /**
+     * 保存 `directiveContainers`，供测试服务在测试执行期间读取或传递。
+     */
     override val directiveContainers: List<DirectivesContainer>
         get() = listOf(AdditionalFilesDirectives)
 
+    /**
+     * 执行 `produceAdditionalFiles` 对应的测试服务流程，维持测试框架的阶段契约。
+     */
     override fun produceAdditionalFiles(
         globalDirectives: RegisteredDirectives,
         module: TestModule,
@@ -41,6 +50,9 @@ class SpecHelpersSourceFilesProvider(
             .toList()
     }
 
+    /**
+     * 提供 `resolveSpecHelpersRoot` 对应的测试服务流程，维持测试框架的阶段契约。
+     */
     private fun resolveSpecHelpersRoot(): File? {
         val candidates = listOf(
             File("cfir/analysis-tests/testData/helpers/spec"),
@@ -50,4 +62,3 @@ class SpecHelpersSourceFilesProvider(
         return candidates.firstOrNull { it.exists() && it.isDirectory }
     }
 }
-

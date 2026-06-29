@@ -72,6 +72,12 @@ internal class LLCfirModuleLazyDeclarationResolver(val moduleComponents: LLCfirM
         lazyResolve(target, toPhase, LLCfirResolveDesignationCollector::getDesignationToResolveRecursively)
     }
 
+    /**
+     * lazy resolve 的公共执行骨架。
+     *
+     * 先保证目标所在文件至少完成 import resolve，再通过 [resolveTarget] 收集真正需要推进的 designation；
+     * 所有异常都会附带目标元素、起止阶段和模块会话信息后重新抛出。
+     */
     private inline fun <T : CfirElementWithResolveState> lazyResolve(
         targetElement: T,
         toPhase: CfirResolvePhase,
@@ -113,6 +119,11 @@ internal class LLCfirModuleLazyDeclarationResolver(val moduleComponents: LLCfirM
         }
     }
 
+    /**
+     * 确保 [target] 所在文件已经推进到 [CfirResolvePhase.IMPORTS]。
+     *
+     * 对没有包含文件的 synthetic 或特殊 CFIR 元素直接返回。
+     */
     private fun resolveContainingFileToImports(target: CfirElementWithResolveState) {
         if (checkAnalysisReadiness(target, containingDeclarations = null, CfirResolvePhase.IMPORTS)) return
 
@@ -120,6 +131,11 @@ internal class LLCfirModuleLazyDeclarationResolver(val moduleComponents: LLCfirM
         resolveFileToImportsWithLock(containingCfirFile)
     }
 
+    /**
+     * 在全局锁和文件写锁下解析 [cfirFile] 的 imports。
+     *
+     * import resolve 是同文件后续声明 resolve 的前置条件，必须通过 lock provider 串行化。
+     */
     private fun resolveFileToImportsWithLock(cfirFile: CfirFile) {
         val lockProvider = moduleComponents.globalResolveComponents.lockProvider
         lockProvider.withGlobalLock {
@@ -135,6 +151,11 @@ internal class LLCfirModuleLazyDeclarationResolver(val moduleComponents: LLCfirM
         }
     }
 
+    /**
+     * 将 [target] 中的所有目标声明逐阶段推进到 [toPhase]。
+     *
+     * 起始阶段取所有目标声明当前阶段的最小值，保证同一个 designation 中阶段较低的声明不会被跳过。
+     */
     private fun lazyResolveTargets(target: LLCfirResolveTarget, toPhase: CfirResolvePhase) {
         var currentPhase = getMinResolvePhase(target).coerceAtLeast(CfirResolvePhase.IMPORTS)
         if (checkAnalysisReadiness(target.target, target.path, toPhase, currentPhase)) return
@@ -157,6 +178,9 @@ internal class LLCfirModuleLazyDeclarationResolver(val moduleComponents: LLCfirM
         }
     }
 
+    /**
+     * 返回 [designation] 中所有待解析声明的最低解析阶段。
+     */
     private fun getMinResolvePhase(designation: LLCfirResolveTarget): CfirResolvePhase {
         var min = CfirResolvePhase.BODY_RESOLVE
         designation.forEachTarget { target ->
@@ -167,6 +191,9 @@ internal class LLCfirModuleLazyDeclarationResolver(val moduleComponents: LLCfirM
     }
 }
 
+/**
+ * 为单个 CFIR 元素 lazy resolve 失败补充模块、会话、阶段和声明附件后重新抛出。
+ */
 private fun handleExceptionFromResolve(
     exception: Exception,
     cfirDeclarationToResolve: CfirElementWithResolveState,
@@ -196,6 +223,9 @@ private fun handleExceptionFromResolve(
     }
 }
 
+/**
+ * 为 designation 级 lazy resolve 失败补充模块、会话和 designation 附件后重新抛出。
+ */
 private fun handleExceptionFromResolve(
     exception: Exception,
     designation: LLCfirResolveTarget,

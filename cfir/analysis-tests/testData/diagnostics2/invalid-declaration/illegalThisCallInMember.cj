@@ -1,6 +1,6 @@
 // RUN_PIPELINE_TILL: FRONTEND
 class IllegalThisInMember {
     func build(): Unit {
-        <!ILLEGAL_THIS_OR_SUPER_CALL!>this<!>()
+        <!INVALID_THIS_CALL_OUTSIDE_CTOR!>this<!>()
     }
 }

@@ -36,6 +36,9 @@ open class CangjieCoreProjectEnvironment(
         }
     }
 
+    /**
+     * 在项目服务创建前注册仓颉 headless 环境需要的项目级服务。
+     */
     override fun preregisterServices() {
         CangJieHeadlessPlatformBootstrap.preregisterProjectEnvironment(this)
     }

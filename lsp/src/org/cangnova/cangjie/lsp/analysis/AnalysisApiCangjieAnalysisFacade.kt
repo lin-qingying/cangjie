@@ -46,10 +46,24 @@ import org.eclipse.lsp4j.jsonrpc.messages.Either3
 class AnalysisApiCangjieAnalysisFacade(
     lifecycleContext: CangjieAnalysisLifecycleContext,
 ) : AbstractCangjieAnalysisFacade() {
+    /**
+     * LSP 文档到 PSI 快照的工厂。
+     */
     private val psiDocumentFactory = AnalysisApiPsiDocumentFactory(lifecycleContext)
+
+    /**
+     * Analysis API 语义查询和 LSP 坐标转换的共享支持层。
+     */
     private val semanticSupport = AnalysisApiLspSemanticSupport(lifecycleContext, psiDocumentFactory)
+
+    /**
+     * LSP rename 协议适配器。
+     */
     private val renameSupport = AnalysisApiLspRenameSupport(semanticSupport)
 
+    /**
+     * Analysis API facade 当前支持的 LSP 功能集合。
+     */
     override val supportedFeatures: CangjieLspFeatureSet = CangjieLspFeatureSet(
         completion = true,
         hover = true,
@@ -70,22 +84,39 @@ class AnalysisApiCangjieAnalysisFacade(
         diagnostics = true,
     )
 
+    /**
+     * 文档打开后创建或更新 PSI 快照。
+     */
     override fun didOpen(context: CangjieAnalysisRequestContext, document: LspTextDocument) {
         upsertSnapshot(document)
     }
 
+    /**
+     * 文档变更后创建或更新 PSI 快照。
+     */
     override fun didChange(context: CangjieAnalysisRequestContext, document: LspTextDocument) {
         upsertSnapshot(document)
     }
 
+    /**
+     * 文档保存后刷新 PSI 快照。
+     */
     override fun didSave(context: CangjieAnalysisRequestContext, document: LspTextDocument) {
         upsertSnapshot(document)
     }
 
+    /**
+     * 文档关闭后移除对应 PSI 快照。
+     */
     override fun didClose(context: CangjieAnalysisRequestContext, document: LspTextDocument) {
         psiDocumentFactory.removeSnapshot(document.uri)
     }
 
+    /**
+     * 工作区目录变化后的语义层通知入口。
+     *
+     * 当前快照事实源不在此重建，目录变化由项目结构状态重新分类。
+     */
     override fun didChangeWorkspaceFolders(
         context: CangjieAnalysisRequestContext,
         added: List<WorkspaceFolder>,
@@ -94,10 +125,16 @@ class AnalysisApiCangjieAnalysisFacade(
         // 打开文档的 PSI 快照现在是稳定事实源，workspace 变更后由 project structure 重新分类。
     }
 
+    /**
+     * 项目结构刷新后的语义层通知入口。
+     */
     override fun didRefreshProjectStructure(context: CangjieAnalysisRequestContext) {
         // project structure 刷新只重算模块投影，不再重建 PSI 快照。
     }
 
+    /**
+     * 收集单个打开文档的 Analysis API 诊断并转换为 LSP 诊断。
+     */
     override fun collectDiagnostics(
         context: CangjieAnalysisRequestContext,
         document: LspTextDocument,
@@ -110,6 +147,9 @@ class AnalysisApiCangjieAnalysisFacade(
         )
     }
 
+    /**
+     * 收集当前工作区所有可见源码文件的诊断报告。
+     */
     override fun collectWorkspaceDiagnostics(
         context: CangjieAnalysisRequestContext,
     ): List<WorkspaceDocumentDiagnosticReport> {
@@ -137,6 +177,11 @@ class AnalysisApiCangjieAnalysisFacade(
         }
     }
 
+    /**
+     * 计算当前位置的补全项。
+     *
+     * 优先使用引用 variants；缺少 variants 时补充当前文件作用域和工作区源码声明。
+     */
     override fun completion(
         context: CangjieAnalysisRequestContext,
         document: LspTextDocument,
@@ -187,6 +232,11 @@ class AnalysisApiCangjieAnalysisFacade(
         return Either.forLeft(items)
     }
 
+    /**
+     * 计算当前位置的 hover 内容。
+     *
+     * 内容包含公开符号渲染结果和可渲染 CDoc 文档。
+     */
     override fun hover(
         context: CangjieAnalysisRequestContext,
         document: LspTextDocument,
@@ -215,6 +265,9 @@ class AnalysisApiCangjieAnalysisFacade(
         }
     }
 
+    /**
+     * 计算当前位置所在调用表达式的签名帮助。
+     */
     override fun signatureHelp(
         context: CangjieAnalysisRequestContext,
         document: LspTextDocument,
@@ -238,18 +291,27 @@ class AnalysisApiCangjieAnalysisFacade(
         }
     }
 
+    /**
+     * 解析声明跳转目标。
+     */
     override fun declaration(
         context: CangjieAnalysisRequestContext,
         document: LspTextDocument,
         params: DeclarationParams,
     ): Either<List<Location>, List<LocationLink>> = definitionLike(document, params.position)
 
+    /**
+     * 解析定义跳转目标。
+     */
     override fun definition(
         context: CangjieAnalysisRequestContext,
         document: LspTextDocument,
         params: DefinitionParams,
     ): Either<List<Location>, List<LocationLink>> = definitionLike(document, params.position)
 
+    /**
+     * 解析类型定义跳转目标。
+     */
     override fun typeDefinition(
         context: CangjieAnalysisRequestContext,
         document: LspTextDocument,
@@ -263,6 +325,9 @@ class AnalysisApiCangjieAnalysisFacade(
         },
     )
 
+    /**
+     * 查找当前位置类型或 class-like 声明的实现者。
+     */
     override fun implementation(
         context: CangjieAnalysisRequestContext,
         document: LspTextDocument,
@@ -309,6 +374,9 @@ class AnalysisApiCangjieAnalysisFacade(
         },
     )
 
+    /**
+     * 查找当前位置目标在工作区中的引用。
+     */
     override fun references(
         context: CangjieAnalysisRequestContext,
         document: LspTextDocument,
@@ -362,6 +430,9 @@ class AnalysisApiCangjieAnalysisFacade(
         return locations.toList()
     }
 
+    /**
+     * 计算当前文档内与目标相关的高亮范围。
+     */
     override fun documentHighlight(
         context: CangjieAnalysisRequestContext,
         document: LspTextDocument,
@@ -405,6 +476,9 @@ class AnalysisApiCangjieAnalysisFacade(
         }.distinctBy { highlight -> "${highlight.range.start.line}:${highlight.range.start.character}-${highlight.range.end.line}:${highlight.range.end.character}" }
     }
 
+    /**
+     * 构造当前文档的符号树。
+     */
     override fun documentSymbols(
         context: CangjieAnalysisRequestContext,
         document: LspTextDocument,
@@ -416,6 +490,9 @@ class AnalysisApiCangjieAnalysisFacade(
             .map(Either<SymbolInformation, DocumentSymbol>::forRight)
     }
 
+    /**
+     * 根据查询文本收集工作区符号。
+     */
     override fun workspaceSymbols(
         context: CangjieAnalysisRequestContext,
         params: WorkspaceSymbolParams,
@@ -437,12 +514,20 @@ class AnalysisApiCangjieAnalysisFacade(
         return Either.forRight(workspaceSymbols)
     }
 
+    /**
+     * 计算 code action。
+     *
+     * 当前 Analysis API facade 尚未提供 code action，返回空列表。
+     */
     override fun codeActions(
         context: CangjieAnalysisRequestContext,
         document: LspTextDocument,
         params: CodeActionParams,
     ): List<Either<Command, CodeAction>> = emptyList()
 
+    /**
+     * 计算整篇文档格式化编辑。
+     */
     override fun formatting(
         context: CangjieAnalysisRequestContext,
         document: LspTextDocument,
@@ -462,18 +547,27 @@ class AnalysisApiCangjieAnalysisFacade(
         }
     }
 
+    /**
+     * 执行重命名并返回工作区编辑。
+     */
     override fun rename(
         context: CangjieAnalysisRequestContext,
         document: LspTextDocument,
         params: RenameParams,
     ): WorkspaceEdit? = renameSupport.rename(context, document, params)
 
+    /**
+     * 准备重命名并返回可编辑名称范围。
+     */
     override fun prepareRename(
         context: CangjieAnalysisRequestContext,
         document: LspTextDocument,
         params: RenameParams,
     ): Either3<Range, PrepareRenameResult, PrepareRenameDefaultBehavior>? = renameSupport.prepareRename(document, params)
 
+    /**
+     * 收集当前文档折叠范围。
+     */
     override fun foldingRanges(
         context: CangjieAnalysisRequestContext,
         document: LspTextDocument,
@@ -493,6 +587,9 @@ class AnalysisApiCangjieAnalysisFacade(
         }
     }
 
+    /**
+     * 计算当前位置集合的选择范围链。
+     */
     override fun selectionRanges(
         context: CangjieAnalysisRequestContext,
         document: LspTextDocument,
@@ -504,6 +601,9 @@ class AnalysisApiCangjieAnalysisFacade(
         }
     }
 
+    /**
+     * 计算整篇文档语义 token。
+     */
     override fun semanticTokensFull(
         context: CangjieAnalysisRequestContext,
         document: LspTextDocument,
@@ -513,6 +613,9 @@ class AnalysisApiCangjieAnalysisFacade(
         SemanticTokens(encodeSemanticTokens(document, tokens))
     }
 
+    /**
+     * 计算指定范围内的语义 token。
+     */
     override fun semanticTokensRange(
         context: CangjieAnalysisRequestContext,
         document: LspTextDocument,
@@ -524,6 +627,11 @@ class AnalysisApiCangjieAnalysisFacade(
         SemanticTokens(encodeSemanticTokens(document, tokens))
     }
 
+    /**
+     * 计算 inlay hints。
+     *
+     * 当前未接入 inlay hint 语义，返回空列表。
+     */
     override fun inlayHints(
         context: CangjieAnalysisRequestContext,
         document: LspTextDocument,
@@ -685,6 +793,11 @@ class AnalysisApiCangjieAnalysisFacade(
         }
     }
 
+    /**
+     * 将 PSI 元素恢复成公开符号。
+     *
+     * 当前只支持具名声明，其他元素返回 null。
+     */
     private fun PsiElement.toPublicSymbol(
         session: CaSession,
         useSiteFile: CjFile,
@@ -695,6 +808,11 @@ class AnalysisApiCangjieAnalysisFacade(
         }
     }
 
+    /**
+     * 从可调用 PSI 声明恢复对应的公开可调用符号。
+     *
+     * 成员声明通过 owner 的 declaredMemberScope 查找，顶层声明通过包名和安全名称查找。
+     */
     private fun CjCallableDeclaration.restoreCallableSymbol(
         session: CaSession,
         useSiteFile: CjFile,
@@ -718,6 +836,9 @@ class AnalysisApiCangjieAnalysisFacade(
             }
     }
 
+    /**
+     * 构造 LSP signature help 中的单个签名信息。
+     */
     private fun CaSession.buildSignatureInformation(
         callableDeclaration: CjCallableDeclaration?,
         callableSymbol: CaCallableSymbol,
@@ -761,6 +882,9 @@ class AnalysisApiCangjieAnalysisFacade(
         }
     }
 
+    /**
+     * 根据调用实参范围计算当前激活参数下标。
+     */
     private fun activeParameterIndex(
         callExpression: CjCallExpression,
         caretOffset: Int,
@@ -779,6 +903,9 @@ class AnalysisApiCangjieAnalysisFacade(
             .coerceAtLeast(0)
     }
 
+    /**
+     * 将 completion variant 转换为 LSP completion item。
+     */
     private fun toCompletionItem(variant: Any): CompletionItem? = when (variant) {
         is String -> CompletionItem(variant).apply { kind = CompletionItemKind.Text }
         is CjNamedDeclaration -> {
@@ -794,6 +921,9 @@ class AnalysisApiCangjieAnalysisFacade(
             ?.let { label -> CompletionItem(label).apply { kind = CompletionItemKind.Text } }
     }
 
+    /**
+     * 将 PSI 声明构造成文档符号节点。
+     */
     private fun buildDocumentSymbol(
         document: LspTextDocument,
         declaration: CjDeclaration,
@@ -817,6 +947,9 @@ class AnalysisApiCangjieAnalysisFacade(
         return symbol
     }
 
+    /**
+     * 收集指定文件中的工作区符号。
+     */
     private fun collectWorkspaceSymbols(file: CjFile): List<WorkspaceSymbol> {
         val fileUri = semanticSupport.documentUriOf(file) ?: return emptyList()
 
@@ -842,6 +975,9 @@ class AnalysisApiCangjieAnalysisFacade(
         return collect(file, ownerName = null)
     }
 
+    /**
+     * 将仓颉 PSI 声明分类为 LSP 符号类型。
+     */
     private fun symbolKindOf(declaration: CjNamedDeclaration): SymbolKind = when (declaration) {
         is CjClass -> SymbolKind.Class
         is CjStruct -> SymbolKind.Struct
@@ -855,6 +991,9 @@ class AnalysisApiCangjieAnalysisFacade(
         else -> SymbolKind.Object
     }
 
+    /**
+     * 将 LSP 符号类型映射为补全项类型。
+     */
     private fun SymbolKind.toCompletionItemKind(): CompletionItemKind = when (this) {
         SymbolKind.Class -> CompletionItemKind.Class
         SymbolKind.Struct -> CompletionItemKind.Struct
@@ -866,6 +1005,9 @@ class AnalysisApiCangjieAnalysisFacade(
         else -> CompletionItemKind.Text
     }
 
+    /**
+     * 将仓颉折叠类型映射为 LSP 折叠范围类型。
+     */
     private fun CangJieFoldingKind.toLspFoldingRangeKind(): String = when (this) {
         CangJieFoldingKind.COMMENT -> FoldingRangeKind.Comment
         CangJieFoldingKind.IMPORTS -> FoldingRangeKind.Imports
@@ -912,6 +1054,9 @@ class AnalysisApiCangjieAnalysisFacade(
         return data
     }
 
+    /**
+     * 将语义 token 修饰符集合编码为 LSP bitset。
+     */
     private fun encodeModifiers(
         modifiers: Set<CangJieSemanticTokenModifier>,
         modifierIndex: Map<String, Int>,
@@ -924,6 +1069,9 @@ class AnalysisApiCangjieAnalysisFacade(
         return bitset
     }
 
+    /**
+     * 将格式化请求参数转换为仓颉格式化器使用的代码风格设置。
+     */
     private fun DocumentFormattingParams.toCodeStyleSettings(): CodeStyleSettings {
         val settings = CangJieCodeStyleSettingsFactory.createDefaultSettings()
         val indentOptions = settings.cangjieCommonSettings.initIndentOptions()
@@ -934,12 +1082,18 @@ class AnalysisApiCangjieAnalysisFacade(
         return settings
     }
 
+    /**
+     * 提取声明符号对应的 CDoc 文档字符串。
+     */
     @OptIn(CjNonPublicApi::class, CaNonPublicApi::class)
     private fun CaSession.documentationOf(symbol: CaDeclarationSymbol): String? {
         val declaration = symbol.psiSafe<CjDeclaration>() ?: return null
         return declaration.findCDoc()?.renderToDocumentationString()
     }
 
+    /**
+     * 将 CDoc 描述渲染为 LSP hover 可使用的 Markdown 文本。
+     */
     @OptIn(CjNonPublicApi::class)
     private fun CDocCommentDescriptor.renderToDocumentationString(): String? {
         val rendered = buildString {
@@ -960,6 +1114,9 @@ class AnalysisApiCangjieAnalysisFacade(
         return rendered.ifBlank { null }
     }
 
+    /**
+     * 收集可以渲染到 hover 文档中的 CDoc 标签。
+     */
     @OptIn(CjNonPublicApi::class)
     private fun CDocCommentDescriptor.collectRenderableTags(): List<CDocTag> {
         return buildList {
@@ -976,6 +1133,9 @@ class AnalysisApiCangjieAnalysisFacade(
         }
     }
 
+    /**
+     * 将单个 CDoc 标签渲染为一行文档文本。
+     */
     private fun CDocTag.renderTagLine(): String {
         val tagName = name ?: return ""
         val content = getContent().trim()

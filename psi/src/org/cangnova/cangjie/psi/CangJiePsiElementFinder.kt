@@ -31,7 +31,13 @@ import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.util.Processor
 import org.cangnova.cangjie.psi.packgae.CangJiePackage
 
+/**
+ * 表示 `CangJiePsiElementFinderBase`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 abstract class CangJiePsiElementFinderBase : PossiblyDumbAware {
+    /**
+     * 提供 `processPackageDirectories` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     open fun processPackageDirectories(
         psiPackage: CangJiePackage,
         scope: GlobalSearchScope,
@@ -48,4 +54,3 @@ abstract class CangJiePsiElementFinderBase : PossiblyDumbAware {
 
     }
 }
-

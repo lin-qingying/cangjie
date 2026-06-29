@@ -19,8 +19,19 @@ import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
+/**
+ * 校验默认 CHIR 构建器对声明注册、符号表和引用绑定的处理。
+ *
+ * 该测试聚焦构建阶段的结构约束，确保非法图和重复符号会被诊断收集器记录，
+ * 合法包注册后可以通过上下文和符号表恢复引用目标。
+ */
 class ChirBuilderTest {
 
+    /**
+     * 校验函数入口块不存在时构建器拒绝注册该声明。
+     *
+     * 该用例固定无效 CFG 的错误诊断，防止构建阶段接受后续流水线无法执行的函数图。
+     */
     @Test
     fun `builder rejects function with missing entry block`() {
         val diagnostics = RecordingChirDiagnosticCollector()
@@ -46,6 +57,11 @@ class ChirBuilderTest {
         assertTrue(diagnostics.errors.any { it is ChirBuildError.InvalidGraph })
     }
 
+    /**
+     * 校验构建器会识别同名符号的重复声明。
+     *
+     * 该用例确保符号注册以名称唯一性为边界，并通过诊断收集器暴露重复符号错误。
+     */
     @Test
     fun `builder detects duplicate symbol`() {
         val diagnostics = RecordingChirDiagnosticCollector()
@@ -60,6 +76,11 @@ class ChirBuilderTest {
         assertTrue(diagnostics.errors.any { it is ChirBuildError.DuplicateSymbol })
     }
 
+    /**
+     * 校验包注册完成后构建器可以绑定未解析引用。
+     *
+     * 该用例覆盖包节点写入上下文、函数声明可查找以及符号引用解析到目标声明的完整链路。
+     */
     @Test
     fun `builder can bind symbol reference after package registration`() {
         val context = DefaultChirContext()

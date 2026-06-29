@@ -27,6 +27,9 @@ package org.cangnova.cangjie.psi
 import org.cangnova.cangjie.psi.CjNodeTypes.CASE_BLOCK
 import com.intellij.openapi.diagnostic.Logger
 
+/**
+ * 表示 `CjCaseBlockExpression`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjCaseBlockExpression(text: CharSequence?) : CjBlockExpression(CASE_BLOCK, text) {
     companion object {
         val LOG = Logger.getInstance(CjCaseBlockExpression::class.java)

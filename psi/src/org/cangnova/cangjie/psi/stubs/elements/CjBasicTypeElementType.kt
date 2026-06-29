@@ -32,24 +32,39 @@ import org.cangnova.cangjie.psi.CjBasicType
 import org.cangnova.cangjie.psi.stubs.CangJieBasicTypeStub
 import org.cangnova.cangjie.psi.stubs.impl.CangJieBasicTypeStubImpl
 
+/**
+ * 表示 `CjBasicTypeElementType`，承载PSI Stub中的语法节点、索引桩或辅助模型。
+ */
 class CjBasicTypeElementType(
     debugString: String
 ) : CjStubElementType<CangJieBasicTypeStub, CjBasicType>(
     debugString, CjBasicType::class.java, CangJieBasicTypeStub::class.java
 ) {
+    /**
+     * 实现 `serialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun serialize(stub: CangJieBasicTypeStub, dataStream: StubOutputStream) {
         dataStream.writeName(stub.basicType)
     }
 
+    /**
+     * 实现 `createPsi` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createPsi(stub: CangJieBasicTypeStub): CjBasicType {
         return CjBasicType(stub)
     }
 
+    /**
+     * 实现 `deserialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>?): CangJieBasicTypeStub {
         val name = dataStream.readName()
         return CangJieBasicTypeStubImpl(parentStub, name?.string ?: "")
     }
 
+    /**
+     * 实现 `createStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createStub(psi: CjBasicType, parentStub: StubElement<out PsiElement>?): CangJieBasicTypeStub {
         return CangJieBasicTypeStubImpl(parentStub, psi.name)
     }

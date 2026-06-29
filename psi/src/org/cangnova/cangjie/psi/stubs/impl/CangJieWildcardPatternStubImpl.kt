@@ -41,6 +41,9 @@ class CangJieWildcardPatternStubImpl(
     parent: StubElement<out PsiElement>?,
 ) : CangJieStubBaseImpl<CjWildcardPattern>(parent, CjStubElementTypes.WILDCARD_PATTERN),
     CangJieWildcardPatternStub {
+    /**
+     * 实现 `copyInto` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun copyInto(newParent: StubElement<*>?): CangJieWildcardPatternStubImpl = CangJieWildcardPatternStubImpl(
         parent = newParent,
     )

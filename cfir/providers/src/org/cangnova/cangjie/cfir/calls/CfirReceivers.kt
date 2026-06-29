@@ -615,6 +615,7 @@ private fun collectTypeParameterBoundsScopes(
 ) {
     if (!visitedTypeParameters.add(lookupTag)) return
     val typeParameterType = org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl(lookupTag)
+    if (typeParameterType.hasInvalidDeclaredUpperBounds(session)) return
     val bounds = collectTypeParameterUpperBounds(typeParameterType)
     bounds.forEach {
         collectTypeScopes(
@@ -663,8 +664,10 @@ private fun collectTypeParameterUpperBounds(
  * 将 lookup tag 解析到 TYPES 阶段并把所有 resolved upper bound 交给 [collect]。
  */
 private fun ConeTypeParameterLookupTag.collectUpperBoundsTo(collect: (ConeCangJieType) -> Unit) {
-    typeParameterSymbol.lazyResolveToPhase(org.cangnova.cangjie.cfir.declarations.CfirResolvePhase.TYPES)
-    typeParameterSymbol.resolvedBounds.map { it.coneType }.forEach(collect)
+    declaredUpperBoundRefsAfterTypeResolve()
+        .mapNotNull { it.declaredUpperBoundConeTypeOrNull() }
+        .filterNot { it is ConeErrorType }
+        .forEach(collect)
 }
 
 /**

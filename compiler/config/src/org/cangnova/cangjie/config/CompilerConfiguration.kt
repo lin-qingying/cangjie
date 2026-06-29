@@ -139,6 +139,9 @@ class CompilerConfiguration {
         return map[key.ideaKey] as T?
     }
 
+    /**
+     * 将当前配置中的所有键值渲染为便于调试的多行文本。
+     */
     override fun toString(): String {
         return buildString {
             for ((key, value) in map) {
@@ -174,6 +177,9 @@ class CompilerConfiguration {
     annotation class Internals(val message: String)
 }
 
+/**
+ * 创建 CLI/standalone 编译流程使用的默认编译配置。
+ */
 fun CompilerConfiguration.Companion.create(
     diagnosticsCollector: BaseDiagnosticsCollector? = null,
     messageCollector: MessageCollector? = null,

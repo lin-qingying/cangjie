@@ -16,9 +16,27 @@ import org.gradle.api.tasks.SourceSetContainer
  * ```
  */
 
+/**
+ * 配置当前项目的 Gradle SourceSet。
+ *
+ * 该入口通过 [SourceSetsBuilder] 提供 `"main" { ... }` 形式的简洁 DSL。
+ */
 inline fun Project.sourceSets(crossinline body: SourceSetsBuilder.() -> Unit) = SourceSetsBuilder(this).body()
 
-class SourceSetsBuilder(val project: Project) {
+/**
+ * SourceSet DSL 的构建器。
+ *
+ * 构建器持有目标 [project]，并把字符串调用语法映射为 source set 的创建与配置。
+ */
+class SourceSetsBuilder(
+    /**
+     * 正在配置 source set 的 Gradle 项目。
+     */
+    val project: Project,
+) {
+    /**
+     * 获取或创建当前字符串命名的 source set，并在其上执行 [body]。
+     */
     inline operator fun String.invoke(crossinline body: SourceSet.() -> Unit): SourceSet {
         val sourceSetName = this
         return project.sourceSets.maybeCreate(sourceSetName).apply {
@@ -27,18 +45,24 @@ class SourceSetsBuilder(val project: Project) {
     }
 }
 
-/** 清空源集的所有源目录 */
+/**
+ * 清空当前 source set 的源码目录和资源目录。
+ */
 fun SourceSet.none() {
     java.setSrcDirs(emptyList<String>())
     resources.setSrcDirs(emptyList<String>())
 }
 
-/** 添加生成代码目录（默认 gen/） */
+/**
+ * 向当前 source set 添加生成源码目录。
+ */
 fun SourceSet.generatedDir(dirName: String = "gen") {
     java.srcDir(dirName)
 }
 
-/** 添加生成测试代码目录（默认 tests-gen/） */
+/**
+ * 向当前 source set 添加生成测试源码目录。
+ */
 fun SourceSet.generatedTestDir(dirName: String = "tests-gen") {
     java.srcDir(dirName)
 }
@@ -71,20 +95,38 @@ fun SourceSet.projectDefault() {
     }
 }
 
+/**
+ * 当前项目的 Gradle source set 容器。
+ */
 val Project.sourceSets: SourceSetContainer
     get() = javaPluginExtension().sourceSets
 
+/**
+ * 当前项目的 `main` source set。
+ */
 val Project.mainSourceSet: SourceSet
     get() = javaPluginExtension().mainSourceSet
 
+/**
+ * 当前项目的 `test` source set。
+ */
 val Project.testSourceSet: SourceSet
     get() = javaPluginExtension().testSourceSet
 
+/**
+ * Java 插件扩展中的 `main` source set。
+ */
 val JavaPluginExtension.mainSourceSet: SourceSet
     get() = sourceSets.getByName("main")
 
+/**
+ * Java 插件扩展中的 `test` source set。
+ */
 val JavaPluginExtension.testSourceSet: SourceSet
     get() = sourceSets.getByName("test")
 
+/**
+ * 获取当前项目的 Java 插件扩展。
+ */
 fun Project.javaPluginExtension(): JavaPluginExtension =
     extensions.getByType(JavaPluginExtension::class.java)

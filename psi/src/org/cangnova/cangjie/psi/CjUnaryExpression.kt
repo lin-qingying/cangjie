@@ -29,13 +29,25 @@ import com.intellij.lang.ASTNode
 import com.intellij.psi.tree.IElementType
 import com.intellij.psi.util.PsiTreeUtil
 
+/**
+ * 表示 `CjUnaryExpression`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 abstract class CjUnaryExpression(node: ASTNode) : CjExpressionImpl(node), CjOperationExpression {
 
+    /**
+     * 保存 `baseExpression`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     @get:IfNotParsed
     open val baseExpression: CjExpression? get() = PsiTreeUtil.getPrevSiblingOfType(operationReference, CjExpression::class.java)
 
+    /**
+     * 暴露 `operationReference`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val operationReference: CjSimpleNameExpression
         get() = findChildByType(CjNodeTypes.OPERATION_REFERENCE)!!
+    /**
+     * 保存 `operationToken`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val operationToken: IElementType
         get() = operationReference.referencedNameElementType
 }

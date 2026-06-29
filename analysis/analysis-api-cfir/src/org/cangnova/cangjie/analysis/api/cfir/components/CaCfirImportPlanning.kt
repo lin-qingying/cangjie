@@ -25,9 +25,21 @@ import org.cangnova.cangjie.psi.psiUtil.getStrictParentOfType
  * 它描述某个符号在指定位置是否可直接使用、是否需要导入，或者应被隐藏。
  */
 internal class CaCfirCompletionCandidateDecisionImpl(
+    /**
+     * 当前被判定的公开 Analysis API 符号。
+     */
     override val symbol: CaSymbol,
+    /**
+     * 符号在 use-site 的补全可用状态。
+     */
     override val status: CaCompletionCandidateStatus,
+    /**
+     * 当符号需要新增导入后才能以短名使用时，对应的导入路径。
+     */
     override val requiredImport: ImportPath?,
+    /**
+     * 约束本次补全判定结果生命周期的会话 token。
+     */
     override val token: CaLifetimeToken,
 ) : CaCompletionCandidateDecision
 
@@ -35,10 +47,25 @@ internal class CaCfirCompletionCandidateDecisionImpl(
  * 引用缩短操作实现。
  */
 internal class CaCfirReferenceShorteningOperationImpl(
+    /**
+     * 可以被短名替换的限定表达式。
+     */
     override val expression: CjExpression,
+    /**
+     * 限定表达式当前解析到的目标符号。
+     */
     override val target: CaSymbol,
+    /**
+     * 替换限定表达式时使用的短名。
+     */
     override val shortName: Name,
+    /**
+     * 目标符号在当前位置的补全与导入判定。
+     */
     override val decision: CaCompletionCandidateDecision,
+    /**
+     * 约束缩短操作对象生命周期的会话 token。
+     */
     override val token: CaLifetimeToken,
 ) : CaReferenceShorteningOperation
 
@@ -46,8 +73,17 @@ internal class CaCfirReferenceShorteningOperationImpl(
  * 引用缩短规划实现。
  */
 internal class CaCfirReferenceShorteningPlanImpl(
+    /**
+     * 被分析的仓颉源文件。
+     */
     override val file: CjFile,
+    /**
+     * 文件内所有可安全执行的引用缩短操作。
+     */
     override val operations: List<CaReferenceShorteningOperation>,
+    /**
+     * 约束缩短规划生命周期的会话 token。
+     */
     override val token: CaLifetimeToken,
 ) : CaReferenceShorteningPlan
 
@@ -55,10 +91,25 @@ internal class CaCfirReferenceShorteningPlanImpl(
  * 指定选择范围的缩短命令实现。
  */
 internal class CaCfirReferenceShorteningCommandImpl(
+    /**
+     * 命令作用的仓颉源文件。
+     */
     override val file: CjFile,
+    /**
+     * 调用方指定的文本选择范围。
+     */
     override val selection: TextRange,
+    /**
+     * 与选择范围相交、应由本命令执行的缩短操作。
+     */
     override val operations: List<CaReferenceShorteningOperation>,
+    /**
+     * 执行缩短后为保持短名可见而需要补充的导入集合。
+     */
     override val importsToAdd: Set<ImportPath>,
+    /**
+     * 约束缩短命令生命周期的会话 token。
+     */
     override val token: CaLifetimeToken,
 ) : CaReferenceShorteningCommand
 
@@ -66,11 +117,29 @@ internal class CaCfirReferenceShorteningCommandImpl(
  * 导入优化规划实现。
  */
 internal class CaCfirImportOptimizationPlanImpl(
+    /**
+     * 被优化导入列表的仓颉源文件。
+     */
     override val file: CjFile,
+    /**
+     * 优化后应继续保留的现有导入项。
+     */
     override val retainedImports: List<CjImportInfo>,
+    /**
+     * 与前序导入路径重复、可删除的导入项。
+     */
     override val duplicateImports: List<CjImportInfo>,
+    /**
+     * 在当前文件引用集合中未被使用、可删除的导入项。
+     */
     override val unusedImports: List<CjImportInfo>,
+    /**
+     * 引用缩短或补全判定发现的缺失导入路径。
+     */
     override val missingImports: List<ImportPath>,
+    /**
+     * 约束导入优化规划生命周期的会话 token。
+     */
     override val token: CaLifetimeToken,
 ) : CaImportOptimizationPlan
 
@@ -205,6 +274,9 @@ internal fun CaCfirSession.collectImportOptimizationPlan(file: CjFile): CaImport
     )
 }
 
+/**
+ * 解析限定表达式在缩短时真正要保留的目标符号。
+ */
 private fun CaCfirSession.resolveShorteningTarget(expression: CjDotQualifiedExpression): CaSymbol? {
     val selector = expression.selectorExpression
     return when (selector) {
@@ -230,6 +302,9 @@ private fun CaSymbol.canBeShortenedAsStandaloneReference(): Boolean = when (this
     else -> false
 }
 
+/**
+ * 判断符号是否已经可通过文件作用域或当前包作用域以短名直接访问。
+ */
 private fun CaCfirSession.isDirectlyReachable(symbol: CaSymbol, file: CjFile): Boolean {
     val shortName = symbol.shortNameOrNull() ?: return false
     val visibleSymbols = buildList<CaSymbol> {
@@ -246,6 +321,9 @@ private fun CaCfirSession.isDirectlyReachable(symbol: CaSymbol, file: CjFile): B
         .any { visibleSymbol -> with(this) { visibleSymbol.isEquivalentTo(symbol) } }
 }
 
+/**
+ * 提取符号可参与补全、导入和缩短判定的短名。
+ */
 private fun CaSymbol.shortNameOrNull(): Name? = when (this) {
     is CaClassLikeSymbol -> classId?.shortClassName
     is CaCallableSymbol -> callableId?.callableName
@@ -253,6 +331,9 @@ private fun CaSymbol.shortNameOrNull(): Name? = when (this) {
     else -> name
 }
 
+/**
+ * 将可独立导入的顶层符号转换为精确导入路径。
+ */
 private fun CaSymbol.asTopLevelImportPath(): ImportPath? = when (this) {
     is CaClassLikeSymbol -> classId?.let { ImportPath(it.asSingleFqName(), false) }
     is CaCallableSymbol -> callableId
@@ -261,6 +342,9 @@ private fun CaSymbol.asTopLevelImportPath(): ImportPath? = when (this) {
     else -> null
 }
 
+/**
+ * 从 PSI 导入节点恢复统一的 [ImportPath] 表示。
+ */
 private fun CjImportInfo.importPathOrNull(): ImportPath? {
     return when (this) {
         is org.cangnova.cangjie.psi.CjImportItem -> importPath

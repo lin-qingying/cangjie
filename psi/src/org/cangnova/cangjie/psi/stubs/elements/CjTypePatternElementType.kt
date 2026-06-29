@@ -45,6 +45,9 @@ class CjTypePatternElementType(debugName: String) :
         CangJieTypePatternStub::class.java,
     ) {
 
+    /**
+     * 实现 `createStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createStub(psi: CjTypePattern, parentStub: StubElement<*>?): CangJieTypePatternStub {
         val name = psi.name
         return CangJieTypePatternStubImpl(
@@ -53,17 +56,26 @@ class CjTypePatternElementType(debugName: String) :
         )
     }
 
+    /**
+     * 实现 `serialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     @Throws(IOException::class)
     override fun serialize(stub: CangJieTypePatternStub, dataStream: StubOutputStream) {
         dataStream.writeName(stub.name)
     }
 
+    /**
+     * 实现 `deserialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     @Throws(IOException::class)
     override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>): CangJieTypePatternStub {
         val name = dataStream.readName()
         return CangJieTypePatternStubImpl(parentStub, name)
     }
 
+    /**
+     * 实现 `indexStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun indexStub(stub: CangJieTypePatternStub, sink: IndexSink) {
         // 类型模式的索引由变量索引处理
     }

@@ -15,11 +15,24 @@ import org.cangnova.cangjie.cfir.declarations.util.superConeTypes
 import org.cangnova.cangjie.cfir.symbols.CfirLazyDeclarationResolver
 import org.cangnova.cangjie.cfir.resolve.toClassSymbol
 
+/**
+ * low-level CFIR session 暴露给 CFIR 树的 lazy declaration resolver 实现。
+ */
 @ThreadSafeMutableState
 internal class LLCfirLazyDeclarationResolver : CfirLazyDeclarationResolver() {
+    /**
+     * low-level resolver 的阶段开始回调由模块级 lazy resolver 处理，这里保持空实现。
+     */
     override fun startResolvingPhase(phase: CfirResolvePhase) {}
+
+    /**
+     * low-level resolver 的阶段结束回调由模块级 lazy resolver 处理，这里保持空实现。
+     */
     override fun finishResolvingPhase(phase: CfirResolvePhase) {}
 
+    /**
+     * 将单个 CFIR 元素推进到指定解析阶段。
+     */
     override fun lazyResolveToPhase(element: CfirElementWithResolveState, toPhase: CfirResolvePhase) {
         assertLazyResolveAllowed()
         val session = element.llCfirResolvableSession ?: return
@@ -29,6 +42,9 @@ internal class LLCfirLazyDeclarationResolver : CfirLazyDeclarationResolver() {
         )
     }
 
+    /**
+     * 将 class 本身和 callable 成员推进到指定解析阶段。
+     */
     override fun lazyResolveToPhaseWithCallableMembers(clazz: CfirClass, toPhase: CfirResolvePhase) {
         assertLazyResolveAllowed()
         val cfirClass = clazz as? CfirClass ?: return
@@ -46,6 +62,9 @@ internal class LLCfirLazyDeclarationResolver : CfirLazyDeclarationResolver() {
         }
     }
 
+    /**
+     * 递归推进目标元素及其声明子树到指定解析阶段。
+     */
     override fun lazyResolveToPhaseRecursively(element: CfirElementWithResolveState, toPhase: CfirResolvePhase) {
         assertLazyResolveAllowed()
         val session = element.llCfirResolvableSession ?: return

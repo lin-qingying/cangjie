@@ -44,20 +44,32 @@ class CjConstantPatternElementType(debugName: String) :
         CangJieConstantPatternStub::class.java,
     ) {
 
+    /**
+     * 实现 `createStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createStub(psi: CjConstantPattern, parentStub: StubElement<*>?): CangJieConstantPatternStub {
         return CangJieConstantPatternStubImpl(parentStub)
     }
 
+    /**
+     * 实现 `serialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     @Throws(IOException::class)
     override fun serialize(stub: CangJieConstantPatternStub, dataStream: StubOutputStream) {
         // 常量模式没有额外数据
     }
 
+    /**
+     * 实现 `deserialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     @Throws(IOException::class)
     override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>): CangJieConstantPatternStub {
         return CangJieConstantPatternStubImpl(parentStub)
     }
 
+    /**
+     * 实现 `indexStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun indexStub(stub: CangJieConstantPatternStub, sink: IndexSink) {
         // 常量模式不需要索引
     }

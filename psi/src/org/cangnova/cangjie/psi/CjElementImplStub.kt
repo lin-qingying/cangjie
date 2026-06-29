@@ -39,6 +39,9 @@ import com.intellij.psi.impl.source.PsiFileImpl
 import com.intellij.psi.stubs.IStubElementType
 import com.intellij.psi.stubs.StubElement
 
+/**
+ * 表示 `CjElementImplStub`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 open class CjElementImplStub<T : StubElement<*>> :
     StubBasedPsiElementBase<T>, CjElement, StubBasedPsiElement<T> {
     constructor(stub: T, nodeType: IStubElementType<*, *>) : super(stub, nodeType)
@@ -47,31 +50,52 @@ open class CjElementImplStub<T : StubElement<*>> :
 
     constructor(node: ASTNode) : super(node)
 
+    /**
+     * 实现 `getPsiOrParent` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getPsiOrParent(): CjElement {
         return this
     }
 
+    /**
+     * 实现 `toString` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun toString(): String {
         return node.elementType.toString()
     }
 
+    /**
+     * 实现 `getReference` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getReference(): PsiReference? {
         val references = references
         return if ((references.isNotEmpty())) references[0] else null
     }
 
+    /**
+     * 实现 `getReferences` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getReferences(): Array<PsiReference> {
         return getReferencesFromProviders(this)
     }
 
+    /**
+     * 实现 `getOwnReferences` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getOwnReferences(): Collection<PsiSymbolReference> {
         return cangJieOwnReferences()
     }
 
+    /**
+     * 实现 `getOwnDeclarations` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getOwnDeclarations(): Collection<PsiSymbolDeclaration> {
         return cangJieOwnDeclarations()
     }
 
+    /**
+     * 实现 `getContainingCjFile` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getContainingCjFile(): CjFile {
         val file = containingFile
         if (file !is CjFile) {
@@ -95,10 +119,16 @@ open class CjElementImplStub<T : StubElement<*>> :
         return file
     }
 
+    /**
+     * 实现 `getLanguage` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getLanguage(): Language {
         return CangJieLanguage
     }
 
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun accept(visitor: PsiElementVisitor) {
         if (visitor is CjVisitor<*, *>) {
             @Suppress("UNCHECKED_CAST")
@@ -108,6 +138,9 @@ open class CjElementImplStub<T : StubElement<*>> :
         }
     }
 
+    /**
+     * 实现 `acceptChildren` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <D> acceptChildren(visitor: CjVisitor<Unit, D>, data: D) {
         var child = firstChild
         while (child != null) {
@@ -118,12 +151,18 @@ open class CjElementImplStub<T : StubElement<*>> :
         }
     }
 
+    /**
+     * 提供 `,` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun <PsiT : CjElementImplStub<*>, StubT : StubElement<*>> getStubOrPsiChildrenAsList(
         elementType: CjStubElementType<StubT, PsiT>,
     ): List<PsiT> {
         return listOf(*getStubOrPsiChildren(elementType, elementType.arrayFactory))
     }
 
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitCjElement(this, data)
     }

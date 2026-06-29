@@ -6,6 +6,6 @@ open class Base {
 }
 
 class MissingSuper <: Base {
-    <!EXPLICIT_SUPER_CALL_REQUIRED!>init<!>() {
+    <!NO_NON_PARAM_CONSTRUCTOR_IN_SUPER_CLASS!>init<!>() {
     }
 }

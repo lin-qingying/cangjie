@@ -53,8 +53,14 @@ import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 abstract class CjVariable<S : StubElement<*>> : CjDeclarationStub<S>, CjVariableDeclaration {
     constructor(stub: S, type: IStubElementType<S, *>) : super(stub, type)
     constructor(node: ASTNode) : super(node)
+    /**
+     * 保存 `isLocal`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val isLocal: Boolean
         get() = !isTopLevel && this !is CjFieldVariable
+    /**
+     * 保存 `isTopLevel`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     open val isTopLevel: Boolean get() = false
 }
 
@@ -79,24 +85,42 @@ class CjPatternVariable : CjVariable<CangJieVariableStub> {
     constructor(stub: CangJieVariableStub) : super(stub, CjStubElementTypes.VARIABLE)
     constructor(node: ASTNode) : super(node)
 
+    /**
+     * 暴露 `valueParameterList`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val valueParameterList: CjParameterList?
         get() = null
 
+    /**
+     * 暴露 `valueParameters`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val valueParameters: List<CjParameter>
         get() = emptyList()
 
 
 
     // Variables don't have type parameters
+    /**
+     * 暴露 `typeParameterList`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val typeParameterList: CjTypeParameterList?
         get() = null
 
+    /**
+     * 暴露 `typeConstraintList`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val typeConstraintList: CjTypeConstraintList?
         get() = null
 
+    /**
+     * 暴露 `typeConstraints`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val typeConstraints: List<CjTypeConstraint>
         get() = emptyList()
 
+    /**
+     * 暴露 `typeParameters`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val typeParameters: List<CjTypeParameter>
         get() = emptyList()
 
@@ -139,17 +163,29 @@ class CjPatternVariable : CjVariable<CangJieVariableStub> {
             }
         }
 
+    /**
+     * 保存 `equalsToken`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val equalsToken: PsiElement? get() = findChildByType(CjTokens.EQ)
 
+    /**
+     * 实现 `toString` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun toString(): String {
         return "${super.toString()} [${patternKind}]"
     }
 
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitPatternVariable(this, data)
 
     }
 
+    /**
+     * 暴露 `isTopLevel`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val isTopLevel: Boolean
         get() {
             val stub = stub
@@ -160,6 +196,9 @@ class CjPatternVariable : CjVariable<CangJieVariableStub> {
             return parent is CjFile
         }
 
+    /**
+     * 暴露 `typeReference`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val typeReference: CjTypeReference?
         get() {
             val stub = stub
@@ -185,13 +224,22 @@ class CjPatternVariable : CjVariable<CangJieVariableStub> {
 
 
 
+    /**
+     * 实现 `setTypeReference` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun setTypeReference(typeRef: CjTypeReference?): CjTypeReference? {
         return setTypeReference(this, pattern, typeRef)
     }
 
+    /**
+     * 暴露 `colon`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val colon: PsiElement?
         get() = findChildByType(CjTokens.COLON)
 
+    /**
+     * 暴露 `isVar`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val isVar: Boolean
         get() {
             val stub = stub
@@ -202,6 +250,9 @@ class CjPatternVariable : CjVariable<CangJieVariableStub> {
             return node.findChildByType(CjTokens.VAR_KEYWORD) != null
         }
 
+    /**
+     * 保存 `isConst`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val isConst: Boolean
         get() {
             val stub = stub
@@ -212,9 +263,15 @@ class CjPatternVariable : CjVariable<CangJieVariableStub> {
             return node.findChildByType(CjTokens.CONST_KEYWORD) != null
         }
 
+    /**
+     * 暴露 `isStatic`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val isStatic: Boolean
         get() = hasModifier(CjTokens.STATIC_KEYWORD)
 
+    /**
+     * 暴露 `letOrVarKeyword`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val letOrVarKeyword: PsiElement
         get() {
             val element =
@@ -222,6 +279,9 @@ class CjPatternVariable : CjVariable<CangJieVariableStub> {
             return element
         }
 
+    /**
+     * 暴露 `initializer`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val initializer: CjExpression?
         get() {
             val stub = stub
@@ -241,6 +301,9 @@ class CjPatternVariable : CjVariable<CangJieVariableStub> {
             )
         }
 
+    /**
+     * 实现 `hasInitializer` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun hasInitializer(): Boolean {
         val stub = stub
         if (stub != null) {
@@ -263,22 +326,37 @@ class CjPatternVariable : CjVariable<CangJieVariableStub> {
         )
     }
 // CjVariable 是模式匹配声明，可能包含多个绑定。请从 CjBindingPattern 获取 fqName。
+    /**
+     * 暴露 `nameAsSafeName`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val nameAsSafeName: Name
         get() = throw UnsupportedOperationException(
             "CjVariable 是模式匹配声明，可能包含多个绑定。请使用 pattern.getAllBindings() 获取所有变量名。"
         )
 
+    /**
+     * 暴露 `fqName`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val fqName: FqName?
         get() = null
 
+    /**
+     * 实现 `getNameIdentifier` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getNameIdentifier(): PsiElement? {
       return  null
     }
 
+    /**
+     * 实现 `setName` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun setName(name: @NlsSafe String): PsiElement? {
        return null
     }
 
+    /**
+     * 暴露 `nameAsName`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val nameAsName: Name?
         get() = null
     companion object {

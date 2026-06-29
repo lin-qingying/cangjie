@@ -31,10 +31,19 @@ import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 import com.intellij.psi.stubs.StubElement
 import com.intellij.util.io.StringRef
 
+/**
+ * 表示 `CangJieNameReferenceExpressionStubImpl`，承载PSI Stub中的语法节点、索引桩或辅助模型。
+ */
 class CangJieNameReferenceExpressionStubImpl :
     CangJieStubBaseImpl<CjNameReferenceExpression>,
     CangJieNameReferenceExpressionStub {
+    /**
+     * 保存 `referencedName` 的内部状态，供PSI Stub实现维护节点缓存或解析上下文。
+     */
     private val referencedName: StringRef
+    /**
+     * 保存 `isClassRef`，供PSI Stub流程读取节点结构或语义信息。
+     */
     val isClassRef: Boolean
 
     constructor(parent: StubElement<*>?, referencedName: StringRef) : super(
@@ -54,20 +63,35 @@ class CangJieNameReferenceExpressionStubImpl :
         this.isClassRef = myClassRef
     }
 
+    /**
+     * 实现 `getReferencedName` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getReferencedName(): String {
         return referencedName.string
     }
 
+    /**
+     * 实现 `copyInto` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun copyInto(newParent: StubElement<*>?): CangJieNameReferenceExpressionStubImpl = CangJieNameReferenceExpressionStubImpl(
         parent = newParent,
         referencedName = referencedName,
         myClassRef = isClassRef,
     )
 }
+/**
+ * 表示 `CangJieNameBasicReferenceExpressionStubImpl`，承载PSI Stub中的语法节点、索引桩或辅助模型。
+ */
 class CangJieNameBasicReferenceExpressionStubImpl :
     CangJieStubBaseImpl<CjNameBasicReferenceExpression>,
     CangJieNameBasicReferenceExpressionStub {
+    /**
+     * 保存 `referencedName` 的内部状态，供PSI Stub实现维护节点缓存或解析上下文。
+     */
     private val referencedName: StringRef
+    /**
+     * 保存 `isClassRef`，供PSI Stub流程读取节点结构或语义信息。
+     */
     val isClassRef: Boolean
 
     constructor(parent: StubElement<*>?, referencedName: StringRef) : super(
@@ -87,10 +111,16 @@ class CangJieNameBasicReferenceExpressionStubImpl :
         this.isClassRef = myClassRef
     }
 
+    /**
+     * 实现 `getReferencedName` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getReferencedName(): String {
         return referencedName.string
     }
 
+    /**
+     * 实现 `copyInto` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun copyInto(newParent: StubElement<*>?): CangJieNameBasicReferenceExpressionStubImpl = CangJieNameBasicReferenceExpressionStubImpl(
         parent = newParent,
         referencedName = referencedName,

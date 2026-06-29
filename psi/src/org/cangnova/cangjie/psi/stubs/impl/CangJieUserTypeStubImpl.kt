@@ -30,10 +30,16 @@ import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 import com.intellij.psi.PsiElement
 import com.intellij.psi.stubs.StubElement
 
+/**
+ * 表示 `CangJieUserTypeStubImpl`，承载PSI Stub中的语法节点、索引桩或辅助模型。
+ */
 class CangJieUserTypeStubImpl(
 
     parent: StubElement<out PsiElement>?,
 ) : CangJieStubBaseImpl<CjUserType>(parent, CjStubElementTypes.USER_TYPE), CangJieUserTypeStub {
+    /**
+     * 实现 `copyInto` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun copyInto(newParent: StubElement<*>?): CangJieUserTypeStubImpl = CangJieUserTypeStubImpl(
         parent = newParent,
     )

@@ -27,11 +27,20 @@ package org.cangnova.cangjie.psi
 import com.intellij.lang.ASTNode
 import com.intellij.psi.util.PsiTreeUtil
 
+/**
+ * 表示 `CjPrefixExpression`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjPrefixExpression(node: ASTNode) : CjUnaryExpression(node) {
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitPrefixExpression(this, data)
     }
 
+    /**
+     * 暴露 `baseExpression`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     @get:IfNotParsed
     override val baseExpression: CjExpression?
         get() = PsiTreeUtil.getNextSiblingOfType(

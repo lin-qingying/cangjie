@@ -24,12 +24,27 @@
 
 package org.cangnova.cangjie.psi
 
+/**
+ * 定义 `CjTypeParameterListOwner` 接口，约束仓颉 PSI节点或服务需要暴露的结构能力。
+ */
 interface CjTypeParameterListOwner : CjNamedDeclaration {
+    /**
+     * 保存 `typeParameterList`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val typeParameterList: CjTypeParameterList?
 
+    /**
+     * 保存 `typeConstraintList`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val typeConstraintList: CjTypeConstraintList?
 
+    /**
+     * 保存 `typeConstraints`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val typeConstraints: List<CjTypeConstraint>
 
+    /**
+     * 保存 `typeParameters`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val typeParameters: List<CjTypeParameter>
 }

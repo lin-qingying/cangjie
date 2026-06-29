@@ -11,6 +11,9 @@ import org.cangnova.cangjie.cfir.declarations.ResolveStateAccess
 import org.cangnova.cangjie.cfir.expressions.withCfirEntry
 import org.cangnova.cangjie.utils.exceptions.checkWithAttachment
 
+/**
+ * 校验当前 CFIR 元素至少已经达到 [requiredResolvePhase]。
+ */
 internal fun CfirElementWithResolveState.checkPhase(requiredResolvePhase: CfirResolvePhase) {
     @OptIn(ResolveStateAccess::class)
     val declarationResolveState = resolveState

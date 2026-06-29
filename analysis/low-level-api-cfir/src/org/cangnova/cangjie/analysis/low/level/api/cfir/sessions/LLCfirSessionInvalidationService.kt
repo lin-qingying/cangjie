@@ -20,19 +20,34 @@ import org.cangnova.cangjie.analysis.api.platform.modification.KotlinModificatio
  */
 @CaImplementationDetail
 class LLCfirSessionInvalidationService(private val project: Project) {
+    /**
+     * 监听 analysis API 模块修改事件并转发给 session invalidation service。
+     */
     @OptIn(CaPlatformInterface::class)
     internal class LLCangJieModificationEventListener(val project: Project) : KotlinModificationEventListener {
+        /**
+         * 在收到模块或源码修改事件后触发 session 失效。
+         */
         override fun onModification(event: KotlinModificationEvent) {
             getInstance(project).invalidate(event)
         }
     }
 
+    /**
+     * 监听 PSI 全局修改计数变化，用于清理 unstable dangling file session。
+     */
     internal class LLPsiModificationTrackerListener(val project: Project) : PsiModificationTracker.Listener {
+        /**
+         * PSI 修改计数变化后失效 unstable dangling file session。
+         */
         override fun modificationCountChanged() {
             getInstance(project).invalidator.invalidateUnstableDanglingFileSessions()
         }
     }
 
+    /**
+     * 当前服务使用的 session cache storage invalidator。
+     */
     private val invalidator by lazy(LazyThreadSafetyMode.PUBLICATION) {
         LLCfirSessionCacheStorageInvalidator(project, LLCfirSessionCache.getInstance(project).storage)
     }
@@ -53,6 +68,9 @@ class LLCfirSessionInvalidationService(private val project: Project) {
     }
 
     companion object {
+        /**
+         * 取得工程级 session invalidation service。
+         */
         fun getInstance(project: Project): LLCfirSessionInvalidationService =
             project.getService(LLCfirSessionInvalidationService::class.java)
     }

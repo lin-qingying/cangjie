@@ -30,15 +30,33 @@ import com.intellij.psi.PsiElement
 import kotlin.properties.ReadOnlyProperty
 import kotlin.reflect.KProperty
 
+/**
+ * 表示 `UserDataCachedDelegate`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 private class UserDataCachedDelegate<in T : UserDataHolder, out V>(
     key: String,
+    /**
+     * 保存 `modificationStampFactory` 的内部状态，供仓颉 PSI实现维护节点缓存或解析上下文。
+     */
     private val modificationStampFactory: (T) -> Long,
+    /**
+     * 保存 `valueFactory` 的内部状态，供仓颉 PSI实现维护节点缓存或解析上下文。
+     */
     private val valueFactory: (T) -> V,
 ) : ReadOnlyProperty<T, V> {
+    /**
+     * 保存 `key` 的内部状态，供仓颉 PSI实现维护节点缓存或解析上下文。
+     */
     private val key = Key<ValueHolder<V>>(key)
 
+    /**
+     * 表示 `ValueHolder`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+     */
     private class ValueHolder<V>(val value: V, val modificationStamp: Long)
 
+    /**
+     * 实现 `getValue` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getValue(thisRef: T, property: KProperty<*>): V {
         val cached = thisRef.getUserData(key)
         val modificationStamp = modificationStampFactory(thisRef)
@@ -51,10 +69,16 @@ private class UserDataCachedDelegate<in T : UserDataHolder, out V>(
         return value
     }
 }
+/**
+ * 提供 `userDataCached` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+ */
 fun <T : UserDataHolder, V> userDataCached(key: String, modificationStampFactory: (T) -> Long, valueFactory: (T) -> V): ReadOnlyProperty<T, V> {
     return UserDataCachedDelegate(key, modificationStampFactory, valueFactory)
 }
 
+/**
+ * 提供 `userDataCached` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+ */
 fun <T : PsiElement, V> userDataCached(key: String, valueFactory: (T) -> V): ReadOnlyProperty<T, V> {
     return userDataCached(key, { it.containingFile.modificationStamp }, valueFactory)
 }

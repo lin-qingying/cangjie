@@ -17,6 +17,11 @@ interface ListField {
      */
     val listType: ClassRef<PositionTypeParameterRef>
 
+    /**
+     * 将列表类型和元素类型组合后的完整字段类型。
+     *
+     * 生成属性、构造参数和函数签名时应使用该类型，而不是分别读取 [listType] 与 [baseType]。
+     */
     val typeRef: ClassRef<PositionTypeParameterRef>
         get() = listType.withArgs(baseType)
 }

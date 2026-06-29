@@ -271,6 +271,34 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
             RENDER_STRING,
         )
         map.put(
+            CfirErrors.THIS_OR_SUPER_NOT_ALLOWED_TO_INITIALIZE_NON_STATIC_MEMBER,
+            "''{0}'' is not allowed to initialize non-static member.",
+            RENDER_STRING,
+        )
+        map.put(
+            CfirErrors.THIS_OR_SUPER_NOT_ALLOWED_TO_INITIALIZE_STATIC_MEMBER,
+            "''{0}'' is not allowed to initialize static member.",
+            RENDER_STRING,
+        )
+        map.put(
+            CfirErrors.THIS_SUPER_USE_ERROR_OUTSIDE_CLASS,
+            "''{0}'' cannot be used outside class or struct or interface.",
+            RENDER_STRING,
+        )
+        map.put(
+            CfirErrors.INVALID_THIS_CALL_OUTSIDE_CTOR,
+            "Invalid calling ''{0}'' outside the constructor.",
+            RENDER_STRING,
+        )
+        map.put(
+            CfirErrors.ILLEGAL_SUPER_ALONE,
+            "Invalid super expression, it can only be used on the left-hand side of a dot.",
+        )
+        map.put(
+            CfirErrors.ILLEGAL_THIS_OUTSIDE_STRUCT_CONSTRUCTOR,
+            "''this'' is only allowed to be used inside constructor or function for struct.",
+        )
+        map.put(
             CfirErrors.ILLEGAL_PLACE_OF_CALLING_THIS_OR_SUPER,
             "Call to ''{0}'' must be first expression in constructor.",
             RENDER_STRING,
@@ -302,6 +330,31 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
             RENDER_STRING,
         )
         map.put(CfirErrors.STATIC_MEMBERS_CANNOT_CALL_MEMBERS, "non-static variable 'this' cannot be referenced from a static context")
+        map.put(
+            CfirErrors.ILLEGAL_ACCESS_NON_STATIC_MEMBER,
+            "''{0}'' is non-static member, cannot access by type name",
+            RENDER_NAME,
+        )
+        map.put(
+            CfirErrors.STATIC_FUNCTION_CANNOT_ACCESS_NON_STATIC_MEMBER,
+            "''{0}'' is non-static member, cannot be accessed by static function",
+            RENDER_NAME,
+        )
+        map.put(
+            CfirErrors.STATIC_LAMBDA_CANNOT_ACCESS_NON_STATIC,
+            "''{0}'' is non-static member, cannot be accessed by static lambda expression",
+            RENDER_NAME,
+        )
+        map.put(
+            CfirErrors.STATIC_VARIABLE_CANNOT_ACCESS_NON_STATIC_MEMBER,
+            "''{0}'' is non-static member, cannot be accessed by static variable",
+            RENDER_NAME,
+        )
+        map.put(
+            CfirErrors.OBJECT_CANNOT_ACCESS_STATIC_MEMBER,
+            "object cannot access static member ''{0}''",
+            RENDER_NAME,
+        )
         map.put(
             CfirErrors.EXPLICIT_SUPER_CALL_REQUIRED,
             "Explicit super constructor call is required.",

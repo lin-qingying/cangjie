@@ -25,8 +25,14 @@ import org.junit.jupiter.api.Test
 class CangJieFindUsagesProviderTest : AbstractAnalysisApiExecutionTest(
     "analysis/cj-references/testData/findUsagesProvider",
 ) {
+    /**
+     * 使用 standalone CFIR 分析 API 配置运行 find usages provider 测试。
+     */
     override val configurator = CaCfirStandaloneAnalysisApiTestConfigurator
 
+    /**
+     * 验证 Find Usages UI 展示文本、可搜索性和帮助 ID 契约。
+     */
     @Test
     fun presentationContracts(mainFile: CjFile) {
         val provider = CangJieFindUsagesProvider()

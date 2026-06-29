@@ -18,6 +18,12 @@ import java.io.File
  * - 反编译文本路径只通过 compiled stub -> decompiled PSI -> text builder。
  */
 object CjoDeclarationLoader {
+    /**
+     * 将已加载的 `.cjo` package 反序列化为顶层 CFIR 声明列表。
+     *
+     * 该方法按 package header 中记录的顶层声明索引和 extend 索引读取声明，并使用外部传入的
+     * [moduleData] 作为 owner，确保反编译 stub 与真实项目模块结构保持一致。
+     */
     fun loadDeclarations(
         loadedPackage: LoadedCjoPackage,
         moduleData: CfirModuleData,

@@ -30,15 +30,24 @@ import org.cangnova.cangjie.psi.stubs.elements.CjTokenSets
 import com.intellij.lang.ASTNode
 import com.intellij.psi.util.PsiTreeUtil
 
+/**
+ * 表示 `CjPropertyBody`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjPropertyBody : CjElementImplStub<CangJiePlaceHolderStub<CjPropertyBody>>, CjDeclarationContainer {
 
     constructor(node: ASTNode) : super(node)
 
     constructor(stub: CangJiePlaceHolderStub<CjPropertyBody>) : super(stub, CjStubElementTypes.PROPERTY_BODY)
+    /**
+     * 保存 `accessors`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val accessors: List<CjPropertyAccessor>
         get() {
             return getStubOrPsiChildrenAsList(CjStubElementTypes.PROPERTY_ACCESSOR)
         }
+    /**
+     * 暴露 `declarations`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val declarations: List<CjDeclaration>
         get() = stub?.getChildrenByType(CjTokenSets.DECLARATION_TYPES, CjDeclaration.ARRAY_FACTORY)?.toList()
             ?: PsiTreeUtil.getChildrenOfTypeAsList(this, CjDeclaration::class.java)

@@ -50,17 +50,36 @@ import org.cangnova.cangjie.psi.*
  * PSI index based implementation of [CfirPredicateBasedProvider].
  */
 internal class LLCfirIdePredicateBasedProvider(
+    /**
+     * 当前 provider 服务的低阶 CFIR session。
+     */
     private val session: LLCfirSession,
+
+    /**
+     * IDE 层注解索引解析器，用于按注解 class id 找到 PSI 声明。
+     */
     private val annotationsResolver: CangJieAnnotationsResolver,
 ) : CfirPredicateBasedProvider() {
+    /**
+     * 当前工程的项目结构提供器，用于把 PSI 文件映射到正确的 analysis module。
+     */
     private val projectStructureProvider by lazy { CangJieProjectStructureProvider.getInstance(session.project) }
 
+    /**
+     * session 中注册的插件注解集合。
+     */
     private val registeredPluginAnnotations: CfirRegisteredPluginAnnotations
         get() = session.registeredPluginAnnotations
 
+    /**
+     * 按 CFIR 文件缓存声明到其外层 owner symbol 列表的映射。
+     */
     private val declarationOwnersCache: CfirCache<CfirFile, CfirOwnersStorage, Nothing?> =
         session.cfirCachesFactory.createCache { cfirFile -> CfirOwnersStorage.collectOwners(cfirFile) }
 
+    /**
+     * 根据 [predicate] 中的注解约束从 PSI 注解索引找到候选声明，再过滤为匹配的 CFIR symbol。
+     */
     override fun getSymbolsByPredicate(predicate: LookupPredicate): List<CfirBasedSymbol<*>> {
         val annotations = predicate.annotations
         val annotatedDeclarations = annotations
@@ -76,6 +95,11 @@ internal class LLCfirIdePredicateBasedProvider(
             .toList()
     }
 
+    /**
+     * 将 PSI 声明解析为可用于 lookup predicate 匹配的 CFIR 声明。
+     *
+     * 只接受非局部 class-like、函数、构造函数和属性声明；局部声明永远不应被 lookup predicate 命中。
+     */
     private fun CjElement.findCfirDeclarationForLookupPredicate(): CfirDeclaration? {
         if (this !is CjDeclaration) return null
 
@@ -93,6 +117,9 @@ internal class LLCfirIdePredicateBasedProvider(
         return this.resolveToCfirSymbol(resolutionFacadeForFile).cfir
     }
 
+    /**
+     * 返回 [declaration] 的外层声明 owner symbol 列表。
+     */
     override fun getOwnersOfDeclaration(declaration: CfirDeclaration): List<CfirBasedSymbol<*>>? {
         val cfirFile = declaration.getContainingFile() ?: return null
         val declarationOwners = declarationOwnersCache.getValue(cfirFile)
@@ -100,6 +127,9 @@ internal class LLCfirIdePredicateBasedProvider(
         return declarationOwners.getOwners(declaration)
     }
 
+    /**
+     * 判断 [file] 对应的 PSI 文件中是否存在插件注册注解。
+     */
     override fun fileHasPluginAnnotations(file: CfirFile): Boolean {
         val targetCjFile = file.psi as? CjFile ?: return false
         val pluginAnnotations = registeredPluginAnnotations.annotations
@@ -114,6 +144,9 @@ internal class LLCfirIdePredicateBasedProvider(
         }
     }
 
+    /**
+     * 判断 [declaration] 是否满足给定 declaration 或 lookup predicate。
+     */
     override fun matches(predicate: AbstractPredicate<*>, declaration: CfirDeclaration): Boolean {
         return when (predicate) {
             is DeclarationPredicate -> predicate.accept(declarationPredicateMatcher, declaration)
@@ -121,10 +154,23 @@ internal class LLCfirIdePredicateBasedProvider(
         }
     }
 
+    /**
+     * declaration predicate 的匹配 visitor。
+     */
     private val declarationPredicateMatcher = Matcher<DeclarationPredicate>()
+
+    /**
+     * lookup predicate 的匹配 visitor。
+     */
     private val lookupPredicateMatcher = Matcher<LookupPredicate>()
 
+    /**
+     * 将 CFIR predicate 树解释为布尔匹配结果的 visitor。
+     */
     private inner class Matcher<P : AbstractPredicate<P>> : PredicateVisitor<P, Boolean, CfirDeclaration>() {
+        /**
+         * 未覆盖的 predicate 类型会走到这里，表示 matcher 与 predicate 层级已经不一致。
+         */
         override fun visitPredicate(predicate: AbstractPredicate<P>, data: CfirDeclaration): Boolean {
             error(
                 "When overrides for all possible DeclarationPredicate subtypes are implemented, " +
@@ -132,28 +178,46 @@ internal class LLCfirIdePredicateBasedProvider(
             )
         }
 
+        /**
+         * 匹配逻辑与：左右子谓词都必须满足。
+         */
         override fun visitAnd(predicate: AbstractPredicate.And<P>, data: CfirDeclaration): Boolean {
             return predicate.a.accept(this, data) && predicate.b.accept(this, data)
         }
 
+        /**
+         * 匹配逻辑或：任一子谓词满足即可。
+         */
         override fun visitOr(predicate: AbstractPredicate.Or<P>, data: CfirDeclaration): Boolean {
             return predicate.a.accept(this, data) || predicate.b.accept(this, data)
         }
 
+        /**
+         * 判断当前声明是否直接带有目标注解。
+         */
         override fun visitAnnotatedWith(predicate: AbstractPredicate.AnnotatedWith<P>, data: CfirDeclaration): Boolean {
             return annotationsOnDeclaration(data).any { it in predicate.annotations }
         }
 
+        /**
+         * 判断当前声明的任意外层声明是否带有目标注解。
+         */
         override fun visitAncestorAnnotatedWith(predicate: AbstractPredicate.AncestorAnnotatedWith<P>, data: CfirDeclaration): Boolean {
             return annotationsOnOuterDeclarations(data).any { it in predicate.annotations }
         }
 
+        /**
+         * 判断当前声明上的注解类型是否被目标 meta-annotation 标记。
+         */
         override fun visitMetaAnnotatedWith(predicate: AbstractPredicate.MetaAnnotatedWith<P>, data: CfirDeclaration): Boolean {
             return data.annotations.any { annotation ->
                 annotation.markedWithMetaAnnotation(session, data, predicate.metaAnnotations, predicate.includeItself)
             }
         }
 
+        /**
+         * 判断当前声明的直接父声明是否带有目标注解。
+         */
         override fun visitParentAnnotatedWith(predicate: AbstractPredicate.ParentAnnotatedWith<P>, data: CfirDeclaration): Boolean {
             val parent = data.directParentDeclaration ?: return false
             val parentPredicate = DeclarationPredicate.AnnotatedWith(predicate.annotations)
@@ -161,16 +225,25 @@ internal class LLCfirIdePredicateBasedProvider(
             return parentPredicate.accept(declarationPredicateMatcher, parent)
         }
 
+        /**
+         * 判断当前声明的任意直接子声明是否带有目标注解。
+         */
         override fun visitHasAnnotatedWith(predicate: AbstractPredicate.HasAnnotatedWith<P>, data: CfirDeclaration): Boolean {
             val childPredicate = DeclarationPredicate.AnnotatedWith(predicate.annotations)
 
             return data.anyDirectChildDeclarationMatches(childPredicate)
         }
 
+        /**
+         * 当前声明的直接父 CFIR 声明。
+         */
         private val CfirDeclaration.directParentDeclaration: CfirDeclaration?
             get() = getOwnersOfDeclaration(this)?.lastOrNull()?.cfir
     }
 
+    /**
+     * 判断当前声明的直接子声明中是否存在满足 [childPredicate] 的声明。
+     */
     private fun CfirDeclaration.anyDirectChildDeclarationMatches(childPredicate: DeclarationPredicate): Boolean {
         var result = false
 
@@ -181,6 +254,11 @@ internal class LLCfirIdePredicateBasedProvider(
         return result
     }
 
+    /**
+     * 读取 [declaration] 自身直接声明的注解全限定名集合。
+     *
+     * 优先使用已解析 CFIR 注解类型；当 CFIR 注解尚未解析出类型时，回退到 IDE 注解索引解析 PSI 注解。
+     */
     private fun annotationsOnDeclaration(declaration: CfirDeclaration): Set<AnnotationFqn> {
         if (declaration.annotations.isEmpty()) return emptySet()
 
@@ -199,11 +277,19 @@ internal class LLCfirIdePredicateBasedProvider(
         return psiAnnotations.map { it.asSingleFqName() }.toSet()
     }
 
+    /**
+     * 收集 [declaration] 所有外层 owner 声明上的注解全限定名。
+     */
     private fun annotationsOnOuterDeclarations(declaration: CfirDeclaration): Set<AnnotationFqn> {
         return getOwnersOfDeclaration(declaration)?.flatMap { annotationsOnDeclaration(it.cfir) }.orEmpty().toSet()
     }
 }
 
+/**
+ * 判断 annotation call 对应的注解类是否带有任一 [metaAnnotations]。
+ *
+ * 如果 [includeItself] 为 `true`，注解类自身命中 meta-annotation 集合也算匹配。
+ */
 private fun CfirAnnotation.markedWithMetaAnnotation(
     session: LLCfirSession,
     containingDeclaration: CfirDeclaration,
@@ -216,6 +302,11 @@ private fun CfirAnnotation.markedWithMetaAnnotation(
     return annotationSymbol.markedWithMetaAnnotation(session, metaAnnotations, includeItself, mutableSetOf())
 }
 
+/**
+ * 递归判断注解类 symbol 是否直接或间接带有目标 meta-annotation。
+ *
+ * [visited] 用于切断注解之间的循环引用。
+ */
 private fun CfirClassSymbol.markedWithMetaAnnotation(
     session: LLCfirSession,
     metaAnnotations: Set<AnnotationFqn>,
@@ -235,10 +326,24 @@ private fun CfirClassSymbol.markedWithMetaAnnotation(
     }
 }
 
-private class CfirOwnersStorage(private val declarationToOwner: Map<CfirDeclaration, List<CfirBasedSymbol<*>>>) {
+/**
+ * 保存单个 CFIR 文件中声明到其外层 owner symbol 列表的映射。
+ */
+private class CfirOwnersStorage(
+    /**
+     * 每个声明对应的外层 owner symbol 列表，顺序由外到内。
+     */
+    private val declarationToOwner: Map<CfirDeclaration, List<CfirBasedSymbol<*>>>
+) {
+    /**
+     * 返回 [declaration] 的 owner symbol 列表。
+     */
     fun getOwners(declaration: CfirDeclaration): List<CfirBasedSymbol<*>>? = declarationToOwner[declaration]
 
     companion object {
+        /**
+         * 遍历 [file] 并收集所有声明的 owner 信息。
+         */
         fun collectOwners(file: CfirFile): CfirOwnersStorage {
             val declarationToOwners = hashMapOf<CfirDeclaration, List<CfirBasedSymbol<*>>>()
             val psiToCfir = hashMapOf<CjElement, CfirDeclaration>()

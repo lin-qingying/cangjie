@@ -95,11 +95,21 @@ internal fun createDecompiledFileStub(
     return fileStub
 }
 
+/**
+ * 从文件 stub kind 中提取 package facade origin。
+ *
+ * 只有 facade kind 需要 origin 信息；普通 file kind 不参与顶层 callable facade 索引。
+ */
 private fun org.cangnova.cangjie.psi.stubs.CangJieFileStubKind.facadeOrigin(): CangJieStubOrigin.Facade? {
     val facade = this as? org.cangnova.cangjie.psi.stubs.CangJieFileStubKind.WithPackage.Facade ?: return null
     return CangJieStubOrigin.Facade(facade.facadeFqName.asString().replace('.', '/'))
 }
 
+/**
+ * 根据 `.cjo` header 中的 import 信息创建 PSI import directive stub。
+ *
+ * 新格式优先使用结构化 [CjoImportEntry]；旧格式回退到字符串 import 列表，并继续保留 all-under 标记。
+ */
 private fun createImportDirectiveStubs(
     parent: StubElement<*>,
     packageFqName: FqName,
@@ -129,6 +139,9 @@ private fun createImportDirectiveStubs(
     }
 }
 
+/**
+ * 按源码 PSI 的 dot-qualified 结构创建 package name 表达式 stub。
+ */
 private fun createPackageNameExpressionStubs(parent: StubElement<*>, segments: List<Name>) {
     when (segments.size) {
         0 -> Unit
@@ -144,12 +157,21 @@ private fun createPackageNameExpressionStubs(parent: StubElement<*>, segments: L
     }
 }
 
+/**
+ * 直接在父 stub 下创建一组扁平名称引用。
+ */
 private fun createFlatNameReferenceStubs(parent: StubElement<*>, segments: List<Name>) {
     segments.forEach { segment ->
         createNameReferenceStub(parent, segment)
     }
 }
 
+/**
+ * 为 import 路径创建名称表达式 stub。
+ *
+ * 短路径保持扁平结构，较长路径使用 dot-qualified package 前缀加末尾名称引用，
+ * 以匹配现有 PSI import stub 的结构预期。
+ */
 private fun createImportNameExpressionStubs(parent: StubElement<*>, segments: List<Name>, isAllUnder: Boolean) {
     if (segments.size <= 2) {
         createFlatNameReferenceStubs(parent, segments)
@@ -160,6 +182,9 @@ private fun createImportNameExpressionStubs(parent: StubElement<*>, segments: Li
     createNameReferenceStub(parent, segments.last())
 }
 
+/**
+ * 创建单个名称引用表达式 stub。
+ */
 private fun createNameReferenceStub(parent: StubElement<*>, name: Name) {
     CangJieNameReferenceExpressionStubImpl(parent, StringRef.fromString(name.asString()))
 }
@@ -189,6 +214,9 @@ internal fun createTypeParameterListStub(parent: StubElement<*>, typeParameters:
     }
 }
 
+/**
+ * 为只关心 operator 状态的 callable 创建修饰符 bit mask。
+ */
 internal fun createCallableModifierMask(isOperator: Boolean): Long {
     return createCallableModifierMask(
         isOperator = isOperator,
@@ -198,6 +226,11 @@ internal fun createCallableModifierMask(isOperator: Boolean): Long {
     )
 }
 
+/**
+ * 根据 CFIR 声明状态创建 PSI modifier list 使用的 bit mask。
+ *
+ * 该映射覆盖 abstract/open/static/mut/override/redef/unsafe/operator/foreign 等反编译文本需要展示的修饰符。
+ */
 internal fun createDeclarationModifierMask(
     status: CfirDeclarationStatus,
     isOperator: Boolean = false,
@@ -222,6 +255,11 @@ internal fun createDeclarationModifierMask(
     )
 }
 
+/**
+ * 根据显式布尔值创建 callable 修饰符 bit mask。
+ *
+ * 该重载主要服务于测试和没有完整 [CfirDeclarationStatus] 的 callable stub 构造场景。
+ */
 internal fun createCallableModifierMask(
     isOperator: Boolean = false,
     isAbstract: Boolean = false,
@@ -261,6 +299,12 @@ private fun toStubImportItemInfo(entry: CjoImportEntry): CangJieImportDirectiveS
     )
 }
 
+/**
+ * 根据 CFIR 声明实际类型分派到对应的 `.cjo` stub 构建入口。
+ *
+ * 不具备独立 PSI 声明形态的 accessor、code fragment、匿名函数、类型参数和值参数等节点在这里跳过；
+ * 它们会作为所属声明的附属结构由更具体的 builder 处理。
+ */
 internal fun createDeclarationStub(
     parent: StubElement<*>,
     declaration: CfirDeclaration,

@@ -32,17 +32,29 @@ import com.intellij.psi.stubs.StubElement
 import com.intellij.psi.stubs.StubInputStream
 import com.intellij.psi.stubs.StubOutputStream
 
+/**
+ * 表示 `CjValueArgumentElementType`，承载PSI Stub中的语法节点、索引桩或辅助模型。
+ */
 class CjValueArgumentElementType<T : CjValueArgument>(debugName: String, psiClass: Class<T>) :
     CjStubElementType<CangJieValueArgumentStub<T>, T>(debugName, psiClass, CangJieValueArgumentStub::class.java) {
 
+    /**
+     * 实现 `createStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createStub(psi: T, parentStub: StubElement<out PsiElement>?): CangJieValueArgumentStub<T> {
         return CangJieValueArgumentStubImpl(parentStub, this, psi.isSpread)
     }
 
+    /**
+     * 实现 `serialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun serialize(stub: CangJieValueArgumentStub<T>, dataStream: StubOutputStream) {
         dataStream.writeBoolean(stub.isSpread())
     }
 
+    /**
+     * 实现 `deserialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<PsiElement>?): CangJieValueArgumentStub<T> {
         val isSpread = dataStream.readBoolean()
         return CangJieValueArgumentStubImpl(parentStub, this, isSpread)

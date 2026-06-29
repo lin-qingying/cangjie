@@ -9,6 +9,9 @@ import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintStorage
 import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintSystemImpl
 import org.cangnova.cangjie.type.model.*
 
+/**
+ * 基于当前固定类型变量和额外绑定构造 substitutor。
+ */
 fun ConstraintStorage.buildCurrentSubstitutor(
     context: TypeSystemInferenceExtensionContext,
     additionalBindings: Map<TypeConstructorMarker, CangJieTypeMarker>
@@ -16,6 +19,9 @@ fun ConstraintStorage.buildCurrentSubstitutor(
     return context.typeSubstitutorByTypeConstructor(fixedTypeVariables + additionalBindings)
 }
 
+/**
+ * 构造约束系统最终对外可见的抽象结果 substitutor。
+ */
 fun ConstraintStorage.buildAbstractResultingSubstitutor(
     context: TypeSystemInferenceExtensionContext,
     transformTypeVariablesToErrorTypes: Boolean = true
@@ -36,6 +42,9 @@ fun ConstraintStorage.buildAbstractResultingSubstitutor(
     return context.typeSubstitutorByTypeConstructor(fixedTypeVariables + uninferredSubstitutorMap)
 }
 
+/**
+ * 构造把未固定类型变量替换为不可参与子类型比较 stub 的 substitutor。
+ */
 fun ConstraintStorage.buildNotFixedVariablesToNonSubtypableTypesSubstitutor(
     context: TypeSystemInferenceExtensionContext
 ): TypeSubstitutorMarker {
@@ -46,6 +55,9 @@ fun ConstraintStorage.buildNotFixedVariablesToNonSubtypableTypesSubstitutor(
     )
 }
 
+/**
+ * 判断类型构造器是否存在以自身为界的递归类型参数。
+ */
 context(c: TypeSystemInferenceExtensionContext)
 fun TypeConstructorMarker.hasRecursiveTypeParametersWithGivenSelfType(): Boolean {
     if (getParameters().any { it.hasRecursiveBounds(this) }) return true
@@ -59,10 +71,16 @@ fun TypeConstructorMarker.hasRecursiveTypeParametersWithGivenSelfType(): Boolean
     return false
 }
 
+/**
+ * 判断类型构造器对应的类型参数是否有递归边界。
+ */
 context(c: TypeSystemInferenceExtensionContext)
 fun TypeConstructorMarker.isRecursiveTypeParameter() =
     getTypeParameterClassifier()?.hasRecursiveBounds() == true
 
+/**
+ * 从类型树中提取包含给定递归类型参数的外层类型。
+ */
 context(context: TypeSystemInferenceExtensionContext)
 fun CangJieTypeMarker.extractTypeForGivenRecursiveTypeParameter(typeParameter: TypeParameterMarker): CangJieTypeMarker? {
     for (argument in getArguments()) {
@@ -80,6 +98,9 @@ fun CangJieTypeMarker.extractTypeForGivenRecursiveTypeParameter(typeParameter: T
     return null
 }
 
+/**
+ * 如果类型变量尚未注册到约束系统，则注册它。
+ */
 fun ConstraintSystemImpl.registerTypeVariableIfNotPresent(
     typeVariable: TypeVariableMarker
 ) {
@@ -89,11 +110,17 @@ fun ConstraintSystemImpl.registerTypeVariableIfNotPresent(
     }
 }
 
+/**
+ * 提取类型树中包含的所有类型变量构造器。
+ */
 context(c: TypeSystemInferenceExtensionContext)
 fun CangJieTypeMarker.extractAllContainingTypeVariables(): Set<TypeConstructorMarker> = buildSet {
     extractAllContainingTypeVariablesNoCaptureTypeProcessing(this)
 }
 
+/**
+ * 不展开 captured type，直接从类型树中收集类型变量构造器。
+ */
 context(context: TypeSystemInferenceExtensionContext)
 private fun CangJieTypeMarker.extractAllContainingTypeVariablesNoCaptureTypeProcessing(result: MutableSet<TypeConstructorMarker>) {
     contains { nestedType ->

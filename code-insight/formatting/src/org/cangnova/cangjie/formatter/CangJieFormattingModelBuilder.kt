@@ -29,8 +29,14 @@ import com.intellij.lang.ASTNode
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiFile
 
+/**
+ * 仓颉 IntelliJ formatting model 构建器。
+ */
 class CangJieFormattingModelBuilder : FormattingModelBuilder {
 
+    /**
+     * 基于文件根节点创建仓颉格式化块树。
+     */
     override fun createModel(formattingContext: FormattingContext): FormattingModel {
 
 
@@ -49,6 +55,9 @@ class CangJieFormattingModelBuilder : FormattingModelBuilder {
 
     }
 
+    /**
+     * 仓颉当前不声明额外的影响缩进范围，交由默认格式化流程处理。
+     */
     override fun getRangeAffectingIndent(psiFile: PsiFile, i: Int, astNode: ASTNode): TextRange? {
         return null
     }

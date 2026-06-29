@@ -19,6 +19,14 @@ interface ConeDiagnostic {
 }
 
 /**
+ * 允许错误类型在成员作用域遍历时继续使用 delegated nominal type 的诊断。
+ *
+ * 这不是通用错误恢复标记；只有类型构造器已经解析成功、错误只发生在不影响 nominal
+ * owner 的附属信息上时，诊断实现才应声明该能力。
+ */
+interface ConeAllowsDelegatedScopeTraversalDiagnostic : ConeDiagnostic
+
+/**
  * 不会被重复上报的诊断包装。
  *
  * 当 type ref、reference 等多个 CFIR 节点都携带同一错误时，用该包装保留错误类型语义，

@@ -13,14 +13,23 @@ import org.cangnova.cangjie.analysis.api.platform.CaEngineService
  */
 @CaPlatformInterface
 interface CaStatisticsService : CaEngineService {
+    /**
+     * 启动统计收集和上报逻辑。
+     */
     fun start()
 
     @CaPlatformInterface
     companion object {
+        /**
+         * 是否通过 Registry 启用 Analysis API 统计。
+         */
         val areStatisticsEnabled: Boolean by lazy(LazyThreadSafetyMode.PUBLICATION) {
             Registry.`is`("kotlin.analysis.statistics", false)
         }
 
+        /**
+         * 在统计启用时获取项目级统计服务。
+         */
         fun getInstance(project: Project): CaStatisticsService? =
             if (areStatisticsEnabled) project.serviceOrNull() else null
     }

@@ -15,7 +15,18 @@ import org.cangnova.cangjie.psi.CjElement
 import org.cangnova.cangjie.test.services.TestServices
 import org.cangnova.cangjie.test.services.assertions
 
+/**
+ * 跨模块恢复 symbol pointer 的抽象测试。
+ *
+ * 测试在声明所在模块创建 pointer，失效相关模块 session 后，在另一个 caret 指定模块中恢复 pointer，
+ * 并比较 debug/source 两种 renderer 输出。
+ */
 abstract class AbstractSymbolRestoreFromDifferentModuleTest : AbstractAnalysisApiBasedTest() {
+    /**
+     * 执行跨模块 symbol pointer 恢复测试。
+     *
+     * 方法分别定位声明位置与恢复位置，创建 pointer、触发 session 失效，再在恢复位置分析上下文中恢复 symbol。
+     */
     override fun doTest(testServices: TestServices) {
         val declaration =
             testServices.expressionMarkerProvider.getBottommostElementsOfTypeAtCarets<CjDeclaration>(testServices).single().first
@@ -67,7 +78,15 @@ abstract class AbstractSymbolRestoreFromDifferentModuleTest : AbstractAnalysisAp
         testServices.assertions.assertEqualsToTestOutputFile(actualPretty, extension = ".pretty.txt")
     }
 
+    /**
+     * 跨模块恢复测试使用的常量集合。
+     *
+     * 当前只包含恢复失败时写入 golden 的占位文本。
+     */
     private companion object {
+        /**
+         * symbol pointer 无法在目标模块上下文恢复时输出的固定占位符。
+         */
         const val NOT_RESTORED = "<NOT RESTORED>"
     }
 }

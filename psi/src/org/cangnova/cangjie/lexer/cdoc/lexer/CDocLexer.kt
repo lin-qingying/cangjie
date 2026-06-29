@@ -28,6 +28,12 @@ import com.intellij.lexer.FlexAdapter
 import com.intellij.lexer.MergingLexerAdapter
 import com.intellij.psi.tree.TokenSet
 
+/**
+ * 保存 `CDOC_TOKENS` 的内部状态，供仓颉词法与文档注释实现维护节点缓存或解析上下文。
+ */
 private val CDOC_TOKENS = TokenSet.create(CDocTokens.TEXT, CDocTokens.CODE_BLOCK_TEXT)
 
+/**
+ * 表示 `CDocLexer`，承载仓颉词法与文档注释中的语法节点、索引桩或辅助模型。
+ */
 class CDocLexer : MergingLexerAdapter(FlexAdapter(_CDocLexer()), CDOC_TOKENS)

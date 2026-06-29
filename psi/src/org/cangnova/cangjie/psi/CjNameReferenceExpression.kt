@@ -34,11 +34,23 @@ import com.intellij.psi.tree.IElementType
 import com.intellij.psi.tree.TokenSet
 import org.cangnova.cangjie.name.*
 
+/**
+ * 定义 `CjCallableReference` 接口，约束仓颉 PSI节点或服务需要暴露的结构能力。
+ */
 interface CjCallableReference : CjReferenceExpression {
+    /**
+     * 保存 `callableReference`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val callableReference: CjSimpleNameExpression
+    /**
+     * 保存 `receiverExpression`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val receiverExpression: CjExpression? get() = null
 }
 
+/**
+ * 表示 `CjNameReferenceExpression`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjNameReferenceExpression :
     CjExpressionImplStub<CangJieNameReferenceExpressionStub>,
     CjSimpleNameExpression,
@@ -47,6 +59,9 @@ class CjNameReferenceExpression :
 
     constructor(stub: CangJieNameReferenceExpressionStub) : super(stub, CjStubElementTypes.REFERENCE_EXPRESSION)
 
+    /**
+     * 暴露 `referencedName`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val referencedName: String
         get() {
             val stub = stub
@@ -56,40 +71,64 @@ class CjNameReferenceExpression :
             return CjSimpleNameExpressionImpl.getReferencedNameImpl(this)
         }
 
+    /**
+     * 暴露 `referencedNameAsName`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val referencedNameAsName: Name
         get() {
             return CjSimpleNameExpressionImpl.getReferencedNameAsNameImpl(this)
         }
 
+    /**
+     * 暴露 `referencedNameElement`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val referencedNameElement: PsiElement
         get() {
             return findChildByType(NAME_REFERENCE_EXPRESSIONS) ?: this
         }
+    /**
+     * 保存 `typeArguments`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val typeArguments: List<CjTypeProjection>
         get() {
 
             return typeArgumentList?.arguments ?: emptyList()
         }
+    /**
+     * 保存 `typeArgumentList`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val typeArgumentList: CjTypeArgumentList?
         get() {
 
             return findChildByType<PsiElement>(CjNodeTypes.TYPE_ARGUMENT_LIST) as CjTypeArgumentList?
         }
 
+    /**
+     * 暴露 `identifier`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val identifier: PsiElement?
         get() {
             return findChildByType(IDENTIFIER)
         }
 
+    /**
+     * 暴露 `referencedNameElementType`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val referencedNameElementType: IElementType
         get() {
             return CjSimpleNameExpressionImpl.getReferencedNameElementTypeImpl(this)
         }
 
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitSimpleNameExpression(this, data)
     }
 
+    /**
+     * 保存 `isPlaceholder`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val isPlaceholder: Boolean
         get() = identifier?.text?.equals("_") == true
 
@@ -97,10 +136,16 @@ class CjNameReferenceExpression :
         private val NAME_REFERENCE_EXPRESSIONS = TokenSet.create(IDENTIFIER, THIS_KEYWORD, SUPER_KEYWORD, VARRAY_KEYWORD)
     }
 
+    /**
+     * 暴露 `callableReference`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val callableReference: CjNameReferenceExpression
         get() = this
 }
 
+/**
+ * 表示 `CjNameBasicReferenceExpression`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjNameBasicReferenceExpression :
     CjExpressionImplStub<CangJieNameBasicReferenceExpressionStub>,
     CjSimpleNameExpression,
@@ -109,6 +154,9 @@ class CjNameBasicReferenceExpression :
 
     constructor(stub: CangJieNameBasicReferenceExpressionStub) : super(stub, CjStubElementTypes.BASIC_REFERENCE_EXPRESSION)
 
+    /**
+     * 暴露 `referencedName`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val referencedName: String
         get() {
             val stub = stub
@@ -118,40 +166,64 @@ class CjNameBasicReferenceExpression :
             return CjSimpleNameExpressionImpl.getReferencedNameImpl(this)
         }
 
+    /**
+     * 暴露 `referencedNameAsName`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val referencedNameAsName: Name
         get() {
             return CjSimpleNameExpressionImpl.getReferencedNameAsNameImpl(this)
         }
 
+    /**
+     * 暴露 `referencedNameElement`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val referencedNameElement: PsiElement
         get() {
             return findChildByType(NAME_REFERENCE_EXPRESSIONS) ?: this
         }
+    /**
+     * 保存 `typeArguments`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val typeArguments: List<CjTypeProjection>
         get() {
 
             return typeArgumentList?.arguments ?: emptyList()
         }
+    /**
+     * 保存 `typeArgumentList`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val typeArgumentList: CjTypeArgumentList?
         get() {
 
             return findChildByType<PsiElement>(CjNodeTypes.TYPE_ARGUMENT_LIST) as CjTypeArgumentList?
         }
 
+    /**
+     * 暴露 `identifier`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val identifier: PsiElement?
         get() {
             return findChildByType(IDENTIFIER)
         }
 
+    /**
+     * 暴露 `referencedNameElementType`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val referencedNameElementType: IElementType
         get() {
             return CjSimpleNameExpressionImpl.getReferencedNameElementTypeImpl(this)
         }
 
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitSimpleNameExpression(this, data)
     }
 
+    /**
+     * 保存 `isPlaceholder`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val isPlaceholder: Boolean
         get() = identifier?.text?.equals("_") == true
 
@@ -159,6 +231,9 @@ class CjNameBasicReferenceExpression :
         private val NAME_REFERENCE_EXPRESSIONS = TokenSet.create(IDENTIFIER, THIS_KEYWORD, SUPER_KEYWORD, VARRAY_KEYWORD)
     }
 
+    /**
+     * 暴露 `callableReference`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val callableReference: CjNameBasicReferenceExpression
         get() = this
 }

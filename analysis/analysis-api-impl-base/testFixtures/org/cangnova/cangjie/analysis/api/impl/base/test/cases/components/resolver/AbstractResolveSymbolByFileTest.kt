@@ -14,6 +14,11 @@ import org.cangnova.cangjie.test.services.assertions
  * 只遍历当前 resolver 公开 API 的稳定入口 `CjReferenceExpression.resolveToSymbol()`。
  */
 abstract class AbstractResolveSymbolByFileTest : AbstractResolveSymbolTest() {
+    /**
+     * 执行文件级 symbol 解析快照测试。
+     *
+     * 方法遍历所有真实使用点 simple-name，并渲染 `resolveToSymbol()` 返回的公开 symbol。
+     */
     override fun doTestByMainFile(mainFile: CjFile, mainModule: CjTestModule, testServices: TestServices) {
         val referenceExpressions = mainFile.collectDescendantsOfType<CjSimpleNameExpression>()
             .filter { it.isUsageSimpleNameForAnalysisApiTest() }

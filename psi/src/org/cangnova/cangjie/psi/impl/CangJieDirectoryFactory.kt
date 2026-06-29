@@ -49,7 +49,13 @@ import org.cangnova.cangjie.psi.CjPsiDirectory
  */
 internal class CangJieDirectoryFactory(private val project: Project) : PsiDirectoryFactory() {
 
+    /**
+     * 保存 `psiManager` 的内部状态，供仓颉 PSI实现维护节点缓存或解析上下文。
+     */
     private val psiManager = PsiManagerEx.getInstanceEx(project)
+    /**
+     * 保存 `projectFileIndex` 的内部状态，供仓颉 PSI实现维护节点缓存或解析上下文。
+     */
     private val projectFileIndex = ProjectFileIndex.getInstance(project)
 
     /**

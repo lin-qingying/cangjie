@@ -9,6 +9,6 @@ class IllegalSuperInMember <: Base {
     }
 
     func rebuild(): Unit {
-        <!ILLEGAL_THIS_OR_SUPER_CALL!>super<!>(1)
+        <!INVALID_THIS_CALL_OUTSIDE_CTOR!>super<!>(1)
     }
 }

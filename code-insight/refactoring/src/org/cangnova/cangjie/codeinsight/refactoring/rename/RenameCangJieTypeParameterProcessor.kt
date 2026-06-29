@@ -14,5 +14,8 @@ import org.cangnova.cangjie.psi.CjTypeParameter
  * 仓颉类型参数的 rename processor。
  */
 class RenameCangJieTypeParameterProcessor : RenameCangJiePsiProcessor() {
+    /**
+     * 只处理仓颉类型参数声明。
+     */
     override fun canProcessElement(element: PsiElement): Boolean = element is CjTypeParameter
 }

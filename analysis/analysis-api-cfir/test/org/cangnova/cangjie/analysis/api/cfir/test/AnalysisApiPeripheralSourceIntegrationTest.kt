@@ -31,8 +31,14 @@ import org.junit.jupiter.api.Test
 class AnalysisApiPeripheralSourceIntegrationTest : AbstractAnalysisApiExecutionTest(
     "analysis/analysis-api-cfir/testData/peripheralModules",
 ) {
+    /**
+     * 使用 standalone CFIR 配置验证外围 source-backed 模块协同能力。
+     */
     override val configurator = CaCfirStandaloneAnalysisApiTestConfigurator
 
+    /**
+     * 验证普通源码模块上的 stub index、light declaration 与 inspector dump 视图。
+     */
     @Test
     fun sourceViews(mainFile: CjFile, mainModule: CjTestModule, testServices: TestServices) {
         assertEquals(TestModuleKind.Source, mainModule.moduleKind)
@@ -46,6 +52,9 @@ class AnalysisApiPeripheralSourceIntegrationTest : AbstractAnalysisApiExecutionT
         )
     }
 
+    /**
+     * 验证 library source 模块上的外围服务视图与普通 source 模块保持同构。
+     */
     @Test
     fun librarySourceViews(mainFile: CjFile, mainModule: CjTestModule, testServices: TestServices) {
         assertEquals(TestModuleKind.LibrarySource, mainModule.moduleKind)
@@ -59,6 +68,9 @@ class AnalysisApiPeripheralSourceIntegrationTest : AbstractAnalysisApiExecutionT
         )
     }
 
+    /**
+     * 验证 source-backed light declaration provider 会保留同名顶层函数重载的独立签名。
+     */
     @Test
     fun sourceOverloadedLightDeclarations(mainFile: CjFile, mainModule: CjTestModule) {
         val provider = CaLightDeclarationProvider.getInstance(mainFile.project)

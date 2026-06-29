@@ -12,7 +12,11 @@ import org.cangnova.cangjie.type.TypeCheckerState
 import org.cangnova.cangjie.type.AbstractTypeChecker
 import org.cangnova.cangjie.type.model.*
 
+/**
+ * 约束系统使用的类型检查状态。
+ */
 abstract class TypeCheckerStateForConstraintSystem(
+    /** 推断扩展类型系统上下文。 */
     val extensionTypeContext: TypeSystemInferenceExtensionContext,
     cangjieTypePreparator: AbstractTypePreparator,
     cangjieTypeRefiner: AbstractTypeRefiner
@@ -24,13 +28,25 @@ abstract class TypeCheckerStateForConstraintSystem(
     cangjieTypePreparator = cangjieTypePreparator,
     cangjieTypeRefiner = cangjieTypeRefiner,
 ) {
+    /**
+     * 当前语言版本配置。
+     */
     abstract val languageVersionSettings: LanguageVersionSettings
 
+    /**
+     * 判断刚性类型是否为当前约束系统管理的类型变量。
+     */
     abstract fun isMyTypeVariable(type: RigidTypeMarker): Boolean
 
     // super and sub type isSingleClassifierType
+    /**
+     * 为类型变量添加 upper 约束。
+     */
     abstract fun addUpperConstraint(typeVariable: TypeConstructorMarker, superType: CangJieTypeMarker, isNoInfer: Boolean)
 
+    /**
+     * 为类型变量添加 lower 约束。
+     */
     abstract fun addLowerConstraint(
         typeVariable: TypeConstructorMarker,
         subType: CangJieTypeMarker,
@@ -38,6 +54,9 @@ abstract class TypeCheckerStateForConstraintSystem(
         isNoInfer: Boolean,
     )
 
+    /**
+     * 为类型变量添加 equality 约束。
+     */
     abstract fun addEqualityConstraint(typeVariable: TypeConstructorMarker, type: CangJieTypeMarker)
 
     /**
@@ -53,6 +72,9 @@ abstract class TypeCheckerStateForConstraintSystem(
         return internalAddSubtypeConstraint(subType, superType, isNoInfer = false)
     }
 
+    /**
+     * 将子类型约束转写为约束系统中的上下界约束。
+     */
     private fun internalAddSubtypeConstraint(
         subType: CangJieTypeMarker,
         superType: CangJieTypeMarker,
@@ -154,6 +176,9 @@ abstract class TypeCheckerStateForConstraintSystem(
         return true
     }
 
+    /**
+     * 当 lower side 是交叉类型时，尝试把约束拆给其中的类型变量分量。
+     */
     private fun simplifyConstraintForPossibleIntersectionSubType(subType: CangJieTypeMarker, superType: CangJieTypeMarker, isNoInfer: Boolean): Boolean? =
         with(extensionTypeContext) {
             @Suppress("NAME_SHADOWING")
@@ -180,9 +205,15 @@ abstract class TypeCheckerStateForConstraintSystem(
             return typeVariables.all { simplifyUpperConstraint(it, superType, isNoInfer) }
         }
 
+    /**
+     * 直接调用类型检查器判断子类型关系。
+     */
     private fun isSubtypeOfByTypeChecker(subType: CangJieTypeMarker, superType: CangJieTypeMarker) =
         AbstractTypeChecker.isSubtypeOf(this as TypeCheckerState, subType, superType)
 
+    /**
+     * 在慢速断言开启时校验输入类型形状。
+     */
     private fun assertInputTypes(subType: CangJieTypeMarker, superType: CangJieTypeMarker): Unit = with(typeSystemContext) {
         if (!AbstractTypeChecker.RUN_SLOW_ASSERTIONS) return
         fun correctSubType(subType: RigidTypeMarker) =
@@ -201,11 +232,17 @@ abstract class TypeCheckerStateForConstraintSystem(
         }
     }
 
+    /**
+     * 判断类型的刚性边界是否都满足谓词。
+     */
     private inline fun CangJieTypeMarker.bothBounds(f: (RigidTypeMarker) -> Boolean): Boolean {
         val rigidType = with(extensionTypeContext) { asRigidType() } ?: return false
         return f(rigidType)
     }
 
+    /**
+     * 判断类型任意刚性边界是否满足谓词。
+     */
     private inline fun CangJieTypeMarker.anyBound(f: (RigidTypeMarker) -> Boolean): Boolean {
         val rigidType = with(extensionTypeContext) { asRigidType() } ?: return false
         return f(rigidType)

@@ -40,20 +40,32 @@ import org.cangnova.cangjie.psi.stubs.impl.CangJieFinalizerStubImpl
 import java.io.IOException
 import org.jetbrains.annotations.NonNls
 
+/**
+ * 表示 `CjFinalizerElementType`，承载PSI Stub中的语法节点、索引桩或辅助模型。
+ */
 class CjFinalizerElementType(debugName: String) :
     CjStubElementType<CangJieFinalizerStub, CjFinalizer>(
         debugName,
         CjFinalizer::class.java,
         CangJieFinalizerStub::class.java,
     ) {
+    /**
+     * 实现 `createPsi` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createPsi(stub: CangJieFinalizerStub): CjFinalizer {
         return CjFinalizer(stub)
     }
 
+    /**
+     * 实现 `createPsiFromAst` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createPsiFromAst(node: ASTNode): CjFinalizer {
         return CjFinalizer(node)
     }
 
+    /**
+     * 实现 `createStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createStub(
         psi: CjFinalizer,
         parentStub: StubElement<*>,
@@ -66,12 +78,18 @@ class CjFinalizerElementType(debugName: String) :
         )
     }
 
+    /**
+     * 实现 `serialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     @Throws(IOException::class)
     override fun serialize(stub: CangJieFinalizerStub, dataStream: StubOutputStream) {
         dataStream.writeName(stub.name)
         dataStream.writeBoolean(stub.hasBody())
     }
 
+    /**
+     * 实现 `deserialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     @Throws(IOException::class)
     override fun deserialize(
         dataStream: StubInputStream,
@@ -87,15 +105,24 @@ class CjFinalizerElementType(debugName: String) :
         )
     }
 
+    /**
+     * 实现 `indexStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun indexStub(stub: CangJieFinalizerStub, sink: IndexSink) {}
 }
 
+/**
+ * 表示 `CjSecondaryConstructorElementType`，承载PSI Stub中的语法节点、索引桩或辅助模型。
+ */
 class CjSecondaryConstructorElementType(@NonNls debugName: String) :
     CjConstructorElementType<CjSecondaryConstructor>(
         debugName,
         CjSecondaryConstructor::class.java,
         CangJieConstructorStub::class.java,
     ) {
+    /**
+     * 实现 `newStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun newStub(
         parentStub: StubElement<*>,
         nameRef: StringRef?,

@@ -48,22 +48,64 @@ import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
  */
 class CangJieVariableStubImpl(
     parent: StubElement<out PsiElement>?,
+    /**
+     * 保存 `patternKind` 的内部状态，供PSI Stub实现维护节点缓存或解析上下文。
+     */
     private val patternKind: PatternKind,
+    /**
+     * 保存 `isVar` 的内部状态，供PSI Stub实现维护节点缓存或解析上下文。
+     */
     private val isVar: Boolean,
+    /**
+     * 保存 `isConst` 的内部状态，供PSI Stub实现维护节点缓存或解析上下文。
+     */
     private val isConst: Boolean,
+    /**
+     * 保存 `isTopLevel` 的内部状态，供PSI Stub实现维护节点缓存或解析上下文。
+     */
     private val isTopLevel: Boolean,
+    /**
+     * 保存 `hasInitializer` 的内部状态，供PSI Stub实现维护节点缓存或解析上下文。
+     */
     private val hasInitializer: Boolean,
+    /**
+     * 保存 `hasReturnTypeRef` 的内部状态，供PSI Stub实现维护节点缓存或解析上下文。
+     */
     private val hasReturnTypeRef: Boolean,
+    /**
+     * 保存 `origin`，供PSI Stub流程读取节点结构或语义信息。
+     */
     val origin: CangJieStubOrigin?,
 ) : CangJieStubBaseImpl<CjPatternVariable>(parent, CjStubElementTypes.VARIABLE), CangJieVariableStub {
 
+    /**
+     * 实现 `getPatternKind` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getPatternKind(): PatternKind = patternKind
+    /**
+     * 实现 `isVar` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun isVar(): Boolean = isVar
+    /**
+     * 实现 `isConst` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun isConst(): Boolean = isConst
+    /**
+     * 实现 `isTopLevel` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun isTopLevel(): Boolean = isTopLevel
+    /**
+     * 实现 `hasInitializer` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun hasInitializer(): Boolean = hasInitializer
+    /**
+     * 实现 `hasReturnTypeRef` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun hasReturnTypeRef(): Boolean = hasReturnTypeRef
 
+    /**
+     * 实现 `copyInto` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun copyInto(newParent: StubElement<*>?): CangJieVariableStubImpl = CangJieVariableStubImpl(
         parent = newParent,
         patternKind = patternKind,

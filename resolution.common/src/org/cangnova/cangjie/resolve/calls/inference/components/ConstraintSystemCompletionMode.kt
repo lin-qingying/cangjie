@@ -26,9 +26,13 @@ package org.cangnova.cangjie.resolve.calls.inference.components
  * @param fixNotInferredTypeVariablesToErrorType 是否将无法推断的类型变量固定为错误类型
  */
 enum class ConstraintSystemCompletionMode(
+    /** 是否要求分析所有延迟原子。 */
     val allPostponedAtomsShouldBeAnalyzed: Boolean,
+    /** 是否要求分析所有 lambda。 */
     val allLambdasShouldBeAnalyzed: Boolean = allPostponedAtomsShouldBeAnalyzed,
+    /** 是否解析 fork point 约束。 */
     val shouldForkPointConstraintsBeResolved: Boolean,
+    /** 是否把无法推断的类型变量固定为错误类型。 */
     val fixNotInferredTypeVariablesToErrorType: Boolean,
 ) {
 
@@ -143,5 +147,8 @@ enum class ConstraintSystemCompletionMode(
         "此模式仅供 OverloadResolutionByLambdaReturnTypeResolver 使用。" +
                 "如需判断当前模式，请使用 isUntilFirstLambda()。"
     )
+    /**
+     * 标记仅供基于 Lambda 返回类型的重载解析使用的完成模式 API。
+     */
     annotation class ExclusiveForOverloadResolutionByLambdaReturnType
 }

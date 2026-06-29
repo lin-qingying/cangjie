@@ -32,16 +32,25 @@ import com.intellij.psi.stubs.StubOutputStream
 import org.jetbrains.annotations.NonNls
 import java.io.IOException
 
+/**
+ * 表示 `CjPropertyAccessorElementType`，承载PSI Stub中的语法节点、索引桩或辅助模型。
+ */
 class CjPropertyAccessorElementType(debugName: String) :
     CjStubElementType<CangJiePropertyAccessorStub, CjPropertyAccessor>(
         debugName,
         CjPropertyAccessor::class.java,
         CangJiePropertyAccessorStub::class.java,
     ) {
+    /**
+     * 实现 `createStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createStub(psi: CjPropertyAccessor, parentStub: StubElement<*>?): CangJiePropertyAccessorStub {
         return CangJiePropertyAccessorStubImpl(parentStub, psi.isGetter, psi.hasBody(), psi.hasBlockBody())
     }
 
+    /**
+     * 实现 `serialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     @Throws(IOException::class)
     override fun serialize(stub: CangJiePropertyAccessorStub, dataStream: StubOutputStream) {
         dataStream.writeBoolean(stub.isGetter())
@@ -49,6 +58,9 @@ class CjPropertyAccessorElementType(debugName: String) :
         dataStream.writeBoolean(stub.hasBlockBody())
     }
 
+    /**
+     * 实现 `deserialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     @Throws(IOException::class)
     override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>): CangJiePropertyAccessorStub {
         val isGetter = dataStream.readBoolean()

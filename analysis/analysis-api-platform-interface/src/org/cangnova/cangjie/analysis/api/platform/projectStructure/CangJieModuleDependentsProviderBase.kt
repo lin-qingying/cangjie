@@ -10,8 +10,14 @@ import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
  */
 @CaPlatformInterface
 abstract class CangJieModuleDependentsProviderBase : CangJieModuleDependentsProvider {
+    /**
+     * 通过直接依赖方递归计算传递依赖方。
+     */
     override fun getTransitiveDependents(module: CaModule): Set<CaModule> = computeTransitiveDependents(module)
 
+    /**
+     * 递归遍历依赖方图并排除查询模块自身。
+     */
     protected fun computeTransitiveDependents(module: CaModule): Set<CaModule> = buildSet {
         fun visit(currentModule: CaModule) {
             if (currentModule in this) return

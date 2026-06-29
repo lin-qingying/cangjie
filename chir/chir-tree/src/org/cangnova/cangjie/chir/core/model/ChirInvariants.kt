@@ -6,6 +6,9 @@ import org.cangnova.cangjie.chir.core.controlflow.ChirConditionalBranchTerminato
 import org.cangnova.cangjie.chir.core.controlflow.ChirUnwindTerminator
 import org.cangnova.cangjie.chir.core.declaration.ChirFunctionDeclaration
 
+/**
+ * 校验函数的最小控制流不变量。
+ */
 fun validateMinimalControlFlow(function: ChirFunctionDeclaration): List<String> {
     if (function.blocks.isEmpty()) return listOf("function ${function.name} has no blocks")
 

@@ -27,38 +27,65 @@ import com.intellij.lang.impl.PsiBuilderAdapter
 import com.intellij.psi.tree.IElementType
 
 
+/**
+ * 表示 `SemanticWhitespaceAwarePsiBuilderAdapter`，承载仓颉语法解析中的语法节点、索引桩或辅助模型。
+ */
 open class SemanticWhitespaceAwarePsiBuilderAdapter(private val builder: SemanticWhitespaceAwarePsiBuilder) :
     PsiBuilderAdapter(
         builder
     ), SemanticWhitespaceAwarePsiBuilder {
+    /**
+     * 实现 `newlineBeforeCurrentToken` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun newlineBeforeCurrentToken(): Boolean {
         return builder.newlineBeforeCurrentToken()
     }
 
+    /**
+     * 实现 `disableNewlines` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun disableNewlines() {
         builder.disableNewlines()
     }
 
+    /**
+     * 实现 `enableNewlines` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun enableNewlines() {
         builder.enableNewlines()
     }
 
+    /**
+     * 实现 `restoreNewlinesState` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun restoreNewlinesState() {
         builder.restoreNewlinesState()
     }
 
+    /**
+     * 实现 `restoreJoiningComplexTokensState` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun restoreJoiningComplexTokensState() {
         builder.restoreJoiningComplexTokensState()
     }
 
+    /**
+     * 实现 `enableJoiningComplexTokens` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun enableJoiningComplexTokens() {
         builder.enableJoiningComplexTokens()
     }
 
+    /**
+     * 实现 `disableJoiningComplexTokens` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun disableJoiningComplexTokens() {
         builder.disableJoiningComplexTokens()
     }
 
+    /**
+     * 实现 `isWhitespaceOrComment` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun isWhitespaceOrComment(elementType: IElementType): Boolean {
         return builder.isWhitespaceOrComment(elementType)
     }

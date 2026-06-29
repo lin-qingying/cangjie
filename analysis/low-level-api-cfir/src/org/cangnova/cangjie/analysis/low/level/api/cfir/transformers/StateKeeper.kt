@@ -7,30 +7,44 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.transformers
 
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
 
+/**
+ * 标记 [StateKeeper] 构建 DSL 的作用域，避免嵌套 DSL 中误用接收者。
+ */
 @DslMarker
 internal annotation class StateKeeperDsl
 
 /**
- * Post-processors run after arrangers, but before the action block.
- * It is a work-around for cases when an arranger cannot properly tweak the state by itself
- * (for instance, when such tweak depends on a non-local mutation).
+ * 状态后处理函数。
+ *
+ * 后处理在 arranger 调整之后、真实 action 执行之前运行，用于处理无法由单个状态保存规则自行完成的额外修正。
  */
 internal typealias PostProcessor = () -> Unit
 
+/**
+ * [StateKeeper] DSL 中用于登记待恢复状态的构建器。
+ */
 @StateKeeperDsl
 internal interface StateKeeperBuilder {
+    /**
+     * 登记一份需要在失败时恢复或在 action 前后处理的 [state]。
+     */
     fun register(state: PreservedState)
 }
 
+/**
+ * 针对单个 [Owner] 构建状态保存规则的 DSL 作用域。
+ *
+ * @property owner 当前正在登记状态规则的对象。
+ */
 @JvmInline
 @StateKeeperDsl
 internal value class StateKeeperScope<Owner : Any, Context : Any>(private val owner: Owner) {
     /**
-     * Defines an entity state preservation rule.
+     * 定义一条带 arranger 的实体状态保存规则。
      *
-     * @param provider a function that returns the current entity state (a getter).
-     * @param mutator a function that modifies the entity state (a setter).
-     * @param arranger a function that provides a tweaked entity state. Such a state is then applied using a [mutator].
+     * @param provider 读取当前实体状态的函数。
+     * @param mutator 写回实体状态的函数。
+     * @param arranger 基于当前状态生成临时调整状态的函数。
      */
     inline fun <Value> StateKeeperBuilder.add(
         provider: (Owner) -> Value,
@@ -54,10 +68,10 @@ internal value class StateKeeperScope<Owner : Any, Context : Any>(private val ow
     }
 
     /**
-     * Defines an entity state preservation rule.
+     * 定义一条简单的实体状态保存规则。
      *
-     * @param provider a function that returns the current entity state (a getter).
-     * @param mutator a function that modifies the entity state (a setter).
+     * @param provider 读取当前实体状态的函数。
+     * @param mutator 写回实体状态的函数。
      */
     inline fun <Value> StateKeeperBuilder.add(provider: (Owner) -> Value, crossinline mutator: (Owner, Value) -> Unit) {
         val owner = this@StateKeeperScope.owner
@@ -70,8 +84,7 @@ internal value class StateKeeperScope<Owner : Any, Context : Any>(private val ow
     }
 
     /**
-     * Defines an entity state preservation rule by delegating to a given [keeper].
-     * In other words, applies all rules defined in the [keeper] to the current entity.
+     * 通过委托给 [keeper] 为当前实体定义状态保存规则。
      */
     fun StateKeeperBuilder.add(keeper: StateKeeper<Owner, Context>, context: Context) {
         val owner = this@StateKeeperScope.owner
@@ -79,7 +92,7 @@ internal value class StateKeeperScope<Owner : Any, Context : Any>(private val ow
     }
 
     /**
-     * Defines a post-processor.
+     * 定义一段 action 执行前运行的后处理逻辑。
      */
     fun StateKeeperBuilder.postProcess(block: PostProcessor) {
         register(object : PreservedState {
@@ -90,8 +103,9 @@ internal value class StateKeeperScope<Owner : Any, Context : Any>(private val ow
 }
 
 /**
- * Registers a given [entity] using the delegate [keeper].
- * Does nothing if the [entity] is `null`.
+ * 使用委托 [keeper] 登记 [entity] 的状态保存规则。
+ *
+ * 当 [entity] 为 `null` 时不执行任何操作。
  */
 internal fun <Entity : Any, Context : Any> StateKeeperBuilder.entity(
     entity: Entity?,
@@ -106,8 +120,9 @@ internal fun <Entity : Any, Context : Any> StateKeeperBuilder.entity(
 }
 
 /**
- * Registers a given [entity] using the building [block].
- * Does nothing if the [entity] is `null`.
+ * 使用 [block] 登记 [entity] 的状态保存规则。
+ *
+ * 当 [entity] 为 `null` 时不执行任何操作。
  */
 internal inline fun <Entity : Any, Context : Any> StateKeeperBuilder.entity(
     entity: Entity?,
@@ -120,9 +135,9 @@ internal inline fun <Entity : Any, Context : Any> StateKeeperBuilder.entity(
 }
 
 /**
- * Registers all entities in a given [list] sequentially using the delegate [keeper].
- * Does nothing if the [list] is `null`.
- * Skips `null` elements in the [list].
+ * 使用委托 [keeper] 顺序登记 [list] 中每个非空实体的状态保存规则。
+ *
+ * 当 [list] 为 `null` 时不执行任何操作。
  */
 internal fun <Entity : Any, Context : Any> StateKeeperBuilder.entityList(
     list: List<Entity?>?,
@@ -139,9 +154,9 @@ internal fun <Entity : Any, Context : Any> StateKeeperBuilder.entityList(
 }
 
 /**
- * Registers all entities in a given [list] sequentially using the building [block].
- * Does nothing if the [list] is `null`.
- * Skips `null` elements in the [list].
+ * 使用 [block] 顺序登记 [list] 中每个非空实体的状态保存规则。
+ *
+ * 当 [list] 为 `null` 时不执行任何操作。
  */
 internal inline fun <Entity : Any, Context : Any> StateKeeperBuilder.entityList(
     list: List<Entity?>?,
@@ -158,12 +173,9 @@ internal inline fun <Entity : Any, Context : Any> StateKeeperBuilder.entityList(
 }
 
 /**
- * Defines a [StateKeeper] using a builder DSL.
- * This function is supposed to be the main entry point for [StateKeeper] creation.
+ * 使用构建器 DSL 定义 [StateKeeper]。
  *
- * @param block a function that defines state preservation rules.
- *  The function collects rules for each individual owner separately.
- *  Nested owners can be handled inside [entity] or [entityList] blocks.
+ * 这是创建状态保持器的主入口。[block] 为每个 owner 分别收集状态保存规则，嵌套 owner 可通过 [entity] 或 [entityList] 处理。
  */
 internal fun <Owner : Any, Context : Any> stateKeeper(
     block: StateKeeperScope<Owner, Context>.(StateKeeperBuilder, Owner, Context) -> Unit,
@@ -180,9 +192,18 @@ internal fun <Owner : Any, Context : Any> stateKeeper(
     block(scope, builder, owner, context)
 
     object : PreservedState {
+        /**
+         * 标记后处理是否已经执行，避免重复运行后处理规则。
+         */
         private var isPostProcessed = false
+        /**
+         * 标记恢复是否已经执行，避免异常路径重复恢复状态。
+         */
         private var isRestored = false
 
+        /**
+         * 执行所有登记的后处理规则。
+         */
         override fun postProcess() {
             if (isPostProcessed) {
                 return
@@ -192,6 +213,9 @@ internal fun <Owner : Any, Context : Any> stateKeeper(
             states.forEach { it.postProcess() }
         }
 
+        /**
+         * 执行所有登记的状态恢复规则。
+         */
         override fun restore() {
             if (isRestored) {
                 return
@@ -204,19 +228,12 @@ internal fun <Owner : Any, Context : Any> stateKeeper(
 }
 
 /**
- * [StateKeeper] backs up parts of an object state, and allows to restore it if errors occur during that object mutation.
- * This is not a complete object dumper. All preservation rules are explicitly defined (usually in the [stateKeeper] DSL).
+ * 显式保存对象局部状态并在失败时恢复的工具。
  *
- * State keeper provides the following life cycle:
- * 1. Preparation. Back up the state.
- * 2. Arrangement. For rules with arrangers, use the state provider by the arranger.
- * 3. Post-processing. Call supplied post-processors for additional state tweaks.
- * 4. Action. Perform the potentially failing action.
- * 5. Restoration (optional). Restore the state if the action failed.
+ * 它不是完整对象快照机制，所有保存规则都必须通过 [stateKeeper] DSL 明确声明。生命周期为：准备并保存状态；对带 arranger 的规则
+ * 应用临时调整；执行后处理；运行可能失败的 action；如果 action 失败，则恢复保存状态。
  *
- * Preparation and arrangement steps are run by calling the [prepare] function.
- * Post-processing is run by calling [PreservedState.postProcess], potentially after some manual tweaks.
- * Restoration is run by calling [PreservedState.restore] if the action failed.
+ * @property provider 根据 owner 和上下文生成一份 [PreservedState] 的函数。
  *
  * @sample
  * ```
@@ -233,8 +250,9 @@ internal fun <Owner : Any, Context : Any> stateKeeper(
  */
 internal class StateKeeper<in Owner : Any, Context : Any>(val provider: (Owner, Context) -> PreservedState) {
     /**
-     * Backs up the [owner] state by calling providers, and potentially tweaks the object state with arrangers.
-     * Note that post-processors are not run during preparation.
+     * 保存 [owner] 当前状态，并按规则执行必要的 arranger 调整。
+     *
+     * 后处理不会在准备阶段运行，调用方需要在 action 前显式调用 [PreservedState.postProcess]。
      */
     fun prepare(owner: Owner, context: Context): PreservedState {
         return provider(owner, context)
@@ -242,22 +260,30 @@ internal class StateKeeper<in Owner : Any, Context : Any>(val provider: (Owner, 
 }
 
 /**
- * State preserved by a [StateKeeper].
+ * [StateKeeper] 保存出来的一组可后处理、可恢复状态。
  */
 internal interface PreservedState {
     /**
-     * Performs post-processing of the state, according to supplied [PostProcessor]s.
-     * This function must be called before the potentially failing action block.
+     * 根据登记的 [PostProcessor] 执行状态后处理。
+     *
+     * 该函数必须在可能失败的 action 前调用。
      */
     fun postProcess()
 
     /**
-     * Restores the state, according to rules defined by the [StateKeeper].
-     * This function must be called when the action block fails.
+     * 根据 [StateKeeper] 中定义的规则恢复状态。
+     *
+     * 该函数应在 action 失败时调用。
      */
     fun restore()
 }
 
+/**
+ * 在 [keeper] 保护下解析 [target]。
+ *
+ * 该函数先准备保存状态，再调用 [prepareTarget] 做 action 前准备，随后运行后处理并执行 [action]。如果 action 抛出普通异常，
+ * 会恢复保存状态后重新抛出；如果抛出 [PartialBodyAnalysisSuspendedException]，说明局部 body 分析正常挂起，不需要恢复。
+ */
 internal inline fun <Target : CfirElementWithResolveState, Context : Any, Result> resolveWithKeeper(
     target: Target,
     context: Context,

@@ -22,7 +22,13 @@ import org.cangnova.cangjie.codegen.api.CodegenOptions
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
+/**
+ * 函数调用约定和 LLVM 属性发射的集成测试。
+ */
 class FunctionCallConventionIntegrationTest {
+    /**
+     * 验证导入函数声明和调用会保留 calling convention 与参数属性。
+     */
     @Test
     fun `emits imported declaration and call with calling convention and attributes`() {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
@@ -123,6 +129,9 @@ class FunctionCallConventionIntegrationTest {
         assertTrue(ir.contains("ret i32 %call_ret"), ir)
     }
 
+    /**
+     * 验证函数定义头会发射 linkage、calling convention 和参数属性。
+     */
     @Test
     fun `emits function header with linkage cc and parameter attributes`() {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)

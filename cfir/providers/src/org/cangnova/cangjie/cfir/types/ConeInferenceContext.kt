@@ -41,6 +41,7 @@ import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.FqNameUnsafe
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.type.AbstractTypeChecker
 import org.cangnova.cangjie.type.AbstractTypeRefiner
 import org.cangnova.cangjie.type.TypeCheckerState
 import org.cangnova.cangjie.type.model.*
@@ -743,14 +744,40 @@ interface ConeInferenceContext : TypeSystemInferenceExtensionContext, ConeTypeCo
     }
 
     /**
-     * 返回理想整数字面量构造器的近似类型。
+     * 返回 ideal 数字字面量构造器的近似类型。
+     *
+     * 官方 `TypeManager::IsPrimitiveSubtype` 会把 `IdealInt <: I` 解释为任一可落地
+     * 整数类型满足 `I` 即成立；`GetAllExtendsByTy(IdealInt)` 也会展开所有具体整数
+     * 的 extend。这里在 expected type 不是具体 primitive 时选择唯一满足 expected
+     * type 的 primitive，使推断完成写回的类型实参保持官方的 extend 约束语义。
      */
     override fun TypeConstructorMarker.getApproximatedIntegerLiteralType(expectedType: CangJieTypeMarker?): CangJieTypeMarker {
-        if (this is ConeIdealLiteralType) {
-            return getApproximatedType(expectedType as? ConeCangJieType)
+        val expectedConeType = expectedType as? ConeCangJieType
+        val defaultApproximation = when (this) {
+            is ConeIdealLiteralType -> getApproximatedType(expectedConeType)
+            is ConePrimitiveType -> IdealTypeResolver.resolveIfIdeal(this, expectedConeType)
+            else -> ConePrimitiveType.INT64
         }
-        // 不是理想字面量类型，返回 Int64 作为默认
-        return ConePrimitiveType.INT64
+
+        if (expectedConeType == null || expectedConeType is ConeErrorType) {
+            return defaultApproximation
+        }
+
+        val possibleTypes = when (this) {
+            is ConeIdealLiteralType -> possibleTypes
+            is ConePrimitiveType -> when (kind) {
+                PrimitiveTypeKind.IDEAL_INT -> ConeIdealIntLiteralType.POSSIBLE_INT_TYPES
+                PrimitiveTypeKind.IDEAL_FLOAT -> ConeIdealFloatLiteralType.POSSIBLE_FLOAT_TYPES
+                else -> emptyList()
+            }
+            else -> emptyList()
+        }
+        if (possibleTypes.isEmpty()) return defaultApproximation
+
+        val matchingTypes = possibleTypes.filter { candidate ->
+            AbstractTypeChecker.isSubtypeOf(this@ConeInferenceContext, candidate, expectedConeType)
+        }
+        return matchingTypes.singleOrNull() ?: defaultApproximation
     }
 
 

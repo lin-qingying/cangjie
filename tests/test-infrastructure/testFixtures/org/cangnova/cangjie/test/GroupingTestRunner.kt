@@ -17,6 +17,9 @@ class GroupingTestRunner(
         testServices.register(TestModuleStructure::class, EmptyModuleStructure)
     }
 
+    /**
+     * 执行 `run` 对应的测试基础设施流程，维持测试框架的阶段契约。
+     */
     fun run(nonGroupingPhaseOutputs: List<NonGroupingPhaseOutput>) {
         testServices.register(GroupingPhaseInputsHolder::class, GroupingPhaseInputsHolder(nonGroupingPhaseOutputs))
         val merger = GroupingPhaseInputsMerger(testServices, testConfiguration.mergerWorkers)
@@ -31,12 +34,27 @@ class GroupingTestRunner(
         )
     }
 
+    /**
+     * 提供 `EmptyModuleStructure` 单例，集中承载测试基础设施的共享状态、常量或默认行为。
+     */
     private object EmptyModuleStructure : TestModuleStructure() {
+        /**
+         * 保存 `modules`，供测试基础设施在测试执行期间读取或传递。
+         */
         override val modules get() = emptyList<org.cangnova.cangjie.test.model.TestModule>()
+        /**
+         * 保存 `allDirectives`，供测试基础设施在测试执行期间读取或传递。
+         */
         override val allDirectives get() = org.cangnova.cangjie.test.directives.model.RegisteredDirectivesImpl(emptyList(), emptyMap(), emptyMap())
+        /**
+         * 保存 `originalTestDataFiles`，供测试基础设施在测试执行期间读取或传递。
+         */
         override val originalTestDataFiles get() = emptyList<File>()
     }
 
+    /**
+     * 提供 `GroupingPhaseStep` 对应的测试基础设施流程，维持测试框架的阶段契约。
+     */
     private fun TestStep.GroupingPhaseStep<*, *>.hackyProcess(
         inputArtifact: ResultingArtifact<*>,
         thereWereExceptionsOnPreviousSteps: Boolean,
@@ -46,6 +64,9 @@ class GroupingTestRunner(
             .process(inputArtifact as ResultingArtifact<GroupingPhaseInputArtifact>, thereWereExceptionsOnPreviousSteps)
     }
 
+    /**
+     * 提供 `>` 对应的测试基础设施流程，维持测试框架的阶段契约。
+     */
     private fun <I : ResultingArtifact<I>> TestStep.GroupingPhaseStep<I, *>.process(
         artifact: ResultingArtifact<I>,
         thereWereExceptionsOnPreviousSteps: Boolean,

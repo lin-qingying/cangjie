@@ -31,6 +31,9 @@ import com.intellij.lang.ASTNode
  * 该节点与官方 C++ 的 OptionalChainExpr 同职责，仅做 PSI/语法承接。
  */
 class CjOptionalChainExpression(node: ASTNode) : CjExpressionImpl(node) {
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitOptionalChainExpression(this, data)
     }

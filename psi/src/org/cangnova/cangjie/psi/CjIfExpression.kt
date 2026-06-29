@@ -28,30 +28,60 @@ import org.cangnova.cangjie.lexer.CjTokens
 import com.intellij.lang.ASTNode
 import com.intellij.psi.PsiElement
 
+/**
+ * 表示 `CjIfExpression`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjIfExpression(node: ASTNode) : CjExpressionImpl(node), CjPatternEntryBlock {
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitIfExpression(this, data)
     }
 
+    /**
+     * 保存 `condition`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     @get: IfNotParsed
     val condition: CjExpression?
         get() = findExpressionUnder(CjNodeTypes.CONDITION)
 
+    /**
+     * 保存 `letExpression`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val letExpression get() = findChildByType<CjLetExpression>(CjNodeTypes.LET_EXPRESSION)
 
+    /**
+     * 保存 `leftParenthesis`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     @get:IfNotParsed
     val leftParenthesis: PsiElement?
         get() = findChildByType(CjTokens.LPAR)
 
+    /**
+     * 保存 `rightParenthesis`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     @get:IfNotParsed
     val rightParenthesis: PsiElement?
         get() = findChildByType(CjTokens.RPAR)
+    /**
+     * 保存 `then`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val then: CjExpression?
         get() = findExpressionUnder(CjNodeTypes.THEN)
+    /**
+     * 保存 `else`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val `else`: CjExpression?
         get() = findExpressionUnder(CjNodeTypes.ELSE)
+    /**
+     * 保存 `elseKeyword`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val elseKeyword: PsiElement?
         get() = findChildByType(CjTokens.ELSE_KEYWORD)
+    /**
+     * 保存 `ifKeyword`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val ifKeyword: PsiElement
         get() = findChildByType(CjTokens.IF_KEYWORD)!!
 }

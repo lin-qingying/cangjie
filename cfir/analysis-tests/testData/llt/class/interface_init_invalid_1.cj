@@ -2,7 +2,7 @@
 
 interface I0 {
     func f() {
-        <!ILLEGAL_THIS_OR_SUPER_CALL!>this<!>()
+        <!INVALID_THIS_CALL_OUTSIDE_CTOR!>this<!>()
     }
 }
 

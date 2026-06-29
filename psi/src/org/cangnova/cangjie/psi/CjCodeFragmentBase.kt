@@ -26,4 +26,7 @@ package org.cangnova.cangjie.psi
 
 import com.intellij.psi.PsiCodeFragment
 
+/**
+ * 定义 `CjCodeFragmentBase` 接口，约束仓颉 PSI节点或服务需要暴露的结构能力。
+ */
 interface CjCodeFragmentBase : PsiCodeFragment

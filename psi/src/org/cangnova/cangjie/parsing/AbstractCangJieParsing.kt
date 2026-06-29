@@ -40,8 +40,17 @@ import org.cangnova.cangjie.utils.substringWithContext
 import org.jetbrains.annotations.Contract
 import org.jetbrains.annotations.TestOnly
 
+/**
+ * 表示 `AbstractCangJieParsing`，承载仓颉语法解析中的语法节点、索引桩或辅助模型。
+ */
 abstract class AbstractCangJieParsing(
+    /**
+     * 保存 `builder`，供仓颉语法解析流程读取节点结构或语义信息。
+     */
     protected val builder: SemanticWhitespaceAwarePsiBuilder,
+    /**
+     * 保存 `isLazy`，供仓颉语法解析流程读取节点结构或语义信息。
+     */
     protected val isLazy: Boolean = true,
 
     ) {
@@ -73,25 +82,64 @@ abstract class AbstractCangJieParsing(
      */
     data class ParsingContext(
         // ==================== 解析控制相关 ====================
+        /**
+         * 保存 `disableMacroParsing`，供仓颉语法解析流程读取节点结构或语义信息。
+         */
         val disableMacroParsing: Boolean = false,
 
+        /**
+         * 保存 `enableCustomAnnotation`，供仓颉语法解析流程读取节点结构或语义信息。
+         */
         val enableCustomAnnotation: Boolean = false,
 
+        /**
+         * 保存 `allowParseAnnotationsInValueParameter`，供仓颉语法解析流程读取节点结构或语义信息。
+         */
         val allowParseAnnotationsInValueParameter: Boolean = true,
 //        val strictMode: Boolean = false
 
         // ==================== 错误报告相关 ====================
+        /**
+         * 保存 `shouldReportError`，供仓颉语法解析流程读取节点结构或语义信息。
+         */
         val shouldReportError: Boolean = true,
 
         // ==================== 表达式解析相关 ====================
+        /**
+         * 保存 `allowLetExpression`，供仓颉语法解析流程读取节点结构或语义信息。
+         */
         val allowLetExpression: Boolean = false,
+        /**
+         * 保存 `parseTypeArguments`，供仓颉语法解析流程读取节点结构或语义信息。
+         */
         val parseTypeArguments: Boolean = true,
+        /**
+         * 保存 `isParseOperator`，供仓颉语法解析流程读取节点结构或语义信息。
+         */
         val isParseOperator: Boolean = true,
+        /**
+         * 保存 `isExpression`，供仓颉语法解析流程读取节点结构或语义信息。
+         */
         val isExpression: Boolean = false,
+        /**
+         * 保存 `preferBlock`，供仓颉语法解析流程读取节点结构或语义信息。
+         */
         val preferBlock: Boolean = false,
+        /**
+         * 保存 `collapse`，供仓颉语法解析流程读取节点结构或语义信息。
+         */
         val collapse: Boolean = true,
+        /**
+         * 保存 `isDoubleArrow`，供仓颉语法解析流程读取节点结构或语义信息。
+         */
         val isDoubleArrow: Boolean = true,
+        /**
+         * 保存 `backToken`，供仓颉语法解析流程读取节点结构或语义信息。
+         */
         val backToken: Boolean = false,
+        /**
+         * 保存 `processStringInterpolation`，供仓颉语法解析流程读取节点结构或语义信息。
+         */
         val processStringInterpolation: Boolean = true,
     ) {
         companion object {
@@ -137,6 +185,9 @@ abstract class AbstractCangJieParsing(
             val NO_STRING_INTERPOLATION = ParsingContext(processStringInterpolation = false)
         }
 
+        /**
+         * 保存 `expressionFirst`，供仓颉语法解析流程读取节点结构或语义信息。
+         */
         val expressionFirst: TokenSet
             get() = if (allowLetExpression) {
                 CangJieExpressionParsing.EXPRESSION_FIRST_WITH_LET
@@ -147,17 +198,29 @@ abstract class AbstractCangJieParsing(
 
 
 
+    /**
+     * 提供 `interface` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
+     */
     fun interface Parser {
         fun parse(builder: PsiBuilder, level: Int): Boolean
     }
 
+    /**
+     * 提供 `interface` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
+     */
     fun interface Hook<T> {
         @Contract("_,null,_->null")
         fun run(builder: PsiBuilder, marker: PsiBuilder.Marker?, param: T?): PsiBuilder.Marker?
     }
 
     protected inner class At(
+        /**
+         * 保存 `lookFor` 的内部状态，供仓颉语法解析实现维护节点缓存或解析上下文。
+         */
         private val lookFor: IElementType,
+        /**
+         * 保存 `topLevelOnly` 的内部状态，供仓颉语法解析实现维护节点缓存或解析上下文。
+         */
         private val topLevelOnly: Boolean = true
     ) : AbstractTokenStreamPredicate() {
         override fun matching(topLevel: Boolean): Boolean =
@@ -165,7 +228,13 @@ abstract class AbstractCangJieParsing(
     }
 
     protected inner class AtSet(
+        /**
+         * 保存 `lookFor` 的内部状态，供仓颉语法解析实现维护节点缓存或解析上下文。
+         */
         private val lookFor: TokenSet,
+        /**
+         * 保存 `topLevelOnly` 的内部状态，供仓颉语法解析实现维护节点缓存或解析上下文。
+         */
         private val topLevelOnly: TokenSet = lookFor
     ) : AbstractTokenStreamPredicate() {
         override fun matching(topLevel: Boolean): Boolean =
@@ -333,6 +402,9 @@ abstract class AbstractCangJieParsing(
         }
     }
 
+    /**
+     * 提供 `advanceBalancedBlock` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
+     */
     fun advanceBalancedBlock() {
         var braceCount = 1
         while (!eof()) {
@@ -434,6 +506,9 @@ abstract class AbstractCangJieParsing(
         return false
     }
 
+    /**
+     * 提供 `_atSet` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
+     */
     protected fun _atSet(vararg set: IElementType): Boolean {
         return _atSet(TokenSet.create(*set))
     }
@@ -628,6 +703,9 @@ abstract class AbstractCangJieParsing(
         return false
     }
 
+    /**
+     * 提供 `expect` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
+     */
     protected fun expect(expectationSet: TokenSet): Boolean {
         if (atSet(expectationSet)) {
             advance()
@@ -758,10 +836,16 @@ abstract class AbstractCangJieParsing(
         }
     }
 
+    /**
+     * 提供 `rawLookup` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
+     */
     protected fun rawLookup(steps: Int): IElementType? {
         return builder.rawLookup(steps)
     }
 
+    /**
+     * 提供 `getGtTokenType` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
+     */
     protected fun getGtTokenType(): IElementType? =
         when (val tokenType = tt()) {
             CjTokens.QUEST -> if (rawLookup(1) === CjTokens.QUEST) CjTokens.COALESCING else tokenType
@@ -775,6 +859,9 @@ abstract class AbstractCangJieParsing(
         }
 
     //    获取可以被重载的操作符标记 OPERATIONS
+    /**
+     * 提供 `getOperationTokenType` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
+     */
     protected fun getOperationTokenType(): IElementType? =
         when (val tokenType = getGtTokenType()) {
             CjTokens.LPAR -> if (rawLookup(1) === CjTokens.RPAR) CjTokens.OPERATION_INVOKE else tokenType
@@ -800,12 +887,18 @@ abstract class AbstractCangJieParsing(
             else -> tokenType
         }
 
+    /**
+     * 提供 `createTruncatedBuilder` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
+     */
     protected fun createTruncatedBuilder(eofPosition: Int): CangJieParsing {
         return create(TruncatedSemanticWhitespaceAwarePsiBuilder(builder, eofPosition))
     }
 
     context(context: ParsingContext)
 
+    /**
+     * 提供 `expectSafeCall` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
+     */
     protected fun expectSafeCall(expectationSet: TokenSet, message: String, recoverySet: TokenSet?): Boolean {
         val tokenType = getSafeTokenType()
         if (expectationSet.contains(tokenType)) {
@@ -849,6 +942,9 @@ abstract class AbstractCangJieParsing(
         }
     }
 
+    /**
+     * 提供 `create` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
+     */
     protected abstract fun create(builder: SemanticWhitespaceAwarePsiBuilder): CangJieParsing
 
     /**
@@ -916,11 +1012,20 @@ abstract class AbstractCangJieParsing(
     }
 
     // Extension functions for token operations
+    /**
+     * 提供 `isAtEnd` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
+     */
     fun PsiBuilder.isAtEnd() = eof()
 
+    /**
+     * 提供 `currentTokenMatches` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
+     */
     fun PsiBuilder.currentTokenMatches(expectation: IElementType): Boolean =
         getTokenType() === expectation
 
+    /**
+     * 提供 `currentTokenMatchesSet` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
+     */
     fun PsiBuilder.currentTokenMatchesSet(set: TokenSet): Boolean =
         set.contains(getTokenType())
 
@@ -958,12 +1063,18 @@ abstract class AbstractCangJieParsing(
         return marker
     }
 
+    /**
+     * 提供 `parsing` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
+     */
     protected fun parsing(block: AbstractCangJieParsing.() -> Unit) {
         this.block()
     }
 
     context(context: ParsingContext)
 
+    /**
+     * 提供 `withRecoveryContext` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
+     */
     protected fun withRecoveryContext(recoverySet: TokenSet, block: () -> Unit) {
         try {
             block()
@@ -972,6 +1083,9 @@ abstract class AbstractCangJieParsing(
         }
     }
 
+    /**
+     * 提供 `withErrorReporting` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
+     */
     protected fun PsiBuilder.Marker.withErrorReporting(message: String, block: PsiBuilder.Marker.() -> Unit) {
         try {
             block()
@@ -1136,6 +1250,9 @@ abstract class AbstractCangJieParsing(
             ?.let { rawLookup(-it) }
     }
 
+    /**
+     * 提供 `advanceSafeToken` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
+     */
     protected fun advanceSafeToken(type: IElementType?) {
         mark().apply {
             when (type) {
@@ -1173,6 +1290,9 @@ abstract class AbstractCangJieParsing(
 
     }
 
+    /**
+     * 提供 `advanceOperationToken` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
+     */
     protected fun advanceOperationToken(type: IElementType?) {
         val gtToken = mark()
 
@@ -1192,7 +1312,13 @@ abstract class AbstractCangJieParsing(
         }
     }
 
+    /**
+     * 保存 `productions`，供仓颉语法解析流程读取节点结构或语义信息。
+     */
     val productions: MutableList<out SyntaxTreeBuilder.Production> get() = builder.getProductions()
+    /**
+     * 提供 `getSafeTokenType` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
+     */
     protected fun getSafeTokenType(): IElementType? {
         var tokenType = tt()
         if (tokenType !== CjTokens.QUEST) return tokenType
@@ -1301,6 +1427,9 @@ abstract class AbstractCangJieParsing(
      * ```
      */
     protected class RecoveryScope(private val error: Throwable?) {
+        /**
+         * 提供 `onError` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
+         */
         fun onError(handler: (Throwable) -> Unit) {
             error?.let(handler)
         }
@@ -1308,6 +1437,9 @@ abstract class AbstractCangJieParsing(
 
     context(context: ParsingContext)
 
+    /**
+     * 提供 `withRecovery` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
+     */
     protected fun withRecovery(recoverySet: TokenSet, block: () -> Unit): RecoveryScope {
         var error: Throwable? = null
         try {
@@ -1464,6 +1596,9 @@ abstract class AbstractCangJieParsing(
 
     context(context: ParsingContext)
 
+    /**
+     * 提供 `expect` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
+     */
     protected fun expect(tokenType: IElementType, message: String = "", block: () -> Unit) {
         if (expect(tokenType, message)) {
             block()
@@ -1516,27 +1651,42 @@ abstract class AbstractCangJieParsing(
      * ```
      */
     protected class MarkerBuilder(private val marker: PsiBuilder.Marker) {
+        /**
+         * 提供 `then` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
+         */
         fun then(block: () -> Unit): MarkerBuilder {
             block()
             return this
         }
 
+        /**
+         * 提供 `done` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
+         */
         fun done(elementType: IElementType): MarkerBuilder {
             marker.done(elementType)
             return this
         }
 
+        /**
+         * 提供 `drop` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
+         */
         fun drop(): MarkerBuilder {
             marker.drop()
             return this
         }
 
+        /**
+         * 提供 `rollback` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
+         */
         fun rollback(): MarkerBuilder {
             marker.rollbackTo()
             return this
         }
     }
 
+    /**
+     * 提供 `markers` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
+     */
     protected fun markers(block: () -> Unit) {
         block()
     }
@@ -1561,24 +1711,42 @@ abstract class AbstractCangJieParsing(
      * ```
      */
     protected class LookaheadResult(
+        /**
+         * 保存 `success` 的内部状态，供仓颉语法解析实现维护节点缓存或解析上下文。
+         */
         private val success: Boolean,
+        /**
+         * 保存 `marker` 的内部状态，供仓颉语法解析实现维护节点缓存或解析上下文。
+         */
         private val marker: PsiBuilder.Marker
     ) {
+        /**
+         * 提供 `onSuccess` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
+         */
         fun onSuccess(block: () -> Unit): LookaheadResult {
             if (success) block()
             return this
         }
 
+        /**
+         * 提供 `onFailure` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
+         */
         fun onFailure(block: () -> Unit): LookaheadResult {
             if (!success) block()
             return this
         }
 
+        /**
+         * 提供 `rollback` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
+         */
         fun rollback() {
             marker.rollbackTo()
         }
     }
 
+    /**
+     * 提供 `lookAhead` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
+     */
     protected fun lookAhead(block: () -> Boolean): LookaheadResult {
         val marker = mark()
         val result = try {
@@ -1609,28 +1777,49 @@ abstract class AbstractCangJieParsing(
      * ```
      */
     protected class ErrorRecoveryBuilder {
+        /**
+         * 保存 `recoveryBlock` 的内部状态，供仓颉语法解析实现维护节点缓存或解析上下文。
+         */
         private var recoveryBlock: ((Throwable) -> Unit)? = null
+        /**
+         * 保存 `finallyBlock` 的内部状态，供仓颉语法解析实现维护节点缓存或解析上下文。
+         */
         private var finallyBlock: (() -> Unit)? = null
 
+        /**
+         * 提供 `recover` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
+         */
         fun recover(block: (Throwable) -> Unit): ErrorRecoveryBuilder {
             recoveryBlock = block
             return this
         }
 
+        /**
+         * 提供 `finally` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
+         */
         fun finally(block: () -> Unit): ErrorRecoveryBuilder {
             finallyBlock = block
             return this
         }
 
+        /**
+         * 提供 `handleError` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
+         */
         internal fun handleError(error: Throwable) {
             recoveryBlock?.invoke(error)
         }
 
+        /**
+         * 提供 `handleFinally` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
+         */
         internal fun handleFinally() {
             finallyBlock?.invoke()
         }
     }
 
+    /**
+     * 提供 `error` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
+     */
     context(context: ParsingContext)
     fun error(mark: PsiBuilder.Marker, @NlsContexts.ParsingError message: String) {
         if (context.shouldReportError) {
@@ -1638,6 +1827,9 @@ abstract class AbstractCangJieParsing(
         }
     }
 
+    /**
+     * 提供 `errorRecovery` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
+     */
     protected fun errorRecovery(block: () -> Unit): ErrorRecoveryBuilder {
         val builder = ErrorRecoveryBuilder()
         try {

@@ -24,5 +24,8 @@ interface CaDiagnosticWithPsi<out PSI : PsiElement> : CaDiagnostic {
      */
     val textRanges: Collection<TextRange>
 
+    /**
+     * 返回携带 PSI 类型信息的诊断运行时类别。
+     */
     override val diagnosticClass: KClass<out CaDiagnosticWithPsi<PSI>>
 }

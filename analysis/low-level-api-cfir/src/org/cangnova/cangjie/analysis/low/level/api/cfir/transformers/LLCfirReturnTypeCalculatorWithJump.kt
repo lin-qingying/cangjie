@@ -28,6 +28,9 @@ internal class LLCfirReturnTypeCalculatorWithJump(
     scopeSession: ScopeSession,
     implicitBodyResolveComputationSession: LLImplicitBodyResolveComputationSession,
 ) : ReturnTypeCalculatorWithJump(session, scopeSession, implicitBodyResolveComputationSession) {
+    /**
+     * 解析 [declaration] 的返回类型，并在需要隐式类型计算时跳转到 LL 懒解析流程。
+     */
     override fun resolveDeclaration(declaration: CfirCallableDeclaration): CfirResolvedTypeRef {
         val hasSomethingToResolveOnImplicitTypePhase = when (declaration) {
             is CfirProperty -> declaration.shouldBeResolvedOnImplicitTypePhase
@@ -57,6 +60,9 @@ internal class LLCfirReturnTypeCalculatorWithJump(
         return declaration.returnTypeRef as CfirResolvedTypeRef
     }
 
+    /**
+     * 尝试计算 [declaration] 的返回类型，并在委托父类前执行取消检查。
+     */
     override fun tryCalculateReturnTypeOrNull(declaration: CfirCallableDeclaration): CfirResolvedTypeRef {
         checkCanceled()
         return super.tryCalculateReturnTypeOrNull(declaration)

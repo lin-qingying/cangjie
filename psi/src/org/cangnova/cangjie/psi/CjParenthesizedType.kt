@@ -29,29 +29,47 @@ import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 import com.google.common.collect.Lists
 import com.intellij.lang.ASTNode
 
+/**
+ * 表示 `CjParenthesizedType`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjParenthesizedType : CjElementImplStub<CangJiePlaceHolderStub<CjParenthesizedType>>, CjTypeElement {
 
     constructor(node: ASTNode) : super(node)
 
     constructor(stub: CangJiePlaceHolderStub<CjParenthesizedType>) : super(stub, CjStubElementTypes.PARENTHESIZED_TYPE)
 
+    /**
+     * 提供 `getTypeArgumentList` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun getTypeArgumentList(): CjTypeArgumentList? {
         return getStubOrPsiChild(CjStubElementTypes.TYPE_ARGUMENT_LIST)
     }
 
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitParenthesizedType(this, data)
     }
 
+    /**
+     * 提供 `getType` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun getType(): CjTypeElement? {
         return getStubOrPsiChild(CjStubElementTypes.TYPE_REFERENCE)?.typeElement
     }
 
+    /**
+     * 提供 `getTypeArguments` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun getTypeArguments(): List<CjTypeProjection> {
         val typeArgumentList: CjTypeArgumentList? = getTypeArgumentList()
         return typeArgumentList?.arguments ?: emptyList()
     }
 
+    /**
+     * 暴露 `typeArgumentsAsTypes`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val typeArgumentsAsTypes: List<CjTypeReference>
         get() {
 

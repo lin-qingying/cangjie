@@ -26,6 +26,7 @@ package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
+import org.cangnova.cangjie.cfir.analysis.checkers.hasInvalidDeclaredUpperBoundsInCurrentContext
 import org.cangnova.cangjie.cfir.analysis.checkers.modifierByToken
 import org.cangnova.cangjie.cfir.analysis.checkers.realSourceModifiers
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
@@ -197,6 +198,9 @@ object CfirFunctionReturnTypeInferenceChecker : CfirFunctionChecker() {
     override fun check(declaration: CfirFunction) {
         val returnTypeRef = declaration.returnTypeRef
         if (returnTypeRef is CfirErrorTypeRef && returnTypeRef.isFunctionReturnTypeInferenceFailure()) {
+            if (declaration.hasInvalidDeclaredUpperBoundsInCurrentContext()) {
+                return
+            }
             if (declaration is CfirNamedFunction && declaration.body != null) {
                 reporter.reportOn(
                     source = declaration.functionNameDiagnosticSource(),

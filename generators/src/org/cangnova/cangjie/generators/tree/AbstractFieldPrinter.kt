@@ -12,24 +12,47 @@ import org.cangnova.cangjie.generators.tree.printer.printPropertyDeclaration
 import org.cangnova.cangjie.generators.util.printBlock
 import org.cangnova.cangjie.utils.withIndent
 
+/**
+ * 打印树模型字段属性或构造参数的公共基类。
+ *
+ * 具体树生成器可覆盖类型选择、可变性和 opt-in 包裹策略，以适配接口、实现类和构建器中的不同字段形态。
+ */
 abstract class AbstractFieldPrinter<Field : AbstractField<*>>(
+    /**
+     * 带导入收集能力的目标源码打印器。
+     */
     private val printer: ImportCollectingPrinter,
 ) {
 
     /**
-     * Allows to forcibly make the field a `var` instead of `val`.
+     * 强制把字段打印为 `var`。
+     *
+     * 默认遵循字段自身可变性，具体生成器可在实现类需要可写属性时覆盖。
      */
     protected open fun forceMutable(field: Field): Boolean = false
 
     /**
-     * Allows to override the printed type of [field]. For example, for list fields we may want to use [MutableList] instead of [List]
-     * in implementation classes.
+     * 返回字段在当前位置实际打印的类型。
+     *
+     * 例如实现类中的列表字段可以从只读 [List] 改为 [MutableList]。
      */
     protected open fun actualTypeOfField(field: Field): TypeRefWithNullability = field.typeRef
 
+    /**
+     * 是否在默认值 getter 场景中包裹 opt-in 注解。
+     */
     protected open val wrapOptInAnnotations: Boolean
         get() = false
 
+    /**
+     * 打印字段声明。
+     *
+     * @param field 要打印的字段模型。
+     * @param inImplementation 是否处于实现类生成阶段。
+     * @param override 是否添加 `override` 修饰。
+     * @param inConstructor 是否作为主构造函数参数打印。
+     * @param modality 需要显式输出的成员可见/抽象形态。
+     */
     fun printField(
         field: Field,
         inImplementation: Boolean,

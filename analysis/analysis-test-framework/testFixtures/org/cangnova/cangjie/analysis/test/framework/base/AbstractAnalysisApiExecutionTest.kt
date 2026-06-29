@@ -27,9 +27,15 @@ import kotlin.io.path.isRegularFile
  */
 @ExtendWith(AnalysisApiExecutionTestExtension::class)
 abstract class AbstractAnalysisApiExecutionTest(
+    /**
+     * 当前手写测试使用的 testData 目录路径。
+     */
     val testDirPathString: String,
 ) : AbstractAnalysisApiBasedTest() {
 
+    /**
+     * 由 JUnit extension 调用的底层执行入口。
+     */
     @Deprecated("Handled by the test infrastructure. Avoid calling directly")
     fun performTest(path: String, block: (TestServices, CjFile?, CjTestModule) -> Unit) {
         runTest(path) { testServices ->
@@ -39,9 +45,15 @@ abstract class AbstractAnalysisApiExecutionTest(
     }
 }
 
+/**
+ * 为手写 Analysis API 测试提供 testData 执行和参数注入的 JUnit5 extension。
+ */
 internal class AnalysisApiExecutionTestExtension :
     BeforeTestExecutionCallback, AfterTestExecutionCallback, ParameterResolver {
 
+    /**
+     * Extension 支持自动注入的参数类型。
+     */
     private companion object {
         private val SUPPORTED_PARAMETER_TYPES = listOf(
             TestServices::class.java,
@@ -50,19 +62,40 @@ internal class AnalysisApiExecutionTestExtension :
         )
     }
 
+    /**
+     * 单个测试方法执行期间缓存的参数状态。
+     */
     private class State(
+        /**
+         * 当前测试服务容器。
+         */
         val testServices: TestServices,
+        /**
+         * 当前测试主文件。
+         */
         val mainFile: CjFile?,
+        /**
+         * 当前测试主模块。
+         */
         val mainModule: CjTestModule,
     )
 
+    /**
+     * 当前线程正在执行的测试状态。
+     */
     private val cachedState = ThreadLocal<State>()
 
+    /**
+     * 判断当前参数是否可由 Analysis API 测试 extension 注入。
+     */
     override fun supportsParameter(parameterContext: ParameterContext, extensionContext: ExtensionContext): Boolean {
         val parameterType = parameterContext.parameter.type
         return SUPPORTED_PARAMETER_TYPES.any { it.isAssignableFrom(parameterType) }
     }
 
+    /**
+     * 根据参数类型返回当前测试状态中的对应对象。
+     */
     override fun resolveParameter(parameterContext: ParameterContext, extensionContext: ExtensionContext): Any? {
         val state = cachedState.get() ?: error("State is not cached yet")
         val parameterType = parameterContext.parameter.type
@@ -74,6 +107,9 @@ internal class AnalysisApiExecutionTestExtension :
         }
     }
 
+    /**
+     * 在测试方法执行前解析 testData 并缓存参数状态。
+     */
     override fun beforeTestExecution(context: ExtensionContext) {
         val testInstance = context.requiredTestInstance as AbstractAnalysisApiExecutionTest
         val testFilePath = getTestFilePath(testInstance.testDirPathString, context.requiredTestMethod.name)
@@ -85,10 +121,16 @@ internal class AnalysisApiExecutionTestExtension :
         }
     }
 
+    /**
+     * 在测试方法结束后清空线程本地状态。
+     */
     override fun afterTestExecution(context: ExtensionContext?) {
         cachedState.remove()
     }
 
+    /**
+     * 根据测试目录和方法名定位实际 testData 文件。
+     */
     private fun getTestFilePath(testDirPathString: String, testFileName: String): Path {
         val workspaceRoot = locateWorkspaceRoot(Paths.get("").toAbsolutePath().normalize())
         val candidates = listOf(

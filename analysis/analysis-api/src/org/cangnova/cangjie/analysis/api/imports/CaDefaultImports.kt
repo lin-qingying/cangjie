@@ -26,6 +26,9 @@ interface CaDefaultImports  {
     val excludedFromDefaultImports: List<ImportPath>
 }
 @SubclassOptInRequired(CaImplementationDetail::class)
+/**
+ * 单条默认 import 及其优先级。
+ */
 interface CaDefaultImport {
     /**
      * 该默认 import 实际指向的导入路径。

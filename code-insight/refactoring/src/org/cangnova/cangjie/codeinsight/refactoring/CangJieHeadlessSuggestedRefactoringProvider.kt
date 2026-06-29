@@ -16,5 +16,8 @@ import com.intellij.refactoring.suggested.SuggestedRefactoringProvider
  * 只需要满足 Kotlin `Renamer` 末尾的 `reset()` 清理协议，不应因此初始化插件层或 UI 编辑器。
  */
 class CangJieHeadlessSuggestedRefactoringProvider : SuggestedRefactoringProvider {
+    /**
+     * Headless rename 完成后的清理钩子；当前实现不维护 suggested-refactoring 状态。
+     */
     override fun reset() = Unit
 }

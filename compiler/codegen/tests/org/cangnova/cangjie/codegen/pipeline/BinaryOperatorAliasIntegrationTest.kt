@@ -16,7 +16,13 @@ import org.cangnova.cangjie.codegen.api.CodegenOptions
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
+/**
+ * 二元操作符别名到 LLVM lowering 的集成测试。
+ */
 class BinaryOperatorAliasIntegrationTest {
+    /**
+     * 验证别名操作符会通过枚举解析映射到正确 LLVM 指令。
+     */
     @Test
     fun `maps alias operators through enum parser`() {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)

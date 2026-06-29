@@ -21,6 +21,11 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.caches.cleanable.ValueRe
  *  even after the session has been reclaimed by the GC.
  */
 internal class LLCfirSessionCleaner(private val disposable: Disposable?) : ValueReferenceCleaner<LLCfirSession> {
+    /**
+     * 清理被显式移除或垃圾回收的 [value]。
+     *
+     * 方法会标记 session 失效、释放 session disposable，并在 session 仍存在时收集失效事件。
+     */
     override fun cleanUp(value: LLCfirSession?) {
         // If both the session and the disposable are present, we can check their consistency. Otherwise, this is not possible, because
         // we cannot store the session in the session cleaner (otherwise the session will never be garbage-collected).
@@ -47,6 +52,11 @@ internal class LLCfirSessionCleaner(private val disposable: Disposable?) : Value
         }
     }
 
+    /**
+     * 带诊断信息的清理入口。
+     *
+     * [diagnosticInformation] 会写入 session 的 invalidation 信息，清理失败时追加异常堆栈后继续抛出。
+     */
     override fun cleanUp(value: LLCfirSession?, diagnosticInformation: String?) {
         value?.invalidationInformation = buildString {
             if (diagnosticInformation != null) {

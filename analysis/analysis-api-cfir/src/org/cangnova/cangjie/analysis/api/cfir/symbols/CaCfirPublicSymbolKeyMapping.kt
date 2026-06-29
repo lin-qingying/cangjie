@@ -126,6 +126,9 @@ internal fun CfirCallableSymbol<*>.publicSymbolCacheKeyOrNull(session: CaCfirSes
     }
 }
 
+/**
+ * 从公开符号对象推导可跨 session 恢复的缓存键。
+ */
 internal fun CaSymbol.publicSymbolCacheKeyOrNull(): CaCfirPublicSymbolCacheKey? = when (this) {
     is CaCfirFileSymbol -> CaCfirFileSymbolCacheKey(file)
     is CaCfirPackageSymbol -> CaCfirPackageSymbolCacheKey(fqName)
@@ -166,6 +169,9 @@ internal fun CaSymbol.publicSymbolCacheKeyOrNull(): CaCfirPublicSymbolCacheKey? 
     else -> null
 }
 
+/**
+ * 为补全候选判定生成稳定或临时的去重 key。
+ */
 internal fun CaSymbol.completionDecisionKey(): CaCfirCompletionSymbolKey =
     publicSymbolCacheKeyOrNull()?.let(::CaCfirStableCompletionSymbolKey)
         ?: CaCfirEphemeralCompletionSymbolKey(this)

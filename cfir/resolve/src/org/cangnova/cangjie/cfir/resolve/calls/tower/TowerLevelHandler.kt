@@ -26,7 +26,7 @@ package org.cangnova.cangjie.cfir.resolve.calls.tower
 
 import org.cangnova.cangjie.cfir.calls.ExpressionReceiverValue
 import org.cangnova.cangjie.cfir.calls.ReceiverValue
-import org.cangnova.cangjie.cfir.calls.resolvedQualifierSymbol
+import org.cangnova.cangjie.cfir.calls.qualifierScopeOrNull
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.resolve.BodyResolveComponents
@@ -250,7 +250,10 @@ internal class DispatchReceiverMemberScopeTowerLevel(
     private fun memberScope(): MemberScopeData? {
         val scope = dispatchReceiver.scope(components) ?: return null
         val effectiveDispatchReceiver = dispatchReceiver.takeUnless {
-            it is ExpressionReceiverValue && it.receiverExpression.resolvedQualifierSymbol(components.session) != null
+            it is ExpressionReceiverValue && it.receiverExpression.qualifierScopeOrNull(
+                components.session,
+                components.scopeSession,
+            ) != null
         }
         return MemberScopeData(scope, effectiveDispatchReceiver)
     }

@@ -33,6 +33,9 @@ import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.psi.*
 
+/**
+ * 表示 `ConstantValueKind`，承载PSI Stub中的语法节点、索引桩或辅助模型。
+ */
 enum class ConstantValueKind {
 
     BOOLEAN_CONSTANT,
@@ -44,28 +47,64 @@ enum class ConstantValueKind {
     UNIT_CONSTANT,
 }
 
+/**
+ * 定义 `CangJiePropertyAccessorStub` 接口，约束PSI Stub节点或服务需要暴露的结构能力。
+ */
 interface CangJiePropertyAccessorStub : StubElement<CjPropertyAccessor> {
+    /**
+     * 提供 `isGetter` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
+     */
     fun isGetter(): Boolean
+    /**
+     * 提供 `hasBody` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
+     */
     fun hasBody(): Boolean
+    /**
+     * 提供 `hasBlockBody` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
+     */
     fun hasBlockBody(): Boolean
 }
 
+/**
+ * 定义 `CangJieCollectionLiteralExpressionStub` 接口，约束PSI Stub节点或服务需要暴露的结构能力。
+ */
 interface CangJieCollectionLiteralExpressionStub : StubElement<CjCollectionLiteralExpression>
 
+/**
+ * 定义 `CangJieConstantExpressionStub` 接口，约束PSI Stub节点或服务需要暴露的结构能力。
+ */
 interface CangJieConstantExpressionStub : StubElement<CjConstantExpression> {
+    /**
+     * 提供 `kind` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
+     */
     fun kind(): ConstantValueKind
+    /**
+     * 提供 `value` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
+     */
     fun value(): String
 }
 
+/**
+ * 定义 `CangJieStubElement` 接口，约束PSI Stub节点或服务需要暴露的结构能力。
+ */
 interface CangJieStubElement<T : CjElement> : StubElement<T> {
     /** Returns a copy of this stub with the parent set to [newParent] */
     fun copyInto(newParent: StubElement<*>?): CangJieStubElement<T>
 }
 
 
+/**
+ * 定义 `CangJieFileStub` 接口，约束PSI Stub节点或服务需要暴露的结构能力。
+ */
 interface CangJieFileStub : PsiFileStub<CjFile>, CangJieStubElement<CjFile> {
+    /**
+     * 提供 `getPackageFqName` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
+     */
     fun getPackageFqName(): FqName
 
+    /**
+     * 保存 `kind`，供PSI Stub流程读取节点结构或语义信息。
+     */
     val kind: CangJieFileStubKind
 }
 
@@ -78,39 +117,96 @@ interface CangJieFileStub : PsiFileStub<CjFile>, CangJieStubElement<CjFile> {
  */
 interface CangJiePlaceHolderStub<T : CjElement> : StubElement<T>
 
+/**
+ * 定义 `CangJieAnnotationStub` 接口，约束PSI Stub节点或服务需要暴露的结构能力。
+ */
 interface CangJieAnnotationStub : StubElement<CjAnnotation> {
+    /**
+     * 提供 `getShortName` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
+     */
     fun getShortName(): String?
+    /**
+     * 提供 `hasValueArguments` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
+     */
     fun hasValueArguments(): Boolean
 }
 
+/**
+ * 定义 `CangJieMacroExpressionStub` 接口，约束PSI Stub节点或服务需要暴露的结构能力。
+ */
 interface CangJieMacroExpressionStub : StubElement<CjMacroExpression> {
+    /**
+     * 提供 `getShortName` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
+     */
     fun getShortName(): String?
+    /**
+     * 提供 `hasValueArguments` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
+     */
     fun hasValueArguments(): Boolean
 }
 
+/**
+ * 定义 `CangJieModifierListStub` 接口，约束PSI Stub节点或服务需要暴露的结构能力。
+ */
 interface CangJieModifierListStub : StubElement<CjDeclarationModifierList> {
+    /**
+     * 提供 `hasModifier` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
+     */
     fun hasModifier(modifierToken: CjKeywordToken): Boolean
 }
 
+/**
+ * 定义 `CangJieContextReceiverStub` 接口，约束PSI Stub节点或服务需要暴露的结构能力。
+ */
 interface CangJieContextReceiverStub : StubElement<CjContextReceiver> {
+    /**
+     * 提供 `getLabel` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
+     */
     fun getLabel(): String?
 }
 
+/**
+ * 定义 `CangJieValueArgumentStub` 接口，约束PSI Stub节点或服务需要暴露的结构能力。
+ */
 interface CangJieValueArgumentStub<T : CjValueArgument> : CangJiePlaceHolderStub<T> {
+    /**
+     * 提供 `isSpread` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
+     */
     fun isSpread(): Boolean
 }
 
+/**
+ * 定义 `CangJieBasicTypeStub` 接口，约束PSI Stub节点或服务需要暴露的结构能力。
+ */
 interface CangJieBasicTypeStub : StubElement<CjBasicType> {
+    /**
+     * 保存 `basicType`，供PSI Stub流程读取节点结构或语义信息。
+     */
     val basicType: String
 }
 
+/**
+ * 定义 `CangJieUserTypeStub` 接口，约束PSI Stub节点或服务需要暴露的结构能力。
+ */
 interface CangJieUserTypeStub : StubElement<CjUserType>
+/**
+ * 定义 `CangJieTupleTypeStub` 接口，约束PSI Stub节点或服务需要暴露的结构能力。
+ */
 interface CangJieTupleTypeStub : StubElement<CjTupleType>
 
+/**
+ * 定义 `CangJieClassifierStub` 接口，约束PSI Stub节点或服务需要暴露的结构能力。
+ */
 interface CangJieClassifierStub {
+    /**
+     * 提供 `getClassId` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
+     */
     fun getClassId(): ClassId?
 }
 
+/**
+ * 定义 `CangJieTypeAliasStub` 接口，约束PSI Stub节点或服务需要暴露的结构能力。
+ */
 interface CangJieTypeAliasStub : CangJieClassifierStub, CangJieStubWithFqName<CjTypeAlias> {
 
 }
@@ -242,7 +338,13 @@ interface CangJieConstantPatternStub : CangJiePatternStub<CjConstantPattern>
  */
 interface CangJieMatchConditionStub : CangJiePatternStub<CjMatchConditionWithExpression>
 
+/**
+ * 定义 `CangJiePropertyStub` 接口，约束PSI Stub节点或服务需要暴露的结构能力。
+ */
 interface CangJiePropertyStub : CangJieCallableStubBase<CjProperty> {
+    /**
+     * 实现 `isTopLevel` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun isTopLevel(): Boolean = false
 }
 
@@ -262,52 +364,127 @@ interface CangJiePropertyStub : CangJieCallableStubBase<CjProperty> {
  * ```
  */
 interface CangJieFieldStub : CangJieCallableStubBase<CjFieldVariable> {
+    /**
+     * 提供 `isVar` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
+     */
     fun isVar(): Boolean
+    /**
+     * 提供 `isConst` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
+     */
     fun isConst(): Boolean
+    /**
+     * 提供 `hasInitializer` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
+     */
     fun hasInitializer(): Boolean
+    /**
+     * 提供 `hasReturnTypeRef` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
+     */
     fun hasReturnTypeRef(): Boolean
 
+    /**
+     * 实现 `isTopLevel` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun isTopLevel(): Boolean = false
 }
 
+/**
+ * 定义 `CangJieCallableStubBase` 接口，约束PSI Stub节点或服务需要暴露的结构能力。
+ */
 interface CangJieCallableStubBase<TDeclaration : CjCallableDeclaration> : CangJieStubWithFqName<TDeclaration> {
+    /**
+     * 提供 `isTopLevel` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
+     */
     fun isTopLevel(): Boolean
 }
 
+/**
+ * 定义 `CangJieStubWithFqName` 接口，约束PSI Stub节点或服务需要暴露的结构能力。
+ */
 interface CangJieStubWithFqName<T : PsiNamedElement> : NamedStub<T> {
+    /**
+     * 提供 `getFqName` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
+     */
     fun getFqName(): FqName?
 }
 
+/**
+ * 定义 `CangJieTypeParameterStub` 接口，约束PSI Stub节点或服务需要暴露的结构能力。
+ */
 interface CangJieTypeParameterStub : CangJieStubWithFqName<CjTypeParameter> {
 //    fun isInVariance(): Boolean
 }
 
+/**
+ * 定义 `CangJieNameBasicReferenceExpressionStub` 接口，约束PSI Stub节点或服务需要暴露的结构能力。
+ */
 interface CangJieNameBasicReferenceExpressionStub : StubElement<CjNameBasicReferenceExpression> {
+    /**
+     * 提供 `getReferencedName` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
+     */
     fun getReferencedName(): String
 }
 
+/**
+ * 定义 `CangJieNameReferenceExpressionStub` 接口，约束PSI Stub节点或服务需要暴露的结构能力。
+ */
 interface CangJieNameReferenceExpressionStub : StubElement<CjNameReferenceExpression> {
+    /**
+     * 提供 `getReferencedName` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
+     */
     fun getReferencedName(): String
 }
 
+/**
+ * 定义 `CangJieParameterStubBase` 接口，约束PSI Stub节点或服务需要暴露的结构能力。
+ */
 interface CangJieParameterStubBase<T : PsiNamedElement> : CangJieStubWithFqName<T>
+/**
+ * 定义 `CangJieCatchParameterStub` 接口，约束PSI Stub节点或服务需要暴露的结构能力。
+ */
 interface CangJieCatchParameterStub : CangJieParameterStubBase<CjCatchParameter>
 
+/**
+ * 定义 `CangJieParameterStub` 接口，约束PSI Stub节点或服务需要暴露的结构能力。
+ */
 interface CangJieParameterStub : CangJieParameterStubBase<CjParameter> {
+    /**
+     * 提供 `isMutable` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
+     */
     fun isMutable(): Boolean
+    /**
+     * 提供 `hasLetOrVar` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
+     */
     fun hasLetOrVar(): Boolean
+    /**
+     * 提供 `hasDefaultValue` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
+     */
     fun hasDefaultValue(): Boolean
+    /**
+     * 提供 `isNamed` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
+     */
     fun isNamed(): Boolean
 }
 
+/**
+ * 定义 `CangJieClassStub` 接口，约束PSI Stub节点或服务需要暴露的结构能力。
+ */
 interface CangJieClassStub : CangJieTypeStatementStub<CjClass> {
 
 }
 
+/**
+ * 定义 `CangJieStructStub` 接口，约束PSI Stub节点或服务需要暴露的结构能力。
+ */
 interface CangJieStructStub : CangJieTypeStatementStub<CjStruct>
 
+/**
+ * 定义 `CangJieInterfaceStub` 接口，约束PSI Stub节点或服务需要暴露的结构能力。
+ */
 interface CangJieInterfaceStub : CangJieTypeStatementStub<CjInterface>
 
+/**
+ * 定义 `CangJieEnumStub` 接口，约束PSI Stub节点或服务需要暴露的结构能力。
+ */
 interface CangJieEnumStub : CangJieTypeStatementStub<CjEnum> {
     /**
      * 是否非穷尽枚举
@@ -351,61 +528,133 @@ interface CangJieEnumConstructorStub : NamedStub<CjEnumConstructor> {
 
 
 
+/**
+ * 定义 `CangJieExtendStub` 接口，约束PSI Stub节点或服务需要暴露的结构能力。
+ */
 interface CangJieExtendStub : CangJieTypeStatementStub<CjExtend> {
+    /**
+     * 保存 `extendId`，供PSI Stub流程读取节点结构或语义信息。
+     */
     val extendId: String;
 
     //被扩展类型名称
+    /**
+     * 保存 `receiverTypeName`，供PSI Stub流程读取节点结构或语义信息。
+     */
     val receiverTypeName: String?;
 }
 
 
+/**
+ * 定义 `CangJieTypeStatementStub` 接口，约束PSI Stub节点或服务需要暴露的结构能力。
+ */
 interface CangJieTypeStatementStub<T : CjTypeStatement> : CangJieClassifierStub, CangJieStubWithFqName<T> {
+    /**
+     * 提供 `getSuperNames` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
+     */
     fun getSuperNames(): List<String>
 }
 
+/**
+ * 定义 `CangJieConstructorStub` 接口，约束PSI Stub节点或服务需要暴露的结构能力。
+ */
 interface CangJieConstructorStub<T : CjConstructor<T>> :
     CangJieCallableStubBase<T> {
+    /**
+     * 提供 `hasBody` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
+     */
     fun hasBody(): Boolean
+    /**
+     * 保存 `isPrimary`，供PSI Stub流程读取节点结构或语义信息。
+     */
     val isPrimary: Boolean get() = false
 }
 
+/**
+ * 定义 `CangJieFinalizerStub` 接口，约束PSI Stub节点或服务需要暴露的结构能力。
+ */
 interface CangJieFinalizerStub : CangJieCallableStubBase<CjFinalizer> {
+    /**
+     * 提供 `hasBody` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
+     */
     fun hasBody(): Boolean
 }
 
+/**
+ * 定义 `CangJieImportAliasStub` 接口，约束PSI Stub节点或服务需要暴露的结构能力。
+ */
 interface CangJieImportAliasStub : StubElement<CjImportAlias> {
+    /**
+     * 提供 `getName` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
+     */
     fun getName(): String?
 }
 
 
+/**
+ * 定义 `CangJieFunctionStub` 接口，约束PSI Stub节点或服务需要暴露的结构能力。
+ */
 interface CangJieFunctionStub<F : CjFunction> : CangJieCallableStubBase<F> {
+    /**
+     * 提供 `hasBlockBody` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
+     */
     fun hasBlockBody(): Boolean
+    /**
+     * 提供 `hasBody` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
+     */
     fun hasBody(): Boolean
+    /**
+     * 提供 `hasTypeParameterListBeforeFunctionName` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
+     */
     fun hasTypeParameterListBeforeFunctionName(): Boolean
 }
 
+/**
+ * 定义 `CangJieNamedFunctionStub` 接口，约束PSI Stub节点或服务需要暴露的结构能力。
+ */
 interface CangJieNamedFunctionStub : CangJieFunctionStub<CjNamedFunction>
 
+/**
+ * 定义 `CangJieMainFunctionStub` 接口，约束PSI Stub节点或服务需要暴露的结构能力。
+ */
 interface CangJieMainFunctionStub : CangJieFunctionStub<CjMainFunction> {
+    /**
+     * 实现 `hasBlockBody` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun hasBlockBody(): Boolean {
         return true
     }
 
+    /**
+     * 实现 `hasBody` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun hasBody(): Boolean {
         return true
     }
 
+    /**
+     * 实现 `hasTypeParameterListBeforeFunctionName` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun hasTypeParameterListBeforeFunctionName(): Boolean {
         return false
     }
 }
 
+/**
+ * 定义 `CangJieMacroStub` 接口，约束PSI Stub节点或服务需要暴露的结构能力。
+ */
 interface CangJieMacroStub : CangJieFunctionStub<CjMacroDeclaration>
 
 
+/**
+ * 定义 `CangJieForeignDirectiveStub` 接口，约束PSI Stub节点或服务需要暴露的结构能力。
+ */
 interface CangJieForeignDirectiveStub : StubElement<CjForeignDirective>
 
 
+/**
+ * 定义 `CangJiePackageDirectiveStub` 接口，约束PSI Stub节点或服务需要暴露的结构能力。
+ */
 interface CangJiePackageDirectiveStub : StubElement<CjPackageDirective> {
     /**
      * 当前 package directive 是否使用 macro package 形式。
@@ -414,6 +663,9 @@ interface CangJiePackageDirectiveStub : StubElement<CjPackageDirective> {
 }
 
 
+/**
+ * 定义 `CangJieImportDirectiveStub` 接口，约束PSI Stub节点或服务需要暴露的结构能力。
+ */
 interface CangJieImportDirectiveStub : StubElement<CjImportDirective> {
     /**
      * 获取包的完全限定名
@@ -433,19 +685,43 @@ interface CangJieImportDirectiveStub : StubElement<CjImportDirective> {
      * 导入项信息数据类
      */
     data class ImportItemInfo(
+        /**
+         * 保存 `importedFqName`，供PSI Stub流程读取节点结构或语义信息。
+         */
         val importedFqName: FqName?,
+        /**
+         * 保存 `isAllUnder`，供PSI Stub流程读取节点结构或语义信息。
+         */
         val isAllUnder: Boolean,
+        /**
+         * 保存 `aliasName`，供PSI Stub流程读取节点结构或语义信息。
+         */
         val aliasName: String?
     )
 }
 
 
+/**
+ * 定义 `CangJieTypeProjectionStub` 接口，约束PSI Stub节点或服务需要暴露的结构能力。
+ */
 interface CangJieTypeProjectionStub : StubElement<CjTypeProjection> {
+    /**
+     * 提供 `getProjectionKind` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
+     */
     fun getProjectionKind(): CjProjectionKind
 }
 
+/**
+ * 定义 `CangJiePlaceHolderWithTextStub` 接口，约束PSI Stub节点或服务需要暴露的结构能力。
+ */
 interface CangJiePlaceHolderWithTextStub<T : CjElement> : CangJiePlaceHolderStub<T> {
+    /**
+     * 提供 `text` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
+     */
     fun text(): String
 }
 
+/**
+ * 定义 `CangJieFunctionTypeStub` 接口，约束PSI Stub节点或服务需要暴露的结构能力。
+ */
 interface CangJieFunctionTypeStub : StubElement<CjFunctionType>

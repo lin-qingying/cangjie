@@ -5,9 +5,21 @@
 
 package org.cangnova.cangjie.analysis.low.level.api.cfir.api
 
+/**
+ * 控制 low-level diagnostics 收集时启用哪几类 checker。
+ */
 data class DiagnosticCheckerFilter(
+    /**
+     * 是否运行默认 checker 集合。
+     */
     val runDefaultCheckers: Boolean,
+    /**
+     * 是否运行额外 checker 集合。
+     */
     val runExtraCheckers: Boolean,
+    /**
+     * 是否运行实验性 checker 集合。
+     */
     val runExperimentalCheckers: Boolean,
 ) {
     companion object {
@@ -23,6 +35,9 @@ data class DiagnosticCheckerFilter(
     }
 }
 
+/**
+ * 合并两个 diagnostics checker 过滤器，任一侧启用的 checker 类别都会保留。
+ */
 operator fun DiagnosticCheckerFilter.plus(other: DiagnosticCheckerFilter) =
     DiagnosticCheckerFilter(
         runDefaultCheckers || other.runDefaultCheckers,

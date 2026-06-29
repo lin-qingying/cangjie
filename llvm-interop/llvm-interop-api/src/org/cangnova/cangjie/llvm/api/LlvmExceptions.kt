@@ -27,6 +27,12 @@ class LlvmBackendUnavailableException(
  * LLVM 主版本不匹配时抛出的异常。
  */
 class LlvmVersionMismatchException(
+    /**
+     * API/JNI 层期望的 LLVM 主版本。
+     */
     val expectedMajor: Int,
+    /**
+     * 原生 LLVM 运行时实际返回的版本字符串。
+     */
     val actualVersion: String,
 ) : LlvmException("LLVM major version mismatch: expected $expectedMajor but got $actualVersion")

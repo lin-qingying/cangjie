@@ -15,6 +15,11 @@ import org.junit.jupiter.api.Assertions.assertEquals
  * 避免 default imports 被后续实现改动悄悄退化成宿主私有细节。
  */
 abstract class AbstractDefaultImportsTest : AbstractAnalysisApiComponentTest() {
+    /**
+     * 执行默认导入集合测试。
+     *
+     * 方法分别比较 high priority、low priority、excluded imports 以及合并后的默认导入顺序。
+     */
     override fun doTestByMainFile(mainFile: CjFile, mainModule: CjTestModule, testServices: TestServices) {
         val directives = directivesForMainFile(mainFile, mainModule)
         val expectedRegularImports = directives[AnalysisApiComponentTestDirectives.EXPECTED_DEFAULT_REGULAR_IMPORT]

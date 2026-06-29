@@ -7,6 +7,9 @@ package org.cangnova.cangjie.chir.core.expression
  * 后端和校验器必须通过本枚举解析后再使用，禁止各自维护私有字符串分发表。
  */
 enum class ChirUnaryOperator(
+    /**
+     * 操作的规范名称。
+     */
     val canonicalName: String,
     vararg aliases: String,
 ) {
@@ -16,15 +19,34 @@ enum class ChirUnaryOperator(
     LOGICAL_NOT("logical_not", "lnot"),
     IDENTITY("identity", "copy", "mov");
 
+    /**
+     * 当前操作可接受的所有规范化名称。
+     */
     val acceptedNames: Set<String> = (aliases.toSet() + canonicalName).mapTo(linkedSetOf(), String::canonicalOperationName)
 
+    /**
+     * 一元操作解析工具。
+     */
     companion object {
+        /**
+         * 解析原始操作名。
+         */
         fun parse(raw: String): ChirUnaryOperator? = byName[raw.canonicalOperationName()]
+
+        /**
+         * 解析原始操作名，失败时抛出错误。
+         */
         fun require(raw: String): ChirUnaryOperator =
             parse(raw) ?: error("unsupported unary operator '$raw'")
 
+        /**
+         * 所有一元操作可接受名称集合。
+         */
         val acceptedNames: Set<String> = entries.flatMapTo(linkedSetOf()) { it.acceptedNames }
 
+        /**
+         * 规范化名称到一元操作的索引。
+         */
         private val byName: Map<String, ChirUnaryOperator> = entries
             .flatMap { operator -> operator.acceptedNames.map { it to operator } }
             .toMap()
@@ -35,7 +57,14 @@ enum class ChirUnaryOperator(
  * CHIR 二元操作的结构化语义。
  */
 enum class ChirBinaryOperator(
+    /**
+     * 操作的规范名称。
+     */
     val canonicalName: String,
+
+    /**
+     * 二元操作族。
+     */
     val family: ChirBinaryOperatorFamily,
     vararg aliases: String,
 ) {
@@ -69,21 +98,43 @@ enum class ChirBinaryOperator(
     FLOAT_GREATER("fgt", ChirBinaryOperatorFamily.COMPARISON),
     FLOAT_GREATER_OR_EQUAL("fge", ChirBinaryOperatorFamily.COMPARISON);
 
+    /**
+     * 当前操作可接受的所有规范化名称。
+     */
     val acceptedNames: Set<String> = (aliases.toSet() + canonicalName).mapTo(linkedSetOf(), String::canonicalOperationName)
 
+    /**
+     * 二元操作解析工具。
+     */
     companion object {
+        /**
+         * 解析原始操作名。
+         */
         fun parse(raw: String): ChirBinaryOperator? = byName[raw.canonicalOperationName()]
+
+        /**
+         * 解析原始操作名，失败时抛出错误。
+         */
         fun require(raw: String): ChirBinaryOperator =
             parse(raw) ?: error("unsupported binary operator '$raw'")
 
+        /**
+         * 所有二元操作可接受名称集合。
+         */
         val acceptedNames: Set<String> = entries.flatMapTo(linkedSetOf()) { it.acceptedNames }
 
+        /**
+         * 规范化名称到二元操作的索引。
+         */
         private val byName: Map<String, ChirBinaryOperator> = entries
             .flatMap { operator -> operator.acceptedNames.map { it to operator } }
             .toMap()
     }
 }
 
+/**
+ * 二元操作族。
+ */
 enum class ChirBinaryOperatorFamily {
     ARITHMETIC,
     BITWISE,
@@ -95,6 +146,9 @@ enum class ChirBinaryOperatorFamily {
  * CHIR 内存操作的结构化语义。
  */
 enum class ChirMemoryOperation(
+    /**
+     * 操作的规范名称。
+     */
     val canonicalName: String,
     vararg aliases: String,
 ) {
@@ -104,15 +158,34 @@ enum class ChirMemoryOperation(
     GET_ELEMENT_PTR("gep", "getelementptr"),
     GET_ELEMENT_PTR_INBOUNDS("getelementptr.inbounds", "getelementptr inbounds");
 
+    /**
+     * 当前操作可接受的所有规范化名称。
+     */
     val acceptedNames: Set<String> = (aliases.toSet() + canonicalName).mapTo(linkedSetOf(), String::canonicalOperationName)
 
+    /**
+     * 内存操作解析工具。
+     */
     companion object {
+        /**
+         * 解析原始操作名。
+         */
         fun parse(raw: String): ChirMemoryOperation? = byName[raw.canonicalOperationName()]
+
+        /**
+         * 解析原始操作名，失败时抛出错误。
+         */
         fun require(raw: String): ChirMemoryOperation =
             parse(raw) ?: error("unsupported memory operation '$raw'")
 
+        /**
+         * 所有内存操作可接受名称集合。
+         */
         val acceptedNames: Set<String> = entries.flatMapTo(linkedSetOf()) { it.acceptedNames }
 
+        /**
+         * 规范化名称到内存操作的索引。
+         */
         private val byName: Map<String, ChirMemoryOperation> = entries
             .flatMap { operation -> operation.acceptedNames.map { it to operation } }
             .toMap()
@@ -125,7 +198,14 @@ enum class ChirMemoryOperation(
  * 这里包含 LLVM lowering 直接消费的操作，也保留 JVM 后端专用操作名用于 CHIR 校验。
  */
 enum class ChirOtherOperation(
+    /**
+     * 操作的规范名称。
+     */
     val canonicalName: String,
+
+    /**
+     * 其他操作族。
+     */
     val family: ChirOtherOperationFamily,
     vararg aliases: String,
 ) {
@@ -155,25 +235,50 @@ enum class ChirOtherOperation(
     JVM_CHECKCAST("jvm.checkcast", ChirOtherOperationFamily.JVM),
     JVM_INSTANCEOF("jvm.instanceof", ChirOtherOperationFamily.JVM);
 
+    /**
+     * 当前操作可接受的所有规范化名称。
+     */
     val acceptedNames: Set<String> = (aliases.toSet() + canonicalName).mapTo(linkedSetOf(), String::canonicalOperationName)
 
+    /**
+     * 其他操作解析工具。
+     */
     companion object {
+        /**
+         * 解析原始操作名。
+         */
         fun parse(raw: String): ChirOtherOperation? = byName[raw.canonicalOperationName()]
+
+        /**
+         * 解析原始操作名，失败时抛出错误。
+         */
         fun require(raw: String): ChirOtherOperation =
             parse(raw) ?: error("unsupported other operation '$raw'")
 
+        /**
+         * 所有其他操作可接受名称集合。
+         */
         val acceptedNames: Set<String> = entries.flatMapTo(linkedSetOf()) { it.acceptedNames }
 
+        /**
+         * 规范化名称到其他操作的索引。
+         */
         private val byName: Map<String, ChirOtherOperation> = entries
             .flatMap { operation -> operation.acceptedNames.map { it to operation } }
             .toMap()
     }
 }
 
+/**
+ * 其他表达式操作族。
+ */
 enum class ChirOtherOperationFamily {
     LLVM_VALUE,
     LLVM_CAST,
     JVM,
 }
 
+/**
+ * 将操作名规范化为比较用小写形式。
+ */
 internal fun String.canonicalOperationName(): String = trim().lowercase()

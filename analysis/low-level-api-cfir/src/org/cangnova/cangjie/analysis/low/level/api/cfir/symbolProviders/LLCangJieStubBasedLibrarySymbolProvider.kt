@@ -49,44 +49,66 @@ import org.cangnova.cangjie.psi.stubs.impl.CangJiePropertyStubImpl
 import org.cangnova.cangjie.utils.ifNotEmpty
 import org.cangnova.cangjie.utils.exceptions.requireWithAttachment
 
+/**
+ * typealias 反序列化后处理函数。
+ *
+ * 缓存创建阶段需要先返回 [CfirTypeAliasSymbol] 以打破递归，随后再通过该函数把 typealias CFIR 内容加载到符号上。
+ */
 typealias DeserializedTypeAliasPostProcessor = (CfirTypeAliasSymbol) -> Unit
 
 /**
- * [LLCangJieStubBasedLibrarySymbolProvider] deserializes CFIR symbols from existing stubs, retrieving them by [ClassId]/[CallableId] from a
- * [CangJieDeclarationProvider][org.cangnova.cangjie.analysis.api.platform.declarations.CangJieDeclarationProvider].
+ * 基于已有 stub 反序列化库 CFIR 符号的 [LLCangJieSymbolProvider] 实现。
  *
- * The symbol provider is currently only enabled in IDE mode. The Standalone mode uses [LLJvmClassFileBasedSymbolProvider] whose base class
- * [JvmClassFileBasedSymbolProvider][org.cangnova.cangjie.cfir.java.deserialization.JvmClassFileBasedSymbolProvider] is also used by the
- * compiler.
+ * 该提供器通过平台声明索引按 [ClassId] 或 [CallableId] 找到库 stub PSI，再把 stub 反序列化为已解析完成的 CFIR 符号。
+ * 它当前只用于 IDE 模式；独立模式会使用基于 class 文件的符号提供器。
  *
- * Because the symbol provider uses existing stubs, there is no need to keep a huge protobuf in memory, which would be the case for
- * metadata-based deserialization ([JvmClassFileBasedSymbolProvider][org.cangnova.cangjie.cfir.java.deserialization.JvmClassFileBasedSymbolProvider]).
- * At the same time, there is no need to guess sources for CFIR elements anymore, as they are set during deserialization.
+ * 由于直接复用已有 stub，这里不需要像 metadata 反序列化那样在内存中保留大型 protobuf；同时 CFIR 元素来源会在反序列化期间设置，
+ * 不再需要额外推断 source。
  *
- * Like with [JvmClassFileBasedSymbolProvider][org.cangnova.cangjie.cfir.java.deserialization.JvmClassFileBasedSymbolProvider], the resulting
- * deserialized CFIR elements are already fully resolved.
+ * 与编译器侧 class 文件符号提供器一致，该提供器产出的反序列化 CFIR 元素已经处于完成解析状态。
  */
 @OptIn(CaPlatformInterface::class)
 internal open class LLCangJieStubBasedLibrarySymbolProvider(
     session: LLCfirSession,
+    /**
+     * 根据声明类型和 stub 来源创建反序列化 container source 的提供器。
+     */
     private val deserializedContainerSourceProvider: DeserializedContainerSourceProvider,
     scope: GlobalSearchScope,
 ) : LLCangJieSymbolProvider(session) {
+    /**
+     * 当前会话的仓颉作用域提供器，用于类和成员反序列化。
+     */
     private val cangjieScopeProvider: CfirCangJieScopeProvider get() = session.cangjieScopeProvider
+    /**
+     * 当前低阶 CFIR 模块数据。
+     */
     private val moduleData: LLCfirModuleData get() = session.llCfirModuleData
 
+    /**
+     * 当前低阶会话对应的 Analysis API 模块。
+     */
     private val module: CaModule
         get() = moduleData.caModule
 
+    /**
+     * 当前库搜索范围内的仓颉声明索引。
+     */
     final override val declarationProvider = session.project.createDeclarationProvider(
         scope,
         contextualModule = session.caModule,
     )
 
+    /**
+     * 基于 [declarationProvider] 的缓存名称索引。
+     */
     @OptIn(CaPlatformInterface::class)
     override val symbolNamesProvider: CfirSymbolNamesProvider =
         LLCfirCangJieSymbolNamesProvider.cached(session, declarationProvider)
 
+    /**
+     * typealias 符号缓存，支持按 class ID 和按 PSI 精确反序列化。
+     */
     private val typeAliasCache = LLPsiAwareClassLikeSymbolCache(
         createTypeAliasCache(::findAndDeserializeTypeAlias),
         createTypeAliasCache { declaration: CjClassLikeDeclaration, context ->
@@ -95,6 +117,9 @@ internal open class LLCangJieStubBasedLibrarySymbolProvider(
         },
     )
 
+    /**
+     * 创建带反序列化后处理阶段的 typealias 缓存。
+     */
     private inline fun <K : Any> createTypeAliasCache(
         crossinline deserialize: (K, StubBasedCfirDeserializationContext?) -> Pair<CfirTypeAliasSymbol?, DeserializedTypeAliasPostProcessor?>,
     ): CfirCache<K, CfirTypeAliasSymbol?, StubBasedCfirDeserializationContext?> =
@@ -109,6 +134,9 @@ internal open class LLCangJieStubBasedLibrarySymbolProvider(
             },
         )
 
+    /**
+     * 类、接口、结构体和枚举的 class-like 符号缓存。
+     */
     private val classCache = LLPsiAwareClassLikeSymbolCache(
         session,
         ::findAndDeserializeClass,
@@ -117,18 +145,26 @@ internal open class LLCangJieStubBasedLibrarySymbolProvider(
         findAndDeserializeClass(classId, declaration, context)
     }
 
+    /**
+     * 顶层函数符号缓存。
+     */
     private val functionCache = session.cfirCachesFactory.createCache(::loadFunctionsByCallableId)
+    /**
+     * 顶层属性符号缓存。
+     */
     private val propertyCache = session.cfirCachesFactory.createCache(::loadPropertiesByCallableId)
 
+    /**
+     * 当前库搜索范围内的包索引。
+     */
     final override val packageProvider = session.project.createPackageProvider(scope)
 
     /**
-     * Computes the origin for the declarations coming from [file].
+     * 计算 [file] 中反序列化声明的 CFIR 来源。
      *
-     * We assume that a stub Kotlin declaration might come only from Library or from BuiltIns.
-     * We do the decision based upon the extension of the [file].
+     * 当前实现把 stub 声明视为库声明。方法保持 `open`，允许子类在已知来源更严格的场景中提供更精确的判定。
      *
-     * This method is left open so the inheritors can provide more optimal/strict implementations.
+     * @return [file] 中声明应使用的 [CfirDeclarationOrigin]。
      */
     protected open fun getDeclarationOriginFor(file: CjFile): CfirDeclarationOrigin {
         val virtualFile = file.virtualFile
@@ -140,6 +176,9 @@ internal open class LLCangJieStubBasedLibrarySymbolProvider(
         }
     }
 
+    /**
+     * 按 [classId] 查找 typealias stub 并创建可后处理的反序列化结果。
+     */
     @OptIn(CaPlatformInterface::class)
     private fun findAndDeserializeTypeAlias(
         classId: ClassId,
@@ -152,6 +191,9 @@ internal open class LLCangJieStubBasedLibrarySymbolProvider(
         return findAndDeserializeTypeAlias(classId, declaration, context)
     }
 
+    /**
+     * 根据已知 [declaration] 创建 typealias 符号和延迟反序列化后处理函数。
+     */
     private fun findAndDeserializeTypeAlias(
         classId: ClassId,
         declaration: CjClassLikeDeclaration,
@@ -177,6 +219,9 @@ internal open class LLCangJieStubBasedLibrarySymbolProvider(
         return symbol to postProcessor
     }
 
+    /**
+     * 按 [classId] 查找 class-like stub 并反序列化为类符号。
+     */
     private fun findAndDeserializeClass(
         classId: ClassId,
         parentContext: StubBasedCfirDeserializationContext?,
@@ -188,6 +233,9 @@ internal open class LLCangJieStubBasedLibrarySymbolProvider(
         return findAndDeserializeClass(classId, declaration, parentContext)
     }
 
+    /**
+     * 根据已知 [declaration] 反序列化类、接口、结构体或枚举符号。
+     */
     private fun findAndDeserializeClass(
         classId: ClassId,
         declaration: CjClassLikeDeclaration,
@@ -214,6 +262,9 @@ internal open class LLCangJieStubBasedLibrarySymbolProvider(
         return symbol
     }
 
+    /**
+     * 校验反序列化 [declaration] 与可选 [context] 中记录的 class-like 声明一致。
+     */
     private fun checkDeclarationAndContextConsistency(
         declaration: CjClassLikeDeclaration,
         context: StubBasedCfirDeserializationContext?,
@@ -227,6 +278,9 @@ internal open class LLCangJieStubBasedLibrarySymbolProvider(
         }
     }
 
+    /**
+     * 按 [callableId] 加载顶层函数符号列表。
+     */
     private fun loadFunctionsByCallableId(
         callableId: CallableId,
         foundFunctions: Collection<CjNamedFunction>?,
@@ -247,6 +301,9 @@ internal open class LLCangJieStubBasedLibrarySymbolProvider(
         }
     }
 
+    /**
+     * 按 [callableId] 加载顶层属性符号列表。
+     */
     private fun loadPropertiesByCallableId(callableId: CallableId, foundProperties: Collection<CjProperty>?): List<CfirPropertySymbol> {
         val topLevelProperties = foundProperties ?: declarationProvider.getTopLevelProperties(callableId)
 
@@ -264,6 +321,9 @@ internal open class LLCangJieStubBasedLibrarySymbolProvider(
         }
     }
 
+    /**
+     * 将指定包和名称下的顶层函数与属性符号追加到 [destination]。
+     */
     @CfirSymbolProviderInternals
     override fun getTopLevelCallableSymbolsTo(destination: MutableList<CfirCallableSymbol<*>>, packageFqName: FqName, name: Name) {
         val callableId = CallableId(packageFqName, name)
@@ -271,6 +331,9 @@ internal open class LLCangJieStubBasedLibrarySymbolProvider(
         destination += propertyCache.getCallablesWithoutContext(callableId)
     }
 
+    /**
+     * 在名称索引确认可能存在 callable 后，从当前缓存中读取无 PSI 上下文的 callable 符号。
+     */
     private fun <C : CfirCallableSymbol<*>, CONTEXT> CfirCache<CallableId, List<C>, CONTEXT?>.getCallablesWithoutContext(
         id: CallableId,
     ): List<C> {
@@ -278,6 +341,9 @@ internal open class LLCangJieStubBasedLibrarySymbolProvider(
         return getValue(id, null)
     }
 
+    /**
+     * 根据已知 [callables] 精确加载顶层 callable 符号并追加到 [destination]。
+     */
     @CfirSymbolProviderInternals
     override fun getTopLevelCallableSymbolsTo(
         destination: MutableList<CfirCallableSymbol<*>>,
@@ -293,11 +359,17 @@ internal open class LLCangJieStubBasedLibrarySymbolProvider(
         }
     }
 
+    /**
+     * 将指定包和名称下的顶层函数符号追加到 [destination]。
+     */
     @CfirSymbolProviderInternals
     override fun getTopLevelFunctionSymbolsTo(destination: MutableList<CfirNamedFunctionSymbol>, packageFqName: FqName, name: Name) {
         destination += functionCache.getCallablesWithoutContext(CallableId(packageFqName, name))
     }
 
+    /**
+     * 根据已知 [functions] 精确加载顶层函数符号并追加到 [destination]。
+     */
     @CfirSymbolProviderInternals
     override fun getTopLevelFunctionSymbolsTo(
         destination: MutableList<CfirNamedFunctionSymbol>,
@@ -307,11 +379,17 @@ internal open class LLCangJieStubBasedLibrarySymbolProvider(
         destination += functionCache.getValue(callableId, functions)
     }
 
+    /**
+     * 将指定包和名称下的顶层属性符号追加到 [destination]。
+     */
     @CfirSymbolProviderInternals
     override fun getTopLevelPropertySymbolsTo(destination: MutableList<CfirPropertySymbol>, packageFqName: FqName, name: Name) {
         destination += propertyCache.getCallablesWithoutContext(CallableId(packageFqName, name))
     }
 
+    /**
+     * 根据已知 [properties] 精确加载顶层属性符号并追加到 [destination]。
+     */
     @CfirSymbolProviderInternals
     override fun getTopLevelPropertySymbolsTo(
         destination: MutableList<CfirPropertySymbol>,
@@ -321,9 +399,15 @@ internal open class LLCangJieStubBasedLibrarySymbolProvider(
         destination += propertyCache.getValue(callableId, properties)
     }
 
+    /**
+     * 判断当前库包索引中是否存在 [fqName] 包。
+     */
     override fun hasPackage(fqName: FqName): Boolean =
         packageProvider.doesPackageExist(fqName)
 
+    /**
+     * 按 [classId] 查询库 class-like 符号，优先读取缓存，再按名称索引触发类或 typealias 反序列化。
+     */
     override fun getClassLikeSymbolByClassId(classId: ClassId): CfirClassLikeSymbol<*>? {
         getCachedClassLikeSymbol(classId)?.let { return it }
 
@@ -332,21 +416,33 @@ internal open class LLCangJieStubBasedLibrarySymbolProvider(
         return getClass(classId) ?: getTypeAlias(classId)
     }
 
+    /**
+     * 从类缓存和 typealias 缓存中读取 [classId] 对应的已缓存 class-like 符号。
+     */
     private fun getCachedClassLikeSymbol(classId: ClassId): CfirClassLikeSymbol<*>? {
         return classCache.getCachedSymbolByClassId(classId)
             ?: typeAliasCache.getCachedSymbolByClassId(classId)
     }
 
+    /**
+     * 按 [classId] 触发普通 class-like 符号反序列化。
+     */
     private fun getClass(classId: ClassId): CfirClassLikeSymbol<*>? {
         @OptIn(LLModuleSpecificSymbolProviderAccess::class)
         return classCache.getSymbolByClassId(classId, context = null)
     }
 
+    /**
+     * 按 [classId] 触发 typealias 符号反序列化。
+     */
     private fun getTypeAlias(classId: ClassId): CfirTypeAliasSymbol? {
         @OptIn(LLModuleSpecificSymbolProviderAccess::class)
         return typeAliasCache.getSymbolByClassId(classId, context = null)
     }
 
+    /**
+     * 根据已知 [classLikeDeclaration] 精确查询或反序列化 [classId] 对应的 class-like 符号。
+     */
     @LLModuleSpecificSymbolProviderAccess
     override fun getClassLikeSymbolByClassId(classId: ClassId, classLikeDeclaration: CjClassLikeDeclaration): CfirClassLikeSymbol<*>? {
         val cache = if (classLikeDeclaration is CjTypeStatement) classCache else typeAliasCache
@@ -355,6 +451,9 @@ internal open class LLCangJieStubBasedLibrarySymbolProvider(
         return cache.getSymbolByClassId(classId, createClassLikeDeserializationContext(classId, classLikeDeclaration))
     }
 
+    /**
+     * 根据 [declaration] PSI 精确查询或反序列化 [classId] 对应的 class-like 符号。
+     */
     @LLModuleSpecificSymbolProviderAccess
     override fun getClassLikeSymbolByPsi(classId: ClassId, declaration: PsiElement): CfirClassLikeSymbol<*>? {
         if (declaration !is CjClassLikeDeclaration) return null
@@ -365,6 +464,9 @@ internal open class LLCangJieStubBasedLibrarySymbolProvider(
         return cache.getSymbolByPsi(classId, declaration, createClassLikeDeserializationContext(classId, declaration))
     }
 
+    /**
+     * 为已知 class-like PSI 声明创建 stub 反序列化上下文。
+     */
     private fun createClassLikeDeserializationContext(
         classId: ClassId,
         classLikeDeclaration: CjClassLikeDeclaration,
@@ -392,6 +494,12 @@ internal open class LLCangJieStubBasedLibrarySymbolProvider(
         )
     }
 
+    /**
+     * 按已知 [callableDeclaration] 查找单个顶层 callable 符号。
+     *
+     * 该入口用于调用方已经拥有 PSI 声明、但仍需要从当前缓存中找到真实反序列化符号的场景。缓存填充仍基于名字索引，
+     * 最后再通过 PSI 精确匹配目标声明。
+     */
     fun getTopLevelCallableSymbol(
         packageFqName: FqName,
         shortName: Name,
@@ -410,6 +518,11 @@ internal open class LLCangJieStubBasedLibrarySymbolProvider(
         return callableSymbols?.singleOrNull { it.cfir.realPsi == callableDeclaration }
     }
 
+    /**
+     * 当前提供器已经缓存的 CFIR 声明列表。
+     *
+     * 该属性仅供低阶分析统计使用，不参与符号解析语义。
+     */
     @OptIn(CfirCacheInternals::class)
     @LLStatisticsOnlyApi
     internal val cachedDeclarations: List<CfirDeclaration>
@@ -424,7 +537,13 @@ internal open class LLCangJieStubBasedLibrarySymbolProvider(
             }
         }
 
+    /**
+     * stub 库符号反序列化的静态辅助入口集合。
+     */
     companion object {
+        /**
+         * 从 [property] 的已编译 stub 加载顶层属性符号。
+         */
         fun loadProperty(
             property: CjProperty,
             callableId: CallableId,
@@ -457,6 +576,9 @@ internal open class LLCangJieStubBasedLibrarySymbolProvider(
             ).symbol
         }
 
+        /**
+         * 从 [function] 的已编译 stub 加载顶层函数符号。
+         */
         fun loadFunction(
             function: CjNamedFunction,
             callableId: CallableId,
@@ -491,6 +613,9 @@ internal open class LLCangJieStubBasedLibrarySymbolProvider(
         }
     }
 
+    /**
+     * 根据 PSI 声明形态创建对应类型的 class-like 符号。
+     */
     private fun createClassLikeSymbol(classId: ClassId, declaration: CjTypeStatement): CfirClassLikeSymbol<*> {
         return when {
             declaration.isInterface() -> CfirInterfaceSymbol(classId)

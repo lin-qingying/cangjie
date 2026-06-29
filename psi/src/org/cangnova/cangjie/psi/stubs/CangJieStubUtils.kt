@@ -28,13 +28,22 @@ import com.intellij.extapi.psi.StubBasedPsiElementBase
 import com.intellij.psi.stubs.PsiFileStub
 import com.intellij.psi.stubs.StubElement
 
+/**
+ * 保存 `StubBasedPsiElementBase`，供PSI Stub流程读取节点结构或语义信息。
+ */
 val StubBasedPsiElementBase<*>.containingFileStub: PsiFileStub<*>?
     get() {
         val stub = this.greenStub ?: return null
         return stub.containingFileStub
     }
 
+/**
+ * 保存 `StubElement`，供PSI Stub流程读取节点结构或语义信息。
+ */
 val StubElement<*>.containingCangJieFileStub: CangJieFileStub?
     get() = containingFileStub as? CangJieFileStub
+/**
+ * 保存 `StubBasedPsiElementBase`，供PSI Stub流程读取节点结构或语义信息。
+ */
 val StubBasedPsiElementBase<*>.containingCangJieFileStub: PsiFileStub<*>?
     get() = containingFileStub as? CangJieFileStub

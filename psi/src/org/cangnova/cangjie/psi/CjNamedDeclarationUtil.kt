@@ -27,12 +27,21 @@ package org.cangnova.cangjie.psi
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.FqNameUnsafe
 
+/**
+ * 提供 `CjNamedDeclarationUtil` 单例，集中承载仓颉 PSI的共享状态、工厂或工具行为。
+ */
 object CjNamedDeclarationUtil {
+    /**
+     * 提供 `getUnsafeFQName` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun getUnsafeFQName(namedDeclaration: CjNamedDeclaration): FqNameUnsafe? {
         val fqName = namedDeclaration.fqName
         return fqName?.toUnsafe()
     }
 
+    /**
+     * 提供 `getFQName` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun getFQName(namedDeclaration: CjNamedDeclaration): FqName? {
         val name = namedDeclaration.nameAsName ?: return null
 
@@ -41,6 +50,9 @@ object CjNamedDeclarationUtil {
         return parentFqName.child(name)
     }
 
+    /**
+     * 提供 `getParentFqName` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun getParentFqName(namedDeclaration: CjNamedDeclaration): FqName? {
         var parent = namedDeclaration.parent
         if (parent is CjAbstractClassBody) {

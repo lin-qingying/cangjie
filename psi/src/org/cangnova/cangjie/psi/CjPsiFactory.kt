@@ -104,9 +104,21 @@ private const val DO_NOT_ANALYZE_NOTIFICATION = "This file was created by CjPsiF
  * @property eventSystemEnabled 是否启用事件系统（默认 false）
  */
 class CjPsiFactory private constructor(
+    /**
+     * 保存 `project` 的内部状态，供仓颉 PSI实现维护节点缓存或解析上下文。
+     */
     private val project: Project,
+    /**
+     * 保存 `markGenerated` 的内部状态，供仓颉 PSI实现维护节点缓存或解析上下文。
+     */
     private val markGenerated: Boolean,
+    /**
+     * 保存 `context` 的内部状态，供仓颉 PSI实现维护节点缓存或解析上下文。
+     */
     private val context: PsiElement?,
+    /**
+     * 保存 `eventSystemEnabled` 的内部状态，供仓颉 PSI实现维护节点缓存或解析上下文。
+     */
     private val eventSystemEnabled: Boolean,
 ) {
     /**
@@ -326,61 +338,109 @@ class CjPsiFactory private constructor(
         return createProperty(text)
     }
 
+    /**
+     * 提供 `createProperty` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun createProperty(@NonNls text: String): CjProperty {
         return createClass(
             "class A { $text }",
         ).properties.first()
     }
 
+    /**
+     * 提供 `createSimpleName` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun createSimpleName(@NonNls name: String): CjSimpleNameExpression {
         return createPatternVariable(name, null, false, name).initializer as CjSimpleNameExpression
     }
 
+    /**
+     * 提供 `createExpressionOfType` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     private inline fun <reified E : CjExpression> createExpressionOfType(text: String): E =
         createExpression(text) as? E
             ?: error("Failed to create ${E::class.simpleName} from `$text`")
 
+    /**
+     * 提供 `createSimpleNameStringTemplateEntry` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun createSimpleNameStringTemplateEntry(@NonNls name: String): CjSimpleNameStringTemplateEntry {
         val stringTemplateExpression = createExpression($$"\"$$$name\"") as CjStringTemplateExpression
         return stringTemplateExpression.entries[0] as CjSimpleNameStringTemplateEntry
     }
 
+    /**
+     * 提供 `createColon` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun createColon(): PsiElement {
         return createPatternVariable("let x: Int64").findElementAt(5)!!
     }
 
+    /**
+     * 提供 `createPrimaryConstructor` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun createPrimaryConstructor(@NonNls text: String = ""): CjPrimaryConstructor {
         return createClass(if (text.isNotEmpty()) "class A { public A$text{} }" else "class A { public A(){} } ").primaryConstructor!!
     }
 
+    /**
+     * 表示 `BlockWrapper`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+     */
     private class BlockWrapper(fakeBlockExpression: CjBlockExpression, override val baseExpression: CjExpression) :
         CjBlockExpression(fakeBlockExpression.text), CjPsiUtil.CjExpressionWrapper {
 
+        /**
+         * 暴露 `statements`，实现仓颉 PSI节点对上层接口的属性契约。
+         */
         override val statements: List<CjExpression>
             get() = listOf(baseExpression)
 
+        /**
+         * 实现 `getParent` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+         */
         override fun getParent(): PsiElement = baseExpression.parent
 
+        /**
+         * 实现 `getPsiOrParent` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+         */
         override fun getPsiOrParent(): CjElement = baseExpression.psiOrParent
 
+        /**
+         * 实现 `getContainingCjFile` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+         */
         override fun getContainingCjFile() = baseExpression.getContainingCjFile()
 
+        /**
+         * 实现 `getContainingFile` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+         */
         override fun getContainingFile(): PsiFile = baseExpression.containingFile
     }
 
+    /**
+     * 提供 `createCallArguments` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun createCallArguments(@NonNls text: String): CjValueArgumentList {
         val property = createPatternVariable("let x = foo $text")
         return (property.initializer as CjCallExpression).valueArgumentList!!
     }
 
+    /**
+     * 提供 `createDot` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun createDot(): PsiElement {
         return createType("T.(X)").findElementAt(1)!!
     }
 
+    /**
+     * 提供 `createParameterList` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun createParameterList(@NonNls text: String): CjParameterList {
         return createFunction("func foo$text{}").valueParameterList!!
     }
 
+    /**
+     * 提供 `createFunctionTypeReceiver` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun createFunctionTypeReceiver(typeReference: CjTypeReference): CjFunctionTypeReceiver {
         return (createType("() -> B").typeElement as CjFunctionType).receiver!!.apply {
             this.typeReference.replace(
@@ -389,6 +449,9 @@ class CjPsiFactory private constructor(
         }
     }
 
+    /**
+     * 提供 `createImportDirective` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun createImportDirective(importPath: ImportPath): CjImportDirective {
         if (importPath.fqName.isRoot) {
             throw IllegalArgumentException("import path must not be empty")
@@ -398,6 +461,9 @@ class CjPsiFactory private constructor(
         return file.importDirectives.first()
     }
 
+    /**
+     * 执行 `appendImport` 内部辅助逻辑，支撑仓颉 PSI节点的结构解析与访问。
+     */
     private fun StringBuilder.appendImport(importPath: ImportPath) {
         if (importPath.fqName.isRoot) {
             throw IllegalArgumentException("import path must not be empty")
@@ -412,10 +478,16 @@ class CjPsiFactory private constructor(
         }
     }
 
+    /**
+     * 提供 `createBlockCodeFragment` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun createBlockCodeFragment(@NonNls text: String, context: PsiElement?): CjBlockCodeFragment {
         return CjBlockCodeFragment(project, "fragment.cj", text, null, context)
     }
 
+    /**
+     * 提供 `createComment` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun createComment(@NonNls text: String): PsiComment {
         val file = createFile(text)
         val comments = file.children.filterIsInstance<PsiComment>()
@@ -424,6 +496,9 @@ class CjPsiFactory private constructor(
         return comment
     }
 
+    /**
+     * 提供 `createLambdaExpression` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun createLambdaExpression(@NonNls parameters: String, @NonNls body: String): CjLambdaExpression =
         (
                 if (parameters.isNotEmpty()) {
@@ -433,14 +508,23 @@ class CjPsiFactory private constructor(
                 }
                 ) as CjLambdaExpression
 
+    /**
+     * 提供 `createExpressionCodeFragment` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun createExpressionCodeFragment(@NonNls text: String, context: PsiElement?): CjExpressionCodeFragment {
         return CjExpressionCodeFragment(project, "fragment.cj", text, null, context)
     }
 
+    /**
+     * 提供 `createSemicolon` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun createSemicolon(): PsiElement {
         return createPatternVariable("let x: Int64;").findElementAt(12)!!
     }
 
+    /**
+     * 提供 `createFunction` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun createFunction(@NonNls funDecl: String): CjNamedFunction {
         return createDeclaration(funDecl)
     }
@@ -449,19 +533,37 @@ class CjPsiFactory private constructor(
 //        createFromText<CjModDeclItem>("mod ${text.escapeIdentifierIfNeeded()};")?.identifier
 //            ?: error("Failed to create identifier: `$text`")
 
+    /**
+     * 提供 `createConstructorKeyword` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun createConstructorKeyword(): PsiElement =
         createClass("class A ").primaryConstructor!!.getInitKeyword()!!
 
+    /**
+     * 提供 `createNameIdentifier` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun createNameIdentifier(@NonNls name: String) = createNameIdentifierIfPossible(name)!!
+    /**
+     * 提供 `createNameIdentifierIfPossible` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun createNameIdentifierIfPossible(@NonNls name: String) = createFieldVariable(name, null, false).nameIdentifier
+    /**
+     * 提供 `createPatternVariable` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun createPatternVariable(@NonNls name: String, @NonNls type: String?, isVar: Boolean): CjPatternVariable {
         return createPatternVariable(name, type, isVar, null)
     }
 
+    /**
+     * 提供 `createFieldVariable` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun createFieldVariable(@NonNls name: String, @NonNls type: String?, isVar: Boolean): CjFieldVariable {
         return createFieldVariable(name, type, isVar, null)
     }
 
+    /**
+     * 提供 `createFieldVariable` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun createFieldVariable(
         @NonNls name: String,
         @NonNls type: String?,
@@ -471,6 +573,9 @@ class CjPsiFactory private constructor(
         return createFieldVariable(null, name, type, isVar, initializer)
     }
 
+    /**
+     * 提供 `createPatternVariable` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun createPatternVariable(
         @NonNls name: String,
         @NonNls type: String?,
@@ -480,18 +585,30 @@ class CjPsiFactory private constructor(
         return createPatternVariable(null, name, type, isVar, initializer)
     }
 
+    /**
+     * 提供 `createStruct` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun createStruct(@NonNls text: String): CjStruct {
         return createDeclaration(text)
     }
 
+    /**
+     * 提供 `createClass` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun createClass(@NonNls text: String): CjClass {
         return createDeclaration(text)
     }
 
+    /**
+     * 提供 `createTypeStatement` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun createTypeStatement(@NonNls text: String): CjTypeStatement {
         return createDeclaration(text)
     }
 
+    /**
+     * 提供 `createFieldVariable` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun createFieldVariable(
         @NonNls modifiers: String?,
         @NonNls name: String,
@@ -518,6 +635,9 @@ class CjPsiFactory private constructor(
             ?: error("Failed to create field variable: `$text`")
     }
 
+    /**
+     * 提供 `createPatternVariable` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun createPatternVariable(
         @NonNls modifiers: String?,
         @NonNls name: String,
@@ -531,27 +651,45 @@ class CjPsiFactory private constructor(
         return createPatternVariable(text)
     }
 
+    /**
+     * 提供 `createPackageDirectiveIfNeeded` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun createPackageDirectiveIfNeeded(fqName: FqName): CjPackageDirective? {
         return if (fqName.isRoot) null else createPackageDirective(fqName)
     }
 
+    /**
+     * 提供 `createPackageDirective` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun createPackageDirective(fqName: FqName): CjPackageDirective {
         return createFile("package ${fqName.asString()}").packageDirective!!
     }
 
+    /**
+     * 执行 `doCreateExpression` 内部辅助逻辑，支撑仓颉 PSI节点的结构解析与访问。
+     */
     private fun doCreateExpression(@NonNls text: String): CjExpression? {
         // 注意：下面的‘\n’很重要--如果没有它，会出现一些奇怪的代码缩进问题
         return createPatternVariable("let x =\n$text").initializer
     }
 
+    /**
+     * 提供 `createFieldVariable` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun createFieldVariable(@NonNls text: String): CjFieldVariable {
         return createDeclaration(text)
     }
 
+    /**
+     * 提供 `createPatternVariable` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun createPatternVariable(@NonNls text: String): CjPatternVariable {
         return createDeclaration(text)
     }
 
+    /**
+     * 提供 `createDeclaration` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun <TDeclaration : CjDeclaration> createDeclaration(@NonNls text: String): TDeclaration {
         val file = createFile(text)
         val declarations = file.declarations
@@ -566,6 +704,9 @@ class CjPsiFactory private constructor(
         return declarations.first() as TDeclaration
     }
 
+    /**
+     * 执行 `doCreateFile` 内部辅助逻辑，支撑仓颉 PSI节点的结构解析与访问。
+     */
     private fun doCreateFile(@NonNls fileName: String, @NonNls text: String): CjFile {
         return PsiFileFactory.getInstance(project).createFileFromText(
             fileName,
@@ -577,6 +718,9 @@ class CjPsiFactory private constructor(
         ) as CjFile
     }
 
+    /**
+     * 执行 `createAnnotationOnlyFile` 内部辅助逻辑，支撑仓颉 PSI节点的结构解析与访问。
+     */
     private fun createAnnotationOnlyFile(@NonNls text: String): CjFile {
         val file = PsiFileFactory.getInstance(project).createFileFromText(
             "dummy.cj.macrocall",
@@ -597,6 +741,9 @@ class CjPsiFactory private constructor(
         return file
     }
 
+    /**
+     * 提供 `createFile` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun createFile(@NonNls fileName: String, @NonNls text: String): CjFile {
         val file = doCreateFile(fileName, text)
 
@@ -610,14 +757,23 @@ class CjPsiFactory private constructor(
         return file
     }
 
+    /**
+     * 提供 `createFile` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun createFile(@NonNls text: String): CjFile {
         return createFile("dummy.cj", text)
     }
 
+    /**
+     * 提供 `createModifier` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun createModifier(modifier: CjKeywordToken): PsiElement {
         return createModifierList(modifier.value).getModifier(modifier)!!
     }
 
+    /**
+     * 提供 `createExpressionIfPossible` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun createExpressionIfPossible(@NonNls text: String): CjExpression? {
         val expression = try {
             doCreateExpression(text) ?: return null
@@ -627,27 +783,45 @@ class CjPsiFactory private constructor(
         return if (expression.text == text) expression else null
     }
 
+    /**
+     * 提供 `createModifierList` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun createModifierList(modifier: CjKeywordToken): CjModifierList {
         return createModifierList(modifier.value)
     }
 
+    /**
+     * 提供 `createModifierList` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun createModifierList(modifier: CjModifierKeywordToken): CjModifierList {
         return createModifierList(modifier.value)
     }
 
+    /**
+     * 提供 `createModifierList` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun createModifierList(@NonNls text: String): CjModifierList {
         return createClass("$text class x{}").modifierList!!
     }
 
+    /**
+     * 提供 `createComma` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun createComma(): PsiElement {
         return createType("T<X, Y>").findElementAt(3)!!
     }
 
+    /**
+     * 提供 `createTypeIfPossible` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun createTypeIfPossible(@NonNls type: String): CjTypeReference? {
         val typeReference = createPatternVariable("let x : $type").typeReference
         return if (typeReference?.text == type) typeReference else null
     }
 
+    /**
+     * 提供 `createType` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun createType(@NonNls type: String): CjTypeReference {
         val typeReference = createTypeIfPossible(type)
         if (typeReference == null || typeReference.text != type) {
@@ -656,6 +830,9 @@ class CjPsiFactory private constructor(
         return typeReference
     }
 
+    /**
+     * 提供 `createExpression` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun createExpression(@NonNls text: String): CjExpression {
         val expression = doCreateExpression(text) ?: error("Failed to create expression from text: '$text'")
         assert(expression.text == text) {
@@ -664,30 +841,51 @@ class CjPsiFactory private constructor(
         return expression
     }
 
+    /**
+     * 提供 `createWhiteSpace` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun createWhiteSpace(@NonNls text: String): PsiElement {
         return createPatternVariable("let${text}x: Int64").findElementAt(3)!!
     }
 
+    /**
+     * 提供 `createWhiteSpace` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun createWhiteSpace(): PsiElement {
         return createWhiteSpace(" ")
     }
 
+    /**
+     * 提供 `createNewLine` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun createNewLine(lineBreaks: Int): PsiElement {
         return createWhiteSpace("\n".repeat(lineBreaks))
     }
 
+    /**
+     * 提供 `createIndent` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun createIndent(): PsiElement {
         return createWhiteSpace("    ")
     }
 
+    /**
+     * 提供 `createNewLineAndIndent` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun createNewLineAndIndent(length: Int = 4): PsiElement {
         return createWhiteSpace("\n" + " ".repeat(length))
     }
 
+    /**
+     * 提供 `createNewLine` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun createNewLine(): PsiElement {
         return createWhiteSpace("\n ")
     }
 
+    /**
+     * 提供 `createIdentifier` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun createIdentifier(toString: String): PsiElement? {
         return createClass("class $toString").nameIdentifier
     }

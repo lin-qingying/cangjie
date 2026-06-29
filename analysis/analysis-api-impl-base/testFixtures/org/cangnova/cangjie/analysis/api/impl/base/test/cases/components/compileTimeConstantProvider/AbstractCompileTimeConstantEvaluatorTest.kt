@@ -23,6 +23,11 @@ import org.cangnova.cangjie.test.services.assertions
  * - 渲染文本与递归结构
  */
 abstract class AbstractCompileTimeConstantEvaluatorTest : AbstractAnalysisApiComponentTest() {
+    /**
+     * 执行编译期常量求值测试。
+     *
+     * 方法定位目标表达式，调用公开 compile-time constant provider，并将值种类和值文本渲染到 golden。
+     */
     override fun doTestByMainFile(mainFile: CjFile, mainModule: CjTestModule, testServices: TestServices) {
         val actual = copyAwareAnalyzeForTest(mainFile) { contextFile ->
             val targetElement = testServices.expressionMarkerProvider.getBottommostElementOfTypeByDirective(contextFile, mainModule.testModule)
@@ -47,6 +52,11 @@ abstract class AbstractCompileTimeConstantEvaluatorTest : AbstractAnalysisApiCom
         testServices.assertions.assertEqualsToTestOutputFile(actual)
     }
 
+    /**
+     * 渲染编译期常量值。
+     *
+     * 输出同时包含常量值类型和值内容，保证不同常量子类型的公开表现可被稳定比较。
+     */
     private fun renderCompileTimeValue(
         value: CaCompileTimeValue,
         indent: Int = 2,

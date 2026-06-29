@@ -40,37 +40,64 @@ import org.cangnova.cangjie.psi.psiUtil.getContainingCjFile
 import org.cangnova.cangjie.psi.psiUtil.parentSubstitute
 import java.util.*
 
+/**
+ * 表示 `CjBlockExpression`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 open class CjBlockExpression : LazyParseablePsiElement, CjElement, CjExpression, CjStatementExpression {
     constructor(type: IElementType, text: CharSequence?) : super(type, text)
     constructor(text: CharSequence?) : super(CjNodeTypes.BLOCK, text)
 
+    /**
+     * 实现 `getLanguage` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getLanguage(): Language {
         return CangJieLanguage
     }
 
+    /**
+     * 实现 `toString` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun toString(): String {
         return node.elementType.toString()
     }
+    /**
+     * 实现 `getContainingCjFile` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getContainingCjFile(): CjFile {
         return getContainingCjFile(this)
 
     }
+    /**
+     * 实现 `getContainingFile` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getContainingFile(): PsiFile {
         return super.getContainingFile()
     }
 
+    /**
+     * 实现 `getPsi` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <T : PsiElement> getPsi(clazz: Class<T>): T {
         return super.getPsi(clazz)
     }
 
+    /**
+     * 实现 `acceptChildren` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <D> acceptChildren(visitor: CjVisitor<Unit, D>, data: D) {
         CjPsiUtil.visitChildren(this, visitor, data)
     }
 
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitBlockExpression(this, data)
     }
 
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun accept(visitor: PsiElementVisitor) {
         if (visitor is CjVisitor<*, *>) {
             @Suppress("UNCHECKED_CAST")
@@ -80,12 +107,18 @@ open class CjBlockExpression : LazyParseablePsiElement, CjElement, CjExpression,
         }
     }
 
+    /**
+     * 实现 `delete` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     @Throws(IncorrectOperationException::class)
     override fun delete() {
         this.deleteSemicolon()
         super.delete()
     }
 
+    /**
+     * 实现 `getChildren` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getChildren(): Array<PsiElement> {
         var psiChild = firstChild
 
@@ -100,10 +133,16 @@ open class CjBlockExpression : LazyParseablePsiElement, CjElement, CjExpression,
         return if (result == null) PsiElement.EMPTY_ARRAY else PsiUtilCore.toPsiElementArray(result)
     }
 
+    /**
+     * 实现 `getPsiOrParent` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getPsiOrParent(): CjElement {
         return this
     }
 
+    /**
+     * 实现 `getParent` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getParent(): PsiElement {
         val substitute = this.parentSubstitute
         return substitute ?: super.getParent()
@@ -111,9 +150,15 @@ open class CjBlockExpression : LazyParseablePsiElement, CjElement, CjExpression,
 
 
 
+    /**
+     * 保存 `firstStatement`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val firstStatement: CjExpression?
         get() = findChildByClass(CjExpression::class.java)
 
+    /**
+     * 保存 `lastStatement`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val lastStatement: CjExpression?
         get() {
             val statement = statements
@@ -125,9 +170,15 @@ open class CjBlockExpression : LazyParseablePsiElement, CjElement, CjExpression,
             return null
         }
 
+    /**
+     * 保存 `statements`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     open val statements: List<CjExpression>
         get() = Arrays.asList(*findChildrenByClass(CjExpression::class.java))
 
+    /**
+     * 保存 `statementsWithoutReturnKeyword`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val statementsWithoutReturnKeyword: Set<CjExpression>
         /**
          * 没有return关键字的语句
@@ -154,6 +205,9 @@ open class CjBlockExpression : LazyParseablePsiElement, CjElement, CjExpression,
             return result
         }
 
+    /**
+     * 保存 `returnStatements`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val returnStatements: Set<CjExpression>
         get() {
             val returns: MutableSet<CjExpression> = HashSet(
@@ -171,15 +225,24 @@ open class CjBlockExpression : LazyParseablePsiElement, CjElement, CjExpression,
             return returns
         }
 
+    /**
+     * 保存 `lastBracketRange`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val lastBracketRange: TextRange?
         get() {
             val rBrace = rBrace
             return rBrace?.textRange
         }
 
+    /**
+     * 保存 `rBrace`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val rBrace: PsiElement?
         get() = findPsiChildByType(CjTokens.RBRACE)
 
+    /**
+     * 保存 `lBrace`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val lBrace: PsiElement?
         get() = findPsiChildByType(CjTokens.LBRACE)
 }

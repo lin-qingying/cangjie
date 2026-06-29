@@ -28,6 +28,11 @@ import org.cangnova.cangjie.psi.CjElement
  * declaration finder 主干能力，而不是继续保留上游漂移的专用 builder 路径。
  */
 internal object RawCfirNonLocalDeclarationBuilder {
+    /**
+     * 以 [rootNonLocalDeclaration] 所在文件为单位重建 raw CFIR，并返回 designation 对应的非局部声明。
+     *
+     * 函数符号复绑由后续替换流程完成；本函数只保证从同一 PSI 根重新构造出结构等价的 CFIR 声明。
+     */
     fun buildWithFunctionSymbolRebind(
         session: CfirSession,
         scopeProvider: CfirScopeProvider,
@@ -53,6 +58,11 @@ internal object RawCfirNonLocalDeclarationBuilder {
         }
     }
 
+    /**
+     * 从 [rebuiltFile] 中查找 [declaration] 对应的重建 CFIR 声明。
+     *
+     * 找不到时附带原 PSI 与旧 CFIR target 抛出错误，便于定位 raw rebuild 与 declaration finder 的结构偏差。
+     */
     private fun rebuiltDeclaration(
         rebuiltFile: CfirFile,
         designation: CfirDesignation,

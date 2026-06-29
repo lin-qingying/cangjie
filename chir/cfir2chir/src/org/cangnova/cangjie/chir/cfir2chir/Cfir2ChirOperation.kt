@@ -7,6 +7,9 @@ package org.cangnova.cangjie.chir.cfir2chir
  * CHIR core 只承载通用 IR 结构，CFIR 专有语义由本模块写入 `ChirOtherExpression.operation` 字符串。
  */
 internal enum class Cfir2ChirOperation(
+    /**
+     * 写入 `ChirOtherExpression.operation` 的稳定操作名。
+     */
     val canonicalName: String,
 ) {
     PHI("phi"),

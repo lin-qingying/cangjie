@@ -28,6 +28,9 @@ interface ConstraintSystemUtilContext {
      */
     fun CangJieTypeMarker.extractBuiltinFunctionArgumentTypes(): List<CangJieTypeMarker>
 
+    /**
+     * 从被捕获类型中还原原始类型。
+     */
     fun CangJieTypeMarker.unCapture(): CangJieTypeMarker
 
     /**

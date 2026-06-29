@@ -26,11 +26,23 @@ import kotlin.reflect.KClass
  */
 @CaImplementationDetail
 class CaBasePsiSymbolPointer<S : CaSymbol> private constructor(
+    /**
+     * 指向 source PSI 的 smart pointer。
+     */
     private val psiPointer: SmartPsiElementPointer<out CjElement>,
+    /**
+     * 恢复后期望得到的符号类型。
+     */
     private val expectedClass: KClass<S>,
+    /**
+     * 从 PSI 恢复符号的 Analysis API 入口。
+     */
     private val restoreSymbolByPsi: CaSession.(CjElement) -> CaSymbol?,
     originalSymbol: S?,
 ) : CaBaseCachedSymbolPointer<S>(originalSymbol) {
+    /**
+     * 在缓存不可用时通过 PSI pointer 恢复符号。
+     */
     override fun restoreIfNotCached(session: CaSession): S? {
         val psi = psiPointer.element ?: return null
         val symbol = session.restoreSymbolByPsi(psi) ?: return null
@@ -40,11 +52,17 @@ class CaBasePsiSymbolPointer<S : CaSymbol> private constructor(
         return symbol as S
     }
 
+    /**
+     * 判断另一个 pointer 是否指向同一 PSI 与同一符号类型。
+     */
     fun pointsToTheSameSymbolAs(other: CaSymbolPointer<CaSymbol>): Boolean = this === other ||
         other is CaBasePsiSymbolPointer<*> &&
         other.expectedClass == expectedClass &&
         other.psiPointer == psiPointer
 
+    /**
+     * 通过 PSI 元素创建兼容宿主的 PSI symbol pointer。
+     */
     constructor(
         psi: CjElement,
         expectedClass: KClass<S>,
@@ -59,6 +77,9 @@ class CaBasePsiSymbolPointer<S : CaSymbol> private constructor(
 
     @CaImplementationDetail
     companion object {
+        /**
+         * 为 source-origin 符号创建 PSI pointer。
+         */
         fun <S : CaSymbol> createForSymbolFromSource(
             symbol: S,
             expectedClass: KClass<S>,
@@ -70,6 +91,9 @@ class CaBasePsiSymbolPointer<S : CaSymbol> private constructor(
             return CaBasePsiSymbolPointer(psi, expectedClass, restoreSymbolByPsi, symbol)
         }
 
+        /**
+         * 为给定 PSI 元素创建 PSI pointer。
+         */
         fun <S : CaSymbol> createForSymbolFromPsi(
             element: CjElement,
             expectedClass: KClass<S>,
@@ -88,6 +112,9 @@ class CaBasePsiSymbolPointer<S : CaSymbol> private constructor(
 @CaImplementationDetail
 interface SmartPointerIncompatiblePsiFile
 
+/**
+ * 根据包含文件能力创建常规 smart pointer 或软引用 pointer。
+ */
 @CaImplementationDetail
 fun createCompatibleSmartPointer(element: CjElement): SmartPsiElementPointer<out CjElement> {
     val containingFile = element.containingCjFile
@@ -100,23 +127,55 @@ fun createCompatibleSmartPointer(element: CjElement): SmartPsiElementPointer<out
         .createSmartPsiElementPointer(element, containingFile)
 }
 
+/**
+ * 以软引用保存 PSI 元素和文件的 lightweight pointer。
+ */
 private class SoftSmartPsiElementPointer<T : PsiElement>(
     element: T,
     containingFile: PsiFile,
 ) : SmartPsiElementPointer<T> {
+    /**
+     * PSI 所属 project。
+     */
     private val project = containingFile.project
+
+    /**
+     * PSI 元素软引用。
+     */
     private val elementRef = SoftReference(element)
+
+    /**
+     * 包含文件软引用。
+     */
     private val containingFileRef = SoftReference(containingFile)
 
+    /**
+     * 返回当前仍可达的 PSI 元素。
+     */
     override fun getElement(): T? = elementRef.get()
 
+    /**
+     * 返回当前仍可达的包含文件。
+     */
     override fun getContainingFile(): PsiFile? = containingFileRef.get()
 
+    /**
+     * 返回包含文件对应的虚文件。
+     */
     override fun getVirtualFile(): VirtualFile? = containingFile?.virtualFile
 
+    /**
+     * 返回 PSI 所属 project。
+     */
     override fun getProject(): Project = project
 
+    /**
+     * 软引用 pointer 不支持 PSI range。
+     */
     override fun getPsiRange(): Segment? = throw UnsupportedOperationException("Not supported")
 
+    /**
+     * 软引用 pointer 不支持文档 range。
+     */
     override fun getRange(): Segment? = throw UnsupportedOperationException("Not supported")
 }

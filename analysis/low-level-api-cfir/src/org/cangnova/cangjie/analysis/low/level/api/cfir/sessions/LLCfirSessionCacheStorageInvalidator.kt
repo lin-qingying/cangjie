@@ -47,12 +47,25 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.LLCfirB
  */
 @LLCfirInternals
 class LLCfirSessionCacheStorageInvalidator(
+    /**
+     * 当前 invalidator 所属工程。
+     */
     private val project: Project,
+
+    /**
+     * 需要被失效和清理的 session cache storage。
+     */
     private val storage: LLCfirSessionCacheStorage,
 ) {
+    /**
+     * session 失效事件发布器。
+     */
     private val sessionInvalidationEventPublisher: LLCfirSessionInvalidationEventPublisher
         get() = LLCfirSessionInvalidationEventPublisher.getInstance(project)
 
+    /**
+     * 根据 [event] 类型选择对应的 session 失效策略。
+     */
     fun invalidate(event: KotlinModificationEvent) {
         when (event) {
             is KotlinModuleStateModificationEvent ->
@@ -203,6 +216,9 @@ class LLCfirSessionCacheStorageInvalidator(
         }
     }
 
+    /**
+     * 失效以 [contextModule] 为上下文的 dangling file session。
+     */
     private fun invalidateContextualDanglingFileSessions(contextModule: CaModule) = performInvalidation {
         ApplicationManager.getApplication().assertWriteAccessAllowed()
 
@@ -211,6 +227,9 @@ class LLCfirSessionCacheStorageInvalidator(
         }
     }
 
+    /**
+     * 失效所有 unstable dangling file session。
+     */
     fun invalidateUnstableDanglingFileSessions() = performInvalidation {
         ApplicationManager.getApplication().assertWriteAccessAllowed()
 
@@ -276,8 +295,14 @@ class LLCfirSessionCacheStorageInvalidator(
         return removeSourceSessionInWriteAction(module)
     }
 
+    /**
+     * 从源码 session 缓存中移除 [module]。
+     */
     private fun removeSourceSessionInWriteAction(module: CaModule): Boolean = removeSessionFrom(module, storage.sourceCache)
 
+    /**
+     * 从指定 [storage] 中移除 [module] 对应 session。
+     */
     private fun removeSessionFrom(module: CaModule, storage: SessionStorage): Boolean = storage.remove(module) != null
 
     /**
@@ -305,10 +330,16 @@ class LLCfirSessionCacheStorageInvalidator(
         }
     }
 
+    /**
+     * 移除所有 unstable dangling file session。
+     */
     private fun removeUnstableDanglingFileSessions() {
         removeAllSessionsFrom(storage.unstableDanglingFileSessionCache)
     }
 
+    /**
+     * 移除以 [contextModule] 为上下文的 dangling file session。
+     */
     private fun removeContextualDanglingFileSessions(contextModule: CaModule) {
         removeUnstableDanglingFileSessions()
 
@@ -325,6 +356,9 @@ class LLCfirSessionCacheStorageInvalidator(
         }
     }
 
+    /**
+     * 判断 [module] 的 context module 链中是否包含 [contextModule]。
+     */
     private tailrec fun hasContextModule(module: CaDanglingFileModule, contextModule: CaModule): Boolean {
         return when (val candidate = module.contextModule) {
             contextModule -> true
@@ -333,6 +367,9 @@ class LLCfirSessionCacheStorageInvalidator(
         }
     }
 
+    /**
+     * 移除 stable 与 unstable dangling file session。
+     */
     private fun removeAllDanglingFileSessions() {
         withIndependentRemoval {
             independently { removeAllSessionsFrom(storage.danglingFileSessionCache) }
@@ -340,6 +377,9 @@ class LLCfirSessionCacheStorageInvalidator(
         }
     }
 
+    /**
+     * 移除所有 library fallback dependencies session。
+     */
     private fun removeAllLibraryFallbackDependenciesSessions() {
         removeAllSessionsFrom(storage.libraryFallbackDependenciesCache)
     }
@@ -352,10 +392,16 @@ class LLCfirSessionCacheStorageInvalidator(
         removeAllMatchingSessionsFrom(storage.sourceCache) { it is CaLibraryModule || it is CaLibrarySourceModule }
     }
 
+    /**
+     * 清空指定 [storage] 中的全部 session。
+     */
     private fun removeAllSessionsFrom(storage: SessionStorage, diagnosticInformation: String? = null) {
         storage.clear(diagnosticInformation)
     }
 
+    /**
+     * 移除指定 [storage] 中所有满足 [shouldBeRemoved] 的 session。
+     */
     private inline fun removeAllMatchingSessionsFrom(storage: SessionStorage, shouldBeRemoved: (CaModule) -> Boolean) {
         // Because this function is executed in a single thread, we do not need concurrency guarantees to remove all matching sessions, so a
         // "collect and remove" approach also works.

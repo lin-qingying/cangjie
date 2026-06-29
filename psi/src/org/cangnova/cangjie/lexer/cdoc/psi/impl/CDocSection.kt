@@ -40,22 +40,40 @@ class CDocSection(node: ASTNode) : CDocTag(node), ContributedReferenceHost {
     override fun getName(): String? =
         (firstChild as? CDocTag)?.name
 
+    /**
+     * 实现 `getSubjectName` 的仓颉词法与文档注释协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getSubjectName(): String? =
         (firstChild as? CDocTag)?.getSubjectName()
 
+    /**
+     * 实现 `getContent` 的仓颉词法与文档注释协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getContent(): String =
         (firstChild as? CDocTag)?.getContent() ?: super.getContent()
 
+    /**
+     * 提供 `findTagsByName` 操作，封装仓颉词法与文档注释节点的访问、构造或判断逻辑。
+     */
     fun findTagsByName(name: String): List<CDocTag> {
         return getChildrenOfType<CDocTag>().filter { it.name == name }
     }
 
+    /**
+     * 提供 `findTagByName` 操作，封装仓颉词法与文档注释节点的访问、构造或判断逻辑。
+     */
     fun findTagByName(name: String): CDocTag? = findTagsByName(name).firstOrNull()
 
+    /**
+     * 实现 `getReference` 的仓颉词法与文档注释协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getReference(): PsiReference? {
         return references.firstOrNull()
     }
 
+    /**
+     * 实现 `getReferences` 的仓颉词法与文档注释协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getReferences(): Array<out PsiReference?> {
         return CangJieReferenceProvidersService.getReferencesFromProviders(this)
     }

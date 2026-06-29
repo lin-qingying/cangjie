@@ -41,6 +41,9 @@ import com.intellij.psi.tree.TokenSet
 
 import kotlin.math.max
 
+/**
+ * 创建右花括号前依赖换行状态的 spacing。
+ */
 fun CommonCodeStyleSettings.createSpaceBeforeRBrace(numSpacesOtherwise: Int, textRange: TextRange): Spacing? {
     return Spacing.createDependentLFSpacing(
         numSpacesOtherwise, numSpacesOtherwise, textRange,
@@ -49,27 +52,60 @@ fun CommonCodeStyleSettings.createSpaceBeforeRBrace(numSpacesOtherwise: Int, tex
     )
 }
 
-class CangJieSpacingBuilder(val commonCodeStyleSettings: CommonCodeStyleSettings, val spacingBuilderUtil: CangJieSpacingBuilderUtil) {
+/**
+ * 仓颉 formatter 的 spacing 规则容器。
+ */
+class CangJieSpacingBuilder(
+    /** 通用代码风格设置。 */
+    val commonCodeStyleSettings: CommonCodeStyleSettings,
+    /** spacing 创建时需要的平台适配工具。 */
+    val spacingBuilderUtil: CangJieSpacingBuilderUtil
+) {
+    /** 按注册顺序保存的 spacing builder。 */
     private val builders = ArrayList<Builder>()
 
+    /**
+     * 可根据相邻 AST block 计算 spacing 的规则构建器。
+     */
     private interface Builder {
+        /**
+         * 返回 parent 下 left/right block 之间的 spacing。
+         */
         fun getSpacing(parent: ASTBlock, left: ASTBlock, right: ASTBlock): Spacing?
     }
 
+    /**
+     * IntelliJ 原生 SpacingBuilder 的仓颉包装。
+     */
     inner class BasicSpacingBuilder : SpacingBuilder(commonCodeStyleSettings), Builder {
+        /**
+         * 委托给 IntelliJ 原生 spacing builder。
+         */
         override fun getSpacing(parent: ASTBlock, left: ASTBlock, right: ASTBlock): Spacing? {
             return super.getSpacing(parent, left, right)
         }
     }
 
+    /**
+     * 自定义 spacing 规则的匹配条件。
+     */
     private data class Condition(
+        /** 父 block 的元素类型条件。 */
         val parent: IElementType? = null,
+        /** 左 block 的元素类型条件。 */
         val left: IElementType? = null,
+        /** 右 block 的元素类型条件。 */
         val right: IElementType? = null,
+        /** 父 block 的元素类型集合条件。 */
         val parentSet: TokenSet? = null,
+        /** 左 block 的元素类型集合条件。 */
         val leftSet: TokenSet? = null,
+        /** 右 block 的元素类型集合条件。 */
         val rightSet: TokenSet? = null
     ) : (ASTBlock, ASTBlock, ASTBlock) -> Boolean {
+        /**
+         * 判断 parent/left/right 是否满足所有已声明条件。
+         */
         override fun invoke(p: ASTBlock, l: ASTBlock, r: ASTBlock): Boolean =
             (parent == null || p.requireNode().elementType == parent) &&
                     (left == null || l.requireNode().elementType == left) &&
@@ -79,18 +115,34 @@ class CangJieSpacingBuilder(val commonCodeStyleSettings: CommonCodeStyleSettings
                     (rightSet == null || rightSet.contains(r.requireNode().elementType))
     }
 
+    /**
+     * 自定义 spacing 规则，由条件列表和动作组成。
+     */
     private data class Rule(
+        /** 规则必须满足的条件列表。 */
         val conditions: List<Condition>,
+        /** 条件满足后执行的 spacing 计算动作。 */
         val action: (ASTBlock, ASTBlock, ASTBlock) -> Spacing?
     ) : (ASTBlock, ASTBlock, ASTBlock) -> Spacing? {
+        /**
+         * 条件全部满足时执行 spacing 动作。
+         */
         override fun invoke(p: ASTBlock, l: ASTBlock, r: ASTBlock): Spacing? =
             if (conditions.all { it(p, l, r) }) action(p, l, r) else null
     }
 
+    /**
+     * 支持闭包规则的自定义 spacing builder。
+     */
     inner class CustomSpacingBuilder : Builder {
+        /** 已注册的自定义 spacing 规则。 */
         private val rules = ArrayList<Rule>()
+        /** 当前正在累积的匹配条件。 */
         private var conditions = ArrayList<Condition>()
 
+        /**
+         * 依次尝试自定义规则并返回第一个非空 spacing。
+         */
         override fun getSpacing(parent: ASTBlock, left: ASTBlock, right: ASTBlock): Spacing? {
             for (rule in rules) {
                 val spacing = rule(parent, left, right)
@@ -101,6 +153,9 @@ class CangJieSpacingBuilder(val commonCodeStyleSettings: CommonCodeStyleSettings
             return null
         }
 
+        /**
+         * 累加 parent/left/right 位置条件。
+         */
         fun inPosition(
             parent: IElementType? = null, left: IElementType? = null, right: IElementType? = null,
             parentSet: TokenSet? = null, leftSet: TokenSet? = null, rightSet: TokenSet? = null
@@ -109,6 +164,9 @@ class CangJieSpacingBuilder(val commonCodeStyleSettings: CommonCodeStyleSettings
             return this
         }
 
+        /**
+         * 根据父 block 是否换行创建依赖换行 spacing。
+         */
         fun lineBreakIfLineBreakInParent(numSpacesOtherwise: Int, allowBlankLines: Boolean = true) {
             newRule { p, _, _ ->
                 Spacing.createDependentLFSpacing(
@@ -119,6 +177,9 @@ class CangJieSpacingBuilder(val commonCodeStyleSettings: CommonCodeStyleSettings
             }
         }
 
+        /**
+         * 当左侧声明跨行时插入指定空行数。
+         */
         fun emptyLinesIfLineBreakInLeft(emptyLines: Int, numberOfLineFeedsOtherwise: Int = 1, numSpacesOtherwise: Int = 0) {
             newRule { _: ASTBlock, left: ASTBlock, _: ASTBlock ->
                 val lastChild = left.node?.psi?.lastChild
@@ -142,14 +203,23 @@ class CangJieSpacingBuilder(val commonCodeStyleSettings: CommonCodeStyleSettings
             }
         }
 
+        /**
+         * 注册固定 spacing 规则。
+         */
         fun spacing(spacing: Spacing) {
             newRule { _, _, _ -> spacing }
         }
 
+        /**
+         * 注册自定义 spacing 计算规则。
+         */
         fun customRule(block: (parent: ASTBlock, left: ASTBlock, right: ASTBlock) -> Spacing?) {
             newRule(block)
         }
 
+        /**
+         * 使用当前条件创建规则，并清空条件累积区。
+         */
         private fun newRule(rule: (ASTBlock, ASTBlock, ASTBlock) -> Spacing?) {
             val savedConditions = ArrayList(conditions)
             rules.add(Rule(savedConditions, rule))
@@ -157,6 +227,9 @@ class CangJieSpacingBuilder(val commonCodeStyleSettings: CommonCodeStyleSettings
         }
     }
 
+    /**
+     * 计算 parent 下两个相邻子 block 之间的 spacing。
+     */
     fun getSpacing(parent: Block, child1: Block?, child2: Block): Spacing? {
         if (parent !is ASTBlock || child1 !is ASTBlock || child2 !is ASTBlock) {
             return null
@@ -180,18 +253,27 @@ class CangJieSpacingBuilder(val commonCodeStyleSettings: CommonCodeStyleSettings
         return null
     }
 
+    /**
+     * 注册一组 IntelliJ 原生 spacing builder 规则。
+     */
     fun simple(init: BasicSpacingBuilder.() -> Unit) {
         val builder = BasicSpacingBuilder()
         builder.init()
         builders.add(builder)
     }
 
+    /**
+     * 注册一组仓颉自定义 spacing 规则。
+     */
     fun custom(init: CustomSpacingBuilder.() -> Unit) {
         val builder = CustomSpacingBuilder()
         builder.init()
         builders.add(builder)
     }
 
+    /**
+     * 创建标准 spacing 对象。
+     */
     fun createSpacing(
         minSpaces: Int,
         maxSpaces: Int = minSpaces,
@@ -203,7 +285,13 @@ class CangJieSpacingBuilder(val commonCodeStyleSettings: CommonCodeStyleSettings
     }
 }
 
+/**
+ * spacing builder 依赖的平台能力抽象。
+ */
 interface CangJieSpacingBuilderUtil {
+    /**
+     * 创建依赖换行状态的 spacing。
+     */
     fun createLineFeedDependentSpacing(
         minSpaces: Int,
         maxSpaces: Int,
@@ -214,11 +302,20 @@ interface CangJieSpacingBuilderUtil {
         rule: DependentSpacingRule
     ): Spacing
 
+    /**
+     * 返回指定节点前一个非空白叶子节点。
+     */
     fun getPreviousNonWhitespaceLeaf(node: ASTNode?): ASTNode?
 
+    /**
+     * 判断节点是否为空白或空节点。
+     */
     fun isWhitespaceOrEmpty(node: ASTNode?): Boolean
 }
 
+/**
+ * 创建并初始化仓颉 spacing builder。
+ */
 fun rules(
     commonCodeStyleSettings: CommonCodeStyleSettings,
     builderUtil: CangJieSpacingBuilderUtil,
@@ -229,6 +326,9 @@ fun rules(
     return builder
 }
 
+/**
+ * 返回声明中跳过修饰符和空白注释后的第一个有效 AST 节点。
+ */
 internal fun ASTNode.startOfDeclaration(): ASTNode? = children().firstOrNull {
     val elementType = it.elementType
     elementType !is CjModifierListElementType<*> && elementType !in CjTokens.WHITE_SPACE_OR_COMMENT_BIT_SET

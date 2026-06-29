@@ -31,8 +31,14 @@ import com.intellij.psi.search.ScopeOptimizer
  * 再加载 code-insight 提供的处理器声明。
  */
 object CangJieRefactoringHeadlessRegistrar {
+    /**
+     * code-insight 重构扩展声明文件在 classpath 中的固定路径。
+     */
     const val PLUGIN_XML_PATH: String = "META-INF/code-insight/cangjie-code-insight-refactoring.xml"
 
+    /**
+     * 在 headless application 中注册重构相关 application 级扩展点。
+     */
     fun registerExtensionPoints(application: MockApplication) {
         application.registerExtensionPointIfMissing(
             "com.intellij.lang.namesValidator",
@@ -68,6 +74,9 @@ object CangJieRefactoringHeadlessRegistrar {
         )
     }
 
+    /**
+     * 在 headless project 中注册重构相关 project 级服务和扩展点。
+     */
     fun registerProjectServices(project: MockProject) {
         project.registerExtensionPointIfMissing(
             "com.intellij.refactoring.elementListenerProvider",
@@ -87,6 +96,9 @@ object CangJieRefactoringHeadlessRegistrar {
         }
     }
 
+    /**
+     * 若 application 扩展点尚未存在，则按 IntelliJ core 环境规则注册它。
+     */
     private fun <T : Any> MockApplication.registerExtensionPointIfMissing(
         name: String,
         extensionClass: Class<T>,
@@ -95,6 +107,9 @@ object CangJieRefactoringHeadlessRegistrar {
         CoreApplicationEnvironment.registerExtensionPoint(extensionArea, name, extensionClass)
     }
 
+    /**
+     * 若 project 扩展点尚未存在，则按 IntelliJ core 环境规则注册它。
+     */
     private fun <T : Any> MockProject.registerExtensionPointIfMissing(
         name: String,
         extensionClass: Class<T>,

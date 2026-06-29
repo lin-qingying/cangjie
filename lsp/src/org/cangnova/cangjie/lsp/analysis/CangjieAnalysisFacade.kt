@@ -53,16 +53,34 @@ import org.eclipse.lsp4j.jsonrpc.messages.Either3
  * 这里定义的是框架契约，真正的 CFIR/Analysis API 对接后续实现。
  */
 interface CangjieAnalysisFacade : AutoCloseable {
+    /**
+     * 当前分析实现实际支持的 LSP 功能集合。
+     */
     val supportedFeatures: CangjieLspFeatureSet
 
+    /**
+     * 通知分析层某个文档已经打开。
+     */
     fun didOpen(context: CangjieAnalysisRequestContext, document: LspTextDocument) {}
 
+    /**
+     * 通知分析层某个打开文档的内容已经变化。
+     */
     fun didChange(context: CangjieAnalysisRequestContext, document: LspTextDocument) {}
 
+    /**
+     * 通知分析层某个打开文档已经保存。
+     */
     fun didSave(context: CangjieAnalysisRequestContext, document: LspTextDocument) {}
 
+    /**
+     * 通知分析层某个文档已经关闭。
+     */
     fun didClose(context: CangjieAnalysisRequestContext, document: LspTextDocument) {}
 
+    /**
+     * 通知分析层工作区目录集合已经变化。
+     */
     fun didChangeWorkspaceFolders(
         context: CangjieAnalysisRequestContext,
         added: List<WorkspaceFolder>,
@@ -77,6 +95,11 @@ interface CangjieAnalysisFacade : AutoCloseable {
      */
     fun didRefreshProjectStructure(context: CangjieAnalysisRequestContext) {}
 
+    /**
+     * 收集指定打开文档的诊断。
+     *
+     * 返回值使用 LSP Diagnostic 模型，调用方负责决定 push 或 pull 的发布方式。
+     */
     fun collectDiagnostics(
         context: CangjieAnalysisRequestContext,
         document: LspTextDocument,
@@ -93,124 +116,187 @@ interface CangjieAnalysisFacade : AutoCloseable {
         context: CangjieAnalysisRequestContext,
     ): List<WorkspaceDocumentDiagnosticReport>
 
+    /**
+     * 计算指定文档位置的补全结果。
+     */
     fun completion(
         context: CangjieAnalysisRequestContext,
         document: LspTextDocument,
         params: CompletionParams,
     ): Either<List<CompletionItem>, CompletionList>
 
+    /**
+     * 计算指定文档位置的悬停信息。
+     */
     fun hover(
         context: CangjieAnalysisRequestContext,
         document: LspTextDocument,
         params: HoverParams,
     ): Hover?
 
+    /**
+     * 计算指定文档位置的签名帮助。
+     */
     fun signatureHelp(
         context: CangjieAnalysisRequestContext,
         document: LspTextDocument,
         params: SignatureHelpParams,
     ): SignatureHelp?
 
+    /**
+     * 解析指定位置的声明跳转目标。
+     */
     fun declaration(
         context: CangjieAnalysisRequestContext,
         document: LspTextDocument,
         params: DeclarationParams,
     ): Either<List<Location>, List<LocationLink>>
 
+    /**
+     * 解析指定位置的定义跳转目标。
+     */
     fun definition(
         context: CangjieAnalysisRequestContext,
         document: LspTextDocument,
         params: DefinitionParams,
     ): Either<List<Location>, List<LocationLink>>
 
+    /**
+     * 解析指定位置的类型定义跳转目标。
+     */
     fun typeDefinition(
         context: CangjieAnalysisRequestContext,
         document: LspTextDocument,
         params: TypeDefinitionParams,
     ): Either<List<Location>, List<LocationLink>>
 
+    /**
+     * 解析指定位置的实现跳转目标。
+     */
     fun implementation(
         context: CangjieAnalysisRequestContext,
         document: LspTextDocument,
         params: org.eclipse.lsp4j.ImplementationParams,
     ): Either<List<Location>, List<LocationLink>>
 
+    /**
+     * 查找指定位置符号的引用位置。
+     */
     fun references(
         context: CangjieAnalysisRequestContext,
         document: LspTextDocument,
         params: ReferenceParams,
     ): List<Location>
 
+    /**
+     * 计算指定位置的文档高亮结果。
+     */
     fun documentHighlight(
         context: CangjieAnalysisRequestContext,
         document: LspTextDocument,
         params: DocumentHighlightParams,
     ): List<DocumentHighlight>
 
+    /**
+     * 收集当前文档中的符号列表或符号树。
+     */
     fun documentSymbols(
         context: CangjieAnalysisRequestContext,
         document: LspTextDocument,
         params: DocumentSymbolParams,
     ): List<Either<SymbolInformation, DocumentSymbol>>
 
+    /**
+     * 收集工作区符号查询结果。
+     */
     fun workspaceSymbols(
         context: CangjieAnalysisRequestContext,
         params: WorkspaceSymbolParams,
     ): Either<List<SymbolInformation>, List<WorkspaceSymbol>>
 
+    /**
+     * 计算指定范围或诊断对应的 code action。
+     */
     fun codeActions(
         context: CangjieAnalysisRequestContext,
         document: LspTextDocument,
         params: CodeActionParams,
     ): List<Either<Command, CodeAction>>
 
+    /**
+     * 计算文档格式化产生的文本编辑。
+     */
     fun formatting(
         context: CangjieAnalysisRequestContext,
         document: LspTextDocument,
         params: DocumentFormattingParams,
     ): List<TextEdit>
 
+    /**
+     * 执行重命名并返回工作区编辑。
+     */
     fun rename(
         context: CangjieAnalysisRequestContext,
         document: LspTextDocument,
         params: RenameParams,
     ): WorkspaceEdit?
 
+    /**
+     * 准备重命名并返回可重命名范围。
+     */
     fun prepareRename(
         context: CangjieAnalysisRequestContext,
         document: LspTextDocument,
         params: RenameParams,
     ): Either3<Range, PrepareRenameResult, PrepareRenameDefaultBehavior>?
 
+    /**
+     * 计算当前文档的折叠范围。
+     */
     fun foldingRanges(
         context: CangjieAnalysisRequestContext,
         document: LspTextDocument,
         params: FoldingRangeRequestParams,
     ): List<FoldingRange>
 
+    /**
+     * 计算当前文档的选择范围链。
+     */
     fun selectionRanges(
         context: CangjieAnalysisRequestContext,
         document: LspTextDocument,
         params: SelectionRangeParams,
     ): List<SelectionRange>
 
+    /**
+     * 计算整篇文档的语义 token。
+     */
     fun semanticTokensFull(
         context: CangjieAnalysisRequestContext,
         document: LspTextDocument,
         params: SemanticTokensParams,
     ): SemanticTokens?
 
+    /**
+     * 计算指定范围内的语义 token。
+     */
     fun semanticTokensRange(
         context: CangjieAnalysisRequestContext,
         document: LspTextDocument,
         params: SemanticTokensRangeParams,
     ): SemanticTokens?
 
+    /**
+     * 计算当前文档范围内的 inlay hints。
+     */
     fun inlayHints(
         context: CangjieAnalysisRequestContext,
         document: LspTextDocument,
         params: InlayHintParams,
     ): List<InlayHint>
 
+    /**
+     * 释放分析 facade 持有的资源。
+     */
     override fun close() {}
 }

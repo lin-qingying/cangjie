@@ -11,8 +11,14 @@ import org.cangnova.cangjie.psi.CjExpression
  * 数据流快照入口。
  */
 internal class CaCfirDataFlowProvider(
+    /**
+     * 延迟取得当前 CFIR Analysis session，数据流快照由 session 级实现计算。
+     */
     override val analysisSessionProvider: () -> CaCfirSession,
 ) : CaBaseSessionComponent<CaCfirSession>(), CaDataFlowProvider {
+    /**
+     * 返回表达式在当前 session 下的数据流信息快照。
+     */
     override fun CjExpression.getDataFlowInfo(): CaDataFlowInfo = withValidityAssertion {
         analysisSession.getDataFlowInfo(this@getDataFlowInfo)
     }

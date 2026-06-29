@@ -21,6 +21,12 @@ import org.cangnova.cangjie.test.services.assertions
  * 只验证已经公开的 `CaType.annotations` 契约，不发明新的测试桥接 API。
  */
 abstract class AbstractAnalysisApiAnnotationsOnTypesTest : AbstractAnalysisApiComponentTest() {
+    /**
+     * 执行类型注解测试。
+     *
+     * 方法在 caret 处定位 `CjTypeReference`，通过其所属 callable 的公开 return type 观察
+     * `CaType.annotations`，并将稳定渲染结果与 golden 文件比较。
+     */
     override fun doTestByMainFile(mainFile: CjFile, mainModule: CjTestModule, testServices: TestServices) {
         val typeReference = testServices.expressionMarkerProvider
             .getBottommostElementOfTypeAtCaret<CjTypeReference>(mainFile)
@@ -36,6 +42,11 @@ abstract class AbstractAnalysisApiAnnotationsOnTypesTest : AbstractAnalysisApiCo
         testServices.assertions.assertEqualsToTestOutputFile(actual)
     }
 
+    /**
+     * 通过类型引用所属 callable 的公开 return type 恢复 `CaType`。
+     *
+     * 当前测试只使用已经存在的公开 API 面，不直接访问内部类型解析结构。
+     */
     private fun CaSession.resolveCallableReturnType(typeReference: CjTypeReference): CaType {
         val owner = PsiTreeUtil.getParentOfType(typeReference, CjCallableDeclaration::class.java)
             ?: error("Type reference `${typeReference.text}` is not owned by a callable declaration.")

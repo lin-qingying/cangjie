@@ -60,8 +60,15 @@ internal interface CaCfirPsiSymbol<out P : PsiElement, out S : CfirBasedSymbol<*
      */
     abstract override val origin: CaSymbolOrigin
 
+    /**
+     * 触发并返回懒加载的底层 CFIR 符号。
+     */
     override val cfirSymbol: S get() = lazyCfirSymbol.value
 }
+
+/**
+ * 当前 use-site 不是 library source session 时执行指定动作。
+ */
 @OptIn(ExperimentalContracts::class)
 internal inline fun <R> CaCfirPsiSymbol<*, *>.ifNotLibrarySource(action: () -> R): R? {
     contract {
@@ -71,6 +78,9 @@ internal inline fun <R> CaCfirPsiSymbol<*, *>.ifNotLibrarySource(action: () -> R
     return if (analysisSession.useSiteModule is CaLibrarySourceModule) null else action()
 }
 
+/**
+ * 当前公开符号来源为源码时执行指定动作。
+ */
 @OptIn(ExperimentalContracts::class)
 internal inline fun <R> CaCfirPsiSymbol<*, *>.ifSource(action: () -> R): R? {
     contract {
@@ -79,22 +89,40 @@ internal inline fun <R> CaCfirPsiSymbol<*, *>.ifSource(action: () -> R): R? {
 
     return if (origin == CaSymbolOrigin.SOURCE) action() else null
 }
+
+/**
+ * 从源码 callable PSI 直接创建公开 value parameter 符号列表。
+ */
 internal fun CaCfirCjBasedSymbol<CjCallableDeclaration, *>.createCaValueParameters(): List<CaValueParameterSymbol>? =
     ifNotLibrarySource {
         with(analysisSession) {
             backingPsi?.valueParameters?.map { it.symbol as CaValueParameterSymbol }
         }
     }
+
+/**
+ * 从源码类型参数 owner PSI 直接创建公开 type parameter 符号列表。
+ */
 internal fun CaCfirCjBasedSymbol<CjTypeParameterListOwner, *>.createCaTypeParameters(): List<CaTypeParameterSymbol>? =
     ifNotLibrarySource {
         with(analysisSession) {
             backingPsi?.typeParameters?.map { it.symbol }
         }
     }
+
+/**
+ * 由仓颉 PSI 元素承载的 CFIR 符号协议。
+ */
 internal interface CaCfirCjBasedSymbol<out P : CjElement, out S : CfirBasedSymbol<*>> : CaCfirPsiSymbol<P, S> {
+    /**
+     * 优先根据 PSI 来源推导公开符号 origin。
+     */
     override val origin: CaSymbolOrigin get() = withValidityAssertion { psiOrSymbolOrigin() }
 }
 
+/**
+ * 为声明 PSI 构造延迟解析 CFIR 符号的包装。
+ */
 internal inline fun <reified S : CfirBasedSymbol<*>> lazyCfirSymbol(
     declaration: CjDeclaration,
     session: CaCfirSession,
@@ -102,6 +130,9 @@ internal inline fun <reified S : CfirBasedSymbol<*>> lazyCfirSymbol(
     declaration.resolveToCfirSymbolOfType<S>(session.resolutionFacade)
 }
 
+/**
+ * 为普通 PSI 元素构造延迟提取 CFIR 符号的包装。
+ */
 internal inline fun <reified E : CfirElement, reified S : CfirBasedSymbol<*>> lazyCfirSymbol(
     element: CjElement,
     session: CaCfirSession,
@@ -129,8 +160,14 @@ internal inline fun CaCfirPsiSymbol<out PsiElement, *>.backingPsiOrFindCurrentPs
     return currentBackingPsi ?: findPsi()
 }
 
+/**
+ * 按 PSI 优先、CFIR 符号兜底的方式计算符号 hashCode。
+ */
 internal fun CaCfirPsiSymbol<*, *>.psiOrSymbolHashCode(): Int = backingPsi?.hashCode() ?: cfirSymbol.hashCode()
 
+/**
+ * 按 PSI 身份和 CFIR 符号身份组合判断两个公开符号是否相等。
+ */
 internal fun CaCfirPsiSymbol<*, *>.psiOrSymbolEquals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || other::class != this::class) return false
@@ -145,6 +182,7 @@ internal fun CaCfirPsiSymbol<*, *>.psiOrSymbolEquals(other: Any?): Boolean {
         else -> cfirSymbol == other.cfirSymbol
     }
 }
+
 /**
  * Currently, the compiled file can represent both library and non-library origin depending on the `preferBinary`
  * parameter from [org.jetbrains.kotlin.analysis.low.level.api.fir.sessions.LLCfirSessionCache.getSession].
@@ -160,10 +198,21 @@ internal fun <P : CjElement> CaCfirPsiSymbol<P, *>.psiOrSymbolOrigin(): CaSymbol
         else -> CaSymbolOrigin.SOURCE
     }
 }
+
+/**
+ * 为由注解 PSI 承载的符号创建公开注解列表。
+ */
 internal fun CaCfirCjBasedSymbol<CjAnnotated, *>.psiOrSymbolAnnotationList(): CaAnnotationList {
     return CaCfirAnnotationListForDeclaration.create(cfirSymbol, builder)
 }
+
+/**
+ * 判断仓颉 PSI 元素是否来自已编译库文件。
+ */
 internal val CjElement.cameFromCangJieLibrary: Boolean get() = containingCjFile.isCompiled
+/**
+ * 在允许使用 PSI 的 origin 下返回 CFIR 符号对应的真实 PSI。
+ */
 internal val CfirBasedSymbol<*>.backingPsiIfApplicable: PsiElement?
     get() {
         if (origin == CfirDeclarationOrigin.Synthetic.TypeAliasConstructor) return null
@@ -172,6 +221,9 @@ internal val CfirBasedSymbol<*>.backingPsiIfApplicable: PsiElement?
     }
 
 
+/**
+ * 为函数体声明创建公开返回类型，block body 且未声明返回类型时直接返回 Unit。
+ */
 internal fun CaCfirCjBasedSymbol<CjDeclarationWithBody, CfirCallableSymbol<*>>.createReturnType(): CaType {
     val backingPsi = backingPsi
     if (backingPsi?.hasBlockBody() == true && !backingPsi.hasDeclaredReturnType()) {
@@ -193,6 +245,9 @@ internal val CaCfirCjBasedSymbol<CjCallableDeclaration, CfirCallableSymbol<*>>.i
         return sourcePsi?.hasModifier(CjTokens.OVERRIDE_KEYWORD) ?: cfirSymbol.rawStatus.isOverride
     }
 
+/**
+ * 为 source PSI 符号创建指定公开符号类型的 PSI-based pointer。
+ */
 internal inline fun <reified S : CaSymbol> CaCfirPsiSymbol<out CjElement, *>.psiBasedSymbolPointerOfTypeIfSource(
     noinline restoreSymbolByPsi: org.cangnova.cangjie.analysis.api.CaSession.(CjElement) -> CaSymbol?,
 ): CaSymbolPointer<S>? {
@@ -200,6 +255,9 @@ internal inline fun <reified S : CaSymbol> CaCfirPsiSymbol<out CjElement, *>.psi
 }
 
 @OptIn(CaImplementationDetail::class)
+/**
+ * 为 source PSI 符号创建带运行时类型校验的 PSI-based pointer。
+ */
 internal fun <S : CaSymbol> CaCfirPsiSymbol<out CjElement, *>.psiBasedSymbolPointerOfTypeIfSource(
     expectedClass: KClass<S>,
     restoreSymbolByPsi: org.cangnova.cangjie.analysis.api.CaSession.(CjElement) -> CaSymbol?,

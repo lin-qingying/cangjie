@@ -66,20 +66,46 @@ import java.util.function.BooleanSupplier
 import java.util.function.Consumer
 
 /**
- * 浠撻 headless IntelliJ 瀹瑰櫒鐨勭粺涓€骞冲彴寮曞鍣ㄣ€? *
- * 褰撳墠瀹炵幇鏄庣‘绾︽潫涓衡€滅函 IntelliJ 骞冲彴 + 浠撻 PSI 鑷韩鈥濓紝
- * 涓嶅紩鍏?Java PSI / Java 鎻掍欢渚濊禆銆? *
- * 鍥犳杩欓噷琛ラ綈鐨勬槸锛? * - 涓?references / target extraction / rename 鍩虹璁炬柦鐩存帴鐩稿叧鐨勫钩鍙?EP
- * - headless 鍦烘櫙涓嬬己澶便€佷絾 Analysis API 浼氱洿鎺ヨ姹傜殑搴旂敤绾ф湇鍔? * - 浠撻璇█鑷繁鐨?FileType / ParserDefinition 鍩虹璁炬柦
+ * 仓颉 headless IntelliJ 容器的统一平台引导器。
+ *
+ * 当前实现明确约束为“纯 IntelliJ 平台 + 仓颉 PSI 自身”，不引入 Java PSI / Java 插件依赖。
+ * 因此这里补齐的是 references、target extraction、rename 基础设施直接依赖的平台 EP，
+ * 以及 headless 场景缺失但 Analysis API 会直接请求的应用级服务。
  */
 internal object CangJieHeadlessPlatformBootstrap {
+    /**
+     * headless 统计服务读取设备 ID 的系统属性名。
+     */
     private const val HEADLESS_STATISTICS_DEVICE_ID_PROPERTY = "idea.headless.statistics.device.id"
+
+    /**
+     * headless 统计服务读取 salt 的系统属性名。
+     */
     private const val HEADLESS_STATISTICS_SALT_PROPERTY = "idea.headless.statistics.salt"
+
+    /**
+     * headless 统计服务读取最大上传文件数的系统属性名。
+     */
     private const val HEADLESS_STATISTICS_MAX_FILES_TO_SEND_PROPERTY = "idea.headless.statistics.max.files.to.send"
+
+    /**
+     * headless 环境固定使用的虚拟统计设备 ID。
+     */
     private const val HEADLESS_STATISTICS_DEVICE_ID = "000000000000000-0000-0000-0000-000000000000"
+
+    /**
+     * headless 环境固定使用的统计 salt。
+     */
     private const val HEADLESS_STATISTICS_SALT = "cangjie-headless-statistics-salt"
+
+    /**
+     * headless 环境禁止统计服务上传文件。
+     */
     private const val HEADLESS_STATISTICS_MAX_FILES_TO_SEND = "0"
 
+    /**
+     * 初始化 application 级扩展点、仓颉 PSI 基础设施和平台服务。
+     */
     fun initializeApplicationEnvironment(
         applicationEnvironment: CangjieCoreApplicationEnvironment,
     ) {
@@ -89,13 +115,19 @@ internal object CangJieHeadlessPlatformBootstrap {
     }
 
     /**
-     * 鐩墠鏃?Java PSI 渚濊禆锛屽洜姝ら」鐩骇鍙繚鐣欎笌 PSI 鐢熷懡鍛ㄦ湡鐩存帴鐩稿叧鐨?EP銆?     */
+     * 预注册项目级扩展点。
+     *
+     * 当前没有 Java PSI 依赖，因此项目级只保留与 PSI 生命周期直接相关的 EP。
+     */
     fun preregisterProjectEnvironment(
         projectEnvironment: CangjieCoreProjectEnvironment,
     ) {
         registerProjectExtensionPoints(projectEnvironment.project.extensionArea)
     }
 
+    /**
+     * 初始化 project 级服务和需要项目实例参与构造的平台服务。
+     */
     fun initializeProjectEnvironment(
         projectEnvironment: CangjieCoreProjectEnvironment,
     ) {
@@ -110,6 +142,9 @@ internal object CangJieHeadlessPlatformBootstrap {
         registerEditorContextManagerIfMissing(project)
     }
 
+    /**
+     * 注册 application 级 IntelliJ 扩展点，覆盖仓颉引用、symbol 和 target 提取链路。
+     */
     private fun registerApplicationExtensionPoints(area: ExtensionsArea) {
         registerExtensionPoint(area, "com.intellij.fileContextProvider", FileContextProvider::class.java)
         registerExtensionPoint(area, "com.intellij.psi.metaDataContributor", MetaDataContributor::class.java)
@@ -129,6 +164,9 @@ internal object CangJieHeadlessPlatformBootstrap {
         registerExtensionPoint(area, "com.intellij.targetElementUtilExtender", TargetElementUtilExtender::class.java)
     }
 
+    /**
+     * 注册仓颉文件类型和 parser definition。
+     */
     private fun registerCangJiePsiInfrastructure(
         applicationEnvironment: CangjieCoreApplicationEnvironment,
     ) {
@@ -138,6 +176,9 @@ internal object CangJieHeadlessPlatformBootstrap {
         applicationEnvironment.registerParserDefinition(CangJieParserDefinition())
     }
 
+    /**
+     * 注册 headless application 缺失但仓颉前端/Analysis API 需要的服务。
+     */
     private fun registerApplicationServices(
         applicationEnvironment: CangjieCoreApplicationEnvironment,
     ) {
@@ -192,6 +233,9 @@ internal object CangJieHeadlessPlatformBootstrap {
         )
     }
 
+    /**
+     * 仅在宿主未显式提供时写入 headless 统计系统属性。
+     */
     private fun setHeadlessStatisticsPropertyIfMissing(name: String, value: String) {
         if (System.getProperty(name) == null) {
             System.setProperty(name, value)
@@ -228,6 +272,9 @@ internal object CangJieHeadlessPlatformBootstrap {
         )
     }
 
+    /**
+     * 通过类名反射注册可由默认构造函数创建的 application service。
+     */
     private fun registerReflectiveApplicationServiceIfMissing(
         application: MockApplication,
         className: String,
@@ -239,11 +286,17 @@ internal object CangJieHeadlessPlatformBootstrap {
         application.registerService(serviceClass as Class<Any>)
     }
 
+    /**
+     * 注册 project 级 PSI 生命周期扩展点。
+     */
     private fun registerProjectExtensionPoints(area: ExtensionsArea) {
         registerExtensionPoint(area, PsiTreeChangePreprocessor.EP.name, PsiTreeChangePreprocessor::class.java)
         registerExtensionPoint(area, PsiTreeChangeListener.EP.name, PsiTreeChangeListener::class.java)
     }
 
+    /**
+     * 如果指定 application service 尚未存在，则按实现类注册。
+     */
     private fun <T : Any> registerApplicationServiceIfMissing(
         application: MockApplication,
         serviceInterface: Class<T>,
@@ -267,6 +320,9 @@ internal object CangJieHeadlessPlatformBootstrap {
         }
     }
 
+    /**
+     * 如果缺失 `EditorContextManager`，则按平台 internal 构造签名反射创建。
+     */
     private fun registerEditorContextManagerIfMissing(project: MockProject) {
         if (project.getService(EditorContextManager::class.java) != null) return
 
@@ -280,6 +336,9 @@ internal object CangJieHeadlessPlatformBootstrap {
         project.registerService(EditorContextManager::class.java, serviceInstance)
     }
 
+    /**
+     * 向指定扩展区注册扩展点，已存在时保持幂等。
+     */
     private fun <T : Any> registerExtensionPoint(
         area: ExtensionsArea,
         name: String,
@@ -292,28 +351,45 @@ internal object CangJieHeadlessPlatformBootstrap {
 }
 
 /**
- * 瀵归綈 Kotlin headless 鐜鐨勫啓鍔ㄤ綔绾︽潫銆? *
- * 榛樿 MockApplication 浼氭妸鍐欐潈闄愯涓烘亽鎴愮珛锛岃繖浼氭帺鐩?Analysis API
- * 鍦ㄥ啓鍔ㄤ綔绾︽潫涓婄殑鐪熷疄琛屼负銆傝繖閲屾敼鎴愪粎鍦?runWriteAction 浣滅敤鍩熷唴寮€鏀惧啓鏉冮檺銆? */
+ * 对齐 Kotlin headless 环境的写动作约束。
+ *
+ * 默认 MockApplication 会把写权限视为恒成立，这会掩盖 Analysis API 在写动作约束上的真实行为。
+ * 这里改成仅在 `runWriteAction` 作用域内开放写权限。
+ */
 internal class CangJieCoreUnitTestApplication(
     parentDisposable: Disposable,
 ) : MockApplication(parentDisposable) {
+    /**
+     * 单测核心环境固定报告 unit-test 模式。
+     */
     override fun isUnitTestMode(): Boolean = true
 
+    /**
+     * 根据当前线程写动作标记返回写权限状态。
+     */
     override fun isWriteAccessAllowed(): Boolean = CangJieWriteAccessSupport.isWriteAccessAllowed()
 
+    /**
+     * 在当前线程临时开放写权限并执行写动作。
+     */
     override fun runWriteAction(action: Runnable) {
         CangJieWriteAccessSupport.withWriteAccessAllowedInThread {
             action.run()
         }
     }
 
+    /**
+     * 在当前线程临时开放写权限并执行可返回值的写动作。
+     */
     override fun <T : Any?> runWriteAction(computation: Computable<T?>): T? {
         return CangJieWriteAccessSupport.withWriteAccessAllowedInThread {
             computation.compute()
         }
     }
 
+    /**
+     * 在当前线程临时开放写权限并执行可抛异常的写动作。
+     */
     override fun <T : Any?, E : Throwable?> runWriteAction(
         computation: ThrowableComputable<T?, E?>,
     ): T? {
@@ -324,12 +400,22 @@ internal class CangJieCoreUnitTestApplication(
 }
 
 /**
- * 鍐欐潈闄愮姸鎬佹寜绾跨▼闅旂锛岄伩鍏嶅叡浜?Application 鏃朵笉鍚屼换鍔＄浉浜掓薄鏌撱€? */
+ * 写权限状态按线程隔离，避免共享 application 时不同任务相互污染。
+ */
 private object CangJieWriteAccessSupport {
+    /**
+     * 当前线程是否处于仓颉 core 写动作作用域。
+     */
     private val isWriteAccessAllowedInThread = ThreadLocal.withInitial { false }
 
+    /**
+     * 返回当前线程是否允许写访问。
+     */
     fun isWriteAccessAllowed(): Boolean = isWriteAccessAllowedInThread.get()
 
+    /**
+     * 在当前线程临时打开写访问标记并执行回调，结束后恢复为关闭状态。
+     */
     inline fun <T> withWriteAccessAllowedInThread(action: () -> T): T {
         isWriteAccessAllowedInThread.set(true)
         try {
@@ -342,30 +428,58 @@ private object CangJieWriteAccessSupport {
 }
 
 /**
- * Headless 娴嬭瘯/鏈嶅姟瀹夸富涓嬬殑寮傛鎵ц璇箟缁熶竴闄嶄负鍚屾鎵ц銆? */
+ * Headless 测试/服务宿主下的异步执行语义统一降为同步执行。
+ */
 internal class CangJieTestAsyncExecutionService : AsyncExecutionService() {
+    /**
+     * 创建立即执行的可过期 executor。
+     */
     override fun createExecutor(executor: Executor): ExpirableExecutor = CangJieImmediateExpirableExecutor(executor)
 
+    /**
+     * 创建立即执行的 UI executor，并以写动作方式运行命令。
+     */
     override fun createUIExecutor(modalityState: ModalityState): AppUIExecutor = CangJieImmediateAppUiExecutor(runAsWriteAction = true)
 
+    /**
+     * 创建立即执行的写线程 executor。
+     */
     override fun createWriteThreadExecutor(modalityState: ModalityState): AppUIExecutor = CangJieImmediateAppUiExecutor(runAsWriteAction = true)
 
+    /**
+     * 创建立即执行的 non-blocking read action。
+     */
     override fun <T> buildNonBlockingReadAction(computation: Callable<out T>): NonBlockingReadAction<T> {
         return CangJieImmediateNonBlockingReadAction(computation)
     }
 }
 
+/**
+ * 将 ExpirableExecutor 语义压缩为同步执行的 headless executor。
+ */
 private class CangJieImmediateExpirableExecutor(
     executor: Executor = Executor(Runnable::run),
 ) : ExpirableExecutor {
+    /**
+     * 实际执行命令的底层 executor。
+     */
     private val delegate = executor
 
+    /**
+     * Headless 立即执行器不跟踪 disposable 过期状态，直接返回自身。
+     */
     override fun expireWith(parentDisposable: Disposable): ExpirableExecutor = this
 
+    /**
+     * 立即委托执行命令。
+     */
     override fun execute(command: Runnable) {
         delegate.execute(command)
     }
 
+    /**
+     * 提交 callable 并把结果或异常写入 promise。
+     */
     override fun <T> submit(task: Callable<T>): CancellablePromise<T> {
         val promise = AsyncPromise<T>()
         try {
@@ -382,6 +496,9 @@ private class CangJieImmediateExpirableExecutor(
         return promise
     }
 
+    /**
+     * 提交 runnable，并以 `null` 作为成功结果。
+     */
     override fun submit(task: Runnable): CancellablePromise<Any?> {
         return submit(
             Callable {
@@ -392,17 +509,38 @@ private class CangJieImmediateExpirableExecutor(
     }
 }
 
+/**
+ * Headless 环境中的立即执行 UI executor。
+ */
 private class CangJieImmediateAppUiExecutor(
+    /**
+     * 是否将执行体包装进 application 写动作。
+     */
     private val runAsWriteAction: Boolean,
 ) : AppUIExecutor {
+    /**
+     * Headless 环境不延迟调度，直接返回当前 executor。
+     */
     override fun later(): AppUIExecutor = this
 
+    /**
+     * Headless 环境不需要等待文档提交，直接返回当前 executor。
+     */
     override fun withDocumentsCommitted(project: Project): AppUIExecutor = this
 
+    /**
+     * Headless 环境没有 dumb/smart 模式切换，直接返回当前 executor。
+     */
     override fun inSmartMode(project: Project): AppUIExecutor = this
 
+    /**
+     * Headless 立即执行器不跟踪 disposable 过期状态，直接返回自身。
+     */
     override fun expireWith(parentDisposable: Disposable): AppUIExecutor = this
 
+    /**
+     * 立即执行命令，并按配置决定是否包裹写动作。
+     */
     override fun execute(command: Runnable) {
         if (runAsWriteAction) {
             ApplicationManager.getApplication().runWriteAction(command)
@@ -411,6 +549,9 @@ private class CangJieImmediateAppUiExecutor(
         }
     }
 
+    /**
+     * 立即执行 callable，并把结果或异常写入 promise。
+     */
     override fun <T> submit(task: Callable<T>): CancellablePromise<T> {
         val promise = AsyncPromise<T>()
         try {
@@ -431,6 +572,9 @@ private class CangJieImmediateAppUiExecutor(
         return promise
     }
 
+    /**
+     * 提交 runnable，并以 `null` 作为成功结果。
+     */
     override fun submit(task: Runnable): CancellablePromise<Any?> {
         return submit(
             Callable {
@@ -441,7 +585,13 @@ private class CangJieImmediateAppUiExecutor(
     }
 }
 
+/**
+ * Headless 环境中的 transferred write action 服务实现。
+ */
 private class CangJieTransferredWriteActionService : TransferredWriteActionService {
+    /**
+     * Headless 环境没有 EDT 切换，直接执行传入写动作。
+     */
     override fun runOnEdtWithTransferredWriteActionAndWait(action: Runnable) {
         action.run()
     }
@@ -451,12 +601,24 @@ private class CangJieTransferredWriteActionService : TransferredWriteActionServi
  * Headless PSI mutation 只需要稳定保存空白信息；真实格式化由 code-insight formatter 负责。
  */
 private class CangJieHeadlessIndentHelper : IndentHelper() {
+    /**
+     * Headless 缩进服务不计算实际缩进，统一返回 0。
+     */
     override fun getIndent(file: PsiFile, element: ASTNode): Int = 0
 
+    /**
+     * Headless 缩进服务不区分是否包含非空白字符，统一返回 0。
+     */
     override fun getIndent(file: PsiFile, element: ASTNode, includeNonSpace: Boolean): Int = 0
 }
 
+/**
+ * Headless 环境下的 stub 不一致报告器。
+ */
 private class CangJieHeadlessStubInconsistencyReporter : StubInconsistencyReporter {
+    /**
+     * 忽略 PSI 文本与 stub 之间的一致性报告。
+     */
     override fun reportStubInconsistencyBetweenPsiAndText(
         project: Project,
         sourceOfCheck: StubInconsistencyReporter.SourceOfCheck?,
@@ -464,6 +626,9 @@ private class CangJieHeadlessStubInconsistencyReporter : StubInconsistencyReport
     ) {
     }
 
+    /**
+     * 忽略带强制类型的 PSI 文本与 stub 一致性报告。
+     */
     override fun reportStubInconsistencyBetweenPsiAndText(
         project: Project,
         sourceOfCheck: StubInconsistencyReporter.SourceOfCheck,
@@ -472,12 +637,21 @@ private class CangJieHeadlessStubInconsistencyReporter : StubInconsistencyReport
     ) {
     }
 
+    /**
+     * 忽略 Kotlin 描述符缺失报告，仓颉 headless 环境不依赖该描述符链路。
+     */
     override fun reportKotlinDescriptorNotFound(project: Project?) {
     }
 
+    /**
+     * 忽略 Kotlin 类名缺失报告，仓颉 headless 环境不依赖该描述符链路。
+     */
     override fun reportKotlinMissingClassName(project: Project, hasClassName: Boolean, hasFacadeClassName: Boolean) {
     }
 
+    /**
+     * 忽略 stub tree 与索引不一致报告。
+     */
     override fun reportStubTreeAndIndexDoNotMatch(
         project: Project,
         source: StubInconsistencyReporter.StubTreeAndIndexDoNotMatchSource,
@@ -485,21 +659,48 @@ private class CangJieHeadlessStubInconsistencyReporter : StubInconsistencyReport
     }
 }
 
+/**
+ * Headless 环境中的同步 NonBlockingReadAction 实现。
+ */
 private class CangJieImmediateNonBlockingReadAction<T>(
+    /**
+     * 需要在 read action 语义下执行的计算。
+     */
     private val computation: Callable<out T>,
 ) : NonBlockingReadAction<T> {
+    /**
+     * 计算完成后需要在 UI 线程执行的回调；headless 环境中同步调用。
+     */
     private var uiCallback: Consumer<in T>? = null
 
+    /**
+     * Headless 环境没有 smart mode 等待，直接返回自身。
+     */
     override fun inSmartMode(project: Project): NonBlockingReadAction<T> = this
 
+    /**
+     * Headless 环境不等待文档提交，直接返回自身。
+     */
     override fun withDocumentsCommitted(project: Project): NonBlockingReadAction<T> = this
 
+    /**
+     * Headless 同步实现不跟踪过期条件，直接返回自身。
+     */
     override fun expireWhen(expireCondition: BooleanSupplier): NonBlockingReadAction<T> = this
 
+    /**
+     * Headless 同步实现不包装进度指示器，直接返回自身。
+     */
     override fun wrapProgress(progressIndicator: ProgressIndicator): NonBlockingReadAction<T> = this
 
+    /**
+     * Headless 同步实现不跟踪 disposable 过期状态，直接返回自身。
+     */
     override fun expireWith(parentDisposable: Disposable): NonBlockingReadAction<T> = this
 
+    /**
+     * 记录计算完成后的 UI 回调，并继续返回当前 action。
+     */
     override fun finishOnUiThread(
         modalityState: ModalityState,
         uiThreadAction: Consumer<in T>,
@@ -507,8 +708,14 @@ private class CangJieImmediateNonBlockingReadAction<T>(
         uiCallback = uiThreadAction
     }
 
+    /**
+     * Headless 同步实现不做任务合并，直接返回自身。
+     */
     override fun coalesceBy(vararg equality: Any): NonBlockingReadAction<T> = this
 
+    /**
+     * 使用传入 executor 执行同步计算，并将结果写入 promise。
+     */
     override fun submit(backgroundThreadExecutor: Executor): CancellablePromise<T> {
         val promise = AsyncPromise<T>()
         backgroundThreadExecutor.execute {
@@ -522,6 +729,9 @@ private class CangJieImmediateNonBlockingReadAction<T>(
         return promise
     }
 
+    /**
+     * 同步执行计算，并在成功后立即调用 UI 回调。
+     */
     override fun executeSynchronously(): T {
         try {
             val result = computation.call()
@@ -538,13 +748,22 @@ private class CangJieImmediateNonBlockingReadAction<T>(
 }
 
 /**
- * IntelliJ 242 鐨?CompactVirtualFileSetFactory 涓?CompactVirtualFileSet 鏋勯€犲櫒鍧囦负鍖呯鏈夈€? *
- * 杩欓噷涓嶉€€鍖栦负鏅€?Set锛岃€屾槸鏄惧紡鍙嶅皠澶嶇敤骞冲彴鑷繁鐨?CompactVirtualFileSet锛? * 淇濇寔涓?IntelliJ / Kotlin headless 鐜涓€鑷寸殑璇箟涓庣┖闂寸壒寰併€? */
+ * IntelliJ 242 的 `CompactVirtualFileSetFactory` 与 `CompactVirtualFileSet` 构造器均为包私有。
+ *
+ * 这里不退化为普通 `Set`，而是显式反射复用平台自己的 `CompactVirtualFileSet`，
+ * 保持与 IntelliJ / Kotlin headless 环境一致的语义与空间特征。
+ */
 internal class CangJieHeadlessVirtualFileSetFactory : VirtualFileSetFactory {
+    /**
+     * 创建空的紧凑虚拟文件集合。
+     */
     override fun createCompactVirtualFileSet(): VirtualFileSet {
         return emptyConstructor.newInstance()
     }
 
+    /**
+     * 基于已有虚拟文件集合创建紧凑虚拟文件集合。
+     */
     override fun createCompactVirtualFileSet(
         files: MutableCollection<out VirtualFile>,
     ): VirtualFileSet {
@@ -552,19 +771,31 @@ internal class CangJieHeadlessVirtualFileSetFactory : VirtualFileSetFactory {
     }
 
     private companion object {
+        /**
+         * IntelliJ 平台内部紧凑虚拟文件集合实现类名。
+         */
         private const val COMPACT_VIRTUAL_FILE_SET_CLASS_NAME = "com.intellij.openapi.vfs.CompactVirtualFileSet"
 
+        /**
+         * 反射解析到的紧凑虚拟文件集合实现类。
+         */
         private val compactVirtualFileSetClass: Class<out VirtualFileSet> by lazy {
             @Suppress("UNCHECKED_CAST")
             Class.forName(COMPACT_VIRTUAL_FILE_SET_CLASS_NAME) as Class<out VirtualFileSet>
         }
 
+        /**
+         * 创建空紧凑集合的无参构造器。
+         */
         private val emptyConstructor: Constructor<out VirtualFileSet> by lazy {
             compactVirtualFileSetClass.getDeclaredConstructor().apply {
                 isAccessible = true
             }
         }
 
+        /**
+         * 基于已有虚拟文件集合创建紧凑集合的构造器。
+         */
         private val collectionConstructor: Constructor<out VirtualFileSet> by lazy {
             compactVirtualFileSetClass.getDeclaredConstructor(Collection::class.java).apply {
                 isAccessible = true

@@ -13,19 +13,46 @@ import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintSystemError
 import org.cangnova.cangjie.resolve.checkers.EmptyIntersectionTypeInfo
 import org.cangnova.cangjie.type.model.*
 
+/**
+ * 类型推断约束系统的只读入口。
+ */
 interface ConstraintSystem {
+    /**
+     * 当前约束系统是否已经存在矛盾。
+     */
     val hasContradiction: Boolean
+    /**
+     * 当前约束系统收集到的错误。
+     */
     val errors: List<ConstraintSystemError>
 
+    /**
+     * 返回可继续写入约束的 builder。
+     */
     fun getBuilder(): ConstraintSystemBuilder
 
     // after this method we shouldn't mutate system via ConstraintSystemBuilder
+    /**
+     * 将当前系统冻结为只读约束存储。
+     */
     fun asReadOnlyStorage(): ConstraintStorage
 
+    /**
+     * 返回约束系统完成阶段使用的上下文视图。
+     */
     fun asConstraintSystemCompleterContext(): ConstraintSystemCompletionContext
+    /**
+     * 返回延迟参数分析阶段使用的上下文视图。
+     */
     fun asPostponedArgumentsAnalyzerContext(): PostponedArgumentsAnalyzerContext
+    /**
+     * 解析 fork point 中积累的分支约束。
+     */
     fun resolveForkPointsConstraints()
 
+    /**
+     * 判断一组类型形成空交叉类型时的具体原因。
+     */
     fun getEmptyIntersectionTypeKind(types: Collection<CangJieTypeMarker>): EmptyIntersectionTypeInfo?
 }
 
@@ -48,5 +75,11 @@ interface ConstraintSystem {
  * Lately, we call such situation a "fork point" and each of the options a "fork point branch"
  * Each branch is defined by the set of constraints that need to be added to the system if we choose the particular branch.
  */
+/**
+ * fork point 的所有分支描述。
+ */
 typealias ForkPointData = List<ForkPointBranchDescription>
+/**
+ * 单个 fork point 分支需要追加的类型变量约束集合。
+ */
 typealias ForkPointBranchDescription = Set<Pair<TypeVariableMarker, Constraint>>

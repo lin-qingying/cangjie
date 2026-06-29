@@ -22,5 +22,8 @@ abstract class CaTypeParameterType : CaType {
      */
     abstract val symbol: CaTypeParameterSymbol
 
+    /**
+     * 创建可恢复该类型参数类型的类型指针。
+     */
     abstract override fun createPointer(): CaTypePointer<CaTypeParameterType>
 }

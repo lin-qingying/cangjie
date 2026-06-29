@@ -32,6 +32,9 @@ import com.intellij.openapi.util.text.StringUtil
 import com.intellij.psi.PsiElement
 import com.intellij.psi.TokenType
 
+/**
+ * 表示 `CDocTag`，承载仓颉词法与文档注释中的语法节点、索引桩或辅助模型。
+ */
 open class CDocTag(node: ASTNode) : CDocElementImpl(node) {
 
     /**
@@ -53,6 +56,9 @@ open class CDocTag(node: ASTNode) : CDocElementImpl(node) {
      */
     open fun getSubjectName(): String? = getSubjectLink()?.getLinkText()
 
+    /**
+     * 提供 `getSubjectLink` 操作，封装仓颉词法与文档注释节点的访问、构造或判断逻辑。
+     */
     fun getSubjectLink(): CDocLink? {
         val children = childrenAfterTagName()
         if (hasSubject(children)) {
@@ -61,11 +67,17 @@ open class CDocTag(node: ASTNode) : CDocElementImpl(node) {
         return null
     }
 
+    /**
+     * 保存 `knownTag`，供仓颉词法与文档注释流程读取节点结构或语义信息。
+     */
     val knownTag: CDocKnownTag?
         get() {
             return name?.let { CDocKnownTag.findByTagName(it) }
         }
 
+    /**
+     * 执行 `hasSubject` 内部辅助逻辑，支撑仓颉词法与文档注释节点的结构解析与访问。
+     */
     private fun hasSubject(contentChildren: List<ASTNode>): Boolean {
         if (knownTag?.isReferenceRequired == true) {
             return contentChildren.firstOrNull()?.elementType == CDocTokens.MARKDOWN_LINK
@@ -73,6 +85,9 @@ open class CDocTag(node: ASTNode) : CDocElementImpl(node) {
         return false
     }
 
+    /**
+     * 执行 `childrenAfterTagName` 内部辅助逻辑，支撑仓颉词法与文档注释节点的结构解析与访问。
+     */
     private fun childrenAfterTagName(): List<ASTNode> =
         node.getChildren(null)
             .dropWhile { it.elementType == CDocTokens.TAG_NAME }
@@ -144,6 +159,9 @@ open class CDocTag(node: ASTNode) : CDocElementImpl(node) {
         return builder.toString().trimEnd('\r', '\n', ' ', '\t')
     }
 
+    /**
+     * 执行 `trimCommonIndent` 内部辅助逻辑，支撑仓颉词法与文档注释节点的结构解析与访问。
+     */
     private fun trimCommonIndent(builder: StringBuilder, prepend4WhiteSpaces: Boolean = false): String {
         val lines = builder.lines()
         val minIndent = lines.filter { it.isNotBlank() }.minOfOrNull { it.calcIndent() } ?: 0
@@ -158,7 +176,13 @@ open class CDocTag(node: ASTNode) : CDocElementImpl(node) {
         return processedLines.joinToString("\n")
     }
 
+    /**
+     * 执行 `calcIndent` 内部辅助逻辑，支撑仓颉词法与文档注释节点的结构解析与访问。
+     */
     private fun String.calcIndent() = indexOfFirst { !it.isWhitespace() }
+    /**
+     * 执行 `isIndented` 内部辅助逻辑，支撑仓颉词法与文档注释节点的结构解析与访问。
+     */
     private fun String.isIndented() = startsWith(indentationWhiteSpaces) || startsWith("\t")
 
     companion object {

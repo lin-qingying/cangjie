@@ -40,9 +40,17 @@ import org.junit.jupiter.api.Assertions.assertEquals
  * 这样后续导航、文档、renderer 侧都可以复用同一条关系语义。
  */
 abstract class AbstractOverriddenDeclarationProviderTest : AbstractAnalysisApiComponentTest() {
+    /**
+     * 当前 override relation 测试额外注册的目标种类与期望覆写链指令。
+     */
     override val additionalDirectives: List<DirectivesContainer>
         get() = super.additionalDirectives + AnalysisApiSymbolOverrideTestDirectives
 
+    /**
+     * 执行覆写关系测试。
+     *
+     * 方法定位目标 callable，恢复公开 symbol，并比较直接覆写链与完整覆写链的稳定签名。
+     */
     override fun doTestByMainFile(mainFile: CjFile, mainModule: CjTestModule, testServices: TestServices) {
         val directives = directivesForMainFile(mainFile, mainModule)
         val targetOwnerName = directives[AnalysisApiComponentTestDirectives.TARGET_CLASS].singleOrNull()
@@ -68,6 +76,11 @@ abstract class AbstractOverriddenDeclarationProviderTest : AbstractAnalysisApiCo
         }
     }
 
+    /**
+     * 按目标种类、名称和可选 owner 名称定位待检查的 callable PSI。
+     *
+     * 该定位区分成员函数、成员属性和 extend 函数，避免同名 callable 混淆。
+     */
     private fun findTargetCallable(
         mainFile: CjFile,
         targetKind: String,
@@ -122,6 +135,11 @@ abstract class AbstractOverriddenDeclarationProviderTest : AbstractAnalysisApiCo
         append(normalizeTypeRendering(symbol.returnType.render(CaTypeRendererForSource.WITH_SHORT_NAMES)))
     }
 
+    /**
+     * 渲染 callable symbol 的稳定限定名称。
+     *
+     * 优先使用 `CallableId`；对于 extend 或局部 callable，则沿 containing declaration 链拼接可读名称。
+     */
     private fun CaSession.renderDeclarationQualifiedName(symbol: CaCallableSymbol): String {
         symbol.callableId?.let { callableId ->
             return callableId.toString().replace('/', '.')

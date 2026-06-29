@@ -34,11 +34,22 @@ import org.cangnova.cangjie.lsp.CangjieLspEnvironment
  * 这样 LSP 与 Analysis API 的耦合集中在一处，不会散落到 server、document store 和具体能力实现里。
  */
 internal object AnalysisApiLspServiceRegistrar {
+    /**
+     * LSP 运行时需要显式加载的 Analysis API 插件 XML。
+     *
+     * 这些 XML 提供 CFIR 分析和引用能力的服务声明，是 headless 容器补齐平台服务的基础输入。
+     */
     private val analysisPluginXmls = listOf(
         "META-INF/analysis-api/cangjie-analysis-api-cfir.xml",
         "META-INF/analysis-api/cangjie-cj-references.xml",
     )
 
+    /**
+     * 向当前 LSP 环境注册 Analysis API 运行所需的 application 和 project 服务。
+     *
+     * 该方法集中装配 standalone provider、project structure、modification tracker 和受限分析服务，
+     * 保证 LSP 文档快照可以走真实 Analysis API 路径解析。
+     */
     @OptIn(CaPlatformInterface::class)
     fun register(environment: CangjieLspEnvironment) {
         val application = environment.coreEnvironment.applicationEnvironment.application as? MockApplication

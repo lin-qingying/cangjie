@@ -40,6 +40,9 @@ import java.util.concurrent.ConcurrentHashMap
  */
 @Suppress("UnstableApiUsage")
 object PluginStructureProvider {
+    /**
+     * headless 注册 extension/service 时使用的合成插件描述符。
+     */
     private val fakePluginDescriptor = DefaultPluginDescriptor("cangjie-analysis-api-loader")
 
     /**
@@ -50,7 +53,14 @@ object PluginStructureProvider {
      * 2. 对缺失 include 明确报错，而不是静默忽略。
      */
     private object ReadContext : PluginDescriptorReaderContext {
+        /**
+         * standalone 读取 XML 时使用无缓存副作用的 interner。
+         */
         override val interner get() = NoOpXmlInterner
+
+        /**
+         * 缺失 include 时不允许静默忽略，确保服务装配失败能暴露为明确错误。
+         */
         override val isMissingIncludeIgnored: Boolean get() = false
     }
 
@@ -61,28 +71,55 @@ object PluginStructureProvider {
      * 因此这里集中做一次规范化，避免调用侧反复记忆细节。
      */
     private class ResourceDataLoader(
+        /**
+         * 用于从当前组件管理器可见资源中加载 XML 的类加载器。
+         */
         private val classLoader: ClassLoader,
     ) : DataLoader {
+        /**
+         * 加载指定 plugin XML 资源。
+         */
         override fun load(path: String, pluginDescriptorSourceOnly: Boolean): InputStream? {
             val normalizedPath = path.removePrefix("/")
             return classLoader.getResource(normalizedPath)?.openStream()
         }
 
+        /**
+         * 返回用于调试 XML 加载来源的简短名称。
+         */
         override fun toString(): String = "resources data loader"
     }
 
+    /**
+     * 按 XML 路径和类加载器缓存解析后的 raw plugin descriptor。
+     */
     private val pluginDescriptorsCache = ContainerUtil.createConcurrentSoftKeySoftValueMap<PluginDesignation, RawPluginDescriptor>()
 
+    /**
+     * 唯一标识一次 plugin XML 解析输入。
+     */
     private data class PluginDesignation(
+        /**
+         * 规范化后的 plugin XML 相对路径。
+         */
         val relativePath: String,
+        /**
+         * 负责加载 XML 及其声明类的类加载器。
+         */
         val classLoader: ClassLoader,
     ) {
+        /**
+         * 从组件管理器推导 XML 路径和类加载器的便捷构造器。
+         */
         constructor(relativePath: String, componentManager: MockComponentManager) : this(
             normalizePluginXmlPath(relativePath),
             componentManager.classLoader,
         )
     }
 
+    /**
+     * 将指定 plugin XML 中的 application 级扩展点、扩展实现和服务注册到 mock application。
+     */
     fun registerApplicationServices(application: MockApplication, pluginRelativePath: String) {
         val containerDescriptor = RawPluginDescriptor::appElementsContainer
 
@@ -91,6 +128,9 @@ object PluginStructureProvider {
         registerServices(application, pluginRelativePath, containerDescriptor)
     }
 
+    /**
+     * 将指定 plugin XML 中的 project 级扩展点、扩展实现、服务和 listener 注册到 mock project。
+     */
     fun registerProjectServices(project: MockProject, pluginRelativePath: String) {
         val containerDescriptor = RawPluginDescriptor::projectElementsContainer
 
@@ -100,6 +140,9 @@ object PluginStructureProvider {
         registerProjectListeners(project, pluginRelativePath)
     }
 
+    /**
+     * 从指定 XML container 中注册 extension point 声明。
+     */
     private inline fun registerExtensionPoints(
         componentManager: MockComponentManager,
         pluginRelativePath: String,
@@ -119,6 +162,9 @@ object PluginStructureProvider {
         }
     }
 
+    /**
+     * 从指定 XML container 中注册 service 声明。
+     */
     private inline fun registerServices(
         componentManager: MockComponentManager,
         pluginRelativePath: String,
@@ -139,6 +185,9 @@ object PluginStructureProvider {
         }
     }
 
+    /**
+     * 注册白名单 extension point 下的 extension 实现。
+     */
     private fun registerExtensionPointImplementations(
         componentManager: MockComponentManager,
         pluginRelativePath: String,
@@ -177,6 +226,9 @@ object PluginStructureProvider {
         (project.analysisMessageBus as MessageBusEx).setLazyListeners(listenersMap)
     }
 
+    /**
+     * 读取或复用缓存中的 plugin descriptor。
+     */
     private fun getOrCalculatePluginDescriptor(
         designation: PluginDesignation,
     ): RawPluginDescriptor {
@@ -190,6 +242,9 @@ object PluginStructureProvider {
         }
     }
 
+    /**
+     * 将 parser 层 extension element 转换为 runtime extension descriptor。
+     */
     private fun ExtensionElement.toExtensionDescriptor(): ExtensionDescriptor {
         val loadingOrder = order
             ?.takeIf(String::isNotBlank)
@@ -224,6 +279,9 @@ object PluginStructureProvider {
         return PluginListenerDescriptor(listenerDescriptor, fakePluginDescriptor)
     }
 
+    /**
+     * 将 parser 层操作系统枚举映射为 runtime extension descriptor 使用的操作系统枚举。
+     */
     private fun OS.toPlatformOs(): ExtensionDescriptor.Os {
         return when (this) {
             OS.MAC -> ExtensionDescriptor.Os.mac
@@ -277,9 +335,15 @@ object PluginStructureProvider {
         "com.intellij.useScopeOptimizer",
     )
 
+    /**
+     * 当前 mock 组件管理器加载 plugin XML 声明类时使用的类加载器。
+     */
     private val MockComponentManager.classLoader: ClassLoader
         get() = loadClass<Any>(PluginDesignation::class.java.name, fakePluginDescriptor).classLoader
 
+    /**
+     * 以接口类型注册 service 实现，保留 XML 中 serviceInterface/serviceImplementation 的契约。
+     */
     private fun <T> MockComponentManager.registerServiceWithInterface(
         interfaceClass: Class<T>,
         implementationClass: Class<T>,

@@ -31,25 +31,43 @@ import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.stubs.CangJieExtendStub
 import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 
+/**
+ * 表示 `CjExtend`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjExtend : CjTypeStatement {
+    /**
+     * 保存 `_stub` 的内部状态，供仓颉 PSI实现维护节点缓存或解析上下文。
+     */
     private val _stub: CangJieExtendStub?
         get() = stub as? CangJieExtendStub
 
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitExtend(this, data)
     }
 
+    /**
+     * 暴露 `typeName`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val typeName: String
         get() = "extend"
 
     constructor(node: ASTNode) : super(node)
     constructor(stub: CangJieExtendStub) : super(stub, CjStubElementTypes.EXTEND)
 
+    /**
+     * 实现 `getName` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getName(): String? {
         _stub?.name?.let { return it }
         return getExtendName()
     }
 
+    /**
+     * 执行 `getExtendName` 内部辅助逻辑，支撑仓颉 PSI节点的结构解析与访问。
+     */
     private fun getExtendName(): String? {
         return when (val type = receiverTypeReceiver?.typeElement) {
             is CjUserType -> type.referencedName
@@ -59,6 +77,9 @@ class CjExtend : CjTypeStatement {
         }
     }
 
+    /**
+     * 实现 `getNameIdentifier` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getNameIdentifier(): PsiElement? {
         return when (val type = receiverTypeReceiver?.typeElement) {
             is CjUserType -> type.referenceExpression?.identifier
@@ -81,11 +102,17 @@ class CjExtend : CjTypeStatement {
             return getReceiverTypeRefByTree()
         }
 
+    /**
+     * 暴露 `nameAsSafeName`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val nameAsSafeName: Name
         get() = receiverTypeReceiver?.text?.let { text ->
             if (text.isEmpty()) Name.ERROR_NAME else Name.identifier(text)
         } ?: Name.ERROR_NAME
 
+    /**
+     * 暴露 `nameAsName`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val nameAsName: Name
         get() = name?.let(Name::identifier) ?: Name.ERROR_NAME
 
@@ -116,6 +143,9 @@ class CjExtend : CjTypeStatement {
         return normalizeExtendTypeText(name)?.takeIf { it.isNotBlank() }
     }
 
+    /**
+     * 执行 `getReceiverTypeRefByTree` 内部辅助逻辑，支撑仓颉 PSI节点的结构解析与访问。
+     */
     private fun getReceiverTypeRefByTree(): CjTypeReference? {
         var child = firstChild
         while (child != null) {

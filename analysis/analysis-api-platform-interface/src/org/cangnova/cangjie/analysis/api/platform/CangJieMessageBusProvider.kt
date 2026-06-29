@@ -11,10 +11,16 @@ import org.cangnova.cangjie.analysis.api.CaPlatformInterface
  */
 @CaPlatformInterface
 interface CangJieMessageBusProvider : CaPlatformComponent {
+    /**
+     * 返回 Analysis API 订阅和发布主题时应使用的消息总线。
+     */
     fun getMessageBus(): MessageBus
 
     @CaPlatformInterface
     companion object {
+        /**
+         * 获取项目级 message bus provider 服务。
+         */
         fun getInstance(project: Project): CangJieMessageBusProvider = project.service()
     }
 }

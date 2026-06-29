@@ -10,11 +10,17 @@ import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.render
 import org.cangnova.cangjie.psi.CjElement
 
+/**
+ * 表示同一个 PSI source 被多个 CFIR 元素作为真实来源复用的结构错误。
+ */
 class DuplicatedCfirSourceElementsException(
     existingCfir: CfirElement,
     newCfir: CfirElement,
     psi: CjElement
 ) : IllegalStateException() {
+    /**
+     * 包含已有/新增 CFIR 文本和 PSI 上下文的详细诊断消息。
+     */
     override val message: String? = """|The PSI element should be used only once as a real PSI source of CfirElement,
        |the elements ${if (existingCfir.source === newCfir.source) "HAVE" else "DON'T HAVE"} the same instances of source elements 
        |

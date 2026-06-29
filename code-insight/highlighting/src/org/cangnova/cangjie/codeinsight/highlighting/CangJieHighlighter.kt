@@ -36,8 +36,14 @@ import com.intellij.psi.tree.IElementType
  * [CangJieHighlightingLexicalKeys]，因此不同使用方不会再各自维护词法高亮映射。
  */
 open class CangJieHighlighter : SyntaxHighlighterBase() {
+    /**
+     * 创建仓颉词法高亮 lexer。
+     */
     override fun getHighlightingLexer(): Lexer = CangJieHighlightingLexer()
 
+    /**
+     * 返回指定 token 类型对应的高亮属性 key。
+     */
     override fun getTokenHighlights(tokenType: IElementType): Array<TextAttributesKey> =
         CangJieHighlightingLexicalKeys.keysOf(tokenType)
 }

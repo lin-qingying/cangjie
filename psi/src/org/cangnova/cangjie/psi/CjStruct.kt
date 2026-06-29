@@ -28,14 +28,26 @@ import org.cangnova.cangjie.psi.stubs.CangJieStructStub
 import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 import com.intellij.lang.ASTNode
 
+/**
+ * 表示 `CjStruct`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjStruct : CjTypeStatement {
 
     constructor(node: ASTNode) : super(node)
     constructor(stub: CangJieStructStub) : super(stub, CjStubElementTypes.STRUCT)
 
+    /**
+     * 实现 `toString` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun toString(): String = node.elementType.toString() + " : $name"
+    /**
+     * 暴露 `typeName`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val typeName: String
         get() = "struct"
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R : Any?, D : Any?> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitStruct(this, data)
     }

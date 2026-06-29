@@ -36,8 +36,14 @@ interface CaSubstitutorProvider : CaLifetimeOwner {
  */
 @OptIn(ExperimentalContracts::class)
 class CaSubstitutorBuilder(
+    /**
+     * builder 所属 Analysis API session 的生命周期 token。
+     */
     override val token: CaLifetimeToken,
 ) : CaLifetimeOwner {
+    /**
+     * 保持插入顺序的类型参数替换规则存储。
+     */
     private val backingMappings = linkedMapOf<CaTypeParameterSymbol, CaType>()
 
     /**

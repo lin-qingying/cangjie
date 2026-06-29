@@ -25,6 +25,9 @@ package org.cangnova.cangjie.lexer
 
 import org.jetbrains.annotations.NonNls
 
+/**
+ * 表示 `CjModifierKeywordToken`，承载仓颉词法与文档注释中的语法节点、索引桩或辅助模型。
+ */
 class CjModifierKeywordToken : CjKeywordToken {
     private constructor(debugName: String, value: String, isSoft: Boolean) : super(
         debugName,

@@ -27,6 +27,7 @@ package org.cangnova.cangjie.cfir.resolve.body
 import java.math.BigInteger
 import org.cangnova.cangjie.LanguageFeature
 import org.cangnova.cangjie.cfir.*
+import org.cangnova.cangjie.cfir.calls.qualifierScopeOrNull
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.diagnostic.*
 import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
@@ -764,15 +765,30 @@ open class CfirExpressionsResolveTransformer(
 
         if (
             containingConstructor == null ||
-            targetDeclaration == null ||
-            context.towerDataMode != CfirTowerDataMode.CONSTRUCTOR_HEADER
+            targetDeclaration == null
         ) {
             components.dataFlowAnalyzer.enterCallArguments(functionCall, functionCall.argumentList.arguments)
             functionCall.replaceArgumentList(
                 functionCall.argumentList.transform(transformer, ResolutionMode.ContextIndependent)
             )
             components.dataFlowAnalyzer.exitCallArguments()
-            functionCall.replaceConeTypeOrNull(builtinTypes.unitType)
+            functionCall.replaceConeTypeOrNull(functionCall.invalidConstructorDelegationCallType())
+            return functionCall
+        }
+
+        if (context.towerDataMode != CfirTowerDataMode.CONSTRUCTOR_HEADER) {
+            components.dataFlowAnalyzer.enterCallArguments(functionCall, functionCall.argumentList.arguments)
+            functionCall.replaceArgumentList(
+                functionCall.argumentList.transform(transformer, ResolutionMode.ContextDependent)
+            )
+            components.dataFlowAnalyzer.exitCallArguments()
+            functionCall.replaceConeTypeOrNull(
+                when (functionCall.origin) {
+                    CfirFunctionCallOrigin.ConstructorDelegationThis -> targetDeclaration.defaultType()
+                    CfirFunctionCallOrigin.ConstructorDelegationSuper -> targetDeclaration.defaultType()
+                    else -> builtinTypes.unitType
+                }
+            )
             return functionCall
         }
 
@@ -798,6 +814,20 @@ open class CfirExpressionsResolveTransformer(
         result.replaceConeTypeOrNull(builtinTypes.unitType)
         return result
     }
+
+    /**
+     * 构造器外部的 `this(...)` / `super(...)` 已由 checker 报告专用诊断。
+     * 解析阶段保留一个不再二次上报的错误类型，避免赋值/成员访问继续产生级联误报。
+     */
+    private fun CfirFunctionCall.invalidConstructorDelegationCallType(): ConeErrorType =
+        ConeErrorType(
+            ConeUnreportedDuplicateDiagnostic(
+                ConeSimpleDiagnostic(
+                    "constructor delegation call is outside constructor",
+                    DiagnosticKind.SuperNotAllowed,
+                )
+            )
+        )
 
     /** 返回 class-like 的第一个直接具体父声明。 */
     private fun CfirClassLikeDeclaration.directConcreteSuperDeclarationOrNull(): CfirClassLikeDeclaration? =
@@ -1775,7 +1805,7 @@ open class CfirExpressionsResolveTransformer(
         val subscriptLValue = assignment.lValue as? CfirSubscriptExpression
         if (subscriptLValue != null) {
             assignment.transformAnnotations(transformer, ResolutionMode.ContextIndependent)
-            subscriptLValue.transformReceiver(transformer, ResolutionMode.ContextIndependent)
+            subscriptLValue.transformReceiver(transformer, ResolutionMode.ReceiverResolution)
             subscriptLValue.transformIndices(transformer, ResolutionMode.ContextIndependent)
             assignment.transformRValue(transformer, ResolutionMode.ContextIndependent)
 
@@ -2230,8 +2260,8 @@ open class CfirExpressionsResolveTransformer(
     /**
      * 解析基础数值类型转换表达式。
      *
-     * 目标类型和实参先独立解析；随后校验目标必须是 primitive，实参必须符合官方数值转换规则，
-     * 最后再结合外层 expected type 报告上下文类型不匹配。
+     * 目标类型和实参先独立解析；随后校验目标必须是 primitive，实参必须符合官方数值转换规则。
+     * 外层 expected type 只作为上下文提示，类型不匹配由对应 checker 统一报告。
      */
     override fun transformTypeConversion(
         typeConversion: CfirTypeConversion,
@@ -2273,21 +2303,7 @@ open class CfirExpressionsResolveTransformer(
             errorType("numeric conversion requires numeric operand")
         }
 
-        val expectedType = data.expectedTypeOrNull
-        val checkedType = if (
-            expectedType != null &&
-            synthesizedType !is ConeErrorType &&
-            AbstractTypeChecker.isSubtypeOf(session.typeContext, synthesizedType, expectedType) != true
-        ) {
-            ConeErrorType(
-                diagnostic = ConeTypeMismatchError(expectedType, synthesizedType),
-                delegatedType = synthesizedType,
-            )
-        } else {
-            synthesizedType
-        }
-
-        typeConversion.replaceConeTypeOrNull(checkedType)
+        typeConversion.replaceConeTypeOrNull(synthesizedType)
         return typeConversion
     }
 
@@ -2607,7 +2623,9 @@ open class CfirExpressionsResolveTransformer(
         subscriptExpression: CfirSubscriptExpression,
         data: ResolutionMode,
     ): CfirExpression {
-        subscriptExpression.transformChildren(transformer, ResolutionMode.ContextIndependent)
+        subscriptExpression.transformAnnotations(transformer, ResolutionMode.ContextIndependent)
+        subscriptExpression.transformReceiver(transformer, ResolutionMode.ReceiverResolution)
+        subscriptExpression.transformIndices(transformer, ResolutionMode.ContextIndependent)
         val receiverType = subscriptExpression.receiver.coneTypeOrNull
         val receiverErrorType = receiverType?.propagatedErrorTypeOrNull()
         val indexErrorType = subscriptExpression.indices.firstNotNullOfOrNull { index ->
@@ -2620,31 +2638,43 @@ open class CfirExpressionsResolveTransformer(
             return subscriptExpression
         }
         val expandedReceiverType = receiverType?.fullyExpandedType(session)
-        val resultType = when (val effectiveReceiverType = expandedReceiverType ?: receiverType) {
-            is ConeTupleType -> {
-                val indexValue = extractConstantIntIndex(subscriptExpression.indices.firstOrNull())
-                if (indexValue != null && indexValue in effectiveReceiverType.elementTypes.indices) {
-                    val elementType = effectiveReceiverType.elementTypes[indexValue]
-                    elementType.propagatedErrorTypeOrNull() ?: elementType
-                } else {
-                    errorType("tuple index out of bounds or non-constant")
-                }
+        val resultType = if (subscriptExpression.receiver.isTypeQualifierReceiver()) {
+            if (receiverType != null) {
+                resolveSubscriptExpressionType(subscriptExpression, receiverType, data)
+            } else {
+                errorType("receiver has no type")
             }
-            is ConeVArrayType -> effectiveReceiverType.elementType.propagatedErrorTypeOrNull()
-                ?: effectiveReceiverType.elementType
-            else -> {
-                val arrayElementType = effectiveReceiverType?.arrayElementType ?: receiverType?.arrayElementType
-                arrayElementType?.propagatedErrorTypeOrNull() ?: arrayElementType
-                    ?: if (receiverType != null) {
-                        resolveSubscriptExpressionType(subscriptExpression, receiverType, data)
+        } else {
+            when (val effectiveReceiverType = expandedReceiverType ?: receiverType) {
+                is ConeTupleType -> {
+                    val indexValue = extractConstantIntIndex(subscriptExpression.indices.firstOrNull())
+                    if (indexValue != null && indexValue in effectiveReceiverType.elementTypes.indices) {
+                        val elementType = effectiveReceiverType.elementTypes[indexValue]
+                        elementType.propagatedErrorTypeOrNull() ?: elementType
                     } else {
-                        errorType("receiver has no type")
+                        errorType("tuple index out of bounds or non-constant")
                     }
+                }
+                is ConeVArrayType -> effectiveReceiverType.elementType.propagatedErrorTypeOrNull()
+                    ?: effectiveReceiverType.elementType
+                else -> {
+                    val arrayElementType = effectiveReceiverType?.arrayElementType ?: receiverType?.arrayElementType
+                    arrayElementType?.propagatedErrorTypeOrNull() ?: arrayElementType
+                        ?: if (receiverType != null) {
+                            resolveSubscriptExpressionType(subscriptExpression, receiverType, data)
+                        } else {
+                            errorType("receiver has no type")
+                        }
+                }
             }
         }
         subscriptExpression.replaceConeTypeOrNull(resultType)
         return subscriptExpression
     }
+
+    /** 类型 qualifier 不是运行时数组值，不能走 tuple/VArray/Array 快速元素访问路径。 */
+    private fun CfirExpression.isTypeQualifierReceiver(): Boolean =
+        qualifierScopeOrNull(session, components.scopeSession) != null
 
     /**
      * 解析普通下标访问的结果类型。
@@ -2701,7 +2731,7 @@ open class CfirExpressionsResolveTransformer(
         data: ResolutionMode,
     ) {
         val receiverType = subscriptExpression.receiver.coneTypeOrNull?.fullyExpandedType(session)
-        if (receiverType is ConeVArrayType) {
+        if (receiverType is ConeVArrayType && !subscriptExpression.receiver.isTypeQualifierReceiver()) {
             subscriptExpression.replaceConeTypeOrNull(receiverType.elementType)
             return
         }

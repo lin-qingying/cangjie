@@ -48,6 +48,9 @@ object LLSessionStructureWriter {
     }
 
     @OptIn(ExperimentalUuidApi::class)
+    /**
+     * 将 [graph] 写成 GraphML 文档。
+     */
     private fun writeGraph(graph: LLSessionStructureGraph, writer: BufferedWriter) {
         with(writer) {
             appendLine("""<?xml version="1.0" encoding="UTF-8"?>""")
@@ -93,6 +96,9 @@ object LLSessionStructureWriter {
         }
     }
 
+    /**
+     * 转义 GraphML 文本节点中的 XML 特殊字符。
+     */
     private fun escapeXml(text: String): String {
         return text.replace("&", "&amp;")
             .replace("<", "&lt;")

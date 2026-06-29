@@ -21,5 +21,8 @@ abstract class CaPrimitiveType : CaType {
      */
     abstract val kind: PrimitiveTypeKind
 
+    /**
+     * 创建可恢复该基本类型的类型指针。
+     */
     abstract override fun createPointer(): CaTypePointer<CaPrimitiveType>
 }

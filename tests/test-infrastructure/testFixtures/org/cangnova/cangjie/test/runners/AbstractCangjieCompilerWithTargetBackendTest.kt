@@ -10,9 +10,15 @@ import org.cangnova.cangjie.test.builders.TestConfigurationBuilder
  * 对应 Kotlin K2 的 AbstractKotlinCompilerWithTargetBackendTest
  */
 abstract class AbstractCangjieCompilerWithTargetBackendTest(
+    /**
+     * 保存 `targetBackend`，供测试运行器在测试执行期间读取或传递。
+     */
     val targetBackend: TargetBackend,
 ) : AbstractCangjieCompilerTest() {
 
+    /**
+     * 执行 `configureInternal` 对应的测试运行器流程，维持测试框架的阶段契约。
+     */
     @TestInfrastructureInternals
     final override fun configureInternal(builder: TestConfigurationBuilder) {
         val myTargetBackend = targetBackend

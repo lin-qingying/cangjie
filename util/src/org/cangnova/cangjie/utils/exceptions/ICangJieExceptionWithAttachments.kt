@@ -31,17 +31,37 @@ import java.nio.charset.StandardCharsets
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.contract
 
+/**
+ * 仓颉异常附件协议。
+ *
+ * 实现该接口的异常可以携带 IntelliJ [Attachment]，用于在 IDE 日志和错误报告中保留编译器现场信息。
+ */
 interface ICangJieExceptionWithAttachments : ExceptionWithAttachments {
+    /**
+     * 当前异常持有的可变附件列表。
+     */
     val mutableAttachments: MutableList<Attachment>
 
+    /**
+     * 返回 IntelliJ 平台期望的附件数组。
+     */
     override fun getAttachments(): Array<Attachment> = mutableAttachments.toTypedArray()
 
+    /**
+     * 添加一个文本附件并返回当前异常。
+     */
     fun withAttachment(name: String, content: Any?): ICangJieExceptionWithAttachments {
         mutableAttachments.add(Attachment(name, content?.toString() ?: "<null>"))
         return this
     }
 
+    /**
+     * 附件复制与 cause 传播工具。
+     */
     companion object {
+        /**
+         * 从 cause 异常中复制已有附件，并追加 cause 的堆栈文本。
+         */
         internal fun ICangJieExceptionWithAttachments.withAttachmentsFrom(from: Throwable?) {
             if (from is ICangJieExceptionWithAttachments) {
                 from.mutableAttachments.mapTo(mutableAttachments) { attachment ->
@@ -53,6 +73,9 @@ interface ICangJieExceptionWithAttachments : ExceptionWithAttachments {
             }
         }
 
+        /**
+         * 使用新名称复制附件内容。
+         */
         private fun Attachment.copyWithNewName(newName: String): Attachment {
             val content = String(bytes, StandardCharsets.UTF_8)
             return Attachment(newName, content)
@@ -60,7 +83,13 @@ interface ICangJieExceptionWithAttachments : ExceptionWithAttachments {
     }
 }
 
+/**
+ * 带附件的非法状态异常。
+ */
 open class CangJieIllegalStateExceptionWithAttachments : IllegalStateException, ICangJieExceptionWithAttachments {
+    /**
+     * 当前异常携带的附件集合。
+     */
     final override val mutableAttachments = mutableListOf<Attachment>()
 
     constructor(message: String) : super(message)
@@ -70,7 +99,13 @@ open class CangJieIllegalStateExceptionWithAttachments : IllegalStateException, 
     }
 }
 
+/**
+ * 带附件的运行时异常。
+ */
 open class CangJieRuntimeExceptionWithAttachments : RuntimeException, ICangJieExceptionWithAttachments {
+    /**
+     * 当前异常携带的附件集合。
+     */
     final override val mutableAttachments = mutableListOf<Attachment>()
 
     constructor(message: String) : super(message)
@@ -80,7 +115,13 @@ open class CangJieRuntimeExceptionWithAttachments : RuntimeException, ICangJieEx
     }
 }
 
+/**
+ * 带附件的非法参数异常。
+ */
 open class CangJieIllegalArgumentExceptionWithAttachments : IllegalArgumentException, ICangJieExceptionWithAttachments {
+    /**
+     * 当前异常携带的附件集合。
+     */
     final override val mutableAttachments = mutableListOf<Attachment>()
 
     constructor(message: String) : super(message)
@@ -90,6 +131,11 @@ open class CangJieIllegalArgumentExceptionWithAttachments : IllegalArgumentExcep
     }
 }
 
+/**
+ * 带附件的参数前置条件检查。
+ *
+ * 条件失败时抛出 [CangJieIllegalArgumentExceptionWithAttachments]。
+ */
 @OptIn(ExperimentalContracts::class)
 inline fun requireWithAttachment(
     condition: Boolean,

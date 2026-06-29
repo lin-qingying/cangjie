@@ -27,4 +27,7 @@ interface CaSessionComponent : CaLifetimeOwner
     "The session component is an implementation detail of the Analysis API and should be accessed via `CaSession` or context parameter bridges instead.",
     level = RequiresOptIn.Level.WARNING,
 )
+/**
+ * 需要显式 opt-in 才能实现或直接使用的 session component 实现细节标记。
+ */
 annotation class CaSessionComponentImplementationDetail

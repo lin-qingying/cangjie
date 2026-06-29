@@ -42,24 +42,42 @@ import com.intellij.psi.search.SearchScope
 import java.util.*
 import javax.swing.Icon
 
+/**
+ * 定义 `CjQualifiedExpression` 接口，约束仓颉 PSI节点或服务需要暴露的结构能力。
+ */
 interface CjQualifiedExpression : CjExpression {
+    /**
+     * 保存 `receiverExpression`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val receiverExpression: CjExpression
         get() {
             val expression = getExpression(false) ?: throw AssertionError("No receiver found: ${getElementTextWithContext()}")
             return expression
         }
 
+    /**
+     * 保存 `selectorExpression`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val selectorExpression: CjExpression?
         get() = getExpression(true)
 
+    /**
+     * 保存 `operationTokenNode`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val operationTokenNode: ASTNode
         get() = node.findChildByType(CjTokens.OPERATIONS) ?: error(
             "No operation node for ${node.elementType}. Children: ${Arrays.toString(children)}",
         )
 
+    /**
+     * 保存 `operationSign`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val operationSign: CjSingleValueToken
         get() = operationTokenNode.elementType as CjSingleValueToken
 
+    /**
+     * 执行 `getExpression` 内部辅助逻辑，支撑仓颉 PSI节点的结构解析与访问。
+     */
     private fun getExpression(afterOperation: Boolean): CjExpression? {
         return operationTokenNode.psi?.siblings(afterOperation, false)?.firstIsInstanceOrNull<CjExpression>()
     }

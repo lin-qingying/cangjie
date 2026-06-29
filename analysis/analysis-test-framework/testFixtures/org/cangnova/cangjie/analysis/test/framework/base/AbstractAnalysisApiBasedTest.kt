@@ -63,6 +63,9 @@ import org.junit.jupiter.api.TestInfo
  * 4. 暴露以 use-site module 为边界的会话进入方式。
  */
 abstract class AbstractAnalysisApiBasedTest : TestWithDisposable() {
+    /**
+     * 当前测试使用的 Analysis API configurator。
+     */
     abstract val configurator: AnalysisApiTestConfigurator
 
     /**
@@ -77,6 +80,9 @@ abstract class AbstractAnalysisApiBasedTest : TestWithDisposable() {
     open val additionalDirectives: List<DirectivesContainer>
         get() = listOf(ExpressionMarkerProvider.Directives)
 
+    /**
+     * 以主文件和主模块为入口执行测试。
+     */
     protected open fun doTestByMainFile(mainFile: CjFile, mainModule: CjTestModule, testServices: TestServices) {
         throw UnsupportedOperationException(
             "The test case is not fully implemented. " +
@@ -85,6 +91,9 @@ abstract class AbstractAnalysisApiBasedTest : TestWithDisposable() {
         )
     }
 
+    /**
+     * 以主模块和可选主文件为入口执行测试。
+     */
     protected open fun doTestByMainModuleAndOptionalMainFile(
         mainFile: CjFile?,
         mainModule: CjTestModule,
@@ -93,30 +102,61 @@ abstract class AbstractAnalysisApiBasedTest : TestWithDisposable() {
         doTestByMainFile(mainFile ?: error("The main file is not found"), mainModule, testServices)
     }
 
+    /**
+     * 以测试服务容器为入口执行测试。
+     */
     protected open fun doTest(testServices: TestServices) {
         val (mainFile, mainModule) = findMainFileAndModule(testServices)
         doTestByMainModuleAndOptionalMainFile(mainFile, mainModule, testServices)
     }
 
+    /**
+     * 当前测试数据文件路径。
+     */
     protected lateinit var testDataPath: Path
         private set
 
+    /**
+     * 当前测试运行中的测试服务容器。
+     */
     private var _testServices: TestServices? = null
+
+    /**
+     * 当前 JUnit 测试信息。
+     */
     private lateinit var currentTestInfo: CangJieTestInfo
 
+    /**
+     * 当前测试运行中的非空测试服务容器。
+     */
     protected val testServices: TestServices
         get() = _testServices ?: error("`testServices` has not been initialized")
 
+    /**
+     * 在每个测试用例开始前记录 JUnit 测试信息。
+     */
     @BeforeEach
     fun initTestInfo(testInfo: TestInfo) {
         currentTestInfo = testInfo.toCangJieTestInfo()
     }
 
+    /**
+     * 主文件和主模块的成对结果。
+     */
     data class ModuleWithMainFile(
+        /**
+         * 当前测试解析出的主文件；无主文件场景下为 `null`。
+         */
         val mainFile: CjFile?,
+        /**
+         * 当前测试解析出的主模块。
+         */
         val module: CjTestModule,
     )
 
+    /**
+     * 根据测试模块结构、指令和命名约定查找主文件与主模块。
+     */
     protected fun findMainFileAndModule(testServices: TestServices): ModuleWithMainFile {
         val modules = testServices.cjTestModuleStructure.mainModules
         val explicitMainModules = modules.filter(::isMainModule)
@@ -136,10 +176,16 @@ abstract class AbstractAnalysisApiBasedTest : TestWithDisposable() {
         )
     }
 
+    /**
+     * 判断测试模块是否是主模块。
+     */
     protected open fun isMainModule(module: CjTestModule): Boolean {
         return module.testModule.isAnalysisApiMainModule
     }
 
+    /**
+     * 在指定模块内查找测试主文件。
+     */
     protected fun findMainFile(module: CjTestModule): CjFile? {
         val cjFiles = module.cjFiles
         module.testModule.analysisApiMainFileName?.let { declaredMainFileName ->
@@ -152,6 +198,9 @@ abstract class AbstractAnalysisApiBasedTest : TestWithDisposable() {
         return cjFiles.firstOrNull { isMainFile(it, module) }
     }
 
+    /**
+     * 判断指定文件是否应作为当前模块的主文件。
+     */
     protected open fun isMainFile(file: CjFile, module: CjTestModule): Boolean {
         val expressionMarkerProvider = testServices.expressionMarkerProvider
         if (expressionMarkerProvider?.getCaretOrNull(file) != null ||
@@ -202,12 +251,21 @@ abstract class AbstractAnalysisApiBasedTest : TestWithDisposable() {
         return getDefaultTestOutputFile(extension, subdirectoryName)
     }
 
+    /**
+     * 构造当前测试数据对应的默认 golden 输出文件路径。
+     */
     private fun getDefaultTestOutputFile(extension: String, subdirectoryName: String?): Path =
         buildTestOutputFilePath(extension, subdirectoryName, variant = null)
 
+    /**
+     * 查找指定变体对应的 golden 输出文件。
+     */
     private fun findVariantTestOutputFile(extension: String, subdirectoryName: String?, variant: String): Path? =
         buildTestOutputFilePath(extension, subdirectoryName, variant).takeIf { it.exists() }
 
+    /**
+     * 根据扩展名、子目录和变体名称构造 golden 输出文件路径。
+     */
     private fun buildTestOutputFilePath(extension: String, subdirectoryName: String?, variant: String?): Path {
         val extensionWithDot = "." + extension.removePrefix(".")
         val baseName = testDataPath.nameWithoutExtension
@@ -221,6 +279,9 @@ abstract class AbstractAnalysisApiBasedTest : TestWithDisposable() {
         return directoryPath.resolve(relativePath)
     }
 
+    /**
+     * 使用默认 [doTest] 入口运行指定测试数据。
+     */
     protected fun runTest(path: String) {
         runTest(path) { doTest(it) }
     }
@@ -293,6 +354,9 @@ abstract class AbstractAnalysisApiBasedTest : TestWithDisposable() {
         block(testServices)
     }
 
+    /**
+     * 构造当前测试用例使用的 non-grouping 测试配置。
+     */
     private fun createTestConfiguration(): NonGroupingPhaseTestConfiguration {
         return testConfiguration(testDataPath.toString()) {
             configureTest(this)
@@ -323,6 +387,9 @@ abstract class AbstractAnalysisApiBasedTest : TestWithDisposable() {
         )
     }
 
+    /**
+     * 以指定上下文元素进入 Analysis API session。
+     */
     protected fun <R> analyzeForTest(contextElement: CjElement, action: CaSession.() -> R): R {
         return analyze(contextElement, action)
     }

@@ -27,14 +27,29 @@ package org.cangnova.cangjie.lang
 import com.intellij.lang.Language
 
 
+/**
+ * 提供 `CangJieLanguage` 单例，集中承载仓颉语言文件类型的共享状态、工厂或工具行为。
+ */
 object CangJieLanguage : Language("CangJie") {
+    /**
+     * 执行 `readResolve` 内部辅助逻辑，支撑仓颉语言文件类型节点的结构解析与访问。
+     */
     private fun readResolve(): Any = CangJieLanguage
 
+    /**
+     * 保存 `NAME`，供仓颉语言文件类型流程读取节点结构或语义信息。
+     */
     val NAME: String = "CangJie"
 
 //    private fun readResolve(): Any = CangJieLanguage
 
+    /**
+     * 实现 `isCaseSensitive` 的仓颉语言文件类型协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun isCaseSensitive() = true
 
+    /**
+     * 实现 `getDisplayName` 的仓颉语言文件类型协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getDisplayName() = NAME
 }

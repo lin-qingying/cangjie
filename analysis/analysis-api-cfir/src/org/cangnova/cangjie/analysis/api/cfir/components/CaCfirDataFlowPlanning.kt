@@ -43,10 +43,25 @@ import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirNamedReferenceWithC
  * 表达式类型、编译期值、是否为纯引用，以及基于源码形状和语义符号推断出的稳定性。
  */
 internal class CaCfirDataFlowInfoImpl(
+    /**
+     * 表达式当前解析出的公开类型。
+     */
     override val expressionType: CaType?,
+    /**
+     * 表达式可求出的编译期值。
+     */
     override val compileTimeValue: CaCompileTimeValue?,
+    /**
+     * 表达式是否只由引用、括号和限定访问组成。
+     */
     override val isPureReference: Boolean,
+    /**
+     * 表达式结果在数据流分析中的稳定性分类。
+     */
     override val stability: CaDataFlowStability,
+    /**
+     * 约束数据流快照生命周期的会话 token。
+     */
     override val token: CaLifetimeToken,
 ) : CaDataFlowInfo
 
@@ -71,6 +86,9 @@ internal fun CaCfirSession.getDataFlowInfo(expression: CjExpression): CaDataFlow
     )
 }
 
+/**
+ * 根据编译期值、引用目标和 PSI 形态推导公开数据流稳定性。
+ */
 private fun CaCfirSession.computeDataFlowStability(
     expression: CjExpression,
     compileTimeValue: CaCompileTimeValue?,
@@ -106,6 +124,9 @@ private fun CaCfirSession.computeDataFlowStability(
     }
 }
 
+/**
+ * 解析表达式最终绑定的稳定引用目标。
+ */
 private fun CaCfirSession.resolveStableReferenceTarget(expression: CjExpression): CaSymbol? {
     return when (expression) {
         is CjParenthesizedExpression -> expression.expression?.let(::resolveStableReferenceTarget)
@@ -130,6 +151,9 @@ private fun CaCfirSession.resolveStableReferenceTargetByCfir(expression: CjExpre
     }
 }
 
+/**
+ * 将 CFIR 引用转换为数据流稳定性判定使用的公开目标符号。
+ */
 private fun CfirReference.toStableTargetSymbol(session: CaCfirSession): CaSymbol? {
     val symbol = when (this) {
         is CfirResolvedNamedReference -> resolvedSymbol
@@ -143,6 +167,9 @@ private fun CfirReference.toStableTargetSymbol(session: CaCfirSession): CaSymbol
     return session.cfirSymbolBuilder.buildSymbol(symbol)
 }
 
+/**
+ * 判断表达式是否只表达引用链而不引入调用、字面量或计算。
+ */
 private fun CjExpression.isPureReferenceExpression(): Boolean = when (this) {
     is CjReferenceExpression -> true
     is CjParenthesizedExpression -> expression?.isPureReferenceExpression() == true

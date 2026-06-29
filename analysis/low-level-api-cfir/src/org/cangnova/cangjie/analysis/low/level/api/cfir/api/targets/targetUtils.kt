@@ -12,6 +12,9 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.llCfirSession
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 
+/**
+ * 将 designation 包装为单目标 lazy resolve target。
+ */
 internal fun CfirDesignation.asResolveTarget(): LLCfirSingleResolveTarget = LLCfirSingleResolveTarget(this)
 
 /**
@@ -28,4 +31,7 @@ internal fun LLCfirResolveTarget.resolve(phase: CfirResolvePhase) {
     lazyDeclarationResolver.lazyResolveTarget(this, phase)
 }
 
+/**
+ * 取得 resolve target 所属的 low-level session。
+ */
 internal val LLCfirResolveTarget.session: LLCfirSession get() = target.llCfirSession

@@ -31,23 +31,38 @@ import org.jetbrains.annotations.NonNls
 import org.jetbrains.annotations.NotNull
 import java.lang.reflect.Constructor
 
+/**
+ * 表示 `CjNodeType`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 open class CjNodeType(
     @NotNull @NonNls debugName: String,
     psiClass: Class<out CjElement>?
 ) : IElementType(debugName, CangJieLanguage) {
+    /**
+     * 保存 `myPsiFactory` 的内部状态，供仓颉 PSI实现维护节点缓存或解析上下文。
+     */
     private val myPsiFactory: Constructor<out CjElement>? = try {
         psiClass?.getConstructor(ASTNode::class.java)
     } catch (_: NoSuchMethodException) {
         throw RuntimeException("Must have a constructor with ASTNode")
     }
 
+    /**
+     * 表示 `CjLeftBoundNodeType`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+     */
     class CjLeftBoundNodeType(
         @NotNull @NonNls debugName: String,
         psiClass: Class<out CjElement>?
     ) : CjNodeType(debugName, psiClass) {
+        /**
+         * 实现 `isLeftBound` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+         */
         override fun isLeftBound(): Boolean = true
     }
 
+    /**
+     * 提供 `createPsi` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun createPsi(node: ASTNode): CjElement {
         assert(node.elementType === this)
 

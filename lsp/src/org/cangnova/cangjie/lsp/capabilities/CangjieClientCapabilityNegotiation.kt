@@ -15,9 +15,24 @@ import org.eclipse.lsp4j.PositionEncodingKind
  * 这样可以避免把“服务端实现了什么”和“当前客户端真的接受什么”混在一起。
  */
 data class CangjieClientCapabilityNegotiation(
+    /**
+     * 当前客户端下最终允许暴露的功能集合。
+     */
     val features: CangjieLspFeatureSet,
+
+    /**
+     * 是否可以在初始化结果中声明 pull diagnostics provider。
+     */
     val pullDiagnostics: Boolean,
+
+    /**
+     * 是否可以声明 workspace folders 监听能力。
+     */
     val workspaceFolders: Boolean,
+
+    /**
+     * 服务端最终采用的 position encoding；为 null 时表示不显式声明。
+     */
     val positionEncoding: String?,
 )
 
@@ -32,6 +47,11 @@ data class CangjieClientCapabilityNegotiation(
  */
 object CangjieClientCapabilityNegotiator {
 
+    /**
+     * 根据客户端初始化参数和服务端描述计算最终能力协商结果。
+     *
+     * 核心能力在客户端未显式声明时保持兼容开启，较新的高级能力必须由客户端显式声明后才暴露。
+     */
     fun negotiate(
         params: InitializeParams,
         serverFeatures: CangjieLspFeatureSet,
@@ -74,6 +94,11 @@ object CangjieClientCapabilityNegotiator {
         )
     }
 
+    /**
+     * 判断当前客户端是否支持诊断通道。
+     *
+     * 客户端未上报能力时按传统 publishDiagnostics 兼容；显式上报时至少需要通知或 pull diagnostics 能力之一。
+     */
     private fun supportsDiagnosticsChannel(
         textDocument: org.eclipse.lsp4j.TextDocumentClientCapabilities?,
         workspace: org.eclipse.lsp4j.WorkspaceClientCapabilities?,
@@ -84,6 +109,9 @@ object CangjieClientCapabilityNegotiator {
             workspace?.diagnostics != null
     }
 
+    /**
+     * 判断当前客户端是否显式支持 pull diagnostics。
+     */
     private fun supportsPullDiagnostics(
         textDocument: org.eclipse.lsp4j.TextDocumentClientCapabilities?,
         workspace: org.eclipse.lsp4j.WorkspaceClientCapabilities?,
@@ -91,6 +119,11 @@ object CangjieClientCapabilityNegotiator {
         return textDocument?.diagnostic != null || workspace?.diagnostics != null
     }
 
+    /**
+     * 判断核心能力是否可暴露。
+     *
+     * 核心能力保持老客户端兼容策略，因此能力对象本身不作为关闭条件。
+     */
     private fun supportsCore(@Suppress("UNUSED_PARAMETER") capability: Any?): Boolean = true
 
     /**

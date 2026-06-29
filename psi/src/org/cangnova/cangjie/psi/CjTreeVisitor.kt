@@ -24,12 +24,21 @@
 
 package org.cangnova.cangjie.psi
 
+/**
+ * 表示 `CjTreeVisitor`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 open class CjTreeVisitor<D> : CjVisitor<Unit, D>() {
+    /**
+     * 实现 `visitCjElement` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun visitCjElement(element: CjElement, data: D) {
         element.acceptChildren(this, data)
 
     }
 
+    /**
+     * 实现 `visitCjFile` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun visitCjFile(file: CjFile, data: D) {
         super.visitCjFile(file, data)
         file.acceptChildren<D>(this, data)

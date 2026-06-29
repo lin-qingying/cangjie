@@ -5,6 +5,11 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.structure
 import kotlin.reflect.KProperty1
 import kotlin.reflect.jvm.isAccessible
 
+/**
+ * 判断 [receiver] 上由该属性表示的 `by lazy` 属性是否已经初始化。
+ *
+ * 该函数用于 session structure 统计，避免为输出图结构而触发 lazy dependency 计算。
+ */
 internal fun <T> KProperty1<T, *>.isLazyInitialized(receiver: T): Boolean {
     isAccessible = true
 

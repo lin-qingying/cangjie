@@ -50,26 +50,47 @@ import org.cangnova.cangjie.test.model.ServicesAndDirectivesContainer
 import org.cangnova.cangjie.test.model.TestModule
 import java.io.File
 
+/**
+ * 表示 `DefaultsDsl`，承载测试服务中的配置数据、测试产物或处理步骤。
+ */
 @DslMarker
 annotation class DefaultsDsl
 
+/**
+ * 表示 `AbstractEnvironmentConfigurator`，承载测试服务中的配置数据、测试产物或处理步骤。
+ */
 abstract class AbstractEnvironmentConfigurator : ServicesAndDirectivesContainer {
+    /**
+     * 提供 `provideAdditionalAnalysisFlags` 对应的测试服务流程，维持测试框架的阶段契约。
+     */
     open fun provideAdditionalAnalysisFlags(
         directives: RegisteredDirectives,
         languageVersion: LanguageVersion,
     ): Map<AnalysisFlag<*>, Any?> = emptyMap()
 
+    /**
+     * 提供 `configureCompileConfigurationWithAdditionalConfigurationKeys` 对应的测试服务流程，维持测试框架的阶段契约。
+     */
     abstract fun configureCompileConfigurationWithAdditionalConfigurationKeys(
         configuration: CompilerConfiguration,
         module: TestModule
     )
 
+    /**
+     * 保存 `compilationStage`，供测试服务在测试执行期间读取或传递。
+     */
     open val compilationStage: CompilationStage
         get() = CompilationStage.FIRST
 
 }
 
+/**
+ * 表示 `EnvironmentConfigurator`，承载测试服务中的配置数据、测试产物或处理步骤。
+ */
 abstract class EnvironmentConfigurator(protected val testServices: TestServices) : AbstractEnvironmentConfigurator() {
+    /**
+     * 执行 `configureCompileConfigurationWithAdditionalConfigurationKeys` 对应的测试服务流程，维持测试框架的阶段契约。
+     */
     final override fun configureCompileConfigurationWithAdditionalConfigurationKeys(
         configuration: CompilerConfiguration,
         module: TestModule,
@@ -79,16 +100,31 @@ abstract class EnvironmentConfigurator(protected val testServices: TestServices)
         extractor.configure(configuration, module.directives)
         configureCompilerConfiguration(configuration, module)
     }
+    /**
+     * 提供 `provideConfigurationKeys` 对应的测试服务流程，维持测试框架的阶段契约。
+     */
     open fun DirectiveToConfigurationKeyExtractor.provideConfigurationKeys() {}
 
+    /**
+     * 提供 `configureCompilerConfiguration` 对应的测试服务流程，维持测试框架的阶段契约。
+     */
     protected open fun configureCompilerConfiguration(configuration: CompilerConfiguration, module: TestModule) {}
 
 }
 
+/**
+ * 表示 `CommonEnvironmentConfigurator`，承载测试服务中的配置数据、测试产物或处理步骤。
+ */
 class CommonEnvironmentConfigurator(testServices: TestServices) : EnvironmentConfigurator(testServices) {
+    /**
+     * 保存 `directiveContainers`，供测试服务在测试执行期间读取或传递。
+     */
     override val directiveContainers: List<org.cangnova.cangjie.test.directives.model.DirectivesContainer>
         get() = listOf(ConfigurationDirectives)
 
+    /**
+     * 执行 `provideAdditionalAnalysisFlags` 对应的测试服务流程，维持测试框架的阶段契约。
+     */
     override fun provideAdditionalAnalysisFlags(
         directives: RegisteredDirectives,
         languageVersion: LanguageVersion,
@@ -103,11 +139,17 @@ class CommonEnvironmentConfigurator(testServices: TestServices) : EnvironmentCon
         }
     }
 
+    /**
+     * 执行 `provideConfigurationKeys` 对应的测试服务流程，维持测试框架的阶段契约。
+     */
     override fun DirectiveToConfigurationKeyExtractor.provideConfigurationKeys() {
         register(CfirDiagnosticsDirectives.DUMP_INFERENCE_LOGS, CommonConfigurationKeys.DUMP_INFERENCE_LOGS)
         register(CfirDiagnosticsDirectives.CHECK_PROGRAM_ENTRY, CfirFrontendConfigurationKeys.CHECK_PROGRAM_ENTRY)
     }
 
+    /**
+     * 执行 `configureCompilerConfiguration` 对应的测试服务流程，维持测试框架的阶段契约。
+     */
     override fun configureCompilerConfiguration(configuration: CompilerConfiguration, module: TestModule) {
         val noPreludeEnabled = module.hasDirective(NO_PRELUDE)
         addRuntimeClasspathRoots(configuration, module)
@@ -124,6 +166,9 @@ class CommonEnvironmentConfigurator(testServices: TestServices) : EnvironmentCon
 
     }
 
+    /**
+     * 提供 `setupCliConfiguration` 对应的测试服务流程，维持测试框架的阶段契约。
+     */
     private fun setupCliConfiguration(
         module: TestModule,
         configuration: CompilerConfiguration,
@@ -141,6 +186,9 @@ class CommonEnvironmentConfigurator(testServices: TestServices) : EnvironmentCon
 
     }
 
+    /**
+     * 提供 `addRuntimeClasspathRoots` 对应的测试服务流程，维持测试框架的阶段契约。
+     */
     private fun addRuntimeClasspathRoots(configuration: CompilerConfiguration, module: TestModule) {
         val runtimeRoots = testServices.runtimeClasspathProviders
             .asSequence()
@@ -181,12 +229,18 @@ class CommonEnvironmentConfigurator(testServices: TestServices) : EnvironmentCon
             .forEach { configuration.addClasspathRoot(it.path) }
     }
 
+    /**
+     * 提供 `addStdlibClasspathRoots` 对应的测试服务流程，维持测试框架的阶段契约。
+     */
     private fun addStdlibClasspathRoots(configuration: CompilerConfiguration) {
         resolveStdlibRoots()
             .distinctBy { it.absolutePath }
             .forEach { configuration.addClasspathRoot(it.path) }
     }
 
+    /**
+     * 提供 `resolveStdlibRoots` 对应的测试服务流程，维持测试框架的阶段契约。
+     */
     private fun resolveStdlibRoots(): List<File> {
         val fromEnv = System.getenv("CANGJIE_STDLIB_MODULE")
             ?.split(File.pathSeparator)
@@ -212,6 +266,9 @@ class CommonEnvironmentConfigurator(testServices: TestServices) : EnvironmentCon
             .toList()
     }
 
+    /**
+     * 提供 `normalizeStdlibRoot` 对应的测试服务流程，维持测试框架的阶段契约。
+     */
     private fun normalizeStdlibRoot(path: File): File {
         val normalized = path.normalize()
         if (normalized.resolve("std/std.core.cjo").isFile) return normalized
@@ -220,15 +277,33 @@ class CommonEnvironmentConfigurator(testServices: TestServices) : EnvironmentCon
     }
 }
 
+/**
+ * 提供 `hasDirective` 对应的测试服务流程，维持测试框架的阶段契约。
+ */
 private fun TestModule.hasDirective(directive: SimpleDirective): Boolean {
     return directive in directives || files.any { directive in it.directives }
 }
 
+/**
+ * 表示 `DirectiveToConfigurationKeyExtractor`，承载测试服务中的配置数据、测试产物或处理步骤。
+ */
 class DirectiveToConfigurationKeyExtractor {
+    /**
+     * 保存 `booleanDirectivesMap`，供测试服务在测试执行期间读取或传递。
+     */
     private val booleanDirectivesMap = mutableMapOf<SimpleDirective, CompilerConfigurationKey<Boolean>>()
+    /**
+     * 保存 `invertedBooleanDirectives`，供测试服务在测试执行期间读取或传递。
+     */
     private val invertedBooleanDirectives = mutableSetOf<SimpleDirective>()
+    /**
+     * 保存 `valueDirectivesMap`，供测试服务在测试执行期间读取或传递。
+     */
     private val valueDirectivesMap = mutableMapOf<ValueDirective<*>, CompilerConfigurationKey<*>>()
 
+    /**
+     * 执行 `register` 对应的测试服务流程，维持测试框架的阶段契约。
+     */
     fun register(
         directive: SimpleDirective,
         key: CompilerConfigurationKey<Boolean>,
@@ -240,6 +315,9 @@ class DirectiveToConfigurationKeyExtractor {
         }
     }
 
+    /**
+     * 执行 `register` 对应的测试服务流程，维持测试框架的阶段契约。
+     */
     fun <T : Any> register(
         directive: ValueDirective<T>,
         key: CompilerConfigurationKey<T>
@@ -247,6 +325,9 @@ class DirectiveToConfigurationKeyExtractor {
         valueDirectivesMap[directive] = key
     }
 
+    /**
+     * 执行 `configure` 对应的测试服务流程，维持测试框架的阶段契约。
+     */
     fun configure(configuration: CompilerConfiguration, registeredDirectives: RegisteredDirectives) {
         for ((directive, key) in booleanDirectivesMap) {
             if (directive in registeredDirectives) {

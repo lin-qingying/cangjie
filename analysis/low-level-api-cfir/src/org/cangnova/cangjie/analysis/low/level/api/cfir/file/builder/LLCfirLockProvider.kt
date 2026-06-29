@@ -29,8 +29,14 @@ import java.util.concurrent.locks.ReentrantLock
  * @see withJumpingLock
  */
 internal class LLCfirLockProvider(private val checker: LLCfirLazyResolveContractChecker) {
+    /**
+     * 可选的全局解析锁，用于调试或兼容需要串行 lazy resolve 的场景。
+     */
     private val globalLock = ReentrantLock()
 
+    /**
+     * 在启用 registry 开关时用全局锁包裹指定动作。
+     */
     inline fun <R> withGlobalLock(action: () -> R): R {
         if (!globalLockEnabled) return action()
 
@@ -163,6 +169,9 @@ internal class LLCfirLockProvider(private val checker: LLCfirLazyResolveContract
         }
     }
 
+    /**
+     * 根据 partial body analysis 状态计算写锁释放后应该发布的新阶段。
+     */
     private fun CfirElementWithResolveState.computeNewPhase(stateSnapshot: CfirResolveState, toPhase: CfirResolvePhase): CfirResolvePhase {
         if (this is CfirDeclaration && toPhase == CfirResolvePhase.BODY_RESOLVE) {
             val state = partialBodyAnalysisState
@@ -178,12 +187,18 @@ internal class LLCfirLockProvider(private val checker: LLCfirLazyResolveContract
         return toPhase
     }
 
+    /**
+     * 等待其它线程完成当前 phase resolve barrier。
+     */
     private fun waitOnBarrier(
         stateSnapshot: CfirInProcessOfResolvingToPhaseStateWithBarrier,
     ): Boolean {
         return stateSnapshot.barrier.await(lockingInterval, TimeUnit.MILLISECONDS)
     }
 
+    /**
+     * 将无 barrier 的 resolving 状态升级为有 barrier 的状态，供其它线程等待。
+     */
     private fun CfirElementWithResolveState.trySettingBarrier(
         toPhase: CfirResolvePhase,
         stateSnapshot: CfirResolveState,
@@ -192,6 +207,9 @@ internal class LLCfirLockProvider(private val checker: LLCfirLazyResolveContract
         resolveStateFieldUpdater.compareAndSet(this, stateSnapshot, newState)
     }
 
+    /**
+     * 尝试把 resolved 状态切换为当前线程持有的 phase resolving 状态。
+     */
     private fun CfirElementWithResolveState.tryLock(
         toPhase: CfirResolvePhase,
         stateSnapshot: CfirResolveState,
@@ -200,6 +218,9 @@ internal class LLCfirLockProvider(private val checker: LLCfirLazyResolveContract
         return resolveStateFieldUpdater.compareAndSet(this, stateSnapshot, newState)
     }
 
+    /**
+     * 发布 resolved phase 状态，并在存在 barrier 时唤醒等待线程。
+     */
     private fun CfirElementWithResolveState.unlock(toPhase: CfirResolvePhase) {
         when (val stateSnapshotAfter = resolveStateFieldUpdater.getAndSet(this, CfirResolvedToPhaseState(toPhase))) {
             is CfirInProcessOfResolvingToPhaseStateWithoutBarrier -> {}
@@ -400,12 +421,18 @@ internal class LLCfirLockProvider(private val checker: LLCfirLazyResolveContract
     }
 }
 
+/**
+ * 直接更新 `CfirElementWithResolveState.resolveState` 的原子 updater。
+ */
 private val resolveStateFieldUpdater = AtomicReferenceFieldUpdater.newUpdater(
     CfirElementWithResolveState::class.java,
     CfirResolveState::class.java,
     "resolveState"
 )
 
+/**
+ * 控制是否在 parallel resolve 外额外启用全局锁的 registry 开关。
+ */
 private val globalLockEnabled: Boolean by lazy(LazyThreadSafetyMode.PUBLICATION) {
     Registry.`is`("kotlin.parallel.resolve.under.global.lock", false)
 }
@@ -414,6 +441,9 @@ private val globalLockEnabled: Boolean by lazy(LazyThreadSafetyMode.PUBLICATION)
  * @see CfirInProcessOfResolvingToJumpingPhaseState
  */
 private class JumpingResolutionStatesStack {
+    /**
+     * 当前线程持有的 jumping phase resolve 状态栈。
+     */
     private val stateStackHolder = ThreadLocal.withInitial<MutableList<CfirInProcessOfResolvingToJumpingPhaseState>> {
         mutableListOf()
     }

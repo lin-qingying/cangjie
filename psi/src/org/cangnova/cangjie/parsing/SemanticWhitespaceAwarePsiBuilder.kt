@@ -27,6 +27,9 @@ package org.cangnova.cangjie.parsing
 import com.intellij.lang.PsiBuilder
 import com.intellij.psi.tree.IElementType
 
+/**
+ * 定义 `SemanticWhitespaceAwarePsiBuilder` 接口，约束仓颉语法解析节点或服务需要暴露的结构能力。
+ */
 interface SemanticWhitespaceAwarePsiBuilder : PsiBuilder {
 
     /**

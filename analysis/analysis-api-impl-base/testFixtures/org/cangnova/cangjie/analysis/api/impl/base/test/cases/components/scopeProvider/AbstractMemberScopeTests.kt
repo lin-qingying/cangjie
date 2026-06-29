@@ -24,12 +24,22 @@ import org.junit.jupiter.api.Assertions.assertTrue
  */
 abstract class AbstractMemberScopeTestBase : AbstractScopeTestBase() {
     context(session: CaSession)
+    /**
+     * 从目标 class-like symbol 中选择具体成员 scope。
+     *
+     * 子类通过该方法区分 use-site member scope、declared member scope 和 combined declared member scope。
+     */
     protected abstract fun getScope(
         classLikeSymbol: CaClassLikeSymbol,
         declarationContainerSymbol: CaDeclarationContainerSymbol,
     ): CaScope
 
     context(session: CaSession)
+    /**
+     * 定位目标 class-like 声明并获取对应成员 scope。
+     *
+     * 方法确保目标 symbol 可恢复且实现 declaration container，再委托给子类选择具体 scope。
+     */
     final override fun getScope(mainFile: CjFile, testServices: TestServices): CaScope {
         val module = testServices.cjTestModuleStructure.requireModuleByFile(mainFile)
         val directives = directivesForMainFile(mainFile, module)
@@ -48,24 +58,48 @@ abstract class AbstractMemberScopeTestBase : AbstractScopeTestBase() {
     }
 }
 
+/**
+ * use-site member scope 测试。
+ *
+ * 该 scope 包含从类型使用点可见的成员集合。
+ */
 abstract class AbstractMemberScopeTest : AbstractMemberScopeTestBase() {
     context(_: CaSession)
+    /**
+     * 返回目标 declaration container 的 use-site member scope。
+     */
     override fun getScope(
         classLikeSymbol: CaClassLikeSymbol,
         declarationContainerSymbol: CaDeclarationContainerSymbol,
     ): CaScope = declarationContainerSymbol.memberScope
 }
 
+/**
+ * declared member scope 测试。
+ *
+ * 该 scope 聚焦 class-like 声明自身直接声明的成员。
+ */
 abstract class AbstractDeclaredMemberScopeTest : AbstractMemberScopeTestBase() {
     context(_: CaSession)
+    /**
+     * 返回目标 class-like symbol 的 declared member scope。
+     */
     override fun getScope(
         classLikeSymbol: CaClassLikeSymbol,
         declarationContainerSymbol: CaDeclarationContainerSymbol,
     ): CaScope = classLikeSymbol.declaredMemberScope
 }
 
+/**
+ * combined declared member scope 测试。
+ *
+ * 该 scope 用于观察 declaration container 聚合后的声明成员视图。
+ */
 abstract class AbstractCombinedDeclaredMemberScopeTest : AbstractMemberScopeTestBase() {
     context(_: CaSession)
+    /**
+     * 返回目标 declaration container 的 combined declared member scope。
+     */
     override fun getScope(
         classLikeSymbol: CaClassLikeSymbol,
         declarationContainerSymbol: CaDeclarationContainerSymbol,

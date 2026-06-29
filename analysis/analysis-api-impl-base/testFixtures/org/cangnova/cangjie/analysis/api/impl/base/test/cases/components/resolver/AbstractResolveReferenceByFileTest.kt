@@ -15,6 +15,11 @@ import org.cangnova.cangjie.test.services.assertions
  * 因而这里仅遍历拥有主引用的 `CjReferenceExpression`，不硬接 Kotlin 的更宽泛 reference 家族。
  */
 abstract class AbstractResolveReferenceByFileTest : AbstractResolveReferenceTest() {
+    /**
+     * 执行文件级引用解析快照测试。
+     *
+     * 方法遍历文件内所有真实使用点 simple-name，并复用单引用 renderer 输出解析结果。
+     */
     override fun doTestByMainFile(mainFile: CjFile, mainModule: CjTestModule, testServices: TestServices) {
         val references = mainFile.collectDescendantsOfType<CjSimpleNameExpression>()
             .filter { it.isUsageSimpleNameForAnalysisApiTest() }

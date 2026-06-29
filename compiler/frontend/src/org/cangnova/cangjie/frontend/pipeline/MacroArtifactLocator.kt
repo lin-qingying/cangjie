@@ -10,9 +10,18 @@ import java.io.File
  * 包名、ABI 和导出宏定义仍统一交给 [MacroArtifactResolver] 校验。
  */
 class MacroArtifactLocator(
+    /**
+     * 仓颉 SDK 根目录。
+     */
     private val sdkHome: String = DEFAULT_MACRO_SDK_HOME,
+    /**
+     * SDK 中按宿主平台区分的库目录名。
+     */
     private val host: String = defaultCangjieLibHost(),
 ) {
+    /**
+     * 为一组宏包需求定位可用 artifact。
+     */
     fun locate(
         packageDemands: Set<FqName>,
         searchRoots: List<String>,
@@ -45,6 +54,9 @@ class MacroArtifactLocator(
         return result.values.toList()
     }
 
+    /**
+     * 仅在给定搜索根中定位普通外部宏包 artifact。
+     */
     fun locateFromRoots(packageFqName: FqName, roots: List<File>): MacroArtifactPackage? {
         val cjoPath = findCjo(packageFqName, roots) ?: return null
         val dynamicLibPath = findMacroDynamicLibrary(packageFqName, roots) ?: return null
@@ -57,6 +69,9 @@ class MacroArtifactLocator(
         )
     }
 
+    /**
+     * 在 SDK stdlib 目录中定位官方宏包 artifact。
+     */
     private fun locateFromSdk(packageFqName: FqName): MacroArtifactPackage? {
         if (toLibCangjieBaseName(packageFqName) == null) return null
         val modulesRoot = File(sdkHome, "modules/$host")
@@ -72,6 +87,9 @@ class MacroArtifactLocator(
         )
     }
 
+    /**
+     * 按官方 `.cjo` 命名规则在搜索根中查找包文件。
+     */
     private fun findCjo(packageFqName: FqName, roots: List<File>): File? {
         val cjoName = "${toCjoFileName(packageFqName)}.cjo"
         val firstSegment = packageFqName.firstSegment()?.asString()
@@ -84,6 +102,9 @@ class MacroArtifactLocator(
         return null
     }
 
+    /**
+     * 在普通搜索根中查找宏动态库。
+     */
     private fun findMacroDynamicLibrary(packageFqName: FqName, roots: List<File>): File? {
         val libraryName = "lib-macro_${toCjoFileName(packageFqName)}.${dynamicLibraryExtension()}"
         val firstSegment = packageFqName.firstSegment()?.asString()
@@ -96,6 +117,9 @@ class MacroArtifactLocator(
         return null
     }
 
+    /**
+     * 在 SDK runtime 根目录中查找标准库动态库。
+     */
     private fun findStdDynamicLibrary(packageFqName: FqName, runtimeRoot: File): File? {
         val baseName = toLibCangjieBaseName(packageFqName) ?: return null
         val libraryName = "lib$baseName.${dynamicLibraryExtension()}"
@@ -103,6 +127,9 @@ class MacroArtifactLocator(
     }
 }
 
+/**
+ * 将包名转换为官方 `.cjo` 文件名。
+ */
 fun toCjoFileName(packageFqName: FqName): String {
     val text = packageFqName.asString()
     val index = text.indexOf("::")
@@ -113,6 +140,9 @@ fun toCjoFileName(packageFqName: FqName): String {
     }
 }
 
+/**
+ * 将官方标准库包名转换为 SDK runtime 动态库基础名。
+ */
 private fun toLibCangjieBaseName(packageFqName: FqName): String? {
     val text = packageFqName.asString()
     val stdlibName = standardLibraryPackages[text] ?: return null
@@ -182,6 +212,9 @@ private val standardLibraryPackages: Map<String, String> = linkedMapOf(
     "std" to "std",
 )
 
+/**
+ * 返回当前宿主系统使用的动态库扩展名。
+ */
 internal fun dynamicLibraryExtension(): String =
     when {
         System.getProperty("os.name").contains("Windows", ignoreCase = true) -> "dll"
@@ -189,6 +222,9 @@ internal fun dynamicLibraryExtension(): String =
         else -> "so"
     }
 
+/**
+ * 返回当前宿主系统对应的仓颉 SDK 库目录名。
+ */
 private fun defaultCangjieLibHost(): String =
     when {
         System.getProperty("os.name").contains("Windows", ignoreCase = true) -> "windows_x86_64_cjnative"

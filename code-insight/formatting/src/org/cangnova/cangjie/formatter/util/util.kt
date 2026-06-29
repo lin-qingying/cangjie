@@ -40,8 +40,12 @@ import com.intellij.psi.tree.TokenSet
 import com.intellij.psi.util.PsiUtilCore
 
 
+/**
+ * 从 registry 判断调用位置尾逗号是否启用。
+ */
 fun trailingCommaIsAllowedOnCallSite(): Boolean = Registry.`is`("cangjie.formatter.allowTrailingCommaOnCallSite")
 
+/** 声明位置支持尾逗号的 PSI 类型集合。 */
 private val TYPES_WITH_TRAILING_COMMA_ON_DECLARATION_SITE = TokenSet.create(
     CjNodeTypes.TYPE_PARAMETER_LIST,
 
@@ -50,6 +54,7 @@ private val TYPES_WITH_TRAILING_COMMA_ON_DECLARATION_SITE = TokenSet.create(
     CjNodeTypes.VALUE_PARAMETER_LIST,
 )
 
+/** 调用位置支持尾逗号的 PSI 类型集合。 */
 private val TYPES_WITH_TRAILING_COMMA_ON_CALL_SITE = TokenSet.create(
     CjNodeTypes.COLLECTION_LITERAL_EXPRESSION,
     CjNodeTypes.TYPE_ARGUMENT_LIST,
@@ -57,23 +62,36 @@ private val TYPES_WITH_TRAILING_COMMA_ON_CALL_SITE = TokenSet.create(
     CjNodeTypes.VALUE_ARGUMENT_LIST,
 )
 
+/** 所有支持尾逗号的 PSI 类型集合。 */
 private val TYPES_WITH_TRAILING_COMMA = TokenSet.orSet(
     TYPES_WITH_TRAILING_COMMA_ON_DECLARATION_SITE,
     TYPES_WITH_TRAILING_COMMA_ON_CALL_SITE,
 )
 
+/**
+ * 判断 PSI 元素是否允许在当前 registry 状态下添加尾逗号。
+ */
 fun PsiElement.canAddTrailingCommaWithRegistryCheck(): Boolean {
     val type = PsiUtilCore.getElementType(this) ?: return false
     return type in TYPES_WITH_TRAILING_COMMA_ON_DECLARATION_SITE ||
             trailingCommaIsAllowedOnCallSite() && type in TYPES_WITH_TRAILING_COMMA_ON_CALL_SITE
 }
 
+/**
+ * 判断 AST 节点对应位置是否允许添加尾逗号。
+ */
 fun CangJieCodeStyleSettings.addTrailingCommaIsAllowedFor(node: ASTNode): Boolean =
     addTrailingCommaIsAllowedFor(PsiUtilCore.getElementType(node))
 
+/**
+ * 判断 PSI 元素对应位置是否允许添加尾逗号。
+ */
 fun CangJieCodeStyleSettings.addTrailingCommaIsAllowedFor(element: PsiElement): Boolean =
     addTrailingCommaIsAllowedFor(PsiUtilCore.getElementType(element))
 
+/**
+ * 判断元素类型在当前代码风格中是否允许添加尾逗号。
+ */
 private fun CangJieCodeStyleSettings.addTrailingCommaIsAllowedFor(type: IElementType?): Boolean = when (type) {
     null -> false
     in TYPES_WITH_TRAILING_COMMA_ON_DECLARATION_SITE -> ALLOW_TRAILING_COMMA
@@ -81,6 +99,9 @@ private fun CangJieCodeStyleSettings.addTrailingCommaIsAllowedFor(type: IElement
     else -> false
 }
 
+/**
+ * 判断 PSI 元素类型是否属于尾逗号规则覆盖范围。
+ */
 fun PsiElement.canAddTrailingComma(): Boolean = when {
     this is CjMatchEntry && (isElse || parent.cast<CjMatchExpression>().leftParenthesis == null) -> false
     this is CjFunctionLiteral && arrow == null -> false

@@ -9,7 +9,13 @@ import kotlin.test.assertTrue
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.lexer.cdoc.lexer.CDocTokens
 
+/**
+ * 验证仓颉词法 token 到高亮 key 的共享映射。
+ */
 class CangJieHighlightingLexicalKeysTest {
+    /**
+     * 关键字、字面量和注释 token 应映射到对应高亮 key。
+     */
     @Test
     fun testKeywordNumberStringAndCommentTokens() {
         assertKeys(CjTokens.LET_KEYWORD, CangJieHighlightingColors.LET_KEYWORD)
@@ -25,6 +31,9 @@ class CangJieHighlightingLexicalKeysTest {
         assertKeys(CjTokens.DOC_COMMENT, CangJieHighlightingColors.DOC_COMMENT)
     }
 
+    /**
+     * CDoc 标签名应同时保留文档注释底色和标签专用高亮。
+     */
     @Test
     fun testCdocTagUsesBaseDocCommentAndSpecificTagKey() {
         assertKeys(
@@ -34,6 +43,9 @@ class CangJieHighlightingLexicalKeysTest {
         )
     }
 
+    /**
+     * 运算符、括号、标点和坏字符 token 应映射到对应高亮 key。
+     */
     @Test
     fun testOperatorBracketsPunctuationAndBadCharacterTokens() {
         assertKeys(CjTokens.PLUS, CangJieHighlightingColors.OPERATOR_SIGN)
@@ -52,6 +64,9 @@ class CangJieHighlightingLexicalKeysTest {
         assertKeys(TokenType.BAD_CHARACTER, CangJieHighlightingColors.BAD_CHARACTER)
     }
 
+    /**
+     * SyntaxHighlighter 应完全委托共享词法映射表。
+     */
     @Test
     fun testSyntaxHighlighterUsesSharedLexicalTable() {
         val highlighter = CangJieHighlighter()
@@ -72,12 +87,18 @@ class CangJieHighlightingLexicalKeysTest {
         }
     }
 
+    /**
+     * 未映射的普通标识符不应拥有词法高亮 key。
+     */
     @Test
     fun testUnmappedIdentifierHasNoLexicalHighlightingKey() {
         assertTrue(CangJieHighlightingLexicalKeys.keysOf(CjTokens.IDENTIFIER).isEmpty())
         assertEquals(null, CangJieHighlightingLexicalKeys.primaryKeyOf(CjTokens.IDENTIFIER))
     }
 
+    /**
+     * 断言指定 token 的高亮 key 数组和主 key。
+     */
     private fun assertKeys(
         tokenType: com.intellij.psi.tree.IElementType,
         vararg expected: TextAttributesKey,

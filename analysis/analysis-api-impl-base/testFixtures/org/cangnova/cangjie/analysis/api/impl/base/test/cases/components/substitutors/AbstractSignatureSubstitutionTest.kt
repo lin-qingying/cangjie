@@ -25,6 +25,11 @@ import org.junit.jupiter.api.Assertions.assertNotNull
  * 3. 观察替换后参数与返回类型的公开渲染结果。
  */
 abstract class AbstractSignatureSubstitutionTest : AbstractAnalysisApiComponentTest() {
+    /**
+     * 执行签名替换测试。
+     *
+     * 方法恢复泛型 callable 与替换目标 class-like symbol，构造 substitutor 后比较替换后的参数和返回类型。
+     */
     override fun doTestByMainFile(mainFile: CjFile, mainModule: CjTestModule, testServices: TestServices) {
         val directives = directivesForMainFile(mainFile, mainModule)
         val targetClass = PsiTreeUtil.findChildrenOfType(mainFile, CjClass::class.java)

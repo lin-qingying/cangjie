@@ -18,10 +18,15 @@ import org.cangnova.cangjie.analysis.api.symbols.CaDeclarationSymbol
  * 对齐 Kotlin Analysis API 的 `KaDeclarationModifiersRenderer`。
  */
 class CaDeclarationModifiersRenderer private constructor(
+    /** 整体修饰符列表渲染策略。 */
     val modifierListRenderer: CaModifierListRenderer,
+    /** 修饰符排序策略。 */
     val modifiersSorter: CaModifiersSorter,
+    /** 模态修饰符提供者。 */
     val modalityProvider: CaRendererModalityModifierProvider,
+    /** 可见性修饰符提供者。 */
     val visibilityProvider: CaRendererVisibilityModifierProvider,
+    /** 其它声明修饰符提供者。 */
     val otherModifiersProvider: CaRendererOtherModifiersProvider,
 ) {
     /** 渲染 [symbol] 的修饰符列表到 [printer]。 */

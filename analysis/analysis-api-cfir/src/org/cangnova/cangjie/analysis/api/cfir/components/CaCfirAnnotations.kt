@@ -40,6 +40,9 @@ import org.cangnova.cangjie.psi.CjElement
 import org.cangnova.cangjie.psi.CjValueArgument
 
 
+/**
+ * 从源码 PSI 注解构造公开 Analysis API 注解视图。
+ */
 internal fun CjAnnotation.asPublicAnnotation(
     session: CaCfirSession,
     token: CaLifetimeToken,
@@ -120,6 +123,9 @@ private fun CjAnnotation.buildPublicNamedArguments(
     }
 }
 
+/**
+ * 从 CFIR 注解调用引用中恢复构造器公开符号。
+ */
 private fun CfirAnnotationCall.resolveAnnotationConstructorSymbol(builder: CaSymbolByCfirBuilder): CaConstructorSymbol? {
     val symbol = when (val reference = calleeReference) {
         is CfirResolvedNamedReference -> reference.resolvedSymbol
@@ -129,9 +135,15 @@ private fun CfirAnnotationCall.resolveAnnotationConstructorSymbol(builder: CaSym
     return builder.functionBuilder.buildConstructorSymbol(symbol)
 }
 
+/**
+ * 从已解析注解类型引用中提取注解类 classId。
+ */
 internal fun CfirTypeRef.annotationClassIdOrNull(): ClassId? =
     (this as? CfirResolvedTypeRef)?.coneType?.classIdOrPrimitiveClassId
 
+/**
+ * 将 CFIR 注解参数列表转换为公开命名注解参数列表。
+ */
 private fun CfirArgumentList.asPublicNamedAnnotationValues(token: CaLifetimeToken): List<CaNamedAnnotationValue> {
     val resolvedMapping = (this as? CfirResolvedArgumentList)?.mapping
     if (resolvedMapping != null && resolvedMapping.isNotEmpty()) {
@@ -153,6 +165,9 @@ private fun CfirArgumentList.asPublicNamedAnnotationValues(token: CaLifetimeToke
     }
 }
 
+/**
+ * 将单个 CFIR 注解实参转换为公开命名注解值。
+ */
 private fun CfirExpression.asPublicNamedAnnotationValue(
     name: Name,
     position: Int,
@@ -167,6 +182,9 @@ private fun CfirExpression.asPublicNamedAnnotationValue(
     )
 }
 
+/**
+ * 将 CFIR 注解实参表达式转换为公开注解值对象。
+ */
 private fun CfirExpression.asPublicAnnotationValue(
     token: CaLifetimeToken,
     errorMessage: String = "Unsupported CFIR annotation argument `${source?.text}`",
@@ -192,6 +210,9 @@ private fun CfirExpression.asPublicAnnotationValue(
     }
 }
 
+/**
+ * 将 CFIR 字面量表达式转换为公开常量注解值。
+ */
 private fun CfirLiteralExpression.literalAsPublicAnnotationValue(
     sourcePsi: CjElement?,
     token: CaLifetimeToken,
@@ -211,6 +232,9 @@ private fun CfirLiteralExpression.literalAsPublicAnnotationValue(
     )
 }
 
+/**
+ * 在缺少 PSI 时从 source 文本兜出注解短名。
+ */
 private fun org.cangnova.cangjie.source.CjSourceElement?.annotationShortNameOrNull(): Name? {
     val rawText = this?.text?.toString()?.trim().orEmpty()
     if (!rawText.startsWith("@")) return null
@@ -224,6 +248,9 @@ private fun org.cangnova.cangjie.source.CjSourceElement?.annotationShortNameOrNu
     return Name.identifierIfValid(shortName)
 }
 
+/**
+ * 去除仓颉数字字面量的类型后缀，便于按基础数值解析。
+ */
 private fun String.removeNumericSuffix(): String =
     trim().removeSuffix("i8").removeSuffix("i16").removeSuffix("i32").removeSuffix("i64")
         .removeSuffix("inative")
@@ -231,6 +258,9 @@ private fun String.removeNumericSuffix(): String =
         .removeSuffix("unative")
         .removeSuffix("f16").removeSuffix("f32").removeSuffix("f64")
 
+/**
+ * 解析 rune 字面量文本为公开注解常量使用的码点。
+ */
 private fun String.parseRuneLiteral(): Int {
     val body = trim().removePrefix("'").removeSuffix("'")
     return when {

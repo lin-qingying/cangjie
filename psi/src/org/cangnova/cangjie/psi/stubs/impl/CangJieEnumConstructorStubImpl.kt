@@ -42,20 +42,41 @@ import com.intellij.util.io.StringRef
  class CangJieEnumConstructorStubImpl(
     type: CjEnumConstructorElementType,
     parent: StubElement<out PsiElement>?,
+    /**
+     * 保存 `name` 的内部状态，供PSI Stub实现维护节点缓存或解析上下文。
+     */
     private val name: StringRef?,       // 枚举构造器名称 (例如: Red, Green)
+    /**
+     * 保存 `typeCount` 的内部状态，供PSI Stub实现维护节点缓存或解析上下文。
+     */
     private val typeCount: Int,         // 参数类型数量
+    /**
+     * 保存 `enumFqName` 的内部状态，供PSI Stub实现维护节点缓存或解析上下文。
+     */
     private val enumFqName: StringRef?, // 所属枚举的完全限定名
 ) : CangJieStubBaseImpl<CjEnumConstructor>(parent, type), CangJieEnumConstructorStub {
 
+    /**
+     * 实现 `getName` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getName() = StringRef.toString(name)
 
+    /**
+     * 实现 `getTypeCount` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getTypeCount(): Int = typeCount
 
+    /**
+     * 实现 `getEnumFqName` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getEnumFqName(): FqName? {
         val fqNameStr = StringRef.toString(enumFqName) ?: return null
         return FqName(fqNameStr)
     }
 
+    /**
+     * 实现 `copyInto` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun copyInto(newParent: StubElement<*>?): CangJieEnumConstructorStubImpl = CangJieEnumConstructorStubImpl(
         type = stubType as CjEnumConstructorElementType,
         parent = newParent,

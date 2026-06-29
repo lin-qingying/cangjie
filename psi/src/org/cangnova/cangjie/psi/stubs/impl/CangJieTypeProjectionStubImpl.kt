@@ -29,12 +29,21 @@ import org.cangnova.cangjie.psi.CjTypeProjection
 import org.cangnova.cangjie.psi.stubs.CangJieTypeProjectionStub
 import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 
+/**
+ * 表示 `CangJieTypeProjectionStubImpl`，承载PSI Stub中的语法节点、索引桩或辅助模型。
+ */
 class CangJieTypeProjectionStubImpl(parent: StubElement<*>, private val projectionKindOrdinal: Int) :
     CangJieStubBaseImpl<CjTypeProjection>(parent, CjStubElementTypes.TYPE_PROJECTION), CangJieTypeProjectionStub {
+    /**
+     * 实现 `getProjectionKind` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getProjectionKind(): CjProjectionKind {
         return CjProjectionKind.entries[projectionKindOrdinal]
     }
 
+    /**
+     * 实现 `copyInto` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun copyInto(newParent: StubElement<*>?): CangJieTypeProjectionStubImpl = CangJieTypeProjectionStubImpl(
         parent = requireNotNull(newParent),
         projectionKindOrdinal = projectionKindOrdinal,

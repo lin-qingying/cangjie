@@ -29,14 +29,26 @@ import org.cangnova.cangjie.psi.CjNodeTypes
 import com.intellij.lang.ASTNode
 import com.intellij.psi.PsiElement
 
+/**
+ * 表示 `CjLoopExpression`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 abstract class CjLoopExpression(node: ASTNode) : CjExpressionImpl(node), CjStatementExpression {
+    /**
+     * 保存 `body`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val body: CjExpression?
         get() = findExpressionUnder(CjNodeTypes.BODY)
 
+    /**
+     * 保存 `leftParenthesis`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     @get: IfNotParsed
     val leftParenthesis: PsiElement?
         get() = findChildByType(CjTokens.LPAR)
 
+    /**
+     * 保存 `rightParenthesis`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     @get: IfNotParsed
     val rightParenthesis: PsiElement?
         get() = findChildByType(CjTokens.RPAR)

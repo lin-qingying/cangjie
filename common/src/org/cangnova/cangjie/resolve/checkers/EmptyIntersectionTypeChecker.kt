@@ -218,6 +218,12 @@ enum class EmptyIntersectionTypeKind(
  * @param casingTypes 造成冲突的两个刚性类型（用于错误报告）
  */
 class EmptyIntersectionTypeInfo(
+    /**
+     * 空交叉的原因种类。
+     */
     val kind: EmptyIntersectionTypeKind,
+    /**
+     * 造成空交叉判断的刚性类型集合。
+     */
     vararg val casingTypes: RigidTypeMarker  // 仓颉所有类型均为刚性类型
 )

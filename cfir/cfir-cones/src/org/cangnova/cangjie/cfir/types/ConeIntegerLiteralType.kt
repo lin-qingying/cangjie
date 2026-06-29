@@ -94,8 +94,8 @@ sealed class ConeIdealIntLiteralType : ConeIdealLiteralType() {
          */
         val POSSIBLE_INT_TYPES: List<ConePrimitiveType> = listOf(
             ConePrimitiveType.INT8, ConePrimitiveType.INT16,
-            ConePrimitiveType.INT32, ConePrimitiveType.INT64,
-            ConePrimitiveType.INT_NATIVE,
+            ConePrimitiveType.INT32, ConePrimitiveType.INT_NATIVE,
+            ConePrimitiveType.INT64,
             ConePrimitiveType.UINT8, ConePrimitiveType.UINT16,
             ConePrimitiveType.UINT32, ConePrimitiveType.UINT64,
             ConePrimitiveType.UINT_NATIVE,

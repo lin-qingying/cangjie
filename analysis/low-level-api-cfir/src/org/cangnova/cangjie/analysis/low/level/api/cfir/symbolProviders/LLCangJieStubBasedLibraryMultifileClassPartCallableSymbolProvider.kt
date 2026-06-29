@@ -20,21 +20,29 @@ import org.cangnova.cangjie.psi.stubs.impl.CangJieStubOrigin
 import org.cangnova.cangjie.analysis.low.level.api.cfir.stubBased.deserialization.compiledStub
 
 /**
- * Issue: [KT-68484](https://youtrack.jetbrains.com/issue/KT-68484).
+ * 为合成多文件类 part 中的顶层 callable 提供兜底符号反序列化。
  *
- * This class provides fallback symbols for top-level callables from synthetic multifile class part
- * ([MULTIFILE_CLASS_PART][org.cangnova.cangjie.load.kotlin.header.KotlinClassHeader.Kind.MULTIFILE_CLASS_PART]).
+ * 多文件类 part 可能不会进入常规索引，但 IDE 仍可能为其构建 stub，并在库 callable 查找中请求对应符号。该提供器只在主库符号
+ * 查询没有结果时被调用，用于按已知 PSI 声明补齐函数或属性符号。
  *
- * @see org.cangnova.cangjie.analysis.decompiler.stub.file.ClsClassFinder.isCangJieInternalCompiledFile
+ * @property session 用于创建缓存并执行 stub 反序列化的 CFIR 会话。
  * @see addCallableIfNeeded
  **/
 internal class LLCangJieStubBasedLibraryMultifileClassPartCallableSymbolProvider(val session: CfirSession) {
+    /**
+     * 多文件类 part 函数兜底缓存。
+     */
     private val fallbackFunctionCache = session.cfirCachesFactory.createCache(::loadFunction)
+    /**
+     * 多文件类 part 属性兜底缓存。
+     */
     private val fallbackPropertyCache = session.cfirCachesFactory.createCache(::loadProperty)
 
     /**
-     * This fallback is required for multifile part classes which are not present in indices
-     * but might be requested as in some cases we still build stubs for them.
+     * 在需要时把 [callableDeclaration] 对应的多文件类 part callable 符号追加到 [callableCandidates]。
+     *
+     * 只有声明所在文件 stub 表示多文件类 facade 时才会尝试加载。该兜底路径用于索引缺失但 stub 存在的库 callable，
+     * 不参与普通源码或普通库文件的主查询流程。
      */
     fun addCallableIfNeeded(
         callableCandidates: MutableList<CfirCallableSymbol<*>>,
@@ -57,6 +65,9 @@ internal class LLCangJieStubBasedLibraryMultifileClassPartCallableSymbolProvider
         symbol?.let(callableCandidates::add)
     }
 
+    /**
+     * 从多文件类 part 的 [function] stub 反序列化顶层函数符号。
+     */
     private fun loadFunction(function: CjNamedFunction, callableId: CallableId): CfirNamedFunctionSymbol? {
         return LLCangJieStubBasedLibrarySymbolProvider.loadFunction(
             function = function,
@@ -67,6 +78,9 @@ internal class LLCangJieStubBasedLibraryMultifileClassPartCallableSymbolProvider
         )
     }
 
+    /**
+     * 从多文件类 part 的 [property] stub 反序列化顶层属性符号。
+     */
     private fun loadProperty(property: CjProperty, callableId: CallableId): CfirPropertySymbol? {
         return LLCangJieStubBasedLibrarySymbolProvider.loadProperty(
             property = property,

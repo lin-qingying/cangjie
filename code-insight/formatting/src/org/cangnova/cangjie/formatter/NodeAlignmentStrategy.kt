@@ -27,10 +27,22 @@ import com.intellij.formatting.Alignment
 import com.intellij.formatting.alignment.AlignmentStrategy
 import com.intellij.lang.ASTNode
 
+/**
+ * 基于 ASTNode 的 formatter 对齐策略抽象。
+ */
 abstract class NodeAlignmentStrategy : CommonAlignmentStrategy() {
+    /**
+     * 返回指定节点在格式化块中的对齐对象。
+     */
     public abstract override fun getAlignment(node: ASTNode): Alignment?
 
+    /**
+     * 将 IntelliJ `AlignmentStrategy` 包装成节点级策略。
+     */
     private class AlignmentStrategyWrapper(private val internalStrategy: AlignmentStrategy) : NodeAlignmentStrategy() {
+        /**
+         * 根据父子节点元素类型委托给内部对齐策略。
+         */
         override fun getAlignment(node: ASTNode): Alignment? {
             val parent = node.getTreeParent()
             if (parent != null) {
@@ -42,9 +54,13 @@ abstract class NodeAlignmentStrategy : CommonAlignmentStrategy() {
     }
 
     companion object {
+        /** 不产生任何对齐的节点策略。 */
         val nullStrategy: NodeAlignmentStrategy = fromTypes(AlignmentStrategy.wrap(null))
 
 
+        /**
+         * 将元素类型对齐策略提升为节点对齐策略。
+         */
         fun fromTypes(strategy: AlignmentStrategy): NodeAlignmentStrategy {
             return AlignmentStrategyWrapper(strategy)
         }

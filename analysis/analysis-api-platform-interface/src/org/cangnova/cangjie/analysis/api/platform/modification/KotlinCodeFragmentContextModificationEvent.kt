@@ -8,8 +8,14 @@ import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
  */
 @CaPlatformInterface
 class KotlinCodeFragmentContextModificationEvent(val module: CaModule) : KotlinModificationEvent {
+    /**
+     * 按模块比较事件相等性。
+     */
     override fun equals(other: Any?): Boolean =
         this === other || other is KotlinCodeFragmentContextModificationEvent && module == other.module
 
+    /**
+     * 基于模块计算哈希值。
+     */
     override fun hashCode(): Int = module.hashCode()
 }

@@ -7,6 +7,9 @@ import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaSourceModule
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 
+/**
+ * 判断模块在当前 low-level session 中应按 lazy 还是 static 方式解析的 provider。
+ */
 interface LLModuleResolutionStrategyProvider {
     /**
      * Returns [LLModuleResolutionStrategy.STATIC] if the [module] is treated as a binary for the current session,
@@ -43,6 +46,9 @@ enum class LLModuleResolutionStrategy {
  * A resolution strategy that treats all modules but the [useSiteModule] as [LLModuleResolutionStrategy.STATIC].
  */
 internal class LLSimpleResolutionStrategyProvider(private val useSiteModule: CaModule) : LLModuleResolutionStrategyProvider {
+    /**
+     * use-site module 使用 lazy 策略，其它模块使用 static 策略。
+     */
     override fun getKind(module: CaModule): LLModuleResolutionStrategy {
         return when (module) {
             useSiteModule -> LLModuleResolutionStrategy.LAZY

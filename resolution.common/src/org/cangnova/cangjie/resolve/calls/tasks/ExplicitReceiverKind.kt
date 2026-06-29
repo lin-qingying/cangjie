@@ -67,14 +67,20 @@ enum class ExplicitReceiverKind {
     BOTH_RECEIVERS,
     ;
 
+    /**
+     * 是否存在扩展接收者。
+     */
     val isExtensionReceiver: Boolean
         /**
          * 判断此调用是否有扩展接收者。
          *
          * [EXTENSION_RECEIVER] 和 [BOTH_RECEIVERS] 均返回 true。
-         */
+        */
         get() = this == ExplicitReceiverKind.EXTENSION_RECEIVER || this == ExplicitReceiverKind.BOTH_RECEIVERS
 
+    /**
+     * 是否存在派发接收者。
+     */
     val isDispatchReceiver: Boolean
         /**
          * 判断此调用是否有派发接收者。

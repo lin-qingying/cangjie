@@ -26,15 +26,39 @@ import org.cangnova.cangjie.name.Name
  * 因此这里组合“文件声明 scope + package scope”，但两者都是真实 CFIR scope。
  */
 internal class CaCfirFileScope(
+    /**
+     * 当前文件作用域所属的公开文件符号。
+     */
     private val owner: CaCfirFileSymbol,
+    /**
+     * 用于构造公开符号的 CFIR builder。
+     */
     private val builder: CaSymbolByCfirBuilder
 ) : CaScope {
+    /**
+     * 当前作用域公开对象的生命周期令牌。
+     */
     override val token: CaLifetimeToken get() = builder.token
+
+    /**
+     * 返回当前文件内所有可能名称。
+     */
     override fun getAllPossibleNames(): Set<Name> = withValidityAssertion { allNamesCached }
+
+    /**
+     * 返回当前文件内可能的 callable 名称。
+     */
     override fun getPossibleCallableNames(): Set<Name> = withValidityAssertion { backingCallableNames }
+
+    /**
+     * 返回当前文件内可能的 classifier 名称。
+     */
     override fun getPossibleClassifierNames(): Set<Name> = withValidityAssertion { _classifierNames }
 
 
+    /**
+     * 当前文件顶层函数和属性名称缓存。
+     */
     private val backingCallableNames: Set<Name> by cached {
         val result = mutableSetOf<Name>()
         owner.cfirSymbol.cfir.declarations
@@ -48,6 +72,10 @@ internal class CaCfirFileScope(
 
         result
     }
+
+    /**
+     * 当前文件顶层 class-like 声明名称缓存。
+     */
     private val _classifierNames: Set<Name> by cached {
         val result = mutableSetOf<Name>()
         owner.cfirSymbol.cfir.declarations
@@ -57,6 +85,10 @@ internal class CaCfirFileScope(
 
         result
     }
+
+    /**
+     * 按名称过滤器查询当前文件内 callable 符号。
+     */
     override fun callables(nameFilter: (Name) -> Boolean): Sequence<CaCallableSymbol> = withValidityAssertion {
         sequence {
             owner.cfirSymbol.cfir.declarations.forEach { firDeclaration ->
@@ -72,6 +104,10 @@ internal class CaCfirFileScope(
             }
         }
     }
+
+    /**
+     * 按名称过滤器查询当前文件内 classifier 符号。
+     */
     override fun classifiers(nameFilter: (Name) -> Boolean): Sequence<CaClassifierSymbol> = withValidityAssertion {
         sequence {
             owner.cfirSymbol.cfir.declarations.forEach { firDeclaration ->
@@ -87,25 +123,41 @@ internal class CaCfirFileScope(
         }
     }
 
+    /**
+     * 按名称集合查询当前文件内 classifier 符号。
+     */
     override fun classifiers(names: Collection<Name>): Sequence<CaClassifierSymbol> = withValidityAssertion {
         if (names.isEmpty()) return emptySequence()
         val namesSet = names.toSet()
         return classifiers { it in namesSet }
     }
 
+    /**
+     * 文件作用域不直接提供构造器集合。
+     */
     override val constructors: Sequence<CaConstructorSymbol>
         get() = withValidityAssertion { emptySequence() }
 
+    /**
+     * 文件作用域不直接提供包符号。
+     */
     @CaExperimentalApi
     override fun getPackageSymbols(nameFilter: (Name) -> Boolean): Sequence<CaPackageSymbol> = withValidityAssertion {
         emptySequence()
     }
+
+    /**
+     * 按名称集合查询当前文件内 callable 符号。
+     */
     override fun callables(names: Collection<Name>): Sequence<CaCallableSymbol> = withValidityAssertion {
         if (names.isEmpty()) return emptySequence()
         val namesSet = names.toSet()
         return callables { it in namesSet }
     }
 
+    /**
+     * 当前文件作用域的全部名称缓存。
+     */
     private val allNamesCached by cached {
         backingCallableNames + _classifierNames
     }

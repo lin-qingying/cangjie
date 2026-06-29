@@ -17,12 +17,21 @@ import org.cangnova.cangjie.name.Name
  */
 @OptIn(CaImplementationDetail::class)
 abstract class CaBaseVariableSignature<out S : CaVariableSymbol> : CaVariableSignature<S> {
+    /**
+     * 变量签名名称，默认取底层变量符号名称。
+     */
     override val name: Name
         get() = withValidityAssertion { symbol.name }
 
+    /**
+     * 变量签名类型，默认取签名的返回类型。
+     */
     override val type
         get() = withValidityAssertion { returnType }
 
+    /**
+     * 变量签名注解，默认从底层可注解符号读取。
+     */
     override val annotations: List<CaAnnotation>
         get() = withValidityAssertion {
             (symbol as? CaAnnotatedSymbol)?.annotations?.toList().orEmpty()

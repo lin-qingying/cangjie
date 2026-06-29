@@ -6,16 +6,16 @@ open class Parent {
 }
 
 class children <: Parent {
-    public children(c!: Int32 = <!ASSIGNMENT_OF_MEMBER_VARIABLE_CANNOT_USE_THIS_OR_SUPER!>t<!>his.a) {}
-    public init(c: Int64, b!: Int32 = <!ASSIGNMENT_OF_MEMBER_VARIABLE_CANNOT_USE_THIS_OR_SUPER!>s<!>uper.a) {}
+    public children(c!: Int32 = <!ASSIGNMENT_OF_MEMBER_VARIABLE_CANNOT_USE_THIS_OR_SUPER!>this<!>.a) {}
+    public init(c: Int64, b!: Int32 = <!ASSIGNMENT_OF_MEMBER_VARIABLE_CANNOT_USE_THIS_OR_SUPER!>super<!>.a) {}
     public func f(d!: Int32 = this.a) {}
     public func f1(d!: Int32 = super.a) {}
 }
 
 struct A {
     public var a: Int64 = 1
-    public init(e!: Int64 = <!ASSIGNMENT_OF_MEMBER_VARIABLE_CANNOT_USE_THIS_OR_SUPER!>s<!>uper.a) {}
-    public init(b!: String = "a", c!: Int64 = <!ASSIGNMENT_OF_MEMBER_VARIABLE_CANNOT_USE_THIS_OR_SUPER!>t<!>his.a) {}
+    public init(e!: Int64 = <!ASSIGNMENT_OF_MEMBER_VARIABLE_CANNOT_USE_THIS_OR_SUPER!>super<!>.a) {}
+    public init(b!: String = "a", c!: Int64 = <!ASSIGNMENT_OF_MEMBER_VARIABLE_CANNOT_USE_THIS_OR_SUPER!>this<!>.a) {}
 }
 
 main(): Int64 {

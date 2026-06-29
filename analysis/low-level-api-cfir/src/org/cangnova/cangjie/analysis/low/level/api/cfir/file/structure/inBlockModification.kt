@@ -44,6 +44,15 @@ private fun CfirNamedFunction.inBodyInvalidation(): Boolean {
     return true
 }
 
+/**
+ * 将函数类声明的已解析函数体回退为惰性函数体，并清除依赖该函数体的控制流图。
+ *
+ * 如果传入的 [body] 已经是 [CfirLazyBlock]，说明函数体尚未真正完成解析，此时不需要回退解析阶段，
+ * 返回 `null` 以便调用方只完成自身状态同步。对于已经解析过的函数体，本函数会把声明阶段降到
+ * [phaseWithoutBody]，保证后续查询可以重新触发 body resolve。
+ *
+ * @return 实际回退到的解析阶段；如果函数体仍是惰性块则返回 `null`。
+ */
 private fun CfirFunction.invalidateBody(body: CfirBlock): CfirResolvePhase? {
     // the body is not yet resolved, so there is nothing to invalidate
     if (body is CfirLazyBlock) return null
@@ -119,6 +128,14 @@ private fun CfirPropertyAccessor.inBodyInvalidation(): Boolean {
     return true
 }
 
+/**
+ * 使代码片段的已解析块失效，并把代码片段阶段回退到 body resolve 之前。
+ *
+ * 代码片段没有声明签名与函数体之间的边界，因此一旦块内容已解析，就需要整体替换为惰性块。
+ * 若当前块已经是 [CfirLazyBlock]，则视为已有可重新解析入口，不再重复替换。
+ *
+ * @return 始终返回 `true`，表示该代码片段变更可以按块内修改处理。
+ */
 private fun CfirCodeFragment.inBodyInvalidation(): Boolean {
     if (block is CfirLazyBlock) {
         return true
@@ -130,11 +147,23 @@ private fun CfirCodeFragment.inBodyInvalidation(): Boolean {
     return true
 }
 
+/**
+ * 表示移除函数体或初始化器之后声明应保留的最高解析阶段。
+ *
+ * 该阶段不会超过 [CfirResolvePhase.BODY_RESOLVE] 的前一阶段，同时也不会提升当前声明已有的
+ * [CfirDeclaration.resolvePhase]，用于在失效时保持阶段单调回退而不引入额外解析。
+ */
 private val CfirDeclaration.phaseWithoutBody: CfirResolvePhase
     get() {
         return minOf(CfirResolvePhase.BODY_RESOLVE.previous, resolvePhase)
     }
 
+/**
+ * 将声明解析状态回退到 [newPhase]，并在部分 body 解析声明上同步清理缓存的部分解析状态。
+ *
+ * 只有已经进入 body resolve 前置阶段或更高阶段的部分可解析声明才需要清除 [partialBodyAnalysisState]；
+ * 较早阶段的声明尚未产生可复用的部分 body 结果，不需要额外处理。
+ */
 private fun CfirDeclaration.decreasePhase(newPhase: CfirResolvePhase) {
     if (isPartialBodyResolvable) {
         val oldPhase = resolvePhase

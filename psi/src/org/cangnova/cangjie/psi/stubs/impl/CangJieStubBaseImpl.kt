@@ -38,8 +38,14 @@ import com.intellij.psi.stubs.StubBase
 import com.intellij.psi.stubs.StubElement
 import java.lang.reflect.Method
 
+/**
+ * 保存 `STUB_TO_STRING_PREFIX`，供PSI Stub流程读取节点结构或语义信息。
+ */
 const val STUB_TO_STRING_PREFIX = "CangJieStub$"
 
+/**
+ * 表示 `CangJieStubBaseImpl`，承载PSI Stub中的语法节点、索引桩或辅助模型。
+ */
 abstract class CangJieStubBaseImpl<T : CjElementImplStub<*>>(parent: StubElement<*>?, elementType: IStubElementType<*, *>) :
     StubBase<T>(parent, elementType), CangJieStubElement<T> {
 
@@ -55,15 +61,27 @@ abstract class CangJieStubBaseImpl<T : CjElementImplStub<*>>(parent: StubElement
         )
     }
 
+    /**
+     * 提供 `copyInto` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
+     */
     abstract override fun copyInto(newParent: StubElement<*>?): CangJieStubBaseImpl<T>
 
+    /**
+     * 实现 `getStubType` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getStubType(): IStubElementType<out StubElement<*>, *> =
         super.getStubType() as IStubElementType<out StubElement<*>, *>
 
+    /**
+     * 执行 `renderPropertyValues` 内部辅助逻辑，支撑PSI Stub节点的结构解析与访问。
+     */
     private fun renderPropertyValues(stubInterface: Class<out Any?>): List<String> {
         return collectProperties(stubInterface).mapNotNull { property -> renderProperty(property) }.sorted()
     }
 
+    /**
+     * 执行 `getPropertyName` 内部辅助逻辑，支撑PSI Stub节点的结构解析与访问。
+     */
     private fun getPropertyName(method: Method): String {
         val methodName = method.name
         if (methodName.startsWith("get")) {
@@ -72,6 +90,9 @@ abstract class CangJieStubBaseImpl<T : CjElementImplStub<*>>(parent: StubElement
         return methodName
     }
 
+    /**
+     * 执行 `renderProperty` 内部辅助逻辑，支撑PSI Stub节点的结构解析与访问。
+     */
     private fun renderProperty(property: Method): String? {
         return try {
             val value = property.invoke(this)
@@ -87,6 +108,9 @@ abstract class CangJieStubBaseImpl<T : CjElementImplStub<*>>(parent: StubElement
         }
     }
 
+    /**
+     * 执行 `collectProperties` 内部辅助逻辑，支撑PSI Stub节点的结构解析与访问。
+     */
     private fun collectProperties(stubInterface: Class<*>): Collection<Method> {
         val result = ArrayList<Method>()
         result.addAll(stubInterface.declaredMethods.filter { it.parameterTypes.isEmpty() })
@@ -98,6 +122,9 @@ abstract class CangJieStubBaseImpl<T : CjElementImplStub<*>>(parent: StubElement
         return result
     }
 
+    /**
+     * 实现 `toString` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun toString(): String {
         val stubInterface = this::class.java.interfaces.single { it.name.contains("Stub") }
         val propertiesValues = renderPropertyValues(stubInterface)

@@ -39,7 +39,13 @@ import org.cangnova.cangjie.cfir.types.coneType
 import org.cangnova.cangjie.cfir.types.classId
 import org.cangnova.cangjie.cfir.visitors.transformSingle
 
+/**
+ * STATUS 阶段的低阶懒解析入口。
+ */
 internal object LLCfirStatusLazyResolver : LLCfirLazyResolver(CfirResolvePhase.STATUS) {
+    /**
+     * 为 [target] 创建 STATUS 阶段目标解析器，并建立当前目标适用的状态解析模式。
+     */
     override fun createTargetResolver(target: LLCfirResolveTarget): LLCfirTargetResolver {
         val session = target.session
         val resolveMode = target.resolveMode()
@@ -54,24 +60,50 @@ internal object LLCfirStatusLazyResolver : LLCfirLazyResolver(CfirResolvePhase.S
         )
     }
 
+    /**
+     * 校验成员声明的状态已经解析完成。
+     */
     override fun phaseSpecificCheckIsResolved(target: CfirElementWithResolveState) {
         if (target !is CfirMemberDeclaration) return
         checkDeclarationStatusIsResolved(target)
     }
 }
 
+/**
+ * STATUS 阶段解析目标的策略。
+ *
+ * [resolveSupertypes] 控制是否强制解析父类型状态，[shouldBeResolved] 控制 class-like 成员 callable 是否随容器一起解析。
+ */
 private sealed class StatusResolveMode(val resolveSupertypes: Boolean) {
+    /**
+     * 判断 [callableDeclaration] 是否应随当前 class-like 容器一起解析状态。
+     */
     abstract fun shouldBeResolved(callableDeclaration: CfirCallableDeclaration): Boolean
 
+    /**
+     * 只解析当前目标，不主动解析全部 callable 成员。
+     */
     object OnlyTarget : StatusResolveMode(resolveSupertypes = false) {
+        /**
+         * OnlyTarget 模式下 callable 成员不会被容器解析连带推进。
+         */
         override fun shouldBeResolved(callableDeclaration: CfirCallableDeclaration): Boolean = false
     }
 
+    /**
+     * 解析目标及其 callable 成员，并在需要时解析父类型状态。
+     */
     object AllCallables : StatusResolveMode(resolveSupertypes = true) {
+        /**
+         * AllCallables 模式下所有 callable 成员都会被容器解析连带推进。
+         */
         override fun shouldBeResolved(callableDeclaration: CfirCallableDeclaration): Boolean = true
     }
 }
 
+/**
+ * 根据解析目标形态选择 STATUS 阶段模式。
+ */
 private fun LLCfirResolveTarget.resolveMode(): StatusResolveMode = when (this) {
     is LLCfirSingleResolveTarget -> when (target) {
         is CfirClassLikeDeclaration -> StatusResolveMode.OnlyTarget
@@ -81,13 +113,27 @@ private fun LLCfirResolveTarget.resolveMode(): StatusResolveMode = when (this) {
     else -> StatusResolveMode.AllCallables
 }
 
+/**
+ * low-level STATUS 阶段使用的状态计算会话。
+ *
+ * 它维护 use-site 会话栈，使父类型符号查找可以从当前 class-like 所属会话逐层回退到使用点会话。
+ */
 private class LLStatusComputationSession(
     useSiteSession: LLCfirSession,
     useSiteScopeSession: ScopeSession,
+    /**
+     * 当前 STATUS 阶段解析模式。
+     */
     val resolveMode: StatusResolveMode,
 ) : CfirStatusComputationSession(useSiteSession, useSiteScopeSession) {
+    /**
+     * 当前父类型解析过程中可用的 use-site 会话栈。
+     */
     private val useSiteSessions: MutableList<LLCfirSession> = mutableListOf(useSiteSession)
 
+    /**
+     * 在 [classLikeDeclaration] 所属会话上下文中执行 [action]。
+     */
     private inline fun withClassSession(classLikeDeclaration: CfirClassLikeDeclaration, action: () -> Unit) {
         val newSession = (classLikeDeclaration.moduleData.session as? LLCfirSession)
             ?.takeUnless { it == useSiteSessions.lastOrNull() }
@@ -99,6 +145,9 @@ private class LLStatusComputationSession(
         }
     }
 
+    /**
+     * 强制解析 [declaration] 父类型的状态，并在声明所属会话中完成父类型符号查找。
+     */
     override fun forceResolveStatusesOfSupertypes(declaration: CfirDeclaration) {
         if (declaration !is CfirClassLikeDeclaration) return
         withClassSession(declaration) {
@@ -106,6 +155,9 @@ private class LLStatusComputationSession(
         }
     }
 
+    /**
+     * 把父类型 [typeRef] 转换为可参与状态计算的 class-like 符号集合。
+     */
     override fun superTypeToSymbols(typeRef: CfirTypeRef) = buildSet {
         val classId = typeRef.coneType.classId ?: return@buildSet
 
@@ -114,6 +166,9 @@ private class LLStatusComputationSession(
         }
     }
 
+    /**
+     * 递归解析父类型 class-like 声明的 STATUS。
+     */
     override fun resolveClassForSuperType(classLikeDeclaration: CfirClassLikeDeclaration): Boolean {
         val target = classLikeDeclaration.tryCollectDesignation()?.asResolveTarget() ?: return false
         val resolver = LLCfirStatusTargetResolver(
@@ -133,12 +188,24 @@ private class LLStatusComputationSession(
  */
 private class LLCfirStatusTargetResolver(
     target: LLCfirResolveTarget,
+    /**
+     * 当前目标使用的 STATUS 解析模式。
+     */
     private val resolveMode: StatusResolveMode,
     statusComputationSession: CfirStatusComputationSession,
 ) : LLCfirTargetResolver(target, CfirResolvePhase.STATUS) {
+    /**
+     * 当前 resolver 绑定的状态计算会话。
+     */
     private val statusComputationSession: CfirStatusComputationSession = statusComputationSession
+    /**
+     * 委托主干状态解析逻辑的 transformer 包装。
+     */
     private val transformer = Transformer(statusComputationSession)
 
+    /**
+     * 进入 class-like 容器时确保其 STATUS 已解析，并在 transformer 中登记当前 class。
+     */
     @Deprecated("Should never be called directly, only for override purposes, please use withClassLike", level = DeprecationLevel.ERROR)
     override fun withContainingClassLike(cfirClassLike: CfirClassLikeDeclaration, action: () -> Unit) {
         if (cfirClassLike is CfirClass || cfirClassLike is CfirInterface || cfirClassLike is CfirStruct || cfirClassLike is CfirEnum) {
@@ -153,10 +220,16 @@ private class LLCfirStatusTargetResolver(
         }
     }
 
+    /**
+     * 解析 class-like 类型参数的状态。
+     */
     private fun resolveClassLikeTypeParameters(classLike: CfirClassLikeDeclaration) {
         classLike.transformTypeParameters(transformer, data = null)
     }
 
+    /**
+     * 按 [resolveMode] 解析 class-like 中需要随容器推进的 callable 成员状态。
+     */
     private fun resolveCallableMembers(classLike: CfirClassLikeDeclaration) {
         for (member in classLike.declarations) {
             if (member !is CfirCallableDeclaration || !resolveMode.shouldBeResolved(member)) continue
@@ -166,6 +239,9 @@ private class LLCfirStatusTargetResolver(
         }
     }
 
+    /**
+     * 在无目标锁阶段执行 STATUS 解析，并在需要时自行进入自定义写锁。
+     */
     override fun doResolveWithoutLock(target: CfirElementWithResolveState): Boolean = when (target) {
         is CfirClass -> {
             if (transformer.statusComputationSession[target].requiresComputation) {
@@ -278,6 +354,9 @@ private class LLCfirStatusTargetResolver(
         else -> false
     }
 
+    /**
+     * 解析 class-like 声明本身的状态、类型参数和必要的 callable 成员状态。
+     */
     private fun resolveClassLike(classLike: CfirClassLikeDeclaration) {
         transformer.statusComputationSession.startComputing(classLike)
 
@@ -311,6 +390,9 @@ private class LLCfirStatusTargetResolver(
         }
     }
 
+    /**
+     * 在解析 callable 状态前收集 override 目标，并把 override 集合交给 [transform]。
+     */
     private inline fun <T : CfirCallableDeclaration> performResolveWithOverriddenCallables(
         target: T,
         getOverridden: (T) -> List<T>,
@@ -324,6 +406,9 @@ private class LLCfirStatusTargetResolver(
         }
     }
 
+    /**
+     * 在目标锁内执行常规 STATUS transformer。
+     */
     override fun doLazyResolveUnderLock(target: CfirElementWithResolveState) {
         when (target) {
             is CfirClass -> error("should be resolved in doResolveWithoutLock")
@@ -333,12 +418,23 @@ private class LLCfirStatusTargetResolver(
         }
     }
 
+    /**
+     * STATUS 阶段使用的 transformer 包装。
+     *
+     * class 和 interface 的常规 transform 入口在 low-level 中由 [resolveClassLike] 控制，因此这里直接返回原声明。
+     */
     private class Transformer(statusComputationSession: CfirStatusComputationSession) :
         CfirStatusResolveTransformer(statusComputationSession) {
+        /**
+         * class 状态由外层 resolver 显式处理。
+         */
         override fun transformClass(klass: CfirClass, data: Nothing?): CfirClass {
             return klass
         }
 
+        /**
+         * interface 状态由外层 resolver 显式处理。
+         */
         override fun transformInterface(interfaceDeclaration: CfirInterface, data: Nothing?): CfirInterface {
             return interfaceDeclaration
         }

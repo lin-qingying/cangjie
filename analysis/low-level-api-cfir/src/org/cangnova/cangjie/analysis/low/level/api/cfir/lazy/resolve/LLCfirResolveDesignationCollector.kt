@@ -25,24 +25,45 @@ import org.cangnova.cangjie.cfir.declarations.*
  * @see shouldBeResolved
  */
 internal object LLCfirResolveDesignationCollector {
+    /**
+     * 为单个 [target] 收集普通 lazy resolve 目标。
+     *
+     * 该入口只解析目标及其必要外层路径，不强制递归解析嵌套声明或全部 callable 成员。
+     */
     fun getDesignationToResolve(target: CfirElementWithResolveState): LLCfirResolveTarget? {
         return getDesignationToResolve(target, CfirDesignation::asResolveTarget)
     }
 
+    /**
+     * 为类 [target] 收集包含全部 callable 成员的 lazy resolve 目标。
+     */
     fun getDesignationToResolveWithCallableMembers(target: CfirClass): LLCfirResolveTarget? {
         return getDesignationToResolve(target, ::LLCfirClassWithAllCallablesResolveTarget)
     }
 
+    /**
+     * 为 [target] 收集递归解析目标，使目标及其嵌套声明一并推进阶段。
+     */
     fun getDesignationToResolveRecursively(target: CfirElementWithResolveState): LLCfirResolveTarget? {
         return getDesignationToResolve(target, ::LLCfirWholeElementResolveTarget)
     }
 
+    /**
+     * 根据部分 body 解析请求收集目标 declaration 的 resolve target。
+     *
+     * 返回的目标会携带 [request] 中的语句范围和停止点，用于 resolver runner 中执行有限 body 分析。
+     */
     fun getDesignationToResolveForPartialBody(request: LLPartialBodyResolveRequest): LLCfirResolveTarget? {
         return getDesignationToResolve(request.target) {
             LLCfirPartialBodyResolveTarget(it, request)
         }
     }
 
+    /**
+     * 收集 [target] 的 CFIR designation，并通过 [resolveTarget] 包装成具体低阶 resolve target。
+     *
+     * 如果目标来源不允许 lazy resolve，或者目标无需解析，则返回 `null`。
+     */
     private fun getDesignationToResolve(
         target: CfirElementWithResolveState,
         resolveTarget: (CfirDesignation) -> LLCfirResolveTarget,
@@ -52,6 +73,12 @@ internal object LLCfirResolveDesignationCollector {
         return llResolveTarget
     }
 
+    /**
+     * 计算 [target] 真正应该解析的 declaration designation。
+     *
+     * 访问器、类型参数和值参数会提升到其包含声明；可延迟返回类型计算的 callable 可以直接作为目标；
+     * 其他声明走通用 designation 收集逻辑。
+     */
     private fun getCfirDesignationToResolve(target: CfirElementWithResolveState): CfirDesignation? {
         if (!target.shouldBeResolved()) {
             return null
@@ -74,6 +101,11 @@ internal object LLCfirResolveDesignationCollector {
         else -> throwUnexpectedCfirElementError(this)
     }
 
+    /**
+     * 判断声明来源是否允许 lazy resolve。
+     *
+     * 非 lazy-resolvable origin 必须已经处于 body resolve 阶段，否则说明调用方试图解析不可惰性推进的声明。
+     */
     private fun CfirDeclaration.shouldBeResolved(): Boolean {
         if (!origin.isLazyResolvable) {
             @OptIn(ResolveStateAccess::class)

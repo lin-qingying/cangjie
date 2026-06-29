@@ -26,9 +26,18 @@ import com.intellij.lang.Language
  * 从而不构建 Stub 索引，避免与源文件产生 REDECLARATION 冲突。
  */
 object CangJieMacroCallLanguage : Language(CangJieLanguage, "CangJieMacroCall") {
+    /**
+     * 执行 `readResolve` 内部辅助逻辑，支撑仓颉语言文件类型节点的结构解析与访问。
+     */
     private fun readResolve(): Any = CangJieMacroCallLanguage
 
+    /**
+     * 实现 `isCaseSensitive` 的仓颉语言文件类型协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun isCaseSensitive() = true
 
+    /**
+     * 实现 `getDisplayName` 的仓颉语言文件类型协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getDisplayName() = "CangJie Macro Call"
 }

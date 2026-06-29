@@ -33,6 +33,9 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.util.PsiTreeUtil
 import java.util.*
 
+/**
+ * 表示 `CjCollectionLiteralExpression`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjCollectionLiteralExpression :
     CjElementImplStub<CangJieCollectionLiteralExpressionStub>,
     CjReferenceExpression {
@@ -43,28 +46,43 @@ class CjCollectionLiteralExpression :
 
     constructor(node: ASTNode) : super(node)
 
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitCollectionLiteralExpression(this, data)
     }
 
+    /**
+     * 保存 `leftBracket`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val leftBracket: PsiElement?
         get() {
             val astNode = node.findChildByType(CjTokens.LBRACKET)
             return astNode?.psi
         }
 
+    /**
+     * 保存 `rightBracket`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val rightBracket: PsiElement?
         get() {
             val astNode = node.findChildByType(CjTokens.RBRACKET)
             return astNode?.psi
         }
 
+    /**
+     * 保存 `trailingComma`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val trailingComma: PsiElement?
         get() {
             val rightBracket = rightBracket
             return getTrailingCommaByClosingElement(rightBracket)
         }
 
+    /**
+     * 保存 `innerExpressions`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val innerExpressions: List<CjExpression>
         get() {
             val stub = stub

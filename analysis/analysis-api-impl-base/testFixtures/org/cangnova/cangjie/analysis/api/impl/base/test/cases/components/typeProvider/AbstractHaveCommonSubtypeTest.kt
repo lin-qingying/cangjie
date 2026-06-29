@@ -11,8 +11,15 @@ import org.cangnova.cangjie.test.services.assertions
 
 /**
  * `typeProvider.haveCommonSubtype` 的抽象测试。
+ *
+ * 当前测试用公开 subtype 与 semantic equality 查询组合出公共子类型判断的可观察结果。
  */
 abstract class AbstractHaveCommonSubtypeTest : AbstractAnalysisApiComponentTest() {
+    /**
+     * 执行公共子类型关系快照测试。
+     *
+     * 方法读取左右表达式类型，输出类型文本和计算出的公共子类型判断结果。
+     */
     override fun doTestByMainFile(mainFile: CjFile, mainModule: CjTestModule, testServices: TestServices) {
         val left = testServices.expressionMarkerProvider
             .getTopmostSelectedElementOfType<CjExpression>(mainFile, qualifier = "left")

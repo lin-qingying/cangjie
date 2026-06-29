@@ -12,5 +12,8 @@ import org.cangnova.cangjie.analysis.api.impl.base.components.CaBaseCDocProvider
  */
 @OptIn(CaImplementationDetail::class)
 internal class CaCfirCDocProvider(
+    /**
+     * 延迟取得当前 CFIR Analysis session，CDoc 查询复用基础 provider 的 session 绑定逻辑。
+     */
     override val analysisSessionProvider: () -> CaCfirSession,
 ): CaBaseCDocProvider<CaCfirSession>()

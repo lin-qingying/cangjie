@@ -35,6 +35,9 @@ import org.junit.jupiter.api.Test
 class AnalysisApiIdeDecompiledReferenceTest : AbstractAnalysisApiExecutionTest(
     "analysis/analysis-api-cfir/testData/ideDecompiledReferences",
 ) {
+    /**
+     * 使用 CFIR IDE-mode 配置运行 decompiled library 引用解析测试。
+     */
     override val configurator: AnalysisApiTestConfigurator =
         CaCfirAnalysisApiTestConfiguratorFactory.createConfigurator(
             AnalysisApiTestConfiguratorFactoryData(
@@ -45,6 +48,9 @@ class AnalysisApiIdeDecompiledReferenceTest : AbstractAnalysisApiExecutionTest(
             ),
         )
 
+    /**
+     * 验证类型位置引用能解析到 library binary decompiled 模块中的 typealias PSI 与 symbol。
+     */
     @Test
     fun decompiledTypeAliasReference(
         mainFile: CjFile,

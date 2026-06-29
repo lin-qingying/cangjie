@@ -11,6 +11,9 @@ import org.cangnova.cangjie.analysis.api.types.CaType
  * public API 调用方不应依赖某个 substitutor 是否实现该接口。
  */
 interface CaMapBackedSubstitutor : CaSubstitutor {
+    /**
+     * 返回 substitutor 内部保存的类型参数到类型映射。
+     */
     fun getAsMap(): Map<CaTypeParameterSymbol, CaType>
 }
 
@@ -20,6 +23,13 @@ interface CaMapBackedSubstitutor : CaSubstitutor {
  * 这同样只是实现层协议，用来对齐 Kotlin impl-base 的 chained substitutor 结构。
  */
 interface CaChainedSubstitutor : CaSubstitutor {
+    /**
+     * 链式替换中的第一段 substitutor。
+     */
     val first: CaSubstitutor
+
+    /**
+     * 链式替换中的第二段 substitutor。
+     */
     val second: CaSubstitutor
 }

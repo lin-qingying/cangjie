@@ -15,22 +15,34 @@ import org.cangnova.cangjie.test.testFramework.CjParsingTestCase
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 
+/**
+ * 验证共享折叠区域收集器的语法覆盖和占位文本。
+ */
 class CangJieFoldingRangeCollectorTest : CjParsingTestCase(
     dataPath = "",
     fileExt = "cj",
     fileType = CangJieFileType.INSTANCE,
     CangJieParserDefinition(),
 ) {
+    /**
+     * 初始化 PSI 解析测试环境。
+     */
     @BeforeEach
     fun setUpFixture() {
         setUp()
     }
 
+    /**
+     * 释放 PSI 解析测试环境。
+     */
     @AfterEach
     fun tearDownFixture() {
         tearDown()
     }
 
+    /**
+     * 多个 import 应合并为一个 imports 折叠区域。
+     */
     @Test
     fun testMultipleImportsProduceSingleImportsRegion() {
         val regions = collect(
@@ -48,6 +60,9 @@ class CangJieFoldingRangeCollectorTest : CjParsingTestCase(
         assertTrue(imports.single().canBeRemovedWhenCollapsed)
     }
 
+    /**
+     * 块、类体、函数 literal 和 match 表达式应产生普通折叠区域。
+     */
     @Test
     fun testBlockClassBodyFunctionLiteralAndMatchProduceRegion() {
         val regions = collect(
@@ -76,6 +91,9 @@ class CangJieFoldingRangeCollectorTest : CjParsingTestCase(
         assertTrue(regionTexts.any { it.startsWith("match") })
     }
 
+    /**
+     * 单行块和单行调用不应产生折叠区域。
+     */
     @Test
     fun testSingleLineBlockAndCallDoNotProduceRegion() {
         val file = parse(
@@ -90,6 +108,9 @@ class CangJieFoldingRangeCollectorTest : CjParsingTestCase(
         assertTrue(regions.isEmpty() || regions.all { "\n" in it.element.text })
     }
 
+    /**
+     * 多行调用应折叠参数括号范围并使用 `(...)` 占位符。
+     */
     @Test
     fun testMultilineCallProducesRegionWithParenthesesPlaceholder() {
         val file = parse(
@@ -110,6 +131,9 @@ class CangJieFoldingRangeCollectorTest : CjParsingTestCase(
         assertEquals("(...)", callRegion.placeholderText)
     }
 
+    /**
+     * 块注释与 CDoc 应产生 comment 类折叠区域。
+     */
     @Test
     fun testBlockCommentAndCDocProduceCommentRegion() {
         val regions = collect(
@@ -130,11 +154,17 @@ class CangJieFoldingRangeCollectorTest : CjParsingTestCase(
         assertTrue(comments.any { it.placeholderText == "/** doc text ...*/" })
     }
 
+    /**
+     * 解析源码并收集折叠区域。
+     */
     private fun collect(text: String): List<CangJieFoldingRegion> {
         val file = parse(text)
         return CangJieFoldingRangeCollector.collect(file, DocumentImpl(file.text))
     }
 
+    /**
+     * 将内联仓颉源码解析为 PSI 文件。
+     */
     private fun parse(text: String): CjFile {
         return createPsiFile("folding", text) as CjFile
     }

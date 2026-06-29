@@ -30,5 +30,8 @@ abstract class CaClassErrorType : CaErrorType {
      */
     abstract val candidateSymbols: Collection<CaClassLikeSymbol>
 
+    /**
+     * 创建可恢复该 class-like 错误类型的类型指针。
+     */
     abstract override fun createPointer(): CaTypePointer<CaClassErrorType>
 }

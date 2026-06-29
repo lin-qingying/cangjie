@@ -35,6 +35,9 @@ import com.intellij.psi.stubs.StubInputStream
 import com.intellij.psi.stubs.StubOutputStream
 import com.intellij.util.io.StringRef
 
+/**
+ * 表示 `CjConstantExpressionElementType`，承载PSI Stub中的语法节点、索引桩或辅助模型。
+ */
 class CjConstantExpressionElementType(debugName: String) :
     CjStubElementType<CangJieConstantExpressionStub, CjConstantExpression>(
         debugName,
@@ -42,6 +45,9 @@ class CjConstantExpressionElementType(debugName: String) :
         CangJieConstantExpressionStub::class.java,
     ) {
 
+    /**
+     * 实现 `shouldCreateStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun shouldCreateStub(node: ASTNode): Boolean {
         val parent = node.treeParent ?: return false
         if (parent.elementType != CjStubElementTypes.VALUE_ARGUMENT) return false
@@ -49,6 +55,9 @@ class CjConstantExpressionElementType(debugName: String) :
         return super.shouldCreateStub(node)
     }
 
+    /**
+     * 实现 `createStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createStub(psi: CjConstantExpression, parentStub: StubElement<*>?): CangJieConstantExpressionStub {
         val elementType = psi.node.elementType as? CjConstantExpressionElementType
             ?: throw IllegalStateException("Stub element type is expected for constant")
@@ -63,11 +72,17 @@ class CjConstantExpressionElementType(debugName: String) :
         )
     }
 
+    /**
+     * 实现 `serialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun serialize(stub: CangJieConstantExpressionStub, dataStream: StubOutputStream) {
         dataStream.writeInt(stub.kind().ordinal)
         dataStream.writeName(stub.value())
     }
 
+    /**
+     * 实现 `deserialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>?): CangJieConstantExpressionStub {
         val kindOrdinal = dataStream.readInt()
         val value = dataStream.readName() ?: StringRef.fromString("")

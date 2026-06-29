@@ -17,6 +17,9 @@ import org.cangnova.cangjie.test.services.assertions
  * 渲染整文件 CFIR 的 lazy resolve phase golden。
  */
 abstract class AbstractWholeFileResolvePhaseTest : AbstractAnalysisApiBasedTest() {
+    /**
+     * 将整文件推进到 BODY_RESOLVE 并渲染 resolve phase golden。
+     */
     override fun doTestByMainFile(mainFile: CjFile, mainModule: CjTestModule, testServices: TestServices) {
         val resolutionFacade = mainFile.getResolutionFacadeForTest()
         val cfirFile = mainFile.getOrBuildCfirFile(resolutionFacade)
@@ -26,6 +29,12 @@ abstract class AbstractWholeFileResolvePhaseTest : AbstractAnalysisApiBasedTest(
     }
 }
 
+/**
+ * source 配置下的整文件 resolve phase 测试基类。
+ */
 abstract class AbstractSourceWholeFileResolvePhaseTest : AbstractWholeFileResolvePhaseTest() {
+    /**
+     * 使用源码 low-level CFIR 测试配置。
+     */
     override val configurator = analysisApiCfirSourceTestConfigurator(analyseInDependentSession = false)
 }

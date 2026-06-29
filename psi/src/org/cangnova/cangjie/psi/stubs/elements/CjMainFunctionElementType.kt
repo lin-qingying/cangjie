@@ -41,6 +41,9 @@ import com.intellij.psi.stubs.StubOutputStream
 import com.intellij.util.io.StringRef
 import java.io.IOException
 
+/**
+ * 表示 `CjMainFunctionElementType`，承载PSI Stub中的语法节点、索引桩或辅助模型。
+ */
 class CjMainFunctionElementType : CjStubElementType<CangJieMainFunctionStub, CjMainFunction> {
     constructor(debugName: String, psiClass: Class<CjMainFunction>, stubClass: Class<*>) : super(
         debugName,
@@ -50,6 +53,9 @@ class CjMainFunctionElementType : CjStubElementType<CangJieMainFunctionStub, CjM
 
     constructor(debugName: String) : super(debugName, CjMainFunction::class.java, CangJieMainFunctionStub::class.java)
 
+    /**
+     * 实现 `createStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createStub(psi: CjMainFunction, parentStub: StubElement<out PsiElement>): CangJieMainFunctionStubImpl {
         var fqName = psi.safeFqNameForLazyResolve()
         if (fqName != null) {
@@ -64,6 +70,9 @@ class CjMainFunctionElementType : CjStubElementType<CangJieMainFunctionStub, CjM
         )
     }
 
+    /**
+     * 实现 `serialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     @Throws(IOException::class)
     override fun serialize(stub: CangJieMainFunctionStub, dataStream: StubOutputStream) {
         dataStream.writeName(stub.name)
@@ -76,10 +85,16 @@ class CjMainFunctionElementType : CjStubElementType<CangJieMainFunctionStub, CjM
         }
     }
 
+    /**
+     * 实现 `indexStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun indexStub(stub: CangJieMainFunctionStub, sink: IndexSink) {
         getInstance().indexMainFunction(stub, sink)
     }
 
+    /**
+     * 实现 `deserialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     @Throws(IOException::class)
     override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>): CangJieMainFunctionStubImpl {
         val name = dataStream.readName()

@@ -20,6 +20,12 @@ import org.cangnova.cangjie.test.services.assertions
  * - qualified / short 两种公开渲染
  */
 abstract class AbstractTypeTest : AbstractAnalysisApiComponentTest() {
+    /**
+     * 执行公共类型快照断言。
+     *
+     * 子类只负责提供目标 `CaType`，该方法统一渲染 presentation、qualified/short 文本、
+     * abbreviation、fullyExpandedType 和 classLikeSymbol。
+     */
     override fun doTestByMainFile(mainFile: CjFile, mainModule: CjTestModule, testServices: TestServices) {
         val actual = analyzeForTest(mainFile) {
             val type = getType(useSiteSession, mainFile, mainModule, testServices)
@@ -48,6 +54,11 @@ abstract class AbstractTypeTest : AbstractAnalysisApiComponentTest() {
         testServices.assertions.assertEqualsToTestOutputFile(actual)
     }
 
+    /**
+     * 获取当前测试要观察的公开类型。
+     *
+     * 不同子类可以从声明返回类型、内置类型、类型别名或其它公开入口恢复类型，但必须只返回 public `CaType`。
+     */
     protected abstract fun getType(
         analysisSession: CaSession,
         cjFile: CjFile,

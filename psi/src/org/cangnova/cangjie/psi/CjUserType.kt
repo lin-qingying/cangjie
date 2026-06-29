@@ -30,28 +30,46 @@ import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 import com.google.common.collect.Lists
 import com.intellij.lang.ASTNode
 
+/**
+ * 表示 `CjUserType`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjUserType : CjElementImplStub<CangJieUserTypeStub>, CjTypeElement {
     constructor(node: ASTNode) : super(node)
 
     constructor(stub: CangJieUserTypeStub) : super(stub, CjStubElementTypes.USER_TYPE)
 
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitUserType(this, data)
     }
 
+    /**
+     * 保存 `typeArgumentList`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val typeArgumentList: CjTypeArgumentList?
         get() = getStubOrPsiChild(CjStubElementTypes.TYPE_ARGUMENT_LIST)
 
+    /**
+     * 保存 `typeArguments`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val typeArguments: List<CjTypeProjection>
         get() {
             val typeArgumentList = typeArgumentList
             return typeArgumentList?.arguments ?: emptyList()
         }
 
+    /**
+     * 实现 `toString` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun toString(): String {
         return node.elementType.toString()
     }
 
+    /**
+     * 暴露 `typeArgumentsAsTypes`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val typeArgumentsAsTypes: List<CjTypeReference>
         get() {
             val result: MutableList<CjTypeReference> =
@@ -62,10 +80,16 @@ class CjUserType : CjElementImplStub<CangJieUserTypeStub>, CjTypeElement {
             return result
         }
 
+    /**
+     * 保存 `referenceExpression`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     @get:IfNotParsed
     val referenceExpression: CjSimpleNameExpression?
         get() = getStubOrPsiChild(CjStubElementTypes.REFERENCE_EXPRESSION)
 
+    /**
+     * 保存 `qualifier`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val qualifier: CjUserType?
         get() = getStubOrPsiChild(CjStubElementTypes.USER_TYPE)
 
@@ -85,6 +109,9 @@ class CjUserType : CjElementImplStub<CangJieUserTypeStub>, CjTypeElement {
         qualifier?.deleteQualifier(size - 1)
     }
 
+    /**
+     * 提供 `deleteQualifier` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun deleteQualifier() {
         val qualifier = checkNotNull(qualifier)
         val dot = checkNotNull(findChildByType(CjTokens.DOT))
@@ -92,9 +119,15 @@ class CjUserType : CjElementImplStub<CangJieUserTypeStub>, CjTypeElement {
         dot.delete()
     }
 
+    /**
+     * 实现 `getName` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getName(): String? {
         return referencedName
     }
+    /**
+     * 保存 `referencedName`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val referencedName: String?
         get() {
             val referenceExpression = referenceExpression

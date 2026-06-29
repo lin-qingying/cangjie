@@ -45,8 +45,14 @@ import org.cangnova.cangjie.psi.CjExpression
  */
 @OptIn(CaExperimentalApi::class)
 internal class CaCfirVisibilityChecker(
+    /**
+     * 延迟取得当前 CFIR Analysis session，所有可见性判断都通过该 session 访问 LL FIR/CFIR 服务。
+     */
     override val analysisSessionProvider: () -> CaCfirSession,
 ) : CaBaseSessionComponent<CaCfirSession>(), CaVisibilityChecker, CaCfirSessionComponent {
+    /**
+     * 为指定 use-site 构造可复用的声明可见性检查器。
+     */
     override fun createUseSiteVisibilityChecker(
         useSiteFile: org.cangnova.cangjie.analysis.api.symbols.CaFileSymbol,
         receiverExpression: CjExpression?,
@@ -67,6 +73,9 @@ internal class CaCfirVisibilityChecker(
         )
     }
 
+    /**
+     * 判断 callable 成员是否在目标类内部可见。
+     */
     override fun CaCallableSymbol.isVisibleInClass(classSymbol: CaClassSymbol): Boolean = withValidityAssertion {
         require(this@isVisibleInClass is CaCfirSymbol<*>)
         require(classSymbol is CaCfirSymbol<*>)
@@ -84,19 +93,46 @@ internal class CaCfirVisibilityChecker(
         )
     }
 
+    /**
+     * 判断声明是否属于公开 API 表面。
+     */
     override fun isPublicApi(symbol: CaDeclarationSymbol): Boolean = withValidityAssertion {
         symbol.visibility == CaSymbolVisibility.PUBLIC
     }
 }
 
+/**
+ * 固定 use-site 上下文后可重复使用的 CFIR 可见性检查器。
+ */
 private class CaCfirUseSiteVisibilityChecker(
+    /**
+     * 使用点 PSI，决定局部声明、private 成员和 protected 成员的可见边界。
+     */
     private val position: PsiElement,
+    /**
+     * 使用点所属模块。
+     */
     private val positionModule: CaModule,
+    /**
+     * 使用点外层 CFIR 声明链。
+     */
     private val containingDeclarations: List<CfirDeclaration>,
+    /**
+     * 使用点所在文件的公开 CFIR 文件符号。
+     */
     private val useSiteFile: CaCfirFileSymbol,
+    /**
+     * 执行可见性判断所需的 Analysis session。
+     */
     private val analysisSession: CaCfirSession,
+    /**
+     * 约束检查器生命周期的会话 token。
+     */
     override val token: CaLifetimeToken,
 ) : CaUseSiteVisibilityChecker {
+    /**
+     * 判断候选声明符号在当前 use-site 是否可访问。
+     */
     override fun isVisible(candidateSymbol: CaDeclarationSymbol): Boolean = withValidityAssertion {
         require(candidateSymbol is CaCfirSymbol<*>)
 
@@ -111,6 +147,9 @@ private class CaCfirUseSiteVisibilityChecker(
     }
 }
 
+/**
+ * 按 CFIR 声明可见性和 use-site 上下文执行最终访问判定。
+ */
 private fun CaCfirSession.isDeclarationVisibleAtUseSite(
     candidateDeclaration: CfirMemberDeclaration,
     useSiteFile: CfirFile,
@@ -142,6 +181,9 @@ private fun CaCfirSession.isDeclarationVisibleAtUseSite(
     }
 }
 
+/**
+ * 为候选声明选择执行可见性规则时应使用的 LL CFIR session。
+ */
 private fun CaCfirSession.getTargetSession(
     positionModule: CaModule,
     candidateDeclaration: CfirMemberDeclaration,
@@ -152,6 +194,9 @@ private fun CaCfirSession.getTargetSession(
     }
 )
 
+/**
+ * 判断使用点包是否允许访问目标 package-internal 声明。
+ */
 private fun canSeePackageInternalDeclaration(
     useSiteFile: CfirFile,
     declaration: CfirMemberDeclaration,
@@ -163,6 +208,9 @@ private fun canSeePackageInternalDeclaration(
     return canAccessPackageInternalDeclaration(useSitePackage, declarationPackage)
 }
 
+/**
+ * 判断 private 顶层声明是否与使用点处于同一个 CFIR 文件。
+ */
 private fun canSeePrivateTopLevelDeclarationFromFile(
     useSiteFile: CfirFile,
     declaration: CfirMemberDeclaration,
@@ -172,6 +220,9 @@ private fun canSeePrivateTopLevelDeclarationFromFile(
     return useSiteFile == declarationContainingFile
 }
 
+/**
+ * 判断 use-site 声明链是否位于指定 owner class 内部。
+ */
 private fun canSeeMemberOf(
     ownerClassId: ClassId,
     containingDeclarations: List<CfirDeclaration>,
@@ -182,6 +233,9 @@ private fun canSeeMemberOf(
         .any { it == ownerClassId }
 }
 
+/**
+ * 判断局部声明在当前 PSI 位置是否仍处于可见 lexical 范围内。
+ */
 private fun isLocalDeclarationVisible(
     declaration: CfirMemberDeclaration,
     position: PsiElement,

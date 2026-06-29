@@ -24,6 +24,9 @@
 
 package org.cangnova.cangjie.psi.stubs
 
+/**
+ * 提供 `CangJieStubVersions` 单例，集中承载PSI Stub的共享状态、工厂或工具行为。
+ */
 object CangJieStubVersions {
 
     /**
@@ -43,10 +46,19 @@ object CangJieStubVersions {
      */
     const val SOURCE_STUB_VERSION = 205
 
+    /**
+     * 保存 `BINARY_STUB_VERSION`，供PSI Stub流程读取节点结构或语义信息。
+     */
     private const val BINARY_STUB_VERSION = SOURCE_STUB_VERSION
 
+    /**
+     * 保存 `CLASSFILE_STUB_VERSION`，供PSI Stub流程读取节点结构或语义信息。
+     */
     const val CLASSFILE_STUB_VERSION = BINARY_STUB_VERSION + 0
 
+    /**
+     * 保存 `BUILTIN_STUB_VERSION`，供PSI Stub流程读取节点结构或语义信息。
+     */
     const val BUILTIN_STUB_VERSION = BINARY_STUB_VERSION + 4
 
 

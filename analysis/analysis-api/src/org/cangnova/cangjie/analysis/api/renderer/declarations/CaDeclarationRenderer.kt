@@ -71,44 +71,83 @@ import org.cangnova.cangjie.analysis.api.symbols.name
  * 对齐 Kotlin Analysis API 的 `KaDeclarationRenderer`。
  */
 class CaDeclarationRenderer private constructor(
+    /** 声明名称渲染策略。 */
     val nameRenderer: CaDeclarationNameRenderer,
+    /** 关键字渲染策略。 */
     val keywordsRenderer: CaKeywordsRenderer,
+    /** 代码风格配置。 */
     val codeStyle: CaRendererCodeStyle,
+    /** 类型渲染策略。 */
     val typeRenderer: CaTypeRenderer,
+    /** 注解渲染策略。 */
     val annotationRenderer: CaAnnotationRenderer,
+    /** 声明修饰符渲染策略。 */
     val modifiersRenderer: CaDeclarationModifiersRenderer,
+    /** 声明相关类型的近似化策略。 */
     val declarationTypeApproximator: CaRendererTypeApproximator,
+    /** class-like body 渲染策略。 */
     val classifierBodyRenderer: CaClassifierBodyRenderer,
+    /** 单个 super type 渲染策略。 */
     val superTypeRenderer: CaSuperTypeRenderer,
+    /** super type 列表渲染策略。 */
     val superTypeListRenderer: CaSuperTypeListRenderer,
+    /** super type 过滤策略。 */
     val superTypesFilter: CaSuperTypesFilter,
+    /** body 成员作用域提供策略。 */
     val bodyMemberScopeProvider: CaRendererBodyMemberScopeProvider,
+    /** body 成员排序策略。 */
     val bodyMemberScopeSorter: CaRendererBodyMemberScopeSorter,
+    /** 函数体渲染策略。 */
     val functionLikeBodyRenderer: CaFunctionLikeBodyRenderer,
+    /** 变量初始化器渲染策略。 */
     val variableInitializerRenderer: CaVariableInitializerRenderer,
+    /** 参数默认值渲染策略。 */
     val parameterDefaultValueRenderer: CaParameterDefaultValueRenderer,
+    /** 属性 accessor 列表渲染策略。 */
     val propertyAccessorsRenderer: CaPropertyAccessorsRenderer,
+    /** 单个属性 accessor body 渲染策略。 */
     val accessorBodyRenderer: CaPropertyAccessorBodyRenderer,
+    /** callable 返回类型渲染策略。 */
     val returnTypeRenderer: CaCallableReturnTypeRenderer,
+    /** callable receiver 渲染策略。 */
     val callableReceiverRenderer: CaCallableReceiverRenderer,
+    /** callable 参数列表渲染策略。 */
     val valueParametersRenderer: CaCallableParameterRenderer,
+    /** 类型参数列表渲染策略。 */
     val typeParametersRenderer: CaTypeParametersRenderer,
+    /** 类型参数过滤策略。 */
     val typeParametersFilter: CaTypeParametersFilter,
+    /** callable 签名渲染策略。 */
     val callableSignatureRenderer: CaCallableSignatureRenderer,
+    /** 返回类型过滤策略。 */
     val returnTypeFilter: CaCallableReturnTypeFilter,
+    /** 函数类关键字渲染策略。 */
     val functionLikeKeywordRenderer: CaFunctionLikeKeywordRenderer,
+    /** class-like 符号渲染策略。 */
     val classLikeRenderer: CaClassLikeSymbolRenderer,
+    /** typealias 符号渲染策略。 */
     val typeAliasRenderer: CaTypeAliasSymbolRenderer,
+    /** extend 符号渲染策略。 */
     val extendRenderer: CaExtendSymbolRenderer,
+    /** 命名函数符号渲染策略。 */
     val namedFunctionRenderer: CaNamedFunctionSymbolRenderer,
+    /** 构造器符号渲染策略。 */
     val constructorRenderer: CaConstructorSymbolRenderer,
+    /** 属性符号渲染策略。 */
     val propertyRenderer: CaPropertySymbolRenderer,
+    /** getter 符号渲染策略。 */
     val getterRenderer: CaPropertyGetterSymbolRenderer,
+    /** setter 符号渲染策略。 */
     val setterRenderer: CaPropertySetterSymbolRenderer,
+    /** 字段符号渲染策略。 */
     val fieldRenderer: CaFieldSymbolRenderer,
+    /** 局部变量符号渲染策略。 */
     val localVariableRenderer: CaLocalVariableSymbolRenderer,
+    /** enum constructor 符号渲染策略。 */
     val enumConstructorRenderer: CaEnumConstructorSymbolRenderer,
+    /** 值参数符号渲染策略。 */
     val valueParameterRenderer: CaValueParameterSymbolRenderer,
+    /** 类型参数符号渲染策略。 */
     val typeParameterRenderer: CaTypeParameterSymbolRenderer,
 ) {
     /** 将声明 [symbol] 渲染为字符串。 */
