@@ -3,7 +3,7 @@
 
 struct A {
     public let a: Int32
-    <!CLASS_UNINITIALIZED_FIELD!>p<!>ublic A(x: Int32) {
+    <!CLASS_UNINITIALIZED_FIELD!>public A(x: Int32)<!> {
     }
 }
 
@@ -23,7 +23,7 @@ struct GenRec {
         this(x)
         this.b = y
     }
-    <!CLASS_UNINITIALIZED_FIELD!>p<!>rivate GenRec(x: Int64) {
+    <!CLASS_UNINITIALIZED_FIELD!>private GenRec(x: Int64)<!> {
         this.a = x
     }
 }

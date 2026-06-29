@@ -8,6 +8,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirFunctionCallOrigin
 import org.cangnova.cangjie.cfir.resolve.ResolutionMode
 import org.cangnova.cangjie.cfir.resolve.calls.ConeResolutionAtom
 import org.cangnova.cangjie.cfir.resolve.calls.ConeResolutionAtom.Companion.createRawAtom
+import org.cangnova.cangjie.cfir.semantics.AbstractCallKind
 import org.cangnova.cangjie.cfir.semantics.AbstractCallInfo
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
@@ -104,6 +105,19 @@ open class CallInfo(
      */
     val isCollectionLiteralCall: Boolean
         get() = containingCandidateForCollectionLiteral != null
+
+    /**
+     * 供 diagnostics/checkers 等上层模块使用的稳定调用分类。
+     *
+     * 具体 resolve 阶段序列仍由本模块的 `CallKind` 决定；这里仅暴露语义分类。
+     */
+    override val semanticCallKind: AbstractCallKind
+        get() = when (callKind) {
+            CallKind.Function -> AbstractCallKind.Function
+            CallKind.DelegatingConstructorCall -> AbstractCallKind.DelegatingConstructorCall
+            CallKind.NamedValueAccess -> AbstractCallKind.NamedValueAccess
+            CallKind.EnumConstructorCall -> AbstractCallKind.EnumConstructorCall
+        }
 
     /**
      * 当前调用是否为隐式 `invoke` 展开。

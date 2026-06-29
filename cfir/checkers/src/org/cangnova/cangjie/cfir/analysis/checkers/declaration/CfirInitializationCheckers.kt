@@ -250,7 +250,7 @@ private class CfirInitializationFlowAnalyzer(
             .forEach { fieldInfo ->
                 with(context) {
                     reporter.reportOn(
-                        source = constructor.constructorDeclarationDiagnosticSource(),
+                        source = constructor.constructorDeclarationHeaderDiagnosticSource(),
                         factory = CfirErrors.CLASS_UNINITIALIZED_FIELD,
                         a = fieldInfo.diagnosticName,
                     )
@@ -396,6 +396,7 @@ private class CfirInitializationFlowAnalyzer(
         }
         is CfirThrowExpression -> analyzeExpression(expression.exception, state).terminate()
         is CfirFunctionCall -> analyzeFunctionCall(expression, state)
+        is CfirAnonymousFunctionExpression -> state
         is CfirNamedAccessExpression -> analyzeVariableRead(expression, state, accessMode)
         is CfirQualifiedAccessExpression -> analyzeQualifiedAccess(expression, state, accessMode)
         is CfirBlock -> analyzeScopedBlock(expression, state)
@@ -898,76 +899,14 @@ private class CfirInitializationFlowAnalyzer(
         var state = initialState
         var order = nextVisitOrder
 
-        fun CfirQualifiedAccessExpression.trackedStaticGlobalVariableOrNull(): StaticGlobalInitializerVariable? {
-            val symbol = resolvedAccessSymbolOrNull()?.initializationSymbol() ?: return null
-            return trackedBySymbol[symbol]
+        state = analyzeStatements(body.statements, state)
+        for (variable in trackedBySymbol.values) {
+            if (variable.initialized) continue
+            if (!state.isInitialized(variable.symbol)) continue
+            variable.initialized = true
+            variable.visitOrder = order++
         }
 
-        fun reportStaticGlobalReadIfNeeded(access: CfirQualifiedAccessExpression) {
-            val variable = access.trackedStaticGlobalVariableOrNull() ?: return
-            if (state.isInitialized(variable.symbol)) return
-            with(context) {
-                reporter.reportOn(
-                    source = access.calleeReference.source ?: access.source,
-                    factory = CfirErrors.USED_BEFORE_INITIALIZATION,
-                    a = variable.diagnosticName,
-                )
-            }
-        }
-
-        fun markStaticGlobalAssignmentTarget(lValue: CfirExpression) {
-            val access = lValue as? CfirQualifiedAccessExpression ?: return
-            val variable = access.trackedStaticGlobalVariableOrNull() ?: return
-            if (!variable.initialized) {
-                variable.initialized = true
-                variable.visitOrder = order++
-            }
-            state = state.markInitialized(variable.symbol)
-        }
-
-        val visitor = object : org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid() {
-            override fun visitElement(element: CfirElement) {
-                element.acceptChildren(this, null)
-            }
-
-            override fun visitBlock(block: CfirBlock) {
-                for (statement in block.statements) {
-                    statement.accept(this, null)
-                }
-            }
-
-            override fun visitAnonymousFunctionExpression(anonymousFunctionExpression: CfirAnonymousFunctionExpression) = Unit
-
-            override fun visitPatternVariable(patternVariable: CfirPatternVariable) {
-                val initializer = patternVariable.initializer ?: return
-                if (initializer is CfirAnonymousFunctionExpression) return
-                initializer.accept(this, null)
-            }
-
-            override fun visitAssignment(assignment: CfirAssignment) {
-                assignment.rValue.accept(this, null)
-                markStaticGlobalAssignmentTarget(assignment.lValue)
-            }
-
-            override fun visitFunctionCall(functionCall: CfirFunctionCall) {
-                functionCall.explicitReceiver?.accept(this, null)
-                for (argument in functionCall.argumentList.arguments) {
-                    argument.accept(this, null)
-                }
-            }
-
-            override fun visitQualifiedAccessExpression(qualifiedAccessExpression: CfirQualifiedAccessExpression) {
-                qualifiedAccessExpression.explicitReceiver?.accept(this, null)
-                reportStaticGlobalReadIfNeeded(qualifiedAccessExpression)
-            }
-
-            override fun visitNamedAccessExpression(namedAccessExpression: CfirNamedAccessExpression) {
-                namedAccessExpression.explicitReceiver?.accept(this, null)
-                reportStaticGlobalReadIfNeeded(namedAccessExpression)
-            }
-        }
-
-        body.accept(visitor, null)
         declaration.visitOrder = order++
         collectRecursiveStaticFunctionReads(body, declaration.visitOrder, trackedBySymbol, recursiveStaticFunctionReads)
         return StaticInitializerProcessingResult(state, order)
@@ -1078,7 +1017,7 @@ private class CfirInitializationFlowAnalyzer(
             if (variable.initialized) continue
             with(context) {
                 reporter.reportOn(
-                    source = field.source,
+                    source = field.fieldVariableNameDiagnosticSource(),
                     factory = CfirErrors.TYPE_UNINITIALIZED_STATIC_FIELD,
                     a = field.name,
                 )

@@ -357,14 +357,14 @@ open class AbstractCfirStatusResolveTransformer(
     }
 
     /** 推进 interface 声明 STATUS，并在其容器上下文内处理类型参数和成员。 */
-    override fun transformInterface(interfaceDeclaration: CfirInterface, data: Nothing?): CfirInterface {
+    override fun transformInterface(`interface`: CfirInterface, data: Nothing?): CfirInterface {
         val outerClass = containingClass
-        return withResolvedStatusPhase(interfaceDeclaration) {
-            storeClass(interfaceDeclaration) {
-                statusComputationSession.forceResolveStatusesOfSupertypes(interfaceDeclaration)
-                interfaceDeclaration.transformTypeParameters(this, null)
-                transformInterfaceStatus(interfaceDeclaration, outerClass)
-                transformClassLikeMembers(interfaceDeclaration)
+        return withResolvedStatusPhase(`interface`) {
+            storeClass(`interface`) {
+                statusComputationSession.forceResolveStatusesOfSupertypes(`interface`)
+                `interface`.transformTypeParameters(this, null)
+                transformInterfaceStatus(`interface`, outerClass)
+                transformClassLikeMembers(`interface`)
             }
         }
     }

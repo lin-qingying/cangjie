@@ -33,6 +33,7 @@ import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirAssignment
+import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirIncrementDecrementExpression
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
@@ -54,6 +55,7 @@ import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.ConeStructType
 import org.cangnova.cangjie.cfir.types.ConeVArrayType
+import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.source.AbstractCjSourceElement
 
@@ -294,7 +296,7 @@ internal object CfirMutationTargetClassifier {
         val directTarget = when (resolvedSymbol) {
             is CfirFieldVariableSymbol -> {
                 val field = resolvedSymbol.takeIf { it.isBound }?.cfir
-                if (field != null && isImmutableFieldAssignmentForbidden(field)) {
+                if (field != null && isImmutableFieldAssignmentForbidden(field, assignment)) {
                     MutationTarget.ImmutableValue
                 } else {
                     MutationTarget.Assignable
@@ -424,12 +426,50 @@ internal object CfirMutationTargetClassifier {
      * 已有初始化器的字段不能再次赋值。
      */
     context(context: CheckerContext)
-    private fun CfirQualifiedAccessExpression.isImmutableFieldAssignmentForbidden(field: CfirFieldVariable): Boolean {
+    private fun CfirQualifiedAccessExpression.isImmutableFieldAssignmentForbidden(
+        field: CfirFieldVariable,
+        assignment: CfirAssignment?,
+    ): Boolean {
         if (field.isVar) return false
-        val inConstructor = context.findClosestDeclaration<CfirConstructor>() != null
-        if (!inConstructor) return true
+        val constructor = context.findClosestDeclaration<CfirConstructor>() ?: return true
+        if (field.status.isStatic != constructor.status.isStatic) return true
         if (field.hasSameNamePrimaryConstructorPropertyInOwner()) return true
-        return field.initializer != null
+        if (field.initializer != null) return true
+        return assignment != null && field.hasPriorInitializationAssignmentIn(constructor, assignment)
+    }
+
+    /**
+     * let 字段在构造器/static init 中允许一次初始化赋值；同一构造器体内已经发生过
+     * 直接初始化后，后续赋值必须按不可变值处理。嵌套 lambda 不是立即执行路径，扫描时跳过。
+     */
+    private fun CfirFieldVariable.hasPriorInitializationAssignmentIn(
+        constructor: CfirConstructor,
+        assignment: CfirAssignment,
+    ): Boolean {
+        val assignmentStart = assignment.source?.startOffset ?: return false
+        val body = constructor.body ?: return false
+        var found = false
+        body.accept(object : CfirVisitorVoid() {
+            override fun visitElement(element: org.cangnova.cangjie.cfir.CfirElement) {
+                if (found) return
+                element.acceptChildren(this, null)
+            }
+
+            override fun visitAnonymousFunctionExpression(anonymousFunctionExpression: CfirAnonymousFunctionExpression) = Unit
+
+            override fun visitAssignment(assignment: CfirAssignment) {
+                if (found) return
+                val startOffset = assignment.source?.startOffset
+                if (startOffset == null || startOffset >= assignmentStart) return
+                val access = assignment.lValue as? CfirQualifiedAccessExpression ?: return
+                if (access.resolvedAssignableSymbolOrNull() == symbol) {
+                    found = true
+                    return
+                }
+                assignment.rValue.accept(this, null)
+            }
+        }, null)
+        return found
     }
 
     /**

@@ -378,7 +378,6 @@ object CfirGeneralSemanticsChecker : CfirFileChecker() {
  * 对齐 C++ TypeCheckClassLike.cpp / LegalityOfUsage/:
  * - NON_ABSTRACT_CLASS_CANNOT_BE_SEALED
  * - STATIC_VARIABLE_USE_GENERIC_PARAMETER
- * - TYPE_UNINITIALIZED_STATIC_FIELD: static 成员未初始化
  * - INSTANCE_FUNC_CANNOT_BE_USED_IN_FINALIZER: finalizer 中不能调用实例函数
  * - CSTRUCT_CANNOT_IMPL_INTERFACES: @C struct 不能实现接口
  * - EXPORT_SAME_PRIVATE_DECL: 同名 private 导出限制
@@ -397,17 +396,14 @@ object CfirClassStructSemanticsChecker : CfirClassLikeChecker() {
         if (declaration is CfirClass) {
             checkSealedOnlyOnAbstract(declaration)
             checkStaticVariableGenericParameterDependency(declaration)
-            checkUninitializedStaticFields(declaration)
             checkFinalizerConstraints(declaration)
         }
         if (declaration is CfirStruct) {
             checkStaticVariableGenericParameterDependency(declaration)
             checkCStructCannotImplInterfaces(declaration)
-            checkUninitializedStaticFields(declaration)
         }
         if (declaration is CfirEnum) {
             checkStaticVariableGenericParameterDependency(declaration)
-            checkUninitializedStaticFields(declaration)
         }
         if (declaration is CfirInterface) {
             checkStaticVariableGenericParameterDependency(declaration)
@@ -425,26 +421,6 @@ object CfirClassStructSemanticsChecker : CfirClassLikeChecker() {
             source = classDecl.source,
             factory = CfirErrors.NON_ABSTRACT_CLASS_CANNOT_BE_SEALED,
         )
-    }
-
-    /**
-     * static let 字段必须有初始化值。
-     *
-     * 对齐 C++ DiagKind::sema_type_uninitialized_static_field
-     */
-    context(context: CheckerContext, reporter: DiagnosticReporter)
-    private fun checkUninitializedStaticFields(classLike: CfirClassLikeDeclaration) {
-        for (member in classLike.declarations) {
-            val fieldVariable = member as? CfirFieldVariable ?: continue
-            if (!fieldVariable.status.isStatic) continue
-            if (fieldVariable.isVar) continue // var 可以后续赋值
-            if (fieldVariable.initializer != null) continue
-            reporter.reportOn(
-                source = fieldVariable.source,
-                factory = CfirErrors.TYPE_UNINITIALIZED_STATIC_FIELD,
-                a = fieldVariable.name,
-            )
-        }
     }
 
     /**

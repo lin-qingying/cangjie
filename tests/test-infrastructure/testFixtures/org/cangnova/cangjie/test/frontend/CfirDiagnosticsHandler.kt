@@ -247,10 +247,10 @@ class CfirDiagnosticsHandler(
             /**
              * 执行 `visitNamedAccessExpression` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
              */
-            override fun visitNamedAccessExpression(propertyAccess: CfirNamedAccessExpression) {
-                val reference = propertyAccess.calleeReference as? CfirNamedReference ?: return
-                consumer.reportContainingCallableOwner(propertyAccess, reference)
-                super.visitNamedAccessExpression(propertyAccess)
+            override fun visitNamedAccessExpression(namedAccessExpression: CfirNamedAccessExpression) {
+                val reference = namedAccessExpression.calleeReference as? CfirNamedReference ?: return
+                consumer.reportContainingCallableOwner(namedAccessExpression, reference)
+                super.visitNamedAccessExpression(namedAccessExpression)
             }
         }.let(cfirFile::accept)
 
@@ -334,15 +334,16 @@ class CfirDiagnosticsHandler(
      * 提供 `callableNameForDebug` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
      */
     private fun callableNameForDebug(callable: CfirCallableDeclaration): String = when (callable) {
+
+        is CfirValueParameter -> callable.name.asString()
+        is CfirMainFunction -> "main"
+        is CfirMacroDeclaration -> callable.symbol.name.asString()
+        is CfirConstructor -> "<init>"
         is CfirFunction -> callable.symbol.name.asString()
         is CfirProperty -> callable.name.asString()
         is CfirFieldVariable -> callable.name.asString()
         is CfirPatternVariable -> "<pattern>"
         is CfirVariable -> callable.symbol.toString()
-        is CfirValueParameter -> callable.name.asString()
-        is CfirMainFunction -> "main"
-        is CfirMacroDeclaration -> callable.symbol.name.asString()
-        is CfirConstructor -> "<init>"
         else -> callable.symbol.toString()
     }
 }

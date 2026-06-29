@@ -15,7 +15,7 @@ public func foo(lam: () -> Unit): Unit {
 import pkga.foo
 
 class B {
-    <!TYPE_UNINITIALIZED_STATIC_FIELD!>public static let CTX: Int64<!>
+    public static let <!TYPE_UNINITIALIZED_STATIC_FIELD!>CTX<!>: Int64
 
     static init() {
         foo(

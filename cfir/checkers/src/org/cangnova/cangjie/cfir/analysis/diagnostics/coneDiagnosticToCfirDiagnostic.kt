@@ -43,6 +43,7 @@ import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.resolve.toSymbol
 import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeParameterBasedTypeVariable
 import org.cangnova.cangjie.cfir.scopes.impl.typeAliasConstructorInfo
+import org.cangnova.cangjie.cfir.semantics.AbstractCallKind
 import org.cangnova.cangjie.cfir.semantics.AbstractCallCandidate
 import org.cangnova.cangjie.cfir.semantics.ErrorTypeInArguments
 import org.cangnova.cangjie.cfir.semantics.ResolutionDiagnostic
@@ -168,6 +169,9 @@ private fun ConeHiddenCandidateError.mapConeHiddenCandidateError(
         ?: callOrAssignmentSource
         ?: candidate.callInfo.callSite.source
         ?: return emptyList()
+    if (candidate.symbol is CfirConstructorSymbol && candidate.callInfo.semanticCallKind == AbstractCallKind.Function) {
+        return listOfNotNull(CfirErrors.NO_CONSTRUCTOR.on(diagnosticSource, session))
+    }
     return listOfNotNull(
         CfirErrors.NO_MATCH_FUNCTION_DECLARATION_FOR_CALL.on(
             diagnosticSource.firstCharacterDiagnosticSource(),

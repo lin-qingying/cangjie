@@ -30,6 +30,8 @@ plugins.withId("org.jetbrains.kotlin.jvm") {
         "main" { projectDefault() }
         "test" { projectDefault() }
     }
+
+    project.exposeClassesVariantsForProjectDependencyResolution()
 }
 
 tasks.withType<Test>().configureEach {
