@@ -20,25 +20,52 @@ abstract class AbstractVisitorVoidPrinter<Element, Field>(
         where Element : AbstractElement<Element, Field, *>,
               Field : AbstractField<Field> {
 
+    /**
+     * Void visitor 不声明 result/data 类型参数。
+     */
     final override val visitorTypeParameters: List<TypeVariable>
         get() = emptyList()
 
+    /**
+     * Void visitor 的 data 参数使用可空 [Nothing] 占位。
+     */
     final override val visitorDataType: TypeRef
         get() = StandardTypes.nothing.copy(nullable = true)
 
+    /**
+     * Void visitor 的访问方法返回 [Unit]。
+     */
     override fun visitMethodReturnType(element: Element) = StandardTypes.unit
 
+    /**
+     * Void visitor 继承的带 data 参数 visitor 基类。
+     */
     abstract val visitorSuperClass: ClassRef<PositionTypeParameterRef>
 
+    /**
+     * Void visitor 的父类型列表。
+     */
     override val visitorSuperTypes: List<ClassRef<PositionTypeParameterRef>>
         get() = listOf(visitorSuperClass.withArgs(StandardTypes.unit, visitorDataType))
 
+    /**
+     * 根元素的无 data 访问方法是否生成为抽象方法。
+     */
     abstract val useAbstractMethodForRootElement: Boolean
 
+    /**
+     * 覆盖带 data 参数的 visit 方法时是否标记为 final。
+     */
     abstract val overriddenVisitMethodsAreFinal: Boolean
 
+    /**
+     * 判断指定元素的无 data visit 方法是否需要覆盖父类型方法。
+     */
     protected open fun shouldOverrideMethodWithNoDataParameter(element: Element): Boolean = false
 
+    /**
+     * 打印无 data visit 方法，以及带 data 参数方法到无 data 方法的桥接。
+     */
     final override fun printMethodsForElement(element: Element) {
         val parentInVisitor = parentInVisitor(element)
         if (!element.isRootElement && parentInVisitor == null) return

@@ -21,7 +21,13 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 
+/**
+ * LLVM lowering 类型契约校验的集成测试。
+ */
 class TypeContractIntegrationTest {
+    /**
+     * 验证返回值类型与函数返回类型不一致时会失败。
+     */
     @Test
     fun `rejects return value type mismatch`() {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
@@ -57,6 +63,9 @@ class TypeContractIntegrationTest {
         assertTrue(error.message?.contains("return value type mismatch") == true, error.message)
     }
 
+    /**
+     * 验证算术表达式结果类型与操作数类型不一致时会失败。
+     */
     @Test
     fun `rejects arithmetic result type mismatch`() {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
@@ -108,6 +117,9 @@ class TypeContractIntegrationTest {
         assertTrue(error.message?.contains("binary result type mismatch") == true, error.message)
     }
 
+    /**
+     * 验证条件分支条件不是 bool 时会失败。
+     */
     @Test
     fun `rejects conditional branch with non boolean condition`() {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
@@ -146,6 +158,9 @@ class TypeContractIntegrationTest {
         assertTrue(error.message?.contains("conditional branch condition type mismatch") == true, error.message)
     }
 
+    /**
+     * 验证返回值引用未声明参数时会失败。
+     */
     @Test
     fun `rejects return value that references undeclared parameter`() {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
@@ -181,6 +196,9 @@ class TypeContractIntegrationTest {
         assertTrue(error.message?.contains("is not declared in function") == true, error.message)
     }
 
+    /**
+     * 验证 throw unwind 目标块缺失时会失败。
+     */
     @Test
     fun `rejects throw terminator with missing unwind target`() {
         val voidType = ChirResolvedTypeRef(ChirPrimitiveType.VOID)
@@ -217,6 +235,9 @@ class TypeContractIntegrationTest {
         assertTrue(error.message?.contains("throw unwind target block:missing missing") == true, error.message)
     }
 
+    /**
+     * 对单个函数构造 package 并执行默认 LLVM codegen。
+     */
     private fun generate(function: DefaultChirFunctionDeclaration) {
         DefaultChirToLlvmCodeGenerator().generate(
             ChirCodegenInput(
@@ -244,6 +265,9 @@ class TypeContractIntegrationTest {
         )
     }
 
+    /**
+     * 构造返回整型零的基本块。
+     */
     private fun returningBlock(id: String, intType: ChirResolvedTypeRef): ChirBlock {
         return ChirBlock(
             semanticId = ChirSemanticId(id),

@@ -20,6 +20,9 @@ import java.util.concurrent.ConcurrentMap
  */
 @ThreadSafe
 internal abstract class ModuleFileCache {
+    /**
+     * 当前 cache 所属模块的解析组件。
+     */
     abstract val moduleComponents: LLCfirModuleResolveComponents
 
     /**
@@ -28,8 +31,14 @@ internal abstract class ModuleFileCache {
      */
     abstract fun fileCached(file: CjFile, createValue: () -> CfirFile): CfirFile
 
+    /**
+     * 返回包含指定 CFIR 声明的已缓存 CFIR 文件。
+     */
     abstract fun getContainerCfirFile(declaration: CfirDeclaration): CfirFile?
 
+    /**
+     * 返回指定 PSI 文件已经构建过的 CFIR 文件。
+     */
     abstract fun getCachedCfirFile(cjFile: CjFile): CfirFile?
 
     /**
@@ -41,21 +50,43 @@ internal abstract class ModuleFileCache {
     abstract fun getAllCachedCfirFilesForResolution(): Collection<CfirFile>
 
     @LLStatisticsOnlyApi
+    /**
+     * 返回统计 API 可见的所有已缓存 CFIR 文件。
+     */
     fun getAllCachedCfirFiles(): Collection<CfirFile> = getAllCachedCfirFilesForResolution()
 }
 
+/**
+ * 基于弱 key map 的模块文件 cache 实现。
+ */
 internal class ModuleFileCacheImpl(override val moduleComponents: LLCfirModuleResolveComponents) : ModuleFileCache() {
+    /**
+     * PSI 文件到 CFIR 文件的弱 key 缓存。
+     */
     private val cjFileToCfirFile: ConcurrentMap<CjFile, CfirFile> = MapMaker().weakKeys().makeMap()
+
+    /**
+     * 返回缓存中的 CFIR 文件，缺失时原子创建并缓存。
+     */
     override fun fileCached(file: CjFile, createValue: () -> CfirFile): CfirFile =
         cjFileToCfirFile.computeIfAbsent(file) { createValue() }
 
+    /**
+     * 从弱 key cache 中查询已构建 CFIR 文件。
+     */
     override fun getCachedCfirFile(cjFile: CjFile): CfirFile? = cjFileToCfirFile[cjFile]
 
+    /**
+     * 通过声明 PSI 所在文件定位包含它的已缓存 CFIR 文件。
+     */
     override fun getContainerCfirFile(declaration: CfirDeclaration): CfirFile? {
         val cjFile = declaration.psi?.containingFile as? CjFile ?: return null
         return getCachedCfirFile(cjFile)
     }
 
     @LLStatisticsOnlyApi
+    /**
+     * 返回当前缓存中的全部 CFIR 文件。
+     */
     override fun getAllCachedCfirFilesForResolution(): Collection<CfirFile> = cjFileToCfirFile.values
 }

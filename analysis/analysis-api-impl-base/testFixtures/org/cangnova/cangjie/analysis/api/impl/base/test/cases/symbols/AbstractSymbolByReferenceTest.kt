@@ -21,9 +21,19 @@ import org.junit.jupiter.api.Assertions.assertNotNull
  * 该测试锁定的是“通过引用入口恢复公开 symbol”的契约，而不是再从 declaration 反推。
  */
 abstract class AbstractSymbolByReferenceTest : AbstractAnalysisApiComponentTest() {
+    /**
+     * 当前 reference-to-symbol 测试额外注册的指令集合。
+     *
+     * 指令描述目标引用名称、期望 symbol 类型、symbol 名称和 original PSI 类型。
+     */
     override val additionalDirectives: List<DirectivesContainer>
         get() = super.additionalDirectives + AnalysisApiReferenceSymbolTestDirectives
 
+    /**
+     * 执行引用到 symbol 的公开 API 断言。
+     *
+     * 方法定位使用点引用，调用 `resolveToSymbol()`，并比较 symbol 类型、名称以及回跳 PSI 类型。
+     */
     override fun doTestByMainFile(mainFile: CjFile, mainModule: CjTestModule, testServices: TestServices) {
         val directives = directivesForMainFile(mainFile, mainModule)
         val reference = findUsageSimpleName(mainFile, directives.referenceTargetName)

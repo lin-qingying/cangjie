@@ -12,22 +12,34 @@ import org.cangnova.cangjie.test.testFramework.CjParsingTestCase
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 
+/**
+ * 表示 `OptionalSyntaxParsingTest`，承载PSI 测试中的语法节点、索引桩或辅助模型。
+ */
 class OptionalSyntaxParsingTest : CjParsingTestCase(
     dataPath = "",
     fileExt = "cj",
     fileType = CangJieFileType.INSTANCE,
     CangJieParserDefinition(),
 ) {
+    /**
+     * 提供 `setUpFixture` 操作，封装PSI 测试节点的访问、构造或判断逻辑。
+     */
     @BeforeEach
     fun setUpFixture() {
         setUp()
     }
 
+    /**
+     * 提供 `tearDownFixture` 操作，封装PSI 测试节点的访问、构造或判断逻辑。
+     */
     @AfterEach
     fun tearDownFixture() {
         tearDown()
     }
 
+    /**
+     * 提供 `testOptionTypeParsesAsNestedOptionalType` 操作，封装PSI 测试节点的访问、构造或判断逻辑。
+     */
     @Test
     fun testOptionTypeParsesAsNestedOptionalType() {
         val file = createPsiFile("optionalType", "func sample(value: ??Int64) {}") as CjFile
@@ -35,6 +47,9 @@ class OptionalSyntaxParsingTest : CjParsingTestCase(
         assertEquals(2, optionTypes.size)
     }
 
+    /**
+     * 提供 `testOptionalChainBuildsOptionalPsiNodes` 操作，封装PSI 测试节点的访问、构造或判断逻辑。
+     */
     @Test
     fun testOptionalChainBuildsOptionalPsiNodes() {
         val file = createPsiFile(
@@ -50,6 +65,9 @@ class OptionalSyntaxParsingTest : CjParsingTestCase(
         assertNotNull(PsiTreeUtil.findChildOfType(file, CjOptionalChainExpression::class.java))
     }
 
+    /**
+     * 提供 `testInvalidStandaloneQuestReportsError` 操作，封装PSI 测试节点的访问、构造或判断逻辑。
+     */
     @Test
     fun testInvalidStandaloneQuestReportsError() {
         val file = createPsiFile(
@@ -65,6 +83,9 @@ class OptionalSyntaxParsingTest : CjParsingTestCase(
         assertTrue(errors.isNotEmpty())
     }
 
+    /**
+     * 提供 `testAbstractFunctionWithoutBodyDoesNotProduceParseError` 操作，封装PSI 测试节点的访问、构造或判断逻辑。
+     */
     @Test
     fun testAbstractFunctionWithoutBodyDoesNotProduceParseError() {
         val file = createPsiFile(

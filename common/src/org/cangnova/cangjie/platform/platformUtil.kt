@@ -2,14 +2,26 @@ package org.cangnova.cangjie.platform
 
 import kotlin.reflect.KClass
 
+/**
+ * 返回目标平台中指定类型的简单平台列表。
+ */
 inline fun <reified T : SimplePlatform> TargetPlatform.subplatformsOfType(): List<T> =
     componentPlatforms.filterIsInstance<T>()
 
+/**
+ * 返回目标平台中指定 Java class 类型的简单平台列表。
+ */
 fun <T> TargetPlatform.subplatformsOfType(klass: Class<T>): List<T> = componentPlatforms.filterIsInstance(klass)
 
+/**
+ * 判断可空目标平台是否包含指定简单平台类型。
+ */
 inline fun <reified T : SimplePlatform> TargetPlatform?.has(): Boolean =
     this != null && subplatformsOfType<T>().isNotEmpty()
 
+/**
+ * 判断可空目标平台是否包含指定 KClass 对应的简单平台类型。
+ */
 fun TargetPlatform?.has(klass: KClass<*>): Boolean = this != null && subplatformsOfType(klass.java).isNotEmpty()
 
 /**

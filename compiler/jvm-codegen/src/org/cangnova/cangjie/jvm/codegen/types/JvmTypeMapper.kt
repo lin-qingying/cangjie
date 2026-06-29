@@ -28,9 +28,18 @@ import org.objectweb.asm.Type
  * CHIR 类型到 JVM descriptor 的映射器。这里表达 JVM ABI，不在 CHIR 核心模型里塞平台细节。
  */
 class JvmTypeMapper(
+    /**
+     * 类型名未显式带包名时使用的默认包名。
+     */
     private val defaultPackageName: String = "",
+    /**
+     * 用于把 CHIR 类型名转换为 JVM internal name 的命名策略。
+     */
     private val namePolicy: JvmNamePolicy = JvmNamePolicy(JvmCodegenOptions()),
 ) {
+    /**
+     * 将 CHIR 返回类型映射为 JVM 返回类型，Unit/Void/Nothing 都映射为 void。
+     */
     fun mapReturnType(type: ChirTypeRef): Type {
         val resolved = resolvedType(type)
         return if (resolved == ChirPrimitiveType.UNIT || resolved == ChirPrimitiveType.VOID || resolved == ChirPrimitiveType.NOTHING) {
@@ -40,6 +49,9 @@ class JvmTypeMapper(
         }
     }
 
+    /**
+     * 将 CHIR 值类型映射为 JVM 栈上或局部变量中的 ASM Type。
+     */
     fun mapValueType(type: ChirTypeRef): Type {
         return when (val resolved = resolvedType(type)) {
             ChirPrimitiveType.BOOL -> Type.BOOLEAN_TYPE
@@ -72,6 +84,9 @@ class JvmTypeMapper(
         }
     }
 
+    /**
+     * 根据返回类型和参数类型生成 JVM 方法 descriptor。
+     */
     fun methodDescriptor(returnType: ChirTypeRef, parameterTypes: List<ChirTypeRef>): String {
         return Type.getMethodDescriptor(
             mapReturnType(returnType),
@@ -79,6 +94,9 @@ class JvmTypeMapper(
         )
     }
 
+    /**
+     * 将命名 CHIR 类型映射为 JVM object type。
+     */
     private fun mapNamedType(type: ChirNamedType): Type {
         return when (type.renderName) {
             "String", "std.core.String", "std/String", "java.lang.String" -> Type.getObjectType("java/lang/String")
@@ -86,6 +104,9 @@ class JvmTypeMapper(
         }
     }
 
+    /**
+     * 读取已解析 CHIR 类型；未解析类型不能进入 JVM lowering。
+     */
     private fun resolvedType(type: ChirTypeRef): ChirType {
         return when (type) {
             is ChirResolvedTypeRef -> type.type

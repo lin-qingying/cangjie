@@ -30,10 +30,19 @@ import org.cangnova.cangjie.psi.stubs.elements.CjValueArgumentElementType
 import com.intellij.psi.PsiElement
 import com.intellij.psi.stubs.StubElement
 
+/**
+ * 表示 `CangJieValueArgumentStubImpl`，承载PSI Stub中的语法节点、索引桩或辅助模型。
+ */
 class CangJieValueArgumentStubImpl<T : CjValueArgument>(
     parent: StubElement<out PsiElement>?,
     elementType: CjValueArgumentElementType<T>,
+    /**
+     * 保存 `isSpread` 的内部状态，供PSI Stub实现维护节点缓存或解析上下文。
+     */
     private val isSpread: Boolean,
 ) : CangJiePlaceHolderStubImpl<T>(parent, elementType), CangJieValueArgumentStub<T> {
+    /**
+     * 实现 `isSpread` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun isSpread(): Boolean = isSpread
 }

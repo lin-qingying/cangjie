@@ -14,6 +14,11 @@ import org.junit.jupiter.api.Assertions.assertEquals
  * retained / duplicate / unused / missing。
  */
 abstract class AbstractImportOptimizationPlanTest : AbstractAnalysisApiComponentTest() {
+    /**
+     * 执行 import optimization plan 测试。
+     *
+     * 方法将公开计划中的 retained、duplicate、unused、missing 四类结果规范化为字符串并排序比较。
+     */
     override fun doTestByMainFile(mainFile: CjFile, mainModule: CjTestModule, testServices: TestServices) {
         val directives = directivesForMainFile(mainFile, mainModule)
         val expectedRetained = directives[AnalysisApiComponentTestDirectives.EXPECTED_RETAINED_IMPORT].sorted()

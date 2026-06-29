@@ -14,6 +14,9 @@ enum class ImplementationKind(val title: String, val typeKind: TypeKind) {
     SealedInterface("sealed interface", TypeKind.Interface),
     Object("object", TypeKind.Class);
 
+    /**
+     * 当前实现种类是否生成接口形态。
+     */
     val isInterface: Boolean
         get() = typeKind == TypeKind.Interface
 }

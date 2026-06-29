@@ -21,9 +21,17 @@ import org.junit.jupiter.api.Assertions.assertEquals
  * - `isCompileTimeConstant`
  */
 abstract class AbstractExpressionInformationTest : AbstractAnalysisApiComponentTest() {
+    /**
+     * 当前 expression information 测试额外注册的指令集合。
+     */
     override val additionalDirectives: List<DirectivesContainer>
         get() = super.additionalDirectives + AnalysisApiExpressionInformationTestDirectives
 
+    /**
+     * 执行表达式信息测试。
+     *
+     * 方法定位目标表达式，读取 statement-like 和 compile-time-constant 两类公开布尔属性。
+     */
     override fun doTestByMainFile(mainFile: CjFile, mainModule: CjTestModule, testServices: TestServices) {
         val directives = directivesForMainFile(mainFile, mainModule)
         val expression = findExpression(mainFile, directives.expressionInfoTargetExpressionText)
@@ -42,6 +50,11 @@ abstract class AbstractExpressionInformationTest : AbstractAnalysisApiComponentT
         }
     }
 
+    /**
+     * 在主文件中按文本定位 expression-information 测试目标表达式。
+     *
+     * 查找结果必须唯一，保证测试断言对应唯一 PSI。
+     */
     private fun findExpression(mainFile: CjFile, expressionText: String): CjExpression {
         val candidates = PsiTreeUtil.findChildrenOfType(mainFile, CjExpression::class.java)
             .filter { expression -> expression.text == expressionText }

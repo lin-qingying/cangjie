@@ -1,7 +1,9 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
+import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
@@ -21,20 +23,22 @@ object CfirConstructorDelegationCallChecker : CfirFunctionCallChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirFunctionCall) {
         val delegationName = expression.origin.constructorDelegationKeyword() ?: return
-        val closestFunction = context.closestFunctionLikeDeclaration() ?: run {
+        val source = expression.calleeReference.source ?: expression.source
+        if (context.findClosestDeclaration<CfirClassLikeDeclaration>() == null) {
             reporter.reportOn(
-                source = expression.calleeReference.source ?: expression.source,
-                factory = CfirErrors.ILLEGAL_THIS_OR_SUPER_CALL,
+                source = source,
+                factory = CfirErrors.THIS_SUPER_USE_ERROR_OUTSIDE_CLASS,
                 a = delegationName,
             )
             return
         }
 
+        val closestFunction = context.closestFunctionLikeDeclaration()
         if (closestFunction is CfirConstructor) return
 
         reporter.reportOn(
-            source = expression.calleeReference.source ?: expression.source,
-            factory = CfirErrors.ILLEGAL_THIS_OR_SUPER_CALL,
+            source = source,
+            factory = CfirErrors.INVALID_THIS_CALL_OUTSIDE_CTOR,
             a = delegationName,
         )
     }

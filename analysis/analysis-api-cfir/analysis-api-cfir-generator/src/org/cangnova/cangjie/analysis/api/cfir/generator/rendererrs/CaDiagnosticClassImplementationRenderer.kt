@@ -13,12 +13,21 @@ import org.cangnova.cangjie.utils.SmartPrinter
 import org.cangnova.cangjie.utils.withIndent
 import kotlin.reflect.KType
 
+/**
+ * 生成 Analysis API CFIR 诊断实现类文件的 renderer。
+ */
 object CaDiagnosticClassImplementationRenderer : AbstractDiagnosticsDataClassRenderer() {
+    /**
+     * 输出文件头和所有诊断实现类。
+     */
     override fun SmartPrinter.render(diagnosticList: HLDiagnosticList, packageName: String) {
         printHeader(packageName, diagnosticList)
         printDiagnosticClassesImplementation(diagnosticList)
     }
 
+    /**
+     * 逐个输出诊断实现类声明。
+     */
     private fun SmartPrinter.printDiagnosticClassesImplementation(diagnosticList: HLDiagnosticList) {
         for (diagnostic in diagnosticList.diagnostics) {
             printDiagnosticImplementation(diagnostic, diagnosticList)
@@ -26,6 +35,9 @@ object CaDiagnosticClassImplementationRenderer : AbstractDiagnosticsDataClassRen
         }
     }
 
+    /**
+     * 输出单个诊断实现类及其父类、接口列表。
+     */
     private fun SmartPrinter.printDiagnosticImplementation(diagnostic: HLDiagnostic, diagnosticList: HLDiagnosticList) {
         println("internal class ${diagnostic.implClassName}(")
         withIndent {
@@ -36,6 +48,9 @@ object CaDiagnosticClassImplementationRenderer : AbstractDiagnosticsDataClassRen
         println(">(cfirDiagnostic, token), CaCfirDiagnostic.${diagnostic.className}")
     }
 
+    /**
+     * 输出实现类主构造参数，包括公开参数、原始 CFIR 诊断和生命周期 token。
+     */
     private fun SmartPrinter.printParameters(diagnostic: HLDiagnostic, diagnosticList: HLDiagnosticList) {
         for (parameter in diagnostic.parameters) {
             printParameter(parameter, diagnosticList)
@@ -44,6 +59,9 @@ object CaDiagnosticClassImplementationRenderer : AbstractDiagnosticsDataClassRen
         println("token: CaLifetimeToken,")
     }
 
+    /**
+     * 输出单个公开诊断参数的 override 属性。
+     */
     private fun SmartPrinter.printParameter(parameter: HLDiagnosticParameter, diagnosticList: HLDiagnosticList) {
         print("override val ${parameter.name}: ")
         printTypeWithShortNames(parameter.type) {
@@ -52,14 +70,23 @@ object CaDiagnosticClassImplementationRenderer : AbstractDiagnosticsDataClassRen
         println(",")
     }
 
+    /**
+     * 实现类需要导入公开参数类型。
+     */
     override fun collectImportsForDiagnosticParameterReflect(diagnosticParameter: HLDiagnosticParameter): Collection<KType> {
         return listOf(diagnosticParameter.type)
     }
 
+    /**
+     * 实现类不需要额外的简单字符串导入。
+     */
     override fun collectImportsForDiagnosticParameterSimple(diagnosticParameter: HLDiagnosticParameter): Collection<String> {
         return emptyList()
     }
 
+    /**
+     * 实现类文件固定依赖的默认导入。
+     */
     override val defaultImports = listOf(
         "org.cangnova.cangjie.cfir.diagnostics.CjPsiDiagnostic",
         "org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken",

@@ -16,10 +16,10 @@ class Test <: Base<Int32> {
     public init(a: Int32) {}
     public init(a: Test) {}
     public init() {
-        this(<!ASSIGNMENT_OF_MEMBER_VARIABLE_CANNOT_USE_THIS_OR_SUPER!>t<!>his.i)
+        this(<!ASSIGNMENT_OF_MEMBER_VARIABLE_CANNOT_USE_THIS_OR_SUPER!>this<!>.i)
     }
     public init(a: Int32, b: Int32) {
-        this(<!ASSIGNMENT_OF_MEMBER_VARIABLE_CANNOT_USE_THIS_OR_SUPER!>t<!>his.f())
+        this(<!ASSIGNMENT_OF_MEMBER_VARIABLE_CANNOT_USE_THIS_OR_SUPER!>this<!>.f())
     }
     public init(a: Int32, b: Int32, c: Int32) {
         this(<!ASSIGNMENT_OF_MEMBER_VARIABLE_CANNOT_USE_THIS_OR_SUPER!>i<!>)
@@ -28,13 +28,13 @@ class Test <: Base<Int32> {
         this(<!ASSIGNMENT_OF_MEMBER_VARIABLE_CANNOT_USE_THIS_OR_SUPER!>f<!>())
     }
     public init(a: Int32, b: Int32, c: Int32, d: Int32, e: Int32) {
-        this(<!ASSIGNMENT_OF_MEMBER_VARIABLE_CANNOT_USE_THIS_OR_SUPER!>t<!>his)
+        this(<!ASSIGNMENT_OF_MEMBER_VARIABLE_CANNOT_USE_THIS_OR_SUPER!>this<!>)
     }
     public init(a: Int32, b: Int32, c: Int32, d: Int32, e: Int32, f: Int32) {
-        super(<!ASSIGNMENT_OF_MEMBER_VARIABLE_CANNOT_USE_THIS_OR_SUPER!>s<!>uper.i)
+        super(<!ASSIGNMENT_OF_MEMBER_VARIABLE_CANNOT_USE_THIS_OR_SUPER!>super<!>.i)
     }
     public init(a: Int32, b: Int32, c: Int32, d: Int32, e: Int32, f: Int32, g: Int32) {
-        super(<!ASSIGNMENT_OF_MEMBER_VARIABLE_CANNOT_USE_THIS_OR_SUPER!>s<!>uper.foo())
+        super(<!ASSIGNMENT_OF_MEMBER_VARIABLE_CANNOT_USE_THIS_OR_SUPER!>super<!>.foo())
     }
     public <!OVERLOAD_CONFLICTS!>init<!>(a: Int32, b: Int32, c: Int32, d: Int32, e: Int32, f: Int32) {
         super(<!ASSIGNMENT_OF_MEMBER_VARIABLE_CANNOT_USE_THIS_OR_SUPER!>j<!>)

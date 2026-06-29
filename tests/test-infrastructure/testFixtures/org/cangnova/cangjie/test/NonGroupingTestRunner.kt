@@ -16,8 +16,14 @@ import org.cangnova.cangjie.test.services.*
 class NonGroupingTestRunner(
     testConfiguration: NonGroupingPhaseTestConfiguration
 ) : TestRunner<TestStep.NonGroupingStep<*, *>, NonGroupingPhaseTestConfiguration>(testConfiguration) {
+    /**
+     * 保存 `allRanHandlers`，供测试基础设施在测试执行期间读取或传递。
+     */
     private val allRanHandlers = mutableSetOf<AnalysisHandler<*>>()
 
+    /**
+     * 执行 `runTest` 对应的测试基础设施流程，维持测试框架的阶段契约。
+     */
     fun runTest(@TestDataFile testDataFileName: String, beforeDispose: (NonGroupingPhaseTestConfiguration) -> Unit = {}) {
         try {
             prepareModuleStructure(testDataFileName)
@@ -27,6 +33,9 @@ class NonGroupingTestRunner(
         }
     }
 
+    /**
+     * 执行 `prepareModuleStructure` 对应的测试基础设施流程，维持测试框架的阶段契约。
+     */
     fun prepareModuleStructure(testDataFileName: String): TestModuleStructure? {
         val services = testServices
 
@@ -55,16 +64,25 @@ class NonGroupingTestRunner(
         }
         return moduleStructure
     }
+    /**
+     * 执行 `runTestPipeline` 对应的测试基础设施流程，维持测试框架的阶段契约。
+     */
     fun runTestPipeline() {
         runTestPreprocessing()
         runSteps()
         reportFailures()
     }
+    /**
+     * 执行 `runTestPreprocessing` 对应的测试基础设施流程，维持测试框架的阶段契约。
+     */
     override fun runTestPreprocessing() {
         super.runTestPreprocessing()
         val globalMetadataInfoHandler = testServices.globalMetadataInfoHandler
         globalMetadataInfoHandler.parseExistingMetadataInfosFromAllSources()
     }
+    /**
+     * 执行 `runSteps` 对应的测试基础设施流程，维持测试框架的阶段契约。
+     */
     fun runSteps() {
         val services = testConfiguration.testServices
         val moduleStructure = services.moduleStructure
@@ -98,6 +116,9 @@ class NonGroupingTestRunner(
     }
 
 
+    /**
+     * 提供 `processModule` 对应的测试基础设施流程，维持测试框架的阶段契约。
+     */
     private fun processModule(
         module: TestModule,
         artifactsProvider: ArtifactsProvider
@@ -116,6 +137,9 @@ class NonGroupingTestRunner(
         )
     }
 
+    /**
+     * 提供 `NonGroupingStep` 对应的测试基础设施流程，维持测试框架的阶段契约。
+     */
     private fun TestStep.NonGroupingStep<*, *>.hackyProcessModule(
         module: TestModule,
         inputArtifact: ResultingArtifact<*>,
@@ -126,6 +150,9 @@ class NonGroupingTestRunner(
             .processModule(module, inputArtifact as ResultingArtifact<ResultingArtifact.Source>, thereWereExceptionsOnPreviousSteps)
     }
 
+    /**
+     * 提供 `>` 对应的测试基础设施流程，维持测试框架的阶段契约。
+     */
     private fun <I : ResultingArtifact<I>> TestStep.NonGroupingStep<I, *>.processModule(
         module: TestModule,
         artifact: ResultingArtifact<I>,

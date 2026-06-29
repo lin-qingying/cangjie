@@ -18,20 +18,35 @@ import org.cangnova.cangjie.test.services.compilerConfigurationProvider
 import org.cangnova.cangjie.test.services.moduleStructure
 import org.cangnova.cangjie.test.services.sourceFileProvider
 
+/**
+ * 表示 `CfirFrontendPipelineFacade`，承载CFIR 前端测试中的配置数据、测试产物或处理步骤。
+ */
 abstract class CfirFrontendPipelineFacade<Phase, OutputPipelineArtifact>(
     testServices: TestServices,
+    /**
+     * 保存 `phase`，供CFIR 前端测试在测试执行期间读取或传递。
+     */
     private val phase: Phase,
 ) : FrontendFacade<CfirOutputArtifact>(testServices, FrontendKinds.CFIR)
         where OutputPipelineArtifact : FrontendPipelineArtifact,
               Phase : PipelinePhase<ConfigurationPipelineArtifact, OutputPipelineArtifact> {
 
+    /**
+     * 保存 `additionalServices`，供CFIR 前端测试在测试执行期间读取或传递。
+     */
     override val additionalServices: List<ServiceRegistrationData>
         get() = listOf(frontendBasedFacadesMarkerRegistrationData)
 
+    /**
+     * 执行 `shouldTransform` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     override fun shouldTransform(module: TestModule): Boolean {
         return shouldRunFirFrontendFacade(module, testServices)
     }
 
+    /**
+     * 执行 `analyze` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     override fun analyze(module: TestModule): CfirOutputArtifact? {
         val configuration = testServices.compilerConfigurationProvider.getCompilerConfiguration(module)
         val input = ConfigurationPipelineArtifact(
@@ -47,6 +62,9 @@ abstract class CfirFrontendPipelineFacade<Phase, OutputPipelineArtifact>(
         return CfirFrontendPipelineOutputArtifact(output, testFirOutputs)
     }
 
+    /**
+     * 提供 `getPartsForDependsOnModules` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     open fun getPartsForDependsOnModules(
         module: TestModule,
         firOutputs: List<org.cangnova.cangjie.cfir.pipeline.SingleModuleFrontendOutput>,
@@ -60,14 +78,26 @@ abstract class CfirFrontendPipelineFacade<Phase, OutputPipelineArtifact>(
     }
 }
 
+/**
+ * 表示 `CfirFrontendPipelineOutputArtifact`，承载CFIR 前端测试中的配置数据、测试产物或处理步骤。
+ */
 class CfirFrontendPipelineOutputArtifact<A : FrontendPipelineArtifact>(
+    /**
+     * 保存 `frontendArtifact`，供CFIR 前端测试在测试执行期间读取或传递。
+     */
     val frontendArtifact: A,
     partsForDependsOnModules: List<CfirOutputPartForDependsOnModule>,
 ) : CfirOutputArtifact(partsForDependsOnModules) {
+    /**
+     * 保存 `allFirFiles`，供CFIR 前端测试在测试执行期间读取或传递。
+     */
     override val allFirFiles: Collection<org.cangnova.cangjie.cfir.declarations.CfirFile>
         get() = frontendArtifact.frontendOutput.outputs.flatMap { it.fir }
 }
 
+/**
+ * 执行 `toTestOutputPart` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+ */
 fun org.cangnova.cangjie.cfir.pipeline.SingleModuleFrontendOutput.toTestOutputPart(
     correspondingModule: TestModule,
     testServices: TestServices,
@@ -89,6 +119,9 @@ fun org.cangnova.cangjie.cfir.pipeline.SingleModuleFrontendOutput.toTestOutputPa
     )
 }
 
+/**
+ * 执行 `processErrorFromFrontendPhase` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+ */
 fun processErrorFromFrontendPhase(configuration: CompilerConfiguration, testServices: TestServices): Nothing? {
     if (CheckCompilationErrors.CheckDiagnosticCollector.checkHasErrorsAndReportToMessageCollector(configuration)) {
         if (CHECK_COMPILER_OUTPUT in testServices.moduleStructure.allDirectives) {
@@ -98,4 +131,7 @@ fun processErrorFromFrontendPhase(configuration: CompilerConfiguration, testServ
     error("Frontend phase returned null and there are no errors in diagnostic/message collectors")
 }
 
+/**
+ * 提供 `shouldRunFirFrontendFacade` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+ */
 private fun shouldRunFirFrontendFacade(@Suppress("UNUSED_PARAMETER") module: TestModule, @Suppress("UNUSED_PARAMETER") testServices: TestServices): Boolean = true

@@ -31,19 +31,31 @@ import org.cangnova.cangjie.utils.exceptions.ExceptionAttachmentBuilder
 import org.cangnova.cangjie.utils.exceptions.withCfirEntry
 
 /**
- * Allows to search for CFIR declarations by compiled [CjDeclaration]s.
+ * 根据反编译或 stub PSI 声明查找对应 CFIR 声明的工具。
  */
 internal class CfirDeclarationForCompiledElementSearcher(private val session: LLCfirSession) {
+    /**
+     * 当前 low-level 会话所属工程。
+     */
     private val project get() = session.project
 
+    /**
+     * 工程结构提供器，用于错误附件中描述 PSI 所属模块。
+     */
     private val projectStructureProvider by lazy(LazyThreadSafetyMode.PUBLICATION) {
         CangJieProjectStructureProvider.getInstance(project)
     }
 
+    /**
+     * PSI 与 CFIR 元素匹配策略。
+     */
     private val cfirElementByPsiElementChooser by lazy(LazyThreadSafetyMode.PUBLICATION) {
         LLCfirElementByPsiElementChooser.getInstance(project)
     }
 
+    /**
+     * 查找 [cjDeclaration] 对应的非局部 CFIR 声明。
+     */
     fun findNonLocalDeclaration(cjDeclaration: CjDeclaration): CfirDeclaration = when (cjDeclaration) {
         is CjClassLikeDeclaration -> findNonLocalClassLikeDeclaration(cjDeclaration)
         is CjConstructor<*> -> findConstructorOfNonLocalClass(cjDeclaration)
@@ -56,12 +68,21 @@ internal class CfirDeclarationForCompiledElementSearcher(private val session: LL
         else -> errorWithCfirSpecificEntries("Unsupported compiled declaration of type", psi = cjDeclaration)
     }
 
+    /**
+     * 查找 [function] 对应的函数符号候选。
+     */
     private fun findFunctionCandidates(function: CjNamedFunction): List<CfirFunctionSymbol<*>> =
         findCallableCandidates(function, function.parent is CjFile).filterIsInstance<CfirFunctionSymbol<*>>()
 
+    /**
+     * 查找 [property] 对应的属性符号候选。
+     */
     private fun findPropertyCandidates(property: CjProperty): List<CfirPropertySymbol> =
         findCallableCandidates(property, property.parent is CjFile).filterIsInstance<CfirPropertySymbol>()
 
+    /**
+     * 查找 compiled callable [declaration] 对应的 CFIR callable 符号候选。
+     */
     private fun findCallableCandidates(
         declaration: CjCallableDeclaration,
         isTopLevel: Boolean,
@@ -98,6 +119,9 @@ internal class CfirDeclarationForCompiledElementSearcher(private val session: LL
         }
     }
 
+    /**
+     * 查找 compiled 类型参数 [param] 对应的 CFIR 类型参数声明。
+     */
     private fun findNonLocalTypeParameter(param: CjTypeParameter): CfirDeclaration {
         val owner = param.containingDeclaration ?: errorWithCfirSpecificEntries("Unsupported compiled type parameter", psi = param)
         val cfirDeclaration = findNonLocalDeclaration(owner)
@@ -112,6 +136,9 @@ internal class CfirDeclarationForCompiledElementSearcher(private val session: LL
         } as CfirDeclaration
     }
 
+    /**
+     * 查找 compiled 值参数 [param] 对应的 CFIR 值参数声明。
+     */
     private fun findParameter(param: CjParameter): CfirDeclaration {
         val ownerDeclaration = param.ownerFunction ?: errorWithCfirSpecificEntries("Unsupported compiled parameter", psi = param)
         val cfirDeclaration = findNonLocalDeclaration(ownerDeclaration)
@@ -125,6 +152,9 @@ internal class CfirDeclarationForCompiledElementSearcher(private val session: LL
             ?: errorWithCfirSpecificEntries("No cfir value parameter found", psi = param, cfir = cfirFunction)
     }
 
+    /**
+     * 查找 compiled class-like [declaration] 对应的 CFIR class-like 声明。
+     */
     private fun findNonLocalClassLikeDeclaration(declaration: CjClassLikeDeclaration): CfirClassLikeDeclaration {
         val classId = declaration.getClassId() ?: errorWithCfirSpecificEntries("Non-local class should have classId", psi = declaration)
 
@@ -150,18 +180,25 @@ internal class CfirDeclarationForCompiledElementSearcher(private val session: LL
         }
     }
 
+    /**
+     * 在二进制来源模式下按 [classId] 查找 class-like 符号。
+     */
     private fun findBinaryClassLikeSymbol(classId: ClassId): CfirClassLikeSymbol<*>? =
         session.symbolProvider.getClassLikeSymbolByClassIdWithoutDependencies(classId)
 
     /**
-     * Note regarding [LLModuleSpecificSymbolProviderAccess]: [CfirDeclarationForCompiledElementSearcher] must be queried with PSI elements
-     * that are contained in the compiled element searcher's module. As such, it's also legal to call module-specific symbol provider
-     * functions on that module's symbol provider.
+     * 按 stub PSI 精确查找 class-like 符号。
+     *
+     * [CfirDeclarationForCompiledElementSearcher] 只应接收属于当前 compiled element searcher 模块的 PSI，因此允许调用模块专属
+     * 符号提供器访问入口。
      */
     @OptIn(LLModuleSpecificSymbolProviderAccess::class)
     private fun findStubClassLikeSymbol(classId: ClassId, declaration: CjClassLikeDeclaration): CfirClassLikeSymbol<*>? =
         session.symbolProvider.getClassLikeSymbolByPsiWithoutDependencies(classId, declaration)
 
+    /**
+     * 查找非局部 class 中 [declaration] 对应的构造器 CFIR 声明。
+     */
     private fun findConstructorOfNonLocalClass(declaration: CjConstructor<*>): CfirConstructor {
         val containingClass = declaration.containingTypeStatement
             ?: errorWithCfirSpecificEntries("Constructor must have outer class", psi = declaration)
@@ -175,6 +212,9 @@ internal class CfirDeclarationForCompiledElementSearcher(private val session: LL
         return constructorCandidate
     }
 
+    /**
+     * 查找非局部函数 [declaration] 对应的 CFIR 函数声明。
+     */
     private fun findNonLocalFunction(declaration: CjNamedFunction): CfirFunction {
         require(!declaration.isLocal)
 
@@ -187,6 +227,9 @@ internal class CfirDeclarationForCompiledElementSearcher(private val session: LL
         return functionCandidate.cfir
     }
 
+    /**
+     * 查找非局部属性 [declaration] 对应的 CFIR 属性声明。
+     */
     private fun findNonLocalProperty(declaration: CjProperty): CfirProperty {
         require(!declaration.isLocal)
 
@@ -199,6 +242,9 @@ internal class CfirDeclarationForCompiledElementSearcher(private val session: LL
         return propertyCandidate.cfir
     }
 
+    /**
+     * 查找属性访问器 [declaration] 对应的 CFIR 访问器声明。
+     */
     private fun findNonLocalPropertyAccessor(declaration: CjPropertyAccessor): CfirPropertyAccessor {
         val cfirProperty = findNonLocalProperty(declaration.property)
 
@@ -207,6 +253,9 @@ internal class CfirDeclarationForCompiledElementSearcher(private val session: LL
     }
 }
 
+/**
+ * 把候选符号集合写入异常附件。
+ */
 private fun ExceptionAttachmentBuilder.withCandidates(candidates: List<CfirBasedSymbol<*>>) {
     withEntry("Candidates count", candidates.size.toString())
     for ((index, candidate) in candidates.withIndex()) {

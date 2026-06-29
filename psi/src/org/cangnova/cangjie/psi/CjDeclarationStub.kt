@@ -46,25 +46,43 @@ import java.util.concurrent.atomic.AtomicLong
  * 因此这里不再为类型声明保留额外的层级父节点回退分支。
  */
 abstract class CjDeclarationStub<T : StubElement<*>> : CjModifierListOwnerStub<T>, CjDeclaration {
+    /**
+     * 保存 `modificationStamp` 的内部状态，供仓颉 PSI实现维护节点缓存或解析上下文。
+     */
     private val modificationStamp = AtomicLong()
 
     constructor(stub: T, nodeType: IStubElementType<*, *>) : super(stub, nodeType)
 
     constructor(node: ASTNode) : super(node)
 
+    /**
+     * 暴露 `expression`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val expression: CjExpression?
         get() = PsiTreeUtil.getStubChildOfType(this, CjExpression::class.java)
 
+    /**
+     * 实现 `subtreeChanged` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun subtreeChanged() {
         super.subtreeChanged()
         modificationStamp.getAndIncrement()
     }
 
+    /**
+     * 提供 `getModificationStamp` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun getModificationStamp(): Long = modificationStamp.get()
 
+    /**
+     * 暴露 `docComment`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val docComment: CDoc?
         get() = findDocComment(this)
 
+    /**
+     * 实现 `getParent` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getParent(): PsiElement? {
         val stub = stub
         if (stub != null) {
@@ -73,6 +91,9 @@ abstract class CjDeclarationStub<T : StubElement<*>> : CjModifierListOwnerStub<T
         return super.getParent()
     }
 
+    /**
+     * 实现 `getOriginalElement` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getOriginalElement(): PsiElement {
         val currentDeclaration = requireCurrentCjElement() as CjDeclaration
         val navigationPolicy = ApplicationManager.getApplication().getService(
@@ -82,6 +103,9 @@ abstract class CjDeclarationStub<T : StubElement<*>> : CjModifierListOwnerStub<T
         return (navigationTarget as? CjElement)?.requireCurrentCjElement() ?: navigationTarget
     }
 
+    /**
+     * 实现 `getNavigationElement` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getNavigationElement(): PsiElement {
         val currentDeclaration = requireCurrentCjElement() as CjDeclaration
         val navigationPolicy = ApplicationManager.getApplication().getService(

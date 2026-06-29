@@ -37,9 +37,17 @@ import org.junit.jupiter.api.Assertions.assertTrue
  * 4. pattern binding usages
  */
 abstract class AbstractFindUsagesTest : AbstractAnalysisApiComponentTest() {
+    /**
+     * 当前 find usages 测试额外注册的目标种类、数量和 scope 指令。
+     */
     override val additionalDirectives: List<DirectivesContainer>
         get() = super.additionalDirectives + AnalysisApiUsageTestDirectives
 
+    /**
+     * 执行 find usages 断言。
+     *
+     * 方法定位目标 PSI，运行仓颉引用搜索 executor，并比较命中数量与局部 scope 约束。
+     */
     override fun doTestByMainFile(mainFile: CjFile, mainModule: CjTestModule, testServices: TestServices) {
         val directives = directivesForMainFile(mainFile, mainModule)
         val target = findTarget(mainFile, directives.usageTargetKind, directives.usageTargetName)
@@ -51,6 +59,11 @@ abstract class AbstractFindUsagesTest : AbstractAnalysisApiComponentTest() {
         }
     }
 
+    /**
+     * 按 testData 指定的目标种类和名称定位 usages 搜索目标。
+     *
+     * 支持顶层函数、extend 成员、import alias 和 binding pattern。
+     */
     private fun findTarget(
         mainFile: CjFile,
         targetKind: String,
@@ -71,6 +84,11 @@ abstract class AbstractFindUsagesTest : AbstractAnalysisApiComponentTest() {
         else -> error("Unsupported usages target kind: $targetKind")
     }
 
+    /**
+     * 使用仓颉 references search executor 查找目标引用。
+     *
+     * 该函数绕过泛型 search API 的异步层，直接收集 executor 产出的 `PsiReference`。
+     */
     private fun findUsages(target: PsiElement): List<PsiReference> {
         val references = mutableListOf<PsiReference>()
         val executor = CangJieReferencesSearchExecutor()
@@ -90,6 +108,11 @@ abstract class AbstractFindUsagesTest : AbstractAnalysisApiComponentTest() {
         return references
     }
 
+    /**
+     * 断言局部目标的所有引用都位于其 `LocalSearchScope` 内部。
+     *
+     * 该检查防止 binding pattern 等局部声明的 usages 泄漏到作用域外。
+     */
     private fun assertReferencesStayInsideLocalScope(
         target: PsiElement,
         references: List<PsiReference>,

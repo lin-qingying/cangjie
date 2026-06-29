@@ -49,14 +49,23 @@ import java.util.Comparator
 class StandaloneSessionBuilderAgainstStdlibTest : AbstractAnalysisApiExecutionTest(
     "analysis/analysis-api-standalone/testData/stdlib",
 ) {
+    /**
+     * 使用 CFIR standalone Analysis API 配置执行 stdlib/builtins 相关测试。
+     */
     override val configurator = CaCfirStandaloneAnalysisApiTestConfigurator
 
+    /**
+     * 补充反编译服务与 standalone 平台服务注册器，确保 builtins binary 可见。
+     */
     override val additionalServiceRegistrars: List<AnalysisApiServiceRegistrar<TestServices>> =
         listOf(
             CaAnalysisApiDecompiledTestServiceRegistrar,
             StandaloneBuilderPlatformTestServiceRegistrar,
         )
 
+    /**
+     * 验证 standalone source module 通过 builtins 依赖能解析 stdlib binary 类型。
+     */
     @Test
     fun sourceModuleResolvesStdlibBinaryAndBuiltinTypes(
         mainFile: CjFile,
@@ -68,6 +77,9 @@ class StandaloneSessionBuilderAgainstStdlibTest : AbstractAnalysisApiExecutionTe
         }
     }
 
+    /**
+     * 验证 standalone 模块闭包保留 builtins 模块并支持稳定模块名查找。
+     */
     @Test
     fun standaloneGraphRetainsBuiltinsModule(
         mainFile: CjFile,
@@ -84,6 +96,9 @@ class StandaloneSessionBuilderAgainstStdlibTest : AbstractAnalysisApiExecutionTe
         }
     }
 
+    /**
+     * 构造带临时源码文件和 builtins 模块的 standalone stdlib 测试上下文。
+     */
     private fun withStandaloneBuiltinsContext(
         mainFile: CjFile,
         mainModule: CjTestModule,
@@ -140,6 +155,9 @@ class StandaloneSessionBuilderAgainstStdlibTest : AbstractAnalysisApiExecutionTe
         }
     }
 
+    /**
+     * 断言临时源码中的 stdlib 引用能解析到预期的 binary/builtins 类型。
+     */
     private fun assertStdlibUsageResolves(
         sourceFile: CjFile,
         context: org.cangnova.cangjie.analysis.api.standalone.session.CaStandaloneAnalysisContext,
@@ -175,6 +193,9 @@ class StandaloneSessionBuilderAgainstStdlibTest : AbstractAnalysisApiExecutionTe
         }
     }
 
+    /**
+     * 断言 standalone project 中的 builtins binary index 能暴露 stdlib 包。
+     */
     private fun assertBuiltinsBinaryVisible(project: com.intellij.openapi.project.Project) {
         val binaryIndex = project.getService(CaDecompiledBinaryIndex::class.java)
         val objectPoolBinary = binaryIndex.findBuiltinsBinaryFile(FqName("std.objectpool"))
@@ -190,6 +211,9 @@ class StandaloneSessionBuilderAgainstStdlibTest : AbstractAnalysisApiExecutionTe
         )
     }
 
+    /**
+     * 断言 Analysis API 类型为 class-like 类型且 classId 与预期一致。
+     */
     private fun assertTypeClassId(
         actualType: org.cangnova.cangjie.analysis.api.types.CaType,
         expectedClassId: ClassId,
@@ -204,6 +228,9 @@ class StandaloneSessionBuilderAgainstStdlibTest : AbstractAnalysisApiExecutionTe
         return actualType
     }
 
+    /**
+     * 收集源码诊断文本，用于类型断言失败时提供上下文。
+     */
     private fun collectDiagnosticsText(
         sourceFile: CjFile,
         context: org.cangnova.cangjie.analysis.api.standalone.session.CaStandaloneAnalysisContext,
@@ -219,6 +246,9 @@ class StandaloneSessionBuilderAgainstStdlibTest : AbstractAnalysisApiExecutionTe
         }
     }
 
+    /**
+     * 渲染类型调试文本，包含 classId、类型文本和当前诊断集合。
+     */
     private fun org.cangnova.cangjie.analysis.api.types.CaType.debugText(diagnosticsText: String): String {
         val classIdText = (this as? CaClassLikeType)?.classId?.asString()
         return buildString {
@@ -237,6 +267,9 @@ class StandaloneSessionBuilderAgainstStdlibTest : AbstractAnalysisApiExecutionTe
         }
     }
 
+    /**
+     * 从真实文件系统路径恢复 PSI 文件系统项。
+     */
     private fun psiItem(
         psiManager: PsiManager,
         path: Path,
@@ -255,6 +288,9 @@ class StandaloneSessionBuilderAgainstStdlibTest : AbstractAnalysisApiExecutionTe
         }
     }
 
+    /**
+     * 从真实文件系统路径恢复仓颉 PSI 文件。
+     */
     private fun psiFile(
         psiManager: PsiManager,
         path: Path,

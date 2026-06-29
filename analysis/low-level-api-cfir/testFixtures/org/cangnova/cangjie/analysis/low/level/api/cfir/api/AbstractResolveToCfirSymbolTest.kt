@@ -20,13 +20,28 @@ import org.cangnova.cangjie.test.services.assertions
  * 对应的 CFIR symbol，并输出它最终绑定的声明渲染结果。
  */
 abstract class AbstractResolveToCfirSymbolTest : AbstractAnalysisApiBasedTest() {
+    /**
+     * 使用源码 low-level CFIR 测试配置。
+     */
     override val configurator = analysisApiCfirSourceTestConfigurator(analyseInDependentSession = false)
 
+    /**
+     * 待解析声明及其测试输出位置描述。
+     */
     private data class TargetDeclaration(
+        /**
+         * 带 caret 标记的 PSI 声明。
+         */
         val declaration: CjDeclaration,
+        /**
+         * 输出中用于稳定排序和定位的文本描述。
+         */
         val locationDescription: String,
     )
 
+    /**
+     * 收集所有 caret 声明，解析为 CFIR symbol 并渲染绑定声明。
+     */
     override fun doTestByMainFile(mainFile: CjFile, mainModule: CjTestModule, testServices: TestServices) {
         val targets = testServices.cjTestModuleStructure.mainModules
             .flatMap { module -> module.cjFiles }
@@ -64,6 +79,9 @@ abstract class AbstractResolveToCfirSymbolTest : AbstractAnalysisApiBasedTest() 
         testServices.assertions.assertEqualsToTestOutputFile(actual)
     }
 
+    /**
+     * 给多行 [text] 添加 [size] 个空格缩进。
+     */
     private fun indent(text: String, size: Int): String {
         val prefix = " ".repeat(size)
         return text.lineSequence().joinToString(separator = "\n") { line -> prefix + line }

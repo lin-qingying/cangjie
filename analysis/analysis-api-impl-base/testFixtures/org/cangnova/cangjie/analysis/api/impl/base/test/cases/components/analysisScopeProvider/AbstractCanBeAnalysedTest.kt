@@ -22,13 +22,29 @@ import org.cangnova.cangjie.test.services.assertions
  * 3. 结果只围绕公开 `canBeAnalysed()` 契约断言。
  */
 abstract class AbstractCanBeAnalysedTest : AbstractAnalysisApiComponentTest() {
+    /**
+     * 当前可分析性测试额外注册的 use-site module 指令。
+     *
+     * 该指令允许同一份 testData 指定从哪个模块的 analysis session 调用 `canBeAnalysed()`。
+     */
     override val additionalDirectives: List<DirectivesContainer>
         get() = super.additionalDirectives + Directives
 
+    /**
+     * 可分析性测试的专用指令集合。
+     */
     object Directives : SimpleDirectivesContainer() {
+        /**
+         * 指定调用 `canBeAnalysed()` 时使用的 analysis session 所属模块。
+         */
         val USE_SITE_MODULE by directive("指定从哪个测试模块的 analysis session 调用 `canBeAnalysed()`。")
     }
 
+    /**
+     * 执行 `canBeAnalysed()` 组件测试。
+     *
+     * 方法根据指令选择 use-site module，并验证目标文件或元素是否能被公开 Analysis API 分析。
+     */
     override fun doTestByMainFile(mainFile: CjFile, mainModule: CjTestModule, testServices: TestServices) {
         val targetElement = testServices.expressionMarkerProvider.getBottommostElementOfTypeByDirective(
             file = mainFile,

@@ -45,13 +45,25 @@ import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
  */
 class CangJieBindingPatternStubImpl(
     parent: StubElement<out PsiElement>?,
+    /**
+     * 保存 `nameRef` 的内部状态，供PSI Stub实现维护节点缓存或解析上下文。
+     */
     private val nameRef: StringRef?,
+    /**
+     * 暴露 `fqName`，实现PSI Stub节点对上层接口的属性契约。
+     */
     override val fqName: FqName? = null,
 ) : CangJieStubBaseImpl<CjBindingPattern>(parent, CjStubElementTypes.BINDING_PATTERN),
     CangJieBindingPatternStub {
 
+    /**
+     * 实现 `getName` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getName(): String? = StringRef.toString(nameRef)
 
+    /**
+     * 实现 `copyInto` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun copyInto(newParent: StubElement<*>?): CangJieBindingPatternStubImpl = CangJieBindingPatternStubImpl(
         parent = newParent,
         nameRef = nameRef,

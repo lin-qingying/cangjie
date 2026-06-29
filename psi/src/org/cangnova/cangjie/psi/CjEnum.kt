@@ -31,19 +31,34 @@ import com.intellij.lang.ASTNode
 import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.lexer.CjTokens
 
+/**
+ * 表示 `CjEnum`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjEnum : CjTypeStatement {
     constructor(node: ASTNode) : super(node)
     constructor(stub: CangJieEnumStub) : super(stub, CjStubElementTypes.ENUM)
 
+    /**
+     * 实现 `toString` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun toString(): String = node.elementType.toString() + ": " + name
 
+    /**
+     * 暴露 `typeName`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val typeName: String
         get() = "enum"
 
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R : Any?, D : Any?> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitEnum(this, data)
     }
 
+    /**
+     * 暴露 `body`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val body: CjEnumBody?
         get() {
             return getStubOrPsiChild(ENUM_BODY)
@@ -61,6 +76,9 @@ class CjEnum : CjTypeStatement {
             return body?.isNonExhaustive == true
         }
 
+    /**
+     * 保存 `constructor`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val constructor: List<CjEnumConstructor>
         get() {
             return body?.constructor ?: emptyList()

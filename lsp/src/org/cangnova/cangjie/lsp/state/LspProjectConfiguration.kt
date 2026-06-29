@@ -19,8 +19,19 @@ import java.nio.file.Paths
  * 3. 后续增量文档与工程模型对齐。
  */
 data class LspProjectConfiguration(
+    /**
+     * 当前工作区中客户端声明或推导出的模块定义。
+     */
     val workspaceModules: List<LspWorkspaceModuleDefinition>,
+
+    /**
+     * 标准库 `.cjo` 或模块搜索路径。
+     */
     val stdlibSearchPaths: List<String>,
+
+    /**
+     * 三方库或 package 依赖搜索路径。
+     */
     val librarySearchPaths: List<String>,
 ) {
     /**
@@ -35,9 +46,22 @@ data class LspProjectConfiguration(
     }
 
     companion object {
+        /**
+         * 标准库搜索路径写入的系统属性名。
+         */
         const val STDLIB_PROPERTY: String = "cangjie.stdlib.module"
+
+        /**
+         * 三方库搜索路径写入的系统属性名。
+         */
         const val LIBRARY_PROPERTY: String = "cangjie.library"
 
+        /**
+         * 从 LSP initialize 参数构造工程配置。
+         *
+         * 方法解析 initializationOptions、workspaceFolders/rootUri、stdlib 和 library 路径，
+         * 并在工作区目录覆盖参数存在时使用最新目录状态重建模块列表。
+         */
         fun fromInitializeParams(
             params: InitializeParams,
             workspaceFoldersOverride: List<WorkspaceFolder>? = null,
@@ -76,6 +100,11 @@ data class LspProjectConfiguration(
             )
         }
 
+        /**
+         * 从初始化选项和 workspace folder 中解析工作区模块定义。
+         *
+         * 客户端未提供 multi-module 配置时，每个 workspace folder 会退化为一个模块。
+         */
         private fun parseWorkspaceModules(
             rawInitializationOptions: Map<*, *>,
             workspaceFolders: List<WorkspaceFolder>,
@@ -104,6 +133,11 @@ data class LspProjectConfiguration(
             }
         }
 
+        /**
+         * 解析单个模块配置中的源码根 URI。
+         *
+         * 未声明 source_sets 时以模块根 URI 作为默认源码根。
+         */
         private fun parseSourceRootUris(
             moduleMap: Map<*, *>,
             moduleRootUri: String,
@@ -122,6 +156,9 @@ data class LspProjectConfiguration(
                 .toList()
         }
 
+        /**
+         * 解析模块 package 依赖的搜索路径。
+         */
         private fun parsePackageSearchPaths(moduleMap: Map<*, *>): List<String> {
             val packageRequires = moduleMap["package_requires"] as? Map<*, *> ?: return emptyList()
             return (packageRequires["path_option"] as? List<*>)
@@ -130,12 +167,20 @@ data class LspProjectConfiguration(
                 .distinct()
         }
 
+        /**
+         * 从 URI 尾段推导工作区或模块名称。
+         */
         private fun inferWorkspaceName(uri: String): String {
             val trimmed = uri.trimEnd('/')
             val slashIndex = trimmed.lastIndexOf('/')
             return if (slashIndex >= 0) trimmed.substring(slashIndex + 1) else trimmed
         }
 
+        /**
+         * 将 initializationOptions 规范化为 Map。
+         *
+         * 输入可能来自 lsp4j 的 Map、Gson JsonElement、JSON 字符串或其他可序列化对象。
+         */
         private fun normalizeInitializationOptions(raw: Any?): Map<*, *> {
             val gson = Gson()
             return when (raw) {
@@ -146,6 +191,11 @@ data class LspProjectConfiguration(
             }
         }
 
+        /**
+         * 根据路径列表设置或清除系统属性。
+         *
+         * 多个路径按当前平台的 path separator 拼接，空列表则清除属性以避免污染后续会话。
+         */
         private fun setOrClearSystemProperty(
             key: String,
             values: List<String>,
@@ -159,17 +209,44 @@ data class LspProjectConfiguration(
     }
 }
 
+/**
+ * LSP 工作区中的单个模块定义。
+ *
+ * 模块定义描述源码根和 package 搜索路径，是 Analysis API 项目结构构建模块图的输入。
+ */
 data class LspWorkspaceModuleDefinition(
+    /**
+     * 模块名称。
+     */
     val name: String,
+
+    /**
+     * 该模块包含的源码根 URI。
+     */
     val sourceRootUris: List<String>,
+
+    /**
+     * 该模块额外贡献的 package 依赖搜索路径。
+     */
     val packageSearchPaths: List<String>,
 )
 
+/**
+ * 将对象转换为非空字符串。
+ *
+ * 非字符串或空白字符串返回 null，用于解析宽松 initializationOptions。
+ */
 internal fun Any?.asNonBlankStringOrNull(): String? =
     (this as? String)?.takeIf { it.isNotBlank() }
 
+/**
+ * 将普通路径字符串转换为 [Path]，失败时返回 null。
+ */
 internal fun String.toPathOrNull(): Path? =
     runCatching { Paths.get(this) }.getOrNull()
 
+/**
+ * 将 URI 字符串转换为 [Path]，失败时返回 null。
+ */
 internal fun String.uriToPathOrNull(): Path? =
     runCatching { Paths.get(URI(this)) }.getOrNull()

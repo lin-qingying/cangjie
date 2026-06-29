@@ -35,6 +35,9 @@ import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 import org.cangnova.cangjie.psi.stubs.elements.CjTokenSets.FILE_DECLARATION_TYPES
 import org.cangnova.cangjie.psi.stubs.impl.CangJieFileStubImpl
 
+/**
+ * 反编译文本中用于替代真实函数体、初始化器或访问器实现的固定占位注释。
+ */
 private const val DECOMPILED_CODE_COMMENT = "/* compiled code */"
 
 /**

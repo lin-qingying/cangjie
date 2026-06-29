@@ -277,7 +277,8 @@ class CfirCallResolver(
     /**
      * 解析 `this(...)` / `super(...)` 委托构造调用。
      *
-     * 目标 class-like 声明先 lazy resolve 到 TYPES，然后只从目标声明的构造器集合创建候选；
+     * 目标 class-like 声明先 lazy resolve 到 STATUS，然后只从目标声明的构造器集合创建候选；
+     * 构造器候选的可见性与模态依赖 STATUS 阶段补全，不能停在 TYPES。
      * 最终候选或构造器诊断会写回调用 callee。
      */
     fun resolveDelegatingConstructorCallAndSelectCandidate(
@@ -286,7 +287,7 @@ class CfirCallResolver(
         resolutionMode: ResolutionMode,
     ): CfirFunctionCall {
         val callee = functionCall.calleeReference as? CfirNamedReference ?: return functionCall
-        targetDeclaration.symbol.lazyResolveToPhase(CfirResolvePhase.TYPES)
+        targetDeclaration.symbol.lazyResolveToPhase(CfirResolvePhase.STATUS)
         val actualTarget = targetDeclaration.symbol.cfir
         val callInfo = createDelegatingConstructorCallInfo(functionCall, actualTarget, resolutionMode)
         val constructorSymbols = actualTarget.declarations
@@ -1166,9 +1167,13 @@ class CfirCallResolver(
             OperatorNameConventions.TOKENS_BY_OPERATOR_NAME[name]
         }
         val argumentTypes = callInfo.arguments.mapNotNull { it.coneTypeOrNull }
+        val hasInvalidTypeParameterUpperBoundReceiver =
+            explicitReceiver?.coneTypeOrNull?.isTypeParameterWithInvalidDeclaredUpperBounds(session) == true
 
         // 根据期望的调用种类生成诊断
         val diagnostic = when {
+            hasInvalidTypeParameterUpperBoundReceiver ->
+                ConeUnreportedDuplicateDiagnostic(ConeSimpleDiagnostic("type parameter upper bound is already invalid"))
             expectedCallKind != null -> when (expectedCallKind) {
                 CallKind.Function,
                 CallKind.DelegatingConstructorCall,
@@ -1289,7 +1294,9 @@ class CfirCallResolver(
 
             else -> {
                 val candidate = candidates.single()
+                val genericTypeInconsistentError = candidate.staticQualifierGenericTypeInconsistentError()
                 when {
+                    genericTypeInconsistentError != null -> genericTypeInconsistentError
                     candidate.hasUninferableBareStaticGenericQualifier() -> ConeUnableToInferGenericFuncError()
                     !candidate.isSuccessful -> createConeDiagnosticForCandidateWithError(applicability, candidate)
                     else -> null
@@ -1333,6 +1340,69 @@ class CfirCallResolver(
     /** 从表达式 callee reference 中提取已携带的诊断，用于避免 receiver 错误重复上报。 */
     private fun CfirExpression.diagnosticFromCalleeReference(): ConeDiagnostic? =
         ((this as? CfirResolvable)?.calleeReference as? CfirDiagnosticHolder)?.diagnostic
+
+    /**
+     * 泛型 static qualifier 经由继承或 extend 提升成员时，参数约束会先作用到
+     * qualifier owner 的 fresh type variable。若同一个 owner 参数被实参推成多个
+     * 不同类型，官方 `CheckAndGetMappingForTypeDecl` 报 generic-type-inconsistent，
+     * 而不是普通参数不匹配或泛型推断失败。
+     */
+    private fun Candidate.staticQualifierGenericTypeInconsistentError(): ConeGenericTypeInconsistentError? {
+        if (!symbol.isBound) return null
+        val callable = symbol.cfir as? CfirCallableDeclaration ?: return null
+        if (!callable.status.isStatic || callable is CfirConstructor || callable is CfirEnumConstructor) return null
+
+        val receiver = callInfo.explicitReceiver as? CfirQualifiedAccessExpression ?: return null
+        val qualifierOwnerTypeParameters = receiver.staticQualifierOwnerTypeParameterSymbols()
+        if (qualifierOwnerTypeParameters.isEmpty()) return null
+
+        val storage = system.currentStorage()
+        for (freshVariable in freshVariables.filterIsInstance<ConeTypeParameterBasedTypeVariable>()) {
+            if (freshVariable.typeParameterSymbol !in qualifierOwnerTypeParameters) continue
+
+            val constrainedTypes = mutableListOf<ConeCangJieType>()
+            fun addConstrainedType(type: ConeCangJieType?) {
+                if (type == null || type is ConeErrorType) return
+                if (constrainedTypes.none { existing -> existing.isSameTypeAs(type) }) {
+                    constrainedTypes += type
+                }
+            }
+
+            addConstrainedType(storage.fixedTypeVariables[freshVariable.typeConstructor] as? ConeCangJieType)
+            storage.notFixedTypeVariables[freshVariable.typeConstructor]
+                ?.constraints
+                ?.filter { constraint ->
+                    constraint.kind == ConstraintKind.LOWER || constraint.kind == ConstraintKind.EQUALITY
+                }
+                ?.forEach { constraint -> addConstrainedType(constraint.type as? ConeCangJieType) }
+
+            if (constrainedTypes.size > 1) {
+                return ConeGenericTypeInconsistentError(freshVariable.typeParameterSymbol.name, this)
+            }
+        }
+
+        return null
+    }
+
+    /**
+     * 返回 static qualifier 自身声明的泛型参数集合。
+     *
+     * 继承成员和 extend 成员的 callable owner 可能不是 qualifier class 本身；
+     * 这里必须以源码中的 nominal base 为准，才能对齐官方 baseExpr 映射检查。
+     */
+    private fun CfirQualifiedAccessExpression.staticQualifierOwnerTypeParameterSymbols(): Set<CfirTypeParameterSymbol> {
+        resolvedQualifierTypeAliasSymbol()?.cfir?.let { typeAlias ->
+            val expandedType = typeAlias.expandedTypeRef.coneTypeOrNull ?: return emptySet()
+            return typeAlias.typeParameters
+                .filter { parameter -> expandedType.referencesTypeParameter(parameter.symbol) }
+                .mapTo(linkedSetOf()) { parameter -> parameter.symbol }
+        }
+
+        val owner = unwrapSmartcastExpression().resolvedQualifierClassifier(session)?.cfir
+            as? CfirTypeParameterRefsOwner
+            ?: return emptySet()
+        return owner.typeParameters.mapTo(linkedSetOf()) { parameter -> parameter.symbol }
+    }
 
     /**
      * `Box.create()` 这类裸泛型类名静态成员调用属于调用推断错误。
@@ -1621,7 +1691,7 @@ class CfirCallResolver(
         }
 
         val actualClassifier = (classifier as? CfirTypeAliasSymbol)?.fullyExpandedClass(session) ?: classifier
-        actualClassifier.lazyResolveToPhase(CfirResolvePhase.TYPES)
+        actualClassifier.lazyResolveToPhase(CfirResolvePhase.STATUS)
         val actualDeclaration = actualClassifier.cfir
         if (actualClassifier.classId == StdlibClassIds.Array) {
             return collectBuiltinArrayConstructorCandidates(

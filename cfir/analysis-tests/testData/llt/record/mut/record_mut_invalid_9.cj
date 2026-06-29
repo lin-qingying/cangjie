@@ -14,6 +14,6 @@ struct R1<T> {
 
 main() {
     let obj = R1<Int64>(0)
-    <!IMMUTABLE_FUNCTION_CANNOT_ACCESS_MUTABLE_FUNCTION!>obj.foo(1)<!>
+    obj.<!IMMUTABLE_FUNCTION_CANNOT_ACCESS_MUTABLE_FUNCTION!>foo<!>(1)
     return 1
 }

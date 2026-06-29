@@ -33,6 +33,11 @@ import org.cangnova.cangjie.utils.exceptions.ICangJieExceptionWithAttachments
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.contract
 
+/**
+ * 带附件的运行时条件检查。
+ *
+ * 条件失败时会构造 [CangJieExceptionWithAttachments]，调用 [attachments] 填充排障信息后抛出。
+ */
 @OptIn(ExperimentalContracts::class)
 inline fun checkWithAttachment(
     value: Boolean,
@@ -48,9 +53,18 @@ inline fun checkWithAttachment(
     }
 }
 
+/**
+ * 仓颉编译器通用的带附件运行时异常。
+ */
 open class CangJieExceptionWithAttachments : RuntimeException, ICangJieExceptionWithAttachments {
+    /**
+     * 当前异常携带的 IntelliJ 附件列表。
+     */
     override val mutableAttachments = mutableListOf<Attachment>()
 
+    /**
+     * 添加一个文本附件并返回当前异常实例。
+     */
     override fun withAttachment(name: String, content: Any?): CangJieExceptionWithAttachments {
         return super.withAttachment(name, content) as CangJieExceptionWithAttachments
     }
@@ -61,6 +75,9 @@ open class CangJieExceptionWithAttachments : RuntimeException, ICangJieException
         withAttachmentsFrom(cause)
     }
 
+    /**
+     * 在读动作中提取 PSI 上下文并作为附件加入异常。
+     */
     fun withPsiAttachment(name: String, element: PsiElement?): CangJieExceptionWithAttachments {
         runCatching {
             ApplicationManager.getApplication().runReadAction<String> { element?.let(::getElementTextWithContext) }

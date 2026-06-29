@@ -21,4 +21,7 @@ package org.cangnova.cangjie.resolve
  *  ---------
  */
 const val ROOT_PREFIX_FOR_IDE_RESOLUTION_MODE = "_root_ide_package_"
+/**
+ * IDE root prefix 的点号后缀形式，用于拼接全限定名。
+ */
 const val ROOT_PREFIX_FOR_IDE_RESOLUTION_MODE_WITH_DOT = "$ROOT_PREFIX_FOR_IDE_RESOLUTION_MODE."

@@ -19,6 +19,9 @@ import org.cangnova.cangjie.utils.trimToSize
 import java.util.*
 
 // 将 ConstraintSystemMarker 作为本文件内的 Context 类型别名，简化代码书写
+/**
+ * 本文件内约束系统上下文的简写。
+ */
 private typealias Context = ConstraintSystemMarker
 
 /**
@@ -30,7 +33,9 @@ private typealias Context = ConstraintSystemMarker
  *   3. [UnstableSystemMergeMode] 下合并两个 [VariableWithConstraints]（用于 OverloadResolutionByLambdaReturnType）
  */
 class MutableVariableWithConstraints private constructor(
+    /** 所属约束系统上下文。 */
     private val context: Context,
+    /** 当前约束集合关联的类型变量。 */
     override val typeVariable: TypeVariableMarker,
     constraints: List<Constraint>?, // 已经过化简与去重的约束列表；null 表示初始化为空
 ) : VariableWithConstraints {
@@ -314,6 +319,9 @@ class MutableVariableWithConstraints private constructor(
         return equalityConstraints[constraint.typeHashCode]?.none { it.type == constraint.type } ?: true
     }
 
+    /**
+     * 返回便于调试的约束集合描述。
+     */
     override fun toString(): String {
         return "Constraints for $typeVariable"
     }
@@ -409,4 +417,7 @@ annotation class AssertionsOnly
             "is intended to be used exclusively for OverloadResolutionByLambdaReturnType resolve. " +
             "Please don't use in other modes."
 )
+/**
+ * 标记约束系统不稳定合并模式专用 API。
+ */
 annotation class UnstableSystemMergeMode

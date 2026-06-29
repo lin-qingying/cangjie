@@ -62,11 +62,20 @@ import org.junit.jupiter.api.Test
 class StandaloneSessionBuilderTest : AbstractAnalysisApiExecutionTest(
     "analysis/analysis-api-standalone/testData/sessionBuilder",
 ) {
+    /**
+     * 使用 CFIR standalone Analysis API 配置执行 session builder 行为测试。
+     */
     override val configurator = CaCfirStandaloneAnalysisApiTestConfigurator
 
+    /**
+     * 为直接构造 standalone session builder 的测试注册平台服务。
+     */
     override val additionalServiceRegistrars: List<AnalysisApiServiceRegistrar<TestServices>> =
         listOf(StandaloneBuilderPlatformTestServiceRegistrar)
 
+    /**
+     * 验证根模块构建会收集可达模块闭包，并支持稳定模块名查询。
+     */
     @Test
     fun collectReachableModulesAndFindByStableName(
         mainFile: CjFile,
@@ -82,6 +91,9 @@ class StandaloneSessionBuilderTest : AbstractAnalysisApiExecutionTest(
         assertNull(context.findModuleByStableName("missing"))
     }
 
+    /**
+     * 验证跨模块批量文件分析保持调用方输入顺序。
+     */
     @Test
     fun analyzeFilesPreservesInputOrderAcrossModules(
         mainFile: CjFile,
@@ -103,6 +115,9 @@ class StandaloneSessionBuilderTest : AbstractAnalysisApiExecutionTest(
         assertEquals(listOf("Secondary", "Helper", "entry"), declarationNames)
     }
 
+    /**
+     * 验证批量元素分析按 use-site module 分组复用 session 且结果顺序不漂移。
+     */
     @Test
     fun analyzeElementsResolvesUseSiteModulesAndPreservesInputOrder(
         mainFile: CjFile,
@@ -133,6 +148,9 @@ class StandaloneSessionBuilderTest : AbstractAnalysisApiExecutionTest(
         assertEquals(listOf("consume:main", "Helper:helper"), renderedDeclarations)
     }
 
+    /**
+     * 验证更具体的文件 source root 会覆盖目录 root 并独立决定依赖解析边界。
+     */
     @Test
     fun specificSourceRootOverridesDirectoryRootAndItsDependencies(
         mainFile: CjFile,
@@ -257,6 +275,9 @@ class StandaloneSessionBuilderTest : AbstractAnalysisApiExecutionTest(
         }
     }
 
+    /**
+     * 验证同一 standalone 模块内的具体文件 root 能向目录 root 中源码贡献声明。
+     */
     @Test
     fun specificFileSourceRootContributesDeclarationsToSameModule(
         mainFile: CjFile,
@@ -336,6 +357,9 @@ class StandaloneSessionBuilderTest : AbstractAnalysisApiExecutionTest(
         }
     }
 
+    /**
+     * 验证目录 source root 经过目录链接暴露的文件会进入内容作用域和声明收集闭包。
+     */
     @Test
     fun sourceRootFollowsDirectoryLinks(
         mainFile: CjFile,
@@ -418,6 +442,9 @@ class StandaloneSessionBuilderTest : AbstractAnalysisApiExecutionTest(
         }
     }
 
+    /**
+     * 验证 standalone 上下文失效会推进 modification count 并使旧 session 产物失效。
+     */
     @Test
     fun invalidateContextInvalidatesPreviousSessionObjects(
         mainFile: CjFile,
@@ -454,6 +481,9 @@ class StandaloneSessionBuilderTest : AbstractAnalysisApiExecutionTest(
         }
     }
 
+    /**
+     * 验证代码片段会落到 dangling module，并能捕获上下文函数参数。
+     */
     @Test
     fun codeFragmentCapturesContextAndUsesDanglingModule(
         mainFile: CjFile,
@@ -489,6 +519,9 @@ class StandaloneSessionBuilderTest : AbstractAnalysisApiExecutionTest(
         }
     }
 
+    /**
+     * 验证非物理文件继承上下文模块并能够解析上下文中的调用。
+     */
     @Test
     fun nonPhysicalFileUsesContextModuleAndResolvesCalls(
         mainFile: CjFile,
@@ -527,6 +560,9 @@ class StandaloneSessionBuilderTest : AbstractAnalysisApiExecutionTest(
         }
     }
 
+    /**
+     * 基于主测试模块创建 standalone 分析上下文。
+     */
     private fun standaloneContext(
         mainFile: CjFile,
         mainModule: CjTestModule,

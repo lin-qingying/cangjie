@@ -27,6 +27,9 @@ enum class CaDanglingFileResolutionMode {
     IGNORE_SELF,
 }
 
+/**
+ * 存储内存文件显式绑定模块的 user-data key。
+ */
 private val EXPLICIT_MODULE_KEY = Key.create<CaModule>("EXPLICIT_MODULE")
 
 /**

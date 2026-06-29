@@ -32,6 +32,9 @@ import org.cangnova.cangjie.utils.exceptions.withPsiEntry
 import com.intellij.lang.ASTNode
 import com.intellij.openapi.diagnostic.Logger
 
+/**
+ * 表示 `CjDotQualifiedExpression`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjDotQualifiedExpression :
     CjExpressionImplStub<CangJiePlaceHolderStub<CjDotQualifiedExpression>>,
     CjQualifiedExpression,
@@ -44,10 +47,16 @@ class CjDotQualifiedExpression :
         CjStubElementTypes.DOT_QUALIFIED_EXPRESSION,
     )
 
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitDotQualifiedExpression(this, data)
     }
 
+    /**
+     * 暴露 `receiverExpression`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val receiverExpression: CjExpression
         get() {
             val stub = stub
@@ -60,6 +69,9 @@ class CjDotQualifiedExpression :
             return super<CjQualifiedExpression>.receiverExpression
         }
 
+    /**
+     * 暴露 `selectorExpression`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val selectorExpression: CjExpression?
         get() {
             val stub = stub
@@ -72,6 +84,9 @@ class CjDotQualifiedExpression :
             return super.selectorExpression
         }
 
+    /**
+     * 执行 `getChildExpressionsByStub` 内部辅助逻辑，支撑仓颉 PSI节点的结构解析与访问。
+     */
     private fun getChildExpressionsByStub(stub: CangJiePlaceHolderStub<CjDotQualifiedExpression>): Array<out CjExpression?>? {
         if (stub.getParentStubOfType(CjImportItem::class.java) == null &&
             stub.getParentStubOfType(CjPackageDirective::class.java) == null &&
@@ -97,6 +112,9 @@ class CjDotQualifiedExpression :
         private val LOG = Logger.getInstance(CjDotQualifiedExpression::class.java)
     }
 
+    /**
+     * 暴露 `callableReference`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val callableReference: CjNameReferenceExpression
         get() {
             val selector = selectorExpression

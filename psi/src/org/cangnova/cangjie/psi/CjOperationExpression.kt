@@ -24,7 +24,13 @@
 
 package org.cangnova.cangjie.psi
 
+/**
+ * 定义 `CjOperationExpression` 接口，约束仓颉 PSI节点或服务需要暴露的结构能力。
+ */
 interface CjOperationExpression : CjExpression {
 
+    /**
+     * 保存 `operationReference`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val operationReference: CjSimpleNameExpression
 }

@@ -33,6 +33,9 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiNameIdentifierOwner
 import com.intellij.psi.search.LocalSearchScope
 
+/**
+ * 表示 `CjImportAlias`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjImportAlias : CjElementImplStub<CangJieImportAliasStub>, PsiNameIdentifierOwner {
     @Suppress("unused")
     constructor(node: ASTNode) : super(node)
@@ -40,23 +43,44 @@ class CjImportAlias : CjElementImplStub<CangJieImportAliasStub>, PsiNameIdentifi
     @Suppress("unused")
     constructor(stub: CangJieImportAliasStub) : super(stub, CjStubElementTypes.IMPORT_ALIAS)
 
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R : Any?, D : Any?> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitImportAlias(this, data)
     }
 
+    /**
+     * 保存 `importDirective`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val importDirective: CjImportInfo?
         get() = parent as? CjImportInfo
 
+    /**
+     * 实现 `getName` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getName() = stub?.getName() ?: nameIdentifier?.text
 
+    /**
+     * 实现 `setName` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun setName(name: String): PsiElement {
         nameIdentifier?.replace(CjPsiFactory(project).createNameIdentifier(name))
         return this
     }
 
+    /**
+     * 实现 `getNameIdentifier` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getNameIdentifier(): PsiElement? = findChildByType(CjTokens.IDENTIFIER)
 
+    /**
+     * 实现 `getTextOffset` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getTextOffset() = nameIdentifier?.textOffset ?: startOffset
 
+    /**
+     * 实现 `getUseScope` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getUseScope() = LocalSearchScope(containingFile)
 }

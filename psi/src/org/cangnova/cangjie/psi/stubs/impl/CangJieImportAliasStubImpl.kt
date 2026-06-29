@@ -31,12 +31,24 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.stubs.StubElement
 import com.intellij.util.io.StringRef
 
+/**
+ * 表示 `CangJieImportAliasStubImpl`，承载PSI Stub中的语法节点、索引桩或辅助模型。
+ */
 class CangJieImportAliasStubImpl(
     parent: StubElement<out PsiElement>?,
+    /**
+     * 保存 `name` 的内部状态，供PSI Stub实现维护节点缓存或解析上下文。
+     */
     private val name: StringRef?,
 ) : CangJieStubBaseImpl<CjImportAlias>(parent, CjStubElementTypes.IMPORT_ALIAS), CangJieImportAliasStub {
+    /**
+     * 实现 `getName` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getName(): String? = StringRef.toString(name)
 
+    /**
+     * 实现 `copyInto` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun copyInto(newParent: StubElement<*>?): CangJieImportAliasStubImpl = CangJieImportAliasStubImpl(
         parent = newParent,
         name = name,

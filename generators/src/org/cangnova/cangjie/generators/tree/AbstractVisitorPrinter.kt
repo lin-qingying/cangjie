@@ -11,7 +11,15 @@ import org.cangnova.cangjie.generators.tree.printer.*
 import org.cangnova.cangjie.generators.util.printBlock
 import org.cangnova.cangjie.utils.withIndent
 
+/**
+ * 打印树 visitor 或 transformer 访问器类型的公共基类。
+ *
+ * 该类统一生成 visitor 类型声明、类型参数、继承子句、构造参数以及每个元素对应的访问方法。
+ */
 abstract class AbstractVisitorPrinter<Element : AbstractElement<Element, Field, *>, Field : AbstractField<Field>>(
+    /**
+     * 带导入收集能力的目标源码打印器。
+     */
     val printer: ImportCollectingPrinter,
 ) {
 
@@ -20,18 +28,30 @@ abstract class AbstractVisitorPrinter<Element : AbstractElement<Element, Field, 
      */
     abstract val visitorType: ClassRef<*>
 
+    /**
+     * 打印到 visitor 类型声明前的注解。
+     */
     protected open val annotations: List<Annotation>
         get() = emptyList()
 
+    /**
+     * visitor 类型本身应生成的实现种类。
+     */
     open val implementationKind: ImplementationKind
         get() = when (visitorType.kind) {
             TypeKind.Class -> ImplementationKind.AbstractClass
             TypeKind.Interface -> ImplementationKind.Interface
         }
 
+    /**
+     * visitor 主构造函数参数列表。
+     */
     open val constructorParameters: List<PrimaryConstructorParameter>
         get() = emptyList()
 
+    /**
+     * visitor 类型声明前需要打印的 opt-in 注解。
+     */
     open val optIns: List<ClassRef<*>>
         get() = emptyList()
 
@@ -51,8 +71,14 @@ abstract class AbstractVisitorPrinter<Element : AbstractElement<Element, Field, 
      */
     abstract val visitorTypeParameters: List<TypeVariable>
 
+    /**
+     * visitor 方法中 `data` 参数的类型。
+     */
     abstract val visitorDataType: TypeRef
 
+    /**
+     * 返回指定元素的 visit 方法返回类型。
+     */
     abstract fun visitMethodReturnType(element: Element): TypeRef
 
     /**
@@ -74,6 +100,9 @@ abstract class AbstractVisitorPrinter<Element : AbstractElement<Element, Field, 
      */
     open fun parentInVisitor(element: Element): Element? = element.parentInVisitor
 
+    /**
+     * 判断指定元素是否跳过 visitor 方法生成。
+     */
     open fun skipElement(element: Element): Boolean = false
 
     /**
@@ -108,6 +137,9 @@ abstract class AbstractVisitorPrinter<Element : AbstractElement<Element, Field, 
         )
     }
 
+    /**
+     * 输出指定元素的 visitor 方法声明并添加前导空行。
+     */
     protected fun printMethodDeclarationForElement(element: Element, modality: Modality? = null, override: Boolean) {
         printer.run {
             println()
@@ -119,6 +151,11 @@ abstract class AbstractVisitorPrinter<Element : AbstractElement<Element, Field, 
         }
     }
 
+    /**
+     * 打印指定元素对应的 visitor 方法。
+     *
+     * 默认实现会在存在 visitor 父元素时委托给父元素访问方法，否则根据 visitor 类型决定是否生成抽象方法。
+     */
     protected open fun printMethodsForElement(element: Element) {
         printer.run {
             val parentInVisitor = parentInVisitor(element)
@@ -142,12 +179,21 @@ abstract class AbstractVisitorPrinter<Element : AbstractElement<Element, Field, 
         }
     }
 
+    /**
+     * 打印 visitor 类型体内的额外方法。
+     */
     protected open fun ImportCollectingPrinter.printAdditionalMethods() {
     }
 
+    /**
+     * visitor 类型声明前的额外 KDoc 文本。
+     */
     protected open val ImportCollecting.classKDoc: String
         get() = ""
 
+    /**
+     * 打印完整 visitor 类型。
+     */
     open fun printVisitor(elements: List<Element>) {
         val visitorType = this.visitorType
         printer.run {

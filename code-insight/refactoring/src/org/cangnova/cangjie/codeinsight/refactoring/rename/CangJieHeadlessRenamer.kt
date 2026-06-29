@@ -43,23 +43,38 @@ import com.intellij.util.containers.MultiMap
  * `code-insight:refactoring` 中，作为 IDE 插件与 LSP 共同使用的语言重构核心。
  */
 class CangJieHeadlessRenamer(
+    /** 执行 rename 的 IntelliJ project。 */
     private val project: Project,
     target: PsiElement,
+    /** 目标元素的新名称。 */
     private val newName: String,
+    /** 是否搜索注释中的非代码用法。 */
     private val searchInComments: Boolean,
+    /** 是否搜索普通文本中的非代码用法。 */
     private val searchTextOccurrences: Boolean,
+    /** rename usage 搜索作用域。 */
     private val refactoringScope: SearchScope = GlobalSearchScope.projectScope(project),
 ) {
+    /** 经 rename processor 替换后的主重命名元素。 */
     private val primaryElement: PsiElement =
         RenamePsiElementProcessor.forElement(target).substituteElementToRename(target, null) ?: target
+    /** 本次 rename 涉及的元素到新名称映射。 */
     private val allRenames = linkedMapOf<PsiElement, String>()
+    /** 自动联动 rename 的变量重命名器。 */
     private val renamers = mutableListOf<AutomaticRenamer>()
+    /** 因无法解析冲突而跳过的 usage。 */
     private val skippedUsages = mutableListOf<UnresolvableCollisionUsageInfo>()
+    /** rename 后需要交给平台处理的非代码 usage。 */
     private var nonCodeUsages = emptyArray<NonCodeUsageInfo>()
+    /** 初始化阶段找到的主元素 usage。 */
     private val usages: Array<UsageInfo>
 
+    /**
+     * rename 前每个受影响文件的原始文本快照，key 为 virtual file URL。
+     */
     val originals: Map<String, Pair<PsiFile, String>>
         get() = _originals
+    /** 可变的原始文本快照存储。 */
     private val _originals: MutableMap<String, Pair<PsiFile, String>> = linkedMapOf()
 
     init {
@@ -69,6 +84,11 @@ class CangJieHeadlessRenamer(
         usages = initUsagesAndRenamers()
     }
 
+    /**
+     * 执行完整 headless rename 流程。
+     *
+     * 方法会先提交文档、检查命名冲突、展开自动重命名项，再进入写动作执行 PSI rename。
+     */
     fun rename() {
         if (!primaryElement.isValid) return
         PsiDocumentManager.getInstance(project).commitAllDocuments()
@@ -123,6 +143,9 @@ class CangJieHeadlessRenamer(
         execute(usagesIn)
     }
 
+    /**
+     * 查找主元素 usage，并初始化适用的自动重命名器。
+     */
     private fun initUsagesAndRenamers(): Array<UsageInfo> {
         val result = mutableListOf<UsageInfo>()
         val foundUsages = RenameUtil.findUsages(
@@ -145,6 +168,9 @@ class CangJieHeadlessRenamer(
         return UsageViewUtil.removeDuplicatedUsages(result.toTypedArray())
     }
 
+    /**
+     * 让所有匹配的 rename processor 为指定元素补充附加重命名项。
+     */
     private fun prepareRenaming(
         element: PsiElement,
         elementNewName: String,
@@ -155,6 +181,9 @@ class CangJieHeadlessRenamer(
         }
     }
 
+    /**
+     * 收集自动重命名器产生的变量 usage。
+     */
     private fun findRenamedVariables(variableUsages: MutableList<UsageInfo>) {
         for (renamer in renamers) {
             for (element in renamer.elements) {
@@ -166,17 +195,26 @@ class CangJieHeadlessRenamer(
         }
     }
 
+    /**
+     * 将一个附加元素纳入本次 rename 映射。
+     */
     private fun addElement(element: PsiElement, elementNewName: String) {
         RenameUtil.assertNonCompileElement(element)
         allRenames[element] = elementNewName
     }
 
+    /**
+     * 保存文件快照并执行最终重构命令。
+     */
     private fun execute(usagesIn: Array<UsageInfo>) {
         saveOriginalFileTexts(usagesIn)
         doRefactoring(linkedSetOf(*usagesIn))
         SuggestedRefactoringProvider.getInstance(project).reset()
     }
 
+    /**
+     * 在 IntelliJ command/write action 中执行 rename 重构。
+     */
     private fun doRefactoring(usageInfoSet: MutableCollection<UsageInfo>) {
         val writableUsageInfos = removeNonWritableUsages(usageInfoSet)
         val data = RefactoringEventData()
@@ -213,6 +251,9 @@ class CangJieHeadlessRenamer(
         commandFailure?.let { throw it }
     }
 
+    /**
+     * 对每个待重命名元素分派 usage 并调用对应 processor 修改 PSI。
+     */
     private fun performRefactoring(usagesIn: Array<UsageInfo>, transaction: RefactoringTransaction) {
         val postRenameCallbacks = mutableListOf<Runnable>()
         val renameEvents = MultiMap.createLinked<RefactoringElementListener, SmartPsiElementPointer<PsiElement>>()
@@ -233,8 +274,14 @@ class CangJieHeadlessRenamer(
                 elementNewName,
                 infos.toTypedArray(),
                 object : RefactoringElementListener {
+                    /**
+                     * Rename 不处理移动事件。
+                     */
                     override fun elementMoved(newElement: PsiElement) = Unit
 
+                    /**
+                     * 记录 processor 返回的新元素，用于事务结束后通知监听器。
+                     */
                     override fun elementRenamed(newElement: PsiElement) {
                         if (newElement.isValid) {
                             renameEvents.putValue(elementListener, SmartPointerManager.createPointer(newElement))
@@ -248,6 +295,9 @@ class CangJieHeadlessRenamer(
         afterRename(postRenameCallbacks, renameEvents)
     }
 
+    /**
+     * 提交文档、通知 rename listener，并执行 processor 的 post-rename 回调。
+     */
     private fun afterRename(
         postRenameCallbacks: List<Runnable>,
         renameEvents: MultiMap<RefactoringElementListener, SmartPsiElementPointer<PsiElement>>,
@@ -261,6 +311,9 @@ class CangJieHeadlessRenamer(
         postRenameCallbacks.forEach(Runnable::run)
     }
 
+    /**
+     * 移除不可写或已失效的 usage。
+     */
     private fun removeNonWritableUsages(usageInfoSet: MutableCollection<UsageInfo>): Array<UsageInfo> {
         val iterator = usageInfoSet.iterator()
         while (iterator.hasNext()) {
@@ -272,12 +325,18 @@ class CangJieHeadlessRenamer(
         return usageInfoSet.toTypedArray()
     }
 
+    /**
+     * 保存所有 usage 文件和重命名元素所在文件的原始文本。
+     */
     private fun saveOriginalFileTexts(infos: Array<UsageInfo>) {
         _originals.clear()
         addFiles(infos.mapNotNull(UsageInfo::getFile))
         addFiles(allRenames.keys.mapNotNull(PsiElement::getContainingFile))
     }
 
+    /**
+     * 将文件列表按 virtual file URL 去重后加入原始文本快照。
+     */
     private fun addFiles(files: List<PsiFile>) {
         files.mapNotNull { file ->
             val virtualFile = file.virtualFile ?: return@mapNotNull null
@@ -295,6 +354,11 @@ class CangJieHeadlessRenamer(
         fun canRename(target: PsiElement): Boolean =
             RenamePsiElementProcessor.forElement(target).canProcessElement(target)
 
+        /**
+         * 按被重命名元素对 usage 进行分类。
+         *
+         * 分类结果用于把每个 usage 只交给拥有该元素的 rename processor。
+         */
         fun classifyUsages(
             elements: MutableCollection<out PsiElement>,
             usages: Collection<UsageInfo>,

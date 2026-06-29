@@ -16,6 +16,11 @@ import org.cangnova.cangjie.psi.stubs.impl.*
  * 显式类型不能只停留在 declaration 的布尔位，必须物化出完整 TYPE_REFERENCE 子树。
  */
 internal class TypeCjoStubBuilder {
+    /**
+     * 为声明上的显式类型创建 type reference stub。
+     *
+     * 隐式类型引用表示源码中没有显式类型标注，因此不会在反编译 stub 中创建类型节点。
+     */
     fun createDeclaredTypeReferenceStub(
         parent: StubElement<*>,
         typeRef: CfirTypeRef,
@@ -24,6 +29,11 @@ internal class TypeCjoStubBuilder {
         createTypeReferenceStub(parent, typeRef)
     }
 
+    /**
+     * 为 callable 返回类型创建 type reference stub。
+     *
+     * 函数类型引用会提取其返回类型作为 callable 的声明返回类型，普通类型则直接创建引用。
+     */
     fun createCallableReturnTypeReferenceStub(
         parent: StubElement<*>,
         typeRef: CfirTypeRef,
@@ -39,6 +49,12 @@ internal class TypeCjoStubBuilder {
         }
     }
 
+    /**
+     * 为 callable 值参数创建参数列表 stub。
+     *
+     * 可按需创建空参数列表，并可为 primary constructor 参数补齐 modifier list，
+     * 以保持与源码 PSI header 层级一致。
+     */
     fun createCallableParameterListStub(
         parent: StubElement<*>,
         valueParameters: List<CfirValueParameter>,
@@ -57,10 +73,18 @@ internal class TypeCjoStubBuilder {
         }
     }
 
+    /**
+     * 创建空的值参数列表 stub。
+     */
     fun createEmptyParameterListStub(parent: StubElement<*>) {
         CangJiePlaceHolderStubImpl<CjParameterList>(parent, CjStubElementTypes.VALUE_PARAMETER_LIST)
     }
 
+    /**
+     * 根据参数名列表创建简单参数列表 stub。
+     *
+     * 该入口用于 setter 等反编译合成参数，不携带类型引用。
+     */
     fun createSimpleParameterListStub(
         parent: StubElement<*>,
         parameterNames: List<String>,
@@ -72,6 +96,11 @@ internal class TypeCjoStubBuilder {
         }
     }
 
+    /**
+     * 根据 CFIR 类型引用创建完整 type reference stub。
+     *
+     * 该入口覆盖 resolved/basic/user/function/tuple/option/varray/implicit 等 CFIR 类型形态。
+     */
     fun createTypeReferenceStub(
         parent: StubElement<*>,
         typeRef: CfirTypeRef,
@@ -93,6 +122,11 @@ internal class TypeCjoStubBuilder {
         }
     }
 
+    /**
+     * 根据 Cone 类型创建完整 type reference stub。
+     *
+     * Cone 类型来自已解析类型系统，可能携带 classifier、函数类型、元组、VArray 或原始类型等结构。
+     */
     private fun createTypeReferenceStub(
         parent: StubElement<*>,
         coneType: ConeCangJieType,
@@ -125,6 +159,11 @@ internal class TypeCjoStubBuilder {
         }
     }
 
+    /**
+     * 创建基础类型引用 stub。
+     *
+     * 如果输入文本不是仓颉内建基础类型名，则按已渲染用户类型处理，避免丢失复杂类型文本。
+     */
     private fun createBasicTypeReferenceStub(
         parent: StubElement<*>,
         basicTypeName: String,
@@ -142,6 +181,9 @@ internal class TypeCjoStubBuilder {
         CangJieBasicTypeStubImpl(typeReferenceStub, normalizedTypeName)
     }
 
+    /**
+     * 为已经渲染好的用户类型文本创建 type reference stub。
+     */
     private fun createRenderedUserTypeReferenceStub(
         parent: StubElement<*>,
         renderedType: String,
@@ -150,6 +192,9 @@ internal class TypeCjoStubBuilder {
         createRenderedUserTypeStub(typeReferenceStub, renderedType)
     }
 
+    /**
+     * 为 Cone classifier 或类型参数创建限定用户类型引用 stub。
+     */
     private fun createQualifiedUserTypeReferenceStub(
         parent: StubElement<*>,
         segments: List<Pair<Name, Boolean>>,
@@ -160,6 +205,9 @@ internal class TypeCjoStubBuilder {
         createQualifiedUserTypeStub(typeReferenceStub, segments, typeArguments)
     }
 
+    /**
+     * 为 CFIR user type 创建限定用户类型引用 stub。
+     */
     private fun createQualifiedUserTypeReferenceStubFromCfir(
         parent: StubElement<*>,
         segments: List<Pair<Name, Boolean>>,
@@ -170,6 +218,11 @@ internal class TypeCjoStubBuilder {
         createQualifiedUserTypeStubFromCfir(typeReferenceStub, segments, typeArguments)
     }
 
+    /**
+     * 递归创建 Cone 类型参数驱动的 qualified user type stub。
+     *
+     * 每个路径段对应一个嵌套 user type stub，末尾段携带类型实参列表。
+     */
     private fun createQualifiedUserTypeStub(
         parent: StubElement<*>,
         segments: List<Pair<Name, Boolean>>,
@@ -193,6 +246,9 @@ internal class TypeCjoStubBuilder {
         }
     }
 
+    /**
+     * 递归创建 CFIR 类型引用驱动的 qualified user type stub。
+     */
     private fun createQualifiedUserTypeStubFromCfir(
         parent: StubElement<*>,
         segments: List<Pair<Name, Boolean>>,
@@ -214,6 +270,9 @@ internal class TypeCjoStubBuilder {
         }
     }
 
+    /**
+     * 将已渲染类型文本拆分为路径段和顶层类型实参，并创建 user type stub。
+     */
     private fun createRenderedUserTypeStub(
         parent: StubElement<*>,
         renderedType: String,
@@ -226,6 +285,9 @@ internal class TypeCjoStubBuilder {
         createRenderedUserTypeStub(parent, segments, renderedType.topLevelTypeArguments())
     }
 
+    /**
+     * 根据已经拆分出的名称段和类型实参文本递归创建 user type stub。
+     */
     private fun createRenderedUserTypeStub(
         parent: StubElement<*>,
         segments: List<Name>,
@@ -245,6 +307,9 @@ internal class TypeCjoStubBuilder {
         }
     }
 
+    /**
+     * 根据已渲染类型文本创建 type reference stub。
+     */
     private fun createTypeReferenceStubFromRenderedText(
         parent: StubElement<*>,
         renderedType: String,
@@ -260,6 +325,9 @@ internal class TypeCjoStubBuilder {
         }
     }
 
+    /**
+     * 根据 CFIR 函数类型引用创建函数类型 stub。
+     */
     private fun createFunctionTypeReferenceStub(
         parent: StubElement<*>,
         parameterTypes: List<CfirTypeRef>,
@@ -284,6 +352,9 @@ internal class TypeCjoStubBuilder {
         createTypeReferenceStub(functionTypeStub, returnType)
     }
 
+    /**
+     * 创建单个值参数 stub，并按需补齐注解列表和修饰符列表占位。
+     */
     private fun createParameterStub(
         parent: StubElement<*>,
         name: String?,
@@ -309,6 +380,9 @@ internal class TypeCjoStubBuilder {
         return parameterStub
     }
 
+    /**
+     * 根据 Cone 函数类型创建函数类型 stub。
+     */
     private fun createFunctionTypeReferenceStub(
         parent: StubElement<*>,
         parameterTypes: List<ConeCangJieType>,
@@ -333,6 +407,9 @@ internal class TypeCjoStubBuilder {
         createTypeReferenceStub(functionTypeStub, returnType)
     }
 
+    /**
+     * 根据 CFIR tuple 类型引用创建元组类型 stub。
+     */
     private fun createTupleTypeReferenceStubFromCfir(
         parent: StubElement<*>,
         elementTypes: List<CfirTypeRef>,
@@ -344,6 +421,9 @@ internal class TypeCjoStubBuilder {
         }
     }
 
+    /**
+     * 根据 Cone tuple 类型创建元组类型 stub。
+     */
     private fun createTupleTypeReferenceStub(
         parent: StubElement<*>,
         elementTypes: List<ConeCangJieType>,
@@ -355,6 +435,9 @@ internal class TypeCjoStubBuilder {
         }
     }
 
+    /**
+     * 根据 CFIR VArray 类型引用创建 VArray 类型 stub。
+     */
     private fun createVArrayTypeReferenceStub(
         parent: StubElement<*>,
         elementType: CfirTypeRef,
@@ -368,6 +451,9 @@ internal class TypeCjoStubBuilder {
         CangJieNameReferenceExpressionStubImpl(varrayTypeStub, StringRef.fromString(sizeLiteral), false)
     }
 
+    /**
+     * 根据 Cone VArray 类型创建 VArray 类型 stub。
+     */
     private fun createVArrayTypeReferenceStub(
         parent: StubElement<*>,
         elementType: ConeCangJieType,
@@ -381,6 +467,9 @@ internal class TypeCjoStubBuilder {
         CangJieNameReferenceExpressionStubImpl(varrayTypeStub, StringRef.fromString(sizeLiteral), false)
     }
 
+    /**
+     * 将 CFIR option 类型反编译为 `Option<T>` 用户类型 stub。
+     */
     private fun createOptionTypeReferenceStub(
         parent: StubElement<*>,
         componentType: CfirTypeRef,
@@ -393,17 +482,26 @@ internal class TypeCjoStubBuilder {
         createTypeReferenceStub(projectionStub, componentType)
     }
 
+    /**
+     * 返回去掉顶层类型实参后的类型主体文本。
+     */
     private fun String.substringBeforeTopLevelTypeArguments(): String {
         val index = indexOfTopLevelLt()
         return if (index < 0) this else substring(0, index).trim()
     }
 
+    /**
+     * 解析当前类型文本最外层的类型实参文本列表。
+     */
     private fun String.topLevelTypeArguments(): List<String> {
         val ltIndex = indexOfTopLevelLt()
         if (ltIndex < 0 || !endsWith(">")) return emptyList()
         return substring(ltIndex + 1, lastIndex).splitTopLevelTypeArguments()
     }
 
+    /**
+     * 查找当前字符串中顶层 `<` 的位置。
+     */
     private fun String.indexOfTopLevelLt(): Int {
         var depth = 0
         forEachIndexed { index, char ->
@@ -418,6 +516,9 @@ internal class TypeCjoStubBuilder {
         return -1
     }
 
+    /**
+     * 按顶层逗号拆分类型实参文本，忽略嵌套泛型内部的逗号。
+     */
     private fun String.splitTopLevelTypeArguments(): List<String> {
         val result = mutableListOf<String>()
         var depth = 0
@@ -437,6 +538,9 @@ internal class TypeCjoStubBuilder {
     }
 
     private companion object {
+        /**
+         * 反编译 stub 可以直接映射为 basic type stub 的仓颉基础类型名集合。
+         */
         val BASIC_TYPE_NAMES = setOf(
             "Bool",
             "IntNative",

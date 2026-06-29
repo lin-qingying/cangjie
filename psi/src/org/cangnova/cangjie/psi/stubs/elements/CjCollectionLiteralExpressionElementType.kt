@@ -31,18 +31,30 @@ import com.intellij.psi.stubs.StubElement
 import com.intellij.psi.stubs.StubInputStream
 import com.intellij.psi.stubs.StubOutputStream
 
+/**
+ * 表示 `CjCollectionLiteralExpressionElementType`，承载PSI Stub中的语法节点、索引桩或辅助模型。
+ */
 class CjCollectionLiteralExpressionElementType(debugName: String) :
     CjStubElementType<CangJieCollectionLiteralExpressionStub, CjCollectionLiteralExpression>(
         debugName,
         CjCollectionLiteralExpression::class.java,
         CangJieCollectionLiteralExpressionStub::class.java,
     ) {
+    /**
+     * 实现 `serialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun serialize(stub: CangJieCollectionLiteralExpressionStub, dataStream: StubOutputStream) {}
 
+    /**
+     * 实现 `deserialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>?): CangJieCollectionLiteralExpressionStub {
         return CangJieCollectionLiteralExpressionStubImpl(parentStub)
     }
 
+    /**
+     * 实现 `createStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createStub(psi: CjCollectionLiteralExpression, parentStub: StubElement<*>?): CangJieCollectionLiteralExpressionStub {
         return CangJieCollectionLiteralExpressionStubImpl(parentStub)
     }

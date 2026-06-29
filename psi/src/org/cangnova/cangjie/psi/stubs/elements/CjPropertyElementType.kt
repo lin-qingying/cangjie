@@ -40,11 +40,17 @@ import com.intellij.psi.stubs.StubInputStream
 import com.intellij.psi.stubs.StubOutputStream
 import com.intellij.util.io.StringRef
 
+/**
+ * 表示 `CjPropertyElementType`，承载PSI Stub中的语法节点、索引桩或辅助模型。
+ */
 class CjPropertyElementType(debugName: String) : CjStubElementType<CangJiePropertyStub, CjProperty>(
     debugName,
     CjProperty::class.java,
     CangJiePropertyStub::class.java,
 ) {
+    /**
+     * 实现 `serialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun serialize(stub: CangJiePropertyStub, dataStream: StubOutputStream) {
         dataStream.writeName(stub.name)
         dataStream.writeName(stub.getFqName()?.asString())
@@ -53,6 +59,9 @@ class CjPropertyElementType(debugName: String) : CjStubElementType<CangJieProper
         }
     }
 
+    /**
+     * 实现 `deserialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>?): CangJiePropertyStub {
         val name = dataStream.readName()
         val fqNameAsString = dataStream.readName()
@@ -66,6 +75,9 @@ class CjPropertyElementType(debugName: String) : CjStubElementType<CangJieProper
         )
     }
 
+    /**
+     * 实现 `createStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createStub(psi: CjProperty, parentStub: StubElement<out PsiElement>?): CangJiePropertyStub {
         return CangJiePropertyStubImpl(
             parentStub,
@@ -74,14 +86,23 @@ class CjPropertyElementType(debugName: String) : CjStubElementType<CangJieProper
         )
     }
 
+    /**
+     * 实现 `indexStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun indexStub(stub: CangJiePropertyStub, sink: IndexSink) {
         getInstance().indexProperty(stub, sink)
     }
 
+    /**
+     * 实现 `createPsi` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createPsi(stub: CangJiePropertyStub): CjProperty {
         return CjProperty(stub)
     }
 
+    /**
+     * 实现 `createPsiFromAst` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createPsiFromAst(node: ASTNode): CjProperty {
         return CjProperty(node)
     }

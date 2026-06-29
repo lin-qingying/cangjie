@@ -8,7 +8,13 @@ import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 
+/**
+ * CHIR 只读上下文视图测试。
+ */
 class ChirReadOnlyContextTest {
+    /**
+     * 验证只读集合以快照形式暴露，调用方无法修改内部索引。
+     */
     @Test
     fun `read-only views are exposed as snapshots`() {
         val context: ChirContext = DefaultChirContext()

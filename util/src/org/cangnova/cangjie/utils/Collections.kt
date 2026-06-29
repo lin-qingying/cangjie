@@ -120,10 +120,16 @@ inline fun <T> buildCollection(
     builder: (CollectionBuilder<T>).() -> Unit,
 ): MutableCollection<T> {
     object : CollectionBuilder<T> {
+        /**
+         * 将单个元素加入结果集合。
+         */
         override fun add(item: T) {
             result.add(item)
         }
 
+        /**
+         * 将多个元素加入结果集合。
+         */
         override fun addAll(items: Collection<T>) {
             result.addAll(items)
         }
@@ -179,10 +185,16 @@ interface CollectionBuilder<in T> {
 inline fun <K, V> buildMap(builder: (MapBuilder<K, V>).() -> Unit): Map<K, V> {
     val result = HashMap<K, V>()
     object : MapBuilder<K, V> {
+        /**
+         * 将单个键值对加入结果 Map。
+         */
         override fun put(key: K, value: V) {
             result[key] = value
         }
 
+        /**
+         * 将多个键值对加入结果 Map。
+         */
         override fun putAll(map: Map<K, V>) {
             result.putAll(map)
         }
@@ -249,6 +261,9 @@ fun <T> SmartList<T>.optimizeList(): List<T> = when (size) {
     }
 }
 
+/**
+ * Int 范围内最大的 2 的幂，用于 Map 容量上限判断。
+ */
 private const val INT_MAX_POWER_OF_TWO: Int = Int.MAX_VALUE / 2 + 1
 
 /**
@@ -518,17 +533,45 @@ typealias LookbackValue<T> = Pair<T, T?>
  */
 fun <T> Sequence<T>.withPrevious(): Sequence<LookbackValue<T>> = LookbackSequence(this)
 
-private class LookbackSequence<T>(private val sequence: Sequence<T>) : Sequence<LookbackValue<T>> {
+/**
+ * 为序列包装前一个元素信息的序列实现。
+ */
+private class LookbackSequence<T>(
+    /**
+     * 被包装的原始序列。
+     */
+    private val sequence: Sequence<T>,
+) : Sequence<LookbackValue<T>> {
 
+    /**
+     * 创建带前驱信息的迭代器。
+     */
     override fun iterator(): Iterator<LookbackValue<T>> = LookbackIterator(sequence.iterator())
 }
 
-private class LookbackIterator<T>(private val iterator: Iterator<T>) : Iterator<LookbackValue<T>> {
+/**
+ * 在遍历时保存前一个元素的迭代器。
+ */
+private class LookbackIterator<T>(
+    /**
+     * 原始序列迭代器。
+     */
+    private val iterator: Iterator<T>,
+) : Iterator<LookbackValue<T>> {
 
+    /**
+     * 上一次返回的元素。
+     */
     private var previous: T? = null
 
+    /**
+     * 判断原始迭代器是否还有元素。
+     */
     override fun hasNext() = iterator.hasNext()
 
+    /**
+     * 返回当前元素及其前一个元素。
+     */
     override fun next(): LookbackValue<T> {
         val next = iterator.next()
         val result = LookbackValue(next, previous)
@@ -557,17 +600,45 @@ typealias WithNextValue<T> = Pair<T, T?>
  */
 fun <T : Any> Sequence<T>.withNext(): Sequence<WithNextValue<T>> = WithNextSequence(this)
 
-private class WithNextSequence<T : Any>(private val sequence: Sequence<T>) : Sequence<WithNextValue<T>> {
+/**
+ * 为序列包装后一个元素信息的序列实现。
+ */
+private class WithNextSequence<T : Any>(
+    /**
+     * 被包装的原始序列。
+     */
+    private val sequence: Sequence<T>,
+) : Sequence<WithNextValue<T>> {
 
+    /**
+     * 创建带后继信息的迭代器。
+     */
     override fun iterator(): Iterator<WithNextValue<T>> = WithNextIterator(sequence.iterator())
 }
 
-private class WithNextIterator<T : Any>(private val iterator: Iterator<T>) : Iterator<WithNextValue<T>> {
+/**
+ * 在遍历时预读后一个元素的迭代器。
+ */
+private class WithNextIterator<T : Any>(
+    /**
+     * 原始序列迭代器。
+     */
+    private val iterator: Iterator<T>,
+) : Iterator<WithNextValue<T>> {
 
+    /**
+     * 已预读但尚未作为当前值返回的元素。
+     */
     private var next: T? = null
 
+    /**
+     * 判断是否存在当前或后续元素。
+     */
     override fun hasNext() = next != null || iterator.hasNext()
 
+    /**
+     * 返回当前元素及其后一个元素。
+     */
     override fun next(): WithNextValue<T> {
         if (next == null) { // The first invocation (or illegal after-the-last invocation)
             next = iterator.next()
@@ -733,6 +804,9 @@ fun <T : Any> Sequence<Any>.match(vararg expectedTypes: KClass<*>, last: KClass<
         .lastOrNull()
         ?.let(last::cast)
 
+/**
+ * 无限重复当前序列的所有元素。
+ */
 private fun <T> Sequence<T>.cycle(): Sequence<T> = sequence { while (true) yieldAll(this@cycle) }
 
 /**

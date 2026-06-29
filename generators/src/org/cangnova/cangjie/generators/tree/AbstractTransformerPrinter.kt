@@ -18,8 +18,14 @@ abstract class AbstractTransformerPrinter<Element : AbstractElement<Element, Fie
     printer: ImportCollectingPrinter,
 ) : AbstractVisitorPrinter<Element, Field>(printer) {
 
+    /**
+     * transformer 的 visit 方法返回当前元素对应的 transformer 结果类型。
+     */
     override fun visitMethodReturnType(element: Element) = element.transformerClass
 
+    /**
+     * 打印指定元素的 transform 方法以及桥接到 visitor 方法的 final override。
+     */
     override fun printMethodsForElement(element: Element) {
         printer.run {
             println()

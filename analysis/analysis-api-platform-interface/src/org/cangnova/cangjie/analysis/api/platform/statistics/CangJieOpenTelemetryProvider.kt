@@ -13,10 +13,16 @@ import org.cangnova.cangjie.analysis.api.platform.CaOptionalPlatformComponent
  */
 @CaPlatformInterface
 interface CangJieOpenTelemetryProvider : CaOptionalPlatformComponent {
+    /**
+     * 平台提供的 OpenTelemetry 实例。
+     */
     val openTelemetry: OpenTelemetry
 
     @CaPlatformInterface
     companion object {
+        /**
+         * 获取可选的项目级 OpenTelemetry provider 服务。
+         */
         fun getInstance(project: Project): CangJieOpenTelemetryProvider? = project.serviceOrNull()
     }
 }

@@ -27,7 +27,13 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 
+/**
+ * LLVM nominal type declaration 收集与发射的集成测试。
+ */
 class TypeDeclarationIntegrationTest {
+    /**
+     * 验证所有 CHIR 使用点中的 nominal 类型都会收集为 LLVM type declaration。
+     */
     @Test
     fun `emits nominal type declarations from all CHIR use sites`() {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
@@ -104,6 +110,9 @@ class TypeDeclarationIntegrationTest {
         )
     }
 
+    /**
+     * 验证声明类、命名类型和 this 类型使用统一 canonical LLVM 名称。
+     */
     @Test
     fun `uses canonical names for declared class named and this types`() {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
@@ -194,6 +203,9 @@ class TypeDeclarationIntegrationTest {
         )
     }
 
+    /**
+     * 验证 memory lowering 的 alloca 结果不是 pointer/ref 契约时会失败。
+     */
     @Test
     fun `rejects memory lowering without pointer result contract`() {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
@@ -251,6 +263,9 @@ class TypeDeclarationIntegrationTest {
         assertTrue(error.message?.contains("memory operation requires pointer/ref type") == true, error.message)
     }
 
+    /**
+     * 验证聚合类型全局变量缺少显式 initializer 时会失败。
+     */
     @Test
     fun `rejects aggregate global without explicit initializer`() {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
@@ -290,6 +305,9 @@ class TypeDeclarationIntegrationTest {
         assertTrue(error.message?.contains("requires an explicit initializer") == true, error.message)
     }
 
+    /**
+     * 生成单 module package 的 LLVM IR 文本。
+     */
     private fun generateIr(
         chirPackage: ChirPackage,
         validateBeforeLowering: Boolean = true,

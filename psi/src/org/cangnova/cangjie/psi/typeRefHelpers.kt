@@ -31,6 +31,9 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiErrorElement
 import com.intellij.psi.PsiWhiteSpace
 
+/**
+ * 提供 `setTypeReference` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+ */
 fun setTypeReference(declaration: CjCallableDeclaration, addAfter: PsiElement?, typeRef: CjTypeReference?): CjTypeReference? {
     val oldTypeRef = getTypeReference(declaration)
     if (typeRef != null) {
@@ -52,6 +55,9 @@ fun setTypeReference(declaration: CjCallableDeclaration, addAfter: PsiElement?, 
         return null
     }
 }
+/**
+ * 提供 `getTypeReference` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+ */
 fun getTypeReference(declaration: CjCallableDeclaration): CjTypeReference? {
     return declaration.firstChild!!.siblings(forward = true)
         .dropWhile { it.node!!.elementType != CjTokens.COLON }

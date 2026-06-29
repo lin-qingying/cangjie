@@ -27,18 +27,36 @@ package org.cangnova.cangjie.psi
 import com.intellij.lang.ASTNode
 import com.intellij.psi.PsiElementVisitor
 
+/**
+ * 表示 `CjSpawnExpression`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjSpawnExpression(node: ASTNode) : CjCallExpression(node) {
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun accept(visitor: PsiElementVisitor) {
         super.accept(visitor)
     }
 
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitSpawnExpression(this, data)
     }
+    /**
+     * 保存 `lambdaExpression`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val lambdaExpression: CjLambdaExpression?
         get() = lambdaArgument?.getLambdaExpression()
+    /**
+     * 保存 `lambdaArgument`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val lambdaArgument: CjLambdaArgument?
         get() = findChildByClass(CjLambdaArgument::class.java)
+    /**
+     * 暴露 `calleeExpression`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val calleeExpression: CjLambdaExpression?
         get() {
             return lambdaExpression

@@ -64,18 +64,39 @@ internal class CangJieMacroCallParserDefinition : ParserDefinition {
         }
     }
 
+    /**
+     * 实现 `createLexer` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createLexer(project: Project?): Lexer = CangJieLexer()
 
+    /**
+     * 实现 `createParser` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createParser(project: Project?): PsiParser = CangJieParser(project!!)
 
+    /**
+     * 实现 `getFileNodeType` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getFileNodeType(): IFileElementType = FILE_ELEMENT_TYPE
 
+    /**
+     * 实现 `getCommentTokens` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getCommentTokens(): TokenSet = CjTokens.COMMENTS
 
+    /**
+     * 实现 `getWhitespaceTokens` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getWhitespaceTokens(): TokenSet = CjTokens.WHITESPACES
 
+    /**
+     * 实现 `getStringLiteralElements` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getStringLiteralElements(): TokenSet = TokenSet.EMPTY
 
+    /**
+     * 实现 `createElement` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createElement(astNode: ASTNode): PsiElement {
         return when (val elementType = astNode.elementType) {
             is CjStubElementType<*, *> -> elementType.createPsiFromAst(astNode)
@@ -88,6 +109,9 @@ internal class CangJieMacroCallParserDefinition : ParserDefinition {
         }
     }
 
+    /**
+     * 实现 `createFile` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createFile(viewProvider: FileViewProvider): PsiFile {
         return CjMacroCallFile(viewProvider)
     }

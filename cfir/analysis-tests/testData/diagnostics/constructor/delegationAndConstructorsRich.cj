@@ -7,7 +7,7 @@ class Box {
 
 class AmbiguousBox {
     init(value: Int64, left!: Int64 = 0) {}
-    <!CONFLICTING_OVERLOADS!>init(value: Int64, right!: Int64 = 0)<!> {}
+    <!CONFLICTING_OVERLOADS!>init<!>(value: Int64, right!: Int64 = 0) {}
 }
 
 open class Base {
@@ -17,14 +17,14 @@ open class Base {
 }
 
 class MissingSuper <: Base {
-    <!EXPLICIT_SUPER_CALL_REQUIRED!>init<!>() {
+    <!NO_NON_PARAM_CONSTRUCTOR_IN_SUPER_CLASS!>init<!>() {
     }
 }
 
 class IllegalSuper <: Base {
     init() {
         let _ = 1
-        <!ILLEGAL_THIS_OR_SUPER_CALL!>super<!>(1)
+        <!ILLEGAL_PLACE_OF_CALLING_THIS_OR_SUPER!>super<!>(1)
     }
 }
 

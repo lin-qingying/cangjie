@@ -34,22 +34,40 @@ import org.cangnova.cangjie.lexer.CjTokens
  * 它只服务于 `handle (...)`，因此单独建模，避免混入 match/catch 的通用 pattern 语义。
  */
 class CjCommandTypePattern(node: ASTNode) : CjElementImpl(node) {
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitCommandTypePattern(this, data)
     }
 
+    /**
+     * 保存 `bindingNameElement`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val bindingNameElement: PsiElement?
         get() = findChildByType(CjTokens.IDENTIFIER)
 
+    /**
+     * 保存 `bindingName`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val bindingName: String?
         get() = bindingNameElement?.text
 
+    /**
+     * 保存 `wildcardElement`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val wildcardElement: PsiElement?
         get() = findChildByType(CjTokens.UNDERLINE)
 
+    /**
+     * 保存 `isWildcard`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val isWildcard: Boolean
         get() = wildcardElement != null
 
+    /**
+     * 保存 `typeReferences`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val typeReferences: List<CjTypeReference>
         get() = findChildrenByClass(CjTypeReference::class.java).toList()
 }

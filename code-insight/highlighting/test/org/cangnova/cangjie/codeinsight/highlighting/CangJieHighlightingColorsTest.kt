@@ -5,7 +5,13 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
+/**
+ * 验证仓颉高亮属性 key 与语义 HighlightInfoType 的稳定性。
+ */
 class CangJieHighlightingColorsTest {
+    /**
+     * 所有 TextAttributesKey 外部名必须稳定且唯一。
+     */
     @Test
     fun testTextAttributeKeyExternalNamesAreStableAndUnique() {
         val names = allKeys.map(TextAttributesKey::getExternalName)
@@ -19,6 +25,9 @@ class CangJieHighlightingColorsTest {
         assertTrue("CANGJIE_BAD_CHARACTER" in names)
     }
 
+    /**
+     * 语义 HighlightInfoType 必须复用共享 TextAttributesKey。
+     */
     @Test
     fun testSemanticHighlightInfoTypesUseSharedAttributeKeys() {
         assertEquals(
@@ -39,6 +48,9 @@ class CangJieHighlightingColorsTest {
         )
     }
 
+    /**
+     * 测试覆盖的完整仓颉 TextAttributesKey 列表。
+     */
     private val allKeys: List<TextAttributesKey> = listOf(
         CangJieHighlightingColors.KEYWORD,
         CangJieHighlightingColors.LET_KEYWORD,

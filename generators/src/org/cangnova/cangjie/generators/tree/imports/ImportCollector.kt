@@ -45,6 +45,9 @@ internal class ImportCollector(currentPackage: String) : ImportCollecting {
         "java.lang",
     )
 
+    /**
+     * 添加指定包和实体名的导入，并按阈值折叠为星号导入。
+     */
     private fun addImport(packageName: String, entity: String) {
         if (packageName in ignoredPackages) return
         val entities = imports.computeIfAbsent(packageName) { sortedSetOf() }
@@ -59,6 +62,9 @@ internal class ImportCollector(currentPackage: String) : ImportCollecting {
         }
     }
 
+    /**
+     * 添加 importable 描述的导入。
+     */
     override fun addImport(importable: Importable) {
         addImport(importable.packageName, importable.typeName)
     }

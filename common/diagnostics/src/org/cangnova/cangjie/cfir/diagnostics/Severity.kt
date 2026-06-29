@@ -8,6 +8,9 @@ package org.cangnova.cangjie.cfir.diagnostics
 
 import org.cangnova.cangjie.messages.CompilerMessageSeverity
 
+/**
+ * 仓颉诊断严重级别。
+ */
 enum class Severity {
     INFO,
     ERROR,
@@ -19,6 +22,9 @@ enum class Severity {
     FIXED_WARNING,
     STRONG_WARNING;
 
+    /**
+     * 转换为编译器消息严重级别。
+     */
     fun toCompilerMessageSeverity(): CompilerMessageSeverity = when (this) {
         INFO -> CompilerMessageSeverity.INFO
         ERROR -> CompilerMessageSeverity.ERROR
@@ -27,6 +33,9 @@ enum class Severity {
         FIXED_WARNING -> CompilerMessageSeverity.FIXED_WARNING
     }
 
+    /**
+     * 当前级别是否会在 Werror 下被视作错误。
+     */
     val isErrorWhenWError: Boolean
         get() = when (this) {
             INFO, ERROR -> false
@@ -35,6 +44,9 @@ enum class Severity {
             STRONG_WARNING -> true
         }
 
+    /**
+     * 当前级别是否为错误。
+     */
     val isError: Boolean
         get() = when (this) {
             ERROR -> true
@@ -44,5 +56,4 @@ enum class Severity {
             STRONG_WARNING -> false
         }
 }
-
 

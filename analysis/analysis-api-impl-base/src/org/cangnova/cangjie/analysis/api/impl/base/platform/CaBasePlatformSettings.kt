@@ -10,6 +10,9 @@ import org.cangnova.cangjie.analysis.api.platform.CaPlatformSettings
  * 产品插件不再通过 shared XML 直接装配它，而是由各宿主显式提供自己的 platform settings。
  */
 internal class CaBasePlatformSettings : CaPlatformSettings {
+    /**
+     * 基础平台默认把反序列化声明视为来自 binary。
+     */
     override val deserializedDeclarationsOrigin: CaDeserializedDeclarationsOrigin
         get() = CaDeserializedDeclarationsOrigin.BINARIES
 }

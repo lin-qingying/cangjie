@@ -37,6 +37,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
+import org.cangnova.cangjie.cfir.declarations.CfirStruct
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
@@ -54,9 +55,11 @@ import org.cangnova.cangjie.cfir.visitors.CfirDefaultVisitorVoid
  *
  * 对齐官方 Cangjie `TypeCheckReference.cpp#CheckThisOrSuperInInitializer`：
  * - 当前检查节点是 `VAR_DECL` 时才应用本规则；
- * - static 字段初始化器中显式 `this` / `super` 都非法；
- * - 非 static 字段初始化器中 `super` 与裸 `this` 非法；
- * - 非 static 字段初始化器中的 `this.member` 不由本规则报告。
+ * - static 字段初始化器中显式 `this` 与 `super.member` / `super.call` 非法；
+ * - 非 static 字段初始化器中 `super.member` / `super.call` 与裸 `this` 非法；
+ * - 裸 `super` 只由 `ILLEGAL_SUPER_ALONE` 规则报告，不叠加 initializer 诊断；
+ * - class 字段初始化器中的 `this.member` 不由本规则报告；
+ * - struct 字段初始化器中的 `this.member` 按官方 struct-this 规则报告。
  *
  * Kotlin 没有同语义规则，但成员属性初始化相关诊断由 `FirMemberPropertiesChecker`
  * 这样的声明检查入口统一处理；本 checker 因此挂在 `CfirFieldVariableChecker`。
@@ -68,7 +71,8 @@ object CfirFieldVariableThisOrSuperInitializerChecker : CfirFieldVariableChecker
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirFieldVariable) {
         val initializer = declaration.initializer ?: return
-        initializer.accept(FieldInitializerReferenceVisitor(declaration, context, reporter))
+        val owner = context.findClosestDeclaration<CfirClassLikeDeclaration>()
+        initializer.accept(FieldInitializerReferenceVisitor(declaration, owner, context, reporter))
     }
 }
 
@@ -176,6 +180,11 @@ private class FieldInitializerReferenceVisitor(
     private val field: CfirFieldVariable,
 
     /**
+     * 当前字段所在的 class-like 声明，用于区分 struct 字段初始化器中的 `this.member`。
+     */
+    private val owner: CfirClassLikeDeclaration?,
+
+    /**
      * 当前 checker 上下文。
      */
     private val context: CheckerContext,
@@ -204,8 +213,8 @@ private class FieldInitializerReferenceVisitor(
      * 访问 qualified access 并维护 receiver 判断所需的访问栈。
      */
     override fun visitQualifiedAccessExpression(qualifiedAccessExpression: CfirQualifiedAccessExpression) {
-        if (qualifiedAccessExpression is CfirSuperReceiverExpression) {
-            reportIllegalReference(qualifiedAccessExpression, "super")
+        if (qualifiedAccessExpression is CfirSuperReceiverExpression && qualifiedAccessExpression.isReceiverOfQualifiedAccess()) {
+            reportInitializerReference(qualifiedAccessExpression, "super")
         }
 
         qualifiedAccessStack.addLast(qualifiedAccessExpression)
@@ -214,6 +223,19 @@ private class FieldInitializerReferenceVisitor(
         } finally {
             qualifiedAccessStack.removeLast()
         }
+    }
+
+    /**
+     * 字段初始化器中的 `this()` / `super()` 由调用级 checker 归类为 outside-ctor 诊断；
+     * 本 visitor 只继续扫描实参，避免把 callee receiver 再归入 initializer 引用规则。
+     */
+    override fun visitFunctionCall(functionCall: CfirFunctionCall) {
+        if (functionCall.constructorDelegationKindOrNull() != null) {
+            functionCall.argumentList.accept(this)
+            return
+        }
+
+        visitQualifiedAccessExpression(functionCall)
     }
 
     /**
@@ -235,8 +257,12 @@ private class FieldInitializerReferenceVisitor(
      */
     private fun checkThisReceiver(expression: CfirThisReceiverExpression) {
         if (expression.calleeReference.isImplicit) return
+        if (!field.status.isStatic && owner is CfirStruct) {
+            reportIllegalThisOutsideStructConstructor(expression)
+            return
+        }
         if (!field.status.isStatic && expression.isReceiverOfQualifiedAccess()) return
-        reportIllegalReference(expression, "this")
+        reportInitializerReference(expression, "this")
     }
 
     /**
@@ -249,30 +275,52 @@ private class FieldInitializerReferenceVisitor(
     }
 
     /**
-     * 报告非法 super 引用。
+     * 报告字段初始化器中的非法 super 引用。
      */
-    private fun reportIllegalReference(expression: CfirSuperReceiverExpression, keyword: String) {
+    private fun reportInitializerReference(expression: CfirSuperReceiverExpression, keyword: String) {
         with(context) {
             reporter.reportOn(
                 source = expression.calleeReference.source ?: expression.source,
-                factory = CfirErrors.ILLEGAL_THIS_OR_SUPER_CALL,
+                factory = initializerReferenceDiagnosticFactory(),
                 a = keyword,
             )
         }
     }
 
     /**
-     * 报告非法 this 引用。
+     * 报告字段初始化器中的非法 this 引用。
      */
-    private fun reportIllegalReference(expression: CfirThisReceiverExpression, keyword: String) {
+    private fun reportInitializerReference(expression: CfirThisReceiverExpression, keyword: String) {
         with(context) {
             reporter.reportOn(
                 source = expression.calleeReference.source ?: expression.source,
-                factory = CfirErrors.ILLEGAL_THIS_OR_SUPER_CALL,
+                factory = initializerReferenceDiagnosticFactory(),
                 a = keyword,
             )
         }
     }
+
+    /**
+     * struct 字段初始化器中的 `this.member` 对齐官方 struct-this 规则，不走初始化读诊断。
+     */
+    private fun reportIllegalThisOutsideStructConstructor(expression: CfirThisReceiverExpression) {
+        with(context) {
+            reporter.reportOn(
+                source = expression.calleeReference.source ?: expression.source,
+                factory = CfirErrors.ILLEGAL_THIS_OUTSIDE_STRUCT_CONSTRUCTOR,
+            )
+        }
+    }
+
+    /**
+     * static 与非 static 字段初始化器使用官方区分的诊断名。
+     */
+    private fun initializerReferenceDiagnosticFactory() =
+        if (field.status.isStatic) {
+            CfirErrors.THIS_OR_SUPER_NOT_ALLOWED_TO_INITIALIZE_STATIC_MEMBER
+        } else {
+            CfirErrors.THIS_OR_SUPER_NOT_ALLOWED_TO_INITIALIZE_NON_STATIC_MEMBER
+        }
 }
 
 /**
@@ -498,7 +546,7 @@ private class ConstructorMemberAccessBeforeInitializationVisitor(
     private fun reportIllegalReference(expression: CfirSuperReceiverExpression, keyword: String) {
         with(context) {
             reporter.reportOn(
-                source = expression.calleeReference.source?.firstCharacterDiagnosticSource() ?: expression.source,
+                source = expression.calleeReference.source ?: expression.source,
                 factory = CfirErrors.ASSIGNMENT_OF_MEMBER_VARIABLE_CANNOT_USE_THIS_OR_SUPER,
                 a = keyword,
                 b = place.diagnosticContext,
@@ -512,7 +560,7 @@ private class ConstructorMemberAccessBeforeInitializationVisitor(
     private fun reportIllegalReference(expression: CfirThisReceiverExpression, keyword: String) {
         with(context) {
             reporter.reportOn(
-                source = expression.calleeReference.source?.firstCharacterDiagnosticSource() ?: expression.source,
+                source = expression.calleeReference.source ?: expression.source,
                 factory = CfirErrors.ASSIGNMENT_OF_MEMBER_VARIABLE_CANNOT_USE_THIS_OR_SUPER,
                 a = keyword,
                 b = place.diagnosticContext,

@@ -13,6 +13,9 @@ import org.cangnova.cangjie.test.services.TestServices
  * 不再混入 standalone 生产态 permission/lifetime/platform settings。
  */
 object CaStandaloneModeTestServiceRegistrar : AnalysisApiTestServiceRegistrar() {
+    /**
+     * standalone 当前没有额外 project-model 测试服务，保留空实现用于占位扩展点。
+     */
     override fun registerProjectModelServices(project: MockProject, disposable: Disposable, testServices: TestServices) {
     }
 }

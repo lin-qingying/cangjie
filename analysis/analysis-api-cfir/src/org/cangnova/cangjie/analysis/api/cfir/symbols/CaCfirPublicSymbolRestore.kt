@@ -33,6 +33,9 @@ import org.cangnova.cangjie.cfir.resolve.providers.CfirProviderImpl
 import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.Name
 
+/**
+ * 按 callableId 与 callable kind 恢复稳定的公开 callable 符号。
+ */
 internal fun CaCfirSession.restoreCallablePublicSymbol(
     callableId: CallableId,
     kind: CaCfirCallableSymbolKind,
@@ -90,6 +93,9 @@ internal fun CaCfirSession.restoreTopLevelFunctionPublicSymbol(
     return cfirSymbolBuilder.functionBuilder.buildNamedFunctionSymbol(functionSymbol)
 }
 
+/**
+ * 按 extend 稳定身份和成员 callable 信息恢复 extend 成员公开符号。
+ */
 internal fun CaCfirSession.restoreExtendMemberCallablePublicSymbol(
     extendIdentity: CaCfirExtendSymbolIdentity,
     callableName: Name,
@@ -105,6 +111,9 @@ internal fun CaCfirSession.restoreExtendMemberCallablePublicSymbol(
     }
 }
 
+/**
+ * 按稳定 extend identity 恢复公开 extend 符号。
+ */
 internal fun CaCfirSession.restoreExtendPublicSymbol(
     extendIdentity: CaCfirExtendSymbolIdentity,
 ): org.cangnova.cangjie.analysis.api.symbols.CaExtendSymbol? {
@@ -116,6 +125,9 @@ internal fun CaCfirSession.restoreExtendPublicSymbol(
     return cfirSymbolBuilder.buildExtendSymbol(extendDeclaration.symbol)
 }
 
+/**
+ * 在单个 CFIR 文件树中查找匹配 callableId 与 kind 的 callable 符号。
+ */
 private fun CfirFile.findCallableSymbol(
     callableId: CallableId,
     kind: CaCfirCallableSymbolKind,
@@ -139,6 +151,9 @@ private fun CfirFile.findCallableSymbol(
     return result
 }
 
+/**
+ * 判断底层 CFIR callable 符号是否属于指定公开 callable kind。
+ */
 private fun CfirCallableSymbol<*>.matchesKind(kind: CaCfirCallableSymbolKind): Boolean = when (kind) {
     CaCfirCallableSymbolKind.PATTERN_VARIABLE -> this is CfirPatternVariableSymbol
     CaCfirCallableSymbolKind.PATTERN_BINDING -> this is CfirPatternBindingSymbol
@@ -152,6 +167,9 @@ private fun CfirCallableSymbol<*>.matchesKind(kind: CaCfirCallableSymbolKind): B
     CaCfirCallableSymbolKind.ENUM_CONSTRUCTOR -> this is CfirEnumConstructorSymbol
 }
 
+/**
+ * 判断公开 callable 符号是否匹配稳定缓存键中的 callableId 与 kind。
+ */
 private fun CaCallableSymbol.matchesStableCallable(
     callableId: CallableId,
     kind: CaCfirCallableSymbolKind,

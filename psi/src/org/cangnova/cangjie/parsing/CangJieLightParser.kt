@@ -31,7 +31,13 @@ import com.intellij.openapi.util.Ref
 import com.intellij.psi.TokenType
 import com.intellij.util.diff.FlyweightCapableTreeStructure
 
+/**
+ * 提供 `CangJieLightParser` 单例，集中承载仓颉语法解析的共享状态、工厂或工具行为。
+ */
 object CangJieLightParser {
+    /**
+     * 提供 `parse` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
+     */
     fun parse(
         builder: PsiBuilder,
         errorListener: LightTreeParsingErrorListener? = null,
@@ -47,10 +53,16 @@ object CangJieLightParser {
         }
     }
 
+    /**
+     * 提供 `interface` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
+     */
     fun interface LightTreeParsingErrorListener {
         fun onError(startOffset: Int, endOffset: Int, message: String?)
     }
 
+    /**
+     * 执行 `reportErrors` 内部辅助逻辑，支撑仓颉语法解析节点的结构解析与访问。
+     */
     private fun reportErrors(
         node: LighterASTNode,
         tree: FlyweightCapableTreeStructure<LighterASTNode>,

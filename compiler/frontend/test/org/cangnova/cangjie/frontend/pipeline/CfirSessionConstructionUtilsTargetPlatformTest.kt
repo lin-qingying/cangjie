@@ -17,7 +17,13 @@ import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Test
 
 @OptIn(CompilerConfiguration.Internals::class)
+/**
+ * 覆盖 CFIR session 构建时 target platform 传递行为的测试。
+ */
 class CfirSessionConstructionUtilsTargetPlatformTest {
+    /**
+     * 验证 cjvm 平台占位对象会原样写入 source module data。
+     */
     @Test
     fun `prepareSessions carries cjvm placeholder through source module data`() {
         val configuration = CompilerConfiguration().apply {

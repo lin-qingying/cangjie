@@ -18,17 +18,54 @@ import org.cangnova.cangjie.type.model.*
 import org.cangnova.cangjie.types.AbstractTypeApproximator
 import org.cangnova.cangjie.types.TypeApproximatorConfiguration
 
+/**
+ * 类型变量固定时的结果类型解析器。
+ *
+ * 该组件根据类型变量收集到的上下界、等价约束、递归 self type 约束以及整型字面量约束，
+ * 选择一个可作为固定结果的类型，并在必要时调用类型近似器把内部类型稳定化。
+ */
 class ResultTypeResolver(
+    /**
+     * 用于把内部类型近似为可固定结果类型的近似器。
+     */
     val typeApproximator: AbstractTypeApproximator,
+
+    /**
+     * 判断约束结果类型是否足够平凡、可直接作为固定结果的 oracle。
+     */
     val trivialConstraintTypeInferenceOracle: TrivialConstraintTypeInferenceOracle,
+
+    /**
+     * 当前语言版本设置，供兼容性分支和特性开关读取。
+     */
     private val languageVersionSettings: LanguageVersionSettings,
 ) {
+    /**
+     * 结果类型解析所需的约束系统上下文。
+     *
+     * 上下文同时提供类型系统操作、约束系统构建能力和未固定变量集合，使解析器可以在
+     * 不持有具体实现的情况下完成替换、proper type 判断和约束兼容性探测。
+     */
     interface Context : TypeSystemInferenceExtensionContext, ConstraintSystemBuilder {
+        /**
+         * 当前仍未固定的类型变量及其约束。
+         */
         val notFixedTypeVariables: Map<TypeConstructorMarker, VariableWithConstraints>
+
+        /**
+         * 外层约束系统变量在当前系统中的前缀数量。
+         */
         val outerSystemVariablesPrefixSize: Int
+
+        /**
+         * 构建把未固定变量替换为 stub type 的替换器。
+         */
         fun buildNotFixedVariablesToStubTypesSubstitutor(): TypeSubstitutorMarker
     }
 
+    /**
+     * 根据递归 self type 上界约束为类型变量构建默认类型。
+     */
     context(c: Context)
     private fun TypeVariableMarker.getDefaultTypeForSelfType(constraints: List<Constraint>): CangJieTypeMarker? {
         val typeVariableConstructor = freshTypeConstructor()
@@ -42,6 +79,9 @@ class ResultTypeResolver(
         return c.createPlaceholderTypeForSelfType(typeVariableConstructor, typesForRecursiveTypeParameters)
     }
 
+    /**
+     * 在没有可用 proper 约束时，根据固定方向选择类型变量默认结果类型。
+     */
     context(c: Context)
     private fun TypeVariableMarker.getDefaultType(direction: ResolveDirection, constraints: List<Constraint>): CangJieTypeMarker {
         getDefaultTypeForSelfType(constraints)?.let { return it }
@@ -49,6 +89,9 @@ class ResultTypeResolver(
         return if (direction == ResolveDirection.TO_SUBTYPE) c.nothingType() else c.anyType()
     }
 
+    /**
+     * 解析 [variableWithConstraints] 在指定 [direction] 下的最终固定类型。
+     */
     context(c: Context)
     fun findResultType(variableWithConstraints: VariableWithConstraints, direction: ResolveDirection): CangJieTypeMarker {
         findResultTypeOrNull(variableWithConstraints, direction)?.let { return it }
@@ -57,6 +100,9 @@ class ResultTypeResolver(
         return variableWithConstraints.typeVariable.getDefaultType(direction, variableWithConstraints.constraints)
     }
 
+    /**
+     * 将当前类型向父类型近似；若类型是整型字面量类型，则使用 [superTypeCandidate] 作为期望类型。
+     */
     context(c: Context)
     private fun CangJieTypeMarker.approximateToSuperTypeOrSelf(superTypeCandidate: CangJieTypeMarker?): CangJieTypeMarker {
         // In case we have an ILT as the subtype, we approximate it using the upper type as the expected type.
@@ -73,10 +119,16 @@ class ResultTypeResolver(
         return typeApproximator.approximateToSuperType(this, TypeApproximatorConfiguration.InternalTypesApproximation) ?: this
     }
 
+    /**
+     * 将当前类型向子类型近似，近似失败时保持原类型。
+     */
     private fun CangJieTypeMarker.approximateToSubTypeOrSelf(): CangJieTypeMarker {
         return typeApproximator.approximateToSubType(this, TypeApproximatorConfiguration.InternalTypesApproximation) ?: this
     }
 
+    /**
+     * 尝试解析 [variableWithConstraints] 的结果类型；缺少可用约束时返回 `null`。
+     */
     context(c: Context)
     fun findResultTypeOrNull(
         variableWithConstraints: VariableWithConstraints,
@@ -111,6 +163,9 @@ class ResultTypeResolver(
         }
     }
 
+    /**
+     * 判断等价约束得到的结果类型是否已经不含整型字面量常量构造器。
+     */
     context(c: Context)
     private fun CangJieTypeMarker.isAppropriateResultTypeFromEqualityConstraints(): Boolean {
         return !contains { type ->
@@ -181,6 +236,9 @@ class ResultTypeResolver(
         return !c.isEqualityConstraintCompatible(approximatedResultType, variableWithConstraints.typeVariable.defaultType())
     }
 
+    /**
+     * 在两个方向的候选类型之间选择当前变量的结果类型。
+     */
     context(c: Context)
     private fun VariableWithConstraints.resultType(
         firstCandidate: CangJieTypeMarker?,
@@ -200,6 +258,9 @@ class ResultTypeResolver(
         return secondCandidate.takeIf { isSuitableType(it, this) }
     }
 
+    /**
+     * 为交叉类型候选构造带上界的特殊结果类型。
+     */
     context(c: Context)
     private fun specialResultForIntersectionType(firstCandidate: CangJieTypeMarker, secondCandidate: CangJieTypeMarker): CangJieTypeMarker? {
         if (firstCandidate.typeConstructor().isIntersection()) {
@@ -211,9 +272,15 @@ class ResultTypeResolver(
         return null
     }
 
+    /**
+     * 把内部候选类型近似为公开声明可见的类型形态。
+     */
     private fun CangJieTypeMarker.toPublicType(): CangJieTypeMarker =
         typeApproximator.approximateToSuperType(this, TypeApproximatorConfiguration.PublicDeclaration.SaveAnonymousTypes) ?: this
 
+    /**
+     * 判断 [resultType] 是否满足 [variableWithConstraints] 中所有可用于固定的 proper 约束。
+     */
     context(c: Context)
     private fun isSuitableType(resultType: CangJieTypeMarker, variableWithConstraints: VariableWithConstraints): Boolean {
         val filteredConstraints = variableWithConstraints.constraints.filter { it.isProperConstraint() }
@@ -240,6 +307,9 @@ class ResultTypeResolver(
         return filteredConstraints.any { it.kind.isUpper() }
     }
 
+    /**
+     * 判断当前变量是否允许以 Any 类型作为固定结果。
+     */
     context(c: Context)
     private fun VariableWithConstraints.isAnyResultTypeAllowed(): Boolean {
         return constraints.any { constraint ->
@@ -247,6 +317,9 @@ class ResultTypeResolver(
         }
     }
 
+    /**
+     * 判断当前变量是否允许以 Nothing 类型作为固定结果。
+     */
     context(c: Context)
     private fun VariableWithConstraints.isNothingResultTypeAllowed(): Boolean {
         return constraints.any { constraint ->
@@ -254,6 +327,9 @@ class ResultTypeResolver(
         }
     }
 
+    /**
+     * 从下界约束中计算可作为固定结果的子类型候选。
+     */
     context(c: Context)
     private fun VariableWithConstraints.findSubType(): CangJieTypeMarker? {
         val lowerConstraintTypes = prepareLowerConstraints(constraints)
@@ -298,6 +374,11 @@ class ResultTypeResolver(
         return null
     }
 
+    /**
+     * 准备用于计算公共父类型的下界约束类型列表。
+     *
+     * 当约束中混入未固定变量时，该方法会按 PCLA 规则把未固定变量替换为 stub type。
+     */
     context(c: Context)
     private fun prepareLowerConstraints(constraints: List<Constraint>): List<CangJieTypeMarker> {
         var atLeastOneProper = false
@@ -336,6 +417,9 @@ class ResultTypeResolver(
         return lowerConstraintTypes.map { if (it.isProperTypeForFixation()) it else notFixedToStubTypesSubstitutor.safeSubstitute(it) }
     }
 
+    /**
+     * 调整整型字面量类型在公共父类型计算中的顺序，使非字面量候选优先沉淀为结果。
+     */
     context(c: Context)
     private fun sinkIntegerLiteralTypes(types: List<CangJieTypeMarker>): List<CangJieTypeMarker> {
         return types.sortedBy { type ->
@@ -344,11 +428,17 @@ class ResultTypeResolver(
         }
     }
 
+    /**
+     * 根据上界约束计算交叉后的父类型候选。
+     */
     context(c: Context)
     private fun computeUpperType(upperConstraints: List<Constraint>): CangJieTypeMarker {
         return c.intersectTypes(upperConstraints.map { it.type })
     }
 
+    /**
+     * 从上界约束中计算可作为固定结果的父类型候选。
+     */
     context(c: Context)
     private fun VariableWithConstraints.findSuperType(): CangJieTypeMarker? {
         val upperConstraints = constraints.filter {
@@ -363,15 +453,24 @@ class ResultTypeResolver(
         return null
     }
 
+    /**
+     * 判断该约束是否可直接参与类型变量固定。
+     */
     context(c: Context)
     private fun Constraint.isProperConstraint(): Boolean {
         return type.isProperTypeForFixation() && !isNoInfer
     }
 
+    /**
+     * 判断当前类型在固定阶段是否为 proper type。
+     */
     context(c: Context)
     private fun CangJieTypeMarker.isProperTypeForFixation(): Boolean =
         isProperTypeForFixation(c.notFixedTypeVariables.keys) { c.isProperType(it) }
 
+    /**
+     * 在存在 proper 等价约束时解析可代表该等价约束集合的结果类型。
+     */
     context(c: Context)
     fun findResultIfThereIsEqualsConstraint(variableWithConstraints: VariableWithConstraints, isStrictMode: Boolean): CangJieTypeMarker? {
         val properEqualityConstraints = variableWithConstraints.constraints.filter {
@@ -382,6 +481,11 @@ class ResultTypeResolver(
     }
 
     // Discriminate integer literal types as they are less specific than separate integer types (Int, Short...)
+    /**
+     * 从 proper 等价约束集合中选择单一代表类型。
+     *
+     * 非严格模式下允许整型字面量类型作为退路；严格模式下只接受不含整型字面量类型的代表。
+     */
     context(c: Context)
     private fun representativeFromEqualityConstraints(
         variableWithConstraints: VariableWithConstraints,

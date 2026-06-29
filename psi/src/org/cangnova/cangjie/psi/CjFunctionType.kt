@@ -31,11 +31,17 @@ import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 import com.google.common.collect.Lists
 import com.intellij.lang.ASTNode
 
+/**
+ * 表示 `CjFunctionType`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjFunctionType : CjElementImplStub<CangJiePlaceHolderStub<CjFunctionType>>, CjTypeElement {
     constructor(node: ASTNode) : super(node)
 
     constructor(stub: CangJiePlaceHolderStub<CjFunctionType>) : super(stub, CjStubElementTypes.FUNCTION_TYPE)
 
+    /**
+     * 暴露 `typeArgumentsAsTypes`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val typeArgumentsAsTypes: List<CjTypeReference>
         get() {
             val result =
@@ -58,22 +64,37 @@ class CjFunctionType : CjElementImplStub<CangJiePlaceHolderStub<CjFunctionType>>
             return result
         }
 
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitFunctionType(this, data)
     }
 
+    /**
+     * 保存 `parameterList`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val parameterList: CjParameterList?
         get() = getStubOrPsiChild(CjStubElementTypes.VALUE_PARAMETER_LIST)
 
+    /**
+     * 保存 `parameters`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val parameters: List<CjParameter>
         get() {
             val list = parameterList
             return list?.parameters ?: emptyList()
         }
 
+    /**
+     * 保存 `receiver`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val receiver: CjFunctionTypeReceiver?
         get() = getStubOrPsiChild(CjStubElementTypes.FUNCTION_TYPE_RECEIVER)
 
+    /**
+     * 保存 `receiverTypeReference`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val receiverTypeReference: CjTypeReference?
         get() {
             val receiverDeclaration = receiver ?: return null
@@ -82,6 +103,9 @@ class CjFunctionType : CjElementImplStub<CangJiePlaceHolderStub<CjFunctionType>>
 
 
 
+    /**
+     * 保存 `returnTypeReference`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val returnTypeReference: CjTypeReference?
         get() = getStubOrPsiChild(CjStubElementTypes.TYPE_REFERENCE)
 

@@ -43,13 +43,22 @@ import com.intellij.psi.tree.IElementType
 import com.intellij.psi.tree.IErrorCounterReparseableElementType
 import com.intellij.psi.util.PsiTreeUtil
 
+  /**
+   * 表示 `LambdaExpressionElementType`，承载PSI Stub中的语法节点、索引桩或辅助模型。
+   */
   class LambdaExpressionElementType :
     IErrorCounterReparseableElementType("LAMBDA_EXPRESSION", CangJieLanguage),
     ICompositeElementType {
+    /**
+     * 实现 `createCompositeNode` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createCompositeNode(): ASTNode {
         return CjLambdaExpression(null)
     }
 
+    /**
+     * 实现 `parseContents` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun parseContents(chameleon: ASTNode): ASTNode {
         val project = chameleon.psi.project
         val builder: PsiBuilder = PsiBuilderFactory.getInstance().createBuilder(
@@ -62,10 +71,16 @@ import com.intellij.psi.util.PsiTreeUtil
         return CangJieParser.parseLambdaExpression(builder).firstChildNode
     }
 
+    /**
+     * 实现 `createNode` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createNode(text: CharSequence?): ASTNode {
         return CjLambdaExpression(text)
     }
 
+    /**
+     * 实现 `isParsable` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun isParsable(parent: ASTNode?, buffer: CharSequence, fileLanguage: Language, project: Project): Boolean {
         return super.isParsable(parent, buffer, fileLanguage, project) && !wasArrowMovedOrDeleted(
             parent,
@@ -73,6 +88,9 @@ import com.intellij.psi.util.PsiTreeUtil
         ) && !wasParameterCommaMovedOrDeleted(parent, buffer)
     }
 
+    /**
+     * 实现 `getErrorsCount` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getErrorsCount(seq: CharSequence, fileLanguage: Language?, project: Project?): Int {
         return ElementTypeUtils.getCangJieBlockImbalanceCount(seq)
     }

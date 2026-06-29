@@ -20,7 +20,13 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
+/**
+ * 包级成员发射策略的集成测试。
+ */
 class PackageMembersEmissionIntegrationTest {
+    /**
+     * 验证单 module 模式会同时发射包级函数、全局变量和模块函数。
+     */
     @Test
     fun `single module emits package functions globals and module functions together`() {
         val output = generate(ModulePartitionMode.SINGLE_MODULE)
@@ -32,6 +38,9 @@ class PackageMembersEmissionIntegrationTest {
         assertTrue(ir.contains("define i32 @module_main()"), ir)
     }
 
+    /**
+     * 验证按 CHIR module 切分时包级定义只发射到 package module。
+     */
     @Test
     fun `per chir module emits package definitions only in package module`() {
         val modules = generate(ModulePartitionMode.PER_CHIR_MODULE)
@@ -47,6 +56,9 @@ class PackageMembersEmissionIntegrationTest {
         assertTrue(chirModule.ir.contains("define i32 @module_main()"), chirModule.ir)
     }
 
+    /**
+     * 按指定 partition mode 生成测试 package 的 LLVM 输出。
+     */
     private fun generate(partitionMode: ModulePartitionMode) =
         DefaultChirToLlvmCodeGenerator().generate(
             ChirCodegenInput(
@@ -64,6 +76,9 @@ class PackageMembersEmissionIntegrationTest {
             ),
         ).modules
 
+    /**
+     * 构造同时包含包级成员和普通模块成员的测试 package。
+     */
     private fun packageWithMembers(): ChirPackage {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
         val initId = ChirSemanticId("fn:pkg_init")
@@ -93,6 +108,9 @@ class PackageMembersEmissionIntegrationTest {
         )
     }
 
+    /**
+     * 构造返回指定整数字面量的简单函数声明。
+     */
     private fun simpleFunction(
         name: String,
         literal: String,

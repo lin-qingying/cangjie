@@ -39,16 +39,25 @@ import com.intellij.testFramework.LightVirtualFile
 import com.intellij.util.messages.Topic
 import java.util.LinkedHashSet
 
+/**
+ * 表示 `CjCodeFragment`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 abstract class CjCodeFragment(
     viewProvider: FileViewProvider,
     imports: String?, // Should be separated by KtCodeFragment.IMPORT_SEPARATOR
     elementType: IElementType,
+    /**
+     * 保存 `context` 的内部状态，供仓颉 PSI实现维护节点缓存或解析上下文。
+     */
     private val context: PsiElement?,
 ) : CjFile(
     viewProvider,
     false,
 ),
     CjCodeFragmentBase {
+    /**
+     * 保存 `viewProvider` 的内部状态，供仓颉 PSI实现维护节点缓存或解析上下文。
+     */
     private var viewProvider = super.getViewProvider() as SingleRootFileViewProvider
 
     constructor(
@@ -102,25 +111,52 @@ abstract class CjCodeFragment(
         }
     }
 
+    /**
+     * 保存 `importDirectiveStrings` 的内部状态，供仓颉 PSI实现维护节点缓存或解析上下文。
+     */
     private var importDirectiveStrings = LinkedHashSet<String>()
 
+    /**
+     * 保存 `forcedResolveScope` 的内部状态，供仓颉 PSI实现维护节点缓存或解析上下文。
+     */
     private var forcedResolveScope: GlobalSearchScope? = null
+    /**
+     * 实现 `getForcedResolveScope` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getForcedResolveScope(): GlobalSearchScope? = forcedResolveScope
 
 
 
+    /**
+     * 实现 `forceResolveScope` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun forceResolveScope(scope: GlobalSearchScope?) {
         forcedResolveScope = scope
     }
 
+    /**
+     * 保存 `isPhysical` 的内部状态，供仓颉 PSI实现维护节点缓存或解析上下文。
+     */
     private var isPhysical = true
 
+    /**
+     * 提供 `getContentElement` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     abstract fun getContentElement(): CjElement?
 
+    /**
+     * 实现 `isPhysical` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun isPhysical() = isPhysical
 
+    /**
+     * 实现 `isValid` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun isValid() = true
 
+    /**
+     * 实现 `getContext` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getContext(): PsiElement? {
         if (context != null && context !is CjElement) {
             val logInfoForContextElement =
@@ -132,8 +168,14 @@ abstract class CjCodeFragment(
         return context
     }
 
+    /**
+     * 实现 `getResolveScope` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getResolveScope() = context?.resolveScope ?: super.getResolveScope()
 
+    /**
+     * 实现 `clone` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun clone(): CjCodeFragment {
         val elementClone = calcTreeElement().clone() as FileElement
         return (cloneImpl(elementClone) as CjCodeFragment).apply {
@@ -161,12 +203,21 @@ abstract class CjCodeFragment(
         }
     }
 
+    /**
+     * 提供 `importsToString` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun importsToString(): String {
         return importDirectiveStrings.joinToString(IMPORT_SEPARATOR)
     }
 
+    /**
+     * 提供 `getViewProvider` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     final override fun getViewProvider() = viewProvider
 
+    /**
+     * 提供 `addImportsFromString` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun addImportsFromString(imports: String?) {
         val notifyChanged = viewProvider.isEventSystemEnabled && project !is MockProject
 
@@ -191,10 +242,16 @@ abstract class CjCodeFragment(
         ReplaceWith("addImportsFromString(import)"),
         level = DeprecationLevel.WARNING,
     )
+    /**
+     * 提供 `addImport` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun addImport(import: String) {
         addImportsFromString(import)
     }
 
+    /**
+     * 提供 `importsAsImportList` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun importsAsImportList(): CjImportList? {
         if (importDirectiveStrings.isNotEmpty() && context != null) {
             val ktPsiFactory = CjPsiFactory.contextual(context)
@@ -205,13 +262,22 @@ abstract class CjCodeFragment(
         return null
     }
 
+    /**
+     * 暴露 `importDirectivesItem`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val importDirectivesItem: List<CjImportInfo>
         get() = importsAsImportList()?.imports?.flatMap { it.importItems } ?: emptyList()
 
+    /**
+     * 提供 `getContextContainingFile` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun getContextContainingFile(): CjFile? {
         return getOriginalContext()?.takeIf { it.isValid }?.getContainingCjFile()
     }
 
+    /**
+     * 提供 `getOriginalContext` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun getOriginalContext(): CjElement? {
         val contextElement = getContext() as? CjElement
         val contextFile = contextElement?.containingFile as? CjFile
@@ -246,6 +312,9 @@ abstract class CjCodeFragment(
     }
 }
 
+/**
+ * 提供 `interface` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+ */
 fun interface CangJieCodeFragmentImportModificationListener {
     fun onCodeFragmentImportsModification(codeFragment: CjCodeFragment)
 }

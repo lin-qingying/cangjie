@@ -35,21 +35,33 @@ import com.intellij.psi.stubs.StubInputStream
 import com.intellij.psi.stubs.StubOutputStream
 import com.intellij.util.io.StringRef
 
+/**
+ * 表示 `CjTypeAliasElementType`，承载PSI Stub中的语法节点、索引桩或辅助模型。
+ */
 class CjTypeAliasElementType(debugName: String) :
     CjStubElementType<CangJieTypeAliasStub, CjTypeAlias>(
         debugName,
         CjTypeAlias::class.java,
         CangJieTypeAliasStub::class.java,
     ) {
+    /**
+     * 实现 `serialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun serialize(stub: CangJieTypeAliasStub, dataStream: StubOutputStream) {
         dataStream.writeName(stub.name)
         dataStream.writeName(stub.getFqName()?.asString())
         StubUtils.serializeClassId(dataStream, stub.getClassId())
     }
 
+    /**
+     * 实现 `indexStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun indexStub(stub: CangJieTypeAliasStub, sink: IndexSink) {
         StubIndexService.getInstance().indexTypeAlias(stub, sink)
     }
+    /**
+     * 实现 `deserialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>?): CangJieTypeAliasStub {
         val name = dataStream.readName()
         val fqName = dataStream.readName()
@@ -58,6 +70,9 @@ class CjTypeAliasElementType(debugName: String) :
         return CangJieTypeAliasStubImpl(parentStub, name, fqName, classId)
     }
 
+    /**
+     * 实现 `createStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createStub(psi: CjTypeAlias, parentStub: StubElement<*>): CangJieTypeAliasStub {
         val name = StringRef.fromString(psi.name)
         val fqName = StringRef.fromString(psi.safeFqNameForLazyResolve()?.asString())

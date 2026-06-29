@@ -13,15 +13,40 @@ import org.eclipse.lsp4j.Range
  * 这样既不会破坏 LSP 的 CRLF 文本模型，也不会让 Analysis API 再和客户端换行风格耦合。
  */
 data class LspTextDocument(
+    /**
+     * 文档在 LSP 协议中的 URI。
+     */
     val uri: String,
+
+    /**
+     * 客户端上报的语言标识。
+     */
     val languageId: String?,
+
+    /**
+     * 客户端维护的文档版本号。
+     */
     val version: Int,
+
+    /**
+     * 客户端原始文本内容，保留原始换行风格。
+     */
     val text: String,
 ) {
+    /**
+     * 供 Analysis API 和 PSI 使用的规范化文本。
+     *
+     * 该属性懒加载并只把 CRLF/CR 换行规范化为 LF，不回写到协议层原始文本。
+     */
     val analysisText: String by lazy(LazyThreadSafetyMode.NONE) {
         normalizeText(text)
     }
 
+    /**
+     * 基于新文本和新版本创建文档快照。
+     *
+     * URI 与语言标识保持不变，确保增量更新只改变内容和版本。
+     */
     fun withText(
         newText: String,
         newVersion: Int,

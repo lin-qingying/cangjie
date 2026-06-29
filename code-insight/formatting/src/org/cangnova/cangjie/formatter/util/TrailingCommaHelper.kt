@@ -41,7 +41,13 @@ import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.psi.util.PsiUtilCore
 
 
+/**
+ * 尾逗号格式化规则的 PSI 查询工具。
+ */
 object TrailingCommaHelper {
+    /**
+     * 找出逗号拥有者中位置非法的逗号。
+     */
     fun findInvalidCommas(commaOwner: CjElement): List<PsiElement> = commaOwner.firstChild
         ?.siblings(withItself = false)
         ?.filter { it.isComma }
@@ -49,9 +55,15 @@ object TrailingCommaHelper {
             it.prevLeaf(true)?.isLineBreak() == true || it.leafIgnoringWhitespace(false) != it.leafIgnoringWhitespaceAndComments(false)
         }?.toList().orEmpty()
 
+    /**
+     * 判断元素的尾逗号已经存在，或当前代码风格允许补充。
+     */
     fun trailingCommaExistsOrCanExist(psiElement: PsiElement, settings: CodeStyleSettings): Boolean =
         TrailingCommaContext.create(psiElement).commaExistsOrMayExist(settings.cangjieCustomSettings)
 
+    /**
+     * 判断逗号拥有者是否已经存在尾逗号。
+     */
     fun trailingCommaExists(commaOwner: CjElement): Boolean = when (commaOwner) {
         is CjFunctionLiteral -> commaOwner.valueParameterList?.trailingComma != null
         is CjMatchEntry -> commaOwner.trailingComma != null
@@ -59,6 +71,9 @@ object TrailingCommaHelper {
         else -> trailingCommaOrLastElement(commaOwner)?.isComma == true
     }
 
+    /**
+     * 返回尾逗号或最后一个有效子元素。
+     */
     fun trailingCommaOrLastElement(commaOwner: CjElement): PsiElement? {
         val lastChild = commaOwner.lastSignificantChild ?: return null
         val withSelf = when (PsiUtilCore.getElementType(lastChild)) {
@@ -73,6 +88,9 @@ object TrailingCommaHelper {
     }
 
 
+    /**
+     * 判断存在尾逗号时，首尾边界附近是否缺少换行。
+     */
     fun lineBreakIsMissing(commaOwner: CjElement): Boolean {
         if (!trailingCommaExists(commaOwner)) return false
 
@@ -83,6 +101,9 @@ object TrailingCommaHelper {
         return last?.prevLeaf(true)?.isLineBreak() == false
     }
 
+    /**
+     * 返回逗号列表第一个元素前的语法边界。
+     */
     fun elementBeforeFirstElement(commaOwner: CjElement): PsiElement? = when (commaOwner) {
         is CjParameterList -> {
             val parent = commaOwner.parent
@@ -93,6 +114,9 @@ object TrailingCommaHelper {
         else -> commaOwner.firstChild?.takeIfIsNotError()
     }
 
+    /**
+     * 返回逗号列表最后一个元素后的语法边界。
+     */
     fun elementAfterLastElement(commaOwner: CjElement): PsiElement? = when (commaOwner) {
         is CjParameterList -> {
             val parent = commaOwner.parent
@@ -103,10 +127,18 @@ object TrailingCommaHelper {
         else -> commaOwner.lastChild?.takeIfIsNotError()
     }
 
+    /**
+     * 仅在元素子树没有错误节点时返回该元素。
+     */
     private fun PsiElement.takeIfIsNotError(): PsiElement? = takeIf { !PsiTreeUtil.hasErrorElements(it) }
 
+    /** 尾逗号拥有者右边界 token。 */
     private val RIGHT_BARRIERS = TokenSet.create(CjTokens.RBRACKET, CjTokens.RPAR, CjTokens.RBRACE, CjTokens.GT, CjTokens.ARROW)
+    /** 尾逗号拥有者左边界 token。 */
     private val LEFT_BARRIERS = TokenSet.create(CjTokens.LBRACKET, CjTokens.LPAR, CjTokens.LBRACE, CjTokens.LT)
+    /**
+     * 返回元素的最后一个重要子节点。
+     */
     private val PsiElement.lastSignificantChild: PsiElement?
         get() = when (this) {
             is CjMatchEntry -> arrow

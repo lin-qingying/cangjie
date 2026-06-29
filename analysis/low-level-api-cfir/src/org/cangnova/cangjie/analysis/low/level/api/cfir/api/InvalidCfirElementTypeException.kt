@@ -15,6 +15,9 @@ import org.cangnova.cangjie.utils.exceptions.withCfirEntry
 import java.util.Locale
 import kotlin.reflect.KClass
 
+/**
+ * 表示 PSI 到 CFIR 映射时拿到的元素类型与调用方期望类型不一致。
+ */
 class InvalidCfirElementTypeException(
     actualCfirElement: Any?,
     cjElement: CjElement?,
@@ -36,6 +39,9 @@ class InvalidCfirElementTypeException(
         }
     }
 
+    /**
+     * 带实际元素类型和期望类型集合的可读错误消息。
+     */
     override val message: String = buildString {
         cjElement?.let {
             "For ${cjElement::class.simpleName}, "
@@ -57,6 +63,9 @@ class InvalidCfirElementTypeException(
 }
 
 
+/**
+ * 抛出带 PSI/CFIR 附件的元素类型不匹配异常。
+ */
 fun throwUnexpectedCfirElementError(
     cfirElement: Any?,
     cjElement: CjElement? = null,

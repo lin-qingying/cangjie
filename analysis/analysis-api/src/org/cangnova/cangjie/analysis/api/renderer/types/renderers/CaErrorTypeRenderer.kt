@@ -31,6 +31,9 @@ interface CaErrorTypeRenderer {
      * 优先输出错误类型保留的源码片段；若没有源码信息则退化为 `ERROR` 字面量。
      */
     object AS_CODE_IF_POSSIBLE : CaErrorTypeRenderer {
+        /**
+         * 渲染错误类型的 presentable text，缺失时输出 `ERROR`。
+         */
         override fun renderType(
             analysisSession: CaSession,
             type: CaErrorType,
@@ -49,6 +52,9 @@ interface CaErrorTypeRenderer {
      * 统一输出 `ERROR` 字面量，不暴露任何内部错误细节。
      */
     object AS_ERROR_WORD : CaErrorTypeRenderer {
+        /**
+         * 固定输出 `ERROR` 字面量。
+         */
         override fun renderType(
             analysisSession: CaSession,
             type: CaErrorType,
@@ -63,6 +69,9 @@ interface CaErrorTypeRenderer {
      * 输出 `ERROR(<errorMessage>)`，便于调试或日志展示具体的错误原因。
      */
     object WITH_ERROR_MESSAGE : CaErrorTypeRenderer {
+        /**
+         * 输出携带内部错误消息的调试文本。
+         */
         override fun renderType(
             analysisSession: CaSession,
             type: CaErrorType,

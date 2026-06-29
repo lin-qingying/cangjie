@@ -24,6 +24,9 @@
 
 package org.cangnova.cangjie.psi;
 
+/**
+ * 表示 `ElementKind`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 enum class ElementKind {
     EXPRESSION {
         override val elementClass = CjExpression::class.java
@@ -35,5 +38,8 @@ enum class ElementKind {
         override val elementClass = CjSimpleNameExpression::class.java
     };
 
+    /**
+     * 保存 `elementClass`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     abstract val elementClass: Class<out CjElement>
 }

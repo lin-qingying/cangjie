@@ -26,9 +26,18 @@ package org.cangnova.cangjie.psi
 
 import com.intellij.lang.ASTNode
 
+/**
+ * 表示 `CjQuoteInterpolate`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjQuoteInterpolate(node: ASTNode) : CjElementImpl(node) {
 
+    /**
+     * 保存 `expression`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val expression = findChildByClass<CjExpression>(CjExpression::class.java)
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitQuoteInterpolate(this, data)
     }

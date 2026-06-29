@@ -1,5 +1,5 @@
 
-
+// WITH_EXTRA_CHECKERS
 
 interface ToObj {
     func toObj(): Object

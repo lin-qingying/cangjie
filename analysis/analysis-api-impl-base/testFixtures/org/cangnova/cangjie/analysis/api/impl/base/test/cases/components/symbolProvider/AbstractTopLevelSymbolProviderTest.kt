@@ -24,6 +24,11 @@ import org.junit.jupiter.api.Assertions.assertNotNull
  * 3. 顶层 class-like / callable 查询必须返回稳定的语义标识。
  */
 abstract class AbstractTopLevelSymbolProviderTest : AbstractAnalysisApiComponentTest() {
+    /**
+     * 执行顶层符号提供器测试。
+     *
+     * 方法依次校验 file symbol、package symbol、top-level class-like symbol 和 top-level callable symbol。
+     */
     override fun doTestByMainFile(mainFile: CjFile, mainModule: CjTestModule, testServices: TestServices) {
         val directives = directivesForMainFile(mainFile, mainModule)
 

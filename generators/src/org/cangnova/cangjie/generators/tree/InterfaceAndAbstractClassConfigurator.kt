@@ -12,21 +12,44 @@ import org.cangnova.cangjie.generators.util.solveGraphForClassVsInterface
  */
 class InterfaceAndAbstractClassConfigurator(val elements: List<ImplementationKindOwner>) {
 
+    /**
+     * 将 [ImplementationKindOwner] 适配为图求解器需要的节点类型。
+     */
     private inner class NodeImpl(val element: ImplementationKindOwner) : Node {
+        /**
+         * 当前节点在实现层级中的父节点。
+         */
         override val parents: List<NodeImpl>
             get() = element.allParents.map(::NodeImpl)
 
+        /**
+         * 图求解器要求的原始节点引用。
+         */
         override val origin: NodeImpl
             get() = this
 
+        /**
+         * 节点相等性按底层元素判断。
+         */
         override fun equals(other: Any?): Boolean = other is NodeImpl && element == other.element
 
+        /**
+         * 节点哈希值按底层元素计算。
+         */
         override fun hashCode(): Int = element.hashCode()
     }
 
+    /**
+     * 判断实现节点是否应生成为 final class。
+     *
+     * 只有没有被其他节点作为父节点引用的具体实现，才能成为 final class。
+     */
     private fun shouldBeFinalClass(element: ImplementationKindOwner, allParents: Set<ImplementationKindOwner>): Boolean =
         element is AbstractImplementation<*, *, *> && element !in allParents
 
+    /**
+     * 根据图求解结果写回每个节点的 [ImplementationKind]。
+     */
     private fun updateKinds(nodes: List<NodeImpl>, solution: List<Boolean>) {
         val allParents = nodes.flatMapTo(mutableSetOf()) { element -> element.parents.map { it.origin.element } }
 
@@ -51,6 +74,9 @@ class InterfaceAndAbstractClassConfigurator(val elements: List<ImplementationKin
         }
     }
 
+    /**
+     * 根据元素上的 sealed 标志修正已推导出的 class/interface 种类。
+     */
     private fun updateSealedKinds(nodes: Collection<NodeImpl>) {
         for (node in nodes) {
             val element = node.element
@@ -66,6 +92,11 @@ class InterfaceAndAbstractClassConfigurator(val elements: List<ImplementationKin
         }
     }
 
+    /**
+     * 为全部元素和实现类推导最终的接口/抽象类/具体类形态。
+     *
+     * 显式配置为接口或类的节点会作为约束传给图求解器，求解结果再写回缺省节点。
+     */
     fun configureInterfacesAndAbstractClasses() {
         val nodes = this.elements.map(::NodeImpl)
         val solution = solveGraphForClassVsInterface(

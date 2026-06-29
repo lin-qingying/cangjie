@@ -49,12 +49,18 @@ enum class KotlinModificationEventKind {
     CODE_FRAGMENT_CONTEXT_MODIFICATION,
 }
 
+/**
+ * 当前修改事件种类是否只影响单个模块。
+ */
 @CaPlatformInterface
 val KotlinModificationEventKind.isModuleLevel: Boolean
     get() = this == KotlinModificationEventKind.MODULE_STATE_MODIFICATION ||
             this == KotlinModificationEventKind.MODULE_OUT_OF_BLOCK_MODIFICATION ||
             this == KotlinModificationEventKind.CODE_FRAGMENT_CONTEXT_MODIFICATION
 
+/**
+ * 当前修改事件种类是否影响全局模块或项目状态。
+ */
 @CaPlatformInterface
 val KotlinModificationEventKind.isGlobalLevel: Boolean
     get() = !isModuleLevel

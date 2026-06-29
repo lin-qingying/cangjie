@@ -10,8 +10,14 @@ import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieGlobal
  * `CangJieOptimizingGlobalSearchScopeMerger` 对位 Kotlin `KotlinOptimizingGlobalSearchScopeMerger`。
  */
 internal class CangJieOptimizingGlobalSearchScopeMerger(
+    /**
+     * 查找 scope merge strategy 时使用的 project。
+     */
     private val project: Project,
 ) : CaGlobalSearchScopeMerger {
+    /**
+     * 使用平台注册的 merge strategy 优化后合并多个搜索作用域。
+     */
     @OptIn(CaExperimentalApi::class)
     override fun union(scopes: Collection<GlobalSearchScope>): GlobalSearchScope {
         if (scopes.isEmpty()) {
@@ -27,6 +33,9 @@ internal class CangJieOptimizingGlobalSearchScopeMerger(
         return GlobalSearchScope.union(resultingScopes)
     }
 
+    /**
+     * 对当前 scope 集合应用单个类型化合并策略。
+     */
     @OptIn(CaExperimentalApi::class)
     private fun <T : Any> Collection<GlobalSearchScope>.applyStrategy(
         strategy: CangJieGlobalSearchScopeMergeStrategy<T>,

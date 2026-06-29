@@ -13,8 +13,14 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
+/**
+ * [InferenceLogger] 基础委托行为和 Dummy 实现的回归测试。
+ */
 class InferenceLoggerTest {
 
+    /**
+     * 验证单 origin 包装会执行 action、返回 action 结果，并把 origin 传递给日志器。
+     */
     @Test
     fun `withOrigin delegates and returns action result`() {
         val logger = RecordingInferenceLogger()
@@ -30,6 +36,9 @@ class InferenceLoggerTest {
         assertEquals(listOf(origin), logger.originCalls)
     }
 
+    /**
+     * 验证双 origin 包装会执行 action、返回 action 结果，并记录两个来源对象。
+     */
     @Test
     fun `withOrigins delegates and returns action result`() {
         val logger = RecordingInferenceLogger()
@@ -51,6 +60,9 @@ class InferenceLoggerTest {
         )
     }
 
+    /**
+     * 验证泛型约束、错误和变量固定日志回调会暴露完整参数。
+     */
     @Test
     fun `logger exposes generic callbacks for constraint error and fix-variable events`() {
         val logger = RecordingInferenceLogger()
@@ -69,6 +81,9 @@ class InferenceLoggerTest {
         assertEquals(listOf(FixVariableCall(variable, resultType, context)), logger.fixVariableCalls)
     }
 
+    /**
+     * 验证 Dummy 日志器对所有回调保持 no-op 且不改变返回值。
+     */
     @Test
     fun `dummy logger accepts all callbacks as no-op`() {
         val variable = FakeTypeVariable("T")
@@ -94,23 +109,58 @@ class InferenceLoggerTest {
     }
 }
 
+/**
+ * 记录所有回调参数的测试日志器。
+ */
 private class RecordingInferenceLogger : InferenceLogger() {
+    /**
+     * action 内部手动记录的事件序列。
+     */
     val events = mutableListOf<String>()
+
+    /**
+     * 单 origin 包装收到的 origin 列表。
+     */
     val originCalls = mutableListOf<Any?>()
+
+    /**
+     * 双 origin 包装收到的 origin 组合列表。
+     */
     val originPairs = mutableListOf<OriginPair>()
+
+    /**
+     * 约束日志回调收到的参数列表。
+     */
     val variableConstraintCalls = mutableListOf<VariableConstraintCall>()
+
+    /**
+     * 错误日志回调收到的参数列表。
+     */
     val errorCalls = mutableListOf<ErrorCall>()
+
+    /**
+     * 固定变量日志回调收到的参数列表。
+     */
     val fixVariableCalls = mutableListOf<FixVariableCall>()
 
+    /**
+     * 记录 action 内部事件。
+     */
     fun record(event: String) {
         events += event
     }
 
+    /**
+     * 记录单 origin 后委托给父类执行 action。
+     */
     override fun <T> withOrigin(origin: Any?, action: () -> T): T {
         originCalls += origin
         return super.withOrigin(origin, action)
     }
 
+    /**
+     * 记录双 origin 后委托给父类执行 action。
+     */
     override fun <T> withOrigins(
         firstOwner: Any?,
         firstOrigin: Any?,
@@ -122,51 +172,141 @@ private class RecordingInferenceLogger : InferenceLogger() {
         return super.withOrigins(firstOwner, firstOrigin, secondOwner, secondOrigin, action)
     }
 
+    /**
+     * 记录变量约束日志回调参数。
+     */
     override fun log(variable: TypeVariableMarker, constraint: Constraint, context: Any?) {
         variableConstraintCalls += VariableConstraintCall(variable, constraint, context)
     }
 
+    /**
+     * 记录错误日志回调参数。
+     */
     override fun logError(error: ConstraintSystemError, context: Any?) {
         errorCalls += ErrorCall(error, context)
     }
 
+    /**
+     * 记录变量固定日志回调参数。
+     */
     override fun logFixVariable(variable: TypeVariableMarker, resultType: CangJieTypeMarker, context: Any?) {
         fixVariableCalls += FixVariableCall(variable, resultType, context)
     }
 }
 
+/**
+ * 双 origin 调用的参数快照。
+ */
 private data class OriginPair(
+    /**
+     * 第一个来源所有者。
+     */
     val firstOwner: Any?,
+
+    /**
+     * 第一个来源对象。
+     */
     val firstOrigin: Any?,
+
+    /**
+     * 第二个来源所有者。
+     */
     val secondOwner: Any?,
+
+    /**
+     * 第二个来源对象。
+     */
     val secondOrigin: Any?,
 )
 
+/**
+ * 变量约束日志回调的参数快照。
+ */
 private data class VariableConstraintCall(
+    /**
+     * 参与日志记录的类型变量。
+     */
     val variable: TypeVariableMarker,
+
+    /**
+     * 参与日志记录的约束。
+     */
     val constraint: Constraint,
+
+    /**
+     * 日志上下文对象。
+     */
     val context: Any?,
 )
 
+/**
+ * 错误日志回调的参数快照。
+ */
 private data class ErrorCall(
+    /**
+     * 被记录的约束系统错误。
+     */
     val error: ConstraintSystemError,
+
+    /**
+     * 日志上下文对象。
+     */
     val context: Any?,
 )
 
+/**
+ * 变量固定日志回调的参数快照。
+ */
 private data class FixVariableCall(
+    /**
+     * 被固定的类型变量。
+     */
     val variable: TypeVariableMarker,
+
+    /**
+     * 类型变量固定后的结果类型。
+     */
     val resultType: CangJieTypeMarker,
+
+    /**
+     * 日志上下文对象。
+     */
     val context: Any?,
 )
 
-private data class FakeTypeVariable(private val debugName: String) : TypeVariableMarker {
+/**
+ * 只提供调试名称的测试类型变量。
+ */
+private data class FakeTypeVariable(
+    /**
+     * `toString` 返回的调试名称。
+     */
+    private val debugName: String,
+) : TypeVariableMarker {
+    /**
+     * 返回调试名称。
+     */
     override fun toString(): String = debugName
 }
 
-private data class FakeType(private val debugName: String) : CangJieTypeMarker {
+/**
+ * 只提供调试名称的测试类型。
+ */
+private data class FakeType(
+    /**
+     * `toString` 返回的调试名称。
+     */
+    private val debugName: String,
+) : CangJieTypeMarker {
+    /**
+     * 返回调试名称。
+     */
     override fun toString(): String = debugName
 }
 
+/**
+ * 创建带指定调试名称的测试约束。
+ */
 private fun FakeConstraint(debugName: String): Constraint = Constraint(
     kind = ConstraintKind.UPPER,
     type = FakeType(debugName),
@@ -175,5 +315,8 @@ private fun FakeConstraint(debugName: String): Constraint = Constraint(
     isNoInfer = false,
 )
 
+/**
+ * 创建测试用初始约束。
+ */
 private fun FakeInitialConstraint(): InitialConstraint =
     InitialConstraint(FakeType("A"), FakeType("B"), ConstraintKind.UPPER, SimpleConstraintSystemConstraintPosition)

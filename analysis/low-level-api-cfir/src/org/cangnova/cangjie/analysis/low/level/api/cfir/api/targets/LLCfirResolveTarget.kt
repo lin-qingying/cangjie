@@ -59,11 +59,17 @@ internal sealed class LLCfirResolveTarget(val designation: CfirDesignation) {
         goToTarget(visitor)
     }
 
+    /**
+     * 从 designation 的路径起点开始递归进入目标声明上下文。
+     */
     private fun goToTarget(visitor: LLCfirResolveTargetVisitor) {
         val pathIterator = path.iterator()
         goToTarget(pathIterator, visitor)
     }
 
+    /**
+     * 逐段进入 file、class-like 或 extend 上下文，直到最终 target 元素。
+     */
     private fun goToTarget(
         pathIterator: Iterator<CfirDeclaration>,
         visitor: LLCfirResolveTargetVisitor,
@@ -102,6 +108,9 @@ internal sealed class LLCfirResolveTarget(val designation: CfirDesignation) {
         })
     }
 
+    /**
+     * 输出 target 的路径和附加后缀，用于 lazy resolve 日志与断言信息。
+     */
     override fun toString(): String = buildString {
         append(this@LLCfirResolveTarget::class.simpleName)
         append("(")
@@ -121,8 +130,14 @@ internal sealed class LLCfirResolveTarget(val designation: CfirDesignation) {
         append(")")
     }
 
+    /**
+     * 子类可提供的字符串附加信息，例如全量解析标记或指定成员列表。
+     */
     protected open fun toStringAdditionalSuffix(): String? = null
 
+    /**
+     * 将最终目标元素渲染为稳定的简短名称。
+     */
     private fun toStringForTarget(): String = when (val cfir = target) {
         is CfirConstructor -> "constructor"
         is CfirClassLikeDeclaration -> cfir.symbol.name.asString()

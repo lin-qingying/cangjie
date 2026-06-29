@@ -16,7 +16,13 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
+/**
+ * 校验语言服务器默认能力和诊断发布通道。
+ */
 class CangjieLanguageServerTest : AbstractLspIntegrationTest() {
+    /**
+     * 校验默认服务端通过 push diagnostics 通道发布诊断，不声明 pull diagnostics provider。
+     */
     @Test
     fun `default server keeps diagnostics on notification channel over real lsp connection`() {
         val result = session.initializeResult()
@@ -27,6 +33,9 @@ class CangjieLanguageServerTest : AbstractLspIntegrationTest() {
         assertNull(result.capabilities.diagnosticProvider)
     }
 
+    /**
+     * 校验服务端可以通过真实 LSP 连接发布 facade 产生的诊断。
+     */
     @Test
     fun `publishes diagnostics through real lsp connection`() {
         val diagnosticsSession = createSession(
@@ -51,6 +60,9 @@ class CangjieLanguageServerTest : AbstractLspIntegrationTest() {
         }
     }
 
+    /**
+     * 校验默认 Analysis API facade 会在文档变更后刷新诊断。
+     */
     @Test
     fun `default analysis facade refreshes diagnostics after document changes`() {
         val uri = "file:///workspace/main.cj"
@@ -86,6 +98,9 @@ class CangjieLanguageServerTest : AbstractLspIntegrationTest() {
         assertTrue(secondPublish.diagnostics.isEmpty(), "文档修复后诊断没有刷新为空")
     }
 
+    /**
+     * 校验文档关闭后会向客户端发布空诊断以清理旧结果。
+     */
     @Test
     fun `default analysis facade clears diagnostics after document closed`() {
         val uri = "file:///workspace/main.cj"
@@ -103,9 +118,18 @@ class CangjieLanguageServerTest : AbstractLspIntegrationTest() {
         assertTrue(secondPublish.diagnostics.isEmpty(), "文档关闭后诊断没有刷新为空")
     }
 
+    /**
+     * 测试用诊断 facade。
+     */
     private class RecordingDiagnosticsFacade : AbstractCangjieAnalysisFacade() {
+        /**
+         * 该 facade 只声明诊断能力。
+         */
         override val supportedFeatures = CangjieLspFeatureSet(diagnostics = true)
 
+        /**
+         * 返回固定的单条测试诊断。
+         */
         override fun collectDiagnostics(
             context: CangjieAnalysisRequestContext,
             document: LspTextDocument,

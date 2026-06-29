@@ -15,12 +15,21 @@ import org.cangnova.cangjie.analysis.api.platform.restrictedAnalysis.CaRestricte
  * 而是始终通过统一平台接口读取受限分析策略。
  */
 internal open class CaBaseRestrictedAnalysisService : CaRestrictedAnalysisService {
+    /**
+     * 基础实现默认不处于受限分析状态。
+     */
     override val isAnalysisRestricted: Boolean
         get() = false
 
+    /**
+     * 基础实现默认允许受限状态下继续分析。
+     */
     override val isRestrictedAnalysisAllowed: Boolean
         get() = true
 
+    /**
+     * 拒绝受限分析时抛出平台状态错误。
+     */
     override fun rejectRestrictedAnalysis(): Nothing {
         throw IllegalStateException("Analysis is restricted by the current platform state.")
     }

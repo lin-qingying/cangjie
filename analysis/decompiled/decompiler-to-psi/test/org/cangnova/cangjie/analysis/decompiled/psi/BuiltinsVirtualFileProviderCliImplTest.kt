@@ -17,6 +17,9 @@ import kotlin.io.path.isRegularFile
  * 只要显式提供 `cangjie.stdlib.module`，就必须能枚举出真实 `.cjo` builtins 文件。
  */
 class BuiltinsVirtualFileProviderCliImplTest {
+    /**
+     * 验证通过 `cangjie.stdlib.module` 系统属性提供的标准库根可以被枚举为 builtins `.cjo` 文件。
+     */
     @Test
     fun discoverStdlibFilesFromSystemProperty() {
         withEnvironment {
@@ -43,6 +46,9 @@ class BuiltinsVirtualFileProviderCliImplTest {
         }
     }
 
+    /**
+     * 验证新复制到临时目录的标准库根也能通过刷新感知的 VFS 路径被发现。
+     */
     @Test
     fun discoverStdlibFilesFromFreshTempDirectory() {
         withEnvironment {
@@ -71,6 +77,9 @@ class BuiltinsVirtualFileProviderCliImplTest {
         }
     }
 
+    /**
+     * 定位当前仓库内用于 builtins provider 测试的标准库 `.cjo` fixture 根目录。
+     */
     private fun locateStdlibFixtureRoot(): Path {
         val repoRoot = locateRepositoryRoot(Paths.get("").toAbsolutePath().normalize())
         val fixtureRoot = repoRoot
@@ -86,6 +95,9 @@ class BuiltinsVirtualFileProviderCliImplTest {
         return fixtureRoot
     }
 
+    /**
+     * 将最小标准库 fixture 复制到目标根目录，模拟运行期生成或复制出的 stdlib 目录。
+     */
     private fun copyStdlibFixtureRoot(destinationRoot: Path) {
         val fixtureRoot = locateStdlibFixtureRoot()
         copyFile(fixtureRoot.resolve("std.cjo"), destinationRoot.resolve("std.cjo"))
@@ -95,17 +107,26 @@ class BuiltinsVirtualFileProviderCliImplTest {
         )
     }
 
+    /**
+     * 复制单个 fixture 文件并确保目标父目录已经存在。
+     */
     private fun copyFile(source: Path, target: Path) {
         target.parent?.createDirectories()
         Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING)
     }
 
+    /**
+     * 从起始目录向上查找包含 `settings.gradle.kts` 的仓库根目录。
+     */
     private fun locateRepositoryRoot(start: Path): Path {
         return generateSequence(start) { current -> current.parent }
             .firstOrNull { candidate -> candidate.resolve("settings.gradle.kts").isRegularFile() }
             ?: error("Cannot locate repository root from $start")
     }
 
+    /**
+     * 创建测试用仓颉核心环境并在执行完成后释放 IntelliJ disposable。
+     */
     private fun withEnvironment(action: () -> Unit) {
         val disposable = Disposer.newDisposable("BuiltinsVirtualFileProviderCliImplTest")
         try {

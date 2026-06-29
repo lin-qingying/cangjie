@@ -21,31 +21,67 @@ import java.io.File
 import java.util.Comparator
 import java.util.TreeSet
 
+/**
+ * 按平台、common 和模块名分组后的仓颉源文件集合。
+ */
 data class GroupedCjSources(
+    /**
+     * 平台专属源文件。
+     */
     val platformSources: Collection<CjSourceFile>,
+    /**
+     * common source root 中的源文件。
+     */
     val commonSources: Collection<CjSourceFile>,
+    /**
+     * 按 HMPP 模块名分组的源文件。
+     */
     val sourcesByModuleName: Map<String, Set<CjSourceFile>>,
 ) {
+    /**
+     * 当前分组结果是否没有任何平台或 common 源文件。
+     */
     fun isEmpty(): Boolean = platformSources.isEmpty() && commonSources.isEmpty()
 }
 
+/**
+ * 当前分组中的全部源文件。
+ */
 val GroupedCjSources.allFiles: List<CjSourceFile>
     get() = platformSources + commonSources
 
+/**
+ * 前端源文件收集的完整结果。
+ */
 data class CollectedCjSources(
+    /**
+     * 按来源分组后的源文件集合。
+     */
     val groupedSources: GroupedCjSources,
+    /**
+     * 当前编译配置中的 classpath 根。
+     */
     val classpathRoots: List<File>,
 ) {
+    /**
+     * 当前收集结果中的全部源文件。
+     */
     val allSources: List<CjSourceFile>
         get() = groupedSources.allFiles
 }
 
+/**
+ * 按源文件路径稳定排序的比较器。
+ */
 private val cjSourceFileComparator = Comparator<CjSourceFile> { first, second ->
     val firstPath = first.path ?: error("Expected a source file with a well-defined path")
     val secondPath = second.path ?: error("Expected a source file with a well-defined path")
     firstPath.compareTo(secondPath)
 }
 
+/**
+ * 从编译配置和项目环境中收集仓颉源文件。
+ */
 fun collectCjSources(
     compilerConfiguration: CompilerConfiguration,
     projectEnvironment: VfsBasedProjectEnvironment,
@@ -129,6 +165,9 @@ fun collectCjSources(
     )
 }
 
+/**
+ * 执行 CFIR 源文件处理扩展并返回扩展后的源文件集合。
+ */
 private fun applyCfirProcessSourcesExtension(
     environment: VfsBasedProjectEnvironment,
     configuration: CompilerConfiguration,

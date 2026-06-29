@@ -46,6 +46,9 @@ import kotlin.uuid.Uuid
  */
 @OptIn(PrivateSessionConstructor::class)
 abstract class LLCfirSession(
+    /**
+     * 当前 session 对应的 analysis API 模块。
+     */
     val caModule: CaModule,
     builtinTypes: CfirBuiltinTypes,
     kind: Kind
@@ -54,8 +57,14 @@ abstract class LLCfirSession(
         register(CfirBuiltinTypes::class, builtinTypes)
     }
 
+    /**
+     * 返回当前 session 使用的作用域会话。
+     */
     abstract fun getScopeSession(): ScopeSession
 
+    /**
+     * 当前 session 所属工程。
+     */
     val project: Project
         get() = caModule.project
 
@@ -91,6 +100,9 @@ abstract class LLCfirSession(
      */
     fun createValidityTracker(): ModificationTracker = LLCfirSessionValidityModificationTracker(WeakReference(this))
 
+    /**
+     * 按需创建并注册的 session 级 disposable。
+     */
     private val lazyDisposable: Lazy<Disposable> = lazy {
         val disposable = Disposer.newDisposable()
 
@@ -121,6 +133,9 @@ abstract class LLCfirSession(
     internal val requestedDisposableOrNull: Disposable?
         get() = if (lazyDisposable.isInitialized()) lazyDisposable.value else null
 
+    /**
+     * 返回便于诊断日志阅读的 session 描述。
+     */
     override fun toString(): String {
         return "${this::class.simpleName} for ${caModule.moduleDescription}"
     }
@@ -135,8 +150,16 @@ abstract class LLCfirSession(
 private class LLCfirSessionValidityModificationTracker(private val sessionRef: WeakReference<LLCfirSession>) : ModificationTrackerWithInvalidationReason {
     @Suppress("Unused")
     @Volatile
+    /**
+     * session 失效后递增的修改计数。
+     */
     private var count = 0L
 
+    /**
+     * 返回 session validity 对应的修改计数。
+     *
+     * session 仍有效时恒为 `0`；失效后每次访问递增，确保绑定旧失效 session 的缓存一定会被重新计算。
+     */
     override fun getModificationCount(): Long {
         if (sessionRef.get()?.isValid == true) return 0
 
@@ -147,6 +170,9 @@ private class LLCfirSessionValidityModificationTracker(private val sessionRef: W
         return COUNT_UPDATER.incrementAndGet(this)
     }
 
+    /**
+     * 返回当前 tracker 失效原因的诊断文本。
+     */
     override fun getInvalidationReason(): String? {
         val session = sessionRef.get()
             ?: return "`${LLCfirSession::class.simpleName}` is garbage collected"
@@ -157,18 +183,30 @@ private class LLCfirSessionValidityModificationTracker(private val sessionRef: W
     }
 
     companion object {
+        /**
+         * 原子递增 [count] 的 updater。
+         */
         private val COUNT_UPDATER = AtomicLongFieldUpdater.newUpdater(LLCfirSessionValidityModificationTracker::class.java, "count")
     }
 }
 
+/**
+ * 绑定到具体 analysis module 的 low-level CFIR session 基类。
+ */
 abstract class LLCfirModuleSession(
     caModule: CaModule,
     builtinTypes: CfirBuiltinTypes,
     kind: Kind
 ) : LLCfirSession(caModule, builtinTypes, kind)
 
+/**
+ * 从带解析状态的 CFIR 元素取得其所属 low-level session。
+ */
 val CfirElementWithResolveState.llCfirSession: LLCfirSession
     get() = moduleData.session as LLCfirSession
 
+/**
+ * 从 CFIR symbol 取得其声明所属 low-level session。
+ */
 val CfirBasedSymbol<*>.llCfirSession: LLCfirSession
     get() = cfir.moduleData.session as LLCfirSession

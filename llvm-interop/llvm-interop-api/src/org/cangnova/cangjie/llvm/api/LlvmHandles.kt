@@ -7,6 +7,9 @@ value class LlvmContextRef(val address: Long) {
         val NULL = LlvmContextRef(0L)
     }
 
+    /**
+     * 当前句柄是否为空指针。
+     */
     val isNull: Boolean get() = address == 0L
 }
 
@@ -17,6 +20,9 @@ value class LlvmModuleRef(val address: Long) {
         val NULL = LlvmModuleRef(0L)
     }
 
+    /**
+     * 当前句柄是否为空指针。
+     */
     val isNull: Boolean get() = address == 0L
 }
 
@@ -27,6 +33,9 @@ value class LlvmTypeRef(val address: Long) {
         val NULL = LlvmTypeRef(0L)
     }
 
+    /**
+     * 当前句柄是否为空指针。
+     */
     val isNull: Boolean get() = address == 0L
 }
 
@@ -37,6 +46,9 @@ value class LlvmValueRef(val address: Long) {
         val NULL = LlvmValueRef(0L)
     }
 
+    /**
+     * 当前句柄是否为空指针。
+     */
     val isNull: Boolean get() = address == 0L
 }
 
@@ -47,6 +59,9 @@ value class LlvmBasicBlockRef(val address: Long) {
         val NULL = LlvmBasicBlockRef(0L)
     }
 
+    /**
+     * 当前句柄是否为空指针。
+     */
     val isNull: Boolean get() = address == 0L
 }
 
@@ -57,6 +72,9 @@ value class LlvmBuilderRef(val address: Long) {
         val NULL = LlvmBuilderRef(0L)
     }
 
+    /**
+     * 当前句柄是否为空指针。
+     */
     val isNull: Boolean get() = address == 0L
 }
 
@@ -67,6 +85,9 @@ value class LlvmTargetMachineRef(val address: Long) {
         val NULL = LlvmTargetMachineRef(0L)
     }
 
+    /**
+     * 当前句柄是否为空指针。
+     */
     val isNull: Boolean get() = address == 0L
 }
 
@@ -77,5 +98,8 @@ value class LlvmPassManagerRef(val address: Long) {
         val NULL = LlvmPassManagerRef(0L)
     }
 
+    /**
+     * 当前句柄是否为空指针。
+     */
     val isNull: Boolean get() = address == 0L
 }

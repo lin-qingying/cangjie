@@ -26,9 +26,18 @@ import org.cangnova.cangjie.name.CallableId
  * `extendId + callableName + kind` 两组稳定身份覆盖，这里直接使用它们构建 pointer。
  */
 internal class CaCfirCallableSymbolPointer<S : CaCallableSymbol>(
+    /**
+     * callable 的稳定缓存键。
+     */
     private val cacheKey: CaCfirCallableSymbolCacheKey,
+    /**
+     * 恢复后需要满足的公开 callable 符号类型。
+     */
     private val symbolType: Class<S>,
 ) : CaCfirSymbolPointerBase<S>() {
+    /**
+     * 在目标 CFIR session 中按 callableId 和 kind 恢复 callable 符号。
+     */
     override fun restoreSymbol(session: org.cangnova.cangjie.analysis.api.CaSession): S? =
         symbolType.castOrNull(
             restoreSession(session)?.restoreCallablePublicSymbol(
@@ -38,10 +47,22 @@ internal class CaCfirCallableSymbolPointer<S : CaCallableSymbol>(
         )
 }
 
+/**
+ * extend 成员 callable 符号 pointer。
+ */
 internal class CaCfirExtendMemberCallableSymbolPointer<S : CaCallableSymbol>(
+    /**
+     * extend 成员 callable 的稳定缓存键。
+     */
     private val cacheKey: CaCfirExtendMemberCallableSymbolCacheKey,
+    /**
+     * 恢复后需要满足的公开 callable 符号类型。
+     */
     private val symbolType: Class<S>,
 ) : CaCfirSymbolPointerBase<S>() {
+    /**
+     * 在目标 CFIR session 中按 extend identity、成员名和 kind 恢复 callable 符号。
+     */
     override fun restoreSymbol(session: org.cangnova.cangjie.analysis.api.CaSession): S? =
         symbolType.castOrNull(
             restoreSession(session)?.restoreExtendMemberCallablePublicSymbol(
@@ -62,9 +83,15 @@ internal class CaCfirExtendMemberCallableSymbolPointer<S : CaCallableSymbol>(
  */
 @OptIn(CaImplementationDetail::class)
 internal abstract class CaTopLevelCallableSymbolPointer<S : CaCallableSymbol>(
+    /**
+     * 顶层 callable 的 callableId。
+     */
     private val callableId: CallableId,
     originalSymbol: S?,
 ) : CaCfirCachedSymbolPointer<S>(originalSymbol) {
+    /**
+     * 先按 callableId 收集候选，再交给具体 pointer 选择唯一目标。
+     */
     final override fun restoreIfNotCached(analysisSession: CaSession): S? {
         require(analysisSession is CaCfirSession)
         val candidates = analysisSession.getCallableSymbols(callableId)
@@ -74,10 +101,16 @@ internal abstract class CaTopLevelCallableSymbolPointer<S : CaCallableSymbol>(
     }
 
 
+    /**
+     * 从同 callableId 候选中选择匹配目标并构造公开符号。
+     */
     protected abstract fun CaCfirSession.chooseCandidateAndCreateSymbol(
         candidates: Collection<CfirCallableSymbol<*>>,
         cfirSession: CfirSession
     ): S?
+    /**
+     * 判断另一个顶层 callable pointer 是否指向同一个 callable owner。
+     */
     protected fun hasTheSameOwner(other: CaTopLevelCallableSymbolPointer<*>): Boolean = other.callableId == callableId
 }
 
@@ -90,9 +123,15 @@ internal abstract class CaTopLevelCallableSymbolPointer<S : CaCallableSymbol>(
 @OptIn(CaImplementationDetail::class)
 internal class CaCfirTopLevelFunctionSymbolPointer(
     callableId: CallableId,
+    /**
+     * 区分函数重载的 CFIR callable 签名。
+     */
     private val signature: CfirCallableSignature,
     originalSymbol: CaNamedFunctionSymbol?,
 ) : CaTopLevelCallableSymbolPointer<CaNamedFunctionSymbol>(callableId, originalSymbol) {
+    /**
+     * 在顶层函数候选中按签名选择唯一函数并构造公开符号。
+     */
     override fun CaCfirSession.chooseCandidateAndCreateSymbol(
         candidates: Collection<CfirCallableSymbol<*>>,
         cfirSession: CfirSession
@@ -102,6 +141,9 @@ internal class CaCfirTopLevelFunctionSymbolPointer(
 
     }
 
+    /**
+     * 判断另一个 pointer 是否指向同一个顶层函数符号。
+     */
     fun pointsToTheSameSymbolAs(other: CaSymbolPointer<CaSymbol>): Boolean = this === other ||
         other is CaCfirTopLevelFunctionSymbolPointer &&
         other.signature == signature &&
@@ -109,6 +151,9 @@ internal class CaCfirTopLevelFunctionSymbolPointer(
 }
 
 @OptIn(CaImplementationDetail::class)
+/**
+ * 在 CFIR callable 候选集合中查找签名匹配的指定声明类型。
+ */
 internal inline fun <reified D : CfirCallableDeclaration> Collection<CfirCallableSymbol<*>>.findDeclarationWithSignatureBySymbols(
     signature: CfirCallableSignature,
 ): D? {
@@ -121,5 +166,8 @@ internal inline fun <reified D : CfirCallableDeclaration> Collection<CfirCallabl
     return null
 }
 
+/**
+ * 按 callableId 从当前 CFIR session 的符号 provider 取得顶层 callable 候选。
+ */
 internal fun CaCfirSession.getCallableSymbols(callableId: CallableId) =
     cfirSession.symbolProvider.getTopLevelCallableSymbols(callableId.packageName, callableId.callableName)

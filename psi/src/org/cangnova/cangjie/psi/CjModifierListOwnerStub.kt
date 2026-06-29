@@ -32,6 +32,9 @@ import org.cangnova.cangjie.psi.psiUtil.addModifier
 import org.cangnova.cangjie.psi.psiUtil.removeModifier
 import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 
+/**
+ * 表示 `CjModifierListOwnerStub`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 open class CjModifierListOwnerStub<T : StubElement<*>> :
     CjElementImplStub<T>,
     CjModifierListOwner {
@@ -39,25 +42,43 @@ open class CjModifierListOwnerStub<T : StubElement<*>> :
 
     constructor(stub: T, nodeType: IStubElementType<*, *>) : super(stub, nodeType)
 
+    /**
+     * 暴露 `annotations`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val annotations: CjAnnotations?
         get() = getStubOrPsiChild(CjStubElementTypes.ANNOTATIONS)
 
+    /**
+     * 暴露 `annotationEntries`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val annotationEntries: List<CjAnnotation>
         get() = annotations?.entries ?: emptyList()
 
+    /**
+     * 暴露 `modifierList`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val modifierList: CjModifierList?
         get() = getStubOrPsiChild(CjStubElementTypes.MODIFIER_LIST)
 
+    /**
+     * 实现 `hasModifier` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun hasModifier(modifier: CjKeywordToken): Boolean {
         val modifierList = modifierList
         return modifierList != null && modifierList.hasModifier(modifier)
     }
 
 
+    /**
+     * 实现 `addModifier` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun addModifier(modifier: CjKeywordToken) {
         addModifier(this, modifier)
     }
 
+    /**
+     * 实现 `removeModifier` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun removeModifier(modifier: CjKeywordToken) {
         removeModifier(this, modifier)
     }

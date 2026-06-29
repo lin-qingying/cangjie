@@ -22,7 +22,13 @@ import org.cangnova.cangjie.cfir.withConeTypeEntry
 import org.cangnova.cangjie.utils.exceptions.checkWithAttachment
 import org.cangnova.cangjie.utils.exceptions.withCfirEntry
 
+/**
+ * 从已解析的 class-like Cone 类型构造公开 resolved class type qualifier。
+ */
 internal object UsualClassTypeQualifierBuilder {
+    /**
+     * 构造包含外层类、内部类和类型实参的 qualifier 列表。
+     */
     fun buildQualifiers(
         coneType: ConeClassifierType,
         builder: CaSymbolByCfirBuilder
@@ -72,10 +78,16 @@ internal object UsualClassTypeQualifierBuilder {
         return result
     }
 
+    /**
+     * 本地 class-like 声明只以自身作为 designation 路径。
+     */
     private fun CfirClassLikeDeclaration.collectForLocal(): List<CfirClassLikeDeclaration> {
         return listOf(this)
     }
 
+    /**
+     * 为本地 class-like 声明构造 designation 路径。
+     */
     private fun collectDesignationPathForLocal(declaration: CfirClassLikeDeclaration): List<CfirClassLikeDeclaration> {
         return when (declaration) {
             is CfirClass,
@@ -86,8 +98,14 @@ internal object UsualClassTypeQualifierBuilder {
     }
 }
 
+/**
+ * builder 当前 use-site 的 CFIR session。
+ */
 private val CaSymbolByCfirBuilder.rootSession: CfirSession
     get() = analysisSession.cfirSession
 
+/**
+ * 当前仓颉 CFIR class-like 声明是否为 inner；尚未建模时固定为 false。
+ */
 private val CfirClassLikeDeclaration.isInner: Boolean
     get() = false

@@ -56,42 +56,70 @@ internal class LLCombinedCangJieSymbolProvider private constructor(
     session: CfirSession,
     project: Project,
     providers: List<LLCangJieSymbolProvider>,
+    /**
+     * 合并了所有底层 provider 搜索范围的声明 provider。
+     */
     private val declarationProvider: CangJieDeclarationProvider,
+
+    /**
+     * 合并了所有底层 provider 搜索范围的包 provider。
+     */
     private val packageProvider: CangJiePackageProvider,
 ) : LLSelectingCombinedSymbolProvider<LLCangJieSymbolProvider>(session, project, providers) {
+    /**
+     * 聚合底层 provider 的名称集合 provider。
+     */
     override val symbolNamesProvider: CfirSymbolNamesProvider =
         CfirCompositeSymbolProvider(session, providers).symbolNamesProvider
 
+    /**
+     * class-like 查询缓存。
+     */
     private val classifierCache = NullableCaffeineCache<ClassId, CfirClassLikeSymbol<*>> {
         it
             .maximumSize(500)
             .withStatsCounter(LLStatisticsService.getInstance(project)?.symbolProviders?.combinedSymbolProviderClassCacheStatsCounter)
     }
 
+    /**
+     * 顶层函数查询缓存。
+     */
     private val functionCache =
         Caffeine.newBuilder()
             .expireAfterAccess(Duration.ofSeconds(5))
             .withStatsCounter(LLStatisticsService.getInstance(project)?.symbolProviders?.combinedSymbolProviderCallableCacheStatsCounter)
             .build<CallableId, List<CfirNamedFunctionSymbol>>()
 
+    /**
+     * 顶层属性查询缓存。
+     */
     private val propertyCache =
         Caffeine.newBuilder()
             .expireAfterAccess(Duration.ofSeconds(5))
             .withStatsCounter(LLStatisticsService.getInstance(project)?.symbolProviders?.combinedSymbolProviderCallableCacheStatsCounter)
             .build<CallableId, List<CfirPropertySymbol>>()
 
+    /**
+     * 顶层宏 callable 查询缓存。
+     */
     private val macroCache =
         Caffeine.newBuilder()
             .expireAfterAccess(Duration.ofSeconds(5))
             .withStatsCounter(LLStatisticsService.getInstance(project)?.symbolProviders?.combinedSymbolProviderCallableCacheStatsCounter)
             .build<CallableId, List<CfirCallableSymbol<*>>>()
 
+    /**
+     * 按 class id 查询 class-like symbol。
+     */
     override fun getClassLikeSymbolByClassId(classId: ClassId): CfirClassLikeSymbol<*>? {
         if (!symbolNamesProvider.mayHaveTopLevelClassifier(classId)) return null
 
         return classifierCache.getOrPut(classId) { computeClassLikeSymbolByClassId(it) }
     }
 
+    /**
+     * 通过合并声明 provider 计算 class-like symbol。
+     */
     private fun computeClassLikeSymbolByClassId(classId: ClassId): CfirClassLikeSymbol<*>? {
         val candidates = declarationProvider.getAllClassesByClassId(classId) + declarationProvider.getAllTypeAliasesByClassId(classId)
         val (classLikeDeclaration, provider) = selectCfirstElementInClasspathOrder(candidates) { it } ?: return null
@@ -102,6 +130,9 @@ internal class LLCombinedCangJieSymbolProvider private constructor(
     }
 
     @CfirSymbolProviderInternals
+    /**
+     * 收集顶层 callable symbol。
+     */
     override fun getTopLevelCallableSymbolsTo(destination: MutableList<CfirCallableSymbol<*>>, packageFqName: FqName, name: Name) {
         if (!symbolNamesProvider.mayHaveTopLevelCallable(packageFqName, name)) return
 
@@ -115,6 +146,9 @@ internal class LLCombinedCangJieSymbolProvider private constructor(
     }
 
     @CfirSymbolProviderInternals
+    /**
+     * 收集顶层函数 symbol。
+     */
     override fun getTopLevelFunctionSymbolsTo(destination: MutableList<CfirNamedFunctionSymbol>, packageFqName: FqName, name: Name) {
         if (!symbolNamesProvider.mayHaveTopLevelCallable(packageFqName, name)) return
 
@@ -122,6 +156,9 @@ internal class LLCombinedCangJieSymbolProvider private constructor(
     }
 
     @CfirSymbolProviderInternals
+    /**
+     * 收集顶层属性 symbol。
+     */
     override fun getTopLevelPropertySymbolsTo(destination: MutableList<CfirPropertySymbol>, packageFqName: FqName, name: Name) {
         if (!symbolNamesProvider.mayHaveTopLevelCallable(packageFqName, name)) return
 
@@ -129,6 +166,9 @@ internal class LLCombinedCangJieSymbolProvider private constructor(
     }
 
     @OptIn(CfirSymbolProviderInternals::class)
+    /**
+     * 从缓存中取得顶层函数 symbol。
+     */
     private fun getTopLevelFunctionSymbolsFromCache(callableId: CallableId): List<CfirNamedFunctionSymbol> =
         getCallablesFromCache(
             callableId,
@@ -139,6 +179,9 @@ internal class LLCombinedCangJieSymbolProvider private constructor(
         }
 
     @OptIn(CfirSymbolProviderInternals::class)
+    /**
+     * 从缓存中取得顶层属性 symbol。
+     */
     private fun getTopLevelPropertySymbolsFromCache(callableId: CallableId): List<CfirPropertySymbol> =
         getCallablesFromCache(
             callableId,
@@ -149,6 +192,9 @@ internal class LLCombinedCangJieSymbolProvider private constructor(
         }
 
     @OptIn(CfirSymbolProviderInternals::class)
+    /**
+     * 从缓存中取得顶层宏 callable symbol。
+     */
     private fun getTopLevelMacroSymbolsFromCache(callableId: CallableId): List<CfirCallableSymbol<*>> =
         getCallablesFromCache(
             callableId,
@@ -185,12 +231,18 @@ internal class LLCombinedCangJieSymbolProvider private constructor(
             }
         }
 
+    /**
+     * 判断包是否存在。
+     */
     override fun hasPackage(fqName: FqName): Boolean {
         // Regarding caching `hasPackage`: The static (standalone) package provider precomputes its packages, while the IDE package provider
         // caches the results itself. Hence, it's currently unnecessary to provide another layer of caching here.
         return packageProvider.doesPackageExist(fqName)
     }
 
+    /**
+     * 估算当前 combined provider 自身缓存的 symbol 数量。
+     */
     override fun estimateSymbolCacheSize(): Long = classifierCache.estimatedSize
 
     companion object {

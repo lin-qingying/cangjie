@@ -28,15 +28,30 @@ import org.cangnova.cangjie.lexer.CjTokens
 import com.intellij.lang.ASTNode
 import com.intellij.psi.PsiElement
 
+/**
+ * 表示 `CjReturnExpression`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjReturnExpression(node: ASTNode) : CjExpressionWithLabel(node), CjStatementExpression {
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitReturnExpression(this, data)
     }
 
+    /**
+     * 保存 `returnedExpression`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val returnedExpression: CjExpression?
         get() = findChildByClass(CjExpression::class.java)
+    /**
+     * 保存 `returnKeyword`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val returnKeyword: PsiElement
         get() = findChildByType(CjTokens.RETURN_KEYWORD)!!
+    /**
+     * 保存 `labeledExpression`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val labeledExpression: PsiElement?
         get() = findChildByType(CjNodeTypes.LABEL_QUALIFIER)
 }

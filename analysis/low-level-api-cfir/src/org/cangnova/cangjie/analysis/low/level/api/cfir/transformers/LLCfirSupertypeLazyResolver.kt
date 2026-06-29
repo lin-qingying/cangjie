@@ -19,9 +19,18 @@ import org.cangnova.cangjie.cfir.declarations.resolvePhase
 import org.cangnova.cangjie.cfir.resolve.transformers.runSupertypeResolvePhaseForNonLocalClassLikeDeclaration
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 
+/**
+ * SUPER_TYPES 阶段的低阶懒解析入口。
+ */
 internal object LLCfirSupertypeLazyResolver : LLCfirLazyResolver(CfirResolvePhase.SUPER_TYPES) {
+    /**
+     * 为 [target] 创建 SUPER_TYPES 阶段目标解析器。
+     */
     override fun createTargetResolver(target: LLCfirResolveTarget): LLCfirTargetResolver = LLCfirSuperTypeTargetResolver(target)
 
+    /**
+     * 校验类的父类型和 typealias 展开类型已经完成类型解析。
+     */
     override fun phaseSpecificCheckIsResolved(target: CfirElementWithResolveState) {
         when (target) {
             is CfirClass -> {
@@ -44,6 +53,9 @@ internal object LLCfirSupertypeLazyResolver : LLCfirLazyResolver(CfirResolvePhas
 private class LLCfirSuperTypeTargetResolver(
     target: LLCfirResolveTarget,
 ) : LLCfirTargetResolver(target, CfirResolvePhase.SUPER_TYPES) {
+    /**
+     * 进入外围 class-like 前确保该 class-like 已完成 SUPER_TYPES。
+     */
     @Deprecated("Should never be called directly, only for override purposes, please use withClassLike", level = DeprecationLevel.ERROR)
     override fun withContainingClassLike(cfirClassLike: CfirClassLikeDeclaration, action: () -> Unit) {
         if (cfirClassLike.resolvePhase < resolverPhase) {
@@ -52,6 +64,9 @@ private class LLCfirSuperTypeTargetResolver(
         action()
     }
 
+    /**
+     * 进入外围 extend 前确保该 extend 已完成 SUPER_TYPES。
+     */
     @Deprecated("Should never be called directly, only for override purposes, please use withExtend", level = DeprecationLevel.ERROR)
     override fun withContainingExtend(cfirExtend: CfirExtend, action: () -> Unit) {
         if (cfirExtend.resolvePhase < resolverPhase) {
@@ -60,6 +75,9 @@ private class LLCfirSuperTypeTargetResolver(
         action()
     }
 
+    /**
+     * 在无目标锁阶段执行 SUPER_TYPES 解析并负责加自定义写锁。
+     */
     override fun doResolveWithoutLock(target: CfirElementWithResolveState): Boolean {
         when (target) {
             is CfirClassLikeDeclaration -> {
@@ -98,10 +116,16 @@ private class LLCfirSuperTypeTargetResolver(
         return true
     }
 
+    /**
+     * SUPER_TYPES 阶段必须通过 [doResolveWithoutLock] 完成解析，因此锁内入口不可调用。
+     */
     override fun doLazyResolveUnderLock(target: CfirElementWithResolveState) {
         error("Should be resolved without lock in ${::doResolveWithoutLock.name}")
     }
 
+    /**
+     * 返回当前 designation 中最近的文件容器，找不到时使用解析目标携带的文件。
+     */
     private fun containingFile(): CfirFile? {
         return containingDeclarations.lastOrNull { it is CfirFile } as? CfirFile ?: resolveTarget.cfirFile
     }

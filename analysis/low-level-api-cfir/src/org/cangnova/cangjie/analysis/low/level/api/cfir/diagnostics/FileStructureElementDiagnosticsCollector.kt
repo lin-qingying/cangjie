@@ -13,6 +13,9 @@ import org.cangnova.cangjie.cfir.analysis.collectors.DiagnosticCollectorComponen
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticContext
 import org.cangnova.cangjie.cfir.session.macroExpansionRegistry
 
+/**
+ * 对单个 CFIR structure element 执行 diagnostics 收集并返回按 PSI 元素索引的结果。
+ */
 internal fun collectForStructureElement(
     cfirDeclaration: CfirDeclaration,
     filter: DiagnosticCheckerFilter,

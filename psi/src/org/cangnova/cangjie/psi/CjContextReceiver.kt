@@ -30,25 +30,43 @@ import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 import com.intellij.lang.ASTNode
 import org.cangnova.cangjie.name.*
 
+/**
+ * 表示 `CjContextReceiver`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjContextReceiver : CjElementImplStub<CangJieContextReceiverStub> {
     constructor(node: ASTNode) : super(node)
     constructor(stub: CangJieContextReceiverStub) : super(stub, CjStubElementTypes.CONTEXT_RECEIVER)
 
+    /**
+     * 提供 `targetLabel` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun targetLabel(): CjSimpleNameExpression? =
         findChildByType<CjContainerNode>(CjNodeTypes.LABEL_QUALIFIER)
             ?.findChildByType(CjNodeTypes.LABEL)
 
+    /**
+     * 提供 `labelName` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun labelName(): String? {
         stub?.let { return it.getLabel() }
         return targetLabel()?.referencedName
     }
 
+    /**
+     * 提供 `labelNameAsName` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun labelNameAsName(): Name? {
         stub?.let { stub -> return stub.getLabel()?.let { Name.identifier(it) } }
         return targetLabel()?.referencedNameAsName
     }
 
+    /**
+     * 提供 `typeReference` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun typeReference(): CjTypeReference? = getStubOrPsiChild(CjStubElementTypes.TYPE_REFERENCE)
 
+    /**
+     * 提供 `name` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun name(): String? = labelName() ?: typeReference()?.nameForReceiverLabel()
 }

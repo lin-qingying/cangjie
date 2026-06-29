@@ -409,6 +409,9 @@ interface TypeSystemInferenceExtensionContext : TypeSystemContext, TypeSystemBui
     // 类型提取工具（内部辅助）
     // ------------------------------------------------------------------
 
+    /**
+     * 递归遍历类型实参，将符合给定构造器映射规则的元素收集到目标集合。
+     */
     private fun <T> CangJieTypeMarker.extractTypeOf(to: MutableSet<T>, getIfApplicable: (TypeConstructorMarker) -> T?) {
         for (i in 0 until argumentsCount()) {
             val argument = getArgument(i)
@@ -850,6 +853,10 @@ interface TypeSystemContext : TypeSystemOptimizationContext {
      * 仓颉支持交叉类型用于多接口约束表达
      */
     fun intersectTypes(types: Collection<CangJieTypeMarker>): CangJieTypeMarker
+
+    /**
+     * 计算简单类型集合的交叉类型，并保持结果为简单类型。
+     */
     fun intersectTypes(types: Collection<SimpleTypeMarker>): SimpleTypeMarker
 
     /** 判断是否是刚性类型 */
@@ -857,6 +864,10 @@ interface TypeSystemContext : TypeSystemOptimizationContext {
 
     /** 判断是否是原始值类型（Int、Float、Bool 等内置值类型） */
     fun RigidTypeMarker.isPrimitiveType(): Boolean = (this as? SimpleTypeMarker)?.isPrimitiveType() == true
+
+    /**
+     * 判断简单类型是否是原始值类型（Int、Float、Bool 等内置值类型）。
+     */
     fun SimpleTypeMarker.isPrimitiveType(): Boolean
 
     /** 获取类型携带的注解列表（用于反射，不干预推断） */

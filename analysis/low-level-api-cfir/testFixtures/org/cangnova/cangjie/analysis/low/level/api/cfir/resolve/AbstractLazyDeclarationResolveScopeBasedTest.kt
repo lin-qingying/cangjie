@@ -25,6 +25,9 @@ import org.cangnova.cangjie.test.services.assertions
  * 通过 type scope 抓取 class-like 可见 callable，并检查 override 链在 lazy resolve 前后的稳定性。
  */
 abstract class AbstractLazyDeclarationResolveScopeBasedTest : AbstractAnalysisApiBasedTest() {
+    /**
+     * 对 caret 所在 class-like 的 scope callable 进行 lazy resolve 前后对比渲染。
+     */
     override fun doTestByMainFile(mainFile: CjFile, mainModule: CjTestModule, testServices: TestServices) {
         val classLike = testServices.expressionMarkerProvider.getBottommostElementOfTypeAtCaret<CjTypeStatement>(mainFile)
         val resolutionFacade = mainFile.getResolutionFacadeForTest()
@@ -46,6 +49,9 @@ abstract class AbstractLazyDeclarationResolveScopeBasedTest : AbstractAnalysisAp
         testServices.assertions.assertEqualsToTestOutputFile(dumpSymbols(scope, callables), extension = "after.txt")
     }
 
+    /**
+     * 渲染 [symbols] 及其直接 override 关系。
+     */
     private fun dumpSymbols(
         scope: org.cangnova.cangjie.cfir.scopes.CfirTypeScope,
         symbols: List<org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol<*>>,
@@ -69,6 +75,12 @@ abstract class AbstractLazyDeclarationResolveScopeBasedTest : AbstractAnalysisAp
     }
 }
 
+/**
+ * source 配置下的 scope-based lazy resolve 测试基类。
+ */
 abstract class AbstractSourceLazyDeclarationResolveScopeBasedTest : AbstractLazyDeclarationResolveScopeBasedTest() {
+    /**
+     * 使用源码 low-level CFIR 测试配置。
+     */
     override val configurator = analysisApiCfirSourceTestConfigurator(analyseInDependentSession = false)
 }

@@ -28,55 +28,97 @@ package org.cangnova.cangjie.formatter
 import com.intellij.openapi.util.InvalidDataException
 import org.jdom.Element
 
-class CangJiePackageEntryTable(private val entries: MutableList<CangJiePackageEntry>) :
+/**
+ * 仓颉 import layout 的包条目表。
+ */
+class CangJiePackageEntryTable(
+    /** 按 UI 顺序保存的包条目。 */
+    private val entries: MutableList<CangJiePackageEntry>
+) :
     com.intellij.openapi.util.JDOMExternalizable, Cloneable {
     constructor() : this(mutableListOf())
 
+    /**
+     * 当前 import layout 条目数量。
+     */
     val entryCount: Int get() = entries.size
 
+    /**
+     * 克隆一份包含相同条目顺序的表。
+     */
     public override fun clone(): CangJiePackageEntryTable {
         val clone = CangJiePackageEntryTable()
         clone.copyFrom(this)
         return clone
     }
 
+    /**
+     * 用另一张表的条目替换当前内容。
+     */
     fun copyFrom(packageTable: CangJiePackageEntryTable) {
         entries.clear()
         entries.addAll(packageTable.entries)
     }
 
+    /**
+     * 返回当前条目的数组快照。
+     */
     fun getEntries(): Array<CangJiePackageEntry> {
         return entries.toTypedArray()
     }
 
+    /**
+     * 在指定位置插入条目。
+     */
     fun insertEntryAt(entry: CangJiePackageEntry, index: Int) {
         entries.add(index, entry)
     }
 
+    /**
+     * 删除指定位置的条目。
+     */
     fun removeEntryAt(index: Int) {
         entries.removeAt(index)
     }
 
+    /**
+     * 读取指定位置的条目。
+     */
     fun getEntryAt(index: Int): CangJiePackageEntry {
         return entries[index]
     }
 
+    /**
+     * 替换指定位置的条目。
+     */
     fun setEntryAt(entry: CangJiePackageEntry, index: Int) {
         entries[index] = entry
     }
 
+    /**
+     * 判断包名是否被非特殊条目显式包含。
+     */
     operator fun contains(packageName: String): Boolean {
         return entries.any { !it.isSpecial && it.matchesPackageName(packageName) }
     }
 
+    /**
+     * 删除包名为空的普通条目。
+     */
     fun removeEmptyPackages() {
         entries.removeAll { it.packageName.isBlank() }
     }
 
+    /**
+     * 追加一个 import layout 条目。
+     */
     fun addEntry(entry: CangJiePackageEntry) {
         entries.add(entry)
     }
 
+    /**
+     * 从 XML 读取 import layout 条目。
+     */
     override fun readExternal(element: Element) {
         entries.clear()
 
@@ -97,6 +139,9 @@ class CangJiePackageEntryTable(private val entries: MutableList<CangJiePackageEn
         }
     }
 
+    /**
+     * 将 import layout 条目写入 XML。
+     */
     override fun writeExternal(parentNode: Element) {
         for (entry in entries) {
             val element = Element("package")
@@ -110,6 +155,9 @@ class CangJiePackageEntryTable(private val entries: MutableList<CangJiePackageEn
         }
     }
 
+    /**
+     * 按条目数量和顺序比较两张表。
+     */
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is CangJiePackageEntryTable) return false
@@ -124,5 +172,8 @@ class CangJiePackageEntryTable(private val entries: MutableList<CangJiePackageEn
         return true
     }
 
+    /**
+     * 使用第一项作为表的 hash code，保持与既有实现一致。
+     */
     override fun hashCode(): Int = entries.firstOrNull()?.hashCode() ?: 0
 }

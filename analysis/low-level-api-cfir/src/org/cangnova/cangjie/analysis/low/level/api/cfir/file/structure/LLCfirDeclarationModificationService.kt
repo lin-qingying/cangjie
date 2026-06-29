@@ -55,12 +55,20 @@ import org.cangnova.cangjie.source.psi
  * @see org.cangnova.cangjie.analysis.api.platform.modification.KotlinModuleOutOfBlockModificationEvent
  * @see LLCfirDeclarationModificationTopics.IN_BLOCK_MODIFICATION
  * @see org.cangnova.cangjie.analysis.api.platform.modification.CaSourceModificationService
+ *
+ * @param project 当前低阶 CFIR 服务所属的 IntelliJ 工程，用于访问消息总线、工程结构服务和工程级缓存。
  */
 @LLCfirInternals
 class LLCfirDeclarationModificationService(val project: Project) : Disposable {
     init {
         ApplicationManager.getApplication().addApplicationListener(
             object : ApplicationListener {
+                /**
+                 * 在写动作结束后统一冲刷延迟修改队列。
+                 *
+                 * PSI 事件可能在同一个写动作中连续到达；延迟到写动作尾部处理可以合并重复的块内修改，
+                 * 同时避免在 PSI 树仍处于中间状态时访问 CFIR 缓存。
+                 */
                 override fun writeActionFinished(action: Any) {
                     flushDeferredModifications()
                 }
@@ -74,8 +82,20 @@ class LLCfirDeclarationModificationService(val project: Project) : Disposable {
         )
     }
 
+    /**
+     * 当前写动作内收集到、可以延迟处理的 CFIR 修改。
+     *
+     * 队列只保存块内修改和空白修改；块外修改会立即发布模块级失效事件，并清理同模块中过期的延迟项。
+     * `null` 表示当前没有待处理修改，避免为无修改写动作分配集合。
+     */
     private var modificationQueue: MutableSet<LLModificationLocality.Deferrable>? = null
 
+    /**
+     * 将可延迟的 [modification] 加入当前写动作队列。
+     *
+     * 对块内修改，如果对应 PSI 尚未标记为拥有已解析 CFIR body，则无需构建或失效 CFIR，
+     * 因为后续查询会从惰性入口自然完成解析。
+     */
     private fun addModificationToQueue(modification: LLModificationLocality.Deferrable) {
         // There is no sense to add elements into the queue with an unresolved body.
         if (modification is LLModificationLocality.InBlock && !modification.affectedElement.hasCfirBody) return
@@ -209,6 +229,12 @@ class LLCfirDeclarationModificationService(val project: Project) : Disposable {
                 this is CaElementModificationType.ElementRemoved &&
                 removedElement.potentiallyAffectsPropertyBackingFieldResolution()
 
+    /**
+     * 根据延迟修改的具体局部性执行实际失效逻辑。
+     *
+     * 空白修改只需要重置文件结构中的诊断相关缓存；块内修改需要回退对应 CFIR body、
+     * 清理文件结构缓存，并发布块内修改主题。
+     */
     private fun handleDeferredModification(modificationLocality: LLModificationLocality.Deferrable) {
         when (modificationLocality) {
             is LLModificationLocality.Whitespace ->
@@ -287,6 +313,12 @@ class LLCfirDeclarationModificationService(val project: Project) : Disposable {
      */
     fun ancestorAffectedByInBlockModification(changedElement: PsiElement): PsiElement? = nonLocalDeclarationForLocalChange(changedElement)
 
+    /**
+     * 释放服务生命周期。
+     *
+     * 当前服务注册的应用监听器和消息总线连接都以本服务作为 [Disposable] 父级，
+     * IntelliJ 平台会在释放时统一断开，因此这里不需要额外清理状态。
+     */
     override fun dispose() {}
 
     companion object {
@@ -342,22 +374,53 @@ class LLCfirDeclarationModificationService(val project: Project) : Disposable {
     }
 }
 
+/**
+ * 寻找 [psi] 所属的、可把局部变更限制在块内重新分析范围的非局部声明。
+ *
+ * 普通声明通过 [getNonLocalReanalyzableContainingDeclaration] 判断；代码片段没有常规声明容器，
+ * 因此允许把包含文件本身作为块内失效锚点。
+ */
 private fun nonLocalDeclarationForLocalChange(psi: PsiElement): CjElement? {
     return psi.getNonLocalReanalyzableContainingDeclaration() ?: psi.containingFile as? CjCodeFragment
 }
 
+/**
+ * 低阶 CFIR 对源码修改局部性的内部表示。
+ *
+ * 该层扩展平台级 [CaSourceModificationLocality]，为可以延迟到写动作结束处理的修改额外携带
+ * PSI 锚点、工程与模块信息，使后续失效逻辑无需重新推断变更来源。
+ */
 private sealed interface LLModificationLocality {
     /**
      * A modification that can be deferred to the next flush point (usually the end of a write action) to avoid excessive processing.
      */
     sealed class Deferrable : LLModificationLocality {
+        /**
+         * 受本次修改影响的 CangJie PSI 元素。
+         *
+         * 对块内修改它通常是函数、属性、访问器或代码片段；对空白修改则是距离空白最近的 CangJie PSI 祖先。
+         */
         abstract val affectedElement: CjElement
+
+        /**
+         * [affectedElement] 所属工程，用于延迟计算模块和访问工程级服务。
+         */
         abstract val project: Project
 
+        /**
+         * [affectedElement] 对应的项目结构模块。
+         *
+         * 模块按需惰性计算，保证同一写动作内重复访问时不会多次查询项目结构服务。
+         */
         val module: CaModule by lazy(LazyThreadSafetyMode.NONE) {
             CangJieProjectStructureProvider.getModule(project, affectedElement, useSiteModule = null)
         }
 
+        /**
+         * 按修改类型和 PSI 锚点合并重复延迟项。
+         *
+         * 同一个元素上的同类修改只需要处理一次；不同局部性类型不能互相合并，避免空白修改误覆盖块内修改。
+         */
         override fun equals(other: Any?): Boolean {
             if (other === this) return true
             if (other !is Deferrable) return false
@@ -365,6 +428,9 @@ private sealed interface LLModificationLocality {
             return other::class == this::class && other.affectedElement == affectedElement
         }
 
+        /**
+         * 基于 PSI 锚点生成哈希值，与 [equals] 中的去重规则保持一致。
+         */
         override fun hashCode(): Int = affectedElement.hashCode()
     }
 
@@ -375,17 +441,37 @@ private sealed interface LLModificationLocality {
 
     /**
      * @see CaSourceModificationLocality.Whitespace
+     *
+     * @param affectedElement 距离空白或注释变更最近的 CangJie PSI 祖先。
+     * @param project [affectedElement] 所属工程。
      */
     class Whitespace(
+        /**
+         * 距离空白或注释变更最近的 CangJie PSI 祖先。
+         */
         override val affectedElement: CjElement,
+
+        /**
+         * [affectedElement] 所属工程。
+         */
         override val project: Project,
     ) : Deferrable(), CaSourceModificationLocality.Whitespace
 
     /**
      * @see CaSourceModificationLocality.InBlock
+     *
+     * @param affectedElement 可按块内修改重新分析的声明或代码片段。
+     * @param project [affectedElement] 所属工程。
      */
     class InBlock(
+        /**
+         * 可按块内修改重新分析的声明或代码片段。
+         */
         override val affectedElement: CjElement,
+
+        /**
+         * [affectedElement] 所属工程。
+         */
         override val project: Project,
     ) : Deferrable(), CaSourceModificationLocality.InBlock
 
@@ -418,6 +504,11 @@ private var CjElement.hasCfirBody: Boolean
         )
     }
 
+/**
+ * 标记 PSI 元素是否已经拥有可被块内修改失效的 CFIR body。
+ *
+ * 使用 nullable 布尔值是为了在 `false` 时直接移除 user data，减少 PSI 上的常驻状态。
+ */
 private val hasCfirBodyKey = Key.create<Boolean?>("HAS_CFIR_BODY")
 
 /**
@@ -517,6 +608,12 @@ private fun PsiElement.potentiallyAffectsPropertyBackingFieldResolution(): Boole
     return hasFieldText
 }
 
+/**
+ * 判断 [child] 是否位于 [declaration] 的可块内重新分析 body 范围内。
+ *
+ * 当 [canHaveBackingFieldAccess] 为 `true` 时，还需要排除可能影响属性 backing field 解析的修改；
+ * 这类修改会改变声明结构语义，必须升级为块外修改。
+ */
 private fun isElementInsideBody(declaration: CjDeclarationWithBody, child: PsiElement, canHaveBackingFieldAccess: Boolean): Boolean {
     val body = declaration.bodyExpression ?: return false
     return when {
@@ -526,10 +623,25 @@ private fun isElementInsideBody(declaration: CjDeclarationWithBody, child: PsiEl
     }
 }
 
+/**
+ * 判断命名函数是否具备稳定签名，使函数体变化可以按块内修改处理。
+ *
+ * 块体函数或显式返回类型函数的 body 修改不会改变对外类型契约，因此可以只失效 body。
+ */
 private fun CjNamedFunction.isReanalyzableContainer(): Boolean = hasBlockBody() || typeReference != null
 
+/**
+ * 判断属性访问器是否具备可局部重分析的边界。
+ *
+ * setter、块体访问器或所属属性带显式类型时，访问器 body 的修改不会要求重新推断属性对外类型。
+ */
 private fun CjPropertyAccessor.isReanalyzableContainer(): Boolean = isSetter || hasBlockBody() || property.typeReference != null
 
+/**
+ * 判断属性初始化器是否可以按块内修改处理。
+ *
+ * 只有显式声明类型的属性才能保证初始化器变更不会改变属性暴露类型。
+ */
 private fun CjProperty.isReanalyzableContainer(): Boolean = typeReference != null
 
 /**

@@ -9,5 +9,5 @@ class A<T> {
 }
 
 main() {
-    let x = <!OBJECT_CANNOT_ACCESS_STATIC_MEMBER!>A<!><Int64>(true).f() == 0
+    let x = <!OBJECT_CANNOT_ACCESS_STATIC_MEMBER!>A<Int64><!>(true).f() == 0
 }

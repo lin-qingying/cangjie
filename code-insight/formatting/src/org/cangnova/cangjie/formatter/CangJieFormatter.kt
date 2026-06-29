@@ -51,6 +51,9 @@ import java.util.concurrent.atomic.AtomicReference
  * formatter 引擎，避免在宿主层再次实现一套格式化语义。
  */
 object CangJieFormatter {
+    /**
+     * 确保仓颉 formatting model builder 已注册到 IntelliJ formatting 框架。
+     */
     fun ensureFormattingModelRegistered() {
         ensureFormattingInfrastructureRegistered()
         if (LanguageFormatting.INSTANCE.forLanguage(CangJieLanguage) == null) {
@@ -58,6 +61,9 @@ object CangJieFormatter {
         }
     }
 
+    /**
+     * 使用指定代码风格格式化仓颉 PSI 文件，并返回格式化后的文本。
+     */
     fun format(
         file: CjFile,
         settings: CodeStyleSettings = CangJieCodeStyleSettingsFactory.createDefaultSettings(),
@@ -212,6 +218,9 @@ object CangJieFormatter {
         )
     }
 
+    /**
+     * 注册 headless formatter 所需的 IndentHelper service。
+     */
     private fun ensureIndentHelper(application: MockApplication) {
         if (application.getService(IndentHelper::class.java) == null) {
             application.registerService(IndentHelper::class.java, HeadlessIndentHelper::class.java)
@@ -260,6 +269,9 @@ object CangJieFormatter {
         return result.get()
     }
 
+    /**
+     * 在 undo-transparent command 中执行写动作。
+     */
     private fun <T> runUndoTransparentWriteAction(
         application: com.intellij.openapi.application.Application,
         action: () -> T,
@@ -271,26 +283,52 @@ object CangJieFormatter {
         return result.get()
     }
 
+    /** formatter restriction 扩展点名称。 */
     private const val FORMATTER_RESTRICTION_EXTENSION_POINT = "com.intellij.lang.formatter.restriction"
+    /** 外部格式化处理器扩展点名称。 */
     private const val EXTERNAL_FORMAT_PROCESSOR_EXTENSION_POINT = "com.intellij.externalFormatProcessor"
+    /** 格式化前处理器扩展点名称。 */
     private const val PRE_FORMAT_PROCESSOR_EXTENSION_POINT = "com.intellij.preFormatProcessor"
+    /** 格式化后处理器扩展点名称。 */
     private const val POST_FORMAT_PROCESSOR_EXTENSION_POINT = "com.intellij.postFormatProcessor"
+    /** 文件缩进选项 provider 扩展点名称。 */
     private const val FILE_INDENT_OPTIONS_PROVIDER_EXTENSION_POINT = "com.intellij.fileIndentOptionsProvider"
 }
 
+/**
+ * Headless formatter 中允许文档写入的访问守卫。
+ */
 @Suppress("UnstableApiUsage")
 private class HeadlessDocumentWriteAccessGuard : DocumentWriteAccessGuard() {
+    /**
+     * Headless 格式化文档始终允许写入。
+     */
     override fun isWritable(document: Document): Result = success()
 }
 
+/**
+ * Headless formatter 使用的最小缩进 helper。
+ */
 private class HeadlessIndentHelper : IndentHelper() {
+    /**
+     * 返回默认缩进值。
+     */
     override fun getIndent(file: PsiFile, element: com.intellij.lang.ASTNode): Int = 0
 
+    /**
+     * 返回默认缩进值，忽略非空白字符开关。
+     */
     override fun getIndent(file: PsiFile, element: com.intellij.lang.ASTNode, includeNonSpace: Boolean): Int = 0
 }
 
+/**
+ * 将 MockFileDocumentManager 创建的文档回挂到 virtual file 的 headless 实现。
+ */
 private class HeadlessFileDocumentManager :
     MockFileDocumentManagerImpl(FileDocumentManagerBase.HARD_REF_TO_DOCUMENT_KEY, { DocumentImpl(it) }) {
+    /**
+     * 获取文档并确保 virtual file 持有稳定缓存。
+     */
     override fun getDocument(file: VirtualFile): Document? {
         val document = super.getDocument(file) ?: return null
         file.putUserDataIfAbsent(FileDocumentManagerBase.HARD_REF_TO_DOCUMENT_KEY, document)
@@ -307,8 +345,14 @@ private class HeadlessFileDocumentManager :
 private class HeadlessFormattingPomModel(
     project: Project,
 ) : PomModelImpl(project) {
+    /**
+     * headless formatter 需要额外暴露的 postprocess reformatting aspect。
+     */
     private val postprocessAspect = PostprocessReformattingAspectImpl(project)
 
+    /**
+     * 返回 PomModel aspect，补齐 PostprocessReformattingAspect。
+     */
     override fun <T : PomModelAspect?> getModelAspect(aClass: Class<T>): T? {
         if (aClass == PostprocessReformattingAspect::class.java) {
             @Suppress("UNCHECKED_CAST")
@@ -317,6 +361,9 @@ private class HeadlessFormattingPomModel(
         return super.getModelAspect(aClass)
     }
 
+    /**
+     * 更新依赖 aspect，同时同步 postprocess aspect。
+     */
     override fun updateDependentAspects(event: PomModelEvent) {
         super.updateDependentAspects(event)
         postprocessAspect.update(event)

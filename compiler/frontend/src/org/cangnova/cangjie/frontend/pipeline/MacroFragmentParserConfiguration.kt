@@ -62,6 +62,9 @@ fun CompilerConfiguration.installDefaultMacroFragmentParserFactory(project: Proj
     }
 }
 
+/**
+ * 使用 PSI parser 重新解析宏返回的源码片段。
+ */
 private fun reparsePsiMacroFragment(
     project: Project,
     session: CfirSession,
@@ -112,6 +115,9 @@ private fun reparsePsiMacroFragment(
     }
 }
 
+/**
+ * 使用 light tree parser 重新解析宏返回的源码片段。
+ */
 private fun reparseLightTreeMacroFragment(
     session: CfirSession,
     text: String,
@@ -176,11 +182,23 @@ private fun reparseLightTreeMacroFragment(
     }
 }
 
+/**
+ * light tree 宏片段解析结果。
+ */
 private data class ParsedLightTreeFragment(
+    /**
+     * 解析得到的 light tree。
+     */
     val tree: FlyweightCapableTreeStructure<LighterASTNode>,
+    /**
+     * 基于该 light tree 构造 CFIR 的声明 builder。
+     */
     val builder: LightTreeRawCfirDeclarationBuilder,
 )
 
+/**
+ * 将文本解析为 light tree 片段并创建对应 raw CFIR builder。
+ */
 private fun parseLightTreeFragment(
     session: CfirSession,
     text: String,
@@ -203,16 +221,25 @@ private fun parseLightTreeFragment(
     )
 }
 
+/**
+ * 使用 PSI factory 从文本中解析单个参数。
+ */
 private fun CjPsiFactory.createSingleParameter(text: String): CjParameter? {
     return runCatching {
         createParameterList("($text)").parameters.singleOrNull()
     }.getOrNull()
 }
 
+/**
+ * 在 light tree 中查找第一个声明节点。
+ */
 private fun FlyweightCapableTreeStructure<LighterASTNode>.findFirstDeclaration(): LighterASTNode? {
     return findFirst(*fragmentDeclarationTypes)
 }
 
+/**
+ * 深度优先查找第一个匹配任意 token 类型的 light tree 节点。
+ */
 private fun FlyweightCapableTreeStructure<LighterASTNode>.findFirst(
     vararg tokenTypes: IElementType,
 ): LighterASTNode? {
@@ -234,6 +261,9 @@ private fun FlyweightCapableTreeStructure<LighterASTNode>.findFirst(
     return visit(root)
 }
 
+/**
+ * 在变量节点中查找等号后的第一个表达式节点。
+ */
 private fun FlyweightCapableTreeStructure<LighterASTNode>.findFirstExpressionAfterEquals(
     node: LighterASTNode,
 ): LighterASTNode? {
@@ -259,6 +289,9 @@ private fun FlyweightCapableTreeStructure<LighterASTNode>.findFirstExpressionAft
     return null
 }
 
+/**
+ * 宏片段可接受的顶层声明节点类型。
+ */
 private val fragmentDeclarationTypes: Array<IElementType> = arrayOf(
     CjNodeTypes.CLASS,
     CjNodeTypes.INTERFACE,
@@ -278,6 +311,9 @@ private val fragmentDeclarationTypes: Array<IElementType> = arrayOf(
     CjNodeTypes.FOREIGN,
 )
 
+/**
+ * 使用宏 payload tokenizer 对表面 token 文本重新分词。
+ */
 private fun List<MacroSurfaceToken>.reTokenizeMacroSurfaceTokens(): List<MacroSurfaceToken> {
     val payloadTokens = MacroPayloadTokenizer.tokenize(joinToString(separator = "") { it.text }, baseOffset = 0)
     return payloadTokens.map { token ->

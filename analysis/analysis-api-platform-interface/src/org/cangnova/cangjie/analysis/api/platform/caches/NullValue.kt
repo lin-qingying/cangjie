@@ -10,6 +10,9 @@ import java.util.concurrent.ConcurrentMap
 @CaImplementationDetail
 object NullValue
 
+/**
+ * 将缓存中保存的 [NullValue] 哨兵还原为 Kotlin null。
+ */
 @CaImplementationDetail
 @Suppress("NOTHING_TO_INLINE", "UNCHECKED_CAST")
 inline fun <V> Any.nullValueToNull(): V = when (this) {
@@ -17,6 +20,9 @@ inline fun <V> Any.nullValueToNull(): V = when (this) {
     else -> this
 } as V
 
+/**
+ * 在 [ConcurrentMap] 中缓存允许为 null 的计算结果。
+ */
 @CaImplementationDetail
 inline fun <K : Any, R> ConcurrentMap<K, Any>.getOrPutWithNullableValue(
     key: K,
@@ -26,6 +32,9 @@ inline fun <K : Any, R> ConcurrentMap<K, Any>.getOrPutWithNullableValue(
     return value.nullValueToNull()
 }
 
+/**
+ * 在 Caffeine [Cache] 中缓存允许为 null 的计算结果。
+ */
 @CaImplementationDetail
 inline fun <K : Any, R> Cache<K, Any>.getOrPutWithNullableValue(
     key: K,

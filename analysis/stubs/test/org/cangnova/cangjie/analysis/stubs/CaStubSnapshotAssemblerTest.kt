@@ -7,7 +7,13 @@ import org.cangnova.cangjie.psi.stubs.impl.CangJieFileStubKindImpl
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
+/**
+ * 验证 [CaStubSnapshotAssembler] 的快照聚合规则。
+ */
 class CaStubSnapshotAssemblerTest {
+    /**
+     * 验证多个文件摘要会合并为包级名称索引和 class member 索引。
+     */
     @Test
     fun assembleSnapshotMergesPackageAndClassIndexes() {
         val packageFqName = FqName("sample.snapshot")

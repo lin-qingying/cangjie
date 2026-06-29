@@ -57,20 +57,44 @@ import org.cangnova.cangjie.utils.exceptions.requireWithAttachment
  * An entry point for a CFIR Low Level API resolution. Represents a project view from a use-site [CaModule].
  */
 class LLResolutionFacade internal constructor(
+    /**
+     * 根据 PSI 或模块上下文定位 Analysis API 模块的 provider。
+     */
     val moduleProvider: LLModuleProvider,
+    /**
+     * 决定模块使用 lazy 解析还是 static 已编译解析的策略 provider。
+     */
     val resolutionStrategyProvider: LLModuleResolutionStrategyProvider,
+    /**
+     * 负责创建和复用 use-site、依赖模块、可解析模块 session 的 provider。
+     */
     val sessionProvider: LLSessionProvider,
+    /**
+     * 负责以 low-level session 为上下文收集 diagnostics 的 provider。
+     */
     val diagnosticProvider: LLDiagnosticProvider,
 ) {
+    /**
+     * 当前 facade 代表的 use-site Analysis API 模块。
+     */
     val useSiteModule: CaModule
         get() = moduleProvider.useSiteModule
 
+    /**
+     * 当前 use-site 模块所属 IntelliJ project。
+     */
     val project: Project
         get() = useSiteModule.project
 
+    /**
+     * use-site 模块对应的 CFIR low-level session。
+     */
     val useSiteCfirSession: LLCfirSession
         get() = sessionProvider.useSiteSession
 
+    /**
+     * 取得指定 Analysis API 模块对应的 CFIR low-level session。
+     */
     fun getSessionFor(module: CaModule): LLCfirSession {
         return sessionProvider.getSession(module)
     }
@@ -81,6 +105,9 @@ class LLResolutionFacade internal constructor(
     fun getDependencySessionFor(module: CaModule): LLCfirSession? =
         sessionProvider.getDependencySession(module)
 
+    /**
+     * 取得指定 CFIR session 对应的作用域缓存 session。
+     */
     fun getScopeSessionFor(cfirSession: CfirSession): ScopeSession {
         requireIsInstance<LLCfirSession>(cfirSession)
         return LLDefaultScopeSessionProvider.getScopeSession(cfirSession)
@@ -116,6 +143,9 @@ class LLResolutionFacade internal constructor(
         return moduleComponents.cfirFileBuilder.buildRawCfirFileWithCaching(cjFile)
     }
 
+    /**
+     * 根据 PSI 所属模块取得可解析 session 的模块解析组件。
+     */
     private fun getModuleComponentsForElement(element: CjElement): LLCfirModuleResolveComponents {
         val module = getModule(element)
         return sessionProvider.getResolvableSession(module).moduleComponents
@@ -135,6 +165,9 @@ class LLResolutionFacade internal constructor(
         return diagnosticProvider.collectDiagnostics(cjFile, filter)
     }
 
+    /**
+     * 将仓颉声明 PSI 解析为对应 CFIR symbol，并按请求推进到指定 resolve phase。
+     */
     internal fun resolveToCfirSymbol(cjDeclaration: CjDeclaration, phase: CfirResolvePhase): CfirBasedSymbol<*> {
         val containingCjFile = cjDeclaration.containingCjFile
         val module = getModule(containingCjFile)
@@ -145,10 +178,16 @@ class LLResolutionFacade internal constructor(
         }
     }
 
+    /**
+     * 取得模块的 low-level 解析策略。
+     */
     private fun getModuleResolutionStrategy(module: CaModule): LLModuleResolutionStrategy {
         return resolutionStrategyProvider.getKind(module)
     }
 
+    /**
+     * 在 lazy source 模块中通过 PSI 所属非局部容器恢复 CFIR symbol。
+     */
     private fun findSourceCfirSymbol(cjDeclaration: CjDeclaration): CfirBasedSymbol<*> {
         val targetDeclaration = cjDeclaration.originalDeclaration ?: cjDeclaration
         val targetModule = getModule(targetDeclaration)
@@ -178,6 +217,9 @@ class LLResolutionFacade internal constructor(
         return cfirDeclaration.symbol
     }
 
+    /**
+     * 对需要表达式解析的局部声明执行 CFIR 构建，并还原出对应 CFIR declaration。
+     */
     private fun findSourceCfirDeclarationViaResolve(cjDeclaration: CjExpression): CfirDeclaration {
         val targetExpression = cjDeclaration.unwrapForCfirLookup()
         return when (val cfir = getOrBuildCfirFor(targetExpression)) {
@@ -205,6 +247,9 @@ class LLResolutionFacade internal constructor(
         }
     }
 
+    /**
+     * 在 compiled/static 模块中通过反编译声明搜索器恢复 CFIR symbol。
+     */
     private fun findCompiledCfirSymbol(cjDeclaration: CjDeclaration, module: CaModule): CfirBasedSymbol<*> {
         requireWithAttachment(
             cjDeclaration.containingCjFile.isCompiled,
@@ -221,6 +266,9 @@ class LLResolutionFacade internal constructor(
 
 }
 
+/**
+ * 通过项目结构 provider 取得 PSI 元素在当前 use-site 视图下所属的 Analysis API 模块。
+ */
 fun LLResolutionFacade.getModule(element: PsiElement): CaModule {
     return CangJieProjectStructureProvider.getModule(project, element, useSiteModule)
 }

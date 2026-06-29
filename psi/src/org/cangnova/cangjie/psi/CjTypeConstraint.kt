@@ -28,27 +28,45 @@ import org.cangnova.cangjie.psi.stubs.CangJiePlaceHolderStub
 import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 import com.intellij.lang.ASTNode
 
+/**
+ * 表示 `CjTypeConstraint`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjTypeConstraint : CjElementImplStub<CangJiePlaceHolderStub<CjTypeConstraint>>, CjElement {
     constructor(node: ASTNode) : super(node)
 
     constructor(stub: CangJiePlaceHolderStub<CjTypeConstraint>) : super(stub, CjStubElementTypes.TYPE_CONSTRAINT)
 
+    /**
+     * 实现 `toString` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun toString(): String {
         return node.elementType.toString()
     }
 
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitTypeConstraint(this, data)
     }
 
+    /**
+     * 保存 `subjectTypeParameterName`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     @get:IfNotParsed
     val subjectTypeParameterName: CjSimpleNameExpression?
         get() = getStubOrPsiChild(CjStubElementTypes.REFERENCE_EXPRESSION)
 
+    /**
+     * 保存 `boundTypeReference`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     @get:IfNotParsed
     val boundTypeReference: CjTypeReference?
         get() = getStubOrPsiChild(CjStubElementTypes.TYPE_REFERENCE)
 
+    /**
+     * 保存 `boundTypeReferences`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     @get:IfNotParsed
     val boundTypeReferences: List<CjTypeReference>
         get() = getStubOrPsiChildrenAsList(

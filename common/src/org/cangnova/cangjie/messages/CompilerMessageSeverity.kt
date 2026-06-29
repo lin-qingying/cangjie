@@ -6,6 +6,9 @@ package org.cangnova.cangjie.messages
 
 import java.util.*
 
+/**
+ * 编译器消息严重级别。
+ */
 enum class CompilerMessageSeverity {
     EXCEPTION,
     ERROR,
@@ -32,15 +35,27 @@ enum class CompilerMessageSeverity {
      */
     OUTPUT;
 
+    /**
+     * 是否表示错误级消息。
+     */
     val isError: Boolean
         get() = this == EXCEPTION || this == ERROR
 
+    /**
+     * 是否表示警告级消息。
+     */
     val isWarning: Boolean
         get() = this == STRONG_WARNING || this == WARNING || this == FIXED_WARNING
 
+    /**
+     * 是否表示会受普通 warning 策略影响的警告。
+     */
     val isRegularWarning: Boolean
         get() = this == STRONG_WARNING || this == WARNING
 
+    /**
+     * 面向用户展示的严重级别名称。
+     */
     val presentableName: String
         get() = when (this) {
             EXCEPTION -> "exception"
@@ -52,6 +67,9 @@ enum class CompilerMessageSeverity {
         }
 
     companion object {
+        /**
+         * verbose 输出使用的严重级别集合。
+         */
         @JvmField
         val VERBOSE: EnumSet<CompilerMessageSeverity> = EnumSet.of(LOGGING)
     }

@@ -22,9 +22,15 @@ internal class FileStructureCache(private val moduleResolveComponents: LLCfirMod
      */
     private val cache: ConcurrentMap<CjFile, FileStructure> = ContainerUtil.createConcurrentSoftKeySoftValueMap()
 
+    /**
+     * 返回指定 PSI 文件的 file structure，缺失时构建并缓存。
+     */
     fun getFileStructure(cjFile: CjFile): FileStructure = cache.computeIfAbsent(cjFile) {
         FileStructure.build(cjFile, moduleResolveComponents)
     }
 
+    /**
+     * 返回已缓存的 file structure，不触发构建。
+     */
     fun getCachedFileStructure(cjFile: CjFile): FileStructure? = cache[cjFile]
 }

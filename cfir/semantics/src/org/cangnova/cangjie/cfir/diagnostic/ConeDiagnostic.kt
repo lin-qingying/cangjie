@@ -2,6 +2,7 @@ package org.cangnova.cangjie.cfir.diagnostic
 
 import org.cangnova.cangjie.cfir.CfirQualifierPart
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.types.ConeAllowsDelegatedScopeTraversalDiagnostic
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.cfir.semantics.AbstractCallCandidate
@@ -124,7 +125,7 @@ data class ConeUnmatchedTypeArgumentsError(
      * 调用侧提供的类型实参引用。
      */
     val providedTypeArguments: List<CfirTypeRef>,
-) : ConeDiagnostic {
+) : ConeAllowsDelegatedScopeTraversalDiagnostic {
     /** 面向普通诊断渲染的失败原因。 */
     override val reason: String =
         "type argument count mismatch for ${describeSymbol(symbol)}: expected $expectedCount but got $actualCount"
@@ -209,6 +210,46 @@ class ConeInapplicableCandidateError(
 ) : ConeDiagnosticWithSingleCandidate {
     /** 面向普通诊断渲染的失败原因。 */
     override val reason: String get() = "Inapplicable($applicability): ${describeSymbol(candidateSymbol)}"
+}
+
+/**
+ * 对象接收者访问 static 成员。
+ *
+ * @property memberName 被对象接收者错误访问的 static 成员名。
+ * @property candidate 触发错误的调用候选。
+ */
+class ConeObjectCannotAccessStaticMemberError(
+    /**
+     * 被对象接收者错误访问的 static 成员名。
+     */
+    val memberName: Name,
+    /**
+     * 触发错误的调用候选。
+     */
+    override val candidate: AbstractCallCandidate<*>,
+) : ConeDiagnosticWithSingleCandidate {
+    /** 面向普通诊断渲染的失败原因。 */
+    override val reason: String get() = "object cannot access static member '${memberName.asString()}'"
+}
+
+/**
+ * 类型名访问实例成员。
+ *
+ * @property memberName 被类型名错误访问的实例成员名。
+ * @property candidate 触发错误的调用候选。
+ */
+class ConeIllegalAccessNonStaticMemberError(
+    /**
+     * 被类型名错误访问的实例成员名。
+     */
+    val memberName: Name,
+    /**
+     * 触发错误的调用候选。
+     */
+    override val candidate: AbstractCallCandidate<*>,
+) : ConeDiagnosticWithSingleCandidate {
+    /** 面向普通诊断渲染的失败原因。 */
+    override val reason: String get() = "'${memberName.asString()}' is non-static member, cannot access by type name"
 }
 
 /**
@@ -680,7 +721,11 @@ data class ConeGenericTypeInconsistentError(
      * 替换不一致的泛型参数名。
      */
     val typeParameterName: Name,
-) : ConeDiagnostic {
+    /**
+     * 触发不一致替换的调用候选。
+     */
+    override val candidate: AbstractCallCandidate<*>,
+) : ConeDiagnosticWithSingleCandidate {
     /** 面向普通诊断渲染的失败原因。 */
     override val reason: String get() = "generic type '$typeParameterName' is inconsistent in substitution"
 }

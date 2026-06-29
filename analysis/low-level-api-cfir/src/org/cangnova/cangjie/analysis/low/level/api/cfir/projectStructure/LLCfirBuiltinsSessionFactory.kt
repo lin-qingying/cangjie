@@ -30,12 +30,37 @@ import org.cangnova.cangjie.cfir.symbols.CfirLazyDeclarationResolver
 import org.cangnova.cangjie.platform.TargetPlatform
 import java.util.concurrent.ConcurrentHashMap
 
+/**
+ * 为不同 [TargetPlatform] 创建并缓存低阶 CFIR builtins module 与 builtins session 的工程级工厂。
+ *
+ * Builtins module 可以在项目结构创建期间提前暴露为依赖；builtins session 则延迟到分析服务可用后创建，
+ * 避免项目结构初始化阶段过早触发 session 组件注册。
+ *
+ * @param project 当前工厂所属工程。
+ */
 @OptIn(PrivateSessionConstructor::class, SessionConfiguration::class, CaPlatformInterface::class)
 @LLCfirInternals
 class LLCfirBuiltinsSessionFactory(private val project: Project) {
+    /**
+     * 所有 builtins session 共享的 CFIR 内建类型集合。
+     */
     private val builtInTypes = CfirBuiltinTypes()
+
+    /**
+     * 按目标平台缓存的 builtins analysis API module。
+     */
     private val builtinsModules = ConcurrentHashMap<TargetPlatform, CaBuiltinsModule>()
+
+    /**
+     * 按目标平台缓存的 builtins session。
+     *
+     * session 包装在 IntelliJ [CachedValue] 中，使其能跟随 session validity tracker 自动失效。
+     */
     private val builtinsSessions = ConcurrentHashMap<TargetPlatform, CachedValue<LLCfirBuiltinsSession>>()
+
+    /**
+     * 当前工程的项目结构提供器，用于读取 builtins session 创建所需的语言版本设置。
+     */
     private val projectStructureProvider: CangJieProjectStructureProvider =
         CangJieProjectStructureProvider.getInstance(project)
 
@@ -48,6 +73,11 @@ class LLCfirBuiltinsSessionFactory(private val project: Project) {
     fun getBuiltinsModule(targetPlatform: TargetPlatform): CaBuiltinsModule =
         builtinsModules.getOrPut(targetPlatform) { CaBuiltinsModuleImpl(targetPlatform, project) }
 
+    /**
+     * 返回 [targetPlatform] 对应的 builtins session。
+     *
+     * session 按平台懒创建，并通过其 validity tracker 绑定缓存生命周期。
+     */
     fun getBuiltinsSession(targetPlatform: TargetPlatform): LLCfirBuiltinsSession =
         builtinsSessions.getOrPut(targetPlatform) {
             CachedValuesManager.getManager(project).createCachedValue {
@@ -74,6 +104,12 @@ class LLCfirBuiltinsSessionFactory(private val project: Project) {
         builtinsSessions.clear()
     }
 
+    /**
+     * 创建完整配置的 [LLCfirBuiltinsSession]。
+     *
+     * 创建流程会注册 IDE 公共组件、builtins symbol provider、CFIR provider 和模块数据；
+     * builtins 使用 dummy lazy resolver，因为 builtins 声明来自库符号提供器而非源码 lazy resolve。
+     */
     private fun createBuiltinsSession(targetPlatform: TargetPlatform): LLCfirBuiltinsSession {
         val builtinsModule = getBuiltinsModule(targetPlatform)
         val session = LLCfirBuiltinsSession(builtinsModule, builtInTypes)
@@ -103,6 +139,9 @@ class LLCfirBuiltinsSessionFactory(private val project: Project) {
     }
 
     companion object {
+        /**
+         * 取得工程级 builtins session 工厂服务。
+         */
         fun getInstance(project: Project): LLCfirBuiltinsSessionFactory = project.service()
     }
 }

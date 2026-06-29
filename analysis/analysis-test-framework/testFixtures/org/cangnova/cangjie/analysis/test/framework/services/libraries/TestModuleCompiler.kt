@@ -19,6 +19,9 @@ import kotlin.io.path.listDirectoryEntries
  * 因而这里直接对齐该 artifact 边界，而不是继续伪造 source-backed library module。
  */
 abstract class TestModuleCompiler : TestService {
+    /**
+     * 将测试模块编译成可被 Analysis API 作为 library binary root 读取的产物。
+     */
     abstract fun compileTestModuleToLibrary(
         module: TestModule,
         dependencyBinaryRoots: Collection<Path>,
@@ -26,7 +29,13 @@ abstract class TestModuleCompiler : TestService {
     ): CompiledLibrary
 }
 
+/**
+ * 使用真实 `cjc` 编译器产出 `.cjo` library 的测试模块编译器。
+ */
 object CjcTestModuleCompiler : TestModuleCompiler() {
+    /**
+     * 调用 `cjc -p` 将测试模块源码物化并编译成 static library。
+     */
     override fun compileTestModuleToLibrary(
         module: TestModule,
         dependencyBinaryRoots: Collection<Path>,
@@ -88,6 +97,9 @@ object CjcTestModuleCompiler : TestModuleCompiler() {
         )
     }
 
+    /**
+     * 将测试模块中的虚拟源码文件写入临时源码根目录。
+     */
     private fun materializeModuleSources(module: TestModule, sourceRoot: Path, testServices: TestServices) {
         module.files.forEach { testFile ->
             val relativePath = testFile.name.replace('\\', '/')
@@ -101,6 +113,9 @@ object CjcTestModuleCompiler : TestModuleCompiler() {
         }
     }
 
+    /**
+     * 从环境变量、系统属性或常见 SDK 目录中定位 `cjc` 可执行文件。
+     */
     private fun findCjcPath(): Path {
         val executableName = if (isWindows()) "cjc.exe" else "cjc"
 
@@ -151,8 +166,14 @@ object CjcTestModuleCompiler : TestModuleCompiler() {
     }
 }
 
+/**
+ * 将任意模块名转换为可用于临时目录名的安全片段。
+ */
 private fun String.sanitizeFileName(): String =
     replace(Regex("""[^A-Za-z0-9_.-]"""), "_")
 
+/**
+ * 判断当前测试进程是否运行在 Windows。
+ */
 private fun isWindows(): Boolean =
     System.getProperty("os.name").contains("Windows", ignoreCase = true)

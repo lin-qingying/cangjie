@@ -35,7 +35,6 @@ object CommonDeclarationCheckers : DeclarationCheckers() {
             CfirConflictsDeclarationChecker,
             CfirModifierChecker,
             CfirTypeConstraintsChecker,
-            CfirUnusedExpressionChecker,
         )
 
     /** 对错误声明节点执行的 checker 集合；当前默认主干不注册额外错误声明 checker。 */
@@ -71,8 +70,8 @@ object CommonDeclarationCheckers : DeclarationCheckers() {
     /** 对类型参数及其边界执行的 checker 集合。 */
     override val typeParameterCheckers: Set<CfirTypeParameterChecker>
         get() = setOf(
-            CfirTypeParameterBoundsChecker,
             CfirGenericDeepChecker,
+            CfirTypeParameterBoundsChecker,
         )
 
     /** 对普通命名函数声明的修饰符、重载和默认参数规则执行的 checker 集合。 */
@@ -88,9 +87,9 @@ object CommonDeclarationCheckers : DeclarationCheckers() {
     override val fileCheckers: Set<CfirFileChecker>
         get() = setOf(
             CfirImportsChecker,
-            CfirDceUnusedDeclarationChecker,
             CfirGeneralSemanticsChecker,
             CfirGenericInstantiationChecker,
+            CfirFileStaticGlobalInitializationChecker,
             CfirCommonPackageMainChecker,
         )
 

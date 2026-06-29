@@ -9,6 +9,9 @@ import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
  */
 @CaPlatformInterface
 abstract class CaModuleBase : CaModule {
+    /**
+     * 平台修正后的模块内容搜索范围。
+     */
     override val contentScope: GlobalSearchScope by lazy(LazyThreadSafetyMode.PUBLICATION) {
         CaContentScopeProvider.getInstance(project).getRefinedContentScope(this)
     }

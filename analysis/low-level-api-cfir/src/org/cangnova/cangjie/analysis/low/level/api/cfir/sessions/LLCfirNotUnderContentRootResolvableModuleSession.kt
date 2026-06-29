@@ -10,8 +10,17 @@ import org.cangnova.cangjie.analysis.api.projectStructure.CaNotUnderContentRootM
 import org.cangnova.cangjie.cfir.PrivateSessionConstructor
 import org.cangnova.cangjie.cfir.session.CfirBuiltinTypes
 
+/**
+ * 不在内容根内的源码模块可解析 session。
+ *
+ * 这类 session 仍按源码 session 方式进行 lazy resolve，但模块来源不是常规 source root。
+ */
 internal class LLCfirNotUnderContentRootResolvableModuleSession @PrivateSessionConstructor constructor(
     caModule: CaNotUnderContentRootModule,
+
+    /**
+     * 当前 session 的模块解析组件。
+     */
     override val moduleComponents: LLCfirModuleResolveComponents,
     builtinTypes: CfirBuiltinTypes,
 ) : LLCfirResolvableModuleSession(caModule, builtinTypes)

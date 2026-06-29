@@ -30,17 +30,45 @@ import org.cangnova.cangjie.source.CjRealPsiSourceElement
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 import org.cangnova.cangjie.utils.exceptions.withPsiEntry
 
+/**
+ * 从 compiled PSI/stub 类型节点反序列化 CFIR cone type 和 type ref。
+ */
 internal class StubBasedCfirTypeDeserializer(
+    /**
+     * 反序列化类型绑定的 module data。
+     */
     private val moduleData: CfirModuleData,
+
+    /**
+     * 类型注解反序列化器。
+     */
     private val annotationDeserializer: StubBasedAnnotationDeserializer,
+
+    /**
+     * 外层类型反序列化器，用于解析外层类型参数。
+     */
     private val parent: StubBasedCfirTypeDeserializer?,
+
+    /**
+     * 当前类型参数所属声明 symbol。
+     */
     private val containingSymbol: CfirBasedSymbol<*>?,
     owner: CjTypeParameterListOwner?,
     initialOrigin: CfirDeclarationOrigin
 ) {
+    /**
+     * 用于从 option 类型内部文本重建类型引用的 PSI factory。
+     */
     private val psiFactory: CjPsiFactory? = owner?.project?.let { CjPsiFactory(it) }
+
+    /**
+     * 当前 owner 声明的类型参数 symbol 映射。
+     */
     private val typeParametersByName: Map<String, CfirTypeParameterSymbol>
 
+    /**
+     * 当前 owner 自己声明的类型参数 symbol 列表。
+     */
     val ownTypeParameters: List<CfirTypeParameterSymbol>
         get() = typeParametersByName.values.toList()
 
@@ -89,6 +117,9 @@ internal class StubBasedCfirTypeDeserializer(
         }
     }
 
+    /**
+     * 将 PSI 类型引用反序列化为已解析 CFIR type ref。
+     */
     fun typeRef(typeReference: CjTypeReference): CfirTypeRef = buildResolvedTypeRef {
         source = CjRealPsiSourceElement(typeReference)
         annotations += annotationDeserializer.loadAnnotations(
@@ -100,6 +131,9 @@ internal class StubBasedCfirTypeDeserializer(
         coneType = type(typeReference, ConeAttributes.Empty)
     }
 
+    /**
+     * 将 PSI 类型引用反序列化为 cone type。
+     */
     fun type(typeReference: CjTypeReference): ConeCangJieType {
         val annotations = annotationDeserializer.loadAnnotations(
             annotated = typeReference,
@@ -109,6 +143,9 @@ internal class StubBasedCfirTypeDeserializer(
         return type(typeReference, if (annotations.isEmpty()) ConeAttributes.Empty else ConeAttributes.Empty)
     }
 
+    /**
+     * 将可空 cone type 转为刚性类型，失败时附带类型附件报错。
+     */
     private val ConeCangJieType?.asRigidType: ConeRigidType
         get() = when (this) {
             is ConeRigidType -> this
@@ -117,6 +154,9 @@ internal class StubBasedCfirTypeDeserializer(
             }
         }
 
+    /**
+     * 按类型元素种类反序列化带 [attributes] 的 cone type。
+     */
     private fun type(typeReference: CjTypeReference, attributes: ConeAttributes): ConeCangJieType {
         val typeElement = typeReference.typeElement
         return when (typeElement) {
@@ -127,14 +167,23 @@ internal class StubBasedCfirTypeDeserializer(
         }
     }
 
+    /**
+     * 反序列化函数类型。
+     */
     private fun deserializeFunctionType(typeReference: CjTypeReference, type: CjFunctionType, attributes: ConeAttributes): ConeCangJieType {
         return simpleTypeOrError(typeReference, attributes)
     }
 
+    /**
+     * 反序列化用户类型。
+     */
     private fun deserializeUserType(typeReference: CjTypeReference, type: CjUserType, attributes: ConeAttributes): ConeCangJieType {
         return simpleTypeOrError(typeReference, attributes)
     }
 
+    /**
+     * 反序列化仓颉 option 类型。
+     */
     private fun deserializeOptionType(
         typeReference: CjTypeReference,
         type: CjOptionType,
@@ -152,12 +201,21 @@ internal class StubBasedCfirTypeDeserializer(
         )
     }
 
+    /**
+     * 按名称在当前或外层上下文中查找类型参数 lookup tag。
+     */
     private fun typeParameterSymbol(typeParameterName: String): ConeTypeParameterLookupTag? =
         typeParametersByName[typeParameterName]?.toLookupTag() ?: parent?.typeParameterSymbol(typeParameterName)
 
+    /**
+     * 返回 class-like symbol 声明的类型参数 symbol 列表。
+     */
     fun CfirClassLikeSymbol<*>.typeParameters(): List<CfirTypeParameterSymbol> =
         (cfir as? CfirTypeParameterRefsOwner)?.typeParameters?.map { it.symbol }.orEmpty()
 
+    /**
+     * 尝试把 PSI 类型引用反序列化为简单刚性类型。
+     */
     private fun simpleType(typeReference: CjTypeReference, attributes: ConeAttributes): ConeRigidType? {
         val constructor = typeSymbol(typeReference) ?: return null
         if (constructor is ConeTypeParameterLookupTag) {
@@ -196,9 +254,15 @@ internal class StubBasedCfirTypeDeserializer(
         return ConeClassLikeType(constructor, arguments, attributes)
     }
 
+    /**
+     * 将 PSI 类型引用反序列化为简单类型，失败时返回错误类型。
+     */
     private fun simpleTypeOrError(typeReference: CjTypeReference, attributes: ConeAttributes): ConeRigidType =
         simpleType(typeReference, attributes) ?: ConeErrorType(ConeSimpleDiagnostic("?!id:0", DiagnosticKind.DeserializationError))
 
+    /**
+     * 从 PSI 类型引用恢复 classifier lookup tag。
+     */
     private fun typeSymbol(typeReference: CjTypeReference): ConeClassifierLookupTag? {
         val typeElement = typeReference.typeElement
         if (typeElement is CjFunctionType) {

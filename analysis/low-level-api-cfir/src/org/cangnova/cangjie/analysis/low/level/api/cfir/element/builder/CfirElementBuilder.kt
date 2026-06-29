@@ -91,12 +91,18 @@ internal class CfirElementBuilder(private val moduleComponents: LLCfirModuleReso
         }
     }
 
+    /**
+     * 构建或读取整个仓颉文件的 raw CFIR，并递归解析到 body resolve。
+     */
     private fun getOrBuildCfirForCjFile(cjFile: CjFile): CfirFile {
         val cfirFile = moduleComponents.cfirFileBuilder.buildRawCfirFileWithCaching(cjFile)
         cfirFile.lazyResolveToPhaseRecursively(CfirResolvePhase.BODY_RESOLVE)
         return cfirFile
     }
 
+    /**
+     * 为非普通文件 PSI 元素恢复对应 CFIR 元素。
+     */
     private fun getCfirForNonCjFileElement(element: CjElement): CfirElement? {
         require(element !is CjFile || element is CjCodeFragment)
 
@@ -157,6 +163,9 @@ internal class CfirElementBuilder(private val moduleComponents: LLCfirModuleReso
         else -> null
     }
 
+    /**
+     * 在不推进到 body resolve 的情况下，通过 annotation/type/header 锚点恢复 CFIR 元素。
+     */
     private inline fun <T : CjElement, E : PsiElement> getCfirForNonBodyElement(
         element: CjElement,
         nonLocalDeclaration: CjDeclaration?,
@@ -190,6 +199,9 @@ internal class CfirElementBuilder(private val moduleComponents: LLCfirModuleReso
         return findElementInside(cfirElement = anchorCfir, element = element)
     }
 
+    /**
+     * 返回 annotation 所属的可注解 PSI 声明。
+     */
     private fun PsiElement.annotationOwner(): CjAnnotated? {
         val modifierList = when (val parent = parent) {
             is CjModifierList -> parent
@@ -200,6 +212,9 @@ internal class CfirElementBuilder(private val moduleComponents: LLCfirModuleReso
         return modifierList?.owner as? CjDeclaration
     }
 
+    /**
+     * 通过 annotation 锚点恢复元素对应的 CFIR annotation 或其内部元素。
+     */
     private fun getCfirForElementInsideAnnotations(
         element: CjElement,
         nonLocalDeclaration: CjDeclaration,
@@ -211,6 +226,9 @@ internal class CfirElementBuilder(private val moduleComponents: LLCfirModuleReso
         resolveAndFindCfirForAnchor = { declaration, anchor -> declaration.resolveAndFindAnnotation(anchor, goDeep = true) },
     )
 
+    /**
+     * 通过类型引用锚点恢复元素对应的 CFIR type ref 或其内部元素。
+     */
     private fun getCfirForElementInsideTypes(
         element: CjElement,
         nonLocalDeclaration: CjDeclaration,
@@ -230,6 +248,9 @@ internal class CfirElementBuilder(private val moduleComponents: LLCfirModuleReso
         cfirElement
     }
 
+    /**
+     * 在文件头 package/import 区域内恢复 PSI 元素对应的 CFIR 元素。
+     */
     private fun getCfirForElementInsideFileHeader(element: CjElement): CfirElement? = getCfirForNonBodyElement<CjElement, PsiElement>(
         element = element,
         nonLocalDeclaration = null,
@@ -251,16 +272,25 @@ internal class CfirElementBuilder(private val moduleComponents: LLCfirModuleReso
         },
     )
 
+    /**
+     * 返回文件头中的 package 或 import 锚点元素。
+     */
     private fun CjElement.fileHeaderAnchorElement(): CjElement? {
         return parentsWithSelf.find { it is CjPackageDirective || it is CjImportDirective } as? CjElement
     }
 
+    /**
+     * 在已定位的 CFIR 锚点子树内部继续查找具体 PSI 元素对应的 CFIR 元素。
+     */
     private fun findElementInside(cfirElement: CfirElement, element: CjElement): CfirElement? {
         val elementToSearch = getPsiAsCfirElementSource(element) ?: return null
         val mapping = CfirElementsRecorder.recordElementsFrom(cfirElement, CfirElementsRecorder())
         return CjToCfirMapping.getCfir(elementToSearch, moduleComponents.session, mapping)
     }
 
+    /**
+     * 将声明解析到 TYPES 阶段并查找指定类型引用对应的 CFIR anchor。
+     */
     private fun CfirElementWithResolveState.resolveAndFindTypeRefAnchor(typeReference: CjTypeReference): CfirElement? {
         requireTypeIntersectionWith<CfirAnnotationContainer>()
 
@@ -297,6 +327,9 @@ internal class CfirElementBuilder(private val moduleComponents: LLCfirModuleReso
         return null
     }
 
+    /**
+     * 在 type parameter ref 中查找指定 PSI type reference 对应的 bound type ref。
+     */
     private fun CfirTypeParameterRef.findTypeRefAnchor(typeReference: CjTypeReference): CfirElement? {
         if (this !is CfirTypeParameter) return null
 
@@ -309,6 +342,9 @@ internal class CfirElementBuilder(private val moduleComponents: LLCfirModuleReso
         return null
     }
 
+    /**
+     * 将声明解析到 TYPES 阶段并查找指定 annotation 对应的 CFIR annotation。
+     */
     private fun CfirElementWithResolveState.resolveAndFindAnnotation(
         annotationEntry: CjAnnotation,
         goDeep: Boolean = false,
@@ -345,11 +381,17 @@ internal class CfirElementBuilder(private val moduleComponents: LLCfirModuleReso
             return primaryConstructor.valueParameters.firstOrNull { it.correspondingProperty === this }
         }
 
+    /**
+     * 在 annotation container 中按 PSI annotation 查找 CFIR annotation。
+     */
     private fun CfirAnnotationContainer.findAnnotation(
         annotationEntry: CjAnnotation ,
     ): CfirAnnotation? = annotations.find { it.psi == annotationEntry }
 }
 
+/**
+ * 返回类型参数所属的声明。
+ */
 internal val CjTypeParameter.containingDeclaration: CjDeclaration?
     get() = (parent as? CjTypeParameterList)?.parent as? CjDeclaration
 
@@ -364,9 +406,12 @@ internal val CjElement.isAutonomousElement: Boolean
     get() = when (this) {
         is CjPropertyAccessor, is CjParameter, is CjTypeParameter -> false
         else -> true
-    }
+}
 
 
+/**
+ * 返回包含当前 PSI 的非局部声明；可通过 predicate 进一步筛选声明。
+ */
 fun PsiElement.getNonLocalContainingOrThisDeclaration(predicate: (CjDeclaration) -> Boolean = { true }): CjDeclaration? {
     return getNonLocalContainingOrThisElement { it is CjDeclaration && predicate(it) } as? CjDeclaration
 }
@@ -388,6 +433,9 @@ internal fun PsiElement.getNonLocalContainingOrThisElement(predicate: (CjElement
     return null
 }
 
+/**
+ * 沿父链返回指定类型 PSI 节点，遇到 stopDeclaration 时停止。
+ */
 private inline fun <reified T : CjElement> PsiElement.parentsOfType(stopDeclaration: CjDeclaration?): Sequence<T> {
     return parentsWithSelf.takeWhile { it !== stopDeclaration }.filterIsInstance<T>()
 }

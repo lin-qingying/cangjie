@@ -26,15 +26,33 @@ package org.cangnova.cangjie.lexer.cdoc
 
 import com.intellij.lang.documentation.DocumentationMarkup.*
 
+/**
+ * 表示 `CDocTemplate`，承载仓颉词法与文档注释中的语法节点、索引桩或辅助模型。
+ */
 open class CDocTemplate : Template<StringBuilder> {
+    /**
+     * 保存 `definition`，供仓颉词法与文档注释流程读取节点结构或语义信息。
+     */
     val definition = Placeholder<StringBuilder>()
 
+    /**
+     * 保存 `description`，供仓颉词法与文档注释流程读取节点结构或语义信息。
+     */
     val description = Placeholder<StringBuilder>()
 
+    /**
+     * 保存 `deprecation`，供仓颉词法与文档注释流程读取节点结构或语义信息。
+     */
     val deprecation = Placeholder<StringBuilder>()
 
+    /**
+     * 保存 `containerInfo`，供仓颉词法与文档注释流程读取节点结构或语义信息。
+     */
     val containerInfo = Placeholder<StringBuilder>()
 
+    /**
+     * 实现 `apply` 的仓颉词法与文档注释协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun StringBuilder.apply() {
         append(DEFINITION_START)
         insert(definition)
@@ -55,10 +73,25 @@ open class CDocTemplate : Template<StringBuilder> {
         }
     }
 
+    /**
+     * 表示 `DescriptionBodyTemplate`，承载仓颉词法与文档注释中的语法节点、索引桩或辅助模型。
+     */
     sealed class DescriptionBodyTemplate : Template<StringBuilder> {
+        /**
+         * 表示 `CangJie`，承载仓颉词法与文档注释中的语法节点、索引桩或辅助模型。
+         */
         class CangJie : DescriptionBodyTemplate() {
+            /**
+             * 保存 `content`，供仓颉词法与文档注释流程读取节点结构或语义信息。
+             */
             val content = Placeholder<StringBuilder>()
+            /**
+             * 保存 `sections`，供仓颉词法与文档注释流程读取节点结构或语义信息。
+             */
             val sections = Placeholder<StringBuilder>()
+            /**
+             * 实现 `apply` 的仓颉词法与文档注释协议回调，保持与 IntelliJ PSI 访问契约一致。
+             */
             override fun StringBuilder.apply() {
                 val computedContent = buildString { insert(content) }
                 if (computedContent.isNotBlank()) {
@@ -74,10 +107,19 @@ open class CDocTemplate : Template<StringBuilder> {
         }
     }
 
+    /**
+     * 表示 `NoDocTemplate`，承载仓颉词法与文档注释中的语法节点、索引桩或辅助模型。
+     */
     class NoDocTemplate : CDocTemplate() {
 
+        /**
+         * 保存 `error`，供仓颉词法与文档注释流程读取节点结构或语义信息。
+         */
         val error = Placeholder<StringBuilder>()
 
+        /**
+         * 实现 `apply` 的仓颉词法与文档注释协议回调，保持与 IntelliJ PSI 访问契约一致。
+         */
         override fun StringBuilder.apply() {
             insert(error)
         }

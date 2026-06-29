@@ -38,4 +38,7 @@ import com.intellij.psi.impl.source.codeStyle.CodeEditUtil
 fun PsiElement.deleteSingle() {
     CodeEditUtil.removeChild(parent?.node ?: return, node ?: return)
 }
+/**
+ * 提供 `unquoteCangJieIdentifier` 操作，封装PSI 工具节点的访问、构造或判断逻辑。
+ */
 fun String.unquoteCangJieIdentifier(): String = CjPsiUtil.unquoteIdentifier(this)

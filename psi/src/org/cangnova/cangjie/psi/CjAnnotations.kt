@@ -85,13 +85,22 @@ class CjAnnotations : CjElementImplStub<CangJiePlaceHolderStub<CjAnnotations>> {
 
     constructor(stub: CangJiePlaceHolderStub<CjAnnotations>) : super(stub, CjStubElementTypes.ANNOTATION)
 
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitAnnotation(this, data)
     }
 
+    /**
+     * 保存 `entries`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val entries: List<CjAnnotation>
         get() = getStubOrPsiChildrenAsList(CjStubElementTypes.ANNOTATION)
 
+    /**
+     * 提供 `removeEntry` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun removeEntry(entry: CjAnnotation) {
         if (entries.size > 1) {
             entry.delete()

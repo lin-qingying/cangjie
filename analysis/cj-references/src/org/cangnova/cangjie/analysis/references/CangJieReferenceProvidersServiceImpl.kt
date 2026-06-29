@@ -29,8 +29,14 @@ import org.cangnova.cangjie.psi.psiUtil.parentOfType
  * 3. 统一缓存 provider 产出的 `PsiReference[]`。
  */
 internal class CangJieReferenceProvidersServiceImpl(
+    /**
+     * 用于按项目读取 reference provider 扩展点和缓存 PSI reference 的 IntelliJ project。
+     */
     private val project: Project,
 ) : CangJieReferenceProvidersService() {
+    /**
+     * 扩展点声明的原始 PSI 元素类型到 provider 的绑定表。
+     */
     private val originalProvidersBinding: MultiMap<Class<out PsiElement>, ReferenceProvider<CjElement>> by lazy {
         MultiMap<Class<out PsiElement>, ReferenceProvider<CjElement>>(LinkedHashMap()).apply {
             EP_NAME.getExtensionList(project).forEach { contributor ->
@@ -41,6 +47,11 @@ internal class CangJieReferenceProvidersServiceImpl(
         }
     }
 
+    /**
+     * 按具体 PSI 运行时类型缓存可适用 provider 列表。
+     *
+     * 缓存会把父类/接口上注册的 provider 展开到具体元素类，避免每次取引用都扫描扩展点绑定表。
+     */
     private val providersBindingCache: Map<Class<out PsiElement>, List<ReferenceProvider<CjElement>>> =
         ConcurrentFactoryMap.createMap { klass ->
             buildList {
@@ -52,6 +63,9 @@ internal class CangJieReferenceProvidersServiceImpl(
             }
         }
 
+    /**
+     * 从仓颉 contributor provider 中收集指定上下文元素的 references。
+     */
     private fun doGetCangJieReferencesFromProviders(context: CjElement): Array<PsiReference> {
         if (context is CjSimpleNameExpression && context.isDeclarationNameExpression()) {
             return PsiReference.EMPTY_ARRAY
@@ -71,6 +85,12 @@ internal class CangJieReferenceProvidersServiceImpl(
         return if (result.isEmpty()) PsiReference.EMPTY_ARRAY else result.toTypedArray()
     }
 
+    /**
+     * 返回指定 PSI 元素上的引用集合。
+     *
+     * IntelliJ contributed reference host 交回平台 registry；仓颉 PSI 走本模块 contributor 分发，
+     * 非仓颉 PSI 直接返回空引用。
+     */
     override fun getReferences(psiElement: PsiElement): Array<PsiReference> = when (psiElement) {
         is ContributedReferenceHost -> ReferenceProvidersRegistry.getReferencesFromProviders(psiElement)
         !is CjElement -> PsiReference.EMPTY_ARRAY
@@ -83,13 +103,22 @@ internal class CangJieReferenceProvidersServiceImpl(
     }
 
     private companion object {
+        /**
+         * reference provider 扩展点异常上报使用的 logger。
+         */
         val LOG: Logger = Logger.getInstance(CangJieReferenceProvidersServiceImpl::class.java)
 
+        /**
+         * 仓颉 PSI reference provider contributor 扩展点。
+         */
         val EP_NAME: ExtensionPointName<CangJiePsiReferenceProviderContributor<in CjElement>> = ExtensionPointName(
             "org.cangnova.cangjie.psiReferenceProvider",
         )
     }
 
+    /**
+     * 运行扩展点代码并把异常集中记录到日志。
+     */
     private inline fun runSafely(action: () -> Unit) {
         try {
             action()

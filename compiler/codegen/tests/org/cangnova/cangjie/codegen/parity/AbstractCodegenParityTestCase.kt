@@ -31,9 +31,18 @@ import junit.framework.TestCase
 import java.io.File
 import java.nio.charset.StandardCharsets
 
+/**
+ * Codegen parity fixture 的公共测试基类。
+ */
 abstract class AbstractCodegenParityTestCase : TestCase() {
+    /**
+     * LLVM IR parity 比较器。
+     */
     private val comparator = LlvmIrParityComparator()
 
+    /**
+     * 运行单个 `.chir.json` fixture，并与同名 `.txt` golden 比较。
+     */
     protected fun runTest(testDataFilePath: String) {
         val fixtureFile = resolveTestDataPath(testDataFilePath)
         require(fixtureFile.exists()) { "fixture not found: ${fixtureFile.path}" }
@@ -50,6 +59,9 @@ abstract class AbstractCodegenParityTestCase : TestCase() {
         assertTrue(comparator.formatFirstDiffReport(result), result.matches)
     }
 
+    /**
+     * 校验测试数据目录中每个 CHIR fixture 都有对应 golden 文件。
+     */
     protected fun assertAllFilesPresentByMetadata(testDataRootRelativePath: String) {
         val dir = resolveTestDataPath(testDataRootRelativePath)
         require(dir.isDirectory) { "testData dir not found: ${dir.path}" }
@@ -63,6 +75,9 @@ abstract class AbstractCodegenParityTestCase : TestCase() {
         }
     }
 
+    /**
+     * 解析测试数据路径，支持绝对路径、当前目录相对路径和向上查找仓库根路径。
+     */
     protected fun resolveTestDataPath(path: String): File {
         val direct = File(path)
         if (direct.isAbsolute) return direct
@@ -78,6 +93,9 @@ abstract class AbstractCodegenParityTestCase : TestCase() {
         return direct
     }
 
+    /**
+     * 根据 fixture 文本构造 CHIR package 并生成 LLVM IR。
+     */
     protected fun generateFixtureIr(fixtureText: String): String {
         val chirPackage = buildChirPackageFromFixture(fixtureText)
         return DefaultChirToLlvmCodeGenerator()
@@ -99,6 +117,9 @@ abstract class AbstractCodegenParityTestCase : TestCase() {
             .ir
     }
 
+    /**
+     * 根据 fixture scenario 字段分派构造对应 CHIR package。
+     */
     private fun buildChirPackageFromFixture(fixtureText: String): ChirPackage {
         val scenario = optionalStringField(fixtureText, "scenario") ?: "return"
         val packageName = requiredStringField(fixtureText, "package")
@@ -129,6 +150,9 @@ abstract class AbstractCodegenParityTestCase : TestCase() {
         }
     }
 
+    /**
+     * 构造简单 return 场景的 CHIR package。
+     */
     private fun buildReturnFixturePackage(
         fixtureText: String,
         packageName: String,
@@ -174,6 +198,9 @@ abstract class AbstractCodegenParityTestCase : TestCase() {
         )
     }
 
+    /**
+     * 构造分支与 phi 场景的 CHIR package。
+     */
     private fun buildBranchPhiFixturePackage(packageName: String, moduleName: String, functionName: String): ChirPackage {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
         val i1Type = ChirResolvedTypeRef(BOOL)
@@ -258,6 +285,9 @@ abstract class AbstractCodegenParityTestCase : TestCase() {
         return simplePackage(packageName, moduleName, function)
     }
 
+    /**
+     * 构造导入函数调用场景的 CHIR package。
+     */
     private fun buildImportedCallFixturePackage(packageName: String, moduleName: String, functionName: String): ChirPackage {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
         val importedFunction = DefaultChirFunctionDeclaration(
@@ -337,6 +367,9 @@ abstract class AbstractCodegenParityTestCase : TestCase() {
         )
     }
 
+    /**
+     * 构造 throw unwind 场景的 CHIR package。
+     */
     private fun buildThrowUnwindFixturePackage(packageName: String, moduleName: String, functionName: String): ChirPackage {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
         val ptrType = ChirResolvedTypeRef(ChirCPointerType(ChirResolvedTypeRef(ChirPrimitiveType.INT8)))
@@ -380,6 +413,9 @@ abstract class AbstractCodegenParityTestCase : TestCase() {
         return simplePackage(packageName, moduleName, function)
     }
 
+    /**
+     * 构造运行时符号与全局变量场景的 CHIR package。
+     */
     private fun buildRuntimeGlobalsFixturePackage(packageName: String, moduleName: String, functionName: String): ChirPackage {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
         val initId = ChirSemanticId("fn:init")
@@ -482,6 +518,9 @@ abstract class AbstractCodegenParityTestCase : TestCase() {
         )
     }
 
+    /**
+     * 构造浮点比较场景的 CHIR package。
+     */
     private fun buildFloatCompareFixturePackage(packageName: String, moduleName: String, functionName: String): ChirPackage {
         val f64 = ChirResolvedTypeRef(ChirPrimitiveType.FLOAT64)
         val bool = ChirResolvedTypeRef(ChirPrimitiveType.BOOL)
@@ -518,6 +557,9 @@ abstract class AbstractCodegenParityTestCase : TestCase() {
         return simplePackage(packageName, moduleName, function)
     }
 
+    /**
+     * 构造数值转换链场景的 CHIR package。
+     */
     private fun buildCastChainFixturePackage(packageName: String, moduleName: String, functionName: String): ChirPackage {
         val i32 = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
         val i64 = ChirResolvedTypeRef(ChirPrimitiveType.INT64)
@@ -559,6 +601,9 @@ abstract class AbstractCodegenParityTestCase : TestCase() {
         return simplePackage(packageName, moduleName, function)
     }
 
+    /**
+     * 构造 memory GEP 与 align 属性场景的 CHIR package。
+     */
     private fun buildMemoryGepAlignFixturePackage(packageName: String, moduleName: String, functionName: String): ChirPackage {
         val i32 = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
         val i64 = ChirResolvedTypeRef(ChirPrimitiveType.INT64)
@@ -621,6 +666,9 @@ abstract class AbstractCodegenParityTestCase : TestCase() {
         return simplePackage(packageName, moduleName, function)
     }
 
+    /**
+     * 构造 tail call 和 calling convention 场景的 CHIR package。
+     */
     private fun buildTailCallCcFixturePackage(packageName: String, moduleName: String, functionName: String): ChirPackage {
         val i32 = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
         val imported = DefaultChirFunctionDeclaration(
@@ -693,6 +741,9 @@ abstract class AbstractCodegenParityTestCase : TestCase() {
         )
     }
 
+    /**
+     * 构造一元操作符别名场景的 CHIR package。
+     */
     private fun buildUnaryAliasFixturePackage(packageName: String, moduleName: String, functionName: String): ChirPackage {
         val i32 = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
         val function = DefaultChirFunctionDeclaration(
@@ -731,6 +782,9 @@ abstract class AbstractCodegenParityTestCase : TestCase() {
         return simplePackage(packageName, moduleName, function)
     }
 
+    /**
+     * 构造 i32 select 场景的 CHIR package。
+     */
     private fun buildSelectI32FixturePackage(packageName: String, moduleName: String, functionName: String): ChirPackage {
         val i32 = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
         val i1 = ChirResolvedTypeRef(BOOL)
@@ -782,6 +836,9 @@ abstract class AbstractCodegenParityTestCase : TestCase() {
         return simplePackage(packageName, moduleName, function)
     }
 
+    /**
+     * 构造位运算与移位链场景的 CHIR package。
+     */
     private fun buildBitwiseShiftChainFixturePackage(packageName: String, moduleName: String, functionName: String): ChirPackage {
         val i32 = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
         val function = DefaultChirFunctionDeclaration(
@@ -859,6 +916,9 @@ abstract class AbstractCodegenParityTestCase : TestCase() {
         return simplePackage(packageName, moduleName, function)
     }
 
+    /**
+     * 构造 pointer/int 转换链场景的 CHIR package。
+     */
     private fun buildPtrIntCastChainFixturePackage(packageName: String, moduleName: String, functionName: String): ChirPackage {
         val i8 = ChirResolvedTypeRef(ChirPrimitiveType.INT8)
         val i32 = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
@@ -921,6 +981,9 @@ abstract class AbstractCodegenParityTestCase : TestCase() {
         return simplePackage(packageName, moduleName, function)
     }
 
+    /**
+     * 构造逻辑非场景的 CHIR package。
+     */
     private fun buildUnaryLogicNotFixturePackage(packageName: String, moduleName: String, functionName: String): ChirPackage {
         val i1 = ChirResolvedTypeRef(ChirPrimitiveType.BOOL)
         val function = DefaultChirFunctionDeclaration(
@@ -959,6 +1022,9 @@ abstract class AbstractCodegenParityTestCase : TestCase() {
         return simplePackage(packageName, moduleName, function)
     }
 
+    /**
+     * 构造无符号运算链场景的 CHIR package。
+     */
     private fun buildUnsignedChainFixturePackage(packageName: String, moduleName: String, functionName: String): ChirPackage {
         val i32 = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
         val i1 = ChirResolvedTypeRef(ChirPrimitiveType.BOOL)
@@ -1016,6 +1082,9 @@ abstract class AbstractCodegenParityTestCase : TestCase() {
         return simplePackage(packageName, moduleName, function)
     }
 
+    /**
+     * 构造浮点转换链场景的 CHIR package。
+     */
     private fun buildFloatCastChainFixturePackage(packageName: String, moduleName: String, functionName: String): ChirPackage {
         val f32 = ChirResolvedTypeRef(ChirPrimitiveType.FLOAT32)
         val f64 = ChirResolvedTypeRef(ChirPrimitiveType.FLOAT64)
@@ -1064,6 +1133,9 @@ abstract class AbstractCodegenParityTestCase : TestCase() {
         return simplePackage(packageName, moduleName, function)
     }
 
+    /**
+     * 构造一元杂项操作场景的 CHIR package。
+     */
     private fun buildUnaryMiscFixturePackage(packageName: String, moduleName: String, functionName: String): ChirPackage {
         val i32 = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
         val function = DefaultChirFunctionDeclaration(
@@ -1104,6 +1176,9 @@ abstract class AbstractCodegenParityTestCase : TestCase() {
         return simplePackage(packageName, moduleName, function)
     }
 
+    /**
+     * 构造 void call 场景的 CHIR package。
+     */
     private fun buildVoidCallFixturePackage(packageName: String, moduleName: String, functionName: String): ChirPackage {
         val i32 = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
         val unit = ChirResolvedTypeRef(ChirPrimitiveType.UNIT)
@@ -1170,6 +1245,9 @@ abstract class AbstractCodegenParityTestCase : TestCase() {
         )
     }
 
+    /**
+     * 构造带空格 inbounds GEP 场景的 CHIR package。
+     */
     private fun buildGepSpacedInboundsFixturePackage(packageName: String, moduleName: String, functionName: String): ChirPackage {
         val i32 = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
         val i64 = ChirResolvedTypeRef(ChirPrimitiveType.INT64)
@@ -1225,6 +1303,9 @@ abstract class AbstractCodegenParityTestCase : TestCase() {
         return simplePackage(packageName, moduleName, function)
     }
 
+    /**
+     * 构造覆盖多类操作矩阵的 CHIR package。
+     */
     private fun buildOperationMatrixFixturePackage(packageName: String, moduleName: String, functionName: String): ChirPackage {
         val i32 = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
         val i64 = ChirResolvedTypeRef(ChirPrimitiveType.INT64)
@@ -1351,6 +1432,9 @@ abstract class AbstractCodegenParityTestCase : TestCase() {
         return simplePackage(packageName, moduleName, function)
     }
 
+    /**
+     * 构造只包含单个函数的简单 CHIR package。
+     */
     private fun simplePackage(packageName: String, moduleName: String, function: DefaultChirFunctionDeclaration): ChirPackage {
         return ChirPackage(
             semanticId = ChirSemanticId("pkg:$packageName"),
@@ -1365,12 +1449,18 @@ abstract class AbstractCodegenParityTestCase : TestCase() {
         )
     }
 
+    /**
+     * 从 fixture JSON 文本中读取必需字符串字段。
+     */
     private fun requiredStringField(text: String, fieldName: String): String {
         val regex = """"$fieldName"\s*:\s*"([^"]+)"""".toRegex()
         return regex.find(text)?.groupValues?.get(1)
             ?: error("missing required field '$fieldName' in chir fixture")
     }
 
+    /**
+     * 从 fixture JSON 文本中读取可选字符串字段。
+     */
     private fun optionalStringField(text: String, fieldName: String): String? {
         val regex = """"$fieldName"\s*:\s*"([^"]+)"""".toRegex()
         return regex.find(text)?.groupValues?.get(1)

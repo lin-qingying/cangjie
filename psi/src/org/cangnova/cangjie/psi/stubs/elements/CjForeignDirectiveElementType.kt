@@ -33,12 +33,18 @@ import com.intellij.psi.stubs.StubOutputStream
 import org.jetbrains.annotations.NonNls
 import java.io.IOException
 
+/**
+ * 表示 `CjForeignDirectiveElementType`，承载PSI Stub中的语法节点、索引桩或辅助模型。
+ */
 class CjForeignDirectiveElementType(debugName: String) :
     CjStubElementType<CangJieForeignDirectiveStub, CjForeignDirective>(
         debugName,
         CjForeignDirective::class.java,
         CangJieForeignDirectiveStub::class.java,
     ) {
+    /**
+     * 实现 `createStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createStub(
         cjForeign: CjForeignDirective,
         parentStub: StubElement<out PsiElement?>,
@@ -48,10 +54,16 @@ class CjForeignDirectiveElementType(debugName: String) :
         )
     }
 
+    /**
+     * 实现 `serialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     @Throws(IOException::class)
     override fun serialize(cangJieForeignStub: CangJieForeignDirectiveStub, stubOutputStream: StubOutputStream) {
     }
 
+    /**
+     * 实现 `deserialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     @Throws(IOException::class)
     override fun deserialize(
         stubInputStream: StubInputStream,

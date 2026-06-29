@@ -4,27 +4,72 @@ import org.cangnova.cangjie.chir.core.identity.ChirSemanticId
 import java.time.Duration
 import java.time.Instant
 
+/**
+ * 单次 CHIR pass 执行记录。
+ */
 data class ChirPassExecutionRecord(
+    /**
+     * pass 名称。
+     */
     val passName: String,
+
+    /**
+     * pass 执行状态。
+     */
     val status: ChirPassStatus,
+
+    /**
+     * pass 开始时间。
+     */
     val startedAt: Instant,
+
+    /**
+     * pass 结束时间。
+     */
     val finishedAt: Instant,
+
+    /**
+     * pass 触达的节点集合。
+     */
     val touchedNodes: Set<ChirSemanticId> = emptySet(),
+
+    /**
+     * pass 执行摘要。
+     */
     val summary: String? = null,
+
+    /**
+     * pass 失败时的错误消息。
+     */
     val errorMessage: String? = null,
 )
 
+/**
+ * CHIR pass 执行状态。
+ */
 enum class ChirPassStatus {
     SUCCESS,
     FAILED,
 }
 
+/**
+ * CHIR pipeline 执行上下文。
+ */
 class ChirPassContext {
+    /**
+     * 可变执行记录列表。
+     */
     private val mutableRecords = mutableListOf<ChirPassExecutionRecord>()
 
+    /**
+     * 已完成 pass 的执行记录只读视图。
+     */
     val records: List<ChirPassExecutionRecord>
         get() = mutableRecords
 
+    /**
+     * 执行一个 pass 并记录成功或失败状态。
+     */
     fun <T> runPass(
         passName: String,
         action: () -> T,
@@ -60,12 +105,18 @@ class ChirPassContext {
             .getOrThrow()
     }
 
+    /**
+     * 计算所有已记录 pass 的总耗时跨度。
+     */
     fun totalDuration(): Duration {
         val first = mutableRecords.minByOrNull { it.startedAt } ?: return Duration.ZERO
         val last = mutableRecords.maxByOrNull { it.finishedAt } ?: return Duration.ZERO
         return Duration.between(first.startedAt, last.finishedAt)
     }
 
+    /**
+     * 渲染 pass 执行摘要文本。
+     */
     fun renderSummary(): String {
         if (mutableRecords.isEmpty()) return "No pass executed"
         return buildString {

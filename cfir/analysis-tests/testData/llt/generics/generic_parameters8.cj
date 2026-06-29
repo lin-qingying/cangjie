@@ -14,7 +14,7 @@ interface I<T> {
     }
 }
 
-interface <!INTERFACE_CANNOT_INHERIT_CLASS!>J<!><<!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>T<!>, Y> <: I<T> & I<<!UNRESOLVED_REFERENCE!>V<!>> where T <: String, <!UNRESOLVED_REFERENCE!>V<!> <: Int64 {
+interface <!INTERFACE_CANNOT_INHERIT_CLASS!>J<!><<!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>T<!>, Y> <: I<T> & I<<!UNDECLARED_TYPE_NAME!>V<!>> where T <: String, <!UNDECLARED_TYPE_NAME!>V<!> <: Int64 {
     prop m: Int64 {
         get() {
             return foo()

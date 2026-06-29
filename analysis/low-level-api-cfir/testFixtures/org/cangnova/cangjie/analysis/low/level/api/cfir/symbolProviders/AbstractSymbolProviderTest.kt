@@ -22,18 +22,33 @@ import org.cangnova.cangjie.test.services.assertions
  * 当前只覆盖 `hasPackage()`，后续如果仓颉侧暴露更多稳定查询入口，再沿着这里继续扩展。
  */
 abstract class AbstractSymbolProviderTest : AbstractAnalysisApiBasedTest() {
+    /**
+     * symbol provider 测试指令。
+     */
     private object Directives : SimpleDirectivesContainer() {
+        /**
+         * 对选定 symbol provider 调用 hasPackage() 的包名参数。
+         */
         val HAS_PACKAGE by stringDirective(
             description = "对选定 symbol provider 调用 hasPackage()，值为包名；`<root>` 表示根包。",
             applicability = DirectiveApplicability.Any,
         )
     }
 
+    /**
+     * symbol provider 测试支持的额外指令。
+     */
     override val additionalDirectives: List<DirectivesContainer>
         get() = super.additionalDirectives + Directives
 
+    /**
+     * 返回当前测试需要验证的 symbol provider。
+     */
     protected abstract fun findTestSymbolProvider(mainModule: CjTestModule): CfirSymbolProvider
 
+    /**
+     * 根据 HAS_PACKAGE 指令调用目标 provider 并渲染结果。
+     */
     override fun doTestByMainFile(mainFile: CjFile, mainModule: CjTestModule, testServices: TestServices) {
         val hasPackageTargets = getAllDirectivesWithFiles(Directives.HAS_PACKAGE, testServices)
             .map { parsePackageFqName(it.trim()) }
@@ -50,6 +65,9 @@ abstract class AbstractSymbolProviderTest : AbstractAnalysisApiBasedTest() {
         testServices.assertions.assertEqualsToTestOutputFile(actual)
     }
 
+    /**
+     * 收集结构级和文件级的 [directive] 指令值。
+     */
     private fun getAllDirectivesWithFiles(
         directive: StringDirective,
         testServices: TestServices,
@@ -62,10 +80,16 @@ abstract class AbstractSymbolProviderTest : AbstractAnalysisApiBasedTest() {
         return structureDirectives + fileDirectives
     }
 
+    /**
+     * 解析包名指令文本。
+     */
     private fun parsePackageFqName(value: String): FqName {
         return if (value == "<root>") FqName.ROOT else FqName(value)
     }
 
+    /**
+     * 查找当前模块顶层和依赖中的指定类型 symbol provider。
+     */
     internal inline fun <reified T> CaModule.findSymbolProvidersOfType(): List<T> {
         val resolutionFacade = getResolutionFacade(project)
         val useSiteSession = resolutionFacade.useSiteCfirSession
@@ -79,6 +103,9 @@ abstract class AbstractSymbolProviderTest : AbstractAnalysisApiBasedTest() {
         }
     }
 
+    /**
+     * 返回当前模块自身和依赖的所有顶层 symbol provider。
+     */
     internal fun CaModule.allTopLevelSymbolProviders(): List<CfirSymbolProvider> {
         val resolutionFacade = getResolutionFacade(project)
         val useSiteSession = resolutionFacade.useSiteCfirSession

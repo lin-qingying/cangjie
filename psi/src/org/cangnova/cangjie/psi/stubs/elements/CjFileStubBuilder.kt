@@ -33,7 +33,13 @@ import org.cangnova.cangjie.psi.stubs.impl.CangJieFileStubImpl
 import org.cangnova.cangjie.psi.stubs.impl.CangJieFileStubKindImpl
 import org.cangnova.cangjie.psi.stubs.CangJieCompiledFileErrors
 
+/**
+ * 表示 `CjFileStubBuilder`，承载PSI Stub中的语法节点、索引桩或辅助模型。
+ */
 class CjFileStubBuilder : DefaultStubBuilder() {
+    /**
+     * 实现 `buildStubTree` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun buildStubTree(file: PsiFile): StubElement<*> {
         (file as? CjFile)?.customStubBuilder?.let {
             return it.buildStubTree(file)
@@ -42,6 +48,9 @@ class CjFileStubBuilder : DefaultStubBuilder() {
         return super.buildStubTree(file)
     }
 
+    /**
+     * 实现 `createStubForFile` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createStubForFile(file: PsiFile): StubElement<*> {
         if (file !is CjFile) {
             return super.createStubForFile(file)

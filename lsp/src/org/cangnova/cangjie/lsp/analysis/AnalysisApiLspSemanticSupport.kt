@@ -38,12 +38,30 @@ import org.eclipse.lsp4j.Range
  */
 internal class AnalysisApiLspSemanticSupport(
     lifecycleContext: CangjieAnalysisLifecycleContext,
+    /**
+     * LSP 文档到 Analysis API PSI 快照的工厂。
+     */
     private val psiDocumentFactory: AnalysisApiPsiDocumentFactory,
 ) {
+    /**
+     * 指定位置抽取出的声明目标和引用目标。
+     */
     internal data class PositionTargets(
+        /**
+         * 当前位置命中的声明目标 PSI。
+         */
         val declarationTargets: List<PsiElement>,
+
+        /**
+         * 当前位置命中的引用目标 PSI。
+         */
         val referenceTargets: List<PsiElement>,
     ) {
+        /**
+         * 根据调用方偏好的目标类型选择优先目标列表。
+         *
+         * 引用目标优先于声明目标，符合跳转/引用请求对 use-site 的常见期望。
+         */
         fun preferredTargets(targetKinds: Set<AnalysisApiLspTargetKind>): List<PsiElement> {
             if (AnalysisApiLspTargetKind.REFERENCE in targetKinds && referenceTargets.isNotEmpty()) {
                 return referenceTargets
@@ -55,17 +73,45 @@ internal class AnalysisApiLspSemanticSupport(
         }
     }
 
+    /**
+     * 工作区源码文件在 LSP 与 Analysis API 之间的上下文描述。
+     */
     internal data class WorkspaceFileContext(
+        /**
+         * 工作区可见的仓颉 PSI 文件。
+         */
         val psiFile: CjFile,
+
+        /**
+         * 该文件对应的 LSP 文档 URI。
+         */
         val documentUri: String,
+
+        /**
+         * 用于 offset/position 转换的分析文档快照。
+         */
         val analysisDocument: LspTextDocument,
+
+        /**
+         * 如果文件当前已打开，则为打开文档快照。
+         */
         val openedDocument: LspTextDocument?,
     ) {
+        /**
+         * 打开文档的版本号；未打开文件返回 null。
+         */
         val versionOrNull: Int?
             get() = openedDocument?.version
     }
 
+    /**
+     * 当前 LSP 文档存储。
+     */
     private val documentStore = lifecycleContext.documentStore
+
+    /**
+     * 当前 project 的 LSP 项目结构状态。
+     */
     private val projectStructureState = AnalysisApiLspProjectStructureState.getInstance(lifecycleContext.environment.project)
 
     /**
@@ -110,6 +156,9 @@ internal class AnalysisApiLspSemanticSupport(
         )
     }
 
+    /**
+     * 查找当前位置符合目标类型要求的 PSI 元素列表。
+     */
     fun findTargetElements(
         document: LspTextDocument,
         file: CjFile,
@@ -119,6 +168,9 @@ internal class AnalysisApiLspSemanticSupport(
         return findTargets(document, file, position).preferredTargets(targetKinds)
     }
 
+    /**
+     * 查找当前位置最优先的语义目标元素。
+     */
     fun findPrimaryTarget(
         document: LspTextDocument,
         file: CjFile,
@@ -128,6 +180,9 @@ internal class AnalysisApiLspSemanticSupport(
         return findTargetElements(document, file, position, targetKinds).firstOrNull()
     }
 
+    /**
+     * 计算当前位置可用于 hover 展示的文本范围。
+     */
     fun hoverRange(
         document: LspTextDocument,
         file: CjFile,
@@ -167,6 +222,9 @@ internal class AnalysisApiLspSemanticSupport(
         return if (forward != null && !forward.textRange.isEmpty) forward else null
     }
 
+    /**
+     * 查找当前位置所在的引用表达式。
+     */
     fun findReferenceExpression(
         document: LspTextDocument,
         file: CjFile,
@@ -175,6 +233,9 @@ internal class AnalysisApiLspSemanticSupport(
         findSemanticLeaf(document, file, position)
             ?.let { leaf -> leaf.parentsWithSelf().filterIsInstance<CjReferenceExpression>().firstOrNull() }
 
+    /**
+     * 查找当前位置所在的简单名表达式。
+     */
     fun findSimpleNameExpression(
         document: LspTextDocument,
         file: CjFile,
@@ -183,6 +244,9 @@ internal class AnalysisApiLspSemanticSupport(
         findSemanticLeaf(document, file, position)
             ?.let { leaf -> leaf.parentsWithSelf().filterIsInstance<CjSimpleNameExpression>().firstOrNull() }
 
+    /**
+     * 查找当前位置所在的调用表达式。
+     */
     fun findCallExpression(
         document: LspTextDocument,
         file: CjFile,
@@ -191,6 +255,9 @@ internal class AnalysisApiLspSemanticSupport(
         findSemanticLeaf(document, file, position)
             ?.let { leaf -> leaf.parentsWithSelf().filterIsInstance<CjCallExpression>().firstOrNull() }
 
+    /**
+     * 查找当前位置所在的表达式。
+     */
     fun findExpression(
         document: LspTextDocument,
         file: CjFile,
@@ -199,6 +266,9 @@ internal class AnalysisApiLspSemanticSupport(
         findSemanticLeaf(document, file, position)
             ?.let { leaf -> leaf.parentsWithSelf().filterIsInstance<CjExpression>().firstOrNull() }
 
+    /**
+     * 查找当前位置所在的具名声明。
+     */
     fun findNamedDeclaration(
         document: LspTextDocument,
         file: CjFile,
@@ -226,9 +296,15 @@ internal class AnalysisApiLspSemanticSupport(
         )
     }
 
+    /**
+     * 查询指定 PSI 文件当前是否存在打开文档快照。
+     */
     fun openedDocument(file: CjFile): LspTextDocument? =
         documentUriOf(file)?.let(documentStore::get)
 
+    /**
+     * 将 PSI 文件映射回 LSP 文档 URI。
+     */
     fun documentUriOf(file: CjFile): String? =
         projectStructureState.documentUriOf(file) ?: file.virtualFile?.url
 
@@ -248,6 +324,9 @@ internal class AnalysisApiLspSemanticSupport(
             .toList()
     }
 
+    /**
+     * 返回容器声明的直接子声明。
+     */
     fun declarationChildren(container: CjDeclarationContainer): List<CjDeclaration> = container.declarations
 
     /**
@@ -265,6 +344,9 @@ internal class AnalysisApiLspSemanticSupport(
         return targetKeyFor(resolvedPsi)
     }
 
+    /**
+     * 将引用类 PSI 元素规约成可比较的目标键。
+     */
     fun CaSession.targetKeyForReferenceLike(element: PsiElement): AnalysisApiLspTargetKey? {
         return when (element) {
             is CjReferenceExpression -> targetKeyFor(element)
@@ -278,6 +360,9 @@ internal class AnalysisApiLspSemanticSupport(
         }
     }
 
+    /**
+     * 将声明 PSI 元素规约成可跨文档比较的目标键。
+     */
     fun targetKeyFor(declaration: PsiElement?): AnalysisApiLspTargetKey? {
         return when (declaration) {
             is CjNamedDeclaration -> {
@@ -308,6 +393,9 @@ internal class AnalysisApiLspSemanticSupport(
         }
     }
 
+    /**
+     * 枚举文件中可作为引用目标的 PSI 元素。
+     */
     fun referenceLikeElements(file: CjFile): Sequence<PsiElement> {
         return sequence {
             yieldAll(file.collectDescendantsOfType<CjSimpleNameExpression>().asSequence())
@@ -315,6 +403,9 @@ internal class AnalysisApiLspSemanticSupport(
         }
     }
 
+    /**
+     * 将 LSP position 转换为当前 analysis 文本内的合法 offset。
+     */
     private fun analysisOffset(
         document: LspTextDocument,
         file: CjFile,
@@ -323,6 +414,9 @@ internal class AnalysisApiLspSemanticSupport(
         return document.analysisOffsetAt(position).coerceIn(0, file.textLength.coerceAtLeast(0))
     }
 
+    /**
+     * 构造 PSI 目标去重所需的稳定身份字符串。
+     */
     private fun targetIdentity(element: PsiElement): String {
         val file = (element.containingFile as? CjFile)?.virtualFile?.url ?: "<memory>"
         val range = element.textRange
@@ -337,6 +431,9 @@ internal class AnalysisApiLspSemanticSupport(
         }
     }
 
+    /**
+     * 为工作区 PSI 文件构造 LSP/Analysis 文档上下文。
+     */
     private fun workspaceFileContext(file: CjFile): WorkspaceFileContext? {
         val documentUri = documentUriOf(file) ?: return null
         val openedDocument = documentStore.get(documentUri)
@@ -369,6 +466,9 @@ internal class AnalysisApiLspSemanticSupport(
         return AnalysisApiLspTargetKey.Local(uri, range.startOffset, range.endOffset, stableName)
     }
 
+    /**
+     * 将 Analysis API 公开符号规约为 LSP 语义目标键。
+     */
     private fun org.cangnova.cangjie.analysis.api.symbols.CaSymbol.toTargetKey(session: CaSession): AnalysisApiLspTargetKey? =
         when (this) {
             is org.cangnova.cangjie.analysis.api.symbols.CaPackageSymbol -> AnalysisApiLspTargetKey.Package(fqName)
@@ -390,6 +490,9 @@ internal class AnalysisApiLspSemanticSupport(
             else -> null
         }
 
+    /**
+     * 从当前 PSI 元素向父节点方向遍历自身和祖先。
+     */
     private fun PsiElement.parentsWithSelf(): Sequence<PsiElement> = generateSequence(this) { current ->
         current.parent as? PsiElement
     }
@@ -399,28 +502,66 @@ internal class AnalysisApiLspSemanticSupport(
  * LSP 层跨文档比较引用目标时使用的稳定语义键。
  */
 internal sealed interface AnalysisApiLspTargetKey {
+    /**
+     * package 级目标键。
+     */
     data class Package(val fqName: FqName) : AnalysisApiLspTargetKey
 
+    /**
+     * 文件级目标键。
+     */
     data class File(val packageFqName: FqName, val fileName: String) : AnalysisApiLspTargetKey
 
+    /**
+     * 类、接口、结构体、枚举等 class-like 目标键。
+     */
     data class ClassLike(val classId: ClassId) : AnalysisApiLspTargetKey
 
+    /**
+     * 可调用声明目标键。
+     */
     data class Callable(val callableId: CallableId) : AnalysisApiLspTargetKey
 
+    /**
+     * 缺少全局标识的本地目标键。
+     */
     data class Local(
+        /**
+         * 目标所在文档 URI。
+         */
         val documentUri: String,
+
+        /**
+         * 目标起始 offset。
+         */
         val startOffset: Int,
+
+        /**
+         * 目标结束 offset。
+         */
         val endOffset: Int,
+
+        /**
+         * 可选展示名称。
+         */
         val name: String?,
     ) : AnalysisApiLspTargetKey
 }
 
+/**
+ * LSP 位置目标选择时允许的目标类别。
+ */
 internal enum class AnalysisApiLspTargetKind {
+    /** 声明目标。 */
     DECLARATION,
+    /** 引用目标。 */
     REFERENCE,
     ;
 
     companion object {
+        /**
+         * 同时允许声明和引用目标的默认集合。
+         */
         val ALL: Set<AnalysisApiLspTargetKind> = setOf(DECLARATION, REFERENCE)
     }
 }

@@ -28,6 +28,9 @@ import org.cangnova.cangjie.psi.stubs.CangJiePlaceHolderStub
 import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 import com.intellij.lang.ASTNode
 
+/**
+ * 表示 `CjFunctionTypeReceiver`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjFunctionTypeReceiver :
     CjElementImplStub<CangJiePlaceHolderStub<CjFunctionTypeReceiver>> {
     constructor(node: ASTNode) : super(node)
@@ -36,6 +39,9 @@ class CjFunctionTypeReceiver :
         CjStubElementTypes.FUNCTION_TYPE_RECEIVER,
     )
 
+    /**
+     * 保存 `typeReference`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val typeReference
         get() = getRequiredStubOrPsiChild(CjStubElementTypes.TYPE_REFERENCE)
 }

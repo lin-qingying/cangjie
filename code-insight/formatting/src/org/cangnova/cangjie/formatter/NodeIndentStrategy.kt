@@ -77,6 +77,9 @@ abstract class NodeIndentStrategy {
      */
 
     class ConstIndentStrategy(private val indent: Indent) : NodeIndentStrategy() {
+        /**
+         * 返回构造时指定的固定缩进。
+         */
         override fun getIndent(node: ASTNode, settings: CodeStyleSettings): Indent {
             return indent
         }
@@ -86,17 +89,29 @@ abstract class NodeIndentStrategy {
      * 位置策略：根据节点的父节点和其他条件来确定缩进。
      */
     class PositionStrategy(private val debugInfo: String?) : NodeIndentStrategy() {
+        /**
+         * 根据代码风格计算缩进的回调。
+         */
         private var indentCallback: (CodeStyleSettings) -> Indent = { Indent.getNoneIndent() }
 
+        /** 允许应用策略的父节点类型。 */
         private val within = ArrayList<IElementType>()
+        /** 允许应用策略的父节点自定义条件。 */
         private var withinCallback: ((ASTNode) -> Boolean)? = null
 
+        /** 禁止应用策略的父节点类型。 */
         private val notIn = ArrayList<IElementType>()
 
+        /** 允许应用策略的目标节点类型。 */
         private val forElement = ArrayList<IElementType>()
+        /** 禁止应用策略的目标节点类型。 */
         private val notForElement = ArrayList<IElementType>()
+        /** 允许应用策略的目标节点自定义条件。 */
         private var forElementCallback: ((ASTNode) -> Boolean)? = null
 
+        /**
+         * 返回包含调试信息的策略描述。
+         */
         override fun toString(): String {
             return "PositionStrategy " + (debugInfo ?: "No debug info")
         }
@@ -196,6 +211,9 @@ abstract class NodeIndentStrategy {
             return this
         }
 
+        /**
+         * 根据父节点和目标节点限制计算缩进。
+         */
         override fun getIndent(node: ASTNode, settings: CodeStyleSettings): Indent? {
             if (!isValidIndent(forElement, notForElement, node, forElementCallback)) return null
 

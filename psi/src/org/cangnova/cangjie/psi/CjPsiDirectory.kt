@@ -100,7 +100,13 @@ import java.io.IOException
  * @see PsiFileSystemItem
  */
 class CjPsiDirectory(
+    /**
+     * 保存 `manager` 的内部状态，供仓颉 PSI实现维护节点缓存或解析上下文。
+     */
     private val manager: PsiManager,
+    /**
+     * 保存 `virtualFile` 的内部状态，供仓颉 PSI实现维护节点缓存或解析上下文。
+     */
     private val virtualFile: VirtualFile
 ) : PsiDirectoryImpl(manager as PsiManagerImpl,virtualFile), PsiDirectory, Queryable {
 
@@ -113,22 +119,43 @@ class CjPsiDirectory(
     // 基本属性
     // ============================================================
 
+    /**
+     * 实现 `getVirtualFile` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getVirtualFile(): VirtualFile = virtualFile
 
+    /**
+     * 实现 `isDirectory` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun isDirectory(): Boolean = true
 
+    /**
+     * 实现 `isValid` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun isValid(): Boolean = virtualFile.isValid && !project.isDisposed
 
+    /**
+     * 实现 `getLanguage` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getLanguage(): Language = Language.ANY
 
+    /**
+     * 实现 `getManager` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getManager(): PsiManager = manager
 
+    /**
+     * 实现 `getName` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getName(): String = virtualFile.name
 
     // ============================================================
     // 父目录和导航
     // ============================================================
 
+    /**
+     * 实现 `getParentDirectory` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getParentDirectory(): PsiDirectory? {
         val parentFile = virtualFile.parent ?: return null
 
@@ -143,12 +170,18 @@ class CjPsiDirectory(
         return CjPsiDirectory(manager, parentFile)
     }
 
+    /**
+     * 实现 `getParent` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getParent(): PsiDirectory? = parentDirectory
 
     // ============================================================
     // 子目录和文件
     // ============================================================
 
+    /**
+     * 实现 `getSubdirectories` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getSubdirectories(): Array<PsiDirectory> {
         val files = virtualFile.children
         val dirs = mutableListOf<PsiDirectory>()
@@ -160,6 +193,9 @@ class CjPsiDirectory(
         return dirs.toTypedArray()
     }
 
+    /**
+     * 实现 `getFiles` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getFiles(): Array<PsiFile> {
         if (!virtualFile.isValid) {
             throw InvalidVirtualFileAccessException(virtualFile)
@@ -175,12 +211,18 @@ class CjPsiDirectory(
         return PsiUtilCore.toPsiFileArray(psiFiles)
     }
 
+    /**
+     * 实现 `findSubdirectory` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun findSubdirectory(name: String): PsiDirectory? {
         ProgressManager.checkCanceled()
         val childVFile = virtualFile.findChild(name) ?: return null
         return manager.findDirectory(childVFile)
     }
 
+    /**
+     * 实现 `findFile` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun findFile(name: String): PsiFile? {
         ProgressManager.checkCanceled()
         val childVFile = virtualFile.findChild(name) ?: return null
@@ -200,6 +242,9 @@ class CjPsiDirectory(
     // 子元素处理
     // ============================================================
 
+    /**
+     * 实现 `processChildren` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun processChildren(processor: PsiElementProcessor<in PsiFileSystemItem>): Boolean {
         checkValid()
 
@@ -227,6 +272,9 @@ class CjPsiDirectory(
         return true
     }
 
+    /**
+     * 实现 `getChildren` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getChildren(): Array<PsiElement> {
         checkValid()
 
@@ -243,6 +291,9 @@ class CjPsiDirectory(
     // 目录操作
     // ============================================================
 
+    /**
+     * 实现 `createSubdirectory` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createSubdirectory(name: String): PsiDirectory {
         checkCreateSubdirectory(name)
 
@@ -255,6 +306,9 @@ class CjPsiDirectory(
         }
     }
 
+    /**
+     * 实现 `checkCreateSubdirectory` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun checkCreateSubdirectory(name: String) {
         val existingFile = virtualFile.findChild(name)
         if (existingFile != null) {
@@ -269,6 +323,9 @@ class CjPsiDirectory(
     // 文件操作
     // ============================================================
 
+    /**
+     * 实现 `createFile` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createFile(name: String): PsiFile {
         checkCreateFile(name)
 
@@ -280,6 +337,9 @@ class CjPsiDirectory(
         }
     }
 
+    /**
+     * 实现 `copyFileFrom` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun copyFileFrom(newName: String, originalFile: PsiFile): PsiFile {
         checkCreateFile(newName)
 
@@ -321,6 +381,9 @@ class CjPsiDirectory(
         }
     }
 
+    /**
+     * 执行 `findCopy` 内部辅助逻辑，支撑仓颉 PSI节点的结构解析与访问。
+     */
     private fun findCopy(copyVFile: VirtualFile, originalVFile: VirtualFile): PsiFile {
         return manager.findFile(copyVFile)
             ?: throw IncorrectOperationException(
@@ -340,6 +403,9 @@ class CjPsiDirectory(
         }
     }
 
+    /**
+     * 实现 `checkCreateFile` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun checkCreateFile(name: String) {
         val existingFile = virtualFile.findChild(name)
         if (existingFile != null) {
@@ -354,6 +420,9 @@ class CjPsiDirectory(
     // 添加元素
     // ============================================================
 
+    /**
+     * 实现 `add` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun add(element: PsiElement): PsiElement {
         checkAdd(element)
 
@@ -411,6 +480,9 @@ class CjPsiDirectory(
         }
     }
 
+    /**
+     * 实现 `checkAdd` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun checkAdd(element: PsiElement) {
         CheckUtil.checkWritable(this)
 
@@ -440,14 +512,23 @@ class CjPsiDirectory(
     // 不支持的操作
     // ============================================================
 
+    /**
+     * 实现 `addBefore` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun addBefore(element: PsiElement, anchor: PsiElement?): PsiElement {
         throw IncorrectOperationException()
     }
 
+    /**
+     * 实现 `addAfter` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun addAfter(element: PsiElement, anchor: PsiElement?): PsiElement {
         throw IncorrectOperationException()
     }
 
+    /**
+     * 实现 `replace` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun replace(newElement: PsiElement): PsiElement {
         throw IncorrectOperationException()
     }
@@ -456,6 +537,9 @@ class CjPsiDirectory(
     // 删除和重命名
     // ============================================================
 
+    /**
+     * 实现 `delete` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun delete() {
         checkDelete()
         try {
@@ -465,10 +549,16 @@ class CjPsiDirectory(
         }
     }
 
+    /**
+     * 实现 `checkDelete` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun checkDelete() {
         CheckUtil.checkDelete(virtualFile)
     }
 
+    /**
+     * 实现 `setName` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun setName(name: String): PsiElement {
         checkSetName(name)
 
@@ -481,6 +571,9 @@ class CjPsiDirectory(
         return this
     }
 
+    /**
+     * 实现 `checkSetName` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun checkSetName(name: String) {
         CheckUtil.checkWritable(this)
 
@@ -501,56 +594,110 @@ class CjPsiDirectory(
     // PSI 元素基础方法
     // ============================================================
 
+    /**
+     * 实现 `getContainingFile` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getContainingFile(): PsiFile? = null
 
+    /**
+     * 实现 `getTextRange` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getTextRange(): TextRange? = null
 
+    /**
+     * 实现 `getStartOffsetInParent` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getStartOffsetInParent(): Int = -1
 
+    /**
+     * 实现 `getTextLength` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getTextLength(): Int = -1
 
+    /**
+     * 实现 `findElementAt` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun findElementAt(offset: Int): PsiElement? = null
 
+    /**
+     * 实现 `getTextOffset` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getTextOffset(): Int = -1
 
+    /**
+     * 实现 `getText` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getText(): String = ""
 
+    /**
+     * 实现 `textToCharArray` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun textToCharArray(): CharArray = ArrayUtilRt.EMPTY_CHAR_ARRAY
 
+    /**
+     * 实现 `textMatches` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun textMatches(text: CharSequence): Boolean = false
 
+    /**
+     * 实现 `textMatches` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun textMatches(element: PsiElement): Boolean = false
 
 
+    /**
+     * 实现 `isPhysical` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun isPhysical(): Boolean {
         return virtualFile.fileSystem !is NonPhysicalFileSystem &&
                 virtualFile.fileSystem.protocol != "temp"
     }
 
+    /**
+     * 实现 `copy` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun copy(): PsiElement {
         throw IncorrectOperationException()
     }
 
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun accept(visitor: PsiElementVisitor) {
         visitor.visitDirectory(this)
     }
 
+    /**
+     * 实现 `getNode` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getNode(): ASTNode? = null
 
     // ============================================================
     // 导航支持
     // ============================================================
 
+    /**
+     * 实现 `canNavigateToSource` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun canNavigateToSource(): Boolean = false
 
+    /**
+     * 实现 `getPresentation` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getPresentation(): ItemPresentation? {
         return ItemPresentationProviders.getItemPresentation(this)
     }
 
+    /**
+     * 实现 `navigationRequest` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun navigationRequest(): NavigationRequest? {
         return NavigationRequest.directoryNavigationRequest(this)
     }
 
+    /**
+     * 实现 `navigate` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun navigate(requestFocus: Boolean) {
         PsiNavigationSupport.getInstance().navigateToDirectory(this, requestFocus)
     }
@@ -559,6 +706,9 @@ class CjPsiDirectory(
     // Queryable 接口
     // ============================================================
 
+    /**
+     * 实现 `putInfo` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun putInfo(info: MutableMap<in String, in String>) {
         info["fileName"] = name
     }
@@ -567,14 +717,23 @@ class CjPsiDirectory(
     // 工具方法
     // ============================================================
 
+    /**
+     * 执行 `checkValid` 内部辅助逻辑，支撑仓颉 PSI节点的结构解析与访问。
+     */
     private fun checkValid() {
         if (!isValid) {
             throw PsiInvalidElementAccessException(this)
         }
     }
 
+    /**
+     * 实现 `toString` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun toString(): String = "CjPsiDirectory:${virtualFile.presentableUrl}"
 
+    /**
+     * 实现 `equals` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is CjPsiDirectory) return false
@@ -582,6 +741,9 @@ class CjPsiDirectory(
         return manager == other.manager && virtualFile == other.virtualFile
     }
 
+    /**
+     * 实现 `hashCode` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun hashCode(): Int {
         var result = manager.hashCode()
         result = 31 * result + virtualFile.hashCode()

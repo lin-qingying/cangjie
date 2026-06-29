@@ -4,6 +4,8 @@ import org.cangnova.cangjie.cfir.analysis.checkers.CommonDeclarationCheckers
 import org.cangnova.cangjie.cfir.analysis.checkers.CommonExpressionCheckers
 import org.cangnova.cangjie.cfir.analysis.checkers.CommonLanguageVersionSettingsCheckers
 import org.cangnova.cangjie.cfir.analysis.checkers.CommonTypeCheckers
+import org.cangnova.cangjie.cfir.analysis.checkers.ExtraDeclarationCheckers
+import org.cangnova.cangjie.cfir.analysis.checkers.ExtraExpressionCheckers
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.entrypoint.session.CfirSessionConfigurator
 
@@ -22,10 +24,14 @@ fun CfirSessionConfigurator.registerCommonCheckers() {
 }
 
 /**
- * Hook that mirrors Kotlin FIR test infrastructure.
- * Cangjie currently has no dedicated extra-common checker set.
+ * 额外检查器注册（对齐 K2 的 Extra*Checkers）。
+ *
+ * unused/DCE 与 effects 等附加 warning 不属于主干 type-check 集合，
+ * 仅在测试或 IDE 诊断过滤显式请求 extra checker 时挂载。
  */
 fun CfirSessionConfigurator.registerExtraCommonCheckers() {
+    useCheckers(ExtraDeclarationCheckers)
+    useCheckers(ExtraExpressionCheckers)
 }
 
 /**

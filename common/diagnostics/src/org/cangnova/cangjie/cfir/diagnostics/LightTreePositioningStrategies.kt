@@ -8,8 +8,17 @@ import com.intellij.util.diff.FlyweightCapableTreeStructure
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.psi.CjNodeTypes
 
+/**
+ * LightTree 前端使用的诊断定位策略集合。
+ */
 object LightTreePositioningStrategies {
+    /**
+     * 默认定位策略，直接标记源元素范围。
+     */
     val DEFAULT: LightTreePositioningStrategy = LightTreePositioningStrategy()
+    /**
+     * 标记声明的实际名称标识符。
+     */
     val ACTUAL_DECLARATION_NAME: LightTreePositioningStrategy = object : LightTreePositioningStrategy() {
         override fun mark(
             node: LighterASTNode,
@@ -22,6 +31,9 @@ object LightTreePositioningStrategies {
             return markElement(nameIdentifier, startOffset, endOffset, tree, node)
         }
     }
+    /**
+     * 标记声明起始关键字到名称标识符的范围。
+     */
     val DECLARATION_START_TO_NAME: LightTreePositioningStrategy = object : LightTreePositioningStrategy() {
         override fun mark(
             node: LighterASTNode,
@@ -44,6 +56,9 @@ object LightTreePositioningStrategies {
             return markRange(declarationStart, nameIdentifier, startOffset, endOffset, tree, node)
         }
     }
+    /**
+     * 标记可调用声明签名中不含修饰符的主体范围。
+     */
     val CALLABLE_DECLARATION_SIGNATURE_NO_MODIFIERS: LightTreePositioningStrategy = object : LightTreePositioningStrategy() {
         override fun mark(
             node: LighterASTNode,
@@ -63,6 +78,9 @@ object LightTreePositioningStrategies {
             return markRange(startNode, endNode, startOffset, endOffset, tree, node)
         }
     }
+    /**
+     * 标记 import 路径最后一个被引用名称。
+     */
     val IMPORT_LAST_NAME: LightTreePositioningStrategy = object : LightTreePositioningStrategy() {
         override fun mark(
             node: LighterASTNode,
@@ -77,6 +95,9 @@ object LightTreePositioningStrategies {
             return markElement(nodeToMark, startOffset, endOffset, tree, node)
         }
     }
+    /**
+     * 标记 import alias 的别名标识符。
+     */
     val IMPORT_ALIAS: LightTreePositioningStrategy = object : LightTreePositioningStrategy() {
         override fun mark(
             node: LighterASTNode,
@@ -91,6 +112,9 @@ object LightTreePositioningStrategies {
             return markElement(aliasIdentifier, startOffset, endOffset, tree, node)
         }
     }
+    /**
+     * 标记初始化器中的等号 token。
+     */
     val INITIALIZER_EQ: LightTreePositioningStrategy = object : LightTreePositioningStrategy() {
         override fun mark(
             node: LighterASTNode,
@@ -103,6 +127,9 @@ object LightTreePositioningStrategies {
             else super.mark(node, startOffset, endOffset, tree)
         }
     }
+    /**
+     * 标记声明上的可见性修饰符。
+     */
     val VISIBILITY_MODIFIER: LightTreePositioningStrategy = object : LightTreePositioningStrategy() {
         override fun mark(
             node: LighterASTNode,
@@ -122,6 +149,9 @@ object LightTreePositioningStrategies {
             return markElement(visibilityModifier, startOffset, endOffset, tree, node)
         }
     }
+    /**
+     * 标记 override 或 redef 修饰符。
+     */
     val OVERRIDE_MODIFIER: LightTreePositioningStrategy = object : LightTreePositioningStrategy() {
         override fun mark(
             node: LighterASTNode,
@@ -135,6 +165,9 @@ object LightTreePositioningStrategies {
             return markElement(overrideModifier, startOffset, endOffset, tree, node)
         }
     }
+    /**
+     * 标记 mut 修饰符。
+     */
     val MUT_MODIFIER: LightTreePositioningStrategy = object : LightTreePositioningStrategy() {
         override fun mark(
             node: LighterASTNode,
@@ -147,6 +180,9 @@ object LightTreePositioningStrategies {
             return markElement(mutModifier, startOffset, endOffset, tree, node)
         }
     }
+    /**
+     * 标记 throw 表达式中的 throw 关键字。
+     */
     val THROW_KEYWORD: LightTreePositioningStrategy = object : LightTreePositioningStrategy() {
         override fun mark(
             node: LighterASTNode,
@@ -159,6 +195,9 @@ object LightTreePositioningStrategies {
             return markElement(throwKeyword, startOffset, endOffset, tree, node)
         }
     }
+    /**
+     * 标记数组字面量左中括号。
+     */
     val ARRAY_LITERAL_LEFT_BRACKET: LightTreePositioningStrategy = object : LightTreePositioningStrategy() {
         override fun mark(
             node: LighterASTNode,
@@ -172,6 +211,9 @@ object LightTreePositioningStrategies {
         }
     }
 
+    /**
+     * 标记表达式中的操作符引用。
+     */
     val OPERATOR: LightTreePositioningStrategy = object : LightTreePositioningStrategy() {
         override fun mark(
             node: LighterASTNode,
@@ -192,6 +234,9 @@ object LightTreePositioningStrategies {
         }
     }
 
+    /**
+     * 标记具名实参的参数名。
+     */
     val NAME_OF_NAMED_ARGUMENT: LightTreePositioningStrategy = object : LightTreePositioningStrategy() {
         override fun mark(
             node: LighterASTNode,
@@ -210,6 +255,9 @@ object LightTreePositioningStrategies {
         }
     }
 
+    /**
+     * 标记调用表达式中的实参范围。
+     */
     val VALUE_ARGUMENTS: LightTreePositioningStrategy = object : LightTreePositioningStrategy() {
         override fun mark(
             node: LighterASTNode,
@@ -230,6 +278,9 @@ object LightTreePositioningStrategies {
         }
     }
 
+    /**
+     * 标记调用表达式的实参列表节点。
+     */
     val VALUE_ARGUMENTS_LIST: LightTreePositioningStrategy = object : LightTreePositioningStrategy() {
         override fun mark(
             node: LighterASTNode,
@@ -247,12 +298,27 @@ object LightTreePositioningStrategies {
         }
     }
 
+    /**
+     * 标记限定表达式中的引用表达式。
+     */
     val REFERENCE_BY_QUALIFIED: LightTreePositioningStrategy = FindReferencePositioningStrategy(false)
+    /**
+     * 标记限定表达式中最终被引用的名称。
+     */
     val REFERENCED_NAME_BY_QUALIFIED: LightTreePositioningStrategy = FindReferencePositioningStrategy(true)
 
+    /**
+     * 在不同轻量树表达式形状中寻找应标记引用节点的策略。
+     */
     private class FindReferencePositioningStrategy(
+        /**
+         * 是否跳过括号并定位到最终被引用名称。
+         */
         private val locateReferencedName: Boolean,
     ) : LightTreePositioningStrategy() {
+        /**
+         * 根据轻量树节点类型选择引用节点并返回其标记范围。
+         */
         override fun mark(
             node: LighterASTNode,
             startOffset: Int,
@@ -288,6 +354,9 @@ object LightTreePositioningStrategies {
     }
 }
 
+/**
+ * 从调用、限定或括号表达式中取得引用表达式节点。
+ */
 private fun FlyweightCapableTreeStructure<LighterASTNode>.referenceExpression(
     node: LighterASTNode,
     locateReferencedName: Boolean,
@@ -299,12 +368,18 @@ private fun FlyweightCapableTreeStructure<LighterASTNode>.referenceExpression(
     return result
 }
 
+/**
+ * 返回第一个表达式形态的直接子节点。
+ */
 private fun FlyweightCapableTreeStructure<LighterASTNode>.firstExpressionChild(node: LighterASTNode): LighterASTNode? {
     return getChildrenArray(node)
         .filterNotNull()
         .firstOrNull { it.isExpressionLike() || it.tokenType == CjNodeTypes.PARENTHESIZED }
 }
 
+/**
+ * 返回指定 token 类型的直接子节点列表。
+ */
 private fun FlyweightCapableTreeStructure<LighterASTNode>.childrenOfType(
     node: LighterASTNode,
     tokenType: IElementType,
@@ -314,12 +389,18 @@ private fun FlyweightCapableTreeStructure<LighterASTNode>.childrenOfType(
         .filter { it.tokenType == tokenType }
 }
 
+/**
+ * 返回最后一个表达式形态的直接子节点。
+ */
 private fun FlyweightCapableTreeStructure<LighterASTNode>.lastExpressionChild(node: LighterASTNode): LighterASTNode? {
     return getChildrenArray(node)
         .filterNotNull()
         .lastOrNull { it.isExpressionLike() || it.tokenType == CjNodeTypes.PARENTHESIZED }
 }
 
+/**
+ * 深度优先查找第一个指定 token 类型的后代节点。
+ */
 private fun FlyweightCapableTreeStructure<LighterASTNode>.findDescendantByType(
     node: LighterASTNode,
     tokenType: IElementType,
@@ -332,6 +413,9 @@ private fun FlyweightCapableTreeStructure<LighterASTNode>.findDescendantByType(
     return null
 }
 
+/**
+ * 深度优先查找最后一个指定 token 类型的后代节点。
+ */
 private fun FlyweightCapableTreeStructure<LighterASTNode>.findLastDescendantByType(
     node: LighterASTNode,
     tokenType: IElementType,
@@ -345,6 +429,9 @@ private fun FlyweightCapableTreeStructure<LighterASTNode>.findLastDescendantByTy
     return last
 }
 
+/**
+ * 判断轻量树节点是否可作为表达式形态参与定位。
+ */
 private fun LighterASTNode.isExpressionLike(): Boolean {
     return tokenType == CjNodeTypes.REFERENCE_EXPRESSION ||
             tokenType == CjNodeTypes.CALL_EXPRESSION ||
@@ -356,11 +443,17 @@ private fun LighterASTNode.isExpressionLike(): Boolean {
             tokenType == CjNodeTypes.POSTFIX_EXPRESSION
 }
 
+/**
+ * 查找声明或操作符名称对应的标识节点。
+ */
 private fun FlyweightCapableTreeStructure<LighterASTNode>.nameIdentifier(node: LighterASTNode): LighterASTNode? =
     findChildByType(node, CjTokens.IDENTIFIER)
         ?: findChildByType(node, CjNodeTypes.OPERATION_NAME)
         ?: findChildByType(node, CjTokens.INIT_KEYWORD)
 
+/**
+ * 收集指定类型的所有后代节点。
+ */
 fun FlyweightCapableTreeStructure<LighterASTNode>.collectDescendantsOfType(
     node: LighterASTNode, type: IElementType,
     predicate: (LighterASTNode) -> Boolean = { true }

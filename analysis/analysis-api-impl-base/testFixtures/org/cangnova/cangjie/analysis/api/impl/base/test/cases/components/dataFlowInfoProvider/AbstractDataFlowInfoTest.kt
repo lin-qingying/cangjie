@@ -26,9 +26,17 @@ import org.junit.jupiter.api.Assertions.assertEquals
  * - stability
  */
 abstract class AbstractDataFlowInfoTest : AbstractAnalysisApiComponentTest() {
+    /**
+     * 当前 data-flow 测试额外注册的指令集合。
+     */
     override val additionalDirectives: List<DirectivesContainer>
         get() = super.additionalDirectives + AnalysisApiDataFlowInfoTestDirectives
 
+    /**
+     * 执行 data-flow 信息快照测试。
+     *
+     * 方法定位目标表达式，读取 stability、pure-reference、compile-time value 和 expression type 等公开字段。
+     */
     override fun doTestByMainFile(mainFile: CjFile, mainModule: CjTestModule, testServices: TestServices) {
         val directives = directivesForMainFile(mainFile, mainModule)
         val expression = findExpression(mainFile, directives.dataFlowTargetExpressionText)
@@ -58,6 +66,11 @@ abstract class AbstractDataFlowInfoTest : AbstractAnalysisApiComponentTest() {
         }
     }
 
+    /**
+     * 在主文件中按文本定位 data-flow 测试目标表达式。
+     *
+     * 该查找要求唯一命中，避免同文本表达式导致断言目标不稳定。
+     */
     private fun findExpression(mainFile: CjFile, expressionText: String): CjExpression {
         val candidates = PsiTreeUtil.findChildrenOfType(mainFile, CjExpression::class.java)
             .filter { expression -> expression.text == expressionText }

@@ -31,6 +31,9 @@ import org.junit.jupiter.api.Test
 class AnalysisApiHostConfigurationTest : AbstractAnalysisApiExecutionTest(
     "analysis/analysis-api-cfir/testData/hostConfiguration",
 ) {
+    /**
+     * 使用 CFIR IDE-mode factory 创建配置器，以验证 IDE 宿主服务装配路径。
+     */
     override val configurator: AnalysisApiTestConfigurator =
         CaCfirAnalysisApiTestConfiguratorFactory.createConfigurator(
             AnalysisApiTestConfiguratorFactoryData(
@@ -41,6 +44,9 @@ class AnalysisApiHostConfigurationTest : AbstractAnalysisApiExecutionTest(
             ),
         )
 
+    /**
+     * 验证 IDE-mode 测试宿主注册了权限检查、权限选项和 lifetime token factory。
+     */
     @Test
     fun idePermissionChecker(mainFile: CjFile, testServices: TestServices) {
         val project = testServices.environmentManager.getProject()
@@ -66,6 +72,9 @@ class AnalysisApiHostConfigurationTest : AbstractAnalysisApiExecutionTest(
         }
     }
 
+    /**
+     * 验证显式 analysis restriction 会阻止 IDE-mode 测试宿主创建分析 session。
+     */
     @Test
     fun ideExplicitRestriction(mainFile: CjFile) {
         val permissionRegistry = CaAnalysisPermissionRegistry.getInstance()

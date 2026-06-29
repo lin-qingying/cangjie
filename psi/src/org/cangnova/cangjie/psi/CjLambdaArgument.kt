@@ -29,10 +29,16 @@ import org.cangnova.cangjie.psi.stubs.CangJieValueArgumentStub
 import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 import com.intellij.lang.ASTNode
 
+/**
+ * 表示 `CjLambdaArgument`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjLambdaArgument : CjValueArgument, LambdaArgument {
     constructor(node: ASTNode) : super(node)
 
     constructor(stub: CangJieValueArgumentStub<CjLambdaArgument>) : super(stub, CjStubElementTypes.LAMBDA_ARGUMENT)
 
+    /**
+     * 实现 `getLambdaExpression` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getLambdaExpression(): CjLambdaExpression? = getArgumentExpression()?.unpackFunctionLiteral()
 }

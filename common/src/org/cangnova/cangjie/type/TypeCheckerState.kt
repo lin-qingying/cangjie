@@ -55,6 +55,9 @@ open class TypeCheckerState(
     var isImplicitBoxingAllowed: Boolean = allowImplicitBoxing
         private set
 
+    /**
+     * 在指定隐式装箱开关下执行类型检查片段，并在结束后恢复原状态。
+     */
     internal inline fun <T> runWithImplicitBoxing(allowed: Boolean, f: TypeCheckerState.() -> T): T {
         val previous = isImplicitBoxingAllowed
         isImplicitBoxingAllowed = allowed
@@ -124,7 +127,13 @@ open class TypeCheckerState(
 
         /** 默认实现：短路求值，第一个返回 true 的分支即为最终结果 */
         class Default : ForkPointContext {
+            /**
+             * 当前分支集合是否已有成功结果。
+             */
             var result: Boolean = false
+            /**
+             * 注册一个短路分支。
+             */
             override fun fork(block: () -> Boolean) {
                 if (result) return
                 result = block()
@@ -150,11 +159,20 @@ open class TypeCheckerState(
     // 使用双端队列 + 已访问集合实现广度优先父类型遍历
     // =====================================================================
 
+    /**
+     * 父类型遍历状态是否处于锁定使用中。
+     */
     private var supertypesLocked = false
 
+    /**
+     * 当前父类型 BFS 队列。
+     */
     var supertypesDeque: ArrayDeque<RigidTypeMarker>? = null
         private set
 
+    /**
+     * 当前父类型 BFS 已访问集合。
+     */
     var supertypesSet: MutableSet<RigidTypeMarker>? = null
         private set
 
@@ -241,6 +259,9 @@ open class TypeCheckerState(
 
         /** 跳过策略：不遍历该节点的父类型 */
         object None : SupertypesPolicy() {
+            /**
+             * None 策略不应执行类型变换。
+             */
             override fun transformType(
                 state: TypeCheckerState,
                 type: CangJieTypeMarker,
@@ -252,6 +273,9 @@ open class TypeCheckerState(
          * 仓颉所有类型均为刚性类型，这是标准的父类型遍历策略
          */
         object Direct : SupertypesPolicy() {
+            /**
+             * 将父类型直接转换为刚性类型。
+             */
             override fun transformType(
                 state: TypeCheckerState,
                 type: CangJieTypeMarker,
@@ -266,6 +290,9 @@ open class TypeCheckerState(
 
         /** 仓颉无弹性类型，直接将超类型转为刚性类型 */
         object RigidOnly : SupertypesPolicy() {
+            /**
+             * 将超类型转换为刚性类型。
+             */
             override fun transformType(state: TypeCheckerState, type: CangJieTypeMarker): RigidTypeMarker =
                 with(state.typeSystemContext) {
                     type.asRigidType()

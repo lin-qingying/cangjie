@@ -29,19 +29,34 @@ import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 import com.intellij.lang.ASTNode
 import com.intellij.psi.stubs.IStubElementType
 
+/**
+ * 表示 `CjTypeParameterListOwnerStub`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 abstract class CjTypeParameterListOwnerStub<T : CangJieStubWithFqName<*>> :
     CjNamedDeclarationStub<T>, CjTypeParameterListOwner {
     constructor(stub: T, nodeType: IStubElementType<*, *>) : super(stub, nodeType)
 
     constructor(node: ASTNode) : super(node)
 
+    /**
+     * 暴露 `typeParameterList`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val typeParameterList: CjTypeParameterList? get() = getStubOrPsiChild(CjStubElementTypes.TYPE_PARAMETER_LIST)
+    /**
+     * 暴露 `typeConstraintList`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val typeConstraintList: CjTypeConstraintList? get() = getStubOrPsiChild(CjStubElementTypes.TYPE_CONSTRAINT_LIST)
+    /**
+     * 暴露 `typeConstraints`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val typeConstraints: List<CjTypeConstraint>
         get() {
             val typeConstraintList = typeConstraintList ?: return emptyList()
             return typeConstraintList.constraints
         }
+    /**
+     * 暴露 `typeParameters`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val typeParameters: List<CjTypeParameter>
         get() {
             val list = typeParameterList ?: return emptyList()

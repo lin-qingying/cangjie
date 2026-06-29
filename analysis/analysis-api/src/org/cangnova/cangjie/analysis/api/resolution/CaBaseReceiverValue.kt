@@ -16,6 +16,9 @@ import org.cangnova.cangjie.analysis.api.types.CaType
  */
 @CaImplementationDetail
 class CaBaseReceiverValue(
+    /**
+     * Receiver 的底层语义类型。
+     */
     private val backingType: CaType,
 ) : CaReceiverValue {
     /**

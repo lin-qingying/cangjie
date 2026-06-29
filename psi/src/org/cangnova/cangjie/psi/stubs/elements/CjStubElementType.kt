@@ -34,15 +34,30 @@ import com.intellij.util.ReflectionUtil
 import org.jetbrains.annotations.NonNls
 import java.lang.reflect.Constructor
 
+/**
+ * 表示 `CjStubElementType`，承载PSI Stub中的语法节点、索引桩或辅助模型。
+ */
 abstract class CjStubElementType<StubT : StubElement<*>, PsiT : CjElementImplStub<*>>(
     debugName: String,
     psiClass: Class<PsiT>,
     stubClass: Class<*>,
 ) :
     IStubElementType<StubT, PsiT>(debugName, CangJieLanguage) {
+    /**
+     * 保存 `byNodeConstructor` 的内部状态，供PSI Stub实现维护节点缓存或解析上下文。
+     */
     private val byNodeConstructor: Constructor<PsiT>
+    /**
+     * 保存 `byStubConstructor` 的内部状态，供PSI Stub实现维护节点缓存或解析上下文。
+     */
     private val byStubConstructor: Constructor<PsiT>
+    /**
+     * 保存 `emptyArray` 的内部状态，供PSI Stub实现维护节点缓存或解析上下文。
+     */
     private val emptyArray: Array<PsiT>
+    /**
+     * 保存 `arrayFactory`，供PSI Stub流程读取节点结构或语义信息。
+     */
     val arrayFactory: ArrayFactory<PsiT>
 
     init {
@@ -64,18 +79,30 @@ abstract class CjStubElementType<StubT : StubElement<*>, PsiT : CjElementImplStu
         }
     }
 
+    /**
+     * 提供 `createPsiFromAst` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
+     */
     open fun createPsiFromAst(node: ASTNode): PsiT {
         return ReflectionUtil.createInstance(byNodeConstructor, node)
     }
 
+    /**
+     * 实现 `createPsi` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createPsi(stub: StubT): PsiT {
         return ReflectionUtil.createInstance(byStubConstructor, stub)
     }
 
+    /**
+     * 实现 `getExternalId` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getExternalId(): String {
         return "cangjie.$this"
     }
 
+    /**
+     * 实现 `indexStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun indexStub(stub: StubT, sink: IndexSink) {
     }
 }

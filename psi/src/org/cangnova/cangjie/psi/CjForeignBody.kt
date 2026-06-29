@@ -32,14 +32,26 @@ import com.intellij.lang.ASTNode
 import com.intellij.psi.tree.TokenSet
 import com.intellij.psi.util.PsiTreeUtil
 
+/**
+ * 表示 `CjForeignBody`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjForeignBody : CjElementImplStub<CangJiePlaceHolderStub<CjForeignBody>>, CjDeclarationContainer {
+    /**
+     * 保存 `lBraceTokenSet` 的内部状态，供仓颉 PSI实现维护节点缓存或解析上下文。
+     */
     private val lBraceTokenSet = TokenSet.create(CjTokens.LBRACE)
+    /**
+     * 保存 `rBraceTokenSet` 的内部状态，供仓颉 PSI实现维护节点缓存或解析上下文。
+     */
     private val rBraceTokenSet = TokenSet.create(CjTokens.RBRACE)
 
     constructor(node: ASTNode) : super(node)
 
     constructor(stub: CangJiePlaceHolderStub<CjForeignBody>) : super(stub, CjStubElementTypes.FOREIGN_BODY)
 
+    /**
+     * 暴露 `declarations`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val declarations: List<CjDeclaration>
         get() = stub?.getChildrenByType(CjTokenSets.FILE_DECLARATION_TYPES, CjDeclaration.ARRAY_FACTORY)?.toList()
             ?: PsiTreeUtil.getChildrenOfTypeAsList(this, CjDeclaration::class.java)

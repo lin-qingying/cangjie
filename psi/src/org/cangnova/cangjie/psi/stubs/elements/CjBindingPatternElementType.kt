@@ -50,6 +50,9 @@ class CjBindingPatternElementType(debugName: String) :
         CangJieBindingPatternStub::class.java,
     ) {
 
+    /**
+     * 实现 `createStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createStub(psi: CjBindingPattern, parentStub: StubElement<*>?): CangJieBindingPatternStub {
         val name = psi.name
         // 计算 fqName：顶层变量的绑定模式才有 fqName
@@ -61,6 +64,9 @@ class CjBindingPatternElementType(debugName: String) :
         )
     }
 
+    /**
+     * 执行 `computeFqName` 内部辅助逻辑，支撑PSI Stub节点的结构解析与访问。
+     */
     private fun computeFqName(psi: CjBindingPattern, name: String?): FqName? {
         if (name == null) return null
         val variable = psi.variable ?: return null
@@ -69,6 +75,9 @@ class CjBindingPatternElementType(debugName: String) :
         return file.packageFqName.child(org.cangnova.cangjie.name.Name.identifier(name))
     }
 
+    /**
+     * 实现 `serialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     @Throws(IOException::class)
     override fun serialize(stub: CangJieBindingPatternStub, dataStream: StubOutputStream) {
         dataStream.writeName(stub.getName())
@@ -79,6 +88,9 @@ class CjBindingPatternElementType(debugName: String) :
         }
     }
 
+    /**
+     * 实现 `deserialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     @Throws(IOException::class)
     override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>): CangJieBindingPatternStub {
         val name = dataStream.readName()
@@ -92,6 +104,9 @@ class CjBindingPatternElementType(debugName: String) :
         return CangJieBindingPatternStubImpl(parentStub, name, fqName)
     }
 
+    /**
+     * 实现 `indexStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun indexStub(stub: CangJieBindingPatternStub, sink: IndexSink) {
         // TODO: 添加绑定模式索引
     }

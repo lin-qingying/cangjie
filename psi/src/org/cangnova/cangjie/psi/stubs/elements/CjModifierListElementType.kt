@@ -34,18 +34,30 @@ import com.intellij.util.io.DataInputOutputUtil
 import org.jetbrains.annotations.NonNls
 import java.io.IOException
 
+/**
+ * 表示 `CjModifierListElementType`，承载PSI Stub中的语法节点、索引桩或辅助模型。
+ */
 class CjModifierListElementType<T : CjModifierList>(debugName: String, psiClass: Class<T>) :
     CjStubElementType<CangJieModifierListStub, T>(debugName, psiClass, CangJieModifierListStub::class.java) {
+    /**
+     * 实现 `createStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createStub(psi: T, parentStub: StubElement<*>?): CangJieModifierListStub {
         return CangJieModifierListStubImpl(parentStub, computeMaskFromModifierList(psi), this)
     }
 
+    /**
+     * 实现 `serialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     @Throws(IOException::class)
     override fun serialize(stub: CangJieModifierListStub, dataStream: StubOutputStream) {
         val mask = (stub as CangJieModifierListStubImpl).mask
         DataInputOutputUtil.writeLONG(dataStream, mask)
     }
 
+    /**
+     * 实现 `deserialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     @Throws(IOException::class)
     override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>): CangJieModifierListStub {
         val mask = DataInputOutputUtil.readLONG(dataStream)

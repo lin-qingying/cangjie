@@ -12,8 +12,17 @@ import org.cangnova.cangjie.analysis.api.projectStructure.CaLibrarySourceModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.cfir.session.CfirBuiltinTypes
 
+/**
+ * 库或库源码模块的可解析 low-level CFIR session。
+ *
+ * 该 session 用于需要从库源码或库声明中继续 lazy resolve 的分析路径。
+ */
 internal class LLCfirLibraryOrLibrarySourceResolvableModuleSession(
     caModule: CaModule,
+
+    /**
+     * 当前库可解析 session 的模块解析组件。
+     */
     override val moduleComponents: LLCfirModuleResolveComponents,
     builtinTypes: CfirBuiltinTypes,
 ) : LLCfirResolvableModuleSession(caModule, builtinTypes) {
@@ -22,6 +31,9 @@ internal class LLCfirLibraryOrLibrarySourceResolvableModuleSession(
     }
 
     companion object {
+        /**
+         * 校验 [module] 是否可以创建库类可解析 session。
+         */
         fun checkIsValidCjModule(module: CaModule) {
             require(module is CaLibraryModule || module is CaLibrarySourceModule || module is CaBuiltinsModule) {
                 "Expected ${CaLibraryModule::class.simpleName} or ${CaLibrarySourceModule::class.simpleName}, but ${module::class.simpleName} found"

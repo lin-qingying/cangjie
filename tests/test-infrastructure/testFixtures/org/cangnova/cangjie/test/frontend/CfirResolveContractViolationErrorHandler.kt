@@ -9,7 +9,13 @@ import org.cangnova.cangjie.test.services.assertions
 import org.cangnova.cangjie.test.services.TestServices
 import org.cangnova.cangjie.test.services.moduleStructure
 
+/**
+ * 表示 `CfirResolveContractViolationErrorHandler`，承载CFIR 前端测试中的配置数据、测试产物或处理步骤。
+ */
 class CfirResolveContractViolationErrorHandler(testServices: TestServices) : AfterAnalysisChecker(testServices) {
+    /**
+     * 执行 `check` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     override fun check(failedAssertions: List<WrappedException>) {
         val artifactsProvider = testServices.artifactsProvider
         val exceptions = buildList {

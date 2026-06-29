@@ -35,16 +35,28 @@ import org.cangnova.cangjie.lexer.CjTokens
  * 所以这里建模为 TryExpression 的直接子节点，和 catch/finally 并列。
  */
 class CjHandleClause(node: ASTNode) : CjElementImpl(node) {
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitHandleClause(this, data)
     }
 
+    /**
+     * 保存 `handleKeyword`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val handleKeyword: PsiElement?
         get() = findChildByType(CjTokens.HANDLE_KEYWORD)
 
+    /**
+     * 保存 `commandPattern`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val commandPattern: CjCommandTypePattern?
         get() = findChildByClass(CjCommandTypePattern::class.java)
 
+    /**
+     * 保存 `handleBody`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val handleBody: CjBlockExpression?
         get() = findChildByClass(CjBlockExpression::class.java)
 }

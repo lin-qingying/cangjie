@@ -17,13 +17,25 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.util.errorWithCfirSpecif
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 
 @LLCfirInternals
+/**
+ * 为 Analysis API 模块创建 low-level CFIR resolution facade 的 project 级服务。
+ */
 class LLResolutionFacadeService(project: Project) {
+    /**
+     * project 级 low-level CFIR session cache。
+     */
     private val cache = LLCfirSessionCache.getInstance(project)
 
+    /**
+     * 返回指定 use-site 模块对应的 resolution facade。
+     */
     fun getResolutionFacade(module: CaModule): LLResolutionFacade {
         return create(module, cache::getSession)
     }
 
+    /**
+     * 使用给定 session factory 装配 facade 需要的 module/session/strategy/diagnostic provider。
+     */
     private fun create(module: CaModule, factory: (CaModule) -> LLCfirSession): LLResolutionFacade {
         val moduleProvider = LLModuleProvider(module)
         val sessionProvider = LLSessionProvider(module, factory)
@@ -33,6 +45,9 @@ class LLResolutionFacadeService(project: Project) {
         return LLResolutionFacade(moduleProvider, resolutionStrategyProvider, sessionProvider, diagnosticProvider)
     }
 
+    /**
+     * 根据 use-site 模块种类创建对应的模块解析策略 provider。
+     */
     private fun createResolutionStrategyProvider(module: CaModule, moduleProvider: LLModuleProvider): LLModuleResolutionStrategyProvider {
         return when (module) {
             is CaDanglingFileModule -> {
@@ -55,6 +70,9 @@ class LLResolutionFacadeService(project: Project) {
         }
     }
 
+    /**
+     * 为源码或 dangling 文件模块创建 diagnostics provider，其它模块使用空 provider。
+     */
     private fun createDiagnosticProvider(moduleProvider: LLModuleProvider, sessionProvider: LLSessionProvider): LLDiagnosticProvider {
         return when (moduleProvider.useSiteModule) {
             is CaSourceModule,
@@ -70,7 +88,13 @@ class LLResolutionFacadeService(project: Project) {
     }
 }
 
+/**
+ * source use-site 模块的解析策略 provider。
+ */
 private class LLSourceModuleResolutionStrategyProvider(private val useSiteModule: CaModule) : LLModuleResolutionStrategyProvider {
+    /**
+     * source 模块走 lazy 解析，builtins/library 依赖走 static 解析。
+     */
     override fun getKind(module: CaModule): LLModuleResolutionStrategy {
         return when (module) {
             is CaSourceModule -> LLModuleResolutionStrategy.LAZY
@@ -80,7 +104,13 @@ private class LLSourceModuleResolutionStrategyProvider(private val useSiteModule
     }
 }
 
+/**
+ * binary/library use-site 模块的解析策略 provider。
+ */
 private class LLBinaryModuleResolutionStrategyProvider(private val useSiteModule: CaModule) : LLModuleResolutionStrategyProvider {
+    /**
+     * use-site library source 模块保持 lazy，其余 library/builtins 依赖走 static。
+     */
     override fun getKind(module: CaModule): LLModuleResolutionStrategy {
         LLCfirLibraryOrLibrarySourceResolvableModuleSession.checkIsValidCjModule(module)
         // Providing `LLModuleResolutionStrategy.LAZY` strategy for `CaLibrarySourceModule` is a workaround,
@@ -92,8 +122,14 @@ private class LLBinaryModuleResolutionStrategyProvider(private val useSiteModule
     }
 }
 
+/**
+ * dangling 文件模块的解析策略 provider，dangling 自身走 lazy，其它模块委托上下文策略。
+ */
 private class LLDanglingFileResolutionStrategyProvider(private val delegate: LLModuleResolutionStrategyProvider) :
     LLModuleResolutionStrategyProvider {
+    /**
+     * dangling 模块本身按源码 lazy 解析，其上下文依赖沿用 delegate。
+     */
     override fun getKind(module: CaModule): LLModuleResolutionStrategy {
         return when (module) {
             is CaDanglingFileModule -> LLModuleResolutionStrategy.LAZY
@@ -102,6 +138,9 @@ private class LLDanglingFileResolutionStrategyProvider(private val delegate: LLM
     }
 }
 
+/**
+ * 抛出无法为模块组合提供解析策略的带附件错误。
+ */
 private fun cannotProvideResolutionStrategy(module: CaModule, useSiteModule: CaModule): Nothing {
     errorWithAttachment("Cannot provide a resolution strategy for `${module::class.simpleName}`.") {
         withCaModuleEntry("module", module)

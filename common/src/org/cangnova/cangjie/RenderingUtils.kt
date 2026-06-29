@@ -29,6 +29,9 @@ import org.cangnova.cangjie.name.FqNameUnsafe
 import org.cangnova.cangjie.name.Name
 import kotlin.text.contains
 
+/**
+ * 判断标识符字符串在渲染时是否需要反引号转义。
+ */
 private fun shouldBeEscaped(string: String): Boolean {
     return string in KeywordStringsGenerated.KEYWORDS ||
             string.any { !Character.isLetterOrDigit(it) && it != '_' } ||
@@ -36,10 +39,16 @@ private fun shouldBeEscaped(string: String): Boolean {
             !Character.isJavaIdentifierStart(string.codePointAt(0))
 }
 
+/**
+ * 将名称渲染为源码展示文本，必要时使用反引号转义。
+ */
 fun Name.render(stipSpecialMarkers: Boolean = false): String {
     val string = if (stipSpecialMarkers) asStringStripSpecialMarkers() else asString()
     return if ((!stipSpecialMarkers || !isSpecial) &&  shouldBeEscaped(string)) '`' + string + '`' else string
 }
+/**
+ * 判断名称本身是否需要转义。
+ */
 private fun Name.shouldBeEscaped(): Boolean {
     val string = asString()
     return string in KeywordStringsGenerated.KEYWORDS ||
@@ -48,14 +57,23 @@ private fun Name.shouldBeEscaped(): Boolean {
         !Character.isJavaIdentifierStart(string.codePointAt(0))
 }
 
+/**
+ * 渲染 unsafe FqName。
+ */
 fun FqNameUnsafe.render(): String {
     return renderFqName(pathSegments())
 }
 
+/**
+ * 渲染安全 FqName。
+ */
 fun FqName.render(): String {
     return renderFqName(pathSegments())
 }
 
+/**
+ * 渲染点分隔限定名路径。
+ */
 fun renderFqName(pathSegments: List<Name>): String {
     return buildString {
         for (element in pathSegments) {
@@ -67,6 +85,9 @@ fun renderFqName(pathSegments: List<Name>): String {
     }
 }
 
+/**
+ * 在上下界类型展示文本只有前缀不同或可空性不同的时候折叠前缀。
+ */
 fun replacePrefixesInTypeRepresentations(
     lowerRendered: String,
     lowerPrefix: String,
@@ -88,5 +109,8 @@ fun replacePrefixesInTypeRepresentations(
     return null
 }
 
+/**
+ * 判断两个类型展示文本是否只存在可空性差异。
+ */
 fun typeStringsDifferOnlyInNullability(lower: String, upper: String) =
     lower == upper.replace("?", "") || upper.endsWith("?") && ("$lower?") == upper || "($lower)?" == upper

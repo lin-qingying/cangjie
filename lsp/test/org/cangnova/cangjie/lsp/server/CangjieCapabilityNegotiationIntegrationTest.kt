@@ -12,9 +12,20 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
+/**
+ * 校验 LSP 初始化阶段的客户端能力协商结果。
+ *
+ * 该测试覆盖最小客户端、全功能客户端和位置编码协商失败三类初始化能力面。
+ */
 class CangjieCapabilityNegotiationIntegrationTest : AbstractLspIntegrationTest() {
+    /**
+     * 禁用默认会话，测试按能力组合手动创建会话。
+     */
     override val autoCreateDefaultSession: Boolean = false
 
+    /**
+     * 校验最小客户端保留核心 provider，并隐藏需要显式声明的高级 provider。
+     */
     @Test
     fun `minimal client keeps core providers and hides advanced providers`() {
         val factory = ProtocolContractAnalysisFacadeFactory()
@@ -48,6 +59,9 @@ class CangjieCapabilityNegotiationIntegrationTest : AbstractLspIntegrationTest()
         }
     }
 
+    /**
+     * 校验全功能客户端会暴露高级 provider、pull diagnostics 和工作区元数据。
+     */
     @Test
     fun `full featured client exposes advanced providers pull diagnostics and workspace metadata`() {
         val factory = ProtocolContractAnalysisFacadeFactory()
@@ -78,6 +92,9 @@ class CangjieCapabilityNegotiationIntegrationTest : AbstractLspIntegrationTest()
         }
     }
 
+    /**
+     * 校验客户端不支持服务端偏好位置编码时，初始化结果不显式声明编码。
+     */
     @Test
     fun `server leaves position encoding unset when client omits utf16 and preferred encoding`() {
         val factory = ProtocolContractAnalysisFacadeFactory()
@@ -90,6 +107,9 @@ class CangjieCapabilityNegotiationIntegrationTest : AbstractLspIntegrationTest()
         }
     }
 
+    /**
+     * 构造使用协议契约 facade 的服务端选项。
+     */
     private fun protocolOptions(
         factory: ProtocolContractAnalysisFacadeFactory,
         descriptor: CangjieLanguageServerDescriptor = CangjieLanguageServerDescriptor(),

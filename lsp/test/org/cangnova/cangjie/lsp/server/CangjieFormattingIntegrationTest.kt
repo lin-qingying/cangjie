@@ -9,7 +9,17 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Test
 
+/**
+ * 校验 LSP 文档格式化请求与共享格式化器的集成行为。
+ *
+ * 该测试通过真实 LSP 会话发送 formatting 请求，确认格式化结果使用客户端提供的缩进宽度。
+ */
 class CangjieFormattingIntegrationTest : AbstractLspIntegrationTest() {
+    /**
+     * 校验整篇文档格式化会返回覆盖全文的单个编辑。
+     *
+     * 该用例固定函数空格、运算符空格和两空格缩进，确保 LSP 层正确透传 `FormattingOptions`。
+     */
     @Test
     fun `document formatting returns shared formatter edit and respects indent width`() {
         val uri = "file:///workspace/formatting.cj"

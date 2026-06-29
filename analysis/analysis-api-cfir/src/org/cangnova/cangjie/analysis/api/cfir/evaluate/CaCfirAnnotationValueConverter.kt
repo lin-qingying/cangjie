@@ -105,6 +105,9 @@ internal fun CjExpression.asPublicAnnotationValue(
     )
 }
 
+/**
+ * 将注解上下文中的调用表达式解析为 enum、struct 或 class 实例注解值。
+ */
 private fun CjCallExpression.resolveCallLikeAnnotationValue(
     session: CaCfirSession,
     token: CaLifetimeToken,
@@ -191,6 +194,9 @@ private fun CaCompileTimeValue.asPublicAnnotationValue(
     }
 }
 
+/**
+ * 对表达式执行编译期求值，并把结果转换为公开注解值模型。
+ */
 private fun CaCfirSession.evaluateCompileTimeValueAsAnnotationValue(
     expression: CjExpression,
     token: CaLifetimeToken,
@@ -302,6 +308,9 @@ private fun CaScalarCompileTimeValue.toPublicConstantValue(
     }
 }
 
+/**
+ * 查询表达式在当前 session 中解析出的 classId 或 primitive classId。
+ */
 private fun CjExpression.sessionExpressionClassId(session: CaCfirSession): ClassId? =
     (getOrBuildCfir(session.resolutionFacade) as? CfirExpression)?.resolvedType?.classIdOrPrimitiveClassId
 
@@ -320,23 +329,89 @@ private inline fun scalarConstantOrError(
     }
 }
 
+/**
+ * Bool 标量类型的 ClassId。
+ */
 private val BOOL_CLASS_ID: ClassId = ClassId.topLevel(StandardNames.FqNames.boolFqName)
+
+/**
+ * Rune 标量类型的 ClassId。
+ */
 private val RUNE_CLASS_ID: ClassId = ClassId.topLevel(StandardNames.FqNames.runeFqName)
+
+/**
+ * String 标量类型的 ClassId。
+ */
 private val STRING_CLASS_ID: ClassId = ClassId.topLevel(StandardNames.FqNames.stringFqName)
+
+/**
+ * Int8 标量类型的 ClassId。
+ */
 private val INT8_CLASS_ID: ClassId = ClassId.topLevel(StandardNames.FqNames.int8FqName)
+
+/**
+ * Int16 标量类型的 ClassId。
+ */
 private val INT16_CLASS_ID: ClassId = ClassId.topLevel(StandardNames.FqNames.int16FqName)
+
+/**
+ * Int32 标量类型的 ClassId。
+ */
 private val INT32_CLASS_ID: ClassId = ClassId.topLevel(StandardNames.FqNames.int32FqName)
+
+/**
+ * Int64 标量类型的 ClassId。
+ */
 private val INT64_CLASS_ID: ClassId = ClassId.topLevel(StandardNames.FqNames.int64FqName)
+
+/**
+ * IntNative 标量类型的 ClassId。
+ */
 private val INT_NATIVE_CLASS_ID: ClassId = ClassId.topLevel(StandardNames.FqNames.int_nativeFqName)
+
+/**
+ * UInt8 标量类型的 ClassId。
+ */
 private val UINT8_CLASS_ID: ClassId = ClassId.topLevel(StandardNames.FqNames.uint8FqName)
+
+/**
+ * UInt16 标量类型的 ClassId。
+ */
 private val UINT16_CLASS_ID: ClassId = ClassId.topLevel(StandardNames.FqNames.uint16FqName)
+
+/**
+ * UInt32 标量类型的 ClassId。
+ */
 private val UINT32_CLASS_ID: ClassId = ClassId.topLevel(StandardNames.FqNames.uint32FqName)
+
+/**
+ * UInt64 标量类型的 ClassId。
+ */
 private val UINT64_CLASS_ID: ClassId = ClassId.topLevel(StandardNames.FqNames.uint64FqName)
+
+/**
+ * UIntNative 标量类型的 ClassId。
+ */
 private val UINT_NATIVE_CLASS_ID: ClassId = ClassId.topLevel(StandardNames.FqNames.uint_nativeFqName)
+
+/**
+ * Float16 标量类型的 ClassId。
+ */
 private val FLOAT16_CLASS_ID: ClassId = ClassId.topLevel(StandardNames.FqNames.float16FqName)
+
+/**
+ * Float32 标量类型的 ClassId。
+ */
 private val FLOAT32_CLASS_ID: ClassId = ClassId.topLevel(StandardNames.FqNames.float32FqName)
+
+/**
+ * Float64 标量类型的 ClassId。
+ */
 private val FLOAT64_CLASS_ID: ClassId = ClassId.topLevel(StandardNames.FqNames.float64FqName)
 
+/**
+ * 移除仓颉数值字面量上的类型后缀，便于按目标类型解析。
+ */
 private fun String.removeNumericSuffix(): String =
     trim().removeSuffix("i8").removeSuffix("i16").removeSuffix("i32").removeSuffix("i64")
         .removeSuffix("inative")
@@ -344,6 +419,9 @@ private fun String.removeNumericSuffix(): String =
         .removeSuffix("unative")
         .removeSuffix("f16").removeSuffix("f32").removeSuffix("f64")
 
+/**
+ * 解析 rune 字面量文本为 Unicode code point。
+ */
 private fun parseRuneLiteral(text: String): Int {
     val body = text.removePrefix("'").removeSuffix("'")
     return when {

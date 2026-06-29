@@ -15,8 +15,15 @@ import org.junit.jupiter.api.Assertions.assertNotNull
 
 /**
  * `expressionTypeProvider.returnType` 的抽象测试。
+ *
+ * 该测试同时比较 class default type 与函数声明 return type，确保公开类型入口返回一致的类型视图。
  */
 abstract class AbstractDeclarationReturnTypeTest : AbstractAnalysisApiComponentTest() {
+    /**
+     * 执行声明返回类型查询测试。
+     *
+     * 方法定位目标函数或 callable 声明，并比较公开 return type 的渲染文本。
+     */
     override fun doTestByMainFile(mainFile: CjFile, mainModule: CjTestModule, testServices: TestServices) {
         val directives = directivesForMainFile(mainFile, mainModule)
         val userClass = PsiTreeUtil.findChildrenOfType(mainFile, CjClass::class.java)

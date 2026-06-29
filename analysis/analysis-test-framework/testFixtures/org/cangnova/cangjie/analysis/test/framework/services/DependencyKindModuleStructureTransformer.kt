@@ -21,6 +21,9 @@ import org.cangnova.cangjie.test.services.ModuleStructureTransformer
  */
 @OptIn(TestInfrastructureInternals::class)
 object DependencyKindModuleStructureTransformer : ModuleStructureTransformer() {
+    /**
+     * 根据被依赖模块的 `MODULE_KIND` 重写测试基础设施依赖种类。
+     */
     override fun transformModuleStructure(moduleStructure: TestModuleStructure, defaultsProvider: DefaultsProvider): TestModuleStructure {
         if (AnalysisApiTestDirectives.MODULE_KIND !in moduleStructure.allDirectives) return moduleStructure
 
@@ -37,6 +40,9 @@ object DependencyKindModuleStructureTransformer : ModuleStructureTransformer() {
         )
     }
 
+    /**
+     * 将单条依赖描述转换为 Analysis API 模块种类对应的依赖类型。
+     */
     private fun transformDependency(
         dependency: DependencyDescription,
         moduleMapping: Map<String, TestModule>,

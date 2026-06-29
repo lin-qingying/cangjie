@@ -18,8 +18,16 @@ import org.junit.jupiter.api.Assertions.assertNotNull
 
 /**
  * `types` 层的类型指针一致性抽象测试。
+ *
+ * 测试先从调用表达式获取类型并创建 pointer，再开启新的分析块恢复 pointer，
+ * 验证恢复后的公开类型渲染与原始类型一致。
  */
 abstract class AbstractTypePointerConsistencyTest : AbstractAnalysisApiComponentTest() {
+    /**
+     * 执行类型指针创建与恢复一致性测试。
+     *
+     * 方法使用两次分析会话分别创建和恢复 `CaTypePointer`，确保 pointer 跨会话保存足够的类型身份。
+     */
     override fun doTestByMainFile(mainFile: CjFile, mainModule: CjTestModule, testServices: TestServices) {
         val directives = directivesForMainFile(mainFile, mainModule)
         val callExpression = PsiTreeUtil.findChildrenOfType(mainFile, CjCallExpression::class.java)

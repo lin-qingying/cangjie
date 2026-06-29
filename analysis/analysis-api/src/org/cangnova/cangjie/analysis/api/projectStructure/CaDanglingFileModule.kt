@@ -23,6 +23,9 @@ interface CaDanglingFileModule : CaSourceModule {
         "Use 'files' instead.",
         ReplaceWith("files.single()", imports = ["kotlin.collections.single"]),
     )
+    /**
+     * 单文件 dangling module 的历史兼容入口。
+     */
     val file: CjFile
         get() = files.first()
 

@@ -30,11 +30,17 @@ import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 import com.intellij.lang.ASTNode
 import com.intellij.psi.PsiElement
 
+/**
+ * 表示 `CjTypeProjection`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjTypeProjection : CjModifierListOwnerStub<CangJieTypeProjectionStub> {
     constructor(node: ASTNode) : super(node)
 
     constructor(stub: CangJieTypeProjectionStub) : super(stub, CjStubElementTypes.TYPE_PROJECTION)
 
+    /**
+     * 保存 `projectionKind`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val projectionKind: CjProjectionKind
         get() {
             val stub = stub
@@ -53,13 +59,22 @@ class CjTypeProjection : CjModifierListOwnerStub<CangJieTypeProjectionStub> {
             throw IllegalStateException(projectionToken!!.text)
         }
 
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitTypeProjection(this, data)
     }
 
+    /**
+     * 保存 `typeReference`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val typeReference: CjTypeReference?
         get() = getStubOrPsiChild(CjStubElementTypes.TYPE_REFERENCE)
 
+    /**
+     * 保存 `projectionToken`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val projectionToken: PsiElement?
         get() {
             val star = findChildByType<PsiElement>(CjTokens.MUL)

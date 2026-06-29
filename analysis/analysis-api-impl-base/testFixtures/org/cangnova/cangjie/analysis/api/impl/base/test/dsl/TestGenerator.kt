@@ -83,6 +83,12 @@ import org.cangnova.cangjie.analysis.test.framework.test.configurators.FrontendK
 import org.cangnova.cangjie.analysis.test.framework.test.configurators.TestModuleKind
 import org.jetbrains.kotlin.generators.dsl.TestGroup
 
+/**
+ * 声明仓颉 Analysis API 的全部 generated test 分组。
+ *
+ * 该函数是测试生成脚本的主入口，按组件、符号、类型、会话、引用、restricted analysis 等能力族
+ * 组织抽象测试类，并为每个能力族配置对应的 testData 根目录与配置组合过滤器。
+ */
 fun AnalysisApiTestGroup.generateAnalysisApiTests() {
     component(
         "analysisScopeProvider",

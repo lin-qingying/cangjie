@@ -23,12 +23,21 @@ import kotlin.io.path.readText
  * 同时它仍然走真实 `.cjo -> compiled PSI -> stub summary` 链路。
  */
 class CaStubCompiledGoldenTest : AbstractAnalysisApiBasedTest() {
+    /**
+     * 使用 standalone CFIR 分析 API 测试配置执行 compiled stub golden 流程。
+     */
     override val configurator = CaCfirStandaloneAnalysisApiTestConfigurator
 
+    /**
+     * 注册 compiled `.cjo` 测试所需服务。
+     */
     override val additionalServiceRegistrars: List<AnalysisApiServiceRegistrar<TestServices>> = listOf(
         CjoCompiledStubsTestServiceRegistrar,
     )
 
+    /**
+     * 验证 `std.objectpool` 的 compiled stub summary 与 golden 文件一致。
+     */
     @Test
     fun builtinsObjectPoolSummary() {
         CjoCompiledTestEnvironment.withSlimStdlibFixture(
@@ -67,6 +76,9 @@ class CaStubCompiledGoldenTest : AbstractAnalysisApiBasedTest() {
         }
     }
 
+    /**
+     * 将单文件 stub 摘要渲染为稳定的 golden 文本。
+     */
     private fun renderSummary(summary: CaStubFileSummary): String {
         return buildString {
             appendLine("fileKey=${summary.fileKey.substringAfterLast('/').substringAfterLast('\\')}")
@@ -85,6 +97,9 @@ class CaStubCompiledGoldenTest : AbstractAnalysisApiBasedTest() {
         }.trimEnd()
     }
 
+    /**
+     * 比较实际文本与 golden 文件；开启 `update.test.data` 时写入新的 golden 内容。
+     */
     private fun assertMatchesGolden(actual: String, expectedFile: Path) {
         val normalizedActual = actual.normalizeLineSeparators().trimEnd()
         if (System.getProperty("update.test.data")?.toBooleanStrictOrNull() == true) {
@@ -100,5 +115,8 @@ class CaStubCompiledGoldenTest : AbstractAnalysisApiBasedTest() {
         assertEquals(expected, normalizedActual)
     }
 
+    /**
+     * 将 Windows 换行统一为测试 golden 使用的 LF。
+     */
     private fun String.normalizeLineSeparators(): String = replace("\r\n", "\n")
 }

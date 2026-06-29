@@ -1,27 +1,75 @@
 package org.cangnova.cangjie.codegen.parity
 
+/**
+ * LLVM IR parity 比较前的规范化选项。
+ */
 data class LlvmIrNormalizationOptions(
+    /**
+     * 是否排序顶层声明以消除声明顺序差异。
+     */
     val sortTopLevelDeclarations: Boolean = true,
+    /**
+     * 是否折叠连续空行。
+     */
     val collapseEmptyLines: Boolean = true,
+    /**
+     * 是否忽略 LLVM 注释行。
+     */
     val ignoreCommentLines: Boolean = true,
 )
 
+/**
+ * LLVM IR 首个差异项。
+ */
 data class LlvmIrDiffEntry(
+    /**
+     * 差异所在的 1-based 行号。
+     */
     val lineNumber: Int,
+    /**
+     * 期望 IR 中的行；实际多出行时为空。
+     */
     val expected: String?,
+    /**
+     * 实际 IR 中的行；期望多出行时为空。
+     */
     val actual: String?,
 )
 
+/**
+ * LLVM IR parity 比较结果。
+ */
 data class LlvmIrComparisonResult(
+    /**
+     * 规范化后 IR 是否完全一致。
+     */
     val matches: Boolean,
+    /**
+     * 规范化后的期望 IR。
+     */
     val normalizedExpected: String,
+    /**
+     * 规范化后的实际 IR。
+     */
     val normalizedActual: String,
+    /**
+     * 首个差异；完全一致时为空。
+     */
     val firstDiff: LlvmIrDiffEntry?,
 )
 
+/**
+ * LLVM IR 文本 parity 比较器。
+ */
 class LlvmIrParityComparator(
+    /**
+     * 当前比较器使用的规范化选项。
+     */
     private val options: LlvmIrNormalizationOptions = LlvmIrNormalizationOptions(),
 ) {
+    /**
+     * 对 LLVM IR 文本做稳定规范化。
+     */
     fun normalize(ir: String): String {
         val normalizedLines = ir
             .replace("\r\n", "\n")
@@ -49,6 +97,9 @@ class LlvmIrParityComparator(
         return trimOuterEmptyLines(compacted).joinToString("\n").trimEnd()
     }
 
+    /**
+     * 比较两段 LLVM IR 文本的规范化结果。
+     */
     fun compare(expected: String, actual: String): LlvmIrComparisonResult {
         val normalizedExpected = normalize(expected)
         val normalizedActual = normalize(actual)
@@ -61,6 +112,9 @@ class LlvmIrParityComparator(
         )
     }
 
+    /**
+     * 格式化首个差异报告。
+     */
     fun formatFirstDiffReport(result: LlvmIrComparisonResult): String {
         val diff = result.firstDiff ?: return "LLVM-IR parity matched."
         val expected = diff.expected ?: "<missing>"
@@ -73,6 +127,9 @@ class LlvmIrParityComparator(
         }.trimEnd()
     }
 
+    /**
+     * 查找两段规范化 IR 文本的首个行级差异。
+     */
     private fun firstDiff(expected: String, actual: String): LlvmIrDiffEntry? {
         val expectedLines = expected.split('\n')
         val actualLines = actual.split('\n')
@@ -91,6 +148,9 @@ class LlvmIrParityComparator(
         return null
     }
 
+    /**
+     * 排序函数体之外的顶层声明，保留函数体内部顺序。
+     */
     private fun sortTopLevelDeclarations(lines: List<String>): List<String> {
         val prefix = mutableListOf<String>()
         val declarations = mutableListOf<String>()
@@ -118,6 +178,9 @@ class LlvmIrParityComparator(
         return prefix + declarations.sorted() + body
     }
 
+    /**
+     * 折叠连续空行。
+     */
     private fun collapseEmptyLines(lines: List<String>): List<String> {
         val result = mutableListOf<String>()
         var previousWasEmpty = false
@@ -131,6 +194,9 @@ class LlvmIrParityComparator(
         return result
     }
 
+    /**
+     * 裁剪首尾空行。
+     */
     private fun trimOuterEmptyLines(lines: List<String>): List<String> {
         if (lines.isEmpty()) return lines
         var start = 0

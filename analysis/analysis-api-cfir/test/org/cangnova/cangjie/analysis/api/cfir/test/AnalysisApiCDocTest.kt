@@ -16,6 +16,11 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Test
 
+@OptIn(
+    org.cangnova.cangjie.analysis.api.CaNonPublicApi::class,
+    CjNonPublicApi::class,
+    CjImplementationDetail::class,
+)
 /**
  * CDoc 主线能力回归。
  *
@@ -24,16 +29,17 @@ import org.junit.jupiter.api.Test
  * 2. declaration symbol 与 reference-resolved symbol
  *    能恢复到同一份结构化 CDoc。
  */
-@OptIn(
-    org.cangnova.cangjie.analysis.api.CaNonPublicApi::class,
-    CjNonPublicApi::class,
-    CjImplementationDetail::class,
-)
 class AnalysisApiCDocTest : AbstractAnalysisApiExecutionTest(
     "analysis/analysis-api-cfir/testData/cdoc",
 ) {
+    /**
+     * 使用 standalone CFIR 配置执行 CDoc 结构化查询测试。
+     */
     override val configurator = CaCfirStandaloneAnalysisApiTestConfigurator
 
+    /**
+     * 验证声明 PSI 能直接提供默认段落、参数、返回值与 see 标签内容。
+     */
     @Test
     fun declarationCdoc(mainFile: CjFile) {
         val declaration = PsiTreeUtil.findChildrenOfType(mainFile, CjNamedFunction::class.java)
@@ -57,6 +63,9 @@ class AnalysisApiCDocTest : AbstractAnalysisApiExecutionTest(
         )
     }
 
+    /**
+     * 验证声明 symbol 与引用解析得到的 symbol 能恢复一致的结构化 CDoc。
+     */
     @Test
     fun symbolCDoc(mainFile: CjFile) {
         val declaration = PsiTreeUtil.findChildrenOfType(mainFile, CjNamedFunction::class.java)

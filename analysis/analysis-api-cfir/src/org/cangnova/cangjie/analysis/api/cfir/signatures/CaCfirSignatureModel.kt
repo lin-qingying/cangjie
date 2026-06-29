@@ -26,34 +26,70 @@ import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
  */
 @OptIn(CaExperimentalApi::class, CaImplementationDetail::class)
 internal sealed class CaCfirFunctionSignature<out S : CaFunctionSymbol> : CaFunctionSignature<S>, CfirSymbolBasedSignature {
+    /**
+     * 对当前函数签名应用公开 substitutor。
+     */
     abstract override fun substitute(substitutor: CaSubstitutor): CaCfirFunctionSignature<S>
 
+    /**
+     * 按签名实现类和底层 CFIR 符号比较函数签名。
+     */
     override fun equals(other: Any?): Boolean =
         this === other || other?.javaClass == javaClass && (other as CaCfirFunctionSignature<*>).cfirSymbol == cfirSymbol
 
+    /**
+     * 返回底层 CFIR 符号的哈希码。
+     */
     override fun hashCode(): Int = cfirSymbol.hashCode()
 }
 
+/**
+ * 未经过 substitutor 替换的函数签名实现。
+ */
 @OptIn(CaExperimentalApi::class, CaImplementationDetail::class)
 internal class CaCfirFunctionDummySignature<out S : CaFunctionSymbol>(
+    /**
+     * 签名所属生命周期令牌。
+     */
     override val token: CaLifetimeToken,
+    /**
+     * 签名对应的底层 CFIR 函数符号。
+     */
     override val cfirSymbol: CfirFunctionSymbol<*>,
+    /**
+     * 用于构造公开符号和类型的 CFIR builder。
+     */
     override val cfirSymbolBuilder: org.cangnova.cangjie.analysis.api.cfir.CaSymbolByCfirBuilder,
 ) : CaCfirFunctionSignature<S>() {
+    /**
+     * 当前签名对应的公开函数符号。
+     */
     @Suppress("UNCHECKED_CAST")
     override val symbol: S
         get() = withValidityAssertion { cfirSymbol.buildSymbol(cfirSymbolBuilder) as S }
 
+    /**
+     * 函数返回类型。
+     */
     override val returnType: CaType
         get() = withValidityAssertion { symbol.returnType }
 
+    /**
+     * 函数 receiver 类型。
+     */
     override val receiverType: CaType?
         get() = withValidityAssertion { symbol.receiverType }
 
+    /**
+     * 函数值参数签名列表。
+     */
     override val valueParameters: List<CaVariableSignature<CaValueParameterSymbol>> by cached {
         cfirSymbol.cfir.valueParameters.map { CaCfirVariableDummySignature(token, it.symbol, cfirSymbolBuilder) }
     }
 
+    /**
+     * 根据 substitutor 创建替换后的函数签名。
+     */
     override fun substitute(substitutor: CaSubstitutor): CaCfirFunctionSignature<S> = withValidityAssertion {
         if (substitutor is CaSubstitutor.Empty) return@withValidityAssertion this
         require(substitutor is AbstractCaCfirSubstitutor<*>)
@@ -69,30 +105,63 @@ internal class CaCfirFunctionDummySignature<out S : CaFunctionSymbol>(
  */
 @OptIn(CaExperimentalApi::class, CaImplementationDetail::class)
 internal sealed class CaCfirVariableSignature<out S : CaVariableSymbol> : CaBaseVariableSignature<S>(), CfirSymbolBasedSignature {
+    /**
+     * 对当前变量签名应用公开 substitutor。
+     */
     abstract override fun substitute(substitutor: CaSubstitutor): CaCfirVariableSignature<S>
 
+    /**
+     * 按签名实现类和底层 CFIR 符号比较变量签名。
+     */
     override fun equals(other: Any?): Boolean =
         this === other || other?.javaClass == javaClass && (other as CaCfirVariableSignature<*>).cfirSymbol == cfirSymbol
 
+    /**
+     * 返回底层 CFIR 符号的哈希码。
+     */
     override fun hashCode(): Int = cfirSymbol.hashCode()
 }
 
+/**
+ * 未经过 substitutor 替换的变量签名实现。
+ */
 @OptIn(CaExperimentalApi::class, CaImplementationDetail::class)
 internal class CaCfirVariableDummySignature<out S : CaVariableSymbol>(
+    /**
+     * 签名所属生命周期令牌。
+     */
     override val token: CaLifetimeToken,
+    /**
+     * 签名对应的底层 CFIR callable 符号。
+     */
     override val cfirSymbol: CfirCallableSymbol<*>,
+    /**
+     * 用于构造公开符号和类型的 CFIR builder。
+     */
     override val cfirSymbolBuilder: org.cangnova.cangjie.analysis.api.cfir.CaSymbolByCfirBuilder,
 ) : CaCfirVariableSignature<S>() {
+    /**
+     * 当前签名对应的公开变量符号。
+     */
     @Suppress("UNCHECKED_CAST")
     override val symbol: S
         get() = withValidityAssertion { cfirSymbol.buildSymbol(cfirSymbolBuilder) as S }
 
+    /**
+     * 变量返回类型。
+     */
     override val returnType: CaType
         get() = withValidityAssertion { symbol.returnType }
 
+    /**
+     * 变量 receiver 类型。
+     */
     override val receiverType: CaType?
         get() = withValidityAssertion { symbol.receiverType }
 
+    /**
+     * 根据 substitutor 创建替换后的变量签名。
+     */
     override fun substitute(substitutor: CaSubstitutor): CaCfirVariableSignature<S> = withValidityAssertion {
         if (substitutor is CaSubstitutor.Empty) return@withValidityAssertion this
         require(substitutor is AbstractCaCfirSubstitutor<*>)

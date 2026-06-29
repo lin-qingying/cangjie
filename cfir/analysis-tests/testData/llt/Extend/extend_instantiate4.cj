@@ -1,4 +1,4 @@
-
+// WITH_EXTRA_CHECKERS
 
 class A<T> {
     init(a: Array<T>) {}

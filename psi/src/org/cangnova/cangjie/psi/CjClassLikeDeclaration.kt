@@ -26,7 +26,13 @@ package org.cangnova.cangjie.psi
 
 import org.cangnova.cangjie.name.ClassId
 
+/**
+ * 定义 `CjClassLikeDeclaration` 接口，约束仓颉 PSI节点或服务需要暴露的结构能力。
+ */
 interface CjClassLikeDeclaration : CjNamedDeclaration {
 
+    /**
+     * 提供 `getClassId` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun getClassId(): ClassId?
 }

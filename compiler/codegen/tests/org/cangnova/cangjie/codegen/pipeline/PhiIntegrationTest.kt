@@ -19,7 +19,13 @@ import org.cangnova.cangjie.codegen.api.CodegenOptions
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
+/**
+ * LLVM phi lowering 的集成测试。
+ */
 class PhiIntegrationTest {
+    /**
+     * 验证 phi 节点会携带正确前驱 block 映射。
+     */
     @Test
     fun `emits phi node with predecessor mapping`() {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)

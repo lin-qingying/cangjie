@@ -16,6 +16,9 @@ import kotlin.reflect.KClass
  */
 @CaPlatformInterface
 interface CaLifetimeTokenFactory {
+    /**
+     * 工厂创建的 lifetime token 类型标识。
+     */
     val identifier: KClass<out CaLifetimeToken>
 
     /**
@@ -24,6 +27,9 @@ interface CaLifetimeTokenFactory {
     fun create(project: Project, modificationTracker: ModificationTracker): CaLifetimeToken
 
     companion object {
+        /**
+         * 获取项目级 lifetime token 工厂服务。
+         */
         fun getInstance(project: Project): CaLifetimeTokenFactory = project.service()
     }
 }

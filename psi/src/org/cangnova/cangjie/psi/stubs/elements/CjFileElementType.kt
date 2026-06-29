@@ -39,35 +39,56 @@ import org.cangnova.cangjie.psi.stubs.impl.CangJieFileStubKindImpl
 import org.jetbrains.annotations.NonNls
 import java.io.IOException
 
+/**
+ * 表示 `CjFileElementType`，承载PSI Stub中的语法节点、索引桩或辅助模型。
+ */
 class CjFileElementType : IStubFileElementType<CangJieFileStub> {
     private constructor() : super(NAME, CangJieLanguage)
 
     constructor(debugName: String?) : super(debugName, CangJieLanguage)
 
+    /**
+     * 实现 `getBuilder` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getBuilder(): StubBuilder {
         return CjFileStubBuilder()
     }
 
+    /**
+     * 实现 `getStubVersion` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getStubVersion(): Int {
         return CangJieStubVersions.SOURCE_STUB_VERSION
     }
 
+    /**
+     * 实现 `getExternalId` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getExternalId(): String {
         return NAME
     }
 
+    /**
+     * 实现 `serialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     @Throws(IOException::class)
     override fun serialize(stub: CangJieFileStub, dataStream: StubOutputStream) {
         CangJieFileStubKindImpl.serialize(stub.kind, dataStream)
 
     }
 
+    /**
+     * 实现 `deserialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     @Throws(IOException::class)
     override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>?): CangJieFileStub {
         val kind = CangJieFileStubKindImpl.deserialize(dataStream)
         return CangJieFileStubImpl(file = null, kind = kind)
     }
 
+    /**
+     * 实现 `doParseContents` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun doParseContents(chameleon: ASTNode, psi: PsiElement): ASTNode {
         val project = psi.project
         val languageForParser = getLanguageForParser(psi)
@@ -76,6 +97,9 @@ class CjFileElementType : IStubFileElementType<CangJieFileStub> {
         return parse(builder, psi.containingFile).firstChildNode
     }
 
+    /**
+     * 实现 `indexStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun indexStub(stub: PsiFileStub<*>, sink: IndexSink) {
         getInstance().indexFile(stub as CangJieFileStub, sink)
     }

@@ -23,8 +23,19 @@ import org.cangnova.cangjie.psi.CjTypeStatement
 import org.cangnova.cangjie.utils.addIfNotNull
 import org.cangnova.cangjie.utils.yieldIfNotNull
 
+/**
+ * 基于单个 [CjFile] 的声明 provider。
+ */
 @CaPlatformInterface
-class CangJieFileBasedDeclarationProvider(val cangjieFile: CjFile) : CangJieDeclarationProvider {
+class CangJieFileBasedDeclarationProvider(
+    /**
+     * 作为声明查询来源的仓颉文件。
+     */
+    val cangjieFile: CjFile,
+) : CangJieDeclarationProvider {
+    /**
+     * 用于从 VirtualFile 恢复最新 PSI 的 PSI manager。
+     */
     private val psiManager: PsiManager = PsiManager.getInstance(cangjieFile.project)
 
     /**
@@ -59,6 +70,9 @@ class CangJieFileBasedDeclarationProvider(val cangjieFile: CjFile) : CangJieDecl
             return file.packageFqName
         }
 
+    /**
+     * 当前文件的顶层声明序列。
+     */
     private val topLevelDeclarations: Sequence<CjDeclaration>
         get() {
             return sequence {
@@ -70,10 +84,16 @@ class CangJieFileBasedDeclarationProvider(val cangjieFile: CjFile) : CangJieDecl
             }
         }
 
+    /**
+     * 查找指定 class id 对应的首个类状声明。
+     */
     override fun getClassLikeDeclarationByClassId(classId: ClassId): CjClassLikeDeclaration? {
         return getClassLikeDeclarationsByClassId(classId).firstOrNull()
     }
 
+    /**
+     * 查找指定 class id 对应的所有普通类声明，排除 extend。
+     */
     override fun getAllClassesByClassId(classId: ClassId): Collection<CjTypeStatement> {
         return getClassLikeDeclarationsByClassId(classId)
             .filterIsInstance<CjTypeStatement>()
@@ -81,6 +101,9 @@ class CangJieFileBasedDeclarationProvider(val cangjieFile: CjFile) : CangJieDecl
             .toList()
     }
 
+    /**
+     * 递归查找指定 class id 对应的类状声明序列。
+     */
     private fun getClassLikeDeclarationsByClassId(classId: ClassId): Sequence<CjClassLikeDeclaration> {
         if (filePackageFqName != classId.packageFqName) {
             return emptySequence()
@@ -89,8 +112,14 @@ class CangJieFileBasedDeclarationProvider(val cangjieFile: CjFile) : CangJieDecl
         data class Task(val chunks: List<Name>, val element: PsiElement)
 
         return sequence {
+            /**
+             * 待处理的相对类名片段与 PSI 元素队列。
+             */
             val tasks = ArrayDeque<Task>()
 
+            /**
+             * 从 class id 中拆出的相对类名片段。
+             */
             val startingChunks = classId.relativeClassName.pathSegments()
             for (declaration in topLevelDeclarations) {
                 tasks.addLast(Task(startingChunks, declaration))
@@ -121,28 +150,46 @@ class CangJieFileBasedDeclarationProvider(val cangjieFile: CjFile) : CangJieDecl
         }
     }
 
+    /**
+     * 查找指定 class id 对应的所有类型别名。
+     */
     override fun getAllTypeAliasesByClassId(classId: ClassId): Collection<CjTypeAlias> {
         return getClassLikeDeclarationsByClassId(classId).filterIsInstance<CjTypeAlias>().toList()
     }
 
+    /**
+     * 获取当前文件所属包中所有顶层类状声明名称。
+     */
     override fun getTopLevelCangJieClassLikeDeclarationNamesInPackage(packageFqName: FqName): Set<Name> {
         return getTopLevelDeclarationNames<CjClassLikeDeclaration>(packageFqName) { declaration ->
             declaration !is CjExtend
         }
     }
 
+    /**
+     * 获取指定 callable id 对应的顶层属性。
+     */
     override fun getTopLevelProperties(callableId: CallableId): Collection<CjProperty> {
         return getTopLevelCallables(callableId)
     }
 
+    /**
+     * 获取指定 callable id 对应的顶层函数。
+     */
     override fun getTopLevelFunctions(callableId: CallableId): Collection<CjNamedFunction> {
         return getTopLevelCallables(callableId)
     }
 
+    /**
+     * 获取指定 callable id 对应的顶层宏。
+     */
     override fun getTopLevelMacros(callableId: CallableId): Collection<CjMacroDeclaration> {
         return getTopLevelCallables(callableId)
     }
 
+    /**
+     * 获取指定 callable id 对应顶层 callable 所在文件。
+     */
     override fun getTopLevelCallableFiles(callableId: CallableId): Collection<CjFile> {
         return buildSet {
             getTopLevelProperties(callableId).mapTo(this) { it.containingCjFile }
@@ -151,18 +198,30 @@ class CangJieFileBasedDeclarationProvider(val cangjieFile: CjFile) : CangJieDecl
         }
     }
 
+    /**
+     * 获取当前文件中的顶层 extend 声明。
+     */
     override fun getTopLevelExtends(): Collection<CjExtend> {
         return topLevelDeclarations.filterIsInstance<CjExtend>().toList()
     }
 
+    /**
+     * 当前文件存在顶层 extend 时返回该文件。
+     */
     override fun getTopLevelExtendFiles(): Collection<CjFile> {
         return if (getTopLevelExtends().isNotEmpty()) listOf(currentCangJieFile) else emptyList()
     }
 
+    /**
+     * 获取指定包中的顶层 callable 名称。
+     */
     override fun getTopLevelCallableNamesInPackage(packageFqName: FqName): Set<Name> {
         return getTopLevelDeclarationNames<CjCallableDeclaration>(packageFqName)
     }
 
+    /**
+     * 按包名查找当前文件是否参与 facade。
+     */
     override fun findFilesForFacadeByPackage(packageFqName: FqName): Collection<CjFile> {
         if (filePackageFqName != packageFqName) {
             return emptyList()
@@ -171,6 +230,9 @@ class CangJieFileBasedDeclarationProvider(val cangjieFile: CjFile) : CangJieDecl
         return listOf(currentCangJieFile)
     }
 
+    /**
+     * 按 facade 完整名查找当前文件。
+     */
     override fun findFilesForFacade(facadeFqName: FqName): Collection<CjFile> {
         val file = currentCangJieFile
         if (file.cangjieFileFacadeFqName != facadeFqName) return emptyList()
@@ -184,19 +246,37 @@ class CangJieFileBasedDeclarationProvider(val cangjieFile: CjFile) : CangJieDecl
         return emptyList()
     }
 
+    /**
+     * 单文件 provider 不提供额外内部 facade 文件。
+     */
     override fun findInternalFilesForFacade(facadeFqName: FqName): Collection<CjFile> = emptyList()
 
+    /**
+     * 返回当前文件所属包名。
+     */
     override fun computePackageNames(): Set<String> = setOf(filePackageFqName.asString())
 
+    /**
+     * 单文件 provider 不区分 classifier 包名计算。
+     */
     override val hasSpecificClassifierPackageNamesComputation: Boolean get() = false
+    /**
+     * 单文件 provider 不区分 callable 包名计算。
+     */
     override val hasSpecificCallablePackageNamesComputation: Boolean get() = false
 
 
+    /**
+     * 获取指定 callable id 对应的顶层 callable 声明。
+     */
     private inline fun <reified T : CjCallableDeclaration> getTopLevelCallables(callableId: CallableId): Collection<T> {
         require(callableId.classId == null)
         return getTopLevelDeclarations(callableId.packageName, callableId.callableName)
     }
 
+    /**
+     * 获取指定包名和名称对应的顶层命名声明。
+     */
     private inline fun <reified T : CjNamedDeclaration> getTopLevelDeclarations(
         packageFqName: FqName,
         name: Name
@@ -214,6 +294,9 @@ class CangJieFileBasedDeclarationProvider(val cangjieFile: CjFile) : CangJieDecl
         }
     }
 
+    /**
+     * 获取指定包中满足 [predicate] 的顶层命名声明名称。
+     */
     private inline fun <reified T : CjNamedDeclaration> getTopLevelDeclarationNames(
         packageFqName: FqName,
         predicate: (T) -> Boolean = { true },

@@ -31,20 +31,47 @@ import com.intellij.openapi.vfs.VirtualFile
 import javax.swing.Icon
 
 
+/**
+ * 提供 `CangJieBuiltInFileType` 单例，集中承载仓颉语言文件类型的共享状态、工厂或工具行为。
+ */
 object CangJieBuiltInFileType : FileType {
+    /**
+     * 实现 `getName` 的仓颉语言文件类型协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getName() = "cjo"
 
+    /**
+     * 实现 `getDescription` 的仓颉语言文件类型协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getDescription(): String = ""
 
+    /**
+     * 实现 `getDefaultExtension` 的仓颉语言文件类型协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getDefaultExtension() = "cjo"
 
+    /**
+     * 实现 `getIcon` 的仓颉语言文件类型协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getIcon(): Icon? = null
 
+    /**
+     * 实现 `isBinary` 的仓颉语言文件类型协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun isBinary() = true
 
+    /**
+     * 实现 `isReadOnly` 的仓颉语言文件类型协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun isReadOnly() = true
 
+    /**
+     * 实现 `getCharset` 的仓颉语言文件类型协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getCharset(file: VirtualFile, content: ByteArray): String? = null
 
+    /**
+     * 保存 `DEFAULT_DESCRIPTION`，供仓颉语言文件类型流程读取节点结构或语义信息。
+     */
     private const val DEFAULT_DESCRIPTION = "CangJie built-in declarations"
 }

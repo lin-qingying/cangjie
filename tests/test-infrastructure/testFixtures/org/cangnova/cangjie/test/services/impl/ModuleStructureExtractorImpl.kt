@@ -27,6 +27,9 @@ class ModuleStructureExtractorImpl(
     testServices: TestServices,
     additionalSourceProviders: List<AdditionalSourceProvider>,
     moduleStructureTransformers: List<ModuleStructureTransformer>,
+    /**
+     * 保存 `environmentConfigurators`，供测试服务在测试执行期间读取或传递。
+     */
     private val environmentConfigurators: List<AbstractEnvironmentConfigurator>
 ) : ModuleStructureExtractor(testServices, additionalSourceProviders, moduleStructureTransformers) {
     companion object {
@@ -77,6 +80,9 @@ class ModuleStructureExtractorImpl(
         }
     }
 
+    /**
+     * 执行 `splitTestDataByModules` 对应的测试服务流程，维持测试框架的阶段契约。
+     */
     override fun splitTestDataByModules(
         testDataFileName: String,
         directivesContainer: DirectivesContainer,
@@ -95,7 +101,13 @@ class ModuleStructureExtractorImpl(
     }
 
     private inner class ModuleStructureExtractorWorker(
+        /**
+         * 保存 `testDataFiles`，供测试服务在测试执行期间读取或传递。
+         */
         private val testDataFiles: List<File>,
+        /**
+         * 保存 `directivesContainer`，供测试服务在测试执行期间读取或传递。
+         */
         private val directivesContainer: DirectivesContainer,
     ) {
         private val assertions: Assertions
@@ -441,14 +453,32 @@ class ModuleStructureExtractorImpl(
         }
     }
 
+    /**
+     * 表示 `ModuleNameAndDependencies`，承载测试服务中的配置数据、测试产物或处理步骤。
+     */
     private data class ModuleNameAndDependencies(
+        /**
+         * 保存 `name`，供测试服务在测试执行期间读取或传递。
+         */
         val name: String,
+        /**
+         * 保存 `dependencies`，供测试服务在测试执行期间读取或传递。
+         */
         val dependencies: List<String>,
+        /**
+         * 保存 `friends`，供测试服务在测试执行期间读取或传递。
+         */
         val friends: List<String>,
+        /**
+         * 保存 `dependsOn`，供测试服务在测试执行期间读取或传递。
+         */
         val dependsOn: List<String>
     )
 }
 
+/**
+ * 提供 `plus` 对应的测试服务流程，维持测试框架的阶段契约。
+ */
 private operator fun RegisteredDirectives.plus(other: RegisteredDirectives?): RegisteredDirectives {
     return when {
         other == null -> this
@@ -458,6 +488,9 @@ private operator fun RegisteredDirectives.plus(other: RegisteredDirectives?): Re
     }
 }
 
+/**
+ * 提供 `>` 对应的测试服务流程，维持测试框架的阶段契约。
+ */
 inline fun <reified T : Enum<T>> valueOfOrNull(value: String): T? {
     for (enumValue in enumValues<T>()) {
         if (enumValue.name == value) {

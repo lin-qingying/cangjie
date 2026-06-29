@@ -31,7 +31,16 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
+/**
+ * 验证 `.cjo` compiled stub 渲染为仓颉反编译文本时的语法格式契约。
+ *
+ * 测试通过手工构造 stub 或使用轻量 PSI 环境，覆盖函数、宏、主函数、类型成员、
+ * 属性访问器和修饰符等反编译输出的关键形态。
+ */
 class DecompiledTextBuilderTest {
+    /**
+     * 验证没有参数列表 stub 的普通 compiled 函数仍会渲染空括号和 compiled body 占位。
+     */
     @Test
     fun zeroArgCompiledNamedFunctionWithoutParameterListStillRendersParenthesesAndBody() {
         withCoreEnvironment {
@@ -54,6 +63,9 @@ class DecompiledTextBuilderTest {
         }
     }
 
+    /**
+     * 验证 operator 函数在缺少参数列表 stub 时仍保留 `operator` 修饰符、空括号和 body 占位。
+     */
     @Test
     fun zeroArgCompiledOperatorWithoutParameterListStillRendersParenthesesAndBody() {
         withCoreEnvironment {
@@ -79,6 +91,9 @@ class DecompiledTextBuilderTest {
         }
     }
 
+    /**
+     * 验证主函数和宏声明在没有参数列表 stub 时仍渲染符合仓颉语法的空参数列表。
+     */
     @Test
     fun zeroArgCompiledMainAndMacroWithoutParameterListStillRenderParentheses() {
         withCoreEnvironment {
@@ -112,6 +127,9 @@ class DecompiledTextBuilderTest {
         }
     }
 
+    /**
+     * 验证 foreign callable 只渲染声明头和 `foreign` 修饰符，不添加 compiled body 占位。
+     */
     @Test
     fun foreignCallableRemainsBodylessAndRendersForeignModifier() {
         withCoreEnvironment {
@@ -138,6 +156,9 @@ class DecompiledTextBuilderTest {
         }
     }
 
+    /**
+     * 验证接口抽象成员反编译后保持无函数体形式。
+     */
     @Test
     fun interfaceAbstractMemberRemainsBodyless() {
         withCoreEnvironment { environment ->
@@ -159,6 +180,9 @@ class DecompiledTextBuilderTest {
         }
     }
 
+    /**
+     * 验证抽象类型和 open 成员在反编译文本中保留 modality 修饰符。
+     */
     @Test
     fun compiledAbstractClassAndOpenMemberRenderModalityModifiers() {
         withCoreEnvironment {
@@ -201,6 +225,9 @@ class DecompiledTextBuilderTest {
         }
     }
 
+    /**
+     * 验证没有显式 accessor stub 的 compiled `prop` 仍会渲染 getter body 占位。
+     */
     @Test
     fun compiledPropertyWithoutAccessorStubsStillRendersGetterBody() {
         withCoreEnvironment {
@@ -219,6 +246,9 @@ class DecompiledTextBuilderTest {
         }
     }
 
+    /**
+     * 验证没有显式 accessor stub 的 `mut prop` 会同时渲染 getter 与 setter body 占位。
+     */
     @Test
     fun compiledMutPropertyWithoutAccessorStubsStillRendersGetterAndSetterBodies() {
         withCoreEnvironment {
@@ -242,6 +272,9 @@ class DecompiledTextBuilderTest {
         }
     }
 
+    /**
+     * 验证显式 setter accessor 只渲染参数名，不在 accessor 形参位置补类型文本。
+     */
     @Test
     fun propertyAccessorRendersUntypedSetterParameter() {
         withCoreEnvironment {
@@ -293,6 +326,9 @@ class DecompiledTextBuilderTest {
         }
     }
 
+    /**
+     * 创建测试用仓颉核心环境，并在执行结束后按 IntelliJ 规则释放 disposable。
+     */
     private fun withCoreEnvironment(action: (CangJieCoreEnvironment) -> Unit) {
         val disposable = Disposer.newDisposable("DecompiledTextBuilderTest")
         try {
@@ -310,12 +346,18 @@ class DecompiledTextBuilderTest {
         }
     }
 
+    /**
+     * 构造带 sample package 的手工文件 stub，并返回反编译文本。
+     */
     private fun renderManualFileStub(build: (CangJieFileStubImpl) -> Unit): String {
         val fileStub = CangJieFileStubImpl.forFile(samplePackage)
         build(fileStub)
         return buildDecompiledText(fileStub)
     }
 
+    /**
+     * 构造 sample struct 及其 class body stub，并把 body 交给调用方填充成员。
+     */
     private fun renderManualStructStub(build: (CangJiePlaceHolderStubImpl<CjAbstractClassBody>) -> Unit): String {
         return renderManualFileStub { fileStub ->
             val structStub = CangJieStructStubImpl(
@@ -335,11 +377,17 @@ class DecompiledTextBuilderTest {
         }
     }
 
+    /**
+     * 为手工声明 stub 创建空注解列表和修饰符列表头部。
+     */
     private fun createEmptyHeader(parent: StubElement<*>, modifierMask: Long = 0L) {
         CangJiePlaceHolderStubImpl<CjAnnotations>(parent, CjStubElementTypes.ANNOTATIONS)
         CangJieModifierListStubImpl(parent, modifierMask, CjStubElementTypes.MODIFIER_LIST)
     }
 
+    /**
+     * 在指定声明 stub 下创建一个基础类型引用 stub。
+     */
     private fun createBasicTypeReference(parent: StubElement<*>, typeName: String) {
         val typeReferenceStub = CangJiePlaceHolderStubImpl<org.cangnova.cangjie.psi.CjTypeReference>(
             parent,
@@ -348,6 +396,9 @@ class DecompiledTextBuilderTest {
         CangJieBasicTypeStubImpl(typeReferenceStub, typeName)
     }
 
+    /**
+     * 根据测试需要的修饰符布尔值构造 PSI stub 使用的修饰符 bit mask。
+     */
     private fun computeModifierMask(
         operator: Boolean = false,
         foreign: Boolean = false,
@@ -372,10 +423,19 @@ class DecompiledTextBuilderTest {
     }
 
     private companion object {
+        /** 手工 stub 测试使用的示例包名。 */
         val samplePackage: FqName = FqName("sample")
+
+        /** 手工 class stub 测试使用的示例类名。 */
         val sampleClassName: Name = Name.identifier("Widget")
+
+        /** 手工 class stub 测试使用的示例类全限定名。 */
         val sampleClassFqName: FqName = samplePackage.child(sampleClassName)
+
+        /** 手工 struct stub 测试使用的示例结构体名。 */
         val sampleStructName: Name = Name.identifier("Box")
+
+        /** 手工 struct stub 测试使用的示例结构体全限定名。 */
         val sampleStructFqName: FqName = samplePackage.child(sampleStructName)
     }
 }

@@ -39,11 +39,17 @@ import com.intellij.psi.search.SearchScope
 import com.intellij.psi.stubs.IStubElementType
 import com.intellij.util.IncorrectOperationException
 
+/**
+ * 表示 `CjNamedDeclarationStub`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 abstract class CjNamedDeclarationStub<T : CangJieStubWithFqName<*>> : CjDeclarationStub<T>, CjNamedDeclaration {
     constructor(stub: T, nodeType: IStubElementType<*, *>) : super(stub, nodeType)
 
     constructor(node: ASTNode) : super(node)
 
+    /**
+     * 实现 `getName` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getName(): String? {
         return runReadAction {
             val stub = stub
@@ -62,21 +68,36 @@ abstract class CjNamedDeclarationStub<T : CangJieStubWithFqName<*>> : CjDeclarat
         }
     }
 
+    /**
+     * 暴露 `nameAsName`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val nameAsName: Name?
         get() {
             return this.name?.asOperatorName()
         }
 
+    /**
+     * 暴露 `nameAsSafeName`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val nameAsSafeName: Name
         get() = CjPsiUtil.safeName(name)
 
+    /**
+     * 实现 `getNameIdentifier` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getNameIdentifier(): PsiElement? {
         return findChildByType(CjTokens.IDENTIFIER) ?: findChildByType(CjNodeTypes.OPERATION_NAME)
     }
 
+    /**
+     * 保存 `operatorName`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val operatorName: CjOperationName?
         get() = findChildByType(CjNodeTypes.OPERATION_NAME)
 
+    /**
+     * 实现 `setName` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     @Throws(IncorrectOperationException::class)
     override fun setName(name: String): PsiElement? {
         val identifier = nameIdentifier ?: return null
@@ -90,11 +111,17 @@ abstract class CjNamedDeclarationStub<T : CangJieStubWithFqName<*>> : CjDeclarat
         return this
     }
 
+    /**
+     * 实现 `getTextOffset` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getTextOffset(): Int {
         val identifier = nameIdentifier
         return identifier?.textRange?.startOffset ?: textRange.startOffset
     }
 
+    /**
+     * 实现 `getUseScope` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getUseScope(): SearchScope {
         return computeCangJieDeclarationUseScope(
             declaration = this,
@@ -102,6 +129,9 @@ abstract class CjNamedDeclarationStub<T : CangJieStubWithFqName<*>> : CjDeclarat
         )
     }
 
+    /**
+     * 暴露 `fqName`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val fqName: FqName?
         get() {
             val stub = getStub()

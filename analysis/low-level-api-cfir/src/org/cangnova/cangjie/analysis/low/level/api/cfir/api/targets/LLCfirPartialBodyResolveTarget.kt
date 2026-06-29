@@ -17,8 +17,14 @@ import org.cangnova.cangjie.psi.CjElement
  */
 internal class LLCfirPartialBodyResolveTarget(
     designation: CfirDesignation,
+    /**
+     * 本次 partial body analysis 的请求参数。
+     */
     val request: LLPartialBodyResolveRequest
 ) : LLCfirResolveTarget(designation) {
+    /**
+     * partial body resolve 只对目标元素本身执行 visitor 动作。
+     */
     override fun visitTargetElement(element: CfirElementWithResolveState, visitor: LLCfirResolveTargetVisitor) {
         visitor.performAction(element)
     }
@@ -34,9 +40,21 @@ internal class LLCfirPartialBodyResolveTarget(
  *        is analyzed.
  */
 internal class LLPartialBodyResolveRequest(
+    /**
+     * 需要执行 partial body analysis 的 callable 或可解析声明。
+     */
     val target: CfirDeclaration,
+    /**
+     * 目标声明源码 body 中顶层 PSI 语句总数。
+     */
     val totalPsiStatementCount: Int,
+    /**
+     * 本次请求需要解析到的顶层 PSI 语句数量。
+     */
     val targetPsiStatementCount: Int,
+    /**
+     * 首个不属于本次解析片段的 PSI 元素；为空表示解析完整 body。
+     */
     val stopElement: CjElement?
 ) {
     init {

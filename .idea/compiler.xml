@@ -45,7 +45,6 @@
       <module name="cangjie.analysis.decompiled.decompiler-to-file-stubs.test" target="21" />
       <module name="cangjie.analysis.decompiled.decompiler-to-psi" target="21" />
       <module name="cangjie.analysis.decompiled.decompiler-to-psi.main" target="21" />
-      <module name="cangjie.analysis.decompiled.decompiler-to-psi.test" target="21" />
       <module name="cangjie.analysis.decompiled.decompiler-to-psi.testFixtures" target="21" />
       <module name="cangjie.analysis.decompiled.decompiler-to-stubs" target="21" />
       <module name="cangjie.analysis.decompiled.decompiler-to-stubs.main" target="21" />

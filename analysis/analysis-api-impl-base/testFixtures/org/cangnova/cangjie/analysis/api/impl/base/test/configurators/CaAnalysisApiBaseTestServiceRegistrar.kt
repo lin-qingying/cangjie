@@ -28,10 +28,22 @@ import org.cangnova.cangjie.test.services.TestServices
  * 在测试模块结构安装完成后，为 low-level session 注册 declaration/package/annotation provider。
  */
 object CaAnalysisApiBaseTestServiceRegistrar : AnalysisApiTestServiceRegistrar() {
+    /**
+     * 注册 Analysis API 基础测试在项目级立即可见的服务。
+     *
+     * 当前阶段只安装平台设置，因为 declaration/package provider 依赖 project model，
+     * 需要等测试框架完成模块结构装配后再注册。
+     */
     override fun registerProjectServices(project: MockProject, testServices: TestServices) {
         project.registerPlatformSettings(testServices)
     }
 
+    /**
+     * 注册依赖测试项目模型的 Analysis API 平台服务。
+     *
+     * 这些服务负责从测试模块结构中构造 declaration provider、package provider 和 annotation resolver，
+     * 是低层 session 能够按模块查询源码/库声明的基础。
+     */
     override fun registerProjectModelServices(project: MockProject, disposable: Disposable, testServices: TestServices) {
         project.apply {
             registerService(
@@ -57,6 +69,12 @@ object CaAnalysisApiBaseTestServiceRegistrar : AnalysisApiTestServiceRegistrar()
         }
     }
 
+    /**
+     * 根据当前测试的库索引模式注册 `CaPlatformSettings`。
+     *
+     * 测试框架通过该设置区分反序列化声明应来自 stub 索引还是二进制元数据，
+     * 从而让 source、binary library 和 decompiled 测试使用一致的平台语义。
+     */
     private fun MockProject.registerPlatformSettings(testServices: TestServices) {
         val deserializedDeclarationsOrigin = when (testServices.libraryIndexingConfiguration?.binaryLibraryIndexingMode) {
             AnalysisApiBinaryLibraryIndexingMode.INDEX_STUBS -> CaDeserializedDeclarationsOrigin.STUBS

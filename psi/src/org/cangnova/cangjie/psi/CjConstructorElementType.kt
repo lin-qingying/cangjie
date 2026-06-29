@@ -34,11 +34,17 @@ import com.intellij.util.io.StringRef
 import org.jetbrains.annotations.NonNls
 import java.io.IOException
 
+/**
+ * 表示 `CjConstructorElementType`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 abstract class CjConstructorElementType<T : CjConstructor<T>>(
     debugName: String,
     tClass: Class<T>,
     stubClass: Class<CangJieConstructorStub<*>>,
 ) : CjStubElementType<CangJieConstructorStub<T>, T>(debugName, tClass, stubClass) {
+    /**
+     * 提供 `newStub` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     protected abstract fun newStub(
         parentStub: StubElement<*>,
         nameRef: StringRef?,
@@ -46,8 +52,14 @@ abstract class CjConstructorElementType<T : CjConstructor<T>>(
         isPrimary: Boolean,
     ): CangJieConstructorStub<T>
 
+    /**
+     * 保存 `isPrimary`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     open val isPrimary: Boolean get() = false
 
+    /**
+     * 实现 `createStub` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createStub(psi: T, parentStub: StubElement<*>): CangJieConstructorStub<T> {
         val hasBody = psi.hasBody()
         return newStub(
@@ -58,6 +70,9 @@ abstract class CjConstructorElementType<T : CjConstructor<T>>(
         )
     }
 
+    /**
+     * 实现 `serialize` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     @Throws(IOException::class)
     override fun serialize(stub: CangJieConstructorStub<T>, dataStream: StubOutputStream) {
         dataStream.writeName(stub.name)
@@ -65,6 +80,9 @@ abstract class CjConstructorElementType<T : CjConstructor<T>>(
         dataStream.writeBoolean(stub.isPrimary)
     }
 
+    /**
+     * 实现 `deserialize` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     @Throws(IOException::class)
     override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>): CangJieConstructorStub<T> {
         val name = dataStream.readName()
@@ -73,6 +91,9 @@ abstract class CjConstructorElementType<T : CjConstructor<T>>(
         return newStub(parentStub, name, hasBody, isPrimary)
     }
 
+    /**
+     * 实现 `indexStub` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun indexStub(stub: CangJieConstructorStub<T>, sink: IndexSink) {
     }
 }

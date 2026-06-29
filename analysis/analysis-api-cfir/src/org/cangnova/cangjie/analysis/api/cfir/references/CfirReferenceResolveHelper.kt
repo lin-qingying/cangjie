@@ -45,6 +45,9 @@ import org.cangnova.cangjie.psi.psiUtil.isImportDirectiveExpression
  * resolved qualifier 等语义，因此这些分支不出现。
  */
 internal object CfirReferenceResolveHelper {
+    /**
+     * 解析一个简单名引用并返回公开 Analysis API 符号集合。
+     */
     fun resolveSimpleNameReference(
         ref: CaCfirSimpleNameReference,
         analysisSession: CaCfirSession,
@@ -73,11 +76,17 @@ internal object CfirReferenceResolveHelper {
         }
     }
 
+    /**
+     * 调用表达式中的 callee 简单名需要提升到整个 call 表达式参与 CFIR 查询。
+     */
     private fun adjustResolutionExpression(expression: CjSimpleNameExpression): org.cangnova.cangjie.psi.CjElement {
         val parentAsCall = expression.parent as? CjCallExpression
         return parentAsCall ?: expression
     }
 
+    /**
+     * 解析用户类型 qualifier 中可作为目标的简单名。
+     */
     private fun getSymbolsByUserTypeQualifierPart(
         expression: CjSimpleNameExpression,
         analysisSession: CaCfirSession,
@@ -93,6 +102,9 @@ internal object CfirReferenceResolveHelper {
         return listOfNotNull(resolvedTypeRef.toTargetSymbol(analysisSession, symbolBuilder))
     }
 
+    /**
+     * 判断简单名是否只是用户类型限定路径中的中间片段。
+     */
     private fun CjSimpleNameExpression.isPartOfUserTypeRefQualifier(): Boolean {
         var currentParent = parent
         while (currentParent is CjUserType) {
@@ -144,6 +156,9 @@ internal object CfirReferenceResolveHelper {
         }
     }
 
+    /**
+     * 解析 import 项在当前 simple-name 位置选择出的 CFIR import targets。
+     */
     private fun resolveImportTargets(
         analysisSession: CaCfirSession,
         importItem: CjImportItem,
@@ -189,6 +204,9 @@ internal object CfirReferenceResolveHelper {
         return targets
     }
 
+    /**
+     * 计算 import 路径中当前 simple-name 对应的 FQ name。
+     */
     private fun CjImportItem.selectedFqNameFor(expression: CjSimpleNameExpression): FqName? {
         val importedFqName = importedFqName ?: return null
         val segments = collectSimpleNames(importedReference).map(CjSimpleNameExpression::referencedName)
@@ -204,6 +222,9 @@ internal object CfirReferenceResolveHelper {
         return FqName.fromSegments(selectedSegments)
     }
 
+    /**
+     * 收集 import reference 表达式中的简单名片段。
+     */
     private fun collectSimpleNames(expression: org.cangnova.cangjie.psi.CjExpression?): List<CjSimpleNameExpression> {
         return when (expression) {
             is CjDotQualifiedExpression -> buildList {
@@ -216,6 +237,9 @@ internal object CfirReferenceResolveHelper {
         }
     }
 
+    /**
+     * 从可解析 CFIR 元素的 callee reference 中提取目标符号。
+     */
     private fun getSymbolsByResolvable(
         cfir: CfirResolvable,
         symbolBuilder: CaSymbolByCfirBuilder,
@@ -223,6 +247,9 @@ internal object CfirReferenceResolveHelper {
         return cfir.calleeReference.toTargetSymbol(symbolBuilder)
     }
 
+    /**
+     * 从已解析类型引用恢复目标符号。
+     */
     private fun CfirResolvedTypeRef.toTargetSymbol(
         analysisSession: CaCfirSession,
         symbolBuilder: CaSymbolByCfirBuilder,
@@ -233,6 +260,9 @@ internal object CfirReferenceResolveHelper {
         }
     }
 
+    /**
+     * 从 Cone 类型恢复引用解析目标符号。
+     */
     private fun ConeCangJieType.toTargetSymbol(
         analysisSession: CaCfirSession,
         symbolBuilder: CaSymbolByCfirBuilder,
@@ -250,6 +280,9 @@ internal object CfirReferenceResolveHelper {
         return symbol?.buildSymbol(symbolBuilder)
     }
 
+    /**
+     * 从 CFIR reference 恢复公开 Analysis API 符号集合。
+     */
     private fun CfirReference.toTargetSymbol(
         symbolBuilder: CaSymbolByCfirBuilder,
     ): Collection<org.cangnova.cangjie.analysis.api.symbols.CaSymbol> {

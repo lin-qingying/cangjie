@@ -10,10 +10,19 @@ import org.cangnova.cangjie.cfir.declarations.CfirFile
  * 再转换函数体，最终产出可交给后端继续降级的 CHIR package。
  */
 interface Cfir2ChirConverter {
+    /**
+     * 将同一包内的一组 CFIR 文件转换为一个 CHIR package。
+     */
     fun convert(files: List<CfirFile>): ChirPackage
 }
 
+/**
+ * 默认 CFIR 到 CHIR 转换器实现。
+ */
 class DefaultCfir2ChirConverter : Cfir2ChirConverter {
+    /**
+     * 先注册所有文件和声明 header，再逐文件转换 CHIR module。
+     */
     override fun convert(files: List<CfirFile>): ChirPackage {
         if (files.isEmpty()) {
             throw Cfir2ChirConversionException("CFIR to CHIR conversion requires at least one file")

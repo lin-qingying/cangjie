@@ -6,7 +6,13 @@ import org.cangnova.cangjie.chir.core.checker.DefaultChirValidator
 import org.cangnova.cangjie.chir.core.context.ChirContext
 import org.cangnova.cangjie.chir.core.model.ChirPackage
 
+/**
+ * CHIR 序列化前的校验入口。
+ */
 object ChirSerializationGate {
+    /**
+     * 要求 [chirPackage] 在序列化前通过校验。
+     */
     fun requireValidForSerialization(
         chirPackage: ChirPackage,
         context: ChirContext? = null,

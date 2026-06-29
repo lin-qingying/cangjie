@@ -11,6 +11,9 @@ import org.cangnova.cangjie.cfir.CfirElementWithResolveState
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationDataRegistry
 
+/**
+ * 挂在 CFIR declaration 上的 partial body analysis 状态键。
+ */
 private object PartialBodyAnalysisStateKey : CfirDeclarationDataKey()
 
 /**
@@ -30,6 +33,9 @@ internal var CfirDeclaration.partialBodyAnalysisState: LLPartialBodyAnalysisStat
  * [LLCfirResolveTarget] representing single target to resolve. The [target] can be any of [CfirElementWithResolveState]
  */
 internal class LLCfirSingleResolveTarget(designation: CfirDesignation) : LLCfirResolveTarget(designation) {
+    /**
+     * 对非文件目标执行一次 visitor 动作；文件目标已在父类 visit 入口处理。
+     */
     override fun visitTargetElement(
         element: CfirElementWithResolveState,
         visitor: LLCfirResolveTargetVisitor,

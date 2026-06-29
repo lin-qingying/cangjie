@@ -18,7 +18,18 @@ import java.io.PrintStream
 object LspIoManager {
 
     // 记录原始引用。这是最基础、最不容易出错的 I/O 持有方式。
+    /**
+     * 直接绑定进程标准输入文件描述符的协议输入流。
+     *
+     * 该流绕过 `System.in`，避免后续标准流重定向影响 LSP 消息读取。
+     */
     private val rawIn: InputStream = FileInputStream(FileDescriptor.`in`)
+
+    /**
+     * 直接绑定进程标准输出文件描述符的协议输出流。
+     *
+     * 该流绕过 `System.out`，确保 JSON-RPC 协议响应不会被日志或普通打印污染。
+     */
     private val rawOut: OutputStream = FileOutputStream(FileDescriptor.out)
 
     /**

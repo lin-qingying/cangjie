@@ -7,10 +7,22 @@ package org.cangnova.cangjie.test.codeMetaInfo
 
 import org.cangnova.cangjie.test.codeMetaInfo.model.ParsedCodeMetaInfo
 
+/**
+ * 提供 `CodeMetaInfoParser` 单例，集中承载代码元信息测试的共享状态、常量或默认行为。
+ */
 object CodeMetaInfoParser {
+    /**
+     * 保存 `openingRegex`，供代码元信息测试在测试执行期间读取或传递。
+     */
     val openingRegex = """(<!([^"]*?((".*?")(, ".*?")*?)?[^"]*?)!>)""".toRegex()
+    /**
+     * 保存 `closingRegex`，供代码元信息测试在测试执行期间读取或传递。
+     */
     val closingRegex = """(<!>)""".toRegex()
 
+    /**
+     * 保存 `openingOrClosingRegex`，供代码元信息测试在测试执行期间读取或传递。
+     */
     val openingOrClosingRegex = """(${closingRegex.pattern}|${openingRegex.pattern})""".toRegex()
 
     /*
@@ -27,7 +39,13 @@ object CodeMetaInfoParser {
      */
     private val tagRegex = """([\S&&[^,(){}]]+)([{](.*?)[}])?(\("((?:\\"|.)*?)"\))?(, )?""".toRegex()
 
+    /**
+     * 表示 `Opening`，承载代码元信息测试中的配置数据、测试产物或处理步骤。
+     */
     private class Opening(val index: Int, val tags: String, val startOffset: Int) {
+        /**
+         * 执行 `equals` 对应的代码元信息测试流程，维持测试框架的阶段契约。
+         */
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
             if (javaClass != other?.javaClass) return false
@@ -39,11 +57,17 @@ object CodeMetaInfoParser {
             return true
         }
 
+        /**
+         * 执行 `hashCode` 对应的代码元信息测试流程，维持测试框架的阶段契约。
+         */
         override fun hashCode(): Int {
             return index
         }
     }
 
+    /**
+     * 执行 `getCodeMetaInfoFromText` 对应的代码元信息测试流程，维持测试框架的阶段契约。
+     */
     fun getCodeMetaInfoFromText(renderedText: String): List<ParsedCodeMetaInfo> {
         var text = renderedText
 

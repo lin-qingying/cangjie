@@ -7,12 +7,12 @@ open class B {
 
 class A <: B {
     public var ss = <!USED_BEFORE_INITIALIZATION!>s<!>
-    public var sss = <!ILLEGAL_THIS_OR_SUPER_CALL!>super<!>.s
-    public var ssss = super
+    public var sss = <!THIS_OR_SUPER_NOT_ALLOWED_TO_INITIALIZE_NON_STATIC_MEMBER!>super<!>.s
+    public var ssss = <!ILLEGAL_SUPER_ALONE!>super<!>
     public var sssss = <!USED_BEFORE_INITIALIZATION!>g<!>()
     public var ssssss = <!USED_BEFORE_INITIALIZATION!>g<!>
-    public var sssssss = <!ILLEGAL_THIS_OR_SUPER_CALL!>super<!>.g()
-    public var ssssssss = <!ILLEGAL_THIS_OR_SUPER_CALL!>super<!>.g
+    public var sssssss = <!THIS_OR_SUPER_NOT_ALLOWED_TO_INITIALIZE_NON_STATIC_MEMBER!>super<!>.g()
+    public var ssssssss = <!THIS_OR_SUPER_NOT_ALLOWED_TO_INITIALIZE_NON_STATIC_MEMBER!>super<!>.g
     public var a: Int64
     public var b: Int64 = 1
     public var c = {
@@ -23,7 +23,7 @@ class A <: B {
     public var d = <!USED_BEFORE_INITIALIZATION!>this.f<!>()
     public var e = <!USED_BEFORE_INITIALIZATION!>this.b<!>
     public var ff = {=> 1}
-    public var gg = <!ILLEGAL_THIS_OR_SUPER_CALL!>this<!>
+    public var gg = <!THIS_OR_SUPER_NOT_ALLOWED_TO_INITIALIZE_NON_STATIC_MEMBER!>this<!>
     public var fff = {=> <!USED_BEFORE_INITIALIZATION!>this<!>}
     public init() {
         func m() {

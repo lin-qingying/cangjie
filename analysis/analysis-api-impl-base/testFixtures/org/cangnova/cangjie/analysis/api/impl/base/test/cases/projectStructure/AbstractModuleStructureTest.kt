@@ -31,9 +31,20 @@ import org.junit.jupiter.api.Assertions.assertNull
  * 稳定映射成 `CaModule` 家族、binary artifact view 与 auxiliary modules。
  */
 abstract class AbstractModuleStructureTest : AbstractAnalysisApiBasedTest() {
+    /**
+     * 当前模块结构测试额外注册的项目结构指令。
+     *
+     * 模块结构测试不继承组件级目标定位指令，只需要模块级 expected shape、dependency 和 resolvable 断言。
+     */
     override val additionalDirectives: List<DirectivesContainer>
         get() = listOf(AnalysisApiProjectStructureTestDirectives)
 
+    /**
+     * 执行主模块及其辅助模块形状断言。
+     *
+     * 方法从测试模块模型中读取期望指令，并逐项比较主模块、binary artifact view、auxiliary modules、
+     * direct regular/friend dependencies 以及 dangling/not-under-content-root 上下文绑定。
+     */
     override fun doTestByMainModuleAndOptionalMainFile(
         mainFile: CjFile?,
         mainModule: CjTestModule,
@@ -122,6 +133,11 @@ abstract class AbstractModuleStructureTest : AbstractAnalysisApiBasedTest() {
     }
 }
 
+/**
+ * 将公开 `CaModule` 实例映射为测试数据中使用的模块形状枚举。
+ *
+ * 该转换只暴露模块语义类别，避免 golden 依赖具体实现类名。
+ */
 private fun CaModule.toExpectedShape(): ExpectedCaModuleShape = when (this) {
     is CaDanglingFileModule -> ExpectedCaModuleShape.DanglingFileModule
     is CaLibrarySourceModule -> ExpectedCaModuleShape.LibrarySourceModule
@@ -133,6 +149,11 @@ private fun CaModule.toExpectedShape(): ExpectedCaModuleShape = when (this) {
     else -> error("Unsupported CaModule implementation in project structure test: ${this::class.qualifiedName}")
 }
 
+/**
+ * 将 direct regular dependency 中的辅助模块映射为期望形状。
+ *
+ * 非辅助模块返回 `null`，由调用方过滤后只比较 builtins 与 library fallback 等辅助依赖。
+ */
 private fun toAuxiliaryShapeOrNull(module: CaModule): ExpectedCaModuleShape? = when (module) {
     is CaBuiltinsModule -> ExpectedCaModuleShape.BuiltinsModule
     is CaLibraryFallbackDependenciesModule -> ExpectedCaModuleShape.LibraryFallbackDependenciesModule

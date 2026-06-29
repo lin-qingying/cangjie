@@ -44,6 +44,9 @@ import org.cangnova.cangjie.chir.core.value.ChirValue
 import org.cangnova.cangjie.codegen.diagnostics.CodegenLoweringException
 import org.cangnova.cangjie.codegen.ir.sanitizeIdentifier
 
+/**
+ * LLVM nominal identified type 的分类与名称前缀。
+ */
 internal enum class LlvmNominalTypeKind(val prefix: String) {
     TYPE("type"),
     STRUCT("struct"),
@@ -64,6 +67,9 @@ internal enum class LlvmNominalTypeKind(val prefix: String) {
 internal fun llvmNominalTypeName(kind: LlvmNominalTypeKind, rawName: String): String =
     "%${kind.prefix}.${sanitizeIdentifier(rawName, kind.prefix)}"
 
+/**
+ * 根据 CHIR nominal 类型生成统一的 LLVM identified type 名称。
+ */
 internal fun llvmNominalTypeName(type: ChirType): String = when (type) {
     is ChirNamedType -> llvmNominalTypeName(LlvmNominalTypeKind.TYPE, nominalRawName(type.renderName, type.typeArguments))
     is ChirStructType -> llvmNominalTypeName(LlvmNominalTypeKind.STRUCT, nominalRawName(type.name, type.typeArguments))
@@ -76,6 +82,9 @@ internal fun llvmNominalTypeName(type: ChirType): String = when (type) {
     else -> throw CodegenLoweringException("type ${type.renderName} is not an LLVM nominal type", null)
 }
 
+/**
+ * 收集 package 与 module 中所有被声明或引用到的 LLVM identified type 声明。
+ */
 internal fun collectLlvmTypeDeclarations(
     chirPackage: ChirPackage,
     module: ChirModule,
@@ -95,6 +104,9 @@ internal fun collectLlvmTypeDeclarations(
     return collector.declarations()
 }
 
+/**
+ * 将类型基础名与类型实参组合成 nominal 原始名。
+ */
 private fun nominalRawName(baseName: String, typeArguments: List<ChirTypeRef>): String {
     if (typeArguments.isEmpty()) return baseName
     return buildString {
@@ -105,24 +117,54 @@ private fun nominalRawName(baseName: String, typeArguments: List<ChirTypeRef>): 
     }
 }
 
+/**
+ * LLVM identified type 声明体种类。
+ */
 private enum class TypeDeclarationBodyKind {
     OPAQUE,
     DEFINED,
 }
 
+/**
+ * 一行 LLVM identified type 声明及其声明体种类。
+ */
 private data class TypeDeclarationLine(
+    /**
+     * 完整 LLVM type declaration 行。
+     */
     val line: String,
+    /**
+     * 声明体种类，用于处理 opaque 与 defined 的升级关系。
+     */
     val bodyKind: TypeDeclarationBodyKind,
 )
 
+/**
+ * LLVM identified type 声明收集器。
+ */
 private class LlvmTypeDeclarationCollector(
+    /**
+     * CHIR 类型到 LLVM textual type 的 lowering 服务。
+     */
     private val typeLowering: TypeLowering,
 ) {
+    /**
+     * 按 type name 去重后的 LLVM type declaration。
+     */
     private val declarationsByName = linkedMapOf<String, TypeDeclarationLine>()
+    /**
+     * 已访问 CHIR 类型集合，用于避免递归类型重复遍历。
+     */
     private val visitedTypes = mutableSetOf<String>()
 
+    /**
+     * 返回已收集的 LLVM type declaration 行。
+     */
     fun declarations(): List<String> = declarationsByName.values.map { it.line }
 
+    /**
+     * 记录显式 CHIR type declaration 对应的 LLVM type declaration。
+     */
     fun recordDeclaredType(declaration: ChirTypeDeclaration) {
         when (declaration) {
             is ChirStructDeclaration -> {
@@ -168,6 +210,9 @@ private class LlvmTypeDeclarationCollector(
         }
     }
 
+    /**
+     * 访问任意 CHIR declaration 并收集其中出现的类型。
+     */
     fun visitDeclaration(declaration: ChirDeclaration) {
         when (declaration) {
             is ChirTypeDeclaration -> recordDeclaredType(declaration)
@@ -176,10 +221,16 @@ private class LlvmTypeDeclarationCollector(
         }
     }
 
+    /**
+     * 访问自定义类型声明中的成员声明。
+     */
     private fun visitCustomTypeMembers(declaration: ChirCustomTypeDeclaration) {
         declaration.memberDeclarations.forEach(::visitDeclaration)
     }
 
+    /**
+     * 访问函数签名和函数体中出现的类型。
+     */
     private fun visitFunctionDeclaration(function: ChirFunctionDeclaration) {
         visitTypeRef(function.returnType)
         function.parameters.forEach(::visitDeclaration)
@@ -189,6 +240,9 @@ private class LlvmTypeDeclarationCollector(
         }
     }
 
+    /**
+     * 访问表达式结果类型与操作数类型。
+     */
     private fun visitExpression(expression: ChirExpression) {
         expression.resultType?.let(::visitTypeRef)
         when (expression) {
@@ -209,6 +263,9 @@ private class LlvmTypeDeclarationCollector(
         }
     }
 
+    /**
+     * 访问 terminator 中携带的 value 类型。
+     */
     private fun visitTerminator(terminator: ChirTerminator) {
         when (terminator) {
             is ChirReturnTerminator -> terminator.returnValue?.let(::visitValue)
@@ -217,10 +274,16 @@ private class LlvmTypeDeclarationCollector(
         }
     }
 
+    /**
+     * 访问 CHIR value 的类型引用。
+     */
     private fun visitValue(value: ChirValue) {
         visitTypeRef(value.type)
     }
 
+    /**
+     * 访问 CHIR 类型引用，未解析类型直接报告 lowering 错误。
+     */
     private fun visitTypeRef(typeRef: ChirTypeRef) {
         when (typeRef) {
             is ChirResolvedTypeRef -> visitType(typeRef.type)
@@ -231,6 +294,9 @@ private class LlvmTypeDeclarationCollector(
         }
     }
 
+    /**
+     * 访问已解析 CHIR 类型并递归收集其依赖类型声明。
+     */
     private fun visitType(type: ChirType) {
         val key = type.renderNameWithArguments()
         if (!visitedTypes.add("${type::class.qualifiedName}:$key")) return
@@ -287,16 +353,25 @@ private class LlvmTypeDeclarationCollector(
         }
     }
 
+    /**
+     * 记录有具体字段布局的 LLVM defined identified type。
+     */
     private fun recordDefined(typeName: String, fieldTypes: List<ChirTypeRef>) {
         val fields = fieldTypes.joinToString(", ") { typeLowering.lower(it) }
         val body = if (fields.isEmpty()) "type { }" else "type { $fields }"
         recordLine(typeName, body, TypeDeclarationBodyKind.DEFINED)
     }
 
+    /**
+     * 记录 LLVM opaque identified type。
+     */
     private fun recordOpaque(typeName: String) {
         recordLine(typeName, "type opaque", TypeDeclarationBodyKind.OPAQUE)
     }
 
+    /**
+     * 记录单行 LLVM type declaration，并处理 opaque 到 defined 的升级。
+     */
     private fun recordLine(typeName: String, body: String, bodyKind: TypeDeclarationBodyKind) {
         val line = "$typeName = $body"
         val existing = declarationsByName[typeName]
@@ -318,8 +393,14 @@ private class LlvmTypeDeclarationCollector(
         )
     }
 
+    /**
+     * 为类型参数名构造 CHIR generic type 引用。
+     */
     private fun genericTypeRef(name: String): ChirTypeRef = ChirResolvedTypeRef(ChirGenericType(name))
 
+    /**
+     * 渲染带类型实参的 CHIR 类型名称。
+     */
     private fun ChirType.renderNameWithArguments(): String = when (this) {
         is ChirNamedType -> nominalRawName(renderName, typeArguments)
         is ChirStructType -> nominalRawName(name, typeArguments)

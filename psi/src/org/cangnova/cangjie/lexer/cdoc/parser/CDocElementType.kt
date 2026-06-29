@@ -30,8 +30,14 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.tree.IElementType
 import java.lang.reflect.Constructor
 
+/**
+ * 表示 `CDocElementType`，承载仓颉词法与文档注释中的语法节点、索引桩或辅助模型。
+ */
 class CDocElementType(debugName: String, psiClass: Class<out PsiElement?>) :
     IElementType(debugName, CangJieLanguage) {
+    /**
+     * 保存 `psiFactory` 的内部状态，供仓颉词法与文档注释实现维护节点缓存或解析上下文。
+     */
     private var psiFactory: Constructor<out PsiElement?>? = null
 
     init {
@@ -42,6 +48,9 @@ class CDocElementType(debugName: String, psiClass: Class<out PsiElement?>) :
         }
     }
 
+    /**
+     * 提供 `createPsi` 操作，封装仓颉词法与文档注释节点的访问、构造或判断逻辑。
+     */
     fun createPsi(node: ASTNode): PsiElement {
         assert(node.elementType === this)
         return try {

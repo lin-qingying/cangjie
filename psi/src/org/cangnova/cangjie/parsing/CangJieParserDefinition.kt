@@ -52,19 +52,46 @@ import com.intellij.psi.tree.IElementType
 import com.intellij.psi.tree.IFileElementType
 import com.intellij.psi.tree.TokenSet
 
+/**
+ * 表示 `CangJieParserDefinition`，承载仓颉语法解析中的语法节点、索引桩或辅助模型。
+ */
 class CangJieParserDefinition : ParserDefinition {
+    /**
+     * 实现 `createLexer` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createLexer(project: Project?): Lexer = CangJieLexer()
 
+    /**
+     * 实现 `createParser` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createParser(project: Project?): PsiParser = CangJieParser(project!!)
 
 
+    /**
+     * 实现 `getFileNodeType` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getFileNodeType(): IFileElementType = CjFileElementType.INSTANCE
 
+    /**
+     * 保存 `EOL_COMMENT`，供仓颉语法解析流程读取节点结构或语义信息。
+     */
     val EOL_COMMENT = CjToken("EOL_COMMENT", 4)
+    /**
+     * 保存 `BLOCK_COMMENT`，供仓颉语法解析流程读取节点结构或语义信息。
+     */
     val BLOCK_COMMENT = CjToken("BLOCK_COMMENT", 3)
+    /**
+     * 保存 `DOC_COMMENT`，供仓颉语法解析流程读取节点结构或语义信息。
+     */
     val DOC_COMMENT: IElementType = CDocTokens.CDOC
 
+    /**
+     * 保存 `SHEBANG_COMMENT`，供仓颉语法解析流程读取节点结构或语义信息。
+     */
     val SHEBANG_COMMENT = CjToken("SHEBANG_COMMENT", 5)
+    /**
+     * 保存 `COMMENTS`，供仓颉语法解析流程读取节点结构或语义信息。
+     */
     val COMMENTS = TokenSet.create(
         EOL_COMMENT,
         BLOCK_COMMENT,
@@ -72,12 +99,24 @@ class CangJieParserDefinition : ParserDefinition {
         SHEBANG_COMMENT,
     )
 
+    /**
+     * 实现 `getCommentTokens` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getCommentTokens(): TokenSet = CjTokens.COMMENTS
 
+    /**
+     * 实现 `getWhitespaceTokens` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getWhitespaceTokens(): TokenSet = CjTokens.WHITESPACES
 
+    /**
+     * 实现 `getStringLiteralElements` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getStringLiteralElements(): TokenSet = TokenSet.EMPTY
 
+    /**
+     * 实现 `createElement` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createElement(astNode: ASTNode): PsiElement {
         return when (val elementType = astNode.elementType) {
             is CjStubElementType<*, *> -> elementType.createPsiFromAst(astNode)
@@ -91,6 +130,9 @@ class CangJieParserDefinition : ParserDefinition {
         }
     }
 
+    /**
+     * 实现 `createFile` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createFile(viewProvider: FileViewProvider): PsiFile {
 
 
@@ -104,9 +146,18 @@ class CangJieParserDefinition : ParserDefinition {
 
 
 }
+/**
+ * 提供 `CangJieParserDefinitionUtil` 单例，集中承载仓颉语法解析的共享状态、工厂或工具行为。
+ */
 object CangJieParserDefinitionUtil {
+    /**
+     * 保存 `STD_SCRIPT_SUFFIX`，供仓颉语法解析流程读取节点结构或语义信息。
+     */
     const val STD_SCRIPT_SUFFIX = "cj"
 
+    /**
+     * 保存 `STD_SCRIPT_EXT`，供仓颉语法解析流程读取节点结构或语义信息。
+     */
     @JvmField
     val STD_SCRIPT_EXT = ".$STD_SCRIPT_SUFFIX"
 }

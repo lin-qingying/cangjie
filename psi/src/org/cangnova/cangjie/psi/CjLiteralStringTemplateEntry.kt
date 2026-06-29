@@ -28,6 +28,9 @@ import org.cangnova.cangjie.psi.stubs.CangJiePlaceHolderWithTextStub
 import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 import com.intellij.lang.ASTNode
 
+/**
+ * 表示 `CjLiteralStringTemplateEntry`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjLiteralStringTemplateEntry : CjStringTemplateEntry {
     constructor(node: ASTNode) : super(node)
 
@@ -36,10 +39,16 @@ class CjLiteralStringTemplateEntry : CjStringTemplateEntry {
         CjStubElementTypes.LITERAL_STRING_TEMPLATE_ENTRY,
     )
 
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitLiteralStringTemplateEntry(this, data)
     }
 
+    /**
+     * 实现 `getText` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getText(): String {
         val stub = stub
         if (stub != null) {

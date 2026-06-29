@@ -17,13 +17,25 @@ import kotlin.io.path.exists
 import kotlin.io.path.name
 import kotlin.io.path.readText
 
+/**
+ * 验证 builtins `.cjo` 文件可以生成稳定 stub 树和反编译文本 golden。
+ */
 class BuiltinsStubsTest : AbstractAnalysisApiBasedTest() {
+    /**
+     * 使用 standalone CFIR 分析 API 测试配置执行 builtins stub 流程。
+     */
     override val configurator = CaCfirStandaloneAnalysisApiTestConfigurator
 
+    /**
+     * 注册 compiled `.cjo` 测试所需的 builtins provider、binary index 和 module data 服务。
+     */
     override val additionalServiceRegistrars: List<AnalysisApiServiceRegistrar<TestServices>> = listOf(
         CjoCompiledStubsTestServiceRegistrar,
     )
 
+    /**
+     * 对所有可见 builtins `.cjo` 文件验证 stub 树和反编译文本与 golden 一致。
+     */
     @Test
     fun builtinsStubsAndDecompiledText() {
         CjoCompiledTestEnvironment.withFullStdlibFixture {
@@ -68,6 +80,9 @@ class BuiltinsStubsTest : AbstractAnalysisApiBasedTest() {
         }
     }
 
+    /**
+     * 返回指定 builtins 文件和后缀对应的 golden 文件路径。
+     */
     private fun goldenFile(fileName: String, suffix: String): Path {
         return CjoCompiledTestEnvironment.locateRepositoryRoot()
             .resolve("analysis")
@@ -77,6 +92,9 @@ class BuiltinsStubsTest : AbstractAnalysisApiBasedTest() {
             .resolve("$fileName$suffix")
     }
 
+    /**
+     * 比较实际文本与 golden 文件；开启 `update.test.data` 时写入新的 golden 内容。
+     */
     private fun assertMatchesGolden(actual: String, expectedFile: Path) {
         val normalizedActual = actual.normalizeLineSeparators().trimEnd()
         if (System.getProperty("update.test.data")?.toBooleanStrictOrNull() == true) {
@@ -92,5 +110,8 @@ class BuiltinsStubsTest : AbstractAnalysisApiBasedTest() {
         org.junit.jupiter.api.Assertions.assertEquals(expected, normalizedActual, "Mismatch in ${expectedFile.name}")
     }
 
+    /**
+     * 将 Windows 换行统一为测试 golden 使用的 LF。
+     */
     private fun String.normalizeLineSeparators(): String = replace("\r\n", "\n")
 }

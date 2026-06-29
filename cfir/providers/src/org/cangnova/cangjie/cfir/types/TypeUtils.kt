@@ -2,6 +2,8 @@ package org.cangnova.cangjie.cfir.types
 
 import org.cangnova.cangjie.cfir.copyWithNewSource
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
+import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterLookupTag
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
@@ -10,6 +12,7 @@ import org.cangnova.cangjie.cfir.types.builder.buildErrorTypeRef
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
 import org.cangnova.cangjie.resolve.calls.CommonSuperTypeCalculator
 import org.cangnova.cangjie.source.CjSourceElement
+import org.cangnova.cangjie.type.AbstractTypeChecker
 import org.cangnova.cangjie.type.model.supertypes
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 import org.cangnova.cangjie.utils.exceptions.withCfirEntry
@@ -90,6 +93,140 @@ fun ConeTypeParameterType.collectUpperBounds(typeContext: ConeTypeContext): Set<
 }
 
 /**
+ * 判断类型参数声明侧 upper bounds 是否已经违反 class/interface 上界规则。
+ *
+ * 官方 `GenericsTy::isUpperBoundLegal` 会阻断基于非法上界的成员查找，避免在根因
+ * 上界错误之后继续报告访问/调用级联错误。CFIR 不存储该标志，因此在类型系统层
+ * 从已解析 bounds 派生相同语义，供 receiver scope、static qualifier 和调用解析共享。
+ */
+fun ConeTypeParameterType.hasInvalidDeclaredUpperBounds(session: CfirSession): Boolean =
+    lookupTag.hasInvalidDeclaredUpperBounds(session)
+
+/**
+ * 判断当前类型是否是带非法声明上界的类型参数或其 fresh type variable。
+ */
+fun ConeCangJieType.isTypeParameterWithInvalidDeclaredUpperBounds(session: CfirSession): Boolean = when (this) {
+    is ConeTypeParameterType -> hasInvalidDeclaredUpperBounds(session)
+    is ConeTypeVariableType ->
+        (typeConstructor.originalTypeParameter as? ConeTypeParameterLookupTag)
+            ?.hasInvalidDeclaredUpperBounds(session) == true
+    else -> false
+}
+
+/**
+ * 判断 lookup tag 对应的类型参数是否具有非法声明上界。
+ */
+fun ConeTypeParameterLookupTag.hasInvalidDeclaredUpperBounds(session: CfirSession): Boolean {
+    val boundRefs = declaredUpperBoundRefsAfterTypeResolve()
+    if (boundRefs.any { it.isDefinitelyIllegalDeclaredUpperBound(session) }) return true
+
+    val bounds = boundRefs
+        .mapNotNull { it.declaredUpperBoundConeTypeOrNull() }
+        .filterNot { it is ConeErrorType }
+        .distinct()
+    if (bounds.isEmpty()) return false
+
+    if (bounds.any { !it.isLegalDeclaredUpperBound(session) }) return true
+
+    val classBounds = bounds.mapNotNull { it.declaredClassUpperBoundOrNull(session) }
+    return classBounds.size > 1 && !classBounds.areInSingleInheritanceChain(session)
+}
+
+/**
+ * 返回类型参数在 TYPES 阶段后的声明上界原始列表。
+ *
+ * 非法 function/tuple 上界可能仍保持 raw type-ref 形态；这里不能走 [CfirTypeParameterSymbol.resolvedBounds]
+ * 的强制已解析视图，否则会把官方上界诊断前置成内部异常。
+ */
+fun ConeTypeParameterLookupTag.declaredUpperBoundRefsAfterTypeResolve(): List<CfirTypeRef> {
+    typeParameterSymbol.lazyResolveToPhase(CfirResolvePhase.TYPES)
+    return typeParameterSymbol.cfir.bounds
+}
+
+/**
+ * 从声明上界 type-ref 提取可用于规则判断和诊断渲染的 cone type。
+ */
+fun CfirTypeRef.declaredUpperBoundConeTypeOrNull(): ConeCangJieType? {
+    coneTypeOrNull?.let { return it }
+    return when (this) {
+        is CfirFunctionTypeRef -> {
+            val parameterTypes = parameterTypeRefs.map { it.declaredUpperBoundConeTypeOrNull() }
+            val returnType = returnTypeRef.declaredUpperBoundConeTypeOrNull()
+            if (parameterTypes.any { it == null } || returnType == null) {
+                null
+            } else {
+                ConeFunctionType(
+                    parameterTypes = parameterTypes.filterNotNull(),
+                    returnType = returnType,
+                )
+            }
+        }
+        is CfirTupleTypeRef -> {
+            val elementTypes = elementTypeRefs.map { it.declaredUpperBoundConeTypeOrNull() }
+            if (elementTypes.any { it == null }) {
+                null
+            } else {
+                ConeTupleType(elementTypes.filterNotNull())
+            }
+        }
+        else -> null
+    }
+}
+
+/**
+ * 语法形态已经确定不可能是 class/interface 上界的 raw type-ref。
+ */
+private fun CfirTypeRef.isDefinitelyIllegalDeclaredUpperBound(session: CfirSession): Boolean {
+    declaredUpperBoundConeTypeOrNull()?.let { return !it.isLegalDeclaredUpperBound(session) }
+    return when (this) {
+        is CfirFunctionTypeRef,
+        is CfirTupleTypeRef -> true
+        else -> false
+    }
+}
+
+/**
+ * 判断单个声明上界是否满足官方 class/interface 上界准入规则。
+ */
+private fun ConeCangJieType.isLegalDeclaredUpperBound(session: CfirSession): Boolean {
+    val expandedType = fullyExpandedType(session)
+    if (expandedType === ConeAnyType) return true
+
+    val classId = expandedType.classIdOrPrimitiveClassId
+    if (classId == StdlibClassIds.Any || CfirCTypeSemantics.isCTypeClassId(classId)) return true
+
+    return expandedType is ConeClassLikeType
+}
+
+/**
+ * 提取需要参与“多个 class 上界必须在同一继承链”规则的 class 上界。
+ */
+private fun ConeCangJieType.declaredClassUpperBoundOrNull(session: CfirSession): ConeCangJieType? {
+    val expandedType = fullyExpandedType(session)
+    if (expandedType !is ConeClassLikeType || expandedType.isInterface) return null
+    if (expandedType.classId == StdlibClassIds.Any || CfirCTypeSemantics.isCTypeClassId(expandedType.classId)) return null
+    return expandedType
+}
+
+/**
+ * 判断 class 上界集合是否位于同一继承链。
+ */
+private fun List<ConeCangJieType>.areInSingleInheritanceChain(session: CfirSession): Boolean {
+    for (leftIndex in indices) {
+        for (rightIndex in leftIndex + 1 until size) {
+            val left = this[leftIndex]
+            val right = this[rightIndex]
+            if (!AbstractTypeChecker.isSubtypeOf(session.typeContext, left, right) &&
+                !AbstractTypeChecker.isSubtypeOf(session.typeContext, right, left)
+            ) {
+                return false
+            }
+        }
+    }
+    return true
+}
+
+/**
  * 判断当前类型或其父类型链中是否存在指定 [classId]。
  */
 fun ConeCangJieType.hasSupertypeWithGivenClassId(classId: org.cangnova.cangjie.name.ClassId, typeContext: ConeTypeContext): Boolean {
@@ -135,8 +272,9 @@ fun ConeCangJieType.hasSupertypeWithGivenClassId(classId: org.cangnova.cangjie.n
  * 解析类型参数 lookup tag 的直接上界。
  */
 private fun ConeTypeParameterLookupTag.collectUpperBounds(): List<ConeCangJieType> {
-    typeParameterSymbol.lazyResolveToPhase(CfirResolvePhase.TYPES)
-    return typeParameterSymbol.resolvedBounds.map { it.coneType }
+    return declaredUpperBoundRefsAfterTypeResolve()
+        .mapNotNull { it.declaredUpperBoundConeTypeOrNull() }
+        .filterNot { it is ConeErrorType }
 }
 
 /**

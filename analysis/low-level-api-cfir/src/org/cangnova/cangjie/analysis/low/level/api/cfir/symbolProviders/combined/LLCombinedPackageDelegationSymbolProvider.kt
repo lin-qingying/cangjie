@@ -62,12 +62,25 @@ import org.cangnova.cangjie.utils.newHashMapWithExpectedSize
  */
 internal class LLCombinedPackageDelegationSymbolProvider private constructor(
     session: CfirSession,
+    /**
+     * 被聚合的底层 provider 列表。
+     */
     override val providers: List<CfirSymbolProvider>,
+
+    /**
+     * package 名称到可处理该 package 的 provider 数组映射。
+     */
     private val providersByPackage: Map<String, Array<CfirSymbolProvider>>
 ) : LLCombinedSymbolProvider<CfirSymbolProvider>(session) {
+    /**
+     * 聚合底层 provider 的名称集合 provider。
+     */
     override val symbolNamesProvider: CfirSymbolNamesProvider =
         CfirCompositeCachedSymbolNamesProvider.fromSymbolProviders(session, providers)
 
+    /**
+     * 按 class id 查询 class-like symbol。
+     */
     override fun getClassLikeSymbolByClassId(classId: ClassId): CfirClassLikeSymbol<*>? {
         val relevantProviders = providersByPackage[classId.packageFqName.asString()] ?: return null
 
@@ -75,6 +88,9 @@ internal class LLCombinedPackageDelegationSymbolProvider private constructor(
     }
 
     @CfirSymbolProviderInternals
+    /**
+     * 收集顶层 callable symbol。
+     */
     override fun getTopLevelCallableSymbolsTo(destination: MutableList<CfirCallableSymbol<*>>, packageFqName: FqName, name: Name) {
         val relevantProviders = providersByPackage[packageFqName.asString()] ?: return
 
@@ -82,6 +98,9 @@ internal class LLCombinedPackageDelegationSymbolProvider private constructor(
     }
 
     @CfirSymbolProviderInternals
+    /**
+     * 收集顶层函数 symbol。
+     */
     override fun getTopLevelFunctionSymbolsTo(destination: MutableList<CfirNamedFunctionSymbol>, packageFqName: FqName, name: Name) {
         val relevantProviders = providersByPackage[packageFqName.asString()] ?: return
 
@@ -89,12 +108,18 @@ internal class LLCombinedPackageDelegationSymbolProvider private constructor(
     }
 
     @CfirSymbolProviderInternals
+    /**
+     * 收集顶层属性 symbol。
+     */
     override fun getTopLevelPropertySymbolsTo(destination: MutableList<CfirPropertySymbol>, packageFqName: FqName, name: Name) {
         val relevantProviders = providersByPackage[packageFqName.asString()] ?: return
 
         relevantProviders.forEach { it.getTopLevelPropertySymbolsTo(destination, packageFqName, name) }
     }
 
+    /**
+     * 判断包是否存在。
+     */
     override fun hasPackage(fqName: FqName): Boolean {
         val relevantProviders = providersByPackage[fqName.asString()] ?: return false
 
@@ -103,6 +128,9 @@ internal class LLCombinedPackageDelegationSymbolProvider private constructor(
         return relevantProviders.any { it.hasPackage(fqName) }
     }
 
+    /**
+     * 当前实现没有自有 symbol cache。
+     */
     override fun estimateSymbolCacheSize(): Long = 0
 
     companion object {

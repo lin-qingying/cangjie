@@ -31,8 +31,11 @@ import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityFileScope
 import org.cangnova.cangjie.cfir.resolve.providers.isBareOrDeclarationSelfTypeOf
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.scopes.CfirContainingNamesAwareScope
+import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
+import org.cangnova.cangjie.cfir.scopes.overrideSignatureKey
 import org.cangnova.cangjie.cfir.scopes.scopeSessionKey
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.ProcessorAction
 import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
 import org.cangnova.cangjie.cfir.session.extendProvider
 import org.cangnova.cangjie.cfir.session.services.CfirExtendTargetKey
@@ -46,24 +49,25 @@ import org.cangnova.cangjie.cfir.types.ConeTypeVariableType
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.types.collectUpperBounds
 import org.cangnova.cangjie.cfir.types.extendTargetKey
+import org.cangnova.cangjie.cfir.types.hasInvalidDeclaredUpperBounds
 import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 
 /**
- * 类 qualifier 的 static scope，对齐 Kotlin FIR `FirStaticScope`。
+ * 类 qualifier 的 static lookup scope，对齐 Kotlin FIR 的 qualifier tower level。
  *
- * 这层只负责过滤 static callable；成员枚举、use-site 继承、extend 注入、
- * 泛型实参替换都必须先由 delegate scope 完成，避免 static 解析绕开
- * `CfirClassSubstitutionScope`。
+ * 成员枚举、use-site 继承、extend 注入、泛型实参替换都必须先由 delegate scope 完成，
+ * 避免 static 解析绕开 `CfirClassSubstitutionScope`。同名 static 候选为空时，才保留
+ * 实例成员候选交给 dispatch/extension receiver 阶段报告官方非静态成员访问诊断。
  */
 class CfirClassStaticScope(
     /**
      * 已完成 use-site 和类型替换的委托 scope。
      */
     private val delegateScope: CfirContainingNamesAwareScope,
-) : CfirContainingNamesAwareScope() {
+) : CfirTypeScope() {
     /**
      * 返回委托 scope 的 callable 名称集合。
      */
@@ -109,36 +113,55 @@ class CfirClassStaticScope(
     }
 
     /**
-     * 只处理静态函数。
+     * 处理函数候选；static 候选优先，只有同名 static 为空时才保留实例函数用于诊断。
      */
     override fun processFunctionsByName(name: Name, processor: (CfirNamedFunctionSymbol) -> Unit) {
-        delegateScope.processFunctionsByName(name) { function ->
-            if (function.isStaticCallableForClassQualifier()) {
-                processor(function)
-            }
-        }
+        processStaticOrNonStatic(
+            processFromDelegate = { process -> delegateScope.processFunctionsByName(name, process) },
+            processor = processor,
+        )
     }
 
     /**
-     * 只处理静态属性。
+     * 处理属性候选；static 候选优先，只有同名 static 为空时才保留实例属性用于诊断。
      */
     override fun processPropertiesByName(name: Name, processor: (CfirPropertySymbol) -> Unit) {
-        delegateScope.processPropertiesByName(name) { property ->
-            if (property.isStaticCallableForClassQualifier()) {
-                processor(property)
-            }
-        }
+        processStaticOrNonStatic(
+            processFromDelegate = { process -> delegateScope.processPropertiesByName(name, process) },
+            processor = processor,
+        )
     }
 
     /**
-     * 只处理静态 callable。
+     * 处理 callable 候选；static 候选优先，只有同名 static 为空时才保留实例 callable 用于诊断。
      */
     override fun processCallablesByName(name: Name, processor: (CfirCallableSymbol<*>) -> Unit) {
-        delegateScope.processCallablesByName(name) { callable ->
-            if (callable.isStaticCallableForClassQualifier()) {
-                processor(callable)
-            }
-        }
+        processStaticOrNonStatic(
+            processFromDelegate = { process -> delegateScope.processCallablesByName(name, process) },
+            processor = processor,
+        )
+    }
+
+    /**
+     * static scope 只过滤可由 qualifier 访问的成员；override 链仍来自底层 use-site scope。
+     */
+    override fun processDirectOverriddenFunctionsWithBaseScope(
+        functionSymbol: CfirNamedFunctionSymbol,
+        processor: (CfirNamedFunctionSymbol, CfirTypeScope) -> ProcessorAction,
+    ): ProcessorAction {
+        val typeScope = delegateScope as? CfirTypeScope ?: return ProcessorAction.NEXT
+        return typeScope.processDirectOverriddenFunctionsWithBaseScope(functionSymbol, processor)
+    }
+
+    /**
+     * static scope 只过滤可由 qualifier 访问的成员；override 链仍来自底层 use-site scope。
+     */
+    override fun processDirectOverriddenPropertiesWithBaseScope(
+        propertySymbol: CfirPropertySymbol,
+        processor: (CfirPropertySymbol, CfirTypeScope) -> ProcessorAction,
+    ): ProcessorAction {
+        val typeScope = delegateScope as? CfirTypeScope ?: return ProcessorAction.NEXT
+        return typeScope.processDirectOverriddenPropertiesWithBaseScope(propertySymbol, processor)
     }
 
     /**
@@ -147,8 +170,45 @@ class CfirClassStaticScope(
     override fun withReplacedSessionOrNull(
         newSession: CfirSession,
         newScopeSession: ScopeSession,
-    ): CfirContainingNamesAwareScope? =
+    ): CfirClassStaticScope? =
         delegateScope.withReplacedSessionOrNull(newSession, newScopeSession)?.let(::CfirClassStaticScope)
+
+    /**
+     * 官方先过滤出 static 候选；过滤后为空才报告“类型名访问实例成员”。
+     *
+     * 因此 scope 层只在没有同名 static 时暴露实例候选，避免实例成员污染正常静态调用解析。
+     */
+    private fun <S : CfirCallableSymbol<*>> processStaticOrNonStatic(
+        processFromDelegate: (((S) -> Unit) -> Unit),
+        processor: (S) -> Unit,
+    ) {
+        var hasStatic = false
+        val nonStaticCandidates = mutableListOf<S>()
+        processFromDelegate { callable ->
+            if (callable.isStaticCallableForClassQualifier()) {
+                hasStatic = true
+                processor(callable)
+            } else {
+                nonStaticCandidates.add(callable)
+            }
+        }
+        if (!hasStatic) {
+            nonStaticCandidates.forEach(processor)
+        }
+    }
+}
+
+/**
+ * 判断 callable 是否可通过 class/type qualifier 作为静态成员访问。
+ */
+private fun CfirCallableSymbol<*>.isStaticCallableForClassQualifier(): Boolean {
+    if (this is CfirEnumConstructorSymbol) return true
+    if (this !is CfirNamedFunctionSymbol && this !is CfirPropertySymbol && this !is CfirFieldVariableSymbol) {
+        return false
+    }
+
+    lazyResolveToPhase(org.cangnova.cangjie.cfir.declarations.CfirResolvePhase.STATUS)
+    return cfir.status.isStatic
 }
 
 /**
@@ -160,6 +220,9 @@ fun CfirTypeParameterSymbol.staticScopeForQualifierType(
 ): CfirContainingNamesAwareScope =
     scopeSession.getOrBuild(this, StaticScopeForTypeParameterQualifierScopeKey) {
         val typeParameterType = constructType() as ConeTypeParameterType
+        if (typeParameterType.hasInvalidDeclaredUpperBounds(session)) {
+            return@getOrBuild CfirEmptyContainingNamesAwareScope
+        }
         val upperBoundStaticScopes = typeParameterType
             .collectUpperBounds(session.typeContext)
             .mapNotNull { upperBound -> upperBound.staticScopeForUpperBound(session, scopeSession) }
@@ -303,7 +366,7 @@ private class CfirCompositeContainingNamesAwareScope(
      * 被组合的 scope 列表。
      */
     private val scopes: List<CfirContainingNamesAwareScope>,
-) : CfirContainingNamesAwareScope() {
+) : CfirTypeScope() {
     /**
      * 返回 callable 名称并集。
      */
@@ -356,7 +419,18 @@ private class CfirCompositeContainingNamesAwareScope(
      * 在所有子 scope 中处理函数。
      */
     override fun processFunctionsByName(name: Name, processor: (CfirNamedFunctionSymbol) -> Unit) {
-        scopes.forEach { it.processFunctionsByName(name, processor) }
+        val closestBySignature = linkedMapOf<String, StaticMemberWithScope<CfirNamedFunctionSymbol>>()
+        scopes.forEach { scope ->
+            scope.processFunctionsByName(name) { symbol ->
+                val candidate = StaticMemberWithScope(symbol, scope)
+                val signature = symbol.overrideSignatureKey()
+                val previous = closestBySignature[signature]
+                if (previous == null || candidate.isCloserImplementationThan(previous)) {
+                    closestBySignature[signature] = candidate
+                }
+            }
+        }
+        closestBySignature.values.forEach { processor(it.symbol) }
     }
 
     /**
@@ -374,12 +448,44 @@ private class CfirCompositeContainingNamesAwareScope(
     }
 
     /**
+     * 在所有子 type scope 中查询直接覆盖函数。
+     */
+    override fun processDirectOverriddenFunctionsWithBaseScope(
+        functionSymbol: CfirNamedFunctionSymbol,
+        processor: (CfirNamedFunctionSymbol, CfirTypeScope) -> ProcessorAction,
+    ): ProcessorAction {
+        for (scope in scopes) {
+            val typeScope = scope as? CfirTypeScope ?: continue
+            if (typeScope.processDirectOverriddenFunctionsWithBaseScope(functionSymbol, processor) == ProcessorAction.STOP) {
+                return ProcessorAction.STOP
+            }
+        }
+        return ProcessorAction.NEXT
+    }
+
+    /**
+     * 在所有子 type scope 中查询直接覆盖属性。
+     */
+    override fun processDirectOverriddenPropertiesWithBaseScope(
+        propertySymbol: CfirPropertySymbol,
+        processor: (CfirPropertySymbol, CfirTypeScope) -> ProcessorAction,
+    ): ProcessorAction {
+        for (scope in scopes) {
+            val typeScope = scope as? CfirTypeScope ?: continue
+            if (typeScope.processDirectOverriddenPropertiesWithBaseScope(propertySymbol, processor) == ProcessorAction.STOP) {
+                return ProcessorAction.STOP
+            }
+        }
+        return ProcessorAction.NEXT
+    }
+
+    /**
      * 替换所有子 scope 的 session 后重建组合 scope。
      */
     override fun withReplacedSessionOrNull(
         newSession: CfirSession,
         newScopeSession: ScopeSession,
-    ): CfirContainingNamesAwareScope? {
+    ): CfirCompositeContainingNamesAwareScope? {
         val replacedScopes = scopes.mapNotNull { it.withReplacedSessionOrNull(newSession, newScopeSession) }
         return if (replacedScopes.size == scopes.size) {
             CfirCompositeContainingNamesAwareScope(replacedScopes)
@@ -387,20 +493,73 @@ private class CfirCompositeContainingNamesAwareScope(
             null
         }
     }
+
+    /**
+     * 当前候选是否比同签名旧候选更接近实际实现。
+     *
+     * 官方 `IsCloserToImpl` 在类型参数多上界 static 查找中用更具体实现替换父接口/父类成员；
+     * 这里复用 CFIR use-site scope 的直接 override 链表达相同关系。
+     */
+    private fun StaticMemberWithScope<CfirNamedFunctionSymbol>.isCloserImplementationThan(
+        previous: StaticMemberWithScope<CfirNamedFunctionSymbol>,
+    ): Boolean {
+        if (overrides(previous.symbol)) return true
+        if (previous.overrides(symbol)) return false
+        return previous.symbol.isAbstractForStaticIntersection() && !symbol.isAbstractForStaticIntersection()
+    }
+
+    /**
+     * 判断当前候选是否通过直接 override 链覆盖 [target]。
+     */
+    private fun StaticMemberWithScope<CfirNamedFunctionSymbol>.overrides(target: CfirNamedFunctionSymbol): Boolean {
+        val typeScope = scope as? CfirTypeScope ?: return false
+        val visited = linkedSetOf<Pair<CfirTypeScope, CfirNamedFunctionSymbol>>()
+
+        fun visit(currentScope: CfirTypeScope, currentSymbol: CfirNamedFunctionSymbol): Boolean {
+            if (!visited.add(currentScope to currentSymbol)) return false
+
+            var found = false
+            currentScope.processDirectOverriddenFunctionsWithBaseScope(currentSymbol) { overridden, baseScope ->
+                when {
+                    overridden == target -> {
+                        found = true
+                        ProcessorAction.STOP
+                    }
+
+                    visit(baseScope, overridden) -> {
+                        found = true
+                        ProcessorAction.STOP
+                    }
+
+                    else -> ProcessorAction.NEXT
+                }
+            }
+            return found
+        }
+
+        return visit(typeScope, symbol)
+    }
+
+    /**
+     * 判断函数在交叉上界 static 查找中是否为抽象成员。
+     */
+    private fun CfirNamedFunctionSymbol.isAbstractForStaticIntersection(): Boolean =
+        isBound && cfir.status.isAbstract
 }
 
 /**
- * 判断 callable 是否可通过 class qualifier 作为静态成员访问。
+ * 携带来源 scope 的 static 候选。
  */
-private fun CfirCallableSymbol<*>.isStaticCallableForClassQualifier(): Boolean {
-    if (this is CfirEnumConstructorSymbol) return true
-    if (this !is CfirNamedFunctionSymbol && this !is CfirPropertySymbol && this !is CfirFieldVariableSymbol) {
-        return false
-    }
-
-    lazyResolveToPhase(org.cangnova.cangjie.cfir.declarations.CfirResolvePhase.STATUS)
-    return cfir.status.isStatic
-}
+private data class StaticMemberWithScope<S : CfirCallableSymbol<*>>(
+    /**
+     * 候选 callable symbol。
+     */
+    val symbol: S,
+    /**
+     * 产出该候选的 scope。
+     */
+    val scope: CfirContainingNamesAwareScope,
+)
 
 /**
  * class-like qualifier static scope 的缓存 key。

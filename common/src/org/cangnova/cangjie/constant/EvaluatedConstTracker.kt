@@ -29,17 +29,32 @@ abstract class EvaluatedConstTracker {
     abstract fun load(startOffset: Int, endOffset: Int, fileKey: Key): Any?
 
     companion object {
+        /**
+         * 创建默认内存常量追踪器。
+         */
         fun create(): EvaluatedConstTracker = EvaluatedConstTrackerImpl()
     }
 }
 
+/**
+ * 使用 HashMap 存储常量求值结果的默认实现。
+ */
 private class EvaluatedConstTrackerImpl : EvaluatedConstTracker() {
+    /**
+     * 源码区间和文件键到常量值的映射。
+     */
     private val map = HashMap<Triple<Int, Int, Key>, Any?>()
 
+    /**
+     * 保存指定源码区间的常量值。
+     */
     override fun save(startOffset: Int, endOffset: Int, fileKey: Key, constant: Any?) {
         map[Triple(startOffset, endOffset, fileKey)] = constant
     }
 
+    /**
+     * 读取指定源码区间的常量值。
+     */
     override fun load(startOffset: Int, endOffset: Int, fileKey: Key): Any? {
         return map[Triple(startOffset, endOffset, fileKey)]
     }

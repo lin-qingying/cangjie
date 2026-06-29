@@ -34,10 +34,19 @@ import org.cangnova.cangjie.test.services.SourceFileProviderImpl
 import org.cangnova.cangjie.test.services.TestService
 import org.cangnova.cangjie.test.services.TestServices
 
+/**
+ * 定义 `NonGroupingPhaseTestConfiguration` 接口，约束测试基础设施参与者需要暴露的协作能力。
+ */
 interface NonGroupingPhaseTestConfiguration : TestConfiguration<TestStep.NonGroupingStep<*, *>> {
+    /**
+     * 保存 `startingArtifactFactory`，供测试基础设施在测试执行期间读取或传递。
+     */
     val startingArtifactFactory: (TestModule) -> ResultingArtifact<*>
 }
 
+/**
+ * 表示 `NonGroupingPhaseTestConfigurationImpl`，承载测试基础设施中的配置数据、测试产物或处理步骤。
+ */
 @OptIn(TestInfrastructureInternals::class)
 class NonGroupingPhaseTestConfigurationImpl(
     testInfo: CangJieTestInfo,
@@ -57,8 +66,14 @@ class NonGroupingPhaseTestConfigurationImpl(
     metaInfoHandlerEnabled: Boolean,
     directives: List<DirectivesContainer>,
     defaultRegisteredDirectives: RegisteredDirectives,
+    /**
+     * 维护 `startingArtifactFactory`，供测试基础设施在测试执行期间读取或传递。
+     */
     override var startingArtifactFactory: (TestModule) -> ResultingArtifact<*>,
     additionalServices: List<ServiceRegistrationData>,
+    /**
+     * 保存 `originalBuilder`，供测试基础设施在测试执行期间读取或传递。
+     */
     val originalBuilder: NonGroupingPhaseTestConfigurationBuilder.ReadOnlyBuilder,
 ) : TestConfigurationImplBase<TestStep.NonGroupingStep<*, *>>(
     testInfo, defaultsProvider, assertions, steps, sourcePreprocessors, additionalMetaInfoProcessors, environmentConfigurators,
@@ -68,6 +83,9 @@ class NonGroupingPhaseTestConfigurationImpl(
 ), NonGroupingPhaseTestConfiguration
 
 
+/**
+ * 表示 `TestConfigurationImplBase`，承载测试基础设施中的配置数据、测试产物或处理步骤。
+ */
 @OptIn(TestInfrastructureInternals::class)
 sealed class TestConfigurationImplBase<Step : TestStep<*, *>>(
     testInfo: CangJieTestInfo,
@@ -90,13 +108,25 @@ sealed class TestConfigurationImplBase<Step : TestStep<*, *>>(
     compilerConfigurationProvider: ((TestServices, Disposable, List<AbstractEnvironmentConfigurator>) -> CompilerConfigurationProvider)?,
     runtimeClasspathProviders: List<Constructor<RuntimeClasspathProvider>>,
 
+    /**
+     * 保存 `metaInfoHandlerEnabled`，供测试基础设施在测试执行期间读取或传递。
+     */
     override val metaInfoHandlerEnabled: Boolean,
 
     directives: List<DirectivesContainer>,
+    /**
+     * 保存 `defaultRegisteredDirectives`，供测试基础设施在测试执行期间读取或传递。
+     */
     override val defaultRegisteredDirectives: RegisteredDirectives,
     additionalServices: List<ServiceRegistrationData>,
 ) : TestConfiguration<Step>, TestService {
+    /**
+     * 保存 `rootDisposable`，供测试基础设施在测试执行期间读取或传递。
+     */
     override val rootDisposable: Disposable = TestDisposable("${this::class.simpleName}.rootDisposable")
+    /**
+     * 保存 `testServices`，供测试基础设施在测试执行期间读取或传递。
+     */
     override val testServices: TestServices = TestServices()
 
     init {
@@ -109,7 +139,13 @@ sealed class TestConfigurationImplBase<Step : TestStep<*, *>>(
         }
     }
 
+    /**
+     * 保存 `allDirectives`，供测试基础设施在测试执行期间读取或传递。
+     */
     private val allDirectives = directives.toMutableSet()
+    /**
+     * 保存 `directives`，供测试基础设施在测试执行期间读取或传递。
+     */
     override val directives: DirectivesContainer by lazy {
         when (allDirectives.size) {
             0 -> DirectivesContainer.Empty
@@ -118,14 +154,23 @@ sealed class TestConfigurationImplBase<Step : TestStep<*, *>>(
         }
     }
 
+    /**
+     * 保存 `environmentConfigurators`，供测试基础设施在测试执行期间读取或传递。
+     */
     private val environmentConfigurators: List<AbstractEnvironmentConfigurator> =
         environmentConfigurators
             .map { it.invoke(testServices) }
             .also { it.registerDirectivesAndServices() }
 
+    /**
+     * 保存 `preAnalysisHandlers`，供测试基础设施在测试执行期间读取或传递。
+     */
     override val preAnalysisHandlers: List<PreAnalysisHandler> =
         preAnalysisHandlers.map { it.invoke(testServices) }
 
+    /**
+     * 保存 `moduleStructureExtractor`，供测试基础设施在测试执行期间读取或传递。
+     */
     override val moduleStructureExtractor: ModuleStructureExtractor = ModuleStructureExtractorImpl(
         testServices,
         additionalSourceProviders
@@ -135,6 +180,9 @@ sealed class TestConfigurationImplBase<Step : TestStep<*, *>>(
         this.environmentConfigurators
     )
 
+    /**
+     * 保存 `metaTestConfigurators`，供测试基础设施在测试执行期间读取或传递。
+     */
     override val metaTestConfigurators: List<MetaTestConfigurator> = metaTestConfigurators.map { constructor ->
         constructor.invoke(testServices).also { it.registerDirectivesAndServices() }
     }
@@ -191,11 +239,17 @@ sealed class TestConfigurationImplBase<Step : TestStep<*, *>>(
         }.sortedBy { it.order }
     }
 
+    /**
+     * 提供 `registerDirectivesAndServices` 对应的测试基础设施流程，维持测试框架的阶段契约。
+     */
     private fun ServicesAndDirectivesContainer.registerDirectivesAndServices() {
         allDirectives += directiveContainers
         testServices.register(additionalServices, skipAlreadyRegistered = true)
     }
 
+    /**
+     * 提供 `registerDirectivesAndServices` 对应的测试基础设施流程，维持测试框架的阶段契约。
+     */
     private fun List<ServicesAndDirectivesContainer>.registerDirectivesAndServices() {
         this.forEach { it.registerDirectivesAndServices() }
     }

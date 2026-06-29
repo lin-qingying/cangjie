@@ -58,6 +58,9 @@ object FormattingRules {
      */
     private val skipFormattingRules = mutableListOf<(ASTNode) -> Boolean>()
 
+    /**
+     * 注册额外的跳过格式化规则。
+     */
     fun addSkipFormattingRule(rule: (ASTNode) -> Boolean) {
         skipFormattingRules.add(rule)
     }
@@ -69,4 +72,4 @@ object FormattingRules {
         val parent = node.treeParent
         return parent?.elementType == parentType && !excludedTypes.contains(node.elementType)
     }
-} 
+}

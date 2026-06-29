@@ -120,10 +120,10 @@ class CfirTypeResolveTransformer(
     /**
      * 解析 interface 声明头。
      */
-    override fun transformInterface(interfaceDeclaration: CfirInterface, data: CfirTypeResolutionConfiguration): CfirInterface {
-        transformClassLikeHeader(interfaceDeclaration, data)
-        bumpPhase(interfaceDeclaration)
-        return interfaceDeclaration
+    override fun transformInterface(`interface`: CfirInterface, data: CfirTypeResolutionConfiguration): CfirInterface {
+        transformClassLikeHeader(`interface`, data)
+        bumpPhase(`interface`)
+        return `interface`
     }
 
     /**

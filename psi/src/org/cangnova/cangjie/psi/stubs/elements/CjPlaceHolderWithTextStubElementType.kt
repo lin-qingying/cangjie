@@ -31,17 +31,29 @@ import com.intellij.psi.stubs.StubElement
 import com.intellij.psi.stubs.StubInputStream
 import com.intellij.psi.stubs.StubOutputStream
 
+/**
+ * 表示 `CjPlaceHolderWithTextStubElementType`，承载PSI Stub中的语法节点、索引桩或辅助模型。
+ */
 class CjPlaceHolderWithTextStubElementType<T : CjElementImplStub<out StubElement<*>>>(debugName: String, psiClass: Class<T>) :
     CjStubElementType<CangJiePlaceHolderWithTextStub<T>, T>(debugName, psiClass, CangJiePlaceHolderWithTextStub::class.java) {
 
+    /**
+     * 实现 `createStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createStub(psi: T, parentStub: StubElement<*>): CangJiePlaceHolderWithTextStub<T> {
         return CangJiePlaceHolderWithTextStubImpl(parentStub, this, psi.text)
     }
 
+    /**
+     * 实现 `serialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun serialize(stub: CangJiePlaceHolderWithTextStub<T>, dataStream: StubOutputStream) {
         dataStream.writeUTFFast(stub.text())
     }
 
+    /**
+     * 实现 `deserialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>): CangJiePlaceHolderWithTextStub<T> {
         val text = dataStream.readUTFFast()
         return CangJiePlaceHolderWithTextStubImpl(parentStub, this, text)

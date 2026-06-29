@@ -19,8 +19,14 @@ import org.junit.jupiter.api.Test
 class AnalysisApiRichTargetExtractionTest : AbstractAnalysisApiExecutionTest(
     "analysis/analysis-api-cfir/testData/targetsRich",
 ) {
+    /**
+     * 使用 standalone CFIR 配置运行 richer target extraction 场景测试。
+     */
     override val configurator = CaCfirStandaloneAnalysisApiTestConfigurator
 
+    /**
+     * 验证 extend 成员调用位的目标提取能返回成员声明。
+     */
     @Test
     fun richerTargets(mainFile: CjFile) {
         assertReferenceTargets(
@@ -31,6 +37,9 @@ class AnalysisApiRichTargetExtractionTest : AbstractAnalysisApiExecutionTest(
         )
     }
 
+    /**
+     * 在指定锚点偏移处提取 reference symbols，并断言其还原到期望声明名。
+     */
     private fun assertReferenceTargets(
         file: CjFile,
         anchor: String,
@@ -49,6 +58,9 @@ class AnalysisApiRichTargetExtractionTest : AbstractAnalysisApiExecutionTest(
         assertEquals(expectedReferences, referenceNames, "Unexpected reference targets at `$anchor`")
     }
 
+    /**
+     * 将文本锚点与锚点内偏移转换为文件级绝对偏移。
+     */
     private fun CjFile.offsetOf(anchor: String, offsetInAnchor: Int): Int {
         val anchorStart = text.indexOf(anchor)
         assertTrue(anchorStart >= 0, "Cannot find `$anchor` in ${name}")

@@ -38,27 +38,57 @@ import com.intellij.lang.Language
 import com.intellij.psi.impl.source.tree.LazyParseablePsiElement
 import com.intellij.psi.tree.IElementType
 
+/**
+ * 表示 `CDocImpl`，承载仓颉词法与文档注释中的语法节点、索引桩或辅助模型。
+ */
 class CDocImpl(buffer: CharSequence?) : LazyParseablePsiElement(CDocTokens.CDOC, buffer), CDoc {
 
+    /**
+     * 实现 `getLanguage` 的仓颉词法与文档注释协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getLanguage(): Language = CangJieLanguage
 
+    /**
+     * 实现 `toString` 的仓颉词法与文档注释协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun toString(): String = node.elementType.toString()
 
+    /**
+     * 实现 `getTokenType` 的仓颉词法与文档注释协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getTokenType(): IElementType = CjTokens.DOC_COMMENT
 
+    /**
+     * 实现 `getOwner` 的仓颉词法与文档注释协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getOwner(): CjDeclaration? = getParentOfType(true)
 
+    /**
+     * 实现 `getDefaultSection` 的仓颉词法与文档注释协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getDefaultSection(): CDocSection = getChildOfType()!!
 
+    /**
+     * 实现 `getAllSections` 的仓颉词法与文档注释协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getAllSections(): List<CDocSection> =
         getChildrenOfType<CDocSection>().toList()
 
+    /**
+     * 实现 `findSectionByName` 的仓颉词法与文档注释协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun findSectionByName(name: String): CDocSection? =
         getChildrenOfType<CDocSection>().firstOrNull { it.name == name }
 
+    /**
+     * 实现 `findSectionByTag` 的仓颉词法与文档注释协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun findSectionByTag(tag: CDocKnownTag): CDocSection? =
         findSectionByName(tag.name.toLowerCaseAsciiOnly())
 
+    /**
+     * 实现 `findSectionByTag` 的仓颉词法与文档注释协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun findSectionByTag(tag: CDocKnownTag, subjectName: String): CDocSection? =
         getChildrenOfType<CDocSection>().firstOrNull {
             it.name == tag.name.toLowerCaseAsciiOnly() && it.getSubjectName() == subjectName

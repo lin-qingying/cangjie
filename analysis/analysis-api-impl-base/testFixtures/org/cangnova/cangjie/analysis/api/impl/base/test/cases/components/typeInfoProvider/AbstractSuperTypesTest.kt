@@ -13,8 +13,15 @@ import org.cangnova.cangjie.test.services.assertions
 
 /**
  * `typeInfoProvider.superTypes` 的抽象测试。
+ *
+ * 该测试通过 class symbol 暴露的 `superTypes` 验证公开继承类型列表。
  */
 abstract class AbstractSuperTypesTest : AbstractAnalysisApiComponentTest() {
+    /**
+     * 执行 super types 快照测试。
+     *
+     * 方法定位目标 class，恢复 class symbol，并按 qualified renderer 输出所有直接超类型。
+     */
     override fun doTestByMainFile(mainFile: CjFile, mainModule: CjTestModule, testServices: TestServices) {
         val classDeclaration = testServices.expressionMarkerProvider
             .getTopmostSelectedElementOfTypeByDirectiveOrNull(mainFile, mainModule, CjClass::class)

@@ -27,9 +27,17 @@ import org.junit.jupiter.api.Assertions.assertEquals
  * 3. 局部声明 / extend 成员 / 顶层声明在容器建模上是否一致。
  */
 abstract class AbstractContainingDeclarationProviderByReferenceTest : AbstractAnalysisApiComponentTest() {
+    /**
+     * 当前 containing declaration 测试额外注册的专用指令集合。
+     */
     override val additionalDirectives: List<DirectivesContainer>
         get() = super.additionalDirectives + AnalysisApiContainingDeclarationTestDirectives
 
+    /**
+     * 执行引用目标 containing declaration 链测试。
+     *
+     * 方法通过引用恢复 symbol，再沿公开 `containingDeclaration` 链向外渲染稳定文本。
+     */
     override fun doTestByMainFile(mainFile: CjFile, mainModule: CjTestModule, testServices: TestServices) {
         val directives = directivesForMainFile(mainFile, mainModule)
         val referenceExpression = findUsageSimpleName(mainFile, directives.containingDeclarationTargetName)
@@ -48,6 +56,11 @@ abstract class AbstractContainingDeclarationProviderByReferenceTest : AbstractAn
         }
     }
 
+    /**
+     * 渲染单个 symbol 的 containing declaration 相关摘要。
+     *
+     * 输出根据 callable、class-like、extend 等 symbol 形态选择稳定身份文本，并规范化路径分隔符。
+     */
     context(_: CaSession)
     private fun render(symbol: CaSymbol): String {
         val rendered = when (symbol) {

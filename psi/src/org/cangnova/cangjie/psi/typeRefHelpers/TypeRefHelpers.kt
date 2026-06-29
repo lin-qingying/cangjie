@@ -29,6 +29,9 @@ import org.cangnova.cangjie.psi.*
 import org.cangnova.cangjie.psi.psiUtil.parentsWithSelf
 import org.cangnova.cangjie.psi.psiUtil.siblings
 
+/**
+ * 提供 `setReceiverTypeReference` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+ */
 fun CjFunctionType.setReceiverTypeReference(typeRef: CjTypeReference?) =
     doSetReceiverTypeReference(
         typeRef,
@@ -43,6 +46,9 @@ fun CjFunctionType.setReceiverTypeReference(typeRef: CjTypeReference?) =
         },
     )
 
+/**
+ * 提供 `doSetReceiverTypeReference` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+ */
 private inline fun <T : CjElement> T.doSetReceiverTypeReference(
     typeRef: CjTypeReference?,
     getReceiverTypeReference: T.() -> CjTypeReference?,

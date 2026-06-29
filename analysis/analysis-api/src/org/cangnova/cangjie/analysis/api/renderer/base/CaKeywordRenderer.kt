@@ -51,6 +51,9 @@ fun interface CaKeywordRenderer {
      * 适合源码风格渲染。
      */
     object AS_WORD : CaKeywordRenderer {
+        /**
+         * 当过滤器允许时按关键字 token 的字面值输出。
+         */
         override fun renderKeyword(
             analysisSession: CaSession,
             keyword: CjKeywordToken,
@@ -70,6 +73,9 @@ fun interface CaKeywordRenderer {
      * 用于需要彻底屏蔽关键字的场景(如仅输出签名核心)。
      */
     object NONE : CaKeywordRenderer {
+        /**
+         * 丢弃关键字，不向 printer 写入内容。
+         */
         override fun renderKeyword(
             analysisSession: CaSession,
             keyword: CjKeywordToken,

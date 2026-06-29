@@ -15,6 +15,9 @@ import org.cangnova.cangjie.psi.CjProperty
  * 仓颉属性与字段声明的 rename processor。
  */
 class RenameCangJiePropertyProcessor : RenameCangJiePsiProcessor() {
+    /**
+     * 处理仓颉属性声明和字段变量声明。
+     */
     override fun canProcessElement(element: PsiElement): Boolean =
         element is CjProperty || element is CjFieldVariable
 }

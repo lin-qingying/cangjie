@@ -33,16 +33,25 @@ import com.intellij.psi.stubs.StubInputStream
 import com.intellij.psi.stubs.StubOutputStream
 import com.intellij.util.io.StringRef
 
+/**
+ * 表示 `CjMacroExpressionElementType`，承载PSI Stub中的语法节点、索引桩或辅助模型。
+ */
 class CjMacroExpressionElementType(debugName: String) : CjStubElementType<CangJieMacroExpressionStub, CjMacroExpression>(
     debugName,
     CjMacroExpression::class.java,
     CangJieMacroExpressionStub::class.java,
 ) {
+    /**
+     * 实现 `serialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun serialize(stub: CangJieMacroExpressionStub, dataStream: StubOutputStream) {
         dataStream.writeName(stub.getShortName())
         dataStream.writeBoolean(stub.hasValueArguments())
     }
 
+    /**
+     * 实现 `deserialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>?): CangJieMacroExpressionStub {
         val text = dataStream.readName()
         val hasValueArguments = dataStream.readBoolean()
@@ -55,6 +64,9 @@ class CjMacroExpressionElementType(debugName: String) : CjStubElementType<CangJi
         return CangJieMacroExpressionStubImpl(parentStub, text, hasValueArguments)
     }
 
+    /**
+     * 实现 `createStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createStub(
         psi: CjMacroExpression,
         parentStub: StubElement<out PsiElement>?,

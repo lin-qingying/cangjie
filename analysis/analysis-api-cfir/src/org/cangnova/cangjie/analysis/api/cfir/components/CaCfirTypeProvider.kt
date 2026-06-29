@@ -23,9 +23,15 @@ import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
  * 具体 CFIR type 叶子实现已经独立落位到 `cfir/types`。
  */
 internal class CaCfirTypeProvider(
+    /**
+     * 延迟取得当前 CFIR Analysis session，默认类型计算需要底层 CFIR symbol 和类型构建器。
+     */
     override val analysisSessionProvider: () -> CaCfirSession,
 ) : CaBaseTypeProvider<CaCfirSession>(), CaTypeProvider, CaCfirSessionComponent {
 
+    /**
+     * 返回 class-like 符号在当前 session 下的默认公开类型。
+     */
     override val CaClassLikeSymbol.defaultType: CaType
         get() = withValidityAssertion {
             with(analysisSession) {

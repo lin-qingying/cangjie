@@ -10,9 +10,22 @@ import org.eclipse.lsp4j.TextDocumentIdentifier
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
+/**
+ * 校验 LSP folding range 请求与真实工作区文档的集成行为。
+ *
+ * 该测试覆盖 imports、块注释和多行调用三类折叠范围，确保客户端可见位置来自实际文档快照。
+ */
 class CangjieFoldingIntegrationTest : AbstractLspIntegrationTest() {
+    /**
+     * 禁用默认会话，测试自行创建带夹具工作区的会话。
+     */
     override val autoCreateDefaultSession: Boolean = false
 
+    /**
+     * 校验折叠范围包含导入、注释和多行调用区域。
+     *
+     * 该用例根据源码 token 计算行号，避免硬编码行号掩盖工作区文本变化。
+     */
     @Test
     fun `folding range returns real imports comment and multiline call ranges`() {
         foldingWorkspace().use { fixture ->
@@ -50,6 +63,11 @@ class CangjieFoldingIntegrationTest : AbstractLspIntegrationTest() {
         }
     }
 
+    /**
+     * 构造用于折叠测试的单文件工作区。
+     *
+     * 源文件同时包含连续导入、多行块注释和跨行函数调用，覆盖折叠提供器的主要输入形态。
+     */
     private fun foldingWorkspace(): LspWorkspaceFixture {
         return LspWorkspaceFixtureBuilder()
             .source(
@@ -74,6 +92,11 @@ class CangjieFoldingIntegrationTest : AbstractLspIntegrationTest() {
             .build()
     }
 
+    /**
+     * 返回指定 token 在夹具文件中的 LSP 行号。
+     *
+     * 该方法通过 `LspTextDocument` 统一执行偏移到位置转换，确保测试与协议坐标模型一致。
+     */
     private fun lineOfToken(
         fixture: LspWorkspaceFixture,
         relativePath: String,

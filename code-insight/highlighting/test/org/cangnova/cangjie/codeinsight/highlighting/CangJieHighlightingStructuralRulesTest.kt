@@ -20,22 +20,34 @@ import org.cangnova.cangjie.test.testFramework.CjParsingTestCase
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 
+/**
+ * 验证仓颉 PSI 结构高亮规则。
+ */
 class CangJieHighlightingStructuralRulesTest : CjParsingTestCase(
     dataPath = "",
     fileExt = "cj",
     fileType = CangJieFileType.INSTANCE,
     CangJieParserDefinition(),
 ) {
+    /**
+     * 初始化 PSI 解析测试环境。
+     */
     @BeforeEach
     fun setUpFixture() {
         setUp()
     }
 
+    /**
+     * 释放 PSI 解析测试环境。
+     */
     @AfterEach
     fun tearDownFixture() {
         tearDown()
     }
 
+    /**
+     * 类型声明、类型别名与类型参数应映射到对应语义高亮类型。
+     */
     @Test
     fun testClassStructInterfaceTypeAliasAndTypeParameterRules() {
         val file = parse(
@@ -69,6 +81,9 @@ class CangJieHighlightingStructuralRulesTest : CjParsingTestCase(
         )
     }
 
+    /**
+     * 函数、属性、参数和局部变量应映射到对应语义高亮类型。
+     */
     @Test
     fun testFunctionPropertyParameterAndVariableRules() {
         val file = parse(
@@ -101,6 +116,9 @@ class CangJieHighlightingStructuralRulesTest : CjParsingTestCase(
         )
     }
 
+    /**
+     * 兼容旧顶层函数的转发入口应复用共享规则。
+     */
     @Test
     fun testCompatibilityTopLevelFunctionsDelegateToSharedRules() {
         val file = parse(
@@ -128,9 +146,15 @@ class CangJieHighlightingStructuralRulesTest : CjParsingTestCase(
         assertEquals(CangJieHighlightInfoTypeSemanticNames.LOCAL_VARIABLE, textAttributesForCjVariableDeclaration(variable))
     }
 
+    /**
+     * 将内联仓颉源码解析为 PSI 文件。
+     */
     private fun parse(text: String): CjFile =
         createPsiFile("highlighting", text) as CjFile
 
+    /**
+     * 从测试文件中取出唯一的指定类型后代。
+     */
     private inline fun <reified T : org.cangnova.cangjie.psi.CjElement> CjFile.singleDescendant(): T {
         val element = collectDescendantsOfType<T>().singleOrNull()
         assertNotNull(element, "Expected exactly one ${T::class.simpleName} in test file")

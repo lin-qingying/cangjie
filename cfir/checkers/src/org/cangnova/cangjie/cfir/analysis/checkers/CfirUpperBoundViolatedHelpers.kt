@@ -27,6 +27,9 @@ import org.cangnova.cangjie.cfir.types.abbreviatedType
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.createTypeSubstitutorByTypeConstructor
+import org.cangnova.cangjie.cfir.types.declaredUpperBoundConeTypeOrNull
+import org.cangnova.cangjie.cfir.types.declaredUpperBoundRefsAfterTypeResolve
+import org.cangnova.cangjie.cfir.types.hasInvalidDeclaredUpperBounds
 import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.source.CjFakeSourceElementKind
@@ -227,9 +230,7 @@ private fun checkUpperBoundViolated(
             !argumentType.isGenericTypeWithInvalidUpperBound() &&
             (!isIgnoreTypeParameters || (argumentType.typeArguments.isEmpty() && argumentType !is ConeTypeParameterType))
         ) {
-            val upperBounds = typeParameters[index].symbol.resolvedBounds
-                .map { it.coneType }
-                .filterNot { it is ConeErrorType }
+            val upperBounds = typeParameters[index].declaredUpperBoundTypes()
             if (upperBounds.isNotEmpty()) {
                 val upperBound = substitutor.substituteOrSelf(
                     context.session.typeContext.intersectTypes(upperBounds) as ConeCangJieType,
@@ -270,12 +271,18 @@ private fun checkUpperBoundViolated(
 context(context: CheckerContext)
 private fun ConeCangJieType.isGenericTypeWithInvalidUpperBound(): Boolean {
     val typeParameterType = this as? ConeTypeParameterType ?: return false
-    return typeParameterType.lookupTag.typeParameterSymbol.resolvedBounds.any { bound ->
-        val boundType = bound.coneType
-        if (boundType is ConeErrorType) return@any true
-        !boundType.isLegalGenericUpperBound()
-    }
+    return typeParameterType.hasInvalidDeclaredUpperBounds(context.session)
 }
+
+context(context: CheckerContext)
+private fun CfirTypeParameterRef.hasInvalidDeclaredUpperBounds(): Boolean =
+    symbol.toLookupTag().hasInvalidDeclaredUpperBounds(context.session)
+
+private fun CfirTypeParameterRef.declaredUpperBoundTypes(): List<ConeCangJieType> =
+    symbol.toLookupTag()
+        .declaredUpperBoundRefsAfterTypeResolve()
+        .mapNotNull { it.declaredUpperBoundConeTypeOrNull() }
+        .filterNot { it is ConeErrorType }
 
 /**
  * 判断类型是否允许作为泛型类型参数上界。

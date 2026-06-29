@@ -2351,6 +2351,7 @@ class LightTreeRawCfirDeclarationBuilder(
                 CfirTypeConstraintReference(
                     parameterName = Name.identifier(parameterNameNode.asText()),
                     source = parameterNameNode.toSource(),
+                    boundTypeRefs = tree.getChildrenByType(constraint, CjNodeTypes.TYPE_REFERENCE).map(::convertTypeRef),
                     constraintSource = constraint.toSource(),
                 )
             }

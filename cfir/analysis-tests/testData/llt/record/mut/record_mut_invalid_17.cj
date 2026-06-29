@@ -10,9 +10,9 @@ struct R1 {
 }
 
 func structMut<<!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>T<!>>(obj: T): Unit where T <: R1 {
-    <!IMMUTABLE_FUNCTION_CANNOT_ACCESS_MUTABLE_FUNCTION!>obj.foo()<!>
+    obj.<!IMMUTABLE_FUNCTION_CANNOT_ACCESS_MUTABLE_FUNCTION!>foo<!>()
     var r = R1()
-    let _ = <!USE_MUTABLE_FUNC_ALONE!>r.foo<!>
+    let _ = r.<!USE_MUTABLE_FUNC_ALONE!>foo<!>
 }
 
 main() {

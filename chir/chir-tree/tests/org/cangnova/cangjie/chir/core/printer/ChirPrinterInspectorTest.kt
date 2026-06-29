@@ -15,8 +15,18 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
+/**
+ * 校验 CHIR 打印器和结构检查器的确定性输出。
+ *
+ * 该测试固定文本打印顺序、节点标识和结构摘要字段，确保调试工具输出可以作为稳定基线。
+ */
 class ChirPrinterInspectorTest {
 
+    /**
+     * 校验打印器会按稳定顺序输出包、模块、函数、块和表达式。
+     *
+     * 该用例锁定带节点标识的文本格式，防止排序、缩进或关键字段变化破坏基线对比。
+     */
     @Test
     fun `printer emits stable sorted output with node identifiers`() {
         val printed = ChirPrinter.print(samplePackage())
@@ -41,6 +51,11 @@ package printer.pkg id=pkg:printer access=INTERNAL packageInit=_ literalInit=_
         assertEquals(expected, printed)
     }
 
+    /**
+     * 校验检查器会生成结构化且确定性的摘要。
+     *
+     * 该用例确认包标识、计数字段和模块排序稳定，便于测试工具进行机器可读比较。
+     */
     @Test
     fun `inspector emits structured deterministic summary`() {
         val fixture = samplePackage()
@@ -58,6 +73,11 @@ package printer.pkg id=pkg:printer access=INTERNAL packageInit=_ literalInit=_
         assertTrue(alphaPos in 0 until betaPos)
     }
 
+    /**
+     * 构造包含两个模块和两类函数形态的打印样本包。
+     *
+     * 样本故意以 beta、alpha 的输入顺序创建模块，用于验证打印器和检查器会执行稳定排序。
+     */
     private fun samplePackage(): ChirPackage {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
         val beta = DefaultChirFunctionDeclaration(

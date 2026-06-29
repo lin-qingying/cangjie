@@ -13,10 +13,16 @@ import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
  */
 @CaPlatformInterface
 interface CaResolutionScopeProvider : CaEngineService {
+    /**
+     * 返回指定 use-site module 的解析作用域。
+     */
     fun getResolutionScope(module: CaModule): CaResolutionScope
 
     @CaPlatformInterface
     companion object {
+        /**
+         * 获取项目级解析作用域 provider 服务。
+         */
         fun getInstance(project: Project): CaResolutionScopeProvider = project.service()
     }
 }

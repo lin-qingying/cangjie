@@ -20,6 +20,9 @@ import java.io.File
  * [LLLibrarySymbolProviderFactory] for [KotlinDeserializedDeclarationsOrigin.BINARIES][org.cangnova.cangjie.analysis.api.platform.KotlinDeserializedDeclarationsOrigin.BINARIES].
  */
 internal object LLBinaryOriginLibrarySymbolProviderFactory : LLLibrarySymbolProviderFactory {
+    /**
+     * binary-origin JVM library provider 当前复用 common library provider 创建路径。
+     */
     override fun createJvmLibrarySymbolProvider(
         session: LLCfirSession,
         packagePartProvider: LLPackagePartProvider,
@@ -27,6 +30,9 @@ internal object LLBinaryOriginLibrarySymbolProviderFactory : LLLibrarySymbolProv
     ): List<CfirSymbolProvider> =
         createCommonLibrarySymbolProvider(session, packagePartProvider, scope)
 
+    /**
+     * 创建基于 `.cjo` 反序列化的 common library symbol provider。
+     */
     override fun createCommonLibrarySymbolProvider(
         session: LLCfirSession,
         packagePartProvider: LLPackagePartProvider,
@@ -34,12 +40,18 @@ internal object LLBinaryOriginLibrarySymbolProviderFactory : LLLibrarySymbolProv
     ): List<CfirSymbolProvider> =
         listOf(createDeserializedLibrarySymbolProvider(session))
 
+    /**
+     * 创建 builtins session 使用的 primitive provider 与 `.cjo` 反序列化 provider。
+     */
     override fun createBuiltinsSymbolProvider(session: LLCfirSession): List<CfirSymbolProvider> =
         listOf(
             CfirBuiltinSymbolProvider(session),
             createBuiltinsDeserializedSymbolProvider(session),
         )
 
+    /**
+     * 创建普通 library `.cjo` 反序列化 symbol provider。
+     */
     private fun createDeserializedLibrarySymbolProvider(session: LLCfirSession): CfirSymbolProvider =
         CfirDeserializedSymbolProvider(
             session = session,
@@ -78,6 +90,9 @@ internal object LLBinaryOriginLibrarySymbolProviderFactory : LLLibrarySymbolProv
         )
     }
 
+    /**
+     * 从 builtins virtual file 推断 `.cjo` 搜索根目录。
+     */
     private fun toBuiltinsSearchRoot(virtualFile: VirtualFile): File {
         val file = File(virtualFile.path)
         val parent = file.parentFile ?: return file

@@ -19,25 +19,49 @@ import org.cangnova.cangjie.name.Name
  * 因此这里只保留 owner pointer + member 选择这一条主恢复链。
  */
 internal abstract class CaCfirMemberSymbolPointer<S : CaSymbol>(
+    /**
+     * 成员 owner 声明容器的 pointer。
+     */
     private val ownerPointer: CaSymbolPointer<CaDeclarationContainerSymbol>,
 ) : CaCfirSymbolPointerBase<S>() {
     @CaImplementationDetail
+    /**
+     * 先恢复 owner，再由具体子类在 owner 作用域中选择成员符号。
+     */
     final override fun restoreSymbol(session: CaSession): S? {
         val cfirSession = restoreSession(session) ?: return null
         val ownerSymbol = ownerPointer.restoreSymbol(session) ?: return null
         return cfirSession.chooseCandidateAndCreateSymbol(ownerSymbol)
     }
 
+    /**
+     * 从 owner 声明容器中选择目标成员并构造公开符号。
+     */
     protected abstract fun CaCfirSession.chooseCandidateAndCreateSymbol(ownerSymbol: CaDeclarationContainerSymbol): S?
 }
 
+/**
+ * 成员函数符号 pointer。
+ */
 @OptIn(CaImplementationDetail::class)
 internal class CaCfirMemberFunctionSymbolPointer(
+    /**
+     * 成员函数所属声明容器的 pointer。
+     */
     private val ownerPointer: CaSymbolPointer<CaDeclarationContainerSymbol>,
+    /**
+     * 成员函数短名。
+     */
     private val name: Name,
+    /**
+     * 区分重载的 CFIR callable 签名。
+     */
     private val signature: CfirCallableSignature,
 ) : CaCfirMemberSymbolPointer<CaNamedFunctionSymbol>(ownerPointer) {
     @OptIn(CaImplementationDetail::class)
+    /**
+     * 从 owner 的 declared member scope 中按名称和签名恢复成员函数。
+     */
     override fun CaCfirSession.chooseCandidateAndCreateSymbol(ownerSymbol: CaDeclarationContainerSymbol): CaNamedFunctionSymbol? {
         val candidates = when (ownerSymbol) {
             is org.cangnova.cangjie.analysis.api.symbols.CaClassSymbol -> with(this) {

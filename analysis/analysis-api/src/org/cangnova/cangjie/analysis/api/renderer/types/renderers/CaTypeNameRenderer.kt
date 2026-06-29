@@ -35,6 +35,9 @@ fun interface CaTypeNameRenderer {
      * 始终调用 [Name.render]，按仓颉源码风格输出（必要时自动加引号转义）。
      */
     object QUOTED : CaTypeNameRenderer {
+        /**
+         * 按仓颉源码转义规则渲染类型短名。
+         */
         override fun renderName(
             analysisSession: CaSession,
             name: Name,

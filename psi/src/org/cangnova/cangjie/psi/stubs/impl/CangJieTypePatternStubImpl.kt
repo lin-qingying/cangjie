@@ -41,12 +41,21 @@ import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
  */
 class CangJieTypePatternStubImpl(
     parent: StubElement<out PsiElement>?,
+    /**
+     * 保存 `name` 的内部状态，供PSI Stub实现维护节点缓存或解析上下文。
+     */
     private val name: StringRef?,
 ) : CangJieStubBaseImpl<CjTypePattern>(parent, CjStubElementTypes.TYPE_PATTERN),
     CangJieTypePatternStub {
 
+    /**
+     * 实现 `getName` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getName(): String? = StringRef.toString(name)
 
+    /**
+     * 实现 `copyInto` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun copyInto(newParent: StubElement<*>?): CangJieTypePatternStubImpl = CangJieTypePatternStubImpl(
         parent = newParent,
         name = name,

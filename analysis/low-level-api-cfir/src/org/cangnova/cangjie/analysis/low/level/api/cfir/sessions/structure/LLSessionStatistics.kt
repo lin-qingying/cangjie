@@ -16,8 +16,19 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.structure
  * @property lifetime The time in seconds since the creation of the session.
  */
 internal class LLSessionStatistics(
+    /**
+     * session 中所有仓颉 CFIR 元素的估算权重。
+     */
     val cangjieWeight: Long,
+
+    /**
+     * session 中所有 Java CFIR 元素的估算权重。
+     */
     val javaWeight: Long,
+
+    /**
+     * session 自创建以来的存活秒数。
+     */
     val lifetime: Double,
 ) {
     /**
@@ -26,6 +37,9 @@ internal class LLSessionStatistics(
     val weight: Long get() = cangjieWeight + javaWeight
 
     companion object {
+        /**
+         * 空统计值。
+         */
         val ZERO = LLSessionStatistics(0, 0, 0.0)
     }
 }

@@ -30,28 +30,52 @@ import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 import com.intellij.lang.ASTNode
 import com.intellij.psi.PsiElement
 
+/**
+ * 表示 `CjVArrayType`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjVArrayType : CjElementImplStub<CangJiePlaceHolderStub<CjVArrayType>>, CjTypeElement {
 
     constructor(node: ASTNode) : super(node)
     constructor(stub: CangJiePlaceHolderStub<CjVArrayType>) : super(stub, CjStubElementTypes.VARRAY_TYPE)
 
     // 整数字面量
+    /**
+     * 保存 `literal`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val literal: PsiElement? get() = findChildByType(CjTokens.INTEGER_LITERAL)
 
     //    类型参数
+    /**
+     * 保存 `typeProjection`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val typeProjection = typeArguments.firstOrNull()
 
+    /**
+     * 保存 `typeReference`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val typeReference = typeProjection?.typeReference
+    /**
+     * 保存 `typeElement`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val typeElement = typeReference?.typeElement
+    /**
+     * 保存 `typeArgumentList`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val typeArgumentList: CjTypeArgumentList?
         get() = getStubOrPsiChild(CjStubElementTypes.TYPE_ARGUMENT_LIST)
 
+    /**
+     * 保存 `typeArguments`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val typeArguments: List<CjTypeProjection>
         get() {
             val typeArgumentList = typeArgumentList
             return typeArgumentList?.arguments ?: emptyList()
         }
 
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitVArrayType(this, data)
     }

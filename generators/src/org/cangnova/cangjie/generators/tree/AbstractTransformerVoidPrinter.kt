@@ -20,12 +20,21 @@ abstract class AbstractTransformerVoidPrinter<Element : AbstractElement<Element,
     printer: ImportCollectingPrinter
 ) : AbstractTransformerPrinter<Element, Field>(printer) {
 
+    /**
+     * Void transformer 不声明 visitor 类型参数。
+     */
     final override val visitorTypeParameters: List<TypeVariable>
         get() = emptyList()
 
+    /**
+     * Void transformer 的 data 参数使用可空 [Nothing] 占位。
+     */
     final override val visitorDataType: TypeRef
         get() = StandardTypes.nothing.copy(nullable = true)
 
+    /**
+     * 打印无 data 参数的 transform 方法，并生成带 data 参数签名到无 data 版本的桥接。
+     */
     override fun printMethodsForElement(element: Element) {
         printer.run {
             val elementParameterName = element.visitorParameterName

@@ -46,8 +46,17 @@ import java.util.concurrent.ConcurrentHashMap
  * @see LLCfirDeclarationModificationService
  */
 internal class FileStructure private constructor(
+    /**
+     * 当前文件结构对应的 PSI 文件。
+     */
     private val cjFile: CjFile,
+    /**
+     * 当前 PSI 文件对应的 raw CFIR 文件。
+     */
     private val cfirFile: CfirFile,
+    /**
+     * 当前模块的 low-level 解析组件。
+     */
     private val moduleComponents: LLCfirModuleResolveComponents,
 ) {
     companion object {
@@ -70,8 +79,14 @@ internal class FileStructure private constructor(
         }
     }
 
+    /**
+     * 当前 CFIR 文件 session 中的 declaration provider。
+     */
     private val cfirProvider = cfirFile.moduleData.session.cfirProvider
 
+    /**
+     * PSI 容器到 structure element 的缓存。
+     */
     private val structureElements = ConcurrentHashMap<CjElement, FileStructureElement>()
 
     /**
@@ -98,6 +113,9 @@ internal class FileStructure private constructor(
         return structureElements.getOrPut(container) { createStructureElement(container) }
     }
 
+    /**
+     * 为指定 PSI 元素创建或取得 structure element，并加入结果集合。
+     */
     private fun addStructureElementForTo(element: CjElement, result: MutableCollection<FileStructureElement>) {
         checkCanceled()
         LLCfirDiagnosticVisitor.suppressAndLogExceptions {
@@ -105,10 +123,16 @@ internal class FileStructure private constructor(
         }
     }
 
+    /**
+     * 返回用于缓存 structure element 的 PSI 容器；无法定位时回退到文件。
+     */
     private fun getContainerCjElement(element: CjElement, nonLocalContainer: CjElement?): CjElement {
         return getStructureCjElement(element, nonLocalContainer) ?: element.containingCjFile
     }
 
+    /**
+     * 根据非局部容器和 super constructor call 特例选择实际 structure PSI 容器。
+     */
     private fun getStructureCjElement(element: CjElement, nonLocalContainer: CjElement?): CjElement? {
         val container = if (nonLocalContainer?.isAutonomousElement == true)
             nonLocalContainer
@@ -126,6 +150,9 @@ internal class FileStructure private constructor(
         return resultedContainer ?: container
     }
 
+    /**
+     * 判断元素是否位于 class super constructor call 中。
+     */
     private fun CjTypeStatement.isPartOfSuperClassCall(element: CjElement): Boolean {
         for (entry in superTypeListEntries) {
             if (entry !is CjSuperTypeCallEntry) continue
@@ -142,6 +169,9 @@ internal class FileStructure private constructor(
         return false
     }
 
+    /**
+     * 收集整个文件所有 structure element 的 diagnostics。
+     */
     fun getAllDiagnosticsForFile(diagnosticCheckerFilter: DiagnosticCheckerFilter): List<CjPsiDiagnostic> {
         val structureElements = getAllStructureElements()
         return buildList {
@@ -149,6 +179,9 @@ internal class FileStructure private constructor(
         }
     }
 
+    /**
+     * 将每个 structure element 的 diagnostics 追加到当前集合。
+     */
     private fun MutableCollection<CjPsiDiagnostic>.collectDiagnosticsFromStructureElements(
         structureElements: Collection<FileStructureElement>,
         diagnosticCheckerFilter: DiagnosticCheckerFilter,
@@ -162,6 +195,9 @@ internal class FileStructure private constructor(
         }
     }
 
+    /**
+     * 返回文件中所有可独立收集 diagnostics 的 structure element。
+     */
     fun getAllStructureElements(): Collection<FileStructureElement> {
         val structureElements = mutableSetOf<FileStructureElement>()
         addStructureElementForTo(cjFile, structureElements)
@@ -186,18 +222,27 @@ internal class FileStructure private constructor(
         return structureElements.toList().asReversed()
     }
 
+    /**
+     * 创建根文件 structure element。
+     */
     private fun createRootStructure(): RootStructureElement {
         val cfirFile = moduleComponents.cfirFileBuilder.buildRawCfirFileWithCaching(cjFile)
         cfirFile.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE.previous)
         return RootStructureElement(cfirFile, moduleComponents)
     }
 
+    /**
+     * 创建 code fragment 对应的 declaration structure element。
+     */
     private fun createCodeFragmentStructure(): DeclarationStructureElement {
         val cfirCodeFragment = cfirFile.codeFragment
         cfirCodeFragment.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE)
         return DeclarationStructureElement(cfirFile, cfirCodeFragment, moduleComponents)
     }
 
+    /**
+     * 创建普通 PSI 声明对应的 structure element。
+     */
     private fun createDeclarationStructure(declaration: CjDeclaration): FileStructureElement {
         val cfirDeclaration = declaration.findSourceNonLocalCfirDeclaration(cfirFile, cfirProvider)
         return FileElementFactory.createFileStructureElement(
@@ -207,6 +252,9 @@ internal class FileStructure private constructor(
         )
     }
 
+    /**
+     * 根据 PSI 容器种类分派创建对应 structure element。
+     */
     private fun createStructureElement(container: CjElement): FileStructureElement = when (container) {
         is CjCodeFragment -> createCodeFragmentStructure()
         is CjFile -> createRootStructure()

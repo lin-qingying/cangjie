@@ -28,11 +28,17 @@ import org.cangnova.cangjie.psi.stubs.CangJiePlaceHolderStub
 import com.intellij.psi.stubs.IStubElementType
 import com.intellij.psi.stubs.StubElement
 
+/**
+ * 表示 `CangJiePlaceHolderStubImpl`，承载PSI Stub中的语法节点、索引桩或辅助模型。
+ */
 open class CangJiePlaceHolderStubImpl<T : CjElementImplStub<out StubElement<*>>>(
     parent: StubElement<*>?,
     elementType: IStubElementType<*, *>,
 ) :
     CangJieStubBaseImpl<T>(parent, elementType), CangJiePlaceHolderStub<T> {
+    /**
+     * 实现 `copyInto` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun copyInto(newParent: StubElement<*>?): CangJiePlaceHolderStubImpl<T> = CangJiePlaceHolderStubImpl(
         parent = newParent,
         elementType = stubType,

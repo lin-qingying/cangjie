@@ -70,6 +70,9 @@ abstract class CjCommonFile(viewProvider: FileViewProvider, val isCompiled: Bool
      */
     @Volatile
     private var pathCached: String? = null
+    /**
+     * 保存 `customStubBuilder`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     open val customStubBuilder: StubBuilder? get() = null
 
     /**

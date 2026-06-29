@@ -24,6 +24,9 @@
 
 package org.cangnova.cangjie.psi
 
+/**
+ * 表示 `IfNotParsed`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 @Retention(AnnotationRetention.RUNTIME)
 @Target(AnnotationTarget.FUNCTION, AnnotationTarget.PROPERTY_GETTER, AnnotationTarget.PROPERTY_SETTER)
 annotation class IfNotParsed

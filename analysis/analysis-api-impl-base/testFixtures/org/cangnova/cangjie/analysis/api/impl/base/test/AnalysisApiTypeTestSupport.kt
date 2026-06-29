@@ -21,6 +21,12 @@ import org.junit.jupiter.api.Assertions.assertNotNull
  * 3. 在需要时校验 `buildClassType(classId)` 与 `buildClassType(symbol)` 一致
  */
 internal object AnalysisApiTypeTestSupport {
+    /**
+     * 从测试模块源码中按名称恢复稳定的 class-like symbol。
+     *
+     * 该函数先在 PSI 中定位唯一 `CjTypeStatement`，再通过声明的 `ClassId` 进入公开 Analysis API
+     * 查询，确保后续类型构造不直接依赖 PSI 实现细节。
+     */
     context(session: CaSession)
     fun resolveClassSymbol(mainModule: CjTestModule, className: String): CaClassLikeSymbol {
         val declaration = mainModule.cjFiles.asSequence()
@@ -35,6 +41,12 @@ internal object AnalysisApiTypeTestSupport {
             ?: error("Analysis API 无法恢复 class-like symbol: `${classId.asString()}`")
     }
 
+    /**
+     * 根据测试指令描述构造公开 `CaType` 实例。
+     *
+     * 该函数覆盖 type creator 和 type relation 测试共同需要的类型形态，包括 class-like、
+     * 泛型类、tuple、交并类型、函数类型、变长数组和类型参数类型。
+     */
     context(session: CaSession)
     fun buildType(
         kind: String,
@@ -111,6 +123,12 @@ internal object AnalysisApiTypeTestSupport {
         }
     }
 
+    /**
+     * 构造 class-like 类型并校验 ClassId 与 symbol 两条公开入口的一致性。
+     *
+     * 类型构造测试不仅需要得到一个类型，还要保证 `buildClassType(classId)` 与
+     * `buildClassType(symbol)` 在 qualified 渲染和 symbol 恢复上保持同一语义结果。
+     */
     context(session: CaSession)
     private fun assertClassLikeConstruction(
         symbol: CaClassLikeSymbol,
@@ -140,6 +158,12 @@ internal object AnalysisApiTypeTestSupport {
         return byClassId
     }
 
+    /**
+     * 归一化类型渲染中的路径分隔符。
+     *
+     * 部分类型渲染会从内部名字携带 `/` 分隔符，测试期望使用点语义上的点号形式，
+     * 因此在比较前统一转换为 `.`。
+     */
     private fun normalizeTypeRender(rendered: String): String {
         return rendered.replace('/', '.')
     }

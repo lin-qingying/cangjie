@@ -56,6 +56,9 @@ import org.cangnova.cangjie.psi.CjModifierList
  * - 减少内存占用（特别是大型项目中有数万个声明时）
  */
 object ModifierMaskUtils {
+    /**
+     * 保存 `ADDITIONAL_KEYWORDS` 的内部状态，供PSI Stub实现维护节点缓存或解析上下文。
+     */
     private val ADDITIONAL_KEYWORDS = arrayOf(
         CjTokens.FOREIGN_KEYWORD,
     )

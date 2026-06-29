@@ -48,6 +48,9 @@ import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 import org.cangnova.cangjie.utils.exceptions.requireWithAttachment
 import org.cangnova.cangjie.utils.exceptions.withPsiEntry
 
+/**
+ * 从 PSI 修饰符列表恢复 CFIR visibility。
+ */
 internal val CjModifierListOwner.visibility: Visibility
     get() = with(modifierList) {
         when {
@@ -59,6 +62,9 @@ internal val CjModifierListOwner.visibility: Visibility
         }
     }
 
+/**
+ * 从 PSI 修饰符恢复 CFIR modality。
+ */
 internal val CjDeclaration.modality: Modality
     get() = when {
         hasModifier(CjTokens.SEALED_KEYWORD) -> Modality.SEALED
@@ -71,6 +77,9 @@ internal inline val <T, reified S> T.compiledStub: S
         where T : StubBasedPsiElementBase<in S>, T : CjElement, S : StubElement<*>
     get() = (this.greenStub ?: calculateStub()) as S
 
+/**
+ * 为 compiled PSI 元素计算并返回 backing stub。
+ */
 private fun <S, T> T.calculateStub(): Stub
         where T : StubBasedPsiElementBase<in S>, T : CjElement, S : StubElement<*> {
     val cjFile = containingCjFile
@@ -242,6 +251,9 @@ internal fun deserializeClassToSymbol(
     }
 }
 
+/**
+ * 根据 visibility 和 modality 构建已解析声明状态。
+ */
 private fun buildResolvedStatus(visibility: Visibility, modality: Modality): CfirDeclarationStatusImpl {
     return CfirDeclarationStatusImpl(visibility, modality).apply {
         isVisibilityExplicit = visibility != Visibilities.Public
@@ -252,6 +264,9 @@ private fun buildResolvedStatus(visibility: Visibility, modality: Modality): Cfi
     }
 }
 
+/**
+ * 返回类成员声明在反序列化结果中的稳定排序 key。
+ */
 private fun declarationOrderKey(declaration: CfirDeclaration): Int {
     return when (declaration) {
         is org.cangnova.cangjie.cfir.declarations.CfirConstructor -> 0

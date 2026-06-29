@@ -13,7 +13,13 @@ import org.cangnova.cangjie.name.Name
  */
 @CaPlatformInterface
 interface CangJiePackageProvider : CangJieComposableProvider {
+    /**
+     * 判断指定包是否在当前上下文中可见。
+     */
     fun doesPackageExist(packageFqName: FqName): Boolean
 
+    /**
+     * 返回指定包的直接子包名称集合。
+     */
     fun getSubpackageNames(packageFqName: FqName): Set<Name>
 }

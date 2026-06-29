@@ -22,11 +22,20 @@ import java.io.File
 class MacroExpandedCfirDumpHandler(
     testServices: TestServices,
 ) : CfirAnalysisHandler(testServices) {
+    /**
+     * 保存 `directiveContainers`，供CFIR 前端测试在测试执行期间读取或传递。
+     */
     override val directiveContainers: List<DirectivesContainer>
         get() = listOf(MacroConstructionDirectives)
 
+    /**
+     * 保存 `renderedFilesByModule`，供CFIR 前端测试在测试执行期间读取或传递。
+     */
     private val renderedFilesByModule = linkedMapOf<TestModule, List<RenderedMacroExpandedCfirFile>>()
 
+    /**
+     * 执行 `processModule` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     override fun processModule(module: TestModule, info: CfirOutputArtifact) {
         if (MacroConstructionDirectives.DUMP_MACRO_EXPANDED_CFIR !in module.directives) return
 
@@ -45,6 +54,9 @@ class MacroExpandedCfirDumpHandler(
         renderedFilesByModule[module] = files
     }
 
+    /**
+     * 执行 `processAfterAllModules` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     override fun processAfterAllModules(someAssertionWasFailed: Boolean) {
         val testDataFile = testServices.moduleStructure.originalTestDataFiles.first()
         val expectedFile = testDataFile.macroExpandedCfirSideFile()
@@ -79,12 +91,27 @@ class MacroExpandedCfirDumpHandler(
     }
 }
 
+/**
+ * 表示 `RenderedMacroExpandedCfirFile`，承载CFIR 前端测试中的配置数据、测试产物或处理步骤。
+ */
 private data class RenderedMacroExpandedCfirFile(
+    /**
+     * 保存 `fileName`，供CFIR 前端测试在测试执行期间读取或传递。
+     */
     val fileName: String,
+    /**
+     * 保存 `isMacroPackage`，供CFIR 前端测试在测试执行期间读取或传递。
+     */
     val isMacroPackage: Boolean,
+    /**
+     * 保存 `rendered`，供CFIR 前端测试在测试执行期间读取或传递。
+     */
     val rendered: String,
 )
 
+/**
+ * 提供 `renderForMacroExpandedDump` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+ */
 private fun CfirFile.renderForMacroExpandedDump(): String {
     return CfirRenderer(
         modifierRenderer = object : CfirModifierRenderer() {
@@ -95,6 +122,9 @@ private fun CfirFile.renderForMacroExpandedDump(): String {
     ).renderElementAsString(this)
 }
 
+/**
+ * 提供 `macroExpandedCfirSideFile` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+ */
 private fun File.macroExpandedCfirSideFile(): File {
     return parentFile.resolve("$nameWithoutExtension.macro.cfir.txt")
 }

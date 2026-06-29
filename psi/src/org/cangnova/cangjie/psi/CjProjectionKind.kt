@@ -26,6 +26,9 @@ package org.cangnova.cangjie.psi
 
 import org.cangnova.cangjie.lexer.CjSingleValueToken
 
+/**
+ * 表示 `CjProjectionKind`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 enum class CjProjectionKind(val token: CjSingleValueToken?) {
 //    IN(CjTokens.IN_KEYWORD),
 

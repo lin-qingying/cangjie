@@ -28,13 +28,22 @@ import org.junit.jupiter.api.Test
 class ContextCollectorTest : AbstractAnalysisApiExecutionTest(
     "analysis/low-level-api-cfir/testData/contextCollector",
 ) {
+    /**
+     * 使用源码分析配置，确保 ContextCollector 在 source session 中执行。
+     */
     override val configurator = analysisApiCfirSourceTestConfigurator(analyseInDependentSession = false)
 
+    /**
+     * 验证物理文件中的 match 分支 pattern binding 会分别进入对应分支作用域。
+     */
     @Test
     fun matchPatternBindingBranchScopes(mainFile: CjFile) {
         assertDistinctPatternBindings(mainFile, mainFile.findBranchUsageReferences())
     }
 
+    /**
+     * 验证复制文件中的 match 分支 pattern binding 仍能映射到独立分支作用域。
+     */
     @Test
     fun matchPatternBindingBranchScopesInCopiedFile(mainFile: CjFile) {
         val copiedFile = mainFile.copy() as CjFile
@@ -86,6 +95,9 @@ private fun assertDistinctPatternBindings(
     )
 }
 
+/**
+ * 返回测试文件中两个分支结果对 `y` 的引用点。
+ */
 private fun CjFile.findBranchUsageReferences(): List<CjSimpleNameExpression> {
     return PsiTreeUtil.findChildrenOfType(this, CjSimpleNameExpression::class.java)
         .filter { expression -> expression.referencedName == "y" && expression.isUsageReference() }

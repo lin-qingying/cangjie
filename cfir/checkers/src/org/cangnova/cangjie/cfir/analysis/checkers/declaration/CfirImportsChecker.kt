@@ -23,15 +23,18 @@ import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirUserTypeRef
 import org.cangnova.cangjie.cfir.visitors.CfirDefaultVisitorVoid
 import org.cangnova.cangjie.cfir.containingClassLookupTag
+import org.cangnova.cangjie.cfir.unwrapFakeOverridesOrDelegated
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjNodeTypes
+import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
 import org.cangnova.cangjie.source.CjLightSourceElement
 import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.source.psi
 import org.cangnova.cangjie.source.toCjLightSourceElement
 import org.cangnova.cangjie.source.toCjPsiSourceElement
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 
 /**
  * CFIR 文件级导入检查器。
@@ -263,12 +266,31 @@ object CfirImportsChecker : CfirFileChecker() {
             }
 
             override fun visitResolvedNamedReference(resolvedNamedReference: CfirResolvedNamedReference) {
-                val callableSymbol = resolvedNamedReference.resolvedSymbol as? CfirCallableSymbol<*>
-                callableSymbol?.containingClassLookupTag()?.classId?.let(result::add)
+                result.addContainingClassIds(resolvedNamedReference.resolvedSymbol)
                 super.visitResolvedNamedReference(resolvedNamedReference)
+            }
+
+            override fun visitNamedReferenceWithCandidateBase(namedReferenceWithCandidateBase: CfirNamedReferenceWithCandidateBase) {
+                result.addContainingClassIds(namedReferenceWithCandidateBase.candidateSymbol)
+                super.visitNamedReferenceWithCandidateBase(namedReferenceWithCandidateBase)
             }
         })
         return result
+    }
+
+    /**
+     * 记录 resolved/candidate callable 的声明所属 class。
+     *
+     * 成员可能以 fake override / substitution override 形式挂在当前 receiver 类型上；
+     * unused-import 判定必须同时看原始声明所属 class，才能对齐官方基于 AST target 的使用记录。
+     */
+    private fun MutableSet<ClassId>.addContainingClassIds(symbol: CfirBasedSymbol<*>) {
+        val callableSymbol = symbol as? CfirCallableSymbol<*> ?: return
+        callableSymbol.callableId.classId?.let(::add)
+        callableSymbol.containingClassLookupTag()?.classId?.let(::add)
+        val originalSymbol = callableSymbol.unwrapFakeOverridesOrDelegated()
+        originalSymbol.callableId.classId?.let(::add)
+        originalSymbol.containingClassLookupTag()?.classId?.let(::add)
     }
 
     /**

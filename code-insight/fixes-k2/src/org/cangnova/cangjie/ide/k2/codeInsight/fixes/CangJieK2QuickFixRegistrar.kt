@@ -13,6 +13,9 @@ import org.cangnova.cangjie.ide.core.overrideImplement.MemberNotImplementedQuick
  * K2 diagnostic 与具体 quick-fix factory 装配到 code-insight quick-fix 框架。
  */
 class CangJieK2QuickFixRegistrar : CangJieQuickFixRegistrar() {
+    /**
+     * K2 diagnostic 到 quick-fix factory 的注册表。
+     */
     override val list: CangJieQuickFixesList = CangJieQuickFixesListBuilder.registerQuickFixes {
         registerFactory(
             CaCfirDiagnostic.AbstractMemberNotImplemented::class,

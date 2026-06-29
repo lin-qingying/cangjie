@@ -12,5 +12,8 @@ package org.cangnova.cangjie.analysis.api.types
  * 对齐 Kotlin Analysis API 的 `KaUsualClassType`。
  */
 abstract class CaUsualClassType : CaClassLikeType() {
+    /**
+     * 创建可恢复该普通 class-like 类型的类型指针。
+     */
     abstract override fun createPointer(): CaTypePointer<CaUsualClassType>
 }

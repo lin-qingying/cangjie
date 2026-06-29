@@ -27,8 +27,14 @@ package org.cangnova.cangjie.psi
 import org.cangnova.cangjie.name.OperatorNameConventions.asOperatorName
 import com.intellij.lang.ASTNode
 
+/**
+ * 表示 `CjOperationName`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjOperationName(node: ASTNode) : CjElementImpl(node) {
 
+    /**
+     * 实现 `getName` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getName(): String {
         return text.asOperatorName().asString()
     }

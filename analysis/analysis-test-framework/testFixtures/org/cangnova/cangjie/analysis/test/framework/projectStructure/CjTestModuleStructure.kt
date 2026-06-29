@@ -21,9 +21,18 @@ import org.cangnova.cangjie.test.services.TestServices
  * 与 Analysis API 模块图之间的映射关系。
  */
 class CjTestModuleStructure(
+    /**
+     * 测试基础设施中的原始模块结构。
+     */
     val testModuleStructure: TestModuleStructure,
+    /**
+     * 当前测试用例的主测试模块列表。
+     */
     val mainModules: List<CjTestModule>,
 ) : TestService {
+    /**
+     * 当前模块结构绑定的 IntelliJ project。
+     */
     val project: Project
         get() = mainModules.first().caModule.project
 
@@ -58,6 +67,9 @@ class CjTestModuleStructure(
         )
     }
 
+    /**
+     * 所有可承载源码文件的 Analysis API 模块。
+     */
     val allSourceLikeModules: List<CaModule> by lazy(LazyThreadSafetyMode.NONE) {
         mainModules.mapNotNull { testModule ->
             testModule.caModule.takeIf(CaModule::canContainSourceFiles)
@@ -76,18 +88,30 @@ class CjTestModuleStructure(
             .filterIsInstance<PsiFileSystemItem>()
     }
 
+    /**
+     * 当前测试模块结构中的全部仓颉源码 PSI 文件。
+     */
     val allCjFiles: List<CjFile> by lazy(LazyThreadSafetyMode.NONE) {
         allSourceFiles.filterIsInstance<CjFile>()
     }
 
+    /**
+     * 当前测试模块结构暴露的全部 Analysis API 模块视图。
+     */
     val allCaModules: List<CaModule> by lazy(LazyThreadSafetyMode.NONE) {
         mainModules.flatMap(CjTestModule::allCaModules).distinct()
     }
 
+    /**
+     * 当前测试模块结构中的全部 library binary 模块。
+     */
     val binaryModules: List<CaLibraryModule> by lazy(LazyThreadSafetyMode.NONE) {
         allCaModules.filterIsInstance<CaLibraryModule>()
     }
 
+    /**
+     * 按测试模块名查找主模块。
+     */
     fun getModule(moduleName: String): CjTestModule =
         mainModules.first { it.name == moduleName }
 
@@ -107,12 +131,24 @@ class CjTestModuleStructure(
             ?: error("Cannot find CjTestModule for `${file.name}` in Analysis API test module structure.")
     }
 
+    /**
+     * PSI 文件到测试模块的双索引。
+     */
     private data class ModuleIndex(
+        /**
+         * 以 PSI 文件实例为 key 的索引。
+         */
         val byPsiFile: Map<PsiFile, CjTestModule>,
+        /**
+         * 以 VirtualFile URL 为 key 的索引。
+         */
         val byVirtualFileUrl: Map<String, CjTestModule>,
     )
 }
 
+/**
+ * 判断模块是否可以包含源码 PSI 文件。
+ */
 private val CaModule.canContainSourceFiles: Boolean
     get() = when (this) {
         is CaSourceModule,
@@ -123,19 +159,43 @@ private val CaModule.canContainSourceFiles: Boolean
         else -> false
     }
 
+/**
+ * 测试服务容器中的 Analysis API 测试模块结构 provider。
+ */
 abstract class CjTestModuleStructureProvider : TestService {
+    /**
+     * 当前 provider 可访问的测试服务容器。
+     */
     protected abstract val testServices: TestServices
 
+    /**
+     * 注册当前测试用例构建出的模块结构。
+     */
     abstract fun registerModuleStructure(moduleStructure: CjTestModuleStructure)
 
+    /**
+     * 返回当前测试用例已注册的模块结构。
+     */
     abstract fun getModuleStructure(): CjTestModuleStructure
 }
 
+/**
+ * 基于单次写入缓存的测试模块结构 provider 实现。
+ */
 class CjTestModuleStructureProviderImpl(
+    /**
+     * 当前 provider 可访问的测试服务容器。
+     */
     override val testServices: TestServices,
 ) : CjTestModuleStructureProvider() {
+    /**
+     * 当前测试用例注册的模块结构。
+     */
     private lateinit var moduleStructure: CjTestModuleStructure
 
+    /**
+     * 注册模块结构，并禁止同一测试用例重复覆盖。
+     */
     override fun registerModuleStructure(moduleStructure: CjTestModuleStructure) {
         require(!this::moduleStructure.isInitialized) {
             "CjTestModuleStructure 已经注册，测试框架不允许重复覆盖。"
@@ -143,11 +203,20 @@ class CjTestModuleStructureProviderImpl(
         this.moduleStructure = moduleStructure
     }
 
+    /**
+     * 返回已注册的模块结构。
+     */
     override fun getModuleStructure(): CjTestModuleStructure = moduleStructure
 }
 
+/**
+ * 当前测试服务容器中的测试模块结构 provider。
+ */
 val TestServices.cjTestModuleStructureProvider: CjTestModuleStructureProvider
     by TestServices.testServiceAccessor()
 
+/**
+ * 当前测试服务容器中的测试模块结构。
+ */
 val TestServices.cjTestModuleStructure: CjTestModuleStructure
     get() = cjTestModuleStructureProvider.getModuleStructure()

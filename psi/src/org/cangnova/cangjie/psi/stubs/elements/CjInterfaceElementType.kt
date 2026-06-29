@@ -43,24 +43,39 @@ import com.intellij.util.io.StringRef
 import org.jetbrains.annotations.NonNls
 import java.io.IOException
 
+/**
+ * 表示 `CjInterfaceElementType`，承载PSI Stub中的语法节点、索引桩或辅助模型。
+ */
 class CjInterfaceElementType(debugName: String) :
     CjStubElementType<CangJieInterfaceStub, CjInterface>(
         debugName,
         CjInterface::class.java,
         CangJieInterfaceStub::class.java,
     ) {
+    /**
+     * 实现 `indexStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun indexStub(stub: CangJieInterfaceStub, sink: IndexSink) {
         getInstance().indexInterface(stub, sink)
     }
 
+    /**
+     * 实现 `createPsi` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createPsi(stub: CangJieInterfaceStub): CjInterface {
         return CjInterface(stub)
     }
 
+    /**
+     * 实现 `createPsiFromAst` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createPsiFromAst(node: ASTNode): CjInterface {
         return CjInterface(node)
     }
 
+    /**
+     * 实现 `createStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createStub(psi: CjInterface, parentStub: StubElement<out PsiElement?>): CangJieInterfaceStub {
         val fqName = psi.safeFqNameForLazyResolve()
 
@@ -76,6 +91,9 @@ class CjInterfaceElementType(debugName: String) :
         )
     }
 
+    /**
+     * 实现 `serialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     @Throws(IOException::class)
     override fun serialize(stub: CangJieInterfaceStub, dataStream: StubOutputStream) {
         dataStream.writeName(stub.name)
@@ -92,6 +110,9 @@ class CjInterfaceElementType(debugName: String) :
         }
     }
 
+    /**
+     * 实现 `deserialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     @Throws(IOException::class)
     override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>): CangJieInterfaceStub {
         val name = dataStream.readName()

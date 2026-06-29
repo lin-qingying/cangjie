@@ -30,16 +30,37 @@ import org.cangnova.cangjie.codegen.ir.LlvmFunctionArtifact
 import org.cangnova.cangjie.codegen.ir.sanitizeIdentifier
 import org.cangnova.cangjie.codegen.ir.uniquifyIdentifier
 
+/**
+ * 单个 CHIR 函数到 LLVM function IR 的 lowering 单元。
+ */
 class CGFunction(
+    /**
+     * 待 lowering 的 CHIR 函数声明。
+     */
     private val declaration: ChirFunctionDeclaration,
+    /**
+     * 当前 codegen 共享上下文。
+     */
     private val context: CGContext,
+    /**
+     * 表达式 lowering 分派器。
+     */
     private val dispatcher: ExpressionLoweringDispatcher,
 ) {
+    /**
+     * CHIR 参数 semanticId 到 LLVM 参数名的映射。
+     */
     private val parameterNameById: Map<ChirSemanticId, String> = declaration.parameters.associate { parameter ->
         parameter.semanticId to sanitizeIdentifier(parameter.name, "param")
     }
+    /**
+     * CHIR block semanticId 到 LLVM label 的映射。
+     */
     private val blockLabelById: Map<ChirSemanticId, String> by lazy(::buildBlockLabels)
 
+    /**
+     * 降低当前函数并返回 LLVM 函数产物。
+     */
     fun lower(): LlvmFunctionArtifact {
         verifyControlFlow()
         val builder = IRBuilder()
@@ -55,10 +76,19 @@ class CGFunction(
         return LlvmFunctionArtifact(declaration.name, builder.build().joinToString(System.lineSeparator()))
     }
 
+    /**
+     * 通过上下文类型 lowering 服务降低 CHIR 类型。
+     */
     internal fun lowerType(type: ChirTypeRef): String = context.typeLowering.lower(type)
 
+    /**
+     * 生成表达式结果的 LLVM SSA 引用名。
+     */
     internal fun resultRef(semanticId: ChirSemanticId): String = "%${sanitizeIdentifier(semanticId.value, "tmp")}"
 
+    /**
+     * 将 CHIR value 渲染为 LLVM value 引用或常量。
+     */
     internal fun renderValue(value: ChirValue): String {
         return when (value) {
             is ChirConstantValue -> normalizeConstant(value.literal, lowerType(value.type))
@@ -79,8 +109,14 @@ class CGFunction(
         }
     }
 
+    /**
+     * 将 CHIR value 渲染为 `type value` 形式。
+     */
     internal fun renderTypedValue(value: ChirValue): String = "${lowerType(value.type)} ${renderValue(value)}"
 
+    /**
+     * 渲染调用实参，保留允许出现在参数位置的属性 token。
+     */
     internal fun renderCallArgument(value: ChirValue): String {
         val tokens = collectAttributeTokens(value.attributes, callArgumentReservedAttributeKeys)
         return if (tokens.isEmpty()) {
@@ -90,6 +126,9 @@ class CGFunction(
         }
     }
 
+    /**
+     * 从调用目标属性中解析 tail/musttail/notail 调用种类。
+     */
     internal fun callTailKind(attributes: Set<ChirAttribute>): String? {
         val explicit = attributeValue(attributes, "tail")
         if (!explicit.isNullOrBlank()) return explicit
@@ -99,6 +138,9 @@ class CGFunction(
         return enabledBoolean?.key
     }
 
+    /**
+     * 解析基本块 id 对应的 LLVM label。
+     */
     internal fun blockLabel(blockId: ChirSemanticId): String {
         return blockLabelById[blockId] ?: throw CodegenLoweringException(
             "function ${declaration.name} references missing block ${blockId.value}",
@@ -106,6 +148,9 @@ class CGFunction(
         )
     }
 
+    /**
+     * 按 semanticId 字符串或 block 名称解析 LLVM label。
+     */
     internal fun resolveBlockLabel(reference: String): String? {
         val byId = blockLabelById[ChirSemanticId(reference)]
         if (byId != null) return byId
@@ -116,6 +161,9 @@ class CGFunction(
         return byName?.let(blockLabelById::get)
     }
 
+    /**
+     * 降低 CHIR terminator 到 LLVM terminator 指令。
+     */
     private fun lowerTerminator(terminator: ChirTerminator): List<String> {
         return when (terminator) {
             is ChirReturnTerminator -> lowerReturnTerminator(terminator)
@@ -146,6 +194,9 @@ class CGFunction(
         }
     }
 
+    /**
+     * 降低 return terminator，并校验返回值类型与函数返回类型一致。
+     */
     private fun lowerReturnTerminator(terminator: ChirReturnTerminator): List<String> {
         val functionReturnType = lowerType(declaration.returnType)
         val returnValue = terminator.returnValue
@@ -164,6 +215,9 @@ class CGFunction(
         return listOf("  ret $valueType ${renderValue(returnValue)}")
     }
 
+    /**
+     * 构建 LLVM function header。
+     */
     private fun buildFunctionHeader(): String {
         val linkage = attributeValue(declaration.attributes, "linkage")
         val callingConvention = attributeValue(declaration.attributes, "calling_conv")
@@ -211,6 +265,9 @@ class CGFunction(
         }
     }
 
+    /**
+     * 收集可直接打印到 LLVM IR 的属性 token。
+     */
     internal fun collectAttributeTokens(
         attributes: Set<ChirAttribute>,
         reservedKeys: Set<String> = reservedAttributeKeys,
@@ -233,6 +290,9 @@ class CGFunction(
         return tokens
     }
 
+    /**
+     * 从属性集合中读取指定字符串属性值。
+     */
     internal fun attributeValue(attributes: Set<ChirAttribute>, key: String): String? {
         return attributes.asSequence()
             .filterIsInstance<ChirStringAttribute>()
@@ -240,6 +300,9 @@ class CGFunction(
             ?.value
     }
 
+    /**
+     * 返回当前函数的基本块 lowering 顺序。
+     */
     private fun orderedBlocks() = buildList {
         val entry = declaration.blocks.firstOrNull { it.semanticId == declaration.entryBlockId }
         if (entry != null) {
@@ -252,6 +315,9 @@ class CGFunction(
         }
     }
 
+    /**
+     * 为函数中所有基本块构建唯一 LLVM label。
+     */
     private fun buildBlockLabels(): Map<ChirSemanticId, String> {
         val usedLabels = linkedMapOf<String, Int>()
         val labels = linkedMapOf<ChirSemanticId, String>()
@@ -262,6 +328,9 @@ class CGFunction(
         return labels
     }
 
+    /**
+     * 在写出函数前校验基本控制流引用。
+     */
     private fun verifyControlFlow() {
         if (!context.options.verifyBeforeWrite) return
         if (declaration.blocks.isEmpty()) {
@@ -325,6 +394,9 @@ class CGFunction(
         }
     }
 
+    /**
+     * 将 CHIR 常量字面量规范化为 LLVM 常量文本。
+     */
     private fun normalizeConstant(literal: String, llvmType: String): String {
         return when {
             llvmType == "i1" && literal.equals("true", ignoreCase = true) -> "1"
@@ -334,6 +406,9 @@ class CGFunction(
         }
     }
 
+    /**
+     * 要求两个 LLVM textual type 完全一致。
+     */
     private fun requireSameType(expected: String, actual: String, sourceId: ChirSemanticId, subject: String) {
         if (expected != actual) {
             throw CodegenLoweringException(

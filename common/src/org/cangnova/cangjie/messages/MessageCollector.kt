@@ -5,18 +5,33 @@
 
 package org.cangnova.cangjie.messages
 
+/**
+ * 编译器消息收集接口。
+ */
 interface MessageCollector {
+    /**
+     * 清空已收集消息。
+     */
     fun clear()
 
+    /**
+     * 上报一条编译器消息。
+     */
     fun report(
         severity: CompilerMessageSeverity,
         message: String,
         location: CompilerMessageSourceLocation? = null,
     )
 
+    /**
+     * 判断当前收集器是否已收到错误消息。
+     */
     fun hasErrors(): Boolean
 
     companion object {
+        /**
+         * 忽略所有消息的空收集器。
+         */
         @JvmField
         val NONE: MessageCollector = object : MessageCollector {
             override fun clear() = Unit

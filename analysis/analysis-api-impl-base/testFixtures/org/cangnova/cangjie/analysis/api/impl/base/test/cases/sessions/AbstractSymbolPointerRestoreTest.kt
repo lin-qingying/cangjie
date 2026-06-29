@@ -24,6 +24,11 @@ import org.junit.jupiter.api.Assertions.assertNotNull
  * 3. 恢复后的符号仍保持稳定的公开名称。
  */
 abstract class AbstractSymbolPointerRestoreTest : AbstractAnalysisApiComponentTest() {
+    /**
+     * 执行 symbol pointer 创建与恢复测试。
+     *
+     * 方法按目标 simple-name 定位引用，第一次分析创建 pointer，第二次分析恢复 pointer 并比较 symbol 名称。
+     */
     override fun doTestByMainFile(mainFile: CjFile, mainModule: CjTestModule, testServices: TestServices) {
         val directives = directivesForMainFile(mainFile, mainModule)
         val referenceExpression = PsiTreeUtil.findChildrenOfType(mainFile, CjSimpleNameExpression::class.java)

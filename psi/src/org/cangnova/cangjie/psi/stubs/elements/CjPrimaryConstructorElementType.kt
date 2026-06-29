@@ -31,8 +31,14 @@ import org.cangnova.cangjie.psi.stubs.impl.CangJieConstructorStubImpl
 import com.intellij.psi.stubs.StubElement
 import com.intellij.util.io.StringRef
 
+/**
+ * 表示 `CjPrimaryConstructorElementType`，承载PSI Stub中的语法节点、索引桩或辅助模型。
+ */
 class CjPrimaryConstructorElementType(debugName: String) :
     CjConstructorElementType<CjPrimaryConstructor>(debugName, CjPrimaryConstructor::class.java, CangJieConstructorStub::class.java) {
+    /**
+     * 实现 `newStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun newStub(
         parentStub: StubElement<*>,
         nameRef: StringRef?,
@@ -48,6 +54,9 @@ class CjPrimaryConstructorElementType(debugName: String) :
         )
     }
 
+    /**
+     * 暴露 `isPrimary`，实现PSI Stub节点对上层接口的属性契约。
+     */
     override val isPrimary: Boolean
         get() = true
 }

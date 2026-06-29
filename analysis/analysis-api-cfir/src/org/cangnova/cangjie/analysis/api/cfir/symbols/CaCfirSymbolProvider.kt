@@ -59,8 +59,14 @@ import org.cangnova.cangjie.psi.CjTypeStatement
  * 才从 CFIR symbol provider 取符号后交给 public symbol builder。
  */
 internal class CaCfirSymbolProvider(
+    /**
+     * 延迟取得当前 CFIR Analysis session。
+     */
     override val analysisSessionProvider: () -> CaCfirSession,
 ) : CaBaseSymbolProvider<CaCfirSession>(), CaCfirSessionComponent {
+    /**
+     * 将参数 PSI 转换为公开变量符号。
+     */
     override val CjParameter.symbol: CaVariableSymbol
         get() = withPsiValidityAssertion {
             when {
@@ -74,51 +80,81 @@ internal class CaCfirSymbolProvider(
             }
         }
 
+    /**
+     * 将文件 PSI 转换为公开文件符号。
+     */
     override val CjFile.symbol: CaFileSymbol
         get() = withPsiValidityAssertion {
             CaCfirFileSymbol(this@symbol, analysisSession)
         }
 
+    /**
+     * 将类型声明 PSI 转换为公开类符号。
+     */
     override val CjTypeStatement.classSymbol: CaClassSymbol
         get() = withPsiValidityAssertion {
             CaCfirClassSymbol(this@classSymbol, analysisSession)
         }
 
+    /**
+     * 将 typealias PSI 转换为公开 typealias 符号。
+     */
     override val CjTypeAlias.symbol: CaTypeAliasSymbol
         get() = withPsiValidityAssertion {
             CaCfirTypeAliasSymbol(this@symbol, analysisSession)
         }
 
+    /**
+     * 将命名函数 PSI 转换为公开命名函数符号。
+     */
     override val CjNamedFunction.symbol: CaNamedFunctionSymbol
         get() = withPsiValidityAssertion {
             CaCfirNamedFunctionSymbol(this@symbol, analysisSession)
         }
 
+    /**
+     * 将函数 literal PSI 转换为公开匿名函数符号。
+     */
     override val CjFunctionLiteral.symbol: CaAnonymousFunctionSymbol
         get() = withPsiValidityAssertion {
             CaCfirAnonymousFunctionSymbol(this@symbol, analysisSession)
         }
 
+    /**
+     * 将构造器 PSI 转换为公开构造器符号。
+     */
     override val CjConstructor<*>.symbol: CaConstructorSymbol
         get() = withPsiValidityAssertion {
             CaCfirConstructorSymbol(this@symbol, analysisSession)
         }
 
+    /**
+     * 将 macro 声明 PSI 转换为公开 macro 符号。
+     */
     override val CjMacroDeclaration.symbol: CaMacroSymbol
         get() = withPsiValidityAssertion {
             CaCfirMacroSymbol(this@symbol, analysisSession)
         }
 
+    /**
+     * 将 finalizer PSI 转换为公开 finalizer 符号。
+     */
     override val CjFinalizer.symbol: CaFinalizerSymbol
         get() = withPsiValidityAssertion {
             CaCfirFinalizerSymbol(this@symbol, analysisSession)
         }
 
+    /**
+     * 将属性 PSI 转换为公开属性符号。
+     */
     override val CjProperty.symbol: CaPropertySymbol
         get() = withPsiValidityAssertion {
             CaCfirPropertySymbol(this@symbol, analysisSession)
         }
 
+    /**
+     * 将属性访问器 PSI 转换为公开 getter 或 setter 符号。
+     */
     override val CjPropertyAccessor.symbol: CaPropertyAccessorSymbol
         get() = withPsiValidityAssertion {
             val propertySymbol = property.symbol
@@ -129,56 +165,89 @@ internal class CaCfirSymbolProvider(
             }
         }
 
+    /**
+     * 将字段变量 PSI 转换为公开字段符号。
+     */
     override val CjFieldVariable.symbol: CaFieldSymbol
         get() = withPsiValidityAssertion {
             CaCfirFieldSymbol(this@symbol, analysisSession)
         }
 
+    /**
+     * 将 enum constructor PSI 转换为公开 enum constructor 符号。
+     */
     override val CjEnumConstructor.symbol: CaEnumConstructorSymbol
         get() = withPsiValidityAssertion {
             CaCfirEnumConstructorSymbol(this@symbol, analysisSession)
         }
 
+    /**
+     * 将 pattern variable PSI 转换为公开 pattern variable 符号。
+     */
     override val CjPatternVariable.symbol: CaPatternVariableSymbol
         get() = withPsiValidityAssertion {
             CaCfirPatternVariableSymbol(this@symbol, analysisSession)
         }
 
+    /**
+     * 将 binding pattern PSI 转换为公开 pattern binding 符号。
+     */
     override val CjBindingPattern.symbol: CaPatternBindingSymbol
         get() = withPsiValidityAssertion {
             CaCfirPatternBindingSymbol(this@symbol, analysisSession)
         }
 
+    /**
+     * 将 extend PSI 转换为公开 extend 符号。
+     */
     override val CjExtend.symbol: CaExtendSymbol
         get() = withPsiValidityAssertion {
             CaCfirExtendSymbol(this@symbol, analysisSession)
         }
 
+    /**
+     * 将类型参数 PSI 转换为公开类型参数符号。
+     */
     override val CjTypeParameter.symbol: CaTypeParameterSymbol
         get() = withPsiValidityAssertion {
             CaCfirTypeParameterSymbol(this@symbol, analysisSession)
         }
 
+    /**
+     * 按包名查询公开包符号。
+     */
     override fun getPackageSymbol(fqName: FqName): CaPackageSymbol? = withValidityAssertion {
         analysisSession.cfirSymbolBuilder.createPackageSymbolIfOneExists(fqName)
     }
 
+    /**
+     * 按 classId 查询公开 class-like 符号。
+     */
     override fun getClassLikeSymbol(classId: ClassId): CaClassLikeSymbol? = withValidityAssertion {
         analysisSession.cfirSymbolBuilder.classifierBuilder.buildClassLikeSymbolByClassId(classId)
     }
 
+    /**
+     * 按 classId 查询公开类符号。
+     */
     override fun getClassSymbol(classId: ClassId): CaClassSymbol? = withValidityAssertion {
         val symbol = analysisSession.cfirSession.symbolProvider.getClassLikeSymbolByClassId(classId) as? CfirClassSymbol
             ?: return@withValidityAssertion null
         analysisSession.cfirSymbolBuilder.classifierBuilder.buildClassSymbol(symbol)
     }
 
+    /**
+     * 按 classId 查询公开 typealias 符号。
+     */
     override fun getTypeAliasSymbol(classId: ClassId): CaTypeAliasSymbol? = withValidityAssertion {
         val symbol = analysisSession.cfirSession.symbolProvider.getClassLikeSymbolByClassId(classId) as? CfirTypeAliasSymbol
             ?: return@withValidityAssertion null
         analysisSession.cfirSymbolBuilder.classifierBuilder.buildTypeAliasSymbol(symbol)
     }
 
+    /**
+     * 查询指定包和短名下的顶层 class-like 符号。
+     */
     override fun getTopLevelClassLikeSymbols(packageFqName: FqName, name: Name): List<CaClassLikeSymbol> = withValidityAssertion {
         val classId = ClassId(packageFqName, name)
         analysisSession.cfirSymbolBuilder.classifierBuilder.buildClassLikeSymbolByClassId(classId)
@@ -186,11 +255,17 @@ internal class CaCfirSymbolProvider(
             .orEmpty()
     }
 
+    /**
+     * 查询指定包和短名下的顶层 callable 符号。
+     */
     override fun getTopLevelCallableSymbols(packageFqName: FqName, name: Name): List<CaCallableSymbol> = withValidityAssertion {
         analysisSession.cfirSession.symbolProvider.getTopLevelCallableSymbols(packageFqName, name)
             .map { symbol -> analysisSession.cfirSymbolBuilder.buildSymbol(symbol) as CaCallableSymbol }
     }
 
+    /**
+     * 查询指定包下的顶层 extend 符号。
+     */
     override fun getTopLevelExtendSymbols(packageFqName: FqName): List<CaExtendSymbol> = withValidityAssertion {
         analysisSession.cfirSession.extendProviderOrNull
             ?.getExtendsInPackage(packageFqName)
@@ -198,6 +273,9 @@ internal class CaCfirSymbolProvider(
             .orEmpty()
     }
 
+    /**
+     * 查询指定目标 classId 关联的 extend 符号。
+     */
     override fun getExtendSymbols(targetClassId: ClassId): List<CaExtendSymbol> = withValidityAssertion {
         analysisSession.cfirSession.extendProviderOrNull
             ?.getExtendsForClass(targetClassId)

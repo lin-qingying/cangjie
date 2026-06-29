@@ -37,6 +37,9 @@ sealed interface CangJieFileStubKind {
      * 包含包名信息的文件 Stub 类型。
      */
     sealed interface WithPackage : CangJieFileStubKind {
+        /**
+         * 保存 `packageFqName`，供PSI Stub流程读取节点结构或语义信息。
+         */
         val packageFqName: FqName
 
         /**
@@ -48,12 +51,18 @@ sealed interface CangJieFileStubKind {
          * Facade 文件类型。
          */
         sealed interface Facade : WithPackage {
+            /**
+             * 保存 `facadeFqName`，供PSI Stub流程读取节点结构或语义信息。
+             */
             val facadeFqName: FqName
 
             /**
              * 简单的 Facade 文件。
              */
             interface Simple : Facade {
+                /**
+                 * 保存 `partSimpleName`，供PSI Stub流程读取节点结构或语义信息。
+                 */
                 val partSimpleName: String
             }
 
@@ -61,6 +70,9 @@ sealed interface CangJieFileStubKind {
              * 多文件类的 Facade。
              */
             interface MultifileClass : Facade {
+                /**
+                 * 保存 `facadePartSimpleNames`，供PSI Stub流程读取节点结构或语义信息。
+                 */
                 val facadePartSimpleNames: List<String>
             }
         }
@@ -70,6 +82,9 @@ sealed interface CangJieFileStubKind {
      * 无效的文件 Stub（解析失败等情况）。
      */
     interface Invalid : CangJieFileStubKind {
+        /**
+         * 保存 `errorMessage`，供PSI Stub流程读取节点结构或语义信息。
+         */
         val errorMessage: String
     }
 }

@@ -10,7 +10,14 @@ import org.cangnova.cangjie.serialization.deserialization.descriptors.PreRelease
  * builtins package 容器来源。
  */
 internal class BuiltinsDeserializedContainerSource(
+    /**
+     * builtins package 全限定名。
+     */
     val packageFqName: FqName,
+
+    /**
+     * builtins facade 全限定名。
+     */
     val facadeFqName: FqName,
     binaryFilePath: String?,
 ) : DeserializedContainerSource(

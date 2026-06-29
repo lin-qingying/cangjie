@@ -19,14 +19,28 @@ import kotlin.io.path.writeText
  * 避免每个测试类都自己拼目录、复制 stdlib、组装 initializationOptions。
  */
 class LspWorkspaceFixtureBuilder {
+    /**
+     * 待写入临时工作区的文件内容。
+     */
     private val files = linkedMapOf<String, String>()
+
+    /**
+     * 待写入初始化参数的模块定义。
+     */
     private val modules = linkedMapOf<String, ModuleSpec>()
+
+    /**
+     * 是否复制标准库 cjo 夹具。
+     */
     private var includeStdlib: Boolean = true
 
     init {
         addModule(name = "workspace")
     }
 
+    /**
+     * 添加或替换一个工作区模块定义。
+     */
     fun addModule(
         name: String,
         rootRelativePath: String = "",
@@ -44,20 +58,32 @@ class LspWorkspaceFixtureBuilder {
         return this
     }
 
+    /**
+     * 添加一个工作区文件。
+     */
     fun file(relativePath: String, text: String): LspWorkspaceFixtureBuilder {
         files[normalizeRelative(relativePath)] = text
         return this
     }
 
+    /**
+     * 在默认 `src` 源码根下添加一个仓颉源码文件。
+     */
     fun source(relativePath: String, text: String): LspWorkspaceFixtureBuilder {
         return file("src/$relativePath", text)
     }
 
+    /**
+     * 禁用标准库 cjo 夹具复制。
+     */
     fun withoutStdlib(): LspWorkspaceFixtureBuilder {
         includeStdlib = false
         return this
     }
 
+    /**
+     * 创建临时工作区并写入所有声明的文件、模块输出目录和标准库夹具。
+     */
     fun build(): LspWorkspaceFixture {
         val workspaceRoot = Files.createTempDirectory("cangjie-lsp-workspace-")
         val cacheRoot = workspaceRoot.resolve(".cache").resolve("lsp").createDirectories()
@@ -90,6 +116,9 @@ class LspWorkspaceFixtureBuilder {
         )
     }
 
+    /**
+     * 复制最小标准库 cjo 夹具到目标目录。
+     */
     private fun copyStdlibFixtures(destinationRoot: Path) {
         val stdFixtureRoot = locateRepositoryRoot()
             .resolve("cfir")
@@ -105,11 +134,17 @@ class LspWorkspaceFixtureBuilder {
         )
     }
 
+    /**
+     * 复制单个文件并自动创建父目录。
+     */
     private fun copyFile(source: Path, target: Path) {
         target.parent?.createDirectories()
         Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING)
     }
 
+    /**
+     * 从当前目录向上查找仓库根目录。
+     */
     private fun locateRepositoryRoot(): Path {
         var current = Path.of("").toAbsolutePath()
         while (current != current.root) {
@@ -121,6 +156,9 @@ class LspWorkspaceFixtureBuilder {
         error("Cannot locate repository root from ${Path.of("").toAbsolutePath().invariantSeparatorsPathString}")
     }
 
+    /**
+     * 规范化夹具内部使用的相对路径。
+     */
     private fun normalizeRelative(relativePath: String): String {
         return relativePath
             .replace('\\', '/')
@@ -129,27 +167,60 @@ class LspWorkspaceFixtureBuilder {
     }
 }
 
+/**
+ * 已创建的 LSP 临时工作区夹具。
+ */
 class LspWorkspaceFixture internal constructor(
+    /**
+     * 临时工作区根目录。
+     */
     val workspaceRoot: Path,
+
+    /**
+     * LSP 测试使用的目标库缓存目录。
+     */
     val cacheRoot: Path,
+
+    /**
+     * 标准库 cjo 夹具目录；禁用标准库时为 null。
+     */
     val stdlibRoot: Path?,
+
+    /**
+     * 工作区模块定义列表。
+     */
     private val modules: List<ModuleSpec>,
 ) : AutoCloseable {
+    /**
+     * 将相对路径解析为临时工作区下的真实路径。
+     */
     fun path(relativePath: String): Path {
         return workspaceRoot.resolve(
             relativePath.replace('\\', '/').removePrefix("./"),
         )
     }
 
+    /**
+     * 返回相对路径对应的 file URI。
+     */
     fun uri(relativePath: String): String = path(relativePath).toUri().toString()
 
+    /**
+     * 读取相对路径对应文件的文本。
+     */
     fun text(relativePath: String): String = path(relativePath).readText()
 
+    /**
+     * 构造指定相对路径对应的 workspace folder。
+     */
     fun workspaceFolder(relativePath: String = ""): WorkspaceFolder {
         val folderPath = if (relativePath.isBlank()) workspaceRoot else path(relativePath)
         return WorkspaceFolder(folderPath.toUri().toString(), folderPath.fileName?.toString() ?: "workspace")
     }
 
+    /**
+     * 构造该工作区对应的 initialize 参数。
+     */
     fun initializeParams(
         capabilities: ClientCapabilities = LspClientCapabilitiesBuilder.fullFeatured(),
         workspaceFolders: List<WorkspaceFolder> = listOf(workspaceFolder()),
@@ -167,11 +238,17 @@ class LspWorkspaceFixture internal constructor(
         }
     }
 
+    /**
+     * 删除临时工作区和可选标准库夹具目录。
+     */
     override fun close() {
         workspaceRoot.toFile().deleteRecursively()
         stdlibRoot?.toFile()?.deleteRecursively()
     }
 
+    /**
+     * 构造 initializationOptions 中的仓颉工程配置。
+     */
     private fun buildInitializationOptions(
         workspaceFolders: List<WorkspaceFolder>,
         includeMultiModuleOption: Boolean,
@@ -210,10 +287,32 @@ class LspWorkspaceFixture internal constructor(
     }
 }
 
+/**
+ * 测试工作区中的模块规格。
+ */
 internal data class ModuleSpec(
+    /**
+     * 模块名称。
+     */
     val name: String,
+
+    /**
+     * 模块根目录相对工作区根的路径。
+     */
     val rootRelativePath: String,
+
+    /**
+     * 模块源码根相对模块根的路径列表。
+     */
     val sourceRoots: List<String>,
+
+    /**
+     * 模块输出目录相对模块根的路径。
+     */
     val outputRelativePath: String,
+
+    /**
+     * 模块 package 依赖搜索路径。
+     */
     val packageSearchPaths: List<String>,
 )

@@ -18,6 +18,11 @@ import org.junit.jupiter.api.Assertions.assertNotNull
  */
 abstract class AbstractTypeScopeTest : AbstractScopeTestBase() {
     context(session: CaSession)
+    /**
+     * 从目标调用表达式的公开类型中获取 type scope。
+     *
+     * 方法先按指令定位调用表达式，再通过 expression type 的 `scope` 作为被测试作用域。
+     */
     override fun getScope(mainFile: CjFile, testServices: TestServices): CaScope {
         val module = testServices.cjTestModuleStructure.requireModuleByFile(mainFile)
         val directives = directivesForMainFile(mainFile, module)

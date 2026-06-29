@@ -13,8 +13,14 @@ import org.junit.jupiter.api.Test
 class AnalysisApiFrameworkIntegrationTest : AbstractAnalysisApiExecutionTest(
     "analysis/analysis-api-cfir/testData/framework",
 ) {
+    /**
+     * 使用 standalone CFIR 配置运行测试框架主模块选择用例。
+     */
     override val configurator = CaCfirStandaloneAnalysisApiTestConfigurator
 
+    /**
+     * 验证测试框架会把带入口文件的 `app` 模块选为主分析模块。
+     */
     @Test
     fun selectMainModule(mainFile: CjFile, mainModule: CjTestModule) {
         assertEquals("app", mainModule.name)

@@ -34,28 +34,49 @@ import com.intellij.lang.ASTNode
 import com.intellij.navigation.ItemPresentationProviders
 import com.intellij.psi.PsiElement
 
+/**
+ * 表示 `CjTypeAlias`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjTypeAlias : CjTypeParameterListOwnerStub<CangJieTypeAliasStub>, CjNamedDeclaration, CjClassLikeDeclaration {
     constructor(node: ASTNode) : super(node)
     constructor(stub: CangJieTypeAliasStub) : super(stub, CjStubElementTypes.TYPEALIAS)
 
+    /**
+     * 实现 `getClassId` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getClassId(): ClassId? {
         stub?.let { return it.getClassId() }
         return ClassIdCalculator.calculateClassId(this)
     }
 
+    /**
+     * 实现 `toString` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun toString(): String {
         return super.toString()
     }
+    /**
+     * 实现 `getPresentation` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getPresentation() = ItemPresentationProviders.getItemPresentation(this)
 
+    /**
+     * 提供 `getTypeAliasKeyword` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     @IfNotParsed
     fun getTypeAliasKeyword(): PsiElement? =
         findChildByType(CjTokens.TYPE_KEYWORD)
 
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R : Any?, D : Any?> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitTypeAlias(this, data)
     }
 
+    /**
+     * 提供 `getTypeReference` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     @IfNotParsed
     fun getTypeReference(): CjTypeReference? {
         return if (stub != null) {

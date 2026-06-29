@@ -13,5 +13,8 @@ import org.cangnova.cangjie.analysis.api.symbols.pointers.CaSymbolPointer
  * 便于上层在跨 Session 恢复后仍然保留注解能力。
  */
 interface CaAnnotatedSymbol : CaSymbol, CaAnnotated {
+    /**
+     * 创建可在后续 session 中恢复为 annotated symbol 的符号指针。
+     */
     override fun createPointer(): CaSymbolPointer<CaAnnotatedSymbol>
 }

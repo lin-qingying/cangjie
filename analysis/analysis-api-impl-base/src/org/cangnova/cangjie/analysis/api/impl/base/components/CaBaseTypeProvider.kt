@@ -13,6 +13,9 @@ import org.cangnova.cangjie.analysis.api.types.CaType
  */
 @CaImplementationDetail
 abstract class CaBaseTypeProvider<T : CaSession> : CaBaseSessionComponent<T>(), CaTypeProvider {
+    /**
+     * 返回 vararg 参数在调用位置使用的数组类型。
+     */
     override val CaValueParameterSymbol.varargArrayType: CaType?
         get() = withValidityAssertion {
             if (!isVararg) {

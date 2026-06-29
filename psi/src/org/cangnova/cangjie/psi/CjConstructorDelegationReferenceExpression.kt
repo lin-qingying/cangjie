@@ -28,9 +28,15 @@ import org.cangnova.cangjie.lexer.CjTokens
 import com.intellij.lang.ASTNode
 import com.intellij.psi.PsiElement
 
+/**
+ * 表示 `CjConstructorDelegationReferenceExpression`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjConstructorDelegationReferenceExpression(node: ASTNode) :
     CjExpressionImpl(node),
     CjReferenceExpression {
+    /**
+     * 保存 `isThis`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val isThis: Boolean
         get() = findChildByType<PsiElement?>(CjTokens.THIS_KEYWORD) != null
 }

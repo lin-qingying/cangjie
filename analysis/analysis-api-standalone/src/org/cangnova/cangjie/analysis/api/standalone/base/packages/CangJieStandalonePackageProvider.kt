@@ -27,9 +27,19 @@ import org.cangnova.cangjie.name.Name
 class CangJieStandalonePackageProviderFactory(
     project: Project,
 ) : CangJiePackageProviderFactory {
+    /**
+     * 提供模块结构和 decompiled binary index 的 standalone project。
+     */
     private val project = project
+
+    /**
+     * 用于从 source roots 和 library roots 收集包事实的文件收集器。
+     */
     private val fileCollector = CangJieStandaloneSourceFileCollector(project)
 
+    /**
+     * 为指定搜索作用域创建 package provider。
+     */
     override fun createPackageProvider(searchScope: GlobalSearchScope): CangJiePackageProvider {
         val packageNames = buildSet {
             fileCollector.collect(searchScope).mapTo(this) { it.packageFqName }
@@ -68,24 +78,42 @@ class CangJieStandalonePackageProviderFactory(
  * Standalone 平台的包 provider 合并器。
  */
 class CangJieStandalonePackageProviderMerger : CangJiePackageProviderMerger {
+    /**
+     * 将多个 package provider 合并为组合 provider。
+     */
     override fun merge(providers: List<CangJiePackageProvider>): CangJiePackageProvider {
         return CangJieCompositePackageProvider.create(providers)
     }
 }
 
+/**
+ * 基于已知包名集合的 standalone package provider。
+ */
 private class CangJieStandalonePackageProvider(
     packageNames: Set<FqName>,
 ) : CangJiePackageProvider {
+    /**
+     * 包到直接子包名的映射。
+     */
     private val packageToSubpackages: Map<FqName, Set<Name>> = buildPackageToSubpackages(packageNames)
 
+    /**
+     * 判断指定包是否存在。
+     */
     override fun doesPackageExist(packageFqName: FqName): Boolean {
         return packageFqName.isRoot || packageFqName in packageToSubpackages
     }
 
+    /**
+     * 返回指定包的直接子包短名集合。
+     */
     override fun getSubpackageNames(packageFqName: FqName): Set<Name> {
         return packageToSubpackages[packageFqName].orEmpty()
     }
 
+    /**
+     * 从完整包名集合构建父包到直接子包的索引。
+     */
     private fun buildPackageToSubpackages(packageNames: Set<FqName>): Map<FqName, Set<Name>> {
         val packages = linkedMapOf<FqName, MutableSet<Name>>()
         for (packageName in packageNames) {

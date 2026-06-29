@@ -23,21 +23,36 @@
  */
 package org.cangnova.cangjie.parsing
 
+/**
+ * 表示 `SemanticWhitespaceAwarePsiBuilderForByClause`，承载仓颉语法解析中的语法节点、索引桩或辅助模型。
+ */
 class SemanticWhitespaceAwarePsiBuilderForByClause(builder: SemanticWhitespaceAwarePsiBuilder ) :
     SemanticWhitespaceAwarePsiBuilderAdapter(builder) {
+    /**
+     * 保存 `stackSize`，供仓颉语法解析流程读取节点结构或语义信息。
+     */
     var stackSize: Int = 0
         private set
 
+    /**
+     * 实现 `disableNewlines` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun disableNewlines() {
         super.disableNewlines()
         stackSize++
     }
 
+    /**
+     * 实现 `enableNewlines` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun enableNewlines() {
         super.enableNewlines()
         stackSize++
     }
 
+    /**
+     * 实现 `restoreNewlinesState` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun restoreNewlinesState() {
         super.restoreNewlinesState()
         stackSize--

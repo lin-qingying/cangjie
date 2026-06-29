@@ -32,9 +32,18 @@ import com.intellij.psi.codeStyle.CodeStyleSettings
 import com.intellij.psi.codeStyle.CommonCodeStyleSettings
 
 
+/**
+ * 旧版仓颉默认代码风格预设。
+ */
 class CangJieObsoleteCodeStyle : CangJiePredefinedCodeStyle(CODE_STYLE_TITLE, CangJieLanguage) {
+    /**
+     * 代码风格预设的稳定标识。
+     */
     override val codeStyleId: String = CODE_STYLE_ID
 
+    /**
+     * 将旧版默认格式化设置写入 IDE 代码风格配置。
+     */
     override fun apply(settings: CodeStyleSettings) {
         Companion.apply(settings)
     }

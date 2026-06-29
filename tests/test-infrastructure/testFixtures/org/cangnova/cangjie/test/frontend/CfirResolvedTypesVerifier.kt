@@ -24,12 +24,21 @@ import org.cangnova.cangjie.test.model.TestModule
 import org.cangnova.cangjie.test.services.TestServices
 import org.cangnova.cangjie.test.services.assertions
 
+/**
+ * 表示 `CfirResolvedTypesVerifier`，承载CFIR 前端测试中的配置数据、测试产物或处理步骤。
+ */
 class CfirResolvedTypesVerifier(
     testServices: TestServices,
 ) : CfirAnalysisHandler(testServices) {
+    /**
+     * 保存 `directiveContainers`，供CFIR 前端测试在测试执行期间读取或传递。
+     */
     override val directiveContainers: List<DirectivesContainer>
         get() = listOf(CfirDiagnosticsDirectives)
 
+    /**
+     * 执行 `processModule` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     override fun processModule(module: TestModule, info: CfirOutputArtifact) {
         val ignored = IGNORE_LEAKED_INTERNAL_TYPES in module.directives
         var leakedTypesDetected = false
@@ -56,8 +65,14 @@ class CfirResolvedTypesVerifier(
         }
     }
 
+    /**
+     * 执行 `processAfterAllModules` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     override fun processAfterAllModules(someAssertionWasFailed: Boolean) = Unit
 
+    /**
+     * 提供 `renderProblems` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     private fun renderProblems(relativePath: String, problems: List<String>): String {
         return buildString {
             appendLine("VERIFY_RESOLVED_TYPES report for $relativePath")
@@ -69,6 +84,9 @@ class CfirResolvedTypesVerifier(
         }.trimEnd()
     }
 
+    /**
+     * 提供 `collectProblems` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     private fun collectProblems(file: CfirFile): List<String> {
         val collector = ProblemCollector()
         file.accept(object : CfirDefaultVisitorVoid() {
@@ -85,6 +103,9 @@ class CfirResolvedTypesVerifier(
         return collector.renderProblems()
     }
 
+    /**
+     * 提供 `checkExpression` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     private fun checkExpression(expression: CfirExpression, collector: ProblemCollector) {
         if (expression is CfirLazyExpression || expression is CfirErrorExpression) return
         val coneType = expression.coneTypeOrNull
@@ -95,10 +116,16 @@ class CfirResolvedTypesVerifier(
         checkConeType(coneType, expression.renderOwner(), collector)
     }
 
+    /**
+     * 提供 `checkResolvedTypeRef` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     private fun checkResolvedTypeRef(typeRef: CfirResolvedTypeRef, collector: ProblemCollector) {
         checkConeType(typeRef.coneType, typeRef.renderOwner(), collector)
     }
 
+    /**
+     * 提供 `checkConeType` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     private fun checkConeType(type: ConeCangJieType, owner: String, collector: ProblemCollector) {
         when (type) {
             is ConeTypeVariableType -> collector.typeVariableTypes += "$owner: $type"
@@ -128,17 +155,41 @@ class CfirResolvedTypesVerifier(
         }
     }
 
+    /**
+     * 提供 `renderOwner` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     private fun CfirElement.renderOwner(): String {
         return this::class.simpleName ?: "<anonymous>"
     }
 
+    /**
+     * 表示 `ProblemCollector`，承载CFIR 前端测试中的配置数据、测试产物或处理步骤。
+     */
     private class ProblemCollector {
+        /**
+         * 保存 `missingExpressionTypes`，供CFIR 前端测试在测试执行期间读取或传递。
+         */
         val missingExpressionTypes = linkedSetOf<String>()
+        /**
+         * 保存 `typeVariableTypes`，供CFIR 前端测试在测试执行期间读取或传递。
+         */
         val typeVariableTypes = linkedSetOf<String>()
+        /**
+         * 保存 `stubTypes`，供CFIR 前端测试在测试执行期间读取或传递。
+         */
         val stubTypes = linkedSetOf<String>()
+        /**
+         * 保存 `errorTypeRefs`，供CFIR 前端测试在测试执行期间读取或传递。
+         */
         val errorTypeRefs = linkedSetOf<String>()
+        /**
+         * 保存 `errorConeTypes`，供CFIR 前端测试在测试执行期间读取或传递。
+         */
         val errorConeTypes = linkedSetOf<String>()
 
+        /**
+         * 执行 `renderProblems` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+         */
         fun renderProblems(): List<String> {
             return buildList {
                 appendCategory("expressions without resolved type", missingExpressionTypes)
@@ -149,6 +200,9 @@ class CfirResolvedTypesVerifier(
             }
         }
 
+        /**
+         * 提供 `appendCategory` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+         */
         private fun MutableList<String>.appendCategory(header: String, values: Set<String>) {
             if (values.isEmpty()) return
             add("$header:")

@@ -73,29 +73,50 @@ class CjFieldVariable : CjVariable<CangJieFieldStub>  {
         )
     }
 
+    /**
+     * 暴露 `valueParameterList`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val valueParameterList: CjParameterList?
         get() = null
 
+    /**
+     * 暴露 `valueParameters`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val valueParameters: List<CjParameter>
         get() = emptyList()
 
+    /**
+     * 保存 `equalsToken`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val equalsToken: PsiElement?
         get() = findChildByType(CjTokens.EQ)
 
+    /**
+     * 实现 `toString` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun toString(): String {
         return super.toString() + ": " + name
     }
 
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitFieldVariable(this, data)
     }
     //需要实现textOffset
+    /**
+     * 实现 `getTextOffset` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getTextOffset(): Int {
         val identifier = nameIdentifier
         return identifier?.textRange?.startOffset ?: textRange.startOffset
     }
 
 
+    /**
+     * 暴露 `typeReference`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val typeReference: CjTypeReference?
         get() {
             val stub = stub
@@ -119,13 +140,22 @@ class CjFieldVariable : CjVariable<CangJieFieldStub>  {
             return getTypeReference(this)
         }
 
+    /**
+     * 实现 `setTypeReference` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun setTypeReference(typeRef: CjTypeReference?): CjTypeReference? {
         return setTypeReference(this, nameIdentifier, typeRef)
     }
 
+    /**
+     * 暴露 `colon`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val colon: PsiElement?
         get() = findChildByType(CjTokens.COLON)
 
+    /**
+     * 暴露 `isVar`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val isVar: Boolean
         get() {
             val stub = stub
@@ -135,6 +165,9 @@ class CjFieldVariable : CjVariable<CangJieFieldStub>  {
             return node.findChildByType(CjTokens.VAR_KEYWORD) != null
         }
 
+    /**
+     * 保存 `isConst`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val isConst: Boolean
         get() {
             val stub = stub
@@ -144,9 +177,15 @@ class CjFieldVariable : CjVariable<CangJieFieldStub>  {
             return node.findChildByType(CjTokens.CONST_KEYWORD) != null
         }
 
+    /**
+     * 暴露 `isStatic`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val isStatic: Boolean
         get() = hasModifier(CjTokens.STATIC_KEYWORD)
 
+    /**
+     * 暴露 `letOrVarKeyword`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val letOrVarKeyword: PsiElement
         get() {
             val element = checkNotNull(findChildByType(LET_VAR_CONST_TOKEN_SET)) {
@@ -155,6 +194,9 @@ class CjFieldVariable : CjVariable<CangJieFieldStub>  {
             return element
         }
 
+    /**
+     * 暴露 `initializer`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val initializer: CjExpression?
         get() {
             val stub = stub
@@ -172,6 +214,9 @@ class CjFieldVariable : CjVariable<CangJieFieldStub>  {
             )
         }
 
+    /**
+     * 实现 `hasInitializer` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun hasInitializer(): Boolean {
         val stub = stub
         if (stub != null) {
@@ -188,6 +233,9 @@ class CjFieldVariable : CjVariable<CangJieFieldStub>  {
 
     // ========== CjNamedDeclaration 实现 ==========
 
+    /**
+     * 实现 `getName` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getName(): String? {
         val stub = stub
         if (stub != null) {
@@ -201,10 +249,16 @@ class CjFieldVariable : CjVariable<CangJieFieldStub>  {
         return null
     }
 
+    /**
+     * 实现 `getNameIdentifier` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getNameIdentifier(): PsiElement? {
         return findChildByType(CjTokens.IDENTIFIER)
     }
 
+    /**
+     * 实现 `setName` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun setName(name: @NlsSafe String): PsiElement? {
         val identifier = nameIdentifier ?: return null
         val newIdentifier = CjPsiFactory(project).createNameIdentifierIfPossible(name.quoteIfNeeded())
@@ -216,12 +270,21 @@ class CjFieldVariable : CjVariable<CangJieFieldStub>  {
         return this
     }
 
+    /**
+     * 暴露 `nameAsName`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val nameAsName: Name?
         get() = this.name?.asOperatorName()
 
+    /**
+     * 暴露 `nameAsSafeName`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val nameAsSafeName: Name
         get() = CjPsiUtil.safeName(name)
 
+    /**
+     * 暴露 `fqName`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val fqName: FqName?
         get() {
             val stub = getStub()
@@ -234,15 +297,27 @@ class CjFieldVariable : CjVariable<CangJieFieldStub>  {
     // ========== CjTypeParameterListOwner 实现 ==========
     // 字段不支持类型参数，返回 null/空列表
 
+    /**
+     * 暴露 `typeParameterList`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val typeParameterList: CjTypeParameterList?
         get() = null
 
+    /**
+     * 暴露 `typeConstraintList`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val typeConstraintList: CjTypeConstraintList?
         get() = null
 
+    /**
+     * 暴露 `typeConstraints`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val typeConstraints: List<CjTypeConstraint>
         get() = emptyList()
 
+    /**
+     * 暴露 `typeParameters`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val typeParameters: List<CjTypeParameter>
         get() = emptyList()
 }

@@ -29,13 +29,25 @@ import org.cangnova.cangjie.psi.stubs.CangJiePlaceHolderWithTextStub
 import com.intellij.psi.stubs.IStubElementType
 import com.intellij.psi.stubs.StubElement
 
+/**
+ * 表示 `CangJiePlaceHolderWithTextStubImpl`，承载PSI Stub中的语法节点、索引桩或辅助模型。
+ */
 class CangJiePlaceHolderWithTextStubImpl<T : CjElementImplStub<out StubElement<*>>>(
     parent: StubElement<*>,
     elementType: IStubElementType<*, *>,
+    /**
+     * 保存 `text` 的内部状态，供PSI Stub实现维护节点缓存或解析上下文。
+     */
     private val text: String,
 ) : CangJieStubBaseImpl<T>(parent, elementType), CangJiePlaceHolderWithTextStub<T> {
+    /**
+     * 实现 `text` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun text(): String = text
 
+    /**
+     * 实现 `copyInto` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun copyInto(newParent: StubElement<*>?): CangJiePlaceHolderWithTextStubImpl<T> = CangJiePlaceHolderWithTextStubImpl(
         parent = requireNotNull(newParent),
         elementType = stubType,

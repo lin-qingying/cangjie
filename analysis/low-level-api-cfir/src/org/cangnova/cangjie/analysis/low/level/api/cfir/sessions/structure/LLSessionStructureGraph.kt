@@ -21,6 +21,9 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
  * - Directed edges represent dependencies between sessions.
  */
 internal class LLSessionStructureGraph(
+    /**
+     * 以 session 为键保存的图节点。
+     */
     val nodesBySession: Map<LLCfirSession, LLSessionStructureGraphNode>,
 )
 
@@ -33,8 +36,19 @@ internal class LLSessionStructureGraph(
  * @property id A unique numeric ID. It is used to link the node in GraphML.
  */
 internal class LLSessionStructureGraphNode(
+    /**
+     * GraphML 输出中使用的节点编号。
+     */
     val id: Int,
+
+    /**
+     * 当前节点对应的 low-level CFIR session。
+     */
     val session: LLCfirSession,
+
+    /**
+     * 当前 session 的统计信息。
+     */
     val statistics: LLSessionStatistics,
 ) {
     /**
@@ -49,6 +63,9 @@ internal class LLSessionStructureGraphNode(
      */
     var analysisRootDistance: Int? = null
 
+    /**
+     * GraphML 中显示的节点标签。
+     */
     val label: String
         get() = when (val module = session.caModule) {
             is CaDanglingFileModule -> module.moduleDescription

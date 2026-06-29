@@ -14,7 +14,10 @@ import org.cangnova.cangjie.lexer.CjKeywordToken
  * 对齐 Kotlin Analysis API 的 `KaKeywordsRenderer`。
  */
 class CaKeywordsRenderer(
+    /** 负责具体写出关键字文本的 renderer。 */
     val keywordRenderer: CaKeywordRenderer,
+
+    /** 负责判断关键字是否应被输出的过滤器。 */
     val keywordFilter: CaRendererKeywordFilter,
 ) {
 

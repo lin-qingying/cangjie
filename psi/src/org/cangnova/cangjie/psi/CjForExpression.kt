@@ -28,33 +28,57 @@ import org.cangnova.cangjie.lexer.CjTokens
 import com.intellij.lang.ASTNode
 import com.intellij.psi.PsiElement
 
+/**
+ * 表示 `CjForExpression`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjForExpression(node: ASTNode) : CjLoopExpression(node), CjPatternEntryBlock {
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitForExpression(this, data)
     }
 
+    /**
+     * 保存 `loopParameter`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     @get: IfNotParsed
     val loopParameter: CjParameter?
         get() = findChildByType<PsiElement>(CjNodeTypes.VALUE_PARAMETER) as CjParameter?
 
+    /**
+     * 保存 `pattern`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val pattern: CjCasePatternElement?
         get() {
 
             return findChildByClass(CjCasePatternElement::class.java)
         }
+    /**
+     * 保存 `patternGuard`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val patternGuard: CjPatternGuard?
         get() {
 
             return findChildByClass(CjPatternGuard::class.java)
         }
 
+    /**
+     * 保存 `loopRange`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     @get: IfNotParsed
     val loopRange: CjExpression?
         get() = findExpressionUnder(CjNodeTypes.LOOP_RANGE)
 
+    /**
+     * 保存 `inKeyword`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     @get: IfNotParsed
     val inKeyword: PsiElement?
         get() = findChildByType(CjTokens.IN_KEYWORD)
+    /**
+     * 保存 `forKeyword`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val forKeyword: PsiElement?
         get() = findChildByType(CjTokens.FOR_KEYWORD)
 }

@@ -13,6 +13,11 @@ import org.eclipse.lsp4j.jsonrpc.messages.Either
  * 把 Analysis API 诊断转换成协议层使用的 LSP 诊断。
  */
 internal object AnalysisApiDiagnostics {
+    /**
+     * 将 Analysis API 诊断集合转换为当前文档的 LSP 诊断列表。
+     *
+     * 每个诊断可能携带多个文本范围，因此转换结果按有效范围展开，并保留消息、严重级别、来源和诊断码。
+     */
     fun toLspDiagnostics(
         document: LspTextDocument,
         source: String,
@@ -31,9 +36,19 @@ internal object AnalysisApiDiagnostics {
         }
     }
 
+    /**
+     * 将诊断有效范围映射为 LSP 文档范围。
+     *
+     * 映射使用文档快照的 analysis 文本偏移，保证 PSI 诊断位置与客户端可见文本一致。
+     */
     private fun CaDiagnosticWithPsi<*>.lspRanges(document: LspTextDocument) =
         effectiveRanges().map { range -> document.analysisRangeOf(range.startOffset, range.endOffset) }
 
+    /**
+     * 计算诊断可呈现给客户端的文本范围。
+     *
+     * 优先使用诊断自身范围；缺失时回退到 PSI 元素范围；两者都不可用时返回零长度起点范围。
+     */
     private fun CaDiagnosticWithPsi<*>.effectiveRanges(): List<TextRange> {
         val fromDiagnostic = textRanges.filterNot { it.isEmpty }
         if (fromDiagnostic.isNotEmpty()) return fromDiagnostic
@@ -47,6 +62,9 @@ internal object AnalysisApiDiagnostics {
         }
     }
 
+    /**
+     * 将 Analysis API 严重级别映射为 LSP 严重级别。
+     */
     private fun CaSeverity.toLspSeverity(): DiagnosticSeverity = when (this) {
         CaSeverity.ERROR -> DiagnosticSeverity.Error
         CaSeverity.WARNING -> DiagnosticSeverity.Warning

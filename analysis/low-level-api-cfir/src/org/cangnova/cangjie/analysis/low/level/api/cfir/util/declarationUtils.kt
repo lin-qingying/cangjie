@@ -29,6 +29,9 @@ import org.cangnova.cangjie.psi.*
 import org.cangnova.cangjie.psi.psiUtil.containingTypeStatement
 import org.cangnova.cangjie.name.OperatorNameConventions
 
+/**
+ * 基于 [cfirFileBuilder] 和 [provider] 查找当前 PSI 声明对应的源码非局部 CFIR 声明。
+ */
 internal fun CjDeclaration.findSourceNonLocalCfirDeclaration(
     cfirFileBuilder: LLCfirFileBuilder,
     provider: CfirProvider,
@@ -38,7 +41,9 @@ internal fun CjDeclaration.findSourceNonLocalCfirDeclaration(
 )
 
 /**
- * 'Non-local' stands for not local classes/functions/etc.
+ * 查找当前非局部 PSI 声明对应的源码 CFIR 声明。
+ *
+ * “Non-local” 表示非局部 class、函数、属性等声明。
  */
 internal fun CjDeclaration.findSourceNonLocalCfirDeclaration(cfirFile: CfirFile, provider: CfirProvider): CfirDeclaration {
     // TODO test what way faster
@@ -89,6 +94,9 @@ internal fun CjDeclaration.findSourceNonLocalCfirDeclaration(cfirFile: CfirFile,
     )
 }
 
+/**
+ * 收集 [element] 使用点所在的 CFIR 容器路径。
+ */
 @CaImplementationDetail
 fun collectUseSiteContainers(element: PsiElement, resolutionFacade: LLResolutionFacade): List<CfirDeclaration>? {
     val containingDeclaration = element.getNonLocalContainingOrThisDeclaration { it.isAutonomousElement } ?: return null
@@ -97,6 +105,9 @@ fun collectUseSiteContainers(element: PsiElement, resolutionFacade: LLResolution
     return CfirElementFinder.findPathToDeclarationWithTarget(cfirFile, containingDeclaration)
 }
 
+/**
+ * 通过遍历整棵 CFIR 树查找当前 PSI 元素对应的源码 CFIR 声明。
+ */
 internal fun CjElement.findSourceByTraversingWholeTree(
     cfirFileBuilder: LLCfirFileBuilder,
     containerCfirFile: CfirFile?,
@@ -113,6 +124,9 @@ internal fun CjElement.findSourceByTraversingWholeTree(
     )
 }
 
+/**
+ * 使用 [firDeclarationProvider] 查找当前 PSI 声明对应的非局部 CFIR 声明。
+ */
 private fun CjDeclaration.findSourceNonLocalCfirDeclarationByProvider(
     firDeclarationProvider: (CjDeclaration) -> CfirDeclaration?,
 ): CfirDeclaration? {
@@ -175,13 +189,28 @@ private fun CjDeclaration.findSourceNonLocalCfirDeclarationByProvider(
     return candidate?.takeIf { it.psi == this }
 }
 
+/**
+ * 保存复制 PSI 对应原始声明的 user data key。
+ */
 val ORIGINAL_DECLARATION_KEY = com.intellij.openapi.util.Key<CjDeclaration>("ORIGINAL_DECLARATION_KEY")
+/**
+ * 复制 PSI 声明对应的原始声明。
+ */
 var CjDeclaration.originalDeclaration by UserDataProperty(ORIGINAL_DECLARATION_KEY)
 
+/**
+ * 保存复制仓颉文件对应原始文件的 user data key。
+ */
 private val ORIGINAL_CJ_FILE_KEY = com.intellij.openapi.util.Key<CjFile>("ORIGINAL_CJ_FILE_KEY")
+/**
+ * 复制仓颉文件对应的原始文件。
+ */
 var CjFile.originalCjFile by UserDataProperty(ORIGINAL_CJ_FILE_KEY)
 
 
+/**
+ * 通过 [provider] 查找 class-like PSI 对应的 CFIR class-like 声明。
+ */
 private fun CjClassLikeDeclaration.findCfir(provider: CfirProvider): CfirClassLikeDeclaration? {
     return if (provider is LLCfirProvider) {
         provider.getCfirClassifierByDeclaration(this)
@@ -191,6 +220,9 @@ private fun CjClassLikeDeclaration.findCfir(provider: CfirProvider): CfirClassLi
     }
 }
 
+/**
+ * 返回文件中唯一的 code fragment 声明。
+ */
 @LLCfirInternals
 val CfirFile.codeFragment: CfirCodeFragment
     get() {
@@ -198,24 +230,42 @@ val CfirFile.codeFragment: CfirCodeFragment
             ?: errorWithCfirSpecificEntries("Code fragment not found in a CfirFile", cfir = this)
     }
 
+/**
+ * 判断 CFIR 声明是否是生成声明。
+ */
 val CfirDeclaration.isGeneratedDeclaration
     get() = realPsi == null
 
+/**
+ * 遍历 class-like 声明的直接子声明。
+ */
 internal inline fun CfirClassLikeDeclaration.forEachDeclaration(action: (CfirDeclaration) -> Unit) {
     declarations.forEach(action)
 }
 
+/**
+ * 遍历 extend 声明的直接子声明。
+ */
 internal inline fun CfirExtend.forEachDeclaration(action: (CfirDeclaration) -> Unit) {
     declarations.forEach(action)
 }
 
+/**
+ * 遍历文件的直接子声明。
+ */
 internal inline fun CfirFile.forEachDeclaration(action: (CfirDeclaration) -> Unit) {
     declarations.forEach(action)
 }
 
+/**
+ * 判断声明是否能作为直接声明容器。
+ */
 internal val CfirDeclaration.isDeclarationContainer: Boolean
     get() = this is CfirClassLikeDeclaration || this is CfirExtend || this is CfirFile
 
+/**
+ * 根据声明容器类型遍历其直接子声明。
+ */
 internal inline fun CfirDeclaration.forEachDeclaration(action: (CfirDeclaration) -> Unit) {
     when (this) {
         is CfirClassLikeDeclaration -> forEachDeclaration(action)
@@ -226,10 +276,9 @@ internal inline fun CfirDeclaration.forEachDeclaration(action: (CfirDeclaration)
 }
 
 /**
- * Whether a non-local declaration of the given type supports partial body analysis.
+ * 判断非局部声明类型是否支持局部 body 分析。
  *
- * The function only checks the declaration type.
- * It does not perform other important checks such as a number of body statements, or even whether the body is present at all.
+ * 该属性只检查声明类型，不检查 body 是否存在或语句数量是否足以局部分析。
  */
 internal val CfirElementWithResolveState.isPartialBodyResolvable: Boolean
     get() = when (this) {
@@ -239,14 +288,15 @@ internal val CfirElementWithResolveState.isPartialBodyResolvable: Boolean
     }
 
 /**
- * Whether a declaration body block supports partial body analysis.
- * For empty blocks and blocks with a single statement, partial analysis is unavailable.
+ * 判断声明 body block 是否支持局部分析。
+ *
+ * 空 block 和单语句 block 不支持局部分析。
  */
 internal val CfirBlock.isPartialAnalyzable: Boolean
     get() = statements.size > 1
 
 /**
- * A declaration body (a block with statements).
+ * 返回声明 body block。
  */
 internal val CfirElementWithResolveState.body: CfirBlock?
     get() = when (this) {
@@ -255,13 +305,16 @@ internal val CfirElementWithResolveState.body: CfirBlock?
     }
 
 /**
- * Some "local" declarations are not local from the lazy resolution perspective.
+ * 判断 callable 从懒解析视角是否属于局部声明。
  */
 internal val CfirCallableSymbol<*>.isLocalForLazyResolutionPurposes: Boolean
     get() = when (cfir.origin) {
         else -> cfir.isLocal
     }
 
+/**
+ * 返回 code fragment 感知的 PSI 父链，包含当前元素。
+ */
 val PsiElement.parentsWithSelfCodeFragmentAware: Sequence<PsiElement>
     get() = generateSequence(this) { element ->
         when (element) {
@@ -271,9 +324,15 @@ val PsiElement.parentsWithSelfCodeFragmentAware: Sequence<PsiElement>
         }
     }
 
+/**
+ * 返回 code fragment 感知的 PSI 父链，不包含当前元素。
+ */
 val PsiElement.parentsCodeFragmentAware: Sequence<PsiElement>
     get() = parentsWithSelfCodeFragmentAware.drop(1)
 
+/**
+ * 将复制 PSI 元素映射回原始文件中的对应元素。
+ */
 internal fun <T : PsiElement> T.unwrapCopy(containingFile: PsiFile = this.containingFile): T? {
     val originalFile = (containingFile as? CjFile)?.originalCjFile
         ?: containingFile.originalFile.takeUnless { it == containingFile }
@@ -288,6 +347,9 @@ internal fun <T : PsiElement> T.unwrapCopy(containingFile: PsiFile = this.contai
     }
 }
 
+/**
+ * 在 [session] 中查找 `String.plus` 函数符号。
+ */
 fun findStringPlusSymbol(session: CfirSession): CfirNamedFunctionSymbol? {
     val stringClassId = ClassId.topLevel(StandardNames.FqNames.stringFqName)
     return session.symbolProvider.getClassLikeSymbolByClassId(stringClassId)?.cfir?.declarations?.singleOrNull {

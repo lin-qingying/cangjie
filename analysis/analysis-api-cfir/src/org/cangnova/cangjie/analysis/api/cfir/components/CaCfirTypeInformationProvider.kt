@@ -23,8 +23,14 @@ import org.cangnova.cangjie.cfir.types.withoutAbbreviation
  * 不承担类型构造、类型替换或类型关系判断。
  */
 internal class CaCfirTypeInformationProvider(
+    /**
+     * 延迟取得当前 CFIR Analysis session，类型信息查询需要底层 CFIR session。
+     */
     override val analysisSessionProvider: () -> CaCfirSession,
 ) : CaBaseSessionComponent<CaCfirSession>(), CaTypeInformationProvider, CaCfirSessionComponent {
+    /**
+     * 判断公开类型是否代表底层错误类型。
+     */
     override val CaType.isErrorType: Boolean
         get() = withValidityAssertion {
             when (this@isErrorType) {
@@ -33,6 +39,9 @@ internal class CaCfirTypeInformationProvider(
             }
         }
 
+    /**
+     * 返回展开类型别名并移除 abbreviation 后的公开类型。
+     */
     override val CaType.fullyExpandedType: CaType
         get() = withValidityAssertion {
             when (this@fullyExpandedType) {
@@ -44,6 +53,9 @@ internal class CaCfirTypeInformationProvider(
             }
         }
 
+    /**
+     * 返回类型指向的 class-like 符号。
+     */
     override val CaType.classLikeSymbol: CaClassLikeSymbol?
         get() = withValidityAssertion {
             when (this@classLikeSymbol) {

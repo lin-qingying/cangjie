@@ -19,6 +19,11 @@ import org.cangnova.cangjie.psi.CjNamedDeclaration
  * search executor、reference 基类、测试各自维护一份“目标相等性”逻辑。
  */
 internal object CangJieReferenceSearchSupport {
+    /**
+     * 计算目标元素在 usages 搜索中应使用的基础名称集合。
+     *
+     * 同时考虑元素本身、original element 和 navigation element，覆盖 source-backed 与 wrapper-backed 目标。
+     */
     fun baseSearchNames(target: PsiElement): Set<String> {
         return linkedSetOf<String>().apply {
             addNamedElement(target)
@@ -54,6 +59,9 @@ internal object CangJieReferenceSearchSupport {
         }
     }
 
+    /**
+     * 判断 reference 公开的可能解析名称是否与搜索名集合有交集。
+     */
     fun mayResolveByName(
         reference: PsiReference,
         searchNames: Set<String>,
@@ -67,6 +75,9 @@ internal object CangJieReferenceSearchSupport {
         return resolvesByNames.isEmpty() || resolvesByNames.any(searchNames::contains)
     }
 
+    /**
+     * 判断单个 reference 是否匹配目标元素。
+     */
     fun matchesTarget(
         reference: PsiReference,
         target: PsiElement,
@@ -78,6 +89,9 @@ internal object CangJieReferenceSearchSupport {
         return matchesResolvedTargets(reference.unwrappedTargets, target)
     }
 
+    /**
+     * 判断一组解析目标是否与候选目标等价。
+     */
     fun matchesResolvedTargets(
         resolvedTargets: Set<PsiElement>,
         candidateTarget: PsiElement,
@@ -93,6 +107,9 @@ internal object CangJieReferenceSearchSupport {
         }
     }
 
+    /**
+     * 构造用于 reference 目标等价判断的 PSI 身份链。
+     */
     private fun PsiElement.referenceIdentityChain(): Set<PsiElement> {
         val identities = linkedSetOf<PsiElement>()
 
@@ -116,6 +133,9 @@ internal object CangJieReferenceSearchSupport {
         return identities
     }
 
+    /**
+     * 判断两个 PSI 元素是否可视为同一个引用目标。
+     */
     private fun areEquivalent(
         left: PsiElement,
         right: PsiElement,
@@ -133,6 +153,9 @@ internal object CangJieReferenceSearchSupport {
             left::class == right::class
     }
 
+    /**
+     * 将具名 PSI 元素的名称加入搜索名集合。
+     */
     private fun MutableSet<String>.addNamedElement(element: PsiElement?) {
         val name = (element as? PsiNamedElement)?.name
         if (!name.isNullOrBlank()) {

@@ -40,6 +40,9 @@ import kotlin.io.path.writeText
  * 尚未接入 Kotlin 那套 smart-cast 快照，因此 golden 只断言 tower context 与 CFIR 文件渲染结果。
  */
 abstract class AbstractContextCollectorTest : AbstractAnalysisApiBasedTest() {
+    /**
+     * 分别对物理文件和复制文件执行 SELF/BODY context collector golden 测试。
+     */
     override fun doTestByMainFile(mainFile: CjFile, mainModule: CjTestModule, testServices: TestServices) {
         performTest(mainFile, mainModule, testServices, outputVariant = null, preferBodyContext = false)
         performTest(mainFile, mainModule, testServices, outputVariant = "body", preferBodyContext = true)
@@ -49,6 +52,9 @@ abstract class AbstractContextCollectorTest : AbstractAnalysisApiBasedTest() {
         performTest(copiedFile, mainModule, testServices, outputVariant = "body.copy", preferBodyContext = true)
     }
 
+    /**
+     * 创建用于 dangling/copy 路径测试的非物理文件副本。
+     */
     private fun createFileCopy(file: CjFile): CjFile {
         val copiedFile = file.copy() as CjFile
         check(!copiedFile.isPhysical) { "Copied file `${copiedFile.name}` must be non-physical." }
@@ -58,6 +64,9 @@ abstract class AbstractContextCollectorTest : AbstractAnalysisApiBasedTest() {
         return copiedFile
     }
 
+    /**
+     * 对 [mainFile] 执行一次 context collector golden 验证。
+     */
     private fun performTest(
         mainFile: CjFile,
         mainModule: CjTestModule,
@@ -102,15 +111,30 @@ abstract class AbstractContextCollectorTest : AbstractAnalysisApiBasedTest() {
     }
 }
 
+/**
+ * source 配置下的 ContextCollector 测试基类。
+ */
 abstract class AbstractContextCollectorSourceTest : AbstractContextCollectorTest() {
+    /**
+     * 使用源码 low-level CFIR 测试配置。
+     */
     override val configurator = analysisApiCfirSourceTestConfigurator(analyseInDependentSession = false)
 }
 
+/**
+ * ContextCollector golden 文本渲染器。
+ */
 private object ContextCollectorGoldenRenderer {
+    /**
+     * 将 [context] 渲染到 [builder]。
+     */
     fun render(context: ContextCollector.Context, builder: StringBuilder) = with(builder) {
         renderTowerDataContext(context.towerDataContext)
     }
 
+    /**
+     * 渲染 tower data context。
+     */
     private fun StringBuilder.renderTowerDataContext(towerDataContext: CfirTowerDataContext) {
         appendLine("Tower Data Context:")
         for ((index, towerDataElement) in towerDataContext.towerDataElements.withIndex()) {
@@ -133,6 +157,9 @@ private object ContextCollectorGoldenRenderer {
         }
     }
 
+    /**
+     * 渲染单个 [scope]。
+     */
     private fun StringBuilder.renderScope(scope: CfirScope, indent: String) {
         val nameAwareScope = scope as? CfirContainingNamesAwareScope
         if (nameAwareScope == null) {
@@ -171,6 +198,9 @@ private object ContextCollectorGoldenRenderer {
         }
     }
 
+    /**
+     * 通过 [collector] 按名称收集声明符号。
+     */
     private fun <T : CfirBasedSymbol<*>> collectDeclarations(
         names: List<Name>,
         collector: (Name, (T) -> Unit) -> Unit,
@@ -182,14 +212,23 @@ private object ContextCollectorGoldenRenderer {
         }
     }
 
+    /**
+     * 渲染单个 CFIR 符号及其声明。
+     */
     private fun renderSymbol(symbol: CfirBasedSymbol<*>): String {
         val renderer = CfirRenderer.withReadability()
         return "${symbol::class.simpleName} ${renderer.renderElementAsString(symbol.cfir)}"
     }
 
+    /**
+     * 渲染可读的 Cone 类型文本。
+     */
     private fun ConeCangJieType.renderReadableType(): String = renderForDebugging()
 }
 
+/**
+ * 将 [actual] 与指定 ContextCollector golden 文件比较，必要时更新测试数据。
+ */
 private fun AssertionsService.assertMatchesContextCollectorOutput(expectedFile: Path, actual: String) {
     if (System.getProperty("update.test.data")?.toBooleanStrictOrNull() == true) {
         expectedFile.parent.createDirectories()
@@ -200,6 +239,9 @@ private fun AssertionsService.assertMatchesContextCollectorOutput(expectedFile: 
     assertEqualsToFile(expectedFile.toFile(), actual)
 }
 
+/**
+ * 规范化 ContextCollector golden 文本。
+ */
 private fun String.normalizeGoldenText(): String {
     return trim { it <= ' ' }
         .convertLineSeparators()

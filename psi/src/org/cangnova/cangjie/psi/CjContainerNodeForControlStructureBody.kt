@@ -26,4 +26,7 @@ package org.cangnova.cangjie.psi
 
 import com.intellij.lang.ASTNode
 
+/**
+ * 表示 `CjContainerNodeForControlStructureBody`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjContainerNodeForControlStructureBody(node: ASTNode) : CjContainerNode(node)

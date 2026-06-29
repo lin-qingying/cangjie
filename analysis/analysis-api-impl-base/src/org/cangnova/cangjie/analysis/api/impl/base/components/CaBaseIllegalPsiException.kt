@@ -15,6 +15,9 @@ import org.cangnova.cangjie.utils.exceptions.CangJieIllegalArgumentExceptionWith
 import org.cangnova.cangjie.utils.exceptions.buildAttachment
 import org.cangnova.cangjie.utils.exceptions.withPsiEntry
 
+/**
+ * 校验 receiver PSI 后在当前 session component 生命周期内执行 [builder]。
+ */
 @CaImplementationDetail
 context(component: CaBaseSessionComponent<S>)
 @JvmName("withPsiValidityAssertionAsReceiver")
@@ -65,6 +68,9 @@ inline fun <S : CaSession, R> withPsiValidityAssertion(
     builder()
 }
 
+/**
+ * 校验当前 PSI 是否可在当前 session 中分析。
+ */
 @CaImplementationDetail
 context(component: CaBaseSessionComponent<S>)
 fun <S : CaSession> PsiElement.checkValidity() {
@@ -84,6 +90,9 @@ fun <S : CaSession> PsiElement.checkValidity() {
     }
 }
 
+/**
+ * PSI 与当前 use-site session 不匹配时抛出的 Analysis API 输入错误。
+ */
 @CaImplementationDetail
 class CaBaseIllegalPsiException private constructor(
     useSiteModule: CaModule,
@@ -110,6 +119,9 @@ class CaBaseIllegalPsiException private constructor(
     }
 
     companion object {
+        /**
+         * 根据 session 与非法 PSI 构造异常，并附带 use-site/psi 模块信息。
+         */
         fun create(session: CaSession, psi: PsiElement):   CaBaseIllegalPsiException = with(session) {
             val psiModule = getModule(psi)
             CaBaseIllegalPsiException(useSiteModule, psiModule, psi)
@@ -133,4 +145,8 @@ class CaBaseIllegalPsiException private constructor(
         }
     }
 }
+
+/**
+ * 允许旧调用点临时跳过非法 PSI 访问检查的线程局部开关。
+ */
 private val allowIllegalPsiAccess = ThreadLocal.withInitial { false }

@@ -26,24 +26,42 @@ package org.cangnova.cangjie.parsing
 import com.intellij.psi.tree.IElementType
 
 
+/**
+ * 表示 `TruncatedSemanticWhitespaceAwarePsiBuilder`，承载仓颉语法解析中的语法节点、索引桩或辅助模型。
+ */
 class TruncatedSemanticWhitespaceAwarePsiBuilder(
     builder: SemanticWhitespaceAwarePsiBuilder ,
+    /**
+     * 保存 `myEOFPosition` 的内部状态，供仓颉语法解析实现维护节点缓存或解析上下文。
+     */
     private val myEOFPosition: Int
 ) : SemanticWhitespaceAwarePsiBuilderAdapter(builder) {
+    /**
+     * 实现 `eof` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun eof(): Boolean {
         return super.eof() || isOffsetBeyondEof(currentOffset)
     }
 
+    /**
+     * 实现 `getTokenText` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getTokenText(): String? {
         if (eof()) return null
         return super.getTokenText()
     }
 
+    /**
+     * 实现 `getTokenType` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getTokenType(): IElementType? {
         if (eof()) return null
         return super.getTokenType()
     }
 
+    /**
+     * 实现 `lookAhead` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun lookAhead(steps: Int): IElementType? {
         if (eof()) return null
 
@@ -53,6 +71,9 @@ class TruncatedSemanticWhitespaceAwarePsiBuilder(
         return super.rawLookup(rawLookAheadSteps)
     }
 
+    /**
+     * 执行 `rawLookAhead` 内部辅助逻辑，支撑仓颉语法解析节点的结构解析与访问。
+     */
     private fun rawLookAhead(steps: Int): Int {
         var steps = steps
         var cur = 0
@@ -70,6 +91,9 @@ class TruncatedSemanticWhitespaceAwarePsiBuilder(
         return cur
     }
 
+    /**
+     * 执行 `isOffsetBeyondEof` 内部辅助逻辑，支撑仓颉语法解析节点的结构解析与访问。
+     */
     private fun isOffsetBeyondEof(offsetFromCurrent: Int): Boolean {
         return myEOFPosition >= 0 && offsetFromCurrent >= myEOFPosition
     }

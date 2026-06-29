@@ -3,7 +3,13 @@
 import org.cangnova.cangjie.chir.core.declaration.ChirFunctionDeclaration
 import org.cangnova.cangjie.chir.core.model.ChirPackage
 
+/**
+ * CHIR 包结构摘要检查器。
+ */
 object ChirInspector {
+    /**
+     * 生成稳定 JSON 风格的包结构摘要。
+     */
     fun inspect(chirPackage: ChirPackage): String {
         val sortedModules = chirPackage.modules.sortedBy { it.semanticId.value }
         val functionCount = sortedModules.sumOf { module -> module.declarations.count { it is ChirFunctionDeclaration } }
@@ -75,6 +81,9 @@ object ChirInspector {
         }
     }
 
+    /**
+     * 转义 JSON 字符串片段。
+     */
     private fun escape(raw: String): String =
         raw.replace("\\", "\\\\")
             .replace("\"", "\\\"")

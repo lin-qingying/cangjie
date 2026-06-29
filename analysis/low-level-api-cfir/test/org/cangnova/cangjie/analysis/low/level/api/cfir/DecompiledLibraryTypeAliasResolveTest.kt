@@ -40,8 +40,14 @@ import org.junit.jupiter.api.Test
 class DecompiledLibraryTypeAliasResolveTest : AbstractAnalysisApiExecutionTest(
     "analysis/low-level-api-cfir/testData/decompiledLibraries",
 ) {
+    /**
+     * 使用源码分析配置，确保测试覆盖 source -> decompiled library 依赖路径。
+     */
     override val configurator = analysisApiCfirSourceTestConfigurator(analyseInDependentSession = false)
 
+    /**
+     * 验证源码中的 library typealias 引用不会在 low-level CFIR 构建中崩溃，并保留声明侧 alias 名称。
+     */
     @Test
     fun decompiledTypeAliasReference(
         mainFile: CjFile,

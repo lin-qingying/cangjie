@@ -27,16 +27,34 @@ package org.cangnova.cangjie.psi
 import org.cangnova.cangjie.name.Name
 import com.intellij.lang.ASTNode
 
+/**
+ * 表示 `CjExpressionWithLabel`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 open class CjExpressionWithLabel(node: ASTNode) : CjExpressionImpl(node) {
 
+    /**
+     * 提供 `getTargetLabel` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun getTargetLabel(): CjSimpleNameExpression? =
         labelQualifier?.findChildByType(CjNodeTypes.LABEL) as? CjSimpleNameExpression
 
+    /**
+     * 保存 `labelQualifier`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val labelQualifier: CjContainerNode?
         get() = findChildByType(CjNodeTypes.LABEL_QUALIFIER)
 
+    /**
+     * 提供 `getLabelName` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun getLabelName(): String? = getTargetLabel()?.referencedName
+    /**
+     * 提供 `getLabelNameAsName` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun getLabelNameAsName(): Name? = getTargetLabel()?.referencedNameAsName
 
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? = visitor.visitExpressionWithLabel(this, data)
 }

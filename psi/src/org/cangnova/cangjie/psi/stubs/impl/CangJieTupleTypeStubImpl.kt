@@ -30,9 +30,15 @@ import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 import com.intellij.psi.PsiElement
 import com.intellij.psi.stubs.StubElement
 
+/**
+ * 表示 `CangJieTupleTypeStubImpl`，承载PSI Stub中的语法节点、索引桩或辅助模型。
+ */
 class CangJieTupleTypeStubImpl(
     parent: StubElement<out PsiElement>?,
 ) : CangJieStubBaseImpl<CjTupleType>(parent, CjStubElementTypes.TUPLE_TYPE), CangJieTupleTypeStub {
+    /**
+     * 实现 `copyInto` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun copyInto(newParent: StubElement<*>?): CangJieTupleTypeStubImpl = CangJieTupleTypeStubImpl(
         parent = newParent,
     )

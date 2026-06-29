@@ -22,17 +22,47 @@ import org.cangnova.cangjie.psi.buildExtendId
  * 不再把公开 `extendId` 文本反向当作唯一身份来源。
  */
 internal data class CaCfirExtendSymbolIdentity(
+    /**
+     * extend 声明所在包名。
+     */
     val packageFqName: FqName,
+    /**
+     * extend 声明所在文件名。
+     */
     val fileName: String,
+    /**
+     * extend 声明在文件中的稳定声明序号。
+     */
     val declarationIndexInFile: Int,
+    /**
+     * 被扩展目标类型的 classId，无法稳定解析时为 null。
+     */
     val targetClassId: ClassId?,
+    /**
+     * extend 继承接口的稳定语义 key 列表。
+     */
     val inheritedInterfaceSemanticKeys: List<String>,
 )
 
+/**
+ * 同时包含内部稳定身份和公开 extendId 的解析结果。
+ */
 internal data class CaCfirResolvedExtendIdentity(
+    /**
+     * 供缓存和 pointer 恢复使用的稳定身份。
+     */
     val stableIdentity: CaCfirExtendSymbolIdentity,
+    /**
+     * 公开 API 暴露的 extendId 文本。
+     */
     val extendId: String,
+    /**
+     * extend 声明对应的源码 PSI。
+     */
     val extendPsi: CjExtend?,
+    /**
+     * extend 声明所在包名。
+     */
     val packageFqName: FqName,
 )
 
@@ -58,6 +88,9 @@ internal fun CaCfirSession.resolveExtendIdentity(symbol: CfirExtendSymbol): CaCf
     )
 }
 
+/**
+ * 将 low-level extend 语义模型转换为公开符号缓存使用的稳定身份。
+ */
 internal fun CfirExtendSemanticModel.toPublicSymbolIdentity(): CaCfirExtendSymbolIdentity =
     CaCfirExtendSymbolIdentity(
         packageFqName = packageFqName,
@@ -92,6 +125,9 @@ private fun buildPublicExtendId(
     )
 }
 
+/**
+ * 规范化 renderer 产出的 extend 类型文本。
+ */
 private fun normalizeExtendTypeText(rendered: String): String {
     return rendered.removePrefix("R|").removeSuffix("|").trim()
 }

@@ -18,14 +18,29 @@ import org.cangnova.cangjie.platform.TargetPlatform
 @CaPlatformInterface
 @CaImplementationDetail
 class CaBuiltinsModuleImpl(
+    /**
+     * builtins 模块所属目标平台。
+     */
     override val targetPlatform: TargetPlatform,
+    /**
+     * builtins 模块绑定的 project。
+     */
     override val project: Project,
 ) : CaModuleBase(), CaBuiltinsModule {
+    /**
+     * builtins provider 暴露的内建声明内容作用域。
+     */
     override val baseContentScope: GlobalSearchScope
         get() = BuiltinsVirtualFileProvider.getInstance().createBuiltinsScope(project)
 
+    /**
+     * builtins 模块按接口语义和目标平台判等。
+     */
     override fun equals(other: Any?): Boolean =
         other is CaBuiltinsModule && targetPlatform == other.targetPlatform
 
+    /**
+     * builtins 模块 hash 与目标平台保持一致。
+     */
     override fun hashCode(): Int = targetPlatform.hashCode()
 }

@@ -2,8 +2,10 @@
 
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
+/** Cangjie embeddable 工件中重定位依赖使用的根包名。 */
 const val cangjieEmbeddableRootPackage = "org.cangnova.cangjie"
 
+/** 需要在 embeddable 工件中重定位的第三方包前缀集合。 */
 private val cangjieEmbeddablePackagesToRelocate = listOf(
     "com.google",
     "com.sampullara",

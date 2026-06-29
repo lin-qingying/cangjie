@@ -25,7 +25,16 @@
 package org.cangnova.cangjie.psi
 
 
+/**
+ * 定义 `CangJieDeclarationNavigationPolicy` 接口，约束仓颉 PSI节点或服务需要暴露的结构能力。
+ */
 interface CangJieDeclarationNavigationPolicy {
+    /**
+     * 提供 `getOriginalElement` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun getOriginalElement(declaration: CjDeclaration): CjElement
+    /**
+     * 提供 `getNavigationElement` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun getNavigationElement(declaration: CjDeclaration): CjElement
 }

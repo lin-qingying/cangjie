@@ -30,7 +30,18 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.Test
 
+/**
+ * 校验 CHIR 到 LLVM IR 降级器的基线输出与失败路径。
+ *
+ * 该测试覆盖简单返回、常见表达式、控制流分支以及结构校验错误，确保后端入口在写出 IR
+ * 之前能够保持稳定的文本输出和明确的非法 CHIR 报错契约。
+ */
 class ChirToLlvmLoweringParityTest {
+    /**
+     * 校验无参整型返回函数会被降级为最小 LLVM 函数定义。
+     *
+     * 该用例固定入口块、返回终结器和常量返回值的 IR 文本，作为后续降级改动的基础回归样本。
+     */
     @Test
     fun `emits exact baseline for simple return`() {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
@@ -83,6 +94,12 @@ entry:
         assertEquals(expected, normalizeIr(output.modules.single().ir))
     }
 
+    /**
+     * 覆盖一元、二元、内存、调用、select 和条件分支的组合降级。
+     *
+     * 该用例验证表达式结果名、参数类型、基本块标签和分支目标在 LLVM 文本中保持一致，
+     * 防止复杂函数降级时丢失 CHIR 语义标识或错误拼接操作数。
+     */
     @Test
     fun `covers unary binary memory call and branch lowering`() {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
@@ -228,6 +245,11 @@ entry:
         assertTrue(ir.contains("  ret i32 %expr_call"), ir)
     }
 
+    /**
+     * 校验分支终结器指向缺失基本块时会在生成前失败。
+     *
+     * 该用例锁定后端预校验的错误路径，确保非法控制流不会继续进入 LLVM 文本写出阶段。
+     */
     @Test
     fun `fails verification when branch target is missing`() {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
@@ -270,6 +292,11 @@ entry:
         }
     }
 
+    /**
+     * 校验 phi 表达式缺失前驱映射时会快速报错。
+     *
+     * 该用例保证 phi 降级必须具备完整的前驱来源信息，避免生成不完整或语义错误的 LLVM phi 节点。
+     */
     @Test
     fun `fails fast when phi node misses predecessor mapping`() {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
@@ -330,6 +357,11 @@ entry:
         assertTrue(error.message?.contains("missing required 'pred' attribute") == true, error.message)
     }
 
+    /**
+     * 创建测试专用的代码生成选项。
+     *
+     * 选项开启写出前校验并关闭非必要输出，使断言只关注 CHIR 到 LLVM IR 的核心文本。
+     */
     private fun testOptions() = CodegenOptions(
         enabled = true,
         verifyBeforeWrite = true,
@@ -339,6 +371,11 @@ entry:
         emitRuntimeDeclarations = false,
     )
 
+    /**
+     * 规范化 LLVM IR 文本的换行和末尾空白。
+     *
+     * 该辅助方法让基线断言不受 Windows 与 Unix 换行差异影响，同时保留 IR 内容本身。
+     */
     private fun normalizeIr(ir: String): String {
         return ir.replace("\r\n", "\n").trimEnd()
     }

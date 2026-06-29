@@ -22,14 +22,38 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import java.nio.file.Files
 
+/**
+ * JNI LLVM 后端端到端发射路径的集成测试。
+ */
 class JniBackendEndToEndIntegrationTest {
+    /**
+     * 测试启用开关和原生库路径配置。
+     */
     companion object {
+        /**
+         * 启用 JNI 集成测试的环境变量。
+         */
         private const val ENABLE_FLAG = "CANGJIE_LLVM_JNI_INTEGRATION"
+        /**
+         * 指定 JNI 原生库路径的环境变量。
+         */
         private const val LIB_PATH_FLAG = "CANGJIE_LLVM_JNI_LIBRARY_PATH"
+        /**
+         * 指定原生工具链根目录的环境变量。
+         */
         private const val NATIVE_HOME_FLAG = "CANGJIE_NATIVE_HOME"
+        /**
+         * 启用 JNI 集成测试的系统属性。
+         */
         private const val ENABLE_PROP = "cangjie.llvm.jni.integration"
+        /**
+         * 指定原生工具链根目录的系统属性。
+         */
         private const val NATIVE_HOME_PROP = "cangjie.native.home"
 
+        /**
+         * 根据环境变量或系统属性配置 JNI 原生库路径。
+         */
         @JvmStatic
         @BeforeAll
         fun setupNativePath() {
@@ -53,6 +77,9 @@ class JniBackendEndToEndIntegrationTest {
         }
     }
 
+    /**
+     * 验证 JNI 后端可以为简单 CHIR module 生成稳定 LLVM IR。
+     */
     @Test
     fun `jni backend produces stable ir for simple chir module`() {
         val codegen = DefaultChirToLlvmCodeGenerator()
@@ -97,6 +124,9 @@ class JniBackendEndToEndIntegrationTest {
         assertEquals(jniOutputSecond.modules.single().ir, jniOutputFirst.modules.single().ir)
     }
 
+    /**
+     * 验证 JNI 后端可以从 LLVM IR 生成真实 bitcode 字节。
+     */
     @Test
     fun `jni backend emits real llvm bitcode bytes`() {
         val output = DefaultChirToLlvmCodeGenerator().generate(
@@ -122,6 +152,9 @@ class JniBackendEndToEndIntegrationTest {
         assertEquals(0xDE.toByte(), bitcode[3])
     }
 
+    /**
+     * 验证 JNI 后端可以从生成的 CHIR LLVM IR 写出 object file。
+     */
     @Test
     fun `jni backend emits object file from generated chir llvm ir`() {
         val output = DefaultChirToLlvmCodeGenerator().generate(
@@ -156,6 +189,9 @@ class JniBackendEndToEndIntegrationTest {
         assertTrue(Files.size(outputPath) > 0)
     }
 
+    /**
+     * 验证完整 codegen pipeline 能通过 JNI 后端生成 object code 字节。
+     */
     @Test
     fun `jni codegen pipeline emits object code bytes`() {
         JniLlvmBackend().initialize()
@@ -184,6 +220,9 @@ class JniBackendEndToEndIntegrationTest {
         assertTrue(objectCode.isNotEmpty())
     }
 
+    /**
+     * 构造返回常量的最小 CHIR package。
+     */
     private fun simpleReturnPackage(): ChirPackage {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
         val function = DefaultChirFunctionDeclaration(

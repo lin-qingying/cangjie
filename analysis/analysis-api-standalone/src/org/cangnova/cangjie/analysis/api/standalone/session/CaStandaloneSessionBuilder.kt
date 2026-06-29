@@ -33,6 +33,9 @@ import org.cangnova.cangjie.psi.CjFile
  * 3. 最终复用同一套 Analysis API / CFIR 服务完成分析
  */
 class CaStandaloneSessionBuilder(
+    /**
+     * 承载 standalone Analysis API 服务和模块图状态的 IntelliJ project。
+     */
     private val project: Project,
 ) {
     /**
@@ -72,7 +75,13 @@ class CaStandaloneSessionBuilder(
  * 真正的 session 创建与缓存仍由统一的 [CaSessionProvider] 负责。
  */
 class CaStandaloneAnalysisContext(
+    /**
+     * 当前 standalone 上下文绑定的 IntelliJ project。
+     */
     val project: Project,
+    /**
+     * 当前 standalone 上下文安装的项目结构。
+     */
     val projectStructure: CaStandaloneProjectStructure,
 ) {
     /**
@@ -224,12 +233,18 @@ class CaStandaloneAnalysisContext(
  * - 项目级注册 always-accessible lifetime token factory 与 standalone platform settings。
  */
 internal object CaStandaloneSessionServiceRegistrar : AnalysisApiSimpleServiceRegistrar() {
+    /**
+     * 注册 standalone 环境的全局分析权限选项。
+     */
     override fun registerApplicationServices(application: MockApplication) {
         application.apply {
             registerService(CaAnalysisPermissionOptions::class.java, CaStandaloneAnalysisPermissionOptions::class.java)
         }
     }
 
+    /**
+     * 注册 standalone project 级生命周期 token 和平台设置服务。
+     */
     @OptIn(CaPlatformInterface::class)
     override fun registerProjectServices(project: MockProject) {
         project.apply {

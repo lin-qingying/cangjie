@@ -27,13 +27,28 @@ import org.cangnova.cangjie.name.Name
  * 对齐 Kotlin 的 `KaFirTypeParameterSymbol` 落位，将类型参数叶子从巨型文件中拆出。
  */
 internal class CaCfirTypeParameterSymbol private constructor(
+    /**
+     * 类型参数对应的源码 PSI。
+     */
     override val backingPsi: org.cangnova.cangjie.psi.CjTypeParameter?,
+    /**
+     * 当前符号绑定的 CFIR Analysis session。
+     */
     override val analysisSession: CaCfirSession,
+    /**
+     * 延迟取得的底层 CFIR 类型参数符号。
+     */
     override val lazyCfirSymbol: Lazy<CfirTypeParameterSymbol>,
+    /**
+     * 类型参数在 owner 类型参数列表中的稳定下标。
+     */
     internal val stableParameterIndex: Int? = null,
 ) : CaTypeParameterSymbol,
     CaNamedSymbol,
     CaCfirCjBasedSymbol<org.cangnova.cangjie.psi.CjTypeParameter, CfirTypeParameterSymbol> {
+    /**
+     * 类型参数底层 CFIR 符号。
+     */
     override val cfirSymbol: CfirTypeParameterSymbol
         get() = super<CaCfirCjBasedSymbol>.cfirSymbol
 
@@ -50,33 +65,63 @@ internal class CaCfirTypeParameterSymbol private constructor(
         stableParameterIndex = stableParameterIndex,
     )
 
+    /**
+     * 类型参数所在的 use-site 模块。
+     */
     override val containingModule: CaModule
         get() = analysisSession.useSiteModule
 
+    /**
+     * 类型参数对应的 PSI。
+     */
     override val psi
         get() = withValidityAssertion { backingPsiOrFindCurrentPsi { findPsi() } }
 
+    /**
+     * 类型参数公开注解列表。
+     */
     override val annotations: CaAnnotationList
         get() = withValidityAssertion { psiOrSymbolAnnotationList() }
 
+    /**
+     * 类型参数名称。
+     */
     override val name: Name
         get() = withValidityAssertion { backingPsi?.nameAsSafeName ?: cfirSymbol.name }
 
+    /**
+     * 类型参数上界类型列表。
+     */
     override val upperBounds: List<CaType>
         get() = withValidityAssertion { cfirSymbol.resolvedBounds.map(builder.typeBuilder::buildType) }
 
+    /**
+     * 类型参数可见性固定为 local。
+     */
     override val visibility: CaSymbolVisibility
         get() = withValidityAssertion { CaSymbolVisibility.LOCAL }
 
+    /**
+     * 类型参数不显式声明可见性。
+     */
     override val isVisibilityExplicit: Boolean
         get() = withValidityAssertion { false }
 
+    /**
+     * 类型参数 modality 固定为 final。
+     */
     override val modality: CaSymbolModality?
         get() = withValidityAssertion { CaSymbolModality.FINAL }
 
+    /**
+     * 类型参数不显式声明 modality。
+     */
     override val isModalityExplicit: Boolean
         get() = withValidityAssertion { false }
 
+    /**
+     * 类型参数在公开 API 中的位置。
+     */
     override val location: CaSymbolLocation
         get() = withValidityAssertion {
             when {
@@ -86,6 +131,9 @@ internal class CaCfirTypeParameterSymbol private constructor(
             }
         }
 
+    /**
+     * 创建基于 owner pointer 或源码 PSI 的类型参数 pointer。
+     */
     override fun createPointer(): CaSymbolPointer<CaAnnotatedSymbol> = withValidityAssertion {
         val owner = builder.buildSymbol(cfirSymbol.containingDeclarationSymbol)
         if (owner == null) {

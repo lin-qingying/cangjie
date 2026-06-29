@@ -28,7 +28,13 @@ import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiReference
 
+/**
+ * 表示 `CangJieReferenceProvidersService`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 open class CangJieReferenceProvidersService {
+    /**
+     * 提供 `getReferences` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     open fun getReferences(psiElement: PsiElement): Array<PsiReference> = PsiReference.EMPTY_ARRAY
 
     companion object {

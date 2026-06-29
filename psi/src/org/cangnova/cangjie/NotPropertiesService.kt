@@ -28,7 +28,13 @@ import com.intellij.openapi.components.serviceOrNull
 import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.name.FqNameUnsafe
 
+/**
+ * 定义 `NotPropertiesService` 接口，约束PSI 模块节点或服务需要暴露的结构能力。
+ */
 interface NotPropertiesService {
+    /**
+     * 提供 `getNotProperties` 操作，封装PSI 模块节点的访问、构造或判断逻辑。
+     */
     fun getNotProperties(element: PsiElement): Set<FqNameUnsafe>
 
     companion object {

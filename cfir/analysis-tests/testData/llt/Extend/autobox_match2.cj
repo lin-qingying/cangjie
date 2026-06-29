@@ -1,4 +1,4 @@
-
+// WITH_EXTRA_CHECKERS
 
 enum TimeUnit<T1, T2> {
     | Year(T1)

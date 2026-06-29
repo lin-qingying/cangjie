@@ -36,7 +36,13 @@ import com.intellij.psi.tree.IElementType
 import org.cangnova.cangjie.parsing.AbstractCangJieParsing.ParsingContext
 import org.jetbrains.annotations.NotNull
 
+/**
+ * 表示 `CangJieParser`，承载仓颉语法解析中的语法节点、索引桩或辅助模型。
+ */
 class CangJieParser(project: Project) : PsiParser {
+    /**
+     * 实现 `parse` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     @Deprecated("use Companion parse")
     override fun parse(root: IElementType, builder: PsiBuilder): ASTNode {
         error("use Companion parse")

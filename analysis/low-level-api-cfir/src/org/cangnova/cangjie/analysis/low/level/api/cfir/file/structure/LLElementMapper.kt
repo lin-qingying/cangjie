@@ -41,13 +41,26 @@ internal fun interface LLElementMapper : (CjElement) -> CfirElement?
  * The [declaration] must be fully analyzed up to the [CfirResolvePhase.BODY_RESOLVE].
  */
 internal class LLEagerElementMapper(declaration: CfirDeclaration) : LLElementMapper {
+    /**
+     * [declaration] 所属的低阶 CFIR 会话，用于按 PSI 和记录结果恢复真实 CFIR 元素。
+     */
     private val session = declaration.moduleData.session
 
+    /**
+     * 创建映射器时一次性收集到的 PSI-to-CFIR 映射。
+     *
+     * eager 映射器只用于已经完成 body resolve 的声明，因此可以直接遍历完整声明结构。
+     */
     private val mapping = CfirElementsRecorder.recordElementsFrom(
         cfirElement = declaration,
         recorder = FileStructureElement.recorderFor(declaration),
     )
 
+    /**
+     * 查找 [element] 在完整解析声明中对应的 CFIR 元素。
+     *
+     * 如果元素没有被结构记录器覆盖，或者不属于当前声明，则返回 `null`。
+     */
     override fun invoke(element: CjElement): CfirElement? {
         return CjToCfirMapping.getCfir(element, session, mapping)
     }
@@ -64,10 +77,29 @@ internal class LLEagerElementMapper(declaration: CfirDeclaration) : LLElementMap
  * @param session The session hosting the [declaration].
  */
 internal class LLPartialBodyElementMapper(
+    /**
+     * 需要按需进行部分 body 解析并建立映射的 CFIR 声明。
+     */
     private val declaration: CfirDeclaration,
+
+    /**
+     * [declaration] 对应的 PSI 声明，用于定位查询元素处于签名、默认参数值还是函数体语句中。
+     */
     private val psiDeclaration: CjDeclaration,
+
+    /**
+     * [psiDeclaration] 的块体表达式，作为部分解析语句范围的根。
+     */
     private val psiBlock: CjBlockExpression,
+
+    /**
+     * [psiBlock] 中按源码顺序排列的顶层语句。
+     */
     private val psiStatements: List<CjExpression>,
+
+    /**
+     * 承载 [declaration] 的可解析模块会话，用于触发部分解析和恢复映射结果。
+     */
     private val session: LLCfirResolvableModuleSession
 ) : LLElementMapper {
     init {
@@ -197,6 +229,12 @@ internal class LLPartialBodyElementMapper(
     private var bodyMappings: Map<CjElement, CfirElement> = emptyMap()
 
     // The body block cannot be cached on the element provider construction, as the body might be lazy at that point
+    /**
+     * 当前声明的 CFIR body 块。
+     *
+     * 构造映射器时不能缓存该值，因为声明在隐式类型阶段可能仍持有惰性 body；
+     * 每次访问都从声明读取，确保拿到部分解析或完整解析后的最新块。
+     */
     private val bodyBlock: CfirBlock
         get() = declaration.body ?: errorWithCfirSpecificEntries(
             "Partial body element provider supports only declarations with bodies",
@@ -204,8 +242,19 @@ internal class LLPartialBodyElementMapper(
             psi = psiDeclaration,
         )
 
+    /**
+     * 串行化 [cachedState] 与 [bodyMappings] 更新的锁。
+     *
+     * 部分 body 解析可以由多个查询并发触发，映射表只能按解析状态单调追加，因此写入阶段需要互斥。
+     */
     private val lock = Any()
 
+    /**
+     * 返回 [psiElement] 对应的 CFIR 元素，并在需要时触发部分 body 解析。
+     *
+     * 签名元素直接使用 [signatureMappings]；默认参数值和 body 内元素会先判断已有部分解析状态，
+     * 若当前状态尚未覆盖目标位置，则按语句上界执行 [performBodyAnalysis] 后同步新增映射。
+     */
     override fun invoke(psiElement: CjElement): CfirElement? {
         val container = try {
             findContainer(psiElement, psiDeclaration, psiBlock, psiStatements)
@@ -255,6 +304,12 @@ internal class LLPartialBodyElementMapper(
         return CjToCfirMapping.getCfir(psiElement, session, bodyMappings)
     }
 
+    /**
+     * 将声明当前的部分 body 解析结果同步到 [bodyMappings]。
+     *
+     * 该方法只追加新解析出的签名 body 部分和 body 语句映射；如果声明已经被完整解析且没有部分状态，
+     * 则一次性记录完整 body，保证后续查询不再依赖部分解析快照。
+     */
     private fun processBodyAnalysisResult(): Map<CjElement, CfirElement> {
         val existingBodyMappings = this.bodyMappings
         val newState = declaration.partialBodyAnalysisState
@@ -316,10 +371,21 @@ internal class LLPartialBodyElementMapper(
         return existingBodyMappings
     }
 
+    /**
+     * 注册签名中需要 body resolve 才能得到的 PSI-to-CFIR 映射。
+     *
+     * 当前这类结构主要是默认参数值；后续若签名中新增需要 body 阶段解析的结构，应统一从这里扩展。
+     */
     private fun registerSignatureBodyParts(newState: LLPartialBodyAnalysisState?, consumer: MutableMap<CjElement, CfirElement>) {
         registerDefaultParameterValues(newState, consumer)
     }
 
+    /**
+     * 将默认参数值的 CFIR 子树写入 [consumer]。
+     *
+     * 优先使用 [newState] 中的分析快照，因为部分解析可能已经生成了新的默认值 CFIR；
+     * 如果没有快照且声明是函数，则从声明当前参数列表中记录已有默认值。
+     */
     private fun registerDefaultParameterValues(newState: LLPartialBodyAnalysisState?, consumer: MutableMap<CjElement, CfirElement>) {
         val snapshot = newState?.analysisStateSnapshot
         if (snapshot != null) {

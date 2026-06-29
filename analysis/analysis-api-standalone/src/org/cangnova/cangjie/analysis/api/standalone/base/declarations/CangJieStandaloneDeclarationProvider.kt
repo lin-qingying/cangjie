@@ -35,11 +35,24 @@ import org.cangnova.cangjie.utils.isCangJieFileType
  * 工厂从当前平台模块图收集作用域内源码文件，并为 low-level session 提供 source declaration provider。
  */
 class CangJieStandaloneDeclarationProviderFactory(
+    /**
+     * 提供 PSI、模块结构和 decompiled binary index 的 standalone project。
+     */
     private val project: Project,
 ) : CangJieDeclarationProviderFactory {
+    /**
+     * 当前 project 的 standalone 源文件收集器。
+     */
     private val fileCollector = CangJieStandaloneSourceFileCollector(project)
+
+    /**
+     * 用于从 `.cjo` binary virtual file 恢复 decompiled PSI 文件的 PSI 管理器。
+     */
     private val psiManager: PsiManager = PsiManager.getInstance(project)
 
+    /**
+     * 为指定搜索作用域创建 declaration provider。
+     */
     override fun createDeclarationProvider(scope: GlobalSearchScope, contextualModule: CaModule?): CangJieDeclarationProvider {
         val providers = when (contextualModule) {
             is CaLibraryModule -> createLibraryDeclarationProviders(contextualModule, scope)
@@ -77,6 +90,9 @@ class CangJieStandaloneDeclarationProviderFactory(
  * Standalone 平台的声明 provider 合并器。
  */
 class CangJieStandaloneDeclarationProviderMerger : CangJieDeclarationProviderMerger {
+    /**
+     * 将多个 declaration provider 合并为组合 provider。
+     */
     override fun merge(providers: List<CangJieDeclarationProvider>): CangJieDeclarationProvider {
         return CangJieCompositeDeclarationProvider.create(providers)
     }
@@ -88,14 +104,26 @@ class CangJieStandaloneDeclarationProviderMerger : CangJieDeclarationProviderMer
  * 当前仓颉 standalone 平台没有独立注解索引，空解析器表示“不提供额外索引事实”。
  */
 class CangJieStandaloneAnnotationsResolverFactory : CangJieAnnotationsResolverFactory {
+    /**
+     * 返回 standalone 平台当前使用的空注解索引解析器。
+     */
     override fun createAnnotationResolver(searchScope: GlobalSearchScope): CangJieAnnotationsResolver {
         return CangJieStandaloneEmptyAnnotationsResolver
     }
 }
 
+/**
+ * 不提供额外注解索引事实的 standalone 注解解析器。
+ */
 private object CangJieStandaloneEmptyAnnotationsResolver : CangJieAnnotationsResolver {
+    /**
+     * 当前实现不按注解 class id 反查声明。
+     */
     override fun declarationsByAnnotation(annotationClassId: ClassId): Set<CjAnnotated> = emptySet()
 
+    /**
+     * 当前实现不记录声明上的注解 class id 集合。
+     */
     override fun annotationsOnDeclaration(declaration: CjAnnotated): Set<ClassId> = emptySet()
 }
 
@@ -103,12 +131,25 @@ private object CangJieStandaloneEmptyAnnotationsResolver : CangJieAnnotationsRes
  * 从当前平台模块图收集作用域内仓颉源码文件。
  */
 internal class CangJieStandaloneSourceFileCollector(
+    /**
+     * 提供 project structure 和 PSI 管理器的 standalone project。
+     */
     private val project: Project,
 ) {
+    /**
+     * 从虚拟文件恢复 PSI 文件的管理器。
+     */
     private val psiManager: PsiManager = PsiManager.getInstance(project)
+
+    /**
+     * 当前 project 的模块结构 provider。
+     */
     private val moduleProvider: CaModuleProvider
         get() = CaModuleProvider.getInstance(project)
 
+    /**
+     * 从当前模块图全部 source files 中收集位于 [scope] 内的仓颉文件。
+     */
     fun collect(scope: GlobalSearchScope): List<CjFile> {
         return collectFromRoots(moduleProvider.allSourceFiles, scope)
     }
@@ -127,6 +168,9 @@ internal class CangJieStandaloneSourceFileCollector(
         }.distinctBy { file -> file.virtualFile ?: file }
     }
 
+    /**
+     * 从单个 source root 收集仓颉文件。
+     */
     private fun collectFromSourceRoot(
         sourceRoot: PsiFileSystemItem,
         scope: GlobalSearchScope,
@@ -139,6 +183,9 @@ internal class CangJieStandaloneSourceFileCollector(
         }
     }
 
+    /**
+     * 递归遍历目录并收集位于搜索作用域内的仓颉文件。
+     */
     private fun collectFromDirectory(
         directory: PsiDirectory,
         scope: GlobalSearchScope,
@@ -158,6 +205,9 @@ internal class CangJieStandaloneSourceFileCollector(
         })
     }
 
+    /**
+     * 如果文件没有虚拟文件或虚拟文件位于作用域内，则加入目标列表。
+     */
     private fun addIfInScope(
         file: CjFile,
         scope: GlobalSearchScope,

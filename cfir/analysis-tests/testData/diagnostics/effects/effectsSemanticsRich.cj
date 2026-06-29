@@ -1,4 +1,5 @@
 // LANGUAGE: +EffectHandlers
+// WITH_EXTRA_CHECKERS
 // FILE: effect_defs.cj
 package stdx.effect
 
@@ -47,7 +48,7 @@ func resumeThrowingType(): Int64 {
 
 func mismatchHandleBlock(): Unit {
     try {
-        <!UNUSED_EXPRESSION!>1<!>
+        1
     } handle (cmd: GoodCommand) <!MISMATCHING_HANDLE_BLOCK!>{
         false
     }<!>

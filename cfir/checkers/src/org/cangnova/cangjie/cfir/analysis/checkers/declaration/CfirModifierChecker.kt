@@ -163,8 +163,9 @@ object CfirModifierChecker : CfirBasicDeclarationChecker() {
     ) {
         val callable = declaration as? CfirCallableDeclaration ?: return
 
-        if (callable.status.isRedef && !callable.status.isStatic) {
-            val redefModifier = modifiers.modifierByToken(CjTokens.REDEF_KEYWORD) ?: return
+        val redefModifier = modifiers.modifierByToken(CjTokens.REDEF_KEYWORD)
+        val staticModifier = modifiers.modifierByToken(CjTokens.STATIC_KEYWORD)
+        if (redefModifier != null && staticModifier == null) {
             reporter.reportOn(
                 redefModifier.source,
                 CfirErrors.REDEF_INSTANCE_ERROR,
@@ -172,7 +173,7 @@ object CfirModifierChecker : CfirBasicDeclarationChecker() {
             )
             if (callable.hasInheritedNonStaticSignatureIgnoringStatic()) {
                 reporter.reportOn(
-                    redefModifier.source,
+                    callable.source,
                     CfirErrors.NOTHING_TO_OVERRIDE,
                 )
             }

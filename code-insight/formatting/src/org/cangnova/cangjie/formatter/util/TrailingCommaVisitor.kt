@@ -32,7 +32,13 @@ import com.intellij.openapi.progress.ProgressIndicatorProvider
 import com.intellij.psi.PsiElement
 
 
+/**
+ * 遍历仓颉 PSI 并对适用元素执行尾逗号处理。
+ */
 abstract class TrailingCommaVisitor : CjTreeVisitorUnit() {
+    /**
+     * 访问仓颉元素时检测是否适用尾逗号规则。
+     */
     override fun visitCjElement(element: CjElement) {
         super.visitCjElement(element)
         // because CjFunctionLiteral contains CjParameterList
@@ -41,12 +47,18 @@ abstract class TrailingCommaVisitor : CjTreeVisitorUnit() {
         }
     }
 
+    /**
+     * 访问任意 PSI 元素时检查取消并根据配置决定是否递归。
+     */
     override fun visitElement(element: PsiElement) {
         ProgressIndicatorProvider.checkCanceled()
 
         if (recursively) super.visitElement(element)
     }
 
+    /**
+     * 构造上下文并在规则适用时调用处理钩子。
+     */
     private fun runProcessIfApplicable(element: CjElement) {
         val context = TrailingCommaContext.create(element)
         if (context.state != TrailingCommaState.NOT_APPLICABLE) {
@@ -55,7 +67,13 @@ abstract class TrailingCommaVisitor : CjTreeVisitorUnit() {
     }
 
 
+    /**
+     * 子类实现的尾逗号处理逻辑。
+     */
     protected abstract fun process(trailingCommaContext: TrailingCommaContext)
 
+    /**
+     * 是否递归访问子元素。
+     */
     protected open val recursively: Boolean = true
 }

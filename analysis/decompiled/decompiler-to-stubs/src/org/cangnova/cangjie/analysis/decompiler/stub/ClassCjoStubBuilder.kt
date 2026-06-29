@@ -77,6 +77,12 @@ internal fun createExtendStub(
     }
 }
 
+/**
+ * 为 class 声明构建反编译 PSI stub。
+ *
+ * 该入口保留类全限定名、ClassId、类型参数、显式父类型和成员 body，
+ * 嵌套类型通过上下文记录 owner，避免错误注册为顶层 ClassId。
+ */
 internal fun createClassStub(
     parent: StubElement<*>,
     declaration: CfirClass,
@@ -98,6 +104,11 @@ internal fun createClassStub(
     createTypeStatementBodyAndMembers(stub, CjStubElementTypes.CLASS_BODY, declaration.declarations, context.child(declaration.name))
 }
 
+/**
+ * 为 interface 声明构建反编译 PSI stub。
+ *
+ * 接口使用独立的 interface body stub，并复用类型参数、父类型和成员递归构建规则。
+ */
 internal fun createInterfaceStub(
     parent: StubElement<*>,
     declaration: CfirInterface,
@@ -119,6 +130,11 @@ internal fun createInterfaceStub(
     createTypeStatementBodyAndMembers(stub, CjStubElementTypes.INTERFACE_BODY, declaration.declarations, context.child(declaration.name))
 }
 
+/**
+ * 为 struct 声明构建反编译 PSI stub。
+ *
+ * struct 与 class 共享 class body 形状，但使用 `STRUCT` element type 和 struct stub 实现。
+ */
 internal fun createStructStub(
     parent: StubElement<*>,
     declaration: CfirStruct,
@@ -140,6 +156,11 @@ internal fun createStructStub(
     createTypeStatementBodyAndMembers(stub, CjStubElementTypes.CLASS_BODY, declaration.declarations, context.child(declaration.name))
 }
 
+/**
+ * 为 enum 声明构建反编译 PSI stub。
+ *
+ * enum body 中既可以包含枚举构造项，也可以包含普通成员声明，二者统一通过 declaration dispatcher 递归构建。
+ */
 internal fun createEnumStub(
     parent: StubElement<*>,
     declaration: CfirEnum,
@@ -162,6 +183,11 @@ internal fun createEnumStub(
     createTypeStatementBodyAndMembers(stub, CjStubElementTypes.ENUM_BODY, declaration.declarations, context.child(declaration.name))
 }
 
+/**
+ * 为 type alias 声明构建反编译 PSI stub。
+ *
+ * 该 stub 保留 alias 名称、ClassId、类型参数以及展开后的目标类型引用。
+ */
 internal fun createTypeAliasStub(
     parent: StubElement<*>,
     declaration: CfirTypeAlias,
@@ -197,6 +223,9 @@ private fun createTypeStatementBodyStub(
     }
 }
 
+/**
+ * 创建 type statement 的 body stub，并递归构建其成员声明。
+ */
 private fun createTypeStatementBodyAndMembers(
     parent: StubElement<*>,
     bodyElementType: IStubElementType<*, *>,
@@ -209,6 +238,11 @@ private fun createTypeStatementBodyAndMembers(
     }
 }
 
+/**
+ * 去除序列化时隐含的根父类型。
+ *
+ * 单独继承 `Any` 或 `Object` 时，反编译文本应与源码 PSI 一样省略该 supertype 列表。
+ */
 private fun List<CfirTypeRef>.withoutImplicitRootSupertype(): List<CfirTypeRef> {
     val singleClassId = singleOrNull()?.classIdOrNull() ?: return this
     return if (singleClassId == StdlibClassIds.Any || singleClassId == StdlibClassIds.Object) {
@@ -218,10 +252,16 @@ private fun List<CfirTypeRef>.withoutImplicitRootSupertype(): List<CfirTypeRef> 
     }
 }
 
+/**
+ * 从 CFIR 类型引用中提取 classifier class id。
+ */
 private fun CfirTypeRef.classIdOrNull(): ClassId? {
     return ((this as? CfirResolvedTypeRef)?.coneType as? ConeClassifierType)?.lookupTag?.classId
 }
 
+/**
+ * 提取适合作为 extend 名称的短类型名；无法解析 classifier 时回退到可读类型文本。
+ */
 private fun CfirTypeRef.shortTypeNameOrRendered(): String {
     return classIdOrNull()?.shortClassName?.asString()
         ?: normalizeRenderedTypeText(renderDecompiledTypeRef(this))
@@ -229,12 +269,18 @@ private fun CfirTypeRef.shortTypeNameOrRendered(): String {
         ?: "Extend"
 }
 
+/**
+ * 将父类型引用转换为 class stub 中保存的 super name 引用数组。
+ */
 private fun List<CfirTypeRef>.toSuperNameRefs(): Array<StringRef> {
     return toSuperTypeTexts()
         .map(StringRef::fromString)
         .toTypedArray()
 }
 
+/**
+ * 将父类型引用转换为反编译文本和索引都能使用的父类型文本列表。
+ */
 private fun List<CfirTypeRef>.toSuperTypeTexts(): List<String> {
     return mapNotNull { typeRef ->
         typeRef.classIdOrNull()?.shortClassName?.asString()
@@ -242,6 +288,9 @@ private fun List<CfirTypeRef>.toSuperTypeTexts(): List<String> {
     }
 }
 
+/**
+ * 为类型声明创建完整的 supertype list stub。
+ */
 private fun createSuperTypeListStub(parent: StubElement<*>, superTypeRefs: List<CfirTypeRef>) {
     if (superTypeRefs.isEmpty()) return
     val superTypeListStub = CangJiePlaceHolderStubImpl<CjSuperTypeList>(parent, CjStubElementTypes.SUPER_TYPE_LIST)
@@ -252,12 +301,18 @@ private fun createSuperTypeListStub(parent: StubElement<*>, superTypeRefs: List<
     }
 }
 
+/**
+ * 创建只包含单个名称引用的简单类型引用 stub。
+ */
 private fun createSimpleTypeReferenceStub(parent: StubElement<*>, name: String) {
     val typeReferenceStub = CangJiePlaceHolderStubImpl<CjTypeReference>(parent, CjStubElementTypes.TYPE_REFERENCE)
     val userTypeStub = CangJieUserTypeStubImpl(typeReferenceStub)
     CangJieNameReferenceExpressionStubImpl(userTypeStub, StringRef.fromString(name), true)
 }
 
+/**
+ * 根据已经渲染好的父类型文本创建简单 supertype list stub。
+ */
 private fun createSimpleSuperTypeListStub(parent: StubElement<*>, superTypeTexts: List<String>) {
     if (superTypeTexts.isEmpty()) return
     val superTypeListStub = CangJiePlaceHolderStubImpl<CjSuperTypeList>(parent, CjStubElementTypes.SUPER_TYPE_LIST)

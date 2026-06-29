@@ -1,10 +1,10 @@
-
+// WITH_EXTRA_CHECKERS
 
 class A {
     public static var ctx: Int64 = 1
 
     static init() {
-        let l2 = {=> ctx = 10}
+        let <!UNUSED_VARIABLE!>l2<!> = {=> ctx = 10}
     }
 }
 

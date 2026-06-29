@@ -15,7 +15,13 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 
+/**
+ * 代码生成前 CHIR 校验开关的测试。
+ */
 class CodegenPreValidationTest {
+    /**
+     * 验证非法 CHIR 会在 lowering 前被代码生成器拒绝。
+     */
     @Test
     fun `generator rejects invalid CHIR before lowering`() {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
@@ -68,4 +74,3 @@ class CodegenPreValidationTest {
         assertTrue(error.message?.contains("INVALID_CFG") == true, error.message)
     }
 }
-

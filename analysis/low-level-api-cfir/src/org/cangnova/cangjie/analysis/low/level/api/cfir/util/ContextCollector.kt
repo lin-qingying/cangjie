@@ -74,6 +74,9 @@ import org.cangnova.cangjie.utils.exceptions.withCfirEntry
  * `CfirTowerDataContext` 收集逻辑，不再伪造不存在的 smart-cast 快照。
  */
 object ContextCollector {
+    /**
+     * 可收集的上下文位置类型。
+     */
     enum class ContextKind {
         /** 声明或表达式本身所在的位置上下文。 */
         SELF,
@@ -82,16 +85,37 @@ object ContextCollector {
         BODY,
     }
 
+    /**
+     * 收集到的上下文快照。
+     */
     class Context(
+        /**
+         * 指定 PSI 位置可见的 tower data context。
+         */
         val towerDataContext: CfirTowerDataContext,
     )
 
+    /**
+     * PSI 过滤器对候选元素的处理决定。
+     */
     enum class FilterResponse {
+        /**
+         * 继续向内访问该 PSI 对应的 CFIR 子树。
+         */
         CONTINUE,
+        /**
+         * 接受当前上下文并停止继续收集。
+         */
         STOP,
+        /**
+         * 跳过当前 PSI 对应的上下文记录。
+         */
         SKIP,
     }
 
+    /**
+     * 为 [targetElement] 在 [file] 中收集最合适的上下文。
+     */
     fun process(
         resolutionFacade: LLResolutionFacade,
         file: CfirFile,
@@ -127,6 +151,9 @@ object ContextCollector {
         return null
     }
 
+    /**
+     * 如果 [targetElement] 支持局部 body 分析，则先触发对应 CFIR 构建。
+     */
     private fun partiallyResolveTargetElementIfPossible(
         resolutionFacade: LLResolutionFacade,
         designation: CfirDesignation?,
@@ -141,6 +168,9 @@ object ContextCollector {
         return resolutionFacade.getOrBuildCfirFor(resolvedElement) != null
     }
 
+    /**
+     * 计算 [targetElement] 所在非局部声明的 designation。
+     */
     fun computeDesignation(file: CfirFile, targetElement: PsiElement): CfirDesignation? {
         val contextCjDeclaration = targetElement.getNonLocalContainingOrThisDeclaration(::isValidTarget)
         if (contextCjDeclaration != null) {
@@ -150,10 +180,16 @@ object ContextCollector {
         return null
     }
 
+    /**
+     * 判断 PSI 声明是否可作为上下文收集的非局部目标。
+     */
     private fun isValidTarget(declaration: CjDeclaration): Boolean {
         return declaration.isAutonomousElement
     }
 
+    /**
+     * 使用 [filter] 遍历 [file] 并返回可按 PSI 查询上下文的 provider。
+     */
     fun process(
         file: CfirFile,
         designation: CfirDesignation?,
@@ -171,40 +207,91 @@ object ContextCollector {
         return ContextProvider { element, kind -> visitor[element, kind] }
     }
 
+    /**
+     * 按 PSI 与上下文类型查询收集结果的 provider。
+     */
     fun interface ContextProvider {
+        /**
+         * 返回 [element] 在 [kind] 位置的上下文快照。
+         */
         operator fun get(element: PsiElement, kind: ContextKind): Context?
     }
 }
 
+/**
+ * 将访问路径限制到给定 [designation] 的拦截器。
+ */
 private class DesignationInterceptor(val designation: CfirDesignation) : () -> CfirElement? {
+    /**
+     * designation 路径和目标组成的顺序迭代器。
+     */
     private val targetIterator = iterator {
         yieldAll(designation.path)
         yield(designation.target)
     }
 
+    /**
+     * 返回下一个应访问的 designation 元素；没有剩余元素时返回 `null`。
+     */
     override fun invoke(): CfirElement? = if (targetIterator.hasNext()) targetIterator.next() else null
 }
 
+/**
+ * 实际遍历 CFIR 树并记录 tower context 的 visitor。
+ */
 private class ContextCollectorVisitor(
+    /**
+     * 文件会话与 scope session holder。
+     */
     private val bodyHolder: SessionAndScopeSessionHolder,
+    /**
+     * 是否收集 BODY 上下文。
+     */
     private val shouldCollectBodyContext: Boolean,
+    /**
+     * 是否允许访问过程中触发 BODY_RESOLVE。
+     */
     private val shouldTriggerBodyAnalysis: Boolean,
+    /**
+     * PSI 候选过滤器。
+     */
     private val filter: (PsiElement) -> FilterResponse,
+    /**
+     * 可选 designation 路径拦截器。
+     */
     private val designationPathInterceptor: DesignationInterceptor?,
 ) : CfirDefaultVisitorVoid() {
+    /**
+     * 上下文结果表的键。
+     */
     private data class ContextKey(val element: PsiElement, val kind: ContextKind)
 
+    /**
+     * 已收集的上下文结果。
+     */
     private val result = HashMap<ContextKey, Context>()
+    /**
+     * 当前访问路径中的 CFIR 父元素栈。
+     */
     private val parents = ArrayList<CfirElement>()
 
+    /**
+     * 当前遍历使用的 body resolve context。
+     */
     private val context = BodyResolveContext(
         returnTypeCalculator = ReturnTypeCalculatorForFullBodyResolve.Default,
         dataFlowAnalyzerContext = CfirDataFlowAnalyzerContext(),
         isContextCollectorMode = true,
     )
 
+    /**
+     * 标记 visitor 是否仍需要继续收集。
+     */
     private var isActive = true
 
+    /**
+     * 从 [file] 根开始收集上下文。
+     */
     fun collect(file: CfirFile) {
         context.withFile(file) {
             if (designationPathInterceptor != null) {
@@ -220,10 +307,16 @@ private class ContextCollectorVisitor(
         }
     }
 
+    /**
+     * 查询 [element] 与 [kind] 对应的上下文快照。
+     */
     operator fun get(element: PsiElement, kind: ContextKind): Context? {
         return result[ContextKey(element, kind)]
     }
 
+    /**
+     * 返回 [declaration] 所属会话对应的 holder。
+     */
     private fun getSessionHolder(declaration: CfirDeclaration): SessionAndScopeSessionHolder {
         return when (val session = declaration.moduleData.session) {
             bodyHolder.session -> bodyHolder
@@ -231,6 +324,9 @@ private class ContextCollectorVisitor(
         }
     }
 
+    /**
+     * 默认元素访问：记录 SELF/BODY 上下文并继续访问子元素。
+     */
     override fun visitElement(element: CfirElement) {
         dumpContext(element, ContextKind.SELF)
 
@@ -240,6 +336,9 @@ private class ContextCollectorVisitor(
         }
     }
 
+    /**
+     * 访问文件并收集包、导入、注解和文件 body 上下文。
+     */
     override fun visitFile(file: CfirFile) = withProcessor(file) {
         dumpContext(file, ContextKind.SELF)
 
@@ -255,6 +354,9 @@ private class ContextCollectorVisitor(
         }
     }
 
+    /**
+     * 访问 code fragment 并在其专用上下文中收集 block 上下文。
+     */
     override fun visitCodeFragment(codeFragment: CfirCodeFragment) = withProcessor(codeFragment) {
         dumpContext(codeFragment, ContextKind.SELF)
 
@@ -269,22 +371,37 @@ private class ContextCollectorVisitor(
         }
     }
 
+    /**
+     * 访问 class 声明。
+     */
     override fun visitClass(klass: CfirClass) {
         handleClassLikeDeclaration(klass)
     }
 
+    /**
+     * 访问 interface 声明。
+     */
     override fun visitInterface(`interface`: CfirInterface) {
         handleClassLikeDeclaration(`interface`)
     }
 
+    /**
+     * 访问 struct 声明。
+     */
     override fun visitStruct(struct: CfirStruct) {
         handleClassLikeDeclaration(struct)
     }
 
+    /**
+     * 访问 enum 声明。
+     */
     override fun visitEnum(enum: CfirEnum) {
         handleClassLikeDeclaration(enum)
     }
 
+    /**
+     * 处理 class-like 声明的头部和 body 上下文。
+     */
     private fun handleClassLikeDeclaration(declaration: CfirClassLikeDeclaration) = withProcessor(declaration) {
         dumpContext(declaration, ContextKind.SELF)
         processAnnotations(declaration)
@@ -307,6 +424,9 @@ private class ContextCollectorVisitor(
         }
     }
 
+    /**
+     * 访问 extend 声明并收集其扩展类型、父类型和成员上下文。
+     */
     override fun visitExtend(extend: CfirExtend) = withProcessor(extend) {
         dumpContext(extend, ContextKind.SELF)
         processAnnotations(extend)
@@ -324,6 +444,9 @@ private class ContextCollectorVisitor(
         }
     }
 
+    /**
+     * 访问 typealias 声明并收集展开类型上下文。
+     */
     override fun visitTypeAlias(typeAlias: CfirTypeAlias) = withProcessor(typeAlias) {
         dumpContext(typeAlias, ContextKind.SELF)
         processAnnotations(typeAlias)
@@ -336,6 +459,9 @@ private class ContextCollectorVisitor(
         dumpContext(typeAlias, ContextKind.BODY)
     }
 
+    /**
+     * 访问构造器并收集参数、body 和构造器局部作用域上下文。
+     */
     override fun visitConstructor(constructor: CfirConstructor) = withProcessor(constructor) {
         dumpContext(constructor, ContextKind.SELF)
         processAnnotations(constructor)
@@ -357,22 +483,37 @@ private class ContextCollectorVisitor(
         }
     }
 
+    /**
+     * 访问具名函数。
+     */
     override fun visitNamedFunction(namedFunction: CfirNamedFunction) {
         visitFunctionLike(namedFunction)
     }
 
+    /**
+     * 访问 main 函数。
+     */
     override fun visitMainFunction(mainFunction: CfirMainFunction) {
         visitFunctionLike(mainFunction)
     }
 
+    /**
+     * 访问宏声明。
+     */
     override fun visitMacroDeclaration(macroDeclaration: CfirMacroDeclaration) {
         visitFunctionLike(macroDeclaration)
     }
 
+    /**
+     * 访问 finalizer 声明。
+     */
     override fun visitFinalizer(finalizer: CfirFinalizer) {
         visitFunctionLike(finalizer)
     }
 
+    /**
+     * 访问属性访问器并收集参数和 body 上下文。
+     */
     override fun visitPropertyAccessor(propertyAccessor: CfirPropertyAccessor) = withProcessor(propertyAccessor) {
         dumpContext(propertyAccessor, ContextKind.SELF)
         processAnnotations(propertyAccessor)
@@ -387,6 +528,9 @@ private class ContextCollectorVisitor(
         }
     }
 
+    /**
+     * 处理函数类声明的通用上下文收集流程。
+     */
     private fun visitFunctionLike(function: CfirFunction) = withProcessor(function) {
         dumpContext(function, ContextKind.SELF)
         processAnnotations(function)
@@ -410,6 +554,9 @@ private class ContextCollectorVisitor(
         }
     }
 
+    /**
+     * 访问属性并收集 getter/setter 与属性 body 上下文。
+     */
     override fun visitProperty(property: CfirProperty) = withProcessor(property) {
         dumpContext(property, ContextKind.SELF)
         processAnnotations(property)
@@ -428,10 +575,16 @@ private class ContextCollectorVisitor(
         }
     }
 
+    /**
+     * 访问字段变量。
+     */
     override fun visitFieldVariable(fieldVariable: CfirFieldVariable) {
         visitVariableLike(fieldVariable, fieldVariable.symbol, fieldVariable.initializer)
     }
 
+    /**
+     * 访问 pattern 变量并收集 pattern binding 上下文。
+     */
     override fun visitPatternVariable(patternVariable: CfirPatternVariable) {
         withProcessor(patternVariable) {
             dumpContext(patternVariable, ContextKind.SELF)
@@ -448,10 +601,16 @@ private class ContextCollectorVisitor(
         }
     }
 
+    /**
+     * 访问 pattern binding 变量。
+     */
     override fun visitPatternBindingVariable(patternBindingVariable: CfirPatternBindingVariable) {
         visitVariableLike(patternBindingVariable, patternBindingVariable.symbol, patternBindingVariable.initializer)
     }
 
+    /**
+     * 处理局部变量、字段变量和 pattern binding 变量的通用上下文收集流程。
+     */
     private fun visitVariableLike(
         variable: CfirDeclaration,
         symbol: CfirCallableSymbol<*>,
@@ -476,6 +635,9 @@ private class ContextCollectorVisitor(
         }
     }
 
+    /**
+     * 访问值参数并收集默认值上下文。
+     */
     override fun visitValueParameter(valueParameter: CfirValueParameter) = withProcessor(valueParameter) {
         dumpContext(valueParameter, ContextKind.SELF)
         processAnnotations(valueParameter)
@@ -489,6 +651,9 @@ private class ContextCollectorVisitor(
         }
     }
 
+    /**
+     * 访问匿名函数并收集参数与 body 上下文。
+     */
     override fun visitAnonymousFunction(anonymousFunction: CfirAnonymousFunction) = withProcessor(anonymousFunction) {
         dumpContext(anonymousFunction, ContextKind.SELF)
         processAnnotations(anonymousFunction)
@@ -507,10 +672,16 @@ private class ContextCollectorVisitor(
         }
     }
 
+    /**
+     * 访问 block 表达式。
+     */
     override fun visitBlock(block: org.cangnova.cangjie.cfir.expressions.CfirBlock) {
         doVisitBlock(block)
     }
 
+    /**
+     * 收集 [block] 的 SELF/BODY 上下文。
+     */
     private fun doVisitBlock(
         block: org.cangnova.cangjie.cfir.expressions.CfirBlock,
         isolateBlock: Boolean = true,
@@ -528,11 +699,17 @@ private class ContextCollectorVisitor(
         }
     }
 
+    /**
+     * 处理 block 子元素并在结束时记录 BODY 上下文。
+     */
     private fun Processor.processBlockBody(block: org.cangnova.cangjie.cfir.expressions.CfirBlock) {
         processChildren(block, checkIsActive = false)
         dumpContext(block, ContextKind.BODY)
     }
 
+    /**
+     * 为 [element] 当前 [kind] 位置保存 tower context 快照。
+     */
     private fun dumpContext(element: CfirElement, kind: ContextKind, hasBodyContext: Boolean = true) {
         ProgressManager.checkCanceled()
 
@@ -558,6 +735,9 @@ private class ContextCollectorVisitor(
         }
     }
 
+    /**
+     * 处理声明 [body]，并在存在局部 body 快照时只回放已分析语句。
+     */
     private fun Processor.processDeclarationBody(
         declaration: CfirDeclaration,
         body: org.cangnova.cangjie.cfir.expressions.CfirBlock?,
@@ -582,6 +762,9 @@ private class ContextCollectorVisitor(
         process(body)
     }
 
+    /**
+     * 在声明容器上下文中处理 [declaration] 的注解。
+     */
     private fun Processor.processAnnotations(declaration: CfirDeclaration) {
         @OptIn(PrivateForInline::class)
         context.withContainer(declaration) {
@@ -591,15 +774,27 @@ private class ContextCollectorVisitor(
         }
     }
 
+    /**
+     * 创建 [parent] 父栈上下文下的 [Processor] 并执行 [block]。
+     */
     private inline fun withProcessor(parent: CfirElement, block: Processor.() -> Unit) {
         withParent(parent) {
             Processor(this).block()
         }
     }
 
+    /**
+     * 受控处理 CFIR 元素的辅助对象。
+     */
     private inner class Processor(private val delegate: CfirVisitorVoid) {
+        /**
+         * 已由显式 process 调用处理过、后续子遍历应跳过的元素集合。
+         */
         private val elementsToSkip = HashSet<CfirElement>()
 
+        /**
+         * 处理单个可空 [element]。
+         */
         fun process(element: CfirElement?) {
             if (isActive && element != null) {
                 element.accept(delegate)
@@ -607,6 +802,9 @@ private class ContextCollectorVisitor(
             }
         }
 
+        /**
+         * 顺序处理 [elements]，收集停止后立即退出。
+         */
         fun processList(elements: Collection<CfirElement>) {
             for (element in elements) {
                 if (!isActive) {
@@ -617,6 +815,9 @@ private class ContextCollectorVisitor(
             }
         }
 
+        /**
+         * 处理 [element] 的子元素，并跳过已经显式处理过的元素。
+         */
         fun processChildren(element: CfirElement, checkIsActive: Boolean = true) {
             if (checkIsActive && !isActive) {
                 return
@@ -627,11 +828,26 @@ private class ContextCollectorVisitor(
         }
     }
 
+    /**
+     * 跳过指定元素集合的 visitor 包装器。
+     */
     private inner class FilteringVisitor(
+        /**
+         * 真正执行访问的委托 visitor。
+         */
         private val delegate: CfirVisitorVoid,
+        /**
+         * 不再重复访问的元素集合。
+         */
         private val elementsToSkip: Set<CfirElement>,
+        /**
+         * 是否在每次访问前检查 collector 是否仍处于活动状态。
+         */
         private val checkIsActive: Boolean,
     ) : CfirVisitorVoid() {
+        /**
+         * 访问单个 [element]，必要时转交给 [delegate]。
+         */
         override fun visitElement(element: CfirElement) {
             if (checkIsActive && !isActive) {
                 return
@@ -643,6 +859,9 @@ private class ContextCollectorVisitor(
         }
     }
 
+    /**
+     * 如有需要，触发 [CfirDeclaration] 的 BODY_RESOLVE。
+     */
     private fun CfirDeclaration.performBodyAnalysis() {
         if (!shouldTriggerBodyAnalysis && partialBodyAnalysisState != null) {
             return
@@ -651,6 +870,9 @@ private class ContextCollectorVisitor(
         lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE)
     }
 
+    /**
+     * 按 designation 拦截器访问下一个目标，否则执行 [block]。
+     */
     private fun withInterceptor(block: () -> Unit) {
         val target = designationPathInterceptor?.invoke()
         if (target != null) {
@@ -660,6 +882,9 @@ private class ContextCollectorVisitor(
         }
     }
 
+    /**
+     * 在 [parent] 入栈期间执行 [block]。
+     */
     private inline fun withParent(parent: CfirElement, block: () -> Unit) {
         parents.add(parent)
         try {
@@ -669,6 +894,9 @@ private class ContextCollectorVisitor(
         }
     }
 
+    /**
+     * 仅在 collector 仍处于活动状态时执行 [block]。
+     */
     private inline fun onActive(block: () -> Unit) {
         if (isActive) {
             block()
@@ -699,6 +927,9 @@ private inline fun BodyResolveContext.withTypeParametersCompat(
     }
 }
 
+/**
+ * 在 class-like body 上下文中执行 [block]。
+ */
 private inline fun BodyResolveContext.withClassLikeBodyCompat(
     declaration: CfirClassLikeDeclaration,
     holder: SessionAndScopeSessionHolder,
@@ -711,6 +942,9 @@ private inline fun BodyResolveContext.withClassLikeBodyCompat(
     }
 }
 
+/**
+ * 在构造器头部上下文中执行 [block]。
+ */
 private inline fun BodyResolveContext.withConstructorCompat(
     constructor: CfirConstructor,
     holder: SessionAndScopeSessionHolder,
@@ -729,6 +963,9 @@ private inline fun BodyResolveContext.withConstructorCompat(
     }
 }
 
+/**
+ * 在构造器 body 局部作用域中执行 [block]。
+ */
 private inline fun BodyResolveContext.forConstructorBodyCompat(
     constructor: CfirConstructor,
     block: () -> Unit,
@@ -742,6 +979,9 @@ private inline fun BodyResolveContext.forConstructorBodyCompat(
     }
 }
 
+/**
+ * 在函数声明头部上下文中执行 [block]。
+ */
 private inline fun BodyResolveContext.withFunctionDeclarationCompat(
     function: CfirFunction,
     block: () -> Unit,
@@ -758,6 +998,9 @@ private inline fun BodyResolveContext.withFunctionDeclarationCompat(
     }
 }
 
+/**
+ * 在函数 body 局部作用域中执行 [block]。
+ */
 private inline fun BodyResolveContext.forFunctionBodyCompat(
     function: CfirFunction,
     block: () -> Unit,
@@ -771,6 +1014,9 @@ private inline fun BodyResolveContext.forFunctionBodyCompat(
     }
 }
 
+/**
+ * 在属性声明上下文中执行 [block]。
+ */
 private inline fun BodyResolveContext.withPropertyCompat(
     property: CfirProperty,
     block: () -> Unit,
@@ -780,6 +1026,9 @@ private inline fun BodyResolveContext.withPropertyCompat(
     }
 }
 
+/**
+ * 在属性访问器局部作用域中执行 [block]。
+ */
 private inline fun BodyResolveContext.withPropertyAccessorCompat(
     propertyAccessor: CfirPropertyAccessor,
     holder: SessionAndScopeSessionHolder,
@@ -797,6 +1046,9 @@ private inline fun BodyResolveContext.withPropertyAccessorCompat(
     }
 }
 
+/**
+ * 在值参数上下文中执行 [block]。
+ */
 private inline fun BodyResolveContext.withValueParameterCompat(
     valueParameter: CfirValueParameter,
     block: () -> Unit,
@@ -805,6 +1057,9 @@ private inline fun BodyResolveContext.withValueParameterCompat(
     withContainer(valueParameter, block)
 }
 
+/**
+ * 在匿名函数上下文中执行 [block]。
+ */
 private inline fun BodyResolveContext.withAnonymousFunctionCompat(
     anonymousFunction: org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction,
     block: () -> Unit,
@@ -822,6 +1077,9 @@ private inline fun BodyResolveContext.withAnonymousFunctionCompat(
     }
 }
 
+/**
+ * 在普通 block 局部作用域中执行 [block]。
+ */
 private inline fun BodyResolveContext.withBlockScopeCompat(block: () -> Unit) {
     withTowerDataCleanup {
         addLocalScope(CfirLocalScope(file.moduleData.session))
@@ -829,10 +1087,16 @@ private inline fun BodyResolveContext.withBlockScopeCompat(block: () -> Unit) {
     }
 }
 
+/**
+ * 在局部变量 body 上下文中执行 [block]。
+ */
 private inline fun BodyResolveContext.withLocalVariableBodyCompat(block: () -> Unit) {
     withTowerDataCleanup(block)
 }
 
+/**
+ * 在 code fragment 上下文中执行 [block]。
+ */
 private inline fun BodyResolveContext.withCodeFragmentCompat(
     codeFragment: CfirCodeFragment,
     holder: SessionAndScopeSessionHolder,

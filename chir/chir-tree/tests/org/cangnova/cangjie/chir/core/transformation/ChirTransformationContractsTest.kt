@@ -19,14 +19,29 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
+/**
+ * 校验 CHIR 变换基础设施的公共契约。
+ *
+ * 该测试覆盖遍历器、重写会话回滚和表达式分发器，确保变换框架在修改 CHIR 图时保持可观察且可恢复。
+ */
 class ChirTransformationContractsTest {
 
+    /**
+     * 校验 CHIR 遍历器会访问函数块中的全部表达式。
+     *
+     * 该用例使用计数器观察表达式访问次数，固定包、模块、函数、块到表达式的遍历路径。
+     */
     @Test
     fun `walker visits all expressions`() {
         val pkg = samplePackage()
         var expressionCount = 0
 
         val walker = object : ChirWalker() {
+            /**
+             * 记录遍历器访问到的表达式数量。
+             *
+             * 该回调只统计访问次数，不改变被遍历的 CHIR 图。
+             */
             override fun onExpression(expression: org.cangnova.cangjie.chir.core.expression.ChirExpression) {
                 expressionCount += 1
             }
@@ -36,6 +51,11 @@ class ChirTransformationContractsTest {
         assertEquals(1, expressionCount)
     }
 
+    /**
+     * 校验重写会话在生成非法图时会回滚到原始快照。
+     *
+     * 该用例故意把入口块分支改到缺失目标，确认被拒绝的变更不会污染会话内的 CHIR 包。
+     */
     @Test
     fun `rewrite session rolls back invalid graph mutation`() {
         val pkg = samplePackage()
@@ -72,6 +92,11 @@ class ChirTransformationContractsTest {
         assertEquals(pkg, unchanged)
     }
 
+    /**
+     * 校验表达式分发器会按表达式领域调用对应处理器。
+     *
+     * 该用例以二元表达式为样本，固定 dispatcher 到 `handleBinary` 的路由契约。
+     */
     @Test
     fun `dispatcher routes binary expression by domain`() {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
@@ -94,6 +119,11 @@ class ChirTransformationContractsTest {
         assertEquals("binary", tag)
     }
 
+    /**
+     * 构造包含一个二元表达式和两个基本块的变换样本包。
+     *
+     * 样本用于遍历、重写和分发测试共享同一份 CHIR 结构，避免各用例隐含不同图形假设。
+     */
     private fun samplePackage(): ChirPackage {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
         val expression = ChirBinaryExpression(

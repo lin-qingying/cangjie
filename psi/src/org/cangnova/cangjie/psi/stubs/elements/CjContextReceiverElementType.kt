@@ -31,19 +31,31 @@ import com.intellij.psi.stubs.StubElement
 import com.intellij.psi.stubs.StubInputStream
 import com.intellij.psi.stubs.StubOutputStream
 
+/**
+ * 表示 `CjContextReceiverElementType`，承载PSI Stub中的语法节点、索引桩或辅助模型。
+ */
 class CjContextReceiverElementType(debugName: String) : CjStubElementType<CangJieContextReceiverStub, CjContextReceiver>(
     debugName,
     CjContextReceiver::class.java,
     CangJieContextReceiverStub::class.java,
 ) {
+    /**
+     * 实现 `createStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createStub(
         element: CjContextReceiver,
         parentStub: StubElement<*>?,
     ): CangJieContextReceiverStub = CangJieContextReceiverStubImpl(parentStub, this, element.labelName())
 
+    /**
+     * 实现 `serialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun serialize(stub: CangJieContextReceiverStub, dataStream: StubOutputStream) =
         dataStream.writeName(stub.getLabel())
 
+    /**
+     * 实现 `deserialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>?) =
         CangJieContextReceiverStubImpl(parentStub, this, dataStream.readNameString())
 }

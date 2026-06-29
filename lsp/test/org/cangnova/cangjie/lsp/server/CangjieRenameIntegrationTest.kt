@@ -15,9 +15,20 @@ import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
+/**
+ * 校验 LSP rename 请求与 headless 重构能力的集成行为。
+ *
+ * 该测试覆盖跨文件 workspace edit、prepareRename 范围和无头环境扩展注册。
+ */
 class CangjieRenameIntegrationTest : AbstractLspIntegrationTest() {
+    /**
+     * 禁用默认会话，测试使用自定义多文件工作区夹具。
+     */
     override val autoCreateDefaultSession: Boolean = false
 
+    /**
+     * 校验 rename 会同时修改声明和引用所在文件。
+     */
     @Test
     fun `rename returns declaration and reference workspace edits`() {
         renameWorkspace().use { fixture ->
@@ -61,6 +72,9 @@ class CangjieRenameIntegrationTest : AbstractLspIntegrationTest() {
         }
     }
 
+    /**
+     * 校验 headless LSP 容器加载仓颉 rename 输入校验器。
+     */
     @Test
     fun `headless environment loads rename input validator`() {
         renameWorkspace().use { fixture ->
@@ -75,6 +89,9 @@ class CangjieRenameIntegrationTest : AbstractLspIntegrationTest() {
         }
     }
 
+    /**
+     * 构造重命名测试使用的声明文件和引用文件工作区。
+     */
     private fun renameWorkspace(): LspWorkspaceFixture {
         return LspWorkspaceFixtureBuilder()
             .source(
@@ -101,6 +118,9 @@ class CangjieRenameIntegrationTest : AbstractLspIntegrationTest() {
             .build()
     }
 
+    /**
+     * 计算夹具文件中指定 token 的 LSP 位置。
+     */
     private fun positionOf(
         fixture: LspWorkspaceFixture,
         relativePath: String,

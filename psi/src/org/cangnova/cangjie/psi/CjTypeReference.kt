@@ -45,14 +45,23 @@ class CjTypeReference :
 
     constructor(stub: CangJiePlaceHolderStub<CjTypeReference>) : super(stub, CjStubElementTypes.TYPE_REFERENCE)
 
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitTypeReference(this, data)
     }
 
 
+    /**
+     * 保存 `isPlaceholder`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val isPlaceholder: Boolean
         get() = ((typeElement as? CjUserType)?.referenceExpression as? CjNameReferenceExpression)?.isPlaceholder == true
 
+    /**
+     * 保存 `typeElement`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val typeElement: CjTypeElement?
         get() {
             return CjStubbedPsiUtil.getStubOrPsiChild(this, CjTokenSets.TYPE_ELEMENT_TYPES, CjTypeElement.ARRAY_FACTORY)
@@ -64,22 +73,37 @@ class CjTypeReference :
                 }*/
         }
 
+    /**
+     * 提供 `hasParentheses` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun hasParentheses(): Boolean {
         return findChildByType<PsiElement>(CjTokens.LPAR) != null && findChildByType<PsiElement>(CjTokens.RPAR) != null
     }
 
+    /**
+     * 提供 `nameForReceiverLabel` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun nameForReceiverLabel() = (typeElement as? CjUserType)?.referencedName
 
+    /**
+     * 提供 `getTypeText` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun getTypeText(): String {
         return stub?.let { getTypeText(typeElement) } ?: text
     }
 
+    /**
+     * 执行 `getQualifiedName` 内部辅助逻辑，支撑仓颉 PSI节点的结构解析与访问。
+     */
     private fun getQualifiedName(userType: CjUserType): String? {
         val referencedName = userType.referencedName?.let(::renderIdentifier) ?: return null
         val qualifier = userType.qualifier ?: return referencedName
         return getQualifiedName(qualifier) + "." + referencedName
     }
 
+    /**
+     * 执行 `getTypeText` 内部辅助逻辑，支撑仓颉 PSI节点的结构解析与访问。
+     */
     private fun getTypeText(typeElement: CjTypeElement?): String? {
         return when (typeElement) {
             is CjUserType -> buildString {

@@ -26,22 +26,49 @@ package org.cangnova.cangjie.psi
 
 import com.intellij.psi.PsiElement
 
+/**
+ * 定义 `CjDeclarationWithBody` 接口，约束仓颉 PSI节点或服务需要暴露的结构能力。
+ */
 interface CjDeclarationWithBody : CjDeclaration {
 
+    /**
+     * 保存 `bodyExpression`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val bodyExpression: CjExpression?
 
+    /**
+     * 保存 `equalsToken`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val equalsToken: PsiElement?
 
+    /**
+     * 实现 `getName` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getName(): String?
 
+    /**
+     * 提供 `hasBlockBody` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun hasBlockBody(): Boolean
 
+    /**
+     * 提供 `hasBody` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun hasBody(): Boolean
 
+    /**
+     * 提供 `hasDeclaredReturnType` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun hasDeclaredReturnType(): Boolean
 
+    /**
+     * 保存 `valueParameters`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val valueParameters: List<CjParameter>
 
+    /**
+     * 保存 `bodyBlockExpression`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val bodyBlockExpression: CjBlockExpression?
         get() {
             val bodyExpression = bodyExpression

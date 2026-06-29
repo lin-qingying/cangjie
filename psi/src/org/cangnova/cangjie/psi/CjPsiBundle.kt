@@ -29,20 +29,35 @@ import org.jetbrains.annotations.Nls
 import org.jetbrains.annotations.NonNls
 import org.jetbrains.annotations.PropertyKey
 
+/**
+ * 保存 `CJ_PSI_BUNDLE`，供仓颉 PSI流程读取节点结构或语义信息。
+ */
 @NonNls
 const val CJ_PSI_BUNDLE = "messages.CjPsiBundle"
 
+/**
+ * 提供 `CjPsiBundle` 单例，集中承载仓颉 PSI的共享状态、工厂或工具行为。
+ */
 object CjPsiBundle : AbstractCangJieBundle(CJ_PSI_BUNDLE) {
+    /**
+     * 提供 `message` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     @Nls
     @JvmStatic
     fun message(@NonNls @PropertyKey(resourceBundle = CJ_PSI_BUNDLE) key: String, vararg params: Any): String =
         getMessage(key, *params)
 
+    /**
+     * 提供 `htmlMessage` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     @Nls
     @JvmStatic
     fun htmlMessage(@NonNls @PropertyKey(resourceBundle = CJ_PSI_BUNDLE) key: String, vararg params: Any): String =
         getMessage(key, *params).withHtml()
 
+    /**
+     * 提供 `lazyMessage` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     @Nls
     @JvmStatic
     fun lazyMessage(@PropertyKey(resourceBundle = CJ_PSI_BUNDLE) key: String, vararg params: Any): () -> String =

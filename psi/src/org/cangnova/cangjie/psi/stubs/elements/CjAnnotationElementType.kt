@@ -35,12 +35,18 @@ import org.cangnova.cangjie.psi.stubs.impl.CangJieAnnotationStubImpl
 import org.jetbrains.annotations.NonNls
 import java.io.IOException
 
+/**
+ * 表示 `CjAnnotationElementType`，承载PSI Stub中的语法节点、索引桩或辅助模型。
+ */
 class CjAnnotationElementType(debugName: String) :
     CjStubElementType<CangJieAnnotationStub, CjAnnotation>(
         debugName,
         CjAnnotation::class.java,
         CangJieAnnotationStub::class.java,
     ) {
+    /**
+     * 实现 `createStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createStub(
         psi: CjAnnotation,
         parentStub: StubElement<out PsiElement?>,
@@ -52,6 +58,9 @@ class CjAnnotationElementType(debugName: String) :
         return CangJieAnnotationStubImpl(parentStub, StringRef.fromString(resultName), hasValueArguments)
     }
 
+    /**
+     * 实现 `serialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     @Throws(IOException::class)
     override fun serialize(stub: CangJieAnnotationStub, dataStream: StubOutputStream) {
         dataStream.writeName(stub.getShortName())
@@ -69,6 +78,9 @@ class CjAnnotationElementType(debugName: String) :
         }
     }
 
+    /**
+     * 实现 `deserialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     @Throws(IOException::class)
     override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>): CangJieAnnotationStub {
         val text = dataStream.readName()

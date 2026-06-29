@@ -32,7 +32,13 @@ import com.intellij.psi.PsiErrorElement
 import org.cangnova.cangjie.messages.CangJieParsingBundle
 import org.cangnova.cangjie.psi.*
 
+/**
+ * 表示 `CangJieAnnotator`，承载PSI 模块中的语法节点、索引桩或辅助模型。
+ */
 class CangJieAnnotator : Annotator {
+    /**
+     * 实现 `annotate` 的PSI 模块协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun annotate(element: PsiElement, holder: AnnotationHolder) {
         if (element is PsiErrorElement) {
             val errorDescription = element.errorDescription

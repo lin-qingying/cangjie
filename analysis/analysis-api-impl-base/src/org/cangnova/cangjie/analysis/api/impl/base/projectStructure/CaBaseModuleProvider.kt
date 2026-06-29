@@ -15,8 +15,14 @@ import org.cangnova.cangjie.analysis.api.projectStructure.CaModuleProvider
  */
 @CaImplementationDetail
 class CaBaseModuleProvider(
+    /**
+     * 用于访问平台 project-structure provider 的 project。
+     */
     private val project: Project,
 ) : CaModuleProvider {
+    /**
+     * 委托平台 project-structure provider 解析 PSI 所属模块。
+     */
     override fun getModule(element: PsiElement, useSiteModule: CaModule?): CaModule =
         CangJieProjectStructureProvider.getModule(project, element, useSiteModule)
 }

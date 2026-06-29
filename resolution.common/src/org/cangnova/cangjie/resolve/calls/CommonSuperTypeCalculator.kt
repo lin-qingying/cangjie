@@ -219,6 +219,7 @@ object CommonSuperTypeCalculator {
         return null
     }
 
+    // TODO: 实现完整 Meet（GLB），对齐官方 DualMode 设计，替换参数位的 intersectTypes 近似
     /**
      * 函数类型 Join 特化。
      *
@@ -228,7 +229,6 @@ object CommonSuperTypeCalculator {
      *
      * @return 函数类型 Join 结果，或 null 表示不适用
      */
-    // TODO: 实现完整 Meet（GLB），对齐官方 DualMode 设计，替换参数位的 intersectTypes 近似
     context(c: TypeSystemCommonSuperTypesContext)
     private fun joinFunctionTypes(
         types: List<RigidTypeMarker>,

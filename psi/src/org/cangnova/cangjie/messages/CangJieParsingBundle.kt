@@ -28,20 +28,35 @@ import org.jetbrains.annotations.Nls
 import org.jetbrains.annotations.NonNls
 import org.jetbrains.annotations.PropertyKey
 
+/**
+ * 保存 `PARSING_BUNDLE`，供PSI 模块流程读取节点结构或语义信息。
+ */
 @NonNls
 const val PARSING_BUNDLE = "messages.CangJieParsingBundle"
 
+/**
+ * 提供 `CangJieParsingBundle` 单例，集中承载PSI 模块的共享状态、工厂或工具行为。
+ */
 object CangJieParsingBundle : AbstractCangJieBundle(PARSING_BUNDLE) {
+    /**
+     * 提供 `message` 操作，封装PSI 模块节点的访问、构造或判断逻辑。
+     */
     @Nls
     @JvmStatic
     fun message(@NonNls @PropertyKey(resourceBundle = PARSING_BUNDLE) key: String, vararg params: Any): String =
         getMessage(key, *params)
 
+    /**
+     * 提供 `htmlMessage` 操作，封装PSI 模块节点的访问、构造或判断逻辑。
+     */
     @Nls
     @JvmStatic
     fun htmlMessage(@NonNls @PropertyKey(resourceBundle = PARSING_BUNDLE) key: String, vararg params: Any): String =
         getMessage(key, *params).withHtml()
 
+    /**
+     * 提供 `lazyMessage` 操作，封装PSI 模块节点的访问、构造或判断逻辑。
+     */
     @Nls
     @JvmStatic
     fun lazyMessage(@PropertyKey(resourceBundle = PARSING_BUNDLE) key: String, vararg params: Any): () -> String =

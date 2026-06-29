@@ -9,9 +9,15 @@ import org.cangnova.cangjie.llvm.api.installLlvmBindings
  * 提供 Kotlin 侧到本地 LLVM C API 的静态桥接方法。
  */
 object LlvmNative {
+    /**
+     * 当前进程是否已成功加载 LLVM JNI 原生库。
+     */
     @JvmField
     val isAvailable: Boolean
 
+    /**
+     * 原生库加载来源或失败诊断信息。
+     */
     @JvmField
     val loadDiagnostics: String
 

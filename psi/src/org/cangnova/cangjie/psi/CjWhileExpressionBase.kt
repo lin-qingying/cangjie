@@ -27,7 +27,13 @@ package org.cangnova.cangjie.psi
 import org.cangnova.cangjie.psi.CjNodeTypes
 import com.intellij.lang.ASTNode
 
+/**
+ * 表示 `CjWhileExpressionBase`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 abstract class CjWhileExpressionBase(node: ASTNode) : CjLoopExpression(node) {
+    /**
+     * 保存 `condition`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     @get: IfNotParsed
     val condition: CjExpression?
         get() = findExpressionUnder(CjNodeTypes.CONDITION)

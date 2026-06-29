@@ -20,12 +20,30 @@ import java.nio.file.Files
  */
 class LlvmNativeIntegrationTest {
     companion object {
+        /**
+         * 启用 JNI 集成测试的环境变量。
+         */
         private const val ENABLE_FLAG = "CANGJIE_LLVM_JNI_INTEGRATION"
+        /**
+         * 指定单个 JNI 动态库路径的环境变量。
+         */
         private const val LIB_PATH_FLAG = "CANGJIE_LLVM_JNI_LIBRARY_PATH"
+        /**
+         * 指定 native home 的环境变量。
+         */
         private const val NATIVE_HOME_FLAG = "CANGJIE_NATIVE_HOME"
+        /**
+         * 启用 JNI 集成测试的系统属性。
+         */
         private const val ENABLE_PROP = "cangjie.llvm.jni.integration"
+        /**
+         * 指定 native home 的系统属性。
+         */
         private const val NATIVE_HOME_PROP = "cangjie.native.home"
 
+        /**
+         * 根据环境变量或系统属性配置 JNI 原生库加载路径。
+         */
         @JvmStatic
         @BeforeAll
         fun setupNativePath() {
@@ -50,6 +68,9 @@ class LlvmNativeIntegrationTest {
         }
     }
 
+    /**
+     * 验证公开 LLVM API 绑定可以构造函数体并生成 bitcode。
+     */
     @Test
     fun `can build function body through public llvm api binding`() {
         assertTrue(LlvmNative.isAvailable, LlvmNative.loadDiagnostics)
@@ -79,6 +100,9 @@ class LlvmNativeIntegrationTest {
         }
     }
 
+    /**
+     * 验证公开目标机器 API 可以生成目标文件和目标文件字节。
+     */
     @Test
     fun `can emit object file through public target machine binding`() {
         assertTrue(LlvmNative.isAvailable, LlvmNative.loadDiagnostics)
@@ -111,6 +135,9 @@ class LlvmNativeIntegrationTest {
         }
     }
 
+    /**
+     * 验证公开 pass manager API 可以运行模块 pass pipeline。
+     */
     @Test
     fun `can run module pass pipeline through public llvm api binding`() {
         assertTrue(LlvmNative.isAvailable, LlvmNative.loadDiagnostics)
@@ -137,6 +164,9 @@ class LlvmNativeIntegrationTest {
         }
     }
 
+    /**
+     * 验证直接 JNI 桥接可以创建并校验模块。
+     */
     @Test
     fun `can create and verify module through JNI bridge`() {
         assertTrue(LlvmNative.isAvailable, LlvmNative.loadDiagnostics)
@@ -171,6 +201,9 @@ class LlvmNativeIntegrationTest {
         }
     }
 
+    /**
+     * 验证直接 JNI 桥接可以生成 LLVM IR 文件。
+     */
     @Test
     fun `can generate llvm ir file through JNI bridge`() {
         assertTrue(LlvmNative.isAvailable, LlvmNative.loadDiagnostics)
@@ -204,6 +237,9 @@ class LlvmNativeIntegrationTest {
         }
     }
 
+    /**
+     * 验证直接 JNI 桥接可以解析 LLVM assembly 并生成 bitcode。
+     */
     @Test
     fun `can parse llvm assembly and emit bitcode`() {
         assertTrue(LlvmNative.isAvailable, LlvmNative.loadDiagnostics)

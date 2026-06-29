@@ -6,7 +6,7 @@ open class C {
 }
 
 func Foo<U>(a: U) where U <: C {
-    var b = U.<!INVISIBLE_MEMBER!>a<!>
+    var b = <!INVALID_ACCESS_CONTROL!>U<!>.a
     return b
 }
 

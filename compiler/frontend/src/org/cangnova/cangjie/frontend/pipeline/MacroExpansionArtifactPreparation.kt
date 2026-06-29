@@ -18,10 +18,22 @@ import java.io.File
  * orchestrator 返回的中间 artifact 绕过 locator/resolver。
  */
 data class MacroExpansionArtifactPreparationResult(
+    /**
+     * resolver 验证通过后可供宏解析使用的定义列表。
+     */
     val definitions: List<MacroDefinitionEntry> = emptyList(),
+    /**
+     * artifact 定位、即时编译和解析过程中产生的结构化诊断。
+     */
     val diagnostics: List<MacroConstructionDiagnostic> = emptyList(),
+    /**
+     * 最终定位到并参与 resolver 校验的宏 artifact 包。
+     */
     val locatedArtifacts: List<MacroArtifactPackage> = emptyList(),
 ) {
+    /**
+     * 当前准备结果是否包含错误级诊断。
+     */
     val hasErrors: Boolean
         get() = diagnostics.any { it.severity == MacroConstructionDiagnostic.Severity.ERROR }
 }
@@ -77,6 +89,9 @@ fun prepareMacroArtifactDefinitionsForExpansion(
     )
 }
 
+/**
+ * 将 artifact 级诊断复制到触发该包 demand 的宏表面上。
+ */
 private fun attachDemandSurfaceOrigins(
     diagnostics: List<MacroConstructionDiagnostic>,
     demandSurfacesByPackage: Map<FqName, List<MacroSurface>>,
@@ -94,6 +109,9 @@ private fun attachDemandSurfaceOrigins(
     }
 }
 
+/**
+ * 对缺失 artifact 的宏源码包发起按需编译。
+ */
 private fun compileRequiredMacroSourcePackages(
     configuration: CompilerConfiguration,
     preResults: List<PreMacroRawBuildResult>,
@@ -138,6 +156,9 @@ private fun compileRequiredMacroSourcePackages(
     return result.copy(diagnostics = missingSourceRootDiagnostics + result.diagnostics)
 }
 
+/**
+ * 计算本次宏 artifact 定位应搜索的根目录列表。
+ */
 private fun macroArtifactSearchRoots(configuration: CompilerConfiguration): List<String> =
     (configuration.classpathRoots.map { File(it.path).absolutePath } +
         configuration.macroSourcePackageCompilationRequests.flatMap { request ->
@@ -147,6 +168,9 @@ private fun macroArtifactSearchRoots(configuration: CompilerConfiguration): List
         .filter(String::isNotEmpty)
         .distinct()
 
+/**
+ * 合并显式配置和同项目发现得到的宏源码包编译请求。
+ */
 private fun macroSourcePackageCompilationRequestsForExpansion(
     configuration: CompilerConfiguration,
     preResults: List<PreMacroRawBuildResult>,
@@ -202,12 +226,18 @@ private fun discoverSameProjectMacroSourcePackageCompilationRequests(
     }
 }
 
+/**
+ * 判断当前文件是否位于指定根目录之内或等于根目录本身。
+ */
 private fun File.isUnderOrEqual(root: File): Boolean {
     val thisPath = canonicalFile.toPath()
     val rootPath = root.canonicalFile.toPath()
     return thisPath == rootPath || thisPath.startsWith(rootPath)
 }
 
+/**
+ * 构造关闭按需编译时缺失宏 artifact 的诊断。
+ */
 private fun macroArtifactMissingWithAutoCompilationDisabled(packageFqName: FqName): MacroConstructionDiagnostic =
     MacroConstructionDiagnostic(
         severity = MacroConstructionDiagnostic.Severity.ERROR,
@@ -217,6 +247,9 @@ private fun macroArtifactMissingWithAutoCompilationDisabled(packageFqName: FqNam
         diagnosticOrigin = MacroConstructionDiagnostic.Origin.ORCHESTRATION,
     )
 
+/**
+ * 构造找不到同项目宏源码根时的诊断。
+ */
 private fun macroSourceRootMissingDiagnostic(packageFqName: FqName): MacroConstructionDiagnostic =
     MacroConstructionDiagnostic(
         severity = MacroConstructionDiagnostic.Severity.ERROR,

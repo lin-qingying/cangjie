@@ -29,13 +29,22 @@ import org.cangnova.cangjie.psi.stubs.CangJiePackageDirectiveStub
 import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 import com.intellij.psi.stubs.StubElement
 
+/**
+ * 表示 `CangJiePackageDirectiveStubImpl`，承载PSI Stub中的语法节点、索引桩或辅助模型。
+ */
 class CangJiePackageDirectiveStubImpl(
     parent: StubElement<*>,
+    /**
+     * 暴露 `isMacroPackage`，实现PSI Stub节点对上层接口的属性契约。
+     */
     override val isMacroPackage: Boolean,
 ) :
 
     CangJieStubBaseImpl<CjPackageDirective>(parent, CjStubElementTypes.PACKAGE_DIRECTIVE),
     CangJiePackageDirectiveStub {
+    /**
+     * 实现 `copyInto` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun copyInto(newParent: StubElement<*>?): CangJiePackageDirectiveStubImpl = CangJiePackageDirectiveStubImpl(
         parent = requireNotNull(newParent),
         isMacroPackage = isMacroPackage,

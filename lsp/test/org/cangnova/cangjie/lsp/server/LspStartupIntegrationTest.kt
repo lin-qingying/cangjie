@@ -20,8 +20,18 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
+/**
+ * 校验 LSP 服务端启动、初始化和能力协商的基础协议行为。
+ *
+ * 该测试通过真实内存连接覆盖 initialize、文档生命周期和高级能力降级。
+ */
 class LspStartupIntegrationTest : AbstractLspIntegrationTest() {
 
+    /**
+     * 校验服务端可以完成初始化并返回核心能力。
+     *
+     * 该用例固定 serverInfo、文本同步、定义和悬停能力作为默认启动成功的基本信号。
+     */
     @Test
     fun `server should initialize and exchange capabilities successfully`() {
         val result = session.initializeResult()
@@ -35,6 +45,11 @@ class LspStartupIntegrationTest : AbstractLspIntegrationTest() {
         assertNotNull(caps.hoverProvider, "Hover provider should be supported by default")
     }
 
+    /**
+     * 校验服务端能处理多个文档的打开和变更事件。
+     *
+     * 该用例确认会话在连续文档通知后仍保持可用，不因文档存储更新而崩溃。
+     */
     @Test
     fun `server should handle multiple documents without crashing`() {
         val uri1 = "file:///workspace/a.cj"
@@ -47,6 +62,11 @@ class LspStartupIntegrationTest : AbstractLspIntegrationTest() {
         assertNotNull(session.initializeResult())
     }
 
+    /**
+     * 校验客户端声明高级能力时，服务端会隐藏尚未支持的 provider。
+     *
+     * 该用例同时确认核心能力保留，声明、类型定义、实现、选择范围和 pull diagnostics 等高级能力不被误报。
+     */
     @Test
     fun `server should negotiate away unsupported advanced capabilities`() {
         val connection = LspIntegrationTestConnection.create(defaultServerOptions())

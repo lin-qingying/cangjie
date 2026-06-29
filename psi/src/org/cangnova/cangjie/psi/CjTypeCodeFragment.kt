@@ -28,11 +28,17 @@ import org.cangnova.cangjie.psi.CjNodeTypes
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
 
+/**
+ * 表示 `CjTypeCodeFragment`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjTypeCodeFragment(
     project: Project,
     name: String,
     text: CharSequence,
     context: PsiElement?,
 ) : CjCodeFragment(project, name, text, null, CjNodeTypes.TYPE_CODE_FRAGMENT, context) {
+    /**
+     * 实现 `getContentElement` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getContentElement() = findChildByClass(CjTypeReference::class.java)
 }

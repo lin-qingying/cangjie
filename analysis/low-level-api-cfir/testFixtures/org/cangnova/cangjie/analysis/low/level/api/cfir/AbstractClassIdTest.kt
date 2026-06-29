@@ -18,6 +18,9 @@ import org.cangnova.cangjie.test.services.assertions
  * 回写成 inline block comment，source file 本身就是 golden。
  */
 abstract class AbstractClassIdTest : AbstractAnalysisApiBasedTest() {
+    /**
+     * 遍历主文件 PSI，把每个 class-like 的 ClassId 渲染回测试输出。
+     */
     override fun doTestByMainFile(mainFile: CjFile, mainModule: CjTestModule, testServices: TestServices) {
         val text = buildString {
             mainFile.accept(object : PsiElementVisitor() {
@@ -47,6 +50,12 @@ abstract class AbstractClassIdTest : AbstractAnalysisApiBasedTest() {
     }
 }
 
+/**
+ * source 配置下的 ClassId golden 测试基类。
+ */
 abstract class AbstractSourceClassIdTest : AbstractClassIdTest() {
+    /**
+     * 使用源码 low-level CFIR 测试配置。
+     */
     override val configurator = analysisApiCfirSourceTestConfigurator(analyseInDependentSession = false)
 }

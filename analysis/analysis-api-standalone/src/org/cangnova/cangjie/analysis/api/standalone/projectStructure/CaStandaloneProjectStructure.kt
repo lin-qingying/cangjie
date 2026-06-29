@@ -45,6 +45,9 @@ import java.util.concurrent.atomic.AtomicLong
  * 缓存失效和内容范围语义。
  */
 class CaStandaloneProjectStructure(
+    /**
+     * standalone 上下文中完整、可达且已去重的模块图。
+     */
     override val allModules: List<CaModule>,
 ) : CangJieStaticProjectStructureProvider(), CaModuleProvider, CaModificationTracker, CaSessionInvalidationService, CaResolutionScopeProvider {
     /**
@@ -62,10 +65,29 @@ class CaStandaloneProjectStructure(
         distinctProjects.single()
     }
 
+    /**
+     * 整张 standalone 模块图的全局修改计数。
+     */
     private val globalModificationCount = AtomicLong(0)
+
+    /**
+     * 单模块粒度的修改计数表。
+     */
     private val moduleModificationCounts = ConcurrentHashMap<CaModule, AtomicLong>()
+
+    /**
+     * 复用基础 Analysis API 解析作用域实现的委托。
+     */
     private val resolutionScopeProvider = CaBaseResolutionScopeProvider()
+
+    /**
+     * standalone 模块图推导出的唯一目标平台。
+     */
     private val platform: TargetPlatform = inferStandaloneTargetPlatform(allModules)
+
+    /**
+     * 当 PSI 不属于任何内容 root 且没有 PSI 文件可挂载时使用的兜底模块。
+     */
     private val notUnderContentRootModuleWithoutPsiFile: CaNotUnderContentRootModule by lazy(LazyThreadSafetyMode.PUBLICATION) {
         CaStandaloneNotUnderContentRootModule(
             name = "unnamed-outside-content-root",
@@ -75,12 +97,20 @@ class CaStandaloneProjectStructure(
             targetPlatform = platform,
         )
     }
+
+    /**
+     * 当前平台下的 builtins 模块；模块图未显式提供时使用基础实现补齐。
+     */
     private val builtinsModule: CaBuiltinsModule by lazy(LazyThreadSafetyMode.PUBLICATION) {
         allModules
             .filterIsInstance<CaBuiltinsModule>()
             .firstOrNull { module -> module.targetPlatform == platform }
             ?: CaBuiltinsModuleImpl(platform, project)
     }
+
+    /**
+     * 从所有模块 root 构建的归属判定表，较深 root 与源码 root 拥有更高优先级。
+     */
     private val rootEntries = buildList {
         allModules.forEach { module ->
             when (module) {
@@ -96,20 +126,32 @@ class CaStandaloneProjectStructure(
         }
     }.sortedWith(compareByDescending<ModuleRootEntry> { it.rootDepth }.thenByDescending { it.kind.priority })
 
+    /**
+     * 当前 standalone 模块图暴露给 Analysis API 的全部源码文件系统项。
+     */
     override val allSourceFiles: List<PsiFileSystemItem> =
         rootEntries.map(ModuleRootEntry::root).distinct()
 
+    /**
+     * 当前模块图的不可变查询快照。
+     */
     override val snapshot: CaProjectStructureSnapshot =
         CaProjectStructureSnapshot(
             allModules = allModules,
             allResolvableModules = allModules.filter(CaModule::isResolvable),
             allSourceLikeModules = allModules.filterIsInstance<CaSourceModule>(),
-                allSourceFiles = allSourceFiles,
-            )
+            allSourceFiles = allSourceFiles,
+        )
 
+    /**
+     * 当前 standalone project structure 的全局修改计数。
+     */
     override val modificationCount: Long
         get() = globalModificationCount.get()
 
+    /**
+     * 根据 PSI 元素、use-site 偏好和模块 root 表解析元素所属模块。
+     */
     override fun getModule(element: PsiElement, useSiteModule: CaModule?): CaModule {
         val containingFile = element.containingFile ?: return notUnderContentRootModuleWithoutPsiFile
         resolveBuiltinsModule(containingFile)?.let { return it }
@@ -138,26 +180,44 @@ class CaStandaloneProjectStructure(
         )
     }
 
+    /**
+     * 返回直接 depends-on 当前模块的实现模块集合。
+     */
     override fun getImplementingModules(module: CaModule): List<CaModule> {
         return allModules.filter { module in it.directDependsOnDependencies }
     }
 
+    /**
+     * 返回 standalone 环境中不属于内容 root 的兜底模块。
+     */
     override fun getNotUnderContentRootModule(project: Project): CaNotUnderContentRootModule {
         return notUnderContentRootModuleWithoutPsiFile
     }
 
+    /**
+     * 返回指定模块的解析作用域。
+     */
     override fun getResolutionScope(module: CaModule): CaResolutionScope {
         return resolutionScopeProvider.getResolutionScope(module)
     }
 
+    /**
+     * 根据稳定模块名查询当前模块图中的模块。
+     */
     override fun getModuleByStableName(stableModuleName: String): CaModule? {
         return snapshot.getModuleByStableName(stableModuleName)
     }
 
+    /**
+     * 返回指定模块的修改计数；未单独失效过的模块回落到全局修改计数。
+     */
     override fun getModuleModificationCount(module: CaModule): Long {
         return moduleModificationCounts[module]?.get() ?: modificationCount
     }
 
+    /**
+     * 失效指定模块并同步通知 session invalidation service。
+     */
     override fun invalidate(modules: Set<CaModule>) {
         if (modules.isEmpty()) return
 
@@ -185,19 +245,40 @@ class CaStandaloneProjectStructure(
         return rootEntries.firstOrNull { entry -> entry.contains(fileSystemItem) }?.module
     }
 
+    /**
+     * 判断指定 PSI 文件是否属于当前平台的 builtins 内容作用域。
+     */
     private fun resolveBuiltinsModule(file: PsiFile): CaBuiltinsModule? {
         val virtualFile = file.virtualFile ?: return null
         return builtinsModule.takeIf { module -> virtualFile in module.contentScope }
     }
 
+    /**
+     * 单个模块 root 的归属判定记录。
+     */
     private data class ModuleRootEntry(
+        /**
+         * 模块暴露的 PSI root。
+         */
         val root: PsiFileSystemItem,
+        /**
+         * 该 root 所属模块。
+         */
         val module: CaModule,
+        /**
+         * root 类型，用于在多个 root 命中时排序。
+         */
         val kind: RootKind,
     ) {
+        /**
+         * root 路径长度，用于让更具体的 root 优先匹配。
+         */
         val rootDepth: Int
             get() = root.virtualFile?.path?.length ?: root.name.length
 
+        /**
+         * 判断目标 PSI 文件系统项是否位于该 root 覆盖范围内。
+         */
         fun contains(item: PsiFileSystemItem): Boolean {
             if (root == item) return true
 
@@ -207,11 +288,28 @@ class CaStandaloneProjectStructure(
         }
     }
 
+    /**
+     * 模块 root 的种类和优先级。
+     */
     private enum class RootKind(
+        /**
+         * 多个 root 同时命中时的排序优先级。
+         */
         val priority: Int,
     ) {
+        /**
+         * 二进制库 root，优先级最低。
+         */
         LIBRARY_BINARY(0),
+
+        /**
+         * 库源码 root，优先级高于二进制库 root。
+         */
         LIBRARY_SOURCE(1),
+
+        /**
+         * 源码 root，优先级最高。
+         */
         SOURCE(2),
     }
 

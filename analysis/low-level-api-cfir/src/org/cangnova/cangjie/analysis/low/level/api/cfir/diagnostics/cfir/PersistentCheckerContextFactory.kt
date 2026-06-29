@@ -12,7 +12,13 @@ import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.resolve.CfirDiagnosticCollector
 import org.cangnova.cangjie.cfir.resolve.transformers.ReturnTypeCalculatorForFullBodyResolve
 
+/**
+ * 为 low-level diagnostics 恢复和快照持久 checker context 的工厂。
+ */
 internal object PersistentCheckerContextFactory {
+    /**
+     * 创建不包含任何声明路径的空 checker context。
+     */
     fun createEmptyPersistenceCheckerContext(sessionHolder: SessionAndScopeSessionHolder): CheckerContextForProvider {
         return MutableCheckerContext(
             sessionHolder = sessionHolder,
@@ -22,6 +28,9 @@ internal object PersistentCheckerContextFactory {
         )
     }
 
+    /**
+     * 复制已有 checker context，并可追加当前目标声明到 containing declarations。
+     */
     fun createPersistenceCheckerContextSnapshot(
         context: CheckerContextForProvider,
         additionalDeclaration: CfirDeclaration? = null,

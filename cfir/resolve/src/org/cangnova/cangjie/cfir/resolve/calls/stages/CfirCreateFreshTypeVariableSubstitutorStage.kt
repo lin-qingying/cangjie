@@ -273,8 +273,8 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
             return buildList {
                 for ((index, parameter) in expandedDeclaration.typeParameters.withIndex()) {
                     val argumentType = expandedArguments.getOrNull(index) ?: continue
-                    for (bound in parameter.symbol.resolvedBounds) {
-                        val upperBound = toFreshVariables.substituteOrSelf(bound.coneType)
+                    for (bound in parameter.symbol.toDeclaredUpperBoundTypes(session)) {
+                        val upperBound = toFreshVariables.substituteOrSelf(bound)
                         val extendConstraints = collectExtendDerivedUpperBoundConstraints(session, argumentType, upperBound)
                         if (extendConstraints != null) {
                             addAll(extendConstraints)
@@ -288,8 +288,8 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
 
         return buildList {
             for (freshVariable in freshTypeVariables) {
-                for (bound in freshVariable.typeParameterSymbol.resolvedBounds) {
-                    add(freshVariable.defaultType to toFreshVariables.substituteOrSelf(bound.coneType))
+                for (bound in freshVariable.typeParameterSymbol.toDeclaredUpperBoundTypes(session)) {
+                    add(freshVariable.defaultType to toFreshVariables.substituteOrSelf(bound))
                 }
             }
         }
@@ -393,8 +393,8 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
             for (typeParameter in extend.typeParameters) {
                 typeParameter.symbol.lazyResolveToPhase(CfirResolvePhase.TYPES)
                 val actualType = substitution.substitutor.substituteOrSelf(typeParameter.symbol.constructType())
-                for (bound in typeParameter.symbol.resolvedBounds) {
-                    val substitutedBound = substitution.substitutor.substituteOrSelf(bound.coneType)
+                for (bound in typeParameter.symbol.toDeclaredUpperBoundTypes(session)) {
+                    val substitutedBound = substitution.substitutor.substituteOrSelf(bound)
                     if (actualType !is ConeErrorType && substitutedBound !is ConeErrorType) {
                         constraints += actualType to substitutedBound
                     }
@@ -402,6 +402,21 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
             }
         }
         return constraints.takeIf { matchedExtendSupertype }
+    }
+
+    /**
+     * 提取可参与调用约束求解的声明上界。
+     *
+     * 非 class/interface 等非法声明上界由声明 checker 报告；这里不能通过
+     * `resolvedBounds` 强制读取，否则非法 function/tuple 上界会在进入诊断前触发内部异常。
+     */
+    private fun CfirTypeParameterSymbol.toDeclaredUpperBoundTypes(session: CfirSession): List<ConeCangJieType> {
+        lazyResolveToPhase(CfirResolvePhase.TYPES)
+        return toLookupTag()
+            .declaredUpperBoundRefsAfterTypeResolve()
+            .mapNotNull { it.declaredUpperBoundConeTypeOrNull() }
+            .filterNot { it is ConeErrorType }
+            .filter { it.fullyExpandedType(session) is ConeClassLikeType }
     }
 
     /**

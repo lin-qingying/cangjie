@@ -32,6 +32,9 @@ import com.google.common.collect.ImmutableSet
 import com.intellij.psi.tree.IElementType
 import kotlin.collections.get
 
+/**
+ * 提供 `OperatorConventions` 单例，集中承载操作符命名约定的共享状态、工厂或工具行为。
+ */
 object OperatorConventions {
 
 //    val DOUBLE: Name = Name.identifier("toDouble")
@@ -48,6 +51,9 @@ object OperatorConventions {
 //
 //    val BYTE: Name = Name.identifier("toByte")
 
+    /**
+     * 提供 `getOperationSymbolForName` 操作，封装操作符命名约定节点的访问、构造或判断逻辑。
+     */
     fun getOperationSymbolForName(name: Name): CjToken? {
         if (!isConventionName(name)) return null
         var token =
@@ -60,6 +66,9 @@ object OperatorConventions {
         return null
     }
 
+    /**
+     * 保存 `NUMBER_CONVERSIONS`，供操作符命名约定流程读取节点结构或语义信息。
+     */
     val NUMBER_CONVERSIONS: ImmutableSet<Name> =
         ImmutableSet.of<Name>(
 //           OperatorConventions.DOUBLE,
@@ -71,10 +80,16 @@ object OperatorConventions {
 //           OperatorConventions.CHAR
         )
 
+    /**
+     * 提供 `isConventionName` 操作，封装操作符命名约定节点的访问、构造或判断逻辑。
+     */
     fun isConventionName(name: Name): Boolean {
         return CONVENTION_NAMES.contains(name)
     }
 
+    /**
+     * 保存 `ASSIGNMENT_OPERATION_COUNTERPARTS`，供操作符命名约定流程读取节点结构或语义信息。
+     */
     @JvmField
     val ASSIGNMENT_OPERATION_COUNTERPARTS: ImmutableBiMap<CjSingleValueToken, CjSingleValueToken> =
         ImmutableBiMap.builder<CjSingleValueToken, CjSingleValueToken>()
@@ -93,6 +108,9 @@ object OperatorConventions {
             .put(CjTokens.OROREQ, CjTokens.OROR)
             .build()
 
+    /**
+     * 提供 `isConventionType` 操作，封装操作符命名约定节点的访问、构造或判断逻辑。
+     */
     @JvmStatic
     fun isConventionType(type: IElementType): Boolean {
         return COMPARISON_OPERATIONS_NAMES.containsKey(type) ||
@@ -103,12 +121,18 @@ object OperatorConventions {
             )
     }
 
+    /**
+     * 提供 `getNameForOperationSymbol` 操作，封装操作符命名约定节点的访问、构造或判断逻辑。
+     */
     @JvmStatic
     fun getNameForOperationSymbol(token: CjToken?): Name? {
         token ?: return null
         return getNameForOperationSymbol(token, true, true)
     }
 
+    /**
+     * 保存 `COMPARISON_OPERATIONS_NAMES`，供操作符命名约定流程读取节点结构或语义信息。
+     */
     @JvmField
     val COMPARISON_OPERATIONS_NAMES: ImmutableBiMap<CjSingleValueToken, Name> =
         ImmutableBiMap.builder<CjSingleValueToken, Name>()
@@ -120,6 +144,9 @@ object OperatorConventions {
             .put(CjTokens.EQEQ, OperatorNameConventions.EQUALS)
             .build()
 
+    /**
+     * 保存 `BOOLEAN_OPERATIONS_NAMES`，供操作符命名约定流程读取节点结构或语义信息。
+     */
     @JvmField
     val BOOLEAN_OPERATIONS_NAMES: ImmutableBiMap<CjSingleValueToken, Name> =
         ImmutableBiMap.builder<CjSingleValueToken, Name>()
@@ -127,6 +154,9 @@ object OperatorConventions {
             .put(CjTokens.OROR, OperatorNameConventions.OROR)
             .build()
 
+    /**
+     * 提供 `getNameForOperationSymbol` 操作，封装操作符命名约定节点的访问、构造或判断逻辑。
+     */
     fun getNameForOperationSymbol(
         token: CjToken,
         unaryOperations: Boolean,
@@ -158,6 +188,9 @@ object OperatorConventions {
         return null
     }
 
+    /**
+     * 保存 `UNARY_OPERATION_NAMES`，供操作符命名约定流程读取节点结构或语义信息。
+     */
     @JvmField
     val UNARY_OPERATION_NAMES: ImmutableBiMap<CjSingleValueToken, Name> =
         ImmutableBiMap.builder<CjSingleValueToken, Name>()
@@ -167,6 +200,9 @@ object OperatorConventions {
             .put(CjTokens.MINUS, OperatorNameConventions.UNARY_MINUS)
             .build()
 
+    /**
+     * 保存 `ASSIGNMENT_OPERATIONS`，供操作符命名约定流程读取节点结构或语义信息。
+     */
     @JvmField
     val ASSIGNMENT_OPERATIONS: ImmutableBiMap<CjSingleValueToken, Name> =
         ImmutableBiMap.builder<CjSingleValueToken, Name>()
@@ -185,6 +221,9 @@ object OperatorConventions {
             .put(CjTokens.LTLTEQ, OperatorNameConventions.LTLTEQ_ASSIGN)
             .build()
 
+    /**
+     * 保存 `FLOW_OPERATION_NAMES`，供操作符命名约定流程读取节点结构或语义信息。
+     */
     @JvmField
     val FLOW_OPERATION_NAMES: ImmutableBiMap<CjSingleValueToken, Name> =
         ImmutableBiMap.builder<CjSingleValueToken, Name>()
@@ -192,6 +231,9 @@ object OperatorConventions {
             .put(CjTokens.COMPOSITION, OperatorNameConventions.COMPOSITION)
             .build()
 
+    /**
+     * 保存 `BINARY_OPERATION_NAMES`，供操作符命名约定流程读取节点结构或语义信息。
+     */
     @JvmField
     val BINARY_OPERATION_NAMES: ImmutableBiMap<CjSingleValueToken, Name> =
         ImmutableBiMap.builder<CjSingleValueToken, Name>()
@@ -209,6 +251,9 @@ object OperatorConventions {
             .build()
     // If you add new unary, binary or assignment operators, add it to OperatorConventionNames as well
 
+    /**
+     * 保存 `CONVENTION_NAMES`，供操作符命名约定流程读取节点结构或语义信息。
+     */
     @JvmField
     val CONVENTION_NAMES: ImmutableSet<Name> =
         ImmutableSet.builder<Name>()

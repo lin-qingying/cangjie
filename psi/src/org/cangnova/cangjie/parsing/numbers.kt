@@ -24,8 +24,14 @@
 
 package org.cangnova.cangjie.parsing
 
+/**
+ * 表示 `NumberWithRadix`，承载仓颉语法解析中的语法节点、索引桩或辅助模型。
+ */
 data class NumberWithRadix(val number: String, val radix: Int)
 
+/**
+ * 提供 `extractRadix` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
+ */
 fun extractRadix(value: String): NumberWithRadix = when {
     value.startsWith("0x") || value.startsWith("0X") -> NumberWithRadix(value.substring(2), 16)
     value.startsWith("0b") || value.startsWith("0B") -> NumberWithRadix(value.substring(2), 2)

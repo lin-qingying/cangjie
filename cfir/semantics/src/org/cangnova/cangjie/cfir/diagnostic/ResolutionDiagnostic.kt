@@ -179,6 +179,36 @@ class InapplicableWrongReceiver(
 ) : ResolutionDiagnostic(CandidateApplicability.INAPPLICABLE_WRONG_RECEIVER)
 
 /**
+ * 对象接收者不能访问 static 成员。
+ *
+ * 官方 `FilterAndGetTargetsOfObjAccess` 会在对象成员访问中移除 static 目标；
+ * 若剩余目标为空，则报告 `sema_object_cannot_access_static_member`。
+ *
+ * @property memberName 被对象接收者错误访问的 static 成员名。
+ */
+class ObjectCannotAccessStaticMember(
+    /**
+     * 被对象接收者错误访问的 static 成员名。
+     */
+    val memberName: Name,
+) : ResolutionDiagnostic(CandidateApplicability.INAPPLICABLE)
+
+/**
+ * 类型名不能访问实例成员。
+ *
+ * 官方 `CheckStaticMemberAccessLegality` 在 class/struct/enum/interface/typealias
+ * qualifier 访问非 static 成员时报告 `sema_illegal_access_non_static_member`。
+ *
+ * @property memberName 被类型名错误访问的实例成员名。
+ */
+class IllegalAccessNonStaticMember(
+    /**
+     * 被类型名错误访问的实例成员名。
+     */
+    val memberName: Name,
+) : ResolutionDiagnostic(CandidateApplicability.INAPPLICABLE)
+
+/**
  * 同一个形参被重复传参。
  *
  * @property argument 重复传入的实参表达式。

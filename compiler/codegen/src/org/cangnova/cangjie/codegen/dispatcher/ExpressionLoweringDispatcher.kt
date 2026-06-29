@@ -21,7 +21,13 @@ import org.cangnova.cangjie.chir.core.value.ChirValue
 import org.cangnova.cangjie.codegen.diagnostics.CodegenLoweringException
 import org.cangnova.cangjie.codegen.function.CGFunction
 
+/**
+ * CHIR 表达式到 LLVM IR 指令文本的分派器。
+ */
 class ExpressionLoweringDispatcher {
+    /**
+     * 根据 CHIR 表达式具体类型分派到对应 lowering 实现。
+     */
     fun lower(function: CGFunction, expression: ChirExpression): List<String> {
         return when (expression) {
             is ChirUnaryExpression -> lowerUnary(function, expression)
@@ -36,6 +42,9 @@ class ExpressionLoweringDispatcher {
         }
     }
 
+    /**
+     * 降低一元表达式，覆盖整数取负、浮点取负、按位取反、逻辑非和 identity。
+     */
     private fun lowerUnary(function: CGFunction, expression: ChirUnaryExpression): List<String> {
         val result = function.resultRef(expression.semanticId)
         val type = function.lowerType(expression.resultType)
@@ -81,6 +90,9 @@ class ExpressionLoweringDispatcher {
         }
     }
 
+    /**
+     * 降低二元表达式，覆盖算术、位运算、移位和比较操作。
+     */
     private fun lowerBinary(function: CGFunction, expression: ChirBinaryExpression): List<String> {
         val result = function.resultRef(expression.semanticId)
         val leftType = function.lowerType(expression.left.type)
@@ -138,6 +150,9 @@ class ExpressionLoweringDispatcher {
         }
     }
 
+    /**
+     * 降低 CHIR memory 表达式为 LLVM load/store/alloca/getelementptr 指令。
+     */
     private fun lowerMemory(function: CGFunction, expression: ChirMemoryExpression): List<String> {
         val operation = ChirMemoryOperation.parse(expression.operation)
             ?: throw CodegenLoweringException(
@@ -198,6 +213,9 @@ class ExpressionLoweringDispatcher {
         }
     }
 
+    /**
+     * 降低 CHIR 调用表达式为 LLVM call 指令。
+     */
     private fun lowerCall(function: CGFunction, expression: ChirCallExpression): List<String> {
         val args = expression.arguments.joinToString(", ") { function.renderCallArgument(it) }
         val callee = function.renderValue(expression.callee)
@@ -223,6 +241,9 @@ class ExpressionLoweringDispatcher {
         }
     }
 
+    /**
+     * 降低 CHIR other 表达式中的 select、cast 和 phi 操作。
+     */
     private fun lowerOther(function: CGFunction, expression: ChirOtherExpression): List<String> {
         val op = ChirOtherOperation.parse(expression.operation)
             ?: throw CodegenLoweringException(
@@ -311,6 +332,9 @@ class ExpressionLoweringDispatcher {
         }
     }
 
+    /**
+     * 将 CHIR cast 操作映射为 LLVM cast 指令助记符。
+     */
     private fun castMnemonic(operation: ChirOtherOperation): String {
         return when (operation) {
             ChirOtherOperation.BITCAST -> "bitcast"
@@ -332,10 +356,16 @@ class ExpressionLoweringDispatcher {
         }
     }
 
+    /**
+     * 判断 LLVM textual type 是否为浮点类型。
+     */
     private fun isFloatType(llvmType: String): Boolean {
         return llvmType == "half" || llvmType == "float" || llvmType == "double"
     }
 
+    /**
+     * 要求 LLVM textual type 为浮点类型。
+     */
     private fun requireFloatType(llvmType: String, sourceId: ChirSemanticId, subject: String) {
         if (!isFloatType(llvmType)) {
             throw CodegenLoweringException(
@@ -345,6 +375,9 @@ class ExpressionLoweringDispatcher {
         }
     }
 
+    /**
+     * 要求 LLVM textual type 为整数类型。
+     */
     private fun requireIntegerType(llvmType: String, sourceId: ChirSemanticId, subject: String) {
         if (!isIntegerType(llvmType)) {
             throw CodegenLoweringException(
@@ -354,8 +387,14 @@ class ExpressionLoweringDispatcher {
         }
     }
 
+    /**
+     * 判断 LLVM textual type 是否为 `iN` 整数类型。
+     */
     private fun isIntegerType(llvmType: String): Boolean = llvmType.matches(integerTypeRegex)
 
+    /**
+     * 要求两个 LLVM textual type 完全一致。
+     */
     private fun requireSameType(expected: String, actual: String, sourceId: ChirSemanticId, subject: String) {
         if (expected != actual) {
             throw CodegenLoweringException(
@@ -365,6 +404,9 @@ class ExpressionLoweringDispatcher {
         }
     }
 
+    /**
+     * 从参与 memory 操作的 value 属性中提取 LLVM align 后缀。
+     */
     private fun alignSuffixFrom(vararg values: ChirValue?): String {
         val alignValue = values.asSequence()
             .filterNotNull()
@@ -375,6 +417,9 @@ class ExpressionLoweringDispatcher {
         return if (alignValue.isNullOrBlank()) "" else ", align $alignValue"
     }
 
+    /**
+     * 从 CHIR pointer/ref 类型中取得 LLVM pointee type。
+     */
     private fun pointeeType(
         function: CGFunction,
         typeRef: ChirTypeRef,

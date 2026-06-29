@@ -47,20 +47,32 @@ class CjTuplePatternElementType(debugName: String) :
         CangJieTuplePatternStub::class.java,
     ) {
 
+    /**
+     * 实现 `createStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createStub(psi: CjTuplePattern, parentStub: StubElement<*>?): CangJieTuplePatternStub {
         return CangJieTuplePatternStubImpl(parentStub)
     }
 
+    /**
+     * 实现 `serialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     @Throws(IOException::class)
     override fun serialize(stub: CangJieTuplePatternStub, dataStream: StubOutputStream) {
         // 元组模式本身没有额外数据，子模式由子 stub 处理
     }
 
+    /**
+     * 实现 `deserialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     @Throws(IOException::class)
     override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>): CangJieTuplePatternStub {
         return CangJieTuplePatternStubImpl(parentStub)
     }
 
+    /**
+     * 实现 `indexStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun indexStub(stub: CangJieTuplePatternStub, sink: IndexSink) {
         // 元组模式的索引由变量索引处理
     }

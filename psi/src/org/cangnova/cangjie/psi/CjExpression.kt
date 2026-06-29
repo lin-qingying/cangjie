@@ -31,7 +31,13 @@ import com.intellij.psi.tree.IElementType
 import com.intellij.util.ArrayFactory
 
 // 表达式
+/**
+ * 定义 `CjExpression` 接口，约束仓颉 PSI节点或服务需要暴露的结构能力。
+ */
 interface CjExpression : CjElement {
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R?
 
     companion object {
@@ -46,15 +52,27 @@ interface CjExpression : CjElement {
     }
 }
 
+/**
+ * 表示 `CjExpressionImpl`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 abstract class CjExpressionImpl(node: ASTNode) : CjElementImpl(node), CjExpression {
 
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? = visitor.visitExpression(this, data)
 
+    /**
+     * 提供 `findExpressionUnder` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     protected fun findExpressionUnder(type: IElementType): CjExpression? {
         val containerNode = findChildByType<CjContainerNode>(type) ?: return null
         return containerNode.findChildByClass(CjExpression::class.java)
     }
 
+    /**
+     * 实现 `replace` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun replace(newElement: PsiElement): PsiElement {
         return replaceExpression(this, newElement) { super.replace(it) }
     }

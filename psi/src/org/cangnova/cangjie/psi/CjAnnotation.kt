@@ -89,24 +89,39 @@ class CjAnnotation : CjElementImplStub<CangJieAnnotationStub>, CjCallElement {
 
     constructor(stub: CangJieAnnotationStub) : super(stub, CjStubElementTypes.ANNOTATION)
 
+    /**
+     * 暴露 `calleeExpression`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val calleeExpression: CjConstructorCalleeExpression?
         get() {
             return getStubOrPsiChild(CjStubElementTypes.CONSTRUCTOR_CALLEE)
         }
 
+    /**
+     * 暴露 `lambdaArguments`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val lambdaArguments: List<CjLambdaArgument>
         get() {
             return emptyList()
         }
 
+    /**
+     * 暴露 `typeArguments`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val typeArguments: List<CjTypeProjection>
         get() {
             val typeArgumentList = typeArgumentList ?: return emptyList()
             return typeArgumentList.arguments
         }
 
+    /**
+     * 暴露 `typeArgumentList`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val typeArgumentList: CjTypeArgumentList? = null
 
+    /**
+     * 暴露 `valueArgumentList`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val valueArgumentList: CjValueArgumentList?
         get() {
             val stub = stub
@@ -117,6 +132,9 @@ class CjAnnotation : CjElementImplStub<CangJieAnnotationStub>, CjCallElement {
             return getStubOrPsiChild(CjStubElementTypes.VALUE_ARGUMENT_LIST)
         }
 
+    /**
+     * 暴露 `valueArguments`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val valueArguments: List<ValueArgument>
         get() {
             val stub = stub
@@ -127,17 +145,26 @@ class CjAnnotation : CjElementImplStub<CangJieAnnotationStub>, CjCallElement {
             val list = valueArgumentList
             return list?.arguments ?: emptyList<CjValueArgument>()
         }
+    /**
+     * 保存 `atSymbol`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val atSymbol: PsiElement?
         get() {
             return findChildByType(CjTokens.AT)
         }
 
+    /**
+     * 保存 `typeReference`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     @get:IfNotParsed
     val typeReference: CjTypeReference?
         get() {
             val calleeExpression = calleeExpression ?: return null
             return calleeExpression.typeReference
         }
+    /**
+     * 保存 `shortName`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val shortName: Name?
         get() {
             val stub = stub

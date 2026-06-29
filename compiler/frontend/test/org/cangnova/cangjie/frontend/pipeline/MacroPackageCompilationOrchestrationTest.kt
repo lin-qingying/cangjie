@@ -46,10 +46,19 @@ import java.nio.file.Files
 import java.nio.file.Path
 
 @OptIn(CompilerConfiguration.Internals::class)
+/**
+ * 覆盖宏源码包按需编译选择、artifact 准备和外部 cjc 调度行为。
+ */
 class MacroPackageCompilationOrchestrationTest {
+    /**
+     * 每个测试独占的临时目录。
+     */
     @TempDir
     lateinit var tempDir: Path
 
+    /**
+     * 验证未配置 orchestrator 时生成编译失败诊断。
+     */
     @Test
     fun missingOrchestratorReportsCompileFailedDiagnostic() {
         val request = MacroSourcePackageCompilationRequest(
@@ -70,6 +79,9 @@ class MacroPackageCompilationOrchestrationTest {
         assertTrue(diagnostic.message.contains("compile-macro"))
     }
 
+    /**
+     * 验证显式配置的 orchestrator 会收到请求列表和缓存上下文。
+     */
     @Test
     fun configuredOrchestratorReceivesRequestsAndCacheContext() {
         val configuration = CompilerConfiguration()
@@ -108,6 +120,9 @@ class MacroPackageCompilationOrchestrationTest {
         assertTrue(result.artifactPackages.isEmpty())
     }
 
+    /**
+     * 验证默认宏缓存上下文继承编译配置中的 target platform。
+     */
     @Test
     fun defaultMacroCacheContextInheritsConfigurationTargetPlatformPlaceholder() {
         val configuration = CompilerConfiguration().apply {
@@ -117,6 +132,9 @@ class MacroPackageCompilationOrchestrationTest {
         assertSame(CangJiePlatforms.cjvm, configuration.macroCompilationCacheContext.targetPlatform)
     }
 
+    /**
+     * 验证 CFIR 前端默认安装外部 cjc 宏包编译 orchestrator。
+     */
     @Test
     fun cfirFrontendConfigurationInstallsDefaultMacroPackageCompilationOrchestrator() {
         val configuration = CompilerConfiguration.createForCfirFrontend()
@@ -127,6 +145,9 @@ class MacroPackageCompilationOrchestrationTest {
         )
     }
 
+    /**
+     * 验证初始化前端配置时不会覆盖用户自定义 orchestrator。
+     */
     @Test
     fun cfirFrontendInitializationPreservesCustomMacroPackageCompilationOrchestrator() {
         val custom = MacroPackageCompilationOrchestrator { _, _ -> MacroPackageCompilationResult() }
@@ -139,6 +160,9 @@ class MacroPackageCompilationOrchestrationTest {
         assertSame(custom, configuration.macroPackageCompilationOrchestrator)
     }
 
+    /**
+     * 验证仅被 import 实际 demand 的宏源码包会被选中编译。
+     */
     @Test
     fun expansionDemandSelectsOnlyImportedMacroSourcePackageRequests() {
         val fixture = macroDemandFixture(
@@ -163,6 +187,9 @@ class MacroPackageCompilationOrchestrationTest {
         assertEquals(listOf(required), selected)
     }
 
+    /**
+     * 验证全限定宏调用无需 import 也能选择对应宏源码包请求。
+     */
     @Test
     fun expansionDemandSelectsQualifiedMacroSourcePackageRequestWithoutImport() {
         val fixture = macroDemandFixture(
@@ -183,6 +210,9 @@ class MacroPackageCompilationOrchestrationTest {
         assertEquals(listOf(request), selected)
     }
 
+    /**
+     * 验证 all-under import 能触发宏源码包请求选择。
+     */
     @Test
     fun expansionDemandSelectsAllUnderImportedMacroSourcePackageRequest() {
         val fixture = macroDemandFixture(
@@ -203,6 +233,9 @@ class MacroPackageCompilationOrchestrationTest {
         assertEquals(listOf(request), selected)
     }
 
+    /**
+     * 验证带 alias 的宏 import 能触发对应源码包请求选择。
+     */
     @Test
     fun expansionDemandSelectsAliasedMacroSourcePackageRequest() {
         val fixture = macroDemandFixture(
@@ -223,6 +256,9 @@ class MacroPackageCompilationOrchestrationTest {
         assertEquals(listOf(request), selected)
     }
 
+    /**
+     * 验证已有 artifact 能满足 demand，避免重复编译源码包。
+     */
     @Test
     fun expansionDemandDoesNotCompileSourcePackageWhenArtifactIsAlreadySupplied() {
         val fixture = macroDemandFixture(
@@ -251,6 +287,9 @@ class MacroPackageCompilationOrchestrationTest {
         assertTrue(selected.isEmpty())
     }
 
+    /**
+     * 验证同项目宏源码根可从 source root 中发现。
+     */
     @Test
     fun expansionDemandDiscoversSameProjectMacroSourcePackageRoot() {
         val sourceRoot = Files.createDirectories(tempDir.resolve("src"))
@@ -292,6 +331,9 @@ class MacroPackageCompilationOrchestrationTest {
         )
     }
 
+    /**
+     * 验证缺失的同项目宏源码包会被编译、重新定位并解析为定义。
+     */
     @Test
     fun expansionDemandCompilesMissingSameProjectMacroPackageThenRelocatesAndResolvesArtifact() {
         val sourceRoot = Files.createDirectories(tempDir.resolve("src"))
@@ -331,6 +373,9 @@ class MacroPackageCompilationOrchestrationTest {
         assertEquals(listOf(FqName("macros.pkg")), result.locatedArtifacts.map { it.packageFqName })
     }
 
+    /**
+     * 验证禁用按需自动编译时直接报告缺失 artifact，且不调用 orchestrator。
+     */
     @Test
     fun expansionDemandAutoCompilationDisabledReportsMissingArtifactWithoutCallingOrchestrator() {
         val sourceRoot = Files.createDirectories(tempDir.resolve("src"))
@@ -364,6 +409,9 @@ class MacroPackageCompilationOrchestrationTest {
         assertTrue(diagnostic.message.contains("disabled"))
     }
 
+    /**
+     * 验证找不到同项目宏源码根时报告缺失根诊断。
+     */
     @Test
     fun expansionDemandWithoutSameProjectSourceRootReportsMissingRootDiagnostic() {
         val fixture = macroDemandFixture(
@@ -390,6 +438,9 @@ class MacroPackageCompilationOrchestrationTest {
         assertTrue(diagnostic.message.contains("no same-project macro source root"))
     }
 
+    /**
+     * 验证已有 classpath artifact 可直接解析，不再触发同项目源码包编译。
+     */
     @Test
     fun existingArtifactIsResolvedWithoutRepeatedSameProjectMacroCompilation() {
         val sourceRoot = Files.createDirectories(tempDir.resolve("src"))
@@ -423,6 +474,9 @@ class MacroPackageCompilationOrchestrationTest {
         assertEquals(MacroArtifactPackage.Origin.EXTERNAL_PATH, result.locatedArtifacts.single().origin)
     }
 
+    /**
+     * 验证无效现有 artifact 只报告 resolver 诊断，不回退编译源码包。
+     */
     @Test
     fun invalidExistingArtifactReportsResolverDiagnosticWithoutSourceCompilationFallback() {
         val sourceRoot = Files.createDirectories(tempDir.resolve("src"))
@@ -461,6 +515,9 @@ class MacroPackageCompilationOrchestrationTest {
         assertEquals(FqName("macros.pkg"), result.diagnostics.single().artifactPackage)
     }
 
+    /**
+     * 验证 SDK 标准库宏包可直接从 SDK 定位解析。
+     */
     @Test
     fun sdkStdMacroPackageIsResolvedFromSdkWithoutSameProjectCompilation() {
         val sdkHome = Files.createDirectories(tempDir.resolve("sdk"))
@@ -500,6 +557,9 @@ class MacroPackageCompilationOrchestrationTest {
         assertTrue(requireNotNull(result.definitions.single().libPath).endsWith("libcangjie-std-core.${dynamicLibraryExtension()}"))
     }
 
+    /**
+     * 验证默认 cjc resolver 优先使用配置的宏 SDK 根。
+     */
     @Test
     fun defaultCjcResolverUsesConfiguredMacroSdkHome() {
         val sdkHome = Files.createDirectories(tempDir.resolve("configured-sdk"))
@@ -508,6 +568,9 @@ class MacroPackageCompilationOrchestrationTest {
         assertEquals(cjc, DefaultMacroCompilerExecutableResolver.resolve(sdkHome.toString()))
     }
 
+    /**
+     * 验证配置 SDK 缺失时 resolver 使用 CANGJIE_HOME。
+     */
     @Test
     fun defaultCjcResolverUsesCangjieHomeWhenConfiguredSdkIsMissing() {
         val cangjieHome = Files.createDirectories(tempDir.resolve("cangjie-home"))
@@ -524,6 +587,9 @@ class MacroPackageCompilationOrchestrationTest {
         assertEquals(cjc, resolved)
     }
 
+    /**
+     * 验证 CANGJIE_HOME 缺失时 resolver 使用 cjc.home 系统属性。
+     */
     @Test
     fun defaultCjcResolverUsesSystemPropertyHomeAfterCangjieHome() {
         val cjcHome = Files.createDirectories(tempDir.resolve("cjc-home"))
@@ -540,6 +606,9 @@ class MacroPackageCompilationOrchestrationTest {
         assertEquals(cjc, resolved)
     }
 
+    /**
+     * 验证显式 home 均缺失时 resolver 可从 PATH 查找 cjc。
+     */
     @Test
     fun defaultCjcResolverUsesPathAfterExplicitHomes() {
         val pathDirectory = Files.createDirectories(tempDir.resolve("path-bin"))
@@ -556,6 +625,9 @@ class MacroPackageCompilationOrchestrationTest {
         assertEquals(cjc, resolved)
     }
 
+    /**
+     * 验证 resolver 最后会选择用户目录中最新版本 SDK。
+     */
     @Test
     fun defaultCjcResolverUsesNewestUserHomeSdkFallback() {
         val userHome = Files.createDirectories(tempDir.resolve("home"))
@@ -575,6 +647,9 @@ class MacroPackageCompilationOrchestrationTest {
         assertEquals(cjc, resolved)
     }
 
+    /**
+     * 验证所有候选位置缺失时 resolver 报告找不到可执行文件。
+     */
     @Test
     fun defaultCjcResolverReportsMissingExecutableWhenNoSourceMatches() {
         val error = kotlin.runCatching {
@@ -590,6 +665,9 @@ class MacroPackageCompilationOrchestrationTest {
         assertTrue(requireNotNull(error).message.orEmpty().contains("Cannot find"))
     }
 
+    /**
+     * 验证外部 cjc orchestrator 可从编译输出生成 artifact 包。
+     */
     @Test
     fun externalCjcOrchestratorProducesArtifactPackageFromCompiledOutputs() {
         val sourceRoot = Files.createDirectories(tempDir.resolve("src").resolve("macros"))
@@ -645,6 +723,9 @@ class MacroPackageCompilationOrchestrationTest {
         assertEquals("compile-macros.pkg", artifact.compileInvocationId)
     }
 
+    /**
+     * 验证 orchestrator 会通过 CANGJIE_LIBRARY 环境变量传递 classpath。
+     */
     @Test
     fun externalCjcOrchestratorPassesClasspathViaCangjieLibraryEnvironment() {
         val sourceRoot = Files.createDirectories(tempDir.resolve("src").resolve("macros"))
@@ -686,6 +767,9 @@ class MacroPackageCompilationOrchestrationTest {
         )
     }
 
+    /**
+     * 验证外部 cjc 非零退出会生成编译失败诊断并持久化输出。
+     */
     @Test
     fun externalCjcOrchestratorReturnsCompileFailedDiagnosticWithPersistedOutputReference() {
         val sourceRoot = Files.createDirectories(tempDir.resolve("src").resolve("broken"))
@@ -724,6 +808,9 @@ class MacroPackageCompilationOrchestrationTest {
         assertTrue(storedOutput.contains("macro compilation failed"))
     }
 
+    /**
+     * 验证空 source root 和多 source root 在调用命令前被拒绝。
+     */
     @Test
     fun externalCjcOrchestratorRejectsEmptyAndMultipleSourceRootsBeforeCommandInvocation() {
         var commandCalls = 0
@@ -766,6 +853,9 @@ class MacroPackageCompilationOrchestrationTest {
         assertTrue(result.diagnostics[1].message.contains("exactly one package source root"))
     }
 
+    /**
+     * 验证 command runner 抛出的异常会被记录为诊断并持久化堆栈。
+     */
     @Test
     fun externalCjcOrchestratorPersistsCommandRunnerExceptionDiagnostic() {
         val sourceRoot = Files.createDirectories(tempDir.resolve("src").resolve("throwing"))
@@ -805,6 +895,9 @@ class MacroPackageCompilationOrchestrationTest {
         assertTrue(storedOutput.contains("runner exploded"))
     }
 
+    /**
+     * 验证命令成功但缺少 artifact 文件时报告编译失败诊断。
+     */
     @Test
     fun externalCjcOrchestratorReportsSuccessfulInvocationWithMissingArtifacts() {
         val sourceRoot = Files.createDirectories(tempDir.resolve("src").resolve("missing-artifact"))
@@ -843,10 +936,19 @@ class MacroPackageCompilationOrchestrationTest {
         assertTrue(Files.readString(Path.of(diagnosticsRef)).contains("compiled"))
     }
 
+    /**
+     * 宏包 demand 测试夹具。
+     */
     private data class MacroDemandFixture(
+        /**
+         * 预宏 raw 构建结果。
+         */
         val pre: org.cangnova.cangjie.cfir.resolve.providers.macro.PreMacroRawBuildResult,
     )
 
+    /**
+     * 构造带 import 和宏 surface 的 demand fixture。
+     */
     private fun macroDemandFixture(
         imports: List<CfirImport>,
         surface: MacroSurface,
@@ -889,6 +991,9 @@ class MacroPackageCompilationOrchestrationTest {
         )
     }
 
+    /**
+     * 构造同项目宏包源文件对应的 CFIR 文件。
+     */
     private fun macroPackageFile(packageFqName: String, file: File): CfirFile = buildFile {
         source = null
         moduleData = CfirSourceModuleData(
@@ -912,6 +1017,9 @@ class MacroPackageCompilationOrchestrationTest {
         sourceFileLinesMapping = null
     }
 
+    /**
+     * 构造测试用宏 import。
+     */
     private fun macroImport(fqName: String, isAllUnder: Boolean = false, alias: String? = null): CfirImport =
         buildImport {
             source = null
@@ -921,6 +1029,9 @@ class MacroPackageCompilationOrchestrationTest {
             aliasSource = null
         }
 
+    /**
+     * 构造测试用表达式宏 surface。
+     */
     private fun macroSurface(qualifiedName: String): MacroSurfaceExpr = MacroSurfaceExpr(
         surfaceId = 1,
         qualifiedName = FqName(qualifiedName),
@@ -942,6 +1053,9 @@ class MacroPackageCompilationOrchestrationTest {
         replaceHandle = CfirReplaceHandle(1),
     )
 
+    /**
+     * 写入一组可被 locator/resolver 识别的已编译宏 artifact 文件。
+     */
     private fun writeCompiledMacroArtifact(
         outputDir: Path,
         packageFqName: String,
@@ -964,6 +1078,9 @@ class MacroPackageCompilationOrchestrationTest {
         )
     }
 
+    /**
+     * 写入测试用 cjc 可执行文件占位。
+     */
     private fun writeCjcExecutable(root: Path, alreadyBinDirectory: Boolean = false): Path {
         val executableName =
             if (System.getProperty("os.name").contains("Windows", ignoreCase = true)) "cjc.exe" else "cjc"
@@ -974,6 +1091,9 @@ class MacroPackageCompilationOrchestrationTest {
         return cjc
     }
 
+    /**
+     * 从 pre-macro 结果调用 artifact 准备入口。
+     */
     private fun prepareMacroArtifactDefinitionsForPreResults(
         configuration: CompilerConfiguration,
         preResults: List<PreMacroRawBuildResult>,

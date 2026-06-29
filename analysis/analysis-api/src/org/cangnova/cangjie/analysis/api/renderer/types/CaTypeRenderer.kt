@@ -42,21 +42,37 @@ import kotlin.takeIf
  * 对齐 Kotlin Analysis API 的 `KaTypeRenderer`。
  */
 class CaTypeRenderer private constructor(
+    /** typealias 展开渲染模式。 */
     val expandedTypeRenderingMode: CaExpandedTypeRenderingMode,
+    /** class id 限定名渲染策略。 */
     val classIdRenderer: CaClassTypeQualifierRenderer,
+    /** 简单类型名渲染策略。 */
     val typeNameRenderer: CaTypeNameRenderer,
+    /** 类型近似化策略。 */
     val typeApproximator: CaRendererTypeApproximator,
+    /** 类型实参投影渲染策略。 */
     val typeProjectionRenderer: CaTypeProjectionRenderer,
+    /** 基础类型渲染策略。 */
     val primitiveTypeRenderer: CaPrimitiveTypeRenderer,
+    /** 普通 class-like 类型渲染策略。 */
     val usualClassTypeRenderer: CaUsualClassTypeRenderer,
+    /** 函数类型渲染策略。 */
     val functionalTypeRenderer: CaFunctionalTypeRenderer,
+    /** 类型参数类型渲染策略。 */
     val typeParameterTypeRenderer: CaTypeParameterTypeRenderer,
+    /** 类型注解渲染策略。 */
     val annotationsRenderer: CaAnnotationRenderer,
+    /** 未解析 class error 类型渲染策略。 */
     val unresolvedClassErrorTypeRenderer: CaUnresolvedClassErrorTypeRenderer,
+    /** tuple 类型渲染策略。 */
     val tupleTypeRenderer: CaTupleTypeRenderer,
+    /** intersection 类型渲染策略。 */
     val intersectionTypeRenderer: CaIntersectionTypeRenderer,
+    /** union 类型渲染策略。 */
     val unionTypeRenderer: CaUnionTypeRenderer,
+    /** 普通 error 类型渲染策略。 */
     val errorTypeRenderer: CaErrorTypeRenderer,
+    /** 类型渲染过程中使用的关键字渲染策略。 */
     val keywordsRenderer: CaKeywordsRenderer,
 ) {
     /** 按"缩写形态"渲染类型, 若有 abbreviation 则使用 abbreviation。 */

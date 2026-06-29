@@ -27,6 +27,9 @@ import org.cangnova.cangjie.psi.CjTypeStatement
  * IntelliJ 需要的语言级桥接，避免“能 resolve 但没有正式查找用法入口”的断层。
  */
 class CangJieFindUsagesProvider : FindUsagesProvider {
+    /**
+     * 返回仓颉语言的单词扫描器。
+     */
     override fun getWordsScanner(): WordsScanner {
         return DefaultWordsScanner(
             CangJieLexer(),
@@ -36,12 +39,21 @@ class CangJieFindUsagesProvider : FindUsagesProvider {
         )
     }
 
+    /**
+     * 判断目标 PSI 是否支持 find usages。
+     */
     override fun canFindUsagesFor(psiElement: PsiElement): Boolean {
         return psiElement.language == CangJieLanguage && psiElement is PsiNamedElement && !psiElement.name.isNullOrBlank()
     }
 
+    /**
+     * 仓颉当前没有单独的 Find Usages 帮助页。
+     */
     override fun getHelpId(psiElement: PsiElement): String? = null
 
+    /**
+     * 返回目标元素在 Find Usages UI 中展示的类型文本。
+     */
     override fun getType(element: PsiElement): String = when (element) {
         is CjNamedFunction -> "function"
         is CjProperty -> "property"
@@ -56,10 +68,16 @@ class CangJieFindUsagesProvider : FindUsagesProvider {
         else -> "symbol"
     }
 
+    /**
+     * 返回目标元素的描述性名称。
+     */
     override fun getDescriptiveName(element: PsiElement): String {
         return (element as? PsiNamedElement)?.name ?: element.text
     }
 
+    /**
+     * 返回 usages 节点中展示的元素文本。
+     */
     override fun getNodeText(element: PsiElement, useFullName: Boolean): String {
         return when {
             element is CjNamedDeclaration && !element.name.isNullOrBlank() -> element.name!!

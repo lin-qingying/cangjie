@@ -16,8 +16,16 @@ import org.cangnova.cangjie.utils.withIndent
 import kotlin.reflect.KClass
 import kotlin.reflect.full.memberProperties
 
+/**
+ * 同时支持导入收集和缩进输出的源码打印器接口。
+ */
 interface ImportCollectingPrinter : ImportCollecting, IndentingPrinter
 
+/**
+ * 打印类型声明后的继承子句。
+ *
+ * 类类型会附加父类构造参数，接口类型只输出类型引用。
+ */
 fun ImportCollectingPrinter.printInheritanceClause(
     supertypes: List<ClassOrElementRef>,
     superclassConstructorArgs: List<String> = emptyList(),
@@ -37,6 +45,9 @@ fun ImportCollectingPrinter.printInheritanceClause(
     )
 }
 
+/**
+ * 按 Kotlin KDoc 格式打印多行文档注释。
+ */
 fun IndentingPrinter.printKDoc(kDoc: String?) {
     if (kDoc == null) return
     println("/**")
@@ -52,6 +63,11 @@ fun IndentingPrinter.printKDoc(kDoc: String?) {
     println(" */")
 }
 
+/**
+ * 生成元素默认 KDoc。
+ *
+ * 会把元素显式 KDoc 与生成来源属性名组合到同一段文档中。
+ */
 fun AbstractElement<*, *, *>.extendedKDoc(): String = buildString {
     val doc = kDoc
     if (doc != null) {
@@ -61,13 +77,31 @@ fun AbstractElement<*, *, *>.extendedKDoc(): String = buildString {
     append("Generated from: [${element.propertyName}]")
 }
 
+/**
+ * 待打印函数参数的模型。
+ */
 data class FunctionParameter(
+    /**
+     * 参数名称。
+     */
     val name: String,
+    /**
+     * 参数类型。
+     */
     val type: TypeRef,
+    /**
+     * 参数默认值表达式。
+     */
     val defaultValue: String? = null,
+    /**
+     * 是否在参数前添加未使用参数抑制注解。
+     */
     val markAsUnused: Boolean = false,
 ) {
 
+    /**
+     * 将参数渲染为 Kotlin 源码片段。
+     */
     fun render(importCollector: ImportCollecting): String = buildString {
         if (markAsUnused) {
             append("@Suppress(\"UNUSED_PARAMETER\") ")
@@ -80,6 +114,9 @@ data class FunctionParameter(
     }
 }
 
+/**
+ * 打印函数声明，不包含函数体。
+ */
 fun ImportCollectingPrinter.printFunctionDeclaration(
     name: String,
     parameters: List<FunctionParameter>,
@@ -145,6 +182,9 @@ fun ImportCollectingPrinter.printFunctionDeclaration(
     print(typeParameters.multipleUpperBoundsList())
 }
 
+/**
+ * 打印带块体的函数声明。
+ */
 inline fun ImportCollectingPrinter.printFunctionWithBlockBody(
     name: String,
     parameters: List<FunctionParameter>,
@@ -175,18 +215,47 @@ inline fun ImportCollectingPrinter.printFunctionWithBlockBody(
     printBlock(body = blockBody)
 }
 
+/**
+ * 主构造函数参数模型。
+ */
 data class PrimaryConstructorParameter(
+    /**
+     * 底层函数参数定义。
+     */
     val functionParameter: FunctionParameter,
+    /**
+     * 参数在主构造函数中的属性形态。
+     */
     val kind: VariableKind,
+    /**
+     * 参数生成属性的可见性。
+     */
     val visibility: Visibility = Visibility.PUBLIC,
 ) {
+    /**
+     * 参数名称快捷访问。
+     */
     val name by functionParameter::name
+
+    /**
+     * 参数类型快捷访问。
+     */
     val type by functionParameter::type
+
+    /**
+     * 参数默认值快捷访问。
+     */
     val defaultValue by functionParameter::defaultValue
 }
 
+/**
+ * 将字符串转义为 Kotlin 字符串字面量。
+ */
 private fun String.asStringLiteral(): String = "\"" + replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") + "\""
 
+/**
+ * 打印注解参数值。
+ */
 private fun ImportCollectingPrinter.printAnnotationArgument(argument: Any?) {
     when (argument) {
         is String -> print(argument.asStringLiteral())
@@ -205,6 +274,9 @@ private fun ImportCollectingPrinter.printAnnotationArgument(argument: Any?) {
     }
 }
 
+/**
+ * 根据运行时注解实例打印对应的 Kotlin 注解调用。
+ */
 fun <A : Annotation> ImportCollectingPrinter.printAnnotation(annotation: A) {
     @Suppress("UNCHECKED_CAST")
     val annotationInterface = annotation::class.java.interfaces.single().kotlin as KClass<Annotation>
@@ -225,6 +297,9 @@ fun <A : Annotation> ImportCollectingPrinter.printAnnotation(annotation: A) {
     }
 }
 
+/**
+ * 打印属性声明或主构造函数参数声明。
+ */
 fun ImportCollectingPrinter.printPropertyDeclaration(
     name: String,
     type: TypeRef,
@@ -301,11 +376,24 @@ fun ImportCollectingPrinter.printPropertyDeclaration(
     }
 }
 
+/**
+ * 变量声明种类。
+ */
 enum class VariableKind { VAL, VAR, PARAMETER }
 
+/**
+ * Visitor/Transformer data 类型参数。
+ */
 private val dataTP = TypeVariable("D")
+
+/**
+ * Visitor/Transformer data 函数参数。
+ */
 private val dataParameter = FunctionParameter("data", dataTP)
 
+/**
+ * 生成 `accept` 方法的 KDoc 文本。
+ */
 private fun acceptMethodKDoc(
     visitorParameter: FunctionParameter,
     dataParameter: FunctionParameter?,
@@ -332,6 +420,9 @@ private fun acceptMethodKDoc(
     }
 }
 
+/**
+ * 打印元素上的 `accept` 方法。
+ */
 fun ImportCollectingPrinter.printAcceptMethod(
     element: AbstractElement<*, *, *>,
     visitorClass: ClassRef<PositionTypeParameterRef>,
@@ -361,6 +452,9 @@ fun ImportCollectingPrinter.printAcceptMethod(
     println()
 }
 
+/**
+ * 生成 `transform` 方法的 KDoc 文本。
+ */
 private fun transformMethodKDoc(
     transformerParameter: FunctionParameter,
     dataParameter: FunctionParameter?,
@@ -382,6 +476,9 @@ private fun transformMethodKDoc(
     append("\n@return The transformed node.")
 }
 
+/**
+ * 打印元素上的 `transform` 方法。
+ */
 fun ImportCollectingPrinter.printTransformMethod(
     element: AbstractElement<*, *, *>,
     transformerClass: ClassRef<PositionTypeParameterRef>,
@@ -414,6 +511,9 @@ fun ImportCollectingPrinter.printTransformMethod(
     println()
 }
 
+/**
+ * 生成 `acceptChildren` 方法的 KDoc 文本。
+ */
 private fun acceptChildrenKDoc(visitorParameter: FunctionParameter, dataParameter: FunctionParameter?) = buildString {
     append("Runs the provided [")
     append(visitorParameter.name)
@@ -440,6 +540,9 @@ private fun acceptChildrenKDoc(visitorParameter: FunctionParameter, dataParamete
     }
 }
 
+/**
+ * 打印递归访问子节点的 `acceptChildren` 方法声明。
+ */
 fun ImportCollectingPrinter.printAcceptChildrenMethod(
     element: FieldContainer<*>,
     visitorClass: ClassRef<PositionTypeParameterRef>,
@@ -463,6 +566,9 @@ fun ImportCollectingPrinter.printAcceptChildrenMethod(
     )
 }
 
+/**
+ * 生成 `transformChildren` 方法的 KDoc 文本。
+ */
 private fun transformChildrenMethodKDoc(transformerParameter: FunctionParameter, dataParameter: FunctionParameter?, returnType: TypeRef) =
     buildString {
         append("Recursively transforms this node's children *in place* using [")
@@ -493,6 +599,9 @@ private fun transformChildrenMethodKDoc(transformerParameter: FunctionParameter,
         }
     }
 
+/**
+ * 打印递归转换子节点的 `transformChildren` 方法声明。
+ */
 fun ImportCollectingPrinter.printTransformChildrenMethod(
     element: FieldContainer<*>,
     transformerClass: ClassRef<PositionTypeParameterRef>,
@@ -516,6 +625,9 @@ fun ImportCollectingPrinter.printTransformChildrenMethod(
     )
 }
 
+/**
+ * 打印无 data 参数的 `accept` 便捷方法。
+ */
 fun ImportCollectingPrinter.printAcceptVoidMethod(visitorType: ClassRef<*>, treeName: String) {
     val visitorParameter = FunctionParameter("visitor", visitorType)
     val returnType = StandardTypes.unit
@@ -526,6 +638,9 @@ fun ImportCollectingPrinter.printAcceptVoidMethod(visitorType: ClassRef<*>, tree
     }
 }
 
+/**
+ * 打印无 data 参数的 `acceptChildren` 便捷方法。
+ */
 fun ImportCollectingPrinter.printAcceptChildrenVoidMethod(visitorType: ClassRef<*>) {
     val visitorParameter = FunctionParameter("visitor", visitorType)
     printKDoc(acceptChildrenKDoc(visitorParameter, null))
@@ -535,6 +650,9 @@ fun ImportCollectingPrinter.printAcceptChildrenVoidMethod(visitorType: ClassRef<
     }
 }
 
+/**
+ * 打印无 data 参数的根元素 `transform` 便捷方法。
+ */
 fun ImportCollectingPrinter.printTransformVoidMethod(element: AbstractElement<*, *, *>, transformerType: ClassRef<*>, treeName: String) {
     assert(element.isRootElement) { "Expected root element" }
     val transformerParameter = FunctionParameter("transformer", transformerType)
@@ -552,6 +670,9 @@ fun ImportCollectingPrinter.printTransformVoidMethod(element: AbstractElement<*,
     }
 }
 
+/**
+ * 打印无 data 参数的根元素 `transformChildren` 便捷方法。
+ */
 fun ImportCollectingPrinter.printTransformChildrenVoidMethod(element: AbstractElement<*, *, *>, visitorType: ClassRef<*>, returnType: TypeRef) {
     assert(element.isRootElement) { "Expected root element" }
     val transformerParameter = FunctionParameter("transformer", visitorType)
@@ -563,4 +684,7 @@ fun ImportCollectingPrinter.printTransformChildrenVoidMethod(element: AbstractEl
     }
 }
 
+/**
+ * 根据字段可空性返回安全调用或普通调用操作符。
+ */
 fun AbstractField<*>.call(): String = if (nullable) "?." else "."

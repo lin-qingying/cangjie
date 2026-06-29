@@ -11,15 +11,30 @@ import org.cangnova.cangjie.test.services.moduleStructure
 import org.cangnova.cangjie.test.services.TestServices
 import org.cangnova.cangjie.test.util.MultiModuleInfoDumper
 
+/**
+ * 表示 `CfirInferenceLogsHandler`，承载CFIR 前端测试中的配置数据、测试产物或处理步骤。
+ */
 class CfirInferenceLogsHandler(
     testServices: TestServices,
 ) : CfirAnalysisHandler(testServices) {
+    /**
+     * 保存 `directiveContainers`，供CFIR 前端测试在测试执行期间读取或传递。
+     */
     override val directiveContainers: List<DirectivesContainer>
         get() = listOf(CfirDiagnosticsDirectives, DiagnosticsDirectives)
 
+    /**
+     * 保存 `dumper`，供CFIR 前端测试在测试执行期间读取或传递。
+     */
     private val dumper = MultiModuleInfoDumper(moduleHeaderTemplate = "// -- Module: <%s> --")
+    /**
+     * 保存 `collectedLogsByModule`，供CFIR 前端测试在测试执行期间读取或传递。
+     */
     private val collectedLogsByModule = linkedMapOf<TestModule, String>()
 
+    /**
+     * 执行 `processModule` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     override fun processModule(module: TestModule, info: CfirOutputArtifact) {
         for (part in info.partsForDependsOnModules) {
             val currentModule = part.module
@@ -38,6 +53,9 @@ class CfirInferenceLogsHandler(
         }
     }
 
+    /**
+     * 执行 `processAfterAllModules` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     override fun processAfterAllModules(someAssertionWasFailed: Boolean) {
         val directives = testServices.moduleStructure.allDirectives
         val testDataFile = testServices.moduleStructure.originalTestDataFiles.first()
@@ -67,6 +85,9 @@ class CfirInferenceLogsHandler(
         testServices.assertions.assertEqualsToFile(expectedFile, dumper.generateResultingDump())
     }
 
+    /**
+     * 提供 `renderLogger` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     private fun renderLogger(logger: CfirInferenceLogger): String {
         return buildString {
             logger.topLevelElements.forEachIndexed { index, block ->
@@ -84,11 +105,17 @@ class CfirInferenceLogsHandler(
         }
     }
 
+    /**
+     * 提供 `renderOwner` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     private fun renderOwner(owner: CfirInferenceLogger.BlockOwner): String = when (owner) {
         is CfirInferenceLogger.BlockOwner.CandidateOwner -> owner.candidate.toString()
         CfirInferenceLogger.BlockOwner.Unknown -> "Unknown"
     }
 
+    /**
+     * 提供 `renderItem` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     private fun renderItem(item: CfirInferenceLogger.BlockItemElement): String = buildString {
         when (item) {
             is CfirInferenceLogger.NewVariableElement -> append("- NEW ${item.variable.lookupTag.name}")
@@ -104,6 +131,9 @@ class CfirInferenceLogsHandler(
         }
     }
 
+    /**
+     * 提供 `renderOrigins` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     private fun renderOrigins(origins: List<CfirInferenceLogger.ConstraintElement>): String = buildString {
         origins.forEachIndexed { index, origin ->
             if (index > 0) appendLine()
@@ -112,5 +142,8 @@ class CfirInferenceLogsHandler(
     }
 }
 
+/**
+ * 保存 `CfirSession.inferenceLoggerOrNull`，供CFIR 前端测试在测试执行期间读取或传递。
+ */
 private val CfirSession.inferenceLoggerOrNull: CfirInferenceLogger?
     by CfirSession.nullableSessionComponentAccessor()

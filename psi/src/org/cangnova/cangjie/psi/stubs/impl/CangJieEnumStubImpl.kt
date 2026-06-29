@@ -34,25 +34,55 @@ import com.intellij.psi.stubs.StubElement
 import com.intellij.util.io.StringRef
 import java.util.ArrayList
 
+/**
+ * 表示 `CangJieEnumStubImpl`，承载PSI Stub中的语法节点、索引桩或辅助模型。
+ */
 open class CangJieEnumStubImpl(
     type: CjEnumElementType,
     parent: StubElement<out PsiElement>?,
+    /**
+     * 保存 `qualifiedName` 的内部状态，供PSI Stub实现维护节点缓存或解析上下文。
+     */
     private val qualifiedName: StringRef?,
+    /**
+     * 保存 `classId` 的内部状态，供PSI Stub实现维护节点缓存或解析上下文。
+     */
     private val classId: ClassId?,
+    /**
+     * 保存 `name` 的内部状态，供PSI Stub实现维护节点缓存或解析上下文。
+     */
     private val name: StringRef?,
+    /**
+     * 保存 `superNames` 的内部状态，供PSI Stub实现维护节点缓存或解析上下文。
+     */
     private val superNames: Array<StringRef>,
+    /**
+     * 保存 `isNonExhaustive` 的内部状态，供PSI Stub实现维护节点缓存或解析上下文。
+     */
     private val isNonExhaustive: Boolean
 ) : CangJieStubBaseImpl<CjEnum>(parent, type), CangJieEnumStub {
 
+    /**
+     * 实现 `getFqName` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getFqName(): FqName? {
         val stringRef = StringRef.toString(qualifiedName) ?: return null
         return FqName(stringRef)
     }
 
+    /**
+     * 实现 `getName` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getName() = StringRef.toString(name)
+    /**
+     * 实现 `isNonExhaustive` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun isNonExhaustive(): Boolean {
         return isNonExhaustive
     }
+    /**
+     * 实现 `getSuperNames` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getSuperNames(): List<String> {
         val result = ArrayList<String>()
         for (ref in superNames) {
@@ -61,8 +91,14 @@ open class CangJieEnumStubImpl(
         return result
     }
 
+    /**
+     * 实现 `getClassId` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getClassId(): ClassId? = classId
 
+    /**
+     * 实现 `copyInto` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun copyInto(newParent: StubElement<*>?): CangJieEnumStubImpl = CangJieEnumStubImpl(
         type = stubType as CjEnumElementType,
         parent = newParent,

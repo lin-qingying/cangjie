@@ -16,6 +16,9 @@ import org.cangnova.cangjie.platform.TargetPlatform
  * 对齐 Kotlin 声明：`org.jetbrains.kotlin.config.CommonConfigurationKeys`。
  */
 object CommonConfigurationKeys {
+    /**
+     * 编译消息收集器配置键。
+     */
     @JvmField
     val MESSAGE_COLLECTOR_KEY = CompilerConfigurationKey.create<MessageCollector>("MESSAGE_COLLECTOR_KEY")
 
@@ -35,6 +38,10 @@ object CommonConfigurationKeys {
     /** 文件映射跟踪器。对齐 Kotlin 键：`FILE_MAPPING_TRACKER`。 */
     @JvmField
     val FILE_MAPPING_TRACKER = CompilerConfigurationKey.create<ICFileMappingTracker>("FILE_MAPPING_TRACKER")
+
+    /**
+     * CFIR 诊断收集器配置键。
+     */
     @JvmField
     val DIAGNOSTICS_COLLECTOR = CompilerConfigurationKey.create<BaseDiagnosticsCollector>("DIAGNOSTICS_COLLECTOR")
 
@@ -134,6 +141,10 @@ var CompilerConfiguration.fileMappingTracker: ICFileMappingTracker?
     set(value) {
         putIfNotNull(CommonConfigurationKeys.FILE_MAPPING_TRACKER, value)
     }
+
+/**
+ * CFIR 诊断收集器扩展属性。
+ */
 var CompilerConfiguration.diagnosticsCollector: BaseDiagnosticsCollector
     get() = getOrDefault( DIAGNOSTICS_COLLECTOR) { error("diagnostic collector is not initialized") }
     set(value) { put( DIAGNOSTICS_COLLECTOR, value) }
@@ -243,6 +254,9 @@ var CompilerConfiguration.dontSortSourceFiles: Boolean
         put(CommonConfigurationKeys.DONT_SORT_SOURCE_FILES, value)
     }
 
+/**
+ * 编译消息收集器扩展属性，缺省为不会输出消息的 `MessageCollector.NONE`。
+ */
 var CompilerConfiguration.messageCollector: MessageCollector
     get() = get(CommonConfigurationKeys.MESSAGE_COLLECTOR_KEY, MessageCollector.NONE)
     set(value) {

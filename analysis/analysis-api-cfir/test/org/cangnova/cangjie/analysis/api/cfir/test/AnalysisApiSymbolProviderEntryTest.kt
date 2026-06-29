@@ -46,8 +46,14 @@ import org.junit.jupiter.api.Test
 class AnalysisApiSymbolProviderEntryTest : AbstractAnalysisApiExecutionTest(
     "analysis/analysis-api-cfir/testData/symbolProviderEntries",
 ) {
+    /**
+     * 使用 standalone CFIR 配置验证 PSI 入口到 public symbol 的恢复路径。
+     */
     override val configurator = CaCfirStandaloneAnalysisApiTestConfigurator
 
+    /**
+     * 验证各类新增 PSI 入口能直接创建 symbol，并且 symbol 能恢复到同一个 PSI 实例。
+     */
     @Test
     fun psiEntrySymbols(mainFile: CjFile) {
         val macroDeclaration = PsiTreeUtil.findChildrenOfType(mainFile, CjMacroDeclaration::class.java).single()

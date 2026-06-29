@@ -40,8 +40,17 @@ package org.cangnova.cangjie.psi
  * @property category 注解所属的分类
  */
 enum class CjBuiltInAnnotation(
+    /**
+     * 保存 `annotationName`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val annotationName: String,
+    /**
+     * 保存 `description`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val description: String,
+    /**
+     * 保存 `category`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val category: AnnotationCategory
 ) {
     /**
@@ -358,7 +367,13 @@ enum class AnnotationCategory(val description: String) {
  * @property description 调用约定的描述
  */
 enum class CallingConvention(
+    /**
+     * 保存 `conventionName`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val conventionName: String,
+    /**
+     * 保存 `description`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val description: String
 ) {
     /**
@@ -423,7 +438,13 @@ enum class CallingConvention(
  * @property description 目标类型的中文描述
  */
 enum class CjAnnotationTarget(
+    /**
+     * 保存 `targetName`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val targetName: String,
+    /**
+     * 保存 `description`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val description: String
 ) {
     /**
@@ -534,7 +555,13 @@ enum class CjAnnotationTarget(
  * @property description 策略的描述
  */
 enum class OverflowStrategy(
+    /**
+     * 保存 `strategyName`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val strategyName: String,
+    /**
+     * 保存 `description`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val description: String
 ) {
     /**

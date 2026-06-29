@@ -29,6 +29,7 @@ import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.lang.LighterASTNode
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.inheritanceCycleDiagnosticSource
 import org.cangnova.cangjie.cfir.calls.resolvedQualifierClassifier
+import org.cangnova.cangjie.cfir.calls.resolvedQualifierTypeParameter
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.diagnostic.*
 import org.cangnova.cangjie.cfir.diagnostics.*
@@ -90,8 +91,61 @@ fun ConeDiagnostic.toCfirDiagnostics(
         is ConeUnresolvedNameError -> mapConeUnresolvedNameError(source, callOrAssignmentSource, session)
         is ConeHiddenCandidateError -> mapConeHiddenCandidateError(source, callOrAssignmentSource, session)
         is ConeVisibilityError -> listOfNotNull(mapConeVisibilityError(source, callOrAssignmentSource, session))
+        is ConeObjectCannotAccessStaticMemberError ->
+            listOfNotNull(mapObjectCannotAccessStaticMemberError(source, callOrAssignmentSource, session))
+        is ConeIllegalAccessNonStaticMemberError ->
+            listOfNotNull(mapIllegalAccessNonStaticMemberError(source, callOrAssignmentSource, session))
         else -> listOfNotNull(mapOtherDiagnostic(source, valueParameter, callOrAssignmentSource, session))
     }
+}
+
+/**
+ * 对象访问 static 成员时，诊断锚定在源码显式写出的对象接收者 token 上。
+ */
+private fun ConeObjectCannotAccessStaticMemberError.mapObjectCannotAccessStaticMemberError(
+    source: CjSourceElement?,
+    callOrAssignmentSource: CjSourceElement?,
+    session: CfirSession,
+): CjDiagnostic? {
+    val diagnosticSource = candidate.callInfo.explicitReceiver?.objectStaticReceiverDiagnosticSource()
+        ?: source
+        ?: callOrAssignmentSource
+        ?: candidate.callInfo.callSite.source
+        ?: return null
+    return CfirErrors.OBJECT_CANNOT_ACCESS_STATIC_MEMBER.on(diagnosticSource, memberName, session)
+}
+
+/**
+ * 构造器调用 `B().a` 的接收者 source 是整个 `B()`，但用户可见诊断应落在类型名 `B`。
+ */
+private fun CfirExpression.objectStaticReceiverDiagnosticSource(): CjSourceElement? {
+    val access = this as? CfirQualifiedAccessExpression
+    return access?.calleeReference?.source ?: source
+}
+
+/**
+ * 类型名访问实例成员时，诊断锚定在源码显式写出的类型 qualifier 上。
+ */
+private fun ConeIllegalAccessNonStaticMemberError.mapIllegalAccessNonStaticMemberError(
+    source: CjSourceElement?,
+    callOrAssignmentSource: CjSourceElement?,
+    session: CfirSession,
+): CjDiagnostic? {
+    val explicitReceiver = candidate.callInfo.explicitReceiver
+    val diagnosticSource = explicitReceiver?.source
+        ?: source
+        ?: callOrAssignmentSource
+        ?: candidate.callInfo.callSite.source
+        ?: return null
+    val typeParameter = explicitReceiver?.resolvedQualifierTypeParameter()
+    if (typeParameter != null) {
+        return CfirErrors.STATIC_VARIABLE_USE_GENERIC_PARAMETER.on(
+            diagnosticSource,
+            typeParameter.name,
+            session,
+        )
+    }
+    return CfirErrors.ILLEGAL_ACCESS_NON_STATIC_MEMBER.on(diagnosticSource, memberName, session)
 }
 
 /**
@@ -106,6 +160,9 @@ private fun ConeHiddenCandidateError.mapConeHiddenCandidateError(
     if (candidate.callInfo.callSite !is CfirFunctionCall) {
         return emptyList()
     }
+
+    candidate.invalidBinaryOperatorDiagnosticForOperatorCall(source, callOrAssignmentSource, session)
+        ?.let { diagnostic -> return listOf(diagnostic) }
 
     val diagnosticSource = source
         ?: callOrAssignmentSource
@@ -1037,16 +1094,35 @@ private fun ConeAmbiguityError.mapConeAmbiguityError(
 
     val factory = if (isCallLike || isCallLikeContext) CfirErrors.AMBIGUOUS_FUNCTION_CALL else CfirErrors.AMBIGUOUS_USE
     val ambiguitySource = if (factory == CfirErrors.AMBIGUOUS_USE) {
-        callOrAssignmentSource
-            ?.takeIf { source == null || it.startOffset < source.startOffset || it.endOffset > source.endOffset }
-            ?.offsetRangeSourceWhenPsiElementIsNarrower()
-            ?: source?.qualifiedAmbiguousUseSource()
-            ?: callOrAssignmentSource?.qualifiedAmbiguousUseSource()
-            ?: diagnosticSource
+        if (isFunctionValueAmbiguity()) {
+            source ?: callOrAssignmentSource?.offsetRangeSourceWhenPsiElementIsNarrower() ?: diagnosticSource
+        } else {
+            callOrAssignmentSource
+                ?.takeIf { source == null || it.startOffset < source.startOffset || it.endOffset > source.endOffset }
+                ?.offsetRangeSourceWhenPsiElementIsNarrower()
+                ?: source?.qualifiedAmbiguousUseSource()
+                ?: callOrAssignmentSource?.qualifiedAmbiguousUseSource()
+                ?: diagnosticSource
+        }
     } else {
         source ?: diagnosticSource
     }
     return listOfNotNull(factory.on(ambiguitySource, name, session))
+}
+
+/**
+ * 函数名作为值使用时，歧义属于 selector 函数引用本身。
+ *
+ * `a.foo<T>` 中 receiver `a` 只负责提供成员 scope；真正歧义的是 `foo<T>` 这个函数值引用。
+ */
+private fun ConeAmbiguityError.isFunctionValueAmbiguity(): Boolean {
+    val callCandidates = candidates.filterIsInstance<AbstractCallCandidate<*>>()
+    return callCandidates.isNotEmpty() &&
+            !isCallLike &&
+            callCandidates.all { candidate ->
+                candidate.callInfo.arguments.isEmpty() &&
+                        candidate.symbol.takeIf { it.isBound }?.cfir is CfirFunction
+            }
 }
 
 /**
@@ -1313,6 +1389,7 @@ private fun ConeUnresolvedNameError.mapGenericUpperBoundAccessDiagnostic(
     callOrAssignmentSource: CjSourceElement?,
     session: CfirSession,
 ): CjDiagnostic? {
+    if (operator != null) return null
     val typeParameterType = receiverType as? ConeTypeParameterType ?: return null
     val diagnosticSource = source ?: callOrAssignmentSource ?: return null
     val missingName = name
@@ -1723,9 +1800,13 @@ private fun ConeDiagnostic.mapOtherDiagnostic(
             diagnosticSource, packageName, session,
         )
 
-        is ConeGenericTypeInconsistentError -> CfirErrors.GENERIC_TYPE_INCONSISTENT.on(
-            diagnosticSource, typeParameterName, session,
-        )
+        is ConeGenericTypeInconsistentError -> {
+            // 官方把该诊断锚定在 nominal base expression，而不是被调用成员名。
+            val receiverSource = candidate.callInfo.explicitReceiver?.source
+            CfirErrors.GENERIC_TYPE_INCONSISTENT.on(
+                receiverSource ?: diagnosticSource, typeParameterName, session,
+            )
+        }
 
         is ConeUnmatchedTypeArgumentsError -> {
             if (actualCount == 0) {
@@ -2133,7 +2214,7 @@ private fun org.cangnova.cangjie.cfir.expressions.CfirExpression.genericInferenc
 /**
  * 渲染 invalid binary operator 诊断中使用的类型文本。
  */
-private fun ConeCangJieType.renderInvalidBinaryOperatorType(session: CfirSession): String {
+internal fun ConeCangJieType.renderInvalidBinaryOperatorType(session: CfirSession): String {
     val classId = classIdOrPrimitiveClassId ?: return toString()
     val declaration = runCatching { session.symbolProvider.getClassLikeSymbolByClassId(classId)?.cfir }.getOrNull()
     val kind = when (declaration) {

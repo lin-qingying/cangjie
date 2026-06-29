@@ -42,6 +42,9 @@ class CangJieTuplePatternStubImpl(
     parent: StubElement<out PsiElement>?,
 ) : CangJieStubBaseImpl<CjTuplePattern>(parent, CjStubElementTypes.TUPLE_PATTERN),
     CangJieTuplePatternStub {
+    /**
+     * 实现 `copyInto` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun copyInto(newParent: StubElement<*>?): CangJieTuplePatternStubImpl = CangJieTuplePatternStubImpl(
         parent = newParent,
     )

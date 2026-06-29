@@ -11,27 +11,60 @@ import org.cangnova.cangjie.generators.tree.printer.printFunctionWithBlockBody
 import org.cangnova.cangjie.generators.util.printBlock
 import org.cangnova.cangjie.utils.withIndent
 
-abstract class AbstractBuilderPrinter<Element, Implementation, ElementField>(val printer: ImportCollectingPrinter)
+/**
+ * 打印树 Builder DSL 类型和顶层构建函数的公共基类。
+ *
+ * 该打印器负责生成中间 Builder、叶子 Builder、`build*` 函数以及可选的 copy 构建函数。
+ */
+abstract class AbstractBuilderPrinter<Element, Implementation, ElementField>(
+    /**
+     * 带导入收集能力的目标源码打印器。
+     */
+    val printer: ImportCollectingPrinter,
+)
         where Element : AbstractElement<Element, ElementField, Implementation>,
               Implementation : AbstractImplementation<Implementation, Element, ElementField>,
               ElementField : AbstractField<ElementField> {
 
+    /**
+     * Builder 打印器共享的静态类型引用。
+     */
     companion object {
+        /**
+         * Kotlin contracts 实验性 API 的 opt-in 注解类型。
+         */
         private val experimentalContractsAnnotation =
             type("kotlin.contracts", "ExperimentalContracts", TypeKind.Class)
     }
 
+    /**
+     * 访问 implementation detail API 时需要使用的 opt-in 注解。
+     */
     protected abstract val implementationDetailAnnotation: ClassRef<*>
 
+    /**
+     * 打印到 Builder 类型声明前的 DSL 标记注解。
+     */
     protected abstract val builderDslAnnotation: ClassRef<*>
 
+    /**
+     * 打印实现类构造调用中的字段实参表达式。
+     */
     protected open fun ImportCollectingPrinter.printFieldReferenceInImplementationConstructorCall(field: ElementField) {
         print(field.name)
     }
 
+    /**
+     * 返回字段在 Builder 中实际暴露的类型。
+     *
+     * 列表字段默认使用可变列表类型，普通字段使用字段自身类型。
+     */
     protected open fun actualTypeOfField(field: ElementField): TypeRefWithNullability =
         if (field is ListField) StandardTypes.mutableList.withArgs(field.baseType) else field.typeRef
 
+    /**
+     * 将原始元素中的字段值复制到 copy Builder。
+     */
     protected open fun copyField(field: ElementField, originalParameterName: String, copyBuilderVariableName: String) {
         printer.run {
             when {
@@ -50,6 +83,9 @@ abstract class AbstractBuilderPrinter<Element, Implementation, ElementField>(val
         }
     }
 
+    /**
+     * 打印一个 Builder 类型及其关联的顶层 DSL 函数。
+     */
     fun printBuilder(builder: Builder<ElementField, Element>) {
         printer.run {
             addAllImports(builder.usedTypes)
@@ -140,6 +176,9 @@ abstract class AbstractBuilderPrinter<Element, Implementation, ElementField>(val
         }
     }
 
+    /**
+     * 创建顶层构建函数的初始化 Lambda 参数。
+     */
     private fun lambdaParameterForBuilderFunction(builder: Builder<ElementField, Element>, hasRequiredFields: Boolean) =
         FunctionParameter(
             name = "init",
@@ -147,6 +186,9 @@ abstract class AbstractBuilderPrinter<Element, Implementation, ElementField>(val
             defaultValue = "{}".takeIf { !hasRequiredFields },
         )
 
+    /**
+     * 打印 `callsInPlace(init, InvocationKind.EXACTLY_ONCE)` contracts 语句块。
+     */
     private fun ImportCollectingPrinter.contractCallsInPlaceExactlyOnce() {
         addStarImport("kotlin.contracts")
         print("contract")
@@ -155,9 +197,15 @@ abstract class AbstractBuilderPrinter<Element, Implementation, ElementField>(val
         }
     }
 
+    /**
+     * 根据实现类或元素名生成顶层构建函数名。
+     */
     private fun builderFunctionName(builder: LeafBuilder<ElementField, Element, Implementation>) =
         "build" + builder.implementation.run { name?.removePrefix(namePrefix) ?: element.name }
 
+    /**
+     * 打印 `build*` 顶层 DSL 构建函数。
+     */
     private fun ImportCollectingPrinter.printDslBuildFunction(
         builder: LeafBuilder<ElementField, Element, Implementation>,
         hasRequiredFields: Boolean,
@@ -193,6 +241,9 @@ abstract class AbstractBuilderPrinter<Element, Implementation, ElementField>(val
         }
     }
 
+    /**
+     * 判断字段是否需要 Builder 内部存储字段承接调用方赋值。
+     */
     private fun ElementField.needBackingField(fieldIsUseless: Boolean) =
         !nullable && this !is ListField && if (fieldIsUseless) {
             implementationDefaultStrategy?.defaultValue == null
@@ -200,9 +251,17 @@ abstract class AbstractBuilderPrinter<Element, Implementation, ElementField>(val
             defaultValueInBuilder == null
         }
 
+    /**
+     * 判断字段是否应使用 `Delegates.notNull` 生成非空委托。
+     */
     private fun ElementField.needNotNullDelegate(fieldIsUseless: Boolean) =
         needBackingField(fieldIsUseless) && (typeRef == StandardTypes.boolean || typeRef == StandardTypes.int)
 
+    /**
+     * 打印 Builder 中的单个字段声明。
+     *
+     * @return 第一项表示是否已输出需要空行分隔的字段体，第二项表示该字段是否是必填字段。
+     */
     private fun ImportCollectingPrinter.printFieldInBuilder(
         field: ElementField,
         builder: Builder<ElementField, Element>,
@@ -261,6 +320,9 @@ abstract class AbstractBuilderPrinter<Element, Implementation, ElementField>(val
         return needNewLine to hasRequiredFields
     }
 
+    /**
+     * 为无效字段打印隐藏级别的废弃注解。
+     */
     private fun ImportCollectingPrinter.printDeprecationOnUselessFieldIfNeeded(
         field: AbstractField<*>,
         builder: Builder<ElementField, Element>,
@@ -277,6 +339,9 @@ abstract class AbstractBuilderPrinter<Element, Implementation, ElementField>(val
         }
     }
 
+    /**
+     * 打印 Builder 中的列表字段声明。
+     */
     private fun ImportCollectingPrinter.printFieldListInBuilder(
         field: ElementField,
         builder: Builder<ElementField, Element>,
@@ -291,6 +356,9 @@ abstract class AbstractBuilderPrinter<Element, Implementation, ElementField>(val
         println()
     }
 
+    /**
+     * 打印 Builder 字段声明前的 `abstract`、`override`、`open` 或 `lateinit` 修饰符。
+     */
     private fun ImportCollectingPrinter.printModifiers(builder: Builder<ElementField, Element>, field: AbstractField<*>, fieldIsUseless: Boolean) {
         if (builder is IntermediateBuilder) {
             print("abstract ")
@@ -310,6 +378,9 @@ abstract class AbstractBuilderPrinter<Element, Implementation, ElementField>(val
         }
     }
 
+    /**
+     * 打印基于已有元素创建副本的 `build*Copy` 顶层 DSL 函数。
+     */
     private fun ImportCollectingPrinter.printDslBuildCopyFunction(
         builder: LeafBuilder<ElementField, Element, Implementation>,
         hasRequiredFields: Boolean,

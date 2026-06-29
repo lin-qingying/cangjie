@@ -25,11 +25,20 @@ import org.cangnova.cangjie.test.services.assertions
  * 并校验返回节点属于同一个 `CfirFile`。
  */
 abstract class AbstractGetOrBuildCfirTest : AbstractAnalysisApiBasedTest() {
+    /**
+     * 使用源码 low-level CFIR 测试配置。
+     */
     override val configurator = analysisApiCfirSourceTestConfigurator(analyseInDependentSession = false)
 
+    /**
+     * getOrBuildCfir 测试支持的额外指令。
+     */
     override val additionalDirectives: List<DirectivesContainer>
         get() = super.additionalDirectives + Directives
 
+    /**
+     * 对所有标记 PSI 调用 getOrBuildCfir 并渲染返回结果。
+     */
     override fun doTestByMainFile(mainFile: CjFile, mainModule: CjTestModule, testServices: TestServices) {
         fun findElement(qualifier: String): CjElement? {
             val selected = testServices.expressionMarkerProvider.getTopmostSelectedElementOfTypeByDirectiveOrNull(
@@ -86,6 +95,9 @@ abstract class AbstractGetOrBuildCfirTest : AbstractAnalysisApiBasedTest() {
         testServices.assertions.assertEqualsToTestOutputFile(actual)
     }
 
+    /**
+     * 判断 [target] 是否位于 [file] 子树内。
+     */
     private fun isInside(target: CfirElement, file: CfirFile): Boolean {
         var found = false
         file.accept(object : CfirDefaultVisitorVoid() {
@@ -102,11 +114,20 @@ abstract class AbstractGetOrBuildCfirTest : AbstractAnalysisApiBasedTest() {
         return found
     }
 
+    /**
+     * getOrBuildCfir 测试自定义指令。
+     */
     private object Directives : SimpleDirectivesContainer() {
+        /**
+         * 跳过返回节点必须属于同一 CfirFile 的校验。
+         */
         val SKIP_CONTAINMENT_CHECK by directive("跳过“返回的 CFIR 节点必须属于同一 CfirFile”校验。")
     }
 }
 
+/**
+ * 渲染 getOrBuildCfir 的实际返回节点和所在文件。
+ */
 private fun renderActualCfir(
     cfir: CfirElement?,
     cjElement: CjElement,
@@ -126,4 +147,7 @@ private fun renderActualCfir(
     append(renderer.renderElementAsString(cfirFile))
 }
 
+/**
+ * source 配置下的 getOrBuildCfir 测试基类。
+ */
 abstract class AbstractSourceGetOrBuildCfirTest : AbstractGetOrBuildCfirTest()

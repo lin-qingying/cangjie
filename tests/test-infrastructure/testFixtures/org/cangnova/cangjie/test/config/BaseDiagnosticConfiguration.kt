@@ -123,6 +123,9 @@ fun TestConfigurationBuilder.baseCfirDiagnosticTestConfiguration(
 
     configureCommonDiagnosticTestPaths(testDataConsistencyHandler)
 }
+/**
+ * 执行 `NonGroupingPhase` 对应的测试配置流程，维持测试框架的阶段契约。
+ */
 fun TestStepBuilder.HandlersStepBuilder.NonGroupingPhase<CfirOutputArtifact, FrontendKinds.CFIR>.setupHandlersForDiagnosticTest() {
     useHandlers(
         ::CfirDiagnosticsHandler,
@@ -144,6 +147,9 @@ fun TestConfigurationBuilder.configurationForClassicAndCfirTestsAlongside(
 ) {
     useAfterAnalysisCheckers(testDataConsistencyHandler)
 }
+/**
+ * 提供 `firHandlersStep` 对应的测试配置流程，维持测试框架的阶段契约。
+ */
 inline fun TestConfigurationBuilder.firHandlersStep(
     noinline init: TestStepBuilder.HandlersStepBuilder.NonGroupingPhase<CfirOutputArtifact, FrontendKinds.CFIR>.() -> Unit = {}
 ) {
@@ -180,6 +186,9 @@ fun TestConfigurationBuilder.enableLazyResolvePhaseChecking() {
     useAfterAnalysisCheckers(::CfirResolveContractViolationErrorHandler, insertAtFirst = true)
 }
 
+/**
+ * 执行 `TestConfigurationBuilderBase` 对应的测试配置流程，维持测试框架的阶段契约。
+ */
 fun TestConfigurationBuilderBase<*, *>.configureCfirParser(parser: CfirParser) {
     defaultDirectives {
         CFIR_PARSER with parser
@@ -200,9 +209,15 @@ class CfirTestDataConsistencyHandler(
 class CfirSpecificParserSuppressor(
     testServices: TestServices,
 ) : MetaTestConfigurator(testServices) {
+    /**
+     * 保存 `directiveContainers`，供测试配置在测试执行期间读取或传递。
+     */
     override val directiveContainers: List<DirectivesContainer>
         get() = listOf(CfirDiagnosticsDirectives)
 
+    /**
+     * 执行 `shouldSkipTest` 对应的测试配置流程，维持测试框架的阶段契约。
+     */
     override fun shouldSkipTest(): Boolean {
         val allDirectives = testServices.moduleStructure.allDirectives
         val disabledParser = allDirectives.singleOrZeroValue(DISABLE_WITH_PARSER) ?: return false

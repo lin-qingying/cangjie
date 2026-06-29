@@ -32,7 +32,13 @@ import com.intellij.lang.PsiBuilder
 import com.intellij.lang.PsiParser
 import com.intellij.psi.tree.IElementType
 
+/**
+ * 表示 `CDocParser`，承载仓颉词法与文档注释中的语法节点、索引桩或辅助模型。
+ */
 class CDocParser : PsiParser {
+    /**
+     * 实现 `parse` 的仓颉词法与文档注释协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun parse(root: IElementType, builder: PsiBuilder): ASTNode {
         val rootMarker = builder.mark()
         if (builder.tokenType === START) {

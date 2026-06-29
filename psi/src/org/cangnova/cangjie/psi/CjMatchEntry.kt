@@ -29,34 +29,67 @@ import org.cangnova.cangjie.psi.psiUtil.getTrailingCommaByClosingElement
 import com.intellij.lang.ASTNode
 import com.intellij.psi.PsiElement
 
+/**
+ * 定义 `CjPatternEntryBlock` 接口，约束仓颉 PSI节点或服务需要暴露的结构能力。
+ */
 interface CjPatternEntryBlock : PsiElement
 
+/**
+ * 表示 `CjMatchEntry`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjMatchEntry(node: ASTNode) : CjElementImpl(node), CjPatternEntryBlock {
+    /**
+     * 保存 `isElse`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val isElse: Boolean
         get() {
             return elseKeyword != null
         }
 
+    /**
+     * 保存 `elseKeyword`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val elseKeyword: PsiElement?
         get() {
             return findChildByType(CjNodeTypes.WILDCARD_PATTERN)
         }
+    /**
+     * 保存 `body`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val body: CjBlockExpression? get() = findChildByClass(CjBlockExpression::class.java)
+    /**
+     * 保存 `expression`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val expression: CjCaseBlockExpression?
         get() = findChildByClass(CjCaseBlockExpression::class.java)
 
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitMatchEntry(this, data)
     }
 
+    /**
+     * 保存 `conditions`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val conditions: Array<CjCasePatternElement>
         get() = findChildrenByClass(CjCasePatternElement::class.java)
 
+    /**
+     * 保存 `trailingComma`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val trailingComma: PsiElement?
         get() = getTrailingCommaByClosingElement(arrow)
 
+    /**
+     * 保存 `arrow`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val arrow: PsiElement?
         get() = findChildByType(CjTokens.DOUBLE_ARROW)
 
+    /**
+     * 保存 `patternGuard`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val patternGuard: CjPatternGuard? get() = findChildByClass(CjPatternGuard::class.java)
 }

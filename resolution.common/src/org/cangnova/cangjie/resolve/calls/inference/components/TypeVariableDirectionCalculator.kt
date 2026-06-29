@@ -5,10 +5,19 @@
 
 package org.cangnova.cangjie.resolve.calls.inference.components
 
+/**
+ * 计算类型变量在约束系统中解析方向的工具入口。
+ */
 object TypeVariableDirectionCalculator {
+    /**
+     * 类型变量可被固定到的方向。
+     */
     enum class ResolveDirection {
+        /** 固定为当前约束的子类型方向。 */
         TO_SUBTYPE,
+        /** 固定为当前约束的父类型方向。 */
         TO_SUPERTYPE,
+        /** 当前约束不足以确定固定方向。 */
         UNKNOWN
     }
 }

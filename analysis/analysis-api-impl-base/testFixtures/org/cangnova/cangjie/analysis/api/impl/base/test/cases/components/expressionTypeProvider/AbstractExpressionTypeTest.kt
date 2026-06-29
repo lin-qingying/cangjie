@@ -18,8 +18,15 @@ import org.junit.jupiter.api.Assertions.assertTrue
 
 /**
  * `expressionTypeProvider.expressionType` 的抽象测试。
+ *
+ * 该测试从调用表达式、解析到的 callable 返回类型和目标 class default type 三个入口交叉验证类型一致性。
  */
 abstract class AbstractExpressionTypeTest : AbstractAnalysisApiComponentTest() {
+    /**
+     * 执行表达式类型查询测试。
+     *
+     * 方法定位目标表达式，查询公开 expression type，并将规范化后的类型渲染与期望比较。
+     */
     override fun doTestByMainFile(mainFile: CjFile, mainModule: CjTestModule, testServices: TestServices) {
         val directives = directivesForMainFile(mainFile, mainModule)
         val userClass = PsiTreeUtil.findChildrenOfType(mainFile, CjClass::class.java)

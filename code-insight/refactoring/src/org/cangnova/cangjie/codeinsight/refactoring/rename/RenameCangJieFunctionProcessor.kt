@@ -14,5 +14,8 @@ import org.cangnova.cangjie.psi.CjNamedFunction
  * 仓颉函数声明的 rename processor。
  */
 class RenameCangJieFunctionProcessor : RenameCangJiePsiProcessor() {
+    /**
+     * 只处理仓颉命名函数声明。
+     */
     override fun canProcessElement(element: PsiElement): Boolean = element is CjNamedFunction
 }

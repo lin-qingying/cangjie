@@ -23,6 +23,9 @@ import org.cangnova.cangjie.chir.core.value.ChirValue
  * operation、操作数、控制流目标和值类型都必须保持一致。
  */
 object ChirRoundTripAssert {
+    /**
+     * 断言两个 CHIR 包在后端语义上等价。
+     */
     fun assertSemanticallyEquivalent(expected: ChirPackage, actual: ChirPackage) {
         require(expected.semanticId == actual.semanticId) { "package id mismatch" }
         require(expected.name == actual.name) { "package name mismatch" }
@@ -64,6 +67,9 @@ object ChirRoundTripAssert {
         }
     }
 
+    /**
+     * 断言两个表达式节点语义等价。
+     */
     private fun assertExpressionEquivalent(expected: ChirExpression, actual: ChirExpression) {
         require(expected::class == actual::class) { "expression kind mismatch" }
         require(expected.semanticId == actual.semanticId) { "expression id mismatch" }
@@ -106,6 +112,9 @@ object ChirRoundTripAssert {
         }
     }
 
+    /**
+     * 断言两个终结指令语义等价。
+     */
     private fun assertTerminatorEquivalent(expected: ChirTerminator, actual: ChirTerminator) {
         require(expected::class == actual::class) { "terminator kind mismatch" }
         require(expected.semanticId == actual.semanticId) { "terminator id mismatch" }
@@ -136,6 +145,9 @@ object ChirRoundTripAssert {
         }
     }
 
+    /**
+     * 断言两个可空值节点语义等价。
+     */
     private fun assertNullableValueEquivalent(expected: ChirValue?, actual: ChirValue?, location: String) {
         require(expected != null || actual == null) { "$location value mismatch: expected null" }
         require(expected == null || actual != null) { "$location value mismatch: actual null" }
@@ -144,6 +156,9 @@ object ChirRoundTripAssert {
         }
     }
 
+    /**
+     * 断言两个值节点语义等价。
+     */
     private fun assertValueEquivalent(expected: ChirValue, actual: ChirValue, location: String) {
         require(expected::class == actual::class) { "$location value kind mismatch" }
         require(expected.semanticId == actual.semanticId) { "$location value id mismatch" }

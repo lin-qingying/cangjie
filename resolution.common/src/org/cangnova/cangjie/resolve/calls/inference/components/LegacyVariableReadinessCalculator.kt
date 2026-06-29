@@ -7,6 +7,9 @@ import org.cangnova.cangjie.resolve.calls.inference.components.VariableFixationF
 import org.cangnova.cangjie.resolve.calls.inference.components.VariableFixationFinder.VariableForFixation
 import org.cangnova.cangjie.type.model.*
 
+/**
+ * 旧版类型变量固定优先级计算器。
+ */
 class LegacyVariableReadinessCalculator(
     trivialConstraintTypeInferenceOracle: TrivialConstraintTypeInferenceOracle,
     languageVersionSettings: LanguageVersionSettings,
@@ -16,6 +19,9 @@ class LegacyVariableReadinessCalculator(
     languageVersionSettings,
     inferenceLoggerParameter,
 ) {
+    /**
+     * 类型变量固定准备状态，枚举顺序表达优先级。
+     */
     enum class TypeVariableFixationReadiness {
         FORBIDDEN,
         WITHOUT_PROPER_ARGUMENT_CONSTRAINT, // proper constraint from arguments -- not from upper bound for type parameters
@@ -55,6 +61,9 @@ class LegacyVariableReadinessCalculator(
         READY_FOR_FIXATION_REIFIED
     }
 
+    /**
+     * 计算指定类型变量的旧版固定准备状态。
+     */
     context(c: Context)
     override fun TypeConstructorMarker.getReadiness(
         dependencyProvider: TypeVariableDependencyInformationProvider
@@ -99,6 +108,9 @@ class LegacyVariableReadinessCalculator(
         }
     }
 
+    /**
+     * 判断类型变量是否有非 Nothing 的 lower proper 约束。
+     */
     context(c: Context)
     private fun TypeConstructorMarker.hasLowerNonNothingProperConstraint(): Boolean {
         val constraints = c.notFixedTypeVariables[this]?.constraints ?: return false
@@ -108,6 +120,9 @@ class LegacyVariableReadinessCalculator(
         }
     }
 
+    /**
+     * 判断 proper 约束是否全部来自声明上界合并。
+     */
     context(c: Context)
     private fun TypeConstructorMarker.hasOnlyIncorporatedConstraintsFromDeclaredUpperBoundLegacyVersion(): Boolean {
         val constraints = c.notFixedTypeVariables[this]?.constraints ?: return false
@@ -115,6 +130,9 @@ class LegacyVariableReadinessCalculator(
         return constraints.filter { it.isProperArgumentConstraint() }.all { it.position.isFromDeclaredUpperBound }
     }
 
+    /**
+     * 判断类型变量是否有足够的 proper 约束参与固定。
+     */
     context(c: Context)
     override fun typeVariableHasProperConstraint(
         typeVariable: TypeConstructorMarker,
@@ -126,6 +144,9 @@ class LegacyVariableReadinessCalculator(
         }
     }
 
+    /**
+     * 根据旧版 readiness 构造待固定变量描述。
+     */
     context(c: Context)
     override fun prepareVariableForFixation(
         candidate: TypeConstructorMarker,
@@ -141,6 +162,9 @@ class LegacyVariableReadinessCalculator(
         }
     }
 
+    /**
+     * 计算存在复杂依赖时的固定准备状态。
+     */
     context(c: Context)
     private fun TypeConstructorMarker.computeReadinessForVariableWithDependencies(): TypeVariableFixationReadiness {
         val (hasProperNonIltEqualityConstraint, hasProperNonIltConstraint) = computeIltConstraintsRelatedFlags()

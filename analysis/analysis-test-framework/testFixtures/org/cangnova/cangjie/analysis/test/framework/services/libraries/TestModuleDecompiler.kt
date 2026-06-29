@@ -11,13 +11,28 @@ import org.cangnova.cangjie.test.services.TestService
 import org.cangnova.cangjie.test.services.TestServices
 import java.nio.file.Path
 
+/**
+ * 将测试 library binary root 还原为 PSI 文件的反编译服务。
+ */
 interface TestModuleDecompiler : TestService {
+    /**
+     * 返回指定 artifact root 下可被 Analysis API 读取的全部 PSI 文件。
+     */
     fun getAllPsiFilesFromLibrary(artifactRoot: Path, project: Project): List<PsiFile>
 }
 
+/**
+ * 当前测试服务容器中的 library 反编译服务。
+ */
 val TestServices.testModuleDecompiler: TestModuleDecompiler by TestServices.testServiceAccessor()
 
+/**
+ * 从本地目录或单个 `.cjo` 文件收集 PSI 的反编译服务实现。
+ */
 class TestModuleDecompilerDirectory : TestModuleDecompiler {
+    /**
+     * 遍历 artifact root 并收集其中所有 `.cjo` binary 文件对应的 PSI。
+     */
     override fun getAllPsiFilesFromLibrary(artifactRoot: Path, project: Project): List<PsiFile> {
         val normalizedRoot = artifactRoot.toAbsolutePath().normalize()
         val normalizedPath = normalizedRoot.toString().replace('\\', '/')

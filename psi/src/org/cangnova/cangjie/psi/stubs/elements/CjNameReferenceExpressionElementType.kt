@@ -36,12 +36,18 @@ import com.intellij.util.io.StringRef
 import org.jetbrains.annotations.NonNls
 import java.io.IOException
 
+/**
+ * 表示 `CjNameReferenceExpressionElementType`，承载PSI Stub中的语法节点、索引桩或辅助模型。
+ */
 class CjNameReferenceExpressionElementType(debugName: String) :
     CjStubElementType<CangJieNameReferenceExpressionStub, CjNameReferenceExpression>(
         debugName,
         CjNameReferenceExpression::class.java,
         CangJieNameReferenceExpressionStub::class.java,
     ) {
+    /**
+     * 实现 `createStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createStub(
         psi: CjNameReferenceExpression,
         parentStub: StubElement<*>?,
@@ -49,6 +55,9 @@ class CjNameReferenceExpressionElementType(debugName: String) :
         return CangJieNameReferenceExpressionStubImpl(parentStub, StringRef.fromString(psi.referencedName))
     }
 
+    /**
+     * 实现 `serialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     @Throws(IOException::class)
     override fun serialize(stub: CangJieNameReferenceExpressionStub, dataStream: StubOutputStream) {
         dataStream.writeName(stub.getReferencedName())
@@ -57,6 +66,9 @@ class CjNameReferenceExpressionElementType(debugName: String) :
         )
     }
 
+    /**
+     * 实现 `deserialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     @Throws(IOException::class)
     override fun deserialize(
         dataStream: StubInputStream,
@@ -68,12 +80,18 @@ class CjNameReferenceExpressionElementType(debugName: String) :
     }
 }
 
+/**
+ * 表示 `CjNameBasicReferenceExpressionElementType`，承载PSI Stub中的语法节点、索引桩或辅助模型。
+ */
 class CjNameBasicReferenceExpressionElementType(debugName: String) :
     CjStubElementType<CangJieNameBasicReferenceExpressionStub, CjNameBasicReferenceExpression>(
         debugName,
         CjNameBasicReferenceExpression::class.java,
         CangJieNameBasicReferenceExpressionStub::class.java,
     ) {
+    /**
+     * 实现 `createStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createStub(
         psi: CjNameBasicReferenceExpression,
         parentStub: StubElement<*>?,
@@ -81,6 +99,9 @@ class CjNameBasicReferenceExpressionElementType(debugName: String) :
         return CangJieNameBasicReferenceExpressionStubImpl(parentStub, StringRef.fromString(psi.referencedName))
     }
 
+    /**
+     * 实现 `serialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     @Throws(IOException::class)
     override fun serialize(stub: CangJieNameBasicReferenceExpressionStub, dataStream: StubOutputStream) {
         dataStream.writeName(stub.getReferencedName())
@@ -89,6 +110,9 @@ class CjNameBasicReferenceExpressionElementType(debugName: String) :
         )
     }
 
+    /**
+     * 实现 `deserialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     @Throws(IOException::class)
     override fun deserialize(
         dataStream: StubInputStream,

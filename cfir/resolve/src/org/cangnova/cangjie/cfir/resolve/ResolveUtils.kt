@@ -245,6 +245,18 @@ fun createConeDiagnosticForCandidateWithError(
     applicability: CandidateApplicability,
     candidate: Candidate,
 ): org.cangnova.cangjie.cfir.types.ConeDiagnostic {
+    val objectCannotAccessStaticMember =
+        candidate.diagnostics.firstOrNull { it is ObjectCannotAccessStaticMember } as? ObjectCannotAccessStaticMember
+    if (objectCannotAccessStaticMember != null) {
+        return ConeObjectCannotAccessStaticMemberError(objectCannotAccessStaticMember.memberName, candidate)
+    }
+
+    val illegalAccessNonStaticMember =
+        candidate.diagnostics.firstOrNull { it is IllegalAccessNonStaticMember } as? IllegalAccessNonStaticMember
+    if (illegalAccessNonStaticMember != null) {
+        return ConeIllegalAccessNonStaticMemberError(illegalAccessNonStaticMember.memberName, candidate)
+    }
+
     val visibilityError = candidate.diagnostics.firstOrNull { it is VisibilityError } as? VisibilityError
     if (visibilityError != null) {
         return ConeVisibilityError(visibilityError.symbol)

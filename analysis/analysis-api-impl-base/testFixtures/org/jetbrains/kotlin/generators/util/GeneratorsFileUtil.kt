@@ -16,10 +16,22 @@ import kotlin.io.path.toPath
 import kotlin.io.path.writeText
 import kotlin.io.path.createTempDirectory
 
+/**
+ * 测试源码生成过程中的文件系统工具。
+ *
+ * 该对象集中处理生成文件头、内容差异判断、TeamCity 写入保护以及过期生成文件清理，
+ * 保证各个测试生成器共享一致的文件更新语义。
+ */
 object GeneratorsFileUtil {
+    /**
+     * 当前进程是否运行在 TeamCity 环境中。
+     */
     private val isTeamCityBuild: Boolean =
         System.getProperty("teamcity", "false").toBoolean() || System.getenv("TEAMCITY_VERSION") != null
 
+    /**
+     * 多行生成文件头文本。
+     */
     val GENERATED_MESSAGE = """
     /*
      * This file was generated automatically
@@ -27,9 +39,25 @@ object GeneratorsFileUtil {
      */
      """.trimIndent()
 
+    /**
+     * 单行生成文件头的起始标记。
+     */
     const val GENERATED_MESSAGE_PREFIX = "// This file was generated automatically. See "
+
+    /**
+     * 单行生成文件头的禁止手改标记。
+     */
     const val GENERATED_MESSAGE_SUFFIX = "// DO NOT MODIFY IT MANUALLY."
 
+    /**
+     * 仅当目标文件内容发生变化时写入新文本。
+     *
+     * @param file 目标生成文件。
+     * @param newText 新生成的完整文件内容。
+     * @param logNotChanged 内容未变化时是否输出日志。
+     * @param forbidGenerationOnTeamcity 是否在 TeamCity 上阻止真实写入并改为报告构建问题。
+     * @return 文件内容是否发生变化并触发写入。
+     */
     @OptIn(ExperimentalPathApi::class)
     @JvmStatic
     @JvmOverloads
@@ -67,6 +95,11 @@ object GeneratorsFileUtil {
         return true
     }
 
+    /**
+     * 在 TeamCity 环境中把需要重新生成的动作报告为构建问题。
+     *
+     * @return 返回 true 表示当前运行在 TeamCity 且调用方应跳过真实文件操作。
+     */
     private fun failOnTeamCity(message: String): Boolean {
         if (!isTeamCityBuild) return false
 
@@ -93,6 +126,9 @@ object GeneratorsFileUtil {
         return true
     }
 
+    /**
+     * 比较目标文件与新内容是否不同，比较前统一换行符。
+     */
     fun isFileContentChangedIgnoringLineSeparators(file: File, content: String): Boolean {
         val currentContent: String = try {
             StringUtil.convertLineSeparators(file.readText(Charsets.UTF_8))
@@ -102,12 +138,18 @@ object GeneratorsFileUtil {
         return StringUtil.convertLineSeparators(content) != currentContent
     }
 
+    /**
+     * 收集指定目录下此前由生成器写出的文件。
+     */
     fun collectPreviouslyGeneratedFiles(generationPath: File): List<File> {
         return generationPath.walkTopDown().filter {
             it.isFile && it.readText().let { text -> GENERATED_MESSAGE_PREFIX in text && GENERATED_MESSAGE_SUFFIX in text }
         }.toList()
     }
 
+    /**
+     * 删除本轮生成结果中已经不存在的历史生成文件。
+     */
     fun removeExtraFilesFromPreviousGeneration(previouslyGeneratedFiles: List<File>, generatedFiles: List<File>) {
         val generatedFilesPath = generatedFiles.mapTo(mutableSetOf()) { it.absolutePath }
 

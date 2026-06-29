@@ -27,7 +27,13 @@ package org.cangnova.cangjie.messages
 import com.intellij.DynamicBundle
 import org.jetbrains.annotations.Nls
 
+/**
+ * 表示 `AbstractCangJieBundle`，承载PSI 模块中的语法节点、索引桩或辅助模型。
+ */
 abstract class AbstractCangJieBundle protected constructor(val pathToBundle: String) : DynamicBundle(pathToBundle) {
+    /**
+     * 提供 `withHtml` 操作，封装PSI 模块节点的访问、构造或判断逻辑。
+     */
     @Nls
     protected fun String.withHtml(): String = "<html>$this</html>"
 

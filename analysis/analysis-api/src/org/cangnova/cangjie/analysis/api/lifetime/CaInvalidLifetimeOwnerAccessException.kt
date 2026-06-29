@@ -11,5 +11,8 @@ package org.cangnova.cangjie.analysis.api.lifetime
  * @property message 触发此异常的具体原因,由 [CaLifetimeToken.getInvalidationReason] 提供。
  */
 class CaInvalidLifetimeOwnerAccessException(
+    /**
+     * 当前生命周期对象已经失效的原因说明。
+     */
     override val message: String,
 ) : CaIllegalLifetimeOwnerAccessException()

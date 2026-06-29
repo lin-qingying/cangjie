@@ -78,7 +78,13 @@ import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Test
 
 @OptIn(CompilerConfiguration.Internals::class)
+/**
+ * 覆盖前端宏构造执行链路中的 splicer、executor、parser、降级和诊断行为。
+ */
 class FrontendMacroConstructionExecutionTest {
+    /**
+     * 验证默认稳定 splicer 会用解析出的表达式 payload 替换表达式 carrier。
+     */
     @Test
     fun defaultStableSplicerReplacesExpressionMacroCarrierWithParsedExpressionPayload() {
         val fixture = macroExpressionCarrierFixture()
@@ -128,6 +134,9 @@ class FrontendMacroConstructionExecutionTest {
         assertInstanceOf(CfirErrorExpression::class.java, statement)
     }
 
+    /**
+     * 验证默认稳定 splicer 会用解析出的声明 payload 替换声明 carrier。
+     */
     @Test
     fun defaultStableSplicerReplacesDeclarationCarrierWithParsedDeclarationPayload() {
         val session = object : CfirSession(CfirSession.Kind.Source) {}
@@ -163,6 +172,9 @@ class FrontendMacroConstructionExecutionTest {
         assertSame(replacement, file.declarations.single())
     }
 
+    /**
+     * 验证默认稳定 splicer 会用解析出的参数 payload 替换参数 carrier。
+     */
     @Test
     fun defaultStableSplicerReplacesParameterCarrierWithParsedParameterPayload() {
         val session = object : CfirSession(CfirSession.Kind.Source) {}
@@ -200,6 +212,9 @@ class FrontendMacroConstructionExecutionTest {
         assertSame(replacement, function.valueParameters.single())
     }
 
+    /**
+     * 验证局部变量初始化器中的表达式 carrier 也能被稳定替换。
+     */
     @Test
     fun defaultStableSplicerReplacesExpressionCarrierInsideLocalVariableInitializer() {
         val session = object : CfirSession(CfirSession.Kind.Source) {}
@@ -249,6 +264,9 @@ class FrontendMacroConstructionExecutionTest {
         assertSame(replacement, local.initializer)
     }
 
+    /**
+     * 验证 DEGRADED 模式会为局部变量初始化器构造 typed expression 占位符。
+     */
     @Test
     fun degradedModeBuildsTypedExpressionPlaceholderInsideLocalVariableInitializer() {
         val session = object : CfirSession(CfirSession.Kind.Source) {}
@@ -293,6 +311,9 @@ class FrontendMacroConstructionExecutionTest {
         )
     }
 
+    /**
+     * 验证 parser 不可用时 DEGRADED 模式会构造声明和参数占位符。
+     */
     @Test
     fun degradedModeBuildsTypedDeclarationAndParameterPlaceholdersWhenParserIsUnavailable() {
         val session = object : CfirSession(CfirSession.Kind.Source) {}
@@ -326,6 +347,9 @@ class FrontendMacroConstructionExecutionTest {
         )
     }
 
+    /**
+     * 验证已解析的宏会经 executor、fragment parser 和 stable splicer 完整流转。
+     */
     @Test
     fun resolvedMacroUsesExecutorFragmentParserAndStableSplicer() {
         val fixture = macroSurfaceFixture(
@@ -374,6 +398,9 @@ class FrontendMacroConstructionExecutionTest {
         assertTrue((result as MacroConstructionResult.Success).registry.diagnostics.isEmpty())
     }
 
+    /**
+     * 验证重导出宏使用 executable identity 构造 executor 调用信息。
+     */
     @Test
     fun reexportedMacroUsesExecutableIdentityForExecutorCallInfo() {
         val fixture = macroSurfaceFixture(
@@ -423,6 +450,9 @@ class FrontendMacroConstructionExecutionTest {
         assertEquals("impl-macro.dylib", call.libPath)
     }
 
+    /**
+     * 验证父宏参数只替换直接子宏 surface 范围。
+     */
     @Test
     fun parentMacroArgumentsReplaceOnlyDirectChildSurfaceRanges() {
         val packageFqName = FqName("sample")
@@ -493,6 +523,9 @@ class FrontendMacroConstructionExecutionTest {
         )
     }
 
+    /**
+     * 验证父宏属性 token 会替换直接子宏 surface 范围。
+     */
     @Test
     fun parentMacroAttributesReplaceDirectChildSurfaceRange() {
         val packageFqName = FqName("sample")
@@ -559,6 +592,9 @@ class FrontendMacroConstructionExecutionTest {
     // baseline §4 / §8 产出对应的 MacroConstructionDiagnostic.Kind。
     // ============================================================
 
+    /**
+     * 验证 executor 不可用会产生诊断并在 DEGRADED 模式下降级。
+     */
     @Test
     fun batch5_executorUnavailableYieldsExecutorUnavailableDiagnosticAndDegradedMode() {
         val surface = expressionSurface(
@@ -589,6 +625,9 @@ class FrontendMacroConstructionExecutionTest {
         )
     }
 
+    /**
+     * 验证不支持 forced kind 的宏被 `@!` 调用时报告匹配错误。
+     */
     @Test
     fun batch5_forcedKindOnNonForcedMacroReportsAtexclMismatch() {
         val surface = expressionSurface(
@@ -634,6 +673,9 @@ class FrontendMacroConstructionExecutionTest {
         )
     }
 
+    /**
+     * 验证 artifact libPath 会流入 executor 动态库加载调用。
+     */
     @Test
     fun batch5_libPathFlowsThroughExecutorLoadLibraries() {
         val fixture = macroExpressionCarrierFixture(macroName = "WithLib")
@@ -682,6 +724,9 @@ class FrontendMacroConstructionExecutionTest {
         )
     }
 
+    /**
+     * 验证动态库加载失败会报告 cannot-open-lib 并跳过 execute。
+     */
     @Test
     fun batch5_loadLibraryFailureReportsCannotOpenLibAndSkipsExecute() {
         val fixture = macroExpressionCarrierFixture(macroName = "WithLib")
@@ -731,6 +776,9 @@ class FrontendMacroConstructionExecutionTest {
         )
     }
 
+    /**
+     * 验证 diag report warning 会记录但不阻断 strict expansion。
+     */
     @Test
     fun batch5_diagReportWarningIsRecordedWithoutBlockingStrictExpansion() {
         val fixture = macroExpressionCarrierFixture(macroName = "Warn")
@@ -772,6 +820,9 @@ class FrontendMacroConstructionExecutionTest {
         assertEquals(5, diagnostic.tokenRangeEndColumn)
     }
 
+    /**
+     * 验证 diag report error 会在记录后阻断 strict expansion。
+     */
     @Test
     fun batch5_diagReportErrorBlocksStrictExpansionAfterBeingRecorded() {
         val fixture = macroExpressionCarrierFixture(macroName = "Error")
@@ -812,6 +863,9 @@ class FrontendMacroConstructionExecutionTest {
         assertEquals(7, diagnostic.tokenRangeEndColumn)
     }
 
+    /**
+     * 验证 executor failure 结果中的 diag report 会先于失败诊断记录。
+     */
     @Test
     fun batch5_failureResultDiagReportIsRecordedBeforeExecutorFailure() {
         val fixture = macroExpressionCarrierFixture(macroName = "FailWithDiag")
@@ -857,6 +911,9 @@ class FrontendMacroConstructionExecutionTest {
         assertEquals("executor expansion failed", executorFailure.message)
     }
 
+    /**
+     * 验证宏 import alias conflict 会从 bindMacroImports 进入构造诊断。
+     */
     @Test
     fun batch5_aliasConflictIsReportedFromBindMacroImports() {
         // 真实构造两条 import 指向不同 fqn 但绑同一短名 `Bar`，
@@ -930,6 +987,9 @@ class FrontendMacroConstructionExecutionTest {
         assertEquals(setOf(fooFq, bazFq), conflict.relatedTargets.toSet())
     }
 
+    /**
+     * 验证不支持 plain attr 重载的宏会报告 plain macro mismatch。
+     */
     @Test
     fun batch5_plainAttrWithoutOverloadSupportReportsPlainMacroMismatch() {
         val surface = expressionSurface(
@@ -976,6 +1036,12 @@ class FrontendMacroConstructionExecutionTest {
         assertTrue(executor.calls.isEmpty(), "Plain-attr mismatch must not invoke executor: ${executor.calls}")
     }
 
+    /**
+     * 构造表达式宏执行测试使用的载体函数与预处理结果。
+     *
+     * 该 fixture 将待替换的错误表达式放入函数体中，并把同一表达式登记为宏 surface，
+     * 使测试能够验证 stable splice 是否精确替换原始 CFIR 载体。
+     */
     private fun macroExpressionCarrierFixture(macroName: String = "Generated"): MacroExpressionCarrierFixture {
         val session = object : CfirSession(CfirSession.Kind.Source) {}
         val moduleData = TestModuleData(session)
@@ -1026,6 +1092,9 @@ class FrontendMacroConstructionExecutionTest {
         )
     }
 
+    /**
+     * 验证 builtin non-macro surface 在 stable splice 前完成脱糖。
+     */
     @Test
     fun builtinNonMacroSurfaceIsDesugaredBeforeStableSplice() {
         val surface = ifAvailableSurface()
@@ -1060,6 +1129,9 @@ class FrontendMacroConstructionExecutionTest {
         )
     }
 
+    /**
+     * 验证 builtin sourceFile/sourceLine 使用宿主文件元数据。
+     */
     @Test
     fun builtinSourceFileAndSourceLineUseHostFileMetadata() {
         val sourceText = "package sample\n\nlet value = @sourceLine()\nlet file = @sourceFile()\n"
@@ -1110,10 +1182,20 @@ class FrontendMacroConstructionExecutionTest {
         assertEquals(listOf("\"builtin-macro.cj\""), parser.parsedTokens[1].map { it.text })
     }
 
+    /**
+     * 基于单个宏 surface 构造默认源码文件 fixture。
+     */
     private fun macroSurfaceFixture(surface: MacroSurface): MacroSurfaceFixture {
         return macroSurfaceFixture(listOf(surface))
     }
 
+    /**
+     * 构造带指定宏 surface 集合的预宏原始文件 fixture。
+     *
+     * @param surfaces 需要登记到预处理结果中的宏 surface，至少应包含一个元素。
+     * @param sourceText 宿主源码文本，用于 sourceLine/sourceFile 等内建宏定位测试。
+     * @param sourceFileName 宿主虚拟源码文件名。
+     */
     private fun macroSurfaceFixture(
         surfaces: List<MacroSurface>,
         sourceText: String = "",
@@ -1144,11 +1226,19 @@ class FrontendMacroConstructionExecutionTest {
         )
     }
 
+    /**
+     * 构造只包含单个宏工件定义的宏解析上下文。
+     */
     private fun contextWithArtifact(
         pre: org.cangnova.cangjie.cfir.resolve.providers.macro.PreMacroRawBuildResult,
         name: String,
     ) = contextWithArtifacts(pre, name)
 
+    /**
+     * 构造包含多个宏工件定义的宏解析上下文。
+     *
+     * 这些定义均使用 `macros` 包和 `MACRO_ARTIFACT` 来源，用于模拟编译产物中可执行宏的导出表。
+     */
     private fun contextWithArtifacts(
         pre: org.cangnova.cangjie.cfir.resolve.providers.macro.PreMacroRawBuildResult,
         vararg names: String,
@@ -1166,6 +1256,11 @@ class FrontendMacroConstructionExecutionTest {
         ),
     )
 
+    /**
+     * 构造包含指定声明的 CFIR 文件。
+     *
+     * 该辅助函数用于搭建宏载体周围的最小文件结构，保持模块数据、包名和 RAW_CFIR 阶段一致。
+     */
     private fun fileWithDeclarations(
         moduleData: CfirModuleData,
         packageFqName: FqName,
@@ -1184,6 +1279,11 @@ class FrontendMacroConstructionExecutionTest {
         this.declarations += declarations
     }
 
+    /**
+     * 构造测试用命名函数声明。
+     *
+     * 返回的函数处于 RAW_CFIR 阶段，并允许调用方注入符号和值参数以覆盖声明宏、参数宏等场景。
+     */
     private fun namedFunction(
         moduleData: CfirModuleData,
         packageFqName: FqName,
@@ -1205,6 +1305,11 @@ class FrontendMacroConstructionExecutionTest {
         this.valueParameters += valueParameters
     }
 
+    /**
+     * 构造测试用值参数声明。
+     *
+     * 参数符号和所属函数符号会显式绑定，便于参数宏 surface 验证 replace handle 的目标声明。
+     */
     private fun valueParameter(
         moduleData: CfirModuleData,
         packageFqName: FqName,
@@ -1224,6 +1329,11 @@ class FrontendMacroConstructionExecutionTest {
         containingDeclarationSymbol = containingSymbol
     }
 
+    /**
+     * 构造测试用局部 pattern variable。
+     *
+     * 可选 initializer 用于覆盖表达式宏出现在局部变量初始化器内部时的替换与降级路径。
+     */
     private fun patternVariable(
         moduleData: CfirModuleData,
         packageFqName: FqName,
@@ -1245,6 +1355,11 @@ class FrontendMacroConstructionExecutionTest {
         pattern = buildWildcardPattern()
     }
 
+    /**
+     * 构造表达式宏 surface。
+     *
+     * 该 surface 默认位于函数体块内，并携带表达式替换句柄，是宏执行测试中最常见的输入形态。
+     */
     private fun expressionSurface(
         surfaceId: Long,
         qualifiedName: FqName,
@@ -1271,6 +1386,11 @@ class FrontendMacroConstructionExecutionTest {
         replaceHandle = CfirReplaceHandle(surfaceId),
     )
 
+    /**
+     * 构造声明宏 surface。
+     *
+     * 声明 surface 的替换句柄指向给定函数声明，用于验证声明级 stable splice 目标。
+     */
     private fun declarationSurface(
         surfaceId: Long,
         qualifiedName: FqName,
@@ -1297,6 +1417,11 @@ class FrontendMacroConstructionExecutionTest {
         replaceHandle = CfirReplaceHandle(surfaceId, carrier),
     )
 
+    /**
+     * 构造参数宏 surface。
+     *
+     * 参数 surface 的替换句柄指向给定值参数，用于验证参数级宏展开结果不会误写到其他声明位置。
+     */
     private fun parameterSurface(
         surfaceId: Long,
         qualifiedName: FqName,
@@ -1323,10 +1448,18 @@ class FrontendMacroConstructionExecutionTest {
         replaceHandle = CfirReplaceHandle(surfaceId, carrier),
     )
 
+    /**
+     * 构造宏执行器返回片段中使用的 token 信息。
+     */
     private fun tokenInfo(text: String): org.cangnova.cangjie.macro.TokenInfo {
         return org.cangnova.cangjie.macro.TokenInfo(0u.toUByte(), text)
     }
 
+    /**
+     * 构造 `@IfAvailable` 内建 surface。
+     *
+     * 该 surface 使用 branch token 表达脱糖后的主体片段，用于验证 builtin non-macro 不进入稳定拼接队列。
+     */
     private fun ifAvailableSurface(): IfAvailableSurface = IfAvailableSurface(
         surfaceId = 3002L,
         qualifiedName = FqName.topLevel(Name.identifier("IfAvailable")),
@@ -1349,78 +1482,172 @@ class FrontendMacroConstructionExecutionTest {
         branchTokens = listOf(MacroSurfaceToken("body", 0, 4)),
     )
 
+    /**
+     * 宏 surface 测试 fixture。
+     */
     private data class MacroSurfaceFixture(
+        /** 承载 surface 的 CFIR 文件。 */
         val file: CfirFile,
+        /** 测试关注的主宏 surface。 */
         val surface: MacroSurface,
+        /** 包含文件与 surface 索引的预宏原始构建结果。 */
         val pre: org.cangnova.cangjie.cfir.resolve.providers.macro.PreMacroRawBuildResult,
     )
 
+    /**
+     * 表达式宏载体 fixture。
+     */
     private data class MacroExpressionCarrierFixture(
+        /** 包含宏载体表达式的宿主函数。 */
         val function: org.cangnova.cangjie.cfir.declarations.CfirNamedFunction,
+        /** 已登记表达式宏 surface 的预宏原始构建结果。 */
         val pre: org.cangnova.cangjie.cfir.resolve.providers.macro.PreMacroRawBuildResult,
     )
 
+    /**
+     * 记录宏执行调用的测试执行器。
+     *
+     * 所有调用都会返回同一个展开结果，用于检查调用参数与稳定拼接链路。
+     */
     private class RecordingExecutor(
+        /** 每次宏调用返回的固定展开结果。 */
         private val result: MacroExpansionResult = MacroExpansionResult.Success(emptyList(), ""),
     ) : MacroExecutor {
+        /** 执行器接收到的宏调用列表。 */
         val calls = mutableListOf<MacroCallInfo>()
 
+        /**
+         * 记录库加载成功，并保持传入路径的顺序。
+         */
         override fun loadLibraries(libPaths: List<String>) = org.cangnova.cangjie.macro.MacroLibraryLoadResult.Success(libPaths.toList())
+
+        /**
+         * 记录本轮宏调用并为每个调用返回固定结果。
+         */
         override fun execute(calls: List<MacroCallInfo>): List<MacroExpansionResult> {
             this.calls += calls
             return calls.map { result }
         }
+
+        /**
+         * 测试执行器没有跨轮次状态需要清空。
+         */
         override fun reset() {}
+
+        /**
+         * 测试执行器始终可用。
+         */
         override fun isAvailable(): Boolean = true
+
+        /**
+         * 测试执行器不持有外部资源。
+         */
         override fun close() {}
     }
 
+    /**
+     * 同时记录库路径和宏调用的测试执行器。
+     */
     private class LibPathRecordingExecutor(
+        /** 每个宏调用返回的固定展开结果。 */
         private val result: MacroExpansionResult,
     ) : MacroExecutor {
+        /** 执行器接收到的宏调用列表。 */
         val calls = mutableListOf<MacroCallInfo>()
+        /** 宏服务请求加载的库路径。 */
         val loadedLibPaths = mutableListOf<String>()
 
+        /**
+         * 记录库路径并返回加载成功。
+         */
         override fun loadLibraries(libPaths: List<String>): org.cangnova.cangjie.macro.MacroLibraryLoadResult {
             loadedLibPaths += libPaths
             return org.cangnova.cangjie.macro.MacroLibraryLoadResult.Success(libPaths.toList())
         }
 
+        /**
+         * 记录本轮宏调用并为每个调用返回固定结果。
+         */
         override fun execute(calls: List<MacroCallInfo>): List<MacroExpansionResult> {
             this.calls += calls
             return calls.map { result }
         }
 
+        /**
+         * 测试执行器没有跨轮次状态需要清空。
+         */
         override fun reset() {}
+
+        /**
+         * 测试执行器始终可用。
+         */
         override fun isAvailable(): Boolean = true
+
+        /**
+         * 测试执行器不持有外部资源。
+         */
         override fun close() {}
     }
 
+    /**
+     * 模拟宏库加载失败的测试执行器。
+     */
     private class LoadFailingExecutor(
+        /** 返回给宏服务的库加载失败信息。 */
         private val failure: MacroLibraryLoadFailure,
     ) : MacroExecutor {
+        /** 统计宏执行方法是否被错误调用。 */
         var executeCallCount: Int = 0
 
+        /**
+         * 固定返回库加载失败。
+         */
         override fun loadLibraries(libPaths: List<String>): MacroLibraryLoadResult {
             return MacroLibraryLoadResult.Failure(listOf(failure))
         }
 
+        /**
+         * 记录执行次数；正确路径下加载失败后不应进入该方法。
+         */
         override fun execute(calls: List<MacroCallInfo>): List<MacroExpansionResult> {
             executeCallCount += 1
             return calls.map { MacroExpansionResult.Success(emptyList(), "") }
         }
 
+        /**
+         * 测试执行器没有跨轮次状态需要清空。
+         */
         override fun reset() {}
+
+        /**
+         * 测试执行器始终可用，使测试聚焦库加载失败。
+         */
         override fun isAvailable(): Boolean = true
+
+        /**
+         * 测试执行器不持有外部资源。
+         */
         override fun close() {}
     }
 
+    /**
+     * 按宏标识分发表达式结果的测试执行器。
+     */
     private class RoutingExecutor(
+        /** 宏标识到展开结果的映射表。 */
         private val results: Map<String, MacroExpansionResult>,
     ) : MacroExecutor {
+        /** 执行器接收到的宏调用列表。 */
         val calls = mutableListOf<MacroCallInfo>()
 
+        /**
+         * 记录库加载成功，并保持传入路径的顺序。
+         */
         override fun loadLibraries(libPaths: List<String>) = org.cangnova.cangjie.macro.MacroLibraryLoadResult.Success(libPaths.toList())
+
+        /**
+         * 根据调用中的宏标识返回对应展开结果。
+         */
         override fun execute(calls: List<MacroCallInfo>): List<MacroExpansionResult> {
             this.calls += calls
             return calls.map { call ->
@@ -1428,15 +1655,35 @@ class FrontendMacroConstructionExecutionTest {
                     ?: MacroExpansionResult.Failure("No test macro result configured for `${call.idName}`.")
             }
         }
+
+        /**
+         * 测试执行器没有跨轮次状态需要清空。
+         */
         override fun reset() {}
+
+        /**
+         * 测试执行器始终可用。
+         */
         override fun isAvailable(): Boolean = true
+
+        /**
+         * 测试执行器不持有外部资源。
+         */
         override fun close() {}
     }
 
+    /**
+     * 记录宏片段解析输入的测试解析器。
+     */
     private class RecordingParser : MacroFragmentParser {
+        /** 每次解析收到的 token 列表。 */
         val parsedTokens = mutableListOf<List<MacroSurfaceToken>>()
+        /** 每次解析使用的解析模式。 */
         val modes = mutableListOf<MacroFragmentParser.Mode>()
 
+        /**
+         * 记录输入并原样返回成功解析结果。
+         */
         override fun parse(input: MacroFragmentInput): MacroFragmentResult {
             parsedTokens += input.tokens
             modes += input.mode
@@ -1444,17 +1691,31 @@ class FrontendMacroConstructionExecutionTest {
         }
     }
 
+    /**
+     * 固定附加 payload 的测试片段解析器。
+     */
     private class StaticPayloadParser(
+        /** 放入解析成功结果的静态 payload。 */
         private val payload: Any,
     ) : MacroFragmentParser {
+        /**
+         * 原样返回片段节点与 token，并携带固定 payload。
+         */
         override fun parse(input: MacroFragmentInput): MacroFragmentResult {
             return MacroFragmentResult.Success(input.node, input.tokens, input.mode, payload)
         }
     }
 
+    /**
+     * 记录内建 non-macro 脱糖调用的测试脱糖器。
+     */
     private class RecordingDesugarer : BuiltinNonMacroDesugarer {
+        /** 已进入脱糖流程的内建 surface。 */
         val surfaces = mutableListOf<org.cangnova.cangjie.cfir.resolve.providers.macro.BuiltinNonMacroSurface>()
 
+        /**
+         * 记录 surface 并将片段结果原样传回调用方。
+         */
         override fun desugar(
             surface: org.cangnova.cangjie.cfir.resolve.providers.macro.BuiltinNonMacroSurface,
             fragment: MacroFragmentResult.Success,
@@ -1464,15 +1725,27 @@ class FrontendMacroConstructionExecutionTest {
         }
     }
 
+    /**
+     * 记录 stable splice 槽位的测试拼接器。
+     */
     private class RecordingSplicer : MacroStableSplicer {
+        /** 服务提交给 stable splicer 的替换槽位。 */
         val slots = mutableListOf<MacroReplaceSlot>()
 
+        /**
+         * 记录槽位并返回原文件列表，避免测试关注点扩散到真实拼接实现。
+         */
         override fun applySlices(files: List<CfirFile>, slots: List<MacroReplaceSlot>): List<CfirFile> {
             this.slots += slots
             return files
         }
     }
 
+    /**
+     * 使用当前预宏结果创建需求分类，并调用宏构造服务执行展开。
+     *
+     * 该扩展函数将测试中的上下文绑定与分类冻结逻辑集中起来，保证每个用例走同一条服务入口。
+     */
     private fun FrontendMacroConstructionService.expandWithClassification(
         pre: org.cangnova.cangjie.cfir.resolve.providers.macro.PreMacroRawBuildResult,
         context: org.cangnova.cangjie.cfir.resolve.providers.macro.MacroResolutionContext,
@@ -1483,16 +1756,29 @@ class FrontendMacroConstructionExecutionTest {
         return expand(pre, context, classification, mode)
     }
 
+    /**
+     * 宏构造执行测试使用的最小模块数据。
+     */
     private class TestModuleData(session: CfirSession) : CfirModuleData() {
+        /** 测试模块名称。 */
         override val name: Name = Name.identifier("frontend-macro-construction-execution-test")
+        /** 测试模块不声明普通依赖。 */
         override val dependencies: List<CfirModuleData> = emptyList()
+        /** 测试模块不声明 refinement 依赖。 */
         override val refinementDependencies: List<CfirModuleData> = emptyList()
+        /** 测试模块不声明传递 refinement 依赖。 */
         override val allRefinementDependencies: List<CfirModuleData> = emptyList()
+        /** 使用默认仓颉目标平台。 */
         override val targetPlatform = CangJiePlatforms.defaultCangJiePlatform
+        /** 使用默认 CFIR 平台标记。 */
         override val platform: CfirPlatform = CfirPlatform.DEFAULT
+        /** 是否为 common 模块由目标平台判定。 */
         override val isCommon: Boolean = targetPlatform.isCommon()
+        /** 测试模块不携带额外能力。 */
         override val capabilities: CfirModuleCapabilities = CfirModuleCapabilities.Empty
+        /** 稳定模块名与测试类名保持一致。 */
         override val stableModuleName: String = "frontend-macro-construction-execution-test"
+        /** 绑定到该模块数据的 CFIR session。 */
         override val session: CfirSession = session
 
         init {

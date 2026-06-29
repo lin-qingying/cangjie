@@ -27,21 +27,36 @@ package org.cangnova.cangjie.psi
 import org.cangnova.cangjie.psi.CjNodeTypes
 import com.intellij.lang.ASTNode
 
+/**
+ * 表示 `CjTypeParameterListOwnerNotStubbed`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 @Deprecated("")
 abstract class CjTypeParameterListOwnerNotStubbed(node: ASTNode) :
     CjNamedDeclarationNotStubbed(node), CjTypeParameterListOwner {
+    /**
+     * 暴露 `typeParameterList`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val typeParameterList: CjTypeParameterList?
         get() = findChildByType(CjNodeTypes.TYPE_PARAMETER_LIST)
 
+    /**
+     * 暴露 `typeConstraintList`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val typeConstraintList: CjTypeConstraintList?
         get() = findChildByType(CjNodeTypes.TYPE_CONSTRAINT_LIST)
 
+    /**
+     * 暴露 `typeConstraints`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val typeConstraints: List<CjTypeConstraint>
         get() {
             val typeConstraintList = typeConstraintList ?: return emptyList()
             return typeConstraintList.constraints
         }
 
+    /**
+     * 暴露 `typeParameters`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val typeParameters: List<CjTypeParameter>
         get() {
             val list = typeParameterList ?: return emptyList()

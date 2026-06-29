@@ -33,16 +33,28 @@ import com.intellij.psi.stubs.StubInputStream
 import com.intellij.psi.stubs.StubOutputStream
 import com.intellij.util.io.StringRef
 
+/**
+ * 表示 `CjImportAliasElementType`，承载PSI Stub中的语法节点、索引桩或辅助模型。
+ */
 class CjImportAliasElementType(debugName: String) :
     CjStubElementType<CangJieImportAliasStub, CjImportAlias>(debugName, CjImportAlias::class.java, CangJieImportAliasStub::class.java) {
+    /**
+     * 实现 `createStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createStub(psi: CjImportAlias, parentStub: StubElement<out PsiElement>?): CangJieImportAliasStub {
         return CangJieImportAliasStubImpl(parentStub, StringRef.fromString(psi.name))
     }
 
+    /**
+     * 实现 `serialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun serialize(stub: CangJieImportAliasStub, dataStream: StubOutputStream) {
         dataStream.writeName(stub.getName())
     }
 
+    /**
+     * 实现 `deserialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<PsiElement>?): CangJieImportAliasStub {
         val name = dataStream.readName()
         return CangJieImportAliasStubImpl(parentStub, name)

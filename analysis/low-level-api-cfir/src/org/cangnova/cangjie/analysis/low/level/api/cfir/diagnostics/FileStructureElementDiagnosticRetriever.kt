@@ -27,10 +27,22 @@ import org.cangnova.cangjie.util.withSourceCodeAnalysisExceptionUnwrapping
  * @see org.cangnova.cangjie.analysis.low.level.api.cfir.file.structure.FileStructureElement
  */
 internal sealed class FileStructureElementDiagnosticRetriever(
+    /**
+     * 当前 structure element 对应的 CFIR 声明。
+     */
     val declaration: CfirDeclaration,
+    /**
+     * 声明所在的 CFIR 文件。
+     */
     private val file: CfirFile,
+    /**
+     * 当前模块的 low-level 解析组件。
+     */
     private val moduleComponents: LLCfirModuleResolveComponents,
 ) {
+    /**
+     * 强制必要的 body resolve，恢复 checker context，并收集当前 structure element 的 diagnostics。
+     */
     fun retrieve(filter: DiagnosticCheckerFilter): FileStructureElementDiagnosticList {
         forceBodyResolve()
 
@@ -48,6 +60,9 @@ internal sealed class FileStructureElementDiagnosticRetriever(
         }
     }
 
+    /**
+     * 基于持久 checker context 和 diagnostics 组件创建具体 visitor。
+     */
     abstract fun createVisitor(context: CheckerContextForProvider, components: DiagnosticCollectorComponents): LLCfirDiagnosticVisitor
 
     /**
@@ -77,24 +92,39 @@ internal sealed class FileStructureElementDiagnosticRetriever(
  * @see org.cangnova.cangjie.analysis.low.level.api.cfir.file.structure.CfirElementContainerRecorder
  */
 private abstract class LLCfirContainerDiagnosticVisitor(
+    /**
+     * 当前容器 diagnostics 收集时不应递归访问的声明集合。
+     */
     private val declarationsToIgnore: Set<CfirDeclaration>,
     context: CheckerContextForProvider,
     components: DiagnosticCollectorComponents,
 ) : LLCfirDiagnosticVisitor(context, components) {
+    /**
+     * 跳过属于其它结构元素的嵌套声明。
+     */
     override fun shouldVisitDeclaration(declaration: CfirDeclaration): Boolean {
         return declaration !in declarationsToIgnore
     }
 }
 
+/**
+ * class-like declaration 对应的 structure element diagnostics retriever。
+ */
 internal class ClassDiagnosticRetriever(
     declaration: CfirClassLikeDeclaration,
     file: CfirFile,
     moduleComponents: LLCfirModuleResolveComponents,
 ) : FileStructureElementDiagnosticRetriever(declaration, file, moduleComponents) {
+    /**
+     * 创建忽略子结构元素声明的 class diagnostics visitor。
+     */
     override fun createVisitor(context: CheckerContextForProvider, components: DiagnosticCollectorComponents): LLCfirDiagnosticVisitor {
         return Visitor(declaration as CfirClassLikeDeclaration, context, components)
     }
 
+    /**
+     * class-like 容器 diagnostics visitor。
+     */
     private class Visitor(
         regularClass: CfirClassLikeDeclaration,
         context: CheckerContextForProvider,
@@ -106,6 +136,9 @@ internal class ClassDiagnosticRetriever(
     )
 
     companion object {
+        /**
+         * 判断 fake-source 元素是否必须在 class diagnostics 中检查。
+         */
         fun shouldDiagnosticsAlwaysBeCheckedOn(cfirElement: CfirElement) = when (cfirElement.source?.kind) {
             CjFakeSourceElementKind.PropertyFromParameter -> true
             CjFakeSourceElementKind.ImplicitConstructor -> true
@@ -114,19 +147,31 @@ internal class ClassDiagnosticRetriever(
     }
 }
 
+/**
+ * 单个非局部声明对应的 structure element diagnostics retriever。
+ */
 internal class SingleNonLocalDeclarationDiagnosticRetriever(
     declaration: CfirDeclaration,
     file: CfirFile,
     moduleComponents: LLCfirModuleResolveComponents,
 ) : FileStructureElementDiagnosticRetriever(declaration, file, moduleComponents) {
+    /**
+     * 创建只检查当前非局部声明的 visitor。
+     */
     override fun createVisitor(context: CheckerContextForProvider, components: DiagnosticCollectorComponents): LLCfirDiagnosticVisitor {
         return Visitor(context, components)
     }
 
+    /**
+     * 单声明 diagnostics visitor，额外处理主构造参数对应属性。
+     */
     private class Visitor(
         context: CheckerContextForProvider,
         components: DiagnosticCollectorComponents,
     ) : LLCfirDiagnosticVisitor(context, components) {
+        /**
+         * 主构造器 diagnostics 收集后，补充访问由构造参数生成的属性。
+         */
         override fun visitConstructor(constructor: CfirConstructor, data: Nothing?) {
             super.visitConstructor(constructor, data)
 
@@ -141,14 +186,23 @@ internal class SingleNonLocalDeclarationDiagnosticRetriever(
     }
 }
 
+/**
+ * 整个 CFIR 文件对应的 structure element diagnostics retriever。
+ */
 internal class FileDiagnosticRetriever(
     file: CfirFile,
     moduleComponents: LLCfirModuleResolveComponents,
 ) : FileStructureElementDiagnosticRetriever(file, file, moduleComponents) {
+    /**
+     * 创建忽略子结构元素声明的 file diagnostics visitor。
+     */
     override fun createVisitor(context: CheckerContextForProvider, components: DiagnosticCollectorComponents): LLCfirDiagnosticVisitor {
         return Visitor(declaration as CfirFile, context, components)
     }
 
+    /**
+     * 文件级容器 diagnostics visitor。
+     */
     private class Visitor(
         file: CfirFile,
         context: CheckerContextForProvider,

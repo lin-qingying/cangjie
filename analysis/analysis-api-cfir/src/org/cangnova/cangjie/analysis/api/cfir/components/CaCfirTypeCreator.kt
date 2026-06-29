@@ -57,8 +57,14 @@ import org.cangnova.cangjie.name.ClassId
  */
 @OptIn(CaImplementationDetail::class)
 internal class CaCfirTypeCreator(
+    /**
+     * 延迟取得当前 CFIR Analysis session，类型构造必须绑定该 session 的符号表和类型构建器。
+     */
     override val analysisSessionProvider: () -> CaCfirSession,
 ) : CaBaseTypeCreator<CaCfirSession>(), CaCfirSessionComponent {
+    /**
+     * 按 classId 构造 class-like 公开类型。
+     */
     override fun buildClassType(
         classId: ClassId,
         init: CaClassTypeBuilder.() -> Unit
@@ -66,6 +72,9 @@ internal class CaCfirTypeCreator(
         buildClassType(CaBaseClassTypeBuilder.ByClassId(classId, token).apply(init))
     }
 
+    /**
+     * 按公开 class-like 符号构造 class-like 公开类型。
+     */
     override fun buildClassType(
         symbol: CaClassLikeSymbol,
         init: CaClassTypeBuilder.() -> Unit
@@ -73,6 +82,9 @@ internal class CaCfirTypeCreator(
         buildClassType(CaBaseClassTypeBuilder.BySymbol(symbol, token).apply(init))
     }
 
+    /**
+     * 构造指向指定类型参数符号的类型参数类型。
+     */
     override fun buildTypeParameterType(
         symbol: CaTypeParameterSymbol,
         init: CaTypeParameterTypeBuilder.() -> Unit
@@ -82,6 +94,9 @@ internal class CaCfirTypeCreator(
         ConeTypeParameterTypeImpl(cfirSymbol.toLookupTag()).asPublicType() as CaTypeParameterType
     }
 
+    /**
+     * 构造 vararg 参数在公开 API 中使用的数组类型。
+     */
     override fun buildVarargArrayType(elementType: CaType): CaType = withValidityAssertion {
         buildClassType(StdlibClassIds.Array) {
             argument(elementType)
@@ -89,6 +104,9 @@ internal class CaCfirTypeCreator(
     }
 
 
+    /**
+     * 构造函数类型，并保留 C 函数、闭包和变长参数等仓颉函数类型标记。
+     */
     override fun buildFunctionType(
         parameterTypes: List<CaType>,
         returnType: CaType,
@@ -106,6 +124,9 @@ internal class CaCfirTypeCreator(
         ).asPublicType() as CaFunctionType
     }
 
+    /**
+     * 构造固定元素序列的元组类型。
+     */
     override fun buildTupleType(elementTypes: List<CaType>): CaTupleType = withValidityAssertion {
         ConeTupleType(
             elementTypes = elementTypes.asConeTypes("元组类型构造"),
@@ -113,6 +134,9 @@ internal class CaCfirTypeCreator(
         ).asPublicType() as CaTupleType
     }
 
+    /**
+     * 构造由多个组成类型共同约束的交叉类型。
+     */
     override fun buildIntersectionType(conjuncts: List<CaType>): CaIntersectionType = withValidityAssertion {
         require(conjuncts.isNotEmpty()) { "交叉类型至少需要一个组成类型" }
         ConeIntersectionType(
@@ -121,6 +145,9 @@ internal class CaCfirTypeCreator(
         ).asPublicType() as CaIntersectionType
     }
 
+    /**
+     * 构造可由多个候选类型之一满足的联合类型。
+     */
     override fun buildUnionType(alternatives: Collection<CaType>): CaUnionType = withValidityAssertion {
         require(alternatives.isNotEmpty()) { "联合类型至少需要一个组成类型" }
         ConeUnionType(
@@ -142,6 +169,9 @@ internal class CaCfirTypeCreator(
     private fun Iterable<CaType>.asConeTypeArguments(owner: String): List<ConeTypeProjection> =
         asConeTypes(owner)
 
+    /**
+     * 将公开 class type builder 的实参和目标符号落到具体 CFIR class-like 类型。
+     */
     private fun buildClassType(builder: CaBaseClassTypeBuilder): CaType {
         val typeArguments = builder.arguments.map { projection ->
             val type = projection.type
@@ -193,12 +223,18 @@ internal class CaCfirTypeCreator(
         )
     }
 
+    /**
+     * 校验 class-like 符号由 CFIR class-like 符号承载并返回底层符号。
+     */
     private fun CaClassLikeSymbol.requireCfirClassLikeSymbol(): CfirClassLikeSymbolBase<*> {
         val cfirSymbol = (this as? CaCfirSymbol<*>)?.cfirSymbol
         return cfirSymbol as? CfirClassLikeSymbolBase<*>
             ?: error("Expected CFIR class-like symbol, but got ${this::class.simpleName}")
     }
 
+    /**
+     * 校验类型参数符号由 CFIR 类型参数符号承载并返回底层符号。
+     */
     private fun CaTypeParameterSymbol.requireCfirTypeParameterSymbol(): CfirTypeParameterSymbol {
         val cfirSymbol = (this as? CaCfirSymbol<*>)?.cfirSymbol
         return cfirSymbol as? CfirTypeParameterSymbol

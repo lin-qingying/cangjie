@@ -6,7 +6,13 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Test
 
+/**
+ * 验证 `.cjo` 反编译文件 stub kind 的推导规则。
+ */
 class DecompiledFileStubKindsTest {
+    /**
+     * 验证没有顶层 callable 的 package 会推导为普通 file kind。
+     */
     @Test
     fun inferFileWhenPackageHasNoTopLevelCallables() {
         val kind = DecompiledFileStubKinds.inferKind(
@@ -19,6 +25,9 @@ class DecompiledFileStubKindsTest {
         assertEquals("sample.pkg", fileKind.packageFqName.asString())
     }
 
+    /**
+     * 验证单个来源文件提供顶层 callable 时会推导为 simple facade。
+     */
     @Test
     fun inferSimpleFacadeWhenSingleFileProvidesTopLevelCallables() {
         val kind = DecompiledFileStubKinds.inferKind(
@@ -32,6 +41,9 @@ class DecompiledFileStubKindsTest {
         assertEquals("pkg", facade.partSimpleName)
     }
 
+    /**
+     * 验证多个来源文件提供顶层 callable 时会推导为 multifile facade。
+     */
     @Test
     fun inferMultifileFacadeWhenMultipleFilesProvideTopLevelCallables() {
         val kind = DecompiledFileStubKinds.inferKind(
@@ -44,6 +56,9 @@ class DecompiledFileStubKindsTest {
         assertEquals(listOf("alpha", "beta"), multifile.facadePartSimpleNames)
     }
 
+    /**
+     * 验证不同路径下同名源文件生成的 facade part name 保持唯一。
+     */
     @Test
     fun multifilePartNamesRemainUniqueAcrossSameSimpleFileNames() {
         val partNames = DecompiledFileStubKinds.buildFacadePartSimpleNames(

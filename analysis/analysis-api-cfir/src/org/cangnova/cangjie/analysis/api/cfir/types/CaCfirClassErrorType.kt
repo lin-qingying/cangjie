@@ -26,26 +26,53 @@ import org.cangnova.cangjie.cfir.types.renderForDebugging
  * 不把未解析类型退化成单一字符串错误。
  */
 internal class CaCfirClassErrorType(
+    /**
+     * 底层 CFIR class-like 错误类型。
+     */
     override val coneType: ConeErrorType,
+    /**
+     * 产生该错误类型的 CFIR 诊断。
+     */
     private val coneDiagnostic: ConeDiagnostic,
+    /**
+     * 用于构造公开符号和公开类型的 CFIR builder。
+     */
     private val builder: CaSymbolByCfirBuilder,
 ) : CaClassErrorType(), CaCfirType {
+    /**
+     * 当前公开类型的生命周期令牌。
+     */
     override val token: CaLifetimeToken
         get() = builder.token
 
 
+    /**
+     * 面向调试和展示的错误类型文本。
+     */
     override val presentation: String
         get() = withValidityAssertion { coneType.renderForDebugging() }
 
+    /**
+     * 错误类型当前不携带类型注解。
+     */
     override val annotations: CaAnnotationList
         get() = withValidityAssertion { emptyTypeAnnotations(token) }
 
+    /**
+     * 错误类型对应的缩写类型。
+     */
     override val abbreviation: org.cangnova.cangjie.analysis.api.types.CaUsualClassType?
         get() = withValidityAssertion { builder.buildAbbreviatedType(coneType) }
 
+    /**
+     * CFIR 诊断提供的错误原因文本。
+     */
     override val errorMessage: String
         get() = withValidityAssertion { coneDiagnostic.reason }
 
+    /**
+     * 尽量保留限定名和类型实参的可展示错误类型文本。
+     */
     override val presentableText: String?
         get() = withValidityAssertion {
             qualifiers.takeIf { it.isNotEmpty() }?.joinToString(".") { qualifier ->
@@ -69,6 +96,9 @@ internal class CaCfirClassErrorType(
             } ?: coneType.delegatedType?.renderForDebugging()
         }
 
+    /**
+     * 从错误诊断恢复的 class-like qualifier 列表。
+     */
     override val qualifiers: List<CaClassTypeQualifier>
         get() = withValidityAssertion {
             when (coneDiagnostic) {
@@ -82,6 +112,9 @@ internal class CaCfirClassErrorType(
             }
         }
 
+    /**
+     * 错误诊断提供的候选 class-like 符号集合。
+     */
     override val candidateSymbols: Collection<CaClassLikeSymbol>
         get() = withValidityAssertion {
             when (val diagnostic = coneDiagnostic) {
@@ -96,13 +129,25 @@ internal class CaCfirClassErrorType(
             }
         }
 
+    /**
+     * 创建可跨会话恢复该 class-like 错误类型的指针。
+     */
     override fun createPointer(): CaTypePointer<CaClassErrorType> = withValidityAssertion {
         createTypePointer(coneType, ::restoreClassErrorType)
     }
 
+    /**
+     * 按底层 Cone 类型判断公开类型相等性。
+     */
     override fun equals(other: Any?) = typeEquals(other)
 
+    /**
+     * 返回底层 Cone 类型的哈希码。
+     */
     override fun hashCode() = typeHashcode()
 
+    /**
+     * 返回底层 Cone 类型调试文本。
+     */
     override fun toString(): String = coneType.renderForDebugging()
 }

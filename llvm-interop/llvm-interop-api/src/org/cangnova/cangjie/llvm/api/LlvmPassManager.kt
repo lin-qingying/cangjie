@@ -28,8 +28,17 @@ data class LlvmPassPipeline(val pipelineText: String) {
  * 该类通过 LLVM PassBuilder C API 在模块上执行完整 pass pipeline。
  */
 class LlvmPassManager internal constructor(
+    /**
+     * 要运行的 LLVM pass pipeline 描述。
+     */
     private val pipeline: LlvmPassPipeline,
+    /**
+     * 可选的目标机器，用于为优化管线提供 target-aware 信息。
+     */
     private val targetMachine: LlvmTargetMachine?,
+    /**
+     * 实际执行 pass 的 LLVM 绑定实现。
+     */
     private val bindings: LlvmBindings,
 ) : AutoCloseable {
     /** 在给定模块上运行优化/分析 pass。 */
@@ -41,6 +50,9 @@ class LlvmPassManager internal constructor(
         )
     }
 
+    /**
+     * Pass manager 当前不持有额外原生资源，关闭操作为空。
+     */
     override fun close() = Unit
 }
 

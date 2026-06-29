@@ -9,11 +9,26 @@ import org.cangnova.cangjie.analysis.api.CaPlatformInterface
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaNotUnderContentRootModule
 
+/**
+ * Analysis API 项目结构快照。
+ */
 @CaPlatformInterface
 data class CaProjectStructureSnapshot(
+    /**
+     * 快照中的所有模块。
+     */
     val allModules: List<CaModule>,
+    /**
+     * 快照中可解析的模块集合。
+     */
     val allResolvableModules: List<CaModule>,
+    /**
+     * 快照中的源码类模块集合。
+     */
     val allSourceLikeModules: List<CaModule>,
+    /**
+     * 快照覆盖的所有源文件。
+     */
     val allSourceFiles: List<PsiFileSystemItem>,
 ) {
     /**
@@ -43,10 +58,16 @@ data class CaProjectStructureSnapshot(
         allModules.groupBy(CaModule::moduleDescription)
     }
 
+    /**
+     * 按稳定模块名查询模块。
+     */
     fun getModuleByStableName(stableModuleName: String): CaModule? {
         return modulesByStableName[stableModuleName]
     }
 
+    /**
+     * 按稳定模块名查询模块，不存在时抛出错误。
+     */
     fun requireModuleByStableName(stableModuleName: String): CaModule {
         return getModuleByStableName(stableModuleName)
             ?: error("Analysis API project-structure 快照中不存在稳定模块名 `$stableModuleName`")
@@ -80,8 +101,14 @@ data class CaProjectStructureSnapshot(
  */
 @CaPlatformInterface
 interface CangJieProjectStructureProvider {
+    /**
+     * 返回 PSI 元素所属的 use-site module。
+     */
     fun getModule(element: PsiElement, useSiteModule: CaModule?): CaModule
 
+    /**
+     * 返回实现指定模块的模块列表。
+     */
     fun getImplementingModules(module: CaModule): List<CaModule>
 
     /**
@@ -98,8 +125,14 @@ interface CangJieProjectStructureProvider {
         get() = globalLanguageVersionSettings
 
     companion object {
+        /**
+         * 获取项目级 project-structure provider 服务。
+         */
         fun getInstance(project: Project): CangJieProjectStructureProvider = project.service()
 
+        /**
+         * 通过项目级 provider 查询 PSI 元素所属模块。
+         */
         fun getModule(project: Project, element: PsiElement, useSiteModule: CaModule? = null): CaModule =
             getInstance(project).getModule(element, useSiteModule)
     }

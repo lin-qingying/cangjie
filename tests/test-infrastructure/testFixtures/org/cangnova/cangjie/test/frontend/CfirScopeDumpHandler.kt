@@ -45,12 +45,24 @@ import org.cangnova.cangjie.utils.SmartPrinter
 import org.cangnova.cangjie.utils.withIndent
 import java.io.File
 
+/**
+ * 表示 `CfirScopeDumpHandler`，承载CFIR 前端测试中的配置数据、测试产物或处理步骤。
+ */
 class CfirScopeDumpHandler(testServices: TestServices) : CfirAnalysisHandler(testServices) {
+    /**
+     * 保存 `dumper`，供CFIR 前端测试在测试执行期间读取或传递。
+     */
     private val dumper = MultiModuleInfoDumper()
 
+    /**
+     * 保存 `directiveContainers`，供CFIR 前端测试在测试执行期间读取或传递。
+     */
     override val directiveContainers: List<DirectivesContainer>
         get() = listOf(CfirDiagnosticsDirectives)
 
+    /**
+     * 执行 `processModule` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     override fun processModule(module: TestModule, info: CfirOutputArtifact) {
         for (part in info.partsForDependsOnModules) {
             val currentModule = part.module
@@ -76,11 +88,17 @@ class CfirScopeDumpHandler(testServices: TestServices) : CfirAnalysisHandler(tes
         }
     }
 
+    /**
+     * 提供 `extractFqNameAndMemberNames` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     private fun extractFqNameAndMemberNames(fqNameWithNames: String): Pair<String, List<String>> {
         val splitResult = fqNameWithNames.split(":").takeIf { it.size > 1 } ?: return fqNameWithNames to emptyList()
         return splitResult[0].trim() to splitResult[1].split(";").map(String::trim).filter(String::isNotEmpty)
     }
 
+    /**
+     * 提供 `processAllFilesScopeDump` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     private fun SmartPrinter.processAllFilesScopeDump(
         outputPart: CfirOutputPartForDependsOnModule,
         module: TestModule,
@@ -99,6 +117,9 @@ class CfirScopeDumpHandler(testServices: TestServices) : CfirAnalysisHandler(tes
         }
     }
 
+    /**
+     * 提供 `processFileScope` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     private fun SmartPrinter.processFileScope(
         relativePath: String,
         cfirFile: CfirFile,
@@ -132,6 +153,9 @@ class CfirScopeDumpHandler(testServices: TestServices) : CfirAnalysisHandler(tes
         }
     }
 
+    /**
+     * 提供 `processClassByFqName` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     private fun SmartPrinter.processClassByFqName(
         fqName: String,
         namesFromDirective: List<String>,
@@ -155,6 +179,9 @@ class CfirScopeDumpHandler(testServices: TestServices) : CfirAnalysisHandler(tes
         }
     }
 
+    /**
+     * 提供 `processClassLikeScopeByDeclaration` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     private fun SmartPrinter.processClassLikeScopeByDeclaration(
         classLike: CfirClassLikeDeclaration,
         namesFromDirective: List<String>,
@@ -194,6 +221,9 @@ class CfirScopeDumpHandler(testServices: TestServices) : CfirAnalysisHandler(tes
         println()
     }
 
+    /**
+     * 提供 `createUseSiteMemberScope` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     private fun createUseSiteMemberScope(
         classLike: CfirClassLikeDeclaration,
         outputPart: CfirOutputPartForDependsOnModule,
@@ -217,23 +247,59 @@ class CfirScopeDumpHandler(testServices: TestServices) : CfirAnalysisHandler(tes
         }
     }
 
+    /**
+     * 定义 `TopLevelScopeEntry` 接口，约束CFIR 前端测试参与者需要暴露的协作能力。
+     */
     private sealed interface TopLevelScopeEntry {
+        /**
+         * 保存 `name`，供CFIR 前端测试在测试执行期间读取或传递。
+         */
         val name: Name
+        /**
+         * 保存 `kind`，供CFIR 前端测试在测试执行期间读取或传递。
+         */
         val kind: String
     }
 
+    /**
+     * 表示 `ClassLikeScopeEntry`，承载CFIR 前端测试中的配置数据、测试产物或处理步骤。
+     */
     private data class ClassLikeScopeEntry(
+        /**
+         * 保存 `name`，供CFIR 前端测试在测试执行期间读取或传递。
+         */
         override val name: Name,
+        /**
+         * 保存 `kind`，供CFIR 前端测试在测试执行期间读取或传递。
+         */
         override val kind: String,
+        /**
+         * 保存 `declaration`，供CFIR 前端测试在测试执行期间读取或传递。
+         */
         val declaration: CfirClassLikeDeclaration,
     ) : TopLevelScopeEntry
 
+    /**
+     * 表示 `CallableScopeEntry`，承载CFIR 前端测试中的配置数据、测试产物或处理步骤。
+     */
     private data class CallableScopeEntry(
+        /**
+         * 保存 `name`，供CFIR 前端测试在测试执行期间读取或传递。
+         */
         override val name: Name,
+        /**
+         * 保存 `kind`，供CFIR 前端测试在测试执行期间读取或传递。
+         */
         override val kind: String,
+        /**
+         * 保存 `declaration`，供CFIR 前端测试在测试执行期间读取或传递。
+         */
         val declaration: CfirCallableDeclaration,
     ) : TopLevelScopeEntry
 
+    /**
+     * 提供 `collectTopLevelScopeEntries` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     private fun collectTopLevelScopeEntries(
         packageScope: CfirPackageScope,
         cfirFile: CfirFile,
@@ -280,12 +346,18 @@ class CfirScopeDumpHandler(testServices: TestServices) : CfirAnalysisHandler(tes
         return entries
     }
 
+    /**
+     * 提供 `belongsToFile` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     private fun belongsToFile(
         symbol: CfirBasedSymbol<*>,
         cfirFile: CfirFile,
         outputPart: CfirOutputPartForDependsOnModule,
     ): Boolean = outputPart.session.cfirProvider.getContainingFile(symbol) == cfirFile
 
+    /**
+     * 提供 `classLikeKind` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     private fun classLikeKind(declaration: CfirClassLikeDeclaration): String = when (declaration) {
         is CfirInterface -> "interface"
         is CfirClass -> "class"
@@ -295,6 +367,9 @@ class CfirScopeDumpHandler(testServices: TestServices) : CfirAnalysisHandler(tes
         else -> "classlike"
     }
 
+    /**
+     * 提供 `callableKind` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     private fun callableKind(declaration: CfirCallableDeclaration): String = when (declaration) {
         is CfirProperty -> "property"
         is CfirFieldVariable -> "field"
@@ -306,6 +381,9 @@ class CfirScopeDumpHandler(testServices: TestServices) : CfirAnalysisHandler(tes
         else -> "callable"
     }
 
+    /**
+     * 提供 `processTopLevelScopeEntry` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     private fun SmartPrinter.processTopLevelScopeEntry(
         entry: TopLevelScopeEntry,
         packageScope: CfirPackageScope,
@@ -343,6 +421,9 @@ class CfirScopeDumpHandler(testServices: TestServices) : CfirAnalysisHandler(tes
         }
     }
 
+    /**
+     * 提供 `fqNameToClassId` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     private fun fqNameToClassId(fqName: String): ClassId {
         if ('$' in fqName) {
             assertions.fail {
@@ -362,13 +443,28 @@ class CfirScopeDumpHandler(testServices: TestServices) : CfirAnalysisHandler(tes
         return ClassId(packageFqName, Name.identifier(className))
     }
 
+    /**
+     * 表示 `SymbolCounter`，承载CFIR 前端测试中的配置数据、测试产物或处理步骤。
+     */
     private class SymbolCounter {
+        /**
+         * 保存 `map`，供CFIR 前端测试在测试执行期间读取或传递。
+         */
         private val map = mutableMapOf<CfirBasedSymbol<*>, Int>()
+        /**
+         * 维护 `counter`，供CFIR 前端测试在测试执行期间读取或传递。
+         */
         private var counter = 0
 
+        /**
+         * 执行 `getIndex` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+         */
         fun getIndex(symbol: CfirBasedSymbol<*>): Int = map.computeIfAbsent(symbol) { counter++ }
     }
 
+    /**
+     * 提供 `processFunctions` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     private fun SmartPrinter.processFunctions(name: Name, scope: CfirTypeScope) {
         val functions = mutableListOf<org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol>()
         scope.processFunctionsByName(name) { functions += it }
@@ -377,6 +473,9 @@ class CfirScopeDumpHandler(testServices: TestServices) : CfirAnalysisHandler(tes
         }
     }
 
+    /**
+     * 提供 `processFunction` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     private fun SmartPrinter.processFunction(
         symbol: org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol,
         scope: CfirTypeScope,
@@ -391,6 +490,9 @@ class CfirScopeDumpHandler(testServices: TestServices) : CfirAnalysisHandler(tes
         }
     }
 
+    /**
+     * 提供 `processProperties` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     private fun SmartPrinter.processProperties(name: Name, scope: CfirTypeScope) {
         val properties = mutableListOf<CfirPropertySymbol>()
         scope.processPropertiesByName(name) { properties += it }
@@ -399,6 +501,9 @@ class CfirScopeDumpHandler(testServices: TestServices) : CfirAnalysisHandler(tes
         }
     }
 
+    /**
+     * 提供 `processProperty` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     private fun SmartPrinter.processProperty(symbol: CfirPropertySymbol, scope: CfirTypeScope, counter: SymbolCounter) {
         printInfo(symbol.cfir, scope, counter)
         withIndent {
@@ -409,6 +514,9 @@ class CfirScopeDumpHandler(testServices: TestServices) : CfirAnalysisHandler(tes
         }
     }
 
+    /**
+     * 提供 `processMembersByName` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     private fun SmartPrinter.processMembersByName(name: Name, scope: CfirTypeScope): Boolean {
         var hasMembers = false
         val seen = LinkedHashSet<CfirCallableSymbol<*>>()
@@ -433,6 +541,9 @@ class CfirScopeDumpHandler(testServices: TestServices) : CfirAnalysisHandler(tes
         return hasMembers
     }
 
+    /**
+     * 提供 `printTopLevelCallableInfo` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     private fun SmartPrinter.printTopLevelCallableInfo(
         declaration: CfirCallableDeclaration,
         scope: CfirPackageScope,
@@ -445,6 +556,9 @@ class CfirScopeDumpHandler(testServices: TestServices) : CfirAnalysisHandler(tes
         println(" [id: ${counter.getIndex(declaration.symbol)}]")
     }
 
+    /**
+     * 提供 `printInfo` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     private fun SmartPrinter.printInfo(declaration: CfirCallableDeclaration, scope: CfirTypeScope, counter: SymbolCounter) {
         print("[${declaration.origin}]: ")
         val renderedDeclaration = CfirRenderer.withReadability().renderElementAsString(declaration).asSingleLine()
@@ -453,6 +567,9 @@ class CfirScopeDumpHandler(testServices: TestServices) : CfirAnalysisHandler(tes
         println(" [id: ${counter.getIndex(declaration.symbol)}]")
     }
 
+    /**
+     * 提供 `printClassLikeInfo` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     private fun SmartPrinter.printClassLikeInfo(
         declaration: CfirClassLikeDeclaration,
         scope: CfirTypeScope,
@@ -464,12 +581,18 @@ class CfirScopeDumpHandler(testServices: TestServices) : CfirAnalysisHandler(tes
         println(" [id: ${counter.getIndex(declaration.symbol)}]")
     }
 
+    /**
+     * 提供 `asSingleLine` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     private fun String.asSingleLine(): String =
         lineSequence()
             .map(String::trim)
             .filter(String::isNotEmpty)
             .joinToString(" ")
 
+    /**
+     * 提供 `renderHeader` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     private fun CfirClassLikeDeclaration.renderHeader(): String {
         val rendered = CfirRenderer.withReadability().renderElementAsString(this)
         val header = rendered.substringBefore("{").lineSequence().firstOrNull()?.trim().orEmpty()

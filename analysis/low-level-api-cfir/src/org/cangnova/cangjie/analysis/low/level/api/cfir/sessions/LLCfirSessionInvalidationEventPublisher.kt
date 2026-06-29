@@ -52,6 +52,11 @@ internal class LLCfirSessionInvalidationEventPublisher(private val project: Proj
         }
     }
 
+    /**
+     * 收集被清理的 [session]，用于稍后发布 session invalidation 事件。
+     *
+     * 不稳定 dangling module 通常不发布事件；但模块已经无效时仍会收集，确保下游 analysis session 失效。
+     */
     fun collectSession(session: LLCfirSession) {
         // We don't want to collect any modules outside `collectSessionsAndPublishInvalidationEvent`. For example, this might happen during
         // global invalidation, or when unstable dangling file sessions are replaced during `LLCfirSessionCache.getSession`.
@@ -70,6 +75,9 @@ internal class LLCfirSessionInvalidationEventPublisher(private val project: Proj
     }
 
     companion object {
+        /**
+         * 取得工程级 session invalidation event publisher 服务。
+         */
         fun getInstance(project: Project): LLCfirSessionInvalidationEventPublisher =
             project.getService(LLCfirSessionInvalidationEventPublisher::class.java)
     }

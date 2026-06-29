@@ -39,14 +39,41 @@ import kotlin.io.path.outputStream
  * invocation，并把成功产物转成 [MacroArtifactPackage]。
  */
 data class MacroSourcePackageCompilationRequest(
+    /**
+     * 需要独立编译的宏包全限定名。
+     */
     val packageFqName: FqName,
+    /**
+     * 传给 `cjc -p` 的源码根候选列表。
+     */
     val sourceRoots: List<String>,
+    /**
+     * 编译宏包时传入的 import path。
+     */
     val importPaths: List<String> = emptyList(),
+    /**
+     * 编译宏包时暴露给 `CANGJIE_LIBRARY` 的 classpath。
+     */
     val classpath: List<String> = emptyList(),
+    /**
+     * 传给外部 cjc invocation 的额外编译选项。
+     */
     val compilerOptions: List<String> = emptyList(),
+    /**
+     * 宏包编译输出目录。
+     */
     val outputDirectory: String? = null,
+    /**
+     * 外部构建系统为本次宏包编译分配的调用标识。
+     */
     val compileInvocationId: String? = null,
+    /**
+     * 外部编译原始诊断输出引用。
+     */
     val sourceDiagnosticsRef: String? = null,
+    /**
+     * 触发该请求的源位置。
+     */
     val originSource: CjSourceElement? = null,
 )
 
@@ -57,29 +84,77 @@ data class MacroSourcePackageCompilationRequest(
  * 避免 PATH/动态库加载环境、高层 target platform 身份、并行/debug flag 变化时复用旧展开结果。
  */
 data class MacroCompilationCacheContext(
+    /**
+     * 编译选项指纹。
+     */
     val compilerOptionsFingerprint: String = "",
+    /**
+     * 调试开关指纹。
+     */
     val debugFlagsFingerprint: String = "",
+    /**
+     * 并行相关开关指纹。
+     */
     val parallelFlagsFingerprint: String = "",
+    /**
+     * 宏包编译目标平台。
+     */
     val targetPlatform: TargetPlatform = CangJiePlatforms.defaultCangJiePlatform,
+    /**
+     * 运行时加载环境指纹。
+     */
     val runtimeLoaderEnvironmentFingerprint: String = "",
 )
 
+/**
+ * 宏包编译 orchestrator 调用上下文。
+ */
 data class MacroPackageCompilationContext(
+    /**
+     * 当前前端编译配置。
+     */
     val configuration: CompilerConfiguration,
+    /**
+     * 宏执行器 ABI 版本。
+     */
     val executorAbiVersion: String,
+    /**
+     * 影响宏展开缓存键的编译环境上下文。
+     */
     val cacheContext: MacroCompilationCacheContext,
 )
 
+/**
+ * 宏包编译 orchestrator 输出结果。
+ */
 data class MacroPackageCompilationResult(
+    /**
+     * 编译成功后产出的 artifact 包。
+     */
     val artifactPackages: List<MacroArtifactPackage> = emptyList(),
+    /**
+     * 可继续用于 artifact locator 的输出搜索路径。
+     */
     val artifactSearchPaths: List<String> = emptyList(),
+    /**
+     * 编译调度过程中产生的结构化诊断。
+     */
     val diagnostics: List<MacroConstructionDiagnostic> = emptyList(),
 ) {
+    /**
+     * 当前结果是否包含错误级诊断。
+     */
     val hasErrors: Boolean
         get() = diagnostics.any { it.severity == MacroConstructionDiagnostic.Severity.ERROR }
 }
 
+/**
+ * 外部宏包编译调度接口。
+ */
 fun interface MacroPackageCompilationOrchestrator {
+    /**
+     * 编译一批宏源码包并返回可解析 artifact。
+     */
     fun compileMacroPackages(
         requests: List<MacroSourcePackageCompilationRequest>,
         context: MacroPackageCompilationContext,
@@ -109,10 +184,16 @@ internal fun selectMacroSourcePackageCompilationRequestsForExpansion(
     }
 }
 
+/**
+ * 从 pre-macro 结果中收集真实触发宏展开的包需求。
+ */
 internal fun collectMacroExpansionPackageDemands(preResults: List<PreMacroRawBuildResult>): Set<FqName> {
     return collectMacroExpansionPackageDemandSurfaces(preResults.map { MacroDemandClassification.create(it) }).keys
 }
 
+/**
+ * 从 pre-macro 结果中收集每个宏包 demand 对应的宏表面。
+ */
 internal fun collectMacroExpansionPackageDemandSurfacesFromPreResults(
     preResults: List<PreMacroRawBuildResult>,
 ): Map<FqName, List<MacroSurface>> {
@@ -169,6 +250,9 @@ internal fun collectMacroExpansionPackageDemandSurfacesFromPreResults(
     }
 }
 
+/**
+ * 从已分类的宏需求快照中收集每个外部包对应的宏表面。
+ */
 internal fun collectMacroExpansionPackageDemandSurfaces(
     classifications: List<MacroDemandClassification>,
 ): Map<FqName, List<MacroSurface>> {
@@ -189,11 +273,17 @@ private fun MacroSurface.isMacroDefinitionSignatureSurface(): Boolean {
             carrier.containingDeclarationSymbol is CfirMacroDeclarationSymbol
 }
 
+/**
+ * 判断宏表面是否是真实使用方展开 demand。
+ */
 private fun MacroSurface.isMacroExpansionDemandSurface(): Boolean {
     if (isMacroDefinitionSignatureSurface()) return false
     return capturedRawSyntax?.trimStart()?.startsWith("@") == true
 }
 
+/**
+ * 判断声明列表中是否包含宏声明。
+ */
 private fun List<CfirDeclaration>.containsMacroDeclaration(): Boolean {
     return any { declaration ->
         when (declaration) {
@@ -204,6 +294,9 @@ private fun List<CfirDeclaration>.containsMacroDeclaration(): Boolean {
     }
 }
 
+/**
+ * 判断类状声明的嵌套声明中是否包含宏声明。
+ */
 private fun CfirClassLikeDeclaration.nestedDeclarationsContainMacro(): Boolean {
     val nested = when (this) {
         is CfirClass -> declarations
@@ -226,9 +319,18 @@ private fun CfirClassLikeDeclaration.nestedDeclarationsContainMacro(): Boolean {
  *   与 `sourceDiagnosticsRef` 供使用方诊断引用。
  */
 class ExternalCjcMacroPackageCompilationOrchestrator(
+    /**
+     * 外部 cjc 可执行文件解析器。
+     */
     private val executableResolver: MacroCompilerExecutableResolver = DefaultMacroCompilerExecutableResolver,
+    /**
+     * 外部 cjc 命令执行器。
+     */
     private val commandRunner: MacroCompilerCommandRunner = ProcessMacroCompilerCommandRunner,
 ) : MacroPackageCompilationOrchestrator {
+    /**
+     * 调用外部 cjc 编译宏源码包并收集产物。
+     */
     override fun compileMacroPackages(
         requests: List<MacroSourcePackageCompilationRequest>,
         context: MacroPackageCompilationContext,
@@ -334,6 +436,9 @@ class ExternalCjcMacroPackageCompilationOrchestrator(
         )
     }
 
+    /**
+     * 解析当前环境中可用的 cjc 可执行文件。
+     */
     private fun resolveCompilerExecutable(context: MacroPackageCompilationContext): Path {
         if (executableResolver === DefaultMacroCompilerExecutableResolver) {
             return DefaultMacroCompilerExecutableResolver.resolve(context.configuration.macroSdkHome)
@@ -341,6 +446,9 @@ class ExternalCjcMacroPackageCompilationOrchestrator(
         return executableResolver.resolve()
     }
 
+    /**
+     * 构造一次 `cjc -p <root> --compile-macro` 命令。
+     */
     private fun buildCommand(
         cjcPath: Path,
         sourceRoot: Path,
@@ -379,6 +487,9 @@ class ExternalCjcMacroPackageCompilationOrchestrator(
         )
     }
 
+    /**
+     * 从外部编译输出目录中解析出宏 artifact 包。
+     */
     private fun resolveCompiledArtifact(
         request: MacroSourcePackageCompilationRequest,
         outputDirectory: Path,
@@ -402,6 +513,9 @@ class ExternalCjcMacroPackageCompilationOrchestrator(
         )
     }
 
+    /**
+     * 在输出目录中查找并校验目标包的 `.cjo` 文件。
+     */
     private fun findCjoForPackage(outputDirectory: Path, packageFqName: FqName): Path? {
         val cjoName = "${toCjoFileName(packageFqName)}.cjo"
         val firstSegment = packageFqName.firstSegment()?.asString()
@@ -418,6 +532,9 @@ class ExternalCjcMacroPackageCompilationOrchestrator(
         }
     }
 
+    /**
+     * 在输出目录中查找目标包的动态库。
+     */
     private fun findDynamicLibraryForPackage(outputDirectory: Path, packageFqName: FqName): Path? {
         val libraryName = "lib-macro_${toCjoFileName(packageFqName)}.${dynamicLibraryExtension()}"
         val firstSegment = packageFqName.firstSegment()?.asString()
@@ -427,6 +544,9 @@ class ExternalCjcMacroPackageCompilationOrchestrator(
         ).firstOrNull { it.toFile().isFile }
     }
 
+    /**
+     * 从请求的 import/classpath 根中发现依赖 BCHIR 文件。
+     */
     private fun discoverDependencyBchirPaths(request: MacroSourcePackageCompilationRequest): List<String> {
         return (request.importPaths + request.classpath)
             .map(String::trim)
@@ -443,6 +563,9 @@ class ExternalCjcMacroPackageCompilationOrchestrator(
             .distinct()
     }
 
+    /**
+     * 将外部 cjc 的 stdout/stderr 持久化为诊断引用文件。
+     */
     private fun persistDiagnosticsOutput(
         request: MacroSourcePackageCompilationRequest,
         outputDirectory: Path,
@@ -468,6 +591,9 @@ class ExternalCjcMacroPackageCompilationOrchestrator(
         return diagnosticsFile.absolutePathString()
     }
 
+    /**
+     * 根据源码根和包名计算默认宏编译输出目录。
+     */
     private fun defaultOutputDirectoryFor(
         request: MacroSourcePackageCompilationRequest,
         sourceRoot: Path,
@@ -477,12 +603,18 @@ class ExternalCjcMacroPackageCompilationOrchestrator(
             ?: Files.createTempDirectory("macro-build-$packageSegment")
     }
 
+    /**
+     * 以文件序列形式遍历路径树。
+     */
     private fun Path.walkTopDown(): Sequence<File> {
         val root = toFile()
         if (!root.exists()) return emptySequence()
         return root.walkTopDown()
     }
 
+    /**
+     * 读取 `.cjo` 文件头部元数据。
+     */
     private fun readCjoHeader(path: Path): CjoPackageHeader {
         val bytes = Files.readAllBytes(path)
         val buffer = ByteBuffer.wrap(bytes)
@@ -490,29 +622,74 @@ class ExternalCjcMacroPackageCompilationOrchestrator(
     }
 }
 
+/**
+ * cjc 可执行文件解析器。
+ */
 fun interface MacroCompilerExecutableResolver {
+    /**
+     * 返回可执行 cjc 路径。
+     */
     fun resolve(): Path
 }
 
+/**
+ * 外部宏编译命令模型。
+ */
 data class MacroCompilerCommand(
+    /**
+     * 命令行参数，第一项是可执行文件路径。
+     */
     val arguments: List<String>,
+    /**
+     * 进程工作目录。
+     */
     val workingDirectory: File,
+    /**
+     * 附加到进程环境变量中的键值。
+     */
     val environment: Map<String, String>,
 )
 
+/**
+ * 外部宏编译命令执行结果。
+ */
 data class MacroCompilerCommandResult(
+    /**
+     * 进程退出码。
+     */
     val exitCode: Int,
+    /**
+     * 标准输出文本。
+     */
     val stdout: String,
+    /**
+     * 标准错误文本。
+     */
     val stderr: String,
 )
 
+/**
+ * 外部宏编译命令执行器。
+ */
 fun interface MacroCompilerCommandRunner {
+    /**
+     * 执行给定命令并返回退出结果。
+     */
     fun run(command: MacroCompilerCommand): MacroCompilerCommandResult
 }
 
+/**
+ * 默认 cjc 可执行文件解析器。
+ */
 object DefaultMacroCompilerExecutableResolver : MacroCompilerExecutableResolver {
+    /**
+     * 使用默认 SDK 配置解析 cjc。
+     */
     override fun resolve(): Path = resolve(DEFAULT_MACRO_SDK_HOME)
 
+    /**
+     * 使用指定 SDK 根解析 cjc。
+     */
     fun resolve(sdkHome: String): Path {
         return resolve(
             sdkHome = sdkHome,
@@ -523,6 +700,9 @@ object DefaultMacroCompilerExecutableResolver : MacroCompilerExecutableResolver 
         )
     }
 
+    /**
+     * 按 SDK、环境变量、系统属性、PATH 和用户目录兜底顺序解析 cjc。
+     */
     internal fun resolve(
         sdkHome: String,
         cangjieHome: String?,
@@ -557,6 +737,9 @@ object DefaultMacroCompilerExecutableResolver : MacroCompilerExecutableResolver 
         error("Cannot find `$executableName`. Set CANGJIE_HOME or cjc.home, or place cjc on PATH.")
     }
 
+    /**
+     * 在 PATH 环境变量中查找可执行文件。
+     */
     private fun findOnPath(executableName: String, pathValue: String): Path? {
         if (pathValue.isBlank()) return null
         return pathValue.split(File.pathSeparatorChar)
@@ -567,10 +750,19 @@ object DefaultMacroCompilerExecutableResolver : MacroCompilerExecutableResolver 
             .firstOrNull(Path::exists)
     }
 
+    /**
+     * 当前系统是否为 Windows。
+     */
     private fun isWindows(): Boolean = System.getProperty("os.name").lowercase().contains("win")
 }
 
+/**
+ * 基于 [ProcessBuilder] 的外部 cjc 命令执行器。
+ */
 object ProcessMacroCompilerCommandRunner : MacroCompilerCommandRunner {
+    /**
+     * 启动外部进程并收集 stdout/stderr/exitCode。
+     */
     override fun run(command: MacroCompilerCommand): MacroCompilerCommandResult {
         val process = ProcessBuilder(command.arguments)
             .directory(command.workingDirectory)
@@ -591,6 +783,9 @@ object ProcessMacroCompilerCommandRunner : MacroCompilerCommandRunner {
     }
 }
 
+/**
+ * 构造缺失宏包编译 orchestrator 时的诊断列表。
+ */
 internal fun unresolvedMacroPackageCompilationDiagnostics(
     requests: List<MacroSourcePackageCompilationRequest>,
 ): List<MacroConstructionDiagnostic> = requests.map { request ->
@@ -606,6 +801,9 @@ internal fun unresolvedMacroPackageCompilationDiagnostics(
     )
 }
 
+/**
+ * 根据宏包编译请求构造编译失败诊断。
+ */
 private fun MacroSourcePackageCompilationRequest.compilationError(
     message: String,
     sourceDiagnosticsRef: String? = this.sourceDiagnosticsRef,

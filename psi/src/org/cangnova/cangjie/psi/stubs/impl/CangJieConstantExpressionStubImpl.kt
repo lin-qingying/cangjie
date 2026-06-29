@@ -32,15 +32,33 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.stubs.StubElement
 import com.intellij.util.io.StringRef
 
+/**
+ * 表示 `CangJieConstantExpressionStubImpl`，承载PSI Stub中的语法节点、索引桩或辅助模型。
+ */
 class CangJieConstantExpressionStubImpl(
     parent: StubElement<out PsiElement>?,
     elementType: CjConstantExpressionElementType,
+    /**
+     * 保存 `kind` 的内部状态，供PSI Stub实现维护节点缓存或解析上下文。
+     */
     private val kind: ConstantValueKind,
+    /**
+     * 保存 `value` 的内部状态，供PSI Stub实现维护节点缓存或解析上下文。
+     */
     private val value: StringRef,
 ) : CangJieStubBaseImpl<CjConstantExpression>(parent, elementType), CangJieConstantExpressionStub {
+    /**
+     * 实现 `kind` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun kind(): ConstantValueKind = kind
+    /**
+     * 实现 `value` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun value(): String = StringRef.toString(value)
 
+    /**
+     * 实现 `copyInto` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun copyInto(newParent: StubElement<*>?): CangJieConstantExpressionStubImpl = CangJieConstantExpressionStubImpl(
         parent = newParent,
         elementType = stubType as CjConstantExpressionElementType,

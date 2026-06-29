@@ -12,14 +12,27 @@ import org.junit.jupiter.api.TestInfo
  * Kotlin 对应文件：`external/kotlin/analysis/analysis-test-framework/testFixtures/org/jetbrains/kotlin/analysis/test/framework/TestWithDisposable.kt`
  */
 abstract class TestWithDisposable {
+    /**
+     * 当前测试用例的根 disposable，按 JUnit 用例生命周期创建和释放。
+     */
     private var _disposable: Disposable? = null
+
+    /**
+     * 当前测试可使用的非空根 disposable。
+     */
     protected val disposable: Disposable get() = _disposable!!
 
+    /**
+     * 在每个测试用例开始前创建带显示名的 root disposable。
+     */
     @BeforeEach
     fun initDisposable(testInfo: TestInfo) {
         _disposable = Disposer.newDisposable("disposable for ${testInfo.displayName}")
     }
 
+    /**
+     * 在每个测试用例结束后释放 root disposable，并遵守 IntelliJ write action 清理约束。
+     */
     @AfterEach
     fun disposeDisposable() {
         _disposable?.let { disposable ->
@@ -44,4 +57,3 @@ abstract class TestWithDisposable {
         _disposable = null
     }
 }
-

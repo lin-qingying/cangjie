@@ -11,6 +11,9 @@ package org.cangnova.cangjie.psi.stubs
  * 因此必须集中定义，避免多个模块各自拷贝后逐渐漂移。
  */
 object CangJieCompiledFileErrors {
+    /**
+     * 保存 `NEWER_VERSION_DECOMPILE_ERROR`，供PSI Stub流程读取节点结构或语义信息。
+     */
     const val NEWER_VERSION_DECOMPILE_ERROR =
         "// This file was compiled with a newer version of CangJie compiler and can't be decompiled."
 }

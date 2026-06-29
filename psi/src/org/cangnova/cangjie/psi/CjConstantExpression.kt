@@ -31,6 +31,9 @@ import com.intellij.lang.ASTNode
 import com.intellij.psi.PsiElement
 import com.intellij.util.IncorrectOperationException
 
+/**
+ * 表示 `CjConstantExpression`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjConstantExpression :
 
     CjElementImplStub<CangJieConstantExpressionStub>, CjExpression {
@@ -38,10 +41,16 @@ class CjConstantExpression :
 
     constructor(stub: CangJieConstantExpressionStub) : super(stub, kindToConstantElementType(stub.kind()))
 
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitConstantExpression(this, data)
     }
 
+    /**
+     * 实现 `replace` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     @Throws(IncorrectOperationException::class)
     override fun replace(newElement: PsiElement): PsiElement {
         return replaceExpression(this, newElement, true) { newElement: PsiElement? ->

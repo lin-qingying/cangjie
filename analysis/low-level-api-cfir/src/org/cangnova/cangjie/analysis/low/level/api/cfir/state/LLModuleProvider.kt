@@ -7,7 +7,15 @@ import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProvider
 
-class LLModuleProvider(val useSiteModule: CaModule) {
+/**
+ * 基于 use-site module 解析 PSI 所属 analysis module 的 provider。
+ */
+class LLModuleProvider(
+    /**
+     * 当前查询的 use-site module。
+     */
+    val useSiteModule: CaModule
+) {
     /**
      * Returns a [CaModule] for a given [element] in context of the current session.
      *

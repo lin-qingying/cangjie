@@ -9,8 +9,14 @@ import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
  * @see LLCombinedPackageDelegationSymbolProvider
  */
 abstract class AbstractCombinedPackageDelegationSymbolProviderTest : AbstractSymbolProviderTest() {
+    /**
+     * 使用源码 low-level CFIR 配置构造待检查的组合 symbol provider。
+     */
     override val configurator = analysisApiCfirSourceTestConfigurator(analyseInDependentSession = false)
 
+    /**
+     * 从主模块的顶层 symbol provider 图中定位唯一的包委托组合 provider。
+     */
     override fun findTestSymbolProvider(mainModule: CjTestModule): CfirSymbolProvider {
         val providers = mainModule.caModule.findSymbolProvidersOfType<LLCombinedPackageDelegationSymbolProvider>()
         val availableProviders = mainModule.caModule.allTopLevelSymbolProviders()

@@ -25,10 +25,14 @@ import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
 import org.cangnova.cangjie.psi.*
 import org.cangnova.cangjie.psi.psiUtil.containingTypeStatement
 
+/**
+ * 基于 CFIR source 与 PSI 结构计算符号所属 class-like 符号的工具。
+ */
 internal object LLContainingClassCalculator {
     /**
-     * Returns a containing class symbol for the given symbol, computing it solely from the source information
-     * and information inside CFIR nodes.
+     * 返回 [symbol] 的外围 class-like 符号。
+     *
+     * 该方法只使用 source 信息和 CFIR 节点内部信息，不依赖额外索引。
      */
     fun getContainingClassSymbol(symbol: CfirBasedSymbol<*>): CfirClassLikeSymbol<*>? {
         if (!symbol.origin.isLazyResolvable) {
@@ -71,6 +75,9 @@ internal object LLContainingClassCalculator {
         return null
     }
 
+    /**
+     * 判断 [symbol] 这种符号类别是否可能拥有外围 class-like。
+     */
     private fun canHaveContainingClassSymbol(symbol: CfirBasedSymbol<*>): Boolean = when (symbol) {
         is CfirValueParameterSymbol, is CfirAnonymousFunctionSymbol -> false
         is CfirPropertySymbol -> true
@@ -79,6 +86,9 @@ internal object LLContainingClassCalculator {
         else -> false
     }
 
+    /**
+     * 根据 [psi] 所属模块解析外围 class-like 符号。
+     */
     private fun computeContainingClass(symbol: CfirBasedSymbol<*>, psi: CjTypeStatement?): CfirClassLikeSymbol<*>? {
         if (psi == null) {
             return null

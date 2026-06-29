@@ -22,12 +22,20 @@ import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
  * [CjDanglingFileModules][org.cangnova.cangjie.analysis.api.projectStructure.CaDanglingFileModule].
  */
 
+/**
+ * low-level CFIR session 失效后发布的消息主题集合。
+ */
 object LLCfirSessionInvalidationTopics {
+    /**
+     * session 失效事件主题。
+     */
     val SESSION_INVALIDATION: Topic<LLCfirSessionInvalidationListener> =
         Topic(LLCfirSessionInvalidationListener::class.java, Topic.BroadcastDirection.TO_CHILDREN, true)
 }
 
-
+/**
+ * low-level CFIR session 失效事件监听器。
+ */
 interface LLCfirSessionInvalidationListener {
     /**
      * [afterInvalidation] is published when sessions for the given [modules] have been invalidated. Because the sessions are already

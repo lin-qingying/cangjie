@@ -3,7 +3,7 @@
 open class B {}
 
 class A <: B {
-    public var a = <!ILLEGAL_THIS_OR_SUPER_CALL!>super<!>()
+    public var a = <!INVALID_THIS_CALL_OUTSIDE_CTOR!>super<!>()
 }
 
 main() {
@@ -13,5 +13,5 @@ main() {
 }
 
 class C {
-    public var a = <!ILLEGAL_THIS_OR_SUPER_CALL!>super<!>()
+    public var a = <!INVALID_THIS_CALL_OUTSIDE_CTOR!>super<!>()
 }

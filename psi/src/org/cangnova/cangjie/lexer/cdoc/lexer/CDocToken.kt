@@ -27,6 +27,9 @@ package org.cangnova.cangjie.lexer.cdoc.lexer
 import org.cangnova.cangjie.lexer.CjToken
 import org.jetbrains.annotations.NonNls
 
+/**
+ * 表示 `CDocToken`，承载仓颉词法与文档注释中的语法节点、索引桩或辅助模型。
+ */
 class CDocToken : CjToken {
     @Deprecated("")
     constructor(debugName: String) : super(debugName)

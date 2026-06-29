@@ -34,43 +34,79 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiElementVisitor
 import com.intellij.psi.impl.source.tree.LazyParseablePsiElement
 
+/**
+ * 表示 `CjLambdaExpression`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjLambdaExpression(text: CharSequence?) :
     LazyParseablePsiElement(LAMBDA_EXPRESSION, text),
     CjExpression {
 
+    /**
+     * 保存 `functionLiteral`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val functionLiteral: CjFunctionLiteral
         get() = findChildByType(FUNCTION_LITERAL)?.getPsi(CjFunctionLiteral::class.java)!!
 
+    /**
+     * 保存 `valueParameters`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val valueParameters: List<CjParameter>
         get() = functionLiteral.valueParameters
 
+    /**
+     * 保存 `parameterList`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val parameterList: CjParameterList?
         get() = functionLiteral.valueParameterList
+    /**
+     * 保存 `bodyExpression`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val bodyExpression: CjBlockExpression?
         get() = functionLiteral.bodyExpression
 
+    /**
+     * 提供 `hasDeclaredReturnType` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun hasDeclaredReturnType(): Boolean {
         return functionLiteral.typeReference != null
     }
 
+    /**
+     * 提供 `asElement` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun asElement(): CjElement {
         return this
     }
 
+    /**
+     * 保存 `leftCurlyBrace`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val leftCurlyBrace: ASTNode
         get() = functionLiteral.node.findChildByType(LBRACE)!!
 
+    /**
+     * 保存 `rightCurlyBrace`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val rightCurlyBrace: ASTNode?
         get() = functionLiteral.node.findChildByType(RBRACE)
 
+    /**
+     * 实现 `acceptChildren` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <D> acceptChildren(visitor: CjVisitor<Unit, D>, data: D) {
         CjPsiUtil.visitChildren<D>(this, visitor, data)
     }
 
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitLambdaExpression(this, data)
     }
 
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun accept(visitor: PsiElementVisitor) {
         if (visitor is CjVisitor<*, *>) {
             @Suppress("UNCHECKED_CAST")
@@ -80,18 +116,30 @@ class CjLambdaExpression(text: CharSequence?) :
         }
     }
 
+    /**
+     * 实现 `toString` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun toString(): String {
         return node.elementType.toString()
     }
 
+    /**
+     * 实现 `getPsiOrParent` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getPsiOrParent(): CjElement {
         return this
     }
 
+    /**
+     * 实现 `getContainingCjFile` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getContainingCjFile(): CjFile {
         return getContainingCjFile(this)
     }
 
+    /**
+     * 提供 `shouldChangeModificationCount` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     @Suppress("unused") // keep for compatibility with potential plugins
     fun shouldChangeModificationCount(place: PsiElement?): Boolean {
         return false

@@ -20,6 +20,9 @@ import org.cangnova.cangjie.utils.exceptions.requireWithAttachment
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.contract
 
+/**
+ * 构造包含 CFIR、Cone 类型和 PSI 附件的错误并直接抛出。
+ */
 fun errorWithCfirSpecificEntries(
     message: String,
     cause: Exception? = null,
@@ -31,6 +34,9 @@ fun errorWithCfirSpecificEntries(
     throw buildErrorWithCfirSpecificEntries(message, cause, cfir, coneType, psi, additionalInfos)
 }
 
+/**
+ * 构造包含 low-level CFIR 特定附件的异常对象。
+ */
 fun buildErrorWithCfirSpecificEntries(
     message: String,
     cause: Exception? = null,
@@ -54,6 +60,9 @@ fun buildErrorWithCfirSpecificEntries(
         additionalInfos()
     }
 
+/**
+ * 要求当前对象同时是 [R] 类型，否则抛出带 CFIR 附件的异常。
+ */
 @OptIn(ExperimentalContracts::class)
 inline fun <reified R> Any.requireTypeIntersectionWith() {
     contract { returns() implies (this@requireTypeIntersectionWith is R) }

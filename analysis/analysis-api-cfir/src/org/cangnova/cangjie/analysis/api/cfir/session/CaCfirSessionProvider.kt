@@ -33,22 +33,37 @@ import java.util.concurrent.ConcurrentHashMap
 class CaCfirSessionProvider(
     project: Project,
 ) : CaBaseSessionProvider(project), CaSessionInvalidationService {
+    /**
+     * use-site 模块到 CFIR Analysis API session 的缓存。
+     */
     private val cache = ConcurrentHashMap<CaModule, CaCfirSession>()
 
+    /**
+     * low-level CFIR resolution facade 服务。
+     */
     @OptIn(LLCfirInternals::class)
     private val resolutionFacadeService by lazy(LazyThreadSafetyMode.PUBLICATION) {
         LLResolutionFacadeService.getInstance(project)
     }
 
+    /**
+     * 平台 project-structure provider，用于从 PSI 恢复 use-site 模块。
+     */
     private val projectStructureProvider by lazy(LazyThreadSafetyMode.PUBLICATION) {
         CangJieProjectStructureProvider.getInstance(project)
     }
 
+    /**
+     * 根据 use-site PSI 元素获取 Analysis API session。
+     */
     override fun getAnalysisSession(useSiteElement: CjElement): CaSession {
         val module = resolveUseSiteModule(useSiteElement)
         return getAnalysisSession(module)
     }
 
+    /**
+     * 根据 use-site 模块获取或创建 Analysis API session。
+     */
     override fun getAnalysisSession(useSiteModule: CaModule): CaSession {
         ProgressManager.checkCanceled()
         flushDeferredModificationsIfInsideWriteAction()
@@ -61,16 +76,25 @@ class CaCfirSessionProvider(
         return session
     }
 
+    /**
+     * 进入基于 PSI 元素的分析前发布写动作分析事件。
+     */
     override fun beforeEnteringAnalysis(session: CaSession, useSiteElement: CjElement) {
         super.beforeEnteringAnalysis(session, useSiteElement)
         publishEnteringAnalysisInWriteActionIfNeeded()
     }
 
+    /**
+     * 进入基于模块的分析前发布写动作分析事件。
+     */
     override fun beforeEnteringAnalysis(session: CaSession, useSiteModule: CaModule) {
         super.beforeEnteringAnalysis(session, useSiteModule)
         publishEnteringAnalysisInWriteActionIfNeeded()
     }
 
+    /**
+     * 离开基于 PSI 元素的分析后发布写动作分析事件。
+     */
     override fun afterLeavingAnalysis(session: CaSession, useSiteElement: CjElement) {
         try {
             super.afterLeavingAnalysis(session, useSiteElement)
@@ -79,6 +103,9 @@ class CaCfirSessionProvider(
         }
     }
 
+    /**
+     * 离开基于模块的分析后发布写动作分析事件。
+     */
     override fun afterLeavingAnalysis(session: CaSession, useSiteModule: CaModule) {
         try {
             super.afterLeavingAnalysis(session, useSiteModule)
@@ -87,6 +114,9 @@ class CaCfirSessionProvider(
         }
     }
 
+    /**
+     * 逐出指定模块对应的 Analysis API session 缓存。
+     */
     override fun invalidate(modules: Set<CaModule>) {
         modules.forEach(cache::remove)
     }
@@ -124,14 +154,23 @@ class CaCfirSessionProvider(
         return results.map { it as R }
     }
 
+    /**
+     * 清空当前 provider 管理的全部 session 缓存。
+     */
     override fun clearCaches() {
         invalidate(cache.keys.toSet())
     }
 
+    /**
+     * provider 释放时清空 session 缓存。
+     */
     override fun dispose() {
         clearCaches()
     }
 
+    /**
+     * 为指定 use-site 模块创建新的 CFIR Analysis API session。
+     */
     @OptIn(CaPlatformInterface::class, LLCfirInternals::class)
     private fun createAnalysisSession(useSiteModule: CaModule): CaCfirSession {
         val resolutionFacade = resolutionFacadeService.getResolutionFacade(useSiteModule)
@@ -143,6 +182,9 @@ class CaCfirSessionProvider(
         )
     }
 
+    /**
+     * 确认缓存返回的 session 仍然有效。
+     */
     private fun checkSessionValidity(session: CaCfirSession) {
         require(session.token.isValid()) {
             "通过 `getAnalysisSession` 获取的 Analysis API session 必须保持有效。"
@@ -160,18 +202,27 @@ class CaCfirSessionProvider(
         LLCfirDeclarationModificationService.getInstance(project).flushDeferredModifications()
     }
 
+    /**
+     * 在写动作分析开始时发布平台事件。
+     */
     @OptIn(CaPlatformInterface::class)
     private fun publishEnteringAnalysisInWriteActionIfNeeded() {
         if (!isAnalysisInWriteAction()) return
         project.analysisMessageBus.syncPublisher(CangJieAnalysisInWriteActionListener.TOPIC).onEnteringAnalysisInWriteAction()
     }
 
+    /**
+     * 在写动作分析结束时发布平台事件。
+     */
     @OptIn(CaPlatformInterface::class)
     private fun publishAfterLeavingAnalysisInWriteActionIfNeeded() {
         if (!isAnalysisInWriteAction()) return
         project.analysisMessageBus.syncPublisher(CangJieAnalysisInWriteActionListener.TOPIC).afterLeavingAnalysisInWriteAction()
     }
 
+    /**
+     * 判断当前是否处于允许 Analysis API 运行的写动作中。
+     */
     private fun isAnalysisInWriteAction(): Boolean {
         return ApplicationManager.getApplication().isWriteAccessAllowed &&
                 CaAnalysisPermissionRegistry.getInstance().isAnalysisAllowedInWriteAction
@@ -191,14 +242,23 @@ class CaCfirSessionProvider(
      * 否则下一次 analysis 仍可能从 provider cache 取回已失效 token 的旧 session。
      */
     internal class SessionInvalidationListener(private val project: Project) : LLCfirSessionInvalidationListener {
+        /**
+         * 当前项目注册的 CFIR Analysis API session provider。
+         */
         private val analysisSessionProvider: CaCfirSessionProvider
             get() = getInstance(project) as? CaCfirSessionProvider
                 ?: error("Expected the analysis session provider to be a `${CaCfirSessionProvider::class.simpleName}`.")
 
+        /**
+         * low-level 按模块失效后逐出对应 Analysis API session。
+         */
         override fun afterInvalidation(modules: Set<CaModule>) {
             analysisSessionProvider.invalidate(modules)
         }
 
+        /**
+         * low-level 全局失效后清空全部 Analysis API session。
+         */
         override fun afterGlobalInvalidation() {
             analysisSessionProvider.clearCaches()
         }

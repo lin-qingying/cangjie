@@ -20,8 +20,16 @@ import org.junit.jupiter.api.Assertions.assertFalse
  */
 abstract class AbstractFileScopeTest : AbstractScopeTestBase() {
     context(_: CaSession)
+    /**
+     * 获取当前文件的公开 file scope。
+     */
     override fun getScope(mainFile: CjFile, testServices: TestServices): CaScope = mainFile.getFileScope()
 
+    /**
+     * 执行 file scope 测试。
+     *
+     * 除基座的 scope 内容输出外，额外校验 file symbol 渲染和不应出现的名称。
+     */
     override fun doTestByMainFile(mainFile: CjFile, mainModule: CjTestModule, testServices: TestServices) {
         super.doTestByMainFile(mainFile, mainModule, testServices)
 

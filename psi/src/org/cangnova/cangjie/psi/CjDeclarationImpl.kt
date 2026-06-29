@@ -33,37 +33,64 @@ import org.cangnova.cangjie.psi.psiUtil.findDocComment
 import org.cangnova.cangjie.psi.psiUtil.removeModifier
 import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 
+/**
+ * 表示 `CjDeclarationImpl`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 abstract class CjDeclarationImpl(node: ASTNode) : CjExpressionImpl(node), CjDeclaration {
+    /**
+     * 暴露 `modifierList`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val modifierList: CjModifierList?
         get() =
             findChildByType(CjNodeTypes.MODIFIER_LIST)
 
+    /**
+     * 实现 `hasModifier` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun hasModifier(modifier: CjKeywordToken): Boolean {
         val modifierList: CjModifierList? = modifierList
         return modifierList != null && modifierList.hasModifier(modifier)
     }
 
+    /**
+     * 暴露 `expression`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val expression: CjExpression?
         get() = PsiTreeUtil.getStubChildOfType(
             this,
             CjExpression::class.java,
         )
 
+    /**
+     * 暴露 `annotations`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val annotations: CjAnnotations?
         get() = findChildByType<CjAnnotations>(CjStubElementTypes.ANNOTATIONS)
 
+    /**
+     * 暴露 `annotationEntries`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val annotationEntries: List<CjAnnotation>
         get() = annotations?.entries ?: emptyList()
 
 
+    /**
+     * 实现 `addModifier` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun addModifier(modifier: CjKeywordToken) {
         addModifier(this, modifier)
     }
 
+    /**
+     * 实现 `removeModifier` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun removeModifier(modifier: CjKeywordToken) {
         removeModifier(this, modifier)
     }
 
+    /**
+     * 暴露 `docComment`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val docComment: CDoc?
         get() {
             return findDocComment(this)

@@ -38,6 +38,9 @@ fun interface CaRendererKeywordFilter {
 
     /** 预设: 放行所有关键字。 */
     object ALL : CaRendererKeywordFilter {
+        /**
+         * 始终允许关键字渲染。
+         */
         override fun filter(analysisSession: CaSession, modifier: CjKeywordToken, annotated: CaAnnotated): Boolean {
             return true
         }
@@ -45,6 +48,9 @@ fun interface CaRendererKeywordFilter {
 
     /** 预设: 拒绝所有关键字。 */
     object NONE : CaRendererKeywordFilter {
+        /**
+         * 始终拒绝关键字渲染。
+         */
         override fun filter(analysisSession: CaSession, modifier: CjKeywordToken, annotated: CaAnnotated): Boolean {
             return false
         }
@@ -56,6 +62,9 @@ fun interface CaRendererKeywordFilter {
             predicate: CaSession.(modifier: CjKeywordToken, annotated: CaAnnotated) -> Boolean
         ): CaRendererKeywordFilter =
             object : CaRendererKeywordFilter {
+                /**
+                 * 委托调用方提供的 session 谓词执行过滤。
+                 */
                 override fun filter(
                     analysisSession: CaSession,
                     modifier: CjKeywordToken,

@@ -27,9 +27,15 @@ package org.cangnova.cangjie.psi.stubs.elements
 import org.cangnova.cangjie.psi.CjStringTemplateExpression
 import com.intellij.lang.ASTNode
 
+/**
+ * 表示 `CjStringTemplateExpressionElementType`，承载PSI Stub中的语法节点、索引桩或辅助模型。
+ */
 class CjStringTemplateExpressionElementType(debugName: String) :
     CjPlaceHolderStubElementType<CjStringTemplateExpression>(debugName, CjStringTemplateExpression::class.java) {
 
+    /**
+     * 实现 `shouldCreateStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun shouldCreateStub(node: ASTNode): Boolean {
         if (node.treeParent?.elementType != CjStubElementTypes.VALUE_ARGUMENT) return false
         return super.shouldCreateStub(node)

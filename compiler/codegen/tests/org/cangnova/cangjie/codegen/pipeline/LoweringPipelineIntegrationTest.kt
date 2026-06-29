@@ -16,7 +16,13 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 
+/**
+ * CHIR 到 LLVM lowering pipeline 的集成测试。
+ */
 class LoweringPipelineIntegrationTest {
+    /**
+     * 验证开启 trace 时 pipeline 会输出 pass 追踪行。
+     */
     @Test
     fun `emits lowering trace when enabled`() {
         val generator = DefaultChirToLlvmCodeGenerator()
@@ -41,6 +47,9 @@ class LoweringPipelineIntegrationTest {
         assertTrue(output.loweringTrace.any { it.contains("control-flow-contract") }, output.loweringTrace.joinToString("\n"))
     }
 
+    /**
+     * 验证控制流 pass 会拒绝无效 CFG。
+     */
     @Test
     fun `control-flow pass rejects invalid cfg`() {
         val generator = DefaultChirToLlvmCodeGenerator()
@@ -65,6 +74,9 @@ class LoweringPipelineIntegrationTest {
         assertTrue(error.message?.contains("control-flow contract") == true, error.message)
     }
 
+    /**
+     * 构造控制流合法的测试 package。
+     */
     private fun validPackage(): ChirPackage {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
         val function = DefaultChirFunctionDeclaration(
@@ -102,6 +114,9 @@ class LoweringPipelineIntegrationTest {
         )
     }
 
+    /**
+     * 构造入口块缺失的非法 CFG package。
+     */
     private fun invalidCfgPackage(): ChirPackage {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
         val function = DefaultChirFunctionDeclaration(
@@ -135,4 +150,3 @@ class LoweringPipelineIntegrationTest {
         )
     }
 }
-

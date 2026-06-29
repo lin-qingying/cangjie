@@ -28,9 +28,15 @@ import org.cangnova.cangjie.cfir.types.type
  * 不引入任何 Kotlin 专属的 dynamic/flexible/raw/captured 等分支。
  */
 internal interface ConeTypePointer<out T : ConeCangJieType> {
+    /**
+     * 在指定 CFIR Analysis API 会话中恢复 Cone 类型。
+     */
     fun restore(session: CaCfirSession): T?
 }
 
+/**
+ * 为 Cone 类型创建可跨会话恢复的指针。
+ */
 internal fun <T : ConeCangJieType> T.createPointer(
     builder: CaSymbolByCfirBuilder,
 ): ConeTypePointer<T> {
@@ -127,28 +133,61 @@ internal fun <T : ConeCangJieType> T.createPointer(
     } as ConeTypePointer<T>
 }
 
+/**
+ * 基于恢复函数实现的简单 Cone 类型指针。
+ */
 private class ConeSimpleTypePointer<T : ConeCangJieType>(
+    /**
+     * 在目标会话中恢复 Cone 类型的函数。
+     */
     private val restoreType: (CaCfirSession) -> T?,
 ) : ConeTypePointer<T> {
+    /**
+     * 调用恢复函数还原 Cone 类型。
+     */
     override fun restore(session: CaCfirSession): T? = restoreType(session)
 }
 
+/**
+ * 类型参数 Cone 类型的指针。
+ */
 private class ConeTypeParameterTypePointer(
+    /**
+     * 原始类型参数符号。
+     */
     private val symbol: CfirTypeParameterSymbol,
+    /**
+     * 类型参数类型携带的 Cone attributes。
+     */
     private val attributes: org.cangnova.cangjie.cfir.types.ConeAttributes,
 ) : ConeTypePointer<ConeTypeParameterType> {
+    /**
+     * 在目标会话中恢复类型参数符号并重建类型参数 Cone 类型。
+     */
     override fun restore(session: CaCfirSession): ConeTypeParameterType? {
         val restoredSymbol = symbol.toLookupTag().toSymbol(session.cfirSession) as? CfirTypeParameterSymbol ?: symbol
         return ConeTypeParameterTypeImpl(ConeTypeParameterLookupTag(restoredSymbol), attributes)
     }
 }
 
+/**
+ * Cone 类型投影的指针。
+ */
 private class ConeTypeProjectionPointer(
+    /**
+     * 投影中实际类型的指针。
+     */
     private val typePointer: ConeTypePointer< ConeCangJieType>,
 ) {
+    /**
+     * 在目标会话中恢复类型投影。
+     */
     fun restore(session: CaCfirSession): ConeTypeProjection? = typePointer.restore(session)
 }
 
+/**
+ * 为 Cone 类型投影创建可恢复指针。
+ */
 private fun ConeTypeProjection.createPointer(builder: CaSymbolByCfirBuilder): ConeTypeProjectionPointer {
     return ConeTypeProjectionPointer(type.createPointer(builder))
 }

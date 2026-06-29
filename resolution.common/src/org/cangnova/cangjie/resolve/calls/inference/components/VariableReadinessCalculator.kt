@@ -8,6 +8,9 @@ import org.cangnova.cangjie.resolve.calls.inference.components.VariableFixationF
 import org.cangnova.cangjie.type.model.*
 import org.cangnova.cangjie.resolve.calls.inference.components.VariableReadinessCalculator.TypeVariableFixationReadinessQuality as Q
 
+/**
+ * 基于位掩码质量集合的类型变量固定优先级计算器。
+ */
 class VariableReadinessCalculator(
     trivialConstraintTypeInferenceOracle: TrivialConstraintTypeInferenceOracle,
     languageVersionSettings: LanguageVersionSettings,
@@ -85,22 +88,43 @@ class VariableReadinessCalculator(
             check(ordinal < (Int.SIZE_BITS - 2))
         }
 
+        /**
+         * 当前质量在 readiness 位掩码中的位置。
+         */
         val mask: Int = 1 shl ((Int.SIZE_BITS - 2) - ordinal)
     }
 
+    /**
+     * 以位掩码保存的类型变量固定准备状态。
+     */
     class TypeVariableFixationReadiness : Comparable<TypeVariableFixationReadiness> {
+        /**
+         * readiness quality 集合的位掩码。
+         */
         private var bitMask: Int = 0
 
+        /**
+         * 读取指定 readiness quality 是否存在。
+         */
         operator fun get(index: TypeVariableFixationReadinessQuality): Boolean = (bitMask and index.mask) != 0
 
+        /**
+         * 设置指定 readiness quality 是否存在。
+         */
         operator fun set(index: TypeVariableFixationReadinessQuality, value: Boolean) {
             val conditionalMask = if (value) index.mask else 0
             bitMask = (bitMask and index.mask.inv()) or conditionalMask
         }
 
+        /**
+         * 按位掩码顺序比较两个 readiness。
+         */
         override fun compareTo(other: TypeVariableFixationReadiness): Int = bitMask - other.bitMask
     }
 
+    /**
+     * 计算指定类型变量的固定准备状态。
+     */
     context(c: Context)
     override fun TypeConstructorMarker.getReadiness(dependencyProvider: TypeVariableDependencyInformationProvider): TypeVariableFixationReadiness {
         val readiness = TypeVariableFixationReadiness()
@@ -148,12 +172,18 @@ class VariableReadinessCalculator(
         return readiness
     }
 
+    /**
+     * 判断类型变量是否没有显式 lower Nothing 约束。
+     */
     context(c: Context)
     private fun TypeConstructorMarker.hasNoExplicitLowerNothingConstraint(): Boolean =
         c.notFixedTypeVariables[this]?.constraints
             ?.none { it.kind.isLower() && it.type.typeConstructor().isNothingConstructor() }
             ?: true
 
+    /**
+     * 判断类型变量是否有 proper 约束可用于固定。
+     */
     context(c: Context)
     override fun typeVariableHasProperConstraint(
         typeVariable: TypeConstructorMarker,
@@ -163,6 +193,9 @@ class VariableReadinessCalculator(
         return readiness[Q.ALLOWED] && readiness[Q.HAS_PROPER_CONSTRAINTS]
     }
 
+    /**
+     * 根据 readiness 构造待固定变量描述。
+     */
     context(c: Context)
     override fun prepareVariableForFixation(
         candidate: TypeConstructorMarker,

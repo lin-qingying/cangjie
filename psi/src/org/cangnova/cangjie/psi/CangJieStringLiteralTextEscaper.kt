@@ -30,6 +30,9 @@ import com.intellij.openapi.util.TextRange
 import com.intellij.psi.LiteralTextEscaper
 import kotlin.math.min
 
+/**
+ * 提供 `toNativeArray` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+ */
 fun List<Int>.toNativeArray(dest: IntArray, offset: Int, len: Int) {
     require(len >= 0) { "Length cannot be negative." }
     require(offset in 0 until this.size) { "Offset out of bounds: $offset" }
@@ -44,10 +47,16 @@ fun List<Int>.toNativeArray(dest: IntArray, offset: Int, len: Int) {
     }
 }
 
+/**
+ * 提供 `toNativeArray` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+ */
 fun List<Int>.toNativeArray(): IntArray {
     return this.toNativeArray(0, this.size)
 }
 
+/**
+ * 提供 `toNativeArray` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+ */
 fun List<Int>.toNativeArray(offset: Int, len: Int): IntArray {
     require(len >= 0) { "Length cannot be negative." }
     require(offset in 0..this.size) { "Offset out of bounds: $offset" }
@@ -61,10 +70,19 @@ fun List<Int>.toNativeArray(offset: Int, len: Int): IntArray {
     }
 }
 
+/**
+ * 表示 `CangJieStringLiteralTextEscaper`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CangJieStringLiteralTextEscaper(host: CjStringTemplateExpression) :
     LiteralTextEscaper<CjStringTemplateExpression>(host) {
+    /**
+     * 保存 `sourceOffsets` 的内部状态，供仓颉 PSI实现维护节点缓存或解析上下文。
+     */
     private var sourceOffsets: IntArray? = null
 
+    /**
+     * 实现 `decode` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun decode(rangeInsideHost: TextRange, outChars: StringBuilder): Boolean {
         val sourceOffsetsList = mutableListOf<Int>()
         var sourceOffset = 0
@@ -106,16 +124,25 @@ class CangJieStringLiteralTextEscaper(host: CjStringTemplateExpression) :
         return true
     }
 
+    /**
+     * 实现 `getOffsetInHost` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getOffsetInHost(offsetInDecoded: Int, rangeInsideHost: TextRange): Int {
         val offsets = sourceOffsets
         if (offsets == null || offsetInDecoded >= offsets.size) return -1
         return min(offsets[offsetInDecoded], rangeInsideHost.length) + rangeInsideHost.startOffset
     }
 
+    /**
+     * 实现 `getRelevantTextRange` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getRelevantTextRange(): TextRange {
         return myHost.getContentRange()
     }
 
+    /**
+     * 实现 `isOneLine` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun isOneLine(): Boolean {
         return myHost.isSingleQuoted()
     }

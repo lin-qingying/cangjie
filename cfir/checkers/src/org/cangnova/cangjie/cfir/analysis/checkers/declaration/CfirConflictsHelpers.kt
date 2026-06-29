@@ -276,6 +276,8 @@ internal fun CfirDeclarationCollector<CfirBasedSymbol<*>>.collectClassMembers(cl
     for (declaration in classDeclaration.declarations) {
         when (declaration) {
             is CfirFunction -> {
+                if (declaration is CfirConstructor && declaration.status.isStatic) continue
+
                 val declaredFunction = declaration.symbol as? CfirFunctionSymbol<*> ?: continue
                 if (!declaredFunction.isCollectable()) continue
 

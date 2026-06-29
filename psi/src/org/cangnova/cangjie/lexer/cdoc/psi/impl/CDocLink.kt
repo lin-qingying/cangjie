@@ -29,9 +29,18 @@ import org.cangnova.cangjie.psi.psiUtil.getStrictParentOfType
 import com.intellij.lang.ASTNode
 import com.intellij.openapi.util.TextRange
 
+/**
+ * 表示 `CDocLink`，承载仓颉词法与文档注释中的语法节点、索引桩或辅助模型。
+ */
 class CDocLink(node: ASTNode) : CjElementImpl(node) {
+    /**
+     * 提供 `getLinkText` 操作，封装仓颉词法与文档注释节点的访问、构造或判断逻辑。
+     */
     fun getLinkText(): String = getLinkTextRange().substring(text)
 
+    /**
+     * 提供 `getLinkTextRange` 操作，封装仓颉词法与文档注释节点的访问、构造或判断逻辑。
+     */
     fun getLinkTextRange(): TextRange {
         val text = text
         if (text.startsWith('[') && text.endsWith(']')) {

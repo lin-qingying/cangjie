@@ -37,21 +37,36 @@ import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.util.IncorrectOperationException
 import java.util.concurrent.atomic.AtomicLong
 
+/**
+ * 表示 `CjSuperTypeList`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjSuperTypeList : CjElementImplStub<CangJiePlaceHolderStub<CjSuperTypeList>> {
+    /**
+     * 保存 `_modificationStamp` 的内部状态，供仓颉 PSI实现维护节点缓存或解析上下文。
+     */
     private val _modificationStamp = AtomicLong()
 
     constructor(node: ASTNode) : super(node)
 
     constructor(stub: CangJiePlaceHolderStub<CjSuperTypeList>) : super(stub, CjStubElementTypes.SUPER_TYPE_LIST)
 
+    /**
+     * 实现 `toString` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun toString(): String {
         return node.elementType.toString()
     }
 
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitSuperTypeList(this, data)
     }
 
+    /**
+     * 提供 `addEntry` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun addEntry(entry: CjSuperTypeListEntry): CjSuperTypeListEntry {
         return addItem(
             this,
@@ -60,6 +75,9 @@ class CjSuperTypeList : CjElementImplStub<CangJiePlaceHolderStub<CjSuperTypeList
         )
     }
 
+    /**
+     * 提供 `removeEntry` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun removeEntry(entry: CjSuperTypeListEntry) {
         removeItem(entry)
         if (entries.isEmpty()) {
@@ -67,6 +85,9 @@ class CjSuperTypeList : CjElementImplStub<CangJiePlaceHolderStub<CjSuperTypeList
         }
     }
 
+    /**
+     * 实现 `delete` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     @Throws(IncorrectOperationException::class)
     override fun delete() {
         var left = PsiTreeUtil.skipSiblingsBackward(
@@ -78,6 +99,9 @@ class CjSuperTypeList : CjElementImplStub<CangJiePlaceHolderStub<CjSuperTypeList
         parent.deleteChildRange(left, this)
     }
 
+    /**
+     * 保存 `entries`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val entries: List<CjSuperTypeListEntry>
         get() = listOf(
             *getStubOrPsiChildren(
@@ -86,11 +110,17 @@ class CjSuperTypeList : CjElementImplStub<CangJiePlaceHolderStub<CjSuperTypeList
             ),
         )
 
+    /**
+     * 实现 `subtreeChanged` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun subtreeChanged() {
         super.subtreeChanged()
         _modificationStamp.getAndIncrement()
     }
 
+    /**
+     * 保存 `modificationStamp`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val modificationStamp: Long get() =
         _modificationStamp.get()
 }

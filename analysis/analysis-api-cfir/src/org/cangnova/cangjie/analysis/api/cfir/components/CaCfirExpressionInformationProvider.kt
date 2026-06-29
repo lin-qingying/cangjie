@@ -12,13 +12,22 @@ import org.cangnova.cangjie.psi.CjExpression
  */
 @OptIn(CaImplementationDetail::class)
 internal class CaCfirExpressionInformationProvider(
+    /**
+     * 延迟取得当前 CFIR Analysis session。
+     */
     override val analysisSessionProvider: () -> CaCfirSession,
 ) : CaBaseSessionComponent<CaCfirSession>(), CaExpressionInformationProvider {
+    /**
+     * 判断表达式在当前位置是否以语句形态参与语义。
+     */
     override val CjExpression.isStatementLike: Boolean
         get() = withValidityAssertion {
             this@isStatementLike.isStatementLikeExpression()
         }
 
+    /**
+     * 判断表达式是否可以稳定求得编译期常量值。
+     */
     override val CjExpression.isCompileTimeConstant: Boolean
         get() = withValidityAssertion {
             analysisSession.evaluateCompileTimeValue(this@isCompileTimeConstant) != null

@@ -15,6 +15,12 @@ import org.cangnova.cangjie.test.directives.model.RegisteredDirectives
  * 3. 让抽象测试只围绕公开 Analysis API 断言，而不是再手工维护方法名到文件名的映射。
  */
 abstract class AbstractAnalysisApiComponentTest : AbstractAnalysisApiBasedTest() {
+    /**
+     * 当前组件测试基类额外注册的指令集合。
+     *
+     * 在继承基础分析测试指令的同时加入 `AnalysisApiComponentTestDirectives`，保证所有组件级
+     * generated tests 都能读取统一的目标定位、期望类型、期望 symbol 和作用域断言字段。
+     */
     override val additionalDirectives: List<DirectivesContainer>
         get() = super.additionalDirectives + AnalysisApiComponentTestDirectives
 

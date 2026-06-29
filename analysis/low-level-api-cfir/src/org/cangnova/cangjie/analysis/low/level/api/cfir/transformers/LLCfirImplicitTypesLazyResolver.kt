@@ -35,9 +35,15 @@ import org.cangnova.cangjie.utils.exceptions.withCfirEntry
  * 不引入仓颉不存在的 declaration shape（匿名初始化块、field、enum entry 等）。
  */
 internal object LLCfirImplicitTypesLazyResolver : LLCfirLazyResolver(CfirResolvePhase.IMPLICIT_TYPES) {
+    /**
+     * 为 [target] 创建 IMPLICIT_TYPES 阶段的 body 目标解析器。
+     */
     override fun createTargetResolver(target: LLCfirResolveTarget): LLCfirTargetResolver =
         LLCfirImplicitBodyTargetResolver(target)
 
+    /**
+     * 校验 callable 的返回类型已经在隐式类型阶段完成解析。
+     */
     override fun phaseSpecificCheckIsResolved(target: CfirElementWithResolveState) {
         if (target !is CfirCallableDeclaration) return
         checkReturnTypeRefIsResolved(target)
@@ -50,15 +56,23 @@ internal object LLCfirImplicitTypesLazyResolver : LLCfirLazyResolver(CfirResolve
  */
 internal typealias LLImplicitBodyResolveComputationSession = CfirImplicitBodyResolveComputationSession
 
+/**
+ * IMPLICIT_TYPES 阶段的 low-level body 目标解析器。
+ *
+ * 该解析器只处理需要隐式返回类型或隐式变量类型计算的声明，并在 raw resolve 后通知声明修改服务 body 已解析。
+ */
 internal class LLCfirImplicitBodyTargetResolver(
     target: LLCfirResolveTarget,
     llImplicitBodyResolveComputationSessionParameter: LLImplicitBodyResolveComputationSession? = null,
 ) : LLCfirAbstractBodyTargetResolver(
     resolveTarget = target,
     resolvePhase = CfirResolvePhase.IMPLICIT_TYPES,
-    llImplicitBodyResolveComputationSession =
+        llImplicitBodyResolveComputationSession =
         llImplicitBodyResolveComputationSessionParameter ?: LLImplicitBodyResolveComputationSession(),
 ) {
+    /**
+     * 只执行隐式类型求解的 body transformer。
+     */
     override val transformer = object : CfirImplicitAwareBodyResolveTransformer(
         session = resolveTargetSession,
         scopeSession = resolveTargetScopeSession,
@@ -67,7 +81,13 @@ internal class LLCfirImplicitBodyTargetResolver(
         implicitTypeOnly = true,
         returnTypeCalculator = createReturnTypeCalculator(),
     ) {
+        /**
+         * IMPLICIT_TYPES 阶段不保留类 CFG。
+         */
         override val preserveCFGForClasses: Boolean get() = false
+        /**
+         * IMPLICIT_TYPES 阶段不构建文件级 CFG。
+         */
         override val buildCfgForFiles: Boolean get() = false
     }
 
@@ -83,6 +103,9 @@ internal class LLCfirImplicitBodyTargetResolver(
         llImplicitBodyResolveComputationSession.pushCycledSymbol((target as CfirCallableDeclaration).symbol)
     }
 
+    /**
+     * 在目标锁内推进 [target] 的隐式类型解析。
+     */
     override fun doLazyResolveUnderLock(target: CfirElementWithResolveState) {
         when (target) {
             is CfirCallableDeclaration if target.canHaveDeferredReturnTypeCalculation -> {
@@ -115,6 +138,9 @@ internal class LLCfirImplicitBodyTargetResolver(
         }
     }
 
+    /**
+     * 执行父类 raw body 解析，并记录 body 已推进到当前阶段。
+     */
     override fun rawResolve(target: CfirElementWithResolveState) {
         super.rawResolve(target)
         LLCfirDeclarationModificationService.bodyResolved(target, resolverPhase)

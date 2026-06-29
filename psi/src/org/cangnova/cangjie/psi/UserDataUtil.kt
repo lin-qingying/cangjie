@@ -29,21 +29,48 @@ import com.intellij.openapi.util.UserDataHolder
 import com.intellij.psi.PsiElement
 import kotlin.reflect.KProperty
 
+/**
+ * 表示 `UserDataProperty`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class UserDataProperty<in R : UserDataHolder, T : Any>(val key: Key<T>) {
+    /**
+     * 提供 `getValue` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     operator fun getValue(thisRef: R, desc: KProperty<*>) = thisRef.getUserData(key)
 
+    /**
+     * 提供 `setValue` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     operator fun setValue(thisRef: R, desc: KProperty<*>, value: T?) = thisRef.putUserData(key, value)
 }
+/**
+ * 表示 `NotNullableUserDataProperty`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class NotNullableUserDataProperty<in R : UserDataHolder, T : Any>(val key: Key<T>, val defaultValue: T) {
+    /**
+     * 提供 `getValue` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     operator fun getValue(thisRef: R, desc: KProperty<*>) = thisRef.getUserData(key) ?: defaultValue
 
+    /**
+     * 提供 `setValue` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     operator fun setValue(thisRef: R, desc: KProperty<*>, value: T) {
         thisRef.putUserData(key, if (value != defaultValue) value else null)
     }
 }
+/**
+ * 表示 `NotNullablePsiCopyableUserDataProperty`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class NotNullablePsiCopyableUserDataProperty<in R : PsiElement, T : Any>(val key: Key<T>, val defaultValue: T) {
+    /**
+     * 提供 `getValue` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     operator fun getValue(thisRef: R, property: KProperty<*>) = thisRef.getCopyableUserData(key) ?: defaultValue
 
+    /**
+     * 提供 `setValue` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     operator fun setValue(thisRef: R, property: KProperty<*>, value: T) {
         thisRef.putCopyableUserData(key, if (value != defaultValue) value else null)
     }

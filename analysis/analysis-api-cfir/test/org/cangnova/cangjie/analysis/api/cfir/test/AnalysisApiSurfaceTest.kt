@@ -22,8 +22,14 @@ import org.junit.jupiter.api.Test
 class AnalysisApiSurfaceTest : AbstractAnalysisApiExecutionTest(
     "analysis/analysis-api-cfir/testData/surface",
 ) {
+    /**
+     * 使用 standalone CFIR 配置验证 Analysis API 对外表面入口。
+     */
     override val configurator = CaCfirStandaloneAnalysisApiTestConfigurator
 
+    /**
+     * 验证源码引用可以通过 Analysis API session 解析为函数 symbol。
+     */
     @Test
     fun sourceReferenceResolution(mainFile: CjFile, testServices: TestServices) {
         val referenceExpression = testServices.expressionMarkerProvider

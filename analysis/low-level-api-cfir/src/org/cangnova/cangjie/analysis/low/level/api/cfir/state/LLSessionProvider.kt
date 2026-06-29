@@ -7,8 +7,18 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSessionCache
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 
+/**
+ * 根据 analysis module 提供 low-level CFIR session 的查询入口。
+ */
 class LLSessionProvider(
+    /**
+     * 当前查询上下文的 use-site module。
+     */
     val useSiteModule: CaModule,
+
+    /**
+     * 创建 use-site session 的工厂。
+     */
     private val useSiteSessionFactory: (CaModule) -> LLCfirSession
 ) {
     /**
@@ -37,6 +47,11 @@ class LLSessionProvider(
         return getSession(module, preferBinary = false) as LLCfirResolvableModuleSession
     }
 
+    /**
+     * 按 [preferBinary] 策略取得 [module] 对应 session。
+     *
+     * use-site module 始终返回强引用保存的 [useSiteSession]。
+     */
     private fun getSession(module: CaModule, preferBinary: Boolean): LLCfirSession {
         if (module == useSiteModule) {
             return useSiteSession

@@ -27,6 +27,9 @@ import org.cangnova.cangjie.analysis.api.renderer.types.renderers.impl.CaFunctio
  * 只有 analysis-api 真正能够表达的语义差异，才允许进入公开 preset 集合。
  */
 object CaTypeRendererForSource {
+    /**
+     * 源码风格类型渲染预设，class-like 类型使用全限定名并保留类型实参。
+     */
     val WITH_QUALIFIED_NAMES: CaTypeRenderer = CaTypeRenderer {
         expandedTypeRenderingMode = CaExpandedTypeRenderingMode.RENDER_ABBREVIATED_TYPE
         classIdRenderer = CaClassTypeQualifierRenderer.WITH_QUALIFIED_NAMES
@@ -46,26 +49,41 @@ object CaTypeRendererForSource {
         keywordsRenderer = CaKeywordsRenderer.AS_WORD
     }
 
+    /**
+     * 源码风格类型渲染预设，class-like 类型使用短名并保留类型实参。
+     */
     val WITH_SHORT_NAMES: CaTypeRenderer = WITH_QUALIFIED_NAMES.with {
         classIdRenderer = CaClassTypeQualifierRenderer.WITH_SHORT_NAMES
         annotationsRenderer = CaAnnotationRendererForSource.WITH_SHORT_NAMES
     }
 
+    /**
+     * 源码风格类型渲染预设，使用全限定名但省略类型实参。
+     */
     val WITH_QUALIFIED_NAMES_WITHOUT_TYPE_ARGUMENTS: CaTypeRenderer = WITH_QUALIFIED_NAMES.with {
         usualClassTypeRenderer = CaUsualClassTypeRenderer.AS_CLASS_TYPE_WITHOUT_TYPE_ARGUMENTS
         typeProjectionRenderer = CaTypeProjectionRenderer.NONE
     }
 
+    /**
+     * 源码风格类型渲染预设，使用短名并省略类型实参。
+     */
     val WITH_SHORT_NAMES_WITHOUT_TYPE_ARGUMENTS: CaTypeRenderer =
         WITH_QUALIFIED_NAMES_WITHOUT_TYPE_ARGUMENTS.with {
             classIdRenderer = CaClassTypeQualifierRenderer.WITH_SHORT_NAMES
             annotationsRenderer = CaAnnotationRendererForSource.WITH_SHORT_NAMES
         }
 
+    /**
+     * 源码风格类型渲染预设，使用全限定名并省略函数类型 kind 关键字。
+     */
     val WITH_QUALIFIED_NAMES_WITHOUT_FUNCTION_KIND_KEYWORDS: CaTypeRenderer = WITH_QUALIFIED_NAMES.with {
         functionalTypeRenderer = CaFunctionalTypeRendererForSource.WITHOUT_KIND_KEYWORDS
     }
 
+    /**
+     * 源码风格类型渲染预设，使用短名并省略函数类型 kind 关键字。
+     */
     val WITH_SHORT_NAMES_WITHOUT_FUNCTION_KIND_KEYWORDS: CaTypeRenderer =
         WITH_QUALIFIED_NAMES_WITHOUT_FUNCTION_KIND_KEYWORDS.with {
             classIdRenderer = CaClassTypeQualifierRenderer.WITH_SHORT_NAMES

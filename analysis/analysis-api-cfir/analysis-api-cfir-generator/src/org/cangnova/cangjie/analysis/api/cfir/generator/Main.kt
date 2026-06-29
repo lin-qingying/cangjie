@@ -9,6 +9,11 @@ import org.cangnova.cangjie.analysis.api.cfir.generator.DiagnosticClassGenerator
 import org.cangnova.cangjie.cfir.checkers.generator.diagnostics.DIAGNOSTICS_LIST
 import java.nio.file.Paths
 
+/**
+ * Analysis API CFIR 诊断类生成器命令行入口。
+ *
+ * 参数顺序固定为生成包名和输出根目录，诊断定义直接来自 CFIR checker 的 `DIAGNOSTICS_LIST`。
+ */
 fun main(args: Array<String>) {
     require(args.size == 2) {
         """

@@ -42,6 +42,9 @@ class CangJieEnumPatternStubImpl(
     parent: StubElement<out PsiElement>?,
 ) : CangJieStubBaseImpl<CjEnumPattern>(parent, CjStubElementTypes.ENUM_PATTERN),
     CangJieEnumPatternStub {
+    /**
+     * 实现 `copyInto` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun copyInto(newParent: StubElement<*>?): CangJieEnumPatternStubImpl = CangJieEnumPatternStubImpl(
         parent = newParent,
     )

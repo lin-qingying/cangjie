@@ -40,15 +40,35 @@ import kotlin.io.path.isRegularFile
 class AnalysisApiBuiltinsLightDeclarationDocumentationTest : AbstractAnalysisApiExecutionTest(
     "analysis/analysis-api-cfir/testData/lightDeclarationDocsBuiltins",
 ) {
+    /**
+     * 指向测试内临时 stdlib 根目录的系统属性名。
+     */
     private val stdlibModulePropertyName = "cangjie.stdlib.module"
+
+    /**
+     * 测试开始前已有的 stdlib 系统属性值，用于在测试结束后恢复调用方环境。
+     */
     private var previousStdlibModulePropertyValue: String? = null
+
+    /**
+     * 当前测试创建的精简 stdlib fixture 根目录。
+     */
     private lateinit var testStdlibRoot: Path
 
+    /**
+     * 使用 CFIR standalone 配置运行 builtins light declaration 文档测试。
+     */
     override val configurator = CaCfirStandaloneAnalysisApiTestConfigurator
 
+    /**
+     * 额外启用 decompiled PSI 服务，使 builtins 二进制文件可以恢复为可查询的反编译视图。
+     */
     override val additionalServiceRegistrars: List<AnalysisApiServiceRegistrar<TestServices>> =
         listOf(CaAnalysisApiDecompiledTestServiceRegistrar)
 
+    /**
+     * 在每个用例前安装只包含必要 builtins 文件的 stdlib fixture。
+     */
     @BeforeEach
     fun installStdlibFixtureProperty() {
         previousStdlibModulePropertyValue = System.getProperty(stdlibModulePropertyName)
@@ -56,6 +76,9 @@ class AnalysisApiBuiltinsLightDeclarationDocumentationTest : AbstractAnalysisApi
         System.setProperty(stdlibModulePropertyName, testStdlibRoot.toString())
     }
 
+    /**
+     * 在每个用例后恢复调用方原有的 stdlib 系统属性状态。
+     */
     @AfterEach
     fun restoreStdlibFixtureProperty() {
         if (previousStdlibModulePropertyValue == null) {
@@ -65,6 +88,9 @@ class AnalysisApiBuiltinsLightDeclarationDocumentationTest : AbstractAnalysisApi
         }
     }
 
+    /**
+     * 验证 builtins 的 decompiled light declaration 能被发现，并且无 CDoc 时文档结果稳定为空。
+     */
     @Test
     fun builtinsLightDeclarationDocs(mainFile: CjFile, mainModule: CjTestModule) {
         val decompiledFile = findBuiltinsObjectPool(mainFile)
@@ -86,6 +112,9 @@ class AnalysisApiBuiltinsLightDeclarationDocumentationTest : AbstractAnalysisApi
         }
     }
 
+    /**
+     * 验证 `std.objectpool` 的反编译文本可恢复且规模保持在可控范围内。
+     */
     @Test
     fun builtinsDecompiledText(mainFile: CjFile, mainModule: CjTestModule) {
         val decompiledFile = findBuiltinsObjectPool(mainFile)
@@ -94,6 +123,9 @@ class AnalysisApiBuiltinsLightDeclarationDocumentationTest : AbstractAnalysisApi
         assertTrue(decompiledFile.text.length < 200_000, "std.objectpool decompiled text 不应异常膨胀")
     }
 
+    /**
+     * 验证精简 builtins fixture 只暴露当前用例需要的顶层反编译声明。
+     */
     @Test
     fun builtinsDecompiledTopLevelDeclarations(mainFile: CjFile, mainModule: CjTestModule) {
         val decompiledFile = findBuiltinsObjectPool(mainFile)
@@ -105,6 +137,9 @@ class AnalysisApiBuiltinsLightDeclarationDocumentationTest : AbstractAnalysisApi
         )
     }
 
+    /**
+     * 从 builtins 二进制索引或虚拟文件提供器中定位 `std.objectpool` 的反编译 PSI 文件。
+     */
     private fun findBuiltinsObjectPool(mainFile: CjFile): CjFile? {
         return ApplicationManager.getApplication().runWriteAction<CjFile?> {
             val binaryIndex = mainFile.project.getService(CaDecompiledBinaryIndex::class.java)
@@ -122,6 +157,9 @@ class AnalysisApiBuiltinsLightDeclarationDocumentationTest : AbstractAnalysisApi
         }
     }
 
+    /**
+     * 在仓库内定位可复制的 stdlib fixture 根目录。
+     */
     private fun locateStdlibFixtureRoot(): Path {
         val repoRoot = locateRepositoryRoot(Paths.get("").toAbsolutePath().normalize())
         val fixtureRoot = repoRoot
@@ -137,12 +175,18 @@ class AnalysisApiBuiltinsLightDeclarationDocumentationTest : AbstractAnalysisApi
         return fixtureRoot
     }
 
+    /**
+     * 从给定目录向上查找包含 `settings.gradle.kts` 的仓库根目录。
+     */
     private fun locateRepositoryRoot(start: Path): Path {
         return generateSequence(start) { current -> current.parent }
             .firstOrNull { candidate -> candidate.resolve("settings.gradle.kts").isRegularFile() }
             ?: error("Cannot locate repository root from $start")
     }
 
+    /**
+     * 把测试需要的 stdlib 文件复制到临时目录，避免完整 SDK 进入 builtins 测试边界。
+     */
     private fun createSlimStdlibFixture(
         vararg relativePaths: String,
     ): Path {

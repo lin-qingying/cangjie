@@ -26,11 +26,20 @@ package org.cangnova.cangjie.psi
 
 import com.intellij.lang.ASTNode
 
+/**
+ * 表示 `CjTupleExpression`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjTupleExpression(node: ASTNode) : CjExpressionImpl(node) {
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitTupleExpression(this, data)
     }
 
+    /**
+     * 保存 `expressions`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val expressions: List<CjExpression>
         get() {
             return findChildrenByClass(CjExpression::class.java).toList()

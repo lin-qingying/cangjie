@@ -1,4 +1,4 @@
-
+// WITH_EXTRA_CHECKERS
 
 interface I {
     func f() {

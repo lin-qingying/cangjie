@@ -751,7 +751,7 @@ class CfirClassUseSiteMemberScope private constructor(
             return classSymbol.cfir.superTypeRefs.mapNotNull { superTypeRef ->
                 val resolvedRef = superTypeRef as? CfirResolvedTypeRef ?: return@mapNotNull null
                 val supertype = resolvedRef.coneType
-                substitutor?.substituteOrSelf(supertype) ?: supertype
+                (substitutor?.substituteOrSelf(supertype) ?: supertype).scopeTraversalType()
             }
         }
 
@@ -763,15 +763,30 @@ class CfirClassUseSiteMemberScope private constructor(
         return session.typeAwareSupertypeProviderOrNull
             ?.getDirectSupertypes(type)
             ?.takeIf { it.isNotEmpty() }
+            ?.map { it.scopeTraversalType() }
             ?: directSupertypeProvider
                 ?.getDirectSuperTypes(classId)
                 ?.map { it.coneType }
                 ?.takeIf { it.isNotEmpty() }
+                ?.map { it.scopeTraversalType() }
             ?: classSymbol.cfir.superTypeRefs.mapNotNull { superTypeRef ->
                 val resolvedRef = superTypeRef as? CfirResolvedTypeRef ?: return@mapNotNull null
-                resolvedRef.coneType
+                resolvedRef.coneType.scopeTraversalType()
             }
     }
+
+    /**
+     * 泛型实参数量错误仍然有已解析的 classifier owner。
+     *
+     * 官方在这类错误后保留 nominal member lookup 能力，避免 `J<T>` 实参数量错误继续级联成
+     * `B().m` 的成员缺失；未解析类型或错误类型实参不走这里。
+     */
+    private fun ConeCangJieType.scopeTraversalType(): ConeCangJieType =
+        if (this is ConeErrorType && diagnostic is ConeAllowsDelegatedScopeTraversalDiagnostic) {
+            delegatedType ?: this
+        } else {
+            this
+        }
 
     /**
      * 在 extend 声明体内查询父类型时按 graph edge 来源跳过当前 extend 自己贡献的接口。

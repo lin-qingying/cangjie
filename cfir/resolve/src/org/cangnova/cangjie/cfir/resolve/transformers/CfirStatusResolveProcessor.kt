@@ -1074,7 +1074,8 @@ class CfirStatusResolver(
     /**
      * 解析默认可见性。
      *
-     * 局部声明固定为 local，访问器继承所属属性，override 声明使用直接覆盖链中最宽的可见性。
+     * 局部声明固定为 local，访问器继承所属属性，override 声明使用直接覆盖链中最宽的可见性；
+     * 其它声明保留 raw builder / deserializer 已写入的默认可见性。
      */
     private fun resolveVisibility(
         declaration: CfirDeclaration,

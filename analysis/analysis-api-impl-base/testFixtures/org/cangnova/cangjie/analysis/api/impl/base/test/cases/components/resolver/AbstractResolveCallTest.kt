@@ -24,6 +24,11 @@ import org.junit.jupiter.api.Assertions.assertNotNull
  * 由 generated tests 扫描目录统一展开。
  */
 abstract class AbstractResolveCallTest : AbstractAnalysisApiComponentTest() {
+    /**
+     * 执行单个调用表达式的调用解析测试。
+     *
+     * 方法定位目标调用，断言成功函数调用、接收者类型、参数类型和 callable 名称。
+     */
     override fun doTestByMainFile(mainFile: CjFile, mainModule: CjTestModule, testServices: TestServices) {
         val directives = directivesForMainFile(mainFile, mainModule)
         val memberCall = PsiTreeUtil.findChildrenOfType(mainFile, CjCallExpression::class.java)

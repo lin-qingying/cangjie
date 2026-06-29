@@ -24,11 +24,24 @@ import kotlin.reflect.KType
 import kotlin.reflect.full.createType
 import kotlin.reflect.full.isSubclassOf
 
+/**
+ * 将 CFIR 原始诊断定义转换为 Analysis API 诊断生成模型。
+ *
+ * 转换过程中会处理废弃诊断的错误/警告拆分、公开诊断类名生成以及参数类型转换。
+ */
 object HLDiagnosticConverter {
+    /**
+     * 转换完整的 CFIR 诊断列表。
+     */
     fun convert(diagnosticList: DiagnosticList): HLDiagnosticList {
         return HLDiagnosticList(diagnosticList.allDiagnostics.flatMap(::convertDiagnostic))
     }
 
+    /**
+     * 转换单个诊断定义。
+     *
+     * 普通诊断生成一个高层诊断；废弃诊断按严重级别生成错误和警告两个高层诊断。
+     */
     private fun convertDiagnostic(diagnostic: DiagnosticData): List<HLDiagnostic> {
         return when (diagnostic){
             is RegularDiagnosticData -> listOf(
@@ -52,6 +65,9 @@ object HLDiagnosticConverter {
         }
     }
 
+    /**
+     * 转换单个诊断参数，并记录原始生成诊断类中的参数字段名。
+     */
     private fun convertParameter(index: Int, diagnosticParameter: DiagnosticParameter): HLDiagnosticParameter {
         val conversion = CfirToCjConversionCreator.createConversion(diagnosticParameter.type)
         val convertedType = conversion.convertType(diagnosticParameter.type)
@@ -65,20 +81,35 @@ object HLDiagnosticConverter {
         )
     }
 
+    /**
+     * 生成普通诊断的公开接口名。
+     */
     private fun RegularDiagnosticData.getHLDiagnosticClassName(): String = name.sanitizeName()
 
+    /**
+     * 生成普通诊断的实现类名。
+     */
     private fun RegularDiagnosticData.getHLDiagnosticImplClassName(): String =
         "${getHLDiagnosticClassName()}Impl"
 
+    /**
+     * 生成废弃诊断在指定严重级别下的公开接口名。
+     */
     private fun DeprecationDiagnosticData.getHLDiagnosticClassName(severity: HLDiagnosticSeverity): String {
         val diagnosticName = "${name}_${severity.name}"
         return diagnosticName.sanitizeName()
     }
 
+    /**
+     * 生成废弃诊断在指定严重级别下的实现类名。
+     */
     private fun DeprecationDiagnosticData.getHLDiagnosticImplClassName(severity: HLDiagnosticSeverity): String {
         return "${getHLDiagnosticClassName(severity)}Impl"
     }
 
+    /**
+     * 将诊断定义中的下划线大写名称转换为公开 API 使用的 PascalCase 名称。
+     */
     private fun String.sanitizeName(): String =
         lowercase()
             .split('_')
@@ -88,7 +119,13 @@ object HLDiagnosticConverter {
 
 }
 
+/**
+ * CFIR 诊断参数到 Analysis API 公开参数的转换规则创建器。
+ */
 internal object CfirToCjConversionCreator {
+    /**
+     * 根据原始参数类型创建对应的公开参数转换规则。
+     */
     fun createConversion(type: KType): HLParameterConversion {
         val nullable = type.isMarkedNullable
         val kClass = type.classifier as KClass<*>
@@ -99,6 +136,9 @@ internal object CfirToCjConversionCreator {
             ?: error("Unsupported type $type, consider add corresponding mapping")
     }
 
+    /**
+     * 返回运行时参数分派转换器需要覆盖的全部 CFIR 类型映射。
+     */
     fun getAllConverters(conversionForCollectionValues: HLParameterConversion): Map<KClass<*>, HLParameterConversion> {
         return buildMap {
             putAll(typeMapping)
@@ -109,6 +149,9 @@ internal object CfirToCjConversionCreator {
         }
     }
 
+    /**
+     * 尝试把 CFIR 内部类型映射为 Analysis API 公共类型。
+     */
     private fun tryMapCfirTypeToCjType(kClass: KClass<*>, nullable: Boolean): HLParameterConversion? {
         return if (nullable) {
             nullableTypeMapping[kClass] ?: typeMapping[kClass]
@@ -117,15 +160,24 @@ internal object CfirToCjConversionCreator {
         }
     }
 
+    /**
+     * 尝试保留允许直接暴露的简单参数类型。
+     */
     private fun tryMapAllowedType(kClass: KClass<*>): HLParameterConversion? {
         if (kClass in allowedTypesWithoutTypeParams) return HLIdParameterConversion
         return null
     }
 
+    /**
+     * 根据类型简单名派生集合元素转换 lambda 的参数名。
+     */
     private fun KType.toParameterName(): String {
         return kClass.simpleName!!.replaceFirstChar(Char::lowercaseChar)
     }
 
+    /**
+     * 尝试处理平台集合类型等非 CFIR 专有参数。
+     */
     private fun tryMapPlatformType(type: KType, kClass: KClass<*>): HLParameterConversion? {
         if (kClass.isSubclassOf(Collection::class)) {
             val elementType = type.arguments.single().type ?: return HLIdParameterConversion
@@ -137,6 +189,9 @@ internal object CfirToCjConversionCreator {
         return null
     }
 
+    /**
+     * 尝试保留 PSI 元素类型参数。
+     */
     private fun tryMapPsiElementType(kClass: KClass<*>): HLParameterConversion? {
         if (kClass.isSubclassOf(PsiElement::class)) {
             return HLIdParameterConversion
@@ -144,8 +199,14 @@ internal object CfirToCjConversionCreator {
         return null
     }
 
+    /**
+     * 可空 CFIR 类型到公开类型的特殊映射。
+     */
     private val nullableTypeMapping: Map<KClass<*>, HLFunctionCallConversion> = emptyMap()
 
+    /**
+     * CFIR 内部类型到 Analysis API 公共类型的直接映射。
+     */
     private val typeMapping: Map<KClass<*>, HLFunctionCallConversion> = mapOf(
         CfirTypeParameterSymbol::class to HLFunctionCallConversion(
             "cfirSymbolBuilder.classifierBuilder.buildTypeParameterSymbol({0})",
@@ -157,6 +218,9 @@ internal object CfirToCjConversionCreator {
         )
     )
 
+    /**
+     * 无泛型参数且允许原样暴露到公开诊断 API 的类型集合。
+     */
     private val allowedTypesWithoutTypeParams = setOf(
         Boolean::class,
         String::class,
@@ -168,6 +232,9 @@ internal object CfirToCjConversionCreator {
         Visibility::class,
     )
 
+    /**
+     * 反射类型对应的 Kotlin class。
+     */
     private val KType.kClass: KClass<*>
         get() = classifier as KClass<*>
 }

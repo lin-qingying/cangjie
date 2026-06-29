@@ -14,8 +14,14 @@ import org.cangnova.cangjie.analysis.api.lifetime.CaSessionComponent
  */
 @CaImplementationDetail
 abstract class CaBaseSessionComponent<T : CaSession> : CaSessionComponent {
+    /**
+     * 提供当前分析会话的延迟访问器。
+     */
     abstract val analysisSessionProvider: () -> T
 
+    /**
+     * 当前组件关联的分析会话。
+     */
     val analysisSession: T
         get() = analysisSessionProvider()
 

@@ -188,7 +188,15 @@ abstract class AbstractImplementationConfigurator<Implementation, Element, Eleme
     // 字段容器 DSL 基类：被 ImplementationContext 和 ElementContext 共同继承
     // ──────────────────────────────────────────────────────────────────────
 
+    /**
+     * 面向字段容器的通用实现配置 DSL。
+     *
+     * 该上下文既可配置具体实现类字段，也可配置元素字段并让默认值策略沿实现继承链传播。
+     */
     protected abstract class FieldContainerContext<Field>(
+        /**
+         * 当前 DSL 操作所作用的字段容器。
+         */
         private val fieldContainer: FieldContainer<Field>,
     ) where Field : AbstractField<*> {
 

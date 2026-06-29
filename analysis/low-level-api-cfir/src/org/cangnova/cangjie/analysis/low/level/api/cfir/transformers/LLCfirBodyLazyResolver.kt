@@ -59,9 +59,18 @@ import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 import kotlin.reflect.KProperty1
 
+/**
+ * BODY_RESOLVE 阶段的低阶懒解析入口。
+ */
 internal object LLCfirBodyLazyResolver : LLCfirLazyResolver(CfirResolvePhase.BODY_RESOLVE) {
+    /**
+     * 为 [target] 创建 BODY_RESOLVE 阶段目标解析器。
+     */
     override fun createTargetResolver(target: LLCfirResolveTarget): LLCfirTargetResolver = LLCfirBodyTargetResolver(target)
 
+    /**
+     * 校验 body 相关结构已经完成解析。
+     */
     override fun phaseSpecificCheckIsResolved(target: CfirElementWithResolveState) {
         when (target) {
             is CfirValueParameter -> checkDefaultValueIsResolved(target)
@@ -96,6 +105,9 @@ internal object PartialBodyAnalysisSuspendedException :
 private class CfirPartialBodyDeclarationResolveTransformer(
     transformer: CfirAbstractBodyResolveTransformerDispatcher
 ) : CfirDeclarationsResolveTransformer(transformer) {
+    /**
+     * 解析函数内容；如果函数已有局部 body 分析状态，则只继续转换 body。
+     */
     override fun transformFunctionContent(
         function: CfirFunction,
         resolutionModeForBody: ResolutionMode,
@@ -109,6 +121,9 @@ private class CfirPartialBodyDeclarationResolveTransformer(
         return super.transformFunctionContent(function, resolutionModeForBody, shouldResolveEverything)
     }
 
+    /**
+     * 解析构造器内容；如果构造器已有局部 body 分析状态，则只继续转换 body。
+     */
     override fun transformConstructorContent(constructor: CfirConstructor, data: ResolutionMode): CfirConstructor {
         if (constructor.partialBodyAnalysisState != null) {
             constructor.transformBody(this, data)
@@ -119,14 +134,28 @@ private class CfirPartialBodyDeclarationResolveTransformer(
     }
 }
 
+/**
+ * 支持局部 body 分析的表达式解析 transformer。
+ *
+ * 当目标是 [LLCfirPartialBodyResolveTarget] 时，它只解析到请求的 stop element 前，并保存 tower/data-flow 快照供后续继续分析。
+ */
 private class CfirPartialBodyExpressionResolveTransformer(
     transformer: CfirAbstractBodyResolveTransformerDispatcher,
+    /**
+     * 当前 body 解析请求目标。
+     */
     private val target: LLCfirResolveTarget
 ) : CfirExpressionsResolveTransformer(transformer) {
+    /**
+     * 局部 body 分析相关常量。
+     */
     private companion object {
         // After a certain number of partial analyses,
         // trigger the full analysis so we don't return to the same declaration over and over again.
         // Note that the first analysis can also perform only default parameter value analysis and exit just after it.
+        /**
+         * 单个声明允许重复局部分析的最大次数。
+         */
         private val MAX_ANALYSES_COUNT: Int by lazy(LazyThreadSafetyMode.PUBLICATION) {
             // On various repositories, number of declarations analyzed more than five times, is under 1%.
             // So here we cap only unusually lengthy declarations.
@@ -134,8 +163,14 @@ private class CfirPartialBodyExpressionResolveTransformer(
         }
     }
 
+    /**
+     * 标记当前是否已经处于顶层 block 分析过程中。
+     */
     private var isInsideAnalysis = false
 
+    /**
+     * 转换 block，并在可局部分析时选择局部或完整 body 解析路径。
+     */
     override fun transformBlock(block: CfirBlock, data: ResolutionMode): CfirExpression {
         val declaration = context.containerIfAny
 
@@ -169,6 +204,9 @@ private class CfirPartialBodyExpressionResolveTransformer(
         return block
     }
 
+    /**
+     * 以“最外层 block 分析”身份执行 [block]，避免嵌套 block 重复触发局部分析。
+     */
     @OptIn(ExperimentalContracts::class)
     private inline fun performTopmostBlockAnalysis(block: () -> Unit) {
         contract {
@@ -185,6 +223,9 @@ private class CfirPartialBodyExpressionResolveTransformer(
         }
     }
 
+    /**
+     * 从已有局部分析状态继续解析 [block]，或首次解析到请求的 stop element。
+     */
     @OptIn(CfgInternals::class)
     private fun transformPartially(
         request: LLPartialBodyResolveRequest,
@@ -252,8 +293,14 @@ private class CfirPartialBodyExpressionResolveTransformer(
         return block
     }
 
+    /**
+     * 将旧 CFG 快照中的 CFIR 元素映射到当前 body 中的对应元素。
+     */
     @CfgInternals
     private class LLSnapshotCfirMapper(private val roots: List<CfirElement>) : SnapshotCfirMapper {
+        /**
+         * 判断 [element] 是否需要参与 CFG 快照映射。
+         */
         private fun shouldBeHandled(element: CfirElement): Boolean {
             /** Accepts elements handled by [org.cangnova.cangjie.cfir.resolve.dfa.CfirLocalVariableAssignmentAnalyzer] */
             val isElementKindHandled = when (element) {
@@ -265,6 +312,9 @@ private class CfirPartialBodyExpressionResolveTransformer(
             return isElementKindHandled && element.source?.kind == CjRealSourceElementKind
         }
 
+        /**
+         * PSI 到当前 CFIR 元素的映射表。
+         */
         private val mapping: Map<PsiElement, CfirElement> by lazy(LazyThreadSafetyMode.NONE) {
             val result = HashMap<PsiElement, CfirElement>()
 
@@ -293,6 +343,9 @@ private class CfirPartialBodyExpressionResolveTransformer(
             result
         }
 
+        /**
+         * 把旧快照中的 [element] 映射到当前 body 中的对应 CFIR 元素。
+         */
         override fun <T : CfirElement> mapElement(element: T): T {
             if (!shouldBeHandled(element)) {
                 return element
@@ -321,6 +374,9 @@ private class CfirPartialBodyExpressionResolveTransformer(
             return newElement as T
         }
 
+        /**
+         * 把旧快照中的 [symbol] 映射到当前 body 中的对应符号。
+         */
         override fun <T : CfirBasedSymbol<*>> mapSymbol(symbol: T): T {
             @Suppress("UNCHECKED_CAST")
             return mapElement(symbol.cfir).symbol as T
@@ -328,9 +384,9 @@ private class CfirPartialBodyExpressionResolveTransformer(
     }
 
     /**
-     * Replaces references to stale [ControlFlowGraph]s in already analyzed [CfirElement]s to one from the newly created snapshot.
-     * Patching does not require explicit locking as clients must only access the [ControlFlowGraph] nodes through
-     * the [LLPartialBodyAnalysisSnapshot].
+     * 将已分析 [CfirElement] 中指向旧 [ControlFlowGraph] 的引用替换为新快照中的图。
+     *
+     * 客户端只能通过 [LLPartialBodyAnalysisSnapshot] 访问 CFG 节点，因此这里不需要额外加锁。
      */
     private fun patchControlFlowGraphReferences(elements: Collection<CfirElement>, graphMapping: Map<ControlFlowGraph, ControlFlowGraph>) {
         val visitor = object : CfirVisitorVoid() {
@@ -354,6 +410,9 @@ private class CfirPartialBodyExpressionResolveTransformer(
         }
     }
 
+    /**
+     * 从 [startIndex] 开始局部转换 [block] 中的语句，直到到达 stop element 或完整解析结束。
+     */
     private fun transformStatementsPartially(
         request: LLPartialBodyResolveRequest,
         block: CfirBlock,
@@ -422,6 +481,9 @@ private class CfirPartialBodyExpressionResolveTransformer(
         return true
     }
 
+    /**
+     * 发布 [request] 对应的局部 body 分析状态。
+     */
     private fun publishPartialAnalysisState(
         request: LLPartialBodyResolveRequest,
         statementRange: IntRange,
@@ -443,6 +505,9 @@ private class CfirPartialBodyExpressionResolveTransformer(
         )
     }
 
+    /**
+     * 收集函数参数默认值，用于局部 body 分析结果。
+     */
     private fun collectDefaultParameterValues(declaration: CfirDeclaration): List<CfirExpression> {
         if (declaration is CfirFunction) {
             val result = declaration.valueParameters.mapNotNull { it.defaultValue }
@@ -453,8 +518,9 @@ private class CfirPartialBodyExpressionResolveTransformer(
     }
 
     /**
-     * Analyzes the body completely.
-     * Note that even in [transformFully], [transformPartially] may be called if the body was already partially analyzed.
+     * 完整解析声明 body。
+     *
+     * 如果 body 已经存在局部分析状态，[transformFully] 仍会委托 [transformPartially] 从已有状态继续到结尾。
      */
     private fun transformFully(
         declaration: CfirDeclaration,
@@ -479,6 +545,9 @@ private class CfirPartialBodyExpressionResolveTransformer(
         return transformPartially(request, block, data, currentState)
     }
 
+    /**
+     * 判断 [element] 是否应该在到达 [stopElement] 前继续转换。
+     */
     private fun shouldTransform(element: CfirElement, stopElement: CjElement, stopElements: Set<CjElement>): Boolean {
         val source = element.source
         if (source is CjPsiSourceElement) {
@@ -494,34 +563,37 @@ private class CfirPartialBodyExpressionResolveTransformer(
 }
 
 /**
- * This resolver is responsible for [BODY_RESOLVE][CfirResolvePhase.BODY_RESOLVE] phase.
+ * BODY_RESOLVE 阶段的目标解析器。
  *
- * This resolver:
- * - Transforms bodies of declarations.
- * - Builds [control flow graph][ControlFlowGraph].
+ * 该解析器负责转换声明 body 并构建 [ControlFlowGraph]。为避免取消异常或局部分析中断留下损坏状态，解析前会通过
+ * [BodyStateKeepers] 保存并在失败时恢复 body、默认值、CFG 引用和局部分析状态。
  *
- * Before the transformation, the resolver [recreates][BodyStateKeepers] all bodies
- * to prevent corrupted states due to [PCE][com.intellij.openapi.progress.ProcessCanceledException].
- *
- * Special rules:
- * - [CfirFile] – All members which [isUsedInControlFlowGraphBuilderForFile] have
- *   to be resolved before the file to build correct [CFG][ControlFlowGraph].
- * - [CfirClass] – All members which [isUsedInControlFlowGraphBuilderForClass] have
- *   to be resolved before the class to build correct [CFG][ControlFlowGraph].
+ * 文件和 class 有额外规则：用于构建 CFG 的成员必须先于容器本身完成 BODY_RESOLVE，之后容器才能生成正确 CFG。
  *
  * @see BodyStateKeepers
- * @see CfirBodyResolveTransformer
  * @see CfirResolvePhase.BODY_RESOLVE
  */
 private class LLCfirBodyTargetResolver(target: LLCfirResolveTarget) : LLCfirAbstractBodyTargetResolver(target, CfirResolvePhase.BODY_RESOLVE) {
+    /**
+     * BODY_RESOLVE 阶段使用的 dispatcher。
+     */
     override val transformer = BodyTransformerDispatcher()
 
+    /**
+     * low-level body 解析 dispatcher，接入局部 body 分析专用的声明和表达式 transformer。
+     */
     inner class BodyTransformerDispatcher : CfirAbstractBodyResolveTransformerDispatcher(resolverPhase, false) {
+        /**
+         * body 解析上下文，持有返回类型计算器和数据流分析上下文。
+         */
         override val context: BodyResolveContext = BodyResolveContext(
             returnTypeCalculator = createReturnTypeCalculator(),
             dataFlowAnalyzerContext = CfirDataFlowAnalyzerContext(),
         )
 
+        /**
+         * body 解析组件集合。
+         */
         override val components: BodyResolveTransformerComponents =
             BodyResolveTransformerComponents(
                 session = resolveTargetSession,
@@ -531,21 +603,36 @@ private class LLCfirBodyTargetResolver(target: LLCfirResolveTarget) : LLCfirAbst
                 expandTypeAliases = true,
             )
 
+        /**
+         * 表达式 transformer，支持局部 body 分析中断和恢复。
+         */
         override val expressionsTransformer: CfirExpressionsResolveTransformer =
             CfirPartialBodyExpressionResolveTransformer(this, resolveTarget)
 
+        /**
+         * 声明 transformer，支持已有局部 body 分析状态的快速路径。
+         */
         override val declarationsTransformer: CfirDeclarationsResolveTransformer =
             CfirPartialBodyDeclarationResolveTransformer(this)
 
+        /**
+         * low-level body 解析不复用类 CFG。
+         */
         override val preserveCFGForClasses: Boolean get() = false
+        /**
+         * 文件 CFG 由 [LLCfirBodyTargetResolver] 显式构建。
+         */
         override val buildCfgForFiles: Boolean get() = false
     }
 
     /**
-     * No one should depend on body resolution of another declaration
+     * BODY_RESOLVE 不应成为其他声明解析的依赖，因此跳过通用依赖解析步骤。
      */
     override val skipDependencyTargetResolutionStep: Boolean get() = true
 
+    /**
+     * 在无目标锁阶段处理文件、class 和代码片段这类需要自定义锁内流程的目标。
+     */
     override fun doResolveWithoutLock(target: CfirElementWithResolveState): Boolean {
         when (target) {
             is CfirClass -> {
@@ -609,6 +696,9 @@ private class LLCfirBodyTargetResolver(target: LLCfirResolveTarget) : LLCfirAbst
         return false
     }
 
+    /**
+     * 为 [target] class 构建并写入 CFG 引用。
+     */
     private fun calculateControlFlowGraph(target: CfirClass) {
         checkWithAttachment(
             target.controlFlowGraphReference == null,
@@ -627,6 +717,9 @@ private class LLCfirBodyTargetResolver(target: LLCfirResolveTarget) : LLCfirAbst
         target.replaceControlFlowGraphReference(CfirControlFlowGraphReferenceImpl(controlFlowGraph))
     }
 
+    /**
+     * 在构建容器 CFG 前，先解析参与 CFG 构建的成员声明。
+     */
     private inline fun <T : CfirElementWithResolveState> resolveMembersForControlFlowGraph(
         declarationWithMembers: T,
         withDeclaration: (T, () -> Unit) -> Unit,
@@ -646,6 +739,9 @@ private class LLCfirBodyTargetResolver(target: LLCfirResolveTarget) : LLCfirAbst
         }
     }
 
+    /**
+     * 为 [target] 文件构建并写入 CFG 引用。
+     */
     private fun calculateControlFlowGraph(target: CfirFile) {
         checkWithAttachment(
             target.controlFlowGraphReference == null,
@@ -664,6 +760,9 @@ private class LLCfirBodyTargetResolver(target: LLCfirResolveTarget) : LLCfirAbst
         target.replaceControlFlowGraphReference(CfirControlFlowGraphReferenceImpl(controlFlowGraph))
     }
 
+    /**
+     * 为 [cfirCodeFragment] 构建 code fragment body 解析上下文。
+     */
     private fun resolveCodeFragmentContext(cfirCodeFragment: CfirCodeFragment): LLCfirCodeFragmentContext {
         val cjCodeFragment = cfirCodeFragment.psi as? CjCodeFragment
             ?: errorWithAttachment("Code fragment source not found") {
@@ -715,6 +814,9 @@ private class LLCfirBodyTargetResolver(target: LLCfirResolveTarget) : LLCfirAbst
         }
     }
 
+    /**
+     * 将 tower data context 中的 scope 与 receiver 替换到指定 [session]/[scopeSession]。
+     */
     private fun CfirTowerDataContext.withProperSession(session: CfirSession, scopeSession: ScopeSession): CfirTowerDataContext {
         return replaceTowerDataElements(
             towerDataElements.map { it.withProperSession(session, scopeSession) }.toPersistentList(),
@@ -722,6 +824,9 @@ private class LLCfirBodyTargetResolver(target: LLCfirResolveTarget) : LLCfirAbst
         )
     }
 
+    /**
+     * 将单个 tower data element 的 scope 与 implicit receiver 替换到指定 [session]/[scopeSession]。
+     */
     private fun CfirTowerDataElement.withProperSession(
         session: CfirSession,
         scopeSession: ScopeSession,
@@ -732,6 +837,9 @@ private class LLCfirBodyTargetResolver(target: LLCfirResolveTarget) : LLCfirAbst
         staticScopeOwnerSymbol
     )
 
+    /**
+     * 在目标锁内解析拥有 body 的声明。
+     */
     override fun doLazyResolveUnderLock(target: CfirElementWithResolveState) {
         // There is no sense to resolve such declarations as they do not have bodies
         // Also, they have STUB expression instead of default values, so we shouldn't change them
@@ -755,6 +863,9 @@ private class LLCfirBodyTargetResolver(target: LLCfirResolveTarget) : LLCfirAbst
         }
     }
 
+    /**
+     * 执行 raw body 解析，并在完整或局部成功时通知声明修改服务。
+     */
     override fun rawResolve(target: CfirElementWithResolveState) {
         try {
             super.rawResolve(target)
@@ -768,15 +879,27 @@ private class LLCfirBodyTargetResolver(target: LLCfirResolveTarget) : LLCfirAbst
     }
 }
 
+/**
+ * BODY_RESOLVE 阶段使用的状态保持器集合。
+ */
 internal object BodyStateKeepers {
+    /**
+     * code fragment block 状态保持器。
+     */
     val CODE_FRAGMENT: StateKeeper<CfirCodeFragment, CfirDesignation> = stateKeeper { builder, _, _ ->
         builder.add(CfirCodeFragment::block, CfirCodeFragment::replaceBlock, ::blockGuard)
     }
 
+    /**
+     * 可局部 body 分析声明的局部分析状态保持器。
+     */
     val PARTIAL_BODY_RESOLVABLE: StateKeeper<CfirDeclaration, CfirDesignation> = stateKeeper { builder, declaration, context ->
         builder.add(CfirDeclaration::partialBodyAnalysisState::get, CfirDeclaration::partialBodyAnalysisState::set)
     }
 
+    /**
+     * 函数 body、返回类型、参数默认值和 CFG 引用状态保持器。
+     */
     val FUNCTION: StateKeeper<CfirFunction, CfirDesignation> = stateKeeper { builder, function, designation ->
         if (function.isCertainlyResolved) {
             if (!isCallableWithSpecialBody(function)) {
@@ -799,10 +922,16 @@ internal object BodyStateKeepers {
         builder.add(CfirFunction::controlFlowGraphReference, CfirFunction::replaceControlFlowGraphReference)
     }
 
+    /**
+     * 构造器状态保持器，复用函数状态规则。
+     */
     val CONSTRUCTOR: StateKeeper<CfirConstructor, CfirDesignation> = stateKeeper { builder, _, designation ->
         builder.add(FUNCTION, designation)
     }
 
+    /**
+     * 变量返回类型与 initializer 状态保持器。
+     */
     val VARIABLE: StateKeeper<CfirVariable, CfirDesignation> = stateKeeper { builder, variable, _ ->
         builder.add(CfirVariable::returnTypeRef, CfirVariable::replaceReturnTypeRef)
 
@@ -813,6 +942,9 @@ internal object BodyStateKeepers {
         }
     }
 
+    /**
+     * 值参数默认值、求值 initializer 和 CFG 引用状态保持器。
+     */
     private val VALUE_PARAMETER: StateKeeper<CfirValueParameter, CfirDesignation> = stateKeeper { builder, valueParameter, _ ->
         if (valueParameter.defaultValue != null) {
             builder.add(CfirValueParameter::defaultValue, CfirValueParameter::replaceDefaultValue, ::expressionGuard)
@@ -825,10 +957,16 @@ internal object BodyStateKeepers {
         builder.add(CfirValueParameter::controlFlowGraphReference, CfirValueParameter::replaceControlFlowGraphReference)
     }
 
+    /**
+     * 字段变量状态保持器，复用变量状态规则。
+     */
     val FIELD: StateKeeper<CfirFieldVariable, CfirDesignation> = stateKeeper { builder, _, designation ->
         builder.add(VARIABLE, designation)
     }
 
+    /**
+     * 属性 body 解析状态、返回类型、访问器和 CFG 引用状态保持器。
+     */
     val PROPERTY: StateKeeper<CfirProperty, CfirDesignation> = stateKeeper { builder, property, designation ->
         if (property.bodyResolveState >= CfirPropertyBodyResolveState.ALL_BODIES_RESOLVED) {
             return@stateKeeper
@@ -844,12 +982,17 @@ internal object BodyStateKeepers {
     }
 }
 
+/**
+ * 保存函数已解析 body 的局部分析结果，供状态恢复时拼回新 body。
+ */
 private fun StateKeeperScope<CfirFunction, CfirDesignation>.preserveResolvedState(builder: StateKeeperBuilder, function: CfirFunction) {
     preservePartialBodyResolveResult(builder, function, CfirFunction::body, CfirFunction::valueParameters)
 }
 
 /**
- * @return the number of analyzed fir statements or null if no partial result is present
+ * 保存 [declaration] 的局部 body 分析结果。
+ *
+ * @return 已分析 CFIR 语句数量；没有局部结果时返回 `null`。
  */
 private fun <T : CfirDeclaration> StateKeeperScope<T, CfirDesignation>.preservePartialBodyResolveResult(
     builder: StateKeeperBuilder,
@@ -894,6 +1037,9 @@ private fun <T : CfirDeclaration> StateKeeperScope<T, CfirDesignation>.preserveP
     return state.analyzedCfirStatementCount
 }
 
+/**
+ * 判断函数 body 是否已经确定完成解析。
+ */
 private val CfirFunction.isCertainlyResolved: Boolean
     get() {
         if (this is CfirPropertyAccessor) {
@@ -911,21 +1057,42 @@ private val CfirFunction.isCertainlyResolved: Boolean
         return body !is CfirLazyBlock && body.hasResolvedType
     }
 
+/**
+ * 返回尚未解析 initializer 的变量 initializer 属性访问器。
+ */
 private val CfirVariable.initializerGetterIfUnresolved: KProperty1<CfirVariable, CfirExpression?>?
     get() = CfirVariable::initializer.takeUnless { this is CfirProperty && bodyResolveState >= CfirPropertyBodyResolveState.INITIALIZER_RESOLVED }
 
+/**
+ * 返回尚未解析 getter body 的属性访问器。
+ */
 private val CfirProperty.getterIfUnresolved: CfirPropertyAccessor?
     get() = if (bodyResolveState < CfirPropertyBodyResolveState.INITIALIZER_AND_GETTER_RESOLVED) getter else null
 
+/**
+ * 返回尚未解析 setter body 的属性访问器。
+ */
 private val CfirProperty.setterIfUnresolved: CfirPropertyAccessor?
     get() = if (bodyResolveState < CfirPropertyBodyResolveState.ALL_BODIES_RESOLVED) setter else null
 
+/**
+ * code fragment body 解析使用的上下文实现。
+ */
 private class LLCfirCodeFragmentContext(
+    /**
+     * code fragment 可见的 tower data context。
+     */
     override val towerDataContext: CfirTowerDataContext,
 ) : CfirCodeFragmentContext
 
+/**
+ * 判断声明是否会参与文件级 CFG 构建。
+ */
 private val CfirDeclaration.isUsedInFileControlFlowGraphBuilder: Boolean
     get() = this is CfirControlFlowGraphOwner
 
+/**
+ * 判断声明是否会参与 class 级 CFG 构建。
+ */
 private val CfirDeclaration.isUsedInClassControlFlowGraphBuilder: Boolean
     get() = this is CfirControlFlowGraphOwner

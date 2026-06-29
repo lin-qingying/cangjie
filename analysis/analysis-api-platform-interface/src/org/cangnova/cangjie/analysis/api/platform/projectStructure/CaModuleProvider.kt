@@ -21,15 +21,27 @@ interface CaModuleProvider {
      */
     val snapshot: CaProjectStructureSnapshot
 
+    /**
+     * 当前平台可见的所有模块。
+     */
     val allModules: List<CaModule>
         get() = snapshot.allModules
 
+    /**
+     * 当前平台可解析的模块。
+     */
     val resolvableModules: List<CaModule>
         get() = snapshot.allResolvableModules
 
+    /**
+     * 源码类模块集合。
+     */
     val sourceLikeModules: List<CaModule>
         get() = snapshot.allSourceLikeModules
 
+    /**
+     * 当前模块图包含的所有源文件。
+     */
     val allSourceFiles: List<PsiFileSystemItem>
         get() = snapshot.allSourceFiles
 
@@ -50,6 +62,9 @@ interface CaModuleProvider {
         snapshot.getModuleByDescription(moduleDescription)
 
     companion object {
+        /**
+         * 获取项目级模块 provider 服务。
+         */
         fun getInstance(project: Project): CaModuleProvider = project.service()
     }
 }

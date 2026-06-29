@@ -55,6 +55,9 @@ class CDocLinkParser : PsiParser {
         }
     }
 
+    /**
+     * 实现 `parse` 的仓颉词法与文档注释协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun parse(root: IElementType, builder: PsiBuilder): ASTNode {
         val rootMarker = builder.mark()
         val hasLBracket = builder.tokenType == CjTokens.LBRACKET
@@ -84,6 +87,9 @@ class CDocLinkParser : PsiParser {
         return builder.treeBuilt
     }
 
+    /**
+     * 执行 `parseQualifiedName` 内部辅助逻辑，支撑仓颉词法与文档注释节点的结构解析与访问。
+     */
     private fun parseQualifiedName(builder: PsiBuilder) {
         var marker = builder.mark()
         while (true) {
@@ -103,5 +109,8 @@ class CDocLinkParser : PsiParser {
         }
     }
 
+    /**
+     * 执行 `isName` 内部辅助逻辑，支撑仓颉词法与文档注释节点的结构解析与访问。
+     */
     private fun isName(tokenType: IElementType?) = tokenType == CjTokens.IDENTIFIER || tokenType in CjTokens.KEYWORDS
 }

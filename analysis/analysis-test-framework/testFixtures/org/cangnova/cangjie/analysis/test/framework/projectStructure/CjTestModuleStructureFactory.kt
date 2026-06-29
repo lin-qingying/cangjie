@@ -37,6 +37,9 @@ import java.nio.file.Path
  * 测试模块本身不再伪造额外 builtins/fallback owner。
  */
 object CjTestModuleStructureFactory {
+    /**
+     * 从测试基础设施模块结构创建 Analysis API 测试模块结构。
+     */
     fun createProjectStructureByTestStructure(
         testModuleStructure: TestModuleStructure,
         testServices: TestServices,
@@ -76,6 +79,9 @@ object CjTestModuleStructureFactory {
         )
     }
 
+    /**
+     * 根据测试依赖声明为当前模块写入 regular/friend/fallback dependency。
+     */
     private fun wireDependencies(
         cjTestModule: CjTestModule,
         modulesByName: Map<String, CjTestModule>,
@@ -129,6 +135,9 @@ object CjTestModuleStructureFactory {
 
     }
 
+    /**
+     * 根据依赖描述解析目标测试模块应暴露的 Analysis API 模块视图。
+     */
     private fun resolveDependencyModule(
         modulesByName: Map<String, CjTestModule>,
         dependency: DependencyDescription,
@@ -136,6 +145,9 @@ object CjTestModuleStructureFactory {
         return modulesByName.getValue(dependency.dependencyModuleName).moduleForDependency(dependency.kind)
     }
 
+    /**
+     * 为单个测试模块创建主模块、可选 binary artifact 模块和 PSI 文件集合。
+     */
     private fun createModuleSet(
         testModule: TestModule,
         moduleKind: TestModuleKind,
@@ -243,6 +255,9 @@ object CjTestModuleStructureFactory {
         }
     }
 
+    /**
+     * 推断测试模块应使用的 Analysis API 模块种类。
+     */
     private fun inferModuleKind(testModule: TestModule): TestModuleKind {
         findExplicitModuleKind(testModule)?.let { return it }
 
@@ -253,17 +268,35 @@ object CjTestModuleStructureFactory {
         return TestModuleKind.Source
     }
 
+    /**
+     * 读取测试模块上显式声明的 Analysis API 模块种类。
+     */
     private fun findExplicitModuleKind(testModule: TestModule): TestModuleKind? {
         return testModule.analysisApiModuleKind
     }
 
+    /**
+     * 单个测试模块创建出的 Analysis API 模块视图集合。
+     */
     private data class TestModuleSet(
+        /**
+         * 当前测试模块的主 Analysis API 模块。
+         */
         val primaryModule: CaModule,
+        /**
+         * 当前测试模块额外暴露的 binary artifact 模块。
+         */
         val binaryArtifactModule: CaLibraryModule?,
+        /**
+         * 当前测试模块对应的 PSI 文件集合。
+         */
         val psiFiles: List<PsiFile>,
     )
 }
 
+/**
+ * 将测试模块的源码文件转换为 PSI 文件集合。
+ */
 private fun createSourcePsiFiles(
     testModule: TestModule,
     testServices: TestServices,
@@ -275,6 +308,9 @@ private fun createSourcePsiFiles(
         .toList()
 }
 
+/**
+ * 收集当前模块编译为 binary library 时需要传给 `cjc` 的依赖 binary root。
+ */
 private fun TestModule.getDependencyBinaryRoots(
     existingModules: Map<String, CjTestModule>,
     testServices: TestServices,
@@ -296,6 +332,9 @@ private fun TestModule.getDependencyBinaryRoots(
     }
 }
 
+/**
+ * 将本地文件系统上的 compiled library root 转换为 PSI 文件系统项。
+ */
 private fun List<Path>.toPsiBinaryRoots(project: Project): List<PsiFileSystemItem> {
     val psiManager = PsiManager.getInstance(project)
     return map { path ->
@@ -315,12 +354,18 @@ private fun List<Path>.toPsiBinaryRoots(project: Project): List<PsiFileSystemIte
     }
 }
 
+/**
+ * 若依赖尚未存在，则写入普通依赖列表。
+ */
 private fun CaMutableTestModule.addRegularDependencyIfAbsent(module: CaModule) {
     if (module !== this && module !in directRegularDependencies) {
         directRegularDependencies += module
     }
 }
 
+/**
+ * 若依赖尚未存在，则写入 friend 依赖列表。
+ */
 private fun CaMutableTestModule.addFriendDependencyIfAbsent(module: CaModule) {
     if (module !== this && module !in directFriendDependencies) {
         directFriendDependencies += module

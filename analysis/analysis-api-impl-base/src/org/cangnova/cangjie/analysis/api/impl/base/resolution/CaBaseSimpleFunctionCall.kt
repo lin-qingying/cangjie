@@ -23,30 +23,60 @@ import org.cangnova.cangjie.psi.CjExpression
  */
 @CaImplementationDetail
 class CaBaseSimpleFunctionCall(
+    /**
+     * 当前函数调用解析出的部分应用函数符号。
+     */
     private val backingPartiallyAppliedSymbol: CaPartiallyAppliedFunctionSymbol<CaFunctionSymbol>,
+    /**
+     * 源码实参与 value parameter signature 的映射。
+     */
     private val backingValueArgumentMapping: Map<CjExpression, CaVariableSignature<CaValueParameterSymbol>>,
+    /**
+     * 类型参数到实际类型实参的映射。
+     */
     private val backingTypeArgumentsMapping: Map<CaTypeParameterSymbol, CaType>,
 ) : CaFunctionCall<CaFunctionSymbol> {
+    /**
+     * 函数调用沿用部分应用符号的 lifetime token。
+     */
     override val token: CaLifetimeToken
         get() = backingPartiallyAppliedSymbol.token
 
+    /**
+     * 返回部分应用函数符号。
+     */
     @Suppress("DEPRECATION")
     @Deprecated("Use the content of the `partiallyAppliedSymbol` directly instead")
     override val partiallyAppliedSymbol: CaPartiallyAppliedFunctionSymbol<CaFunctionSymbol>
         get() = withValidityAssertion { backingPartiallyAppliedSymbol }
 
+    /**
+     * 返回当前函数调用使用的函数签名。
+     */
     override val signature: CaFunctionSignature<CaFunctionSymbol>
         get() = withValidityAssertion { backingPartiallyAppliedSymbol.signature }
 
+    /**
+     * 返回当前函数调用的 dispatch receiver。
+     */
     override val dispatchReceiver: CaReceiverValue?
         get() = withValidityAssertion { backingPartiallyAppliedSymbol.dispatchReceiver }
 
+    /**
+     * 返回类型参数到实际类型的映射。
+     */
     override val typeArgumentsMapping: Map<CaTypeParameterSymbol, CaType>
         get() = withValidityAssertion { backingTypeArgumentsMapping }
 
+    /**
+     * 返回源码值实参与 value parameter signature 的映射。
+     */
     override val valueArgumentMapping: Map<CjExpression, CaVariableSignature<CaValueParameterSymbol>>
         get() = withValidityAssertion { backingValueArgumentMapping }
 
+    /**
+     * 返回源码实参与 callable parameter signature 的合并映射。
+     */
     override val combinedArgumentMapping: Map<CjExpression, CaVariableSignature<CaParameterSymbol>>
         get() = withValidityAssertion { backingValueArgumentMapping }
 }

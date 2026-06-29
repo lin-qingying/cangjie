@@ -37,16 +37,25 @@ import org.cangnova.cangjie.name.*
  * 标签主题或链接中限定名称的单个部分。
  */
 class CDocName(node: ASTNode) : CjElementImpl(node) {
+    /**
+     * 提供 `getContainingDoc` 操作，封装仓颉词法与文档注释节点的访问、构造或判断逻辑。
+     */
     fun getContainingDoc(): CDoc {
         val Cdoc = getStrictParentOfType<CDoc>()
         return Cdoc ?: throw IllegalStateException("CDOCName must be inside a CDOC")
     }
 
+    /**
+     * 提供 `getContainingSection` 操作，封装仓颉词法与文档注释节点的访问、构造或判断逻辑。
+     */
     fun getContainingSection(): CDocSection {
         val CDOC = getStrictParentOfType<CDocSection>()
         return CDOC ?: throw IllegalStateException("CDOCName must be inside a CDOCSection")
     }
 
+    /**
+     * 提供 `getQualifier` 操作，封装仓颉词法与文档注释节点的访问、构造或判断逻辑。
+     */
     fun getQualifier(): CDocName? = getChildOfType()
 
     /**
@@ -59,14 +68,23 @@ class CDocName(node: ASTNode) : CjElementImpl(node) {
         return TextRange(nameStart, textRange.length)
     }
 
+    /**
+     * 提供 `getNameText` 操作，封装仓颉词法与文档注释节点的访问、构造或判断逻辑。
+     */
     fun getNameText(): String = getNameTextRange().substring(text)
 
+    /**
+     * 提供 `getQualifiedName` 操作，封装仓颉词法与文档注释节点的访问、构造或判断逻辑。
+     */
     fun getQualifiedName(): List<String> {
         val qualifier = getQualifier()
         val nameAsList = listOf(getNameText())
         return if (qualifier != null) qualifier.getQualifiedName() + nameAsList else nameAsList
     }
 
+    /**
+     * 提供 `getQualifiedNameAsFqName` 操作，封装仓颉词法与文档注释节点的访问、构造或判断逻辑。
+     */
     fun getQualifiedNameAsFqName(): FqName {
         return FqName.fromSegments(getQualifiedName())
     }

@@ -24,16 +24,37 @@
 
 package org.cangnova.cangjie.psi
 
+/**
+ * 定义 `CjCallElement` 接口，约束仓颉 PSI节点或服务需要暴露的结构能力。
+ */
 interface CjCallElement : CjElement {
+    /**
+     * 保存 `calleeExpression`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val calleeExpression: CjExpression?
 
+    /**
+     * 保存 `valueArgumentList`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val valueArgumentList: CjValueArgumentList?
 
+    /**
+     * 保存 `valueArguments`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val valueArguments: List<ValueArgument>
 
+    /**
+     * 保存 `lambdaArguments`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val lambdaArguments: List<CjLambdaArgument>
 
+    /**
+     * 保存 `typeArguments`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val typeArguments: List<CjTypeProjection>
 
+    /**
+     * 保存 `typeArgumentList`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val typeArgumentList: CjTypeArgumentList?
 }

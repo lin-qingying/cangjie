@@ -21,5 +21,8 @@ interface CaErrorType : CaType {
      */
     val presentableText: String?
 
+    /**
+     * 创建可恢复该错误类型的类型指针。
+     */
     override fun createPointer(): CaTypePointer<CaErrorType>
 }

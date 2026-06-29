@@ -45,6 +45,9 @@ import org.cangnova.cangjie.test.services.TestServices
  * 4. 允许从 class-like 声明继续选定具体 member。
  */
 abstract class AbstractCfirLazyDeclarationResolveTestCase : AbstractAnalysisApiBasedTest() {
+    /**
+     * 根据 caret 和测试指令查找需要执行 lazy resolve 的 CFIR 声明。
+     */
     protected fun findCfirDeclarationToResolve(
         cjFile: CjFile,
         testServices: TestServices,
@@ -78,6 +81,9 @@ abstract class AbstractCfirLazyDeclarationResolveTestCase : AbstractAnalysisApiB
         }
     }
 
+    /**
+     * 如果测试指令要求选择成员或 property accessor，则从 [symbol] 继续选择具体目标。
+     */
     private fun chooseMemberDeclarationIfNeeded(
         symbol: CfirBasedSymbol<*>,
         resolutionFacade: LLResolutionFacade,
@@ -105,6 +111,9 @@ abstract class AbstractCfirLazyDeclarationResolveTestCase : AbstractAnalysisApiB
         } ?: error("Property `${propertySymbol.callableId}` 不存在请求的 accessor：$propertyPart")
     }
 
+    /**
+     * 在 [classLikeSymbol] 的成员 scope 中选择匹配测试指令的 callable 符号。
+     */
     private fun chooseClassLikeMember(
         classLikeSymbol: CfirClassLikeSymbol<*>,
         resolutionFacade: LLResolutionFacade,
@@ -156,6 +165,9 @@ abstract class AbstractCfirLazyDeclarationResolveTestCase : AbstractAnalysisApiB
         }
     }
 
+    /**
+     * 判断 [symbol] 是否匹配成员名和 symbol class simpleName 指令。
+     */
     private fun matches(
         symbol: CfirCallableSymbol<*>,
         memberName: String?,
@@ -166,20 +178,47 @@ abstract class AbstractCfirLazyDeclarationResolveTestCase : AbstractAnalysisApiB
         return true
     }
 
+    /**
+     * lazy resolve 测试额外支持的指令集合。
+     */
     override val additionalDirectives: List<DirectivesContainer>
         get() = super.additionalDirectives + Directives
 
+    /**
+     * lazy resolve 调用入口模式。
+     */
     protected enum class LazyResolveMode {
+        /**
+         * 只推进当前目标到指定阶段。
+         */
         Regular,
+        /**
+         * 递归推进当前目标及子声明。
+         */
         Recursive,
+        /**
+         * 推进 class-like 及其 callable 成员。
+         */
         WithCallableMembers,
     }
 
+    /**
+     * property 目标可切换到的访问器部分。
+     */
     protected enum class PropertyPart {
+        /**
+         * 选择 getter。
+         */
         GETTER,
+        /**
+         * 选择 setter。
+         */
         SETTER,
     }
 
+    /**
+     * 根据测试指令选择 lazy resolve 入口并推进到 [targetPhase]。
+     */
     protected fun CfirElementWithResolveState.lazyResolveToPhaseByDirective(
         targetPhase: CfirResolvePhase,
         testServices: TestServices,
@@ -195,23 +234,50 @@ abstract class AbstractCfirLazyDeclarationResolveTestCase : AbstractAnalysisApiB
         }
     }
 
+    /**
+     * lazy resolve 测试使用的自定义指令。
+     */
     protected object Directives : SimpleDirectivesContainer() {
+        /**
+         * 在 class-like declaration 内选择指定成员名。
+         */
         val MEMBER_NAME_FILTER by stringDirective("在 class-like declaration 内选择指定成员名。")
+        /**
+         * 在 class-like declaration 内选择指定 symbol class simpleName。
+         */
         val MEMBER_SYMBOL_CLASS by stringDirective("在 class-like declaration 内选择指定 symbol class simpleName。")
+        /**
+         * 将 property 目标切换到 getter 或 setter。
+         */
         val RESOLVE_PROPERTY_PART by enumDirective<PropertyPart>("将 property 目标切换到 getter / setter。")
+        /**
+         * 直接对整个 CfirFile 执行 lazy resolve。
+         */
         val RESOLVE_FILE by directive("直接对整个 CfirFile 执行 lazy resolve。")
+        /**
+         * 指定 lazy resolve 入口模式。
+         */
         val LAZY_MODE by enumDirective<LazyResolveMode>("指定 lazy resolve 入口：regular / recursive / withCallableMembers。")
     }
 }
 
+/**
+ * 返回当前测试模块结构的全部指令。
+ */
 private fun TestServices.allDirectivesForAnalysisTest() = cjTestModuleStructure.testModuleStructure.allDirectives
 
+/**
+ * 使用 resolve phase renderer 渲染 CFIR 元素。
+ */
 internal fun renderCfirWithResolvePhases(element: CfirElement): String {
     return CfirRenderer(
         resolvePhaseRenderer = CfirResolvePhaseRenderer(),
     ).renderElementAsString(element)
 }
 
+/**
+ * 收集 [scope] 中所有函数、属性和构造器 callable 符号。
+ */
 internal fun collectCallableSymbols(scope: CfirTypeScope): List<CfirCallableSymbol<*>> {
     val result = linkedSetOf<CfirCallableSymbol<*>>()
     scope.getCallableNames().sortedBy(Name::asString).forEach { name ->
@@ -222,6 +288,9 @@ internal fun collectCallableSymbols(scope: CfirTypeScope): List<CfirCallableSymb
     return result.toList()
 }
 
+/**
+ * 收集 [symbol] 在 [scope] 中的直接 overridden callable 及其 base scope。
+ */
 internal fun collectDirectOverriddenCallables(
     symbol: CfirCallableSymbol<*>,
     scope: CfirTypeScope,

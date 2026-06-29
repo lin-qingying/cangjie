@@ -28,41 +28,68 @@ import org.cangnova.cangjie.psi.CjNodeTypes
 import com.intellij.lang.ASTNode
 import com.intellij.psi.PsiElement
 
+/**
+ * 表示 `CjFunctionNotStubbed`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 @Suppress("deprecation")
 abstract class CjFunctionNotStubbed(node: ASTNode) :
     CjTypeParameterListOwnerNotStubbed(node),
     CjFunction {
+    /**
+     * 暴露 `valueParameterList`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val valueParameterList: CjParameterList?
         get() = findChildByType(CjNodeTypes.VALUE_PARAMETER_LIST)
 
+    /**
+     * 暴露 `valueParameters`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val valueParameters: List<CjParameter>
         get() {
             val list = valueParameterList
             return list?.parameters ?: emptyList()
         }
 
+    /**
+     * 暴露 `bodyExpression`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val bodyExpression: CjExpression?
         get() {
             return findChildByClass(CjExpression::class.java)
         }
 
+    /**
+     * 实现 `hasDeclaredReturnType` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun hasDeclaredReturnType(): Boolean {
         return false
     }
 
 
 
+    /**
+     * 暴露 `typeReference`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val typeReference: CjTypeReference?
         get() = null
 
+    /**
+     * 实现 `setTypeReference` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun setTypeReference(typeRef: CjTypeReference?): CjTypeReference? {
         if (typeRef == null) return null
         throw IllegalStateException("Lambda expressions can't have type reference")
     }
 
+    /**
+     * 暴露 `colon`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val colon: PsiElement?
         get() = null
 
+    /**
+     * 暴露 `isLocal`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val isLocal: Boolean
         get() {
             val parent = parent

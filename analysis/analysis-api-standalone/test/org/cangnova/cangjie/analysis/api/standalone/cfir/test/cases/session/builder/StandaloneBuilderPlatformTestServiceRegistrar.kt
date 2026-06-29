@@ -27,8 +27,14 @@ import org.cangnova.cangjie.test.services.TestServices
  * 注册进 headless project；否则 `CaStandalonePlatformState` 等 service 无法解析。
  */
 object StandaloneBuilderPlatformTestServiceRegistrar : AnalysisApiTestServiceRegistrar() {
+    /**
+     * 本测试注册器没有额外 application 级服务，保留空实现以明确覆盖测试框架扩展点。
+     */
     override fun registerApplicationServices(application: MockApplication, testServices: TestServices) {}
 
+    /**
+     * 注册 standalone builder 手写测试依赖的平台级 project service。
+     */
     override fun registerProjectServices(project: MockProject, testServices: TestServices) {
         project.registerService(CaStandalonePlatformState::class.java)
         project.registerService(CaRestrictedAnalysisService::class.java, CaStandaloneRestrictedAnalysisService::class.java)

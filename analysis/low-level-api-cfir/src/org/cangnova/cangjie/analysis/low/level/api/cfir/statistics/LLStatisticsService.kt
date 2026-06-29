@@ -27,19 +27,37 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains.LLSym
  * handling of whether statistics are enabled (see [CaStatisticsService.areStatisticsEnabled]).
  */
 class LLStatisticsService(internal val project: Project) : Disposable {
+    /**
+     * 周期性更新统计域的调度器。
+     */
     internal val scheduler: LLStatisticsScheduler = LLStatisticsScheduler(this)
 
+    /**
+     * analysis session 统计域。
+     */
     val analysisSessions: LLAnalysisSessionStatistics = LLAnalysisSessionStatistics(this)
 
+    /**
+     * symbol provider 统计域。
+     */
     internal val symbolProviders: LLSymbolProviderStatistics = LLSymbolProviderStatistics(this)
 
+    /**
+     * 当前服务管理的所有统计域。
+     */
     internal val domains: List<LLStatisticsDomain> = listOf(analysisSessions, symbolProviders)
 
     @OptIn(CaPlatformInterface::class)
+    /**
+     * 平台提供的 OpenTelemetry 实例。
+     */
     internal val openTelemetry: OpenTelemetry
         get() = CangJieOpenTelemetryProvider.getInstance(project)?.openTelemetry
             ?: error("${LLStatisticsService::class.simpleName} should not be used when OpenTelemetry is not available.")
 
+    /**
+     * 统计服务是否已经启动。
+     */
     private var hasStarted: Boolean = false
 
     /**
@@ -59,6 +77,9 @@ class LLStatisticsService(internal val project: Project) : Disposable {
         }
     }
 
+    /**
+     * 停止周期统计任务。
+     */
     override fun dispose() {
         synchronized(this) {
             if (hasStarted) {

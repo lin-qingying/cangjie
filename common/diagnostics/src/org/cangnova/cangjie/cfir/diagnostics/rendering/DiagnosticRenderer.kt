@@ -7,9 +7,17 @@ package org.cangnova.cangjie.cfir.diagnostics.rendering
 
 import org.cangnova.cangjie.cfir.diagnostics.UnboundDiagnostic
 
+/**
+ * 将未绑定诊断渲染为用户可读消息的接口。
+ */
 interface DiagnosticRenderer<in D : UnboundDiagnostic> {
+    /**
+     * 渲染完整诊断消息文本。
+     */
     fun render(diagnostic: D): String
 
+    /**
+     * 渲染诊断消息模板所需的参数数组。
+     */
     fun renderParameters(diagnostic: D): Array<out Any?>
 }
-

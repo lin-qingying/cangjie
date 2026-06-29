@@ -10,9 +10,22 @@ import org.junit.jupiter.api.assertThrows
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.ExecutionException
 
+/**
+ * 校验语言服务器初始化、关闭和退出码的生命周期协议。
+ *
+ * 该测试使用可替换退出处理器避免测试进程退出，同时固定 shutdown/exit 的协议语义。
+ */
 class CangjieLanguageServerLifecycleTest : AbstractLspIntegrationTest() {
+    /**
+     * 禁用默认会话，测试按场景手动创建服务器或会话。
+     */
     override val autoCreateDefaultSession: Boolean = false
 
+    /**
+     * 校验未连接客户端时 initialize 会快速失败。
+     *
+     * 该用例确保服务端不会在缺失远端代理时进入部分初始化状态。
+     */
     @Test
     fun `initialize fails fast when client is not connected`() {
         val server = CangjieLanguageServer(defaultServerOptions())
@@ -26,6 +39,11 @@ class CangjieLanguageServerLifecycleTest : AbstractLspIntegrationTest() {
         }
     }
 
+    /**
+     * 校验正常关闭的实时会话会请求成功退出码。
+     *
+     * 该用例通过替换 exit handler 观察退出码，不触发真实 JVM 退出。
+     */
     @Test
     fun `closing a live session exits with success code`() {
         val exitCodes = CopyOnWriteArrayList<Int>()
@@ -43,6 +61,11 @@ class CangjieLanguageServerLifecycleTest : AbstractLspIntegrationTest() {
         assertEquals(listOf(0), exitCodes)
     }
 
+    /**
+     * 校验未收到 shutdown 就调用 exit 会报告非零退出码。
+     *
+     * 该用例固定 LSP 生命周期协议中的异常退出语义。
+     */
     @Test
     fun `exit without shutdown reports non zero exit code`() {
         val exitCodes = CopyOnWriteArrayList<Int>()

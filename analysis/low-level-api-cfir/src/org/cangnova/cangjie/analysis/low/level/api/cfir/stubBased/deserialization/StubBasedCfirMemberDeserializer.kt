@@ -71,23 +71,74 @@ import org.cangnova.cangjie.source.SuspiciousFakeSourceCheck
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 import org.cangnova.cangjie.utils.exceptions.withPsiEntry
 
+/**
+ * stub-based CFIR 反序列化过程中共享的上下文。
+ */
 internal class StubBasedCfirDeserializationContext(
+    /**
+     * 反序列化声明绑定的 module data。
+     */
     val moduleData: org.cangnova.cangjie.cfir.common.CfirModuleData,
+
+    /**
+     * 当前容器包名。
+     */
     val packageFqName: FqName,
+
+    /**
+     * 当前类内上下文的相对类名；顶层 callable 可为 `null`。
+     */
     val relativeClassName: FqName?,
+
+    /**
+     * 当前上下文使用的类型反序列化器。
+     */
     val typeDeserializer: StubBasedCfirTypeDeserializer,
+
+    /**
+     * 当前上下文使用的注解反序列化器。
+     */
     val annotationDeserializer: StubBasedAnnotationDeserializer,
+
+    /**
+     * 当前声明所属的反序列化 container source。
+     */
     val containerSource: DeserializedContainerSource?,
+
+    /**
+     * 当前外层类 symbol。
+     */
     val outerClassSymbol: CfirClassLikeSymbol<*>?,
+
+    /**
+     * 外层上下文捕获到的类型参数 symbol。
+     */
     val outerTypeParameters: List<CfirTypeParameterSymbol>,
+
+    /**
+     * 当前反序列化声明使用的初始 origin。
+     */
     val initialOrigin: CfirDeclarationOrigin,
+
+    /**
+     * 当前上下文绑定的 class-like PSI 声明。
+     */
     val classLikeDeclaration: org.cangnova.cangjie.psi.CjClassLikeDeclaration? = null,
 ) {
+    /**
+     * 当前 module data 绑定的 CFIR session。
+     */
     val session: CfirSession get() = moduleData.session
 
+    /**
+     * 当前上下文可见的全部类型参数 symbol。
+     */
     val allTypeParameters: List<CfirTypeParameterSymbol> =
         typeDeserializer.ownTypeParameters + outerTypeParameters
 
+    /**
+     * 为 [owner] 创建子反序列化上下文。
+     */
     fun childContext(
         owner: CjTypeParameterListOwner,
         relativeClassName: FqName? = this.relativeClassName,
@@ -115,6 +166,9 @@ internal class StubBasedCfirDeserializationContext(
         initialOrigin = initialOrigin
     )
 
+    /**
+     * 返回绑定 [classLikeDeclaration] 的上下文副本。
+     */
     fun withClassLikeDeclaration(
         classLikeDeclaration: org.cangnova.cangjie.psi.CjClassLikeDeclaration,
     ): StubBasedCfirDeserializationContext = StubBasedCfirDeserializationContext(
@@ -130,7 +184,14 @@ internal class StubBasedCfirDeserializationContext(
         classLikeDeclaration = classLikeDeclaration,
     )
 
+    /**
+     * 当前上下文的 member deserializer。
+     */
     val memberDeserializer: StubBasedCfirMemberDeserializer = StubBasedCfirMemberDeserializer(this, initialOrigin)
+
+    /**
+     * 当前类上下文的 dispatch receiver 类型。
+     */
     val dispatchReceiver = relativeClassName?.let {
         ConeClassLikeType(
             ClassId(packageFqName, it).toLookupTag(),
@@ -212,11 +273,24 @@ internal class StubBasedCfirDeserializationContext(
     }
 }
 
+/**
+ * 从 compiled PSI/stub 中反序列化 callable、属性、构造函数、类型别名和参数声明。
+ */
 internal class StubBasedCfirMemberDeserializer(
+    /**
+     * 当前成员反序列化上下文。
+     */
     private val c: StubBasedCfirDeserializationContext,
+
+    /**
+     * 反序列化声明使用的初始 origin。
+     */
     private val initialOrigin: CfirDeclarationOrigin,
 ) {
     @Suppress("UNUSED_PARAMETER")
+    /**
+     * 反序列化类型别名声明。
+     */
     fun loadTypeAlias(typeAlias: CjTypeAlias, aliasSymbol: CfirTypeAliasSymbol, scopeProvider: CfirScopeProvider): CfirTypeAlias {
         val name = typeAlias.nameAsSafeName
         val local = c.childContext(typeAlias, containingDeclarationSymbol = aliasSymbol)
@@ -240,6 +314,9 @@ internal class StubBasedCfirMemberDeserializer(
         }
     }
 
+    /**
+     * 反序列化属性 getter。
+     */
     private fun loadPropertyGetter(
         getter: CjPropertyAccessor?,
         classSymbol: CfirClassLikeSymbol<*>?,
@@ -269,6 +346,9 @@ internal class StubBasedCfirMemberDeserializer(
         }
     }
 
+    /**
+     * 反序列化属性 setter。
+     */
     private fun loadPropertySetter(
         setter: CjPropertyAccessor?,
         classSymbol: CfirClassLikeSymbol<*>?,
@@ -299,6 +379,9 @@ internal class StubBasedCfirMemberDeserializer(
         }
     }
 
+    /**
+     * 反序列化属性声明。
+     */
     fun loadProperty(
         property: CjProperty,
         classSymbol: CfirClassLikeSymbol<*>? = null,
@@ -341,6 +424,9 @@ internal class StubBasedCfirMemberDeserializer(
         }
     }
 
+    /**
+     * 反序列化命名函数声明。
+     */
     fun loadFunction(
         function: CjNamedFunction,
         classSymbol: CfirClassLikeSymbol<*>? = null,
@@ -373,6 +459,9 @@ internal class StubBasedCfirMemberDeserializer(
     }
 
     @OptIn(SuspiciousFakeSourceCheck::class)
+    /**
+     * 反序列化构造函数声明。
+     */
     fun loadConstructor(
         constructor: CjConstructor<*>,
         classOrObject: CjTypeStatement,
@@ -430,6 +519,9 @@ internal class StubBasedCfirMemberDeserializer(
         containingClassForStaticMemberAttr = c.dispatchReceiver?.lookupTag
     }
 
+    /**
+     * 反序列化函数或构造函数的值参数列表。
+     */
     private fun valueParameters(
         valueParameters: List<CjParameter>,
         functionSymbol: CfirFunctionSymbol<*>,
@@ -438,6 +530,9 @@ internal class StubBasedCfirMemberDeserializer(
         loadValueParameter(parameter, functionSymbol, forceDefaultValue)
     }
 
+    /**
+     * 反序列化单个值参数。
+     */
     private fun loadValueParameter(
         parameter: CjParameter,
         containingSymbol: CfirCallableSymbol<*>,
@@ -469,9 +564,15 @@ internal class StubBasedCfirMemberDeserializer(
         annotations += c.annotationDeserializer.loadAnnotations(parameter, containingSymbol)
     }
 
+    /**
+     * 使用 [context] 的类型反序列化器把 PSI 类型引用转换为 CFIR type ref。
+     */
     private fun CjTypeReference.toTypeRef(context: StubBasedCfirDeserializationContext): CfirTypeRef =
         context.typeDeserializer.typeRef(this)
 
+    /**
+     * 构建已解析声明状态。
+     */
     private fun buildResolvedStatus(visibility: Visibility, modality: Modality): CfirDeclarationStatusImpl {
         return CfirDeclarationStatusImpl(visibility, modality).apply {
             isVisibilityExplicit = visibility != Visibilities.Public

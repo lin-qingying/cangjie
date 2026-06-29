@@ -27,10 +27,19 @@ import org.cangnova.cangjie.codegen.diagnostics.CodegenLoweringException
  * 不能在这里生成看似可用的占位 LLVM 类型。
  */
 interface TypeLowering {
+    /**
+     * 将 CHIR 类型引用降低为 LLVM textual type。
+     */
     fun lower(type: ChirTypeRef): String
 }
 
+/**
+ * 默认 CHIR 到 LLVM 类型 lowering 实现。
+ */
 class DefaultTypeLowering : TypeLowering {
+    /**
+     * 降低已解析 CHIR 类型；未解析类型直接失败。
+     */
     override fun lower(type: ChirTypeRef): String {
         return when (type) {
             is ChirResolvedTypeRef -> lowerResolved(type)
@@ -41,6 +50,9 @@ class DefaultTypeLowering : TypeLowering {
         }
     }
 
+    /**
+     * 降低具体已解析 CHIR 类型到 LLVM textual type。
+     */
     private fun lowerResolved(type: ChirResolvedTypeRef): String {
         return when (val resolved = type.type) {
             ChirPrimitiveType.UNIT -> "void"

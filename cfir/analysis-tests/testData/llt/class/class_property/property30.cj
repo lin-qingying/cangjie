@@ -26,7 +26,7 @@ class Doo <: Boo {
     public var c: Unit = (<!USED_BEFORE_INITIALIZATION!>m<!> = 1)
     public var d: Int32 = <!USED_BEFORE_INITIALIZATION!>n<!>
     public var e: Int32 = <!USED_BEFORE_INITIALIZATION!>m<!>
-    public var e1: Int32 = <!ILLEGAL_THIS_OR_SUPER_CALL!>super<!>.m
+    public var e1: Int32 = <!THIS_OR_SUPER_NOT_ALLOWED_TO_INITIALIZE_NON_STATIC_MEMBER!>super<!>.m
     public func f1(): Int32 {
         m = 2
         0

@@ -1,5 +1,5 @@
 
-
+// WITH_EXTRA_CHECKERS
 
 main() {
     let a = Some(1)

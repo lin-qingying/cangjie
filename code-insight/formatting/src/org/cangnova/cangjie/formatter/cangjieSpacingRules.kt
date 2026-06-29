@@ -44,19 +44,26 @@ import org.cangnova.cangjie.psi.psiUtil.children
 import org.cangnova.cangjie.psi.psiUtil.textRangeWithoutComments
 
 
+/** 修饰符列表中的 token 集合。 */
 val MODIFIERS_LIST_ENTRIES = TokenSet.orSet(MODIFIER_KEYWORDS)
 
+/** extend 约束中冒号规则适用的 PSI 类型集合。 */
 val EXTEND_COLON_ELEMENTS =
     TokenSet.create(TYPE_CONSTRAINT, CLASS, TYPE_PARAMETER, ENUM_CONSTRUCTOR, SECONDARY_CONSTRUCTOR)
 
+/** 类型标注中冒号规则适用的 PSI 类型集合。 */
 val TYPE_COLON_ELEMENTS =
     TokenSet.create(PROPERTY, FUNC, MAIN_FUNC, VALUE_PARAMETER, FUNCTION_LITERAL)
 
 
+/** 顶层和类体声明类型集合。 */
 val DECLARATIONS = TokenSet.create(PROPERTY, FUNC, CLASS, ENUM_CONSTRUCTOR, SECONDARY_CONSTRUCTOR)
 
 
 //缩进
+/**
+ * 创建仓颉 formatter 使用的 spacing builder。
+ */
 fun createSpacingBuilder(settings: CodeStyleSettings, builderUtil: CangJieSpacingBuilderUtil): CangJieSpacingBuilder {
     val cangjieCommonSettings = settings.cangjieCommonSettings
     val cangjieCustomSettings = settings.cangjieCustomSettings
@@ -758,17 +765,29 @@ fun createSpacingBuilder(settings: CodeStyleSettings, builderUtil: CangJieSpacin
     }
 }
 
+/**
+ * 创建不允许换行的固定空格 spacing。
+ */
 fun SpacingBuilder.RuleBuilder.spacesNoLineBreak(spaces: Int): SpacingBuilder? =
     spacing(spaces, spaces, 0, false, 0)
 
+/**
+ * 对 token set 中每个父类型注册 afterInside spacing 规则。
+ */
 fun SpacingBuilder.afterInside(element: IElementType, tokenSet: TokenSet, spacingFun: RuleBuilder.() -> Unit) {
     tokenSet.types.forEach { inType -> afterInside(element, inType).spacingFun() }
 }
 
+/**
+ * 对 token set 中每个父类型注册 beforeInside spacing 规则。
+ */
 fun SpacingBuilder.beforeInside(element: IElementType, tokenSet: TokenSet, spacingFun: RuleBuilder.() -> Unit) {
     tokenSet.types.forEach { inType -> beforeInside(element, inType).spacingFun() }
 }
 
+/**
+ * 返回 spacing 依赖范围中排除匿名函数/lambda 后的文本范围。
+ */
 private fun excludeLambdas(parent: ASTBlock): List<TextRange> {
     val rangesToExclude = mutableListOf<TextRange>()
 //    parent.requireNode().psi.accept(object : CjTreeVisitorUnit() {

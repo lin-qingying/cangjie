@@ -13,6 +13,9 @@ import org.cangnova.cangjie.serialization.deserialization.descriptors.PreRelease
  * 不再借用 JVM class name 兼容壳。
  */
 internal class ClassDeserializedContainerSource(
+    /**
+     * 当前 class container source 对应的 class id。
+     */
     val classId: ClassId,
 ) : DeserializedContainerSource(
     presentableString = "class ${classId.asString()}",

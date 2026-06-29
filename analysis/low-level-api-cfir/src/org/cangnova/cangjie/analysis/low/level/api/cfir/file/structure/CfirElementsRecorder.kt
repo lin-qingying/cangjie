@@ -32,6 +32,9 @@ import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.source.psi
 import org.cangnova.cangjie.source.toCjPsiSourceElement
 
+/**
+ * 遍历 CFIR 子树并记录 PSI 元素到 CFIR 元素的映射。
+ */
 internal open class CfirElementsRecorder : CfirVisitor<Unit, MutableMap<CjElement, CfirElement>>() {
 
     /**
@@ -70,11 +73,17 @@ internal open class CfirElementsRecorder : CfirVisitor<Unit, MutableMap<CjElemen
         }
     }
 
+    /**
+     * 默认记录当前元素锚点并继续访问子元素。
+     */
     override fun visitElement(element: CfirElement, data: MutableMap<CjElement, CfirElement>) {
         cacheElement(element, data)
         element.acceptChildren(this, data)
     }
 
+    /**
+     * 记录 where/type constraint 中 subject 名称到类型参数声明的映射。
+     */
     override fun visitTypeParameter(typeParameter: CfirTypeParameter, data: MutableMap<CjElement, CfirElement>) {
         for (bound in typeParameter.bounds) {
             val boundPsi = (bound.source as? CjPsiSourceElement)?.psi
@@ -84,6 +93,9 @@ internal open class CfirElementsRecorder : CfirVisitor<Unit, MutableMap<CjElemen
         super.visitTypeParameter(typeParameter, data)
     }
 
+    /**
+     * 记录赋值左侧 PSI 到 assignment CFIR 节点的写入语义映射。
+     */
     override fun visitAssignment(assignment: CfirAssignment, data: MutableMap<CjElement, CfirElement>) {
         // 对标 Kotlin 的 write-mapping 语义：赋值左侧命中赋值节点本身。
         val lValuePsi = (assignment.lValue.source as? CjPsiSourceElement)?.psi as? CjElement
@@ -91,6 +103,9 @@ internal open class CfirElementsRecorder : CfirVisitor<Unit, MutableMap<CjElemen
         visitElement(assignment, data)
     }
 
+    /**
+     * 记录 literal expression，并为负数字面量补充常量子节点到转换后 literal 的映射。
+     */
     override fun visitLiteralExpression(literalExpression: CfirLiteralExpression, data: MutableMap<CjElement, CfirElement>) {
         cacheElement(literalExpression, data)
         literalExpression.annotations.forEach {
@@ -104,6 +119,9 @@ internal open class CfirElementsRecorder : CfirVisitor<Unit, MutableMap<CjElemen
         }
     }
 
+    /**
+     * 记录 binding pattern 到语义绑定变量，并继续访问类型、变量和嵌套 pattern。
+     */
     override fun visitBindingPattern(bindingPattern: CfirBindingPattern, data: MutableMap<CjElement, CfirElement>) {
         recordPatternBindingVariable(bindingPattern, bindingPattern.bindingVariable, data)
         bindingPattern.typeRef?.accept(this, data)
@@ -111,11 +129,17 @@ internal open class CfirElementsRecorder : CfirVisitor<Unit, MutableMap<CjElemen
         bindingPattern.nestedPattern?.accept(this, data)
     }
 
+    /**
+     * 记录 var/enum pattern 到语义绑定变量。
+     */
     override fun visitVarOrEnumPattern(varOrEnumPattern: CfirVarOrEnumPattern, data: MutableMap<CjElement, CfirElement>) {
         recordPatternBindingVariable(varOrEnumPattern, varOrEnumPattern.bindingVariable, data)
         varOrEnumPattern.bindingVariable?.accept(this, data)
     }
 
+    /**
+     * 记录 type pattern 到语义绑定变量，并访问类型引用。
+     */
     override fun visitTypePattern(typePattern: CfirTypePattern, data: MutableMap<CjElement, CfirElement>) {
         recordPatternBindingVariable(typePattern, typePattern.bindingVariable, data)
         typePattern.typeRef.accept(this, data)
@@ -123,32 +147,51 @@ internal open class CfirElementsRecorder : CfirVisitor<Unit, MutableMap<CjElemen
     }
 
     //@formatter:off
+    /** 引用节点没有直接 PSI 到 CFIR 映射需求。 */
     override fun visitReference(reference: CfirReference, data: MutableMap<CjElement, CfirElement>) {}
+    /** 控制流图引用节点没有直接 PSI 到 CFIR 映射需求。 */
     override fun visitControlFlowGraphReference(controlFlowGraphReference: CfirControlFlowGraphReference, data: MutableMap<CjElement, CfirElement>) {}
+    /** 命名引用节点没有直接 PSI 到 CFIR 映射需求。 */
     override fun visitNamedReference(namedReference: CfirNamedReference, data: MutableMap<CjElement, CfirElement>) {}
+    /** this 引用节点没有直接 PSI 到 CFIR 映射需求。 */
     override fun visitThisReference(thisReference: CfirThisReference, data: MutableMap<CjElement, CfirElement>) {}
     //@formatter:on
 
+    /**
+     * 记录错误类型引用，并保留其 qualifier 与 delegated type ref 映射。
+     */
     override fun visitErrorTypeRef(errorTypeRef: CfirErrorTypeRef, data: MutableMap<CjElement, CfirElement>) {
         super.visitResolvedTypeRef(errorTypeRef, data)
         recordTypeQualifiers(errorTypeRef, data)
         errorTypeRef.delegatedTypeRef?.accept(this, data)
     }
 
+    /**
+     * 记录已解析类型引用，并为多段 qualifier 补充映射。
+     */
     override fun visitResolvedTypeRef(resolvedTypeRef: CfirResolvedTypeRef, data: MutableMap<CjElement, CfirElement>) {
         super.visitResolvedTypeRef(resolvedTypeRef, data)
         recordTypeQualifiers(resolvedTypeRef, data)
         resolvedTypeRef.delegatedTypeRef?.accept(this, data)
     }
 
+    /**
+     * user type ref 自身不直接缓存，只继续访问子节点。
+     */
     override fun visitUserTypeRef(userTypeRef: CfirUserTypeRef, data: MutableMap<CjElement, CfirElement>) {
         userTypeRef.acceptChildren(this, data)
     }
 
+    /**
+     * option type ref 自身不直接缓存，只继续访问子节点。
+     */
     override fun visitOptionTypeRef(optionTypeRef: CfirOptionTypeRef, data: MutableMap<CjElement, CfirElement>) {
         optionTypeRef.acceptChildren(this, data)
     }
 
+    /**
+     * 将 CFIR 元素的 anchor PSI 写入映射缓存。
+     */
     protected fun cacheElement(element: CfirElement, cache: MutableMap<CjElement, CfirElement>) {
         val psi = element.anchorPsi as? CjElement ?: return
         cache(psi, element, cache)
@@ -170,18 +213,27 @@ internal open class CfirElementsRecorder : CfirVisitor<Unit, MutableMap<CjElemen
         cache(psi, variable, cache)
     }
 
+    /**
+     * 判断 literal 是否由负号前缀表达式转换而来。
+     */
     private val CfirLiteralExpression.isConverted: Boolean
         get() {
             val cfirSourcePsi = this.source?.psi ?: return false
             return cfirSourcePsi is CjPrefixExpression && cfirSourcePsi.operationToken == CjTokens.MINUS
         }
 
+    /**
+     * 返回 converted literal 内部的原始常量表达式。
+     */
     private val CfirLiteralExpression.constantExpression: CjConstantExpression?
         get() {
             val cfirSourcePsi = this.source?.psi
             return cfirSourcePsi?.findDescendantOfType()
         }
 
+    /**
+     * 为被负号折叠的 literal 构造常量子表达式对应的反向 literal。
+     */
     private fun CfirLiteralKind.reverseConverted(original: CfirLiteralExpression): CfirLiteralExpression? {
         val value = original.value as? Number ?: return null
         val convertedValue: Any = when (this) {
@@ -208,6 +260,9 @@ internal open class CfirElementsRecorder : CfirVisitor<Unit, MutableMap<CjElemen
         }
     }
 
+    /**
+     * 为多段 user type qualifier 记录每个 qualifier 到 resolved type ref 的映射。
+     */
     private fun recordTypeQualifiers(resolvedTypeRef: CfirResolvedTypeRef, data: MutableMap<CjElement, CfirElement>) {
         val userTypeRef = resolvedTypeRef.delegatedTypeRef as? CfirUserTypeRef ?: return
         val qualifiers = userTypeRef.qualifier

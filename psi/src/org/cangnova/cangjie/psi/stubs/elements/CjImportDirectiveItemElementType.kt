@@ -37,12 +37,18 @@ import org.cangnova.cangjie.psi.CjNodeType
 import org.jetbrains.annotations.NonNls
 import java.io.IOException
 
+/**
+ * 表示 `CjImportDirectiveElementType`，承载PSI Stub中的语法节点、索引桩或辅助模型。
+ */
 class CjImportDirectiveElementType(debugName: String) :
     CjStubElementType<CangJieImportDirectiveStub, CjImportDirective>(
         debugName,
         CjImportDirective::class.java,
         CangJieImportDirectiveStub::class.java,
     ) {
+    /**
+     * 实现 `createStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createStub(psi: CjImportDirective, parentStub: StubElement<*>?): CangJieImportDirectiveStub {
         // 从 PSI 收集所有导入项信息
         val importItems = psi.importItems.map { item ->
@@ -60,6 +66,9 @@ class CjImportDirectiveElementType(debugName: String) :
         )
     }
 
+    /**
+     * 实现 `serialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     @Throws(IOException::class)
     override fun serialize(stub: CangJieImportDirectiveStub, dataStream: StubOutputStream) {
         val packageFqName = stub.getPackageFqName()?.asString()
@@ -90,10 +99,16 @@ class CjImportDirectiveElementType(debugName: String) :
         }
     }
 
+    /**
+     * 实现 `indexStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun indexStub(stub: CangJieImportDirectiveStub, sink: IndexSink) {
         getInstance().indexImports(stub, sink)
     }
 
+    /**
+     * 实现 `deserialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     @Throws(IOException::class)
     override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>): CangJieImportDirectiveStub {
         val packageFqName = if (dataStream.readBoolean()) {

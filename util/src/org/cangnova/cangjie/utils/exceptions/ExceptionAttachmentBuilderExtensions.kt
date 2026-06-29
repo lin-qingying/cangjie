@@ -18,10 +18,16 @@ package org.cangnova.cangjie.utils.exceptions
 
 import org.cangnova.cangjie.utils.rethrowIntellijPlatformExceptionIfNeeded
 
+/**
+ * 将 CFIR 相关对象写入异常附件。
+ */
 fun ExceptionAttachmentBuilder.withCfirEntry(name: String, fir: Any?) {
     withEntry(name, fir) { it.toString() }
 }
 
+/**
+ * 在保留 IntelliJ 平台控制流异常语义的前提下，用附件增强普通异常并重新抛出。
+ */
 inline fun rethrowExceptionWithDetails(
     message: String,
     exception: Throwable,

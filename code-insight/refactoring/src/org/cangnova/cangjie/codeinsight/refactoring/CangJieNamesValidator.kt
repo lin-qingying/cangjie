@@ -19,7 +19,13 @@ import org.cangnova.cangjie.psi.psiUtil.isIdentifier
  * `NamesValidator` 判断关键字和合法标识符，具体语法判断复用 PSI 层 lexer。
  */
 class CangJieNamesValidator : NamesValidator {
+    /**
+     * 判断名称是否为仓颉关键字。
+     */
     override fun isKeyword(name: String, project: Project?): Boolean = name in KeywordStringsGenerated.KEYWORDS
 
+    /**
+     * 判断名称是否符合仓颉标识符词法规则。
+     */
     override fun isIdentifier(name: String, project: Project?): Boolean = name.isIdentifier()
 }

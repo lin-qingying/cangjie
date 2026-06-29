@@ -28,6 +28,9 @@ import org.cangnova.cangjie.psi.stubs.CangJieMacroStub
 import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 import com.intellij.lang.ASTNode
 
+/**
+ * 表示 `CjMacroDeclaration`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjMacroDeclaration : CjFunctionImpl<CangJieMacroStub, CjMacroDeclaration> {
     constructor(node: ASTNode) : super(node)
 
@@ -35,9 +38,15 @@ class CjMacroDeclaration : CjFunctionImpl<CangJieMacroStub, CjMacroDeclaration> 
 
 //    override val isStatic: Boolean
 //        get() = false
+    /**
+     * 暴露 `isTopLevel`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val isTopLevel: Boolean
         get() = true
 
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitMacroDeclaration(this, data)
     }

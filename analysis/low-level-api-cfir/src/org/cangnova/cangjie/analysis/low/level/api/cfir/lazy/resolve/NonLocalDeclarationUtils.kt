@@ -41,6 +41,11 @@ internal fun elementCanBeLazilyResolved(element: CjElement?): Boolean = when (el
     }
 }
 
+/**
+ * 如果父节点是宏输入包装层，则返回包装层的真实父节点。
+ *
+ * 仓颉注解和宏输入在 PSI 中可能额外包一层 [CjMacroInput]；lazy resolve 判断声明容器时需要把它视为透明节点。
+ */
 private fun unwrapMacroInputParent(parent: PsiElement?): PsiElement? {
     return when (parent) {
         is CjMacroInput -> parent.parent

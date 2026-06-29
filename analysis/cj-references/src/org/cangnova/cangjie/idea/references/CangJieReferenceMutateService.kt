@@ -16,16 +16,28 @@ import org.cangnova.cangjie.psi.CjValueArgumentName
  * 避免每个 reference 子类重复直接操作语法树。
  */
 interface CangJieReferenceMutateService {
+    /**
+     * 将引用元素重命名为新的简单名称。
+     */
     fun handleElementRename(cjReference: CjReference, newElementName: String): PsiElement?
 
+    /**
+     * 将引用绑定到目标 PSI 元素。
+     */
     fun bindToElement(cjReference: CjReference, element: PsiElement): PsiElement
 
+    /**
+     * 将简单名称引用绑定到目标 PSI 元素，并按指定模式处理可能的导入缩短。
+     */
     fun bindToElement(
         simpleNameReference: CjSimpleNameReference,
         element: PsiElement,
         shorteningMode: CjSimpleNameReference.ShorteningMode,
     ): PsiElement
 
+    /**
+     * 将简单名称引用绑定到指定全限定名。
+     */
     fun bindToFqName(
         simpleNameReference: CjSimpleNameReference,
         fqName: FqName,
@@ -34,7 +46,13 @@ interface CangJieReferenceMutateService {
     ): PsiElement
 }
 
+/**
+ * 默认仓颉 reference mutation 服务实现。
+ */
 internal class CangJieReferenceMutateServiceImpl : CangJieReferenceMutateService {
+    /**
+     * 根据引用承载的 PSI 类型执行具体重命名。
+     */
     override fun handleElementRename(cjReference: CjReference, newElementName: String): PsiElement? {
         return when (val element = cjReference.element) {
             is CjSimpleNameExpression -> {
@@ -60,12 +78,18 @@ internal class CangJieReferenceMutateServiceImpl : CangJieReferenceMutateService
         }
     }
 
+    /**
+     * 将引用绑定到具名 PSI 元素的简单名称。
+     */
     override fun bindToElement(cjReference: CjReference, element: PsiElement): PsiElement {
         val targetName = (element as? PsiNamedElement)?.name
             ?: throw IncorrectOperationException("Cannot bind ${cjReference::class.java.simpleName} to unnamed PSI")
         return handleElementRename(cjReference, targetName) ?: cjReference.element
     }
 
+    /**
+     * 将简单名称引用绑定到具名 PSI 元素；当前实现只替换短名。
+     */
     override fun bindToElement(
         simpleNameReference: CjSimpleNameReference,
         element: PsiElement,
@@ -76,6 +100,9 @@ internal class CangJieReferenceMutateServiceImpl : CangJieReferenceMutateService
         return handleElementRename(simpleNameReference, targetName) ?: simpleNameReference.element
     }
 
+    /**
+     * 将简单名称引用绑定到全限定名的短名部分。
+     */
     override fun bindToFqName(
         simpleNameReference: CjSimpleNameReference,
         fqName: FqName,

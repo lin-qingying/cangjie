@@ -28,6 +28,9 @@ import org.cangnova.cangjie.psi.stubs.CangJiePlaceHolderStub
 import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 import com.intellij.lang.ASTNode
 
+/**
+ * 表示 `CjTypeConstraintList`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjTypeConstraintList : CjElementImplStub<CangJiePlaceHolderStub<CjTypeConstraintList>> {
     constructor(node: ASTNode) : super(node)
 
@@ -36,10 +39,16 @@ class CjTypeConstraintList : CjElementImplStub<CangJiePlaceHolderStub<CjTypeCons
         CjStubElementTypes.TYPE_CONSTRAINT_LIST,
     )
 
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitTypeConstraintList(this, data)
     }
 
+    /**
+     * 保存 `constraints`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val constraints: List<CjTypeConstraint>
         get() = getStubOrPsiChildrenAsList(
             CjStubElementTypes.TYPE_CONSTRAINT,

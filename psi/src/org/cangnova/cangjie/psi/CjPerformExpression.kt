@@ -33,10 +33,16 @@ import com.intellij.lang.ASTNode
  * 这样 raw-CFIR/CFIR 可以继续沿官方 effect AST 形状建模。
  */
 class CjPerformExpression(node: ASTNode) : CjExpressionImpl(node), CjStatementExpression {
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitPerformExpression(this, data)
     }
 
+    /**
+     * 保存 `expression`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     @get:IfNotParsed
     val expression: CjExpression?
         get() = findChildByClass(CjExpression::class.java)

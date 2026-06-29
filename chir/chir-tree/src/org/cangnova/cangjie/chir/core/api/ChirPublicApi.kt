@@ -14,8 +14,19 @@ import org.cangnova.cangjie.chir.core.model.ChirPackage
  * inside the `core.*` subdomains.
  */
 class ChirPublicApi(
+    /**
+     * 注册 CHIR 包使用的上下文。
+     */
     private val context: ChirContext,
+
+    /**
+     * 写入上下文的构建器。
+     */
     private val builder: ChirBuilder,
+
+    /**
+     * 注册后执行的校验器。
+     */
     private val validator: ChirValidator = DefaultChirValidator(),
 ) {
     /**

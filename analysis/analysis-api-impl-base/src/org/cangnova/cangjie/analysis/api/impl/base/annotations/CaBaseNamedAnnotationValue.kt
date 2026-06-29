@@ -15,15 +15,31 @@ public class CaBaseNamedAnnotationValue(
     name: Name,
     expression: CaAnnotationValue,
 ) : CaNamedAnnotationValue {
+    /**
+     * 注解实参名称。
+     */
     private val backingName: Name = name
+
+    /**
+     * 注解实参表达式值。
+     */
     private val backingExpression: CaAnnotationValue = expression
 
+    /**
+     * 命名注解实参沿用表达式值的 lifetime token。
+     */
     override val token: CaLifetimeToken
         get() = backingExpression.token
 
+    /**
+     * 返回注解实参名称。
+     */
     override val name: Name
         get() = withValidityAssertion { backingName }
 
+    /**
+     * 返回注解实参表达式值。
+     */
     override val expression: CaAnnotationValue
         get() = withValidityAssertion { backingExpression }
 }

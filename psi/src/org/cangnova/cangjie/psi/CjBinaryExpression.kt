@@ -28,11 +28,20 @@ import com.intellij.lang.ASTNode
 import com.intellij.psi.PsiElement
 import com.intellij.psi.tree.IElementType
 
+/**
+ * 表示 `CjBinaryExpression`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 open class CjBinaryExpression(node: ASTNode) : CjExpressionImpl(node), CjOperationExpression {
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitBinaryExpression(this, data)
     }
 
+    /**
+     * 保存 `left`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     @get:IfNotParsed
     val left: CjExpression?
         get() {
@@ -48,6 +57,9 @@ open class CjBinaryExpression(node: ASTNode) : CjExpressionImpl(node), CjOperati
             return null
         }
 
+    /**
+     * 保存 `right`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     @get:IfNotParsed
     val right: CjExpression?
         get() {
@@ -63,6 +75,9 @@ open class CjBinaryExpression(node: ASTNode) : CjExpressionImpl(node), CjOperati
             return null
         }
 
+    /**
+     * 暴露 `operationReference`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val operationReference: CjOperationReferenceExpression get() {
         val operationReference = findChildByType<PsiElement>(CjNodeTypes.OPERATION_REFERENCE)
             ?: throw NullPointerException("No operation reference for binary expression: " + children.contentToString())
@@ -70,6 +85,9 @@ open class CjBinaryExpression(node: ASTNode) : CjExpressionImpl(node), CjOperati
         return operationReference as CjOperationReferenceExpression
     }
 
+    /**
+     * 保存 `operationToken`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val operationToken: IElementType
         get() = operationReference.referencedNameElementType
 }

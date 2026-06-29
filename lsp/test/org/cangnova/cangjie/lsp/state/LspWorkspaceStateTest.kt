@@ -8,7 +8,13 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
+/**
+ * 校验 LSP 工作区状态对 initialize、workspace folder 和诊断协商的处理。
+ */
 class LspWorkspaceStateTest {
+    /**
+     * 校验 rootUri 可以退化为 workspace folder，并应用库搜索路径系统属性。
+     */
     @Test
     fun `initialize falls back to rootUri as workspace folder and applies project properties`() {
         withLibraryPropertiesRestored {
@@ -31,6 +37,9 @@ class LspWorkspaceStateTest {
         }
     }
 
+    /**
+     * 校验 workspace folder 增删会同步到当前状态。
+     */
     @Test
     fun `updateWorkspaceFolders keeps workspace folder state in sync`() {
         val state = LspWorkspaceState()
@@ -48,6 +57,9 @@ class LspWorkspaceStateTest {
         assertEquals(listOf("file:///workspace/two"), state.workspaceFolders().map(WorkspaceFolder::getUri))
     }
 
+    /**
+     * 校验 publishDiagnostics version 字段只在客户端显式协商时启用。
+     */
     @Test
     fun `supports publish diagnostics version only when client negotiates it`() {
         val versionedState = LspWorkspaceState()
@@ -69,6 +81,9 @@ class LspWorkspaceStateTest {
         assertFalse(plainState.supportsPublishDiagnosticsVersion())
     }
 
+    /**
+     * 校验 shutdown 标记独立于 initialize 生命周期维护。
+     */
     @Test
     fun `marks shutdown requested independently from initialize lifecycle`() {
         val state = LspWorkspaceState()
@@ -79,6 +94,9 @@ class LspWorkspaceStateTest {
         assertTrue(state.isShutdownRequested())
     }
 
+    /**
+     * 在测试执行后恢复库搜索路径相关系统属性。
+     */
     private fun withLibraryPropertiesRestored(action: () -> Unit) {
         val previousStdlib = System.getProperty(LspProjectConfiguration.STDLIB_PROPERTY)
         val previousLibrary = System.getProperty(LspProjectConfiguration.LIBRARY_PROPERTY)
@@ -90,6 +108,9 @@ class LspWorkspaceStateTest {
         }
     }
 
+    /**
+     * 按给定旧值恢复或清除系统属性。
+     */
     private fun restoreProperty(key: String, value: String?) {
         if (value == null) {
             System.clearProperty(key)

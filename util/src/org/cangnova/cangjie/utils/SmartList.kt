@@ -26,7 +26,13 @@ package org.cangnova.cangjie.utils
  * @param E 列表元素类型
  */
 class SmartList<E> private constructor(
+    /**
+     * 当前列表元素数量。
+     */
     private var mySize: Int,
+    /**
+     * 底层紧凑存储；null 表示空列表，单个元素直接存储，多元素使用数组存储。
+     */
     private var myElem: Any?, // null=空, E=单元素, Array<Any?>=多元素
 ) : AbstractMutableList<E>(), RandomAccess {
 
@@ -69,8 +75,14 @@ class SmartList<E> private constructor(
         }
     }
 
+    /**
+     * 当前列表大小。
+     */
     override val size: Int get() = mySize
 
+    /**
+     * 返回指定下标的元素。
+     */
     @Suppress("UNCHECKED_CAST")
     override fun get(index: Int): E {
         checkIndex(index)
@@ -80,6 +92,9 @@ class SmartList<E> private constructor(
         }
     }
 
+    /**
+     * 在指定位置插入元素，并根据列表大小维护紧凑存储形态。
+     */
     override fun add(index: Int, element: E) {
         if (index < 0 || index > mySize) {
             throw IndexOutOfBoundsException("Index: $index, Size: $mySize")
@@ -110,6 +125,9 @@ class SmartList<E> private constructor(
         modCount++
     }
 
+    /**
+     * 替换指定位置的元素并返回旧元素。
+     */
     @Suppress("UNCHECKED_CAST")
     override fun set(index: Int, element: E): E {
         checkIndex(index)
@@ -128,6 +146,9 @@ class SmartList<E> private constructor(
         }
     }
 
+    /**
+     * 删除指定位置的元素并返回旧元素。
+     */
     @Suppress("UNCHECKED_CAST")
     override fun removeAt(index: Int): E {
         checkIndex(index)
@@ -157,12 +178,18 @@ class SmartList<E> private constructor(
         return oldValue
     }
 
+    /**
+     * 清空列表并释放底层存储。
+     */
     override fun clear() {
         myElem = null
         mySize = 0
         modCount++
     }
 
+    /**
+     * 根据当前列表大小返回最轻量的迭代器。
+     */
     override fun iterator(): MutableIterator<E> = when (mySize) {
         0 -> EmptyIterator()
         1 -> SingletonIterator()
@@ -203,6 +230,9 @@ class SmartList<E> private constructor(
 
     // ── 私有工具 ──────────────────────────────────────────────────────
 
+    /**
+     * 校验下标是否位于当前列表范围内。
+     */
     private fun checkIndex(index: Int) {
         if (index < 0 || index >= mySize) {
             throw IndexOutOfBoundsException("Index: $index, Size: $mySize")
@@ -215,8 +245,17 @@ class SmartList<E> private constructor(
      * 不分配任何资源，直接返回"无更多元素"。
      */
     private class EmptyIterator<T> : MutableIterator<T> {
+        /**
+         * 空迭代器始终没有下一个元素。
+         */
         override fun hasNext() = false
+        /**
+         * 空迭代器读取元素时始终抛出 [NoSuchElementException]。
+         */
         override fun next() = throw NoSuchElementException()
+        /**
+         * 空迭代器不支持删除元素。
+         */
         override fun remove() = throw IllegalStateException()
     }
 

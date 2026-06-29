@@ -11,7 +11,13 @@ import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.impl.CfirPrimaryConstructor
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 
+/**
+ * 根据 CFIR 声明种类创建对应文件结构元素的工厂。
+ */
 internal object FileElementFactory {
+    /**
+     * 创建 class、extend、文件或普通声明对应的 structure element，并推进所需 resolve phase。
+     */
     fun createFileStructureElement(
         cfirDeclaration: CfirDeclaration,
         cfirFile: CfirFile,

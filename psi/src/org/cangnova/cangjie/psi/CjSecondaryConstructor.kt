@@ -32,6 +32,9 @@ import com.intellij.psi.PsiElement
 
 // 从构造函数
 
+/**
+ * 表示 `CjSecondaryConstructor`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjSecondaryConstructor : CjConstructor<CjSecondaryConstructor> {
 
     constructor(node: ASTNode) : super(node)
@@ -40,13 +43,28 @@ class CjSecondaryConstructor : CjConstructor<CjSecondaryConstructor> {
         CjStubElementTypes.SECONDARY_CONSTRUCTOR,
     )
 
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? = visitor.visitSecondaryConstructor(this, data)
+    /**
+     * 实现 `getConstructorKeyword` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getConstructorKeyword() = notNullChild<PsiElement>(super.getConstructorKeyword())
 
+    /**
+     * 实现 `getContainingTypeStatement` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getContainingTypeStatement() = parent?.parent as CjTypeStatement
 
+    /**
+     * 暴露 `isConst`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val isConst: Boolean
         get() = hasModifier(CjTokens.CONST_KEYWORD)
 
+    /**
+     * 实现 `getInitKeyword` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getInitKeyword() = notNullChild<PsiElement>(super.getInitKeyword())
 }

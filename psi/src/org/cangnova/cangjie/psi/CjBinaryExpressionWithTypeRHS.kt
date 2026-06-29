@@ -26,11 +26,20 @@ package org.cangnova.cangjie.psi
 
 import com.intellij.lang.ASTNode
 
+/**
+ * 表示 `CjBinaryExpressionWithTypeRHS`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjBinaryExpressionWithTypeRHS(node: ASTNode) : CjExpressionImpl(node), CjOperationExpression {
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitBinaryWithTypeRHSExpression(this, data)
     }
 
+    /**
+     * 保存 `left`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val left: CjExpression
         get() {
             val left = checkNotNull(
@@ -41,6 +50,9 @@ class CjBinaryExpressionWithTypeRHS(node: ASTNode) : CjExpressionImpl(node), CjO
             return left
         }
 
+    /**
+     * 保存 `right`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     @get:IfNotParsed
     val right: CjTypeReference?
         get() {
@@ -56,6 +68,9 @@ class CjBinaryExpressionWithTypeRHS(node: ASTNode) : CjExpressionImpl(node), CjO
             return null
         }
 
+    /**
+     * 暴露 `operationReference`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val operationReference: CjSimpleNameExpression get() =
         findChildByType(CjNodeTypes.OPERATION_REFERENCE)!!
 }

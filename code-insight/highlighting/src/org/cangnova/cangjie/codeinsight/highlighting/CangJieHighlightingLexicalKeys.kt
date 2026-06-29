@@ -16,7 +16,9 @@ import org.cangnova.cangjie.lexer.cdoc.lexer.CDocTokens.CDOC_HIGHLIGHT_TOKENS
  * 都应从这里取 token 映射，避免在不同宿主中各自维护一套 token -> key 规则。
  */
 object CangJieHighlightingLexicalKeys {
+    /** token 的主高亮属性映射。 */
     private val keys1: MutableMap<IElementType, TextAttributesKey> = HashMap()
+    /** token 的附加高亮属性映射，用于 CDoc tag 等叠加高亮。 */
     private val keys2: MutableMap<IElementType, TextAttributesKey> = HashMap()
 
     init {

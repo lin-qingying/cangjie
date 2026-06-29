@@ -18,6 +18,9 @@ import kotlin.io.path.readBytes
  * - 不需要 project/service 容器。
  */
 class CjoBinaryFileReaderTest {
+    /**
+     * 验证标准库 `std.core.cjo` 的 package 名可以仅通过二进制头部读取恢复。
+     */
     @Test
     fun readPackageFqNameFromStdCoreBinary() {
         val stdCoreBinary = locateStdlibFixtureRoot().resolve("std").resolve("std.core.cjo")
@@ -34,6 +37,9 @@ class CjoBinaryFileReaderTest {
         assertEquals(FqName("std.core"), packageFqName)
     }
 
+    /**
+     * 定位仓库中作为 `.cjo` 读取测试输入的标准库 fixture 根目录。
+     */
     private fun locateStdlibFixtureRoot(): Path {
         val repoRoot = locateRepositoryRoot(Paths.get("").toAbsolutePath().normalize())
         val fixtureRoot = repoRoot
@@ -49,6 +55,9 @@ class CjoBinaryFileReaderTest {
         return fixtureRoot
     }
 
+    /**
+     * 从当前工作目录向上查找包含 `settings.gradle.kts` 的仓库根目录。
+     */
     private fun locateRepositoryRoot(start: Path): Path {
         return generateSequence(start) { current -> current.parent }
             .firstOrNull { candidate -> candidate.resolve("settings.gradle.kts").isRegularFile() }

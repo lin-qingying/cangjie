@@ -27,6 +27,9 @@ package org.cangnova.cangjie.psi.stubs.impl
 import com.intellij.psi.stubs.StubInputStream
 import com.intellij.psi.stubs.StubOutputStream
 
+/**
+ * 表示 `CangJieStubOrigin`，承载PSI Stub中的语法节点、索引桩或辅助模型。
+ */
 sealed class CangJieStubOrigin {
     companion object {
         private const val FACADE_KIND = 1
@@ -52,11 +55,23 @@ sealed class CangJieStubOrigin {
         }
     }
 
+    /**
+     * 保存 `kind`，供PSI Stub流程读取节点结构或语义信息。
+     */
     protected abstract val kind: Int
 
+    /**
+     * 提供 `serializeContent` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
+     */
     protected abstract fun serializeContent(dataStream: StubOutputStream)
 
+    /**
+     * 表示 `Facade`，承载PSI Stub中的语法节点、索引桩或辅助模型。
+     */
     data class Facade(
+        /**
+         * 保存 `className`，供PSI Stub流程读取节点结构或语义信息。
+         */
         val className: String, // Internal name of the package part class
     ) : CangJieStubOrigin() {
         companion object {
@@ -67,15 +82,30 @@ sealed class CangJieStubOrigin {
             }
         }
 
+        /**
+         * 暴露 `kind`，实现PSI Stub节点对上层接口的属性契约。
+         */
         override val kind: Int get() = FACADE_KIND
 
+        /**
+         * 实现 `serializeContent` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+         */
         override fun serializeContent(dataStream: StubOutputStream) {
             dataStream.writeName(className)
         }
     }
 
+    /**
+     * 表示 `MultiFileFacade`，承载PSI Stub中的语法节点、索引桩或辅助模型。
+     */
     data class MultiFileFacade(
+        /**
+         * 保存 `className`，供PSI Stub流程读取节点结构或语义信息。
+         */
         val className: String, // Internal name of the package part class
+        /**
+         * 保存 `facadeClassName`，供PSI Stub流程读取节点结构或语义信息。
+         */
         val facadeClassName: String, // Internal name of the facade class
     ) : CangJieStubOrigin() {
         companion object {
@@ -87,8 +117,14 @@ sealed class CangJieStubOrigin {
             }
         }
 
+        /**
+         * 暴露 `kind`，实现PSI Stub节点对上层接口的属性契约。
+         */
         override val kind: Int get() = MULTI_FILE_FACADE_KIND
 
+        /**
+         * 实现 `serializeContent` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+         */
         override fun serializeContent(dataStream: StubOutputStream) {
             dataStream.writeName(className)
             dataStream.writeName(facadeClassName)

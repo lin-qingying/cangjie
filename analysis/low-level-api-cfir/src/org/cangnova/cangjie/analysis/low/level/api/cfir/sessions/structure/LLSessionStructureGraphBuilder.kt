@@ -6,6 +6,9 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSessionCacheStorage
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSourcesSession
 
+/**
+ * 从 session cache storage 构建 session structure 图。
+ */
 internal object LLSessionStructureGraphBuilder {
     /**
      * Builds an [LLSessionStructureGraph] from all sessions in the given [storage].
@@ -39,6 +42,11 @@ internal object LLSessionStructureGraphBuilder {
         return graph
     }
 
+    /**
+     * 为已创建的节点填充源码 session 依赖边。
+     *
+     * 只使用已经初始化的 lazy dependencies，避免为了统计输出触发新的 session 计算。
+     */
     private fun assignDependencies(nodesBySession: Map<LLCfirSession, LLSessionStructureGraphNode>) {
         nodesBySession.values.forEach { node ->
             val session = node.session
@@ -52,6 +60,9 @@ internal object LLSessionStructureGraphBuilder {
         }
     }
 
+    /**
+     * 从 analysis root 节点出发计算每个节点到最近 analysis root 的距离。
+     */
     private fun assignDistancesFromAnalysisRoots(analysisRootNodes: List<LLSessionStructureGraphNode>) {
         val queue = ArrayDeque<LLSessionStructureGraphNode>()
 

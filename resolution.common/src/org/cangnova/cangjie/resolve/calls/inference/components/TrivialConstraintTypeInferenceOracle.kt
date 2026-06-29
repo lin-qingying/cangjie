@@ -9,6 +9,9 @@ import org.cangnova.cangjie.resolve.calls.inference.model.Constraint
 import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintKind
 import org.cangnova.cangjie.type.model.*
 
+/**
+ * 判断约束系统中“平凡约束”和可用结果类型的 oracle。
+ */
 class TrivialConstraintTypeInferenceOracle private constructor(context: TypeSystemInferenceExtensionContext) :
     TypeSystemInferenceExtensionContext by context {
     // This constructor is used for injection only in old FE
@@ -17,6 +20,9 @@ class TrivialConstraintTypeInferenceOracle private constructor(context: TypeSyst
     // The idea is to add knowledge that constraint `Nothing(?) <: T` is quite useless and
     // it's totally fine to go and resolve postponed argument without fixation T to Nothing(?).
     // In other words, constraint `Nothing(?) <: T` is *not* proper
+    /**
+     * 判断约束是否不携带有价值的推断信息。
+     */
     fun isNotInterestingConstraint(constraint: Constraint): Boolean {
         return constraint.kind == ConstraintKind.LOWER && constraint.type.typeConstructor().isNothingConstructor()
     }
@@ -24,6 +30,9 @@ class TrivialConstraintTypeInferenceOracle private constructor(context: TypeSyst
     // This function controls the choice between sub and super result type
     // Even that Nothing(?) is the most specific type for subtype, it doesn't bring valuable information to the user,
     // therefore it is discriminated in favor of supertype
+    /**
+     * 判断候选结果类型是否适合固定为推断结果。
+     */
     fun isSuitableResultedType(
         resultType: CangJieTypeMarker
     ): Boolean {
@@ -35,6 +44,9 @@ class TrivialConstraintTypeInferenceOracle private constructor(context: TypeSyst
     // there will be constraint `approximation(out K) <: K` => `Nothing <: K`, which is innocent
     // but can change result of the constraint system.
     // Therefore, here we avoid adding such trivial constraints to have stable constraint system
+    /**
+     * 判断合并阶段生成的新约束是否可视为平凡约束。
+     */
     fun isGeneratedConstraintTrivial(
         baseConstraint: Constraint,
         otherConstraint: Constraint,
@@ -56,10 +68,16 @@ class TrivialConstraintTypeInferenceOracle private constructor(context: TypeSyst
     }
 
 
+    /**
+     * 判断类型构造器是否为 Nothing。
+     */
     private fun CangJieTypeMarker.isNothingOrNullableNothing(): Boolean =
         typeConstructor().isNothingConstructor()
 
 
+    /**
+     * 判断类型树中是否只包含 Nothing。
+     */
     private fun CangJieTypeMarker.containsOnlyNothing(): Boolean =
         contains {
             it.isNothing()
@@ -67,6 +85,9 @@ class TrivialConstraintTypeInferenceOracle private constructor(context: TypeSyst
 
 
     companion object {
+        /**
+         * 为指定类型系统上下文创建 oracle。
+         */
         fun create(context: TypeSystemInferenceExtensionContext) = TrivialConstraintTypeInferenceOracle(context)
     }
 }

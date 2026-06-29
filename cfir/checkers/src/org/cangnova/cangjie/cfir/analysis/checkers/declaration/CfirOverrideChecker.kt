@@ -25,13 +25,19 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.modifierByToken
+import org.cangnova.cangjie.cfir.analysis.checkers.realSourceModifiers
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
+import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
+import org.cangnova.cangjie.cfir.scopes.overrideSignatureKey
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.types.*
+import org.cangnova.cangjie.cfir.unwrapSubstitutionOverrides
 import org.cangnova.cangjie.descriptors.Visibilities
+import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.type.AbstractTypeChecker
 import org.cangnova.cangjie.type.model.TypeConstructorMarker
 
@@ -104,7 +110,11 @@ object CfirOverrideChecker : CfirClassLikeChecker() {
      * 当前 CFIR 同时支持普通 override 和静态成员 redef，两者共用后续目标查找与兼容性规则。
      */
     private fun CfirCallableDeclaration.hasOverrideLikeModifier(): Boolean {
-        return status.isOverride || status.isRedef
+        val modifiers = source?.realSourceModifiers()
+        return modifiers?.modifierByToken(CjTokens.OVERRIDE_KEYWORD) != null ||
+                modifiers?.modifierByToken(CjTokens.REDEF_KEYWORD) != null ||
+                status.isOverride ||
+                status.isRedef
     }
 
     /**
@@ -114,8 +124,24 @@ object CfirOverrideChecker : CfirClassLikeChecker() {
      * 合法性问题误报为继承目标缺失。
      */
     private fun CfirCallableDeclaration.isValidOverrideLikeDeclaration(): Boolean {
-        if (status.isRedef && !status.isStatic) return false
-        if (status.isOverride && status.isStatic) return false
+        val modifiers = source?.realSourceModifiers()
+        val hasRedefModifier = if (modifiers != null) {
+            modifiers.modifierByToken(CjTokens.REDEF_KEYWORD) != null
+        } else {
+            status.isRedef
+        }
+        val hasOverrideModifier = if (modifiers != null) {
+            modifiers.modifierByToken(CjTokens.OVERRIDE_KEYWORD) != null
+        } else {
+            status.isOverride
+        }
+        val hasStaticModifier = if (modifiers != null) {
+            modifiers.modifierByToken(CjTokens.STATIC_KEYWORD) != null
+        } else {
+            status.isStatic
+        }
+        if (hasRedefModifier && !hasStaticModifier) return false
+        if (hasOverrideModifier && hasStaticModifier) return false
         return true
     }
 
@@ -127,20 +153,73 @@ object CfirOverrideChecker : CfirClassLikeChecker() {
      */
     context(context: CheckerContext)
     private fun CfirCallableDeclaration.hasInheritedSignatureIgnoringStatic(
-        classScope: org.cangnova.cangjie.cfir.scopes.CfirTypeScope,
+        classScope: CfirTypeScope,
         ownerDeclaration: CfirClassLikeDeclaration,
     ): Boolean {
         return when (val symbol = symbol) {
             is CfirNamedFunctionSymbol -> classScope
-                .collectDirectOverriddenFunctionsIgnoringStatic(symbol)
-                .any { it.canParticipateInOverrideTargetSearch(ownerDeclaration, context) }
+                .hasInheritedFunctionSignatureIgnoringStatic(symbol, ownerDeclaration)
 
             is CfirPropertySymbol -> classScope
-                .collectDirectOverriddenPropertiesIgnoringStatic(symbol)
-                .any { it.canParticipateInOverrideTargetSearch(ownerDeclaration, context) }
+                .hasInheritedPropertySignatureIgnoringStatic(symbol, ownerDeclaration)
 
             else -> false
         }
+    }
+
+    /**
+     * 按名称直接扫描 use-site scope 中的父函数签名。
+     *
+     * scope 的 direct-overridden 入口会过滤 static 差异；这里用于抑制 static/redef
+     * 冲突下的普通 `NOTHING_TO_OVERRIDE`，因此必须保留同签名但静态性不同的父成员。
+     */
+    context(context: CheckerContext)
+    private fun CfirTypeScope.hasInheritedFunctionSignatureIgnoringStatic(
+        symbol: CfirNamedFunctionSymbol,
+        ownerDeclaration: CfirClassLikeDeclaration,
+    ): Boolean {
+        val targetSignature = symbol.overrideSignatureKey()
+        var found = false
+        processCallablesByName(symbol.name) { candidate ->
+            if (found || candidate !is CfirNamedFunctionSymbol || candidate == symbol) return@processCallablesByName
+            if (!candidate.isInheritedCandidateOf(ownerDeclaration, context)) return@processCallablesByName
+            if (candidate.overrideSignatureKey() != targetSignature) return@processCallablesByName
+            if (!candidate.canParticipateInOverrideTargetSearch(ownerDeclaration, context)) return@processCallablesByName
+            found = true
+        }
+        return found
+    }
+
+    /**
+     * 按名称直接扫描 use-site scope 中的父属性签名，语义同函数版本。
+     */
+    context(context: CheckerContext)
+    private fun CfirTypeScope.hasInheritedPropertySignatureIgnoringStatic(
+        symbol: CfirPropertySymbol,
+        ownerDeclaration: CfirClassLikeDeclaration,
+    ): Boolean {
+        val targetSignature = symbol.overrideSignatureKey()
+        var found = false
+        processCallablesByName(symbol.name) { candidate ->
+            if (found || candidate !is CfirPropertySymbol || candidate == symbol) return@processCallablesByName
+            if (!candidate.isInheritedCandidateOf(ownerDeclaration, context)) return@processCallablesByName
+            if (candidate.overrideSignatureKey() != targetSignature) return@processCallablesByName
+            if (!candidate.canParticipateInOverrideTargetSearch(ownerDeclaration, context)) return@processCallablesByName
+            found = true
+        }
+        return found
+    }
+
+    /**
+     * 过滤掉当前类自己的 callable，只保留从父类型/extend 进入 use-site scope 的候选。
+     */
+    private fun CfirCallableSymbol<*>.isInheritedCandidateOf(
+        ownerDeclaration: CfirClassLikeDeclaration,
+        context: CheckerContext,
+    ): Boolean {
+        val currentClassId = (ownerDeclaration.symbol as? CfirClassLikeSymbol<*>)?.classId ?: return true
+        val candidateClassId = ownerClassId(context) ?: return true
+        return candidateClassId != currentClassId
     }
 
     /**
@@ -252,6 +331,15 @@ object CfirOverrideChecker : CfirClassLikeChecker() {
                 return
             }
 
+            if (declaration.shouldReportStaticInterfaceReturnTypeIncompatible(overridden, context)) {
+                reporter.reportOn(
+                    source = (declaration as? CfirNamedFunction)?.functionNameDiagnosticSource() ?: declaration.source,
+                    factory = CfirErrors.RETURN_TYPE_INCOMPATIBLE,
+                    a = overridden.name,
+                )
+                return
+            }
+
             reporter.reportOn(
                 source = declaration.source,
                 factory = CfirErrors.OVERRIDING_RETURN_TYPE_MISMATCH,
@@ -261,6 +349,21 @@ object CfirOverrideChecker : CfirClassLikeChecker() {
             )
             return
         }
+    }
+
+    /**
+     * static 成员实现 interface static 要求时，官方走 `sema_return_type_incompatible`。
+     */
+    private fun CfirCallableDeclaration.shouldReportStaticInterfaceReturnTypeIncompatible(
+        overridden: CfirCallableSymbol<*>,
+        context: CheckerContext,
+    ): Boolean {
+        if (this !is CfirNamedFunction) return false
+        if (!status.isStatic) return false
+        if (!overridden.isBound) return false
+        val originalOverridden = overridden.unwrapSubstitutionOverrides()
+        if (!originalOverridden.isBound || !originalOverridden.cfir.status.isStatic) return false
+        return context.ownerClassSymbol(originalOverridden)?.cfir is CfirInterface
     }
 
     /**

@@ -37,5 +37,8 @@ enum class AnnotationUseSiteTarget(renderName: String? = null) {
     PROPERTY_DELEGATE_FIELD("delegate"),
     ;
 
+    /**
+     * 该 use-site target 在源码或诊断消息中的展示名称。
+     */
     val renderName: String = renderName ?: name.toLowerCaseAsciiOnly()
 }

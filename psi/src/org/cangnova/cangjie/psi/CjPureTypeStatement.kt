@@ -23,23 +23,62 @@
  */
 package org.cangnova.cangjie.psi
 
+/**
+ * 定义 `CjPureTypeStatement` 接口，约束仓颉 PSI节点或服务需要暴露的结构能力。
+ */
 interface CjPureTypeStatement : CjPureElement, CjDeclarationContainer {
+    /**
+     * 提供 `getName` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun getName(): String?
 
+    /**
+     * 保存 `superTypeListEntries`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val superTypeListEntries: List<CjSuperTypeListEntry>
 
+    /**
+     * 提供 `hasExplicitPrimaryConstructor` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun hasExplicitPrimaryConstructor(): Boolean
 
+    /**
+     * 提供 `hasPrimaryConstructor` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun hasPrimaryConstructor(): Boolean
 
+    /**
+     * 保存 `primaryConstructor`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val primaryConstructor: CjPrimaryConstructor?
+    /**
+     * 保存 `annotations`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val annotations: CjAnnotations?
+    /**
+     * 保存 `primaryConstructorModifierList`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val primaryConstructorModifierList: CjModifierList?
 
+    /**
+     * 保存 `primaryConstructorParameters`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val primaryConstructorParameters: List<CjParameter>
+    /**
+     * 保存 `finalizers`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val finalizers: List<CjFinalizer>
+    /**
+     * 保存 `secondaryConstructors`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val secondaryConstructors: List<CjSecondaryConstructor>
+    /**
+     * 保存 `primaryConstructors`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val primaryConstructors: List<CjPrimaryConstructor>
 
+    /**
+     * 保存 `body`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val body: CjAbstractClassBody?
 }

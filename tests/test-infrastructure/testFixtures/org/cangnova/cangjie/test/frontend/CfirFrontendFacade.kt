@@ -52,6 +52,9 @@ open class CfirFrontendFacade(
     testServices: TestServices,
 ) : FrontendFacade<CfirOutputArtifact>(testServices, FrontendKinds.CFIR) {
 
+    /**
+     * 保存 `additionalServices`，供CFIR 前端测试在测试执行期间读取或传递。
+     */
     override val additionalServices: List<ServiceRegistrationData>
         get() = listOf(
             frontendBasedFacadesMarkerRegistrationData,
@@ -59,13 +62,22 @@ open class CfirFrontendFacade(
             service(::CfirDiagnosticCollectorService),
         )
 
+    /**
+     * 保存 `directiveContainers`，供CFIR 前端测试在测试执行期间读取或传递。
+     */
     override val directiveContainers
         get() = listOf(CfirDiagnosticsDirectives)
 
+    /**
+     * 执行 `shouldTransform` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     override fun shouldTransform(module: TestModule): Boolean {
         return shouldRunCfirFrontendFacade(module, testServices)
     }
 
+    /**
+     * 执行 `analyze` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     override fun analyze(module: TestModule): CfirOutputArtifact {
         val sortedModules = sortDependsOnTopologically(module)
         val (moduleDataMap, moduleDataProvider) = initializeModuleData(sortedModules)
@@ -96,6 +108,9 @@ open class CfirFrontendFacade(
         return CfirOutputArtifactImpl(firOutputPartForDependsOnModules)
     }
 
+    /**
+     * 提供 `sortDependsOnTopologically` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     protected fun sortDependsOnTopologically(module: TestModule): List<TestModule> {
         val reachableModules = linkedSetOf<TestModule>()
 
@@ -111,6 +126,9 @@ open class CfirFrontendFacade(
         }.asReversed()
     }
 
+    /**
+     * 提供 `initializeModuleData` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     private fun initializeModuleData(
         modules: List<TestModule>,
     ): Pair<Map<TestModule, CfirModuleData>, ModuleDataProvider> {
@@ -144,6 +162,9 @@ open class CfirFrontendFacade(
         return moduleDataMap to libraryList.moduleDataProvider
     }
 
+    /**
+     * 提供 `createLibrarySession` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     private fun createLibrarySession(
         module: TestModule,
         moduleName: Name,
@@ -170,6 +191,9 @@ open class CfirFrontendFacade(
         )
     }
 
+    /**
+     * 提供 `analyze` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     private fun analyze(
         module: TestModule,
         moduleData: CfirModuleData,
@@ -250,6 +274,9 @@ open class CfirFrontendFacade(
         else -> false
     }
 
+    /**
+     * 提供 `createModuleBasedSession` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     */
     private fun createModuleBasedSession(
         module: TestModule,
         moduleData: CfirModuleData,
@@ -293,6 +320,9 @@ open class CfirFrontendFacade(
     }
 }
 
+/**
+ * 提供 `sourceDependencyModules` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+ */
 private fun TestModule.sourceDependencyModules(): List<TestModule> {
     return allDependencies
         .filter { it.kind == Source }

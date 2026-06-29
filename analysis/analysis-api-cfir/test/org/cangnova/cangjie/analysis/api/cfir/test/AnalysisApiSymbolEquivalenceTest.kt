@@ -38,8 +38,14 @@ import org.junit.jupiter.api.Test
 class AnalysisApiSymbolEquivalenceTest : AbstractAnalysisApiExecutionTest(
     "analysis/analysis-api-cfir/testData/equivalence",
 ) {
+    /**
+     * 使用 standalone CFIR 配置运行 public symbol 等价性协议测试。
+     */
     override val configurator = CaCfirStandaloneAnalysisApiTestConfigurator
 
+    /**
+     * 验证不同入口得到的同一语义 symbol 等价，而不同局部绑定保持不等价。
+     */
     @Test
     fun symbolEquivalence(mainFile: CjFile) {
         val extendDeclaration = mainFile.declarations.filterIsInstance<CjExtend>().single()
@@ -97,6 +103,9 @@ class AnalysisApiSymbolEquivalenceTest : AbstractAnalysisApiExecutionTest(
     }
 }
 
+/**
+ * 判断 simple-name 是否处于真实引用位置，排除 pattern 声明侧名称。
+ */
 private fun CjSimpleNameExpression.isUsageReference(): Boolean {
     return this !is CjBindingPattern &&
         parent !is CjBindingPattern &&

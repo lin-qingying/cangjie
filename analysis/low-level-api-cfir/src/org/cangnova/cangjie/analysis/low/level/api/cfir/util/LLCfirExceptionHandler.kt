@@ -9,11 +9,20 @@ import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.CfirExceptionHandler
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 
+/**
+ * low-level CFIR 分析使用的异常处理器。
+ */
 internal object LLCfirExceptionHandler : CfirExceptionHandler() {
+    /**
+     * 元素分析异常在 low-level 层不吞掉，直接重新抛出。
+     */
     override fun handleExceptionOnElementAnalysis(element: CfirElement, throwable: Throwable): Nothing {
         throw throwable
     }
 
+    /**
+     * 文件分析异常在 low-level 层不吞掉，直接重新抛出。
+     */
     override fun handleExceptionOnFileAnalysis(file: CfirFile, throwable: Throwable): Nothing {
         throw throwable
     }

@@ -28,6 +28,9 @@ import org.cangnova.cangjie.psi.stubs.CangJiePlaceHolderStub
 import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 import com.intellij.lang.ASTNode
 
+/**
+ * 表示 `CjTupleType`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjTupleType : CjElementImplStub<CangJiePlaceHolderStub<CjTupleType>>, CjTypeElement {
 
     constructor(node: ASTNode) : super(node)
@@ -35,6 +38,9 @@ class CjTupleType : CjElementImplStub<CangJiePlaceHolderStub<CjTupleType>>, CjTy
     constructor(stub: CangJiePlaceHolderStub<CjTupleType>) : super(stub, CjStubElementTypes.TUPLE_TYPE)
 //    constructor(stub:CangJieTupleTypeStub):super(stub, CjStubElementTypes.TUPLE_TYPE)
 
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitTupleType(this, data)
     }
@@ -44,6 +50,9 @@ class CjTupleType : CjElementImplStub<CangJiePlaceHolderStub<CjTupleType>>, CjTy
 //        val list: CjParameterList = getParameterList()
 //        return list?.parameters ?: emptyList()
 //    }
+    /**
+     * 暴露 `typeArgumentsAsTypes`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val typeArgumentsAsTypes: List<CjTypeReference>
         get() = getStubOrPsiChildrenAsList(CjStubElementTypes.TYPE_REFERENCE)
 }

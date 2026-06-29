@@ -16,11 +16,17 @@ import org.cangnova.cangjie.analysis.test.framework.test.configurators.TestModul
  * 不再放在 IDE/CFIR 通用工厂中混合分派。
  */
 object CaCfirStandaloneModeTestConfiguratorFactory : AnalysisApiTestConfiguratorFactory() {
+    /**
+     * 为支持的 standalone CFIR 测试配置创建 configurator。
+     */
     override fun createConfigurator(data: AnalysisApiTestConfiguratorFactoryData): AnalysisApiTestConfigurator {
         requireSupported(data)
         return CaCfirStandaloneAnalysisApiTestConfigurator
     }
 
+    /**
+     * 判断当前测试维度是否属于 standalone CFIR normal session 模式。
+     */
     override fun supportMode(data: AnalysisApiTestConfiguratorFactoryData): Boolean {
         return when {
             data.frontend != FrontendKind.Cfir -> false

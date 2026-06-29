@@ -18,16 +18,34 @@ import org.cangnova.cangjie.test.services.assertions
  * 针对选定 declaration 依次推进所有 CFIR resolve phase，并在每一阶段输出目标声明与相关文件快照。
  */
 abstract class AbstractCfirLazyDeclarationResolveOverAllPhasesTest : AbstractCfirLazyDeclarationResolveTestCase() {
+    /**
+     * 当前 golden 输出文件扩展名。
+     */
     protected open val outputExtension: String
         get() = ".txt"
 
+    /**
+     * lazy resolve 测试的渲染范围。
+     */
     protected enum class OutputRenderingMode {
+        /**
+         * 渲染所有模块中的全部 CFIR 文件。
+         */
         ALL_FILES_FROM_ALL_MODULES,
+        /**
+         * 仅渲染目标声明。
+         */
         ONLY_TARGET_DECLARATION,
     }
 
+    /**
+     * 子类可在执行前校验 [resolutionFacade]。
+     */
     protected open fun checkResolutionFacade(resolutionFacade: LLResolutionFacade) {}
 
+    /**
+     * 依次推进目标声明到所有 CFIR 阶段，并生成阶段 golden。
+     */
     protected fun doLazyResolveTest(
         cjFile: CjFile,
         testServices: TestServices,
@@ -85,6 +103,9 @@ abstract class AbstractCfirLazyDeclarationResolveOverAllPhasesTest : AbstractCfi
         )
     }
 
+    /**
+     * 判断 [target] 是否位于当前 [CfirFile] 子树内。
+     */
     private fun CfirFile.containsElement(target: CfirElementWithResolveState): Boolean {
         if (this === target) return true
         var found = false

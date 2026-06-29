@@ -29,23 +29,47 @@ import com.intellij.lang.ASTNode
 import com.intellij.psi.PsiElement
 import com.intellij.psi.util.PsiTreeUtil
 
+/**
+ * 表示 `CjMacroInput`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjMacroInput(node: ASTNode) : CjExpressionImpl(node) {
 
+    /**
+     * 保存 `declarations`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val declarations: CjDeclaration?
         get() {
             return PsiTreeUtil.getChildrenOfTypeAsList(this, CjDeclaration::class.java).firstOrNull()
         }
+    /**
+     * 保存 `tokens`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val tokens: List<PsiElement>
         get() = findChildByType<CjQuoteTokens>(CjNodeTypes.QUOTE_TOKENS)?.tokens ?: emptyList()
 }
 
+/**
+ * 表示 `CjQuoteParameters`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjQuoteParameters(node: ASTNode) : CjExpressionImpl(node)
+/**
+ * 表示 `CjMacroAttr`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjMacroAttr(node: ASTNode) : CjExpressionImpl(node){
+    /**
+     * 保存 `tokens`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val tokens: List<PsiElement>
         get() = findChildByType<CjQuoteTokens>(CjNodeTypes.QUOTE_TOKENS)?.tokens ?: emptyList()
 
 }
+/**
+ * 表示 `CjQuoteTokens`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjQuoteTokens(node: ASTNode) : CjExpressionImpl(node) {
 
+    /**
+     * 保存 `tokens`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val tokens: List<PsiElement> get() = findChildrenByType(CangJieExpressionParsing.QUOTE_TOKENS)
 }

@@ -14,12 +14,27 @@ import org.cangnova.cangjie.analysis.decompiler.stub.file.CangJieMetadataStubBui
  * - 通过 view provider 创建 decompiled PSI。
  */
 abstract class CangJieMetadataDecompiler : CjoFileDecompilers.Full() {
+    /**
+     * 判断指定文件是否可由当前 metadata stub builder 处理。
+     */
     final override fun accepts(file: VirtualFile): Boolean = getStubBuilder().isSupported(file)
 
+    /**
+     * 返回当前 decompiler 使用的 `.cjo` stub builder。
+     */
     abstract override fun getStubBuilder(): CangJieMetadataStubBuilder
 
+    /**
+     * 根据 view provider 创建具体反编译 PSI 文件。
+     */
     protected abstract fun createFile(viewProvider: CangJieDecompiledFileViewProvider): CjDecompiledFile
 
+    /**
+     * 创建带 metadata 校验的仓颉反编译 view provider。
+     *
+     * 只有 stub builder 能从虚拟文件读取 stub 时才构造 [CjDecompiledFile]，
+     * 否则返回空 PSI，使平台继续按无可用反编译结果处理该文件。
+     */
     final override fun createFileViewProvider(
         file: VirtualFile,
         manager: PsiManager,

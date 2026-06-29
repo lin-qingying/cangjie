@@ -26,7 +26,13 @@ package org.cangnova.cangjie.psi.stubs.impl
 
 import com.intellij.util.io.StringRef
 
+/**
+ * 提供 `Utils` 单例，集中承载PSI Stub的共享状态、工厂或工具行为。
+ */
 object Utils {
+    /**
+     * 提供 `wrapStrings` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
+     */
     fun wrapStrings(names: List<String>): Array<StringRef> {
         return Array(names.size) { i -> StringRef.fromString(names[i])!! }
     }

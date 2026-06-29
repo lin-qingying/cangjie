@@ -55,6 +55,9 @@ class CjFieldElementType(debugName: String) :
         CangJieFieldStub::class.java,
     ) {
 
+    /**
+     * 实现 `createStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createStub(psi: CjFieldVariable, parentStub: StubElement<out PsiElement>?): CangJieFieldStub {
         return CangJieFieldStubImpl(
             parentStub,
@@ -68,6 +71,9 @@ class CjFieldElementType(debugName: String) :
         )
     }
 
+    /**
+     * 实现 `serialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     @Throws(IOException::class)
     override fun serialize(stub: CangJieFieldStub, dataStream: StubOutputStream) {
         dataStream.writeName(stub.name)
@@ -82,6 +88,9 @@ class CjFieldElementType(debugName: String) :
         }
     }
 
+    /**
+     * 实现 `deserialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     @Throws(IOException::class)
     override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>?): CangJieFieldStub {
         val name = dataStream.readName()
@@ -104,14 +113,23 @@ class CjFieldElementType(debugName: String) :
         )
     }
 
+    /**
+     * 实现 `indexStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun indexStub(stub: CangJieFieldStub, sink: IndexSink) {
         getInstance().indexFieldVariable(stub, sink)
     }
 
+    /**
+     * 实现 `createPsi` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createPsi(stub: CangJieFieldStub): CjFieldVariable {
         return CjFieldVariable(stub)
     }
 
+    /**
+     * 实现 `createPsiFromAst` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createPsiFromAst(node: ASTNode): CjFieldVariable {
         return CjFieldVariable(node)
     }

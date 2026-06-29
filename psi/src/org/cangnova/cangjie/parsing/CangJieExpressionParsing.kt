@@ -41,26 +41,53 @@ import org.cangnova.cangjie.psi.CjNodeTypes
 import org.cangnova.cangjie.psi.CjNodeTypes.*
 import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes.BASIC_REFERENCE_EXPRESSION
 
+/**
+ * 表示 `CangJieExpressionParsing`，承载仓颉语法解析中的语法节点、索引桩或辅助模型。
+ */
 open class CangJieExpressionParsing(
     builder: SemanticWhitespaceAwarePsiBuilder,
+    /**
+     * 保存 `cangJieParsing` 的内部状态，供仓颉语法解析实现维护节点缓存或解析上下文。
+     */
     private val cangJieParsing: CangJieParsing,
     isLazy: Boolean,
 ) : AbstractCangJieParsing(
     builder,
     isLazy,
 ) {
+    /**
+     * 保存 `ARROW_SET` 的内部状态，供仓颉语法解析实现维护节点缓存或解析上下文。
+     */
     private val ARROW_SET = TokenSet.create(DOUBLE_ARROW)
+    /**
+     * 保存 `ARROW_COMMA_SET` 的内部状态，供仓颉语法解析实现维护节点缓存或解析上下文。
+     */
     private val ARROW_COMMA_SET = TokenSet.create(DOUBLE_ARROW, COMMA)
+    /**
+     * 保存 `TRY_RESOURCE_TYPE_RECOVERY_SET` 的内部状态，供仓颉语法解析实现维护节点缓存或解析上下文。
+     */
     private val TRY_RESOURCE_TYPE_RECOVERY_SET = TokenSet.create(EQ, COMMA, RPAR)
+    /**
+     * 保存 `VARRAY_TYPE_RECOVERY_SET` 的内部状态，供仓颉语法解析实现维护节点缓存或解析上下文。
+     */
     private val VARRAY_TYPE_RECOVERY_SET = TokenSet.create(GT, EOL_OR_SEMICOLON)
+    /**
+     * 保存 `VARRAY_LINE_RECOVERY_SET` 的内部状态，供仓颉语法解析实现维护节点缓存或解析上下文。
+     */
     private val VARRAY_LINE_RECOVERY_SET = TokenSet.create(EOL_OR_SEMICOLON)
 
+    /**
+     * 保存 `quoteExpressionParsing`，供仓颉语法解析流程读取节点结构或语义信息。
+     */
     val quoteExpressionParsing = CangJieQuoteExpressionParsing(
         builder,
         this,
         true
     )
 
+    /**
+     * 提供 `create` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
+     */
     public override fun create(builder: SemanticWhitespaceAwarePsiBuilder): CangJieParsing =
         cangJieParsing.create(builder)
 
@@ -315,7 +342,13 @@ open class CangJieExpressionParsing(
         ),
         ;
 
+        /**
+         * 保存 `higher` 的内部状态，供仓颉语法解析实现维护节点缓存或解析上下文。
+         */
         private var higher: Precedence? = null
+        /**
+         * 保存 `operations` 的内部状态，供仓颉语法解析实现维护节点缓存或解析上下文。
+         */
         private val operations: TokenSet
 
         @OptIn(ExperimentalStdlibApi::class)
@@ -333,10 +366,16 @@ open class CangJieExpressionParsing(
             this.operations = TokenSet.create(*operations)
         }
 
+        /**
+         * 提供 `getOperations` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
+         */
         fun getOperations(): TokenSet {
             return operations
         }
 
+        /**
+         * 提供 `parseRightHandSide` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
+         */
         context(context: ParsingContext)
         open fun parseRightHandSide(
             operation: IElementType,
@@ -351,6 +390,9 @@ open class CangJieExpressionParsing(
             return BINARY_EXPRESSION
         }
 
+        /**
+         * 提供 `parseHigherPrecedence` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
+         */
         context(context: ParsingContext)
         open fun parseHigherPrecedence(parser: CangJieExpressionParsing) {
             assert(higher != null)
@@ -620,15 +662,24 @@ open class CangJieExpressionParsing(
         }
     }
 
+    /**
+     * 执行 `atVArrayTypeArgumentStart` 内部辅助逻辑，支撑仓颉语法解析节点的结构解析与访问。
+     */
     private fun atVArrayTypeArgumentStart(): Boolean =
         at(VARRAY_KEYWORD) || atSet(BASICTYPES) || at(IDENTIFIER) || at(LPAR) || at(QUEST) || at(THIS_KEYWORD)
 
+    /**
+     * 执行 `skipVArrayMismatchTrivia` 内部辅助逻辑，支撑仓颉语法解析节点的结构解析与访问。
+     */
     private fun skipVArrayMismatchTrivia() {
         while (at(EOL_COMMENT) || at(BLOCK_COMMENT) || at(DOC_COMMENT) || at(SHEBANG_COMMENT)) {
             advance()
         }
     }
 
+    /**
+     * 执行 `advanceVArrayMismatchLookahead` 内部辅助逻辑，支撑仓颉语法解析节点的结构解析与访问。
+     */
     private fun advanceVArrayMismatchLookahead() {
         skipVArrayMismatchTrivia()
         if (!eof() && !at(SEMICOLON)) {
@@ -1572,6 +1623,9 @@ open class CangJieExpressionParsing(
         handleClause.done(HANDLE)
     }
 
+    /**
+     * 执行 `parseCommandTypePattern` 内部辅助逻辑，支撑仓颉语法解析节点的结构解析与访问。
+     */
     context(context: ParsingContext)
     private fun parseCommandTypePattern() {
         val commandPattern = mark()
@@ -1821,6 +1875,9 @@ open class CangJieExpressionParsing(
         marker.done(THROW)
     }
 
+    /**
+     * 执行 `parsePerform` 内部辅助逻辑，支撑仓颉语法解析节点的结构解析与访问。
+     */
     context(context: ParsingContext)
     private fun parsePerform() {
         assert(_at(PERFORM_KEYWORD))
@@ -1830,6 +1887,9 @@ open class CangJieExpressionParsing(
         marker.done(PERFORM)
     }
 
+    /**
+     * 执行 `parseResume` 内部辅助逻辑，支撑仓颉语法解析节点的结构解析与访问。
+     */
     context(context: ParsingContext)
     private fun parseResume() {
         assert(_at(RESUME_KEYWORD))
@@ -1989,8 +2049,17 @@ open class CangJieExpressionParsing(
      * @property nestingLevel 嵌套层级
      */
     data class PatternParseContext(
+        /**
+         * 保存 `allowedPatterns`，供仓颉语法解析流程读取节点结构或语义信息。
+         */
         val allowedPatterns: Set<PatternType> = PatternType.ALL_PATTERNS,
+        /**
+         * 保存 `isVariableDeclaration`，供仓颉语法解析流程读取节点结构或语义信息。
+         */
         val isVariableDeclaration: Boolean = false,
+        /**
+         * 保存 `nestingLevel`，供仓颉语法解析流程读取节点结构或语义信息。
+         */
         val nestingLevel: Int = 0,
     ) {
         companion object {
@@ -2006,16 +2075,25 @@ open class CangJieExpressionParsing(
             )
         }
 
+        /**
+         * 提供 `withNestingLevel` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
+         */
         fun withNestingLevel(level: Int): PatternParseContext {
             return copy(nestingLevel = level)
         }
 
+        /**
+         * 提供 `isPatternAllowed` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
+         */
         fun isPatternAllowed(pattern: PatternType): Boolean {
             return allowedPatterns.contains(pattern)
         }
     }
 
     inner class PatternParser(
+        /**
+         * 保存 `context` 的内部状态，供仓颉语法解析实现维护节点缓存或解析上下文。
+         */
         private val context: PatternParseContext
     ) {
         context(context: ParsingContext)
@@ -3975,6 +4053,9 @@ private enum class RecognizedPattern {
     TYPE,
     ENUM;
 
+    /**
+     * 提供 `toPatternType` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
+     */
     fun toPatternType(): PatternType = when (this) {
         VAR_OR_ENUM -> PatternType.VAR_OR_ENUM
         BINDING -> PatternType.BINDING
@@ -3982,6 +4063,9 @@ private enum class RecognizedPattern {
         ENUM -> PatternType.ENUM
     }
 
+    /**
+     * 提供 `toNodeType` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
+     */
     fun toNodeType(): IElementType = when (this) {
         VAR_OR_ENUM -> CjNodeTypes.VAR_OR_ENUM_PATTERN
         BINDING -> BINDING_PATTERN

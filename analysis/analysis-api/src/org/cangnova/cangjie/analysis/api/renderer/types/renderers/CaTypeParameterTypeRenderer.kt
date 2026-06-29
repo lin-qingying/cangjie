@@ -31,6 +31,9 @@ interface CaTypeParameterTypeRenderer {
      * 按源码风格渲染：依次输出注解与类型参数名。
      */
     object AS_SOURCE : CaTypeParameterTypeRenderer {
+        /**
+         * 按源码风格输出类型参数类型。
+         */
         override fun renderType(
             analysisSession: CaSession,
             type: CaTypeParameterType,

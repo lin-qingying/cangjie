@@ -24,6 +24,12 @@
 package org.cangnova.cangjie.parsing
 
 
+/**
+ * 定义 `Consumer` 接口，约束仓颉语法解析节点或服务需要暴露的结构能力。
+ */
 interface Consumer<T> {
+    /**
+     * 提供 `consume` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
+     */
     fun consume(item: T?)
 }

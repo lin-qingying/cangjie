@@ -25,7 +25,13 @@ import java.util.concurrent.ConcurrentHashMap
  */
 @LLCfirInternals
 abstract class CleanableValueReferenceCache<K : Any, V : Any>(
+    /**
+     * key 到带 cleanup reference 的实际并发存储。
+     */
     protected val backingMap: ConcurrentHashMap<K, ReferenceWithCleanup<K, V>>,
+    /**
+     * 接收已被 GC 回收 value reference 的队列。
+     */
     protected val referenceQueue: ReferenceQueue<V>,
 ) {
     /**
@@ -42,17 +48,29 @@ abstract class CleanableValueReferenceCache<K : Any, V : Any>(
         return createCopy(mapCopy, queueCopy)
     }
 
+    /**
+     * 基于调用方提供的 map 与 queue 创建相同引用强度的 cache 实例。
+     */
     protected abstract fun createCopy(
         mapCopy: ConcurrentHashMap<K, ReferenceWithCleanup<K, V>>,
         queueCopy: ReferenceQueue<V>,
     ): CleanableValueReferenceCache<K, V>
 
+    /**
+     * 使用当前 cache 的 reference queue 创建 value reference。
+     */
     internal fun createReference(key: K, value: V): ReferenceWithCleanup<K, V> {
         return createReference(key, value, referenceQueue)
     }
 
+    /**
+     * 使用指定 reference queue 创建具体引用强度的 value reference。
+     */
     internal abstract fun createReference(key: K, value: V ,queue: ReferenceQueue<V>): ReferenceWithCleanup<K, V>
 
+    /**
+     * 处理 reference queue 中已被 GC 回收的 value，并触发其 cleanup。
+     */
     private fun processQueue() {
         while (true) {
             val ref = referenceQueue.poll() ?: break
@@ -271,8 +289,14 @@ abstract class CleanableValueReferenceCache<K : Any, V : Any>(
             return backingMap.values.mapNotNull { it.get() }
         }
 
+    /**
+     * 返回包含 cache 类型和当前 size 的调试字符串。
+     */
     override fun toString(): String = "${this::class.simpleName} size:$size"
 
+    /**
+     * 对已移除或已回收的 reference 执行绑定的 cleanup。
+     */
     private fun ReferenceWithCleanup<K, V>.performCleanup(diagnosticInformation: String?) {
         cleaner.cleanUp(get(), diagnosticInformation)
     }

@@ -11,6 +11,9 @@ import org.cangnova.cangjie.analysis.api.impl.base.components.CaBaseSessionCompo
  * 不额外发明仓颉专属导航入口或 fallback 协议。
  */
 internal class CaCfirSourceProvider(
+    /**
+     * 延迟取得当前 CFIR Analysis session，保留 source provider 的标准组件生命周期。
+     */
     override val analysisSessionProvider: () -> CaCfirSession,
 ) : CaBaseSessionComponent<CaCfirSession>(), CaSourceProvider {
 }

@@ -17,8 +17,14 @@ import org.cangnova.cangjie.psi.CjSimpleNameExpression
 import org.cangnova.cangjie.psi.psiUtil.unwrapParenthesesLabelsAndAnnotations
 import org.cangnova.cangjie.utils.runIf
 
+/**
+ * simple-name reference 的 impl-base 基类。
+ */
 @CaImplementationDetail
 abstract class CaBaseSimpleNameReference(expression: CjSimpleNameExpression) : CjSimpleNameReference(expression) {
+    /**
+     * 返回该引用可能解析到的名称集合。
+     */
     override val resolvesByNames: Collection<Name>
         get() {
             val element = element
@@ -39,6 +45,9 @@ abstract class CaBaseSimpleNameReference(expression: CjSimpleNameExpression) : C
         }
 }
 
+/**
+ * 根据操作符引用恢复可能解析到的操作函数名称。
+ */
 private fun operatorNames(expression: CjOperationReferenceExpression): Collection<Name>? = buildList {
     val tokenType = expression.operationSignTokenType ?: return null
 
@@ -73,6 +82,9 @@ private fun operatorNames(expression: CjOperationReferenceExpression): Collectio
     }
 }
 
+/**
+ * 判断赋值表达式是否可能由插件提供的 assignment 语义解析。
+ */
 @OptIn(CaPlatformInterface::class)
 private fun isAssignmentResolved(project: Project, binaryExpression: CjBinaryExpression): Boolean {
     val sourceModule = CangJieProjectStructureProvider.getModule(project, binaryExpression, useSiteModule = null)

@@ -30,17 +30,29 @@ import org.cangnova.cangjie.psi.stubs.CangJieMacroExpressionStub
 import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 import com.intellij.lang.ASTNode
 
+/**
+ * 表示 `CjMacroExpression`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjMacroExpression : CjElementImplStub<CangJieMacroExpressionStub>, CjExpression, CjCallElement {
 
     constructor(node: ASTNode) : super(node)
 
     constructor(stub: CangJieMacroExpressionStub) : super(stub, CjStubElementTypes.MACRO_EXPRESSION)
 
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitMacroExpression(this, data)
     }
 
+    /**
+     * 保存 `referenceExpression`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val referenceExpression: CjNameReferenceExpression? get() = findChildByType(CjNodeTypes.REFERENCE_EXPRESSION)
+    /**
+     * 保存 `shortName`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val shortName: Name?
         get() {
             val stub = stub
@@ -57,19 +69,43 @@ class CjMacroExpression : CjElementImplStub<CangJieMacroExpressionStub>, CjExpre
 
             return null
         }
+    /**
+     * 保存 `input`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val input: CjMacroInput? get() = findChildByType(CjNodeTypes.MACRO_INPUT)
+    /**
+     * 保存 `attr`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val attr: CjMacroAttr? get() = findChildByType(CjNodeTypes.MACRO_ATTR)
 
+    /**
+     * 暴露 `calleeExpression`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val calleeExpression: CjExpression?
         get() = null
+    /**
+     * 暴露 `valueArgumentList`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val valueArgumentList: CjValueArgumentList?
         get() = null
+    /**
+     * 暴露 `valueArguments`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val valueArguments: List<ValueArgument>
         get() = emptyList()
+    /**
+     * 暴露 `lambdaArguments`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val lambdaArguments: List<CjLambdaArgument>
         get() = emptyList()
+    /**
+     * 暴露 `typeArguments`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val typeArguments: List<CjTypeProjection>
         get() = emptyList()
+    /**
+     * 暴露 `typeArgumentList`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val typeArgumentList: CjTypeArgumentList?
         get() = null
 }

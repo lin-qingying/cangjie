@@ -26,7 +26,13 @@ package org.cangnova.cangjie.psi
 
 import com.intellij.psi.PsiElement
 
+/**
+ * 表示 `CjTreeVisitorUnit`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 open class CjTreeVisitorUnit : CjVisitorUnit() {
+    /**
+     * 实现 `visitElement` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun visitElement(element: PsiElement) {
         element.acceptChildren(this)
     }

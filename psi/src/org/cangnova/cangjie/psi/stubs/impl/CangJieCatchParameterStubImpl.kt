@@ -32,9 +32,18 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.stubs.StubElement
 import com.intellij.util.io.StringRef
 
+/**
+ * 表示 `CangJieCatchParameterStubImpl`，承载PSI Stub中的语法节点、索引桩或辅助模型。
+ */
 class CangJieCatchParameterStubImpl(
+    /**
+     * 保存 `fqName` 的内部状态，供PSI Stub实现维护节点缓存或解析上下文。
+     */
     private val fqName: StringRef?,
 
+    /**
+     * 保存 `name` 的内部状态，供PSI Stub实现维护节点缓存或解析上下文。
+     */
     private val name: StringRef?,
     parent: StubElement<out PsiElement>?,
 
@@ -43,14 +52,23 @@ class CangJieCatchParameterStubImpl(
     CjStubElementTypes.CATCH_PARAMETER,
 ),
     CangJieCatchParameterStub {
+    /**
+     * 实现 `getName` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getName(): String? {
         return StringRef.toString(name)
     }
 
+    /**
+     * 实现 `getFqName` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getFqName(): FqName? {
         return if (fqName != null) FqName(fqName.string) else null
     }
 
+    /**
+     * 实现 `copyInto` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun copyInto(newParent: StubElement<*>?): CangJieCatchParameterStubImpl = CangJieCatchParameterStubImpl(
         fqName = fqName,
         name = name,

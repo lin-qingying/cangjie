@@ -30,6 +30,9 @@ import com.intellij.psi.codeStyle.CodeStyleManager
 import com.intellij.util.DocumentUtil
 
 
+/**
+ * 将指定偏移所在行按仓颉代码风格重新调整缩进。
+ */
 fun Document.adjustLineIndent(project: Project, offset: Int) {
     CodeStyleManager.getInstance(project).adjustLineIndent(this, DocumentUtil.getLineStartOffset(offset, this))
 }

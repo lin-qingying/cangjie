@@ -30,12 +30,21 @@ import org.cangnova.cangjie.psi.psiUtil.siblings
 import com.intellij.psi.PsiComment
 import com.intellij.psi.PsiWhiteSpace
 
+/**
+ * 提供 `EditCommaSeparatedListHelper` 单例，集中承载仓颉 PSI的共享状态、工厂或工具行为。
+ */
 object EditCommaSeparatedListHelper {
+    /**
+     * 提供 `addItem` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     @JvmOverloads
     fun <TItem : CjElement> addItem(list: CjElement, allItems: List<TItem>, item: TItem, prefix: CjToken = CjTokens.LPAR): TItem {
         return addItemBefore(list, allItems, item, null, prefix)
     }
 
+    /**
+     * 提供 `addItemAfter` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     @Suppress("UNCHECKED_CAST")
     @JvmOverloads
     fun <TItem : CjElement> addItemAfter(
@@ -64,6 +73,9 @@ object EditCommaSeparatedListHelper {
         }
     }
 
+    /**
+     * 提供 `addItemBefore` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     @JvmOverloads
     fun <TItem : CjElement> addItemBefore(
         list: CjElement,
@@ -88,6 +100,9 @@ object EditCommaSeparatedListHelper {
         return addItemAfter(list, allItems, item, anchorAfter, prefix)
     }
 
+    /**
+     * 提供 `removeItem` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun <TItem : CjElement> removeItem(item: TItem) {
         var comma = item.siblings(withItself = false).firstOrNull { it !is PsiWhiteSpace && it !is PsiComment }
         if (comma?.node?.elementType != CjTokens.COMMA) {

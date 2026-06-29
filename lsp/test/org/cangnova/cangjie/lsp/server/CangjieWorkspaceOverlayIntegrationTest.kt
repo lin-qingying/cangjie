@@ -15,9 +15,20 @@ import kotlin.io.path.invariantSeparatorsPathString
 import kotlin.io.path.isDirectory
 import kotlin.io.path.writeText
 
+/**
+ * 校验 LSP 工作区 overlay 文档与磁盘源码模块的协同关系。
+ *
+ * 该测试覆盖打开文档替换磁盘 PSI、关闭后回退磁盘 PSI，以及标准库搜索路径注入。
+ */
 class CangjieWorkspaceOverlayIntegrationTest : AbstractLspIntegrationTest() {
+    /**
+     * 禁用默认会话，测试需要为每个临时工作区单独构造初始化参数。
+     */
     override val autoCreateDefaultSession: Boolean = false
 
+    /**
+     * 校验工作区源码模块可以解析磁盘依赖，打开文件不会被拆成 dangling module。
+     */
     @Test
     fun `workspace source module resolves disk dependency without splitting opened file into dangling module`() {
         withWorkspaceAndStdlib(
@@ -53,6 +64,9 @@ class CangjieWorkspaceOverlayIntegrationTest : AbstractLspIntegrationTest() {
         }
     }
 
+    /**
+     * 校验 overlay 依赖变更会刷新其他打开工作区文件，关闭后回退磁盘内容。
+     */
     @Test
     fun `overlay dependency updates and close fallback refresh diagnostics for other opened workspace files`() {
         withWorkspaceAndStdlib(
@@ -127,6 +141,9 @@ class CangjieWorkspaceOverlayIntegrationTest : AbstractLspIntegrationTest() {
         }
     }
 
+    /**
+     * 校验通过初始化参数配置的 cjo 标准库路径可以解析默认导入。
+     */
     @Test
     fun `stdlib default imports resolve String through configured cjo search path`() {
         withWorkspaceAndStdlib(
@@ -184,6 +201,9 @@ class CangjieWorkspaceOverlayIntegrationTest : AbstractLspIntegrationTest() {
         }
     }
 
+    /**
+     * 构造带多模块 initializationOptions 的 LSP 初始化参数。
+     */
     private fun buildInitializeParams(
         workspaceRoot: Path,
         stdlibRoot: Path,
@@ -220,6 +240,9 @@ class CangjieWorkspaceOverlayIntegrationTest : AbstractLspIntegrationTest() {
         }
     }
 
+    /**
+     * 返回指定文档最近一次发布的诊断列表。
+     */
     private fun diagnosticsFor(
         session: org.cangnova.cangjie.lsp.framework.LspIntegrationTestSession,
         documentUri: String,
@@ -230,16 +253,25 @@ class CangjieWorkspaceOverlayIntegrationTest : AbstractLspIntegrationTest() {
             .orEmpty()
     }
 
+    /**
+     * 写入临时工作区文件并自动创建父目录。
+     */
     private fun writeWorkspaceFile(path: Path, text: String) {
         path.parent?.createDirectories()
         path.writeText(text)
     }
 
+    /**
+     * 将诊断渲染为便于断言失败消息展示的短文本。
+     */
     private fun renderDiagnostic(diagnostic: Diagnostic): String {
         val message = diagnostic.message.left ?: diagnostic.message.right ?: "<no-message>"
         return "${diagnostic.code}:${message}"
     }
 
+    /**
+     * 复制测试所需的最小标准库 cjo 夹具。
+     */
     private fun copyStdlibFixtures(stdlibRoot: Path) {
         val repoRoot = locateRepositoryRoot()
         val stdFixtureRoot = repoRoot /
@@ -253,6 +285,11 @@ class CangjieWorkspaceOverlayIntegrationTest : AbstractLspIntegrationTest() {
         copyFile(stdFixtureRoot / "std" / "std.core.cjo", stdlibRoot / "std" / "std.core.cjo")
     }
 
+    /**
+     * 解析当前机器可用的标准库根目录。
+     *
+     * 优先选择用户 SDK 中的较新 windows_x86_64_llvm 标准库，找不到时回退到测试夹具。
+     */
     private fun resolveStdlibRoot(fallbackStdlibRoot: Path): Path {
         val userHome = System.getProperty("user.home")?.let(Path::of) ?: return fallbackStdlibRoot
         val sdkRoot = userHome / ".cangjie" / "sdks"
@@ -279,6 +316,9 @@ class CangjieWorkspaceOverlayIntegrationTest : AbstractLspIntegrationTest() {
         return installedSdk.getParent()?.getParent() ?: fallbackStdlibRoot
     }
 
+    /**
+     * 从 std.core.cjo 所在路径推导 SDK 版本。
+     */
     private fun parseSdkVersion(stdCorePath: Path): SdkVersion {
         val sdkDirName = stdCorePath
             .getParent()
@@ -297,11 +337,17 @@ class CangjieWorkspaceOverlayIntegrationTest : AbstractLspIntegrationTest() {
         )
     }
 
+    /**
+     * 复制单个文件并自动创建目标父目录。
+     */
     private fun copyFile(source: Path, target: Path) {
         target.parent?.createDirectories()
         Files.copy(source, target)
     }
 
+    /**
+     * 从当前工作目录向上查找仓库根目录。
+     */
     private fun locateRepositoryRoot(): Path {
         var current = Path.of("").toAbsolutePath()
         while (current != current.root) {
@@ -313,9 +359,23 @@ class CangjieWorkspaceOverlayIntegrationTest : AbstractLspIntegrationTest() {
         error("Cannot locate repository root from ${Path.of("").toAbsolutePath().invariantSeparatorsPathString}")
     }
 
+    /**
+     * 表示解析出的 SDK 语义版本。
+     */
     private data class SdkVersion(
+        /**
+         * 主版本号。
+         */
         val major: Int,
+
+        /**
+         * 次版本号。
+         */
         val minor: Int,
+
+        /**
+         * 补丁版本号。
+         */
         val patch: Int,
     )
 }

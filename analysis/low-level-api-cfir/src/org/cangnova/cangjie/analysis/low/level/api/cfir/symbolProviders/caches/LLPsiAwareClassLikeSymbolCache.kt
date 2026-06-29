@@ -35,7 +35,14 @@ import org.cangnova.cangjie.utils.exceptions.ExceptionAttachmentBuilder
  * The cache is used by symbol providers to implement [LLPsiAwareSymbolProvider][org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLPsiAwareSymbolProvider].
  */
 internal open class LLPsiAwareClassLikeSymbolCache<E : PsiElement, V : CfirClassLikeSymbol<*>?, CONTEXT>(
+    /**
+     * 按 class id 缓存的主 class-like symbol cache。
+     */
     private val mainCache: CfirCache<ClassId, V, CONTEXT>,
+
+    /**
+     * 按 PSI 声明缓存的歧义兜正 cache。
+     */
     private val ambiguityCache: CfirCache<E, V, CONTEXT>,
 ) {
     constructor(
@@ -133,6 +140,9 @@ internal open class LLPsiAwareClassLikeSymbolCache<E : PsiElement, V : CfirClass
 
     @OptIn(CfirCacheInternals::class)
     @LLStatisticsOnlyApi
+    /**
+     * 当前两个底层 cache 中已经缓存的 symbol 值。
+     */
     internal val cachedValues: List<V>
         get() = mainCache.cachedValues + ambiguityCache.cachedValues
 }

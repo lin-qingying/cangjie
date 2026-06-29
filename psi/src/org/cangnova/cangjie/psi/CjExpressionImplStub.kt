@@ -31,24 +31,39 @@ import com.intellij.psi.stubs.IStubElementType
 import com.intellij.psi.stubs.StubElement
 import com.intellij.util.IncorrectOperationException
 
+/**
+ * 表示 `CjExpressionImplStub`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 abstract class CjExpressionImplStub<T : StubElement<*>> : CjElementImplStub<T>, CjExpression {
     constructor(stub: T, nodeType: IStubElementType<*, *>) : super(stub, nodeType)
 
     constructor(node: ASTNode) : super(node)
 
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitExpression(this, data)
     }
 
+    /**
+     * 实现 `replace` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     @Throws(IncorrectOperationException::class)
     override fun replace(newElement: PsiElement): PsiElement {
         return replaceExpression(this, newElement, true) { newElement: PsiElement -> this.rawReplace(newElement) }
     }
 
+    /**
+     * 提供 `rawReplace` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun rawReplace(newElement: PsiElement): PsiElement {
         return super.replace(newElement)
     }
 
+    /**
+     * 实现 `getParent` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getParent(): PsiElement? {
         val stub = getStub()
         if (stub != null) {

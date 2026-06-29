@@ -15,10 +15,24 @@ import org.cangnova.cangjie.codegen.lowering.ChirLoweringPlan
 import org.cangnova.cangjie.codegen.lowering.ChirToLlvmLoweringPipeline
 import org.cangnova.cangjie.codegen.module.CGModule
 
+/**
+ * 默认 CHIR 到 LLVM codegen 入口。
+ */
 class DefaultChirToLlvmCodeGenerator : ChirToLlvmCodeGenerator {
+    /**
+     * CHIR 到 LLVM 之前执行的 lowering pass pipeline。
+     */
     private val loweringPipeline = ChirToLlvmLoweringPipeline()
+    /**
+     * LLVM 后端工厂。
+     */
     private val backendFactory = LlvmBackendFactory()
 
+    /**
+     * 生成 LLVM 模块产物。
+     *
+     * 该方法按选项执行 CHIR 校验、module 切分、lowering pipeline、CGModule 降低和后端产物发射。
+     */
     override fun generate(input: ChirCodegenInput): ChirCodegenOutput {
         if (!input.options.enabled) {
             return ChirCodegenOutput(emptyList())
@@ -72,6 +86,9 @@ class DefaultChirToLlvmCodeGenerator : ChirToLlvmCodeGenerator {
         return ChirCodegenOutput(modules = modules, loweringTrace = loweringTrace)
     }
 
+    /**
+     * 将多个 CHIR module 合并为单个 lowering module。
+     */
     private fun mergeModules(modules: List<ChirModule>): ChirModule {
         return ChirModule(
             semanticId = ChirSemanticId("merged:${modules.joinToString("+") { it.semanticId.value }}"),
@@ -80,6 +97,9 @@ class DefaultChirToLlvmCodeGenerator : ChirToLlvmCodeGenerator {
         )
     }
 
+    /**
+     * 判断输入 package 是否包含需要单独发射的包级定义。
+     */
     private fun ChirCodegenInput.hasPackageDefinitions(): Boolean {
         return chirPackage.members.globalFunctions.isNotEmpty() ||
             chirPackage.members.globalVariables.isNotEmpty() ||
@@ -87,6 +107,9 @@ class DefaultChirToLlvmCodeGenerator : ChirToLlvmCodeGenerator {
             chirPackage.packageLiteralInitFunctionId != null
     }
 
+    /**
+     * 为包级定义构造虚拟 CHIR module。
+     */
     private fun ChirCodegenInput.packageDefinitionsModule(): ChirModule {
         return ChirModule(
             semanticId = ChirSemanticId("pkg-module:${chirPackage.semanticId.value}"),
@@ -95,8 +118,17 @@ class DefaultChirToLlvmCodeGenerator : ChirToLlvmCodeGenerator {
         )
     }
 
+    /**
+     * module lowering 前的计划项。
+     */
     private data class ModuleLoweringInput(
+        /**
+         * 待 lowering 的 CHIR module。
+         */
         val module: ChirModule,
+        /**
+         * 是否在该 module 中发射包级定义。
+         */
         val emitPackageDefinitions: Boolean,
     )
 }

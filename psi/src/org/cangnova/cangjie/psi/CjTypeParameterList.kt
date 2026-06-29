@@ -32,6 +32,9 @@ import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 import com.intellij.lang.ASTNode
 import com.intellij.psi.PsiElement
 
+/**
+ * 表示 `CjTypeParameterList`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjTypeParameterList : CjElementImplStub<CangJiePlaceHolderStub<CjTypeParameterList>> {
     constructor(node: ASTNode) : super(node)
 
@@ -40,13 +43,22 @@ class CjTypeParameterList : CjElementImplStub<CangJiePlaceHolderStub<CjTypeParam
         CjStubElementTypes.TYPE_PARAMETER_LIST,
     )
 
+    /**
+     * 实现 `toString` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun toString(): String {
         return node.elementType.toString()
     }
 
+    /**
+     * 保存 `parameters`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val parameters: List<CjTypeParameter>
         get() = getStubOrPsiChildrenAsList(CjStubElementTypes.TYPE_PARAMETER)
 
+    /**
+     * 提供 `addParameter` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     */
     fun addParameter(typeParameter: CjTypeParameter): CjTypeParameter {
         return addItem(
             this,
@@ -56,10 +68,16 @@ class CjTypeParameterList : CjElementImplStub<CangJiePlaceHolderStub<CjTypeParam
         )
     }
 
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitTypeParameterList(this, data)
     }
 
+    /**
+     * 保存 `trailingComma`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val trailingComma: PsiElement?
         get() = getTrailingCommaByClosingElement(findChildByType(CjTokens.GT))
 }

@@ -28,6 +28,9 @@ package org.cangnova.cangjie.lexer.cdoc
  * A template that expands inside [TOuter]
  */
 interface Template<in TOuter> {
+    /**
+     * 提供 `apply` 操作，封装仓颉词法与文档注释节点的访问、构造或判断逻辑。
+     */
     fun TOuter.apply()
 }
 
@@ -35,10 +38,19 @@ interface Template<in TOuter> {
  * A placeholder that is inserted inside [TOuter]
  */
 open class Placeholder<TOuter> {
+    /**
+     * 保存 `contentStack` 的内部状态，供仓颉词法与文档注释实现维护节点缓存或解析上下文。
+     */
     private var contentStack = mutableListOf<(TOuter.(Exec) -> Unit)>()
 
+    /**
+     * 保存 `meta`，供仓颉词法与文档注释流程读取节点结构或语义信息。
+     */
     var meta: String = ""
 
+    /**
+     * 提供 `invoke` 操作，封装仓颉词法与文档注释节点的访问、构造或判断逻辑。
+     */
     operator fun invoke(meta: String = "", content: TOuter.(Exec) -> Unit) {
         this.contentStack.add(content)
         this.meta = meta
@@ -53,8 +65,14 @@ open class Placeholder<TOuter> {
         }
     }
 
+    /**
+     * 提供 `isEmpty` 操作，封装仓颉词法与文档注释节点的访问、构造或判断逻辑。
+     */
     fun isEmpty() = contentStack.isEmpty()
 
+    /**
+     * 提供 `apply` 操作，封装仓颉词法与文档注释节点的访问、构造或判断逻辑。
+     */
     fun apply(destination: TOuter) {
         val top = contentStack.lastOrNull()
         val exec = Exec(contentStack.lastIndex, destination)
@@ -66,20 +84,35 @@ open class Placeholder<TOuter> {
  * A placeholder that is also a template
  */
 open class TemplatePlaceholder<TTemplate> {
+    /**
+     * 保存 `content` 的内部状态，供仓颉词法与文档注释实现维护节点缓存或解析上下文。
+     */
     private var content: TTemplate.() -> Unit = { }
+    /**
+     * 提供 `invoke` 操作，封装仓颉词法与文档注释节点的访问、构造或判断逻辑。
+     */
     operator fun invoke(content: TTemplate.() -> Unit) {
         this.content = content
     }
 
+    /**
+     * 提供 `apply` 操作，封装仓颉词法与文档注释节点的访问、构造或判断逻辑。
+     */
     fun apply(template: TTemplate) {
         template.content()
     }
 }
+/**
+ * 提供 `insert` 操作，封装仓颉词法与文档注释节点的访问、构造或判断逻辑。
+ */
 fun <TOuter, TTemplate : Template<TOuter>> TOuter.insert(template: TTemplate, build: TTemplate.() -> Unit) {
     template.build()
     with(template) { apply() }
 }
 
+/**
+ * 提供 `insert` 操作，封装仓颉词法与文档注释节点的访问、构造或判断逻辑。
+ */
 fun <TTemplate : Template<TOuter>, TOuter> TOuter.insert(template: TTemplate, placeholder: TemplatePlaceholder<TTemplate>) {
     placeholder.apply(template)
     with(template) { apply() }

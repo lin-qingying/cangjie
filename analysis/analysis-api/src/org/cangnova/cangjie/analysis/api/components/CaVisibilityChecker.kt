@@ -30,6 +30,9 @@ interface CaVisibilityChecker : CaLifetimeOwner {
         "Use `createUseSiteVisibilityChecker` instead.",
         replaceWith = ReplaceWith("createUseSiteVisibilityChecker(useSiteFile, receiverExpression, position).isVisible(candidateSymbol)"),
     )
+    /**
+     * 兼容旧调用方式的一次性 use-site 可见性检查入口。
+     */
     fun isVisible(
         candidateSymbol: CaDeclarationSymbol,
         useSiteFile: CaFileSymbol,

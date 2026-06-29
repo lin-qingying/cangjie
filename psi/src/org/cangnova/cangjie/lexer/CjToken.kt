@@ -27,8 +27,17 @@ package org.cangnova.cangjie.lexer
 import org.cangnova.cangjie.lang.CangJieLanguage
 import com.intellij.psi.tree.IElementType
 
+/**
+ * 表示 `CjToken`，承载仓颉词法与文档注释中的语法节点、索引桩或辅助模型。
+ */
 open class CjToken @JvmOverloads constructor(
+    /**
+     * 保存 `name`，供仓颉词法与文档注释流程读取节点结构或语义信息。
+     */
     val name: String,
+    /**
+     * 保存 `tokenId`，供仓颉词法与文档注释流程读取节点结构或语义信息。
+     */
     var tokenId: Int = INVALID_ID,
 ) : IElementType(
     name,
@@ -39,6 +48,9 @@ open class CjToken @JvmOverloads constructor(
         private const val INVALID_ID = -1
     }
 
+    /**
+     * 实现 `toString` 的仓颉词法与文档注释协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun toString(): String {
         return name
     }

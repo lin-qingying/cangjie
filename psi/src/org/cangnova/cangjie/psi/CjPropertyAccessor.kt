@@ -31,6 +31,9 @@ import com.intellij.lang.ASTNode
 import com.intellij.psi.PsiElement
 import com.intellij.psi.util.PsiTreeUtil
 
+/**
+ * 表示 `CjPropertyAccessor`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjPropertyAccessor :
     CjDeclarationStub<CangJiePropertyAccessorStub>,
     CjDeclarationWithBody,
@@ -40,10 +43,16 @@ class CjPropertyAccessor :
 
     constructor(stub: CangJiePropertyAccessorStub) : super(stub, CjStubElementTypes.PROPERTY_ACCESSOR)
 
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitPropertyAccessor(this, data)
     }
 
+    /**
+     * 保存 `isSetter`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val isSetter: Boolean
         get() {
             val stub: CangJiePropertyAccessorStub? = stub
@@ -53,6 +62,9 @@ class CjPropertyAccessor :
             return findChildByType<PsiElement?>(CjTokens.SET_KEYWORD) != null
         }
 
+    /**
+     * 保存 `isGetter`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val isGetter: Boolean
         get() {
             val stub: CangJiePropertyAccessorStub? = stub
@@ -62,9 +74,15 @@ class CjPropertyAccessor :
             return findChildByType<PsiElement?>(CjTokens.GET_KEYWORD) != null
         }
 
+    /**
+     * 保存 `parameterList`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val parameterList: CjParameterList?
         get() = getStubOrPsiChild(CjStubElementTypes.VALUE_PARAMETER_LIST)
 
+    /**
+     * 保存 `parameter`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val parameter: CjParameter?
         get() {
             val parameterList: CjParameterList = parameterList ?: return null
@@ -73,12 +91,18 @@ class CjPropertyAccessor :
             return parameters[0]
         }
 
+    /**
+     * 暴露 `valueParameters`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val valueParameters: List<CjParameter>
         get() {
             val parameter: CjParameter = parameter ?: return emptyList()
             return listOf(parameter)
         }
 
+    /**
+     * 暴露 `bodyExpression`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val bodyExpression: CjExpression?
         get() {
             val stub: CangJiePropertyAccessorStub? = stub
@@ -95,6 +119,9 @@ class CjPropertyAccessor :
             return findChildByClass(CjExpression::class.java)
         }
 
+    /**
+     * 暴露 `bodyBlockExpression`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val bodyBlockExpression: CjBlockExpression?
         get() {
             val stub: CangJiePropertyAccessorStub? = stub
@@ -117,6 +144,9 @@ class CjPropertyAccessor :
             return null
         }
 
+    /**
+     * 实现 `hasBlockBody` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun hasBlockBody(): Boolean {
         val stub: CangJiePropertyAccessorStub? = stub
         if (stub != null) {
@@ -125,6 +155,9 @@ class CjPropertyAccessor :
         return equalsToken == null
     }
 
+    /**
+     * 实现 `hasBody` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun hasBody(): Boolean {
         val stub: CangJiePropertyAccessorStub? = stub
         if (stub != null) {
@@ -133,16 +166,28 @@ class CjPropertyAccessor :
         return bodyExpression != null
     }
 
+    /**
+     * 暴露 `equalsToken`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val equalsToken: PsiElement?
         get() = findChildByType(CjTokens.EQ)
 
+    /**
+     * 实现 `hasDeclaredReturnType` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun hasDeclaredReturnType(): Boolean {
         return true
     }
 
+    /**
+     * 保存 `returnTypeReference`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val returnTypeReference: CjTypeReference?
         get() = getStubOrPsiChild(CjStubElementTypes.TYPE_REFERENCE)
 
+    /**
+     * 保存 `namePlaceholder`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val namePlaceholder: PsiElement
         get() {
             val get: PsiElement? = findChildByType(CjTokens.GET_KEYWORD)
@@ -152,27 +197,45 @@ class CjPropertyAccessor :
             return findChildByType(CjTokens.SET_KEYWORD)!!
         }
 
+    /**
+     * 保存 `rightParenthesis`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val rightParenthesis: PsiElement?
         get() = findChildByType(CjTokens.RPAR)
 
+    /**
+     * 保存 `leftParenthesis`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val leftParenthesis: PsiElement?
         get() = findChildByType(CjTokens.LPAR)
 
+    /**
+     * 暴露 `initializer`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val initializer: CjExpression?
         get() = PsiTreeUtil.getNextSiblingOfType(
             equalsToken,
             CjExpression::class.java,
         )
 
+    /**
+     * 实现 `hasInitializer` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun hasInitializer(): Boolean {
         return initializer != null
     }
 
+    /**
+     * 保存 `property`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val property: CjProperty
         get() {
             return parent!!.parent as CjProperty
         }
 
+    /**
+     * 实现 `getTextOffset` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getTextOffset(): Int {
         return namePlaceholder.textRange.startOffset
     }

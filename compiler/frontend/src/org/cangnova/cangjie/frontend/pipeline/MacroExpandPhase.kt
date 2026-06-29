@@ -87,11 +87,23 @@ import org.cangnova.cangjie.source.CjSourceFileLinesMapping
 import org.cangnova.cangjie.source.text
 import java.util.IdentityHashMap
 
+/**
+ * 为给定 CFIR session 创建宏执行器的工厂。
+ */
 fun interface MacroExecutorFactory {
+    /**
+     * 创建与 [session] 绑定的宏执行器。
+     */
     fun create(session: CfirSession): MacroExecutor
 }
 
+/**
+ * 为给定 CFIR session 创建宏片段 parser 的工厂。
+ */
 fun interface MacroFragmentParserFactory {
+    /**
+     * 创建与 [session] 绑定的宏片段 parser。
+     */
     fun create(session: CfirSession): MacroFragmentParser
 }
 
@@ -100,46 +112,79 @@ fun interface MacroFragmentParserFactory {
  */
 object FrontendMacroConfigurationKeys {
     @JvmField
+    /**
+     * 宏执行器工厂配置键。
+     */
     val MACRO_EXECUTOR_FACTORY = CompilerConfigurationKey.create<MacroExecutorFactory>("MACRO_EXECUTOR_FACTORY")
 
     @JvmField
+    /**
+     * 单次宏展开允许的最大迭代次数配置键。
+     */
     val MACRO_EXPAND_MAX_ITERATIONS = CompilerConfigurationKey.create<Int>("MACRO_EXPAND_MAX_ITERATIONS")
 
     @JvmField
+    /**
+     * 宏片段 parser 工厂配置键。
+     */
     val MACRO_FRAGMENT_PARSER_FACTORY =
         CompilerConfigurationKey.create<MacroFragmentParserFactory>("MACRO_FRAGMENT_PARSER_FACTORY")
 
     @JvmField
+    /**
+     * 外部已编译宏 artifact 包配置键。
+     */
     val MACRO_ARTIFACT_PACKAGES =
         CompilerConfigurationKey.create<List<MacroArtifactPackage>>("MACRO_ARTIFACT_PACKAGES")
 
     @JvmField
+    /**
+     * 宏执行器 ABI 版本配置键。
+     */
     val MACRO_EXECUTOR_ABI_VERSION =
         CompilerConfigurationKey.create<String>("MACRO_EXECUTOR_ABI_VERSION")
 
     @JvmField
+    /**
+     * 可按需编译的宏源码包请求配置键。
+     */
     val MACRO_SOURCE_PACKAGE_COMPILATION_REQUESTS =
         CompilerConfigurationKey.create<List<MacroSourcePackageCompilationRequest>>(
             "MACRO_SOURCE_PACKAGE_COMPILATION_REQUESTS",
         )
 
     @JvmField
+    /**
+     * 宏源码包编译调度器配置键。
+     */
     val MACRO_PACKAGE_COMPILATION_ORCHESTRATOR =
         CompilerConfigurationKey.create<MacroPackageCompilationOrchestrator>("MACRO_PACKAGE_COMPILATION_ORCHESTRATOR")
 
     @JvmField
+    /**
+     * 宏编译缓存上下文配置键。
+     */
     val MACRO_COMPILATION_CACHE_CONTEXT =
         CompilerConfigurationKey.create<MacroCompilationCacheContext>("MACRO_COMPILATION_CACHE_CONTEXT")
 
     @JvmField
+    /**
+     * 后台自动编译宏源码包开关配置键。
+     */
     val MACRO_BACKGROUND_AUTO_COMPILATION_ENABLED =
         CompilerConfigurationKey.create<Boolean>("MACRO_BACKGROUND_AUTO_COMPILATION_ENABLED")
 
     @JvmField
+    /**
+     * 宏展开 demand 触发自动编译开关配置键。
+     */
     val MACRO_EXPANSION_DEMAND_AUTO_COMPILATION_ENABLED =
         CompilerConfigurationKey.create<Boolean>("MACRO_EXPANSION_DEMAND_AUTO_COMPILATION_ENABLED")
 
     @JvmField
+    /**
+     * 宏 SDK 根目录配置键。
+     */
     val MACRO_SDK_HOME = CompilerConfigurationKey.create<String>("MACRO_SDK_HOME")
 
     /**
@@ -153,54 +198,81 @@ object FrontendMacroConfigurationKeys {
         CompilerConfigurationKey.create<MacroConstructionService.Mode>("MACRO_CONSTRUCTION_MODE")
 }
 
+/**
+ * 当前配置中的宏执行器工厂。
+ */
 var CompilerConfiguration.macroExecutorFactory: MacroExecutorFactory?
     get() = get(FrontendMacroConfigurationKeys.MACRO_EXECUTOR_FACTORY)
     set(value) {
         putIfNotNull(FrontendMacroConfigurationKeys.MACRO_EXECUTOR_FACTORY, value)
     }
 
+/**
+ * 当前配置中的宏展开最大迭代次数。
+ */
 var CompilerConfiguration.macroExpandMaxIterations: Int
     get() = get(FrontendMacroConfigurationKeys.MACRO_EXPAND_MAX_ITERATIONS, 16)
     set(value) {
         put(FrontendMacroConfigurationKeys.MACRO_EXPAND_MAX_ITERATIONS, value)
     }
 
+/**
+ * 当前配置中的宏片段 parser 工厂。
+ */
 var CompilerConfiguration.macroFragmentParserFactory: MacroFragmentParserFactory?
     get() = get(FrontendMacroConfigurationKeys.MACRO_FRAGMENT_PARSER_FACTORY)
     set(value) {
         putIfNotNull(FrontendMacroConfigurationKeys.MACRO_FRAGMENT_PARSER_FACTORY, value)
     }
 
+/**
+ * 当前配置中显式提供的已编译宏 artifact 包。
+ */
 var CompilerConfiguration.macroArtifactPackages: List<MacroArtifactPackage>
     get() = get(FrontendMacroConfigurationKeys.MACRO_ARTIFACT_PACKAGES, emptyList())
     set(value) {
         put(FrontendMacroConfigurationKeys.MACRO_ARTIFACT_PACKAGES, value)
     }
 
+/**
+ * 当前前端宏构造模式。
+ */
 var CompilerConfiguration.macroConstructionMode: MacroConstructionService.Mode
     get() = get(FrontendMacroConfigurationKeys.MACRO_CONSTRUCTION_MODE, MacroConstructionService.Mode.STRICT)
     set(value) {
         put(FrontendMacroConfigurationKeys.MACRO_CONSTRUCTION_MODE, value)
     }
 
+/**
+ * 当前宏执行器 ABI 版本。
+ */
 var CompilerConfiguration.macroExecutorAbiVersion: String
     get() = get(FrontendMacroConfigurationKeys.MACRO_EXECUTOR_ABI_VERSION, MacroExecutor.DEFAULT_ABI_VERSION)
     set(value) {
         put(FrontendMacroConfigurationKeys.MACRO_EXECUTOR_ABI_VERSION, value)
     }
 
+/**
+ * 当前配置中可按需编译的宏源码包请求列表。
+ */
 var CompilerConfiguration.macroSourcePackageCompilationRequests: List<MacroSourcePackageCompilationRequest>
     get() = get(FrontendMacroConfigurationKeys.MACRO_SOURCE_PACKAGE_COMPILATION_REQUESTS, emptyList())
     set(value) {
         put(FrontendMacroConfigurationKeys.MACRO_SOURCE_PACKAGE_COMPILATION_REQUESTS, value)
     }
 
+/**
+ * 当前宏源码包编译调度器。
+ */
 var CompilerConfiguration.macroPackageCompilationOrchestrator: MacroPackageCompilationOrchestrator?
     get() = get(FrontendMacroConfigurationKeys.MACRO_PACKAGE_COMPILATION_ORCHESTRATOR)
     set(value) {
         putIfNotNull(FrontendMacroConfigurationKeys.MACRO_PACKAGE_COMPILATION_ORCHESTRATOR, value)
     }
 
+/**
+ * 当前宏编译缓存上下文。
+ */
 var CompilerConfiguration.macroCompilationCacheContext: MacroCompilationCacheContext
     get() = get(FrontendMacroConfigurationKeys.MACRO_COMPILATION_CACHE_CONTEXT)
         ?: MacroCompilationCacheContext(
@@ -210,24 +282,36 @@ var CompilerConfiguration.macroCompilationCacheContext: MacroCompilationCacheCon
         put(FrontendMacroConfigurationKeys.MACRO_COMPILATION_CACHE_CONTEXT, value)
     }
 
+/**
+ * 是否允许后台自动编译宏源码包。
+ */
 var CompilerConfiguration.macroBackgroundAutoCompilationEnabled: Boolean
     get() = get(FrontendMacroConfigurationKeys.MACRO_BACKGROUND_AUTO_COMPILATION_ENABLED, false)
     set(value) {
         put(FrontendMacroConfigurationKeys.MACRO_BACKGROUND_AUTO_COMPILATION_ENABLED, value)
     }
 
+/**
+ * 是否允许宏展开 demand 触发宏源码包按需编译。
+ */
 var CompilerConfiguration.macroExpansionDemandAutoCompilationEnabled: Boolean
     get() = get(FrontendMacroConfigurationKeys.MACRO_EXPANSION_DEMAND_AUTO_COMPILATION_ENABLED, true)
     set(value) {
         put(FrontendMacroConfigurationKeys.MACRO_EXPANSION_DEMAND_AUTO_COMPILATION_ENABLED, value)
     }
 
+/**
+ * 当前宏 SDK 根目录。
+ */
 var CompilerConfiguration.macroSdkHome: String
     get() = get(FrontendMacroConfigurationKeys.MACRO_SDK_HOME, DEFAULT_MACRO_SDK_HOME)
     set(value) {
         put(FrontendMacroConfigurationKeys.MACRO_SDK_HOME, value)
     }
 
+/**
+ * 默认宏 SDK 根目录。
+ */
 const val DEFAULT_MACRO_SDK_HOME: String = "C:\\Users\\lin17\\.cangjie\\sdks\\cangjie-1.0.5"
 
 /**
@@ -238,10 +322,22 @@ const val DEFAULT_MACRO_SDK_HOME: String = "C:\\Users\\lin17\\.cangjie\\sdks\\ca
  * 并阻止 ordinary resolve；无宏源码走 identity [MacroConstructionResult.Success]。
  */
 class FrontendMacroConstructionService(
+    /**
+     * 当前宏构造使用的编译配置。
+     */
     private val configuration: CompilerConfiguration,
+    /**
+     * 将 executor/parser 返回的片段稳定拼回 CFIR 的 splicer。
+     */
     private val stableSplicer: MacroStableSplicer = CfirExpressionMacroStableSplicer,
+    /**
+     * 内建非宏语法糖处理器。
+     */
     private val builtinNonMacroDesugarer: BuiltinNonMacroDesugarer = CangJieBuiltinNonMacroDesugarer,
 ) : MacroConstructionService {
+    /**
+     * 对 pre-macro raw CFIR 执行宏构造并返回最终构造结果。
+     */
     override fun expand(
         pre: PreMacroRawBuildResult,
         context: MacroResolutionContext,
@@ -468,6 +564,9 @@ class FrontendMacroConstructionService(
         }
     }
 
+    /**
+     * 根据最终宏解析决策展开单个宏表面。
+     */
     private fun expandResolvedSurface(
         pre: PreMacroRawBuildResult,
         surface: MacroSurface,
@@ -537,6 +636,9 @@ class FrontendMacroConstructionService(
         }
     }
 
+    /**
+     * 计算内建宏的 token 输出。
+     */
     private fun evaluateBuiltinMacro(
         surface: MacroSurface,
         entry: MacroDefinitionEntry,
@@ -569,6 +671,9 @@ class FrontendMacroConstructionService(
         return listOf(MacroSurfaceToken(text = text, startOffset = 0, endOffset = text.length))
     }
 
+    /**
+     * 调用外部宏执行器并把执行结果转换为宏表面 token。
+     */
     private fun evaluateExternalMacro(
         surface: MacroSurface,
         entry: MacroDefinitionEntry,
@@ -627,6 +732,9 @@ class FrontendMacroConstructionService(
         }
     }
 
+    /**
+     * 将 executor diag report 写入宏构造 registry。
+     */
     private fun recordMacroDiagReports(
         surface: MacroSurface,
         diagnostics: List<org.cangnova.cangjie.macro.MacroDiagnosticInfo>,
@@ -649,6 +757,9 @@ class FrontendMacroConstructionService(
         }
     }
 
+    /**
+     * 将动态库加载失败记录为宏构造诊断。
+     */
     private fun reportLibraryLoadFailure(
         surface: MacroSurface,
         failure: MacroLibraryLoadFailure,
@@ -664,6 +775,9 @@ class FrontendMacroConstructionService(
         )
     }
 
+    /**
+     * 将宏解析 kind mismatch 映射为构造诊断类型和消息。
+     */
     private fun MacroResolution.KindMismatch.toConstructionDiagnostic():
             Pair<MacroConstructionDiagnostic.Kind, String> {
         val macroName = entry.name.asString()
@@ -678,6 +792,9 @@ class FrontendMacroConstructionService(
         }
     }
 
+    /**
+     * 解析宏输出 token 并按需对内建非宏表面执行脱糖。
+     */
     private fun parseAndDesugarFragment(
         surface: MacroSurface,
         decision: FinalMacroSurfaceDecision,
@@ -716,6 +833,9 @@ class FrontendMacroConstructionService(
         }
     }
 
+    /**
+     * 返回内建非宏表面应暴露给父宏的 token。
+     */
     private fun tokensForBuiltinNonMacro(
         surface: MacroSurface,
         refreshedTokens: RefreshedMacroSurfaceTokens,
@@ -727,6 +847,9 @@ class FrontendMacroConstructionService(
         }
     }
 
+    /**
+     * 将宏调用环报告为每个环节点上的构造诊断。
+     */
     private fun reportMacroCycle(
         cycle: MacroExpansionCycle,
         registry: MacroExpansionRegistry,
@@ -742,6 +865,9 @@ class FrontendMacroConstructionService(
         }
     }
 
+    /**
+     * 报告同包宏定义不能被当前包宏调用直接解析的错误。
+     */
     private fun reportSamePackageMacroDefinition(
         surface: MacroSurface,
         sameDef: MacroDefinitionEntry,
@@ -787,6 +913,9 @@ class FrontendMacroConstructionService(
         }
     }
 
+    /**
+     * 判断诊断是否允许在 DEGRADED 模式下降级为占位符。
+     */
     private fun isDegradableDiagnostic(diagnostic: MacroConstructionDiagnostic): Boolean {
         if (diagnostic.originSurfaceId == null) return false
         return when (diagnostic.kind) {
@@ -809,6 +938,9 @@ class FrontendMacroConstructionService(
         }
     }
 
+    /**
+     * 判断宏表面是否已经存在阻断构造的 artifact/orchestration 诊断。
+     */
     private fun MacroSurface.hasBlockingPreConstructionDiagnostic(registry: MacroExpansionRegistry): Boolean {
         return registry.diagnostics.any { diagnostic ->
             diagnostic.originSurfaceId == surfaceId &&
@@ -860,6 +992,9 @@ class FrontendMacroConstructionService(
     }
 
     @Suppress("UNCHECKED_CAST")
+    /**
+     * 替换声明列表中的降级占位符声明，并递归处理嵌套声明。
+     */
     private fun replaceDegradedDeclarationPlaceholders(
         declarations: List<CfirDeclaration>,
         declarationPlaceholders: IdentityHashMap<CfirDeclaration, CfirDeclaration>,
@@ -895,6 +1030,9 @@ class FrontendMacroConstructionService(
         }
     }
 
+    /**
+     * 替换函数声明中的降级占位符参数。
+     */
     private fun replaceDegradedParameterPlaceholders(
         declaration: CfirDeclaration,
         parameterPlaceholders: IdentityHashMap<CfirValueParameter, CfirValueParameter>,
@@ -906,6 +1044,9 @@ class FrontendMacroConstructionService(
         declaration.replaceValueParameters(newParameters)
     }
 
+    /**
+     * 为声明宏构造失败生成错误声明占位符。
+     */
     private fun buildDeclarationMacroErrorPlaceholder(
         surface: MacroSurface,
         declaration: CfirDeclaration,
@@ -942,6 +1083,9 @@ class FrontendMacroConstructionService(
         }
     }
 
+    /**
+     * 替换文件中的降级表达式占位符。
+     */
     private fun replaceDegradedExpressionPlaceholders(
         file: CfirFile,
         expressionPlaceholders: IdentityHashMap<CfirExpression, CfirExpression>,
@@ -956,6 +1100,9 @@ class FrontendMacroConstructionService(
         file.transform<CfirFile, Unit>(transformer, Unit)
     }
 
+    /**
+     * 为表达式宏构造失败生成错误表达式占位符。
+     */
     private fun buildExpressionMacroErrorPlaceholder(
         surface: MacroSurface,
         expression: CfirExpression,
@@ -968,6 +1115,9 @@ class FrontendMacroConstructionService(
         }
     }
 
+    /**
+     * 为参数宏构造失败生成错误参数占位符。
+     */
     private fun buildParameterMacroErrorPlaceholder(
         surface: MacroSurface,
         parameter: CfirValueParameter,
@@ -1000,12 +1150,18 @@ class FrontendMacroConstructionService(
         }
     }
 
+    /**
+     * 返回宏表面原始源位置，缺失时使用调用方提供的 fallback。
+     */
     private fun MacroSurface.macroOriginSource(
         fallback: org.cangnova.cangjie.source.CjSourceElement?,
     ): org.cangnova.cangjie.source.CjSourceElement? {
         return sourceRange?.source ?: fallback
     }
 
+    /**
+     * 为降级占位符创建简单诊断。
+     */
     private fun macroPlaceholderDiagnostic(surface: MacroSurface): ConeSimpleDiagnostic {
         return ConeSimpleDiagnostic(
             "Macro call `${surface.capturedRawSyntax ?: surface.qualifiedName?.asString().orEmpty()}` " +
@@ -1013,6 +1169,9 @@ class FrontendMacroConstructionService(
         )
     }
 
+    /**
+     * 向 registry 添加错误级宏构造诊断。
+     */
     private fun reportError(
         registry: MacroExpansionRegistry,
         message: String,
@@ -1111,6 +1270,9 @@ class FrontendMacroConstructionService(
         }
     }
 
+    /**
+     * 计算源文件内容 hash。
+     */
     private fun hashSourceContent(file: CfirFile): String {
         val text = runCatching {
             file.sourceFile?.getContentsAsStream()?.use { stream ->
@@ -1120,6 +1282,9 @@ class FrontendMacroConstructionService(
         return org.cangnova.cangjie.utils.StableHash.sha256(text)
     }
 
+    /**
+     * 计算宏表面列表及注解槽快照 hash。
+     */
     private fun hashSurfaces(
         surfaces: List<MacroSurface>,
         annotationMetadataRegistry: org.cangnova.cangjie.cfir.resolve.providers.macro.CfirAnnotationMetadataRegistry?,
@@ -1136,6 +1301,9 @@ class FrontendMacroConstructionService(
         return org.cangnova.cangjie.utils.StableHash.sha256Of(parts)
     }
 
+    /**
+     * 计算文件 import 与宏 import 绑定信息 hash。
+     */
     private fun hashImports(file: CfirFile, context: MacroResolutionContext): String {
         val importParts = file.imports.map { import ->
             "${import.importedFqName?.asString().orEmpty()}|" +
@@ -1148,6 +1316,9 @@ class FrontendMacroConstructionService(
         return org.cangnova.cangjie.utils.StableHash.sha256Of(importParts + defaultParts + bindingParts)
     }
 
+    /**
+     * 计算当前宏依赖集合签名。
+     */
     private fun computeMacroDependencySignature(context: MacroResolutionContext): String {
         val sourceTargets = context.symbolIndex.sources.map { it.fqName.asString() }
         val foreignTargets = context.symbolIndex.foreigns.map { entry ->
@@ -1159,6 +1330,9 @@ class FrontendMacroConstructionService(
         return org.cangnova.cangjie.utils.StableHash.sha256Of(sourceTargets + foreignTargets)
     }
 
+    /**
+     * 计算展开后 CFIR 文件结构快照 hash。
+     */
     private fun hashResultSnapshot(file: CfirFile): String {
         if (file.declarations.isEmpty()) return "result:empty"
         val parts = buildList {
@@ -1169,6 +1343,9 @@ class FrontendMacroConstructionService(
         return org.cangnova.cangjie.utils.StableHash.sha256Of(parts)
     }
 
+    /**
+     * 收集声明及其嵌套结构的稳定快照片段。
+     */
     private fun collectDeclarationSnapshot(declaration: CfirDeclaration, parts: MutableList<String>) {
         parts += "${declaration::class.simpleName.orEmpty()}|${declaration.stableName()}|ann=${declaration.annotations.stableAnnotationSnapshot()}"
         if (declaration is CfirClassLikeDeclaration) {
@@ -1185,6 +1362,9 @@ class FrontendMacroConstructionService(
         }
     }
 
+    /**
+     * 返回声明用于 cache key 的稳定名称。
+     */
     private fun CfirDeclaration.stableName(): String = when (this) {
         is CfirClassLikeDeclaration -> name.asString()
         is CfirNamedFunction -> name.asString()
@@ -1197,6 +1377,9 @@ class FrontendMacroConstructionService(
         else -> ""
     }
 
+    /**
+     * 返回注解列表用于 cache key 的稳定文本。
+     */
     private fun List<CfirAnnotation>.stableAnnotationSnapshot(): String =
         joinToString(separator = ";") { annotation ->
             when (annotation) {
@@ -1211,6 +1394,9 @@ class FrontendMacroConstructionService(
             }
         }
 
+    /**
+     * 返回注解替换槽快照用于 cache key 的稳定文本。
+     */
     private fun org.cangnova.cangjie.cfir.resolve.providers.macro.CfirAnnotationSlotSnapshot.stableCacheText(): String =
         listOf(
             "index=$annotationIndex",
@@ -1222,6 +1408,9 @@ class FrontendMacroConstructionService(
             "callSite=$callSite",
         ).joinToString("|")
 
+    /**
+     * 将宏 executor 诊断严重级别映射为构造诊断严重级别。
+     */
     private fun Int.toConstructionSeverity(): MacroConstructionDiagnostic.Severity {
         return when (this) {
             MacroDiagnosticSeverity.INFO -> MacroConstructionDiagnostic.Severity.INFO
@@ -1231,6 +1420,9 @@ class FrontendMacroConstructionService(
         }
     }
 
+    /**
+     * 将宏展开失败类型映射为构造诊断类型。
+     */
     private fun MacroExpansionFailureKind.toConstructionDiagnosticKind(): MacroConstructionDiagnostic.Kind {
         return when (this) {
             MacroExpansionFailureKind.CANNOT_FIND_METHOD -> MacroConstructionDiagnostic.Kind.MACRO_CANNOT_FIND_METHOD
@@ -1243,6 +1435,9 @@ class FrontendMacroConstructionService(
         }
     }
 
+    /**
+     * 将动态库加载失败类型映射为构造诊断类型。
+     */
     private fun MacroLibraryLoadFailureKind.toConstructionDiagnosticKind(): MacroConstructionDiagnostic.Kind {
         return when (this) {
             MacroLibraryLoadFailureKind.CANNOT_OPEN_LIB -> MacroConstructionDiagnostic.Kind.MACRO_CANNOT_OPEN_LIB
@@ -1262,6 +1457,9 @@ class FrontendMacroConstructionService(
  * fragment，避免把 builtin non-macro surface 交给 ordinary resolve。
  */
 private object CangJieBuiltinNonMacroDesugarer : BuiltinNonMacroDesugarer {
+    /**
+     * 对内建非宏表面的解析结果执行前端内置脱糖。
+     */
     override fun desugar(
         surface: BuiltinNonMacroSurface,
         fragment: MacroFragmentResult.Success,
@@ -1283,6 +1481,9 @@ private object CangJieBuiltinNonMacroDesugarer : BuiltinNonMacroDesugarer {
  * expression carrier 时会硬失败，避免 silent identity splice。
  */
 private object CfirExpressionMacroStableSplicer : MacroStableSplicer {
+    /**
+     * 将一批宏替换槽稳定应用到 CFIR 文件树。
+     */
     override fun applySlices(files: List<CfirFile>, slots: List<MacroReplaceSlot>): List<CfirFile> {
         val expressionSlotsWithCarrier = IdentityHashMap<CfirExpression, MacroReplaceSlot>()
         val declarationSlotsWithCarrier = IdentityHashMap<CfirDeclaration, MacroReplaceSlot>()
@@ -1380,6 +1581,9 @@ private object CfirExpressionMacroStableSplicer : MacroStableSplicer {
         return files
     }
 
+    /**
+     * 替换声明或参数上的注解槽。
+     */
     private fun replaceAnnotationSlots(
         annotationSlots: MutableMap<org.cangnova.cangjie.cfir.resolve.providers.macro.CfirAnnotationReplaceCarrier, MacroReplaceSlot>,
     ) {
@@ -1403,6 +1607,9 @@ private object CfirExpressionMacroStableSplicer : MacroStableSplicer {
     }
 
     @Suppress("UNCHECKED_CAST")
+    /**
+     * 替换声明列表中的宏声明槽，并递归替换参数槽。
+     */
     private fun replaceDeclarationSlots(
         declarations: List<CfirDeclaration>,
         declarationSlots: IdentityHashMap<CfirDeclaration, MacroReplaceSlot>,
@@ -1423,6 +1630,9 @@ private object CfirExpressionMacroStableSplicer : MacroStableSplicer {
         }
     }
 
+    /**
+     * 递归替换类状声明或扩展声明中的嵌套声明槽。
+     */
     private fun replaceNestedDeclarationSlots(
         declaration: CfirDeclaration,
         declarationSlots: IdentityHashMap<CfirDeclaration, MacroReplaceSlot>,
@@ -1440,6 +1650,9 @@ private object CfirExpressionMacroStableSplicer : MacroStableSplicer {
         }
     }
 
+    /**
+     * 替换函数参数列表中的宏参数槽。
+     */
     private fun replaceParameterSlots(
         declaration: CfirDeclaration,
         parameterSlots: IdentityHashMap<CfirValueParameter, MacroReplaceSlot>,
@@ -1451,6 +1664,9 @@ private object CfirExpressionMacroStableSplicer : MacroStableSplicer {
         declaration.replaceValueParameters(newParameters)
     }
 
+    /**
+     * 从宏替换槽中读取表达式 payload。
+     */
     private fun MacroReplaceSlot.toExpressionPayload(): CfirExpression {
         val success = fragment as? MacroFragmentResult.Success
             ?: error("Macro fragment for `${origin.qualifiedName?.asString().orEmpty()}` did not parse successfully.")
@@ -1462,6 +1678,9 @@ private object CfirExpressionMacroStableSplicer : MacroStableSplicer {
             )
     }
 
+    /**
+     * 从宏替换槽中读取声明 payload。
+     */
     private fun MacroReplaceSlot.toDeclarationPayload(): CfirDeclaration {
         val success = fragment as? MacroFragmentResult.Success
             ?: error("Macro fragment for `${origin.qualifiedName?.asString().orEmpty()}` did not parse successfully.")
@@ -1473,6 +1692,9 @@ private object CfirExpressionMacroStableSplicer : MacroStableSplicer {
             )
     }
 
+    /**
+     * 从宏替换槽中读取参数 payload。
+     */
     private fun MacroReplaceSlot.toValueParameterPayload(): CfirValueParameter {
         val success = fragment as? MacroFragmentResult.Success
             ?: error("Macro fragment for `${origin.qualifiedName?.asString().orEmpty()}` did not parse successfully.")
@@ -1485,6 +1707,9 @@ private object CfirExpressionMacroStableSplicer : MacroStableSplicer {
     }
 }
 
+/**
+ * 返回宏片段对父宏可见的 token 序列。
+ */
 private fun MacroFragmentResult.parentVisibleTokens(): List<MacroSurfaceToken> {
     return when (this) {
         is MacroFragmentResult.Success -> tokens
@@ -1493,6 +1718,9 @@ private fun MacroFragmentResult.parentVisibleTokens(): List<MacroSurfaceToken> {
     }
 }
 
+/**
+ * 将宏表面和解析结果转换为 executor 协议调用信息。
+ */
 private fun MacroSurface.toMacroCallInfo(
     entry: MacroDefinitionEntry,
     parentNames: List<String>,
@@ -1547,11 +1775,23 @@ private fun macroWrapperFunctionName(
     return (prefix + macroName + "_" + packageName).replace('.', '_')
 }
 
+/**
+ * 子宏展开结果刷新后的宏表面 token。
+ */
 private data class RefreshedMacroSurfaceTokens(
+    /**
+     * 刷新后的输入 token。
+     */
     val inputTokens: List<MacroSurfaceToken>,
+    /**
+     * 刷新后的属性 token。
+     */
     val attrTokens: List<MacroSurfaceToken>,
 )
 
+/**
+ * 判断当前宏节点是否存在无法映射的子宏 payload 通道。
+ */
 private fun MacroCallNode.hasUnresolvedChildPayloadChannel(
     childResults: Map<MacroCallNode, List<MacroSurfaceToken>>,
 ): Boolean {
@@ -1560,6 +1800,9 @@ private fun MacroCallNode.hasUnresolvedChildPayloadChannel(
     }
 }
 
+/**
+ * 使用子宏展开结果刷新当前宏节点的输入和属性 token。
+ */
 private fun MacroCallNode.refreshTokensWithChildResults(
     childResults: Map<MacroCallNode, List<MacroSurfaceToken>>,
 ): RefreshedMacroSurfaceTokens {
@@ -1572,6 +1815,9 @@ private fun MacroCallNode.refreshTokensWithChildResults(
     return RefreshedMacroSurfaceTokens(inputTokens = input, attrTokens = attr)
 }
 
+/**
+ * 用子宏展开结果替换父宏 token 序列中的子宏源码范围。
+ */
 private fun List<MacroSurfaceToken>.replaceChildMacroRanges(
     childResults: Map<MacroCallNode, List<MacroSurfaceToken>>,
     channel: MacroPayloadChannel,
@@ -1603,15 +1849,24 @@ private fun List<MacroSurfaceToken>.replaceChildMacroRanges(
     return current
 }
 
+/**
+ * 判断 token 是否完整落在给定宏表面源码范围内。
+ */
 private fun MacroSurfaceToken.isInside(range: org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceSourceRange): Boolean {
     return startOffset >= range.startOffset && endOffset <= range.endOffset
 }
 
+/**
+ * 将宏表面 token 转换为 executor 协议 token，使用默认位置。
+ */
 private fun List<MacroSurfaceToken>.toTokenInfo(
     defaultBegin: SourcePosition,
     defaultEnd: SourcePosition,
 ): List<TokenInfo> = toTokenInfo(defaultBegin, defaultEnd, null)
 
+/**
+ * 将宏表面 token 转换为 executor 协议 token。
+ */
 private fun List<MacroSurfaceToken>.toTokenInfo(
     defaultBegin: SourcePosition,
     defaultEnd: SourcePosition,
@@ -1625,6 +1880,9 @@ private fun List<MacroSurfaceToken>.toTokenInfo(
     )
 }
 
+/**
+ * 将源文件 offset 转换为 executor 协议源码位置。
+ */
 private fun Int?.toSourcePosition(linesMapping: CjSourceFileLinesMapping?): SourcePosition {
     val offset = this ?: return SourcePosition()
     if (offset < 0 || linesMapping == null) return SourcePosition()
@@ -1633,6 +1891,9 @@ private fun Int?.toSourcePosition(linesMapping: CjSourceFileLinesMapping?): Sour
     return SourcePosition(line = line + 1, column = column + 1)
 }
 
+/**
+ * 将 executor 返回的 token 重建为宏表面 token。
+ */
 private fun List<TokenInfo>.toMacroSurfaceTokens(): List<MacroSurfaceToken> {
     if (isEmpty()) return emptyList()
     val text = MacroMsgCodec.rebuildExpandedText(this)
@@ -1645,6 +1906,9 @@ private fun List<TokenInfo>.toMacroSurfaceTokens(): List<MacroSurfaceToken> {
     )
 }
 
+/**
+ * 将普通字符串转为 Kotlin 字符串字面量。
+ */
 private fun stringLiteral(value: String): String = buildString {
     append('"')
     for (ch in value) {

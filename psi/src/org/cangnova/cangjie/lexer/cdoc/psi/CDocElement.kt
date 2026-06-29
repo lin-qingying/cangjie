@@ -26,4 +26,7 @@ package org.cangnova.cangjie.lexer.cdoc.psi
 
 import com.intellij.psi.PsiElement
 
+/**
+ * 定义 `CDocElement` 接口，约束仓颉词法与文档注释节点或服务需要暴露的结构能力。
+ */
 interface CDocElement : PsiElement

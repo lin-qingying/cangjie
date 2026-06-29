@@ -7,13 +7,31 @@ import org.cangnova.cangjie.test.model.TestModule
 import org.cangnova.cangjie.test.services.AdditionalMetaInfoProcessor
 import org.cangnova.cangjie.test.services.TestServices
 
+/**
+ * 表示 `AbstractTwoAttributesMetaInfoProcessor`，承载测试基础设施中的配置数据、测试产物或处理步骤。
+ */
 abstract class AbstractTwoAttributesMetaInfoProcessor(testServices: TestServices) : AdditionalMetaInfoProcessor(testServices) {
+    /**
+     * 保存 `firstAttribute`，供测试基础设施在测试执行期间读取或传递。
+     */
     protected abstract val firstAttribute: String
+    /**
+     * 保存 `secondAttribute`，供测试基础设施在测试执行期间读取或传递。
+     */
     protected abstract val secondAttribute: String
 
+    /**
+     * 提供 `processorEnabled` 对应的测试基础设施流程，维持测试框架的阶段契约。
+     */
     protected abstract fun processorEnabled(module: TestModule): Boolean
+    /**
+     * 提供 `firstAttributeEnabled` 对应的测试基础设施流程，维持测试框架的阶段契约。
+     */
     protected abstract fun firstAttributeEnabled(module: TestModule): Boolean
 
+    /**
+     * 执行 `processMetaInfos` 对应的测试基础设施流程，维持测试框架的阶段契约。
+     */
     override fun processMetaInfos(module: TestModule, file: TestFile) {
         /*
          * Rules for OI/NI attribute:

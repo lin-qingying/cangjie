@@ -34,16 +34,28 @@ import org.cangnova.cangjie.lexer.CjTokens
  * 这里不把 `with` 提升为全局关键字，PSI 仅按 `resume` 局部语法形状恢复。
  */
 class CjResumeExpression(node: ASTNode) : CjExpressionImpl(node), CjStatementExpression {
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitResumeExpression(this, data)
     }
 
+    /**
+     * 保存 `resumeKeyword`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val resumeKeyword: PsiElement?
         get() = findChildByType(CjTokens.RESUME_KEYWORD)
 
+    /**
+     * 保存 `throwingKeyword`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     val throwingKeyword: PsiElement?
         get() = findChildByType(CjTokens.THROWING_KEYWORD)
 
+    /**
+     * 保存 `withExpression`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     @get:IfNotParsed
     val withExpression: CjExpression?
         get() {
@@ -51,6 +63,9 @@ class CjResumeExpression(node: ASTNode) : CjExpressionImpl(node), CjStatementExp
             return findChildByClass(CjExpression::class.java)
         }
 
+    /**
+     * 保存 `throwingExpression`，供仓颉 PSI流程读取节点结构或语义信息。
+     */
     @get:IfNotParsed
     val throwingExpression: CjExpression?
         get() {

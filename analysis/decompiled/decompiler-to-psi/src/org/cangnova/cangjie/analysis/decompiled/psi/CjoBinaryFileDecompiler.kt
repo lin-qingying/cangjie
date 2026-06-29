@@ -14,6 +14,12 @@ import com.intellij.psi.PsiManager
  * 主链，不单独实现文本渲染路径。
  */
 class CjoBinaryFileDecompiler : BinaryFileDecompiler {
+    /**
+     * 返回 `.cjo` 文件在编辑器中展示的反编译文本。
+     *
+     * 项目不可解析或已释放时返回空文本；正常路径通过 PSI 管理器触发
+     * [CangJieDecompiledFileViewProvider] 和 compiled stub 的既有渲染链路。
+     */
     override fun decompile(file: VirtualFile): CharSequence {
         val project = ProjectLocator.getInstance().guessProjectForFile(file)
             ?: ProjectLocator.getPreferredProject(file)

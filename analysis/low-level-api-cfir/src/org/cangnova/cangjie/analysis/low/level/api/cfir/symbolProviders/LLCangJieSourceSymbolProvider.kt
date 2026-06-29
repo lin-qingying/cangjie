@@ -34,29 +34,47 @@ import org.cangnova.cangjie.utils.exceptions.ExceptionAttachmentBuilder
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 
 /**
- * [LLCangJieSourceSymbolProvider] is a [LLCangJieSymbolProvider] which provides symbols for source-based modules, such as [CaSourceModule][org.cangnova.cangjie.analysis.api.projectStructure.CaSourceModule].
+ * 面向源码模块的 [LLCangJieSymbolProvider] 实现。
+ *
+ * 该提供器从模块内容范围内的仓颉 PSI 构建 raw CFIR，并把 class-like、顶层函数、顶层属性和顶层扩展文件暴露为 CFIR 符号。
+ * 典型使用方是 [CaSourceModule][org.cangnova.cangjie.analysis.api.projectStructure.CaSourceModule] 对应的低阶分析会话。
  */
 @OptIn(CaPlatformInterface::class)
 internal class LLCangJieSourceSymbolProvider(
     session: LLCfirSession,
+    /**
+     * 当前模块的解析组件集合，提供内容范围、raw CFIR 文件构建器和模块数据。
+     */
     private val moduleComponents: LLCfirModuleResolveComponents,
     declarationProviderFactory: (GlobalSearchScope) -> CangJieDeclarationProvider?,
 ) : LLCangJieSymbolProvider(session), LLMultiClassLikeSymbolProvider {
+    /**
+     * 当前源码模块的内容搜索范围。
+     */
     private val searchScope: GlobalSearchScope
         get() = moduleComponents.module.contentScope
 
+    /**
+     * 聚合当前内容范围内可用的仓颉声明索引。
+     */
     override val declarationProvider = CangJieCompositeDeclarationProvider.create(
         listOfNotNull(
             declarationProviderFactory(searchScope),
         )
     )
 
+    /**
+     * 聚合当前内容范围内可用的仓颉包索引。
+     */
     override val packageProvider = CangJieCompositePackageProvider.create(
         listOfNotNull(
             session.project.createPackageProvider(searchScope),
         )
     )
 
+    /**
+     * 绑定当前源码声明索引的缓存名称提供器。
+     */
     override val symbolNamesProvider: CfirSymbolNamesProvider = CfirCompositeCachedSymbolNamesProvider.create(
         session,
         listOfNotNull(
@@ -64,20 +82,32 @@ internal class LLCangJieSourceSymbolProvider(
         )
     )
 
+    /**
+     * class-like 符号缓存，支持按 [ClassId] 与按 PSI 两种命中路径。
+     */
     private val classLikeCache =
         LLPsiAwareClassLikeSymbolCache(session, ::computeClassLikeSymbolByClassId) { declaration: CjClassLikeDeclaration, _ ->
             computeClassLikeSymbolByPsi(declaration)
         }
 
+    /**
+     * 根据 [classId] 查询当前源码模块中的 class-like 符号。
+     */
     override fun getClassLikeSymbolByClassId(classId: ClassId): CfirClassLikeSymbol<*>? {
         if (!symbolNamesProvider.mayHaveTopLevelClassifier(classId)) return null
         return getClassLikeSymbolByClassIdAndDeclaration(classId, classLikeDeclaration = null)
     }
 
+    /**
+     * 根据已知 [classLikeDeclaration] 查询 [classId] 对应的 class-like 符号。
+     */
     @LLModuleSpecificSymbolProviderAccess
     override fun getClassLikeSymbolByClassId(classId: ClassId, classLikeDeclaration: CjClassLikeDeclaration): CfirClassLikeSymbol<*>? =
         getClassLikeSymbolByClassIdAndDeclaration(classId, classLikeDeclaration)
 
+    /**
+     * 统一按 [classId] 与可选 PSI 上下文查询 class-like 缓存。
+     */
     @OptIn(LLModuleSpecificSymbolProviderAccess::class)
     private fun getClassLikeSymbolByClassIdAndDeclaration(
         classId: ClassId,
@@ -90,6 +120,9 @@ internal class LLCangJieSourceSymbolProvider(
         )
     }
 
+    /**
+     * 根据 [declaration] PSI 精确查询 [classId] 对应的 class-like 符号。
+     */
     @LLModuleSpecificSymbolProviderAccess
     override fun getClassLikeSymbolByPsi(classId: ClassId, declaration: PsiElement): CfirClassLikeSymbol<*>? {
         return classLikeCache.getSymbolByPsi<CjClassLikeDeclaration>(
@@ -100,8 +133,10 @@ internal class LLCangJieSourceSymbolProvider(
     }
 
     /**
-     * To find out more about KT-62339, we're adding information about whether the declaration for the given class ID can *now* be found by
-     * the declaration provider (or is still `null`). And whether the given context element is actually in the scope of the symbol provider.
+     * 为 class-like 缓存异常补充声明索引与内容范围诊断信息。
+     *
+     * 这里会记录指定 class ID 当前是否仍能从 [declarationProvider] 找到声明，以及给定上下文 PSI 是否位于当前符号提供器的
+     * [searchScope] 内，用于定位缓存失效或模块归属异常。
      */
     private val buildAdditionalAttachmentsForClassLikeSymbol: ExceptionAttachmentBuilder.(ClassId, CjClassLikeDeclaration?) -> Unit =
         { classId, context ->
@@ -117,6 +152,11 @@ internal class LLCangJieSourceSymbolProvider(
             }
         }
 
+    /**
+     * 查询 [classId] 对应的全部 class-like 符号。
+     *
+     * 多声明场景下直接使用 [declarationProvider] 提供的声明集合，确保结果只来自当前模块内容范围。
+     */
     override fun getAllClassLikeSymbolsByClassId(classId: ClassId): List<CfirClassLikeSymbol<*>> {
         val declarations = declarationProvider.getAllClassesByClassId(classId) + declarationProvider.getAllTypeAliasesByClassId(classId)
 
@@ -126,6 +166,9 @@ internal class LLCangJieSourceSymbolProvider(
         return declarations.mapNotNull { getClassLikeSymbolByPsi(classId, it) }
     }
 
+    /**
+     * 根据 [classId] 与可选 PSI 上下文计算 class-like 符号。
+     */
     private fun computeClassLikeSymbolByClassId(classId: ClassId, context: CjClassLikeDeclaration?): CfirClassLikeSymbol<*>? {
         require(context == null || context.isPhysical)
         val classLikeDeclaration = context ?: declarationProvider.getClassLikeDeclarationByClassId(classId) ?: return null
@@ -139,6 +182,9 @@ internal class LLCangJieSourceSymbolProvider(
         }
     }
 
+    /**
+     * 根据物理 [declaration] PSI 计算 class-like 符号。
+     */
     private fun computeClassLikeSymbolByPsi(declaration: CjClassLikeDeclaration): CfirClassLikeSymbol<*>? {
         require(declaration.isPhysical)
 
@@ -148,6 +194,9 @@ internal class LLCangJieSourceSymbolProvider(
         }
     }
 
+    /**
+     * 构建声明所在文件的 raw CFIR，并在其中定位对应的 class-like CFIR 声明。
+     */
     private inline fun findClassLikeSymbol(
         classId: ClassId,
         declaration: CjClassLikeDeclaration,
@@ -162,17 +211,26 @@ internal class LLCangJieSourceSymbolProvider(
             }
     }
 
+    /**
+     * 查询指定包和名称下的全部顶层 callable 符号。
+     */
     override fun getTopLevelCallableSymbols(packageFqName: FqName, name: Name): List<CfirCallableSymbol<*>> {
         if (!symbolNamesProvider.mayHaveTopLevelCallable(packageFqName, name)) return emptyList()
         return getTopLevelCallableSymbols(CallableId(packageFqName, name), callableFiles = null)
     }
 
+    /**
+     * 将指定包和名称下的全部顶层 callable 符号追加到 [destination]。
+     */
     @CfirSymbolProviderInternals
     override fun getTopLevelCallableSymbolsTo(destination: MutableList<CfirCallableSymbol<*>>, packageFqName: FqName, name: Name) {
         if (!symbolNamesProvider.mayHaveTopLevelCallable(packageFqName, name)) return
         destination += getTopLevelCallableSymbols(CallableId(packageFqName, name), callableFiles = null)
     }
 
+    /**
+     * 根据已知 [callables] 所在文件查询顶层 callable 符号并追加到 [destination]。
+     */
     @CfirSymbolProviderInternals
     override fun getTopLevelCallableSymbolsTo(
         destination: MutableList<CfirCallableSymbol<*>>,
@@ -182,26 +240,41 @@ internal class LLCangJieSourceSymbolProvider(
         destination += getTopLevelCallableSymbols(callableId, callables.mapTo(mutableSetOf()) { it.containingCjFile })
     }
 
+    /**
+     * 通过 [callableCache] 获取 [callableId] 对应的顶层 callable 符号。
+     */
     private fun getTopLevelCallableSymbols(callableId: CallableId, callableFiles: Collection<CjFile>?): List<CfirCallableSymbol<*>> {
         return callableCache.getValue(callableId, callableFiles)
     }
 
+    /**
+     * 顶层 callable 缓存，缓存键为 [CallableId]，上下文为可选的已知声明文件集合。
+     */
     private val callableCache: CfirCache<CallableId, List<CfirCallableSymbol<*>>, Collection<CjFile>?> =
         session.cfirCachesFactory.createCache { callableId, context ->
             computeCallableSymbolsByCallableId<CfirCallableSymbol<*>>(callableId, context)
         }
 
+    /**
+     * 查询指定包和名称下的全部顶层函数符号。
+     */
     override fun getTopLevelFunctionSymbols(packageFqName: FqName, name: Name): List<CfirNamedFunctionSymbol> {
         if (!symbolNamesProvider.mayHaveTopLevelCallable(packageFqName, name)) return emptyList()
         return getTopLevelFunctionSymbols(CallableId(packageFqName, name), callableFiles = null)
     }
 
+    /**
+     * 将指定包和名称下的全部顶层函数符号追加到 [destination]。
+     */
     @CfirSymbolProviderInternals
     override fun getTopLevelFunctionSymbolsTo(destination: MutableList<CfirNamedFunctionSymbol>, packageFqName: FqName, name: Name) {
         if (!symbolNamesProvider.mayHaveTopLevelCallable(packageFqName, name)) return
         destination += getTopLevelFunctionSymbols(CallableId(packageFqName, name), callableFiles = null)
     }
 
+    /**
+     * 根据已知 [functions] 所在文件查询顶层函数符号并追加到 [destination]。
+     */
     @CfirSymbolProviderInternals
     override fun getTopLevelFunctionSymbolsTo(
         destination: MutableList<CfirNamedFunctionSymbol>,
@@ -211,26 +284,41 @@ internal class LLCangJieSourceSymbolProvider(
         destination += getTopLevelFunctionSymbols(callableId, functions.mapTo(mutableSetOf()) { it.containingCjFile })
     }
 
+    /**
+     * 顶层函数缓存，缓存键为 [CallableId]，上下文为可选的已知声明文件集合。
+     */
     private val functionCache: CfirCache<CallableId, List<CfirNamedFunctionSymbol>, Collection<CjFile>?> =
         session.cfirCachesFactory.createCache { callableId, context ->
             computeCallableSymbolsByCallableId<CfirNamedFunctionSymbol>(callableId, context)
         }
 
+    /**
+     * 通过 [functionCache] 获取 [callableId] 对应的顶层函数符号。
+     */
     private fun getTopLevelFunctionSymbols(callableId: CallableId, callableFiles: Collection<CjFile>?): List<CfirNamedFunctionSymbol> {
         return functionCache.getValue(callableId, callableFiles)
     }
 
+    /**
+     * 查询指定包和名称下的全部顶层属性符号。
+     */
     override fun getTopLevelPropertySymbols(packageFqName: FqName, name: Name): List<CfirPropertySymbol> {
         if (!symbolNamesProvider.mayHaveTopLevelCallable(packageFqName, name)) return emptyList()
         return getTopLevelPropertySymbols(CallableId(packageFqName, name), callableFiles = null)
     }
 
+    /**
+     * 将指定包和名称下的全部顶层属性符号追加到 [destination]。
+     */
     @CfirSymbolProviderInternals
     override fun getTopLevelPropertySymbolsTo(destination: MutableList<CfirPropertySymbol>, packageFqName: FqName, name: Name) {
         if (!symbolNamesProvider.mayHaveTopLevelCallable(packageFqName, name)) return
         destination += getTopLevelPropertySymbols(CallableId(packageFqName, name), callableFiles = null)
     }
 
+    /**
+     * 根据已知 [properties] 所在文件查询顶层属性符号并追加到 [destination]。
+     */
     @CfirSymbolProviderInternals
     override fun getTopLevelPropertySymbolsTo(
         destination: MutableList<CfirPropertySymbol>,
@@ -240,23 +328,29 @@ internal class LLCangJieSourceSymbolProvider(
         destination += getTopLevelPropertySymbols(callableId, properties.mapTo(mutableSetOf()) { it.containingCjFile })
     }
 
+    /**
+     * 顶层属性缓存，缓存键为 [CallableId]，上下文为可选的已知声明文件集合。
+     */
     private val propertyCache: CfirCache<CallableId, List<CfirPropertySymbol>, Collection<CjFile>?> =
         session.cfirCachesFactory.createCache { callableId, context ->
             computeCallableSymbolsByCallableId<CfirPropertySymbol>(callableId, context)
         }
 
+    /**
+     * 通过 [propertyCache] 获取 [callableId] 对应的顶层属性符号。
+     */
     private fun getTopLevelPropertySymbols(callableId: CallableId, callableFiles: Collection<CjFile>?): List<CfirPropertySymbol> {
         return propertyCache.getValue(callableId, callableFiles)
     }
 
     /**
-     * Locates all the callable symbols of required [TYPE] with the matching [callableId] within a specific set of files.
-     * Uses the passed [context] files to avoid index access if available; falls back to the [declarationProvider] otherwise.
+     * 在指定文件集合内定位匹配 [callableId] 的 [TYPE] 类型 callable 符号。
      *
-     * To work correctly with the [CfirCache], this function has to obey the following contract:
+     * 当 [context] 不为空时直接使用已知文件避免访问索引；否则通过 [declarationProvider] 获取包含该 callable 的顶层文件。
      *
-     * It can be called with some [callableId] and a non-null [context] **if and only if** the returned value
-     * is going to be the same for the `null` context.
+     * 为了与 [CfirCache] 正确协作，该函数必须满足以下契约：
+     *
+     * 只有当非空 [context] 的返回值与 `null` 上下文的返回值一致时，才允许使用同一个 [callableId] 携带非空 [context] 调用。
      */
     private inline fun <reified TYPE : CfirCallableSymbol<*>> computeCallableSymbolsByCallableId(
         callableId: CallableId,
@@ -280,6 +374,9 @@ internal class LLCangJieSourceSymbolProvider(
         return result
     }
 
+    /**
+     * 从当前 [CfirFile] 的顶层声明中收集指定 [name] 与 [TYPE] 类型匹配的 callable 符号。
+     */
     private inline fun <reified TYPE : CfirCallableSymbol<*>> CfirFile.collectCallableSymbolsOfTypeTo(result: MutableList<TYPE>, name: Name) {
         declarations.mapNotNullTo(result) { declaration ->
             if (declaration is CfirCallableDeclaration && declaration.symbol.name == name) {
@@ -288,10 +385,16 @@ internal class LLCangJieSourceSymbolProvider(
         }
     }
 
+    /**
+     * 判断当前源码模块包索引中是否存在 [fqName] 包。
+     */
     override fun hasPackage(fqName: FqName): Boolean {
         return packageProvider.doesPackageExist(fqName)
     }
 
+    /**
+     * 物化当前源码模块中的顶层扩展文件为 raw CFIR 文件。
+     */
     internal override fun materializeTopLevelExtendFiles(): List<CfirFile> {
         return declarationProvider.getTopLevelExtendFiles()
             .distinctBy { file -> file.virtualFile ?: file }

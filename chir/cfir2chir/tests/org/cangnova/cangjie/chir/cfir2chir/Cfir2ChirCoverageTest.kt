@@ -107,7 +107,13 @@ import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
+/**
+ * 覆盖 CFIR 到 CHIR 转换中尚未接入真实 testData 的关键 lowering 分支。
+ */
 class Cfir2ChirCoverageTest {
+    /**
+     * 验证带值 if 表达式会生成 then/else block 和 phi 操作。
+     */
     @Test
     fun `lowers value if expression into CHIR phi`() {
         val condition = buildComparisonExpression {
@@ -134,6 +140,9 @@ class Cfir2ChirCoverageTest {
         assertTrue(chirFunction.otherOperations().contains(Cfir2ChirOperation.PHI.canonicalName))
     }
 
+    /**
+     * 验证非 Unit if 分支 fallthrough 缺值时不会静默生成错误 CHIR。
+     */
     @Test
     fun `rejects non-unit if branch that falls through without value`() {
         val condition = buildComparisonExpression {
@@ -158,6 +167,9 @@ class Cfir2ChirCoverageTest {
         }
     }
 
+    /**
+     * 验证匿名函数重复出现时复用已转换声明，并保留两次表达式操作。
+     */
     @Test
     fun `reuses already converted anonymous function without swallowing storage errors`() {
         val anonymous = buildAnonymousFunction {
@@ -186,6 +198,9 @@ class Cfir2ChirCoverageTest {
         assertEquals(2, operations.count { it == Cfir2ChirOperation.CFIR_ANONYMOUS_FUNCTION.canonicalName })
     }
 
+    /**
+     * 验证 CFIR 专有表达式形态会以 cfir2chir operation 保留到 CHIR。
+     */
     @Test
     fun `preserves CFIR-only expression forms as cfir2chir operations`() {
         val function = functionWithBody(
@@ -265,6 +280,9 @@ class Cfir2ChirCoverageTest {
         assertTrue(Cfir2ChirOperation.CFIR_SMART_CAST.canonicalName in operations)
     }
 
+    /**
+     * 验证复合 Cone 类型映射只依赖 cfir2chir 的类型映射层，不反向依赖 CHIR tree 细节。
+     */
     @Test
     fun `maps composite Cone types without depending on CFIR tree module from chir tree`() {
         val mapper = Cfir2ChirTypeMapper()
@@ -290,6 +308,9 @@ class Cfir2ChirCoverageTest {
         }
     }
 
+    /**
+     * 验证 struct、interface、extend、typealias、primitive 和 code fragment 声明转换。
+     */
     @Test
     fun `converts class-like declarations in cfir2chir module`() {
         val module = convertModule(
@@ -348,12 +369,21 @@ class Cfir2ChirCoverageTest {
         assertTrue(ChirStringAttribute("cfir.kind", "codeFragment") in codeFragment.attributes)
     }
 
+    /**
+     * 转换单个 CFIR 函数并返回唯一 CHIR 函数声明。
+     */
     private fun convertSingleFunction(function: CfirNamedFunction): ChirFunctionDeclaration =
         convertModule(function).declarations.filterIsInstance<ChirFunctionDeclaration>().single()
 
+    /**
+     * 将一组测试声明包进 CFIR 文件并转换为唯一 CHIR module。
+     */
     private fun convertModule(vararg declarations: CfirDeclaration): ChirModule =
         DefaultCfir2ChirConverter().convert(listOf(fileWith(*declarations))).modules.single()
 
+    /**
+     * 构造返回指定表达式值的命名函数。
+     */
     private fun functionReturningExpression(
         name: String,
         returnType: ConePrimitiveType,
@@ -361,6 +391,9 @@ class Cfir2ChirCoverageTest {
     ): CfirNamedFunction =
         functionWithBody(name, returnType, returnType, listOf(expression))
 
+    /**
+     * 构造带指定 body 语句列表的命名函数。
+     */
     private fun functionWithBody(
         name: String,
         returnType: ConePrimitiveType,
@@ -376,11 +409,17 @@ class Cfir2ChirCoverageTest {
         }
     }
 
+    /**
+     * 构造带解析类型的 CFIR block。
+     */
     private fun blockOf(type: ConePrimitiveType, vararg statements: CfirStatement) = buildBlock {
         coneTypeOrNull = type
         this.statements += statements
     }
 
+    /**
+     * 构造测试用字段变量。
+     */
     private fun field(name: String, type: ConePrimitiveType, mutable: Boolean): CfirFieldVariable {
         val variableName = Name.identifier(name)
         return buildFieldVariable {
@@ -392,6 +431,9 @@ class Cfir2ChirCoverageTest {
         }
     }
 
+    /**
+     * 构造包含指定声明的测试 CFIR 文件。
+     */
     private fun fileWith(vararg declarations: CfirDeclaration): CfirFile =
         buildFile {
             commonDeclaration()
@@ -404,6 +446,9 @@ class Cfir2ChirCoverageTest {
             this.declarations += declarations
         }
 
+    /**
+     * 填充命名函数声明在转换测试中必需的公共字段。
+     */
     private fun CfirNamedFunctionBuilder.commonNamedFunctionDeclaration(symbol: CfirNamedFunctionSymbol) {
         commonDeclaration()
         isLocal = false
@@ -413,6 +458,9 @@ class Cfir2ChirCoverageTest {
         isMut = false
     }
 
+    /**
+     * 填充字段变量声明在转换测试中必需的公共字段。
+     */
     private fun CfirFieldVariableBuilder.commonFieldVariableDeclaration(symbol: CfirFieldVariableSymbol) {
         commonDeclaration()
         isLocal = false
@@ -421,6 +469,9 @@ class Cfir2ChirCoverageTest {
         this.symbol = symbol
     }
 
+    /**
+     * 填充命名函数 builder 的基础声明元数据。
+     */
     private fun CfirNamedFunctionBuilder.commonDeclaration() {
         moduleData = TestModuleData
         resolvePhase = CfirResolvePhase.BODY_RESOLVE
@@ -428,6 +479,9 @@ class Cfir2ChirCoverageTest {
         attributes = CfirDeclarationAttributes.EMPTY
     }
 
+    /**
+     * 填充字段变量 builder 的基础声明元数据。
+     */
     private fun CfirFieldVariableBuilder.commonDeclaration() {
         moduleData = TestModuleData
         resolvePhase = CfirResolvePhase.BODY_RESOLVE
@@ -435,6 +489,9 @@ class Cfir2ChirCoverageTest {
         attributes = CfirDeclarationAttributes.EMPTY
     }
 
+    /**
+     * 填充文件 builder 的基础声明元数据。
+     */
     private fun CfirFileBuilder.commonDeclaration() {
         moduleData = TestModuleData
         resolvePhase = CfirResolvePhase.BODY_RESOLVE
@@ -442,6 +499,9 @@ class Cfir2ChirCoverageTest {
         attributes = CfirDeclarationAttributes.EMPTY
     }
 
+    /**
+     * 填充 extend builder 的基础声明元数据。
+     */
     private fun CfirExtendBuilder.commonDeclaration() {
         moduleData = TestModuleData
         resolvePhase = CfirResolvePhase.BODY_RESOLVE
@@ -449,6 +509,9 @@ class Cfir2ChirCoverageTest {
         attributes = CfirDeclarationAttributes.EMPTY
     }
 
+    /**
+     * 填充 typealias builder 的基础声明元数据。
+     */
     private fun CfirTypeAliasBuilder.commonDeclaration() {
         moduleData = TestModuleData
         resolvePhase = CfirResolvePhase.BODY_RESOLVE
@@ -456,6 +519,9 @@ class Cfir2ChirCoverageTest {
         attributes = CfirDeclarationAttributes.EMPTY
     }
 
+    /**
+     * 填充 code fragment builder 的基础声明元数据。
+     */
     private fun CfirCodeFragmentBuilder.commonDeclaration() {
         moduleData = TestModuleData
         resolvePhase = CfirResolvePhase.BODY_RESOLVE
@@ -463,6 +529,9 @@ class Cfir2ChirCoverageTest {
         attributes = CfirDeclarationAttributes.EMPTY
     }
 
+    /**
+     * 填充匿名函数 builder 的基础声明元数据。
+     */
     private fun CfirAnonymousFunctionBuilder.commonDeclaration() {
         moduleData = TestModuleData
         resolvePhase = CfirResolvePhase.BODY_RESOLVE
@@ -472,6 +541,9 @@ class Cfir2ChirCoverageTest {
         dispatchReceiverType = null
     }
 
+    /**
+     * 填充 struct builder 的 class-like 公共字段。
+     */
     private fun CfirStructBuilder.commonClassLikeDeclaration(
         name: String,
         symbol: CfirStructSymbol,
@@ -483,6 +555,9 @@ class Cfir2ChirCoverageTest {
         this.symbol = symbol
     }
 
+    /**
+     * 填充 interface builder 的 class-like 公共字段。
+     */
     private fun CfirInterfaceBuilder.commonClassLikeDeclaration(
         name: String,
         symbol: CfirInterfaceSymbol,
@@ -494,6 +569,9 @@ class Cfir2ChirCoverageTest {
         this.symbol = symbol
     }
 
+    /**
+     * 填充 struct builder 的基础声明元数据。
+     */
     private fun CfirStructBuilder.commonDeclaration() {
         moduleData = TestModuleData
         resolvePhase = CfirResolvePhase.BODY_RESOLVE
@@ -501,6 +579,9 @@ class Cfir2ChirCoverageTest {
         attributes = CfirDeclarationAttributes.EMPTY
     }
 
+    /**
+     * 填充 interface builder 的基础声明元数据。
+     */
     private fun CfirInterfaceBuilder.commonDeclaration() {
         moduleData = TestModuleData
         resolvePhase = CfirResolvePhase.BODY_RESOLVE
@@ -508,28 +589,46 @@ class Cfir2ChirCoverageTest {
         attributes = CfirDeclarationAttributes.EMPTY
     }
 
+    /**
+     * 构造 Int32 字面量表达式。
+     */
     private fun intLiteral(value: Int) = buildLiteralExpression {
         kind = CfirLiteralKind.INT
         this.value = value
         coneTypeOrNull = ConePrimitiveType.INT32
     }
 
+    /**
+     * 构造 Bool 字面量表达式。
+     */
     private fun boolLiteral(value: Boolean) = buildLiteralExpression {
         kind = CfirLiteralKind.BOOLEAN
         this.value = value
         coneTypeOrNull = ConePrimitiveType.BOOLEAN
     }
 
+    /**
+     * 构造 Int32 resolved type ref。
+     */
     private fun intTypeRef(): CfirTypeRef = typeRef(ConePrimitiveType.INT32)
 
+    /**
+     * 构造指定 Cone 类型的 resolved type ref。
+     */
     private fun typeRef(type: org.cangnova.cangjie.cfir.types.ConeCangJieType): CfirTypeRef =
         buildResolvedTypeRef {
             coneType = type
         }
 
+    /**
+     * 构造 sample 包下的测试 class id。
+     */
     private fun classId(name: String): ClassId =
         ClassId(PackageName, Name.identifier(name))
 
+    /**
+     * 提取 CHIR 函数中所有 other expression 的 operation 名称。
+     */
     private fun ChirFunctionDeclaration.otherOperations(): List<String> =
         blocks.flatMap { block ->
             block.expressions.mapNotNull { expression ->
@@ -537,19 +636,31 @@ class Cfir2ChirCoverageTest {
             }
         }
 
+    /**
+     * 转换测试不应触发真实 scope 查询的占位 scope provider。
+     */
     private object UnusedScopeProvider : CfirScopeProvider() {
+        /**
+         * 禁止在测试 fixture 中查询 use-site 成员作用域。
+         */
         override fun getUseSiteMemberScope(
             klass: CfirClass,
             useSiteSession: CfirSession,
             scopeSession: ScopeSession,
         ): CfirTypeScope = error("scope provider must not be used by cfir2chir coverage tests")
 
+        /**
+         * 禁止在测试 fixture 中查询 typealias constructor 作用域。
+         */
         override fun getTypealiasConstructorScope(
             typeAlias: CfirTypeAlias,
             useSiteSession: CfirSession,
             scopeSession: ScopeSession,
         ): CfirScope = error("scope provider must not be used by cfir2chir coverage tests")
 
+        /**
+         * 禁止在测试 fixture 中查询 declaration-site 成员作用域。
+         */
         override fun getDeclarationSiteMemberScope(
             klass: CfirClass,
             useSiteSession: CfirSession,
@@ -557,18 +668,54 @@ class Cfir2ChirCoverageTest {
         ): CfirTypeScope = error("scope provider must not be used by cfir2chir coverage tests")
     }
 
+    /**
+     * cfir2chir 覆盖测试使用的最小 source session。
+     */
     private object TestSession : CfirSession(Kind.Source)
 
+    /**
+     * cfir2chir 覆盖测试使用的最小 module data。
+     */
     private object TestModuleData : CfirModuleData() {
+        /**
+         * 测试模块名称。
+         */
         override val name: Name = Name.identifier("cfir2chir-coverage")
+        /**
+         * 测试模块没有普通依赖。
+         */
         override val dependencies: List<CfirModuleData> = emptyList()
+        /**
+         * 测试模块没有 refinement 依赖。
+         */
         override val refinementDependencies: List<CfirModuleData> = emptyList()
+        /**
+         * 测试模块没有传递 refinement 依赖。
+         */
         override val allRefinementDependencies: List<CfirModuleData> = emptyList()
+        /**
+         * 测试模块使用默认仓颉平台。
+         */
         override val targetPlatform = CangJiePlatforms.defaultCangJiePlatform
+        /**
+         * 测试模块使用默认 CFIR 平台。
+         */
         override val platform: CfirPlatform = CfirPlatform.DEFAULT
+        /**
+         * 测试模块是否为 common 模块。
+         */
         override val isCommon: Boolean = targetPlatform.isCommon()
+        /**
+         * 测试模块不声明额外 capability。
+         */
         override val capabilities: CfirModuleCapabilities = CfirModuleCapabilities.Empty
+        /**
+         * 测试模块稳定名称。
+         */
         override val stableModuleName: String = "cfir2chir-coverage"
+        /**
+         * 测试模块绑定的 CFIR session。
+         */
         override val session: CfirSession
             get() = TestSession
 

@@ -227,7 +227,10 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                         }
                     }
 
-                    if (implementationInfo.hasMutFunctionConflict(superInfo) && reportedMutConflicts.add(superInfo.name)) {
+                    if (extend.hasStructTarget() &&
+                        implementationInfo.hasMutFunctionConflict(superInfo) &&
+                        reportedMutConflicts.add(superInfo.name)
+                    ) {
                         reporter.reportOn(
                             source = extend.source?.firstCharacterDiagnosticSource() ?: superTypeRef.source,
                             factory = CfirErrors.INCOMPATIBLE_MUT_MODIFIER_BETWEEN_STRUCT_AND_INTERFACE,
@@ -693,43 +696,50 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
     }
 
     /**
-     * 继承抽象类时，父类的 static 抽象函数必须被实现。
+     * 抽象类继承 static 抽象成员时，仍必须在继承诊断层暴露未实现成员。
      *
-     * 对齐 C++ DiagKind::sema_inherit_abstract_class_static_unimplement_func
+     * 对齐 C++ `DiagnoseForUnimplementedInterfaces`：
+     * 当前声明是 abstract class 且继承到外部 static abstract 成员时，报告
+     * `sema_inherit_abstract_class_static_unimplement_func`。普通非抽象类仍由
+     * `ABSTRACT_MEMBER_NOT_IMPLEMENTED` 路径负责。
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkAbstractClassStaticUnimplemented(classDecl: CfirClass) {
-        if (classDecl.status.isAbstract) return // 抽象类本身不需要实现
+        if (!classDecl.status.isAbstract) return
 
-        for (superTypeRef in classDecl.superTypeRefs) {
-            val resolvedType = (superTypeRef as? CfirResolvedTypeRef)?.coneType ?: continue
-            if (resolvedType is ConeErrorType) continue
-            val superClassId = (resolvedType as? ConeClassLikeType)?.classId ?: continue
-            val superSymbol = context.session.symbolProvider.getClassLikeSymbolByClassId(superClassId) ?: continue
-            val superDecl = superSymbol.cfir as? CfirClass ?: continue
-            if (!superDecl.status.isAbstract) continue
+        val ownerClassId = (classDecl.symbol as? CfirClassLikeSymbol<*>)?.classId
+        val staticMembers = context.createUseSiteMemberScope(classDecl)
+            .collectInheritedMemberInfos(context)
+            .filter { info ->
+                info.isStatic &&
+                    (info.kind == "function" || info.kind == "property") &&
+                    info.symbol?.isVisibleIn(classDecl, context) != false
+            }
+            .groupBy { it.requirementDiagnosticKey() }
 
-            // 查找父类中的 static abstract 函数
-            for (superMember in superDecl.declarations) {
-                if (superMember !is CfirNamedFunction) continue
-                if (!superMember.status.isStatic || !superMember.status.isAbstract) continue
+        val reported = mutableSetOf<String>()
+        for ((_, members) in staticMembers) {
+            val concreteImplementations = members.filter { !it.isAbstract }
+            for (abstractMember in members) {
+                val sourceOwnerClassId = abstractMember.symbol?.ownerClassId(context)
+                if (!abstractMember.isAbstract || sourceOwnerClassId == ownerClassId) continue
 
-                // 检查子类是否实现了该 static 函数
-                val implemented = classDecl.declarations.any { member ->
-                    member is CfirNamedFunction &&
-                        member.status.isStatic &&
-                        member.name == superMember.name &&
-                        member.body != null
+                val implemented = concreteImplementations.any { implementation ->
+                    implementation.canImplement(abstractMember) &&
+                        !implementation.hasWeakVisibilityComparedTo(abstractMember)
                 }
-                if (!implemented) {
-                    reporter.reportOn(
-                        source = classDecl.source,
-                        factory = CfirErrors.INHERIT_ABSTRACT_CLASS_STATIC_UNIMPLEMENT_FUNC,
-                        a = classDecl.name,
-                        b = "static function",
-                        c = superMember.name,
-                    )
-                }
+                if (implemented) continue
+
+                val key = abstractMember.requirementDiagnosticKey()
+                if (!reported.add(key)) continue
+
+                reporter.reportOn(
+                    source = classDecl.classLikeNameDiagnosticSource() ?: classDecl.source,
+                    factory = CfirErrors.INHERIT_ABSTRACT_CLASS_STATIC_UNIMPLEMENT_FUNC,
+                    a = classDecl.name,
+                    b = "static ${abstractMember.kind}",
+                    c = abstractMember.name,
+                )
             }
         }
     }
@@ -838,6 +848,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                     name = member.name,
                     kind = "function",
                     isStatic = member.status.isStatic,
+                    isRedef = member.status.isRedef,
                     isConst = member.status.isConst,
                     isMut = member.status.isMut,
                     isDefault = member.status.isDefault,
@@ -853,6 +864,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                     name = member.name,
                     kind = member.inheritanceMemberKind(),
                     isStatic = member.status.isStatic,
+                    isRedef = member.status.isRedef,
                     isConst = member.status.isConst,
                     isMut = member.status.isMut,
                     isDefault = member.status.isDefault,
@@ -868,6 +880,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                     name = member.name,
                     kind = "variable",
                     isStatic = member.status.isStatic,
+                    isRedef = false,
                     isConst = false,
                     isMut = false,
                     isDefault = false,
@@ -984,7 +997,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                             }
                         }
 
-                        if (!hasStaticConflict && ownInfo.hasMutFunctionConflict(superInfo)) {
+                        if (!hasStaticConflict && subject is CfirStruct && ownInfo.hasMutFunctionConflict(superInfo)) {
                             val key = ownInfo.overrideDiagnosticKey(superInfo)
                             if (reportedMutConflicts.add(key)) {
                                 reporter.reportOn(
@@ -1249,6 +1262,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                 name = declaration.name,
                 kind = "function",
                 isStatic = declaration.status.isStatic,
+                isRedef = declaration.status.isRedef,
                 isConst = declaration.status.isConst,
                 isMut = declaration.status.isMut,
                 isDefault = declaration.status.isDefault,
@@ -1264,6 +1278,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                 name = declaration.name,
                 kind = declaration.inheritanceMemberKind(),
                 isStatic = declaration.status.isStatic,
+                isRedef = declaration.status.isRedef,
                 isConst = declaration.status.isConst,
                 isMut = declaration.status.isMut,
                 isDefault = declaration.status.isDefault,
@@ -1279,6 +1294,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                 name = declaration.name,
                 kind = "variable",
                 isStatic = declaration.status.isStatic,
+                isRedef = false,
                 isConst = false,
                 isMut = false,
                 isDefault = false,
@@ -1369,6 +1385,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         classDecl: CfirClassLikeDeclaration,
         context: CheckerContext,
     ): Boolean {
+        if (isRedef) return false
         if (kind != superInfo.kind) return false
         if (kind != "function" && kind != "property") return false
         if (!hasSameOverrideSignature(superInfo)) return false
@@ -1657,11 +1674,20 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
     /**
      * 判断同签名函数之间是否存在 mut 修饰符不一致。
      */
+    context(context: CheckerContext)
     private fun InheritedMemberInfo.hasMutFunctionConflict(superInfo: InheritedMemberInfo): Boolean {
         if (kind != "function" || superInfo.kind != "function") return false
         if (isMut == superInfo.isMut) return false
+        val superOwner = superInfo.symbol?.let { context.ownerClassSymbol(it)?.cfir }
+        if (superOwner !is CfirInterface) return false
         return hasSameOverrideSignature(superInfo)
     }
+
+    /**
+     * 官方只要求 struct 及 struct extend 在实现 interface mut 函数时保持 mut 一致。
+     */
+    private fun CfirExtend.hasStructTarget(): Boolean =
+        (extendedTypeRef as? CfirResolvedTypeRef)?.coneType is ConeStructType
 
     /**
      * 生成实现/覆盖类诊断的去重 key。
@@ -1715,6 +1741,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
      * @property name 成员名称。
      * @property kind 成员类别，当前包括 `function`、`property`、`variable`。
      * @property isStatic 成员是否为 static。
+     * @property isRedef 函数或属性是否带 redef 语义。
      * @property isConst 函数或属性是否带 const 语义。
      * @property isMut 函数或属性是否带 mut 语义。
      * @property isDefault 是否为接口 default 成员。
@@ -1732,6 +1759,8 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         val kind: String,
         /** 成员是否为 static。 */
         val isStatic: Boolean,
+        /** 函数或属性是否带 redef 语义。 */
+        val isRedef: Boolean,
         /** 函数或属性是否带 const 语义。 */
         val isConst: Boolean,
         /** 函数或属性是否带 mut 语义。 */
@@ -1850,10 +1879,8 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         when (this) {
             is FunctionReturnTypeConflict.Mismatch -> reporter.reportOn(
                 source = source,
-                factory = CfirErrors.OVERRIDING_RETURN_TYPE_MISMATCH,
-                a = implementationType,
-                b = baseType,
-                c = name,
+                factory = CfirErrors.RETURN_TYPE_INCOMPATIBLE,
+                a = name,
             )
 
             is FunctionReturnTypeConflict.Invariance -> reporter.reportOn(

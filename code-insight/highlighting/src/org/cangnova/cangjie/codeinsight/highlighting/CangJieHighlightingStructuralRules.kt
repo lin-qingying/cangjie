@@ -44,11 +44,17 @@ import org.cangnova.cangjie.psi.psiUtil.isAbstract
  * “这个仓颉 PSI 元素应该归到哪个高亮类型”。这样结构高亮规则只有一份。
  */
 object CangJieHighlightingStructuralRules {
+    /**
+     * 为任意仓颉 PSI 元素选择结构高亮信息类型。
+     */
     fun highlightInfoTypeForElement(element: PsiElement): HighlightInfoType? =
         highlightInfoTypeForTypeDeclaration(element)
             ?: highlightInfoTypeForFunction(element)
             ?: highlightInfoTypeForPropertyDeclaration(element)
 
+    /**
+     * 为变量声明选择语义高亮信息类型。
+     */
     fun highlightInfoTypeForVariableDeclaration(variable: CjVariable<*>): HighlightInfoType = when (variable) {
         is CjPatternVariable -> when {
             variable.isLocal -> CangJieHighlightInfoTypeSemanticNames.LOCAL_VARIABLE
@@ -60,6 +66,9 @@ object CangJieHighlightingStructuralRules {
         else -> CangJieHighlightInfoTypeSemanticNames.INSTANCE_PROPERTY
     }
 
+    /**
+     * 为属性声明选择语义高亮信息类型。
+     */
     fun highlightInfoTypeForPropertyDeclaration(property: CjProperty): HighlightInfoType = when {
         property.isLocal -> CangJieHighlightInfoTypeSemanticNames.LOCAL_VARIABLE
         property.isCustomPropertyDeclaration() ->
@@ -68,11 +77,17 @@ object CangJieHighlightingStructuralRules {
         else -> CangJieHighlightInfoTypeSemanticNames.INSTANCE_PROPERTY
     }
 
+    /**
+     * 为参数声明选择语义高亮信息类型。
+     */
     fun highlightInfoTypeForParameterDeclaration(parameter: CjParameter): HighlightInfoType = when {
         parameter.letOrVarKeyword != null -> CangJieHighlightInfoTypeSemanticNames.INSTANCE_PROPERTY
         else -> CangJieHighlightInfoTypeSemanticNames.PARAMETER
     }
 
+    /**
+     * 为可能是属性、参数或变量的声明选择高亮信息类型。
+     */
     fun highlightInfoTypeForPropertyDeclaration(declaration: PsiElement): HighlightInfoType? = when (declaration) {
         is CjProperty -> highlightInfoTypeForPropertyDeclaration(declaration)
         is CjParameter -> highlightInfoTypeForParameterDeclaration(declaration)
@@ -80,11 +95,17 @@ object CangJieHighlightingStructuralRules {
         else -> null
     }
 
+    /**
+     * 为函数声明选择高亮信息类型。
+     */
     fun highlightInfoTypeForFunction(function: PsiElement): HighlightInfoType? = when (function) {
         is CjFunction -> CangJieHighlightInfoTypeSemanticNames.FUNCTION_DECLARATION
         else -> null
     }
 
+    /**
+     * 为类型相关声明选择高亮信息类型。
+     */
     fun highlightInfoTypeForTypeDeclaration(declaration: PsiElement): HighlightInfoType? = when {
         declaration is CjTypeParameter -> CangJieHighlightInfoTypeSemanticNames.TYPE_PARAMETER
         declaration is CjTypeAlias -> CangJieHighlightInfoTypeSemanticNames.TYPE_ALIAS
@@ -92,6 +113,9 @@ object CangJieHighlightingStructuralRules {
         else -> null
     }
 
+    /**
+     * 根据 class-like 声明种类选择具体类型高亮信息类型。
+     */
     fun highlightInfoTypeForClass(cclass: CjTypeStatement): HighlightInfoType = when {
         cclass.isInterface() -> CangJieHighlightInfoTypeSemanticNames.INTERFACE
         cclass.isStruct() -> CangJieHighlightInfoTypeSemanticNames.STRUCT
@@ -100,30 +124,57 @@ object CangJieHighlightingStructuralRules {
         else -> CangJieHighlightInfoTypeSemanticNames.CLASS
     }
 
+    /**
+     * 判断属性声明是否包含自定义 getter 或 setter 体。
+     */
     private fun CjProperty.isCustomPropertyDeclaration(): Boolean =
         getter?.bodyExpression != null || setter?.bodyExpression != null
 }
 
+/**
+ * 兼容旧调用点的通用元素高亮入口。
+ */
 fun textAttributesKeyForCjElement(element: PsiElement): HighlightInfoType? =
     CangJieHighlightingStructuralRules.highlightInfoTypeForElement(element)
 
+/**
+ * 兼容旧调用点的变量声明高亮入口。
+ */
 fun textAttributesForCjVariableDeclaration(variable: CjVariable<*>): HighlightInfoType =
     CangJieHighlightingStructuralRules.highlightInfoTypeForVariableDeclaration(variable)
 
+/**
+ * 兼容旧调用点的属性声明高亮入口。
+ */
 fun textAttributesForCjPropertyDeclaration(property: CjProperty): HighlightInfoType =
     CangJieHighlightingStructuralRules.highlightInfoTypeForPropertyDeclaration(property)
 
+/**
+ * 兼容旧调用点的参数声明高亮入口。
+ */
 fun textAttributesForCjParameterDeclaration(parameter: CjParameter): HighlightInfoType =
     CangJieHighlightingStructuralRules.highlightInfoTypeForParameterDeclaration(parameter)
 
+/**
+ * 兼容旧调用点的属性类声明高亮入口。
+ */
 fun textAttributesKeyForPropertyDeclaration(declaration: PsiElement): HighlightInfoType? =
     CangJieHighlightingStructuralRules.highlightInfoTypeForPropertyDeclaration(declaration)
 
+/**
+ * 兼容旧调用点的函数声明高亮入口。
+ */
 fun textAttributesKeyForCjFunction(function: PsiElement): HighlightInfoType? =
     CangJieHighlightingStructuralRules.highlightInfoTypeForFunction(function)
 
+/**
+ * 兼容旧调用点的类型声明高亮入口。
+ */
 fun textAttributesKeyForTypeDeclaration(declaration: PsiElement): HighlightInfoType? =
     CangJieHighlightingStructuralRules.highlightInfoTypeForTypeDeclaration(declaration)
 
+/**
+ * 兼容旧调用点的 class-like 声明高亮入口。
+ */
 fun textAttributesForClass(cclass: CjTypeStatement): HighlightInfoType =
     CangJieHighlightingStructuralRules.highlightInfoTypeForClass(cclass)

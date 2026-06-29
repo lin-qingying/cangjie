@@ -32,13 +32,24 @@ import com.intellij.util.xmlb.XmlSerializer
 import org.jdom.Element
 import java.lang.reflect.InvocationTargetException
 
+/**
+ * 仓颉语言的 CommonCodeStyleSettings 扩展。
+ *
+ * @property isTempForDeserialize 是否为读取 XML 时使用的临时设置对象。
+ */
 class CangJieCommonCodeStyleSettings(val isTempForDeserialize: Boolean = false) :
     CommonCodeStyleSettings(CangJieLanguage) {
 
+    /**
+     * 当前 common settings 对应的仓颉预定义代码风格标识。
+     */
     @ReflectionUtil.SkipInEquals
     var CODE_STYLE_DEFAULTS: String? = null
 
 
+    /**
+     * 从 XML 读取 common settings，并在非临时对象上先应用预定义风格。
+     */
     override fun readExternal(element: Element?) {
         if (isTempForDeserialize) {
             super.readExternal(element)
@@ -50,6 +61,9 @@ class CangJieCommonCodeStyleSettings(val isTempForDeserialize: Boolean = false) 
         super.readExternal(element)
     }
 
+    /**
+     * 比较仓颉 common settings 的公开字段、soft margin、缩进和排列设置。
+     */
     override fun equals(obj: Any?): Boolean {
         if (obj !is CangJieCommonCodeStyleSettings) {
             return false
@@ -73,12 +87,18 @@ class CangJieCommonCodeStyleSettings(val isTempForDeserialize: Boolean = false) 
         return arrangementSettingsEqual(obj)
     }
 
+    /**
+     * 将 soft wrap 相关配置序列化到指定 XML 节点。
+     */
     private fun serializeInto(softWraps: List<SoftWrap>, element: Element) {
         if (!softMargins.isEmpty()) {
             XmlSerializer.serializeInto(this, element)
         }
     }
 
+    /**
+     * 为指定根设置克隆一份仓颉 common settings。
+     */
     override fun clone(rootSettings: CodeStyleSettings): CommonCodeStyleSettings {
 
         val commonSettings = CangJieCommonCodeStyleSettings()
@@ -139,6 +159,9 @@ class CangJieCommonCodeStyleSettings(val isTempForDeserialize: Boolean = false) 
     }
 
 
+    /**
+     * 基于预定义风格标识生成 hash code。
+     */
     override fun hashCode(): Int {
         var result = isTempForDeserialize.hashCode()
         result = 31 * result + (CODE_STYLE_DEFAULTS?.hashCode() ?: 0)

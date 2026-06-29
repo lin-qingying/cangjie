@@ -49,6 +49,9 @@ import org.cangnova.cangjie.cfir.types.type
  * 不在 backend 阶段兜底成其他类型。
  */
 class Cfir2ChirTypeMapper {
+    /**
+     * 将 CFIR type ref 映射为 CHIR type ref。
+     */
     fun mapTypeRef(typeRef: CfirTypeRef): ChirTypeRef {
         return when (typeRef) {
             is CfirResolvedTypeRef -> ChirResolvedTypeRef(mapConeType(typeRef.coneType))
@@ -57,9 +60,15 @@ class Cfir2ChirTypeMapper {
         }
     }
 
+    /**
+     * 将 Cone 类型映射为已解析 CHIR type ref。
+     */
     fun mapConeTypeRef(type: ConeCangJieType): ChirResolvedTypeRef =
         ChirResolvedTypeRef(mapConeType(type))
 
+    /**
+     * 将已解析 Cone 类型映射为 CHIR 类型。
+     */
     fun mapConeType(type: ConeCangJieType): ChirType {
         return when (type) {
             is ConePrimitiveType -> mapPrimitiveType(type.kind)
@@ -116,6 +125,9 @@ class Cfir2ChirTypeMapper {
         }
     }
 
+    /**
+     * 映射尚未形成 Cone 的基础类型引用，主要覆盖内建类型名。
+     */
     private fun mapBasicTypeRef(typeRef: CfirBasicTypeRef): ChirTypeRef {
         return ChirResolvedTypeRef(
             when (typeRef.name.asString()) {
@@ -142,6 +154,9 @@ class Cfir2ChirTypeMapper {
         )
     }
 
+    /**
+     * 将 CFIR primitive kind 映射为 CHIR primitive type。
+     */
     private fun mapPrimitiveType(kind: PrimitiveTypeKind): ChirPrimitiveType {
         return when (kind) {
             PrimitiveTypeKind.UNIT -> ChirPrimitiveType.UNIT
@@ -167,6 +182,9 @@ class Cfir2ChirTypeMapper {
         }
     }
 
+    /**
+     * 将 Long 精确转换为 Int，越界时报告转换异常。
+     */
     private fun Long.toIntExact(label: String): Int {
         if (this < Int.MIN_VALUE || this > Int.MAX_VALUE) {
             throw Cfir2ChirConversionException("$label $this cannot be represented by current CHIR VArray rank field")
@@ -174,6 +192,9 @@ class Cfir2ChirTypeMapper {
         return toInt()
     }
 
+    /**
+     * 为交叉/联合等合成类型渲染稳定可读名称。
+     */
     private fun ConeCangJieType.renderNameForSyntheticType(): String =
         when (this) {
             is ConePrimitiveType -> mapPrimitiveType(kind).renderName

@@ -24,14 +24,26 @@
 
 package org.cangnova.cangjie.name
 
+/**
+ * 名称构造工具集合。
+ */
 object NameUtils {
+    /**
+     * context receiver 合成名称前缀。
+     */
     @JvmStatic
     val CONTEXT_RECEIVER_PREFIX = "\$context_receiver"
 
+    /**
+     * 根据序号生成 context receiver 名称。
+     */
     @JvmStatic
     fun contextReceiverName(index: Int): Name =
         Name.identifier("${CONTEXT_RECEIVER_PREFIX}_$index")
 
+    /**
+     * 根据源文件短名称生成 package part class 名前缀。
+     */
     @JvmStatic
     fun getPackagePartClassNamePrefix(shortFileName: String): String =
         shortFileName.ifEmpty { "_" }

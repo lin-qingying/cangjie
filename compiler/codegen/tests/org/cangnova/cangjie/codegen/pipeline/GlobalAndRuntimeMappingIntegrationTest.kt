@@ -19,7 +19,13 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 
+/**
+ * 全局变量和运行时入口映射的集成测试。
+ */
 class GlobalAndRuntimeMappingIntegrationTest {
+    /**
+     * 验证全局常量、变量和包运行时入口映射会出现在 LLVM IR 中。
+     */
     @Test
     fun `emits globals constants and package runtime entry mappings`() {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
@@ -135,6 +141,9 @@ class GlobalAndRuntimeMappingIntegrationTest {
         assertTrue(ir.contains("@cangjie.package.literal_init = internal constant ptr @literal_init"), ir)
     }
 
+    /**
+     * 验证包运行时入口引用缺失目标函数时会报告 lowering 错误。
+     */
     @Test
     fun `rejects package runtime entry mapping with missing target function`() {
         val error = assertThrows<CodegenLoweringException> {

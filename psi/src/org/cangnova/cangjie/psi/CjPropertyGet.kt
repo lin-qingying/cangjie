@@ -30,12 +30,18 @@ import com.intellij.lang.ASTNode
 import com.intellij.psi.util.PsiTreeUtil
 import org.cangnova.cangjie.psi.stubs.elements.CjTokenSets.DECLARATION_TYPES
 
+/**
+ * 表示 `CjPropertyGet`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjPropertyGet : CjElementImplStub<CangJiePlaceHolderStub<CjPropertyGet>>, CjDeclarationContainer {
 
     constructor(node: ASTNode) : super(node)
 
     constructor(stub: CangJiePlaceHolderStub<CjPropertyGet>) : super(stub, CjStubElementTypes.PROPERTY_GET)
 
+    /**
+     * 暴露 `declarations`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val declarations: List<CjDeclaration>
         get() = stub?.getChildrenByType(DECLARATION_TYPES, CjDeclaration.ARRAY_FACTORY)?.toList()
             ?: PsiTreeUtil.getChildrenOfTypeAsList(this, CjDeclaration::class.java)

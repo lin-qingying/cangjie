@@ -19,11 +19,11 @@ enum EE {
 }
 
 main(): Int64 {
-    <!ILLEGAL_ACCESS_NON_STATIC_MEMBER!>E<!>E.a1
+    <!ILLEGAL_ACCESS_NON_STATIC_MEMBER!>EE<!>.a1
     EE.A
     EE.a2
-    <!ILLEGAL_ACCESS_NON_STATIC_MEMBER!>E<!>E.test()
-    <!ILLEGAL_ACCESS_NON_STATIC_MEMBER!>E<!>E.test
+    <!ILLEGAL_ACCESS_NON_STATIC_MEMBER!>EE<!>.test()
+    <!ILLEGAL_ACCESS_NON_STATIC_MEMBER!>EE<!>.test
     EE.test1
     EE.test1()
     0

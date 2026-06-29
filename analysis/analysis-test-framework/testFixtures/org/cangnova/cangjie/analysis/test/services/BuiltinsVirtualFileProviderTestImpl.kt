@@ -17,7 +17,14 @@ import java.io.File
  * 这样 binary index、decompiled PSI 和 stub builder 共享同一条 VFS/fileType 路径。
  */
 internal class BuiltinsVirtualFileProviderTestImpl : BuiltinsVirtualFileProviderBaseImpl() {
+    /**
+     * 复用 CLI builtins provider 的标准 builtins 解析逻辑。
+     */
     private val coreVirtualFileProvider = BuiltinsVirtualFileProviderCliImpl()
+
+    /**
+     * 当前测试可用的 builtins 根目录集合。
+     */
     private val builtinRoots by lazy {
         coreVirtualFileProvider.getBuiltinVirtualFiles()
             .map(::toBuiltinRoot)
@@ -25,20 +32,35 @@ internal class BuiltinsVirtualFileProviderTestImpl : BuiltinsVirtualFileProvider
             .ifEmpty { resolveFallbackBuiltinRoots() }
     }
 
+    /**
+     * 当前测试可见的 builtins `.cjo` 文件集合。
+     */
     private val files by lazy {
         builtinRoots.flatMapTo(linkedSetOf()) { root -> collectBuiltinFiles(root) }
     }
 
+    /**
+     * 返回全部 builtins binary 文件。
+     */
     override fun getBuiltinVirtualFiles(): Set<VirtualFile> = files
 
+    /**
+     * 返回全部 builtins 根目录。
+     */
     override fun getBuiltinRootVirtualFiles(): Set<VirtualFile> {
         return builtinRoots
     }
 
+    /**
+     * 返回指定 project 可见的 builtins 根目录。
+     */
     override fun getBuiltinRootVirtualFiles(project: Project): Set<VirtualFile> {
         return builtinRoots
     }
 
+    /**
+     * 创建覆盖当前测试 builtins 文件集合的搜索作用域。
+     */
     override fun createBuiltinsScope(project: Project): GlobalSearchScope =
         GlobalSearchScope.filesScope(project, files)
 
@@ -67,6 +89,9 @@ internal class BuiltinsVirtualFileProviderTestImpl : BuiltinsVirtualFileProvider
             .toCollection(linkedSetOf())
     }
 
+    /**
+     * 将 stdlib 根目录规范化到包含 builtins 文件的父级目录。
+     */
     private fun normalizeStdlibRoot(path: File): File {
         val normalized = path.normalize()
         if (normalized.resolve("std/std.core.${CangJieBuiltInFileType.defaultExtension}").isFile) return normalized
@@ -76,12 +101,18 @@ internal class BuiltinsVirtualFileProviderTestImpl : BuiltinsVirtualFileProvider
         return normalized
     }
 
+    /**
+     * 从当前目录向上定位仓库根目录。
+     */
     private fun locateRepositoryRoot(start: File): File {
         return generateSequence(start) { file -> file.parentFile }
             .firstOrNull { file -> file.resolve("settings.gradle.kts").isFile }
             ?: start
     }
 
+    /**
+     * 从单个 builtins 文件反推出 builtins 根目录。
+     */
     private fun toBuiltinRoot(file: VirtualFile): VirtualFile {
         return if (file.parent?.name == "std") file.parent.parent ?: file.parent else file.parent ?: file
     }

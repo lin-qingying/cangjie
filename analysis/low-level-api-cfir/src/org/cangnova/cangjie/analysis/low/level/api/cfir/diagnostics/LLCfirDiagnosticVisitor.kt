@@ -24,12 +24,21 @@ import org.cangnova.cangjie.psi.CjCodeFragment
 import org.cangnova.cangjie.psi.CjDeclaration
 import org.cangnova.cangjie.utils.exceptions.shouldIjPlatformExceptionBeRethrown
 
+/**
+ * low-level CFIR diagnostics 收集使用的 checker-running visitor。
+ */
 internal open class LLCfirDiagnosticVisitor(
     context: CheckerContextForProvider,
     components: DiagnosticCollectorComponents,
 ) : CheckerRunningDiagnosticCollectorVisitor(context, components) {
+    /**
+     * 可选的元素访问前 diagnostics 收集钩子。
+     */
     private val beforeElementDiagnosticCollectionHandler = context.session.beforeElementDiagnosticCollectionHandler
 
+    /**
+     * 进入嵌套声明前通知 handler，然后执行默认嵌套遍历。
+     */
     override fun visitNestedElements(element: CfirElement) {
         if (element is CfirDeclaration) {
             beforeElementDiagnosticCollectionHandler?.beforeGoingNestedDeclaration(element, context)
@@ -38,6 +47,9 @@ internal open class LLCfirDiagnosticVisitor(
         super.visitNestedElements(element)
     }
 
+    /**
+     * 对当前 CFIR 元素运行所有 diagnostics 组件并提交嵌套声明上的 pending diagnostics。
+     */
     override fun checkElement(element: CfirElement) {
         beforeElementDiagnosticCollectionHandler?.beforeCollectingForElement(element)
         components.regularComponents.forEach { diagnosticVisitor ->
@@ -57,6 +69,9 @@ internal open class LLCfirDiagnosticVisitor(
         }
     }
 
+    /**
+     * 对 code fragment 补充其上下文声明链，保证 checker context 与宿主声明一致。
+     */
     override fun visitCodeFragment(codeFragment: CfirCodeFragment, data: Nothing?) {
         val cjCodeFragment = codeFragment.psi as CjCodeFragment
 

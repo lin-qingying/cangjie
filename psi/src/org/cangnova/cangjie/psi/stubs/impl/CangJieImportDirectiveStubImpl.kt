@@ -30,21 +30,39 @@ import org.cangnova.cangjie.psi.stubs.CangJieImportDirectiveStub
 import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 import com.intellij.psi.stubs.StubElement
 
+/**
+ * 表示 `CangJieImportDirectiveStubImpl`，承载PSI Stub中的语法节点、索引桩或辅助模型。
+ */
 class CangJieImportDirectiveStubImpl(
     parent: StubElement<*>,
+    /**
+     * 保存 `packageFqName` 的内部状态，供PSI Stub实现维护节点缓存或解析上下文。
+     */
     private val packageFqName: FqName?,
+    /**
+     * 保存 `importItems` 的内部状态，供PSI Stub实现维护节点缓存或解析上下文。
+     */
     private val importItems: List<CangJieImportDirectiveStub.ImportItemInfo>
 ) : CangJieStubBaseImpl<CjImportDirective>(parent, CjStubElementTypes.IMPORT_DIRECTIVE),
     CangJieImportDirectiveStub {
 
+    /**
+     * 实现 `getPackageFqName` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getPackageFqName(): FqName? {
         return packageFqName
     }
 
+    /**
+     * 实现 `getImportItems` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getImportItems(): List<CangJieImportDirectiveStub.ImportItemInfo> {
         return importItems
     }
 
+    /**
+     * 实现 `copyInto` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun copyInto(newParent: StubElement<*>?): CangJieImportDirectiveStubImpl = CangJieImportDirectiveStubImpl(
         parent = requireNotNull(newParent),
         packageFqName = packageFqName,

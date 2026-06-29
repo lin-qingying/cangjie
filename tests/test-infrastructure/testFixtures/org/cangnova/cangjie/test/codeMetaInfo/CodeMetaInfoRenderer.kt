@@ -9,7 +9,13 @@ import com.intellij.util.containers.Stack
 import org.cangnova.cangjie.test.codeMetaInfo.model.CodeMetaInfo
 import org.cangnova.cangjie.test.codeMetaInfo.model.ParsedCodeMetaInfo
 
+/**
+ * 提供 `CodeMetaInfoRenderer` 单例，集中承载代码元信息测试的共享状态、常量或默认行为。
+ */
 object CodeMetaInfoRenderer {
+    /**
+     * 执行 `renderTagsToText` 对应的代码元信息测试流程，维持测试框架的阶段契约。
+     */
     fun renderTagsToText(
         codeMetaInfos: List<CodeMetaInfo>,
         originalText: String
@@ -19,6 +25,9 @@ object CodeMetaInfoRenderer {
         }
     }
 
+    /**
+     * 执行 `renderTagsToText` 对应的代码元信息测试流程，维持测试框架的阶段契约。
+     */
     fun renderTagsToText(
         builder: StringBuilder,
         codeMetaInfos: List<CodeMetaInfo>,
@@ -45,6 +54,9 @@ object CodeMetaInfoRenderer {
         }
     }
 
+    /**
+     * 提供 `processMetaInfosStartedAtOffset` 对应的代码元信息测试流程，维持测试框架的阶段契约。
+     */
     private fun processMetaInfosStartedAtOffset(
         offset: Int,
         sortedMetaInfos: Map<Int, List<CodeMetaInfo>>,
@@ -86,13 +98,22 @@ object CodeMetaInfoRenderer {
         checkOpenedAndCloseStringIfNeeded(opened, offset, builder)
     }
 
+    /**
+     * 保存 `metaInfoComparator`，供代码元信息测试在测试执行期间读取或传递。
+     */
     private val metaInfoComparator = (compareBy<CodeMetaInfo> { it.start } then compareByDescending { it.end }) then compareBy { it.tag }
 
+    /**
+     * 提供 `mergeAttributesAndSortInfos` 对应的代码元信息测试流程，维持测试框架的阶段契约。
+     */
     private fun mergeAttributesAndSortInfos(metaInfos: Collection<CodeMetaInfo>): List<CodeMetaInfo> {
         return mergeIdenticalInfosWithDifferentAttributes(metaInfos)
             .sortedWith(metaInfoComparator)
     }
 
+    /**
+     * 提供 `mergeIdenticalInfosWithDifferentAttributes` 对应的代码元信息测试流程，维持测试框架的阶段契约。
+     */
     private fun mergeIdenticalInfosWithDifferentAttributes(metaInfos: Collection<CodeMetaInfo>): List<CodeMetaInfo> {
         return metaInfos.groupBy { it.start }.map { (_, withSameStart) ->
             withSameStart.groupBy { it.end }.map { (_, withSameEnd) ->
@@ -119,6 +140,9 @@ object CodeMetaInfoRenderer {
         }.flatten()
     }
 
+    /**
+     * 提供 `checkOpenedAndCloseStringIfNeeded` 对应的代码元信息测试流程，维持测试框架的阶段契约。
+     */
     private fun checkOpenedAndCloseStringIfNeeded(opened: Stack<CodeMetaInfo>, end: Int, result: StringBuilder) {
         var prev: CodeMetaInfo? = null
         while (opened.isNotEmpty() && end == opened.peek().end) {
@@ -129,4 +153,7 @@ object CodeMetaInfoRenderer {
     }
 }
 
+/**
+ * 执行 `clearTextFromDiagnosticMarkup` 对应的代码元信息测试流程，维持测试框架的阶段契约。
+ */
 fun clearTextFromDiagnosticMarkup(text: String): String = text.replace(CodeMetaInfoParser.openingOrClosingRegex, "")

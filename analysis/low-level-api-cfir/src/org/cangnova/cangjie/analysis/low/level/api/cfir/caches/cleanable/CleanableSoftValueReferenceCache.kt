@@ -20,9 +20,15 @@ import java.util.concurrent.ConcurrentHashMap
 class CleanableSoftValueReferenceCache<K : Any, V : Any>(
     backingMap: ConcurrentHashMap<K, ReferenceWithCleanup<K, V>> = ConcurrentHashMap(),
     referenceQueue: ReferenceQueue<V> = ReferenceQueue(),
+    /**
+     * 为每个新加入缓存的 value 创建 cleanup 处理器。
+     */
     private val getCleaner: (V) -> ValueReferenceCleaner<V>,
 ) : CleanableValueReferenceCache<K, V>(backingMap, referenceQueue) {
 
+    /**
+     * 创建共享相同 soft-reference 语义的新 cache 副本。
+     */
     override fun createCopy(
         mapCopy: ConcurrentHashMap<K, ReferenceWithCleanup<K, V>>,
         queueCopy: ReferenceQueue<V>
@@ -30,17 +36,36 @@ class CleanableSoftValueReferenceCache<K : Any, V : Any>(
         return CleanableSoftValueReferenceCache(mapCopy, queueCopy, getCleaner)
     }
 
+    /**
+     * 为 value 创建带 cleanup 的 soft reference。
+     */
     override fun createReference(key: K, value: V, queue: ReferenceQueue<V>): ReferenceWithCleanup<K, V> {
         return SoftReferenceWithCleanup(key, value, getCleaner(value), queue)
     }
 }
 
+/**
+ * 携带 key 与 cleaner 的 soft reference。
+ */
 private class SoftReferenceWithCleanup<K, V>(
+    /**
+     * 该 reference 在 backing map 中对应的 key。
+     */
     override val key: K,
     value: V,
+    /**
+     * value 被移除或回收后执行的 cleanup 处理器。
+     */
     override val cleaner: ValueReferenceCleaner<V>,
     referenceQueue: ReferenceQueue<V>,
 ) : SoftReference<V>(value, referenceQueue), ReferenceWithCleanup<K, V> {
+    /**
+     * 基于 key 与当前 referent 比较 reference 等价性。
+     */
     override fun equals(other: Any?): Boolean = equalsImpl(other)
+
+    /**
+     * 使用 key 作为 hash，保证 backing map 中 reference 移除匹配稳定。
+     */
     override fun hashCode(): Int = hashKeyImpl()
 }

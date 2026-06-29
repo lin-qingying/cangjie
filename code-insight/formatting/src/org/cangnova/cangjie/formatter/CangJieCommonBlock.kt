@@ -323,43 +323,73 @@ import com.intellij.psi.tree.IElementType
 import com.intellij.psi.tree.TokenSet
 
 
+/** 点限定操作符 token 集合。 */
 internal val QUALIFIED_OPERATION = TokenSet.create(DOT)
+/** 需要按点链处理的限定表达式类型集合。 */
 internal val QUALIFIED_EXPRESSIONS = TokenSet.create(DOT_QUALIFIED_EXPRESSION)
+/** Elvis 表达式 token 集合。 */
 internal val ELVIS_SET = TokenSet.create()
+/** 不需要链式 wrap 的限定表达式类型集合。 */
 internal val QUALIFIED_EXPRESSIONS_WITHOUT_WRAP = TokenSet.create(IMPORT_DIRECTIVE, PACKAGE_DIRECTIVE)
+/** formatter 识别的注释 token 集合。 */
 internal val COMMENTS = TokenSet.create(BLOCK_COMMENT, DOC_COMMENT)
 
+/** CDoc 内容相对注释起始位置的缩进。 */
 internal const val CDOC_COMMENT_INDENT = 1
 
+/** 二元表达式 PSI 类型集合。 */
 internal val BINARY_EXPRESSIONS = TokenSet.create(BINARY_EXPRESSION, BINARY_WITH_TYPE, IS_EXPRESSION)
+/** CDoc 内容节点类型集合。 */
 internal val CDOC_CONTENT = TokenSet.create(CDocTokens.CDOC, CDocElementTypes.CDOC_SECTION, CDocElementTypes.CDOC_TAG)
 
+/** 需要普通子缩进的代码块类型集合。 */
 internal val CODE_BLOCKS = TokenSet.create(BLOCK, CLASS_BODY, FUNCTION_LITERAL, PROPERTY_BODY)
 
+/** 允许按列对齐的二元运算符集合。 */
 internal val ALIGN_FOR_BINARY_OPERATIONS =
     TokenSet.create(MUL, DIV, PERC, PLUS, MINUS, LT, GT, LTEQ, GTEQ, ANDAND, OROR)
+/** 注解节点类型集合。 */
 internal val ANNOTATIONS = TokenSet.create()
 
+/**
+ * 根据子 AST 节点创建 wrap 的策略函数。
+ */
 typealias WrappingStrategy = (childElement: ASTNode) -> Wrap?
 
 
+/** 不参与 formatter 的节点类型集合。 */
 internal val NO_FORMAT_NODES = listOf(
 
     QUOTE_EXPRESSION
 )
 
+/**
+ * 不为子节点创建 wrap 的策略。
+ */
 fun noWrapping(@Suppress("UNUSED_PARAMETER") childElement: ASTNode): Wrap? = null
 
+/**
+ * 仓颉 AST block 的通用构建逻辑。
+ */
 abstract class CangJieCommonBlock(
+    /** 当前 block 对应的 AST 节点。 */
     private val node: ASTNode,
+    /** 当前格式化使用的代码风格设置。 */
     private val settings: CodeStyleSettings,
+    /** 当前格式化使用的 spacing builder。 */
     private val spacingBuilder: CangJieSpacingBuilder,
+    /** 当前 block 的子节点对齐策略。 */
     private val alignmentStrategy: CommonAlignmentStrategy,
+    /** 覆盖当前节点真实 children 的子节点序列。 */
     private val overrideChildren: Sequence<ASTNode>? = null,
 ) {
     @Volatile
+    /** 已构建的子 block 缓存。 */
     private var mySubBlocks: List<ASTBlock>? = null
 
+    /**
+     * 返回当前 block 的文本范围。
+     */
     fun getTextRange(): TextRange {
         if (overrideChildren != null) {
             return TextRange(overrideChildren.first().startOffset, overrideChildren.last().textRange.endOffset)
@@ -367,6 +397,9 @@ abstract class CangJieCommonBlock(
         return node.textRange
     }
 
+    /**
+     * 创建普通 AST block。
+     */
     protected abstract fun createBlock(
         node: ASTNode,
         alignmentStrategy: CommonAlignmentStrategy,
@@ -377,26 +410,56 @@ abstract class CangJieCommonBlock(
         overrideChildren: Sequence<ASTNode>? = null,
     ): ASTBlock
 
+    /**
+     * 创建只参与 spacing 计算的合成节点 block。
+     */
     protected abstract fun createSyntheticSpacingNodeBlock(node: ASTNode): ASTBlock
 
+    /**
+     * 返回平台 block 已构建的子 block。
+     */
     protected abstract fun getSubBlocks(): List<Block>
 
+    /**
+     * 调用宿主 block 的 child attributes 计算。
+     */
     protected abstract fun getSuperChildAttributes(newChildIndex: Int): ChildAttributes
 
+    /**
+     * 调用宿主 block 的不完整状态判断。
+     */
     protected abstract fun isIncompleteInSuper(): Boolean
 
+    /**
+     * 为 match case 分支创建对齐策略。
+     */
     protected abstract fun getAlignmentForCaseBranch(shouldAlignInColumns: Boolean): CommonAlignmentStrategy
 
+    /**
+     * 返回当前宿主 block 的对齐对象。
+     */
     protected abstract fun getAlignment(): Alignment?
 
+    /**
+     * 根据开关和默认对齐创建子节点对齐策略。
+     */
     protected abstract fun createAlignmentStrategy(
         alignOption: Boolean, defaultAlignment: Alignment?
     ): CommonAlignmentStrategy
 
+    /**
+     * 返回不产生对齐的策略。
+     */
     protected abstract fun getNullAlignmentStrategy(): CommonAlignmentStrategy
 
+    /**
+     * 判断当前 AST 节点是否为叶子。
+     */
     fun isLeaf(): Boolean = node.firstChildNode == null
 
+    /**
+     * 判断当前 block 是否语法不完整。
+     */
     fun isIncomplete(): Boolean {
         if (isIncompleteInSuper()) {
             return true
@@ -406,6 +469,9 @@ abstract class CangJieCommonBlock(
         return node.elementType == MODIFIER_LIST && node.treeParent?.elementType == CLASS_BODY
     }
 
+    /**
+     * 构建当前 AST 节点的子 block 列表。
+     */
     fun buildChildren(): List<Block> {
         // Check if this node should be formatted
         if (!shouldFormat(node)) {
@@ -436,6 +502,9 @@ abstract class CangJieCommonBlock(
         return nodeSubBlocks
     }
 
+    /**
+     * 判断指定节点是否应参与格式化。
+     */
     private fun shouldFormat(node: ASTNode): Boolean {
         // Check for special comments that indicate no formatting
         val prevComment = getPrevWithoutWhitespace(node)?.takeIf { it.elementType in COMMENTS }
@@ -476,6 +545,9 @@ abstract class CangJieCommonBlock(
         return true
     }
 
+    /**
+     * 将限定表达式子 block 按点号位置拆出合成 block。
+     */
     private fun splitSubBlocksOnDot(nodeSubBlocks: List<ASTBlock>): List<ASTBlock> {
         if (node.treeParent?.isQualifier == true || node.isCallChainWithoutWrap) return nodeSubBlocks
 
@@ -490,6 +562,9 @@ abstract class CangJieCommonBlock(
         return nodeSubBlocks.replaceBlock(newBlock, 0).splitAtIndex(operationBlockIndex, indent, wrap)
     }
 
+    /**
+     * 递归处理调用链中的子 block wrap 和缩进。
+     */
     private fun ASTBlock.processBlock(wrap: Wrap?, enforceIndentToChildren: Boolean): ASTBlock {
         val currentNode = requireNode()
         val enforceIndent = enforceIndentToChildren && anyCallInCallChainIsWrapped(currentNode)
@@ -512,15 +587,24 @@ abstract class CangJieCommonBlock(
         }.wrapToBlock(currentNode, this)
     }
 
+    /**
+     * 替换列表中指定位置的 block。
+     */
     private fun List<ASTBlock>.replaceBlock(block: ASTBlock, index: Int = 0): List<ASTBlock> =
         toMutableList().apply { this[index] = block }
 
+    /**
+     * 判断调用链第一个调用是否允许 wrap。
+     */
     private val ASTNode.wrapForFirstCallInChainIsAllowed: Boolean
         get() {
             if (unwrapQualifier()?.isCall != true) return false
             return settings.cangjieCommonSettings.WRAP_FIRST_METHOD_IN_CALL_CHAIN || receiverIsCall()
         }
 
+    /**
+     * 为限定表达式创建链式调用 wrap。
+     */
     private fun createWrapForQualifierExpression(node: ASTNode): Wrap? =
         if (node.wrapForFirstCallInChainIsAllowed && node.receiverIsCall()) Wrap.createWrap(
             settings.cangjieCommonSettings.METHOD_CALL_CHAIN_WRAP,
@@ -529,6 +613,9 @@ abstract class CangJieCommonBlock(
         else null
 
 
+    /**
+     * 为限定表达式创建链式调用缩进。
+     */
     private fun createIndentForQualifierExpression(enforceIndentToChildren: Boolean): Indent {
         val indentType = if (settings.cangjieCustomSettings.CONTINUATION_INDENT_FOR_CHAINED_CALLS) {
             if (enforceIndentToChildren) Indent.Type.CONTINUATION else Indent.Type.CONTINUATION_WITHOUT_FIRST
@@ -542,11 +629,17 @@ abstract class CangJieCommonBlock(
         )
     }
 
+    /**
+     * 将 block 列表包装成单个合成 block。
+     */
     private fun List<ASTBlock>.wrapToBlock(
         anchor: ASTNode?,
         parentBlock: ASTBlock?,
     ): ASTBlock = splitAtIndex(0, null, null, anchor, parentBlock).single()
 
+    /**
+     * 从指定索引开始把后续 block 切分为合成 block。
+     */
     private fun List<ASTBlock>.splitAtIndex(
         index: Int,
         indent: Indent?,
@@ -578,6 +671,9 @@ abstract class CangJieCommonBlock(
         return subList(0, index) + operationSyntheticBlock
     }
 
+    /**
+     * 按 Elvis 运算符位置拆分二元表达式子 block。
+     */
     private fun splitSubBlocksOnElvis(nodeSubBlocks: List<ASTBlock>): List<ASTBlock> {
         val elvisIndex = nodeSubBlocks.indexOfBlockWithType(ELVIS_SET)
         if (elvisIndex >= 0) {
@@ -597,6 +693,9 @@ abstract class CangJieCommonBlock(
         return nodeSubBlocks
     }
 
+    /**
+     * 根据子节点上下文计算缩进。
+     */
     private fun createChildIndent(child: ASTNode): Indent? {
         val childParent = child.treeParent
         val childType = child.elementType
@@ -644,6 +743,9 @@ abstract class CangJieCommonBlock(
         return Indent.getNoneIndent()
     }
 
+    /**
+     * 判断节点是否位于代码片段根块中。
+     */
     private fun isInCodeChunk(node: ASTNode): Boolean {
         val parent = node.treeParent ?: return false
 
@@ -657,6 +759,9 @@ abstract class CangJieCommonBlock(
 //       || parentType == BLOCK_CODE_FRAGMENT
     }
 
+    /**
+     * 返回新子节点插入时的缩进和对齐属性。
+     */
     fun getChildAttributes(newChildIndex: Int): ChildAttributes {
         val type = node.elementType
 
@@ -736,6 +841,9 @@ abstract class CangJieCommonBlock(
         }
     }
 
+    /**
+     * 根据父节点类型创建子节点对齐策略。
+     */
     private fun getChildrenAlignmentStrategy(): CommonAlignmentStrategy {
         val cangjieCommonSettings = settings.cangjieCommonSettings
         val cangjieCustomSettings = settings.cangjieCustomSettings
@@ -794,6 +902,9 @@ abstract class CangJieCommonBlock(
     }
 
 
+    /**
+     * 为指定子节点构建 AST block。
+     */
     private fun buildSubBlock(
         child: ASTNode,
         alignmentStrategy: CommonAlignmentStrategy,
@@ -824,6 +935,9 @@ abstract class CangJieCommonBlock(
         )
     }
 
+    /**
+     * 构建当前节点的全部直接子 block。
+     */
     private fun buildSubBlocks(): List<ASTBlock> {
         val childrenAlignmentStrategy = getChildrenAlignmentStrategy()
         val wrappingStrategy = getWrappingStrategy()
@@ -848,6 +962,9 @@ abstract class CangJieCommonBlock(
             .flatMap { buildSubBlocksForChildNode(it, childrenAlignmentStrategy, wrappingStrategy) }.toList()
     }
 
+    /**
+     * 为单个 AST 子节点构建一个或多个子 block。
+     */
     private fun buildSubBlocksForChildNode(
         node: ASTNode,
         childrenAlignmentStrategy: CommonAlignmentStrategy,
@@ -875,6 +992,9 @@ abstract class CangJieCommonBlock(
         return sequenceOf(buildSubBlock(node, childrenAlignmentStrategy, wrappingStrategy))
     }
 
+    /**
+     * 展平嵌套二元表达式的子节点。
+     */
     private fun collectBinaryExpressionChildren(node: ASTNode, result: MutableList<ASTNode>) {
         for (child in node.children()) {
             if (child.elementType == BINARY_EXPRESSION) {
@@ -885,6 +1005,9 @@ abstract class CangJieCommonBlock(
         }
     }
 
+    /**
+     * 根据当前节点类型选择子节点 wrap 策略。
+     */
     private fun getWrappingStrategy(): WrappingStrategy {
         val commonSettings = settings.cangjieCommonSettings
         val elementType = node.elementType
@@ -1057,11 +1180,17 @@ abstract class CangJieCommonBlock(
         return ::noWrapping
     }
 
+    /**
+     * 创建默认尾逗号 wrap 策略。
+     */
     private fun defaultTrailingCommaWrappingStrategy(
         leftAnchor: IElementType, rightAnchor: IElementType
     ): WrappingStrategy = fun(childElement: ASTNode): Wrap? =
         trailingCommaWrappingStrategyWithMultiLineCheck(leftAnchor, rightAnchor)(childElement)
 
+    /**
+     * 判断当前节点是否应按尾逗号规则触发 wrap。
+     */
     private val ASTNode.addTrailingComma: Boolean
         get() = (settings.cangjieCustomSettings.addTrailingCommaIsAllowedFor(this) || lastChildNode?.let {
             getSiblingWithoutWhitespaceAndComments(
@@ -1070,6 +1199,9 @@ abstract class CangJieCommonBlock(
         }?.elementType === COMMA) && psi?.let(PsiElement::isMultiline) == true
 
 
+    /**
+     * 在同一序列中查找非分隔符 sibling。
+     */
     private fun ASTNode.notDelimiterSiblingNodeInSequence(
         forward: Boolean,
         delimiterType: IElementType,
@@ -1091,6 +1223,9 @@ abstract class CangJieCommonBlock(
         return sibling
     }
 
+    /**
+     * 创建“当前或相邻前序元素跨行”判断函数。
+     */
     private fun thisOrPrevIsMultiLineElement(
         typeOfFirstElement: IElementType,
         typeOfLastElement: IElementType,
@@ -1118,6 +1253,9 @@ abstract class CangJieCommonBlock(
         return psi.parent.containsLineBreakInChild(startOffset, endOffset)
     }
 
+    /**
+     * 创建带多行检查的尾逗号 wrap 策略。
+     */
     private fun trailingCommaWrappingStrategyWithMultiLineCheck(
         leftAnchor: IElementType,
         rightAnchor: IElementType,
@@ -1128,6 +1266,9 @@ abstract class CangJieCommonBlock(
         additionalCheck = thisOrPrevIsMultiLineElement(leftAnchor, rightAnchor),
     )
 
+    /**
+     * 创建尾逗号相关的 wrap 策略。
+     */
     private fun trailingCommaWrappingStrategy(
         leftAnchor: IElementType? = null,
         rightAnchor: IElementType? = null,
@@ -1145,9 +1286,15 @@ abstract class CangJieCommonBlock(
     }
 }
 
+/**
+ * 返回限定表达式的 receiver 节点。
+ */
 private fun ASTNode.qualifierReceiver(): ASTNode? =
     unwrapQualifier()?.psi?.safeAs<CjQualifiedExpression>()?.receiverExpression?.node?.unwrapQualifier()
 
+/**
+ * 向内拆开 postfix/qualified 表达式，直到找到限定表达式节点。
+ */
 private tailrec fun ASTNode.unwrapQualifier(): ASTNode? {
     if (elementType in QUALIFIED_EXPRESSIONS) return this
 
@@ -1157,14 +1304,23 @@ private tailrec fun ASTNode.unwrapQualifier(): ASTNode? {
     return psi.baseExpression?.node?.unwrapQualifier()
 }
 
+/**
+ * 判断限定表达式 receiver 是否为调用。
+ */
 private fun ASTNode.receiverIsCall(): Boolean = qualifierReceiver()?.isCall == true
 
+/**
+ * 判断调用链所在父节点是否禁止 wrap。
+ */
 private val ASTNode.isCallChainWithoutWrap: Boolean
     get() {
         val callChainParent = parents().firstOrNull { !it.isQualifier } ?: return true
         return callChainParent.elementType in QUALIFIED_EXPRESSIONS_WITHOUT_WRAP
     }
 
+/**
+ * 判断节点是否位于限定表达式链内。
+ */
 private val ASTNode.isQualifier: Boolean
     get() {
         var currentNode: ASTNode? = this
@@ -1177,9 +1333,15 @@ private val ASTNode.isQualifier: Boolean
         return false
     }
 
+/**
+ * 判断节点是否表示调用表达式。
+ */
 private val ASTNode.isCall: Boolean
     get() = unwrapQualifier()?.lastChildNode?.elementType == CALL_EXPRESSION
 
+/**
+ * 判断调用链中是否已有任意调用发生换行。
+ */
 private fun anyCallInCallChainIsWrapped(node: ASTNode): Boolean {
     val sequentialNodes = generateSequence(node) {
         when (it.elementType) {
@@ -1200,11 +1362,20 @@ private fun anyCallInCallChainIsWrapped(node: ASTNode): Boolean {
     }
 }
 
+/**
+ * 判断节点是否为参数列表中的第一个参数。
+ */
 private fun ASTNode.isFirstParameter(): Boolean = treePrev?.elementType == LPAR
 
+/**
+ * 创建注解之后的 wrap 策略。
+ */
 private fun wrapAfterAnnotation(wrapType: Int): WrappingStrategy =
     { childElement -> getWrapAfterAnnotation(childElement, wrapType) }
 
+/**
+ * 如果前一个有效叶子是注解列表，则为当前节点创建 wrap。
+ */
 private fun getWrapAfterAnnotation(childElement: ASTNode, wrapType: Int): Wrap? {
     if (childElement.elementType in COMMENTS) return null
     var prevLeaf = childElement.treePrev
@@ -1222,18 +1393,27 @@ private fun getWrapAfterAnnotation(childElement: ASTNode, wrapType: Int): Wrap? 
 }
 
 
+/**
+ * 判断节点前是否存在换行。
+ */
 private fun hasLineBreakBefore(node: ASTNode): Boolean {
     val prevSibling = node.leaves(false).dropWhile { it.psi is PsiComment }.firstOrNull()
 
     return prevSibling?.elementType == TokenType.WHITE_SPACE && prevSibling.textContains('\n') == true
 }
 
+/**
+ * 判断节点前是否存在至少两个换行。
+ */
 private fun hasDoubleLineBreakBefore(node: ASTNode): Boolean {
     val prevSibling = node.leaves(false).firstOrNull() ?: return false
 
     return prevSibling.text.count { it == '\n' } >= 2
 }
 
+/**
+ * 根据仓颉自定义代码风格选项设置 continuation indent。
+ */
 fun NodeIndentStrategy.PositionStrategy.continuationIf(
     option: (CangJieCodeStyleSettings) -> Boolean,
     indentFirst: Boolean = false,
@@ -1244,9 +1424,15 @@ fun NodeIndentStrategy.PositionStrategy.continuationIf(
     } else Indent.getNormalIndent()
 }
 
+/**
+ * 读取表达式节点中的运算符 token 类型。
+ */
 private fun getOperationType(node: ASTNode): IElementType? =
     node.findChildByType(OPERATION_REFERENCE)?.firstChildNode?.elementType
 
+/**
+ * 判断节点前一个有效 sibling 是否包含错误元素。
+ */
 fun hasErrorElementBefore(node: ASTNode): Boolean {
     val prevSibling = getPrevWithoutWhitespace(node) ?: return false
     if (prevSibling.elementType == TokenType.ERROR_ELEMENT) return true
@@ -1255,6 +1441,9 @@ fun hasErrorElementBefore(node: ASTNode): Boolean {
 }
 
 
+/**
+ * 判断二元表达式是否应抑制默认缩进。
+ */
 fun ASTNode.suppressBinaryExpressionIndent(): Boolean {
     var psi = psi.parent as? CjBinaryExpression ?: return false
     while (psi.parent is CjBinaryExpression) {
@@ -1264,6 +1453,9 @@ fun ASTNode.suppressBinaryExpressionIndent(): Boolean {
     return psi.parent?.node?.elementType == CONDITION
 }
 
+/**
+ * 创建括号内子元素的对齐策略。
+ */
 private fun getAlignmentForChildInParenthesis(
     shouldAlignChild: Boolean,
     parameter: IElementType,
@@ -1301,12 +1493,18 @@ private fun getAlignmentForChildInParenthesis(
 }
 
 
+/**
+ * 返回前后方向上第一个非空白且非注释 sibling。
+ */
 private fun getSiblingWithoutWhitespaceAndComments(pNode: ASTNode, forward: Boolean = false): ASTNode? {
     return pNode.siblings(forward = forward).firstOrNull {
         it.elementType != TokenType.WHITE_SPACE && it.elementType !in COMMENTS
     }
 }
 
+/**
+ * 创建 enum 构造项 wrap 策略。
+ */
 private fun getWrappingStrategyForEnum(
     wrapType: Int,
 
@@ -1413,5 +1611,3 @@ private fun createWrapAlwaysIf(option: Boolean): Wrap? = if (option) Wrap.create
 fun getPrevWithoutWhitespace(pNode: ASTNode): ASTNode? {
     return pNode.siblings(forward = false).firstOrNull { it.elementType != TokenType.WHITE_SPACE }
 }
-
- 

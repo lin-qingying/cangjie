@@ -28,6 +28,9 @@ import org.cangnova.cangjie.psi.stubs.CangJiePlaceHolderStub
 import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 import com.intellij.lang.ASTNode
 
+/**
+ * 表示 `CjSuperTypeCallEntry`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
+ */
 class CjSuperTypeCallEntry : CjSuperTypeListEntry, CjCallElement {
     constructor(node: ASTNode) : super(node)
 
@@ -36,34 +39,58 @@ class CjSuperTypeCallEntry : CjSuperTypeListEntry, CjCallElement {
         CjStubElementTypes.SUPER_TYPE_CALL_ENTRY,
     )
 
+    /**
+     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitSuperTypeCallEntry(this, data)
     }
 
+    /**
+     * 暴露 `calleeExpression`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val calleeExpression: CjConstructorCalleeExpression get() {
         return getRequiredStubOrPsiChild(CjStubElementTypes.CONSTRUCTOR_CALLEE)
     }
 
+    /**
+     * 暴露 `lambdaArguments`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val lambdaArguments: List<CjLambdaArgument> get() {
         return emptyList()
     }
 
+    /**
+     * 暴露 `typeArguments`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val typeArguments: List<CjTypeProjection> get() {
         val typeArgumentList = typeArgumentList ?: return emptyList()
         return typeArgumentList.arguments
     }
 
+    /**
+     * 暴露 `typeArgumentList`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val typeArgumentList: CjTypeArgumentList? = null
 
+    /**
+     * 暴露 `valueArgumentList`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val valueArgumentList: CjValueArgumentList? get() {
         return findChildByType(CjNodeTypes.VALUE_ARGUMENT_LIST)
     }
 
+    /**
+     * 暴露 `valueArguments`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val valueArguments: List<ValueArgument> get() {
         val list = valueArgumentList
         return list?.arguments ?: emptyList<CjValueArgument>()
     }
 
+    /**
+     * 暴露 `typeReference`，实现仓颉 PSI节点对上层接口的属性契约。
+     */
     override val typeReference: CjTypeReference? get() {
         return calleeExpression.typeReference
     }

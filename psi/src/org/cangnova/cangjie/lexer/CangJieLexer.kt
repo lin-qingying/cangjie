@@ -26,6 +26,9 @@ package org.cangnova.cangjie.lexer
 
 import com.intellij.lexer.FlexAdapter
 
+/**
+ * 表示 `CangJieLexer`，承载仓颉词法与文档注释中的语法节点、索引桩或辅助模型。
+ */
 class CangJieLexer : FlexAdapter(_CangJieLexer()) {
 
 //    private val braceStack: Stack<Int> = Stack()

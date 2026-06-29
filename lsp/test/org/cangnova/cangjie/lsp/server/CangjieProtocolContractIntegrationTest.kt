@@ -13,9 +13,20 @@ import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
+/**
+ * 校验 LSP 服务层对 analysis facade 的协议分发契约。
+ *
+ * 该测试使用可录制的协议 facade，确认各类请求在功能启用、关闭和工作区通知下的转发行为。
+ */
 class CangjieProtocolContractIntegrationTest : AbstractLspIntegrationTest() {
+    /**
+     * 禁用默认会话，测试为每个场景手动注入协议契约 facade。
+     */
     override val autoCreateDefaultSession: Boolean = false
 
+    /**
+     * 校验文本文件请求在功能启用时会路由到协议契约 facade。
+     */
     @Test
     fun `text document requests route through contract facade when features are enabled`() {
         val factory = ProtocolContractAnalysisFacadeFactory()
@@ -121,6 +132,9 @@ class CangjieProtocolContractIntegrationTest : AbstractLspIntegrationTest() {
         }
     }
 
+    /**
+     * 校验功能关闭或文档缺失时服务层返回中性值且不调用 facade。
+     */
     @Test
     fun `disabled features and missing documents return neutral values without invoking facade`() {
         val factory = ProtocolContractAnalysisFacadeFactory(
@@ -167,6 +181,9 @@ class CangjieProtocolContractIntegrationTest : AbstractLspIntegrationTest() {
         }
     }
 
+    /**
+     * 校验工作区通知会路由到 facade，notebook 通知不会破坏会话。
+     */
     @Test
     fun `workspace notifications route through facade and notebook traffic keeps session alive`() {
         val factory = ProtocolContractAnalysisFacadeFactory()
@@ -213,6 +230,9 @@ class CangjieProtocolContractIntegrationTest : AbstractLspIntegrationTest() {
         }
     }
 
+    /**
+     * 构造使用协议契约 facade 的服务端选项。
+     */
     private fun protocolOptions(factory: ProtocolContractAnalysisFacadeFactory): CangjieLspServerOptions {
         return defaultServerOptions().copy(analysisFacadeFactory = factory::create)
     }

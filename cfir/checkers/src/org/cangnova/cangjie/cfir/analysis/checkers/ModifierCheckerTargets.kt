@@ -156,6 +156,7 @@ internal val possibleTargetMap: Map<CjKeywordToken, Set<CangJieTarget>> = mapOf(
         CangJieTarget.INTERFACE_MEMBER_FUNCTION,
         CangJieTarget.MEMBER_PROPERTY,
         CangJieTarget.STRUCT_MEMBER_FUNCTION,
+        CangJieTarget.EXTEND_MEMBER_FUNCTION,
     ),
     OPEN_KEYWORD to EnumSet.of(
         CangJieTarget.CLASS_ONLY,

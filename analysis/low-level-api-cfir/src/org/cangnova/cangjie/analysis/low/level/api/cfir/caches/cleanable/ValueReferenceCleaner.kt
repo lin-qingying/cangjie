@@ -34,6 +34,12 @@ fun interface ValueReferenceCleaner<V> {
 
 @LLCfirInternals
 @Suppress("unused")// used in IDE
+/**
+ * 不执行任何清理动作的 cleaner 实现，供 IDE 服务配置和默认路径复用。
+ */
 class NoOpValueReferenceCleaner<V> : ValueReferenceCleaner<V> {
+    /**
+     * 忽略被移除或回收的 value。
+     */
     override fun cleanUp(value: V?) {}
 }

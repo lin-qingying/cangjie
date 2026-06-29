@@ -13,6 +13,11 @@ import org.cangnova.cangjie.test.services.assertions
  * @see AbstractCollectDiagnosticsTest
  */
 abstract class AbstractElementDiagnosticsTest : AbstractAnalysisApiComponentTest() {
+    /**
+     * 执行单个 PSI 元素的诊断收集测试。
+     *
+     * 方法按指令定位目标元素，调用元素级 diagnostics 入口，并将诊断名称与文本范围写入 golden。
+     */
     override fun doTestByMainFile(mainFile: CjFile, mainModule: CjTestModule, testServices: TestServices) {
         val targetDeclaration = testServices.expressionMarkerProvider.getBottommostElementOfTypeByDirective(
             mainFile,

@@ -16,6 +16,12 @@ import org.cangnova.cangjie.psi.stubs.impl.CangJieFileStubKindImpl
  * - 多文件顶层 callable: `MultifileClass`
  */
 internal object DecompiledFileStubKinds {
+    /**
+     * 根据 package、来源文件列表和顶层 callable 状态推导反编译文件 stub kind。
+     *
+     * 没有顶层 callable 的 package 作为普通 file stub；存在顶层 callable 时，
+     * 再根据参与 facade 的来源文件数量选择 simple facade 或 multifile facade。
+     */
     fun inferKind(
         packageFqName: FqName,
         sourceFiles: List<String>,
@@ -56,9 +62,12 @@ internal object DecompiledFileStubKinds {
                 val occurrence = (seenBaseNames[baseName] ?: 0) + 1
                 seenBaseNames[baseName] = occurrence
                 if (occurrence == 1) baseName else "${baseName}_$occurrence"
-            }
+        }
     }
 
+    /**
+     * 从来源文件路径中提取可作为 facade part 的稳定短名。
+     */
     private fun extractFacadePartSimpleName(filePath: String): String {
         val rawSimpleName = filePath
             .substringAfterLast('/')

@@ -11,6 +11,9 @@ import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
  * `CaModule.contentScope` 的默认引擎实现。
  */
 internal class CaBaseContentScopeProvider : CaContentScopeProvider {
+    /**
+     * 返回经过平台 refiner 扩展和限制后的模块内容作用域。
+     */
     @OptIn(CaPlatformInterface::class)
     override fun getRefinedContentScope(module: CaModule): GlobalSearchScope {
         val baseContentScope = module.baseContentScope
@@ -37,6 +40,9 @@ internal class CaBaseContentScopeProvider : CaContentScopeProvider {
         return mergeScopes(module, enlargementScopes, restrictionScopes)
     }
 
+    /**
+     * 合并扩展 scope，并按顺序应用限制 scope。
+     */
     private fun mergeScopes(
         module: CaModule,
         enlargementScopes: MutableList<GlobalSearchScope>,

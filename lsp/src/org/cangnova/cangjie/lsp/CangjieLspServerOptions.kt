@@ -10,9 +10,28 @@ import org.cangnova.cangjie.lsp.capabilities.CangjieLanguageServerDescriptor
  * LSP 服务器启动选项。
  */
 data class CangjieLspServerOptions(
+    /**
+     * 描述服务器默认能力、名称、版本和协议特性的配置对象。
+     */
     val descriptor: CangjieLanguageServerDescriptor = CangjieLanguageServerDescriptor(),
+
+    /**
+     * 创建编译器核心环境时使用的运行模式。
+     */
     val environmentMode: CangJieCoreEnvironmentMode = CangJieCoreEnvironmentMode.Production,
+
+    /**
+     * 构造 LSP 运行环境的工厂。
+     *
+     * 测试和嵌入式宿主可以通过该工厂替换默认环境创建逻辑。
+     */
     val environmentFactory: () -> CangjieLspEnvironment = { CangjieLspEnvironment.create(environmentMode) },
+
+    /**
+     * 根据生命周期上下文构造分析外观的工厂。
+     *
+     * 默认实现接入 Analysis API，测试可替换为协议契约或录制型 facade。
+     */
     val analysisFacadeFactory: (CangjieAnalysisLifecycleContext) -> CangjieAnalysisFacade = { AnalysisApiCangjieAnalysisFacade(it) },
     /**
      * 进程退出策略。

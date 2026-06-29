@@ -38,9 +38,17 @@ import org.junit.jupiter.api.Assertions.assertNotNull
  * 2. 再在主文件 use-site session 中通过 `createUseSiteVisibilityChecker(...)` 校验可见性。
  */
 abstract class AbstractVisibilityCheckerTest : AbstractAnalysisApiComponentTest() {
+    /**
+     * 当前 visibility 测试额外注册的声明种类与期望可见性指令。
+     */
     override val additionalDirectives: List<DirectivesContainer>
         get() = super.additionalDirectives + AnalysisApiVisibilityTestDirectives
 
+    /**
+     * 执行可见性测试。
+     *
+     * 方法先在声明所属文件校验 symbol visibility 元数据，再在 use-site 文件校验实际可见性。
+     */
     override fun doTestByMainFile(mainFile: CjFile, mainModule: CjTestModule, testServices: TestServices) {
         val directives = directivesForMainFile(mainFile, mainModule)
         val targetDeclaration = findTargetDeclaration(
@@ -74,6 +82,11 @@ abstract class AbstractVisibilityCheckerTest : AbstractAnalysisApiComponentTest(
         }
     }
 
+    /**
+     * 使用新旧两个 visibility checker 入口检查声明是否在 use-site 可见。
+     *
+     * 测试要求 deprecated 入口和 `createUseSiteVisibilityChecker` 入口返回同一结果。
+     */
     private fun CaSession.checkVisibility(
         declarationSymbol: CaDeclarationSymbol,
         useSiteElement: PsiElement,
@@ -103,6 +116,11 @@ abstract class AbstractVisibilityCheckerTest : AbstractAnalysisApiComponentTest(
         return visibleByUseSiteChecker
     }
 
+    /**
+     * 按目标种类和名称在所有测试文件中定位可见性测试目标声明。
+     *
+     * 该函数覆盖顶层函数、属性、class、extend 成员和 binding pattern。
+     */
     private fun findTargetDeclaration(
         allFiles: List<CjFile>,
         targetKind: String,
@@ -141,6 +159,11 @@ abstract class AbstractVisibilityCheckerTest : AbstractAnalysisApiComponentTest(
             ?: error("Cannot uniquely locate visibility target `$targetName` of kind `$targetKind`.")
     }
 
+    /**
+     * 将目标 PSI 声明恢复为公开 declaration symbol。
+     *
+     * 不同 PSI 声明形态使用各自公开 symbol 入口。
+     */
     private fun CaSession.resolveDeclarationSymbol(target: PsiElement): CaDeclarationSymbol? {
         return when (target) {
             is CjNamedFunction -> target.symbol
@@ -151,6 +174,11 @@ abstract class AbstractVisibilityCheckerTest : AbstractAnalysisApiComponentTest(
         }
     }
 
+    /**
+     * 尝试恢复 declaration symbol，失败时返回 `null`。
+     *
+     * use-site 可见性测试允许目标在当前 session 中不可恢复，此时按不可见处理。
+     */
     private fun CaSession.tryResolveDeclarationSymbol(target: PsiElement): CaDeclarationSymbol? {
         return runCatching { resolveDeclarationSymbol(target) }.getOrNull()
     }

@@ -14,8 +14,14 @@ import org.gradle.kotlin.dsl.findByType
 import org.gradle.kotlin.dsl.getByType
 import java.util.concurrent.Callable
 
+/**
+ * 获取或创建指定名称的 configuration。
+ */
 fun ConfigurationContainer.getOrCreate(name: String): Configuration = findByName(name) ?: create(name)
 
+/**
+ * 向指定 configuration 添加依赖，并可选配置 module dependency。
+ */
 fun DependencyHandler.add(configurationName: String, dependencyNotation: Any, configure: (ModuleDependency.() -> Unit)?) {
     if (configure != null) {
         add(configurationName, dependencyNotation, closureOf(configure))
@@ -24,6 +30,9 @@ fun DependencyHandler.add(configurationName: String, dependencyNotation: Any, co
     }
 }
 
+/**
+ * 将任务产物发布到指定 configuration。
+ */
 fun <T : Task> Project.addArtifact(
     configurationName: String,
     task: TaskProvider<T>,
@@ -33,6 +42,12 @@ fun <T : Task> Project.addArtifact(
     return artifacts.add(configurationName, task, body)
 }
 
+/**
+ * 延迟计算 copy source，避免配置阶段提前解析文件集合。
+ */
 inline fun CopySourceSpec.from(crossinline filesProvider: () -> Any?): CopySourceSpec = from(Callable { filesProvider() })
 
+/**
+ * 查找当前 project 的 Java plugin extension。
+ */
 fun Project.findJavaPluginExtension(): JavaPluginExtension? = extensions.findByType()

@@ -8,14 +8,36 @@ import org.gradle.api.tasks.testing.Test
 import org.gradle.kotlin.dsl.getByType
 import org.gradle.kotlin.dsl.register
 
+/**
+ * 仓库测试任务使用的 JUnit 运行模式。
+ */
 enum class JUnitMode {
+    /**
+     * 使用 JUnit 4 runner。
+     */
     JUnit4,
+    /**
+     * 使用 JUnit Platform。
+     */
     JUnit5,
 }
 
+/**
+ * 项目测试约定扩展。
+ *
+ * 该扩展集中注册普通测试任务、额外测试任务以及测试生成器任务，使各模块的 Gradle 脚本保持一致。
+ */
 open class ProjectTestsExtension(
+    /**
+     * 持有该扩展的 Gradle 项目。
+     */
     private val project: Project,
 ) {
+    /**
+     * 配置默认 `test` 任务。
+     *
+     * 这是最常用的入口，内部委托到带任务名的重载并固定任务名为 `test`。
+     */
     fun testTask(
         parallel: Boolean? = null,
         jUnitMode: JUnitMode,
@@ -28,6 +50,12 @@ open class ProjectTestsExtension(
         body = body,
     ) as TaskProvider<Test>
 
+    /**
+     * 注册或配置指定名称的测试任务。
+     *
+     * 对非默认测试任务会补齐 `test` source set 的 classpath 与 testClassesDirs，并按 [jUnitMode]
+     * 配置 JUnit 运行器。
+     */
     fun testTask(
         taskName: String,
         parallel: Boolean? = null,
@@ -76,6 +104,11 @@ open class ProjectTestsExtension(
         return testTaskProvider
     }
 
+    /**
+     * 注册基于 [CacheableJavaExec] 的测试数据生成任务。
+     *
+     * 生成器任务会跟踪 testData 输入、tests-gen 输出和生成器 classpath，并自动接入测试编译任务。
+     */
     fun testGenerator(
         mainClassName: String,
         generateTestsInBuildDirectory: Boolean = false,
@@ -160,6 +193,12 @@ open class ProjectTestsExtension(
     }
 }
 
+/**
+ * 为显式指定外部测试类的 Gradle include pattern 自动补充内部类匹配。
+ *
+ * Gradle 命令行 `--tests SomeGeneratedClass` 默认不会包含内部类，这会漏跑生成式测试套件；
+ * 该函数在 JUnit4 测试执行前补充 `SomeGeneratedClass$*` 形式的模式。
+ */
 private fun Test.addInnerClassPatternsForExplicitClassIncludes() {
     val defaultFilterClass = "org.gradle.api.internal.tasks.testing.filter.DefaultTestFilter"
     val filterObject = filter

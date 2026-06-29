@@ -41,8 +41,14 @@ import org.junit.jupiter.api.Test
 class AnalysisApiSessionBehaviorTest : AbstractAnalysisApiExecutionTest(
     "analysis/analysis-api-cfir/testData/sessions",
 ) {
+    /**
+     * 使用 standalone CFIR 配置运行 session 与 symbol pointer 行为测试。
+     */
     override val configurator = CaCfirStandaloneAnalysisApiTestConfigurator
 
+    /**
+     * 验证普通命名函数 symbol pointer 可以跨 `analyzeForTest` 边界恢复到原始 PSI。
+     */
     @Test
     fun symbolPointerRestore(mainFile: CjFile) {
         val referenceExpression = PsiTreeUtil.findChildrenOfType(mainFile, CjSimpleNameExpression::class.java)
@@ -69,6 +75,9 @@ class AnalysisApiSessionBehaviorTest : AbstractAnalysisApiExecutionTest(
         }
     }
 
+    /**
+     * 验证顶层 pattern binding 的 symbol pointer 可以恢复到绑定模式声明。
+     */
     @Test
     fun topLevelPatternBindingPointerRestore(mainFile: CjFile) {
         val referenceExpression = PsiTreeUtil.findChildrenOfType(mainFile, CjSimpleNameExpression::class.java)
@@ -97,6 +106,9 @@ class AnalysisApiSessionBehaviorTest : AbstractAnalysisApiExecutionTest(
         }
     }
 
+    /**
+     * 验证解构中的不同 pattern binding 会恢复到各自独立的声明 PSI。
+     */
     @Test
     fun patternBindingDeclarationRestore(mainFile: CjFile) {
         val references = PsiTreeUtil.findChildrenOfType(mainFile, CjSimpleNameExpression::class.java)
@@ -120,6 +132,9 @@ class AnalysisApiSessionBehaviorTest : AbstractAnalysisApiExecutionTest(
         }
     }
 
+    /**
+     * 验证 match 不同分支中的同名 pattern binding 解析为不同 symbol 和不同声明 PSI。
+     */
     @Test
     fun matchPatternBindingResolve(mainFile: CjFile) {
         val references = PsiTreeUtil.findChildrenOfType(mainFile, CjSimpleNameExpression::class.java)
@@ -146,6 +161,9 @@ class AnalysisApiSessionBehaviorTest : AbstractAnalysisApiExecutionTest(
         }
     }
 
+    /**
+     * 验证 extend symbol pointer、位置、来源和成员作用域在跨 session 恢复后保持稳定。
+     */
     @Test
     fun extendSymbolPointerRestore(mainFile: CjFile) {
         val extendDeclaration = mainFile.declarations.filterIsInstance<CjExtend>().single()
@@ -182,6 +200,9 @@ class AnalysisApiSessionBehaviorTest : AbstractAnalysisApiExecutionTest(
         }
     }
 
+    /**
+     * 验证属性 getter/setter symbol pointer 可恢复，并保留 owning property 与 setter 参数关系。
+     */
     @Test
     fun propertyAccessorPointerRestore(mainFile: CjFile) {
         val accessors = PsiTreeUtil.findChildrenOfType(mainFile, CjPropertyAccessor::class.java)
@@ -229,6 +250,9 @@ class AnalysisApiSessionBehaviorTest : AbstractAnalysisApiExecutionTest(
         }
     }
 
+    /**
+     * 验证匿名函数 symbol pointer 能恢复到函数文字 PSI，并保留外层声明关系。
+     */
     @Test
     fun anonymousFunctionPointerRestore(mainFile: CjFile) {
         val functionLiteral = PsiTreeUtil.findChildrenOfType(mainFile, CjFunctionLiteral::class.java).single()
@@ -292,6 +316,9 @@ private fun Any?.asPatternBindingDeclarationPsi(): PsiNameIdentifierOwner? {
     }
 }
 
+/**
+ * 从作用域中按名称取得唯一 callable symbol。
+ */
 private fun org.cangnova.cangjie.analysis.api.scopes.CaScope.callableSymbol(name: String): CaSymbol {
     return callables(Name.identifier(name)).single()
 }

@@ -18,6 +18,11 @@ import org.cangnova.cangjie.test.services.TestServices
  * 再使用 debug renderer 与同名 `.txt` golden 对比。
  */
 abstract class AbstractSymbolRenderingByReferenceTest : AbstractAnalysisApiComponentTest() {
+    /**
+     * 执行通过引用渲染 declaration symbol 的测试。
+     *
+     * 方法在 caret 处解析引用，确认结果为 declaration symbol 后使用 debug renderer 生成 golden 文本。
+     */
     override fun doTestByMainFile(mainFile: CjFile, mainModule: CjTestModule, testServices: TestServices) {
         val referenceExpression = testServices.expressionMarkerProvider
             .getBottommostElementOfTypeAtCaret<CjReferenceExpression>(mainFile)

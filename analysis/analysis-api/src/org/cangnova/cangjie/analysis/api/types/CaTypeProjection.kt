@@ -19,5 +19,9 @@ class CaTypeProjection(
      * 投影对应的具体类型,缺省/通配语义下可能为 `null`。
      */
     val type: CaType?,
+
+    /**
+     * 类型投影所属 session 的生命周期 token。
+     */
     override val token: CaLifetimeToken,
 ) : CaLifetimeOwner

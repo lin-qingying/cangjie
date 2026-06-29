@@ -30,13 +30,25 @@ import org.cangnova.cangjie.psi.stubs.elements.CjContextReceiverElementType
 import com.intellij.psi.PsiElement
 import com.intellij.psi.stubs.StubElement
 
+/**
+ * 表示 `CangJieContextReceiverStubImpl`，承载PSI Stub中的语法节点、索引桩或辅助模型。
+ */
 class CangJieContextReceiverStubImpl(
     parent: StubElement<out PsiElement>?,
     elementType: CjContextReceiverElementType,
+    /**
+     * 保存 `label` 的内部状态，供PSI Stub实现维护节点缓存或解析上下文。
+     */
     private val label: String?,
 ) : CangJieStubBaseImpl<CjContextReceiver>(parent, elementType), CangJieContextReceiverStub {
+    /**
+     * 实现 `getLabel` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun getLabel() = label
 
+    /**
+     * 实现 `copyInto` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun copyInto(newParent: StubElement<*>?): CangJieContextReceiverStubImpl = CangJieContextReceiverStubImpl(
         parent = newParent,
         elementType = stubType as CjContextReceiverElementType,

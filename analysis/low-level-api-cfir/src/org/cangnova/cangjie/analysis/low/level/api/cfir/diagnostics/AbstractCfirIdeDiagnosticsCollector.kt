@@ -31,6 +31,9 @@ import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.CfirSessionComponent
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater
 
+/**
+ * low-level CFIR diagnostics collector 基类，按给定 checker filter 创建诊断组件。
+ */
 internal abstract class AbstractLLCfirDiagnosticsCollector(
     session: CfirSession,
     filter: DiagnosticCheckerFilter,
@@ -41,6 +44,9 @@ internal abstract class AbstractLLCfirDiagnosticsCollector(
     }
 )
 
+/**
+ * 从 CFIR session 取得 low-level checker factory。
+ */
 private val CfirSession.checkersFactory: LLCheckersFactory by CfirSession.sessionComponentAccessor()
 
 /**
@@ -52,10 +58,24 @@ private val CfirSession.checkersFactory: LLCheckersFactory by CfirSession.sessio
  * @see org.cangnova.cangjie.cfir.analysis.CheckersComponent
  */
 internal class LLCheckersFactory(val session: LLCfirSession) : CfirSessionComponent {
+    /**
+     * declaration checker 的按 filter 懒加载 provider。
+     */
     private val declarationCheckersProvider = Provider(session, ::createDeclarationCheckers)
+
+    /**
+     * expression checker 的按 filter 懒加载 provider。
+     */
     private val expressionCheckersProvider = Provider(session, ::createExpressionCheckers)
+
+    /**
+     * type checker 的按 filter 懒加载 provider。
+     */
     private val typeCheckersProvider = Provider(session, ::createTypeCheckers)
 
+    /**
+     * 根据 checker filter 和 reporter 创建完整 diagnostics collector 组件集合。
+     */
     fun createComponents(filter: DiagnosticCheckerFilter, reporter: PendingDiagnosticReporter): DiagnosticCollectorComponents {
         val declarationCheckers = declarationCheckersProvider.getOrCreateCheckers(filter)
         val expressionCheckers = expressionCheckersProvider.getOrCreateCheckers(filter)
@@ -78,7 +98,13 @@ internal class LLCheckersFactory(val session: LLCfirSession) : CfirSessionCompon
      * This provider allows creating checkers lazily based on a given [filter][DiagnosticCheckerFilter].
      */
     private class Provider<T>(
+        /**
+         * 创建 checker 时读取扩展点和 session 组件的 CFIR session。
+         */
         private val session: CfirSession,
+        /**
+         * 根据 filter 与扩展 checker 列表创建目标 checker 集合的工厂函数。
+         */
         private val checkersFactory: (
             filter: DiagnosticCheckerFilter,
             additionalCheckers: List<CfirAdditionalCheckersExtension>,
@@ -88,6 +114,9 @@ internal class LLCheckersFactory(val session: LLCfirSession) : CfirSessionCompon
         @Volatile
         private var filterToCheckersMap: SmartFMap<DiagnosticCheckerFilter, T> = SmartFMap.emptyMap()
 
+        /**
+         * 返回指定 filter 对应的 checker 集合；未命中时原子创建并缓存。
+         */
         fun getOrCreateCheckers(filter: DiagnosticCheckerFilter): T {
             // Happy-path to avoid checkers recreation
             filterToCheckersMap[filter]?.let { return it }
@@ -103,6 +132,9 @@ internal class LLCheckersFactory(val session: LLCfirSession) : CfirSessionCompon
             return checkers
         }
 
+        /**
+         * 从 session 扩展服务中读取额外 checker 并创建实际 checker 集合。
+         */
         private fun createCheckers(filter: DiagnosticCheckerFilter): T {
             val additionalCheckers = session.extensionService.additionalCheckers
             return checkersFactory(filter, additionalCheckers)
@@ -117,6 +149,9 @@ internal class LLCheckersFactory(val session: LLCfirSession) : CfirSessionCompon
         }
     }
 
+    /**
+     * 根据 filter 组合默认、IDE-only、扩展和 extra declaration checkers。
+     */
     private fun createDeclarationCheckers(
         filter: DiagnosticCheckerFilter,
         extensionCheckers: List<CfirAdditionalCheckersExtension>
@@ -132,6 +167,9 @@ internal class LLCheckersFactory(val session: LLCfirSession) : CfirSessionCompon
         }
     }
 
+    /**
+     * 根据 filter 组合默认、扩展、extra 和 experimental expression checkers。
+     */
     private fun createExpressionCheckers(
         filter: DiagnosticCheckerFilter,
         extensionCheckers: List<CfirAdditionalCheckersExtension>
@@ -150,6 +188,9 @@ internal class LLCheckersFactory(val session: LLCfirSession) : CfirSessionCompon
         }
     }
 
+    /**
+     * 根据 filter 组合默认、扩展和 experimental type checkers。
+     */
     private fun createTypeCheckers(
         filter: DiagnosticCheckerFilter,
         extensionCheckers: List<CfirAdditionalCheckersExtension>,
@@ -165,12 +206,18 @@ internal class LLCheckersFactory(val session: LLCfirSession) : CfirSessionCompon
     }
 
 
+    /**
+     * 用 DSL 构建 declaration checker 列表并合成为一个 checker 集合。
+     */
     private inline fun createDeclarationCheckers(
         createDeclarationCheckers: MutableList<DeclarationCheckers>.() -> Unit
     ): DeclarationCheckers =
         createDeclarationCheckers(buildList(createDeclarationCheckers))
 
 
+    /**
+     * 将一个或多个 declaration checker 集合合成为 collector 可消费的实例。
+     */
     @OptIn(CheckersComponentInternal::class)
     private fun createDeclarationCheckers(declarationCheckers: List<DeclarationCheckers>): DeclarationCheckers {
         return when (declarationCheckers.size) {
@@ -181,10 +228,16 @@ internal class LLCheckersFactory(val session: LLCfirSession) : CfirSessionCompon
         }
     }
 
+    /**
+     * 用 DSL 构建 expression checker 列表并合成为一个 checker 集合。
+     */
     private inline fun createExpressionCheckers(
         createExpressionCheckers: MutableList<ExpressionCheckers>.() -> Unit
     ): ExpressionCheckers = createExpressionCheckers(buildList(createExpressionCheckers))
 
+    /**
+     * 将一个或多个 expression checker 集合合成为 collector 可消费的实例。
+     */
     @OptIn(CheckersComponentInternal::class)
     private fun createExpressionCheckers(expressionCheckers: List<ExpressionCheckers>): ExpressionCheckers {
         return when (expressionCheckers.size) {
@@ -195,10 +248,16 @@ internal class LLCheckersFactory(val session: LLCfirSession) : CfirSessionCompon
         }
     }
 
+    /**
+     * 用 DSL 构建 type checker 列表并合成为一个 checker 集合。
+     */
     private inline fun createTypeCheckers(
         createTypeCheckers: MutableList<TypeCheckers>.() -> Unit
     ): TypeCheckers = createTypeCheckers(buildList(createTypeCheckers))
 
+    /**
+     * 将一个或多个 type checker 集合合成为 collector 可消费的实例。
+     */
     @OptIn(CheckersComponentInternal::class)
     private fun createTypeCheckers(typeCheckers: List<TypeCheckers>): TypeCheckers {
         return when (typeCheckers.size) {

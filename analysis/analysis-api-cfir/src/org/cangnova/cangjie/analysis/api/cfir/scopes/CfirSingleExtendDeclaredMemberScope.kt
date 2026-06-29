@@ -21,11 +21,29 @@ import org.cangnova.cangjie.name.Name
  * extend 声明自身的成员索引必须停留在 CFIR scope 层，保持与 Kotlin ScopeProvider 的职责边界一致。
  */
 internal class CfirSingleExtendDeclaredMemberScope(
+    /**
+     * 当前作用域索引的单个 extend 声明。
+     */
     private val extend: CfirExtend,
 ) : CfirClassScope() {
+    /**
+     * extend 内 class-like 成员索引。
+     */
     private val classifiers = linkedMapOf<Name, MutableList<CfirClassLikeSymbol<*>>>()
+
+    /**
+     * extend 内函数成员索引。
+     */
     private val functions = linkedMapOf<Name, MutableList<CfirNamedFunctionSymbol>>()
+
+    /**
+     * extend 内属性成员索引。
+     */
     private val properties = linkedMapOf<Name, MutableList<CfirPropertySymbol>>()
+
+    /**
+     * extend 内字段或变量成员索引。
+     */
     private val variables = linkedMapOf<Name, MutableList<CfirVariableSymbol<*>>>()
 
     init {
@@ -57,22 +75,40 @@ internal class CfirSingleExtendDeclaredMemberScope(
         }
     }
 
+    /**
+     * 返回 extend 内 callable 成员名称集合。
+     */
     override fun getCallableNames(): Set<Name> = functions.keys + properties.keys + variables.keys
 
+    /**
+     * 返回 extend 内 classifier 成员名称集合。
+     */
     override fun getClassifierNames(): Set<Name> = classifiers.keys
 
+    /**
+     * 按名称处理 extend 内 class-like 成员。
+     */
     override fun processClassifiersByName(name: Name, processor: (CfirClassLikeSymbol<*>) -> Unit) {
         classifiers[name]?.forEach(processor)
     }
 
+    /**
+     * 按名称处理 extend 内函数成员。
+     */
     override fun processFunctionsByName(name: Name, processor: (CfirNamedFunctionSymbol) -> Unit) {
         functions[name]?.forEach(processor)
     }
 
+    /**
+     * 按名称处理 extend 内属性成员。
+     */
     override fun processPropertiesByName(name: Name, processor: (CfirPropertySymbol) -> Unit) {
         properties[name]?.forEach(processor)
     }
 
+    /**
+     * 按名称处理 extend 内全部 callable 成员。
+     */
     override fun processCallablesByName(name: Name, processor: (CfirCallableSymbol<*>) -> Unit) {
         functions[name]?.forEach(processor)
         properties[name]?.forEach(processor)

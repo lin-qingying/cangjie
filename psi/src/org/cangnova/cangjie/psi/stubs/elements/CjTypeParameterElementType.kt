@@ -33,12 +33,18 @@ import com.intellij.util.io.StringRef
 import org.jetbrains.annotations.NonNls
 import java.io.IOException
 
+/**
+ * 表示 `CjTypeParameterElementType`，承载PSI Stub中的语法节点、索引桩或辅助模型。
+ */
 class CjTypeParameterElementType(debugName: String) :
     CjStubElementType<CangJieTypeParameterStub, CjTypeParameter>(
         debugName,
         CjTypeParameter::class.java,
         CangJieTypeParameterStub::class.java,
     ) {
+    /**
+     * 实现 `createStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     override fun createStub(psi: CjTypeParameter, parentStub: StubElement<*>?): CangJieTypeParameterStub {
         return CangJieTypeParameterStubImpl(
             parentStub,
@@ -46,6 +52,9 @@ class CjTypeParameterElementType(debugName: String) :
         )
     }
 
+    /**
+     * 实现 `serialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     @Throws(IOException::class)
     override fun serialize(stub: CangJieTypeParameterStub, dataStream: StubOutputStream) {
         dataStream.writeName(stub.name)
@@ -53,6 +62,9 @@ class CjTypeParameterElementType(debugName: String) :
         //        dataStream.writeBoolean(stub.isInVariance());
     }
 
+    /**
+     * 实现 `deserialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
+     */
     @Throws(IOException::class)
     override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>): CangJieTypeParameterStub {
         val name = dataStream.readName()
