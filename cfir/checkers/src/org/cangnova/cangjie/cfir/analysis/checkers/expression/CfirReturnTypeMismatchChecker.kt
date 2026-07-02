@@ -4,6 +4,7 @@ import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.diagnosticFactoryForReturnTypeMismatch
 import org.cangnova.cangjie.cfir.analysis.checkers.hasUninferredOmittedLambdaParameterType
 import org.cangnova.cangjie.cfir.analysis.checkers.isSubtypeForTypeMismatch
+import org.cangnova.cangjie.cfir.analysis.checkers.lambdaExpectedFunctionType
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.analysis.diagnostics.specificTypeMismatchDiagnostic
 import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
@@ -14,7 +15,6 @@ import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirMacroDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirMainFunction
 import org.cangnova.cangjie.cfir.declarations.hasLambdaParameterShapeDiagnostic
-import org.cangnova.cangjie.cfir.declarations.lambdaParameterShapeExpectedFunctionType
 import org.cangnova.cangjie.cfir.diagnostic.ConeTypeMismatchError
 import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
@@ -32,7 +32,6 @@ import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeStructType
-import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
 import org.cangnova.cangjie.cfir.types.ConeUnreportedDuplicateDiagnostic
 import org.cangnova.cangjie.cfir.types.StdlibClassIds
@@ -71,7 +70,7 @@ object CfirReturnTypeMismatchChecker : CfirReturnExpressionChecker( ) {
         if (
             containingFunction is CfirAnonymousFunction &&
             containingFunction.hasUninferredOmittedLambdaParameterType() &&
-            !containingFunction.hasLambdaShapeDiagnosticForReturnTypeCheck()
+            !containingFunction.hasLambdaShapeDiagnosticForReturnTypeCheck(context)
         ) {
             return
         }
@@ -88,6 +87,10 @@ object CfirReturnTypeMismatchChecker : CfirReturnExpressionChecker( ) {
         }
 
         val expectedType = returnTypeMismatch?.expectedType ?: when (containingFunction) {
+            is CfirAnonymousFunction ->
+                containingFunction.lambdaExpectedFunctionType(context)?.returnType
+                    ?: (containingFunction.returnTypeRef as? CfirResolvedTypeRef)?.coneType
+                    ?: return
             is CfirConstructor -> ConePrimitiveType.UNIT
             else -> (containingFunction.returnTypeRef as? CfirResolvedTypeRef)?.coneType ?: return
         }
@@ -177,10 +180,9 @@ private fun org.cangnova.cangjie.cfir.types.ConeDiagnostic.unwrapUnreportedDupli
 /**
  * Lambda 参数头部已有更具体形状错误时，显式 return 的类型检查不能被省略参数占位符屏蔽。
  */
-private fun CfirAnonymousFunction.hasLambdaShapeDiagnosticForReturnTypeCheck(): Boolean {
+private fun CfirAnonymousFunction.hasLambdaShapeDiagnosticForReturnTypeCheck(context: CheckerContext): Boolean {
     if (hasLambdaParameterShapeDiagnostic == true) return true
-    val expectedFunctionType = lambdaParameterShapeExpectedFunctionType
-        ?: matchingParameterFunctionType as? ConeFunctionType
+    val expectedFunctionType = lambdaExpectedFunctionType(context)
         ?: return false
     return valueParameters.size != expectedFunctionType.parameterTypes.size
 }

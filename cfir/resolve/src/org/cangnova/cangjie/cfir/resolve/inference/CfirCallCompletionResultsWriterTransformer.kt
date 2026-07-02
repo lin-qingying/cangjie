@@ -456,7 +456,10 @@ class CfirCallCompletionResultsWriterTransformer(
                 hasVariableLenArg = originalExpectedFunctionType?.hasVariableLenArg ?: false,
                 attributes = originalExpectedFunctionType?.attributes ?: ConeAttributes.Empty,
             )
-            registerExpectedType(lambdaAtom.expression, completedFunctionType)
+            val existingExpectedType = arguments[lambdaAtom.expression]
+            if (existingExpectedType.functionTypeForLambdaShape() == null) {
+                registerExpectedType(lambdaAtom.expression, completedFunctionType)
+            }
         }
 
         if (lambdasReturnType.isEmpty() && arguments.isEmpty() && argumentReplacements.isNullOrEmpty()) return null
@@ -789,13 +792,13 @@ class CfirCallCompletionResultsWriterTransformer(
         expectedType: ConeCangJieType?,
         containingCallIsError: Boolean,
     ) {
-        val expectedFunctionType = (expectedType as? ConeFunctionType)
+        val expectedFunctionType = expectedType.functionTypeForLambdaShape()
             ?: return
 
         anonymousFunction.lambdaParameterShapeExpectedFunctionType = expectedFunctionType
+        anonymousFunction.replaceMatchingParameterFunctionType(expectedFunctionType)
         if (containingCallIsError) return
 
-        anonymousFunction.replaceMatchingParameterFunctionType(expectedFunctionType)
         anonymousFunction.valueParameters.forEachIndexed { index, parameter ->
             val parameterType = expectedFunctionType.parameterTypes.getOrNull(index)
                 ?.let(::finallySubstituteOrSelf)
@@ -815,6 +818,18 @@ class CfirCallCompletionResultsWriterTransformer(
             }
             parameter.replaceReturnTypeRef(typeRef)
         }
+    }
+
+    /**
+     * 取得 lambda 头部诊断所使用的目标函数类型。
+     *
+     * 错误候选不会继续把参数类型写回 lambda header，但仍要保留官方 `ChkLamParamTys`
+     * 使用的目标函数形状，供最终 checker 报告参数个数、显式参数类型和返回体错误。
+     */
+    private fun ConeCangJieType?.functionTypeForLambdaShape(): ConeFunctionType? {
+        if (this == null) return null
+        return this as? ConeFunctionType
+            ?: fullyExpandedType(session) as? ConeFunctionType
     }
 
     /**
