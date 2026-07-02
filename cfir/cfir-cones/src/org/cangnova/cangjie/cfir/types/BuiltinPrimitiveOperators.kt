@@ -207,10 +207,28 @@ object BuiltinPrimitiveOperators {
     }
 
     /**
+     * 按运算符名称和参数个数索引全部 primitive 内建签名。
+     *
+     * 该索引用于类型尚未完全确定的语境，例如无上下文 lambda 参数 placeholder。
+     * 调用方仍需根据已知操作数筛选唯一签名，避免把官方认为有歧义的内建运算提前定型。
+     */
+    private val signaturesByNameAndParameterCount: Map<Pair<Name, Int>, List<BuiltinPrimitiveOperatorSignature>> =
+        signaturesByReceiver.values
+            .flatten()
+            .distinct()
+            .groupBy { signature -> signature.name to signature.parameterKinds.size }
+
+    /**
      * 返回 [receiverKind] 可暴露的 primitive 内建运算签名。
      */
     fun signaturesFor(receiverKind: PrimitiveTypeKind): List<BuiltinPrimitiveOperatorSignature> =
         signaturesByReceiver[receiverKind].orEmpty()
+
+    /**
+     * 返回指定运算符名称和参数个数对应的全部 primitive 内建签名。
+     */
+    fun signaturesForOperator(name: Name, parameterCount: Int): List<BuiltinPrimitiveOperatorSignature> =
+        signaturesByNameAndParameterCount[name to parameterCount].orEmpty()
 
     /**
      * 按调用名称、接收者类型和参数类型解析 primitive 内建运算。
@@ -405,6 +423,12 @@ object BuiltinPrimitiveOperators {
         is ConeStructType -> classId.toPrimitiveTypeKindOrNull()
         is ConeEnumType -> classId.toPrimitiveTypeKindOrNull()
         is ConeTypeAliasType -> expandedClassIdOrPrimitiveClassId?.toPrimitiveTypeKindOrNull()
+        is ConeIntersectionType -> {
+            val componentKinds = intersectedTypes
+                .map { componentType -> componentType.toBuiltinOperatorKind() ?: return null }
+                .distinct()
+            componentKinds.singleOrNull()
+        }
         else -> classIdOrPrimitiveClassId?.toPrimitiveTypeKindOrNull()
     }
 

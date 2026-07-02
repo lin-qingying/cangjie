@@ -9,6 +9,7 @@ import org.cangnova.cangjie.resolve.calls.inference.ConstraintSystemBuilder
 import org.cangnova.cangjie.resolve.calls.inference.model.*
 import org.cangnova.cangjie.resolve.calls.model.CollectionLiteralAtomMarker
 import org.cangnova.cangjie.resolve.calls.model.PostponedAtomWithRevisableExpectedType
+import org.cangnova.cangjie.resolve.calls.model.PostponedCallableReferenceMarker
 import org.cangnova.cangjie.resolve.calls.model.PostponedResolvedAtomMarker
 import org.cangnova.cangjie.type.model.*
 
@@ -133,7 +134,13 @@ abstract class ConstraintSystemCompletionContext : VariableFixationFinder.Contex
      * 查找拥有可修订期望类型的延迟参数。
      */
     private fun <A : PostponedResolvedAtomMarker> findPostponedArgumentWithRevisableExpectedType(postponedArguments: List<A>): A? =
-        postponedArguments.firstOrNull { argument -> argument is PostponedAtomWithRevisableExpectedType }
+        postponedArguments.firstOrNull { argument ->
+            if (argument !is PostponedAtomWithRevisableExpectedType) return@firstOrNull false
+            if (argument is PostponedCallableReferenceMarker && argument.needsResolution) {
+                return@firstOrNull argument.inputTypes.all { containsOnlyFixedVariables(it) }
+            }
+            true
+        }
 
     /**
      * 查找所有输入类型都已固定的延迟参数。

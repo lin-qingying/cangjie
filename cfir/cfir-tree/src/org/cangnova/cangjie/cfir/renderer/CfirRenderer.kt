@@ -637,7 +637,17 @@ class CfirRenderer(
                 superTypeRefs = enum_.superTypeRefs,
             )
             printer.pushIndent()
-            enum_.declarations.forEach { it.accept(this) }
+            var ellipsisRendered = false
+            enum_.declarations.forEach { declaration ->
+                if (!ellipsisRendered && enum_.isNonExhaustive && declaration !is CfirEnumConstructor) {
+                    println("...")
+                    ellipsisRendered = true
+                }
+                declaration.accept(this)
+            }
+            if (!ellipsisRendered && enum_.isNonExhaustive) {
+                println("...")
+            }
             printer.popIndent()
             println("}")
         }

@@ -8,5 +8,5 @@ enum Color {
 enum Option<T> {
     | Some(T)
     | None
+    | ...
 }
-

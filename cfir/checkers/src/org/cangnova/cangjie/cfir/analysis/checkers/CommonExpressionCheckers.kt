@@ -32,6 +32,8 @@ object CommonExpressionCheckers : ExpressionCheckers() {
     override val basicExpressionCheckers: Set<CfirBasicExpressionChecker>
         get() = setOf(
             CfirLoopConditionTypeMismatchChecker,
+            CfirVarInOrConditionChecker,
+            CfirLetConditionPatternChecker,
             CfirSpawnSemanticsChecker,
             CfirExpressionWithErrorTypeChecker,
             CfirFunctionBodyTypeMismatchChecker,

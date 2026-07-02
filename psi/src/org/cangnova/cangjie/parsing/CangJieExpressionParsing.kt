@@ -450,12 +450,15 @@ open class CangJieExpressionParsing(
         var expression = mark()
         precedence.parseHigherPrecedence(this)
 
-        while (!interruptedWithNewLine() && precedence.getOperations()
-                .contains(getGtTokenType())
-        ) {
-            getGtTokenType()?.let {
-                parseOperationReference(it)
-                val resultType = precedence.parseRightHandSide(it, this)
+        while (!interruptedWithNewLine() && precedence.getOperations().contains(getGtTokenType())) {
+            getGtTokenType()?.let { operation ->
+                if (context.stopAtConditionOperatorInLetInitializer &&
+                    (operation === ANDAND || operation === OROR)
+                ) {
+                    break
+                }
+                parseOperationReference(operation)
+                val resultType = precedence.parseRightHandSide(operation, this)
                 expression.done(resultType)
                 expression = expression.precede()
             }
@@ -947,7 +950,9 @@ open class CangJieExpressionParsing(
         advance()
         if (!at(RPAR) && context.isParseOperator && !at(COMMA)) {
 
-            parseExpression()
+            with(context.copy(stopAtConditionOperatorInLetInitializer = false)) {
+                parseExpression()
+            }
 
         } else {
             isUnit = true
@@ -956,7 +961,9 @@ open class CangJieExpressionParsing(
             isTuple = true
             advance()
 
-            parseExpression()
+            with(context.copy(stopAtConditionOperatorInLetInitializer = false)) {
+                parseExpression()
+            }
 
         }
         expect(RPAR, CangJieParsingBundle.message("parsing.error.expecting.symbol", ")"))
@@ -1978,7 +1985,14 @@ open class CangJieExpressionParsing(
             error(CangJieParsingBundle.message("parsing.error.left.arrow.in.let"))
         }
 
-        parseExpression()
+        with(
+            context.copy(
+                stopAtConditionOperatorInLetInitializer = true,
+                suppressLiteralTrailingLambdaInLetCondition = true,
+            )
+        ) {
+            parseExpression()
+        }
 
         expr.done(LET_EXPRESSION)
     }
@@ -2551,6 +2565,12 @@ open class CangJieExpressionParsing(
      */
     context(context: ParsingContext)
     private fun parseCallSuffix(): Boolean {
+        if ((context.suppressLiteralTrailingLambdaInLetCondition || context.allowLetExpression) &&
+            at(LBRACE) &&
+            previousSignificantTokenIsLiteral()
+        ) {
+            return false
+        }
         if (parseCallWithClosure()) {
         } else if (at(LPAR)) {
             parseValueArgumentList()
@@ -2748,6 +2768,28 @@ open class CangJieExpressionParsing(
             }
         }
 
+        return false
+    }
+
+    private fun previousSignificantTokenIsLiteral(): Boolean {
+        for (i in 1..builder.currentOffset) {
+            val previousToken = builder.rawLookup(-i) ?: return false
+            if (
+                previousToken === TokenType.WHITE_SPACE ||
+                previousToken === BLOCK_COMMENT ||
+                previousToken === DOC_COMMENT ||
+                previousToken === EOL_COMMENT ||
+                previousToken === SHEBANG_COMMENT
+            ) {
+                continue
+            }
+            return previousToken === INTEGER_LITERAL ||
+                previousToken === RUNE_LITERAL ||
+                previousToken === CHARACTER_BYTE_LITERAL ||
+                previousToken === FLOAT_LITERAL ||
+                previousToken === TRUE_KEYWORD ||
+                previousToken === FALSE_KEYWORD
+        }
         return false
     }
 

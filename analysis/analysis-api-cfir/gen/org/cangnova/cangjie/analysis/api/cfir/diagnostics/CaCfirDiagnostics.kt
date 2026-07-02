@@ -218,6 +218,19 @@ sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
         val actualCount: String
     }
 
+    interface OperatorOverloadBuiltInUnaryOperator : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = OperatorOverloadBuiltInUnaryOperator::class
+        val operator: String
+        val receiverType: String
+    }
+
+    interface OperatorOverloadBuiltInBinaryOperator : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = OperatorOverloadBuiltInBinaryOperator::class
+        val operator: String
+        val receiverType: String
+        val parameterType: String
+    }
+
     interface RepeatedModifier : CaCfirDiagnostic<PsiElement> {
         override val diagnosticClass get() = RepeatedModifier::class
         val modifier: CjKeywordToken
@@ -357,6 +370,34 @@ sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
         val calleeName: String
     }
 
+    interface ThisOrSuperNotAllowedToInitializeNonStaticMember : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = ThisOrSuperNotAllowedToInitializeNonStaticMember::class
+        val calleeName: String
+    }
+
+    interface ThisOrSuperNotAllowedToInitializeStaticMember : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = ThisOrSuperNotAllowedToInitializeStaticMember::class
+        val calleeName: String
+    }
+
+    interface ThisSuperUseErrorOutsideClass : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = ThisSuperUseErrorOutsideClass::class
+        val calleeName: String
+    }
+
+    interface InvalidThisCallOutsideCtor : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = InvalidThisCallOutsideCtor::class
+        val calleeName: String
+    }
+
+    interface IllegalSuperAlone : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = IllegalSuperAlone::class
+    }
+
+    interface IllegalThisOutsideStructConstructor : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = IllegalThisOutsideStructConstructor::class
+    }
+
     interface IllegalPlaceOfCallingThisOrSuper : CaCfirDiagnostic<PsiElement> {
         override val diagnosticClass get() = IllegalPlaceOfCallingThisOrSuper::class
         val calleeName: String
@@ -386,6 +427,35 @@ sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
     interface ThisAsExpressionInFunc : CaCfirDiagnostic<PsiElement> {
         override val diagnosticClass get() = ThisAsExpressionInFunc::class
         val contextDescription: String
+    }
+
+    interface StaticMembersCannotCallMembers : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = StaticMembersCannotCallMembers::class
+    }
+
+    interface IllegalAccessNonStaticMember : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = IllegalAccessNonStaticMember::class
+        val memberName: Name
+    }
+
+    interface StaticFunctionCannotAccessNonStaticMember : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = StaticFunctionCannotAccessNonStaticMember::class
+        val memberName: Name
+    }
+
+    interface StaticLambdaCannotAccessNonStatic : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = StaticLambdaCannotAccessNonStatic::class
+        val memberName: Name
+    }
+
+    interface StaticVariableCannotAccessNonStaticMember : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = StaticVariableCannotAccessNonStaticMember::class
+        val memberName: Name
+    }
+
+    interface ObjectCannotAccessStaticMember : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = ObjectCannotAccessStaticMember::class
+        val memberName: Name
     }
 
     interface ExplicitSuperCallRequired : CaCfirDiagnostic<PsiElement> {
@@ -676,6 +746,17 @@ sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
         val overriddenName: Name
     }
 
+    interface ReturnTypeIncompatible : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = ReturnTypeIncompatible::class
+        val functionName: Name
+    }
+
+    interface ReturnTypeInvariance : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = ReturnTypeInvariance::class
+        val functionName: Name
+        val interfaceType: CaType
+    }
+
     interface PropertyOverrideImplementTypeDiff : CaCfirDiagnostic<PsiElement> {
         override val diagnosticClass get() = PropertyOverrideImplementTypeDiff::class
         val actualType: CaType
@@ -748,6 +829,14 @@ sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
         override val diagnosticClass get() = NoMatchingOperatorInvoke::class
         val name: String
         val type: CaType
+    }
+
+    interface NoMatchFunctionDeclarationForCall : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = NoMatchFunctionDeclarationForCall::class
+    }
+
+    interface NoMatchFunctionDeclarationForRef : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = NoMatchFunctionDeclarationForRef::class
     }
 
     interface NoMatchOperatorFunctionCall : CaCfirDiagnostic<PsiElement> {
@@ -1069,6 +1158,14 @@ sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
         val memberName: Name
         val superMemberKind: String
         val containerName: Name
+    }
+
+    interface StaticAndNonStaticMemberCannotHaveSameName : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = StaticAndNonStaticMemberCannotHaveSameName::class
+        val memberStaticKind: String
+        val memberName: Name
+        val superMemberStaticKind: String
+        val containerKind: String
     }
 
     interface MemberVariableCanNotShadow : CaCfirDiagnostic<PsiElement> {
@@ -1995,6 +2092,14 @@ sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
 
     interface UnusedExpression : CaCfirDiagnostic<CjExpression> {
         override val diagnosticClass get() = UnusedExpression::class
+    }
+
+    interface UnusedVariable : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = UnusedVariable::class
+    }
+
+    interface UnusedFunction : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = UnusedFunction::class
     }
 
     interface TypealiasUnusedTypeParameters : CaCfirDiagnostic<PsiElement> {

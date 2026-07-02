@@ -554,6 +554,7 @@ class CfirDeclDeserializer(
             deserializeTypeParameters(decl)
         }
         val info = decl.info(EnumInfo()) as? EnumInfo
+        val isNonExhaustive = info?.nonExhaustive == true
         val superTypeRefs =
             info?.let { deserializeInheritedTypes(it::inheritedTypes, it.inheritedTypesLength) } ?: mutableListOf()
         val members = info?.let {
@@ -581,6 +582,7 @@ class CfirDeclDeserializer(
             declarations = members,
             name = name,
             isRefEnum = isRefEnum,
+            isNonExhaustive = isNonExhaustive,
             scopeProvider = context.moduleData.session.cangjieScopeProvider,
         )
         symbol.bind(cfirEnum)

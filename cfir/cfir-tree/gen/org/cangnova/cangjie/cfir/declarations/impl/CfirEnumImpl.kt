@@ -40,6 +40,7 @@ class CfirEnumImpl @CfirImplementationDetail constructor(
     override val declarations: MutableList<CfirDeclaration>,
     override val name: Name,
     override val isRefEnum: Boolean,
+    override val isNonExhaustive: Boolean,
 ) : CfirEnum() {
     override var controlFlowGraphReference: CfirControlFlowGraphReference? = null
 

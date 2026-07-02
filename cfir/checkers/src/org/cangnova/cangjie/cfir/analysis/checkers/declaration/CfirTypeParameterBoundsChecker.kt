@@ -2,6 +2,7 @@ package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.analysis.checkers.CfirExtendSemantics
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.declaredUpperBoundConeTypeInCurrentContextOrNull
 import org.cangnova.cangjie.cfir.analysis.checkers.declaredUpperBoundTypesInCurrentContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
@@ -10,11 +11,13 @@ import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirInterface
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
+import org.cangnova.cangjie.cfir.declarations.CfirTypeParameterRef
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameterRefsOwner
 import org.cangnova.cangjie.cfir.declarations.typeConstraintDiagnosticData
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
+import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.scopes.overrideSignatureKey
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassMemberScopeKind
@@ -26,18 +29,24 @@ import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
+import org.cangnova.cangjie.cfir.symbols.toLookupTag
 import org.cangnova.cangjie.cfir.types.ConeAnyType
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
+import org.cangnova.cangjie.cfir.types.ConeLookupTagBasedType
 import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
 import org.cangnova.cangjie.cfir.types.StdlibClassIds
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
+import org.cangnova.cangjie.cfir.types.createTypeSubstitutorByTypeConstructor
+import org.cangnova.cangjie.cfir.types.declaredUpperBoundRefsAfterTypeResolve
 import org.cangnova.cangjie.cfir.types.renderForDebugging
+import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.type.AbstractTypeChecker
+import org.cangnova.cangjie.type.model.TypeConstructorMarker
 
 /**
  * 类型参数上界合法性检查器。
@@ -75,7 +84,9 @@ object CfirTypeParameterBoundsChecker : CfirTypeParameterChecker() {
         }
         if (invalidBounds.isNotEmpty()) return
 
-        val classBounds = uniqueBounds.values
+        val boundsWithExposedClassConstraints = uniqueBounds.values.withExposedClassUpperBounds()
+
+        val classBounds = boundsWithExposedClassConstraints
             .filter { it.upperBoundKind() == UpperBoundKind.CLASS }
             .map { it.fullyExpandTypeAlias() }
 
@@ -83,9 +94,78 @@ object CfirTypeParameterBoundsChecker : CfirTypeParameterChecker() {
             reporter.reportOn(declaration.source, CfirErrors.CONFLICTING_UPPER_BOUNDS)
         }
 
-        declaration.reportUpperBoundInheritedMemberTypeConsistency(uniqueBounds.values)
+        declaration.reportUpperBoundInheritedMemberTypeConsistency(boundsWithExposedClassConstraints)
     }
 }
+
+/**
+ * 返回直接上界以及泛型 class/interface 上界通过声明约束暴露出的上界。
+ *
+ * 例如 `X <: A<X>` 且 `class A<T> where T <: C1` 时，官方会同时把
+ * `A<X>` 与 `C1` 看作 `X` 的 class 上界并做冲突检查；这里在 checker
+ * 入口统一展开，避免各个诊断路径分别补同一条泛型约束传播规则。
+ */
+context(context: CheckerContext)
+private fun Collection<ConeCangJieType>.withExposedClassUpperBounds(): List<ConeCangJieType> {
+    val result = linkedMapOf<String, ConeCangJieType>()
+    val queue = ArrayDeque<ConeCangJieType>()
+    queue.addAll(this)
+
+    while (queue.isNotEmpty()) {
+        val current = queue.removeFirst().fullyExpandTypeAlias()
+        if (current is ConeErrorType) continue
+        if (result.putIfAbsent(current.stableBoundKey(), current) != null) continue
+
+        queue.addAll(current.exposedClassLikeUpperBounds())
+    }
+
+    return result.values.toList()
+}
+
+/**
+ * 对 class/interface 实例 `A<X>` 展开其声明侧类型参数上界，并以当前实参替换。
+ */
+context(context: CheckerContext)
+private fun ConeCangJieType.exposedClassLikeUpperBounds(): List<ConeCangJieType> {
+    val lookupType = fullyExpandTypeAlias() as? ConeLookupTagBasedType ?: return emptyList()
+    val declaration = lookupType.toResolvedClassLikeDeclaration() as? CfirTypeParameterRefsOwner ?: return emptyList()
+    if (declaration.typeParameters.isEmpty() || declaration.typeParameters.size != lookupType.typeArguments.size) {
+        return emptyList()
+    }
+
+    val substitutor = declaration.createDeclarationTypeSubstitutor(lookupType)
+    return declaration.typeParameters.flatMap { typeParameter ->
+        typeParameter.declaredUpperBoundTypesForExposure()
+            .map { substitutor.substituteOrSelf(it) }
+            .filterNot { it is ConeErrorType }
+    }
+}
+
+/**
+ * 创建 class/interface 声明类型参数到当前使用点实参的替换器。
+ */
+context(context: CheckerContext)
+private fun CfirTypeParameterRefsOwner.createDeclarationTypeSubstitutor(
+    type: ConeLookupTagBasedType,
+): ConeSubstitutor {
+    val substitutions = typeParameters.zip(type.typeArguments).associate { (typeParameter, argument) ->
+        typeParameter.symbol.toLookupTag() as TypeConstructorMarker to argument.type
+    }
+    return createTypeSubstitutorByTypeConstructor(
+        map = substitutions,
+        context = context.session.typeContext,
+        approximateIntegerLiterals = false,
+    )
+}
+
+/**
+ * 读取类型参数声明侧上界，用于泛型 class/interface 上界暴露。
+ */
+context(context: CheckerContext)
+private fun CfirTypeParameterRef.declaredUpperBoundTypesForExposure(): List<ConeCangJieType> =
+    symbol.toLookupTag()
+        .declaredUpperBoundRefsAfterTypeResolve()
+        .mapNotNull { it.declaredUpperBoundConeTypeInCurrentContextOrNull() }
 
 /**
  * 检查泛型上界交集继承到的同签名成员返回类型/属性类型是否一致。

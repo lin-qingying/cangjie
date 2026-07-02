@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.diagnostic
 
 import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
@@ -46,6 +47,61 @@ class ArgumentTypeMismatch(
      * 类型约束系统是否已经存在矛盾。
      */
     val systemHadContradiction: Boolean = false,
+) : ResolutionDiagnostic(CandidateApplicability.INAPPLICABLE)
+
+/**
+ * Lambda 参数列表个数与目标函数类型参数个数不匹配。
+ *
+ * 该诊断对应官方 `sema_param_miss_match`，用于把 lambda 头部形状错误
+ * 与普通调用实参数量错误分层，避免后续省略参数注解诊断覆盖主错误。
+ *
+ * @property anonymousFunction 出错的 lambda 声明。
+ * @property expectedCount 目标函数类型期望的参数个数。
+ * @property actualCount lambda 参数列表实际提供的参数个数。
+ */
+class LambdaParameterCountMismatch(
+    /**
+     * 出错的 lambda 声明。
+     */
+    val anonymousFunction: CfirAnonymousFunction,
+    /**
+     * 目标函数类型期望的参数个数。
+     */
+    val expectedCount: Int,
+    /**
+     * lambda 参数列表实际提供的参数个数。
+     */
+    val actualCount: Int,
+) : ResolutionDiagnostic(CandidateApplicability.INAPPLICABLE_ARGUMENTS_MAPPING_ERROR)
+
+/**
+ * Lambda 显式参数类型与目标函数类型参数不兼容。
+ *
+ * 当同一 lambda 仍含省略类型参数时，官方会释放被抑制的参数级类型不匹配，
+ * 而不是额外报告整个 lambda 表达式不匹配。
+ *
+ * @property anonymousFunction 出错的 lambda 声明。
+ * @property parameter 不兼容的 lambda 参数。
+ * @property expectedType 目标函数类型中的参数类型。
+ * @property actualType 源码显式写出的 lambda 参数类型。
+ */
+class LambdaParameterTypeMismatch(
+    /**
+     * 出错的 lambda 声明。
+     */
+    val anonymousFunction: CfirAnonymousFunction,
+    /**
+     * 不兼容的 lambda 参数。
+     */
+    val parameter: CfirValueParameter,
+    /**
+     * 目标函数类型中的参数类型。
+     */
+    val expectedType: ConeCangJieType,
+    /**
+     * 源码显式写出的 lambda 参数类型。
+     */
+    val actualType: ConeCangJieType,
 ) : ResolutionDiagnostic(CandidateApplicability.INAPPLICABLE)
 
 /**

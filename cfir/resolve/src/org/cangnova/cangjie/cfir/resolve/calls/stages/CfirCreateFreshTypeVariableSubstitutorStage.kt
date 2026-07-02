@@ -41,6 +41,8 @@ import org.cangnova.cangjie.cfir.resolve.providers.isBareOrDeclarationSelfTypeOf
 import org.cangnova.cangjie.cfir.resolve.inference.model.ConeDeclaredUpperBoundConstraintPosition
 import org.cangnova.cangjie.cfir.resolve.inference.model.ConeExplicitTypeParameterConstraintPosition
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
+import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
+import org.cangnova.cangjie.cfir.references.CfirResolvedErrorReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.scopes.impl.typeAliasConstructorInfo
 import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeParameterBasedTypeVariable
@@ -51,6 +53,7 @@ import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.session.typeResolver
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirTypeAliasSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
@@ -81,12 +84,21 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
     context(sink: CheckerSink, context: ResolutionContext)
     override suspend fun check(candidate: Candidate) {
         val declaration = candidate.symbol.cfir
+        val enumConstructorReceiverOwnerTypeParameters =
+            collectEnumConstructorReceiverOwnerTypeParameters(context.session, candidate, declaration)
+        val enumConstructorReceiverOwnerLookupTags =
+            enumConstructorReceiverOwnerTypeParameters.mapTo(mutableSetOf()) { it.symbol.toLookupTag() }
         val knownOwnerSubstitutions = createCallableOwnerUseSiteSubstitutionMap(
             session = context.session,
             callableSymbol = candidate.symbol as? CfirCallableSymbol<*>,
             receiverType = candidate.useSiteReceiverType(),
-        ) + createBareEnumConstructorQualifierOwnerSubstitutionMap(context.session, candidate, declaration)
-        val typeParameters = collectCandidateTypeParametersForFreshVariables(context.session, candidate, declaration)
+        ).filterKeys { it !in enumConstructorReceiverOwnerLookupTags } +
+                createBareEnumConstructorQualifierOwnerSubstitutionMap(context.session, candidate, declaration)
+        val typeParameters = (
+                enumConstructorReceiverOwnerTypeParameters +
+                        collectCandidateTypeParametersForFreshVariables(context.session, candidate, declaration)
+                )
+            .distinctBy { it.symbol }
             .filterNot { typeParameter -> typeParameter.symbol.toLookupTag() in knownOwnerSubstitutions }
         if (typeParameters.isEmpty()) {
             val substitutor = knownOwnerSubstitutions
@@ -192,27 +204,48 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
     }
 
     /**
-     * enum constructor payload 类型可能解析到 owner enum 的类型参数，而候选 fresh variables
-     * 来自当前 callable 收集到的推断参数。这里把声明签名里同名的实际 lookupTag 一并映射到同一个
-     * fresh variable，保证参数检查、返回类型和 expected type 约束共享同一个推断身份。
+     * 候选签名中的 owner 类型参数可能已经被 use-site scope 替换成外来 fresh variable。
+     *
+     * 例如 `T1.a16(i16)` 会先把 enum constructor receiver `T1` 解析成 `Test<X>`，
+     * 随后成员 scope 中的 `a16(x: Array<T>)` 签名可能表现为 `Array<X>`。外层成员候选
+     * 会重新为 owner `T` 创建当前约束系统内的 fresh variable；这里把签名里遗留的
+     * `T` lookup tag 和外来 `X` constructor 都别名到同一个当前 fresh variable，保证
+     * 参数、receiver、返回值和 expected type 约束进入同一个候选约束系统。
      */
     private fun buildFreshVariableSubstitutionMap(
         declaration: Any?,
         freshTypeVariables: List<ConeTypeParameterBasedTypeVariable>,
     ): Map<TypeConstructorMarker, ConeCangJieType> {
         val substitution = linkedMapOf<TypeConstructorMarker, ConeCangJieType>()
-        val freshByName = freshTypeVariables.associateBy { it.typeParameterSymbol.name }
+        val freshBySymbol = freshTypeVariables.associateBy { it.typeParameterSymbol }
+        val uniqueFreshByName = freshTypeVariables
+            .groupBy { it.typeParameterSymbol.name }
+            .mapNotNull { (name, variables) -> variables.singleOrNull()?.let { name to it } }
+            .toMap()
+
+        fun freshVariableFor(lookupTag: org.cangnova.cangjie.cfir.symbols.ConeTypeParameterLookupTag): ConeTypeParameterBasedTypeVariable? {
+            return freshBySymbol[lookupTag.typeParameterSymbol]
+                ?: uniqueFreshByName[lookupTag.typeParameterSymbol.name]
+        }
+
         for (freshVariable in freshTypeVariables) {
             substitution[freshVariable.typeParameterSymbol.toLookupTag()] = freshVariable.defaultType as ConeCangJieType
         }
 
-        if (declaration is CfirEnumConstructor) {
-            val signatureTypes = declaration.valueParameters.mapNotNull { it.returnTypeRef.coneTypeOrNull } +
-                    listOfNotNull(declaration.returnTypeRef.coneTypeOrNull)
+        val callable = declaration as? CfirCallableDeclaration
+        if (callable != null) {
+            val valueParameterTypes = when (callable) {
+                is CfirFunction -> callable.valueParameters.mapNotNull { it.returnTypeRef.coneTypeOrNull }
+                is CfirConstructor -> callable.valueParameters.mapNotNull { it.returnTypeRef.coneTypeOrNull }
+                is CfirEnumConstructor -> callable.valueParameters.mapNotNull { it.returnTypeRef.coneTypeOrNull }
+                else -> emptyList()
+            }
+            val signatureTypes = valueParameterTypes +
+                    listOfNotNull(callable.returnTypeRef.coneTypeOrNull, callable.dispatchReceiverType)
             for (type in signatureTypes) {
-                type.collectTypeParameterLookupTags { lookupTag ->
-                    val freshVariable = freshByName[lookupTag.typeParameterSymbol.name] ?: return@collectTypeParameterLookupTags
-                    substitution.putIfAbsent(lookupTag, freshVariable.defaultType as ConeCangJieType)
+                type.collectTypeParameterAliases { aliasConstructor, originalLookupTag ->
+                    val freshVariable = freshVariableFor(originalLookupTag) ?: return@collectTypeParameterAliases
+                    substitution.putIfAbsent(aliasConstructor, freshVariable.defaultType as ConeCangJieType)
                 }
             }
         }
@@ -221,27 +254,37 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
     }
 
     /**
-     * 遍历类型中出现的类型参数 lookup tag。
+     * 遍历类型中出现的类型参数别名。
      */
-    private fun ConeCangJieType.collectTypeParameterLookupTags(
-        consume: (org.cangnova.cangjie.cfir.symbols.ConeTypeParameterLookupTag) -> Unit,
+    private fun ConeCangJieType.collectTypeParameterAliases(
+        consume: (
+            aliasConstructor: TypeConstructorMarker,
+            originalLookupTag: org.cangnova.cangjie.cfir.symbols.ConeTypeParameterLookupTag,
+        ) -> Unit,
     ) {
         when (this) {
-            is ConeTypeParameterType -> consume(lookupTag)
-            is ConeLookupTagBasedType -> typeArguments.forEach { it.type.collectTypeParameterLookupTags(consume) }
+            is ConeTypeParameterType -> consume(lookupTag, lookupTag)
+            is ConeTypeVariableType -> {
+                val originalLookupTag =
+                    typeConstructor.originalTypeParameter as? org.cangnova.cangjie.cfir.symbols.ConeTypeParameterLookupTag
+                        ?: return
+                consume(typeConstructor, originalLookupTag)
+                consume(originalLookupTag, originalLookupTag)
+            }
+            is ConeLookupTagBasedType -> typeArguments.forEach { it.type.collectTypeParameterAliases(consume) }
             is ConeTypeAliasType -> {
-                expandedType?.collectTypeParameterLookupTags(consume)
-                typeArguments.forEach { it.type.collectTypeParameterLookupTags(consume) }
+                expandedType?.collectTypeParameterAliases(consume)
+                typeArguments.forEach { it.type.collectTypeParameterAliases(consume) }
             }
             is ConeFunctionType -> {
-                parameterTypes.forEach { it.collectTypeParameterLookupTags(consume) }
-                returnType.collectTypeParameterLookupTags(consume)
+                parameterTypes.forEach { it.collectTypeParameterAliases(consume) }
+                returnType.collectTypeParameterAliases(consume)
             }
-            is ConeTupleType -> elementTypes.forEach { it.collectTypeParameterLookupTags(consume) }
-            is ConeVArrayType -> elementType.collectTypeParameterLookupTags(consume)
-            is ConePointerType -> pointeeType.collectTypeParameterLookupTags(consume)
-            is ConeIntersectionType -> intersectedTypes.forEach { it.collectTypeParameterLookupTags(consume) }
-            is ConeUnionType -> unionTypes.forEach { it.collectTypeParameterLookupTags(consume) }
+            is ConeTupleType -> elementTypes.forEach { it.collectTypeParameterAliases(consume) }
+            is ConeVArrayType -> elementType.collectTypeParameterAliases(consume)
+            is ConePointerType -> pointeeType.collectTypeParameterAliases(consume)
+            is ConeIntersectionType -> intersectedTypes.forEach { it.collectTypeParameterAliases(consume) }
+            is ConeUnionType -> unionTypes.forEach { it.collectTypeParameterAliases(consume) }
             else -> Unit
         }
     }
@@ -490,7 +533,7 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
             return typeVariableReceiverOwnerTypeParameters + ownTypeParameters
         }
         if (ownTypeParameters.isNotEmpty()) return ownTypeParameters
-        if (declaration !is org.cangnova.cangjie.cfir.declarations.CfirConstructor &&
+        if (declaration !is CfirConstructor &&
             declaration !is CfirEnumConstructor
         ) {
             return emptyList()
@@ -536,7 +579,7 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
         if (receiver.typeArguments.isNotEmpty()) return emptyList()
 
         val ownerSymbol = receiver.resolvedQualifierClassifier(session) ?: return emptyList()
-        val ownerDeclaration = ownerSymbol.cfir as? CfirClassLikeDeclaration ?: return emptyList()
+        val ownerDeclaration = ownerSymbol.cfir
         if (ownerDeclaration.typeParameters.isEmpty()) return emptyList()
 
         val receiverType = receiver.coneTypeOrNull as? ConeLookupTagBasedType ?: return emptyList()
@@ -572,7 +615,7 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
         collectBareTypeAliasQualifierTypeParameters(receiver)?.let { return it }
 
         val ownerSymbol = receiver.resolvedQualifierClassifier(session) ?: return emptyList()
-        val ownerDeclaration = ownerSymbol.cfir as? CfirClassLikeDeclaration ?: return emptyList()
+        val ownerDeclaration = ownerSymbol.cfir
         val receiverType = receiver.coneTypeOrNull as? ConeLookupTagBasedType ?: return emptyList()
         if (!receiverType.isBareOrDeclarationSelfTypeOf(ownerSymbol)) return emptyList()
         return ownerDeclaration.typeParameters
@@ -590,12 +633,28 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
         declaration: Any?,
     ): List<CfirTypeParameterRef> {
         val callable = declaration as? CfirCallableDeclaration ?: return emptyList()
-        if (callable.status.isStatic) return emptyList()
-        val receiverType = candidate.dispatchReceiverExpression()?.coneTypeOrNull as? ConeTypeVariableType
+        val dispatchReceiverExpression = candidate.dispatchReceiverExpression()
+        val extensionReceiverExpression = candidate.chosenExtensionReceiverExpression()
+        val receiverType = (dispatchReceiverExpression ?: extensionReceiverExpression)?.coneTypeOrNull as? ConeTypeVariableType
             ?: return emptyList()
         if (receiverType.typeConstructor.originalTypeParameter != null) return emptyList()
 
+        val callableSymbol = candidate.symbol as? CfirCallableSymbol<*>
+        if (extensionReceiverExpression != null && dispatchReceiverExpression == null) {
+            val ownerExtend = callableSymbol
+                ?.unwrapSubstitutionOverrides()
+                ?.let(session.extendProvider::getContainingExtend)
+                ?.takeIf(session.extendProvider::isExtendAccessible)
+            if (ownerExtend != null) {
+                return ownerExtend.typeParameters
+            }
+        }
+
+        if (callable.status.isStatic) return emptyList()
         val ownerClassId = ownerClassIdForCallable(session, candidate)
+            ?: callableSymbol?.dispatchReceiverType
+                ?.fullyExpandedType(session)
+                ?.classIdOrPrimitiveClassId
             ?: return emptyList()
         val ownerDeclaration = session.symbolProvider.getClassLikeSymbolByClassId(ownerClassId)?.cfir
             ?: session.cfirProvider.getCfirClassifierByFqName(ownerClassId)
@@ -603,6 +662,86 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
 
         return (ownerDeclaration as? CfirTypeParameterRefsOwner)?.typeParameters.orEmpty()
     }
+
+    /**
+     * 无参 enum constructor 作为成员 receiver 时，owner 泛型实参属于外层成员调用候选。
+     *
+     * `T1.a16(i16)` 这类调用中，`T1` 自身没有实参，真正能约束 enum owner `Test<T>` 的
+     * 是成员 `a16` 的参数、返回值和外层 expected type。若把 `T1` 预解析时遗留的 foreign
+     * fresh variable 当作已知 use-site substitution，成员候选的约束系统就无法完成该变量。
+     * 因此这里为成员候选重新收集 owner 类型参数，让后续 dispatch receiver 检查把 `T1`
+     * 定型到同一组 fresh variables 上。
+     */
+    private fun collectEnumConstructorReceiverOwnerTypeParameters(
+        session: CfirSession,
+        candidate: Candidate,
+        declaration: Any?,
+    ): List<CfirTypeParameterRef> {
+        val callable = declaration as? CfirCallableDeclaration ?: return emptyList()
+        if (callable.status.isStatic || callable is CfirEnumConstructor) return emptyList()
+
+        val ownerClassId = ownerClassIdForCallable(session, candidate)
+            ?: return emptyList()
+        val ownerDeclaration = session.symbolProvider.getClassLikeSymbolByClassId(ownerClassId)?.cfir
+            ?: session.cfirProvider.getCfirClassifierByFqName(ownerClassId)
+            ?: return emptyList()
+        val ownerTypeParameters = (ownerDeclaration as? CfirTypeParameterRefsOwner)?.typeParameters.orEmpty()
+        if (ownerTypeParameters.isEmpty()) return emptyList()
+
+        val receiver = candidate.enumConstructorMemberAccessReceiverExpression()
+            ?: return emptyList()
+        val isEnumReceiver = receiver.isNoArgEnumConstructorReceiverOf(ownerDeclaration)
+        if (!isEnumReceiver) return emptyList()
+
+        return ownerTypeParameters
+    }
+
+    /** 成员访问语法中的 enum constructor receiver，以调用点显式 receiver 为准。 */
+    private fun Candidate.enumConstructorMemberAccessReceiverExpression(): CfirQualifiedAccessExpression? =
+        callInfo.explicitReceiver as? CfirQualifiedAccessExpression
+            ?: dispatchReceiverExpression() as? CfirQualifiedAccessExpression
+
+    /**
+     * 判断 member receiver 是否为当前 owner 的无参 enum constructor sugar。
+     *
+     * 外层成员候选创建 fresh variables 时，receiver 可能仍处在 `ContextDependent`
+     * 的裸名状态，不能只依赖 resolved reference；已解析到非 enum symbol 时则必须拒绝，
+     * 避免把普通变量/属性 receiver 当作 enum constructor。
+     */
+    private fun CfirQualifiedAccessExpression.isNoArgEnumConstructorReceiverOf(
+        ownerDeclaration: CfirDeclaration,
+    ): Boolean {
+        if (explicitReceiver != null) return false
+        if (typeArguments.isNotEmpty()) return false
+
+        val symbol = enumConstructorSymbolOrNull()
+        if (symbol != null) {
+            val constructor = symbol.cfir
+            return constructor.valueParameters.isEmpty()
+        }
+
+        val reference = calleeReference
+        if (reference !is org.cangnova.cangjie.cfir.references.CfirNamedReference) return false
+        if (reference is CfirResolvedNamedReference) return false
+        if (reference is CfirNamedReferenceWithCandidateBase) return false
+
+        val owner = ownerDeclaration as? CfirClassLikeDeclaration ?: return false
+        return owner.declarations
+            .asSequence()
+            .filterIsInstance<CfirEnumConstructor>()
+            .any { constructor ->
+                constructor.name == reference.name && constructor.valueParameters.isEmpty()
+            }
+    }
+
+    /** 提取 receiver 表达式已经解析到的 enum constructor symbol。 */
+    private fun CfirQualifiedAccessExpression.enumConstructorSymbolOrNull(): CfirEnumConstructorSymbol? =
+        when (val reference = calleeReference) {
+            is CfirNamedReferenceWithCandidateBase -> reference.candidateSymbol as? CfirEnumConstructorSymbol
+            is CfirResolvedErrorReference -> reference.resolvedSymbol as? CfirEnumConstructorSymbol
+            is CfirResolvedNamedReference -> reference.resolvedSymbol as? CfirEnumConstructorSymbol
+            else -> null
+        }
 
     /**
      * 从裸 typealias qualifier 中收集实际参与展开类型的类型参数。
@@ -724,10 +863,11 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
         session: CfirSession,
         candidate: Candidate,
     ): org.cangnova.cangjie.name.ClassId? {
-        val callableSymbol = candidate.symbol as? org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol<*> ?: return null
+        val callableSymbol = candidate.symbol as? CfirCallableSymbol<*> ?: return null
+        val originalCallableSymbol = callableSymbol.unwrapSubstitutionOverrides()
 
-        return session.cfirProvider.getContainingClass(callableSymbol)?.classId
-            ?: (callableSymbol.cfir as? CfirEnumConstructor)?.let {
+        return session.cfirProvider.getContainingClass(originalCallableSymbol)?.classId
+            ?: (originalCallableSymbol.cfir as? CfirEnumConstructor)?.let {
                 val receiver = candidate.bareStaticQualifierExpression()
                 receiver?.coneTypeOrNull
                     ?.fullyExpandedType(session)

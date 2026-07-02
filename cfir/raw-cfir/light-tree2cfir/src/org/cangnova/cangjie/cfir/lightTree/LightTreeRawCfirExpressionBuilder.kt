@@ -1112,26 +1112,32 @@ class LightTreeRawCfirExpressionBuilder(
 
     /** 转换 let-pattern 条件表达式。 */
     private fun convertLetPatternExpression(node: LighterASTNode): CfirLetPatternExpression {
-        var patternNode: LighterASTNode? = null
+        val patternNodes = mutableListOf<LighterASTNode>()
         var initializerNode: LighterASTNode? = null
 
         tree.forEachChildren(node) { child ->
             when {
-                patternNode == null && isPatternToken(child.tokenType) -> patternNode = child
+                isPatternToken(child.tokenType) -> patternNodes += child
                 initializerNode == null && isExpressionToken(child.tokenType) -> initializerNode = child
             }
         }
 
         val status = declarationBuilder.cloneDeclarationStatus(CfirDeclarationStatusImpl.DEFAULT)
-        val pattern = patternNode?.let {
+        val convertedPatterns = patternNodes.map {
             convertPattern(
                 node = it,
                 ownerStatus = status,
                 ownerIsLocal = true,
                 ownerIsVar = false,
             )
-        } ?: buildWildcardPattern {
-            source = node.toSource()
+        }
+        val pattern = when (convertedPatterns.size) {
+            0 -> buildWildcardPattern { source = node.toSource() }
+            1 -> convertedPatterns.single()
+            else -> buildOrPattern {
+                source = node.toSource()
+                alternatives.addAll(convertedPatterns)
+            }
         }
         val initializer = initializerNode?.let { convertExpression(it) }
             ?: buildErrorExpression(reason = "Missing let-pattern initializer")
@@ -1693,13 +1699,15 @@ class LightTreeRawCfirExpressionBuilder(
                 CjNodeTypes.VALUE_PARAMETER_LIST -> {
                     tree.forEachChildren(child) { param ->
                         if (param.tokenType == CjNodeTypes.VALUE_PARAMETER) {
-                            valueParams.add(
-                                declarationBuilder.convertValueParameter(
-                                    param,
-                                    functionSymbol,
-                                    requiresExplicitType = false,
-                                )
+                            val valueParameter = declarationBuilder.convertValueParameter(
+                                param,
+                                functionSymbol,
+                                requiresExplicitType = false,
                             )
+                            if (tree.findChildByType(param, CjNodeTypes.TYPE_REFERENCE) == null) {
+                                valueParameter.isLambdaParameterTypeOmitted = true
+                            }
+                            valueParams.add(valueParameter)
                         }
                     }
                 }

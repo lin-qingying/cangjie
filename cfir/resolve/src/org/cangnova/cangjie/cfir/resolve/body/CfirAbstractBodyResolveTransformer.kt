@@ -615,6 +615,14 @@ abstract class CfirAbstractBodyResolveTransformerDispatcher(
         return expressionsTransformer.transformLetPatternExpression(letPatternExpression, data)
     }
 
+    /** 将 quote 表达式 body resolve 分发给表达式 transformer。 */
+    override fun transformQuoteExpression(
+        quoteExpression: CfirQuoteExpression,
+        data: ResolutionMode,
+    ): CfirExpression {
+        return expressionsTransformer.transformQuoteExpression(quoteExpression, data)
+    }
+
     /** 将 return 表达式 body resolve 分发给表达式 transformer。 */
     override fun transformReturnExpression(
         returnExpression: CfirReturnExpression,

@@ -29,7 +29,7 @@ import com.intellij.lang.ASTNode
 /**
  * 表示 `CjLetExpression`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
  */
-class CjLetExpression(node: ASTNode) : CjElementImpl(node) {
+class CjLetExpression(node: ASTNode) : CjExpressionImpl(node) {
     /**
      * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
      */
@@ -41,6 +41,11 @@ class CjLetExpression(node: ASTNode) : CjElementImpl(node) {
      * 保存 `pattern`，供仓颉 PSI流程读取节点结构或语义信息。
      */
     val pattern get() = findChildByClass(CjCasePatternElement::class.java)
+    /**
+     * 保存 `patterns`，供 let-pattern 解构条件读取 `|` 分隔的多个顶层模式。
+     */
+    val patterns: List<CjCasePatternElement>
+        get() = findChildrenByClass(CjCasePatternElement::class.java).toList()
     /**
      * 保存 `expression`，供仓颉 PSI流程读取节点结构或语义信息。
      */

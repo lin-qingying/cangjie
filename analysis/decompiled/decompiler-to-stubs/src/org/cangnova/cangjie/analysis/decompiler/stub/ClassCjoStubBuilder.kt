@@ -175,7 +175,7 @@ internal fun createEnumStub(
         classId = context.owningClassFqName?.let { null } ?: ClassId(context.packageFqName, declaration.name),
         name = StringRef.fromString(declaration.name.asString()),
         superNames = superTypeRefs.toSuperNameRefs(),
-        isNonExhaustive = false,
+        isNonExhaustive = declaration.isNonExhaustive,
     )
     createEmptyDeclarationHeaderStubs(stub, createDeclarationModifierMask(declaration.status))
     createTypeParameterListStub(stub, declaration.typeParameters)

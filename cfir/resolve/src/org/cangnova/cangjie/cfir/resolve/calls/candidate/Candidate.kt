@@ -33,6 +33,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirArrayLiteral
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirNamedAccessExpression
 import org.cangnova.cangjie.cfir.resolve.CfirSamResolver
+import org.cangnova.cangjie.cfir.resolve.CfirLocalLambdaInitializerInferenceReference
 import org.cangnova.cangjie.cfir.resolve.calls.CallableReferenceAdaptation
 import org.cangnova.cangjie.cfir.resolve.calls.ConePostponedResolvedAtom
 import org.cangnova.cangjie.cfir.resolve.calls.ConeResolutionAtom
@@ -57,6 +58,17 @@ import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintSystemError
 import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintSystemImpl
 import org.cangnova.cangjie.resolve.calls.tasks.ExplicitReceiverKind
 import org.cangnova.cangjie.resolve.calls.tower.CandidateApplicability
+import org.cangnova.cangjie.type.model.TypeConstructorMarker
+
+/**
+ * 记录一次 fresh lambda receiver 成员访问中需要从 PCLA common system 移除的 receiver 约束。
+ */
+internal data class FreshReceiverConstraintToDrop(
+    /** fresh lambda 参数对应的类型变量构造器。 */
+    val receiverTypeConstructor: TypeConstructorMarker,
+    /** 当前成员访问的 receiver 表达式。 */
+    val receiverExpression: CfirExpression,
+)
 
 /**
  * 单个调用解析候选。
@@ -145,6 +157,23 @@ class Candidate(
     /** 为候选声明类型参数创建的 fresh type variable 列表。 */
     lateinit var freshVariables: List<ConeTypeVariable>
         private set
+
+    /**
+     * 候选外部导入的、需要在同一次 completion 中固定的类型变量。
+     *
+     * 这类变量不属于当前 callable 声明的类型参数，例如无上下文 lambda initializer
+     * 暂存的参数 placeholder。它们的约束系统会并入当前候选；若不把变量本身暴露给
+     * completion，约束虽存在但不会进入 fixation 队列。
+     */
+    val additionalCompletionVariables: MutableSet<TypeConstructorMarker> = linkedSetOf()
+
+    /**
+     * PCLA 中 fresh lambda receiver 的成员访问可能先得到一组 owner 候选。
+     *
+     * 当该集合尚未被后续语法信息收窄到单一 owner 时，resolver 仍可选择一个等价签名候选
+     * 作为表达式代表，但不能把这个代表候选的 receiver 约束提交到 common system。
+     */
+    internal var freshReceiverConstraintToDrop: FreshReceiverConstraintToDrop? = null
 
     /**
      * 初始化声明类型参数到 fresh type variable 的 substitutor 和变量列表。
@@ -482,6 +511,8 @@ class Candidate(
     val postponedPCLACalls: MutableList<ConeResolutionAtom> = mutableListOf()
     /** 已经通过 PCLA 分析过的 lambda 声明。 */
     val lambdasAnalyzedWithPCLA: MutableList<CfirDeclaration> = mutableListOf()
+    /** 函数值调用 completion 后需要恢复并重算的局部 lambda initializer。 */
+    internal val localLambdaInitializerCompletions: MutableList<CfirLocalLambdaInitializerInferenceReference> = mutableListOf()
 
     // Retained as an upstream-aligned callback seam for delegated-property/PCLA completion-result writing.
     // In the current local direct chain there is no CfirDelegatedPropertyInferenceSession or writer-mode
@@ -609,6 +640,19 @@ class Candidate(
 
     /** callable value 合成参数缓存。 */
     private var cachedSyntheticCallableValueParameters: List<CfirValueParameter>? = null
+    /** 当前函数值调用为 fresh lambda 形参临时构造的函数类型形状。 */
+    private var callableValueInvokeFunctionShape: ConeFunctionType? = null
+
+    /**
+     * 记录函数值调用语法反推出的函数类型形状。
+     *
+     * 无上下文 lambda 形参最初只是 fresh type variable；在 `g(arg)` 这种调用中，
+     * 形参映射必须先看到 `(Arg) -> R` 结构，才能把实参和返回约束并入同一轮 PCLA。
+     */
+    fun registerCallableValueInvokeFunctionShape(functionType: ConeFunctionType) {
+        callableValueInvokeFunctionShape = functionType
+        cachedSyntheticCallableValueParameters = null
+    }
 
     /**
      * 返回实参映射使用的声明参数列表。
@@ -726,8 +770,10 @@ class Candidate(
      * 对 callable value 候选提取函数类型返回类型。
      */
     private fun callableValueReturnType(declaration: CfirVariable): ConeCangJieType? {
-        val variableType = declaration.returnTypeRef.resolvedConeTypeOrNull() ?: return null
-        val functionType = variableType as? ConeFunctionType ?: return null
+        val functionType = callableValueInvokeFunctionShape
+            ?: declaration.returnTypeRef.resolvedConeTypeOrNull()
+                ?.recoverableFunctionTypeOrNull()
+            ?: return null
         return functionType.returnType
     }
 
@@ -746,8 +792,9 @@ class Candidate(
     private fun callableValueParametersForMapping(declaration: CfirVariable): List<CfirValueParameter> {
         cachedSyntheticCallableValueParameters?.let { return it }
 
-        val variableType = declaration.returnTypeRef.resolvedConeTypeOrNull()
-        val functionType = variableType as? ConeFunctionType
+        val functionType = callableValueInvokeFunctionShape
+            ?: declaration.returnTypeRef.resolvedConeTypeOrNull()
+                ?.recoverableFunctionTypeOrNull()
         if (functionType == null || functionType.parameterTypes.isEmpty()) {
             cachedSyntheticCallableValueParameters = emptyList()
             return emptyList()
@@ -780,6 +827,18 @@ class Candidate(
         cachedSyntheticCallableValueParameters = syntheticParameters
         return syntheticParameters
     }
+
+    /**
+     * 函数值候选允许错误类型携带函数 delegated type。
+     *
+     * 这类类型保留原始诊断，同时让实参映射和返回类型计算继续走普通函数值候选流程。
+     */
+    private fun ConeCangJieType.recoverableFunctionTypeOrNull(): ConeFunctionType? =
+        when (this) {
+            is ConeFunctionType -> this
+            is ConeErrorType -> delegatedType as? ConeFunctionType
+            else -> null
+        }
 
 
     /**

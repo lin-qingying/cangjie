@@ -45,6 +45,8 @@ import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.resolvedType
@@ -209,9 +211,19 @@ internal class ScopeBasedTowerLevel(
     private fun CfirCallableSymbol<*>.isDirectCallableValueCandidate(): Boolean {
         if (!isBound) return false
         val declaration = cfir as? CfirVariable ?: return false
-        return declaration.returnTypeRef.coneTypeOrNull is ConeFunctionType
+        return declaration.returnTypeRef.coneTypeOrNull.recoverableFunctionTypeOrNull() != null
     }
 }
+
+/**
+ * 错误类型携带函数 delegated type 时仍可作为函数值进入调用解析。
+ */
+private fun ConeCangJieType?.recoverableFunctionTypeOrNull(): ConeFunctionType? =
+    when (this) {
+        is ConeFunctionType -> this
+        is ConeErrorType -> delegatedType as? ConeFunctionType
+        else -> null
+    }
 
 /**
  * 基于 dispatch receiver 成员作用域的 tower level。
@@ -379,7 +391,8 @@ internal class TowerLevelProcessor(
         receiverExpression: org.cangnova.cangjie.cfir.expressions.CfirExpression,
         dispatchReceiver: ReceiverValue,
     ): CandidateApplicability {
-        val functionType = receiverExpression.resolvedType as ConeFunctionType
+        val functionType = receiverExpression.resolvedType.recoverableFunctionTypeOrNull()
+            ?: error("Expected function type or recoverable error function type receiver")
 
         return resultCollector.consumeCandidate(
             group,
@@ -417,7 +430,7 @@ internal class FunctionTypeInvokeTowerLevel(
         if (info.callKind != CallKind.Function || info.name != OperatorNameConventions.INVOKE) {
             return ProcessResult.SCOPE_EMPTY
         }
-        if (receiverExpression.resolvedType !is ConeFunctionType) return ProcessResult.SCOPE_EMPTY
+        if (receiverExpression.resolvedType.recoverableFunctionTypeOrNull() == null) return ProcessResult.SCOPE_EMPTY
 
         val functionTypeReceiver = ExpressionReceiverValue(receiverExpression)
         processor.consumeFunctionTypeInvokeCandidate(receiverExpression, functionTypeReceiver)

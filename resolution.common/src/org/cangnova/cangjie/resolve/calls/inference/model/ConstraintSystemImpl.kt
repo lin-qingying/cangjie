@@ -378,6 +378,21 @@ class ConstraintSystemImpl(
     }
 
     /**
+     * 删除指定类型变量上满足条件的约束。
+     *
+     * 该入口用于 PCLA fresh receiver 候选集合尚未收窄时撤销代表候选的临时 receiver 约束；
+     * 其它变量和同一变量上的非匹配约束保持不变。
+     */
+    fun removeConstraintsForVariable(
+        typeConstructor: TypeConstructorMarker,
+        shouldRemove: (Constraint) -> Boolean,
+    ) {
+        checkState(State.BUILDING, State.COMPLETION, State.TRANSACTION)
+        val variableWithConstraints = storage.notFixedTypeVariables[typeConstructor] ?: return
+        variableWithConstraints.removeConstraints(shouldRemove)
+    }
+
+    /**
      * 获取 [type] 对应类型变量的 proper 父类型构造器候选。
      */
     fun getProperSuperTypeConstructors(type: CangJieTypeMarker): List<TypeConstructorMarker> {

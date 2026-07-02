@@ -24,6 +24,7 @@ import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirNamedReferenceWithCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.stages.TypeArgumentMapping
+import org.cangnova.cangjie.cfir.resolve.calls.substituteExplicitTypeArgumentConstraints
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.resolve.inference.model.ConeDeclaredUpperBoundConstraintPosition
 import org.cangnova.cangjie.cfir.resolve.inference.model.ConeExplicitTypeParameterConstraintPosition
@@ -58,8 +59,10 @@ import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.types.ConeLookupTagBasedType
 import org.cangnova.cangjie.cfir.types.ConePointerType
 import org.cangnova.cangjie.cfir.types.ConeSimpleCangJieType
+import org.cangnova.cangjie.cfir.types.ConeTupleType
 import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
 import org.cangnova.cangjie.cfir.types.ConeTypeVariableType
+import org.cangnova.cangjie.cfir.types.ConeVArrayType
 import org.cangnova.cangjie.cfir.types.StdlibClassIds
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.types.arrayLiteralElementType
@@ -67,6 +70,7 @@ import org.cangnova.cangjie.cfir.types.asCone
 import org.cangnova.cangjie.cfir.types.builder.buildErrorTypeRef
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.classId
+import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.coneTypeSafe
 import org.cangnova.cangjie.cfir.types.contains
 import org.cangnova.cangjie.cfir.types.createTypeSubstitutorByTypeConstructor
@@ -141,19 +145,37 @@ class CfirCallCompleter(
         candidate.noArgEnumConstructorTargetTypeSubstitutor(initialType, resolutionMode)?.let { substitutor ->
             return call.transformSingle(createCompletionResultsWriter(substitutor), null)
         }
+        if (candidate.shouldKeepNoArgEnumConstructorForBareGenericDiagnostic(initialType)) {
+            return call.transformSingle(createCompletionResultsWriter(ConeSubstitutor.Empty), null)
+        }
         addConstraintFromExpectedType(candidate, initialType, resolutionMode)
+        candidate.addSameClassifierArgumentTypeConstraints()
 
         if (skipEvenPartialCompletion) return call
 
-        val completionMode = candidate.computeCompletionMode(
-            session.inferenceComponents,
-            resolutionMode,
-            initialType,
-        ).let {
-            when {
-                it == ConstraintSystemCompletionMode.FULL ->
-                    inferenceSession.customCompletionModeInsteadOfFull(call) ?: ConstraintSystemCompletionMode.FULL
-                else -> it
+        val computedCompletionMode = if (
+            components.context.isInsideCallArgumentResolution &&
+            resolutionMode is ResolutionMode.ContextDependent &&
+            candidate.containsCandidateFreshVariable(candidate.substitutedReturnType())
+        ) {
+            ConstraintSystemCompletionMode.PARTIAL
+        } else {
+            candidate.computeCompletionMode(
+                session.inferenceComponents,
+                resolutionMode,
+                initialType,
+            )
+        }
+        val completionMode = when {
+            candidate.isSyntheticCallForTopLevelLambdaWithoutExpectedFunctionType() ->
+                ConstraintSystemCompletionMode.PCLA_POSTPONED_CALL
+
+            else -> computedCompletionMode.let {
+                when {
+                    it == ConstraintSystemCompletionMode.FULL ->
+                        inferenceSession.customCompletionModeInsteadOfFull(call) ?: ConstraintSystemCompletionMode.FULL
+                    else -> it
+                }
             }
         }
         val analyzer = createPostponedArgumentsAnalyzer(transformer.resolutionContext)
@@ -170,6 +192,7 @@ class CfirCallCompleter(
             ConstraintSystemCompletionMode.PARTIAL,
             ConstraintSystemCompletionMode.PCLA_POSTPONED_CALL -> {
                 runCompletionForCall(candidate, completionMode, call, initialType, analyzer)
+                call.updatePartiallyCompletedResultType(candidate)
                 inferenceSession.processPartiallyResolvedCall(call, resolutionMode, completionMode)
                 if (candidate.isSyntheticCallForTopLevelLambda()) {
                     val finalSubstitutor = candidate.system.currentStorage()
@@ -187,6 +210,23 @@ class CfirCallCompleter(
     }
 
     /**
+     * 嵌套调用在部分完成后只需要把当前可确定的返回类型暴露给外层候选。
+     *
+     * 这里不运行完整 completion writer：候选引用、实参树和 postponed atom 仍由最终选中
+     * 候选的完成阶段写回；当前步骤只修正 `foo(id(1))` 这类外层实参检查读取到的
+     * 返回类型，避免把内层 fresh type variable 当成普通实参类型。
+     */
+    private fun CfirExpression.updatePartiallyCompletedResultType(candidate: Candidate) {
+        if (this is CfirAnnotationCall || this is CfirAnonymousFunctionExpression) return
+        val currentType = coneTypeOrNull ?: return
+        val substitutor = candidate.system.currentStorage()
+            .buildCurrentSubstitutor(session.typeContext, emptyMap())
+            .asCone()
+        val updatedType = substitutor.substituteOrNull(currentType) ?: return
+        replaceConeTypeOrNull(updatedType)
+    }
+
+    /**
      * 判断候选是否是承载顶层 lambda 语义的 synthetic call。
      *
      * 这类调用在仓颉中用于让无上下文 lambda 继续通过成员访问和外层调用反推参数类型，
@@ -194,6 +234,21 @@ class CfirCallCompleter(
      */
     private fun Candidate.isSyntheticCallForTopLevelLambda(): Boolean =
         callInfo.callSite is CfirAnonymousFunctionExpression
+
+    /**
+     * 无上下文 lambda 的 synthetic accept 不能在 initializer 阶段做 FULL completion。
+     *
+     * 官方 SynLamExpr 会保留形参 placeholder，让 body 中的成员访问/调用语法和后续使用点继续约束它；
+     * 若这里把 `Any` 参数位当成完整上下文，会把所有未推断输入变量立即固定成错误类型。
+     */
+    private fun Candidate.isSyntheticCallForTopLevelLambdaWithoutExpectedFunctionType(): Boolean {
+        if (!isSyntheticCallForTopLevelLambda()) return false
+        val function = symbol.takeIf { it.isBound }?.cfir as? CfirFunction ?: return false
+        val parameterType = function.valueParameters.singleOrNull()
+            ?.returnTypeRef
+            ?.coneTypeOrNull
+        return parameterType !is ConeFunctionType
+    }
 
     /**
      * 从解析模式中的期望类型向候选约束系统注入外层上下文约束。
@@ -220,6 +275,7 @@ class CfirCallCompleter(
         if (candidate.addBuiltinArrayConstructorExpectedElementConstraint(expectedType)) return
         if (candidate.addBuiltinPointerConstructorExpectedPointeeConstraint(expectedType)) return
         if (candidate.addEnumConstructorExpectedTypeConstraint(initialType, expectedType)) return
+        if (candidate.addEnumConstructorPayloadExpectedTypeConstraint(initialType, expectedType)) return
 
         when {
             resolutionMode.fromCast -> {
@@ -373,7 +429,8 @@ class CfirCallCompleter(
         initialType: ConeCangJieType,
         expectedType: ConeCangJieType,
     ): Boolean {
-        if (symbol.takeIf { it.isBound }?.cfir !is CfirEnumConstructor) return false
+        val enumConstructor = symbol.takeIf { it.isBound }?.cfir as? CfirEnumConstructor ?: return false
+        if (enumConstructor.valueParameters.isNotEmpty()) return false
         val initialEnumClassId = initialType.fullyExpandedType().enumConstructorOwnerClassIdOrNull()
             ?: return false
         val expectedEnumClassId = expectedType.fullyExpandedType().enumConstructorOwnerClassIdOrNull()
@@ -382,6 +439,161 @@ class CfirCallCompleter(
 
         system.addEqualityConstraintIfCompatible(initialType, expectedType, ConeExpectedTypeConstraintPosition)
         return true
+    }
+
+    /**
+     * 带 payload 的 enum constructor 需要把目标 owner 类型投影到 payload 泛型参数。
+     *
+     * 官方 `Some(a): ??I` 会同时形成 `?A <: T` 与 `T <: ?I`。这不是初始化器层面的
+     * 普通类型不匹配，而是隐式 enum constructor 调用的泛型实参无法求解；只有当
+     * payload 下界和目标上界是同构 nominal 类型且内部实参存在 subtype 关系时，才把
+     * 目标 payload 作为推断上界加入，避免把形状完全不同的目标类型误归为推断失败。
+     */
+    private fun Candidate.addEnumConstructorPayloadExpectedTypeConstraint(
+        initialType: ConeCangJieType,
+        expectedType: ConeCangJieType,
+    ): Boolean {
+        val enumConstructor = symbol.takeIf { it.isBound }?.cfir as? CfirEnumConstructor ?: return false
+        if (enumConstructor.valueParameters.isEmpty()) return false
+        if (callInfo.hasExplicitTypeArguments) return false
+        if (!argumentMappingInitialized) return false
+
+        val ownerClassId = initialType.fullyExpandedType().enumConstructorOwnerClassIdOrNull() ?: return false
+        if (expectedType.fullyExpandedType().enumConstructorOwnerClassIdOrNull() != ownerClassId) return false
+
+        val initialTypeArguments = initialType
+            .fullyExpandedType(session)
+            .enumTypeArgumentsForClassId(ownerClassId)
+            ?: return false
+        val expectedTypeArguments = expectedType
+            .fullyExpandedType(session)
+            .enumTypeArgumentsForClassId(ownerClassId)
+            ?: return false
+        if (initialTypeArguments.size != expectedTypeArguments.size) return false
+
+        var addedConstraint = false
+        for ((initialArgument, expectedArgument) in initialTypeArguments.zip(expectedTypeArguments)) {
+            if (!containsCandidateFreshVariable(initialArgument)) continue
+
+            for ((atom, parameter) in argumentMapping) {
+                val parameterType = parameter.returnTypeRef.coneTypeOrNull
+                    ?.let(substitutor::substituteOrSelf)
+                    ?: continue
+                if (!parameterType.isSameCandidateVariable(initialArgument)) continue
+
+                val argumentType = atom.expression.coneTypeOrNull ?: continue
+                if (!argumentType.shouldUseAsEnumPayloadInferenceLowerBound(expectedArgument)) continue
+
+                system.addSubtypeConstraint(
+                    argumentType,
+                    expectedArgument,
+                    ConeArgumentConstraintPosition(atom.expression),
+                )
+                addedConstraint = true
+            }
+        }
+        return addedConstraint
+    }
+
+    /** 判断参数类型是否正是 enum owner 的当前 fresh 变量。 */
+    private fun ConeCangJieType.isSameCandidateVariable(other: ConeCangJieType): Boolean {
+        val left = this as? ConeTypeVariableType ?: return false
+        val right = other as? ConeTypeVariableType ?: return false
+        return left.typeConstructor == right.typeConstructor
+    }
+
+    /**
+     * 判断 payload 下界是否应与目标 payload 上界组成推断失败约束。
+     *
+     * 两者根 classifier 必须相同且内部实参存在真实 subtype 关系；形状不一致的目标
+     * 继续交给初始化器类型检查，保持官方 `???I = Some(a)` 的普通 mismatch 口径。
+     */
+    private fun ConeCangJieType.shouldUseAsEnumPayloadInferenceLowerBound(
+        expectedPayloadType: ConeCangJieType,
+    ): Boolean {
+        if (AbstractTypeChecker.isSubtypeOf(session.typeContext, this, expectedPayloadType) == true) return false
+        val actual = fullyExpandedType(session) as? ConeLookupTagBasedType ?: return false
+        val expected = expectedPayloadType.fullyExpandedType(session) as? ConeLookupTagBasedType ?: return false
+        if (actual.expandedClassIdOrPrimitiveClassId != expected.expandedClassIdOrPrimitiveClassId) return false
+        if (actual.typeArguments.size != expected.typeArguments.size) return false
+
+        var hasRelatedDifference = false
+        for ((actualArgument, expectedArgument) in actual.typeArguments.zip(expected.typeArguments)) {
+            val actualArgumentType = actualArgument.type
+            val expectedArgumentType = expectedArgument.type
+            if (actualArgumentType == expectedArgumentType) continue
+            if (actualArgumentType.isOptionShape() != expectedArgumentType.isOptionShape()) return false
+            val related = AbstractTypeChecker.isSubtypeOf(session.typeContext, actualArgumentType, expectedArgumentType) == true ||
+                    AbstractTypeChecker.isSubtypeOf(session.typeContext, expectedArgumentType, actualArgumentType) == true
+            if (!related) return false
+            hasRelatedDifference = true
+        }
+        return hasRelatedDifference
+    }
+
+    /** 判断类型展开后是否为标准库 Option 形状。 */
+    private fun ConeCangJieType.isOptionShape(): Boolean =
+        (fullyExpandedType(session) as? ConeLookupTagBasedType)
+            ?.expandedClassIdOrPrimitiveClassId == StdlibClassIds.Option
+
+    /**
+     * 从已完成实参映射中提取同构泛型类型实参约束。
+     *
+     * 这一步属于 LocalTypeArgumentSynthesis 的 completion 输入：`Array<Int64>` 对 `Array<T>`
+     * 不只是整体 subtype 检查，还要把 `T == Int64` 写入候选约束系统。它必须发生在
+     * 固定类型变量之前，才能让 enum constructor receiver owner、普通泛型函数和返回类型
+     * 使用同一组最终 substitutor。
+     */
+    private fun Candidate.addSameClassifierArgumentTypeConstraints() {
+        if (!argumentMappingInitialized) return
+        for ((atom, parameter) in argumentMapping) {
+            val argumentType = atom.expression.coneTypeOrNull ?: continue
+            val expectedType = parameter.returnTypeRef.coneTypeOrNull
+                ?.let(substitutor::substituteOrSelf)
+                ?.let(::substituteExplicitTypeArgumentConstraints)
+                ?: continue
+            addSameClassifierTypeArgumentConstraints(
+                argumentType = argumentType,
+                expectedType = expectedType,
+                position = ConeArgumentConstraintPosition(atom.expression),
+            )
+        }
+    }
+
+    /** 对同一个 classifier 的类型实参递归登记 equality 约束。 */
+    private fun Candidate.addSameClassifierTypeArgumentConstraints(
+        argumentType: ConeCangJieType,
+        expectedType: ConeCangJieType,
+        position: ConeArgumentConstraintPosition,
+    ) {
+        val actualClassifier = argumentType.fullyExpandedType(session) as? ConeLookupTagBasedType ?: return
+        val expectedClassifier = expectedType.fullyExpandedType(session) as? ConeLookupTagBasedType ?: return
+        if (actualClassifier.expandedClassIdOrPrimitiveClassId != expectedClassifier.expandedClassIdOrPrimitiveClassId) {
+            return
+        }
+        if (actualClassifier.typeArguments.size != expectedClassifier.typeArguments.size) return
+
+        for ((actualArgument, expectedArgument) in actualClassifier.typeArguments.zip(expectedClassifier.typeArguments)) {
+            val actualArgumentType = actualArgument.type
+            val expectedArgumentType = expectedArgument.type
+            if (!containsCandidateFreshVariable(expectedArgumentType)) continue
+            system.addEqualityConstraintIfCompatible(actualArgumentType, expectedArgumentType, position)
+            addSameClassifierTypeArgumentConstraints(actualArgumentType, expectedArgumentType, position)
+        }
+    }
+
+    /** 判断类型树是否含当前候选的 fresh type variable。 */
+    private fun Candidate.containsCandidateFreshVariable(type: ConeCangJieType): Boolean = when (type) {
+        is ConeTypeVariableType -> freshVariables.any { it.typeConstructor == type.typeConstructor }
+        is ConeLookupTagBasedType -> type.typeArguments.any { containsCandidateFreshVariable(it.type) }
+        is ConeFunctionType -> type.parameterTypes.any { containsCandidateFreshVariable(it) } ||
+                containsCandidateFreshVariable(type.returnType)
+        is ConeTupleType -> type.elementTypes.any { containsCandidateFreshVariable(it) }
+        is ConeVArrayType -> containsCandidateFreshVariable(type.elementType)
+        is ConePointerType -> containsCandidateFreshVariable(type.pointeeType)
+        is ConeTypeAliasType -> type.typeArguments.any { containsCandidateFreshVariable(it.type) } ||
+                type.expandedType?.let { containsCandidateFreshVariable(it) } == true
+        else -> false
     }
 
     /**
@@ -416,6 +628,20 @@ class CfirCallCompleter(
         if (!freshTypeConstructors.all { it in targetSubstitution }) return null
 
         return CfirTypeSubstitutorByMap(targetSubstitution)
+    }
+
+    /**
+     * 无目标类型的无参 enum constructor 不是“泛型函数推断失败”，而是裸泛型 owner
+     * 缺少类型实参。这里保留已经解析出的 enum constructor 引用和带 fresh owner 变量的
+     * 返回类型，让后续裸泛型访问 checker 统一报告 `GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT`。
+     */
+    private fun Candidate.shouldKeepNoArgEnumConstructorForBareGenericDiagnostic(
+        initialType: ConeCangJieType,
+    ): Boolean {
+        val enumConstructor = symbol.takeIf { it.isBound }?.cfir as? CfirEnumConstructor ?: return false
+        if (enumConstructor.valueParameters.isNotEmpty()) return false
+        if (callInfo.hasExplicitTypeArguments) return false
+        return containsCandidateFreshVariable(initialType)
     }
 
     /**
@@ -603,6 +829,60 @@ class CfirCallCompleter(
         ) { atom, withPCLASession ->
             actualAnalyzer.analyze(candidate.system, atom, candidate, withPCLASession)
         }
+        if (reanalyzeLocalLambdaInitializersAfterCompletion(candidate)) {
+            completer.complete(
+                candidate.system.asConstraintSystemCompleterContext(),
+                completionMode,
+                listOf(ConeAtomWithCandidate(call, candidate)),
+                initialType,
+                transformer.resolutionContext,
+            ) { atom, withPCLASession ->
+                actualAnalyzer.analyze(candidate.system, atom, candidate, withPCLASession)
+            }
+        }
+    }
+
+    /**
+     * 函数值调用会在 completion 后才拿到局部 lambda initializer 的真实参数类型。
+     *
+     * 首轮 completion 固定输入位点后，必须把 initializer body 恢复到首轮 body resolve 前的状态，
+     * 按这些最终参数类型重算 body，并把 body 中产生的新约束合回当前候选系统；随后调用方会再次完成
+     * 同一个候选，使返回类型与外层泛型调用看到的是重算后的结果。
+     */
+    private fun reanalyzeLocalLambdaInitializersAfterCompletion(candidate: Candidate): Boolean {
+        if (candidate.localLambdaInitializerCompletions.isEmpty()) return false
+        val substitutor = candidate.system.currentStorage()
+            .buildCurrentSubstitutor(session.typeContext, emptyMap())
+            .asCone()
+        var reanalyzed = false
+        for (completion in candidate.localLambdaInitializerCompletions) {
+            val inferenceData = completion.data
+            if (inferenceData.bodyReanalyzedAfterCallableValueCompletion) continue
+            val applied = inferenceData.applyCompletionResult(
+                completion.variable,
+                substitutor,
+                candidate.system.currentStorage(),
+                restoreBodyResolveState = true,
+            )
+            if (!applied) continue
+
+            val lambdaExpression = inferenceData.lambdaExpression
+            val lambda = lambdaExpression.anonymousFunction
+            val pclaInferenceSession = CfirPCLAInferenceSession(candidate, session.inferenceComponents)
+            transformer.context.withAnonymousFunctionTowerDataContext(lambda.symbol) {
+                transformer.context.withInferenceSession(pclaInferenceSession) {
+                    transformer.declarationsTransformer.doTransformAnonymousFunctionBodyFromCallCompletion(
+                        lambdaExpression,
+                        null,
+                    )
+                }
+                pclaInferenceSession.applyResultsToMainCandidate()
+            }
+            transformer.context.dropContextForAnonymousFunction(lambda)
+            inferenceData.bodyReanalyzedAfterCallableValueCompletion = true
+            reanalyzed = true
+        }
+        return reanalyzed
     }
 
     /**
@@ -659,6 +939,7 @@ class CfirCallCompleter(
             components.dataFlowAnalyzer,
             components.integerLiteralAndOperatorApproximationTransformer,
             components.context,
+            transformer.declarationsTransformer,
             mode,
         )
     }
@@ -705,7 +986,7 @@ class CfirCallCompleter(
         ): ReturnArgumentsAnalysisResult {
             val lambda = lambdaAtom.anonymousFunction
             val expectedFunctionType = lambdaAtom.expectedType as? ConeFunctionType
-            lambda.replaceMatchingParameterFunctionType(lambdaAtom.expectedType)
+            lambda.replaceMatchingParameterFunctionType(expectedFunctionType)
             rewriteLambdaParameterTypes(lambda.valueParameters, parameters, candidate, withPCLASession)
 
             val expectedReturnTypeRef = expectedReturnType?.let { returnType ->
@@ -759,6 +1040,12 @@ class CfirCallCompleter(
                             resolutionMode,
                         )
                     }
+                    /*
+                     * PCLA 会话在 lambda body 中使用 common constraint system 解析嵌套调用。
+                     * 顶层无上下文 lambda 的参数 placeholder 约束也产生在这个系统中；
+                     * body 完成后必须提交回当前候选，后续 completion 才能固定并写回函数类型。
+                     */
+                    pclaInferenceSession.applyResultsToMainCandidate()
                 } else {
                     additionalConstraints = transformer.context.inferenceSession.runLambdaCompletion(
                         candidate,
@@ -851,11 +1138,33 @@ class CfirCallCompleter(
             } ?: ConeCannotInferValueParameterType(null, "Cannot infer parameter type")
             return ConeErrorType(diagnostic)
         }
+        if (containingCandidate.isSyntheticCallForTopLevelLambda() &&
+            containsSyntheticTopLevelLambdaBoundaryVariable(containingCandidate)
+        ) {
+            return this
+        }
 
         return session.typeApproximator.approximateToSuperType(
             this,
             TypeApproximatorConfiguration.IntermediateApproximationToSupertypeAfterCompletionInK2,
         ) ?: this
+    }
+
+    /**
+     * 顶层无上下文 lambda 的参数类型可能由成员访问反推出复合边界，
+     * 例如 `l.iterator()` 会得到 `Array<Tfresh>`。该 fresh variable 属于
+     * synthetic accept 候选的约束系统，必须保留到局部 lambda initializer
+     * 状态中，后续 `f([1, 2])` 才能继续约束元素类型。
+     */
+    private fun ConeCangJieType.containsSyntheticTopLevelLambdaBoundaryVariable(
+        containingCandidate: Candidate,
+    ): Boolean {
+        val availableVariables = containingCandidate.system.currentStorage().allTypeVariables.keys
+        if (availableVariables.isEmpty()) return false
+        return contains { type ->
+            type is org.cangnova.cangjie.cfir.types.ConeTypeVariableType &&
+                    type.typeConstructor in availableVariables
+        }
     }
 
     /**
@@ -881,7 +1190,7 @@ class CfirCallCompleter(
         }
 
         if (isRootLambdaForPCLASession || inferenceSession is CfirPCLAInferenceSession) {
-            return typeConstructor.originalTypeParameter == null
+            return false
         }
         return true
     }

@@ -4,12 +4,14 @@ import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.diagnostic.AmbiguousArgumentType
 import org.cangnova.cangjie.cfir.diagnostic.ConeAmbiguityError
 import org.cangnova.cangjie.cfir.diagnostic.ArgumentTypeMismatch
+import org.cangnova.cangjie.cfir.diagnostic.UnsuccessfulCallableReferenceArgument
 import org.cangnova.cangjie.cfir.expressions.CfirResolvable
 import org.cangnova.cangjie.cfir.expressions.CfirNamedAccessExpression
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
 import org.cangnova.cangjie.cfir.references.CfirErrorNamedReference
 import org.cangnova.cangjie.cfir.references.builder.buildErrorNamedReference
+import org.cangnova.cangjie.cfir.resolve.body.CallableReferenceResolutionResult
 import org.cangnova.cangjie.cfir.resolve.body.CfirCallResolver
 import org.cangnova.cangjie.cfir.resolve.calls.ConeContextSensitiveAlternativeForQualifierAtom
 import org.cangnova.cangjie.cfir.resolve.calls.ConeLambdaWithTypeVariableAsExpectedTypeAtom
@@ -136,9 +138,7 @@ class PostponedArgumentsAnalyzer(
                 }
             }
 
-            is ConeResolvedCallableReferenceAtom -> {
-                atom.analyzed = true
-            }
+            is ConeResolvedCallableReferenceAtom -> processCallableReference(atom, candidate)
 
             is ConeSimpleNameForContextSensitiveResolution -> {
                 processFunctionReferenceArgument(atom, candidate)
@@ -146,6 +146,28 @@ class PostponedArgumentsAnalyzer(
 
             is ConeContextSensitiveAlternativeForQualifierAtom -> {
                 atom.analyzed = true
+            }
+        }
+    }
+
+    /**
+     * 在 completion 阶段重新解析首轮因重载歧义推迟的 callable reference。
+     */
+    private fun processCallableReference(
+        atom: ConeResolvedCallableReferenceAtom,
+        candidate: Candidate,
+    ) {
+        if (!atom.needsResolution) {
+            atom.markResolved()
+            return
+        }
+
+        when (callResolver.resolveCallableReferenceArguments(candidate, listOf(atom))) {
+            CallableReferenceResolutionResult.RESOLVED -> return
+            CallableReferenceResolutionResult.POSTPONED -> return
+            CallableReferenceResolutionResult.FAILURE -> {
+                candidate.addDiagnostic(UnsuccessfulCallableReferenceArgument(atom.expression))
+                atom.markResolved()
             }
         }
     }

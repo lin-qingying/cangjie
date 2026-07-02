@@ -9,6 +9,6 @@ extend Int64 {
 }
 
 main() {
-    var x = <!AMBIGUOUS_USE!>Int64.test<!>
+    var x = Int64.<!AMBIGUOUS_USE!>test<!>
     return 0
 }

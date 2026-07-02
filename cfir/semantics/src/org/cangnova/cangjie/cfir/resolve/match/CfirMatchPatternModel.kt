@@ -380,7 +380,7 @@ sealed class CfirConstructor {
      * @property entryName enum entry 名称。
      * @property arityHint 构造器 payload 元数。
      */
-    data class Enum(
+    class Enum(
         /**
          * enum 类型 classId。
          */
@@ -397,7 +397,31 @@ sealed class CfirConstructor {
          * 当前 enum use-site 类型下替换后的 payload 类型。
          */
         val payloadTypes: List<ConeCangJieType> = emptyList(),
-    ) : CfirConstructor()
+    ) : CfirConstructor() {
+        /**
+         * enum 构造器身份只由声明入口和 payload 元数决定。
+         *
+         * payloadTypes 是 use-site 下的展开信息，只服务子模式类型投影，不参与覆盖关系比较。
+         */
+        private val identityArity: Int
+            get() = payloadTypes.size.takeIf { it != 0 } ?: arityHint
+
+        override fun equals(other: Any?): Boolean =
+            other is Enum &&
+                enumClassId == other.enumClassId &&
+                entryName == other.entryName &&
+                identityArity == other.identityArity
+
+        override fun hashCode(): Int {
+            var result = enumClassId.hashCode()
+            result = 31 * result + entryName.hashCode()
+            result = 31 * result + identityArity
+            return result
+        }
+
+        override fun toString(): String =
+            "Enum(enumClassId=$enumClassId, entryName=$entryName, arity=$identityArity)"
+    }
 
     /**
      * 类型模式构造器。
@@ -411,6 +435,9 @@ sealed class CfirConstructor {
         /** 单一构造器总是被任意区间覆盖。 */
         override fun coveredByRange(from: CfirConstantValue, to: CfirConstantValue, included: Boolean): Boolean = true
     }
+
+    /** 非穷尽 enum 的未知未来构造器。 */
+    data object NonExhaustiveEnum : CfirConstructor()
 
     /**
      * 常量值构造器。
@@ -444,7 +471,7 @@ sealed class CfirConstructor {
 
             is ConeEnumType -> {
                 val enumDeclaration = session.enumDeclaration(patternType) ?: return emptyList()
-                enumDeclaration.declarations
+                val enumConstructors = enumDeclaration.declarations
                     .filterIsInstance<CfirEnumConstructor>()
                     .map { constructor ->
                         Enum(
@@ -454,6 +481,7 @@ sealed class CfirConstructor {
                             payloadTypes = constructor.substitutedPayloadParameterTypes(enumDeclaration, patternType),
                         )
                     }
+                if (enumDeclaration.isNonExhaustive) enumConstructors + NonExhaustiveEnum else enumConstructors
             }
 
             is ConeClassLikeType if patternType.classId == StdlibClassIds.Option -> listOf(
@@ -666,10 +694,18 @@ fun collectEnumConstructorNames(type: ConeEnumType, context: MatchExhaustiveness
 /**
  * 取得 enum 声明本体。payload 类型、构造器枚举和缺失模式渲染必须复用同一声明入口。
  */
-private fun CfirSession.enumDeclaration(type: ConeEnumType): CfirEnum? {
+fun CfirSession.enumDeclaration(type: ConeEnumType): CfirEnum? {
     val classSymbol = symbolProvider.getClassLikeSymbolByClassId(type.classId) ?: return null
     if (!classSymbol.isBound) return null
     return classSymbol.cfir as? CfirEnum
+}
+
+/**
+ * 判断类型是否是带 `...` 的非穷尽 enum。
+ */
+fun ConeCangJieType.isNonExhaustiveEnum(session: CfirSession): Boolean {
+    val enumType = expandedPatternEnumType(session) ?: this as? ConeEnumType ?: return false
+    return session.enumDeclaration(enumType)?.isNonExhaustive == true
 }
 
 /**

@@ -7,6 +7,8 @@ dependencies {
     api(project(":cfir:cfir-common"))
     api(project(":cfir:cfir-tree"))
     api(project(":cfir:providers"))
+    api(project(":psi"))
+    api(project(":resolution.common"))
     api(project(":cfir:providers"))
  
 

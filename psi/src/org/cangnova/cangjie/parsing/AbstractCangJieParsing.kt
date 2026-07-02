@@ -75,6 +75,8 @@ abstract class AbstractCangJieParsing(
      * @property isParseOperator 是否解析操作符
      * @property isExpression 是否为表达式模式
      * @property preferBlock 是否优先解析为代码块
+     * @property stopAtConditionOperatorInLetInitializer 是否在 let 条件 initializer 中把 `&&`/`||` 留给外层条件
+     * @property suppressLiteralTrailingLambdaInLetCondition 是否在 let 条件 initializer 中禁止字面量后的 trailing lambda 恢复
      * @property collapse 是否折叠
      * @property isDoubleArrow 是否使用双箭头
      * @property backToken 宏表达式是否返回token
@@ -125,6 +127,14 @@ abstract class AbstractCangJieParsing(
          * 保存 `preferBlock`，供仓颉语法解析流程读取节点结构或语义信息。
          */
         val preferBlock: Boolean = false,
+        /**
+         * 保存 `stopAtConditionOperatorInLetInitializer`，用于 enhanced condition 中保留逻辑运算边界。
+         */
+        val stopAtConditionOperatorInLetInitializer: Boolean = false,
+        /**
+         * 保存 `suppressLiteralTrailingLambdaInLetCondition`，用于缺失右括号时避免把循环体恢复成字面量调用。
+         */
+        val suppressLiteralTrailingLambdaInLetCondition: Boolean = false,
         /**
          * 保存 `collapse`，供仓颉语法解析流程读取节点结构或语义信息。
          */

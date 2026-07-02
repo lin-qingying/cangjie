@@ -39,11 +39,13 @@ import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
 import org.cangnova.cangjie.cfir.expressions.*
+import org.cangnova.cangjie.cfir.expressions.builder.buildNamedAccessExpression
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.CfirErrorNamedReference
 import org.cangnova.cangjie.cfir.references.CfirReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.references.builder.buildErrorNamedReference
+import org.cangnova.cangjie.cfir.references.builder.buildNamedReference
 import org.cangnova.cangjie.cfir.references.builder.buildResolvedNamedReference
 import org.cangnova.cangjie.cfir.resolve.*
 import org.cangnova.cangjie.cfir.resolve.calls.ConeResolvedCallableReferenceAtom
@@ -56,6 +58,8 @@ import org.cangnova.cangjie.cfir.resolve.calls.stages.CfirCreateFreshTypeVariabl
 import org.cangnova.cangjie.cfir.resolve.calls.stages.ResolutionStageRunner
 import org.cangnova.cangjie.cfir.resolve.calls.stages.fullyProcessCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.tower.CfirTowerGroup
+import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.CfirPCLAInferenceSession
+import org.cangnova.cangjie.cfir.resolve.providers.findExtendDeclarationSubstitution
 import org.cangnova.cangjie.cfir.resolve.withExpectedType
 import org.cangnova.cangjie.cfir.resolve.inference.inferenceComponents
 import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeParameterBasedTypeVariable
@@ -67,6 +71,7 @@ import org.cangnova.cangjie.cfir.semantics.ResolutionDiagnostic
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.builtinTypes
 import org.cangnova.cangjie.cfir.session.cfirProvider
+import org.cangnova.cangjie.cfir.session.extendProvider
 import org.cangnova.cangjie.cfir.session.extendProviderOrNull
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.*
@@ -81,6 +86,7 @@ import org.cangnova.cangjie.psi.CjValueArgument
 import org.cangnova.cangjie.resolve.calls.inference.buildCurrentSubstitutor
 import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintKind
 import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintStorage
+import org.cangnova.cangjie.resolve.calls.inference.model.ReceiverConstraintPosition
 import org.cangnova.cangjie.resolve.calls.tower.ApplicabilityDetail
 import org.cangnova.cangjie.resolve.calls.tower.CandidateApplicability
 import org.cangnova.cangjie.resolve.calls.tower.isSuccess
@@ -89,8 +95,20 @@ import org.cangnova.cangjie.source.fakeElement
 import org.cangnova.cangjie.source.psi
 import org.cangnova.cangjie.source.text
 import org.cangnova.cangjie.type.AbstractTypeChecker
+import org.cangnova.cangjie.type.model.TypeConstructorMarker
 import org.cangnova.cangjie.type.model.safeSubstitute
 import org.cangnova.cangjie.utils.runIf
+
+/**
+ * callable reference 实参解析结果。
+ *
+ * `POSTPONED` 表示首轮重载歧义仍可能在外层约束完成后收敛，调用方不能把外层候选判为失败。
+ */
+internal enum class CallableReferenceResolutionResult {
+    RESOLVED,
+    POSTPONED,
+    FAILURE,
+}
 
 /**
  * CFIR body resolve 阶段的统一调用解析入口。
@@ -225,12 +243,14 @@ class CfirCallResolver(
             if (enumResult.candidates.isNotEmpty()) {
                 effectiveResult = enumResult
             } else {
-                // 阶段2b：枚举构造器也未找到，fallback 到 NamedValueAccess（无参枚举作为值访问等场景）
+                // 阶段2b：枚举构造器也未找到，先按无参值访问解析 callee，再决定是否作为函数值调用。
+                val valueAccess = buildCalleeValueAccess(functionCall, callee)
                 val variableAccessResult = collectCandidates(
-                    functionCall,
+                    valueAccess,
                     callee.name,
                     CallKind.NamedValueAccess,
                     origin = functionCall.origin,
+                    callSite = functionCall,
                     resolutionMode = resolutionMode,
                 )
                 matchedClassifier = findClassifierForCall(functionCall, callee.name)
@@ -244,9 +264,18 @@ class CfirCallResolver(
                 if (constructorResult != null && constructorResult.candidates.isNotEmpty()) {
                     effectiveResult = constructorResult
                     matchedClassifier = null
-                } else if (variableAccessResult.candidates.isNotEmpty()) {
-                    expectedCallKind = CallKind.NamedValueAccess
-                    expectedCandidates = variableAccessResult.candidates
+                } else {
+                    val callableValueInvokeResult = collectCallableValueInvokeCandidates(
+                        functionCall = functionCall,
+                        name = callee.name,
+                        valueAccessResult = variableAccessResult,
+                    )
+                    if (callableValueInvokeResult != null) {
+                        effectiveResult = callableValueInvokeResult
+                    } else if (variableAccessResult.candidates.isNotEmpty()) {
+                        expectedCallKind = CallKind.NamedValueAccess
+                        expectedCandidates = variableAccessResult.candidates
+                    }
                 }
             }
         }
@@ -654,7 +683,7 @@ class CfirCallResolver(
     internal fun resolveCallableReferenceArguments(
         containingCallCandidate: Candidate,
         atoms: List<ConeResolvedCallableReferenceAtom>,
-    ): Boolean {
+    ): CallableReferenceResolutionResult {
         /** 一条 callable reference 部分解析路径的约束系统快照与已选候选。 */
         data class PartialResolution(
             val storage: ConstraintStorage,
@@ -672,20 +701,29 @@ class CfirCallResolver(
             /** 当前 atom 展开后形成的下一批部分解析路径。 */
             val nextPartials = mutableListOf<PartialResolution>()
             for (partial in partials) {
-                for (choice in callableReferenceChoices(containingCallCandidate, atom, partial.storage)) {
+                val choices = callableReferenceChoices(containingCallCandidate, atom, partial.storage)
+                for (choice in choices) {
                     nextPartials += PartialResolution(
                         storage = choice.candidate.system.currentStorage(),
                         choices = partial.choices + choice,
                     )
                 }
             }
-            if (nextPartials.isEmpty()) return false
+            if (nextPartials.isEmpty()) {
+                atoms.forEach { atom -> atom.markResolved() }
+                return CallableReferenceResolutionResult.FAILURE
+            }
             partials = nextPartials
         }
 
         if (partials.size != 1) {
-            atoms.forEach { atom -> atom.isPostponedBecauseOfAmbiguity = true }
-            return false
+            if (atoms.any { atom -> atom.isPostponedBecauseOfAmbiguity }) {
+                atoms.forEach { atom -> atom.markResolved() }
+                return CallableReferenceResolutionResult.FAILURE
+            }
+
+            atoms.forEach { atom -> atom.postponeBecauseOfAmbiguity() }
+            return CallableReferenceResolutionResult.POSTPONED
         }
 
         val resolved = partials.single()
@@ -694,7 +732,7 @@ class CfirCallResolver(
             choice.candidate.system.replaceContentWith(resolved.storage)
             choice.apply()
         }
-        return true
+        return CallableReferenceResolutionResult.RESOLVED
     }
 
     /**
@@ -725,7 +763,7 @@ class CfirCallResolver(
             )
             expression.replaceConeTypeOrNull(resultingType)
             atom.resultingTypeForCallableReference = resultingType
-            atom.analyzed = true
+            atom.markResolved()
         }
     }
 
@@ -746,7 +784,7 @@ class CfirCallResolver(
 
         val callInfo = expression.callableReferenceCallInfo(expectedType)
         val candidateFactory = CandidateFactory(transformer.resolutionContext, baseSystem)
-        return originalCandidates.mapNotNull { originalCandidate ->
+        val choices = originalCandidates.mapNotNull { originalCandidate ->
             val candidate = candidateFactory.createCallableReferenceCandidate(callInfo, originalCandidate)
             components.resolutionStageRunner.fullyProcessCandidate(candidate, transformer.resolutionContext)
             val resultingType = candidate.resultingTypeForCallableReference ?: return@mapNotNull null
@@ -755,6 +793,10 @@ class CfirCallResolver(
             }
             CallableReferenceChoice(atom, expression, candidate, resultingType)
         }
+        if (choices.size <= 1) return choices
+
+        val mostSpecificCandidates = conflictResolver.chooseMaximallySpecificCandidates(choices.map { it.candidate })
+        return choices.filter { choice -> choice.candidate in mostSpecificCandidates }
     }
 
     /**
@@ -891,6 +933,103 @@ class CfirCallResolver(
     }
 
     /**
+     * 将函数调用 callee 单独解析成值访问。
+     *
+     * `f(x)` 的 fallback 不能把 `x` 作为 `NamedValueAccess` 的实参收集，否则函数值变量
+     * 会先得到 `TooManyArguments`，无法再进入函数值调用推断。
+     */
+    private fun buildCalleeValueAccess(
+        functionCall: CfirFunctionCall,
+        callee: CfirNamedReference,
+    ): CfirQualifiedAccessExpression =
+        buildNamedAccessExpression {
+            source = functionCall.source
+            calleeReference = buildNamedReference {
+                source = callee.source
+                name = callee.name
+            }
+            explicitReceiver = functionCall.explicitReceiver
+            typeArguments.addAll(functionCall.typeArguments)
+        }
+
+    /**
+     * 从已解析的 callee 值候选创建函数值调用候选。
+     *
+     * 这对齐 Kotlin FIR 的 common invoke receiver 结构：callee 值候选作为
+     * [CallInfo.candidateForCommonInvokeReceiver] 保留，原始调用实参参与函数值候选的
+     * 参数映射、约束完成和 completion 写回。
+     */
+    private fun collectCallableValueInvokeCandidates(
+        functionCall: CfirFunctionCall,
+        name: Name,
+        valueAccessResult: ResolutionResult,
+    ): ResolutionResult? {
+        val callableValueCandidates = valueAccessResult.candidates
+            .filter { candidate -> candidate.isCallableValueCandidate() }
+        if (callableValueCandidates.isEmpty()) return null
+
+        val invokeInfo = valueAccessResult.info.copy(
+            callKind = CallKind.Function,
+            arguments = functionCall.argumentList.arguments,
+            typeArguments = functionCall.typeArguments,
+            name = name,
+            implicitInvokeMode = ImplicitInvokeMode.Regular,
+        )
+        val candidateFactory = CandidateFactory(transformer.resolutionContext, invokeInfo)
+        val invokeCandidates = callableValueCandidates.map { valueCandidate ->
+            candidateFactory.createCallableValueInvokeCandidate(
+                callInfo = invokeInfo.copy(candidateForCommonInvokeReceiver = valueCandidate),
+                callableValueCandidate = valueCandidate,
+            )
+        }
+        val (reducedCandidates, applicability) = reduceCandidateSet(
+            candidates = invokeCandidates,
+            info = invokeInfo,
+            collectorApplicability = CandidateApplicability.RESOLVED,
+        )
+
+        return ResolutionResult(
+            info = invokeInfo,
+            applicability = applicability,
+            candidates = reducedCandidates,
+            forwardedDiagnostics = valueAccessResult.forwardedDiagnostics,
+        )
+    }
+
+    /**
+     * 判断值访问候选是否可作为函数值调用。
+     */
+    private fun Candidate.isCallableValueCandidate(): Boolean {
+        val variable = symbol.takeIf { it.isBound }?.cfir as? CfirVariable ?: return false
+        if (variable.localLambdaInitializerInferenceDataOrNull() != null) return true
+        val rawType = variable.returnTypeRef.coneTypeOrNull ?: return false
+        if (isFreshLambdaValueParameterCallableCandidate(variable, rawType)) return true
+        val type = rawType.fullyExpandedType(session)
+        return when (type) {
+            is ConeFunctionType -> true
+            is ConeErrorType -> type.delegatedType?.fullyExpandedType(session) is ConeFunctionType
+            else -> false
+        }
+    }
+
+    /**
+     * PCLA 中无上下文 lambda 形参可通过调用语法反推为函数值。
+     *
+     * 这里只承认当前候选约束系统中的 fresh 变量；声明类型参数或普通未解析类型不能
+     * 通过该入口伪装成函数类型，仍交给常规调用诊断处理。
+     */
+    private fun Candidate.isFreshLambdaValueParameterCallableCandidate(
+        variable: CfirVariable,
+        type: ConeCangJieType,
+    ): Boolean {
+        if (components.context.inferenceSession !is CfirPCLAInferenceSession) return false
+        if (variable !is CfirValueParameter) return false
+        val variableType = type as? ConeTypeVariableType ?: return false
+        if (variableType.typeConstructor.originalTypeParameter != null) return false
+        return variableType.typeConstructor in system.currentStorage().allTypeVariables
+    }
+
+    /**
      * 仓颉尾随 lambda 只参与最后一个函数类型形参的候选。
      *
      * 官方 `SyntaxFilterCandidates` 对 trailing closure 会直接检查最后一个
@@ -973,13 +1112,32 @@ class CfirCallResolver(
                     info.resolutionMode.expectedType == null &&
                     functionValueCandidates.size > 1
 
-        return reduceCollectedCandidates(
+        return reduceCandidateSet(
             candidates = if (preserveFunctionValueOverloadSet) functionValueCandidates else collector.bestCandidates(),
             collectorApplicability = if (preserveFunctionValueOverloadSet) {
                 CandidateApplicability.RESOLVED
             } else {
                 collector.currentApplicability
             },
+            info = info,
+            preserveFunctionValueOverloadSet = preserveFunctionValueOverloadSet,
+            resolutionContext = resolutionContext,
+        )
+    }
+
+    /**
+     * 对已经构造好的候选集合执行统一 stage 处理和最具体规约。
+     */
+    private fun reduceCandidateSet(
+        candidates: Collection<Candidate>,
+        info: CallInfo,
+        collectorApplicability: CandidateApplicability,
+        preserveFunctionValueOverloadSet: Boolean = false,
+        resolutionContext: ResolutionContext = transformer.resolutionContext,
+    ): Pair<Set<Candidate>, CandidateApplicability> =
+        reduceCollectedCandidates(
+            candidates = candidates,
+            collectorApplicability = collectorApplicability,
             isCandidateSuccessful = Candidate::isSuccessful,
             candidateApplicability = Candidate::lowestApplicability,
             fullyProcessCandidate = { candidate ->
@@ -998,7 +1156,6 @@ class CfirCallResolver(
                     ?: conflictResolver.chooseMaximallySpecificCandidates(expectedTypeFilteredCandidates)
             },
         )
-    }
 
     /**
      * 仓颉 check-mode 会让表达式目标类型参与重载选择。这里在候选已经完成参数适用性检查后，
@@ -1027,21 +1184,85 @@ class CfirCallResolver(
     private fun reduceFreshTypeVariableReceiverCandidates(candidates: Set<Candidate>): Set<Candidate>? {
         if (candidates.size <= 1) return null
 
-        val receiverTypeConstructor = candidates.first().freshTypeVariableDispatchReceiverConstructor() ?: return null
-        if (candidates.any { it.freshTypeVariableDispatchReceiverConstructor() != receiverTypeConstructor }) {
+        val receiverTypeConstructor = candidates.first().freshTypeVariableReceiverConstructor() ?: return null
+        if (candidates.any { it.freshTypeVariableReceiverConstructor() != receiverTypeConstructor }) {
             return null
         }
         if (candidates.any { !it.isSuccessful }) return null
 
-        val shapes = candidates.map { candidate ->
+        val receiverExpression = candidates.first().freshTypeVariableReceiverExpression() ?: return null
+        val knownConstraintFilteredCandidates =
+            reduceFreshReceiverCandidatesByKnownConstraints(candidates, receiverTypeConstructor, receiverExpression)
+                ?: candidates
+        val ownerFilteredCandidates =
+            reduceFreshReceiverCandidatesByOwnerSum(knownConstraintFilteredCandidates, receiverTypeConstructor)
+                ?: knownConstraintFilteredCandidates
+
+        val shapes = ownerFilteredCandidates.map { candidate ->
             candidate.freshReceiverCallableShape() ?: return null
         }
         val firstShape = shapes.first()
         if (shapes.drop(1).all { it.isEquivalentTo(firstShape) }) {
+            if (ownerFilteredCandidates.size > 1) {
+                firstShape.candidate.freshReceiverConstraintToDrop = FreshReceiverConstraintToDrop(
+                    receiverTypeConstructor = receiverTypeConstructor,
+                    receiverExpression = receiverExpression,
+                )
+            }
             return setOf(firstShape.candidate)
         }
 
         return null
+    }
+
+    /**
+     * 使用同一 fresh receiver 已有的非当前 receiver 约束过滤 owner 候选。
+     *
+     * 例如 `getB19(x); x.foo19(y)` 中 `getB19(x)` 已产生 `x <: B19`，
+     * 因此 `foo19` 的 owner 只能保留 `B19` 可作为子类型的候选 owner。
+     */
+    private fun reduceFreshReceiverCandidatesByKnownConstraints(
+        candidates: Set<Candidate>,
+        receiverTypeConstructor: TypeConstructorMarker,
+        receiverExpression: CfirExpression,
+    ): Set<Candidate>? {
+        val filtered = candidates.filterTo(linkedSetOf()) { candidate ->
+            val ownerType = candidate.freshReceiverExpectedOwnerType() ?: return@filterTo false
+            candidate.isFreshReceiverOwnerCompatibleWithKnownConstraints(
+                receiverTypeConstructor,
+                receiverExpression,
+                ownerType,
+            )
+        }
+        return filtered.takeIf { it.isNotEmpty() && it.size < candidates.size }
+    }
+
+    /**
+     * 使用 PCLA 会话维护的 owner 候选集合过滤 fresh receiver 候选。
+     *
+     * 该集合对应官方 `SynLamExpr` 的成员语法候选交集；集合尚未收窄到单个 owner 时，
+     * resolver 仍可选择等价签名代表，但稍后会丢弃该代表候选的 receiver 约束。
+     */
+    private fun reduceFreshReceiverCandidatesByOwnerSum(
+        candidates: Set<Candidate>,
+        receiverTypeConstructor: TypeConstructorMarker,
+    ): Set<Candidate>? {
+        val ownerTypesByCandidate = candidates.mapNotNull { candidate ->
+            val ownerType = candidate.freshReceiverExpectedOwnerType() ?: return@mapNotNull null
+            candidate to ownerType
+        }
+        if (ownerTypesByCandidate.size != candidates.size) return null
+
+        val refinedOwnerTypes = components.context.inferenceSession.refineFreshReceiverCandidateOwners(
+            receiverTypeConstructor,
+            ownerTypesByCandidate.map { it.second },
+        ) ?: return null
+        val filtered = ownerTypesByCandidate.mapNotNullTo(linkedSetOf()) { (candidate, ownerType) ->
+            candidate.takeIf {
+                refinedOwnerTypes.any { refinedOwnerType -> ownerType.isSameTypeAs(refinedOwnerType) }
+            }
+        }
+        return filtered.takeIf { it.isNotEmpty() && it.size < candidates.size }
     }
 
     /**
@@ -1079,14 +1300,19 @@ class CfirCallResolver(
      * 两者都会按候选 substitutor 和约束系统当前状态归一化。
      */
     private fun Candidate.freshReceiverCallableShape(): FreshReceiverCallableShape? {
-        if (!symbol.isBound || !argumentMappingInitialized) return null
+        if (!symbol.isBound) return null
         val declaration = symbol.cfir as? CfirCallableDeclaration ?: return null
 
-        val valueParameterTypes = buildList {
-            for (parameter in argumentMapping.values) {
-                val parameterType = parameter.returnTypeRef.coneTypeOrNull ?: return null
-                add(normalizeFreshReceiverShapeType(parameterType))
+        val valueParameterTypes: List<ConeCangJieType> = when {
+            argumentMappingInitialized -> buildList<ConeCangJieType> {
+                for (parameter in argumentMapping.values) {
+                    val parameterType = parameter.returnTypeRef.coneTypeOrNull ?: return null
+                    add(normalizeFreshReceiverShapeType(parameterType))
+                }
             }
+            declaration is CfirProperty -> emptyList()
+            declaration is CfirFunction && declaration.valueParameters.isEmpty() -> emptyList()
+            else -> return null
         }
         val returnType = components.returnTypeCalculator
             .tryCalculateReturnType(declaration)
@@ -1094,6 +1320,35 @@ class CfirCallResolver(
             .let { returnType -> normalizeFreshReceiverShapeType(returnType) }
 
         return FreshReceiverCallableShape(this, valueParameterTypes, returnType)
+    }
+
+    /** 返回 fresh receiver 候选的声明 owner 类型。 */
+    private fun Candidate.freshReceiverExpectedOwnerType(): ConeCangJieType? {
+        val callableSymbol = symbol as? CfirCallableSymbol<*> ?: return null
+        val receiverExpression = freshTypeVariableReceiverExpression() ?: return null
+        val receiverType = when (receiverExpression) {
+            dispatchReceiverExpression() -> callableSymbol.dispatchReceiverType
+            givenExtensionReceiver?.expression -> expectedExtensionReceiverType()
+            else -> null
+        } ?: return null
+        return normalizeFreshReceiverShapeType(receiverType)
+    }
+
+    /** 计算 extension 候选在当前 use-site 下的 receiver 类型。 */
+    private fun Candidate.expectedExtensionReceiverType(): ConeCangJieType? {
+        val callableSymbol = symbol as? CfirCallableSymbol<*> ?: return null
+        val originalSymbol = callableSymbol.unwrapSubstitutionOverrides()
+        val extendProvider = session.extendProvider
+        val ownerExtend = extendProvider.getContainingExtend(originalSymbol)
+            ?.takeIf(extendProvider::isExtendAccessible)
+            ?: return null
+        val actualReceiverType = givenExtensionReceiver?.expression?.coneTypeOrNull
+        if (actualReceiverType != null) {
+            findExtendDeclarationSubstitution(session, ownerExtend, actualReceiverType)
+                ?.substitutedReceiverType
+                ?.let { return it }
+        }
+        return ownerExtend.extendedTypeRef.coneTypeOrNull
     }
 
     /**
@@ -1105,7 +1360,106 @@ class CfirCallResolver(
         val substituted = substitutor.substituteOrSelf(type)
         val currentSubstitutor = system.buildCurrentSubstitutor()
         val currentType = currentSubstitutor.safeSubstitute(system, substituted).asCone()
-        return representativeConstraintType(currentType)
+        return normalizeFreshReceiverTypeArguments(representativeConstraintType(currentType))
+    }
+
+    /** 递归归一化 owner/callable shape 中嵌套的 fresh 类型变量。 */
+    private fun Candidate.normalizeFreshReceiverTypeArguments(type: ConeCangJieType): ConeCangJieType {
+        val representative = representativeConstraintType(type)
+        if (representative !== type) {
+            return normalizeFreshReceiverTypeArguments(representative)
+        }
+
+        fun List<ConeTypeProjection>.normalizeProjections(): List<ConeTypeProjection> =
+            map { projection -> normalizeFreshReceiverTypeArguments(projection.type) }
+
+        return when (type) {
+            is ConeClassLikeType -> ConeClassLikeType(
+                lookupTag = type.lookupTag,
+                typeArguments = type.typeArguments.normalizeProjections(),
+                attributes = type.attributes,
+                isInterface = type.isInterface,
+                isThisType = type.isThisType,
+            )
+            is ConeStructType -> ConeStructType(
+                lookupTag = type.lookupTag,
+                typeArguments = type.typeArguments.normalizeProjections(),
+                attributes = type.attributes,
+            )
+            is ConeEnumType -> ConeEnumType(
+                lookupTag = type.lookupTag,
+                typeArguments = type.typeArguments.normalizeProjections(),
+                attributes = type.attributes,
+                isRefEnum = type.isRefEnum,
+            )
+            is ConeTypeAliasType -> ConeTypeAliasType(
+                classId = type.classId,
+                expandedType = type.expandedType?.let { expandedType ->
+                    normalizeFreshReceiverTypeArguments(expandedType)
+                },
+                typeArguments = type.typeArguments.normalizeProjections(),
+                attributes = type.attributes,
+            )
+            is ConeFunctionType -> ConeFunctionType(
+                parameterTypes = type.parameterTypes.map { parameterType ->
+                    normalizeFreshReceiverTypeArguments(parameterType)
+                },
+                returnType = normalizeFreshReceiverTypeArguments(type.returnType),
+                isCFunc = type.isCFunc,
+                isClosureType = type.isClosureType,
+                hasVariableLenArg = type.hasVariableLenArg,
+                attributes = type.attributes,
+            )
+            is ConeTupleType -> ConeTupleType(
+                elementTypes = type.elementTypes.map { elementType ->
+                    normalizeFreshReceiverTypeArguments(elementType)
+                },
+                attributes = type.attributes,
+            )
+            is ConeVArrayType -> ConeVArrayType(
+                elementType = normalizeFreshReceiverTypeArguments(type.elementType),
+                size = type.size,
+                attributes = type.attributes,
+            )
+            is ConePointerType -> ConePointerType(
+                pointeeType = normalizeFreshReceiverTypeArguments(type.pointeeType),
+                attributes = type.attributes,
+            )
+            else -> type
+        }
+    }
+
+    /**
+     * 判断 owner 候选是否与 fresh receiver 已有约束兼容。
+     *
+     * 当前成员访问自身产生的 receiver 约束只说明“若选择该候选则需要满足该 owner”，
+     * 不能反过来作为该候选可行的证据；其它实参、expected type 和前序成员访问约束才参与过滤。
+     */
+    private fun Candidate.isFreshReceiverOwnerCompatibleWithKnownConstraints(
+        receiverTypeConstructor: TypeConstructorMarker,
+        receiverExpression: CfirExpression,
+        ownerType: ConeCangJieType,
+    ): Boolean {
+        val constraints = system.currentStorage()
+            .notFixedTypeVariables[receiverTypeConstructor]
+            ?.constraints
+            .orEmpty()
+            .filterNot { constraint ->
+                val position = constraint.position.from
+                position is ReceiverConstraintPosition<*> && position.argument === receiverExpression
+            }
+            .filter { constraint ->
+                constraint.kind == ConstraintKind.LOWER ||
+                    constraint.kind == ConstraintKind.UPPER ||
+                    constraint.kind == ConstraintKind.EQUALITY
+            }
+            .mapNotNull { constraint -> constraint.type as? ConeCangJieType }
+            .filterNot { constraintType -> constraintType is ConeErrorType }
+
+        if (constraints.isEmpty()) return true
+        return constraints.all { constraintType ->
+            AbstractTypeChecker.isSubtypeOf(session.typeContext, constraintType, ownerType)
+        }
     }
 
     /**
@@ -1138,11 +1492,25 @@ class CfirCallResolver(
      *
      * 只接受非声明类型参数产生的 fresh 变量，用于识别 lambda receiver placeholder 的成员访问。
      */
-    private fun Candidate.freshTypeVariableDispatchReceiverConstructor(): org.cangnova.cangjie.type.model.TypeConstructorMarker? {
-        val receiverType = dispatchReceiverExpression()?.coneTypeOrNull as? ConeTypeVariableType ?: return null
+    private fun Candidate.freshTypeVariableReceiverConstructor(): org.cangnova.cangjie.type.model.TypeConstructorMarker? {
+        val receiverType = freshTypeVariableReceiverExpression()?.coneTypeOrNull as? ConeTypeVariableType ?: return null
         if (receiverType.typeConstructor.originalTypeParameter != null) return null
         return receiverType.typeConstructor
     }
+
+    /** 返回 fresh lambda placeholder 对应的 dispatch 或 extension receiver 表达式。 */
+    private fun Candidate.freshTypeVariableReceiverExpression(): CfirExpression? {
+        dispatchReceiverExpression()?.takeIf { receiverExpression ->
+            receiverExpression.coneTypeOrNull.isFreshLambdaReceiverTypeVariable()
+        }?.let { return it }
+        return givenExtensionReceiver?.expression?.takeIf { receiverExpression ->
+            receiverExpression.coneTypeOrNull.isFreshLambdaReceiverTypeVariable()
+        }
+    }
+
+    /** 判断类型是否为无上下文 lambda receiver 使用的 fresh type variable。 */
+    private fun ConeCangJieType?.isFreshLambdaReceiverTypeVariable(): Boolean =
+        this is ConeTypeVariableType && typeConstructor.originalTypeParameter == null
 
     /**
      * 根据候选规约结果构造最终 callee reference。

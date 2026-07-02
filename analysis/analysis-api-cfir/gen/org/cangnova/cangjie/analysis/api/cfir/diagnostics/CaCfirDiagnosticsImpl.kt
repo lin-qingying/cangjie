@@ -257,6 +257,21 @@ internal class InvalidOperatorParameterCountImpl(
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.InvalidOperatorParameterCount
 
+internal class OperatorOverloadBuiltInUnaryOperatorImpl(
+    override val operator: String,
+    override val receiverType: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.OperatorOverloadBuiltInUnaryOperator
+
+internal class OperatorOverloadBuiltInBinaryOperatorImpl(
+    override val operator: String,
+    override val receiverType: String,
+    override val parameterType: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.OperatorOverloadBuiltInBinaryOperator
+
 internal class RepeatedModifierImpl(
     override val modifier: CjKeywordToken,
     cfirDiagnostic: CjPsiDiagnostic,
@@ -423,6 +438,40 @@ internal class IllegalThisOrSuperCallImpl(
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.IllegalThisOrSuperCall
 
+internal class ThisOrSuperNotAllowedToInitializeNonStaticMemberImpl(
+    override val calleeName: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.ThisOrSuperNotAllowedToInitializeNonStaticMember
+
+internal class ThisOrSuperNotAllowedToInitializeStaticMemberImpl(
+    override val calleeName: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.ThisOrSuperNotAllowedToInitializeStaticMember
+
+internal class ThisSuperUseErrorOutsideClassImpl(
+    override val calleeName: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.ThisSuperUseErrorOutsideClass
+
+internal class InvalidThisCallOutsideCtorImpl(
+    override val calleeName: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.InvalidThisCallOutsideCtor
+
+internal class IllegalSuperAloneImpl(
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.IllegalSuperAlone
+
+internal class IllegalThisOutsideStructConstructorImpl(
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.IllegalThisOutsideStructConstructor
+
 internal class IllegalPlaceOfCallingThisOrSuperImpl(
     override val calleeName: String,
     cfirDiagnostic: CjPsiDiagnostic,
@@ -459,6 +508,41 @@ internal class ThisAsExpressionInFuncImpl(
     cfirDiagnostic: CjPsiDiagnostic,
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.ThisAsExpressionInFunc
+
+internal class StaticMembersCannotCallMembersImpl(
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.StaticMembersCannotCallMembers
+
+internal class IllegalAccessNonStaticMemberImpl(
+    override val memberName: Name,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.IllegalAccessNonStaticMember
+
+internal class StaticFunctionCannotAccessNonStaticMemberImpl(
+    override val memberName: Name,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.StaticFunctionCannotAccessNonStaticMember
+
+internal class StaticLambdaCannotAccessNonStaticImpl(
+    override val memberName: Name,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.StaticLambdaCannotAccessNonStatic
+
+internal class StaticVariableCannotAccessNonStaticMemberImpl(
+    override val memberName: Name,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.StaticVariableCannotAccessNonStaticMember
+
+internal class ObjectCannotAccessStaticMemberImpl(
+    override val memberName: Name,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.ObjectCannotAccessStaticMember
 
 internal class ExplicitSuperCallRequiredImpl(
     cfirDiagnostic: CjPsiDiagnostic,
@@ -804,6 +888,19 @@ internal class OverridingReturnTypeMismatchImpl(
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.OverridingReturnTypeMismatch
 
+internal class ReturnTypeIncompatibleImpl(
+    override val functionName: Name,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.ReturnTypeIncompatible
+
+internal class ReturnTypeInvarianceImpl(
+    override val functionName: Name,
+    override val interfaceType: CaType,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.ReturnTypeInvariance
+
 internal class PropertyOverrideImplementTypeDiffImpl(
     override val actualType: CaType,
     override val expectedType: CaType,
@@ -891,6 +988,16 @@ internal class NoMatchingOperatorInvokeImpl(
     cfirDiagnostic: CjPsiDiagnostic,
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.NoMatchingOperatorInvoke
+
+internal class NoMatchFunctionDeclarationForCallImpl(
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.NoMatchFunctionDeclarationForCall
+
+internal class NoMatchFunctionDeclarationForRefImpl(
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.NoMatchFunctionDeclarationForRef
 
 internal class NoMatchOperatorFunctionCallImpl(
     cfirDiagnostic: CjPsiDiagnostic,
@@ -1277,6 +1384,15 @@ internal class InheritMemberKindInconsistentImpl(
     cfirDiagnostic: CjPsiDiagnostic,
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.InheritMemberKindInconsistent
+
+internal class StaticAndNonStaticMemberCannotHaveSameNameImpl(
+    override val memberStaticKind: String,
+    override val memberName: Name,
+    override val superMemberStaticKind: String,
+    override val containerKind: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.StaticAndNonStaticMemberCannotHaveSameName
 
 internal class MemberVariableCanNotShadowImpl(
     override val memberName: Name,
@@ -2392,6 +2508,16 @@ internal class UnusedExpressionImpl(
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<CjExpression>(cfirDiagnostic, token), CaCfirDiagnostic.UnusedExpression
 
+internal class UnusedVariableImpl(
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.UnusedVariable
+
+internal class UnusedFunctionImpl(
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.UnusedFunction
+
 internal class TypealiasUnusedTypeParametersImpl(
     override val typeParameters: String,
     cfirDiagnostic: CjPsiDiagnostic,
@@ -2662,3 +2788,4 @@ internal class MacroCycleImpl(
     cfirDiagnostic: CjPsiDiagnostic,
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.MacroCycle
+

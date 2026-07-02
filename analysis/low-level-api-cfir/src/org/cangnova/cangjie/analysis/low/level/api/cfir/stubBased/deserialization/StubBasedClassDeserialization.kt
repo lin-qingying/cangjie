@@ -38,6 +38,7 @@ import org.cangnova.cangjie.psi.CjClass
 import org.cangnova.cangjie.psi.CjConstructor
 import org.cangnova.cangjie.psi.CjDeclaration
 import org.cangnova.cangjie.psi.CjElement
+import org.cangnova.cangjie.psi.CjEnum
 import org.cangnova.cangjie.psi.CjModifierListOwner
 import org.cangnova.cangjie.psi.CjNamedFunction
 import org.cangnova.cangjie.psi.CjProperty
@@ -242,6 +243,7 @@ internal fun deserializeClassToSymbol(
             this.superTypeRefs += superTypeRefs
             this.declarations += sortedDeclarations
             this.isRefEnum = symbol.isRefEnum
+            this.isNonExhaustive = (classOrObject as? CjEnum)?.isNonExhaustive == true
             annotations += context.annotationDeserializer.loadAnnotations(classOrObject, symbol)
         }
 

@@ -142,6 +142,13 @@ class PendingDiagnosticsReporterImpl(
                         if (diagnostic.isCfirDceWarning() && hasErrorInFile(path, pendingList)) {
                             continue
                         }
+                        if (diagnostic.isGenericTypeMismatchSupersededByReturnMismatch(
+                                pendingDiagnostics = pendingList,
+                                committedDiagnostics = committedDiagnosticsByFilePath[path],
+                            )
+                        ) {
+                            continue
+                        }
                         commitDiagnostic(path, diagnostic, context)
                     }
                 }
@@ -209,3 +216,20 @@ private fun CjDiagnostic.hasSameDiagnosticIdentity(other: CjDiagnostic): Boolean
  */
 private fun CjDiagnostic.isCfirDceWarning(): Boolean =
     factoryName == "CFIR_UNUSED_VARIABLE" || factoryName == "CFIR_UNUSED_EXPRESSION"
+
+/**
+ * RETURN_TYPE_MISMATCH 是 return 根表达式上的专用分类；同一起点且覆盖通用
+ * TYPE_MISMATCH 范围时，专用诊断拥有该位置，避免重复输出通用类型不匹配。
+ */
+private fun CjDiagnostic.isGenericTypeMismatchSupersededByReturnMismatch(
+    pendingDiagnostics: List<CjDiagnostic>,
+    committedDiagnostics: List<CjDiagnostic>?,
+): Boolean {
+    if (factoryName != "CFIR_TYPE_MISMATCH") return false
+    return (pendingDiagnostics.asSequence() + committedDiagnostics.orEmpty().asSequence())
+        .any { candidate ->
+            candidate.factoryName == "CFIR_RETURN_TYPE_MISMATCH" &&
+                candidate.firstRange.startOffset == firstRange.startOffset &&
+                candidate.firstRange.endOffset >= firstRange.endOffset
+        }
+}

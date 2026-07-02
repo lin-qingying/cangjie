@@ -24,6 +24,7 @@
 
 package org.cangnova.cangjie.cfir.resolve.body
 
+import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.builder.buildImport
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
@@ -32,15 +33,19 @@ import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
+import org.cangnova.cangjie.cfir.expressions.CfirResolvable
 import org.cangnova.cangjie.cfir.expressions.CfirStatement
 import org.cangnova.cangjie.cfir.expressions.CfirWrappedExpression
+import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.resolve.CfirTypeResolutionConfiguration
 import org.cangnova.cangjie.cfir.resolve.ResolutionMode
 import org.cangnova.cangjie.cfir.resolve.createCurrentScopeList
 import org.cangnova.cangjie.cfir.resolve.dfa.CfirControlFlowGraphReferenceImpl
+import org.cangnova.cangjie.cfir.resolve.localLambdaInitializerInferenceData
 import org.cangnova.cangjie.cfir.resolve.transformers.CfirSpecificTypeResolverTransformer
 import org.cangnova.cangjie.cfir.resolve.withExpectedType
 import org.cangnova.cangjie.cfir.resolvedTypeFromPrototype
+import org.cangnova.cangjie.cfir.patterns.visibleBindingVariables
 import org.cangnova.cangjie.cfir.scopes.CfirScope
 import org.cangnova.cangjie.cfir.scopes.defaultImportsProvider
 import org.cangnova.cangjie.cfir.scopes.impl.*
@@ -52,6 +57,7 @@ import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.cfir.types.builder.buildErrorTypeRef
 import org.cangnova.cangjie.cfir.types.impl.ResolvedImplicitTypeRef
+import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
 import org.cangnova.cangjie.cfir.whileAnalysing
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
@@ -625,13 +631,16 @@ open class CfirDeclarationsResolveTransformer(
             ResolutionMode.ContextIndependent
         }
 
-        variable.initializer?.let {
-            variable.transformInitializer(transformer, initializerMode)
-        }
-
-        variable.resolveImplicitReturnTypeFromInitializer()
-
         context.storeVariable(variable, session)
+
+        context.withContainer(variable) {
+            context.withVariableInitializer(variable) {
+                variable.initializer?.let {
+                    variable.transformInitializer(transformer, initializerMode)
+                }
+                variable.resolveImplicitReturnTypeFromInitializer()
+            }
+        }
 
         bumpPhase(variable)
         return variable
@@ -801,9 +810,16 @@ open class CfirDeclarationsResolveTransformer(
             ResolutionMode.ContextIndependent
         }
 
+        val bindingVariables = patternVariable.pattern.visibleBindingVariables()
+        bindingVariables.forEach { bindingVariable ->
+            context.storeVariable(bindingVariable, session)
+        }
+
         val initializer = patternVariable.initializer
         if (initializer != null) {
-            patternVariable.transformInitializer(transformer, initializerMode)
+            context.withVariableInitializer(bindingVariables) {
+                patternVariable.transformInitializer(transformer, initializerMode)
+            }
         }
 
         patternVariable.resolveImplicitReturnTypeFromInitializer()
@@ -839,6 +855,7 @@ open class CfirDeclarationsResolveTransformer(
      * 后续隐式类型缓存或 checker 继续看到裸 `CfirImplicitTypeRef`。
      */
     private fun CfirVariable.resolveImplicitReturnTypeFromInitializer() {
+        copyLocalLambdaInitializerInferenceDataFromInitializer()
         val implicitTypeRef = returnTypeRef as? CfirImplicitTypeRef ?: return
         val initType = initializer?.coneTypeOrNull
         val resolvedTypeRef = if (initType != null) {
@@ -854,6 +871,20 @@ open class CfirDeclarationsResolveTransformer(
             }
         }
         replaceReturnTypeRef(resolvedTypeRef)
+        copyLocalLambdaInitializerInferenceDataFromInitializer()
+    }
+
+    /**
+     * 局部 lambda initializer 的 placeholder 约束属于变量声明整体，而不只属于隐式类型收敛。
+     *
+     * 声明返回类型可能已在更早阶段由 initializer 写成 resolved type ref；此时仍必须把
+     * lambda 保存的约束状态带到变量上，使后续 `f(arg)` 函数值调用可以继续完成参数类型。
+     */
+    private fun CfirVariable.copyLocalLambdaInitializerInferenceDataFromInitializer() {
+        (initializer as? CfirAnonymousFunctionExpression)
+            ?.anonymousFunction
+            ?.localLambdaInitializerInferenceData
+            ?.let { localLambdaInitializerInferenceData = it }
     }
 
     /**
@@ -1047,6 +1078,14 @@ open class CfirDeclarationsResolveTransformer(
             return session.builtinTypes.unitType
         }
 
+        returnExpressions.firstNotNullOfOrNull { expression ->
+            expression.recursionInImplicitTypeErrorOrNull()
+        }?.let { return it }
+
+        if (returnExpressions.any { expression -> expression.referencesImplicitReturnOwner(function) }) {
+            return ConeErrorType(ConeSimpleDiagnostic("Recursive implicit type", DiagnosticKind.RecursionInImplicitTypes))
+        }
+
         val expressionTypes = returnExpressions.map { expression ->
             expression.coneTypeOrNull ?: ConeErrorType(
                 ConeSimpleDiagnostic("Postponed inference", DiagnosticKind.InferenceError)
@@ -1072,6 +1111,66 @@ open class CfirDeclarationsResolveTransformer(
     }
 
     /**
+     * 返回表达式内部若已出现隐式返回类型递归，函数返回类型推断必须保留该根因。
+     *
+     * 根表达式可能仍被 operator/match 层算出一个普通类型；只看根类型会丢失官方
+     * `unable to infer return type` 的递归诊断，并让 body 内部级联错误冒出。
+     */
+    private fun CfirExpression.recursionInImplicitTypeErrorOrNull(): ConeErrorType? {
+        (coneTypeOrNull as? ConeErrorType)
+            ?.takeIf { it.isRecursionInImplicitTypeError() }
+            ?.let { return it }
+
+        var result: ConeErrorType? = null
+        acceptChildren(object : CfirVisitorVoid() {
+            override fun visitElement(element: CfirElement) {
+                if (result != null) return
+                if (element is CfirExpression) {
+                    val errorType = element.coneTypeOrNull as? ConeErrorType
+                    if (errorType?.isRecursionInImplicitTypeError() == true) {
+                        result = errorType
+                        return
+                    }
+                }
+                element.acceptChildren(this, null)
+            }
+        }, null)
+        return result
+    }
+
+    /**
+     * 隐式返回类型的返回表达式若直接引用当前函数，返回类型计算会依赖自身。
+     *
+     * 这种自引用不一定在根表达式上形成错误类型，例如 `return temp % match (foo)` 仍可能
+     * 被后续 operator/match 层推成普通类型；因此需要在 join 之前按解析后的 symbol 扫描。
+     */
+    private fun CfirExpression.referencesImplicitReturnOwner(function: CfirFunction): Boolean {
+        var found = false
+        acceptChildren(object : CfirVisitorVoid() {
+            override fun visitElement(element: CfirElement) {
+                if (found) return
+                if (element is CfirAnonymousFunctionExpression) return
+                val resolvedReference = (element as? CfirResolvable)?.calleeReference as? CfirResolvedNamedReference
+                if (resolvedReference?.resolvedSymbol == function.symbol) {
+                    found = true
+                    return
+                }
+                element.acceptChildren(this, null)
+            }
+        }, null)
+        return found
+    }
+
+    /** 判断错误类型是否来自隐式类型递归检测。 */
+    private fun ConeErrorType.isRecursionInImplicitTypeError(): Boolean {
+        val diagnostic = diagnostic.unwrapUnreportedDuplicateDiagnostic() as? ConeSimpleDiagnostic ?: return false
+        return diagnostic.kind == DiagnosticKind.RecursionInImplicitTypes
+    }
+
+    private fun ConeDiagnostic.unwrapUnreportedDuplicateDiagnostic(): ConeDiagnostic =
+        (this as? ConeUnreportedDuplicateDiagnostic)?.original ?: this
+
+    /**
      * 如果所有返回表达式都是同一个 `This` 类型，则直接把该 `This` 类型作为公共返回类型。
      */
     private fun List<ConeCangJieType>.commonThisReturnTypeOrNull(): ConeClassLikeType? {
@@ -1084,12 +1183,13 @@ open class CfirDeclarationsResolveTransformer(
     /**
      * 函数隐式返回类型不能只因为所有候选都可装箱到 `Any` 就吞掉推断失败。
      *
-     * 仓颉允许 `class` 返回值与基本类型共同推断为 `Any`；但纯基本类型/值类型候选之间
-     * 若唯一公共父类型退化到 `Any`，官方语义仍要求报告“没有最小公共父类型”。
+     * 官方 `CalcFuncRetTyFromBody` 允许自定义 class/struct/enum 返回值与基本类型共同推断为
+     * `Any`；但纯标准库值类型候选之间若唯一公共父类型退化到 `Any`，仍要求报告
+     * “没有最小公共父类型”。
      */
     private fun ConeCangJieType.isAcceptableInferredReturnType(expressionTypes: List<ConeCangJieType>): Boolean {
         if (!isAnyType()) return true
-        return expressionTypes.any { it is ConeClassLikeType && !it.isAnyType() }
+        return expressionTypes.any { it.isUserDefinedClassifierType() }
     }
 
     /**
@@ -1097,6 +1197,19 @@ open class CfirDeclarationsResolveTransformer(
      */
     private fun ConeCangJieType.isAnyType(): Boolean {
         return this === ConeAnyType || (this is ConeClassLikeType && classId == StdlibClassIds.Any)
+    }
+
+    /**
+     * 是否为用户声明的名义类型。
+     *
+     * 标准库类型（例如 `String`、`Unit`、`Array`、`Option`）参与返回类型 join 时不自动把
+     * `Any` 作为可接受结果；自定义 class/struct/enum 与 primitive 混合时才按官方语义允许
+     * 隐式返回 `Any`。
+     */
+    private fun ConeCangJieType.isUserDefinedClassifierType(): Boolean {
+        val id = classId ?: return false
+        if (id.packageFqName == StdlibClassIds.Any.packageFqName) return false
+        return this is ConeClassLikeType || this is ConeStructType || this is ConeEnumType
     }
 
     /**

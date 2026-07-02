@@ -7,7 +7,7 @@ enum Test<X> {
 }
 
 main() {
-    let a = Test<Rune>.Test('c')
+    let a = Test<Rune>.Test(<!ARGUMENT_TYPE_MISMATCH!>'c'<!>)
     match (a) {
       case Test('c') => 1          // PC-Con
       case Test<Rune>('c') => 2    // PC-ConWithTyArgs

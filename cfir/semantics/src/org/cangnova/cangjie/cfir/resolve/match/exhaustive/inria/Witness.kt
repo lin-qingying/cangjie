@@ -38,6 +38,7 @@ class Witness(val patterns: MutableList<CfirMatchPattern> = mutableListOf()) {
         oldPatterns.clear()
 
         val kind = when {
+            constructor is CfirConstructor.NonExhaustiveEnum -> CfirMatchPatternKind.Wild
             type is ConeTupleType -> CfirMatchPatternKind.Tuple(pats)
             type is ConeEnumType && constructor is CfirConstructor.Enum ->
                 CfirMatchPatternKind.Enum(type.classId, constructor.entryName, pats)

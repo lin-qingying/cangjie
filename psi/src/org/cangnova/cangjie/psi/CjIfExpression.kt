@@ -49,7 +49,8 @@ class CjIfExpression(node: ASTNode) : CjExpressionImpl(node), CjPatternEntryBloc
     /**
      * 保存 `letExpression`，供仓颉 PSI流程读取节点结构或语义信息。
      */
-    val letExpression get() = findChildByType<CjLetExpression>(CjNodeTypes.LET_EXPRESSION)
+    val letExpression: CjLetExpression?
+        get() = condition as? CjLetExpression
 
     /**
      * 保存 `leftParenthesis`，供仓颉 PSI流程读取节点结构或语义信息。

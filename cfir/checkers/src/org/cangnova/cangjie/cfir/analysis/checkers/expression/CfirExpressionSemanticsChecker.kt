@@ -44,6 +44,7 @@ import org.cangnova.cangjie.cfir.diagnostic.ConeCommandHandleTypeError
 import org.cangnova.cangjie.cfir.diagnostic.ConeCommandIncompatibleTypeError
 import org.cangnova.cangjie.cfir.diagnostic.ConeDiagnosticWithSingleCandidate
 import org.cangnova.cangjie.cfir.diagnostic.ConeMismatchingHandleBlockError
+import org.cangnova.cangjie.cfir.diagnostic.ConeTypeMismatchError
 import org.cangnova.cangjie.cfir.diagnostics.*
 import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.references.CfirErrorNamedReference
@@ -155,8 +156,10 @@ object CfirExpressionWithErrorTypeChecker : CfirBasicExpressionChecker() {
             if (calleeReference is CfirSuperReference && calleeReference.superTypeRef is CfirErrorTypeRef) return
             if (calleeReference is CfirResolvedNamedReference) {
                 val symbol = calleeReference.resolvedSymbol as? CfirCallableSymbol<*>
-                if (symbol?.resolvedReturnTypeRef is CfirErrorTypeRef) return
-                if (symbol?.resolvedReturnType?.contains { it is ConeErrorType && it.diagnostic == type.diagnostic } == true) return
+                val returnTypeRef = symbol?.cfir?.returnTypeRef
+                if (returnTypeRef is CfirErrorTypeRef) return
+                val returnType = (returnTypeRef as? CfirResolvedTypeRef)?.coneType
+                if (returnType?.contains { it is ConeErrorType && it.diagnostic == type.diagnostic } == true) return
             }
         }
         if (expression is CfirThisReceiverExpression && expression.calleeReference.diagnostic != null) return
@@ -178,6 +181,12 @@ object CfirExpressionWithErrorTypeChecker : CfirBasicExpressionChecker() {
                     else -> {}
                 }
             }
+            if (
+                diagnostic.unwrapUnreportedDuplicateDiagnostic() is ConeTypeMismatchError &&
+                expression.isReturnedExpressionRoot(context)
+            ) {
+                return
+            }
             val diagnosticSource = when {
                 expression is CfirPerformExpression && diagnostic is ConeCommandIncompatibleTypeError ->
                     expression.expression.source ?: source
@@ -194,6 +203,31 @@ object CfirExpressionWithErrorTypeChecker : CfirBasicExpressionChecker() {
         }
     }
 }
+
+/**
+ * 判断当前错误表达式是否正是 `return expr` 的返回值根表达式。
+ *
+ * 返回值根上的通用类型不匹配应交给 [CfirReturnTypeMismatchChecker] 统一分类为
+ * RETURN_TYPE_MISMATCH；return 内部更深层的实参/接收者错误仍保留原有诊断入口。
+ */
+private fun CfirExpression.isReturnedExpressionRoot(context: CheckerContext): Boolean {
+    val returnExpression = context.containingStatements
+        .asReversed()
+        .filterIsInstance<CfirReturnExpression>()
+        .firstOrNull()
+        ?: return false
+    return returnExpression.result.unwrapWrappedExpression() === this.unwrapWrappedExpression()
+}
+
+/** 去掉 CFIR wrapped expression，取得实际表达式根。 */
+private tailrec fun CfirExpression.unwrapWrappedExpression(): CfirExpression = when (this) {
+    is CfirWrappedExpression -> expression.unwrapWrappedExpression()
+    else -> this
+}
+
+/** 解开用于去重占位的诊断包装，返回真正需要比较和分类的原始诊断。 */
+private fun ConeDiagnostic.unwrapUnreportedDuplicateDiagnostic(): ConeDiagnostic =
+    (this as? ConeUnreportedDuplicateDiagnostic)?.original ?: this
 
 /**
  * mut 函数引用限制

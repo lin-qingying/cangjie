@@ -40,5 +40,6 @@ class CjWhileExpression(node: ASTNode) : CjWhileExpressionBase(node), CjPatternE
     /**
      * 保存 `letExpression`，供仓颉 PSI流程读取节点结构或语义信息。
      */
-    val letExpression get() = findChildByType<CjLetExpression>(CjNodeTypes.LET_EXPRESSION)
+    val letExpression: CjLetExpression?
+        get() = condition as? CjLetExpression
 }

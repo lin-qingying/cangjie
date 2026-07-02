@@ -4,15 +4,19 @@ import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.analysis.checkers.CfirExtendSemantics
 import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.hasUninferredOmittedLambdaParameterType
 import org.cangnova.cangjie.cfir.analysis.checkers.isTypeParameterWithInvalidDeclaredUpperBoundsInCurrentContext
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.isInvalidPrimitiveCompoundAssignmentCall
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.analysis.diagnostics.toCfirDiagnostics
+import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
+import org.cangnova.cangjie.cfir.declarations.hasLambdaParameterShapeDiagnostic
+import org.cangnova.cangjie.cfir.declarations.lambdaParameterShapeExpectedFunctionType
 import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.PendingDiagnosticReporter
@@ -24,7 +28,9 @@ import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCallOrigin
 import org.cangnova.cangjie.cfir.expressions.CfirNamedAccessExpression
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
+import org.cangnova.cangjie.cfir.expressions.CfirReturnExpression
 import org.cangnova.cangjie.cfir.expressions.CfirSuperReceiverExpression
+import org.cangnova.cangjie.cfir.expressions.CfirWrappedExpression
 import org.cangnova.cangjie.cfir.references.CfirErrorReference
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.CfirReference
@@ -40,13 +46,16 @@ import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.diagnostic.ConeAmbiguityError
 import org.cangnova.cangjie.cfir.diagnostic.ConeCannotInferValueParameterType
+import org.cangnova.cangjie.cfir.diagnostic.ConeConstraintSystemHasContradiction
 import org.cangnova.cangjie.cfir.diagnostic.ConeDiagnosticWithSingleCandidate
 import org.cangnova.cangjie.cfir.diagnostic.ConeGenericTypeArgumentNotMatchConstraintError
 import org.cangnova.cangjie.cfir.diagnostic.ConeNoMatchingInvokeOperatorError
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
+import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
 import org.cangnova.cangjie.cfir.diagnostic.ConeInapplicableCandidateError
+import org.cangnova.cangjie.cfir.diagnostic.ConeTypeMismatchError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedNameError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedReferenceError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedSymbolError
@@ -229,14 +238,9 @@ class ErrorNodeDiagnosticCollectorComponent(
             return
         }
         if (diagnostic.isUnresolvedCascadeAfterFailedImport(context)) return
-        if (
-            diagnostic is ConeAmbiguityError &&
-            diagnostic.isFunctionCandidateAmbiguity() &&
-            reference.isCompositionRightOperandFunctionReference(context)
-        ) {
-            return
-        }
-
+        if (diagnostic.unwrapUnreportedDuplicateDiagnostic() is ConeTypeMismatchError &&
+            context.isReturnResultElement(callOrAssignment)
+        ) return
         // 注解项上的 unresolved 已由其类型引用报告，保持与 Kotlin FIR 的去重位置一致。
         if (source?.elementType == CjNodeTypes.ANNOTATION && diagnostic is ConeUnresolvedNameError) return
         // Already reported in FirConventionFunctionCallChecker
@@ -275,33 +279,6 @@ class ErrorNodeDiagnosticCollectorComponent(
             callOrAssignment.qualifiedAmbiguitySource(reference, diagnostic),
         )
     }
-
-    /**
-     * 官方 `ChkFlowExpr` 会把 composition 右操作数标记为 flow 函数引用语境。
-     * 在该语境中重载函数引用由外层 `composition(f, g)` 解析决定，不再作为普通引用独立报告歧义。
-     */
-    private fun CfirReference.isCompositionRightOperandFunctionReference(context: CheckerContext): Boolean =
-        context.callsOrAssignments.asReversed().any { it.isCompositionCallRightArgument(this) } ||
-            context.containingElements.asReversed().any { it.isCompositionCallRightArgument(this) }
-
-    /**
-     * 判断当前节点是否是 `f ~> g` 解糖得到的 core intrinsic `composition(f, g)`，
-     * 且给定引用来自第二个实参 `g`。
-     */
-    private fun CfirElement.isCompositionCallRightArgument(reference: CfirReference): Boolean {
-        val call = this as? CfirFunctionCall ?: return false
-        if (call.origin != CfirFunctionCallOrigin.CompilerCoreIntrinsic) return false
-        val calleeName = (call.calleeReference as? CfirNamedReference)?.name?.asString()
-        if (calleeName != "composition") return false
-        return call.argumentList.arguments.getOrNull(1)?.toReferenceOrNull() == reference
-    }
-
-    /**
-     * flow 函数引用语境只抑制函数候选之间的歧义；普通值/类型歧义仍必须按原位置报告。
-     */
-    private fun ConeAmbiguityError.isFunctionCandidateAmbiguity(): Boolean =
-        candidateSymbols.isNotEmpty() &&
-            candidateSymbols.all { symbol -> symbol.takeIf { it.isBound }?.cfir is CfirFunction }
 
     /**
      * qualified access 的歧义诊断应标完整访问表达式，例如 `Int64.test`，而不是只标 selector。
@@ -397,6 +374,9 @@ class ErrorNodeDiagnosticCollectorComponent(
         // 数组访问名称引用的 unresolved 错误交由 ArrayAccessChecker 负责。
         if (source.kind == CjFakeSourceElementKind.ArrayAccessNameReference && diagnostic is ConeUnresolvedNameError) return
         if (diagnostic.isUnresolvedCascadeAfterFailedImport(context)) return
+        if (diagnostic.unwrapUnreportedDuplicateDiagnostic() is ConeTypeMismatchError &&
+            (context.isReturnResultSource(source) || context.isReturnResultSource(callOrAssignmentSource))
+        ) return
         if (diagnostic is ConeGenericTypeArgumentNotMatchConstraintError) {
             val containingExtend = context.findClosestDeclaration<CfirExtend>()
             if (
@@ -565,6 +545,66 @@ class ErrorNodeDiagnosticCollectorComponent(
     private fun CjSourceElement.contains(other: CjSourceElement): Boolean =
         startOffset <= other.startOffset && other.endOffset <= endOffset
 
+    /**
+     * 判断当前 source 是否对应 `return expr` 的返回值根表达式。
+     *
+     * 根表达式上的通用类型不匹配由 `CfirReturnTypeMismatchChecker` 统一分类为
+     * RETURN_TYPE_MISMATCH。构造器/调用的错误引用 source 可能只覆盖 callee，
+     * 因此允许 source 从返回值根起点开始且不越过根表达式；return 内部更深层的
+     * 实参/接收者错误不能被这里吞掉。
+     */
+    private fun CheckerContext.isReturnResultSource(source: CjSourceElement?): Boolean {
+        if (source == null) return false
+        val returnExpression = closestReturnExpressionOrNull() ?: return false
+        val resultSource = returnExpression.result.source as? CjSourceElement ?: return false
+        return source.startOffset == resultSource.startOffset &&
+            source.endOffset <= resultSource.endOffset
+    }
+
+    /**
+     * LightTree 路径没有可靠 PSI 父链，类型不匹配映射需要由 checker 栈显式提供
+     * `return expr` 的 expr source，才能把根表达式 mismatch 分类为 RETURN_TYPE_MISMATCH。
+     */
+    private fun CheckerContext.returnExpressionSourceForTypeMismatch(
+        source: CjSourceElement?,
+        callOrAssignmentSource: CjSourceElement?,
+    ): AbstractCjSourceElement? {
+        if (!isReturnResultSource(source) && !isReturnResultSource(callOrAssignmentSource)) return null
+        val returnExpression = closestReturnExpressionOrNull() ?: return null
+        return returnExpression.result.source as? AbstractCjSourceElement
+    }
+
+    /**
+     * 判断错误引用所属的调用/访问节点是否正是 `return expr` 的返回值根表达式。
+     *
+     * 构造器调用等场景中错误引用 source 只覆盖 callee（例如 `B<Int64>`），而返回值
+     * 根表达式 source 覆盖整个调用（例如 `B<Int64>()`）。因此不能只比较引用 source，
+     * 必须按宿主 CFIR 节点判断。
+     */
+    private fun CheckerContext.isReturnResultElement(element: CfirElement?): Boolean {
+        val expression = element as? CfirExpression ?: return false
+        val returnExpression = closestReturnExpressionOrNull() ?: return false
+        val returnResult = returnExpression.result.unwrapWrappedExpression()
+        val owner = expression.unwrapWrappedExpression()
+        if (owner === returnResult) return true
+
+        val ownerSource = owner.source as? CjSourceElement ?: return false
+        val resultSource = returnResult.source as? CjSourceElement ?: return false
+        return ownerSource.startOffset == resultSource.startOffset &&
+            ownerSource.endOffset == resultSource.endOffset
+    }
+
+    /** 从当前 checker 遍历栈中取得最近的 return 表达式。 */
+    private fun CheckerContext.closestReturnExpressionOrNull(): CfirReturnExpression? =
+        containingStatements.asReversed().filterIsInstance<CfirReturnExpression>().firstOrNull()
+            ?: containingElements.asReversed().filterIsInstance<CfirReturnExpression>().firstOrNull()
+
+    /** 去掉 CFIR wrapped expression，取得实际表达式根。 */
+    private tailrec fun CfirExpression.unwrapWrappedExpression(): CfirExpression = when (this) {
+        is CfirWrappedExpression -> expression.unwrapWrappedExpression()
+        else -> this
+    }
+
     // ── 内部数据类 ────────────────────────────────────────────────────────────
 
     /**
@@ -600,7 +640,10 @@ class ErrorNodeDiagnosticCollectorComponent(
         valueParameter: CfirValueParameter? = null
 
     ) {
+        if (diagnostic.isLambdaParameterInferenceCoveredByShapeDiagnostic(source, context)) return
         if (diagnostic.isUnmappedCallArgumentLambdaParameterDiagnostic(source, context)) return
+        if (diagnostic.isLambdaBodyCascadeFromUninferredLambdaParameter(source, context)) return
+        if (diagnostic.unwrapUnreportedDuplicateDiagnostic() is ConeTypeMismatchError && context.isReturnResultSource(source)) return
         reportCfirDiagnostic(
             diagnostic = diagnostic,
             source = source,
@@ -609,6 +652,7 @@ class ErrorNodeDiagnosticCollectorComponent(
             reporter = reporter,
             callOrAssignmentSource = callOrAssignmentSource,
             valueParameter = valueParameter,
+            returnExpressionSource = context.returnExpressionSourceForTypeMismatch(source, callOrAssignmentSource),
         )
     }
 
@@ -658,6 +702,7 @@ class ErrorNodeDiagnosticCollectorComponent(
             reporter: DiagnosticReporter,
             callOrAssignmentSource: CjSourceElement? = null,
             valueParameter: CfirValueParameter? = null,
+            returnExpressionSource: AbstractCjSourceElement? = null,
         ) {
             // 抑制规则 1：委托属性访问器的 unresolved/ambiguous/inapplicable 错误
             // 由 DelegatedPropertyChecker 处理。
@@ -694,10 +739,81 @@ class ErrorNodeDiagnosticCollectorComponent(
                 return
             }
 
+            if (diagnostic.isLambdaBodyCascadeFromUninferredLambdaParameter(source, context)) {
+                return
+            }
+            if (diagnostic.isLambdaParameterInferenceCoveredByShapeDiagnostic(source, context)) {
+                return
+            }
+
             // 将 ConeDiagnostic 转换为具体的 CFIR 诊断列表并逐一提交。
-            for (coneDiagnostic in diagnostic.toCfirDiagnostics(session, source, callOrAssignmentSource, valueParameter)) {
+            for (coneDiagnostic in diagnostic.toCfirDiagnostics(
+                session,
+                source,
+                callOrAssignmentSource,
+                valueParameter,
+                returnExpressionSource,
+            )) {
                 reporter.report(coneDiagnostic, context)
             }
         }
     }
 }
+
+/**
+ * 官方 lambda 参数推断失败时只报告首个省略参数，body 内由该 placeholder
+ * 派生的调用/运算符候选错误不继续扩散。
+ */
+private fun ConeDiagnostic.isLambdaBodyCascadeFromUninferredLambdaParameter(
+    source: CjSourceElement?,
+    context: CheckerContext,
+): Boolean {
+    if (source == null) return false
+    if (this is ConeCannotInferValueParameterType) return false
+    if (!isLambdaBodyCascadeDiagnostic()) return false
+
+    val lambda = context.findClosestDeclaration<CfirAnonymousFunction>() ?: return false
+    if (!lambda.isLambda || !lambda.hasExplicitParameterList) return false
+    if (!lambda.hasUninferredOmittedLambdaParameterType()) return false
+    if (lambda.valueParameters.any { parameter -> parameter.source?.containsSource(source) == true }) return false
+
+    return true
+}
+
+/**
+ * Lambda 头部已经按目标函数类型产生形状错误时，省略参数的推断失败不再单独报告。
+ */
+private fun ConeDiagnostic.isLambdaParameterInferenceCoveredByShapeDiagnostic(
+    source: CjSourceElement?,
+    context: CheckerContext,
+): Boolean {
+    if (this !is ConeCannotInferValueParameterType || source == null) return false
+    val lambda = context.findClosestDeclaration<CfirAnonymousFunction>() ?: return false
+    if (!lambda.isLambda || !lambda.hasExplicitParameterList) return false
+    if (lambda.valueParameters.none { parameter -> parameter.source?.containsSource(source) == true }) return false
+    if (lambda.hasLambdaParameterShapeDiagnostic == true) return true
+
+    val expectedFunctionType = lambda.lambdaParameterShapeExpectedFunctionType
+        ?: lambda.matchingParameterFunctionType as? ConeFunctionType
+        ?: return false
+    return lambda.valueParameters.size != expectedFunctionType.parameterTypes.size
+}
+
+private fun ConeDiagnostic.isLambdaBodyCascadeDiagnostic(): Boolean =
+    when (unwrapUnreportedDuplicateDiagnosticForLambdaCascade()) {
+        is ConeAmbiguityError,
+        is ConeConstraintSystemHasContradiction,
+        is ConeInapplicableCandidateError,
+        is ConeNoMatchingInvokeOperatorError,
+        is ConeTypeMismatchError,
+        is ConeUnresolvedNameError,
+        is ConeUnresolvedReferenceError,
+        is ConeUnresolvedSymbolError -> true
+        else -> false
+    }
+
+private fun ConeDiagnostic.unwrapUnreportedDuplicateDiagnosticForLambdaCascade(): ConeDiagnostic =
+    (this as? ConeUnreportedDuplicateDiagnostic)?.original ?: this
+
+private fun CjSourceElement.containsSource(other: CjSourceElement): Boolean =
+    startOffset <= other.startOffset && other.endOffset <= endOffset

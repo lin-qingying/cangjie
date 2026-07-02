@@ -606,6 +606,7 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
      *
      * 支持带参数的构造器（ADT 风格）。
      * isRefEnum 区分值枚举（EnumTy）和引用枚举（RefEnumTy）。
+     * isNonExhaustive 保存 enum body 中的 `...`，作为 match 穷尽性判断的声明级语义。
      */
     val enumDeclaration: Element by element(Declaration, name = "Enum") {
         parent(classLikeDeclaration)
@@ -617,6 +618,7 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
         +FieldSets.declarations
         +field("name", nameType)
         +field("isRefEnum", booleanType)
+        +field("isNonExhaustive", booleanType)
     }
 
     /**

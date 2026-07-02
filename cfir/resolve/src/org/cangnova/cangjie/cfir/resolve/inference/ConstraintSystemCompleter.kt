@@ -462,6 +462,17 @@ class ConstraintSystemCompleter(
         fun ConeTypeVariable?.toTypeConstructor(): TypeConstructorMarker? =
             this?.typeConstructor?.takeIf { it in notFixedTypeVariables.keys }
 
+        fun ConeCangJieType.collectInputTypeVariables() {
+            typeConstructor()
+                ?.takeIf { it in notFixedTypeVariables }
+                ?.let(result::add)
+            for (constructor in extractTypeVariables()) {
+                if (constructor in notFixedTypeVariables) {
+                    result.add(constructor)
+                }
+            }
+        }
+
         fun PostponedAtomWithRevisableExpectedType.collectNotFixedVariables() {
             val revisedExpectedType = revisedExpectedType as? ConeCangJieType ?: return
             for (typeArgument in revisedExpectedType.typeArguments) {
@@ -488,17 +499,25 @@ class ConstraintSystemCompleter(
                     candidate.freshVariables.mapNotNullTo(result) { typeVariable ->
                         typeVariable.toTypeConstructor()
                     }
+                    candidate.additionalCompletionVariables.filterTo(result) { typeConstructor ->
+                        typeConstructor in notFixedTypeVariables
+                    }
                 }
             ) { postponedAtom ->
                 when (postponedAtom) {
                     is ConeResolvedLambdaAtom -> {
                         result.addIfNotNull(postponedAtom.typeVariableForLambdaReturnType.toTypeConstructor())
+                        postponedAtom.inputTypes.forEach { inputType ->
+                            inputType.collectInputTypeVariables()
+                        }
                     }
                     is ConeLambdaWithTypeVariableAsExpectedTypeAtom -> {
                         postponedAtom.collectNotFixedVariables()
                     }
                     is ConeResolvedCallableReferenceAtom -> {
-                        postponedAtom.collectNotFixedVariables()
+                        if (postponedAtom.needsResolution) {
+                            postponedAtom.collectNotFixedVariables()
+                        }
                     }
                     is ConeSimpleNameForContextSensitiveResolution,
                     is ConeContextSensitiveAlternativeForQualifierAtom -> {
@@ -596,6 +615,15 @@ class ConstraintSystemCompleter(
             typeVariable: TypeVariableMarker,
             topLevelAtoms: List<ConeResolutionAtom>,
         ): CfirStatement? {
+            val typeConstructor = (typeVariable as? ConeTypeVariable)?.typeConstructor
+
+            fun ConeCangJieType.containsTypeConstructor(constructor: TypeConstructorMarker): Boolean {
+                if (this is ConeTypeVariableType && this.typeConstructor == constructor) return true
+                return typeArguments.any { typeProjection ->
+                    typeProjection.type.containsTypeConstructor(constructor)
+                }
+            }
+
             fun ConeResolutionAtom.findFirstStatementContainingVariable(): CfirStatement? {
                 var result: CfirStatement? = null
 
@@ -615,6 +643,14 @@ class ConstraintSystemCompleter(
                         if (postponedAtom is ConeResolvedLambdaAtom) {
                             if (postponedAtom.typeVariableForLambdaReturnType == typeVariable) {
                                 suggestElement(postponedAtom.anonymousFunction)
+                            } else if (typeConstructor != null) {
+                                postponedAtom.inputTypes.forEachIndexed { index, inputType ->
+                                    if (inputType.containsTypeConstructor(typeConstructor)) {
+                                        postponedAtom.anonymousFunction.valueParameters
+                                            .getOrNull(index)
+                                            ?.let(::suggestElement)
+                                    }
+                                }
                             }
                         }
                     }
