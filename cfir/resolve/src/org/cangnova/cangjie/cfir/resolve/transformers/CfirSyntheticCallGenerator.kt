@@ -32,6 +32,7 @@ import org.cangnova.cangjie.cfir.declarations.DEFAULT_STATUS_FOR_STATUSLESS_DECL
 import org.cangnova.cangjie.cfir.declarations.builder.buildNamedFunction
 import org.cangnova.cangjie.cfir.declarations.builder.buildValueParameter
 import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
+import org.cangnova.cangjie.cfir.declarations.lambdaParameterShapeExpectedFunctionType
 import org.cangnova.cangjie.cfir.diagnostic.ConeInapplicableCandidateError
 import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
@@ -40,6 +41,7 @@ import org.cangnova.cangjie.cfir.expressions.builder.buildFunctionCall
 import org.cangnova.cangjie.cfir.resolve.ResolutionMode
 import org.cangnova.cangjie.cfir.resolve.CfirLocalLambdaInitializerInferenceData
 import org.cangnova.cangjie.cfir.resolve.CfirResolutionSnapshot
+import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.resolve.body.CfirAbstractBodyResolveTransformer
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallInfo
@@ -54,6 +56,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
 import org.cangnova.cangjie.cfir.types.ConeAnyType
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.types.ConeTypeVariableType
 import org.cangnova.cangjie.cfir.types.asCone
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
@@ -98,6 +101,11 @@ class CfirSyntheticCallGenerator(
         val parameterType = expectedTypeData?.expectedType
             ?.takeUnless { it.isUnitOrAny() }
             ?: ConeAnyType
+        parameterType.functionTypeForLambdaShape()?.let { expectedFunctionType ->
+            val anonymousFunction = anonymousFunctionExpression.anonymousFunction
+            anonymousFunction.lambdaParameterShapeExpectedFunctionType = expectedFunctionType
+            anonymousFunction.replaceMatchingParameterFunctionType(expectedFunctionType)
+        }
         val reference = generateCalleeReferenceToFunctionWithSingleParameterOfSpecifiedType(
             callSite = anonymousFunctionExpression,
             argument = anonymousFunctionExpression,
@@ -297,6 +305,11 @@ class CfirSyntheticCallGenerator(
     /** 判断类型是否为 Unit 或 Any，作为 synthetic 参数类型时无需保留具体期望类型。 */
     private fun ConeCangJieType.isUnitOrAny(): Boolean =
         this == ConeAnyType || with(session.typeContext) { this@isUnitOrAny.isUnit() }
+
+    /** 取得 lambda 头部诊断可使用的目标函数类型。 */
+    private fun ConeCangJieType.functionTypeForLambdaShape(): ConeFunctionType? =
+        this as? ConeFunctionType
+            ?: fullyExpandedType(session) as? ConeFunctionType
 
     private companion object {
         val SYNTHETIC_ACCEPT_SPECIFIC_TYPE_NAME: Name = Name.special("<synthetic-accept-specific-type>")

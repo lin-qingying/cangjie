@@ -37,6 +37,7 @@ object CommonExpressionCheckers : ExpressionCheckers() {
             CfirSpawnSemanticsChecker,
             CfirExpressionWithErrorTypeChecker,
             CfirFunctionBodyTypeMismatchChecker,
+            CfirVariableLambdaInitializerTypeMismatchChecker,
             org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirFinalizerThisUsageChecker,
             org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirOpenConstructorThisUsageChecker,
             org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirStaticContextThisUsageChecker,

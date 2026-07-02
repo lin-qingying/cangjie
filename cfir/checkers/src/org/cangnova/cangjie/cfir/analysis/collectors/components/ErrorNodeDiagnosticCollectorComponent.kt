@@ -6,6 +6,7 @@ import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaratio
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.hasUninferredOmittedLambdaParameterType
 import org.cangnova.cangjie.cfir.analysis.checkers.isTypeParameterWithInvalidDeclaredUpperBoundsInCurrentContext
+import org.cangnova.cangjie.cfir.analysis.checkers.lambdaExpectedFunctionType
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.isInvalidPrimitiveCompoundAssignmentCall
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.analysis.diagnostics.toCfirDiagnostics
@@ -16,7 +17,6 @@ import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.declarations.hasLambdaParameterShapeDiagnostic
-import org.cangnova.cangjie.cfir.declarations.lambdaParameterShapeExpectedFunctionType
 import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.PendingDiagnosticReporter
@@ -52,7 +52,6 @@ import org.cangnova.cangjie.cfir.diagnostic.ConeGenericTypeArgumentNotMatchConst
 import org.cangnova.cangjie.cfir.diagnostic.ConeNoMatchingInvokeOperatorError
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
-import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
 import org.cangnova.cangjie.cfir.diagnostic.ConeInapplicableCandidateError
 import org.cangnova.cangjie.cfir.diagnostic.ConeTypeMismatchError
@@ -793,8 +792,7 @@ private fun ConeDiagnostic.isLambdaParameterInferenceCoveredByShapeDiagnostic(
     if (lambda.valueParameters.none { parameter -> parameter.source?.containsSource(source) == true }) return false
     if (lambda.hasLambdaParameterShapeDiagnostic == true) return true
 
-    val expectedFunctionType = lambda.lambdaParameterShapeExpectedFunctionType
-        ?: lambda.matchingParameterFunctionType as? ConeFunctionType
+    val expectedFunctionType = lambda.lambdaExpectedFunctionType(context)
         ?: return false
     return lambda.valueParameters.size != expectedFunctionType.parameterTypes.size
 }

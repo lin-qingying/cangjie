@@ -5,8 +5,8 @@ import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
-import org.cangnova.cangjie.cfir.declarations.hasLambdaParameterShapeDiagnostic
 import org.cangnova.cangjie.cfir.declarations.isLambdaParameterTypeOmitted
+import org.cangnova.cangjie.cfir.declarations.lambdaParameterShapeExpectedFunctionType
 import org.cangnova.cangjie.cfir.diagnostic.AmbiguousArgumentType
 import org.cangnova.cangjie.cfir.diagnostic.ArgumentTypeMismatch
 import org.cangnova.cangjie.cfir.diagnostic.InapplicableWrongReceiver
@@ -56,7 +56,6 @@ import org.cangnova.cangjie.cfir.types.ConeTupleType
 import org.cangnova.cangjie.cfir.types.ConeUnreportedDuplicateDiagnostic
 import org.cangnova.cangjie.cfir.types.ConeVArrayType
 import org.cangnova.cangjie.cfir.types.IdealTypeResolver
-import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
 import org.cangnova.cangjie.cfir.types.arrayLiteralElementType
 import org.cangnova.cangjie.cfir.types.asCone
 import org.cangnova.cangjie.cfir.types.expandedClassIdOrPrimitiveClassId
@@ -73,6 +72,7 @@ import org.cangnova.cangjie.resolve.calls.inference.components.PostponedArgument
 import org.cangnova.cangjie.resolve.calls.inference.model.ArgumentConstraintPosition
 import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintKind
 import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintPosition
+import org.cangnova.cangjie.source.CjFakeSourceElementKind
 import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.type.AbstractTypeChecker
 
@@ -786,7 +786,7 @@ internal object ArgumentCheckingProcessor {
         val shapeDiagnostic = expectedFunctionType
             ?.let { lambdaParameterShapeDiagnostic(anonymousFunction, it, declaredParameterTypes) }
         if (shapeDiagnostic != null) {
-            anonymousFunction.hasLambdaParameterShapeDiagnostic = true
+            anonymousFunction.lambdaParameterShapeExpectedFunctionType = expectedFunctionType
         }
         val parameterTypes = if (shapeDiagnostic is LambdaParameterTypeMismatch) {
             declaredParameterTypes.mapIndexed { index, declaredType ->
@@ -905,7 +905,8 @@ internal object ArgumentCheckingProcessor {
 
     /** 源码中是否省略了 lambda 参数类型。 */
     private fun CfirValueParameter.hasOmittedLambdaParameterType(): Boolean =
-        isLambdaParameterTypeOmitted == true || returnTypeRef is CfirImplicitTypeRef
+        isLambdaParameterTypeOmitted == true ||
+                returnTypeRef.source?.kind == CjFakeSourceElementKind.ImplicitReturnTypeOfLambdaValueParameter
 
     /**
      * Lambda 参数按函数类型参数逆变检查；官方这里不做自动装箱。
@@ -915,7 +916,15 @@ internal object ArgumentCheckingProcessor {
         actualType: ConeCangJieType,
     ): Boolean {
         if (expectedType is ConeErrorType || actualType is ConeErrorType) return true
-        return AbstractTypeChecker.isSubtypeOf(session.typeContext, expectedType, actualType)
+        val expectedFunctionType = ConeFunctionType(
+            parameterTypes = listOf(expectedType),
+            returnType = expectedType,
+        )
+        val actualFunctionType = ConeFunctionType(
+            parameterTypes = listOf(actualType),
+            returnType = expectedType,
+        )
+        return AbstractTypeChecker.isSubtypeOf(session.typeContext, actualFunctionType, expectedFunctionType)
     }
 
     /**
