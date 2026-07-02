@@ -15,6 +15,8 @@ import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirNamedReferenceWithC
 import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeVariableForLambdaReturnType
 import org.cangnova.cangjie.cfir.semantics.AbstractConeResolutionAtom
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.ConeFunctionType
+import org.cangnova.cangjie.cfir.types.asCone
 import org.cangnova.cangjie.resolve.calls.model.LambdaWithTypeVariableAsExpectedTypeMarker
 import org.cangnova.cangjie.resolve.calls.model.PostponedAtomWithRevisableExpectedType
 import org.cangnova.cangjie.resolve.calls.model.PostponedCallableReferenceMarker
@@ -329,21 +331,64 @@ class ConeResolvedCallableReferenceAtom(
     /** callable reference 表达式。 */
     override val expression: CfirExpression,
     /** callable reference 的上下文期望类型。 */
-    override val expectedType: ConeCangJieType?,
+    expectedType: ConeCangJieType?,
 ) : ConePostponedAtomWithRevisableExpectedType(), PostponedCallableReferenceMarker {
-    /** callable reference 不直接提供输入类型。 */
-    override val inputTypes: Collection<ConeCangJieType> = emptyList()
-    /** callable reference 的结果类型在单独字段中记录。 */
-    override val outputType: ConeCangJieType? = null
+    /** 首轮 eager 解析获得的原始期望类型。 */
+    private val initialExpectedType: ConeCangJieType? = expectedType
+
+    /**
+     * callable reference 的解析状态。
+     *
+     * 首轮 eager 解析遇到重载歧义时不能直接判定外层候选失败；需要等待外层约束
+     * 把期望函数类型的参数/返回类型固定后，再在 completion 阶段重试。
+     */
+    enum class State(val needsResolution: Boolean) {
+        NOT_RESOLVED_YET(needsResolution = true),
+        POSTPONED_BECAUSE_OF_AMBIGUITY(needsResolution = true),
+        RESOLVED(needsResolution = false),
+    }
+
+    /** 当前 callable reference 解析状态。 */
+    var state: State = State.NOT_RESOLVED_YET
+        internal set
+
+    /** 是否仍需调用解析器完成重载选择。 */
+    override val needsResolution: Boolean
+        get() = state.needsResolution
+
+    /** callable reference 在 completion 前暴露的输入类型。 */
+    override val inputTypes: Collection<ConeCangJieType>
+        get() {
+            if (state == State.NOT_RESOLVED_YET) return emptyList()
+            val expectedFunctionType = expectedType as? ConeFunctionType
+            return expectedFunctionType?.parameterTypes ?: listOfNotNull(expectedType)
+        }
+
+    /** callable reference 在 completion 后可细化的输出类型。 */
+    override val outputType: ConeCangJieType?
+        get() {
+            if (state == State.NOT_RESOLVED_YET) return null
+            return (expectedType as? ConeFunctionType)?.returnType
+        }
+
+    /** callable reference 当前期望类型，歧义推迟后优先使用 completion 修订出的函数类型。 */
+    override val expectedType: ConeCangJieType?
+        get() = if (!isPostponedBecauseOfAmbiguity) {
+            initialExpectedType
+        } else {
+            revisedExpectedType?.asCone() ?: initialExpectedType
+        }
+
     /** callable reference 解析完成后得到的函数类型。 */
     var resultingTypeForCallableReference: ConeCangJieType? = null
         internal set
     /** 标记该 callable reference 是否因候选歧义而推迟解析。 */
-    var isPostponedBecauseOfAmbiguity: Boolean = false
-        internal set
+    val isPostponedBecauseOfAmbiguity: Boolean
+        get() = state == State.POSTPONED_BECAUSE_OF_AMBIGUITY
 
     /** 约束系统修订后的期望类型。 */
     override var revisedExpectedType: CangJieTypeMarker? = null
+        get() = if (isPostponedBecauseOfAmbiguity) field else expectedType
         private set
 
     /**
@@ -351,6 +396,18 @@ class ConeResolvedCallableReferenceAtom(
      */
     override fun reviseExpectedType(expectedType: CangJieTypeMarker) {
         revisedExpectedType = expectedType
+    }
+
+    /** 将首轮重载歧义记录为等待 completion 的 postponed 状态。 */
+    fun postponeBecauseOfAmbiguity() {
+        check(state != State.RESOLVED) { "Resolved callable reference cannot be postponed again" }
+        state = State.POSTPONED_BECAUSE_OF_AMBIGUITY
+    }
+
+    /** 标记 callable reference 已经完成最终解析。 */
+    fun markResolved() {
+        state = State.RESOLVED
+        analyzed = true
     }
 }
 

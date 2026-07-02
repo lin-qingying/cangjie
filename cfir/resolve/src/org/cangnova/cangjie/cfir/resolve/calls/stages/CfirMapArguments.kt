@@ -175,6 +175,11 @@ object CfirMapArguments : ResolutionStage() {
             val argumentName = argument.name
             if (argumentName != null) {
                 seenNamedArgument = true
+                if (parameters.isEmpty()) {
+                    diagnostics += TooManyArguments(argument.atom.expression, candidate.callInfo.name)
+                    hasUnmappedNamedArgumentError = true
+                    continue
+                }
                 if (isCallableValueCall) {
                     diagnostics += NamedArgumentsNotAllowed(argument.atom.expression, "variable function call")
                     hasUnmappedNamedArgumentError = true

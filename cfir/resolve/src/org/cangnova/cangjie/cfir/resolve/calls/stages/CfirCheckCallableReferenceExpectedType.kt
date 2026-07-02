@@ -8,6 +8,7 @@ import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CheckerSink
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.yieldDiagnostic
+import org.cangnova.cangjie.cfir.resolve.body.CallableReferenceResolutionResult
 import org.cangnova.cangjie.cfir.resolve.expectedType
 import org.cangnova.cangjie.cfir.resolve.inference.model.ConeArgumentConstraintPosition
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
@@ -77,11 +78,15 @@ object CfirEagerResolveOfCallableReferences : ResolutionStage() {
             .filterNot { it.analyzed }
         if (callableReferenceAtoms.isEmpty()) return
 
-        if (!context.bodyResolveComponents.callResolver.resolveCallableReferenceArguments(candidate, callableReferenceAtoms)) {
-            callableReferenceAtoms.forEach { atom ->
-                sink.reportDiagnostic(UnsuccessfulCallableReferenceArgument(atom.expression))
+        when (context.bodyResolveComponents.callResolver.resolveCallableReferenceArguments(candidate, callableReferenceAtoms)) {
+            CallableReferenceResolutionResult.RESOLVED,
+            CallableReferenceResolutionResult.POSTPONED -> return
+            CallableReferenceResolutionResult.FAILURE -> {
+                callableReferenceAtoms.forEach { atom ->
+                    sink.reportDiagnostic(UnsuccessfulCallableReferenceArgument(atom.expression))
+                }
+                sink.yieldDiagnostic(InapplicableCandidate)
             }
-            sink.yieldDiagnostic(InapplicableCandidate)
         }
     }
 }

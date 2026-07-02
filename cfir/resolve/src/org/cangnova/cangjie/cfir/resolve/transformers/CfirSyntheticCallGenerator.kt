@@ -38,6 +38,8 @@ import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.builder.buildArgumentList
 import org.cangnova.cangjie.cfir.expressions.builder.buildFunctionCall
 import org.cangnova.cangjie.cfir.resolve.ResolutionMode
+import org.cangnova.cangjie.cfir.resolve.CfirLocalLambdaInitializerInferenceData
+import org.cangnova.cangjie.cfir.resolve.CfirResolutionSnapshot
 import org.cangnova.cangjie.cfir.resolve.body.CfirAbstractBodyResolveTransformer
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallInfo
@@ -45,15 +47,24 @@ import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallKind
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CandidateFactory
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirNamedReferenceWithCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.createErrorReferenceWithExistingCandidate
+import org.cangnova.cangjie.cfir.resolve.inference.inferenceComponents
+import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.CfirPCLAInferenceSession
 import org.cangnova.cangjie.cfir.session.builtinTypes
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
 import org.cangnova.cangjie.cfir.types.ConeAnyType
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.ConeTypeVariableType
+import org.cangnova.cangjie.cfir.types.asCone
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
+import org.cangnova.cangjie.cfir.types.coneTypeOrNull
+import org.cangnova.cangjie.cfir.types.contains
+import org.cangnova.cangjie.cfir.resolve.localLambdaInitializerInferenceData
 import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.resolve.calls.inference.buildCurrentSubstitutor
+import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintStorage
 import org.cangnova.cangjie.resolve.calls.tasks.ExplicitReceiverKind
 import org.cangnova.cangjie.source.CjSourceElement
 
@@ -104,10 +115,69 @@ class CfirSyntheticCallGenerator(
         components.dataFlowAnalyzer.exitCallArguments()
         components.dataFlowAnalyzer.enterFunctionCall(fakeCall)
 
+        val preBodyResolveSnapshot = CfirResolutionSnapshot.capture(anonymousFunctionExpression)
         val resultingCall = components.callCompleter.completeCall(fakeCall, ResolutionMode.ContextIndependent)
+        if (parameterType == ConeAnyType) {
+            val inferenceData = CfirLocalLambdaInitializerInferenceData(
+                reference.candidate.system.currentStorage(),
+                anonymousFunctionExpression,
+                reference.candidate.postponedPCLACalls.toList(),
+                preBodyResolveSnapshot,
+            )
+            inferenceData.reanalyzeTopLevelLambdaBodyIfPossible(reference)
+
+            reference.candidate.system.currentStorage().takeIf { storage ->
+                storage.notFixedTypeVariables.isNotEmpty() ||
+                        anonymousFunctionExpression.hasLocalLambdaPlaceholderFrom(storage)
+            }?.let { storage ->
+                inferenceData.constraintStorage = storage
+                anonymousFunctionExpression.anonymousFunction.localLambdaInitializerInferenceData = inferenceData
+            }
+        }
 
         components.dataFlowAnalyzer.exitFunctionCall(resultingCall, callCompleted = true)
         return resultingCall.argumentList.arguments.single()
+    }
+
+    /**
+     * synthetic accept 首轮 completion 后，若 lambda 参数类型已经能从 body 约束中确定，
+     * 立即恢复首轮解析前的 body 并重算一次，清除同一 body 内早期成员访问/操作符解析留下的旧错误。
+     */
+    private fun CfirLocalLambdaInitializerInferenceData.reanalyzeTopLevelLambdaBodyIfPossible(
+        reference: CfirNamedReferenceWithCandidate,
+    ) {
+        val candidate = reference.candidate
+        val storage = candidate.system.currentStorage()
+        val substitutor = storage.buildCurrentSubstitutor(session.typeContext, emptyMap()).asCone()
+        val applied = applyCompletionResult(
+            variable = null,
+            substitutor = substitutor,
+            completedStorage = storage,
+            restoreBodyResolveState = true,
+        )
+        if (!applied) return
+
+        val expression = lambdaExpression
+        val lambda = expression.anonymousFunction
+        val pclaInferenceSession = CfirPCLAInferenceSession(candidate, session.inferenceComponents)
+        components.context.withAnonymousFunctionTowerDataContext(lambda.symbol) {
+            components.context.withInferenceSession(pclaInferenceSession) {
+                components.transformer.declarationsTransformer.doTransformAnonymousFunctionBodyFromCallCompletion(
+                    expression,
+                    null,
+                )
+            }
+            pclaInferenceSession.applyResultsToMainCandidate()
+        }
+        components.context.dropContextForAnonymousFunction(lambda)
+        val completedStorage = candidate.system.currentStorage()
+        val completedSubstitutor = completedStorage.buildCurrentSubstitutor(session.typeContext, emptyMap()).asCone()
+        applyCompletionResult(
+            variable = null,
+            substitutor = completedSubstitutor,
+            completedStorage = completedStorage,
+            restoreBodyResolveState = false,
+        )
     }
 
     /** 构造接受单个指定类型参数的合成函数候选引用。 */
@@ -163,6 +233,19 @@ class CfirSyntheticCallGenerator(
         }
 
         return CfirNamedReferenceWithCandidate(source, name, candidate)
+    }
+
+    /**
+     * synthetic lambda 完成后若函数类型仍含当前约束系统里的 placeholder，
+     * 后续函数值调用必须继续持有该系统才能把实参约束导回 lambda 参数。
+     */
+    private fun CfirAnonymousFunctionExpression.hasLocalLambdaPlaceholderFrom(
+        storage: ConstraintStorage,
+    ): Boolean {
+        val functionType = coneTypeOrNull ?: anonymousFunction.typeRef.coneTypeOrNull ?: return false
+        return functionType.contains { type ->
+            type is ConeTypeVariableType && type.typeConstructor in storage.allTypeVariables
+        }
     }
 
     /** 构造合成 accept 函数的唯一值参数。 */

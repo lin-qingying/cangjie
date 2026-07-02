@@ -53,6 +53,7 @@ import org.cangnova.cangjie.cfir.semantics.ResolutionDiagnostic
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.ConeTypeVariable
 import org.cangnova.cangjie.cfir.types.ConeTypeVariableType
 import org.cangnova.cangjie.cfir.types.asCone
 import org.cangnova.cangjie.cfir.types.coneType
@@ -66,7 +67,10 @@ import org.cangnova.cangjie.resolve.calls.inference.buildCurrentSubstitutor
 import org.cangnova.cangjie.resolve.calls.inference.components.ConstraintSystemCompletionMode
 import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintStorage
 import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintSystemImpl
+import org.cangnova.cangjie.resolve.calls.inference.model.ReceiverConstraintPosition
+import org.cangnova.cangjie.type.AbstractTypeChecker
 import org.cangnova.cangjie.type.model.TypeConstructorMarker
+import org.cangnova.cangjie.type.model.TypeVariableMarker
 import org.cangnova.cangjie.util.PrivateForInline
 import java.util.EnumMap
 import java.util.IdentityHashMap
@@ -164,12 +168,34 @@ class BodyResolveContext(
     @set:PrivateForInline
     var inferenceSession: CfirInferenceSession = CfirInferenceSession.DEFAULT
 
+    /**
+     * overload-by-lambda 候选分析帧。
+     *
+     * rollback 试跑可以在候选已经失败后停止继续解析目标类型实参；最终落地分析必须保持完整解析，
+     * 以便真实选中候选仍产生普通 body resolve 诊断。
+     */
+    private data class OverloadByLambdaCandidateFrame(
+        val candidate: Candidate,
+        val shortCircuitOnFailure: Boolean,
+    )
+
     /** overload-by-lambda 解析过程中待报告诊断的候选栈。 */
-    private val overloadByLambdaCandidateStack: ArrayDeque<Candidate> = ArrayDeque()
+    private val overloadByLambdaCandidateStack: ArrayDeque<OverloadByLambdaCandidateFrame> = ArrayDeque()
 
     /** 当前是否正在解析赋值表达式右侧。 */
     @set:PrivateForInline
     var isInsideAssignmentRhs: Boolean = false
+
+    /** 当前正在解析 initializer 的局部变量栈。 */
+    private val variableInitializerStack: ArrayDeque<List<CfirVariable>> = ArrayDeque()
+
+    /** 当前正在解析 initializer 的最内层变量。 */
+    val variableBeingInitialized: CfirVariable?
+        get() = variableInitializerStack.lastOrNull()?.singleOrNull()
+
+    /** 当前正在解析 initializer 的最内层变量集合。 */
+    val variablesBeingInitialized: List<CfirVariable>
+        get() = variableInitializerStack.lastOrNull().orEmpty()
 
     /** 当前 public API inline 函数上下文。 */
     @set:PrivateForInline
@@ -192,6 +218,28 @@ class BodyResolveContext(
     /** 当前是否处于 annotation class 参数或默认值解析上下文。 */
     @set:PrivateForInline
     var isInsideAnnotationContext: Boolean = false
+
+    /** 当前是否正在预解析某个外层调用的实参表达式。 */
+    private var callArgumentResolutionDepth: Int = 0
+
+    /**
+     * 在外层调用实参预解析上下文中执行 [block]。
+     *
+     * 嵌套泛型调用在该上下文中不能过早 full completion；它需要保留子候选约束，
+     * 等外层候选形参 expected type 进入同一约束系统后再完成。
+     */
+    fun <T> withCallArgumentResolution(block: () -> T): T {
+        callArgumentResolutionDepth += 1
+        return try {
+            block()
+        } finally {
+            callArgumentResolutionDepth -= 1
+        }
+    }
+
+    /** 是否处于外层调用实参预解析过程。 */
+    val isInsideCallArgumentResolution: Boolean
+        get() = callArgumentResolutionDepth > 0
 
     // ── File entry ─────────────────────────────────────────────────────────
 
@@ -325,6 +373,31 @@ class BodyResolveContext(
             f()
         } finally {
             containers.removeLast()
+        }
+    }
+
+    /**
+     * 在局部变量 initializer 上下文内执行解析。
+     *
+     * 变量声明会先进入当前 scope 以遮蔽外层同名绑定，但 initializer 内对该变量自身的访问
+     * 不能解析为有效引用；表达式解析层据此产生 unresolved 诊断。
+     */
+    fun <T> withVariableInitializer(variable: CfirVariable, f: () -> T): T =
+        withVariableInitializer(listOf(variable), f)
+
+    /**
+     * 在一组 pattern binding 的 initializer 上下文内执行解析。
+     *
+     * `let (a, b) = ...` 这类声明会同时把多个 binding 引入当前声明作用域；initializer
+     * 中对这些名字的访问必须命中内层声明并报告 unresolved，而不是退回外层同名变量。
+     */
+    fun <T> withVariableInitializer(variables: Collection<CfirVariable>, f: () -> T): T {
+        if (variables.isEmpty()) return f()
+        variableInitializerStack.addLast(variables.toList())
+        return try {
+            f()
+        } finally {
+            variableInitializerStack.removeLast()
         }
     }
 
@@ -1041,8 +1114,12 @@ class BodyResolveContext(
      * 仓颉 overload-by-lambda 需要完整重检 lambda body；当外层候选已经因 body 约束失败后，
      * 嵌套调用继续做完整 OBL 候选试跑不会让外层候选重新成功，只会制造指数级重复分析。
      */
-    fun <T> withOverloadByLambdaCandidate(candidate: Candidate, block: () -> T): T {
-        overloadByLambdaCandidateStack.addLast(candidate)
+    fun <T> withOverloadByLambdaCandidate(
+        candidate: Candidate,
+        shortCircuitOnFailure: Boolean,
+        block: () -> T,
+    ): T {
+        overloadByLambdaCandidateStack.addLast(OverloadByLambdaCandidateFrame(candidate, shortCircuitOnFailure))
         return try {
             block()
         } finally {
@@ -1051,12 +1128,28 @@ class BodyResolveContext(
     }
 
     /** 是否仍应缩减 overload-by-lambda 候选集合。 */
-    fun shouldReduceOverloadByLambdaCandidates(): Boolean =
-        overloadByLambdaCandidateStack.lastOrNull()?.isSuccessful != false
+    fun shouldReduceOverloadByLambdaCandidates(): Boolean {
+        val frame = overloadByLambdaCandidateStack.lastOrNull() ?: return true
+        return !frame.shortCircuitOnFailure || frame.candidate.isSuccessful
+    }
+
+    /** 当前是否处于允许在首个候选失败点停止目标类型检查的 overload-by-lambda 试跑。 */
+    fun shouldShortCircuitOverloadByLambdaTargetChecks(): Boolean =
+        overloadByLambdaCandidateStack.lastOrNull()?.shortCircuitOnFailure == true
+
+    /** 当前可短路试跑候选是否已经失败。 */
+    fun hasCurrentShortCircuitableOverloadByLambdaCandidateFailure(): Boolean {
+        val frame = overloadByLambdaCandidateStack.lastOrNull() ?: return false
+        return frame.shortCircuitOnFailure && !frame.candidate.isSuccessful
+    }
+
+    /** 当前推断会话的共享约束系统是否已经出现矛盾。 */
+    fun hasCurrentInferenceSessionContradiction(): Boolean =
+        inferenceSession.hasCurrentConstraintContradiction
 
     /** 把 overload-by-lambda 试跑诊断写入当前候选。 */
     fun reportOverloadByLambdaCandidateDiagnostic(diagnostic: ResolutionDiagnostic) {
-        val candidate = overloadByLambdaCandidateStack.lastOrNull() ?: return
+        val candidate = overloadByLambdaCandidateStack.lastOrNull()?.candidate ?: return
         if (candidate.isSuccessful) {
             candidate.addDiagnostic(diagnostic)
         }
@@ -1340,6 +1433,10 @@ private object IdentitySnapshotCfirMapper : SnapshotCfirMapper {
  * 默认实现不共享约束系统；PCLA 等高级模式通过子类改写候选基础约束和 lambda 完成策略。
  */
 abstract class CfirInferenceSession {
+    /** 当前会话正在使用的约束系统是否已失败。 */
+    open val hasCurrentConstraintContradiction: Boolean
+        get() = false
+
     /** 返回指定候选应复用的基础约束存储。 */
     open fun baseConstraintStorageForCandidate(
         candidate: org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate,
@@ -1372,9 +1469,32 @@ abstract class CfirInferenceSession {
     open fun addSubtypeConstraintIfCompatible(
         lowerType: org.cangnova.cangjie.cfir.types.ConeCangJieType,
         upperType: org.cangnova.cangjie.cfir.types.ConeCangJieType,
-        system: ConstraintSystemImpl,
     ) {
     }
+
+    /** 在兼容时向指定系统添加 subtype 约束。 */
+    open fun addSubtypeConstraintIfCompatible(
+        lowerType: org.cangnova.cangjie.cfir.types.ConeCangJieType,
+        upperType: org.cangnova.cangjie.cfir.types.ConeCangJieType,
+        system: ConstraintSystemImpl,
+    ) {
+        addSubtypeConstraintIfCompatible(lowerType, upperType)
+    }
+
+    /** 在当前推断会话中注册结构化表达式推断产生的类型变量。 */
+    open fun registerInferenceVariable(variable: TypeVariableMarker) {
+    }
+
+    /**
+     * 收窄 fresh lambda receiver 的成员 owner 候选集合。
+     *
+     * 默认推断会话不维护跨表达式候选集合；PCLA 会话用它模拟官方 `TryInferFromSyntaxInfo`
+     * 中同一 lambda 参数成员候选集合的交集。
+     */
+    open fun refineFreshReceiverCandidateOwners(
+        receiverTypeConstructor: TypeConstructorMarker,
+        ownerTypes: List<ConeCangJieType>,
+    ): Set<ConeCangJieType>? = null
 
     companion object {
         /** 默认推断会话，不改变普通调用解析行为。 */
@@ -1407,6 +1527,12 @@ class CfirPCLAInferenceSession(
 ) : CfirInferenceSession() {
     /** 当前 PCLA 共享 common constraint system。 */
     private var currentCommonSystem: ConstraintSystemImpl = prepareSharedBaseSystem(outerCandidate.system, inferenceComponents)
+    /** 当前 PCLA common system 是否已经出现约束矛盾。 */
+    override val hasCurrentConstraintContradiction: Boolean
+        get() = currentCommonSystem.hasContradiction
+    /** fresh lambda receiver 对应的候选 owner 集合。 */
+    private val freshReceiverCandidateOwnersByTypeVariable =
+        linkedMapOf<TypeConstructorMarker, MutableList<ConeCangJieType>>()
 
     /** 返回当前候选应使用的共享基础约束存储。 */
     override fun baseConstraintStorageForCandidate(
@@ -1437,6 +1563,14 @@ class CfirPCLAInferenceSession(
         if (candidate?.usedOuterCs != true) return
 
         currentCommonSystem.replaceContentWith(candidate.system.currentStorage())
+        candidate.freshReceiverConstraintToDrop?.let { constraintToDrop ->
+            currentCommonSystem.removeConstraintsForVariable(constraintToDrop.receiverTypeConstructor) { constraint ->
+                val position = constraint.position.from
+                position is ReceiverConstraintPosition<*> &&
+                    position.argument === constraintToDrop.receiverExpression
+            }
+            candidate.freshReceiverConstraintToDrop = null
+        }
 
         if (completionMode == ConstraintSystemCompletionMode.PCLA_POSTPONED_CALL) {
             outerCandidate.postponedPCLACalls += ConeAtomWithCandidate(call, candidate)
@@ -1482,7 +1616,6 @@ class CfirPCLAInferenceSession(
     override fun addSubtypeConstraintIfCompatible(
         lowerType: ConeCangJieType,
         upperType: ConeCangJieType,
-        system: ConstraintSystemImpl,
     ) {
         currentCommonSystem.addSubtypeConstraintIfCompatible(
             lowerType,
@@ -1490,6 +1623,74 @@ class CfirPCLAInferenceSession(
             ConeExpectedTypeConstraintPosition,
         )
     }
+
+    /** 把 PCLA body 内部新建的结构化推断变量纳入当前 common system。 */
+    override fun registerInferenceVariable(variable: TypeVariableMarker) {
+        currentCommonSystem.registerVariable(variable)
+    }
+
+    /**
+     * 按官方 `SynLamExpr` 的语法候选收窄规则维护 fresh receiver owner 集合。
+     *
+     * 同一 placeholder 上多次成员访问时，候选 owner 取交集；若交集为空，保留当前访问集合，
+     * 后续由普通解析诊断负责报告真实歧义或不可推断。
+     */
+    override fun refineFreshReceiverCandidateOwners(
+        receiverTypeConstructor: TypeConstructorMarker,
+        ownerTypes: List<ConeCangJieType>,
+    ): Set<ConeCangJieType>? {
+        val distinctOwnerTypes = ownerTypes.distinctByConeType()
+        if (distinctOwnerTypes.isEmpty()) return null
+
+        val previous = freshReceiverCandidateOwnersByTypeVariable[receiverTypeConstructor]
+        val refined = when (previous) {
+            null -> distinctOwnerTypes
+            else -> distinctOwnerTypes.filter { ownerType ->
+                previous.any { previousOwner -> previousOwner.isSameConeType(ownerType) }
+            }.ifEmpty { distinctOwnerTypes }
+        }
+
+        freshReceiverCandidateOwnersByTypeVariable[receiverTypeConstructor] = refined.toMutableList()
+        addFreshReceiverOwnerConstraintIfSingle(receiverTypeConstructor, refined)
+        return refined.toSet()
+    }
+
+    /**
+     * owner 候选集合收敛到单一类型时，把它转成真正的 PCLA 约束。
+     *
+     * 官方 `TryEnforceCandidate` 会在能确定唯一 owner 构造器时约束 placeholder；
+     * CFIR 的在线成员候选规约在多候选阶段只维护 owner-sum，直到交集变为单一候选再
+     * 写入 common system，避免第一条成员访问过早把等价候选中的代表类型固定下来。
+     */
+    private fun addFreshReceiverOwnerConstraintIfSingle(
+        receiverTypeConstructor: TypeConstructorMarker,
+        ownerTypes: List<ConeCangJieType>,
+    ) {
+        val ownerType = ownerTypes.singleOrNull() ?: return
+        val receiverType = (currentCommonSystem.currentStorage().allTypeVariables[receiverTypeConstructor] as? ConeTypeVariable)
+            ?.defaultType
+            ?: return
+        currentCommonSystem.addSubtypeConstraintIfCompatible(
+            receiverType,
+            ownerType,
+            ConeExpectedTypeConstraintPosition,
+        )
+    }
+
+    /** 按当前 session 类型等价关系去重，避免类型实参结构相同但对象不同导致集合无法相交。 */
+    private fun List<ConeCangJieType>.distinctByConeType(): List<ConeCangJieType> {
+        val result = mutableListOf<ConeCangJieType>()
+        for (type in this) {
+            if (result.none { existing -> existing.isSameConeType(type) }) {
+                result += type
+            }
+        }
+        return result
+    }
+
+    /** 判断两个 Cone 类型是否为同一个 owner 候选。 */
+    private fun ConeCangJieType.isSameConeType(other: ConeCangJieType): Boolean =
+        AbstractTypeChecker.equalTypes(inferenceComponents.session.typeContext, this, other)
 
     /** 使用当前约束系统 substitutor 更新表达式返回类型。 */
     private fun CfirExpression.updateReturnTypeWithCurrentSubstitutor(

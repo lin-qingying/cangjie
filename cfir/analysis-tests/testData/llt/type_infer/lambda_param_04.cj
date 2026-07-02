@@ -21,7 +21,7 @@ let f10_2 = {a, b => a + (b ?? 0)}
 let f13 = {
     x => match (1) {
         case 1 => x
-        case _ => 1
+        case <!UNREACHABLE_PATTERN!>_<!> => 1
     }
 }
 

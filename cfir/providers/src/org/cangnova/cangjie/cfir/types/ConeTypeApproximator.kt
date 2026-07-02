@@ -121,6 +121,10 @@ class ConeTypeApproximator(
 //        ) return false
 
 
+        // 该 fast-path 只适用于纯 ILT 近似配置。公开声明、类型变量等配置还可能
+        // 近似其他结构，不能因为当前类型树不含 ILT 就直接短路。
+        if (conf !is TypeApproximatorConfiguration.AbstractILTApproximation) return false
+
         /**
          * 核心逻辑：
          *
@@ -142,6 +146,8 @@ class ConeTypeApproximator(
     ): Boolean = when (type) {
         // ILT（Ideal Literal Type，比如整数常量类型）必须近似
         is ConeIdealLiteralType -> true
+        // 公共类型系统同时把 primitive 形式的 IdealInt/IdealFloat 视为 ILT 构造器。
+        is ConePrimitiveType -> type.kind.isIdeal
         // 仓颉无 CapturedType，其他类型默认不需要近似
         else -> false
     }

@@ -36,4 +36,6 @@ plugins.withId("org.jetbrains.kotlin.jvm") {
 
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
+    // LLT/诊断失败报告可能包含超长源码 diff，本地可信测试进程需要允许 JAXP 读取完整报告实体。
+    systemProperty("jdk.xml.maxGeneralEntitySizeLimit", "0")
 }

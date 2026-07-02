@@ -29,6 +29,7 @@ import org.cangnova.cangjie.cfir.resolve.match.CfirMatchPattern
 import org.cangnova.cangjie.cfir.resolve.match.CfirMatchPatternKind
 import org.cangnova.cangjie.cfir.resolve.match.CfirMatrix
 import org.cangnova.cangjie.cfir.resolve.match.collectEnumConstructorNames
+import org.cangnova.cangjie.cfir.resolve.match.isNonExhaustiveEnum
 import org.cangnova.cangjie.cfir.resolve.match.exhaustive.CheckSource
 import org.cangnova.cangjie.cfir.resolve.match.exhaustive.ExhaustivenessChecker
 import org.cangnova.cangjie.cfir.resolve.match.exhaustive.ExhaustivenessResult
@@ -57,6 +58,7 @@ class SmallEnumBitVectorChecker : ExhaustivenessChecker {
         context: MatchExhaustivenessContext,
     ): Boolean {
         val enumType = type.expandedPatternEnumType(context.session) ?: return false
+        if (enumType.isNonExhaustiveEnum(context.session)) return false
         val variantCount = collectEnumConstructorNames(enumType, context).size
         return variantCount in 1..maxVariants
     }

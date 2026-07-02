@@ -3,10 +3,14 @@ package org.cangnova.cangjie.cfir.analysis.checkers.expression
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
 import org.cangnova.cangjie.cfir.analysis.checkers.diagnosticFactoryForReturnTypeMismatch
+import org.cangnova.cangjie.cfir.analysis.checkers.hasUninferredOmittedLambdaParameterType
 import org.cangnova.cangjie.cfir.analysis.checkers.isSubtypeForTypeMismatch
 import org.cangnova.cangjie.cfir.analysis.diagnostics.specificTypeMismatchDiagnostic
+import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
+import org.cangnova.cangjie.cfir.declarations.hasLambdaParameterShapeDiagnostic
+import org.cangnova.cangjie.cfir.declarations.lambdaParameterShapeExpectedFunctionType
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
@@ -21,6 +25,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirTryExpression
 import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeErrorType
+import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.typeContext
 
@@ -37,6 +42,13 @@ object CfirFunctionBodyTypeMismatchChecker : CfirBasicExpressionChecker() {
     override fun check(expression: CfirStatement) {
         val block = expression as? CfirBlock ?: return
         val containingFunction = context.findClosestDeclaration<CfirFunction> { it.body === block } ?: return
+        if (
+            containingFunction is CfirAnonymousFunction &&
+            containingFunction.hasUninferredOmittedLambdaParameterType() &&
+            !containingFunction.hasLambdaShapeDiagnosticForBodyTypeCheck()
+        ) {
+            return
+        }
         if (containingFunction.returnTypeRef is CfirImplicitTypeRef) return
 
         if (block.statements.dropLast(1).any { it is CfirReturnExpression }) return
@@ -73,6 +85,17 @@ object CfirFunctionBodyTypeMismatchChecker : CfirBasicExpressionChecker() {
             )
         }
     }
+}
+
+/**
+ * Lambda 参数头部已经有更具体形状错误时，返回类型检查仍应继续执行。
+ */
+private fun CfirAnonymousFunction.hasLambdaShapeDiagnosticForBodyTypeCheck(): Boolean {
+    if (hasLambdaParameterShapeDiagnostic == true) return true
+    val expectedFunctionType = lambdaParameterShapeExpectedFunctionType
+        ?: matchingParameterFunctionType as? ConeFunctionType
+        ?: return false
+    return valueParameters.size != expectedFunctionType.parameterTypes.size
 }
 
 /**

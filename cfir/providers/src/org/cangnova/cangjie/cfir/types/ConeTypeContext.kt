@@ -407,14 +407,22 @@ interface ConeTypeContext :
      */
     override fun RigidTypeMarker.possibleIntegerTypes(): Collection<CangJieTypeMarker> =
         when (this) {
-            is ConeIdealLiteralType -> possibleTypes
+            is ConeIdealLiteralType -> possibleTypes.withDefaultIdealTypeFirst(defaultType)
             is ConePrimitiveType -> when (kind) {
-                PrimitiveTypeKind.IDEAL_INT -> ConeIdealIntLiteralType.POSSIBLE_INT_TYPES
-                PrimitiveTypeKind.IDEAL_FLOAT -> ConeIdealFloatLiteralType.POSSIBLE_FLOAT_TYPES
+                PrimitiveTypeKind.IDEAL_INT -> ConeIdealIntLiteralType.POSSIBLE_INT_TYPES.withDefaultIdealTypeFirst(ConePrimitiveType.INT64)
+                PrimitiveTypeKind.IDEAL_FLOAT -> ConeIdealFloatLiteralType.POSSIBLE_FLOAT_TYPES.withDefaultIdealTypeFirst(ConePrimitiveType.FLOAT64)
                 else -> emptyList()
             }
             else -> emptyList()
         }
+
+    /**
+     * 约束系统会采用第一个成功的 ideal 分支派生约束。
+     * 因此子类型检查枚举候选时先尝试官方默认落地类型，避免
+     * `IdealInt <: Comparable<T>` 将 `T` 固定成候选列表里的 Int8。
+     */
+    private fun Collection<ConePrimitiveType>.withDefaultIdealTypeFirst(defaultType: ConePrimitiveType): List<ConePrimitiveType> =
+        if (firstOrNull() == defaultType) toList() else listOf(defaultType) + filterNot { it == defaultType }
 
 
     /**

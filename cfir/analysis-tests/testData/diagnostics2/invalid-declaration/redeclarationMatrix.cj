@@ -1,7 +1,7 @@
 // RUN_PIPELINE_TILL: FRONTEND
 interface abc {
     func ab(): Unit
-    <!CONFLICTING_OVERLOADS!>func ab()<!>: Unit
+    func <!CONFLICTING_OVERLOADS!>ab<!>(): Unit
 }
 
 class <!CLASSIFIER_REDECLARATION!>abc<!> {
@@ -10,4 +10,4 @@ class <!CLASSIFIER_REDECLARATION!>abc<!> {
 }
 
 func top() {}
-<!CONFLICTING_OVERLOADS!>func top()<!> {}
+func <!CONFLICTING_OVERLOADS!>top<!>() {}

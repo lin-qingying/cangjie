@@ -15,12 +15,15 @@ import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeFunctionType
+import org.cangnova.cangjie.cfir.types.ConeLookupTagBasedType
 import org.cangnova.cangjie.cfir.types.ConeTupleType
 import org.cangnova.cangjie.cfir.types.StdlibClassIds
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.declaredUpperBoundRefsAfterTypeResolve
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
+import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.Name
 
 /**
@@ -66,7 +69,7 @@ internal fun ConeCangJieType.isTypeParameterWithInvalidDeclaredUpperBoundsInCurr
  * 在当前声明栈下提取声明上界的 cone type。
  */
 context(context: CheckerContext)
-private fun CfirTypeRef.declaredUpperBoundConeTypeInCurrentContextOrNull(): ConeCangJieType? {
+internal fun CfirTypeRef.declaredUpperBoundConeTypeInCurrentContextOrNull(): ConeCangJieType? {
     coneTypeOrNull?.let { return it }
     return when (this) {
         is CfirFunctionTypeRef -> {
@@ -90,6 +93,7 @@ private fun CfirTypeRef.declaredUpperBoundConeTypeInCurrentContextOrNull(): Cone
             }
         }
         is CfirUserTypeRef -> visibleTypeParameterSymbolOrNull()?.constructType()
+            ?: classLikeConeTypeInCurrentContextOrNull()
         else -> null
     }
 }
@@ -103,6 +107,30 @@ private fun CfirUserTypeRef.visibleTypeParameterSymbolOrNull(): CfirTypeParamete
     val part = qualifier.single()
     if (part.typeArguments.isNotEmpty()) return null
     return context.findVisibleTypeParameterSymbol(part.name)
+}
+
+/**
+ * 将 checker 阶段尚未写成 resolved type-ref 的同包 class-like 上界恢复为 Cone 类型。
+ *
+ * LLT 的局部/同文件泛型声明在声明 checker 时可能仍携带 raw `CfirUserTypeRef`；
+ * 上界合法性和冲突检查需要消费同一份结构化类型，而不是依赖 symbol lazy resolve
+ * 是否已经把 type-ref 原地改写完成。
+ */
+context(context: CheckerContext)
+private fun CfirUserTypeRef.classLikeConeTypeInCurrentContextOrNull(): ConeLookupTagBasedType? {
+    if (qualifier.size != 1) return null
+
+    val part = qualifier.single()
+    val file = context.containingFileSymbol?.cfir ?: return null
+    val classId = ClassId(file.packageDirective.packageFqName, part.name)
+    val symbol = context.session.symbolProvider.getClassLikeSymbolByClassId(classId) ?: return null
+    val declaration = symbol.cfir
+    if (declaration.typeParameters.size != part.typeArguments.size) return null
+
+    val typeArguments = part.typeArguments.map { argument ->
+        argument.declaredUpperBoundConeTypeInCurrentContextOrNull() ?: return null
+    }
+    return symbol.constructType(typeArguments)
 }
 
 /**

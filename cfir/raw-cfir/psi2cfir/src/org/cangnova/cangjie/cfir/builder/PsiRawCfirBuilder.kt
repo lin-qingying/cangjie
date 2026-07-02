@@ -772,6 +772,7 @@ class PsiRawCfirBuilder(
                         declarations.addAll(classDeclarations)
                         this.name = name
                         this.isRefEnum = false
+                        this.isNonExhaustive = (psi as? CjEnum)?.isNonExhaustive == true
                     }
                 }
             }
@@ -1751,6 +1752,7 @@ class PsiRawCfirBuilder(
             is CjSimpleNameExpression -> convertNameReference(psi)
             is CjIfExpression -> convertIf(psi)
             is CjMatchExpression -> convertMatch(psi)
+            is CjLetExpression -> convertLetPatternExpression(psi)
             is CjForExpression -> convertFor(psi)
             is CjWhileExpression -> convertWhile(psi)
             is CjDoWhileExpression -> convertDoWhile(psi)
@@ -2430,12 +2432,22 @@ class PsiRawCfirBuilder(
         /** 转换 if/while 条件中的 let-pattern 表达式。 */
         private fun convertLetPatternExpression(psi: CjLetExpression): CfirLetPatternExpression {
             val status = cloneDeclarationStatus(CfirDeclarationStatusImpl.DEFAULT)
-            val pattern = convertCasePattern(
-                pattern = psi.pattern,
-                ownerStatus = status,
-                ownerIsLocal = true,
-                ownerIsVar = false,
-            )
+            val convertedPatterns = psi.patterns.map {
+                convertCasePattern(
+                    pattern = it,
+                    ownerStatus = status,
+                    ownerIsLocal = true,
+                    ownerIsVar = false,
+                )
+            }
+            val pattern = when (convertedPatterns.size) {
+                0 -> buildWildcardPattern { source = psi.toCjPsiSourceElement() }
+                1 -> convertedPatterns.single()
+                else -> buildOrPattern {
+                    source = psi.toCjPsiSourceElement()
+                    alternatives.addAll(convertedPatterns)
+                }
+            }
             val initializer = psi.expression?.let { convertExpression(it) }
                 ?: buildErrorExpression(reason = "Missing let-pattern initializer")
 
@@ -2752,7 +2764,11 @@ class PsiRawCfirBuilder(
         private fun convertLambda(psi: CjLambdaExpression): CfirAnonymousFunctionExpression {
             val anonymousFunctionSymbol = CfirAnonymousFunctionSymbol()
             val valueParams = psi.valueParameters.map {
-                convertValueParameter(it, anonymousFunctionSymbol, requiresExplicitType = false)
+                convertValueParameter(it, anonymousFunctionSymbol, requiresExplicitType = false).also { parameter ->
+                    if (it.typeReference == null) {
+                        parameter.isLambdaParameterTypeOmitted = true
+                    }
+                }
             }
             val hasExplicitParameterList = psi.valueParameters.isNotEmpty()
             val functionTarget = CfirFunctionTarget(labelName = null, isLambda = true)

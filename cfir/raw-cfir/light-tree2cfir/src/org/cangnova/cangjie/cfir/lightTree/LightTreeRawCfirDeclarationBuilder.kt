@@ -453,6 +453,8 @@ class LightTreeRawCfirDeclarationBuilder(
                     this.declarations.addAll(classDeclarations)
                     this.name = name
                     this.isRefEnum = false
+                    val enumBody = tree.findChildByType(node, CjNodeTypes.ENUM_BODY)
+                    this.isNonExhaustive = enumBody != null && tree.findChildByType(enumBody, CjTokens.ELLIPSIS) != null
                 }
             }
         }

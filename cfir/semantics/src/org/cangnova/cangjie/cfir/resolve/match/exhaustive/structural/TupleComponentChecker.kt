@@ -3,6 +3,7 @@ package org.cangnova.cangjie.cfir.resolve.match.exhaustive.structural
 import org.cangnova.cangjie.cfir.resolve.match.CfirMatchPattern
 import org.cangnova.cangjie.cfir.resolve.match.CfirMatchPatternKind
 import org.cangnova.cangjie.cfir.resolve.match.CfirMatrix
+import org.cangnova.cangjie.cfir.resolve.match.isNonExhaustiveEnum
 import org.cangnova.cangjie.cfir.resolve.match.exhaustive.CheckSource
 import org.cangnova.cangjie.cfir.resolve.match.exhaustive.ExhaustivenessChecker
 import org.cangnova.cangjie.cfir.resolve.match.exhaustive.ExhaustivenessResult
@@ -37,6 +38,7 @@ class TupleComponentChecker(
         context: MatchExhaustivenessContext,
     ): Boolean {
         if (type !is ConeTupleType) return false
+        if (type.elementTypes.any { it.isNonExhaustiveEnum(context.session) }) return false
         return patterns.all { pattern ->
             when (val kind = pattern.kind) {
                 CfirMatchPatternKind.Wild, is CfirMatchPatternKind.Binding -> true

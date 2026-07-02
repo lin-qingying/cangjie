@@ -41,9 +41,9 @@ import org.cangnova.cangjie.cfir.resolve.transformers.ensureResolvedTypeDeclarat
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
+import org.cangnova.cangjie.cfir.types.arrayElementType
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
-import org.cangnova.cangjie.cfir.types.typeContext
-import org.cangnova.cangjie.type.AbstractTypeChecker
+import org.cangnova.cangjie.resolve.calls.inference.isSubtypeConstraintCompatible
 
 /**
  * 候选解析阶段中的实参适用性检查。
@@ -149,7 +149,7 @@ private fun Candidate.prepareExpectedType(
         ?: argument.getExpectedType(
             session,
             parameter,
-            unwrapCangjieVariadicParameter = parameter == cangjieVariadicParameterForCall,
+            unwrapCangjieVariadicParameter = false,
         )
 
     // 仓颉没有 SAM 转换，直接跳过那一步
@@ -184,9 +184,20 @@ private fun Candidate.selectVariadicExpectedType(
 
     val preparedArgumentType = prepareArgumentType(argumentType, session)
     val matchesNormalArrayParameter =
-        AbstractTypeChecker.isSubtypeOf(session.typeContext, preparedArgumentType, normalExpectedType) == true
+        preparedArgumentType.isArrayArgumentForArrayParameter(normalExpectedType) ||
+                system.isSubtypeConstraintCompatible(preparedArgumentType, normalExpectedType)
     if (matchesNormalArrayParameter) return null
 
     // 官方 cjc 会在普通调用匹配失败后把这部分位置实参收束成 ArrayLit。
     return markVariadicArgument(atom)
 }
+
+/**
+ * 仓颉普通变参只在调用点提供元素序列时生效。
+ *
+ * 如果实参本身已经是 `Array<...>`，它应先走普通数组形参检查；即使元素类型里含
+ * 待推断变量，也不能因为独立 subtype 探测暂时无法证明兼容，就把整个数组实参
+ * 重新解释成变参元素。
+ */
+private fun ConeCangJieType.isArrayArgumentForArrayParameter(expectedType: ConeCangJieType): Boolean =
+    arrayElementType != null && expectedType.arrayElementType != null

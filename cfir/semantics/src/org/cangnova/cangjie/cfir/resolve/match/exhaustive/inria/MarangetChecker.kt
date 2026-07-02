@@ -6,6 +6,7 @@ import org.cangnova.cangjie.cfir.resolve.match.CfirConstructor
 import org.cangnova.cangjie.cfir.resolve.match.CfirMatchPattern
 import org.cangnova.cangjie.cfir.resolve.match.CfirMatchPatternKind
 import org.cangnova.cangjie.cfir.resolve.match.CfirMatrix
+import org.cangnova.cangjie.cfir.resolve.match.isNonExhaustiveEnum
 import org.cangnova.cangjie.cfir.resolve.match.exhaustive.CheckSource
 import org.cangnova.cangjie.cfir.resolve.match.exhaustive.ExhaustivenessChecker
 import org.cangnova.cangjie.cfir.resolve.match.exhaustive.ExhaustivenessResult
@@ -112,7 +113,7 @@ class MarangetChecker : ExhaustivenessChecker {
         val missingConstructors = allConstructors.minus(usedConstructors)
 
         val isPrivatelyEmpty = allConstructors.isEmpty()
-        val isDeclaredNonExhaustive = type.isTyAdt() && hasNonExhaustiveAttribute(type)
+        val isDeclaredNonExhaustive = type.isTyAdt() && hasNonExhaustiveAttribute(type, context)
         val isNonExhaustive = isPrivatelyEmpty || isDeclaredNonExhaustive
 
         if (missingConstructors.isEmpty() && !isNonExhaustive) {
@@ -175,10 +176,9 @@ class MarangetChecker : ExhaustivenessChecker {
 
     /**
      * 类型是否声明为非穷尽。
-     *
-     * 当前仓颉模型尚未接入对应属性，保留独立钩子以便后续扩展。
      */
-    private fun hasNonExhaustiveAttribute(type: ConeCangJieType): Boolean = false
+    private fun hasNonExhaustiveAttribute(type: ConeCangJieType, context: MatchExhaustivenessContext): Boolean =
+        type.isNonExhaustiveEnum(context.session)
 
     /** 单例实例。 */
     companion object {

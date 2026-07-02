@@ -8,5 +8,6 @@ FILE: enumDeclaration.cj
     internal? enum Option<T> {
         Some(R|T|)
         None
+        ...
         init()
     }

@@ -38,6 +38,7 @@ class CfirEnumBuilder {
     val declarations: MutableList<CfirDeclaration> = mutableListOf()
     lateinit var name: Name
     var isRefEnum: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
+    var isNonExhaustive: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
 
     @OptIn(CfirImplementationDetail::class)
     fun build(): CfirEnum {
@@ -57,6 +58,7 @@ class CfirEnumBuilder {
             declarations,
             name,
             isRefEnum,
+            isNonExhaustive,
         )
     }
 
@@ -90,5 +92,6 @@ inline fun buildEnumCopy(original: CfirEnum, init: CfirEnumBuilder.() -> Unit): 
     copyBuilder.declarations.addAll(original.declarations)
     copyBuilder.name = original.name
     copyBuilder.isRefEnum = original.isRefEnum
+    copyBuilder.isNonExhaustive = original.isNonExhaustive
     return copyBuilder.apply(init).build()
 }

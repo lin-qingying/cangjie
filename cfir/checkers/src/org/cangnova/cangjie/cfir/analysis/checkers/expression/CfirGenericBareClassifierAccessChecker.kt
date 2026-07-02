@@ -7,13 +7,20 @@ import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
+import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
+import org.cangnova.cangjie.cfir.references.CfirResolvedErrorReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.references.impl.CfirResolvedAppliedCallableReference
+import org.cangnova.cangjie.cfir.session.cfirProvider
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirTypeAliasSymbol
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
+import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterLookupTag
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.ConeTypeVariableType
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.contains
 
@@ -26,19 +33,50 @@ object CfirGenericBareClassifierAccessChecker : CfirQualifiedAccessChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirQualifiedAccessExpression) {
         if (expression.typeArguments.isNotEmpty()) return
+        val resolvedSymbol = expression.calleeReference.resolvedBareAccessSymbol() ?: return
+
+        if (resolvedSymbol is CfirEnumConstructorSymbol) {
+            expression.reportEnumConstructorWithoutTypeArgumentsIfNeeded(resolvedSymbol)
+            return
+        }
+
         if (context.callsOrAssignments.asReversed().drop(1).any { call ->
                 call is CfirFunctionCall && call.explicitReceiver === expression
             }) return
         if (expression.isQualifierOfEnumConstructorAccess()) return
 
         val resolvedReference = expression.calleeReference as? CfirResolvedNamedReference ?: return
-        val resolvedSymbol = resolvedReference.resolvedSymbol as? CfirClassLikeSymbol<*> ?: return
-        if (!resolvedSymbol.requiresExplicitTypeArgumentsForBareAccess()) return
+        val classLikeSymbol = resolvedSymbol as? CfirClassLikeSymbol<*> ?: return
+        if (!classLikeSymbol.requiresExplicitTypeArgumentsForBareAccess()) return
 
         reporter.reportOn(
             source = resolvedReference.source ?: expression.source,
             factory = CfirErrors.GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT,
-            a = resolvedSymbol.classId.shortClassName,
+            a = classLikeSymbol.classId.shortClassName,
+        )
+    }
+
+    /**
+     * enum constructor 本身不是 classifier symbol，但裸 `T1` 的 owner enum 仍可能是泛型。
+     *
+     * 官方在 `T1.a16(...)` 不能从 member call 推断出 owner `Test<T>` 时，同时报告
+     * 函数推断失败和裸泛型 enum constructor 缺少类型实参；若 owner 已由实参或目标类型
+     * 固定成 `Test<Int64>`，这里不再报裸泛型诊断。
+     */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun CfirQualifiedAccessExpression.reportEnumConstructorWithoutTypeArgumentsIfNeeded(
+        symbol: CfirEnumConstructorSymbol,
+    ) {
+        val ownerSymbol = context.session.cfirProvider.getContainingClass(symbol) ?: return
+        val ownerTypeParameters = ownerSymbol.cfir.typeParameters.mapTo(mutableSetOf()) { it.symbol }
+        if (ownerTypeParameters.isEmpty()) return
+        val constructorType = coneTypeOrNull
+        if (constructorType != null && !constructorType.containsUnfixedOwnerTypeParameter(ownerTypeParameters)) return
+
+        reporter.reportOn(
+            source = calleeReference.source ?: source,
+            factory = CfirErrors.GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT,
+            a = symbol.name,
         )
     }
 
@@ -63,6 +101,20 @@ object CfirGenericBareClassifierAccessChecker : CfirQualifiedAccessChecker() {
             type is ConeTypeParameterType && type.lookupTag.typeParameterSymbol == symbol
         }
 
+    /** 判断 enum constructor 类型是否仍含 owner 的未固定泛型参数。 */
+    private fun ConeCangJieType.containsUnfixedOwnerTypeParameter(
+        ownerTypeParameters: Set<CfirTypeParameterSymbol>,
+    ): Boolean = contains { type ->
+        when (type) {
+            is ConeTypeParameterType -> type.lookupTag.typeParameterSymbol in ownerTypeParameters
+            is ConeTypeVariableType -> {
+                val originalTag = type.typeConstructor.originalTypeParameter as? ConeTypeParameterLookupTag
+                originalTag?.typeParameterSymbol in ownerTypeParameters
+            }
+            else -> false
+        }
+    }
+
     /** 判断当前限定访问是否只是 enum 构造器访问链中的限定符。 */
     context(context: CheckerContext)
     private fun CfirQualifiedAccessExpression.isQualifierOfEnumConstructorAccess(): Boolean {
@@ -79,4 +131,13 @@ object CfirGenericBareClassifierAccessChecker : CfirQualifiedAccessChecker() {
         is CfirResolvedAppliedCallableReference -> resolvedSymbol.takeIf { it.isBound }?.cfir is CfirEnumConstructor
         else -> false
     }
+
+    /** 统一读取裸访问解析后的 symbol，兼容完成前后的 candidate/error reference。 */
+    private fun org.cangnova.cangjie.cfir.references.CfirReference.resolvedBareAccessSymbol(): CfirBasedSymbol<*>? =
+        when (this) {
+            is CfirResolvedNamedReference -> resolvedSymbol
+            is CfirResolvedErrorReference -> resolvedSymbol
+            is CfirNamedReferenceWithCandidateBase -> candidateSymbol
+            else -> null
+        }
 }

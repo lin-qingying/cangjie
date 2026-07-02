@@ -36,6 +36,7 @@ abstract class CfirEnum : CfirClassLikeDeclaration(), CfirControlFlowGraphOwner 
     abstract override val declarations: List<CfirDeclaration>
     abstract override val name: Name
     abstract val isRefEnum: Boolean
+    abstract val isNonExhaustive: Boolean
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
         visitor.visitEnum(this, data)

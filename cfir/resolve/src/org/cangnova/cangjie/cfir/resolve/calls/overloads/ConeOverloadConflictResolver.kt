@@ -18,6 +18,7 @@ import org.cangnova.cangjie.resolve.calls.inference.model.SimpleConstraintSystem
 import org.cangnova.cangjie.resolve.calls.results.*
 import org.cangnova.cangjie.type.AbstractTypeChecker
 import org.cangnova.cangjie.type.model.CangJieTypeMarker
+import org.cangnova.cangjie.type.model.TypeConstructorMarker
 import org.cangnova.cangjie.type.model.TypeParameterMarker
 import org.cangnova.cangjie.type.model.TypeSubstitutorMarker
 import org.cangnova.cangjie.type.model.TypeSystemInferenceExtensionContext
@@ -875,11 +876,12 @@ class ConeOverloadConflictResolver(
             val session = inferenceComponents.session
             val typeForCallableReference = call.resultingTypeForCallableReference
             if (typeForCallableReference != null) {
-                typeForCallableReference.typeArguments
-                    .dropLast(1)
-                    .mapTo(this) { argument ->
-                        TypeWithConversion(argument.type.prepareType(session, call))
+                val functionType = typeForCallableReference.fullyExpandedType()
+                if (functionType is ConeFunctionType) {
+                    functionType.parameterTypes.mapTo(this) { parameterType ->
+                        TypeWithConversion(parameterType.prepareCallableReferenceSignatureType(session, call))
                     }
+                }
             } else if (call.argumentMappingInitialized) {
                 val variadicParameter = call.cangjieVariadicParameterForCall
                 var variadicParameterAdded = false
@@ -956,6 +958,117 @@ class ConeOverloadConflictResolver(
         val substitutor = candidate.system.buildNotFixedVariablesToStubTypesSubstitutor()
         return with(session.typeContext) {
             substitutor.safeSubstitute(expanded) as ConeCangJieType
+        }
+    }
+
+    /**
+     * callable reference 候选签名比较需要看到候选当前约束系统已经求出的类型。
+     *
+     * 泛型函数引用没有源码类型实参位置；若直接把未固定 fresh variable 替换为 stub，
+     * `println<T>` 这类泛型候选会和 `println(Int64)` 这类专门候选在特异性比较中保持并列。
+     * 这里先把对应声明类型参数的 fresh variable 规整回源码类型参数，避免它们被
+     * callable reference 的 expected type 约束提前解成与专门重载相同的参数类型；
+     * 随后再应用当前替换，让外层非声明推断变量继续参与精确比较，最后才用 stub
+     * 表示真正无法参与精确比较的推断变量。
+     */
+    private fun ConeCangJieType.prepareCallableReferenceSignatureType(
+        session: org.cangnova.cangjie.cfir.session.CfirSession,
+        candidate: Candidate,
+    ): ConeCangJieType {
+        val declarationTypeParameterBindings = candidate.declarationTypeParameterBindingsForCallableReference()
+        val expanded = fullyExpandedType().restoreDeclarationTypeParameters()
+        val currentSubstituted = with(session.typeContext) {
+            candidate.system
+                .buildCurrentSubstitutor(declarationTypeParameterBindings)
+                .safeSubstitute(expanded) as ConeCangJieType
+        }
+        if (!candidate.system.usesOuterCs) return currentSubstituted
+
+        val notFixedToStub = candidate.system.buildNotFixedVariablesToStubTypesSubstitutor()
+        return with(session.typeContext) {
+            notFixedToStub.safeSubstitute(currentSubstituted) as ConeCangJieType
+        }
+    }
+
+    /**
+     * callable reference most-specific 比较中，候选自身的声明类型参数必须以声明类型参数身份参与比较。
+     *
+     * 候选可用 expected function type 证明自身适用，但不能因此把 `println<T>(T)` 的 `T`
+     * 固定成 `Int64` 后与 `println(Int64)` 变成同一个签名；否则专门重载会被误判为歧义。
+     * 这里同时覆盖 fresh constructor 和源码 lookup tag 两种 substitutor 键，保证当前替换只作用于外层推断变量。
+     */
+    private fun Candidate.declarationTypeParameterBindingsForCallableReference(): Map<TypeConstructorMarker, ConeCangJieType> {
+        val bindings = linkedMapOf<TypeConstructorMarker, ConeCangJieType>()
+        for (freshVariable in freshVariables) {
+            val originalTypeParameter = freshVariable.typeConstructor.originalTypeParameter as? ConeTypeParameterLookupTag
+                ?: continue
+            val declarationType = ConeTypeParameterTypeImpl(originalTypeParameter, freshVariable.defaultType.attributes)
+            bindings[freshVariable.typeConstructor] = declarationType
+            bindings[originalTypeParameter] = declarationType
+        }
+        return bindings
+    }
+
+    /** 递归把候选 fresh type variable 还原为其声明侧类型参数。 */
+    private fun ConeCangJieType.restoreDeclarationTypeParameters(): ConeCangJieType {
+        fun List<ConeTypeProjection>.restoreArguments(): List<ConeTypeProjection> =
+            map { projection -> projection.type.restoreDeclarationTypeParameters() }
+
+        return when (this) {
+            is ConeTypeVariableType -> {
+                val originalTypeParameter = typeConstructor.originalTypeParameter as? ConeTypeParameterLookupTag
+                if (originalTypeParameter != null) {
+                    ConeTypeParameterTypeImpl(originalTypeParameter, attributes)
+                } else {
+                    this
+                }
+            }
+            is ConeClassLikeType -> ConeClassLikeType(
+                lookupTag = lookupTag,
+                typeArguments = typeArguments.restoreArguments(),
+                attributes = attributes,
+                isInterface = isInterface,
+                isThisType = isThisType,
+            )
+            is ConeStructType -> ConeStructType(
+                lookupTag = lookupTag,
+                typeArguments = typeArguments.restoreArguments(),
+                attributes = attributes,
+            )
+            is ConeEnumType -> ConeEnumType(
+                lookupTag = lookupTag,
+                typeArguments = typeArguments.restoreArguments(),
+                attributes = attributes,
+                isRefEnum = isRefEnum,
+            )
+            is ConeTypeAliasType -> ConeTypeAliasType(
+                classId = classId,
+                expandedType = expandedType?.restoreDeclarationTypeParameters(),
+                typeArguments = typeArguments.restoreArguments(),
+                attributes = attributes,
+            )
+            is ConeFunctionType -> ConeFunctionType(
+                parameterTypes = parameterTypes.map { it.restoreDeclarationTypeParameters() },
+                returnType = returnType.restoreDeclarationTypeParameters(),
+                isCFunc = isCFunc,
+                isClosureType = isClosureType,
+                hasVariableLenArg = hasVariableLenArg,
+                attributes = attributes,
+            )
+            is ConeTupleType -> ConeTupleType(
+                elementTypes = elementTypes.map { it.restoreDeclarationTypeParameters() },
+                attributes = attributes,
+            )
+            is ConeVArrayType -> ConeVArrayType(
+                elementType = elementType.restoreDeclarationTypeParameters(),
+                size = size,
+                attributes = attributes,
+            )
+            is ConePointerType -> ConePointerType(
+                pointeeType = pointeeType.restoreDeclarationTypeParameters(),
+                attributes = attributes,
+            )
+            else -> this
         }
     }
 

@@ -461,7 +461,7 @@ class CfirClassSubstitutionScope(
             val copiedSymbol = org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol(valueParameter.symbol.callableId)
             buildValueParameterCopy(valueParameter) {
                 symbol = copiedSymbol
-                returnTypeRef = substituteTypeRef(valueParameter.symbol.resolvedReturnTypeRef, substitutor)
+                returnTypeRef = substituteTypeRef(valueParameter.returnTypeRef, substitutor)
             }
         }
     }

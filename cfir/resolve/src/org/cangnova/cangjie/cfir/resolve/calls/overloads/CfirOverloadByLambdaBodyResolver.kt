@@ -1,29 +1,9 @@
 package org.cangnova.cangjie.cfir.resolve.calls.overloads
 
-import org.cangnova.cangjie.cfir.CfirElement
-import org.cangnova.cangjie.cfir.CfirElementWithResolveState
-import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
-import org.cangnova.cangjie.cfir.declarations.CfirControlFlowGraphOwner
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
-import org.cangnova.cangjie.cfir.declarations.CfirResolveState
-import org.cangnova.cangjie.cfir.declarations.ResolveStateAccess
-import org.cangnova.cangjie.cfir.declarations.CfirVariable
-import org.cangnova.cangjie.cfir.declarations.impl.CfirPatternVariableImpl
-import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
-import org.cangnova.cangjie.cfir.expressions.CfirArgumentList
-import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
-import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
-import org.cangnova.cangjie.cfir.expressions.CfirMatchBranch
-import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
 import org.cangnova.cangjie.cfir.expressions.CfirResolvable
-import org.cangnova.cangjie.cfir.expressions.CfirStatement
-import org.cangnova.cangjie.cfir.expressions.impl.CfirMatchBranchImpl
-import org.cangnova.cangjie.cfir.patterns.CfirPattern
-import org.cangnova.cangjie.cfir.patterns.CfirPatternMutableState
-import org.cangnova.cangjie.cfir.references.CfirControlFlowGraphReference
-import org.cangnova.cangjie.cfir.references.CfirReference
+import org.cangnova.cangjie.cfir.resolve.CfirResolutionSnapshot
 import org.cangnova.cangjie.cfir.resolve.body.CfirAbstractBodyResolveTransformer
 import org.cangnova.cangjie.cfir.resolve.body.CfirImplicitBodyResolveComputationSessionSnapshot
 import org.cangnova.cangjie.cfir.resolve.body.ReturnTypeCalculatorWithJump
@@ -46,10 +26,7 @@ import org.cangnova.cangjie.cfir.resolve.inference.inferenceComponents
 import org.cangnova.cangjie.cfir.resolve.initialTypeOfCandidate
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.semantics.ResolutionDiagnostic
-import org.cangnova.cangjie.cfir.types.CfirTypeRef
-import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeFunctionType
-import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
 import org.cangnova.cangjie.resolve.calls.inference.components.ConstraintSystemCompletionMode
 import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintStorage
 import org.cangnova.cangjie.resolve.calls.tower.CandidateApplicability
@@ -206,7 +183,10 @@ class CfirOverloadByLambdaBodyResolver(
                     call = call,
                     initialType = components.initialTypeOfCandidate(candidate),
                 )
-                components.context.withOverloadByLambdaCandidate(candidate) {
+                components.context.withOverloadByLambdaCandidate(
+                    candidate,
+                    shortCircuitOnFailure = rollback,
+                ) {
                     analyzer.analyzeLambda(
                         csImpl = candidate.system,
                         atom = lambda,
@@ -337,6 +317,9 @@ class CfirOverloadByLambdaBodyResolver(
 
     /**
      * 成功候选在回滚模式下捕获的最终状态。
+     *
+     * 候选成功意味着试跑没有触发目标元素短路；恢复这份状态等价于完整落地分析，
+     * 同时避免深层嵌套 overload-by-lambda 在选中候选上重复解析。
      */
     private class SuccessfulCandidateAnalysis(
         /** CFIR 树与解析状态快照。 */
@@ -380,6 +363,8 @@ class CfirOverloadByLambdaBodyResolver(
         private val postponedPCLACalls: List<ConeResolutionAtom>,
         /** 已经通过 PCLA 分析过的 lambda 列表副本。 */
         private val lambdasAnalyzedWithPCLA: List<CfirDeclaration>,
+        /** 局部 lambda initializer completion 列表副本。 */
+        private val localLambdaInitializerCompletions: List<org.cangnova.cangjie.cfir.resolve.CfirLocalLambdaInitializerInferenceReference>,
         /** PCLA 完成结果写回回调列表副本。 */
         private val completionCallbacks: List<(ConeSubstitutor) -> Unit>,
     ) {
@@ -397,6 +382,8 @@ class CfirOverloadByLambdaBodyResolver(
             candidate.postponedPCLACalls.addAll(postponedPCLACalls)
             candidate.lambdasAnalyzedWithPCLA.clear()
             candidate.lambdasAnalyzedWithPCLA.addAll(lambdasAnalyzedWithPCLA)
+            candidate.localLambdaInitializerCompletions.clear()
+            candidate.localLambdaInitializerCompletions.addAll(localLambdaInitializerCompletions)
             candidate.onPCLACompletionResultsWritingCallbacks.clear()
             candidate.onPCLACompletionResultsWritingCallbacks.addAll(completionCallbacks)
         }
@@ -422,6 +409,7 @@ class CfirOverloadByLambdaBodyResolver(
                     postponedAtoms = candidate.postponedAtoms.toList(),
                     postponedPCLACalls = candidate.postponedPCLACalls.toList(),
                     lambdasAnalyzedWithPCLA = candidate.lambdasAnalyzedWithPCLA.toList(),
+                    localLambdaInitializerCompletions = candidate.localLambdaInitializerCompletions.toList(),
                     completionCallbacks = candidate.onPCLACompletionResultsWritingCallbacks.toList(),
                 )
             }
@@ -477,6 +465,8 @@ class CfirOverloadByLambdaBodyResolver(
         private val postponedPCLACallsSize: Int,
         /** 捕获时 PCLA lambda 列表长度。 */
         private val lambdasAnalyzedWithPCLASize: Int,
+        /** 捕获时局部 lambda initializer completion 列表长度。 */
+        private val localLambdaInitializerCompletionsSize: Int,
         /** 捕获时 PCLA completion 回调列表长度。 */
         private val completionCallbacksSize: Int,
     ) {
@@ -489,6 +479,7 @@ class CfirOverloadByLambdaBodyResolver(
             candidate.postponedAtoms.removeTail(postponedAtomsSize)
             candidate.postponedPCLACalls.removeTail(postponedPCLACallsSize)
             candidate.lambdasAnalyzedWithPCLA.removeTail(lambdasAnalyzedWithPCLASize)
+            candidate.localLambdaInitializerCompletions.removeTail(localLambdaInitializerCompletionsSize)
             candidate.onPCLACompletionResultsWritingCallbacks.removeTail(completionCallbacksSize)
         }
 
@@ -505,224 +496,12 @@ class CfirOverloadByLambdaBodyResolver(
                 postponedAtomsSize = candidate.postponedAtoms.size,
                 postponedPCLACallsSize = candidate.postponedPCLACalls.size,
                 lambdasAnalyzedWithPCLASize = candidate.lambdasAnalyzedWithPCLA.size,
+                localLambdaInitializerCompletionsSize = candidate.localLambdaInitializerCompletions.size,
                 completionCallbacksSize = candidate.onPCLACompletionResultsWritingCallbacks.size,
             )
         }
     }
 
-    /**
-     * CFIR 树可变解析状态快照。
-     *
-     * overload-by-lambda 会反复在同一个调用树上试探候选，因此必须记录所有可能被 lambda body resolve
-     * 改写的类型、引用、body、pattern、CFG 和 resolve state。
-     */
-    private class CfirResolutionSnapshot private constructor(
-        /** 带 resolve state 元素的阶段状态快照。 */
-        private val resolveStates: IdentityHashMap<CfirElementWithResolveState, CfirResolveState>,
-        /** 表达式到其 cone type 的快照。 */
-        private val expressionTypes: IdentityHashMap<CfirExpression, ConeCangJieType?>,
-        /** 可解析表达式到 callee reference 的快照。 */
-        private val calleeReferences: IdentityHashMap<CfirResolvable, CfirReference>,
-        /** 匿名函数返回类型引用快照。 */
-        private val anonymousFunctionReturnTypes: IdentityHashMap<CfirAnonymousFunction, CfirTypeRef>,
-        /** 匿名函数整体函数类型引用快照。 */
-        private val anonymousFunctionTypes: IdentityHashMap<CfirAnonymousFunction, CfirTypeRef>,
-        /** 匿名函数匹配参数函数类型快照。 */
-        private val anonymousFunctionMatchingTypes: IdentityHashMap<CfirAnonymousFunction, ConeCangJieType?>,
-        /** 匿名函数 body 快照。 */
-        private val anonymousFunctionBodies: IdentityHashMap<CfirAnonymousFunction, CfirBlock?>,
-        /** 变量返回类型引用快照。 */
-        private val variableTypes: IdentityHashMap<CfirVariable, CfirTypeRef>,
-        /** block 语句列表快照。 */
-        private val blockStatements: IdentityHashMap<CfirBlock, List<CfirStatement>>,
-        /** 模式变量当前 pattern 快照。 */
-        private val patternVariablePatterns: IdentityHashMap<CfirPatternVariable, CfirPattern>,
-        /** match branch 当前 pattern 快照。 */
-        private val matchBranchPatterns: IdentityHashMap<CfirMatchBranch, CfirPattern>,
-        /** pattern 内部可变状态快照。 */
-        private val patternStates: IdentityHashMap<CfirPattern, CfirPatternMutableState>,
-        /** qualified access 接收者与类型实参快照。 */
-        private val qualifiedAccessStates: IdentityHashMap<CfirQualifiedAccessExpression, QualifiedAccessState>,
-        /** 函数调用实参列表快照。 */
-        private val functionCallArgumentLists: IdentityHashMap<CfirFunctionCall, CfirArgumentList>,
-        /** CFG owner 到 CFG reference 的快照。 */
-        private val controlFlowGraphReferences: IdentityHashMap<CfirControlFlowGraphOwner, CfirControlFlowGraphReference?>,
-    ) {
-        /**
-         * 把快照中的全部 CFIR 可变状态恢复到原对象上。
-         */
-        @OptIn(ResolveStateAccess::class)
-        fun restore() {
-            for ((element, state) in resolveStates) {
-                element.resolveState = state
-            }
-            for ((owner, reference) in controlFlowGraphReferences) {
-                owner.replaceControlFlowGraphReference(reference)
-            }
-            for ((variable, typeRef) in variableTypes) {
-                variable.replaceReturnTypeRef(typeRef)
-            }
-            for ((function, typeRef) in anonymousFunctionReturnTypes) {
-                function.replaceReturnTypeRef(typeRef)
-            }
-            for ((function, typeRef) in anonymousFunctionTypes) {
-                function.replaceTypeRef(typeRef)
-            }
-            for ((function, matchingType) in anonymousFunctionMatchingTypes) {
-                function.replaceMatchingParameterFunctionType(matchingType)
-            }
-            for ((function, body) in anonymousFunctionBodies) {
-                function.replaceBody(body)
-            }
-            for ((patternVariable, pattern) in patternVariablePatterns) {
-                val impl = patternVariable as? CfirPatternVariableImpl
-                    ?: error("CfirPatternVariable must be backed by generated implementation")
-                impl.pattern = pattern
-            }
-            for ((branch, pattern) in matchBranchPatterns) {
-                val impl = branch as? CfirMatchBranchImpl
-                    ?: error("CfirMatchBranch must be backed by generated implementation")
-                impl.pattern = pattern
-            }
-            for ((_, state) in patternStates) {
-                state.restore()
-            }
-            for ((block, statements) in blockStatements) {
-                val mutableStatements = block.statements as? MutableList<CfirStatement>
-                    ?: error("CfirBlock statements must be mutable during overload-by-lambda rollback")
-                mutableStatements.clear()
-                mutableStatements.addAll(statements)
-            }
-            for ((call, argumentList) in functionCallArgumentLists) {
-                call.replaceArgumentList(argumentList)
-            }
-            for ((access, state) in qualifiedAccessStates) {
-                access.replaceDispatchReceiver(state.dispatchReceiver)
-                access.replaceTypeArguments(state.typeArguments)
-            }
-            for ((resolvable, reference) in calleeReferences) {
-                resolvable.replaceCalleeReference(reference)
-            }
-            for ((expression, type) in expressionTypes) {
-                expression.replaceConeTypeOrNull(type)
-            }
-        }
-
-        /**
-         * CFIR 解析快照工厂。
-         */
-        companion object {
-            /**
-             * 从根元素遍历并捕获 overload-by-lambda 回滚所需的全部状态。
-             */
-            fun capture(root: CfirElement): CfirResolutionSnapshot {
-                val resolveStates = IdentityHashMap<CfirElementWithResolveState, CfirResolveState>()
-                val expressionTypes = IdentityHashMap<CfirExpression, ConeCangJieType?>()
-                val calleeReferences = IdentityHashMap<CfirResolvable, CfirReference>()
-                val anonymousFunctionReturnTypes = IdentityHashMap<CfirAnonymousFunction, CfirTypeRef>()
-                val anonymousFunctionTypes = IdentityHashMap<CfirAnonymousFunction, CfirTypeRef>()
-                val anonymousFunctionMatchingTypes = IdentityHashMap<CfirAnonymousFunction, ConeCangJieType?>()
-                val anonymousFunctionBodies = IdentityHashMap<CfirAnonymousFunction, CfirBlock?>()
-                val variableTypes = IdentityHashMap<CfirVariable, CfirTypeRef>()
-                val blockStatements = IdentityHashMap<CfirBlock, List<CfirStatement>>()
-                val patternVariablePatterns = IdentityHashMap<CfirPatternVariable, CfirPattern>()
-                val matchBranchPatterns = IdentityHashMap<CfirMatchBranch, CfirPattern>()
-                val patternStates = IdentityHashMap<CfirPattern, CfirPatternMutableState>()
-                val qualifiedAccessStates = IdentityHashMap<CfirQualifiedAccessExpression, QualifiedAccessState>()
-                val functionCallArgumentLists = IdentityHashMap<CfirFunctionCall, CfirArgumentList>()
-                val controlFlowGraphReferences =
-                    IdentityHashMap<CfirControlFlowGraphOwner, CfirControlFlowGraphReference?>()
-
-                root.accept(
-                    /**
-                     * 快照捕获访问器。
-                     */
-                    object : CfirVisitorVoid() {
-                        /**
-                         * 捕获当前元素及其子树中所有可回滚状态。
-                         */
-                        @OptIn(ResolveStateAccess::class)
-                        override fun visitElement(element: CfirElement) {
-                            if (element is CfirElementWithResolveState) {
-                                resolveStates[element] = element.resolveState
-                            }
-                            if (element is CfirExpression && element !is CfirAnonymousFunctionExpression) {
-                                expressionTypes[element] = element.coneTypeOrNull
-                            }
-                            if (element is CfirResolvable) {
-                                calleeReferences[element] = element.calleeReference
-                            }
-                            if (element is CfirAnonymousFunction) {
-                                anonymousFunctionReturnTypes[element] = element.returnTypeRef
-                                anonymousFunctionTypes[element] = element.typeRef
-                                anonymousFunctionMatchingTypes[element] = element.matchingParameterFunctionType
-                                anonymousFunctionBodies[element] = element.body
-                            }
-                            if (element is CfirVariable) {
-                                variableTypes[element] = element.returnTypeRef
-                            }
-                            if (element is CfirBlock) {
-                                blockStatements[element] = element.statements.toList()
-                            }
-                            if (element is CfirPatternVariable) {
-                                patternVariablePatterns[element] = element.pattern
-                            }
-                            if (element is CfirMatchBranch) {
-                                matchBranchPatterns[element] = element.pattern
-                            }
-                            if (element is CfirPattern) {
-                                CfirPatternMutableState.capture(element)?.let { patternState ->
-                                    patternStates[element] = patternState
-                                }
-                            }
-                            if (element is CfirQualifiedAccessExpression) {
-                                qualifiedAccessStates[element] = QualifiedAccessState(
-                                    dispatchReceiver = element.dispatchReceiver,
-                                    typeArguments = element.typeArguments.toList(),
-                                )
-                            }
-                            if (element is CfirFunctionCall) {
-                                functionCallArgumentLists[element] = element.argumentList
-                            }
-                            if (element is CfirControlFlowGraphOwner) {
-                                controlFlowGraphReferences[element] = element.controlFlowGraphReference
-                            }
-                            element.acceptChildren(this, null)
-                        }
-                    },
-                    null,
-                )
-
-                return CfirResolutionSnapshot(
-                    resolveStates,
-                    expressionTypes,
-                    calleeReferences,
-                    anonymousFunctionReturnTypes,
-                    anonymousFunctionTypes,
-                    anonymousFunctionMatchingTypes,
-                    anonymousFunctionBodies,
-                    variableTypes,
-                    blockStatements,
-                    patternVariablePatterns,
-                    matchBranchPatterns,
-                    patternStates,
-                    qualifiedAccessStates,
-                    functionCallArgumentLists,
-                    controlFlowGraphReferences,
-                )
-            }
-        }
-
-        /**
-         * qualified access 的可变状态。
-         */
-        private data class QualifiedAccessState(
-            /** 当前 dispatch receiver。 */
-            val dispatchReceiver: CfirExpression?,
-            /** 当前类型实参列表。 */
-            val typeArguments: List<CfirTypeRef>,
-        )
-    }
 }
 
 /**

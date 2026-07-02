@@ -2,18 +2,38 @@
 
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.CfirAnnotationContainer
+import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.diagnostic.ConeDiagnosticWithSingleCandidate
 import org.cangnova.cangjie.cfir.diagnostics.CjDiagnostic
+import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticContext
+import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.Severity
+import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.expressions.CfirResolvable
 import org.cangnova.cangjie.cfir.expressions.CfirStatement
+import org.cangnova.cangjie.cfir.references.CfirErrorNamedReference
+import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
+import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.session.languageVersionSettings
+import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFileSymbol
 import org.cangnova.cangjie.LanguageVersionSettings
 import org.cangnova.cangjie.cfir.SessionAndScopeSessionHolder
 import org.cangnova.cangjie.cfir.resolve.transformers.ReturnTypeCalculator
+import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
+import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
+import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.types.ConeDiagnostic
+import org.cangnova.cangjie.cfir.types.ConeErrorType
+import org.cangnova.cangjie.cfir.types.ConeUnreportedDuplicateDiagnostic
+import org.cangnova.cangjie.cfir.types.coneTypeOrNull
+import org.cangnova.cangjie.cfir.types.contains
+import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
 
 /** checker 执行期间可读取的诊断上下文，暴露当前 session、作用域和遍历栈信息。 */
 abstract class CheckerContext : DiagnosticContext, SessionAndScopeSessionHolder {
@@ -79,9 +99,100 @@ abstract class CheckerContext : DiagnosticContext, SessionAndScopeSessionHolder 
             Severity.WARNING, Severity.STRONG_WARNING, Severity.FIXED_WARNING -> allWarningsSuppressed
             Severity.ERROR -> allErrorsSuppressed
         }
-        return suppressedByAll || diagnostic.factoryName in suppressedDiagnostics
+        return suppressedByAll ||
+            diagnostic.factoryName in suppressedDiagnostics ||
+            diagnostic.isDerivedFromRecursiveImplicitReturn()
+    }
+
+    /**
+     * 隐式返回类型递归是函数签名层的根错误。
+     *
+     * 官方编译器在引用仍含 `?` 返回类型的函数时报告函数名级
+     * `sema_unable_to_infer_return_type`，并阻断同一返回表达式里由该未知返回类型派生的
+     * operator / match / pattern 等后续错误。这里在 checker context 层统一过滤这些派生诊断，
+     * 避免各 expression checker 分别硬编码同一规则。
+     */
+    private fun CjDiagnostic.isDerivedFromRecursiveImplicitReturn(): Boolean {
+        if (factoryName == "CFIR_UNABLE_TO_INFER_RETURN_TYPE") return false
+
+        return (containingStatements.asSequence() + callsOrAssignments.asSequence() + containingElements.asSequence())
+            .filterIsInstance<CfirExpression>()
+            .any { expression -> expression.dependsOnRecursiveImplicitReturnType() }
     }
 }
+
+/**
+ * 判断表达式类型或引用目标是否依赖“隐式返回类型递归”的 callable。
+ */
+private fun CfirExpression.dependsOnRecursiveImplicitReturnType(): Boolean {
+    if (coneTypeOrNull.hasRecursiveImplicitTypeError()) return true
+    if ((this as? CfirResolvable)?.recursiveImplicitReturnCallableOrNull() != null) return true
+
+    var found = false
+    acceptChildren(object : CfirVisitorVoid() {
+        override fun visitElement(element: CfirElement) {
+            if (found) return
+            if (element is CfirAnonymousFunctionExpression) return
+            when {
+                element is CfirExpression && element.coneTypeOrNull.hasRecursiveImplicitTypeError() -> {
+                    found = true
+                    return
+                }
+                element is CfirResolvable && element.recursiveImplicitReturnCallableOrNull() != null -> {
+                    found = true
+                    return
+                }
+            }
+            element.acceptChildren(this, null)
+        }
+    }, null)
+    return found
+}
+
+/**
+ * 若当前可解析表达式引用了返回类型递归失败的 callable，返回该 callable 声明。
+ */
+private fun CfirResolvable.recursiveImplicitReturnCallableOrNull(): CfirCallableDeclaration? {
+    val symbol = when (val reference = calleeReference) {
+        is CfirResolvedNamedReference -> reference.resolvedSymbol
+        is CfirNamedReferenceWithCandidateBase -> reference.candidateSymbol
+        is CfirErrorNamedReference ->
+            (reference.diagnostic as? ConeDiagnosticWithSingleCandidate)?.candidateSymbol
+        else -> null
+    } as? CfirCallableSymbol<*> ?: return null
+
+    return symbol.cfir.takeIf { it.returnTypeRef.hasRecursiveImplicitTypeError() }
+}
+
+/**
+ * 判断类型引用是否承载隐式返回类型递归错误。
+ */
+private fun CfirTypeRef.hasRecursiveImplicitTypeError(): Boolean = when (this) {
+    is CfirErrorTypeRef -> diagnostic.isRecursiveImplicitTypeDiagnostic()
+    is CfirResolvedTypeRef -> coneType.hasRecursiveImplicitTypeError()
+    else -> false
+}
+
+/**
+ * 判断类型树内部是否包含隐式返回类型递归错误。
+ */
+private fun org.cangnova.cangjie.cfir.types.ConeCangJieType?.hasRecursiveImplicitTypeError(): Boolean {
+    if (this == null) return false
+    return contains { type ->
+        type is ConeErrorType && type.diagnostic.isRecursiveImplicitTypeDiagnostic()
+    }
+}
+
+/**
+ * 判断 Cone diagnostic 是否是隐式返回类型递归错误。
+ */
+private fun ConeDiagnostic.isRecursiveImplicitTypeDiagnostic(): Boolean {
+    val simpleDiagnostic = unwrapUnreportedDuplicateDiagnostic() as? ConeSimpleDiagnostic ?: return false
+    return simpleDiagnostic.kind == DiagnosticKind.RecursionInImplicitTypes
+}
+
+private fun ConeDiagnostic.unwrapUnreportedDuplicateDiagnostic(): ConeDiagnostic =
+    (this as? ConeUnreportedDuplicateDiagnostic)?.original ?: this
 
 /** 诊断收集 visitor 使用的可变 checker context 实现。 */
 class MutableCheckerContext(

@@ -31,8 +31,13 @@ import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticFactory1
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
+import org.cangnova.cangjie.cfir.expressions.CfirBinaryOp
+import org.cangnova.cangjie.cfir.expressions.CfirBinaryOpKind
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirForInExpression
+import org.cangnova.cangjie.cfir.expressions.CfirIfExpression
+import org.cangnova.cangjie.cfir.expressions.CfirLetPatternExpression
+import org.cangnova.cangjie.cfir.expressions.CfirLoopExpression
 import org.cangnova.cangjie.cfir.expressions.CfirMatchBranch
 import org.cangnova.cangjie.cfir.patterns.bindingOccurrences
 import org.cangnova.cangjie.cfir.patterns.visibleBindingVariables
@@ -336,6 +341,43 @@ private class LocalRedeclarationVisitor(
     }
 
     /**
+     * while-let 的条件 binding 与循环体顶层共享一个局部作用域。
+     *
+     * 该作用域不与外层函数/块参数冲突，但循环体顶层声明会与条件引入的变量冲突；
+     * body statements 直接遍历，避免 body block 再引入额外隔离层。
+     */
+    override fun visitLoopExpression(loopExpression: CfirLoopExpression) {
+        if (loopExpression.isDoWhile || !loopExpression.condition.hasLetPatternCondition()) {
+            loopExpression.acceptChildren(this)
+            return
+        }
+
+        withScope {
+            declareLetConditionBindings(loopExpression.condition)
+            loopExpression.body.statements.forEach { it.accept(this) }
+        }
+    }
+
+    /**
+     * if-let 的条件 binding 与 then 分支顶层共享一个局部作用域。
+     *
+     * 该作用域对外层声明只做遮蔽，不做重声明冲突；then 分支顶层声明仍会与条件
+     * 引入的 binding 冲突。else/else-if 按独立分支遍历，不能复用 then 侧作用域。
+     */
+    override fun visitIfExpression(ifExpression: CfirIfExpression) {
+        if (!ifExpression.condition.hasLetPatternCondition()) {
+            ifExpression.acceptChildren(this)
+            return
+        }
+
+        withScope {
+            declareLetConditionBindings(ifExpression.condition)
+            ifExpression.thenBranch.statements.forEach { it.accept(this) }
+        }
+        ifExpression.elseBranch?.accept(this)
+    }
+
+    /**
      * match branch 的 pattern binding 在分支作用域中声明。
      */
     override fun visitMatchBranch(matchBranch: CfirMatchBranch) {
@@ -400,6 +442,30 @@ private class LocalRedeclarationVisitor(
     private fun declarePattern(pattern: org.cangnova.cangjie.cfir.patterns.CfirPattern, report: Boolean = true) {
         pattern.visibleBindingVariables().forEach { bindingVariable ->
             declare(bindingVariable.symbol, report)
+        }
+    }
+
+    /**
+     * 判断条件树是否包含 let-pattern 条件。
+     */
+    private fun org.cangnova.cangjie.cfir.expressions.CfirExpression.hasLetPatternCondition(): Boolean = when (this) {
+        is CfirLetPatternExpression -> true
+        is CfirBinaryOp -> (kind == CfirBinaryOpKind.AND || kind == CfirBinaryOpKind.OR) &&
+            (left.hasLetPatternCondition() || right.hasLetPatternCondition())
+        else -> false
+    }
+
+    /**
+     * 收集条件中会进入循环体作用域的 pattern binding。
+     */
+    private fun declareLetConditionBindings(condition: org.cangnova.cangjie.cfir.expressions.CfirExpression) {
+        when (condition) {
+            is CfirLetPatternExpression -> declarePattern(condition.pattern)
+            is CfirBinaryOp if condition.kind == CfirBinaryOpKind.AND || condition.kind == CfirBinaryOpKind.OR -> {
+                declareLetConditionBindings(condition.left)
+                declareLetConditionBindings(condition.right)
+            }
+            else -> condition.accept(this)
         }
     }
 
