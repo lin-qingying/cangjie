@@ -34,6 +34,7 @@ import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirBinaryOp
 import org.cangnova.cangjie.cfir.expressions.CfirBinaryOpKind
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
+import org.cangnova.cangjie.cfir.expressions.CfirCatch
 import org.cangnova.cangjie.cfir.expressions.CfirForInExpression
 import org.cangnova.cangjie.cfir.expressions.CfirIfExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLetPatternExpression
@@ -385,6 +386,19 @@ private class LocalRedeclarationVisitor(
             declarePattern(matchBranch.pattern)
             matchBranch.guard?.accept(this)
             matchBranch.body.statements.forEach { it.accept(this) }
+        }
+    }
+
+    /**
+     * catch 参数只在当前 catch 子句内可见。
+     *
+     * 多个 catch 子句允许复用同名参数；参数与 catch body 顶层共享作用域，
+     * 因此 body 内同名局部声明仍应报告重声明。
+     */
+    override fun visitCatch(catch: CfirCatch) {
+        withScope {
+            catch.pattern.bindingVariable?.let { declare(it.symbol) }
+            catch.body.statements.forEach { it.accept(this) }
         }
     }
 

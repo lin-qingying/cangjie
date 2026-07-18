@@ -78,7 +78,7 @@ object JUnit5Assertions : AssertionsService() {
                 appendLine(actual)
             }
             throw AssertionFailedError(
-                "${message()}: ${expectedFile.name}$details",
+                "${message()}: ${expectedFile.name} ",
                 FileInfo(expectedFile.absolutePath, expected.toByteArray(StandardCharsets.UTF_8)),
                 actual,
             )

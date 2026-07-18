@@ -259,6 +259,65 @@ class MacroArtifactResolverTest {
     }
 
     /**
+     * 验证官方标准宏包门面可重导出到普通实现包，运行库仍使用标准宏包门面库。
+     */
+    @Test
+    fun sdkStdMacroFacadeMayReexportNormalImplementationPackage() {
+        val sdkHome = tempDir.resolve("sdk")
+        val host = currentHost()
+        val modulesRoot = Files.createDirectories(sdkHome.resolve("modules").resolve(host))
+        val runtimeRoot = Files.createDirectories(sdkHome.resolve("runtime").resolve("lib").resolve(host))
+        val facadeCjo = writeCjoAt(
+            path = modulesRoot.resolve("std").resolve("std.deriving.cjo"),
+            packageFqName = "std.deriving",
+            kind = PackageKind.Macro,
+            callableNames = emptyList(),
+            fileImports = listOf(
+                CjoPackageFileImports(
+                    listOf(
+                        CjoPackageImport(
+                            prefixPaths = listOf("std", "deriving", "impl"),
+                            identifier = "deriveImpl",
+                            alias = "Derive",
+                            isDecl = true,
+                            withImplicitExport = true,
+                        ),
+                    ),
+                ),
+            ),
+        )
+        writeCjoAt(
+            path = modulesRoot.resolve("std").resolve("std.deriving.impl.cjo"),
+            packageFqName = "std.deriving.impl",
+            kind = PackageKind.Normal,
+            callableNames = listOf("deriveImpl"),
+        )
+        val facadeDylib = writeFile(runtimeRoot, "libcangjie-std-deriving.${dynamicLibraryExtension()}")
+        writeFile(runtimeRoot, "libcangjie-std-deriving.impl.${dynamicLibraryExtension()}")
+
+        val result = MacroArtifactResolver().resolve(
+            packages = listOf(
+                artifact(
+                    packageFqName = "std.deriving",
+                    cjoPath = facadeCjo,
+                    dynamicLibPath = facadeDylib,
+                    origin = MacroArtifactPackage.Origin.SDK_STDLIB,
+                ),
+            ),
+            searchRoots = listOf(modulesRoot.toString()),
+            sdkHome = sdkHome.toString(),
+        )
+
+        assertTrue(result.diagnostics.isEmpty(), "Unexpected diagnostics: ${result.diagnostics}")
+        val definition = result.definitions.single()
+        assertEquals(FqName("std.deriving"), definition.packageFqName)
+        assertEquals("Derive", definition.name.asString())
+        assertEquals(FqName("std.deriving.impl"), definition.executablePackageFqName)
+        assertEquals("deriveImpl", definition.executableName.asString())
+        assertEquals(facadeDylib.toString(), definition.libPath)
+    }
+
+    /**
      * 构造测试用宏 artifact 包。
      */
     private fun artifact(
@@ -294,6 +353,16 @@ class MacroArtifactResolverTest {
     }
 
     /**
+     * 在指定目录写入测试用普通二进制文件。
+     */
+    private fun writeFile(directory: Path, name: String): Path {
+        val path = directory.resolve(name)
+        Files.createDirectories(path.parent)
+        Files.write(path, byteArrayOf(1))
+        return path
+    }
+
+    /**
      * 写入带指定包元数据的 `.cjo` 文件。
      */
     private fun writeCjo(
@@ -304,6 +373,20 @@ class MacroArtifactResolverTest {
         fileImports: List<CjoPackageFileImports> = emptyList(),
     ): Path {
         val path = tempDir.resolve(name)
+        return writeCjoAt(path, packageFqName, kind, callableNames, fileImports)
+    }
+
+    /**
+     * 写入带指定包元数据的 `.cjo` 文件到明确路径。
+     */
+    private fun writeCjoAt(
+        path: Path,
+        packageFqName: String,
+        kind: UByte,
+        callableNames: List<String>,
+        fileImports: List<CjoPackageFileImports> = emptyList(),
+    ): Path {
+        path.parent?.let(Files::createDirectories)
         return CjoPackageWriter.write(
             path,
             CjoPackageMetadata(
@@ -315,4 +398,14 @@ class MacroArtifactResolverTest {
             ),
         )
     }
+
+    /**
+     * 与生产 locator 相同的 SDK host 目录名。
+     */
+    private fun currentHost(): String =
+        when {
+            System.getProperty("os.name").contains("Windows", ignoreCase = true) -> "windows_x86_64_cjnative"
+            System.getProperty("os.name").contains("Mac", ignoreCase = true) -> "darwin_x86_64_cjnative"
+            else -> "linux_x86_64_cjnative"
+        }
 }

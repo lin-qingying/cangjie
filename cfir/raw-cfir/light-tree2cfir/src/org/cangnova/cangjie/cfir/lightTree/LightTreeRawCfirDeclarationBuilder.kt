@@ -1775,9 +1775,10 @@ class LightTreeRawCfirDeclarationBuilder(
             if (child.tokenType == CjNodeTypes.IMPORT_LIST) {
                 tree.forEachChildren(child) { directive ->
                     if (directive.tokenType == CjNodeTypes.IMPORT_DIRECTIVE) {
+                        val directiveBaseFqName = directive.extractImportDirectiveBaseFqName()
                         tree.forEachChildren(directive) { item ->
                             if (item.tokenType == CjNodeTypes.IMPORT_ITEM) {
-                                convertImportItem(item)?.let { imports.add(it) }
+                                convertImportItem(item, directiveBaseFqName)?.let { imports.add(it) }
                             }
                         }
                     }
@@ -1787,8 +1788,25 @@ class LightTreeRawCfirDeclarationBuilder(
         return imports
     }
 
+    /**
+     * 提取 `import a.{b, c}` 中位于 IMPORT_DIRECTIVE 直接子层的共享前缀 `a`。
+     *
+     * 单项导入和 `import {a.b, c.d}` 的路径位于 IMPORT_ITEM 内部，这里只读取
+     * directive 直接子节点，保持与 PSI `CjImportItem.importedFqName` 的组合语义一致。
+     */
+    private fun LighterASTNode.extractImportDirectiveBaseFqName(): FqName? {
+        var baseText: String? = null
+        tree.forEachChildren(this) { child ->
+            when (child.tokenType) {
+                CjNodeTypes.DOT_QUALIFIED_EXPRESSION,
+                CjNodeTypes.REFERENCE_EXPRESSION -> baseText = child.asText()
+            }
+        }
+        return baseText?.takeIf { it.isNotBlank() }?.let { FqName(it) }
+    }
+
     /** 转换单个 import item。 */
-    private fun convertImportItem(item: LighterASTNode): CfirImport? {
+    private fun convertImportItem(item: LighterASTNode, directiveBaseFqName: FqName?): CfirImport? {
         // 提取导入的 FQN（从 DOT_QUALIFIED_EXPRESSION 或 REFERENCE_EXPRESSION）
         var fqNameText: String? = null
         var isAllUnder = false
@@ -1806,7 +1824,13 @@ class LightTreeRawCfirDeclarationBuilder(
             }
         }
 
-        val fqName = fqNameText?.let { normalizeImportFqName(FqName(it)) } ?: return null
+        val itemFqName = fqNameText?.let { FqName(it) }
+        val fqName = when {
+            directiveBaseFqName != null && itemFqName != null -> directiveBaseFqName.child(itemFqName)
+            itemFqName != null -> itemFqName
+            directiveBaseFqName != null -> directiveBaseFqName
+            else -> null
+        }?.let(::normalizeImportFqName) ?: return null
         return buildImport {
             source = item.toSource()
             importedFqName = fqName

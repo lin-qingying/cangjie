@@ -31,11 +31,11 @@ class B<X> where X <: Sub {
 
 main(): Int64 {
     let a = A<C1>()
-    a.foo<<!GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT!>C<!>2>(C1())
+    a.foo<<!GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT!>C2<!>>(C1())
     let b = a.<!AMBIGUOUS_USE!>foo<C2><!>
-    let c = A<C1>.goo<<!GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT!>C<!>2>
+    let c = A<C1>.goo<<!GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT!>C2<!>>
 
-    B<Sub>().f<<!GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT!>S<!>ub2>(Sub2())
+    B<Sub>().f<<!GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT!>Sub2<!>>(Sub2())
     let x: Sub = B<Sub>().f<SSub>(SSub())
     0
 }

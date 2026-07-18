@@ -264,7 +264,7 @@ class CjTypePattern : CjCasePattern<CangJieTypePatternStub>, PsiNameIdentifierOw
      * 保存 `identifierElement`，供仓颉 PSI流程读取节点结构或语义信息。
      */
     val identifierElement: PsiElement?
-        get() = findChildByType(CjTokens.IDENTIFIER)
+        get() = directBindingReference?.identifier ?: directBindingIdentifier
     /**
      * 获取所属的变量声明
      */
@@ -283,7 +283,7 @@ class CjTypePattern : CjCasePattern<CangJieTypePatternStub>, PsiNameIdentifierOw
         if (stub != null) {
             return stub.name
         }
-        return reference?.text
+        return identifierElement?.text
     }
     /**
      * 保存 `variable`，供仓颉 PSI流程读取节点结构或语义信息。
@@ -294,7 +294,37 @@ class CjTypePattern : CjCasePattern<CangJieTypePatternStub>, PsiNameIdentifierOw
      * 保存 `reference`，供仓颉 PSI流程读取节点结构或语义信息。
      */
     val reference: CjSimpleNameExpression?
-        get() = findChildByType(CjNodeTypes.REFERENCE_EXPRESSION)
+        get() = directBindingReference
+
+    /**
+     * 类型模式的绑定名位于冒号之前，类型引用内部也可能包含 REFERENCE_EXPRESSION。
+     * 只扫描顶层子节点，避免把 `case x: Float64` 中的类型名当成绑定名。
+     */
+    private val directBindingReference: CjSimpleNameExpression?
+        get() {
+            var child = firstChild
+            while (child != null) {
+                if (child is CjTypeReference || child.node.elementType == CjTokens.COLON) return null
+                if (child is CjSimpleNameExpression) return child
+                child = child.nextSibling
+            }
+            return null
+        }
+
+    /**
+     * `_ : T` 在 PSI 中是叶子 token，不是普通引用；保留它供调用方识别并抑制绑定变量。
+     */
+    private val directBindingIdentifier: PsiElement?
+        get() {
+            var child = firstChild
+            while (child != null) {
+                val elementType = child.node.elementType
+                if (child is CjTypeReference || elementType == CjTokens.COLON) return null
+                if (elementType == CjTokens.IDENTIFIER || elementType == CjTokens.UNDERLINE) return child
+                child = child.nextSibling
+            }
+            return null
+        }
 
     /**
      * 保存 `typeReference`，供仓颉 PSI流程读取节点结构或语义信息。

@@ -16,20 +16,17 @@ import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.CfirUserTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
-import org.cangnova.cangjie.cfir.types.ConeAnyType
-import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeClassifierType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
 import org.cangnova.cangjie.cfir.types.ConeTypeContext
-import org.cangnova.cangjie.cfir.types.StdlibClassIds
 import org.cangnova.cangjie.cfir.types.abbreviatedType
-import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.createTypeSubstitutorByTypeConstructor
 import org.cangnova.cangjie.cfir.types.declaredUpperBoundConeTypeOrNull
 import org.cangnova.cangjie.cfir.types.declaredUpperBoundRefsAfterTypeResolve
 import org.cangnova.cangjie.cfir.types.hasInvalidDeclaredUpperBounds
+import org.cangnova.cangjie.cfir.types.isLegalDeclaredUpperBound
 import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.source.CjFakeSourceElementKind
@@ -110,7 +107,6 @@ internal fun checkUpperBoundViolated(
             sourceArguments.getOrNull(index)
                 .takeIf { canMapArgumentSources }
                 ?.source
-                ?.firstCharacterDiagnosticSource()
                 ?: genericSource?.firstCharacterDiagnosticSource()
         },
         sourceTypeRefs = sourceArguments.takeIf { canMapArgumentSources },
@@ -172,7 +168,7 @@ internal fun checkUpperBoundViolated(
     checkUpperBoundViolated(
         typeParameters = typeParameters,
         argumentTypes = typeArgumentRefs.map { it.coneTypeOrNull },
-        argumentSources = typeArgumentRefs.map { it.source?.firstCharacterDiagnosticSource() },
+        argumentSources = typeArgumentRefs.map { it.source },
         sourceTypeRefs = typeArgumentRefs,
         fallbackSource = fallbackSource,
         substitutor = substitutor,
@@ -237,7 +233,11 @@ private fun checkUpperBoundViolated(
                 )
                 if (
                     upperBound !is ConeErrorType &&
-                    !AbstractTypeChecker.isSubtypeOf(context.session.typeContext, argumentType, upperBound)
+                    !AbstractTypeChecker.isSubtypeOfWithoutOptionBoxing(
+                        context.session.typeContext,
+                        argumentType,
+                        upperBound,
+                    )
                 ) {
                     // 合成声明可能携带无 source 的 resolved type ref；真实源码 type ref 会在递归路径继续检查。
                     if (argumentSource != null) {
@@ -278,22 +278,14 @@ context(context: CheckerContext)
 private fun CfirTypeParameterRef.hasInvalidDeclaredUpperBounds(): Boolean =
     symbol.toLookupTag().hasInvalidDeclaredUpperBounds(context.session)
 
-private fun CfirTypeParameterRef.declaredUpperBoundTypes(): List<ConeCangJieType> =
-    symbol.toLookupTag()
+context(context: CheckerContext)
+private fun CfirTypeParameterRef.declaredUpperBoundTypes(): List<ConeCangJieType> {
+    val bounds = symbol.toLookupTag()
         .declaredUpperBoundRefsAfterTypeResolve()
         .mapNotNull { it.declaredUpperBoundConeTypeOrNull() }
         .filterNot { it is ConeErrorType }
-
-/**
- * 判断类型是否允许作为泛型类型参数上界。
- */
-context(context: CheckerContext)
-private fun ConeCangJieType.isLegalGenericUpperBound(): Boolean {
-    val expandedType = fullyExpandedType(context.session)
-    if (expandedType is ConeClassLikeType || expandedType == ConeAnyType) return true
-
-    val classId = expandedType.classIdOrPrimitiveClassId
-    return classId == StdlibClassIds.Any || classId != null && CfirExtendSemantics.isCType(classId)
+    return bounds.filter { it.isLegalDeclaredUpperBound(context.session) }
+        .ifEmpty { bounds }
 }
 
 /**

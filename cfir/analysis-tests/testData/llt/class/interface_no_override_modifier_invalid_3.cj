@@ -7,7 +7,7 @@ interface I1 {
 }
 
 interface I2 <: I1 {
-    <!INHERIT_MEMBER_KIND_INCONSISTENT!>f<!>unc foo(): Int64 {
+    func <!STATIC_AND_NON_STATIC_MEMBER_CANNOT_HAVE_SAME_NAME!>foo<!>(): Int64 {
         return 2
     }
 }

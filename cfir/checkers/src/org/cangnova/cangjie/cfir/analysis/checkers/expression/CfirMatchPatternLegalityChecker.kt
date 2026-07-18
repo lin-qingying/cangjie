@@ -101,29 +101,12 @@ object CfirMatchPatternLegalityChecker : CfirMatchExpressionChecker() {
 
             is CfirBindingPattern -> {
                 val declaredType = (pattern.typeRef as? CfirResolvedTypeRef)?.coneType
-                if (declaredType != null && !typesMayOverlap(declaredType, expectedType, context)) {
-                    reporter.reportOn(
-                        source = pattern.source,
-                        factory = CfirErrors.PATTERN_NOT_MATCH,
-                        a = pattern.patternText(),
-                    )
-                    return
-                }
                 pattern.nestedPattern?.let { nested ->
                     checkPattern(nested, declaredType ?: expectedType)
                 }
             }
 
-            is CfirTypePattern -> {
-                val declaredType = (pattern.typeRef as? CfirResolvedTypeRef)?.coneType ?: return
-                if (!typesMayOverlap(declaredType, expectedType, context)) {
-                    reporter.reportOn(
-                        source = pattern.source,
-                        factory = CfirErrors.PATTERN_NOT_MATCH,
-                        a = pattern.patternText(),
-                    )
-                }
-            }
+            is CfirTypePattern -> Unit
 
             is CfirTuplePattern -> {
                 val tupleType = expectedType as? ConeTupleType
@@ -151,8 +134,8 @@ object CfirMatchPatternLegalityChecker : CfirMatchExpressionChecker() {
             }
 
             is CfirEnumPattern -> {
-                val argumentTypes = pattern.enumConstructorArgumentTypes(expectedType, context)
-                if (argumentTypes == null) {
+                val resolution = pattern.resolveEnumConstructorPattern(expectedType, context)
+                if (resolution == null) {
                     reporter.reportOn(
                         source = pattern.enumConstructorDiagnosticSource(),
                         factory = CfirErrors.PATTERN_NOT_MATCH,
@@ -161,7 +144,7 @@ object CfirMatchPatternLegalityChecker : CfirMatchExpressionChecker() {
                     return
                 }
 
-                if (pattern.arguments.size != argumentTypes.size) {
+                if (resolution is EnumPatternConstructorResolution.ArityMismatch) {
                     reporter.reportOn(
                         source = pattern.source ?: pattern.constructorReference.source,
                         factory = CfirErrors.ENUM_PATTERN_PARAM_SIZE_ERROR,
@@ -169,6 +152,7 @@ object CfirMatchPatternLegalityChecker : CfirMatchExpressionChecker() {
                     return
                 }
 
+                val argumentTypes = (resolution as EnumPatternConstructorResolution.Resolved).argumentTypes
                 pattern.arguments.forEachIndexed { index, argument ->
                     checkPattern(argument, argumentTypes[index])
                 }
@@ -217,7 +201,10 @@ object CfirMatchPatternLegalityChecker : CfirMatchExpressionChecker() {
 internal fun CfirMatchExpression.hasPatternLegalityProblem(context: CheckerContext): Boolean {
     val subjectType = subject?.coneTypeOrNull ?: return false
     if (subjectType is ConeErrorType) return false
-    return branches.any { branch -> branch.pattern.hasPatternLegalityProblem(subjectType, context) }
+    return branches.any { branch ->
+        branch.pattern.hasDuplicatePatternBindings() ||
+                branch.pattern.hasPatternLegalityProblem(subjectType, context)
+    }
 }
 
 /**
@@ -234,14 +221,10 @@ private fun CfirPattern.hasPatternLegalityProblem(
 
         is CfirBindingPattern -> {
             val declaredType = (typeRef as? CfirResolvedTypeRef)?.coneType
-            val headMismatch = declaredType != null && !typesMayOverlap(declaredType, expectedType, context)
-            headMismatch || (nestedPattern?.hasPatternLegalityProblem(declaredType ?: expectedType, context) == true)
+            nestedPattern?.hasPatternLegalityProblem(declaredType ?: expectedType, context) == true
         }
 
-        is CfirTypePattern -> {
-            val declaredType = (typeRef as? CfirResolvedTypeRef)?.coneType ?: return false
-            !typesMayOverlap(declaredType, expectedType, context)
-        }
+        is CfirTypePattern -> false
 
         is CfirTuplePattern -> {
             val tupleType = expectedType as? ConeTupleType ?: return true
@@ -252,11 +235,16 @@ private fun CfirPattern.hasPatternLegalityProblem(
         }
 
         is CfirEnumPattern -> {
-            val argumentTypes = enumConstructorArgumentTypes(expectedType, context) ?: return true
-            arguments.size != argumentTypes.size ||
+            when (val resolution = resolveEnumConstructorPattern(expectedType, context)) {
+                null,
+                EnumPatternConstructorResolution.ArityMismatch,
+                -> true
+
+                is EnumPatternConstructorResolution.Resolved ->
                     arguments.withIndex().any { (index, argument) ->
-                        argument.hasPatternLegalityProblem(argumentTypes[index], context)
+                        argument.hasPatternLegalityProblem(resolution.argumentTypes[index], context)
                     }
+            }
         }
 
         is CfirConstPattern -> !isCompatibleWith(expectedType)
@@ -267,6 +255,43 @@ private fun CfirPattern.hasPatternLegalityProblem(
                     alternatives.any { alternative -> alternative.hasPatternLegalityProblem(expectedType, context) }
         }
     }
+}
+
+/**
+ * pattern 内部重复绑定已经由声明冲突检查器报告；这里仅阻止 match 覆盖算法继续
+ * 把这个无效 pattern 当成可覆盖后续分支的有效行。
+ */
+private fun CfirPattern.hasDuplicatePatternBindings(): Boolean {
+    val seen = hashSetOf<String>()
+    var duplicate = false
+
+    fun record(name: Name?) {
+        val text = name?.asString() ?: return
+        if (text == "_") return
+        if (!seen.add(text)) duplicate = true
+    }
+
+    fun visit(pattern: CfirPattern) {
+        when (pattern) {
+            is CfirBindingPattern -> {
+                record(pattern.name)
+                pattern.nestedPattern?.let(::visit)
+            }
+
+            is CfirTypePattern -> record(pattern.bindingName)
+            is CfirTuplePattern -> pattern.elements.forEach(::visit)
+            is CfirEnumPattern -> pattern.arguments.forEach(::visit)
+            is CfirOrPattern -> pattern.alternatives.forEach(::visit)
+            is CfirWildcardPattern,
+            is CfirVarOrEnumPattern,
+            is CfirConstPattern,
+            is CfirExpressionPattern,
+            -> Unit
+        }
+    }
+
+    visit(this)
+    return duplicate
 }
 
 /**
@@ -435,26 +460,52 @@ private fun CfirEnumPattern.constructorName(): Name? = when (val reference = con
 }
 
 /**
- * 解析 enum pattern 构造器的 payload 参数类型列表。
+ * enum pattern 构造器解析结果。
+ *
+ * 参数个数不匹配必须与“subject enum 中不存在该构造器”分开，前者报告专门的
+ * `ENUM_PATTERN_PARAM_SIZE_ERROR`，后者才属于 `PATTERN_NOT_MATCH`。
+ */
+private sealed interface EnumPatternConstructorResolution {
+    data class Resolved(val argumentTypes: List<ConeCangJieType>) : EnumPatternConstructorResolution
+
+    data object ArityMismatch : EnumPatternConstructorResolution
+}
+
+/**
+ * 按 expected enum owner、构造器名称和 pattern payload 个数解析构造器。
  *
  * 标准库 Option 先走专门语义，普通 enum 再通过 subject 类型展开和 enum 声明查找构造器。
+ * 同名构造器允许具有不同 payload 形状，因此不能只按名称取第一个声明。
  */
-private fun CfirEnumPattern.enumConstructorArgumentTypes(
+private fun CfirEnumPattern.resolveEnumConstructorPattern(
     expectedType: ConeCangJieType,
     context: CheckerContext,
-): List<ConeCangJieType>? {
+): EnumPatternConstructorResolution? {
     val optionArgumentTypes = resolveStdlibOptionArgumentTypes(this, expectedType)
-    if (optionArgumentTypes != null) return optionArgumentTypes
+    if (optionArgumentTypes != null) {
+        return if (arguments.size == optionArgumentTypes.size) {
+            EnumPatternConstructorResolution.Resolved(optionArgumentTypes)
+        } else {
+            EnumPatternConstructorResolution.ArityMismatch
+        }
+    }
 
     val enumType = expectedType.expandedPatternEnumType(context.session) ?: return null
     val enumDeclaration = context.session.symbolProvider.getClassLikeSymbolByClassId(enumType.classId)?.cfir as? CfirEnum
         ?: return null
     val constructorName = constructorName() ?: return null
-    val enumConstructor = enumDeclaration.declarations
+    val constructorsByName = enumDeclaration.declarations
         .filterIsInstance<CfirEnumConstructor>()
-        .firstOrNull { constructor -> constructor.name == constructorName }
-        ?: return null
-    return enumConstructor.substitutedPayloadParameterTypes(enumDeclaration, enumType)
+        .filter { constructor -> constructor.name == constructorName }
+    if (constructorsByName.isEmpty()) return null
+
+    val enumConstructor = constructorsByName.firstOrNull { constructor ->
+        constructor.payloadArity() == arguments.size
+    } ?: return EnumPatternConstructorResolution.ArityMismatch
+
+    return EnumPatternConstructorResolution.Resolved(
+        enumConstructor.substitutedPayloadParameterTypes(enumDeclaration, enumType),
+    )
 }
 
 /**

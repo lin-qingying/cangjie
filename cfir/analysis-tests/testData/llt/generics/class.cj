@@ -9,7 +9,7 @@ interface J {
 }
 
 public class B <: J {
-    public func <!OVERRIDING_RETURN_TYPE_MISMATCH!>foo<!>(a: Int16): Father {
+    public func <!RETURN_TYPE_INCOMPATIBLE!>foo<!>(a: Int16): Father {
         return Child()
     }
 }

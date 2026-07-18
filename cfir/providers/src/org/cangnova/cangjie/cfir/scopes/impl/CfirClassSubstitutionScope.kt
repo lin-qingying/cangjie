@@ -84,6 +84,16 @@ class CfirClassSubstitutionScope(
     }
 
     /**
+     * 返回当前 scope 对指定 owner 类型参数的实例化结果。
+     *
+     * 从该 scope 产出的 callable 已经按 [dispatchReceiverType] 构造完成；调用推断阶段必须复用
+     * 同一 owner 映射，不能通过 substitution override 的原始声明再次创建 owner fresh variable。
+     * 即使结果仍是外层声明的类型参数，也表示该参数已由当前构造类型固定，而不是本次调用待推断参数。
+     */
+    fun substitutedOwnerTypeParameterOrNull(typeParameterSymbol: CfirTypeParameterSymbol): ConeCangJieType? =
+        substitutor.substituteOrNull(typeParameterSymbol.constructType())
+
+    /**
      * 函数 substitution override 缓存。
      */
     private val functionOverrideCache = mutableMapOf<CfirNamedFunctionSymbol, CfirNamedFunctionSymbol>()
@@ -145,6 +155,23 @@ class CfirClassSubstitutionScope(
      */
     override fun processClassifiersByName(name: Name, processor: (CfirClassLikeSymbol<*>) -> Unit) {
         useSiteMemberScope.processClassifiersByName(name, processor)
+    }
+
+    /**
+     * 透传嵌套 classifier 时合并底层 scope 与当前具体 owner 的替换器。
+     */
+    override fun processClassifiersByNameWithSubstitution(
+        name: Name,
+        processor: (CfirClassifierSymbol<*>, ConeSubstitutor) -> Unit,
+    ) {
+        useSiteMemberScope.processClassifiersByNameWithSubstitution(name) { classifier, delegateSubstitutor ->
+            val effectiveSubstitutor = when {
+                delegateSubstitutor === ConeSubstitutor.Empty -> substitutor
+                substitutor === ConeSubstitutor.Empty -> delegateSubstitutor
+                else -> ChainedCfirSubstitutor(delegateSubstitutor, substitutor)
+            }
+            processor(classifier, effectiveSubstitutor)
+        }
     }
 
     /**

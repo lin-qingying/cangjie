@@ -10,7 +10,7 @@ open class Basei {
 
 class Data <: Basei {
     public var a = 2;
-    public var resc = temp;
+    public var resc = <!UNRESOLVED_REFERENCE!>temp<!>;
     public var res = <!USED_BEFORE_INITIALIZATION!>getNum1<!>();
     public init() {}
 }

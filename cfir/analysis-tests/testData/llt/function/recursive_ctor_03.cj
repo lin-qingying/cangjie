@@ -6,7 +6,7 @@ open class A {
 
 class B <: A {
     public var b1: UInt32 = 2
-    public var obj: A = <!RECURSIVE_CONSTRUCTOR_CALL!>B()<!>
+    public var obj: A = <!RECURSIVE_CONSTRUCTOR_CALL!>B<!>()
 }
 
 main() {

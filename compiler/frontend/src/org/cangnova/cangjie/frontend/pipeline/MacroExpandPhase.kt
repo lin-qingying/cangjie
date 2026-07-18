@@ -355,6 +355,7 @@ class FrontendMacroConstructionService(
         for (surface in pre.allSurfaces) {
             registry.registerOriginSurface(surface)
         }
+        registerUsedMacroNames(pre, classification, registry)
         registry.addAll(preConstructionDiagnostics)
 
         // baseline 第 12 节 Batch 5："alias conflict / macro package / ..."。
@@ -390,6 +391,38 @@ class FrontendMacroConstructionService(
         }
 
         return MacroConstructionService.successOf(pre, expandedFiles, registry)
+    }
+
+    /**
+     * 把 construction routing 已确认消费的 macro 调用按宿主文件登记到 registry。
+     *
+     * 该记录服务于后续 ordinary checker：macro 调用在 final CFIR 中可能已被展开产物替换，
+     * 但对应 import 仍应按官方 unused-import 规则视为已使用。
+     */
+    private fun registerUsedMacroNames(
+        pre: PreMacroRawBuildResult,
+        classification: MacroDemandClassification,
+        registry: MacroExpansionRegistry,
+    ) {
+        val usedDecisionsBySurfaceId = classification.finalDecisions
+            .asSequence()
+            .filter { it.localConstruction }
+            .filterNot { it.surface.isMacroDefinitionSignatureSurface() }
+            .associateBy { it.surface.surfaceId }
+        if (usedDecisionsBySurfaceId.isEmpty()) return
+
+        for (preFile in pre.files) {
+            for (surface in preFile.surfaces) {
+                val decision = usedDecisionsBySurfaceId[surface.surfaceId]
+                if (decision != null) {
+                    registry.registerUsedMacroSurface(preFile.cfirFile, surface)
+                    val resolvedEntry = (decision.resolution as? MacroResolution.Resolved)?.entry
+                    if (resolvedEntry != null) {
+                        registry.registerUsedMacroDefinition(preFile.cfirFile, resolvedEntry)
+                    }
+                }
+            }
+        }
     }
 
     /**

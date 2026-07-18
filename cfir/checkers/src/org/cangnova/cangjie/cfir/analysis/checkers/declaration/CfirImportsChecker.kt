@@ -11,16 +11,26 @@ import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirImport
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
-import org.cangnova.cangjie.cfir.resolve.providers.isReexportingSourceImport
+import org.cangnova.cangjie.cfir.resolve.providers.isPackageVisibleSourceImport
+import org.cangnova.cangjie.cfir.resolve.providers.isUnusedImportCheckExempt
 import org.cangnova.cangjie.cfir.resolve.services.CfirResolvedImportBinding
 import org.cangnova.cangjie.cfir.resolve.services.CfirResolvedImportTarget
+import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.annotationMetadataRegistryOrNull
+import org.cangnova.cangjie.cfir.session.cfirProvider
+import org.cangnova.cangjie.cfir.session.extendProviderOrNull
 import org.cangnova.cangjie.cfir.session.importBindingStoreOrNull
+import org.cangnova.cangjie.cfir.session.macroExpansionRegistry
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirUserTypeRef
+import org.cangnova.cangjie.cfir.types.classId
+import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.visitors.CfirDefaultVisitorVoid
 import org.cangnova.cangjie.cfir.containingClassLookupTag
 import org.cangnova.cangjie.cfir.unwrapFakeOverridesOrDelegated
@@ -173,8 +183,8 @@ object CfirImportsChecker : CfirFileChecker() {
         declaration: CfirFile,
         duplicateImports: Set<CfirImport>,
     ) {
-        val referencedNames = declaration.collectReferencedNames()
-        val referencedClassIds = declaration.collectReferencedClassIds()
+        val localUsage = declaration.collectImportUsage(context.session)
+        val packageUsage by lazy { declaration.collectPackageImportUsage(context.session) }
         val importBindingsByImport = context.session.importBindingStoreOrNull
             ?.getBindings(declaration)
             ?.imports
@@ -183,18 +193,68 @@ object CfirImportsChecker : CfirFileChecker() {
 
         for (import in declaration.imports) {
             if (import in duplicateImports) continue
-            if (import.isAllUnder) continue
-            if (import.isReexportingSourceImport()) continue
+            if (import.isUnusedImportCheckExempt(context.session)) continue
 
             val importedFqName = import.importedFqName?.takeUnless { it.isRoot } ?: continue
             if (!hasResolvedTerminalImportTarget(import, importedFqName, importBindingsByImport)) continue
 
+            val usage = if (import.isPackageVisibleSourceImport()) packageUsage else localUsage
+            if (import.isAllUnder) {
+                if (import.referencesAnyStarImportedTarget(usage.targets, usage.names, context.session)) continue
+                if (context.session.macroExpansionRegistry?.usedMacroNames(declaration, importedFqName).orEmpty().isNotEmpty()) continue
+                reporter.reportOn(import.source, CfirErrors.UNUSED_IMPORT, importedFqName)
+                continue
+            }
+
             val importedName = import.aliasName ?: importedFqName.shortName()
-            if (importedName in referencedNames) continue
-            if (import.referencesAnyClassId(referencedClassIds, importBindingsByImport)) continue
+            if (importedName in usage.names) continue
+            if (import.aliasName == null && import.referencesAnyClassId(usage.targets.classIds, importBindingsByImport)) continue
+            if (import.aliasName == null && importedFqName in usage.targets.macroPackages) continue
+            if (import.referencesUsedMacroPackage(declaration, context.session, importBindingsByImport)) continue
 
             reporter.reportOn(import.source, CfirErrors.UNUSED_IMPORT, importedFqName)
         }
+    }
+
+    /**
+     * 收集单个文件内用于 unused-import 判定的引用事实。
+     */
+    private fun CfirFile.collectImportUsage(session: CfirSession): ImportUsage =
+        ImportUsage(
+            names = collectReferencedNames() + collectMacroSurfaceReferencedNames(session),
+            targets = collectReferencedImportTargets(session),
+        )
+
+    /**
+     * 收集当前包全部源码文件的引用事实。
+     *
+     * 官方 unused-import 实现对 private import 使用文件级使用图，对非 private 的包级可见
+     * import 使用整个 AST/package 使用图；这里对应 `internal import` 的同包可见语义。
+     */
+    private fun CfirFile.collectPackageImportUsage(session: CfirSession): ImportUsage {
+        val packageFqName = packageDirective.packageFqName
+        val files = session.cfirProvider.getCfirFilesByPackage(packageFqName)
+        val names = linkedSetOf<Name>()
+        val classIds = linkedSetOf<ClassId>()
+        val callablePackages = linkedSetOf<FqName>()
+        val macroPackages = linkedSetOf<FqName>()
+
+        for (file in files) {
+            val usage = file.collectImportUsage(session)
+            names += usage.names
+            classIds += usage.targets.classIds
+            callablePackages += usage.targets.callablePackages
+            macroPackages += usage.targets.macroPackages
+        }
+
+        return ImportUsage(
+            names = names,
+            targets = ReferencedImportTargets(
+                classIds = classIds,
+                callablePackages = callablePackages,
+                macroPackages = macroPackages,
+            ),
+        )
     }
 
     /**
@@ -208,6 +268,12 @@ object CfirImportsChecker : CfirFileChecker() {
         accept(object : CfirDefaultVisitorVoid() {
             override fun visitElement(element: CfirElement) {
                 element.acceptChildren(this)
+            }
+
+            override fun visitAnnotation(annotation: CfirAnnotation) {
+                annotation.shortNameOrNull()?.let(result::add)
+                annotation.typeRef.accept(this)
+                annotation.arguments.forEach { it.accept(this) }
             }
 
             override fun visitNamedReference(namedReference: CfirNamedReference) {
@@ -235,6 +301,17 @@ object CfirImportsChecker : CfirFileChecker() {
     }
 
     /**
+     * 收集当前源文件中 construction 阶段已经消费过的 macro surface 名称。
+     *
+     * 普通 checker 看到的是 macro construction 后的 final CFIR，原始 `@Macro` 节点可能已经
+     * 被展开产物替换；unused-import 必须像官方 `GetUsedMacroDecls(file)` 一样，把这些
+     * construction-only macro 调用也计为 import 使用。
+     */
+    private fun CfirFile.collectMacroSurfaceReferencedNames(session: CfirSession): Set<Name> {
+        return session.macroExpansionRegistry?.usedMacroNames(this).orEmpty()
+    }
+
+    /**
      * IMPORTS 阶段已经产出的 binding 是本文件 import 可解析性的唯一事实来源。
      * checker 仅在缺失 binding 时才回退到 symbolProvider 直接查询，避免与宏导入、
      * re-export 等已解析目标再次脱节。
@@ -258,24 +335,60 @@ object CfirImportsChecker : CfirFileChecker() {
      * 该集合用于识别只通过成员调用触达的类导入，避免成员解析已经证明导入被使用时
      * 仍把对应类导入报告为未使用。
      */
-    private fun CfirFile.collectReferencedClassIds(): Set<ClassId> {
-        val result = linkedSetOf<ClassId>()
+    private fun CfirFile.collectReferencedImportTargets(session: CfirSession): ReferencedImportTargets {
+        val classIds = linkedSetOf<ClassId>()
+        val callablePackages = linkedSetOf<FqName>()
+        val macroPackages = linkedSetOf<FqName>()
         accept(object : CfirDefaultVisitorVoid() {
             override fun visitElement(element: org.cangnova.cangjie.cfir.CfirElement) {
                 element.acceptChildren(this)
             }
 
+            override fun visitAnnotation(annotation: CfirAnnotation) {
+                recordMacroAnnotationPackage(annotation, macroPackages, session)
+                super.visitAnnotation(annotation)
+            }
+
+            override fun visitResolvedTypeRef(resolvedTypeRef: CfirResolvedTypeRef) {
+                resolvedTypeRef.coneType.classId?.let(classIds::add)
+                super.visitResolvedTypeRef(resolvedTypeRef)
+                resolvedTypeRef.delegatedTypeRef?.accept(this)
+            }
+
             override fun visitResolvedNamedReference(resolvedNamedReference: CfirResolvedNamedReference) {
-                result.addContainingClassIds(resolvedNamedReference.resolvedSymbol)
+                recordCallableImportTargets(resolvedNamedReference.resolvedSymbol, classIds, callablePackages, session)
                 super.visitResolvedNamedReference(resolvedNamedReference)
             }
 
             override fun visitNamedReferenceWithCandidateBase(namedReferenceWithCandidateBase: CfirNamedReferenceWithCandidateBase) {
-                result.addContainingClassIds(namedReferenceWithCandidateBase.candidateSymbol)
+                recordCallableImportTargets(namedReferenceWithCandidateBase.candidateSymbol, classIds, callablePackages, session)
                 super.visitNamedReferenceWithCandidateBase(namedReferenceWithCandidateBase)
             }
         })
-        return result
+        return ReferencedImportTargets(
+            classIds = classIds,
+            callablePackages = callablePackages,
+            macroPackages = macroPackages,
+        )
+    }
+
+    /**
+     * 记录 annotation metadata 中的 macro surface 包使用。
+     *
+     * 声明宏在 construction 或 degraded 路径中可能仍以 annotation 形式保留在 final CFIR；
+     * unused-import 判定必须读取 raw-builder 写入的 slot metadata，而不是把它当普通类型引用。
+     */
+    private fun recordMacroAnnotationPackage(
+        annotation: CfirAnnotation,
+        macroPackages: MutableSet<FqName>,
+        session: CfirSession,
+    ) {
+        val annotationCall = annotation as? CfirAnnotationCall ?: return
+        val qualifiedName = session.annotationMetadataRegistryOrNull
+            ?.snapshot(annotationCall)
+            ?.qualifiedName
+            ?: return
+        qualifiedName.parent().takeUnless { it.isRoot }?.let(macroPackages::add)
     }
 
     /**
@@ -284,13 +397,27 @@ object CfirImportsChecker : CfirFileChecker() {
      * 成员可能以 fake override / substitution override 形式挂在当前 receiver 类型上；
      * unused-import 判定必须同时看原始声明所属 class，才能对齐官方基于 AST target 的使用记录。
      */
-    private fun MutableSet<ClassId>.addContainingClassIds(symbol: CfirBasedSymbol<*>) {
+    private fun recordCallableImportTargets(
+        symbol: CfirBasedSymbol<*>,
+        classIds: MutableSet<ClassId>,
+        callablePackages: MutableSet<FqName>,
+        session: CfirSession,
+    ) {
         val callableSymbol = symbol as? CfirCallableSymbol<*> ?: return
-        callableSymbol.callableId.classId?.let(::add)
-        callableSymbol.containingClassLookupTag()?.classId?.let(::add)
+        callablePackages += callableSymbol.callableId.packageName
+        callableSymbol.callableId.classId?.let(classIds::add)
+        callableSymbol.containingClassLookupTag()?.classId?.let(classIds::add)
         val originalSymbol = callableSymbol.unwrapFakeOverridesOrDelegated()
-        originalSymbol.callableId.classId?.let(::add)
-        originalSymbol.containingClassLookupTag()?.classId?.let(::add)
+        callablePackages += originalSymbol.callableId.packageName
+        originalSymbol.callableId.classId?.let(classIds::add)
+        originalSymbol.containingClassLookupTag()?.classId?.let(classIds::add)
+
+        val ownerExtend = session.extendProviderOrNull
+            ?.getContainingExtend(originalSymbol)
+            ?: return
+        for (superTypeRef in ownerExtend.superTypeRefs) {
+            superTypeRef.coneTypeOrNull?.classId?.let(classIds::add)
+        }
     }
 
     /**
@@ -310,6 +437,77 @@ object CfirImportsChecker : CfirFileChecker() {
             .filterIsInstance<CfirResolvedImportTarget.ClassLike>()
             .any { it.classId in bindings }
     }
+
+    /**
+     * 判断星号导入的目标包中是否有任一 class-like 或 callable 被当前文件解析使用。
+     */
+    private fun CfirImport.referencesAnyStarImportedTarget(
+        referencedTargets: ReferencedImportTargets,
+        referencedNames: Set<Name>,
+        session: CfirSession,
+    ): Boolean {
+        val packageFqName = importedFqName ?: return false
+        return referencedTargets.classIds.any { it.packageFqName == packageFqName } ||
+            packageFqName in referencedTargets.callablePackages ||
+            packageFqName in referencedTargets.macroPackages ||
+            referencedNames.any { name -> session.symbolProvider.hasTopLevelName(packageFqName, name) }
+    }
+
+    /**
+     * 判断普通包导入是否被限定 macro 调用消费。
+     *
+     * macro construction 记录的是解析后的定义包使用事实；对于 `import a` 后的
+     * `@a.Derive`，final CFIR 已经不一定保留原始限定调用，因此 unused-import 需要
+     * 直接按导入包名查询 construction registry。
+     */
+    private fun CfirImport.referencesUsedMacroPackage(
+        file: CfirFile,
+        session: CfirSession,
+        importBindingsByImport: Map<CfirImport, CfirResolvedImportBinding>,
+    ): Boolean {
+        val importedFqName = importedFqName ?: return false
+        val registry = session.macroExpansionRegistry ?: return false
+        val usedMacroNames = registry.usedMacroNames(file, importedFqName)
+        if (usedMacroNames.isEmpty()) return false
+
+        val resolvedBinding = importBindingsByImport[this]
+        if (resolvedBinding != null) {
+            return resolvedBinding.targets.any { it is CfirResolvedImportTarget.Package }
+        }
+
+        return session.symbolProvider.hasPackage(importedFqName)
+    }
+
+    /**
+     * 判断指定包是否通过 source/delegated provider 暴露给定顶层名称。
+     *
+     * 这里使用 symbol provider 的 reexport 后视图，覆盖 `public import a.*` 再被
+     * `import pkg.*` 消费的路径，避免星号导入只按真实声明包名判断而误报未使用。
+     */
+    private fun org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider.hasTopLevelName(
+        packageFqName: FqName,
+        name: Name,
+    ): Boolean {
+        if (getClassLikeSymbolByClassId(ClassId(packageFqName, name)) != null) return true
+        return getTopLevelCallableSymbols(packageFqName, name).isNotEmpty()
+    }
+
+    /**
+     * 当前文件中已解析引用触达的 import 目标集合。
+     */
+    private data class ReferencedImportTargets(
+        val classIds: Set<ClassId>,
+        val callablePackages: Set<FqName>,
+        val macroPackages: Set<FqName>,
+    )
+
+    /**
+     * unused-import 判定使用的名称引用与解析目标引用集合。
+     */
+    private data class ImportUsage(
+        val names: Set<Name>,
+        val targets: ReferencedImportTargets,
+    )
 
     /**
      * 查找 import 父路径中第一个无法解析为包前缀的片段下标。

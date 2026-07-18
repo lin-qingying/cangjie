@@ -15,7 +15,7 @@ class A {
         }
     }
     public init(str: String) {
-        <!CANNOT_ASSIGN_TO_IMMUTABLE!>this.b = foo()<!>
+        this.<!CANNOT_ASSIGN_TO_IMMUTABLE!>b<!> = foo()
     }
 
     init() {

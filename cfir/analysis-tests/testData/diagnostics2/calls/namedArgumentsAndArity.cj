@@ -24,7 +24,7 @@ func testTooManyArguments(): Unit {
 }
 
 func testNamedArgumentsNotAllowed(): Unit {
-    positional(<!NAMED_ARGUMENTS_NOT_ALLOWED!>a<!>: 1, <!NAMED_ARGUMENTS_NOT_ALLOWED!>b<!>: 2)
+    positional(<!NAMED_ARGUMENTS_NOT_ALLOWED!>a<!>: 1, b: 2)
 }
 
 func testNamedParameterNotFound(): Unit {

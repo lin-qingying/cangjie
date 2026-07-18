@@ -13,7 +13,7 @@ struct S {
         func foo(a: Int8) {
             func C(a: Int8) {} // This function shadows the outer C variable at line 18
             let v: Rune = 'a'
-            let str: String = C(<!TYPE_MISMATCH!>v<!>)
+            let str: String = C(<!ARGUMENT_TYPE_MISMATCH!>v<!>)
         }
     }
 }

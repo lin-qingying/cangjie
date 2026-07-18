@@ -22,7 +22,7 @@ main() {
     funcWithFuncParam(<!UNSAFE_FUNC_CAN_ONLY_BE_CALLED!>unsafeFunc<!>)
     // member access
     let obj = ClassWithUnsafeMember()
-    fn = <!UNSAFE_FUNC_CAN_ONLY_BE_CALLED!>obj.unsafeFunc<!>
-    funcWithFuncParam(<!UNSAFE_FUNC_CAN_ONLY_BE_CALLED!>obj.unsafeFunc<!>)
+    fn = obj.<!UNSAFE_FUNC_CAN_ONLY_BE_CALLED!>unsafeFunc<!>
+    funcWithFuncParam(obj.<!UNSAFE_FUNC_CAN_ONLY_BE_CALLED!>unsafeFunc<!>)
     return 0
 }

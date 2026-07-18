@@ -5,6 +5,7 @@
 
 package org.cangnova.cangjie.cfir.resolve.calls.stages
 
+import org.cangnova.cangjie.cfir.resolve.calls.CandidateProcessingMode
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.session.inferenceLogger
@@ -42,7 +43,14 @@ class ResolutionStageRunner {
                 if (runAdditionalStages) it.resolutionSequenceWithAdditionalStages
                 else it.resolutionSequence
             }
-            while (candidate.passedStages < resolutionSequence.size) {
+            val stageLimit = when (context.candidateProcessingMode) {
+                CandidateProcessingMode.FULL -> resolutionSequence.size
+                CandidateProcessingMode.ARGUMENT_SHAPE -> {
+                    val mapArgumentsIndex = resolutionSequence.indexOf(CfirMapArguments)
+                    if (mapArgumentsIndex >= 0) mapArgumentsIndex + 1 else resolutionSequence.size
+                }
+            }
+            while (candidate.passedStages < stageLimit) {
                 context(context, sink) {
                     val nextStage = resolutionSequence[candidate.passedStages++]
                     inferenceLogger?.logStage("Resolution Stages > ${nextStage::class.simpleName}", candidate.system)

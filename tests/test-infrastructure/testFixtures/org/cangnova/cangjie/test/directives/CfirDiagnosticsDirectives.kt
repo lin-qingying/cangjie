@@ -98,6 +98,13 @@ object CfirDiagnosticsDirectives : SimpleDirectivesContainer(){
     )
 
     /**
+     * 按官方 `--no-sub-pkg` 模式编译当前测试模块。
+     */
+    val NO_SUB_PKG by directive(
+        description = "Enables no-sub-package compilation mode for package-level import diagnostics.",
+    )
+
+    /**
      * 保存 `DUMP_INFERENCE_LOGS`，供测试指令在测试执行期间读取或传递。
      */
     val DUMP_INFERENCE_LOGS by directive(

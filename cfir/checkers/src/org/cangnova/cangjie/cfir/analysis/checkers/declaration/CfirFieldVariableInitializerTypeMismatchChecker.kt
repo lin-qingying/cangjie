@@ -30,6 +30,7 @@ object CfirFieldVariableInitializerTypeMismatchChecker : CfirFieldVariableChecke
         checkTypeMismatch(
             expectedType = expectedType,
             actualType = actualType,
+            expression = initializer,
             source = source,
             preferredSpecializedSource = initializer.source as? AbstractCjSourceElement,
             diagnosticFactory = CfirErrors.TYPE_MISMATCH,

@@ -13,7 +13,7 @@ interface I2 {
 }
 
 class C <: I1 & I2 {
-    public func <!OVERRIDING_RETURN_TYPE_MISMATCH!>f<!>(a: Int32): Father {
+    public func <!RETURN_TYPE_INCOMPATIBLE!>f<!>(a: Int32): Father {
         Child()
     }
 }

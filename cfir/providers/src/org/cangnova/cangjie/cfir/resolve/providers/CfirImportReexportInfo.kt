@@ -3,6 +3,8 @@ package org.cangnova.cangjie.cfir.resolve.providers
 import com.intellij.lang.LighterASTNode
 import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.cfir.declarations.CfirImport
+import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.noSubPackage
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.source.CjLightSourceElement
@@ -40,17 +42,39 @@ internal data class CfirReexportImportInfo(
 )
 
 /**
- * 仓颉 `public/protected/internal import` 会把导入成员重导出；
+ * 仓颉 `public/protected import` 会把导入成员作为本包 API 重导出；
  * 默认 `import` 等价于 `private import`，不参与重导出。
  */
 fun CfirImport.isReexportingSourceImport(): Boolean =
     source.importVisibilityKeyword() in REEXPORTING_IMPORT_VISIBILITIES
 
 /**
+ * 判断 import 是否对同包其它源码文件可见。
+ *
+ * `internal import` 不属于 public/protected API 重导出，但它会参与包级名称解析；
+ * unused-import 检查仍需要基于包级使用情况决定是否报告。
+ */
+fun CfirImport.isPackageVisibleSourceImport(): Boolean =
+    source.importVisibilityKeyword() in PACKAGE_VISIBLE_IMPORT_VISIBILITIES
+
+/**
+ * 判断当前 import 是否免于未使用导入检查。
+ *
+ * `public/protected import` 始终作为包 API 重导出；`internal import` 仅在支持子包的默认
+ * 编译模式下豁免。private 与未显式标注可见性的 import 始终参加文件级检查。
+ */
+fun CfirImport.isUnusedImportCheckExempt(session: CfirSession): Boolean =
+    when (source.importVisibilityKeyword()) {
+        "public", "protected" -> true
+        "internal" -> !session.noSubPackage
+        else -> false
+    }
+
+/**
  * 将当前 import 转换为 source provider 可使用的 reexport 信息。
  */
 internal fun CfirImport.reexportInfoOrNull(): CfirReexportImportInfo? {
-    if (!isReexportingSourceImport()) return null
+    if (!isPackageVisibleSourceImport()) return null
 
     val importedFqName = importedFqName?.takeUnless { it.isRoot } ?: return null
     val importedPackageFqName = if (isAllUnder) importedFqName else importedFqName.parent()
@@ -116,6 +140,14 @@ private val IMPORT_VISIBILITY_PATTERN = Regex("^(public|protected|internal|priva
  * 会产生 reexport 的 import 可见性集合。
  */
 private val REEXPORTING_IMPORT_VISIBILITIES = setOf(
+    "public",
+    "protected",
+)
+
+/**
+ * 对同包其它源码文件可见的 import 可见性集合。
+ */
+private val PACKAGE_VISIBLE_IMPORT_VISIBILITIES = setOf(
     "public",
     "protected",
     "internal",

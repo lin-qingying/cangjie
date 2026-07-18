@@ -9,6 +9,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirForInExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLoopExpression
 import org.cangnova.cangjie.cfir.expressions.CfirStatement
 import org.cangnova.cangjie.cfir.session.builtinTypes
+import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.source.AbstractCjSourceElement
 import org.cangnova.cangjie.type.AbstractTypeChecker
@@ -27,6 +28,7 @@ object CfirLoopConditionTypeMismatchChecker : CfirBasicExpressionChecker() {
         val condition = loopExpression.condition
         val source = condition.source as? AbstractCjSourceElement ?: return
         val actualType = condition.coneTypeOrNull ?: return
+        if (actualType is ConeErrorType) return
         val expectedType = context.session.builtinTypes.boolType
 
         if (AbstractTypeChecker.isSubtypeOf(context.session.typeContext, actualType, expectedType) != true) {

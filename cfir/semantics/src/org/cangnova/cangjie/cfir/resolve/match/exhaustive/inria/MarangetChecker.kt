@@ -1,5 +1,8 @@
 package org.cangnova.cangjie.cfir.resolve.match.exhaustive.inria
 
+import org.cangnova.cangjie.cfir.declarations.CfirClass
+import org.cangnova.cangjie.cfir.declarations.CfirConstructor as CfirClassConstructor
+import org.cangnova.cangjie.cfir.declarations.CfirInterface
 import org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.resolve.match.CfirConstructor
@@ -7,21 +10,34 @@ import org.cangnova.cangjie.cfir.resolve.match.CfirMatchPattern
 import org.cangnova.cangjie.cfir.resolve.match.CfirMatchPatternKind
 import org.cangnova.cangjie.cfir.resolve.match.CfirMatrix
 import org.cangnova.cangjie.cfir.resolve.match.isNonExhaustiveEnum
+import org.cangnova.cangjie.cfir.resolve.match.isTypePatternOrdinarySubtypeOf
 import org.cangnova.cangjie.cfir.resolve.match.exhaustive.CheckSource
 import org.cangnova.cangjie.cfir.resolve.match.exhaustive.ExhaustivenessChecker
 import org.cangnova.cangjie.cfir.resolve.match.exhaustive.ExhaustivenessResult
 import org.cangnova.cangjie.cfir.resolve.match.exhaustive.MatchExhaustivenessContext
 import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
-import org.cangnova.cangjie.cfir.types.ConeClassifierType
 import org.cangnova.cangjie.cfir.types.ConeEnumType
+import org.cangnova.cangjie.cfir.types.ConeErrorType
+import org.cangnova.cangjie.cfir.types.ConeFunctionType
+import org.cangnova.cangjie.cfir.types.ConeIntersectionType
+import org.cangnova.cangjie.cfir.types.ConeLookupTagBasedType
+import org.cangnova.cangjie.cfir.types.ConePlaceholderType
+import org.cangnova.cangjie.cfir.types.ConePointerType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
+import org.cangnova.cangjie.cfir.types.ConeQuestType
 import org.cangnova.cangjie.cfir.types.ConeStructType
+import org.cangnova.cangjie.cfir.types.ConeStubType
 import org.cangnova.cangjie.cfir.types.ConeTupleType
-import org.cangnova.cangjie.cfir.types.typeContext
-import org.cangnova.cangjie.type.AbstractTypeChecker
+import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
+import org.cangnova.cangjie.cfir.types.ConeTypeVariableType
+import org.cangnova.cangjie.cfir.types.ConeUnionType
+import org.cangnova.cangjie.cfir.types.ConeVArrayType
+import org.cangnova.cangjie.cfir.types.type
+import org.cangnova.cangjie.descriptors.Visibilities
 
 /**
  * Maranget 模式 useful/穷尽性通用检查器。
@@ -105,6 +121,12 @@ class MarangetChecker : ExhaustivenessChecker {
         val pattern = patterns.first()
         val type = matrix.firstColumnType ?: pattern.ergonomicType
         if (pattern.isUnreachableTypePattern(context)) return Usefulness.Useless
+        if (pattern.kind is CfirMatchPatternKind.Type) {
+            val wildcard = listOf(CfirMatchPattern.wild(type))
+            if (isUseful(matrix, wildcard, withWitness = false, context, isTopLevel = false) is Usefulness.Useless) {
+                return Usefulness.Useless
+            }
+        }
         val constructors = pattern.constructors
         if (constructors.isNotEmpty()) return expandConstructors(constructors, type)
 
@@ -201,7 +223,7 @@ private fun ConeCangJieType.isIntegerLike(): Boolean =
 /**
  * 对齐官方 `DestructedPattern::IsUnreachableTypePattern`：
  * 只有 `Nothing` 或双方都是封闭类型且互无子类型关系时，type pattern 才能静态判死。
- * 开放 class/interface 和携带类型实参的 class-like 类型必须保留运行期可达可能性。
+ * 开放 class/interface 和仍含未解析泛型分量的类型必须保留运行期可达可能性。
  */
 private fun CfirMatchPattern.isUnreachableTypePattern(context: MatchExhaustivenessContext): Boolean {
     val patternType = (kind as? CfirMatchPatternKind.Type)?.type ?: return false
@@ -210,17 +232,36 @@ private fun CfirMatchPattern.isUnreachableTypePattern(context: MatchExhaustivene
     if (goalType.hasOpenTypeShape() || patternType.hasOpenTypeShape()) return false
     if (!goalType.isSealedLikeForTypePattern(context) || !patternType.isSealedLikeForTypePattern(context)) return false
 
-    val goalIsSubtype = AbstractTypeChecker.isSubtypeOf(context.session.typeContext, goalType, patternType) == true
-    val patternIsSubtype = AbstractTypeChecker.isSubtypeOf(context.session.typeContext, patternType, goalType) == true
+    val goalIsSubtype = goalType.isTypePatternOrdinarySubtypeOf(patternType, context.session)
+    val patternIsSubtype = patternType.isTypePatternOrdinarySubtypeOf(goalType, context.session)
     return !goalIsSubtype && !patternIsSubtype
 }
 
 /**
- * 判断类型形状是否包含开放的类型实参或嵌套开放分量。
+ * 判断类型形状是否仍包含未解析的泛型或错误分量。
+ *
+ * `Option<Int64>` 这类 concrete 实例化是封闭形状；只有 `Option<T>`、fresh type variable
+ * 或错误类型才保留运行期开放性。不能仅因存在 type argument 就放弃静态不相交判定。
  */
 private fun ConeCangJieType.hasOpenTypeShape(): Boolean = when (this) {
-    is ConeClassifierType -> typeArguments.isNotEmpty()
+    is ConeTypeParameterType,
+    is ConeTypeVariableType,
+    is ConeStubType,
+    is ConePlaceholderType,
+    is ConeQuestType,
+    is ConeErrorType,
+    -> true
+
+    is ConeTypeAliasType -> typeArguments.any { it.type.hasOpenTypeShape() } ||
+            expandedType?.hasOpenTypeShape() == true
+    is ConeLookupTagBasedType -> typeArguments.any { it.type.hasOpenTypeShape() }
+    is ConeFunctionType -> parameterTypes.any { it.hasOpenTypeShape() } || returnType.hasOpenTypeShape()
     is ConeTupleType -> elementTypes.any { it.hasOpenTypeShape() }
+    is ConeVArrayType -> elementType.hasOpenTypeShape()
+    is ConePointerType -> pointeeType.hasOpenTypeShape()
+    is ConeIntersectionType -> intersectedTypes.any { it.hasOpenTypeShape() } ||
+            upperBoundForApproximation?.hasOpenTypeShape() == true
+    is ConeUnionType -> unionTypes.any { it.hasOpenTypeShape() }
     else -> false
 }
 
@@ -233,16 +274,38 @@ private fun ConeCangJieType.isSealedLikeForTypePattern(context: MatchExhaustiven
         is ConeEnumType,
         is ConeStructType,
         is ConeTupleType,
+        is ConeFunctionType,
         -> true
 
         is ConeClassLikeType -> {
             val symbol = context.session.symbolProvider.getClassLikeSymbolByClassId(classId) ?: return false
             if (!symbol.isBound) return false
             symbol.lazyResolveToPhase(CfirResolvePhase.STATUS)
-            val status = (symbol.cfir as? CfirMemberDeclaration)?.status ?: return false
-            status.isSealed || !status.isOpen
+            val declaration = symbol.cfir as? CfirMemberDeclaration ?: return false
+            declaration.isSealedLikeClassLike()
         }
 
         else -> false
     }
 }
+
+/**
+ * 对齐官方 `IsSealedLike`：interface 只有 sealed/private 才封闭；
+ * class 还可因没有 public/protected 构造器而封闭。普通非 open interface 仍可被外部实现，
+ * 不能参与 type-pattern 静态判死。
+ */
+private fun CfirMemberDeclaration.isSealedLikeClassLike(): Boolean {
+    if (status.isSealed || Visibilities.isPrivate(status.visibility)) return true
+    return when (this) {
+        is CfirClass -> !hasVisibleConstructor()
+        is CfirInterface -> false
+        else -> true
+    }
+}
+
+/** 判断 class 是否存在官方意义上的可见构造器。 */
+private fun CfirClass.hasVisibleConstructor(): Boolean =
+    declarations.filterIsInstance<CfirClassConstructor>().any { constructor ->
+        constructor.status.visibility === Visibilities.Public ||
+            constructor.status.visibility === Visibilities.Protected
+    }

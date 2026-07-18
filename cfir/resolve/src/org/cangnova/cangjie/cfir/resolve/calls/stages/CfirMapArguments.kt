@@ -12,6 +12,7 @@ import org.cangnova.cangjie.cfir.diagnostic.NamedParameterNotFound
 import org.cangnova.cangjie.cfir.diagnostic.NeedNamedArgument
 import org.cangnova.cangjie.cfir.diagnostic.NoValueForParameter
 import org.cangnova.cangjie.cfir.diagnostic.TooManyArguments
+import org.cangnova.cangjie.cfir.diagnostic.WrongNumberOfArguments
 import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
@@ -24,6 +25,7 @@ import org.cangnova.cangjie.cfir.resolve.calls.cangjieVariadicParameterForMappin
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallKind
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CheckerSink
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.yieldIfNeed
 import org.cangnova.cangjie.cfir.semantics.ResolutionDiagnostic
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeFunctionType
@@ -66,9 +68,22 @@ object CfirMapArguments : ResolutionStage() {
 
             CallKind.Function,
             CallKind.DelegatingConstructorCall,
-            CallKind.EnumConstructorCall,
             -> mapCallableArguments(candidate, argumentAtoms)
+
+            CallKind.EnumConstructorCall -> {
+                // 裸 enum constructor 访问沿用 enum 专用 tower 查找，但不是零实参调用。
+                // 只有真实的 CfirFunctionCall 才进入参数映射；否则缺参诊断会错误地
+                // 与 ENUM_CONSTRUCTOR_WITH_PARAM_MUST_HAVE_ARGS 级联。
+                if (candidate.callInfo.callSite is CfirFunctionCall) {
+                    mapCallableArguments(candidate, argumentAtoms)
+                } else {
+                    candidate.initializeArgumentMapping(emptyList(), linkedMapOf())
+                }
+            }
         }
+
+        // 参数形态错误已经足以判定候选不可用；必须在进入类型实参和实参值检查前交还控制权。
+        sink.yieldIfNeed()
     }
 
     /**
@@ -104,6 +119,21 @@ object CfirMapArguments : ResolutionStage() {
         val argumentInfos = argumentAtoms.map(::CallArgumentInfo)
         val nonTrailingArguments = argumentInfos.filterNot { it.isTrailingLambda }
         val trailingLambdaArguments = argumentInfos.filter { it.isTrailingLambda }
+        val isCallableValueCall = candidate.symbol.takeIf { it.isBound }?.cfir is CfirVariable
+
+        if (isCallableValueCall && argumentAtoms.size != parameters.size) {
+            candidate.initializeArgumentMapping(argumentAtoms, linkedMapOf())
+            candidate.numDefaults = 0
+            sink.reportDiagnostic(WrongNumberOfArguments(parameters.size, argumentAtoms.size))
+            return
+        }
+
+        if (variadicParameter == null && argumentAtoms.size > parameters.size) {
+            candidate.initializeArgumentMapping(argumentAtoms, linkedMapOf())
+            candidate.numDefaults = 0
+            sink.reportDiagnostic(TooManyArguments(argumentAtoms[parameters.size].expression, candidate.callInfo.name))
+            return
+        }
 
         val regularResult = createCallableArgumentMapping(
             candidate = candidate,
@@ -169,7 +199,7 @@ object CfirMapArguments : ResolutionStage() {
 
         var nextPositionalIndex = 0
         var seenNamedArgument = false
-        var hasUnmappedNamedArgumentError = false
+        var hasArgumentMappingError = false
 
         for ((argumentIndex, argument) in nonTrailingArguments.withIndex()) {
             val argumentName = argument.name
@@ -177,45 +207,42 @@ object CfirMapArguments : ResolutionStage() {
                 seenNamedArgument = true
                 if (parameters.isEmpty()) {
                     diagnostics += TooManyArguments(argument.atom.expression, candidate.callInfo.name)
-                    hasUnmappedNamedArgumentError = true
-                    continue
+                    hasArgumentMappingError = true
+                    break
                 }
                 if (isCallableValueCall) {
                     diagnostics += NamedArgumentsNotAllowed(argument.atom.expression, "variable function call")
-                    hasUnmappedNamedArgumentError = true
+                    hasArgumentMappingError = true
                     continue
                 }
 
                 val parameter = parameters.firstOrNull { it.name == argumentName }
                 if (parameter == null) {
                     diagnostics += NamedParameterNotFound(argument.atom.expression, argumentName)
-                    hasUnmappedNamedArgumentError = true
-                    continue
+                    hasArgumentMappingError = true
+                    break
                 }
                 if (!parameter.isNamed) {
                     diagnostics +=
                         NamedArgumentsNotAllowed(argument.atom.expression, "parameter '${parameter.name.asString()}'")
-                    hasUnmappedNamedArgumentError = true
-                    continue
+                    hasArgumentMappingError = true
+                    break
                 }
                 if (!usedParameters.add(parameter)) {
                     diagnostics += ArgumentPassedTwice(argument.atom.expression, parameter)
-                    hasUnmappedNamedArgumentError = true
-                    continue
+                    hasArgumentMappingError = true
+                    break
                 }
                 argumentMapping[argument.atom] = parameter
                 continue
             }
 
-            // 对齐 Kotlin FIR 的参数绑定语义：
-            // 命名参数可能提前绑定掉前面的形参，后续位置参数必须跳过这些已绑定项，
-            // 否则会把“命名后的位置参数”错误地重新对到旧形参上，制造伪造的 missing / need-named 诊断。
-            while (
-                nextPositionalIndex < parameters.size &&
-                parameters[nextPositionalIndex] in usedParameters &&
-                parameters[nextPositionalIndex] != variadicParameter
-            ) {
-                nextPositionalIndex += 1
+            // 官方 `CheckArgsWithParamName` 在首个“命名后位置实参”处终止当前候选检查，
+            // 不能继续跳过已绑定形参并制造后续 missing / duplicate / type 级联诊断。
+            if (seenNamedArgument) {
+                diagnostics += MixingNamedAndPositionalArguments(argument.atom.expression)
+                hasArgumentMappingError = true
+                break
             }
 
             operatorSetTrailingNamedParameterForPositionalArgument(
@@ -233,9 +260,6 @@ object CfirMapArguments : ResolutionStage() {
             }
 
             if (variadicInfo != null && nextPositionalIndex >= variadicInfo.fixedPositionalArity) {
-                if (seenNamedArgument) {
-                    diagnostics += MixingNamedAndPositionalArguments(argument.atom.expression)
-                }
                 usedParameters.add(variadicInfo.parameter)
                 argumentMapping[argument.atom] = variadicInfo.parameter
                 nextPositionalIndex = variadicInfo.fixedPositionalArity + 1
@@ -248,15 +272,14 @@ object CfirMapArguments : ResolutionStage() {
             val parameter = parameters.getOrNull(nextPositionalIndex)
             if (parameter == null) {
                 diagnostics += TooManyArguments(argument.atom.expression, candidate.callInfo.name)
-                continue
-            }
-
-            if (seenNamedArgument) {
-                diagnostics += MixingNamedAndPositionalArguments(argument.atom.expression)
+                hasArgumentMappingError = true
+                break
             }
 
             if (parameter.isNamed && !candidate.callInfo.origin.isNamedPrefixOptionalOrigin()) {
                 diagnostics += NeedNamedArgument(argument.atom.expression, parameter)
+                hasArgumentMappingError = true
+                break
             }
 
             usedParameters.add(parameter)
@@ -269,17 +292,19 @@ object CfirMapArguments : ResolutionStage() {
             candidate.markEmptyVariadicCall()
         }
 
-        mapTrailingLambdaArguments(
-            candidate = candidate,
-            parameters = parameters,
-            variadicParameter = variadicParameter,
-            trailingLambdaArguments = trailingLambdaArguments,
-            usedParameters = usedParameters,
-            argumentMapping = argumentMapping,
-            diagnostics = diagnostics,
-        )
+        if (!hasArgumentMappingError) {
+            mapTrailingLambdaArguments(
+                candidate = candidate,
+                parameters = parameters,
+                variadicParameter = variadicParameter,
+                trailingLambdaArguments = trailingLambdaArguments,
+                usedParameters = usedParameters,
+                argumentMapping = argumentMapping,
+                diagnostics = diagnostics,
+            )
+        }
 
-        if (!hasUnmappedNamedArgumentError) {
+        if (!hasArgumentMappingError) {
             parameters
                 .filterNot { it in usedParameters }
                 .filter { it != variadicParameter }

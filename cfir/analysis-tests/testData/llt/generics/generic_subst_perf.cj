@@ -76,6 +76,6 @@ class C <: J1<Rune> & J2<Rune> & J3<Rune> & J4<Rune> & J5<Rune> & J6<Rune> & J7<
 }
 
 main() {
-    let v1 = {x => x.foo("123")}
+    let v1 = {<!LAMBDA_MUST_HAVE_TYPE_ANNOTATION!>x<!> => x.foo("123")}
     let v2 = [C()] |> any {x => x.foo(2)}
 }

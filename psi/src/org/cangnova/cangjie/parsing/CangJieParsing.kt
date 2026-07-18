@@ -1257,7 +1257,7 @@ class CangJieParsing private constructor(
      */
     context(parseContext: ParsingContext)
     private fun parseTopLevelDeclaration() {
-        parseTopLevelDeclaration(false)
+        parseTopLevelDeclaration(true)
     }
 
 
@@ -1295,6 +1295,14 @@ class CangJieParsing private constructor(
         if (at(PUBLIC_KEYWORD) && lookahead(1) == IMPORT_KEYWORD) {
             // error("imports are only allowed in the beginning of file");
             parseImportDirectives()
+            decl.drop()
+            return
+        }
+
+        // 顶层 `@Macro decl` 由 macro expression 包裹真实声明，PSI 与 LightTree
+        // 必须产出同构的 MACRO_EXPRESSION，后续 raw builder 才能建立 construction surface。
+        if (parseMacro && !parseContext.disableMacroParsing && at(AT)) {
+            expressionParsing.parseMacroExpression()
             decl.drop()
             return
         }

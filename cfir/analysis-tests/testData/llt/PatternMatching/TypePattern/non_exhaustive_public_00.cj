@@ -7,10 +7,10 @@ class A <: I {}
 class B <: I {}
 
 func f(x: I) {
-    <!NON_EXHAUSTIVE_MATCH!>match (x) {
+    match (<!NON_EXHAUSTIVE_MATCH!>x<!>) {
         case _: A => 0
         case _: B => 1
-    }<!>
+    }
 }
 
 main() {

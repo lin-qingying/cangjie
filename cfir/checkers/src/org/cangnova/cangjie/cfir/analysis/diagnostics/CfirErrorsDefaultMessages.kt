@@ -141,7 +141,11 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
             RENDER_NAME,
         )
         map.put(CfirErrors.INTERFACE_CANNOT_INHERIT_CLASS, "interface ''{0}'' cannot inherit non-interface type ''{1}''", RENDER_NAME, RENDER_NAME)
+        map.put(CfirErrors.CLASS_INHERIT_NON_CLASS_NOR_INTERFACE, "class ''{0}'' can only inherit a class or implement interfaces", RENDER_NAME)
         map.put(CfirErrors.MULTIPLE_CLASS_SUPER_TYPES, "type ''{0}'' has multiple class supertypes: {1}", RENDER_NAME, RENDER_NAME_LIST)
+        map.put(CfirErrors.ILLEGAL_MULTI_INHERITANCE, "only one super class may appear in supertype list of class ''{0}''", RENDER_NAME)
+        map.put(CfirErrors.SUPERCLASS_MUST_BE_PLACED_AT_FIRST, "super class ''{0}'' must be placed at the beginning of supertype list", RENDER_NAME)
+        map.put(CfirErrors.NON_INHERITABLE_SUPER_CLASS, "super class ''{0}'' is not inheritable", RENDER_NAME)
         map.put(CfirErrors.STATIC_CANNOT_BE_OPEN_ABSTRACT_OVERRIDE, "declaration ''{0}'': static declaration cannot be open/abstract/override", RENDER_NULLABLE_NAME)
         map.put(CfirErrors.MISSING_FUNC_BODY, "{0} ''{1}'' can not be abstract", RENDER_STRING, RENDER_NAME)
         map.put(
@@ -190,6 +194,8 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
             RENDER_NAME,
         )
         map.put(CfirErrors.MISSING_ENTRY, "''main'' is missing")
+        map.put(CfirErrors.UNEXPECTED_PARAM_FOR_ENTRY, "''main'' cannot be defined with parameter whose type is not ''Array<String>''")
+        map.put(CfirErrors.UNEXPECTED_RETURN_TYPE_FOR_ENTRY, "return type of ''main'' is not ''Integer'' or ''Unit''")
         map.put(
             CfirErrors.CANNOT_OVERRIDE_INVISIBLE_MEMBER,
             "Cannot override invisible member ''{0}''.",
@@ -201,11 +207,6 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
             RENDER_NAME,
         )
         map.put(
-            CfirErrors.CLASS_NOT_OPEN_FOR_INHERITANCE,
-            "Class ''{0}'' is not open for inheritance.",
-            RENDER_NAME,
-        )
-        map.put(
             CfirErrors.NO_VALUE_FOR_PARAMETER,
             "No value passed for parameter ''{0}''.",
             RENDER_NAME,
@@ -214,6 +215,14 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
             CfirErrors.TOO_MANY_ARGUMENTS,
             "Too many arguments for ''{0}''.",
             RENDER_NAME,
+        )
+        map.put(
+            CfirErrors.WRONG_NUMBER_OF_ARGUMENTS,
+            "Wrong number of arguments for function value call.",
+        )
+        map.put(
+            CfirErrors.PARAMETERS_AND_ARGUMENTS_MISMATCH,
+            "parameters and arguments mismatch",
         )
         map.put(
             CfirErrors.NAMED_PARAMETER_NOT_FOUND,
@@ -401,6 +410,17 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
             RENDER_NAME,
         )
         map.put(
+            CfirErrors.ILLEGAL_CAPTURE_THIS,
+            "'this' is not allowed to be captured in constructor of {0}.",
+            RENDER_STRING,
+        )
+        map.put(
+            CfirErrors.CAPTURE_THIS_OR_INSTANCE_FIELD_IN_FUNC,
+            "''{0}'' cannot be captured in the {1}.",
+            RENDER_NAME,
+            RENDER_STRING,
+        )
+        map.put(
             CfirErrors.ANNOTATION_NO_CONST_INIT,
             "class with '@Annotation' should have 'const' constructor.",
         )
@@ -586,6 +606,11 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
             "no matching function declaration for function reference",
         )
         map.put(
+            CfirErrors.AMBIGUOUS_FUNCTION_REFERENCE,
+            "ambiguous match for function reference ''{0}''",
+            RENDER_NAME,
+        )
+        map.put(
             CfirErrors.NO_MATCH_OPERATOR_FUNCTION_CALL,
             "no matching function for operator ''()'' function call",
         )
@@ -755,6 +780,10 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
         map.put(CfirErrors.TRAILING_LAMBDA_CANNOT_USED_FOR_NON_FUNCTION, "trailing lambda cannot be used for non-function type ''{0}''", RENDER_TYPE)
         map.put(CfirErrors.LAMBDA_MUST_HAVE_TYPE_ANNOTATION, "parameters of this lambda expression must have type annotations")
         map.put(CfirErrors.USE_FUNC_CAPTURE_VAR_ALONE, "{0} capturing mutable variables needs to be called directly", RENDER_STRING)
+        map.put(CfirErrors.FUNC_CAPTURE_VAR_CANNOT_ASSIGN, "{0} captured a mutable variable {1}, {2} cannot be assigned to a variable", RENDER_STRING, RENDER_STRING, RENDER_STRING)
+        map.put(CfirErrors.FUNC_CAPTURE_VAR_CANNOT_RETURN, "{0} captured a mutable variable {1}, {2} cannot be returned", RENDER_STRING, RENDER_STRING, RENDER_STRING)
+        map.put(CfirErrors.FUNC_CAPTURE_VAR_CANNOT_PARAM, "{0} captured a mutable variable {1}, {2} cannot be passed as an argument", RENDER_STRING, RENDER_STRING, RENDER_STRING)
+        map.put(CfirErrors.FUNC_CAPTURE_VAR_CANNOT_EXPR, "{0} captured a mutable variable {1}, {2} cannot be used as an expression", RENDER_STRING, RENDER_STRING, RENDER_STRING)
 
         // ================================================================
         // Expression
@@ -781,6 +810,7 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
         map.put(CfirErrors.CAPTURE_BEFORE_INITIALIZATION, "cannot capture variable ''{0}'' before initialization", RENDER_NAME)
         map.put(CfirErrors.CAPTURE_HAS_SHADOW_VARIABLE, "captured variable ''{0}'' has a shadow variable in an intermediate scope", RENDER_NAME)
         map.put(CfirErrors.INTERPOLATION_IN_CONST_PATTERN, "cannot use string interpolation in constant pattern")
+        map.put(CfirErrors.INVALID_STRING_IMPLEMENTATION, "string interpolation expression must implement 'core.ToString'")
         map.put(CfirErrors.CANNOT_REF_TO_PKG_NAME, "package name cannot be referred independently")
         map.put(CfirErrors.USE_EXPR_WITHOUT_IMPORT, "import ''{0}'' to use the ''{1}'' expression", RENDER_NULLABLE_FQNAME, RENDER_STRING)
 
@@ -789,10 +819,12 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
         // ================================================================
         map.put(CfirErrors.GENERIC_TYPE_INCONSISTENT, "generic types substitutions are inconsistent for ''{0}''", RENDER_NAME)
         map.put(CfirErrors.GENERIC_ARGUMENT_NO_MATCH, "type argument's number does not match type parameter's number")
+        map.put(CfirErrors.INVALID_TYPE_PARAM_OF_ENUM_MEMBER_ACCESS, "type arguments are not allowed on an enum member when its owner is explicit")
         map.put(CfirErrors.GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT, "generic type argument ''{0}'' does not match upper bound ''{1}'' of ''{2}''", RENDER_TYPE, RENDER_TYPE, RENDER_TYPE)
         map.put(CfirErrors.GENERIC_CONSTRAINT_NOT_LOOSER, "the constraint of type parameter is not looser than parent's constraint")
         map.put(CfirErrors.GENERIC_INFINITE_INSTANTIATION, "generic infinite instantiation")
         map.put(CfirErrors.GENERIC_INSTANTIATION_CAUSES_AMBIGUOUS_FUNCTIONS, "generic instantiation ''{0}'' causes ambiguous function ''{1}''", RENDER_NAME, RENDER_NAME)
+        map.put(CfirErrors.CANNOT_INSTANTIATED_BY_INCOMPLETE_TYPE, "generic parameter ''{0}'' cannot be instantiated by incomplete type ''{1}''", RENDER_NAME, RENDER_TYPE)
         map.put(CfirErrors.GENERIC_PARAM_EXIST_IN_CLASS_IRRELEVANT_UPPERBOUND_RECURSIVELY, "generic parameter ''{0}'' cannot be used in class irrelevant upper bounds ''{1}''", RENDER_NAME, RENDER_TYPE)
         map.put(CfirErrors.GENERIC_PARAM_DIRECTLY_RECURSIVE, "generic parameter ''{0}'' is bounded directly recursively with ''{1}'' which is forbidden", RENDER_NAME, RENDER_NAME)
         map.put(CfirErrors.UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE, "the upper bound ''{0}'' of generic parameter ''{1}'' must be class or interface", RENDER_TYPE, RENDER_NAME)
@@ -814,11 +846,23 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
             RENDER_STRING,
         )
         map.put(
+            CfirErrors.CANNOT_CONVERT_LITERAL,
+            "cannot convert a ''{0}'' literal to type ''{1}''.",
+            RENDER_STRING,
+            RENDER_TYPE,
+        )
+        map.put(
             CfirErrors.MEMBER_VARIABLE_CAN_NOT_SHADOW,
             "the variable ''{0}'' must not shadow a member variable of the supertype",
             RENDER_NAME
         )
         map.put(CfirErrors.CANNOT_OVERRIDE, "cannot override {0} ''{1}''", RENDER_STRING, RENDER_NAME)
+        map.put(
+            CfirErrors.INVALID_OVERRIDE_MEMBER_IN_CLASS,
+            "cannot override non-abstract {0} ''{1}'' with abstract {0}",
+            RENDER_STRING,
+            RENDER_NAME,
+        )
         map.put(
             CfirErrors.NEED_MEMBER_IMPLEMENTATION,
             "implementation of function or property is needed in ''{0}''",

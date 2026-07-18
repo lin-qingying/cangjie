@@ -1,12 +1,12 @@
 
 
 class A {
-    <!TYPE_UNINITIALIZED_STATIC_FIELD!>private static let a: Int64<!>
-    private operator func +(b: A, c: A) {}
+    private static let <!TYPE_UNINITIALIZED_STATIC_FIELD!>a<!>: Int64
+    private <!INVALID_OPERATOR_PARAMETER_COUNT!>operator<!> func +(b: A, c: A) {}
 }
 
 main() {
-    A.a
-    A() + A()
+    <!INVALID_ACCESS_CONTROL!>A<!>.a
+    A() <!INVALID_BINARY_OPERATOR!>+<!> A()
     return 0
 }

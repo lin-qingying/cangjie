@@ -154,6 +154,10 @@ class Candidate(
      */
     lateinit var substitutor: ConeSubstitutor
         private set
+
+    /** 向 resolve 后语义检查暴露声明参数替换，不泄漏可变候选实现。 */
+    override val typeParameterSubstitutorOrNull: ConeSubstitutor?
+        get() = if (this::substitutor.isInitialized) substitutor else null
     /** 为候选声明类型参数创建的 fresh type variable 列表。 */
     lateinit var freshVariables: List<ConeTypeVariable>
         private set
@@ -490,7 +494,10 @@ class Candidate(
     /**
      * 记录上下文敏感解析后的简单名替换。
      */
-    fun setUpdatedArgumentFromContextSensitiveResolution(old: CfirNamedAccessExpression, new: CfirExpression) {
+    internal fun setUpdatedArgumentFromContextSensitiveResolution(
+        old: CfirExpression,
+        new: CfirExpression,
+    ) {
         setUpdatedArgument(old, new)
     }
 
@@ -608,7 +615,7 @@ class Candidate(
      * 标记 receiver source 已更新。
      */
     fun updateSourcesOfReceivers() {
-        require(!sourcesWereUpdated)
+        if (sourcesWereUpdated) return
         sourcesWereUpdated = true
     }
 

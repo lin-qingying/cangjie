@@ -2,7 +2,7 @@
 
 main(): Int64 {
     let x: Int32 = 1
-    var a = <!GENERIC_INSTANTIATION_CAUSES_AMBIGUOUS_FUNCTIONS!>C<!>(x)
+    var a = <!GENERIC_INSTANTIATION_CAUSES_AMBIGUOUS_FUNCTIONS!>C(x)<!>
     return 0
 }
 

@@ -5,7 +5,16 @@ import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.extendProviderOrNull
 import org.cangnova.cangjie.cfir.session.typeAwareSupertypeProviderOrNull
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
+import org.cangnova.cangjie.cfir.types.ConeAnyType
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.ConeClassLikeType
+import org.cangnova.cangjie.cfir.types.ConeEnumType
+import org.cangnova.cangjie.cfir.types.ConeFunctionType
+import org.cangnova.cangjie.cfir.types.ConePrimitiveType
+import org.cangnova.cangjie.cfir.types.ConeStructType
+import org.cangnova.cangjie.cfir.types.ConeTupleType
+import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
+import org.cangnova.cangjie.cfir.types.ConeVArrayType
 import org.cangnova.cangjie.cfir.types.expandedExtendTargetKey
 import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.type.AbstractTypeChecker
@@ -24,8 +33,90 @@ fun ConeCangJieType.isMatchSubtypeOf(
     session: CfirSession,
 ): Boolean {
     if (AbstractTypeChecker.isSubtypeOf(session.typeContext, this, superType) == true) return true
+    if (this is ConeTupleType && superType is ConeTupleType) {
+        return elementTypes.size == superType.elementTypes.size &&
+                elementTypes.zip(superType.elementTypes).all { (leafElement, rootElement) ->
+                    leafElement.isMatchSubtypeOf(rootElement, session)
+                }
+    }
+    if (this is ConeFunctionType && superType is ConeFunctionType) {
+        return parameterTypes.size == superType.parameterTypes.size &&
+                isCFunc == superType.isCFunc &&
+                hasVariableLenArg == superType.hasVariableLenArg &&
+                parameterTypes.zip(superType.parameterTypes).all { (leafParameter, rootParameter) ->
+                    rootParameter.isMatchSubtypeOf(leafParameter, session)
+                } &&
+                returnType.isMatchSubtypeOf(superType.returnType, session)
+    }
     return hasTypeAwareSupertype(superType, session)
             || hasVisibleExtendSupertype(superType, session)
+}
+
+/**
+ * 判断 type pattern 是否可在 usefulness 矩阵中直接退化为 wildcard。
+ *
+ * 官方 `PatternUsefulness::FromTypePattern` 只在 `goalTy <: patternTy` 时把类型模式
+ * 当作通配符；tuple/function 中由元素装箱、函数逆变/协变带来的可运行期命中属于
+ * `IsSubtypeBoxed` 的诊断语义，不能提前吞成 wildcard，否则会把告警错误地转移到后续 `_`。
+ */
+fun ConeCangJieType.isTypePatternWildcardSubtypeOf(
+    superType: ConeCangJieType,
+    session: CfirSession,
+): Boolean = isTypePatternOrdinarySubtypeOf(superType, session)
+
+/**
+ * type pattern usefulness 使用的普通 subtype 关系。
+ *
+ * 官方 `TypeManager::IsSubtype` 对函数和 tuple 的结构分量不会走 `IsSubtypeBoxed`
+ * 的递归装箱路径；只有 `ChkTypePattern` 的 boxed 告警语义才使用那条关系。
+ */
+fun ConeCangJieType.isTypePatternOrdinarySubtypeOf(
+    superType: ConeCangJieType,
+    session: CfirSession,
+): Boolean = isTypePatternOrdinarySubtypeOf(superType, session, allowValueBoxing = true)
+
+private fun ConeCangJieType.isTypePatternOrdinarySubtypeOf(
+    superType: ConeCangJieType,
+    session: CfirSession,
+    allowValueBoxing: Boolean,
+): Boolean {
+    if (this is ConeTupleType || superType is ConeTupleType) {
+        if (this !is ConeTupleType || superType !is ConeTupleType) return false
+        return elementTypes.size == superType.elementTypes.size &&
+                elementTypes.zip(superType.elementTypes).all { (leafElement, rootElement) ->
+                    leafElement.isTypePatternOrdinarySubtypeOf(rootElement, session, allowValueBoxing = false)
+                }
+    }
+
+    if (this is ConeFunctionType || superType is ConeFunctionType) {
+        if (this !is ConeFunctionType || superType !is ConeFunctionType) return false
+        return parameterTypes.size == superType.parameterTypes.size &&
+                isCFunc == superType.isCFunc &&
+                hasVariableLenArg == superType.hasVariableLenArg &&
+                parameterTypes.zip(superType.parameterTypes).all { (leafParameter, rootParameter) ->
+                    rootParameter.isTypePatternOrdinarySubtypeOf(leafParameter, session, allowValueBoxing = false)
+                } &&
+                returnType.isTypePatternOrdinarySubtypeOf(superType.returnType, session, allowValueBoxing = false)
+    }
+
+    if (!allowValueBoxing && requiresBoxingToClassLikeSupertype(superType)) return false
+    return AbstractTypeChecker.isSubtypeOfWithoutOptionBoxing(session.typeContext, this, superType)
+}
+
+private fun ConeCangJieType.requiresBoxingToClassLikeSupertype(superType: ConeCangJieType): Boolean {
+    if (superType !== ConeAnyType && superType !is ConeClassLikeType) return false
+    return when (this) {
+        is ConePrimitiveType,
+        is ConeStructType,
+        is ConeEnumType,
+        is ConeTupleType,
+        is ConeFunctionType,
+        is ConeVArrayType,
+        -> true
+
+        is ConeTypeAliasType -> expandedType?.requiresBoxingToClassLikeSupertype(superType) == true
+        else -> false
+    }
 }
 
 /**

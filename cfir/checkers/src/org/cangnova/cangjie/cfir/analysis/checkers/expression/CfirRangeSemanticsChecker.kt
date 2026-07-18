@@ -53,6 +53,7 @@ object CfirRangeSemanticsChecker : CfirBasicExpressionChecker() {
         checkTypeMismatch(
             expectedType = expectedType,
             actualType = actualType,
+            expression = expression,
             source = source,
             preferredSpecializedSource = source,
             diagnosticFactory = CfirErrors.TYPE_MISMATCH,
@@ -70,6 +71,7 @@ object CfirRangeSemanticsChecker : CfirBasicExpressionChecker() {
         checkTypeMismatch(
             expectedType = expectedType,
             actualType = actualType,
+            expression = stepExpression,
             source = source,
             preferredSpecializedSource = source,
             diagnosticFactory = CfirErrors.TYPE_MISMATCH,

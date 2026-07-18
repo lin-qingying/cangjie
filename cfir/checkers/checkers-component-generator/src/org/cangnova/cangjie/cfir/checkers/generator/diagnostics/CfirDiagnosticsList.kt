@@ -130,10 +130,30 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
             parameter<Name>("superTypeName")  // 被继承的类型名
         }
 
+        // class/struct/enum 的父类型无法解析为 class 或 interface。
+        val CLASS_INHERIT_NON_CLASS_NOR_INTERFACE by error<CjTypeReference> {
+            parameter<Name>("className")
+        }
+
         // 类有多个超类：一个类试图继承多个具体的类（不支持多重继承）
         val MULTIPLE_CLASS_SUPER_TYPES by error<CjTypeReference> {
             parameter<Name>("className")  // 该类名
             parameter<Collection<Name>>("superTypes")  // 多个超类名称列表
+        }
+
+        // class 继承列表中出现多个 concrete 父类
+        val ILLEGAL_MULTI_INHERITANCE by error<CjTypeReference> {
+            parameter<Name>("className")
+        }
+
+        // concrete 父类必须位于继承列表第一位
+        val SUPERCLASS_MUST_BE_PLACED_AT_FIRST by error<CjTypeReference> {
+            parameter<Name>("superClassName")
+        }
+
+        // 父 class 未声明为 open/abstract，不能被继承
+        val NON_INHERITABLE_SUPER_CLASS by error<CjTypeReference> {
+            parameter<Name>("superClassName")
         }
     }
 
@@ -349,6 +369,12 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
             parameter<Name>("targetName")
         }
 
+        // 函数值调用的实参数量与函数类型参数数量不一致
+        val WRONG_NUMBER_OF_ARGUMENTS by error<PsiElement>(PositioningStrategy.VALUE_ARGUMENTS_LIST)
+
+        // 泛型调用的类型映射无法使形参与实参兼容
+        val PARAMETERS_AND_ARGUMENTS_MISMATCH by error<PsiElement>()
+
         // 命名参数名在目标参数列表中不存在
         val NAMED_PARAMETER_NOT_FOUND by error<PsiElement>(PositioningStrategy.NAME_OF_NAMED_ARGUMENT) {
             parameter<Name>("parameterName")
@@ -552,6 +578,15 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
         val IMMUTABLE_FUNCTION_CANNOT_ACCESS_MUTABLE_FUNCTION by error<PsiElement> {
             parameter<Name>("currentFunctionName")
             parameter<Name>("targetFunctionName")
+        }
+
+        val ILLEGAL_CAPTURE_THIS by error<PsiElement>(PositioningStrategy.REFERENCED_NAME_BY_QUALIFIED) {
+            parameter<String>("ownerKind")
+        }
+
+        val CAPTURE_THIS_OR_INSTANCE_FIELD_IN_FUNC by error<PsiElement>(PositioningStrategy.REFERENCED_NAME_BY_QUALIFIED) {
+            parameter<Name>("capturedName")
+            parameter<String>("functionDescription")
         }
     }
 
@@ -817,6 +852,12 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
             parameter<Name>("overriddenName")
         }
 
+        /** 字面量不能按目标类型完成仓颉语义转换。 */
+        val CANNOT_CONVERT_LITERAL by error<PsiElement> {
+            parameter<String>("literalDescription")
+            parameter<ConeCangJieType>("expectedType")
+        }
+
         // 官方 sema_return_type_incompatible：实现/重定义/内建 operator 合成时返回类型不兼容。
         val RETURN_TYPE_INCOMPATIBLE by error<PsiElement> {
             parameter<Name>("functionName")
@@ -838,14 +879,15 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
         // 可执行编译目标缺少程序入口。
         val MISSING_ENTRY by error<PsiElement>()
 
+        // 程序入口 main 的参数必须为空或唯一 `Array<String>`。
+        val UNEXPECTED_PARAM_FOR_ENTRY by error<PsiElement>()
+
+        // 程序入口 main 的显式返回类型必须是整数或 Unit。
+        val UNEXPECTED_RETURN_TYPE_FOR_ENTRY by error<PsiElement>()
+
         // override 目标不可见
         val CANNOT_OVERRIDE_INVISIBLE_MEMBER by error<CjNamedDeclaration>(PositioningStrategy.OVERRIDE_MODIFIER) {
             parameter<Name>("memberName")
-        }
-
-        // 父类未开放继承
-        val CLASS_NOT_OPEN_FOR_INHERITANCE by error<CjTypeReference> {
-            parameter<Name>("className")
         }
 
         // 非抽象类/结构体未实现继承来的抽象成员。官方 cjc 报在类型声明起始处。
@@ -919,6 +961,11 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
 
         // 函数引用没有可访问的匹配声明，对齐官方 sema_no_match_function_declaration_for_ref。
         val NO_MATCH_FUNCTION_DECLARATION_FOR_REF by error<PsiElement>(PositioningStrategy.DEFAULT)
+
+        // 目标函数类型下仍有多个匹配函数引用，对齐官方 sema_ambiguous_func_ref。
+        val AMBIGUOUS_FUNCTION_REFERENCE by error<PsiElement>(PositioningStrategy.DEFAULT) {
+            parameter<Name>("name")
+        }
 
         // 非函数表达式使用 `()` 调用，对齐官方 sema_no_match_operator_function_call。
         val NO_MATCH_OPERATOR_FUNCTION_CALL by error<PsiElement>(PositioningStrategy.DEFAULT)
@@ -1052,6 +1099,31 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
         val USE_FUNC_CAPTURE_VAR_ALONE by error<PsiElement> {
             parameter<String>("description")
         }
+
+        // 传递捕获可变变量的闭包不能作为普通值使用
+        val FUNC_CAPTURE_VAR_CANNOT_ASSIGN by error<PsiElement> {
+            parameter<String>("closureName")
+            parameter<String>("captureKind")
+            parameter<String>("subjectName")
+        }
+
+        val FUNC_CAPTURE_VAR_CANNOT_RETURN by error<PsiElement> {
+            parameter<String>("closureName")
+            parameter<String>("captureKind")
+            parameter<String>("subjectName")
+        }
+
+        val FUNC_CAPTURE_VAR_CANNOT_PARAM by error<PsiElement> {
+            parameter<String>("closureName")
+            parameter<String>("captureKind")
+            parameter<String>("subjectName")
+        }
+
+        val FUNC_CAPTURE_VAR_CANNOT_EXPR by error<PsiElement> {
+            parameter<String>("closureName")
+            parameter<String>("captureKind")
+            parameter<String>("subjectName")
+        }
     }
 
     /**
@@ -1162,6 +1234,9 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
         // 常量模式中不能使用字符串插值
         val INTERPOLATION_IN_CONST_PATTERN by error<PsiElement>()
 
+        // 字符串插值表达式必须是 primitive，或实现 core.ToString。
+        val INVALID_STRING_IMPLEMENTATION by error<PsiElement>()
+
         // 包名不能独立引用
         val CANNOT_REF_TO_PKG_NAME by error<PsiElement>()
 
@@ -1186,6 +1261,9 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
         // 类型参数个数不匹配
         val GENERIC_ARGUMENT_NO_MATCH by error<PsiElement>()
 
+        // 已显式给出 enum owner 后，enum member 不能再次携带类型实参
+        val INVALID_TYPE_PARAM_OF_ENUM_MEMBER_ACCESS by error<PsiElement>(PositioningStrategy.REFERENCED_NAME_BY_QUALIFIED)
+
         // 泛型类型实参不满足声明侧约束
         val GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT by error<PsiElement> {
             parameter<ConeCangJieType>("actualType")
@@ -1203,6 +1281,12 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
         val GENERIC_INSTANTIATION_CAUSES_AMBIGUOUS_FUNCTIONS by error<PsiElement> {
             parameter<Name>("instantiation")
             parameter<Name>("functionName")
+        }
+
+        // 含 static 约束的泛型参数不能由 static 成员不完整的接口或 Nothing 实例化
+        val CANNOT_INSTANTIATED_BY_INCOMPLETE_TYPE by error<PsiElement> {
+            parameter<Name>("typeParameterName")
+            parameter<ConeCangJieType>("typeArgument")
         }
 
         // 泛型参数存在与类无关的上界递归引用
@@ -1265,6 +1349,12 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
 
         // 父成员不是 open/abstract/interface 成员，子类不能覆盖
         val CANNOT_OVERRIDE by error<PsiElement> {
+            parameter<String>("memberKind")
+            parameter<Name>("memberName")
+        }
+
+        // 子类不能用 abstract 成员覆盖父类中已有实现的同签名成员。
+        val INVALID_OVERRIDE_MEMBER_IN_CLASS by error<PsiElement> {
             parameter<String>("memberKind")
             parameter<Name>("memberName")
         }

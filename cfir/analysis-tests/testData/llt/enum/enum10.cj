@@ -11,6 +11,6 @@ enum TimeUnit1<T> {
 
 func codegenUnitTest(): Int32 {
     var time1 = <!AMBIGUOUS_CONSTRUCTOR_CALL!>Year<!>(1)
-    var time2 = TimeUnit.Month(<!TYPE_MISMATCH!>r'a'<!>)
+    var time2 = TimeUnit.Month(<!CANNOT_CONVERT_LITERAL!>r'a'<!>)
     return 0
 }

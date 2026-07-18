@@ -2,6 +2,7 @@
 
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.CfirAnnotationContainer
+import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFile
@@ -23,6 +24,7 @@ import org.cangnova.cangjie.cfir.session.languageVersionSettings
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFileSymbol
 import org.cangnova.cangjie.LanguageVersionSettings
+import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.cfir.SessionAndScopeSessionHolder
 import org.cangnova.cangjie.cfir.resolve.transformers.ReturnTypeCalculator
 import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
@@ -34,6 +36,8 @@ import org.cangnova.cangjie.cfir.types.ConeUnreportedDuplicateDiagnostic
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.contains
 import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
+import java.util.Collections
+import java.util.IdentityHashMap
 
 /** checker 执行期间可读取的诊断上下文，暴露当前 session、作用域和遍历栈信息。 */
 abstract class CheckerContext : DiagnosticContext, SessionAndScopeSessionHolder {
@@ -92,6 +96,18 @@ abstract class CheckerContext : DiagnosticContext, SessionAndScopeSessionHolder 
     override val containingFilePath: String?
         get() = containingFileSymbol?.sourceFile?.path
 
+    /** 当前诊断收集轮次中，指定 lambda 是否已经产生参数形状诊断。 */
+    abstract fun hasLambdaParameterShapeDiagnostic(lambda: CfirAnonymousFunction): Boolean
+
+    /** 记录当前诊断收集轮次中指定 lambda 已经产生参数形状诊断。 */
+    abstract fun recordLambdaParameterShapeDiagnostic(lambda: CfirAnonymousFunction)
+
+    /** 记录当前调用范围已经由泛型实例化成员冲突拥有根诊断。 */
+    abstract fun recordGenericInstantiationMemberConflict(source: CjSourceElement)
+
+    /** 判断指定 source 或其宿主调用是否属于已确认的泛型实例化成员冲突。 */
+    abstract fun hasGenericInstantiationMemberConflict(source: CjSourceElement?): Boolean
+
     /** 根据 suppress 名称和 suppress-all 标记判断诊断是否应被抑制。 */
     override fun isDiagnosticSuppressed(diagnostic: CjDiagnostic): Boolean {
         val suppressedByAll = when (diagnostic.severity) {
@@ -114,6 +130,7 @@ abstract class CheckerContext : DiagnosticContext, SessionAndScopeSessionHolder 
      */
     private fun CjDiagnostic.isDerivedFromRecursiveImplicitReturn(): Boolean {
         if (factoryName == "CFIR_UNABLE_TO_INFER_RETURN_TYPE") return false
+        if (factoryName == "CFIR_NO_MATCH_FUNCTION_DECLARATION_FOR_REF") return false
 
         return (containingStatements.asSequence() + callsOrAssignments.asSequence() + containingElements.asSequence())
             .filterIsInstance<CfirExpression>()
@@ -214,6 +231,11 @@ class MutableCheckerContext(
     private val mutableCallsOrAssignments: MutableList<CfirElement> = mutableListOf(),
     /** 可变注解容器栈。 */
     private val mutableAnnotationContainers: MutableList<CfirAnnotationContainer> = mutableListOf(),
+    /** 当前诊断收集轮次内已经产生 lambda 参数形状诊断的函数集合。 */
+    private val lambdaParameterShapeDiagnostics: MutableSet<CfirAnonymousFunction> =
+        Collections.newSetFromMap(IdentityHashMap<CfirAnonymousFunction, Boolean>()),
+    /** 当前诊断轮次中已由泛型实例化成员冲突拥有的调用范围。 */
+    private val genericInstantiationMemberConflictRanges: MutableSet<Pair<Int, Int>> = linkedSetOf(),
     /** 当前作用域中被显式 suppress 的诊断名称集合。 */
     override val suppressedDiagnostics: Set<String> = emptySet(),
     /** 当前作用域是否 suppress 所有 info 级别诊断。 */
@@ -251,6 +273,24 @@ class MutableCheckerContext(
     override val annotationContainers: List<CfirAnnotationContainer>
         get() = mutableAnnotationContainers
 
+    override fun hasLambdaParameterShapeDiagnostic(lambda: CfirAnonymousFunction): Boolean =
+        lambda in lambdaParameterShapeDiagnostics
+
+    override fun recordLambdaParameterShapeDiagnostic(lambda: CfirAnonymousFunction) {
+        lambdaParameterShapeDiagnostics += lambda
+    }
+
+    override fun recordGenericInstantiationMemberConflict(source: CjSourceElement) {
+        genericInstantiationMemberConflictRanges += source.startOffset to source.endOffset
+    }
+
+    override fun hasGenericInstantiationMemberConflict(source: CjSourceElement?): Boolean {
+        source ?: return false
+        return genericInstantiationMemberConflictRanges.any { (start, end) ->
+            source.startOffset >= start && source.endOffset <= end
+        }
+    }
+
     /** 创建带有新增 suppress 信息的 context。 */
     override fun addSuppressedDiagnostics(
         diagnosticNames: Collection<String>,
@@ -269,6 +309,8 @@ class MutableCheckerContext(
             mutableElements = mutableElements,
             mutableCallsOrAssignments = mutableCallsOrAssignments,
             mutableAnnotationContainers = mutableAnnotationContainers,
+            lambdaParameterShapeDiagnostics = lambdaParameterShapeDiagnostics,
+            genericInstantiationMemberConflictRanges = genericInstantiationMemberConflictRanges,
             suppressedDiagnostics = suppressedDiagnostics + diagnosticNames,
             allInfosSuppressed = this.allInfosSuppressed || allInfosSuppressed,
             allWarningsSuppressed = this.allWarningsSuppressed || allWarningsSuppressed,

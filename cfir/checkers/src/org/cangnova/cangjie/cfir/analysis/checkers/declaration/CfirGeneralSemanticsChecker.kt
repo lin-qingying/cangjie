@@ -34,6 +34,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
 import org.cangnova.cangjie.cfir.isCatchParameter
+import org.cangnova.cangjie.cfir.patterns.visibleBindingVariables
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.session.cjMappingConfigProvider
 import org.cangnova.cangjie.cfir.session.noPrelude
@@ -41,6 +42,7 @@ import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.types.*
+import org.cangnova.cangjie.cfir.types.impl.ResolvedImplicitTypeRef
 import org.cangnova.cangjie.cfir.visitors.CfirDefaultVisitorVoid
 import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.descriptors.Visibility
@@ -311,12 +313,41 @@ object CfirGeneralSemanticsChecker : CfirFileChecker() {
 
         val effectiveVisibility = ownVisibility.effectiveInside(containingAccessLevel)
         val exposure = declaration.findFirstSignatureExposure(effectiveVisibility)
-        if (exposure != null) {
+        if (exposure != null && declaration is CfirPatternVariable) {
+            val bindings = declaration.pattern.visibleBindingVariables()
+            val bindingsUseInferredTypes = bindings.size != 1 || declaration.returnTypeRef.isImplicitAccessibilityType()
+            bindings.forEach { binding ->
+                if (bindingsUseInferredTypes) {
+                    reporter.reportOn(
+                        source = binding.source,
+                        factory = CfirErrors.ACCESSIBILITY_WITH_MAIN_HINT,
+                        a = "variable",
+                        b = binding.name,
+                        c = exposure.visibility,
+                    )
+                } else {
+                    reporter.reportOn(
+                        source = binding.source,
+                        factory = CfirErrors.ACCESSIBILITY_ERROR,
+                        a = binding.name.asString(),
+                        b = exposure.visibility,
+                    )
+                }
+            }
+        } else if (exposure?.inferred == true) {
+            reporter.reportOn(
+                source = declaration.accessibilityDiagnosticSource(),
+                factory = CfirErrors.ACCESSIBILITY_WITH_MAIN_HINT,
+                a = if (declaration is CfirNamedFunction) "function" else "variable",
+                b = declaration.declarationName() ?: Name.special("<unknown>"),
+                c = exposure.visibility,
+            )
+        } else if (exposure != null) {
             reporter.reportOn(
                 source = declaration.accessibilityDiagnosticSource(),
                 factory = CfirErrors.ACCESSIBILITY_ERROR,
                 a = declaration.declarationName()?.asString() ?: "<unknown>",
-                b = exposure,
+                b = exposure.visibility,
             )
         }
 
@@ -336,25 +367,36 @@ object CfirGeneralSemanticsChecker : CfirFileChecker() {
     context(context: CheckerContext)
     private fun CfirDeclaration.findFirstSignatureExposure(
         declarationVisibility: Visibility,
-    ): Visibility? {
+    ): SignatureExposure? {
         (this as? CfirTypeParameterRefsOwner)
             ?.findFirstTypeParameterBoundExposure(declarationVisibility)
-            ?.let { return it }
+            ?.let { return SignatureExposure(it, inferred = false) }
 
         return when (this) {
             is CfirNamedFunction -> {
-                returnTypeRef.findFirstExposure(declarationVisibility)
+                returnTypeRef.findFirstExposure(declarationVisibility)?.let {
+                    SignatureExposure(it, returnTypeRef.isImplicitAccessibilityType())
+                }
                     ?: valueParameters.asSequence()
                         .mapNotNull { it.returnTypeRef.findFirstExposure(declarationVisibility) }
                         .firstOrNull()
+                        ?.let { SignatureExposure(it, inferred = false) }
             }
 
+            is CfirPatternVariable -> returnTypeRef.findFirstExposure(declarationVisibility)
+                ?.let { SignatureExposure(it, inferred = true) }
             is CfirProperty -> returnTypeRef.findFirstExposure(declarationVisibility)
+                ?.let { SignatureExposure(it, returnTypeRef.isImplicitAccessibilityType()) }
             is CfirFieldVariable -> returnTypeRef.findFirstExposure(declarationVisibility)
+                ?.let { SignatureExposure(it, returnTypeRef.isImplicitAccessibilityType()) }
             is CfirTypeAlias -> expandedTypeRef.findFirstExposure(declarationVisibility)
+                ?.let { SignatureExposure(it, inferred = false) }
             else -> null
         }
     }
+
+    /** 签名暴露结果，同时保留诊断是否来自推断类型。 */
+    private data class SignatureExposure(val visibility: Visibility, val inferred: Boolean)
 
     /**
      * 查找类型参数上界中第一个可见性暴露问题。
@@ -834,9 +876,22 @@ private fun CfirDeclaration.accessibilityDiagnosticSource(): AbstractCjSourceEle
  */
 context(context: CheckerContext)
 private fun CfirTypeRef.findFirstExposure(declarationVisibility: Visibility): Visibility? {
-    val resolvedType = (this as? CfirResolvedTypeRef)?.coneType ?: return null
+    val resolvedType = when (this) {
+        is CfirResolvedTypeRef -> coneType
+        is ResolvedImplicitTypeRef -> typeRef.coneType
+        else -> return null
+    }
     return resolvedType.findFirstExposure(declarationVisibility)
 }
+
+/**
+ * 判断声明类型是否来自推断。
+ *
+ * resolve 可能把隐式类型直接写成无 source 的 resolved type ref，也可能保留
+ * [ResolvedImplicitTypeRef] 包装；两种形态都必须映射到 with-main-hint 诊断。
+ */
+private fun CfirTypeRef.isImplicitAccessibilityType(): Boolean =
+    this is CfirImplicitTypeRef || source == null
 
 /**
  * 在 cone 类型结构中递归查找第一个可见性暴露问题。

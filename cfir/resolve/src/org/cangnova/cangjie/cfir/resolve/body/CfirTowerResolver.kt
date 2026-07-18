@@ -41,7 +41,6 @@ import org.cangnova.cangjie.cfir.resolve.calls.tower.CfirTowerResolveTask
 import org.cangnova.cangjie.cfir.resolve.calls.tower.TowerDataElementsForName
 import org.cangnova.cangjie.cfir.resolve.calls.tower.TowerResolveManager
 import org.cangnova.cangjie.cfir.scopes.CfirScope
-import org.cangnova.cangjie.cfir.scopes.CfirTypeParameterScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirLocalScope
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
@@ -66,10 +65,12 @@ class CfirTowerResolver(
      */
     private val resolutionStageRunner: ResolutionStageRunner,
     /**
-     * 默认候选收集器。
+     * 调用方显式注入的候选收集器。
+     *
+     * 普通调用解析不注入收集器，每次 [runResolver] 都创建独立实例，避免候选阶段内
+     * 递归解析嵌套调用时清空外层调用尚未完成规约的候选状态。
      */
-    internal val collector: CfirCandidateCollector =
-        CfirCandidateCollector(components, resolutionStageRunner),
+    private val injectedCollector: CfirCandidateCollector? = null,
 ) : SessionHolder {
 
     /**
@@ -77,11 +78,6 @@ class CfirTowerResolver(
      */
     override val session: CfirSession
         get() = components.session
-
-    /**
-     * 默认 tower resolve 调度器。
-     */
-    private val manager = TowerResolveManager(collector)
 
     /**
      * 运行一次调用解析并返回收集到的候选。
@@ -92,8 +88,10 @@ class CfirTowerResolver(
         externalCollector: CfirCandidateCollector? = null,
         candidateFactory: CandidateFactory = CandidateFactory(context, info),
     ): CfirCandidateCollector {
-        val resultCollector = externalCollector ?: collector
-        val resolveManager = if (externalCollector == null) manager else TowerResolveManager(resultCollector)
+        val resultCollector = externalCollector
+            ?: injectedCollector
+            ?: CfirCandidateCollector(components, resolutionStageRunner)
+        val resolveManager = TowerResolveManager(resultCollector)
 
         resultCollector.newDataSet()
         resolveManager.reset()
@@ -210,15 +208,36 @@ class CfirTowerResolver(
         return emptyList()
     }
 
+    /** 返回指定 classifier 在首个可见 tower scope 中携带的 use-site substitutor。 */
+    fun findClassifierSubstitutor(
+        name: Name,
+        target: CfirClassifierSymbol<*>,
+    ): org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor {
+        val scopes = components.towerDataContext.towerDataElements.asReversed().flatMap { it.getAvailableScopes() }
+        for (scope in scopes) {
+            var result: org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor? = null
+            scope.processClassifiersByNameWithSubstitution(name) { symbol, substitutor ->
+                if (symbol == target && result == null) result = substitutor
+            }
+            if (result != null) return result!!
+        }
+        return org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor.Empty
+    }
+
     /**
      * 在当前 tower 可见作用域中查找类型参数符号。
      */
     fun findTypeParameters(name: Name): List<CfirTypeParameterSymbol> {
         val scopes = components.towerDataContext.towerDataElements.asReversed().flatMap { it.getAvailableScopes() }
         for (scope in scopes) {
-            val typeParameterScope = scope as? CfirTypeParameterScope ?: continue
             val result = mutableListOf<CfirTypeParameterSymbol>()
-            typeParameterScope.processTypeParametersByName(name) { result += it }
+            // 类型参数已经由 CfirTypeParameterScopeImpl 暴露到 classifier 主入口；
+            // 这里也必须走同一入口，保证组合 scope 与直接 scope 的行为一致。
+            scope.processClassifiersByNameWithSubstitution(name) { symbol, _ ->
+                if (symbol is CfirTypeParameterSymbol) {
+                    result += symbol
+                }
+            }
             if (result.isNotEmpty()) return result.distinct()
         }
         return emptyList()
@@ -253,14 +272,6 @@ class CfirTowerResolver(
             if (result.isNotEmpty()) return result
         }
         return emptyList()
-    }
-
-    /**
-     * 重置候选收集器和 tower 调度器状态。
-     */
-    fun reset() {
-        collector.newDataSet()
-        manager.reset()
     }
 
     /**

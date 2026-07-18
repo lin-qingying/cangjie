@@ -171,10 +171,22 @@ open class CjBlockExpression : LazyParseablePsiElement, CjElement, CjExpression,
         }
 
     /**
-     * 保存 `statements`，供仓颉 PSI流程读取节点结构或语义信息。
+     * 当前 block 的直接语句列表。
+     *
+     * block 可能包含嵌套 match、lambda 或局部 block；这些子结构内部的表达式不能泄漏为当前 block 的语句。
      */
     open val statements: List<CjExpression>
-        get() = Arrays.asList(*findChildrenByClass(CjExpression::class.java))
+        get() {
+            val result = ArrayList<CjExpression>()
+            var child = firstChild
+            while (child != null) {
+                if (child is CjExpression) {
+                    result.add(child)
+                }
+                child = child.nextSibling
+            }
+            return result
+        }
 
     /**
      * 保存 `statementsWithoutReturnKeyword`，供仓颉 PSI流程读取节点结构或语义信息。

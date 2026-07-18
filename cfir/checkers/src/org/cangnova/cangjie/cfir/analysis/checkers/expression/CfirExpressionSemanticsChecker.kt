@@ -446,11 +446,15 @@ object CfirStaticContextNonStaticMemberAccessChecker : CfirQualifiedAccessChecke
             }
         }
 
-        return if (closestFunction.status.isStatic) StaticNonStaticAccessKind.FUNCTION else null
+        return if (closestFunction.status.isStatic || hasStaticEnclosingDeclarationAfter(closestFunction)) {
+            StaticNonStaticAccessKind.FUNCTION
+        } else {
+            null
+        }
     }
 
     /**
-     * lambda 本身不带 static 状态；它从外层 static 函数或 static 存储成员继承 static 语境。
+     * lambda 和本地函数本身不带 static 状态；它们从外层 static 函数或 static 存储成员继承 static 语境。
      */
     private fun CheckerContext.hasStaticEnclosingDeclarationAfter(function: CfirFunction): Boolean {
         return containingDeclarations.asReversed()

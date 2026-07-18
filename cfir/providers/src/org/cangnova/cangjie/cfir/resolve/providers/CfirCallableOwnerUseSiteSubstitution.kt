@@ -55,11 +55,7 @@ fun createCallableOwnerUseSiteSubstitutionMap(
     val ownerDeclaration = ownerSymbol?.cfir
         ?: session.cfirProvider.getCfirClassifierByFqName(ownerClassId)
         ?: return emptyMap()
-    if (
-        originalCallableSymbol !is CfirEnumConstructorSymbol &&
-        ownerSymbol != null &&
-        concreteOwnerType.isBareOrDeclarationSelfTypeOf(ownerSymbol)
-    ) {
+    if (ownerSymbol != null && concreteOwnerType.isBareOrDeclarationSelfTypeOf(ownerSymbol)) {
         return emptyMap()
     }
     return createClassLikeOwnerSubstitutionMap(ownerDeclaration, concreteOwnerType)

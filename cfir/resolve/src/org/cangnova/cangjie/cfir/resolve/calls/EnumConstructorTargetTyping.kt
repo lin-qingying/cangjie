@@ -51,8 +51,11 @@ internal fun CfirExpression.noArgEnumConstructorTargetType(
         return candidate.candidate.noArgEnumConstructorTargetType(expectedType, session)
     }
 
-    val enumConstructorSymbol = (reference as? CfirResolvedNamedReference)?.resolvedSymbol as? CfirEnumConstructorSymbol
-        ?: return null
+    val enumConstructorSymbol = when (reference) {
+        is CfirResolvedNamedReference -> reference.resolvedSymbol
+        is CfirResolvedErrorReference -> reference.resolvedSymbol
+        else -> null
+    } as? CfirEnumConstructorSymbol ?: return null
     return enumConstructorSymbol.noArgEnumConstructorTargetType(expectedType, session)
 }
 

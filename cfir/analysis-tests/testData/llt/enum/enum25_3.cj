@@ -13,7 +13,7 @@ main(): Int64 {
     var y = A.a(1)
     var z = match (x) {
         case b(w) => w
-        case a => 0
+        case <!UNREACHABLE_PATTERN!>a<!> => 0
     }
     var a: Int64 = a(1)
     return z - 10 + a

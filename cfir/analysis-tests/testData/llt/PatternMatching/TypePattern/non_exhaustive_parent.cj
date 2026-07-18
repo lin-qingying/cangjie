@@ -12,14 +12,14 @@ private class B {}
 
 extend B <: J {}
 
-func f(x: Option<I>) {
-    <!NON_EXHAUSTIVE_MATCH!>match (x) {
+private func f(x: Option<I>) {
+    match (<!NON_EXHAUSTIVE_MATCH!>x<!>) {
         case Some(_: A) => 0
         case Some(_: J) => 1
         case Some(_: B) => -1 // unreachable
-    }<!>
+    }
 }
 
 main() {
-    f(Some(0))
+    f(Some(A()))
 }

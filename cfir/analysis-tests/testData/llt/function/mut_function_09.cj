@@ -13,7 +13,7 @@ struct S1 {
     }
 
     mut func f() {
-        <!CANNOT_ASSIGN_TO_IMMUTABLE!>t1.t0<!> += 1
+        t1.t0 += 1
     }
 }
 
@@ -27,7 +27,7 @@ class C {
 
 main() {
     let a = [S2()]
-    a[0].t2.f()
+    a[0].t2.<!IMMUTABLE_FUNCTION_CANNOT_ACCESS_MUTABLE_FUNCTION!>f<!>()
     let c = C()
     c.s2.t2.f()
 }

@@ -634,7 +634,7 @@ class LightTreeRawCfirExpressionBuilder(
 
           val callArguments = effectiveArgNodes.mapNotNull { convertCallArgument(it) }.toMutableList()
           val lambdaArgs = lambdaArgNodes.mapNotNull { lambdaArg ->
-              val lambdaExpr = tree.findChildByType(lambdaArg, CjNodeTypes.LAMBDA_EXPRESSION)
+              val lambdaExpr = findLambdaExpression(lambdaArg)
               lambdaExpr?.let {
                   convertLambda(it).also { anonymousFunctionExpression ->
                       anonymousFunctionExpression.replaceIsTrailingLambda(true)
@@ -846,14 +846,16 @@ class LightTreeRawCfirExpressionBuilder(
 
     /** 转换 spawn 表达式。 */
     private fun convertSpawn(node: LighterASTNode): CfirExpression {
-        val lambdaNode = tree.findChildByType(node, CjNodeTypes.LAMBDA_EXPRESSION)
-        val body = if (lambdaNode != null) {
-            val bodyNode = tree.findChildByType(lambdaNode, CjNodeTypes.BLOCK)
-            bodyNode?.let { convertBlock(it) } ?: buildBlock { source = lambdaNode.toSource() }
-        } else {
-            buildBlock { source = node.toSource() }
+        val lambdaNode = findLambdaExpression(node)
+        val bodyNode = lambdaNode?.let(::findLambdaBodyBlock)
+        val body = bodyNode?.let { convertBlock(it) }
+            ?: buildBlock { source = (lambdaNode ?: node).toSource() }
+        val threadContextArgument = findFirstValueArgument(node)?.let(::convertCallArgument)
+        return buildSpawnExpression {
+            source = node.toSource()
+            this.body = body
+            this.threadContextArgument = threadContextArgument
         }
-        return buildSpawnExpression { source = node.toSource(); this.body = body }
     }
 
     /** 转换点访问或安全访问表达式。 */
@@ -927,9 +929,9 @@ class LightTreeRawCfirExpressionBuilder(
                 directTypeArgs
             } else {
                 collectTypeArgumentsFromCallee(calleeRef)
-            }
+              }
               val lambdaArgs = lambdaArgNodes.mapNotNull { lambdaArg ->
-                  val lambdaExpr = tree.findChildByType(lambdaArg, CjNodeTypes.LAMBDA_EXPRESSION)
+                  val lambdaExpr = findLambdaExpression(lambdaArg)
                   lambdaExpr?.let {
                       convertLambda(it).also { anonymousFunctionExpression ->
                           anonymousFunctionExpression.replaceIsTrailingLambda(true)
@@ -1257,12 +1259,7 @@ class LightTreeRawCfirExpressionBuilder(
         if (isPatternToken(node.tokenType)) {
             return convertPattern(node)
         }
-        // 在子节点中查找 pattern
-        tree.forEachChildren(node) { child ->
-            if (isPatternToken(child.tokenType)) {
-                return convertPattern(child)
-            }
-        }
+        findFirstPatternNode(node)?.let { return convertPattern(it) }
         // 回退：将表达式包装为 constPattern（如 case score < 60）
         val expr = findFirstExpression(node) ?: node.takeIf { isExpressionToken(it.tokenType) }
         if (expr != null) {
@@ -1272,6 +1269,18 @@ class LightTreeRawCfirExpressionBuilder(
             }
         }
         return buildWildcardPattern { source = node.toSource() }
+    }
+
+    /**
+     * LightTree 中 match condition 可能额外包一层语法容器；递归查找第一个真实 pattern，
+     * 避免把 `case x: T` 回退成表达式 pattern。
+     */
+    private fun findFirstPatternNode(node: LighterASTNode): LighterASTNode? {
+        tree.forEachChildren(node) { child ->
+            if (isPatternToken(child.tokenType)) return child
+            findFirstPatternNode(child)?.let { return it }
+        }
+        return null
     }
 
     // ===== Pattern =====
@@ -1319,14 +1328,23 @@ class LightTreeRawCfirExpressionBuilder(
         }
         CjNodeTypes.TYPE_PATTERN -> {
             val typeRef = tree.findChildByType(node, CjNodeTypes.TYPE_REFERENCE)
-            val nameNode = tree.findChildByType(node, CjNodeTypes.REFERENCE_EXPRESSION)
-                ?: tree.findChildByType(node, CjTokens.IDENTIFIER)
+            var nameNode: LighterASTNode? = null
+            tree.forEachChildren(node) { child ->
+                if (child.tokenType == CjTokens.COLON || child.tokenType == CjNodeTypes.TYPE_REFERENCE) return@forEachChildren
+                if (nameNode == null && child.isTypePatternBindingNameNode()) {
+                    nameNode = child
+                }
+            }
+            val bindingName = nameNode
+                ?.asText()
+                ?.takeUnless { it == "_" }
+                ?.let(Name::identifier)
             buildTypePattern {
                 source = node.toSource()
                 this.typeRef = convertTypeReference(typeRef, tree, this@LightTreeRawCfirExpressionBuilder.source) {
                     it.toSourceElement()
                 }
-                bindingName = nameNode?.let { Name.identifier(it.asText()) }
+                this.bindingName = bindingName
                 bindingVariable = bindingName?.let { name ->
                     declarationBuilder.createPatternBindingVariable(
                         source = (nameNode ?: node).toSource(),
@@ -1689,10 +1707,10 @@ class LightTreeRawCfirExpressionBuilder(
     private fun convertLambda(node: LighterASTNode): CfirAnonymousFunctionExpression {
         val functionSymbol = CfirAnonymousFunctionSymbol()
         val valueParams = mutableListOf<org.cangnova.cangjie.cfir.declarations.CfirValueParameter>()
-        var bodyNode: LighterASTNode? = null
 
         // LAMBDA_EXPRESSION 内部包含 FUNCTION_LITERAL
-        val funcLiteral = tree.findChildByType(node, CjNodeTypes.FUNCTION_LITERAL) ?: node
+        val funcLiteral = lambdaFunctionLiteral(node)
+        val bodyNode = findLambdaBodyBlock(node)
 
         tree.forEachChildren(funcLiteral) { child ->
             when (child.tokenType) {
@@ -1711,7 +1729,6 @@ class LightTreeRawCfirExpressionBuilder(
                         }
                     }
                 }
-                CjNodeTypes.BLOCK -> bodyNode = child
             }
         }
 
@@ -1747,6 +1764,41 @@ class LightTreeRawCfirExpressionBuilder(
             isTrailingLambda = false
         }
     }
+
+    /** LightTree 的 lambda body 位于 FUNCTION_LITERAL 下，spawn 与普通 lambda 必须共用同一抽取规则。 */
+    private fun findLambdaBodyBlock(lambdaNode: LighterASTNode): LighterASTNode? =
+        tree.findChildByType(lambdaFunctionLiteral(lambdaNode), CjNodeTypes.BLOCK)
+
+    /** LightTree 中尾随 lambda 会包在 LAMBDA_ARGUMENT 下，这里统一还原语义上的 LAMBDA_EXPRESSION。 */
+    private fun findLambdaExpression(node: LighterASTNode): LighterASTNode? {
+        if (node.tokenType == CjNodeTypes.LAMBDA_EXPRESSION) return node
+        tree.forEachChildren(node) { child ->
+            when (child.tokenType) {
+                CjNodeTypes.LAMBDA_EXPRESSION -> return child
+                CjNodeTypes.LAMBDA_ARGUMENT -> tree.findChildByType(child, CjNodeTypes.LAMBDA_EXPRESSION)?.let { return it }
+            }
+        }
+        return null
+    }
+
+    /** spawn 的线程上下文参数位于可选 VALUE_ARGUMENT_LIST 的第一个 VALUE_ARGUMENT。 */
+    private fun findFirstValueArgument(node: LighterASTNode): LighterASTNode? {
+        tree.findChildByType(node, CjNodeTypes.VALUE_ARGUMENT_LIST)?.let { argumentList ->
+            tree.forEachChildren(argumentList) { argument ->
+                if (argument.tokenType == CjNodeTypes.VALUE_ARGUMENT) return argument
+            }
+        }
+        return null
+    }
+
+    private fun lambdaFunctionLiteral(lambdaNode: LighterASTNode): LighterASTNode =
+        tree.findChildByType(lambdaNode, CjNodeTypes.FUNCTION_LITERAL) ?: lambdaNode
+
+    /** 类型模式绑定名是冒号前的直接名称节点，LightTree 可能使用 BASIC_REFERENCE_EXPRESSION 包装普通标识符。 */
+    private fun LighterASTNode.isTypePatternBindingNameNode(): Boolean =
+        tokenType == CjNodeTypes.REFERENCE_EXPRESSION ||
+                tokenType == BASIC_REFERENCE_EXPRESSION ||
+                tokenType == CjTokens.IDENTIFIER
 
     // ===== Misc =====
 

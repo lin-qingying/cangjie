@@ -34,6 +34,8 @@ open class CfirCandidateCollector(
      * 当前最佳候选集合。
      */
     private val candidates = mutableListOf<Candidate>()
+    /** tower 每个 group 实际发现的全部候选，不按适用性等级删除。 */
+    private val discoveredCandidatesByGroup = linkedMapOf<CfirTowerGroup, MutableList<Candidate>>()
     /**
      * 需要转发的解析诊断。
      */
@@ -64,6 +66,7 @@ open class CfirCandidateCollector(
      */
     open fun newDataSet() {
         candidates.clear()
+        discoveredCandidatesByGroup.clear()
         forwardedDiagnostics.clear()
         functionValueCandidates.clear()
         functionValueCandidatesGroup = null
@@ -79,6 +82,7 @@ open class CfirCandidateCollector(
         candidate: Candidate,
         context: ResolutionContext,
     ): CandidateApplicability {
+        discoveredCandidatesByGroup.getOrPut(group) { mutableListOf() } += candidate
         val applicability = resolutionStageRunner.processCandidate(candidate, context)
         val currentBestGroup = bestGroup
         recordFunctionValueCandidate(group, candidate)
@@ -123,12 +127,26 @@ open class CfirCandidateCollector(
     fun bestCandidates(): List<Candidate> = candidates
 
     /**
+     * 返回最终最佳 tower group 中实际发现的全部候选。
+     *
+     * numeric priority 等适用性分层可能让 [bestCandidates] 只保留一个候选，但外层 expected
+     * type 细化仍需要同一词法 group 的完整声明集合；更低优先级 tower group 不得被重新引入。
+     */
+    fun candidatesDiscoveredInBestGroup(): List<Candidate> =
+        bestGroup?.let(discoveredCandidatesByGroup::get).orEmpty()
+
+    /**
      * 无目标类型的函数名作为值使用时，同一作用域中的函数候选必须先作为重载集合保留。
      *
      * 官方 Cangjie 对 `let f = obj.foo<T>` 这类表达式会先诊断函数引用歧义；
      * 只有单候选时才下沉到该候选自身的泛型约束错误。
      */
     fun functionValueCandidates(): List<Candidate> = functionValueCandidates
+
+    /**
+     * 返回函数值候选所属的最佳 tower group，供 named-value 跨 callable kind 合并时校验作用域层级。
+     */
+    fun functionValueCandidatesGroup(): CfirTowerGroup? = functionValueCandidatesGroup
 
     /**
      * 在函数名作为值使用时记录同组函数候选。

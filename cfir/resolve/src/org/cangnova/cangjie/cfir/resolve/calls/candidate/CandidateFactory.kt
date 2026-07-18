@@ -286,6 +286,29 @@ class CandidateFactory(
     }
 
     /**
+     * 仅从 tower discovery 的不可变字段重建普通 callable 候选。
+     *
+     * expected-return 细化不能复用旧候选的约束系统、stage 进度或诊断；receiver 也必须
+     * 重新包装为 raw atom，使新调用在独立的 [CallInfo] 与基础约束系统上完整执行 stages。
+     */
+    fun createCandidateFromDiscovery(
+        callInfo: CallInfo,
+        discovery: CfirCallableCandidateDiscovery,
+    ): Candidate = Candidate(
+        symbol = discovery.symbol,
+        dispatchReceiver = discovery.dispatchReceiverExpression?.let(ConeResolutionAtom::createRawAtom),
+        givenExtensionReceiver = discovery.givenExtensionReceiverExpression?.let(ConeResolutionAtom::createRawAtom),
+        explicitReceiverKind = discovery.explicitReceiverKind,
+        constraintSystemFactory = context.inferenceComponents.constraintSystemFactory,
+        baseSystem = baseSystem,
+        callInfo = callInfo,
+        originScope = discovery.originScope,
+        isFromCompanionObjectTypeScope = discovery.isFromCompanionObjectTypeScope,
+        isFromOriginalTypeInPresenceOfSmartCast = discovery.isFromOriginalTypeInPresenceOfSmartCast,
+        bodyResolveContext = context.bodyResolveContext,
+    )
+
+    /**
      * 基于已解析的函数值变量创建调用候选。
      *
      * `f(x)` 这种形态先要把 `f` 解析成普通值，再把该值的函数类型参数映射到
@@ -542,17 +565,17 @@ class CandidateFactory(
     }
 
     /**
-     * 函数类型 `invoke` 的 receiver 可能来自无上下文 lambda 参数调用语法临时构造的函数形状。
+     * 函数类型 `invoke` 的 receiver 可能携带上游调用留下的推断变量。
      *
-     * 这些类型变量不属于 synthetic invoke 函数声明本身；若不显式暴露给 completion，
-     * `${g(0)}` 这类外层表达式后来加入的 `ToString` 约束只会留在系统里，变量不会进入固定队列。
+     * 这些变量不属于 synthetic invoke 函数声明本身；若不显式暴露给 completion，
+     * invoke 实参和返回 expected type 产生的约束只会留在系统里，变量不会进入固定队列。
      */
     private fun Candidate.registerFunctionTypeInvokeCompletionVariables(functionType: ConeFunctionType) {
-        additionalCompletionVariables += functionType.freshCompletionTypeVariablesIn(system.currentStorage().allTypeVariables.keys)
+        additionalCompletionVariables += functionType.completionBoundaryTypeVariablesIn(system.currentStorage().allTypeVariables.keys)
     }
 
-    /** 收集函数类型边界上当前约束系统可见的 fresh 类型变量。 */
-    private fun ConeCangJieType.freshCompletionTypeVariablesIn(
+    /** 收集函数类型边界上当前约束系统可见的推断变量。 */
+    private fun ConeCangJieType.completionBoundaryTypeVariablesIn(
         availableConstructors: Set<TypeConstructorMarker>,
     ): Set<TypeConstructorMarker> {
         val result = linkedSetOf<TypeConstructorMarker>()
@@ -560,7 +583,7 @@ class CandidateFactory(
         fun ConeCangJieType.collect() {
             when (this) {
                 is ConeTypeVariableType -> {
-                    if (typeConstructor.originalTypeParameter == null && typeConstructor in availableConstructors) {
+                    if (typeConstructor in availableConstructors) {
                         result += typeConstructor
                     }
                 }

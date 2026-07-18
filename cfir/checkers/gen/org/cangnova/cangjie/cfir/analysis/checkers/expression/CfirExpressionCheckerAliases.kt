@@ -25,6 +25,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
 import org.cangnova.cangjie.cfir.expressions.CfirRangeExpression
 import org.cangnova.cangjie.cfir.expressions.CfirReturnExpression
 import org.cangnova.cangjie.cfir.expressions.CfirStatement
+import org.cangnova.cangjie.cfir.expressions.CfirStringInterpolation
 import org.cangnova.cangjie.cfir.expressions.CfirSubscriptExpression
 import org.cangnova.cangjie.cfir.expressions.CfirSuperReceiverExpression
 import org.cangnova.cangjie.cfir.expressions.CfirThrowExpression
@@ -33,6 +34,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirTypeOperator
 
 typealias CfirBasicExpressionChecker = CfirExpressionChecker<CfirStatement>
 typealias CfirLiteralExpressionChecker = CfirExpressionChecker<CfirLiteralExpression>
+typealias CfirStringInterpolationChecker = CfirExpressionChecker<CfirStringInterpolation>
 typealias CfirCallChecker = CfirExpressionChecker<CfirCall>
 typealias CfirFunctionCallChecker = CfirExpressionChecker<CfirFunctionCall>
 typealias CfirNamedAccessChecker = CfirExpressionChecker<CfirNamedAccessExpression>

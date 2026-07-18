@@ -105,6 +105,10 @@ class DeclarationCheckersDiagnosticComponent(
         checkers.allBasicDeclarationCheckers.check(codeFragment, data)
     }
 
+    override fun visitVariable(variable: CfirVariable, data: CheckerContext) {
+        checkers.allCallableDeclarationCheckers.check(variable, data)
+    }
+
     override fun visitPatternBindingVariable(patternBindingVariable: CfirPatternBindingVariable, data: CheckerContext) {
         checkers.allCallableDeclarationCheckers.check(patternBindingVariable, data)
     }

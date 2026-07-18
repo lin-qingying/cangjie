@@ -30,6 +30,22 @@ val ResolutionDiagnostic.isSuccess: Boolean get() = applicability.isSuccess
 object ErrorTypeInArguments : ResolutionDiagnostic(CandidateApplicability.INAPPLICABLE)
 
 /**
+ * 候选 callable 的声明签名中出现普通错误类型，调用诊断按声明错误恢复。
+ *
+ * 该诊断只阻止错误类型进入普通 subtype constraint，不在调用位置产生派生 no-match；
+ * 声明处的根诊断已经完整描述错误。
+ */
+object ErrorTypeInCandidateSignature : ResolutionDiagnostic(CandidateApplicability.INAPPLICABLE)
+
+/**
+ * 候选 callable 的参数签名来自重声明 classifier 的类型使用歧义。
+ *
+ * 官方语义会在这种声明签名无法确定唯一类型时保留调用 no-match，必须与普通未声明类型等
+ * 可恢复的签名错误分离。
+ */
+object AmbiguousClassifierTypeInCandidateSignature : ResolutionDiagnostic(CandidateApplicability.INAPPLICABLE)
+
+/**
  * smart cast 不稳定，不能作为候选所需类型使用。
  *
  * @property argument 发生 smart cast 的表达式。

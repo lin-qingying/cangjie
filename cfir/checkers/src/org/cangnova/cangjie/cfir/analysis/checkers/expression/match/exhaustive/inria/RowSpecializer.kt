@@ -4,9 +4,8 @@ import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.match.CfirConstructor
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.match.CfirMatchPattern
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.match.CfirMatchPatternKind
+import org.cangnova.cangjie.cfir.resolve.match.isTypePatternOrdinarySubtypeOf
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
-import org.cangnova.cangjie.cfir.types.typeContext
-import org.cangnova.cangjie.type.AbstractTypeChecker
 
 /** Maranget 算法的行特化工具，负责按选定构造器重写矩阵行。 */
 object RowSpecializer {
@@ -59,12 +58,11 @@ object RowSpecializer {
     }
 
     /**
-     * 官方 `Constructor::IsCoveredBy` 对 TYPE 构造器使用 `candidateTy <: patternTy`。
-     * 这让 `case _: Collection<T>` 覆盖后续 `case _: Array<T>`，但不会把开放父类型
-     * 的 selector 提前收窄成同型判断。
+     * 官方 `Constructor::IsCoveredBy` 对 TYPE 构造器使用 type-pattern 普通 subtype。
+     * boxed/autobox 关系只属于类型模式诊断语义，不能让前序 type pattern 覆盖后续运行期类型测试。
      */
     private fun ConeCangJieType.isCoveredByTypePattern(
         patternType: ConeCangJieType,
         context: CheckerContext,
-    ): Boolean = AbstractTypeChecker.isSubtypeOf(context.session.typeContext, this, patternType) == true
+    ): Boolean = isTypePatternOrdinarySubtypeOf(patternType, context.session)
 }

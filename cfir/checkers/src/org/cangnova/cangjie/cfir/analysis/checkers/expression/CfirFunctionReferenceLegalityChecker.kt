@@ -1,16 +1,22 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.declaration.firstCharacterDiagnosticSource
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
+import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
+import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
 import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
-import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
+import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
+import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
 
 /**
  * 函数值引用合法性检查。
@@ -29,7 +35,7 @@ object CfirFunctionReferenceLegalityChecker : CfirQualifiedAccessChecker() {
     override fun check(expression: CfirQualifiedAccessExpression) {
         if (expression is CfirFunctionCall) return
 
-        val targetSymbol = expression.resolvedFunctionSymbolOrNull()
+        val targetSymbol = expression.resolvedCallableSymbolOrNull()
         if (targetSymbol == null) {
             val recoveredMutFunction = expression.declaredUpperBoundMutFunctionOrNull() ?: return
             val diagnosticSource = expression.calleeReference.source ?: expression.source ?: return
@@ -41,6 +47,7 @@ object CfirFunctionReferenceLegalityChecker : CfirQualifiedAccessChecker() {
             return
         }
 
+        targetSymbol.lazyResolveToPhase(CfirResolvePhase.TYPES)
         val targetDeclaration = targetSymbol.takeIf { it.isBound }?.cfir ?: return
         val diagnosticSource = expression.calleeReference.source ?: expression.source ?: return
 
@@ -54,6 +61,14 @@ object CfirFunctionReferenceLegalityChecker : CfirQualifiedAccessChecker() {
         }
 
         val targetFunction = targetDeclaration as? CfirNamedFunction ?: return
+        if (targetFunction.returnTypeRef.hasRecursiveImplicitReturnType()) {
+            reporter.reportOn(
+                source = (expression.source ?: diagnosticSource).firstCharacterDiagnosticSource(),
+                factory = CfirErrors.NO_MATCH_FUNCTION_DECLARATION_FOR_REF,
+            )
+            return
+        }
+
         if (targetFunction.status.isMut) {
             reporter.reportOn(
                 source = diagnosticSource,
@@ -70,12 +85,24 @@ object CfirFunctionReferenceLegalityChecker : CfirQualifiedAccessChecker() {
         }
     }
 
-    /** 从限定访问的 calleeReference 中提取函数 symbol。 */
-    private fun CfirQualifiedAccessExpression.resolvedFunctionSymbolOrNull(): CfirFunctionSymbol<*>? {
+    /**
+     * 从限定访问的 calleeReference 中提取 callable symbol。
+     *
+     * enum 构造器在 CFIR 中是独立的 [CfirCallableSymbol]，并不继承
+     * [CfirFunctionSymbol]；因此函数引用合法性检查必须先覆盖整个 callable
+     * 空间，再在普通函数规则中收窄到 [CfirNamedFunction]。
+     */
+    private fun CfirQualifiedAccessExpression.resolvedCallableSymbolOrNull(): CfirCallableSymbol<*>? {
         return when (val reference = calleeReference) {
-            is CfirResolvedNamedReference -> reference.resolvedSymbol as? CfirFunctionSymbol<*>
-            is CfirNamedReferenceWithCandidateBase -> reference.candidateSymbol as? CfirFunctionSymbol<*>
+            is CfirResolvedNamedReference -> reference.resolvedSymbol as? CfirCallableSymbol<*>
+            is CfirNamedReferenceWithCandidateBase -> reference.candidateSymbol as? CfirCallableSymbol<*>
             else -> null
         }
+    }
+
+    /** 函数引用目标仍处在隐式返回类型递归中时，引用本身不能形成合法函数值。 */
+    private fun org.cangnova.cangjie.cfir.types.CfirTypeRef.hasRecursiveImplicitReturnType(): Boolean {
+        val diagnostic = (this as? CfirErrorTypeRef)?.diagnostic as? ConeSimpleDiagnostic ?: return false
+        return diagnostic.kind == DiagnosticKind.RecursionInImplicitTypes
     }
 }

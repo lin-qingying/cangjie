@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.semantics
 
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
+import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.resolve.calls.inference.ConstraintSystem
 import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintSystemError
 import org.cangnova.cangjie.resolve.calls.tasks.ExplicitReceiverKind
@@ -44,6 +45,14 @@ abstract class AbstractCallCandidate<P : AbstractConeResolutionAtom> : AbstractC
 
     /** 当前候选使用的类型约束系统。 */
     abstract val system: ConstraintSystem
+
+    /**
+     * 声明类型参数到当前候选 fresh type variable/已知 owner 实参的替换器。
+     *
+     * 该只读 seam 供 resolve 之后的语义检查消费最终实例化结果；checker 必须先应用此替换，
+     * 再应用 [system] 的最终替换器，不能重新推导一套候选类型实参。
+     */
+    abstract val typeParameterSubstitutorOrNull: ConeSubstitutor?
 
     /** 当前候选是否复用了外层调用的约束系统。 */
     abstract val usedOuterCs: Boolean

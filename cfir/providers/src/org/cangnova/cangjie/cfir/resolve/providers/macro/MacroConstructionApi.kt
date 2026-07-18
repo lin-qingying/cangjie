@@ -289,6 +289,10 @@ class MacroExpansionRegistry : org.cangnova.cangjie.cfir.session.CfirSessionComp
     private val _diagnostics: MutableList<MacroConstructionDiagnostic> = mutableListOf()
     /** `surfaceId -> MacroSurface` 反查表。 */
     private val _originSurfaceById: MutableMap<Long, MacroSurface> = mutableMapOf()
+    /** `fileIdentity -> construction 阶段已消费的 macro 简单名集合`。 */
+    private val _usedMacroNamesByFileIdentity: MutableMap<String, MutableSet<Name>> = linkedMapOf()
+    /** `fileIdentity -> macro package -> construction 阶段已消费的 macro 简单名集合`。 */
+    private val _usedMacroNamesByPackageByFileIdentity: MutableMap<String, MutableMap<FqName, MutableSet<Name>>> = linkedMapOf()
     /** degraded placeholder id 到原始 surface id 的映射。 */
     private val _placeholderOriginById: MutableMap<Long, Long> = mutableMapOf()
     /** 展开产物 source 到原始 surface id 的映射。 */
@@ -352,6 +356,64 @@ class MacroExpansionRegistry : org.cangnova.cangjie.cfir.session.CfirSessionComp
     /** 注册一个原始 macro surface，建立 surface id 到 surface 的反查。 */
     fun registerOriginSurface(surface: MacroSurface) {
         _originSurfaceById[surface.surfaceId] = surface
+    }
+
+    /**
+     * 登记某个源文件中已经被 construction routing 消费的 macro surface。
+     *
+     * ordinary checker 看到的是展开后的 final CFIR，原始 macro 调用可能已经被 splice
+     * 移除；unused-import 必须通过这份文件级事实恢复官方 `GetUsedMacroDecls(file)` 语义。
+     */
+    fun registerUsedMacroSurface(file: CfirFile, surface: MacroSurface) {
+        val qualifiedName = surface.qualifiedName ?: return
+        val name = qualifiedName.shortName()
+        val packageFqName = qualifiedName.parent()
+        for (fileIdentity in file.macroExpansionFileIdentities()) {
+            _usedMacroNamesByFileIdentity.getOrPut(fileIdentity) { linkedSetOf() } += name
+            if (!packageFqName.isRoot) {
+                _usedMacroNamesByPackageByFileIdentity
+                    .getOrPut(fileIdentity) { linkedMapOf() }
+                    .getOrPut(packageFqName) { linkedSetOf() } += name
+            }
+        }
+    }
+
+    /**
+     * 登记某个源文件中已经被 construction routing 消费的已解析 macro 定义。
+     *
+     * 与 [registerUsedMacroSurface] 的语法名兜底不同，该入口记录定义所在包，
+     * 供 `import pkg.*` 的 unused-import 判定按官方 `usedMacroInFile[packageName]`
+     * 语义识别 all-under macro import 使用。
+     */
+    fun registerUsedMacroDefinition(file: CfirFile, entry: MacroDefinitionEntry) {
+        for (fileIdentity in file.macroExpansionFileIdentities()) {
+            _usedMacroNamesByFileIdentity.getOrPut(fileIdentity) { linkedSetOf() } += entry.name
+            _usedMacroNamesByPackageByFileIdentity
+                .getOrPut(fileIdentity) { linkedMapOf() }
+                .getOrPut(entry.packageFqName) { linkedSetOf() } += entry.name
+        }
+    }
+
+    /**
+     * 查询某源文件 construction 阶段已消费的 macro 简单名集合。
+     */
+    fun usedMacroNames(file: CfirFile): Set<Name> {
+        return file.macroExpansionFileIdentities()
+            .flatMap { identity -> _usedMacroNamesByFileIdentity[identity].orEmpty() }
+            .toSet()
+    }
+
+    /**
+     * 查询某源文件 construction 阶段在指定 macro 包中已消费的 macro 简单名集合。
+     */
+    fun usedMacroNames(file: CfirFile, packageFqName: FqName): Set<Name> {
+        return file.macroExpansionFileIdentities()
+            .flatMap { identity ->
+                _usedMacroNamesByPackageByFileIdentity[identity]
+                    ?.get(packageFqName)
+                    .orEmpty()
+            }
+            .toSet()
     }
 
     /** 注册 degraded placeholder 与原始 surface 的对应关系。 */
@@ -440,6 +502,33 @@ class MacroExpansionRegistry : org.cangnova.cangjie.cfir.session.CfirSessionComp
         /** 没有文件级 cache key 时使用的模块签名。 */
         const val EMPTY_MODULE_SIGNATURE: String = "macro-module:empty"
     }
+}
+
+/**
+ * Macro registry 内使用的稳定文件身份。
+ *
+ * 同一源码文件在 PSI、LightTree 与 resolve 副本中可能只保留 path、source name 或 CFIR name
+ * 的一部分；registry 同时写入这些稳定键，避免 checker 依赖某个入口的 source 表示细节。
+ */
+private fun CfirFile.macroExpansionFileIdentities(): Set<String> = buildSet {
+    addMacroExpansionFileIdentity(sourceFile?.path)
+    addMacroExpansionFileIdentity(sourceFile?.name)
+    addMacroExpansionFileIdentity(name)
+}
+
+/**
+ * 记录 registry 查询使用的文件身份。
+ *
+ * PSI、LightTree 与 resolve 后的 CFIR 副本在 Windows 上可能分别保留绝对路径、
+ * 反斜杠路径、标准化斜杠路径或仅文件名；registry 必须把这些稳定形态一并登记，
+ * 才能让 construction 阶段记录的文件级 macro 使用事实被后续 checker 找回。
+ */
+private fun MutableSet<String>.addMacroExpansionFileIdentity(value: String?) {
+    val identity = value?.takeIf(String::isNotBlank) ?: return
+    add(identity)
+    val normalized = identity.replace('\\', '/')
+    add(normalized)
+    normalized.substringAfterLast('/').takeIf(String::isNotBlank)?.let(::add)
 }
 
 /**

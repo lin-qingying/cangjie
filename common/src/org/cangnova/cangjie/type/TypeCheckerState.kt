@@ -31,6 +31,8 @@ open class TypeCheckerState(
     val allowedTypeVariable: Boolean,
     /** 普通子类型判断是否允许 struct/enum 等值类型隐式装箱到接口类型 */
     allowImplicitBoxing: Boolean = true,
+    /** 普通子类型判断是否允许值自动提升为 `Option<T>` */
+    allowOptionBoxing: Boolean = true,
     /** 类型系统上下文，提供所有类型操作 */
     val typeSystemContext: TypeSystemContext,
     /** 类型预处理器，在比较前对类型做规范化处理 */
@@ -55,6 +57,10 @@ open class TypeCheckerState(
     var isImplicitBoxingAllowed: Boolean = allowImplicitBoxing
         private set
 
+    /** 当前子类型判断是否允许官方 `allowOptionBox` 路径。 */
+    var isOptionBoxingAllowed: Boolean = allowOptionBoxing
+        private set
+
     /**
      * 在指定隐式装箱开关下执行类型检查片段，并在结束后恢复原状态。
      */
@@ -65,6 +71,17 @@ open class TypeCheckerState(
             f()
         } finally {
             isImplicitBoxingAllowed = previous
+        }
+    }
+
+    /** 在指定 Option 自动装箱开关下执行类型检查片段，并在结束后恢复原状态。 */
+    internal inline fun <T> runWithOptionBoxing(allowed: Boolean, f: TypeCheckerState.() -> T): T {
+        val previous = isOptionBoxingAllowed
+        isOptionBoxingAllowed = allowed
+        return try {
+            f()
+        } finally {
+            isOptionBoxingAllowed = previous
         }
     }
 

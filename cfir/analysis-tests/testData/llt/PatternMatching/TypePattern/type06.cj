@@ -20,9 +20,9 @@ enum Family {
 main(): Int64 {
     var target = Family.son(Son())
     var res = match (target) {
-        case son(uncle: Uncle) => 0
+        case <!UNREACHABLE_PATTERN!>son(uncle: Uncle)<!> => 0
         case son(father: Father) => father.age
-        case _ => -1
+        case <!UNREACHABLE_PATTERN!>_<!> => -1
     }
     if (res == 20) {
         return 0

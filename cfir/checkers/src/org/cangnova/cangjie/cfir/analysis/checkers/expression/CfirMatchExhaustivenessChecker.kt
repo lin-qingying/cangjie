@@ -24,7 +24,7 @@ object CfirMatchExhaustivenessChecker : CfirMatchExpressionChecker( ) {
     /**
      * 检查 match 表达式是否穷尽。
      *
-     * subject 类型错误或 pattern 本身非法时跳过；非穷尽结果在 subject 位置报告缺失 case 文本。
+     * subject 类型错误或 pattern 本身非法时跳过；非穷尽结果在 match 表达式位置报告缺失 case 文本。
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirMatchExpression) {
@@ -39,7 +39,7 @@ object CfirMatchExhaustivenessChecker : CfirMatchExpressionChecker( ) {
         val exhaustiveness = checkerExhaustivenessStatus(expression, context)
         if (exhaustiveness !is CfirMatchExhaustivenessStatus.NonExhaustive) return
         reporter.reportOn(
-            subject.source as? AbstractCjSourceElement ?: source,
+            source,
             CfirErrors.NON_EXHAUSTIVE_MATCH,
             exhaustiveness.missingCaseTexts,
         )

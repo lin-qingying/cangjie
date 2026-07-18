@@ -61,6 +61,8 @@ object StdlibClassIds {
     @JvmField val ToString = ClassId(core, StandardNames.TOSTRING)
     /** `std.core.Future`。 */
     @JvmField val Future = ClassId(core, StandardNames.FUTURE)
+    /** `std.core.ThreadContext`。 */
+    @JvmField val ThreadContext = ClassId(core, StandardNames.THREAD_CONTEXT)
 
     // ---- stdx.effect effect handlers ----
 
@@ -75,7 +77,7 @@ object StdlibClassIds {
     @JvmField
     val allClassIds: Set<ClassId> = setOf(
         Object, Any, String, Array, Option, Range, CType, Exception, Error, Resource,
-        Comparable, Equatable, Countable, Iterable, Collection, ToString, Future,
+        Comparable, Equatable, Countable, Iterable, Collection, ToString, Future, ThreadContext,
         Command, Resumption,
     )
 }

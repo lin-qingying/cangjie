@@ -39,13 +39,19 @@ import org.cangnova.cangjie.cfir.references.builder.buildResolvedErrorReference
 import org.cangnova.cangjie.cfir.references.impl.CfirResolvedAppliedCallableReference
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallKind
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirErrorReferenceWithCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirNamedReferenceWithCandidate
+import org.cangnova.cangjie.cfir.resolve.calls.substituteExplicitTypeArgumentConstraints
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.types.*
+import org.cangnova.cangjie.name.ClassId
+import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintMismatch
 import org.cangnova.cangjie.resolve.calls.tower.CandidateApplicability
+import org.cangnova.cangjie.type.AbstractTypeChecker
 import org.cangnova.cangjie.type.model.safeSubstitute
+import org.cangnova.cangjie.type.model.typeConstructor
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 import org.cangnova.cangjie.utils.exceptions.withCfirEntry
 
@@ -53,6 +59,15 @@ import org.cangnova.cangjie.utils.exceptions.withCfirEntry
  * 取得候选符号的初始表达式类型，并应用候选当前 substitutor。
  */
 fun BodyResolveComponents.initialTypeOfCandidate(candidate: Candidate): ConeCangJieType {
+    if (candidate.symbol.cfir is CfirEnumConstructor) {
+        // enum constructor 的表达式结果是 owner enum 类型，不是声明 returnTypeRef。
+        // candidate.substitutedReturnType 已应用声明类型参数替换，这里只继续应用当前约束系统，
+        // 供 expected-return 过滤和嵌套调用目标类型选择读取真实 owner 类型。
+        val system = candidate.system
+        return system.buildCurrentSubstitutor()
+            .safeSubstitute(system, candidate.substitutedReturnType())
+            .asCone()
+    }
     val type = typeFromSymbol(candidate.symbol)
     return type.initialTypeOfCandidate(candidate)
 }
@@ -62,6 +77,38 @@ fun BodyResolveComponents.initialTypeOfCandidate(candidate: Candidate): ConeCang
  */
 val CfirTypeParameterSymbol.defaultType: ConeTypeParameterType
     get() = ConeTypeParameterTypeImpl(toLookupTag())
+
+/**
+ * 查找当前类型到目标 class/interface 的唯一已实例化父类型视图。
+ *
+ * 该查询统一交给类型系统的 corresponding-supertype 算法，使继承链上的泛型替换、
+ * extend 超类型和多路径继承都使用与 subtype 检查相同的语义。
+ */
+fun ConeCangJieType.findCorrespondingClassLikeSupertype(
+    session: CfirSession,
+    targetClassId: ClassId,
+): ConeClassLikeType? {
+    val sourceType = fullyExpandedType(session) as? ConeRigidType ?: return null
+    val targetType = session.symbolProvider.getClassLikeSymbolByClassId(targetClassId)
+        ?.constructType() as? ConeRigidType
+        ?: return null
+    val targetConstructor = with(session.typeContext) { targetType.typeConstructor() }
+    val typeCheckerState = session.typeContext.newTypeCheckerState(
+        errorTypesEqualToAnything = false,
+        stubTypesEqualToAnything = false,
+    )
+    val correspondingTypes = AbstractTypeChecker.findCorrespondingSupertypes(
+        typeCheckerState,
+        sourceType,
+        targetConstructor,
+    ).mapNotNull { type -> type as? ConeClassLikeType }
+    val first = correspondingTypes.firstOrNull() ?: return null
+    return first.takeIf { candidate ->
+        correspondingTypes.all { current ->
+            AbstractTypeChecker.equalTypes(session.typeContext, candidate, current)
+        }
+    }
+}
 
 /**
  * 从可解析访问表达式中提取表达式类型。
@@ -76,6 +123,17 @@ fun <T : CfirResolvable> BodyResolveComponents.typeFromCallee(access: T): ConeCa
                     ConeSimpleDiagnostic("Unresolved qualifier type argument", DiagnosticKind.Other)
                 )
             }
+            val expectedCount = (classifierSymbol.cfir as? CfirTypeParameterRefsOwner)?.typeParameters?.size ?: 0
+            if (expectedCount != typeArguments.size) {
+                return ConeErrorType(
+                    diagnostic = ConeGenericArgumentNoMatchError(
+                        expectedCount = expectedCount,
+                        actualCount = typeArguments.size,
+                    ),
+                    delegatedType = classifierSymbol.constructTypeForQualifiedAccess(emptyList()),
+                    typeArguments = typeArguments,
+                )
+            }
             return classifierSymbol.constructTypeForQualifiedAccess(typeArguments)
         }
     }
@@ -87,6 +145,15 @@ fun <T : CfirResolvable> BodyResolveComponents.typeFromCallee(access: T): ConeCa
  */
 fun BodyResolveComponents.typeFromCallee(calleeReference: CfirReference): ConeCangJieType {
     return when (calleeReference) {
+        is CfirErrorReferenceWithCandidate -> {
+            val candidate = calleeReference.candidate
+            if (candidate.hasExplicitTypeArgumentConstraintMismatchForNominalRecovery()) {
+                return candidate.substituteExplicitTypeArgumentConstraints(candidate.substitutedReturnType())
+            }
+            // 其他失败候选只承载根诊断，不能把声明的名义返回类型暴露给外围表达式。
+            ConeErrorType(ConeUnreportedDuplicateDiagnostic(calleeReference.diagnostic))
+        }
+
         is CfirNamedReferenceWithCandidate -> {
             val candidate = calleeReference.candidate
             // 函数类型变量以调用形式使用时，对齐 synthetic invoke：表达式类型是函数类型的返回值。
@@ -145,6 +212,19 @@ fun BodyResolveComponents.typeFromCallee(calleeReference: CfirReference): ConeCa
         }
     }
 }
+
+/**
+ * 显式类型实参的上界违例不应抹掉构造调用的 nominal 结果类型。
+ * 具体诊断由 upper-bound checker 报告，外围表达式仍需使用候选声明返回类型完成成员解析。
+ */
+private fun Candidate.hasExplicitTypeArgumentConstraintMismatchForNominalRecovery(): Boolean =
+    explicitTypeArgumentsForNominalRecovery().isNotEmpty() &&
+        (errors.any { it is ConstraintMismatch } || system.hasContradiction)
+
+private fun Candidate.explicitTypeArgumentsForNominalRecovery(): List<CfirTypeRef> =
+    callInfo.typeArguments.ifEmpty {
+        (callInfo.callSite as? CfirQualifiedAccessExpression)?.typeArguments.orEmpty()
+    }
 
 /**
  * 构造命名值候选作为表达式时的类型。

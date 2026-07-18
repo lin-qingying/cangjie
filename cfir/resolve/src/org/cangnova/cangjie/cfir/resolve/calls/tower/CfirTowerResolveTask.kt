@@ -33,6 +33,7 @@ import org.cangnova.cangjie.cfir.resolve.body.CfirTowerDataContext
 import org.cangnova.cangjie.cfir.resolve.body.importedPackageQualifierScopeOrNull
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallInfo
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallKind
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CandidateFactory
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCandidateCollector
 import org.cangnova.cangjie.cfir.scopes.CfirImportScope
@@ -200,17 +201,43 @@ internal open class CfirTowerResolveTask(
      * 解析没有显式接收者的调用。
      */
     suspend fun runResolverForNoReceiver(info: CallInfo) {
+        var lookupStoppedByNonFunctionDeclaration = false
+        var hasFunctionDeclarationInCloserLocalScope = false
         enumerateTowerLevels(
             onScope = { scope, group ->
-                processLevel(ScopeBasedTowerLevel(components, scope), info, group)
+                if (!lookupStoppedByNonFunctionDeclaration) {
+                    val declarationPresence = if (
+                        info.callKind == CallKind.Function && scope is CfirLocalScope
+                    ) {
+                        scope.cangjieCallDeclarationPresence(info.name)
+                    } else {
+                        CangjieCallDeclarationPresence.NONE
+                    }
+
+                    val shouldProcessCurrentScope =
+                        !declarationPresence.hasNonFunctionDeclaration ||
+                                !hasFunctionDeclarationInCloserLocalScope ||
+                                declarationPresence.hasFunctionDeclaration
+                    if (declarationPresence.hasNonFunctionDeclaration) {
+                        lookupStoppedByNonFunctionDeclaration = true
+                    }
+                    if (shouldProcessCurrentScope) {
+                        processLevel(ScopeBasedTowerLevel(components, scope), info, group)
+                    }
+                    if (declarationPresence.hasFunctionDeclaration) {
+                        hasFunctionDeclarationInCloserLocalScope = true
+                    }
+                }
             },
             onImplicitReceiver = { receiver, group ->
-                processLevel(
-                    DispatchReceiverMemberScopeTowerLevel(components, receiver),
-                    info,
-                    group,
-                    explicitReceiverKind = ExplicitReceiverKind.NO_EXPLICIT_RECEIVER,
-                )
+                if (!lookupStoppedByNonFunctionDeclaration) {
+                    processLevel(
+                        DispatchReceiverMemberScopeTowerLevel(components, receiver),
+                        info,
+                        group,
+                        explicitReceiverKind = ExplicitReceiverKind.NO_EXPLICIT_RECEIVER,
+                    )
+                }
             },
         )
     }
@@ -291,6 +318,41 @@ internal open class CfirTowerResolveTask(
             CfirTowerGroup.EXPLICIT_MEMBER,
         )
     }
+}
+
+/**
+ * 无显式接收者调用在当前 scope 中可见的声明种类。
+ *
+ * 官方 `LookUpImpl::FindRealResult` 会跨父 scope 累积函数 overload；一旦遇到变量、属性或
+ * classifier，名称查找就在该声明层停止。函数 tower 因此只处理函数声明，最近的非函数声明
+ * 由后续 named-value / classifier 调用路径解析，不能因当前函数候选不适用而越过它继续向外查找。
+ */
+private data class CangjieCallDeclarationPresence(
+    val hasFunctionDeclaration: Boolean,
+    val hasNonFunctionDeclaration: Boolean,
+) {
+    companion object {
+        val NONE = CangjieCallDeclarationPresence(
+            hasFunctionDeclaration = false,
+            hasNonFunctionDeclaration = false,
+        )
+    }
+}
+
+/** 收集当前 scope 的声明种类，不执行候选适用性检查。 */
+private fun CfirScope.cangjieCallDeclarationPresence(name: Name): CangjieCallDeclarationPresence {
+    var hasFunctionDeclaration = false
+    var hasNonFunctionDeclaration = false
+
+    processFunctionsByName(name) { hasFunctionDeclaration = true }
+    processVariablesByName(name) { hasNonFunctionDeclaration = true }
+    processPropertiesByName(name) { hasNonFunctionDeclaration = true }
+    processClassifiersByName(name) { hasNonFunctionDeclaration = true }
+
+    return CangjieCallDeclarationPresence(
+        hasFunctionDeclaration = hasFunctionDeclaration,
+        hasNonFunctionDeclaration = hasNonFunctionDeclaration,
+    )
 }
 
 /**

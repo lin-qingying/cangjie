@@ -61,9 +61,10 @@ class StdlibClassIdsTest {
         assertTrue(all.contains(StdlibClassIds.Iterable))
         assertTrue(all.contains(StdlibClassIds.ToString))
         assertTrue(all.contains(StdlibClassIds.Future))
+        assertTrue(all.contains(StdlibClassIds.ThreadContext))
         assertTrue(all.contains(StdlibClassIds.Command))
         assertTrue(all.contains(StdlibClassIds.Resumption))
-        assertEquals(17, all.size)
+        assertEquals(18, all.size)
     }
 
     /**

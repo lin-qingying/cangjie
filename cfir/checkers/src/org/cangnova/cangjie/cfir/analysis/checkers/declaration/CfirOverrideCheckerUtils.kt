@@ -107,6 +107,9 @@ private fun CfirCallableSymbol<*>.ownerClassId(session: org.cangnova.cangjie.cfi
 
 /**
  * 收集与函数符号直接覆盖且签名和静态性一致的父函数。
+ *
+ * static interface requirement 不进入普通 override graph，因此 static 声明还需要从
+ * use-site scope 按稳定签名补齐；这与普通 override 边合并后构成完整的实现关系目标集。
  */
 internal fun CfirTypeScope.collectDirectOverriddenFunctions(functionSymbol: CfirNamedFunctionSymbol): List<CfirFunctionSymbol<*>> {
     val targetSignature = functionSymbol.overrideSignatureKey()
@@ -121,6 +124,17 @@ internal fun CfirTypeScope.collectDirectOverriddenFunctions(functionSymbol: Cfir
             result += candidate
         }
         ProcessorAction.NEXT
+    }
+    if (targetIsStatic) {
+        processFunctionsByName(functionSymbol.name) { candidate ->
+            if (
+                candidate != functionSymbol &&
+                candidate.overrideSignatureKey() == targetSignature &&
+                candidate.isStaticMemberForOverride()
+            ) {
+                result += candidate
+            }
+        }
     }
     return result.toList()
 }

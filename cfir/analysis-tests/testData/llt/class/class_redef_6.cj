@@ -8,7 +8,7 @@ open class C1 {
 }
 
 class C2 <: C1 {
-    <!INHERIT_MEMBER_KIND_INCONSISTENT!>p<!>ublic <!REDEF_INSTANCE_ERROR!>redef<!> func foo(): Int64 {
+    public <!REDEF_INSTANCE_ERROR!>redef<!> func <!STATIC_AND_NON_STATIC_MEMBER_CANNOT_HAVE_SAME_NAME!>foo<!>(): Int64 {
         return 3
     }
 }

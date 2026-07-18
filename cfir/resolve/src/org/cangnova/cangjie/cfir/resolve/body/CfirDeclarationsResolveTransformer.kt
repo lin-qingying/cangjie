@@ -42,6 +42,7 @@ import org.cangnova.cangjie.cfir.resolve.ResolutionMode
 import org.cangnova.cangjie.cfir.resolve.createCurrentScopeList
 import org.cangnova.cangjie.cfir.resolve.dfa.CfirControlFlowGraphReferenceImpl
 import org.cangnova.cangjie.cfir.resolve.localLambdaInitializerInferenceData
+import org.cangnova.cangjie.cfir.semantics.ErrorTypeInArguments
 import org.cangnova.cangjie.cfir.resolve.transformers.CfirSpecificTypeResolverTransformer
 import org.cangnova.cangjie.cfir.resolve.withExpectedType
 import org.cangnova.cangjie.cfir.resolvedTypeFromPrototype
@@ -61,6 +62,7 @@ import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
 import org.cangnova.cangjie.cfir.whileAnalysing
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
+import org.cangnova.cangjie.type.AbstractTypeChecker
 
 /**
  * Declaration-level resolve transformer.
@@ -325,13 +327,15 @@ open class CfirDeclarationsResolveTransformer(
                 .transformAnnotations(transformer, ResolutionMode.ContextIndependent)
         }
 
-        val bodyResolutionMode = function.returnTypeRef
-            .takeUnless { it is CfirImplicitTypeRef }
-            ?.let(::withExpectedType)
-            ?: resolutionModeForBody
-
         val body = function.body
         if (body != null) {
+            val declaredReturnTypeRef = function.returnTypeRef.takeUnless { it is CfirImplicitTypeRef }
+            val bodyResolutionMode = when {
+                function !is CfirAnonymousFunction && declaredReturnTypeRef?.coneTypeOrNull?.isUnit == true ->
+                    ResolutionMode.ContextIndependent
+                declaredReturnTypeRef != null -> withExpectedType(declaredReturnTypeRef)
+                else -> resolutionModeForBody
+            }
             function.transformBody(transformer, bodyResolutionMode)
         }
         function.replaceControlFlowGraphReference(dataFlowAnalyzer.exitFunction(function))
@@ -631,16 +635,26 @@ open class CfirDeclarationsResolveTransformer(
             ResolutionMode.ContextIndependent
         }
 
-        context.storeVariable(variable, session)
-
         context.withContainer(variable) {
             context.withVariableInitializer(variable) {
                 variable.initializer?.let {
                     variable.transformInitializer(transformer, initializerMode)
+                    variable.initializer?.applySingleRuneStringLiteralConversion(
+                        (explicitTypeRef as? CfirResolvedTypeRef)?.coneType,
+                    )
                 }
+                reportInitializerMismatchToOverloadByLambdaCandidate(
+                    expectedTypeRef = explicitTypeRef as? CfirResolvedTypeRef,
+                    initializer = variable.initializer,
+                )
                 variable.resolveImplicitReturnTypeFromInitializer()
             }
         }
+
+        // 局部变量在 initializer 完成解析后才进入作用域。
+        // 这样同名引用会继续查找外层变量、分类器或 enum constructor，
+        // 而真正不存在外层声明的递归自引用仍由普通名称解析报告 unresolved。
+        context.storeVariable(variable, session)
 
         bumpPhase(variable)
         return variable
@@ -678,6 +692,11 @@ open class CfirDeclarationsResolveTransformer(
                 valueParameter,
                 withExpectedType(valueParameter.returnTypeRef),
             ) as CfirValueParameter
+        }.also { resolvedParameter ->
+            reportInitializerMismatchToOverloadByLambdaCandidate(
+                expectedTypeRef = resolvedParameter.returnTypeRef as? CfirResolvedTypeRef,
+                initializer = resolvedParameter.defaultValue,
+            )
         }
 
         dataFlowAnalyzer.exitValueParameter(result)?.let { graph ->
@@ -719,12 +738,24 @@ open class CfirDeclarationsResolveTransformer(
 
         val initializer = fieldVariable.initializer
         if (initializer != null) {
-            dataFlowAnalyzer.enterFieldInitializer(fieldVariable)
-            fieldVariable.transformInitializer(transformer, initializerMode)
-            // 仓颉 CfirFieldVariable 不是 CfirControlFlowGraphOwner：
-            // 字段初始化器的 CFG 归属包含它的 class initializer / primary constructor，
-            // 这里只负责通知 DFA 出栈，graph 由 DFA 合并到上层。
-            dataFlowAnalyzer.exitFieldInitializer()
+            context.withFieldInitializer(fieldVariable) {
+                dataFlowAnalyzer.enterFieldInitializer(fieldVariable)
+                try {
+                    fieldVariable.transformInitializer(transformer, initializerMode)
+                    fieldVariable.initializer?.applySingleRuneStringLiteralConversion(
+                        (explicitTypeRef as? CfirResolvedTypeRef)?.coneType,
+                    )
+                    reportInitializerMismatchToOverloadByLambdaCandidate(
+                        expectedTypeRef = explicitTypeRef as? CfirResolvedTypeRef,
+                        initializer = fieldVariable.initializer,
+                    )
+                } finally {
+                    // 仓颉 CfirFieldVariable 不是 CfirControlFlowGraphOwner：
+                    // 字段初始化器的 CFG 归属包含它的 class initializer / primary constructor，
+                    // 这里只负责通知 DFA 出栈，graph 由 DFA 合并到上层。
+                    dataFlowAnalyzer.exitFieldInitializer()
+                }
+            }
         }
 
         fieldVariable.resolveImplicitReturnTypeFromInitializer()
@@ -811,15 +842,15 @@ open class CfirDeclarationsResolveTransformer(
         }
 
         val bindingVariables = patternVariable.pattern.visibleBindingVariables()
-        bindingVariables.forEach { bindingVariable ->
-            context.storeVariable(bindingVariable, session)
-        }
-
         val initializer = patternVariable.initializer
         if (initializer != null) {
             context.withVariableInitializer(bindingVariables) {
                 patternVariable.transformInitializer(transformer, initializerMode)
             }
+            reportInitializerMismatchToOverloadByLambdaCandidate(
+                expectedTypeRef = explicitTypeRef as? CfirResolvedTypeRef,
+                initializer = patternVariable.initializer,
+            )
         }
 
         patternVariable.resolveImplicitReturnTypeFromInitializer()
@@ -835,6 +866,27 @@ open class CfirDeclarationsResolveTransformer(
 
         bumpPhase(patternVariable)
         return patternVariable
+    }
+
+    /**
+     * overload-by-lambda 候选试跑必须把声明 initializer 的目标类型失败写回当前候选。
+     * 正常解析仍由声明 checker 产生精确诊断；这里只提供候选成功与否所需的结构化失败信号。
+     */
+    private fun reportInitializerMismatchToOverloadByLambdaCandidate(
+        expectedTypeRef: CfirResolvedTypeRef?,
+        initializer: CfirExpression?,
+    ) {
+        if (!context.shouldShortCircuitOverloadByLambdaTargetChecks()) return
+        val expectedType = expectedTypeRef?.coneType ?: return
+        val actualType = initializer?.coneTypeOrNull ?: return
+        if (expectedType is ConeErrorType || actualType is ConeErrorType) return
+
+        val effectiveActualType = IdealTypeResolver.resolveIfIdeal(actualType, expectedType)
+        val isCompatible = AbstractTypeChecker.equalTypes(session.typeContext, effectiveActualType, expectedType) ||
+                AbstractTypeChecker.isSubtypeOf(session.typeContext, effectiveActualType, expectedType) == true
+        if (!isCompatible) {
+            context.reportOverloadByLambdaCandidateDiagnostic(ErrorTypeInArguments)
+        }
     }
 
     // ── Block（非 declaration，不走 whileAnalysing） ───────────────────────
@@ -1004,7 +1056,8 @@ open class CfirDeclarationsResolveTransformer(
 
             // 局部嵌套函数（不在类体/文件顶层）需要先把签名解析好，
             // 因为类成员的签名由前面的阶段（SUPER_TYPES / STATUS）处理过。
-            val isLocalNested = containingDeclaration != null &&
+            val isLocalNested = function.isLocal ||
+                    containingDeclaration != null &&
                     containingDeclaration !is CfirClass &&
                     containingDeclaration !is CfirFile
             if (isLocalNested) {
@@ -1022,9 +1075,19 @@ open class CfirDeclarationsResolveTransformer(
             }
 
             if (function is CfirFinalizer) {
-                context.forFinalizerBody(function, components, resolveBody)
+                context.forFinalizerBody(
+                    finalizer = function,
+                    holder = components,
+                    resolveParameterDefaultsSequentially = shouldResolveEverything,
+                    f = resolveBody,
+                )
             } else {
-                context.forFunctionBody(function, components, resolveBody)
+                context.forFunctionBody(
+                    function = function,
+                    holder = components,
+                    resolveParameterDefaultsSequentially = shouldResolveEverything,
+                    f = resolveBody,
+                )
             }
         }
     }
@@ -1039,10 +1102,14 @@ open class CfirDeclarationsResolveTransformer(
         shouldResolveEverything: Boolean,
         inferImplicitReturnType: Boolean = true,
     ): F {
+        val resolutionModeForBody = function.returnTypeRef
+            .takeUnless { returnTypeRef -> returnTypeRef is CfirImplicitTypeRef }
+            ?.let(::withExpectedType)
+            ?: ResolutionMode.ContextIndependent
         @Suppress("UNCHECKED_CAST")
         val result = transformFunctionContent(
             function,
-            resolutionModeForBody = ResolutionMode.ContextIndependent,
+            resolutionModeForBody = resolutionModeForBody,
             shouldResolveEverything = shouldResolveEverything,
         ) as F
 
@@ -1091,6 +1158,10 @@ open class CfirDeclarationsResolveTransformer(
                 ConeSimpleDiagnostic("Postponed inference", DiagnosticKind.InferenceError)
             )
         }
+
+        // 返回表达式已经携带结构化错误时，函数返回类型必须保留该根因。
+        // 错误类型不能参与正常类型的公共父类型合并，否则会被改写成函数级推断失败并产生级联诊断。
+        expressionTypes.firstOrNull { type -> type is ConeErrorType }?.let { return it }
 
         if (expressionTypes.size == 1) {
             return expressionTypes.single()
@@ -1217,10 +1288,14 @@ open class CfirDeclarationsResolveTransformer(
      * 用于局部嵌套函数进入 body resolve 前的一次性签名准备。
      */
     private fun prepareSignatureForBodyResolve(callableMember: CfirCallableDeclaration) {
-        callableMember.transformReturnTypeRef(transformer, ResolutionMode.ContextIndependent)
+        callableMember.replaceReturnTypeRef(
+            resolveExplicitTypeRefIfNeeded(callableMember.returnTypeRef, extractTypeParameters(callableMember)),
+        )
         if (callableMember is CfirFunction) {
-            callableMember.valueParameters.forEach {
-                it.transformReturnTypeRef(transformer, ResolutionMode.ContextIndependent)
+            callableMember.valueParameters.forEach { parameter ->
+                parameter.replaceReturnTypeRef(
+                    resolveExplicitTypeRefIfNeeded(parameter.returnTypeRef, extractTypeParameters(callableMember)),
+                )
             }
         }
     }

@@ -16,6 +16,6 @@ class Child <: Parent {
     }
 }
 
-<!UNEXPECTED_PARAM_FOR_ENTRY!>m<!>ain(a: Int32): Int64 {
+<!UNEXPECTED_PARAM_FOR_ENTRY!>main<!>(a: Int32): Int64 {
     return Child().main1()
 }

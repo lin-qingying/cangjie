@@ -176,6 +176,20 @@ class TooManyArguments(
 ) : ResolutionDiagnostic(CandidateApplicability.INAPPLICABLE_ARGUMENTS_MAPPING_ERROR)
 
 /**
+ * 函数值调用的实参数量与函数类型参数数量不一致。
+ *
+ * 官方 `CheckFuncPtrCall` 对函数值调用使用一个 call-level
+ * `sema_wrong_number_of_arguments`，不拆成逐形参 missing/extra 诊断。
+ *
+ * @property expectedCount 函数类型要求的实参数量。
+ * @property actualCount 调用实际提供的实参数量。
+ */
+class WrongNumberOfArguments(
+    val expectedCount: Int,
+    val actualCount: Int,
+) : ResolutionDiagnostic(CandidateApplicability.INAPPLICABLE_ARGUMENTS_MAPPING_ERROR)
+
+/**
  * 命名实参找不到对应形参。
  *
  * @property argument 触发错误的命名实参表达式。
@@ -207,11 +221,25 @@ object InapplicableCandidate : ResolutionDiagnostic(CandidateApplicability.INAPP
  *
  * @property argument 作为函数引用使用、但没有匹配声明的实参表达式。
  */
+/** callable reference 实参失败的结构化分类。 */
+enum class CallableReferenceFailureKind {
+    /** 目标函数类型下没有匹配声明。 */
+    NO_MATCH,
+    /** 目标函数类型下仍有多个匹配声明。 */
+    AMBIGUITY,
+    /** 多个不同函数类型会形成不同的外层泛型实参映射。 */
+    AMBIGUOUS_ARGUMENT_TYPE,
+    /** 裸函数引用只存在必须显式实例化的泛型函数候选。 */
+    GENERIC_TYPE_ARGUMENT_REQUIRED,
+}
+
 class UnsuccessfulCallableReferenceArgument(
     /**
      * 作为函数引用使用、但没有匹配声明的实参表达式。
      */
     val argument: CfirExpression,
+    /** 当前外层候选下 callable reference 的失败分类。 */
+    val failureKind: CallableReferenceFailureKind = CallableReferenceFailureKind.NO_MATCH,
 ) : ResolutionDiagnostic(CandidateApplicability.INAPPLICABLE)
 
 /**

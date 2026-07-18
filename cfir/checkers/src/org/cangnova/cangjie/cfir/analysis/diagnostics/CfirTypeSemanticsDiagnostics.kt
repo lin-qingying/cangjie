@@ -3,11 +3,15 @@ package org.cangnova.cangjie.cfir.analysis.diagnostics
 import org.cangnova.cangjie.cfir.diagnostics.CjDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticContext
 import org.cangnova.cangjie.cfir.diagnostics.InternalDiagnosticFactoryMethod
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
+import org.cangnova.cangjie.cfir.expressions.CfirLiteralKind
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.languageVersionSettings
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeVArrayType
+import org.cangnova.cangjie.cfir.types.isRune
 import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.source.AbstractCjSourceElement
 import org.cangnova.cangjie.source.CjSourceElement
@@ -24,6 +28,13 @@ import org.cangnova.cangjie.type.AbstractTypeChecker
  * 这样可以避免 VArray 这类类型系统专门语义在多个入口重复实现。
  */
 internal sealed interface CfirSpecificTypeMismatch {
+    /** 字面量不能按目标类型转换。 */
+    data class CannotConvertLiteral(
+        /** 官方诊断中的字面量类别文本。 */
+        val literalDescription: String,
+        /** 目标类型。 */
+        val expectedType: ConeCangJieType,
+    ) : CfirSpecificTypeMismatch
     /** VArray 元素类型相同但长度不同导致的细分 type mismatch。 */
     data class VArraySizeMismatch(
         /** 两个 VArray 共同的元素类型。 */
@@ -39,8 +50,15 @@ internal sealed interface CfirSpecificTypeMismatch {
 internal fun classifySpecificTypeMismatch(
     expectedType: ConeCangJieType,
     actualType: ConeCangJieType,
+    expression: CfirExpression?,
     session: CfirSession,
 ): CfirSpecificTypeMismatch? {
+    if (expression is CfirLiteralExpression && expression.kind == CfirLiteralKind.RUNE && !expectedType.isRune) {
+        return CfirSpecificTypeMismatch.CannotConvertLiteral(
+            literalDescription = "character",
+            expectedType = expectedType,
+        )
+    }
     val expandedExpectedType = expectedType.fullyExpandedType(session)
     val expandedActualType = actualType.fullyExpandedType(session)
 
@@ -67,10 +85,16 @@ internal fun specificTypeMismatchDiagnostic(
     source: AbstractCjSourceElement?,
     expectedType: ConeCangJieType,
     actualType: ConeCangJieType,
+    expression: CfirExpression? = null,
     session: CfirSession,
 ): CjDiagnostic? {
     val diagnosticSource = source as? CjSourceElement ?: return null
-    return when (val mismatch = classifySpecificTypeMismatch(expectedType, actualType, session)) {
+    return when (val mismatch = classifySpecificTypeMismatch(expectedType, actualType, expression, session)) {
+        is CfirSpecificTypeMismatch.CannotConvertLiteral -> createCannotConvertLiteralDiagnostic(
+            source = diagnosticSource,
+            mismatch = mismatch,
+            session = session,
+        )
         is CfirSpecificTypeMismatch.VArraySizeMismatch -> createVArraySizeMismatchDiagnostic(
             source = diagnosticSource,
             mismatch = mismatch,
@@ -79,6 +103,22 @@ internal fun specificTypeMismatchDiagnostic(
 
         null -> null
     }
+}
+
+/** 创建目标类型驱动的字面量转换失败诊断。 */
+@OptIn(InternalDiagnosticFactoryMethod::class)
+private fun createCannotConvertLiteralDiagnostic(
+    source: CjSourceElement,
+    mismatch: CfirSpecificTypeMismatch.CannotConvertLiteral,
+    session: CfirSession,
+): CjDiagnostic? {
+    return CfirErrors.CANNOT_CONVERT_LITERAL.on(
+        source,
+        mismatch.literalDescription,
+        mismatch.expectedType,
+        null,
+        diagnosticContext(session),
+    )
 }
 
 /** 创建 VArray 长度不匹配的专用诊断。 */

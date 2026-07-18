@@ -42,6 +42,7 @@ import org.cangnova.cangjie.name.ClassId
  * - struct 只沿非 static 字段递归；
  * - enum 只沿构造器参数递归；
  * - tuple 与 VArray 按元素类型继续展开；
+ * - 只有环内全部节点都是 struct 时报告，enum 只参与遍历不触发递归值类型诊断；
  * - class、interface、ref enum 等引用语义类型不会构成值类型递归。
  */
 object CfirValueTypeRecursiveChecker : CfirClassLikeChecker() {
@@ -52,6 +53,7 @@ object CfirValueTypeRecursiveChecker : CfirClassLikeChecker() {
     override fun check(declaration: CfirClassLikeDeclaration) {
         if (!declaration.isValueTypeDeclaration()) return
         val cycle = declaration.recursiveValueTypeCycleOrNull() ?: return
+        if (!cycle.hasOnlyStructDeclarations()) return
         val firstDeclarationInCycle = cycle.minByOrNull { it.source?.startOffset ?: Int.MAX_VALUE } ?: return
         if (firstDeclarationInCycle.valueTypeClassId() != declaration.valueTypeClassId()) return
 
@@ -166,6 +168,15 @@ object CfirValueTypeRecursiveChecker : CfirClassLikeChecker() {
      */
     private fun CfirClassLikeDeclaration.isValueTypeDeclaration(): Boolean =
         this is CfirStruct || this is CfirEnum && !isRefEnum
+
+    /**
+     * 官方 `HasOnlyStructTypeInCycle` 只对全 struct 环报值类型递归。
+     *
+     * 非 ref enum 的构造器参数仍需要被遍历，以便发现 enum 后方的 struct 环；
+     * 但只要实际环中含 enum，官方不会报 `sema_value_type_recursive`。
+     */
+    private fun List<CfirClassLikeDeclaration>.hasOnlyStructDeclarations(): Boolean =
+        all { it is CfirStruct }
 
     /**
      * 返回值语义类型声明的 ClassId。

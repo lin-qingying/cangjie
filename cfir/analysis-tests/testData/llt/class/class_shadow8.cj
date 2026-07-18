@@ -8,8 +8,8 @@ open class Base {
 }
 
 class Data <: Base {
-    <!INHERIT_MEMBER_KIND_INCONSISTENT!>p<!>ublic let val: Int32 = 1
-    <!INHERIT_MEMBER_KIND_INCONSISTENT!>p<!>ublic let f: Int32 = 2
+    public let <!STATIC_AND_NON_STATIC_MEMBER_CANNOT_HAVE_SAME_NAME!>val<!>: Int32 = 1
+    public let <!STATIC_AND_NON_STATIC_MEMBER_CANNOT_HAVE_SAME_NAME!>f<!>: Int32 = 2
 }
 
 main(): Int64 {

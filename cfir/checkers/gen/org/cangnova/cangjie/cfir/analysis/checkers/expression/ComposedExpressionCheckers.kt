@@ -14,6 +14,8 @@ class ComposedExpressionCheckers : ExpressionCheckers() {
         get() = _basicExpressionCheckers
     override val literalExpressionCheckers: Set<CfirLiteralExpressionChecker>
         get() = _literalExpressionCheckers
+    override val stringInterpolationCheckers: Set<CfirStringInterpolationChecker>
+        get() = _stringInterpolationCheckers
     override val callCheckers: Set<CfirCallChecker>
         get() = _callCheckers
     override val functionCallCheckers: Set<CfirFunctionCallChecker>
@@ -59,6 +61,7 @@ class ComposedExpressionCheckers : ExpressionCheckers() {
 
     private val _basicExpressionCheckers: MutableSet<CfirBasicExpressionChecker> = mutableSetOf()
     private val _literalExpressionCheckers: MutableSet<CfirLiteralExpressionChecker> = mutableSetOf()
+    private val _stringInterpolationCheckers: MutableSet<CfirStringInterpolationChecker> = mutableSetOf()
     private val _callCheckers: MutableSet<CfirCallChecker> = mutableSetOf()
     private val _functionCallCheckers: MutableSet<CfirFunctionCallChecker> = mutableSetOf()
     private val _namedAccessCheckers: MutableSet<CfirNamedAccessChecker> = mutableSetOf()
@@ -85,6 +88,7 @@ class ComposedExpressionCheckers : ExpressionCheckers() {
     fun register(checkers: ExpressionCheckers) {
         _basicExpressionCheckers.addAll(checkers.basicExpressionCheckers)
         _literalExpressionCheckers.addAll(checkers.literalExpressionCheckers)
+        _stringInterpolationCheckers.addAll(checkers.stringInterpolationCheckers)
         _callCheckers.addAll(checkers.callCheckers)
         _functionCallCheckers.addAll(checkers.functionCallCheckers)
         _namedAccessCheckers.addAll(checkers.namedAccessCheckers)

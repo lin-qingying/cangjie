@@ -14,7 +14,7 @@ open class DataI {
 }
 
 class DataIDerived <: DataI {
-    <!INHERIT_MEMBER_KIND_INCONSISTENT!>p<!>ublic let val: Int32 = 5
+    public let <!STATIC_AND_NON_STATIC_MEMBER_CANNOT_HAVE_SAME_NAME!>val<!>: Int32 = 5
 }
 
 main(): Int64 {

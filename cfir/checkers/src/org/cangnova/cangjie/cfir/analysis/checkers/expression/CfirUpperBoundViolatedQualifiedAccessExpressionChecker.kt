@@ -4,6 +4,8 @@ import org.cangnova.cangjie.cfir.analysis.checkers.checkUpperBoundViolated
 import org.cangnova.cangjie.cfir.analysis.checkers.checkUpperBoundViolatedForTypealiasExpansion
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.createGenericUseSiteSubstitutor
+import org.cangnova.cangjie.cfir.declarations.CfirConstructor
+import org.cangnova.cangjie.cfir.declarations.CfirTypeParameterRefsOwner
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
 import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
@@ -12,6 +14,7 @@ import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.resolve.providers.createCallableOwnerUseSiteSubstitutionMap
 import org.cangnova.cangjie.cfir.scopes.impl.typeAliasConstructorInfo
+import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirConstructorSymbol
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
@@ -35,7 +38,7 @@ object CfirUpperBoundViolatedQualifiedAccessExpressionChecker : CfirQualifiedAcc
         if (typeArgumentRefs.isEmpty()) return
 
         val callableSymbol = expression.resolvedCallableSymbolOrNull() ?: return
-        val typeParameters = callableSymbol.cfir.typeParameters
+        val typeParameters = callableSymbol.useSiteTypeParameters()
         if (typeParameters.isEmpty() || typeArgumentRefs.size != typeParameters.size) return
 
         val typeArguments = typeArgumentRefs.map { it.coneTypeOrNull ?: return }
@@ -76,6 +79,23 @@ object CfirUpperBoundViolatedQualifiedAccessExpressionChecker : CfirQualifiedAcc
             is CfirNamedReferenceWithCandidateBase -> reference.candidateSymbol as? CfirCallableSymbol<*>
             else -> null
         }
+
+    /**
+     * 构造器调用的显式类型实参属于 owner class，而不是 constructor 自身。
+     * 即使候选已经是 error reference，也必须恢复 owner 的 nominal 参数以报告
+     * use-site upper-bound 违例并保留后续成员解析所需的类型。
+     */
+    context(context: CheckerContext)
+    private fun CfirCallableSymbol<*>.useSiteTypeParameters(): List<org.cangnova.cangjie.cfir.declarations.CfirTypeParameterRef> {
+        val declaration = cfir
+        if (declaration !is CfirConstructor) return declaration.typeParameters
+        val ownerClassId = callableId.classId ?: return declaration.typeParameters
+        val owner = context.session.symbolProvider
+            .getClassLikeSymbolByClassId(ownerClassId)
+            ?.cfir as? CfirTypeParameterRefsOwner
+            ?: return declaration.typeParameters
+        return owner.typeParameters + declaration.typeParameters
+    }
 
     /** 根据显式或 dispatch receiver 类型构造 owner use-site 类型参数替换。 */
     context(context: CheckerContext)

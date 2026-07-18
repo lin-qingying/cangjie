@@ -11,17 +11,21 @@ import org.cangnova.cangjie.cfir.analysis.checkers.expression.isInvalidPrimitive
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.analysis.diagnostics.toCfirDiagnostics
 import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
+import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
+import org.cangnova.cangjie.cfir.declarations.CfirEnum
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
+import org.cangnova.cangjie.cfir.declarations.CfirInterface
+import org.cangnova.cangjie.cfir.declarations.CfirStruct
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
-import org.cangnova.cangjie.cfir.declarations.hasLambdaParameterShapeDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.PendingDiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirAssignment
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
 import org.cangnova.cangjie.cfir.expressions.CfirErrorExpression
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
@@ -44,6 +48,7 @@ import org.cangnova.cangjie.source.fakeElement
 import org.cangnova.cangjie.source.realElement
 import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
+import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.diagnostic.ConeAmbiguityError
 import org.cangnova.cangjie.cfir.diagnostic.ConeCannotInferValueParameterType
 import org.cangnova.cangjie.cfir.diagnostic.ConeConstraintSystemHasContradiction
@@ -66,6 +71,7 @@ import org.cangnova.cangjie.cfir.references.CfirResolvedErrorReference
 import org.cangnova.cangjie.cfir.types.ConeDiagnostic
 import org.cangnova.cangjie.cfir.types.ConeUnreportedDuplicateDiagnostic
 import org.cangnova.cangjie.cfir.types.renderForDebugging
+import org.cangnova.cangjie.cfir.session.annotationMetadataRegistryOrNull
 import org.cangnova.cangjie.cfir.session.importBindingStoreOrNull
 import org.cangnova.cangjie.psi.CjNodeTypes
 
@@ -156,6 +162,7 @@ class ErrorNodeDiagnosticCollectorComponent(
 //        if (errorTypeRef.hasExpandedTypeAliasDeclarationSiteError()) return
         if (errorTypeRef.isNestedTypeAliasDeclarationSiteCascade(data)) return
         if (errorTypeRef.diagnostic.isUnresolvedCascadeAfterFailedImport(data)) return
+        if (errorTypeRef.isMacroAnnotationTypeRef(data)) return
 
         val source = errorTypeRef.source
         if (source != null) {
@@ -174,6 +181,38 @@ class ErrorNodeDiagnosticCollectorComponent(
             // We provide a value parameter in case errorTypeRef is a type of this parameter
             valueParameter = data.containingElements.getOrNull(data.containingElements.lastIndex - 1) as? CfirValueParameter
         )
+    }
+
+    /**
+     * declaration macro annotation 的 callee 类型引用不属于普通类型解析域。
+     *
+     * Raw builder 会把 `@pkg.Macro decl` 记录到 annotation metadata；即使 degraded
+     * construction 后 annotation 仍留在 final CFIR，也不能再把 `pkg` 当作类型限定符报错。
+     */
+    private fun CfirErrorTypeRef.isMacroAnnotationTypeRef(context: CheckerContext): Boolean {
+        val annotation = (
+                context.callsOrAssignments.asReversed().asSequence() +
+                        context.containingElements.asReversed().asSequence()
+                )
+            .filterIsInstance<CfirAnnotationCall>()
+            .firstOrNull { it.typeRef.containsTypeRef(this) }
+            ?: return false
+        return context.session.annotationMetadataRegistryOrNull
+            ?.snapshot(annotation)
+            ?.qualifiedName != null
+    }
+
+    /**
+     * annotation type resolve 会把原始 typeRef 保存在 delegated 链上；
+     * macro annotation 过滤必须沿链识别当前错误 typeRef，不能只比较顶层对象身份。
+     */
+    private fun CfirTypeRef.containsTypeRef(target: CfirTypeRef): Boolean {
+        var current: CfirTypeRef? = this
+        while (current != null) {
+            if (current === target) return true
+            current = (current as? CfirResolvedTypeRef)?.delegatedTypeRef
+        }
+        return false
     }
 
     /**
@@ -225,6 +264,7 @@ class ErrorNodeDiagnosticCollectorComponent(
         val callOrAssignment =
             context.callsOrAssignments.lastOrNull { it.toReferenceOrNull() == reference }
                 ?: context.containingElements.asReversed().firstOrNull { it.toReferenceOrNull() == reference }
+        if (isDominatedNestedAmbiguity(diagnostic, callOrAssignment, context)) return
         if (((reference is CfirNamedReference && reference.name.asString() == "<super>") || reference is CfirSuperReference) &&
             context.findClosestDeclaration<CfirExtend>() != null
         ) {
@@ -255,7 +295,7 @@ class ErrorNodeDiagnosticCollectorComponent(
                 context.isInsideConstructorValueParameterDefaultValue()
             ) return
             if (callOrAssignment.explicitReceiver is CfirSuperReceiverExpression &&
-                context.findClosestDeclaration<CfirExtend>() != null
+                context.isInsideIllegalSuperReceiverOwner()
             ) return
             if (callOrAssignment.dispatchReceiver.cannotBeResolved() ||
 //                callOrAssignment.extensionReceiver.cannotBeResolved() ||
@@ -277,6 +317,27 @@ class ErrorNodeDiagnosticCollectorComponent(
             context,
             callOrAssignment.qualifiedAmbiguitySource(reference, diagnostic),
         )
+    }
+
+    /** 外层结构化调用歧义已携带该内层诊断时，避免重复报告内层错误。 */
+    private fun isDominatedNestedAmbiguity(
+        diagnostic: ConeDiagnostic,
+        currentOwner: CfirElement?,
+        context: CheckerContext,
+    ): Boolean {
+        val ancestors = buildList<CfirElement> {
+            addAll(context.callsOrAssignments)
+            addAll(context.containingElements)
+        }
+        return ancestors.asReversed().any { ancestor ->
+            if (ancestor === currentOwner) return@any false
+            val call = ancestor as? CfirFunctionCall ?: return@any false
+            val outerDiagnostic = (call.calleeReference as? CfirDiagnosticHolder)?.diagnostic
+                ?: return@any false
+            val ambiguity = outerDiagnostic.unwrapUnreportedDuplicateDiagnostic() as? ConeAmbiguityError
+                ?: return@any false
+            ambiguity.dominatedNestedDiagnostics.any { it === diagnostic }
+        }
     }
 
     /**
@@ -415,6 +476,17 @@ class ErrorNodeDiagnosticCollectorComponent(
         is CfirQualifiedAccessExpression -> calleeReference
         is CfirAssignment     -> lValue.toReferenceOrNull()
         else                  -> null
+    }
+
+    /**
+     * `super.member` 的 receiver 若已由非法声明上下文检查器报告，selector 上的未解析错误就是级联噪声。
+     *
+     * class 内的字段初始化限制不属于这里；那些场景仍由专门的初始化 checker 决定是否保留成员未解析诊断。
+     */
+    private fun CheckerContext.isInsideIllegalSuperReceiverOwner(): Boolean {
+        if (findClosestDeclaration<CfirExtend>() != null) return true
+        val owner = findClosestDeclaration<CfirClassLikeDeclaration>() ?: return true
+        return owner is CfirStruct || owner is CfirEnum || owner is CfirInterface
     }
 
     /**
@@ -753,6 +825,15 @@ class ErrorNodeDiagnosticCollectorComponent(
                 valueParameter,
                 returnExpressionSource,
             )) {
+                if (
+                    coneDiagnostic.factoryName == "CFIR_UNABLE_TO_INFER_GENERIC_FUNC" &&
+                    (
+                        context.hasGenericInstantiationMemberConflict(source) ||
+                            context.hasGenericInstantiationMemberConflict(callOrAssignmentSource)
+                        )
+                ) {
+                    continue
+                }
                 reporter.report(coneDiagnostic, context)
             }
         }
@@ -790,7 +871,7 @@ private fun ConeDiagnostic.isLambdaParameterInferenceCoveredByShapeDiagnostic(
     val lambda = context.findClosestDeclaration<CfirAnonymousFunction>() ?: return false
     if (!lambda.isLambda || !lambda.hasExplicitParameterList) return false
     if (lambda.valueParameters.none { parameter -> parameter.source?.containsSource(source) == true }) return false
-    if (lambda.hasLambdaParameterShapeDiagnostic == true) return true
+    if (context.hasLambdaParameterShapeDiagnostic(lambda)) return true
 
     val expectedFunctionType = lambda.lambdaExpectedFunctionType(context)
         ?: return false

@@ -17,7 +17,9 @@ import org.cangnova.cangjie.cfir.declarations.CfirInterface
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameterRef
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameterRefsOwner
+import org.cangnova.cangjie.cfir.diagnostic.ConeDiagnosticWithSingleCandidate
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
+import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
@@ -27,7 +29,14 @@ import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.resolve.providers.createExtendDeclarationSubstitution
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.resolve.toSymbol
+import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
+import org.cangnova.cangjie.cfir.scopes.impl.CfirClassMemberScopeKind
+import org.cangnova.cangjie.cfir.scopes.impl.CfirClassSubstitutionScope
+import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
+import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
 import org.cangnova.cangjie.cfir.session.extendProvider
+import org.cangnova.cangjie.cfir.session.ProcessorAction
+import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.session.services.CfirExtendTargetKey
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
@@ -35,6 +44,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirEnumSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirInterfaceSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirStructSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
@@ -60,18 +70,19 @@ import org.cangnova.cangjie.cfir.types.ConeStructType
 import org.cangnova.cangjie.cfir.types.ConeTupleType
 import org.cangnova.cangjie.cfir.types.ConeUnionType
 import org.cangnova.cangjie.cfir.types.ConeVArrayType
+import org.cangnova.cangjie.cfir.types.asCone
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.createTypeSubstitutorByTypeConstructor
-import org.cangnova.cangjie.cfir.types.expandedExtendTargetKey
 import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.cfir.types.typeContext
-import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.unwrapSubstitutionOverrides
 import org.cangnova.cangjie.cfir.visitors.CfirDefaultVisitorVoid
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.source.CjOffsetsOnlySourceElement
 import org.cangnova.cangjie.source.text
 import org.cangnova.cangjie.type.AbstractTypeChecker
+import org.cangnova.cangjie.resolve.calls.inference.buildAbstractResultingSubstitutor
 import org.cangnova.cangjie.type.model.TypeConstructorMarker
 import java.util.ArrayDeque
 import java.util.IdentityHashMap
@@ -136,6 +147,11 @@ private class GenericInstantiationAnalyzer(
      * 已经报告过成员实例化冲突的源码和函数名集合。
      */
     private val reportedMemberInstantiationSources = linkedSetOf<MemberInstantiationReportKey>()
+
+    /**
+     * 已报告 static 成员不完整类型实参的源码范围。
+     */
+    private val reportedIncompleteTypeArgumentSources = linkedSetOf<SourceKey>()
 
     /**
      * 当前递归处理中的声明实例化栈。
@@ -226,14 +242,20 @@ private class GenericInstantiationAnalyzer(
             return
         }
 
-        if (targetDeclaration == null) return
-        if (hasExpandingActiveInstantiation(targetDeclaration, expandedArguments)) {
-            reportInfiniteInstantiation(memberInstantiationContext?.source)
-            return
-        }
         val nestedSubstitutions = typeParameters
             .zip(expandedArguments)
             .associate { (typeParameter, argument) -> typeParameter.symbol to argument }
+        if (trigger.checkStaticCompleteness) {
+            checkStaticMemberCompleteness(trigger, typeParameters, expandedArguments, nestedSubstitutions)
+        }
+
+        if (targetDeclaration == null) return
+        if (hasExpandingActiveInstantiation(targetDeclaration, expandedArguments)) {
+            // 扩张边的诊断归属当前实例化声明的入边；member context 可能已切换到
+            // 当前 trigger，不能覆盖真正形成闭包的上一条成员签名 source。
+            reportInfiniteInstantiation(instantiationContext?.source ?: memberInstantiationContext?.source)
+            return
+        }
         if (targetDeclaration is CfirClassLikeDeclaration) {
             checkInstantiatedDuplicateSupertypes(
                 declaration = targetDeclaration,
@@ -242,7 +264,14 @@ private class GenericInstantiationAnalyzer(
                 checkExtendInterfaces = trigger.checkExtendInterfaces,
                 duplicateSuperInterfaceSource = trigger.duplicateSuperInterfaceSource,
             )
-            checkInstantiatedMemberSignatures(targetDeclaration, nestedSubstitutions, memberInstantiationContext?.source)
+            if (trigger.checkMemberSignatures) {
+                checkInstantiatedMemberSignatures(
+                    targetDeclaration,
+                    nestedSubstitutions,
+                    memberInstantiationContext?.source,
+                    memberInstantiationContext?.ownMemberConflictSource,
+                )
+            }
         }
         processDeclaration(targetDeclaration, nestedSubstitutions, memberInstantiationContext)
     }
@@ -286,7 +315,12 @@ private class GenericInstantiationAnalyzer(
         override fun visitResolvedTypeRef(resolvedTypeRef: CfirResolvedTypeRef) {
             if (resolvedTypeRef is CfirErrorTypeRef || resolvedTypeRef.coneType is ConeErrorType) return
             val source = resolvedTypeRef.source ?: resolvedTypeRef.delegatedTypeRef?.source
-            collectTypeTriggers(resolvedTypeRef.coneType, source, isNestedTypeArgument = false)
+            collectTypeTriggers(
+                resolvedTypeRef.coneType,
+                source,
+                isNestedTypeArgument = false,
+                checkMemberSignatures = true,
+            )
             collectExplicitUserTypeTrigger(resolvedTypeRef, source)
             super.visitResolvedTypeRef(resolvedTypeRef)
         }
@@ -302,27 +336,40 @@ private class GenericInstantiationAnalyzer(
         }
 
         private fun collectQualifiedAccessTrigger(expression: CfirQualifiedAccessExpression) {
-            if (expression.resolvedQualifierClassifier(checkerContext.session) != null) {
-                expression.coneTypeOrNull?.let { qualifierType ->
-                    collectTypeTriggers(qualifierType, expression.source, isNestedTypeArgument = false)
+            val qualifier = expression.explicitReceiver
+            if (qualifier?.resolvedQualifierClassifier(checkerContext.session) != null) {
+                qualifier.coneTypeOrNull?.let { qualifierType ->
+                    collectTypeTriggers(
+                        qualifierType,
+                        qualifier.source,
+                        isNestedTypeArgument = false,
+                        checkMemberSignatures = true,
+                        ownMemberConflictSource = qualifier.source,
+                    )
                 }
             }
 
             val callableSymbol = expression.resolvedCallableSymbolOrNull() ?: return
             val isConstructorLikeInstantiationCall = callableSymbol.isConstructorLikeInstantiationCall()
-            val source = if (isConstructorLikeInstantiationCall && expression.typeArguments.isEmpty()) {
-                expression.source ?: expression.calleeReference.source
+            val source = expression.calleeReference.source ?: expression.source
+            val ownMemberConflictSource = if (isConstructorLikeInstantiationCall && expression.typeArguments.isEmpty()) {
+                expression.source ?: source
             } else {
-                expression.calleeReference.source ?: expression.source
+                source
             }
             if (isConstructorLikeInstantiationCall) {
-                expression.coneTypeOrNull?.let { constructedType ->
+                val constructedType = expression.coneTypeOrNull
+                    ?.takeUnless { it is ConeErrorType }
+                    ?: expression.inferredConstructedTypeFromCandidate()
+                constructedType?.let {
                     collectTypeTriggers(
-                        constructedType,
+                        it,
                         source,
                         isNestedTypeArgument = false,
                         checkExtendInterfaces = true,
                         duplicateSuperInterfaceSource = expression.calleeReference.source ?: source,
+                        checkMemberSignatures = true,
+                        ownMemberConflictSource = ownMemberConflictSource,
                     )
                 }
             }
@@ -333,10 +380,44 @@ private class GenericInstantiationAnalyzer(
                 symbol = callableSymbol,
                 declaration = declaration,
                 typeArguments = typeArguments,
+                typeArgumentSources = expression.typeArguments.map { typeArgument -> typeArgument.source ?: source },
                 source = source,
                 isNestedTypeArgument = false,
+                checkStaticCompleteness = true,
+                checkMemberSignatures = true,
+                ownMemberConflictSource = ownMemberConflictSource,
             )
-            typeArguments.forEach { collectTypeTriggers(it, source, isNestedTypeArgument = true) }
+            typeArguments.forEach {
+                collectTypeTriggers(
+                    it,
+                    source,
+                    isNestedTypeArgument = true,
+                    checkMemberSignatures = true,
+                    ownMemberConflictSource = ownMemberConflictSource,
+                )
+            }
+        }
+
+        /**
+         * 从已完成候选中恢复构造器 owner 的最终实例化类型。
+         *
+         * 泛型实例化成员冲突是实例化后的独立检查，不参与重载候选淘汰；即使调用引用因该
+         * 冲突暂时保留错误类型，resolver 已完成的声明替换和约束系统结果仍是唯一权威来源。
+         */
+        private fun CfirQualifiedAccessExpression.inferredConstructedTypeFromCandidate(): ConeCangJieType? {
+            val diagnostic = (calleeReference as? CfirDiagnosticHolder)?.diagnostic
+                as? ConeDiagnosticWithSingleCandidate
+                ?: return null
+            val candidate = diagnostic.candidate
+            val constructor = candidate.symbol.cfir as? CfirConstructor ?: return null
+            val declaredReturnType = constructor.returnTypeRef.coneTypeOrNull ?: return null
+            val candidateSubstitutor = candidate.typeParameterSubstitutorOrNull ?: return null
+            val candidateReturnType = candidateSubstitutor.substituteOrSelf(declaredReturnType)
+            val resultingSubstitutor = candidate.system.asReadOnlyStorage()
+                .buildAbstractResultingSubstitutor(checkerContext.session.typeContext)
+                .asCone()
+            return resultingSubstitutor.substituteOrSelf(candidateReturnType)
+                .takeUnless { it is ConeErrorType || it.containsTypeParameterSymbol() }
         }
 
         private fun collectTypeTriggers(
@@ -346,6 +427,8 @@ private class GenericInstantiationAnalyzer(
             propagateSourceAsRoot: Boolean = true,
             checkExtendInterfaces: Boolean = false,
             duplicateSuperInterfaceSource: CjSourceElement? = source,
+            checkMemberSignatures: Boolean = false,
+            ownMemberConflictSource: CjSourceElement? = source,
         ) {
             when (type) {
                 is ConeClassifierType -> {
@@ -361,6 +444,8 @@ private class GenericInstantiationAnalyzer(
                                 propagateSourceAsRoot = propagateSourceAsRoot,
                                 checkExtendInterfaces = checkExtendInterfaces,
                                 duplicateSuperInterfaceSource = duplicateSuperInterfaceSource,
+                                checkMemberSignatures = checkMemberSignatures,
+                                ownMemberConflictSource = ownMemberConflictSource,
                             )
                         }
                     }
@@ -370,6 +455,8 @@ private class GenericInstantiationAnalyzer(
                             source,
                             isNestedTypeArgument = true,
                             propagateSourceAsRoot = propagateSourceAsRoot,
+                            checkMemberSignatures = checkMemberSignatures,
+                            ownMemberConflictSource = ownMemberConflictSource,
                         )
                     }
                 }
@@ -381,6 +468,8 @@ private class GenericInstantiationAnalyzer(
                             source,
                             isNestedTypeArgument = true,
                             propagateSourceAsRoot = propagateSourceAsRoot,
+                            checkMemberSignatures = checkMemberSignatures,
+                            ownMemberConflictSource = ownMemberConflictSource,
                         )
                     }
                     collectTypeTriggers(
@@ -388,6 +477,8 @@ private class GenericInstantiationAnalyzer(
                         source,
                         isNestedTypeArgument = true,
                         propagateSourceAsRoot = propagateSourceAsRoot,
+                        checkMemberSignatures = checkMemberSignatures,
+                        ownMemberConflictSource = ownMemberConflictSource,
                     )
                 }
 
@@ -397,6 +488,8 @@ private class GenericInstantiationAnalyzer(
                         source,
                         isNestedTypeArgument = true,
                         propagateSourceAsRoot = propagateSourceAsRoot,
+                        checkMemberSignatures = checkMemberSignatures,
+                        ownMemberConflictSource = ownMemberConflictSource,
                     )
                 }
 
@@ -405,6 +498,8 @@ private class GenericInstantiationAnalyzer(
                     source,
                     isNestedTypeArgument = true,
                     propagateSourceAsRoot = propagateSourceAsRoot,
+                    checkMemberSignatures = checkMemberSignatures,
+                    ownMemberConflictSource = ownMemberConflictSource,
                 )
                 is ConePointerType -> {
                     triggers += InstantiationTrigger(
@@ -422,6 +517,8 @@ private class GenericInstantiationAnalyzer(
                         source,
                         isNestedTypeArgument = true,
                         propagateSourceAsRoot = propagateSourceAsRoot,
+                        checkMemberSignatures = checkMemberSignatures,
+                        ownMemberConflictSource = ownMemberConflictSource,
                     )
                 }
                 is ConeIntersectionType -> type.intersectedTypes.forEach {
@@ -430,6 +527,8 @@ private class GenericInstantiationAnalyzer(
                         source,
                         isNestedTypeArgument = true,
                         propagateSourceAsRoot = propagateSourceAsRoot,
+                        checkMemberSignatures = checkMemberSignatures,
+                        ownMemberConflictSource = ownMemberConflictSource,
                     )
                 }
 
@@ -439,6 +538,8 @@ private class GenericInstantiationAnalyzer(
                         source,
                         isNestedTypeArgument = true,
                         propagateSourceAsRoot = propagateSourceAsRoot,
+                        checkMemberSignatures = checkMemberSignatures,
+                        ownMemberConflictSource = ownMemberConflictSource,
                     )
                 }
 
@@ -448,6 +549,8 @@ private class GenericInstantiationAnalyzer(
                         source,
                         isNestedTypeArgument = true,
                         propagateSourceAsRoot = propagateSourceAsRoot,
+                        checkMemberSignatures = checkMemberSignatures,
+                        ownMemberConflictSource = ownMemberConflictSource,
                     )
                 }
             }
@@ -468,12 +571,75 @@ private class GenericInstantiationAnalyzer(
                 symbol = symbol,
                 declaration = symbol.cfir,
                 typeArguments = typeArguments,
+                typeArgumentSources = qualifierPart.typeArguments.map { typeArgument -> typeArgument.source ?: source },
                 source = source,
                 isNestedTypeArgument = false,
+                checkStaticCompleteness = true,
+                checkMemberSignatures = true,
             )
-            typeArguments.forEach { collectTypeTriggers(it, source, isNestedTypeArgument = true) }
+            typeArguments.forEach {
+                collectTypeTriggers(
+                    it,
+                    source,
+                    isNestedTypeArgument = true,
+                    checkMemberSignatures = true,
+                )
+            }
         }
         }
+
+    /**
+     * 检查一次泛型实例化中每个具体类型实参的 static 成员完整性。
+     *
+     * 官方检查只在对应类型参数的上界声明了 static 成员且实参已经满足上界时触发；
+     * 诊断必须落在各自的类型实参 source，不能退化到整个调用表达式。
+     */
+    private fun checkStaticMemberCompleteness(
+        trigger: InstantiationTrigger,
+        typeParameters: List<CfirTypeParameterRef>,
+        typeArguments: List<ConeCangJieType>,
+        substitutions: Map<CfirTypeParameterSymbol, ConeCangJieType>,
+    ) {
+        for ((index, pair) in typeParameters.zip(typeArguments).withIndex()) {
+            val (typeParameter, typeArgument) = pair
+            val upperBounds = typeParameter.symbol.cfir.bounds
+                .mapNotNull { bound -> bound.coneTypeOrNull }
+                .map { bound -> substitute(bound, substitutions) }
+            if (upperBounds.isEmpty()) continue
+            if (upperBounds.any { upperBound ->
+                    !AbstractTypeChecker.isSubtypeOfWithoutOptionBoxing(
+                        checkerContext.session.typeContext,
+                        typeArgument,
+                        upperBound,
+                    )
+                }
+            ) {
+                continue
+            }
+
+            val hasStaticUpperBoundMember = context(checkerContext) {
+                CfirStaticMemberCompleteness.hasStaticMembers(upperBounds)
+            }
+            if (!hasStaticUpperBoundMember) continue
+
+            val isIncomplete = typeArgument.isNothing || context(checkerContext) {
+                CfirStaticMemberCompleteness.unimplementedStaticRequirements(typeArgument).isNotEmpty()
+            }
+            if (!isIncomplete) continue
+
+            val diagnosticSource = trigger.typeArgumentSources.getOrNull(index) ?: trigger.source ?: continue
+            val sourceKey = diagnosticSource.sourceKeyOrNull() ?: continue
+            if (!reportedIncompleteTypeArgumentSources.add(sourceKey)) continue
+            context(checkerContext) {
+                reporter.reportOn(
+                    source = diagnosticSource,
+                    factory = CfirErrors.CANNOT_INSTANTIATED_BY_INCOMPLETE_TYPE,
+                    a = typeParameter.symbol.cfir.name,
+                    b = typeArgument,
+                )
+            }
+        }
+    }
 
     /**
      * 使用当前声明实例化替换批量替换类型实参。
@@ -535,13 +701,14 @@ private class GenericInstantiationAnalyzer(
         declaration: CfirClassLikeDeclaration,
         substitutions: Map<CfirTypeParameterSymbol, ConeCangJieType>,
         triggerSource: CjSourceElement?,
+        ownMemberConflictSource: CjSourceElement?,
     ) {
         if (substitutions.isEmpty()) return
-        if (substitutions.values.any { it.containsTypeParameterSymbol() }) return
         val membersByName = declaration.collectInstantiatedMemberSignatures(substitutions)
         reportInstantiatedMemberSignatureConflicts(
             membersByName = membersByName,
             triggerSource = triggerSource,
+            ownMemberConflictSource = ownMemberConflictSource,
             instantiationName = { declaration.renderInstantiationName(substitutions) },
         )
     }
@@ -561,6 +728,7 @@ private class GenericInstantiationAnalyzer(
         if (substitutions.isEmpty()) return
         if (substitutions.values.any { it.containsTypeParameterSymbol() }) return
         val source = duplicateSuperInterfaceSource ?: triggerSource ?: return
+        if (source.usesDeclarationTypeParameterArgument(declaration.typeParameters)) return
         val substitutor = substitutions.toConeSubstitutor()
         val instantiatedSelfType = declaration.instantiatedSelfType(substitutor)
         val duplicatedInterface = context(checkerContext) {
@@ -595,6 +763,7 @@ private class GenericInstantiationAnalyzer(
         reportInstantiatedMemberSignatureConflicts(
             membersByName = membersByName,
             triggerSource = triggerSource,
+            ownMemberConflictSource = triggerSource,
             instantiationName = { Name.identifier(instantiatedType.renderForInstantiationDiagnostic()) },
         )
     }
@@ -605,10 +774,9 @@ private class GenericInstantiationAnalyzer(
     private fun reportInstantiatedMemberSignatureConflicts(
         membersByName: Map<Name, List<InstantiatedMemberSignature>>,
         triggerSource: CjSourceElement?,
+        ownMemberConflictSource: CjSourceElement?,
         instantiationName: () -> Name,
     ) {
-        val sourceKey = triggerSource.sourceKeyOrNull() ?: return
-
         for ((name, members) in membersByName) {
             val stableMembers = mutableListOf<InstantiatedMemberSignature>()
             val genericMembers = members.filter { it.hasGenericTypes }
@@ -618,8 +786,14 @@ private class GenericInstantiationAnalyzer(
                 for (stableMember in stableMembers) {
                     if (!stableMember.conflictsWith(genericMember)) continue
                     if (stableMember.isInheritedDefaultInterfaceConflictWith(genericMember)) continue
+                    val diagnosticSource = if (stableMember.isOwnMember || genericMember.isOwnMember) {
+                        ownMemberConflictSource ?: triggerSource
+                    } else {
+                        triggerSource
+                    }
+                    val sourceKey = diagnosticSource.sourceKeyOrNull() ?: break
                     reportGenericInstantiationCausesAmbiguousFunctions(
-                        source = triggerSource,
+                        source = diagnosticSource,
                         sourceKey = sourceKey,
                         instantiationName = instantiationName(),
                         functionName = name,
@@ -680,12 +854,13 @@ private class GenericInstantiationAnalyzer(
         substitutor: ConeSubstitutor,
     ): List<InstantiatedMemberSignature> {
         val signatures = mutableListOf<InstantiatedMemberSignature>()
-        val visitedInterfaces = linkedSetOf<org.cangnova.cangjie.name.ClassId>()
+        val visitedInterfaces = linkedSetOf<String>()
         for (superTypeRef in superTypeRefs) {
             val supertype = superTypeRef.coneTypeOrNull ?: continue
             collectDefaultInterfaceFunctionSignatures(
                 ownerExtend = ownerExtend,
                 interfaceType = substitutor.substituteOrSelf(supertype),
+                genericInterfaceType = supertype,
                 destination = signatures,
                 visitedInterfaces = visitedInterfaces,
             )
@@ -699,23 +874,33 @@ private class GenericInstantiationAnalyzer(
     private fun collectDefaultInterfaceFunctionSignatures(
         ownerExtend: CfirExtend?,
         interfaceType: ConeCangJieType,
+        genericInterfaceType: ConeCangJieType,
         destination: MutableList<InstantiatedMemberSignature>,
-        visitedInterfaces: MutableSet<org.cangnova.cangjie.name.ClassId>,
+        visitedInterfaces: MutableSet<String>,
     ) {
         val classifierType = interfaceType as? ConeClassifierType ?: return
         val symbol = classifierType.toSymbol(checkerContext.session) as? CfirClassLikeSymbol<*> ?: return
-        if (!visitedInterfaces.add(symbol.classId)) return
+        val genericClassifierType = genericInterfaceType as? ConeClassifierType ?: classifierType
+        val interfaceKey = context(checkerContext) {
+            genericClassifierType.instantiatedInterfaceKey()
+        } ?: symbol.classId.asString()
+        if (!visitedInterfaces.add(interfaceKey)) return
         val declaration = symbol.cfir as? CfirClassLikeDeclaration ?: return
         val substitutor = declaration.createDeclarationTypeSubstitutor(interfaceType)
+        val genericSubstitutor = declaration.createDeclarationTypeSubstitutor(genericClassifierType)
 
-        for (member in declaration.declarations) {
-            val function = member as? CfirFunction ?: continue
-            if (function.body == null || function.status.isAbstract) continue
-            destination += function.toInstantiatedMemberSignature(
-                ownerName = declaration.name,
-                substitutor = substitutor,
-                inheritedDefaultOwnerExtend = ownerExtend,
-            ) ?: continue
+        if (declaration is CfirInterface) {
+            for (member in declaration.declarations) {
+                val function = member as? CfirFunction ?: continue
+                destination += function.toInstantiatedMemberSignature(
+                    ownerName = declaration.name,
+                    substitutor = substitutor,
+                    inheritedDefaultOwnerExtend = ownerExtend,
+                    genericSubstitutor = genericSubstitutor,
+                    inheritedInterfaceKey = interfaceKey,
+                    isOwnMember = false,
+                ) ?: continue
+            }
         }
 
         for (superTypeRef in declaration.superTypeRefs) {
@@ -723,6 +908,7 @@ private class GenericInstantiationAnalyzer(
             collectDefaultInterfaceFunctionSignatures(
                 ownerExtend = ownerExtend,
                 interfaceType = substitutor.substituteOrSelf(supertype),
+                genericInterfaceType = genericSubstitutor.substituteOrSelf(supertype),
                 destination = destination,
                 visitedInterfaces = visitedInterfaces,
             )
@@ -735,146 +921,124 @@ private class GenericInstantiationAnalyzer(
     private fun CfirClassLikeDeclaration.collectInstantiatedMemberSignatures(
         substitutions: Map<CfirTypeParameterSymbol, ConeCangJieType>,
     ): Map<Name, List<InstantiatedMemberSignature>> {
-        val functions = linkedMapOf<CfirFunctionSymbol<*>, CfirFunction>()
-        for (member in declarations) {
-            val function = member as? CfirFunction ?: continue
-            functions[function.symbol] = function
-        }
-
         val substitutor = substitutions.toConeSubstitutor()
-        val ownSignatures = functions.values
-            .asSequence()
-            .mapNotNull { it.toInstantiatedMemberSignature(name, substitutor) }
-            .toList()
-        val signatures = ownSignatures.toMutableList()
-        signatures += collectInheritedDefaultFunctionSignatures(
-            superTypeRefs = superTypeRefs,
-            ownerExtend = null,
-            substitutor = substitutor,
-        )
-        signatures += collectInheritedInterfaceFunctionSignatures(
-            superTypeRefs = superTypeRefs,
-            substitutor = substitutor,
-            implementedBy = if (this is CfirInterface) emptyList() else ownSignatures,
-        )
-        instantiatedSelfType(substitutor)?.let { instantiatedType ->
-            signatures += collectClassLikeExtendMemberSignatures(instantiatedType)
+        val instantiatedType = instantiatedSelfType(substitutor) ?: return emptyMap()
+        val concreteScopes = instantiatedUseSiteMemberScopes(instantiatedType) ?: return emptyMap()
+        val genericType = declarationSelfTypeForInstantiation() ?: return emptyMap()
+        val genericScope = instantiatedUseSiteMemberScopes(genericType)?.substituted ?: return emptyMap()
+        val ownFunctions: Set<CfirFunctionSymbol<*>> = declarations.asSequence()
+            .filterIsInstance<CfirFunction>()
+            .map { it.symbol }
+            .toCollection(linkedSetOf())
+        val signatures = mutableListOf<InstantiatedMemberSignature>()
+
+        for (callableName in concreteScopes.substituted.getCallableNames()) {
+            val genericIndependentMembers = genericScope.originalFunctionSymbolsByName(callableName)
+            concreteScopes.substituted.processFunctionsByName(callableName) { functionSymbol ->
+                val originalSymbol = functionSymbol.unwrapSubstitutionOverrides()
+                if (originalSymbol !in genericIndependentMembers) {
+                    return@processFunctionsByName
+                }
+                functionSymbol.toInstantiatedMemberSignature(
+                    ownerName = name,
+                    ownFunctions = ownFunctions,
+                )?.let(signatures::add)
+
+                // 仅当前类型 own member 才可能在具体实例化后新覆盖一个原本独立的父 overload。
+                // inherited requirement 的 override 链已经由 provider MergeInheritedMembers 归并，
+                // 不能在 checker 中再次拆开。
+                if (originalSymbol !in ownFunctions) return@processFunctionsByName
+                concreteScopes.raw.processDirectOverriddenFunctionsWithBaseScope(originalSymbol) { overridden, _ ->
+                    if (overridden.unwrapSubstitutionOverrides() in genericIndependentMembers) {
+                        overridden.toInstantiatedMemberSignature(
+                            ownerName = name,
+                            ownFunctions = ownFunctions,
+                        )?.let(signatures::add)
+                    }
+                    ProcessorAction.NEXT
+                }
+            }
+        }
+        concreteScopes.substituted.processDeclaredConstructors { constructorSymbol ->
+            constructorSymbol.toInstantiatedMemberSignature(
+                ownerName = name,
+                ownFunctions = ownFunctions,
+            )?.let(signatures::add)
         }
 
         return signatures.groupBy { it.name }
     }
 
     /**
-     * 收集 class-like 实例化类型可见的 extend 成员签名。
+     * 为具体实例化类型创建统一的 use-site substitution scope。
+     *
+     * 父类、接口与 extend 的替换和覆盖合并由 provider scope 统一完成；checker 只消费
+     * 合并后的独立函数成员，避免再维护一套与调用解析分叉的继承遍历。
      */
-    private fun collectClassLikeExtendMemberSignatures(
+    private fun CfirClassLikeDeclaration.instantiatedUseSiteMemberScopes(
         instantiatedType: ConeCangJieType,
-    ): List<InstantiatedMemberSignature> {
-        val targetKey = instantiatedType.expandedExtendTargetKey ?: return emptyList()
-        val signatures = mutableListOf<InstantiatedMemberSignature>()
-        val extendProvider = checkerContext.session.extendProvider
-        for (extend in extendProvider.getExtendsForTarget(targetKey)) {
-            if (!extendProvider.isExtendAccessible(extend)) continue
-            val targetPattern = extend.extendedTypeRef.coneTypeOrNull ?: continue
-            val substitution = createExtendDeclarationSubstitution(
-                session = checkerContext.session,
-                extend = extend,
-                targetPattern = targetPattern,
-                concreteReceiverType = instantiatedType,
-            ) ?: continue
-
-            signatures += extend.collectOwnFunctionSignatures(substitution.substitutor)
-            signatures += extend.collectInheritedDefaultFunctionSignatures(extend, substitution.substitutor)
-        }
-        return signatures
+    ): InstantiatedMemberScopes? {
+        val classLikeSymbol = symbol as? CfirClassLikeSymbol<*> ?: return null
+        val rawScope = CfirClassUseSiteMemberScope(
+            session = checkerContext.session,
+            classSymbol = classLikeSymbol,
+            symbolProvider = checkerContext.session.symbolProvider,
+            extendProvider = checkerContext.session.extendProvider,
+            directSupertypeProvider = checkerContext.session.directSupertypeProviderOrNull,
+            ownerType = instantiatedType,
+            dispatchReceiverType = instantiatedType,
+            scopeKind = CfirClassMemberScopeKind.USE_SITE,
+        )
+        val substitutedScope = CfirClassSubstitutionScope(
+            session = checkerContext.session,
+            useSiteMemberScope = rawScope,
+            dispatchReceiverType = instantiatedType,
+        )
+        return InstantiatedMemberScopes(rawScope, substitutedScope)
     }
 
     /**
-     * 收集继承接口中的函数签名。
+     * 收集泛型声明形态下仍然独立可见的原始函数成员。
      */
-    private fun collectInheritedInterfaceFunctionSignatures(
-        superTypeRefs: List<CfirTypeRef>,
-        substitutor: ConeSubstitutor,
-        implementedBy: List<InstantiatedMemberSignature> = emptyList(),
-    ): List<InstantiatedMemberSignature> {
-        val signatures = mutableListOf<InstantiatedMemberSignature>()
-        val visitedInterfaces = linkedSetOf<String>()
-        for (superTypeRef in superTypeRefs) {
-            val supertype = superTypeRef.coneTypeOrNull ?: continue
-            collectInterfaceFunctionSignatures(
-                interfaceType = substitutor.substituteOrSelf(supertype),
-                genericInterfaceType = supertype,
-                destination = signatures,
-                visitedInterfaces = visitedInterfaces,
-                implementedBy = implementedBy,
-            )
-        }
-        return signatures
-    }
-
-    /**
-     * 递归收集接口及其父接口中的函数签名。
-     */
-    private fun collectInterfaceFunctionSignatures(
-        interfaceType: ConeCangJieType,
-        genericInterfaceType: ConeCangJieType,
-        destination: MutableList<InstantiatedMemberSignature>,
-        visitedInterfaces: MutableSet<String>,
-        implementedBy: List<InstantiatedMemberSignature> = emptyList(),
-    ) {
-        val classifierType = interfaceType as? ConeClassifierType ?: return
-        val symbol = classifierType.toSymbol(checkerContext.session) as? CfirClassLikeSymbol<*> ?: return
-        val declaration = symbol.cfir as? CfirClassLikeDeclaration ?: return
-        val interfaceKey = context(checkerContext) {
-            classifierType.instantiatedInterfaceKey()
-        } ?: symbol.classId.asString()
-        if (!visitedInterfaces.add(interfaceKey)) return
-
-        val substitutor = declaration.createDeclarationTypeSubstitutor(classifierType)
-        val genericSubstitutor = declaration.createDeclarationTypeSubstitutor(genericInterfaceType)
-        for (member in declaration.declarations) {
-            val function = member as? CfirFunction ?: continue
-            val signature = function.toInstantiatedMemberSignature(
-                ownerName = declaration.name,
-                substitutor = substitutor,
-                genericSubstitutor = genericSubstitutor,
-            ) ?: continue
-            if (implementedBy.any { implementation -> implementation.conflictsWith(signature) }) continue
-            destination += signature
-        }
-
-        for (superTypeRef in declaration.superTypeRefs) {
-            val supertype = superTypeRef.coneTypeOrNull ?: continue
-            collectInterfaceFunctionSignatures(
-                interfaceType = substitutor.substituteOrSelf(supertype),
-                genericInterfaceType = genericSubstitutor.substituteOrSelf(supertype),
-                destination = destination,
-                visitedInterfaces = visitedInterfaces,
-                implementedBy = implementedBy,
-            )
+    private fun CfirTypeScope.originalFunctionSymbolsByName(name: Name): Set<CfirNamedFunctionSymbol> = buildSet {
+        processFunctionsByName(name) { functionSymbol ->
+            add(functionSymbol.unwrapSubstitutionOverrides())
         }
     }
 
     /**
-     * 收集父接口默认函数签名。
+     * 把 scope 已完成 owner 替换的函数符号转换为冲突签名。
      */
-    private fun collectInheritedDefaultFunctionSignatures(
-        superTypeRefs: List<CfirTypeRef>,
-        ownerExtend: CfirExtend?,
-        substitutor: ConeSubstitutor,
-    ): List<InstantiatedMemberSignature> {
-        val signatures = mutableListOf<InstantiatedMemberSignature>()
-        val visitedInterfaces = linkedSetOf<org.cangnova.cangjie.name.ClassId>()
-        for (superTypeRef in superTypeRefs) {
-            val supertype = superTypeRef.coneTypeOrNull ?: continue
-            collectDefaultInterfaceFunctionSignatures(
-                ownerExtend = ownerExtend,
-                interfaceType = substitutor.substituteOrSelf(supertype),
-                destination = signatures,
-                visitedInterfaces = visitedInterfaces,
-            )
+    private fun CfirFunctionSymbol<*>.toInstantiatedMemberSignature(
+        ownerName: Name,
+        ownFunctions: Set<CfirFunctionSymbol<*>>,
+    ): InstantiatedMemberSignature? {
+        val instantiatedFunction = cfir
+        if (instantiatedFunction.typeParameters.isNotEmpty()) return null
+        val originalSymbol = unwrapSubstitutionOverrides()
+        val originalFunction = originalSymbol.cfir
+        if (
+            originalFunction.origin != CfirDeclarationOrigin.Source &&
+            originalFunction.origin !is CfirDeclarationOrigin.SubstitutionOverride
+        ) {
+            return null
         }
-        return signatures
+        val parameterTypes = instantiatedFunction.valueParameters.map { parameter ->
+            parameter.returnTypeRef.coneTypeOrNull ?: return null
+        }
+        val hasGenericParameterTypes = originalFunction.valueParameters.any { parameter ->
+            parameter.returnTypeRef.coneTypeOrNull?.containsTypeParameterSymbol() == true
+        }
+        return InstantiatedMemberSignature(
+            function = originalFunction,
+            name = originalFunction.instantiationMemberName(ownerName),
+            isStatic = instantiatedFunction.status.isStatic,
+            parameterTypes = parameterTypes,
+            hasGenericTypes = hasGenericParameterTypes,
+            inheritedDefaultOwnerExtend = null,
+            inheritedInterfaceKey = null,
+            isOwnMember = originalSymbol in ownFunctions,
+        )
     }
 
     /**
@@ -925,6 +1089,8 @@ private class GenericInstantiationAnalyzer(
         substitutor: ConeSubstitutor,
         inheritedDefaultOwnerExtend: CfirExtend? = null,
         genericSubstitutor: ConeSubstitutor = ConeSubstitutor.Empty,
+        inheritedInterfaceKey: String? = null,
+        isOwnMember: Boolean = true,
     ): InstantiatedMemberSignature? {
         if (origin != CfirDeclarationOrigin.Source && origin !is CfirDeclarationOrigin.SubstitutionOverride) return null
         if (typeParameters.isNotEmpty()) return null
@@ -945,6 +1111,8 @@ private class GenericInstantiationAnalyzer(
             parameterTypes = instantiatedParameterTypes,
             hasGenericTypes = hasGenericTypes,
             inheritedDefaultOwnerExtend = inheritedDefaultOwnerExtend,
+            inheritedInterfaceKey = inheritedInterfaceKey,
+            isOwnMember = isOwnMember,
         )
     }
 
@@ -990,7 +1158,7 @@ private class GenericInstantiationAnalyzer(
      * 判断两个实例化成员签名是否冲突。
      */
     private fun InstantiatedMemberSignature.conflictsWith(other: InstantiatedMemberSignature): Boolean {
-        if (function === other.function) return false
+        if (function === other.function && inheritedInterfaceKey == other.inheritedInterfaceKey) return false
         if (isStatic != other.isStatic) return false
         if (parameterTypes.size != other.parameterTypes.size) return false
         return parameterTypes.zip(other.parameterTypes).all { (left, right) ->
@@ -1357,6 +1525,26 @@ private class GenericInstantiationAnalyzer(
     }
 
     /**
+     * 重复父接口实例化诊断只面向已经固定的实例化引用。
+     *
+     * `A<X, Y>` 这类仍直接携带目标声明类型参数名的引用，要等真实调用/类型使用
+     * 固定类型实参后，再由成员实例化检查或具体重复父接口检查报告。
+     */
+    private fun CjSourceElement.usesDeclarationTypeParameterArgument(
+        typeParameters: List<CfirTypeParameterRef>,
+    ): Boolean {
+        if (typeParameters.isEmpty()) return false
+        val sourceText = text?.toString() ?: return false
+        val argumentText = sourceText.substringAfter('<', missingDelimiterValue = "")
+            .substringBeforeLast('>', missingDelimiterValue = "")
+        if (argumentText.isBlank()) return false
+        return typeParameters.any { typeParameter ->
+            val parameterName = Regex.escape(typeParameter.symbol.name.asString())
+            Regex("""(?<![\p{L}\p{N}_])$parameterName(?![\p{L}\p{N}_])""").containsMatchIn(argumentText)
+        }
+    }
+
+    /**
      * 报告泛型实例化导致成员函数调用歧义的诊断。
      */
     private fun reportGenericInstantiationCausesAmbiguousFunctions(
@@ -1368,6 +1556,7 @@ private class GenericInstantiationAnalyzer(
         val diagnosticSource = source ?: return
         val reportKey = MemberInstantiationReportKey(sourceKey, functionName)
         if (!reportedMemberInstantiationSources.add(reportKey)) return
+        checkerContext.recordGenericInstantiationMemberConflict(diagnosticSource)
         context(checkerContext) {
             reporter.reportOn(
                 diagnosticSource,
@@ -1447,7 +1636,13 @@ private class GenericInstantiationAnalyzer(
             instantiationContext?.targetDeclaration != null &&
             instantiationContext.targetDeclaration !== targetDeclaration
         ) {
-            return instantiationContext.source
+            // 仅从具体构造调用建立的根 context 需要把诊断归属切换到当前扩张边。
+            // 声明图遍历必须保留最外层声明入口 source，官方闭环诊断依赖该入口。
+            return if (instantiationContext.preferCurrentTriggerSource) {
+                source ?: instantiationContext.source
+            } else {
+                instantiationContext.source
+            }
         }
         return infiniteInstantiationSource()
     }
@@ -1461,9 +1656,25 @@ private class GenericInstantiationAnalyzer(
         instantiationContext: InstantiationContext?,
         targetDeclaration: CfirDeclaration?,
     ): InstantiationContext? {
-        if (instantiationContext != null) return instantiationContext
+        if (instantiationContext != null) {
+            if (targetDeclaration == null || instantiationContext.targetDeclaration === targetDeclaration) {
+                return instantiationContext
+            }
+            if (!instantiationContext.preferCurrentTriggerSource) return instantiationContext
+            return InstantiationContext(
+                source = source ?: instantiationContext.source,
+                targetDeclaration = targetDeclaration,
+                ownMemberConflictSource = instantiationContext.ownMemberConflictSource,
+                preferCurrentTriggerSource = true,
+            )
+        }
         val source = source.takeIf { propagateSourceAsRoot } ?: return null
-        return InstantiationContext(source, targetDeclaration)
+        return InstantiationContext(
+            source = source,
+            targetDeclaration = targetDeclaration,
+            ownMemberConflictSource = ownMemberConflictSource ?: source,
+            preferCurrentTriggerSource = checkExtendInterfaces,
+        )
     }
 }
 
@@ -1487,6 +1698,11 @@ private data class InstantiationTrigger(
     val typeArguments: List<ConeCangJieType>,
 
     /**
+     * 与 [typeArguments] 按索引对应的精确源码位置。
+     */
+    val typeArgumentSources: List<CjSourceElement?> = emptyList(),
+
+    /**
      * 诊断归属的源码位置。
      */
     val source: CjSourceElement?,
@@ -1495,6 +1711,11 @@ private data class InstantiationTrigger(
      * 触发点是否位于嵌套类型实参中。
      */
     val isNestedTypeArgument: Boolean,
+
+    /**
+     * 当前触发点是否是官方实例化完整性检查认可的真实泛型引用。
+     */
+    val checkStaticCompleteness: Boolean = false,
 
     /**
      * 是否允许把 source 作为根实例化触发点传播。
@@ -1510,6 +1731,16 @@ private data class InstantiationTrigger(
      * 重复父接口诊断优先使用的 source。
      */
     val duplicateSuperInterfaceSource: CjSourceElement? = source,
+
+    /**
+     * 是否对该触发点执行实例化成员签名冲突检查。
+     */
+    val checkMemberSignatures: Boolean = false,
+
+    /**
+     * 直接成员参与冲突时使用的诊断 source。
+     */
+    val ownMemberConflictSource: CjSourceElement? = source,
 
     /**
      * 内建 extend 目标 key。
@@ -1587,6 +1818,25 @@ private data class InstantiationContext(
      * 当前实例化目标声明。
      */
     val targetDeclaration: CfirDeclaration?,
+
+    /**
+     * 直接成员参与冲突时使用的诊断 source。
+     */
+    val ownMemberConflictSource: CjSourceElement,
+
+    /**
+     * 是否由具体构造调用建立，跨声明时诊断 source 应跟随当前扩张边。
+     */
+    val preferCurrentTriggerSource: Boolean,
+)
+
+/** 当前实例化 owner 的原始 use-site scope 与最终 substitution scope。 */
+private data class InstantiatedMemberScopes(
+    /** 用于查询 own member 在具体实例化后新形成的 direct-overridden provenance。 */
+    val raw: CfirTypeScope,
+
+    /** 提供 resolver 实际消费的最终成员集合与 substituted 参数签名。 */
+    val substituted: CfirTypeScope,
 )
 
 /**
@@ -1649,6 +1899,16 @@ private data class InstantiatedMemberSignature(
      * 该签名是否来自某个 extend 继承的接口默认实现。
      */
     val inheritedDefaultOwnerExtend: CfirExtend?,
+
+    /**
+     * 继承接口实例的泛型来源 key。
+     */
+    val inheritedInterfaceKey: String?,
+
+    /**
+     * 是否是当前 class-like/extend 自身声明的直接成员。
+     */
+    val isOwnMember: Boolean,
 )
 
 /**

@@ -44,6 +44,11 @@ object CfirFrontendConfigurationKeys {
     val NO_PRELUDE =
         CompilerConfigurationKey.create<Boolean>("NO_PRELUDE")
 
+    /** 是否按无子包模式编译当前源码包。 */
+    @JvmField
+    val NO_SUB_PACKAGE =
+        CompilerConfigurationKey.create<Boolean>("NO_SUB_PACKAGE")
+
     /** 测试/命令行注入的项目 API level。 */
     @JvmField
     val API_LEVEL =
@@ -84,6 +89,18 @@ var CompilerConfiguration.noPrelude: Boolean
     get() = getBoolean(CfirFrontendConfigurationKeys.NO_PRELUDE)
     set(value) {
         put(CfirFrontendConfigurationKeys.NO_PRELUDE, value)
+    }
+
+/**
+ * 是否按无子包模式编译当前源码包。
+ *
+ * 官方编译器仅在该模式下把 `internal import` 纳入未使用导入检查；未显式配置时保持
+ * 支持子包的默认编译行为。
+ */
+var CompilerConfiguration.noSubPackage: Boolean
+    get() = getBoolean(CfirFrontendConfigurationKeys.NO_SUB_PACKAGE)
+    set(value) {
+        put(CfirFrontendConfigurationKeys.NO_SUB_PACKAGE, value)
     }
 
 /**

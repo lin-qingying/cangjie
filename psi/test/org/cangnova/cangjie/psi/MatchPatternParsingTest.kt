@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.psi
 
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import com.intellij.psi.util.PsiTreeUtil
 import org.cangnova.cangjie.lang.CangJieFileType
@@ -90,5 +91,72 @@ class MatchPatternParsingTest : CjParsingTestCase(
 
         assertIs<CjConstantPattern>(entries[0].conditions.single())
         assertIs<CjConstantPattern>(entries[1].conditions.single())
+    }
+
+    /**
+     * 类型模式的绑定名和冒号后的基本类型必须分离；`Float64` 不能被误当成绑定引用或表达式。
+     */
+    @Test
+    fun testTypePatternKeepsBindingAndBasicTypeReferenceSeparate() {
+        val file = createPsiFile(
+            "matchTypePattern",
+            """
+            func sample(value: Any): Int64 {
+                return match (value) {
+                    case j: Float64 => 1
+                    case _ => 0
+                }
+            }
+            """.trimIndent(),
+        ) as CjFile
+
+        val matchExpression = PsiTreeUtil.findChildOfType(file, CjMatchExpression::class.java)
+            ?: error("match expression not found")
+        val typePattern = assertIs<CjTypePattern>(matchExpression.entries.first().conditions.single())
+
+        assertEquals("j", typePattern.name)
+        assertEquals("Float64", typePattern.typeReference?.text)
+    }
+
+    /**
+     * case body 的语句集合只能暴露当前 CASE_BLOCK 的直接语句，不能泄漏嵌套 match 的 pattern。
+     */
+    @Test
+    fun testCaseBlockStatementsDoNotIncludeNestedPatterns() {
+        val file = createPsiFile(
+            "nestedMatchCaseBlock",
+            """
+            var a = b()
+            let c = true
+            var d = e
+
+            enum f {
+                e
+            }
+
+            class b {
+                public let g: Int8 = 5
+            }
+
+            func h(i!: Int8 = match {
+                    case c => match (d) {
+                        case j: Float64 => a
+                    }
+                    case _ => a
+                }.g) {}
+            """.trimIndent(),
+        ) as CjFile
+
+        val matchExpressions = PsiTreeUtil.findChildrenOfType(file, CjMatchExpression::class.java).toList()
+        val outerMatch = matchExpressions.first { it.subjectExpression == null }
+        val innerMatch = matchExpressions.first { it.subjectExpression?.text == "d" }
+
+        val outerStatements = outerMatch.entries.first().expression?.statements.orEmpty()
+        val innerStatements = innerMatch.entries.first().expression?.statements.orEmpty()
+
+        assertEquals(1, outerStatements.size)
+        assertIs<CjMatchExpression>(outerStatements.single())
+        assertEquals(1, innerStatements.size)
+        assertEquals("a", innerStatements.single().text)
     }
 }

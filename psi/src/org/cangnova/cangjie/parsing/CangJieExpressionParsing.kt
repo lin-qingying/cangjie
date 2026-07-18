@@ -1374,7 +1374,8 @@ open class CangJieExpressionParsing(
         builder.disableNewlines()
         val matchContext = if (at(LPAR)) {
             parseCondition()
-            context
+            // 有主语 match 的 case 条件是模式；不能继承外层无主语 match 的表达式条件上下文。
+            context.copy(isExpression = false)
         } else {
             context.copy(isExpression = true)
         }
@@ -3171,7 +3172,7 @@ open class CangJieExpressionParsing(
      * Grammar:
      * ```
      * spawnExpression
-     *   : "spawn" lambdaArgument+
+     *   : "spawn" valueArgumentList? lambdaArgument+
      *   ;
      * ```
      */
@@ -3181,6 +3182,9 @@ open class CangJieExpressionParsing(
         val spawn = mark()
         advance()
 
+        if (at(LPAR)) {
+            parseValueArgumentList()
+        }
         parseCallWithClosure()
 
         spawn.done(SPAWN_EXPRESSION)
@@ -3302,13 +3306,9 @@ open class CangJieExpressionParsing(
         val macroExpression = mark()
         advance()
 
-        val simpleName = mark()
-        if (at(IDENTIFIER)) {
-            advance()
-            simpleName.done(REFERENCE_EXPRESSION)
-        } else {
-            simpleName.drop()
+        if (!parseMacroReferenceExpression()) {
             macroExpression.drop()
+            return
         }
 
         if (at(LBRACKET)) {
@@ -3373,12 +3373,7 @@ open class CangJieExpressionParsing(
         val macroExpression = mark()
         advance()
 
-        val simpleName = mark()
-        if (at(IDENTIFIER)) {
-            advance()
-            simpleName.done(REFERENCE_EXPRESSION)
-        } else {
-            simpleName.drop()
+        if (!parseMacroReferenceExpression()) {
             error("expected identifier after '@'")
             macroExpression.drop()
 
@@ -3416,6 +3411,28 @@ open class CangJieExpressionParsing(
             macroExpression.done(MACRO_EXPRESSION)
             return null
         }
+    }
+
+    /**
+     * 解析 macro callee 的完整限定名。
+     *
+     * PSI 宏节点沿用单个 REFERENCE_EXPRESSION 作为 callee 容器；这里必须消费
+     * `@pkg.Name` 的点号链，否则顶层 declaration macro 的真实声明会落到宏输入之外。
+     */
+    private fun parseMacroReferenceExpression(): Boolean {
+        val simpleName = mark()
+        if (!at(IDENTIFIER)) {
+            simpleName.drop()
+            return false
+        }
+
+        advance()
+        while (at(DOT) && lookahead(1) == IDENTIFIER) {
+            advance()
+            advance()
+        }
+        simpleName.done(REFERENCE_EXPRESSION)
+        return true
     }
 
     /**

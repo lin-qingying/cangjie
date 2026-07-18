@@ -8,7 +8,7 @@ class Point {
         this.x = x
         this.y = y
     }
-    public operator func -(<!CANNOT_HAVE_DEFAULT_PARAM!>oprand!: Point = Point<!NO_VALUE_FOR_PARAMETER!>()<!><!>): Point {
+    public operator func -(<!CANNOT_HAVE_DEFAULT_PARAM!>oprand!: Point = Point<!NO_VALUE_FOR_PARAMETER, NO_VALUE_FOR_PARAMETER!>()<!><!>): Point {
         Point(-oprand.x, -oprand.y)
     }
 }
@@ -20,5 +20,5 @@ func foo(a: Int32, b!: Int64 = 10): Int64 {
 main(): Int64 {
     var f = foo
     var d = f(1, 1)
-    var e = <!NO_VALUE_FOR_PARAMETER, TYPE_MISMATCH!>f(1)<!>
+    var e = f<!WRONG_NUMBER_OF_ARGUMENTS!>(1)<!>
 }

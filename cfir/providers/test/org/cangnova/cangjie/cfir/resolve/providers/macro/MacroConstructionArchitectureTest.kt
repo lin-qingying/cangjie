@@ -36,10 +36,10 @@ import org.junit.jupiter.api.assertThrows
  */
 class MacroConstructionArchitectureTest {
     /**
-     * 验证同包源码宏会进入同包索引，但不会作为合法外部宏 lookup 结果。
+     * 验证源宏包 public 宏会进入同包保护索引，并作为其它包可导入的合法宏 API。
      */
     @Test
-    fun `symbol index records same-package source macro but excludes it from legal lookup`() {
+    fun `symbol index records same-package source macro and exposes it for external lookup`() {
         val fixture = Fixture()
         val macro = fixture.macroDeclaration("LocalMacro", "test.pkg")
         val file = fixture.file(packageName = "test.pkg", declarations = listOf(macro), isMacroPackage = true)
@@ -52,8 +52,8 @@ class MacroConstructionArchitectureTest {
         assertNotNull(samePackage)
         assertSame(macro, samePackage!!.declaration)
         assertEquals(MacroDefinitionEntry.Source.SOURCE_PACKAGE, samePackage.source)
-        assertTrue(index.lookupByShortName(Name.identifier("LocalMacro")).isEmpty())
-        assertEquals(null, index.lookupByFqName(FqName("test.pkg.LocalMacro")))
+        assertSame(samePackage, index.lookupByFqName(FqName("test.pkg.LocalMacro")))
+        assertTrue(index.lookupByShortName(Name.identifier("LocalMacro")).contains(samePackage))
         assertTrue(provider.isEmpty)
         assertTrue(provider.getAllFiles().isEmpty())
     }

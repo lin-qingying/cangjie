@@ -31,6 +31,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.resolve.calls.ConeResolutionAtom
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallInfo
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallKind
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CheckerSink
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.yieldDiagnostic
@@ -42,8 +43,11 @@ import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.arrayElementType
+import org.cangnova.cangjie.cfir.types.asCone
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
+import org.cangnova.cangjie.cfir.types.contains
 import org.cangnova.cangjie.resolve.calls.inference.isSubtypeConstraintCompatible
+import org.cangnova.cangjie.type.model.safeSubstitute
 
 /**
  * 候选解析阶段中的实参适用性检查。
@@ -103,6 +107,19 @@ object CfirCheckArguments : ResolutionStage() {
         argument.coneTypeOrNull.ensureResolvedTypeDeclaration(context.session)
         val expectedType =
             prepareExpectedType(context.session, callInfo, atom, argument, parameter)
+        if (
+            callInfo.callKind == CallKind.DelegatingConstructorCall &&
+            expectedType?.contains { type -> type is ConeErrorType } == true
+        ) {
+            /*
+             * 普通调用必须保留错误签名候选并继续进入 ArgumentCheckingProcessor：
+             * ConeErrorType 与任意类型兼容，用于阻止声明错误继续级联成调用错误。
+             * 委托构造调用不同，其目标决定类初始化链；含错误形参类型的父构造器
+             * 不能成为有效委托目标，因此仅在该调用种类上淘汰候选。
+             */
+            sink.reportDiagnostic(InapplicableCandidate)
+            return
+        }
         ArgumentCheckingProcessor.resolveArgumentExpression(
             this,
             atom,
@@ -158,7 +175,10 @@ private fun Candidate.prepareExpectedType(
             ?: basicExpectedType
 
     val substitutedExpectedType = this.substitutor.substituteOrSelf(expectedType)
-    return substituteExplicitTypeArgumentConstraints(substitutedExpectedType)
+    val currentExpectedType = system.buildCurrentSubstitutor()
+        .safeSubstitute(system, substitutedExpectedType)
+        .asCone()
+    return substituteExplicitTypeArgumentConstraints(currentExpectedType)
 }
 
 /**

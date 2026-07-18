@@ -34,6 +34,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirReturnExpression
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
+import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirConstructorSymbol
 import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
@@ -115,20 +116,27 @@ private class RecursiveConstructorGraph(
 
     /**
      * 从指定 class-like 声明出发查找递归构造调用环。
+     *
+     * 官方在 class/struct body 中先按源码检查字段初始化器，再检查二级构造器，
+     * 最后才会走主构造器。CFIR 的 declarations 存储顺序可能把合成主构造器放在最前，
+     * 因此这里必须显式恢复语义顺序，否则同一个环会选择错误的主诊断节点。
      */
     fun findCycleOrNull(declaration: CfirClassLikeDeclaration): RecursiveConstructorCycle? {
-        for (member in declaration.declarations) {
-            when (member) {
-                is CfirFieldVariable -> {
-                    if (member.status.isStatic) continue
-                    for (call in member.initializer?.collectConstructorDependencyCalls().orEmpty()) {
-                        visitConstructorCall(call)?.let { return it }
-                    }
+        declaration.declarations
+            .filterIsInstance<CfirFieldVariable>()
+            .filterNot { field -> field.status.isStatic }
+            .forEach { field ->
+                for (call in field.initializer?.collectConstructorDependencyCalls().orEmpty()) {
+                    visitConstructorCall(call)?.let { return it }
                 }
-
-                is CfirConstructor -> visitConstructor(member)?.let { return it }
-                else -> Unit
             }
+
+        val constructors = declaration.declarations.filterIsInstance<CfirConstructor>()
+        for (constructor in constructors.filterNot(CfirConstructor::isPrimary)) {
+            visitConstructor(constructor)?.let { return it }
+        }
+        for (constructor in constructors.filter(CfirConstructor::isPrimary)) {
+            visitConstructor(constructor)?.let { return it }
         }
         return null
     }
@@ -166,10 +174,6 @@ private class RecursiveConstructorGraph(
 
         path += RecursiveConstructorNode.Call(call)
         if (!visitingCalls.add(call)) {
-            return buildCycleFor(call)
-        }
-
-        if (targetConstructor in visitingConstructors) {
             return buildCycleFor(call)
         }
 
@@ -220,8 +224,11 @@ private class RecursiveConstructorGraph(
      */
     private fun CfirConstructor.dependencyCalls(): List<CfirFunctionCall> {
         val ownerInitializerCalls = ownerClassLikeDeclarationOrNull()?.initializerConstructorCalls().orEmpty()
+        val defaultValueCalls = valueParameters.flatMap { parameter ->
+            parameter.defaultValue?.collectConstructorDependencyCalls().orEmpty()
+        }
         val bodyCalls = body?.collectConstructorDependencyCalls().orEmpty()
-        return ownerInitializerCalls + bodyCalls
+        return ownerInitializerCalls + defaultValueCalls + bodyCalls
     }
 
     /**
@@ -302,7 +309,8 @@ private class RecursiveConstructorGraph(
      */
     private fun CfirConstructor.ownerClassLikeDeclarationOrNull(): CfirClassLikeDeclaration? {
         val classId = symbol.callableId.classId ?: return null
-        return context.session.symbolProvider.getClassLikeSymbolByClassId(classId)?.cfir as? CfirClassLikeDeclaration
+        return context.session.cfirProvider.getCfirClassifierByFqName(classId)
+            ?: context.session.symbolProvider.getClassLikeSymbolByClassId(classId)?.cfir as? CfirClassLikeDeclaration
     }
 
     /**
@@ -395,7 +403,8 @@ private fun CfirConstructor.implicitPrimaryConstructorOwner(context: CheckerCont
  */
 private fun CfirConstructor.ownerClassLikeDeclarationOrNull(context: CheckerContext): CfirClassLikeDeclaration? {
     val classId = symbol.callableId.classId ?: return null
-    return context.session.symbolProvider.getClassLikeSymbolByClassId(classId)?.cfir as? CfirClassLikeDeclaration
+    return context.session.cfirProvider.getCfirClassifierByFqName(classId)
+        ?: context.session.symbolProvider.getClassLikeSymbolByClassId(classId)?.cfir as? CfirClassLikeDeclaration
 }
 
 /**

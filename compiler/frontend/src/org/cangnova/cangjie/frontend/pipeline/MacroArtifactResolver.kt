@@ -202,8 +202,9 @@ class MacroArtifactResolver {
                     return@mapNotNull null
                 }
 
+                val runtimeArtifact = selectRuntimeArtifact(artifact, executableArtifact)
                 val executableCjoHash = hashFile(executableArtifact.cjoPath, fileHashCache)
-                val executableDynamicLibHash = hashFile(executableArtifact.dynamicLibPath, fileHashCache)
+                val executableDynamicLibHash = hashFile(runtimeArtifact.dynamicLibPath, fileHashCache)
                 val executableBchirHash = StableHash.sha256Of(
                     executableArtifact.dependenciesBchirPaths.map { hashFile(it, fileHashCache) },
                 )
@@ -217,7 +218,8 @@ class MacroArtifactResolver {
                     "executableTarget=${exportedMacro.executableFqName.asString()}",
                     "executableCjo=${executableArtifact.cjoPath}",
                     "executableCjoHash=$executableCjoHash",
-                    "executableDylib=${executableArtifact.dynamicLibPath}",
+                    "runtimeArtifact=${runtimeArtifact.packageFqName.asString()}",
+                    "executableDylib=${runtimeArtifact.dynamicLibPath}",
                     "executableDylibHash=$executableDynamicLibHash",
                     "executableBchirHash=$executableBchirHash",
                     "executableAbi=${executableArtifact.abiVersion ?: artifact.abiVersion.orEmpty()}",
@@ -232,7 +234,7 @@ class MacroArtifactResolver {
                     executablePackageFqName = exportedMacro.executablePackageFqName,
                     executableName = exportedMacro.executableName,
                     source = MacroDefinitionEntry.Source.MACRO_ARTIFACT,
-                    libPath = executableArtifact.dynamicLibPath,
+                    libPath = runtimeArtifact.dynamicLibPath,
                     executorAbi = executableArtifact.abiVersion ?: artifact.abiVersion,
                     artifactSignature = artifactSignature,
                     cjoHash = visibleCjoHash,
@@ -433,7 +435,7 @@ class MacroArtifactResolver {
                 relatedTargets = listOf(executableMacroFqName),
             )
         }
-        if (header.kind != PackageKind.Macro) {
+        if (header.kind != PackageKind.Macro && !ownerArtifact.allowsStdMacroFacadeCommonExecutable(executableArtifact, header)) {
             diagnostics += ownerArtifact.error(
                 kind = MacroConstructionDiagnostic.Kind.MACRO_EXPECT_MACRO_DEFINITION,
                 message = "Re-exported macro `${visibleMacroFqName.asString()}` resolves to `${executableMacroFqName.asString()}`, but package `${ownerMacro.executablePackageFqName.asString()}` is not a macro package artifact.",
@@ -456,6 +458,37 @@ class MacroArtifactResolver {
         }
         return diagnostics
     }
+
+    /**
+     * 官方标准宏包（如 `std.deriving`）是宏入口包，但其公开宏可重导出到普通实现包。
+     * executor 动态库仍按标准宏入口包加载，wrapper identity 则保留真实实现包。
+     */
+    private fun selectRuntimeArtifact(
+        ownerArtifact: MacroArtifactPackage,
+        executableArtifact: MacroArtifactPackage,
+    ): MacroArtifactPackage {
+        if (ownerArtifact.isOfficialStdMacroFacade() && executableArtifact.origin == MacroArtifactPackage.Origin.SDK_STDLIB) {
+            return ownerArtifact
+        }
+        return executableArtifact
+    }
+
+    /**
+     * 标准宏入口包可以 re-export SDK 普通实现包；普通外部宏包仍必须指向 macro artifact。
+     */
+    private fun MacroArtifactPackage.allowsStdMacroFacadeCommonExecutable(
+        executableArtifact: MacroArtifactPackage,
+        header: CjoPackageHeader,
+    ): Boolean {
+        return isOfficialStdMacroFacade() &&
+            executableArtifact.origin == MacroArtifactPackage.Origin.SDK_STDLIB &&
+            executableArtifact.packageFqName != packageFqName &&
+            header.kind == PackageKind.Normal
+    }
+
+    /** 是否为官方编译器内置标准宏包入口。 */
+    private fun MacroArtifactPackage.isOfficialStdMacroFacade(): Boolean =
+        origin == MacroArtifactPackage.Origin.SDK_STDLIB && packageFqName in OFFICIAL_STDLIB_MACRO_PACKAGES
 
     /**
      * 读取 `.cjo` 文件头部元数据。
@@ -508,6 +541,15 @@ class MacroArtifactResolver {
      */
     private fun macroFqName(packageFqName: FqName, name: Name): FqName =
         if (packageFqName.isRoot) FqName.topLevel(name) else packageFqName.child(name)
+
+    /**
+     * 官方 `ImportManager::GetImportedStdMacroPackages` 中的标准宏包入口。
+     */
+    private val OFFICIAL_STDLIB_MACRO_PACKAGES: Set<FqName> = setOf(
+        FqName("std.deriving"),
+        FqName("std.unittest.testmacro"),
+        FqName("std.unittest.mock.mockmacro"),
+    )
 
     /**
      * 已解析的导出宏信息。

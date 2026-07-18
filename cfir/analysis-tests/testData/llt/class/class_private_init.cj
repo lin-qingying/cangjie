@@ -23,7 +23,7 @@ class B {
     }
 }
 
-class C <: <!CLASS_NOT_OPEN_FOR_INHERITANCE!>A<!> {
+class C <: <!NON_INHERITABLE_SUPER_CLASS!>A<!> {
     public init() {
         super<!NO_VALUE_FOR_PARAMETER!>()<!>
     }
