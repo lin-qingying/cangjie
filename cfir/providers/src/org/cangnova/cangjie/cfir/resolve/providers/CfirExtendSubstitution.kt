@@ -228,7 +228,7 @@ private fun ConeCangJieType.satisfiesUpperBound(
     upperBound: ConeCangJieType,
     substitutor: ConeSubstitutor,
 ): Boolean {
-    if (AbstractTypeChecker.isSubtypeOf(session.typeContext, this, upperBound)) {
+    if (AbstractTypeChecker.isSubtypeOfWithoutOptionBoxing(session.typeContext, this, upperBound)) {
         return true
     }
 
@@ -245,7 +245,11 @@ private fun ConeCangJieType.satisfiesUpperBound(
     return typeParameterType.collectUpperBounds(session.typeContext).any { actualUpperBound ->
         val substitutedUpperBound = substitutor.substituteOrSelf(actualUpperBound)
         substitutedUpperBound !is ConeErrorType &&
-                AbstractTypeChecker.isSubtypeOf(session.typeContext, substitutedUpperBound, upperBound)
+                AbstractTypeChecker.isSubtypeOfWithoutOptionBoxing(
+                    session.typeContext,
+                    substitutedUpperBound,
+                    upperBound,
+                )
     }
 }
 

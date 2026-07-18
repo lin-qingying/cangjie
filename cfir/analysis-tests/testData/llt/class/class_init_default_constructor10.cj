@@ -9,4 +9,4 @@ open class Tree {
     }
 }
 
-<!EXPLICIT_SUPER_CALL_REQUIRED!>class Tree_None <: Tree {}<!>
+class <!NO_NON_PARAM_CONSTRUCTOR_IN_SUPER_CLASS!>Tree_None<!> <: Tree {}

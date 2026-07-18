@@ -14,7 +14,7 @@ open class Base {
 }
 
 class Sub <: Base {
-    <!STATIC_AND_NON_STATIC_MEMBER_CANNOT_HAVE_SAME_NAME!>p<!>ublic static func foo(a: Int16): Int16 {
+    public static func <!STATIC_AND_NON_STATIC_MEMBER_CANNOT_HAVE_SAME_NAME!>foo<!>(a: Int16): Int16 {
         0
     }
 }
@@ -47,7 +47,7 @@ func y<T>(input: B<T>): B<T> {
 func test<T>(input: T): Int64 {
     let xv = x<T>
     let yv = y<T>
-    xv(yv(<!TYPE_MISMATCH!>B<Int64>()<!>))
+    xv(yv(<!ARGUMENT_TYPE_MISMATCH!>B<Int64>()<!>))
     return 0
 }
 

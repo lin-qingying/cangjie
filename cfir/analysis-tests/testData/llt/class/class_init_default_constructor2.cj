@@ -1,5 +1,5 @@
 
 
 class A {
-    <!CLASS_UNINITIALIZED_FIELD!>public var a: Int64<!>
+    public var <!CLASS_UNINITIALIZED_FIELD!>a<!>: Int64
 }

@@ -86,6 +86,48 @@ object AbstractTypeChecker {
     }
 
     /**
+     * 按函数引用目标类型规则检查子类型关系。
+     *
+     * 官方函数引用候选筛选不把普通值到 `Option<T>` 的自动提升作为函数参数兼容关系；
+     * 其他继承、泛型和函数方差规则仍复用同一套类型检查器。
+     */
+    fun isSubtypeOfForFunctionReference(
+        context: TypeCheckerProviderContext,
+        subType: CangJieTypeMarker,
+        superType: CangJieTypeMarker,
+    ): Boolean = isSubtypeOfWithoutOptionBoxing(context, subType, superType)
+
+    /**
+     * 在禁用 `T -> Option<T>` 自动提升的前提下检查普通子类型关系。
+     *
+     * 该入口用于语义上要求精确名义/结构关系的阶段，例如函数引用目标筛选和
+     * type-pattern usefulness。它仍保留继承、泛型不变性、函数方差等通用规则，
+     * 只关闭表达式目标定型阶段才允许的 Option 自动装箱。
+     */
+    fun isSubtypeOfWithoutOptionBoxing(
+        context: TypeCheckerProviderContext,
+        subType: CangJieTypeMarker,
+        superType: CangJieTypeMarker,
+    ): Boolean {
+        val state = context.newTypeCheckerState(
+            errorTypesEqualToAnything = true,
+            stubTypesEqualToAnything = true,
+        )
+        return isSubtypeOfWithoutOptionBoxing(state, subType, superType)
+    }
+
+    /** 在现有类型检查状态中临时关闭 Option 自动装箱。 */
+    fun isSubtypeOfWithoutOptionBoxing(
+        state: TypeCheckerState,
+        subType: CangJieTypeMarker,
+        superType: CangJieTypeMarker,
+    ): Boolean {
+        return state.runWithOptionBoxing(allowed = false) {
+            completeIsSubTypeOf(this, subType, superType)
+        }
+    }
+
+    /**
      * 判断两个类型是否相等（双向子类型）。
      */
     fun equalTypes(
@@ -250,6 +292,22 @@ object AbstractTypeChecker {
         // Nothing 是所有类型的子类型
         if (ctx.isNothing(subType)) return true
 
+        /*
+         * 普通 primitive 是 final 的值类型，不存在 primitive kind 之间的继承或 widening。
+         * 在进入 corresponding-supertypes BFS 前按 constructor 常量时间判定，避免为大量
+         * 明确不兼容的重载签名反复遍历父类型图。Nothing、ideal literal 以及
+         * primitive-to-interface 装箱仍保留后续通用语义。
+         */
+        if (
+            ctx.isPrimitiveType(subType) &&
+            ctx.isPrimitiveType(superType) &&
+            !ctx.isNothing(superType) &&
+            !ctx.isIntegerLiteralType(subType) &&
+            !ctx.isIntegerLiteralType(superType)
+        ) {
+            return ctx.areEqualTypeConstructors(ctx.typeConstructor(subType), ctx.typeConstructor(superType))
+        }
+
         // 官方 TypeManager::IsSubtype 中，只有允许 implicitBoxed 时值类型才可装箱到 Any；
         // 禁止隐式装箱的函数类型子类型检查里，仅 class/interface 这类引用语义类型保留 Any 关系。
         if (ctx.isAnyConstructor(ctx.typeConstructor(superType))) {
@@ -258,6 +316,7 @@ object AbstractTypeChecker {
 
         val optionBoxedElementType = ctx.optionBoxedElementTypeOf(superType)
         if (
+            state.isOptionBoxingAllowed &&
             optionBoxedElementType != null &&
             ctx.optionNestedLevelOf(subType) < ctx.optionNestedLevelOf(superType) &&
             completeIsSubTypeOf(state, subType, optionBoxedElementType)
@@ -480,6 +539,14 @@ object AbstractTypeChecker {
     ): List<RigidTypeMarker> {
         val ctx = state.typeSystemContext
 
+        if (
+            !state.isImplicitBoxingAllowed &&
+            ctx.isInterface(superConstructor) &&
+            ctx.isPrimitiveType(subType)
+        ) {
+            return emptyList()
+        }
+
         ctx.fastCorrespondingSupertypes(subType, superConstructor)?.let { return it }
 
         if (!ctx.isClassTypeConstructor(superConstructor) && !ctx.isInterface(superConstructor) && ctx.isClassType(subType)) {
@@ -618,6 +685,9 @@ private fun TypeSystemContext.isInterface(ctor: TypeConstructorMarker): Boolean 
 
 /** 桥接 [TypeSystemContext.isClassType] */
 private fun TypeSystemContext.isClassType(type: RigidTypeMarker): Boolean = type.isClassType()
+
+/** 调用 [TypeSystemContext.isPrimitiveType] */
+private fun TypeSystemContext.isPrimitiveType(type: RigidTypeMarker): Boolean = type.isPrimitiveType()
 
 /** 桥接 [TypeSystemContext.isCommonFinalClassConstructor] */
 private fun TypeSystemContext.isCommonFinalClassConstructor(ctor: TypeConstructorMarker): Boolean = ctor.isCommonFinalClassConstructor()

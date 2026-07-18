@@ -137,12 +137,23 @@ class PendingDiagnosticsReporterImpl(
                         // CHIR DCE 类 warning 在官方编译器中位于 sema 成功之后。
                         // 因此这里延迟到文件结束，再根据同文件是否存在 error 统一决定提交或丢弃。
                     }
+                    diagnostic.isAccessibilityError() && !commitEverything -> {
+                        // 可见性与 override 返回类型诊断可能落在完全相同的成员名范围；
+                        // 延迟可见性诊断，使文件级提交时能够按官方诊断优先级统一裁决。
+                    }
                     diagnosticElement == element || commitEverything -> {
                         iterator.remove()
                         if (diagnostic.isCfirDceWarning() && hasErrorInFile(path, pendingList)) {
                             continue
                         }
                         if (diagnostic.isGenericTypeMismatchSupersededByReturnMismatch(
+                                pendingDiagnostics = pendingList,
+                                committedDiagnostics = committedDiagnosticsByFilePath[path],
+                            )
+                        ) {
+                            continue
+                        }
+                        if (diagnostic.isAccessibilityErrorSupersededByReturnTypeError(
                                 pendingDiagnostics = pendingList,
                                 committedDiagnostics = committedDiagnosticsByFilePath[path],
                             )
@@ -170,6 +181,15 @@ class PendingDiagnosticsReporterImpl(
             val (_, pendingList) = iterator.next()
             for (diagnostic in pendingList) {
                 if (!context.isDiagnosticSuppressed(diagnostic)) {
+                    if (diagnostic.isAccessibilityErrorSupersededByReturnTypeError(
+                            pendingDiagnostics = pendingList,
+                            committedDiagnostics = committedDiagnosticsByFilePath[
+                                (diagnostic.context as? DiagnosticContext)?.containingFilePath
+                            ],
+                        )
+                    ) {
+                        continue
+                    }
                     commitDiagnostic(
                         filePath = (diagnostic.context as? DiagnosticContext)?.containingFilePath,
                         diagnostic = diagnostic,
@@ -216,6 +236,31 @@ private fun CjDiagnostic.hasSameDiagnosticIdentity(other: CjDiagnostic): Boolean
  */
 private fun CjDiagnostic.isCfirDceWarning(): Boolean =
     factoryName == "CFIR_UNUSED_VARIABLE" || factoryName == "CFIR_UNUSED_EXPRESSION"
+
+private fun CjDiagnostic.isAccessibilityError(): Boolean = factoryName == "CFIR_ACCESSIBILITY_ERROR"
+
+/**
+ * 官方诊断引擎对同范围、同严重级别错误只保留一个；继承检查中返回类型错误比随后产生的
+ * 可见性错误更具体，因此相同首范围上的可见性错误由返回类型诊断取代。
+ */
+private fun CjDiagnostic.isAccessibilityErrorSupersededByReturnTypeError(
+    pendingDiagnostics: List<CjDiagnostic>,
+    committedDiagnostics: List<CjDiagnostic>?,
+): Boolean {
+    if (!isAccessibilityError()) return false
+    return (pendingDiagnostics.asSequence() + committedDiagnostics.orEmpty().asSequence())
+        .any { candidate ->
+            candidate.factoryName in RETURN_TYPE_OVERRIDE_ERROR_NAMES &&
+                candidate.severity == severity &&
+                candidate.firstRange.startOffset == firstRange.startOffset &&
+                candidate.firstRange.endOffset == firstRange.endOffset
+        }
+}
+
+private val RETURN_TYPE_OVERRIDE_ERROR_NAMES: Set<String> = setOf(
+    "CFIR_RETURN_TYPE_INCOMPATIBLE",
+    "CFIR_RETURN_TYPE_INVARIANCE",
+)
 
 /**
  * RETURN_TYPE_MISMATCH 是 return 根表达式上的专用分类；同一起点且覆盖通用

@@ -40,6 +40,7 @@ object CfirCaptureHasShadowVariableChecker : CfirQualifiedAccessChecker() {
 
         val variableName = target.variableName
         val containingFunctions = context.containingDeclarations.asReversed().filterIsInstance<CfirFunction>()
+        if (containingFunctions.size < 2) return
         for (function in containingFunctions) {
             if (function.containsDeclarationInOwnScope(target)) return
             if (!function.hasShadowVariableDeclaration(variableName, target)) continue

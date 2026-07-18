@@ -29,7 +29,10 @@ import org.cangnova.cangjie.cfir.CfirFunctionTarget
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.SessionAndScopeSessionHolder
 import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.diagnostic.ConeCannotInferGenericFunctionTypeParameterType
+import org.cangnova.cangjie.cfir.diagnostic.ConeCannotInferTypeParameterType
 import org.cangnova.cangjie.cfir.diagnostic.ConeCannotInferValueParameterType
+import org.cangnova.cangjie.cfir.diagnostic.ConeUnableToInferGenericFuncError
 import org.cangnova.cangjie.cfir.diagnostic.ConeConstraintSystemHasContradiction
 import org.cangnova.cangjie.cfir.diagnostic.ConeInapplicableCandidateError
 import org.cangnova.cangjie.cfir.diagnostic.ConeTypeParameterInQualifiedAccess
@@ -50,7 +53,9 @@ import org.cangnova.cangjie.cfir.resolve.body.buildAppliedCallableReference
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.resolve.calls.ConeResolutionAtom
 import org.cangnova.cangjie.cfir.resolve.calls.ConeResolutionAtomWithPostponedChild
+import org.cangnova.cangjie.cfir.resolve.calls.ConeResolvedCallableReferenceAtom
 import org.cangnova.cangjie.cfir.resolve.calls.ConeResolvedLambdaAtom
+import org.cangnova.cangjie.cfir.diagnostic.CallableReferenceFailureKind
 import org.cangnova.cangjie.cfir.resolve.calls.applyNoArgEnumConstructorTargetType
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallKind
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
@@ -76,6 +81,7 @@ import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
 import org.cangnova.cangjie.cfir.visitors.transformSingle
 import org.cangnova.cangjie.resolve.calls.tower.ApplicabilityDetail
 import org.cangnova.cangjie.resolve.calls.tower.isSuccess
+import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintMismatch
 import org.cangnova.cangjie.source.CjFakeSourceElementKind
 import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.source.fakeElement
@@ -276,11 +282,21 @@ class CfirCallCompletionResultsWriterTransformer(
         val calleeReference = functionCall.calleeReference as? CfirNamedReferenceWithCandidate ?: return functionCall
         val result = prepareQualifiedTransform(functionCall, calleeReference)
         val candidate = calleeReference.candidate
+        candidate.commitCallableReferenceResults()
+        result.transformCompletedFunctionCallReceiver(candidate)
         val originalArgumentList = result.argumentList
 
-        val resultType = candidate.callFailureDiagnosticForResultType()?.let { diagnostic ->
+        val completedResultType = candidate.completedFunctionCallResultType(result.resolvedType)
+        val enumConstructorInferenceDiagnostic = candidate
+            .payloadEnumConstructorInferenceDiagnostic(completedResultType)
+        if (enumConstructorInferenceDiagnostic != null) {
+            result.replaceCalleeReference(calleeReference.toErrorReference(enumConstructorInferenceDiagnostic))
+        }
+        val resultType = calleeReference.callDiagnosticForResultType()?.let { diagnostic ->
             ConeErrorType(ConeUnreportedDuplicateDiagnostic(diagnostic))
-        } ?: candidate.completedFunctionCallResultType(result.resolvedType)
+        } ?: enumConstructorInferenceDiagnostic?.let { diagnostic ->
+            ConeErrorType(ConeUnreportedDuplicateDiagnostic(diagnostic), delegatedType = completedResultType)
+        } ?: completedResultType
         val allArgs = calleeReference.computeAllArguments(originalArgumentList)
         val (regularMapping, allArgsMapping) = candidate.handleVarargsAndReturnResultingArgumentsMapping(
             argumentList = allArgs,
@@ -305,6 +321,31 @@ class CfirCallCompletionResultsWriterTransformer(
     }
 
     /**
+     * 函数调用不会像普通 qualified access 一样继续 transformChildren，因此显式 receiver
+     * 必须在 completion writer 中单独写回。函数类型 `invoke` 的 receiver 可能是一个
+     * 仍携带 postponed lambda 的调用，如 `fold { ... }(Nil)`；外层 invoke 完成后，
+     * 最终 substitutor 已经固定 receiver 的函数形状，需用同一 completion 结果写回
+     * receiver 子树，避免 lambda 参数和返回类型停留在候选阶段的旧占位类型上。
+     */
+    private fun CfirFunctionCall.transformCompletedFunctionCallReceiver(candidate: Candidate) {
+        val dispatchReceiver = candidate.dispatchReceiverExpression() ?: return
+        val expectedReceiverType = dispatchReceiver.coneTypeOrNull?.substituteType(candidate)
+        val receiverData = expectedReceiverType?.toExpectedType(argumentReplacements = null)
+
+        val completedReceiver = if (explicitReceiver === dispatchReceiver) {
+            transformExplicitReceiver(this@CfirCallCompletionResultsWriterTransformer, receiverData)
+            transformExplicitReceiver(integerOperatorApproximator, expectedReceiverType)
+            explicitReceiver
+        } else {
+            dispatchReceiver
+                .transformSingle(this@CfirCallCompletionResultsWriterTransformer, receiverData)
+                .transformSingle(integerOperatorApproximator, expectedReceiverType) as? CfirExpression
+        }?.withCompletedEnumConstructorReceiverType(candidate)
+
+        replaceDispatchReceiver(completedReceiver)
+    }
+
+    /**
      * 计算函数调用完成后表达式结果类型。
      */
     private fun Candidate.completedFunctionCallResultType(resolvedType: ConeCangJieType): ConeCangJieType {
@@ -312,6 +353,63 @@ class CfirCallCompletionResultsWriterTransformer(
             return finallySubstituteOrSelf(substitutedReturnType())
         }
         return resolvedType.substituteType(this)
+    }
+
+    /**
+     * payload enum constructor 的 owner 泛型属于调用推断。
+     *
+     * `Some(None)` 中外层 `Some` 的 owner 参数在完成后会表现为返回类型内部的无法推断错误；
+     * 若仍把引用写成普通 resolved reference，后续只能把它误判为裸 generic classifier。
+     * 这里把该完成结果提升为调用引用诊断，使统一诊断映射在整个调用范围报告
+     * `UNABLE_TO_INFER_GENERIC_FUNC`。
+     */
+    private fun Candidate.payloadEnumConstructorInferenceDiagnostic(
+        completedResultType: ConeCangJieType,
+    ): ConeDiagnostic? {
+        val enumConstructor = symbol.takeIf { it.isBound }?.cfir as? CfirEnumConstructor ?: return null
+        if (enumConstructor.valueParameters.isEmpty()) return null
+        if (callInfo.hasExplicitTypeArguments) return null
+        if (postponedAtoms.filterIsInstance<ConeResolvedCallableReferenceAtom>().any { atom ->
+                atom.failureKind == CallableReferenceFailureKind.GENERIC_TYPE_ARGUMENT_REQUIRED
+            }
+        ) return null
+        if (completedResultType.containsAnyTypeVariable()) {
+            return ConeUnableToInferGenericFuncError()
+        }
+        return completedResultType.findGenericInferenceDiagnostic()
+    }
+
+    /** 判断完成类型是否仍保留未完成的推断变量。 */
+    private fun ConeCangJieType.containsAnyTypeVariable(): Boolean = when (this) {
+        is ConeTypeVariableType -> true
+        else -> typeArguments.any { it.type.containsAnyTypeVariable() }
+    }
+
+    /** 从完成类型树中查找 owner 泛型无法推断诊断。 */
+    private fun ConeCangJieType.findGenericInferenceDiagnostic(): ConeDiagnostic? {
+        val visited = IdentityHashMap<ConeCangJieType, Boolean>()
+
+        fun visit(type: ConeCangJieType): ConeDiagnostic? {
+            if (visited.put(type, true) != null) return null
+            if (type is ConeErrorType) {
+                val originalDiagnostic = when (val current = type.diagnostic) {
+                    is ConeUnreportedDuplicateDiagnostic -> current.original
+                    else -> current
+                }
+                if (originalDiagnostic is ConeCannotInferGenericFunctionTypeParameterType ||
+                    originalDiagnostic is ConeCannotInferTypeParameterType
+                ) {
+                    return originalDiagnostic
+                }
+                type.delegatedType?.let(::visit)?.let { return it }
+            }
+            for (argument in type.typeArguments) {
+                visit(argument.type)?.let { return it }
+            }
+            return null
+        }
+
+        return visit(this)
     }
 
     /**
@@ -469,6 +567,23 @@ class CfirCallCompletionResultsWriterTransformer(
             forErrorReference = forErrorReference,
             argumentReplacements,
         )
+    }
+
+    /**
+     * 将最终外层候选局部保存的 callable-reference 结果提交到共享 CFIR 表达式。
+     *
+     * 候选比较阶段不能提前写回，否则一个 overload 候选会污染其他候选看到的引用集合。
+     */
+    private fun Candidate.commitCallableReferenceResults() {
+        for (atom in postponedAtoms.filterIsInstance<ConeResolvedCallableReferenceAtom>()) {
+            val expression = atom.expression as? CfirNamedAccessExpression ?: continue
+            atom.resultingReference?.let { reference -> expression.replaceCalleeReference(reference) }
+            atom.resultingTypeForCallableReference?.let { resultingType ->
+                expression.replaceConeTypeOrNull(
+                    finallySubstituteOrSelf(substitutor.substituteOrSelf(resultingType))
+                )
+            }
+        }
     }
 
     /**
@@ -632,7 +747,9 @@ class CfirCallCompletionResultsWriterTransformer(
             ?.let { expectedType -> candidate.noArgEnumConstructorTargetType(expectedType, session) }
         val result = prepareQualifiedTransform(qualifiedAccessExpression, calleeReference, forcedResultType)
         result.transformChildren(this, data)
-        val resultType = forcedResultType ?: result.coneTypeOrNull?.substituteType(candidate)
+        val resultType = calleeReference.callDiagnosticForResultType()?.let { diagnostic ->
+            ConeErrorType(ConeUnreportedDuplicateDiagnostic(diagnostic))
+        } ?: forcedResultType ?: result.coneTypeOrNull?.substituteType(candidate)
         if (resultType != null) {
             // qualified access 完成后必须写回最终替换类型；无参 enum constructor
             // 如 `None` 的 owner 泛型依赖 expected type 约束，不能保留声明原始类型。
@@ -809,11 +926,12 @@ class CfirCallCompletionResultsWriterTransformer(
                         "Lambda or anonymous function has more parameters than expected",
                     ),
                 )
-            val source = parameter.source
-                ?.fakeElement(CjFakeSourceElementKind.ImplicitReturnTypeOfLambdaValueParameter)
             val typeRef = if (parameter.returnTypeRef is CfirImplicitTypeRef) {
+                val source = parameter.source
+                    ?.fakeElement(CjFakeSourceElementKind.ImplicitReturnTypeOfLambdaValueParameter)
                 parameterType.toCfirResolvedTypeRef(source)
             } else {
+                val source = parameter.returnTypeRef.source
                 parameter.returnTypeRef.resolvedTypeFromPrototype(parameterType, source)
             }
             parameter.replaceReturnTypeRef(typeRef)
@@ -955,7 +1073,10 @@ class CfirCallCompletionResultsWriterTransformer(
             if (!shouldRestoreAndReanalyze || !shouldReanalyze) continue
 
             context.withAnonymousFunctionTowerDataContext(lambda.symbol) {
-                declarationsTransformer.doTransformAnonymousFunctionBodyFromCallCompletion(lambdaExpression, null)
+                declarationsTransformer.doTransformAnonymousFunctionBodyFromCallCompletion(
+                    lambdaExpression,
+                    null,
+                )
             }
             context.dropContextForAnonymousFunction(lambda)
             completion.data.bodyReanalyzedAfterCallableValueCompletion = true
@@ -1159,8 +1280,14 @@ class CfirCallCompletionResultsWriterTransformer(
     }
 
     /**
-     * 根据候选失败状态构造用于结果类型的未报告诊断。
+     * 根据错误引用或候选失败状态构造用于结果类型的未报告诊断。
      */
+    @OptIn(ApplicabilityDetail::class)
+    private fun CfirNamedReferenceWithCandidate.callDiagnosticForResultType(): ConeDiagnostic? {
+        if (this is CfirErrorReferenceWithCandidate) return diagnostic
+        return candidate.callFailureDiagnosticForResultType()
+    }
+
     @OptIn(ApplicabilityDetail::class)
     private fun Candidate.callFailureDiagnosticForResultType(): ConeDiagnostic? {
         if (!lowestApplicability.isSuccess) {

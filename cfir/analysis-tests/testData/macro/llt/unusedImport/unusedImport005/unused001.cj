@@ -1,5 +1,4 @@
-<!UNUSED_IMPORT!>import std.deriving.Derive<!>
+import <!UNUSED_IMPORT!>std.deriving.Derive<!>
 main() {
 }
-
 

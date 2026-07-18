@@ -7,4 +7,4 @@ open class A {
     }
 }
 
-<!EXPLICIT_SUPER_CALL_REQUIRED!>class B <: A {}<!>
+class <!NO_NON_PARAM_CONSTRUCTOR_IN_SUPER_CLASS!>B<!> <: A {}

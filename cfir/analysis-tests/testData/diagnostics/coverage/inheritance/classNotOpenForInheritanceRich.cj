@@ -3,7 +3,7 @@ class FinalBase {}
 open class OpenBase {}
 abstract class AbstractBase {}
 
-class FinalChild <: <!CLASS_NOT_OPEN_FOR_INHERITANCE!>FinalBase<!> {}
+class FinalChild <: <!NON_INHERITABLE_SUPER_CLASS!>FinalBase<!> {}
 
 class OpenChild <: OpenBase {}
 

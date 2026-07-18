@@ -12,7 +12,6 @@ import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
-import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.resolve.constants.CfirIntConstantEvalUtils
@@ -79,10 +78,8 @@ object CfirConstEvalArithmeticChecker : CfirFunctionCallChecker() {
 
     /**
      * 需要检查求值结果范围的 operator 集合。
-     *
-     * 乘法由现有字面量和类型推断链处理，这里保持与当前诊断策略一致。
      */
-    private val OVERFLOW_REPORTING = setOf(PLUS, MINUS, DIV, REM, LEFT_SHIFT, RIGHT_SHIFT, EXPONENTIATION)
+    private val OVERFLOW_REPORTING = setOf(PLUS, MINUS, TIMES, DIV, REM, LEFT_SHIFT, RIGHT_SHIFT, EXPONENTIATION)
 
     /**
      * 检查函数调用形式的整数常量算术表达式。
@@ -105,6 +102,7 @@ object CfirConstEvalArithmeticChecker : CfirFunctionCallChecker() {
         }
 
         val right = evaluateIntegerConstantExpression(rightExpression) ?: return
+        val isPrimitiveOperatorCall = expression.isResolvedPrimitiveOperatorCall(operatorName)
 
         if ((operatorName == DIV || operatorName == REM) && right.value == BigInteger.ZERO) {
             if (expression.hasUInt64LeftAndInt64ZeroRight()) {
@@ -117,17 +115,14 @@ object CfirConstEvalArithmeticChecker : CfirFunctionCallChecker() {
                 )
                 return
             }
-            if (
-                expression.explicitReceiver !is CfirLiteralExpression ||
-                expression.calleeReference is CfirResolvedNamedReference
-            ) {
+            if (isPrimitiveOperatorCall) {
                 reporter.reportOn(source, CfirErrors.CONST_EVAL_DIVIDE_BY_ZERO, operatorName.asString())
                 return
             }
         }
 
         if (operatorName !in OVERFLOW_REPORTING) return
-        if (!expression.isResolvedPrimitiveOperatorCall(operatorName)) return
+        if (!isPrimitiveOperatorCall) return
         val result = evaluateIntegerConstantExpression(expression)?.value ?: return
 
         val rangeTargetType = context.expectedInitializerTypeFor(source) ?: expression.overflowRangeTypeOrNull(operatorName)

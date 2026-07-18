@@ -5,6 +5,7 @@ import org.cangnova.cangjie.cfir.analysis.diagnostics.specificTypeMismatchDiagno
 import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticFactory3
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeFunctionType
@@ -35,6 +36,7 @@ context(context: CheckerContext, reporter: DiagnosticReporter)
 fun checkTypeMismatch(
     expectedType: ConeCangJieType,
     actualType: ConeCangJieType,
+    expression: CfirExpression,
     source: AbstractCjSourceElement,
     preferredSpecializedSource: AbstractCjSourceElement? = null,
     diagnosticFactory: CjDiagnosticFactory3<ConeCangJieType, ConeCangJieType, Boolean>,
@@ -46,6 +48,7 @@ fun checkTypeMismatch(
         source = diagnosticSource,
         expectedType = expectedType,
         actualType = effectiveActualType,
+        expression = expression,
         session = context.session,
     )?.let { diagnostic ->
         reporter.report(diagnostic, context)

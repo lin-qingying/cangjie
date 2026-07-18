@@ -1,9 +1,12 @@
 package org.cangnova.cangjie.cfir.resolve.inference
 
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
-import org.cangnova.cangjie.cfir.diagnostic.AmbiguousArgumentType
 import org.cangnova.cangjie.cfir.diagnostic.ConeAmbiguityError
+import org.cangnova.cangjie.cfir.diagnostic.ConeAmbiguousFunctionReferenceError
+import org.cangnova.cangjie.cfir.diagnostic.ConeNoMatchingFunctionReferenceError
+import org.cangnova.cangjie.cfir.diagnostic.CallableReferenceFailureKind
 import org.cangnova.cangjie.cfir.diagnostic.ArgumentTypeMismatch
+import org.cangnova.cangjie.cfir.diagnostic.AmbiguousArgumentType
 import org.cangnova.cangjie.cfir.diagnostic.UnsuccessfulCallableReferenceArgument
 import org.cangnova.cangjie.cfir.expressions.CfirResolvable
 import org.cangnova.cangjie.cfir.expressions.CfirNamedAccessExpression
@@ -36,7 +39,6 @@ import org.cangnova.cangjie.cfir.session.builtinTypes
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeFunctionType
-import org.cangnova.cangjie.cfir.types.ConeUnreportedDuplicateDiagnostic
 import org.cangnova.cangjie.cfir.types.asCone
 import org.cangnova.cangjie.resolve.calls.inference.isSubtypeConstraintCompatible
 import org.cangnova.cangjie.resolve.calls.inference.ConstraintSystemBuilder
@@ -166,7 +168,21 @@ class PostponedArgumentsAnalyzer(
             CallableReferenceResolutionResult.RESOLVED -> return
             CallableReferenceResolutionResult.POSTPONED -> return
             CallableReferenceResolutionResult.FAILURE -> {
-                candidate.addDiagnostic(UnsuccessfulCallableReferenceArgument(atom.expression))
+                when (atom.failureKind) {
+                    CallableReferenceFailureKind.AMBIGUOUS_ARGUMENT_TYPE -> candidate.addDiagnostic(
+                        AmbiguousArgumentType(candidate.callInfo.callSite, atom.expression),
+                    )
+
+                    CallableReferenceFailureKind.GENERIC_TYPE_ARGUMENT_REQUIRED ->
+                        candidate.addDiagnostic(ErrorTypeInArguments)
+
+                    else -> candidate.addDiagnostic(
+                        UnsuccessfulCallableReferenceArgument(
+                            atom.expression,
+                            atom.failureKind ?: CallableReferenceFailureKind.NO_MATCH,
+                        )
+                    )
+                }
                 atom.markResolved()
             }
         }
@@ -201,8 +217,26 @@ class PostponedArgumentsAnalyzer(
             return
         }
 
-        val selectedCandidate = selectFunctionReferenceCandidateByExpectedType(atom, functionCandidates)
-        if (selectedCandidate != null) {
+        val matchingCandidates = matchingFunctionReferenceCandidatesByExpectedType(
+            atom,
+            functionCandidates,
+            topLevelCandidate,
+        )
+        if (matchingCandidates == null) {
+            ArgumentCheckingProcessor.resolveArgumentExpression(
+                topLevelCandidate,
+                atom.fallbackSubAtom,
+                atom.expectedType,
+                CheckerSinkImpl(topLevelCandidate),
+                context = resolutionContext,
+                isReceiver = false,
+                isDispatch = false,
+            )
+            return
+        }
+
+        if (matchingCandidates.size == 1) {
+            val selectedCandidate = matchingCandidates.single()
             val functionType = resolutionContext.bodyResolveComponents
                 .functionTypeForFunctionValueCandidate(selectedCandidate)
             expression.replaceCalleeReference(
@@ -225,20 +259,37 @@ class PostponedArgumentsAnalyzer(
             return
         }
 
-        val hasExplicitTypeArguments = expression.typeArguments.isNotEmpty() ||
-            functionCandidates
-                .filterIsInstance<org.cangnova.cangjie.cfir.semantics.AbstractCallCandidate<*>>()
-                .any { candidate -> candidate.callInfo.hasExplicitTypeArguments }
+        val hasExplicitTypeArguments = expression.typeArguments.isNotEmpty() || functionCandidates.any { candidate ->
+            candidate.callInfo.hasExplicitTypeArguments
+        }
+        val hasIgnoredGenericCandidate = !hasExplicitTypeArguments && functionCandidates.any { candidate ->
+            val function = candidate.symbol.takeIf { it.isBound }?.cfir as? CfirFunction
+            function?.typeParameters?.isNotEmpty() == true
+        }
 
-        val diagnostic = if (hasExplicitTypeArguments) {
-            topLevelCandidate.addDiagnostic(AmbiguousArgumentType(topLevelCandidate.callInfo.explicitReceiver ?: topLevelCandidate.callInfo.callSite, expression))
-            ConeUnreportedDuplicateDiagnostic(ambiguity)
-        } else {
-            topLevelCandidate.addDiagnostic(ErrorTypeInArguments)
-            ConeSimpleDiagnostic(
-                "generic function reference should be used with type argument",
-                DiagnosticKind.GenericTypeWithoutTypeArgument,
-            )
+        val diagnostic = when {
+            matchingCandidates.size > 1 -> {
+                topLevelCandidate.addDiagnostic(
+                    UnsuccessfulCallableReferenceArgument(expression, CallableReferenceFailureKind.AMBIGUITY)
+                )
+                ConeAmbiguousFunctionReferenceError(
+                    name = errorReference.name,
+                    candidatesWithErrors = matchingCandidates.associateWith { null },
+                )
+            }
+
+            hasIgnoredGenericCandidate -> {
+                topLevelCandidate.addDiagnostic(ErrorTypeInArguments)
+                ConeSimpleDiagnostic(
+                    "generic function reference should be used with type argument",
+                    DiagnosticKind.GenericTypeWithoutTypeArgument,
+                )
+            }
+
+            else -> {
+                topLevelCandidate.addDiagnostic(UnsuccessfulCallableReferenceArgument(expression))
+                ConeNoMatchingFunctionReferenceError(errorReference.name)
+            }
         }
 
         expression.replaceCalleeReference(
@@ -252,26 +303,27 @@ class PostponedArgumentsAnalyzer(
     }
 
     /**
-     * 按期望函数类型从歧义函数引用候选中选择唯一候选。
+     * 使用外层候选当前约束系统替换目标函数类型，再收集所有满足目标类型的函数引用候选。
      */
-    private fun selectFunctionReferenceCandidateByExpectedType(
+    private fun matchingFunctionReferenceCandidatesByExpectedType(
         atom: ConeSimpleNameForContextSensitiveResolution,
         candidates: List<Candidate>,
-    ): Candidate? {
-        val expectedFunctionType = atom.expectedType
+        topLevelCandidate: Candidate,
+    ): Set<Candidate>? {
+        val systemBuilder = topLevelCandidate.system.getBuilder()
+        val expectedFunctionType = systemBuilder.buildCurrentSubstitutor().asCone()
+            .safeSubstitute(systemBuilder, atom.expectedType)
+            .asCone()
             .fullyExpandedType(resolutionContext.session) as? ConeFunctionType ?: return null
-        val matchingCandidates = candidates.filterTo(linkedSetOf()) { candidate ->
+        return candidates.filterTo(linkedSetOf()) { candidate ->
             val functionType = resolutionContext.bodyResolveComponents
                 .functionTypeForFunctionValueCandidate(candidate)
-            AbstractTypeChecker.isSubtypeOf(resolutionContext.typeContext, functionType, expectedFunctionType)
-        }
-
-        return when (matchingCandidates.size) {
-            0 -> null
-            1 -> matchingCandidates.single()
-            else -> callResolver.conflictResolver
-                .chooseMaximallySpecificCandidates(matchingCandidates)
-                .singleOrNull()
+            val matches = AbstractTypeChecker.isSubtypeOfForFunctionReference(
+                resolutionContext.typeContext,
+                functionType,
+                expectedFunctionType,
+            )
+            matches
         }
     }
 
@@ -303,7 +355,6 @@ class PostponedArgumentsAnalyzer(
             csImpl.hasUpperOrEqualUnitConstraint(atom.returnType) -> components.session.builtinTypes.unitType
             else -> null
         }
-
         val result = lambdaAnalyzer.analyzeAndGetLambdaReturnArguments(
             lambdaAtom = atom,
             parameters = parameterTypes,

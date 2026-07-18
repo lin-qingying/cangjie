@@ -44,7 +44,11 @@ import org.cangnova.cangjie.cfir.references.builder.buildResolvedNamedReference
 import org.cangnova.cangjie.cfir.references.impl.CfirNamedReferenceImpl
 import org.cangnova.cangjie.cfir.references.impl.CfirResolvedAppliedCallableReference
 import org.cangnova.cangjie.cfir.resolve.*
+import org.cangnova.cangjie.cfir.resolve.calls.CandidateProcessingMode
+import org.cangnova.cangjie.cfir.resolve.calls.applySpawnExpectedFutureType
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirNamedReferenceWithCandidate
+import org.cangnova.cangjie.cfir.resolve.calls.futureTypeOrNull
+import org.cangnova.cangjie.cfir.resolve.calls.synthesizeSpawnType
 import org.cangnova.cangjie.cfir.resolve.constants.CfirIntConstantEvalUtils
 import org.cangnova.cangjie.cfir.resolve.match.exhaustive.ExhaustivenessAnalyzer
 import org.cangnova.cangjie.cfir.resolve.match.exhaustive.ExhaustivenessResult
@@ -59,10 +63,12 @@ import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.languageVersionSettings
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.*
+import org.cangnova.cangjie.cfir.semantics.AbstractCallCandidate
 import org.cangnova.cangjie.cfir.semantics.AbstractCandidate
 import org.cangnova.cangjie.cfir.semantics.ErrorTypeInArguments
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
+import org.cangnova.cangjie.cfir.visitors.transformSingle
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
@@ -101,6 +107,23 @@ open class CfirExpressionsResolveTransformer(
     private data class ArrayLiteralCandidateTrialResult(
         val arrayLiteral: CfirArrayLiteral,
         val stoppedOnFailure: Boolean,
+    )
+
+    /** 多重赋值中按源码顺序发现的首个结构或分量类型不兼容。 */
+    private data class MultipleAssignmentTypeMismatch(
+        val expectedType: ConeCangJieType,
+        val actualType: ConeCangJieType,
+    )
+
+    /**
+     * 构造器委托调用的名义目标。
+     *
+     * [declaration] 提供构造器声明集合，[constructedType] 保留当前继承边上的完整类型实参，
+     * 后续必须基于该具体类型生成 substitution override，不能再退化为原始声明签名。
+     */
+    private data class DelegatingConstructorTarget(
+        val declaration: CfirClassLikeDeclaration,
+        val constructedType: ConeCangJieType,
     )
 
     /** 当前会话的内建类型集合。 */
@@ -270,9 +293,9 @@ open class CfirExpressionsResolveTransformer(
             superReference.replaceSuperTypeRef(resolvedSuperTypeRef)
         }
 
-        val owner = context.containingRegularClass
+        val owner = context.containingClassLikeDeclaration
         val receiverType = when {
-            owner == null -> errorType("`super` is only allowed inside class declarations")
+            owner == null -> errorType("`super` is only allowed inside class-like declarations")
             resolvedSuperTypeRef is CfirResolvedTypeRef -> resolveExplicitSuperReceiverType(owner, resolvedSuperTypeRef)
             else -> resolveImplicitSuperReceiverType(owner)
         }
@@ -288,10 +311,14 @@ open class CfirExpressionsResolveTransformer(
     ): CfirExpression {
         val synthesized = synthesizeLiteralType(literalExpression.kind)
         val expectedType = data.expectedTypeOrNull
-        val resolvedType = if (expectedType != null) {
-            IdealTypeResolver.resolveIfIdeal(synthesized, expectedType)
-        } else {
-            synthesized
+        val resolvedType = when {
+            expectedType?.isRune == true &&
+                    literalExpression.isSingleRuneStringLiteral() &&
+                    (context.variableBeingInitialized != null ||
+                            context.fieldBeingInitialized != null ||
+                            context.isInsideAssignmentRhs) -> ConePrimitiveType.RUNE
+            expectedType != null -> IdealTypeResolver.resolveIfIdeal(synthesized, expectedType)
+            else -> synthesized
         }
         literalExpression.replaceConeTypeOrNull(resolvedType)
         components.dataFlowAnalyzer.exitLiteralExpression(literalExpression)
@@ -410,7 +437,7 @@ open class CfirExpressionsResolveTransformer(
                 }
 
                 is CfirResolvedNamedReference -> {
-                    qualifiedAccessExpression.replaceSelfInitializerReferenceIfNeeded()?.let {
+                    qualifiedAccessExpression.replaceInitializerReferenceIfNeeded()?.let {
                         return@whileAnalysing it
                     }
                     if (qualifiedAccessExpression.coneTypeOrNull == null) {
@@ -437,7 +464,7 @@ open class CfirExpressionsResolveTransformer(
                                 is CfirErrorNamedReference,
                                 is CfirThisReference,
                                 -> {
-                                    transformedCallee.replaceSelfInitializerReferenceIfNeeded()?.let {
+                                    transformedCallee.replaceInitializerReferenceIfNeeded()?.let {
                                         return@whileAnalysing it
                                     }
                                     if (transformedCallee.coneTypeOrNull == null) {
@@ -549,16 +576,24 @@ open class CfirExpressionsResolveTransformer(
                     else -> transformExplicitReceiverOf(functionCall)
                 }
 
-                withResolvedExplicitReceiver.also {
-                    components.dataFlowAnalyzer.exitCallExplicitReceiver()
-                    val argumentResolutionMode = it.builtinExponentiationArgumentResolutionMode()
-                        ?: ResolutionMode.ContextDependent
-                    val transformedArgumentList: CfirArgumentList = context.withCallArgumentResolution {
-                        it.argumentList.transform(transformer, argumentResolutionMode)
-                    }
-                    it.replaceArgumentList(transformedArgumentList)
+                components.dataFlowAnalyzer.exitCallExplicitReceiver()
+                if (withResolvedExplicitReceiver.commitNeedNamedArgumentShapeFailure(data)) {
                     components.dataFlowAnalyzer.exitCallArguments()
+                    return@whileAnalysing completeFunctionCall(
+                        withResolvedExplicitReceiver,
+                        data,
+                        skipEvenPartialCompletion = false,
+                    )
                 }
+
+                val argumentResolutionMode = withResolvedExplicitReceiver.builtinExponentiationArgumentResolutionMode()
+                    ?: ResolutionMode.ContextDependent
+                val transformedArgumentList: CfirArgumentList = context.withCallArgumentResolution {
+                    withResolvedExplicitReceiver.argumentList.transform(transformer, argumentResolutionMode)
+                }
+                withResolvedExplicitReceiver.replaceArgumentList(transformedArgumentList)
+                components.dataFlowAnalyzer.exitCallArguments()
+                withResolvedExplicitReceiver
             } else {
                 functionCall
             }
@@ -604,6 +639,59 @@ open class CfirExpressionsResolveTransformer(
         }
 
     /**
+     * 在实参值解析前提交确定的“必须使用命名实参”绑定失败。
+     *
+     * probe 复用完整调用入口，因此普通函数、enum constructor 与 class constructor 共享同一套
+     * tower 和 fallback 规则；隔离副本保证未命中时不会把候选、错误引用或约束系统写回原调用。
+     * 只有最终最佳候选集合中的每个候选都仅包含 [NeedNamedArgument] 时才提交，避免 shape 阶段
+     * 缺少实参类型证据时提前锁定其他 overload 失败。
+     */
+    private fun CfirFunctionCall.commitNeedNamedArgumentShapeFailure(
+        resolutionMode: ResolutionMode,
+    ): Boolean {
+        val probe = buildFunctionCallCopy(this) {}
+        val resolvedProbe = resolutionContext.withCandidateProcessingMode(CandidateProcessingMode.ARGUMENT_SHAPE) {
+            callResolver.resolveCallAndSelectCandidate(probe, resolutionMode)
+        }
+        val shapeFailures = resolvedProbe.needNamedArgumentShapeFailuresOrNull() ?: return false
+
+        /*
+         * 官方 PreCheck 会在调用值检查前解析显式类型引用。命名实参形态已经使实参值无效时，
+         * 仍需保留该子树中独立的 type-ref 诊断，但绝不能进入表达式 body resolve。
+         * SpecificTypeResolver 是纯类型引用树 transformer，正好提供这条阶段边界。
+         */
+        val typeResolutionConfiguration = currentTypeResolutionConfiguration()
+        shapeFailures.forEach { failure ->
+            failure.argument.transformSingle(specificTypeResolverTransformer, typeResolutionConfiguration)
+        }
+
+        replaceCalleeReference(resolvedProbe.calleeReference)
+        replaceDispatchReceiver(resolvedProbe.dispatchReceiver)
+        replaceConeTypeOrNull(resolvedProbe.coneTypeOrNull)
+        return true
+    }
+
+    /**
+     * 返回 shape probe 最终最佳候选上的命名实参失败；任一候选含其他失败原因时拒绝提前提交。
+     */
+    private fun CfirFunctionCall.needNamedArgumentShapeFailuresOrNull(): List<NeedNamedArgument>? {
+        val diagnostic = (calleeReference as? CfirDiagnosticHolder)?.diagnostic ?: return null
+        val candidates = (diagnostic as? ConeDiagnosticWithCandidates)?.candidates
+            ?: return null
+        if (candidates.isEmpty()) return null
+
+        val failures = mutableListOf<NeedNamedArgument>()
+        for (candidate in candidates) {
+            val callCandidate = candidate as? AbstractCallCandidate<*> ?: return null
+            if (callCandidate.errors.isNotEmpty() || callCandidate.diagnostics.isEmpty()) return null
+            for (candidateDiagnostic in callCandidate.diagnostics) {
+                failures += candidateDiagnostic as? NeedNamedArgument ?: return null
+            }
+        }
+        return failures
+    }
+
+    /**
      * 解析 PCLA 中 fresh value-parameter 的直接调用。
      *
      * 普通无 receiver 调用查找函数声明；lambda 参数 `g` 的类型尚未固定为函数类型时，
@@ -615,7 +703,7 @@ open class CfirExpressionsResolveTransformer(
     ): CfirFunctionCall? {
         if (originalCall.explicitReceiver != null) return null
         if (components.context.inferenceSession !is CfirPCLAInferenceSession) return null
-        val originalCallee = originalCall.calleeReference as? CfirNamedReferenceImpl ?: return null
+        val originalCallee = originalCall.calleeReference as? CfirNamedReference ?: return null
         if (originalCallee.name == OperatorNameConventions.INVOKE) return null
 
         val resolvedAccess = callResolver.resolveNamedValueAccessAndSelectCandidate(
@@ -633,7 +721,7 @@ open class CfirExpressionsResolveTransformer(
             resolutionMode = data,
         ) as? CfirQualifiedAccessExpression ?: return null
 
-        val receiverType = resolvedAccess.valueParameterTypeFromResolvedReferenceOrNull() as? ConeTypeVariableType
+        val receiverType = resolvedAccess.variableTypeFromResolvedReferenceOrNull() as? ConeTypeVariableType
             ?: return null
         if (receiverType.typeConstructor.originalTypeParameter != null) return null
         resolvedAccess.replaceConeTypeOrNull(receiverType)
@@ -649,7 +737,6 @@ open class CfirExpressionsResolveTransformer(
             argumentList = buildArgumentList {
                 arguments.addAll(originalCall.argumentList.arguments)
             }
-            typeArguments.addAll(originalCall.typeArguments)
             origin = originalCall.origin
         }
 
@@ -684,9 +771,9 @@ open class CfirExpressionsResolveTransformer(
         functionCall.tryResolveBuiltinOperatorWithFreshLambdaOperands(callee.name, data.expectedTypeOrNull)
             ?.let { return it }
         functionCall.tryResolveOperatorWithOnlyFreshLambdaOperands(callee.name)?.let { return it }
-        val receiverType = explicitReceiver.coneTypeOrNull ?: return null
+        val receiverType = explicitReceiver.stableBuiltinOperatorOperandTypeOrNull() ?: return null
         val argumentTypes = functionCall.argumentList.arguments.map { argument ->
-            argument.coneTypeOrNull ?: return null
+            argument.stableBuiltinOperatorOperandTypeOrNull() ?: return null
         }
         val propagatedArgumentError = argumentTypes.firstNotNullOfOrNull { argumentType ->
             argumentType.propagatedErrorTypeOrNull()
@@ -719,6 +806,41 @@ open class CfirExpressionsResolveTransformer(
         }
         functionCall.replaceConeTypeOrNull(returnType)
         return functionCall
+    }
+
+    /**
+     * 返回可供 primitive operator 表消费的稳定操作数类型。
+     *
+     * 泛型调用作为 operator 操作数时，调用仍处于 partial completion，结果 fresh variable
+     * 尚未写回表达式节点；但它可能已经被调用自身实参约束为唯一 primitive lower/equality。
+     * 这里只读取候选约束系统的结构化结果，不固定变量、不修改子调用 AST，也不消费 outer
+     * expected-type 约束，因此不会把上下文相关的泛型调用提前完成。
+     */
+    private fun CfirExpression.stableBuiltinOperatorOperandTypeOrNull(): ConeCangJieType? {
+        coneTypeOrNull?.let { type ->
+            if (BuiltinPrimitiveOperators.isBuiltinPrimitiveOperand(type)) return type
+        }
+
+        val call = this as? CfirFunctionCall ?: return null
+        val candidate = (call.calleeReference as? CfirNamedReferenceWithCandidate)?.candidate ?: return null
+        val returnType = candidate.substitutedReturnType()
+        val returnVariable = returnType as? ConeTypeVariableType ?: return null
+        val constraints = candidate.system.currentStorage()
+            .notFixedTypeVariables[returnVariable.typeConstructor]
+            ?.constraints
+            ?: return null
+        val stableTypes = constraints
+            .asSequence()
+            .filter { constraint ->
+                constraint.kind == org.cangnova.cangjie.resolve.calls.inference.model.ConstraintKind.LOWER ||
+                        constraint.kind == org.cangnova.cangjie.resolve.calls.inference.model.ConstraintKind.EQUALITY
+            }
+            .mapNotNull { constraint -> constraint.type as? ConeCangJieType }
+            .map { type -> IdealTypeResolver.resolveIfIdeal(type) }
+            .filter(BuiltinPrimitiveOperators::isBuiltinPrimitiveOperand)
+            .distinct()
+            .toList()
+        return stableTypes.singleOrNull()
     }
 
     /**
@@ -1097,15 +1219,15 @@ open class CfirExpressionsResolveTransformer(
         val containingClass = context.containers
             .dropLast(1)
             .lastOrNull { declaration -> declaration is CfirClassLikeDeclaration } as? CfirClassLikeDeclaration
-        val targetDeclaration = when (functionCall.origin) {
-            CfirFunctionCallOrigin.ConstructorDelegationThis -> containingClass
-            CfirFunctionCallOrigin.ConstructorDelegationSuper -> containingClass?.directConcreteSuperDeclarationOrNull()
+        val target = when (functionCall.origin) {
+            CfirFunctionCallOrigin.ConstructorDelegationThis -> containingClass?.constructorDelegationSelfTargetOrNull()
+            CfirFunctionCallOrigin.ConstructorDelegationSuper -> containingClass?.directConcreteSuperConstructorTargetOrNull()
             else -> null
         }
 
         if (
             containingConstructor == null ||
-            targetDeclaration == null
+            target == null
         ) {
             components.dataFlowAnalyzer.enterCallArguments(functionCall, functionCall.argumentList.arguments)
             functionCall.replaceArgumentList(
@@ -1116,36 +1238,40 @@ open class CfirExpressionsResolveTransformer(
             return functionCall
         }
 
-        if (context.towerDataMode != CfirTowerDataMode.CONSTRUCTOR_HEADER) {
+        val isConstructorHeaderCall = context.towerDataMode == CfirTowerDataMode.CONSTRUCTOR_HEADER
+        if (!isConstructorHeaderCall) {
             components.dataFlowAnalyzer.enterCallArguments(functionCall, functionCall.argumentList.arguments)
             functionCall.replaceArgumentList(
                 functionCall.argumentList.transform(transformer, ResolutionMode.ContextDependent)
             )
             components.dataFlowAnalyzer.exitCallArguments()
-            functionCall.replaceConeTypeOrNull(
-                when (functionCall.origin) {
-                    CfirFunctionCallOrigin.ConstructorDelegationThis -> targetDeclaration.defaultType()
-                    CfirFunctionCallOrigin.ConstructorDelegationSuper -> targetDeclaration.defaultType()
-                    else -> builtinTypes.unitType
-                }
-            )
-            return functionCall
+        } else {
+            components.dataFlowAnalyzer.enterCallArguments(functionCall, functionCall.argumentList.arguments)
+            context.forDelegatedConstructorCallChildren(containingConstructor, containingClass, components) {
+                functionCall.replaceArgumentList(
+                    functionCall.argumentList.transform(transformer, ResolutionMode.ContextDependent)
+                )
+            }
+            components.dataFlowAnalyzer.exitCallArguments()
         }
 
-        components.dataFlowAnalyzer.enterCallArguments(functionCall, functionCall.argumentList.arguments)
-        context.forDelegatedConstructorCallChildren(containingConstructor, containingClass, components) {
-            functionCall.replaceArgumentList(
-                functionCall.argumentList.transform(transformer, ResolutionMode.ContextDependent)
-            )
-        }
-        components.dataFlowAnalyzer.exitCallArguments()
-
-        val resolvedCall = context.forDelegatedConstructorCallResolution {
+        /*
+         * 参数映射与候选诊断必须始终由调用解析器统一产生。非首语句的 delegation
+         * 虽然还会由 declaration checker 报告位置非法，但不能因此跳过调用解析，
+         * 否则参数数量、无构造器和歧义会退回到 checker 的第二套实现。
+         */
+        val resolveCall = {
             callResolver.resolveDelegatingConstructorCallAndSelectCandidate(
                 functionCall,
-                targetDeclaration,
+                target.declaration,
+                target.constructedType,
                 ResolutionMode.ContextIndependent,
             )
+        }
+        val resolvedCall = if (isConstructorHeaderCall) {
+            context.forDelegatedConstructorCallResolution(resolveCall)
+        } else {
+            resolveCall()
         }
 
         components.dataFlowAnalyzer.enterFunctionCall(resolvedCall)
@@ -1169,17 +1295,35 @@ open class CfirExpressionsResolveTransformer(
             )
         )
 
-    /** 返回 class-like 的第一个直接具体父声明。 */
-    private fun CfirClassLikeDeclaration.directConcreteSuperDeclarationOrNull(): CfirClassLikeDeclaration? =
-        superTypeRefs
-            .mapNotNull { superTypeRef -> superTypeRef.toResolvedSuperDeclarationOrNull() }
-            .firstOrNull { superDeclaration -> superDeclaration !is CfirInterface }
+    /**
+     * 为 `this(...)` 构造当前声明自身的实例化目标。
+     *
+     * 自身类型参数仍作为类型实参保留，使同类构造器委托和父类构造器委托经过同一 substitution seam。
+     */
+    private fun CfirClassLikeDeclaration.constructorDelegationSelfTargetOrNull(): DelegatingConstructorTarget? {
+        val classSymbol = symbol as? CfirClassLikeSymbol<*> ?: return null
+        val typeArguments = typeParameters.map { parameter ->
+            ConeTypeParameterTypeImpl(parameter.symbol.toLookupTag())
+        }
+        return DelegatingConstructorTarget(
+            declaration = this,
+            constructedType = constructClassLikeType(classSymbol, classSymbol.classId, typeArguments),
+        )
+    }
 
-    /** 从 resolved super typeRef 解析对应声明。 */
-    private fun CfirTypeRef.toResolvedSuperDeclarationOrNull(): CfirClassLikeDeclaration? {
+    /** 返回 class-like 的第一个直接具体父类型及其声明。 */
+    private fun CfirClassLikeDeclaration.directConcreteSuperConstructorTargetOrNull(): DelegatingConstructorTarget? =
+        superTypeRefs
+            .mapNotNull { superTypeRef -> superTypeRef.toDelegatingConstructorTargetOrNull() }
+            .firstOrNull { target -> target.declaration !is CfirInterface }
+
+    /** 从 resolved super typeRef 同时保留完整父类型和对应声明。 */
+    private fun CfirTypeRef.toDelegatingConstructorTargetOrNull(): DelegatingConstructorTarget? {
         val resolvedTypeRef = this as? CfirResolvedTypeRef ?: return null
         if (resolvedTypeRef.coneType is ConeErrorType) return null
-        return resolvedTypeRef.coneType.toResolvedSuperDeclarationOrNull()
+        val constructedType = resolvedTypeRef.coneType.fullyExpandTypeAliasForConstructorDelegation()
+        val declaration = constructedType.toResolvedSuperDeclarationOrNull() ?: return null
+        return DelegatingConstructorTarget(declaration, constructedType)
     }
 
     /** 从 cone type 解析对应 class-like 声明。 */
@@ -1247,24 +1391,42 @@ open class CfirExpressionsResolveTransformer(
         resolvedCall: CfirFunctionCall,
         data: ResolutionMode,
     ): CfirFunctionCall? {
+        val originalCallee = originalCalleeReference as? CfirNamedReference ?: return null
         val diagnostic = (resolvedCall.calleeReference as? CfirDiagnosticHolder)?.diagnostic
         val noArgEnumValueCalledWithArguments = diagnostic.isNoArgEnumValueCalledWithArguments(originalCall)
+        val noArgEnumValueOnValueReceiver =
+            diagnostic is ConeNotMemberOfError &&
+                callResolver.isNoArgEnumConstructorOnValueReceiver(
+                    originalCall.explicitReceiver,
+                    originalCallee.name,
+                )
         val isVArraySizeCall = originalCall.isVArraySizeCall()
-        if (originalCall.explicitReceiver != null && !noArgEnumValueCalledWithArguments && !isVArraySizeCall) return null
+        if (
+            originalCall.explicitReceiver != null &&
+            !noArgEnumValueCalledWithArguments &&
+            !noArgEnumValueOnValueReceiver &&
+            !isVArraySizeCall
+        ) return null
 
         val shouldPreserveOriginalDiagnostic =
-            diagnostic !is ConeUnresolvedNameError && !noArgEnumValueCalledWithArguments
+            diagnostic !is ConeUnresolvedNameError &&
+                !noArgEnumValueCalledWithArguments &&
+                !noArgEnumValueOnValueReceiver
         val canTryImplicitInvoke = when (diagnostic) {
             is ConeUnresolvedNameError -> true
-            is ConeInapplicableCandidateError -> diagnostic.candidateSymbol is CfirEnumConstructorSymbol
-            is ConeConstraintSystemHasContradiction -> diagnostic.candidateSymbol is CfirEnumConstructorSymbol
+            is ConeNotMemberOfError -> noArgEnumValueOnValueReceiver
+            is ConeInapplicableCandidateError ->
+                diagnostic.candidateSymbol is CfirEnumConstructorSymbol ||
+                        diagnostic.candidateSymbol is CfirVariableSymbol<*>
+            is ConeConstraintSystemHasContradiction ->
+                diagnostic.candidateSymbol is CfirEnumConstructorSymbol ||
+                        diagnostic.candidateSymbol is CfirVariableSymbol<*>
             is ConeAmbiguityError -> !diagnostic.applicability.isSuccess &&
                     diagnostic.candidateSymbols.all { it is CfirEnumConstructorSymbol }
             else -> false
         }
         if (!canTryImplicitInvoke) return null
 
-        val originalCallee = originalCalleeReference as? CfirNamedReferenceImpl ?: return null
         if (originalCallee.name == OperatorNameConventions.INVOKE) return null
 
         val resolvedAccess = callResolver.resolveNamedValueAccessAndSelectCandidate(
@@ -1281,6 +1443,7 @@ open class CfirExpressionsResolveTransformer(
             isUsedAsGetClassReceiver = false,
             callSite = originalCall,
             resolutionMode = data,
+            purpose = NamedValueAccessPurpose.ImplicitInvokeReceiver,
         ) as? CfirQualifiedAccessExpression ?: return null
         // 构造器匹配已有诊断时，只有裸 enum value 访问本身成功，才继续尝试 `operator ()`。
         // 否则保留原构造器参数映射诊断，避免被裸访问的派生错误覆盖。
@@ -1311,7 +1474,6 @@ open class CfirExpressionsResolveTransformer(
             argumentList = buildArgumentList {
                 arguments.addAll(originalCall.argumentList.arguments)
             }
-            typeArguments.addAll(originalCall.typeArguments)
             origin = originalCall.origin
         }
 
@@ -1322,11 +1484,21 @@ open class CfirExpressionsResolveTransformer(
 
         if (shouldPreserveOriginalDiagnostic) return null
 
-        // 变量已解析但类型上没有 invoke 操作符 → 报告专用诊断
+        // 接收者自身已携带错误类型时，调用失败只是既有错误的级联，不再生成 callee 未解析诊断。
         val receiverType = resolvedAccess.coneTypeOrNull
+        if (receiverType is ConeErrorType) {
+            resolvedCall.replaceConeTypeOrNull(receiverType)
+            return resolvedCall
+        }
+
+        // 变量已解析但类型上没有 invoke 操作符 → 报告专用诊断
         if (receiverType != null && receiverType !is ConeErrorType) {
             val diagnosticSource = if (isVArraySizeCall) {
                 originalCall.explicitReceiver?.source ?: originalCallee.source
+            } else if (noArgEnumValueOnValueReceiver) {
+                // 运行时 enum 值上的非法 constructor 成员只突出 selector；
+                // 类型限定的 `Enum.Entry(args)` 仍突出完整 enum value 表达式。
+                originalCallee.source
             } else {
                 originalCallee.source.enumValueAccessSource(originalCall.explicitReceiver?.source)
             }
@@ -1353,7 +1525,7 @@ open class CfirExpressionsResolveTransformer(
     private fun CfirQualifiedAccessExpression.applyFreshFunctionInvokeShape(
         arguments: List<CfirExpression>,
     ): ConeFunctionType? {
-        val receiverType = coneTypeOrNull ?: valueParameterTypeFromResolvedReferenceOrNull() ?: return null
+        val receiverType = coneTypeOrNull ?: variableTypeFromResolvedReferenceOrNull() ?: return null
         if (coneTypeOrNull == null) {
             replaceConeTypeOrNull(receiverType)
         }
@@ -1379,13 +1551,18 @@ open class CfirExpressionsResolveTransformer(
         return functionType
     }
 
-    /** 从已解析的 lambda value parameter 引用中恢复声明侧类型。 */
-    private fun CfirQualifiedAccessExpression.valueParameterTypeFromResolvedReferenceOrNull(): ConeCangJieType? {
+    /**
+     * 从已解析的变量引用中恢复声明侧类型。
+     *
+     * 隐式 invoke 的 receiver 不只可能是 lambda 参数，也可能来自局部字段或模式绑定；
+     * 它们统一由 [CfirVariableSymbol] 承载，必须走同一声明类型恢复路径。
+     */
+    private fun CfirQualifiedAccessExpression.variableTypeFromResolvedReferenceOrNull(): ConeCangJieType? {
         val symbol = when (val reference = calleeReference) {
             is CfirResolvedNamedReference -> reference.resolvedSymbol
             is CfirNamedReferenceWithCandidate -> reference.candidateSymbol
             else -> null
-        } as? CfirValueParameterSymbol ?: return null
+        } as? CfirVariableSymbol<*> ?: return null
         return symbol.cfir.returnTypeRef.coneTypeOrNull
     }
 
@@ -1446,10 +1623,12 @@ open class CfirExpressionsResolveTransformer(
     /** 解析限定访问或调用的显式 receiver。 */
     fun <Q : CfirQualifiedAccessExpression> transformExplicitReceiverOf(qualifiedAccessExpression: Q): Q {
         if (qualifiedAccessExpression.explicitReceiver == null) return qualifiedAccessExpression
+        val receiverResolutionMode = qualifiedAccessExpression.explicitReceiverResolutionMode()
         qualifiedAccessExpression.transformExplicitReceiver(
             transformer,
-            qualifiedAccessExpression.explicitReceiverResolutionMode(),
+            receiverResolutionMode,
         )
+        qualifiedAccessExpression.explicitReceiver?.materializeResolvedReceiverType()
         return qualifiedAccessExpression
     }
 
@@ -1462,11 +1641,11 @@ open class CfirExpressionsResolveTransformer(
      */
     private fun CfirQualifiedAccessExpression.explicitReceiverResolutionMode(): ResolutionMode {
         val callee = calleeReference as? CfirNamedReference ?: return ResolutionMode.ReceiverResolution
-        if (explicitReceiver?.isBareEnumConstructorReceiverCandidate() == true) {
+        if (explicitReceiver?.let(callResolver::isContextDependentBareEnumConstructorReceiverCandidate) == true) {
             return ResolutionMode.ContextDependent
         }
         if (callee.name != OperatorNameConventions.INVOKE) return ResolutionMode.ReceiverResolution
-        return if (explicitReceiver?.isNestedCallInvokeReceiver() == true) {
+        return if (explicitReceiver?.requiresOuterInvokeConstraints() == true) {
             ResolutionMode.ContextDependent
         } else {
             ResolutionMode.ReceiverResolution
@@ -1474,23 +1653,51 @@ open class CfirExpressionsResolveTransformer(
     }
 
     /**
-     * 无参 enum constructor sugar 可作为成员访问 receiver，并由外层成员调用实参反推 owner 泛型。
+     * 判断函数类型 `invoke` 的接收者调用是否确实需要由外层实参继续固定返回类型。
      *
-     * 这种 receiver 在语法上是无显式 receiver、无实参、无类型实参的裸名访问；若先按
-     * `ReceiverResolution` 独立完成，会在外层成员调用收集约束前报 `UNABLE_TO_INFER_GENERIC_FUNC`。
+     * 首次解析时尚无候选，先保留一轮外层约束入口；候选形成后，仅返回类型仍含本候选
+     * 系统未固定变量的调用继续延迟。无论哪一轮，receiver 调用都会立即暴露当前结构化结果类型。
      */
-    private fun CfirExpression.isBareEnumConstructorReceiverCandidate(): Boolean {
-        val access = this as? CfirQualifiedAccessExpression ?: return false
-        if (access is CfirFunctionCall) return false
-        if (access.explicitReceiver != null) return false
-        return access.typeArguments.isEmpty()
+    private fun CfirExpression.requiresOuterInvokeConstraints(): Boolean = when (this) {
+        is CfirFunctionCall -> {
+            val candidate = (calleeReference as? CfirNamedReferenceWithCandidate)?.candidate
+            if (candidate == null) {
+                // 首次进入 nested invoke 时尚未收集内层候选，必须先保留外层约束入口。
+                coneTypeOrNull == null
+            } else {
+                val notFixedTypeVariables = candidate.system.currentStorage().notFixedTypeVariables
+                notFixedTypeVariables.isNotEmpty() && candidate.substitutedReturnType().contains { type ->
+                    type is ConeTypeVariableType && type.typeConstructor in notFixedTypeVariables
+                }
+            }
+        }
+
+        is CfirWrappedExpression -> expression.requiresOuterInvokeConstraints()
+        else -> false
     }
 
-    /** 判断表达式是否是函数类型 `invoke` 接收者链条中仍需外层调用约束的嵌套调用。 */
-    private fun CfirExpression.isNestedCallInvokeReceiver(): Boolean = when (this) {
-        is CfirFunctionCall -> true
-        is CfirWrappedExpression -> expression.isNestedCallInvokeReceiver()
-        else -> false
+    /**
+     * 把 receiver 调用当前已经确定的候选结果类型暴露给外层 tower。
+     *
+     * PSI 操作符 lowering 会把已解析调用直接复用为下一个 operator call 的 dispatch receiver；
+     * 即使失败候选未进入 completion writer，receiver 转换契约也必须在返回前写入候选初始类型。
+     * Context-dependent 调用仍保留 fresh variables 和约束系统供外层 `invoke` 继续求解。
+     */
+    private fun CfirExpression.materializeResolvedReceiverType() {
+        when (this) {
+            is CfirFunctionCall -> {
+                if (coneTypeOrNull != null) return
+                val candidate = (calleeReference as? CfirNamedReferenceWithCandidate)?.candidate ?: return
+                replaceConeTypeOrNull(components.initialTypeOfCandidate(candidate))
+            }
+
+            is CfirWrappedExpression -> {
+                expression.materializeResolvedReceiverType()
+                if (coneTypeOrNull == null) {
+                    replaceConeTypeOrNull(expression.coneTypeOrNull)
+                }
+            }
+        }
     }
 
     /** 执行命名值访问解析并选择候选。 */
@@ -1924,12 +2131,13 @@ open class CfirExpressionsResolveTransformer(
                 name = pattern.name
             }
         }
-        val resolvedAccess = callResolver.resolveVariableAccessAndSelectCandidate(
+        val resolvedAccess = callResolver.resolveNamedValueAccessAndSelectCandidate(
             qualifiedAccess = temporaryAccess,
             isUsedAsReceiver = false,
             isUsedAsGetClassReceiver = false,
             callSite = temporaryAccess,
             resolutionMode = ResolutionMode.ContextIndependent,
+            purpose = NamedValueAccessPurpose.PatternConstructorProbe,
         ) as? CfirQualifiedAccessExpression ?: return null
         val resolvedReference = resolvedAccess.calleeReference
 
@@ -2413,7 +2621,18 @@ open class CfirExpressionsResolveTransformer(
             subscriptLValue.transformIndices(transformer, ResolutionMode.ContextIndependent)
             assignment.transformRValue(transformer, ResolutionMode.ContextIndependent)
 
+            /*
+             * 复合下标赋值的 rValue 会以同一个 subscript 节点作为 operator receiver，
+             * 因而上一步已经按 get 语义解析出元素类型。set 调用只验证回写是否合法，
+             * 其 Unit 返回类型不能覆盖左值元素类型，否则后续会把 `a[i] += x` 误判为
+             * `Unit <op> T`。这与 Kotlin FIR 对 indexed augmented assignment 分离
+             * lhsGetCall 和 setCall 的结构一致。
+             */
+            val compoundElementType = assignment.compoundSubscriptElementTypeOrNull(subscriptLValue)
             resolveSubscriptSetAssignment(assignment, subscriptLValue, data)
+            if (compoundElementType != null && subscriptLValue.coneTypeOrNull !is ConeErrorType) {
+                subscriptLValue.replaceConeTypeOrNull(compoundElementType)
+            }
             assignment.replaceConeTypeOrNull(builtinTypes.unitType)
             components.dataFlowAnalyzer.exitVariableAssignment(assignment)
             return assignment
@@ -2423,11 +2642,109 @@ open class CfirExpressionsResolveTransformer(
         assignment.transformLValue(transformer, ResolutionMode.ContextIndependent)
         val lValueType = assignment.lValue.coneTypeOrNull?.takeUnless { it is ConeErrorType }
         val rValueMode = lValueType?.let(::withExpectedType) ?: ResolutionMode.ContextIndependent
-        assignment.transformRValue(transformer, rValueMode)
-        assignment.replaceConeTypeOrNull(builtinTypes.unitType)
+        context.withAssignmentRhs {
+            assignment.transformRValue(transformer, rValueMode)
+        }
+        assignment.rValue.applySingleRuneStringLiteralConversion(lValueType)
+        val resolvedRValueType = assignment.rValue.coneTypeOrNull
+        val multipleAssignmentMismatch = (assignment.lValue as? CfirTupleLiteral)
+            ?.let { tupleTarget ->
+                resolvedRValueType?.let { actualType ->
+                    tupleTarget.firstMultipleAssignmentTypeMismatch(actualType)
+                }
+            }
+        assignment.replaceConeTypeOrNull(
+            when {
+                multipleAssignmentMismatch != null -> ConeErrorType(
+                    ConeUnreportedDuplicateDiagnostic(
+                        ConeMismatchedTypesMultipleAssignError(
+                            expectedType = multipleAssignmentMismatch.expectedType,
+                            actualType = multipleAssignmentMismatch.actualType,
+                        ),
+                    ),
+                    delegatedType = builtinTypes.unitType,
+                )
+
+                assignment.lValue is CfirTupleLiteral && resolvedRValueType is ConeErrorType ->
+                    resolvedRValueType.propagatedErrorTypeOrNull() ?: resolvedRValueType
+
+                else -> builtinTypes.unitType
+            }
+        )
         components.dataFlowAnalyzer.recordAssignment(assignment)
         components.dataFlowAnalyzer.exitVariableAssignment(assignment)
         return assignment
+    }
+
+    /**
+     * 按多重赋值解糖后的目标顺序检查 tuple 结构、元数和分量兼容性。
+     *
+     * RHS 已在进入该函数前完整完成解析；这里只分类首个失败，不改变求值顺序。
+     * 嵌套 tuple 递归保持相同规则，下划线目标不要求分量类型。
+     */
+    private fun CfirExpression.firstMultipleAssignmentTypeMismatch(
+        actualType: ConeCangJieType,
+    ): MultipleAssignmentTypeMismatch? {
+        if (actualType is ConeErrorType) return null
+        if (isMultipleAssignmentDiscardTarget()) return null
+
+        val expectedType = coneTypeOrNull ?: return null
+        if (expectedType is ConeErrorType) {
+            return MultipleAssignmentTypeMismatch(expectedType, actualType)
+        }
+
+        if (this is CfirTupleLiteral) {
+            val expandedActualType = actualType.fullyExpandedType()
+            val actualElementTypes = (expandedActualType as? ConeTupleType)?.elementTypes
+                ?: return MultipleAssignmentTypeMismatch(expectedType, actualType)
+            if (elements.size != actualElementTypes.size) {
+                return MultipleAssignmentTypeMismatch(expectedType, actualType)
+            }
+            for (index in elements.indices) {
+                elements[index]
+                    .firstMultipleAssignmentTypeMismatch(actualElementTypes[index])
+                    ?.let { return it }
+            }
+            return null
+        }
+
+        val expandedExpectedType = expectedType.fullyExpandedType()
+        val expandedActualType = actualType.fullyExpandedType()
+        return if (
+            AbstractTypeChecker.isSubtypeOf(
+                session.typeContext,
+                expandedActualType,
+                expandedExpectedType,
+            ) == true
+        ) {
+            null
+        } else {
+            MultipleAssignmentTypeMismatch(expectedType, actualType)
+        }
+    }
+
+    /** 判断当前目标是否为多重赋值中的丢弃占位 `_`。 */
+    private fun CfirExpression.isMultipleAssignmentDiscardTarget(): Boolean {
+        val access = this as? CfirQualifiedAccessExpression ?: return false
+        val reference = access.calleeReference as? CfirNamedReference ?: return false
+        return reference.name.asString() == "_"
+    }
+
+    /**
+     * 取得复合下标赋值中已经按 get 语义解析出的元素类型。
+     *
+     * raw builder 使用 operator call 表示 `a[i] <op>= value`，并把同一个 subscript
+     * 节点作为 call receiver；普通 `a[i] = value` 不满足该结构，因此不会误入。
+     */
+    private fun CfirAssignment.compoundSubscriptElementTypeOrNull(
+        subscriptExpression: CfirSubscriptExpression,
+    ): ConeCangJieType? {
+        val operatorCall = rValue as? CfirFunctionCall ?: return null
+        if (operatorCall.origin != CfirFunctionCallOrigin.Operator) return null
+        if (operatorCall.source != source) return null
+        val operatorReceiver = operatorCall.explicitReceiver as? CfirSubscriptExpression ?: return null
+        if (operatorReceiver !== subscriptExpression && operatorReceiver.source != subscriptExpression.source) return null
+        return operatorReceiver.coneTypeOrNull?.takeUnless { it is ConeErrorType }
     }
 
     // ── Tuple / Array / String Literals ──────────────────────────────────────
@@ -3356,22 +3673,18 @@ open class CfirExpressionsResolveTransformer(
      */
     private fun inferIterableElementType(iterableType: ConeCangJieType?): ConeCangJieType {
         if (iterableType == null) return errorType("iterable has no type")
-        iterableType.arrayElementType?.let { return it }
-        when (iterableType) {
-            is ConeClassLikeType -> {
-                if (iterableType.classId == StdlibClassIds.Range) {
-                    return iterableType.typeArguments.firstOrNull()?.type ?: ConePrimitiveType.INT64
-                }
-                val typeArgs = iterableType.typeArguments
-                if (typeArgs.isNotEmpty()) return typeArgs.first().type
-            }
-            is ConeStructType -> {
-                if (iterableType.classId == StdlibClassIds.Range) {
-                    return iterableType.typeArguments.firstOrNull()?.type ?: ConePrimitiveType.INT64
-                }
-            }
-            else -> Unit
+        val expandedIterableType = iterableType.fullyExpandedType(session)
+        expandedIterableType.arrayElementType?.let { return it }
+        val classifierType = expandedIterableType as? ConeClassifierType
+        if (classifierType?.lookupTag?.classId == StdlibClassIds.Range) {
+            return expandedIterableType.typeArguments.firstOrNull()?.type ?: ConePrimitiveType.INT64
         }
+        expandedIterableType
+            .findCorrespondingClassLikeSupertype(session, StdlibClassIds.Iterable)
+            ?.typeArguments
+            ?.singleOrNull()
+            ?.type
+            ?.let { return it }
         return errorType("cannot infer element type from: $iterableType")
     }
 
@@ -3849,21 +4162,27 @@ open class CfirExpressionsResolveTransformer(
     /**
      * 解析 `spawn` 表达式。
      *
-     * spawn body 独立解析，表达式结果类型为标准库 `Future<bodyType>`，
-     * body 缺失类型时按 `Unit` 进行错误恢复。
+     * 官方 `ChkSpawnExpr` 在外层目标类型是 `Future<T>` 时，会把 task 按 `() -> T`
+     * 检查；没有目标类型时才先综合 task 返回类型再构造 `Future<returnType>`。
      */
     override fun transformSpawnExpression(
         spawnExpression: CfirSpawnExpression,
         data: ResolutionMode,
     ): CfirExpression {
-        spawnExpression.transformChildren(transformer, ResolutionMode.ContextIndependent)
-        val taskReturnType = spawnExpression.body.coneTypeOrNull ?: builtinTypes.unitType
-        spawnExpression.replaceConeTypeOrNull(
-            constructNamedType(
-                classId = StdlibClassIds.Future,
-                typeArguments = listOf(taskReturnType),
-            )
+        spawnExpression.transformAnnotations(transformer, data)
+
+        val expectedFutureType = data.expectedTypeOrNull?.futureTypeOrNull()
+        val expectedTaskReturnType = expectedFutureType?.typeArguments?.singleOrNull()?.type
+        spawnExpression.transformBody(
+            transformer,
+            expectedTaskReturnType?.let(::withExpectedType) ?: ResolutionMode.ContextIndependent,
         )
+        spawnExpression.transformThreadContextArgument(transformer, ResolutionMode.ContextIndependent)
+
+        val resultType = data.expectedTypeOrNull
+            ?.let { spawnExpression.applySpawnExpectedFutureType(it, session) }
+            ?: spawnExpression.synthesizeSpawnType(session)
+        spawnExpression.replaceConeTypeOrNull(resultType)
         return spawnExpression
     }
 
@@ -3878,11 +4197,11 @@ open class CfirExpressionsResolveTransformer(
     ): T where T : CfirExpression, T : CfirResolvable {
         val candidateReference = access.calleeReference as? CfirNamedReferenceWithCandidate
         if (candidateReference != null) {
-            access.replaceSelfInitializerReferenceIfNeeded()?.let { return it }
+            access.replaceInitializerReferenceIfNeeded()?.let { return it }
             return components.callCompleter.completeCall(access, data)
         }
 
-        access.replaceSelfInitializerReferenceIfNeeded()?.let { return it }
+        access.replaceInitializerReferenceIfNeeded()?.let { return it }
 
         if (access.coneTypeOrNull == null) {
             when (access.calleeReference) {
@@ -3896,18 +4215,26 @@ open class CfirExpressionsResolveTransformer(
     }
 
     /**
-     * 局部变量 initializer 中，变量名会遮蔽外层同名绑定，但不能解析成自身。
+     * initializer 中需要在解析阶段改写的自引用。
      */
-    private fun <T> T.replaceSelfInitializerReferenceIfNeeded(): T? where T : CfirExpression, T : CfirResolvable {
-        val initializingVariables = context.variablesBeingInitialized
-        if (initializingVariables.isEmpty()) return null
+    private fun <T> T.replaceInitializerReferenceIfNeeded(): T? where T : CfirExpression, T : CfirResolvable =
+        replaceCurrentFieldInitializerReferenceIfNeeded()
+
+    /**
+     * 字段 initializer 中，裸名字引用当前字段自身时，官方解析阶段报未声明名。
+     *
+     * 显式 `this.a` 保持为成员访问，交给初始化检查报告初始化前使用。
+     */
+    private fun <T> T.replaceCurrentFieldInitializerReferenceIfNeeded(): T? where T : CfirExpression, T : CfirResolvable {
+        val field = context.fieldBeingInitialized ?: return null
+        if ((this as? CfirQualifiedAccessExpression)?.explicitReceiver != null) return null
         val reference = calleeReference
         val resolvedSymbol = when (reference) {
             is CfirNamedReferenceWithCandidate -> reference.candidateSymbol
             is CfirResolvedNamedReference -> reference.resolvedSymbol
             else -> return null
         }
-        if (initializingVariables.none { variable -> resolvedSymbol == variable.symbol }) return null
+        if (resolvedSymbol != field.symbol) return null
 
         val namedReference = reference as? CfirNamedReference ?: return null
         val diagnostic = ConeUnresolvedNameError(namedReference.name)
@@ -4190,58 +4517,87 @@ open class CfirExpressionsResolveTransformer(
         context.forBlock(session) { block() }
 
     /**
-     * `super` 的语义在仓颉里是固定的：
-     * 1. 只能出现在 class 内部；
-     * 2. 绑定到当前 class 声明的直接父 class；
-     * 3. 不能落到接口父类型，也不能从继承链上做兜底推断。
+     * `super` receiver 的定型和合法性诊断分离：
+     * 1. class 内的合法 `super` 仍只绑定当前 class 声明的直接 concrete 父类型；
+     * 2. interface 内的非法 `super` 先绑定直接父接口做错误恢复，避免 selector/call 级联；
+     * 3. struct/enum 等非 class/interface owner 不合成可用 receiver 类型。
      *
-     * 这里在进入 tower resolve 前就把接收者类型确定下来，
-     * 避免后续 `ExpressionReceiverValue.scope()` 再遇到未解析的 `super`。
+     * 合法性本身由 `CfirIllegalSuperReferenceChecker` 按官方规则统一报告。
      */
-    private fun resolveImplicitSuperReceiverType(owner: CfirClass): ConeCangJieType {
-        val directClassSuperTypes = owner.directClassSuperTypes()
-        return when (directClassSuperTypes.size) {
-            1 -> directClassSuperTypes.single()
-            0 -> errorType("`super` requires a direct class supertype in ${owner.name}")
-            else -> errorType("`super` is ambiguous because ${owner.name} declares multiple direct class supertypes")
+    private fun resolveImplicitSuperReceiverType(owner: CfirClassLikeDeclaration): ConeCangJieType {
+        val directReceiverSuperTypes = owner.directSuperReceiverTypes()
+        return when (directReceiverSuperTypes.size) {
+            1 -> directReceiverSuperTypes.single()
+            0 -> errorType("`super` requires a direct receiver supertype in ${owner.name}")
+            else -> errorType("`super` is ambiguous because ${owner.name} declares multiple direct receiver supertypes")
         }
     }
 
     /**
      * 预留给未来显式 `super<T>` / `super<Base>` 语法：
-     * 即使语法层已经指定了目标类型，也必须严格受“当前 class 的直接父 class”约束。
+     * 即使语法层已经指定了目标类型，也必须严格受当前 owner 可绑定的直接父类型约束。
      */
     private fun resolveExplicitSuperReceiverType(
-        owner: CfirClass,
+        owner: CfirClassLikeDeclaration,
         resolvedSuperTypeRef: CfirResolvedTypeRef,
     ): ConeCangJieType {
         val requestedType = resolvedSuperTypeRef.coneType
-        if (!requestedType.isDirectClassSuperType()) {
-            return errorType("`super` can only target a direct class supertype of ${owner.name}")
+        if (!requestedType.isDirectSuperReceiverTypeFor(owner)) {
+            return errorType("`super` can only target a direct receiver supertype of ${owner.name}")
         }
 
-        val directClassSuperTypes = owner.directClassSuperTypes()
-        if (directClassSuperTypes.none { it == requestedType }) {
-            return errorType("`super` can only target a direct class supertype of ${owner.name}")
+        val directReceiverSuperTypes = owner.directSuperReceiverTypes()
+        if (directReceiverSuperTypes.none { it == requestedType }) {
+            return errorType("`super` can only target a direct receiver supertype of ${owner.name}")
         }
 
         return requestedType
     }
 
     /**
-     * 提取当前 class 声明中已经解析成功的直接 class-like 父类型。
+     * 提取当前 owner 中可用于 `super` receiver 恢复的直接父类型。
      *
-     * 接口父类型会被过滤掉，因为 `super` 表达式只能绑定到直接 class/struct/enum 父实现类型。
+     * class 的合法 receiver 只取 concrete 父类型；若源码只声明接口父类型，则按官方
+     * `AddObjectSuperClass` 语义补入隐式 `Object` receiver。interface 分支只服务非法
+     * `super` 后续成员解析恢复，因此只取直接父接口，合法性不在这里放行。
      */
-    private fun CfirClass.directClassSuperTypes(): List<ConeCangJieType> {
-        return superTypeRefs
+    private fun CfirClassLikeDeclaration.directSuperReceiverTypes(): List<ConeCangJieType> {
+        val declaredReceiverTypes = superTypeRefs
             .filterIsInstance<CfirResolvedTypeRef>()
             .map(CfirResolvedTypeRef::coneType)
-            .filter { candidate -> candidate.isDirectClassSuperType() }
+            .filter { candidate -> candidate.isDirectSuperReceiverTypeFor(this) }
+        return declaredReceiverTypes.withImplicitClassObjectSuperReceiverType(this)
     }
 
-    /** 判断类型是否可作为 `super` 的直接实现父类型。 */
-    private fun ConeCangJieType.isDirectClassSuperType(): Boolean = when (this) {
+    /**
+     * 普通 class 没有显式 concrete 父类时，官方前置检查会补 `std.core.Object`。
+     * body resolve 的 `super` receiver 候选需要与类型系统和 member scope 共享同一层继承语义。
+     */
+    private fun List<ConeCangJieType>.withImplicitClassObjectSuperReceiverType(
+        owner: CfirClassLikeDeclaration,
+    ): List<ConeCangJieType> {
+        if (owner !is CfirClass) return this
+        if (owner.symbol.classId == StdlibClassIds.Object) return this
+        if (any { candidate -> candidate.isConcreteSuperclassCandidate() }) return this
+
+        val implicitObject = ConeClassLikeType(StdlibClassIds.Object.toLookupTag())
+        return (this + implicitObject).distinct()
+    }
+
+    /** 判断类型是否可作为当前 owner 的 `super` receiver 类型。 */
+    private fun ConeCangJieType.isDirectSuperReceiverTypeFor(owner: CfirClassLikeDeclaration): Boolean = when (owner) {
+        is CfirClass -> when (this) {
+            is ConeClassLikeType -> !isInterface
+            is ConeStructType, is ConeEnumType -> true
+            else -> false
+        }
+
+        is CfirInterface -> this is ConeClassLikeType && isInterface
+        else -> false
+    }
+
+    /** 判断类型是否占用 class 的 concrete 父类槽位。 */
+    private fun ConeCangJieType.isConcreteSuperclassCandidate(): Boolean = when (this) {
         is ConeClassLikeType -> !isInterface
         is ConeStructType, is ConeEnumType -> true
         else -> false

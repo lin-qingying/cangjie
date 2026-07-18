@@ -24,6 +24,7 @@
 
 package org.cangnova.cangjie.cfir.resolve.calls.stages
 
+import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.diagnostic.WrongArgumentCount
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
@@ -45,6 +46,17 @@ object CfirMapTypeArguments : ResolutionStage() {
     context(sink: CheckerSink, context: ResolutionContext)
     /** 解析显式类型实参并写入候选，同时检查数量是否匹配声明泛型参数。 */
     override suspend fun check(candidate: Candidate) {
+        val declaration = candidate.symbol.takeIf { it.isBound }?.cfir
+        if (candidate.isQualifiedEnumMemberWithTypeArguments(declaration)) {
+            /*
+             * `TimeUnit<Int32>.Year<Int64>` 中的 `Int64` 属于 enum member access，
+             * 不能再次绑定 owner enum。合法性由表达式 checker 独立报告，候选仍按
+             * qualifier 已确定的 owner 类型继续完成，避免破坏返回类型和后续 pattern。
+             */
+            candidate.typeArgumentMapping = TypeArgumentMapping.NoExplicitArguments
+            return
+        }
+
         val mapping = buildTypeArgumentMapping(candidate)
         candidate.typeArgumentMapping = mapping
 
@@ -96,4 +108,15 @@ object CfirMapTypeArguments : ResolutionStage() {
             ?.mapNotNull { it as? CfirResolvedTypeRef }
             .orEmpty()
     }
+
+    /**
+     * 判断显式类型实参是否写在已有 enum owner qualifier 后的成员上。
+     *
+     * 裸 `Year<Int32>(...)` 是 enum sugar，类型实参仍用于实例化 owner；只有
+     * `TimeUnit<Int32>.Year<Int64>(...)` 这种已有显式 receiver 的成员实参非法。
+     */
+    private fun Candidate.isQualifiedEnumMemberWithTypeArguments(declaration: Any?): Boolean =
+        declaration is CfirEnumConstructor &&
+                callInfo.explicitReceiver != null &&
+                resolvedExplicitTypeArguments().isNotEmpty()
 }

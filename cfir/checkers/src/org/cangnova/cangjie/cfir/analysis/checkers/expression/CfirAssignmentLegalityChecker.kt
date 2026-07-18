@@ -42,12 +42,6 @@ import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
-import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
-import org.cangnova.cangjie.cfir.scopes.isStaticMemberForOverride
-import org.cangnova.cangjie.cfir.scopes.overrideSignatureKey
-import org.cangnova.cangjie.cfir.scopes.unsubstitutedScope
-import org.cangnova.cangjie.cfir.session.ProcessorAction
-import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
@@ -117,7 +111,7 @@ object CfirAssignmentLegalityChecker : CfirAssignmentChecker() {
         when (val target = CfirMutationTargetClassifier.classifyAssignment(access, expression)) {
             is CfirMutationTargetClassifier.MutationTarget.ImmutableValue -> {
                 reporter.reportOn(
-                    source = assignmentSource,
+                    source = access.source ?: assignmentSource,
                     factory = CfirErrors.CANNOT_ASSIGN_TO_IMMUTABLE,
                 )
             }
@@ -314,13 +308,14 @@ internal object CfirMutationTargetClassifier {
 
             is CfirPropertySymbol -> {
                 val property = resolvedSymbol.takeIf { it.isBound }?.cfir as? CfirProperty
-                if (property != null && !property.hasUsableSetter()) {
+                if (property != null && !property.isEffectivelyWritable()) {
                     MutationTarget.ImmutableValue
                 } else {
                     MutationTarget.Assignable
                 }
             }
 
+            is CfirEnumConstructorSymbol -> MutationTarget.ImmutableValue
             is CfirFunctionSymbol<*> -> MutationTarget.NonAssignableName(referenceNameOrFallback())
             is CfirClassLikeSymbol<*> -> MutationTarget.NonAssignableName(referenceNameOrFallback())
             null -> null
@@ -347,68 +342,13 @@ internal object CfirMutationTargetClassifier {
     }
 
     /**
-     * Cangjie 允许 `mut prop` 的 getter/setter 分别由子类和父类提供。
+     * 判断属性契约是否允许写入。
      *
-     * 官方 `GetUsableSetterForProperty` 在当前属性没有 setter 时会继续沿父类查找有效 setter；
-     * 这里复用 CFIR 的 override scope 与签名规则实现同一语义。
+     * `mut` 是属性对调用方暴露的可写契约；抽象接口属性即使没有本地 setter body，
+     * 仍然必须保持可写。setter 的实现位置和可见性属于 accessor 解析，不得反向把
+     * 一个 `mut prop` 降级为 immutable。
      */
-    context(context: CheckerContext)
-    private fun CfirProperty.hasUsableSetter(): Boolean {
-        if (!status.isMut) return false
-        if (setter != null) return true
-
-        val propertySymbol = symbol as? CfirPropertySymbol ?: return false
-        val ownerClassId = propertySymbol.callableId.classId ?: return false
-        val ownerSymbol = context.session.symbolProvider.getClassLikeSymbolByClassId(ownerClassId) ?: return false
-        val ownerDeclaration = ownerSymbol.cfir as? CfirClassLikeDeclaration ?: return false
-        val ownerScope = ownerDeclaration.unsubstitutedScope(
-            useSiteSession = context.session,
-            scopeSession = context.scopeSession,
-            withForcedTypeCalculator = false,
-            memberRequiredPhase = null,
-        )
-
-        return propertySymbol.hasInheritedUsableSetter(ownerScope, linkedSetOf())
-    }
-
-    /**
-     * 沿覆盖链查找当前属性可复用的父类 setter。
-     *
-     * 仓颉允许可变属性的 getter/setter 分布在继承链上；这里用 override signature 和静态性
-     * 过滤候选，避免把不同成员误当作同一个 setter 来源。
-     */
-    private fun CfirPropertySymbol.hasInheritedUsableSetter(
-        scope: CfirTypeScope,
-        visited: MutableSet<CfirPropertySymbol>,
-    ): Boolean {
-        if (!visited.add(this)) return false
-
-        val targetSignature = overrideSignatureKey()
-        val targetIsStatic = isStaticMemberForOverride()
-        var found = false
-        scope.processDirectOverriddenPropertiesWithBaseScope(this) { candidate, baseScope ->
-            if (
-                candidate == this ||
-                candidate.overrideSignatureKey() != targetSignature ||
-                candidate.isStaticMemberForOverride() != targetIsStatic
-            ) {
-                return@processDirectOverriddenPropertiesWithBaseScope ProcessorAction.NEXT
-            }
-
-            val candidateProperty = candidate.takeIf { it.isBound }?.cfir
-            if (
-                candidateProperty != null &&
-                candidateProperty.status.isMut &&
-                (candidateProperty.setter != null || candidate.hasInheritedUsableSetter(baseScope, visited))
-            ) {
-                found = true
-                ProcessorAction.STOP
-            } else {
-                ProcessorAction.NEXT
-            }
-        }
-        return found
-    }
+    private fun CfirProperty.isEffectivelyWritable(): Boolean = status.isMut
 
     /**
      * 取得当前访问引用的名称，缺失时返回错误名占位。

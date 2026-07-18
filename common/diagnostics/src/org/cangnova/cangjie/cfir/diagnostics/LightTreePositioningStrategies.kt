@@ -270,6 +270,14 @@ object LightTreePositioningStrategies {
                     ?.let { listNode -> tree.childrenOfType(listNode, CjNodeTypes.VALUE_ARGUMENT) }
                     .orEmpty()
 
+                CjNodeTypes.DOT_QUALIFIED_EXPRESSION,
+                CjNodeTypes.SAFE_ACCESS_EXPRESSION,
+                -> tree.lastExpressionChild(node)
+                    ?.takeIf { it.tokenType == CjNodeTypes.CALL_EXPRESSION }
+                    ?.let { selectorCall -> tree.findChildByType(selectorCall, CjNodeTypes.VALUE_ARGUMENT_LIST) }
+                    ?.let { listNode -> tree.childrenOfType(listNode, CjNodeTypes.VALUE_ARGUMENT) }
+                    .orEmpty()
+
                 CjNodeTypes.VALUE_ARGUMENT_LIST -> tree.childrenOfType(node, CjNodeTypes.VALUE_ARGUMENT)
                 else -> emptyList()
             }
@@ -290,6 +298,11 @@ object LightTreePositioningStrategies {
         ): List<TextRange> {
             val valueArgumentList = when (node.tokenType) {
                 CjNodeTypes.CALL_EXPRESSION -> tree.findChildByType(node, CjNodeTypes.VALUE_ARGUMENT_LIST)
+                CjNodeTypes.DOT_QUALIFIED_EXPRESSION,
+                CjNodeTypes.SAFE_ACCESS_EXPRESSION,
+                -> tree.lastExpressionChild(node)
+                    ?.takeIf { it.tokenType == CjNodeTypes.CALL_EXPRESSION }
+                    ?.let { selectorCall -> tree.findChildByType(selectorCall, CjNodeTypes.VALUE_ARGUMENT_LIST) }
                 CjNodeTypes.VALUE_ARGUMENT_LIST -> node
                 else -> null
             } ?: return VALUE_ARGUMENTS.mark(node, startOffset, endOffset, tree)

@@ -569,12 +569,19 @@ class ConstraintInjector(
             lowerType: CangJieTypeMarker,
             upperType: CangJieTypeMarker,
         ) {
-            fun isSubtypeOf(upperType: CangJieTypeMarker) =
-                AbstractTypeChecker.isSubtypeOf(
-                    this@TypeCheckerStateForConstraintInjector as TypeCheckerState,
+            val typeCheckerState = this@TypeCheckerStateForConstraintInjector as TypeCheckerState
+            val checksDeclaredUpperBound =
+                isIncorporatingConstraintFromDeclaredUpperBound ||
+                    position.from is DeclaredUpperBoundConstraintPosition<*>
+            fun isSubtypeOf(upperType: CangJieTypeMarker) = if (checksDeclaredUpperBound) {
+                AbstractTypeChecker.isSubtypeOfWithoutOptionBoxing(
+                    typeCheckerState,
                     lowerType,
                     upperType,
                 )
+            } else {
+                AbstractTypeChecker.isSubtypeOf(typeCheckerState, lowerType, upperType)
+            }
 
             if (!isSubtypeOf(upperType)) {
 

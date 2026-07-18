@@ -1,16 +1,13 @@
 package org.cangnova.cangjie.cfir.analysis.tests.services
 
-import org.cangnova.cangjie.cfir.diagnostics.DiagnosticContext
 import org.cangnova.cangjie.test.model.AfterAnalysisChecker
 import org.cangnova.cangjie.test.model.FrontendKinds
 import org.cangnova.cangjie.test.frontend.cfirDiagnosticCollectorService
 import org.cangnova.cangjie.test.services.artifactsProvider
 import org.cangnova.cangjie.test.services.moduleStructure
-import org.cangnova.cangjie.test.services.sourceFileProvider
 import org.cangnova.cangjie.test.services.TestServices
 import org.opentest4j.AssertionFailedError
 import org.opentest4j.FileInfo
-import java.io.File
 import java.nio.charset.StandardCharsets
 
 /**
@@ -66,24 +63,16 @@ class CfirInlineDiagnosticsChecker(
         artifact: org.cangnova.cangjie.test.frontend.CfirOutputArtifact,
         file: org.cangnova.cangjie.test.model.TestFile,
     ): List<org.cangnova.cangjie.cfir.diagnostics.CjDiagnostic> {
-        val normalizedRealPath = normalizePath(testServices.sourceFileProvider.getOrCreateRealFileForSourceFile(file).canonicalPath)
-        val normalizedOriginalPath = normalizePath(file.originalFile.canonicalPath)
-
-        return testServices.cfirDiagnosticCollectorService
-            .getFrontendDiagnosticsForModule(artifact)
-            .values
-            .flatten()
-            .filter { diagnostic ->
-                val filePath = (diagnostic.context as? DiagnosticContext)?.containingFilePath?.let(::normalizePath)
-                filePath == null || filePath == normalizedRealPath || filePath == normalizedOriginalPath
-            }
-    }
-
-    /**
-     * 规范化路径分隔符与 canonical path。
-     */
-    private fun normalizePath(path: String): String {
-        return File(path).canonicalPath.replace('\\', '/')
+        val frontendDiagnostics = testServices.cfirDiagnosticCollectorService.getFrontendDiagnosticsForModule(artifact)
+        val cfirFiles = artifact.partsForDependsOnModules
+            .asSequence()
+            .mapNotNull { part -> part.firFilesByTestFile[file] }
+            .toList()
+        val diagnostics = cfirFiles
+            .asSequence()
+            .flatMap { cfirFile -> frontendDiagnostics[cfirFile].orEmpty().asSequence() }
+            .toList()
+        return diagnostics
     }
 }
 

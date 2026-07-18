@@ -3,7 +3,7 @@ package org.cangnova.cangjie.cfir.resolve.match.exhaustive.inria
 import org.cangnova.cangjie.cfir.resolve.match.CfirConstructor
 import org.cangnova.cangjie.cfir.resolve.match.CfirMatchPattern
 import org.cangnova.cangjie.cfir.resolve.match.CfirMatchPatternKind
-import org.cangnova.cangjie.cfir.resolve.match.isMatchSubtypeOf
+import org.cangnova.cangjie.cfir.resolve.match.isTypePatternOrdinarySubtypeOf
 import org.cangnova.cangjie.cfir.resolve.match.exhaustive.MatchExhaustivenessContext
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 
@@ -73,13 +73,12 @@ object RowSpecializer {
     /**
      * 官方 `Constructor::IsCoveredBy` 对 TYPE 构造器使用 `candidateTy <: patternTy`。
      *
-     * Cangjie 的 subtype 关系还包含 `extend B <: I` 这类 boxed/extend interface
-     * 关系；当前通用 [AbstractTypeChecker] 尚未吸收 extend 索引，因此 pattern
-     * usefulness 在普通 subtype 失败后需要补读同一 session 的 extend 语义模型。
+     * 这里必须使用 type-pattern 普通 subtype，而不是 boxed match subtype；`String`
+     * 可自动装箱为 `Option<String>` 不代表 `case _: Option<String>` 覆盖 `case _: String`。
      */
     private fun ConeCangJieType.isCoveredByTypePattern(
         patternType: ConeCangJieType,
         context: MatchExhaustivenessContext,
     ): Boolean =
-        isMatchSubtypeOf(patternType, context.session)
+        isTypePatternOrdinarySubtypeOf(patternType, context.session)
 }

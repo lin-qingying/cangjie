@@ -390,7 +390,7 @@ private fun typeToScope(
         else -> if (type.requiresPrimitiveExtendUnionScope()) {
             CfirUnionTypeScope(scopes.toList())
         } else {
-            CfirCompositeTypeScope(scopes.toList())
+            CfirCompositeTypeScope(scopes.toList(), session)
         }
     }
 }
@@ -412,7 +412,7 @@ private fun collectTypeScopes(
     type: ConeCangJieType,
     scopeKind: CfirClassMemberScopeKind,
     destination: MutableSet<CfirTypeScope>,
-    visitedClassIds: MutableSet<org.cangnova.cangjie.name.ClassId>,
+    visitedTypes: MutableSet<ConeCangJieType>,
     visitedTypeParameters: MutableSet<ConeTypeParameterLookupTag>,
 ) {
     when (type) {
@@ -424,7 +424,7 @@ private fun collectTypeScopes(
                 originalTypeParameter,
                 scopeKind,
                 destination,
-                visitedClassIds,
+                visitedTypes,
                 visitedTypeParameters,
             )
         }
@@ -436,7 +436,7 @@ private fun collectTypeScopes(
                 type.lookupTag,
                 scopeKind,
                 destination,
-                visitedClassIds,
+                visitedTypes,
                 visitedTypeParameters,
             )
         }
@@ -449,7 +449,7 @@ private fun collectTypeScopes(
                     it,
                     scopeKind,
                     destination,
-                    visitedClassIds,
+                    visitedTypes,
                     visitedTypeParameters,
                 )
             }
@@ -462,7 +462,7 @@ private fun collectTypeScopes(
                 type,
                 scopeKind,
                 destination,
-                visitedClassIds,
+                visitedTypes,
                 visitedTypeParameters,
             )
         }
@@ -474,7 +474,7 @@ private fun collectTypeScopes(
                 type,
                 scopeKind,
                 destination,
-                visitedClassIds,
+                visitedTypes,
                 visitedTypeParameters,
             )
         }
@@ -486,7 +486,7 @@ private fun collectTypeScopes(
                     type = type,
                     scopeKind = scopeKind,
                     destination = destination,
-                    visitedClassIds = visitedClassIds,
+                    visitedTypes = visitedTypes,
                     visitedTypeParameters = visitedTypeParameters,
                 )
             ) {
@@ -494,7 +494,9 @@ private fun collectTypeScopes(
             }
 
             val classId = type.classIdOrPrimitiveClassId ?: return
-            if (!visitedClassIds.add(classId)) return
+            // 同一个泛型声明的不同实例拥有不同的成员签名，不能只按 ClassId 去重。
+            // 以完整 Cone 类型作为访问键，同时仍可阻断真正相同类型形成的递归父类型环。
+            if (!visitedTypes.add(type)) return
             val symbol = session.symbolProvider.getClassLikeSymbolByClassId(classId) ?: return
             val declaration = symbol.cfir
             val rawScope = when (declaration) {
@@ -542,7 +544,7 @@ private fun collectNonClassBuiltinExtendScopes(
     type: ConeCangJieType,
     scopeKind: CfirClassMemberScopeKind,
     destination: MutableSet<CfirTypeScope>,
-    visitedClassIds: MutableSet<org.cangnova.cangjie.name.ClassId>,
+    visitedTypes: MutableSet<ConeCangJieType>,
     visitedTypeParameters: MutableSet<ConeTypeParameterLookupTag>,
 ): Boolean {
     val targetKey = type.expandedExtendTargetKey ?: return false
@@ -569,7 +571,7 @@ private fun collectNonClassBuiltinExtendScopes(
             supertype,
             scopeKind,
             destination,
-            visitedClassIds,
+            visitedTypes,
             visitedTypeParameters,
         )
     }
@@ -585,7 +587,7 @@ private fun collectIdealPrimitiveTypeScopes(
     type: ConeCangJieType,
     scopeKind: CfirClassMemberScopeKind,
     destination: MutableSet<CfirTypeScope>,
-    visitedClassIds: MutableSet<org.cangnova.cangjie.name.ClassId>,
+    visitedTypes: MutableSet<ConeCangJieType>,
     visitedTypeParameters: MutableSet<ConeTypeParameterLookupTag>,
 ) {
     for (primitiveType in type.idealExtendLookupTypes) {
@@ -595,7 +597,7 @@ private fun collectIdealPrimitiveTypeScopes(
             primitiveType,
             scopeKind,
             destination,
-            visitedClassIds,
+            visitedTypes,
             visitedTypeParameters,
         )
     }
@@ -610,7 +612,7 @@ private fun collectTypeParameterBoundsScopes(
     lookupTag: ConeTypeParameterLookupTag,
     scopeKind: CfirClassMemberScopeKind,
     destination: MutableSet<CfirTypeScope>,
-    visitedClassIds: MutableSet<org.cangnova.cangjie.name.ClassId>,
+    visitedTypes: MutableSet<ConeCangJieType>,
     visitedTypeParameters: MutableSet<ConeTypeParameterLookupTag>,
 ) {
     if (!visitedTypeParameters.add(lookupTag)) return
@@ -624,7 +626,7 @@ private fun collectTypeParameterBoundsScopes(
             it,
             scopeKind,
             destination,
-            visitedClassIds,
+            visitedTypes,
             visitedTypeParameters,
         )
     }

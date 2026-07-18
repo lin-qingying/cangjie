@@ -10,20 +10,20 @@ func help() {
 }
 
 func help2(): Unit {
-    return <!CANNOT_CONVERT_LITERAL!>0<!>
+    return <!RETURN_TYPE_MISMATCH!>0<!>
 }
 
 func help3(): Unit {
     return
 }
 
-func exit() {
+func <!UNABLE_TO_INFER_RETURN_TYPE!>exit<!>() {
     if (true) {
         return 0
     } else {
         return ""
     };
-    <!INCOMPATIBLE_FUNC_BODY_AND_RETURN_TYPE!>r<!>eturn
+    return
 }
 //func exit2() {if (true {return 0} else) {}}
 func exit3() {
@@ -42,10 +42,10 @@ main() {
     test1()
     test1(b: 2)
     test1(a: 1)
-    test1(a: 1, <!UNORDERED_ARGUMENTS!>1<!>)
+    test1(a: 1, <!MIXING_NAMED_AND_POSITIONAL_ARGUMENTS!>1<!>)
     test1(<!NEED_NAMED_ARGUMENT!>1<!>, a: 1)
     test1(<!NEED_NAMED_ARGUMENT!>""<!>, "")
-    test1<!WRONG_NUMBER_OF_ARGUMENTS!>("", "", "")<!>
+    test1("", "", <!TOO_MANY_ARGUMENTS!>""<!>)
     return 0
 }
 
@@ -61,14 +61,14 @@ func foo(): Int32 {
     return callFunc(<!NO_MATCH_FUNCTION_DECLARATION_FOR_REF!>f<!>un)
 }
 
-func bar() {
+func <!UNABLE_TO_INFER_RETURN_TYPE!>bar<!>() {
     return true;
-    <!INCOMPATIBLE_FUNC_BODY_AND_RETURN_TYPE!>1<!>
+    1
 }
 
-func baz() {
+func <!UNABLE_TO_INFER_RETURN_TYPE!>baz<!>() {
     while (true) {
         return false
     };
-    <!INCOMPATIBLE_FUNC_BODY_AND_RETURN_TYPE!>1<!>
+    1
 }

@@ -57,7 +57,6 @@ object DiagnosticNameMapper {
         "UNRESOLVED_REFERENCE" to "sema_undeclared_identifier",
         "INVISIBLE_MEMBER" to "sema_no_matching_function",
         "INVISIBLE_REFERENCE" to "sema_undeclared_identifier",
-        "CLASS_NOT_OPEN_FOR_INHERITANCE" to "sema_class_not_open_for_inheritance",
         "EXPLICIT_SUPER_CALL_REQUIRED" to "sema_explicit_super_call_required",
         "AMBIGUOUS_FUNCTION_CALL" to "sema_ambiguous_call",
         "AMBIGUOUS_CONSTRUCTOR_CALL" to "sema_ambiguous_constructor_call",
@@ -103,7 +102,11 @@ object DiagnosticNameMapper {
 
         // ── Inheritance ──
         "INTERFACE_CANNOT_INHERIT_CLASS" to "sema_interface_cannot_inherit_class",
+        "CLASS_INHERIT_NON_CLASS_NOR_INTERFACE" to "sema_class_inherit_non_class_nor_interface",
         "INHERITANCE_CYCLE" to "sema_inheritance_cycle",
+        "ILLEGAL_MULTI_INHERITANCE" to "sema_illegal_multi_inheritance",
+        "SUPERCLASS_MUST_BE_PLACED_AT_FIRST" to "sema_superclass_must_be_placed_at_first",
+        "NON_INHERITABLE_SUPER_CLASS" to "sema_non_inheritable_super_class",
         "MULTIPLE_CLASS_SUPER_TYPES" to "sema_multiple_class_inheritance",
         "OVERRIDE_STATIC_ERROR" to "sema_override_static_error",
         "SUPER_TYPES_DUPLICATE" to "sema_super_types_duplicate",
@@ -141,6 +144,8 @@ object DiagnosticNameMapper {
 
         // ── Call / Arguments ──
         "TOO_MANY_ARGUMENTS" to "sema_too_many_arguments",
+        "WRONG_NUMBER_OF_ARGUMENTS" to "sema_wrong_number_of_arguments",
+        "PARAMETERS_AND_ARGUMENTS_MISMATCH" to "sema_parameters_and_arguments_mismatch",
         "NO_VALUE_FOR_PARAMETER" to "sema_no_value_for_parameter",
         "ARGUMENT_PASSED_TWICE" to "sema_argument_passed_twice",
         "NAMED_ARGUMENTS_NOT_ALLOWED" to "sema_named_arguments_not_allowed",
@@ -160,6 +165,7 @@ object DiagnosticNameMapper {
         "GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT" to "sema_generic_type_without_type_argument",
         "GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT" to "sema_generic_type_argument_not_match_constraint",
         "GENERIC_INFINITE_INSTANTIATION" to "sema_generic_infinite_instantiation",
+        "CANNOT_INSTANTIATED_BY_INCOMPLETE_TYPE" to "sema_cannot_instantiated_by_incomplete_type",
         "GENERIC_NO_MEMBER_MATCH_IN_UPPER_BOUNDS" to "sema_generic_no_member_match_in_upper_bounds",
         "GENERIC_NO_METHOD_MATCH_IN_UPPER_BOUNDS" to "sema_generic_no_method_match_in_upper_bounds",
         "CONFLICTING_UPPER_BOUNDS" to "sema_conflicting_upper_bounds",
@@ -177,6 +183,8 @@ object DiagnosticNameMapper {
         // ── Mut / Immutable ──
         "IMMUTABLE_FUNCTION_CANNOT_ACCESS_MUTABLE_FUNCTION" to "sema_immutable_function_cannot_access_mutable_function",
         "CANNOT_MODIFY_VAR" to "sema_cannot_modify_var",
+        "ILLEGAL_CAPTURE_THIS" to "sema_illegal_capture_this",
+        "CAPTURE_THIS_OR_INSTANCE_FIELD_IN_FUNC" to "sema_capture_this_or_instance_field_in_func",
 
         // ── Initialization ──
         "USED_BEFORE_INITIALIZATION" to "sema_used_before_initialization",
@@ -196,6 +204,7 @@ object DiagnosticNameMapper {
         "CONST_EVAL_NEGATIVE_SHIFT_COUNT" to "sema_const_eval_negative_shift_count",
         "CONST_EVAL_SHIFT_COUNT_OVERFLOW" to "sema_const_eval_shift_count_overflow",
         "LITERAL_NUMERIC_OVERFLOW" to "sema_literal_numeric_overflow",
+        "INVALID_STRING_IMPLEMENTATION" to "sema_invalid_string_implementation",
 
         // ── Operator ──
         "INVALID_BINARY_OPERATOR" to "sema_invalid_binary_expr",

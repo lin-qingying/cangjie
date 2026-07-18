@@ -16,7 +16,7 @@ class Data<T> {
 }
 
 func run(): Int32 {
-    let data: Data<(Int64) -> Int64> = <!PARAMETERS_AND_ARGUMENTS_MISMATCH!>D<!>ata<(Int64) -> Int64>(<!TYPE_MISMATCH!>getHeight<!>)
+    let data: Data<(Int64) -> Int64> = <!PARAMETERS_AND_ARGUMENTS_MISMATCH!>Data<!><(Int64) -> Int64>(<!TYPE_MISMATCH!>getHeight<!>)
     var res = data.width(5)
     if (res == 10) {
         return 0

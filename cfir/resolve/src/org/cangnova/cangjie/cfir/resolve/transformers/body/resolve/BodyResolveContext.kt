@@ -164,6 +164,15 @@ class BodyResolveContext(
     @set:PrivateForInline
     var containingRegularClass: CfirClass? = null
 
+    /**
+     * 当前最内层 class-like 声明容器。
+     *
+     * 该属性只描述 body resolve 的声明归属，用于 `this`/`super` 等接收者恢复；
+     * `super` 在 interface/struct/enum/extend 中是否合法仍由专门 checker 判定。
+     */
+    val containingClassLikeDeclaration: CfirClassLikeDeclaration?
+        get() = containers.asReversed().filterIsInstance<CfirClassLikeDeclaration>().firstOrNull()
+
     /** 当前调用推断会话。 */
     @set:PrivateForInline
     var inferenceSession: CfirInferenceSession = CfirInferenceSession.DEFAULT
@@ -189,6 +198,9 @@ class BodyResolveContext(
     /** 当前正在解析 initializer 的局部变量栈。 */
     private val variableInitializerStack: ArrayDeque<List<CfirVariable>> = ArrayDeque()
 
+    /** 当前正在解析 initializer 的字段变量栈。 */
+    private val fieldInitializerStack: ArrayDeque<CfirFieldVariable> = ArrayDeque()
+
     /** 当前正在解析 initializer 的最内层变量。 */
     val variableBeingInitialized: CfirVariable?
         get() = variableInitializerStack.lastOrNull()?.singleOrNull()
@@ -196,6 +208,10 @@ class BodyResolveContext(
     /** 当前正在解析 initializer 的最内层变量集合。 */
     val variablesBeingInitialized: List<CfirVariable>
         get() = variableInitializerStack.lastOrNull().orEmpty()
+
+    /** 当前正在解析 initializer 的最内层字段。 */
+    val fieldBeingInitialized: CfirFieldVariable?
+        get() = fieldInitializerStack.lastOrNull()
 
     /** 当前 public API inline 函数上下文。 */
     @set:PrivateForInline
@@ -398,6 +414,21 @@ class BodyResolveContext(
             f()
         } finally {
             variableInitializerStack.removeLast()
+        }
+    }
+
+    /**
+     * 在字段 initializer 上下文内执行解析。
+     *
+     * 字段 initializer 中的裸名字若解析到当前字段自身，官方语义按未声明名处理；显式
+     * `this.field` 仍然是成员访问，后续初始化检查负责报告初始化前使用。
+     */
+    fun <T> withFieldInitializer(field: CfirFieldVariable, f: () -> T): T {
+        fieldInitializerStack.addLast(field)
+        return try {
+            f()
+        } finally {
+            fieldInitializerStack.removeLast()
         }
     }
 
@@ -725,7 +756,7 @@ class BodyResolveContext(
     /** 对齐 K2 `withNamedFunction`：注册局部函数，并在函数声明 container 外层安装函数类型参数作用域。 */
     @OptIn(PrivateForInline::class)
     inline fun <T> withNamedFunction(namedFunction: CfirNamedFunction, session: CfirSession, f: () -> T): T {
-        if (containerIfAny !is CfirClass) {
+        if (namedFunction.isLocal || containerIfAny !is CfirClass) {
             storeFunction(namedFunction, session)
         }
         return withTypeParametersOf(namedFunction) {
@@ -800,8 +831,14 @@ class BodyResolveContext(
     inline fun <T> forFunctionBody(
         function: CfirFunction,
         holder: SessionAndScopeSessionHolder,
+        resolveParameterDefaultsSequentially: Boolean,
         f: () -> T,
-    ): T = withFunctionLocalScope(function, holder.session, f)
+    ): T = withFunctionLocalScope(
+        function = function,
+        session = holder.session,
+        preloadValueParameters = !resolveParameterDefaultsSequentially,
+        f = f,
+    )
 
     /**
      * finalizer body 与普通函数共享局部参数作用域，
@@ -812,36 +849,54 @@ class BodyResolveContext(
     inline fun <T> forFinalizerBody(
         finalizer: CfirFinalizer,
         holder: SessionAndScopeSessionHolder,
+        resolveParameterDefaultsSequentially: Boolean,
         f: () -> T,
     ): T = withTowerDataMode(CfirTowerDataMode.FINALIZER) {
-        withFunctionLocalScope(finalizer, holder.session, f)
+        withFunctionLocalScope(
+            function = finalizer,
+            session = holder.session,
+            preloadValueParameters = !resolveParameterDefaultsSequentially,
+            f = f,
+        )
     }
 
-    /** 在函数体局部 scope 中执行 [f]，并把函数 value parameters 写入该 scope。 */
+    /**
+     * 在函数局部 scope 中执行 [f]。
+     *
+     * 完整 body resolve 按声明顺序解析默认值，由 [withValueParameter] 在每个默认值完成后
+     * 提交当前参数；仅推断函数体时签名已经完成，可以直接预装全部参数。
+     */
     @PublishedApi
     internal inline fun <T> withFunctionLocalScope(
         function: CfirFunction,
         session: CfirSession,
+        preloadValueParameters: Boolean,
         f: () -> T,
     ): T = withTowerDataCleanup {
         addLocalScope(CfirLocalScope(session))
-        for (parameter in function.valueParameters) {
-            storeVariable(parameter, session)
+        if (preloadValueParameters) {
+            for (parameter in function.valueParameters) {
+                storeVariable(parameter, session)
+            }
         }
         f()
     }
 
-    /** 存储 value parameter 并在其容器上下文中执行 [f]。 */
+    /**
+     * 在值参数容器中解析声明内容，并在完成后把参数提交到当前局部 scope。
+     * 因而默认值只能引用此前已经完成的参数，不能引用自身或后置参数。
+     */
     @OptIn(PrivateForInline::class)
     inline fun <T> withValueParameter(
         valueParameter: CfirValueParameter,
         session: CfirSession,
         f: () -> T,
     ): T {
-        storeValueParameterIfNeeded(valueParameter, session)
-        return withContainer(valueParameter) {
+        val result = withContainer(valueParameter) {
             f()
         }
+        storeValueParameterIfNeeded(valueParameter, session)
+        return result
     }
 
     /** 为匿名函数建立参数局部 scope 和容器上下文。 */
@@ -884,13 +939,18 @@ class BodyResolveContext(
     @OptIn(PrivateForInline::class)
     inline fun <T> forConstructorParameters(
         constructor: CfirConstructor,
-        owningClass: CfirClassLikeDeclaration?,
+        @Suppress("UNUSED_PARAMETER") owningClass: CfirClassLikeDeclaration?,
         holder: SessionAndScopeSessionHolder,
         f: () -> T,
     ): T {
-        // 构造器默认值不能访问构造中类的成员；
-        // 由 checker 在发现前一个参数被后一个参数引用且未初始化时报错。
-        return forConstructorParametersOrDelegatedConstructorCallChildren(constructor, owningClass, holder, f)
+        // 默认值按参数声明顺序解析；withValueParameter 会在当前参数完成后再提交到该 scope。
+        require(towerDataMode == CfirTowerDataMode.CONSTRUCTOR_HEADER) {
+            "forConstructorParameters must be nested inside forConstructor"
+        }
+        return withTowerDataCleanup {
+            addLocalScope(CfirLocalScope(holder.session))
+            f()
+        }
     }
 
     /** 解析委托构造调用的子表达式，并复用构造器参数上下文。 */

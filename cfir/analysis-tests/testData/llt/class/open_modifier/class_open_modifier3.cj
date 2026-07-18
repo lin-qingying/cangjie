@@ -9,7 +9,7 @@ class A {
     }
 }
 
-class B <: <!CLASS_NOT_OPEN_FOR_INHERITANCE!>A<!> {
+class B <: <!NON_INHERITABLE_SUPER_CLASS!>A<!> {
     public init() {
         f()
         var a = {=> super.f}
@@ -23,7 +23,7 @@ class B <: <!CLASS_NOT_OPEN_FOR_INHERITANCE!>A<!> {
     }
 }
 
-class C <: <!CLASS_NOT_OPEN_FOR_INHERITANCE!>B<!> {
+class C <: <!NON_INHERITABLE_SUPER_CLASS!>B<!> {
     public init() {
         super.f()
         var a = {=> f}

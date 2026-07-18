@@ -18,6 +18,7 @@ import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.types.CfirUserTypeRef
 import org.cangnova.cangjie.cfir.types.ConeAllowsDelegatedScopeTraversalDiagnostic
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
@@ -27,11 +28,15 @@ import org.cangnova.cangjie.cfir.types.ConeIntersectionType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.ConeStructType
 import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
+import org.cangnova.cangjie.cfir.types.contains
 import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.cfir.types.withArguments
 import org.cangnova.cangjie.cfir.types.withoutAbbreviation
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.source.AbstractCjSourceElement
+import org.cangnova.cangjie.source.CjSourceElement
+import org.cangnova.cangjie.source.CjOffsetsOnlySourceElement
 
 /**
  * class-like 直接父类型合法性检查器。
@@ -48,8 +53,7 @@ object CfirSupertypesChecker : CfirClassLikeChecker() {
         when (declaration) {
             is CfirInterface -> checkInterfaceSupertypes(declaration)
             is CfirClass, is CfirStruct, is CfirEnum -> {
-                checkConcreteSupertypesOpenForInheritance(declaration)
-                checkMultipleConcreteSupertypes(declaration)
+                checkConcreteSupertypeRules(declaration)
             }
             else -> Unit
         }
@@ -115,7 +119,13 @@ object CfirSupertypesChecker : CfirClassLikeChecker() {
         val ownerName = declaration.classLikeName()
         for (superTypeRef in declaration.superTypeRefs) {
             val superType = superTypeRef.toResolvedSupertypeForInterfaceLegality() ?: continue
-            if (superType.toResolvedSuperDeclaration(context)?.classKindOrNull() == CfirClassKind.INTERFACE) {
+
+            // 外层 nominal 声明只负责提供父类型种类；完整类型树负责判定父类型是否有效。
+            // 例如 I<V> 即使能够解析到 interface I，未解析的 V 仍使整个继承类型无效。
+            if (
+                !superType.completeType.contains { it is ConeErrorType } &&
+                superType.nominalType.toResolvedSuperDeclaration(context)?.classKindOrNull() == CfirClassKind.INTERFACE
+            ) {
                 continue
             }
 
@@ -123,56 +133,96 @@ object CfirSupertypesChecker : CfirClassLikeChecker() {
                 source = declaration.source,
                 factory = CfirErrors.INTERFACE_CANNOT_INHERIT_CLASS,
                 a = ownerName,
-                b = superType.supertypeDiagnosticName(context),
+                b = superType.nominalType.supertypeDiagnosticName(context),
             )
         }
     }
 
     /**
-     * 检查 class/struct/enum 是否声明了多个具体父类型。
+     * 检查 class/struct/enum 的 concrete 父类型顺序、多继承和可继承性。
+     *
+     * 官方 `CheckAndAddSubDecls` 逐个父类型维护两个状态：
+     * - 是否已经出现 concrete 父 class；
+     * - 当前父类型在继承列表中的顺序。
+     * 这能区分“第二个父 class”和“父 class 放在接口之后”两类诊断。
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
-    private fun checkMultipleConcreteSupertypes(declaration: CfirClassLikeDeclaration) {
-        val concreteSupers = declaration.superTypeRefs.mapNotNull { superTypeRef ->
-            val superDeclaration = superTypeRef.toResolvedSuperDeclaration(context) ?: return@mapNotNull null
-            if (superDeclaration.classKindOrNull() == CfirClassKind.INTERFACE) return@mapNotNull null
-            ConcreteSupertype(superTypeRef, superDeclaration.classLikeName())
-        }
-
-        if (concreteSupers.size <= 1) return
-
-        concreteSupers.drop(1).forEach { concreteSuper ->
-            reporter.reportOn(
-                source = concreteSuper.typeRef.source,
-                factory = CfirErrors.MULTIPLE_CLASS_SUPER_TYPES,
-                a = declaration.classLikeName(),
-                b = concreteSupers.map { it.name },
-            )
-        }
-    }
-
-    /**
-     * 检查具体父类型是否允许被当前声明继承。
-     */
-    context(context: CheckerContext, reporter: DiagnosticReporter)
-    private fun checkConcreteSupertypesOpenForInheritance(declaration: CfirClassLikeDeclaration) {
+    private fun checkConcreteSupertypeRules(declaration: CfirClassLikeDeclaration) {
         val ownerKey = declaration.classLikeIdentityKey()
+        var hasConcreteSuperClass = false
+        var superClassLikeCount = 0
 
         for (superTypeRef in declaration.superTypeRefs) {
-            val superDeclaration = superTypeRef.toResolvedSuperDeclaration(context) ?: continue
-            if (superDeclaration.classKindOrNull() == CfirClassKind.INTERFACE) continue
-            if (ownerKey != null && ownerKey == superDeclaration.classLikeIdentityKey()) continue
-            if (!superDeclaration.requiresOpenForInheritance()) continue
+            if (superTypeRef.reportInvalidConcreteSupertypeIfNeeded(declaration)) continue
+            val resolvedSupertype = superTypeRef.toResolvedSuperDeclarationWithSource(context) ?: continue
+            val superDeclaration = resolvedSupertype.declaration
+            val supertypeSource = resolvedSupertype.source
+            if (superDeclaration.classKindOrNull() == CfirClassKind.INTERFACE) {
+                superClassLikeCount++
+                continue
+            }
 
-            // 这是直接继承规则，属于 declaration checker 的职责；
-            // 这里不借用类型不匹配等兜底诊断，而是稳定产出专门的继承语义错误。
-            reporter.reportOn(
-                source = superTypeRef.source,
-                factory = CfirErrors.CLASS_NOT_OPEN_FOR_INHERITANCE,
-                a = superDeclaration.classLikeName(),
-            )
+            if (hasConcreteSuperClass) {
+                reporter.reportOn(
+                    source = supertypeSource,
+                    factory = CfirErrors.ILLEGAL_MULTI_INHERITANCE,
+                    a = declaration.classLikeName(),
+                )
+            } else if (superClassLikeCount != 0) {
+                reporter.reportOn(
+                    source = supertypeSource,
+                    factory = CfirErrors.SUPERCLASS_MUST_BE_PLACED_AT_FIRST,
+                    a = superDeclaration.classLikeName(),
+                )
+            }
+
+            if (
+                (ownerKey == null || ownerKey != superDeclaration.classLikeIdentityKey()) &&
+                superDeclaration.requiresOpenForInheritance()
+            ) {
+                reporter.reportOn(
+                    source = supertypeSource,
+                    factory = CfirErrors.NON_INHERITABLE_SUPER_CLASS,
+                    a = superDeclaration.classLikeName(),
+                )
+            }
+
+            hasConcreteSuperClass = true
+            superClassLikeCount++
         }
     }
+}
+
+/**
+ * 对无法恢复 nominal class/interface 的父类型报告 concrete class-like 继承错误。
+ *
+ * 带有效 delegated nominal type 的错误（例如已解析 owner 上的类型实参数量问题）仍交给
+ * 对应泛型诊断；只有完全无法确定父 class/interface 的错误类型才属于本检查器。
+ */
+context(context: CheckerContext, reporter: DiagnosticReporter)
+private fun CfirTypeRef.reportInvalidConcreteSupertypeIfNeeded(owner: CfirClassLikeDeclaration): Boolean {
+    val resolvedTypeRef = this as? CfirResolvedTypeRef ?: return false
+    val coneType = resolvedTypeRef.coneType as? ConeErrorType ?: return false
+    if (coneType.effectiveNominalSupertypeOrNull() != null) return false
+
+    reporter.reportOn(
+        source = resolvedTypeRef.supertypeConstructorDiagnosticSource(),
+        factory = CfirErrors.CLASS_INHERIT_NON_CLASS_NOR_INTERFACE,
+        a = owner.classLikeName(),
+    )
+    return true
+}
+
+/** 取得父类型最外层 classifier 名称的完整 token 范围。 */
+private fun CfirResolvedTypeRef.supertypeConstructorDiagnosticSource(): AbstractCjSourceElement? {
+    val userTypeRef = delegatedTypeRef as? CfirUserTypeRef ?: return source
+    val qualifierPart = userTypeRef.qualifier.lastOrNull() ?: return source
+    val qualifierSource = qualifierPart.source ?: return source
+    return CjOffsetsOnlySourceElement(
+        startOffset = qualifierSource.startOffset,
+        endOffset = (qualifierSource.startOffset + qualifierPart.name.asString().length)
+            .coerceAtMost(qualifierSource.endOffset),
+    )
 }
 
 /**
@@ -194,22 +244,76 @@ private data class ConcreteSupertype(
 )
 
 /**
+ * 父类型引用解析结果。
+ *
+ * @property declaration 父类型引用对应的 class-like 声明。
+ * @property source 触发父类型诊断的源码位置，错误类型场景下取其委托的原始 typeRef。
+ */
+private data class ResolvedSupertypeDeclaration(
+    /**
+     * 父类型引用对应的 class-like 声明。
+     */
+    val declaration: CfirClassLikeDeclaration,
+
+    /**
+     * 触发父类型诊断的源码位置。
+     */
+    val source: CjSourceElement?,
+)
+
+/**
+ * interface 父类型合法性检查所需的两个类型视图。
+ *
+ * [completeType] 保留完整类型实参树，用于识别嵌套错误类型；[nominalType] 保留可解析的
+ * 外层声明，用于在完整类型有效时判断父类型究竟是 interface 还是 concrete 类型。
+ */
+private data class InterfaceSupertypeLegality(
+    val completeType: ConeCangJieType,
+    val nominalType: ConeCangJieType,
+)
+
+/**
  * 将父类型引用解析为 class-like 声明。
  */
-private fun CfirTypeRef.toResolvedSuperDeclaration(context: CheckerContext): CfirClassLikeDeclaration? {
+private fun CfirTypeRef.toResolvedSuperDeclaration(context: CheckerContext): CfirClassLikeDeclaration? =
+    toResolvedSuperDeclarationWithSource(context)?.declaration
+
+/**
+ * 将父类型引用解析为 class-like 声明，并保留 resolve 阶段错误类型背后的原始父类型。
+ */
+private fun CfirTypeRef.toResolvedSuperDeclarationWithSource(
+    context: CheckerContext,
+): ResolvedSupertypeDeclaration? =
+    toResolvedSuperDeclarationWithSource(context, seenTypeRefs = linkedSetOf())
+
+/**
+ * 将父类型引用解析为 class-like 声明，并保留 resolve 阶段错误类型背后的原始父类型。
+ */
+private fun CfirTypeRef.toResolvedSuperDeclarationWithSource(
+    context: CheckerContext,
+    seenTypeRefs: MutableSet<CfirTypeRef>,
+): ResolvedSupertypeDeclaration? {
+    if (!seenTypeRefs.add(this)) return null
     val resolvedTypeRef = this as? CfirResolvedTypeRef ?: return null
-    return resolvedTypeRef.coneType.effectiveNominalSupertypeOrNull()?.toResolvedSuperDeclaration(context)
+    resolvedTypeRef.coneType.effectiveNominalSupertypeOrNull()?.toResolvedSuperDeclaration(context)?.let {
+        return ResolvedSupertypeDeclaration(it, source)
+    }
+    return resolvedTypeRef.delegatedTypeRef?.toResolvedSuperDeclarationWithSource(context, seenTypeRefs)
 }
 
 /**
- * interface 直接父类型必须是单一 nominal interface。
+ * interface 直接父类型必须是完整有效的单一 nominal interface。
  *
- * 解析失败的错误类型不继续级联；但实参数量错误这类已解析到 nominal owner 的错误类型，
- * 可以按 delegated type 继续参与父类型合法性检查。
+ * resolve 阶段可能在完整类型无效时仍保留可解析的外层 nominal 声明。检查器不能丢弃
+ * 完整类型树，否则 I<ErrorType> 会被误判为合法 interface 父类型。
  */
-private fun CfirTypeRef.toResolvedSupertypeForInterfaceLegality(): ConeCangJieType? {
+private fun CfirTypeRef.toResolvedSupertypeForInterfaceLegality(): InterfaceSupertypeLegality? {
     val resolvedTypeRef = this as? CfirResolvedTypeRef ?: return null
-    return resolvedTypeRef.coneType.effectiveNominalSupertypeOrNull() ?: resolvedTypeRef.coneType
+    val completeType = resolvedTypeRef.coneType
+    return InterfaceSupertypeLegality(
+        completeType = completeType,
+        nominalType = completeType.effectiveNominalSupertypeOrNull() ?: completeType,
+    )
 }
 
 private fun ConeCangJieType.effectiveNominalSupertypeOrNull(): ConeCangJieType? =

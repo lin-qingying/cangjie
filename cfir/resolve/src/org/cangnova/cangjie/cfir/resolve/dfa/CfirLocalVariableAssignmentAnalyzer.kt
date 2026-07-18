@@ -217,6 +217,19 @@ class CfirLocalVariableAssignmentAnalyzer private constructor(
     }
 
     /**
+     * 返回局部 callable 直接写入的外层局部声明。
+     *
+     * mini CFG 在进入局部函数或 lambda 时只保留词法外层声明，因此这里暴露的集合天然是
+     * callable write effect，而不是函数自身局部变量的普通赋值。调用图的传递闭包由消费方
+     * 按实际 resolved call 计算，避免把“声明了闭包”误当成“已经执行闭包”。
+     */
+    internal fun assignedOuterLocals(function: CfirFunction): Set<CfirCallableDeclaration> =
+        getInfoForDeclaration(function.symbol)
+            ?.assignedInside
+            ?.getAssignedDeclarations()
+            .orEmpty()
+
+    /**
      * 退出当前函数作用域。
      */
     fun exitFunction() {
@@ -432,6 +445,9 @@ class CfirLocalVariableAssignmentAnalyzer private constructor(
                     .filter { (_, values) -> values.any { !it.operatorAssignment } }
                     .mapTo(mutableSetOf()) { (declaration, _) -> declaration.symbol }
             }
+
+            /** 返回本赋值集合中的全部局部声明。 */
+            fun getAssignedDeclarations(): Set<CfirCallableDeclaration> = assignments.keys
         }
 
         /**
@@ -570,8 +586,15 @@ class CfirLocalVariableAssignmentAnalyzer private constructor(
              * 按调用求值顺序访问函数调用，并将 lambda 参数作为 postponed 参数放在普通参数之后。
              */
             override fun visitFunctionCall(functionCall: CfirFunctionCall, data: MiniCfgData) {
-                functionCall.explicitReceiver?.accept(this, data)
-                functionCall.dispatchReceiver?.accept(this, data)
+                val explicitReceiver = functionCall.explicitReceiver
+                explicitReceiver?.accept(this, data)
+
+                // resolved call 会让 explicit/dispatch receiver 共享同一个 CFIR DAG 节点；
+                // receiver 在语言求值顺序中只执行一次，mini CFG 也必须按对象身份去重。
+                val dispatchReceiver = functionCall.dispatchReceiver
+                if (dispatchReceiver !== explicitReceiver) {
+                    dispatchReceiver?.accept(this, data)
+                }
 
                 val (postponedLambdas, normalArguments) =
                     functionCall.argumentList.arguments.partition { it is CfirAnonymousFunctionExpression }

@@ -41,6 +41,10 @@ class ExpressionCheckersDiagnosticComponent(
         checkers.allLiteralExpressionCheckers.check(literalExpression, data)
     }
 
+    override fun visitStringInterpolation(stringInterpolation: CfirStringInterpolation, data: CheckerContext) {
+        checkers.allStringInterpolationCheckers.check(stringInterpolation, data)
+    }
+
     override fun visitFunctionCall(functionCall: CfirFunctionCall, data: CheckerContext) {
         checkers.allFunctionCallCheckers.check(functionCall, data)
     }
@@ -155,10 +159,6 @@ class ExpressionCheckersDiagnosticComponent(
 
     override fun visitHandleClause(handleClause: CfirHandleClause, data: CheckerContext) {
         checkers.allBasicExpressionCheckers.check(handleClause, data)
-    }
-
-    override fun visitStringInterpolation(stringInterpolation: CfirStringInterpolation, data: CheckerContext) {
-        checkers.allBasicExpressionCheckers.check(stringInterpolation, data)
     }
 
     override fun visitMatchBranch(matchBranch: CfirMatchBranch, data: CheckerContext) {

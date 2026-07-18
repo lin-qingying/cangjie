@@ -13,19 +13,19 @@ abstract class C1 <: I1 {}
 
 <!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>class C2<!> <: I1 {}
 
-<!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>class C3<!> <: I1 {
-    public func <!OVERRIDING_RETURN_TYPE_MISMATCH!>foo<!>(): Int64 {
+class C3 <: I1 {
+    public func <!RETURN_TYPE_INCOMPATIBLE!>foo<!>(): Int64 {
         return 0
     }
 }
 
-class C4 <: <!UNRESOLVED_REFERENCE!>I2<!> {
+class C4 <: <!UNDECLARED_TYPE_NAME!>I2<!> {
     public func foo(): Base {
         return Base()
     }
 }
 
-class C5 <: <!UNRESOLVED_REFERENCE!>I2<!> {
+class C5 <: <!UNDECLARED_TYPE_NAME!>I2<!> {
     public func foo(): Derived {
         return Derived()
     }

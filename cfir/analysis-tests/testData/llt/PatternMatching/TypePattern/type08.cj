@@ -17,7 +17,7 @@ main(): Int64 {
     var target = (Father(), Son(), Uncle())
     var res = match (target) {
         case (father: Father, son: Father, uncle: Uncle) => son.age
-        case _ => -1
+        case <!UNREACHABLE_PATTERN!>_<!> => -1
     }
     if (res == 20) {
         return 0

@@ -164,6 +164,15 @@ class CfirDeclarationToStringTest {
         ): CfirTypeScope = CfirTypeScope.Empty
 
         /**
+         * renderer 测试不解析 typealias 构造调用，返回空 scope 保持测试边界纯粹。
+         */
+        override fun getTypealiasConstructorScope(
+            typeAlias: CfirTypeAlias,
+            useSiteSession: CfirSession,
+            scopeSession: ScopeSession,
+        ): CfirTypeScope = CfirTypeScope.Empty
+
+        /**
          * 类声明点 member scope 在本测试中为空。
          */
         override fun getDeclarationSiteMemberScope(

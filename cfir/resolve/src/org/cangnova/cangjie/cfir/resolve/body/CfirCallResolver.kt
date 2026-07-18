@@ -49,7 +49,11 @@ import org.cangnova.cangjie.cfir.references.builder.buildNamedReference
 import org.cangnova.cangjie.cfir.references.builder.buildResolvedNamedReference
 import org.cangnova.cangjie.cfir.resolve.*
 import org.cangnova.cangjie.cfir.resolve.calls.ConeResolvedCallableReferenceAtom
+import org.cangnova.cangjie.cfir.resolve.calls.CandidateProcessingMode
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
+import org.cangnova.cangjie.cfir.resolve.calls.cangjieVariadicParameterForMapping
+import org.cangnova.cangjie.cfir.resolve.calls.hasUncertainExpectedTypeCompatibilityShape
+import org.cangnova.cangjie.cfir.resolve.calls.substituteExplicitTypeArgumentConstraints
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.*
 import org.cangnova.cangjie.cfir.resolve.calls.overloads.CfirOverloadByLambdaBodyResolver
 import org.cangnova.cangjie.cfir.resolve.calls.overloads.ConeCallConflictResolver
@@ -62,8 +66,13 @@ import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.CfirPCLAInfer
 import org.cangnova.cangjie.cfir.resolve.providers.findExtendDeclarationSubstitution
 import org.cangnova.cangjie.cfir.resolve.withExpectedType
 import org.cangnova.cangjie.cfir.resolve.inference.inferenceComponents
+import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeParameterBasedTypeVariable
 import org.cangnova.cangjie.cfir.scopes.defaultImportsProvider
+import org.cangnova.cangjie.cfir.scopes.CfirScope
+import org.cangnova.cangjie.cfir.scopes.impl.CfirClassMemberScopeKind
+import org.cangnova.cangjie.cfir.scopes.impl.CfirClassSubstitutionScope
+import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
 import org.cangnova.cangjie.cfir.semantics.AbstractCallCandidate
 import org.cangnova.cangjie.cfir.semantics.AbstractCandidate
 import org.cangnova.cangjie.cfir.semantics.ErrorTypeInArguments
@@ -84,6 +93,8 @@ import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.OperatorNameConventions
 import org.cangnova.cangjie.psi.CjValueArgument
 import org.cangnova.cangjie.resolve.calls.inference.buildCurrentSubstitutor
+import org.cangnova.cangjie.resolve.calls.inference.buildAbstractResultingSubstitutor
+import org.cangnova.cangjie.resolve.calls.inference.components.ConstraintSystemCompletionMode
 import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintKind
 import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintStorage
 import org.cangnova.cangjie.resolve.calls.inference.model.ReceiverConstraintPosition
@@ -98,6 +109,7 @@ import org.cangnova.cangjie.type.AbstractTypeChecker
 import org.cangnova.cangjie.type.model.TypeConstructorMarker
 import org.cangnova.cangjie.type.model.safeSubstitute
 import org.cangnova.cangjie.utils.runIf
+import java.util.IdentityHashMap
 
 /**
  * callable reference 实参解析结果。
@@ -108,6 +120,20 @@ internal enum class CallableReferenceResolutionResult {
     RESOLVED,
     POSTPONED,
     FAILURE,
+}
+
+/** 命名值访问在当前解析步骤中的结构用途。 */
+enum class NamedValueAccessPurpose {
+    /** 普通源码值访问，解析结果会直接进入最终 CFIR。 */
+    Regular,
+
+    /** 隐式 `invoke` 改写中只用于构造临时 receiver 的值访问。 */
+    ImplicitInvokeReceiver,
+
+    /**
+     * 模式裸名字的枚举构造器探测。探测失败表示普通绑定变量，不能产生最终诊断。
+     */
+    PatternConstructorProbe,
 }
 
 /**
@@ -124,6 +150,25 @@ class CfirCallResolver(
     private val towerResolver: CfirTowerResolver =
         CfirTowerResolver(components, components.resolutionStageRunner),
 ) : SessionHolder {
+    /**
+     * 函数调用节点到其不可变 tower discovery 的映射。
+     *
+     * completion 会把携带 Candidate 的引用改写成 applied reference，因此 discovery 不能只挂在
+     * 可变 Candidate 上；调用节点对象在同一 body resolve 生命周期内保持稳定，适合作为 identity key。
+     */
+    private val expectedTypeRefinementDiscoveries =
+        IdentityHashMap<CfirFunctionCall, List<CfirCallableCandidateDiscovery>>()
+
+    /**
+     * 清理当前 body-resolve 事务中暂存的 expected-return discovery。
+     *
+     * discovery 只服务于同一调用树内的 expected type 二次规约；它不是 session
+     * 级缓存。显式在事务边界清理，避免候选描述中的 scope、symbol 和表达式图把
+     * 已完成解析的文件长期保留。
+     */
+    fun clearExpectedTypeRefinementDiscoveries() {
+        expectedTypeRefinementDiscoveries.clear()
+    }
 
     /** 当前解析 session。 */
     override val session: CfirSession get() = components.session
@@ -185,7 +230,7 @@ class CfirCallResolver(
         var matchedClassifier: CfirClassLikeSymbol<*>? = null
         var classLikeCallResolved = false
         if (!isCollectionLiteralCall) {
-            if (sameFileClassifierForCall != null) {
+            if (sameFileClassifierForCall != null && result.candidates.isEmpty()) {
                 effectiveResult = collectClassConstructorCandidates(
                     functionCall = functionCall,
                     classifier = sameFileClassifierForCall,
@@ -284,6 +329,7 @@ class CfirCallResolver(
             matchedClassifier = findClassifierForCall(functionCall, callee.name)
         }
 
+
         val nameReference = createResolvedNamedReference(
             callee,
             callee.name,
@@ -304,6 +350,90 @@ class CfirCallResolver(
     }
 
     /**
+     * 在不重复 tower discovery 的前提下，用已发现重载集合和新的 expected type 重建候选。
+     *
+     * 官方调用检查先发现声明集合，再在候选局部 checkpoint 中按目标返回类型检查；这里仅当
+     * 所有已有候选的返回类型都可确定分类且得到唯一 survivor 时，读取 discovery 的不可变字段
+     * 创建 fresh candidate。旧候选的约束系统、stage 进度、诊断和 replacement 均不会复用。
+     * 返回类型仍含推断变量、错误恢复分量或无法唯一规约时返回 null，由调用方执行完整 resolver。
+     */
+    fun resolveCallFromPrecollectedCandidates(
+        functionCall: CfirFunctionCall,
+        resolutionMode: ResolutionMode,
+        discoveries: List<CfirCallableCandidateDiscovery>,
+    ): Pair<Candidate, CfirFunctionCall>? {
+        if (discoveries.size <= 1) return null
+        val callee = functionCall.calleeReference as? CfirNamedReference ?: return null
+        val callKind = when {
+            discoveries.all { discovery ->
+                discovery.symbol.takeIf { it.isBound }?.cfir is CfirEnumConstructor
+            } -> CallKind.EnumConstructorCall
+            discoveries.all { discovery ->
+                discovery.symbol.takeIf { it.isBound }?.cfir is CfirFunction
+            } -> CallKind.Function
+            else -> return null
+        }
+        val info = buildCallInfo(
+            qualifiedAccess = functionCall,
+            name = callee.name,
+            forceCallKind = callKind,
+            origin = functionCall.origin,
+            resolutionMode = resolutionMode,
+        )
+        val discovery = uniquePrecollectedCandidateByExpectedReturnType(info, discoveries)
+            ?: return null
+        val freshCandidate = CandidateFactory(transformer.resolutionContext, info).createCandidateFromDiscovery(
+            callInfo = info,
+            discovery = discovery,
+        )
+        val (reducedCandidates, applicability) = reduceCandidateSet(
+            candidates = listOf(freshCandidate),
+            info = info,
+            collectorApplicability = CandidateApplicability.HIDDEN,
+        )
+        val reference = createResolvedNamedReference(
+            reference = callee,
+            name = callee.name,
+            callInfo = info,
+            candidates = reducedCandidates,
+            applicability = applicability,
+            explicitReceiver = functionCall.explicitReceiver,
+        )
+        functionCall.replaceCalleeReference(reference)
+        val selectedCandidate = (reference as? CfirNamedReferenceWithCandidate)?.candidate ?: return null
+        reportBodyResolutionErrorToOverloadByLambdaCandidate(reference, selectedCandidate)
+        selectedCandidate.updateSourcesOfReceivers()
+        return selectedCandidate to functionCall
+    }
+
+    /** 返回调用初次名字查找保存的不可变候选描述集合。 */
+    fun expectedTypeRefinementDiscovery(
+        functionCall: CfirFunctionCall,
+    ): List<CfirCallableCandidateDiscovery>? = expectedTypeRefinementDiscoveries[functionCall]
+
+    /**
+     * 对已发现候选做无副作用的 expected-return 分类，并仅返回唯一确定 survivor。
+     */
+    private fun uniquePrecollectedCandidateByExpectedReturnType(
+        info: CallInfo,
+        discoveries: List<CfirCallableCandidateDiscovery>,
+    ): CfirCallableCandidateDiscovery? {
+        val expectedType = info.resolutionMode.expectedType
+            ?.fullyExpandedType(session)
+            ?: return null
+        if (expectedType.hasUncertainExpectedTypeCompatibilityShape()) return null
+
+        var matchingDiscovery: CfirCallableCandidateDiscovery? = null
+        for (discovery in discoveries) {
+            val candidateReturnType = discovery.deterministicReturnType ?: return null
+            if (!AbstractTypeChecker.isSubtypeOf(session.typeContext, candidateReturnType, expectedType)) continue
+            if (matchingDiscovery != null) return null
+            matchingDiscovery = discovery
+        }
+        return matchingDiscovery
+    }
+
+    /**
      * 解析 `this(...)` / `super(...)` 委托构造调用。
      *
      * 目标 class-like 声明先 lazy resolve 到 STATUS，然后只从目标声明的构造器集合创建候选；
@@ -313,21 +443,35 @@ class CfirCallResolver(
     fun resolveDelegatingConstructorCallAndSelectCandidate(
         functionCall: CfirFunctionCall,
         targetDeclaration: CfirClassLikeDeclaration,
+        constructedTargetType: ConeCangJieType,
         resolutionMode: ResolutionMode,
     ): CfirFunctionCall {
         val callee = functionCall.calleeReference as? CfirNamedReference ?: return functionCall
         targetDeclaration.symbol.lazyResolveToPhase(CfirResolvePhase.STATUS)
         val actualTarget = targetDeclaration.symbol.cfir
         val callInfo = createDelegatingConstructorCallInfo(functionCall, actualTarget, resolutionMode)
-        val constructorSymbols = actualTarget.declarations
-            .filterIsInstance<CfirConstructor>()
-            .map(CfirConstructor::symbol)
+        val declaredMemberScope = CfirClassUseSiteMemberScope(
+            session = session,
+            classSymbol = actualTarget.symbol,
+            symbolProvider = session.symbolProvider,
+            ownerType = constructedTargetType,
+            dispatchReceiverType = constructedTargetType,
+            scopeKind = CfirClassMemberScopeKind.DECLARATION_SITE,
+        )
+        val constructorScope = CfirClassSubstitutionScope(
+            session = session,
+            useSiteMemberScope = declaredMemberScope,
+            dispatchReceiverType = constructedTargetType,
+        )
+        val constructorSymbols = buildList {
+            constructorScope.processDeclaredConstructors(::add)
+        }
         val candidateFactory = CandidateFactory(transformer.resolutionContext, callInfo)
         val constructorCandidates = constructorSymbols.map { constructorSymbol ->
             candidateFactory.createCandidate(
                 callInfo = callInfo,
                 symbol = constructorSymbol,
-                originScope = null,
+                originScope = constructorScope,
             )
         }
         val (reducedCandidates, applicability) = reduceCollectedCandidates(
@@ -339,17 +483,27 @@ class CfirCallResolver(
                 components.resolutionStageRunner.fullyProcessCandidate(candidate, transformer.resolutionContext)
             },
             chooseMostSpecific = { currentCandidates ->
-                currentCandidates.singleOrNull()?.let(::setOf)
+                if (transformer.resolutionContext.candidateProcessingMode == CandidateProcessingMode.ARGUMENT_SHAPE) {
+                    return@reduceCollectedCandidates currentCandidates
+                }
+                reduceArityOnlyErrorCandidates(functionCall, currentCandidates)
+                    ?: currentCandidates.singleOrNull()?.let(::setOf)
                     ?: conflictResolver.chooseMaximallySpecificCandidates(currentCandidates)
             },
         )
+        val reducedResult = ResolutionResult(
+            info = callInfo,
+            applicability = applicability,
+            candidates = reducedCandidates,
+            forwardedDiagnostics = emptyList(),
+        ).reduceCandidatesByLambdaBody(functionCall)
 
         val nameReference = createResolvedNamedReference(
             callee,
             actualTarget.name,
-            callInfo,
-            reducedCandidates,
-            applicability,
+            reducedResult.info,
+            reducedResult.candidates,
+            reducedResult.applicability,
             explicitReceiver = null,
             createResolvedReferenceWithoutCandidateForLocalVariables = false,
         )
@@ -360,6 +514,69 @@ class CfirCallResolver(
         candidate?.updateSourcesOfReceivers()
         return functionCall
     }
+
+    /**
+     * 为普通函数、构造器和 enum constructor 选择最有解释力的纯参数数量失败候选。
+     *
+     * 该排序只参与失败诊断恢复，不参与任何成功 overload resolution。调用解析阶段已经
+     * 完整处理候选后，若当前最优失败组的每个候选都只包含 missing/extra 参数诊断，
+     * 则按调用实参数量到候选真实可接受 arity 区间的距离选择；距离相同时优先上界更小
+     * 的区间，使同等距离的 extra-argument 诊断稳定优先于 missing-argument 诊断。
+     * 默认参数与本次参数映射实际采用的仓颉变参形状都计入区间。
+     */
+    private fun reduceArityOnlyErrorCandidates(
+        functionCall: CfirFunctionCall,
+        candidates: Set<Candidate>,
+    ): Set<Candidate>? {
+        if (candidates.size <= 1) return null
+        if (candidates.any { candidate ->
+                val declaration = candidate.symbol.takeIf { it.isBound }?.cfir
+                declaration !is CfirFunction && declaration !is CfirConstructor && declaration !is CfirEnumConstructor
+            }
+        ) return null
+        if (candidates.any { candidate -> !candidate.hasOnlyArityMappingErrors() }) return null
+
+        val argumentCount = functionCall.argumentList.arguments.size
+        val selected = candidates.minWithOrNull(
+            compareBy<Candidate> { candidate -> candidate.arityDistance(argumentCount) }
+                .thenBy { candidate -> candidate.maximumAcceptedArity() },
+        ) ?: return null
+        return setOf(selected)
+    }
+
+    /** 判断候选失败是否完全由缺失或多余实参构成。 */
+    private fun Candidate.hasOnlyArityMappingErrors(): Boolean =
+        diagnostics.isNotEmpty() && diagnostics.all { diagnostic ->
+            diagnostic is NoValueForParameter || diagnostic is TooManyArguments
+        }
+
+    /** 计算实参数量到候选真实可接受 arity 区间的距离。 */
+    private fun Candidate.arityDistance(argumentCount: Int): Int {
+        val requiredArity = requiredAcceptedArity()
+        val maximumArity = maximumAcceptedArity()
+        return when {
+            argumentCount < requiredArity -> requiredArity - argumentCount
+            argumentCount > maximumArity -> argumentCount - maximumArity
+            else -> 0
+        }
+    }
+
+    /**
+     * 计算本次参数映射形状下的最小可接受实参数量。
+     *
+     * 只有映射器实际选择了仓颉变参路径时才排除变参形参，避免把普通 `Array<T>` 参数
+     * 无条件当作可省略参数。
+     */
+    private fun Candidate.requiredAcceptedArity(): Int {
+        val variadicParameter = cangjieVariadicParameterForCall
+        return declaredParametersForMapping().count { parameter ->
+            parameter != variadicParameter && parameter.defaultValue == null
+        }
+    }
+
+    /** 计算本次参数映射形状下的最大可接受实参数量；仓颉变参路径没有有限上界。 */
+    private fun Candidate.maximumAcceptedArity(): Int =
+        if (cangjieVariadicParameterForCall != null) Int.MAX_VALUE else declaredParametersForMapping().size
 
     /** 判断 classifier 或其 typealias 展开结果是否为标准库 `Array`。 */
     private fun CfirClassLikeSymbol<*>?.isStdlibArrayClassifier(): Boolean {
@@ -379,6 +596,7 @@ class CfirCallResolver(
         isUsedAsGetClassReceiver: Boolean,
         callSite: CfirElement,
         resolutionMode: ResolutionMode,
+        purpose: NamedValueAccessPurpose = NamedValueAccessPurpose.Regular,
     ): CfirExpression {
         return resolveNamedValueAccessAndSelectCandidateImpl(
             qualifiedAccess = qualifiedAccess,
@@ -386,6 +604,7 @@ class CfirCallResolver(
             resolutionMode = resolutionMode,
             isUsedAsGetClassReceiver = isUsedAsGetClassReceiver,
             callSite = callSite,
+            purpose = purpose,
         ) { true }
     }
 
@@ -409,6 +628,7 @@ class CfirCallResolver(
             isUsedAsGetClassReceiver = isUsedAsGetClassReceiver,
             callSite = callSite,
             resolutionMode = resolutionMode,
+            purpose = NamedValueAccessPurpose.Regular,
         )
 
     /**
@@ -424,10 +644,10 @@ class CfirCallResolver(
         resolutionMode: ResolutionMode,
         isUsedAsGetClassReceiver: Boolean,
         callSite: CfirElement = qualifiedAccess,
+        purpose: NamedValueAccessPurpose = NamedValueAccessPurpose.Regular,
         acceptCandidates: (Collection<Candidate>) -> Boolean,
     ): CfirExpression {
         val callee = qualifiedAccess.calleeReference as? CfirNamedReference ?: return qualifiedAccess
-
         val transformedAccess = transformer.transformExplicitReceiverOf(qualifiedAccess)
         // 导入包限定符对齐 Kotlin FirResolvedQualifier / PackageQualifierReceiver：
         // 它只提供静态成员查找作用域，不是运行期值接收者，不能继续保留为 dispatch receiver。
@@ -497,7 +717,8 @@ class CfirCallResolver(
         var result = basicResult
 
         if (transformedAccess.explicitReceiver == null) {
-            if (isUsedAsReceiver && !basicResult.isSuccess) {
+            // 类型参数在值位置仍应保留其 classifier 身份与真实类型，后置 checker 再报告非法值使用。
+            if (!basicResult.isSuccess) {
                 val typeParameter = towerResolver.findTypeParameters(callee.name).firstOrNull()
                 if (typeParameter != null) {
                     transformedAccess.replaceCalleeReference(
@@ -515,6 +736,7 @@ class CfirCallResolver(
             if (!result.isSuccess || (isUsedAsReceiver && result.candidates.all { it.symbol is CfirClassLikeSymbol<*> })) {
                 val classifier = towerResolver.findClassifiers(callee.name)
                     .firstOrNull { it.isValidClassifierExpression(isUsedAsReceiver) }
+                    ?: resolveTopLevelClassifierByShortName(callee.name)
                 if (classifier != null) {
                     transformedAccess.replaceCalleeReference(
                         buildResolvedNamedReference {
@@ -566,6 +788,20 @@ class CfirCallResolver(
         }
 
         val reducedCandidates = result.candidates
+        if (purpose == NamedValueAccessPurpose.PatternConstructorProbe &&
+            reducedCandidates.none { candidate ->
+                candidate.symbol.takeIf { it.isBound }?.cfir is CfirEnumConstructor
+            }
+        ) {
+            // `case Day(x)` 中的 x 先按裸模式名探测；没有枚举构造器时它是绑定，
+            // 该次临时访问的 unresolved 结果不能污染最终 body diagnostics。
+            return transformedAccess
+        }
+        transformedAccess.resolveEnumConstructorAsImplicitInvokeReceiver(
+            callee = callee,
+            candidates = reducedCandidates,
+            purpose = purpose,
+        )?.let { return it }
         if (!acceptCandidates(reducedCandidates)) return transformedAccess
 
         val nameReference = createResolvedNamedReference(
@@ -701,7 +937,7 @@ class CfirCallResolver(
             /** 当前 atom 展开后形成的下一批部分解析路径。 */
             val nextPartials = mutableListOf<PartialResolution>()
             for (partial in partials) {
-                val choices = callableReferenceChoices(containingCallCandidate, atom, partial.storage)
+                val choices = callableReferenceChoices(atom, partial.storage)
                 for (choice in choices) {
                     nextPartials += PartialResolution(
                         storage = choice.candidate.system.currentStorage(),
@@ -710,7 +946,10 @@ class CfirCallResolver(
                 }
             }
             if (nextPartials.isEmpty()) {
-                atoms.forEach { atom -> atom.markResolved() }
+                if (atom.failureKind == null) {
+                    atom.failureKind = CallableReferenceFailureKind.NO_MATCH
+                    atom.markResolved()
+                }
                 return CallableReferenceResolutionResult.FAILURE
             }
             partials = nextPartials
@@ -718,7 +957,35 @@ class CfirCallResolver(
 
         if (partials.size != 1) {
             if (atoms.any { atom -> atom.isPostponedBecauseOfAmbiguity }) {
-                atoms.forEach { atom -> atom.markResolved() }
+                val choicesByAtom = atoms.associateWith { atom ->
+                    partials
+                        .asSequence()
+                        .flatMap { partial -> partial.choices.asSequence() }
+                        .filter { choice -> choice.atom === atom }
+                        .distinctBy { choice -> choice.candidate }
+                        .toList()
+                }
+                val ambiguousArgumentAtom = choicesByAtom.entries.firstOrNull { (_, choices) ->
+                    choices.distinctResultingTypes().size > 1
+                }
+                if (ambiguousArgumentAtom != null) {
+                    val representative = ambiguousArgumentAtom.value.firstOrNull()
+                    if (representative != null) {
+                        containingCallCandidate.system.replaceContentWith(representative.candidate.system.currentStorage())
+                        containingCallCandidate.additionalCompletionVariables +=
+                            representative.candidate.freshVariables.map { variable -> variable.typeConstructor }
+                        containingCallCandidate.additionalCompletionVariables +=
+                            representative.candidate.additionalCompletionVariables
+                        representative.apply()
+                        ambiguousArgumentAtom.key.commitResultingCallableReference()
+                    }
+                    ambiguousArgumentAtom.key.failureKind = CallableReferenceFailureKind.AMBIGUOUS_ARGUMENT_TYPE
+                    return CallableReferenceResolutionResult.FAILURE
+                }
+                atoms.forEach { atom ->
+                    val choices = choicesByAtom.getValue(atom)
+                    atom.markAmbiguousFunctionReference(choices)
+                }
                 return CallableReferenceResolutionResult.FAILURE
             }
 
@@ -729,10 +996,39 @@ class CfirCallResolver(
         val resolved = partials.single()
         containingCallCandidate.system.replaceContentWith(resolved.storage)
         for (choice in resolved.choices) {
+            containingCallCandidate.additionalCompletionVariables +=
+                choice.candidate.freshVariables.map { variable -> variable.typeConstructor }
+            containingCallCandidate.additionalCompletionVariables +=
+                choice.candidate.additionalCompletionVariables
             choice.candidate.system.replaceContentWith(resolved.storage)
             choice.apply()
         }
         return CallableReferenceResolutionResult.RESOLVED
+    }
+
+    /** 将 completion 后仍有多个匹配项的 callable reference 写回为专用歧义诊断。 */
+    private fun ConeResolvedCallableReferenceAtom.markAmbiguousFunctionReference(
+        choices: List<CallableReferenceChoice>,
+    ) {
+        val expression = expression as? CfirNamedAccessExpression
+        val reference = expression?.calleeReference as? CfirNamedReference
+        if (expression == null || reference == null || choices.isEmpty()) {
+            markResolved()
+            return
+        }
+
+        val diagnostic = ConeAmbiguousFunctionReferenceError(
+            name = reference.name,
+            candidatesWithErrors = choices.associate { choice -> choice.candidate to null },
+        )
+        resultingReference = buildErrorNamedReference {
+            source = reference.source
+            name = reference.name
+            this.diagnostic = diagnostic
+        }
+        resultingTypeForCallableReference = ConeErrorType(diagnostic, delegatedType = expectedType)
+        failureKind = CallableReferenceFailureKind.AMBIGUITY
+        markResolved()
     }
 
     /**
@@ -754,15 +1050,13 @@ class CfirCallResolver(
         fun apply() {
             val reference = expression.calleeReference as? CfirNamedReference ?: return
             candidate.updateSourcesOfReceivers()
-            expression.replaceCalleeReference(
-                CfirNamedReferenceWithCandidate(
-                    reference.source,
-                    reference.name,
-                    candidate,
-                )
+            atom.resultingReference = CfirNamedReferenceWithCandidate(
+                reference.source,
+                reference.name,
+                candidate,
             )
-            expression.replaceConeTypeOrNull(resultingType)
             atom.resultingTypeForCallableReference = resultingType
+            atom.failureKind = null
             atom.markResolved()
         }
     }
@@ -770,33 +1064,101 @@ class CfirCallResolver(
     /**
      * 为一个 callable reference atom 枚举在当前约束系统快照下可成功的候选选择。
      *
-     * expected type 会先按外层候选约束系统替换，再用 candidate factory 复制原候选并完整跑 stages。
+     * expected type 会先按外层候选约束系统替换，再在该分支的 base system 上运行局部 tower resolve。
+     * 普通 collector 只保留当前最佳 tower group，避免把被遮蔽或低优先级声明引入函数引用歧义。
      */
     private fun callableReferenceChoices(
-        containingCallCandidate: Candidate,
         atom: ConeResolvedCallableReferenceAtom,
         baseSystem: ConstraintStorage,
     ): List<CallableReferenceChoice> {
         val expression = atom.expression as? CfirNamedAccessExpression ?: return emptyList()
         val expectedType = atom.expectedTypeForCallableReference(baseSystem) ?: return emptyList()
-        val originalCandidates = expression.callableReferenceCandidates()
+        val callInfo = expression.callableReferenceCallInfo(expectedType)
+        val collector = CfirCandidateCollector(components, components.resolutionStageRunner)
+        val resultCollector = towerResolver.runResolver(
+            info = callInfo,
+            context = transformer.resolutionContext,
+            externalCollector = collector,
+            candidateFactory = CandidateFactory(transformer.resolutionContext, baseSystem),
+        )
+        val (reducedCandidates, _) = reduceCandidates(resultCollector, callInfo)
+        val functionCandidates = reducedCandidates.filter { candidate ->
+            candidate.symbol.takeIf { it.isBound }?.cfir is CfirFunction
+        }
+        val hasExplicitTypeArguments = expression.typeArguments.isNotEmpty() || callInfo.hasExplicitTypeArguments
+        val originalCandidates = if (hasExplicitTypeArguments) {
+            functionCandidates
+        } else {
+            functionCandidates.filter { candidate ->
+                val function = candidate.symbol.takeIf { it.isBound }?.cfir as? CfirFunction
+                function?.typeParameters.isNullOrEmpty()
+            }
+        }
+        if (!hasExplicitTypeArguments && originalCandidates.isEmpty() && functionCandidates.isNotEmpty()) {
+            atom.markGenericTypeArgumentRequired()
+            return emptyList()
+        }
         if (originalCandidates.isEmpty()) return emptyList()
 
-        val callInfo = expression.callableReferenceCallInfo(expectedType)
-        val candidateFactory = CandidateFactory(transformer.resolutionContext, baseSystem)
-        val choices = originalCandidates.mapNotNull { originalCandidate ->
-            val candidate = candidateFactory.createCallableReferenceCandidate(callInfo, originalCandidate)
-            components.resolutionStageRunner.fullyProcessCandidate(candidate, transformer.resolutionContext)
-            val resultingType = candidate.resultingTypeForCallableReference ?: return@mapNotNull null
-            if (!candidate.isSuccessful || candidate.system.hasContradiction) {
-                return@mapNotNull null
-            }
+        val choices = originalCandidates.mapNotNull { candidate ->
+            val resultingType = candidate.currentFunctionReferenceType() ?: return@mapNotNull null
             CallableReferenceChoice(atom, expression, candidate, resultingType)
         }
         if (choices.size <= 1) return choices
 
         val mostSpecificCandidates = conflictResolver.chooseMaximallySpecificCandidates(choices.map { it.candidate })
         return choices.filter { choice -> choice.candidate in mostSpecificCandidates }
+    }
+
+    /**
+     * 完成函数引用候选并用约束系统最终 substitutor 构造对外函数类型。
+     */
+    private fun Candidate.currentFunctionReferenceType(): ConeCangJieType? {
+        val rawResultingType = resultingTypeForCallableReference ?: return null
+        if (!isSuccessful || system.hasContradiction) return null
+        val resultingSubstitutor = system.currentStorage()
+            .buildCurrentSubstitutor(session.typeContext, emptyMap())
+            .asCone()
+        return substituteExplicitTypeArgumentConstraints(
+            resultingSubstitutor.substituteOrSelf(rawResultingType),
+        )
+    }
+
+    /** 按类型系统相等性对 callable-reference 结果函数类型去重。 */
+    private fun List<CallableReferenceChoice>.distinctResultingTypes(): List<ConeCangJieType> {
+        val result = mutableListOf<ConeCangJieType>()
+        for (choice in this) {
+            if (result.none { type -> AbstractTypeChecker.equalTypes(session.typeContext, type, choice.resultingType) }) {
+                result += choice.resultingType
+            }
+        }
+        return result
+    }
+
+    /** 将只有泛型候选的裸函数引用写回为缺少显式类型实参。 */
+    private fun ConeResolvedCallableReferenceAtom.markGenericTypeArgumentRequired() {
+        val expression = expression as? CfirNamedAccessExpression ?: return
+        val reference = expression.calleeReference as? CfirNamedReference ?: return
+        val diagnostic = ConeSimpleDiagnostic(
+            "generic function reference should be used with type argument",
+            DiagnosticKind.GenericTypeWithoutTypeArgument,
+        )
+        resultingReference = buildErrorNamedReference {
+            source = reference.source
+            name = reference.name
+            this.diagnostic = diagnostic
+        }
+        resultingTypeForCallableReference = ConeErrorType(diagnostic, delegatedType = expectedType)
+        failureKind = CallableReferenceFailureKind.GENERIC_TYPE_ARGUMENT_REQUIRED
+        markResolved()
+        commitResultingCallableReference()
+    }
+
+    /** 失败候选已确定专用诊断时，将 atom 的局部结果提交到对应实参表达式。 */
+    private fun ConeResolvedCallableReferenceAtom.commitResultingCallableReference() {
+        val expression = expression as? CfirNamedAccessExpression ?: return
+        resultingReference?.let(expression::replaceCalleeReference)
+        resultingTypeForCallableReference?.let(expression::replaceConeTypeOrNull)
     }
 
     /**
@@ -812,24 +1174,6 @@ class CfirCallResolver(
             .buildCurrentSubstitutor(session.typeContext, emptyMap())
             .asCone()
         return substitutor.substituteOrSelf(rawExpectedType)
-    }
-
-    /**
-     * 从 callable reference 表达式已有 callee reference 中提取候选。
-     *
-     * 已选候选直接复用；歧义错误只保留函数声明候选，避免把非 callable 值混入 callable reference 解析。
-     */
-    private fun CfirNamedAccessExpression.callableReferenceCandidates(): List<Candidate> {
-        return when (val reference = calleeReference) {
-            is CfirNamedReferenceWithCandidate -> listOf(reference.candidate)
-            is CfirErrorNamedReference -> {
-                val ambiguity = reference.diagnostic as? ConeAmbiguityError ?: return emptyList()
-                ambiguity.candidates.filterIsInstance<Candidate>().filter { candidate ->
-                    candidate.symbol.takeIf { it.isBound }?.cfir is CfirFunction
-                }
-            }
-            else -> emptyList()
-        }
     }
 
     /**
@@ -875,6 +1219,38 @@ class CfirCallResolver(
         resolutionMode: ResolutionMode,
         collectionLiteralContext: CollectionLiteralOuterCandidateContext? = null,
     ): ResolutionResult {
+        val info = buildCallInfo(
+            qualifiedAccess = qualifiedAccess,
+            name = name,
+            forceCallKind = forceCallKind,
+            isUsedAsGetClassReceiver = isUsedAsGetClassReceiver,
+            origin = origin,
+            containingDeclarations = containingDeclarations,
+            callSite = callSite,
+            resolutionMode = resolutionMode,
+            collectionLiteralContext = collectionLiteralContext,
+        )
+
+        return collectCandidates(info = info, resolutionContext = resolutionContext, collector = collector)
+    }
+
+    /**
+     * 为 tower discovery 与已发现候选的 expected-return 细化构造同一份调用信息。
+     *
+     * 两条路径必须共享实参、receiver、call kind 与外层 collection-literal 语境；否则 fresh
+     * candidate 会在与原始名字查找不同的调用模型上执行 stages。
+     */
+    private fun buildCallInfo(
+        qualifiedAccess: CfirQualifiedAccessExpression,
+        name: Name,
+        forceCallKind: CallKind? = null,
+        isUsedAsGetClassReceiver: Boolean = false,
+        origin: CfirFunctionCallOrigin = CfirFunctionCallOrigin.Regular,
+        containingDeclarations: List<CfirDeclaration> = transformer.components.containingDeclarations,
+        callSite: CfirElement = qualifiedAccess,
+        resolutionMode: ResolutionMode,
+        collectionLiteralContext: CollectionLiteralOuterCandidateContext? = null,
+    ): CallInfo {
         val explicitReceiver = qualifiedAccess.explicitReceiver
         val arguments = (qualifiedAccess as? CfirFunctionCall)?.argumentList?.arguments ?: emptyList()
         val typeArguments = qualifiedAccess.typeArguments
@@ -886,7 +1262,7 @@ class CfirCallResolver(
             else -> CallKind.NamedValueAccess
         }
 
-        val info = CallInfo(
+        return CallInfo(
             callSite = callSite,
             callKind = callKind,
             name = name,
@@ -901,8 +1277,6 @@ class CfirCallResolver(
             resolutionMode = resolutionMode,
             containingCandidateForCollectionLiteral = collectionLiteralContext?.containingCandidate,
         )
-
-        return collectCandidates(info = info, resolutionContext = resolutionContext, collector = collector)
     }
 
     /**
@@ -920,17 +1294,89 @@ class CfirCallResolver(
         var (reducedCandidates, applicability) = reduceCandidates(resultCollector, info = info)
         reducedCandidates = reduceFunctionValueCandidatesByExpectedType(info, reducedCandidates)
         val callSite = info.callSite
-        if (callSite is CfirQualifiedAccessExpression && components.context.shouldReduceOverloadByLambdaCandidates()) {
-            reducedCandidates = overloadByLambdaBodyResolver.reduceCandidates(callSite, reducedCandidates)
-        }
-
-        return ResolutionResult(
+        var result = ResolutionResult(
             info = info,
             applicability = applicability,
             candidates = reducedCandidates,
             forwardedDiagnostics = resultCollector.forwardedDiagnostics(),
         )
+        if (callSite is CfirQualifiedAccessExpression) {
+            result = result.reduceCandidatesByLambdaBody(callSite)
+        }
+
+        val expectedTypeRefinementDiscovery = buildExpectedTypeRefinementDiscovery(
+            info = info,
+            candidates = resultCollector.candidatesDiscoveredInBestGroup(),
+        )
+        val functionCall = info.callSite as? CfirFunctionCall
+        if (functionCall != null && (info.callKind == CallKind.Function || info.callKind == CallKind.EnumConstructorCall)) {
+            if (expectedTypeRefinementDiscovery.isEmpty()) {
+                expectedTypeRefinementDiscoveries.remove(functionCall)
+            } else {
+                expectedTypeRefinementDiscoveries[functionCall] = expectedTypeRefinementDiscovery
+            }
+        }
+
+        return result
     }
+
+    /**
+     * 把初次 tower 名字查找的完整成功候选集冻结成 expected-return 细化描述。
+     *
+     * 任一候选仍不成功、符号不是 callable 或返回类型不能确定时，描述仍保留但其返回类型为空；
+     * 后续规约会整体回退完整 resolver，不会从不完整信息中删除候选。
+     */
+    private fun buildExpectedTypeRefinementDiscovery(
+        info: CallInfo,
+        candidates: Collection<Candidate>,
+    ): List<CfirCallableCandidateDiscovery> {
+        if (info.callKind != CallKind.Function && info.callKind != CallKind.EnumConstructorCall) return emptyList()
+        if (candidates.size <= 1 || candidates.any { !it.isSuccessful }) return emptyList()
+
+        val discoveries = ArrayList<CfirCallableCandidateDiscovery>(candidates.size)
+        for (candidate in candidates) {
+            val symbol = candidate.symbol as? CfirCallableSymbol<*> ?: return emptyList()
+            val returnType = components.initialTypeOfCandidate(candidate).fullyExpandedType(session)
+            val deterministicReturnType = returnType.takeIf {
+                candidate.system.isProperType(it) && !it.hasUncertainExpectedTypeCompatibilityShape()
+            }
+            discoveries += CfirCallableCandidateDiscovery(
+                symbol = symbol,
+                dispatchReceiverExpression = candidate.dispatchReceiver?.expression,
+                givenExtensionReceiverExpression = candidate.givenExtensionReceiver?.expression,
+                explicitReceiverKind = candidate.explicitReceiverKind,
+                originScope = candidate.originScope,
+                isFromCompanionObjectTypeScope = candidate.isFromCompanionObjectTypeScope,
+                isFromOriginalTypeInPresenceOfSmartCast = candidate.isFromOriginalTypeInPresenceOfSmartCast,
+                deterministicReturnType = deterministicReturnType,
+            )
+        }
+        return discoveries.distinctBy { discovery -> discovery.refinementIdentityKey() }
+    }
+
+    /**
+     * 同一声明可能同时经文件 scope 与 package scope 被发现；expected-return 细化按真实调用目标去重，
+     * 但保留 receiver 身份与 smart-cast 来源不同的候选，因为它们携带不同的调用约束。
+     */
+    private fun CfirCallableCandidateDiscovery.refinementIdentityKey(): ExpectedTypeRefinementDiscoveryKey =
+        ExpectedTypeRefinementDiscoveryKey(
+            symbol = symbol,
+            dispatchReceiverExpression = dispatchReceiverExpression,
+            givenExtensionReceiverExpression = givenExtensionReceiverExpression,
+            explicitReceiverKind = explicitReceiverKind,
+            isFromCompanionObjectTypeScope = isFromCompanionObjectTypeScope,
+            isFromOriginalTypeInPresenceOfSmartCast = isFromOriginalTypeInPresenceOfSmartCast,
+        )
+
+    /** expected-return discovery 的语义调用身份；origin scope 不参与同声明重复发现的区分。 */
+    private data class ExpectedTypeRefinementDiscoveryKey(
+        val symbol: CfirCallableSymbol<*>,
+        val dispatchReceiverExpression: CfirExpression?,
+        val givenExtensionReceiverExpression: CfirExpression?,
+        val explicitReceiverKind: org.cangnova.cangjie.resolve.calls.tasks.ExplicitReceiverKind,
+        val isFromCompanionObjectTypeScope: Boolean,
+        val isFromOriginalTypeInPresenceOfSmartCast: Boolean,
+    )
 
     /**
      * 将函数调用 callee 单独解析成值访问。
@@ -971,7 +1417,9 @@ class CfirCallResolver(
         val invokeInfo = valueAccessResult.info.copy(
             callKind = CallKind.Function,
             arguments = functionCall.argumentList.arguments,
-            typeArguments = functionCall.typeArguments,
+            // 源码类型实参属于被调用的函数值表达式；函数类型 synthetic invoke
+            // 自身没有声明类型参数，不能继承 receiver 的类型实参。
+            typeArguments = emptyList(),
             name = name,
             implicitInvokeMode = ImplicitInvokeMode.Regular,
         )
@@ -1074,6 +1522,9 @@ class CfirCallResolver(
         info: CallInfo,
         candidates: Set<Candidate>,
     ): Set<Candidate> {
+        if (transformer.resolutionContext.candidateProcessingMode == CandidateProcessingMode.ARGUMENT_SHAPE) {
+            return candidates
+        }
         if (candidates.size <= 1 || info.callKind != CallKind.NamedValueAccess) return candidates
         val expectedFunctionType = info.resolutionMode.expectedType
             ?.fullyExpandedType() as? ConeFunctionType ?: return candidates
@@ -1082,16 +1533,112 @@ class CfirCallResolver(
             candidate.symbol.takeIf { it.isBound }?.cfir is CfirFunction
         }
         if (functionCandidates.size != candidates.size) return candidates
+        val expression = info.callSite as? CfirNamedAccessExpression ?: return candidates
 
         val matchingCandidates = functionCandidates.filterTo(linkedSetOf()) { candidate ->
-            val functionType = components.functionTypeForFunctionValueCandidate(candidate)
-            AbstractTypeChecker.isSubtypeOf(session.typeContext, functionType, expectedFunctionType)
+            candidate.completedFunctionReferenceType(expression, expectedFunctionType) != null
         }
-
         return when (matchingCandidates.size) {
             0 -> candidates
             1 -> matchingCandidates
-            else -> conflictResolver.chooseMaximallySpecificCandidates(matchingCandidates)
+            else -> matchingCandidates
+        }
+    }
+
+    /**
+     * 将函数值 overload set 在完整目标函数类型下归类为成功、无匹配或函数引用歧义。
+     *
+     * 含未固定类型变量的目标类型仍由 postponed argument completion 处理；这里仅在目标类型
+     * 已经确定时生成官方 `ChkRefExpr` 对应的结构化结果。
+     */
+    private fun functionReferenceTargetDiagnostic(
+        info: CallInfo,
+        candidates: Collection<Candidate>,
+    ): ConeDiagnostic? {
+        if (info.callKind != CallKind.NamedValueAccess || candidates.isEmpty()) return null
+        val expectedFunctionType = info.resolutionMode.expectedType
+            ?.fullyExpandedType() as? ConeFunctionType ?: return null
+        if (expectedFunctionType.contains { type -> type is ConeTypeVariableType }) return null
+        if (candidates.any { candidate -> candidate.symbol.takeIf { it.isBound }?.cfir !is CfirFunction }) return null
+        val expression = info.callSite as? CfirNamedAccessExpression ?: return null
+
+        val matchingCandidates = candidates.filter { candidate ->
+            candidate.completedFunctionReferenceType(expression, expectedFunctionType) != null
+        }
+        return when (matchingCandidates.size) {
+            0 -> ConeNoMatchingFunctionReferenceError(info.name)
+            1 -> null
+            else -> ConeAmbiguousFunctionReferenceError(
+                name = info.name,
+                candidatesWithErrors = matchingCandidates.associateWith { null },
+            )
+        }
+    }
+
+    /**
+     * 在已确定的目标函数类型下独立完成一个函数值候选，并返回完成后的函数类型。
+     *
+     * 该探测只服务于普通 named-value access 的最终重载规约：目标类型不含外层待固定变量，
+     * 因而可以在隔离的候选约束系统中完成泛型函数实例化。postponed callable-reference
+     * 实参使用外层调用的分支约束系统，不经过此入口，避免提前固定外层类型变量。
+     */
+    private fun Candidate.completedFunctionReferenceType(
+        expression: CfirNamedAccessExpression,
+        expectedFunctionType: ConeFunctionType,
+    ): ConeCangJieType? {
+        if (!hasCompatibleFunctionValueParameterShape(expectedFunctionType)) return null
+
+        val callInfo = expression.callableReferenceCallInfo(expectedFunctionType)
+        val probeCandidate = CandidateFactory(transformer.resolutionContext, callInfo)
+            .createCallableReferenceCandidate(callInfo, this)
+        components.resolutionStageRunner.fullyProcessCandidate(
+            probeCandidate,
+            transformer.resolutionContext,
+        )
+        val rawResultingType = probeCandidate.resultingTypeForCallableReference ?: return null
+        if (!probeCandidate.isSuccessful || probeCandidate.system.hasContradiction) return null
+
+        components.callCompleter.runCompletionForCall(
+            candidate = probeCandidate,
+            completionMode = ConstraintSystemCompletionMode.FULL,
+            call = expression,
+            initialType = rawResultingType,
+        )
+        if (probeCandidate.system.hasContradiction) return null
+
+        val resultingType = probeCandidate.system.currentStorage()
+            .buildAbstractResultingSubstitutor(session.typeContext)
+            .asCone()
+            .substituteOrSelf(rawResultingType)
+        return resultingType.takeIf { type ->
+            AbstractTypeChecker.isSubtypeOfForFunctionReference(
+                session.typeContext,
+                type,
+                expectedFunctionType,
+            )
+        }
+    }
+
+    /**
+     * 先按目标函数类型的参数形状过滤函数值 overload。
+     *
+     * 参数已经不匹配的候选不需要、也不应该计算隐式返回类型；否则递归函数值引用会在
+     * 一个本来应被参数过滤掉的 overload 上制造伪递归。
+     */
+    private fun Candidate.hasCompatibleFunctionValueParameterShape(expectedFunctionType: ConeFunctionType): Boolean {
+        val function = symbol.takeIf { it.isBound }?.cfir as? CfirFunction ?: return false
+        if (function.valueParameters.size != expectedFunctionType.parameterTypes.size) return false
+        if (expectedFunctionType.parameterTypes.any { parameterType -> parameterType.contains { it is ConeTypeVariableType } }) {
+            return true
+        }
+        return function.valueParameters.zip(expectedFunctionType.parameterTypes).all { (parameter, expectedParameterType) ->
+            val parameterType = (parameter.returnTypeRef as? CfirResolvedTypeRef)?.coneType ?: return false
+            val substitutedParameterType = substitutor.substituteOrSelf(parameterType)
+            AbstractTypeChecker.isSubtypeOfForFunctionReference(
+                session.typeContext,
+                expectedParameterType,
+                substitutedParameterType,
+            )
         }
     }
 
@@ -1106,21 +1653,47 @@ class CfirCallResolver(
         info: CallInfo,
         resolutionContext: ResolutionContext = transformer.resolutionContext,
     ): Pair<Set<Candidate>, CandidateApplicability> {
-        val functionValueCandidates = collector.functionValueCandidates()
+        val discoveredFunctionValueCandidates = collector.functionValueCandidates()
+        val accessibleFunctionValueCandidates = discoveredFunctionValueCandidates.filter { candidate ->
+            candidate.isSuccessful
+        }
+        val functionValueCandidates = when {
+            info.callKind != CallKind.NamedValueAccess -> accessibleFunctionValueCandidates
+            info.resolutionMode.expectedType != null -> accessibleFunctionValueCandidates
+            info.hasExplicitTypeArguments -> accessibleFunctionValueCandidates
+            else -> {
+                val nonGenericCandidates = accessibleFunctionValueCandidates.filter { candidate ->
+                    val function = candidate.symbol.takeIf { it.isBound }?.cfir as? CfirFunction
+                    function?.typeParameters.isNullOrEmpty()
+                }
+                nonGenericCandidates.ifEmpty { accessibleFunctionValueCandidates }
+            }
+        }
+        val bestCandidates = collector.bestCandidates()
         val preserveFunctionValueOverloadSet =
             info.callKind == CallKind.NamedValueAccess &&
-                    info.resolutionMode.expectedType == null &&
-                    functionValueCandidates.size > 1
+                    functionValueCandidates.size > 1 &&
+                    bestCandidates.isNotEmpty() &&
+                    bestCandidates.all { candidate ->
+                        candidate.symbol.takeIf { it.isBound }?.cfir is CfirFunction
+                    } &&
+                    collector.functionValueCandidatesGroup() == collector.bestGroup
+        val namedValueCandidates = when {
+            preserveFunctionValueOverloadSet -> functionValueCandidates
+            else -> bestCandidates
+        }
+        val preserveNamedValueCandidateSet =
+            preserveFunctionValueOverloadSet
 
         return reduceCandidateSet(
-            candidates = if (preserveFunctionValueOverloadSet) functionValueCandidates else collector.bestCandidates(),
-            collectorApplicability = if (preserveFunctionValueOverloadSet) {
+            candidates = namedValueCandidates,
+            collectorApplicability = if (preserveNamedValueCandidateSet) {
                 CandidateApplicability.RESOLVED
             } else {
                 collector.currentApplicability
             },
             info = info,
-            preserveFunctionValueOverloadSet = preserveFunctionValueOverloadSet,
+            preserveNamedValueCandidateSet = preserveNamedValueCandidateSet,
             resolutionContext = resolutionContext,
         )
     }
@@ -1132,7 +1705,7 @@ class CfirCallResolver(
         candidates: Collection<Candidate>,
         info: CallInfo,
         collectorApplicability: CandidateApplicability,
-        preserveFunctionValueOverloadSet: Boolean = false,
+        preserveNamedValueCandidateSet: Boolean = false,
         resolutionContext: ResolutionContext = transformer.resolutionContext,
     ): Pair<Set<Candidate>, CandidateApplicability> =
         reduceCollectedCandidates(
@@ -1144,18 +1717,69 @@ class CfirCallResolver(
                 components.resolutionStageRunner.fullyProcessCandidate(candidate, resolutionContext)
             },
             chooseMostSpecific = { candidates ->
-                if (preserveFunctionValueOverloadSet) {
+                if (transformer.resolutionContext.candidateProcessingMode == CandidateProcessingMode.ARGUMENT_SHAPE) {
                     return@reduceCollectedCandidates candidates
                 }
-                val syntaxFilteredCandidates = reduceTrailingLambdaCandidatesByParameterType(info, candidates)
+                if (preserveNamedValueCandidateSet) {
+                    return@reduceCollectedCandidates candidates
+                }
+                val arityFilteredCandidates = reduceCandidatesByArgumentCount(info, candidates)
+                val syntaxFilteredCandidates = reduceTrailingLambdaCandidatesByParameterType(info, arityFilteredCandidates)
                 val expectedTypeFilteredCandidates = reduceCandidatesByExpectedReturnType(info, syntaxFilteredCandidates)
+                val callSite = info.callSite as? CfirFunctionCall
+                if (callSite != null) {
+                    reduceArityOnlyErrorCandidates(callSite, expectedTypeFilteredCandidates)?.let {
+                        return@reduceCollectedCandidates it
+                    }
+                }
                 reduceFreshTypeVariableReceiverCandidates(expectedTypeFilteredCandidates)?.let {
                     return@reduceCollectedCandidates it
+                }
+                // 官方对多个合法 enum constructor 不执行普通函数的 most-specific 规约。
+                // payload 必须留在各候选分支中按 expected type 检查，否则会提前提交某个
+                // owner，并错误丢失泛型/非泛型 constructor 之间的真实歧义。
+                if (info.resolutionMode.expectedType == null &&
+                    expectedTypeFilteredCandidates.size > 1 &&
+                    expectedTypeFilteredCandidates.all { candidate ->
+                        candidate.symbol.takeIf { it.isBound }?.cfir is CfirEnumConstructor
+                    }
+                ) {
+                    return@reduceCollectedCandidates expectedTypeFilteredCandidates
                 }
                 expectedTypeFilteredCandidates.singleOrNull()?.let(::setOf)
                     ?: conflictResolver.chooseMaximallySpecificCandidates(expectedTypeFilteredCandidates)
             },
         )
+
+    /**
+     * 按仓颉 callable 参数数量形状预筛选 overload 候选。
+     *
+     * 官方 `FuncDeclsGroupByFixedPositionalArity` 会在最终候选比较前优先保留
+     * 能接受当前实参数量的声明。这里同时考虑默认参数和仓颉 Array 变参；若没有
+     * 任何候选满足数量范围，则保留原集合，让参数映射阶段产生真实 arity 诊断。
+     */
+    private fun reduceCandidatesByArgumentCount(
+        info: CallInfo,
+        candidates: Set<Candidate>,
+    ): Set<Candidate> {
+        if (candidates.size <= 1 || info.callKind != CallKind.Function) return candidates
+        val argumentCount = info.arguments.size
+        val matchingCandidates = candidates.filterTo(linkedSetOf()) { candidate ->
+            val parameters = candidate.declaredParametersForMapping()
+            val declaration = candidate.symbol.takeIf { it.isBound }?.cfir
+            if (declaration is CfirVariable) {
+                return@filterTo argumentCount == parameters.size
+            }
+
+            val variadicParameter = candidate.cangjieVariadicParameterForMapping(parameters)
+            val requiredCount = parameters.count { parameter ->
+                parameter != variadicParameter && parameter.defaultValue == null
+            }
+            argumentCount >= requiredCount &&
+                    (variadicParameter != null || argumentCount <= parameters.size)
+        }
+        return matchingCandidates.ifEmpty { candidates }
+    }
 
     /**
      * 仓颉 check-mode 会让表达式目标类型参与重载选择。这里在候选已经完成参数适用性检查后，
@@ -1537,11 +2161,14 @@ class CfirCallResolver(
         val argumentTypes = callInfo.arguments.mapNotNull { it.coneTypeOrNull }
         val hasInvalidTypeParameterUpperBoundReceiver =
             explicitReceiver?.coneTypeOrNull?.isTypeParameterWithInvalidDeclaredUpperBounds(session) == true
+        val functionReferenceTargetDiagnostic = functionReferenceTargetDiagnostic(callInfo, candidates)
 
         // 根据期望的调用种类生成诊断
         val diagnostic = when {
             hasInvalidTypeParameterUpperBoundReceiver ->
                 ConeUnreportedDuplicateDiagnostic(ConeSimpleDiagnostic("type parameter upper bound is already invalid"))
+            functionReferenceTargetDiagnostic != null -> functionReferenceTargetDiagnostic
+            callInfo.isStandaloneGenericFunctionValueSet(candidates) -> ConeUnableToInferGenericFuncError()
             expectedCallKind != null -> when (expectedCallKind) {
                 CallKind.Function,
                 CallKind.DelegatingConstructorCall,
@@ -1564,7 +2191,11 @@ class CfirCallResolver(
                         }
                         else -> {
                             val receiverType = explicitReceiver?.coneTypeOrNull
+                            val declarationErrorType = (symbol?.takeIf { it.isBound }?.cfir as? CfirVariable)
+                                ?.returnTypeRef
+                                ?.coneTypeOrNull as? ConeErrorType
                             when {
+                                declarationErrorType != null -> ConeUnreportedDuplicateDiagnostic(declarationErrorType.diagnostic)
                                 receiverType != null && !receiverType.isUnit -> {
                                     val declarationType = (symbol as? CfirCallableSymbol<*>)?.let {
                                         components.returnTypeCalculator.tryCalculateReturnType(it.cfir).coneType
@@ -1596,7 +2227,27 @@ class CfirCallResolver(
             }
 
             candidates.isEmpty() -> {
+                val enumConstructorOnValueReceiver = explicitReceiver?.let { receiver ->
+                    receiver.enumConstructorMemberOnValueReceiver(name)
+                }
                 when {
+                    enumConstructorOnValueReceiver != null -> {
+                        val receiverType = explicitReceiver.coneTypeOrNull
+                            ?.fullyExpandedType(session)
+                        if (receiverType == null) {
+                            ConeUnresolvedNameError(name, operatorToken, argumentTypes = argumentTypes)
+                        } else if (callInfo.callKind == CallKind.Function &&
+                            enumConstructorOnValueReceiver.valueParameters.isEmpty()
+                        ) {
+                            ConeNoMatchingInvokeOperatorError(name, receiverType)
+                        } else {
+                            ConeNotMemberOfError(
+                                memberName = name,
+                                kind = if (callInfo.callKind == CallKind.Function) "method" else "member",
+                                typeName = receiverType.classIdOrPrimitiveClassId?.shortClassName ?: name,
+                            )
+                        }
+                    }
                     callInfo.callKind == CallKind.DelegatingConstructorCall -> ConeNoConstructorError
                     explicitReceiver?.importedPackageQualifierOrNull(components.file, session)?.packageFqName != null ->
                         ConeNotMemberOfError(
@@ -1647,6 +2298,7 @@ class CfirCallResolver(
             }
 
             candidates.size > 1 -> {
+                val dominatedNestedDiagnostics = dominatedNestedAmbiguities(candidates, callInfo.arguments)
                 val candidatesWithErrors = candidates.associateWith {
                     runIf(!it.isSuccessful) { createConeDiagnosticForCandidateWithError(it.applicability, it) }
                 }
@@ -1657,14 +2309,21 @@ class CfirCallResolver(
                     isCallLike = callInfo.callKind == CallKind.Function ||
                             callInfo.callKind == CallKind.DelegatingConstructorCall ||
                             callInfo.callKind == CallKind.EnumConstructorCall,
+                    dominatedNestedDiagnostics = dominatedNestedDiagnostics,
                 )
             }
 
             else -> {
                 val candidate = candidates.single()
+                val enumConstructorValueReceiverDiagnostic = candidate.enumConstructorValueReceiverDiagnostic()
                 val genericTypeInconsistentError = candidate.staticQualifierGenericTypeInconsistentError()
                 when {
+                    enumConstructorValueReceiverDiagnostic != null -> enumConstructorValueReceiverDiagnostic
                     genericTypeInconsistentError != null -> genericTypeInconsistentError
+                    candidate.isGenericFunctionReferenceWithoutTypeArguments() -> ConeSimpleDiagnostic(
+                        "generic function reference should be used with type argument",
+                        DiagnosticKind.GenericTypeWithoutTypeArgument,
+                    )
                     candidate.hasUninferableBareStaticGenericQualifier() -> ConeUnableToInferGenericFuncError()
                     !candidate.isSuccessful -> createConeDiagnosticForCandidateWithError(applicability, candidate)
                     else -> null
@@ -1705,9 +2364,113 @@ class CfirCallResolver(
         return CfirNamedReferenceWithCandidate(source, name, candidate)
     }
 
+    /**
+     * 外层调用的全部成功候选都以候选局部 replacement 解释同一个原始实参时，
+     * 原始实参上预解析遗留的歧义已被外层结构化歧义支配。
+     *
+     * 各候选 replacement 可能选择不同符号，因此这里只把原始节点的诊断标记为
+     * 不重复上报，绝不提交任一分支的 replacement。
+     */
+    private fun dominatedNestedAmbiguities(
+        outerCandidates: Collection<Candidate>,
+        originalArguments: List<CfirExpression>,
+    ): Set<ConeDiagnostic> {
+        if (outerCandidates.isEmpty() || outerCandidates.any { !it.isSuccessful }) return emptySet()
+
+        val dominated = linkedSetOf<ConeDiagnostic>()
+        for (argument in originalArguments) {
+            if (outerCandidates.any { candidate -> candidate.argumentReplacements?.containsKey(argument) != true }) {
+                continue
+            }
+            val nestedCall = argument as? CfirFunctionCall ?: continue
+            val reference = nestedCall.calleeReference as? CfirNamedReference ?: continue
+            val diagnostic = (reference as? CfirDiagnosticHolder)?.diagnostic as? ConeAmbiguityError ?: continue
+            dominated += diagnostic
+        }
+        return dominated
+    }
+
     /** 从表达式 callee reference 中提取已携带的诊断，用于避免 receiver 错误重复上报。 */
     private fun CfirExpression.diagnosticFromCalleeReference(): ConeDiagnostic? =
         ((this as? CfirResolvable)?.calleeReference as? CfirDiagnosticHolder)?.diagnostic
+
+    /**
+     * 查找运行时 enum 值接收者上的同名构造器。
+     *
+     * enum constructor 只属于 enum 类型限定符的静态构造语法；当 receiver 已经是一个
+     * enum 值时，官方语义把无参构造器视为不可调用的值，把有参构造器视为非法实例成员。
+     * 该判定集中在候选为空的共享恢复路径，避免把 enum sugar 当成普通实例成员成功解析。
+     */
+    private fun CfirExpression.enumConstructorMemberOnValueReceiver(name: Name): CfirEnumConstructor? {
+        if (qualifierScopeOrNull(session, components.scopeSession) != null) return null
+        val receiverType = coneTypeOrNull?.fullyExpandedType(session) ?: return null
+        val receiverClassId = receiverType.classIdOrPrimitiveClassId ?: return null
+        val enumSymbol = session.symbolProvider.getClassLikeSymbolByClassId(receiverClassId)
+            ?: return null
+        val enumDeclaration = enumSymbol.cfir as? CfirEnum ?: return null
+        return enumDeclaration.declarations
+            .filterIsInstance<CfirEnumConstructor>()
+            .firstOrNull { it.name == name }
+    }
+
+    /**
+     * 将隐式 `invoke` 探测中的无参 enum constructor 临时访问规范化为 enum 值。
+     *
+     * 该节点不会作为独立成员访问提交；它只向后续统一的 `invoke` 查找暴露运行时
+     * receiver 的真实实例化 enum 类型。普通实例成员候选始终优先，带 payload 的
+     * constructor 也不会进入这条恢复路径。
+     */
+    private fun CfirQualifiedAccessExpression.resolveEnumConstructorAsImplicitInvokeReceiver(
+        callee: CfirNamedReference,
+        candidates: Collection<Candidate>,
+        purpose: NamedValueAccessPurpose,
+    ): CfirQualifiedAccessExpression? {
+        if (purpose != NamedValueAccessPurpose.ImplicitInvokeReceiver) return null
+        if (candidates.any { it.symbol !is CfirEnumConstructorSymbol }) return null
+
+        val receiver = explicitReceiver ?: return null
+        val constructor = receiver.enumConstructorMemberOnValueReceiver(callee.name) ?: return null
+        if (constructor.valueParameters.isNotEmpty()) return null
+        val receiverType = receiver.coneTypeOrNull?.fullyExpandedType(session) ?: return null
+
+        replaceCalleeReference(
+            buildResolvedNamedReference {
+                source = callee.source
+                name = callee.name
+                resolvedSymbol = constructor.symbol
+            }
+        )
+        replaceConeTypeOrNull(receiverType)
+        return this
+    }
+
+    /** 判断运行时 enum receiver 上是否存在同名无参 constructor 值。 */
+    fun isNoArgEnumConstructorOnValueReceiver(receiver: CfirExpression?, name: Name): Boolean =
+        receiver?.enumConstructorMemberOnValueReceiver(name)?.valueParameters?.isEmpty() == true
+
+    /**
+     * 将成功进入 tower 的 enum constructor 候选重新按 receiver 语义分类。
+     *
+     * 成员 scope 为类型限定访问保留 enum constructor，但同一 scope 也可能被运行时 enum
+     * receiver 复用；候选存在不代表实例访问合法。无参构造器在官方 AST 中是不可变值，
+     * `value.C()` 因此进入 invoke 失败；有参构造器及普通值访问则属于非法 enum 实例成员。
+     */
+    private fun Candidate.enumConstructorValueReceiverDiagnostic(): ConeDiagnostic? {
+        val constructorSymbol = symbol as? CfirEnumConstructorSymbol ?: return null
+        val receiver = callInfo.explicitReceiver ?: return null
+        val constructor = receiver.enumConstructorMemberOnValueReceiver(constructorSymbol.name) ?: return null
+        val receiverType = receiver.coneTypeOrNull?.fullyExpandedType(session) ?: return null
+
+        return if (callInfo.callKind == CallKind.Function && constructor.valueParameters.isEmpty()) {
+            ConeNoMatchingInvokeOperatorError(constructorSymbol.name, receiverType)
+        } else {
+            ConeNotMemberOfError(
+                memberName = constructorSymbol.name,
+                kind = if (callInfo.callKind == CallKind.Function) "method" else "member",
+                typeName = receiverType.classIdOrPrimitiveClassId?.shortClassName ?: constructorSymbol.name,
+            )
+        }
+    }
 
     /**
      * 泛型 static qualifier 经由继承或 extend 提升成员时，参数约束会先作用到
@@ -1772,6 +2535,28 @@ class CfirCallResolver(
         return owner.typeParameters.mapTo(linkedSetOf()) { parameter -> parameter.symbol }
     }
 
+    /** 泛型函数作为值使用时必须显式提供函数自身的类型实参。 */
+    private fun Candidate.isGenericFunctionReferenceWithoutTypeArguments(): Boolean {
+        if (callInfo.callKind != CallKind.NamedValueAccess || callInfo.hasExplicitTypeArguments) return false
+        val function = symbol.takeIf { it.isBound }?.cfir as? CfirFunction ?: return false
+        return function.typeParameters.isNotEmpty()
+    }
+
+    /**
+     * 无目标类型且没有显式类型实参时，若可访问的函数值候选全部是泛型函数，
+     * 独立函数引用无法实例化其类型参数，应直接报告无法推断而不是重载歧义。
+     */
+    private fun CallInfo.isStandaloneGenericFunctionValueSet(candidates: Collection<Candidate>): Boolean {
+        if (callKind != CallKind.NamedValueAccess || resolutionMode.expectedType != null || hasExplicitTypeArguments) {
+            return false
+        }
+        if (candidates.isEmpty()) return false
+        return candidates.all { candidate ->
+            val function = candidate.symbol.takeIf { it.isBound }?.cfir as? CfirFunction
+            function?.typeParameters?.isNotEmpty() == true
+        }
+    }
+
     /**
      * `Box.create()` 这类裸泛型类名静态成员调用属于调用推断错误。
      * 当 owner 泛型参数没有显式实参，且完全没有出现在可调用签名中时，
@@ -1779,6 +2564,7 @@ class CfirCallResolver(
      * 构造器的 owner 类型参数由构造调用自身推断，不属于 static member qualifier 诊断。
      */
     private fun Candidate.hasUninferableBareStaticGenericQualifier(): Boolean {
+        if (callInfo.callSite !is CfirFunctionCall) return false
         if (callInfo.callKind == CallKind.NamedValueAccess) return false
         val callable = symbol.cfir as? CfirCallableDeclaration ?: return false
         if (callable is CfirConstructor) return false
@@ -2078,16 +2864,33 @@ class CfirCallResolver(
             )
         }
 
+        val classifierSubstitutor = classifierSubstitutorForCall(functionCall, classifier)
+        val explicitTypeArguments = functionCall.typeArguments.mapNotNull { typeArgument ->
+            typeArgument.coneTypeOrNull
+        }
+        val constructedTypeArguments = when {
+            functionCall.typeArguments.isNotEmpty() && explicitTypeArguments.size == functionCall.typeArguments.size ->
+                explicitTypeArguments
+            else -> actualDeclaration.typeParameters.map { it.symbol.constructType() }
+        }
+        val rawConstructedType = actualClassifier.constructType(constructedTypeArguments)
+        val constructedType = classifierSubstitutor.substituteOrSelf(rawConstructedType)
+        val constructorScope: CfirScope = if (classifier is CfirTypeAliasSymbol) {
+            classifier.cfir.scopeProvider
+                .getTypealiasConstructorScope(classifier.cfir, session, components.scopeSession)
+        } else {
+            val declaredMemberScope = CfirClassUseSiteMemberScope(
+                session = session,
+                classSymbol = actualClassifier,
+                symbolProvider = session.symbolProvider,
+                ownerType = constructedType,
+                dispatchReceiverType = constructedType,
+                scopeKind = CfirClassMemberScopeKind.DECLARATION_SITE,
+            )
+            CfirClassSubstitutionScope(session, declaredMemberScope, constructedType)
+        }
         val constructorSymbols = buildList {
-            if (classifier is CfirTypeAliasSymbol) {
-                classifier.cfir.scopeProvider
-                    .getTypealiasConstructorScope(classifier.cfir, session, components.scopeSession)
-                    .processDeclaredConstructors(::add)
-            } else {
-                actualClassifier.cfir.declarations
-                    .filterIsInstance<org.cangnova.cangjie.cfir.declarations.CfirConstructor>()
-                    .mapTo(this, CfirConstructor::symbol)
-            }
+            constructorScope.processDeclaredConstructors(::add)
         }
         if (constructorSymbols.isEmpty()) {
             return ResolutionResult(
@@ -2104,7 +2907,7 @@ class CfirCallResolver(
             candidateFactory.createCandidate(
                 callInfo = callInfo,
                 symbol = constructorSymbol,
-                originScope = null,
+                originScope = constructorScope,
             )
         }
         val (reducedCandidates, applicability) = reduceCollectedCandidates(
@@ -2118,6 +2921,9 @@ class CfirCallResolver(
                 components.resolutionStageRunner.fullyProcessCandidate(candidate, transformer.resolutionContext)
             },
             chooseMostSpecific = { currentCandidates ->
+                if (transformer.resolutionContext.candidateProcessingMode == CandidateProcessingMode.ARGUMENT_SHAPE) {
+                    return@reduceCollectedCandidates currentCandidates
+                }
                 reduceConstructorCandidatesByOwnerTypeInference(
                     candidates = currentCandidates,
                     ownerTypeParameters = actualDeclaration.typeParameters,
@@ -2132,7 +2938,7 @@ class CfirCallResolver(
             applicability = applicability,
             candidates = reducedCandidates,
             forwardedDiagnostics = emptyList(),
-        )
+        ).reduceCandidatesByLambdaBody(functionCall)
     }
 
     /**
@@ -2205,6 +3011,9 @@ class CfirCallResolver(
                 components.resolutionStageRunner.fullyProcessCandidate(candidate, transformer.resolutionContext)
             },
             chooseMostSpecific = { currentCandidates ->
+                if (transformer.resolutionContext.candidateProcessingMode == CandidateProcessingMode.ARGUMENT_SHAPE) {
+                    return@reduceCollectedCandidates currentCandidates
+                }
                 currentCandidates.singleOrNull()?.let(::setOf)
                     ?: conflictResolver.chooseMaximallySpecificCandidates(currentCandidates)
             },
@@ -2214,7 +3023,7 @@ class CfirCallResolver(
             applicability = applicability,
             candidates = reducedCandidates,
             forwardedDiagnostics = emptyList(),
-        )
+        ).reduceCandidatesByLambdaBody(functionCall)
     }
 
     /**
@@ -2265,6 +3074,9 @@ class CfirCallResolver(
                 components.resolutionStageRunner.fullyProcessCandidate(candidate, transformer.resolutionContext)
             },
             chooseMostSpecific = { currentCandidates ->
+                if (transformer.resolutionContext.candidateProcessingMode == CandidateProcessingMode.ARGUMENT_SHAPE) {
+                    return@reduceCollectedCandidates currentCandidates
+                }
                 currentCandidates.singleOrNull()?.let(::setOf)
                     ?: conflictResolver.chooseMaximallySpecificCandidates(currentCandidates)
             },
@@ -2274,7 +3086,7 @@ class CfirCallResolver(
             applicability = applicability,
             candidates = reducedCandidates,
             forwardedDiagnostics = emptyList(),
-        )
+        ).reduceCandidatesByLambdaBody(functionCall)
     }
 
     /**
@@ -2297,6 +3109,9 @@ class CfirCallResolver(
                 components.resolutionStageRunner.fullyProcessCandidate(currentCandidate, transformer.resolutionContext)
             },
             chooseMostSpecific = { currentCandidates ->
+                if (transformer.resolutionContext.candidateProcessingMode == CandidateProcessingMode.ARGUMENT_SHAPE) {
+                    return@reduceCollectedCandidates currentCandidates
+                }
                 currentCandidates.singleOrNull()?.let(::setOf)
                     ?: conflictResolver.chooseMaximallySpecificCandidates(currentCandidates)
             },
@@ -2306,7 +3121,7 @@ class CfirCallResolver(
             applicability = applicability,
             candidates = reducedCandidates,
             forwardedDiagnostics = emptyList(),
-        )
+        ).reduceCandidatesByLambdaBody(functionCall)
     }
 
     /**
@@ -2463,6 +3278,30 @@ class CfirCallResolver(
     )
 
     /**
+     * 判断显式 receiver 裸名访问是否需要延迟到外层成员调用共同完成。
+     *
+     * 无参 enum constructor 可写成 `T1.a16(arg)`，其中 enum owner 的类型实参要由外层成员
+     * 调用实参反推，不能先按独立 receiver 完成。但类型参数、class-like qualifier 和导入包
+     * qualifier 也具有同样的裸名语法，必须保留 `ReceiverResolution` 语义进入正常 qualifier
+     * 解析；否则 `U.foo()` 这类泛型静态访问会在左侧 `U` 处退化为普通未解析名称。
+     */
+    fun isContextDependentBareEnumConstructorReceiverCandidate(expression: CfirExpression): Boolean {
+        val access = expression as? CfirQualifiedAccessExpression ?: return false
+        if (access is CfirFunctionCall) return false
+        if (access.explicitReceiver != null) return false
+        if (access.typeArguments.isNotEmpty()) return false
+        val callee = access.calleeReference as? CfirNamedReference ?: return false
+        val name = callee.name
+
+        if (components.file.resolveImportedPackageQualifier(name, session) != null) return false
+        if (towerResolver.findTypeParameters(name).isNotEmpty()) return false
+        if (towerResolver.findClassifiers(name).any { it.isValidClassifierExpression(isUsedAsReceiver = true) }) return false
+        if (resolveTopLevelClassifierByShortName(name) != null) return false
+
+        return true
+    }
+
+    /**
      * 查找可能被当前调用语法当成构造调用目标的 classifier。
      *
      * 有显式 receiver 时只在 qualifier 的静态 scope 中查找；裸名调用会先走 tower classifier，
@@ -2486,13 +3325,14 @@ class CfirCallResolver(
     /**
      * 按短名解析顶层 class-like 符号。
      *
-     * 查找顺序为同文件声明、显式 import / star import、当前包、默认 import；
+     * 查找顺序为同文件声明、显式 import / star import、当前包、primitive 基础包、默认 import；
      * 该逻辑补足 tower 在某些构造调用 fallback 中无法直接拿到 classifier 的场景。
      */
     private fun resolveTopLevelClassifierByShortName(name: Name): CfirClassLikeSymbol<*>? {
         val file = components.file
         val packageCandidates = LinkedHashSet<ClassId>()
         val explicitImportCandidates = LinkedHashSet<ClassId>()
+        val builtinPrimitiveCandidates = LinkedHashSet<ClassId>()
 
         findSameFileTopLevelClassifier(file, name)?.let { declaration ->
             return declaration.symbol
@@ -2512,6 +3352,7 @@ class CfirCallResolver(
         }
 
         packageCandidates += ClassId(file.packageDirective.packageFqName, name)
+        builtinPrimitiveCandidates += ClassId(StandardNames.BASIC_PACKAGE_FQ_NAME, name)
 
         val defaultImportCandidates = LinkedHashSet<ClassId>()
         val defaultImportsProvider = session.defaultImportsProvider
@@ -2522,6 +3363,7 @@ class CfirCallResolver(
         return sequenceOf(
             packageCandidates,
             explicitImportCandidates,
+            builtinPrimitiveCandidates,
             defaultImportCandidates,
         ).flatMap { it.asSequence() }
             .firstNotNullOfOrNull(components.symbolProvider::getClassLikeSymbolByClassId)
@@ -2583,6 +3425,25 @@ class CfirCallResolver(
         return result
     }
 
+    /** 返回构造目标 classifier 在当前查找位置携带的 use-site substitutor。 */
+    private fun classifierSubstitutorForCall(
+        access: CfirQualifiedAccessExpression,
+        classifier: CfirClassLikeSymbol<*>,
+    ): ConeSubstitutor {
+        val explicitReceiver = access.explicitReceiver
+        if (explicitReceiver == null) {
+            return towerResolver.findClassifierSubstitutor(classifier.name, classifier)
+        }
+        val scope = explicitReceiver.unwrapSmartcastExpression()
+            .qualifierScopeOrNull(session, components.scopeSession)
+            ?: return ConeSubstitutor.Empty
+        var result: ConeSubstitutor? = null
+        scope.processClassifiersByNameWithSubstitution(classifier.name) { symbol, substitutor ->
+            if (symbol == classifier && result == null) result = substitutor
+        }
+        return result ?: ConeSubstitutor.Empty
+    }
+
     /** 判断 classifier 是否能作为表达式出现；type parameter 只允许在 receiver 语境中使用。 */
     private fun CfirClassifierSymbol<*>.isValidClassifierExpression(isUsedAsReceiver: Boolean): Boolean =
         this is CfirClassLikeSymbol<*> || (isUsedAsReceiver && this is CfirTypeParameterSymbol)
@@ -2641,6 +3502,42 @@ class CfirCallResolver(
         /** tower resolver 转发出的非候选诊断。 */
         val forwardedDiagnostics: List<ResolutionDiagnostic>,
     )
+
+    /**
+     * 对已规约候选集合继续执行 lambda body 重载缩减，并同步候选集合整体适用性。
+     *
+     * 普通 tower 候选、class constructor fallback 和内建 constructor 都会先各自完成
+     * stage 规约；若候选仍只能由 lambda body 目标类型区分，就必须进入同一个
+     * overload-by-lambda owner，而不能只让普通 tower 路径拥有该能力。
+     */
+    private fun ResolutionResult.reduceCandidatesByLambdaBody(
+        callSite: CfirQualifiedAccessExpression,
+    ): ResolutionResult {
+        if (transformer.resolutionContext.candidateProcessingMode == CandidateProcessingMode.ARGUMENT_SHAPE) {
+            return this
+        }
+        if (!components.context.shouldReduceOverloadByLambdaCandidates()) return this
+
+        val candidateSet = candidates.toSet()
+        val reducedCandidates = overloadByLambdaBodyResolver.reduceCandidates(callSite, candidateSet)
+        if (reducedCandidates == candidateSet) return this
+
+        return copy(
+            applicability = reducedCandidates.normalizedReductionApplicability(applicability),
+            candidates = reducedCandidates,
+        )
+    }
+
+    /** 由候选集合当前诊断状态重新计算整体规约适用性。 */
+    private fun Collection<Candidate>.normalizedReductionApplicability(
+        fallback: CandidateApplicability,
+    ): CandidateApplicability =
+        map { candidate ->
+            normalizeReductionApplicability(
+                isSuccessful = candidate.isSuccessful,
+                applicability = candidate.lowestApplicability,
+            )
+        }.maxOrNull() ?: fallback
 }
 
 /** overload candidate set 中的一个候选及其是否属于当前最佳候选集合。 */

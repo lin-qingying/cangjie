@@ -188,7 +188,13 @@ private fun CfirTypeRef.isDefinitelyIllegalDeclaredUpperBound(session: CfirSessi
 /**
  * 判断单个声明上界是否满足官方 class/interface 上界准入规则。
  */
-private fun ConeCangJieType.isLegalDeclaredUpperBound(session: CfirSession): Boolean {
+/**
+ * 判断单个声明上界是否满足仓颉 class/interface 上界准入规则。
+ *
+ * 该判定同时供声明检查、调用约束初始化和 use-site 上界诊断使用；非法声明上界
+ * 只能由声明侧 checker 报告，不能作为普通泛型约束继续参与后续推断。
+ */
+fun ConeCangJieType.isLegalDeclaredUpperBound(session: CfirSession): Boolean {
     val expandedType = fullyExpandedType(session)
     if (expandedType === ConeAnyType) return true
 

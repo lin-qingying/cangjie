@@ -15,5 +15,5 @@ func f<T>(): Unit where T <: I1 {
 }
 
 main() {
-    f<<!CANNOT_INSTANTIATED_BY_INCOMPLETE_TYPE!>I<!>2>() // error
+    f<<!CANNOT_INSTANTIATED_BY_INCOMPLETE_TYPE!>I2<!>>() // error
 }

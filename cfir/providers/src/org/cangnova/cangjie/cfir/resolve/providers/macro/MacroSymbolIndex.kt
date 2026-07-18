@@ -8,6 +8,8 @@ import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirInterface
 import org.cangnova.cangjie.cfir.declarations.CfirMacroDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirStruct
+import org.cangnova.cangjie.cfir.resolve.providers.isReexportingSourceImport
+import org.cangnova.cangjie.cfir.resolve.providers.reexportInfoOrNull
 import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
@@ -188,6 +190,7 @@ object BuiltinMacroRegistry {
  * 构造 [MacroSymbolIndex]：
  *
  * - 从 [pre] 的所有 raw 文件中收集 source [CfirMacroDeclaration]；
+ * - 将源宏包自身的 public macro 声明与 public/protected import 重导出投影为可查宏 API；
  * - 合并 [libraryDefinitions] / [sharedBuiltinDefinitions] / [macroArtifactDefinitions]
  *   作为合法 lookup 目标；
  * - 注册 [builtinMacros] 作为内建 evaluator 入口。
@@ -218,12 +221,15 @@ fun buildMacroSymbolIndex(
         )
     }
 
-    val foreignEntries: List<MacroDefinitionEntry> = buildList {
+    val baseForeignEntries: List<MacroDefinitionEntry> = buildList {
         addAll(libraryDefinitions)
         addAll(sharedBuiltinDefinitions)
         addAll(macroArtifactDefinitions)
+        addAll(sourceEntries)
         addAll(builtinEntries)
     }
+    val sourceReexportEntries = collectSourceMacroReexportDefinitions(pre, baseForeignEntries)
+    val foreignEntries = (baseForeignEntries + sourceReexportEntries).distinctBy(MacroDefinitionEntry::fqName)
 
     val foreignByName = foreignEntries.groupBy(MacroDefinitionEntry::name)
     val foreignByFqName = foreignEntries.associateBy(MacroDefinitionEntry::fqName)
@@ -245,6 +251,65 @@ private fun collectSourceMacroDefinitions(pre: PreMacroRawBuildResult): List<Mac
         collectMacroDeclarationsInto(file.declarations, packageFqName, result)
     }
     return result
+}
+
+/**
+ * 收集源宏包通过 public/protected import 暴露的宏定义。
+ *
+ * 官方宏包会把宏相关包中的可见 import 纳入宏调用解析；这里在 construction 期离线
+ * 构造同样的 API 视图，使 `macro package a; public import b.M` 暴露为 `a.M`，
+ * 但 executor 身份仍然保持在真实定义 [MacroDefinitionEntry.executableFqName] 上。
+ */
+private fun collectSourceMacroReexportDefinitions(
+    pre: PreMacroRawBuildResult,
+    baseEntries: List<MacroDefinitionEntry>,
+): List<MacroDefinitionEntry> {
+    val knownEntries = linkedMapOf<FqName, MacroDefinitionEntry>()
+    for (entry in baseEntries) {
+        knownEntries.putIfAbsent(entry.fqName, entry)
+    }
+
+    val reexportImports = pre.files
+        .filter(PreMacroCfirFile::isMacroPackage)
+        .flatMap { preFile ->
+            val packageFqName = preFile.cfirFile.packageDirective.packageFqName
+            preFile.cfirFile.imports.mapNotNull { import ->
+                if (!import.isReexportingSourceImport()) return@mapNotNull null
+                val reexport = import.reexportInfoOrNull() ?: return@mapNotNull null
+                packageFqName to reexport
+            }
+        }
+
+    var changed = true
+    while (changed) {
+        changed = false
+        for ((exportingPackage, reexport) in reexportImports) {
+            val targets = if (reexport.isAllUnder) {
+                knownEntries.values.filter { it.packageFqName == reexport.importedPackageFqName }
+            } else {
+                val importedName = reexport.importedName ?: continue
+                listOfNotNull(knownEntries[reexport.importedPackageFqName.child(importedName)])
+            }
+
+            for (target in targets) {
+                val visibleName = if (reexport.isAllUnder) {
+                    target.name
+                } else {
+                    reexport.exportedName ?: continue
+                }
+                val projected = target.copy(
+                    packageFqName = exportingPackage,
+                    name = visibleName,
+                )
+                if (knownEntries.putIfAbsent(projected.fqName, projected) == null) {
+                    changed = true
+                }
+            }
+        }
+    }
+
+    val baseFqNames = baseEntries.mapTo(linkedSetOf(), MacroDefinitionEntry::fqName)
+    return knownEntries.values.filter { it.fqName !in baseFqNames }
 }
 
 /** 递归遍历声明树，把 public source macro 声明加入 [out]。 */

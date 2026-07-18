@@ -1,4 +1,4 @@
 // RUN_PIPELINE_TILL: FRONTEND
 class FinalBase {}
 
-class FinalChild <: <!CLASS_NOT_OPEN_FOR_INHERITANCE!>FinalBase<!> {}
+class FinalChild <: <!NON_INHERITABLE_SUPER_CLASS!>FinalBase<!> {}

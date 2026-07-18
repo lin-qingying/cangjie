@@ -15,6 +15,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeDiagnostic
 import org.cangnova.cangjie.resolve.calls.tower.CandidateApplicability
+import org.cangnova.cangjie.source.CjSourceElement
 
 /**
  * 未解析类 Cone 诊断的公共基类。
@@ -149,6 +150,7 @@ interface ConeDiagnosticWithCandidates : ConeDiagnostic {
  * @property applicability 歧义候选所在的适用性层级。
  * @property candidatesWithErrors 候选及其附带的结构化错误。
  * @property isCallLike 是否来自调用形式的引用。
+ * @property typeUseSource classifier 类型使用歧义对应的完整源码范围；普通调用歧义为空。
  */
 class ConeAmbiguityError(
     /**
@@ -167,12 +169,56 @@ class ConeAmbiguityError(
      * 是否来自调用形式的引用。
      */
     val isCallLike: Boolean = false,
+    /** 被外层调用结构化歧义支配、不得重复上报的内层诊断。 */
+    val dominatedNestedDiagnostics: Set<ConeDiagnostic> = emptySet(),
+    /**
+     * classifier 类型使用歧义对应的完整源码范围。
+     *
+     * 类型解析必须保留整个 user type，而不是只保留最终 classifier token；诊断层据此绕过
+     * 普通 qualified reference 的名称定位策略，完整标记 `A<X, Y>` 这类类型使用。
+     */
+    val typeUseSource: CjSourceElement? = null,
 ) : ConeDiagnosticWithCandidates {
     /** 面向普通诊断渲染的失败原因。 */
     override val reason: String get() = "Ambiguity: $name, ${candidateSymbols.map { describeSymbol(it) }}"
 
     /** 参与歧义判断的候选集合。 */
     override val candidates: Collection<AbstractCandidate> get() = candidatesWithErrors.keys
+}
+
+/**
+ * 目标函数类型下存在多个可用函数引用。
+ *
+ * 与裸函数名的 [ConeAmbiguityError] 不同，该诊断表示引用已经进入官方 `ChkRefExpr`
+ * 的目标类型检查，并且仍有多个函数类型满足目标函数类型。
+ */
+class ConeAmbiguousFunctionReferenceError(
+    /** 被引用的函数名。 */
+    val name: Name,
+    /** 满足目标函数类型的候选及其结构化错误。 */
+    val candidatesWithErrors: Map<out AbstractCandidate, ConeDiagnostic?>,
+) : ConeDiagnosticWithCandidates {
+    /** 面向普通诊断渲染的失败原因。 */
+    override val reason: String
+        get() = "Ambiguous function reference: $name, ${candidateSymbols.map { describeSymbol(it) }}"
+
+    /** 参与函数引用歧义判断的候选集合。 */
+    override val candidates: Collection<AbstractCandidate>
+        get() = candidatesWithErrors.keys
+}
+
+/**
+ * 目标函数类型下没有可用函数引用。
+ *
+ * 该状态对应官方 `sema_no_match_function_declaration_for_ref`，必须与普通名称未解析、
+ * 裸函数名歧义以及泛型函数缺失显式类型实参区分。
+ */
+class ConeNoMatchingFunctionReferenceError(
+    /** 被引用的函数名。 */
+    val name: Name,
+) : ConeDiagnostic {
+    /** 面向普通诊断渲染的失败原因。 */
+    override val reason: String get() = "No matching function declaration for reference: $name"
 }
 
 /**
@@ -943,6 +989,17 @@ class ConeUnableToInferGenericFuncError : ConeDiagnostic {
 }
 
 /**
+ * 无法从当前表达式上下文反推出完整类型。
+ *
+ * 对齐 C++ `sema_unable_to_infer_expr`；典型场景是 expected interface 能匹配 generic enum
+ * 的父类型，但父类型没有携带足够的 owner 类型参数信息。
+ */
+class ConeUnableToInferExpressionTypeError : ConeDiagnostic {
+    /** 面向普通诊断渲染的失败原因。 */
+    override val reason: String get() = "unable to infer the type of this expression"
+}
+
+/**
  * resolve 完成后节点仍无效。
  *
  * 对齐 C++ sema_invalid_node_after_check。
@@ -1017,16 +1074,22 @@ data class ConeMismatchedTypesBecauseError(
  *
  * 对齐 C++ sema_mismatched_types_multiple_assign。
  *
+ * @property expectedType 首个不兼容目标所要求的类型。
  * @property actualType 多重赋值右侧或分量的实际类型。
  */
 data class ConeMismatchedTypesMultipleAssignError(
+    /**
+     * 首个不兼容目标所要求的类型。
+     */
+    val expectedType: ConeCangJieType,
     /**
      * 多重赋值右侧或分量的实际类型。
      */
     val actualType: ConeCangJieType,
 ) : ConeDiagnostic {
     /** 面向普通诊断渲染的失败原因。 */
-    override val reason: String get() = "type mismatch in multiple assignment: $actualType"
+    override val reason: String get() =
+        "type mismatch in multiple assignment: expected $expectedType but got $actualType"
 }
 
 /**

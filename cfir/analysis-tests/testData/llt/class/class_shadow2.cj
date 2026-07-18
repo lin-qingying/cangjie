@@ -7,7 +7,7 @@ open class Base {
 }
 
 class Data <: Base {
-    <!INHERIT_MEMBER_KIND_INCONSISTENT!>p<!>ublic static let f = 2
+    public static let <!STATIC_AND_NON_STATIC_MEMBER_CANNOT_HAVE_SAME_NAME!>f<!> = 2
 }
 
 main(): Int64 {

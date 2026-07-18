@@ -56,12 +56,13 @@ class CjMatchEntry(node: ASTNode) : CjElementImpl(node), CjPatternEntryBlock {
     /**
      * 保存 `body`，供仓颉 PSI流程读取节点结构或语义信息。
      */
-    val body: CjBlockExpression? get() = findChildByClass(CjBlockExpression::class.java)
+    val body: CjBlockExpression?
+        get() = directChildOfType()
     /**
      * 保存 `expression`，供仓颉 PSI流程读取节点结构或语义信息。
      */
     val expression: CjCaseBlockExpression?
-        get() = findChildByClass(CjCaseBlockExpression::class.java)
+        get() = directChildOfType()
 
     /**
      * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
@@ -74,7 +75,17 @@ class CjMatchEntry(node: ASTNode) : CjElementImpl(node), CjPatternEntryBlock {
      * 保存 `conditions`，供仓颉 PSI流程读取节点结构或语义信息。
      */
     val conditions: Array<CjCasePatternElement>
-        get() = findChildrenByClass(CjCasePatternElement::class.java)
+        get() {
+            val result = ArrayList<CjCasePatternElement>()
+            var child = firstChild
+            while (child != null && child != arrow) {
+                if (child is CjCasePatternElement) {
+                    result.add(child)
+                }
+                child = child.nextSibling
+            }
+            return result.toTypedArray()
+        }
 
     /**
      * 保存 `trailingComma`，供仓颉 PSI流程读取节点结构或语义信息。
@@ -91,5 +102,18 @@ class CjMatchEntry(node: ASTNode) : CjElementImpl(node), CjPatternEntryBlock {
     /**
      * 保存 `patternGuard`，供仓颉 PSI流程读取节点结构或语义信息。
      */
-    val patternGuard: CjPatternGuard? get() = findChildByClass(CjPatternGuard::class.java)
+    val patternGuard: CjPatternGuard?
+        get() = directChildOfType()
+
+    /**
+     * match entry 的结构查询只允许读取直接子节点，避免嵌套 match 的 pattern/body 泄漏到当前分支。
+     */
+    private inline fun <reified T : PsiElement> directChildOfType(): T? {
+        var child = firstChild
+        while (child != null) {
+            if (child is T) return child
+            child = child.nextSibling
+        }
+        return null
+    }
 }

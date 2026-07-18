@@ -44,6 +44,7 @@ object CfirPatternVariableInitializerTypeMismatchChecker : CfirPatternVariableCh
         checkTypeMismatch(
             expectedType = expectedType,
             actualType = actualType,
+            expression = initializer,
             source = if (isEnumConstructorInitializer) initializerSource ?: source else source,
             preferredSpecializedSource = initializerSource,
             diagnosticFactory = CfirErrors.TYPE_MISMATCH,

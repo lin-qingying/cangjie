@@ -279,7 +279,7 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
         return when (scopes.size) {
             0 -> null
             1 -> scopes.single()
-            else -> CfirCompositeTypeScope(scopes)
+            else -> CfirCompositeTypeScope(scopes, context.session)
         }
     }
 

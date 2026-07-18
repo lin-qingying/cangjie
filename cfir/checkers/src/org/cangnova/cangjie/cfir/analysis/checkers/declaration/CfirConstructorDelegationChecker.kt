@@ -7,22 +7,16 @@ import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
-import org.cangnova.cangjie.cfir.declarations.CfirEnum
 import org.cangnova.cangjie.cfir.declarations.CfirInterface
-import org.cangnova.cangjie.cfir.declarations.CfirPrimitiveTypeDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirStruct
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
-import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCallOrigin
 import org.cangnova.cangjie.cfir.expressions.CfirWrappedExpression
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
-import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
-import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.resolve.providers.canAccessPackageInternalDeclaration
 import org.cangnova.cangjie.cfir.resolve.providers.getContainingFile
 import org.cangnova.cangjie.cfir.session.cfirProvider
@@ -38,7 +32,6 @@ import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
 import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
 import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.name.ClassId
-import org.cangnova.cangjie.name.Name
 
 /**
  * 对齐 Kotlin FIR 的 constructor delegation issues checker 思路：
@@ -84,7 +77,6 @@ object CfirConstructorDelegationChecker : CfirConstructorChecker() {
                     factory = CfirErrors.ILLEGAL_PLACE_OF_CALLING_THIS_OR_SUPER,
                     a = delegation.kind.keyword,
                 )
-                delegation.checkExplicitDelegationTarget(owner, declaration)
             }
 
         firstStatementDelegation?.checkArgumentMemberAccessBeforeInitialization(owner)
@@ -99,9 +91,8 @@ object CfirConstructorDelegationChecker : CfirConstructorChecker() {
                     )
                     return
                 }
-                firstStatementDelegation.checkExplicitDelegationTarget(owner, declaration)
             }
-            ConstructorDelegationCallKind.SUPER -> firstStatementDelegation.checkExplicitDelegationTarget(owner, declaration)
+            ConstructorDelegationCallKind.SUPER -> Unit
             null -> {
                 /*
                  * 官方只在缺失显式 `super(...)` 时诊断合成的隐式 `super()`。
@@ -140,97 +131,6 @@ object CfirConstructorDelegationChecker : CfirConstructorChecker() {
     }
 
     /**
-     * 检查二级构造器的 `this(...)` 委托目标。
-     *
-     * 解析成功时只接受当前声明所属 class-like 内的构造器；解析缺失时回退到参数数量
-     * 匹配，以便在没有候选时优先报告更精确的实参数量诊断。
-     */
-    context(context: CheckerContext, reporter: DiagnosticReporter)
-    private fun checkThisDelegation(
-        owner: CfirClassLikeDeclaration,
-        declaration: CfirConstructor,
-        call: CfirFunctionCall,
-    ) {
-        val constructors = owner.declarations.filterIsInstance<CfirConstructor>()
-        val resolvedConstructor = call.resolvedDelegatedConstructorOrNull()?.takeIf { constructor -> constructor in constructors }
-        val candidates = resolvedConstructor?.let(::listOf)
-            ?: constructors.filter { constructor -> constructor.matchesDelegationCall(call) }
-
-        when {
-            candidates.isEmpty() -> {
-                if (reportConstructorArgumentCountMismatch(listOf(declaration) + constructors.filter { it !== declaration }, call)) {
-                    return
-                }
-                reporter.reportOn(
-                    source = call.delegationDiagnosticSource() ?: declaration.source,
-                    factory = CfirErrors.NO_CONSTRUCTOR,
-                )
-            }
-
-            candidates.size > 1 -> reporter.reportOn(
-                source = call.delegationDiagnosticSource() ?: declaration.source,
-                factory = CfirErrors.AMBIGUOUS_CONSTRUCTOR_CALL,
-                a = owner.classLikeName(),
-            )
-        }
-    }
-
-    /**
-     * 检查显式 `this(...)` / `super(...)` 委托的目标与实参数量。
-     *
-     * 官方会把非首语句委托调用同时当作普通构造器调用继续检查，因此这里不能在
-     * 报告位置非法后提前截断目标解析诊断。
-     */
-    context(context: CheckerContext, reporter: DiagnosticReporter)
-    private fun ConstructorDelegationCall.checkExplicitDelegationTarget(
-        owner: CfirClassLikeDeclaration,
-        declaration: CfirConstructor,
-    ) {
-        when (kind) {
-            ConstructorDelegationCallKind.THIS -> checkThisDelegation(owner, declaration, call)
-            ConstructorDelegationCallKind.SUPER -> checkSuperDelegation(owner, declaration, call)
-        }
-    }
-
-    /**
-     * 检查构造器的 `super(...)` 委托目标。
-     *
-     * 只有存在实际非接口父类时才检查父类构造器；无父类场景保持官方语义，不额外产生
-     * `NO_CONSTRUCTOR`。
-     */
-    context(context: CheckerContext, reporter: DiagnosticReporter)
-    private fun checkSuperDelegation(
-        owner: CfirClassLikeDeclaration,
-        declaration: CfirConstructor,
-        call: CfirFunctionCall,
-    ) {
-        // 官方实现只在存在实际父类时检查父类构造器；无显式父类的 `super()` 不产生 NO_CONSTRUCTOR。
-        val superDeclaration = owner.directConcreteSuperDeclaration(context) ?: return
-        val constructors = superDeclaration.declarations.filterIsInstance<CfirConstructor>()
-        val resolvedConstructor = call.resolvedDelegatedConstructorOrNull()?.takeIf { constructor -> constructor in constructors }
-        val candidates = resolvedConstructor?.let(::listOf)
-            ?: constructors.filter { constructor -> constructor.matchesDelegationCall(call) }
-
-        when {
-            candidates.isEmpty() -> {
-                if (reportConstructorArgumentCountMismatch(constructors, call)) {
-                    return
-                }
-                reporter.reportOn(
-                    source = call.delegationDiagnosticSource() ?: declaration.source,
-                    factory = CfirErrors.NO_CONSTRUCTOR,
-                )
-            }
-
-            candidates.size > 1 -> reporter.reportOn(
-                source = call.delegationDiagnosticSource() ?: declaration.source,
-                factory = CfirErrors.AMBIGUOUS_CONSTRUCTOR_CALL,
-                a = superDeclaration.classLikeName(),
-            )
-        }
-    }
-
-    /**
      * 在构造器没有显式委托调用时检查是否允许隐式调用父类无参构造器。
      *
      * 该规则只作用于 class；struct、interface、enum 等其他 class-like 声明不在这里
@@ -258,9 +158,28 @@ object CfirConstructorDelegationChecker : CfirConstructorChecker() {
         }
 
         reporter.reportOn(
-            source = declaration.constructorNameDiagnosticSource(),
+            source = declaration.implicitPrimaryConstructorOwner(context)?.classLikeNameDiagnosticSource()
+                ?: declaration.constructorNameDiagnosticSource(),
             factory = CfirErrors.NO_NON_PARAM_CONSTRUCTOR_IN_SUPER_CLASS,
         )
+    }
+}
+
+/**
+ * 判断构造器是否是由 class-like 声明隐式生成的主构造器。
+ *
+ * 官方对这种构造器的隐式 `super()` 诊断落在 owner 类型名，而不是父类型引用或
+ * 合成构造器 source 内的最后一个标识符。
+ */
+private fun CfirConstructor.implicitPrimaryConstructorOwner(context: CheckerContext): CfirClassLikeDeclaration? {
+    val classId = symbol.callableId.classId ?: return null
+    val owner = context.session.symbolProvider.getClassLikeSymbolByClassId(classId)?.cfir as? CfirClassLikeDeclaration
+        ?: return null
+    val constructorSource = source ?: return null
+    val ownerSource = owner.source ?: return null
+    return owner.takeIf {
+        constructorSource.startOffset == ownerSource.startOffset &&
+                constructorSource.endOffset == ownerSource.endOffset
     }
 }
 
@@ -303,44 +222,6 @@ private fun CfirConstructor.canSeePrivateConstructorOwner(): Boolean {
         .asSequence()
         .filterIsInstance<CfirClassLikeDeclaration>()
         .any { declaration -> declaration.symbol.classId == ownerClassId }
-}
-
-/**
- * 根据构造器候选集合与委托调用实参数量报告数量类诊断。
- *
- * 返回 true 表示已经报告 `TOO_MANY_ARGUMENTS` 或 `NO_VALUE_FOR_PARAMETER`，
- * 调用方不应再报告兜底的 `NO_CONSTRUCTOR`。
- */
-context(context: CheckerContext, reporter: DiagnosticReporter)
-private fun reportConstructorArgumentCountMismatch(
-    constructors: List<CfirConstructor>,
-    call: CfirFunctionCall,
-): Boolean {
-    val argumentCount = call.argumentList.arguments.size
-    val tooManyTarget = constructors.firstOrNull { constructor -> argumentCount > constructor.valueParameters.size }
-    if (tooManyTarget != null) {
-        val source = call.argumentList.arguments.getOrNull(tooManyTarget.valueParameters.size)?.source
-            ?: call.delegationDiagnosticSource()
-        reporter.reportOn(
-            source = source,
-            factory = CfirErrors.TOO_MANY_ARGUMENTS,
-            a = call.delegationName(),
-        )
-        return true
-    }
-
-    val missingTarget = constructors.firstOrNull { constructor -> argumentCount < constructor.requiredParameterCount() }
-        ?: return false
-    val missingParameter = missingTarget.valueParameters
-        .drop(argumentCount)
-        .firstOrNull { parameter -> parameter.defaultValue == null }
-        ?: return false
-    reporter.reportOn(
-        source = call.source ?: call.delegationDiagnosticSource(),
-        factory = CfirErrors.NO_VALUE_FOR_PARAMETER,
-        a = missingParameter.name,
-    )
-    return true
 }
 
 /**
@@ -400,14 +281,6 @@ private fun ConstructorDelegationCall.checkArgumentMemberAccessBeforeInitializat
  * 这样既贴近 Kotlin FIR 的报错体验，也能避免把整段调用都染成同一类构造器语义错误。
  */
 private fun CfirFunctionCall.delegationDiagnosticSource() = calleeReference.source ?: source
-
-/**
- * 取得委托调用在诊断中展示的名称。
- *
- * 正常情况下使用 callee 引用的简单名；当引用不是命名引用时回退到构造器专用占位名。
- */
-private fun CfirFunctionCall.delegationName(): Name =
-    (calleeReference as? CfirNamedReference)?.name ?: Name.special("<constructor>")
 
 /**
  * 将任意 CFIR 元素识别为构造器委托调用。
@@ -477,32 +350,6 @@ private fun org.cangnova.cangjie.cfir.expressions.CfirBlock.collectDelegationCal
         }
     }, null)
     return result
-}
-
-/**
- * 以参数数量判断构造器是否可能匹配某个委托调用。
- *
- * 这里只做数量层面的快速匹配，类型兼容与默认参数语义由调用解析或更精确的诊断逻辑处理。
- */
-private fun CfirConstructor.matchesDelegationCall(call: CfirFunctionCall): Boolean {
-    val argumentCount = call.argumentList.arguments.size
-    val minimum = requiredParameterCount()
-    val maximum = valueParameters.size
-    return argumentCount in minimum..maximum
-}
-
-/**
- * 从委托调用的 callee reference 中取得已经解析到的构造器声明。
- *
- * 同时支持成功解析引用和带候选符号的错误恢复引用；真正的诊断 holder 不作为可用候选。
- */
-private fun CfirFunctionCall.resolvedDelegatedConstructorOrNull(): CfirConstructor? {
-    return when (val reference = calleeReference) {
-        is CfirResolvedNamedReference -> reference.resolvedSymbol.cfir as? CfirConstructor
-        is CfirNamedReferenceWithCandidateBase ->
-            reference.takeUnless { it is CfirDiagnosticHolder }?.candidateSymbol?.cfir as? CfirConstructor
-        else -> null
-    }
 }
 
 /**
@@ -598,18 +445,6 @@ private fun ConeCangJieType.fullyExpandTypeAlias(context: CheckerContext): ConeC
         current = expandedType
     }
     return current
-}
-
-/**
- * 取得 class-like 声明用于构造器诊断展示的名称。
- */
-private fun CfirClassLikeDeclaration.classLikeName(): Name = when (this) {
-    is CfirPrimitiveTypeDeclaration -> name
-    is CfirClass -> name
-    is CfirInterface -> name
-    is CfirStruct -> name
-    is CfirEnum -> name
-    is CfirTypeAlias -> name
 }
 
 /**

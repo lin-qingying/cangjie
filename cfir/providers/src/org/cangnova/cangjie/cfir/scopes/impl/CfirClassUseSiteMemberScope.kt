@@ -28,6 +28,8 @@ import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
+import org.cangnova.cangjie.cfir.declarations.CfirInterface
+import org.cangnova.cangjie.cfir.originalForSubstitutionOverride
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityFileScope
 import org.cangnova.cangjie.cfir.resolve.providers.CfirDirectSupertypeProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirExtendProvider
@@ -44,6 +46,7 @@ import org.cangnova.cangjie.cfir.session.services.CfirExtendTargetKey
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.cfir.unwrapSubstitutionOverrides
+import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
@@ -530,12 +533,15 @@ class CfirClassUseSiteMemberScope private constructor(
             for (parent in parentScopes) {
                 parent.processFunctionsByName(name) { parentCandidates += MemberWithBaseScope(it, parent) }
             }
+            val inheritableParentCandidates = parentCandidates.filterInheritedForCurrentScope()
             filterOutOverridden(
-                parentCandidates,
+                inheritableParentCandidates,
                 CfirTypeScope::processDirectOverriddenFunctionsWithBaseScope,
             ).filterOutAbstractMembersImplementedByConcrete(
                 CfirNamedFunctionSymbol::overridesFunctionCandidate,
-            ).toList()
+            ).filterOutInterfaceDefaultMembersImplementedByConcrete(
+                CfirNamedFunctionSymbol::overridesFunctionCandidate,
+            ).mergeEquivalentInheritedFunctions().toList()
         }
     }
 
@@ -548,14 +554,83 @@ class CfirClassUseSiteMemberScope private constructor(
             for (parent in parentScopes) {
                 parent.processPropertiesByName(name) { parentCandidates += MemberWithBaseScope(it, parent) }
             }
+            val inheritableParentCandidates = parentCandidates.filterInheritedForCurrentScope()
             filterOutOverridden(
-                parentCandidates,
+                inheritableParentCandidates,
                 CfirTypeScope::processDirectOverriddenPropertiesWithBaseScope,
             ).filterOutAbstractMembersImplementedByConcrete(
+                { candidate -> canImplementPropertyCandidate(candidate) },
+            ).filterOutInterfaceDefaultMembersImplementedByConcrete(
                 { candidate -> canImplementPropertyCandidate(candidate) },
             ).toList()
         }
     }
+
+    /**
+     * 父类型成员进入当前 class use-site scope 前先执行官方继承过滤：
+     * private 父成员不是子类型的继承成员，不能污染调用解析或接口 default 合并。
+     */
+    private fun <S : CfirCallableSymbol<*>> Collection<MemberWithBaseScope<S>>.filterInheritedForCurrentScope():
+            List<MemberWithBaseScope<S>> =
+        filter { it.symbol.canBeInheritedIntoCurrentScope() }
+
+    /**
+     * 父类 concrete 成员实现同签名 interface default 后，interface default 不再参与 use-site 候选。
+     *
+     * 该规则覆盖函数与属性，并与抽象成员过滤并列放在父候选合并层，避免调用解析和继承检查各自发明规则。
+     */
+    private fun <S : CfirCallableSymbol<*>> Collection<MemberWithBaseScope<S>>.filterOutInterfaceDefaultMembersImplementedByConcrete(
+        overridesCandidate: S.(S) -> Boolean,
+    ): Collection<MemberWithBaseScope<S>> {
+        return filter { candidate ->
+            if (!candidate.symbol.isInterfaceDefaultMemberForCurrentScope()) return@filter true
+
+            none { concreteCandidate ->
+                concreteCandidate !== candidate &&
+                        concreteCandidate.symbol.isConcreteClassMemberForCurrentScope() &&
+                        concreteCandidate.symbol.overridesCandidate(candidate.symbol)
+            }
+        }
+    }
+
+    /**
+     * 判断父 callable 是否可以作为当前 class 的继承成员。
+     */
+    private fun CfirCallableSymbol<*>.canBeInheritedIntoCurrentScope(): Boolean {
+        if (!isBound) return true
+        if (cfir.status.visibility != Visibilities.Private) return true
+        return ownerClassIdForCurrentScope() == classSymbol.classId
+    }
+
+    /**
+     * 判断 callable 是否是接口 default 成员。
+     */
+    private fun CfirCallableSymbol<*>.isInterfaceDefaultMemberForCurrentScope(): Boolean {
+        if (!isBound || !cfir.status.isDefault) return false
+        return ownerClassLikeDeclarationForCurrentScope() is CfirInterface
+    }
+
+    /**
+     * 判断 callable 是否是可实现接口 default 的类侧 concrete 成员。
+     */
+    private fun CfirCallableSymbol<*>.isConcreteClassMemberForCurrentScope(): Boolean {
+        if (!isBound || cfir.status.isAbstract) return false
+        return ownerClassLikeDeclarationForCurrentScope() !is CfirInterface
+    }
+
+    /**
+     * 读取 callable 所属 class-like 声明。
+     */
+    private fun CfirCallableSymbol<*>.ownerClassLikeDeclarationForCurrentScope(): CfirClassLikeDeclaration? {
+        val ownerClassId = ownerClassIdForCurrentScope() ?: return null
+        return symbolProvider.getClassLikeSymbolByClassId(ownerClassId)?.cfir as? CfirClassLikeDeclaration
+    }
+
+    /**
+     * 读取 callable 所属 class id；substitution/intersection override 可回退到 provider 记录。
+     */
+    private fun CfirCallableSymbol<*>.ownerClassIdForCurrentScope(): ClassId? =
+        callableId.classId ?: session.cfirProvider.getContainingClass(this)?.classId
 
     /**
      * 判断当前属性是否可以实现父属性候选。
@@ -1005,6 +1080,62 @@ private fun <S : CfirCallableSymbol<*>> Collection<MemberWithBaseScope<S>>.filte
         }
     }
 }
+
+/**
+ * 归并继承图中代表同一最终函数契约的父成员。
+ *
+ * 官方 `MergeInheritedMembers` 先归并继承图中原本等价的 requirement，再执行实例化替换。
+ * 因此 key 同时包含当前 substitution override 的直接输入签名和当前已实例化签名：前者区分
+ * 原本不同、仅由当前 owner substitution 新制造的碰撞，后者区分同一原始 `I<T>.test` 经不同
+ * 父类型实参得到的 `I<Float64>`/`I<(Int64, Float64)>` overload。只有两层签名都相同，才是
+ * 重复继承路径贡献的同一个 requirement。
+ */
+private fun Collection<MemberWithBaseScope<CfirNamedFunctionSymbol>>.mergeEquivalentInheritedFunctions():
+        Collection<MemberWithBaseScope<CfirNamedFunctionSymbol>> {
+    val merged = linkedMapOf<InheritedFunctionMergeKey, MemberWithBaseScope<CfirNamedFunctionSymbol>>()
+    for (candidate in this) {
+        val symbol = candidate.symbol
+        val provenance = symbol.originalForSubstitutionOverride ?: symbol
+        val key = InheritedFunctionMergeKey(
+            isStatic = provenance.isStaticMemberForOverride(),
+            provenanceSignature = provenance.overrideSignatureKey(),
+            instantiatedSignature = symbol.overrideSignatureKey(),
+            defaultImplementationOwner = provenance
+                .takeIf { it.isBound && it.cfir.status.isDefault }
+                ?.callableId
+                ?.classId,
+        )
+        val previous = merged[key]
+        if (previous == null || previous.symbol.shouldBeReplacedByConcrete(symbol)) {
+            merged[key] = candidate
+        }
+    }
+    return merged.values
+}
+
+/** 继承 requirement 归并所需的 substitution 前后联合签名。 */
+private data class InheritedFunctionMergeKey(
+    /** static 与实例成员不能归并。 */
+    val isStatic: Boolean,
+
+    /** 当前 owner substitution 之前的直接输入签名。 */
+    val provenanceSignature: String,
+
+    /** 沿父类型边完成实例化后的签名。 */
+    val instantiatedSignature: String,
+
+    /**
+     * 接口 default implementation 的声明 owner。
+     *
+     * 同一接口成员经菱形继承重复到达当前 scope 时仍应合并；不同接口各自提供同签名
+     * default 时必须保留为独立候选，供未实现检查识别官方 `shouldBeImplemented` 冲突。
+     */
+    val defaultImplementationOwner: ClassId?,
+)
+
+/** 同一归并契约存在 concrete 实现时，concrete symbol 作为 scope 代表。 */
+private fun CfirNamedFunctionSymbol.shouldBeReplacedByConcrete(candidate: CfirNamedFunctionSymbol): Boolean =
+    isBound && candidate.isBound && cfir.status.isAbstract && !candidate.cfir.status.isAbstract
 
 /**
  * 通过 direct-overridden 链判断 [member] 是否覆盖目标 [target]。

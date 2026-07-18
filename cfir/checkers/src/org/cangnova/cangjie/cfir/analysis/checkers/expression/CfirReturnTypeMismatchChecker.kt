@@ -14,7 +14,6 @@ import org.cangnova.cangjie.cfir.declarations.CfirErrorFunction
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirMacroDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirMainFunction
-import org.cangnova.cangjie.cfir.declarations.hasLambdaParameterShapeDiagnostic
 import org.cangnova.cangjie.cfir.diagnostic.ConeTypeMismatchError
 import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
@@ -181,7 +180,7 @@ private fun org.cangnova.cangjie.cfir.types.ConeDiagnostic.unwrapUnreportedDupli
  * Lambda 参数头部已有更具体形状错误时，显式 return 的类型检查不能被省略参数占位符屏蔽。
  */
 private fun CfirAnonymousFunction.hasLambdaShapeDiagnosticForReturnTypeCheck(context: CheckerContext): Boolean {
-    if (hasLambdaParameterShapeDiagnostic == true) return true
+    if (context.hasLambdaParameterShapeDiagnostic(this)) return true
     val expectedFunctionType = lambdaExpectedFunctionType(context)
         ?: return false
     return valueParameters.size != expectedFunctionType.parameterTypes.size

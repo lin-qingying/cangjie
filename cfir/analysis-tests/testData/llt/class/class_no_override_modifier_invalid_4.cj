@@ -7,7 +7,7 @@ interface I1 {
 }
 
 class C1 <: I1 {
-    <!INHERIT_MEMBER_KIND_INCONSISTENT!>p<!>ublic static func foo(): Int64 {
+    public static func <!STATIC_AND_NON_STATIC_MEMBER_CANNOT_HAVE_SAME_NAME!>foo<!>(): Int64 {
         return 2
     }
 }

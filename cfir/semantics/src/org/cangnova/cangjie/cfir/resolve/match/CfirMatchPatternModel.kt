@@ -640,7 +640,7 @@ fun isSameType(a: ConeCangJieType, b: ConeCangJieType): Boolean {
  */
 private fun ConeCangJieType.coversExpectedType(expectedType: ConeCangJieType, session: CfirSession): Boolean {
     if (isNothing) return false
-    return expectedType.isMatchSubtypeOf(this, session)
+    return expectedType.isTypePatternWildcardSubtypeOf(this, session)
 }
 
 /**

@@ -6,6 +6,7 @@ import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirIfExpression
 import org.cangnova.cangjie.cfir.session.builtinTypes
+import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.source.AbstractCjSourceElement
 import org.cangnova.cangjie.type.AbstractTypeChecker
@@ -20,6 +21,7 @@ object CfirIfConditionTypeMismatchChecker : CfirIfExpressionChecker( ) {
         val condition = expression.condition
         val source = condition.source as? AbstractCjSourceElement ?: return
         val actualType = condition.coneTypeOrNull ?: return
+        if (actualType is ConeErrorType) return
         val expectedType = context.session.builtinTypes.boolType
 
         if (AbstractTypeChecker.isSubtypeOf(context.session.typeContext, actualType, expectedType) != true) {

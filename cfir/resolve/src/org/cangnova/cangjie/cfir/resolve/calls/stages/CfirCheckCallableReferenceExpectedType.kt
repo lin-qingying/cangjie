@@ -2,20 +2,32 @@ package org.cangnova.cangjie.cfir.resolve.calls.stages
 
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.diagnostic.InapplicableCandidate
+import org.cangnova.cangjie.cfir.diagnostic.AmbiguousArgumentType
 import org.cangnova.cangjie.cfir.diagnostic.UnsuccessfulCallableReferenceArgument
+import org.cangnova.cangjie.cfir.diagnostic.CallableReferenceFailureKind
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
+import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CheckerSink
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.yieldDiagnostic
 import org.cangnova.cangjie.cfir.resolve.body.CallableReferenceResolutionResult
 import org.cangnova.cangjie.cfir.resolve.expectedType
+import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.resolve.inference.model.ConeArgumentConstraintPosition
+import org.cangnova.cangjie.cfir.semantics.ErrorTypeInArguments
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
+import org.cangnova.cangjie.cfir.types.ConeDiagnostic
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeFunctionType
+import org.cangnova.cangjie.cfir.types.ConeTypeVariableType
+import org.cangnova.cangjie.cfir.types.contains
 import org.cangnova.cangjie.cfir.types.approximateThisTypeForDeclaration
+import org.cangnova.cangjie.cfir.types.asCone
+import org.cangnova.cangjie.cfir.types.ConeUnreportedDuplicateDiagnostic
+import org.cangnova.cangjie.resolve.calls.inference.buildCurrentSubstitutor
+import org.cangnova.cangjie.type.AbstractTypeChecker
 
 /**
  * 用期望函数类型检查函数名作为值使用的候选。
@@ -29,13 +41,43 @@ object CfirCheckCallableReferenceExpectedType : ResolutionStage() {
     /** 在候选约束系统中加入 callable reference 结果函数类型到 expected type 的子类型约束。 */
     override suspend fun check(candidate: Candidate) {
         val expectedType = candidate.callInfo.resolutionMode.expectedType ?: return
+        val expectedFunctionType = expectedType.fullyExpandedType(context.session) as? ConeFunctionType
         val function = candidate.symbol.takeIf { it.isBound }?.cfir as? CfirFunction ?: return
+        if (expectedFunctionType != null && !candidate.hasCompatibleParameterShape(function, expectedFunctionType)) {
+            sink.yieldDiagnostic(InapplicableCandidate)
+            return
+        }
         val resultingType = candidate.buildResultingCallableReferenceType(function, context)
+        if (resultingType.hasRecursiveImplicitReturnType()) {
+            sink.yieldDiagnostic(InapplicableCandidate)
+            return
+        }
 
         candidate.initializeCallableReferenceAdaptation(
             callableReferenceAdaptation = null,
             resultingTypeForCallableReference = resultingType,
         )
+        val currentStorage = candidate.system.currentStorage()
+        val currentResultingType = currentStorage
+            .buildCurrentSubstitutor(context.typeContext, emptyMap())
+            .asCone()
+            .substituteOrSelf(resultingType)
+        val hasNotFixedVariables = currentResultingType.contains { type ->
+            type is ConeTypeVariableType && type.typeConstructor in currentStorage.notFixedTypeVariables
+        }
+        if (
+            !hasNotFixedVariables &&
+            expectedFunctionType != null &&
+            !expectedFunctionType.contains { it is ConeTypeVariableType } &&
+            !AbstractTypeChecker.isSubtypeOfForFunctionReference(
+                context.typeContext,
+                currentResultingType,
+                expectedFunctionType,
+            )
+        ) {
+            sink.yieldDiagnostic(InapplicableCandidate)
+            return
+        }
         candidate.system.addSubtypeConstraint(
             resultingType,
             expectedType,
@@ -61,6 +103,26 @@ object CfirCheckCallableReferenceExpectedType : ResolutionStage() {
         val returnType = substitutedReturnType(calculatedReturnType).approximateThisTypeForDeclaration()
         return ConeFunctionType(parameterTypes, returnType)
     }
+
+    /** 先检查参数形状，避免明显不匹配的 overload 触发隐式返回类型计算。 */
+    private fun Candidate.hasCompatibleParameterShape(
+        function: CfirFunction,
+        expectedType: ConeFunctionType,
+    ): Boolean = function.valueParameters.size == expectedType.parameterTypes.size
+
+    /** 判断函数引用结果类型是否依赖正在计算的隐式返回类型。 */
+    private fun ConeCangJieType.hasRecursiveImplicitReturnType(): Boolean =
+        contains { type ->
+            type is ConeErrorType && type.diagnostic.unwrapUnreportedDuplicateDiagnostic()
+                .let { diagnostic ->
+                    diagnostic is ConeSimpleDiagnostic &&
+                        diagnostic.kind == DiagnosticKind.RecursionInImplicitTypes
+                }
+        }
+
+    /** 解开用于抑制级联诊断的 wrapper，读取原始递归类型错误。 */
+    private fun ConeDiagnostic.unwrapUnreportedDuplicateDiagnostic(): ConeDiagnostic =
+        (this as? ConeUnreportedDuplicateDiagnostic)?.original ?: this
 }
 
 /**
@@ -82,10 +144,30 @@ object CfirEagerResolveOfCallableReferences : ResolutionStage() {
             CallableReferenceResolutionResult.RESOLVED,
             CallableReferenceResolutionResult.POSTPONED -> return
             CallableReferenceResolutionResult.FAILURE -> {
-                callableReferenceAtoms.forEach { atom ->
-                    sink.reportDiagnostic(UnsuccessfulCallableReferenceArgument(atom.expression))
+                val failureDiagnostics = callableReferenceAtoms
+                    .filter { atom -> atom.failureKind != null }
+                    .map { atom ->
+                        when (atom.failureKind) {
+                            CallableReferenceFailureKind.AMBIGUOUS_ARGUMENT_TYPE ->
+                                AmbiguousArgumentType(candidate.callInfo.callSite, atom.expression)
+
+                            CallableReferenceFailureKind.GENERIC_TYPE_ARGUMENT_REQUIRED ->
+                                ErrorTypeInArguments
+
+                            else ->
+                                UnsuccessfulCallableReferenceArgument(
+                                    atom.expression,
+                                    atom.failureKind ?: CallableReferenceFailureKind.NO_MATCH,
+                                )
+                        }
+                    }
+                check(failureDiagnostics.isNotEmpty()) {
+                    "Callable-reference resolution failed without a classified failing atom"
                 }
-                sink.yieldDiagnostic(InapplicableCandidate)
+                // 具体 callable-reference 失败诊断同时拥有 INAPPLICABLE 适用性和错误归属。
+                // 最后一个诊断负责终止当前阶段，避免再附加通用 InapplicableCandidate 产生外层调用级联。
+                failureDiagnostics.dropLast(1).forEach(sink::reportDiagnostic)
+                sink.yieldDiagnostic(failureDiagnostics.last())
             }
         }
     }

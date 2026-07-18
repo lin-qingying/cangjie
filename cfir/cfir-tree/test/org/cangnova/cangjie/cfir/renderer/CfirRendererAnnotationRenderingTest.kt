@@ -9,6 +9,7 @@ import org.cangnova.cangjie.cfir.common.CfirPlatform
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationAttributes
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.declarations.builder.buildClass
 import org.cangnova.cangjie.cfir.declarations.builder.buildFile
 import org.cangnova.cangjie.cfir.declarations.builder.buildNamedFunction
@@ -254,6 +255,15 @@ class CfirRendererAnnotationRenderingTest {
          */
         override fun getUseSiteMemberScope(
             klass: org.cangnova.cangjie.cfir.declarations.CfirClass,
+            useSiteSession: CfirSession,
+            scopeSession: ScopeSession,
+        ): CfirTypeScope = CfirTypeScope.Empty
+
+        /**
+         * renderer 测试不解析 typealias 构造调用，返回空 scope 保持测试边界纯粹。
+         */
+        override fun getTypealiasConstructorScope(
+            typeAlias: CfirTypeAlias,
             useSiteSession: CfirSession,
             scopeSession: ScopeSession,
         ): CfirTypeScope = CfirTypeScope.Empty

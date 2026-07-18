@@ -109,13 +109,18 @@ open class ReturnTypeCalculatorWithJump(
         return computeReturnTypeRef(declaration)
     }
 
-    /** 构造递归隐式类型错误，并把参与递归的符号记录到计算会话。 */
-    protected fun recursionInImplicitTypeRef(declaration: CfirCallableDeclaration): CfirResolvedTypeRef =
-        buildErrorTypeRef {
+    /** 构造递归隐式类型错误，把根错误写回声明，并把参与递归的符号记录到计算会话。 */
+    protected fun recursionInImplicitTypeRef(declaration: CfirCallableDeclaration): CfirResolvedTypeRef {
+        val errorTypeRef = buildErrorTypeRef {
+            source = declaration.returnTypeRef.source
             diagnostic = ConeSimpleDiagnostic("Recursive implicit type", DiagnosticKind.RecursionInImplicitTypes)
-        }.also {
-            implicitBodyResolveComputationSession.calculateAndStoreNonTrivialLoop(declaration.symbol)
         }
+        if (declaration.returnTypeRef !is CfirResolvedTypeRef) {
+            declaration.replaceReturnTypeRef(errorTypeRef)
+        }
+        implicitBodyResolveComputationSession.calculateAndStoreNonTrivialLoop(declaration.symbol)
+        return errorTypeRef
+    }
 
     /** 执行普通隐式返回类型计算，并处理计算状态缓存和递归检测。 */
     private fun computeReturnTypeRef(declaration: CfirCallableDeclaration): CfirResolvedTypeRef {
@@ -197,6 +202,9 @@ open class ReturnTypeCalculatorWithJump(
         }
 
         tryCalculateReturnTypeOrNull(owner)
+        if (declaration.returnTypeRef !is CfirResolvedTypeRef && owner.returnTypeRef is CfirResolvedTypeRef) {
+            resolveDeclaration(owner)
+        }
         return declaration.returnTypeRef as? CfirResolvedTypeRef
     }
 

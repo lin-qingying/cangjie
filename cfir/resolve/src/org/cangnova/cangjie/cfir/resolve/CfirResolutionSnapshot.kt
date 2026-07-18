@@ -24,7 +24,6 @@ import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
 import org.cangnova.cangjie.cfir.declarations.CfirResolveState
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.declarations.ResolveStateAccess
-import org.cangnova.cangjie.cfir.declarations.hasLambdaParameterShapeDiagnostic
 import org.cangnova.cangjie.cfir.declarations.impl.CfirPatternVariableImpl
 import org.cangnova.cangjie.cfir.declarations.lambdaParameterShapeExpectedFunctionType
 import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
@@ -67,8 +66,6 @@ internal class CfirResolutionSnapshot private constructor(
     private val anonymousFunctionTypes: IdentityHashMap<CfirAnonymousFunction, CfirTypeRef>,
     /** 匿名函数匹配参数函数类型快照。 */
     private val anonymousFunctionMatchingTypes: IdentityHashMap<CfirAnonymousFunction, ConeCangJieType?>,
-    /** 匿名函数参数形状诊断标记快照。 */
-    private val anonymousFunctionShapeDiagnostics: IdentityHashMap<CfirAnonymousFunction, Boolean?>,
     /** 匿名函数参数形状诊断目标函数类型快照。 */
     private val anonymousFunctionShapeExpectedTypes: IdentityHashMap<CfirAnonymousFunction, ConeFunctionType?>,
     /** 匿名函数 body 快照。 */
@@ -112,9 +109,6 @@ internal class CfirResolutionSnapshot private constructor(
         }
         for ((function, matchingType) in anonymousFunctionMatchingTypes) {
             function.replaceMatchingParameterFunctionType(matchingType)
-        }
-        for ((function, hasShapeDiagnostic) in anonymousFunctionShapeDiagnostics) {
-            function.hasLambdaParameterShapeDiagnostic = hasShapeDiagnostic
         }
         for ((function, expectedFunctionType) in anonymousFunctionShapeExpectedTypes) {
             function.lambdaParameterShapeExpectedFunctionType = expectedFunctionType
@@ -177,7 +171,6 @@ internal class CfirResolutionSnapshot private constructor(
             val anonymousFunctionReturnTypes = IdentityHashMap<CfirAnonymousFunction, CfirTypeRef>()
             val anonymousFunctionTypes = IdentityHashMap<CfirAnonymousFunction, CfirTypeRef>()
             val anonymousFunctionMatchingTypes = IdentityHashMap<CfirAnonymousFunction, ConeCangJieType?>()
-            val anonymousFunctionShapeDiagnostics = IdentityHashMap<CfirAnonymousFunction, Boolean?>()
             val anonymousFunctionShapeExpectedTypes = IdentityHashMap<CfirAnonymousFunction, ConeFunctionType?>()
             val anonymousFunctionBodies = IdentityHashMap<CfirAnonymousFunction, CfirBlock?>()
             val variableTypes = IdentityHashMap<CfirVariable, CfirTypeRef>()
@@ -210,7 +203,6 @@ internal class CfirResolutionSnapshot private constructor(
                             anonymousFunctionReturnTypes[element] = element.returnTypeRef
                             anonymousFunctionTypes[element] = element.typeRef
                             anonymousFunctionMatchingTypes[element] = element.matchingParameterFunctionType
-                            anonymousFunctionShapeDiagnostics[element] = element.hasLambdaParameterShapeDiagnostic
                             anonymousFunctionShapeExpectedTypes[element] = element.lambdaParameterShapeExpectedFunctionType
                             anonymousFunctionBodies[element] = element.body
                         }
@@ -256,7 +248,6 @@ internal class CfirResolutionSnapshot private constructor(
                 anonymousFunctionReturnTypes,
                 anonymousFunctionTypes,
                 anonymousFunctionMatchingTypes,
-                anonymousFunctionShapeDiagnostics,
                 anonymousFunctionShapeExpectedTypes,
                 anonymousFunctionBodies,
                 variableTypes,

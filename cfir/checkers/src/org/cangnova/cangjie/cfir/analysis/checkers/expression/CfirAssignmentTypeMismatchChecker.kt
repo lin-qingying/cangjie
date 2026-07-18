@@ -13,7 +13,9 @@ import org.cangnova.cangjie.cfir.expressions.CfirSuperReceiverExpression
 import org.cangnova.cangjie.cfir.expressions.CfirSubscriptExpression
 import org.cangnova.cangjie.cfir.expressions.CfirThisReceiverExpression
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
+import org.cangnova.cangjie.cfir.diagnostic.ConeMismatchedTypesMultipleAssignError
 import org.cangnova.cangjie.cfir.types.ConeErrorType
+import org.cangnova.cangjie.cfir.types.ConeUnreportedDuplicateDiagnostic
 import org.cangnova.cangjie.cfir.types.ConeVArrayType
 import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.source.AbstractCjSourceElement
@@ -36,6 +38,25 @@ object CfirAssignmentTypeMismatchChecker : CfirAssignmentChecker() {
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirAssignment) {
+        val rootDiagnostic = (expression.coneTypeOrNull as? ConeErrorType)?.diagnostic
+        val multipleAssignmentDiagnostic = when (rootDiagnostic) {
+            is ConeMismatchedTypesMultipleAssignError -> rootDiagnostic
+            is ConeUnreportedDuplicateDiagnostic ->
+                rootDiagnostic.original as? ConeMismatchedTypesMultipleAssignError
+            else -> null
+        }
+        if (multipleAssignmentDiagnostic != null) {
+            val rValueSource = expression.rValue.source as? AbstractCjSourceElement ?: return
+            reporter.reportOn(
+                rValueSource,
+                CfirErrors.TYPE_MISMATCH,
+                multipleAssignmentDiagnostic.expectedType,
+                multipleAssignmentDiagnostic.actualType,
+                false,
+            )
+            return
+        }
+
         val lValue = expression.lValue
         if (lValue is CfirSubscriptExpression) {
             val receiverType = lValue.receiver.coneTypeOrNull
@@ -82,7 +103,12 @@ object CfirAssignmentTypeMismatchChecker : CfirAssignmentChecker() {
             }
 
             reporter.reportOn(
-                rValueSource, CfirErrors.ASSIGNMENT_TYPE_MISMATCH,
+                rValueSource,
+                if (expression.rValue.isResolvedClassLikeValueReference()) {
+                    CfirErrors.TYPE_MISMATCH
+                } else {
+                    CfirErrors.ASSIGNMENT_TYPE_MISMATCH
+                },
                 lValueType,
                 rValueType,
                 false,

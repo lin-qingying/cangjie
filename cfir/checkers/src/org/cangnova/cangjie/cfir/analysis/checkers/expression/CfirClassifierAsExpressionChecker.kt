@@ -8,16 +8,18 @@ import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCallOrigin
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
 import org.cangnova.cangjie.cfir.expressions.CfirSubscriptExpression
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
 import org.cangnova.cangjie.source.CjOffsetsOnlySourceElement
 import org.cangnova.cangjie.name.OperatorNameConventions
 
 /**
- * 表达式位置不能把 class / struct / enum 等类型名当作值使用。
+ * 表达式位置不能把类型参数或 class / struct / enum 等类型名当作值使用。
  *
  * Kotlin FIR 在 `FirStandaloneQualifierChecker` 中检查独立 qualifier；
  * 本地 CFIR 暂无独立 qualifier 节点，类型名会以 `CfirResolvedNamedReference`
@@ -27,8 +29,8 @@ object CfirClassifierAsExpressionChecker : CfirQualifiedAccessChecker() {
     /**
      * 检查 qualified access 是否把类型名当作表达式值使用。
      *
-     * 函数调用和作为外层接收者的 qualifier 不在这里报告；其余解析到 class-like symbol 的访问
-     * 使用引用首字符范围对齐官方 `sema_ref_not_be_type` 诊断。
+     * 函数调用和作为外层接收者的 qualifier 不在这里报告。类型参数使用完整引用范围；
+     * class-like symbol 保持现有首字符范围行为，由其独立诊断范围簇继续处理。
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirQualifiedAccessExpression) {
@@ -37,16 +39,32 @@ object CfirClassifierAsExpressionChecker : CfirQualifiedAccessChecker() {
             return
         }
         val resolvedReference = expression.calleeReference as? CfirResolvedNamedReference ?: return
-        resolvedReference.resolvedSymbol as? CfirClassLikeSymbol<*> ?: return
         val source = resolvedReference.source ?: expression.source ?: return
         if (expression.isUsedAsOuterReceiver()) return
         if (expression.isUsedAsSubscriptReceiver()) return
+        if (resolvedReference.resolvedSymbol is CfirClassLikeSymbol<*> && expression.isAssignmentExpectedTypeOperand()) return
 
-        reporter.reportOn(
-            source = CjOffsetsOnlySourceElement(source.startOffset, source.startOffset + 1),
-            factory = CfirErrors.REF_NOT_BE_TYPE,
-        )
+        when (resolvedReference.resolvedSymbol) {
+            is CfirTypeParameterSymbol -> reporter.reportOn(
+                source = source,
+                factory = CfirErrors.REF_NOT_BE_TYPE,
+            )
+
+            is CfirClassLikeSymbol<*> -> reporter.reportOn(
+                source = CjOffsetsOnlySourceElement(source.startOffset, source.startOffset + 1),
+                factory = CfirErrors.REF_NOT_BE_TYPE,
+            )
+
+            else -> Unit
+        }
     }
+
+    /** 赋值右值已有明确目标类型时，类型不匹配由 assignment checker 统一拥有。 */
+    context(context: CheckerContext)
+    private fun CfirQualifiedAccessExpression.isAssignmentExpectedTypeOperand(): Boolean =
+        context.callsOrAssignments.asReversed()
+            .filterIsInstance<org.cangnova.cangjie.cfir.expressions.CfirAssignment>()
+            .any { assignment -> assignment.rValue === this }
 
     /**
      * 官方在 `DiagnoseForBinaryExpr` 中会同时保留操作数的类型名表达式错误和外层二元表达式错误。
@@ -78,9 +96,7 @@ object CfirClassifierAsExpressionChecker : CfirQualifiedAccessChecker() {
 
     /** 判断表达式是否为解析到 class / struct / enum 等分类器的裸类型名操作数。 */
     private fun org.cangnova.cangjie.cfir.expressions.CfirExpression.isClassifierAsExpressionOperand(): Boolean {
-        val access = this as? CfirQualifiedAccessExpression ?: return false
-        val resolvedReference = access.calleeReference as? CfirResolvedNamedReference ?: return false
-        return resolvedReference.resolvedSymbol is CfirClassLikeSymbol<*>
+        return isResolvedClassLikeValueReference()
     }
 
     /**
@@ -114,4 +130,12 @@ object CfirClassifierAsExpressionChecker : CfirQualifiedAccessChecker() {
             statement is CfirSubscriptExpression && statement.receiver === this
         }
     }
+}
+
+/** 判断表达式是否为解析到 class / struct / enum 等声明的裸类型名值引用。 */
+internal fun CfirExpression.isResolvedClassLikeValueReference(): Boolean {
+    val access = this as? CfirQualifiedAccessExpression ?: return false
+    if (access is CfirFunctionCall) return false
+    val resolvedReference = access.calleeReference as? CfirResolvedNamedReference ?: return false
+    return resolvedReference.resolvedSymbol is CfirClassLikeSymbol<*>
 }

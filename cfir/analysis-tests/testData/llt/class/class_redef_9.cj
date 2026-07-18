@@ -8,7 +8,7 @@ open class C1 {
 }
 
 class C2 <: C1 {
-    public static redef func <!OVERRIDING_RETURN_TYPE_MISMATCH!>foo<!>(a: Int64): Int32 {
+    public static redef func <!RETURN_TYPE_INCOMPATIBLE!>foo<!>(a: Int64): Int32 {
         return 3
     }
 }

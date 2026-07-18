@@ -12,7 +12,7 @@ enum TimeUnit2 {
 
 func codegenUnitTest(): TimeUnit {
     var time1 = TimeUnit.<!NOT_MEMBER_OF!>Year3<!>(1)
-    var time2 = <!NO_VALUE_FOR_PARAMETER!>TimeUnit2.Month2(1)<!>
+    var time2 = TimeUnit2.Month2<!NO_VALUE_FOR_PARAMETER!>(1)<!>
     var time3 = TimeUnit2.<!NOT_MEMBER_OF!>Year<!>
     var time4 = <!NO_MATCHING_OPERATOR_INVOKE!>TimeUnit.Year<!>(1)
     return <!RETURN_TYPE_MISMATCH!>0<!>

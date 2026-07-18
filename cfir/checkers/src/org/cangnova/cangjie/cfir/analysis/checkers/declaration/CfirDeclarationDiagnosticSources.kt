@@ -79,6 +79,22 @@ internal fun CfirClassLikeDeclaration.classLikeNameDiagnosticSource(
 internal fun CfirClassLikeDeclaration.classLikeDeclarationHeaderDiagnosticSource(): AbstractCjSourceElement? {
     val declarationSource = source ?: return null
     val nameSource = classLikeNameDiagnosticSource(includeTypeParameters = true) ?: return declarationSource
+    source?.psi?.let { psi ->
+        val classLikePsi = when (psi) {
+            is CjPsiClassLikeDeclaration -> psi
+            else -> PsiTreeUtil.getParentOfType(psi, CjPsiClassLikeDeclaration::class.java, false)
+                ?: PsiTreeUtil.findChildOfType(psi, CjPsiClassLikeDeclaration::class.java)
+        }
+        val keyword = (classLikePsi as? CjTypeStatement)?.declarationKeyword
+        if (keyword != null) {
+            return CjOffsetsOnlySourceElement(
+                startOffset = keyword.textRange.startOffset,
+                endOffset = nameSource.endOffset,
+            )
+        }
+    }
+
+    (declarationSource as? CjSourceElement)?.findClassLikeDeclarationHeaderSource()?.let { return it }
     return CjOffsetsOnlySourceElement(
         startOffset = declarationSource.startOffset,
         endOffset = nameSource.endOffset,
@@ -180,6 +196,25 @@ internal fun CfirNamedFunction.functionNameDiagnosticSource(): AbstractCjSourceE
         nameElement?.toCjPsiSourceElement()
     }
         ?: (source as? CjSourceElement)?.findFunctionNameSource(name)
+        ?: source
+
+/**
+ * 取得程序入口 `main` 名称的诊断 source。
+ *
+ * `main` 在 CFIR 中有独立节点类型，PSI/light-tree 都需要显式收窄到名称 token，
+ * 避免入口签名诊断落到整条声明。
+ */
+internal fun CfirMainFunction.mainFunctionNameDiagnosticSource(): AbstractCjSourceElement? =
+    source?.psi?.let { psi ->
+        val mainPsi = when (psi) {
+            is CjMainFunction -> psi
+            else -> PsiTreeUtil.getParentOfType(psi, CjMainFunction::class.java, false)
+                ?: PsiTreeUtil.findChildOfType(psi, CjMainFunction::class.java)
+        }
+        mainPsi?.node?.findChildByType(CjTokens.MAIN_KEYWORD)?.psi?.toCjPsiSourceElement()
+            ?: mainPsi?.nameIdentifier?.toCjPsiSourceElement()
+    }
+        ?: (source as? CjSourceElement)?.findMainFunctionNameSource()
         ?: source
 
 /**
@@ -385,6 +420,32 @@ private fun CjSourceElement.findInheritanceCycleHeaderSource(): AbstractCjSource
 }
 
 /**
+ * 在 light-tree source 中查找 class-like 声明头范围。
+ *
+ * 范围从 `class`/`struct`/`interface`/`enum` 关键字开始，到名称/类型参数结束；
+ * 前置访问控制与 open/abstract 等修饰符不属于声明头诊断的核心范围。
+ */
+private fun CjSourceElement.findClassLikeDeclarationHeaderSource(): AbstractCjSourceElement? {
+    val tokens = collectLeafTokens()
+
+    for ((index, token) in tokens.withIndex()) {
+        if (token.tokenType !in classLikeDeclarationKeywords) continue
+        val endToken = tokens.asSequence()
+            .drop(index + 1)
+            .takeWhile { it.tokenType != CjTokens.LTCOLON && it.tokenType != CjTokens.LBRACE }
+            .filter { treeStructure.toString(it).toString().isNotBlank() }
+            .lastOrNull()
+            ?: token
+        return CjOffsetsOnlySourceElement(
+            startOffset = treeStructure.getStartOffset(token),
+            endOffset = treeStructure.getEndOffset(endToken),
+        )
+    }
+
+    return null
+}
+
+/**
  * 在 light-tree source 中查找 typealias 声明头范围。
  *
  * 范围从 `type` 关键字开始，到别名名称或类型参数列表结束，排除右侧展开类型。
@@ -439,6 +500,18 @@ private fun CjSourceElement.findFunctionNameSource(name: Name): AbstractCjSource
     }
 
     return null
+}
+
+/**
+ * 在 light-tree source 中查找程序入口 `main` 关键字。
+ */
+private fun CjSourceElement.findMainFunctionNameSource(): AbstractCjSourceElement? {
+    val tokens = collectLeafTokens()
+    val mainToken = tokens.firstOrNull { it.tokenType == CjTokens.MAIN_KEYWORD } ?: return null
+    return CjOffsetsOnlySourceElement(
+        startOffset = treeStructure.getStartOffset(mainToken),
+        endOffset = treeStructure.getEndOffset(mainToken),
+    )
 }
 
 /**

@@ -812,6 +812,12 @@ object StandardNames {
     val FUTURE = Name.identifier("Future")
 
     /**
+     * 调度上下文接口 `ThreadContext` 的短名称。
+     */
+    @JvmField
+    val THREAD_CONTEXT = Name.identifier("ThreadContext")
+
+    /**
      * 标准字符串类型 `String` 的短名称。
      */
     @JvmField
@@ -1037,6 +1043,12 @@ object StandardNames {
          */
         @JvmField
         val futureFqName: FqName = core.child(FUTURE)
+
+        /**
+         * 标准库调度上下文接口 `std.core.ThreadContext` 的 FqName。
+         */
+        @JvmField
+        val threadContextFqName: FqName = core.child(THREAD_CONTEXT)
 
         /** 标准库类型 `std.core.Range` 的 FqName。 */
         @JvmField

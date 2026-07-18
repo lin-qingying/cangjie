@@ -39,6 +39,7 @@ import org.cangnova.cangjie.cfir.scopes.impl.CfirExtendMemberScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassSubstitutionScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
 import org.cangnova.cangjie.cfir.scopes.overrideSignatureKey
+import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
 import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
 import org.cangnova.cangjie.cfir.session.extendProvider
 import org.cangnova.cangjie.cfir.session.extendRuleQueryServiceOrNull
@@ -49,6 +50,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
+import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.symbols.toLookupTag
 import org.cangnova.cangjie.cfir.types.*
@@ -129,7 +131,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         val reportedPropertyTypeConflicts = mutableSetOf<String>()
         val reportedPropertyMutabilityConflicts = mutableSetOf<String>()
         val reportedFunctionReturnTypeConflicts = mutableSetOf<String>()
-        val reportedUnimplementedMembers = mutableSetOf<String>()
+        var hasUnimplementedMember = false
 
         for (superTypeRef in extend.superTypeRefs) {
             val superDecl = superTypeRef.resolvedClassLikeDeclaration() ?: continue
@@ -258,16 +260,17 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                 if (hasSatisfiedImplementation) continue
 
                 if (superInfo.isAbstract) {
-                    val requirementKey = superInfo.requirementDiagnosticKey()
-                    if (reportedUnimplementedMembers.add(requirementKey)) {
-                        reporter.reportOn(
-                            source = extend.source?.firstCharacterDiagnosticSource() ?: extend.extendedTypeRef.source,
-                            factory = CfirErrors.NEED_MEMBER_IMPLEMENTATION,
-                            a = extend.targetDisplayName(),
-                        )
-                    }
+                    hasUnimplementedMember = true
                 }
             }
+        }
+
+        if (hasUnimplementedMember) {
+            reporter.reportOn(
+                source = extend.source ?: extend.extendedTypeRef.source,
+                factory = CfirErrors.ABSTRACT_MEMBER_NOT_IMPLEMENTED,
+                a = extend.targetDiagnosticName(),
+            )
         }
     }
 
@@ -570,7 +573,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         for ((name, kinds) in kindsByName) {
             if (kinds.size > 1) {
                 reporter.reportOn(
-                    source = classDecl.source,
+                    source = classDecl.classLikeNameDiagnosticSource(),
                     factory = CfirErrors.INHERIT_SUPER_MEMBER_KIND_INCONSISTENT,
                     a = name,
                 )
@@ -708,7 +711,9 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         if (!classDecl.status.isAbstract) return
 
         val ownerClassId = (classDecl.symbol as? CfirClassLikeSymbol<*>)?.classId
-        val staticMembers = context.createUseSiteMemberScope(classDecl)
+        // class 声明自身只承担 declaration-site 继承义务；extend 引入的接口由 extend owner 报告。
+        val staticMembers = context.session.cangjieScopeProvider
+            .getDeclarationSiteMemberScope(classDecl, context.session, context.scopeSession)
             .collectInheritedMemberInfos(context)
             .filter { info ->
                 info.isStatic &&
@@ -848,6 +853,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                     name = member.name,
                     kind = "function",
                     isStatic = member.status.isStatic,
+                    isOverride = member.status.isOverride,
                     isRedef = member.status.isRedef,
                     isConst = member.status.isConst,
                     isMut = member.status.isMut,
@@ -864,6 +870,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                     name = member.name,
                     kind = member.inheritanceMemberKind(),
                     isStatic = member.status.isStatic,
+                    isOverride = member.status.isOverride,
                     isRedef = member.status.isRedef,
                     isConst = member.status.isConst,
                     isMut = member.status.isMut,
@@ -880,6 +887,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                     name = member.name,
                     kind = "variable",
                     isStatic = member.status.isStatic,
+                    isOverride = false,
                     isRedef = false,
                     isConst = false,
                     isMut = false,
@@ -903,6 +911,8 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         val reportedReturnTypeConflicts = mutableSetOf<String>()
         val reportedVariableShadows = mutableSetOf<Name>()
         val reportedCannotOverrides = mutableSetOf<String>()
+        val reportedInvalidAbstractOverrides = mutableSetOf<String>()
+        val reportedWeakVisibilities = mutableSetOf<String>()
         val reportedExtendOverrides = mutableSetOf<String>()
         for (inheritedSource in subject.inheritedSources) {
             val superType = (inheritedSource.typeRef as? CfirResolvedTypeRef)?.coneType ?: continue
@@ -935,28 +945,14 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                         val hasStaticConflict = ownInfo.isStatic != superInfo.isStatic
                         if (hasStaticConflict) {
                             if (reportedStaticConflicts.add(ownInfo.name)) {
-                                val source = ownInfo.source?.firstCharacterDiagnosticSource()
-                                    ?: ownInfo.nameSource
-                                    ?: subject.source
-                                if (subject.isExtendSubject) {
-                                    reporter.reportOn(
-                                        source = source,
-                                        factory = CfirErrors.STATIC_AND_NON_STATIC_MEMBER_CANNOT_HAVE_SAME_NAME,
-                                        a = ownInfo.staticKind,
-                                        b = ownInfo.name,
-                                        c = superInfo.staticKind,
-                                        d = "extended type",
-                                    )
-                                } else {
-                                    reporter.reportOn(
-                                        source = source,
-                                        factory = CfirErrors.INHERIT_MEMBER_KIND_INCONSISTENT,
-                                        a = ownInfo.staticKind,
-                                        b = ownInfo.name,
-                                        c = superInfo.staticKind,
-                                        d = superInfo.ownerName ?: superClassId.shortClassName,
-                                    )
-                                }
+                                reporter.reportOn(
+                                    source = ownInfo.nameSource ?: ownInfo.source ?: subject.source,
+                                    factory = CfirErrors.STATIC_AND_NON_STATIC_MEMBER_CANNOT_HAVE_SAME_NAME,
+                                    a = ownInfo.staticKind,
+                                    b = ownInfo.name,
+                                    c = superInfo.staticKind,
+                                    d = if (subject.isExtendSubject) "extended type" else "parent class or interfaces",
+                                )
                             }
                         }
 
@@ -1023,6 +1019,22 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                             }
                         }
 
+                        if (classDecl != null &&
+                            !ownInfo.isOverride &&
+                            !ownInfo.isRedef &&
+                            ownInfo.hasWeakVisibilityComparedTo(superInfo)
+                        ) {
+                            val key = ownInfo.overrideDiagnosticKey(superInfo)
+                            if (reportedWeakVisibilities.add(key)) {
+                                reporter.reportOn(
+                                    source = ownInfo.source ?: ownInfo.nameSource ?: subject.source,
+                                    factory = CfirErrors.CANNOT_WEAKEN_ACCESS_PRIVILEGE,
+                                    a = superInfo.name,
+                                    b = superInfo.visibility,
+                                )
+                            }
+                        }
+
                         if (!hasStaticConflict && ownInfo.kind == "variable" && reportedVariableShadows.add(ownInfo.name)) {
                             reporter.reportOn(
                                 source = ownInfo.source?.firstCharacterDiagnosticSource() ?: subject.source,
@@ -1054,6 +1066,18 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                                     b = ownInfo.name,
                                 )
                             }
+                        } else if (classDecl != null && ownInfo.invalidAbstractOverrideInClass(superInfo, classDecl, context)) {
+                            val key = ownInfo.overrideDiagnosticKey(superInfo)
+                            if (reportedInvalidAbstractOverrides.add(key)) {
+                                reporter.reportOn(
+                                    source = ownInfo.source?.firstCharacterDiagnosticSource()
+                                        ?: ownInfo.nameSource
+                                        ?: subject.source,
+                                    factory = CfirErrors.INVALID_OVERRIDE_MEMBER_IN_CLASS,
+                                    a = ownInfo.kind,
+                                    b = ownInfo.name,
+                                )
+                            }
                         }
                     }
                 }
@@ -1079,15 +1103,51 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         val implementationType = implementationSymbol.resolvedReturnTypeOrNull(context) ?: return null
         val baseType = baseSymbol.resolvedReturnTypeOrNull(context) ?: return null
         if (implementationType is ConeErrorType || baseType is ConeErrorType) return null
+        if (implementationType.hasGenericReturnTypeInvarianceAgainst(baseType, context)) {
+            return FunctionReturnTypeConflict.Invariance(baseType)
+        }
         if (implementationType.hasOfficialReturnTypeInvarianceAgainst(baseType, context)) {
             return FunctionReturnTypeConflict.Invariance(baseType)
         }
-        if (implementationType.containsAnyTypeParameter() || baseType.containsAnyTypeParameter()) return null
         if (AbstractTypeChecker.isSubtypeOf(context.session.typeContext, implementationType, baseType)) return null
         return FunctionReturnTypeConflict.Mismatch(
             implementationType = implementationType,
             baseType = baseType,
         )
+    }
+
+    /**
+     * 对齐官方 `StructInheritanceChecker::CheckReturnOverrideByGeneric`：实现方直接以类型参数
+     * 作为返回类型且与父返回类型不同时，只有类上界能够提供返回类型协变依据；无上界、
+     * 接口上界或类型参数上界都必须保持返回类型不变。
+     */
+    private fun ConeCangJieType.hasGenericReturnTypeInvarianceAgainst(
+        baseType: ConeCangJieType,
+        context: CheckerContext,
+    ): Boolean {
+        val typeParameter = this as? ConeTypeParameterType ?: return false
+        if (AbstractTypeChecker.equalTypes(context.session.typeContext, typeParameter, baseType)) return false
+        return !typeParameter.hasConcreteClassUpperBound(context, mutableSetOf())
+    }
+
+    /**
+     * 判断类型参数的直接或传递上界中是否存在具体类上界。
+     *
+     * 官方在继承检查前通过 `ExposeGenericUpperBounds` 展开上界闭包；CFIR 在检查点按需递归，
+     * 并用 visited 保持循环上界仍属于“仅泛型上界”的不变性分支。
+     */
+    private fun ConeTypeParameterType.hasConcreteClassUpperBound(
+        context: CheckerContext,
+        visited: MutableSet<CfirTypeParameterSymbol>,
+    ): Boolean {
+        val symbol = lookupTag.typeParameterSymbol
+        if (!visited.add(symbol)) return false
+        return symbol.resolvedBounds.any { boundRef ->
+            when (val bound = boundRef.coneType) {
+                is ConeTypeParameterType -> bound.hasConcreteClassUpperBound(context, visited)
+                else -> !bound.isInterfaceType(context)
+            }
+        }
     }
 
     /**
@@ -1162,35 +1222,6 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
     }
 
     /**
-     * 判断类型或其缩略类型中是否包含任意类型参数。
-     *
-     * 泛型返回类型在官方实现中存在单独的替换和约束路径，这里不把它简化为
-     * 普通 concrete type 的返回类型不一致诊断。
-     */
-    private fun ConeCangJieType.containsAnyTypeParameter(): Boolean =
-        abbreviatedType?.containsAnyTypeParameter() == true || containsAnyTypeParameterInConstructor()
-
-    /**
-     * 在类型构造器、类型实参、展开类型以及复合类型内部递归查找任意类型参数。
-     */
-    private fun ConeCangJieType.containsAnyTypeParameterInConstructor(): Boolean = when (this) {
-        is ConeTypeParameterType -> true
-        is ConeClassLikeType -> typeArguments.any { it.type.containsAnyTypeParameter() }
-        is ConeStructType -> typeArguments.any { it.type.containsAnyTypeParameter() }
-        is ConeEnumType -> typeArguments.any { it.type.containsAnyTypeParameter() }
-        is ConeTypeAliasType -> typeArguments.any { it.type.containsAnyTypeParameter() } ||
-            (expandedType?.containsAnyTypeParameter() == true)
-        is ConeFunctionType -> parameterTypes.any { it.containsAnyTypeParameter() } ||
-            returnType.containsAnyTypeParameter()
-        is ConeTupleType -> elementTypes.any { it.containsAnyTypeParameter() }
-        is ConeVArrayType -> elementType.containsAnyTypeParameter()
-        is ConePointerType -> pointeeType.containsAnyTypeParameter()
-        is ConeIntersectionType -> intersectedTypes.any { it.containsAnyTypeParameter() }
-        is ConeUnionType -> unionTypes.any { it.containsAnyTypeParameter() }
-        else -> arrayElementType?.containsAnyTypeParameter() == true
-    }
-
-    /**
      * 将 CFIR 声明转换为继承检查使用的成员信息。
      *
      * 该入口只返回可继承成员；private 等不应继承的成员会由 symbol 侧过滤。
@@ -1262,6 +1293,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                 name = declaration.name,
                 kind = "function",
                 isStatic = declaration.status.isStatic,
+                isOverride = declaration.status.isOverride,
                 isRedef = declaration.status.isRedef,
                 isConst = declaration.status.isConst,
                 isMut = declaration.status.isMut,
@@ -1278,6 +1310,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                 name = declaration.name,
                 kind = declaration.inheritanceMemberKind(),
                 isStatic = declaration.status.isStatic,
+                isOverride = declaration.status.isOverride,
                 isRedef = declaration.status.isRedef,
                 isConst = declaration.status.isConst,
                 isMut = declaration.status.isMut,
@@ -1294,6 +1327,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                 name = declaration.name,
                 kind = "variable",
                 isStatic = declaration.status.isStatic,
+                isOverride = false,
                 isRedef = false,
                 isConst = false,
                 isMut = false,
@@ -1395,6 +1429,32 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         if (superSymbol.cfir.status.isStatic) return false
         if (superSymbol.isAbstractLike(context)) return false
         if (superSymbol.isOverridableFrom(classDecl, context)) return false
+
+        return true
+    }
+
+    /**
+     * 官方 `CheckInheritanceAttributes` 禁止 class 用 abstract 成员覆盖父 class
+     * 中已有实现的同签名函数/属性，即使父成员本身是 `open`。
+     */
+    private fun InheritedMemberInfo.invalidAbstractOverrideInClass(
+        superInfo: InheritedMemberInfo,
+        classDecl: CfirClassLikeDeclaration,
+        context: CheckerContext,
+    ): Boolean {
+        if (classDecl !is CfirClass) return false
+        if (!isAbstract) return false
+        if (kind != superInfo.kind) return false
+        if (kind != "function" && kind != "property") return false
+        if (!hasSameOverrideSignature(superInfo)) return false
+
+        val superSymbol = superInfo.symbol ?: return false
+        if (!superSymbol.isBound) return false
+        if (superSymbol.cfir.status.isStatic) return false
+        if (superInfo.isAbstract) return false
+
+        val superOwner = context.ownerClassSymbol(superSymbol)?.cfir
+        if (superOwner is CfirInterface) return false
 
         return true
     }
@@ -1545,6 +1605,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
      * 判断类型对应的 class-like 声明是否为接口。
      */
     private fun ConeCangJieType.isInterfaceType(context: CheckerContext): Boolean {
+        if ((this as? ConeClassLikeType)?.isInterface == true) return true
         val classId = classIdOrPrimitiveClassId ?: return false
         return context.session.symbolProvider.getClassLikeSymbolByClassId(classId)?.cfir is CfirInterface
     }
@@ -1736,6 +1797,17 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         } ?: "<unknown>")
 
     /**
+     * 构造 extend 未实现成员诊断使用的目标类型名称。
+     */
+    context(context: CheckerContext)
+    private fun CfirExtend.targetDiagnosticName(): Name =
+        (extendedTypeRef as? CfirResolvedTypeRef)
+            ?.coneType
+            ?.classIdOrPrimitiveClassId
+            ?.shortClassName
+            ?: Name.special("<unknown>")
+
+    /**
      * 继承检查使用的统一成员描述。
      *
      * @property name 成员名称。
@@ -1759,6 +1831,8 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         val kind: String,
         /** 成员是否为 static。 */
         val isStatic: Boolean,
+        /** 函数或属性是否带 override 语义。 */
+        val isOverride: Boolean,
         /** 函数或属性是否带 redef 语义。 */
         val isRedef: Boolean,
         /** 函数或属性是否带 const 语义。 */
@@ -2048,7 +2122,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                 supertype.resolvedUseSiteMemberScope(excludingExtend)?.let(::add)
             }
         }
-        return CfirCompositeTypeScope(scopes)
+        return CfirCompositeTypeScope(scopes, context.session)
     }
 
 }

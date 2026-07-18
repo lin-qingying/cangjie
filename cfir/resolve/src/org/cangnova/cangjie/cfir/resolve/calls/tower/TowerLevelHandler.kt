@@ -29,9 +29,13 @@ import org.cangnova.cangjie.cfir.calls.ReceiverValue
 import org.cangnova.cangjie.cfir.calls.qualifierScopeOrNull
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
+import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirEnum
+import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.resolve.BodyResolveComponents
 import org.cangnova.cangjie.cfir.resolve.calls.ConstructorFilter
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
+import org.cangnova.cangjie.cfir.resolve.ResolutionMode
 import org.cangnova.cangjie.cfir.resolve.calls.isInstanceExtendMemberCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallInfo
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallKind
@@ -45,9 +49,13 @@ import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
+import org.cangnova.cangjie.cfir.session.cfirProvider
+import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeFunctionType
+import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
+import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.resolvedType
 import org.cangnova.cangjie.name.OperatorNameConventions
@@ -163,8 +171,31 @@ internal class ScopeBasedTowerLevel(
     override fun processFunctionsByName(info: CallInfo, processor: TowerLevelProcessor): ProcessResult {
         if (info.callKind == CallKind.EnumConstructorCall) {
             var result = ProcessResult.SCOPE_EMPTY
+            val lexicalOwnerClassId = lexicalEnumOwnerClassId(info)
+            // 目标 enum owner 只细化无 receiver 的 enum sugar；显式 `E.C` 已由 qualifier 确定 owner。
+            val expectedOwnerClassId = if (info.explicitReceiver == null) {
+                (info.resolutionMode as? ResolutionMode.WithExpectedType)
+                    ?.expectedType
+                    ?.fullyExpandedType(components.session)
+                    ?.classIdOrPrimitiveClassId
+                    ?.takeIf { classId ->
+                        components.session.symbolProvider.getClassLikeSymbolByClassId(classId)?.cfir is CfirEnum
+                    }
+            } else {
+                null
+            }
             scope.processCallablesByName(info.name) { symbol ->
                 val enumConstructorSymbol = symbol as? CfirEnumConstructorSymbol ?: return@processCallablesByName
+                if (lexicalOwnerClassId != null &&
+                    components.session.cfirProvider.getContainingClass(enumConstructorSymbol)?.classId != lexicalOwnerClassId
+                ) {
+                    return@processCallablesByName
+                }
+                if (expectedOwnerClassId != null &&
+                    components.session.cfirProvider.getContainingClass(enumConstructorSymbol)?.classId != expectedOwnerClassId
+                ) {
+                    return@processCallablesByName
+                }
                 result = ProcessResult.FOUND
                 consumeCallableCandidate(enumConstructorSymbol, processor)
             }
@@ -203,6 +234,27 @@ internal class ScopeBasedTowerLevel(
         }
 
         return result
+    }
+
+    /** 查找裸 enum constructor 访问的最近 lexical enum owner。 */
+    private fun lexicalEnumOwnerClassId(info: CallInfo): org.cangnova.cangjie.name.ClassId? {
+        if (info.explicitReceiver != null) return null
+
+        for (declaration in info.containingDeclarations.asReversed()) {
+            when (declaration) {
+                is CfirEnum -> return declaration.symbol.classId
+                is CfirExtend -> {
+                    val ownerClassId = declaration.extendedTypeRef.coneTypeOrNull
+                        ?.fullyExpandedType(components.session)
+                        ?.classIdOrPrimitiveClassId
+                    val owner = ownerClassId?.let(components.session.symbolProvider::getClassLikeSymbolByClassId)
+                    return owner?.classId?.takeIf { owner.cfir is CfirEnum }
+                }
+                is CfirClassLikeDeclaration -> return null
+                else -> Unit
+            }
+        }
+        return null
     }
 
     /**

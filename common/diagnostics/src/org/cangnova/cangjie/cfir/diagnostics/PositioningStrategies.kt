@@ -215,6 +215,8 @@ object PositioningStrategies {
         override fun mark(element: PsiElement): List<TextRange> {
             val arguments = when (element) {
                 is CjCallExpression -> element.valueArgumentList?.arguments.orEmpty()
+                is CjQualifiedExpression -> (element.selectorExpression as? CjCallExpression)
+                    ?.valueArgumentList?.arguments.orEmpty()
                 is CjValueArgumentList -> element.arguments
                 else -> emptyList()
             }
@@ -230,6 +232,7 @@ object PositioningStrategies {
         override fun mark(element: PsiElement): List<TextRange> {
             val argumentList = when (element) {
                 is CjCallExpression -> element.valueArgumentList
+                is CjQualifiedExpression -> (element.selectorExpression as? CjCallExpression)?.valueArgumentList
                 is CjValueArgumentList -> element
                 else -> null
             } ?: return VALUE_ARGUMENTS.mark(element)

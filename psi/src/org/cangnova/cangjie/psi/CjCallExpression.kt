@@ -65,36 +65,21 @@ open class CjCallExpression(node: ASTNode) : CjExpressionImpl(node), CjCallEleme
         get() {
             val directTypeArgumentList = findChildByType<CjTypeArgumentList>(CjNodeTypes.TYPE_ARGUMENT_LIST)
             return directTypeArgumentList
-                ?: findTypeArgumentListInCalleeSyntax()
-                ?: referenceExpression?.getTypeArgumentList()
+                ?: calleeExpression?.calleeOwnTypeArgumentList()
         }
 
     /**
-     * 执行 `findTypeArgumentListInCalleeSyntax` 内部辅助逻辑，支撑仓颉 PSI节点的结构解析与访问。
+     * 调用表达式的类型实参只能来自当前调用的 callee 本身。
+     *
+     * `f<T>(x)`、`a.f<T>(x)` 中的 `<T>` 属于当前调用；`g<T>(x)(y)` 外层调用
+     * 不能继承内层 `g<T>` 的类型实参，lambda body 或实参中的类型也不能被递归拾取。
      */
-    private fun findTypeArgumentListInCalleeSyntax(): CjTypeArgumentList? {
-        fun ASTNode.findTypeArgumentList(): CjTypeArgumentList? {
-            if (elementType == CjNodeTypes.TYPE_ARGUMENT_LIST) {
-                return psi as? CjTypeArgumentList
-            }
-            var child = firstChildNode
-            while (child != null) {
-                child.findTypeArgumentList()?.let { return it }
-                child = child.treeNext
-            }
-            return null
+    private fun CjExpression.calleeOwnTypeArgumentList(): CjTypeArgumentList? =
+        when (this) {
+            is CjSimpleNameExpression -> getTypeArgumentList()
+            is CjQualifiedExpression -> (selectorExpression as? CjSimpleNameExpression)?.getTypeArgumentList()
+            else -> null
         }
-
-        var child = node.firstChildNode
-        while (child != null) {
-            if (child.elementType == CjNodeTypes.VALUE_ARGUMENT_LIST || child.elementType == CjNodeTypes.LAMBDA_ARGUMENT) {
-                return null
-            }
-            child.findTypeArgumentList()?.let { return it }
-            child = child.treeNext
-        }
-        return null
-    }
 
     /**
      * 暴露 `calleeExpression`，实现仓颉 PSI节点对上层接口的属性契约。

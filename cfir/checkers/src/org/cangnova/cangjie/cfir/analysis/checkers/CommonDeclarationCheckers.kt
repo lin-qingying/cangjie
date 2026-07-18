@@ -49,6 +49,7 @@ object CommonDeclarationCheckers : DeclarationCheckers() {
     override val callableDeclarationCheckers: Set<CfirCallableDeclarationChecker>
         get() = setOf(
             CfirConstVariableInitializerChecker,
+            CfirVariableLambdaInitializerTypeMismatchChecker,
             CfirVArrayExtraChecker,
             CfirDeprecatedDeclarationChecker,
             org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirJavaInteropTypePropagationChecker,
@@ -66,6 +67,10 @@ object CommonDeclarationCheckers : DeclarationCheckers() {
             CfirFinalizerDeclarationChecker,
             CfirConstFunctionBodyChecker,
         )
+
+    /** 对程序入口 `main` 的参数和返回类型签名执行官方入口约束检查。 */
+    override val mainFunctionCheckers: Set<CfirMainFunctionChecker>
+        get() = setOf(CfirMainFunctionSignatureChecker)
 
     /** 对类型参数及其边界执行的 checker 集合。 */
     override val typeParameterCheckers: Set<CfirTypeParameterChecker>

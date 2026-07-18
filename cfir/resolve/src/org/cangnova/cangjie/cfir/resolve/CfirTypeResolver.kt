@@ -28,7 +28,10 @@ import org.cangnova.cangjie.AnalysisFlags
 import org.cangnova.cangjie.ImportPath
 import org.cangnova.cangjie.builtins.StandardNames
 import org.cangnova.cangjie.cfir.CfirQualifierPart
+import org.cangnova.cangjie.cfir.nameConflictsTracker
 import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.diagnostic.ConeAmbiguityError
+import org.cangnova.cangjie.cfir.diagnostic.ConeGenericArgumentNoMatchError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnmatchedTypeArgumentsError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedTypeQualifierError
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
@@ -36,7 +39,9 @@ import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
 import org.cangnova.cangjie.cfir.resolve.constants.CfirIntConstantEvalUtils
 import org.cangnova.cangjie.cfir.scopes.CfirTypeParameterScope
 import org.cangnova.cangjie.cfir.scopes.defaultImportsProvider
+import org.cangnova.cangjie.cfir.semantics.AbstractCandidate
 import org.cangnova.cangjie.cfir.session.*
+import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.ConeClassLikeLookupTagImpl
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
 import org.cangnova.cangjie.cfir.symbols.toLookupTag
@@ -44,6 +49,7 @@ import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.resolve.calls.tower.CandidateApplicability
 
 /**
  * CFIR 类型解析器抽象。
@@ -250,32 +256,45 @@ class CfirTypeResolverImpl(
                 return result(resolveCFuncUserType(qualifierPart, configuration, expandTypeAliases))
             }
             resolveSpecialBuiltinUserType(qualifierPart, configuration, expandTypeAliases)?.let { return result(it) }
-            if (qualifierPart.typeArguments.isEmpty()) {
-                configuration.typeParameterTypeOrNull(qualifierPart.name)?.let { return result(it) }
+            configuration.typeParameterTypeOrNull(qualifierPart.name)?.let { typeParameterType ->
+                if (qualifierPart.typeArguments.isEmpty()) {
+                    return result(typeParameterType)
+                }
+
+                val resolvedArguments = resolveTypeArguments(
+                    qualifierPart.typeArguments,
+                    configuration,
+                    expandTypeAliases,
+                )
+                return result(
+                    ConeErrorType(
+                        diagnostic = ConeGenericArgumentNoMatchError(
+                            expectedCount = 0,
+                            actualCount = resolvedArguments.size,
+                        ),
+                        delegatedType = typeParameterType,
+                        typeArguments = resolvedArguments,
+                    )
+                )
             }
         }
 
         val resolvedQualifier = resolveQualifiedClassLike(typeRef, configuration)
+        val finalQualifier = typeRef.qualifier.last()
+        val resolvedArguments = resolveTypeArguments(
+            finalQualifier.typeArguments,
+            configuration,
+            expandTypeAliases,
+        )
         val resolvedClass = resolvedQualifier.declaration
             ?: return result(ConeErrorType(
-                resolvedQualifier.diagnostic
-                    ?: ConeUnresolvedTypeQualifierError(typeRef.qualifier)
+                diagnostic = resolvedQualifier.diagnostic
+                    ?: ConeUnresolvedTypeQualifierError(typeRef.qualifier),
+                typeArguments = resolvedArguments,
             ))
 
         val classId = checkNotNull(resolvedQualifier.classId) {
             "Resolved class-like declaration `${resolvedClass.name}` is missing ClassId"
-        }
-        val finalQualifier = typeRef.qualifier.last()
-        val resolvedArguments = finalQualifier.typeArguments.map { argument ->
-            resolveType(
-                argument,
-                configuration,
-                areBareTypesAllowed = false,
-                isOperandOfIsOperator = false,
-                resolveDeprecations = true,
-                supertypeSupplier = SupertypeSupplier.Default,
-                expandTypeAliases = expandTypeAliases,
-            ).type
         }
         val expectedTypeArgumentsCount = resolvedClass.typeParameters.size
         if (expectedTypeArgumentsCount != resolvedArguments.size) {
@@ -307,16 +326,31 @@ class CfirTypeResolverImpl(
             expandTypeAliases = expandTypeAliases,
             configuration = configuration,
         )
-        resolvedArguments.firstOrNull { it is ConeErrorType }?.let { errorArgument ->
-            return result(
-                ConeErrorType(
-                    diagnostic = ConeUnreportedDuplicateDiagnostic((errorArgument as ConeErrorType).diagnostic),
-                    delegatedType = resolvedType,
-                    typeArguments = resolvedArguments,
-                )
-            )
-        }
+        // 分类器已经成功解析时必须保留外层名义类型。错误类型实参由其自身 type ref 负责报告，
+        // 不能提升为顶层 ConeErrorType，否则会丢失成员作用域与 owner substitution 所需的 classId。
         return result(resolvedType)
+    }
+
+    /**
+     * 解析 user type 上显式书写的类型实参。
+     *
+     * 类型目标的符号识别与实参数量校验必须相互独立：即使目标是零元类型参数，
+     * 其显式实参仍需进入统一类型解析链并保存在错误类型中，供后续诊断与级联抑制使用。
+     */
+    private fun resolveTypeArguments(
+        typeArguments: List<CfirTypeRef>,
+        configuration: TypeResolutionConfiguration,
+        expandTypeAliases: Boolean,
+    ): List<ConeCangJieType> = typeArguments.map { argument ->
+        resolveType(
+            argument,
+            configuration,
+            areBareTypesAllowed = false,
+            isOperandOfIsOperator = false,
+            resolveDeprecations = true,
+            supertypeSupplier = SupertypeSupplier.Default,
+            expandTypeAliases = expandTypeAliases,
+        ).type
     }
 
     /**
@@ -544,6 +578,9 @@ class CfirTypeResolverImpl(
         val lastQualifier = qualifier.last()
         if (qualifier.size == 1) {
             val classId = resolveSimpleClassId(lastQualifier.name, configuration) ?: ClassId(FqName.ROOT, lastQualifier.name)
+            classifierRedeclarationAmbiguity(classId, typeRef)?.let { diagnostic ->
+                return QualifiedClassLikeResolution(classId, null, diagnostic)
+            }
             val declaration = resolveClass(classId)
             return if (declaration != null) {
                 QualifiedClassLikeResolution(classId, declaration, null)
@@ -555,6 +592,9 @@ class CfirTypeResolverImpl(
         val qualifierNames = qualifier.map(CfirQualifierPart::name)
         val fullPackageFqName = qualifierNames.dropLast(1).toFqName()
         val fullClassId = ClassId(fullPackageFqName, lastQualifier.name)
+        classifierRedeclarationAmbiguity(fullClassId, typeRef)?.let { diagnostic ->
+            return QualifiedClassLikeResolution(fullClassId, null, diagnostic)
+        }
         resolveClass(fullClassId)?.let { declaration ->
             return QualifiedClassLikeResolution(fullClassId, declaration, null)
         }
@@ -566,6 +606,36 @@ class CfirTypeResolverImpl(
             classId = null,
             declaration = null,
             diagnostic = ConeUnresolvedTypeQualifierError(typeRef.qualifier),
+        )
+    }
+
+    /**
+     * 将同一 ClassId 下的 classifier 重声明转换为类型使用位置的候选级歧义。
+     *
+     * provider 的首声明索引只负责稳定 symbol 查询；类型使用必须消费 conflicts tracker 中的
+     * 完整候选集合，不能从多个合法同层候选中任意挑选一个声明继续解析。
+     */
+    private fun classifierRedeclarationAmbiguity(
+        classId: ClassId,
+        typeRef: CfirUserTypeRef,
+    ): ConeAmbiguityError? {
+        val redeclarations = session.nameConflictsTracker
+            ?.getClassifierRedeclarations(classId)
+            ?.map { it.classifierSymbol }
+            ?.distinct()
+            .orEmpty()
+        if (redeclarations.size < 2) return null
+
+        val candidatesWithErrors = linkedMapOf<AbstractCandidate, ConeDiagnostic?>()
+        for (symbol in redeclarations) {
+            candidatesWithErrors[ClassifierTypeCandidate(symbol)] = null
+        }
+        return ConeAmbiguityError(
+            name = typeRef.qualifier.last().name,
+            applicability = CandidateApplicability.RESOLVED,
+            candidatesWithErrors = candidatesWithErrors,
+            isCallLike = false,
+            typeUseSource = typeRef.source,
         )
     }
 
@@ -694,4 +764,11 @@ class CfirTypeResolverImpl(
          */
         val diagnostic: ConeDiagnostic?,
     )
+
+    /** 类型解析歧义使用的轻量 classifier 候选。 */
+    private class ClassifierTypeCandidate(
+        override val symbol: CfirClassLikeSymbol<*>,
+    ) : AbstractCandidate() {
+        override val applicability: CandidateApplicability = CandidateApplicability.RESOLVED
+    }
 }

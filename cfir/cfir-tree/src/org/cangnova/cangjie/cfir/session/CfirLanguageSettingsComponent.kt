@@ -55,6 +55,18 @@ class CfirPreludeSettingsComponent(
 ) : CfirSessionComponent
 
 /**
+ * 源码包编译模式配置。
+ *
+ * @property noSubPackage 为 `true` 时当前源码包按无子包模式编译。
+ */
+class CfirPackageCompilationSettingsComponent(
+    /**
+     * 是否启用无子包编译模式。
+     */
+    val noSubPackage: Boolean,
+) : CfirSessionComponent
+
+/**
  * 程序入口检查配置。
  *
  * 仓颉官方编译器只在可执行编译目标中检查缺失 `main`，IDE/type-check 场景不启用。
@@ -81,6 +93,12 @@ private val CfirSession.preludeSettingsComponent: CfirPreludeSettingsComponent?
     by CfirSession.nullableSessionComponentAccessor()
 
 /**
+ * 当前 session 的源码包编译模式组件；未注册时采用支持子包的默认模式。
+ */
+private val CfirSession.packageCompilationSettingsComponent: CfirPackageCompilationSettingsComponent?
+    by CfirSession.nullableSessionComponentAccessor()
+
+/**
  * 当前 session 的程序入口检查配置组件；未注册时表示不检查入口。
  */
 private val CfirSession.programEntrySettingsComponent: CfirProgramEntrySettingsComponent?
@@ -97,6 +115,12 @@ val CfirSession.languageVersionSettings: LanguageVersionSettings
  */
 val CfirSession.noPrelude: Boolean
     get() = preludeSettingsComponent?.noPrelude == true
+
+/**
+ * 当前 session 是否按无子包模式编译源码包。
+ */
+val CfirSession.noSubPackage: Boolean
+    get() = packageCompilationSettingsComponent?.noSubPackage == true
 
 /**
  * 当前 session 是否检查程序入口。

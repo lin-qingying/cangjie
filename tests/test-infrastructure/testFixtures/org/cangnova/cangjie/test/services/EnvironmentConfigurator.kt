@@ -145,6 +145,7 @@ class CommonEnvironmentConfigurator(testServices: TestServices) : EnvironmentCon
     override fun DirectiveToConfigurationKeyExtractor.provideConfigurationKeys() {
         register(CfirDiagnosticsDirectives.DUMP_INFERENCE_LOGS, CommonConfigurationKeys.DUMP_INFERENCE_LOGS)
         register(CfirDiagnosticsDirectives.CHECK_PROGRAM_ENTRY, CfirFrontendConfigurationKeys.CHECK_PROGRAM_ENTRY)
+        register(CfirDiagnosticsDirectives.NO_SUB_PKG, CfirFrontendConfigurationKeys.NO_SUB_PACKAGE)
     }
 
     /**

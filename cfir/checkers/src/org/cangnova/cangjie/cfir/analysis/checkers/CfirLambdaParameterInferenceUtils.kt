@@ -39,10 +39,29 @@ internal fun CfirAnonymousFunction.hasUninferredOmittedLambdaParameterType(): Bo
 /**
  * 判断参数类型是否来自源码省略，而不是显式类型标注。
  */
-private fun CfirValueParameter.hasOmittedLambdaParameterType(): Boolean {
+internal fun CfirValueParameter.hasOmittedLambdaParameterType(): Boolean {
     if (isLambdaParameterTypeOmitted == true) return true
     if (returnTypeRef is CfirImplicitTypeRef) return true
     return returnTypeRef.source?.kind == CjFakeSourceElementKind.ImplicitReturnTypeOfLambdaValueParameter
+}
+
+/**
+ * 取得源码显式写出的 lambda 参数类型。
+ *
+ * Completion 会把目标函数参数类型写回 lambda header，并把旧 type-ref 挂到 delegated
+ * 链上；重载和 PCLA 场景可能多次写回。形状诊断必须追溯到最初解析自源码的显式类型，
+ * 不能把最近一次写回的 expected type 当作用户标注。
+ */
+internal fun CfirValueParameter.explicitLambdaParameterType(): ConeCangJieType? {
+    if (hasOmittedLambdaParameterType()) return null
+
+    var current = returnTypeRef
+    var explicitType: ConeCangJieType? = null
+    while (current is CfirResolvedTypeRef) {
+        explicitType = current.coneType
+        current = current.delegatedTypeRef ?: break
+    }
+    return explicitType
 }
 
 /**

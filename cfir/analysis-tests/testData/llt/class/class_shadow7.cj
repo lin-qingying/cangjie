@@ -5,7 +5,7 @@ open class Base {
 }
 
 class Data <: Base {
-    <!INHERIT_MEMBER_KIND_INCONSISTENT!>p<!>ublic static func f(): Int32 {
+    public static func <!STATIC_AND_NON_STATIC_MEMBER_CANNOT_HAVE_SAME_NAME!>f<!>(): Int32 {
         return 0
     }
 }

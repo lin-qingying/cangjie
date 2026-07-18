@@ -200,6 +200,8 @@ private fun ConeCangJieType.renderForInstantiationDiagnostic(
     if (depth >= DUPLICATE_SUPER_INTERFACE_TYPE_KEY_MAX_DEPTH) return "..."
     if (!visited.add(this)) return "..."
     return when (this) {
+        is ConeTypeParameterType -> "P@${System.identityHashCode(lookupTag.typeParameterSymbol)}"
+
         is ConeLookupTagBasedType -> buildString {
             append(lookupTag.name.asString())
             if (typeArguments.isNotEmpty()) {
@@ -209,7 +211,6 @@ private fun ConeCangJieType.renderForInstantiationDiagnostic(
             }
         }
 
-        is ConeTypeParameterType -> lookupTag.typeParameterSymbol.name.asString()
         is ConeTupleType -> elementTypes.joinToString(prefix = "(", postfix = ")") {
             it.renderForInstantiationDiagnostic(visited, depth + 1)
         }

@@ -378,8 +378,15 @@ abstract class CfirAbstractBodyResolveTransformerDispatcher(
     /** 转换文件 body，并在文件作用域内建立可访问性上下文。 */
     override fun transformFile(file: CfirFile, data: ResolutionMode): CfirFile {
         checkSessionConsistency(file)
-        return CfirAccessibilityFileScope.with(file) {
-            declarationsTransformer.transformFile(file, data)
+        return try {
+            CfirAccessibilityFileScope.with(file) {
+                declarationsTransformer.transformFile(file, data)
+            }
+        } finally {
+            // expected-return discovery 的 owner 是一次完整的 body-resolve 事务，
+            // 不能随着 session 继续存活；嵌套声明转换共享同一 resolver，但不会
+            // 经过本文件入口，因此此处正好覆盖最外层文件事务。
+            components.callResolver.clearExpectedTypeRefinementDiscoveries()
         }
     }
 
@@ -461,6 +468,14 @@ abstract class CfirAbstractBodyResolveTransformerDispatcher(
     /** 将字段变量 body resolve 分发给声明 transformer。 */
     override fun transformFieldVariable(fieldVariable: CfirFieldVariable, data: ResolutionMode): CfirFieldVariable {
         return declarationsTransformer.transformFieldVariable(fieldVariable, data)
+    }
+
+    /** 将值参数 body resolve 分发给声明 transformer，使默认值继承参数声明类型。 */
+    override fun transformValueParameter(
+        valueParameter: CfirValueParameter,
+        data: ResolutionMode,
+    ): CfirValueParameter {
+        return declarationsTransformer.transformValueParameter(valueParameter, data)
     }
 
     /**

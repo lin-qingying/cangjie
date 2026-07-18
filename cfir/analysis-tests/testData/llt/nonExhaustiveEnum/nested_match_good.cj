@@ -11,9 +11,9 @@ enum D {
 let k = (D1, B(10))
 
 main() {
-    <!NON_EXHAUSTIVE_MATCH!>match (k) {
+    match (k) {
         case (D1, A) => 1
         case (D1, _) => 2
         case (D2(a), _) => a
-    }<!>
+    }
 }

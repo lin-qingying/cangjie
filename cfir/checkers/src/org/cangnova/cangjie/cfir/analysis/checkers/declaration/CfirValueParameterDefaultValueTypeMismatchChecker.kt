@@ -30,6 +30,7 @@ object CfirValueParameterDefaultValueTypeMismatchChecker : CfirValueParameterChe
         checkTypeMismatch(
             expectedType = expectedType,
             actualType = actualType,
+            expression = defaultValue,
             source = source,
             preferredSpecializedSource = defaultValue.source as? AbstractCjSourceElement,
             diagnosticFactory = CfirErrors.TYPE_MISMATCH,

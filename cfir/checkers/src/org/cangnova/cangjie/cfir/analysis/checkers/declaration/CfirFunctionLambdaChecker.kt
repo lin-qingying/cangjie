@@ -1,13 +1,13 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.explicitLambdaParameterType
 import org.cangnova.cangjie.cfir.analysis.checkers.firstOmittedLambdaParameterForInferenceFailure
+import org.cangnova.cangjie.cfir.analysis.checkers.hasOmittedLambdaParameterType
 import org.cangnova.cangjie.cfir.analysis.checkers.lambdaExpectedFunctionType
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
-import org.cangnova.cangjie.cfir.declarations.hasLambdaParameterShapeDiagnostic
-import org.cangnova.cangjie.cfir.declarations.isLambdaParameterTypeOmitted
 import org.cangnova.cangjie.cfir.diagnostic.ConeDiagnosticWithSingleCandidate
 import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
@@ -16,16 +16,12 @@ import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.semantics.AbstractCallCandidate
-import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
+import org.cangnova.cangjie.cfir.resolve.calls.isLambdaTargetParameterSubtypeOfAnnotation
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
-import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeFunctionType
-import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.source.AbstractCjSourceElement
-import org.cangnova.cangjie.source.CjFakeSourceElementKind
 import org.cangnova.cangjie.source.CjOffsetsOnlySourceElement
-import org.cangnova.cangjie.type.AbstractTypeChecker
 
 /**
  * Lambda 表达式参数类型注解检查器
@@ -43,10 +39,10 @@ object CfirLambdaParameterTypeChecker : CfirAnonymousFunctionChecker() {
     override fun check(declaration: CfirAnonymousFunction) {
         if (!declaration.isLambda) return
         if (!declaration.hasExplicitParameterList) return
-        if (declaration.hasLambdaParameterShapeDiagnostic == true) return
+        if (context.hasLambdaParameterShapeDiagnostic(declaration)) return
 
         if (declaration.reportLambdaParameterShapeDiagnostic()) {
-            declaration.hasLambdaParameterShapeDiagnostic = true
+            context.recordLambdaParameterShapeDiagnostic(declaration)
             return
         }
 
@@ -54,7 +50,7 @@ object CfirLambdaParameterTypeChecker : CfirAnonymousFunctionChecker() {
 
         // 如果已有匹配的函数类型（由上下文推断）且参数类型已被填充，不需要显式注解。
         if (declaration.matchingParameterFunctionType != null && parameterToReport == null) return
-        if (declaration.hasLambdaParameterShapeDiagnostic == true) return
+        if (context.hasLambdaParameterShapeDiagnostic(declaration)) return
         if (declaration.isUnmappedCallArgumentLambda()) return
 
         parameterToReport?.reportLambdaParameterTypeAnnotation()
@@ -88,7 +84,7 @@ object CfirLambdaParameterTypeChecker : CfirAnonymousFunctionChecker() {
             val actualType = parameter.explicitLambdaParameterType() ?: return@forEachIndexed
             val expectedType = expectedFunctionType.parameterTypes.getOrNull(index) ?: return@forEachIndexed
             if (actualType is ConeErrorType || expectedType is ConeErrorType) return@forEachIndexed
-            if (isCompatibleExplicitLambdaParameterType(expectedType, actualType)) {
+            if (isLambdaTargetParameterSubtypeOfAnnotation(context.session, expectedType, actualType)) {
                 return@forEachIndexed
             }
 
@@ -113,50 +109,6 @@ object CfirLambdaParameterTypeChecker : CfirAnonymousFunctionChecker() {
         }
 
         return false
-    }
-
-    /** 源码中是否省略了 lambda 参数类型。 */
-    private fun CfirValueParameter.hasOmittedLambdaParameterType(): Boolean =
-        isLambdaParameterTypeOmitted == true ||
-                returnTypeRef is CfirImplicitTypeRef ||
-                returnTypeRef.source?.kind == CjFakeSourceElementKind.ImplicitReturnTypeOfLambdaValueParameter
-
-    /**
-     * 取得源码显式写出的 lambda 参数类型。
-     */
-    private fun CfirValueParameter.explicitLambdaParameterType(): ConeCangJieType? {
-        if (hasOmittedLambdaParameterType()) return null
-        val resolvedTypeRef = returnTypeRef as? CfirResolvedTypeRef ?: return null
-        val delegatedResolvedTypeRef = resolvedTypeRef.delegatedTypeRef as? CfirResolvedTypeRef
-        return delegatedResolvedTypeRef?.coneType ?: resolvedTypeRef.coneType
-    }
-
-    /**
-     * Lambda 参数类型按函数参数逆变规则检查，并关闭隐式装箱。
-     *
-     * 官方 `ChkLamParamTys` 使用 `IsSubtype(paramTy, annotatedTy, false, false)`；
-     * 这里通过函数类型子类型检查复用同一条“参数位置不装箱”的框架规则，
-     * 避免普通表达式 mismatch 规则把 `Int64` 放宽到 `ToString`。
-     */
-    context(context: CheckerContext)
-    private fun isCompatibleExplicitLambdaParameterType(
-        expectedType: ConeCangJieType,
-        actualType: ConeCangJieType,
-    ): Boolean {
-        if (expectedType is ConeErrorType || actualType is ConeErrorType) return true
-        val expectedFunctionType = ConeFunctionType(
-            parameterTypes = listOf(expectedType),
-            returnType = expectedType,
-        )
-        val actualFunctionType = ConeFunctionType(
-            parameterTypes = listOf(actualType),
-            returnType = expectedType,
-        )
-        return AbstractTypeChecker.isSubtypeOf(
-            context.session.typeContext,
-            actualFunctionType,
-            expectedFunctionType,
-        )
     }
 
     /**

@@ -13,7 +13,7 @@ func f() {
     func g2() {
         g()
     }
-    let c = <!FUNC_CAPTURE_VAR_CANNOT_ASSIGN!>g<!>2
+    let c = <!FUNC_CAPTURE_VAR_CANNOT_ASSIGN!>g2<!>
     func h() {
         print("${y}")
     }

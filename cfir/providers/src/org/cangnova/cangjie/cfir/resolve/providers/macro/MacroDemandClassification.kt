@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.cfir.resolve.providers.macro
 
+import org.cangnova.cangjie.builtins.StandardNames
 import org.cangnova.cangjie.cfir.session.CfirSessionComponent
 import org.cangnova.cangjie.cfir.session.annotationMetadataRegistryOrNull
 import org.cangnova.cangjie.name.FqName
@@ -411,10 +412,22 @@ private fun MacroSurface.externalDemandPackage(
         if (kind == MacroSurface.Kind.FORCED) return null
         return listOfNotNull(qualifiedPackage)
             .plus(importCandidates)
-            .firstOrNull { it in sourceMacroPackages }
+            .firstOrNull { it in sourceMacroPackages || it in OFFICIAL_STDLIB_MACRO_PACKAGES }
     }
     return qualifiedPackage ?: importCandidates.firstOrNull()
 }
+
+/**
+ * 官方编译器在 macro call resolve / evaluation 阶段会把这些标准库包作为内建宏包处理。
+ *
+ * annotation surface 不能无差别对所有 import 发起 artifact demand，否则普通 annotation
+ * import 会被误判为宏包缺失；这里只对官方标准宏包和同项目 macro package 开放。
+ */
+private val OFFICIAL_STDLIB_MACRO_PACKAGES: Set<FqName> = setOf(
+    StandardNames.STD_DERIVING_PACKAGE_FQ_NAME,
+    StandardNames.STD_UNITTEST_TESTMACRO_PACKAGE_FQ_NAME,
+    StandardNames.STD_UNITTEST_MOCK_MOCKMACRO_PACKAGE_FQ_NAME,
+)
 
 /** 判定当前 surface 是否只是 macro 定义签名的一部分，而不是 macro 调用需求。 */
 private fun MacroSurface.isMacroDefinitionSignatureSurfaceForClassification(): Boolean {

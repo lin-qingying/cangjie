@@ -1,3 +1,4 @@
+// NO_SUB_PKG
 // FILE: fileUseArrayList.cj
 public var a : ArrayList<Int64> = ArrayList<Int64>()
 
@@ -6,5 +7,4 @@ public var a : ArrayList<Int64> = ArrayList<Int64>()
 // FILE: unused004.cj
 internal import {std.collection.ArrayList}
 main() {}
-
 

@@ -34,6 +34,7 @@ import org.cangnova.cangjie.cfir.entrypoint.checkers.registerCommonCheckers
 import org.cangnova.cangjie.cfir.entrypoint.configuration.checkProgramEntry
 import org.cangnova.cangjie.cfir.entrypoint.configuration.diagnosticFactoriesStorage
 import org.cangnova.cangjie.cfir.entrypoint.configuration.noPrelude
+import org.cangnova.cangjie.cfir.entrypoint.configuration.noSubPackage
 import org.cangnova.cangjie.cfir.extensions.CfirExtensionRegistrar
 import org.cangnova.cangjie.cfir.extensions.CfirSwitchableExtensionDeclarationsSymbolProvider
 import org.cangnova.cangjie.cfir.resolve.CfirDefaultImportsProvider
@@ -244,6 +245,10 @@ abstract class CfirAbstractSessionFactory<CONTEXT> {
             if (configuration.dumpInferenceLogs) register(CfirInferenceLogger::class, CfirInferenceLogger())
             registerCliCompilerAndCommonComponents(languageVersionSettings)
             register(CfirPreludeSettingsComponent::class, CfirPreludeSettingsComponent(configuration.noPrelude))
+            register(
+                CfirPackageCompilationSettingsComponent::class,
+                CfirPackageCompilationSettingsComponent(configuration.noSubPackage),
+            )
             register(
                 CfirProgramEntrySettingsComponent::class,
                 CfirProgramEntrySettingsComponent(configuration.checkProgramEntry)

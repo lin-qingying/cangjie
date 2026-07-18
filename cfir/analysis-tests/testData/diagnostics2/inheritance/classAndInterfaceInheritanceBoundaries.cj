@@ -5,7 +5,7 @@ interface Marker {}
 
 class OpenChild <: OpenBase {}
 
-class FinalChild <: <!CLASS_NOT_OPEN_FOR_INHERITANCE!>FinalBase<!> {}
+class FinalChild <: <!NON_INHERITABLE_SUPER_CLASS!>FinalBase<!> {}
 
 interface <!INTERFACE_CANNOT_INHERIT_CLASS!>BadInterface<!> <: FinalBase {}
 

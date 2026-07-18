@@ -9,7 +9,7 @@ open class Data <: Base {
 }
 
 class Derived <: Data {
-    <!INHERIT_MEMBER_KIND_INCONSISTENT!>p<!>ublic static let val = 3
+    public static let <!STATIC_AND_NON_STATIC_MEMBER_CANNOT_HAVE_SAME_NAME!>val<!> = 3
 }
 
 main(): Int64 {

@@ -37,7 +37,7 @@ object CommonExpressionCheckers : ExpressionCheckers() {
             CfirSpawnSemanticsChecker,
             CfirExpressionWithErrorTypeChecker,
             CfirFunctionBodyTypeMismatchChecker,
-            CfirVariableLambdaInitializerTypeMismatchChecker,
+            CfirClosureCaptureUsageChecker,
             org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirFinalizerThisUsageChecker,
             org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirOpenConstructorThisUsageChecker,
             org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirStaticContextThisUsageChecker,
@@ -94,6 +94,10 @@ object CommonExpressionCheckers : ExpressionCheckers() {
             CfirFloatLiteralRangeChecker,
         )
 
+    /** 对字符串插值块执行最终类型的 `ToString` 契约检查。 */
+    override val stringInterpolationCheckers: Set<CfirStringInterpolationChecker>
+        get() = setOf(CfirStringInterpolationToStringChecker)
+
     /** 对函数调用、构造器调用、弃用调用、inout 和 API 等级规则执行的 checker 集合。 */
     override val functionCallCheckers: Set<CfirFunctionCallChecker>
         get() = setOf(
@@ -116,9 +120,11 @@ object CommonExpressionCheckers : ExpressionCheckers() {
     override val qualifiedAccessCheckers: Set<CfirQualifiedAccessChecker>
         get() = setOf(
             CfirFunctionReferenceLegalityChecker,
+            CfirInvalidEnumMemberTypeArgumentsChecker,
             CfirGenericBareClassifierAccessChecker,
             CfirUpperBoundViolatedQualifiedAccessExpressionChecker,
             CfirCaptureHasShadowVariableChecker,
+            CfirStructInstanceFieldCaptureChecker,
             CfirClassifierAsExpressionChecker,
             CfirMutFuncReferenceChecker,
             CfirUnsafeFuncReferenceChecker,

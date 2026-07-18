@@ -90,7 +90,6 @@ fun main(args: Array<String>) {
                     visitAlso<CfirPerformExpression>(it)
                     visitAlso<CfirResumeExpression>(it)
                     visitAlso<CfirHandleClause>(it)
-                    visitAlso<CfirStringInterpolation>(it)
                     visitAlso<CfirMatchBranch>(it)
                     visitAlso<CfirCatch>(it)
                     visitAlso<CfirLoopExpression>(it)
@@ -107,6 +106,7 @@ fun main(args: Array<String>) {
                     visitAlso<CfirLetPatternExpression>(it)
                 }
                 alias<CfirLiteralExpression>("LiteralExpressionChecker")
+                alias<CfirStringInterpolation>("StringInterpolationChecker")
                 alias<CfirCall>("CallChecker", false)
                 alias<CfirFunctionCall>("FunctionCallChecker")
                 alias<CfirNamedAccessExpression>("NamedAccessChecker")
@@ -145,6 +145,7 @@ fun main(args: Array<String>) {
                 }
                 alias<CfirMemberDeclaration>("MemberDeclarationChecker", false)
                 alias<CfirCallableDeclaration>("CallableDeclarationChecker", false).let {
+                    visitAlso<CfirVariable>(it)
                     visitAlso<CfirPatternBindingVariable>(it)
                 }
                 alias<CfirFunction>("FunctionChecker", false).let {

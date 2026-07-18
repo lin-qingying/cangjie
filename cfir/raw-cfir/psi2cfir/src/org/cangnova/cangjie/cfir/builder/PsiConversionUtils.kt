@@ -18,6 +18,50 @@ import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.*
 
 /**
+ * 将 PSI 声明名转换为 raw CFIR 使用的名称身份。
+ *
+ * PSI 的通用 `nameAsSafeName` 会去掉反引号，而 LightTree raw builder 保留 token 原文。
+ * 两条 raw builder 路径必须保留相同的反引号标识符身份，避免普通标识符与语法入口混同。
+ */
+internal val CjNamedDeclaration.cfirNameAsSafeName: Name
+    get() = rawIdentifierName(nameIdentifier?.rawIdentifierTokenText())
+        ?: rawIdentifierName(nameIdentifier?.text)
+        ?: rawIdentifierName(text.trim())
+        ?: nameAsSafeName
+
+/** 将 PSI 名称引用转换为与声明侧一致的 raw CFIR 名称身份。 */
+internal val CjSimpleNameExpression.cfirReferencedNameAsName: Name
+    get() = rawIdentifierName(referencedNameElement.text) ?: referencedNameAsName
+
+internal val CjBindingPattern.cfirNameAsSafeName: Name
+    get() = rawIdentifierName(nameIdentifier?.rawIdentifierTokenText()) ?: nameAsSafeName
+
+internal val CjVarOrEnumPattern.cfirNameAsSafeName: Name
+    get() = rawIdentifierName(nameIdentifier?.rawIdentifierTokenText()) ?: nameAsSafeName
+
+internal val CjTypePattern.cfirNameAsName: Name?
+    get() = rawIdentifierName(nameIdentifier?.rawIdentifierTokenText()) ?: nameAsName
+
+/** 只把完整反引号 token 视为 raw 标识符，普通名称与操作符继续走既有归一化规则。 */
+private fun rawIdentifierName(text: String?): Name? = text
+    ?.takeIf { it.length >= 2 && it.first() == '`' && it.last() == '`' }
+    ?.let(Name::identifier)
+
+/**
+ * PSI 的 IDENTIFIER 节点范围可能不包含反引号；从原文件相邻字符恢复完整 raw token。
+ */
+private fun com.intellij.psi.PsiElement.rawIdentifierTokenText(): String? {
+    val range = textRange
+    val fileText = containingFile?.text ?: return text
+    val start = range.startOffset
+    val end = range.endOffset
+    if (start > 0 && end < fileText.length && fileText[start - 1] == '`' && fileText[end] == '`') {
+        return fileText.substring(start - 1, end + 1)
+    }
+    return text
+}
+
+/**
  * PSI 特有的类型转换工具（对齐 Kotlin 的 PsiConversionUtils.kt）。
  *
  * 将 CjTypeReference PSI 节点转换为未解析的 CfirTypeRef。
@@ -120,13 +164,14 @@ private fun buildQualifierFromUserType(
     val segments = mutableListOf<CfirQualifierPart>()
     var current: CjUserType? = userType
     while (current != null) {
-        val name = current.referencedName
+        val name = current.referenceExpression?.cfirReferencedNameAsName
+            ?: current.referencedName?.let(Name::identifier)
         if (name != null) {
             segments.add(
                 0,
                 buildQualifierPart {
                     source = current.referenceExpression?.let(toSource) as? CjSourceElement
-                    this.name = Name.identifier(name)
+                    this.name = name
                     typeArguments += current.typeArguments.map { it.typeReference.toCfirOrImplicitTypeRef(toSource) }
                 }
             )

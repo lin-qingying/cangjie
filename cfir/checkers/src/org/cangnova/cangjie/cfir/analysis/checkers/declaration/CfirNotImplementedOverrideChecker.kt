@@ -184,6 +184,13 @@ private fun <S : CfirCallableSymbol<*>> List<S>.hasConcreteInterfaceImplementati
     context: CheckerContext,
 ): Boolean {
     val ownerClassId = (ownerDeclaration.symbol as? CfirClassLikeSymbol<*>)?.classId
+    val hasConcreteClassImplementation = any { symbol ->
+        if (symbol.isAbstractLike(context)) return@any false
+        val owner = context.ownerClassSymbol(symbol)?.cfir ?: return@any false
+        owner !is CfirInterface
+    }
+    if (hasConcreteClassImplementation) return false
+
     val hasOwnConcreteImplementation = any { symbol ->
         symbol.ownerClassId(context) == ownerClassId && !symbol.isAbstractLike(context)
     }

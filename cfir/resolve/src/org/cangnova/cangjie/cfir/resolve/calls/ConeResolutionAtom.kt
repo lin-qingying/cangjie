@@ -4,10 +4,13 @@ import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
 import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.references.CfirNamedReference
+import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
+import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
+import org.cangnova.cangjie.cfir.diagnostic.CallableReferenceFailureKind
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirNamedAccessExpression
 import org.cangnova.cangjie.cfir.expressions.CfirResolvable
-import org.cangnova.cangjie.cfir.references.CfirErrorNamedReference
 import org.cangnova.cangjie.cfir.diagnostic.ConeAmbiguityError
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
@@ -62,7 +65,7 @@ sealed class ConeResolutionAtom : AbstractConeResolutionAtom() {
                     )
                 }
                 is CfirNamedAccessExpression -> when {
-                    expression.shouldBeResolvedAsFunctionReferenceArgument() ->
+                    expression.isFunctionReferenceCandidateSet() ->
                         ConeResolutionAtomWithPostponedChild(
                             expression = expression,
                             fallbackSubAtom = createRawAtomForResolvable(expression),
@@ -72,24 +75,6 @@ sealed class ConeResolutionAtom : AbstractConeResolutionAtom() {
                 is CfirResolvable -> createRawAtomForResolvable(expression)
                 else -> ConeSimpleLeafResolutionAtom(expression)
             }
-        }
-
-        /**
-         * 判断命名访问是否是因函数引用参数歧义而需要 postponed 处理的表达式。
-         */
-        private fun CfirNamedAccessExpression.shouldBeResolvedAsFunctionReferenceArgument(): Boolean {
-            if (this is CfirFunctionCall) return false
-            val resolvedCandidate = (calleeReference as? CfirNamedReferenceWithCandidate)?.candidate
-            if (resolvedCandidate?.symbol?.takeIf { it.isBound }?.cfir is CfirFunction) {
-                return true
-            }
-
-            val diagnostic = (calleeReference as? CfirErrorNamedReference)?.diagnostic as? ConeAmbiguityError
-                ?: return false
-            return diagnostic.candidates.isNotEmpty() &&
-                diagnostic.candidates.all { candidate ->
-                    candidate.symbol.takeIf { it.isBound }?.cfir is CfirFunction
-                }
         }
 
         /**
@@ -105,6 +90,46 @@ sealed class ConeResolutionAtom : AbstractConeResolutionAtom() {
                 ConeSimpleLeafResolutionAtom(cfirExpression)
             }
         }
+    }
+}
+
+/**
+ * 判断命名访问是否已经解析为函数值候选或纯函数重载集合。
+ *
+ * 外层调用创建 argument atom 时，内部名字访问可能尚未完成解析，因此该判断既用于 atom 初建，
+ * 也用于参数检查阶段的延迟重分类。真正带调用语法的函数调用不属于 callable reference。
+ */
+internal fun CfirNamedAccessExpression.isFunctionReferenceCandidateSet(): Boolean {
+    if (this is CfirFunctionCall) return false
+    val resolvedFunction = (calleeReference as? CfirResolvedNamedReference)
+        ?.resolvedSymbol
+        ?.takeIf { symbol -> symbol.isBound }
+        ?.cfir is CfirFunction
+    if (resolvedFunction) return true
+    return callableReferenceFunctionCandidatesOrNull() != null
+}
+
+/**
+ * 从命名引用中提取纯函数 callable-reference 候选集合。
+ *
+ * 错误 carrier 可能同时携带一个代表候选和完整歧义诊断；语义候选必须优先读取诊断 payload，
+ * 只有没有歧义 payload 时才能使用已选择候选。
+ */
+internal fun CfirNamedAccessExpression.callableReferenceFunctionCandidatesOrNull(): List<Candidate>? {
+    val ambiguity = (calleeReference as? CfirDiagnosticHolder)?.diagnostic as? ConeAmbiguityError
+    if (ambiguity != null) {
+        val candidates = ambiguity.candidates.filterIsInstance<Candidate>()
+        if (candidates.isEmpty() || candidates.size != ambiguity.candidates.size) return null
+        return candidates.takeIf { functionCandidates ->
+            functionCandidates.all { candidate ->
+                candidate.symbol.takeIf { it.isBound }?.cfir is CfirFunction
+            }
+        }
+    }
+
+    val selectedCandidate = (calleeReference as? CfirNamedReferenceWithCandidate)?.candidate ?: return null
+    return listOf(selectedCandidate).takeIf {
+        selectedCandidate.symbol.takeIf { it.isBound }?.cfir is CfirFunction
     }
 }
 
@@ -361,7 +386,7 @@ class ConeResolvedCallableReferenceAtom(
         get() {
             if (state == State.NOT_RESOLVED_YET) return emptyList()
             val expectedFunctionType = expectedType as? ConeFunctionType
-            return expectedFunctionType?.parameterTypes ?: listOfNotNull(expectedType)
+            return expectedFunctionType?.parameterTypes.orEmpty()
         }
 
     /** callable reference 在 completion 后可细化的输出类型。 */
@@ -381,6 +406,12 @@ class ConeResolvedCallableReferenceAtom(
 
     /** callable reference 解析完成后得到的函数类型。 */
     var resultingTypeForCallableReference: ConeCangJieType? = null
+        internal set
+    /** 当前外层候选局部解析得到的引用，最终候选选定后才写回共享表达式。 */
+    var resultingReference: CfirNamedReference? = null
+        internal set
+    /** 当前外层候选下 callable reference 的失败分类。 */
+    var failureKind: CallableReferenceFailureKind? = null
         internal set
     /** 标记该 callable reference 是否因候选歧义而推迟解析。 */
     val isPostponedBecauseOfAmbiguity: Boolean

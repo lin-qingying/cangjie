@@ -77,6 +77,7 @@ object CfirTryTargetTypeMismatchChecker : CfirTryExpressionChecker() {
         checkTypeMismatch(
             expectedType = expectedType,
             actualType = actualType,
+            expression = expression,
             source = source,
             preferredSpecializedSource = source,
             diagnosticFactory = CfirErrors.TYPE_MISMATCH,

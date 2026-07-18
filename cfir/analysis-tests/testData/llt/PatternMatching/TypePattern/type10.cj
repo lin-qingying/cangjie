@@ -14,7 +14,7 @@ class b {
 
 func h(i!: Int8 = match {
         case c => match (d) {
-            case j: Float64 => a
+            case <!UNREACHABLE_PATTERN!>j: Float64<!> => a
             case _ => b()
         }
         case _ => a

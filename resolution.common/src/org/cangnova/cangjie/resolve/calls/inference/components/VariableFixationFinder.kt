@@ -369,7 +369,9 @@ abstract class AbstractVariableReadinessCalculator<Readiness : Comparable<Readin
     context(c: Context)
     protected fun TypeConstructorMarker.hasProperArgumentConstraints(): Boolean {
         val constraints = c.notFixedTypeVariables[this]?.constraints ?: return false
-        val anyProperConstraint = constraints.any { it.isProperArgumentConstraint() }
+        val anyProperConstraint = constraints.any { constraint ->
+            constraint.isProperArgumentConstraint() || constraint.isUsableDeclaredUpperBoundConstraint()
+        }
         if (!anyProperConstraint) return false
 
         // temporary hack to fail calls which contain callable references resolved though OI with uninferred type parameters
@@ -380,7 +382,9 @@ abstract class AbstractVariableReadinessCalculator<Readiness : Comparable<Readin
         // which is expected to be used only for semi-fixation of input types for input types for OverloadResolutionByLambdaReturnType.
         if (!c.allowSemiFixationToOtherTypeVariables) return true
 
-        val properConstraints = constraints.filter { it.isProperArgumentConstraint() }
+        val properConstraints = constraints.filter { constraint ->
+            constraint.isProperArgumentConstraint() || constraint.isUsableDeclaredUpperBoundConstraint()
+        }
         if (properConstraints.any { it.kind != ConstraintKind.LOWER }) return true
 
         // NB: All proper constraints are LOWER here.
@@ -402,6 +406,25 @@ abstract class AbstractVariableReadinessCalculator<Readiness : Comparable<Readin
         type.isProperType()
                 && position.initialConstraint.position !is DeclaredUpperBoundConstraintPosition<*>
                 && !isNoInfer
+
+    /**
+     * 判断声明上界是否能作为无值证据类型变量的最终固定依据。
+     *
+     * 仓颉允许只由声明上界的 meet 完成泛型实例化；`Any` 上界不提供实际信息，
+     * primitive 等非法上界仍由声明检查器独立诊断，调用推断不得再追加 unable-to-infer。
+     */
+    context(c: Context)
+    private fun Constraint.isUsableDeclaredUpperBoundConstraint(): Boolean {
+        val isDeclaredUpperBound =
+            position.isFromDeclaredUpperBound ||
+                    position.initialConstraint.position is DeclaredUpperBoundConstraintPosition<*>
+        return isDeclaredUpperBound &&
+                kind == ConstraintKind.UPPER &&
+                type.isProperType() &&
+                !type.isError() &&
+                !type.typeConstructor().isAnyConstructor() &&
+                !isNoInfer
+    }
 
     /**
      * 判断当前类型是否可作为固定阶段的 proper type。

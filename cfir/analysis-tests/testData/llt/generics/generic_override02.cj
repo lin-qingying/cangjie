@@ -14,7 +14,7 @@ class CA<T> <: I3<I1> where T <: I1 {
     init(_x: T) {
         x = _x
     }
-    public func <!OVERRIDING_RETURN_TYPE_MISMATCH!>goo<!>(): T {
+    public func <!RETURN_TYPE_INVARIANCE!>goo<!>(): T {
         println("here")
         x
     }

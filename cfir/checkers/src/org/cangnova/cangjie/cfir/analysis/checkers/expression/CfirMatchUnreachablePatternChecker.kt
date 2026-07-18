@@ -4,9 +4,10 @@ import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirEnum
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
+import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameterRefsOwner
-import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.declarations.expandedPatternEnumType
+import org.cangnova.cangjie.cfir.declarations.matchSubjectValueDomainData
 import org.cangnova.cangjie.cfir.declarations.substitutedPayloadParameterTypes
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
@@ -14,6 +15,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
+import org.cangnova.cangjie.cfir.expressions.CfirMatchExhaustivenessStatus
 import org.cangnova.cangjie.cfir.expressions.CfirMatchExpression
 import org.cangnova.cangjie.cfir.expressions.CfirNamedAccessExpression
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
@@ -26,6 +28,7 @@ import org.cangnova.cangjie.cfir.resolve.match.CfirConstructor
 import org.cangnova.cangjie.cfir.resolve.match.CfirMatchPattern
 import org.cangnova.cangjie.cfir.resolve.match.CfirMatchPatternKind
 import org.cangnova.cangjie.cfir.resolve.match.calculateMatrix
+import org.cangnova.cangjie.cfir.resolve.match.isNonExhaustiveEnum
 import org.cangnova.cangjie.cfir.resolve.match.isMatchSubtypeOf
 import org.cangnova.cangjie.cfir.resolve.match.exhaustive.MatchExhaustivenessContext
 import org.cangnova.cangjie.cfir.resolve.match.exhaustive.inria.MarangetChecker
@@ -34,10 +37,11 @@ import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirConstructorSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirVariableSymbol
 import org.cangnova.cangjie.cfir.symbols.constructType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.ConeClassLikeType
+import org.cangnova.cangjie.cfir.types.ConeAnyType
 import org.cangnova.cangjie.cfir.types.ConeEnumType
 import org.cangnova.cangjie.cfir.types.ConeTupleType
 import org.cangnova.cangjie.cfir.types.StdlibClassIds
@@ -66,25 +70,58 @@ object CfirMatchUnreachablePatternChecker : CfirMatchExpressionChecker() {
         if (expression.hasPatternLegalityProblem(context)) return
 
         val matchContext = MatchExhaustivenessContext.fromSession(context.session)
-        val knownConstructor = expression.subject?.knownEnumConstructorOrNull(subjectType, context)
-        val knownSubjectRows = expression.subject?.knownSubjectRowsOrNull(subjectType, matchContext)
+        /*
+         * subject value-domain 来自官方 CHIR 常量分析阶段。Sema 已判定 match 非穷尽时，
+         * 官方编译流程会在进入 CHIR 前终止；此时仍保留 Sema usefulness 的分支覆盖检查，
+         * 但不能额外释放基于运行值域的 chir_unreachable_pattern。
+         */
+        val valueDomainAvailable =
+            expression.exhaustiveness !is CfirMatchExhaustivenessStatus.NonExhaustive &&
+                !subjectType.containsNonExhaustiveEnum(matchContext)
+        val knownConstructor = if (!valueDomainAvailable) null else {
+            expression.subject?.knownEnumConstructorOrNull(subjectType, context)
+                ?: context.containingDeclarations
+                    .asReversed()
+                    .filterIsInstance<CfirFunction>()
+                    .firstOrNull()
+                    ?.matchSubjectValueDomainData
+                    ?.enumConstructorTags
+                    ?.get(expression)
+                    ?.toKnownEnumConstructor(context)
+        }
+        val knownSubjectRows = if (!valueDomainAvailable) null else {
+            expression.subject?.knownSubjectRowsOrNull(subjectType, matchContext)
+        }
         val previousRows = mutableListOf<List<CfirMatchPattern>>()
+        var knownConstructorConsumed = false
 
         for (branch in expression.branches) {
             val branchRows = runCatching {
                 branch.pattern.calculateMatrix(subjectType, context.session)
             }.getOrElse { emptyList() }
 
-            if (branchRows.isNotEmpty() && branchRows.all { row ->
-                    row.isUnreachable(previousRows, matchContext, knownConstructor, knownSubjectRows)
-                }) {
+            val matchesKnownConstructor = knownConstructor != null && branchRows.any { row ->
+                row.any { pattern -> pattern.mayMatch(knownConstructor) }
+            }
+            val unreachableByKnownTag = knownConstructor != null &&
+                (knownConstructorConsumed || !matchesKnownConstructor)
+            val unreachableByPatterns = branchRows.isNotEmpty() && branchRows.all { row ->
+                row.isUnreachable(previousRows, matchContext, knownConstructor, knownSubjectRows)
+            }
+            if (unreachableByKnownTag || unreachableByPatterns) {
                 reporter.reportOn(
                     source = branch.pattern.source ?: branch.source,
                     factory = CfirErrors.UNREACHABLE_PATTERN,
                 )
             }
 
-            if (branch.guard == null) {
+            if (!unreachableByKnownTag && !unreachableByPatterns && matchesKnownConstructor && branch.guard == null) {
+                knownConstructorConsumed = true
+            }
+
+            // 官方 usefulness 只把有 witness 的可达分支加入覆盖矩阵；不可达 type pattern
+            // 既不能消费已知 enum tag，也不能遮蔽后续 wildcard。
+            if (branch.guard == null && !unreachableByKnownTag && !unreachableByPatterns) {
                 previousRows += branchRows
             }
         }
@@ -119,7 +156,8 @@ object CfirMatchUnreachablePatternChecker : CfirMatchExpressionChecker() {
         when (val patternKind = kind) {
             is CfirMatchPatternKind.Enum ->
                 patternKind.enumClassId == knownConstructor.enumClassId &&
-                    patternKind.entryName == knownConstructor.entryName
+                    patternKind.entryName == knownConstructor.entryName &&
+                    patternKind.subPatterns.size == knownConstructor.payloadArity
 
             CfirMatchPatternKind.Error,
             CfirMatchPatternKind.Wild,
@@ -133,47 +171,67 @@ object CfirMatchUnreachablePatternChecker : CfirMatchExpressionChecker() {
     /**
      * 尝试从 match subject 的静态形态推导已知 enum 构造器。
      *
-     * 直接构造器访问和由局部变量初始化转发的构造器访问都会被识别。
+     * 只识别 subject 表达式自身的构造器访问。局部变量在当前位置的值域必须由
+     * CFG/DFA 事实提供，checker 不能回溯声明 initializer 代替流分析。
      */
     private fun CfirExpression.knownEnumConstructorOrNull(
         subjectType: org.cangnova.cangjie.cfir.types.ConeCangJieType,
         context: CheckerContext,
     ): KnownEnumConstructor? {
         val enumType = subjectType.expandedPatternEnumType(context.session) ?: return null
-        val entryName = knownEnumConstructorEntryNameOrNull() ?: return null
-        return KnownEnumConstructor(enumType.classId, entryName)
-    }
-
-    /**
-     * 提取表达式已知 enum 构造器的 entry 名称。
-     */
-    private fun CfirExpression.knownEnumConstructorEntryNameOrNull(): String? {
-        unwrapSingleExpressionBlock().takeIf { it !== this }?.knownEnumConstructorEntryNameOrNull()?.let { return it }
-        directEnumConstructorEntryNameOrNull()?.let { return it }
-
-        val variable = (this as? CfirQualifiedAccessExpression)
-            ?.takeIf { it.explicitReceiver == null && it.dispatchReceiver == null }
-            ?.resolvedVariableOrNull()
+        val enumConstructor = knownEnumConstructorDeclarationOrNull() ?: return null
+        val enumDeclaration = context.session.symbolProvider
+            .getClassLikeSymbolByClassId(enumType.classId)
+            ?.takeIf { symbol -> symbol.isBound }
+            ?.cfir as? CfirEnum
             ?: return null
+        if (enumDeclaration.declarations
+                .filterIsInstance<CfirEnumConstructor>()
+                .none { constructor -> constructor.valueParameters.isNotEmpty() }
+        ) return null
+        return KnownEnumConstructor(
+            enumClassId = enumType.classId,
+            entryName = enumConstructor.name.asString(),
+            payloadArity = enumConstructor.valueParameters.size,
+        )
+    }
 
-        return variable.initializer?.unwrapSingleExpressionBlock()?.directEnumConstructorEntryNameOrNull()
+    /** 把 DFA 记录的 enum constructor symbol 转为 usefulness 使用的最小 tag。 */
+    private fun org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol.toKnownEnumConstructor(
+        context: CheckerContext,
+    ): KnownEnumConstructor? {
+        val owner = context.session.cfirProvider.getContainingClass(this)?.cfir as? CfirEnum ?: return null
+        val constructor = takeIf { isBound }?.cfir ?: return null
+        return KnownEnumConstructor(
+            enumClassId = owner.symbol.classId,
+            entryName = name.asString(),
+            payloadArity = constructor.valueParameters.size,
+        )
     }
 
     /**
-     * 从直接 enum constructor 调用或命名访问中提取 entry 名称。
+     * 提取表达式已知 enum 构造器声明。
      */
-    private fun CfirExpression.directEnumConstructorEntryNameOrNull(): String? {
+    private fun CfirExpression.knownEnumConstructorDeclarationOrNull(): CfirEnumConstructor? {
+        unwrapSingleExpressionBlock().takeIf { it !== this }
+            ?.knownEnumConstructorDeclarationOrNull()
+            ?.let { return it }
+        return directEnumConstructorDeclarationOrNull()
+    }
+
+    /**
+     * 从直接 enum constructor 调用或命名访问中提取已解析声明。
+     */
+    private fun CfirExpression.directEnumConstructorDeclarationOrNull(): CfirEnumConstructor? {
         val access = when (this) {
             is CfirFunctionCall -> this
             is CfirNamedAccessExpression -> this
             is CfirQualifiedAccessExpression -> this
             else -> return null
         }
-        val enumConstructor = access.calleeReference.resolvedSymbolOrNull()
+        return access.calleeReference.resolvedSymbolOrNull()
             ?.takeIf { it.isBound }
             ?.cfir as? CfirEnumConstructor
-            ?: return null
-        return enumConstructor.name.asString()
     }
 
     /**
@@ -183,28 +241,20 @@ object CfirMatchUnreachablePatternChecker : CfirMatchExpressionChecker() {
         (this as? CfirBlock)?.statements?.singleOrNull() as? CfirExpression ?: this
 
     /**
-     * 从 qualified access 中解析变量声明。
-     */
-    private fun CfirQualifiedAccessExpression.resolvedVariableOrNull(): CfirVariable? =
-        (calleeReference.resolvedSymbolOrNull() as? CfirVariableSymbol<*>)
-            ?.takeIf { it.isBound }
-            ?.cfir
-
-    /**
-     * 从 match subject 的静态初始化形态构造“当前实际只可能是这些值”的模式行。
+     * 从 match subject 表达式自身的静态形态构造“当前实际只可能是这些值”的模式行。
      *
      * 官方 unreachable-pattern 诊断来自 CHIR 的不可达分支分析；这里把 CFIR 中已经
-     * 可见的局部初始化、enum 构造、tuple 字面量和 Option autobox 信息降到同一个
+     * 可见的 enum 构造、tuple 字面量和 Option autobox 信息降到同一个
      * Maranget pattern 模型中，避免另起一套与穷尽性不同的覆盖语义。
      */
     private fun CfirExpression.knownSubjectRowsOrNull(
         subjectType: ConeCangJieType,
         context: MatchExhaustivenessContext,
     ): CfirMatrix? {
+        if (subjectType.isAnyType()) return null
         val pattern = knownSubjectPatternOrNull(
             expectedType = subjectType,
             context = context,
-            visitedVariables = mutableSetOf(),
             allowNarrowTypePattern = false,
         )
             ?: return null
@@ -217,39 +267,24 @@ object CfirMatchUnreachablePatternChecker : CfirMatchExpressionChecker() {
     private fun CfirExpression.knownSubjectPatternOrNull(
         expectedType: ConeCangJieType,
         context: MatchExhaustivenessContext,
-        visitedVariables: MutableSet<CfirVariableSymbol<*>>,
         allowNarrowTypePattern: Boolean,
     ): CfirMatchPattern? {
         unwrapSingleExpressionBlock().takeIf { it !== this }
-            ?.knownSubjectPatternOrNull(expectedType, context, visitedVariables, allowNarrowTypePattern)
-            ?.let { return it }
-
-        resolvedVariableOrNullForKnownSubject()
-            ?.takeIf { visitedVariables.add(it.symbol) }
-            ?.initializer
-            ?.knownSubjectPatternOrNull(expectedType, context, visitedVariables, allowNarrowTypePattern)
+            ?.knownSubjectPatternOrNull(expectedType, context, allowNarrowTypePattern)
             ?.let { return it }
 
         if (expectedType.isStdlibOptionType()) {
-            knownStdlibOptionSomePatternOrNull(expectedType, context, visitedVariables)?.let { return it }
+            knownStdlibOptionSomePatternOrNull(expectedType, context)?.let { return it }
         }
 
         if (allowNarrowTypePattern) {
             knownConstructedTypePatternOrNull(expectedType, context)?.let { return it }
         }
-        (this as? CfirTupleLiteral)?.knownTuplePatternOrNull(expectedType, context, visitedVariables)?.let { return it }
-        knownEnumConstructorPatternOrNull(expectedType, context, visitedVariables)?.let { return it }
+        (this as? CfirTupleLiteral)?.knownTuplePatternOrNull(expectedType, context)?.let { return it }
+        knownEnumConstructorPatternOrNull(expectedType, context)?.let { return it }
         knownLiteralPatternOrNull(expectedType)?.let { return it }
         return if (allowNarrowTypePattern) knownNarrowTypePatternOrNull(expectedType, context) else null
     }
-
-    /**
-     * 局部引用的 initializer 承接到当前 subject。
-     */
-    private fun CfirExpression.resolvedVariableOrNullForKnownSubject(): CfirVariable? =
-        (this as? CfirQualifiedAccessExpression)
-            ?.takeIf { it.explicitReceiver == null && it.dispatchReceiver == null }
-            ?.resolvedVariableOrNull()
 
     /**
      * tuple 字面量保留每个分量的已知 pattern；未知分量退化为对应分量通配。
@@ -257,7 +292,6 @@ object CfirMatchUnreachablePatternChecker : CfirMatchExpressionChecker() {
     private fun CfirTupleLiteral.knownTuplePatternOrNull(
         expectedType: ConeCangJieType,
         context: MatchExhaustivenessContext,
-        visitedVariables: MutableSet<CfirVariableSymbol<*>>,
     ): CfirMatchPattern? {
         val tupleType = expectedType as? ConeTupleType ?: coneTypeOrNull as? ConeTupleType ?: return null
         val subPatterns = elements.mapIndexed { index, element ->
@@ -265,7 +299,6 @@ object CfirMatchUnreachablePatternChecker : CfirMatchExpressionChecker() {
             element.knownSubjectPatternOrNull(
                 expectedType = elementType,
                 context = context,
-                visitedVariables = visitedVariables,
                 allowNarrowTypePattern = true,
             )
                 ?: CfirMatchPattern.wild(elementType)
@@ -279,7 +312,6 @@ object CfirMatchUnreachablePatternChecker : CfirMatchExpressionChecker() {
     private fun CfirExpression.knownEnumConstructorPatternOrNull(
         expectedType: ConeCangJieType,
         context: MatchExhaustivenessContext,
-        visitedVariables: MutableSet<CfirVariableSymbol<*>>,
     ): CfirMatchPattern? {
         val enumType = expectedType.expandedPatternEnumType(context.session) ?: return null
         val call = this as? CfirFunctionCall ?: return null
@@ -305,7 +337,6 @@ object CfirMatchUnreachablePatternChecker : CfirMatchExpressionChecker() {
                 argument.knownSubjectPatternOrNull(
                     expectedType = it,
                     context = context,
-                    visitedVariables = visitedVariables,
                     allowNarrowTypePattern = true,
                 )
             }
@@ -323,7 +354,6 @@ object CfirMatchUnreachablePatternChecker : CfirMatchExpressionChecker() {
     private fun CfirExpression.knownStdlibOptionSomePatternOrNull(
         expectedType: ConeCangJieType,
         context: MatchExhaustivenessContext,
-        visitedVariables: MutableSet<CfirVariableSymbol<*>>,
     ): CfirMatchPattern? {
         val payloadType = expectedType.optionElementType ?: return null
         val actualType = coneTypeOrNull ?: return null
@@ -332,7 +362,6 @@ object CfirMatchUnreachablePatternChecker : CfirMatchExpressionChecker() {
         val payloadPattern = knownSubjectPatternOrNull(
             expectedType = payloadType,
             context = context,
-            visitedVariables = visitedVariables,
             allowNarrowTypePattern = true,
         )
             ?: CfirMatchPattern(payloadType, CfirMatchPatternKind.Type(actualType, null))
@@ -410,6 +439,21 @@ object CfirMatchUnreachablePatternChecker : CfirMatchExpressionChecker() {
         optionElementType != null
 
     /**
+     * `Any` 的显式声明类型保留运行期类型测试空间，不能被初始化表达式的静态值域收窄。
+     */
+    private fun ConeCangJieType.isAnyType(): Boolean =
+        this === ConeAnyType || expandedClassIdOrPrimitiveClassId == StdlibClassIds.Any
+
+    /**
+     * 非穷尽 enum 带有未知未来构造器，不能再用当前 subject 初始化值域收窄可达性。
+     */
+    private fun ConeCangJieType.containsNonExhaustiveEnum(context: MatchExhaustivenessContext): Boolean =
+        when (this) {
+            is ConeTupleType -> elementTypes.any { it.containsNonExhaustiveEnum(context) }
+            else -> isNonExhaustiveEnum(context.session)
+        }
+
+    /**
      * 读取 enum constructor 在当前 enum use-site 类型下的真实 payload 类型。
      */
     private fun CfirEnumConstructor.substitutedPayloadTypes(
@@ -439,12 +483,15 @@ object CfirMatchUnreachablePatternChecker : CfirMatchExpressionChecker() {
      *
      * @property enumClassId enum 类的 ClassId。
      * @property entryName enum entry 的名称文本。
+     * @property payloadArity constructor payload 参数数量。
      */
     private data class KnownEnumConstructor(
         /** enum 类的 ClassId。 */
         val enumClassId: ClassId,
         /** enum entry 的名称文本。 */
         val entryName: String,
+        /** constructor payload 参数数量。 */
+        val payloadArity: Int,
     )
 
     /**

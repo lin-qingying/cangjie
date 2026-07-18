@@ -1,9 +1,9 @@
 
 
 func f<T>(x: T) {
-    <!NON_EXHAUSTIVE_MATCH!>match (x) {
+    match (<!NON_EXHAUSTIVE_MATCH!>x<!>) {
         case _: Int64 => 0 // reachable
-    }<!>
+    }
 }
 
 main() {

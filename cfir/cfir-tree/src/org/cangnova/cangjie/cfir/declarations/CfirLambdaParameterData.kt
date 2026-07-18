@@ -15,17 +15,6 @@ var CfirValueParameter.isLambdaParameterTypeOmitted: Boolean? by
     CfirDeclarationDataRegistry.data(LambdaParameterTypeOmittedKey)
 
 /**
- * Lambda 头部已经由调用解析阶段报告过参数形状错误。
- *
- * 官方 `ChkLamExpr` 在参数个数或显式参数类型不兼容时，会把该错误作为
- * lambda 形状错误处理；后续 checker 不能再把同一根因降级成省略参数缺少注解。
- */
-private object LambdaParameterShapeDiagnosticKey : CfirDeclarationDataKey()
-
-var CfirAnonymousFunction.hasLambdaParameterShapeDiagnostic: Boolean? by
-    CfirDeclarationDataRegistry.data(LambdaParameterShapeDiagnosticKey)
-
-/**
  * Lambda 头部诊断使用的目标函数类型。
  *
  * 调用完成阶段在错误候选上不会把类型强行写入 [CfirAnonymousFunction.matchingParameterFunctionType]，

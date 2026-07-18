@@ -29,6 +29,15 @@ class LltCompanionSourceFilesProvider(
     testServices: TestServices,
 ) : AdditionalSourceProvider(testServices) {
     /**
+     * 父级聚合文件扫描结果缓存。
+     *
+     * 全量 LLT 会对同一目录下的大量文件重复调用该 provider。父级目录中的聚合文件集合
+     * 与当前测试文件无关，可以按目录缓存，避免每个测试都重新 canonicalize 和读取父级
+     * `.cj` 文件。
+     */
+    private val ancestorAggregateFilesCache: MutableMap<Path, List<File>> = mutableMapOf()
+
+    /**
      * 该 provider 使用的指令容器。
      */
     override val directiveContainers: List<DirectivesContainer>
@@ -56,10 +65,10 @@ class LltCompanionSourceFilesProvider(
         val parentMultiFileCompanions = testModuleStructure.originalTestDataFiles.flatMap(::collectParentMultiFileCompanions)
 
         val fileCompanions = (explicitCompanions + packageCompanions + multiFileCompanions)
-            .distinctBy { it.canonicalFile }
+            .distinctBy { it.normalizedAbsolutePath() }
             .map { it.toTestFile("lltCompanions") }
         val virtualCompanions = parentMultiFileCompanions
-            .distinctBy { it.ownerFile.canonicalFile to it.relativePath }
+            .distinctBy { it.ownerFile.normalizedAbsolutePath() to it.relativePath }
             .map { it.toTestFile() }
 
         return fileCompanions + virtualCompanions
@@ -73,7 +82,7 @@ class LltCompanionSourceFilesProvider(
         return directory.listFiles().orEmpty()
             .asSequence()
             .filter { it.isFile && it.extension == "cj" }
-            .filter { it.canonicalFile != testDataFile.canonicalFile }
+            .filter { !it.isSameNormalizedFile(testDataFile) }
             .sortedBy { it.name }
             .toList()
     }
@@ -91,7 +100,7 @@ class LltCompanionSourceFilesProvider(
         val sameNamePackageFile = directory.resolve("${testDataFile.nameWithoutExtension}.pkg.cj")
         val packageFile = directory.resolve("pkg.cj")
         return listOf(sameNamePackageFile, packageFile)
-            .filter { it.isFile && it.canonicalFile != testDataFile.canonicalFile }
+            .filter { it.isFile && !it.isSameNormalizedFile(testDataFile) }
             .sortedBy { it.name }
     }
 
@@ -113,10 +122,12 @@ class LltCompanionSourceFilesProvider(
                 val directory = testDataFile.parentFile.resolve(entry.substring(0, slashIndex))
                 directory to entry.substring(slashIndex + 1)
             }
-            .groupBy({ it.first.canonicalFile }, { it.second })
+            .groupBy({ it.first.normalizedAbsolutePath() }, { it })
         if (declaredByDirectory.isEmpty()) return emptyList()
 
-        return declaredByDirectory.flatMap { (directory, declaredNames) ->
+        return declaredByDirectory.flatMap { (_, declaredEntries) ->
+            val directory = declaredEntries.first().first
+            val declaredNames = declaredEntries.mapTo(mutableSetOf()) { it.second }
             directory.listFiles().orEmpty()
                 .asSequence()
                 .filter { it.isFile && it.extension == "cj" }
@@ -132,19 +143,20 @@ class LltCompanionSourceFilesProvider(
     private fun collectParentMultiFileCompanions(testDataFile: File): List<VirtualCompanionFile> {
         if (!testDataFile.invariantSeparatorsPath.contains("cfir/analysis-tests/testData/llt/")) return emptyList()
 
-        val directory = testDataFile.parentFile?.canonicalFile ?: return emptyList()
+        val directory = testDataFile.parentFile?.normalizedAbsolutePath() ?: return emptyList()
+        val testDataPath = testDataFile.normalizedAbsolutePath()
         val aggregates = collectAncestorAggregateFiles(testDataFile)
         return aggregates.flatMap { aggregate ->
             val fragments = parseFileDirectiveFragments(aggregate)
             val declaresCurrentDirectory = fragments.any { fragment ->
                 aggregate.parentFile.resolve(fragment.relativePath)
                     .parentFile
-                    ?.canonicalFile == directory
+                    ?.normalizedAbsolutePath() == directory
             }
             if (!declaresCurrentDirectory) return@flatMap emptyList()
 
             fragments.filter { fragment ->
-                aggregate.parentFile.resolve(fragment.relativePath).canonicalFile != testDataFile.canonicalFile
+                aggregate.parentFile.resolve(fragment.relativePath).normalizedAbsolutePath() != testDataPath
             }
         }
     }
@@ -156,14 +168,16 @@ class LltCompanionSourceFilesProvider(
         val lltRootMarker = Path.of("cfir", "analysis-tests", "testData", "llt").toString().replace('\\', '/')
         val result = mutableListOf<File>()
         var directory = testDataFile.parentFile?.parentFile
-        while (directory != null && directory.invariantSeparatorsPath.contains(lltRootMarker)) {
-            directory.listFiles().orEmpty()
-                .asSequence()
-                .filter { it.isFile && it.extension == "cj" }
-                .filter { it.canonicalFile != testDataFile.canonicalFile }
-                .filter { FILE_DIRECTIVE.containsMatchIn(it.readText()) }
-                .sortedBy { it.name }
-                .forEach(result::add)
+        while (directory != null && directory.normalizedInvariantSeparatorsPath().contains(lltRootMarker)) {
+            val directoryPath = directory.normalizedAbsolutePath()
+            result += ancestorAggregateFilesCache.getOrPut(directoryPath) {
+                directory.listFiles().orEmpty()
+                    .asSequence()
+                    .filter { it.isFile && it.extension == "cj" }
+                    .filter { FILE_DIRECTIVE.containsMatchIn(it.readText()) }
+                    .sortedBy { it.name }
+                    .toList()
+            }
             directory = directory.parentFile
         }
         return result
@@ -229,6 +243,23 @@ class LltCompanionSourceFilesProvider(
     private fun File.isPackageCompanionFile(): Boolean {
         return name == "pkg.cj" || name.endsWith(".pkg.cj")
     }
+
+    /**
+     * 返回不触发文件系统 canonicalize 的规范化绝对路径。
+     */
+    private fun File.normalizedAbsolutePath(): Path = toPath().toAbsolutePath().normalize()
+
+    /**
+     * 使用规范化绝对路径判断两个测试数据文件是否相同。
+     */
+    private fun File.isSameNormalizedFile(other: File): Boolean =
+        normalizedAbsolutePath() == other.normalizedAbsolutePath()
+
+    /**
+     * 返回使用 `/` 的规范化绝对路径字符串。
+     */
+    private fun File.normalizedInvariantSeparatorsPath(): String =
+        normalizedAbsolutePath().toString().replace('\\', '/')
 
     /**
      * 父级聚合文件中声明的虚拟 companion 源文件。

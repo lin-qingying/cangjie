@@ -44,6 +44,7 @@ import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
 import org.cangnova.cangjie.cfir.references.CfirResolvedErrorReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
+import org.cangnova.cangjie.cfir.scopes.impl.CfirClassSubstitutionScope
 import org.cangnova.cangjie.cfir.scopes.impl.typeAliasConstructorInfo
 import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeParameterBasedTypeVariable
 import org.cangnova.cangjie.cfir.session.CfirSession
@@ -88,12 +89,20 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
             collectEnumConstructorReceiverOwnerTypeParameters(context.session, candidate, declaration)
         val enumConstructorReceiverOwnerLookupTags =
             enumConstructorReceiverOwnerTypeParameters.mapTo(mutableSetOf()) { it.symbol.toLookupTag() }
-        val knownOwnerSubstitutions = createCallableOwnerUseSiteSubstitutionMap(
-            session = context.session,
-            callableSymbol = candidate.symbol as? CfirCallableSymbol<*>,
-            receiverType = candidate.useSiteReceiverType(),
-        ).filterKeys { it !in enumConstructorReceiverOwnerLookupTags } +
-                createBareEnumConstructorQualifierOwnerSubstitutionMap(context.session, candidate, declaration)
+        val knownOwnerSubstitutions = buildMap {
+            if (!candidate.hasScopeOwnedInstanceMemberSubstitution(declaration)) {
+                putAll(
+                    createCallableOwnerUseSiteSubstitutionMap(
+                        session = context.session,
+                        callableSymbol = candidate.symbol as? CfirCallableSymbol<*>,
+                        receiverType = candidate.useSiteReceiverType(),
+                    ).filterKeys { it !in enumConstructorReceiverOwnerLookupTags }
+                )
+            }
+            putAll(createBareStaticExtendTargetOwnerSubstitutionMap(context.session, candidate, declaration))
+            putAll(createBareEnumConstructorQualifierOwnerSubstitutionMap(context.session, candidate, declaration))
+            putAll(collectOriginScopeOwnerSubstitutions(context.session, candidate, declaration))
+        }
         val typeParameters = (
                 enumConstructorReceiverOwnerTypeParameters +
                         collectCandidateTypeParametersForFreshVariables(context.session, candidate, declaration)
@@ -428,7 +437,11 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
                 val extendSupertype = resolveExtendTypeRef(session, extend, superTypeRef)
                     ?.let(substitution.substitutor::substituteOrSelf)
                     ?: return@any false
-                AbstractTypeChecker.isSubtypeOf(session.typeContext, extendSupertype, upperBound)
+                AbstractTypeChecker.isSubtypeOfWithoutOptionBoxing(
+                    session.typeContext,
+                    extendSupertype,
+                    upperBound,
+                )
             }
             if (!matchesUpperBound) continue
 
@@ -455,11 +468,22 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
      */
     private fun CfirTypeParameterSymbol.toDeclaredUpperBoundTypes(session: CfirSession): List<ConeCangJieType> {
         lazyResolveToPhase(CfirResolvePhase.TYPES)
-        return toLookupTag()
+        val bounds = toLookupTag()
             .declaredUpperBoundRefsAfterTypeResolve()
             .mapNotNull { it.declaredUpperBoundConeTypeOrNull() }
             .filterNot { it is ConeErrorType }
-            .filter { it.fullyExpandedType(session) is ConeClassLikeType }
+        val effectiveBounds = bounds.filter { bound -> bound.isLegalDeclaredUpperBound(session) }
+            .ifEmpty { bounds }
+        return effectiveBounds.filter { bound ->
+            when (bound.fullyExpandedType(session)) {
+                is ConeClassLikeType,
+                is ConeEnumType,
+                is ConeStructType,
+                is ConePrimitiveType,
+                -> true
+                else -> false
+            }
+        }
     }
 
     /**
@@ -491,6 +515,51 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
         dispatchReceiverExpression()?.coneTypeOrNull
             ?: chosenExtensionReceiverExpression()?.coneTypeOrNull
             ?: callInfo.explicitReceiver?.coneTypeOrNull
+
+    /**
+     * 判断普通实例成员的 owner substitution 是否已经由候选来源 scope 完整应用。
+     *
+     * [CfirClassSubstitutionScope] 产出的 substitution override 已拥有最终参数和返回签名；
+     * fresh-variable 阶段若再 unwrap 到原声明并按 receiver 注入 owner map，会把签名中保留的
+     * lexical generic 参数误当成原 owner 参数进行二次替换。构造器、enum constructor 与 static
+     * 成员仍保留既有路径：它们可能来自 classifier/qualifier 调用，而非具体实例成员 scope。
+     */
+    private fun Candidate.hasScopeOwnedInstanceMemberSubstitution(declaration: Any?): Boolean {
+        val callable = declaration as? CfirCallableDeclaration ?: return false
+        if (callable.status.isStatic || callable is CfirConstructor || callable is CfirEnumConstructor) return false
+        if (originScope !is CfirClassSubstitutionScope) return false
+
+        val callableSymbol = symbol as? CfirCallableSymbol<*> ?: return false
+        return callableSymbol.unwrapSubstitutionOverrides() !== callableSymbol
+    }
+
+    /**
+     * 收集产生候选的 substitution scope 已经确定的 constructor owner 映射。
+     *
+     * 这是“owner 已实例化”的结构事实：构造器 symbol 即使能回溯到原始声明，其 owner 类型参数
+     * 也已经在 scope 层替换完成。把该映射并入候选初始 substitutor，可阻止后续 owner 回查把它们
+     * 再次 fresh 化；普通 classifier 构造调用不来自该 scope，仍按原有调用推断规则处理。
+     */
+    private fun collectOriginScopeOwnerSubstitutions(
+        session: CfirSession,
+        candidate: Candidate,
+        declaration: Any?,
+    ): Map<TypeConstructorMarker, ConeCangJieType> {
+        if (declaration !is CfirConstructor) return emptyMap()
+        val substitutionScope = candidate.originScope as? CfirClassSubstitutionScope ?: return emptyMap()
+        val ownerClassId = ownerClassIdForCallable(session, candidate) ?: return emptyMap()
+        val ownerDeclaration = session.symbolProvider.getClassLikeSymbolByClassId(ownerClassId)?.cfir
+            ?: session.cfirProvider.getCfirClassifierByFqName(ownerClassId)
+            ?: return emptyMap()
+        val ownerTypeParameters = (ownerDeclaration as? CfirTypeParameterRefsOwner)?.typeParameters.orEmpty()
+
+        return ownerTypeParameters.mapNotNull { typeParameter ->
+            val substitutedType = substitutionScope
+                .substitutedOwnerTypeParameterOrNull(typeParameter.symbol)
+                ?: return@mapNotNull null
+            typeParameter.symbol.toLookupTag() to substitutedType
+        }.toMap()
+    }
 
     /**
      * 返回调用候选参与显式类型实参映射和 fresh-variable 初始化的类型参数。
@@ -594,6 +663,45 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
     }
 
     /**
+     * static extend 成员通过裸泛型 owner 调用时，把 extend 目标类型反映射到 owner 类型参数。
+     *
+     * 官方 `RelayMappingFromExtendToExtended` 会把 `extend E<Rune>` 中的目标实参固定为
+     * `E` 的 owner 映射 `T -> Rune`；泛型 extend 则形成 `T -> R`，随后 `R` 再进入
+     * 当前候选的 fresh-variable substitutor。该映射属于声明 owner 的结构事实，不能把
+     * concrete extend 的 owner 参数再次当作无约束 fresh variable。
+     */
+    private fun createBareStaticExtendTargetOwnerSubstitutionMap(
+        session: CfirSession,
+        candidate: Candidate,
+        declaration: Any?,
+    ): Map<TypeConstructorMarker, ConeCangJieType> {
+        val callable = declaration as? CfirCallableDeclaration ?: return emptyMap()
+        if (!callable.status.isStatic || callable is CfirConstructor || callable is CfirEnumConstructor) {
+            return emptyMap()
+        }
+        val callableSymbol = candidate.symbol as? CfirCallableSymbol<*> ?: return emptyMap()
+        val ownerExtend = session.extendProvider.getContainingExtend(callableSymbol.unwrapSubstitutionOverrides())
+            ?.takeIf(session.extendProvider::isExtendAccessible)
+            ?: return emptyMap()
+        val receiver = candidate.bareStaticQualifierExpression() ?: return emptyMap()
+        if (receiver.typeArguments.isNotEmpty()) return emptyMap()
+        val ownerSymbol = receiver.resolvedQualifierClassifier(session) ?: return emptyMap()
+        val receiverType = receiver.coneTypeOrNull as? ConeLookupTagBasedType ?: return emptyMap()
+        if (!receiverType.isBareOrDeclarationSelfTypeOf(ownerSymbol)) return emptyMap()
+
+        val targetType = resolveExtendTypeRef(session, ownerExtend, ownerExtend.extendedTypeRef)
+            ?.fullyExpandedType(session) as? ConeLookupTagBasedType
+            ?: return emptyMap()
+        if (targetType.classIdOrPrimitiveClassId != ownerSymbol.classId) return emptyMap()
+        val ownerTypeParameters = (ownerSymbol.cfir as? CfirTypeParameterRefsOwner)?.typeParameters.orEmpty()
+        if (ownerTypeParameters.size != targetType.typeArguments.size) return emptyMap()
+
+        return ownerTypeParameters.zip(targetType.typeArguments).associate { (typeParameter, argument) ->
+            typeParameter.symbol.toLookupTag() to argument.type
+        }
+    }
+
+    /**
      * 泛型类型的静态成员可通过裸类名参与调用推断，例如 `Box.create()`。
      *
      * 官方 Cangjie 在调用路径为 owner class 的类型参数创建待推断变量；如果没有
@@ -690,7 +798,7 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
 
         val receiver = candidate.enumConstructorMemberAccessReceiverExpression()
             ?: return emptyList()
-        val isEnumReceiver = receiver.isNoArgEnumConstructorReceiverOf(ownerDeclaration)
+        val isEnumReceiver = receiver.isNoArgEnumConstructorReceiverOf(session, ownerDeclaration)
         if (!isEnumReceiver) return emptyList()
 
         return ownerTypeParameters
@@ -709,17 +817,23 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
      * 避免把普通变量/属性 receiver 当作 enum constructor。
      */
     private fun CfirQualifiedAccessExpression.isNoArgEnumConstructorReceiverOf(
+        session: CfirSession,
         ownerDeclaration: CfirDeclaration,
     ): Boolean {
-        if (explicitReceiver != null) return false
         if (typeArguments.isNotEmpty()) return false
 
         val symbol = enumConstructorSymbolOrNull()
         if (symbol != null) {
             val constructor = symbol.cfir
-            return constructor.valueParameters.isEmpty()
+            val expectedOwnerClassId = (ownerDeclaration as? CfirClassLikeDeclaration)?.symbol?.classId
+                ?: return false
+            val constructorOwnerClassId = session.cfirProvider.getContainingClass(symbol)?.classId
+                ?: return false
+            return constructor.valueParameters.isEmpty() && constructorOwnerClassId == expectedOwnerClassId
         }
 
+        // 只有尚未解析 symbol 的裸名 fallback 才能依赖当前 owner 的 lexical enum scope。
+        if (explicitReceiver != null) return false
         val reference = calleeReference
         if (reference !is org.cangnova.cangjie.cfir.references.CfirNamedReference) return false
         if (reference is CfirResolvedNamedReference) return false

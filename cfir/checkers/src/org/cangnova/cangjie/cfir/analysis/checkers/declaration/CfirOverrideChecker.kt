@@ -65,8 +65,10 @@ object CfirOverrideChecker : CfirClassLikeChecker() {
 
         for (member in declaration.declarations) {
             val callable = member as? CfirCallableDeclaration ?: continue
-            if (!callable.isSourceDeclaration || !callable.hasOverrideLikeModifier()) continue
-            if (!callable.isValidOverrideLikeDeclaration()) continue
+            if (!callable.isSourceDeclaration) continue
+            val hasOverrideLikeModifier = callable.hasOverrideLikeModifier()
+            if (hasOverrideLikeModifier && !callable.isValidOverrideLikeDeclaration()) continue
+            if (!hasOverrideLikeModifier && !callable.status.isStatic) continue
 
             val overriddenCandidates = when (val symbol = callable.symbol) {
                 is CfirNamedFunctionSymbol -> classScope.collectDirectOverriddenFunctions(symbol)
@@ -76,6 +78,7 @@ object CfirOverrideChecker : CfirClassLikeChecker() {
             }.filter { it.canParticipateInOverrideTargetSearch(declaration, context) }
 
             if (overriddenCandidates.isEmpty()) {
+                if (!hasOverrideLikeModifier) continue
                 if (callable.hasInheritedSignatureIgnoringStatic(classScope, declaration)) {
                     continue
                 }
@@ -234,12 +237,11 @@ object CfirOverrideChecker : CfirClassLikeChecker() {
     ) {
         val function = declaration as? CfirFunction ?: return
         val overriddenPair = overriddenSymbols.firstNotNullOfOrNull { overridden ->
-            (overridden.cfir as? CfirFunction)?.let { it to overridden }
+            val overriddenFunction = overridden.cfir as? CfirFunction ?: return@firstNotNullOfOrNull null
+            (overriddenFunction to overridden)
+                .takeIf { function.hasMismatchedParameterNamingAgainst(overriddenFunction) }
         } ?: return
-        val overriddenFunction = overriddenPair.first
         val overriddenSymbol = overriddenPair.second
-
-        if (!function.hasMismatchedParameterNamingAgainst(overriddenFunction)) return
 
         reporter.reportOn(
             source = declaration.source,
@@ -340,13 +342,8 @@ object CfirOverrideChecker : CfirClassLikeChecker() {
                 return
             }
 
-            reporter.reportOn(
-                source = declaration.source,
-                factory = CfirErrors.OVERRIDING_RETURN_TYPE_MISMATCH,
-                a = overridingReturnType,
-                b = overriddenReturnType,
-                c = overridden.name,
-            )
+            // 普通函数返回类型不兼容由 CfirInheritanceDeepChecker 统一报告
+            // RETURN_TYPE_INCOMPATIBLE，对齐官方 StructInheritanceChecker::CheckImplementationRelation。
             return
         }
     }

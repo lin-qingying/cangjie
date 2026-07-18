@@ -45,6 +45,7 @@ object CfirCheckDispatchReceiver : ResolutionStage() {
             sink.yieldIfNeed()
             return
         }
+        if (candidate.isImplicitReceiverForStaticMember()) return
 
         val expectedReceiverType = candidate.expectedDispatchReceiverType() ?: return
         val expectedType = candidate.substitutor.substituteOrSelf(expectedReceiverType)
@@ -179,6 +180,20 @@ object CfirCheckDispatchReceiver : ResolutionStage() {
         val callableSymbol = symbol as? CfirCallableSymbol<*> ?: return false
         if (!callableSymbol.cfir.status.isStatic) return false
         return hasTypeQualifierDispatchReceiver(context)
+    }
+
+    /**
+     * 无显式接收者访问 static 成员时，隐式 receiver 只负责把成员 scope 暴露给 tower。
+     *
+     * owner 泛型替换已经在候选 fresh-variable 初始化阶段从 use-site receiver 建立；
+     * 这里若继续加入 dispatch receiver subtype 约束，会把 extend/interface 继承路径上的
+     * 查找 receiver 当作运行时实例 receiver，导致不同声明来源的同名类型参数误报不匹配。
+     */
+    private fun Candidate.isImplicitReceiverForStaticMember(): Boolean {
+        val callableSymbol = symbol as? CfirCallableSymbol<*> ?: return false
+        if (!callableSymbol.cfir.status.isStatic) return false
+        if (callInfo.explicitReceiver != null) return false
+        return dispatchReceiver != null
     }
 
     /** 当前 dispatch receiver 是否为 class/typealias/内建类型 qualifier。 */

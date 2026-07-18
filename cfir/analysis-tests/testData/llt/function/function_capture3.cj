@@ -17,9 +17,9 @@ func f1() {
 
 func f2() {
     func f1() {
-        x
+        <!CAPTURE_HAS_SHADOW_VARIABLE!>x<!>
     }
-    let f2 = {=> x}
+    let f2 = {=> <!CAPTURE_HAS_SHADOW_VARIABLE!>x<!>}
     let x = 99
     if (f1() != 4 || f2() != 4) {
         return 1

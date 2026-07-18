@@ -35,11 +35,11 @@ func Test() {
         )
     )
 
-    aaa(<!TYPE_MISMATCH!>ccc(Int16(1))<!>)
-    aaa(ccc(<!CANNOT_CONVERT_LITERAL!>r<!>'a'))
-    aaa(ccc(a: r'a', <!UNORDERED_ARGUMENTS!>1<!>))
-    aaa(ccc(a: r'a', <!MULTIPLE_NAMED_ARGUMENT!>a<!>: 1))
-    aaa(ccc(a: <!CANNOT_CONVERT_LITERAL!>r<!>'a', b: 1))
+    aaa(<!ARGUMENT_TYPE_MISMATCH!>ccc(Int16(1))<!>)
+    aaa(ccc(<!CANNOT_CONVERT_LITERAL!>r'a'<!>))
+    aaa(ccc(a: r'a', <!MIXING_NAMED_AND_POSITIONAL_ARGUMENTS!>1<!>))
+    aaa(ccc(a: r'a', <!ARGUMENT_PASSED_TWICE!>a<!>: 1))
+    aaa(ccc(a: <!CANNOT_CONVERT_LITERAL!>r'a'<!>, b: 1))
     return 0
 }
 
