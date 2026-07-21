@@ -12,6 +12,16 @@ fun ConeCangJieType.contains(predicate: (ConeCangJieType) -> Boolean): Boolean {
 }
 
 /**
+ * 判断当前完整类型树中是否含有错误类型。
+ *
+ * 外层名义类型即使解析成功，类型实参仍可能包含 [ConeErrorType]；官方 InvalidTy 语义会让
+ * 这类复合类型阻断后续普通类型规则，因此调用方不能只检查根类型节点。
+ */
+fun ConeCangJieType.containsErrorType(): Boolean = contains { type ->
+    type is ConeErrorType || type.isError
+}
+
+/**
  * 递归访问当前类型及其内部包含的所有 [ConeCangJieType]。
  *
  * 遍历顺序不作为 API 契约；调用方不能依赖具体访问顺序。

@@ -4,7 +4,11 @@ import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.resolve.CfirTypeResolver
 import org.cangnova.cangjie.cfir.resolve.ExtendTestFixtures
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
+import org.cangnova.cangjie.cfir.types.ConeClassLikeType
+import org.cangnova.cangjie.cfir.types.ConeClassLookupTagImpl
+import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
+import org.cangnova.cangjie.cfir.types.impl.CfirResolvedTypeRefImpl
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
@@ -89,6 +93,64 @@ class CfirExtendIndexStoreTest {
         )
         assertEquals(1, query.inheritedInterfacesOf(extend1).size)
         assertEquals(interfaceA, query.inheritedInterfacesOf(extend1).single().classId)
+    }
+
+    /**
+     * 验证 typealias 目标与真实目标共享同一索引和接口语义等价类，同时保留 alias 声明元数据。
+     */
+    @Test
+    fun `type alias targets are indexed by expanded semantic identity`() {
+        val (_, moduleData) = ExtendTestFixtures.newSessionAndModule()
+        val packageFqName = FqName("sample.pkg")
+        val targetClassId = ClassId(packageFqName, Name.identifier("Target"))
+        val targetAliasId = ClassId(packageFqName, Name.identifier("TargetAlias"))
+        val interfaceClassId = ClassId(packageFqName, Name.identifier("I"))
+        val interfaceAliasId = ClassId(packageFqName, Name.identifier("IAlias"))
+
+        fun aliasTypeRef(aliasId: ClassId, expandedClassId: ClassId, isInterface: Boolean = false) =
+            CfirResolvedTypeRefImpl(
+                source = null,
+                annotations = emptyList(),
+                coneType = ConeTypeAliasType(
+                    classId = aliasId,
+                    expandedType = ConeClassLikeType(
+                        lookupTag = ConeClassLookupTagImpl(expandedClassId),
+                        isInterface = isInterface,
+                    ),
+                ),
+                delegatedTypeRef = null,
+            )
+
+        val aliasExtend = ExtendTestFixtures.newExtend(
+            moduleData = moduleData,
+            extendedTypeRef = aliasTypeRef(targetAliasId, targetClassId),
+            superTypeRefs = listOf(aliasTypeRef(interfaceAliasId, interfaceClassId, isInterface = true)),
+        )
+        val directExtend = ExtendTestFixtures.newExtend(
+            moduleData = moduleData,
+            extendedTypeRef = ExtendTestFixtures.classTypeRef(targetClassId),
+            superTypeRefs = listOf(ExtendTestFixtures.classTypeRef(interfaceClassId, isInterface = true)),
+        )
+        val file = ExtendTestFixtures.newFile(moduleData, packageFqName, listOf(aliasExtend, directExtend))
+        val resolver = MapBackedTypeResolver(
+            mapOf(
+                targetClassId to ExtendTestFixtures.newClass(moduleData, "Target"),
+                interfaceClassId to ExtendTestFixtures.newInterface(moduleData, "I"),
+            ),
+        )
+
+        val store = CfirExtendIndexStore()
+        store.rebuild(listOf(file), resolver)
+
+        val aliasModel = store.modelForDeclaration(aliasExtend)
+        assertEquals(targetClassId, aliasModel?.targetClassId)
+        assertEquals(targetAliasId, aliasModel?.declaredTargetClassId)
+        assertEquals(2, store.modelsForClass(targetClassId).size)
+        assertEquals(0, store.modelsForClass(targetAliasId).size)
+        assertEquals(
+            store.modelForDeclaration(directExtend)?.inheritedInterfaceSemanticKeys,
+            aliasModel?.inheritedInterfaceSemanticKeys,
+        )
     }
 
     /**

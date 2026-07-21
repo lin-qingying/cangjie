@@ -23,6 +23,22 @@ class CfirExtendRuleQueryServiceImpl(
         indexStore.modelForDeclaration(declaration)?.targetKey
 
     /**
+     * 返回完整实例化目标模式相同的 extend 声明。
+     */
+    override fun extendDeclarationsForSameTarget(declaration: Any): List<Any> {
+        val targetSemanticKey = indexStore.modelForDeclaration(declaration)?.targetSemanticKey ?: return emptyList()
+        return indexStore.modelsForSemanticTarget(targetSemanticKey).map { it.declaration }
+    }
+
+    /**
+     * 返回同一 nominal target bucket 中的 extend 声明，并保留源码顺序。
+     */
+    override fun extendDeclarationsForNominalTarget(declaration: Any): List<Any> {
+        val targetKey = indexStore.modelForDeclaration(declaration)?.targetKey ?: return emptyList()
+        return indexStore.modelsForTarget(targetKey).map { it.declaration }
+    }
+
+    /**
      * 返回声明对应的目标 classId。
      */
     override fun targetClassIdOf(declaration: Any): ClassId? =

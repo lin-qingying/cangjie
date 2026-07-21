@@ -2,4 +2,4 @@
 
 type F = (Int32) -> Int8
 
-extend F {}
+extend <!ILLEGAL_EXTENDED_TYPE!>F<!> {}

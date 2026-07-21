@@ -265,7 +265,7 @@ private fun CfirSession.registerCoreResolveServices(
     register(CfirTypeAwareSupertypeProvider::class, CfirTypeAwareSupertypeProviderImpl(this))
     register(CfirModuleVisibilityChecker::class, CfirModuleVisibilityChecker.Standard(this))
 
-    val extendIndexStore = CfirExtendIndexStore()
+    val extendIndexStore = CfirExtendIndexStore(this)
     register(CfirExtendIndexStore::class, extendIndexStore)
     register(CfirExtendRuleQueryService::class, CfirExtendRuleQueryServiceImpl(extendIndexStore))
 

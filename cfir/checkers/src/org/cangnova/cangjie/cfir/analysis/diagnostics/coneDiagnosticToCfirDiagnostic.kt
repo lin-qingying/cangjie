@@ -817,9 +817,11 @@ private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
     }
 
     if (diagnostics.isNotEmpty()) {
+        val hasCallLevelArityDiagnostic = candidate.diagnostics.any { it is WrongNumberOfArguments }
         return listOfNotNull(
-            noMatchingInvokeDiagnostic,
-            candidate.parametersAndArgumentsMismatchDiagnostic(session),
+            noMatchingInvokeDiagnostic.takeUnless { hasCallLevelArityDiagnostic },
+            candidate.parametersAndArgumentsMismatchDiagnostic(session)
+                .takeUnless { hasCallLevelArityDiagnostic },
         ) + diagnostics
     }
     if (suppressedRangeArgumentMismatch) return listOfNotNull(noMatchingInvokeDiagnostic)
@@ -1313,6 +1315,10 @@ private fun ConeAmbiguityError.mapConeAmbiguityError(
     callOrAssignmentSource: CjSourceElement?,
     session: CfirSession,
 ): List<CjDiagnostic> {
+    if (isErrorArgumentCascade) return emptyList()
+
+    sharedOverloadArgumentTypeMismatchDiagnostic(session)?.let { return listOf(it) }
+
     @OptIn(ApplicabilityDetail::class)
     if (!applicability.isSuccess) {
         val candidateDiagnostics = candidatesWithErrors.values.map { coneDiagnostic ->
@@ -1419,6 +1425,62 @@ private fun ConeAmbiguityError.mapConeAmbiguityError(
         source ?: diagnosticSource
     }
     return listOfNotNull(factory.on(ambiguitySource, name, session))
+}
+
+/**
+ * 多候选调用应报告所有候选共同失败的实参，而不是任一候选内部最先检查到的实参。
+ *
+ * 候选的参数类型不同会让各自首个 mismatch 不同；按原始实参顺序求 mismatch argument
+ * 身份交集后，得到的才是 overload 集合无法规约的调用级根因。
+ */
+private fun ConeAmbiguityError.sharedOverloadArgumentTypeMismatchDiagnostic(
+    session: CfirSession,
+): CjDiagnostic? {
+    val callCandidates = candidatesWithErrors.keys.filterIsInstance<AbstractCallCandidate<*>>()
+    if (callCandidates.isEmpty() || callCandidates.size != candidatesWithErrors.size) return null
+    val originalArguments = callCandidates.first().callInfo.arguments
+    val sharedArgument = originalArguments.firstOrNull { argument ->
+        callCandidates.all { candidate ->
+            candidate.diagnostics.any { diagnostic ->
+                diagnostic is ArgumentTypeMismatch && diagnostic.argument === argument
+            }
+        }
+    } ?: return null
+    val candidateMismatches = callCandidates.map { candidate ->
+        val mismatch = candidate.diagnostics
+            .filterIsInstance<ArgumentTypeMismatch>()
+            .first { it.argument === sharedArgument }
+        candidate to mismatch
+    }
+    val substitutedExpectedTypes = candidateMismatches.map { (candidate, mismatch) ->
+        mismatch.expectedType.substituteTypeVariableTypes(candidate, session)
+    }
+    val expectedType = substitutedExpectedTypes.first()
+    if (substitutedExpectedTypes.drop(1).any { otherExpectedType ->
+            !AbstractTypeChecker.equalTypes(session.typeContext, expectedType, otherExpectedType)
+        }
+    ) {
+        return null
+    }
+    val (representativeCandidate, mismatch) = candidateMismatches.first()
+    val diagnosticSource = sharedArgument.source ?: return null
+    val actualType = mismatch.actualType.substituteTypeVariableTypes(representativeCandidate, session)
+    if (expectedType.containsErrorType() || actualType.containsErrorType()) return null
+
+    specificTypeMismatchDiagnostic(
+        source = diagnosticSource,
+        expectedType = expectedType,
+        actualType = actualType,
+        expression = sharedArgument,
+        session = session,
+    )?.let { return it }
+    return CfirErrors.TYPE_MISMATCH.on(
+        diagnosticSource,
+        expectedType,
+        actualType,
+        mismatch.isMismatchDueToNullability,
+        session,
+    )
 }
 
 /**
@@ -2233,8 +2295,14 @@ private fun ConeDiagnostic.mapOtherDiagnostic(
         )
 
         is ConeUnableToInferGenericFuncError -> CfirErrors.UNABLE_TO_INFER_GENERIC_FUNC.on(
-            source ?: diagnosticSource, session,
+            diagnosticSource, session,
         )
+
+        is ConeGenericFunctionReferenceWithoutTypeArgumentsError ->
+            CfirErrors.UNABLE_TO_INFER_GENERIC_FUNC.on(
+                source ?: diagnosticSource,
+                session,
+            )
 
         is ConeUnableToInferExpressionTypeError -> CfirErrors.UNABLE_TO_INFER_EXPR.on(
             diagnosticSource, session,

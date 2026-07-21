@@ -4,6 +4,7 @@ import org.cangnova.cangjie.cfir.calls.qualifierScopeOrNull
 import org.cangnova.cangjie.cfir.diagnostic.IllegalAccessNonStaticMember
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCallOrigin
 import org.cangnova.cangjie.cfir.resolve.providers.findExtendDeclarationSubstitution
+import org.cangnova.cangjie.cfir.resolve.providers.semanticExtendedType
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CheckerSink
@@ -67,7 +68,7 @@ object CfirCheckExtensionReceiver : ResolutionStage() {
                 ?.substitutedReceiverType
                 ?.let { return it }
         }
-        return ownerExtend.extendedTypeRef.coneTypeOrNull
+        return ownerExtend.semanticExtendedType(context.session)
     }
 
     /**

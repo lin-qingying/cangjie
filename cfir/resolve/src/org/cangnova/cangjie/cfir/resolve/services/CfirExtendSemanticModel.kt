@@ -28,8 +28,14 @@ data class CfirExtendSemanticModel(
     val declarationIndexInFile: Int,
     /** 被扩展目标的规范化 key。 */
     val targetKey: CfirExtendTargetKey?,
-    /** 被扩展目标 classId。 */
+    /** 被扩展目标完整实例化模式的稳定语义 key。 */
+    val targetSemanticKey: String?,
+    /** 源码中声明的目标 key；typealias 目标保留 alias 声明身份。 */
+    val declaredTargetKey: CfirExtendTargetKey?,
+    /** 被扩展真实目标的 classId。 */
     val targetClassId: ClassId?,
+    /** 源码中声明的目标 classId；typealias 目标为 alias 自身 classId。 */
+    val declaredTargetClassId: ClassId?,
     /** 被扩展目标 class kind。 */
     val targetClassKind: CfirClassKind?,
     /** extend 继承接口的完整语义列表。 */

@@ -92,6 +92,11 @@ object CfirFunctionBodyTypeMismatchChecker : CfirBasicExpressionChecker() {
 
         if (!isSubtypeForTypeMismatch(context.session, context.session.typeContext, actualType, expectedType)) {
             val diagnosticFactory = when {
+                // 官方 ChkBlock 会把目标返回类型下推到真实尾表达式，由该表达式的 Check
+                // 在自身 source 上报告 sema_mismatched_types；因此调用、引用、while 等普通
+                // 隐式尾表达式都属于 TYPE_MISMATCH。只有空 block / 声明结尾没有可检查的
+                // 尾表达式，才由 CheckFuncBody 的返回类型兜底诊断负责。
+                tailExpression != null -> CfirErrors.TYPE_MISMATCH
                 containingFunction is CfirAnonymousFunction && containingFunction.isLambda -> CfirErrors.TYPE_MISMATCH
                 containingFunction is CfirPropertyAccessor && containingFunction.isGetter -> CfirErrors.TYPE_MISMATCH
                 else -> diagnosticFactoryForReturnTypeMismatch(context.session, expectedType)

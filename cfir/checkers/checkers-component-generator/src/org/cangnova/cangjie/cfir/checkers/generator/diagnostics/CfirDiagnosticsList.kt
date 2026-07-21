@@ -184,7 +184,7 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
 
         // 扩展泛型使用错误：声明了泛型参数但未参与扩展语义
         val EXTEND_GENERIC_USAGE by error<CjTypeReference> {
-            parameter<Name>("typeParameterName")
+            parameter<String>("typeParameterNames")
         }
 
         // 扩展特化冲突：同一目标上同一接口出现互相冲突的特化

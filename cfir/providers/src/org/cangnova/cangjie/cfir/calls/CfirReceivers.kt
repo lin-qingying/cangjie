@@ -727,19 +727,6 @@ fun CfirExpression.qualifierScopeOrNull(
 private fun CfirTypeAliasSymbol.expandedClassLikeSymbol(session: CfirSession): CfirClassLikeSymbol<*>? {
     if (!isBound) return null
     val expandedType = (cfir as? CfirTypeAlias)?.expandedTypeRef?.coneTypeOrNull ?: return null
-    val classId = when (expandedType) {
-        is ConeClassLikeType -> expandedType.classId
-        is ConeStructType -> expandedType.classId
-        is ConeEnumType -> expandedType.classId
-        is ConeTypeAliasType -> expandedType.expandedType?.let { nested ->
-            when (nested) {
-                is ConeClassLikeType -> nested.classId
-                is ConeStructType -> nested.classId
-                is ConeEnumType -> nested.classId
-                else -> expandedType.classId
-            }
-        } ?: expandedType.classId
-        else -> return null
-    }
+    val classId = expandedType.expandedClassIdOrPrimitiveClassId ?: return null
     return session.symbolProvider.getClassLikeSymbolByClassId(classId)
 }

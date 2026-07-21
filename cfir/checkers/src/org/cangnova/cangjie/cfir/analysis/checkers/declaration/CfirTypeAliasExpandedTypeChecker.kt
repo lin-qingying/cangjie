@@ -8,8 +8,10 @@ import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedTypeQualifierError
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
+import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.CfirUserTypeRef
+import org.cangnova.cangjie.cfir.types.containsErrorType
 
 /**
  * 检查 typealias 展开类型本身是否合法。
@@ -32,10 +34,14 @@ object CfirTypeAliasExpandedTypeChecker : CfirTypeAliasChecker() {
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirTypeAlias) {
-        val expandedTypeRef = declaration.expandedTypeRef as? CfirErrorTypeRef ?: return
+        val expandedTypeRef = declaration.expandedTypeRef as? CfirResolvedTypeRef ?: return
 
-        if (expandedTypeRef.diagnostic is ConeUnresolvedTypeQualifierError) return
-        if (expandedTypeRef.diagnostic.reason.startsWith(RECURSIVE_TYPEALIAS_PREFIX)) return
+        if (expandedTypeRef is CfirErrorTypeRef) {
+            if (expandedTypeRef.diagnostic is ConeUnresolvedTypeQualifierError) return
+            if (expandedTypeRef.diagnostic.reason.startsWith(RECURSIVE_TYPEALIAS_PREFIX)) return
+        } else if (!expandedTypeRef.coneType.containsErrorType()) {
+            return
+        }
 
         val qualifier = expandedTypeRef.rootTypeQualifier() ?: return
         reporter.reportOn(
@@ -48,8 +54,8 @@ object CfirTypeAliasExpandedTypeChecker : CfirTypeAliasChecker() {
     /**
      * 从错误类型引用保留的委托类型中提取根用户类型 qualifier。
      */
-    private fun CfirErrorTypeRef.rootTypeQualifier(): CfirQualifierPart? {
-        return (delegatedTypeRef ?: partiallyResolvedTypeRef)
+    private fun CfirResolvedTypeRef.rootTypeQualifier(): CfirQualifierPart? {
+        return (delegatedTypeRef ?: (this as? CfirErrorTypeRef)?.partiallyResolvedTypeRef)
             ?.rootTypeQualifier()
     }
 
@@ -59,7 +65,7 @@ object CfirTypeAliasExpandedTypeChecker : CfirTypeAliasChecker() {
     private fun CfirTypeRef.rootTypeQualifier(): CfirQualifierPart? {
         return when (this) {
             is CfirUserTypeRef -> qualifier.lastOrNull()
-            is CfirErrorTypeRef -> rootTypeQualifier()
+            is CfirResolvedTypeRef -> rootTypeQualifier()
             else -> null
         }
     }

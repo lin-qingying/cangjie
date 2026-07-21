@@ -44,6 +44,7 @@ import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirNamedReferenceWithC
 import org.cangnova.cangjie.cfir.resolve.codeFragmentContext
 import org.cangnova.cangjie.cfir.resolve.inference.InferenceComponents
 import org.cangnova.cangjie.cfir.resolve.inference.model.ConeExpectedTypeConstraintPosition
+import org.cangnova.cangjie.cfir.resolve.providers.semanticExtendedType
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.resolve.transformers.ReturnTypeCalculator
 import org.cangnova.cangjie.cfir.scopes.CfirScope
@@ -700,9 +701,12 @@ class BodyResolveContext(
             towerDataContext
         }
 
+        val semanticExtendedType = checkNotNull(extend.semanticExtendedType(holder.session)) {
+            "Extend target type must be resolved before body resolution"
+        }
         val extensionReceiver = ImplicitExtensionReceiverValue(
             extend.symbol,
-            extend.extendedTypeRef.coneType,
+            semanticExtendedType,
             holder.session,
             holder.scopeSession,
         )

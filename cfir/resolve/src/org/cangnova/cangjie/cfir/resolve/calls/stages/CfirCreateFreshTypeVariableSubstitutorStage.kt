@@ -33,6 +33,7 @@ import org.cangnova.cangjie.cfir.resolve.SupertypeSupplier
 import org.cangnova.cangjie.cfir.resolve.createParametersSubstitutor
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
+import org.cangnova.cangjie.cfir.resolve.calls.containingAccessibleExtendOrNull
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CheckerSink
 import org.cangnova.cangjie.cfir.resolve.providers.createCallableOwnerUseSiteSubstitutionMap
@@ -89,8 +90,12 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
             collectEnumConstructorReceiverOwnerTypeParameters(context.session, candidate, declaration)
         val enumConstructorReceiverOwnerLookupTags =
             enumConstructorReceiverOwnerTypeParameters.mapTo(mutableSetOf()) { it.symbol.toLookupTag() }
+        val bareStaticExtendTypeParameters =
+            collectBareStaticQualifierExtendTypeParameters(context.session, candidate, declaration)
         val knownOwnerSubstitutions = buildMap {
-            if (!candidate.hasScopeOwnedInstanceMemberSubstitution(declaration)) {
+            if (!candidate.hasScopeOwnedInstanceMemberSubstitution(declaration) &&
+                bareStaticExtendTypeParameters.isEmpty()
+            ) {
                 putAll(
                     createCallableOwnerUseSiteSubstitutionMap(
                         session = context.session,
@@ -105,7 +110,12 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
         }
         val typeParameters = (
                 enumConstructorReceiverOwnerTypeParameters +
-                        collectCandidateTypeParametersForFreshVariables(context.session, candidate, declaration)
+                        collectCandidateTypeParametersForFreshVariables(
+                            context.session,
+                            candidate,
+                            declaration,
+                            bareStaticExtendTypeParameters,
+                        )
                 )
             .distinctBy { it.symbol }
             .filterNot { typeParameter -> typeParameter.symbol.toLookupTag() in knownOwnerSubstitutions }
@@ -572,13 +582,15 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
         session: CfirSession,
         candidate: Candidate,
         declaration: Any?,
+        precomputedBareStaticExtendTypeParameters: List<CfirTypeParameterRef>? = null,
     ): List<CfirTypeParameterRef> {
         val ownTypeParameters = (declaration as? CfirTypeParameterRefsOwner)?.typeParameters.orEmpty()
         if ((declaration as? CfirConstructor)?.typeAliasConstructorInfo != null) {
             return ownTypeParameters
         }
 
-        val extendTypeParameters = collectBareStaticQualifierExtendTypeParameters(session, candidate, declaration)
+        val extendTypeParameters = precomputedBareStaticExtendTypeParameters
+            ?: collectBareStaticQualifierExtendTypeParameters(session, candidate, declaration)
         if (extendTypeParameters.isNotEmpty()) {
             if (candidate.callInfo.typeArguments.isEmpty()) {
                 return extendTypeParameters + ownTypeParameters
@@ -640,21 +652,14 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
         if (!callable.status.isStatic) return emptyList()
 
         val callableSymbol = candidate.symbol as? CfirCallableSymbol<*> ?: return emptyList()
-        val ownerExtend = session.extendProvider.getContainingExtend(callableSymbol.unwrapSubstitutionOverrides())
-            ?.takeIf(session.extendProvider::isExtendAccessible)
-            ?: return emptyList()
+        val ownerExtend = callableSymbol.containingAccessibleExtendOrNull(session) ?: return emptyList()
 
         val receiver = candidate.bareStaticQualifierExpression() ?: return emptyList()
         if (receiver.typeArguments.isNotEmpty()) return emptyList()
 
         val ownerSymbol = receiver.resolvedQualifierClassifier(session) ?: return emptyList()
-        val ownerDeclaration = ownerSymbol.cfir
-        if (ownerDeclaration.typeParameters.isEmpty()) return emptyList()
-
-        val receiverType = receiver.coneTypeOrNull as? ConeLookupTagBasedType ?: return emptyList()
-        if (!receiverType.isBareOrDeclarationSelfTypeOf(ownerSymbol)) return emptyList()
-
-        val extendTargetType = ownerExtend.extendedTypeRef.coneTypeOrNull as? ConeLookupTagBasedType
+        val extendTargetType = resolveExtendTypeRef(session, ownerExtend, ownerExtend.extendedTypeRef)
+            ?.fullyExpandedType(session) as? ConeLookupTagBasedType
             ?: return emptyList()
         if (extendTargetType.typeArguments.isEmpty()) return emptyList()
         if (extendTargetType.classIdOrPrimitiveClassId != ownerSymbol.classId) return emptyList()
@@ -680,14 +685,10 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
             return emptyMap()
         }
         val callableSymbol = candidate.symbol as? CfirCallableSymbol<*> ?: return emptyMap()
-        val ownerExtend = session.extendProvider.getContainingExtend(callableSymbol.unwrapSubstitutionOverrides())
-            ?.takeIf(session.extendProvider::isExtendAccessible)
-            ?: return emptyMap()
+        val ownerExtend = callableSymbol.containingAccessibleExtendOrNull(session) ?: return emptyMap()
         val receiver = candidate.bareStaticQualifierExpression() ?: return emptyMap()
         if (receiver.typeArguments.isNotEmpty()) return emptyMap()
         val ownerSymbol = receiver.resolvedQualifierClassifier(session) ?: return emptyMap()
-        val receiverType = receiver.coneTypeOrNull as? ConeLookupTagBasedType ?: return emptyMap()
-        if (!receiverType.isBareOrDeclarationSelfTypeOf(ownerSymbol)) return emptyMap()
 
         val targetType = resolveExtendTypeRef(session, ownerExtend, ownerExtend.extendedTypeRef)
             ?.fullyExpandedType(session) as? ConeLookupTagBasedType

@@ -2464,10 +2464,10 @@ open class CfirExpressionsResolveTransformer(
      * 该入口服务于通用 visitor 分发；具体 `break`、`continue` 节点也会复用同一套类型与 CFG 处理。
      */
     override fun transformLoopJump(
-        jumpExpression: CfirLoopJump,
+        loopJump: CfirLoopJump,
         data: ResolutionMode,
     ): CfirExpression {
-        return transformLoopJumpLike(jumpExpression, data)
+        return transformLoopJumpLike(loopJump, data)
     }
 
     /** 解析 `break` 表达式，并将其类型固定为 `Nothing`。 */
@@ -2824,6 +2824,31 @@ open class CfirExpressionsResolveTransformer(
             resolvedArrayLiteral.withElementTypeDiagnostics(expectedElementType)
         } else {
             resolvedArrayLiteral
+        }
+
+        /*
+         * 数组元素内部已有解析根错误时，数组仍需保留可恢复的目标 Array/VArray 形状，
+         * 但其顶层类型必须继续是 error type。否则元素错误被下面的类型收集过滤后，外层
+         * constructor/call 会把数组当作正常实参并派生新的候选或类型诊断。
+         */
+        val nestedElementDiagnostic = arrayLiteralWithElementDiagnostics.elements
+            .firstNotNullOfOrNull { element -> element.rootErrorDiagnosticOrNull() }
+            ?.unwrapUnreportedDuplicate()
+        if (nestedElementDiagnostic != null) {
+            val delegatedArrayType = expectedElementType?.let { elementType ->
+                constructArrayLiteralType(
+                    expectedType,
+                    elementType,
+                    arrayLiteralWithElementDiagnostics.elements.size,
+                )
+            }
+            arrayLiteralWithElementDiagnostics.replaceConeTypeOrNull(
+                ConeErrorType(
+                    ConeUnreportedDuplicateDiagnostic(nestedElementDiagnostic),
+                    delegatedType = delegatedArrayType,
+                )
+            )
+            return arrayLiteralWithElementDiagnostics
         }
 
         val elementTypes = arrayLiteralWithElementDiagnostics.elements
@@ -3428,6 +3453,10 @@ open class CfirExpressionsResolveTransformer(
         })
         return result
     }
+
+    /** 展开错误恢复传播过程中叠加的“不重复上报”包装。 */
+    private tailrec fun ConeDiagnostic.unwrapUnreportedDuplicate(): ConeDiagnostic =
+        if (this is ConeUnreportedDuplicateDiagnostic) original.unwrapUnreportedDuplicate() else this
 
     /**
      * 对齐官方 `ChkCoalescingExpr`：`left: Option<T>` 时，`left ?? right`
