@@ -302,6 +302,17 @@ class CfirCallCompleter(
         val expectedType = resolutionMode.expectedType.fullyExpandedType()
         if (!candidate.shouldUseExpectedTypeForCompletion(initialType, expectedType)) return
         if (
+            resolutionMode.lastStatementInBlock &&
+            candidate.system.isProperType(initialType)
+        ) {
+            // 声明体尾表达式的确定返回类型由 body 类型检查与声明返回类型比较，不能再反向写入
+            // 已经合法解析的调用候选。否则 `print(value): Unit` 会因外层 `main(): Int64`
+            // 注入矛盾约束并退化成 NEW_INFERENCE_ERROR，而不是在完整调用上报告 TYPE_MISMATCH。
+            // 返回类型含未固定变量（例如 `make<T>(): T`）时仍使用 expected type 完成推断；
+            // 数组、enum 等依赖目标类型的构造调用同样保留原有推断路径。
+            return
+        }
+        if (
             candidate.hasTypeAliasConstructorExpansionUpperBoundViolation() ||
             candidate.hasTypeAliasConstructorUpperBoundMismatchBeforeExpectedType()
         ) {
@@ -607,7 +618,8 @@ class CfirCallCompleter(
         expectedType: ConeCangJieType,
         position: ConeArgumentConstraintPosition,
     ) {
-        val currentSubstitutor = system.currentStorage()
+        val currentStorage = system.currentStorage()
+        val currentSubstitutor = currentStorage
             .buildCurrentSubstitutor(session.typeContext, emptyMap())
             .asCone()
         val substitutedArgumentType = currentSubstitutor.substituteOrNull(argumentType) ?: argumentType
@@ -618,14 +630,41 @@ class CfirCallCompleter(
             return
         }
         if (actualClassifier.typeArguments.size != expectedClassifier.typeArguments.size) return
+        val ownedNotFixedConstructors = currentStorage.notFixedTypeVariables.keys
 
         for ((actualArgument, expectedArgument) in actualClassifier.typeArguments.zip(expectedClassifier.typeArguments)) {
             val actualArgumentType = actualArgument.type
             val expectedArgumentType = expectedArgument.type
             if (!containsSystemNotFixedVariable(expectedArgumentType)) continue
+            /*
+             * 同构分解只能约束当前 candidate storage 拥有的 fresh constructors。
+             * 嵌套调用/subcandidate 的变量会随 atom subsystem 合并或最终 substitutor 物化；
+             * 在此之前把 foreign constructor 送入当前 ConstraintInjector 会破坏系统所有权不变量。
+             */
+            if (actualArgumentType.containsForeignInferenceVariable(ownedNotFixedConstructors) ||
+                expectedArgumentType.containsForeignInferenceVariable(ownedNotFixedConstructors)
+            ) {
+                continue
+            }
             system.addEqualityConstraintIfCompatible(actualArgumentType, expectedArgumentType, position)
             addSameClassifierTypeArgumentConstraints(actualArgumentType, expectedArgumentType, position)
         }
+    }
+
+    /** 判断类型树是否含不属于当前候选 storage 的 inference variable。 */
+    private fun ConeCangJieType.containsForeignInferenceVariable(
+        ownedNotFixedConstructors: Set<TypeConstructorMarker>,
+    ): Boolean = when (this) {
+        is ConeTypeVariableType -> typeConstructor !in ownedNotFixedConstructors
+        is ConeLookupTagBasedType -> typeArguments.any { it.type.containsForeignInferenceVariable(ownedNotFixedConstructors) }
+        is ConeFunctionType -> parameterTypes.any { it.containsForeignInferenceVariable(ownedNotFixedConstructors) } ||
+                returnType.containsForeignInferenceVariable(ownedNotFixedConstructors)
+        is ConeTupleType -> elementTypes.any { it.containsForeignInferenceVariable(ownedNotFixedConstructors) }
+        is ConeVArrayType -> elementType.containsForeignInferenceVariable(ownedNotFixedConstructors)
+        is ConePointerType -> pointeeType.containsForeignInferenceVariable(ownedNotFixedConstructors)
+        is ConeTypeAliasType -> typeArguments.any { it.type.containsForeignInferenceVariable(ownedNotFixedConstructors) } ||
+                expandedType?.containsForeignInferenceVariable(ownedNotFixedConstructors) == true
+        else -> false
     }
 
     /** 判断类型树是否含当前候选的 fresh type variable。 */

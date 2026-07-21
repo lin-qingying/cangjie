@@ -8,7 +8,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
 import org.cangnova.cangjie.cfir.types.classId
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
-import org.cangnova.cangjie.cfir.types.declaredExtendTargetKey
+import org.cangnova.cangjie.cfir.types.expandedExtendTargetKey
 import org.cangnova.cangjie.cfir.types.extendLookupKinds
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
@@ -72,7 +72,7 @@ class CfirDeserializedExtendProvider(
                 for (extend in extends) {
                     byDeclarationPackage[extend] = packageFqName
                     val targetKey =
-                        extend.extendedTypeRef.coneTypeOrNull?.declaredExtendTargetKey ?: continue
+                        extend.extendedTypeRef.coneTypeOrNull?.expandedExtendTargetKey ?: continue
                     byTargetKey.getOrPut(targetKey) { mutableListOf() }.add(extend)
                     for (declaration in extend.declarations) {
                         val callableDeclaration = declaration as? CfirCallableDeclaration ?: continue

@@ -18,6 +18,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameterRefsOwner
 import org.cangnova.cangjie.cfir.declarations.callableNameOrNull
 import org.cangnova.cangjie.cfir.resolve.CfirTypeResolver
+import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.CfirSessionComponent
 import org.cangnova.cangjie.cfir.session.services.CfirExtendInheritedInterfaceSemantic
 import org.cangnova.cangjie.cfir.session.services.CfirExtendTargetKey
@@ -37,7 +38,7 @@ import org.cangnova.cangjie.cfir.types.arrayElementType
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.declaredExtendTargetKey
-import org.cangnova.cangjie.cfir.types.expandedClassIdOrPrimitiveClassId
+import org.cangnova.cangjie.cfir.types.expandedExtendTargetKey
 import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.name.ClassId
@@ -51,7 +52,10 @@ import org.cangnova.cangjie.type.model.TypeConstructorMarker
  * 该服务把文件中的 `CfirExtend` 声明归一化为稳定的语义模型，并缓存目标类型、包、
  * 来源、接口闭包、默认成员和成员 owner 等索引，供 checker、scope、可见性和规则查询服务共享。
  */
-class CfirExtendIndexStore : CfirSessionComponent {
+class CfirExtendIndexStore(
+    /** 生产 session，用于完整 typealias 递归规范化；纯索引单元测试可不提供。 */
+    private val session: CfirSession? = null,
+) : CfirSessionComponent {
     /** extend 索引版本号；每次 rebuild 完成后递增，供依赖方失效本地缓存。 */
     @Volatile
     var modificationCount: Long = 0
@@ -61,6 +65,8 @@ class CfirExtendIndexStore : CfirSessionComponent {
     private var models: List<CfirExtendSemanticModel> = emptyList()
     /** 按被扩展目标键分组的 extend 模型。 */
     private var modelsByTargetKey: Map<CfirExtendTargetKey, List<CfirExtendSemanticModel>> = emptyMap()
+    /** 按完整实例化目标模式分组的 extend 模型。 */
+    private var modelsByTargetSemanticKey: Map<String, List<CfirExtendSemanticModel>> = emptyMap()
     /** 按声明所在包分组的 extend 模型。 */
     private var modelsByPackage: Map<FqName, List<CfirExtendSemanticModel>> = emptyMap()
     /** 按语义来源分组的 extend 模型。 */
@@ -96,6 +102,7 @@ class CfirExtendIndexStore : CfirSessionComponent {
         models = next
         modelByDeclaration = next.associateBy { it.declaration }
         modelsByTargetKey = next.filter { it.targetKey != null }.groupBy { it.targetKey!! }
+        modelsByTargetSemanticKey = next.filter { it.targetSemanticKey != null }.groupBy { it.targetSemanticKey!! }
         modelsByPackage = next.groupBy { it.packageFqName }
         modelsByOrigin = next.groupBy { it.origin }
         containingExtendByCallableSymbol = buildContainingExtendIndex(next)
@@ -120,6 +127,12 @@ class CfirExtendIndexStore : CfirSessionComponent {
      */
     fun modelsForTarget(targetKey: CfirExtendTargetKey): List<CfirExtendSemanticModel> =
         modelsByTargetKey[targetKey].orEmpty()
+
+    /**
+     * 查询完整实例化目标模式相同的所有 extend 模型。
+     */
+    fun modelsForSemanticTarget(targetSemanticKey: String): List<CfirExtendSemanticModel> =
+        modelsByTargetSemanticKey[targetSemanticKey].orEmpty()
 
     /**
      * 查询指定 class-like 目标上的所有 extend 模型。
@@ -318,8 +331,9 @@ class CfirExtendIndexStore : CfirSessionComponent {
         declarationIndexInFile: Int,
         resolver: CfirTypeResolver,
     ): CfirExtendSemanticModel {
-        val semanticNormalizer = CfirExtendTypeSemanticNormalizer(this)
-        val targetClass = resolver.resolveClass(extendedTypeRef)
+        val semanticNormalizer = CfirExtendTypeSemanticNormalizer(this, session, resolver)
+        val targetClassId = extendedTypeRef.toClassIdOrNull(resolver)
+        val targetClass = targetClassId?.let(resolver::resolveClass)
         val inheritedInterfaces = superTypeRefs.map { superTypeRef ->
             CfirExtendInheritedInterfaceSemantic(
                 classId = superTypeRef.toDirectInterfaceClassIdOrNull(resolver),
@@ -335,8 +349,11 @@ class CfirExtendIndexStore : CfirSessionComponent {
             packageFqName = file.packageDirective.packageFqName,
             fileName = file.name,
             declarationIndexInFile = declarationIndexInFile,
-            targetKey = extendedTypeRef.toExtendTargetKeyOrNull(),
-            targetClassId = extendedTypeRef.toClassIdOrNull(resolver),
+            targetKey = extendedTypeRef.toExtendTargetKeyOrNull(resolver),
+            targetSemanticKey = semanticNormalizer.semanticKeyOrNull(extendedTypeRef),
+            declaredTargetKey = extendedTypeRef.toDeclaredExtendTargetKeyOrNull(),
+            targetClassId = targetClassId,
+            declaredTargetClassId = extendedTypeRef.toDeclaredClassIdOrNull(),
             targetClassKind = targetClass?.classKindOrNull(),
             inheritedInterfaces = inheritedInterfaces,
             inheritedInterfaceClassIds = inheritedInterfaceClassIds,
@@ -355,6 +372,7 @@ class CfirExtendIndexStore : CfirSessionComponent {
         { it.fileName },
         { it.declarationIndexInFile },
         { it.targetKey?.toString() ?: "" },
+        { it.targetSemanticKey ?: "" },
         { it.inheritedInterfaceSemanticKeys.joinToString(separator = "|") },
     )
 
@@ -453,7 +471,7 @@ class CfirExtendIndexStore : CfirSessionComponent {
         resolver: CfirTypeResolver,
     ): List<CfirExtendInheritedInterfaceSemantic> {
         val declaration = this ?: return emptyList()
-        val targetType = targetTypeRef.coneTypeOrNull ?: return emptyList()
+        val targetType = targetTypeRef.coneTypeOrNull?.semanticExpandedType(resolver) ?: return emptyList()
         val substitutor = declaration.createDeclarationTypeSubstitutor(targetType)
         val result = linkedMapOf<String, CfirExtendInheritedInterfaceSemantic>()
         val visiting = linkedSetOf<String>()
@@ -598,10 +616,18 @@ class CfirExtendIndexStore : CfirSessionComponent {
         return result
     }
 
-    /**
-     * 从已解析类型引用中抽取 class id，优先保留 typealias 的别名 class id。
-     */
+    /** 从已解析类型引用中抽取 alias 展开后的真实 class id。 */
     private fun CfirTypeRef.toClassIdOrNull(resolver: CfirTypeResolver): ClassId? {
+        val coneType = (this as? CfirResolvedTypeRef)?.coneType ?: return null
+        return coneType.semanticExpandedType(resolver)?.classIdOrPrimitiveClassId
+    }
+
+    /**
+     * 从已解析类型引用中抽取源码声明的 class id。
+     *
+     * 该信息只服务引用/可见性元数据；所有规则索引均使用 [toClassIdOrNull] 的真实目标。
+     */
+    private fun CfirTypeRef.toDeclaredClassIdOrNull(): ClassId? {
         val coneType = (this as? CfirResolvedTypeRef)?.coneType ?: return null
         val abbreviatedTypeAlias = coneType.abbreviatedType as? ConeTypeAliasType
         if (abbreviatedTypeAlias != null) return abbreviatedTypeAlias.classId
@@ -671,26 +697,18 @@ class CfirExtendIndexStore : CfirSessionComponent {
         return isValid
     }
 
-    /**
-     * 从已解析类型引用中抽取声明层 extend 目标键。
-     */
-    private fun CfirTypeRef.toExtendTargetKeyOrNull(): CfirExtendTargetKey? {
+    /** 从已解析类型引用中抽取 alias 展开后的 extend 语义目标键。 */
+    private fun CfirTypeRef.toExtendTargetKeyOrNull(resolver: CfirTypeResolver): CfirExtendTargetKey? {
+        val coneType = (this as? CfirResolvedTypeRef)?.coneType ?: return null
+        return coneType.semanticExpandedType(resolver)?.expandedExtendTargetKey
+    }
+
+    /** 从已解析类型引用中抽取源码声明目标键。 */
+    private fun CfirTypeRef.toDeclaredExtendTargetKeyOrNull(): CfirExtendTargetKey? {
         val coneType = (this as? CfirResolvedTypeRef)?.coneType ?: return null
         return coneType.declaredExtendTargetKey
     }
 
-    /**
-     * 展开 typealias 后抽取 class-like 或 primitive class id。
-     */
-    private fun ConeCangJieType.expandedClassIdOrPrimitiveClassId(resolver: CfirTypeResolver): ClassId? {
-        if (this !is ConeTypeAliasType) return classIdOrPrimitiveClassId
-
-        expandedType?.expandedClassIdOrPrimitiveClassId(resolver)?.let { return it }
-        val typeAlias = resolver.resolveClass(classId) as? CfirTypeAlias
-        val expandedConeType = (typeAlias?.expandedTypeRef as? CfirResolvedTypeRef)?.coneType
-        return expandedConeType?.expandedClassIdOrPrimitiveClassId(resolver)
-            ?: expandedClassIdOrPrimitiveClassId
-    }
 }
 
 /**

@@ -116,6 +116,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkExtendTargetMemberCompatibility(extend: CfirExtend) {
+        val receiverType = extend.extendedTypeRef.coneTypeOrNull ?: return
         val targetScope = extend.extendedTypeRef.resolvedUseSiteMemberScope(excludingExtend = extend) ?: return
         val targetClassId = (extend.extendedTypeRef as? CfirResolvedTypeRef)
             ?.coneType
@@ -134,6 +135,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         var hasUnimplementedMember = false
 
         for (superTypeRef in extend.superTypeRefs) {
+            if (superTypeRef.coneTypeOrNull?.containsErrorType() == true) continue
             val superDecl = superTypeRef.resolvedClassLikeDeclaration() ?: continue
             for (superInfo in superTypeRef.collectInterfaceRequirementMemberInfos(superDecl)) {
                 val builtinOperatorImplementation = extend.builtinPrimitiveOperatorImplementation(superInfo, context)
@@ -155,7 +157,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                         }
                     }
                     if (targetClassId != null) {
-                        for (info in collectDirectExtendMemberInfos(targetClassId, superInfo.name, context, excludingExtend = extend)) {
+                        for (info in collectDirectExtendMemberInfos(receiverType, superInfo.name, context, excludingExtend = extend)) {
                             add(ExtendImplementationCandidate(info, extend.extendedTypeRef.source, null))
                         }
                     }
@@ -267,9 +269,9 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
 
         if (hasUnimplementedMember) {
             reporter.reportOn(
-                source = extend.source ?: extend.extendedTypeRef.source,
-                factory = CfirErrors.ABSTRACT_MEMBER_NOT_IMPLEMENTED,
-                a = extend.targetDiagnosticName(),
+                source = extend.source?.firstCharacterDiagnosticSource() ?: extend.extendedTypeRef.source,
+                factory = CfirErrors.NEED_MEMBER_IMPLEMENTATION,
+                a = extend.targetDisplayName(),
             )
         }
     }
@@ -445,7 +447,8 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         }
         if (found) return true
         if (targetClassId != null) {
-            for (info in collectDirectExtendMemberInfos(targetClassId, superInfo.name, context, excludingExtend = extend)) {
+            val receiverType = extend.extendedTypeRef.coneTypeOrNull ?: return false
+            for (info in collectDirectExtendMemberInfos(receiverType, superInfo.name, context, excludingExtend = extend)) {
                 if (info.isConcreteImplementationOf(superInfo, context)) return true
             }
         }
@@ -916,7 +919,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         val reportedExtendOverrides = mutableSetOf<String>()
         for (inheritedSource in subject.inheritedSources) {
             val superType = (inheritedSource.typeRef as? CfirResolvedTypeRef)?.coneType ?: continue
-            if (superType is ConeErrorType) continue
+            if (superType.containsErrorType()) continue
             val superClassId = (superType as? ConeClassLikeType)?.classId ?: continue
             val superSymbol = context.session.symbolProvider.getClassLikeSymbolByClassId(superClassId) ?: continue
             val superDecl = superSymbol.cfir as? CfirClassLikeDeclaration ?: continue
@@ -929,7 +932,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                         symbol.inheritedMemberInfoOrNull(context)?.let(::add)
                     }
                     if (inheritedSource.includeDirectExtends) {
-                        addAll(collectDirectExtendMemberInfos(superClassId, name, context))
+                        addAll(collectDirectExtendMemberInfos(superType, name, context))
                         addAll(collectEffectiveExtendInterfaceMemberInfos(superType, name, context))
                     }
                 }
@@ -1372,16 +1375,18 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
      * 本项目 declaration-site scope 不承担这件事，因此继承诊断在这里显式读取 extendProvider。
      */
     private fun collectDirectExtendMemberInfos(
-        superClassId: ClassId,
+        receiverType: ConeCangJieType,
         name: Name,
         context: CheckerContext,
         excludingExtend: CfirExtend? = null,
     ): List<InheritedMemberInfo> {
         val provider = context.session.extendProvider
+        val targetKey = receiverType.expandedExtendTargetKey ?: return emptyList()
         return buildList {
-            for (extend in provider.getExtendsForClass(superClassId)) {
+            for (extend in provider.getExtendsForTarget(targetKey)) {
                 if (extend === excludingExtend) continue
                 if (!provider.isExtendAccessible(extend)) continue
+                if (findExtendDeclarationSubstitution(context.session, extend, receiverType) == null) continue
                 for (member in extend.declarations) {
                     when (member) {
                         is CfirNamedFunction -> {

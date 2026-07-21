@@ -807,7 +807,7 @@ class CfirCallCompletionResultsWriterTransformer(
         for (index in elements.indices) {
             val elementData = expectedElementTypes
                 ?.getOrNull(index)
-                ?.toExpectedType(data?.argumentReplacements)
+                ?.toExpectedType(data.argumentReplacements)
             elements[index] = elements[index].transformSingle(this, elementData) as CfirExpression
         }
         tupleLiteral.replaceConeTypeOrNull(

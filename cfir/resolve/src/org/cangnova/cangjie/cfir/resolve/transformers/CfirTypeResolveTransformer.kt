@@ -36,6 +36,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.resolve.CfirTypeResolutionConfiguration
 import org.cangnova.cangjie.cfir.resolve.ThisTypeResolutionContext
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
+import org.cangnova.cangjie.cfir.resolve.providers.semanticExtendedType
 import org.cangnova.cangjie.cfir.toCfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.resolvedTypeFromPrototype
 import org.cangnova.cangjie.cfir.scopes.CfirScope
@@ -61,19 +62,25 @@ import org.cangnova.cangjie.type.model.TypeConstructorMarker
 class CfirTypeResolveProcessor(
     session: CfirSession,
     scopeSession: ScopeSession,
-) : CfirTransformerBasedResolveProcessor(session, scopeSession, CfirResolvePhase.TYPES) {
+) : CfirGlobalResolveProcessor(session, scopeSession, CfirResolvePhase.TYPES) {
     /** TYPES 阶段实际使用的树转换器实例。 */
     private val typeResolveTransformer = CfirTypeResolveTransformer(session, scopeSession)
 
-    /** 通用 resolve processor 暴露的 transformer 视图。 */
-    @Suppress("UNCHECKED_CAST")
-    override val transformer get() = typeResolveTransformer as org.cangnova.cangjie.cfir.visitors.CfirTransformer<Nothing?>
-
     /**
-     * 推进单个文件的 TYPES 阶段。
+     * 先在整个文件集合上解析所有声明类型参数上界，再执行完整 TYPES 遍历。
+     *
+     * extend 的目标声明可能位于当前声明之后或另一个尚未遍历的文件中；如果在处理
+     * `extend<R> A<R>` 时再触发目标声明的 TYPES 懒解析，会形成 TYPES -> TYPES 重入。
+     * 全局预处理把声明侧 assumptions 建立在同一阶段的稳定快照上，同时保持各文件自己的
+     * import scope，不依赖源码顺序。
      */
-    override fun processFile(file: CfirFile) {
-        typeResolveTransformer.transformFile(file, CfirTypeResolutionConfiguration.EMPTY)
+    override fun process(files: Collection<CfirFile>) {
+        for (file in files) {
+            typeResolveTransformer.preResolveTypeParameterBounds(file)
+        }
+        for (file in files) {
+            typeResolveTransformer.transformFile(file, CfirTypeResolutionConfiguration.EMPTY)
+        }
     }
 }
 
@@ -93,6 +100,46 @@ class CfirTypeResolveTransformer(
     private var currentFile: CfirFile? = null
     /** 当前 low-level 指定解析路径中的外围 class-like 栈。 */
     private val classDeclarationsStack: ArrayDeque<CfirClassLikeDeclaration> = ArrayDeque()
+
+    /**
+     * 在完整 TYPES 遍历前解析文件内所有声明的类型参数上界。
+     *
+     * 该预处理只触碰声明头的 type parameters，并递归保留外围声明的类型参数语境；
+     * 其它类型引用仍由正常 TYPES 遍历按既有顺序处理。
+     */
+    fun preResolveTypeParameterBounds(file: CfirFile) {
+        withFileScope(file) {
+            val configuration = buildConfiguration(file)
+            for (declaration in file.declarations) {
+                preResolveTypeParameterBounds(declaration, configuration)
+            }
+        }
+    }
+
+    /** 递归预解析声明及嵌套声明的类型参数上界。 */
+    private fun preResolveTypeParameterBounds(
+        declaration: CfirDeclaration,
+        data: CfirTypeResolutionConfiguration,
+    ) {
+        val owner = declaration as? CfirTypeParameterRefsOwner
+        val nestedConfiguration = if (owner != null) {
+            data
+                .withTopContainer(declaration)
+                .withAdditionalTypeParameters(owner.typeParameters.filterIsInstance<CfirTypeParameter>())
+                .also { configuration -> owner.transformTypeParameters(this, configuration) }
+        } else {
+            data
+        }
+
+        if (declaration is CfirTypeAlias) {
+            declaration.transformExpandedTypeRef(this, nestedConfiguration)
+        }
+
+        val nestedDeclarations = (declaration as? CfirClassLikeDeclaration)?.declarations.orEmpty()
+        for (nestedDeclaration in nestedDeclarations) {
+            preResolveTypeParameterBounds(nestedDeclaration, nestedConfiguration)
+        }
+    }
 
     // ---- 声明遍历 ----
 
@@ -273,7 +320,7 @@ class CfirTypeResolveTransformer(
      * 为 extend 声明创建禁用状态的 `This` 类型解析上下文。
      */
     private fun thisTypeContextForExtend(extend: CfirExtend): ThisTypeResolutionContext? {
-        val extendedType = extend.extendedTypeRef.coneTypeOrNull ?: return null
+        val extendedType = extend.semanticExtendedType(session) ?: return null
         return ThisTypeResolutionContext(extendedType, isAllowed = false)
     }
 
@@ -662,8 +709,8 @@ class CfirTypeResolveTransformer(
         for (typeParameter in declaration.typeParameters) {
             val key = typeParameter.symbol.toLookupTag()
             val bounds = destination.getOrPut(key) { linkedSetOf() }
-            for (bound in typeParameter.symbol.resolvedBounds) {
-                val boundType = bound.coneType
+            for (bound in typeParameter.symbol.cfir.bounds) {
+                val boundType = bound.declaredUpperBoundConeTypeOrNull() ?: continue
                 bounds += boundType
                 (boundType as? ConeLookupTagBasedType)?.toAssumptionTargetDeclaration()?.let {
                     collectAssumptionBounds(it, destination, visitedDeclarations)

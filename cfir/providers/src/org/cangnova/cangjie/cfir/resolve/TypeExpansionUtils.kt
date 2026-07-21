@@ -12,6 +12,7 @@ import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.types.AbbreviatedTypeAttribute
 import org.cangnova.cangjie.cfir.types.AbstractConeSubstitutor
+import org.cangnova.cangjie.cfir.types.abbreviatedType
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassifierType
 import org.cangnova.cangjie.cfir.types.ConeLookupTagBasedType
@@ -24,6 +25,7 @@ import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.cfir.types.withAbbreviation
 import org.cangnova.cangjie.cfir.types.withAttributes
+import org.cangnova.cangjie.cfir.types.withoutAbbreviation
 
 /**
  * 使用当前上下文 session 完全展开 typealias 顶层构造器，并保留 abbreviation 属性。
@@ -63,6 +65,49 @@ fun ConeCangJieType.fullyExpandedType(
     is ConeLookupTagBasedType -> fullyExpandedTypeNoCache(useSiteSession, expandedConeType)
     is ConeTypeAliasType -> fullyExpandedTypeNoCache(useSiteSession, expandedConeType)
     else -> this
+}
+
+/**
+ * 使用 alias 声明 RHS 与 abbreviation 实参完整展开类型树中的所有 typealias。
+ *
+ * 普通 [fullyExpandedType] 会优先读取 [ConeTypeAliasType.expandedType]。该字段在 use-site
+ * 解析期间可能已携带调用点类型参数，而 abbreviation 才保存源码写下的真实 alias 实参。
+ * extend 索引、适用性匹配和重复接口等声明级语义必须以 alias 声明自身 RHS 为模板，
+ * 再代入 abbreviation 实参，不能消费 use-site 展开缓存。
+ */
+fun ConeCangJieType.fullyExpandedTypeUsingAbbreviation(useSiteSession: CfirSession): ConeCangJieType {
+    val expandingAliases = linkedSetOf<org.cangnova.cangjie.name.ClassId>()
+    val substitutor = object : AbstractConeSubstitutor(useSiteSession.typeContext) {
+        override fun substituteType(type: ConeCangJieType): ConeCangJieType? {
+            val aliasType = type as? ConeTypeAliasType
+                ?: type.abbreviatedType as? ConeTypeAliasType
+                ?: return null
+            if (!expandingAliases.add(aliasType.classId)) return null
+
+            return try {
+                val aliasDeclaration = useSiteSession.symbolProvider
+                    .getClassLikeSymbolByClassId(aliasType.classId)
+                    ?.cfir as? CfirTypeAlias
+                val declaredExpandedType = aliasDeclaration?.expandedTypeRef?.coneTypeOrNull
+                    ?: aliasType.expandedType
+                    ?: return null
+                val appliedExpandedType = if (aliasDeclaration != null) {
+                    aliasDeclaration
+                        .createParametersSubstitutor(aliasType, useSiteSession)
+                        .substituteOrSelf(declaredExpandedType)
+                } else {
+                    declaredExpandedType
+                }
+                val expandedType = appliedExpandedType
+                    .fullyExpandedType(useSiteSession)
+                    .withoutAbbreviation()
+                substituteOrNull(expandedType) ?: expandedType
+            } finally {
+                expandingAliases.remove(aliasType.classId)
+            }
+        }
+    }
+    return substitutor.substituteOrSelf(this).withoutAbbreviation()
 }
 
 /**

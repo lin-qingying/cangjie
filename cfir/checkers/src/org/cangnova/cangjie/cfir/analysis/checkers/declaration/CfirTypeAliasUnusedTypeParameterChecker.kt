@@ -9,6 +9,7 @@ import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
+import org.cangnova.cangjie.cfir.types.containsErrorType
 import org.cangnova.cangjie.cfir.types.forEachType
 
 /**
@@ -27,6 +28,7 @@ object CfirTypeAliasUnusedTypeParameterChecker : CfirTypeAliasChecker() {
 
         val expandedTypeRef = declaration.expandedTypeRef as? CfirResolvedTypeRef ?: return
         if (expandedTypeRef is CfirErrorTypeRef && expandedTypeRef.diagnostic is ConeUnresolvedTypeQualifierError) return
+        if (expandedTypeRef.coneType.containsErrorType()) return
 
         val expandedType = expandedTypeRef.typeForUnusedParameterCheck() ?: return
 

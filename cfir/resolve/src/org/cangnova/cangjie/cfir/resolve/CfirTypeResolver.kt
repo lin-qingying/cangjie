@@ -671,21 +671,18 @@ class CfirTypeResolverImpl(
             )
             is CfirTypeAlias -> {
                 if (expandTypeAliases && !aliasedTypeExpansionGloballyDisabled) {
+                    /*
+                     * typealias RHS 属于 alias 声明语境，绝不能用当前 use-site 的类型参数配置解析。
+                     * TYPES 全局前置步骤会先解析所有 alias RHS；若 low-level 场景尚未推进该声明，
+                     * 保留名义 alias 类型并把展开延后到声明 owner 自己的解析阶段。
+                     */
                     val expandedType = resolvedClass.expandedTypeRef.coneTypeOrNull
-                        ?: resolveType(
-                            resolvedClass.expandedTypeRef,
-                            configuration,
-                            areBareTypesAllowed = false,
-                            isOperandOfIsOperator = false,
-                            resolveDeprecations = true,
-                            supertypeSupplier = SupertypeSupplier.Default,
-                            expandTypeAliases = true,
-                        ).type
-                    ConeTypeAliasType(
+                    val aliasType = ConeTypeAliasType(
                         classId = classId,
                         expandedType = expandedType,
                         typeArguments = resolvedArguments,
-                    ).fullyExpandedType(session)
+                    )
+                    if (expandedType != null) aliasType.fullyExpandedType(session) else aliasType
                 } else {
                     ConeTypeAliasType(
                         classId = classId,

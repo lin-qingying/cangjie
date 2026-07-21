@@ -3,7 +3,6 @@ package org.cangnova.cangjie.cfir.analysis.checkers.expression
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
-import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
@@ -20,7 +19,6 @@ import org.cangnova.cangjie.cfir.expressions.CfirStatement
 import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
 import org.cangnova.cangjie.cfir.references.CfirResolvedErrorReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
-import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
 import java.util.IdentityHashMap
 
@@ -169,7 +167,7 @@ private class ClosureCaptureAnalyzer {
                 element.acceptChildren(this, null)
             }
 
-            override fun visitFunction(nestedFunction: CfirFunction) = Unit
+            override fun visitFunction(function: CfirFunction) = Unit
 
             override fun visitNamedFunction(namedFunction: CfirNamedFunction) = Unit
 

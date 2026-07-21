@@ -286,6 +286,8 @@ class Candidate(
     private var _variadicFixedPositionalArity: Int? = null
     /** 被标记为变参实参的 atom 到期望元素类型映射。 */
     private var _variadicArgumentExpectedTypes: LinkedHashMap<ConeResolutionAtom, ConeCangJieType>? = null
+    /** 变参映射形状允许在类型检查阶段按元素重试的实参。 */
+    private var _variadicEligibleArguments: Set<ConeResolutionAtom> = emptySet()
 
     /** 候选是否使用普通变参调用。 */
     val usesVariadicCall: Boolean
@@ -311,6 +313,7 @@ class Candidate(
     fun updateArgumentMapping(argumentMapping: LinkedHashMap<ConeResolutionAtom, CfirValueParameter>) {
         _argumentMapping = argumentMapping
         _variadicArgumentExpectedTypes?.keys?.retainAll(argumentMapping.keys)
+        _variadicEligibleArguments = _variadicEligibleArguments.intersect(argumentMapping.keys)
     }
 
     /**
@@ -333,7 +336,13 @@ class Candidate(
      * 判断 atom 是否可以作为变参实参。
      */
     fun canUseVariadicArgument(atom: ConeResolutionAtom): Boolean =
-        _variadicParameter != null && argumentMapping[atom] == _variadicParameter
+        _variadicParameter != null && atom in _variadicEligibleArguments
+
+    /** 提交 mapper 已确认可由变参形参承接的实参集合，不等同于实际采用变参语义。 */
+    fun initializeVariadicEligibleArguments(arguments: Collection<ConeResolutionAtom>) {
+        require(_variadicEligibleArguments.isEmpty()) { "Variadic eligible arguments already initialized" }
+        _variadicEligibleArguments = arguments.toSet()
+    }
 
     /**
      * 标记 atom 为变参实参，并返回元素期望类型。
@@ -345,6 +354,7 @@ class Candidate(
                 _variadicArgumentExpectedTypes = it
             }
         expectedTypes[atom] = elementType
+        activateCangjieVariadicCall()
         return elementType
     }
 
@@ -353,6 +363,7 @@ class Candidate(
      */
     fun markEmptyVariadicCall() {
         require(_variadicParameter != null) { "Variadic call info is not initialized" }
+        activateCangjieVariadicCall()
     }
 
     /**
@@ -417,6 +428,13 @@ class Candidate(
         _arguments = newArguments
         _argumentMapping = newArgumentMapping
         remapVariadicArgumentExpectedTypes(oldToNewArguments, remainingArguments)
+        val oldEligibleArguments = _variadicEligibleArguments
+        _variadicEligibleArguments = buildSet {
+            for ((oldArgument, newArgument) in oldToNewArguments) {
+                if (oldArgument in oldEligibleArguments) add(newArgument)
+            }
+            addAll(remainingArguments.filter { it in oldEligibleArguments })
+        }
     }
 
     /** 调用中使用默认参数的数量。 */
@@ -444,14 +462,16 @@ class Candidate(
     val usesCangjieVariadicCall: Boolean
         get() = _cangjieVariadicParameterForCall != null
 
-    /**
-     * 初始化当前调用实际采用的仓颉变参形参。
-     */
-    fun initializeCangjieVariadicParameterForCall(parameter: CfirValueParameter?) {
-        require(_cangjieVariadicParameterForCall == null) {
-            "Cangjie variadic parameter for call already initialized"
+    /** 在映射或类型检查确认采用元素收集语义后，激活实际变参调用。 */
+    private fun activateCangjieVariadicCall() {
+        val parameter = _variadicParameter ?: return
+        if (_cangjieVariadicParameterForCall == null) {
+            _cangjieVariadicParameterForCall = parameter
+        } else {
+            require(_cangjieVariadicParameterForCall == parameter) {
+                "Cangjie variadic call was activated with a different parameter"
+            }
         }
-        _cangjieVariadicParameterForCall = parameter
     }
 
     // ---------------------------------------- Type argument mapping ----------------------------------------

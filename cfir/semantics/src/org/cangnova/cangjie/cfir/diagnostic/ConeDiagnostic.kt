@@ -171,6 +171,8 @@ class ConeAmbiguityError(
     val isCallLike: Boolean = false,
     /** 被外层调用结构化歧义支配、不得重复上报的内层诊断。 */
     val dominatedNestedDiagnostics: Set<ConeDiagnostic> = emptySet(),
+    /** 所有候选是否都仅因结构化 error argument 失败。 */
+    val isErrorArgumentCascade: Boolean = false,
     /**
      * classifier 类型使用歧义对应的完整源码范围。
      *
@@ -986,6 +988,17 @@ data class ConeOptionalChainNonOptionalError(
 class ConeUnableToInferGenericFuncError : ConeDiagnostic {
     /** 面向普通诊断渲染的失败原因。 */
     override val reason: String get() = "unable to infer type arguments for generic function"
+}
+
+/**
+ * 独立泛型函数值引用缺少显式类型实参且没有目标函数类型。
+ *
+ * 该诊断与普通泛型函数调用的推断失败共享用户可见诊断名，但语义锚点固定为函数 selector，
+ * 使诊断映射无需从 PSI/LightTree 宿主形状反推当前错误属于函数值引用还是调用。
+ */
+class ConeGenericFunctionReferenceWithoutTypeArgumentsError : ConeDiagnostic {
+    /** 面向普通诊断渲染的失败原因。 */
+    override val reason: String get() = "generic function reference requires explicit type arguments"
 }
 
 /**

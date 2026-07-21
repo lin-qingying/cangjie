@@ -401,8 +401,8 @@ abstract class CfirAbstractBodyResolveTransformerDispatcher(
     }
 
     /** 将 interface body resolve 分发给声明 transformer。 */
-    override fun transformInterface(interfaceDeclaration: CfirInterface, data: ResolutionMode): CfirInterface {
-        return declarationsTransformer.transformInterface(interfaceDeclaration, data)
+    override fun transformInterface(`interface`: CfirInterface, data: ResolutionMode): CfirInterface {
+        return declarationsTransformer.transformInterface(`interface`, data)
     }
 
     /** 将 struct body resolve 分发给声明 transformer。 */

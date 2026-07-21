@@ -2,6 +2,7 @@ package org.cangnova.cangjie.cfir.resolve.calls
 
 import org.cangnova.cangjie.cfir.common.moduleData
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirFile
@@ -14,6 +15,7 @@ import org.cangnova.cangjie.cfir.resolve.calls.visibility.moduleVisibilityChecke
 import org.cangnova.cangjie.cfir.resolve.providers.canAccessPackageInternalDeclaration
 import org.cangnova.cangjie.cfir.resolve.providers.canAccessPackageProtectedDeclaration
 import org.cangnova.cangjie.cfir.resolve.providers.getContainingFile
+import org.cangnova.cangjie.cfir.scopes.impl.typeAliasConstructorInfo
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.extendProviderOrNull
@@ -39,20 +41,29 @@ fun isVisible(
     val session = candidate.callInfo.session
     val useSiteFile = candidate.callInfo.containingFile
     val containingDeclarations = candidate.callInfo.containingDeclarations
-    val declarationContainingFile = session.cfirProvider.getContainingFile(declaration.symbol)
+    /*
+     * synthetic typealias constructor 没有注册在 provider 文件索引中；其可见性 owner、
+     * 声明文件和 nominal owner 都来自展开类型的原始构造器。若继续用 synthetic symbol，
+     * internal/package 可见构造器会因 containing file 缺失被错误隐藏。
+     */
+    val visibilityOwner = (declaration as? CfirConstructor)
+        ?.typeAliasConstructorInfo
+        ?.originalConstructor
+        ?: declaration
+    val declarationContainingFile = session.cfirProvider.getContainingFile(visibilityOwner.symbol)
 
-    return when (declaration.status.visibility) {
+    return when (visibilityOwner.status.visibility) {
         Visibilities.Public -> true
         Visibilities.Internal -> {
             canSeePackageInternalDeclaration(useSiteFile, declarationContainingFile)
         }
         Visibilities.Private -> {
-            val ownerExtend = declaration.containingExtendOrNull(session)
+            val ownerExtend = visibilityOwner.containingExtendOrNull(session)
             if (ownerExtend != null) {
                 return canSeePrivateExtendMemberOf(ownerExtend, containingDeclarations)
             }
 
-            val ownerClassId = declaration.symbol.getOwnerClassId(session.cfirProvider)
+            val ownerClassId = visibilityOwner.symbol.getOwnerClassId(session.cfirProvider)
             // 对齐官方 TypeCheckUtil::IsLegalAccess：
             // 顶层 private 按同文件可见，成员 private 只能在同一 nominal 声明内部访问。
             when (ownerClassId) {
@@ -62,14 +73,14 @@ fun isVisible(
         }
         Visibilities.Protected -> {
             canSeePackageProtectedDeclaration(useSiteFile, declarationContainingFile) ||
-                    declaration.protectedOwnerClassId(session)?.let { ownerClassId ->
+                    visibilityOwner.protectedOwnerClassId(session)?.let { ownerClassId ->
                         canSeeProtectedMemberOf(ownerClassId, containingDeclarations, session)
                     } == true ||
-                    declaration.containingExtendOrNull(session)?.let { ownerExtend ->
+                    visibilityOwner.containingExtendOrNull(session)?.let { ownerExtend ->
                         canSeePrivateExtendMemberOf(ownerExtend, containingDeclarations)
                     } == true
         }
-        else -> visibilityChecker.platformVisibilityCheck(declaration.status.visibility, declaration, candidate)
+        else -> visibilityChecker.platformVisibilityCheck(visibilityOwner.status.visibility, visibilityOwner, candidate)
     }
 }
 

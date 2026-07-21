@@ -32,6 +32,20 @@ interface CfirExtendRuleQueryService : CfirSessionComponent {
     fun targetKeyOf(declaration: Any): CfirExtendTargetKey?
 
     /**
+     * 返回与 [declaration] 具有同一完整实例化目标模式的 extend 声明。
+     *
+     * 该查询用于重复接口等精确同目标检查；与 nominal target 候选召回分离。
+     */
+    fun extendDeclarationsForSameTarget(declaration: Any): List<Any>
+
+    /**
+     * 返回与 [declaration] 共享同一展开后 nominal target 的全部 extend 声明。
+     *
+     * 结果保留各声明自身的 target pattern，供 specialization checker 做结构化实例化匹配。
+     */
+    fun extendDeclarationsForNominalTarget(declaration: Any): List<Any>
+
+    /**
      * 返回 [declaration] 对应 extend 的 nominal 目标类标识。
      */
     fun targetClassIdOf(declaration: Any): ClassId?

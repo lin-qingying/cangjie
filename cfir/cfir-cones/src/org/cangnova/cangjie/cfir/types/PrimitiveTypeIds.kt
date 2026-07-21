@@ -100,9 +100,8 @@ val ConeCangJieType.extendTargetKey: CfirExtendTargetKey?
 /**
  * extend 声明侧的目标索引键。
  *
- * typealias 目标必须保留别名声明身份：`extend C<T> <: I<T>` 不是
- * 对 `C` 最终展开 class 的 extend。展开类型上的 abbreviation 只用于
- * 还原声明侧 alias 视图，不能在索引时丢掉这层声明映射。
+ * 该键只保留源码声明身份，供引用、导航与可见性元数据使用；不能用于成员查找、
+ * duplicate/orphan 或 extend 等价类判断，因为官方语义以 alias 展开后的真实类型为准。
  */
 val ConeCangJieType.declaredExtendTargetKey: CfirExtendTargetKey?
     get() {
@@ -132,6 +131,6 @@ val ConeCangJieType.expandedClassIdOrPrimitiveClassId: ClassId?
  */
 val ConeCangJieType.expandedExtendTargetKey: CfirExtendTargetKey?
     get() = when (this) {
-        is ConeTypeAliasType -> expandedType?.expandedExtendTargetKey ?: CfirExtendTargetKey.ClassLike(classId)
+        is ConeTypeAliasType -> expandedType?.expandedExtendTargetKey
         else -> extendTargetKey
     }

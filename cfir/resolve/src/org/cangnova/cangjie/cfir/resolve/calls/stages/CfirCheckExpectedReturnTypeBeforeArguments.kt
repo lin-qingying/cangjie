@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.resolve.calls.stages
 
 import org.cangnova.cangjie.cfir.diagnostic.InapplicableCandidate
+import org.cangnova.cangjie.cfir.resolve.ResolutionMode
 import org.cangnova.cangjie.cfir.resolve.expectedType
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.resolve.initialTypeOfCandidate
@@ -27,6 +28,16 @@ object CfirCheckExpectedReturnTypeBeforeArguments : ResolutionStage() {
      */
     context(sink: CheckerSink, context: ResolutionContext)
     override suspend fun check(candidate: Candidate) {
+        val resolutionMode = candidate.callInfo.resolutionMode
+        if (resolutionMode is ResolutionMode.WithExpectedType && resolutionMode.lastStatementInBlock) {
+            // 函数体尾表达式的声明返回类型约束属于调用完成后的类型检查：例如
+            // `main(): Int64 { print(value) }` 必须先把合法的 `print(...): Unit` 调用解析完成，
+            // 再由声明体报告 Unit 与 Int64 不匹配。若在实参检查前按 Int64 淘汰 print，
+            // 所有同名重载都会退化成 UNRESOLVED_REFERENCE，且真实实参适用性没有机会参与选择。
+            // 非尾表达式仍保留本阶段的早期剪枝；尾表达式的重载返回类型细化由候选完成后的
+            // reduceCandidatesByExpectedReturnType 负责，并在没有匹配返回类型时保留原候选集合。
+            return
+        }
         val expectedType = candidate.callInfo.resolutionMode.expectedType ?: return
         val currentSubstitutor = candidate.system.buildCurrentSubstitutor()
 

@@ -33,6 +33,7 @@ import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
 import org.cangnova.cangjie.cfir.resolve.CfirTypeResolutionConfiguration
 import org.cangnova.cangjie.cfir.resolve.SupertypeSupplier
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
+import org.cangnova.cangjie.cfir.resolve.fullyExpandedTypeUsingAbbreviation
 import org.cangnova.cangjie.cfir.resolve.providers.CfirProviderImpl
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSuperTypeGraphEdge
@@ -1216,7 +1217,7 @@ private fun ConeCangJieType.toReferencedDeclaration(session: CfirSession): CfirC
  */
 private fun CfirResolvedTypeRef.isLegalExtendTargetForSupertypeGraph(session: CfirSession): Boolean {
     if (coneType is ConeErrorType) return false
-    return when (val expandedType = coneType.fullyExpandedType(session)) {
+    return when (val expandedType = coneType.fullyExpandedTypeUsingAbbreviation(session)) {
         is ConeErrorType -> false
         is ConeClassLikeType -> !expandedType.isInterface
         is ConeStructType,
@@ -1234,7 +1235,7 @@ private fun CfirResolvedTypeRef.isLegalExtendTargetForSupertypeGraph(session: Cf
 /** 判断 extend 声明中的 supertype 是否是可记录到图中的接口类型。 */
 private fun CfirResolvedTypeRef.isValidExtendInterfaceSupertypeForGraph(session: CfirSession): Boolean {
     if (coneType is ConeErrorType) return false
-    val expandedType = coneType.fullyExpandedType(session)
+    val expandedType = coneType.fullyExpandedTypeUsingAbbreviation(session)
     return expandedType is ConeClassLikeType && expandedType.isInterface
 }
 

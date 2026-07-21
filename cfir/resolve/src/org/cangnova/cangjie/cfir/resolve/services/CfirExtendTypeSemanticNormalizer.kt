@@ -25,14 +25,24 @@
 package org.cangnova.cangjie.cfir.resolve.services
 
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
+import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
+import org.cangnova.cangjie.cfir.resolve.CfirTypeResolver
+import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
+import org.cangnova.cangjie.cfir.resolve.fullyExpandedTypeUsingAbbreviation
 import org.cangnova.cangjie.cfir.resolve.renderStableSemanticKey
+import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.types.*
+import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.type.model.TypeConstructorMarker
 
 /** 为 extend 类型引用生成稳定语义 key 的归一化器。 */
 internal class CfirExtendTypeSemanticNormalizer(
     /** 当前正在建立语义 key 的 extend 声明。 */
     extend: CfirExtend,
+    /** 生产 session；单元测试可省略并通过 resolver 的显式展开路径工作。 */
+    private val session: CfirSession?,
+    /** typealias 声明解析器。 */
+    private val resolver: CfirTypeResolver,
 ) {
     /**
      * extend 语义键不能只保留“第几个类型参数”，还要把约束信息编码进去。
@@ -78,8 +88,59 @@ internal class CfirExtendTypeSemanticNormalizer(
     fun semanticKeyOrNull(type: ConeCangJieType): String =
         canonicalize(type).renderStableSemanticKey()
 
-    /** 把 extend 类型参数替换为带 bounds fingerprint 的 placeholder 类型。 */
+    /**
+     * 把 typealias 展开为真实类型，再将 extend 类型参数替换为带 bounds fingerprint 的 placeholder。
+     *
+     * duplicate/orphan 的稳定键必须与 target lookup 使用同一个真实类型等价类；否则
+     * `I<T>` 与 `type Alias<T> = I<T>` 会在同一 extend 规则中得到不同语义键。
+     */
     private fun canonicalize(type: ConeCangJieType): ConeCangJieType {
-        return substitutor.substituteOrSelf(type)
+        val expandedType = session?.let { currentSession ->
+            type.fullyExpandedTypeUsingAbbreviation(currentSession)
+        }
+            ?: type.semanticExpandedType(resolver)
+            ?: type
+        return substitutor.substituteOrSelf(expandedType)
     }
+}
+
+/**
+ * 通过 resolver 展开顶层 typealias，并把当前 alias 使用处的实际类型实参代入 RHS。
+ *
+ * 该入口供没有完整 session 的索引单元测试以及目标 ClassId/target key 抽取复用；
+ * 生产语义 key 的递归嵌套展开由 [CfirExtendTypeSemanticNormalizer] 完成。
+ */
+internal fun ConeCangJieType.semanticExpandedType(resolver: CfirTypeResolver): ConeCangJieType? =
+    semanticExpandedType(resolver, linkedSetOf())
+
+/** 带循环检测的 typealias 顶层展开实现。 */
+private fun ConeCangJieType.semanticExpandedType(
+    resolver: CfirTypeResolver,
+    visiting: MutableSet<ClassId>,
+): ConeCangJieType? {
+    val aliasType = this as? ConeTypeAliasType
+        ?: abbreviatedType as? ConeTypeAliasType
+        ?: return this
+    if (!visiting.add(aliasType.classId)) return null
+
+    val declaration = resolver.resolveClass(aliasType.classId) as? CfirTypeAlias
+    val declaredExpandedType = declaration?.expandedTypeRef?.coneTypeOrNull
+        ?: aliasType.expandedType
+        ?: return null
+    val appliedExpandedType = if (
+        declaration != null &&
+        declaration.typeParameters.size == aliasType.typeArguments.size &&
+        declaration.typeParameters.isNotEmpty()
+    ) {
+        val substitutions = declaration.typeParameters.zip(aliasType.typeArguments).associate { (typeParameter, argument) ->
+            typeParameter.symbol.toLookupTag() as TypeConstructorMarker to argument.type
+        }
+        CfirTypeSubstitutorByMap(substitutions).substituteOrSelf(declaredExpandedType)
+    } else {
+        declaredExpandedType
+    }
+
+    val result = appliedExpandedType.semanticExpandedType(resolver, visiting)
+    visiting.remove(aliasType.classId)
+    return result
 }

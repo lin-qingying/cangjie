@@ -21,16 +21,16 @@ import org.cangnova.cangjie.cfir.expressions.CfirFunctionCallOrigin
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.resolve.calls.ConeResolutionAtom
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
+import org.cangnova.cangjie.cfir.resolve.calls.cangjieVariadicCallShapeOrNull
 import org.cangnova.cangjie.cfir.resolve.calls.cangjieVariadicParameterForMapping
+import org.cangnova.cangjie.cfir.resolve.calls.isSyntheticFunctionTypeInvoke
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallKind
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CheckerSink
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.yieldIfNeed
 import org.cangnova.cangjie.cfir.semantics.ResolutionDiagnostic
-import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.types.ConeVArrayType
-import org.cangnova.cangjie.cfir.types.arrayElementType
 import org.cangnova.cangjie.cfir.types.coneType
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.OperatorNameConventions
@@ -119,9 +119,20 @@ object CfirMapArguments : ResolutionStage() {
         val argumentInfos = argumentAtoms.map(::CallArgumentInfo)
         val nonTrailingArguments = argumentInfos.filterNot { it.isTrailingLambda }
         val trailingLambdaArguments = argumentInfos.filter { it.isTrailingLambda }
-        val isCallableValueCall = candidate.symbol.takeIf { it.isBound }?.cfir is CfirVariable
+        val isCallableValueCall = candidate.callInfo.candidateForCommonInvokeReceiver != null ||
+                candidate.isSyntheticFunctionTypeInvoke() ||
+                candidate.symbol.takeIf { it.isBound }?.cfir is CfirVariable
+        val positionalArgumentCount = nonTrailingArguments.takeWhile { it.name == null }.size
+        val variadicShape = candidate.cangjieVariadicCallShapeOrNull(parameters, positionalArgumentCount)
+        if (variadicShape != null) {
+            candidate.initializeVariadicCallInfo(
+                parameter = variadicShape.parameter,
+                elementType = variadicShape.elementType,
+                fixedPositionalArity = variadicShape.fixedPositionalArity,
+            )
+        }
 
-        if (isCallableValueCall && argumentAtoms.size != parameters.size) {
+        if (isCallableValueCall && variadicShape == null && argumentAtoms.size != parameters.size) {
             candidate.initializeArgumentMapping(argumentAtoms, linkedMapOf())
             candidate.numDefaults = 0
             sink.reportDiagnostic(WrongNumberOfArguments(parameters.size, argumentAtoms.size))
@@ -143,7 +154,7 @@ object CfirMapArguments : ResolutionStage() {
             trailingLambdaArguments = trailingLambdaArguments,
             variadicParameter = null,
         )
-        val variadicResult = if (isPossibleCangjieVariadicCall(parameters, variadicParameter, nonTrailingArguments)) {
+        val variadicResult = if (variadicShape != null) {
             createCallableArgumentMapping(
                 candidate = candidate,
                 argumentAtoms = argumentAtoms,
@@ -156,12 +167,26 @@ object CfirMapArguments : ResolutionStage() {
             null
         }
 
-        val result = variadicResult ?: regularResult
-        if (result.usesCangjieVariadic && regularResult.diagnostics.isNotEmpty()) {
+        // 普通映射成功时必须保留其 argumentMapping/default/named 语义；并行计算的
+        // variadicResult 此时只提供“exact arity 下哪些 atom 可以在类型检查阶段按元素重试”。
+        // 只有普通映射已有结构诊断（缺参/多参等）时，才真正提交 variadic mapping。
+        val result = when {
+            regularResult.diagnostics.isEmpty() -> regularResult
+            else -> variadicResult ?: regularResult
+        }
+        val variadicEligibleArguments = if (
+            result === regularResult && variadicResult != null
+        ) {
+            variadicResult.variadicEligibleArguments
+        } else {
+            result.variadicEligibleArguments
+        }
+        if (result === variadicResult && regularResult.diagnostics.isNotEmpty()) {
             candidate.initializeCangjieVariadicRegularCallDiagnostics(regularResult.diagnostics)
         }
-        candidate.initializeCangjieVariadicParameterForCall(result.variadicParameter)
         candidate.initializeArgumentMapping(argumentAtoms, result.argumentMapping)
+        candidate.initializeVariadicEligibleArguments(variadicEligibleArguments)
+        if (result.isEmptyVariadicCall) candidate.markEmptyVariadicCall()
         candidate.numDefaults = result.numDefaults
         result.diagnostics.forEach(sink::reportDiagnostic)
     }
@@ -180,21 +205,16 @@ object CfirMapArguments : ResolutionStage() {
         val variadicParameterIndex = parameters.indexOf(variadicParameter)
         val argumentMapping = LinkedHashMap<ConeResolutionAtom, CfirValueParameter>(argumentAtoms.size)
         val usedParameters = linkedSetOf<CfirValueParameter>()
+        val variadicEligibleArguments = mutableListOf<ConeResolutionAtom>()
         val positionalArgumentCount = nonTrailingArguments.takeWhile { it.name == null }.size
         val diagnostics = mutableListOf<ResolutionDiagnostic>()
-        val isCallableValueCall = candidate.symbol.takeIf { it.isBound }?.cfir is CfirVariable
+        val isCallableValueCall = candidate.callInfo.candidateForCommonInvokeReceiver != null ||
+                candidate.isSyntheticFunctionTypeInvoke() ||
+                candidate.symbol.takeIf { it.isBound }?.cfir is CfirVariable
 
         val variadicInfo = variadicParameter?.let {
-            candidate.possibleVariadicInfo(parameters, positionalArgumentCount)?.takeIf { info ->
-                info.parameter == variadicParameter
-            }
-        }
-        if (variadicInfo != null) {
-            candidate.initializeVariadicCallInfo(
-                parameter = variadicInfo.parameter,
-                elementType = variadicInfo.elementType,
-                fixedPositionalArity = variadicInfo.fixedPositionalArity,
-            )
+            candidate.cangjieVariadicCallShapeOrNull(parameters, positionalArgumentCount)
+                ?.takeIf { info -> info.parameter == variadicParameter }
         }
 
         var nextPositionalIndex = 0
@@ -262,10 +282,8 @@ object CfirMapArguments : ResolutionStage() {
             if (variadicInfo != null && nextPositionalIndex >= variadicInfo.fixedPositionalArity) {
                 usedParameters.add(variadicInfo.parameter)
                 argumentMapping[argument.atom] = variadicInfo.parameter
+                variadicEligibleArguments += argument.atom
                 nextPositionalIndex = variadicInfo.fixedPositionalArity + 1
-                if (positionalArgumentCount > variadicInfo.fixedPositionalArity + 1) {
-                    candidate.markVariadicArgument(argument.atom)
-                }
                 continue
             }
 
@@ -287,9 +305,10 @@ object CfirMapArguments : ResolutionStage() {
             nextPositionalIndex += 1
         }
 
-        if (variadicInfo != null && positionalArgumentCount == variadicInfo.fixedPositionalArity) {
+        val isEmptyVariadicCall = variadicInfo != null &&
+                positionalArgumentCount == variadicInfo.fixedPositionalArity
+        if (isEmptyVariadicCall) {
             usedParameters.add(variadicInfo.parameter)
-            candidate.markEmptyVariadicCall()
         }
 
         if (!hasArgumentMappingError) {
@@ -318,8 +337,8 @@ object CfirMapArguments : ResolutionStage() {
             argumentMapping = argumentMapping,
             diagnostics = diagnostics,
             numDefaults = parameters.count { it != variadicParameter && it !in usedParameters && it.defaultValue != null },
-            usesCangjieVariadic = variadicParameter != null,
-            variadicParameter = variadicParameter,
+            variadicEligibleArguments = variadicEligibleArguments,
+            isEmptyVariadicCall = isEmptyVariadicCall,
         )
     }
 
@@ -425,82 +444,11 @@ private data class CallableArgumentMappingResult(
      * 使用默认值的形参数量。
      */
     val numDefaults: Int,
-    /**
-     * 是否使用仓颉变长参数路径。
-     */
-    val usesCangjieVariadic: Boolean,
-    /**
-     * 实际参与调用的变长形参。
-     */
-    val variadicParameter: CfirValueParameter?,
+    /** ordinary Array 检查失败后允许按元素重试的实参。 */
+    val variadicEligibleArguments: List<ConeResolutionAtom>,
+    /** 本次映射是否省略了整个变参数组。 */
+    val isEmptyVariadicCall: Boolean,
 )
-
-/**
- * 判断当前调用是否可能按仓颉变长参数路径映射。
- */
-private fun isPossibleCangjieVariadicCall(
-    parameters: List<CfirValueParameter>,
-    variadicParameter: CfirValueParameter?,
-    nonTrailingArguments: List<CallArgumentInfo>,
-): Boolean {
-    if (variadicParameter == null) return false
-    val positionalParameterSize = parameters.indexOfLast { !it.isNamed } + 1
-    if (positionalParameterSize <= 0) return false
-    val positionalArgumentSize = nonTrailingArguments.takeWhile { it.name == null }.size
-    return positionalArgumentSize + 1 >= positionalParameterSize
-}
-
-/**
- * 变长参数映射辅助信息。
- */
-private data class VariadicInfo(
-    /**
-     * 变长形参。
-     */
-    val parameter: CfirValueParameter,
-    /**
-     * 变长形参的元素类型。
-     */
-    val elementType: ConeCangJieType,
-    /**
-     * 变长参数前固定位置形参数量。
-     */
-    val fixedPositionalArity: Int,
-)
-
-/**
- * 根据候选和位置实参数量推导可用的仓颉变长参数信息。
- */
-private fun Candidate.possibleVariadicInfo(
-    parameters: List<CfirValueParameter>,
-    positionalArgumentCount: Int,
-): VariadicInfo? {
-    val declaration = symbol.takeIf { it.isBound }?.cfir ?: return null
-    if (declaration is CfirEnumConstructor) return null
-    if (declaration is CfirNamedFunction && declaration.name.isDisallowedVariadicOperatorName()) return null
-
-    val variadicParameterIndex = parameters.indexOfLast { !it.isNamed }
-    if (variadicParameterIndex < 0) return null
-    if (positionalArgumentCount + 1 < variadicParameterIndex + 1) return null
-
-    val variadicParameter = parameters[variadicParameterIndex]
-    val elementType = variadicParameter.returnTypeRef.coneType.arrayElementType ?: return null
-    return VariadicInfo(
-        parameter = variadicParameter,
-        elementType = elementType,
-        fixedPositionalArity = variadicParameterIndex,
-    )
-}
-
-/**
- * 判断操作符名是否禁止走仓颉变长参数路径。
- */
-private fun Name.isDisallowedVariadicOperatorName(): Boolean {
-    if (this !in OperatorNameConventions.TOKENS_BY_OPERATOR_NAME) return false
-    return this != OperatorNameConventions.INVOKE &&
-            this != OperatorNameConventions.GET &&
-            this != OperatorNameConventions.SET
-}
 
 /**
  * 调用实参的映射前信息。

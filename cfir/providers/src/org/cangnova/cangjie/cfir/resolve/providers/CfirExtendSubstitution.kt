@@ -3,6 +3,7 @@ package org.cangnova.cangjie.cfir.resolve.providers
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
+import org.cangnova.cangjie.cfir.resolve.fullyExpandedTypeUsingAbbreviation
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.typeAwareSupertypeProviderOrNull
@@ -13,18 +14,21 @@ import org.cangnova.cangjie.cfir.types.CfirTypeSubstitutorByMap
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeCStringType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
+import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.types.ConeLookupTagBasedType
 import org.cangnova.cangjie.cfir.types.ConePointerType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
+import org.cangnova.cangjie.cfir.types.ConeTupleType
 import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
 import org.cangnova.cangjie.cfir.types.ConeTypeVariableType
-import org.cangnova.cangjie.cfir.types.abbreviatedType
+import org.cangnova.cangjie.cfir.types.ConeVArrayType
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.types.collectUpperBounds
 import org.cangnova.cangjie.cfir.types.idealExtendLookupTypes
 import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.cfir.types.typeContext
+import org.cangnova.cangjie.cfir.types.withoutAbbreviation
 import org.cangnova.cangjie.type.AbstractTypeChecker
 import org.cangnova.cangjie.type.model.TypeConstructorMarker
 
@@ -130,18 +134,20 @@ private fun createExtendDeclarationSubstitution(
     concreteReceiverType: ConeCangJieType,
     checkGenericConstraints: Boolean,
 ): CfirExtendDeclarationSubstitution? {
-    val semanticTargetPattern = targetPattern.abbreviatedType ?: targetPattern
-    val semanticReceiverType = if (semanticTargetPattern is ConeTypeAliasType) {
-        concreteReceiverType
-    } else {
-        concreteReceiverType.fullyExpandedType(session)
-    }
+    /*
+     * 官方 extend map 以 typealias 展开后的真实类型参与适用性匹配；alias 身份只属于
+     * 声明/渲染元数据，不能成为另一套 receiver 等价关系。递归 matcher 会对每一层
+     * 再做同样展开，使嵌套类型实参中的 alias 也遵守这一规则。
+     */
+    val semanticTargetPattern = targetPattern.semanticExtendMatchType(session)
+    val semanticReceiverType = concreteReceiverType.semanticExtendMatchType(session)
     val substitutions = linkedMapOf<TypeConstructorMarker, ConeCangJieType>()
     val extendTypeParameterConstructors = extend.typeParameters.mapTo(linkedSetOf<TypeConstructorMarker>()) {
         it.symbol.toLookupTag()
     }
 
     if (!matchExtendTargetType(
+            session = session,
             pattern = semanticTargetPattern,
             actual = semanticReceiverType,
             extendTypeParameterConstructors = extendTypeParameterConstructors,
@@ -156,9 +162,6 @@ private fun createExtendDeclarationSubstitution(
 
     val substitutor = substitutions.takeIf { it.isNotEmpty() }?.let(::CfirTypeSubstitutorByMap)
         ?: ConeSubstitutor.Empty
-    if (checkGenericConstraints && !extend.matchesOfficialInstantiationShape(session, concreteReceiverType, substitutor)) {
-        return null
-    }
     if (checkGenericConstraints && !extend.satisfiesGenericConstraints(session, substitutor)) {
         return null
     }
@@ -166,30 +169,6 @@ private fun createExtendDeclarationSubstitution(
         substitutor = substitutor,
         substitutedReceiverType = substitutor.substituteOrSelf(semanticTargetPattern),
     )
-}
-
-/**
- * 对齐官方 `TypeManager::CheckGenericDeclInstantiation` 的 extend 实例化过滤。
- *
- * 结构匹配只负责从 `extend<T> A<T>` 这类目标模式提取替换；真正的 use-site
- * 适用性还必须保证 extend 声明泛型逐个对应接收者展开后的顶层类型实参。
- * 因此 `extend<T> A<Box<T>>` 或 typealias 展开成更多顶层实参时，不能仅靠
- * 嵌套结构匹配把 `T` 绑定到内层类型后误认为该 extend 成立。
- */
-private fun CfirExtend.matchesOfficialInstantiationShape(
-    session: CfirSession,
-    concreteReceiverType: ConeCangJieType,
-    substitutor: ConeSubstitutor,
-): Boolean {
-    val expandedReceiverType = concreteReceiverType.fullyExpandedType(session) as? ConeLookupTagBasedType
-        ?: return true
-    val receiverArguments = expandedReceiverType.typeArguments.map { it.type }
-    if (receiverArguments.isEmpty()) return true
-    if (typeParameters.size != receiverArguments.size) return false
-
-    return typeParameters.zip(receiverArguments).all { (typeParameter, receiverArgument) ->
-        substitutor.substituteOrSelf(typeParameter.symbol.constructType()) == receiverArgument
-    }
 }
 
 /**
@@ -228,7 +207,11 @@ private fun ConeCangJieType.satisfiesUpperBound(
     upperBound: ConeCangJieType,
     substitutor: ConeSubstitutor,
 ): Boolean {
-    if (AbstractTypeChecker.isSubtypeOfWithoutOptionBoxing(session.typeContext, this, upperBound)) {
+    /*
+     * 官方 CheckGenericDeclInstantiation 使用普通 IsSubtype，允许 Option boxing；
+     * extend where/upper-bound 不能另行收紧为“禁止装箱”的子类型关系。
+     */
+    if (AbstractTypeChecker.isSubtypeOf(session.typeContext, this, upperBound)) {
         return true
     }
 
@@ -245,7 +228,7 @@ private fun ConeCangJieType.satisfiesUpperBound(
     return typeParameterType.collectUpperBounds(session.typeContext).any { actualUpperBound ->
         val substitutedUpperBound = substitutor.substituteOrSelf(actualUpperBound)
         substitutedUpperBound !is ConeErrorType &&
-                AbstractTypeChecker.isSubtypeOfWithoutOptionBoxing(
+                AbstractTypeChecker.isSubtypeOf(
                     session.typeContext,
                     substitutedUpperBound,
                     upperBound,
@@ -259,66 +242,61 @@ private fun ConeCangJieType.satisfiesUpperBound(
  * 匹配成功时会把 extend 类型参数构造器写入 [substitutions]。
  */
 private fun matchExtendTargetType(
+    session: CfirSession,
     pattern: ConeCangJieType,
     actual: ConeCangJieType,
     extendTypeParameterConstructors: Set<TypeConstructorMarker>,
     substitutions: MutableMap<TypeConstructorMarker, ConeCangJieType>,
 ): Boolean {
-    return when (pattern) {
+    val semanticPattern = pattern.semanticExtendMatchType(session)
+    val semanticActual = actual.semanticExtendMatchType(session)
+    return when (semanticPattern) {
         is ConeTypeParameterType -> {
-            val typeParameterConstructor = pattern.lookupTag
+            val typeParameterConstructor = semanticPattern.lookupTag
             if (typeParameterConstructor !in extendTypeParameterConstructors) {
-                pattern == actual
+                semanticActual is ConeTypeParameterType && semanticPattern.lookupTag == semanticActual.lookupTag
             } else {
                 val existing = substitutions[typeParameterConstructor]
-                existing == null || existing == actual
+                existing == null || existing == semanticActual
             }.also { matches ->
                 if (matches) {
-                    substitutions.putIfAbsent(typeParameterConstructor, actual)
+                    substitutions.putIfAbsent(typeParameterConstructor, semanticActual)
                 }
             }
         }
 
         is ConePrimitiveType -> {
-            actual is ConePrimitiveType && pattern.kind == actual.kind ||
-                    actual.idealExtendLookupTypes.any { it.kind == pattern.kind }
+            semanticActual is ConePrimitiveType && semanticPattern.kind == semanticActual.kind ||
+                    semanticActual.idealExtendLookupTypes.any { it.kind == semanticPattern.kind }
         }
 
         is ConePointerType -> {
-            val actualPointer = actual as? ConePointerType ?: return false
+            val actualPointer = semanticActual as? ConePointerType ?: return false
             matchExtendTargetType(
-                pattern = pattern.pointeeType,
+                session = session,
+                pattern = semanticPattern.pointeeType,
                 actual = actualPointer.pointeeType,
                 extendTypeParameterConstructors = extendTypeParameterConstructors,
                 substitutions = substitutions,
             )
         }
 
-        is ConeCStringType -> actual is ConeCStringType
+        is ConeCStringType -> semanticActual is ConeCStringType
 
         is ConeTypeAliasType -> {
-            val actualAlias = actual as? ConeTypeAliasType ?: return false
-            if (pattern.classId != actualAlias.classId) return false
-            if (pattern.typeArguments.size != actualAlias.typeArguments.size) return false
-
-            pattern.typeArguments.indices.all { index ->
-                matchExtendTargetType(
-                    pattern = pattern.typeArguments[index].type,
-                    actual = actualAlias.typeArguments[index].type,
-                    extendTypeParameterConstructors = extendTypeParameterConstructors,
-                    substitutions = substitutions,
-                )
-            }
+            // 已解析 alias 必须在 semanticExtendMatchType 中展开；未展开时不能按别名身份伪造适用性。
+            false
         }
 
         is ConeLookupTagBasedType -> {
-            val actualClassifier = actual as? ConeLookupTagBasedType ?: return false
-            if (pattern.classIdOrPrimitiveClassId != actualClassifier.classIdOrPrimitiveClassId) return false
-            if (pattern.typeArguments.size != actualClassifier.typeArguments.size) return false
+            val actualClassifier = semanticActual as? ConeLookupTagBasedType ?: return false
+            if (semanticPattern.classIdOrPrimitiveClassId != actualClassifier.classIdOrPrimitiveClassId) return false
+            if (semanticPattern.typeArguments.size != actualClassifier.typeArguments.size) return false
 
-            pattern.typeArguments.indices.all { index ->
+            semanticPattern.typeArguments.indices.all { index ->
                 matchExtendTargetType(
-                    pattern = pattern.typeArguments[index].type,
+                    session = session,
+                    pattern = semanticPattern.typeArguments[index].type,
                     actual = actualClassifier.typeArguments[index].type,
                     extendTypeParameterConstructors = extendTypeParameterConstructors,
                     substitutions = substitutions,
@@ -326,6 +304,77 @@ private fun matchExtendTargetType(
             }
         }
 
-        else -> pattern == actual
+        is ConeTupleType -> {
+            val actualTuple = semanticActual as? ConeTupleType ?: return false
+            semanticPattern.elementTypes.matchExtendTypeList(
+                session = session,
+                actualTypes = actualTuple.elementTypes,
+                extendTypeParameterConstructors = extendTypeParameterConstructors,
+                substitutions = substitutions,
+            )
+        }
+
+        is ConeFunctionType -> {
+            val actualFunction = semanticActual as? ConeFunctionType ?: return false
+            if (semanticPattern.isCFunc != actualFunction.isCFunc ||
+                semanticPattern.isClosureType != actualFunction.isClosureType ||
+                semanticPattern.hasVariableLenArg != actualFunction.hasVariableLenArg
+            ) {
+                return false
+            }
+            semanticPattern.parameterTypes.matchExtendTypeList(
+                session = session,
+                actualTypes = actualFunction.parameterTypes,
+                extendTypeParameterConstructors = extendTypeParameterConstructors,
+                substitutions = substitutions,
+            ) && matchExtendTargetType(
+                session = session,
+                pattern = semanticPattern.returnType,
+                actual = actualFunction.returnType,
+                extendTypeParameterConstructors = extendTypeParameterConstructors,
+                substitutions = substitutions,
+            )
+        }
+
+        is ConeVArrayType -> {
+            val actualArray = semanticActual as? ConeVArrayType ?: return false
+            semanticPattern.size == actualArray.size && matchExtendTargetType(
+                session = session,
+                pattern = semanticPattern.elementType,
+                actual = actualArray.elementType,
+                extendTypeParameterConstructors = extendTypeParameterConstructors,
+                substitutions = substitutions,
+            )
+        }
+
+        else -> semanticPattern == semanticActual
+    }
+}
+
+/**
+ * 返回 extend 目标匹配使用的真实类型视图。
+ *
+ * 每一层递归都执行该转换，保证 `A<Alias<T>>` 与 `A<Real<Int64>>` 也按展开后的
+ * 类型结构生成同一份类型参数映射；缩写属性继续保留在原始 type ref 中供 IDE 使用。
+ */
+private fun ConeCangJieType.semanticExtendMatchType(session: CfirSession): ConeCangJieType =
+    fullyExpandedTypeUsingAbbreviation(session)
+
+/** 逐位置递归匹配同一类型构造器的子类型列表。 */
+private fun List<ConeCangJieType>.matchExtendTypeList(
+    session: CfirSession,
+    actualTypes: List<ConeCangJieType>,
+    extendTypeParameterConstructors: Set<TypeConstructorMarker>,
+    substitutions: MutableMap<TypeConstructorMarker, ConeCangJieType>,
+): Boolean {
+    if (size != actualTypes.size) return false
+    return indices.all { index ->
+        matchExtendTargetType(
+            session = session,
+            pattern = this[index],
+            actual = actualTypes[index],
+            extendTypeParameterConstructors = extendTypeParameterConstructors,
+            substitutions = substitutions,
+        )
     }
 }

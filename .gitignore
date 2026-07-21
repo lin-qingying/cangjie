@@ -43,4 +43,11 @@ bin/
 /llvm-interop/third_party/
 
 
+*.cjo
+*.exe
+*.bc
+*.a
+*.log
+.cjc-probes/
+.codegraph/
 /tmp/

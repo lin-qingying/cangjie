@@ -27,6 +27,7 @@ package org.cangnova.cangjie.cfir.resolve.calls.stages
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.diagnostic.InapplicableCandidate
 import org.cangnova.cangjie.cfir.expressions.CfirArrayLiteral
+import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.resolve.calls.ConeResolutionAtom
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
@@ -46,7 +47,6 @@ import org.cangnova.cangjie.cfir.types.arrayElementType
 import org.cangnova.cangjie.cfir.types.asCone
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.contains
-import org.cangnova.cangjie.resolve.calls.inference.isSubtypeConstraintCompatible
 import org.cangnova.cangjie.type.model.safeSubstitute
 
 /**
@@ -197,15 +197,22 @@ private fun Candidate.selectVariadicExpectedType(
     val argumentIndex = arguments.indexOf(atom)
     if (argumentIndex < variadicFixedPositionalArity) return null
 
+    // closure 必须先获得函数元素类型才能完成形状解析；它不可能直接构成 Array 实参，
+    // 因此这里是普通数组形参检查失败后的结构化变参重试入口。
+    if (argument is CfirAnonymousFunctionExpression) return markVariadicArgument(atom)
+
     val argumentType = argument.coneTypeOrNull ?: return null
     val normalExpectedType = this.substitutor.substituteOrSelf(argument.getExpectedType(session, parameter))
     if (argumentType is ConeErrorType || normalExpectedType is ConeErrorType) return null
     if (argument is CfirArrayLiteral) return null
 
     val preparedArgumentType = prepareArgumentType(argumentType, session)
+    // 该位置的普通形参已确定是 Array；普通调用能否成立首先由实参的展开后根形状决定。
+    // 含 fresh owner T 的 `Array<T>` 不能用通用 compatibility 探测来判断 `Person`：
+    // 该探测可能把未固定变量当作可吸收任意输入，掩盖根 classifier 不同，随后才在
+    // 真正约束写入时产生 ARGUMENT_TYPE_MISMATCH。非 Array 根必然进入元素 variadic retry。
     val matchesNormalArrayParameter =
-        preparedArgumentType.isArrayArgumentForArrayParameter(normalExpectedType) ||
-                system.isSubtypeConstraintCompatible(preparedArgumentType, normalExpectedType)
+        preparedArgumentType.isArrayArgumentForArrayParameter(normalExpectedType)
     if (matchesNormalArrayParameter) return null
 
     // 官方 cjc 会在普通调用匹配失败后把这部分位置实参收束成 ArrayLit。

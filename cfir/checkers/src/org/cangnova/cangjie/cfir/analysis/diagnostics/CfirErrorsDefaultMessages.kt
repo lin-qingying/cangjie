@@ -95,7 +95,11 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
             RENDER_NAME,
         )
         map.put(CfirErrors.EXTEND_ORPHAN_RULE, "extend declaration violates orphan rule for target ''{0}''", RENDER_NAME)
-        map.put(CfirErrors.EXTEND_GENERIC_USAGE, "extend type parameter ''{0}'' is unused in extend signatures", RENDER_NAME)
+        map.put(
+            CfirErrors.EXTEND_GENERIC_USAGE,
+            "extend type parameter(s) ''{0}'' must be used in the extended type",
+            RENDER_STRING,
+        )
         map.put(
             CfirErrors.EXTEND_IMMUTABLE_MUT_INTERFACE,
             "immutable extend cannot implement interface ''{0}'' because it contains mut property ''{1}''",
