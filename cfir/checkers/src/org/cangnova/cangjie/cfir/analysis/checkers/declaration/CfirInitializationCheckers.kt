@@ -29,6 +29,7 @@ import org.cangnova.cangjie.cfir.correspondingProperty
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
+import org.cangnova.cangjie.cfir.unwrapFakeOverridesOrDelegated
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.diagnostics.CjDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticContext
@@ -45,6 +46,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertyAccessorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
+import org.cangnova.cangjie.cfir.symbols.CfirThisOwnerSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirVariableSymbol
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
@@ -52,6 +54,58 @@ import org.cangnova.cangjie.cfir.unwrapSubstitutionOverrides
 import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.Name
+import java.util.Collections
+import java.util.IdentityHashMap
+import java.util.WeakHashMap
+
+/**
+ * 初始化赋值在当前控制流中的事实分类。
+ *
+ * 赋值合法性检查器只消费这一层的事实，不再根据源码偏移量猜测“此前是否写过”。
+ */
+internal enum class CfirInitializationAssignmentKind {
+    /** 当前赋值是该存储在所有可达路径上的首次初始化。 */
+    INITIALIZATION,
+
+    /** 当前赋值可能在此前已经完成初始化后再次执行。 */
+    REASSIGNMENT,
+
+    /** 赋值伴随初始化优先级错误，不能再追加不可变赋值诊断。 */
+    PRIORITY_INITIALIZATION_DIAGNOSTIC,
+
+    /** 当前赋值不属于初始化分析跟踪的存储。 */
+    NOT_TRACKED,
+
+    /** 用于合并多次观察结果的稳定优先级。 */
+    ;
+
+    internal val priority: Int
+        get() = when (this) {
+            NOT_TRACKED -> 0
+            INITIALIZATION -> 1
+            REASSIGNMENT -> 2
+            PRIORITY_INITIALIZATION_DIAGNOSTIC -> 3
+        }
+}
+
+/**
+ * 按当前声明栈恢复函数所属的 class-like。
+ *
+ * 声明 checker 在进入函数节点前触发，当前函数本身通常尚未压入栈；而分析嵌套函数时
+ * 栈中还可能同时存在多个 function。这里优先使用函数之前的声明，再从内向外寻找
+ * 最近的 class-like，避免把嵌套函数误绑定到错误的 owner。
+ */
+private fun CheckerContext.ownerOf(function: CfirFunction): CfirClassLikeDeclaration? {
+    val functionIndex = containingDeclarations.indexOfLast { declaration -> declaration === function }
+    val declarationsBeforeFunction = if (functionIndex >= 0) {
+        containingDeclarations.take(functionIndex)
+    } else {
+        containingDeclarations
+    }
+    return declarationsBeforeFunction.asReversed()
+        .filterIsInstance<CfirClassLikeDeclaration>()
+        .firstOrNull()
+}
 
 /**
  * 初始化语义不是解析器职责，而是 definite assignment 风格的后置语义检查。
@@ -78,9 +132,12 @@ private class CfirInitializationFlowAnalyzer(
     private val reportReadDiagnostics: Boolean = true,
 
     /**
-     * 可选的初始化赋值收集集合，用于只分类赋值而不报告诊断的调用路径。
+     * 可选的赋值初始化分类表，用于只计算初始化事实而不报告诊断的调用路径。
+     *
+     * 同一赋值可能在循环回访语义下由“首次初始化”升级为“可能重复写入”，
+     * 因此这里保存分类而不是单一的初始化赋值集合。
      */
-    private val initializationAssignments: MutableSet<CfirAssignment>? = null,
+    private val assignmentClassifications: MutableMap<CfirAssignment, CfirInitializationAssignmentKind>? = null,
 ) {
     /**
      * 当前正在收集普通函数出口的函数及其显式 return 快照。
@@ -105,7 +162,7 @@ private class CfirInitializationFlowAnalyzer(
     fun checkFunction(function: CfirFunction) {
         val body = function.body ?: return
         val owner = if (function is CfirConstructor && function.isInstanceConstructor) {
-            context.findClosestDeclaration<CfirClassLikeDeclaration>()
+            context.ownerOf(function)
         } else {
             null
         }
@@ -113,17 +170,25 @@ private class CfirInitializationFlowAnalyzer(
     }
 
     /**
-     * 收集函数体中会完成初始化的赋值表达式。
+     * 收集函数体内每个受初始化流管理的赋值分类。
      */
-    fun collectInitializationAssignments(function: CfirFunction): Set<CfirAssignment> {
-        val body = function.body ?: return emptySet()
+    fun collectAssignmentClassifications(function: CfirFunction): Map<CfirAssignment, CfirInitializationAssignmentKind> {
+        val body = function.body ?: return emptyMap()
         val owner = if (function is CfirConstructor && function.isInstanceConstructor) {
-            context.findClosestDeclaration<CfirClassLikeDeclaration>()
+            context.ownerOf(function)
         } else {
             null
         }
         analyzeFunctionBody(function, body, owner)
-        return initializationAssignments.orEmpty()
+        return assignmentClassifications.orEmpty()
+    }
+
+    /**
+     * 收集文件级 static/global 初始化序列中的赋值分类。
+     */
+    fun collectFileAssignmentClassifications(file: CfirFile): Map<CfirAssignment, CfirInitializationAssignmentKind> {
+        checkFileStaticGlobalInitialization(file)
+        return assignmentClassifications.orEmpty()
     }
 
     /**
@@ -289,7 +354,7 @@ private class CfirInitializationFlowAnalyzer(
             .forEach { fieldInfo ->
                 with(context) {
                     reporter.reportOn(
-                        source = constructor.constructorNameDiagnosticSource(),
+                        source = constructor.constructorDeclarationHeaderDiagnosticSource(),
                         factory = CfirErrors.CLASS_UNINITIALIZED_FIELD,
                         a = fieldInfo.diagnosticName,
                     )
@@ -327,7 +392,7 @@ private class CfirInitializationFlowAnalyzer(
             emptySet()
         }
 
-        val initialState = InitializationState.empty()
+        val initialState = InitializationState.empty(expectedReceiver = owner?.symbol)
             .declareAll(parameterInfos, parameterInfos.map(TrackedVariableInfo::symbol).toSet())
             .declareAll(fieldInfos, preInitializedFields)
 
@@ -487,8 +552,16 @@ private class CfirInitializationFlowAnalyzer(
         assignment: CfirAssignment,
         state: InitializationState,
     ): InitializationState {
+        val diagnosticCountBeforeRightValue = reportedInitializationDiagnosticCount
         val afterRightValue = analyzeExpression(assignment.rValue, state)
-        return analyzeAssignmentTarget(assignment, assignment.lValue, afterRightValue)
+        val rightValueHasPriorityDiagnostic =
+            reportedInitializationDiagnosticCount != diagnosticCountBeforeRightValue
+        return analyzeAssignmentTarget(
+            assignment = assignment,
+            lValue = assignment.lValue,
+            state = afterRightValue,
+            priorityDiagnostic = rightValueHasPriorityDiagnostic,
+        )
     }
 
     /**
@@ -498,11 +571,17 @@ private class CfirInitializationFlowAnalyzer(
         assignment: CfirAssignment,
         lValue: CfirExpression,
         state: InitializationState,
+        priorityDiagnostic: Boolean = false,
     ): InitializationState = when (lValue) {
-        is CfirQualifiedAccessExpression -> analyzeAssignmentTargetAccess(assignment, lValue, state)
+        is CfirQualifiedAccessExpression -> analyzeAssignmentTargetAccess(
+            assignment = assignment,
+            access = lValue,
+            state = state,
+            priorityDiagnostic = priorityDiagnostic,
+        )
 
         is CfirTupleLiteral -> lValue.elements.fold(state) { currentState, element ->
-            analyzeAssignmentTarget(assignment, element, currentState)
+            analyzeAssignmentTarget(assignment, element, currentState, priorityDiagnostic)
         }
 
         else -> analyzeExpression(lValue, state)
@@ -535,20 +614,44 @@ private class CfirInitializationFlowAnalyzer(
         assignment: CfirAssignment,
         access: CfirQualifiedAccessExpression,
         state: InitializationState,
+        priorityDiagnostic: Boolean,
     ): InitializationState {
+        val diagnosticCountBeforeReceiver = reportedInitializationDiagnosticCount
         val afterReceiver = access.explicitReceiver?.let { receiver ->
             analyzeExpression(receiver, state)
         } ?: state
+        val targetPriorityDiagnostic = priorityDiagnostic ||
+                reportedInitializationDiagnosticCount != diagnosticCountBeforeReceiver
         val symbol = access.resolvedAccessSymbolOrNull() ?: return afterReceiver
+        val trackedVariable = afterReceiver.trackedVariable(symbol)
 
         return when {
-            symbol is CfirVariableSymbol<*> || afterReceiver.isTracked(symbol) -> {
-                if (afterReceiver.shouldReportIllegalMemberAccessFromNestedInitializer(symbol)) {
-                    reportUsedBeforeInitialization(
+            trackedVariable != null && trackedVariable.kind == TrackedVariableKind.INSTANCE_MEMBER &&
+                    !access.isInitializationReceiverFor(afterReceiver.expectedReceiver) -> {
+                // 其他实例上的字段不能推进当前构造器的 this 状态。
+                if (targetPriorityDiagnostic) {
+                    recordAssignmentClassification(
+                        assignment,
+                        CfirInitializationAssignmentKind.PRIORITY_INITIALIZATION_DIAGNOSTIC,
+                    )
+                }
+                afterReceiver
+            }
+
+            trackedVariable != null -> {
+                val nestedInitializerAccessKind =
+                    afterReceiver.illegalMemberAccessKindFromNestedInitializer(symbol)
+                if (nestedInitializerAccessKind != null) {
+                    reportIllegalMemberAccessFromNestedInitializer(
+                        accessKind = nestedInitializerAccessKind,
                         diagnosticName = access.calleeReference.referenceNameOrNull()
                             ?: symbol.nameOrNull()
                             ?: Name.ERROR_NAME,
                         source = access.calleeReference.source ?: access.source,
+                    )
+                    recordAssignmentClassification(
+                        assignment,
+                        CfirInitializationAssignmentKind.PRIORITY_INITIALIZATION_DIAGNOSTIC,
                     )
                     return afterReceiver
                 }
@@ -559,9 +662,28 @@ private class CfirInitializationFlowAnalyzer(
                             ?: Name.ERROR_NAME,
                         source = access.calleeReference.source ?: access.source,
                     )
+                    recordAssignmentClassification(
+                        assignment,
+                        CfirInitializationAssignmentKind.PRIORITY_INITIALIZATION_DIAGNOSTIC,
+                    )
                     return afterReceiver
                 }
-                recordInitializationAssignmentIfNeeded(symbol, afterReceiver, assignment)
+
+                if (targetPriorityDiagnostic) {
+                    recordAssignmentClassification(
+                        assignment,
+                        CfirInitializationAssignmentKind.PRIORITY_INITIALIZATION_DIAGNOSTIC,
+                    )
+                } else {
+                    val classification = if (
+                        afterReceiver.isPossiblyInitialized(symbol) || afterReceiver.mayRevisitAssignment(symbol)
+                    ) {
+                        CfirInitializationAssignmentKind.REASSIGNMENT
+                    } else {
+                        CfirInitializationAssignmentKind.INITIALIZATION
+                    }
+                    recordAssignmentClassification(assignment, classification)
+                }
                 afterReceiver.markInitialized(symbol)
             }
 
@@ -579,20 +701,35 @@ private class CfirInitializationFlowAnalyzer(
     }
 
     /**
-     * 在当前赋值确实是首次初始化写入时记录赋值表达式。
-     *
-     * 该信息供外部分类器判断赋值是否属于初始化赋值；同名主构造成员属性已经占用的字段
-     * 不再作为字段首次初始化处理。
+     * 记录赋值分类，并保留同一赋值在不同控制流观察下的最高优先级事实。
      */
-    private fun recordInitializationAssignmentIfNeeded(
-        symbol: CfirBasedSymbol<*>,
-        state: InitializationState,
+    private fun recordAssignmentClassification(
         assignment: CfirAssignment,
+        classification: CfirInitializationAssignmentKind,
     ) {
-        if (initializationAssignments == null) return
-        if (!state.isTracked(symbol) || state.isInitialized(symbol)) return
-        if (symbol is CfirVariableSymbol<*> && symbol.hasSameNamePrimaryConstructorPropertyInOwner()) return
-        initializationAssignments += assignment
+        val classifications = assignmentClassifications ?: return
+        val previous = classifications[assignment]
+        if (previous == null || classification.priority > previous.priority) {
+            classifications[assignment] = classification
+        }
+    }
+
+    /**
+     * 判断赋值目标的有效接收者是否绑定到当前构造器的 `this`。
+     *
+     * 无显式接收者的成员写入由解析阶段提供隐式 dispatch receiver；在错误恢复节点
+     * 中该 receiver 可能为空，此时只要当前状态确实处于实例构造器上下文即可按当前
+     * owner 解释。显式的其他实例永远不能推进当前对象的字段初始化状态。
+     */
+    private fun CfirQualifiedAccessExpression.isInitializationReceiverFor(
+        expectedReceiver: CfirThisOwnerSymbol<*>?,
+    ): Boolean {
+        if (expectedReceiver == null) return false
+        val receiver = explicitReceiver ?: dispatchReceiver ?: return true
+        val unwrappedReceiver = receiver.unwrapSmartcastExpression()
+        return (unwrappedReceiver as? CfirThisReceiverExpression)
+            ?.calleeReference
+            ?.boundSymbol == expectedReceiver
     }
 
     /**
@@ -705,13 +842,20 @@ private class CfirInitializationFlowAnalyzer(
         state: InitializationState,
     ): InitializationState {
         return if (expression.isDoWhile) {
-            val afterFirstBody = analyzeScopedBlock(expression.body, state)
-            val afterCondition = analyzeExpression(expression.condition, afterFirstBody.withoutTermination())
-            if (afterFirstBody.terminated) afterCondition.terminate() else afterCondition
+            val repeatableBodyState = analyzeScopedBlock(
+                expression.body,
+                state.enterRepeatableRegion(),
+            ).restoreRepeatableDepth(state.repeatableDepth)
+            val afterFirstBody = repeatableBodyState.withoutTermination()
+            val afterCondition = analyzeExpression(expression.condition, afterFirstBody)
+            if (repeatableBodyState.terminated) afterCondition.terminate() else afterCondition
         } else {
             val afterCondition = analyzeExpression(expression.condition, state)
-            analyzeScopedBlock(expression.body, afterCondition)
-            afterCondition
+            val afterBody = analyzeScopedBlock(
+                expression.body,
+                afterCondition.enterRepeatableRegion(),
+            ).restoreRepeatableDepth(afterCondition.repeatableDepth)
+            mergeBranchStates(afterCondition, afterBody)
         }
     }
 
@@ -723,7 +867,9 @@ private class CfirInitializationFlowAnalyzer(
         state: InitializationState,
     ): InitializationState {
         val afterIterable = analyzeExpression(expression.iterable, state)
-        val loopState = expression.variable.pattern.bindingVariables().fold(afterIterable) { currentState, bindingVariable ->
+        val loopState = expression.variable.pattern.bindingVariables().fold(
+            afterIterable.enterRepeatableRegion(),
+        ) { currentState, bindingVariable ->
             currentState.declare(
                 TrackedVariableInfo(
                     symbol = bindingVariable.symbol,
@@ -733,8 +879,10 @@ private class CfirInitializationFlowAnalyzer(
                 initialized = true,
             )
         }
-        analyzeScopedBlock(expression.body, loopState)
-        return afterIterable
+        val afterBody = analyzeScopedBlock(expression.body, loopState)
+            .restoreRepeatableDepth(afterIterable.repeatableDepth)
+            .retainOnly(afterIterable.tracked.keys)
+        return mergeBranchStates(afterIterable, afterBody)
     }
 
     /**
@@ -1009,9 +1157,13 @@ private class CfirInitializationFlowAnalyzer(
         source: org.cangnova.cangjie.source.CjSourceElement?,
         state: InitializationState,
     ): InitializationState {
-        if (!reportReadDiagnostics) return state
-        if (state.shouldReportIllegalMemberAccessFromNestedInitializer(symbol)) {
-            reportUsedBeforeInitialization(diagnosticName, source)
+        val nestedInitializerAccessKind = state.illegalMemberAccessKindFromNestedInitializer(symbol)
+        if (nestedInitializerAccessKind != null) {
+            reportIllegalMemberAccessFromNestedInitializer(
+                accessKind = nestedInitializerAccessKind,
+                diagnosticName = diagnosticName,
+                source = source,
+            )
             return state
         }
         if (!state.isTracked(symbol) || state.isInitialized(symbol)) return state
@@ -1030,14 +1182,15 @@ private class CfirInitializationFlowAnalyzer(
         diagnosticName: Name,
         source: org.cangnova.cangjie.source.CjSourceElement?,
     ) {
-        if (!reportReadDiagnostics) return
         reportedInitializationDiagnosticCount++
-        with(context) {
-            reporter.reportOn(
-                source = source,
-                factory = CfirErrors.USED_BEFORE_INITIALIZATION,
-                a = diagnosticName,
-            )
+        if (reportReadDiagnostics) {
+            with(context) {
+                reporter.reportOn(
+                    source = source,
+                    factory = CfirErrors.USED_BEFORE_INITIALIZATION,
+                    a = diagnosticName,
+                )
+            }
         }
     }
 
@@ -1048,14 +1201,46 @@ private class CfirInitializationFlowAnalyzer(
         diagnosticName: Name,
         source: org.cangnova.cangjie.source.CjSourceElement?,
     ) {
-        if (!reportReadDiagnostics) return
         reportedInitializationDiagnosticCount++
+        if (reportReadDiagnostics) {
+            with(context) {
+                reporter.reportOn(
+                    source = source,
+                    factory = CfirErrors.CAPTURE_BEFORE_INITIALIZATION,
+                    a = diagnosticName,
+                )
+            }
+        }
+    }
+
+    /**
+     * 报告成员初始化器嵌套 callable 对当前实例或继承实例存储的非法捕获。
+     *
+     * 该语义与普通未初始化读取不同：对象仍处于成员初始化阶段，闭包可能在完整对象
+     * 构造前逃逸，因此必须保留官方独立诊断，不能降级为 USED_BEFORE_INITIALIZATION。
+     */
+    private fun reportIllegalMemberAccessFromNestedInitializer(
+        accessKind: NestedInitializerMemberAccessKind,
+        diagnosticName: Name,
+        source: org.cangnova.cangjie.source.CjSourceElement?,
+    ) {
+        reportedInitializationDiagnosticCount++
+        if (!reportReadDiagnostics) return
+
         with(context) {
-            reporter.reportOn(
-                source = source,
-                factory = CfirErrors.CAPTURE_BEFORE_INITIALIZATION,
-                a = diagnosticName,
-            )
+            when (accessKind) {
+                NestedInitializerMemberAccessKind.CURRENT_MEMBER -> reporter.reportOn(
+                    source = source,
+                    factory = CfirErrors.ILLEGAL_USAGE_OF_MEMBER,
+                    a = diagnosticName,
+                )
+
+                NestedInitializerMemberAccessKind.SUPER_MEMBER -> reporter.reportOn(
+                    source = source,
+                    factory = CfirErrors.ILLEGAL_USAGE_OF_SUPER_MEMBER,
+                    a = diagnosticName,
+                )
+            }
         }
     }
 
@@ -1388,16 +1573,18 @@ private class CfirInitializationFlowAnalyzer(
         source: org.cangnova.cangjie.source.CjSourceElement?,
         state: InitializationState,
     ): InitializationState {
-        if (!reportReadDiagnostics || !state.hasUninitializedInstanceFields()) return state
+        if (!state.hasUninitializedInstanceFields()) return state
         if (state.inNestedFunction && !state.inMemberInitializer) return state
         if (!symbol.isInstanceMemberFunctionOrProperty()) return state
         reportedInitializationDiagnosticCount++
-        with(context) {
-            reporter.reportOn(
-                source = source,
-                factory = CfirErrors.USED_BEFORE_INITIALIZATION,
-                a = diagnosticName,
-            )
+        if (reportReadDiagnostics) {
+            with(context) {
+                reporter.reportOn(
+                    source = source,
+                    factory = CfirErrors.USED_BEFORE_INITIALIZATION,
+                    a = diagnosticName,
+                )
+            }
         }
         return state
     }
@@ -1410,22 +1597,96 @@ private class CfirInitializationFlowAnalyzer(
  */
 internal object CfirInitializationAssignmentClassifier {
     /**
-     * 判断赋值表达式是否完成了当前函数上下文中的变量或字段初始化。
+     * 同一诊断收集轮次内的函数级初始化事实缓存。
+     *
+     * 赋值合法性 checker 会逐个访问 assignment；若每次都重新遍历整个构造器，Record
+     * 这类成员密集文件会退化为 O(n²)。缓存按 context 和声明 identity 隔离，避免跨文件
+     * 泄漏符号事实。
      */
+    private class ClassificationCache {
+        val byFunction: IdentityHashMap<CfirFunction, Map<CfirAssignment, CfirInitializationAssignmentKind>> =
+            IdentityHashMap()
+        val byFile: IdentityHashMap<CfirFile, Map<CfirAssignment, CfirInitializationAssignmentKind>> =
+            IdentityHashMap()
+    }
+
+    private val caches = Collections.synchronizedMap(WeakHashMap<CheckerContext, ClassificationCache>())
+
+    /**
+     * 返回赋值表达式在所有可见初始化 owner 中的统一分类。
+     *
+     * 内层函数先分析，外层构造器随后分析。这样嵌套 lambda 对外层未初始化存储的
+     * 捕获可以升级为优先级分类，而不会被内层函数的普通“未跟踪”结果覆盖。
+     */
+    fun classifyAssignment(
+        assignment: CfirAssignment,
+        context: CheckerContext,
+    ): CfirInitializationAssignmentKind {
+        val cache = synchronized(caches) {
+            caches.getOrPut(context) { ClassificationCache() }
+        }
+        var classification = CfirInitializationAssignmentKind.NOT_TRACKED
+        val enclosingFunctions = context.containingDeclarations
+            .filterIsInstance<CfirFunction>()
+            .asReversed()
+
+        for (function in enclosingFunctions) {
+            val functionClassifications = cache.byFunction[function] ?: run {
+                val computed = linkedMapOf<CfirAssignment, CfirInitializationAssignmentKind>()
+                CfirInitializationFlowAnalyzer(
+                    context = context,
+                    reporter = EmptyDiagnosticReporter,
+                    reportReadDiagnostics = false,
+                    assignmentClassifications = computed,
+                ).collectAssignmentClassifications(function)
+                computed.toMap().also { cache.byFunction[function] = it }
+            }
+            classification = classification.merge(functionClassifications[assignment])
+        }
+
+        context.containingFileSymbol?.cfir?.let { file ->
+            val fileClassifications = cache.byFile[file] ?: run {
+                val computed = linkedMapOf<CfirAssignment, CfirInitializationAssignmentKind>()
+                CfirInitializationFlowAnalyzer(
+                    context = context,
+                    reporter = EmptyDiagnosticReporter,
+                    reportReadDiagnostics = false,
+                    assignmentClassifications = computed,
+                ).collectFileAssignmentClassifications(file)
+                computed.toMap().also { cache.byFile[file] = it }
+            }
+            classification = classification.merge(fileClassifications[assignment])
+        }
+
+        return classification
+    }
+
+    /** 合并不同 owner 观察到的初始化事实，保留优先级更高的结论。 */
+    private fun CfirInitializationAssignmentKind.merge(
+        other: CfirInitializationAssignmentKind?,
+    ): CfirInitializationAssignmentKind {
+        other ?: return this
+        return if (other.priority > priority) other else this
+    }
+
+    /** 判断赋值是否属于不重复的首次初始化。 */
     fun isInitializationAssignment(
         assignment: CfirAssignment,
         context: CheckerContext,
-    ): Boolean {
-        val function = context.findClosestDeclaration<CfirFunction>() ?: return false
-        val initializationAssignments = linkedSetOf<CfirAssignment>()
-        CfirInitializationFlowAnalyzer(
-            context = context,
-            reporter = EmptyDiagnosticReporter,
-            reportReadDiagnostics = false,
-            initializationAssignments = initializationAssignments,
-        ).collectInitializationAssignments(function)
-        return assignment in initializationAssignments
-    }
+    ): Boolean = classifyAssignment(assignment, context) == CfirInitializationAssignmentKind.INITIALIZATION
+
+    /** 判断赋值是否因初始化优先级错误而不应追加不可变诊断。 */
+    fun hasPriorityInitializationDiagnostic(
+        assignment: CfirAssignment,
+        context: CheckerContext,
+    ): Boolean = classifyAssignment(assignment, context) ==
+            CfirInitializationAssignmentKind.PRIORITY_INITIALIZATION_DIAGNOSTIC
+
+    /** 判断赋值是否在流分析中被识别为后续重复写入。 */
+    fun isReassignment(
+        assignment: CfirAssignment,
+        context: CheckerContext,
+    ): Boolean = classifyAssignment(assignment, context) == CfirInitializationAssignmentKind.REASSIGNMENT
 }
 
 /**
@@ -1471,15 +1732,20 @@ private enum class InitializationAccessMode {
  * 局部变量、实例成员与 static/global 存储的闭包访问规则不同，不能只用
  * “是否为实例字段”反推捕获诊断，否则 static/global 会被误报为局部捕获。
  */
-private enum class TrackedVariableKind {
+private enum class TrackedVariableKind(
+    /**
+     * 嵌套函数闭包是否会捕获该种类中尚未初始化的存储。
+     */
+    val canBeCapturedBeforeInitialization: Boolean,
+) {
     /** 普通局部变量或参数。 */
-    LOCAL_VARIABLE,
+    LOCAL_VARIABLE(canBeCapturedBeforeInitialization = true),
 
     /** 当前 class-like 或可见父类的实例存储成员。 */
-    INSTANCE_MEMBER,
+    INSTANCE_MEMBER(canBeCapturedBeforeInitialization = true),
 
     /** static 字段或顶层 global 变量。 */
-    STATIC_OR_GLOBAL,
+    STATIC_OR_GLOBAL(canBeCapturedBeforeInitialization = false),
 }
 
 /**
@@ -1500,6 +1766,14 @@ private data class TrackedVariableInfo(
      * 被跟踪符号的初始化语义种类。
      */
     val kind: TrackedVariableKind,
+
+    /**
+     * 声明发生时所处的可重复执行区域深度。
+     *
+     * 赋值若进入更深的循环区域，说明同一存储可能在一次执行中被回访，即使当前
+     * 线性遍历尚未看到第二个语法赋值，也必须按重复赋值处理。
+     */
+    val declarationRepeatableDepth: Int = 0,
 ) {
     /**
      * 是否为实例字段或主构造成员属性。
@@ -1542,6 +1816,22 @@ private data class InitializationState(
     val initialized: Set<CfirBasedSymbol<*>>,
 
     /**
+     * 至少一条可达路径上已经完成初始化的符号集合。
+     *
+     * [initialized] 负责 definite assignment；本集合负责识别可能重复初始化。
+     * 分支合并时前者取交集、后者取并集。
+     */
+    val possiblyInitialized: Set<CfirBasedSymbol<*>>,
+
+    /**
+     * 当前实例字段初始化所匹配的 `this` owner。
+     *
+     * 只有写入该 receiver 的字段才能推进当前构造器状态；写入其他实例不能完成
+     * 当前对象的字段初始化。
+     */
+    val expectedReceiver: CfirThisOwnerSymbol<*>?,
+
+    /**
      * 当前控制流是否已经终止。
      */
     val terminated: Boolean,
@@ -1560,6 +1850,11 @@ private data class InitializationState(
      * 当前是否在嵌套具名函数或匿名函数体内。
      */
     val inNestedFunction: Boolean,
+
+    /**
+     * 当前所在的可重复执行区域深度，用于识别循环中的潜在重复初始化。
+     */
+    val repeatableDepth: Int,
 ) {
     /**
      * 初始化状态工厂。
@@ -1568,13 +1863,16 @@ private data class InitializationState(
         /**
          * 创建空初始化状态。
          */
-        fun empty(): InitializationState = InitializationState(
+        fun empty(expectedReceiver: CfirThisOwnerSymbol<*>? = null): InitializationState = InitializationState(
             tracked = emptyMap(),
             initialized = emptySet(),
+            possiblyInitialized = emptySet(),
+            expectedReceiver = expectedReceiver,
             terminated = false,
             inMemberInitializer = false,
             memberInitializerOwner = null,
             inNestedFunction = false,
+            repeatableDepth = 0,
         )
     }
 
@@ -1586,14 +1884,26 @@ private data class InitializationState(
         initialized: Boolean,
     ): InitializationState {
         val normalizedSymbol = trackedVariable.symbol.initializationSymbol()
-        val normalizedTrackedVariable = trackedVariable.copy(symbol = normalizedSymbol)
+        val normalizedTrackedVariable = trackedVariable.copy(
+            symbol = normalizedSymbol,
+            declarationRepeatableDepth = repeatableDepth,
+        )
         val nextTracked = tracked + (normalizedSymbol to normalizedTrackedVariable)
         val nextInitialized = if (initialized) {
             this.initialized + normalizedSymbol
         } else {
             this.initialized - normalizedSymbol
         }
-        return copy(tracked = nextTracked, initialized = nextInitialized)
+        val nextPossiblyInitialized = if (initialized) {
+            possiblyInitialized + normalizedSymbol
+        } else {
+            possiblyInitialized - normalizedSymbol
+        }
+        return copy(
+            tracked = nextTracked,
+            initialized = nextInitialized,
+            possiblyInitialized = nextPossiblyInitialized,
+        )
     }
 
     /**
@@ -1620,7 +1930,10 @@ private data class InitializationState(
     fun markInitialized(symbol: CfirBasedSymbol<*>): InitializationState {
         val normalizedSymbol = symbol.initializationSymbol()
         if (normalizedSymbol !in tracked) return this
-        return copy(initialized = initialized + normalizedSymbol)
+        return copy(
+            initialized = initialized + normalizedSymbol,
+            possiblyInitialized = possiblyInitialized + normalizedSymbol,
+        )
     }
 
     /**
@@ -1631,7 +1944,10 @@ private data class InitializationState(
             .filterValues(TrackedVariableInfo::isInstanceField)
             .keys
         if (instanceFieldSymbols.isEmpty()) return this
-        return copy(initialized = initialized + instanceFieldSymbols)
+        return copy(
+            initialized = initialized + instanceFieldSymbols,
+            possiblyInitialized = possiblyInitialized + instanceFieldSymbols,
+        )
     }
 
     /**
@@ -1643,6 +1959,26 @@ private data class InitializationState(
      * 判断指定符号是否已经初始化。
      */
     fun isInitialized(symbol: CfirBasedSymbol<*>): Boolean = symbol.initializationSymbol() in initialized
+
+    /**
+     * 判断指定符号是否可能已经初始化。
+     */
+    fun isPossiblyInitialized(symbol: CfirBasedSymbol<*>): Boolean =
+        symbol.initializationSymbol() in possiblyInitialized
+
+    /**
+     * 取得指定符号的初始化跟踪信息。
+     */
+    fun trackedVariable(symbol: CfirBasedSymbol<*>): TrackedVariableInfo? =
+        tracked[symbol.initializationSymbol()]
+
+    /**
+     * 判断赋值是否位于声明所在区域之外的可重复执行区域。
+     */
+    fun mayRevisitAssignment(symbol: CfirBasedSymbol<*>): Boolean {
+        val variable = trackedVariable(symbol) ?: return false
+        return variable.declarationRepeatableDepth < repeatableDepth
+    }
 
     /**
      * 判断当前状态中是否仍有未初始化的实例字段。
@@ -1659,20 +1995,34 @@ private data class InitializationState(
      * 因此读取或写入当前类/父类实例成员时，即使该单个字段已经按声明顺序完成初始化，
      * 仍按官方 illegal-usage-of-member / super-member 语义报告成员非法访问。
      */
-    fun shouldReportIllegalMemberAccessFromNestedInitializer(symbol: CfirBasedSymbol<*>): Boolean {
-        if (!inMemberInitializer || !inNestedFunction) return false
+    fun illegalMemberAccessKindFromNestedInitializer(
+        symbol: CfirBasedSymbol<*>,
+    ): NestedInitializerMemberAccessKind? {
+        if (!inMemberInitializer || !inNestedFunction) return null
         val normalizedSymbol = symbol.initializationSymbol()
-        return tracked[normalizedSymbol]?.kind == TrackedVariableKind.INSTANCE_MEMBER
+        if (tracked[normalizedSymbol]?.kind != TrackedVariableKind.INSTANCE_MEMBER) return null
+
+        val currentOwnerClassId = memberInitializerOwner?.symbol?.classId ?: return null
+        val targetOwnerClassId = normalizedSymbol.initializationMemberOwnerClassId() ?: return null
+        return if (targetOwnerClassId == currentOwnerClassId) {
+            NestedInitializerMemberAccessKind.CURRENT_MEMBER
+        } else {
+            NestedInitializerMemberAccessKind.SUPER_MEMBER
+        }
     }
 
     /**
-     * 判断嵌套函数中是否需要报告捕获未初始化局部变量。
+     * 判断嵌套函数中是否需要报告捕获未初始化存储。
+     *
+     * 局部变量和构造器正在初始化的实例成员都属于闭包捕获；static/global
+     * 拥有独立的初始化顺序规则。成员初始化器中的实例成员非法访问由调用方
+     * 在进入该判断前优先分类，不会退化为捕获诊断。
      */
     fun shouldReportCaptureBeforeInitialization(symbol: CfirBasedSymbol<*>): Boolean {
         val normalizedSymbol = symbol.initializationSymbol()
         val variableInfo = tracked[normalizedSymbol] ?: return false
         return inNestedFunction &&
-                variableInfo.kind == TrackedVariableKind.LOCAL_VARIABLE &&
+                variableInfo.kind.canBeCapturedBeforeInitialization &&
                 normalizedSymbol !in initialized
     }
 
@@ -1708,12 +2058,20 @@ private data class InitializationState(
             initialized = initialized.intersect(other.initialized).filterTo(linkedSetOf()) { symbol ->
                 symbol in sharedTrackedSymbols
             },
+            possiblyInitialized = possiblyInitialized.union(other.possiblyInitialized).filterTo(linkedSetOf()) { symbol ->
+                symbol in sharedTrackedSymbols
+            },
+            expectedReceiver = commonExpectedReceiver(other),
             terminated = terminated && other.terminated,
             inMemberInitializer = inMemberInitializer && other.inMemberInitializer,
             memberInitializerOwner = commonMemberInitializerOwner(other),
             inNestedFunction = inNestedFunction && other.inNestedFunction,
+            repeatableDepth = minOf(repeatableDepth, other.repeatableDepth),
         )
     }
+
+    private fun commonExpectedReceiver(other: InitializationState): CfirThisOwnerSymbol<*>? =
+        expectedReceiver.takeIf { it == other.expectedReceiver }
 
     private fun commonMemberInitializerOwner(other: InitializationState): CfirClassLikeDeclaration? {
         if (!inMemberInitializer || !other.inMemberInitializer) return null
@@ -1728,8 +2086,22 @@ private data class InitializationState(
         return copy(
             tracked = tracked.filterKeys { symbol -> symbol in normalizedVisibleSymbols },
             initialized = initialized.filterTo(linkedSetOf()) { symbol -> symbol in normalizedVisibleSymbols },
+            possiblyInitialized = possiblyInitialized.filterTo(linkedSetOf()) { symbol ->
+                symbol in normalizedVisibleSymbols
+            },
         )
     }
+
+    /**
+     * 进入一个可能执行多次的循环区域。
+     */
+    fun enterRepeatableRegion(): InitializationState = copy(repeatableDepth = repeatableDepth + 1)
+
+    /**
+     * 将循环体结果恢复到外层重复区域深度。
+     */
+    fun restoreRepeatableDepth(depth: Int): InitializationState =
+        if (repeatableDepth == depth) this else copy(repeatableDepth = depth)
 
     /**
      * 标记当前控制流已终止。
@@ -1750,6 +2122,37 @@ private fun CfirBasedSymbol<*>.initializationSymbol(): CfirBasedSymbol<*> = when
     this is CfirPropertySymbol && isBound -> unwrapSubstitutionOverrides()
     this is CfirPropertyAccessorSymbol && isBound -> propertySymbol.unwrapSubstitutionOverrides()
     else -> this
+}
+
+/** 成员初始化器嵌套 callable 的实例成员访问归属。 */
+private enum class NestedInitializerMemberAccessKind {
+    /** 访问当前 class-like 自身声明的实例成员。 */
+    CURRENT_MEMBER,
+
+    /** 访问可见父类声明的实例成员。 */
+    SUPER_MEMBER,
+}
+
+/**
+ * 取得初始化跟踪符号的真实声明 owner。
+ *
+ * substitution/fake/delegated override 只是使用点视图，成员归属必须回到原声明后再与
+ * 当前成员初始化器 owner 比较，否则继承成员会被误分类为当前成员。
+ */
+private fun CfirBasedSymbol<*>.initializationMemberOwnerClassId(): ClassId? {
+    val callable = when (this) {
+        is CfirVariableSymbol<*> -> takeIf { isBound }?.cfir as? CfirCallableDeclaration
+        is CfirPropertySymbol -> takeIf { isBound }?.cfir as? CfirCallableDeclaration
+        is CfirPropertyAccessorSymbol -> takeIf { isBound }?.cfir as? CfirCallableDeclaration
+        else -> null
+    }
+    return callable?.unwrapFakeOverridesOrDelegated()?.symbol?.callableId?.classId
+        ?: when (this) {
+            is CfirVariableSymbol<*> -> callableId.classId
+            is CfirPropertySymbol -> callableId.classId
+            is CfirPropertyAccessorSymbol -> propertySymbol.callableId.classId
+            else -> null
+        }
 }
 
 /**

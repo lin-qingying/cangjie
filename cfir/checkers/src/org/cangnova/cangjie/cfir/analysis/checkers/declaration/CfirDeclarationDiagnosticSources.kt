@@ -259,27 +259,24 @@ internal fun CfirConstructor.constructorNameDiagnosticSource(
  */
 internal fun CfirConstructor.constructorDeclarationHeaderDiagnosticSource(): AbstractCjSourceElement? {
     val declarationSource = source ?: return null
-    source?.psi?.let { psi ->
-        val constructorPsi = when (psi) {
+    declarationSource.psi?.let { psi ->
+        val constructorPsi = checkNotNull(when (psi) {
             is CjConstructor<*> -> psi
             else -> PsiTreeUtil.getParentOfType(psi, CjConstructor::class.java, false)
                 ?: PsiTreeUtil.findChildOfType(psi, CjConstructor::class.java)
+        }) { "构造器 CFIR 的 PSI source 必须对应合法的构造器声明" }
+        val parameterList = checkNotNull(constructorPsi.valueParameterList) {
+            "合法构造器声明必须包含参数列表，才能建立精确的声明头诊断范围"
         }
-        if (constructorPsi != null) {
-            val endElement = constructorPsi.valueParameterList
-                ?: constructorPsi.getInitKeyword()
-                ?: constructorPsi.nameIdentifier
-            if (endElement != null) {
-                return CjOffsetsOnlySourceElement(
-                    startOffset = constructorPsi.textRange.startOffset,
-                    endOffset = endElement.textRange.endOffset,
-                )
-            }
-        }
+        return CjOffsetsOnlySourceElement(
+            startOffset = constructorPsi.textRange.startOffset,
+            endOffset = parameterList.textRange.endOffset,
+        )
     }
-    return (declarationSource as? CjSourceElement)?.findConstructorDeclarationHeaderSource()
-        ?: constructorNameDiagnosticSource()
-        ?: declarationSource
+    val lightTreeSource = declarationSource as? CjLightSourceElement ?: return null
+    return checkNotNull(lightTreeSource.findConstructorDeclarationHeaderSource()) {
+        "构造器 CFIR 的 LightTree source 必须包含完整的构造器声明头"
+    }
 }
 
 /**
@@ -627,7 +624,7 @@ private fun CjSourceElement.findConstructorNameSource(
 /**
  * 在 light-tree source 中查找构造器声明头范围。
  *
- * 范围从构造器声明起点开始，到参数列表右括号结束；无参数列表时退化为构造器名称。
+ * 范围从构造器声明起点开始，到参数列表右括号结束；缺少参数列表表示 source 不满足构造器不变量。
  */
 private fun CjSourceElement.findConstructorDeclarationHeaderSource(): AbstractCjSourceElement? {
     val tokens = collectLeafTokens()
@@ -643,7 +640,7 @@ private fun CjSourceElement.findConstructorDeclarationHeaderSource(): AbstractCj
         )
     }
 
-    return findConstructorNameSource(includeConstKeyword = false)
+    return null
 }
 
 /**

@@ -12,6 +12,7 @@ import org.cangnova.cangjie.cfir.MutableOrEmptyList
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirAssignment
+import org.cangnova.cangjie.cfir.expressions.CfirAssignmentTypeMismatchOutcome
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
@@ -25,6 +26,7 @@ class CfirAssignmentImpl @CfirImplementationDetail constructor(
     override var coneTypeOrNull: ConeCangJieType?,
     override var lValue: CfirExpression,
     override var rValue: CfirExpression,
+    override var typeMismatchOutcome: CfirAssignmentTypeMismatchOutcome?,
 ) : CfirAssignment() {
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
@@ -61,5 +63,9 @@ class CfirAssignmentImpl @CfirImplementationDetail constructor(
 
     override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?) {
         coneTypeOrNull = newConeTypeOrNull
+    }
+
+    override fun replaceTypeMismatchOutcome(newTypeMismatchOutcome: CfirAssignmentTypeMismatchOutcome?) {
+        typeMismatchOutcome = newTypeMismatchOutcome
     }
 }

@@ -30,7 +30,6 @@ import org.cangnova.cangjie.cfir.resolve.calls.visibility.getOwnerClassId
 import org.cangnova.cangjie.cfir.resolve.calls.visibility.moduleVisibilityChecker
 import org.cangnova.cangjie.cfir.resolve.providers.canAccessPackageInternalDeclaration
 import org.cangnova.cangjie.cfir.resolve.providers.getContainingFile
-import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.psi.CjDeclaration
@@ -82,7 +81,7 @@ internal class CaCfirVisibilityChecker(
 
         val candidateDeclaration = cfirSymbol.cfir as? CfirMemberDeclaration ?: return false
         val classDeclaration = classSymbol.cfirSymbol.cfir as? CfirClassLikeDeclaration ?: return false
-        val useSiteFile = analysisSession.cfirSession.cfirProvider.getContainingFile(classDeclaration.symbol) ?: return false
+        val useSiteFile = classDeclaration.symbol.getContainingFile() ?: return false
 
         analysisSession.isDeclarationVisibleAtUseSite(
             candidateDeclaration = candidateDeclaration,
@@ -161,18 +160,18 @@ private fun CaCfirSession.isDeclarationVisibleAtUseSite(
 
     return when (candidateDeclaration.status.visibility) {
         Visibilities.Public -> true
-        Visibilities.Internal -> canSeePackageInternalDeclaration(useSiteFile, candidateDeclaration, targetSession)
+        Visibilities.Internal -> canSeePackageInternalDeclaration(useSiteFile, candidateDeclaration)
         Visibilities.Private -> {
-            val ownerClassId = candidateDeclaration.symbol.getOwnerClassId(targetSession.cfirProvider)
+            val ownerClassId = candidateDeclaration.symbol.getOwnerClassId()
             when (ownerClassId) {
-                null -> canSeePrivateTopLevelDeclarationFromFile(useSiteFile, candidateDeclaration, targetSession)
+                null -> canSeePrivateTopLevelDeclarationFromFile(useSiteFile, candidateDeclaration)
                 else -> canSeeMemberOf(ownerClassId, containingDeclarations)
             }
         }
         Visibilities.Protected -> {
             candidateDeclaration.llCfirModuleData.caModule == targetSession.caModule ||
                 targetSession.moduleVisibilityChecker?.isInFriendModule(candidateDeclaration) == true ||
-                candidateDeclaration.symbol.getOwnerClassId(targetSession.cfirProvider)?.let { ownerClassId ->
+                candidateDeclaration.symbol.getOwnerClassId()?.let { ownerClassId ->
                     canSeeMemberOf(ownerClassId, containingDeclarations)
                 } == true
         }
@@ -200,9 +199,8 @@ private fun CaCfirSession.getTargetSession(
 private fun canSeePackageInternalDeclaration(
     useSiteFile: CfirFile,
     declaration: CfirMemberDeclaration,
-    session: org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession,
 ): Boolean {
-    val declarationContainingFile = session.cfirProvider.getContainingFile(declaration.symbol) ?: return false
+    val declarationContainingFile = declaration.symbol.getContainingFile() ?: return false
     val declarationPackage = declarationContainingFile.packageDirective.packageFqName
     val useSitePackage = useSiteFile.packageDirective.packageFqName
     return canAccessPackageInternalDeclaration(useSitePackage, declarationPackage)
@@ -214,9 +212,8 @@ private fun canSeePackageInternalDeclaration(
 private fun canSeePrivateTopLevelDeclarationFromFile(
     useSiteFile: CfirFile,
     declaration: CfirMemberDeclaration,
-    session: org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession,
 ): Boolean {
-    val declarationContainingFile = session.cfirProvider.getContainingFile(declaration.symbol) ?: return false
+    val declarationContainingFile = declaration.symbol.getContainingFile() ?: return false
     return useSiteFile == declarationContainingFile
 }
 

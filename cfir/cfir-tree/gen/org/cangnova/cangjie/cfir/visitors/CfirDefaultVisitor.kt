@@ -116,6 +116,9 @@ abstract class CfirDefaultVisitor<out R, in D> : CfirVisitor<R, D>() {
     override fun visitInoutArgumentExpression(inoutArgumentExpression: CfirInoutArgumentExpression, data: D): R =
         visitWrappedExpression(inoutArgumentExpression, data)
 
+    override fun visitNamedArgumentExpression(namedArgumentExpression: CfirNamedArgumentExpression, data: D): R =
+        visitWrappedExpression(namedArgumentExpression, data)
+
     override fun visitCall(call: CfirCall, data: D): R =
         visitStatement(call, data)
 

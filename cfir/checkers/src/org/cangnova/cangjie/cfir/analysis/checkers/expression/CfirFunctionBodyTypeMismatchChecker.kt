@@ -56,7 +56,8 @@ object CfirFunctionBodyTypeMismatchChecker : CfirBasicExpressionChecker() {
         if (containingFunction.returnTypeRef is CfirImplicitTypeRef) return
 
         if (block.statements.dropLast(1).any { it is CfirReturnExpression }) return
-        val tailExpression = block.statements.lastOrNull() as? CfirExpression
+        val tailStatement = block.statements.lastOrNull()
+        val tailExpression = tailStatement as? CfirExpression
         if (tailExpression?.isTerminatingFunctionBodyTail() == true) return
 
         // 空函数体或以声明结尾的函数体会正常流出 Unit，仍然必须参与显式返回类型检查。
@@ -67,7 +68,9 @@ object CfirFunctionBodyTypeMismatchChecker : CfirBasicExpressionChecker() {
         }
         if (actualType is ConeErrorType) return
         if (tailExpression?.containsReportedErrorDiagnostic() == true) return
-        val resultSource = tailExpression?.source ?: block.source ?: return
+        // 声明不是 block 的结果表达式，但官方仍把“声明导致 Unit 流出”的类型错误
+        // 定位在该尾声明本身；只有真正的空 body 才定位到整个 block。
+        val resultSource = tailStatement?.source ?: block.source ?: return
 
         val expectedType = when (containingFunction) {
             is CfirAnonymousFunction ->
@@ -93,10 +96,10 @@ object CfirFunctionBodyTypeMismatchChecker : CfirBasicExpressionChecker() {
         if (!isSubtypeForTypeMismatch(context.session, context.session.typeContext, actualType, expectedType)) {
             val diagnosticFactory = when {
                 // 官方 ChkBlock 会把目标返回类型下推到真实尾表达式，由该表达式的 Check
-                // 在自身 source 上报告 sema_mismatched_types；因此调用、引用、while 等普通
-                // 隐式尾表达式都属于 TYPE_MISMATCH。只有空 block / 声明结尾没有可检查的
-                // 尾表达式，才由 CheckFuncBody 的返回类型兜底诊断负责。
-                tailExpression != null -> CfirErrors.TYPE_MISMATCH
+                // 在自身 source 上报告 sema_mismatched_types。声明虽不产生结果表达式，
+                // 但作为非空 body 的语法尾项同样在自身 source 上报告 TYPE_MISMATCH；
+                // 只有真正的空 block 才由 CheckFuncBody 的空体规则负责。
+                tailStatement != null -> CfirErrors.TYPE_MISMATCH
                 containingFunction is CfirAnonymousFunction && containingFunction.isLambda -> CfirErrors.TYPE_MISMATCH
                 containingFunction is CfirPropertyAccessor && containingFunction.isGetter -> CfirErrors.TYPE_MISMATCH
                 else -> diagnosticFactoryForReturnTypeMismatch(context.session, expectedType)

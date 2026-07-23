@@ -16,7 +16,7 @@ func g() {
     f(1) // ok
     E.f(1) // ok
     f(1, 2) // ok, find f(a: Int64, b: Int64)
-    f(1, 2, <!TOO_MANY_ARGUMENTS!>3<!>) // ok, find E.f(Int64, Int64, Int64)
+    f<!WRONG_NUMBER_OF_ARGUMENTS!>(1, 2, 3)<!> // unqualified call does not select E.f(Int64, Int64, Int64)
 }
 
 var A = 0 // conflict with A

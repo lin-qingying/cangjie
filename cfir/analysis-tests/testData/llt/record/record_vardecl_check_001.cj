@@ -10,6 +10,6 @@ struct C {
 
 main(): Int64 {
     let r = R()
-    <!CANNOT_ASSIGN_TO_IMMUTABLE!>r.a.m<!> = 2
+    r.a.<!CANNOT_ASSIGN_TO_IMMUTABLE!>m<!> = 2
     return 0
 }

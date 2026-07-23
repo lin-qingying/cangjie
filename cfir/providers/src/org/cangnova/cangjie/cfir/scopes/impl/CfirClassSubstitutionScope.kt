@@ -67,7 +67,13 @@ class CfirClassSubstitutionScope(
      * 可选的替换 owner 类型；父类型替换时与 dispatch receiver 区分。
      */
     private val substitutionOwnerType: ConeCangJieType? = null,
-) : CfirTypeScope() {
+) : CfirTypeScope(), CfirFunctionInheritanceScope, CfirMemberLookupCompletenessScope {
+    /** substitution 只改变成员签名，lookup completeness 来源保持不变。 */
+    override val memberLookupBlockers: List<CfirMemberLookupBlocker>
+        get() = (useSiteMemberScope as? CfirMemberLookupCompletenessScope)
+            ?.memberLookupBlockers
+            .orEmpty()
+
     /**
      * owner 类型参数替换器。
      */
@@ -142,6 +148,26 @@ class CfirClassSubstitutionScope(
     }
 
     /**
+     * 处理替换后的函数及其继承来源。
+     *
+     * 最终 member 与 base scope 随当前 receiver 一起替换；direct-input identity 保持不变，
+     * 从而让上层 scope 能判断两个相同最终签名是否来自不同泛型父类型实例。
+     */
+    override fun processFunctionsByNameWithProvenance(
+        name: Name,
+        processor: (CfirFunctionInheritanceProvenance) -> Unit,
+    ) {
+        functionInheritanceDelegate().processFunctionsByNameWithProvenance(name) { provenance ->
+            processor(
+                provenance.copy(
+                    member = substituteFunctionSymbol(provenance.member),
+                    baseScope = this@CfirClassSubstitutionScope,
+                )
+            )
+        }
+    }
+
+    /**
      * 按名称处理替换后的属性。
      */
     override fun processPropertiesByName(name: Name, processor: (CfirPropertySymbol) -> Unit) {
@@ -210,6 +236,27 @@ class CfirClassSubstitutionScope(
     }
 
     /**
+     * 处理替换后函数的直接覆盖输入，并保留底层 use-site scope 计算出的来源身份。
+     */
+    override fun processDirectOverriddenFunctionsWithProvenance(
+        functionSymbol: CfirNamedFunctionSymbol,
+        processor: (CfirFunctionInheritanceProvenance) -> ProcessorAction,
+    ): ProcessorAction {
+        val original = functionSymbol.originalForSubstitutionOverride as? CfirNamedFunctionSymbol
+        if (original == null || original !in functionOverrideCache) {
+            return functionInheritanceDelegate()
+                .processDirectOverriddenFunctionsWithProvenance(functionSymbol, processor)
+        }
+
+        val originalProvenance = findVisibleFunctionProvenance(original)
+        return if (processor(originalProvenance) == ProcessorAction.STOP) {
+            ProcessorAction.STOP
+        } else {
+            ProcessorAction.NONE
+        }
+    }
+
+    /**
      * 处理替换后属性的直接覆盖链。
      */
     override fun processDirectOverriddenPropertiesWithBaseScope(
@@ -243,6 +290,34 @@ class CfirClassSubstitutionScope(
             wrappedBaseScopeCache.getOrPut(baseScope) {
                 CfirClassSubstitutionScope(session, baseScope, dispatchReceiverType, substitutionOwnerType)
             }
+        }
+    }
+
+    /**
+     * 返回底层 scope 的函数继承来源能力。
+     */
+    private fun functionInheritanceDelegate(): CfirFunctionInheritanceScope =
+        checkNotNull(useSiteMemberScope as? CfirFunctionInheritanceScope) {
+            "Substitution scope delegate does not preserve function inheritance provenance: $useSiteMemberScope"
+        }
+
+    /**
+     * 在底层最终可见函数中查找 [functionSymbol] 的来源结果。
+     */
+    private fun findVisibleFunctionProvenance(
+        functionSymbol: CfirNamedFunctionSymbol,
+    ): CfirFunctionInheritanceProvenance {
+        var result: CfirFunctionInheritanceProvenance? = null
+        functionInheritanceDelegate().processFunctionsByNameWithProvenance(functionSymbol.name) { provenance ->
+            if (provenance.member == functionSymbol) {
+                check(result == null) {
+                    "Function inheritance provenance is not unique for $functionSymbol in $useSiteMemberScope"
+                }
+                result = provenance
+            }
+        }
+        return checkNotNull(result) {
+            "Missing function inheritance provenance for $functionSymbol in $useSiteMemberScope"
         }
     }
 

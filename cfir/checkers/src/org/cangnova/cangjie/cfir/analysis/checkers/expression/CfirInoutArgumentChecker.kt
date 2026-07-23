@@ -4,10 +4,10 @@ import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
-import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirInoutArgumentExpression
+import org.cangnova.cangjie.cfir.expressions.CfirNamedArgumentExpression
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
@@ -49,10 +49,9 @@ object CfirInoutArgumentChecker : CfirFunctionCallChecker() {
         }
     }
 
-    /** 解开命名实参在 raw-cfir 中包裹出的单表达式 block。 */
-    private fun unwrapArgument(argument: CfirExpression): CfirExpression {
-        // 命名实参在 raw-cfir 中被包成单表达式 block（详见 PsiRawCfirBuilder.convertCallArgument）
-        val inner = (argument as? CfirBlock)?.statements?.singleOrNull() as? CfirExpression ?: argument
-        return inner
+    /** 解开命名实参包装，取得真实的 inout/value 表达式。 */
+    private tailrec fun unwrapArgument(argument: CfirExpression): CfirExpression = when (argument) {
+        is CfirNamedArgumentExpression -> unwrapArgument(argument.expression)
+        else -> argument
     }
 }

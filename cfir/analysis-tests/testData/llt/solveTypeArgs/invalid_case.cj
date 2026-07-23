@@ -8,7 +8,7 @@ class A<B> {
 }
 
 func bar<B, <!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>C<!>>(a: A<B>): C where C <: B {
-    throw A<!TOO_MANY_ARGUMENTS!>("no impl")<!>
+    throw A<!WRONG_NUMBER_OF_ARGUMENTS!>("no impl")<!>
 }
 
 interface Super {}

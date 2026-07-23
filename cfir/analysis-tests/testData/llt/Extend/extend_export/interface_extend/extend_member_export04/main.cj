@@ -36,7 +36,7 @@ import a.*
 import b.*
 
 main() {
-    <!NO_VALUE_FOR_PARAMETER!>Foo().f1()<!> // error
+    Foo().f1<!WRONG_NUMBER_OF_ARGUMENTS!>()<!> // error
     Foo().f1(1) // ok
     Foo().f2() // ok
 }

@@ -45,7 +45,7 @@ main() {
     test1(a: 1, <!MIXING_NAMED_AND_POSITIONAL_ARGUMENTS!>1<!>)
     test1(<!NEED_NAMED_ARGUMENT!>1<!>, a: 1)
     test1(<!NEED_NAMED_ARGUMENT!>""<!>, "")
-    test1("", "", <!TOO_MANY_ARGUMENTS!>""<!>)
+    test1<!WRONG_NUMBER_OF_ARGUMENTS!>("", "", "")<!>
     return 0
 }
 

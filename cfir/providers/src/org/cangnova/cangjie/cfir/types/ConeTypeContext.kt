@@ -433,11 +433,8 @@ interface ConeTypeContext :
             ?: return emptyList()
         if (!classSymbol.isBound) return emptyList()
         classSymbol.lazyResolveToPhase(CfirResolvePhase.SUPER_TYPES)
-        return declarationSelfType(classSymbol)
-            ?.let { declarationSelfType ->
-                session.typeAwareSupertypeProviderOrNull?.getDirectSupertypes(declarationSelfType)
-            }
-            ?.takeIf { it.isNotEmpty() }
-            ?: classSymbol.cfir.superTypeRefs.mapNotNull { (it as? CfirResolvedTypeRef)?.coneType }
+        val declarationSelfType = declarationSelfType(classSymbol) ?: return emptyList()
+        val supertypeProvider = session.typeAwareSupertypeProviderOrNull ?: return emptyList()
+        return supertypeProvider.getDirectSupertypes(declarationSelfType)
     }
 }

@@ -52,6 +52,9 @@ import org.cangnova.cangjie.cfir.resolve.calls.synthesizeSpawnType
 import org.cangnova.cangjie.cfir.resolve.constants.CfirIntConstantEvalUtils
 import org.cangnova.cangjie.cfir.resolve.match.exhaustive.ExhaustivenessAnalyzer
 import org.cangnova.cangjie.cfir.resolve.match.exhaustive.ExhaustivenessResult
+import org.cangnova.cangjie.cfir.resolve.providers.classifyDeclaredSupertype
+import org.cangnova.cangjie.cfir.resolve.providers.constructorDependencyTypeOrNull
+import org.cangnova.cangjie.cfir.resolve.providers.scopeTraversalTypeOrNull
 import org.cangnova.cangjie.cfir.resolve.transformers.CfirSpecificTypeResolverTransformer
 import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.CfirPCLAInferenceSession
 import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.CfirTowerDataMode
@@ -321,8 +324,76 @@ open class CfirExpressionsResolveTransformer(
             else -> synthesized
         }
         literalExpression.replaceConeTypeOrNull(resolvedType)
+        recordAssignmentRhsLiteralMismatch(literalExpression, resolvedType)
         components.dataFlowAnalyzer.exitLiteralExpression(literalExpression)
         return literalExpression
+    }
+
+    /**
+     * 在字面量 owner 仍持有失效前实际类型时完成 assignment RHS 的目标类型结论。
+     *
+     * 官方 `Check(ctx, lTy, lit)` 对直接 Bool/Int/Float/Rune 使用
+     * `CANNOT_CONVERT_LITERAL`；String 保留有效根类型并由赋值层追加 wrapper，Unit
+     * 虽保留 Unit 值类型但根检查失败后不允许 wrapper。
+     */
+    private fun recordAssignmentRhsLiteralMismatch(
+        literalExpression: CfirLiteralExpression,
+        actualType: ConeCangJieType,
+    ) {
+        val expectedType = context.assignmentRhsExpectedTypeFor(literalExpression) ?: return
+        val integerRangeMismatch = literalExpression.isOutOfAssignmentIntegerRange(expectedType)
+        if (!integerRangeMismatch &&
+            AbstractTypeChecker.isSubtypeOf(session.typeContext, actualType, expectedType) == true
+        ) return
+
+        val (primaryDiagnostic, rootValidity) = when (literalExpression.kind) {
+            CfirLiteralKind.BOOLEAN ->
+                CfirAssignmentTypeMismatchPrimaryDiagnostic.CannotConvertLiteral("boolean") to
+                        CfirAssignmentRhsRootValidity.INVALID_AFTER_MISMATCH
+
+            CfirLiteralKind.INT ->
+                CfirAssignmentTypeMismatchPrimaryDiagnostic.CannotConvertLiteral("integer") to
+                        CfirAssignmentRhsRootValidity.INVALID_AFTER_MISMATCH
+
+            CfirLiteralKind.FLOAT ->
+                CfirAssignmentTypeMismatchPrimaryDiagnostic.CannotConvertLiteral("floating-point") to
+                        CfirAssignmentRhsRootValidity.INVALID_AFTER_MISMATCH
+
+            CfirLiteralKind.RUNE ->
+                CfirAssignmentTypeMismatchPrimaryDiagnostic.CannotConvertLiteral("character") to
+                        CfirAssignmentRhsRootValidity.INVALID_AFTER_MISMATCH
+
+            CfirLiteralKind.STRING ->
+                CfirAssignmentTypeMismatchPrimaryDiagnostic.TypeMismatch to
+                        CfirAssignmentRhsRootValidity.VALID_AFTER_MISMATCH
+
+            CfirLiteralKind.UNIT ->
+                CfirAssignmentTypeMismatchPrimaryDiagnostic.TypeMismatch to
+                        CfirAssignmentRhsRootValidity.INVALID_AFTER_MISMATCH
+        }
+        context.recordAssignmentRhsExpectedTypeMismatch(
+            expression = literalExpression,
+            actualType = actualType,
+            primaryDiagnostic = primaryDiagnostic,
+            rhsRootValidity = rootValidity,
+        )
+    }
+
+    /**
+     * 判断无显式后缀的正整数字面量是否超出赋值目标 primitive/VArray 元素范围。
+     *
+     * 目标类型可能是窄元素 VArray；不能只比较 IdealInt 归一化后的 cone 类型，否则
+     * `1000` 会先被解析成目标类型而丢失官方 `CANNOT_CONVERT_LITERAL` 语义。
+     */
+    private fun CfirLiteralExpression.isOutOfAssignmentIntegerRange(
+        expectedType: ConeCangJieType,
+    ): Boolean {
+        if (kind != CfirLiteralKind.INT) return false
+        val parsed = CfirIntConstantEvalUtils.parseIntLiteral(this) ?: return false
+        if (parsed.explicitSuffix != null) return false
+        val targetType = expectedType.fullyExpandedType().arrayLiteralElementType ?: expectedType
+        val range = CfirIntConstantEvalUtils.rangeForPositiveLiteralTargetType(targetType) ?: return false
+        return !range.contains(parsed.value)
     }
 
     /** 根据字面量种类合成初始类型。 */
@@ -492,6 +563,10 @@ open class CfirExpressionsResolveTransformer(
                 }
             }
             components.dataFlowAnalyzer.exitQualifiedAccessExpression(qualifiedAccessExpression)
+            recordAssignmentRhsTypeMismatchIfNeeded(
+                expression = qualifiedAccessExpression,
+                actualType = resolvedExpression.coneTypeOrNull,
+            )
             resolvedExpression
         }
 
@@ -599,6 +674,10 @@ open class CfirExpressionsResolveTransformer(
             }
 
             tryResolveBuiltinOperatorCall(withTransformedArguments, data)?.let { builtinOperatorCall ->
+                recordAssignmentRhsTypeMismatchIfNeeded(
+                    expression = builtinOperatorCall,
+                    actualType = builtinOperatorCall.coneTypeOrNull,
+                )
                 return@whileAnalysing builtinOperatorCall
             }
 
@@ -1277,7 +1356,16 @@ open class CfirExpressionsResolveTransformer(
         components.dataFlowAnalyzer.enterFunctionCall(resolvedCall)
         val result = components.callCompleter.completeCall(resolvedCall, ResolutionMode.ContextIndependent)
         components.dataFlowAnalyzer.exitFunctionCall(result, data.forceFullCompletion)
-        result.replaceConeTypeOrNull(builtinTypes.unitType)
+        /*
+         * 构造器 header 中的委托调用表达式只承担初始化顺序语义，公开类型必须是 Unit；
+         * 非 header 的 `super(...)` / `this(...)` 则仍是后续成员访问的 nominal receiver。
+         * 即使委托调用本身因位置或参数非法而带错误，保留 target.constructedType 也能让
+         * `super().a` 继续经过正常成员查找并报告唯一的 NOT_MEMBER_OF，而不是退化成
+         * Unit 上的 unresolved/cascade 诊断。
+         */
+        result.replaceConeTypeOrNull(
+            if (isConstructorHeaderCall) builtinTypes.unitType else target.constructedType,
+        )
         return result
     }
 
@@ -1319,9 +1407,9 @@ open class CfirExpressionsResolveTransformer(
 
     /** 从 resolved super typeRef 同时保留完整父类型和对应声明。 */
     private fun CfirTypeRef.toDelegatingConstructorTargetOrNull(): DelegatingConstructorTarget? {
-        val resolvedTypeRef = this as? CfirResolvedTypeRef ?: return null
-        if (resolvedTypeRef.coneType is ConeErrorType) return null
-        val constructedType = resolvedTypeRef.coneType.fullyExpandTypeAliasForConstructorDelegation()
+        val constructedType = classifyDeclaredSupertype(session)
+            .constructorDependencyTypeOrNull(includeLoopError = false)
+            ?: return null
         val declaration = constructedType.toResolvedSuperDeclarationOrNull() ?: return null
         return DelegatingConstructorTarget(declaration, constructedType)
     }
@@ -1769,10 +1857,13 @@ open class CfirExpressionsResolveTransformer(
         }
         block.transformOtherChildren(transformer, data)
         val lastExpr = block.statements.lastOrNull()
-        block.replaceConeTypeOrNull(
-            if (lastExpr is CfirExpression) lastExpr.coneTypeOrNull ?: builtinTypes.unitType
-            else builtinTypes.unitType
-        )
+        val resultType = if (lastExpr is CfirExpression) {
+            lastExpr.coneTypeOrNull ?: builtinTypes.unitType
+        } else {
+            builtinTypes.unitType
+        }
+        recordAssignmentRhsTypeMismatchIfNeeded(block, resultType)
+        block.replaceConeTypeOrNull(resultType)
         components.dataFlowAnalyzer.exitBlock(block)
         return block
     }
@@ -1817,7 +1908,9 @@ open class CfirExpressionsResolveTransformer(
         }
 
         matchExpression.replaceExhaustiveness(resolveMatchExhaustiveness(matchExpression))
-        matchExpression.replaceConeTypeOrNull(computeMatchResultType(branchTypes, data.expectedTypeOrNull))
+        val resultType = computeMatchResultType(branchTypes, data.expectedTypeOrNull)
+        recordAssignmentRhsTypeMismatchIfNeeded(matchExpression, resultType)
+        matchExpression.replaceConeTypeOrNull(resultType)
         components.dataFlowAnalyzer.exitMatchExpression(
             matchExpression,
             syntheticElseDecision = components.dataFlowAnalyzer.matchSyntheticElseDecision(matchExpression),
@@ -2270,9 +2363,9 @@ open class CfirExpressionsResolveTransformer(
             thenType == elseType -> thenType
             else -> commonSupertype(listOf(thenType, elseType))
         }
-        ifExpression.replaceConeTypeOrNull(
-            IdealTypeResolver.resolveIfIdeal(mergedType, data.expectedTypeOrNull)
-        )
+        val resultType = IdealTypeResolver.resolveIfIdeal(mergedType, data.expectedTypeOrNull)
+        recordAssignmentRhsTypeMismatchIfNeeded(ifExpression, resultType)
+        ifExpression.replaceConeTypeOrNull(resultType)
         return ifExpression
     }
 
@@ -2614,6 +2707,7 @@ open class CfirExpressionsResolveTransformer(
         assignment: CfirAssignment,
         data: ResolutionMode,
     ): CfirExpression {
+        assignment.replaceTypeMismatchOutcome(null)
         val subscriptLValue = assignment.lValue as? CfirSubscriptExpression
         if (subscriptLValue != null) {
             assignment.transformAnnotations(transformer, ResolutionMode.ContextIndependent)
@@ -2642,11 +2736,21 @@ open class CfirExpressionsResolveTransformer(
         assignment.transformLValue(transformer, ResolutionMode.ContextIndependent)
         val lValueType = assignment.lValue.coneTypeOrNull?.takeUnless { it is ConeErrorType }
         val rValueMode = lValueType?.let(::withExpectedType) ?: ResolutionMode.ContextIndependent
-        context.withAssignmentRhs {
+        val ordinaryExpectedType = lValueType.takeUnless { assignment.lValue is CfirTupleLiteral }
+        val assignmentRhsRoot = assignment.rValue
+        val typeMismatchOutcome = context.withAssignmentRhs(
+            rootExpression = assignmentRhsRoot,
+            expectedType = ordinaryExpectedType,
+        ) {
             assignment.transformRValue(transformer, rValueMode)
+            recordAssignmentRhsTypeMismatchIfNeeded(
+                expression = assignmentRhsRoot,
+                actualType = assignment.rValue.coneTypeOrNull,
+            )
         }
         assignment.rValue.applySingleRuneStringLiteralConversion(lValueType)
         val resolvedRValueType = assignment.rValue.coneTypeOrNull
+        assignment.replaceTypeMismatchOutcome(typeMismatchOutcome)
         val multipleAssignmentMismatch = (assignment.lValue as? CfirTupleLiteral)
             ?.let { tupleTarget ->
                 resolvedRValueType?.let { actualType ->
@@ -2769,7 +2873,9 @@ open class CfirExpressionsResolveTransformer(
         val elementTypes = tupleLiteral.elements.map {
             it.coneTypeOrNull ?: errorType("unresolved element")
         }
-        tupleLiteral.replaceConeTypeOrNull(ConeTupleType(elementTypes))
+        val resultType = ConeTupleType(elementTypes)
+        recordAssignmentRhsTypeMismatchIfNeeded(tupleLiteral, resultType)
+        tupleLiteral.replaceConeTypeOrNull(resultType)
         return tupleLiteral
     }
 
@@ -2798,10 +2904,19 @@ open class CfirExpressionsResolveTransformer(
 
         if (expectedType != null && expectedElementType == null) {
             arrayLiteral.transformChildren(transformer, ResolutionMode.ContextIndependent)
-            return arrayLiteral.asTypeMismatchExpression(
-                expectedType = expectedType,
-                actualType = arrayLiteral.constructArrayTypeFromElements(),
-            )
+            val actualType = arrayLiteral.constructArrayTypeFromElements()
+            recordAssignmentRhsTypeMismatchIfNeeded(arrayLiteral, actualType)
+            return if (context.assignmentRhsExpectedTypeFor(arrayLiteral) != null && actualType !is ConeErrorType) {
+                // assignment frame 负责根诊断；节点保留失效前类型，避免通用错误节点
+                // collector 再次报告同一个类型不匹配。
+                arrayLiteral.replaceConeTypeOrNull(actualType)
+                arrayLiteral
+            } else {
+                arrayLiteral.asTypeMismatchExpression(
+                    expectedType = expectedType,
+                    actualType = actualType,
+                )
+            }
         }
 
         val elementResolutionMode = expectedElementType?.let(::withExpectedType) ?: ResolutionMode.ContextIndependent
@@ -2819,6 +2934,26 @@ open class CfirExpressionsResolveTransformer(
             arrayLiteral.transformChildren(transformer, elementResolutionMode) as CfirArrayLiteral
         }
         resolvedArrayLiteral.ensureQuoteElementTypes()
+
+        val assignmentRootActualType = resolvedArrayLiteral.actualArrayTypeBeforeExpectedElementFailure(
+            expectedType = expectedType,
+        )
+        if (assignmentRootActualType != null && context.assignmentRhsExpectedTypeFor(arrayLiteral) != null) {
+            recordAssignmentRhsTypeMismatchIfNeeded(arrayLiteral, assignmentRootActualType)
+            val assignmentExpectedType = context.assignmentRhsExpectedTypeFor(arrayLiteral)
+            if (assignmentExpectedType != null &&
+                AbstractTypeChecker.isSubtypeOf(
+                    session.typeContext,
+                    assignmentRootActualType,
+                    assignmentExpectedType,
+                ) != true
+            ) {
+                // 外层 assignment 负责该根类型不匹配；不要再制造子元素诊断，
+                // 以免掩盖官方根 Check 的结果。
+                resolvedArrayLiteral.replaceConeTypeOrNull(assignmentRootActualType)
+                return resolvedArrayLiteral
+            }
+        }
 
         val arrayLiteralWithElementDiagnostics = if (expectedElementType != null) {
             resolvedArrayLiteral.withElementTypeDiagnostics(expectedElementType)
@@ -2869,6 +3004,17 @@ open class CfirExpressionsResolveTransformer(
             constructArrayLiteralType(expectedType, elementType, arrayLiteralWithElementDiagnostics.elements.size)
         )
         return arrayLiteralWithElementDiagnostics
+    }
+
+    /** 在数组元素被 expected-type 包装成错误节点前保留数组根的实际推断类型。 */
+    private fun CfirArrayLiteral.actualArrayTypeBeforeExpectedElementFailure(
+        expectedType: ConeCangJieType?,
+    ): ConeCangJieType? {
+        val elementTypes = elements
+            .mapNotNull { it.coneTypeOrNull }
+            .filterNot { it is ConeErrorType }
+        val elementType = inferredElementTypeOrNull(elementTypes) ?: return null
+        return constructArrayLiteralType(expectedType, elementType, elements.size)
     }
 
     /**
@@ -4592,8 +4738,9 @@ open class CfirExpressionsResolveTransformer(
      */
     private fun CfirClassLikeDeclaration.directSuperReceiverTypes(): List<ConeCangJieType> {
         val declaredReceiverTypes = superTypeRefs
-            .filterIsInstance<CfirResolvedTypeRef>()
-            .map(CfirResolvedTypeRef::coneType)
+            .mapNotNull { superTypeRef ->
+                superTypeRef.classifyDeclaredSupertype(session).scopeTraversalTypeOrNull()
+            }
             .filter { candidate -> candidate.isDirectSuperReceiverTypeFor(this) }
         return declaredReceiverTypes.withImplicitClassObjectSuperReceiverType(this)
     }
@@ -4615,22 +4762,14 @@ open class CfirExpressionsResolveTransformer(
 
     /** 判断类型是否可作为当前 owner 的 `super` receiver 类型。 */
     private fun ConeCangJieType.isDirectSuperReceiverTypeFor(owner: CfirClassLikeDeclaration): Boolean = when (owner) {
-        is CfirClass -> when (this) {
-            is ConeClassLikeType -> !isInterface
-            is ConeStructType, is ConeEnumType -> true
-            else -> false
-        }
-
+        is CfirClass -> this is ConeClassLikeType && !isInterface
         is CfirInterface -> this is ConeClassLikeType && isInterface
         else -> false
     }
 
     /** 判断类型是否占用 class 的 concrete 父类槽位。 */
-    private fun ConeCangJieType.isConcreteSuperclassCandidate(): Boolean = when (this) {
-        is ConeClassLikeType -> !isInterface
-        is ConeStructType, is ConeEnumType -> true
-        else -> false
-    }
+    private fun ConeCangJieType.isConcreteSuperclassCandidate(): Boolean =
+        this is ConeClassLikeType && !isInterface
 
     // ── Small Extension Utilities ─────────────────────────────────────────────
 
@@ -4651,6 +4790,32 @@ open class CfirExpressionsResolveTransformer(
      */
     private val ResolutionMode.expectedTypeOrNull: ConeCangJieType?
         get() = (this as? ResolutionMode.WithExpectedType)?.expectedTypeRef?.coneType
+
+    /**
+     * 由当前组合表达式的 result-type owner 固化 assignment RHS mismatch。
+     *
+     * 该 helper 只读取当前 frame 的根 identity；调用方必须在替换根类型前传入实际类型，
+     * 因而不会依据 assignment 的 receiver、RHS 语法或最终 ConeErrorType 逆向猜测语义。
+     */
+    private fun recordAssignmentRhsTypeMismatchIfNeeded(
+        expression: CfirExpression,
+        actualType: ConeCangJieType?,
+        rhsRootValidity: CfirAssignmentRhsRootValidity =
+            CfirAssignmentRhsRootValidity.INVALID_AFTER_MISMATCH,
+        primaryDiagnostic: CfirAssignmentTypeMismatchPrimaryDiagnostic =
+            CfirAssignmentTypeMismatchPrimaryDiagnostic.TypeMismatch,
+    ) {
+        val actual = actualType ?: return
+        if (actual is ConeErrorType) return
+        val expected = context.assignmentRhsExpectedTypeFor(expression) ?: return
+        if (AbstractTypeChecker.isSubtypeOf(session.typeContext, actual, expected) == true) return
+        context.recordAssignmentRhsExpectedTypeMismatch(
+            expression = expression,
+            actualType = actual,
+            primaryDiagnostic = primaryDiagnostic,
+            rhsRootValidity = rhsRootValidity,
+        )
+    }
 
     /**
      * 对齐官方 `SynRangeExprInferElemTy` 的推断顺序。

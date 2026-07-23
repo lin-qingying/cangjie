@@ -15,7 +15,7 @@ public class A {
         }
     }
     public func test(): Unit {
-        <!CANNOT_ASSIGN_TO_IMMUTABLE!>s.x<!> = 1
+        s.<!CANNOT_ASSIGN_TO_IMMUTABLE!>x<!> = 1
     }
 }
 

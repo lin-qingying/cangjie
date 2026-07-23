@@ -381,6 +381,16 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
             "'break' or 'continue' must be used inside a loop.",
         )
         map.put(
+            CfirErrors.ILLEGAL_USAGE_OF_MEMBER,
+            "''{0}'' is not allowed to be accessed before all member variables are initialized",
+            RENDER_NAME,
+        )
+        map.put(
+            CfirErrors.ILLEGAL_USAGE_OF_SUPER_MEMBER,
+            "super member ''{0}'' is not allowed to be used before calling super()",
+            RENDER_NAME,
+        )
+        map.put(
             CfirErrors.USED_BEFORE_INITIALIZATION,
             "Variable ''{0}'' is used before initialization.",
             RENDER_NAME,

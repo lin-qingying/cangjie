@@ -3,7 +3,7 @@
 class A {
     public static let b: Float32 = 0.0
     public A(bb: Float32) {
-        <!CANNOT_ASSIGN_TO_IMMUTABLE!>A.b<!> = bb
+        A.<!CANNOT_ASSIGN_TO_IMMUTABLE!>b<!> = bb
     }
 }
 

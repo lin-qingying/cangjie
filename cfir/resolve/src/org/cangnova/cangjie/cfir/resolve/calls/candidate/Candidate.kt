@@ -35,6 +35,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirNamedAccessExpression
 import org.cangnova.cangjie.cfir.resolve.CfirSamResolver
 import org.cangnova.cangjie.cfir.resolve.CfirLocalLambdaInitializerInferenceReference
 import org.cangnova.cangjie.cfir.resolve.calls.CallableReferenceAdaptation
+import org.cangnova.cangjie.cfir.resolve.calls.ArgumentMappingOutcome
 import org.cangnova.cangjie.cfir.resolve.calls.ConePostponedResolvedAtom
 import org.cangnova.cangjie.cfir.resolve.calls.ConeResolutionAtom
 import org.cangnova.cangjie.cfir.resolve.calls.stages.TypeArgumentMapping
@@ -278,6 +279,13 @@ class Candidate(
     override val argumentMapping: LinkedHashMap<ConeResolutionAtom, CfirValueParameter>
         get() = _argumentMapping ?: error("Argument mapping is not initialized yet")
 
+    /** 参数映射阶段产生的共享结构化结果。 */
+    var argumentMappingOutcome: ArgumentMappingOutcome? = null
+        private set
+
+    /** 不影响候选适用性、但必须在完成后报告的解析诊断。 */
+    val nonBlockingResolutionDiagnostics: MutableList<ResolutionDiagnostic> = mutableListOf()
+
     /** 当前候选普通变参形参。 */
     private var _variadicParameter: CfirValueParameter? = null
     /** 普通变参元素类型。 */
@@ -304,6 +312,17 @@ class Candidate(
         require(_argumentMapping == null) { "Argument mapping already initialized" }
         _argumentMapping = argumentMapping
         _arguments = arguments
+    }
+
+    /** 初始化参数映射的共享结构化结果。 */
+    fun initializeArgumentMappingOutcome(outcome: ArgumentMappingOutcome) {
+        require(argumentMappingOutcome == null) { "Argument mapping outcome already initialized" }
+        argumentMappingOutcome = outcome
+    }
+
+    /** 记录不参与适用性排序的解析诊断。 */
+    fun addNonBlockingResolutionDiagnostic(diagnostic: ResolutionDiagnostic) {
+        nonBlockingResolutionDiagnostics += diagnostic
     }
 
     /**

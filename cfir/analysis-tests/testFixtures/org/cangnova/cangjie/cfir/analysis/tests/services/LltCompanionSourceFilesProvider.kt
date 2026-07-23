@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.tests.services
 
 import org.cangnova.cangjie.test.directives.CfirDiagnosticsDirectives
+import org.cangnova.cangjie.test.directives.CfirDiagnosticsDirectives.DEPENDENCE
 import org.cangnova.cangjie.test.directives.CfirDiagnosticsDirectives.LLT_COMPANION_SOURCES
 import org.cangnova.cangjie.test.directives.model.DirectivesContainer
 import org.cangnova.cangjie.test.directives.model.RegisteredDirectives
@@ -54,6 +55,7 @@ class LltCompanionSourceFilesProvider(
         module: TestModule,
         testModuleStructure: TestModuleStructure,
     ): List<TestFile> {
+        val dependenceCompanions = collectDependenceCompanionFiles(module, testModuleStructure)
         val explicitCompanions = if (containsDirective(globalDirectives, module, LLT_COMPANION_SOURCES)) {
             testModuleStructure.originalTestDataFiles.flatMap(::collectAllSiblingCjFiles)
         } else {
@@ -64,14 +66,86 @@ class LltCompanionSourceFilesProvider(
         val multiFileCompanions = testModuleStructure.originalTestDataFiles.flatMap(::collectMultiFileDirectoryCompanions)
         val parentMultiFileCompanions = testModuleStructure.originalTestDataFiles.flatMap(::collectParentMultiFileCompanions)
 
-        val fileCompanions = (explicitCompanions + packageCompanions + multiFileCompanions)
+        val dependencePaths = dependenceCompanions.mapTo(mutableSetOf()) { it.file.normalizedAbsolutePath() }
+        val fileCompanions = dependenceCompanions.map { it.toTestFile() } +
+            (explicitCompanions + packageCompanions + multiFileCompanions)
             .distinctBy { it.normalizedAbsolutePath() }
+            .filter { it.normalizedAbsolutePath() !in dependencePaths }
             .map { it.toTestFile("lltCompanions") }
         val virtualCompanions = parentMultiFileCompanions
             .distinctBy { it.ownerFile.normalizedAbsolutePath() to it.relativePath }
             .map { it.toTestFile() }
 
         return fileCompanions + virtualCompanions
+    }
+
+    /**
+     * 按当前模块的 [DEPENDENCE] 指令收集选择性 LLT 依赖源。
+     *
+     * 指令值必须是相对当前原始测试文件目录的 `.cj` 文件，并且解析后仍位于 LLT
+     * 测试数据根目录内。所有结构错误都会立即失败，避免静默改变测试编译单元。
+     */
+    private fun collectDependenceCompanionFiles(
+        module: TestModule,
+        testModuleStructure: TestModuleStructure,
+    ): List<DependenceCompanionFile> {
+        if (DEPENDENCE !in module.directives) return emptyList()
+
+        val dependencies = module.directives[DEPENDENCE]
+        require(dependencies.isNotEmpty()) {
+            "DEPENDENCE must list at least one .cj dependency source for module ${module.name}"
+        }
+        val originalTestDataFile = testModuleStructure.originalTestDataFiles.singleOrNull()
+            ?: error("DEPENDENCE requires exactly one original test data file")
+        val originalPath = originalTestDataFile.normalizedAbsolutePath()
+        val originalDirectory = originalTestDataFile.parentFile
+            ?: error("Test data file has no parent directory: ${originalTestDataFile.path}")
+        val lltRoot = originalTestDataFile.requireLltRoot()
+        val seenPaths = mutableSetOf<Path>()
+        val occupiedRelativePaths = module.files.mapTo(mutableSetOf()) { it.relativePath.replace('\\', '/') }
+        val seenRelativePaths = mutableSetOf<String>()
+
+        return dependencies.map { dependency ->
+            val relativePath = runCatching { Path.of(dependency) }.getOrElse { cause ->
+                throw IllegalArgumentException(
+                    "Invalid DEPENDENCE path '$dependency' in ${originalTestDataFile.path}",
+                    cause,
+                )
+            }
+            require(!relativePath.isAbsolute) {
+                "DEPENDENCE path must be relative: '$dependency' in ${originalTestDataFile.path}"
+            }
+
+            val resolvedPath = originalDirectory.toPath().resolve(relativePath).toAbsolutePath().normalize()
+            require(resolvedPath.startsWith(lltRoot)) {
+                "DEPENDENCE path escapes the LLT test data root: '$dependency' in ${originalTestDataFile.path}"
+            }
+            require(resolvedPath.toFile().exists()) {
+                "DEPENDENCE source does not exist: '$dependency' in ${originalTestDataFile.path}"
+            }
+            require(resolvedPath.toFile().isFile) {
+                "DEPENDENCE source is not a regular file: '$dependency' in ${originalTestDataFile.path}"
+            }
+            require(resolvedPath.toFile().extension == "cj") {
+                "DEPENDENCE source must be a .cj file: '$dependency' in ${originalTestDataFile.path}"
+            }
+            require(resolvedPath != originalPath) {
+                "DEPENDENCE source must not be the original test data file: '$dependency' in ${originalTestDataFile.path}"
+            }
+            require(seenPaths.add(resolvedPath)) {
+                "Duplicate DEPENDENCE source '$dependency' in module ${module.name} of ${originalTestDataFile.path}"
+            }
+
+            val lltRelativePath = lltRoot.relativize(resolvedPath).toString().replace('\\', '/')
+            val testRelativePath = "lltDependencies/$lltRelativePath"
+            require(testRelativePath !in occupiedRelativePaths && seenRelativePaths.add(testRelativePath)) {
+                "DEPENDENCE source '$dependency' produces duplicate test path '$testRelativePath' in ${originalTestDataFile.path}"
+            }
+            DependenceCompanionFile(
+                file = resolvedPath.toFile(),
+                relativePath = testRelativePath,
+            )
+        }
     }
 
     /**
@@ -238,6 +312,20 @@ class LltCompanionSourceFilesProvider(
     }
 
     /**
+     * 将选择性依赖源转换为保留 LLT 根相对目录的附加测试文件。
+     */
+    private fun DependenceCompanionFile.toTestFile(): TestFile {
+        return TestFile(
+            relativePath = relativePath,
+            originalContent = file.useLines { it.joinToString("\n") },
+            originalFile = file,
+            startLineNumberInOriginalFile = 0,
+            isAdditional = true,
+            directives = RegisteredDirectives.Empty,
+        )
+    }
+
+    /**
      * 判断当前文件是否为 LLT 包 companion 文件。
      */
     private fun File.isPackageCompanionFile(): Boolean {
@@ -248,6 +336,19 @@ class LltCompanionSourceFilesProvider(
      * 返回不触发文件系统 canonicalize 的规范化绝对路径。
      */
     private fun File.normalizedAbsolutePath(): Path = toPath().toAbsolutePath().normalize()
+
+    /**
+     * 返回当前测试数据所属的 LLT 测试数据根目录。
+     */
+    private fun File.requireLltRoot(): Path {
+        var directory = parentFile
+        while (directory != null) {
+            val normalizedPath = directory.normalizedAbsolutePath()
+            if (normalizedPath.endsWith(LLT_ROOT_SUFFIX)) return normalizedPath
+            directory = directory.parentFile
+        }
+        error("Test data file is outside cfir/analysis-tests/testData/llt: $path")
+    }
 
     /**
      * 使用规范化绝对路径判断两个测试数据文件是否相同。
@@ -280,7 +381,22 @@ class LltCompanionSourceFilesProvider(
         val startLineNumber: Int,
     )
 
+    /**
+     * [DEPENDENCE] 选中的物理依赖源及其附加测试文件相对路径。
+     */
+    private data class DependenceCompanionFile(
+        /** 依赖源物理文件。 */
+        val file: File,
+        /** 保留 LLT 根目录结构的附加测试文件路径。 */
+        val relativePath: String,
+    )
+
     companion object {
+        /**
+         * LLT 测试数据根目录的仓库相对路径。
+         */
+        private val LLT_ROOT_SUFFIX = Path.of("cfir", "analysis-tests", "testData", "llt")
+
         /**
          * 匹配官方多文件测试中的 `// FILE:` 指令。
          */

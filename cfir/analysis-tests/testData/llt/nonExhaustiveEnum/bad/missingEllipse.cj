@@ -5,7 +5,7 @@ enum A {
 }
 
 main() {
-    <!NON_EXHAUSTIVE_MATCH!>match (B) {
+    match (<!NON_EXHAUSTIVE_MATCH!>B<!>) {
         case B => 0
-    }<!>
+    }
 }

@@ -1,7 +1,7 @@
 
 
 main() {
-    var b = R<!TOO_MANY_ARGUMENTS!>(a: 6)<!>
+    var b = R<!WRONG_NUMBER_OF_ARGUMENTS!>(a: 6)<!>
     b.c(7)
     return Int64(b.a - 7)
 }

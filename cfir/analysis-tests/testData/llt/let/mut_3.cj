@@ -10,7 +10,7 @@ class A<T> where T <: IA {
         this.t = t
     }
     func foo() {
-        <!CANNOT_ASSIGN_TO_IMMUTABLE!>t.x<!> = t.x + 1
+        t.<!CANNOT_ASSIGN_TO_IMMUTABLE!>x<!> = t.x + 1
     }
 }
 

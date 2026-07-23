@@ -9,8 +9,6 @@ import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirInterface
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
-import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
-import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
@@ -18,6 +16,9 @@ import org.cangnova.cangjie.cfir.expressions.CfirFunctionCallOrigin
 import org.cangnova.cangjie.cfir.expressions.CfirWrappedExpression
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.resolve.providers.canAccessPackageInternalDeclaration
+import org.cangnova.cangjie.cfir.resolve.providers.classifyDeclaredSupertype
+import org.cangnova.cangjie.cfir.resolve.providers.constructorDependencyTypeOrNull
+import org.cangnova.cangjie.cfir.resolve.providers.getContainingClass
 import org.cangnova.cangjie.cfir.resolve.providers.getContainingFile
 import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
@@ -25,7 +26,6 @@ import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeEnumType
-import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.ConeStructType
 import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
@@ -205,7 +205,7 @@ private fun CfirConstructor.isVisibleForImplicitSuperCall(): Boolean {
 context(context: CheckerContext)
 private fun CfirConstructor.canSeePackageInternalConstructor(): Boolean {
     val useSiteFile = context.containingFileSymbol?.cfir ?: return false
-    val declarationFile = context.session.cfirProvider.getContainingFile(symbol) ?: return false
+    val declarationFile = symbol.getContainingFile() ?: return false
     return canAccessPackageInternalDeclaration(
         useSitePackage = useSiteFile.packageDirective.packageFqName,
         declarationPackage = declarationFile.packageDirective.packageFqName,
@@ -215,7 +215,7 @@ private fun CfirConstructor.canSeePackageInternalConstructor(): Boolean {
 /** 判断 private 构造器 owner 是否等于当前声明栈中的 nominal owner。 */
 context(context: CheckerContext)
 private fun CfirConstructor.canSeePrivateConstructorOwner(): Boolean {
-    val ownerClassId = context.session.cfirProvider.getContainingClass(symbol)?.classId
+    val ownerClassId = symbol.getContainingClass()?.classId
         ?: symbol.callableId.classId
         ?: return false
     return context.containingDeclarations
@@ -372,34 +372,13 @@ internal fun CfirClassLikeDeclaration.directConcreteSuperDeclaration(
 ): CfirClassLikeDeclaration? {
     return superTypeRefs
         .mapNotNull { superTypeRef ->
-            superTypeRef.toResolvedSuperDeclaration(
-                context = context,
-                includeLoopInSupertypeError = includeLoopInSupertypeError,
-            )
+            val dependencyType = superTypeRef
+                .classifyDeclaredSupertype(context.session)
+                .constructorDependencyTypeOrNull(includeLoopInSupertypeError)
+                ?: return@mapNotNull null
+            dependencyType.toResolvedSuperDeclaration(context)
         }
         .firstOrNull { superDeclaration -> superDeclaration !is CfirInterface }
-}
-
-/**
- * 将 super typeRef 解析为可用于构造器语义检查的父 class-like 声明。
- *
- * 普通 resolved typeRef 直接使用其 cone type；循环继承错误恢复路径只在调用方显式允许时启用。
- */
-private fun org.cangnova.cangjie.cfir.types.CfirTypeRef.toResolvedSuperDeclaration(
-    context: CheckerContext,
-    includeLoopInSupertypeError: Boolean,
-): CfirClassLikeDeclaration? {
-    val resolvedTypeRef = this as? CfirResolvedTypeRef ?: return null
-    val coneType = resolvedTypeRef.coneType
-    val effectiveTypeRef = if (coneType is ConeErrorType) {
-        if (!includeLoopInSupertypeError) return null
-        val diagnostic = coneType.diagnostic as? ConeSimpleDiagnostic ?: return null
-        if (diagnostic.kind != DiagnosticKind.LoopInSupertype) return null
-        resolvedTypeRef.delegatedTypeRef as? CfirResolvedTypeRef ?: return null
-    } else {
-        resolvedTypeRef
-    }
-    return effectiveTypeRef.coneType.toResolvedSuperDeclaration(context)
 }
 
 /**

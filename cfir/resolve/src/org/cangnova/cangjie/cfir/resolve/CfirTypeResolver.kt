@@ -32,6 +32,7 @@ import org.cangnova.cangjie.cfir.nameConflictsTracker
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.diagnostic.ConeAmbiguityError
 import org.cangnova.cangjie.cfir.diagnostic.ConeGenericArgumentNoMatchError
+import org.cangnova.cangjie.cfir.diagnostic.ConeNotATypeError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnmatchedTypeArgumentsError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedTypeQualifierError
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
@@ -585,7 +586,12 @@ class CfirTypeResolverImpl(
             return if (declaration != null) {
                 QualifiedClassLikeResolution(classId, declaration, null)
             } else {
-                QualifiedClassLikeResolution(classId, null, ConeUnresolvedTypeQualifierError(typeRef.qualifier))
+                val diagnostic = if (simpleNameResolvesToCallable(lastQualifier.name, configuration)) {
+                    ConeNotATypeError(lastQualifier.name)
+                } else {
+                    ConeUnresolvedTypeQualifierError(typeRef.qualifier)
+                }
+                QualifiedClassLikeResolution(classId, null, diagnostic)
             }
         }
 
@@ -599,7 +605,14 @@ class CfirTypeResolverImpl(
             return QualifiedClassLikeResolution(fullClassId, declaration, null)
         }
         if (packageExists(fullPackageFqName)) {
-            return QualifiedClassLikeResolution(fullClassId, null, ConeUnresolvedTypeQualifierError(typeRef.qualifier))
+            val diagnostic = if (
+                session.symbolProvider.getTopLevelCallableSymbols(fullPackageFqName, lastQualifier.name).isNotEmpty()
+            ) {
+                ConeNotATypeError(lastQualifier.name)
+            } else {
+                ConeUnresolvedTypeQualifierError(typeRef.qualifier)
+            }
+            return QualifiedClassLikeResolution(fullClassId, null, diagnostic)
         }
 
         return QualifiedClassLikeResolution(
@@ -721,6 +734,37 @@ class CfirTypeResolverImpl(
             .filterIsInstance<CfirClassLikeDeclaration>()
             .filter { declaration -> declaration.name == shortName }
             .firstOrNull()
+    }
+
+    /**
+     * 判断简单类型名称是否已经解析到当前可见的顶层 callable。
+     *
+     * 类型解析仍以 classifier namespace 为主；只有 classifier 全部解析失败后才调用该入口，
+     * 因而 callable 只负责把“未声明”细化为“已声明但不是类型”，不会抢占同名类型声明。
+     */
+    private fun simpleNameResolvesToCallable(
+        shortName: Name,
+        configuration: TypeResolutionConfiguration,
+    ): Boolean {
+        for (scope in configuration.scopes) {
+            var found = false
+            scope.processCallablesByName(shortName) { found = true }
+            if (found) return true
+        }
+
+        val file = configuration.useSiteFile ?: return false
+        if (
+            file.declarations
+                .asSequence()
+                .filterIsInstance<CfirCallableDeclaration>()
+                .any { declaration -> declaration.symbol.callableId.callableName == shortName }
+        ) {
+            return true
+        }
+
+        return session.symbolProvider
+            .getTopLevelCallableSymbols(file.packageDirective.packageFqName, shortName)
+            .isNotEmpty()
     }
 
     /**

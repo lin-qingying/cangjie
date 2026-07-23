@@ -6,7 +6,7 @@ class ThisOnly {
     }
 
     init() {
-        this(<!TOO_MANY_ARGUMENTS!>1<!>)
+        this<!WRONG_NUMBER_OF_ARGUMENTS!>(1)<!>
     }
 }
 
@@ -19,6 +19,6 @@ open class Base {
 
 class Child <: Base {
     init() {
-        super<!NO_VALUE_FOR_PARAMETER!>(1)<!>
+        super<!WRONG_NUMBER_OF_ARGUMENTS!>(1)<!>
     }
 }

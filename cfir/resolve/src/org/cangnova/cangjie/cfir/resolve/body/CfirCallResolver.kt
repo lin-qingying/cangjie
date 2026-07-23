@@ -64,6 +64,7 @@ import org.cangnova.cangjie.cfir.resolve.calls.stages.fullyProcessCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.tower.CfirTowerGroup
 import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.CfirPCLAInferenceSession
 import org.cangnova.cangjie.cfir.resolve.providers.findExtendDeclarationSubstitution
+import org.cangnova.cangjie.cfir.resolve.providers.getContainingFile
 import org.cangnova.cangjie.cfir.resolve.providers.semanticExtendedType
 import org.cangnova.cangjie.cfir.resolve.withExpectedType
 import org.cangnova.cangjie.cfir.resolve.inference.inferenceComponents
@@ -341,6 +342,7 @@ class CfirCallResolver(
             matchedClassifier = matchedClassifier,
             expectedCallKind = expectedCallKind,
             expectedCandidates = expectedCandidates,
+            forwardedDiagnostics = effectiveResult.forwardedDiagnostics,
         )
 
         functionCall.replaceCalleeReference(nameReference)
@@ -813,6 +815,7 @@ class CfirCallResolver(
             applicability = result.applicability,
             explicitReceiver = transformedAccess.explicitReceiver,
             expectedCallKind = if (functionCallExpected) CallKind.Function else null,
+            forwardedDiagnostics = result.forwardedDiagnostics,
         )
 
         transformedAccess.replaceCalleeReference(nameReference)
@@ -1434,7 +1437,9 @@ class CfirCallResolver(
         val (reducedCandidates, applicability) = reduceCandidateSet(
             candidates = invokeCandidates,
             info = invokeInfo,
-            collectorApplicability = CandidateApplicability.RESOLVED,
+            // synthetic invoke 候选由本入口即时创建，必须完整执行 visibility/type-argument/
+            // argument-mapping/type-check stages，不能借 collector success 快路径跳过。
+            collectorApplicability = CandidateApplicability.HIDDEN,
         )
 
         return ResolutionResult(
@@ -1582,6 +1587,8 @@ class CfirCallResolver(
      * 该探测只服务于普通 named-value access 的最终重载规约：目标类型不含外层待固定变量，
      * 因而可以在隔离的候选约束系统中完成泛型函数实例化。postponed callable-reference
      * 实参使用外层调用的分支约束系统，不经过此入口，避免提前固定外层类型变量。
+     * 隔离候选上的可见性、receiver 等解析诊断不参与函数类型兼容性；本入口只依据参数形状、
+     * resulting type、约束一致性和最终函数类型子类型关系作出判断，原候选继续拥有并报告这些错误。
      */
     private fun Candidate.completedFunctionReferenceType(
         expression: CfirNamedAccessExpression,
@@ -1597,7 +1604,7 @@ class CfirCallResolver(
             transformer.resolutionContext,
         )
         val rawResultingType = probeCandidate.resultingTypeForCallableReference ?: return null
-        if (!probeCandidate.isSuccessful || probeCandidate.system.hasContradiction) return null
+        if (probeCandidate.system.hasContradiction) return null
 
         components.callCompleter.runCompletionForCall(
             candidate = probeCandidate,
@@ -1646,8 +1653,9 @@ class CfirCallResolver(
     /**
      * 对 tower collector 的最佳候选进行完整 stage 处理和最具体候选规约。
      *
-     * 函数名作为值且没有 expected type 时会保留函数 overload set；其他路径会按适用性、
-     * 尾随 lambda、expected return type 和 fresh receiver 规则逐步收窄。
+     * 带 expected type 的独立函数值保留同组完整 discovery 供函数类型选择；无 expected type
+     * 默认先按 accessibility 过滤，并由 static qualifier 专用策略决定是否保留可见性前的歧义集合。
+     * 其他路径继续按适用性、尾随 lambda、expected return type 和 fresh receiver 规则逐步收窄。
      */
     private fun reduceCandidates(
         collector: CfirCandidateCollector,
@@ -1661,15 +1669,21 @@ class CfirCallResolver(
                 val accessibleFunctionValueCandidates = discoveredFunctionValueCandidates.filter { candidate ->
                     candidate.isSuccessful
                 }
+                val preVisibilityStaticQualifierOverloadSet =
+                    info.preVisibilityStaticQualifierOverloadSet(discoveredFunctionValueCandidates)
+                val selectableFunctionValueCandidates =
+                    preVisibilityStaticQualifierOverloadSet ?: accessibleFunctionValueCandidates
                 when {
-                    info.resolutionMode.expectedType != null || info.hasExplicitTypeArguments ->
+                    info.resolutionMode.expectedType != null ->
+                        discoveredFunctionValueCandidates
+                    info.hasExplicitTypeArguments ->
                         accessibleFunctionValueCandidates
                     else -> {
-                        val nonGenericCandidates = accessibleFunctionValueCandidates.filter { candidate ->
+                        val nonGenericCandidates = selectableFunctionValueCandidates.filter { candidate ->
                             val function = candidate.symbol.takeIf { it.isBound }?.cfir as? CfirFunction
                             function?.typeParameters.isNullOrEmpty()
                         }
-                        nonGenericCandidates.ifEmpty { accessibleFunctionValueCandidates }
+                        nonGenericCandidates.ifEmpty { selectableFunctionValueCandidates }
                     }
                 }
             }
@@ -2158,6 +2172,7 @@ class CfirCallResolver(
         matchedClassifier: CfirClassLikeSymbol<*>? = null,
         expectedCallKind: CallKind? = null,
         expectedCandidates: Collection<Candidate>? = null,
+        forwardedDiagnostics: List<ResolutionDiagnostic> = emptyList(),
     ): CfirNamedReference {
         val source = reference.source
         val operatorToken = runIf(callInfo.origin == CfirFunctionCallOrigin.Operator) {
@@ -2166,12 +2181,20 @@ class CfirCallResolver(
         val argumentTypes = callInfo.arguments.mapNotNull { it.coneTypeOrNull }
         val hasInvalidTypeParameterUpperBoundReceiver =
             explicitReceiver?.coneTypeOrNull?.isTypeParameterWithInvalidDeclaredUpperBounds(session) == true
+        val memberLookupDominatingDiagnostic = if (candidates.isEmpty()) {
+            explicitReceiver?.recoverableNominalRootDiagnosticOrNull()
+                ?: forwardedDiagnostics.memberLookupDominatingDiagnostic(callInfo, source)
+        } else {
+            null
+        }
         val functionReferenceTargetDiagnostic = functionReferenceTargetDiagnostic(callInfo, candidates)
 
         // 根据期望的调用种类生成诊断
         val diagnostic = when {
             hasInvalidTypeParameterUpperBoundReceiver ->
                 ConeUnreportedDuplicateDiagnostic(ConeSimpleDiagnostic("type parameter upper bound is already invalid"))
+            memberLookupDominatingDiagnostic != null ->
+                ConeUnreportedDuplicateDiagnostic(memberLookupDominatingDiagnostic)
             functionReferenceTargetDiagnostic != null -> functionReferenceTargetDiagnostic
             callInfo.isStandaloneGenericFunctionValueSet(candidates) ->
                 ConeGenericFunctionReferenceWithoutTypeArgumentsError()
@@ -2367,6 +2390,45 @@ class CfirCallResolver(
         }
 
         return CfirNamedReferenceWithCandidate(source, name, candidate)
+    }
+
+    /**
+     * 直接 wrong-arity receiver 已经拥有主类型诊断时，selector 的空候选只是级联。
+     */
+    private fun CfirExpression.recoverableNominalRootDiagnosticOrNull(): ConeDiagnostic? {
+        val diagnostic = (coneTypeOrNull as? ConeErrorType)?.diagnostic ?: return null
+        return diagnostic.recoverableNominalRootDiagnosticOrNull()
+    }
+
+    /** 递归展开不重复上报包装，保留 recoverable nominal 根诊断。 */
+    private tailrec fun ConeDiagnostic.recoverableNominalRootDiagnosticOrNull(): ConeDiagnostic? = when (this) {
+        is ConeRecoverableNominalDiagnostic -> this
+        is ConeUnreportedDuplicateDiagnostic -> original.recoverableNominalRootDiagnosticOrNull()
+        else -> null
+    }
+
+    /**
+     * 选择同文件中位于访问之后的声明父类型 blocker。
+     *
+     * 声明已经位于访问之前时，lookup 结果是完整的最终结果，成员缺失仍应正常报告；
+     * 只有访问先于声明时，后续声明的主错误才支配当前空候选。
+     */
+    private fun List<ResolutionDiagnostic>.memberLookupDominatingDiagnostic(
+        callInfo: CallInfo,
+        accessSource: org.cangnova.cangjie.source.AbstractCjSourceElement?,
+    ): ConeDiagnostic? {
+        val accessOffset = accessSource?.startOffset
+            ?: callInfo.callSite.source?.startOffset
+            ?: return null
+        return asSequence()
+            .filterIsInstance<MemberLookupBlockedByDeclaredSupertype>()
+            .firstOrNull { blocker ->
+                val declaration = blocker.ownerSymbol.cfir
+                val declarationOffset = declaration.source?.startOffset ?: return@firstOrNull false
+                blocker.ownerSymbol.getContainingFile() == callInfo.containingFile &&
+                        declarationOffset > accessOffset
+            }
+            ?.rootDiagnostic
     }
 
     /**
@@ -2574,6 +2636,32 @@ class CfirCallResolver(
      */
     private fun CallInfo.isStandaloneFunctionValueAccess(): Boolean =
         callKind == CallKind.NamedValueAccess && callSite !is CfirFunctionCall
+
+    /**
+     * 返回类型限定符上、可见性过滤前的 static 函数重载集合。
+     *
+     * 官方语义只对无目标类型的独立命名函数值访问先做 static overload 歧义判断；
+     * 本 helper 只决定该无目标类型特例。带目标类型的函数引用由独立 expected-type
+     * 规约使用完整 discovery 选择声明并随后报告所选候选错误；显式类型实参、普通调用
+     * 以及无目标类型的对象 receiver 仍先执行 accessibility 过滤。候选来源限定为
+     * collector 已选中的同一最佳 tower group，并再次校验真实声明为 static 函数，
+     * 避免把实例成员或其他 callable kind 引入该集合。
+     */
+    private fun CallInfo.preVisibilityStaticQualifierOverloadSet(
+        discoveredFunctionValueCandidates: Collection<Candidate>,
+    ): List<Candidate>? {
+        if (!isStandaloneFunctionValueAccess() || resolutionMode.expectedType != null || hasExplicitTypeArguments) {
+            return null
+        }
+        val receiver = explicitReceiver?.unwrapSmartcastExpression() ?: return null
+        if (receiver.qualifierScopeOrNull(session, components.scopeSession) == null) return null
+
+        val staticFunctionCandidates = discoveredFunctionValueCandidates.filter { candidate ->
+            val function = candidate.symbol.takeIf { it.isBound }?.cfir as? CfirFunction
+            function?.status?.isStatic == true
+        }
+        return staticFunctionCandidates.takeIf { candidates -> candidates.size > 1 }
+    }
 
     /**
      * 无目标类型且没有显式类型实参时，若可访问的函数值候选全部是泛型函数，

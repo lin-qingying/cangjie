@@ -5,7 +5,7 @@ struct B {
     public let a: Int64 = 1
     public init(c: Int64, a: Int64) {
         this.c = c
-        this.a = a
+        this.<!CANNOT_ASSIGN_TO_IMMUTABLE!>a<!> = a
     }
 }
 

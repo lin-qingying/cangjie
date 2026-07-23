@@ -24,12 +24,12 @@ object CfirMatchExhaustivenessChecker : CfirMatchExpressionChecker( ) {
     /**
      * 检查 match 表达式是否穷尽。
      *
-     * subject 类型错误或 pattern 本身非法时跳过；非穷尽结果在 match 表达式位置报告缺失 case 文本。
+     * subject 类型错误或 pattern 本身非法时跳过；非穷尽结果在 selector 表达式位置报告缺失 case 文本。
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirMatchExpression) {
-        val source = expression.source as? AbstractCjSourceElement ?: return
         val subject = expression.subject ?: return
+        val source = subject.source as? AbstractCjSourceElement ?: return
         val subjectType = subject.coneTypeOrNull ?: return
         if (subjectType is ConeErrorType) return
         if (expression.hasPatternLegalityProblem(context)) return

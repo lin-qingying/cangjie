@@ -16,5 +16,5 @@ class Data <: Basei {
 }
 
 func run(): Int64 {
-    var value: Data = Data()
+    <!TYPE_MISMATCH!>var value: Data = Data()<!>
 }

@@ -3,7 +3,7 @@
 struct RA {
     public let a = 10
     public init(a: Int64) {
-        this.a = a
+        this.<!CANNOT_ASSIGN_TO_IMMUTABLE!>a<!> = a
     }
 }
 

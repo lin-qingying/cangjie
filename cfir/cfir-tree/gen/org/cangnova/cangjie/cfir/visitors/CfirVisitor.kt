@@ -188,6 +188,9 @@ abstract class CfirVisitor<out R, in D> {
     open fun visitInoutArgumentExpression(inoutArgumentExpression: CfirInoutArgumentExpression, data: D): R =
         visitElement(inoutArgumentExpression, data)
 
+    open fun visitNamedArgumentExpression(namedArgumentExpression: CfirNamedArgumentExpression, data: D): R =
+        visitElement(namedArgumentExpression, data)
+
     open fun visitCall(call: CfirCall, data: D): R =
         visitElement(call, data)
 

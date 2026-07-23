@@ -2,18 +2,18 @@
 
 
 <!VALUE_TYPE_RECURSIVE!>s<!>truct A {
-    <!CLASS_UNINITIALIZED_FIELD!>p<!>ublic let x: A
+    public let <!CLASS_UNINITIALIZED_FIELD!>x<!>: A
 }
 
 <!VALUE_TYPE_RECURSIVE!>s<!>truct B {
-    <!CLASS_UNINITIALIZED_FIELD!>p<!>ublic let x: C
-    <!CLASS_UNINITIALIZED_FIELD!>p<!>ublic let y: Int32
+    public let <!CLASS_UNINITIALIZED_FIELD!>x<!>: C
+    public let <!CLASS_UNINITIALIZED_FIELD!>y<!>: Int32
 }
 
 struct C {
-    <!CLASS_UNINITIALIZED_FIELD!>p<!>ublic let x: D
+    public let <!CLASS_UNINITIALIZED_FIELD!>x<!>: D
 }
 
 struct D {
-    <!CLASS_UNINITIALIZED_FIELD!>p<!>ublic let x: B
+    public let <!CLASS_UNINITIALIZED_FIELD!>x<!>: B
 }

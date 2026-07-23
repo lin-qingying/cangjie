@@ -29,14 +29,16 @@ import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirInterface
-import org.cangnova.cangjie.cfir.originalForSubstitutionOverride
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityFileScope
 import org.cangnova.cangjie.cfir.resolve.providers.CfirDirectSupertypeProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirExtendProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSuperTypeGraphEdge
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.DeclaredSupertypeClassification
+import org.cangnova.cangjie.cfir.resolve.providers.classifyDeclaredSupertype
 import org.cangnova.cangjie.cfir.resolve.providers.createCallableOwnerUseSiteSubstitutor
 import org.cangnova.cangjie.cfir.resolve.providers.createExtendDeclarationSubstitution
+import org.cangnova.cangjie.cfir.resolve.providers.scopeTraversalTypeOrNull
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.scopes.isStaticMemberForOverride
@@ -83,6 +85,54 @@ enum class CfirClassMemberScopeKind {
 }
 
 /**
+ * 继承函数在 use-site scope 中的稳定来源身份。
+ *
+ * [directInputMember] 标识进入继承图前的原始函数声明，[inheritanceOwnerType] 标识该声明
+ * 沿泛型父类型路径形成的 owner 实例。二者共同区分 `I<X>.foo` 与 `I<Y>.foo`，同时让
+ * 菱形继承中重复到达的同一个 `I<T>.foo` 保持同一身份。
+ */
+data class CfirFunctionInheritanceIdentity(
+    /** substitution override 链最初的函数声明。 */
+    val directInputMember: CfirNamedFunctionSymbol,
+
+    /** 进入当前实例化之前的泛型 owner/interface 实例。 */
+    val inheritanceOwnerType: ConeCangJieType?,
+)
+
+/**
+ * use-site scope 产生的函数继承结果。
+ *
+ * @property member 已完成当前 owner 替换、供 resolver 消费的最终函数。
+ * @property identity 直接输入成员与泛型父类型实例组成的稳定来源身份。
+ * @property baseScope 处理 [member] 覆盖链的 base scope。
+ */
+data class CfirFunctionInheritanceProvenance(
+    val member: CfirNamedFunctionSymbol,
+    val identity: CfirFunctionInheritanceIdentity,
+    val baseScope: CfirTypeScope,
+)
+
+/**
+ * 能够保留函数继承来源的 type scope。
+ *
+ * 普通成员查询只暴露最终函数集合；需要判断“实例化前独立、实例化后冲突”的消费者通过
+ * 本接口读取 intersection 输入，不得自行重走父类型图。
+ */
+interface CfirFunctionInheritanceScope {
+    /** 按名称处理最终可见函数及其继承来源。 */
+    fun processFunctionsByNameWithProvenance(
+        name: Name,
+        processor: (CfirFunctionInheritanceProvenance) -> Unit,
+    )
+
+    /** 处理函数的直接覆盖输入及其继承来源。 */
+    fun processDirectOverriddenFunctionsWithProvenance(
+        functionSymbol: CfirNamedFunctionSymbol,
+        processor: (CfirFunctionInheritanceProvenance) -> ProcessorAction,
+    ): ProcessorAction
+}
+
+/**
  * class-like 类型 use-site 成员 scope。
  *
  * 该 scope 统一处理声明成员、extend 成员、父类型成员、泛型 owner 替换和直接覆盖查询。
@@ -113,6 +163,13 @@ class CfirClassUseSiteMemberScope private constructor(
      */
     private val ownerType: ConeCangJieType? = declarationSelfType(classSymbol),
     /**
+     * 当前继承路径在最终实例化之前的 owner 类型。
+     *
+     * 默认与 [ownerType] 相同；泛型实例化检查会传入声明 self type，使 scope 在计算最终
+     * 签名的同时保留 `I<X>`/`I<Y>` 这类直接输入身份。
+     */
+    private val inheritanceProvenanceOwnerType: ConeCangJieType? = ownerType,
+    /**
      * 调用点 dispatch receiver 类型，父 scope substitution override 需要保留原始 receiver。
      */
     private val dispatchReceiverType: ConeCangJieType? = ownerType,
@@ -136,7 +193,7 @@ class CfirClassUseSiteMemberScope private constructor(
      * 当前父类型展开路径，用于阻断继承图中的递归 class id。
      */
     private val supertypePath: CfirSupertypePath = CfirSupertypePath.root(classSymbol.classId),
-) : CfirTypeScope() {
+) : CfirTypeScope(), CfirFunctionInheritanceScope, CfirMemberLookupCompletenessScope {
     /**
      * 创建 class-like use-site 成员 scope。
      */
@@ -147,6 +204,7 @@ class CfirClassUseSiteMemberScope private constructor(
         extendProvider: CfirExtendProvider? = null,
         directSupertypeProvider: CfirDirectSupertypeProvider? = null,
         ownerType: ConeCangJieType? = declarationSelfType(classSymbol),
+        inheritanceProvenanceOwnerType: ConeCangJieType? = ownerType,
         dispatchReceiverType: ConeCangJieType? = ownerType,
         scopeKind: CfirClassMemberScopeKind = CfirClassMemberScopeKind.USE_SITE,
         allowBareGenericStaticQualifierExtends: Boolean = false,
@@ -159,6 +217,7 @@ class CfirClassUseSiteMemberScope private constructor(
         extendProvider = extendProvider,
         directSupertypeProvider = directSupertypeProvider,
         ownerType = ownerType,
+        inheritanceProvenanceOwnerType = inheritanceProvenanceOwnerType,
         dispatchReceiverType = dispatchReceiverType,
         scopeKind = scopeKind,
         allowBareGenericStaticQualifierExtends = allowBareGenericStaticQualifierExtends,
@@ -182,6 +241,7 @@ class CfirClassUseSiteMemberScope private constructor(
         extendProvider = extendProvider,
         directSupertypeProvider = directSupertypeProvider,
         ownerType = declarationSelfType(classSymbol),
+        inheritanceProvenanceOwnerType = declarationSelfType(classSymbol),
         dispatchReceiverType = declarationSelfType(classSymbol),
         scopeKind = CfirClassMemberScopeKind.USE_SITE,
         useSitePackage = CfirAccessibilityFileScope.currentPackageFqName(),
@@ -218,9 +278,38 @@ class CfirClassUseSiteMemberScope private constructor(
     private val parentScopes: List<CfirTypeScope> by lazy { buildParentScopes() }
 
     /**
+     * 当前声明及合法父链中因 recoverable nominal 父边造成的 lookup blocker。
+     *
+     * blocker 沿已经构造的父 scope 传播，不重新遍历父类型图；错误父边自身仍不会进入
+     * [parentScopes]，因此这里不会恢复其成员。
+     */
+    override val memberLookupBlockers: List<CfirMemberLookupBlocker> by lazy {
+        buildSet {
+            for (superTypeRef in classSymbol.cfir.superTypeRefs) {
+                val classification = superTypeRef.classifyDeclaredSupertype(session)
+                if (classification is DeclaredSupertypeClassification.RecoverableNominalError) {
+                    add(
+                        CfirMemberLookupBlocker(
+                            ownerSymbol = classSymbol,
+                            rootDiagnostic = classification.errorType.diagnostic,
+                        )
+                    )
+                }
+            }
+            for (parentScope in parentScopes) {
+                addAll(
+                    (parentScope as? CfirMemberLookupCompletenessScope)
+                        ?.memberLookupBlockers
+                        .orEmpty()
+                )
+            }
+        }.toList()
+    }
+
+    /**
      * 按名称缓存的函数结果。
      */
-    private val functions = hashMapOf<Name, Collection<CfirNamedFunctionSymbol>>()
+    private val functions = hashMapOf<Name, Collection<CfirFunctionInheritanceProvenance>>()
 
     /**
      * 按名称缓存的属性结果。
@@ -230,7 +319,7 @@ class CfirClassUseSiteMemberScope private constructor(
     /**
      * 父 scope 函数候选缓存。
      */
-    private val functionsFromParents = hashMapOf<Name, List<MemberWithBaseScope<CfirNamedFunctionSymbol>>>()
+    private val functionsFromParents = hashMapOf<Name, List<CfirFunctionInheritanceProvenance>>()
 
     /**
      * 父 scope 属性候选缓存。
@@ -240,7 +329,7 @@ class CfirClassUseSiteMemberScope private constructor(
     /**
      * 直接覆盖函数缓存。
      */
-    private val directOverriddenFunctions = hashMapOf<CfirNamedFunctionSymbol, List<MemberWithBaseScope<CfirNamedFunctionSymbol>>>()
+    private val directOverriddenFunctions = hashMapOf<CfirNamedFunctionSymbol, List<CfirFunctionInheritanceProvenance>>()
 
     /**
      * 直接覆盖属性缓存。
@@ -292,17 +381,28 @@ class CfirClassUseSiteMemberScope private constructor(
     override fun processDirectOverriddenFunctionsWithBaseScope(
         functionSymbol: CfirNamedFunctionSymbol,
         processor: (CfirNamedFunctionSymbol, CfirTypeScope) -> ProcessorAction
+    ): ProcessorAction = processDirectOverriddenFunctionsWithProvenance(functionSymbol) { provenance ->
+        processor(provenance.member, provenance.baseScope)
+    }
+
+    /**
+     * 处理指定函数的直接覆盖输入，并保留其泛型继承来源。
+     */
+    override fun processDirectOverriddenFunctionsWithProvenance(
+        functionSymbol: CfirNamedFunctionSymbol,
+        processor: (CfirFunctionInheritanceProvenance) -> ProcessorAction,
     ): ProcessorAction {
         val directOverridden = directOverriddenFunctions[functionSymbol]
             ?: computeDirectOverriddenForOwnFunctionIfAny(functionSymbol)
             ?: getFunctionsFromParentsByName(functionSymbol.name)
-                .firstOrNull { it.symbol == functionSymbol }
+                .firstOrNull { it.member == functionSymbol }
                 ?.let { parentMember ->
-                    return parentMember.scope.processDirectOverriddenFunctionsWithBaseScope(functionSymbol, processor)
+                    val inheritanceScope = parentMember.baseScope.requireFunctionInheritanceScope()
+                    return inheritanceScope.processDirectOverriddenFunctionsWithProvenance(functionSymbol, processor)
                 }
             ?: return ProcessorAction.NONE
         for (candidate in directOverridden) {
-            if (processor(candidate.symbol, candidate.scope) == ProcessorAction.STOP) {
+            if (processor(candidate) == ProcessorAction.STOP) {
                 return ProcessorAction.STOP
             }
         }
@@ -338,7 +438,7 @@ class CfirClassUseSiteMemberScope private constructor(
      */
     private fun computeDirectOverriddenForOwnFunctionIfAny(
         functionSymbol: CfirNamedFunctionSymbol,
-    ): List<MemberWithBaseScope<CfirNamedFunctionSymbol>>? {
+    ): List<CfirFunctionInheritanceProvenance>? {
         if (!containsOwnFunction(functionSymbol)) return null
         return directOverriddenFunctions.getOrPut(functionSymbol) {
             computeDirectOverriddenForDeclaredFunction(functionSymbol)
@@ -404,6 +504,7 @@ class CfirClassUseSiteMemberScope private constructor(
         extendProvider = newSession.extendProviderOrNull,
         directSupertypeProvider = newSession.directSupertypeProviderOrNull,
         ownerType = ownerType,
+        inheritanceProvenanceOwnerType = inheritanceProvenanceOwnerType,
         dispatchReceiverType = dispatchReceiverType,
         scopeKind = scopeKind,
         allowBareGenericStaticQualifierExtends = allowBareGenericStaticQualifierExtends,
@@ -447,28 +548,42 @@ class CfirClassUseSiteMemberScope private constructor(
 
         functions.getOrPut(name) {
             collectFunctions(name)
+        }.forEach { processor(it.member) }
+    }
+
+    /**
+     * 按名称处理最终可见函数及其继承来源。
+     */
+    override fun processFunctionsByNameWithProvenance(
+        name: Name,
+        processor: (CfirFunctionInheritanceProvenance) -> Unit,
+    ) {
+        if (name !in getCallableNames()) return
+
+        functions.getOrPut(name) {
+            collectFunctions(name)
         }.forEach(processor)
     }
 
     /**
      * 收集本 scope 与父 scope 中的可见函数。
      */
-    private fun collectFunctions(name: Name): Collection<CfirNamedFunctionSymbol> = buildList {
+    private fun collectFunctions(name: Name): Collection<CfirFunctionInheritanceProvenance> = buildList {
         val local = mutableListOf<CfirNamedFunctionSymbol>()
         declaredScope.processFunctionsByName(name) { local += it }
         extendScope?.processFunctionsByName(name) { local += it }
         for (symbol in local) {
             directOverriddenFunctions[symbol] = computeDirectOverriddenForDeclaredFunction(symbol)
-            add(symbol)
+            add(symbol.localFunctionInheritanceProvenance())
         }
 
         for (candidate in getFunctionsFromParentsByName(name)) {
-            if (local.any { it.overridesFunctionCandidate(candidate.symbol, it.overrideSubstitutorForOwnFunction()) } &&
-                !candidate.symbol.isExtendMemberForOverrideResolution()
+            if (local.any { it.overridesFunctionCandidate(candidate.member, it.overrideSubstitutorForOwnFunction()) } &&
+                !candidate.member.isExtendMemberForOverrideResolution()
             ) {
                 continue
             }
-            add(candidate.symbol)
+            add(candidate)
         }
     }
 
@@ -509,9 +624,9 @@ class CfirClassUseSiteMemberScope private constructor(
      */
     private fun computeDirectOverriddenForDeclaredFunction(
         functionSymbol: CfirNamedFunctionSymbol,
-    ): List<MemberWithBaseScope<CfirNamedFunctionSymbol>> {
+    ): List<CfirFunctionInheritanceProvenance> {
         return getFunctionsFromParentsByName(functionSymbol.name)
-            .filter { functionSymbol.overridesFunctionCandidate(it.symbol, functionSymbol.overrideSubstitutorForOwnFunction()) }
+            .filter { functionSymbol.overridesFunctionCandidate(it.member, functionSymbol.overrideSubstitutorForOwnFunction()) }
     }
 
     /**
@@ -527,21 +642,21 @@ class CfirClassUseSiteMemberScope private constructor(
     /**
      * 返回指定名称的父函数候选。
      */
-    private fun getFunctionsFromParentsByName(name: Name): List<MemberWithBaseScope<CfirNamedFunctionSymbol>> {
+    private fun getFunctionsFromParentsByName(name: Name): List<CfirFunctionInheritanceProvenance> {
         return functionsFromParents.getOrPut(name) {
-            val parentCandidates = mutableListOf<MemberWithBaseScope<CfirNamedFunctionSymbol>>()
+            val parentCandidates = mutableListOf<CfirFunctionInheritanceProvenance>()
             for (parent in parentScopes) {
-                parent.processFunctionsByName(name) { parentCandidates += MemberWithBaseScope(it, parent) }
+                parent.requireFunctionInheritanceScope().processFunctionsByNameWithProvenance(name) {
+                    parentCandidates += it
+                }
             }
-            val inheritableParentCandidates = parentCandidates.filterInheritedForCurrentScope()
-            filterOutOverridden(
-                inheritableParentCandidates,
-                CfirTypeScope::processDirectOverriddenFunctionsWithBaseScope,
-            ).filterOutAbstractMembersImplementedByConcrete(
-                CfirNamedFunctionSymbol::overridesFunctionCandidate,
-            ).filterOutInterfaceDefaultMembersImplementedByConcrete(
-                CfirNamedFunctionSymbol::overridesFunctionCandidate,
-            ).mergeEquivalentInheritedFunctions().toList()
+            parentCandidates
+                .filterInheritedFunctionsForCurrentScope()
+                .filterOutOverriddenFunctions()
+                .filterOutAbstractFunctionsImplementedByConcrete()
+                .filterOutInterfaceDefaultFunctionsImplementedByConcrete()
+                .mergeEquivalentInheritedFunctions()
+                .toList()
         }
     }
 
@@ -575,6 +690,13 @@ class CfirClassUseSiteMemberScope private constructor(
         filter { it.symbol.canBeInheritedIntoCurrentScope() }
 
     /**
+     * 过滤不能进入当前 class 的继承函数，同时保留来源身份。
+     */
+    private fun Collection<CfirFunctionInheritanceProvenance>.filterInheritedFunctionsForCurrentScope():
+            List<CfirFunctionInheritanceProvenance> =
+        filter { it.member.canBeInheritedIntoCurrentScope() }
+
+    /**
      * 父类 concrete 成员实现同签名 interface default 后，interface default 不再参与 use-site 候选。
      *
      * 该规则覆盖函数与属性，并与抽象成员过滤并列放在父候选合并层，避免调用解析和继承检查各自发明规则。
@@ -589,6 +711,22 @@ class CfirClassUseSiteMemberScope private constructor(
                 concreteCandidate !== candidate &&
                         concreteCandidate.symbol.isConcreteClassMemberForCurrentScope() &&
                         concreteCandidate.symbol.overridesCandidate(candidate.symbol)
+            }
+        }
+    }
+
+    /**
+     * 函数 provenance 版本的 interface default/concrete 归并。
+     */
+    private fun Collection<CfirFunctionInheritanceProvenance>.filterOutInterfaceDefaultFunctionsImplementedByConcrete():
+            Collection<CfirFunctionInheritanceProvenance> {
+        return filter { candidate ->
+            if (!candidate.member.isInterfaceDefaultMemberForCurrentScope()) return@filter true
+
+            none { concreteCandidate ->
+                concreteCandidate !== candidate &&
+                        concreteCandidate.member.isConcreteClassMemberForCurrentScope() &&
+                        concreteCandidate.member.overridesFunctionCandidate(candidate.member)
             }
         }
     }
@@ -647,6 +785,20 @@ class CfirClassUseSiteMemberScope private constructor(
     }
 
     /**
+     * 为当前 scope 的直接声明/extend 函数创建继承来源。
+     */
+    private fun CfirNamedFunctionSymbol.localFunctionInheritanceProvenance(): CfirFunctionInheritanceProvenance {
+        return CfirFunctionInheritanceProvenance(
+            member = this,
+            identity = CfirFunctionInheritanceIdentity(
+                directInputMember = unwrapSubstitutionOverrides(),
+                inheritanceOwnerType = inheritanceProvenanceOwnerType,
+            ),
+            baseScope = this@CfirClassUseSiteMemberScope,
+        )
+    }
+
+    /**
      * 按名称处理所有可见 callable。
      */
     override fun processCallablesByName(name: Name, processor: (CfirCallableSymbol<*>) -> Unit) {
@@ -661,12 +813,12 @@ class CfirClassUseSiteMemberScope private constructor(
         }
         val localFunctions = local.filterIsInstance<CfirNamedFunctionSymbol>()
         for (candidate in getFunctionsFromParentsByName(name)) {
-            if (localFunctions.any { it.overridesFunctionCandidate(candidate.symbol, it.overrideSubstitutorForOwnFunction()) } &&
-                !candidate.symbol.isExtendMemberForOverrideResolution()
+            if (localFunctions.any { it.overridesFunctionCandidate(candidate.member, it.overrideSubstitutorForOwnFunction()) } &&
+                !candidate.member.isExtendMemberForOverrideResolution()
             ) {
                 continue
             }
-            processor(candidate.symbol)
+            processor(candidate.member)
         }
         for (candidate in getPropertiesFromParentsByName(name)) {
             processor(candidate.symbol)
@@ -714,7 +866,27 @@ class CfirClassUseSiteMemberScope private constructor(
      */
     private fun buildParentScopes(): List<CfirTypeScope> {
         val rootType = ownerType ?: return emptyList()
-        return directParentTypesOf(rootType).mapNotNull { supertype ->
+        val provenanceRootType = inheritanceProvenanceOwnerType ?: rootType
+        val parentTypes = if (provenanceRootType == rootType) {
+            directParentTypesOf(rootType).map { it to it }
+        } else {
+            val provenanceToConcreteSubstitutor = provenanceRootType.provenanceToConcreteSubstitutor(rootType)
+            val provenanceParents = directParentTypesOf(provenanceRootType).map { provenanceSupertype ->
+                val concreteSupertype = provenanceToConcreteSubstitutor
+                    .substituteOrSelf(provenanceSupertype)
+                concreteSupertype to provenanceSupertype
+            }
+            val representedConcreteTypes = provenanceParents.mapTo(linkedSetOf()) { it.first }
+            buildList {
+                addAll(provenanceParents)
+                for (concreteSupertype in directParentTypesOf(rootType)) {
+                    if (concreteSupertype in representedConcreteTypes) continue
+                    // 仅具体类型适用的 extend 父边仍参与最终 scope；其 identity 不会通过 generic guard。
+                    add(concreteSupertype to concreteSupertype)
+                }
+            }
+        }
+        return parentTypes.mapNotNull { (supertype, provenanceSupertype) ->
             val classId = supertype.classIdOrPrimitiveClassId ?: return@mapNotNull null
             if (supertypePath.contains(classId)) return@mapNotNull null
             val parentSymbol = symbolProvider.getClassLikeSymbolByClassId(classId) ?: return@mapNotNull null
@@ -725,6 +897,7 @@ class CfirClassUseSiteMemberScope private constructor(
                 extendProvider = extendProvider,
                 directSupertypeProvider = directSupertypeProvider,
                 ownerType = supertype,
+                inheritanceProvenanceOwnerType = provenanceSupertype,
                 dispatchReceiverType = dispatchReceiverType ?: rootType,
                 scopeKind = parentScopeKind(),
                 allowBareGenericStaticQualifierExtends = allowBareGenericStaticQualifierExtends,
@@ -734,6 +907,42 @@ class CfirClassUseSiteMemberScope private constructor(
             )
             parentScope.substitutionScopeForSupertype(parentSymbol, supertype)
         }
+    }
+
+    /**
+     * 构造“泛型继承来源 owner -> 当前具体 owner”的替换器。
+     *
+     * 父 scope 的 provenance type 可能携带外层声明的类型参数，例如
+     * `B<X, Y> -> A<X, Y> -> I<X>`。因此不能再次按当前 class 的声明参数建立映射，
+     * 而要按 provenance/concrete owner 的同形类型实参递归收集真实来源参数。
+     */
+    private fun ConeCangJieType.provenanceToConcreteSubstitutor(
+        concreteType: ConeCangJieType,
+    ): ConeSubstitutor {
+        val replacements = linkedMapOf<TypeConstructorMarker, ConeCangJieType>()
+
+        fun collect(provenance: ConeCangJieType, concrete: ConeCangJieType) {
+            if (provenance is ConeTypeParameterType) {
+                val constructor = provenance.lookupTag as TypeConstructorMarker
+                val previous = replacements.putIfAbsent(constructor, concrete)
+                check(previous == null || previous == concrete) {
+                    "Inconsistent inheritance provenance substitution for $provenance: $previous and $concrete"
+                }
+                return
+            }
+
+            check(provenance.typeArguments.size == concrete.typeArguments.size) {
+                "Inheritance provenance owner shape differs from concrete owner: $provenance and $concrete"
+            }
+            provenance.typeArguments.zip(concrete.typeArguments).forEach { (provenanceArgument, concreteArgument) ->
+                collect(provenanceArgument.type, concreteArgument.type)
+            }
+        }
+
+        collect(this, concreteType)
+        return replacements.takeIf { it.isNotEmpty() }
+            ?.let(::CfirTypeSubstitutorByMap)
+            ?: ConeSubstitutor.Empty
     }
 
     /**
@@ -824,9 +1033,11 @@ class CfirClassUseSiteMemberScope private constructor(
         ) {
             val substitutor = classSymbol.createDeclarationSubstitutor(type)
             return classSymbol.cfir.superTypeRefs.mapNotNull { superTypeRef ->
-                val resolvedRef = superTypeRef as? CfirResolvedTypeRef ?: return@mapNotNull null
-                val supertype = resolvedRef.coneType
-                (substitutor?.substituteOrSelf(supertype) ?: supertype).scopeTraversalType()
+                val supertype = superTypeRef
+                    .classifyDeclaredSupertype(session)
+                    .scopeTraversalTypeOrNull()
+                    ?: return@mapNotNull null
+                substitutor?.substituteOrSelf(supertype) ?: supertype
             }
         }
 
@@ -835,33 +1046,18 @@ class CfirClassUseSiteMemberScope private constructor(
             return directParentTypesFromEdges(type, classId, excludingExtend)
         }
 
-        return session.typeAwareSupertypeProviderOrNull
-            ?.getDirectSupertypes(type)
-            ?.takeIf { it.isNotEmpty() }
-            ?.map { it.scopeTraversalType() }
-            ?: directSupertypeProvider
-                ?.getDirectSuperTypes(classId)
-                ?.map { it.coneType }
-                ?.takeIf { it.isNotEmpty() }
-                ?.map { it.scopeTraversalType() }
-            ?: classSymbol.cfir.superTypeRefs.mapNotNull { superTypeRef ->
-                val resolvedRef = superTypeRef as? CfirResolvedTypeRef ?: return@mapNotNull null
-                resolvedRef.coneType.scopeTraversalType()
-            }
-    }
-
-    /**
-     * 泛型实参数量错误仍然有已解析的 classifier owner。
-     *
-     * 官方在这类错误后保留 nominal member lookup 能力，避免 `J<T>` 实参数量错误继续级联成
-     * `B().m` 的成员缺失；未解析类型或错误类型实参不走这里。
-     */
-    private fun ConeCangJieType.scopeTraversalType(): ConeCangJieType =
-        if (this is ConeErrorType && diagnostic is ConeAllowsDelegatedScopeTraversalDiagnostic) {
-            delegatedType ?: this
-        } else {
-            this
+        session.typeAwareSupertypeProviderOrNull?.let { provider ->
+            return provider.getDirectSupertypes(type)
         }
+        directSupertypeProvider?.let { provider ->
+            return provider.getDirectSuperTypes(classId).mapNotNull { superTypeRef ->
+                superTypeRef.classifyDeclaredSupertype(session).scopeTraversalTypeOrNull()
+            }
+        }
+        return classSymbol.cfir.superTypeRefs.mapNotNull { superTypeRef ->
+            superTypeRef.classifyDeclaredSupertype(session).scopeTraversalTypeOrNull()
+        }
+    }
 
     /**
      * 在 extend 声明体内查询父类型时按 graph edge 来源跳过当前 extend 自己贡献的接口。
@@ -1047,6 +1243,14 @@ private typealias ProcessOverriddenWithBaseScope<S> =
         CfirTypeScope.(S, (S, CfirTypeScope) -> ProcessorAction) -> ProcessorAction
 
 /**
+ * 取得 scope 的函数继承来源能力；父 scope 构造链违反该不变量时立即暴露架构错误。
+ */
+private fun CfirTypeScope.requireFunctionInheritanceScope(): CfirFunctionInheritanceScope =
+    checkNotNull(this as? CfirFunctionInheritanceScope) {
+        "Class use-site parent scope must preserve function inheritance provenance: $this"
+    }
+
+/**
  * 对齐 Kotlin FIR `FirOverrideUtils.filterOutOverridden`。
  *
  * 仓颉当前没有 FIR 的 intersection result 模型；这里保留 Kotlin 的过滤位置和
@@ -1061,6 +1265,53 @@ private fun <S : CfirCallableSymbol<*>> filterOutOverridden(
             overridden1 !== overridden2 && overrides(overridden2, overridden1.symbol, processAllOverridden)
         }
     }
+}
+
+/**
+ * 使用 provenance 携带的 base scope 过滤已被其它父候选覆盖的函数。
+ */
+private fun Collection<CfirFunctionInheritanceProvenance>.filterOutOverriddenFunctions():
+        Collection<CfirFunctionInheritanceProvenance> {
+    return filter { overridden1 ->
+        none { overridden2 ->
+            overridden1 !== overridden2 && overrides(overridden2, overridden1.member)
+        }
+    }
+}
+
+/**
+ * 通过 provenance 直接覆盖链判断 [member] 是否覆盖目标 [target]。
+ */
+private fun overrides(
+    member: CfirFunctionInheritanceProvenance,
+    target: CfirNamedFunctionSymbol,
+): Boolean {
+    val visited = linkedSetOf<Pair<CfirTypeScope, CfirNamedFunctionSymbol>>()
+
+    fun visit(current: CfirFunctionInheritanceProvenance): Boolean {
+        if (!visited.add(current.baseScope to current.member)) return false
+
+        var found = false
+        current.baseScope.requireFunctionInheritanceScope()
+            .processDirectOverriddenFunctionsWithProvenance(current.member) { overridden ->
+                when {
+                    overridden.member == target -> {
+                        found = true
+                        ProcessorAction.STOP
+                    }
+
+                    visit(overridden) -> {
+                        found = true
+                        ProcessorAction.STOP
+                    }
+
+                    else -> ProcessorAction.NEXT
+                }
+            }
+        return found
+    }
+
+    return visit(member)
 }
 
 /**
@@ -1082,31 +1333,48 @@ private fun <S : CfirCallableSymbol<*>> Collection<MemberWithBaseScope<S>>.filte
 }
 
 /**
+ * 在函数 provenance 集合中移除已被 concrete 同签名成员实现的抽象输入。
+ */
+private fun Collection<CfirFunctionInheritanceProvenance>.filterOutAbstractFunctionsImplementedByConcrete():
+        Collection<CfirFunctionInheritanceProvenance> {
+    return filter { candidate ->
+        if (!candidate.member.isAbstractForIntersectionResolution()) return@filter true
+
+        none { concreteCandidate ->
+            concreteCandidate !== candidate &&
+                    !concreteCandidate.member.isAbstractForIntersectionResolution() &&
+                    concreteCandidate.member.overridesFunctionCandidate(candidate.member)
+        }
+    }
+}
+
+/**
  * 归并继承图中代表同一最终函数契约的父成员。
  *
  * 官方 `MergeInheritedMembers` 先归并继承图中原本等价的 requirement，再执行实例化替换。
- * 因此 key 同时包含当前 substitution override 的直接输入签名和当前已实例化签名：前者区分
- * 原本不同、仅由当前 owner substitution 新制造的碰撞，后者区分同一原始 `I<T>.test` 经不同
- * 父类型实参得到的 `I<Float64>`/`I<(Int64, Float64)>` overload。只有两层签名都相同，才是
- * 重复继承路径贡献的同一个 requirement。
+ * 因此 key 同时包含直接输入成员、泛型 owner/interface 实例与当前已实例化签名：前两者区分
+ * 原本独立、仅由当前 owner substitution 新制造的碰撞，后者区分同一原始 `I<T>.test` 经不同
+ * 父类型实参得到的 `I<Float64>`/`I<(Int64, Float64)>` overload。三者都相同时，才是重复继承
+ * 路径贡献的同一个 requirement。
  */
-private fun Collection<MemberWithBaseScope<CfirNamedFunctionSymbol>>.mergeEquivalentInheritedFunctions():
-        Collection<MemberWithBaseScope<CfirNamedFunctionSymbol>> {
-    val merged = linkedMapOf<InheritedFunctionMergeKey, MemberWithBaseScope<CfirNamedFunctionSymbol>>()
+private fun Collection<CfirFunctionInheritanceProvenance>.mergeEquivalentInheritedFunctions():
+        Collection<CfirFunctionInheritanceProvenance> {
+    val merged = linkedMapOf<InheritedFunctionMergeKey, CfirFunctionInheritanceProvenance>()
     for (candidate in this) {
-        val symbol = candidate.symbol
-        val provenance = symbol.originalForSubstitutionOverride ?: symbol
+        val symbol = candidate.member
+        val directInput = candidate.identity.directInputMember
         val key = InheritedFunctionMergeKey(
-            isStatic = provenance.isStaticMemberForOverride(),
-            provenanceSignature = provenance.overrideSignatureKey(),
+            isStatic = directInput.isStaticMemberForOverride(),
+            directInputMember = directInput,
+            inheritanceOwnerType = candidate.identity.inheritanceOwnerType,
             instantiatedSignature = symbol.overrideSignatureKey(),
-            defaultImplementationOwner = provenance
+            defaultImplementationOwner = directInput
                 .takeIf { it.isBound && it.cfir.status.isDefault }
                 ?.callableId
                 ?.classId,
         )
         val previous = merged[key]
-        if (previous == null || previous.symbol.shouldBeReplacedByConcrete(symbol)) {
+        if (previous == null || previous.member.shouldBeReplacedByConcrete(symbol)) {
             merged[key] = candidate
         }
     }
@@ -1118,8 +1386,11 @@ private data class InheritedFunctionMergeKey(
     /** static 与实例成员不能归并。 */
     val isStatic: Boolean,
 
-    /** 当前 owner substitution 之前的直接输入签名。 */
-    val provenanceSignature: String,
+    /** 当前 owner substitution 之前的直接输入成员。 */
+    val directInputMember: CfirNamedFunctionSymbol,
+
+    /** 直接输入成员沿父类型路径形成的泛型 owner/interface 实例。 */
+    val inheritanceOwnerType: ConeCangJieType?,
 
     /** 沿父类型边完成实例化后的签名。 */
     val instantiatedSignature: String,

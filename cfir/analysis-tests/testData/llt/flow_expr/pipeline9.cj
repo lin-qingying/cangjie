@@ -15,6 +15,6 @@ func g<T>(_: Unit) {}
 
 main() {
     f(try (x = A()) {} finally {
-        let _ = <!TOO_MANY_ARGUMENTS!>A(1)<!>
+        let _ = A<!WRONG_NUMBER_OF_ARGUMENTS!>(1)<!>
     }) |> g<Unit>
 }

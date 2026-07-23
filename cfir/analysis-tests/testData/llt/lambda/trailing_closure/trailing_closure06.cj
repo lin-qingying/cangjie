@@ -7,6 +7,6 @@ main(): Int64 {
         }
         g
     }
-    var t = <!TOO_MANY_ARGUMENTS!>f(1) {t => t + 1}<!>
+    var t = f<!WRONG_NUMBER_OF_ARGUMENTS!>(1) {t => t + 1}<!>
     return 0
 }

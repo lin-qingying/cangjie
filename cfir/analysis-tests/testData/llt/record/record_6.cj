@@ -12,7 +12,7 @@ struct Base12 {
 
 main() {
     var x = Base12()
-    <!CANNOT_ASSIGN_TO_IMMUTABLE!>x.a<!> = 4
+    x.<!CANNOT_ASSIGN_TO_IMMUTABLE!>a<!> = 4
     if (x.a == 4) {
         print("${x.a}")
         return 0

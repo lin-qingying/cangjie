@@ -1063,6 +1063,24 @@ class ClassGenerated : AbstractCfirPsiLlTDiagnosticsTest() {
         runTest("cfir/analysis-tests/testData/llt/class/class_super_member_func_call_invalid_2.cj")
     }
 
+    @TestMetadata("declared_supertype_classification.cj")
+    @Test
+    fun testDeclaredSupertypeClassification() {
+        runTest("cfir/analysis-tests/testData/llt/class/declared_supertype_classification.cj")
+    }
+
+    @TestMetadata("declared_supertype_member_leakage.cj")
+    @Test
+    fun testDeclaredSupertypeMemberLeakage() {
+        runTest("cfir/analysis-tests/testData/llt/class/declared_supertype_member_leakage.cj")
+    }
+
+    @TestMetadata("declared_supertype_recoverable_nominal.cj")
+    @Test
+    fun testDeclaredSupertypeRecoverableNominal() {
+        runTest("cfir/analysis-tests/testData/llt/class/declared_supertype_recoverable_nominal.cj")
+    }
+
     @TestMetadata("func_in_class1.cj")
     @Test
     fun testFuncInClass1() {

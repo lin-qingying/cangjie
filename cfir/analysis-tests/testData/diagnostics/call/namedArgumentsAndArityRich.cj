@@ -16,11 +16,11 @@ func mixedFriendly(plain: Int64, top!: Int64): Int64 {
 }
 
 func testMissingValue(): Unit {
-    positional<!NO_VALUE_FOR_PARAMETER!>(1)<!>
+    positional<!WRONG_NUMBER_OF_ARGUMENTS!>(1)<!>
 }
 
 func testTooManyArguments(): Unit {
-    positional(1, 2, <!TOO_MANY_ARGUMENTS!>3<!>)
+    positional<!WRONG_NUMBER_OF_ARGUMENTS!>(1, 2, 3)<!>
 }
 
 func testNamedArgumentsNotAllowed(): Unit {

@@ -15,7 +15,7 @@ import a.*
 
 main() {
     let a = A<Int64>.B
-    <!NON_EXHAUSTIVE_MATCH!>match (a) {
+    match (<!NON_EXHAUSTIVE_MATCH!>a<!>) {
         case B => 0
-    }<!>
+    }
 }

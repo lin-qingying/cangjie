@@ -3,7 +3,7 @@
 struct RA<T> {
     public let a = 10
     public init(a: Int32) {
-        this.a = a
+        this.<!CANNOT_ASSIGN_TO_IMMUTABLE!>a<!> = <!TYPE_MISMATCH!>a<!>
     }
 }
 

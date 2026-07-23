@@ -30,6 +30,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CheckerSink
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.yieldDiagnostic
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 
 
@@ -81,7 +82,7 @@ object CfirMapTypeArguments : ResolutionStage() {
      * 它在 `ConeInapplicableCandidateError` 路径中被映射。
      */
     context(sink: CheckerSink)
-    private fun checkTypeArgumentCount(
+    private suspend fun checkTypeArgumentCount(
         candidate: Candidate,
         context: ResolutionContext,
     ) {
@@ -94,7 +95,7 @@ object CfirMapTypeArguments : ResolutionStage() {
 
         val expected = declaredTypeParams.size
         if (expected != explicitCount) {
-            sink.reportDiagnostic(WrongArgumentCount(expected, explicitCount))
+            sink.yieldDiagnostic(WrongArgumentCount(expected, explicitCount))
         }
     }
 

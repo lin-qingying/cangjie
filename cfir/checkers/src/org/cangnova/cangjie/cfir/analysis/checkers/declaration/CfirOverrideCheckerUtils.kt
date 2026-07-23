@@ -27,6 +27,7 @@ package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.resolve.providers.canAccessPackageInternalDeclaration
+import org.cangnova.cangjie.cfir.resolve.providers.getContainingClass
 import org.cangnova.cangjie.cfir.resolve.providers.getContainingFile
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassMemberScopeKind
@@ -87,7 +88,7 @@ internal fun CheckerContext.createUseSiteMemberScope(declaration: CfirClassLikeD
  * 查找 callable 符号所属的 class-like 符号。
  */
 internal fun CheckerContext.ownerClassSymbol(symbol: CfirCallableSymbol<*>): CfirClassLikeSymbol<*>? {
-    val ownerClassId = symbol.ownerClassId(session = session)
+    val ownerClassId = symbol.ownerClassId()
         ?: return null
     return session.symbolProvider.getClassLikeSymbolByClassId(ownerClassId)
 }
@@ -96,13 +97,13 @@ internal fun CheckerContext.ownerClassSymbol(symbol: CfirCallableSymbol<*>): Cfi
  * 在检查上下文中读取 callable 所属 class id。
  */
 internal fun CfirCallableSymbol<*>.ownerClassId(context: CheckerContext): ClassId? =
-    ownerClassId(session = context.session)
+    ownerClassId()
 
 /**
  * 读取 callable id 或 provider 记录的所属 class id。
  */
-private fun CfirCallableSymbol<*>.ownerClassId(session: org.cangnova.cangjie.cfir.session.CfirSession): ClassId? {
-    return callableId.classId ?: session.cfirProvider.getContainingClass(this)?.classId
+private fun CfirCallableSymbol<*>.ownerClassId(): ClassId? {
+    return callableId.classId ?: getContainingClass()?.classId
 }
 
 /**
@@ -207,8 +208,8 @@ internal fun CfirCallableSymbol<*>.isVisibleIn(
     when (cfir.status.visibility) {
         Visibilities.Public, Visibilities.Protected -> return true
         Visibilities.Internal -> {
-            val currentFile = context.session.cfirProvider.getContainingFile(ownerDeclaration.symbol) ?: return true
-            val declarationFile = context.session.cfirProvider.getContainingFile(this) ?: return true
+            val currentFile = ownerDeclaration.symbol.getContainingFile() ?: return true
+            val declarationFile = getContainingFile() ?: return true
             val currentPackage = currentFile.packageDirective.packageFqName
             val declarationPackage = declarationFile.packageDirective.packageFqName
             return canAccessPackageInternalDeclaration(currentPackage, declarationPackage)

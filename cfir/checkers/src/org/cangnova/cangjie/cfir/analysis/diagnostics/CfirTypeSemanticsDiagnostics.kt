@@ -89,19 +89,26 @@ internal fun specificTypeMismatchDiagnostic(
     session: CfirSession,
 ): CjDiagnostic? {
     val diagnosticSource = source as? CjSourceElement ?: return null
-    return when (val mismatch = classifySpecificTypeMismatch(expectedType, actualType, expression, session)) {
+    val mismatch = classifySpecificTypeMismatch(expectedType, actualType, expression, session) ?: return null
+    return mismatch.toDiagnostic(diagnosticSource, session)
+}
+
+/** 将结构化细分 mismatch 转换为项目诊断。 */
+private fun CfirSpecificTypeMismatch.toDiagnostic(
+    source: CjSourceElement,
+    session: CfirSession,
+): CjDiagnostic? {
+    return when (this) {
         is CfirSpecificTypeMismatch.CannotConvertLiteral -> createCannotConvertLiteralDiagnostic(
-            source = diagnosticSource,
-            mismatch = mismatch,
+            source = source,
+            mismatch = this,
             session = session,
         )
         is CfirSpecificTypeMismatch.VArraySizeMismatch -> createVArraySizeMismatchDiagnostic(
-            source = diagnosticSource,
-            mismatch = mismatch,
+            source = source,
+            mismatch = this,
             session = session,
         )
-
-        null -> null
     }
 }
 

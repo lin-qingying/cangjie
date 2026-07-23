@@ -10,6 +10,7 @@ import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallKind
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CheckerSink
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.yieldDiagnostic
 import org.cangnova.cangjie.cfir.resolve.calls.visibility.visibilityChecker
 
 /** 候选可见性检查阶段。 */
@@ -32,7 +33,7 @@ object CfirCheckVisibility : ResolutionStage() {
             } else {
                 VisibilityError(candidate.symbol)
             }
-            sink.reportDiagnostic(diagnostic)
+            sink.yieldDiagnostic(diagnostic)
         }
     }
 

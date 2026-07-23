@@ -278,6 +278,31 @@ open class CfirDefaultTransformer<in D> : CfirTransformer<D>() {
         return transformElement(expression, data)
     }
 
+    /** 默认转换仅包装一个内部表达式的节点。 */
+    override fun transformWrappedExpression(wrappedExpression: CfirWrappedExpression, data: D): CfirExpression {
+        return transformExpression(wrappedExpression, data)
+    }
+
+    /** 默认转换 optional 后缀包装节点。 */
+    override fun transformOptionalExpression(optionalExpression: CfirOptionalExpression, data: D): CfirExpression {
+        return transformWrappedExpression(optionalExpression, data)
+    }
+
+    /** 默认转换 optional-chain 根包装节点。 */
+    override fun transformOptionalChainExpression(optionalChainExpression: CfirOptionalChainExpression, data: D): CfirExpression {
+        return transformWrappedExpression(optionalChainExpression, data)
+    }
+
+    /** 默认转换 inout 实参包装节点。 */
+    override fun transformInoutArgumentExpression(inoutArgumentExpression: CfirInoutArgumentExpression, data: D): CfirExpression {
+        return transformWrappedExpression(inoutArgumentExpression, data)
+    }
+
+    /** 默认转换命名实参包装节点。 */
+    override fun transformNamedArgumentExpression(namedArgumentExpression: CfirNamedArgumentExpression, data: D): CfirExpression {
+        return transformWrappedExpression(namedArgumentExpression, data)
+    }
+
     /**
      * 默认转换代码块。
      */

@@ -37,6 +37,10 @@ import org.cangnova.cangjie.cfir.resolve.fullyExpandedTypeUsingAbbreviation
 import org.cangnova.cangjie.cfir.resolve.providers.CfirProviderImpl
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSuperTypeGraphEdge
+import org.cangnova.cangjie.cfir.resolve.providers.DeclaredSupertypeClassification
+import org.cangnova.cangjie.cfir.resolve.providers.classifyDeclaredSupertype
+import org.cangnova.cangjie.cfir.resolve.providers.inheritanceCycleDependencyTypeOrNull
+import org.cangnova.cangjie.cfir.resolve.providers.ordinarySupertypeTypeOrNull
 import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.LocalClassesNavigationInfo
 import org.cangnova.cangjie.cfir.scopes.CfirScope
 import org.cangnova.cangjie.cfir.scopes.defaultImportsProvider
@@ -244,7 +248,9 @@ open class SupertypeComputationSession {
      */
     val supertypesSupplier: SupertypeSupplier = SupertypeSupplier { classId ->
         val declaration = declarationIndex[classId]
-        supertypeRefs(declaration).mapNotNull(CfirTypeRef::coneTypeOrNull)
+        supertypeRefs(declaration).mapNotNull { typeRef ->
+            typeRef.classifyDeclaredSupertype(expandType = { it }).ordinarySupertypeTypeOrNull()
+        }
     }
 
     /** 记录当前阶段已经访问到的 class-like 声明。 */
@@ -385,7 +391,7 @@ open class SupertypeComputationSession {
         session: CfirSession,
         currentPath: List<CfirClassLikeDeclaration>,
     ): CfirResolvedTypeRef {
-        val target = typeRef.toReferencedDeclaration(session) ?: return typeRef
+        val target = typeRef.inheritanceCycleTarget(session) ?: return typeRef
         val pathSet = currentPath.toSet()
         val hitsCurrentPath = target in pathSet || reachesAny(target, pathSet, session, mutableSetOf())
         if (!hitsCurrentPath) return typeRef
@@ -498,9 +504,33 @@ open class SupertypeComputationSession {
             else -> getResolvedSupertypeRefs(declaration)
         }
         return refs.mapNotNull { ref ->
-            ref.toReferencedDeclaration(session)
-                ?.takeIf { ref.isSemanticallyValidDeclaredSupertypeEdge(declaration, session) }
+            val target = ref.inheritanceCycleTarget(session) ?: return@mapNotNull null
+            target.takeIf { declaration !is CfirInterface || it is CfirInterface }
         }
+    }
+
+    /**
+     * 解析继承环 DFS 使用的声明目标。
+     *
+     * 该入口刻意独立于普通父类型与成员图：错误泛型实参数量仍可恢复 class owner 参与
+     * 官方继承环检查，但不能因此成为类型关系或成员作用域中的有效父边。
+     */
+    private fun CfirResolvedTypeRef.inheritanceCycleTarget(
+        session: CfirSession,
+    ): CfirClassLikeDeclaration? {
+        val classification = classifyDeclaredSupertype(
+            session = session,
+            expandType = { type -> type.fullyExpandedType(session, ::getResolvedExpandedType) },
+        )
+        val dependencyType = classification.inheritanceCycleDependencyTypeOrNull() ?: return null
+
+        // 普通 typealias 父引用必须先保留 alias 声明节点，再由 DFS 展开其目标。
+        // 若在这里直接把 alias 展开到 owner，本应是间接继承环的 `A <: Alias<A>`
+        // 会被错误降成直接 `SUPER_TYPES_SELF_REFERENCE`。
+        if (classification is DeclaredSupertypeClassification.ValidNominal) {
+            coneType.toReferencedDeclaration(session)?.let { return it }
+        }
+        return dependencyType.toReferencedDeclaration(session)
     }
 }
 
@@ -719,6 +749,7 @@ internal open class CfirSupertypeResolverVisitor(
                     typeParameterType != null -> createErrorTypeRef(
                         superTypeRef.source,
                         "Type parameter cannot be used as a supertype",
+                        delegatedTypeRef = transformed,
                     )
 
                     transformed !is CfirResolvedTypeRef -> createErrorTypeRef(
@@ -978,8 +1009,8 @@ private fun CfirResolvedTypeRef.isSemanticallyValidDeclaredSupertypeEdge(
     owner: CfirClassLikeDeclaration,
     session: CfirSession,
 ): Boolean {
-    if (coneType is ConeErrorType) return false
-    val target = toReferencedDeclaration(session) ?: return false
+    val semanticType = classifyDeclaredSupertype(session).ordinarySupertypeTypeOrNull() ?: return false
+    val target = semanticType.toReferencedDeclaration(session) ?: return false
     if (owner is CfirInterface && target !is CfirInterface) return false
     return true
 }

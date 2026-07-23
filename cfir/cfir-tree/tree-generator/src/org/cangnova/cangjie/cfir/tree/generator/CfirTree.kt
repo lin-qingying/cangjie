@@ -988,6 +988,19 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
     val inoutArgumentExpression: Element by element(Expression, name = "InoutArgumentExpression") {
         parent(wrappedExpression)
     }
+
+    /**
+     * `name: expression` 语法产生的命名实参包装节点。
+     *
+     * 参数名称属于调用形状，不应通过 PSI 或源码文本从普通表达式反向恢复。
+     * 完整 value-argument source 用于参数级诊断，nameSource 用于名称级诊断。
+     */
+    val namedArgumentExpression: Element by element(Expression, name = "NamedArgumentExpression") {
+        parent(wrappedExpression)
+
+        +field("argumentName", nameType)
+        +field("nameSource", sourceElementType, nullable = true)
+    }
     /**
      * 调用表达式抽象层。
      */
@@ -1094,6 +1107,7 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
         parent(expression)
         +field("lValue", expression, withTransform = true)
         +field("rValue", expression, withTransform = true)
+        +field("typeMismatchOutcome", assignmentTypeMismatchOutcomeType, nullable = true, withReplace = true)
     }
 
     /**

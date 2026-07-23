@@ -8,22 +8,22 @@ class Aoo {
     public var a: Int32 = 1
     public let b: Int32 = 2
     public var c = if (true) {
-        func foo1(x!: Int32 = <!USED_BEFORE_INITIALIZATION!>a<!>) {
+        func foo1(x!: Int32 = <!ILLEGAL_USAGE_OF_MEMBER!>a<!>) {
             return x
         }
         func foo2() {
-            var x = <!USED_BEFORE_INITIALIZATION!>a<!>;
+            var x = <!ILLEGAL_USAGE_OF_MEMBER!>a<!>;
             return x
         }
         func foo3() {
-            return <!USED_BEFORE_INITIALIZATION!>a<!>
+            return <!ILLEGAL_USAGE_OF_MEMBER!>a<!>
         }
         func foo4() {
-            <!USED_BEFORE_INITIALIZATION!>a<!>;
+            <!ILLEGAL_USAGE_OF_MEMBER!>a<!>;
             return 1
         }
         func foo5() {
-            <!USED_BEFORE_INITIALIZATION!>a<!>
+            <!ILLEGAL_USAGE_OF_MEMBER!>a<!>
         }
 
         func goo1() {

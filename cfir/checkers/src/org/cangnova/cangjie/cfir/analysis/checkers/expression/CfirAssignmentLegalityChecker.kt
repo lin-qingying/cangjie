@@ -27,13 +27,13 @@ package org.cangnova.cangjie.cfir.analysis.checkers.expression
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirInitializationAssignmentClassifier
+import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirInitializationAssignmentKind
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.correspondingProperty
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirAssignment
-import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirIncrementDecrementExpression
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
@@ -49,7 +49,6 @@ import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.ConeStructType
 import org.cangnova.cangjie.cfir.types.ConeVArrayType
-import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.source.AbstractCjSourceElement
 
@@ -97,8 +96,12 @@ object CfirAssignmentLegalityChecker : CfirAssignmentChecker() {
         }
 
         val access = lValue as? CfirQualifiedAccessExpression ?: return
-        val accessSource = access.calleeReference.source ?: access.source ?: expression.source ?: return
-        val assignmentSource = expression.source ?: access.source ?: access.calleeReference.source ?: return
+        val selectorSource = checkNotNull(access.calleeReference.source) {
+            "Qualified assignment target must retain its callee selector source"
+        }
+        val assignmentSource = checkNotNull(expression.source) {
+            "Assignment expression must retain its source"
+        }
 
         if (CfirMutationTargetClassifier.isVArraySizeAccess(access)) {
             reporter.reportOn(
@@ -111,14 +114,14 @@ object CfirAssignmentLegalityChecker : CfirAssignmentChecker() {
         when (val target = CfirMutationTargetClassifier.classifyAssignment(access, expression)) {
             is CfirMutationTargetClassifier.MutationTarget.ImmutableValue -> {
                 reporter.reportOn(
-                    source = access.source ?: assignmentSource,
+                    source = selectorSource,
                     factory = CfirErrors.CANNOT_ASSIGN_TO_IMMUTABLE,
                 )
             }
 
             is CfirMutationTargetClassifier.MutationTarget.NonAssignableName -> {
                 reporter.reportOn(
-                    source = accessSource,
+                    source = selectorSource,
                     factory = CfirErrors.UNQUALIFIED_LEFT_VALUE_ASSIGNED,
                     a = target.name,
                 )
@@ -375,41 +378,16 @@ internal object CfirMutationTargetClassifier {
         if (field.status.isStatic != constructor.status.isStatic) return true
         if (field.hasSameNamePrimaryConstructorPropertyInOwner()) return true
         if (field.initializer != null) return true
-        return assignment != null && field.hasPriorInitializationAssignmentIn(constructor, assignment)
-    }
+        return when (assignment?.let { CfirInitializationAssignmentClassifier.classifyAssignment(it, context) }) {
+            CfirInitializationAssignmentKind.INITIALIZATION,
+            CfirInitializationAssignmentKind.PRIORITY_INITIALIZATION_DIAGNOSTIC,
+            -> false
 
-    /**
-     * let 字段在构造器/static init 中允许一次初始化赋值；同一构造器体内已经发生过
-     * 直接初始化后，后续赋值必须按不可变值处理。嵌套 lambda 不是立即执行路径，扫描时跳过。
-     */
-    private fun CfirFieldVariable.hasPriorInitializationAssignmentIn(
-        constructor: CfirConstructor,
-        assignment: CfirAssignment,
-    ): Boolean {
-        val assignmentStart = assignment.source?.startOffset ?: return false
-        val body = constructor.body ?: return false
-        var found = false
-        body.accept(object : CfirVisitorVoid() {
-            override fun visitElement(element: org.cangnova.cangjie.cfir.CfirElement) {
-                if (found) return
-                element.acceptChildren(this, null)
-            }
-
-            override fun visitAnonymousFunctionExpression(anonymousFunctionExpression: CfirAnonymousFunctionExpression) = Unit
-
-            override fun visitAssignment(assignment: CfirAssignment) {
-                if (found) return
-                val startOffset = assignment.source?.startOffset
-                if (startOffset == null || startOffset >= assignmentStart) return
-                val access = assignment.lValue as? CfirQualifiedAccessExpression ?: return
-                if (access.resolvedAssignableSymbolOrNull() == symbol) {
-                    found = true
-                    return
-                }
-                assignment.rValue.accept(this, null)
-            }
-        }, null)
-        return found
+            CfirInitializationAssignmentKind.REASSIGNMENT,
+            CfirInitializationAssignmentKind.NOT_TRACKED,
+            null,
+            -> true
+        }
     }
 
     /**
@@ -440,7 +418,15 @@ internal object CfirMutationTargetClassifier {
     ): Boolean {
         if (variable.isVar) return false
         if (assignment != null && variable.isLocal && variable.initializer == null) {
-            return !CfirInitializationAssignmentClassifier.isInitializationAssignment(assignment, context)
+            return when (CfirInitializationAssignmentClassifier.classifyAssignment(assignment, context)) {
+                CfirInitializationAssignmentKind.INITIALIZATION,
+                CfirInitializationAssignmentKind.PRIORITY_INITIALIZATION_DIAGNOSTIC,
+                -> false
+
+                CfirInitializationAssignmentKind.REASSIGNMENT,
+                CfirInitializationAssignmentKind.NOT_TRACKED,
+                -> true
+            }
         }
         return true
     }
@@ -454,11 +440,7 @@ internal object CfirMutationTargetClassifier {
     context(context: CheckerContext)
     private fun CfirQualifiedAccessExpression.isImmutableStructReceiverMutationForbidden(): Boolean {
         val receiver = explicitReceiver ?: dispatchReceiver ?: return false
-        val receiverAccess = receiver as? CfirQualifiedAccessExpression ?: return false
-        val receiverSymbol = receiverAccess.resolvedAssignableSymbolOrNull() as? CfirVariableSymbol<*> ?: return false
-        val receiverVariable = receiverSymbol.takeIf { it.isBound }?.cfir ?: return false
-        if (receiverVariable.isVar) return false
-        return receiver.coneTypeOrNull.mayBeStructValueType()
+        return receiver.isImmutableStructValueAccess()
     }
 
     /**

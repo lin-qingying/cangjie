@@ -32,6 +32,7 @@ import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
+import org.cangnova.cangjie.cfir.scopes.createCallableTypeParameterSubstitutorForOverride
 import org.cangnova.cangjie.cfir.scopes.overrideSignatureKey
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.types.*
@@ -39,7 +40,6 @@ import org.cangnova.cangjie.cfir.unwrapSubstitutionOverrides
 import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.type.AbstractTypeChecker
-import org.cangnova.cangjie.type.model.TypeConstructorMarker
 
 /**
  * Override checker aligned to Kotlin FIR order:
@@ -292,8 +292,13 @@ object CfirOverrideChecker : CfirClassLikeChecker() {
 
         for (overridden in overriddenSymbols) {
             if (!overridden.isBound) continue
+            val typeParameterSubstitutor = createCallableTypeParameterSubstitutorForOverride(
+                overriding = declarationSymbol,
+                overridden = overridden,
+                context = context.session.typeContext,
+            ) ?: continue
             val overriddenReturnType = context.returnTypeCalculator.tryCalculateReturnType(overridden.cfir).coneType
-                .substituteAllTypeParameters(declarationSymbol, overridden)
+                .let { typeParameterSubstitutor.substituteOrSelf(it) }
             if (overriddenReturnType is ConeErrorType) continue
 
             val isPropertyOverride = declarationSymbol is CfirPropertySymbol && overridden is CfirPropertySymbol
@@ -373,17 +378,17 @@ object CfirOverrideChecker : CfirClassLikeChecker() {
         declaration: CfirCallableDeclaration,
         overriddenSymbols: List<CfirCallableSymbol<*>>,
     ) {
+        val declarationSymbol = declaration.symbol as? CfirCallableSymbol<*> ?: return
         val childTypeParameters = (declaration as? CfirTypeParameterRefsOwner)?.typeParameters.orEmpty()
         if (childTypeParameters.isEmpty()) return
 
         for (overridden in overriddenSymbols) {
             val parentTypeParameters = (overridden.cfir as? CfirTypeParameterRefsOwner)?.typeParameters.orEmpty()
-            if (parentTypeParameters.size != childTypeParameters.size) continue
-
-            val parentToChildSubstitutor = createParentToChildTypeParameterSubstitutor(
-                parentTypeParameters,
-                childTypeParameters,
-            )
+            val parentToChildSubstitutor = createCallableTypeParameterSubstitutorForOverride(
+                overriding = declarationSymbol,
+                overridden = overridden,
+                context = context.session.typeContext,
+            ) ?: continue
 
             for (index in childTypeParameters.indices) {
                 val childBounds = childTypeParameters[index].symbol.resolvedBounds
@@ -422,58 +427,7 @@ object CfirOverrideChecker : CfirClassLikeChecker() {
             }
         }
     }
-
-    /**
-     * 构造从父声明类型参数到子声明类型参数的类型替换器。
-     */
-    context(context: CheckerContext)
-    private fun createParentToChildTypeParameterSubstitutor(
-        parentTypeParameters: List<CfirTypeParameterRef>,
-        childTypeParameters: List<CfirTypeParameterRef>,
-    ) = createTypeSubstitutorByTypeConstructor(
-        map = parentTypeParameters.zip(childTypeParameters).associate { (parent, child) ->
-            parent.typeConstructorForSubstitution() to ConeTypeParameterTypeImpl(child.symbol.toLookupTag())
-        },
-        context = context.session.typeContext,
-        approximateIntegerLiterals = false,
-    )
 }
-
-/**
- * 将父成员返回类型中的类型参数替换为 override 声明对应的类型参数。
- *
- * 该替换用于在比较父子返回类型时消除不同声明中类型参数符号不相等造成的误差。
- */
-context(context: CheckerContext)
-private fun ConeCangJieType.substituteAllTypeParameters(
-    overrideDeclaration: CfirCallableSymbol<*>,
-    baseDeclaration: CfirCallableSymbol<*>,
-): ConeCangJieType {
-    val overrideTypeParameters = overrideDeclaration.cfir.typeParameters
-    if (overrideTypeParameters.isEmpty()) return this
-
-    val baseTypeParameters = baseDeclaration.cfir.typeParameters
-    val size = minOf(overrideTypeParameters.size, baseTypeParameters.size)
-    if (size == 0) return this
-
-    val map = LinkedHashMap<TypeConstructorMarker, ConeCangJieType>(size)
-    for (index in 0 until size) {
-        map[baseTypeParameters[index].typeConstructorForSubstitution()] =
-            ConeTypeParameterTypeImpl(overrideTypeParameters[index].symbol.toLookupTag())
-    }
-
-    return createTypeSubstitutorByTypeConstructor(
-        map = map,
-        context = context.session.typeContext,
-        approximateIntegerLiterals = false,
-    ).substituteOrSelf(this)
-}
-
-/**
- * 取得类型参数引用在类型替换器中使用的 type constructor。
- */
-private fun CfirTypeParameterRef.typeConstructorForSubstitution(): TypeConstructorMarker =
-    symbol.toLookupTag() as TypeConstructorMarker
 
 /**
  * 取得泛型约束诊断应使用的源码位置。

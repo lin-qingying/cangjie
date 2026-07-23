@@ -2,7 +2,7 @@
 
 
 struct R1<T> {
-    <!CLASS_UNINITIALIZED_FIELD!>public var a: T<!>
+    public var <!CLASS_UNINITIALIZED_FIELD!>a<!>: T
 
     public func foo1(x: T) {
         this.<!CANNOT_MODIFY_VAR!>a<!> = x

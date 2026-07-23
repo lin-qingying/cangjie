@@ -472,6 +472,14 @@ abstract class CfirVisitorVoid : CfirVisitor<Unit, Nothing?>() {
         visitElement(inoutArgumentExpression)
     }
 
+    final override fun visitNamedArgumentExpression(namedArgumentExpression: CfirNamedArgumentExpression, data: Nothing?) {
+        visitNamedArgumentExpression(namedArgumentExpression)
+    }
+
+    open fun visitNamedArgumentExpression(namedArgumentExpression: CfirNamedArgumentExpression) {
+        visitElement(namedArgumentExpression)
+    }
+
     final override fun visitCall(call: CfirCall, data: Nothing?) {
         visitCall(call)
     }

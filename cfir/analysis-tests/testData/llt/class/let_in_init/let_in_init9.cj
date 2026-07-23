@@ -9,7 +9,7 @@ func case01() {
     var m: Int32 = 1
     return {
         x: () -> Int32 =>
-        <!CANNOT_ASSIGN_TO_IMMUTABLE!>a.b<!> = x() + 2
+        a.<!CANNOT_ASSIGN_TO_IMMUTABLE!>b<!> = x() + 2
         m = 2
         var res = a.b + m;
         res
@@ -33,7 +33,7 @@ func case02() {
     var m: Int32 = 1
     return {
         x: () -> Int32 =>
-        <!CANNOT_ASSIGN_TO_IMMUTABLE!>b.b<!> = x() + 2
+        b.<!CANNOT_ASSIGN_TO_IMMUTABLE!>b<!> = x() + 2
         m = 2
         var res = b.b + m;
         res
@@ -45,7 +45,7 @@ func case03() {
     var m: Int32 = 1
     return {
         x: () -> Int32 =>
-        <!CANNOT_ASSIGN_TO_IMMUTABLE!>c.b<!> = x() + 2
+        c.<!CANNOT_ASSIGN_TO_IMMUTABLE!>b<!> = x() + 2
         m = 2
         var res = c.b + m;
         res
@@ -57,7 +57,7 @@ func case04() {
     var m: Int32 = 1
     return {
         x: () -> Int32 =>
-        <!CANNOT_ASSIGN_TO_IMMUTABLE!>c.b<!> = x() + 2
+        c.<!CANNOT_ASSIGN_TO_IMMUTABLE!>b<!> = x() + 2
         m = 2
         var res = c.b + m;
         res
@@ -69,7 +69,7 @@ func case05() {
     var m: Int32 = 1
     return {
         x: () -> Int32 =>
-        <!CANNOT_ASSIGN_TO_IMMUTABLE!>c.a<!> = x() + 2
+        c.<!CANNOT_ASSIGN_TO_IMMUTABLE!>a<!> = x() + 2
         m = 2
         var res = c.a + m;
         res

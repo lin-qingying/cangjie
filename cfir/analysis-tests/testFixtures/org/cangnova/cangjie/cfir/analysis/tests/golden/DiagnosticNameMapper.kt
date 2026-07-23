@@ -187,6 +187,8 @@ object DiagnosticNameMapper {
         "CAPTURE_THIS_OR_INSTANCE_FIELD_IN_FUNC" to "sema_capture_this_or_instance_field_in_func",
 
         // ── Initialization ──
+        "ILLEGAL_USAGE_OF_MEMBER" to "sema_illegal_usage_of_member",
+        "ILLEGAL_USAGE_OF_SUPER_MEMBER" to "sema_illegal_usage_of_super_member",
         "USED_BEFORE_INITIALIZATION" to "sema_used_before_initialization",
 
         // ── Match / Pattern ──

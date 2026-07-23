@@ -1306,10 +1306,15 @@ class LightTreeRawCfirDeclarationBuilder(
         } else {
             convertedExpression
         }
-        if (tree.findChildByType(valueArgumentNode, CjNodeTypes.VALUE_ARGUMENT_NAME) == null) return wrapped
-        return buildBlock {
+        val nameNode = tree.findChildByType(valueArgumentNode, CjNodeTypes.VALUE_ARGUMENT_NAME)
+            ?: return wrapped
+        val referenceNode = tree.findChildByType(nameNode, CjNodeTypes.REFERENCE_EXPRESSION)
+            ?: error("Named annotation argument must contain a reference expression")
+        return buildNamedArgumentExpression {
             source = valueArgumentNode.toSource()
-            statements.add(wrapped)
+            argumentName = Name.identifier(referenceNode.asText())
+            nameSource = referenceNode.toSource()
+            expression = wrapped
         }
     }
 

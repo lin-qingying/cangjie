@@ -6,6 +6,8 @@ import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirInterface
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameterRefsOwner
 import org.cangnova.cangjie.cfir.resolve.providers.createExtendDeclarationSubstitution
+import org.cangnova.cangjie.cfir.resolve.providers.classifyDeclaredSupertype
+import org.cangnova.cangjie.cfir.resolve.providers.ordinarySupertypeTypeOrNull
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.resolve.toSymbol
 import org.cangnova.cangjie.cfir.session.extendProvider
@@ -55,7 +57,10 @@ internal fun CfirClassLikeDeclaration.findInstantiatedDuplicateSuperInterface(
 
     val seenInCurrentDeclaration = linkedMapOf<String, Name>()
     for (superTypeRef in superTypeRefs) {
-        val supertype = superTypeRef.coneTypeOrNull ?: continue
+        val supertype = superTypeRef
+            .classifyDeclaredSupertype(context.session)
+            .ordinarySupertypeTypeOrNull()
+            ?: continue
         collectInstantiatedSuperInterfaceInCurrentDeclaration(
             type = substitutor.substituteOrSelf(supertype),
             seen = seenInCurrentDeclaration,

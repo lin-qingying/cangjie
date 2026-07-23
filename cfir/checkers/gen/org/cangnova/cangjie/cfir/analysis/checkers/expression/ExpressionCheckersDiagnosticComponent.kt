@@ -209,6 +209,10 @@ class ExpressionCheckersDiagnosticComponent(
         checkers.allBasicExpressionCheckers.check(inoutArgumentExpression, data)
     }
 
+    override fun visitNamedArgumentExpression(namedArgumentExpression: CfirNamedArgumentExpression, data: CheckerContext) {
+        checkers.allBasicExpressionCheckers.check(namedArgumentExpression, data)
+    }
+
     override fun visitTypeConversion(typeConversion: CfirTypeConversion, data: CheckerContext) {
         checkers.allBasicExpressionCheckers.check(typeConversion, data)
     }
