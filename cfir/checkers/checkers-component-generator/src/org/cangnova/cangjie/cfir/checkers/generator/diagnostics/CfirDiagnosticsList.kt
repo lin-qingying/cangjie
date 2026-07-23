@@ -536,6 +536,16 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
      * - 构造器结束时仍有实例字段没有被初始化。
      */
     val INITIALIZATION by object : DiagnosticGroup("Initialization") {
+        // 成员初始化器的嵌套 callable 捕获当前实例成员，对齐官方 sema_illegal_usage_of_member。
+        val ILLEGAL_USAGE_OF_MEMBER by error<PsiElement>(PositioningStrategy.REFERENCED_NAME_BY_QUALIFIED) {
+            parameter<Name>("memberName")
+        }
+
+        // 成员初始化器的嵌套 callable 捕获继承实例成员，对齐官方 sema_illegal_usage_of_super_member。
+        val ILLEGAL_USAGE_OF_SUPER_MEMBER by error<PsiElement>(PositioningStrategy.REFERENCED_NAME_BY_QUALIFIED) {
+            parameter<Name>("memberName")
+        }
+
         val USED_BEFORE_INITIALIZATION by error<PsiElement>(PositioningStrategy.REFERENCED_NAME_BY_QUALIFIED) {
             parameter<Name>("variableName")
         }

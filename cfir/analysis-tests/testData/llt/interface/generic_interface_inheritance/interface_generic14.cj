@@ -12,7 +12,7 @@ interface I<T> {
 }
 
 interface II<T> <: I<C> & I<D> & I<E> {
-    func <!OVERRIDING_RETURN_TYPE_MISMATCH!>foo<!>(): C
+    func <!RETURN_TYPE_INCOMPATIBLE!>foo<!>(): C
 }
 
 main() {

@@ -145,6 +145,11 @@ object CfirStructInstanceFieldCaptureChecker : CfirQualifiedAccessChecker() {
         val field = expression.resolvedFieldSymbolOrNull()
             ?.takeIf { it.isBound }
             ?.cfir as? CfirFieldVariable ?: return
+        // static 字段属于类型存储，不通过当前 struct 实例捕获；其访问合法性由
+        // static/global 初始化与访问 checker 负责。不能把无显式 receiver 的静态
+        // 名称误判成隐式 this 字段，否则构造器中的合法 lambda/local function 会
+        // 被错误报告为 ILLEGAL_CAPTURE_THIS。
+        if (field.status.isStatic) return
         val captureContext = context.currentStructCaptureContext(field) ?: return
         val source = expression.calleeReference.source ?: expression.source
 
@@ -279,6 +284,7 @@ private fun CfirFunction.isStaticStructMemberContext(): Boolean =
  */
 private fun CheckerContext.currentStructCaptureContext(field: CfirFieldVariable): StructCaptureContext? {
     val (owner, ownerIndex) = currentStructOwnerAndIndex() ?: return null
+    if (field.status.isStatic) return null
     if (owner.declarations.filterIsInstance<CfirFieldVariable>().none { it.symbol == field.symbol }) return null
     val functions = containingDeclarations
         .drop(ownerIndex + 1)
@@ -363,12 +369,15 @@ private fun CfirQualifiedAccessExpression.resolvedVariableOrPropertySymbolOrNull
  * `this`/`super` 不视为不可变值；变量、属性和临时值按类型及声明可变性递归判断。
  */
 context(context: CheckerContext)
-private fun CfirExpression.isImmutableStructValueAccess(): Boolean {
+internal fun CfirExpression.isImmutableStructValueAccess(): Boolean {
     if (this is CfirThisReceiverExpression || this is CfirSuperReceiverExpression) return false
     if (!coneTypeOrNull.mayBeStructValueTypeInCurrentContext()) return false
 
     val access = this as? CfirQualifiedAccessExpression ?: return true
     val symbol = access.resolvedVariableOrPropertySymbolOrNull()
+    // 类型限定符（例如 `A.a` 中的 `A`）不是一个可被复制/冻结的 struct 值。
+    // static 成员写入的可变性由目标成员自身决定，不能沿限定符伪造值接收者限制。
+    if (symbol is CfirClassLikeSymbol<*>) return false
     val receiver = access.explicitReceiver ?: access.dispatchReceiver
     return when (symbol) {
         is CfirVariableSymbol<*> -> {

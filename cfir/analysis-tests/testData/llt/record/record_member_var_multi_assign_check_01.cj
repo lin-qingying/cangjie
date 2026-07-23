@@ -6,9 +6,9 @@ struct Rectangle {
 
     public init() {
         this.width = 10
-        <!CANNOT_ASSIGN_TO_IMMUTABLE!>this.width<!> = 11
+        this.<!CANNOT_ASSIGN_TO_IMMUTABLE!>width<!> = 11
         this.length = 20
-        <!CANNOT_ASSIGN_TO_IMMUTABLE!>this.length<!> = 21
+        this.<!CANNOT_ASSIGN_TO_IMMUTABLE!>length<!> = 21
     }
 }
 

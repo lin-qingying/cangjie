@@ -9,6 +9,8 @@ import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedNameError
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
+import org.cangnova.cangjie.cfir.expressions.CfirAssignment
+import org.cangnova.cangjie.cfir.expressions.CfirAssignmentTypeMismatchPrimaryDiagnostic
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
@@ -36,6 +38,7 @@ object CfirLiteralNumericOverflowChecker : CfirLiteralExpressionChecker() {
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirLiteralExpression) {
+        if (context.isAssignmentSpecificLiteralConversion(expression)) return
         if (checkSourceSignedLiteral(expression)) return
         if (context.isReceiverOfUnarySignedLiteral(expression)) return
 
@@ -92,6 +95,23 @@ object CfirLiteralNumericOverflowChecker : CfirLiteralExpressionChecker() {
         }
         return true
     }
+}
+
+/**
+ * assignment expected-type owner 已将该直接字面量分类为 CANNOT_CONVERT_LITERAL 时，
+ * 数值范围 checker 不再追加独立的 LITERAL_NUMERIC_OVERFLOW；两者描述的是同一次
+ * AssignExpr/LitConstExpr 失败，官方只保留前者。
+ */
+private fun CheckerContext.isAssignmentSpecificLiteralConversion(
+    expression: CfirLiteralExpression,
+): Boolean {
+    return containingElements.asReversed()
+        .filterIsInstance<CfirAssignment>()
+        .any { assignment ->
+            assignment.rValue === expression &&
+                    assignment.typeMismatchOutcome?.primaryDiagnostic is
+                    CfirAssignmentTypeMismatchPrimaryDiagnostic.CannotConvertLiteral
+        }
 }
 
 /**

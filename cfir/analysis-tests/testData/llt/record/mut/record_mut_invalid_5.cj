@@ -2,7 +2,7 @@
 
 
 struct R1<T> {
-    <!CLASS_UNINITIALIZED_FIELD!>p<!>ublic var i: T
+    public var <!CLASS_UNINITIALIZED_FIELD!>i<!>: T
 
     public mut func foo1() {
         let f = {=> <!CAPTURE_THIS_OR_INSTANCE_FIELD_IN_FUNC!>t<!>his}

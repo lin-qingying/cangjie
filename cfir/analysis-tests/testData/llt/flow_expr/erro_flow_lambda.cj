@@ -9,12 +9,12 @@ func f(x: Int64): Int64 {
 main() {
     var d: Bool = 0 |> {
         f: Int64 =>
-        <!TOO_MANY_ARGUMENTS!>A(name: 1)<!>;
+        A<!WRONG_NUMBER_OF_ARGUMENTS!>(name: 1)<!>;
         A()
     }
     var g = f ~> {
         a: Int64 =>
-        <!TOO_MANY_ARGUMENTS!>A(name: 1)<!>;
+        A<!WRONG_NUMBER_OF_ARGUMENTS!>(name: 1)<!>;
         return 0
     }
 }

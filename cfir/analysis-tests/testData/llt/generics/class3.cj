@@ -17,7 +17,7 @@ class Data<T> {
         count = x
     }
     public func getFoo<V>(x: Roo<V>): Roo<V> {
-        return Roo<V><!NO_VALUE_FOR_PARAMETER!>()<!>
+        return Roo<V><!WRONG_NUMBER_OF_ARGUMENTS!>()<!>
     }
 }
 

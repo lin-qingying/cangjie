@@ -2,7 +2,8 @@ package org.cangnova.cangjie.cfir.diagnostic
 
 import org.cangnova.cangjie.cfir.CfirQualifierPart
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
-import org.cangnova.cangjie.cfir.types.ConeAllowsDelegatedScopeTraversalDiagnostic
+import org.cangnova.cangjie.cfir.types.ConeClassifierAmbiguityDiagnostic
+import org.cangnova.cangjie.cfir.types.ConeRecoverableNominalDiagnostic
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.cfir.semantics.AbstractCallCandidate
@@ -46,6 +47,20 @@ class ConeUnresolvedTypeQualifierError(
     /** 面向类型构造器错误渲染的可读描述。 */
     override val readableDescriptionAsTypeConstructor: String
         get() = "Unresolved qualified name: $qualifier"
+}
+
+/**
+ * 类型位置的名称已经解析到普通 callable，而不是类型声明。
+ *
+ * 该诊断与 [ConeUnresolvedTypeQualifierError] 分离，使所有类型使用位置都能区分
+ * “名称不存在”和“名称存在但不是类型”，无需由具体声明 checker 反查源码。
+ */
+data class ConeNotATypeError(
+    /** 已解析到非类型声明的名称。 */
+    val name: Name,
+) : ConeDiagnostic {
+    /** 面向普通诊断渲染的失败原因。 */
+    override val reason: String = "${name.asString()} is not a type"
 }
 
 /**
@@ -126,7 +141,7 @@ data class ConeUnmatchedTypeArgumentsError(
      * 调用侧提供的类型实参引用。
      */
     val providedTypeArguments: List<CfirTypeRef>,
-) : ConeAllowsDelegatedScopeTraversalDiagnostic {
+) : ConeRecoverableNominalDiagnostic {
     /** 面向普通诊断渲染的失败原因。 */
     override val reason: String =
         "type argument count mismatch for ${describeSymbol(symbol)}: expected $expectedCount but got $actualCount"
@@ -180,7 +195,7 @@ class ConeAmbiguityError(
      * 普通 qualified reference 的名称定位策略，完整标记 `A<X, Y>` 这类类型使用。
      */
     val typeUseSource: CjSourceElement? = null,
-) : ConeDiagnosticWithCandidates {
+) : ConeDiagnosticWithCandidates, ConeClassifierAmbiguityDiagnostic {
     /** 面向普通诊断渲染的失败原因。 */
     override val reason: String get() = "Ambiguity: $name, ${candidateSymbols.map { describeSymbol(it) }}"
 

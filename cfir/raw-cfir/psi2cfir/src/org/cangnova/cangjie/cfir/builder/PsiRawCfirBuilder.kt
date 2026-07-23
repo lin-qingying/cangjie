@@ -2237,12 +2237,7 @@ class PsiRawCfirBuilder(
             )
         }
 
-        /**
-         * 参数映射阶段需要知道调用实参的外层语法（特别是 named argument 前缀），
-         * 因此对命名实参保留一层单表达式 block，避免在 Raw CFIR 阶段把整段 value-argument source 丢掉。
-         * 这里复用现有 block 节点，是为了让后续 checker / reporter / positioning 链路保持统一，
-         * 而不是额外引入只服务于参数绑定的专用表达式分支。
-         */
+        /** 将调用实参转换为结构化的 named/inout 包装表达式。 */
         private fun convertCallArgument(argument: ValueArgument): CfirExpression? {
             val convertedExpression = when (argument) {
                 is CjLambdaArgument -> argument.getLambdaExpression()?.let { lambda ->
@@ -2262,11 +2257,12 @@ class PsiRawCfirBuilder(
                 }
             } else convertedExpression
 
-            if (!argument.isNamed()) return wrapped
-
-            return buildBlock {
+            val argumentName = argument.getArgumentName() ?: return wrapped
+            return buildNamedArgumentExpression {
                 source = argument.asElement().toCjPsiSourceElement()
-                statements.add(wrapped)
+                this.argumentName = argumentName.asName
+                nameSource = argumentName.referenceExpression?.toCjPsiSourceElement()
+                expression = wrapped
             }
         }
 

@@ -148,6 +148,10 @@ abstract class CfirDefaultVisitorVoid : CfirVisitorVoid() {
         visitWrappedExpression(inoutArgumentExpression)
     }
 
+    override fun visitNamedArgumentExpression(namedArgumentExpression: CfirNamedArgumentExpression) {
+        visitWrappedExpression(namedArgumentExpression)
+    }
+
     override fun visitCall(call: CfirCall) {
         visitStatement(call)
     }

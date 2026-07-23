@@ -2,9 +2,9 @@
 
 sealed interface I {
     func f() {
-        <!NON_EXHAUSTIVE_MATCH!>match (this) {
+        match (<!NON_EXHAUSTIVE_MATCH!>this<!>) {
             case _: A => 1
-        }<!>
+        }
     }
 }
 

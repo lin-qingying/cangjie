@@ -32,6 +32,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirEnum
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
+import org.cangnova.cangjie.cfir.diagnostic.MemberLookupBlockedByDeclaredSupertype
 import org.cangnova.cangjie.cfir.resolve.BodyResolveComponents
 import org.cangnova.cangjie.cfir.resolve.calls.ConstructorFilter
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
@@ -44,6 +45,7 @@ import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCandidateCollector
 import org.cangnova.cangjie.cfir.resolve.calls.processFunctionsAndConstructorsByName
 import org.cangnova.cangjie.cfir.scopes.CfirContainingNamesAwareScope
 import org.cangnova.cangjie.cfir.scopes.CfirScope
+import org.cangnova.cangjie.cfir.scopes.impl.CfirMemberLookupCompletenessScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirLocalScope
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
@@ -133,6 +135,27 @@ internal class ScopeBasedTowerLevel(
     private val givenExtensionReceiver: ReceiverValue? = null,
 ) : CfirTowerLevel {
     /**
+     * 当前名称在 scope 中没有候选时，把 lookup completeness blocker 转发给最终规约。
+     *
+     * blocker 不改变 tower level 的 FOUND/SCOPE_EMPTY 结果，也不创建伪候选。
+     */
+    private fun ProcessResult.forwardMemberLookupBlockers(
+        processor: TowerLevelProcessor,
+    ): ProcessResult {
+        if (this != ProcessResult.SCOPE_EMPTY) return this
+        val completenessScope = scope as? CfirMemberLookupCompletenessScope ?: return this
+        for (blocker in completenessScope.memberLookupBlockers) {
+            processor.resultCollector.addForwardedDiagnostic(
+                MemberLookupBlockedByDeclaredSupertype(
+                    ownerSymbol = blocker.ownerSymbol,
+                    rootDiagnostic = blocker.rootDiagnostic,
+                )
+            )
+        }
+        return this
+    }
+
+    /**
      * 对齐 Kotlin `TowerLevels.consumeCallableCandidate`：
      * candidate 在进入 argument mapping / checking 之前，先推进到 TYPES。
      */
@@ -162,7 +185,7 @@ internal class ScopeBasedTowerLevel(
             result = ProcessResult.FOUND
             consumeCallableCandidate(symbol, processor)
         }
-        return result
+        return result.forwardMemberLookupBlockers(processor)
     }
 
     /**
@@ -199,7 +222,7 @@ internal class ScopeBasedTowerLevel(
                 result = ProcessResult.FOUND
                 consumeCallableCandidate(enumConstructorSymbol, processor)
             }
-            return result
+            return result.forwardMemberLookupBlockers(processor)
         }
 
         var result = ProcessResult.SCOPE_EMPTY
@@ -233,7 +256,7 @@ internal class ScopeBasedTowerLevel(
             }
         }
 
-        return result
+        return result.forwardMemberLookupBlockers(processor)
     }
 
     /** 查找裸 enum constructor 访问的最近 lexical enum owner。 */

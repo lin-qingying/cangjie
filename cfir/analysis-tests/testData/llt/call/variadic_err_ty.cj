@@ -5,5 +5,5 @@ func f<T>(x: Array<T>) {
 }
 
 main() {
-    f<Int64>(1, <!TOO_MANY_ARGUMENTS!>true<!>)
+    f<Int64><!WRONG_NUMBER_OF_ARGUMENTS!>(1, true)<!>
 }

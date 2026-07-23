@@ -11,8 +11,8 @@ struct Rectangle {
 
     public init(width: Int64, length: Int64) {
         this()
-        <!CANNOT_ASSIGN_TO_IMMUTABLE!>this.width<!> = width
-        <!CANNOT_ASSIGN_TO_IMMUTABLE!>this.length<!> = length
+        this.<!CANNOT_ASSIGN_TO_IMMUTABLE!>width<!> = width
+        this.<!CANNOT_ASSIGN_TO_IMMUTABLE!>length<!> = length
     }
 }
 

@@ -3,7 +3,7 @@
 class A {
     public let a: Int32 = 0
     public A(aa: Int32) {
-        <!CANNOT_ASSIGN_TO_IMMUTABLE!>this.a<!> = aa
+        this.<!CANNOT_ASSIGN_TO_IMMUTABLE!>a<!> = aa
     }
 }
 

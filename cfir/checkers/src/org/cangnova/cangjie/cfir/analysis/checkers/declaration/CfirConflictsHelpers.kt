@@ -25,6 +25,7 @@ import org.cangnova.cangjie.cfir.scopes.CfirPackageScope
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassMemberScopeKind
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
+import org.cangnova.cangjie.cfir.resolve.providers.getContainingClass
 import org.cangnova.cangjie.cfir.resolve.providers.getContainingFile
 import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
 import org.cangnova.cangjie.cfir.session.cfirProvider
@@ -482,7 +483,7 @@ private fun CfirDeclarationCollector<CfirBasedSymbol<*>>.collectTopLevelConflict
         return
     }
 
-    val actualConflictingFile = conflictingFile ?: context.session.cfirProvider.getContainingFile(conflictingSymbol)
+    val actualConflictingFile = conflictingFile ?: conflictingSymbol.getContainingFile()
     if (!conflictingSymbol.isCollectable()) {
         return
     }
@@ -672,7 +673,7 @@ private fun CfirCallableSymbol<*>.isVisibleInClass(
     if (!isBound) return true
     if (cfir.status.visibility != Visibilities.Private) return true
 
-    val ownerClassId = context.session.cfirProvider.getContainingClass(this)?.classId ?: return true
+    val ownerClassId = getContainingClass()?.classId ?: return true
     val currentClassId = (classDeclaration.symbol as? CfirClassLikeSymbol<*>)?.classId ?: return true
     return ownerClassId == currentClassId
 }

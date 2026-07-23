@@ -33,6 +33,8 @@ import org.cangnova.cangjie.psi.stubs.CangJieFileStubKind
 import org.cangnova.cangjie.psi.stubs.CangJieImportDirectiveStub
 import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 import org.cangnova.cangjie.psi.stubs.elements.CjTokenSets.FILE_DECLARATION_TYPES
+import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.name.OperatorNameConventions.asOperatorString
 import org.cangnova.cangjie.psi.stubs.impl.CangJieFileStubImpl
 
 /**
@@ -209,7 +211,13 @@ internal fun buildDecompiledText(fileStub: CangJieFileStubImpl): String = Pretty
                 return
             }
             append("func ")
-            append(function.name?.let(::renderIdentifier).orEmpty())
+            append(function.name?.let { name ->
+                if (function.hasModifier(CjTokens.OPERATOR_KEYWORD)) {
+                    Name.identifier(name).asOperatorString()
+                } else {
+                    renderIdentifier(name)
+                }
+            }.orEmpty())
             function.typeParameterList?.accept(this)
             function.valueParameterList?.accept(this) ?: append("()")
             withPrefix(": ") { function.typeReference?.getTypeText()?.takeIf(String::isNotBlank)?.let(::append) }

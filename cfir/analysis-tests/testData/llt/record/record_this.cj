@@ -8,12 +8,12 @@ struct Date {
     public static var height: Int32 = 2
     public init() {
         this.width = 1
-        <!CANNOT_ASSIGN_TO_IMMUTABLE!>this.length = 2<!>
+        this.<!CANNOT_ASSIGN_TO_IMMUTABLE!>length<!> = 2
         this.f()
         this.f
         height = 3
     }
-    public init(a: Int64) {
+    public <!RECURSIVE_CONSTRUCTOR_CALL!>init<!>(a: Int64) {
         this
         <!ILLEGAL_PLACE_OF_CALLING_THIS_OR_SUPER!>this<!>(1)
     }

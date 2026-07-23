@@ -21,7 +21,7 @@ interface I2<T> {
 
 func Foo<U>(a: U) where U <: C & I<U> & I2<U> {
     var b: U = a.foo(a)
-    var c = a.foo(1, <!TOO_MANY_ARGUMENTS!>2<!>)
+    var c = a.foo<!WRONG_NUMBER_OF_ARGUMENTS!>(1, 2)<!>
     var d = a.<!GENERIC_NO_METHOD_MATCH_IN_UPPER_BOUNDS!>bar<!>()
     return b
 }

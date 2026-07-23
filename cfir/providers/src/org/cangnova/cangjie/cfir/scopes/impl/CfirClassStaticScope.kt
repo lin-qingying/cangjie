@@ -67,7 +67,13 @@ class CfirClassStaticScope(
      * 已完成 use-site 和类型替换的委托 scope。
      */
     private val delegateScope: CfirContainingNamesAwareScope,
-) : CfirTypeScope() {
+) : CfirTypeScope(), CfirMemberLookupCompletenessScope {
+    /** static qualifier scope 复用 delegate 的声明父类型 lookup completeness。 */
+    override val memberLookupBlockers: List<CfirMemberLookupBlocker>
+        get() = (delegateScope as? CfirMemberLookupCompletenessScope)
+            ?.memberLookupBlockers
+            .orEmpty()
+
     /**
      * 返回委托 scope 的 callable 名称集合。
      */

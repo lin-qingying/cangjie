@@ -5,6 +5,6 @@ func test(a: (Int64) -> Int64, b: Int64): (Int64) -> Int64 {
 }
 
 main() {
-    let x = <!NO_VALUE_FOR_PARAMETER!>test {i: Int8 => {i => i}}<!>
+    let x = <!WRONG_NUMBER_OF_ARGUMENTS!>test {i: Int8 => {i => i}}<!>
     return 0
 }

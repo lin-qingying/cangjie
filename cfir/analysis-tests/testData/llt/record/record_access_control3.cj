@@ -8,5 +8,5 @@ struct R {
 
 main(): Int64 {
     var c: Int32 = 0
-    let b = <!TYPE_MISMATCH!><!INVISIBLE_MEMBER!>R().a<!><!>
+    <!TYPE_MISMATCH!>let b = R().<!INVISIBLE_MEMBER!>a<!><!>
 }

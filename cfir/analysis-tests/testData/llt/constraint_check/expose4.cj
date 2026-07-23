@@ -20,7 +20,7 @@ interface I2<T> {
 }
 
 func Foo<U>(a: U) where U <: C & I<U> & I2<U> {
-    var c = a.foo<!TOO_MANY_ARGUMENTS!>(1, 2)<!>
+    var c = a.foo<!WRONG_NUMBER_OF_ARGUMENTS!>(1, 2)<!>
     var d = a.<!GENERIC_NO_MEMBER_MATCH_IN_UPPER_BOUNDS!>bar<!>()
     return <!UNRESOLVED_REFERENCE!>b<!>
 }

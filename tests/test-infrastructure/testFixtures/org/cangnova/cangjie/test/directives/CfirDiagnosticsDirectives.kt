@@ -91,6 +91,15 @@ object CfirDiagnosticsDirectives : SimpleDirectivesContainer(){
     )
 
     /**
+     * 在 CFIR LLT diagnostics 中列出当前模块需要选择性加载的 `.cj` 依赖源。
+     * 多模块依赖拓扑由 `MODULE` 指令单独表达。
+     */
+    val DEPENDENCE by stringDirective(
+        description = "Adds explicitly listed LLT .cj dependency sources to the current test module.",
+        applicability = DirectiveApplicability.Module,
+    )
+
+    /**
      * 保存 `CHECK_PROGRAM_ENTRY`，供测试指令在测试执行期间读取或传递。
      */
     val CHECK_PROGRAM_ENTRY by directive(

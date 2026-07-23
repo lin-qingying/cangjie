@@ -11,11 +11,11 @@ public class C2 <: C {}
 public class C3 <: C {}
 
 func f1(obj: C) {
-    <!NON_EXHAUSTIVE_MATCH!>match (obj) {
+    match (<!NON_EXHAUSTIVE_MATCH!>obj<!>) {
         case v1: C1 => 0
         case v2: C2 => 1
         case v3: C3 => 2
-    }<!>
+    }
 }
 
 main() {}

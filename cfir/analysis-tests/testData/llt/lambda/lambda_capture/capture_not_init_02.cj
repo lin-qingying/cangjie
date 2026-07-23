@@ -5,8 +5,8 @@ main(): Int64 {
     func b() {
         do {
             <!CAPTURE_BEFORE_INITIALIZATION!>a<!> = 1 // captured before initialization
-        } while (a == 0)
-        return a
+        } while (<!CAPTURE_BEFORE_INITIALIZATION!>a<!> == 0)
+        return <!CAPTURE_BEFORE_INITIALIZATION!>a<!>
     }
 
     b()

@@ -5,7 +5,7 @@ let a = true
 let b: UInt16 = 5
 
 struct c {
-    <!CLASS_UNINITIALIZED_FIELD!>p<!>ublic let d: UInt16
+    public let <!CLASS_UNINITIALIZED_FIELD!>d<!>: UInt16
     public func e() {
         match {
             case <!TYPE_MISMATCH!>{=>}<!> => if (true) {

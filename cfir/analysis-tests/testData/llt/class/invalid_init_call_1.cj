@@ -6,7 +6,7 @@ struct GenRec {
     public init(str: String) {
         if (str == "hi") {
             this.<!CANNOT_ASSIGN_TO_IMMUTABLE!>b<!> = 2
-            <!ILLEGAL_PLACE_OF_CALLING_THIS_OR_SUPER!>this<!><!NO_VALUE_FOR_PARAMETER!>()<!>
+            <!ILLEGAL_PLACE_OF_CALLING_THIS_OR_SUPER!>this<!><!WRONG_NUMBER_OF_ARGUMENTS!>()<!>
             this.c = 4
         } else {
             this.<!CANNOT_ASSIGN_TO_IMMUTABLE!>b<!> = b + 2

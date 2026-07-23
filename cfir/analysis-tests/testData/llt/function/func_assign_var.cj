@@ -26,7 +26,7 @@ func a(x: Int32, y: Int32): Int32 {
 
 func codegenUnitTest(): Int64 {
     var x: (Int64) -> Int32 = <!NO_MATCH_FUNCTION_DECLARATION_FOR_REF!>a<!>
-    var b = <!AMBIGUOUS_USE!>Sub().ff<!>
+    var b = Sub().<!AMBIGUOUS_USE!>ff<!>
     var z = <!AMBIGUOUS_USE!>a<!>
     return 0
 }

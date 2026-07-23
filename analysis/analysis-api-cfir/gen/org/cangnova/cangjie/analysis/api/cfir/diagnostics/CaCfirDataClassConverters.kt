@@ -2844,6 +2844,13 @@ private fun CaDiagnosticConverterBuilder.addConversions132() {
             token,
         )
     }
+    add(CfirErrors.ILLEGAL_USAGE_OF_MEMBER) { cfirDiagnostic ->
+        IllegalUsageOfMemberImpl(
+            cfirDiagnostic.a,
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
 }
 
 private fun CaDiagnosticConverterBuilder.addConversions133() {
@@ -3449,6 +3456,13 @@ private fun CaDiagnosticConverterBuilder.addConversions164() {
 private fun CaDiagnosticConverterBuilder.addConversions165() {
     add(CfirErrors.STRUCT_SUPER_NOT_ALLOWED) { cfirDiagnostic ->
         StructSuperNotAllowedImpl(
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
+    add(CfirErrors.ILLEGAL_USAGE_OF_SUPER_MEMBER) { cfirDiagnostic ->
+        IllegalUsageOfSuperMemberImpl(
+            cfirDiagnostic.a,
             cfirDiagnostic as CjPsiDiagnostic,
             token,
         )

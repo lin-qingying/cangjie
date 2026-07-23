@@ -12,7 +12,7 @@ open class Boo {
 class Aoo <: Boo {
     public var c = if (true) {
         func foo2() {
-            var x = <!USED_BEFORE_INITIALIZATION!>a<!>;
+            var x = <!ILLEGAL_USAGE_OF_SUPER_MEMBER!>a<!>;
             return x
         }
     }

@@ -2,52 +2,20 @@ package org.cangnova.cangjie.analysis.decompiler.stub
 
 import PackageFormat.PackageKind
 import com.intellij.psi.stubs.StubElement
-import org.cangnova.cangjie.cfir.declarations.CfirDeclarationStatus
-import org.cangnova.cangjie.cfir.declarations.CfirClass
-import org.cangnova.cangjie.cfir.declarations.CfirCodeFragment
-import org.cangnova.cangjie.cfir.declarations.CfirConstructor
-import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirEnum
-import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
-import org.cangnova.cangjie.cfir.declarations.CfirErrorFunction
-import org.cangnova.cangjie.cfir.declarations.CfirErrorNamedValue
-import org.cangnova.cangjie.cfir.declarations.CfirExtend
-import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
-import org.cangnova.cangjie.cfir.declarations.CfirFile
-import org.cangnova.cangjie.cfir.declarations.CfirFinalizer
-import org.cangnova.cangjie.cfir.declarations.CfirInterface
-import org.cangnova.cangjie.cfir.declarations.CfirInvalidDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirMacroDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirMainFunction
-import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
-import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
-import org.cangnova.cangjie.cfir.declarations.CfirProperty
-import org.cangnova.cangjie.cfir.declarations.CfirPropertyAccessor
-import org.cangnova.cangjie.cfir.declarations.CfirStruct
-import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
-import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
+import com.intellij.util.io.StringRef
+import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoImportEntry
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjAnnotations
-import org.cangnova.cangjie.psi.CjDeclarationModifierList
 import org.cangnova.cangjie.psi.CjDotQualifiedExpression
 import org.cangnova.cangjie.psi.CjImportList
 import org.cangnova.cangjie.psi.CjTypeParameterList
+import org.cangnova.cangjie.psi.stubs.CangJieFileStubKind
 import org.cangnova.cangjie.psi.stubs.CangJieImportDirectiveStub
-import org.cangnova.cangjie.psi.stubs.impl.CangJieFileStubImpl
-import org.cangnova.cangjie.psi.stubs.impl.CangJieImportAliasStubImpl
-import org.cangnova.cangjie.psi.stubs.impl.CangJieImportDirectiveStubImpl
-import org.cangnova.cangjie.psi.stubs.impl.CangJieModifierListStubImpl
-import org.cangnova.cangjie.psi.stubs.impl.CangJieNameReferenceExpressionStubImpl
-import org.cangnova.cangjie.psi.stubs.impl.CangJiePackageDirectiveStubImpl
-import org.cangnova.cangjie.psi.stubs.impl.CangJiePlaceHolderStubImpl
-import org.cangnova.cangjie.psi.stubs.impl.CangJieStubOrigin
-import org.cangnova.cangjie.psi.stubs.impl.CangJieTypeParameterStubImpl
-import org.cangnova.cangjie.psi.stubs.impl.ModifierMaskUtils
 import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
-import com.intellij.util.io.StringRef
+import org.cangnova.cangjie.psi.stubs.impl.*
 
 /**
  * `.cjo` file stub 构建入口。
@@ -100,8 +68,8 @@ internal fun createDecompiledFileStub(
  *
  * 只有 facade kind 需要 origin 信息；普通 file kind 不参与顶层 callable facade 索引。
  */
-private fun org.cangnova.cangjie.psi.stubs.CangJieFileStubKind.facadeOrigin(): CangJieStubOrigin.Facade? {
-    val facade = this as? org.cangnova.cangjie.psi.stubs.CangJieFileStubKind.WithPackage.Facade ?: return null
+private fun CangJieFileStubKind.facadeOrigin(): CangJieStubOrigin.Facade? {
+    val facade = this as? CangJieFileStubKind.WithPackage.Facade ?: return null
     return CangJieStubOrigin.Facade(facade.facadeFqName.asString().replace('.', '/'))
 }
 
@@ -332,11 +300,11 @@ internal fun createDeclarationStub(
         is CfirCodeFragment,
         is CfirFile,
         is CfirInvalidDeclaration,
-        is org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction,
-        is org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable,
-        is org.cangnova.cangjie.cfir.declarations.CfirPrimitiveTypeDeclaration,
-        is org.cangnova.cangjie.cfir.declarations.CfirTypeParameter,
-        is org.cangnova.cangjie.cfir.declarations.CfirValueParameter,
+        is CfirAnonymousFunction,
+        is CfirPatternBindingVariable,
+        is CfirPrimitiveTypeDeclaration,
+        is CfirTypeParameter,
+        is CfirValueParameter,
         -> Unit
     }
 }

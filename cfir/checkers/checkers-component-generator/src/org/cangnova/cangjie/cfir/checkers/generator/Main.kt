@@ -102,6 +102,7 @@ fun main(args: Array<String>) {
                     visitAlso<CfirUnsafeExpression>(it)
                     visitAlso<CfirQuoteExpression>(it)
                     visitAlso<CfirInoutArgumentExpression>(it)
+                    visitAlso<CfirNamedArgumentExpression>(it)
                     visitAlso<CfirTypeConversion>(it)
                     visitAlso<CfirLetPatternExpression>(it)
                 }

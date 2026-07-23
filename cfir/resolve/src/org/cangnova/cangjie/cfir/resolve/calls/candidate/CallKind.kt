@@ -26,8 +26,8 @@ sealed class CallKind(
     /** 普通函数调用。 */
     data object Function : CallKind(
         CfirCheckVisibility,
-        CfirMapArguments,
         CfirMapTypeArguments,
+        CfirMapArguments,
         CfirCreateFreshTypeVariableSubstitutorStage,
         CfirCheckDispatchReceiver,
         CfirCheckExtensionReceiver,
@@ -45,8 +45,8 @@ sealed class CallKind(
      */
     data object DelegatingConstructorCall : CallKind(
         CfirCheckVisibility,
-        CfirMapArguments,
         CfirMapTypeArguments,
+        CfirMapArguments,
         CfirCreateFreshTypeVariableSubstitutorStage,
         CfirCheckDispatchReceiver,
         CfirCheckExtensionReceiver,
@@ -72,8 +72,8 @@ sealed class CallKind(
     /** enum constructor 调用。 */
     data object EnumConstructorCall : CallKind(
         CfirCheckVisibility,
-        CfirMapArguments,
         CfirMapTypeArguments,
+        CfirMapArguments,
         CfirCreateFreshTypeVariableSubstitutorStage,
         CfirCheckDispatchReceiver,
         CfirCheckExpectedReturnTypeBeforeArguments,

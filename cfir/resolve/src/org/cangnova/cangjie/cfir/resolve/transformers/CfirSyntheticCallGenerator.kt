@@ -24,6 +24,7 @@
 
 package org.cangnova.cangjie.cfir.resolve.transformers
 
+import org.cangnova.cangjie.cfir.toCfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.common.moduleData
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationAttributes
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
@@ -33,7 +34,9 @@ import org.cangnova.cangjie.cfir.declarations.builder.buildNamedFunction
 import org.cangnova.cangjie.cfir.declarations.builder.buildValueParameter
 import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
 import org.cangnova.cangjie.cfir.declarations.lambdaParameterShapeExpectedFunctionType
+import org.cangnova.cangjie.cfir.diagnostic.ArgumentTypeMismatch
 import org.cangnova.cangjie.cfir.diagnostic.ConeInapplicableCandidateError
+import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
 import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.builder.buildArgumentList
@@ -46,6 +49,7 @@ import org.cangnova.cangjie.cfir.resolve.body.CfirAbstractBodyResolveTransformer
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallInfo
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallKind
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CandidateFactory
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirNamedReferenceWithCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.createErrorReferenceWithExistingCandidate
@@ -56,6 +60,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
 import org.cangnova.cangjie.cfir.types.ConeAnyType
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.ConeDiagnostic
 import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.types.ConeTypeVariableType
 import org.cangnova.cangjie.cfir.types.asCone
@@ -125,6 +130,10 @@ class CfirSyntheticCallGenerator(
 
         val preBodyResolveSnapshot = CfirResolutionSnapshot.capture(anonymousFunctionExpression)
         val resultingCall = components.callCompleter.completeCall(fakeCall, ResolutionMode.ContextIndependent)
+        (resultingCall.calleeReference as? CfirDiagnosticHolder)?.diagnostic
+            ?.let { diagnostic ->
+                anonymousFunctionExpression.restoreActualTypeAfterSyntheticTypeMismatch(diagnostic)
+            }
         if (parameterType == ConeAnyType) {
             val inferenceData = CfirLocalLambdaInitializerInferenceData(
                 reference.candidate.system.currentStorage(),
@@ -145,6 +154,32 @@ class CfirSyntheticCallGenerator(
 
         components.dataFlowAnalyzer.exitFunctionCall(resultingCall, callCompleted = true)
         return resultingCall.argumentList.arguments.single()
+    }
+
+    /**
+     * synthetic call 因 lambda 与非函数 expected type 不匹配时，恢复 lambda 的真实推断类型。
+     *
+     * completion writer 会在错误候选上把整个 lambda 暂时写成 expected type；该类型不能
+     * 作为字段/局部声明初始化器的实际类型。只接受当前 lambda 整体对应的单一
+     * [ArgumentTypeMismatch]，并沿候选约束系统替换其 actual type，避免吞掉形参/返回体等
+     * 其他 lambda 诊断或重复生成错误。
+     */
+    private fun CfirAnonymousFunctionExpression.restoreActualTypeAfterSyntheticTypeMismatch(
+        diagnostic: ConeDiagnostic,
+    ) {
+        if (diagnostic !is ConeInapplicableCandidateError) return
+        val candidate = diagnostic.candidate as? Candidate ?: return
+        val mismatch = candidate.diagnostics.singleOrNull { candidateDiagnostic ->
+            candidateDiagnostic is ArgumentTypeMismatch && candidateDiagnostic.argument === this
+        } as? ArgumentTypeMismatch ?: return
+
+        val substitutor = candidate.system.currentStorage()
+            .buildCurrentSubstitutor(session.typeContext, emptyMap())
+            .asCone()
+        val actualType = substitutor.substituteOrSelf(mismatch.actualType)
+        anonymousFunction.replaceTypeRef(
+            actualType.toCfirResolvedTypeRef(anonymousFunction.typeRef.source, anonymousFunction.typeRef),
+        )
     }
 
     /**

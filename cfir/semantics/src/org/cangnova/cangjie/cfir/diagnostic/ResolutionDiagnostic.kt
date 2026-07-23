@@ -7,9 +7,23 @@ import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.semantics.ResolutionDiagnostic
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.ConeDiagnostic
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.resolve.calls.tower.CandidateApplicability
+import org.cangnova.cangjie.source.AbstractCjSourceElement
+
+/**
+ * 成员 scope 因声明父类型错误而无法证明 lookup 完整。
+ *
+ * 该诊断不属于任何 callable 候选，只通过 candidate collector 转发到最终空候选规约。
+ * resolver 根据声明与访问的文件及源码顺序决定它是否支配派生的成员缺失诊断。
+ */
+data class MemberLookupBlockedByDeclaredSupertype(
+    val ownerSymbol: CfirClassLikeSymbol<*>,
+    val rootDiagnostic: ConeDiagnostic,
+) : ResolutionDiagnostic(CandidateApplicability.HIDDEN)
 
 /**
  * 调用实参类型与形参期望类型不匹配。
@@ -185,6 +199,8 @@ class TooManyArguments(
  * @property actualCount 调用实际提供的实参数量。
  */
 class WrongNumberOfArguments(
+    /** 参数列表或调用参数区域的精确源码区间。 */
+    val source: AbstractCjSourceElement,
     val expectedCount: Int,
     val actualCount: Int,
 ) : ResolutionDiagnostic(CandidateApplicability.INAPPLICABLE_ARGUMENTS_MAPPING_ERROR)
@@ -193,6 +209,7 @@ class WrongNumberOfArguments(
  * 命名实参找不到对应形参。
  *
  * @property argument 触发错误的命名实参表达式。
+ * @property source 命名实参名称 token 的源码区间。
  * @property name 不存在的形参名。
  */
 class NamedParameterNotFound(
@@ -200,6 +217,8 @@ class NamedParameterNotFound(
      * 触发错误的命名实参表达式。
      */
     val argument: CfirExpression,
+    /** 命名实参名称 token 的源码区间。 */
+    val source: AbstractCjSourceElement,
     /**
      * 不存在的形参名。
      */
@@ -303,6 +322,8 @@ class ArgumentPassedTwice(
      * 重复传入的实参表达式。
      */
     val argument: CfirExpression,
+    /** 应由诊断覆盖的名称 token 或尾随 closure 左花括号。 */
+    val source: AbstractCjSourceElement,
     /**
      * 被重复绑定的形参。
      */
@@ -310,9 +331,28 @@ class ArgumentPassedTwice(
 ) : ResolutionDiagnostic(CandidateApplicability.INAPPLICABLE_ARGUMENTS_MAPPING_ERROR)
 
 /**
+ * 函数值调用不支持命名实参，但该错误不阻断按位置映射和逐实参类型检查。
+ */
+class UnsupportedNamedArgument(
+    /** 命名实参名称 token 的源码区间。 */
+    val source: AbstractCjSourceElement,
+) : ResolutionDiagnostic(CandidateApplicability.RESOLVED)
+
+/**
+ * 尾随 closure 在参数数量正确且最后形参尚未绑定时只能传给函数类型形参。
+ */
+class TrailingLambdaCannotUsedForNonFunction(
+    /** 完整尾随 closure 的源码区间。 */
+    val source: AbstractCjSourceElement,
+    /** 最后形参的实际类型。 */
+    val parameterType: ConeCangJieType,
+) : ResolutionDiagnostic(CandidateApplicability.INAPPLICABLE_ARGUMENTS_MAPPING_ERROR)
+
+/**
  * 目标调用不允许命名实参。
  *
  * @property argument 使用命名形式的实参表达式。
+ * @property source 命名实参名称 token 的源码区间。
  * @property targetDescription 目标调用的可读描述。
  */
 class NamedArgumentsNotAllowed(
@@ -320,6 +360,8 @@ class NamedArgumentsNotAllowed(
      * 使用命名形式的实参表达式。
      */
     val argument: CfirExpression,
+    /** 命名实参名称 token 的源码区间。 */
+    val source: AbstractCjSourceElement,
     /**
      * 目标调用的可读描述。
      */

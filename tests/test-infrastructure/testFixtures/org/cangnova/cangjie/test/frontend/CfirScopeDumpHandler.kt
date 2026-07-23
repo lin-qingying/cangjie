@@ -135,7 +135,6 @@ class CfirScopeDumpHandler(testServices: TestServices) : CfirAnalysisHandler(tes
         val entries = collectTopLevelScopeEntries(
             packageScope = packageScope,
             cfirFile = cfirFile,
-            outputPart = outputPart,
         )
         if (entries.isEmpty()) {
             withIndent { println("<no scope entries>") }
@@ -303,7 +302,6 @@ class CfirScopeDumpHandler(testServices: TestServices) : CfirAnalysisHandler(tes
     private fun collectTopLevelScopeEntries(
         packageScope: CfirPackageScope,
         cfirFile: CfirFile,
-        outputPart: CfirOutputPartForDependsOnModule,
     ): List<TopLevelScopeEntry> {
         val entries = mutableListOf<TopLevelScopeEntry>()
         val names = linkedSetOf<Name>().apply {
@@ -314,7 +312,7 @@ class CfirScopeDumpHandler(testServices: TestServices) : CfirAnalysisHandler(tes
         for (name in names.sortedBy(Name::asString)) {
             val classLikeSymbols = LinkedHashSet<CfirClassLikeSymbol<*>>()
             packageScope.processClassifiersByName(name) { symbol ->
-                if (belongsToFile(symbol, cfirFile, outputPart)) {
+                if (belongsToFile(symbol, cfirFile)) {
                     classLikeSymbols += symbol
                 }
             }
@@ -331,7 +329,7 @@ class CfirScopeDumpHandler(testServices: TestServices) : CfirAnalysisHandler(tes
 
             val seenCallableSymbols = LinkedHashSet<CfirCallableSymbol<*>>()
             packageScope.processCallablesByName(name) { symbol ->
-                if (!symbol.isBound || !belongsToFile(symbol, cfirFile, outputPart)) return@processCallablesByName
+                if (!symbol.isBound || !belongsToFile(symbol, cfirFile)) return@processCallablesByName
                 if (!seenCallableSymbols.add(symbol)) return@processCallablesByName
                 val declaration = symbol.cfir as? CfirCallableDeclaration ?: return@processCallablesByName
                 entries += CallableScopeEntry(
@@ -352,8 +350,7 @@ class CfirScopeDumpHandler(testServices: TestServices) : CfirAnalysisHandler(tes
     private fun belongsToFile(
         symbol: CfirBasedSymbol<*>,
         cfirFile: CfirFile,
-        outputPart: CfirOutputPartForDependsOnModule,
-    ): Boolean = outputPart.session.cfirProvider.getContainingFile(symbol) == cfirFile
+    ): Boolean = symbol.getContainingFile() == cfirFile
 
     /**
      * 提供 `classLikeKind` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。

@@ -41,6 +41,10 @@ val functionCallOrigin = type("expressions", "CfirFunctionCallOrigin")
  */
 val matchExhaustivenessStatusType = type("expressions", "CfirMatchExhaustivenessStatus")
 /**
+ * 普通赋值类型不匹配语义结果类型引用。
+ */
+val assignmentTypeMismatchOutcomeType = type("expressions", "CfirAssignmentTypeMismatchOutcome")
+/**
  * 错误函数符号类型引用。
  */
 val errorFunctionSymbolType = type("symbols", "CfirErrorFunctionSymbol")

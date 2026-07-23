@@ -19,24 +19,24 @@ class A {
 
 class B {
     public func m() {
-        var a = A<!NO_VALUE_FOR_PARAMETER!>()<!>
+        var a = A<!WRONG_NUMBER_OF_ARGUMENTS!>()<!>
     }
 }
 
 class C <: <!NON_INHERITABLE_SUPER_CLASS!>A<!> {
     public init() {
-        super<!NO_VALUE_FOR_PARAMETER!>()<!>
+        super<!WRONG_NUMBER_OF_ARGUMENTS!>()<!>
     }
     public init(a: Int64) {
         super(a)
     }
     public func k() {
-        var a = A<!NO_VALUE_FOR_PARAMETER!>()<!>
+        var a = A<!WRONG_NUMBER_OF_ARGUMENTS!>()<!>
         var b = A(1) // OK
         var c = A(1, 1) // OK
     }
     public static func j() {
-        var a = A<!NO_VALUE_FOR_PARAMETER!>()<!>
+        var a = A<!WRONG_NUMBER_OF_ARGUMENTS!>()<!>
         var b = A(1) // OK
         var c = A(1, 1) // OK
     }
@@ -44,7 +44,7 @@ class C <: <!NON_INHERITABLE_SUPER_CLASS!>A<!> {
 
 main() {
     var a = A(1)
-    var b = A<!NO_VALUE_FOR_PARAMETER!>()<!>
+    var b = A<!WRONG_NUMBER_OF_ARGUMENTS!>()<!>
     var c = A(1, 1) // OK
     return 0
 }

@@ -12,16 +12,16 @@ class B <: A {
 
     public func foo1() {
         a = 0
-        <!CANNOT_ASSIGN_TO_IMMUTABLE!>b = 0<!>
+        <!CANNOT_ASSIGN_TO_IMMUTABLE!>b<!> = 0
     }
 
     public func foo2() {
         this.a = 0
-        <!CANNOT_ASSIGN_TO_IMMUTABLE!>this.b = 0<!>
+        this.<!CANNOT_ASSIGN_TO_IMMUTABLE!>b<!> = 0
     }
 }
 
 open class A {
     public var a: Int32 = 1
-    <!CLASS_UNINITIALIZED_FIELD!>public let b: Int32<!>
+    public let <!CLASS_UNINITIALIZED_FIELD!>b<!>: Int32
 }

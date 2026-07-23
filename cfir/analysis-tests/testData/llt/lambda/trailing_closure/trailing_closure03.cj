@@ -7,6 +7,6 @@ main(): Int64 {
         }
         g
     }
-    <!TOO_MANY_ARGUMENTS!>f() {t => t + 1}<!>
+    f<!WRONG_NUMBER_OF_ARGUMENTS!>() {t => t + 1}<!>
     return 0
 }

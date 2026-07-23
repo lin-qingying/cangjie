@@ -22,7 +22,7 @@ class B {
         foo(
             {
                 =>
-                    <!CANNOT_ASSIGN_TO_IMMUTABLE!>CTX = 10<!>
+                    <!CANNOT_ASSIGN_TO_IMMUTABLE!>CTX<!> = 10
                     println(CTX)
             }
         )

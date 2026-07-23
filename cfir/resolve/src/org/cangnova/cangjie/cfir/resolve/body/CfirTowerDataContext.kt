@@ -36,6 +36,8 @@ import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.resolve.ImplicitValueMapper
 import org.cangnova.cangjie.cfir.resolve.ImplicitValueStorage
 import org.cangnova.cangjie.cfir.resolve.LocalVariableScopeStorage
+import org.cangnova.cangjie.cfir.resolve.providers.classifyDeclaredSupertype
+import org.cangnova.cangjie.cfir.resolve.providers.scopeTraversalTypeOrNull
 import org.cangnova.cangjie.cfir.scopes.CfirContainingNamesAwareScope
 import org.cangnova.cangjie.cfir.scopes.CfirScope
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
@@ -408,13 +410,11 @@ private fun collectSuperClassesStaticScopes(
     visited: MutableSet<CfirClassLikeSymbol<*>>,
 ) {
     for (superTypeRef in owner.superTypeRefs) {
-        val resolvedTypeRef = superTypeRef as? CfirResolvedTypeRef ?: continue
-        val classId = when (val coneType = resolvedTypeRef.coneType) {
-            is ConeClassLikeType -> coneType.classId
-            is ConeStructType -> coneType.classId
-            is ConeEnumType -> coneType.classId
-            else -> continue
-        }
+        val supertype = superTypeRef
+            .classifyDeclaredSupertype(session)
+            .scopeTraversalTypeOrNull()
+            ?: continue
+        val classId = supertype.classId
 
         val superSymbol = session.symbolProvider.getClassLikeSymbolByClassId(classId) ?: continue
         if (!visited.add(superSymbol)) continue
@@ -422,7 +422,7 @@ private fun collectSuperClassesStaticScopes(
         val superDeclaration = superSymbol.cfir
         if (superDeclaration !is CfirClassLikeDeclaration || superDeclaration is CfirInterface) continue
 
-        superDeclaration.staticScope(session, scopeSession, resolvedTypeRef.coneType)
+        superDeclaration.staticScope(session, scopeSession, supertype)
             ?.asTowerDataElementForStaticScope(superSymbol)
             ?.let(result::add)
 

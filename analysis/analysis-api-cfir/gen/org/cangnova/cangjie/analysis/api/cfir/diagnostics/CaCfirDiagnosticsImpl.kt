@@ -593,6 +593,18 @@ internal class InvalidLoopControlImpl(
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.InvalidLoopControl
 
+internal class IllegalUsageOfMemberImpl(
+    override val memberName: Name,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.IllegalUsageOfMember
+
+internal class IllegalUsageOfSuperMemberImpl(
+    override val memberName: Name,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.IllegalUsageOfSuperMember
+
 internal class UsedBeforeInitializationImpl(
     override val variableName: Name,
     cfirDiagnostic: CjPsiDiagnostic,

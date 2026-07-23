@@ -17,17 +17,17 @@ class C <: A {
 
 open class A {
     public var a: Int32 = 1
-    <!CLASS_UNINITIALIZED_FIELD!>public let b: Int32<!>
+    public let <!CLASS_UNINITIALIZED_FIELD!>b<!>: Int32
 }
 
 class D <: E {
     public init() {
         a = 0
-        <!CANNOT_ASSIGN_TO_IMMUTABLE!>b = 0<!>
+        <!CANNOT_ASSIGN_TO_IMMUTABLE!>b<!> = 0
     }
     public init(c: Int32) {
         a = 0
-        <!CANNOT_ASSIGN_TO_IMMUTABLE!>b = 0<!>
+        <!CANNOT_ASSIGN_TO_IMMUTABLE!>b<!> = 0
     }
 }
 

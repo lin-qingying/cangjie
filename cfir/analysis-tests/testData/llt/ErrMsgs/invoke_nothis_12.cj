@@ -26,6 +26,6 @@ class Data {
 class C {
     public static var data = Data(a: 8)
     public var b = {
-        => data.f2(<!TOO_MANY_ARGUMENTS!>3<!>)
+        => data.f2<!WRONG_NUMBER_OF_ARGUMENTS!>(3)<!>
     }()
 }

@@ -15,9 +15,9 @@ func k() {
 
 main(): Int64 {
     k().a = 2
-    <!CANNOT_ASSIGN_TO_IMMUTABLE!>k().b<!> = 2
-    <!CANNOT_ASSIGN_TO_IMMUTABLE!>m().a<!> = 2
-    <!CANNOT_ASSIGN_TO_IMMUTABLE!>m().b<!> = 2
+    k().<!CANNOT_ASSIGN_TO_IMMUTABLE!>b<!> = 2
+    m().<!CANNOT_ASSIGN_TO_IMMUTABLE!>a<!> = 2
+    m().<!CANNOT_ASSIGN_TO_IMMUTABLE!>b<!> = 2
 
     return 0
 }

@@ -20,6 +20,7 @@ abstract class CfirAssignment : CfirExpression() {
     abstract override val coneTypeOrNull: ConeCangJieType?
     abstract val lValue: CfirExpression
     abstract val rValue: CfirExpression
+    abstract val typeMismatchOutcome: CfirAssignmentTypeMismatchOutcome?
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
         visitor.visitAssignment(this, data)
@@ -31,6 +32,8 @@ abstract class CfirAssignment : CfirExpression() {
     abstract override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
 
     abstract override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?)
+
+    abstract fun replaceTypeMismatchOutcome(newTypeMismatchOutcome: CfirAssignmentTypeMismatchOutcome?)
 
     abstract override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirAssignment
 

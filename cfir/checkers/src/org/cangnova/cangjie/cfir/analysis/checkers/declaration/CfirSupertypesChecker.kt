@@ -14,18 +14,21 @@ import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
+import org.cangnova.cangjie.cfir.resolve.providers.DeclaredSupertypeClassification
+import org.cangnova.cangjie.cfir.resolve.providers.classifyDeclaredSupertype
+import org.cangnova.cangjie.cfir.resolve.providers.declaredSupertypeClassifierSource
+import org.cangnova.cangjie.cfir.resolve.providers.independentNominalCheckTypeOrNull
 import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
-import org.cangnova.cangjie.cfir.types.CfirUserTypeRef
-import org.cangnova.cangjie.cfir.types.ConeAllowsDelegatedScopeTraversalDiagnostic
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeEnumType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeIntersectionType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
+import org.cangnova.cangjie.cfir.types.ConeRecoverableNominalDiagnostic
 import org.cangnova.cangjie.cfir.types.ConeStructType
 import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
 import org.cangnova.cangjie.cfir.types.contains
@@ -34,9 +37,7 @@ import org.cangnova.cangjie.cfir.types.withArguments
 import org.cangnova.cangjie.cfir.types.withoutAbbreviation
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.Name
-import org.cangnova.cangjie.source.AbstractCjSourceElement
 import org.cangnova.cangjie.source.CjSourceElement
-import org.cangnova.cangjie.source.CjOffsetsOnlySourceElement
 
 /**
  * class-like 直接父类型合法性检查器。
@@ -153,10 +154,26 @@ object CfirSupertypesChecker : CfirClassLikeChecker() {
         var superClassLikeCount = 0
 
         for (superTypeRef in declaration.superTypeRefs) {
-            if (superTypeRef.reportInvalidConcreteSupertypeIfNeeded(declaration)) continue
-            val resolvedSupertype = superTypeRef.toResolvedSuperDeclarationWithSource(context) ?: continue
-            val superDeclaration = resolvedSupertype.declaration
-            val supertypeSource = resolvedSupertype.source
+            val classification = superTypeRef.classifyDeclaredSupertype(context.session)
+            when (classification) {
+                is DeclaredSupertypeClassification.InvalidTargetKind -> {
+                    reporter.reportOn(
+                        source = superTypeRef.declaredSupertypeClassifierSource(),
+                        factory = CfirErrors.CLASS_INHERIT_NON_CLASS_NOR_INTERFACE,
+                        a = declaration.classLikeName(),
+                    )
+                    continue
+                }
+
+                is DeclaredSupertypeClassification.PrimaryResolutionError -> continue
+
+                is DeclaredSupertypeClassification.ValidNominal,
+                is DeclaredSupertypeClassification.RecoverableNominalError,
+                is DeclaredSupertypeClassification.LoopError -> Unit
+            }
+            val nominalType = classification.independentNominalCheckTypeOrNull() ?: continue
+            val superDeclaration = nominalType.toResolvedSuperDeclaration(context) ?: continue
+            val supertypeSource = superTypeRef.declaredSupertypeClassifierSource()
             if (superDeclaration.classKindOrNull() == CfirClassKind.INTERFACE) {
                 superClassLikeCount++
                 continue
@@ -191,38 +208,6 @@ object CfirSupertypesChecker : CfirClassLikeChecker() {
             superClassLikeCount++
         }
     }
-}
-
-/**
- * 对无法恢复 nominal class/interface 的父类型报告 concrete class-like 继承错误。
- *
- * 带有效 delegated nominal type 的错误（例如已解析 owner 上的类型实参数量问题）仍交给
- * 对应泛型诊断；只有完全无法确定父 class/interface 的错误类型才属于本检查器。
- */
-context(context: CheckerContext, reporter: DiagnosticReporter)
-private fun CfirTypeRef.reportInvalidConcreteSupertypeIfNeeded(owner: CfirClassLikeDeclaration): Boolean {
-    val resolvedTypeRef = this as? CfirResolvedTypeRef ?: return false
-    val coneType = resolvedTypeRef.coneType as? ConeErrorType ?: return false
-    if (coneType.effectiveNominalSupertypeOrNull() != null) return false
-
-    reporter.reportOn(
-        source = resolvedTypeRef.supertypeConstructorDiagnosticSource(),
-        factory = CfirErrors.CLASS_INHERIT_NON_CLASS_NOR_INTERFACE,
-        a = owner.classLikeName(),
-    )
-    return true
-}
-
-/** 取得父类型最外层 classifier 名称的完整 token 范围。 */
-private fun CfirResolvedTypeRef.supertypeConstructorDiagnosticSource(): AbstractCjSourceElement? {
-    val userTypeRef = delegatedTypeRef as? CfirUserTypeRef ?: return source
-    val qualifierPart = userTypeRef.qualifier.lastOrNull() ?: return source
-    val qualifierSource = qualifierPart.source ?: return source
-    return CjOffsetsOnlySourceElement(
-        startOffset = qualifierSource.startOffset,
-        endOffset = (qualifierSource.startOffset + qualifierPart.name.asString().length)
-            .coerceAtMost(qualifierSource.endOffset),
-    )
 }
 
 /**
@@ -318,7 +303,7 @@ private fun CfirTypeRef.toResolvedSupertypeForInterfaceLegality(): InterfaceSupe
 
 private fun ConeCangJieType.effectiveNominalSupertypeOrNull(): ConeCangJieType? =
     if (this is ConeErrorType) {
-        if (diagnostic is ConeAllowsDelegatedScopeTraversalDiagnostic) delegatedType else null
+        if (diagnostic is ConeRecoverableNominalDiagnostic) delegatedType else null
     } else {
         this
     }

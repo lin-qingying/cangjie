@@ -472,6 +472,14 @@ abstract class CfirTransformer<in D> : CfirVisitor<CfirElement, D>() {
         return transformInoutArgumentExpression(inoutArgumentExpression, data)
     }
 
+    open fun transformNamedArgumentExpression(namedArgumentExpression: CfirNamedArgumentExpression, data: D): CfirStatement {
+        return transformElement(namedArgumentExpression, data)
+    }
+
+    final override fun visitNamedArgumentExpression(namedArgumentExpression: CfirNamedArgumentExpression, data: D): CfirStatement {
+        return transformNamedArgumentExpression(namedArgumentExpression, data)
+    }
+
     open fun transformCall(call: CfirCall, data: D): CfirStatement {
         return transformElement(call, data)
     }

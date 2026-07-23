@@ -140,6 +140,8 @@ object CfirErrors : CjDiagnosticsContainer() {
     val INVALID_LOOP_CONTROL: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_INVALID_LOOP_CONTROL", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
 
     // Initialization
+    val ILLEGAL_USAGE_OF_MEMBER: CjDiagnosticFactory1<Name> = CjDiagnosticFactory1("CFIR_ILLEGAL_USAGE_OF_MEMBER", Severity.ERROR, SourceElementPositioningStrategies.REFERENCED_NAME_BY_QUALIFIED, PsiElement::class, getRendererFactory())
+    val ILLEGAL_USAGE_OF_SUPER_MEMBER: CjDiagnosticFactory1<Name> = CjDiagnosticFactory1("CFIR_ILLEGAL_USAGE_OF_SUPER_MEMBER", Severity.ERROR, SourceElementPositioningStrategies.REFERENCED_NAME_BY_QUALIFIED, PsiElement::class, getRendererFactory())
     val USED_BEFORE_INITIALIZATION: CjDiagnosticFactory1<Name> = CjDiagnosticFactory1("CFIR_USED_BEFORE_INITIALIZATION", Severity.ERROR, SourceElementPositioningStrategies.REFERENCED_NAME_BY_QUALIFIED, PsiElement::class, getRendererFactory())
     val CLASS_UNINITIALIZED_FIELD: CjDiagnosticFactory1<Name> = CjDiagnosticFactory1("CFIR_CLASS_UNINITIALIZED_FIELD", Severity.ERROR, SourceElementPositioningStrategies.ACTUAL_DECLARATION_NAME, PsiElement::class, getRendererFactory())
 

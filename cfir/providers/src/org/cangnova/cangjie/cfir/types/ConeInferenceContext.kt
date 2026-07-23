@@ -131,12 +131,9 @@ interface ConeInferenceContext : TypeSystemInferenceExtensionContext, ConeTypeCo
                     ?: return emptyList()
                 if (!symbol.isBound) return emptyList()
                 symbol.lazyResolveToPhase(CfirResolvePhase.SUPER_TYPES)
-                declarationSelfType(symbol)
-                    ?.let { declarationSelfType ->
-                        session.typeAwareSupertypeProviderOrNull?.getDirectSupertypes(declarationSelfType)
-                    }
-                    ?.takeIf { it.isNotEmpty() }
-                    ?: symbol.cfir.superTypeRefs.mapNotNull { (it as? CfirResolvedTypeRef)?.coneType }
+                val declarationSelfType = declarationSelfType(symbol) ?: return emptyList()
+                val supertypeProvider = session.typeAwareSupertypeProviderOrNull ?: return emptyList()
+                supertypeProvider.getDirectSupertypes(declarationSelfType)
             }
             is ConeTypeParameterLookupTag -> {
                 typeParameterSymbol.lazyResolveToPhase(CfirResolvePhase.TYPES)

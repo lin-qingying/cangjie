@@ -17,7 +17,7 @@ class B <: A {
 
     public func foo2() {
         this.a = 0
-        <!CANNOT_ASSIGN_TO_IMMUTABLE!>this.b<!> = 0
+        this.<!CANNOT_ASSIGN_TO_IMMUTABLE!>b<!> = 0
     }
 }
 

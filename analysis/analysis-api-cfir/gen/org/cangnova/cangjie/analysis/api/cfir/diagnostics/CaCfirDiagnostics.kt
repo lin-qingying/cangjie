@@ -498,6 +498,16 @@ sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
         override val diagnosticClass get() = InvalidLoopControl::class
     }
 
+    interface IllegalUsageOfMember : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = IllegalUsageOfMember::class
+        val memberName: Name
+    }
+
+    interface IllegalUsageOfSuperMember : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = IllegalUsageOfSuperMember::class
+        val memberName: Name
+    }
+
     interface UsedBeforeInitialization : CaCfirDiagnostic<PsiElement> {
         override val diagnosticClass get() = UsedBeforeInitialization::class
         val variableName: Name

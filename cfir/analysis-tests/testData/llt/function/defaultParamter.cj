@@ -8,7 +8,7 @@ class Point {
         this.x = x
         this.y = y
     }
-    public operator func -(<!CANNOT_HAVE_DEFAULT_PARAM!>oprand!: Point = Point<!NO_VALUE_FOR_PARAMETER, NO_VALUE_FOR_PARAMETER!>()<!><!>): Point {
+    public operator func -(<!CANNOT_HAVE_DEFAULT_PARAM!>oprand!: Point = Point<!WRONG_NUMBER_OF_ARGUMENTS!>()<!><!>): Point {
         Point(-oprand.x, -oprand.y)
     }
 }

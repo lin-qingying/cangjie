@@ -19,8 +19,8 @@ enum E1 {
 main(): Int64 {
     let a = EE
     let b = ER(3)
-    <!CANNOT_ASSIGN_TO_IMMUTABLE!>a.a<!> = 1
-    <!CANNOT_ASSIGN_TO_IMMUTABLE!>b.b<!> = 1
+    a.<!CANNOT_ASSIGN_TO_IMMUTABLE!>a<!> = 1
+    b.<!CANNOT_ASSIGN_TO_IMMUTABLE!>b<!> = 1
     b.<!NOT_MEMBER_OF!>d<!>
     return 0
 }

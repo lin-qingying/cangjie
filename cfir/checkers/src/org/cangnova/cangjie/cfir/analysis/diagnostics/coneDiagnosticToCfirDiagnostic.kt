@@ -651,7 +651,7 @@ private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
             is UnsuccessfulCallableReferenceArgument -> null
 
             is ArgumentPassedTwice -> CfirErrors.ARGUMENT_PASSED_TWICE.on(
-                rootCause.argument.source ?: source ?: qualifiedAccessSource ?: return@mapNotNull null,
+                rootCause.source,
                 session,
             )
 
@@ -769,13 +769,13 @@ private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
             )
 
             is NamedArgumentsNotAllowed -> CfirErrors.NAMED_ARGUMENTS_NOT_ALLOWED.on(
-                rootCause.argument.source ?: source ?: qualifiedAccessSource ?: return@mapNotNull null,
+                rootCause.source,
                 rootCause.targetDescription,
                 session,
             )
 
             is NamedParameterNotFound -> CfirErrors.NAMED_PARAMETER_NOT_FOUND.on(
-                rootCause.argument.source ?: source ?: qualifiedAccessSource ?: return@mapNotNull null,
+                rootCause.source,
                 rootCause.name,
                 session,
             )
@@ -933,7 +933,7 @@ private fun List<ResolutionDiagnostic>.mapCangjieVariadicRegularCallDiagnostics(
 ): List<CjDiagnostic> = coalesceArgumentMappingDiagnostics().mapNotNull { diagnostic ->
     when (diagnostic) {
         is ArgumentPassedTwice -> CfirErrors.ARGUMENT_PASSED_TWICE.on(
-            diagnostic.argument.source ?: source ?: qualifiedAccessSource ?: return@mapNotNull null,
+            diagnostic.source,
             session,
         )
 
@@ -943,13 +943,13 @@ private fun List<ResolutionDiagnostic>.mapCangjieVariadicRegularCallDiagnostics(
         )
 
         is NamedArgumentsNotAllowed -> CfirErrors.NAMED_ARGUMENTS_NOT_ALLOWED.on(
-            diagnostic.argument.source ?: source ?: qualifiedAccessSource ?: return@mapNotNull null,
+            diagnostic.source,
             diagnostic.targetDescription,
             session,
         )
 
         is NamedParameterNotFound -> CfirErrors.NAMED_PARAMETER_NOT_FOUND.on(
-            diagnostic.argument.source ?: source ?: qualifiedAccessSource ?: return@mapNotNull null,
+            diagnostic.source,
             diagnostic.name,
             session,
         )
@@ -2220,6 +2220,12 @@ private fun ConeDiagnostic.mapOtherDiagnostic(
                 }
             }
         }
+
+        is ConeNotATypeError -> CfirErrors.NOT_A_TYPE.on(
+            diagnosticSource,
+            name.asString(),
+            session,
+        )
 
         // ── resolve 管线补齐映射 ──
 

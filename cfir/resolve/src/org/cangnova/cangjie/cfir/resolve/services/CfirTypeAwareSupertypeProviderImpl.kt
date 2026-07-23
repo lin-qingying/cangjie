@@ -33,7 +33,9 @@ import org.cangnova.cangjie.cfir.resolve.SupertypeSupplier
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.resolve.providers.CfirExtendProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirTypeAwareSupertypeProvider
+import org.cangnova.cangjie.cfir.resolve.providers.classifyDeclaredSupertype
 import org.cangnova.cangjie.cfir.resolve.providers.createExtendDeclarationSubstitution
+import org.cangnova.cangjie.cfir.resolve.providers.ordinarySupertypeTypeOrNull
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.extendIndexStoreOrNull
 import org.cangnova.cangjie.cfir.session.extendProvider
@@ -125,8 +127,9 @@ class CfirTypeAwareSupertypeProviderImpl(
         val substitutor = declaration.createDeclarationSubstitutor(type)
 
         val declaredSupertypes = declaration.superTypeRefs.mapNotNull { superTypeRef ->
-            val coneType = (superTypeRef as? CfirResolvedTypeRef)?.coneType ?: return@mapNotNull null
-            substitutor?.substituteOrSelf(coneType) ?: coneType
+            val classification = superTypeRef.classifyDeclaredSupertype(session)
+            val semanticType = classification.ordinarySupertypeTypeOrNull() ?: return@mapNotNull null
+            substitutor?.substituteOrSelf(semanticType) ?: semanticType
         }
         return declaredSupertypes.withImplicitObjectSuperclass(declaration)
     }

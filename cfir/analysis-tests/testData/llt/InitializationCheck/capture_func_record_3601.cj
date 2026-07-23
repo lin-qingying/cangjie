@@ -9,7 +9,7 @@ struct Aoo {
     public let b: Int32 = a
     public var c = if (true) {
         func foo2() {
-            <!USED_BEFORE_INITIALIZATION!>a<!>
+            <!ILLEGAL_USAGE_OF_MEMBER!>a<!>
         }
     }
     public func foo3() {

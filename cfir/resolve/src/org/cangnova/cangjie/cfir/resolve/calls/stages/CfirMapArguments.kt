@@ -6,19 +6,25 @@ import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.diagnostic.ArgumentPassedTwice
+import org.cangnova.cangjie.cfir.diagnostic.HiddenCandidate
 import org.cangnova.cangjie.cfir.diagnostic.MixingNamedAndPositionalArguments
 import org.cangnova.cangjie.cfir.diagnostic.NamedArgumentsNotAllowed
 import org.cangnova.cangjie.cfir.diagnostic.NamedParameterNotFound
 import org.cangnova.cangjie.cfir.diagnostic.NeedNamedArgument
-import org.cangnova.cangjie.cfir.diagnostic.NoValueForParameter
+import org.cangnova.cangjie.cfir.diagnostic.TrailingLambdaCannotUsedForNonFunction
 import org.cangnova.cangjie.cfir.diagnostic.TooManyArguments
+import org.cangnova.cangjie.cfir.diagnostic.UnsupportedNamedArgument
+import org.cangnova.cangjie.cfir.diagnostic.VisibilityError
+import org.cangnova.cangjie.cfir.diagnostic.WrongArgumentCount
 import org.cangnova.cangjie.cfir.diagnostic.WrongNumberOfArguments
 import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
-import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCallOrigin
+import org.cangnova.cangjie.cfir.expressions.CfirNamedArgumentExpression
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
+import org.cangnova.cangjie.cfir.resolve.calls.ArgumentMappingOutcome
+import org.cangnova.cangjie.cfir.resolve.calls.CallShape
 import org.cangnova.cangjie.cfir.resolve.calls.ConeResolutionAtom
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
 import org.cangnova.cangjie.cfir.resolve.calls.cangjieVariadicCallShapeOrNull
@@ -28,16 +34,18 @@ import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallKind
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CheckerSink
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.yieldIfNeed
+import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.semantics.ResolutionDiagnostic
+import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
+import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.types.ConeVArrayType
 import org.cangnova.cangjie.cfir.types.coneType
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.OperatorNameConventions
-import org.cangnova.cangjie.psi.CjValueArgument
+import org.cangnova.cangjie.source.AbstractCjSourceElement
+import org.cangnova.cangjie.source.CjOffsetsOnlySourceElement
 import org.cangnova.cangjie.source.CjSourceElement
-import org.cangnova.cangjie.source.psi
-import org.cangnova.cangjie.source.text
 
 /**
  * 参数映射阶段负责把“调用站点实参”绑定到“可调用声明形参”。
@@ -55,6 +63,17 @@ object CfirMapArguments : ResolutionStage() {
     context(sink: CheckerSink, context: ResolutionContext)
     override suspend fun check(candidate: Candidate) {
         val argumentAtoms = candidate.callInfo.arguments.map(ConeResolutionAtom::createRawAtom)
+
+        if (candidate.hasTerminalPreArgumentMappingDiagnostic()) {
+            if (!candidate.argumentMappingInitialized) {
+                candidate.initializeArgumentMapping(argumentAtoms, linkedMapOf())
+            }
+            candidate.numDefaults = 0
+            // 可见性或显式类型实参数量错误支配 value-argument 检查；必须显式
+            // yield，不能依赖阶段 runner 在当前阶段返回后再次推断终止条件。
+            sink.yieldIfNeed()
+            return
+        }
 
         when (candidate.callInfo.callKind) {
             CallKind.NamedValueAccess -> {
@@ -119,6 +138,7 @@ object CfirMapArguments : ResolutionStage() {
         val argumentInfos = argumentAtoms.map(::CallArgumentInfo)
         val nonTrailingArguments = argumentInfos.filterNot { it.isTrailingLambda }
         val trailingLambdaArguments = argumentInfos.filter { it.isTrailingLambda }
+        val callShape = candidate.createCallShape(argumentInfos)
         val isCallableValueCall = candidate.callInfo.candidateForCommonInvokeReceiver != null ||
                 candidate.isSyntheticFunctionTypeInvoke() ||
                 candidate.symbol.takeIf { it.isBound }?.cfir is CfirVariable
@@ -135,14 +155,60 @@ object CfirMapArguments : ResolutionStage() {
         if (isCallableValueCall && variadicShape == null && argumentAtoms.size != parameters.size) {
             candidate.initializeArgumentMapping(argumentAtoms, linkedMapOf())
             candidate.numDefaults = 0
-            sink.reportDiagnostic(WrongNumberOfArguments(parameters.size, argumentAtoms.size))
+            candidate.initializeArgumentMappingOutcome(
+                createArgumentMappingOutcome(
+                    callShape = callShape,
+                    parameters = parameters,
+                    variadicParameter = null,
+                    mappedArgumentCount = 0,
+                    matchedNamedArgumentCount = 0,
+                    hasMappingFailure = true,
+                ),
+            )
+            sink.reportDiagnostic(
+                WrongNumberOfArguments(callShape.arityDiagnosticSource, parameters.size, argumentAtoms.size),
+            )
+            return
+        }
+
+        val requiredParameterCount = parameters.count { parameter ->
+            parameter != variadicParameter && parameter.defaultValue == null
+        }
+        if (!isCallableValueCall && argumentAtoms.size < requiredParameterCount) {
+            candidate.initializeArgumentMapping(argumentAtoms, linkedMapOf())
+            candidate.numDefaults = 0
+            candidate.initializeArgumentMappingOutcome(
+                createArgumentMappingOutcome(
+                    callShape = callShape,
+                    parameters = parameters,
+                    variadicParameter = variadicParameter,
+                    mappedArgumentCount = argumentAtoms.size,
+                    matchedNamedArgumentCount = 0,
+                    hasMappingFailure = true,
+                ),
+            )
+            sink.reportDiagnostic(
+                WrongNumberOfArguments(callShape.arityDiagnosticSource, parameters.size, argumentAtoms.size),
+            )
             return
         }
 
         if (variadicParameter == null && argumentAtoms.size > parameters.size) {
             candidate.initializeArgumentMapping(argumentAtoms, linkedMapOf())
             candidate.numDefaults = 0
-            sink.reportDiagnostic(TooManyArguments(argumentAtoms[parameters.size].expression, candidate.callInfo.name))
+            candidate.initializeArgumentMappingOutcome(
+                createArgumentMappingOutcome(
+                    callShape = callShape,
+                    parameters = parameters,
+                    variadicParameter = null,
+                    mappedArgumentCount = parameters.size,
+                    matchedNamedArgumentCount = 0,
+                    hasMappingFailure = true,
+                ),
+            )
+            sink.reportDiagnostic(
+                WrongNumberOfArguments(callShape.arityDiagnosticSource, parameters.size, argumentAtoms.size),
+            )
             return
         }
 
@@ -153,6 +219,8 @@ object CfirMapArguments : ResolutionStage() {
             nonTrailingArguments = nonTrailingArguments,
             trailingLambdaArguments = trailingLambdaArguments,
             variadicParameter = null,
+            callShape = callShape,
+            isCallableValueCall = isCallableValueCall,
         )
         val variadicResult = if (variadicShape != null) {
             createCallableArgumentMapping(
@@ -162,6 +230,8 @@ object CfirMapArguments : ResolutionStage() {
                 nonTrailingArguments = nonTrailingArguments,
                 trailingLambdaArguments = trailingLambdaArguments,
                 variadicParameter = variadicParameter,
+                callShape = callShape,
+                isCallableValueCall = isCallableValueCall,
             )
         } else {
             null
@@ -185,9 +255,20 @@ object CfirMapArguments : ResolutionStage() {
             candidate.initializeCangjieVariadicRegularCallDiagnostics(regularResult.diagnostics)
         }
         candidate.initializeArgumentMapping(argumentAtoms, result.argumentMapping)
+        candidate.initializeArgumentMappingOutcome(
+            createArgumentMappingOutcome(
+                callShape = callShape,
+                parameters = parameters,
+                variadicParameter = if (result === variadicResult) variadicParameter else null,
+                mappedArgumentCount = result.argumentMapping.size,
+                matchedNamedArgumentCount = result.matchedNamedArgumentCount,
+                hasMappingFailure = result.diagnostics.isNotEmpty(),
+            ),
+        )
         candidate.initializeVariadicEligibleArguments(variadicEligibleArguments)
         if (result.isEmptyVariadicCall) candidate.markEmptyVariadicCall()
         candidate.numDefaults = result.numDefaults
+        result.nonBlockingDiagnostics.forEach(candidate::addNonBlockingResolutionDiagnostic)
         result.diagnostics.forEach(sink::reportDiagnostic)
     }
 
@@ -201,6 +282,8 @@ object CfirMapArguments : ResolutionStage() {
         nonTrailingArguments: List<CallArgumentInfo>,
         trailingLambdaArguments: List<CallArgumentInfo>,
         variadicParameter: CfirValueParameter?,
+        callShape: CallShape,
+        isCallableValueCall: Boolean,
     ): CallableArgumentMappingResult {
         val variadicParameterIndex = parameters.indexOf(variadicParameter)
         val argumentMapping = LinkedHashMap<ConeResolutionAtom, CfirValueParameter>(argumentAtoms.size)
@@ -208,9 +291,7 @@ object CfirMapArguments : ResolutionStage() {
         val variadicEligibleArguments = mutableListOf<ConeResolutionAtom>()
         val positionalArgumentCount = nonTrailingArguments.takeWhile { it.name == null }.size
         val diagnostics = mutableListOf<ResolutionDiagnostic>()
-        val isCallableValueCall = candidate.callInfo.candidateForCommonInvokeReceiver != null ||
-                candidate.isSyntheticFunctionTypeInvoke() ||
-                candidate.symbol.takeIf { it.isBound }?.cfir is CfirVariable
+        val nonBlockingDiagnostics = mutableListOf<ResolutionDiagnostic>()
 
         val variadicInfo = variadicParameter?.let {
             candidate.cangjieVariadicCallShapeOrNull(parameters, positionalArgumentCount)
@@ -220,40 +301,67 @@ object CfirMapArguments : ResolutionStage() {
         var nextPositionalIndex = 0
         var seenNamedArgument = false
         var hasArgumentMappingError = false
+        var matchedNamedArgumentCount = 0
 
         for ((argumentIndex, argument) in nonTrailingArguments.withIndex()) {
             val argumentName = argument.name
-            if (argumentName != null) {
-                seenNamedArgument = true
-                if (parameters.isEmpty()) {
-                    diagnostics += TooManyArguments(argument.atom.expression, candidate.callInfo.name)
+
+            // 函数值的形参没有可引用的声明名称；命名语法逐项报告，但仍严格按位置映射，
+            // 使同一个实参可以继续进入普通期望类型与类型不匹配检查。
+            if (isCallableValueCall) {
+                val parameter = parameters.getOrNull(nextPositionalIndex)
+                if (parameter == null) {
+                    diagnostics.addWrongNumberOfArguments(callShape, parameters.size)
                     hasArgumentMappingError = true
                     break
                 }
-                if (isCallableValueCall) {
-                    diagnostics += NamedArgumentsNotAllowed(argument.atom.expression, "variable function call")
+                if (argumentName != null) {
+                    nonBlockingDiagnostics += UnsupportedNamedArgument(argument.nameSourceOrFail())
+                }
+                usedParameters.add(parameter)
+                argumentMapping[argument.atom] = parameter
+                nextPositionalIndex += 1
+                continue
+            }
+
+            if (argumentName != null) {
+                seenNamedArgument = true
+                if (parameters.isEmpty()) {
+                    diagnostics.addWrongNumberOfArguments(callShape, parameters.size)
                     hasArgumentMappingError = true
-                    continue
+                    break
                 }
 
                 val parameter = parameters.firstOrNull { it.name == argumentName }
                 if (parameter == null) {
-                    diagnostics += NamedParameterNotFound(argument.atom.expression, argumentName)
+                    diagnostics += NamedParameterNotFound(
+                        argument = argument.atom.expression,
+                        source = argument.nameSourceOrFail(),
+                        name = argumentName,
+                    )
                     hasArgumentMappingError = true
                     break
                 }
                 if (!parameter.isNamed) {
-                    diagnostics +=
-                        NamedArgumentsNotAllowed(argument.atom.expression, "parameter '${parameter.name.asString()}'")
+                    diagnostics += NamedArgumentsNotAllowed(
+                        argument = argument.atom.expression,
+                        source = argument.nameSourceOrFail(),
+                        targetDescription = "parameter '${parameter.name.asString()}'",
+                    )
                     hasArgumentMappingError = true
                     break
                 }
                 if (!usedParameters.add(parameter)) {
-                    diagnostics += ArgumentPassedTwice(argument.atom.expression, parameter)
+                    diagnostics += ArgumentPassedTwice(
+                        argument = argument.atom.expression,
+                        source = argument.nameSourceOrFail(),
+                        parameter = parameter,
+                    )
                     hasArgumentMappingError = true
                     break
                 }
                 argumentMapping[argument.atom] = parameter
+                matchedNamedArgumentCount += 1
                 continue
             }
 
@@ -289,7 +397,7 @@ object CfirMapArguments : ResolutionStage() {
 
             val parameter = parameters.getOrNull(nextPositionalIndex)
             if (parameter == null) {
-                diagnostics += TooManyArguments(argument.atom.expression, candidate.callInfo.name)
+                diagnostics.addWrongNumberOfArguments(callShape, parameters.size)
                 hasArgumentMappingError = true
                 break
             }
@@ -312,30 +420,32 @@ object CfirMapArguments : ResolutionStage() {
         }
 
         if (!hasArgumentMappingError) {
-            mapTrailingLambdaArguments(
+            hasArgumentMappingError = mapTrailingLambdaArguments(
                 candidate = candidate,
                 parameters = parameters,
-                variadicParameter = variadicParameter,
                 trailingLambdaArguments = trailingLambdaArguments,
                 usedParameters = usedParameters,
                 argumentMapping = argumentMapping,
                 diagnostics = diagnostics,
+                callShape = callShape,
             )
         }
 
         if (!hasArgumentMappingError) {
-            parameters
+            val hasMissingRequiredParameter = parameters
                 .filterNot { it in usedParameters }
                 .filter { it != variadicParameter }
-                .filter { it.defaultValue == null }
-                .forEach { parameter ->
-                    diagnostics += NoValueForParameter(parameter)
-                }
+                .any { it.defaultValue == null }
+            if (hasMissingRequiredParameter) {
+                diagnostics.addWrongNumberOfArguments(callShape, parameters.size)
+            }
         }
 
         return CallableArgumentMappingResult(
             argumentMapping = argumentMapping,
             diagnostics = diagnostics,
+            nonBlockingDiagnostics = nonBlockingDiagnostics,
+            matchedNamedArgumentCount = matchedNamedArgumentCount,
             numDefaults = parameters.count { it != variadicParameter && it !in usedParameters && it.defaultValue != null },
             variadicEligibleArguments = variadicEligibleArguments,
             isEmptyVariadicCall = isEmptyVariadicCall,
@@ -378,33 +488,45 @@ object CfirMapArguments : ResolutionStage() {
     private fun mapTrailingLambdaArguments(
         candidate: Candidate,
         parameters: List<CfirValueParameter>,
-        variadicParameter: CfirValueParameter?,
         trailingLambdaArguments: List<CallArgumentInfo>,
         usedParameters: MutableSet<CfirValueParameter>,
         argumentMapping: MutableMap<ConeResolutionAtom, CfirValueParameter>,
         diagnostics: MutableList<ResolutionDiagnostic>,
-    ) {
-        val externalArgument = trailingLambdaArguments.firstOrNull() ?: return
-        val lastParameter = parameters.lastOrNull()
-        if (
-            lastParameter == null ||
-            lastParameter == variadicParameter ||
-            lastParameter in usedParameters ||
-            !candidate.acceptsImplicitTrailingLambda(lastParameter)
-        ) {
-            if (diagnostics.none { it is TooManyArguments }) {
-                diagnostics += TooManyArguments(externalArgument.atom.expression, candidate.callInfo.name)
-            }
-        } else {
-            usedParameters.add(lastParameter)
-            argumentMapping[externalArgument.atom] = lastParameter
+        callShape: CallShape,
+    ): Boolean {
+        val externalArgument = trailingLambdaArguments.firstOrNull() ?: return false
+        if (trailingLambdaArguments.size > 1) {
+            diagnostics.addWrongNumberOfArguments(callShape, parameters.size)
+            return true
         }
 
-        trailingLambdaArguments.drop(1).forEach { argument ->
-            if (diagnostics.none { it is TooManyArguments }) {
-                diagnostics += TooManyArguments(argument.atom.expression, candidate.callInfo.name)
-            }
+        val lastParameter = parameters.lastOrNull()
+        if (lastParameter == null) {
+            diagnostics.addWrongNumberOfArguments(callShape, parameters.size)
+            return true
         }
+
+        if (lastParameter in usedParameters) {
+            diagnostics += ArgumentPassedTwice(
+                argument = externalArgument.atom.expression,
+                source = externalArgument.trailingLambdaOpeningBraceSource(),
+                parameter = lastParameter,
+            )
+            return true
+        }
+
+        if (!candidate.acceptsImplicitTrailingLambda(lastParameter)) {
+            diagnostics += TrailingLambdaCannotUsedForNonFunction(
+                source = externalArgument.valueExpression.source
+                    ?: error("Trailing lambda must have a source"),
+                parameterType = lastParameter.returnTypeRef.coneType.fullyExpandedType(candidate.callInfo.session),
+            )
+            return true
+        }
+
+        usedParameters.add(lastParameter)
+        argumentMapping[externalArgument.atom] = lastParameter
+        return false
     }
 
     /**
@@ -414,7 +536,99 @@ object CfirMapArguments : ResolutionStage() {
     private fun Candidate.acceptsImplicitTrailingLambda(parameter: CfirValueParameter): Boolean {
         val parameterType = parameter.returnTypeRef.coneType
             .fullyExpandedType(callInfo.session)
-        return parameterType is ConeFunctionType
+        return parameterType.isFunctionTypeOrHasFunctionUpperBound(callInfo.session, mutableSetOf())
+    }
+
+    /** 判断类型本身或类型参数的任一有效上界是否为函数类型。 */
+    private fun org.cangnova.cangjie.cfir.types.ConeCangJieType.isFunctionTypeOrHasFunctionUpperBound(
+        session: CfirSession,
+        visited: MutableSet<CfirTypeParameterSymbol>,
+    ): Boolean {
+        val expanded = fullyExpandedType(session)
+        return when (expanded) {
+            is ConeFunctionType -> true
+            is ConeTypeParameterType -> {
+                val symbol = expanded.lookupTag.typeParameterSymbol
+                if (!visited.add(symbol)) return false
+                symbol.resolvedBounds.any { bound ->
+                    bound.isFunctionTypeOrHasFunctionUpperBound(session, visited)
+                }
+            }
+
+            else -> false
+        }
+    }
+
+    /** 构造当前候选唯一的调用点参数形状。 */
+    private fun Candidate.createCallShape(arguments: List<CallArgumentInfo>): CallShape {
+        val functionCall = callInfo.callSite as? CfirFunctionCall
+        val argumentListSource = functionCall?.argumentList?.source
+        val callSiteSource = callInfo.callSite.source
+        val firstAvailableSource = argumentListSource
+            ?: callSiteSource
+            ?: arguments.firstNotNullOfOrNull { it.atom.expression.source }
+            ?: error("Callable argument mapping requires a source-bearing call site")
+        val trailingLambdaEnd = arguments
+            .asSequence()
+            .filter { it.isTrailingLambda }
+            .mapNotNull { it.valueExpression.source?.endOffset }
+            .maxOrNull()
+        val startOffset = argumentListSource?.startOffset ?: firstAvailableSource.startOffset
+        val endOffset = trailingLambdaEnd
+            ?: argumentListSource?.endOffset
+            ?: callSiteSource?.endOffset
+            ?: firstAvailableSource.endOffset
+        check(endOffset >= startOffset) {
+            "Invalid call-shape source range: $startOffset..$endOffset"
+        }
+
+        return CallShape(
+            actualArgumentCount = arguments.size,
+            namedArgumentCount = arguments.count { it.name != null },
+            trailingLambdaCount = arguments.count { it.isTrailingLambda },
+            arityDiagnosticSource = CjOffsetsOnlySourceElement(startOffset, endOffset),
+        )
+    }
+}
+
+/** 参数映射前的可见性和显式类型实参数量错误会支配后续调用形状诊断。 */
+private fun Candidate.hasTerminalPreArgumentMappingDiagnostic(): Boolean = diagnostics.any { diagnostic ->
+    diagnostic is HiddenCandidate ||
+            diagnostic is VisibilityError ||
+            diagnostic is WrongArgumentCount
+}
+
+/** 构造候选参数映射的共享结构化结果。 */
+private fun createArgumentMappingOutcome(
+    callShape: CallShape,
+    parameters: List<CfirValueParameter>,
+    variadicParameter: CfirValueParameter?,
+    mappedArgumentCount: Int,
+    matchedNamedArgumentCount: Int,
+    hasMappingFailure: Boolean,
+): ArgumentMappingOutcome = ArgumentMappingOutcome(
+    callShape = callShape,
+    expectedParameterCount = parameters.size,
+    requiredParameterCount = parameters.count { parameter ->
+        parameter != variadicParameter && parameter.defaultValue == null
+    },
+    maximumAcceptedArgumentCount = parameters.size.takeIf { variadicParameter == null },
+    mappedArgumentCount = mappedArgumentCount,
+    matchedNamedArgumentCount = matchedNamedArgumentCount,
+    hasMappingFailure = hasMappingFailure,
+)
+
+/** 同一候选的参数数量失败始终聚合成一条调用级诊断。 */
+private fun MutableList<ResolutionDiagnostic>.addWrongNumberOfArguments(
+    callShape: CallShape,
+    expectedCount: Int,
+) {
+    if (none { it is WrongNumberOfArguments }) {
+        this += WrongNumberOfArguments(
+            source = callShape.arityDiagnosticSource,
+            expectedCount = expectedCount,
+            actualCount = callShape.actualArgumentCount,
+        )
     }
 }
 
@@ -440,6 +654,10 @@ private data class CallableArgumentMappingResult(
      * 映射阶段产生的诊断。
      */
     val diagnostics: List<ResolutionDiagnostic>,
+    /** 不阻断后续类型检查的解析诊断。 */
+    val nonBlockingDiagnostics: List<ResolutionDiagnostic>,
+    /** 成功按名称匹配的命名实参数量。 */
+    val matchedNamedArgumentCount: Int,
     /**
      * 使用默认值的形参数量。
      */
@@ -461,42 +679,30 @@ private data class CallArgumentInfo(
     /**
      * 命名实参名称；位置实参为空。
      */
-    val name: Name? = atom.expression.argumentNameOrNull(),
+    val name: Name? = (atom.expression as? CfirNamedArgumentExpression)?.argumentName,
 ) {
+    /** 命名包装内部的真实值表达式。 */
+    val valueExpression: CfirExpression
+        get() = (atom.expression as? CfirNamedArgumentExpression)?.expression ?: atom.expression
+
+    /** 命名实参名称 token 的 source。 */
+    fun nameSourceOrFail(): AbstractCjSourceElement =
+        (atom.expression as? CfirNamedArgumentExpression)?.nameSource
+            ?: error("Named argument must carry a name source")
+
     /**
      * 当前实参是否是外置尾随 lambda。
      */
     val isTrailingLambda: Boolean
-        get() = (atom.expression as? CfirAnonymousFunctionExpression)?.isTrailingLambda == true
-}
+        get() = (valueExpression as? CfirAnonymousFunctionExpression)?.isTrailingLambda == true
 
-/**
- * 从表达式源码中恢复命名实参名称。
- */
-private fun CfirExpression.argumentNameOrNull(): Name? {
-    val source = valueArgumentSourceOrNull() ?: return null
-    val psiArgument = source?.psi as? CjValueArgument
-    if (psiArgument != null) {
-        return psiArgument.getArgumentName()?.asName
-    }
-
-    // LightTree 路径没有 PSI，可用的稳定信息只有整段 value-argument source。
-    // 这里仅对“显式保留下来的 value-argument 包装层”做文本恢复，避免把普通表达式误判成命名参数。
-    val rawText = source?.text?.toString()?.trim().orEmpty()
-    val separatorIndex = rawText.indexOf(':')
-    if (separatorIndex <= 0) return null
-
-    val possibleName = rawText.substring(0, separatorIndex).trim()
-    return Name.identifierIfValid(possibleName)
-}
-
-/**
- * 返回表达式对应的 value-argument source。
- */
-private fun CfirExpression.valueArgumentSourceOrNull(): CjSourceElement? {
-    return when (this) {
-        is CfirBlock -> source?.takeIf { statements.size == 1 }
-        else -> source?.takeIf { it.psi is CjValueArgument }
+    /** 尾随 closure 左花括号 token 的 source。 */
+    fun trailingLambdaOpeningBraceSource(): AbstractCjSourceElement {
+        val source = valueExpression.source ?: error("Trailing lambda must have a source")
+        return CjOffsetsOnlySourceElement(
+            source.startOffset,
+            (source.startOffset + 1).coerceAtMost(source.endOffset),
+        )
     }
 }
 

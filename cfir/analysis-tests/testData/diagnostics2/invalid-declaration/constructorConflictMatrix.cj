@@ -11,7 +11,7 @@ class AmbiguousBox {
 }
 
 func testNoValueForConstructor(): Unit {
-    Box<!NO_VALUE_FOR_PARAMETER!>()<!>
+    Box<!WRONG_NUMBER_OF_ARGUMENTS!>()<!>
 }
 
 func testAmbiguousConstructorCall(): Unit {

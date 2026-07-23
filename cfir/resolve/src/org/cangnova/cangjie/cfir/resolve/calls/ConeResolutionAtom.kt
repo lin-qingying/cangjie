@@ -10,6 +10,7 @@ import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
 import org.cangnova.cangjie.cfir.diagnostic.CallableReferenceFailureKind
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirNamedAccessExpression
+import org.cangnova.cangjie.cfir.expressions.CfirNamedArgumentExpression
 import org.cangnova.cangjie.cfir.expressions.CfirResolvable
 import org.cangnova.cangjie.cfir.diagnostic.ConeAmbiguityError
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
@@ -64,6 +65,10 @@ sealed class ConeResolutionAtom : AbstractConeResolutionAtom() {
                         subAtom = childExpression?.let { createRawAtom(it) },
                     )
                 }
+                is CfirNamedArgumentExpression -> ConeResolutionAtomWithSingleChild(
+                    expression = expression,
+                    subAtom = createRawAtom(expression.expression),
+                )
                 is CfirNamedAccessExpression -> when {
                     expression.isFunctionReferenceCandidateSet() ->
                         ConeResolutionAtomWithPostponedChild(

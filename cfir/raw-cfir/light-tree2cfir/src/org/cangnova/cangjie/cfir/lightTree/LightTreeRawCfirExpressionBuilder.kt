@@ -693,13 +693,6 @@ class LightTreeRawCfirExpressionBuilder(
         )
     }
 
-    /**
-     * LightTree 路径下同样要保留整段 value-argument source。
-     *
-     * 这里故意复用现有 `CfirBlock` 作为“单表达式包装层”：
-     * 1. 参数映射阶段可以从 block.source 恢复命名参数前缀；
-     * 2. 诊断组件已经完整支持 block，不会像专用 wrapped expression 那样额外引入检查器分发分支。
-     */
     /** 转换单个调用实参，保留 named 与 inout 包装。 */
     private fun convertCallArgument(valueArgumentNode: LighterASTNode): CfirExpression? {
         val expressionNode = findFirstExpression(valueArgumentNode) ?: return null
@@ -713,12 +706,15 @@ class LightTreeRawCfirExpressionBuilder(
         } else {
             convertedExpression
         }
-        val hasName = tree.findChildByType(valueArgumentNode, CjNodeTypes.VALUE_ARGUMENT_NAME) != null
-        if (!hasName) return wrapped
-
-        return buildBlock {
+        val nameNode = tree.findChildByType(valueArgumentNode, CjNodeTypes.VALUE_ARGUMENT_NAME)
+            ?: return wrapped
+        val referenceNode = tree.findChildByType(nameNode, CjNodeTypes.REFERENCE_EXPRESSION)
+            ?: error("Named value argument must contain a reference expression")
+        return buildNamedArgumentExpression {
             source = valueArgumentNode.toSource()
-            statements.add(wrapped)
+            argumentName = Name.identifier(referenceNode.asText())
+            nameSource = referenceNode.toSource()
+            expression = wrapped
         }
     }
 

@@ -20,12 +20,12 @@ struct A <: IA {
 }
 
 func goo(a: A): Unit {
-    <!CANNOT_ASSIGN_TO_IMMUTABLE!>a.x<!> = a.x + 1
+    a.<!CANNOT_ASSIGN_TO_IMMUTABLE!>x<!> = a.x + 1
     println(a.y)
 }
 
 func foo<T>(t: T): Unit where T <: IA {
-    <!CANNOT_ASSIGN_TO_IMMUTABLE!>t.x<!> = t.x + 1
+    t.<!CANNOT_ASSIGN_TO_IMMUTABLE!>x<!> = t.x + 1
     println(t.y)
 }
 main() {}

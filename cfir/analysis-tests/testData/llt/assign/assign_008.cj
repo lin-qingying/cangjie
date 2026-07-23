@@ -1,7 +1,7 @@
 
 
 func f() {
-    <!CANNOT_ASSIGN_TO_IMMUTABLE!>E.A<!> = E.A
+    E.<!CANNOT_ASSIGN_TO_IMMUTABLE!>A<!> = E.A
     <!CANNOT_ASSIGN_TO_IMMUTABLE!>A<!> = A
 }
 

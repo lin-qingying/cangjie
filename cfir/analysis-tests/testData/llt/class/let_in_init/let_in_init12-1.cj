@@ -13,7 +13,7 @@ class C <: A {
 
 open class A {
     public var a: Int32 = 1
-    <!CLASS_UNINITIALIZED_FIELD!>public let b: Int32<!>
+    public let <!CLASS_UNINITIALIZED_FIELD!>b<!>: Int32
 }
 
 main(): Int64 {

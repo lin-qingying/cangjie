@@ -9,11 +9,11 @@ class Green <: Color {}
 class Blue <: Color {}
 
 func f(c: Color) {
-    <!NON_EXHAUSTIVE_MATCH!>match (c) {
+    match (<!NON_EXHAUSTIVE_MATCH!>c<!>) {
         case _: Red => 0
         case _: Green => 1
         case _: Blue => 2
-    }<!>
+    }
 }
 
 main() {

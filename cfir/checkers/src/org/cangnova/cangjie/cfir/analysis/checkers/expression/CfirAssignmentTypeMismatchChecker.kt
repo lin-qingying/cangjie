@@ -8,10 +8,11 @@ import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirAssignment
+import org.cangnova.cangjie.cfir.expressions.CfirAssignmentRhsRootValidity
+import org.cangnova.cangjie.cfir.expressions.CfirAssignmentTypeMismatchPrimaryDiagnostic
+import org.cangnova.cangjie.cfir.expressions.CfirAssignmentTypeMismatchOutcome
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
-import org.cangnova.cangjie.cfir.expressions.CfirSuperReceiverExpression
 import org.cangnova.cangjie.cfir.expressions.CfirSubscriptExpression
-import org.cangnova.cangjie.cfir.expressions.CfirThisReceiverExpression
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.diagnostic.ConeMismatchedTypesMultipleAssignError
 import org.cangnova.cangjie.cfir.types.ConeErrorType
@@ -33,8 +34,9 @@ object CfirAssignmentTypeMismatchChecker : CfirAssignmentChecker() {
     /**
      * 检查赋值右值类型是否能赋给左值类型。
      *
-     * VArray 下标赋值需要在这里按元素类型处理，普通下标赋值仍由 operator set 调用解析负责；
-     * 当 `this` / `super` 接收者参与不兼容赋值时额外报告接收者位置的类型不兼容诊断。
+     * VArray 下标赋值需要在这里按元素类型处理，普通下标赋值仍由 operator set 调用解析负责。
+     * 普通赋值只消费 resolve 阶段写入的 assignment-local mismatch outcome，不再根据 receiver
+     * 或 RHS 语法反推 expected-type 检查后的根有效性。
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirAssignment) {
@@ -62,8 +64,66 @@ object CfirAssignmentTypeMismatchChecker : CfirAssignmentChecker() {
             val receiverType = lValue.receiver.coneTypeOrNull
                 ?.fullyExpandedType(context.session)
             if (receiverType !is ConeVArrayType) return
+            checkVArraySubscriptAssignment(expression, lValue)
+            return
         }
         if (lValue is CfirQualifiedAccessExpression && CfirMutationTargetClassifier.isVArraySizeAccess(lValue)) return
+
+        val outcome = expression.typeMismatchOutcome ?: return
+        reportOrdinaryAssignmentMismatch(expression, outcome)
+    }
+
+    /**
+     * 消费 resolve 固化的普通赋值 mismatch 结果并渲染诊断。
+     */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun reportOrdinaryAssignmentMismatch(
+        expression: CfirAssignment,
+        outcome: CfirAssignmentTypeMismatchOutcome,
+    ) {
+        val rValueSource = expression.rValue.source as? AbstractCjSourceElement ?: return
+        when (val primaryDiagnostic = outcome.primaryDiagnostic) {
+            is CfirAssignmentTypeMismatchPrimaryDiagnostic.CannotConvertLiteral -> {
+                reporter.reportOn(
+                    rValueSource,
+                    CfirErrors.CANNOT_CONVERT_LITERAL,
+                    primaryDiagnostic.literalDescription,
+                    outcome.expectedType,
+                )
+                return
+            }
+
+            CfirAssignmentTypeMismatchPrimaryDiagnostic.TypeMismatch -> Unit
+        }
+
+        if (outcome.rhsRootValidity == CfirAssignmentRhsRootValidity.VALID_AFTER_MISMATCH) {
+            val assignmentSource = expression.source as? AbstractCjSourceElement
+            if (assignmentSource != null) {
+                reporter.reportOn(
+                    assignmentSource.firstCharacterDiagnosticSource(),
+                    CfirErrors.TYPE_INCOMPATIBLE,
+                    "assignment expression",
+                )
+            }
+        }
+
+        reporter.reportOn(
+            rValueSource,
+            CfirErrors.TYPE_MISMATCH,
+            outcome.expectedType,
+            outcome.actualType,
+            false,
+        )
+    }
+
+    /**
+     * VArray 下标赋值不经过普通赋值 outcome，继续按内建元素类型完成独立检查。
+     */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun checkVArraySubscriptAssignment(
+        expression: CfirAssignment,
+        lValue: CfirSubscriptExpression,
+    ) {
 
         val lValueType = lValue.coneTypeOrNull ?: return
         val rValueType = expression.rValue.coneTypeOrNull ?: return
@@ -73,6 +133,7 @@ object CfirAssignmentTypeMismatchChecker : CfirAssignmentChecker() {
             source = rValueSource,
             expectedType = lValueType,
             actualType = rValueType,
+            expression = expression.rValue,
             session = context.session,
         )?.let { diagnostic ->
             reporter.report(diagnostic, context)
@@ -80,35 +141,9 @@ object CfirAssignmentTypeMismatchChecker : CfirAssignmentChecker() {
         }
 
         if (AbstractTypeChecker.isSubtypeOf(context.session.typeContext, rValueType, lValueType) != true) {
-            val receiverSource = (lValue as? CfirQualifiedAccessExpression)
-                ?.explicitReceiver
-                ?.takeIf { receiver ->
-                    receiver is CfirThisReceiverExpression || receiver is CfirSuperReceiverExpression
-                }
-                ?.source as? AbstractCjSourceElement
-            if (receiverSource != null) {
-                reporter.reportOn(
-                    receiverSource.firstCharacterDiagnosticSource(),
-                    CfirErrors.TYPE_INCOMPATIBLE,
-                    "assignment expression",
-                )
-                reporter.reportOn(
-                    rValueSource,
-                    CfirErrors.TYPE_MISMATCH,
-                    lValueType,
-                    rValueType,
-                    false,
-                )
-                return
-            }
-
             reporter.reportOn(
                 rValueSource,
-                if (expression.rValue.isResolvedClassLikeValueReference()) {
-                    CfirErrors.TYPE_MISMATCH
-                } else {
-                    CfirErrors.ASSIGNMENT_TYPE_MISMATCH
-                },
+                CfirErrors.ASSIGNMENT_TYPE_MISMATCH,
                 lValueType,
                 rValueType,
                 false,

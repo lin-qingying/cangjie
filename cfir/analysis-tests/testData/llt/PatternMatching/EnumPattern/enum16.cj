@@ -11,7 +11,7 @@ enum E {
 
 main() {
     let x = E0
-    <!NON_EXHAUSTIVE_MATCH!>match (x) {
+    match (<!NON_EXHAUSTIVE_MATCH!>x<!>) {
         case E0 => 0
-    }<!>
+    }
 }

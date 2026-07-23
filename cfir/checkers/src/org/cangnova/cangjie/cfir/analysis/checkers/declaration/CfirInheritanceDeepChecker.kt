@@ -38,6 +38,7 @@ import org.cangnova.cangjie.cfir.scopes.impl.CfirCompositeTypeScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirExtendMemberScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassSubstitutionScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
+import org.cangnova.cangjie.cfir.scopes.createCallableTypeParameterSubstitutorForOverride
 import org.cangnova.cangjie.cfir.scopes.overrideSignatureKey
 import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
 import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
@@ -1104,7 +1105,13 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         val implementationSymbol = symbol as? CfirFunctionSymbol<*> ?: return null
         val baseSymbol = superInfo.symbol as? CfirFunctionSymbol<*> ?: return null
         val implementationType = implementationSymbol.resolvedReturnTypeOrNull(context) ?: return null
-        val baseType = baseSymbol.resolvedReturnTypeOrNull(context) ?: return null
+        val unsubstitutedBaseType = baseSymbol.resolvedReturnTypeOrNull(context) ?: return null
+        val typeParameterSubstitutor = createCallableTypeParameterSubstitutorForOverride(
+            overriding = implementationSymbol,
+            overridden = baseSymbol,
+            context = context.session.typeContext,
+        ) ?: return null
+        val baseType = typeParameterSubstitutor.substituteOrSelf(unsubstitutedBaseType)
         if (implementationType is ConeErrorType || baseType is ConeErrorType) return null
         if (implementationType.hasGenericReturnTypeInvarianceAgainst(baseType, context)) {
             return FunctionReturnTypeConflict.Invariance(baseType)

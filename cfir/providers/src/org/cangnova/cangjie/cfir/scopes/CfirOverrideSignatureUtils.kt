@@ -29,6 +29,8 @@ import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
+import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
+import org.cangnova.cangjie.cfir.symbols.toLookupTag
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.type.model.TypeConstructorMarker
 
@@ -74,6 +76,38 @@ fun CfirCallableSymbol<*>.overrideSignatureKey(
  */
 fun CfirCallableSymbol<*>.isStaticMemberForOverride(): Boolean =
     isBound && cfir.status.isStatic
+
+/**
+ * 构造 override 关系中 callable 类型参数的 alpha-equivalence 替换器。
+ *
+ * [overridden] 是父成员在当前 use-site scope 中的声明或 substitution copy，
+ * [overriding] 是实现该父成员的子成员。替换方向固定为父成员当前类型参数到
+ * 子成员对应类型参数，使返回类型、约束等后续比较都在子成员的类型参数空间中进行。
+ *
+ * callable 类型参数按声明位置对应；数量不同表示二者不能建立该 override 关系，
+ * 此时返回 `null`，调用方不得采用截断映射或未替换类型继续比较。
+ */
+fun createCallableTypeParameterSubstitutorForOverride(
+    overriding: CfirCallableSymbol<*>,
+    overridden: CfirCallableSymbol<*>,
+    context: ConeTypeContext,
+): ConeSubstitutor? {
+    if (!overriding.isBound || !overridden.isBound) return null
+
+    val overridingTypeParameters = overriding.cfir.typeParameters
+    val overriddenTypeParameters = overridden.cfir.typeParameters
+    if (overridingTypeParameters.size != overriddenTypeParameters.size) return null
+    if (overriddenTypeParameters.isEmpty()) return ConeSubstitutor.Empty
+
+    return createTypeSubstitutorByTypeConstructor(
+        map = overriddenTypeParameters.zip(overridingTypeParameters).associate { (parent, child) ->
+            (parent.symbol.toLookupTag() as TypeConstructorMarker) to
+                ConeTypeParameterTypeImpl(child.symbol.toLookupTag())
+        },
+        context = context,
+        approximateIntegerLiterals = false,
+    )
+}
 
 /**
  * 将 type ref 转换为 override 签名组成部分。

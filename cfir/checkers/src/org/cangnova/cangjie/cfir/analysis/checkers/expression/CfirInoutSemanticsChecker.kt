@@ -6,10 +6,10 @@ import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
-import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirInoutArgumentExpression
+import org.cangnova.cangjie.cfir.expressions.CfirNamedArgumentExpression
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
 import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
@@ -164,11 +164,10 @@ object CfirInoutSemanticsChecker : CfirFunctionCallChecker() {
         }
     }
 
-    /**
-     * 去掉 raw builder 为实参包裹的单表达式 block。
-     */
-    private fun CfirExpression.unwrapArgument(): CfirExpression {
-        return (this as? CfirBlock)?.statements?.singleOrNull() as? CfirExpression ?: this
+    /** 去掉命名实参包装，取得真实的 inout/value 表达式。 */
+    private tailrec fun CfirExpression.unwrapArgument(): CfirExpression = when (this) {
+        is CfirNamedArgumentExpression -> expression.unwrapArgument()
+        else -> this
     }
 
     /**

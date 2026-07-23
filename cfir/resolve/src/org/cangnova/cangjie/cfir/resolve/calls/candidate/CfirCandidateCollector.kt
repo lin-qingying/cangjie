@@ -39,7 +39,7 @@ open class CfirCandidateCollector(
     /**
      * 需要转发的解析诊断。
      */
-    private val forwardedDiagnostics = mutableListOf<ResolutionDiagnostic>()
+    private val forwardedDiagnostics = linkedSetOf<ResolutionDiagnostic>()
     /**
      * 函数名作为值时收集的函数候选。
      */
@@ -119,7 +119,7 @@ open class CfirCandidateCollector(
     /**
      * 返回已转发诊断列表。
      */
-    fun forwardedDiagnostics(): List<ResolutionDiagnostic> = forwardedDiagnostics
+    fun forwardedDiagnostics(): List<ResolutionDiagnostic> = forwardedDiagnostics.toList()
 
     /**
      * 返回当前最佳候选集合。

@@ -19,12 +19,20 @@ interface ConeDiagnostic {
 }
 
 /**
- * 允许错误类型在成员作用域遍历时继续使用 delegated nominal type 的诊断。
+ * 错误类型仍能可靠识别 nominal owner 的诊断。
  *
- * 这不是通用错误恢复标记；只有类型构造器已经解析成功、错误只发生在不影响 nominal
- * owner 的附属信息上时，诊断实现才应声明该能力。
+ * 该标记只表示检查器可以读取 delegated nominal type 来抑制派生诊断，或执行
+ * final class 等独立规则；它不表示错误父类型可以进入继承图或成员作用域。
  */
-interface ConeAllowsDelegatedScopeTraversalDiagnostic : ConeDiagnostic
+interface ConeRecoverableNominalDiagnostic : ConeDiagnostic
+
+/**
+ * classifier 类型使用已经解析到多个同层声明，不能选择任一候选作为声明父类型。
+ *
+ * 该标记位于 cones 公共层，使 providers 能结构化识别父类型 classifier 歧义，
+ * 而不依赖 resolve/semantics 中的具体诊断类，也不解析诊断文本。
+ */
+interface ConeClassifierAmbiguityDiagnostic : ConeDiagnostic
 
 /**
  * 不会被重复上报的诊断包装。
