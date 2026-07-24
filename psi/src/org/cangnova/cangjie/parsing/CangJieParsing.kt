@@ -2742,8 +2742,10 @@ class CangJieParsing private constructor(
      * Grammar:
      * ```
      * propertySetter
-     *   : "set" "(" parameter ")" block
+     *   : "set" "(" identifier ")" block
      *   ;
+     *
+     * setter 参数只需名字，类型由 prop 声明类型决定（对齐官方 PROP_MEMBER_SETTER_BODY）。
      * ```
      *
      * @param detector 修饰符检测器
@@ -2758,6 +2760,7 @@ class CangJieParsing private constructor(
 
         if (at(LPAR)) {
             do {
+                // typeRequired=false：set(v) 合法，不要求 set(v: T)
                 parseValueParameterList(false, VALUE_PARAMETERS_FOLLOW_SET)
             } while (at(LPAR))
         } else {
@@ -3512,7 +3515,7 @@ class CangJieParsing private constructor(
 
         if (at(LPAR)) {
             do {
-                parseValueParameterList()
+                parseValueParameterList(true, VALUE_PARAMETERS_FOLLOW_SET)
             } while (at(LPAR))
         } else {
             errorAndAdvance(
@@ -3617,7 +3620,7 @@ class CangJieParsing private constructor(
         builder.disableJoiningComplexTokens()
         // 类型参数
         if (at(LPAR)) {
-            parseValueParameterList(false, VALUE_PARAMETERS_FOLLOW_SET)
+            parseValueParameterList(true, VALUE_PARAMETERS_FOLLOW_SET)
         } else {
             error(CangJieParsingBundle.message("parsing.error.expecting.symbol", "("))
         }
@@ -3707,7 +3710,7 @@ class CangJieParsing private constructor(
 
         // 参数列表
         if (at(LPAR)) {
-            parseValueParameterList(false, VALUE_PARAMETERS_FOLLOW_SET)
+            parseValueParameterList(true, VALUE_PARAMETERS_FOLLOW_SET)
         } else {
             error(CangJieParsingBundle.message("parsing.error.expecting.symbol", "(")) // 应该为'('
         }
@@ -3953,7 +3956,7 @@ class CangJieParsing private constructor(
 
 
         if (at(LPAR)) {
-            parseValueParameterList(false, VALUE_PARAMETERS_FOLLOW_SET)
+            parseValueParameterList(true, VALUE_PARAMETERS_FOLLOW_SET)
         } else {
             error(CangJieParsingBundle.message("parsing.error.expecting.symbol", "(")) // 应该为'('
         }
@@ -4060,7 +4063,7 @@ class CangJieParsing private constructor(
      */
     context(parseContext: ParsingContext)
     fun parsePrimaryInitFuncValueParameterList() {
-        parseValueParameterList(false, VALUE_PARAMETERS_FOLLOW_SET, true)
+        parseValueParameterList(true, VALUE_PARAMETERS_FOLLOW_SET, true)
     }
 
     /**
@@ -4151,7 +4154,8 @@ class CangJieParsing private constructor(
      */
     context(parseContext: ParsingContext)
     fun parseValueParameterList(
-        typeRequired: Boolean = false,
+        // 默认要求类型；prop set/get 等允许省略类型的场景需显式传 false
+        typeRequired: Boolean = true,
         recoverySet: TokenSet = TokenSet.EMPTY,
         isPrimaryInitFunc: Boolean = false
     ) {
@@ -4538,19 +4542,15 @@ class CangJieParsing private constructor(
 
                 parseTypeRef()
             } else if (typeRequired) {
+                // 普通函数/构造器参数必须写类型；prop set(value) 等场景传 typeRequired=false
+                // 对齐官方 ParseParameter(PROP_MEMBER_SETTER_BODY)：只解析标识符，不要求 `: Type`
                 errorWithRecovery(
                     CangJieParsingBundle.message("parsing.error.parameters.must.have.type.annotation"),
                     PARAMETER_NAME_RECOVERY_SET
                 )
                 noErrors = false
-            } else {
-                errorWithoutAdvancing(
-                    CangJieParsingBundle.message(
-                        "parsing.error.expecting.found", "':'", "Missing type declaration"
-                    )
-                ) // 应该为 ':'
-                noErrors = false
             }
+            // typeRequired=false：允许省略类型（如 prop setter 参数，类型由属性类型注入）
         }
 
         if (at(EQ)) {
