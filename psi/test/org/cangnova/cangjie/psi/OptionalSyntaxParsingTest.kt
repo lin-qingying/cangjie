@@ -105,4 +105,57 @@ class OptionalSyntaxParsingTest : CjParsingTestCase(
             }",
         )
     }
+
+    /**
+     * prop set 参数只需名字，类型由属性类型决定（对齐官方 PROP_MEMBER_SETTER_BODY）。
+     */
+    @Test
+    fun testPropSetterParameterDoesNotRequireType() {
+        val file = createPsiFile(
+            "propSetterNoType",
+            """
+            class C {
+                mut prop value: Int64 {
+                    get() { 0 }
+                    set(v) { }
+                }
+            }
+            """.trimIndent(),
+        ) as CjFile
+
+        val setter = PsiTreeUtil.findChildrenOfType(file, CjPropertyAccessor::class.java)
+            .single { it.isSetter }
+        val parameter = setter.valueParameters.single()
+        assertEquals("v", parameter.name)
+        assertEquals(null, parameter.typeReference)
+
+        val errors = PsiTreeUtil.findChildrenOfType(file, PsiErrorElement::class.java)
+        assertTrue(
+            errors.isEmpty(),
+            "prop setter parameter without type should parse without PsiErrorElement, but got: ${
+                errors.joinToString { it.errorDescription }
+            }",
+        )
+    }
+
+    /**
+     * 普通函数参数仍必须写类型。
+     */
+    @Test
+    fun testFunctionParameterStillRequiresType() {
+        val file = createPsiFile(
+            "functionParamRequiresType",
+            """
+            func sample(x) {}
+            """.trimIndent(),
+        ) as CjFile
+
+        val errors = PsiTreeUtil.findChildrenOfType(file, PsiErrorElement::class.java)
+        assertTrue(
+            errors.any { it.errorDescription.contains("type", ignoreCase = true) },
+            "function parameter without type should report a type-related parse error, but got: ${
+                errors.joinToString { it.errorDescription }
+            }",
+        )
+    }
 }
