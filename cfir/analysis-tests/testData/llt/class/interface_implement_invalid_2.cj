@@ -11,7 +11,7 @@ interface I1 {
 
 abstract class C1 <: I1 {}
 
-<!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>class C2<!> <: I1 {}
+class <!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>C2<!> <: I1 {}
 
 class C3 <: I1 {
     public func <!RETURN_TYPE_INCOMPATIBLE!>foo<!>(): Int64 {

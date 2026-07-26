@@ -147,6 +147,9 @@ object CfirLetConditionPatternChecker : CfirBasicExpressionChecker() {
             reportVariableBindings = false,
             reportKindOnWholePattern = true,
         )
+        val initializerType = expression.initializer.coneTypeOrNull ?: return
+        if (initializerType is ConeErrorType) return
+        CfirMatchPatternLegalityChecker.checkPattern(expression.pattern, initializerType)
     }
 }
 

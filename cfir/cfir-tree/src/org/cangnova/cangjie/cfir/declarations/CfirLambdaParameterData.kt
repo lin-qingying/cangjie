@@ -25,3 +25,14 @@ private object LambdaParameterShapeExpectedFunctionTypeKey : CfirDeclarationData
 
 var CfirAnonymousFunction.lambdaParameterShapeExpectedFunctionType: ConeFunctionType? by
     CfirDeclarationDataRegistry.data(LambdaParameterShapeExpectedFunctionTypeKey)
+
+/**
+ * 当前 lambda 是否位于参数映射已经失败、因而不得继续做实参类型检查的调用参数中。
+ *
+ * 该状态由调用完成写回阶段从结构化 ArgumentMappingOutcome 向整个实参子树传播。
+ * checker 只消费这一语义状态，不从具体诊断名称或错误文本反推调用是否已经终止。
+ */
+private object LambdaInsideFailedArgumentMappingKey : CfirDeclarationDataKey()
+
+var CfirAnonymousFunction.isInsideFailedArgumentMapping: Boolean? by
+    CfirDeclarationDataRegistry.data(LambdaInsideFailedArgumentMappingKey)

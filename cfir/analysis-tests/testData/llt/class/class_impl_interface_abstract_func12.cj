@@ -4,8 +4,8 @@ interface I<T> {
     func foo3():Int64
 }
 
-<!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>class C<T, V><!> <: I<T> & I<V> {} 
-<!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>class D<K><!> <: I<K> {}
+class <!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>C<!><T, V> <: I<T> & I<V> {}
+class <!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>D<!><K> <: I<K> {}
 
 main() {
     return 0

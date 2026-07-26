@@ -58,6 +58,7 @@ object CommonExpressionCheckers : ExpressionCheckers() {
     override val matchExpressionCheckers: Set<CfirMatchExpressionChecker>
         get() = setOf(
             CfirMatchCaseTypeChecker,
+            CfirMatchTargetTypeMismatchChecker,
             CfirMatchPatternLegalityChecker,
             CfirMatchExhaustivenessChecker,
             CfirOrPatternVariableChecker,
@@ -109,7 +110,9 @@ object CommonExpressionCheckers : ExpressionCheckers() {
             CfirImmutableValueCannotAccessMutableFunctionChecker,
             CfirMockApiChecker,
             CfirDeprecatedCallChecker,
-            org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirTrailingLambdaChecker,
+            // trailing closure 是否可用只由参数映射阶段按最终 mapped formal 判定。
+            // 函数值调用同样会进入 CfirMapArguments；这里不能再用 explicitReceiver
+            // 复判，否则普通成员调用会把 dispatch receiver 误当成 closure 目标形参。
             org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirVArrayConstructorArgChecker,
             org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirInoutArgumentChecker,
             org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirApiLevelRefHigherChecker,

@@ -8,9 +8,9 @@ interface I2 <: I1 {}
 
 interface C1 <: I2 {}
 
-<!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>class C2<!> <: I2 {}
+class <!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>C2<!> <: I2 {}
 
-<!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>class C3<!> <: I2 {
+class <!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>C3<!> <: I2 {
     public func foo(a: Int64): Int64 {
         return 0
     }

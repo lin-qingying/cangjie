@@ -652,23 +652,28 @@ open class CfirExpressionsResolveTransformer(
                 }
 
                 components.dataFlowAnalyzer.exitCallExplicitReceiver()
-                if (withResolvedExplicitReceiver.commitNeedNamedArgumentShapeFailure(data)) {
+                if (withResolvedExplicitReceiver.hasErrorExplicitReceiver()) {
                     components.dataFlowAnalyzer.exitCallArguments()
-                    return@whileAnalysing completeFunctionCall(
-                        withResolvedExplicitReceiver,
-                        data,
-                        skipEvenPartialCompletion = false,
-                    )
-                }
+                    withResolvedExplicitReceiver
+                } else {
+                    if (withResolvedExplicitReceiver.commitNeedNamedArgumentShapeFailure(data)) {
+                        components.dataFlowAnalyzer.exitCallArguments()
+                        return@whileAnalysing completeFunctionCall(
+                            withResolvedExplicitReceiver,
+                            data,
+                            skipEvenPartialCompletion = false,
+                        )
+                    }
 
-                val argumentResolutionMode = withResolvedExplicitReceiver.builtinExponentiationArgumentResolutionMode()
-                    ?: ResolutionMode.ContextDependent
-                val transformedArgumentList: CfirArgumentList = context.withCallArgumentResolution {
-                    withResolvedExplicitReceiver.argumentList.transform(transformer, argumentResolutionMode)
+                    val argumentResolutionMode = withResolvedExplicitReceiver.builtinExponentiationArgumentResolutionMode()
+                        ?: ResolutionMode.ContextDependent
+                    val transformedArgumentList: CfirArgumentList = context.withCallArgumentResolution {
+                        withResolvedExplicitReceiver.argumentList.transform(transformer, argumentResolutionMode)
+                    }
+                    withResolvedExplicitReceiver.replaceArgumentList(transformedArgumentList)
+                    components.dataFlowAnalyzer.exitCallArguments()
+                    withResolvedExplicitReceiver
                 }
-                withResolvedExplicitReceiver.replaceArgumentList(transformedArgumentList)
-                components.dataFlowAnalyzer.exitCallArguments()
-                withResolvedExplicitReceiver
             } else {
                 functionCall
             }
@@ -716,6 +721,12 @@ open class CfirExpressionsResolveTransformer(
 
             result
         }
+
+    /**
+     * 显式 receiver 已经是错误类型时，当前调用的参数只会制造级联诊断。
+     */
+    private fun CfirFunctionCall.hasErrorExplicitReceiver(): Boolean =
+        explicitReceiver?.coneTypeOrNull is ConeErrorType
 
     /**
      * 在实参值解析前提交确定的“必须使用命名实参”绑定失败。
@@ -897,6 +908,7 @@ open class CfirExpressionsResolveTransformer(
      */
     private fun CfirExpression.stableBuiltinOperatorOperandTypeOrNull(): ConeCangJieType? {
         coneTypeOrNull?.let { type ->
+            if (type is ConeErrorType) return type
             if (BuiltinPrimitiveOperators.isBuiltinPrimitiveOperand(type)) return type
         }
 
@@ -2169,10 +2181,13 @@ open class CfirExpressionsResolveTransformer(
         val enumType = expectedType?.expandedPatternEnumType(session) ?: return emptyList()
         val enumDeclaration = session.symbolProvider.getClassLikeSymbolByClassId(enumType.classId)?.cfir as? CfirEnum
             ?: return emptyList()
-        val constructorName = pattern.constructorNameOrNull() ?: return emptyList()
+        val constructorAccess = pattern.constructorReference.enumPatternConstructorAccessOrNull() ?: return emptyList()
+        if (!constructorAccess.matchesEnumOwner(enumDeclaration, enumType)) return emptyList()
         val enumConstructor = enumDeclaration.declarations
             .filterIsInstance<CfirEnumConstructor>()
-            .firstOrNull { constructor -> constructor.name == constructorName && constructor.payloadArity() == pattern.arguments.size }
+            .firstOrNull { constructor ->
+                constructor.name == constructorAccess.constructorName && constructor.payloadArity() == pattern.arguments.size
+            }
             ?: return emptyList()
 
         return enumConstructor.substitutedPayloadParameterTypes(enumDeclaration, enumType)
@@ -2189,25 +2204,23 @@ open class CfirExpressionsResolveTransformer(
         expectedType: ConeCangJieType,
     ): List<ConeCangJieType>? {
         val optionArgumentType = expectedType.optionElementType ?: return null
-        val constructorName = pattern.constructorNameOrNull() ?: return null
+        val constructorAccess = pattern.constructorReference.enumPatternConstructorAccessOrNull()
+            ?.takeIf { it.matchesStdlibOptionOwner(expectedType) }
+            ?: return null
         return when {
-            constructorName == optionSomeConstructorName &&
+            constructorAccess.constructorName == optionSomeConstructorName &&
                     pattern.arguments.size == 1 -> listOf(optionArgumentType)
-            constructorName == optionNoneConstructorName &&
+            constructorAccess.constructorName == optionNoneConstructorName &&
                     pattern.arguments.isEmpty() -> emptyList()
-            constructorName == optionSomeConstructorName ||
-                    constructorName == optionNoneConstructorName -> emptyList()
+            constructorAccess.constructorName == optionSomeConstructorName ||
+                    constructorAccess.constructorName == optionNoneConstructorName -> emptyList()
             else -> null
         }
     }
 
     /** 提取 enum pattern 构造器名称。 */
     private fun CfirEnumPattern.constructorNameOrNull(): Name? {
-        return when (val reference = constructorReference) {
-            is CfirResolvedNamedReference -> reference.name
-            is CfirNamedReference -> reference.name
-            else -> null
-        }
+        return constructorReference.enumPatternConstructorAccessOrNull()?.constructorName
     }
 
     /**
@@ -3253,9 +3266,27 @@ open class CfirExpressionsResolveTransformer(
     ): CfirExpression {
         stringInterpolation.transformChildren(transformer, ResolutionMode.ContextIndependent)
         stringInterpolation.addStringInterpolationToStringConstraints()
-        stringInterpolation.replaceConeTypeOrNull(stdlibStringType())
+        val stringType = stdlibStringType()
+        val partErrorType = stringInterpolation.parts.firstNotNullOfOrNull { part ->
+            part.coneTypeOrNull?.propagatedErrorTypeOrNull()
+        }
+        stringInterpolation.replaceConeTypeOrNull(
+            partErrorType?.withStringInterpolationDelegatedType(stringType) ?: stringType
+        )
         return stringInterpolation
     }
+
+    /**
+     * 插值字符串的局部错误应让整个表达式成为错误类型，同时保留 String 的近似结果类型。
+     */
+    private fun ConeErrorType.withStringInterpolationDelegatedType(stringType: ConeCangJieType): ConeErrorType =
+        ConeErrorType(
+            diagnostic,
+            isUninferredParameter = isUninferredParameter,
+            delegatedType = stringType,
+            typeArguments = typeArguments,
+            attributes = attributes,
+        )
 
     /** 为字符串插值中的表达式部分添加 `expr <: ToString` 约束。 */
     private fun CfirStringInterpolation.addStringInterpolationToStringConstraints() {
@@ -3366,7 +3397,7 @@ open class CfirExpressionsResolveTransformer(
             -> {
                 binaryOp.transformChildren(transformer, ResolutionMode.ContextIndependent)
                 binaryOp.applyLogicalOperatorOperandConstraints()
-                builtinTypes.boolType
+                binaryOp.resolveLogicalOperatorType()
             }
 
             CfirBinaryOpKind.COALESCING -> transformCoalescingExpression(binaryOp, data)
@@ -3378,6 +3409,44 @@ open class CfirExpressionsResolveTransformer(
         binaryOp.replaceConeTypeOrNull(resultType)
         return binaryOp
     }
+
+    /**
+     * `&&` / `||` 是不可重载的二元逻辑运算；左右操作数必须都是 Bool。
+     *
+     * 非法逻辑表达式仍挂在二元表达式根节点上，后续 error collector 会通过统一的
+     * `ConeUnresolvedNameError` -> `INVALID_BINARY_OPERATOR` 映射报告操作符诊断。
+     */
+    private fun CfirBinaryOp.resolveLogicalOperatorType(): ConeCangJieType {
+        val leftType = left.coneTypeOrNull ?: return builtinTypes.boolType
+        val rightType = right.coneTypeOrNull ?: return builtinTypes.boolType
+
+        (leftType.propagatedErrorTypeOrNull() ?: rightType.propagatedErrorTypeOrNull())?.let { errorType ->
+            return errorType
+        }
+
+        val operatorName = logicalOperatorName()
+        CfirBuiltinOperatorResolver.tryResolveBuiltinOperator(
+            operatorName,
+            leftType,
+            listOf(rightType),
+        )?.let { return it.returnType }
+
+        val diagnostic = ConeUnresolvedNameError(
+            operatorName,
+            OperatorNameConventions.TOKENS_BY_OPERATOR_NAME.getValue(operatorName),
+            left.invalidBinaryOperatorOperandType(leftType),
+            listOf(right.invalidBinaryOperatorOperandType(rightType)),
+        )
+        return ConeErrorType(diagnostic, delegatedType = builtinTypes.boolType)
+    }
+
+    /** 将 CFIR logical binary kind 映射到内部操作符名称。 */
+    private fun CfirBinaryOp.logicalOperatorName(): Name =
+        when (kind) {
+            CfirBinaryOpKind.AND -> OperatorNameConventions.ANDAND
+            CfirBinaryOpKind.OR -> OperatorNameConventions.OROR
+            else -> error("Expected logical binary operation, got $kind")
+        }
 
     /**
      * `&&` / `||` 的 primitive 语义要求左右 operand 都是 Bool。

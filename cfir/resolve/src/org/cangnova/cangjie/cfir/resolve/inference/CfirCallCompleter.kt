@@ -172,10 +172,21 @@ class CfirCallCompleter(
         }
 
         /*
-         * 不适用候选只用于承载失败诊断，不能经过 completion 被写成 resolved reference。
-         * 但调用结果必须先成为错误类型，使外围类型检查和成员解析识别这是既有错误的级联。
+         * error reference 的完成策略由结构化参数映射结果决定：
+         * - mapping failure 不运行约束完成，只经过 error-call writer 保留根错误并标记
+         *   实参不可检查；
+         * - mapping 尚未完成的错误候选没有可靠目标形状，维持早退；
+         * - mapping 成功的错误候选仍拥有完整 formal/argument 对应关系，必须继续完成
+         *   postponed lambda 和 body。writer 会保留原 error reference，因此外层参数形状
+         *   TYPE_MISMATCH 不会被完成结果覆盖，内层 lambda 同时可以获得 mapped expected type。
          */
-        if (reference.isError) return call
+        if (reference.isError) {
+            when (candidate.argumentMappingOutcome?.hasMappingFailure) {
+                true -> return call.transformSingle(createCompletionResultsWriter(ConeSubstitutor.Empty), null)
+                null -> return call
+                false -> Unit
+            }
+        }
 
         session.lookupTracker?.recordTypeResolveAsLookup(initialType, call.source, components.context.file.source)
         if (candidate.shouldKeepNoArgEnumConstructorForBareGenericDiagnostic(initialType)) {

@@ -5,7 +5,6 @@ import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
-import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.arrayElementType
@@ -22,22 +21,11 @@ import org.cangnova.cangjie.name.OperatorNameConventions
 internal fun Candidate.cangjieVariadicParameterForMapping(
     parameters: List<CfirValueParameter> = declaredParametersForMapping(),
 ): CfirValueParameter? {
-    // synthetic common-invoke 的参数来自函数值类型，不是声明上的普通 Array 形参；
+    // callable value 的参数来自函数值类型，不是声明上的普通 Array 形参；
     // 函数值 arity 必须严格匹配，不能把最后一个 Array 参数重新解释成 variadic。
-    if (callInfo.candidateForCommonInvokeReceiver != null) return null
+    if (isCallableValueCall) return null
     val declaration = symbol.takeIf { it.isBound }?.cfir as? CfirDeclaration
     return parameters.cangjieVariadicParameterOrNull(declaration)
-}
-
-/** 函数类型 receiver 的 synthetic `invoke` 使用严格函数 arity，不参与声明形状 variadic。 */
-internal fun Candidate.isSyntheticFunctionTypeInvoke(): Boolean {
-    val function = symbol.takeIf { it.isBound }?.cfir as? CfirNamedFunction ?: return false
-    if (function.origin != org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin.Synthetic.FakeFunction) {
-        return false
-    }
-    if (callInfo.name != OperatorNameConventions.INVOKE) return false
-    return dispatchReceiverExpression()?.coneTypeOrNull?.fullyExpandedType(callInfo.session) is
-            org.cangnova.cangjie.cfir.types.ConeFunctionType
 }
 
 /**

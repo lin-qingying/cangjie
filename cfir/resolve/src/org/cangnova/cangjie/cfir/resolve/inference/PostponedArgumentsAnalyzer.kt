@@ -40,6 +40,9 @@ import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.types.asCone
+import org.cangnova.cangjie.cfir.types.commonSuperTypeOrNull
+import org.cangnova.cangjie.cfir.types.typeContext
+import org.cangnova.cangjie.resolve.calls.inference.addSubtypeConstraintIfCompatible
 import org.cangnova.cangjie.resolve.calls.inference.isSubtypeConstraintCompatible
 import org.cangnova.cangjie.resolve.calls.inference.ConstraintSystemBuilder
 import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintStorage
@@ -457,8 +460,78 @@ class PostponedArgumentsAnalyzer(
             )
         }
 
+        checkLambdaValueCompatibilityAfterBody(
+            csImpl = csImpl,
+            atom = atom,
+            candidate = candidate,
+            checkerSink = checkerSink,
+            returnAtoms = returnAtoms,
+            hasExpressionInReturnArguments = hasExpressionInReturnArguments,
+        )
+
         atom.analyzed = true
         atom.returnStatements = returnAtoms
+    }
+
+    /**
+     * lambda 没有函数型 expected type 时，在 body 分析后按自身参数和真实返回值合成函数类型。
+     *
+     * 该时点晚于返回表达式解析、早于候选完成写回，既能避免 fresh return variable 掩盖
+     * 根 classifier 不兼容，也能把失败保留为普通 [ArgumentTypeMismatch]，供候选选择和
+     * 错误引用写回共同消费。
+     */
+    private fun checkLambdaValueCompatibilityAfterBody(
+        csImpl: ConstraintSystemImpl,
+        atom: ConeResolvedLambdaAtom,
+        candidate: Candidate,
+        checkerSink: CheckerSinkImpl,
+        returnAtoms: Collection<ConeResolutionAtom>,
+        hasExpressionInReturnArguments: Boolean,
+    ) {
+        val declaredExpectedType = atom.expectedType ?: return
+        val builder = csImpl.getBuilder()
+        if (builder.hasContradiction) return
+        if (candidate.diagnostics.any { diagnostic ->
+            diagnostic is ArgumentTypeMismatch && diagnostic.argument === atom.expression
+        }) return
+
+        val currentSubstitutor = csImpl.buildCurrentSubstitutor()
+        fun substitute(type: ConeCangJieType): ConeCangJieType =
+            currentSubstitutor.safeSubstitute(csImpl, type).asCone()
+
+        val expectedType = substitute(declaredExpectedType)
+        if (expectedType is ConeErrorType) return
+        if (expectedType.fullyExpandedType(components.session) is ConeFunctionType) return
+
+        val expressionReturnTypes = returnAtoms.asSequence()
+            .filterNot { returnAtom -> returnAtom.expression.isImplicitUnitForEmptyLambda() }
+            .mapNotNull { returnAtom -> returnAtom.expression.coneTypeOrNull }
+            .map(::substitute)
+            .toList()
+        val actualReturnType = when {
+            !hasExpressionInReturnArguments -> components.session.builtinTypes.unitType
+            expressionReturnTypes.isNotEmpty() ->
+                components.session.typeContext.commonSuperTypeOrNull(expressionReturnTypes)
+                    ?: substitute(atom.returnType)
+            else -> substitute(atom.returnType)
+        }
+        val actualLambdaType = ConeFunctionType(
+            parameterTypes = atom.parameterTypes.map(::substitute),
+            returnType = actualReturnType,
+        )
+        val position = ConeArgumentConstraintPosition(atom.expression)
+        if (builder.addSubtypeConstraintIfCompatible(actualLambdaType, expectedType, position)) return
+
+        checkerSink.reportDiagnostic(
+            ArgumentTypeMismatch(
+                expectedType = expectedType,
+                actualType = actualLambdaType,
+                argument = atom.expression,
+                isMismatchDueToNullability = false,
+                anonymousFunctionIfReturnExpression = null,
+                systemHadContradiction = false,
+            )
+        )
     }
 
     /**

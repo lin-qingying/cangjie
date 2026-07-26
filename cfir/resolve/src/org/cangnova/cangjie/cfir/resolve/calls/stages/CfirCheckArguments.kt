@@ -62,6 +62,10 @@ object CfirCheckArguments : ResolutionStage() {
     context(sink: CheckerSink, context: ResolutionContext)
     override suspend fun check(candidate: Candidate) {
         if (!candidate.argumentMappingInitialized) return
+        // 参数映射失败已经终结当前候选的实参语义。fullyProcessCandidate 会为了
+        // 错误引用写回继续运行剩余 stage，因此这里必须消费结构化 outcome，不能
+        // 再让 partial mapping 或未映射实参进入类型检查和约束系统。
+        if (candidate.argumentMappingOutcome?.hasMappingFailure == true) return
 
         val contextArgumentsOfInvoke = candidate.expectedContextParameterCountForInvoke ?: 0
         val argumentMapping = candidate.argumentMapping

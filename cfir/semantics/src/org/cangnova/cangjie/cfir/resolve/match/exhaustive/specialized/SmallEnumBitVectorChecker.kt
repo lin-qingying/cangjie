@@ -25,10 +25,10 @@
 package org.cangnova.cangjie.cfir.resolve.match.exhaustive.specialized
 
 import org.cangnova.cangjie.cfir.declarations.expandedPatternEnumType
+import org.cangnova.cangjie.cfir.resolve.match.CfirConstructor
 import org.cangnova.cangjie.cfir.resolve.match.CfirMatchPattern
 import org.cangnova.cangjie.cfir.resolve.match.CfirMatchPatternKind
 import org.cangnova.cangjie.cfir.resolve.match.CfirMatrix
-import org.cangnova.cangjie.cfir.resolve.match.collectEnumConstructorNames
 import org.cangnova.cangjie.cfir.resolve.match.isNonExhaustiveEnum
 import org.cangnova.cangjie.cfir.resolve.match.exhaustive.CheckSource
 import org.cangnova.cangjie.cfir.resolve.match.exhaustive.ExhaustivenessChecker
@@ -59,7 +59,8 @@ class SmallEnumBitVectorChecker : ExhaustivenessChecker {
     ): Boolean {
         val enumType = type.expandedPatternEnumType(context.session) ?: return false
         if (enumType.isNonExhaustiveEnum(context.session)) return false
-        val variantCount = collectEnumConstructorNames(enumType, context).size
+        val variantCount = CfirConstructor.allConstructors(enumType, context.session)
+            .count { it is CfirConstructor.Enum }
         return variantCount in 1..maxVariants
     }
 
@@ -70,11 +71,12 @@ class SmallEnumBitVectorChecker : ExhaustivenessChecker {
         context: MatchExhaustivenessContext,
     ): ExhaustivenessResult {
         val enumType = type.expandedPatternEnumType(context.session) ?: return ExhaustivenessResult.Skipped
-        val variants = collectEnumConstructorNames(enumType, context)
+        val variants = CfirConstructor.allConstructors(enumType, context.session)
+            .filterIsInstance<CfirConstructor.Enum>()
         val variantCount = variants.size
         if (variantCount == 0 || variantCount > maxVariants) return ExhaustivenessResult.Skipped
 
-        val indexByVariant = variants.withIndex().associate { (index, name) -> name to index }
+        val indexByVariant = variants.withIndex().associate { (index, variant) -> variant to index }
         val allMask = (1L shl variantCount) - 1
         var covered = 0L
 
@@ -83,10 +85,13 @@ class SmallEnumBitVectorChecker : ExhaustivenessChecker {
             when (val kind = pattern.kind) {
                 CfirMatchPatternKind.Wild, is CfirMatchPatternKind.Binding -> covered = allMask
                 is CfirMatchPatternKind.Enum -> {
-                    if (kind.enumClassId == enumType.classId) {
-                        val index = indexByVariant[kind.entryName]
-                        if (index != null) covered = covered or (1L shl index)
-                    }
+                    val constructor = CfirConstructor.Enum(
+                        enumClassId = kind.enumClassId,
+                        entryName = kind.entryName,
+                        arityHint = kind.subPatterns.size,
+                    )
+                    val index = indexByVariant[constructor]
+                    if (index != null) covered = covered or (1L shl index)
                 }
 
                 else -> Unit
@@ -99,10 +104,13 @@ class SmallEnumBitVectorChecker : ExhaustivenessChecker {
         } else {
             val missing = variants.filterIndexed { index, _ ->
                 (covered and (1L shl index)) == 0L
-            }.map { missingEntry ->
+            }.map { missingConstructor ->
+                val subPatterns = missingConstructor.subTypes(enumType).map { subType ->
+                    CfirMatchPattern.wild(subType)
+                }
                 CfirMatchPattern(
                     enumType,
-                    CfirMatchPatternKind.Enum(enumType.classId, missingEntry, emptyList()),
+                    CfirMatchPatternKind.Enum(enumType.classId, missingConstructor.entryName, subPatterns),
                     null,
                 )
             }

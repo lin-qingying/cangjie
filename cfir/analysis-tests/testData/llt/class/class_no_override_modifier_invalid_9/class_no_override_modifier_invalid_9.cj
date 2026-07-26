@@ -21,7 +21,7 @@ interface B<T> {
     }
 }
 
-<!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>class D<T><!> <: A<T> & B<T> {}
+class <!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>D<!><T> <: A<T> & B<T> {}
 
 main() {
     return 1

@@ -501,8 +501,11 @@ private fun createPropertyBodyStub(
 /**
  * 创建单个 property accessor stub。
  *
- * getter 没有参数列表；setter 会补一个未带类型的默认 `value` 参数，
- * 与反编译文本中的 `set(value)` 输出保持一致。
+ * 必须与反编译文本 reparse 后的 AST stubbable 节点一一对应：
+ * - getter：空 VALUE_PARAMETER_LIST（对齐 `get()` / 函数空参列表）
+ * - setter：无类型 `value` 参数 + 空 ANNOTATIONS（对齐 parseValueParameter 始终生成 ANNOTATIONS）
+ *
+ * 否则 `std.core.cjo` 等大体量文件会在 calcStubTree reconcile 时失败。
  */
 private fun createPropertyAccessorStub(
     parent: StubElement<*>,
@@ -516,12 +519,15 @@ private fun createPropertyAccessorStub(
         hasBlockBody = true,
     )
     if (isGetter) {
-        return
+        // 对齐 createCallableParameterListStub(..., createEmptyList = true) 与 parsePropertyGet
+        context.typeStubBuilder.createEmptyParameterListStub(accessorStub)
     } else {
+        // includeAnnotations=true：parser 对 value parameter 始终生成空 ANNOTATIONS 节点
+        // （见 parseValueParameter + parseAnnotations），必须与 reparse 的 AST 对齐
         context.typeStubBuilder.createSimpleParameterListStub(
             parent = accessorStub,
             parameterNames = listOf(PROPERTY_SETTER_PARAMETER_NAME),
-            includeAnnotations = false,
+            includeAnnotations = true,
         )
     }
 }

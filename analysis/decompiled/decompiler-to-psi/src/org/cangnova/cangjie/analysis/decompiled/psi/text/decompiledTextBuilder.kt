@@ -34,6 +34,7 @@ import org.cangnova.cangjie.psi.stubs.CangJieImportDirectiveStub
 import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 import org.cangnova.cangjie.psi.stubs.elements.CjTokenSets.FILE_DECLARATION_TYPES
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.name.OperatorNameConventions
 import org.cangnova.cangjie.name.OperatorNameConventions.asOperatorString
 import org.cangnova.cangjie.psi.stubs.impl.CangJieFileStubImpl
 
@@ -126,17 +127,25 @@ internal fun buildDecompiledText(fileStub: CangJieFileStubImpl): String = Pretty
         }
 
         override fun visitExtend(extend: CjExtend) {
-            renderTypeStatement(extend)
+            // extend 的目标是类型位置，不能对 Unit/Int64 等类型关键字做 renderIdentifier（会包 ``）
+            renderTypeStatement(
+                typeStatement = extend,
+                nameText = extend.receiverTypeReceiver?.getTypeText()?.takeIf(String::isNotBlank)
+                    ?: extend.name,
+            )
         }
 
         override fun visitEnum(cenum: CjEnum) {
             renderTypeStatement(cenum)
         }
 
-        private fun renderTypeStatement(typeStatement: CjTypeStatement) {
+        private fun renderTypeStatement(
+            typeStatement: CjTypeStatement,
+            nameText: String? = typeStatement.name?.let(::renderIdentifier),
+        ) {
             withSuffix(" ") { typeStatement.modifierList?.accept(this) }
             append(typeStatement.typeName)
-            withPrefix(" ") { typeStatement.name?.let(::renderIdentifier)?.let(::append) }
+            withPrefix(" ") { nameText?.takeIf(String::isNotBlank)?.let(::append) }
             typeStatement.typeParameterList?.accept(this)
 
             val superTypes = buildList {
@@ -212,8 +221,12 @@ internal fun buildDecompiledText(fileStub: CangJieFileStubImpl): String = Pretty
             }
             append("func ")
             append(function.name?.let { name ->
-                if (function.hasModifier(CjTokens.OPERATOR_KEYWORD)) {
-                    Name.identifier(name).asOperatorString()
+                val nameId = Name.identifier(name)
+                // operator 修饰符或内部 *operator_* 名都应还原为源码操作符文本
+                if (function.hasModifier(CjTokens.OPERATOR_KEYWORD) ||
+                    nameId in OperatorNameConventions.TOKENS_BY_OPERATOR_NAME
+                ) {
+                    nameId.asOperatorString()
                 } else {
                     renderIdentifier(name)
                 }

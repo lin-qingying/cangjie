@@ -4,10 +4,8 @@ import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirEnum
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
-import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameterRefsOwner
 import org.cangnova.cangjie.cfir.declarations.expandedPatternEnumType
-import org.cangnova.cangjie.cfir.declarations.matchSubjectValueDomainData
 import org.cangnova.cangjie.cfir.declarations.substitutedPayloadParameterTypes
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
@@ -79,15 +77,12 @@ object CfirMatchUnreachablePatternChecker : CfirMatchExpressionChecker() {
             expression.exhaustiveness !is CfirMatchExhaustivenessStatus.NonExhaustive &&
                 !subjectType.containsNonExhaustiveEnum(matchContext)
         val knownConstructor = if (!valueDomainAvailable) null else {
+            /*
+             * 官方 Sema reachability 只消费 selector 类型和已类型检查 pattern 矩阵。
+             * 函数级 initializer enum-tag 属于后续 CHIR DCE 信息，不能在这里收窄
+             * `match (local)` 的候选构造器，否则会把仍然合法的 Sema pattern 判成不可达。
+             */
             expression.subject?.knownEnumConstructorOrNull(subjectType, context)
-                ?: context.containingDeclarations
-                    .asReversed()
-                    .filterIsInstance<CfirFunction>()
-                    .firstOrNull()
-                    ?.matchSubjectValueDomainData
-                    ?.enumConstructorTags
-                    ?.get(expression)
-                    ?.toKnownEnumConstructor(context)
         }
         val knownSubjectRows = if (!valueDomainAvailable) null else {
             expression.subject?.knownSubjectRowsOrNull(subjectType, matchContext)

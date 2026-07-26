@@ -17,7 +17,7 @@ interface I3 <: I1 {
     }
 }
 
-<!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>class C1<!> <: I2 & I3 {}
+class <!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>C1<!> <: I2 & I3 {}
 
 main(): Int64 {
     return 0

@@ -34,6 +34,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirNamedAccessExpression
 import org.cangnova.cangjie.cfir.resolve.CfirSamResolver
 import org.cangnova.cangjie.cfir.resolve.CfirLocalLambdaInitializerInferenceReference
+import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.resolve.calls.CallableReferenceAdaptation
 import org.cangnova.cangjie.cfir.resolve.calls.ArgumentMappingOutcome
 import org.cangnova.cangjie.cfir.resolve.calls.ConePostponedResolvedAtom
@@ -54,6 +55,7 @@ import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.impl.ResolvedImplicitTypeRef
 import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.name.OperatorNameConventions
 import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintStorage
 import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintSystemError
 import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintSystemImpl
@@ -688,6 +690,26 @@ class Candidate(
     private var cachedSyntheticCallableValueParameters: List<CfirValueParameter>? = null
     /** 当前函数值调用为 fresh lambda 形参临时构造的函数类型形状。 */
     private var callableValueInvokeFunctionShape: ConeFunctionType? = null
+
+    /**
+     * 当前候选是否表示函数值调用，而不是直接调用一个函数声明。
+     *
+     * common invoke、函数类型 receiver 的 synthetic invoke，以及直接以变量符号承载的
+     * callable value 都共享严格 arity 和普通位置实参语义。参数数量判断、变参识别和
+     * trailing closure 映射必须统一消费这一结构属性，不能各自按候选来源局部推断。
+     */
+    val isCallableValueCall: Boolean
+        get() = callInfo.candidateForCommonInvokeReceiver != null ||
+                isSyntheticFunctionTypeInvoke() ||
+                symbol.takeIf { it.isBound }?.cfir is CfirVariable
+
+    /** 函数类型 receiver 上合成的 `invoke` 候选。 */
+    private fun isSyntheticFunctionTypeInvoke(): Boolean {
+        val function = symbol.takeIf { it.isBound }?.cfir as? CfirNamedFunction ?: return false
+        if (function.origin != CfirDeclarationOrigin.Synthetic.FakeFunction) return false
+        if (callInfo.name != OperatorNameConventions.INVOKE) return false
+        return dispatchReceiverExpression()?.coneTypeOrNull?.fullyExpandedType(callInfo.session) is ConeFunctionType
+    }
 
     /**
      * 记录函数值调用语法反推出的函数类型形状。

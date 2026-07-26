@@ -8,7 +8,7 @@ interface I2 <: I1 {
     func a(): Int32
 }
 
-<!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>class A<!> <: I1 & I2 {
+class <!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>A<!> <: I1 & I2 {
     public func a(): Int32 {
         1
     }

@@ -772,8 +772,13 @@ class CfirCallResolver(
                 callSite = callSite,
                 resolutionMode = resolutionMode,
             )
-            if (enumResult.candidates.isNotEmpty()) {
-                result = enumResult
+            val enumValueCandidates = enumResult.candidates.filter { candidate ->
+                (candidate.symbol.takeIf { it.isBound }?.cfir as? CfirEnumConstructor)
+                    ?.valueParameters
+                    ?.isEmpty() == true
+            }
+            if (enumValueCandidates.isNotEmpty()) {
+                result = enumResult.withCandidates(enumValueCandidates)
             } else if (result.candidates.isEmpty()) {
                 val newResult = collectCandidates(
                     qualifiedAccess = transformedAccess,
@@ -2182,7 +2187,7 @@ class CfirCallResolver(
         val hasInvalidTypeParameterUpperBoundReceiver =
             explicitReceiver?.coneTypeOrNull?.isTypeParameterWithInvalidDeclaredUpperBounds(session) == true
         val memberLookupDominatingDiagnostic = if (candidates.isEmpty()) {
-            explicitReceiver?.recoverableNominalRootDiagnosticOrNull()
+            explicitReceiver?.receiverErrorRootDiagnosticOrNull()
                 ?: forwardedDiagnostics.memberLookupDominatingDiagnostic(callInfo, source)
         } else {
             null
@@ -2393,19 +2398,16 @@ class CfirCallResolver(
     }
 
     /**
-     * 直接 wrong-arity receiver 已经拥有主类型诊断时，selector 的空候选只是级联。
+     * receiver 已经拥有错误类型时，selector 的空候选只是该根错误的级联。
      */
-    private fun CfirExpression.recoverableNominalRootDiagnosticOrNull(): ConeDiagnostic? {
+    private fun CfirExpression.receiverErrorRootDiagnosticOrNull(): ConeDiagnostic? {
         val diagnostic = (coneTypeOrNull as? ConeErrorType)?.diagnostic ?: return null
-        return diagnostic.recoverableNominalRootDiagnosticOrNull()
+        return diagnostic.unwrapUnreportedDuplicateDiagnostic()
     }
 
-    /** 递归展开不重复上报包装，保留 recoverable nominal 根诊断。 */
-    private tailrec fun ConeDiagnostic.recoverableNominalRootDiagnosticOrNull(): ConeDiagnostic? = when (this) {
-        is ConeRecoverableNominalDiagnostic -> this
-        is ConeUnreportedDuplicateDiagnostic -> original.recoverableNominalRootDiagnosticOrNull()
-        else -> null
-    }
+    /** 递归展开不重复上报包装，保留真正的根诊断。 */
+    private tailrec fun ConeDiagnostic.unwrapUnreportedDuplicateDiagnostic(): ConeDiagnostic =
+        if (this is ConeUnreportedDuplicateDiagnostic) original.unwrapUnreportedDuplicateDiagnostic() else this
 
     /**
      * 选择同文件中位于访问之后的声明父类型 blocker。
@@ -3548,11 +3550,15 @@ class CfirCallResolver(
         name: Name,
     ): CfirClassLikeSymbol<*>? {
         val unwrappedReceiver = receiver.unwrapSmartcastExpression()
-        val staticScope = unwrappedReceiver.qualifierScopeOrNull(session, components.scopeSession) ?: return null
         var result: CfirClassLikeSymbol<*>? = null
-        staticScope.processClassifiersByName(name) { classifier ->
-            if (result == null) {
-                result = classifier
+        sequenceOf(
+            unwrappedReceiver.importedPackageQualifierScopeOrNull(components.file, session),
+            unwrappedReceiver.qualifierScopeOrNull(session, components.scopeSession),
+        ).filterNotNull().forEach { scope ->
+            scope.processClassifiersByName(name) { classifier ->
+                if (result == null) {
+                    result = classifier
+                }
             }
         }
         return result
@@ -3576,6 +3582,12 @@ class CfirCallResolver(
         }
         return result ?: ConeSubstitutor.Empty
     }
+
+    /**
+     * 保留候选收集阶段算出的适用性与诊断，只替换 enum 值访问可消费的候选集合。
+     */
+    private fun ResolutionResult.withCandidates(candidates: Collection<Candidate>): ResolutionResult =
+        copy(candidates = candidates)
 
     /** 判断 classifier 是否能作为表达式出现；type parameter 只允许在 receiver 语境中使用。 */
     private fun CfirClassifierSymbol<*>.isValidClassifierExpression(isUsedAsReceiver: Boolean): Boolean =

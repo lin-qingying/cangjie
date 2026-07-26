@@ -11,7 +11,7 @@ public abstract class B <: A {
     }
 }
 
-public <!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>class C<!> <: B {
+public class <!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>C<!> <: B {
     public func c(): Int64 {
         3
     }

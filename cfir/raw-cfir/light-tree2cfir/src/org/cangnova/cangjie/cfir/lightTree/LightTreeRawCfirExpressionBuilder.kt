@@ -558,7 +558,7 @@ class LightTreeRawCfirExpressionBuilder(
           var effectiveCalleeNode = calleeNode
           val effectiveArgNodes = argNodes.toMutableList()
           val effectiveTypeArgNodes = typeArgNodes.toMutableList()
-          var effectiveCallSourceNode = node
+          var callSourceNodeWithoutTrailingLambda: LighterASTNode? = null
           var effectiveValueArgumentListNode = valueArgumentListNode
 
           /**
@@ -572,12 +572,14 @@ class LightTreeRawCfirExpressionBuilder(
            * 扁平化成同一个 function call，避免后续把 `f(1)` 错当成 callee 名称。
            */
           if (lambdaArgNodes.isNotEmpty() && argNodes.isEmpty() && calleeNode?.tokenType == CjNodeTypes.CALL_EXPRESSION) {
+              val nestedCallNode = calleeNode!!
               var nestedCalleeNode: LighterASTNode? = null
               val nestedArgNodes = mutableListOf<LighterASTNode>()
               val nestedTypeArgNodes = mutableListOf<LighterASTNode>()
               var nestedValueArgumentListNode: LighterASTNode? = null
+              var nestedHasTypeArgumentList = false
 
-              tree.forEachChildren(calleeNode!!) { child ->
+              tree.forEachChildren(nestedCallNode) { child ->
                   when (child.tokenType) {
                       CjNodeTypes.VALUE_ARGUMENT_LIST -> {
                           nestedValueArgumentListNode = child
@@ -589,6 +591,7 @@ class LightTreeRawCfirExpressionBuilder(
                       }
 
                       CjNodeTypes.TYPE_ARGUMENT_LIST -> {
+                          nestedHasTypeArgumentList = true
                           tree.forEachChildren(child) { typeArg ->
                               if (typeArg.tokenType == CjNodeTypes.TYPE_PROJECTION) {
                                   val typeRef = tree.findChildByType(typeArg, CjNodeTypes.TYPE_REFERENCE)
@@ -605,13 +608,24 @@ class LightTreeRawCfirExpressionBuilder(
                   }
               }
 
-              effectiveCalleeNode = nestedCalleeNode
-              effectiveCallSourceNode = calleeNode!!
-              effectiveValueArgumentListNode = nestedValueArgumentListNode
-              effectiveArgNodes.clear()
-              effectiveArgNodes.addAll(nestedArgNodes)
-              effectiveTypeArgNodes.clear()
-              effectiveTypeArgNodes.addAll(nestedTypeArgNodes)
+              // `x { ... }` 也可能被 parser 包成退化的 inner CALL_EXPRESSION。
+              // 该包装只提供 callee 身份，不拥有调用后缀，不能成为调用 source 的 owner。
+              if (nestedCalleeNode != null) {
+                  effectiveCalleeNode = nestedCalleeNode
+              }
+
+              val nestedOwnsCallSuffix = nestedValueArgumentListNode != null || nestedHasTypeArgumentList
+              if (nestedOwnsCallSuffix) {
+                  effectiveValueArgumentListNode = nestedValueArgumentListNode
+                  effectiveArgNodes.clear()
+                  effectiveArgNodes.addAll(nestedArgNodes)
+                  effectiveTypeArgNodes.clear()
+                  effectiveTypeArgNodes.addAll(nestedTypeArgNodes)
+
+                  // inner call 已经精确覆盖普通调用后缀；其 source 天然不包含外层尾随 lambda。
+                  // 不得再用外层 lambda 的 offset 重写这个内层节点的 source。
+                  callSourceNodeWithoutTrailingLambda = nestedCallNode
+              }
           }
 
           val directTypeArgs = effectiveTypeArgNodes.map { typeRefNode ->
@@ -644,7 +658,8 @@ class LightTreeRawCfirExpressionBuilder(
           callArguments.addAll(lambdaArgs)
 
           val (receiver, reference) = resolveCalleeReference(effectiveCalleeNode)
-          val callSource = effectiveCallSourceNode.callSourceWithoutTrailingLambda(lambdaArgNodes)
+          val callSource = callSourceNodeWithoutTrailingLambda?.toSource()
+              ?: node.callSourceWithoutTrailingLambda(lambdaArgNodes)
 
           if (!hasValueArgumentList && lambdaArgs.isEmpty() && typeArgs.isNotEmpty()) {
               return buildNamedAccessExpression {
@@ -680,7 +695,12 @@ class LightTreeRawCfirExpressionBuilder(
         val callSource = toSource()
         val firstLambda = lambdaArgNodes.firstOrNull() ?: return callSource
         val startOffset = callSource.startOffset
+        val callEndOffset = callSource.endOffset
         var endOffset = tree.getStartOffset(firstLambda)
+
+        check(endOffset in startOffset..callEndOffset) {
+            "Trailing lambda must be a suffix of its call source owner: call=[$startOffset, $callEndOffset], lambda=$endOffset"
+        }
 
         while (endOffset > startOffset && endOffset - 1 < source.length && source[endOffset - 1].isWhitespace()) {
             endOffset--

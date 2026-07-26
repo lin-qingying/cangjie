@@ -10,6 +10,7 @@ import org.cangnova.cangjie.lang.CangJieFileType
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.name.OperatorNameConventions
 import org.cangnova.cangjie.psi.CjAnnotations
 import org.cangnova.cangjie.psi.CjAbstractClassBody
 import org.cangnova.cangjie.psi.CjFile
@@ -88,6 +89,35 @@ class DecompiledTextBuilderTest {
             }
 
             assertTrue(rendered.contains("operator func -() { /* compiled code */ }"), rendered)
+        }
+    }
+
+    /**
+     * 内部名 `*operator_unaryMinus` 必须还原为源码 `-`，不能原样出现在反编译文本中。
+     */
+    @Test
+    fun unaryMinusOperatorInternalNameRendersAsMinusToken() {
+        withCoreEnvironment {
+            val rendered = renderManualFileStub { fileStub ->
+                val functionStub = CangJieNamedFunctionStubImpl(
+                    parent = fileStub,
+                    element = CjStubElementTypes.FUNCTION,
+                    nameRef = StringRef.fromString(OperatorNameConventions.UNARY_MINUS.asString()),
+                    isTopLevel = false,
+                    fqName = null,
+                    hasBlockBody = true,
+                    hasBody = true,
+                    hasTypeParameterListBeforeFunctionName = false,
+                    origin = null,
+                )
+                createEmptyHeader(
+                    functionStub,
+                    modifierMask = computeModifierMask(operator = true),
+                )
+            }
+
+            assertTrue(rendered.contains("operator func -() { /* compiled code */ }"), rendered)
+            assertFalse(rendered.contains("*operator_unaryMinus"), rendered)
         }
     }
 
@@ -293,11 +323,16 @@ class DecompiledTextBuilderTest {
                     propertyStub,
                     CjStubElementTypes.PROPERTY_BODY,
                 )
-                CangJiePropertyAccessorStubImpl(
+                val getterStub = CangJiePropertyAccessorStubImpl(
                     parent = propertyBodyStub,
                     isGetter = true,
                     hasBody = true,
                     hasBlockBody = true,
+                )
+                // 与 createPropertyAccessorStub(isGetter=true) 对齐：getter 也有空参数列表
+                CangJiePlaceHolderStubImpl<org.cangnova.cangjie.psi.CjParameterList>(
+                    getterStub,
+                    CjStubElementTypes.VALUE_PARAMETER_LIST,
                 )
                 val setterStub = CangJiePropertyAccessorStubImpl(
                     parent = propertyBodyStub,
@@ -309,7 +344,7 @@ class DecompiledTextBuilderTest {
                     setterStub,
                     CjStubElementTypes.VALUE_PARAMETER_LIST,
                 )
-                CangJieParameterStubImpl(
+                val setterParameterStub = CangJieParameterStubImpl(
                     parent = parameterListStub,
                     fqName = null,
                     name = StringRef.fromString("newValue"),
@@ -319,10 +354,46 @@ class DecompiledTextBuilderTest {
                     isNamed = false,
                     functionTypeParameterName = null,
                 )
+                // 对齐 parseValueParameter：value parameter 始终有空 ANNOTATIONS
+                CangJiePlaceHolderStubImpl<org.cangnova.cangjie.psi.CjAnnotations>(
+                    setterParameterStub,
+                    CjStubElementTypes.ANNOTATIONS,
+                )
             }
 
+            assertTrue(rendered.contains("get() { /* compiled code */ }"), rendered)
             assertTrue(rendered.contains("set(newValue) { /* compiled code */ }"), rendered)
             assertFalse(rendered.contains("set(newValue: "), rendered)
+        }
+    }
+
+    /**
+     * extend 的基本类型目标（如 Unit）不得用反引号包裹。
+     */
+    @Test
+    fun extendBasicTypeDoesNotWrapTypeKeywordWithBackticks() {
+        withCoreEnvironment {
+            val rendered = renderManualFileStub { fileStub ->
+                val extendStub = org.cangnova.cangjie.psi.stubs.impl.CangJieExtendStubImpl(
+                    type = CjStubElementTypes.EXTEND,
+                    parent = fileStub,
+                    qualifiedName = StringRef.fromString("${samplePackage.asString()}.Unit"),
+                    classId = null,
+                    name = StringRef.fromString("Unit"),
+                    extendIdRef = StringRef.fromString("Unit"),
+                    superNames = emptyArray(),
+                    receiverTypeName = "Unit",
+                )
+                createEmptyHeader(extendStub)
+                createBasicTypeReference(extendStub, "Unit")
+                CangJiePlaceHolderStubImpl<CjAbstractClassBody>(
+                    extendStub,
+                    CjStubElementTypes.CLASS_BODY,
+                )
+            }
+
+            assertTrue(rendered.contains("extend Unit {"), rendered)
+            assertFalse(rendered.contains("extend `Unit`"), rendered)
         }
     }
 
