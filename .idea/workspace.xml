@@ -36,43 +36,72 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="7e15012e-e26c-4b45-a5dc-4283160ad6fc" name="更改" comment="">
-      <change beforePath="$PROJECT_DIR$/.codegraph/daemon.pid" beforeDir="false" afterPath="$PROJECT_DIR$/.codegraph/daemon.pid" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.codegraph/daemon.pid" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/decompiled/decompiler-to-psi/src/org/cangnova/cangjie/analysis/decompiled/psi/text/decompiledTextBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/decompiled/decompiler-to-psi/src/org/cangnova/cangjie/analysis/decompiled/psi/text/decompiledTextBuilder.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/decompiled/decompiler-to-psi/test/org/cangnova/cangjie/analysis/decompiled/psi/text/DecompiledTextBuilderTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/decompiled/decompiler-to-psi/test/org/cangnova/cangjie/analysis/decompiled/psi/text/DecompiledTextBuilderTest.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/decompiled/decompiler-to-stubs/src/org/cangnova/cangjie/analysis/decompiler/stub/CallableCjoStubBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/decompiled/decompiler-to-stubs/src/org/cangnova/cangjie/analysis/decompiler/stub/CallableCjoStubBuilder.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/decompiled/decompiler-to-stubs/src/org/cangnova/cangjie/analysis/decompiler/stub/ClassCjoStubBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/decompiled/decompiler-to-stubs/src/org/cangnova/cangjie/analysis/decompiler/stub/ClassCjoStubBuilder.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/REPAIR_LOG.md" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/REPAIR_LOG.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/class/constructor/primaryConstructor/primaryConstructor2.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/class/constructor/primaryConstructor/primaryConstructor2.cj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/class/constructor/primaryConstructor/primaryConstructor8.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/class/constructor/primaryConstructor/primaryConstructor8.cj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/class/static_or_global_var/static_or_global_var10.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/class/static_or_global_var/static_or_global_var10.cj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/class/static_or_global_var/static_or_global_var11.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/class/static_or_global_var/static_or_global_var11.cj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/class/static_or_global_var/static_or_global_var12.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/class/static_or_global_var/static_or_global_var12.cj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/class/static_or_global_var/static_or_global_var14/test1.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/class/static_or_global_var/static_or_global_var14/test1.cj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/class/static_or_global_var/static_or_global_var14/test2.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/class/static_or_global_var/static_or_global_var14/test2.cj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/class/static_or_global_var/static_or_global_var3.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/class/static_or_global_var/static_or_global_var3.cj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/class/static_or_global_var/static_or_global_var9.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/class/static_or_global_var/static_or_global_var9.cj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/record/primaryConstructor/primaryConstructor8.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/record/primaryConstructor/primaryConstructor8.cj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/while-let-expr/while_let8.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/while-let-expr/while_let8.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/diagnostics2/redeclaration/simple.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/diagnostics2/redeclaration/simple.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/diagnostics2/type-mismatch/argumentTypeMismatch.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/diagnostics2/type-mismatch/argumentTypeMismatch.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/PatternMatching/EnumPattern/enum02.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/PatternMatching/EnumPattern/enum02.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/PatternMatching/EnumPattern/enum12.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/PatternMatching/EnumPattern/enum12.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/PatternMatching/EnumPattern/enum13.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/PatternMatching/EnumPattern/enum13.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/class/class15.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/class/class15.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/class/class4.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/class/class4.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/class/class_impl_interface_abstract_func1.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/class/class_impl_interface_abstract_func1.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/class/class_impl_interface_abstract_func10.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/class/class_impl_interface_abstract_func10.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/class/class_impl_interface_abstract_func12.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/class/class_impl_interface_abstract_func12.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/class/class_impl_interface_abstract_func2.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/class/class_impl_interface_abstract_func2.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/class/class_impl_interface_abstract_func3.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/class/class_impl_interface_abstract_func3.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/class/class_instantiation_check/import_test/test1/main.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/class/class_instantiation_check/import_test/test1/main.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/class/class_instantiation_check/main2-2.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/class/class_instantiation_check/main2-2.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/class/class_no_override_modifier_invalid_5.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/class/class_no_override_modifier_invalid_5.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/class/class_no_override_modifier_invalid_6.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/class/class_no_override_modifier_invalid_6.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/class/class_no_override_modifier_invalid_7.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/class/class_no_override_modifier_invalid_7.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/class/class_no_override_modifier_invalid_8.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/class/class_no_override_modifier_invalid_8.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/class/class_no_override_modifier_invalid_9/class_no_override_modifier_invalid_9.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/class/class_no_override_modifier_invalid_9/class_no_override_modifier_invalid_9.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/class/interface_implement_4.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/class/interface_implement_4.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/class/interface_implement_invalid_1.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/class/interface_implement_invalid_1.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/class/interface_implement_invalid_2.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/class/interface_implement_invalid_2.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/class/interface_implement_invalid_4.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/class/interface_implement_invalid_4.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/constraint_check/expose4.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/constraint_check/expose4.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/generics/generic_constraint/generic_constraint_and_4.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/generics/generic_constraint/generic_constraint_and_4.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/generics/generic_inheritance/generic_inheritance_nongeneric_funcParameters.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/generics/generic_inheritance/generic_inheritance_nongeneric_funcParameters.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/generics/generic_inheritance/generic_inheritance_nongeneric_funcParameters_1.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/generics/generic_inheritance/generic_inheritance_nongeneric_funcParameters_1.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/generics/override_super_extend/implement_by_super_extend01.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/generics/override_super_extend/implement_by_super_extend01.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/generics/override_super_extend/implement_by_super_extend05.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/generics/override_super_extend/implement_by_super_extend05.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/interface/interface_property/interface_property4.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/interface/interface_property/interface_property4.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/interface/interface_property/interface_property5.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/interface/interface_property/interface_property5.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/checkers-component-generator/src/org/cangnova/cangjie/cfir/checkers/generator/diagnostics/CfirDiagnosticsList.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/checkers-component-generator/src/org/cangnova/cangjie/cfir/checkers/generator/diagnostics/CfirDiagnosticsList.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/CommonExpressionCheckers.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/CommonExpressionCheckers.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirDeclarationDiagnosticSources.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirDeclarationDiagnosticSources.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirGeneralSemanticsChecker.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirGeneralSemanticsChecker.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirInitializationCheckers.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirInitializationCheckers.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirAssignmentLegalityChecker.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirAssignmentLegalityChecker.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirNotImplementedOverrideChecker.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirNotImplementedOverrideChecker.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirFunctionBodyTypeMismatchChecker.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirFunctionBodyTypeMismatchChecker.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirMatchPatternLegalityChecker.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirMatchPatternLegalityChecker.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirMatchUnreachablePatternChecker.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirMatchUnreachablePatternChecker.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirPatternExpressionChecker.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirPatternExpressionChecker.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirTryTargetTypeMismatchChecker.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirTryTargetTypeMismatchChecker.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/diagnostics/coneDiagnosticToCfirDiagnostic.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/diagnostics/coneDiagnosticToCfirDiagnostic.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/candidate/CallInfo.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/candidate/CallInfo.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/transformers/CfirStatusResolveProcessor.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/transformers/CfirStatusResolveProcessor.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/semantics/src/org/cangnova/cangjie/cfir/semantics/AbstractCallInfo.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/semantics/src/org/cangnova/cangjie/cfir/semantics/AbstractCallInfo.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/providers/src/org/cangnova/cangjie/cfir/declarations/CfirEnumConstructorSemantics.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/providers/src/org/cangnova/cangjie/cfir/declarations/CfirEnumConstructorSemantics.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirCallResolver.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirCallResolver.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirExpressionsResolveTransformer.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirExpressionsResolveTransformer.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirPatternBindingResolution.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirPatternBindingResolution.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/candidate/CandidateFactory.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/candidate/CandidateFactory.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/stages/CfirMapArguments.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/stages/CfirMapArguments.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/inference/CfirCallCompleter.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/inference/CfirCallCompleter.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/inference/CfirCallCompletionResultsWriterTransformer.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/inference/CfirCallCompletionResultsWriterTransformer.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/transformers/body/resolve/BodyResolveContext.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/transformers/body/resolve/BodyResolveContext.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/semantics/src/org/cangnova/cangjie/cfir/resolve/match/CfirMatchPatternModel.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/semantics/src/org/cangnova/cangjie/cfir/resolve/match/CfirMatchPatternModel.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/semantics/src/org/cangnova/cangjie/cfir/resolve/match/exhaustive/specialized/SmallEnumBitVectorChecker.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/semantics/src/org/cangnova/cangjie/cfir/resolve/match/exhaustive/specialized/SmallEnumBitVectorChecker.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/common/src/org/cangnova/cangjie/name/OperatorNameConventions.kt" beforeDir="false" afterPath="$PROJECT_DIR$/common/src/org/cangnova/cangjie/name/OperatorNameConventions.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/compiler/frontend/src/org/cangnova/cangjie/frontend/pipeline/CfirFrontendPipelinePhase.kt" beforeDir="false" afterPath="$PROJECT_DIR$/compiler/frontend/src/org/cangnova/cangjie/frontend/pipeline/CfirFrontendPipelinePhase.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/external/cangjie_compiler" beforeDir="false" afterPath="$PROJECT_DIR$/external/cangjie_compiler" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/external/kotlin" beforeDir="false" afterPath="$PROJECT_DIR$/external/kotlin" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/intellij-ide/gradle/wrapper/gradle-wrapper.jar" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/gradle/wrapper/gradle-wrapper.jar" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/intellij-ide/gradle/wrapper/gradle-wrapper.properties" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/gradle/wrapper/gradle-wrapper.properties" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/intellij-ide/gradlew" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/gradlew" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/intellij-ide/gradlew.bat" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/gradlew.bat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/intellij-ide/modules/domain/package-manager/src/main/kotlin/org/cangnova/cangjie/cjpm/CJPMConfigInspectionBundle.kt" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/domain/package-manager/src/main/kotlin/org/cangnova/cangjie/cjpm/CJPMConfigInspectionBundle.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/main/resources/messages/CangJieCompilerBundle.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/intellij-ide/modules/ide/ux/src/main/kotlin/org/cangnova/cangjie/notifications/CangJieCompilerBundle.kt" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/ide/ux/src/main/kotlin/org/cangnova/cangjie/notifications/CangJieCompilerBundle.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.exe" beforeDir="false" afterPath="$PROJECT_DIR$/main.exe" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/repo/gradle-build-conventions/buildsrc-compat/src/main/kotlin/common-configuration.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/repo/gradle-build-conventions/buildsrc-compat/src/main/kotlin/common-configuration.gradle.kts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/repo/gradle-build-conventions/generators/src/main/kotlin/generatorTasks.kt" beforeDir="false" afterPath="$PROJECT_DIR$/repo/gradle-build-conventions/generators/src/main/kotlin/generatorTasks.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/repo/gradle-build-conventions/project-tests-convention/src/main/kotlin/ProjectTestsConvention.kt" beforeDir="false" afterPath="$PROJECT_DIR$/repo/gradle-build-conventions/project-tests-convention/src/main/kotlin/ProjectTestsConvention.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test-infrastructure/testFixtures/org/cangnova/cangjie/test/frontend/CfirDiagnosticsHandler.kt" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test-infrastructure/testFixtures/org/cangnova/cangjie/test/frontend/CfirDiagnosticsHandler.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/psi/src/org/cangnova/cangjie/psi/CjTypeReference.kt" beforeDir="false" afterPath="$PROJECT_DIR$/psi/src/org/cangnova/cangjie/psi/CjTypeReference.kt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -82,11 +111,27 @@
   <component name="CopilotChats">
     <option name="panelChat">
       <chat>
-        <option name="activeSessionId" value="f688f367-093e-4681-b03b-63cb788d3b19" />
+        <option name="activeSessionId" value="24add6f9-5c10-41cc-8c79-2f3ec211ceab" />
         <option name="sessions">
           <session>
             <option name="chatType" value="PANEL" />
             <option name="id" value="f688f367-093e-4681-b03b-63cb788d3b19" />
+            <option name="modeId" value="Ask" />
+            <option name="modelType" value="builtin_family" />
+            <option name="modelValue" value="auto" />
+            <option name="targetType" value="LOCAL" />
+          </session>
+          <session>
+            <option name="chatType" value="PANEL" />
+            <option name="id" value="b35799c1-2df7-4f33-aa12-555341328aee" />
+            <option name="modeId" value="Ask" />
+            <option name="modelType" value="builtin_family" />
+            <option name="modelValue" value="auto" />
+            <option name="targetType" value="LOCAL" />
+          </session>
+          <session>
+            <option name="chatType" value="PANEL" />
+            <option name="id" value="24add6f9-5c10-41cc-8c79-2f3ec211ceab" />
             <option name="modeId" value="Ask" />
             <option name="modelType" value="builtin_family" />
             <option name="modelValue" value="auto" />
@@ -103,7 +148,7 @@
     </persistenceIdMap>
   </component>
   <component name="EmbeddingIndexingInfo">
-    <option name="cachedIndexableFilesCount" value="360954" />
+    <option name="cachedIndexableFilesCount" value="363795" />
   </component>
   <component name="ExportTestResults" outputFolder="$PROJECT_DIR$" userTempatePath="" />
   <component name="ExternalProjectsData">
@@ -151,31 +196,22 @@
                 <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
                 <item name="cangjie" type="f1a62948:ProjectNode" />
                 <item name="cangjie" type="2d1252cf:ModuleNode" />
-                <item name="cfir" type="2d1252cf:ModuleNode" />
+                <item name="prepare" type="2d1252cf:ModuleNode" />
               </path>
               <path>
                 <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
                 <item name="cangjie" type="f1a62948:ProjectNode" />
                 <item name="cangjie" type="2d1252cf:ModuleNode" />
-                <item name="cfir" type="2d1252cf:ModuleNode" />
-                <item name="analysis-tests" type="2d1252cf:ModuleNode" />
-              </path>
-              <path>
-                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
-                <item name="cangjie" type="f1a62948:ProjectNode" />
-                <item name="cangjie" type="2d1252cf:ModuleNode" />
-                <item name="cfir" type="2d1252cf:ModuleNode" />
-                <item name="analysis-tests" type="2d1252cf:ModuleNode" />
+                <item name="prepare" type="2d1252cf:ModuleNode" />
                 <item name="Tasks" type="e4a08cd1:TasksNode" />
               </path>
               <path>
                 <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
                 <item name="cangjie" type="f1a62948:ProjectNode" />
                 <item name="cangjie" type="2d1252cf:ModuleNode" />
-                <item name="cfir" type="2d1252cf:ModuleNode" />
-                <item name="analysis-tests" type="2d1252cf:ModuleNode" />
+                <item name="prepare" type="2d1252cf:ModuleNode" />
                 <item name="Tasks" type="e4a08cd1:TasksNode" />
-                <item name="verification" type="c8890929:TasksNode$1" />
+                <item name="publishing" type="c8890929:TasksNode$1" />
               </path>
             </expand>
             <select />
@@ -242,61 +278,61 @@
   </component>
   <component name="NextEditCompletionFeaturesState">
     <decayedCancelled>
-      <entry key="MS100" value="1.9898188682541982" />
-      <entry key="MS500" value="4.755622824480742" />
-      <entry key="S2" value="9.08969198054417" />
-      <entry key="S5" value="11.591005400688406" />
-      <entry key="S10" value="12.991706329278413" />
-      <entry key="S30" value="14.24134991969121" />
-      <entry key="S60" value="14.607762928643512" />
-      <entry key="M2" value="14.800502477209347" />
-      <entry key="M5" value="14.919369811715233" />
-      <entry key="M10" value="14.959544651908965" />
-      <entry key="M15" value="14.972998471269944" />
-      <entry key="M30" value="14.986483556402742" />
-      <entry key="H1" value="14.993379089393724" />
-      <entry key="H2" value="15.05551939086253" />
-      <entry key="H4" value="16.376426631109148" />
-      <entry key="D1" value="38.552090023744334" />
-      <entry key="W1" value="55.90413467484321" />
+      <entry key="MS100" value="1.447886359520595" />
+      <entry key="MS500" value="2.1622242868940877" />
+      <entry key="S2" value="3.5860562754480494" />
+      <entry key="S5" value="4.323321732775382" />
+      <entry key="S10" value="4.639817184106117" />
+      <entry key="S30" value="4.940778935563939" />
+      <entry key="S60" value="5.19606129260314" />
+      <entry key="M2" value="5.726206767679074" />
+      <entry key="M5" value="10.17497065749777" />
+      <entry key="M10" value="17.388967768802324" />
+      <entry key="M15" value="21.760548726293404" />
+      <entry key="M30" value="27.760493942827665" />
+      <entry key="H1" value="31.55413049494173" />
+      <entry key="H2" value="33.743209443635095" />
+      <entry key="H4" value="36.145757506839615" />
+      <entry key="D1" value="59.196782334540735" />
+      <entry key="W1" value="76.83677660140961" />
     </decayedCancelled>
     <decayedSelected>
-      <entry key="MS100" value="3.102640761080513E-7" />
-      <entry key="MS500" value="0.050317496250515216" />
-      <entry key="S2" value="0.677674051873795" />
-      <entry key="S5" value="1.7660042904021473" />
-      <entry key="S10" value="2.8107017858668963" />
-      <entry key="S30" value="4.071282527490245" />
-      <entry key="S60" value="4.504017629532824" />
-      <entry key="M2" value="4.74347414730388" />
-      <entry key="M5" value="4.89525466170078" />
-      <entry key="M10" value="4.947263999333842" />
-      <entry key="M15" value="4.9647613602797005" />
-      <entry key="M30" value="4.9823398847749845" />
-      <entry key="H1" value="4.991159716753912" />
-      <entry key="H2" value="4.995577298611299" />
-      <entry key="H4" value="4.997788008944062" />
-      <entry key="D1" value="4.999631245849217" />
-      <entry key="W1" value="4.999947318656163" />
+      <entry key="MS100" value="0.0" />
+      <entry key="MS500" value="0.0" />
+      <entry key="S2" value="1.6814143579915626E-125" />
+      <entry key="S5" value="2.540114608974838E-50" />
+      <entry key="S10" value="3.3708975123304786E-25" />
+      <entry key="S30" value="2.0077432186129558E-8" />
+      <entry key="S60" value="3.1629224580164106E-4" />
+      <entry key="M2" value="0.0397503328453882" />
+      <entry key="M5" value="0.7228912737866622" />
+      <entry key="M10" value="1.9011392686092141" />
+      <entry key="M15" value="2.624204096477301" />
+      <entry key="M30" value="3.6222879097259737" />
+      <entry key="H1" value="4.255751640210236" />
+      <entry key="H2" value="4.612889880892558" />
+      <entry key="H4" value="4.802545992437736" />
+      <entry key="D1" value="4.966536031520689" />
+      <entry key="W1" value="4.995205663183292" />
     </decayedSelected>
     <decayedShown>
-      <entry key="MS100" value="1.278054889725833" />
-      <entry key="MS500" value="4.354469614909426" />
-      <entry key="S2" value="9.173005616236733" />
-      <entry key="S5" value="12.776655382371228" />
-      <entry key="S10" value="15.334489593870058" />
-      <entry key="S30" value="18.077076332589005" />
-      <entry key="S60" value="18.979383497765905" />
-      <entry key="M2" value="19.47363531995542" />
-      <entry key="M5" value="19.785423578255106" />
-      <entry key="M10" value="19.89202461507303" />
-      <entry key="M15" value="19.927862538104186" />
-      <entry key="M30" value="19.96385404052895" />
-      <entry key="H1" value="19.982048890701005" />
-      <entry key="H2" value="20.049849624321556" />
-      <entry key="H4" value="21.373582149975167" />
-      <entry key="D1" value="43.55159127184842" />
-      <entry key="W1" value="60.904060564784885" />
+      <entry key="MS100" value="0.9464315682837282" />
+      <entry key="MS500" value="1.33935126183965" />
+      <entry key="S2" value="3.0688115087775163" />
+      <entry key="S5" value="4.062235172131342" />
+      <entry key="S10" value="4.498190570952066" />
+      <entry key="S30" value="4.890635606598804" />
+      <entry key="S60" value="5.170589032016188" />
+      <entry key="M2" value="5.75210892432239" />
+      <entry key="M5" value="10.887811937030495" />
+      <entry key="M10" value="19.281263046046988" />
+      <entry key="M15" value="24.377297582755165" />
+      <entry key="M30" value="31.3779787071705" />
+      <entry key="H1" value="35.807139348327546" />
+      <entry key="H2" value="38.35463101537409" />
+      <entry key="H4" value="40.94753550047206" />
+      <entry key="D1" value="64.16316226263068" />
+      <entry key="W1" value="81.83195699731266" />
     </decayedShown>
   </component>
   <component name="ProblemsViewState">
@@ -317,6 +353,7 @@
           </model>
         </option>
         <option name="targetType" value="BACKGROUND" />
+        <option name="worktreeMode" value="WORKSPACE" />
       </template>
     </option>
   </component>
@@ -324,198 +361,205 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Gradle.AnalysisApiCfirDiagnosticsTest.interfaceTypeParameterDiagnostics.executor": "Run",
-    "Gradle.AnalysisApiSymbolProviderEntryTest.psiEntrySymbols.executor": "Run",
-    "Gradle.Box.testOptionBoxAssign01.executor": "Debug",
-    "Gradle.BoxGenerated.testBoxInMultiMatchcase.executor": "Run",
-    "Gradle.CaStubTreeSummaryExtractorTest.executor": "Run",
-    "Gradle.CangJieCompiledFilesHighlightingTest.executor": "Debug",
-    "Gradle.CangJieCompiledFilesHighlightingTest.testSameProjectLowercaseMacroImportHasNoDiagnosticHighlightingErrors.executor": "Run",
-    "Gradle.CangJieCompiledFilesHighlightingTest.testStdlibFunctionGotoDeclarationOpensBuiltinsTarget.executor": "Debug",
-    "Gradle.CangJieFoldingBuilderTest.executor": "Run",
-    "Gradle.CangJieFormattingTest.executor": "Run",
-    "Gradle.CangJieHighlightingColorsTest.executor": "Run",
-    "Gradle.CangJieHighlightingLexicalKeysTest.executor": "Run",
-    "Gradle.CangJieHighlightingStructuralRulesTest.executor": "Run",
-    "Gradle.CangJieReferenceBindingTest.executor": "Run",
-    "Gradle.CangJieReferenceBindingTest.testFieldBasicTypeReferenceDoesNotProvideTargetOrDocumentation.executor": "Run",
-    "Gradle.CangJieReferenceBindingTest.testFieldBasicTypeReferenceProvidesTargetAndDocumentation.executor": "Run",
-    "Gradle.CangJieReferenceBindingTest.testSourceReferenceToCjoProvidesTargetAndDocumentation.executor": "Run",
-    "Gradle.CangjieLanguageServerTest.executor": "Run",
-    "Gradle.CfirAnalysisDiagnostics2PsiTestGenerated.executor": "Run",
-    "Gradle.CfirAnalysisDiagnostics2TestGenerated.executor": "Run",
-    "Gradle.CfirAnalysisDiagnosticsTestGenerated.executor": "Run",
-    "Gradle.CfirAnalysisDiagnosticsTestGenerated.testArgumentTypeMismatch.executor": "Debug",
-    "Gradle.CfirAnalysisDiagnosticsTestGenerated.testAssignmentTypeMismatch.executor": "Run",
-    "Gradle.CfirAnalysisDiagnosticsTestGenerated.testMultipleDiagnostics.executor": "Run",
-    "Gradle.CfirAnalysisDiagnosticsTestGenerated.testUnresolvedSymbolType.executor": "Debug",
-    "Gradle.CfirAnalysisLLTPsiTestGenerated.executor": "Run",
-    "Gradle.CfirAnalysisLLTTestGenerated.executor": "Run",
-    "Gradle.CfirAnalysisLltTestGenerated.executor": "Run",
-    "Gradle.CfirAnalysisMacroPsiTestGenerated.testSameProjectMacroPackageImportOnly.executor": "Run",
-    "Gradle.CfirAnalysisMacroTestGenerated.executor": "Run",
-    "Gradle.CfirAnalysisMacroTestGenerated.testSameProjectMacroPackageImportOnly.executor": "Run",
-    "Gradle.CfirAnalysisResolveTestGenerated.executor": "Run",
-    "Gradle.CfirConstraintCompletionTest.executor": "Run",
-    "Gradle.CfirConstraintResultBuilderTest.executor": "Run",
-    "Gradle.CfirIdeDependentAnalysisCodeFragmentModuleIsReferenceToTestGenerated.executor": "Run",
-    "Gradle.CfirIdeDependentCodeFragmentModuleProjectStructureTestGenerated.executor": "Run",
-    "Gradle.CfirIdeDependentSourceModuleCollectDiagnosticsTestGenerated.executor": "Run",
-    "Gradle.CfirJoinMeetTest.executor": "Run",
-    "Gradle.CfirMapArgumentsTest.executor": "Run",
-    "Gradle.CfirMinimalResolvePipelineTest.executor": "Run",
-    "Gradle.CfirOverloadConflictResolverTest.executor": "Run",
-    "Gradle.ChirBuilderTest.executor": "Run",
-    "Gradle.CjcGoldenDiagnostics2Test.executor": "Run",
-    "Gradle.CjoSdkDeserializationIntegrationTest.executor": "Run",
-    "Gradle.CjoSdkDeserializationIntegrationTest.sdk cjo fixtures can be deserialized with expected version.executor": "Debug",
-    "Gradle.CjoSearchPathTest.executor": "Debug",
-    "Gradle.ConeSubtypeCheckerTest.executor": "Run",
-    "Gradle.ConstEval.testConstEvalArithmeticOverflow.executor": "Run",
-    "Gradle.ConstEval.testConstEvalDivideByZero.executor": "Run",
-    "Gradle.DeclarationStatus.testMutOnlyOnFunctionRich.executor": "Run",
-    "Gradle.Declarations.testClassWithMembers.executor": "Run",
-    "Gradle.Declarations.testEmptyClass.executor": "Debug",
-    "Gradle.DecompiledFileStubKindsTest.executor": "Run",
-    "Gradle.Enum.testErrorSimpleEnum.executor": "Run",
-    "Gradle.Enum.testSimpleEnum.executor": "Run",
-    "Gradle.ExtendGenerated.executor": "Run",
-    "Gradle.Extensions.testExtendDuplicateInterfaceRich.executor": "Debug",
-    "Gradle.Function.testFuncArg.executor": "Run",
-    "Gradle.General.testMultipleDiagnostics.executor": "Run",
-    "Gradle.General.testSimpleT.executor": "Run",
-    "Gradle.General.testToStringInterfaceParentType.executor": "Debug",
-    "Gradle.Inheritance.testOverrideReturnType.executor": "Debug",
-    "Gradle.Interface.testComparable.executor": "Run",
-    "Gradle.Interop.testObjcMirrorImplTypeBoundaryPlaceholder.executor": "Debug",
-    "Gradle.LightTree2CfirConverterTest.executor": "Run",
-    "Gradle.LightTree2CfirConverterTestGenerated.executor": "Run",
-    "Gradle.LlvmBackendFactoryTest.returns in-memory backend when configured as in-memory.executor": "Debug",
-    "Gradle.LlvmNativeIntegrationTest.can generate llvm ir file through JNI bridge.executor": "Debug",
-    "Gradle.LlvmNativeIntegrationTest.executor": "Run",
-    "Gradle.Match.executor": "Run",
-    "Gradle.Match.testMatchRichPatternsOfficial.executor": "Debug",
-    "Gradle.Match.testNonExhaustiveMatchRich.executor": "Run",
-    "Gradle.MultipleAssignExpr.testCase01.executor": "Run",
-    "Gradle.OfficialCompilerChirComparisonTest.executor": "Run",
-    "Gradle.OfficialCompilerLlvmIrComparisonTest.executor": "Run",
-    "Gradle.Operator.testInvoke.executor": "Debug",
-    "Gradle.Operator.testSubscriptGet.executor": "Run",
-    "Gradle.RawCfirBuilderLazyBodiesByAstTestGenerated.executor": "Run",
-    "Gradle.RawCfirBuilderTestCase.executor": "Run",
-    "Gradle.RawCfirBuilderTestCaseGenerated (1).executor": "Run",
-    "Gradle.RawCfirBuilderTestCaseGenerated.executor": "Run",
-    "Gradle.Redeclaration.testSimple.executor": "Run",
-    "Gradle.Service.testServiceDescriptor.executor": "Run",
-    "Gradle.Stdlib.testCore.executor": "Debug",
-    "Gradle.Super.testRepeatedInheritance.executor": "Debug",
-    "Gradle.TypeMismatch.executor": "Run",
-    "Gradle.TypeMismatch.testArgumentTypeMismatch.executor": "Run",
-    "Gradle.TypeMismatch.testGenericArgumentConstraintConflict.executor": "Debug",
-    "Gradle.TypeMismatch.testGenericConstraintFromExpectedType.executor": "Run",
-    "Gradle.TypeMismatch.testGenericReturnTypeInference.executor": "Run",
-    "Gradle.TypeMismatch.testReturnTypeMismatch.executor": "Debug",
-    "Gradle.TypeMismatch.testSimple.executor": "Debug",
-    "Gradle.TypeMismatch.testWhereMultipleUpperBounds.executor": "Run",
-    "Gradle.Typealias.testA.executor": "Run",
-    "Gradle.TypealiasGenerated.executor": "Run",
-    "Gradle.Unresolved.testStdCore.executor": "Run",
-    "Gradle.Unresolved.testUnresolvedReferenceName.executor": "Run",
-    "Gradle.Users.executor": "Run",
-    "Gradle.Visibility.testPrivateMemberAccessExplicitThis.executor": "Run",
-    "Gradle.cangjie [:analysis:analysis-api-cfir:generateDiagnostics].executor": "Run",
-    "Gradle.cangjie [:analysis:analysis-api-cfir:test].executor": "Run",
-    "Gradle.cangjie [:analysis:low-level-api-cfir:test].executor": "Run",
-    "Gradle.cangjie [:cfir:analysis-tests:build].executor": "Run",
-    "Gradle.cangjie [:cfir:analysis-tests:generateTestGeneratorForCfirAnalysisTestsTests].executor": "Run",
-    "Gradle.cangjie [:cfir:analysis-tests:test].executor": "Run",
-    "Gradle.cangjie [:cfir:cfir-cones:build].executor": "Run",
-    "Gradle.cangjie [:cfir:cfir-tree:generateTree].executor": "Run",
-    "Gradle.cangjie [:cfir:cfir-tree:tree-generator:assemble].executor": "Run",
-    "Gradle.cangjie [:cfir:cfir-tree:tree-generator:org.cangjie.cfir.tree.generator.MainKt.main()].executor": "Run",
-    "Gradle.cangjie [:cfir:cfir-tree:tree-generator:org.cangnova.cangjie.cfir.tree.generator.MainKt.main()].executor": "Debug",
-    "Gradle.cangjie [:cfir:cfir-tree:tree-generator:run].executor": "Run",
-    "Gradle.cangjie [:cfir:checkers:checkers-component-generator:org.cangnova.cangjie.cfir.checkers.generator.MainKt.main()].executor": "Run",
-    "Gradle.cangjie [:cfir:providers:build].executor": "Run",
-    "Gradle.cangjie [:cfir:raw-cfir:psi2cfir:org.cangjie.cfir.builder.TestGeneratorForPsi2Cfir.main()].executor": "Run",
-    "Gradle.cangjie [:compiler:cli-arguments-generator:org.cangnova.cangjie.cli.arguments.generator.MainKt.main()].executor": "Run",
-    "Gradle.cangjie [:compiler:cli:generateCliArguments].executor": "Run",
-    "Gradle.cangjie [:lsp:installDist].executor": "Run",
-    "Gradle.cangjie [:lsp:test].executor": "Run",
-    "Gradle.cangjie [:prepare:ide-plugin-dependencies:cangjie-frontend-analysis-api-cfir-for-ide:publishToMavenLocal].executor": "Run",
-    "Gradle.cangjie [:product:idea-plugin:dependencies --configuration runtimeClasspath > deps.txt].executor": "Run",
-    "Gradle.cangjie [:psi build].executor": "Run",
-    "Gradle.cangjie [:psi:build].executor": "Run",
-    "Gradle.cangjie [build].executor": "Run",
-    "Gradle.cangjie [cfir:cfir-tree:generateTree].executor": "Run",
-    "Gradle.cangjie [cfir:raw-cfir:psi2cfir:test].executor": "Run",
-    "Gradle.cangjie [classes].executor": "Run",
-    "Gradle.cangjie [clean].executor": "Run",
-    "Gradle.cangjie [codeStats].executor": "Run",
-    "Gradle.cangjie [generateCfirDiagnostics].executor": "Run",
-    "Gradle.cangjie [gradle-build-conventions:build].executor": "Run",
-    "Gradle.cangjie [nativeCompile].executor": "Run",
-    "Gradle.cangjie [psi build].executor": "Run",
-    "Gradle.cangjie [publishToMavenLocal].executor": "Run",
-    "Gradle.cangjie [publish].executor": "Run",
-    "Gradle.cangjie [test].executor": "Run",
-    "Gradle.intellij-ide [:cangjie:analysis:analysis-api-cfir:analysis-api-cfir-generator:org.cangnova.cangjie.analysis.api.cfir.generator.MainKt.main()].executor": "Run",
-    "Gradle.intellij-ide [:product:idea-plugin:buildPlugin].executor": "Run",
-    "Gradle.intellij-ide [:product:idea-plugin:dependencies --configuration runtimeClasspath > deps.txt].executor": "Run",
-    "Gradle.intellij-ide [:product:idea-plugin:runIde].executor": "Run",
-    "Gradle.下载 IntelliJ 平台源.executor": "Run",
-    "Gradle.下载源代码.executor": "Run",
-    "Gradle.加载 Gradle 依赖项.executor": "Run",
-    "Gradle.升级 Gradle 包装器.executor": "Run",
-    "Gradle.构建 cangjie.executor": "Run",
-    "Gradle.构建 intellij-ide.executor": "Run",
-    "JUnit.AbstractCfirAnalysisResolveTest.executor": "Run",
-    "JUnit.CangjieLanguageServerTest.executor": "Debug",
-    "JUnit.RawCfirBuilderDeclarationTest 和其他 2 个.executor": "Run",
-    "JUnit.RawCfirBuilderLazyBodiesByAstTestGenerated$Expressions$Atomic 和其他 33 个.executor": "Run",
-    "JUnit.RawCfirBuilderLazyBodiesByAstTestGenerated$Expressions$Basics 和其他 57 个.executor": "Run",
-    "JUnit.RawCfirBuilderLazyBodiesByStubTestGenerated.executor": "Run",
-    "JUnit.RawCfirBuilderTestCaseGenerated$Declarations 和其他 4 个.executor": "Run",
-    "JUnit.RawCfirBuilderTestCaseGenerated$Declarations 和其他 9 个.executor": "Run",
-    "JUnit.RawCfirBuilderTestCaseGenerated$Declarations.executor": "Run",
-    "JUnit.整个项目 (1).executor": "Run",
-    "JUnit.整个项目.executor": "Run",
-    "JUnit.未命名.executor": "Run",
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "RunOnceActivity.MCP Project settings loaded": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
-    "RunOnceActivity.cidr.known.project.marker": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "RunOnceActivity.readMode.enableVisualFormatting": "true",
-    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
-    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "auto.test.manager.delay": "10000",
-    "cidr.known.project.marker": "true",
-    "codeWithMe.voiceChat.enabledByDefault": "false",
-    "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
-    "copilot.chat.legacySessionMetadata.migrated": "true",
-    "git-widget-placeholder": "main",
-    "junie.onboarding.icon.badge.shown": "true",
-    "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "D:/code/intellij/cangjie/cfir/analysis-tests/testData/llt/typealias",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "npm.dev.executor": "Run",
-    "project.structure.last.edited": "模块",
-    "project.structure.proportion": "0.15",
-    "project.structure.side.proportion": "0.30207306",
-    "settings.editor.selected.configurable": "preferences.pluginManager",
-    "settings.editor.splitter.proportion": "0.20833333",
-    "to.speed.mode.migration.done": "true",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Gradle.AnalysisApiCfirDiagnosticsTest.interfaceTypeParameterDiagnostics.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.AnalysisApiSymbolProviderEntryTest.psiEntrySymbols.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.Box.testOptionBoxAssign01.executor&quot;: &quot;Debug&quot;,
+    &quot;Gradle.BoxGenerated.testBoxInMultiMatchcase.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.CaStubTreeSummaryExtractorTest.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.CangJieCompiledFilesHighlightingTest.executor&quot;: &quot;Debug&quot;,
+    &quot;Gradle.CangJieCompiledFilesHighlightingTest.testSameProjectLowercaseMacroImportHasNoDiagnosticHighlightingErrors.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.CangJieCompiledFilesHighlightingTest.testStdlibFunctionGotoDeclarationOpensBuiltinsTarget.executor&quot;: &quot;Debug&quot;,
+    &quot;Gradle.CangJieFoldingBuilderTest.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.CangJieFormattingTest.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.CangJieHighlightingColorsTest.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.CangJieHighlightingLexicalKeysTest.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.CangJieHighlightingStructuralRulesTest.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.CangJieReferenceBindingTest.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.CangJieReferenceBindingTest.testFieldBasicTypeReferenceDoesNotProvideTargetOrDocumentation.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.CangJieReferenceBindingTest.testFieldBasicTypeReferenceProvidesTargetAndDocumentation.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.CangJieReferenceBindingTest.testSourceReferenceToCjoProvidesTargetAndDocumentation.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.CangjieLanguageServerTest.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.CfirAnalysisDiagnostics2PsiTestGenerated.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.CfirAnalysisDiagnostics2TestGenerated.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.CfirAnalysisDiagnosticsTestGenerated.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.CfirAnalysisDiagnosticsTestGenerated.testArgumentTypeMismatch.executor&quot;: &quot;Debug&quot;,
+    &quot;Gradle.CfirAnalysisDiagnosticsTestGenerated.testAssignmentTypeMismatch.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.CfirAnalysisDiagnosticsTestGenerated.testMultipleDiagnostics.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.CfirAnalysisDiagnosticsTestGenerated.testUnresolvedSymbolType.executor&quot;: &quot;Debug&quot;,
+    &quot;Gradle.CfirAnalysisLLTPsiTestGenerated.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.CfirAnalysisLLTTestGenerated.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.CfirAnalysisLltTestGenerated.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.CfirAnalysisMacroPsiTestGenerated.testSameProjectMacroPackageImportOnly.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.CfirAnalysisMacroTestGenerated.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.CfirAnalysisMacroTestGenerated.testSameProjectMacroPackageImportOnly.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.CfirAnalysisResolveTestGenerated.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.CfirConstraintCompletionTest.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.CfirConstraintResultBuilderTest.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.CfirIdeDependentAnalysisCodeFragmentModuleIsReferenceToTestGenerated.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.CfirIdeDependentCodeFragmentModuleProjectStructureTestGenerated.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.CfirIdeDependentSourceModuleCollectDiagnosticsTestGenerated.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.CfirJoinMeetTest.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.CfirMapArgumentsTest.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.CfirMinimalResolvePipelineTest.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.CfirOverloadConflictResolverTest.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.ChirBuilderTest.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.CjcGoldenDiagnostics2Test.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.CjoSdkDeserializationIntegrationTest.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.CjoSdkDeserializationIntegrationTest.sdk cjo fixtures can be deserialized with expected version.executor&quot;: &quot;Debug&quot;,
+    &quot;Gradle.CjoSearchPathTest.executor&quot;: &quot;Debug&quot;,
+    &quot;Gradle.ConeSubtypeCheckerTest.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.ConstEval.testConstEvalArithmeticOverflow.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.ConstEval.testConstEvalDivideByZero.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.DeclarationStatus.testMutOnlyOnFunctionRich.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.Declarations.testClassWithMembers.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.Declarations.testEmptyClass.executor&quot;: &quot;Debug&quot;,
+    &quot;Gradle.DecompiledFileStubKindsTest.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.DecompiledTextBuilderTest.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.Enum.testErrorSimpleEnum.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.Enum.testSimpleEnum.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.ExtendGenerated.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.Extensions.testExtendDuplicateInterfaceRich.executor&quot;: &quot;Debug&quot;,
+    &quot;Gradle.Function.testFuncArg.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.FunctionGenerated.testBodyReturnInference.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.General.testMultipleDiagnostics.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.General.testSimpleT.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.General.testToStringInterfaceParentType.executor&quot;: &quot;Debug&quot;,
+    &quot;Gradle.Inheritance.testOverrideReturnType.executor&quot;: &quot;Debug&quot;,
+    &quot;Gradle.Interface.testComparable.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.Interop.testObjcMirrorImplTypeBoundaryPlaceholder.executor&quot;: &quot;Debug&quot;,
+    &quot;Gradle.LightTree2CfirConverterTest.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.LightTree2CfirConverterTestGenerated.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.LlvmBackendFactoryTest.returns in-memory backend when configured as in-memory.executor&quot;: &quot;Debug&quot;,
+    &quot;Gradle.LlvmNativeIntegrationTest.can generate llvm ir file through JNI bridge.executor&quot;: &quot;Debug&quot;,
+    &quot;Gradle.LlvmNativeIntegrationTest.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.Match.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.Match.testMatchRichPatternsOfficial.executor&quot;: &quot;Debug&quot;,
+    &quot;Gradle.Match.testNonExhaustiveMatchRich.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.MultipleAssignExpr.testCase01.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.OfficialCompilerChirComparisonTest.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.OfficialCompilerLlvmIrComparisonTest.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.Operator.testInvoke.executor&quot;: &quot;Debug&quot;,
+    &quot;Gradle.Operator.testSubscriptGet.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.RawCfirBuilderLazyBodiesByAstTestGenerated.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.RawCfirBuilderTestCase.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.RawCfirBuilderTestCaseGenerated (1).executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.RawCfirBuilderTestCaseGenerated.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.Redeclaration.testSimple.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.Service.testServiceDescriptor.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.Stdlib.testCore.executor&quot;: &quot;Debug&quot;,
+    &quot;Gradle.Super.testRepeatedInheritance.executor&quot;: &quot;Debug&quot;,
+    &quot;Gradle.TypeInferGenerated.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.TypeMismatch.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.TypeMismatch.testArgumentTypeMismatch.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.TypeMismatch.testGenericArgumentConstraintConflict.executor&quot;: &quot;Debug&quot;,
+    &quot;Gradle.TypeMismatch.testGenericConstraintFromExpectedType.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.TypeMismatch.testGenericReturnTypeInference.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.TypeMismatch.testReturnTypeMismatch.executor&quot;: &quot;Debug&quot;,
+    &quot;Gradle.TypeMismatch.testSimple.executor&quot;: &quot;Debug&quot;,
+    &quot;Gradle.TypeMismatch.testWhereMultipleUpperBounds.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.TypePatternGenerated.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.Typealias.testA.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.TypealiasGenerated.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.Unresolved.testStdCore.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.Unresolved.testUnresolvedReferenceName.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.Users.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.Visibility.testPrivateMemberAccessExplicitThis.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [:analysis:analysis-api-cfir:generateDiagnostics].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [:analysis:analysis-api-cfir:test].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [:analysis:low-level-api-cfir:test].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [:cfir:analysis-tests:build].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [:cfir:analysis-tests:generateTestGeneratorForCfirAnalysisTestsTests].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [:cfir:analysis-tests:test].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [:cfir:cfir-cones:build].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [:cfir:cfir-tree:generateTree].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [:cfir:cfir-tree:tree-generator:assemble].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [:cfir:cfir-tree:tree-generator:org.cangjie.cfir.tree.generator.MainKt.main()].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [:cfir:cfir-tree:tree-generator:org.cangnova.cangjie.cfir.tree.generator.MainKt.main()].executor&quot;: &quot;Debug&quot;,
+    &quot;Gradle.cangjie [:cfir:cfir-tree:tree-generator:run].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [:cfir:checkers:checkers-component-generator:org.cangnova.cangjie.cfir.checkers.generator.MainKt.main()].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [:cfir:providers:build].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [:cfir:raw-cfir:psi2cfir:org.cangjie.cfir.builder.TestGeneratorForPsi2Cfir.main()].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [:compiler:cli-arguments-generator:org.cangnova.cangjie.cli.arguments.generator.MainKt.main()].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [:compiler:cli:generateCliArguments].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [:lsp:installDist].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [:lsp:test].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [:prepare:ide-plugin-dependencies:cangjie-frontend-analysis-api-cfir-for-ide:publishToMavenLocal].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [:product:idea-plugin:dependencies --configuration runtimeClasspath &gt; deps.txt].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [:psi build].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [:psi:build].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [build].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [cfir:cfir-tree:generateTree].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [cfir:raw-cfir:psi2cfir:test].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [classes].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [clean].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [codeStats].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [generateCfirDiagnostics].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [gradle-build-conventions:build].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [nativeCompile].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [psi build].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [publishToMavenLocal].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [publish].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [test].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.intellij-ide [:cangjie:analysis:analysis-api-cfir:analysis-api-cfir-generator:org.cangnova.cangjie.analysis.api.cfir.generator.MainKt.main()].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.intellij-ide [:product:idea-plugin:buildPlugin].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.intellij-ide [:product:idea-plugin:dependencies --configuration runtimeClasspath &gt; deps.txt].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.intellij-ide [:product:idea-plugin:runIde].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.下载 IntelliJ 平台源.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.下载源代码.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.加载 Gradle 依赖项.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.升级 Gradle 包装器.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.构建 cangjie.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.构建 intellij-ide.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.AbstractCfirAnalysisResolveTest.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.CangjieLanguageServerTest.executor&quot;: &quot;Debug&quot;,
+    &quot;JUnit.RawCfirBuilderDeclarationTest 和其他 2 个.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.RawCfirBuilderLazyBodiesByAstTestGenerated$Expressions$Atomic 和其他 33 个.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.RawCfirBuilderLazyBodiesByAstTestGenerated$Expressions$Basics 和其他 57 个.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.RawCfirBuilderLazyBodiesByStubTestGenerated.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.RawCfirBuilderTestCaseGenerated$Declarations 和其他 4 个.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.RawCfirBuilderTestCaseGenerated$Declarations 和其他 9 个.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.RawCfirBuilderTestCaseGenerated$Declarations.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.整个项目 (1).executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.整个项目.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.未命名.executor&quot;: &quot;Run&quot;,
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.MCP Project settings loaded&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.readMode.enableVisualFormatting&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
+    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;auto.test.manager.delay&quot;: &quot;10000&quot;,
+    &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
+    &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1&quot;: &quot;true&quot;,
+    &quot;copilot.chat.legacySessionMetadata.migrated&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;D:/code/intellij/cangjie/cfir/analysis-tests/testData/llt/typealias&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;npm.dev.executor&quot;: &quot;Run&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;模块&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.30207306&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
+    &quot;settings.editor.splitter.proportion&quot;: &quot;0.20833333&quot;,
+    &quot;to.speed.mode.migration.done&quot;: &quot;true&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  },
+  &quot;keyToStringList&quot;: {
+    &quot;dev.kikugie.stonecutter.projects&quot;: []
   }
-}]]></component>
+}</component>
   <component name="PsiViewer">
     <option name="SPLIT_DIVIDER_POSITION" value="261" />
   </component>
@@ -559,7 +603,7 @@
     </option>
   </component>
   <component name="RunManager" selected="Gradle.cangjie [:cfir:analysis-tests:test]">
-    <configuration name="BoxGenerated.testBoxInMultiMatchcase" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+    <configuration name="DecompiledTextBuilderTest" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
         <option name="externalProjectPath" value="$PROJECT_DIR$/intellij-ide" />
@@ -570,9 +614,9 @@
         </option>
         <option name="taskNames">
           <list>
-            <option value=":cangjie:cfir:analysis-tests:test" />
+            <option value=":cangjie:analysis:decompiled:decompiler-to-psi:test" />
             <option value="--tests" />
-            <option value="&quot;org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTTest.llt.box.BoxGenerated.testBoxInMultiMatchcase&quot;" />
+            <option value="&quot;org.cangnova.cangjie.analysis.decompiled.psi.text.DecompiledTextBuilderTest&quot;" />
           </list>
         </option>
         <option name="vmOptions" />
@@ -586,7 +630,7 @@
       <GradleCoverageDisabled>false</GradleCoverageDisabled>
       <method v="2" />
     </configuration>
-    <configuration name="ExtendGenerated" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+    <configuration name="FunctionGenerated.testBodyReturnInference" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
         <option name="externalProjectPath" value="$PROJECT_DIR$/intellij-ide" />
@@ -599,34 +643,7 @@
           <list>
             <option value=":cangjie:cfir:analysis-tests:test" />
             <option value="--tests" />
-            <option value="&quot;org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTPsiTest.llt.Extend.ExtendGenerated&quot;" />
-          </list>
-        </option>
-        <option name="vmOptions" />
-      </ExternalSystemSettings>
-      <ExternalSystemDebugServerProcess>false</ExternalSystemDebugServerProcess>
-      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
-      <ExternalSystemDebugDisabled>false</ExternalSystemDebugDisabled>
-      <DebugAllEnabled>false</DebugAllEnabled>
-      <RunAsTest>true</RunAsTest>
-      <GradleProfilingDisabled>false</GradleProfilingDisabled>
-      <GradleCoverageDisabled>false</GradleCoverageDisabled>
-      <method v="2" />
-    </configuration>
-    <configuration name="TypealiasGenerated" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
-      <ExternalSystemSettings>
-        <option name="executionName" />
-        <option name="externalProjectPath" value="$PROJECT_DIR$/intellij-ide" />
-        <option name="externalSystemIdString" value="GRADLE" />
-        <option name="scriptParameters" value="" />
-        <option name="taskDescriptions">
-          <list />
-        </option>
-        <option name="taskNames">
-          <list>
-            <option value=":cangjie:cfir:analysis-tests:test" />
-            <option value="--tests" />
-            <option value="&quot;org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTPsiTest.llt._typealias.TypealiasGenerated&quot;" />
+            <option value="&quot;org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisDiagnostics2PsiTest.diagnostics2.function.FunctionGenerated.testBodyReturnInference&quot;" />
           </list>
         </option>
         <option name="vmOptions" />
@@ -652,6 +669,31 @@
         <option name="taskNames">
           <list>
             <option value=":cfir:analysis-tests:test" />
+          </list>
+        </option>
+        <option name="vmOptions" />
+      </ExternalSystemSettings>
+      <ExternalSystemDebugServerProcess>true</ExternalSystemDebugServerProcess>
+      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <ExternalSystemDebugDisabled>false</ExternalSystemDebugDisabled>
+      <DebugAllEnabled>false</DebugAllEnabled>
+      <RunAsTest>false</RunAsTest>
+      <GradleProfilingDisabled>false</GradleProfilingDisabled>
+      <GradleCoverageDisabled>false</GradleCoverageDisabled>
+      <method v="2" />
+    </configuration>
+    <configuration name="cangjie [publish]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list>
+            <option value="publish" />
           </list>
         </option>
         <option name="vmOptions" />
@@ -711,29 +753,29 @@
       </method>
     </configuration>
     <list>
-      <item itemvalue="Gradle.Run IDE with Plugin" />
-      <item itemvalue="Gradle.BoxGenerated.testBoxInMultiMatchcase" />
-      <item itemvalue="Gradle.ExtendGenerated" />
-      <item itemvalue="Gradle.TypealiasGenerated" />
+      <item itemvalue="Gradle.DecompiledTextBuilderTest" />
+      <item itemvalue="Gradle.FunctionGenerated.testBodyReturnInference" />
       <item itemvalue="Gradle.cangjie [:cfir:analysis-tests:test]" />
+      <item itemvalue="Gradle.cangjie [publish]" />
       <item itemvalue="Gradle.intellij-ide [:product:idea-plugin:runIde]" />
       <item itemvalue="JUnit.未命名" />
+      <item itemvalue="Gradle.Run IDE with Plugin" />
     </list>
     <recent_temporary>
       <list>
         <item itemvalue="Gradle.cangjie [:cfir:analysis-tests:test]" />
-        <item itemvalue="Gradle.BoxGenerated.testBoxInMultiMatchcase" />
-        <item itemvalue="Gradle.ExtendGenerated" />
         <item itemvalue="Gradle.intellij-ide [:product:idea-plugin:runIde]" />
-        <item itemvalue="Gradle.TypealiasGenerated" />
+        <item itemvalue="Gradle.FunctionGenerated.testBodyReturnInference" />
+        <item itemvalue="Gradle.DecompiledTextBuilderTest" />
+        <item itemvalue="Gradle.cangjie [publish]" />
       </list>
     </recent_temporary>
   </component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-jdk-30f59d01ecdd-37e91769500f-intellij.indexing.shared.core-IU-261.25134.95" />
-        <option value="bundled-js-predefined-d6986cc7102b-31caf2ab9e3c-JavaScript-IU-261.25134.95" />
+        <option value="bundled-jdk-30f59d01ecdd-63390994e64e-intellij.indexing.shared.core-IU-262.8665.258" />
+        <option value="bundled-js-predefined-d6986cc7102b-4abd2a77f808-JavaScript-IU-262.8665.258" />
       </set>
     </attachedChunks>
   </component>
@@ -910,7 +952,37 @@
       <workItem from="1782325216752" duration="3358000" />
       <workItem from="1782455600278" duration="1524000" />
       <workItem from="1782495623269" duration="2232000" />
-      <workItem from="1782674076858" duration="21411000" />
+      <workItem from="1782674076858" duration="21737000" />
+      <workItem from="1782802804310" duration="7128000" />
+      <workItem from="1782838783750" duration="2872000" />
+      <workItem from="1782842191049" duration="6197000" />
+      <workItem from="1782981539627" duration="4435000" />
+      <workItem from="1782988543677" duration="14745000" />
+      <workItem from="1783021732372" duration="4845000" />
+      <workItem from="1783367827850" duration="28000" />
+      <workItem from="1783589467821" duration="4272000" />
+      <workItem from="1783618323298" duration="4294000" />
+      <workItem from="1783726234438" duration="3978000" />
+      <workItem from="1783854243599" duration="13000" />
+      <workItem from="1783974994782" duration="3751000" />
+      <workItem from="1784113205197" duration="104000" />
+      <workItem from="1784132968865" duration="584000" />
+      <workItem from="1784144612023" duration="2729000" />
+      <workItem from="1784246958607" duration="1475000" />
+      <workItem from="1784308517934" duration="1993000" />
+      <workItem from="1784354508312" duration="5207000" />
+      <workItem from="1784360872258" duration="3138000" />
+      <workItem from="1784381714353" duration="6890000" />
+      <workItem from="1784441257072" duration="402000" />
+      <workItem from="1784632773985" duration="2180000" />
+      <workItem from="1784636790908" duration="26000" />
+      <workItem from="1784651338899" duration="9921000" />
+      <workItem from="1784725788601" duration="8795000" />
+      <workItem from="1784785074893" duration="1838000" />
+      <workItem from="1784793022941" duration="2955000" />
+      <workItem from="1784796394467" duration="26000" />
+      <workItem from="1784798211954" duration="11987000" />
+      <workItem from="1784880866336" duration="206000" />
     </task>
     <task id="LOCAL-00001" summary="add: implement generic functions and type declarations">
       <option name="closed" value="true" />
@@ -1270,69 +1342,23 @@
   <component name="XDebuggerManager">
     <breakpoint-manager>
       <breakpoints>
-        <line-breakpoint enabled="true" type="kotlin-line">
-          <url>file://$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirCallResolver.kt</url>
-          <line>835</line>
-          <option name="timeStamp" value="333" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="kotlin-line">
-          <url>file://$PROJECT_DIR$/analysis/analysis-api-cfir/test/org/cangnova/cangjie/analysis/api/cfir/test/AnalysisApiSymbolProviderEntryTest.kt</url>
-          <line>87</line>
-          <option name="timeStamp" value="334" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="kotlin-line">
-          <url>file://$PROJECT_DIR$/analysis/analysis-api-cfir/test/org/cangnova/cangjie/analysis/api/cfir/test/AnalysisApiSymbolProviderEntryTest.kt</url>
-          <line>118</line>
-          <option name="timeStamp" value="335" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="kotlin-line">
-          <url>file://$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/symbols/CaCfirPsiSymbol.kt</url>
-          <line>154</line>
-          <option name="timeStamp" value="336" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="kotlin-line">
-          <url>file://$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/psiUtils.kt</url>
-          <line>88</line>
-          <option name="timeStamp" value="337" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="kotlin-line">
-          <url>file://$PROJECT_DIR$/intellij-ide/product/idea-plugin/src/test/kotlin/org/cangnova/cangjie/ide/highlighter/CangJieCompiledFilesHighlightingTest.kt</url>
-          <line>167</line>
-          <option name="timeStamp" value="338" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="kotlin-line">
-          <url>file://$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/references/CaCfirSimpleNameReference.kt</url>
-          <line>87</line>
-          <option name="timeStamp" value="340" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="kotlin-line">
-          <url>file://$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/references/CaCfirReference.kt</url>
-          <line>111</line>
-          <option name="timeStamp" value="341" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="kotlin-line">
-          <url>file://$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/references/CaCfirReference.kt</url>
-          <line>120</line>
-          <option name="timeStamp" value="342" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="kotlin-line">
-          <url>file://$PROJECT_DIR$/intellij-ide/product/idea-plugin/src/test/kotlin/org/cangnova/cangjie/ide/references/CangJieReferenceBindingTest.kt</url>
-          <line>132</line>
-          <option name="temporary" value="true" />
-          <option name="timeStamp" value="349" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="kotlin-line">
-          <url>file://$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirAssignmentTypeMismatchChecker.kt</url>
-          <line>83</line>
-          <option name="timeStamp" value="350" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="kotlin-line">
-          <url>file://$PROJECT_DIR$/cfir/cfir-tree/src/org/cangnova/cangjie/cfir/symbols/CfirBasedSymbol.kt</url>
-          <line>428</line>
-          <option name="timeStamp" value="351" />
+        <breakpoint enabled="true" type="java-exception">
+          <properties class="java.lang.AssertionError" package="java.lang" />
+          <option name="timeStamp" value="352" />
+        </breakpoint>
+        <line-breakpoint type="kotlin-line">
+          <url>file://$PROJECT_DIR$/analysis/decompiled/decompiler-to-stubs/src/org/cangnova/cangjie/analysis/decompiler/stub/CallableCjoStubBuilder.kt</url>
+          <line>342</line>
+          <option name="timeStamp" value="354" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
+    <watches-manager>
+      <configuration name="GradleRunConfiguration">
+        <watch expression="stubList" />
+        <watch expression="nodeList" />
+      </configuration>
+    </watches-manager>
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

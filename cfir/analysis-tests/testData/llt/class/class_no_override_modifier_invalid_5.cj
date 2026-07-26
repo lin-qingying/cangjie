@@ -17,7 +17,7 @@ interface B {
     }
 }
 
-<!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>class D<!> <: A & B {}
+class <!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>D<!> <: A & B {}
 
 main() {
     return 1

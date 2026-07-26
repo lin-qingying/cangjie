@@ -73,20 +73,25 @@ import org.cangnova.cangjie.cfir.resolve.transformers.ReturnTypeCalculator
 import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.BodyResolveContext
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.builtinTypes
+import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
 import org.cangnova.cangjie.cfir.toCfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.cfir.types.builder.buildErrorTypeRef
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
 import org.cangnova.cangjie.cfir.visitors.transformSingle
+import org.cangnova.cangjie.resolve.calls.inference.buildCurrentSubstitutor
 import org.cangnova.cangjie.resolve.calls.tower.ApplicabilityDetail
 import org.cangnova.cangjie.resolve.calls.tower.isSuccess
 import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintMismatch
 import org.cangnova.cangjie.source.CjFakeSourceElementKind
 import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.source.fakeElement
+import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.type.AbstractTypeChecker
+import org.cangnova.cangjie.type.model.TypeConstructorMarker
 import org.cangnova.cangjie.types.TypeApproximatorConfiguration
 import java.util.IdentityHashMap
 
@@ -230,17 +235,30 @@ class CfirCallCompletionResultsWriterTransformer(
     }
 
     /**
-     * 将声明类型经候选 substitutor 和最终 substitutor 替换后近似为可写回类型。
+     * 将声明类型经候选 substitutor、候选当前完成结果和外层最终 substitutor 替换后近似为可写回类型。
+     *
+     * 嵌套泛型调用可能以 PARTIAL completion 暴露给外层候选；这时内层候选自己的
+     * fixed type variables 不一定出现在外层 final substitutor 中。写回参数 expected type
+     * 必须先提交该候选的 current substitutor，才能把 enum constructor owner 泛型传给子实参。
      */
     private fun ConeCangJieType.substituteType(
         candidate: Candidate,
+        contextualExpectedType: ConeCangJieType? = null,
         // Substitutor from type variables (not type parameters)
         substitutor: ConeSubstitutor = finalSubstitutor,
     ): ConeCangJieType {
         // Type parameters are replaced with type variables
         val initialType = candidate.substitutor.substituteOrSelf(this)
+        val contextuallyTyped = candidate.enumConstructorOwnerTargetSubstitutor(contextualExpectedType)
+            ?.substituteOrNull(initialType)
+            ?: initialType
+        val candidateCompletedType = candidate.system.currentStorage()
+            .buildCurrentSubstitutor(session.typeContext, emptyMap())
+            .asCone()
+            .substituteOrNull(contextuallyTyped)
+            ?: contextuallyTyped
         // Type variables are replaced with final type arguments
-        val substitutedType = finallySubstituteOrNull(initialType, substitutor) ?: initialType
+        val substitutedType = finallySubstituteOrNull(candidateCompletedType, substitutor) ?: candidateCompletedType
         // Everything is approximated
         val finalType = typeApproximator.approximateToSuperType(
             type = substitutedType,
@@ -253,6 +271,55 @@ class CfirCallCompletionResultsWriterTransformer(
         // In FE1.0, it's not necessary since the annotation for elvis have some strange form (see org.jetbrains.kotlin.resolve.descriptorUtil.AnnotationsWithOnly)
         // that is not propagated further.
         return finalType
+    }
+
+    /**
+     * 带 payload 的 enum constructor 在目标 owner 类型已知时，需要把 owner 实参投影回候选 fresh 变量。
+     *
+     * 这只用于完成结果写回中的 target typing：普通候选完成仍由约束系统负责；这里补齐
+     * PARTIAL 嵌套调用在外层 expected type 到达后对子实参 expected type 的传递。
+     */
+    private fun Candidate.enumConstructorOwnerTargetSubstitutor(
+        expectedType: ConeCangJieType?,
+    ): ConeSubstitutor? {
+        expectedType ?: return null
+        val enumConstructor = symbol.takeIf { it.isBound }?.cfir as? CfirEnumConstructor ?: return null
+        if (enumConstructor.valueParameters.isEmpty()) return null
+        if (callInfo.hasExplicitTypeArguments) return null
+        val enumConstructorSymbol = symbol as? CfirEnumConstructorSymbol ?: return null
+        val ownerClassId = session.cfirProvider.getContainingClass(enumConstructorSymbol)?.classId ?: return null
+
+        val initialOwnerArguments = substitutedReturnType()
+            .fullyExpandedType(session)
+            .enumTypeArgumentsForClassId(ownerClassId)
+            ?: return null
+        val expectedOwnerArguments = expectedType
+            .fullyExpandedType(session)
+            .enumTypeArgumentsForClassId(ownerClassId)
+            ?: return null
+        if (initialOwnerArguments.size != expectedOwnerArguments.size) return null
+
+        val freshTypeConstructors = freshVariables.mapTo(mutableSetOf()) { it.typeConstructor }
+        val substitution = linkedMapOf<TypeConstructorMarker, ConeCangJieType>()
+        for ((initialArgument, expectedArgument) in initialOwnerArguments.zip(expectedOwnerArguments)) {
+            val initialVariable = initialArgument as? ConeTypeVariableType
+            if (initialVariable != null && initialVariable.typeConstructor in freshTypeConstructors) {
+                substitution[initialVariable.typeConstructor] = expectedArgument
+                continue
+            }
+            if (!AbstractTypeChecker.equalTypes(session.typeContext, initialArgument, expectedArgument)) return null
+        }
+        if (substitution.isEmpty()) return null
+        return CfirTypeSubstitutorByMap(substitution)
+    }
+
+    /**
+     * 在类型确实代表指定 enum owner 时抽取 owner 类型实参。
+     */
+    private fun ConeCangJieType.enumTypeArgumentsForClassId(classId: ClassId): List<ConeCangJieType>? = when (this) {
+        is ConeEnumType -> typeArguments.map { it.type }.takeIf { this.classId == classId }
+        is ConeClassLikeType -> typeArguments.map { it.type }.takeIf { this.classId == classId }
+        else -> null
     }
 
     /**
@@ -290,30 +357,32 @@ class CfirCallCompletionResultsWriterTransformer(
         result.transformCompletedFunctionCallReceiver(candidate)
         val originalArgumentList = result.argumentList
 
-        val completedResultType = candidate.completedFunctionCallResultType(result.resolvedType)
-        recordAssignmentRhsExpectedTypeMismatch(
-            expression = functionCall,
-            actualType = completedResultType,
-            assignmentExpectedTypeMismatchOnly = assignmentExpectedTypeMismatchOnly,
-        )
+        val callExpectedType = data?.getExpectedType(functionCall)
+        val completedResultType = candidate.completedFunctionCallResultType(result.resolvedType, callExpectedType)
         val enumConstructorInferenceDiagnostic = candidate
             .payloadEnumConstructorInferenceDiagnostic(completedResultType)
         if (enumConstructorInferenceDiagnostic != null) {
             result.replaceCalleeReference(calleeReference.toErrorReference(enumConstructorInferenceDiagnostic))
         }
-        val resultType = calleeReference.callDiagnosticForResultType(
-            ignoreAssignmentExpectedTypeMismatch = assignmentExpectedTypeMismatchOnly,
-        )?.let { diagnostic ->
-            ConeErrorType(ConeUnreportedDuplicateDiagnostic(diagnostic))
-        } ?: enumConstructorInferenceDiagnostic?.let { diagnostic ->
-            ConeErrorType(ConeUnreportedDuplicateDiagnostic(diagnostic), delegatedType = completedResultType)
-        } ?: completedResultType
         val allArgs = calleeReference.computeAllArguments(originalArgumentList)
-        val (regularMapping, allArgsMapping) = candidate.handleVarargsAndReturnResultingArgumentsMapping(
-            argumentList = allArgs,
-            callSource = functionCall.source,
+        val argumentMappingFailed = candidate.argumentMappingOutcome?.hasMappingFailure == true
+        val (regularMapping, allArgsMapping) = if (argumentMappingFailed) {
+            // 映射失败时保留原始实参结构；partial mapping 只用于解释候选失败，
+            // 不能触发变参解糖或把部分实参伪装成已经完成的 resolved argument list。
+            ResultingArgumentsMapping(
+                regularMapping = linkedMapOf(),
+                allArgsMapping = allArgs.associateWithTo(LinkedHashMap()) { null },
+            )
+        } else {
+            candidate.handleVarargsAndReturnResultingArgumentsMapping(
+                argumentList = allArgs,
+                callSource = functionCall.source,
+            )
+        }
+        val expectedArgumentsTypeMapping = candidate.createArgumentsMapping(
+            forErrorReference = calleeReference.isError,
+            contextualExpectedType = callExpectedType,
         )
-        val expectedArgumentsTypeMapping = candidate.createArgumentsMapping(forErrorReference = calleeReference.isError)
         result.replaceArgumentList(
             rewriteArgumentList(
                 candidate = candidate,
@@ -325,6 +394,24 @@ class CfirCallCompletionResultsWriterTransformer(
             )
         )
 
+        val callDiagnostic = calleeReference.callDiagnosticForResultType(
+            ignoreAssignmentExpectedTypeMismatch = assignmentExpectedTypeMismatchOnly,
+        )
+        val invalidChildType = result.firstInvalidReceiverOrArgumentType()
+        val resultType = when {
+            callDiagnostic != null -> callDiagnostic.asPropagatedCallErrorType(completedResultType)
+            invalidChildType != null ->
+                invalidChildType.diagnostic.asPropagatedCallErrorType(completedResultType)
+            enumConstructorInferenceDiagnostic != null ->
+                enumConstructorInferenceDiagnostic.asPropagatedCallErrorType(completedResultType)
+            else -> completedResultType
+        }
+        recordAssignmentRhsExpectedTypeMismatch(
+            expression = functionCall,
+            actualType = resultType,
+            assignmentExpectedTypeMismatchOnly = assignmentExpectedTypeMismatchOnly,
+        )
+
         result.replaceConeTypeOrNull(resultType)
         session.lookupTracker?.recordTypeResolveAsLookup(resultType, functionCall.source, context.file.source)
         result.addNonFatalDiagnostics(candidate)
@@ -332,10 +419,41 @@ class CfirCallCompletionResultsWriterTransformer(
     }
 
     /**
-     * 在 completion diagnostic 用 [ConeErrorType] 覆盖结果前捕获赋值 RHS 根的实际类型。
+     * 取得完成写回后 receiver 或实参携带的首个 InvalidTy。
+     *
+     * 子调用的错误必须在外层调用完成后检查：只有此时 postponed call、命名实参包装和
+     * argument replacement 才已经落到最终 CFIR。delegatedType 只是恢复元数据，不参与
+     * receiver scope；因此外层调用本身也必须继续保持 [ConeErrorType]。
+     */
+    private fun CfirFunctionCall.firstInvalidReceiverOrArgumentType(): ConeErrorType? =
+        sequenceOf(explicitReceiver, dispatchReceiver)
+            .plus(argumentList.arguments.asSequence())
+            .mapNotNull { expression -> expression?.coneTypeOrNull as? ConeErrorType }
+            .firstOrNull()
+
+    /**
+     * 把当前根诊断传播为外层调用的 InvalidTy，并仅把声明结果类型保留为恢复元数据。
+     */
+    private fun ConeDiagnostic.asPropagatedCallErrorType(
+        completedResultType: ConeCangJieType,
+    ): ConeErrorType = ConeErrorType(
+        diagnostic = ConeUnreportedDuplicateDiagnostic(unwrapUnreportedDuplicateDiagnostic()),
+        delegatedType = completedResultType,
+    )
+
+    /** 避免 InvalidTy 逐层传播时形成嵌套的不重复上报包装。 */
+    private tailrec fun ConeDiagnostic.unwrapUnreportedDuplicateDiagnostic(): ConeDiagnostic =
+        if (this is ConeUnreportedDuplicateDiagnostic) {
+            original.unwrapUnreportedDuplicateDiagnostic()
+        } else {
+            this
+        }
+
+    /**
+     * 在调用完成并传播子节点 InvalidTy 后记录赋值 RHS 根的实际类型。
      *
      * frame 以对象 identity 限定根节点，调用参数、receiver 和嵌套调用不会写入外层
-     * assignment outcome。
+     * assignment outcome；错误结果不会再派生赋值类型不匹配。
      */
     private fun recordAssignmentRhsExpectedTypeMismatch(
         expression: CfirExpression,
@@ -383,11 +501,14 @@ class CfirCallCompletionResultsWriterTransformer(
     /**
      * 计算函数调用完成后表达式结果类型。
      */
-    private fun Candidate.completedFunctionCallResultType(resolvedType: ConeCangJieType): ConeCangJieType {
+    private fun Candidate.completedFunctionCallResultType(
+        resolvedType: ConeCangJieType,
+        contextualExpectedType: ConeCangJieType?,
+    ): ConeCangJieType {
         if (callInfo.callKind == CallKind.Function && symbol.cfir is CfirVariable) {
             return finallySubstituteOrSelf(substitutedReturnType())
         }
-        return resolvedType.substituteType(this)
+        return resolvedType.substituteType(this, contextualExpectedType)
     }
 
     /**
@@ -534,9 +655,17 @@ class CfirCallCompletionResultsWriterTransformer(
     /**
      * 为候选实参构造 expected type 映射。
      */
-    private fun Candidate.createArgumentsMapping(forErrorReference: Boolean): ExpectedArgumentType.ArgumentsMap? {
-        val lambdasReturnType = postponedAtoms.filterIsInstance<ConeResolvedLambdaAtom>().associate { atom ->
-            atom.anonymousFunction to finallySubstituteOrSelf(substitutor.substituteOrSelf(atom.returnType))
+    private fun Candidate.createArgumentsMapping(
+        forErrorReference: Boolean,
+        contextualExpectedType: ConeCangJieType?,
+    ): ExpectedArgumentType.ArgumentsMap? {
+        val argumentMappingFailed = argumentMappingOutcome?.hasMappingFailure == true
+        val lambdasReturnType = if (argumentMappingFailed) {
+            emptyMap()
+        } else {
+            postponedAtoms.filterIsInstance<ConeResolvedLambdaAtom>().associate { atom ->
+                atom.anonymousFunction to finallySubstituteOrSelf(substitutor.substituteOrSelf(atom.returnType))
+            }
         }
         val arguments = LinkedHashMap<CfirElement, ConeCangJieType>()
 
@@ -550,56 +679,66 @@ class CfirCallCompletionResultsWriterTransformer(
             }
         }
 
-        val cangjieVariadicParameter = cangjieVariadicParameterForCall
-        for ((atom, valueParameter) in argumentMapping) {
-            val parameterType = valueParameter.returnTypeRef.coneTypeOrNull
-                ?.substituteType(this)
-                ?.let { substituteExplicitTypeArgumentConstraints(it) }
-                ?: continue
-            val expectedType = if (valueParameter == cangjieVariadicParameter) {
-                parameterType.arrayElementType ?: parameterType
-            } else {
-                parameterType
+        if (!argumentMappingFailed) {
+            val cangjieVariadicParameter = cangjieVariadicParameterForCall
+            for ((atom, valueParameter) in argumentMapping) {
+                val parameterType = valueParameter.returnTypeRef.coneTypeOrNull
+                    ?.substituteType(this, contextualExpectedType)
+                    ?.let { substituteExplicitTypeArgumentConstraints(it) }
+                    ?: continue
+                val expectedType = if (valueParameter == cangjieVariadicParameter) {
+                    parameterType.arrayElementType ?: parameterType
+                } else {
+                    parameterType
+                }
+                registerExpectedType(atom.expression, expectedType)
+                val unwrappedArgument = atom.unwrapAtom()
+                if (unwrappedArgument !== atom.expression) {
+                    registerExpectedType(unwrappedArgument, expectedType)
+                }
             }
-            registerExpectedType(atom.expression, expectedType)
-            val unwrappedArgument = atom.unwrapAtom()
-            if (unwrappedArgument !== atom.expression) {
-                registerExpectedType(unwrappedArgument, expectedType)
+
+            val argumentReplacements = this@createArgumentsMapping.argumentReplacements
+            argumentReplacements?.forEach { (original, replacement) ->
+                val expectedType = arguments[original] ?: return@forEach
+                if (replacement is CfirExpression) {
+                    registerExpectedType(replacement, expectedType)
+                }
+            }
+
+            for (lambdaAtom in postponedAtoms.filterIsInstance<ConeResolvedLambdaAtom>()) {
+                val originalExpectedFunctionType = lambdaAtom.expectedType as? ConeFunctionType
+                val completedFunctionType = ConeFunctionType(
+                    parameterTypes = lambdaAtom.parameterTypes.map { parameterType ->
+                        finallySubstituteOrSelf(substitutor.substituteOrSelf(parameterType))
+                    },
+                    returnType = lambdasReturnType[lambdaAtom.anonymousFunction]
+                        ?: finallySubstituteOrSelf(substitutor.substituteOrSelf(lambdaAtom.returnType)),
+                    isCFunc = originalExpectedFunctionType?.isCFunc ?: false,
+                    isClosureType = originalExpectedFunctionType?.isClosureType ?: false,
+                    hasVariableLenArg = originalExpectedFunctionType?.hasVariableLenArg ?: false,
+                    attributes = originalExpectedFunctionType?.attributes ?: ConeAttributes.Empty,
+                )
+                val existingExpectedType = arguments[lambdaAtom.expression]
+                if (existingExpectedType.functionTypeForLambdaShape() == null) {
+                    registerExpectedType(lambdaAtom.expression, completedFunctionType)
+                }
             }
         }
 
         val argumentReplacements = this@createArgumentsMapping.argumentReplacements
-        argumentReplacements?.forEach { (original, replacement) ->
-            val expectedType = arguments[original] ?: return@forEach
-            if (replacement is CfirExpression) {
-                registerExpectedType(replacement, expectedType)
-            }
-        }
-
-        for (lambdaAtom in postponedAtoms.filterIsInstance<ConeResolvedLambdaAtom>()) {
-            val originalExpectedFunctionType = lambdaAtom.expectedType as? ConeFunctionType
-            val completedFunctionType = ConeFunctionType(
-                parameterTypes = lambdaAtom.parameterTypes.map { parameterType ->
-                    finallySubstituteOrSelf(substitutor.substituteOrSelf(parameterType))
-                },
-                returnType = lambdasReturnType[lambdaAtom.anonymousFunction]
-                    ?: finallySubstituteOrSelf(substitutor.substituteOrSelf(lambdaAtom.returnType)),
-                isCFunc = originalExpectedFunctionType?.isCFunc ?: false,
-                isClosureType = originalExpectedFunctionType?.isClosureType ?: false,
-                hasVariableLenArg = originalExpectedFunctionType?.hasVariableLenArg ?: false,
-                attributes = originalExpectedFunctionType?.attributes ?: ConeAttributes.Empty,
-            )
-            val existingExpectedType = arguments[lambdaAtom.expression]
-            if (existingExpectedType.functionTypeForLambdaShape() == null) {
-                registerExpectedType(lambdaAtom.expression, completedFunctionType)
-            }
-        }
-
-        if (lambdasReturnType.isEmpty() && arguments.isEmpty() && argumentReplacements.isNullOrEmpty()) return null
+            ?.takeUnless { argumentMappingFailed }
+        if (
+            !argumentMappingFailed &&
+            lambdasReturnType.isEmpty() &&
+            arguments.isEmpty() &&
+            argumentReplacements.isNullOrEmpty()
+        ) return null
         return ExpectedArgumentType.ArgumentsMap(
             map = arguments,
             lambdasReturnTypes = lambdasReturnType,
             forErrorReference = forErrorReference,
+            argumentMappingFailed = argumentMappingFailed,
             argumentReplacements,
         )
     }
@@ -863,7 +1002,10 @@ class CfirCallCompletionResultsWriterTransformer(
         for (index in elements.indices) {
             val elementData = expectedElementTypes
                 ?.getOrNull(index)
-                ?.toExpectedType(data.argumentReplacements)
+                ?.toExpectedType(
+                    argumentReplacements = data.argumentReplacements,
+                    argumentMappingFailed = data.argumentMappingFailed,
+                )
             elements[index] = elements[index].transformSingle(this, elementData) as CfirExpression
         }
         tupleLiteral.replaceConeTypeOrNull(
@@ -878,7 +1020,13 @@ class CfirCallCompletionResultsWriterTransformer(
     override fun transformBlock(block: CfirBlock, data: ExpectedArgumentType?): CfirExpression {
         val expectedType = data?.getExpectedType(block)
         if (expectedType != null && block.statements.singleOrNull() is CfirExpression) {
-            block.transformStatements(this, expectedType.toExpectedType(data.argumentReplacements))
+            block.transformStatements(
+                this,
+                expectedType.toExpectedType(
+                    argumentReplacements = data.argumentReplacements,
+                    argumentMappingFailed = data.argumentMappingFailed,
+                ),
+            )
             block.transformOtherChildren(this, data)
             block.replaceConeTypeOrNull((block.statements.single() as CfirExpression).coneTypeOrNull)
             return block
@@ -894,7 +1042,10 @@ class CfirCallCompletionResultsWriterTransformer(
      */
     override fun transformWrappedExpression(wrappedExpression: CfirWrappedExpression, data: ExpectedArgumentType?): CfirExpression {
         val expectedType = data?.getExpectedType(wrappedExpression)
-        val expressionData = expectedType?.toExpectedType(data.argumentReplacements) ?: data
+        val expressionData = expectedType?.toExpectedType(
+            argumentReplacements = data.argumentReplacements,
+            argumentMappingFailed = data.argumentMappingFailed,
+        ) ?: data
         wrappedExpression.transformChildren(this, expressionData)
         wrappedExpression.replaceConeTypeOrNull(wrappedExpression.expression.coneTypeOrNull)
         return wrappedExpression
@@ -910,11 +1061,20 @@ class CfirCallCompletionResultsWriterTransformer(
 
         val expectedRangeType = data?.getExpectedType(rangeExpression)?.rangeTypeOrNull()
         val endpointExpectedType = expectedRangeType?.typeArguments?.singleOrNull()?.type
-        val endpointData = endpointExpectedType?.toExpectedType(data?.argumentReplacements)
+        val endpointData = endpointExpectedType?.toExpectedType(
+            argumentReplacements = data?.argumentReplacements,
+            argumentMappingFailed = data?.argumentMappingFailed == true,
+        )
         rangeExpression.transformAnnotations(this, data)
         rangeExpression.transformStart(this, endpointData)
         rangeExpression.transformEnd(this, endpointData)
-        rangeExpression.transformStep(this, ConePrimitiveType.INT64.toExpectedType(data?.argumentReplacements))
+        rangeExpression.transformStep(
+            this,
+            ConePrimitiveType.INT64.toExpectedType(
+                argumentReplacements = data?.argumentReplacements,
+                argumentMappingFailed = data?.argumentMappingFailed == true,
+            ),
+        )
         if (expectedRangeType != null) {
             rangeExpression.replaceConeTypeOrNull(expectedRangeType)
         }
@@ -928,6 +1088,9 @@ class CfirCallCompletionResultsWriterTransformer(
         anonymousFunctionExpression: CfirAnonymousFunctionExpression,
         data: ExpectedArgumentType?
     ): CfirExpression {
+        if (data?.argumentMappingFailed == true) {
+            anonymousFunctionExpression.anonymousFunction.isInsideFailedArgumentMapping = true
+        }
         finalizeAnonymousFunction(
             function = anonymousFunctionExpression.anonymousFunction,
             data = data,
@@ -1185,7 +1348,10 @@ class CfirCallCompletionResultsWriterTransformer(
             }
             ?: returnExpressions.firstNotNullOfOrNull { it.expression.coneTypeOrNull }
 
-        val newData = expectedReturnType?.toExpectedType(data?.argumentReplacements)
+        val newData = expectedReturnType?.toExpectedType(
+            argumentReplacements = data?.argumentReplacements,
+            argumentMappingFailed = data?.argumentMappingFailed == true,
+        ) ?: data?.takeIf { it.argumentMappingFailed }
         for (returnExpression in returnExpressions) {
             if (newData != null) {
                 returnExpression.expression.transform<CfirElement, ExpectedArgumentType?>(this, newData)
@@ -1496,6 +1662,8 @@ class CfirCallCompletionResultsWriterTransformer(
 sealed class ExpectedArgumentType(
     /** 子表达式替换映射。 */
     val argumentReplacements: Map<CfirElement, CfirExpression>?,
+    /** 外层调用的参数映射已经失败，当前实参子树不得继续产生参数类型检查诊断。 */
+    val argumentMappingFailed: Boolean,
 ) {
     /**
      * 多实参调用的期望类型映射。
@@ -1507,8 +1675,10 @@ sealed class ExpectedArgumentType(
         val lambdasReturnTypes: Map<CfirAnonymousFunction, ConeCangJieType>,
         /** 当前调用是否来自错误引用。 */
         val forErrorReference: Boolean,
+        /** 当前调用是否已经在参数映射阶段终止。 */
+        argumentMappingFailed: Boolean,
         argumentReplacements: Map<CfirElement, CfirExpression>?,
-    ) : ExpectedArgumentType(argumentReplacements)
+    ) : ExpectedArgumentType(argumentReplacements, argumentMappingFailed)
 
     /**
      * 单一表达式期望类型。
@@ -1517,7 +1687,8 @@ sealed class ExpectedArgumentType(
         /** 下传的期望类型。 */
         val type: ConeCangJieType,
         argumentReplacements: Map<CfirElement, CfirExpression>?,
-    ) : ExpectedArgumentType(argumentReplacements)
+        argumentMappingFailed: Boolean = false,
+    ) : ExpectedArgumentType(argumentReplacements, argumentMappingFailed)
 }
 
 /**
@@ -1543,7 +1714,12 @@ private fun ConeCangJieType.rangeTypeOrNull(): ConeClassifierType? = when (this)
  */
 private fun ConeCangJieType.toExpectedType(
     argumentReplacements: Map<CfirElement, CfirExpression>?,
-): ExpectedArgumentType = ExpectedArgumentType.ExpectedType(this, argumentReplacements)
+    argumentMappingFailed: Boolean = false,
+): ExpectedArgumentType = ExpectedArgumentType.ExpectedType(
+    type = this,
+    argumentReplacements = argumentReplacements,
+    argumentMappingFailed = argumentMappingFailed,
+)
 
 /**
  * 近似理想整数字面量或 primitive ideal 类型。

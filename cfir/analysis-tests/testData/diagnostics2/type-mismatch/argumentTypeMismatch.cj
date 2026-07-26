@@ -10,6 +10,6 @@ func takesInt1<T>(x: T): T {
 main(): Unit {
     takesInt1<Int>
     takesInt
-    <!NEW_INFERENCE_ERROR!>takesInt1<Float64><!>(1)
+    takesInt1<Float64>(<!TYPE_MISMATCH!>1<!>)
     takesInt(<!ARGUMENT_TYPE_MISMATCH!>true<!>)
 }

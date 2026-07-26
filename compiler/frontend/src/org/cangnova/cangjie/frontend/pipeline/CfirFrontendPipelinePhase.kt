@@ -1,61 +1,20 @@
 package org.cangnova.cangjie.frontend.pipeline
 
-import com.intellij.lang.LighterASTNode
-import com.intellij.lang.PsiBuilderFactory
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.project.Project
-import com.intellij.openapi.util.Ref
 import com.intellij.openapi.vfs.StandardFileSystems
-import com.intellij.psi.tree.IElementType
-import com.intellij.util.diff.FlyweightCapableTreeStructure
 import org.cangnova.cangjie.CangJieCoreEnvironment
 import org.cangnova.cangjie.CangJieCoreEnvironmentMode
 import org.cangnova.cangjie.CjPsiSourceFile
 import org.cangnova.cangjie.CjSourceFile
 import org.cangnova.cangjie.cfir.DependencyListForCliModule
-import org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder
-import org.cangnova.cangjie.cfir.builder.macro.MacroPayloadTokenizer
-import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirFile
-import org.cangnova.cangjie.cfir.declarations.CfirFunction
-import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
-import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.entrypoint.session.CfirDefaultSessionFactory
 import org.cangnova.cangjie.cfir.entrypoint.session.createDefaultCfirSessionFactoryContext
 import org.cangnova.cangjie.cfir.extensions.CfirExtensionRegistrar
-import org.cangnova.cangjie.cfir.lightTree.LightTree2Cfir
-import org.cangnova.cangjie.cfir.lightTree.LightTreeRawCfirDeclarationBuilder
-import org.cangnova.cangjie.cfir.pipeline.AllModulesFrontendOutput
-import org.cangnova.cangjie.cfir.pipeline.CfirSessionConstructionUtils
-import org.cangnova.cangjie.cfir.pipeline.CfirSessionProducer
-import org.cangnova.cangjie.cfir.pipeline.SessionWithSources
-import org.cangnova.cangjie.cfir.pipeline.buildPreMacroRawCfirFromCjFiles
-import org.cangnova.cangjie.cfir.pipeline.buildPreMacroRawCfirViaLightTree
-import org.cangnova.cangjie.cfir.pipeline.resolveAndCheckCfir
-import org.cangnova.cangjie.cfir.pipeline.resolveAndCheckCfirAfterConstruction
-import org.cangnova.cangjie.cfir.resolve.providers.CfirProviderImpl
-import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroCallNode
-import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionResult
-import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionService
-import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroDemandClassification
-import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroFailurePolicy
-import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroFragmentParser
-import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceParam
-import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceToken
-import org.cangnova.cangjie.cfir.resolve.providers.macro.PreMacroRawBuildResult
-import org.cangnova.cangjie.cfir.resolve.providers.macro.TokenBackedMacroFragmentParser
+import org.cangnova.cangjie.cfir.pipeline.*
+import org.cangnova.cangjie.cfir.resolve.providers.macro.*
 import org.cangnova.cangjie.cfir.session.CfirSession
-import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
-import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.ensureAnnotationMetadataRegistry
-import org.cangnova.cangjie.config.CompilerConfiguration
-import org.cangnova.cangjie.config.cangjieSourceRoots
-import org.cangnova.cangjie.config.classpathRoots
-import org.cangnova.cangjie.config.diagnosticsCollector
-import org.cangnova.cangjie.config.languageVersionSettings
-import org.cangnova.cangjie.config.messageCollector
-import org.cangnova.cangjie.config.moduleName
-import org.cangnova.cangjie.config.useLightTree
+import org.cangnova.cangjie.config.*
 import org.cangnova.cangjie.frontend.environment.VfsBasedProjectEnvironment
 import org.cangnova.cangjie.frontend.environment.findFileByPath
 import org.cangnova.cangjie.frontend.environment.forAllFiles
@@ -63,22 +22,13 @@ import org.cangnova.cangjie.frontend.sources.CollectedCjSources
 import org.cangnova.cangjie.frontend.sources.GroupedCjSources
 import org.cangnova.cangjie.frontend.sources.allFiles
 import org.cangnova.cangjie.frontend.sources.collectCjSources
-import org.cangnova.cangjie.lexer.CangJieLexer
 import org.cangnova.cangjie.messages.CompilerMessageLocationWithRange
-import org.cangnova.cangjie.messages.CompilerMessageSourceLocation
 import org.cangnova.cangjie.messages.CompilerMessageSeverity
+import org.cangnova.cangjie.messages.CompilerMessageSourceLocation
 import org.cangnova.cangjie.name.Name
-import org.cangnova.cangjie.parsing.CangJieLightParser
-import org.cangnova.cangjie.parsing.CangJieParserDefinition
-import org.cangnova.cangjie.psi.CjDeclaration
 import org.cangnova.cangjie.psi.CjFile
-import org.cangnova.cangjie.psi.CjNodeTypes
-import org.cangnova.cangjie.psi.CjParameter
-import org.cangnova.cangjie.psi.CjPsiFactory
-import org.cangnova.cangjie.source.CjPsiSourceElement
 import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.source.psi
-import org.cangnova.cangjie.source.readSourceFileWithMapping
 import java.io.File
 
 /**
@@ -388,7 +338,7 @@ object CfirFrontendPipelinePhase : PipelinePhase<ConfigurationPipelineArtifact, 
             is MacroConstructionResult.Degraded -> return
         }
         val diagnostics = result.registry.diagnostics
-            .filter { it.severity == org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionDiagnostic.Severity.ERROR }
+            .filter { it.severity == MacroConstructionDiagnostic.Severity.ERROR }
         if (diagnostics.isEmpty()) {
             configuration.messageCollector.report(CompilerMessageSeverity.ERROR, "$label: no further details")
             return

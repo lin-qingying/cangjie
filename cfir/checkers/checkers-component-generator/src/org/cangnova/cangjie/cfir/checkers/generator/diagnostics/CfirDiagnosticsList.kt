@@ -900,7 +900,7 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
             parameter<Name>("memberName")
         }
 
-        // 非抽象类/结构体未实现继承来的抽象成员。官方 cjc 报在类型声明起始处。
+        // 非抽象类/结构体未实现继承来的抽象成员，IDE 诊断定位到类型名称。
         val ABSTRACT_MEMBER_NOT_IMPLEMENTED by error<CjNamedDeclaration> {
             parameter<Name>("className")
         }

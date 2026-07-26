@@ -24,7 +24,6 @@
 
 package org.cangnova.cangjie.psi
 
-import org.cangnova.cangjie.lexer.CjKeywordToken
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.psi.psiUtil.CjStubbedPsiUtil
 import org.cangnova.cangjie.psi.stubs.CangJiePlaceHolderStub
@@ -94,9 +93,11 @@ class CjTypeReference :
 
     /**
      * 执行 `getQualifiedName` 内部辅助逻辑，支撑仓颉 PSI节点的结构解析与访问。
+     *
+     * 类型位置不要对 Unit/Int64 等类型关键字加反引号；`` 只用于标识符位置转义关键字。
      */
     private fun getQualifiedName(userType: CjUserType): String? {
-        val referencedName = userType.referencedName?.let(::renderIdentifier) ?: return null
+        val referencedName = userType.referencedName ?: return null
         val qualifier = userType.qualifier ?: return referencedName
         return getQualifiedName(qualifier) + "." + referencedName
     }
@@ -156,16 +157,6 @@ class CjTypeReference :
 
             null -> null
             else -> error("Unsupported type $typeElement")
-        }
-    }
-
-    private companion object {
-        private val KEYWORD_NAMES: Set<String> = CjTokens.KEYWORDALL.types
-            .filterIsInstance<CjKeywordToken>()
-            .mapTo(hashSetOf()) { keyword -> keyword.value }
-
-        private fun renderIdentifier(identifier: String): String {
-            return if (identifier in KEYWORD_NAMES) "`$identifier`" else identifier
         }
     }
 }

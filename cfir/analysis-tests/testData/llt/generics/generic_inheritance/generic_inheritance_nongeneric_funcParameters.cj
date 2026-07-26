@@ -16,7 +16,7 @@ interface I<T> {
 
 <!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>interface J<T, V><!> <: I<T> & I<V> {}
 
-<!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>class B<T, V><!> <: I<T> & I<V> {
+class <!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>B<!><T, V> <: I<T> & I<V> {
     public prop m: Int64 {
         get() {
             return foo()

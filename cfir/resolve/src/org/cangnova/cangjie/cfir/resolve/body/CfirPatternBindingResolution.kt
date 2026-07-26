@@ -27,8 +27,6 @@ package org.cangnova.cangjie.cfir.resolve.body
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.patterns.*
-import org.cangnova.cangjie.cfir.references.CfirNamedReference
-import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.resolve.CfirTypeResolutionConfiguration
 import org.cangnova.cangjie.cfir.resolve.transformers.CfirSpecificTypeResolverTransformer
 import org.cangnova.cangjie.cfir.resolvedTypeFromPrototype
@@ -175,11 +173,12 @@ private fun CfirPartialBodyResolveTransformer.resolveEnumArgumentTypes(
     val enumDeclaration = (session.symbolProvider.getClassLikeSymbolByClassId(enumType.classId)?.cfir as? CfirEnum)
         ?: return emptyList()
 
-    val constructorName = extractEnumConstructorName(pattern) ?: return emptyList()
+    val constructorAccess = pattern.constructorReference.enumPatternConstructorAccessOrNull() ?: return emptyList()
+    if (!constructorAccess.matchesEnumOwner(enumDeclaration, enumType)) return emptyList()
     val enumConstructor = enumDeclaration.declarations
         .filterIsInstance<CfirEnumConstructor>()
         .firstOrNull { candidate ->
-            candidate.name == constructorName && candidate.payloadArity() == pattern.arguments.size
+            candidate.name == constructorAccess.constructorName && candidate.payloadArity() == pattern.arguments.size
         }
         ?: return emptyList()
 
@@ -194,7 +193,9 @@ private fun resolveStdlibOptionArgumentTypes(
     pattern: CfirEnumPattern,
     expectedType: ConeCangJieType,
 ): List<ConeCangJieType>? {
-    val constructorName = extractEnumConstructorName(pattern)
+    val constructorAccess = pattern.constructorReference.enumPatternConstructorAccessOrNull()
+        ?.takeIf { it.matchesStdlibOptionOwner(expectedType) }
+    val constructorName = constructorAccess?.constructorName
     val optionArgumentType = expectedType.optionElementType ?: return null
     return when {
         constructorName == OPTION_SOME_CONSTRUCTOR_NAME &&
@@ -204,17 +205,6 @@ private fun resolveStdlibOptionArgumentTypes(
                 pattern.arguments.isEmpty() -> emptyList()
         constructorName == OPTION_SOME_CONSTRUCTOR_NAME ||
                 constructorName == OPTION_NONE_CONSTRUCTOR_NAME -> emptyList()
-        else -> null
-    }
-}
-
-/**
- * 提取 enum pattern 中使用的构造器名称。
- */
-private fun extractEnumConstructorName(pattern: CfirEnumPattern): Name? {
-    return when (val reference = pattern.constructorReference) {
-        is CfirResolvedNamedReference -> reference.name
-        is CfirNamedReference -> reference.name
         else -> null
     }
 }

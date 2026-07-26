@@ -33,8 +33,6 @@ import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralKind
 import org.cangnova.cangjie.cfir.expressions.CfirMatchExpression
 import org.cangnova.cangjie.cfir.patterns.*
-import org.cangnova.cangjie.cfir.references.CfirNamedReference
-import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.resolve.match.isMatchSubtypeOf
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassMemberScopeKind
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
@@ -48,7 +46,6 @@ import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.OperatorNameConventions
 import org.cangnova.cangjie.source.AbstractCjSourceElement
-import org.cangnova.cangjie.source.CjOffsetsOnlySourceElement
 import org.cangnova.cangjie.source.text
 
 /**
@@ -89,7 +86,7 @@ object CfirMatchPatternLegalityChecker : CfirMatchExpressionChecker() {
      * tuple、enum、binding、type、const、expression 与 or pattern 各自对应不同的诊断规则。
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
-    private fun checkPattern(
+    internal fun checkPattern(
         pattern: CfirPattern,
         expectedType: ConeCangJieType,
     ) {
@@ -435,12 +432,10 @@ private fun CfirPattern.patternText(): String =
     source?.text?.toString()?.trim().orEmpty().ifBlank { this::class.simpleName ?: "pattern" }
 
 /**
- * 取得 enum pattern 构造器诊断使用的首字符范围。
+ * 取得 enum pattern 构造器诊断使用的完整 pattern 范围。
  */
-private fun CfirEnumPattern.enumConstructorDiagnosticSource(): AbstractCjSourceElement? {
-    val source = constructorReference.source ?: source ?: return null
-    return CjOffsetsOnlySourceElement(source.startOffset, source.startOffset + 1)
-}
+private fun CfirEnumPattern.enumConstructorDiagnosticSource(): AbstractCjSourceElement? =
+    source ?: constructorReference.source
 
 /**
  * 取得类型在 pattern 诊断中的简短展示文本。
@@ -448,15 +443,6 @@ private fun CfirEnumPattern.enumConstructorDiagnosticSource(): AbstractCjSourceE
 private fun ConeCangJieType.patternTypeText(): String = when (this) {
     is ConePrimitiveType -> kind.typeName
     else -> classIdOrPrimitiveClassId?.shortClassName?.asString() ?: toString()
-}
-
-/**
- * 从 enum pattern 构造器引用中提取构造器名称。
- */
-private fun CfirEnumPattern.constructorName(): Name? = when (val reference = constructorReference) {
-    is CfirResolvedNamedReference -> reference.name
-    is CfirNamedReference -> reference.name
-    else -> null
 }
 
 /**
@@ -493,7 +479,9 @@ private fun CfirEnumPattern.resolveEnumConstructorPattern(
     val enumType = expectedType.expandedPatternEnumType(context.session) ?: return null
     val enumDeclaration = context.session.symbolProvider.getClassLikeSymbolByClassId(enumType.classId)?.cfir as? CfirEnum
         ?: return null
-    val constructorName = constructorName() ?: return null
+    val constructorAccess = constructorReference.enumPatternConstructorAccessOrNull() ?: return null
+    if (!constructorAccess.matchesEnumOwner(enumDeclaration, enumType)) return null
+    val constructorName = constructorAccess.constructorName
     val constructorsByName = enumDeclaration.declarations
         .filterIsInstance<CfirEnumConstructor>()
         .filter { constructor -> constructor.name == constructorName }
@@ -518,7 +506,11 @@ private fun resolveStdlibOptionArgumentTypes(
 ): List<ConeCangJieType>? {
     val optionArgumentType = expectedType.optionElementType ?: return null
 
-    return when (pattern.constructorName()) {
+    val constructorAccess = pattern.constructorReference.enumPatternConstructorAccessOrNull()
+        ?.takeIf { it.matchesStdlibOptionOwner(expectedType) }
+        ?: return null
+
+    return when (constructorAccess.constructorName) {
         OPTION_SOME_CONSTRUCTOR_NAME -> listOf(optionArgumentType)
         OPTION_NONE_CONSTRUCTOR_NAME -> emptyList()
         else -> null

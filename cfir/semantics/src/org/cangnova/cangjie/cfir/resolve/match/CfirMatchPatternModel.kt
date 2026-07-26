@@ -26,6 +26,7 @@ package org.cangnova.cangjie.cfir.resolve.match
 
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirEnum
+import org.cangnova.cangjie.cfir.declarations.enumPatternConstructorAccessOrNull
 import org.cangnova.cangjie.cfir.declarations.expandedPatternEnumType
 import org.cangnova.cangjie.cfir.declarations.payloadArity
 import org.cangnova.cangjie.cfir.declarations.substitutedPayloadParameterTypes
@@ -35,7 +36,6 @@ import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralKind
 import org.cangnova.cangjie.cfir.expressions.CfirMatchExpression
 import org.cangnova.cangjie.cfir.patterns.*
-import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.resolve.constants.CfirIntConstantEvalUtils
 import org.cangnova.cangjie.cfir.resolve.match.exhaustive.MatchExhaustivenessContext
 import org.cangnova.cangjie.cfir.session.CfirSession
@@ -555,8 +555,20 @@ fun convertPattern(
         is CfirEnumPattern -> {
             val patternType = expectedType.expandedPatternEnumType(session) ?: expectedType
             val enumClassId = patternType.patternEnumClassId()
-            val entryName = (pattern.constructorReference as? CfirNamedReference)?.name?.asString()
-            if (enumClassId == null || entryName == null) {
+            val constructorAccess = pattern.constructorReference.enumPatternConstructorAccessOrNull()
+            val ownerMatches = when (patternType) {
+                is ConeEnumType -> {
+                    val enumDeclaration = session.enumDeclaration(patternType)
+                    enumDeclaration != null && constructorAccess?.matchesEnumOwner(enumDeclaration, patternType) == true
+                }
+
+                is ConeClassLikeType if patternType.classId == StdlibClassIds.Option ->
+                    constructorAccess?.matchesStdlibOptionOwner(patternType) == true
+
+                else -> false
+            }
+            val entryName = constructorAccess?.constructorName?.asString()
+            if (enumClassId == null || entryName == null || !ownerMatches) {
                 listOf(CfirMatchPattern.Error.copy(cfirPattern = pattern))
             } else {
                 val payloadTypes = if (patternType is ConeEnumType) {

@@ -4,7 +4,6 @@ import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
-import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.diagnostic.ArgumentPassedTwice
 import org.cangnova.cangjie.cfir.diagnostic.HiddenCandidate
 import org.cangnova.cangjie.cfir.diagnostic.MixingNamedAndPositionalArguments
@@ -29,7 +28,6 @@ import org.cangnova.cangjie.cfir.resolve.calls.ConeResolutionAtom
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
 import org.cangnova.cangjie.cfir.resolve.calls.cangjieVariadicCallShapeOrNull
 import org.cangnova.cangjie.cfir.resolve.calls.cangjieVariadicParameterForMapping
-import org.cangnova.cangjie.cfir.resolve.calls.isSyntheticFunctionTypeInvoke
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallKind
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CheckerSink
@@ -139,9 +137,6 @@ object CfirMapArguments : ResolutionStage() {
         val nonTrailingArguments = argumentInfos.filterNot { it.isTrailingLambda }
         val trailingLambdaArguments = argumentInfos.filter { it.isTrailingLambda }
         val callShape = candidate.createCallShape(argumentInfos)
-        val isCallableValueCall = candidate.callInfo.candidateForCommonInvokeReceiver != null ||
-                candidate.isSyntheticFunctionTypeInvoke() ||
-                candidate.symbol.takeIf { it.isBound }?.cfir is CfirVariable
         val positionalArgumentCount = nonTrailingArguments.takeWhile { it.name == null }.size
         val variadicShape = candidate.cangjieVariadicCallShapeOrNull(parameters, positionalArgumentCount)
         if (variadicShape != null) {
@@ -152,7 +147,7 @@ object CfirMapArguments : ResolutionStage() {
             )
         }
 
-        if (isCallableValueCall && variadicShape == null && argumentAtoms.size != parameters.size) {
+        if (candidate.isCallableValueCall && variadicShape == null && argumentAtoms.size != parameters.size) {
             candidate.initializeArgumentMapping(argumentAtoms, linkedMapOf())
             candidate.numDefaults = 0
             candidate.initializeArgumentMappingOutcome(
@@ -174,7 +169,7 @@ object CfirMapArguments : ResolutionStage() {
         val requiredParameterCount = parameters.count { parameter ->
             parameter != variadicParameter && parameter.defaultValue == null
         }
-        if (!isCallableValueCall && argumentAtoms.size < requiredParameterCount) {
+        if (!candidate.isCallableValueCall && argumentAtoms.size < requiredParameterCount) {
             candidate.initializeArgumentMapping(argumentAtoms, linkedMapOf())
             candidate.numDefaults = 0
             candidate.initializeArgumentMappingOutcome(
@@ -220,7 +215,6 @@ object CfirMapArguments : ResolutionStage() {
             trailingLambdaArguments = trailingLambdaArguments,
             variadicParameter = null,
             callShape = callShape,
-            isCallableValueCall = isCallableValueCall,
         )
         val variadicResult = if (variadicShape != null) {
             createCallableArgumentMapping(
@@ -231,7 +225,6 @@ object CfirMapArguments : ResolutionStage() {
                 trailingLambdaArguments = trailingLambdaArguments,
                 variadicParameter = variadicParameter,
                 callShape = callShape,
-                isCallableValueCall = isCallableValueCall,
             )
         } else {
             null
@@ -283,7 +276,6 @@ object CfirMapArguments : ResolutionStage() {
         trailingLambdaArguments: List<CallArgumentInfo>,
         variadicParameter: CfirValueParameter?,
         callShape: CallShape,
-        isCallableValueCall: Boolean,
     ): CallableArgumentMappingResult {
         val variadicParameterIndex = parameters.indexOf(variadicParameter)
         val argumentMapping = LinkedHashMap<ConeResolutionAtom, CfirValueParameter>(argumentAtoms.size)
@@ -308,7 +300,7 @@ object CfirMapArguments : ResolutionStage() {
 
             // 函数值的形参没有可引用的声明名称；命名语法逐项报告，但仍严格按位置映射，
             // 使同一个实参可以继续进入普通期望类型与类型不匹配检查。
-            if (isCallableValueCall) {
+            if (candidate.isCallableValueCall) {
                 val parameter = parameters.getOrNull(nextPositionalIndex)
                 if (parameter == null) {
                     diagnostics.addWrongNumberOfArguments(callShape, parameters.size)
@@ -515,7 +507,7 @@ object CfirMapArguments : ResolutionStage() {
             return true
         }
 
-        if (!candidate.acceptsImplicitTrailingLambda(lastParameter)) {
+        if (!candidate.isCallableValueCall && !candidate.acceptsImplicitTrailingLambda(lastParameter)) {
             diagnostics += TrailingLambdaCannotUsedForNonFunction(
                 source = externalArgument.valueExpression.source
                     ?: error("Trailing lambda must have a source"),
@@ -524,6 +516,12 @@ object CfirMapArguments : ResolutionStage() {
             return true
         }
 
+        /*
+         * 函数值调用可能表现为 common invoke、函数类型 receiver 的 synthetic invoke，
+         * 或直接由变量符号承载。此时 trailing lambda 只是普通位置实参，必须先映射到末形参；
+         * 即使该形参是 Int64/Any，类型错误也由 ArgumentCheckingProcessor 按普通
+         * ArgumentTypeMismatch 报告。声明调用专用的 function-formal 语法过滤不能提前改写诊断种类。
+         */
         usedParameters.add(lastParameter)
         argumentMapping[externalArgument.atom] = lastParameter
         return false
@@ -551,7 +549,7 @@ object CfirMapArguments : ResolutionStage() {
                 val symbol = expanded.lookupTag.typeParameterSymbol
                 if (!visited.add(symbol)) return false
                 symbol.resolvedBounds.any { bound ->
-                    bound.isFunctionTypeOrHasFunctionUpperBound(session, visited)
+                    bound.coneType.isFunctionTypeOrHasFunctionUpperBound(session, visited)
                 }
             }
 

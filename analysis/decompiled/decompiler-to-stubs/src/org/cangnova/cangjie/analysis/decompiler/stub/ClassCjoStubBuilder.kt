@@ -13,6 +13,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.ConeClassifierType
+import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.StdlibClassIds
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.psi.CjClassBody
@@ -68,7 +69,9 @@ internal fun createExtendStub(
         receiverTypeName = receiverTypeName,
     )
     createEmptyDeclarationHeaderStubs(stub)
-    createSimpleTypeReferenceStub(stub, extendName)
+    // 用完整 extendedTypeRef 建 type stub：primitive 走 BASIC_TYPE，避免被当成 user type 再经
+    // renderIdentifier 包成 `Unit` / `Int64`
+    TypeCjoStubBuilder().createDeclaredTypeReferenceStub(stub, declaration.extendedTypeRef)
     createSimpleSuperTypeListStub(stub, superTypeTexts)
     val bodyStub = createTypeStatementBodyStub(stub, CjStubElementTypes.CLASS_BODY)
     val childContext = context.forExtendBody(extendName)
@@ -261,8 +264,17 @@ private fun CfirTypeRef.classIdOrNull(): ClassId? {
 
 /**
  * 提取适合作为 extend 名称的短类型名；无法解析 classifier 时回退到可读类型文本。
+ *
+ * primitive（Unit/Int64 等）不是 [ConeClassifierType]，必须单独取 [PrimitiveTypeKind.typeName]，
+ * 否则会丢失真实被扩展类型。
  */
 private fun CfirTypeRef.shortTypeNameOrRendered(): String {
+    val coneType = (this as? CfirResolvedTypeRef)?.coneType
+    when (coneType) {
+        is ConePrimitiveType -> return coneType.kind.typeName
+        is ConeClassifierType -> return coneType.lookupTag.classId.shortClassName.asString()
+        else -> Unit
+    }
     return classIdOrNull()?.shortClassName?.asString()
         ?: normalizeRenderedTypeText(renderDecompiledTypeRef(this))
             .takeIf { it.isNotBlank() && !it.startsWith("<") }

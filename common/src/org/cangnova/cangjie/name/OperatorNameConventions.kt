@@ -345,41 +345,12 @@ object OperatorNameConventions {
 
     /**
      * 将内部操作符名称还原为源码操作符文本；非操作符名称返回自身字符串。
+     *
+     * 统一走 [TOKENS_BY_OPERATOR_NAME]，避免 `when` 漏掉 `*operator_unaryMinus` 等条目
+     * 导致反编译文本仍显示内部名。
      */
     fun Name.asOperatorString(): String {
-        return when (this) {
-            INVOKE -> "()"
-            GET, SET -> "[]"
-            NOT -> "!"
-            NOT_EQUALS -> "!="
-            EXPONENTIATION -> "**"
-            EQUALS -> "=="
-            TIMES -> "*"
-            DIV -> "/"
-            REM -> "%"
-            MINUS -> "-"
-            PLUS -> "+"
-            LEFT_SHIFT -> "<<"
-            RIGHT_SHIFT -> ">>"
-            COMPARE_GT -> ">"
-            COMPARE_LTEQ -> "<="
-            COMPARE_LT -> "<"
-            COMPARE_GTEQ -> ">="
-            AND -> "&"
-            XOR -> "^"
-            OR -> "|"
-            TIMES_ASSIGN -> "*="
-            DIV_ASSIGN -> "/="
-            EXPONENTIATION_ASSIGN -> "**="
-            REM_ASSIGN -> "%="
-            PLUS_ASSIGN -> "+="
-            MINUS_ASSIGN -> "-="
-            ANDAND -> "&&"
-            OROR -> "||"
-            PIPELINE -> "|>"
-            COMPOSITION -> "~>"
-            else -> this.asString()
-        }
+        return TOKENS_BY_OPERATOR_NAME[this] ?: asString()
     }
 
     /**

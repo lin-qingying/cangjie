@@ -20,6 +20,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirInterface
 import org.cangnova.cangjie.cfir.declarations.CfirStruct
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
+import org.cangnova.cangjie.cfir.declarations.isInsideFailedArgumentMapping
 import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.PendingDiagnosticReporter
@@ -52,7 +53,6 @@ import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.diagnostic.ConeAmbiguityError
 import org.cangnova.cangjie.cfir.diagnostic.ConeCannotInferValueParameterType
 import org.cangnova.cangjie.cfir.diagnostic.ConeConstraintSystemHasContradiction
-import org.cangnova.cangjie.cfir.diagnostic.ConeDiagnosticWithSingleCandidate
 import org.cangnova.cangjie.cfir.diagnostic.ConeGenericTypeArgumentNotMatchConstraintError
 import org.cangnova.cangjie.cfir.diagnostic.ConeNoMatchingInvokeOperatorError
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
@@ -64,7 +64,6 @@ import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedNameError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedReferenceError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedSymbolError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedTypeQualifierError
-import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.references.CfirErrorNamedReference
 import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
 import org.cangnova.cangjie.cfir.references.CfirResolvedErrorReference
@@ -579,36 +578,18 @@ class ErrorNodeDiagnosticCollectorComponent(
     }
 
     /**
-     * lambda 参数类型推断失败若发生在未映射到形参的调用实参上，
-     * 主错误属于外层调用参数映射；这里不再把该 lambda 参数作为独立错误类型重复报告。
+     * 参数映射已经失败的调用不会检查其 lambda 实参；error-call writer 将该结构化
+     * 终止状态传播到嵌套 lambda，这里只阻止旧错误 type-ref 被再次摘取成独立诊断。
      */
-    private fun ConeDiagnostic.isUnmappedCallArgumentLambdaParameterDiagnostic(
+    private fun ConeDiagnostic.isInsideFailedArgumentMappingLambdaParameterDiagnostic(
         source: CjSourceElement?,
         context: CheckerContext,
     ): Boolean {
         if (this !is ConeCannotInferValueParameterType || source == null) return false
-        val containingCall = context.callsOrAssignments
-            .asReversed()
-            .filterIsInstance<CfirFunctionCall>()
-            .firstOrNull { call ->
-                call.argumentList.arguments.any { argument ->
-                    argument is CfirAnonymousFunctionExpression &&
-                        argument.anonymousFunction.valueParameters.any { parameter ->
-                            parameter.source?.contains(source) == true
-                        }
-                }
-            }
-            ?: return false
-
-        val candidateDiagnostic = (containingCall.calleeReference as? CfirDiagnosticHolder)?.diagnostic
-        val candidate = (candidateDiagnostic as? ConeDiagnosticWithSingleCandidate)?.candidate ?: return false
-        if (!candidate.argumentMappingInitialized) return false
-
-        return candidate.argumentMapping.keys.none { atom ->
-            val expression = atom.expression as? CfirAnonymousFunctionExpression ?: return@none false
-            expression.anonymousFunction.valueParameters.any { parameter ->
-                parameter.source?.contains(source) == true
-            }
+        val lambda = context.findClosestDeclaration<CfirAnonymousFunction>() ?: return false
+        if (lambda.isInsideFailedArgumentMapping != true) return false
+        return lambda.valueParameters.any { parameter ->
+            parameter.source?.contains(source) == true
         }
     }
 
@@ -712,7 +693,7 @@ class ErrorNodeDiagnosticCollectorComponent(
 
     ) {
         if (diagnostic.isLambdaParameterInferenceCoveredByShapeDiagnostic(source, context)) return
-        if (diagnostic.isUnmappedCallArgumentLambdaParameterDiagnostic(source, context)) return
+        if (diagnostic.isInsideFailedArgumentMappingLambdaParameterDiagnostic(source, context)) return
         if (diagnostic.isLambdaBodyCascadeFromUninferredLambdaParameter(source, context)) return
         if (diagnostic.unwrapUnreportedDuplicateDiagnostic() is ConeTypeMismatchError && context.isReturnResultSource(source)) return
         reportCfirDiagnostic(

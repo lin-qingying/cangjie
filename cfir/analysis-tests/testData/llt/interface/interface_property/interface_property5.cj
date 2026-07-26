@@ -21,7 +21,7 @@ interface I2 {
     }
 }
 
-<!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>class <!INHERIT_MEMBER_TYPE_INCONSISTENT!>C<!><!> <: I1 & I2 {}
+class <!ABSTRACT_MEMBER_NOT_IMPLEMENTED, INHERIT_MEMBER_TYPE_INCONSISTENT!>C<!> <: I1 & I2 {}
 
 main() {
     return 0

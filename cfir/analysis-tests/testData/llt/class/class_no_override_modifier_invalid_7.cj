@@ -13,7 +13,7 @@ interface B<T> {
     }
 }
 
-<!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>class D<!> <: A & B<Int32> {}
+class <!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>D<!> <: A & B<Int32> {}
 
 main() {
     return 1

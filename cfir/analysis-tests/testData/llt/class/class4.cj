@@ -10,6 +10,6 @@ interface B {
 
 interface C <: A & B {}
 
-<!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>class D<!> <: C {}
+class <!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>D<!> <: C {}
 
 abstract class E <: C {}

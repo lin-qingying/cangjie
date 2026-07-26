@@ -80,6 +80,8 @@ import org.cangnova.cangjie.cfir.types.asCone
 import org.cangnova.cangjie.cfir.types.expandedClassIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
+import org.cangnova.cangjie.cfir.types.declaredUpperBoundConeTypeOrNull
+import org.cangnova.cangjie.cfir.types.declaredUpperBoundRefsAfterTypeResolve
 import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.resolve.calls.inference.ConstraintSystemBuilder
@@ -1079,6 +1081,23 @@ internal object ArgumentCheckingProcessor {
             return false
         }
 
+        val recoveryExpectedFunctionType = declaredFunctionUpperBoundForLambdaRecovery(expectedType)
+        if (recoveryExpectedFunctionType != null) {
+            /*
+             * 非法 function upper bound 不能重新注册为 T 的正常 upper constraint；否则会
+             * 污染 subtype/member 语义。但声明检查只否定上界 legality，不会抹掉该 bound
+             * 为 lambda 提供的参数/返回形状。resolved atom 因此使用 recovery shape，
+             * lambdaType <: T 仍写入当前调用约束系统，两套语义保持分离。
+             */
+            createResolvedLambdaAtom(
+                atom = atom,
+                duringCompletion = false,
+                returnTypeVariable = null,
+                recoveryExpectedFunctionType = recoveryExpectedFunctionType,
+            )
+            return true
+        }
+
         val lambdaAtom = ConeLambdaWithTypeVariableAsExpectedTypeAtom(
             expression = atom.lambdaExpression,
             anonymousFunction = atom.lambdaExpression.anonymousFunction,
@@ -1096,6 +1115,26 @@ internal object ArgumentCheckingProcessor {
         candidate.addPostponedAtom(lambdaAtom)
         atom.setPostponedSubAtom(lambdaAtom)
         return true
+    }
+
+    /**
+     * 从 fresh type variable 对应的声明参数中恢复 lambda 所需的函数形状。
+     *
+     * 该函数只读取已经完成类型解析的声明 bound，并应用候选 substitutor；返回值只供
+     * lambda atom 定型，不会进入类型参数的正常 upper-bound constraint 集合。
+     */
+    private fun ArgumentContext.declaredFunctionUpperBoundForLambdaRecovery(
+        expectedType: ConeTypeVariableType,
+    ): ConeFunctionType? {
+        val originalTypeParameter = expectedType.typeConstructor.originalTypeParameter as? ConeTypeParameterLookupTag
+            ?: return null
+        return originalTypeParameter
+            .declaredUpperBoundRefsAfterTypeResolve()
+            .asSequence()
+            .mapNotNull { boundRef -> boundRef.declaredUpperBoundConeTypeOrNull() }
+            .map { boundType -> candidate.substitutor.substituteOrSelf(boundType).fullyExpandedType(session) }
+            .filterIsInstance<ConeFunctionType>()
+            .firstOrNull()
     }
 
     /**
@@ -1132,10 +1171,12 @@ internal object ArgumentCheckingProcessor {
         atom: ConeResolutionAtomWithPostponedChild,
         duringCompletion: Boolean,
         returnTypeVariable: ConeTypeVariableForLambdaReturnType?,
+        recoveryExpectedFunctionType: ConeFunctionType? = null,
     ): ConeResolvedLambdaAtom {
         val expression = atom.lambdaExpression
         val anonymousFunction = expression.anonymousFunction
-        val expectedFunctionType = expectedType as? ConeFunctionType
+        val expectedFunctionType = recoveryExpectedFunctionType
+            ?: expectedType?.fullyExpandedType(session) as? ConeFunctionType
 
         val declaredParameterTypes = anonymousFunction.valueParameters.mapIndexed { index, parameter ->
             parameter.returnTypeRef.coneTypeOrNull
@@ -1194,7 +1235,15 @@ internal object ArgumentCheckingProcessor {
                 attributes = expectedFunctionType?.attributes ?: org.cangnova.cangjie.cfir.types.ConeAttributes.Empty,
             )
             val position = ConeArgumentConstraintPosition(expression)
-            if (duringCompletion) {
+            if (expectedFunctionType == null) {
+                /*
+                 * 非函数 expected type 下，lambda 的返回类型此时通常仍是 fresh variable。
+                 * 过早写入 `(P...) -> R <: Expected` 可能先被约束系统接受，直到 body
+                 * 把 R 固定后才产生无结构化诊断的迟发 contradiction。这里保留 resolved
+                 * lambda atom，由 PostponedArgumentsAnalyzer 在 body 完成、实际返回类型
+                 * 已知后合成最终函数值类型并执行普通实参兼容性检查。
+                 */
+            } else if (duringCompletion) {
                 csBuilder.addSubtypeConstraint(lambdaType, targetExpectedType, position)
             } else {
                 val compatible = csBuilder.isSubtypeConstraintCompatible(lambdaType, targetExpectedType)

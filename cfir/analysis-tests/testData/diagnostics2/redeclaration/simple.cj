@@ -3,7 +3,7 @@ type A = Int64
 interface abc {
     func ab(): Unit
 
-    <!CONFLICTING_OVERLOADS!>func ab()<!>: Unit
+    func <!CONFLICTING_OVERLOADS!>ab<!>(): Unit
 }
 
 class <!CLASSIFIER_REDECLARATION!>abc<!> {

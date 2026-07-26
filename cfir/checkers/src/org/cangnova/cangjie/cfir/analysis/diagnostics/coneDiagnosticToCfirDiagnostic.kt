@@ -786,6 +786,13 @@ private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
                 session,
             )
 
+            is TrailingLambdaCannotUsedForNonFunction ->
+                CfirErrors.TRAILING_LAMBDA_CANNOT_USED_FOR_NON_FUNCTION.on(
+                    rootCause.source,
+                    rootCause.parameterType,
+                    session,
+                )
+
             is WrongArgumentCount -> CfirErrors.GENERIC_ARGUMENT_NO_MATCH.on(
                 qualifiedAccessSource ?: source ?: candidate.callInfo.callSite.source ?: return@mapNotNull null,
                 session,
@@ -808,7 +815,7 @@ private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
             )
 
             is WrongNumberOfArguments -> CfirErrors.WRONG_NUMBER_OF_ARGUMENTS.on(
-                candidate.callInfo.callSite.source ?: qualifiedAccessSource ?: source ?: return@mapNotNull null,
+                rootCause.source,
                 session,
             )
 
@@ -960,6 +967,13 @@ private fun List<ResolutionDiagnostic>.mapCangjieVariadicRegularCallDiagnostics(
             session,
         )
 
+        is TrailingLambdaCannotUsedForNonFunction ->
+            CfirErrors.TRAILING_LAMBDA_CANNOT_USED_FOR_NON_FUNCTION.on(
+                diagnostic.source,
+                diagnostic.parameterType,
+                session,
+            )
+
         is NoValueForParameter -> CfirErrors.NO_VALUE_FOR_PARAMETER.on(
             qualifiedAccessSource ?: source ?: return@mapNotNull null,
             diagnostic.valueParameter.name,
@@ -977,7 +991,7 @@ private fun List<ResolutionDiagnostic>.mapCangjieVariadicRegularCallDiagnostics(
         )
 
         is WrongNumberOfArguments -> CfirErrors.WRONG_NUMBER_OF_ARGUMENTS.on(
-            qualifiedAccessSource ?: source ?: return@mapNotNull null,
+            diagnostic.source,
             session,
         )
 
@@ -1142,6 +1156,18 @@ private fun argumentTypeMismatch(
     )?.let { return it }
 
     if (argument?.isBareFunctionReferenceValue() == true) {
+        return CfirErrors.TYPE_MISMATCH.on(
+            source,
+            expectedType,
+            actualType,
+            isMismatchDueToNullability,
+            session,
+        )
+    }
+
+    // lambda 自身是完整函数值表达式；当其不能作为普通实参适配目标类型时，
+    // 官方按整个表达式报告 TYPE_MISMATCH，而不是声明调用实参的 ARGUMENT_TYPE_MISMATCH。
+    if (argument is CfirAnonymousFunctionExpression) {
         return CfirErrors.TYPE_MISMATCH.on(
             source,
             expectedType,
@@ -1381,6 +1407,7 @@ private fun ConeAmbiguityError.mapConeAmbiguityError(
     val psi = callLikeProbeSource.psi
     val isCallLikeContext = psi is CjCallExpression || PsiTreeUtil.getParentOfType(psi, CjCallExpression::class.java, false) != null
 
+    if (isOperatorAmbiguityCascadeFromErrorOperand()) return emptyList()
     invalidBinaryOperatorDiagnosticForOperatorAmbiguity(source, diagnosticSource, session)?.let { diagnostic ->
         return listOf(diagnostic)
     }
@@ -1628,6 +1655,21 @@ private fun CjSourceElement.qualifiedAmbiguousUseTextSource(): AbstractCjSourceE
  */
 private fun Char.isQualifiedNamePart(): Boolean =
     isLetterOrDigit() || this == '_' || this == '$' || this == '.'
+
+/**
+ * 二元 operator 的候选歧义如果由错误操作数触发，只保留操作数自己的根诊断。
+ */
+private fun ConeAmbiguityError.isOperatorAmbiguityCascadeFromErrorOperand(): Boolean {
+    val candidate = candidates.filterIsInstance<AbstractCallCandidate<*>>()
+        .firstOrNull { candidate ->
+            candidate.callInfo.origin == CfirFunctionCallOrigin.Operator &&
+                    candidate.callInfo.arguments.size == 1
+        }
+        ?: return false
+    val leftType = candidate.callInfo.explicitReceiver?.coneTypeOrNull
+    val rightType = candidate.callInfo.arguments.singleOrNull()?.coneTypeOrNull
+    return leftType?.containsErrorType() == true || rightType?.containsErrorType() == true
+}
 
 /**
  * 将二元 operator 候选歧义中特定的 primitive operator 情况映射为 invalid binary operator。
@@ -3115,6 +3157,7 @@ private val ResolutionDiagnostic.isArgumentMappingDiagnostic: Boolean
         is NamedArgumentsNotAllowed,
         is NamedParameterNotFound,
         is NeedNamedArgument,
+        is TrailingLambdaCannotUsedForNonFunction,
         is NoValueForParameter,
         is TooManyArguments,
         is WrongNumberOfArguments,

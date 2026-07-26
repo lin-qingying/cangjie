@@ -74,7 +74,7 @@ object CfirNotImplementedOverrideChecker : CfirClassLikeChecker() {
         if (!classScope.hasUnimplementedAbstractMember(declaration, context)) return
 
         reporter.reportOn(
-            source = declaration.classLikeDeclarationHeaderDiagnosticSource(),
+            source = declaration.classLikeNameOffsetsDiagnosticSource(),
             factory = CfirErrors.ABSTRACT_MEMBER_NOT_IMPLEMENTED,
             a = declaration.name,
         )

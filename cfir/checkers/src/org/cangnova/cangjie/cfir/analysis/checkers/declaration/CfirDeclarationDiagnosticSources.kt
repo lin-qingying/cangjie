@@ -71,6 +71,41 @@ internal fun CfirClassLikeDeclaration.classLikeNameDiagnosticSource(
 }
 
 /**
+ * 只保留 class-like 名称范围，不绑定名称叶子 PSI。
+ *
+ * 部分诊断工厂的 PSI 类型是 [CjNamedDeclaration]，但 nameIdentifier 本身是 leaf PSI；
+ * 这类诊断需要名称范围，同时必须走 offsets-only 诊断以避免 PSI 类型不一致。
+ */
+internal fun CfirClassLikeDeclaration.classLikeNameOffsetsDiagnosticSource(
+    includeTypeParameters: Boolean = false,
+): AbstractCjSourceElement? {
+    source?.psi?.let { psi ->
+        val classLikePsi = when (psi) {
+            is CjPsiClassLikeDeclaration -> psi
+            else -> PsiTreeUtil.getParentOfType(psi, CjPsiClassLikeDeclaration::class.java, false)
+                ?: PsiTreeUtil.findChildOfType(psi, CjPsiClassLikeDeclaration::class.java)
+        }
+        val nameIdentifier = classLikePsi?.nameIdentifier ?: return null
+        if (includeTypeParameters) {
+            val typeParameterList = (classLikePsi as? CjTypeParameterListOwner)?.typeParameterList
+            if (typeParameterList != null &&
+                typeParameterList.textRange.endOffset > nameIdentifier.textRange.endOffset
+            ) {
+                return CjOffsetsOnlySourceElement(
+                    startOffset = nameIdentifier.textRange.startOffset,
+                    endOffset = typeParameterList.textRange.endOffset,
+                )
+            }
+        }
+        return CjOffsetsOnlySourceElement(
+            startOffset = nameIdentifier.textRange.startOffset,
+            endOffset = nameIdentifier.textRange.endOffset,
+        )
+    }
+    return (source as? CjSourceElement)?.findClassLikeNameSource(symbol.name, includeTypeParameters)
+}
+
+/**
  * 类型声明头部诊断位置：从声明起点到声明名（含类型参数）结束。
  *
  * 官方 cjc 对部分类型声明诊断使用 Decl/Node 起点作为主位置；LLT inline

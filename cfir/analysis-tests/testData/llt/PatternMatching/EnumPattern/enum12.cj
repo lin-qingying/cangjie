@@ -17,7 +17,7 @@ main(): Int64 {
     var d = match (time) {
         case One(Two(Four)) => 1
         case One(Two(Three)) => 0
-        case _ => -1
+        case <!UNREACHABLE_PATTERN!>_<!> => -1
     }
     return d
 }
