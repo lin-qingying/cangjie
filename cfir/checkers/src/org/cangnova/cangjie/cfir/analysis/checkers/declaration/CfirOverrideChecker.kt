@@ -371,7 +371,10 @@ object CfirOverrideChecker : CfirClassLikeChecker() {
     /**
      * 检查泛型 override 是否放宽而不是收紧父声明的类型参数约束。
      *
-     * 父类型参数会先替换到子类型参数空间，再比较子声明 bounds 是否比父声明更严格。
+     * 同一父声明中的多个 bounds 先折叠为有效交集；多个同签名父声明的有效交集保持为
+     * accepted-domain 的并集。父类型参数替换到子类型参数空间后，按官方两段规则判断：
+     * 子域至少覆盖一个父域，同时不能在非等价情况下严格窄于任一父域。每个子类型参数
+     * 最多报告一次。
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkGenericConstraintCompatibility(
@@ -382,6 +385,10 @@ object CfirOverrideChecker : CfirClassLikeChecker() {
         val childTypeParameters = (declaration as? CfirTypeParameterRefsOwner)?.typeParameters.orEmpty()
         if (childTypeParameters.isEmpty()) return
 
+        val parentDomainsByTypeParameter = List(childTypeParameters.size) {
+            linkedSetOf<ConeCangJieType>()
+        }
+
         for (overridden in overriddenSymbols) {
             val parentTypeParameters = (overridden.cfir as? CfirTypeParameterRefsOwner)?.typeParameters.orEmpty()
             val parentToChildSubstitutor = createCallableTypeParameterSubstitutorForOverride(
@@ -391,39 +398,43 @@ object CfirOverrideChecker : CfirClassLikeChecker() {
             ) ?: continue
 
             for (index in childTypeParameters.indices) {
-                val childBounds = childTypeParameters[index].symbol.resolvedBounds
-                    .filterUsableGenericConstraintBounds()
-                    .filterNot { it.coneType.isAnyBound() }
-                if (childBounds.isEmpty()) continue
+                val parentTypeParameter = parentTypeParameters.getOrNull(index) ?: continue
+                val parentDomain = parentTypeParameter.effectiveGenericConstraintDomain()
+                parentDomainsByTypeParameter[index] +=
+                    parentToChildSubstitutor.substituteOrSelf(parentDomain)
+            }
+        }
 
-                val parentBounds = parentTypeParameters[index].symbol.resolvedBounds
-                    .filterUsableGenericConstraintBounds()
-                    .map { parentToChildSubstitutor.substituteOrSelf(it.coneType) }
+        for (index in childTypeParameters.indices) {
+            val childTypeParameter = childTypeParameters[index]
+            val childDomain = childTypeParameter.effectiveGenericConstraintDomain()
+            val parentDomains = parentDomainsByTypeParameter[index]
+            if (parentDomains.isEmpty()) continue
 
-                val nonLooserBound = childBounds.firstOrNull { childBound ->
-                    !parentBounds.any { parentBound ->
-                        AbstractTypeChecker.isSubtypeOf(context.session.typeContext, parentBound, childBound.coneType)
-                    }
-                } ?: parentBounds.firstOrNull { parentBound ->
-                    childBounds.any { childBound ->
-                        childBound.coneType != parentBound &&
-                                AbstractTypeChecker.isSubtypeOf(
-                                    context.session.typeContext,
-                                    childBound.coneType,
-                                    parentBound
-                                )
-                    }
-                }?.let { childBounds.first() }
-
-                if (nonLooserBound != null) {
-                    reporter.reportOn(
-                        source = declaration.genericConstraintDiagnosticSource(childTypeParameters[index])
-                            ?: nonLooserBound.source
-                            ?: declaration.source,
-                        factory = CfirErrors.GENERIC_CONSTRAINT_NOT_LOOSER,
-                    )
-                    return
-                }
+            val coversAtLeastOneParentDomain = parentDomains.any { parentDomain ->
+                AbstractTypeChecker.isSubtypeOf(
+                    context.session.typeContext,
+                    parentDomain,
+                    childDomain,
+                )
+            }
+            val strictlyNarrowsAParentDomain = parentDomains.any { parentDomain ->
+                !AbstractTypeChecker.equalTypes(
+                    context.session.typeContext,
+                    childDomain,
+                    parentDomain,
+                ) && AbstractTypeChecker.isSubtypeOf(
+                    context.session.typeContext,
+                    childDomain,
+                    parentDomain,
+                )
+            }
+            if (!coversAtLeastOneParentDomain || strictlyNarrowsAParentDomain) {
+                reporter.reportOn(
+                    source = declaration.genericConstraintDiagnosticSource(childTypeParameter)
+                        ?: declaration.source,
+                    factory = CfirErrors.GENERIC_CONSTRAINT_NOT_LOOSER,
+                )
             }
         }
     }
@@ -442,10 +453,41 @@ private fun CfirCallableDeclaration.genericConstraintDiagnosticSource(
     ?.constraintSource
 
 /**
- * 过滤不能参与泛型约束比较的错误类型 bound。
+ * 将单个声明内的直接、传递 bounds 折叠为 accepted-domain 的有效交集。
+ *
+ * 官方 `GetAllGenericUpperBounds` 不会因为某个上界违反 class/interface 准入规则就删除
+ * 该上界；它仍保留泛型上界节点，并沿泛型参数约束图收集传递上界。这样
+ * `T1 <: T2 <: T3 <: T4` 会形成 `T2 & T3 & T4`，而不相关的 `T2`、`T4`
+ * 仍保持为不同约束域。无显式约束最终以 `Any` 表示完整接受域。
  */
-private fun List<CfirResolvedTypeRef>.filterUsableGenericConstraintBounds(): List<CfirResolvedTypeRef> =
-    filterNot { it.coneType is ConeErrorType }
+context(context: CheckerContext)
+private fun CfirTypeParameterRef.effectiveGenericConstraintDomain(): ConeCangJieType {
+    val collectedBounds = linkedSetOf<ConeCangJieType>()
+    val pendingTypeParameters = ArrayDeque<CfirTypeParameterSymbol>()
+    val visitedTypeParameters = linkedSetOf<CfirTypeParameterSymbol>()
+
+    fun collectBound(bound: ConeCangJieType) {
+        when (bound) {
+            is ConeErrorType -> return
+            is ConeIntersectionType -> bound.intersectedTypes.forEach(::collectBound)
+            is ConeTypeParameterType -> {
+                collectedBounds += bound
+                pendingTypeParameters += bound.lookupTag.typeParameterSymbol
+            }
+            else -> collectedBounds += bound
+        }
+    }
+
+    symbol.resolvedBounds.forEach { collectBound(it.coneType) }
+    while (pendingTypeParameters.isNotEmpty()) {
+        val current = pendingTypeParameters.removeFirst()
+        if (!visitedTypeParameters.add(current)) continue
+        current.resolvedBounds.forEach { collectBound(it.coneType) }
+    }
+
+    val effectiveBounds = collectedBounds.filterNot { it.isAnyBound() }
+    return ConeTypeIntersector.intersectTypes(context.session.typeContext, effectiveBounds)
+}
 
 /**
  * 判断 bound 是否等价于 std.core.Any。

@@ -34,8 +34,9 @@ abstract class CfirSession(
         /**
          * 为类型 [T] 创建带默认实现的必需组件访问器。
          */
+        @Suppress("INVISIBLE_REFERENCE")
         inline fun <reified T : CfirSessionComponent> sessionComponentAccessorWithDefault(
-            defaultImplementation:  T
+            defaultImplementation: @kotlin.internal.NoInfer T,
         ): ArrayMapAccessor<CfirSessionComponent, CfirSessionComponent, T> {
             return generateAccessor(T::class, defaultImplementation)
         }

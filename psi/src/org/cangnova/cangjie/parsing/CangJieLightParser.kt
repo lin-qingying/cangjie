@@ -36,16 +36,36 @@ import com.intellij.util.diff.FlyweightCapableTreeStructure
  */
 object CangJieLightParser {
     /**
-     * 提供 `parse` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
+     * 按完整仓颉文件语法构造 LightTree。
      */
     fun parse(
         builder: PsiBuilder,
         errorListener: LightTreeParsingErrorListener? = null,
+    ): FlyweightCapableTreeStructure<LighterASTNode> =
+        parseWith(builder, errorListener) { parseFile() }
+
+    /**
+     * 按 annotation-only 语法构造 LightTree。
+     *
+     * 该入口供 custom annotation 宏展开结果重解析使用，保证参数列表生成标准
+     * `ANNOTATION -> VALUE_ARGUMENT_LIST -> VALUE_ARGUMENT` 结构，禁止退化为 macro-expression token 容器。
+     */
+    fun parseAnnotationOnly(
+        builder: PsiBuilder,
+        errorListener: LightTreeParsingErrorListener? = null,
+    ): FlyweightCapableTreeStructure<LighterASTNode> =
+        parseWith(builder, errorListener) { parseOnlyAnnotationFile() }
+
+    /** 统一创建 parser、执行指定语法入口并完成 LightTree 错误上报。 */
+    private inline fun parseWith(
+        builder: PsiBuilder,
+        errorListener: LightTreeParsingErrorListener?,
+        parseAction: CangJieParsing.() -> Unit,
     ): FlyweightCapableTreeStructure<LighterASTNode> {
         val cjParsing: CangJieParsing = CangJieParsing.createForTopLevelNonLazy(
             SemanticWhitespaceAwarePsiBuilderImpl(builder),
         )
-        cjParsing.parseFile()
+        cjParsing.parseAction()
         return builder.lightTree.also { lightTree ->
             if (errorListener != null) {
                 reportErrors(lightTree.root, lightTree, errorListener)

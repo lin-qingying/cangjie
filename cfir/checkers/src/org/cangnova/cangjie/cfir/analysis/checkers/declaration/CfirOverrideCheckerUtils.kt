@@ -24,9 +24,11 @@
 
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
+import org.cangnova.cangjie.cfir.analysis.checkers.CfirExtendSemantics
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.resolve.providers.canAccessPackageInternalDeclaration
+import org.cangnova.cangjie.cfir.resolve.providers.getContainingExtend
 import org.cangnova.cangjie.cfir.resolve.providers.getContainingClass
 import org.cangnova.cangjie.cfir.resolve.providers.getContainingFile
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
@@ -37,6 +39,10 @@ import org.cangnova.cangjie.cfir.scopes.isStaticMemberForOverride
 import org.cangnova.cangjie.cfir.scopes.overrideSignatureKey
 import org.cangnova.cangjie.cfir.session.*
 import org.cangnova.cangjie.cfir.symbols.*
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.coneTypeOrNull
+import org.cangnova.cangjie.cfir.types.expandedClassIdOrPrimitiveClassId
+import org.cangnova.cangjie.cfir.unwrapSubstitutionOverrides
 import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.name.ClassId
 
@@ -82,6 +88,51 @@ internal fun CheckerContext.createUseSiteMemberScope(declaration: CfirClassLikeD
             )
         }
     }
+}
+
+/**
+ * 为具体 owner 类型创建 override 语义使用的 use-site 成员 scope。
+ *
+ * extend 成员的物理 container 是 extend 声明，但 override 关系属于被扩展目标类型；
+ * 因此直接覆盖图必须以目标类型的 use-site scope 为 owner，同时保留 owner 类型实参替换。
+ */
+internal fun CheckerContext.createUseSiteMemberScope(ownerType: ConeCangJieType): CfirTypeScope {
+    val classId = ownerType.expandedClassIdOrPrimitiveClassId ?: return CfirTypeScope.Empty
+    val symbol = session.symbolProvider.getClassLikeSymbolByClassId(classId) ?: return CfirTypeScope.Empty
+    val rawScope = CfirClassUseSiteMemberScope(
+        session = session,
+        classSymbol = symbol,
+        symbolProvider = session.symbolProvider,
+        extendProvider = session.extendProvider,
+        directSupertypeProvider = session.directSupertypeProviderOrNull,
+        ownerType = ownerType,
+        inheritanceProvenanceOwnerType = ownerType,
+        dispatchReceiverType = ownerType,
+        scopeKind = CfirClassMemberScopeKind.USE_SITE,
+    )
+    return CfirClassSubstitutionScope(
+        session = session,
+        useSiteMemberScope = rawScope,
+        dispatchReceiverType = ownerType,
+        substitutionOwnerType = ownerType,
+    )
+}
+
+/**
+ * 返回 callable 参与 override 语义时应使用的 owner scope。
+ *
+ * 普通成员使用物理所属 class-like；extend 成员使用 extend 目标类型。这里不改变
+ * [ownerClassSymbol] 的物理归属含义，只为 direct-override 消费者提供语义 owner。
+ */
+internal fun CheckerContext.overrideOwnerUseSiteMemberScope(symbol: CfirCallableSymbol<*>): CfirTypeScope? {
+    val normalized = symbol.unwrapSubstitutionOverrides()
+    val physicalOwner = ownerClassSymbol(normalized)?.cfir as? CfirClassLikeDeclaration
+    if (physicalOwner != null) return createUseSiteMemberScope(physicalOwner)
+
+    val containingExtend = normalized.getContainingExtend() ?: return null
+    val targetType = containingExtend.extendedTypeRef.coneTypeOrNull ?: return null
+    if (CfirExtendSemantics.targetDeclaration(this, containingExtend) == null) return null
+    return createUseSiteMemberScope(targetType)
 }
 
 /**

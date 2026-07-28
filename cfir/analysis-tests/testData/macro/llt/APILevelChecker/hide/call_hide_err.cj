@@ -4,7 +4,7 @@
 package ohos.labels1111
 
 @Annotation
-protected class Hide {
+protected class <!ANNOTATION_NON_PUBLIC!>Hide<!> {
     protected const init(isChecked!: Bool = false) {
     }
 }

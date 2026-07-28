@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.frontend.pipeline
 
 import com.intellij.lang.LighterASTNode
+import com.intellij.lang.PsiBuilder
 import com.intellij.lang.PsiBuilderFactory
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Ref
@@ -132,28 +133,17 @@ private fun reparseLightTreeMacroFragment(
             val ownerDeclaration = surface.replaceHandle.annotationCarrier?.owner ?: return null
             val containingSymbol = (ownerDeclaration as? CfirValueParameter)?.containingDeclarationSymbol
                 ?: ownerDeclaration.symbol
-            val parsed = parseLightTreeFragment(session, "$text func __macro_annotation__() {}")
+            val parsed = parseLightTreeAnnotationFragment(session, text)
             val sourceOverride = input.annotationSnapshot?.originalAnnotation?.source
             val argumentListSourceOverride = input.annotationSnapshot?.originalAnnotation?.argumentList?.source
-            val annotation = parsed.tree.findFirst(CjNodeTypes.ANNOTATION)
-            if (annotation != null) {
-                parsed.builder.buildAnnotationCallInPackage(
-                    annotation = annotation,
-                    containingSymbol = containingSymbol,
-                    packageFqName = packageFqName,
-                    sourceOverride = sourceOverride,
-                    argumentListSourceOverride = argumentListSourceOverride,
-                )
-            } else {
-                val macroExpression = parsed.tree.findFirst(CjNodeTypes.MACRO_EXPRESSION) ?: return null
-                parsed.builder.buildMacroExpressionAnnotationCallInPackage(
-                    macroExpression = macroExpression,
-                    containingSymbol = containingSymbol,
-                    packageFqName = packageFqName,
-                    sourceOverride = sourceOverride,
-                    argumentListSourceOverride = argumentListSourceOverride,
-                )
-            }
+            val annotation = parsed.tree.findFirst(CjNodeTypes.ANNOTATION) ?: return null
+            parsed.builder.buildAnnotationCallInPackage(
+                annotation = annotation,
+                containingSymbol = containingSymbol,
+                packageFqName = packageFqName,
+                sourceOverride = sourceOverride,
+                argumentListSourceOverride = argumentListSourceOverride,
+            )
         }
         surface is MacroSurfaceParam -> {
             val original = surface.replaceHandle.carrier as? CfirValueParameter ?: return null
@@ -202,6 +192,28 @@ private data class ParsedLightTreeFragment(
 private fun parseLightTreeFragment(
     session: CfirSession,
     text: String,
+): ParsedLightTreeFragment = createParsedLightTreeFragment(session, text) { builder ->
+    CangJieLightParser.parse(builder)
+}
+
+/** 使用 annotation-only 语法解析 custom annotation 宏展开结果。 */
+private fun parseLightTreeAnnotationFragment(
+    session: CfirSession,
+    text: String,
+): ParsedLightTreeFragment {
+    // annotation 在仓颉语法中必须附着于声明。这里与 PSI createAnnotations 使用同一建模：
+    // 用语法载体声明形成标准 ANNOTATION 子树，最终只提取 annotation payload。
+    val fragmentText = "$text func __macro_annotation__() {}"
+    return createParsedLightTreeFragment(session, fragmentText) { builder ->
+        CangJieLightParser.parseAnnotationOnly(builder)
+    }
+}
+
+/** 统一创建宏片段 PsiBuilder、LightTree 与对应 raw CFIR builder。 */
+private fun createParsedLightTreeFragment(
+    session: CfirSession,
+    text: String,
+    parse: (PsiBuilder) -> FlyweightCapableTreeStructure<LighterASTNode>,
 ): ParsedLightTreeFragment {
     val parserDefinition = CangJieParserDefinition()
     val psiBuilder = PsiBuilderFactory.getInstance().createBuilder(
@@ -209,7 +221,7 @@ private fun parseLightTreeFragment(
         CangJieLexer(),
         text,
     )
-    val lightTree = CangJieLightParser.parse(psiBuilder)
+    val lightTree = parse(psiBuilder)
     return ParsedLightTreeFragment(
         tree = lightTree,
         builder = LightTreeRawCfirDeclarationBuilder(

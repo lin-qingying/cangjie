@@ -2,6 +2,7 @@ package org.cangnova.cangjie.cfir.session
 
 import org.cangnova.cangjie.cfir.resolve.transformers.CfirPhaseResolverRegistry
 import org.cangnova.cangjie.cfir.resolve.transformers.registerResolveProcessors
+import org.cangnova.cangjie.cfir.declarations.CfirDeclarationAvailabilityProvider
 import org.cangnova.cangjie.cfir.CfirEnumMatchTrackerComponent
 import org.cangnova.cangjie.cfir.CfirImportTrackerComponent
 import org.cangnova.cangjie.cfir.CfirLookupTrackerComponent
@@ -264,6 +265,10 @@ private fun CfirSession.registerCoreResolveServices(
     register(CfirDirectSupertypeProvider::class, superTypeGraphStore)
     register(CfirTypeAwareSupertypeProvider::class, CfirTypeAwareSupertypeProviderImpl(this))
     register(CfirModuleVisibilityChecker::class, CfirModuleVisibilityChecker.Standard(this))
+    register(
+        CfirDeclarationAvailabilityProvider::class,
+        CfirDeclarationAvailabilityProvider(this),
+    )
 
     val extendIndexStore = CfirExtendIndexStore(this)
     register(CfirExtendIndexStore::class, extendIndexStore)

@@ -11,11 +11,11 @@ interface I<X> {
 }
 
 class D <: I<B> {
-    public static func test<T>(): Unit where T <: <!GENERIC_CONSTRAINT_NOT_LOOSER!>C & Equatable<B><!> {}
+    public static func test<T>(): Unit where <!GENERIC_CONSTRAINT_NOT_LOOSER!>T <: C & Equatable<B><!> {}
 }
 
 class E <: I<B> {
-    public static func test<T>(): Unit where T <: <!GENERIC_CONSTRAINT_NOT_LOOSER!>Equatable<C><!> {}
+    public static func test<T>(): Unit where <!GENERIC_CONSTRAINT_NOT_LOOSER!>T <: Equatable<C><!> {}
 }
 
 class F <: I<B> {

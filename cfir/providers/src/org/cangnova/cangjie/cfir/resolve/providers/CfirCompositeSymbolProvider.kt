@@ -37,6 +37,10 @@ class CfirCompositeSymbolProvider(
         return null
     }
 
+    /** 聚合所有子 provider 的 class-like 候选，不在 provider 层提前丢失同身份声明。 */
+    override fun getClassLikeSymbolsByClassId(classId: ClassId): List<CfirClassLikeSymbol<*>> =
+        providers.flatMap { provider -> provider.getClassLikeSymbolsByClassId(classId) }.distinct()
+
     /**
      * 将所有子 provider 命中的顶层 callable symbol 追加到 [destination]。
      */

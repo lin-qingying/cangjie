@@ -4,6 +4,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
 import org.cangnova.cangjie.cfir.session.CfirSessionComponent
 import org.cangnova.cangjie.name.FqName
+import org.cangnova.cangjie.source.CjSourceElement
 import java.util.IdentityHashMap
 
 /**
@@ -30,12 +31,16 @@ data class CfirAnnotationReplaceCarrier(
  *
  * [rawSyntax] 保留完整 `@Anno[...]` / `@!Anno[...]` 文本；[argumentText]
  * 仅保留 `[]` 参数列表文本，用于 cache 和 public analysis argument 投影。
+ * [isCompileTimeVisible] 是 parser 按官方 `@` / `@!` 语法确定的语义位，checker
+ * 不得再通过解析结果或源码文本反推；[annotationSource] 精确覆盖完整 annotation。
  *
  * @property owner 持有 annotation 槽位的 CFIR 声明。
  * @property annotationIndex annotation 在 [owner] 的 annotation 列表中的稳定下标。
  * @property originalAnnotation raw build 阶段写入槽位的原始 annotation 对象身份。
  * @property rawSyntax 源码中的完整 annotation 文本，包含 `@` 前缀与参数列表。
- * @property forcedCustom 是否来自 `@!` 强制 custom annotation 语法。
+ * @property forcedCustom 是否来自 `@!` 强制 custom annotation 语法，仅表示语法 provenance。
+ * @property isCompileTimeVisible annotation 是否在编译时可见，对齐官方 AST 语义位。
+ * @property annotationSource 源码中完整 annotation 的精确 source 范围。
  * @property qualifiedName annotation 调用的限定名；解析失败或语法缺失时为 null。
  * @property argumentText annotation 参数列表文本；无显式参数时为 null。
  * @property tokens raw builder 采集到的 annotation token 流。
@@ -50,8 +55,12 @@ data class CfirAnnotationSlotSnapshot(
     val originalAnnotation: CfirAnnotationCall,
     /** 源码中的完整 annotation 文本，包含 `@` 前缀与参数列表。 */
     val rawSyntax: String,
-    /** 是否来自 `@!` 强制 custom annotation 语法。 */
+    /** 是否来自 `@!` 强制 custom annotation 语法，仅表示语法 provenance。 */
     val forcedCustom: Boolean,
+    /** annotation 是否在编译时可见，对齐官方 AST 语义位。 */
+    val isCompileTimeVisible: Boolean,
+    /** 源码中完整 annotation 的精确 source 范围。 */
+    val annotationSource: CjSourceElement,
     /** annotation 调用的限定名；解析失败或语法缺失时为 null。 */
     val qualifiedName: FqName?,
     /** annotation 参数列表文本；无显式参数时为 null。 */
@@ -110,6 +119,37 @@ class CfirAnnotationMetadataRegistry : CfirSessionComponent {
         return carrier
     }
 
+    /**
+     * 为从既有 annotation 派生出的声明 annotation 登记独立槽位。
+     *
+     * 派生槽位只替换 owner、slot index 与 annotation 对象身份；原始语法、编译期可见性、
+     * source、限定名、参数、token 与 call-site provenance 必须完整继承。此 API 只建立
+     * metadata identity，不创建第二个 macro construction surface。
+     *
+     * 原 annotation 未登记 snapshot 表示 raw builder 生命周期被破坏，必须作为不变量失败。
+     */
+    fun recordDerivedSlot(
+        sourceAnnotation: CfirAnnotationCall,
+        owner: CfirDeclaration,
+        annotationIndex: Int,
+        derivedAnnotation: CfirAnnotationCall,
+    ): CfirAnnotationReplaceCarrier {
+        check(!frozen) { "CfirAnnotationMetadataRegistry is frozen." }
+        require(sourceAnnotation !== derivedAnnotation) {
+            "A derived annotation slot must use a distinct annotation object identity."
+        }
+        val sourceSnapshot = checkNotNull(snapshot(sourceAnnotation)) {
+            "Cannot derive annotation metadata without the source annotation slot snapshot."
+        }
+        return record(
+            sourceSnapshot.copy(
+                owner = owner,
+                annotationIndex = annotationIndex,
+                originalAnnotation = derivedAnnotation,
+            )
+        )
+    }
+
     /** 通过稳定槽位身份查找 snapshot。 */
     fun snapshot(carrier: CfirAnnotationReplaceCarrier): CfirAnnotationSlotSnapshot? =
         snapshotsByCarrier[carrier]
@@ -126,6 +166,8 @@ class CfirAnnotationMetadataRegistry : CfirSessionComponent {
 
     /**
      * successful splice 后迁移 slot metadata 到 replacement annotation。
+     *
+     * 迁移只替换 annotation 对象身份；原始语法、编译期可见性与精确 source 必须保持不变。
      */
     fun migrate(carrier: CfirAnnotationReplaceCarrier, replacement: CfirAnnotationCall) {
         check(!frozen) { "CfirAnnotationMetadataRegistry is frozen." }

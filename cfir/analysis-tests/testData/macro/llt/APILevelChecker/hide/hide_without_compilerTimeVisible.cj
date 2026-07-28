@@ -4,7 +4,7 @@
 package ohos.labels
 
 @Annotation
-protected class Hide {
+protected class <!ANNOTATION_NON_PUBLIC!>Hide<!> {
     protected const init(isChecked!: Bool = false) {
     }
 }
@@ -17,5 +17,5 @@ package ohos.dep
 
 import ohos.labels.*
 
-@<!HIDE_COMPILE_TIME_INVISIBLE!>Hide[isChecked: true]<!>
+<!HIDE_COMPILE_TIME_INVISIBLE!>@Hide[isChecked: true]<!>
 public class A {}

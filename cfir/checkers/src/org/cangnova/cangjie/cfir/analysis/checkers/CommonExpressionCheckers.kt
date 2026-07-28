@@ -115,7 +115,6 @@ object CommonExpressionCheckers : ExpressionCheckers() {
             // 复判，否则普通成员调用会把 dispatch receiver 误当成 closure 目标形参。
             org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirVArrayConstructorArgChecker,
             org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirInoutArgumentChecker,
-            org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirApiLevelRefHigherChecker,
             CfirInoutSemanticsChecker,
         )
 
@@ -135,6 +134,7 @@ object CommonExpressionCheckers : ExpressionCheckers() {
             CfirInterfaceCallWithUnimplementedCallChecker,
             CfirStaticContextNonStaticMemberAccessChecker,
             CfirOpenConstructorMemberAccessChecker,
+            CfirApiLevelRefHigherChecker,
         )
 
     /** 对 `super` 接收者表达式合法性执行的 checker 集合。 */

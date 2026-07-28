@@ -12,6 +12,9 @@ dependencies {
     api(project(":util"))
     compileOnly(intellijCore())
     implementation(libs.guava)
+
+    testImplementation(libs.junit.jupiter)
+    testRuntimeOnly(libs.junit.platform.launcher)
 }
 val compileKotlin: KotlinCompile by tasks
 compileKotlin.compilerOptions {

@@ -516,10 +516,12 @@ class PsiRawCfirBuilder(
             }
             val macroAnnotation = psi.asDeclarationMacroAnnotation()
             val annotationCarrier = macroAnnotation?.let { annotation ->
+                val annotationSource = psi.annotationSourceElement()
+                val isCompileTimeVisible = text.trimStart().startsWith("@!")
                 val annotationCall = convertAnnotationCall(
                     annotation = annotation,
                     containingSymbol = containingSymbol,
-                    sourceOverride = source,
+                    sourceOverride = annotationSource,
                     typeRefOverride = psi.toAnnotationTypeRefOverride(),
                     calleeReferenceSourceOverride = psi.referenceExpression?.toCjPsiSourceElement(),
                     argumentListSourceOverride = psi.attr?.toCjPsiSourceElement(),
@@ -532,7 +534,9 @@ class PsiRawCfirBuilder(
                         annotationIndex = annotationIndex,
                         originalAnnotation = annotationCall,
                         rawSyntax = annotation.text,
-                        forcedCustom = text.trimStart().startsWith("@!"),
+                        forcedCustom = isCompileTimeVisible,
+                        isCompileTimeVisible = isCompileTimeVisible,
+                        annotationSource = annotationSource,
                         qualifiedName = qualifiedName,
                         argumentText = psi.attr?.text,
                         tokens = MacroPayloadTokenizer.tokenize(
@@ -685,10 +689,11 @@ class PsiRawCfirBuilder(
                 is CfirValueParameter -> carrier.containingDeclarationSymbol
                 else -> carrier.symbol
             }
+            val annotationSource = psi.annotationSourceElement()
             val annotationCall = convertAnnotationCall(
                 annotation = annotation,
                 containingSymbol = containingSymbol,
-                sourceOverride = psi.toCjPsiSourceElement(),
+                sourceOverride = annotationSource,
                 typeRefOverride = psi.toAnnotationTypeRefOverride(),
                 calleeReferenceSourceOverride = psi.referenceExpression?.toCjPsiSourceElement(),
                 argumentListSourceOverride = psi.attr?.toCjPsiSourceElement(),
@@ -702,6 +707,8 @@ class PsiRawCfirBuilder(
                     originalAnnotation = annotationCall,
                     rawSyntax = annotation.text,
                     forcedCustom = false,
+                    isCompileTimeVisible = false,
+                    annotationSource = annotationSource,
                     qualifiedName = FqName.topLevel(psi.shortName!!),
                     argumentText = psi.attr?.text,
                     tokens = MacroPayloadTokenizer.tokenize(
@@ -889,6 +896,19 @@ class PsiRawCfirBuilder(
             val name = psi.cfirNameAsSafeName
             val propertySource = psi.toCjPsiSourceElement().fakeElement(CjFakeSourceElementKind.PropertyFromParameter)
             val propertySymbol = CfirPropertySymbol(callableIdFor(name))
+            // 参数 annotation 的语义同时落到合成 property；这里只复制节点和 metadata 槽位，
+            // 不再次进入 macro surface 收集，避免为同一源码 annotation 创建第二个 construction surface。
+            val parameterAnnotations = valueParameter.annotations.map { annotation ->
+                check(annotation is CfirAnnotationCall) {
+                    "Primary-constructor parameter annotations must be represented by CfirAnnotationCall."
+                }
+                annotation
+            }
+            val propertyAnnotations = parameterAnnotations.map { annotation ->
+                buildAnnotationCallCopy(annotation) {
+                    containingDeclarationSymbol = propertySymbol
+                }
+            }
             val propertyStatus = cloneDeclarationStatus(convertDeclarationStatus(psi)).also { status ->
                 status.isMut = psi.isMutable
             }
@@ -921,6 +941,7 @@ class PsiRawCfirBuilder(
                     origin = CfirDeclarationOrigin.Source
                     moduleData = baseModuleData
 
+                    annotations.addAll(propertyAnnotations)
                     attributes = declarationAttributes(psi)
                     isLocal = context.inLocalContext
                     dispatchReceiverType = currentDispatchReceiverType()
@@ -929,6 +950,17 @@ class PsiRawCfirBuilder(
                     this.name = name
                     this.getter = getter
                     this.setter = setter
+                }
+            }
+            if (propertyAnnotations.isNotEmpty()) {
+                val metadataRegistry = baseSession.ensureAnnotationMetadataRegistry()
+                propertyAnnotations.forEachIndexed { annotationIndex, derivedAnnotation ->
+                    metadataRegistry.recordDerivedSlot(
+                        sourceAnnotation = parameterAnnotations[annotationIndex],
+                        owner = property,
+                        annotationIndex = annotationIndex,
+                        derivedAnnotation = derivedAnnotation,
+                    )
                 }
             }
             valueParameter.correspondingProperty = property
@@ -995,12 +1027,15 @@ class PsiRawCfirBuilder(
         private fun convertExtend(psi: CjExtend): CfirExtend {
             val extendedTypeRef = convertTypeRef(psi.receiverTypeReceiver)
             val superTypes = psi.superTypeListEntries.map { convertTypeRef(it.typeReference) }
-            val members = psi.body?.declarations?.map { convertDeclaration(it) } ?: emptyList()
 
             return buildSourceDeclaration(CfirExtendSymbol()) { symbol ->
                 buildExtend {
                     resolvePhase = CfirResolvePhase.RAW_CFIR
-                    val typeParametersForExtend = convertTypeParameters(psi, symbol)
+                    val (typeParametersForExtend, members) = withContainerSymbol(symbol) {
+                        val typeParameters = convertTypeParameters(psi, symbol)
+                        val declarations = psi.body?.declarations?.map { convertDeclaration(it) } ?: emptyList()
+                        typeParameters to declarations
+                    }
                     source = psi.toCjPsiSourceElement()
                     this.symbol = symbol
                     origin = CfirDeclarationOrigin.Source
@@ -1379,7 +1414,7 @@ class PsiRawCfirBuilder(
             val enumConstructorName =
                 psi.name?.let { Name.identifier(it) } ?: Name.special("<anonymous-enum-constructor>")
             val valueTypeRefs = psi.typeReferences.map { convertTypeRef(it) }
-            return buildSourceDeclaration(CfirEnumConstructorSymbol(callableIdFor(enumConstructorName))) { symbol ->
+            val enumConstructor = buildSourceDeclaration(CfirEnumConstructorSymbol(callableIdFor(enumConstructorName))) { symbol ->
                 val valueParameters = valueTypeRefs.mapIndexed { index, valueTypeRef ->
                     buildEnumConstructorValueParameter(
                         source = valueTypeRef.source ?: psi.toCjPsiSourceElement(),
@@ -1403,6 +1438,10 @@ class PsiRawCfirBuilder(
                     name = enumConstructorName
                 }
             }
+            // enum constructor 自身是 annotation metadata 与 macro surface 的唯一 owner；
+            // 禁止依赖 class body 的 detached-annotation 回挂逻辑。
+            collectMacroAnnotationSurfaces(psi, AnnotationSurfaceTarget.DECLARATION, enumConstructor)
+            return enumConstructor
         }
 
         /** 为没有显式构造函数的 class-like 声明构造隐式主构造。 */
@@ -1498,12 +1537,15 @@ class PsiRawCfirBuilder(
                 val annotationCall = buildRawAnnotationCall(annotation, carrier)
                 val annotationIndex = carrier.annotations.size
                 carrier.replaceAnnotations(carrier.annotations + annotationCall)
+                val isCompileTimeVisible = annotation.text.trimStart().startsWith("@!")
                 val snapshot = CfirAnnotationSlotSnapshot(
                     owner = carrier,
                     annotationIndex = annotationIndex,
                     originalAnnotation = annotationCall,
                     rawSyntax = annotation.text,
-                    forcedCustom = annotation.text.trimStart().startsWith("@!"),
+                    forcedCustom = isCompileTimeVisible,
+                    isCompileTimeVisible = isCompileTimeVisible,
+                    annotationSource = annotation.toCjPsiSourceElement(),
                     qualifiedName = annotationQualifiedName(annotation),
                     argumentText = annotation.valueArgumentList?.text,
                     tokens = MacroPayloadTokenizer.tokenize(
@@ -3600,6 +3642,26 @@ class PsiRawCfirBuilder(
 /** 计算 reparse 后 PSI 与原始 source override 之间的偏移差。 */
 private fun sourceOffsetDelta(sourceOverride: CjSourceElement?, reparsedPsi: PsiElement): Int {
     return sourceOverride?.let { it.startOffset - reparsedPsi.textRange.startOffset } ?: 0
+}
+
+/**
+ * 返回 macro-expression wrapper 中完整 annotation 的精确 source，不包含其输入声明。
+ */
+private fun CjMacroExpression.annotationSourceElement(): CjSourceElement {
+    val wrapperSource = toCjPsiSourceElement()
+    val annotationEndOffset = attr?.textRange?.endOffset
+        ?: referenceExpression?.textRange?.endOffset
+        ?: error("Macro annotation must contain a reference expression")
+    check(annotationEndOffset in wrapperSource.startOffset..wrapperSource.endOffset) {
+        "Macro annotation source must stay inside its wrapper source range."
+    }
+    return CjLightSourceElement(
+        lighterASTNode = wrapperSource.lighterASTNode,
+        startOffset = wrapperSource.startOffset,
+        endOffset = annotationEndOffset,
+        treeStructure = wrapperSource.treeStructure,
+        kind = wrapperSource.kind,
+    )
 }
 
 /** 将 PSI source element 按 [delta] 平移，用于 macro fragment reparse 后恢复原始位置。 */

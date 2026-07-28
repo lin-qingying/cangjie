@@ -1,3 +1,5 @@
+// API_LEVEL: 18
+
 // FILE: ../level_syscap_check/apilevel.cj
 
 

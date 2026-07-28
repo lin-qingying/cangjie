@@ -289,6 +289,8 @@ class MacroExpansionRegistry : org.cangnova.cangjie.cfir.session.CfirSessionComp
     private val _diagnostics: MutableList<MacroConstructionDiagnostic> = mutableListOf()
     /** `surfaceId -> MacroSurface` 反查表。 */
     private val _originSurfaceById: MutableMap<Long, MacroSurface> = mutableMapOf()
+    /** `fileIdentity -> 原始 macro surface 列表`。 */
+    private val _originSurfacesByFileIdentity: MutableMap<String, MutableList<MacroSurface>> = linkedMapOf()
     /** `fileIdentity -> construction 阶段已消费的 macro 简单名集合`。 */
     private val _usedMacroNamesByFileIdentity: MutableMap<String, MutableSet<Name>> = linkedMapOf()
     /** `fileIdentity -> macro package -> construction 阶段已消费的 macro 简单名集合`。 */
@@ -356,6 +358,40 @@ class MacroExpansionRegistry : org.cangnova.cangjie.cfir.session.CfirSessionComp
     /** 注册一个原始 macro surface，建立 surface id 到 surface 的反查。 */
     fun registerOriginSurface(surface: MacroSurface) {
         _originSurfaceById[surface.surfaceId] = surface
+    }
+
+    /**
+     * 登记某个源文件中 raw builder 捕获的全部原始 macro surface。
+     *
+     * 官方 `CheckAnnoBeforeMacro` 读取的是文件级 `originalMacroCallNodes`；
+     * CFIR 对应 owner 是 construction registry 中按源文件保存的 surface forest，
+     * 不能从 final CFIR 的 declaration annotation 列表反推。
+     */
+    fun registerFileSurfaces(file: CfirFile, surfaces: List<MacroSurface>) {
+        if (surfaces.isEmpty()) return
+        for (surface in surfaces) {
+            registerOriginSurface(surface)
+        }
+        for (fileIdentity in file.macroExpansionFileIdentities()) {
+            val existing = _originSurfacesByFileIdentity.getOrPut(fileIdentity) { mutableListOf() }
+            val knownSurfaceIds = existing.mapTo(linkedSetOf()) { it.surfaceId }
+            for (surface in surfaces) {
+                if (knownSurfaceIds.add(surface.surfaceId)) {
+                    existing += surface
+                }
+            }
+        }
+    }
+
+    /** 查询某源文件 raw builder 捕获的全部原始 macro surface。 */
+    fun originSurfaces(file: CfirFile): List<MacroSurface> {
+        val result = linkedMapOf<Long, MacroSurface>()
+        for (fileIdentity in file.macroExpansionFileIdentities()) {
+            for (surface in _originSurfacesByFileIdentity[fileIdentity].orEmpty()) {
+                result.putIfAbsent(surface.surfaceId, surface)
+            }
+        }
+        return result.values.toList()
     }
 
     /**

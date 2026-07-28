@@ -4,30 +4,9 @@
 package ohos.labels
 
 @Annotation
-protected class Hide {
+protected class <!ANNOTATION_NON_PUBLIC!>Hide<!> {
     protected const init(isChecked!: Bool = false) {
     }
-}
-
-// FILE: call_hide_extend_dep.cj
-
-
-package ohos.dep
-
-import ohos.labels.*
-
-public class A {
-    public func foo() {}
-}
-
-@!Hide[isChecked: true]
-extend A {
-    public func goo() {}
-}
-
-extend A {
-    @!Hide[isChecked: true]
-    public func koo() {}
 }
 
 // FILE: hide_in_extend2.cj
@@ -41,5 +20,5 @@ import ohos.labels.*
 @!Hide[isChecked: true]
 public class A {}
 
-@<!HIDE_DIFF_PARAM!>!Hide[isChecked: false]<!>
-extend A {}
+<!HIDE_DIFF_PARAM!>@!Hide[isChecked: false]
+extend A {}<!>

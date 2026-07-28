@@ -11,7 +11,7 @@ interface I1 {
 }
 
 class D <: I1 {
-    public static func test<T>(): Unit where T <: <!GENERIC_CONSTRAINT_NOT_LOOSER!>C<!> {}
+    public static func test<T>(): Unit where <!GENERIC_CONSTRAINT_NOT_LOOSER!>T <: C<!> {}
 }
 
 class E <: I1 {

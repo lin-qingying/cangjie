@@ -10,7 +10,7 @@ class Test1 <: FaTest {
     public var fPtr: () -> Int32
     public init(x: Int32) {
         a = x
-        fPtr = <!ABSTRACT_METHOD_CANNOT_BE_ACCESSED_DIRECTLY!>s<!>uper.f
+        fPtr = <!ABSTRACT_METHOD_CANNOT_BE_ACCESSED_DIRECTLY!>s<!>uper.<!USED_BEFORE_INITIALIZATION!>f<!>
     }
     public func f(): Int32 {
         return a

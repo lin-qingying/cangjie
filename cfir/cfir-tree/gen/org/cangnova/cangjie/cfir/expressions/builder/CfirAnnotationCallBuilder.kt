@@ -54,3 +54,20 @@ inline fun buildAnnotationCall(init: CfirAnnotationCallBuilder.() -> Unit): Cfir
     }
     return CfirAnnotationCallBuilder().apply(init).build()
 }
+
+@OptIn(ExperimentalContracts::class)
+inline fun buildAnnotationCallCopy(original: CfirAnnotationCall, init: CfirAnnotationCallBuilder.() -> Unit): CfirAnnotationCall {
+    contract {
+        callsInPlace(init, InvocationKind.EXACTLY_ONCE)
+    }
+    val copyBuilder = CfirAnnotationCallBuilder()
+    copyBuilder.source = original.source
+    copyBuilder.annotations.addAll(original.annotations)
+    copyBuilder.coneTypeOrNull = original.coneTypeOrNull
+    copyBuilder.typeRef = original.typeRef
+    copyBuilder.arguments.addAll(original.arguments)
+    copyBuilder.argumentList = original.argumentList
+    copyBuilder.calleeReference = original.calleeReference
+    copyBuilder.containingDeclarationSymbol = original.containingDeclarationSymbol
+    return copyBuilder.apply(init).build()
+}

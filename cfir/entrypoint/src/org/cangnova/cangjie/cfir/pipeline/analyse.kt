@@ -277,7 +277,7 @@ fun resolveAndCheckCfirAfterConstruction(
         classification.freezeFailurePath(MacroFailurePolicy.STRICT)
         val registry = org.cangnova.cangjie.cfir.resolve.providers.macro.MacroExpansionRegistry().apply {
             addAll(preConstructionDiagnostics)
-            pre.allSurfaces.forEach(::registerOriginSurface)
+            pre.files.forEach { preFile -> registerFileSurfaces(preFile.cfirFile, preFile.surfaces) }
         }
         session.register(MacroExpansionRegistry::class, registry)
         session.annotationMetadataRegistryOrNull?.freeze()

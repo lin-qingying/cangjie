@@ -159,7 +159,10 @@ class CommonEnvironmentConfigurator(testServices: TestServices) : EnvironmentCon
         configuration.apiLevel = module.directives[API_LEVEL]
             .lastOrNull()
             ?.toIntOrNull()
-        configuration.apiLevelSyscapConfigPath = module.directives[API_LEVEL_SYSCAP].lastOrNull()
+        configuration.apiLevelSyscapConfigPath = module.directives[API_LEVEL_SYSCAP]
+            .lastOrNull()
+            ?.let { resolveTestDataPath(module, it) }
+            ?.path
         if (WITH_STDLIB in module.directives && !noPreludeEnabled) {
             addStdlibClasspathRoots(configuration)
         }
@@ -210,24 +213,35 @@ class CommonEnvironmentConfigurator(testServices: TestServices) : EnvironmentCon
      * 语义退化成仓库根目录相对路径。
      */
     private fun addImportPathRoots(configuration: CompilerConfiguration, module: TestModule) {
-        val anchorFile = module.files
-            .firstOrNull { !it.isAdditional }
-            ?.originalFile
-            ?.parentFile
-            ?: return
-
         module.directives[IMPORT_PATH]
             .asSequence()
             .map(String::trim)
             .filter(String::isNotEmpty)
-            .map { rawPath ->
-                val candidate = File(rawPath)
-                if (candidate.isAbsolute) candidate else anchorFile.resolve(rawPath)
-            }
-            .map { it.normalize() }
+            .mapNotNull { resolveTestDataPath(module, it) }
             .filter { it.exists() }
             .distinctBy { it.absolutePath }
             .forEach { configuration.addClasspathRoot(it.path) }
+    }
+
+    /**
+     * 按主测试文件所在目录解析测试指令中的路径。
+     *
+     * LLT 的 `--cfg` 与 `--import-path` 都以当前测试数据文件目录为基准；统一在这里
+     * 转成规范化路径，避免 Gradle 工作目录改变测试语义。
+     */
+    private fun resolveTestDataPath(module: TestModule, rawPath: String): File? {
+        val normalizedRawPath = rawPath.trim()
+        if (normalizedRawPath.isEmpty()) return null
+
+        val candidate = File(normalizedRawPath)
+        if (candidate.isAbsolute) return candidate.normalize()
+
+        val anchorDirectory = module.files
+            .firstOrNull { !it.isAdditional }
+            ?.originalFile
+            ?.parentFile
+            ?: return null
+        return anchorDirectory.resolve(candidate).normalize()
     }
 
     /**

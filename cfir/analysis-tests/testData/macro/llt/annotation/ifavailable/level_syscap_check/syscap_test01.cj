@@ -1,3 +1,5 @@
+// API_LEVEL_SYSCAP: json/config.json
+
 // FILE: apilevel.cj
 
 

@@ -1009,23 +1009,26 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                             }
                         }
 
-                        if (!hasStaticConflict) {
-                            val returnTypeConflict = ownInfo.functionReturnTypeConflict(superInfo, context)
-                            if (returnTypeConflict != null) {
-                                val key = ownInfo.overrideDiagnosticKey(superInfo)
-                                if (reportedReturnTypeConflicts.add(key)) {
-                                    returnTypeConflict.report(
-                                        source = ownInfo.nameSource ?: ownInfo.source ?: subject.source,
-                                        name = superInfo.name,
-                                        reporter = reporter,
-                                    )
-                                }
+                        val returnTypeConflict = if (!hasStaticConflict) {
+                            ownInfo.functionReturnTypeConflict(superInfo, context)
+                        } else {
+                            null
+                        }
+                        if (returnTypeConflict != null) {
+                            val key = ownInfo.overrideDiagnosticKey(superInfo)
+                            if (reportedReturnTypeConflicts.add(key)) {
+                                returnTypeConflict.report(
+                                    source = ownInfo.nameSource ?: ownInfo.source ?: subject.source,
+                                    name = superInfo.name,
+                                    reporter = reporter,
+                                )
                             }
                         }
 
                         if (classDecl != null &&
                             !ownInfo.isOverride &&
                             !ownInfo.isRedef &&
+                            returnTypeConflict == null &&
                             ownInfo.hasWeakVisibilityComparedTo(superInfo)
                         ) {
                             val key = ownInfo.overrideDiagnosticKey(superInfo)

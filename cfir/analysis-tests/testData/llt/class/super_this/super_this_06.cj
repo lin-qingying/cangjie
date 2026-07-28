@@ -14,7 +14,7 @@ open class C2 <: C1 {
 class C3 <: C2 {
     public var k: Int32
     public init() {
-        k = <!USED_BEFORE_INITIALIZATION!>super.f<!>()
+        k = super.<!USED_BEFORE_INITIALIZATION!>f<!>()
     }
     public func getK(): Int32 {
         return k

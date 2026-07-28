@@ -1380,17 +1380,46 @@ class CangJieParsing private constructor(
     }
 
     /**
-     * 执行 `isConstModifierStart` 内部辅助逻辑，支撑仓颉语法解析节点的结构解析与访问。
+     * 判断当前 `const` 是声明修饰符，还是变量/字段声明关键字。
+     *
+     * `const` 同时具有两种语法身份：
+     * - `const value = 1` 中它开始一个变量或字段声明；
+     * - `const override func` 中它与其他 modifier 共同修饰函数。
+     *
+     * 官方 parser 会连续收集完整 modifier 序列，不要求 `const` 必须紧邻
+     * `func`/`init`。因此这里先越过后续可识别的声明 modifier，再由最终声明起始
+     * token 决定 `const` 的身份。这保证 modifier 顺序无关，同时不会吞掉合法的
+     * `const value` 字段/变量以及 `const TypeName(...)` 主构造器。
      */
     context(parseContext: ParsingContext)
     private fun isConstModifierStart(parseConstBeforePrimaryConstructor: Boolean): Boolean {
         if (!at(CONST_KEYWORD)) return false
 
-        return when (lookahead(1)) {
+        var declarationStartOffset = 1
+        while (isDeclarationModifierToken(lookahead(declarationStartOffset))) {
+            declarationStartOffset++
+        }
+
+        return when (lookahead(declarationStartOffset)) {
             FUNC_KEYWORD, INIT_KEYWORD -> true
-            IDENTIFIER -> parseConstBeforePrimaryConstructor && lookahead(2) == LPAR
+            IDENTIFIER ->
+                parseConstBeforePrimaryConstructor && lookahead(declarationStartOffset + 1) == LPAR
             else -> false
         }
+    }
+
+    /**
+     * 判断 token 是否可作为声明前缀中的后续 modifier。
+     *
+     * `const`/`foreign`/`unsafe` 因同时拥有其他语法身份，没有放入
+     * [MODIFIER_KEYWORDS]；但在 modifier 序列的前瞻中必须与普通 modifier 统一处理。
+     */
+    private fun isDeclarationModifierToken(token: IElementType?): Boolean {
+        if (token == null) return false
+        return MODIFIER_KEYWORDS.contains(token) ||
+                token == CONST_KEYWORD ||
+                token == FOREIGN_KEYWORD ||
+                token == UNSAFE_KEYWORD
     }
 
 
@@ -1562,18 +1591,26 @@ class CangJieParsing private constructor(
      */
     context(parseContext: ParsingContext)
     fun parseAnnotations() {
-        val set = if (parseContext.disableMacroParsing) {
-            TokenSet.create(AT, ATEXCL)
-
-        } else {
-            TokenSet.create(ATEXCL)
-        }
         val mark = mark()
-        while (_atSet(set) || isBuiltInAnnotation()) {
+        while (isAnnotationStart()) {
             parseAnnotation()
         }
         mark.done(ANNOTATIONS)
     }
+
+    /**
+     * 按当前解析上下文判断 annotation 起始。
+     *
+     * 生产解析保留普通 `@Macro` 的 macro 语义，只把 `@!` 与 builtin annotation
+     * 交给 annotation parser；annotation-only 上下文才同时接受普通 `@`。
+     */
+    context(parseContext: ParsingContext)
+    private fun isAnnotationStart(): Boolean =
+        if (parseContext.disableMacroParsing) {
+            _atSet(AT, ATEXCL)
+        } else {
+            at(ATEXCL) || isBuiltInAnnotation()
+        }
 
     /**
      * 检查是否是内置注解
@@ -2885,7 +2922,7 @@ class CangJieParsing private constructor(
 
             expect(OR)
 
-            if (at(IDENTIFIER)) {
+            if (isEnumConstructorStart()) {
                 parseEnumList()
             } else {
                 error(CangJieParsingBundle.message("parsing.error.expecting.element", "enum constructor"))
@@ -2911,7 +2948,7 @@ class CangJieParsing private constructor(
                 break
             }
 
-            parseEnumEntry()
+            if (!parseEnumEntry()) break
             when {
                 at(RBRACE) -> break
                 at(OR) -> advance()
@@ -2919,6 +2956,16 @@ class CangJieParsing private constructor(
             }
         }
     }
+
+    /**
+     * 判断当前位置能否开始枚举构造项。
+     *
+     * annotation 与 modifier 都属于随后 [ENUM_CONSTRUCTOR] 的声明前缀；首项和 `|` 后续项
+     * 必须使用同一判定，不能把前缀留在 [ENUM_BODY] 上再由 raw builder 猜测 owner。
+     */
+    context(parseContext: ParsingContext)
+    private fun isEnumConstructorStart(): Boolean =
+        at(IDENTIFIER) || at(ELLIPSIS) || isAnnotationStart() || _atSet(MODIFIER_KEYWORDS)
 
     context(parseContext: ParsingContext)
     fun parseTypeCodeFragment() {
@@ -2950,19 +2997,24 @@ class CangJieParsing private constructor(
      * Grammar:
      * ```
      * enumEntry
-     *   : simpleName ("(" typeList ")" )?
+     *   : annotations modifiers simpleName ("(" typeList ")" )?
      *   ;
      * ```
      *
-     * @param isCreateMark 是否创建标记
      * @return 是否成功解析
      */
     context(parseContext: ParsingContext)
-    fun parseEnumEntry(isCreateMark: Boolean = true): Boolean {
-        val entry = if (isCreateMark) mark() else null
+    private fun parseEnumEntry(): Boolean {
+        val entry = mark()
+
+        // 枚举构造项是 annotation 的真实语义 owner；是否消费普通 `@` 必须服从当前
+        // ParsingContext，不能把生产模式中的 declaration macro 强制降级成 annotation。
+        parseAnnotations()
+        parseModifierList(null, TokenSet.EMPTY)
 
         if (!expect(IDENTIFIER, "Expecting enum constructor name")) {
-            entry?.drop()
+            // 即使名称缺失，也要闭合 owner，禁止已解析 annotation/modifier 脱离到 enum body。
+            entry.done(ENUM_CONSTRUCTOR)
             return false
         }
 
@@ -2977,7 +3029,7 @@ class CangJieParsing private constructor(
             expect(RPAR, "Expecting ')'")
         }
 
-        entry?.done(ENUM_CONSTRUCTOR)
+        entry.done(ENUM_CONSTRUCTOR)
         return true
     }
 

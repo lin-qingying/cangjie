@@ -779,7 +779,10 @@ class CfirTypeResolveTransformer(
         if (klass.declarations.any { it is CfirConstructor }) return
 
         val classImpl = klass as? CfirClassImpl ?: return
-        val symbol = CfirConstructorSymbol(CallableId(SpecialNames.INIT))
+        // 隐式构造器同样必须携带真实 owner ClassId。后置声明元数据 checker 会从最终
+        // resolved constructor 还原到 class owner；无 owner 的局部 CallableId 会丢失
+        // class 上的 Hide/APILevel 等注解语义。
+        val symbol = CfirConstructorSymbol(CallableId(klass.symbol.classId, SpecialNames.INIT))
         val constructor = buildConstructor {
             source = klass.source
             moduleData = klass.moduleData
