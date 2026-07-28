@@ -42,28 +42,40 @@ import org.cangnova.cangjie.source.CjSourceElement
 sealed class MacroSurface {
     /** construction 期唯一 surface id。 */
     abstract val surfaceId: Long
+
     /** macro 调用限定名；解析失败或语法缺失时为 null。 */
     abstract val qualifiedName: FqName?
+
     /** macro 调用形式。 */
     abstract val kind: Kind
+
     /** 调用点是否显式带有参数括号。 */
     abstract val hasParenthesis: Boolean
+
     /** attr payload token 流。 */
     abstract val attrTokens: List<MacroSurfaceToken>
+
     /** input payload token 流。 */
     abstract val inputTokens: List<MacroSurfaceToken>
+
     /** surface 在宿主源码中的完整范围。 */
     abstract val sourceRange: MacroSurfaceSourceRange?
+
     /** surface 所在包、类、函数上下文。 */
     abstract val scopeContext: MacroSurfaceScopeContext
+
     /** surface 携带的 modifier 文本。 */
     abstract val modifiers: List<String>
+
     /** surface 携带或覆盖的 annotation 文本。 */
     abstract val carriedAnnotations: List<String>
+
     /** raw builder 捕获的原始语法文本。 */
     abstract val capturedRawSyntax: String?
+
     /** surface 所在语法容器上下文。 */
     abstract val containerContext: MacroSurfaceContainerContext
+
     /** stable splice 必须使用的替换句柄。 */
     abstract val replaceHandle: CfirReplaceHandle
 
@@ -71,6 +83,7 @@ sealed class MacroSurface {
     enum class Kind {
         /** 普通 `@Name(...)` 或 `@Name` 调用形式。 */
         PLAIN,
+
         /** 强制 `@!Name(...)` 调用形式。 */
         FORCED,
     }
@@ -162,20 +175,28 @@ data class MacroSurfaceContainerContext(
     enum class OuterDeclarationKind {
         /** 没有可用外层声明上下文。 */
         NONE,
+
         /** 顶层声明区域。 */
         TOP_LEVEL,
+
         /** class body。 */
         CLASS_BODY,
+
         /** interface body。 */
         INTERFACE_BODY,
+
         /** struct body。 */
         STRUCT_BODY,
+
         /** enum body。 */
         ENUM_BODY,
+
         /** extend body。 */
         EXTEND_BODY,
+
         /** function body。 */
         FUNCTION_BODY,
+
         /** property body。 */
         PROPERTY_BODY,
     }

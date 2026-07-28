@@ -3,15 +3,21 @@ package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 import org.cangnova.cangjie.cfir.analysis.checkers.CfirExtendSemantics
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
+import org.cangnova.cangjie.cfir.correspondingProperty
+import org.cangnova.cangjie.cfir.declarations.CfirDeclarationAvailabilityProvider
+import org.cangnova.cangjie.cfir.declarations.CfirHideAnnotationState
+import org.cangnova.cangjie.cfir.declarations.CfirPlatformAnnotationClassIds
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
+import org.cangnova.cangjie.cfir.declarations.declarationAvailabilityProvider
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
@@ -22,11 +28,15 @@ import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
+import org.cangnova.cangjie.cfir.session.annotationMetadataRegistryOrNull
 import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.cfir.types.typeContext
+import org.cangnova.cangjie.cfir.unwrapSubstitutionOverrides
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjTypeStatement
+import org.cangnova.cangjie.source.CjOffsetsOnlySourceElement
 import org.cangnova.cangjie.source.psi
 import org.cangnova.cangjie.type.AbstractTypeChecker
 
@@ -110,7 +120,7 @@ private fun checkAnnotationMetaRules(
 
     if (declaration is CfirClassLikeDeclaration && !declaration.isPublicLike()) {
         reporter.reportOn(
-            source = annotationEntry.toSourceOrDeclarationSource(declaration),
+            source = declaration.classLikeNameDiagnosticSource(),
             factory = CfirErrors.ANNOTATION_NON_PUBLIC,
         )
     }
@@ -126,14 +136,15 @@ private fun checkAnnotationMetaRules(
 /**
  * 检查 APILevel、IfAvailable 和 Hide 等平台注解的声明级语法规则。
  *
- * 这里处理参数命名、字面量限制、多重注解限制、Hide 位置以及 override 继承关系等
+ * 这里处理参数命名、字面量限制、多重注解限制以及 Hide override 继承关系等
  * 仅依赖声明与注解文本即可判断的约束。
  */
 context(context: CheckerContext, reporter: DiagnosticReporter)
 private fun checkPlatformAnnotationSyntax(
     declaration: CfirDeclaration,
 ) {
-    val apiLevelEntries = declaration.findAnnotations(API_LEVEL).filterIsInstance<CfirAnnotationCall>()
+    val availability = context.session.declarationAvailabilityProvider
+    val apiLevelEntries = availability.findAnnotations(declaration, CfirPlatformAnnotationClassIds.API_LEVEL)
     if (apiLevelEntries.size > 1) {
         reporter.reportOn(
             source = apiLevelEntries[1].toSourceOrDeclarationSource(declaration),
@@ -155,7 +166,7 @@ private fun checkPlatformAnnotationSyntax(
                 reporter.reportOn(entry.toSourceOrDeclarationSource(declaration), CfirErrors.ONLY_LITERAL_SUPPORT, "annotation")
             }
 
-            val syscapLiteral = entry.namedArgumentText("syscap")
+            val syscapLiteral = entry.argumentByName("syscap")?.literalStringOrNull()
             if (syscapLiteral != null && !seenSyscaps.add(syscapLiteral)) {
                 reporter.reportOn(
                     source = entry.toSourceOrDeclarationSource(declaration),
@@ -199,48 +210,44 @@ private fun checkPlatformAnnotationSyntax(
         )
     }
 
-    val hideEntries = declaration.findAnnotations(HIDE).filterIsInstance<CfirAnnotationCall>()
-    if (hideEntries.size > 1) {
-        reporter.reportOn(
-            source = hideEntries[1].toSourceOrDeclarationSource(declaration),
-            factory = CfirErrors.HIDE_MULTI_ANNOTATION,
-        )
-    }
-    // HIDE_COMPILE_TIME_INVISIBLE: @!Hide 注解本身若无法在编译时解析,报错。
-    // 对齐 C++ PluginCustomAnnoChecker.cpp:498 `!anno->isCompileTimeVisible`。
-    if (hideEntries.isNotEmpty()) {
-        val resolvedHide = declaration.annotations.firstOrNull { ann ->
-            val t = (ann.typeRef as? CfirResolvedTypeRef)?.coneType
-            t is ConeClassLikeType && t.classId.shortClassName == HIDE
+    val hideEntries = availability.findAnnotations(declaration, CfirPlatformAnnotationClassIds.HIDE)
+    val firstHideEntry = hideEntries.firstOrNull()
+    val isRegularFunctionParameter =
+        declaration is CfirValueParameter && declaration.correspondingProperty == null
+    if (firstHideEntry != null && isRegularFunctionParameter) {
+        // 官方 Parse 对首个 Hide 先执行普通函数参数检查并 continue；
+        // 后续重复项仍各自进入 duplicate 分支。
+        val parameterSource = checkNotNull(declaration.source) {
+            "Source function parameter with Hide annotation must have a declaration source."
         }
-        val isInvisible = resolvedHide == null
-            || (resolvedHide.typeRef as? CfirResolvedTypeRef)?.coneType is org.cangnova.cangjie.cfir.types.ConeErrorType
-        if (isInvisible) {
+        reporter.reportOn(
+            source = CjOffsetsOnlySourceElement(
+                parameterSource.startOffset,
+                parameterSource.endOffset,
+            ),
+            factory = CfirErrors.HIDE_AT_FUNC_PARAM,
+        )
+    } else if (firstHideEntry != null) {
+        val snapshot = context.session.annotationMetadataRegistryOrNull?.snapshot(firstHideEntry)
+        if (snapshot == null) {
+            check(!declaration.origin.fromSource && firstHideEntry.source == null) {
+                "Source Hide annotation metadata is missing for ${declaration.symbol}."
+            }
+        } else if (!snapshot.isCompileTimeVisible) {
             reporter.reportOn(
-                source = hideEntries.first().toSourceOrDeclarationSource(declaration),
+                source = snapshot.annotationSource,
                 factory = CfirErrors.HIDE_COMPILE_TIME_INVISIBLE,
             )
         }
-    }
-    if (declaration is CfirValueParameter && hideEntries.isNotEmpty()) {
-        reporter.reportOn(
-            source = hideEntries.first().toSourceOrDeclarationSource(declaration),
-            factory = CfirErrors.HIDE_AT_FUNC_PARAM,
-        )
-    }
-    hideEntries.firstOrNull()?.let { hideEntry ->
-        if (declaration.annotations.lastOrNull() != hideEntry) {
-            reporter.reportOn(
-                source = hideEntry.toSourceOrDeclarationSource(declaration),
-                factory = CfirErrors.HIDE_MUST_AT_END,
-                a = HIDE.asString(),
-            )
-        }
 
-        if (hideEntry.hasArguments()) {
-            if (!hideEntry.hasNamedArgument("isChecked") || !hideEntry.firstArgumentIsBooleanLiteralNamed("isChecked")) {
+        if (firstHideEntry.hasArguments()) {
+            val isCheckedArgument = firstHideEntry.argumentByName("isChecked")
+            val hasBooleanIsChecked =
+                isCheckedArgument is org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression &&
+                    isCheckedArgument.value is Boolean
+            if (!firstHideEntry.hasNamedArgument("isChecked") || !hasBooleanIsChecked) {
                 reporter.reportOn(
-                    source = hideEntry.toSourceOrDeclarationSource(declaration),
+                    source = firstHideEntry.toSourceOrDeclarationSource(declaration),
                     factory = CfirErrors.HIDE_DIFF_PARAM,
                     a = "unexpected",
                 )
@@ -248,17 +255,26 @@ private fun checkPlatformAnnotationSyntax(
         }
     }
 
-    // HIDE_MISSING_HIDE: override 带 @!Hide 但父声明无 @!Hide
-    if (hideEntries.isNotEmpty() && declaration is CfirNamedFunction && declaration.status.isOverride) {
-        val parent = findOverriddenInSupers(declaration)
-        val parentHasHide = parent?.hasAnnotation(HIDE) == true
-        if (!parentHasHide && parent != null) {
+    if (hideEntries.size > 1) {
+        // 官方 Parse 以首项建立 hideExist，此后每个 Hide 都在 declaration 位置
+        // 报告一次 multi 并 continue，不再消费该重复项的可见性、位置或参数规则。
+        val duplicateHideSource = when (declaration) {
+            is CfirClassLikeDeclaration -> declaration.classLikeDeclarationHeaderDiagnosticSource()
+            else -> declaration.source
+        }
+        val source = checkNotNull(duplicateHideSource) {
+            "Duplicate Hide annotation requires a declaration source."
+        }
+        repeat(hideEntries.size - 1) {
             reporter.reportOn(
-                source = parent.source ?: declaration.source,
-                factory = CfirErrors.HIDE_MISSING_HIDE,
+                source = source,
+                factory = CfirErrors.HIDE_MULTI_ANNOTATION,
             )
         }
     }
+
+    checkHideOfExtendDeclaration(declaration, availability)
+    checkHideOfOverrideFunction(declaration, availability)
 }
 
 /**
@@ -293,27 +309,114 @@ private fun checkCallingConventionRules(declaration: CfirDeclaration) {
     }
 }
 
-/**
- * 在直接父类型中查找与当前函数同名的被覆写声明。
- *
- * 该辅助用于 Hide override 规则，只需要判断父声明是否携带 `@Hide`，因此按名称在
- * 直接父声明列表中做轻量查找。
- */
-context(context: CheckerContext)
-private fun findOverriddenInSupers(declaration: CfirNamedFunction): CfirDeclaration? {
-    val ownerClassId = declaration.symbol.callableId.classId ?: return null
-    val ownerDecl = context.session.symbolProvider.getClassLikeSymbolByClassId(ownerClassId)?.cfir
-        as? CfirClassLikeDeclaration ?: return null
-    for (superRef in ownerDecl.superTypeRefs) {
-        val t = (superRef as? CfirResolvedTypeRef)?.coneType as? ConeClassLikeType ?: continue
-        val sd = context.session.symbolProvider.getClassLikeSymbolByClassId(t.classId)?.cfir
-            as? CfirClassLikeDeclaration ?: continue
-        val match = sd.declarations.firstOrNull {
-            it is CfirNamedFunction && it.name == declaration.name
-        }
-        if (match != null) return match
+/** 按官方矩阵检查 extend 、被扩展类型与 extend 成员的 Hide 关系。 */
+context(context: CheckerContext, reporter: DiagnosticReporter)
+private fun checkHideOfExtendDeclaration(
+    declaration: CfirDeclaration,
+    availability: CfirDeclarationAvailabilityProvider,
+) {
+    val extend = declaration as? CfirExtend ?: return
+    val target = CfirExtendSemantics.targetDeclaration(context, extend) ?: return
+    val targetHide = availability.ownHideState(target)
+    val extendHide = availability.ownHideState(extend)
+
+    if (targetHide is CfirHideAnnotationState.Present && extendHide is CfirHideAnnotationState.Absent) {
+        reporter.reportOn(extend.source, CfirErrors.HIDE_MISSING_HIDE)
+    } else if (
+        targetHide is CfirHideAnnotationState.Present &&
+        extendHide is CfirHideAnnotationState.Present &&
+        targetHide.isChecked &&
+        !extendHide.isChecked
+    ) {
+        reporter.reportOn(
+            source = extend.source,
+            factory = CfirErrors.HIDE_DIFF_PARAM,
+            a = extendHide.isChecked.toString(),
+        )
     }
-    return null
+
+    val effectiveExtendHide = extendHide as? CfirHideAnnotationState.Present ?: return
+    for (member in extend.declarations) {
+        val memberHide = availability.ownHideState(member) as? CfirHideAnnotationState.Present ?: continue
+        if (memberHide.isChecked == effectiveExtendHide.isChecked) continue
+        reporter.reportOn(
+            source = member.source,
+            factory = CfirErrors.HIDE_DIFF_PARAM,
+            a = memberHide.isChecked.toString(),
+        )
+    }
+}
+
+/**
+ * 使用 use-site scope 的 direct-override 图查找顶层基函数，再比较 effective Hide。
+ *
+ * effective Hide 严格按“函数自身优先，自身缺失时才继承 outer”计算。
+ */
+context(context: CheckerContext, reporter: DiagnosticReporter)
+private fun checkHideOfOverrideFunction(
+    declaration: CfirDeclaration,
+    availability: CfirDeclarationAvailabilityProvider,
+) {
+    val function = declaration as? CfirNamedFunction ?: return
+    val currentHide = availability.effectiveHideStateForOverride(function.symbol)
+        as? CfirHideAnnotationState.Present ?: return
+    val topOverridden = collectTopOverriddenFunctions(function.symbol)
+    if (topOverridden.isEmpty()) return
+
+    var hasDifferentParameter = false
+    for (topFunction in topOverridden) {
+        when (val topHide = availability.effectiveHideStateForOverride(topFunction)) {
+            CfirHideAnnotationState.Absent -> reporter.reportOn(
+                source = topFunction.cfir.functionNameDiagnosticSource(),
+                factory = CfirErrors.HIDE_MISSING_HIDE,
+            )
+
+            is CfirHideAnnotationState.Present -> {
+                if (topHide.isChecked != currentHide.isChecked) hasDifferentParameter = true
+            }
+        }
+    }
+
+    if (hasDifferentParameter) {
+        reporter.reportOn(
+            source = function.functionNameDiagnosticSource(),
+            factory = CfirErrors.HIDE_DIFF_PARAM,
+            a = currentHide.isChecked.toString(),
+        )
+    }
+}
+
+/** 递归展开真实 direct-override 边，保留多父类与 intersection 分支。 */
+context(context: CheckerContext)
+private fun collectTopOverriddenFunctions(
+    functionSymbol: CfirNamedFunctionSymbol,
+): List<CfirNamedFunctionSymbol> {
+    val direct = functionSymbol.directOverriddenFunctions()
+    if (direct.isEmpty()) return emptyList()
+
+    val result = linkedSetOf<CfirNamedFunctionSymbol>()
+    val visited = linkedSetOf<CfirNamedFunctionSymbol>()
+    fun collect(symbol: CfirNamedFunctionSymbol) {
+        if (!visited.add(symbol)) return
+        val parents = symbol.directOverriddenFunctions()
+        if (parents.isEmpty()) {
+            result += symbol.unwrapSubstitutionOverrides()
+            return
+        }
+        parents.forEach(::collect)
+    }
+    direct.forEach(::collect)
+    return result.toList()
+}
+
+/** 在符号所属 class-like 的 use-site scope 中收集直接覆写函数。 */
+context(context: CheckerContext)
+private fun CfirNamedFunctionSymbol.directOverriddenFunctions(): List<CfirNamedFunctionSymbol> {
+    val normalized = unwrapSubstitutionOverrides()
+    val scope = context.overrideOwnerUseSiteMemberScope(normalized) ?: return emptyList()
+    return scope.collectDirectOverriddenFunctions(normalized)
+        .mapNotNull { symbol -> symbol as? CfirNamedFunctionSymbol }
+        .distinct()
 }
 
 /**
@@ -861,14 +964,8 @@ private val OBJC_IMPL = Name.identifier("ObjCImpl")
 /** 外部符号名称映射注解名称。 */
 private val FOREIGN_NAME = Name.identifier("ForeignName")
 
-/** API 可用等级注解名称。 */
-private val API_LEVEL = Name.identifier("APILevel")
-
 /** 条件可用性注解名称。 */
 private val IF_AVAILABLE = Name.identifier("IfAvailable")
-
-/** 编译期隐藏注解名称。 */
-private val HIDE = Name.identifier("Hide")
 
 /**
  * `@IfAvailable` 允许出现的命名参数集合。

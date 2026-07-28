@@ -532,11 +532,7 @@ class LightTreeRawCfirExpressionBuilder(
                 CjNodeTypes.VALUE_ARGUMENT_LIST -> {
                     hasValueArgumentList = true
                     valueArgumentListNode = child
-                    tree.forEachChildren(child) { arg ->
-                        if (arg.tokenType == CjNodeTypes.VALUE_ARGUMENT) {
-                            argNodes.add(arg)
-                        }
-                    }
+                    argNodes.addAll(valueArgumentNodes(child))
                 }
                 CjNodeTypes.TYPE_ARGUMENT_LIST -> {
                     tree.forEachChildren(child) { typeArg ->
@@ -583,11 +579,7 @@ class LightTreeRawCfirExpressionBuilder(
                   when (child.tokenType) {
                       CjNodeTypes.VALUE_ARGUMENT_LIST -> {
                           nestedValueArgumentListNode = child
-                          tree.forEachChildren(child) { arg ->
-                              if (arg.tokenType == CjNodeTypes.VALUE_ARGUMENT) {
-                                  nestedArgNodes.add(arg)
-                              }
-                          }
+                          nestedArgNodes.addAll(valueArgumentNodes(child))
                       }
 
                       CjNodeTypes.TYPE_ARGUMENT_LIST -> {
@@ -646,7 +638,9 @@ class LightTreeRawCfirExpressionBuilder(
               lambdaArgNodes
           )?.let { return it }
 
-          val callArguments = effectiveArgNodes.mapNotNull { convertCallArgument(it) }.toMutableList()
+          // flatten 后的 effectiveArgNodes 是普通实参的规范集合；直接交给共享 converter，
+          // 避免重新依赖某一层 VALUE_ARGUMENT_LIST 而丢失内层调用实参。
+          val callArguments = convertValueArguments(effectiveArgNodes).toMutableList()
           val lambdaArgs = lambdaArgNodes.mapNotNull { lambdaArg ->
               val lambdaExpr = findLambdaExpression(lambdaArg)
               lambdaExpr?.let {
@@ -713,8 +707,38 @@ class LightTreeRawCfirExpressionBuilder(
         )
     }
 
-    /** 转换单个调用实参，保留 named 与 inout 包装。 */
-    private fun convertCallArgument(valueArgumentNode: LighterASTNode): CfirExpression? {
+    /**
+     * 转换标准 [CjNodeTypes.VALUE_ARGUMENT_LIST] 的直接实参子节点。
+     *
+     * 普通调用与 annotation 必须共用该入口，避免不同 builder 对 named argument
+     * 的名称节点和值表达式采用不同遍历规则。
+     */
+    internal fun convertValueArguments(valueArgumentListNode: LighterASTNode): List<CfirExpression> {
+        return convertValueArguments(valueArgumentNodes(valueArgumentListNode))
+    }
+
+    /** 转换已经按调用扁平化规则选定的 value argument 节点集合。 */
+    private fun convertValueArguments(valueArgumentNodes: List<LighterASTNode>): List<CfirExpression> =
+        valueArgumentNodes.mapNotNull(::convertValueArgument)
+
+    /** 读取 value-argument-list 的直接实参节点，作为收集与转换共用的结构边界。 */
+    private fun valueArgumentNodes(valueArgumentListNode: LighterASTNode): List<LighterASTNode> {
+        check(valueArgumentListNode.tokenType == CjNodeTypes.VALUE_ARGUMENT_LIST) {
+            "Value arguments must be read from a VALUE_ARGUMENT_LIST node."
+        }
+        return tree.getChildrenByType(valueArgumentListNode, CjNodeTypes.VALUE_ARGUMENT)
+    }
+
+    /**
+     * 转换单个标准 value argument，保留 named、inout 及各层 source 语义。
+     *
+     * 值表达式只允许来自 [CjNodeTypes.VALUE_ARGUMENT] 的直接表达式子节点；
+     * [CjNodeTypes.VALUE_ARGUMENT_NAME] 仅用于构造参数名，绝不参与值表达式查找。
+     */
+    internal fun convertValueArgument(valueArgumentNode: LighterASTNode): CfirExpression? {
+        check(valueArgumentNode.tokenType == CjNodeTypes.VALUE_ARGUMENT) {
+            "A value argument must be converted from a VALUE_ARGUMENT node."
+        }
         val expressionNode = findFirstExpression(valueArgumentNode) ?: return null
         val convertedExpression = convertExpression(expressionNode)
         val isInout = tree.findChildByType(valueArgumentNode, CjTokens.INOUT_KEYWORD) != null
@@ -866,7 +890,7 @@ class LightTreeRawCfirExpressionBuilder(
         val bodyNode = lambdaNode?.let(::findLambdaBodyBlock)
         val body = bodyNode?.let { convertBlock(it) }
             ?: buildBlock { source = (lambdaNode ?: node).toSource() }
-        val threadContextArgument = findFirstValueArgument(node)?.let(::convertCallArgument)
+        val threadContextArgument = findFirstValueArgument(node)?.let(::convertValueArgument)
         return buildSpawnExpression {
             source = node.toSource()
             this.body = body
@@ -897,7 +921,6 @@ class LightTreeRawCfirExpressionBuilder(
         // selector 为 CALL_EXPRESSION
         if (selector.tokenType == CjNodeTypes.CALL_EXPRESSION) {
             var calleeRef: LighterASTNode? = null
-            val argNodes = mutableListOf<LighterASTNode>()
             val typeArgNodes = mutableListOf<LighterASTNode>()
             val lambdaArgNodes = mutableListOf<LighterASTNode>()
             var valueArgumentListNode: LighterASTNode? = null
@@ -906,11 +929,6 @@ class LightTreeRawCfirExpressionBuilder(
                 when (child.tokenType) {
                     CjNodeTypes.VALUE_ARGUMENT_LIST -> {
                         valueArgumentListNode = child
-                        tree.forEachChildren(child) { arg ->
-                            if (arg.tokenType == CjNodeTypes.VALUE_ARGUMENT) {
-                                argNodes.add(arg)
-                            }
-                        }
                     }
                     CjNodeTypes.TYPE_ARGUMENT_LIST -> {
                         tree.forEachChildren(child) { typeArg ->
@@ -937,7 +955,10 @@ class LightTreeRawCfirExpressionBuilder(
             } else {
                 buildNamedReference(referenceNameFromText(calleeRef?.asText() ?: "<error>"), calleeRef?.toSource() ?: selector.toSource())
             }
-            val callArguments = argNodes.mapNotNull { convertCallArgument(it) }.toMutableList()
+            val callArguments = valueArgumentListNode
+                ?.let(::convertValueArguments)
+                .orEmpty()
+                .toMutableList()
             val directTypeArgs = typeArgNodes.map { typeRefNode ->
                 convertTypeReference(typeRefNode, tree, source) { it.toSourceElement() }
             }

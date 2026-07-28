@@ -2580,8 +2580,8 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
             parameter<Name>("macroName")
         }
 
-        // baseline Batch 7 cycle detection: 同 fingerprint 在 forest evaluator
-        // 多次出现，超出 iteration limit。
+        // baseline Batch 7 cycle detection: 同一逻辑 macro surface 的展开链
+        // 重复进入相同 fingerprint，超出 iteration limit。
         val MACRO_CYCLE by error<PsiElement> {
             parameter<String>("macroName")
             parameter<Collection<String>>("cycleChain")

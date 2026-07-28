@@ -40,7 +40,7 @@ class D {
 
 func testInvokeArgTypeMismatch(): Unit {
     let d = D()
-    d(<!ARGUMENT_TYPE_MISMATCH!>1.0<!>)  // 错误：Float64 不匹配 Int64
+    <!NO_MATCHING_OPERATOR_INVOKE!>d<!>(<!ARGUMENT_TYPE_MISMATCH!>1.0<!>)  // 错误：Float64 不匹配 Int64
 }
 
 // ---- 多个重载 ----

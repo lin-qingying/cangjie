@@ -33,7 +33,8 @@ class D {
 
 func testInvokeArgTypeMismatch(): Unit {
     let d = D()
-    d(<!ARGUMENT_TYPE_MISMATCH!>1.0<!>)
+    <!NO_MATCHING_OPERATOR_INVOKE!>d<!>(<!ARGUMENT_TYPE_MISMATCH!>1.0<!>)
+
 }
 
 class MultiInvoke {
@@ -64,7 +65,8 @@ func testInvokeReturnValue(): Unit {
 
 func testInvokeReturnTypeMismatch(): Unit {
     let d = D()
-    let _: Float64 = <!TYPE_MISMATCH!>d(10)<!>
+    let _: Float64 = <!NO_MATCHING_OPERATOR_INVOKE, UNRESOLVED_REFERENCE!>d<!>(10)
+
 }
 
 struct S {

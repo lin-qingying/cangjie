@@ -153,7 +153,7 @@ class BuilderConfigurator(model: Model) : AbstractBuilderConfigurator<Element, I
         codeFragment, invalidDeclaration, property, propertyAccessor, fieldVariable, patternVariable, patternBindingVariable, valueParameter, typeParameter,
 
         // -------- 语句 / 表达式节点 --------
-        block,
+        annotationCall, block,
         literalExpression, stringInterpolation, functionCall, namedAccessExpression, qualifiedAccessExpression, assignment, binaryOp,
         comparisonExpression,
         typeOperator,

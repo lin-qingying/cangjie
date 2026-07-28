@@ -351,9 +351,10 @@ class FrontendMacroConstructionService(
         var builtDegradedPlaceholders = false
 
         // Baseline 第 9 节："session/analysis 长生命周期 registry"。
-        // 把所有 surface 注册到 registry，供 diagnostic / LSP 反查原 macro 位点。
-        for (surface in pre.allSurfaces) {
-            registry.registerOriginSurface(surface)
+        // 把所有 surface 按文件注册到 registry，供 diagnostic / LSP 和文件级 checker
+        // 反查原 macro 位点与 original macro forest。
+        for (preFile in pre.files) {
+            registry.registerFileSurfaces(preFile.cfirFile, preFile.surfaces)
         }
         registerUsedMacroNames(pre, classification, registry)
         registry.addAll(preConstructionDiagnostics)
@@ -437,17 +438,20 @@ class FrontendMacroConstructionService(
         for (decision in classification.finalDecisions) {
             decision.blockedDiagnostic?.let(registry::addDiagnostic)
         }
-        val expansionDecisions = pre.files.flatMap { preFile ->
-            preFile.surfaces.mapNotNull { surface ->
+        val expansionDecisionsByFile = pre.files.mapNotNull { preFile ->
+            val decisions = preFile.surfaces.mapNotNull decisionForSurface@{ surface ->
                 val decision =
-                    classification.finalDecisions.firstOrNull { it.surface === surface } ?: return@mapNotNull null
-                if (!decision.localConstruction) return@mapNotNull null
+                    classification.finalDecisions.firstOrNull { it.surface === surface }
+                        ?: return@decisionForSurface null
+                if (!decision.localConstruction) return@decisionForSurface null
                 if ((preFile.isMacroPackage && surface !is MacroSurfaceExpr) || surface.isMacroDefinitionSignatureSurface()) {
-                    return@mapNotNull null
+                    return@decisionForSurface null
                 }
                 decision
             }
+            decisions.takeIf { it.isNotEmpty() }?.let { preFile to it }
         }
+        val expansionDecisions = expansionDecisionsByFile.flatMap { (_, decisions) -> decisions }
         if (expansionDecisions.isEmpty()) return pre.files.map { it.cfirFile }
         val expansionSurfaces = expansionDecisions.map { it.surface }
         val decisionsBySurfaceId = expansionDecisions.associateBy { it.surface.surfaceId }
@@ -469,93 +473,92 @@ class FrontendMacroConstructionService(
         val executor = configuration.macroExecutorFactory?.create(pre.session)
         val slots = mutableListOf<MacroReplaceSlot>()
         val evaluator = MacroForestEvaluator(configuration.macroExpandMaxIterations)
-        val forest = MacroCallForestBuilder.build(expansionSurfaces)
-        val expansionSurfaceIds = expansionSurfaces.mapTo(mutableSetOf()) { it.surfaceId }
-        val surfaceFiles = pre.files
-            .flatMap { preFile ->
-                preFile.surfaces
-                    .filter { surface -> surface.surfaceId in expansionSurfaceIds }
-                    .map { surface -> surface.surfaceId to preFile }
-            }
-            .toMap()
+        val surfaceFiles = expansionDecisionsByFile.flatMap { (preFile, decisions) ->
+            decisions.map { decision -> decision.surface.surfaceId to preFile }
+        }.toMap()
 
-        evaluator.evaluate(
-            forest = forest,
-            expand = { node, childResults ->
-                val surface = node.surface
-                val decision = decisionsBySurfaceId[surface.surfaceId]
-                    ?: return@evaluate null
-                val name = surface.qualifiedName?.shortName()
-                if (surface.hasBlockingPreConstructionDiagnostic(registry)) {
-                    return@evaluate null
-                }
-                if (name == null) {
-                    reportError(
+        // sourceRange 是文件内 offset；不同虚拟文件的范围不可直接比较。
+        // 每个 PreMacroCfirFile 独立建 forest，保证 parent/child 关系只存在于同一源码文件。
+        for ((_, fileDecisions) in expansionDecisionsByFile) {
+            val forest = MacroCallForestBuilder.build(fileDecisions.map { it.surface })
+            evaluator.evaluate(
+                forest = forest,
+                expand = { node, childResults ->
+                    val surface = node.surface
+                    val decision = decisionsBySurfaceId[surface.surfaceId]
+                        ?: return@evaluate null
+                    val name = surface.qualifiedName?.shortName()
+                    if (surface.hasBlockingPreConstructionDiagnostic(registry)) {
+                        return@evaluate null
+                    }
+                    if (name == null) {
+                        reportError(
+                            registry = registry,
+                            message = "Macro surface `${surface.capturedRawSyntax.orEmpty()}` has no resolvable macro name.",
+                            kind = MacroConstructionDiagnostic.Kind.MACRO_UNRESOLVED,
+                            originSurfaceId = surface.surfaceId,
+                        )
+                        return@evaluate null
+                    }
+
+                    if (node.hasUnresolvedChildPayloadChannel(childResults)) {
+                        reportError(
+                            registry = registry,
+                            message = "Nested macro surface inside `${
+                                surface.qualifiedName?.asString().orEmpty()
+                            }` cannot be mapped to attr or input token payload.",
+                            kind = MacroConstructionDiagnostic.Kind.MACRO_REEVALUATION_FAILED,
+                            originSurfaceId = surface.surfaceId,
+                        )
+                        return@evaluate null
+                    }
+                    val refreshedTokens = node.refreshTokensWithChildResults(childResults)
+                    val expandedTokens = expandResolvedSurface(
+                        pre = pre,
+                        surface = surface,
+                        decision = decision,
+                        node = node,
+                        childResults = childResults,
+                        refreshedTokens = refreshedTokens,
+                        executor = executor,
                         registry = registry,
-                        message = "Macro surface `${surface.capturedRawSyntax.orEmpty()}` has no resolvable macro name.",
-                        kind = MacroConstructionDiagnostic.Kind.MACRO_UNRESOLVED,
-                        originSurfaceId = surface.surfaceId,
-                    )
-                    return@evaluate null
-                }
+                        preFile = surfaceFiles[surface.surfaceId],
+                    ) ?: return@evaluate null
 
-                if (node.hasUnresolvedChildPayloadChannel(childResults)) {
-                    reportError(
+                    val fragment = parseAndDesugarFragment(
+                        surface = surface,
+                        decision = decision,
+                        annotationSnapshot = decision.annotationCarrier
+                            ?.let { pre.session.annotationMetadataRegistryOrNull?.snapshot(it) },
+                        node = node,
+                        parser = parser,
+                        tokens = expandedTokens,
                         registry = registry,
-                        message = "Nested macro surface inside `${
-                            surface.qualifiedName?.asString().orEmpty()
-                        }` cannot be mapped to attr or input token payload.",
-                        kind = MacroConstructionDiagnostic.Kind.MACRO_REEVALUATION_FAILED,
-                        originSurfaceId = surface.surfaceId,
+                    ) ?: return@evaluate null
+                    (fragment as? MacroFragmentResult.Success)
+                        ?.payload
+                        ?.let { it as? CfirElement }
+                        ?.let { registry.registerGeneratedCfirElement(it, surface.surfaceId) }
+                    val parentVisibleTokens = fragment.parentVisibleTokens()
+
+                    if (surface is BuiltinNonMacroSurface) {
+                        registry.registerGeneratedDisplayText(
+                            surfaceId = surface.surfaceId,
+                            text = parentVisibleTokens.joinToString(separator = "") { it.text },
+                        )
+                        return@evaluate parentVisibleTokens
+                    }
+
+                    slots += MacroReplaceSlot(
+                        handle = surface.replaceHandle,
+                        origin = surface,
+                        fragment = fragment,
                     )
-                    return@evaluate null
-                }
-                val refreshedTokens = node.refreshTokensWithChildResults(childResults)
-                val expandedTokens = expandResolvedSurface(
-                    pre = pre,
-                    surface = surface,
-                    decision = decision,
-                    node = node,
-                    childResults = childResults,
-                    refreshedTokens = refreshedTokens,
-                    executor = executor,
-                    registry = registry,
-                    preFile = surfaceFiles[surface.surfaceId],
-                ) ?: return@evaluate null
-
-                val fragment = parseAndDesugarFragment(
-                    surface = surface,
-                    decision = decision,
-                    annotationSnapshot = decision.annotationCarrier
-                        ?.let { pre.session.annotationMetadataRegistryOrNull?.snapshot(it) },
-                    node = node,
-                    parser = parser,
-                    tokens = expandedTokens,
-                    registry = registry,
-                ) ?: return@evaluate null
-                (fragment as? MacroFragmentResult.Success)
-                    ?.payload
-                    ?.let { it as? CfirElement }
-                    ?.let { registry.registerGeneratedCfirElement(it, surface.surfaceId) }
-                val parentVisibleTokens = fragment.parentVisibleTokens()
-
-                if (surface is BuiltinNonMacroSurface) {
-                    registry.registerGeneratedDisplayText(
-                        surfaceId = surface.surfaceId,
-                        text = parentVisibleTokens.joinToString(separator = "") { it.text },
-                    )
-                    return@evaluate parentVisibleTokens
-                }
-
-                slots += MacroReplaceSlot(
-                    handle = surface.replaceHandle,
-                    origin = surface,
-                    fragment = fragment,
-                )
-                parentVisibleTokens
-            },
-            onCycle = { cycle -> reportMacroCycle(cycle, registry) },
-        )
+                    parentVisibleTokens
+                },
+                onCycle = { cycle -> reportMacroCycle(cycle, registry) },
+            )
+        }
         executor?.let { runCatching { it.close() } }
 
         if (slots.isEmpty()) return null
@@ -887,7 +890,7 @@ class FrontendMacroConstructionService(
         cycle: MacroExpansionCycle,
         registry: MacroExpansionRegistry,
     ) {
-        for (node in cycle.nodes) {
+        for (node in cycle.nodes.distinctBy { it.surface.surfaceId }) {
             val name = node.surface.qualifiedName?.shortName()
             reportError(
                 registry = registry,
@@ -1435,6 +1438,7 @@ class FrontendMacroConstructionService(
             "index=$annotationIndex",
             "raw=$rawSyntax",
             "forced=$forcedCustom",
+            "compileTimeVisible=$isCompileTimeVisible",
             "fqn=${qualifiedName?.asString().orEmpty()}",
             "args=${argumentText.orEmpty()}",
             "tokens=${tokens.joinToString(separator = "") { it.text }}",

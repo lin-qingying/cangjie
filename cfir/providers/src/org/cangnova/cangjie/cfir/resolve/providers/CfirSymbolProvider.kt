@@ -38,6 +38,15 @@ abstract class CfirSymbolProvider(val session: CfirSession) : CfirSessionCompone
     abstract fun getClassLikeSymbolByClassId(classId: ClassId): CfirClassLikeSymbol<*>?
 
     /**
+     * 返回给定 [classId] 的全部 class-like 候选。
+     *
+     * 单一 provider 默认至多提供一个候选；组合 provider 必须覆盖该方法并聚合全部来源，
+     * 供可用性过滤与重声明判定在“选择首项”之前完成。
+     */
+    open fun getClassLikeSymbolsByClassId(classId: ClassId): List<CfirClassLikeSymbol<*>> =
+        listOfNotNull(getClassLikeSymbolByClassId(classId))
+
+    /**
      * 返回指定包名与短名下的所有顶层 callable symbol。
      *
      * 该包装方法负责创建结果集合，实际填充由 [getTopLevelCallableSymbolsTo] 完成。

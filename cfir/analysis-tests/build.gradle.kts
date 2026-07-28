@@ -41,6 +41,9 @@ sourceSets {
 
 projectTests {
     testTask(jUnitMode = JUnitMode.JUnit5) {
+        // 全量 LLT 会在同一 test worker 中累计 8000 余项编译器分析状态；Gradle 默认测试堆
+        // 已连续两次在结果 XML 全部写出后耗尽。显式配置模块级测试堆，保证全量验证能正常收尾。
+        maxHeapSize = "2g"
         workingDir = rootDir
         val updateTestData = System.getProperty("update.test.data")
         if (updateTestData != null) {

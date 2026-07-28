@@ -92,6 +92,7 @@ object CommonDeclarationCheckers : DeclarationCheckers() {
     override val fileCheckers: Set<CfirFileChecker>
         get() = setOf(
             CfirImportsChecker,
+            CfirPlatformAnnotationMacroOrderChecker,
             CfirGeneralSemanticsChecker,
             CfirGenericInstantiationChecker,
             CfirFileStaticGlobalInitializationChecker,

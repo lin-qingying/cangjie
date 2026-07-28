@@ -28,15 +28,18 @@ import org.cangnova.cangjie.AnalysisFlags
 import org.cangnova.cangjie.ImportPath
 import org.cangnova.cangjie.builtins.StandardNames
 import org.cangnova.cangjie.cfir.CfirQualifierPart
-import org.cangnova.cangjie.cfir.nameConflictsTracker
 import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.declarations.declarationAvailabilityProvider
 import org.cangnova.cangjie.cfir.diagnostic.ConeAmbiguityError
 import org.cangnova.cangjie.cfir.diagnostic.ConeGenericArgumentNoMatchError
 import org.cangnova.cangjie.cfir.diagnostic.ConeNotATypeError
+import org.cangnova.cangjie.cfir.diagnostic.ConePackageNameConflictError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnmatchedTypeArgumentsError
+import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedNameError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedTypeQualifierError
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
+import org.cangnova.cangjie.cfir.resolve.body.resolveImportedPackageQualifier
 import org.cangnova.cangjie.cfir.resolve.constants.CfirIntConstantEvalUtils
 import org.cangnova.cangjie.cfir.scopes.CfirTypeParameterScope
 import org.cangnova.cangjie.cfir.scopes.defaultImportsProvider
@@ -508,22 +511,25 @@ class CfirTypeResolverImpl(
     /**
      * 按短名解析简单 classId。
      */
-    private fun resolveSimpleClassId(
+    private fun resolveSimpleClassLike(
         shortName: Name,
         configuration: TypeResolutionConfiguration,
-    ): ClassId? {
+    ): SimpleClassLikeCandidate? {
         for (scope in configuration.scopes) {
-            var resolvedFromScope: ClassId? = null
+            var resolvedFromScope: CfirClassLikeSymbol<*>? = null
             scope.processClassifiersByName(shortName) { classifier ->
                 when (classifier) {
-                    is org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol<*> ->
-                        resolvedFromScope = resolvedFromScope ?: classifier.classId
+                    is org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol<*> -> {
+                        if (resolvedFromScope == null) {
+                            resolvedFromScope = classifier
+                        }
+                    }
                 }
             }
             if (resolvedFromScope != null) {
                 // scope 已经给出了真实符号，这里不能再退回 provider 重新按 ClassId 查询，
                 // 否则当前文件尚未入索引时，同文件声明仍会被默认导入覆盖。
-                return resolvedFromScope
+                return SimpleClassLikeCandidate(resolvedFromScope!!.classId, resolvedFromScope)
             }
         }
 
@@ -532,7 +538,7 @@ class CfirTypeResolverImpl(
         val explicitImportCandidates = LinkedHashSet<ClassId>()
         if (file != null) {
             findSameFileTopLevelClassifier(file, shortName)?.let { declaration ->
-                return declaration.symbol.classId
+                return SimpleClassLikeCandidate(declaration.symbol.classId, declaration.symbol)
             }
 
             // 与 file importing scopes 的顺序保持一致：
@@ -560,12 +566,18 @@ class CfirTypeResolverImpl(
             .filter { it.fqName !in defaultImportsProvider.excludedImports }
         addDefaultImportCandidates(defaultImportCandidates, defaultImports, shortName)
 
-        return sequenceOf(
+        for (classId in sequenceOf(
             packageCandidates,
             explicitImportCandidates,
             defaultImportCandidates,
-        ).flatMap { it.asSequence() }
-            .firstOrNull { resolveClass(it) != null }
+        ).flatMap { it.asSequence() }) {
+            val symbol = classLikeCandidates(
+                classId,
+                preferredSymbol = null,
+            ).firstOrNull() ?: continue
+            return SimpleClassLikeCandidate(classId, symbol)
+        }
+        return null
     }
 
     /**
@@ -578,11 +590,19 @@ class CfirTypeResolverImpl(
         val qualifier = typeRef.qualifier
         val lastQualifier = qualifier.last()
         if (qualifier.size == 1) {
-            val classId = resolveSimpleClassId(lastQualifier.name, configuration) ?: ClassId(FqName.ROOT, lastQualifier.name)
-            classifierRedeclarationAmbiguity(classId, typeRef)?.let { diagnostic ->
+            val simpleCandidate = resolveSimpleClassLike(
+                lastQualifier.name,
+                configuration,
+            )
+            val classId = simpleCandidate?.classId ?: ClassId(FqName.ROOT, lastQualifier.name)
+            val candidates = classLikeCandidates(
+                classId,
+                preferredSymbol = simpleCandidate?.symbol,
+            )
+            classifierRedeclarationAmbiguity(typeRef, candidates)?.let { diagnostic ->
                 return QualifiedClassLikeResolution(classId, null, diagnostic)
             }
-            val declaration = resolveClass(classId)
+            val declaration = candidates.singleOrNull()?.cfir
             return if (declaration != null) {
                 QualifiedClassLikeResolution(classId, declaration, null)
             } else {
@@ -596,12 +616,65 @@ class CfirTypeResolverImpl(
         }
 
         val qualifierNames = qualifier.map(CfirQualifierPart::name)
-        val fullPackageFqName = qualifierNames.dropLast(1).toFqName()
+        val firstName = qualifierNames.first()
+        val importedPackageQualifier = configuration.useSiteFile
+            ?.resolveImportedPackageQualifier(firstName, session)
+        if (importedPackageQualifier != null) {
+            if (importedPackageQualifier.isAmbiguous) {
+                return QualifiedClassLikeResolution(
+                    classId = null,
+                    declaration = null,
+                    diagnostic = ConePackageNameConflictError(firstName),
+                )
+            }
+            if (importedPackageQualifier.isUnresolved) {
+                return QualifiedClassLikeResolution(
+                    classId = null,
+                    declaration = null,
+                    diagnostic = ConeUnresolvedNameError(firstName),
+                )
+            }
+
+            val importedPackage = checkNotNull(importedPackageQualifier.packageFqName) {
+                "Resolved imported package qualifier `$firstName` has no unique package binding"
+            }
+            val packageSegments =
+                importedPackage.pathSegments() + qualifierNames.drop(1).dropLast(1)
+            return resolveQualifiedClassLikeInPackage(
+                packageFqName = packageSegments.toFqName(),
+                lastQualifier = lastQualifier,
+                typeRef = typeRef,
+            )
+        }
+
+        return resolveQualifiedClassLikeInPackage(
+            packageFqName = qualifierNames.dropLast(1).toFqName(),
+            lastQualifier = lastQualifier,
+            typeRef = typeRef,
+        )
+    }
+
+    /**
+     * 在已经确定的真实包中解析 class-like。
+     *
+     * 调用方负责先消解源码首段是否为 imported-package binding；进入这里后，候选聚合、
+     * 重声明歧义和“已声明但不是类型”诊断都只基于最终包身份执行。
+     */
+    private fun resolveQualifiedClassLikeInPackage(
+        packageFqName: FqName,
+        lastQualifier: CfirQualifierPart,
+        typeRef: CfirUserTypeRef,
+    ): QualifiedClassLikeResolution {
+        val fullPackageFqName = packageFqName
         val fullClassId = ClassId(fullPackageFqName, lastQualifier.name)
-        classifierRedeclarationAmbiguity(fullClassId, typeRef)?.let { diagnostic ->
+        val candidates = classLikeCandidates(
+            fullClassId,
+            preferredSymbol = null,
+        )
+        classifierRedeclarationAmbiguity(typeRef, candidates)?.let { diagnostic ->
             return QualifiedClassLikeResolution(fullClassId, null, diagnostic)
         }
-        resolveClass(fullClassId)?.let { declaration ->
+        candidates.singleOrNull()?.cfir?.let { declaration ->
             return QualifiedClassLikeResolution(fullClassId, declaration, null)
         }
         if (packageExists(fullPackageFqName)) {
@@ -629,18 +702,13 @@ class CfirTypeResolverImpl(
      * 完整候选集合，不能从多个合法同层候选中任意挑选一个声明继续解析。
      */
     private fun classifierRedeclarationAmbiguity(
-        classId: ClassId,
         typeRef: CfirUserTypeRef,
+        candidates: List<CfirClassLikeSymbol<*>>,
     ): ConeAmbiguityError? {
-        val redeclarations = session.nameConflictsTracker
-            ?.getClassifierRedeclarations(classId)
-            ?.map { it.classifierSymbol }
-            ?.distinct()
-            .orEmpty()
-        if (redeclarations.size < 2) return null
+        if (candidates.size < 2) return null
 
         val candidatesWithErrors = linkedMapOf<AbstractCandidate, ConeDiagnostic?>()
-        for (symbol in redeclarations) {
+        for (symbol in candidates) {
             candidatesWithErrors[ClassifierTypeCandidate(symbol)] = null
         }
         return ConeAmbiguityError(
@@ -651,6 +719,20 @@ class CfirTypeResolverImpl(
             typeUseSource = typeRef.source,
         )
     }
+
+    /**
+     * 在首项选择前聚合同一 ClassId 的全部来源。
+     *
+     * Hide 不参与前置冲突消解：官方先完成 redeclaration/ambiguity，再在已解析 target 上执行
+     * PostTypeCheck 可用性检查。因此该集合不得按平台 availability 过滤。
+     */
+    private fun classLikeCandidates(
+        classId: ClassId,
+        preferredSymbol: CfirClassLikeSymbol<*>?,
+    ): List<CfirClassLikeSymbol<*>> = buildList {
+        preferredSymbol?.let(::add)
+        addAll(session.declarationAvailabilityProvider.classLikeCandidates(classId))
+    }.distinct()
 
     /**
      * 根据 class-like 声明种类构造最终 cone 类型。
@@ -804,6 +886,12 @@ class CfirTypeResolverImpl(
          * 解析失败时携带的诊断。
          */
         val diagnostic: ConeDiagnostic?,
+    )
+
+    /** 简名 scope 解析保留真实 symbol，避免当前文件尚未入 provider 索引时丢失候选。 */
+    private data class SimpleClassLikeCandidate(
+        val classId: ClassId,
+        val symbol: CfirClassLikeSymbol<*>,
     )
 
     /** 类型解析歧义使用的轻量 classifier 候选。 */

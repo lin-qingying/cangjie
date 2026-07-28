@@ -11,15 +11,15 @@ interface I1 {
 }
 
 class D <: I1 {
-    public static func test<T>(): Unit where T <: <!GENERIC_CONSTRAINT_NOT_LOOSER!>A & C<!> {}
+    public static func test<T>(): Unit where <!GENERIC_CONSTRAINT_NOT_LOOSER!>T <: A & C<!> {}
 }
 
 class E <: I1 {
-    public static func test<T>(): Unit where T <: B & C {}
+    public static func test<T>(): Unit where <!GENERIC_CONSTRAINT_NOT_LOOSER!>T <: B & C<!> {}
 }
 
 class F <: I1 {
-    public static func test<T>(): Unit where T <: <!GENERIC_CONSTRAINT_NOT_LOOSER!>A & B<!> {}
+    public static func test<T>(): Unit where T <: A & B {}
 }
 
 main() {}

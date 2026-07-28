@@ -11,5 +11,5 @@ main() {
     } else {
         f2
     }
-    <!NO_MATCHING_OPERATOR_INVOKE!>f<!>(fp)
+    <!NO_MATCHING_OPERATOR_INVOKE!>f<!>(<!ARGUMENT_TYPE_MISMATCH!>fp<!>)
 }

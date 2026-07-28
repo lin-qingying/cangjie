@@ -1,3 +1,5 @@
+// API_LEVEL: 0
+
 // FILE: level_syscap_check/canIUse.cj
 
 

@@ -27,13 +27,19 @@ package org.cangnova.cangjie.cfir.serialization.deserialize
 import PackageFormat.*
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.MutableOrEmptyList
+import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.builder.buildConstructor
 import org.cangnova.cangjie.cfir.declarations.builder.buildPrimaryConstructor
 import org.cangnova.cangjie.cfir.declarations.impl.*
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralKind
+import org.cangnova.cangjie.cfir.expressions.builder.buildAnnotationCall
+import org.cangnova.cangjie.cfir.expressions.builder.buildArgumentList
 import org.cangnova.cangjie.cfir.expressions.builder.buildLiteralExpression
+import org.cangnova.cangjie.cfir.expressions.builder.buildNamedArgumentExpression
 import org.cangnova.cangjie.cfir.patterns.CfirPattern
 import org.cangnova.cangjie.cfir.patterns.builder.*
 import org.cangnova.cangjie.cfir.references.builder.buildNamedReference
@@ -223,6 +229,116 @@ class CfirDeclDeserializer(
         return decoded
     }
 
+    /**
+     * 将 CJO 声明上的全部注解恢复为 CFIR annotation call。
+     *
+     * target FullId 是注解的语义身份；identifier 只用于构造可读 callee 名，不参与平台注解匹配。
+     * FlatBuffers 当前只序列化 LitConstExpr，因此这里完整恢复其支持的字面量及命名/位置参数。
+     */
+    private fun deserializeAnnotations(
+        decl: Decl,
+        containingDeclarationSymbol: CfirBasedSymbol<*>,
+    ): MutableOrEmptyList<CfirAnnotation> {
+        if (decl.annotationsLength == 0) return MutableOrEmptyList.empty()
+
+        val result = mutableListOf<CfirAnnotation>()
+        for (index in 0 until decl.annotationsLength) {
+            val serialized = decl.annotations(index) ?: continue
+            deserializeAnnotation(serialized, containingDeclarationSymbol)?.let(result::add)
+        }
+        return result.toMutableOrEmpty()
+    }
+
+    /** 恢复单个 CJO 注解调用。 */
+    private fun deserializeAnnotation(
+        serialized: Anno,
+        containingDeclarationSymbol: CfirBasedSymbol<*>,
+    ): CfirAnnotationCall? {
+        val rawIdentifier = serialized.identifier.orEmpty()
+        val targetClassId = serialized.target?.let(context.fullIdResolver::resolveClassId)
+        val shortName = targetClassId?.shortClassName
+            ?: Name.identifierIfValid(
+                rawIdentifier
+                    .removePrefix("@!")
+                    .removePrefix("@")
+                    .substringAfterLast('.'),
+            )
+            ?: Name.ERROR_NAME
+
+        val annotationTypeRef: CfirTypeRef = if (targetClassId != null) {
+            buildResolvedTypeRef {
+                customRenderer = false
+                coneType = ConeClassLikeType(
+                    lookupTag = ConeClassLikeLookupTagImpl(targetClassId),
+                    typeArguments = emptyList(),
+                )
+            }
+        } else {
+            buildImplicitTypeRef {
+                customRenderer = false
+            }
+        }
+
+        val arguments = buildList {
+            for (argumentIndex in 0 until serialized.argsLength) {
+                val serializedArgument = serialized.args(argumentIndex) ?: continue
+                val expression = deserializeAnnotationLiteral(serializedArgument.expr) ?: continue
+                val argumentName = serializedArgument.name?.takeIf(String::isNotBlank)
+                add(
+                    if (argumentName == null) {
+                        expression
+                    } else {
+                        buildNamedArgumentExpression {
+                            this.expression = expression
+                            this.argumentName = Name.identifier(argumentName)
+                        }
+                    }
+                )
+            }
+        }
+
+        return buildAnnotationCall {
+            typeRef = annotationTypeRef
+            this.arguments.addAll(arguments)
+            argumentList = buildArgumentList {
+                this.arguments.addAll(arguments)
+            }
+            calleeReference = buildNamedReference {
+                name = shortName
+            }
+            this.containingDeclarationSymbol = containingDeclarationSymbol
+        }
+    }
+
+    /** 恢复 CJO 注解参数允许的 LitConstExpr。 */
+    private fun deserializeAnnotationLiteral(rawExprIndex: UInt): CfirExpression? {
+        val exprIndex = decodeExprRef(rawExprIndex) ?: return null
+        val expr = context.pkg.allExprs(exprIndex) ?: return null
+        if (expr.kind != ExprKind.LitConstExpr || expr.infoType != ExprInfo.LitConstInfo) return null
+        val literal = expr.info(LitConstInfo()) as? LitConstInfo ?: return null
+        val rawValue = literal.strValue.orEmpty()
+
+        val (kind, value) = when (literal.constKind) {
+            LitConstKind.Integer -> CfirLiteralKind.INT to rawValue
+            LitConstKind.Float -> CfirLiteralKind.FLOAT to rawValue
+            LitConstKind.RuneByte,
+            LitConstKind.Rune,
+            -> CfirLiteralKind.RUNE to rawValue
+            LitConstKind.String,
+            LitConstKind.JString,
+            -> CfirLiteralKind.STRING to rawValue
+            LitConstKind.Bool -> CfirLiteralKind.BOOLEAN to rawValue.toBooleanStrictOrNull()
+            LitConstKind.Unit -> CfirLiteralKind.UNIT to null
+            else -> return null
+        }
+
+        return buildLiteralExpression {
+            coneTypeOrNull = typeDeserializer.deserializeTypeFromField(expr.type)
+            this.kind = kind
+            this.value = value
+        }
+    }
+
     /** 判断声明是否被官方 AST AttributePack 标记为 enum constructor。 */
     private fun isEnumConstructorDecl(decl: Decl): Boolean =
         testAttr(decl, AttrBit.ENUM_CONSTRUCTOR)
@@ -257,6 +373,7 @@ class CfirDeclDeserializer(
         status.isOpen = testAttr(decl, AttrBit.OPEN)
         status.isSealed = testAttr(decl, AttrBit.SEALED)
         status.isStatic = testAttr(decl, AttrBit.STATIC)
+        status.isConst = deserializeConstStatus(decl)
         status.isOverride = testAttr(decl, AttrBit.OVERRIDE)
         status.isOperator = testAttr(decl, AttrBit.OPERATOR)
         status.isForeign = testAttr(decl, AttrBit.FOREIGN)
@@ -264,6 +381,33 @@ class CfirDeclDeserializer(
         status.isMut = testAttr(decl, AttrBit.MUT)
         status.isRedef = testAttr(decl, AttrBit.REDEF)
         return status
+    }
+
+    /**
+     * 从声明专属 info 中恢复 const 语义。
+     *
+     * PackageFormat 不把 const 放进 AttributePack，而是分别保存在函数、变量、模式变量和
+     * 属性的 info 表中。这里集中恢复该状态，保证 Library CFIR 与 Source CFIR 的声明状态等价，
+     * 下游常量求值、构造器和成员检查器无需重新猜测序列化语义。
+     */
+    private fun deserializeConstStatus(decl: Decl): Boolean = when (decl.infoType) {
+        DeclInfo.FuncInfo -> checkNotNull(decl.info(FuncInfo()) as? FuncInfo) {
+            "FuncInfo is missing for declaration '${decl.identifier ?: "<anonymous>"}'"
+        }.isConst
+
+        DeclInfo.VarInfo -> checkNotNull(decl.info(VarInfo()) as? VarInfo) {
+            "VarInfo is missing for declaration '${decl.identifier ?: "<anonymous>"}'"
+        }.isConst
+
+        DeclInfo.VarWithPatternInfo -> checkNotNull(decl.info(VarWithPatternInfo()) as? VarWithPatternInfo) {
+            "VarWithPatternInfo is missing for declaration '${decl.identifier ?: "<anonymous>"}'"
+        }.isConst
+
+        DeclInfo.PropInfo -> checkNotNull(decl.info(PropInfo()) as? PropInfo) {
+            "PropInfo is missing for declaration '${decl.identifier ?: "<anonymous>"}'"
+        }.isConst
+
+        else -> false
     }
 
     /** 将 type 字段值转换为 CfirResolvedTypeRef */
@@ -441,7 +585,7 @@ class CfirDeclDeserializer(
             source = null,
             moduleData = context.moduleData,
             resolvePhase = CfirResolvePhase.BODY_RESOLVE,
-            annotations = MutableOrEmptyList.empty(),
+            annotations = deserializeAnnotations(decl, symbol),
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
             deprecationsProvider = EmptyDeprecationsProvider,
@@ -485,7 +629,7 @@ class CfirDeclDeserializer(
             source = null,
             moduleData = context.moduleData,
             resolvePhase = CfirResolvePhase.BODY_RESOLVE,
-            annotations = MutableOrEmptyList.empty(),
+            annotations = deserializeAnnotations(decl, symbol),
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
             deprecationsProvider = EmptyDeprecationsProvider,
@@ -526,7 +670,7 @@ class CfirDeclDeserializer(
             source = null,
             moduleData = context.moduleData,
             resolvePhase = CfirResolvePhase.BODY_RESOLVE,
-            annotations = MutableOrEmptyList.empty(),
+            annotations = deserializeAnnotations(decl, symbol),
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
             deprecationsProvider = EmptyDeprecationsProvider,
@@ -571,7 +715,7 @@ class CfirDeclDeserializer(
             source = null,
             moduleData = context.moduleData,
             resolvePhase = CfirResolvePhase.BODY_RESOLVE,
-            annotations = MutableOrEmptyList.empty(),
+            annotations = deserializeAnnotations(decl, symbol),
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
             deprecationsProvider = EmptyDeprecationsProvider,
@@ -626,7 +770,7 @@ class CfirDeclDeserializer(
             source = null,
             moduleData = context.moduleData,
             resolvePhase = CfirResolvePhase.BODY_RESOLVE,
-            annotations = MutableOrEmptyList.empty(),
+            annotations = deserializeAnnotations(decl, symbol),
             symbol = symbol,
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
@@ -730,6 +874,7 @@ class CfirDeclDeserializer(
                 source = null
                 moduleData = context.moduleData
                 resolvePhase = CfirResolvePhase.BODY_RESOLVE
+                annotations.addAll(deserializeAnnotations(decl, symbol))
                 origin = CfirDeclarationOrigin.Library
                 attributes = CfirDeclarationAttributes.EMPTY
                 isLocal = false
@@ -747,6 +892,7 @@ class CfirDeclDeserializer(
                 source = null
                 moduleData = context.moduleData
                 resolvePhase = CfirResolvePhase.BODY_RESOLVE
+                annotations.addAll(deserializeAnnotations(decl, symbol))
                 origin = CfirDeclarationOrigin.Library
                 attributes = CfirDeclarationAttributes.EMPTY
                 isLocal = false
@@ -779,7 +925,7 @@ class CfirDeclDeserializer(
             source = null,
             moduleData = context.moduleData,
             resolvePhase = CfirResolvePhase.BODY_RESOLVE,
-            annotations = MutableOrEmptyList.empty(),
+            annotations = deserializeAnnotations(decl, symbol),
             symbol = symbol,
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
@@ -820,7 +966,7 @@ class CfirDeclDeserializer(
             source = null,
             moduleData = context.moduleData,
             resolvePhase = CfirResolvePhase.BODY_RESOLVE,
-            annotations = MutableOrEmptyList.empty(),
+            annotations = deserializeAnnotations(decl, symbol),
             symbol = symbol,
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
@@ -867,7 +1013,7 @@ class CfirDeclDeserializer(
             source = null,
             moduleData = context.moduleData,
             resolvePhase = CfirResolvePhase.BODY_RESOLVE,
-            annotations = MutableOrEmptyList.empty(),
+            annotations = deserializeAnnotations(decl, symbol),
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
             isLocal = false,
@@ -1035,7 +1181,9 @@ class CfirDeclDeserializer(
             source = null,
             moduleData = context.moduleData,
             resolvePhase = CfirResolvePhase.BODY_RESOLVE,
-            annotations = MutableOrEmptyList.empty(),
+            annotations = bindingDecl
+                ?.let { deserializeAnnotations(it, symbol) }
+                ?: MutableOrEmptyList.empty(),
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
             isLocal = outerIsLocal,
@@ -1116,7 +1264,7 @@ class CfirDeclDeserializer(
             source = null,
             moduleData = context.moduleData,
             resolvePhase = CfirResolvePhase.BODY_RESOLVE,
-            annotations = MutableOrEmptyList.empty(),
+            annotations = deserializeAnnotations(decl, symbol),
             symbol = symbol,
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
@@ -1151,7 +1299,7 @@ class CfirDeclDeserializer(
             source = null,
             moduleData = context.moduleData,
             resolvePhase = CfirResolvePhase.BODY_RESOLVE,
-            annotations = MutableOrEmptyList.empty(),
+            annotations = deserializeAnnotations(decl, symbol),
             symbol = symbol,
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
@@ -1182,7 +1330,7 @@ class CfirDeclDeserializer(
             source = null,
             moduleData = context.moduleData,
             resolvePhase = CfirResolvePhase.BODY_RESOLVE,
-            annotations = MutableOrEmptyList.empty(),
+            annotations = deserializeAnnotations(decl, symbol),
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
             containingDeclarationSymbol = containingDeclarationSymbol,
@@ -1207,7 +1355,7 @@ class CfirDeclDeserializer(
             source = null,
             moduleData = context.moduleData,
             resolvePhase = CfirResolvePhase.BODY_RESOLVE,
-            annotations = MutableOrEmptyList.empty(),
+            annotations = deserializeAnnotations(decl, symbol),
             symbol = symbol,
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
@@ -1242,7 +1390,7 @@ class CfirDeclDeserializer(
             source = null,
             moduleData = context.moduleData,
             resolvePhase = CfirResolvePhase.BODY_RESOLVE,
-            annotations = MutableOrEmptyList.empty(),
+            annotations = deserializeAnnotations(decl, symbol),
             symbol = symbol,
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
@@ -1349,7 +1497,7 @@ class CfirDeclDeserializer(
             isNamed = isNamed,
             moduleData = context.moduleData,
             resolvePhase = CfirResolvePhase.BODY_RESOLVE,
-            annotations = MutableOrEmptyList.empty(),
+            annotations = deserializeAnnotations(decl, symbol),
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
             isLocal = false,

@@ -209,7 +209,8 @@ object MacroCallForestBuilder {
 /**
  * 用于 cycle 检测的指纹（baseline 第 12 节 Batch 7：fingerprint cycle detection）。
  *
- * 一次展开循环出现的标志是"同一 fingerprint 在 forest evaluator 多次出现"。
+ * 一次展开循环出现的标志是“同一逻辑 macro surface 的展开链再次进入相同 fingerprint”。
+ * 不同源码调用点即使 fingerprint 完全相同，也属于彼此独立的展开链，不能据此判定循环。
  * Fingerprint = (qualifiedName, parentNames, normalized attr tokens, normalized input tokens)
  *
  * @property qualifiedName 当前节点 macro 调用的限定名。
@@ -277,6 +278,38 @@ data class MacroExpansionCycle(
 )
 
 /**
+ * 按逻辑 macro surface 隔离的展开循环检测器。
+ *
+ * [MacroCallForest] 是一批彼此独立的源码调用点；同名、同参数的 sibling 可以任意多次出现。
+ * 因此 fingerprint 历史必须先按 [MacroSurface.surfaceId] 分区，只允许同一逻辑调用点在
+ * re-evaluation 过程中再次进入相同状态时消耗 [maxIterations]。该边界也为后续生成片段的
+ * 再展开调度保留稳定的 lineage key，禁止退化成 forest 全局计数。
+ */
+internal class MacroExpansionCycleDetector(
+    /** 同一逻辑调用点允许进入同一 fingerprint 的最大次数。 */
+    private val maxIterations: Int,
+) {
+    /** surfaceId -> fingerprint -> 该状态的展开历史。 */
+    private val historiesBySurfaceId =
+        LinkedHashMap<Long, LinkedHashMap<MacroExpansionFingerprint, MutableList<MacroCallNode>>>()
+
+    /**
+     * 记录 [node] 当前展开状态；超过同一 surface 的迭代上限时返回循环信息。
+     */
+    fun observe(
+        node: MacroCallNode,
+        childResults: Map<MacroCallNode, List<MacroSurfaceToken>>,
+    ): MacroExpansionCycle? {
+        val fingerprint = MacroExpansionFingerprint.of(node, childResults)
+        val historiesByFingerprint = historiesBySurfaceId.getOrPut(node.surface.surfaceId) { LinkedHashMap() }
+        val history = historiesByFingerprint.getOrPut(fingerprint) { mutableListOf() }
+        history += node
+        if (history.size <= maxIterations.coerceAtLeast(1)) return null
+        return MacroExpansionCycle(fingerprint, history.toList())
+    }
+}
+
+/**
  * Forest evaluator：child-first 调度 + cycle 检测 + iteration limit。
  *
  * 真实展开调用由 [expand] lambda 承担（接收当前节点 + 已展开 child 的 token 流，
@@ -285,10 +318,10 @@ data class MacroExpansionCycle(
  * Batch 7 阶段 evaluator 主体可见，真实 fragment parse / re-eval 留给 Batch 8：
  * 该入口的回调签名足以支撑 Batch 8 fragment parser 接入。
  *
- * @property maxIterations 同一 fingerprint 允许出现的最大次数，用于限制递归展开。
+ * @property maxIterations 同一逻辑 surface 允许重复进入同一 fingerprint 的最大次数，用于限制递归展开。
  */
 class MacroForestEvaluator(
-    /** 同一 fingerprint 允许出现的最大次数，用于限制递归展开。 */
+    /** 同一逻辑 surface 允许重复进入同一 fingerprint 的最大次数，用于限制递归展开。 */
     private val maxIterations: Int = 16,
 ) {
     /**
@@ -305,8 +338,7 @@ class MacroForestEvaluator(
         onCycle: (MacroExpansionCycle) -> Unit = {},
     ): Map<MacroCallNode, List<MacroSurfaceToken>> {
         val results = LinkedHashMap<MacroCallNode, List<MacroSurfaceToken>>()
-        val seenFingerprints = LinkedHashMap<MacroExpansionFingerprint, MutableList<MacroCallNode>>()
-        val maxPerNode = maxIterations.coerceAtLeast(1)
+        val cycleDetector = MacroExpansionCycleDetector(maxIterations)
 
         for (node in forest.allNodes) {
             val childResults = node.children.mapNotNull { child ->
@@ -316,11 +348,9 @@ class MacroForestEvaluator(
                 continue
             }
 
-            val fingerprint = MacroExpansionFingerprint.of(node, childResults)
-            val history = seenFingerprints.getOrPut(fingerprint) { mutableListOf() }
-            history += node
-            if (history.size > maxPerNode) {
-                onCycle(MacroExpansionCycle(fingerprint, history.toList()))
+            val cycle = cycleDetector.observe(node, childResults)
+            if (cycle != null) {
+                onCycle(cycle)
                 continue
             }
 

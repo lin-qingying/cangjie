@@ -106,25 +106,41 @@ class MacroCallForestTest {
     }
 
     /**
-     * 验证重复指纹超过迭代上限时会通过回调报告宏展开循环。
+     * 验证不同源码调用点即使 fingerprint 相同，也会作为独立 sibling 全部展开。
      */
     @Test
-    fun `evaluator reports fingerprint cycle through callback`() {
+    fun `evaluator treats identical sibling fingerprints as independent call sites`() {
         val first = surface(id = 1, name = "Loop", start = 0, end = 10, inputTokens = listOf(token("same")))
         val second = surface(id = 2, name = "Loop", start = 20, end = 30, inputTokens = listOf(token("same")))
         val cycles = mutableListOf<MacroExpansionCycle>()
 
-        MacroForestEvaluator(maxIterations = 1).evaluate(
+        val results = MacroForestEvaluator(maxIterations = 1).evaluate(
             forest = MacroCallForestBuilder.build(listOf(first, second)),
             expand = { node, _ -> listOf(token(node.surface.surfaceId.toString())) },
             onCycle = cycles::add,
         )
 
-        assertEquals(1, cycles.size)
-        assertEquals("Loop", cycles.single().fingerprint.qualifiedName)
-        assertEquals(listOf(1L, 2L), cycles.single().nodes.map { it.surface.surfaceId })
-        assertSame(first, cycles.single().nodes.first().surface)
-        assertSame(second, cycles.single().nodes.last().surface)
+        assertEquals(emptyList<MacroExpansionCycle>(), cycles)
+        assertEquals(listOf(1L, 2L), results.keys.map { it.surface.surfaceId })
+        assertEquals(listOf("1", "2"), results.values.flatten().map { it.text })
+    }
+
+    /**
+     * 验证同一逻辑 surface 在 re-evaluation 中再次进入同一状态时才会报告循环。
+     */
+    @Test
+    fun `cycle detector reports repeated fingerprint within one logical surface`() {
+        val surface = surface(id = 1, name = "Loop", start = 0, end = 10, inputTokens = listOf(token("same")))
+        val node = MacroCallForestBuilder.build(listOf(surface)).roots.single()
+        val detector = MacroExpansionCycleDetector(maxIterations = 1)
+
+        assertEquals(null, detector.observe(node, emptyMap()))
+        val cycle = requireNotNull(detector.observe(node, emptyMap()))
+
+        assertEquals("Loop", cycle.fingerprint.qualifiedName)
+        assertEquals(listOf(1L, 1L), cycle.nodes.map { it.surface.surfaceId })
+        assertSame(node, cycle.nodes.first())
+        assertSame(node, cycle.nodes.last())
     }
 
     /**

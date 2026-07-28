@@ -226,7 +226,10 @@ private fun List<ConeCangJieType>.smallestClassUpperBoundOrNull(): ConeCangJieTy
 }
 
 /**
- * 为 class/interface 上界创建声明侧成员 scope。
+ * 为 class/interface 上界创建使用点成员 scope。
+ *
+ * 泛型上界冲突比较消费的是该类型在当前使用点可见的完整成员集合，因此必须包含
+ * 可访问 extend 成员；声明点 scope 会有意排除 extend，只适合声明自身继承检查。
  */
 context(context: CheckerContext)
 private fun ConeCangJieType.upperBoundMemberScope(): CfirTypeScope? {
@@ -241,7 +244,7 @@ private fun ConeCangJieType.upperBoundMemberScope(): CfirTypeScope? {
         directSupertypeProvider = context.session.directSupertypeProviderOrNull,
         ownerType = expandedType,
         dispatchReceiverType = expandedType,
-        scopeKind = CfirClassMemberScopeKind.DECLARATION_SITE,
+        scopeKind = CfirClassMemberScopeKind.USE_SITE,
     )
     return CfirClassSubstitutionScope(
         session = context.session,

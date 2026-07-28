@@ -399,6 +399,81 @@ class FrontendMacroConstructionExecutionTest {
     }
 
     /**
+     * 不同源码文件的 offset 坐标系彼此独立，范围相同的宏调用不能被构造成父子节点。
+     */
+    @Test
+    fun macroForestKeepsEqualRangesFromDifferentFilesIndependent() {
+        val session = object : CfirSession(CfirSession.Kind.Source) {}
+        val moduleData = TestModuleData(session)
+        session.register(CfirModuleData::class, moduleData)
+        val packageFqName = FqName("sample")
+        val firstFile = fileWithDeclarations(moduleData, packageFqName)
+        val secondFile = fileWithDeclarations(moduleData, packageFqName)
+        val macroFqName = FqName("macros.Generated")
+        val firstSurface = expressionSurface(
+            surfaceId = 3010L,
+            qualifiedName = macroFqName,
+            packageFqName = packageFqName,
+            sourceRange = MacroSurfaceSourceRange(
+                source = null,
+                startOffset = 0,
+                endOffset = 20,
+            ),
+        )
+        val secondSurface = expressionSurface(
+            surfaceId = 3011L,
+            qualifiedName = macroFqName,
+            packageFqName = packageFqName,
+            sourceRange = MacroSurfaceSourceRange(
+                source = null,
+                startOffset = 0,
+                endOffset = 20,
+            ),
+        )
+        val pre = buildPreMacroRawFiles(
+            session = session,
+            rawCfirFiles = listOf(firstFile, secondFile),
+            fileSurfaces = listOf(listOf(firstSurface), listOf(secondSurface)),
+        )
+        val executor = RecordingExecutor(
+            MacroExpansionResult.Success(
+                tokens = listOf(org.cangnova.cangjie.macro.TokenInfo(0u.toUByte(), "42")),
+                expandedText = "42",
+            ),
+        )
+        val parser = RecordingParser()
+        val splicer = RecordingSplicer()
+        val configuration = CompilerConfiguration().apply {
+            macroExecutorFactory = MacroExecutorFactory { executor }
+            macroFragmentParserFactory = MacroFragmentParserFactory { parser }
+        }
+
+        val result = FrontendMacroConstructionService(configuration, splicer).expandWithClassification(
+            pre = pre,
+            context = bindMacroImports(
+                pre = pre,
+                symbolIndex = buildMacroSymbolIndex(
+                    pre = pre,
+                    macroArtifactDefinitions = listOf(
+                        MacroDefinitionEntry(
+                            packageFqName = FqName("macros"),
+                            name = Name.identifier("Generated"),
+                            source = MacroDefinitionEntry.Source.MACRO_ARTIFACT,
+                        ),
+                    ),
+                ),
+            ),
+            mode = MacroConstructionService.Mode.STRICT,
+        )
+
+        assertTrue(result is MacroConstructionResult.Success)
+        assertEquals(2, executor.calls.size)
+        assertEquals(listOf(3010L, 3011L), splicer.slots.map { it.origin.surfaceId })
+        assertEquals(2, parser.parsedTokens.size)
+        assertTrue((result as MacroConstructionResult.Success).registry.diagnostics.isEmpty())
+    }
+
+    /**
      * 验证重导出宏使用 executable identity 构造 executor 调用信息。
      */
     @Test

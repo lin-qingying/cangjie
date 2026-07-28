@@ -11,7 +11,7 @@ interface I<X> {
 }
 
 class D<X> <: I<X> {
-    public static func test<T>(): Unit where T <: <!GENERIC_CONSTRAINT_NOT_LOOSER!>C & Equatable<X><!> {}
+    public static func test<T>(): Unit where <!GENERIC_CONSTRAINT_NOT_LOOSER!>T <: C & Equatable<X><!> {}
 }
 
 class E<X> <: I<X> {
