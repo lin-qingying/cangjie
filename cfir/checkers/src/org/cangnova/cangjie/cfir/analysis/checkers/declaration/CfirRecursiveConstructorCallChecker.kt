@@ -33,6 +33,7 @@ import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirReturnExpression
+import org.cangnova.cangjie.cfir.references.CfirResolvedErrorReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
@@ -297,6 +298,9 @@ private class RecursiveConstructorGraph(
 
     /**
      * 从函数调用引用中解析构造器符号。
+     *
+     * `CfirResolvedErrorReference` 会为了错误诊断保留候选符号，但它不代表调用已经
+     * 语义可适用；递归构造依赖图只能使用真实可适用的构造器引用。
      */
     private fun CfirFunctionCall.resolvedConstructorSymbolOrNull(): CfirConstructorSymbol? =
         when (val reference = calleeReference) {

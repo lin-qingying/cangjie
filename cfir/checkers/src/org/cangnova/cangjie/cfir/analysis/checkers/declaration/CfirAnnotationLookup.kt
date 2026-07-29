@@ -49,7 +49,7 @@ internal fun CfirAnnotation.shortNameOrNull(): Name? {
 
 /** 返回注解调用指定位置实参的源码文本或字面量文本。 */
 internal fun CfirAnnotationCall.argumentTextAt(index: Int): String? {
-    val argument = argumentList.arguments.getOrNull(index)?.unwrapNamedArgument() ?: return null
+    val argument = explicitArguments().getOrNull(index)?.unwrapNamedArgument() ?: return null
     (argument as? CfirLiteralExpression)?.value?.let { return it.toString() }
     return argument.source?.text?.toString()
         ?.trim()
@@ -59,7 +59,7 @@ internal fun CfirAnnotationCall.argumentTextAt(index: Int): String? {
 
 /** 返回注解调用的实参数量。 */
 internal fun CfirAnnotationCall.argumentCount(): Int =
-    argumentList.arguments.size
+    explicitArguments().size
 
 /** 判断注解调用是否携带任何实参。 */
 internal fun CfirAnnotationCall.hasArguments(): Boolean =
@@ -67,24 +67,24 @@ internal fun CfirAnnotationCall.hasArguments(): Boolean =
 
 /** 判断注解调用是否存在指定名称的命名实参。 */
 internal fun CfirAnnotationCall.hasNamedArgument(name: String): Boolean =
-    argumentList.arguments.any { argument ->
+    explicitArguments().any { argument ->
         (argument as? CfirNamedArgumentExpression)?.argumentName?.asString() == name
     } || argumentByName(name) != null
 
 /** 判断第一个注解实参是否使用命名参数形式。 */
 internal fun CfirAnnotationCall.firstArgumentIsNamed(): Boolean {
-    return argumentList.arguments.firstOrNull() is CfirNamedArgumentExpression
+    return explicitArguments().firstOrNull() is CfirNamedArgumentExpression
 }
 
 /** 从结构化命名实参中提取全部名称。 */
 internal fun CfirAnnotationCall.rawNamedArgumentNames(): List<String> =
-    argumentList.arguments
+    explicitArguments()
         .filterIsInstance<CfirNamedArgumentExpression>()
         .map { it.argumentName.asString() }
 
 /** 根据已解析实参映射查找指定名称对应的实参表达式。 */
 internal fun CfirAnnotationCall.argumentByName(name: String): CfirExpression? {
-    argumentList.arguments
+    explicitArguments()
         .filterIsInstance<CfirNamedArgumentExpression>()
         .firstOrNull { it.argumentName.asString() == name }
         ?.let { return it.expression }
@@ -109,11 +109,11 @@ internal fun CfirAnnotationCall.namedArgumentText(name: String): String? {
 
 /** 判断注解调用的所有实参是否都是字面量或字面量数组形态。 */
 internal fun CfirAnnotationCall.argumentsAreLiteralLike(): Boolean =
-    argumentList.arguments.all { it.isAnnotationLiteralLike() }
+    explicitArguments().all { it.isAnnotationLiteralLike() }
 
 /** 判断第一个实参或指定命名实参是否为布尔字面量。 */
 internal fun CfirAnnotationCall.firstArgumentIsBooleanLiteralNamed(name: String): Boolean {
-    val argument = argumentByName(name) ?: argumentList.arguments.firstOrNull() ?: return false
+    val argument = argumentByName(name) ?: explicitArguments().firstOrNull() ?: return false
     val raw = argument.unwrapNamedArgument().source?.text?.toString()?.trim() ?: argumentTextAt(0)
     return raw == "true" || raw == "false"
 }
@@ -153,6 +153,18 @@ private tailrec fun CfirExpression.unwrapNamedArgument(): CfirExpression = when 
     is CfirNamedArgumentExpression -> expression.unwrapNamedArgument()
     else -> this
 }
+
+/**
+ * 返回源码中显式写出的 annotation 实参。
+ *
+ * [CfirResolvedArgumentList.arguments] 只暴露成功映射到形参的实参；平台注解语法
+ * checker 需要判断源码是否显式写了参数，因此必须优先读取解析前的原始实参列表。
+ */
+private fun CfirAnnotationCall.explicitArguments(): List<CfirExpression> =
+    (argumentList as? CfirResolvedArgumentList)
+        ?.originalArgumentList
+        ?.arguments
+        ?: argumentList.arguments
 
 /** 判断注解是否匹配指定短名。 */
 private fun CfirAnnotation.matchesAnnotationName(annotationName: Name): Boolean {

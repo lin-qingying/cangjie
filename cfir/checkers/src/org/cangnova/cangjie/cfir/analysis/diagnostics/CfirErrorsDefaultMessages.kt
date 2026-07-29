@@ -55,6 +55,7 @@ import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticFactoryToRendererMap
 import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticRenderers.NOT_RENDERED
 import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticRenderers.TO_STRING
 import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticRenderers.VISIBILITY
+import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticRenderers.COLLECTION
 import org.cangnova.cangjie.cfir.diagnostics.rendering.BaseDiagnosticRendererFactory
 import org.cangnova.cangjie.cfir.diagnostics.rendering.CjDiagnosticRenderers.RENDER_NAME
 import org.cangnova.cangjie.cfir.diagnostics.rendering.CjDiagnosticRenderers.RENDER_NAME_LIST
@@ -1134,6 +1135,42 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
         map.put(CfirErrors.FOREIGN_NAME_APPEARED_IN_CHILD, "@{0} could not appear on overridden declaration", RENDER_NAME)
         map.put(CfirErrors.FOREIGN_NAME_CONFLICTING_ANNOTATION, "Declaration ''{0}'' has a conflicting @{1} annotation", RENDER_NAME, RENDER_NAME)
         map.put(CfirErrors.FOREIGN_NAME_CONFLICTING_DERIVED_ANNOTATION, "Declaration ''{0}'' has a conflicting derived @{1} ''{2}''", RENDER_NAME, RENDER_NAME, RENDER_NAME)
+
+        // ================================================================
+        // Macro
+        // ================================================================
+        map.put(CfirErrors.MACRO_NOT_EXPANDED, "macro ''{0}'' was not expanded", RENDER_STRING)
+        map.put(CfirErrors.MACRO_EXPANSION_FAILED, "macro ''{0}'' expansion failed: {1}", RENDER_STRING, RENDER_STRING)
+        map.put(CfirErrors.MACRO_DIAG_REPORT_ERROR, "{0}{1}", RENDER_STRING, RENDER_STRING)
+        map.put(CfirErrors.MACRO_DIAG_REPORT_WARNING, "{0}{1}", RENDER_STRING, RENDER_STRING)
+        map.put(CfirErrors.MACRO_UNDEFINED_PACKAGE, "macro package ''{0}'' is undefined: {1}", RENDER_STRING, RENDER_STRING)
+        map.put(CfirErrors.MACRO_UNDECLARED_IDENTIFIER, "macro identifier ''{0}'' is undeclared: {1}", RENDER_NAME, RENDER_STRING)
+        map.put(CfirErrors.MACRO_EXPECT_MACRO_DEFINITION, "expected macro definition for ''{0}'': {1}", RENDER_STRING, RENDER_STRING)
+        map.put(CfirErrors.MACRO_DEPENDENCY_COMPILE_FAILED, "macro dependency ''{0}'' failed to compile: {1} {2}", RENDER_STRING, RENDER_STRING, RENDER_STRING)
+        map.put(CfirErrors.MACRO_AMBIGUOUS_MATCH, "macro ''{0}'' is ambiguous among: {1}", RENDER_STRING, COLLECTION(RENDER_NULLABLE_FQNAME))
+        map.put(CfirErrors.MACRO_CANNOT_FIND_DEPENDENCY_BCHIR, "cannot find BCHIR for macro dependency ''{0}'' at ''{1}''", RENDER_STRING, RENDER_STRING)
+        map.put(CfirErrors.MACRO_EXPECT_PLAIN_MACRO, "macro ''{0}'' must be a plain macro: {1}", RENDER_STRING, RENDER_STRING)
+        map.put(CfirErrors.MACRO_EXPECT_ATTRIBUTED_MACRO, "macro ''{0}'' must be an attributed macro: {1}", RENDER_STRING, RENDER_STRING)
+        map.put(CfirErrors.MACRO_EXPAND_ATEXCL, "macro ''{0}'' cannot be expanded with @!: {1}", RENDER_STRING, RENDER_STRING)
+        map.put(CfirErrors.MACRO_INVALID_ATTR_TOKENS, "macro ''{0}'' received invalid attribute tokens: {1}", RENDER_STRING, RENDER_STRING)
+        map.put(CfirErrors.MACRO_INVALID_INPUT_TOKENS, "macro ''{0}'' received invalid input tokens: {1}", RENDER_STRING, RENDER_STRING)
+        map.put(CfirErrors.MACRO_INVALID_ESCAPE, "macro ''{0}'' has invalid escape: {1}", RENDER_STRING, RENDER_STRING)
+        map.put(CfirErrors.MACRO_SAME_PACKAGE_DEF_CALL, "macro ''{0}'' cannot be called in its defining package ''{1}''", RENDER_STRING, RENDER_NULLABLE_FQNAME)
+        map.put(CfirErrors.MACRO_ALIAS_CONFLICT, "macro alias ''{0}'' conflicts among: {1}", RENDER_NAME, COLLECTION(RENDER_NULLABLE_FQNAME))
+        map.put(CfirErrors.MACRO_EXECUTOR_UNAVAILABLE, "macro executor is unavailable: {0}", RENDER_STRING)
+        map.put(CfirErrors.MACRO_CANNOT_OPEN_LIB, "cannot open macro library ''{0}'': {1}", RENDER_STRING, RENDER_STRING)
+        map.put(CfirErrors.MACRO_CANNOT_FIND_METHOD, "cannot find method for macro ''{0}'': {1}", RENDER_STRING, RENDER_STRING)
+        map.put(CfirErrors.MACRO_EVALUATE_FAILED, "macro ''{0}'' evaluation failed: {1}", RENDER_STRING, RENDER_STRING)
+        map.put(CfirErrors.MACRO_EXPAND_FAILED, "macro ''{0}'' expansion failed: {1}", RENDER_STRING, RENDER_STRING)
+        map.put(CfirErrors.MACRO_EXPAND_CODE_SHOULD_NOT_HAVE_MACROCALL, "expanded code of macro ''{0}'' must not contain macro calls: {1}", RENDER_STRING, RENDER_STRING)
+        map.put(CfirErrors.MACRO_CALL_SAVE_FILE_FAILED, "macro ''{0}'' call save file failed: {1}", RENDER_STRING, RENDER_STRING)
+        map.put(CfirErrors.MACRO_EXECUTOR_PROTOCOL_ERROR, "macro executor protocol error: {0}", RENDER_STRING)
+        map.put(CfirErrors.MACRO_EXECUTOR_SERVER_DISCONNECTED, "macro executor server disconnected: {0}", RENDER_STRING)
+        map.put(CfirErrors.MACRO_EXECUTOR_TIMEOUT, "macro executor timeout: {0}", RENDER_STRING)
+        map.put(CfirErrors.MACRO_EXECUTOR_SERVER_CRASH, "macro executor server crashed: {0}", RENDER_STRING)
+        map.put(CfirErrors.MACRO_REEVALUATION_FAILED, "macro ''{0}'' reevaluation failed: {1}", RENDER_STRING, RENDER_STRING)
+        map.put(CfirErrors.MACRO_UNRESOLVED, "macro ''{0}'' is unresolved", RENDER_NAME)
+        map.put(CfirErrors.MACRO_CYCLE, "macro ''{0}'' expansion cycle detected: {1}", RENDER_STRING, RENDER_STRING_LIST)
 
         // ================================================================
         // IfAvailable

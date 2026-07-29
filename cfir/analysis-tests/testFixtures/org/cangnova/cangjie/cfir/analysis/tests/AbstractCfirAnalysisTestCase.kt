@@ -14,6 +14,7 @@ import org.cangnova.cangjie.cfir.resolve.providers.CfirProviderImpl
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionResult
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionService
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurface
 import org.cangnova.cangjie.cfir.resolve.providers.macro.buildPreMacroRawFiles
 import org.cangnova.cangjie.cfir.resolve.providers.macro.expandWithDefaultContext
 import org.cangnova.cangjie.cfir.resolve.providers.macro.recordExpandedRawFilesOnce
@@ -96,8 +97,9 @@ abstract class AbstractCfirAnalysisTestCase : CjParsingTestCase(
         session: CfirSession = createTestSession(),
         bodyBuildingMode: BodyBuildingMode = BodyBuildingMode.NORMAL,
     ): CfirFile {
-        return PsiRawCfirBuilder(session, bodyBuildingMode).buildCfirFile(this).also { cfirFile ->
-            session.recordRawCfirFile(cfirFile)
+        val builder = PsiRawCfirBuilder(session, bodyBuildingMode)
+        return builder.buildCfirFile(this).also { cfirFile ->
+            session.recordRawCfirFile(cfirFile, builder.consumeCollectedMacroSurfaces())
         }
     }
 
@@ -107,9 +109,9 @@ abstract class AbstractCfirAnalysisTestCase : CjParsingTestCase(
      * 该方法只使用 identity 宏服务，不展开外部宏进程；它的职责是生成可被后续
      * provider、scope 与 resolve 阶段查询的 recordable file 集合。
      */
-    private fun CfirSession.recordRawCfirFile(cfirFile: CfirFile) {
+    private fun CfirSession.recordRawCfirFile(cfirFile: CfirFile, surfaces: List<MacroSurface>) {
         val provider = cfirProvider as CfirProviderImpl
-        val pre = buildPreMacroRawFiles(this, listOf(cfirFile))
+        val pre = buildPreMacroRawFiles(this, listOf(cfirFile), listOf(surfaces))
         val result = MacroConstructionService.Identity.expandWithDefaultContext(
             pre = pre,
             mode = MacroConstructionService.Mode.STRICT,

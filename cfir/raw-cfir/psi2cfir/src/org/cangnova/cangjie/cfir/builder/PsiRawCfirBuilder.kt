@@ -71,6 +71,56 @@ import org.cangnova.cangjie.psi.CjNodeTypes.*
 import org.cangnova.cangjie.source.*
 import org.cangnova.cangjie.cfir.expressions.builder.buildErrorExpression as buildErrorExpressionNode
 
+/** `CjPsiFactory.createCallArguments` 内部宿主文本 `let x = foo ` 的长度。 */
+private const val PSI_SYNTHETIC_CALL_ARGUMENTS_PREFIX_LENGTH: Int = 12
+
+/** macro-expression wrapper 文本中的半开区间。 */
+private data class MacroExpressionTextRange(
+    /** 起始偏移，相对 wrapper 文本。 */
+    val startOffset: Int,
+    /** 结束偏移，相对 wrapper 文本。 */
+    val endOffset: Int,
+)
+
+/**
+ * 当前 macro-expression wrapper 头部语法。
+ *
+ * PSI 的 [CjMacroExpression] 子树可能只保留 wrapper 名称，而把 `[attr]`
+ * 留在原始文本中；raw CFIR 需要从当前 wrapper 头部恢复 annotation-site
+ * 名称与属性区间，不能从 input declaration 子树泛化搜索。
+ */
+private data class MacroExpressionHeadSyntax(
+    /** 扫描出的原始限定名文本。 */
+    val rawName: String,
+    /** 名称整体在 wrapper 文本中的起止区间。 */
+    val nameRange: MacroExpressionTextRange,
+    /** 本层 wrapper 的属性区间，包含左右方括号。 */
+    val attrRange: MacroExpressionTextRange?,
+)
+
+/** macro-expression input 文本中恢复出的直接 annotation 语法。 */
+private data class MacroExpressionInputAnnotationSyntax(
+    /** 完整 annotation 文本，包含 `@` 前缀。 */
+    val rawSyntax: String,
+    /** annotation 本体在 wrapper 文本中的区间。 */
+    val annotationRange: MacroExpressionTextRange,
+    /** 标准 `(...)` 实参列表区间。 */
+    val argumentRange: MacroExpressionTextRange?,
+    /** 宏式 `[...]` attr 区间。 */
+    val macroAttributeRange: MacroExpressionTextRange?,
+)
+
+/** 从 wrapper 文本重解析出的 PSI annotation 及其原始 source 映射。 */
+private data class ReparsedMacroInputAnnotation(
+    val annotation: CjAnnotation,
+    val rawSyntax: String,
+    val annotationSource: CjSourceElement,
+    val sourceOffsetDelta: Int,
+    val argumentListSource: CjSourceElement?,
+    val macroAttributeText: String?,
+    val macroAttributeStartOffset: Int?,
+)
+
 /**
  * `PSI -> Raw CFIR` 构建器，对齐 Kotlin 的 `PsiRawFirBuilder`。
  * 遍历 PSI 语法树，生成 Raw CFIR 中间表示。
@@ -297,6 +347,7 @@ class PsiRawCfirBuilder(
                 calleeReferenceSourceOverride = annotation.typeReference?.shiftedBy(sourceOffsetDelta)
                     ?: sourceOverride,
                 argumentListSourceOverride = argumentListSourceOverride,
+                macroAttributeOverride = PsiTreeUtil.findChildOfType(annotation, CjMacroAttr::class.java),
             )
         }
     }
@@ -467,6 +518,7 @@ class PsiRawCfirBuilder(
             val carrier = convertDeclaration(declaration)
             macroExpressions.forEach { expression ->
                 applyTopLevelMacroExpression(expression, carrier)
+                collectMacroInputAnnotationSurfaces(expression, declaration, carrier)
             }
             return carrier
         }
@@ -483,13 +535,184 @@ class PsiRawCfirBuilder(
             while (current != null) {
                 macroExpressions += current
                 val input = current.input ?: return null
+                val next = input.children.firstOrNull { it is CjMacroExpression } as? CjMacroExpression
+                if (next != null) {
+                    current = next
+                    continue
+                }
                 input.declarations?.let { declaration ->
                     return declaration to macroExpressions.toList()
                 }
-                current = input.children.firstOrNull { it is CjMacroExpression } as? CjMacroExpression
+                current = null
             }
 
             return null
+        }
+
+        /**
+         * 收集 macro wrapper input 中直接包裹 carrier 声明的普通 annotation。
+         *
+         * PSI 会把 `@Outer @Inner decl` 表达为 `Outer(input = @Inner decl)`：
+         * 外层 wrapper 自身由 [applyTopLevelMacroExpression] 回放，input 中与
+         * carrier 同层的普通 annotation 也必须挂到同一个 carrier 上，才能恢复
+         * 官方 original macro-call forest。
+         */
+        private fun collectMacroInputAnnotationSurfaces(
+            wrapper: CjMacroExpression,
+            annotatedDeclaration: CjDeclaration,
+            carrier: CfirDeclaration,
+        ) {
+            val directAnnotations = wrapper.input?.directAnnotationsBeforeCarrier().orEmpty()
+            val reparsedAnnotations = wrapper.reparseInputAnnotationsBeforeCarrier(annotatedDeclaration)
+            if (directAnnotations.isEmpty() && reparsedAnnotations.isEmpty()) return
+
+            val attachedRanges = annotatedDeclaration.annotationEntries.mapTo(mutableSetOf()) { it.textRange }
+            val detachedAnnotations = directAnnotations.filter { it.textRange !in attachedRanges }
+            collectMacroAnnotationSurfaces(
+                annotated = annotatedDeclaration,
+                entries = detachedAnnotations,
+                target = AnnotationSurfaceTarget.DECLARATION,
+                carrier = carrier,
+            )
+            collectReparsedMacroInputAnnotationSurfaces(
+                annotated = annotatedDeclaration,
+                annotations = reparsedAnnotations,
+                carrier = carrier,
+            )
+        }
+
+        /**
+         * 只读取当前 [CjMacroInput] 的直接 annotation 子节点。
+         *
+         * 遇到下一层 [CjMacroExpression] 或最终 [CjDeclaration] 后停止，禁止递归进入
+         * class body / block，避免把内部声明 annotation 误绑定到外层 carrier。
+         */
+        private fun CjMacroInput.directAnnotationsBeforeCarrier(): List<CjAnnotation> {
+            val result = mutableListOf<CjAnnotation>()
+            for (child in children) {
+                when (child) {
+                    is CjAnnotations -> result += child.entries
+                    is CjAnnotation -> result += child
+                    is CjMacroExpression,
+                    is CjDeclaration,
+                        -> return result
+                }
+            }
+            return result
+        }
+
+        /** 从 wrapper 原始文本中恢复 AST 未建模的 input annotation。 */
+        private fun CjMacroExpression.reparseInputAnnotationsBeforeCarrier(
+            annotatedDeclaration: CjDeclaration,
+        ): List<ReparsedMacroInputAnnotation> {
+            val headSyntax = macroExpressionHeadSyntax() ?: return emptyList()
+            val rawText = text.orEmpty()
+            val scanStart = headSyntax.attrRange?.endOffset ?: headSyntax.nameRange.endOffset
+            val declarationStart = (annotatedDeclaration.textRange.startOffset - textRange.startOffset)
+                .coerceIn(scanStart, rawText.length)
+            val syntaxes = scanMacroExpressionInputAnnotationSyntax(rawText, scanStart, declarationStart)
+            if (syntaxes.isEmpty()) return emptyList()
+
+            val factory = CjPsiFactory.contextual(this)
+            return syntaxes.mapNotNull { syntax ->
+                val annotation = runCatching {
+                    factory.createAnnotations(syntax.rawSyntax).entries.singleOrNull()
+                }.getOrNull() ?: return@mapNotNull null
+                val annotationSource = sliceMacroExpressionSource(syntax.annotationRange)
+                val sourceOffsetDelta = sourceOffsetDelta(annotationSource, annotation)
+                ReparsedMacroInputAnnotation(
+                    annotation = annotation,
+                    rawSyntax = syntax.rawSyntax,
+                    annotationSource = annotationSource,
+                    sourceOffsetDelta = sourceOffsetDelta,
+                    argumentListSource = syntax.argumentRange?.let(::sliceMacroExpressionSource),
+                    macroAttributeText = syntax.macroAttributeRange
+                        ?.let { range -> rawText.substring(range.startOffset, range.endOffset) },
+                    macroAttributeStartOffset = syntax.macroAttributeRange
+                        ?.let { range -> textRange.startOffset + range.startOffset },
+                )
+            }
+        }
+
+        /** 将从 wrapper 文本重解析出的 annotation surface 写入同一个 carrier。 */
+        private fun collectReparsedMacroInputAnnotationSurfaces(
+            annotated: CjDeclaration,
+            annotations: List<ReparsedMacroInputAnnotation>,
+            carrier: CfirDeclaration,
+        ) {
+            if (annotations.isEmpty()) return
+            val metadataRegistry = baseSession.ensureAnnotationMetadataRegistry()
+            val modifiers = (annotated as? CjModifierListOwner)
+                ?.modifierList
+                ?.let(::collectModifierNames)
+                .orEmpty()
+            val carriedAnnotations = annotations.map { it.rawSyntax }
+            val containerContext = macroContainerContext(annotated, AnnotationSurfaceTarget.DECLARATION)
+            val containingSymbol = when (carrier) {
+                is CfirValueParameter -> carrier.containingDeclarationSymbol
+                else -> carrier.symbol
+            }
+
+            for (reparsed in annotations) {
+                val annotation = reparsed.annotation
+                val macroAttribute = PsiTreeUtil.findChildOfType(annotation, CjMacroAttr::class.java)
+                val annotationCall = convertAnnotationCall(
+                    annotation = annotation,
+                    containingSymbol = containingSymbol,
+                    sourceOverride = reparsed.annotationSource,
+                    typeRefOverride = annotation.typeReference?.let {
+                        buildAnnotationTypeRef(it, reparsed.sourceOffsetDelta)
+                    },
+                    calleeReferenceSourceOverride = annotation.typeReference?.shiftedBy(reparsed.sourceOffsetDelta)
+                        ?: reparsed.annotationSource,
+                    argumentListSourceOverride = reparsed.argumentListSource,
+                    macroAttributeOverride = macroAttribute,
+                    macroAttributeTextOverride = reparsed.macroAttributeText,
+                    macroAttributeStartOffsetOverride = reparsed.macroAttributeStartOffset,
+                )
+                val annotationIndex = carrier.annotations.size
+                carrier.replaceAnnotations(carrier.annotations + annotationCall)
+                val isCompileTimeVisible = reparsed.rawSyntax.trimStart().startsWith("@!")
+                val snapshot = CfirAnnotationSlotSnapshot(
+                    owner = carrier,
+                    annotationIndex = annotationIndex,
+                    originalAnnotation = annotationCall,
+                    rawSyntax = reparsed.rawSyntax,
+                    forcedCustom = isCompileTimeVisible,
+                    isCompileTimeVisible = isCompileTimeVisible,
+                    annotationSource = reparsed.annotationSource,
+                    qualifiedName = annotationQualifiedName(annotation),
+                    argumentText = annotation.valueArgumentList?.text ?: reparsed.macroAttributeText,
+                    tokens = MacroPayloadTokenizer.tokenize(
+                        reparsed.rawSyntax,
+                        reparsed.annotationSource.startOffset,
+                    ).toMacroSurfaceTokens(),
+                    callSite = MacroCallSite.DECLARATION,
+                )
+                val annotationCarrier = metadataRegistry.record(snapshot)
+                collectedMacroSurfaces += buildMacroAnnotationSurface(
+                    annotation = annotation,
+                    target = AnnotationSurfaceTarget.DECLARATION,
+                    carrier = carrier,
+                    annotationCarrier = annotationCarrier,
+                    modifiers = modifiers,
+                    carriedAnnotations = carriedAnnotations,
+                    containerContext = containerContext,
+                    sourceOverride = reparsed.annotationSource,
+                    rawSyntaxOverride = reparsed.rawSyntax,
+                    inputTokensOverride = declarationAnnotationMacroInputTokens(
+                        annotated = annotated,
+                        annotationEndOffset = reparsed.annotationSource.endOffset,
+                        shortName = annotation.shortName?.asString(),
+                    ),
+                    attrTokensOverride = reparsed.macroAttributeText?.let { macroAttributeText ->
+                        MacroPayloadTokenizer.tokenize(
+                            macroAttributeText,
+                            reparsed.macroAttributeStartOffset ?: 0,
+                        ).toMacroSurfaceTokens()
+                    },
+                )
+            }
         }
 
         /**
@@ -514,9 +737,12 @@ class PsiRawCfirBuilder(
                 is CfirValueParameter -> carrier.containingDeclarationSymbol
                 else -> carrier.symbol
             }
+            val headSyntax = psi.macroExpressionHeadSyntax()
+            val macroAttributeText = psi.macroAttributeText(headSyntax)
+            val macroAttributeSource = psi.macroAttributeSourceElement(headSyntax)
             val macroAnnotation = psi.asDeclarationMacroAnnotation()
             val annotationCarrier = macroAnnotation?.let { annotation ->
-                val annotationSource = psi.annotationSourceElement()
+                val annotationSource = psi.annotationSourceElement(headSyntax)
                 val isCompileTimeVisible = text.trimStart().startsWith("@!")
                 val annotationCall = convertAnnotationCall(
                     annotation = annotation,
@@ -524,7 +750,10 @@ class PsiRawCfirBuilder(
                     sourceOverride = annotationSource,
                     typeRefOverride = psi.toAnnotationTypeRefOverride(),
                     calleeReferenceSourceOverride = psi.referenceExpression?.toCjPsiSourceElement(),
-                    argumentListSourceOverride = psi.attr?.toCjPsiSourceElement(),
+                    argumentListSourceOverride = macroAttributeSource,
+                    macroAttributeOverride = psi.attr,
+                    macroAttributeTextOverride = macroAttributeText,
+                    macroAttributeStartOffsetOverride = macroAttributeSource?.startOffset,
                 )
                 val annotationIndex = carrier.annotations.size
                 carrier.replaceAnnotations(carrier.annotations + annotationCall)
@@ -538,7 +767,7 @@ class PsiRawCfirBuilder(
                         isCompileTimeVisible = isCompileTimeVisible,
                         annotationSource = annotationSource,
                         qualifiedName = qualifiedName,
-                        argumentText = psi.attr?.text,
+                        argumentText = macroAttributeText,
                         tokens = MacroPayloadTokenizer.tokenize(
                             annotation.text,
                             psi.textRange.startOffset,
@@ -553,8 +782,8 @@ class PsiRawCfirBuilder(
                 kind = if (text.startsWith("@!")) MacroSurface.Kind.FORCED else MacroSurface.Kind.PLAIN,
                 hasParenthesis = input?.text?.trimStart()?.startsWith("(") == true,
                 attrTokens = MacroPayloadTokenizer.tokenize(
-                    psi.attr?.text,
-                    psi.attr?.textRange?.startOffset ?: 0,
+                    macroAttributeText,
+                    macroAttributeSource?.startOffset ?: 0,
                 ).toMacroSurfaceTokens(),
                 inputTokens = MacroPayloadTokenizer.tokenize(
                     input?.text,
@@ -593,15 +822,16 @@ class PsiRawCfirBuilder(
          * classification 再决定它是 declaration macro 还是 custom annotation。
          */
         private fun CjMacroExpression.asDeclarationMacroAnnotation(): CjAnnotation? {
-            val name = macroReferenceText() ?: return null
+            val headSyntax = macroExpressionHeadSyntax()
+            val name = headSyntax?.rawName ?: macroReferenceText() ?: return null
             val prefix = if (text.orEmpty().trimStart().startsWith("@!")) "@!" else "@"
-            val rawAnnotation = prefix + name + attr?.text.orEmpty()
+            val rawAnnotation = prefix + name + macroAttributeText(headSyntax).orEmpty()
             return CjPsiFactory.contextual(this).createAnnotations(rawAnnotation).entries.singleOrNull()
         }
 
         /** 提取 macro expression 的完整引用文本，保留包限定前缀。 */
         private fun CjMacroExpression.macroReferenceText(): String? {
-            return extractMacroReferencePrefix(text.orEmpty())
+            return macroExpressionHeadSyntax()?.rawName
                 ?: referenceExpression?.text?.trim()?.takeIf { it.isNotEmpty() }
                 ?: shortName?.asString()?.takeIf { it.isNotBlank() }
         }
@@ -613,42 +843,7 @@ class PsiRawCfirBuilder(
          * 层补齐语法前缀，供 macro construction surface 和 annotation metadata 使用同一全名。
          */
         private fun extractMacroReferencePrefix(rawText: String): String? {
-            var index = rawText.indexOf('@')
-            if (index < 0) return null
-            index++
-            if (rawText.getOrNull(index) == '!') index++
-            while (index < rawText.length && rawText[index].isWhitespace()) index++
-
-            val start = index
-            var expectIdentifier = true
-            var lastIdentifierEnd = -1
-            while (index < rawText.length) {
-                val current = rawText[index]
-                when {
-                    current.isIdentifierStart() -> {
-                        index++
-                        while (index < rawText.length && rawText[index].isIdentifierPart()) index++
-                        lastIdentifierEnd = index
-                        expectIdentifier = false
-                    }
-                    current == '.' && !expectIdentifier -> {
-                        index++
-                        expectIdentifier = true
-                    }
-                    else -> break
-                }
-            }
-
-            if (lastIdentifierEnd <= start || expectIdentifier) return null
-            return rawText.substring(start, lastIdentifierEnd).takeIf { it.isNotBlank() }
-        }
-
-        private fun Char.isIdentifierStart(): Boolean {
-            return this == '_' || isLetter()
-        }
-
-        private fun Char.isIdentifierPart(): Boolean {
-            return this == '_' || isLetterOrDigit()
+            return scanMacroExpressionHeadSyntax(rawText)?.rawName
         }
 
         /** 将 macro expression 引用文本提升为 construction surface 使用的 FQN。 */
@@ -689,14 +884,20 @@ class PsiRawCfirBuilder(
                 is CfirValueParameter -> carrier.containingDeclarationSymbol
                 else -> carrier.symbol
             }
-            val annotationSource = psi.annotationSourceElement()
+            val headSyntax = psi.macroExpressionHeadSyntax()
+            val macroAttributeText = psi.macroAttributeText(headSyntax)
+            val macroAttributeSource = psi.macroAttributeSourceElement(headSyntax)
+            val annotationSource = psi.annotationSourceElement(headSyntax)
             val annotationCall = convertAnnotationCall(
                 annotation = annotation,
                 containingSymbol = containingSymbol,
                 sourceOverride = annotationSource,
                 typeRefOverride = psi.toAnnotationTypeRefOverride(),
                 calleeReferenceSourceOverride = psi.referenceExpression?.toCjPsiSourceElement(),
-                argumentListSourceOverride = psi.attr?.toCjPsiSourceElement(),
+                argumentListSourceOverride = macroAttributeSource,
+                macroAttributeOverride = psi.attr,
+                macroAttributeTextOverride = macroAttributeText,
+                macroAttributeStartOffsetOverride = macroAttributeSource?.startOffset,
             )
             val annotationIndex = carrier.annotations.size
             carrier.replaceAnnotations(carrier.annotations + annotationCall)
@@ -710,7 +911,7 @@ class PsiRawCfirBuilder(
                     isCompileTimeVisible = false,
                     annotationSource = annotationSource,
                     qualifiedName = FqName.topLevel(psi.shortName!!),
-                    argumentText = psi.attr?.text,
+                    argumentText = macroAttributeText,
                     tokens = MacroPayloadTokenizer.tokenize(
                         annotation.text,
                         psi.textRange.startOffset,
@@ -1534,6 +1735,7 @@ class PsiRawCfirBuilder(
             val containerContext = macroContainerContext(annotated, target)
 
             for (annotation in entries) {
+                val macroAttribute = PsiTreeUtil.findChildOfType(annotation, CjMacroAttr::class.java)
                 val annotationCall = buildRawAnnotationCall(annotation, carrier)
                 val annotationIndex = carrier.annotations.size
                 carrier.replaceAnnotations(carrier.annotations + annotationCall)
@@ -1547,7 +1749,7 @@ class PsiRawCfirBuilder(
                     isCompileTimeVisible = isCompileTimeVisible,
                     annotationSource = annotation.toCjPsiSourceElement(),
                     qualifiedName = annotationQualifiedName(annotation),
-                    argumentText = annotation.valueArgumentList?.text,
+                    argumentText = annotation.valueArgumentList?.text ?: macroAttribute?.text,
                     tokens = MacroPayloadTokenizer.tokenize(
                         annotation.text,
                         annotation.textRange.startOffset,
@@ -1570,6 +1772,47 @@ class PsiRawCfirBuilder(
             }
         }
 
+        /**
+         * Macro-expression wrapper input 中恢复出的 declaration annotation macro
+         * 的 input payload 是当前 annotation 后方同一 carrier 声明的剩余源码，
+         * 而不是 annotation 自身的 `(...)` 实参。
+         *
+         * 例如 `@A @B public class C {}` 中，`@A` 的 input 为
+         * `@B public class C {}`，`@B` 的 input 为 `public class C {}`；
+         * 后续 [MacroCallForestBuilder] 会按同 carrier source order 建立 child-first
+         * wrapper 链并刷新父 payload。
+         */
+        private fun declarationAnnotationMacroInputTokens(
+            annotated: CjAnnotated,
+            annotationEndOffset: Int,
+            shortName: String?,
+            target: AnnotationSurfaceTarget = AnnotationSurfaceTarget.DECLARATION,
+        ): List<MacroSurfaceToken>? {
+            if (target != AnnotationSurfaceTarget.DECLARATION) return null
+            if (shortName == IF_AVAILABLE_ANNOTATION_NAME) return null
+            val owner = annotated as? PsiElement ?: return null
+            return tokenizeSourceSlice(
+                fileText = owner.containingFile?.text,
+                startOffset = annotationEndOffset,
+                endOffset = owner.textRange.endOffset,
+            )
+        }
+
+        /** 按宿主文件绝对 offset 切片并保持 token offset 与原文件一致。 */
+        private fun tokenizeSourceSlice(
+            fileText: String?,
+            startOffset: Int,
+            endOffset: Int,
+        ): List<MacroSurfaceToken>? {
+            if (fileText == null) return null
+            val start = startOffset.coerceIn(0, fileText.length)
+            val end = endOffset.coerceIn(start, fileText.length)
+            return MacroPayloadTokenizer.tokenize(
+                fileText.substring(start, end),
+                start,
+            ).toMacroSurfaceTokens()
+        }
+
         /** 转换单个 annotation call，供普通 annotation 与 macro custom annotation reparse 共用。 */
         fun convertAnnotationCall(
             annotation: CjAnnotation,
@@ -1578,8 +1821,16 @@ class PsiRawCfirBuilder(
             typeRefOverride: CfirTypeRef? = null,
             calleeReferenceSourceOverride: CjSourceElement? = null,
             argumentListSourceOverride: CjSourceElement? = null,
+            macroAttributeOverride: CjMacroAttr? = null,
+            macroAttributeTextOverride: String? = null,
+            macroAttributeStartOffsetOverride: Int? = null,
         ): CfirAnnotationCall {
-            val arguments = convertAnnotationArguments(annotation)
+            val arguments = convertAnnotationArguments(
+                annotation = annotation,
+                macroAttribute = macroAttributeOverride,
+                macroAttributeTextOverride = macroAttributeTextOverride,
+                macroAttributeStartOffsetOverride = macroAttributeStartOffsetOverride,
+            )
             return buildAnnotationCall {
                 source = sourceOverride ?: annotation.toCjPsiSourceElement()
                 typeRef = typeRefOverride ?: convertTypeRef(annotation.typeReference)
@@ -1631,9 +1882,30 @@ class PsiRawCfirBuilder(
         }
 
         /** 转换 annotation 参数；CallingConv 特殊语法转换为字符串 literal 参数。 */
-        private fun convertAnnotationArguments(annotation: CjAnnotation): List<CfirExpression> {
+        private fun convertAnnotationArguments(
+            annotation: CjAnnotation,
+            macroAttribute: CjMacroAttr? = null,
+            macroAttributeTextOverride: String? = null,
+            macroAttributeStartOffsetOverride: Int? = null,
+        ): List<CfirExpression> {
+            if (macroAttributeTextOverride != null && macroAttributeStartOffsetOverride != null) {
+                val macroAttributeArguments = convertMacroAttributeArguments(
+                    rawText = macroAttributeTextOverride,
+                    startOffset = macroAttributeStartOffsetOverride,
+                    factoryContext = annotation,
+                )
+                if (macroAttributeArguments.isNotEmpty()) return macroAttributeArguments
+            }
+
             val valueArguments = annotation.valueArguments.mapNotNull(::convertCallArgument)
             if (valueArguments.isNotEmpty()) return valueArguments
+
+            val macroAttributeArguments = convertMacroAttributeArguments(
+                rawText = macroAttribute?.text,
+                startOffset = macroAttribute?.textRange?.startOffset,
+                factoryContext = annotation,
+            )
+            if (macroAttributeArguments.isNotEmpty()) return macroAttributeArguments
 
             val callingConvention = PsiTreeUtil.findChildOfType(annotation, CjAnnotationCallingConv::class.java)
             if (callingConvention != null) {
@@ -1647,6 +1919,44 @@ class PsiRawCfirBuilder(
             return emptyList()
         }
 
+        /**
+         * 将宏式 annotation attr `[a: b]` 解析成标准 call argument list。
+         *
+         * `CjMacroAttr` 和 macro-expression wrapper 头部 attr 的内部都是
+         * quote-token 风格文本；这里复用仓颉调用参数
+         * parser，使 `@!APILevel[since: "21"]` 和普通 annotation call 产出同一种
+         * `CfirNamedArgumentExpression`，供 checker/resolve/import owner 统一消费。
+         */
+        private fun convertMacroAttributeArguments(
+            rawText: String?,
+            startOffset: Int?,
+            factoryContext: PsiElement,
+        ): List<CfirExpression> {
+            if (rawText == null || startOffset == null) return emptyList()
+            val openBracketIndex = rawText.indexOf('[')
+            val closeBracketIndex = rawText.lastIndexOf(']')
+            if (openBracketIndex < 0 || closeBracketIndex <= openBracketIndex) return emptyList()
+
+            val content = rawText.substring(openBracketIndex + 1, closeBracketIndex)
+            if (content.isBlank()) return emptyList()
+
+            val contentStartOffset = startOffset + openBracketIndex + 1
+            val padding = (contentStartOffset - PSI_SYNTHETIC_CALL_ARGUMENTS_PREFIX_LENGTH - 1)
+                .coerceAtLeast(0)
+            val argumentListText = buildString {
+                repeat(padding) { append(' ') }
+                append('(')
+                append(content)
+                append(')')
+            }
+
+            return runCatching {
+                CjPsiFactory.contextual(factoryContext).createCallArguments(argumentListText)
+                    .arguments
+                    .mapNotNull(::convertCallArgument)
+            }.getOrElse { emptyList() }
+        }
+
         /** 基于 carrier 推导 containing symbol，并构造 raw annotation call。 */
         private fun buildRawAnnotationCall(
             annotation: CjAnnotation,
@@ -1656,7 +1966,11 @@ class PsiRawCfirBuilder(
                 is CfirValueParameter -> carrier.containingDeclarationSymbol
                 else -> carrier.symbol
             }
-            return convertAnnotationCall(annotation, containingSymbol)
+            return convertAnnotationCall(
+                annotation = annotation,
+                containingSymbol = containingSymbol,
+                macroAttributeOverride = PsiTreeUtil.findChildOfType(annotation, CjMacroAttr::class.java),
+            )
         }
 
         /** 构造 annotation-site macro surface，并区分 declaration、parameter 与 builtin non-macro。 */
@@ -1668,23 +1982,30 @@ class PsiRawCfirBuilder(
             modifiers: List<String>,
             carriedAnnotations: List<String>,
             containerContext: MacroSurfaceContainerContext,
+            sourceOverride: CjSourceElement? = null,
+            rawSyntaxOverride: String? = null,
+            inputTokensOverride: List<MacroSurfaceToken>? = null,
+            attrTokensOverride: List<MacroSurfaceToken>? = null,
         ): MacroSurface {
             val surfaceId = MacroSurfaceIdGenerator.next()
-            val kind = if (annotation.text.startsWith("@!")) {
+            val rawSyntax = rawSyntaxOverride ?: annotation.text
+            val kind = if (rawSyntax.trimStart().startsWith("@!")) {
                 MacroSurface.Kind.FORCED
             } else {
                 MacroSurface.Kind.PLAIN
             }
             val qualifiedName = annotationQualifiedName(annotation)
             val valueArgumentList = annotation.valueArgumentList
-            val inputTokens = MacroPayloadTokenizer.tokenize(
+            val inputTokens = inputTokensOverride ?: MacroPayloadTokenizer.tokenize(
                 valueArgumentList?.text,
                 valueArgumentList?.textRange?.startOffset ?: 0,
             ).toMacroSurfaceTokens()
+            val attrTokens = attrTokensOverride ?: emptyList()
+            val source = sourceOverride ?: annotation.toCjPsiSourceElement()
             val sourceRange = MacroSurfaceSourceRange(
-                source = annotation.toCjPsiSourceElement(),
-                startOffset = annotation.textRange.startOffset,
-                endOffset = annotation.textRange.endOffset,
+                source = source,
+                startOffset = source.startOffset,
+                endOffset = source.endOffset,
             )
             val scopeContext = MacroSurfaceScopeContext(
                 packageFqName = context.packageFqName,
@@ -1703,13 +2024,13 @@ class PsiRawCfirBuilder(
                     qualifiedName = qualifiedName,
                     kind = kind,
                     hasParenthesis = valueArgumentList != null,
-                    attrTokens = emptyList(),
+                    attrTokens = attrTokens,
                     inputTokens = inputTokens,
                     sourceRange = sourceRange,
                     scopeContext = scopeContext,
                     modifiers = modifiers,
                     carriedAnnotations = carriedAnnotations,
-                    capturedRawSyntax = annotation.text,
+                    capturedRawSyntax = rawSyntax,
                     containerContext = containerContext,
                     replaceHandle = replaceHandle,
                     branchTokens = inputTokens,
@@ -1722,13 +2043,13 @@ class PsiRawCfirBuilder(
                     qualifiedName = qualifiedName,
                     kind = kind,
                     hasParenthesis = valueArgumentList != null,
-                    attrTokens = emptyList(),
+                    attrTokens = attrTokens,
                     inputTokens = inputTokens,
                     sourceRange = sourceRange,
                     scopeContext = scopeContext,
                     modifiers = modifiers,
                     carriedAnnotations = carriedAnnotations,
-                    capturedRawSyntax = annotation.text,
+                    capturedRawSyntax = rawSyntax,
                     containerContext = containerContext,
                     replaceHandle = replaceHandle,
                 )
@@ -1737,13 +2058,13 @@ class PsiRawCfirBuilder(
                     qualifiedName = qualifiedName,
                     kind = kind,
                     hasParenthesis = valueArgumentList != null,
-                    attrTokens = emptyList(),
+                    attrTokens = attrTokens,
                     inputTokens = inputTokens,
                     sourceRange = sourceRange,
                     scopeContext = scopeContext,
                     modifiers = modifiers,
                     carriedAnnotations = carriedAnnotations,
-                    capturedRawSyntax = annotation.text,
+                    capturedRawSyntax = rawSyntax,
                     containerContext = containerContext,
                     replaceHandle = replaceHandle,
                 )
@@ -3647,9 +3968,13 @@ private fun sourceOffsetDelta(sourceOverride: CjSourceElement?, reparsedPsi: Psi
 /**
  * 返回 macro-expression wrapper 中完整 annotation 的精确 source，不包含其输入声明。
  */
-private fun CjMacroExpression.annotationSourceElement(): CjSourceElement {
+private fun CjMacroExpression.annotationSourceElement(
+    headSyntax: MacroExpressionHeadSyntax? = macroExpressionHeadSyntax(),
+): CjSourceElement {
     val wrapperSource = toCjPsiSourceElement()
-    val annotationEndOffset = attr?.textRange?.endOffset
+    val annotationEndOffset = headSyntax?.let { syntax ->
+        wrapperSource.startOffset + (syntax.attrRange?.endOffset ?: syntax.nameRange.endOffset)
+    } ?: attr?.textRange?.endOffset
         ?: referenceExpression?.textRange?.endOffset
         ?: error("Macro annotation must contain a reference expression")
     check(annotationEndOffset in wrapperSource.startOffset..wrapperSource.endOffset) {
@@ -3663,6 +3988,209 @@ private fun CjMacroExpression.annotationSourceElement(): CjSourceElement {
         kind = wrapperSource.kind,
     )
 }
+
+/** 扫描当前 PSI macro-expression wrapper 的头部语法。 */
+private fun CjMacroExpression.macroExpressionHeadSyntax(): MacroExpressionHeadSyntax? =
+    scanMacroExpressionHeadSyntax(text.orEmpty())
+
+/** 返回当前 wrapper 头部 attr 文本，优先使用源码扫描结果。 */
+private fun CjMacroExpression.macroAttributeText(
+    headSyntax: MacroExpressionHeadSyntax? = macroExpressionHeadSyntax(),
+): String? {
+    val rawText = text.orEmpty()
+    return headSyntax
+        ?.attrRange
+        ?.let { range -> rawText.substring(range.startOffset, range.endOffset) }
+        ?: attr?.text
+}
+
+/** 返回当前 wrapper 头部 attr source，优先使用源码扫描结果。 */
+private fun CjMacroExpression.macroAttributeSourceElement(
+    headSyntax: MacroExpressionHeadSyntax? = macroExpressionHeadSyntax(),
+): CjSourceElement? {
+    return headSyntax
+        ?.attrRange
+        ?.let(::sliceMacroExpressionSource)
+        ?: attr?.toCjPsiSourceElement()
+}
+
+/** 构造 wrapper 内局部文本区间对应的 source。 */
+private fun CjMacroExpression.sliceMacroExpressionSource(range: MacroExpressionTextRange): CjSourceElement {
+    val wrapperSource = toCjPsiSourceElement()
+    return CjLightSourceElement(
+        lighterASTNode = wrapperSource.lighterASTNode,
+        startOffset = wrapperSource.startOffset + range.startOffset,
+        endOffset = wrapperSource.startOffset + range.endOffset,
+        treeStructure = wrapperSource.treeStructure,
+        kind = wrapperSource.kind,
+    )
+}
+
+/**
+ * 从当前 macro-expression wrapper 文本开头扫描 annotation 名称与 attr。
+ *
+ * 扫描只消费 `@` / `@!` 后的限定名以及紧随其后的 `[attr]`，
+ * 不进入 input declaration，因此可恢复 `@!APILevel[since: "21"] @M class A`
+ * 的外层 attr，而不会误读内层 `@M`。
+ */
+private fun scanMacroExpressionHeadSyntax(rawText: String): MacroExpressionHeadSyntax? {
+    var index = rawText.indexOf('@')
+    if (index < 0) return null
+    index++
+    if (rawText.getOrNull(index) == '!') index++
+    while (index < rawText.length && rawText[index].isWhitespace()) index++
+
+    val nameStart = index
+    var expectIdentifier = true
+    var lastIdentifierEnd = -1
+    while (index < rawText.length) {
+        val current = rawText[index]
+        when {
+            current.isMacroIdentifierStart() -> {
+                index++
+                while (index < rawText.length && rawText[index].isMacroIdentifierPart()) index++
+                lastIdentifierEnd = index
+                expectIdentifier = false
+            }
+            current == '.' && !expectIdentifier -> {
+                index++
+                expectIdentifier = true
+            }
+            else -> break
+        }
+    }
+
+    if (lastIdentifierEnd <= nameStart || expectIdentifier) return null
+
+    while (index < rawText.length && rawText[index].isWhitespace()) index++
+    val attrRange = if (rawText.getOrNull(index) == '[') {
+        scanMacroAttributeRange(rawText, index)
+    } else null
+
+    return MacroExpressionHeadSyntax(
+        rawName = rawText.substring(nameStart, lastIdentifierEnd),
+        nameRange = MacroExpressionTextRange(nameStart, lastIdentifierEnd),
+        attrRange = attrRange,
+    )
+}
+
+/**
+ * 扫描 macro-expression wrapper input 中位于 carrier 声明前的直接 annotation 序列。
+ *
+ * 该扫描只在调用方给定的 `[startOffset, endOffset)` 区间内推进；该区间由
+ * wrapper 头部结束位置和最终 carrier 声明起点构成，因此不会进入声明体。
+ */
+private fun scanMacroExpressionInputAnnotationSyntax(
+    rawText: String,
+    startOffset: Int,
+    endOffset: Int,
+): List<MacroExpressionInputAnnotationSyntax> {
+    val result = mutableListOf<MacroExpressionInputAnnotationSyntax>()
+    var index = startOffset.coerceIn(0, rawText.length)
+    val limit = endOffset.coerceIn(index, rawText.length)
+
+    while (index < limit) {
+        while (index < limit && rawText[index].isWhitespace()) index++
+        if (index >= limit || rawText[index] != '@') break
+
+        val annotationStart = index
+        index++
+        if (rawText.getOrNull(index) == '!') index++
+        while (index < limit && rawText[index].isWhitespace()) index++
+
+        val nameStart = index
+        var expectIdentifier = true
+        var lastIdentifierEnd = -1
+        while (index < limit) {
+            val current = rawText[index]
+            when {
+                current.isMacroIdentifierStart() -> {
+                    index++
+                    while (index < limit && rawText[index].isMacroIdentifierPart()) index++
+                    lastIdentifierEnd = index
+                    expectIdentifier = false
+                }
+                current == '.' && !expectIdentifier -> {
+                    index++
+                    expectIdentifier = true
+                }
+                else -> break
+            }
+        }
+        if (lastIdentifierEnd <= nameStart || expectIdentifier) break
+
+        while (index < limit && rawText[index].isWhitespace()) index++
+        var argumentRange: MacroExpressionTextRange? = null
+        var macroAttributeRange: MacroExpressionTextRange? = null
+        when (rawText.getOrNull(index)) {
+            '(' -> {
+                argumentRange = scanBalancedMacroRange(rawText, index, '(', ')') ?: break
+                index = argumentRange.endOffset
+            }
+            '[' -> {
+                macroAttributeRange = scanMacroAttributeRange(rawText, index) ?: break
+                index = macroAttributeRange.endOffset
+            }
+        }
+
+        result += MacroExpressionInputAnnotationSyntax(
+            rawSyntax = rawText.substring(annotationStart, index),
+            annotationRange = MacroExpressionTextRange(annotationStart, index),
+            argumentRange = argumentRange,
+            macroAttributeRange = macroAttributeRange,
+        )
+    }
+
+    return result
+}
+
+/** 扫描 wrapper 头部的平衡方括号 attr 区间，跳过字符串 literal 内部括号。 */
+private fun scanMacroAttributeRange(rawText: String, openBracketIndex: Int): MacroExpressionTextRange? {
+    return scanBalancedMacroRange(rawText, openBracketIndex, '[', ']')
+}
+
+/** 扫描平衡括号区间，跳过字符串 literal 内部括号。 */
+private fun scanBalancedMacroRange(
+    rawText: String,
+    openIndex: Int,
+    openChar: Char,
+    closeChar: Char,
+): MacroExpressionTextRange? {
+    if (rawText.getOrNull(openIndex) != openChar) return null
+    var index = openIndex
+    var bracketDepth = 0
+    var quote: Char? = null
+    var escaped = false
+    while (index < rawText.length) {
+        val current = rawText[index]
+        if (quote != null) {
+            when {
+                escaped -> escaped = false
+                current == '\\' -> escaped = true
+                current == quote -> quote = null
+            }
+            } else {
+                when (current) {
+                    '"', '\'' -> quote = current
+                    openChar -> bracketDepth++
+                    closeChar -> {
+                        bracketDepth--
+                        if (bracketDepth == 0) {
+                            return MacroExpressionTextRange(openIndex, index + 1)
+                        }
+                    }
+                }
+            }
+            index++
+    }
+    return null
+}
+
+/** macro / annotation 名称首字符。 */
+private fun Char.isMacroIdentifierStart(): Boolean = this == '_' || isLetter()
+
+/** macro / annotation 名称后续字符。 */
+private fun Char.isMacroIdentifierPart(): Boolean = this == '_' || isLetterOrDigit()
 
 /** 将 PSI source element 按 [delta] 平移，用于 macro fragment reparse 后恢复原始位置。 */
 private fun PsiElement.shiftedBy(delta: Int): CjSourceElement {

@@ -20,10 +20,13 @@ import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
 import org.cangnova.cangjie.cfir.expressions.CfirErrorExpression
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.expressions.CfirNamedArgumentExpression
+import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.expressions.builder.buildErrorExpression
 import org.cangnova.cangjie.cfir.resolve.providers.macro.BuiltinNonMacroDesugarer
 import org.cangnova.cangjie.cfir.resolve.providers.macro.BuiltinMacroRegistry
 import org.cangnova.cangjie.cfir.resolve.providers.macro.BuiltinNonMacroSurface
+import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirAnnotationReplaceCarrier
 import org.cangnova.cangjie.cfir.resolve.providers.macro.FinalMacroSurfaceDecision
 import org.cangnova.cangjie.cfir.resolve.providers.macro.IdentityMacroStableSplicer
 import org.cangnova.cangjie.cfir.resolve.providers.macro.IfAvailableSurface
@@ -57,11 +60,13 @@ import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceParam
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceToken
 import org.cangnova.cangjie.cfir.resolve.providers.macro.PreMacroCfirFile
 import org.cangnova.cangjie.cfir.resolve.providers.macro.PreMacroRawBuildResult
+import org.cangnova.cangjie.cfir.resolve.providers.macro.registerConstructionSurfaceUsage
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.annotationMetadataRegistryOrNull
 import org.cangnova.cangjie.cfir.symbols.CfirErrorFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirMacroDeclarationSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
+import org.cangnova.cangjie.cfir.types.CfirUserTypeRef
 import org.cangnova.cangjie.cfir.visitors.CfirDefaultTransformer
 import org.cangnova.cangjie.config.CompilerConfiguration
 import org.cangnova.cangjie.config.CompilerConfigurationKey
@@ -356,7 +361,7 @@ class FrontendMacroConstructionService(
         for (preFile in pre.files) {
             registry.registerFileSurfaces(preFile.cfirFile, preFile.surfaces)
         }
-        registerUsedMacroNames(pre, classification, registry)
+        registry.registerConstructionSurfaceUsage(pre, classification)
         registry.addAll(preConstructionDiagnostics)
 
         // baseline 第 12 节 Batch 5："alias conflict / macro package / ..."。
@@ -392,38 +397,6 @@ class FrontendMacroConstructionService(
         }
 
         return MacroConstructionService.successOf(pre, expandedFiles, registry)
-    }
-
-    /**
-     * 把 construction routing 已确认消费的 macro 调用按宿主文件登记到 registry。
-     *
-     * 该记录服务于后续 ordinary checker：macro 调用在 final CFIR 中可能已被展开产物替换，
-     * 但对应 import 仍应按官方 unused-import 规则视为已使用。
-     */
-    private fun registerUsedMacroNames(
-        pre: PreMacroRawBuildResult,
-        classification: MacroDemandClassification,
-        registry: MacroExpansionRegistry,
-    ) {
-        val usedDecisionsBySurfaceId = classification.finalDecisions
-            .asSequence()
-            .filter { it.localConstruction }
-            .filterNot { it.surface.isMacroDefinitionSignatureSurface() }
-            .associateBy { it.surface.surfaceId }
-        if (usedDecisionsBySurfaceId.isEmpty()) return
-
-        for (preFile in pre.files) {
-            for (surface in preFile.surfaces) {
-                val decision = usedDecisionsBySurfaceId[surface.surfaceId]
-                if (decision != null) {
-                    registry.registerUsedMacroSurface(preFile.cfirFile, surface)
-                    val resolvedEntry = (decision.resolution as? MacroResolution.Resolved)?.entry
-                    if (resolvedEntry != null) {
-                        registry.registerUsedMacroDefinition(preFile.cfirFile, resolvedEntry)
-                    }
-                }
-            }
-        }
     }
 
     /**
@@ -1525,8 +1498,7 @@ private object CfirExpressionMacroStableSplicer : MacroStableSplicer {
         val expressionSlotsWithCarrier = IdentityHashMap<CfirExpression, MacroReplaceSlot>()
         val declarationSlotsWithCarrier = IdentityHashMap<CfirDeclaration, MacroReplaceSlot>()
         val parameterSlotsWithCarrier = IdentityHashMap<CfirValueParameter, MacroReplaceSlot>()
-        val annotationSlotsWithCarrier =
-            linkedMapOf<org.cangnova.cangjie.cfir.resolve.providers.macro.CfirAnnotationReplaceCarrier, MacroReplaceSlot>()
+        val annotationSlotsWithCarrier = linkedMapOf<CfirAnnotationReplaceCarrier, MacroReplaceSlot>()
         val unsupportedSlots = mutableListOf<MacroReplaceSlot>()
 
         for (slot in slots) {
@@ -1567,23 +1539,18 @@ private object CfirExpressionMacroStableSplicer : MacroStableSplicer {
             }
         }
 
-        val annotationOwners = annotationSlotsWithCarrier.keys.mapTo(linkedSetOf()) { it.owner }
-        val ownerConflicts = buildList {
-            addAll(declarationSlotsWithCarrier.keys.filter { it in annotationOwners })
-            addAll(parameterSlotsWithCarrier.keys.filter { it in annotationOwners })
-        }
-        require(ownerConflicts.isEmpty()) {
-            "Stable splice cannot replace an owner/parameter and one of its annotation slots in the same batch: " +
-                    ownerConflicts.joinToString { it.symbol.toString() }
-        }
-
         require(unsupportedSlots.isEmpty()) {
             "Stable splice is not implemented for macro surface(s) without typed carrier: " +
                     unsupportedSlots.joinToString { it.origin.qualifiedName?.asString().orEmpty() }
         }
 
         for (file in files) {
-            replaceDeclarationSlots(file.declarations, declarationSlotsWithCarrier, parameterSlotsWithCarrier)
+            replaceDeclarationSlots(
+                file.declarations,
+                declarationSlotsWithCarrier,
+                parameterSlotsWithCarrier,
+                annotationSlotsWithCarrier,
+            )
         }
         replaceAnnotationSlots(annotationSlotsWithCarrier)
 
@@ -1622,7 +1589,7 @@ private object CfirExpressionMacroStableSplicer : MacroStableSplicer {
      * 替换声明或参数上的注解槽。
      */
     private fun replaceAnnotationSlots(
-        annotationSlots: MutableMap<org.cangnova.cangjie.cfir.resolve.providers.macro.CfirAnnotationReplaceCarrier, MacroReplaceSlot>,
+        annotationSlots: MutableMap<CfirAnnotationReplaceCarrier, MacroReplaceSlot>,
     ) {
         val entries = annotationSlots.entries.toList()
         for ((carrier, slot) in entries) {
@@ -1651,6 +1618,7 @@ private object CfirExpressionMacroStableSplicer : MacroStableSplicer {
         declarations: List<CfirDeclaration>,
         declarationSlots: IdentityHashMap<CfirDeclaration, MacroReplaceSlot>,
         parameterSlots: IdentityHashMap<CfirValueParameter, MacroReplaceSlot>,
+        annotationSlots: MutableMap<CfirAnnotationReplaceCarrier, MacroReplaceSlot>,
     ) {
         val mutableDeclarations = declarations as? MutableList<CfirDeclaration>
             ?: error("Stable splice requires mutable declaration carrier list.")
@@ -1660,10 +1628,11 @@ private object CfirExpressionMacroStableSplicer : MacroStableSplicer {
             val replacement = declarationSlots.remove(declaration)?.toDeclarationPayload()
             val current = replacement ?: declaration
             if (replacement != null) {
+                replacement.consumeAnnotationSlotsFromOwner(declaration, annotationSlots)
                 iterator.set(replacement)
             }
-            replaceParameterSlots(current, parameterSlots)
-            replaceNestedDeclarationSlots(current, declarationSlots, parameterSlots)
+            replaceParameterSlots(current, parameterSlots, annotationSlots)
+            replaceNestedDeclarationSlots(current, declarationSlots, parameterSlots, annotationSlots)
         }
     }
 
@@ -1674,15 +1643,22 @@ private object CfirExpressionMacroStableSplicer : MacroStableSplicer {
         declaration: CfirDeclaration,
         declarationSlots: IdentityHashMap<CfirDeclaration, MacroReplaceSlot>,
         parameterSlots: IdentityHashMap<CfirValueParameter, MacroReplaceSlot>,
+        annotationSlots: MutableMap<CfirAnnotationReplaceCarrier, MacroReplaceSlot>,
     ) {
         when (declaration) {
             is CfirClassLikeDeclaration -> replaceDeclarationSlots(
                 declaration.declarations,
                 declarationSlots,
-                parameterSlots
+                parameterSlots,
+                annotationSlots,
             )
 
-            is CfirExtend -> replaceDeclarationSlots(declaration.declarations, declarationSlots, parameterSlots)
+            is CfirExtend -> replaceDeclarationSlots(
+                declaration.declarations,
+                declarationSlots,
+                parameterSlots,
+                annotationSlots,
+            )
             else -> Unit
         }
     }
@@ -1693,13 +1669,110 @@ private object CfirExpressionMacroStableSplicer : MacroStableSplicer {
     private fun replaceParameterSlots(
         declaration: CfirDeclaration,
         parameterSlots: IdentityHashMap<CfirValueParameter, MacroReplaceSlot>,
+        annotationSlots: MutableMap<CfirAnnotationReplaceCarrier, MacroReplaceSlot>,
     ) {
         if (declaration !is CfirFunction || declaration.valueParameters.isEmpty()) return
         val newParameters = declaration.valueParameters.map { parameter ->
-            parameterSlots.remove(parameter)?.toValueParameterPayload() ?: parameter
+            parameterSlots.remove(parameter)?.toValueParameterPayload()?.also { replacement ->
+                replacement.consumeAnnotationSlotsFromOwner(parameter, annotationSlots)
+            } ?: parameter
         }
         declaration.replaceValueParameters(newParameters)
     }
+
+    /**
+     * owner 本身被声明/参数宏替换时，同 owner 的 annotation slot 必须合并到
+     * replacement payload 上，而不能再去修改已经脱离最终文件树的旧 owner。
+     */
+    private fun CfirDeclaration.consumeAnnotationSlotsFromOwner(
+        originalOwner: CfirDeclaration,
+        annotationSlots: MutableMap<CfirAnnotationReplaceCarrier, MacroReplaceSlot>,
+    ) {
+        val ownerSlots = annotationSlots.entries
+            .filter { (carrier, _) -> carrier.owner === originalOwner }
+            .sortedBy { (carrier, _) -> carrier.annotationIndex }
+        if (ownerSlots.isEmpty()) return
+
+        val replacementAnnotations = ownerSlots.map { (_, slot) -> slot.toAnnotationPayload() }
+        val retainedAnnotations = annotations.toMutableList()
+        for (replacement in replacementAnnotations) {
+            val replacementKey = replacement.annotationMergeKey() ?: continue
+            val retainedIndex = retainedAnnotations.indexOfFirst { retained ->
+                retained.annotationMergeKey() == replacementKey
+            }
+            if (retainedIndex >= 0) {
+                retainedAnnotations.removeAt(retainedIndex)
+            }
+        }
+        replaceAnnotations(replacementAnnotations + retainedAnnotations)
+        for ((carrier, _) in ownerSlots) {
+            annotationSlots.remove(carrier)
+        }
+    }
+
+    /** 读取 annotation-slot 宏片段产物。 */
+    private fun MacroReplaceSlot.toAnnotationPayload(): CfirAnnotationCall {
+        return (fragment as? MacroFragmentResult.CustomAnnotation)?.payload
+            ?: error(
+                "Annotation macro surface `${
+                    origin.qualifiedName?.asString().orEmpty()
+                }` did not produce a CfirAnnotationCall payload."
+            )
+    }
+
+    /**
+     * 用 annotation 的结构化调用形态识别 declaration macro input 中已经保留的同一 slot。
+     *
+     * PSI 与 LightTree 的 source identity 不等价：同一个 `@!Hide[...]` 在 child
+     * annotation slot 与 parent declaration fragment 中可能分别来自原文件和临时
+     * fragment tree。stable splice 因此不能只比较 `source.text`，必须优先使用
+     * annotation 名称与实参形态；源码文本仅作为非标准 annotation 节点的稳定补充键。
+     */
+    private fun CfirAnnotation.annotationMergeKey(): String? {
+        val call = this as? CfirAnnotationCall
+        val nameKey = call?.annotationNameMergeKey()
+        if (nameKey != null) {
+            val argumentKey = call.arguments.joinToString(separator = ",") { argument ->
+                argument.annotationArgumentMergeKey()
+            }
+            return "$nameKey($argumentKey)"
+        }
+        return source?.text?.toString()?.normalizedAnnotationMergeText()
+            ?.takeIf(String::isNotEmpty)
+    }
+
+    /** 提取 annotation 调用名，忽略 `@` / `@!` 的语法 provenance。 */
+    private fun CfirAnnotationCall.annotationNameMergeKey(): String? {
+        val userTypeName = (typeRef as? CfirUserTypeRef)
+            ?.qualifier
+            ?.joinToString(separator = ".") { it.name.asString() }
+            ?.takeIf(String::isNotBlank)
+        if (userTypeName != null) return userTypeName
+
+        return (calleeReference as? CfirNamedReference)
+            ?.name
+            ?.asString()
+            ?.takeIf(String::isNotBlank)
+    }
+
+    /** 提取 annotation 实参形态，覆盖 named argument 与普通表达式两类 raw builder 输出。 */
+    private fun CfirElement.annotationArgumentMergeKey(): String {
+        val textKey = source?.text?.toString()?.normalizedAnnotationMergeText()
+        if (!textKey.isNullOrEmpty()) return textKey
+
+        return when (this) {
+            is CfirNamedArgumentExpression -> buildString {
+                append(argumentName.asString())
+                append("=")
+                append(expression.source?.text?.toString()?.normalizedAnnotationMergeText().orEmpty())
+            }
+            else -> this::class.qualifiedName.orEmpty()
+        }
+    }
+
+    /** 规范化 `@!` 与空白差异，避免 PSI/LightTree fragment source 表达不同导致重复合并失败。 */
+    private fun String.normalizedAnnotationMergeText(): String =
+        replace("@!", "@").filterNot(Char::isWhitespace)
 
     /**
      * 从宏替换槽中读取表达式 payload。

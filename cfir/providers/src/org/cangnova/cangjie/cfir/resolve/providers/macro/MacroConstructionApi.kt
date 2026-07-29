@@ -1,8 +1,12 @@
 package org.cangnova.cangjie.cfir.resolve.providers.macro
 
 import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.declarations.CfirMacroDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.annotationMetadataRegistryOrNull
 import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.symbols.CfirMacroDeclarationSymbol
 import org.cangnova.cangjie.cfir.visitors.CfirDefaultVisitor
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
@@ -541,6 +545,44 @@ class MacroExpansionRegistry : org.cangnova.cangjie.cfir.session.CfirSessionComp
 }
 
 /**
+ * 把 construction routing 已确认消费的 surface 按宿主文件登记到 registry。
+ *
+ * unused-import checker 读取的是 construction 后的 final CFIR；原始 macro/custom
+ * annotation surface 可能已被展开、降级或重分类，因此必须在 construction service
+ * 层统一记录“该源码文件使用过这个 surface 名称/定义包”的事实。
+ */
+fun MacroExpansionRegistry.registerConstructionSurfaceUsage(
+    pre: PreMacroRawBuildResult,
+    classification: MacroDemandClassification,
+) {
+    val usedDecisionsBySurfaceId = classification.finalDecisions
+        .asSequence()
+        .filter { it.localConstruction }
+        .filterNot { it.surface.isMacroDefinitionSignatureSurfaceForUsage() }
+        .associateBy { it.surface.surfaceId }
+    if (usedDecisionsBySurfaceId.isEmpty()) return
+
+    for (preFile in pre.files) {
+        for (surface in preFile.surfaces) {
+            val decision = usedDecisionsBySurfaceId[surface.surfaceId] ?: continue
+            registerUsedMacroSurface(preFile.cfirFile, surface)
+            val resolvedEntry = (decision.resolution as? MacroResolution.Resolved)?.entry
+            if (resolvedEntry != null) {
+                registerUsedMacroDefinition(preFile.cfirFile, resolvedEntry)
+            }
+        }
+    }
+}
+
+/** 宏定义签名 surface 是 macro package 编译输入，不是使用方 import usage。 */
+private fun MacroSurface.isMacroDefinitionSignatureSurfaceForUsage(): Boolean {
+    val carrier = replaceHandle.carrier
+    if (carrier is CfirMacroDeclaration) return true
+    return carrier is CfirValueParameter &&
+        carrier.containingDeclarationSymbol is CfirMacroDeclarationSymbol
+}
+
+/**
  * Macro registry 内使用的稳定文件身份。
  *
  * 同一源码文件在 PSI、LightTree 与 resolve 副本中可能只保留 path、source name 或 CFIR name
@@ -795,8 +837,16 @@ private object IdentityMacroConstructionService : MacroConstructionService {
         preConstructionDiagnostics: List<MacroConstructionDiagnostic>,
     ): MacroConstructionResult {
         val files = pre.files.map(PreMacroCfirFile::cfirFile)
+        val registry = MacroExpansionRegistry()
+        for (preFile in pre.files) {
+            registry.registerFileSurfaces(preFile.cfirFile, preFile.surfaces)
+        }
+        registry.registerConstructionSurfaceUsage(pre, classification)
+        registry.addAll(preConstructionDiagnostics)
+        pre.session.register(MacroExpansionRegistry::class, registry)
+        pre.session.annotationMetadataRegistryOrNull?.freeze()
+
         if (preConstructionDiagnostics.isNotEmpty()) {
-            val registry = MacroExpansionRegistry().apply { addAll(preConstructionDiagnostics) }
             return if (registry.hasErrors && mode == MacroConstructionService.Mode.STRICT) {
                 MacroConstructionResult.Failed(registry)
             } else {
@@ -806,7 +856,7 @@ private object IdentityMacroConstructionService : MacroConstructionService {
         return MacroConstructionService.successOf(
             pre = pre,
             files = files,
-            registry = MacroExpansionRegistry.EMPTY,
+            registry = registry,
         )
     }
 }

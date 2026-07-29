@@ -81,10 +81,13 @@ class TokenBackedMacroFragmentParser(
                 reason = "Raw builder threw while reparsing fragment text " +
                     "(${failure::class.simpleName}: ${failure.message ?: "no message"}): ${source.take(60)}",
             )
-        } ?: return MacroFragmentResult.Failure(
-            originNode = node,
-            reason = "Raw builder reported a parse failure for fragment text: ${source.take(60)}",
-        )
+        }
+        if (payload == null) {
+            return MacroFragmentResult.Failure(
+                originNode = node,
+                reason = "Raw builder reported a parse failure for fragment text: ${source.take(60)}",
+            )
+        }
 
         return when (mode) {
             MacroFragmentParser.Mode.CUSTOM_ANNOTATION -> {

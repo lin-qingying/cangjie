@@ -36,7 +36,7 @@ interface MacroFragmentParser {
          *
          * 解析入口、custom-annotation fallback、payload 类型语义有变化时递增。
          */
-        const val VERSION: Int = 1
+        const val VERSION: Int = 2
     }
 }
 

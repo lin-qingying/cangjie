@@ -267,8 +267,9 @@ open class CfirReferenceRenderer {
      * 将引用渲染为单行文本。
      */
     open fun render(reference: CfirReference): String = when (reference) {
-        is CfirNamedReference -> reference.name.asString()
         is CfirResolvedNamedReference -> "${reference.name.asString()} -> ${reference.resolvedSymbol}"
+        is CfirNamedReference -> reference.name.asString()
+
         is CfirThisReference -> buildString {
             append("this")
             reference.boundSymbol?.let { append(" -> ").append(it) }
@@ -571,10 +572,10 @@ class CfirRenderer(
         /**
          * 渲染 import 指令。
          */
-        override fun visitImport(import_: CfirImport) {
-            val suffix = if (import_.isAllUnder) ".*" else ""
-            val alias = import_.aliasName?.let { " as ${it.asString()}" } ?: ""
-            val importedFqName = import_.importedFqName?.asString() ?: "<error>"
+        override fun visitImport(import: CfirImport) {
+            val suffix = if (import.isAllUnder) ".*" else ""
+            val alias = import.aliasName?.let { " as ${it.asString()}" } ?: ""
+            val importedFqName = import.importedFqName?.asString() ?: "<error>"
             println("import $importedFqName$suffix$alias")
         }
 
@@ -597,13 +598,13 @@ class CfirRenderer(
         /**
          * 渲染 interface 声明。
          */
-        override fun visitInterface(iface: CfirInterface) {
-            resolvePhaseRenderer?.render(iface)
-            annotationRenderer?.render(iface)
-            modifierRenderer?.renderModifiers(iface)
-            printClassLikeHeader("interface", iface.name.asString(), iface.typeParameters, iface.superTypeRefs)
+        override fun visitInterface(`interface`: CfirInterface) {
+            resolvePhaseRenderer?.render(`interface`)
+            annotationRenderer?.render(`interface`)
+            modifierRenderer?.renderModifiers(`interface`)
+            printClassLikeHeader("interface", `interface`.name.asString(), `interface`.typeParameters, `interface`.superTypeRefs)
             printer.pushIndent()
-            iface.declarations.forEach { it.accept(this) }
+            `interface`.declarations.forEach { it.accept(this) }
             printer.popIndent()
             println("}")
         }
@@ -625,27 +626,27 @@ class CfirRenderer(
         /**
          * 渲染 enum 声明。
          */
-        override fun visitEnum(enum_: CfirEnum) {
-            resolvePhaseRenderer?.render(enum_)
-            annotationRenderer?.render(enum_)
-            modifierRenderer?.renderModifiers(enum_)
-            val refPrefix = if (enum_.isRefEnum) "ref " else ""
+        override fun visitEnum(enum: CfirEnum) {
+            resolvePhaseRenderer?.render(enum)
+            annotationRenderer?.render(enum)
+            modifierRenderer?.renderModifiers(enum)
+            val refPrefix = if (enum.isRefEnum) "ref " else ""
             printClassLikeHeader(
                 keyword = "${refPrefix}enum",
-                name = enum_.name.asString(),
-                typeParameters = enum_.typeParameters,
-                superTypeRefs = enum_.superTypeRefs,
+                name = enum.name.asString(),
+                typeParameters = enum.typeParameters,
+                superTypeRefs = enum.superTypeRefs,
             )
             printer.pushIndent()
             var ellipsisRendered = false
-            enum_.declarations.forEach { declaration ->
-                if (!ellipsisRendered && enum_.isNonExhaustive && declaration !is CfirEnumConstructor) {
+            enum.declarations.forEach { declaration ->
+                if (!ellipsisRendered && enum.isNonExhaustive && declaration !is CfirEnumConstructor) {
                     println("...")
                     ellipsisRendered = true
                 }
                 declaration.accept(this)
             }
-            if (!ellipsisRendered && enum_.isNonExhaustive) {
+            if (!ellipsisRendered && enum.isNonExhaustive) {
                 println("...")
             }
             printer.popIndent()
@@ -761,18 +762,18 @@ class CfirRenderer(
         /**
          * 渲染字段变量声明。
          */
-        override fun visitFieldVariable(variable: CfirFieldVariable) {
-            resolvePhaseRenderer?.render(variable)
-            annotationRenderer?.render(variable)
-            modifierRenderer?.renderModifiers(variable)
-            print(if (variable.isVar) "var" else "let")
+        override fun visitFieldVariable(fieldVariable: CfirFieldVariable) {
+            resolvePhaseRenderer?.render(fieldVariable)
+            annotationRenderer?.render(fieldVariable)
+            modifierRenderer?.renderModifiers(fieldVariable)
+            print(if (fieldVariable.isVar) "var" else "let")
             print(" ")
-            print(variable.name.asString())
+            print(fieldVariable.name.asString())
             print(": ")
-            renderType(variable.returnTypeRef)
-            if (variable.initializer != null) print(" = ...")
+            renderType(fieldVariable.returnTypeRef)
+            if (fieldVariable.initializer != null) print(" = ...")
             println()
-            variable.initializer?.let {
+            fieldVariable.initializer?.let {
                 printer.pushIndent()
                 println("initializer:")
                 printer.pushIndent()
@@ -785,18 +786,18 @@ class CfirRenderer(
         /**
          * 渲染模式变量声明。
          */
-        override fun visitPatternVariable(variable: CfirPatternVariable) {
-            resolvePhaseRenderer?.render(variable)
-            annotationRenderer?.render(variable)
-            modifierRenderer?.renderModifiers(variable)
-            print(if (variable.isVar) "var" else "let")
+        override fun visitPatternVariable(patternVariable: CfirPatternVariable) {
+            resolvePhaseRenderer?.render(patternVariable)
+            annotationRenderer?.render(patternVariable)
+            modifierRenderer?.renderModifiers(patternVariable)
+            print(if (patternVariable.isVar) "var" else "let")
             print(" ")
-            print(renderPattern(variable.pattern))
+            print(renderPattern(patternVariable.pattern))
             print(": ")
-            renderType(variable.returnTypeRef)
-            if (variable.initializer != null) print(" = ...")
+            renderType(patternVariable.returnTypeRef)
+            if (patternVariable.initializer != null) print(" = ...")
             println()
-            variable.initializer?.let {
+            patternVariable.initializer?.let {
                 printer.pushIndent()
                 println("initializer:")
                 printer.pushIndent()
@@ -880,23 +881,23 @@ class CfirRenderer(
         /**
          * 渲染字面量表达式。
          */
-        override fun visitLiteralExpression(literal: CfirLiteralExpression) {
-            val value = when (literal.kind) {
-                CfirLiteralKind.STRING -> "\"${literal.value}\""
-                CfirLiteralKind.RUNE -> "'${literal.value}'"
+        override fun visitLiteralExpression(literalExpression: CfirLiteralExpression) {
+            val value = when (literalExpression.kind) {
+                CfirLiteralKind.STRING -> "\"${literalExpression.value}\""
+                CfirLiteralKind.RUNE -> "'${literalExpression.value}'"
                 CfirLiteralKind.UNIT -> "()"
-                else -> "${literal.value}"
+                else -> "${literalExpression.value}"
             }
-            println("${literal.kind.name}($value)")
+            println("${literalExpression.kind.name}($value)")
         }
 
         /**
          * 渲染字符串插值表达式。
          */
-        override fun visitStringInterpolation(interpolation: CfirStringInterpolation) {
+        override fun visitStringInterpolation(stringInterpolation: CfirStringInterpolation) {
             println("STRING_INTERPOLATION {")
             printer.pushIndent()
-            interpolation.parts.forEach { it.accept(this) }
+            stringInterpolation.parts.forEach { it.accept(this) }
             printer.popIndent()
             println("}")
         }
@@ -904,12 +905,12 @@ class CfirRenderer(
         /**
          * 渲染函数调用表达式。
          */
-        override fun visitFunctionCall(call: CfirFunctionCall) {
-            val ref = renderReference(call.calleeReference)
+        override fun visitFunctionCall(functionCall: CfirFunctionCall) {
+            val ref = renderReference(functionCall.calleeReference)
             print("FUNCTION_CALL($ref")
-            if (call.typeArguments.isNotEmpty()) {
+            if (functionCall.typeArguments.isNotEmpty()) {
                 print("<")
-                call.typeArguments.forEachIndexed { index, typeArg ->
+                functionCall.typeArguments.forEachIndexed { index, typeArg ->
                     if (index > 0) print(", ")
                     renderType(typeArg)
                 }
@@ -917,15 +918,15 @@ class CfirRenderer(
             }
             println(") {")
             printer.pushIndent()
-            call.explicitReceiver?.let { receiver ->
+            functionCall.explicitReceiver?.let { receiver ->
                 println("receiver:")
                 printer.pushIndent()
                 receiver.accept(this)
                 printer.popIndent()
             }
-            val arguments = call.argumentList.arguments
+            val arguments = functionCall.argumentList.arguments
             if (arguments.isNotEmpty()) {
-                if (call.explicitReceiver != null) {
+                if (functionCall.explicitReceiver != null) {
                     println("arguments:")
                     printer.pushIndent()
                     arguments.forEach { it.accept(this) }
@@ -941,14 +942,14 @@ class CfirRenderer(
         /**
          * 渲染具名访问表达式。
          */
-        override fun visitNamedAccessExpression(access: CfirNamedAccessExpression) {
-            val ref = renderReference(access.calleeReference)
-            if (access.explicitReceiver != null) {
+        override fun visitNamedAccessExpression(namedAccessExpression: CfirNamedAccessExpression) {
+            val ref = renderReference(namedAccessExpression.calleeReference)
+            if (namedAccessExpression.explicitReceiver != null) {
                 println("NAMED_ACCESS($ref) {")
                 printer.pushIndent()
                 println("receiver:")
                 printer.pushIndent()
-                access.explicitReceiver!!.accept(this)
+                namedAccessExpression.explicitReceiver!!.accept(this)
                 printer.popIndent()
                 printer.popIndent()
                 println("}")
@@ -960,14 +961,14 @@ class CfirRenderer(
         /**
          * 渲染限定访问表达式。
          */
-        override fun visitQualifiedAccessExpression(access: CfirQualifiedAccessExpression) {
-            val ref = renderReference(access.calleeReference)
-            if (access.explicitReceiver != null) {
+        override fun visitQualifiedAccessExpression(qualifiedAccessExpression: CfirQualifiedAccessExpression) {
+            val ref = renderReference(qualifiedAccessExpression.calleeReference)
+            if (qualifiedAccessExpression.explicitReceiver != null) {
                 println("QUALIFIED_ACCESS($ref) {")
                 printer.pushIndent()
                 println("receiver:")
                 printer.pushIndent()
-                access.explicitReceiver!!.accept(this)
+                qualifiedAccessExpression.explicitReceiver!!.accept(this)
                 printer.popIndent()
                 printer.popIndent()
                 println("}")
@@ -1038,11 +1039,11 @@ class CfirRenderer(
         /**
          * 渲染比较表达式。
          */
-        override fun visitComparisonExpression(comparison: CfirComparisonExpression) {
-            println("COMPARISON(${comparison.operation.name}) {")
+        override fun visitComparisonExpression(comparisonExpression: CfirComparisonExpression) {
+            println("COMPARISON(${comparisonExpression.operation.name}) {")
             printer.pushIndent()
-            comparison.left.accept(this)
-            comparison.right.accept(this)
+            comparisonExpression.left.accept(this)
+            comparisonExpression.right.accept(this)
             printer.popIndent()
             println("}")
         }
@@ -1131,17 +1132,17 @@ class CfirRenderer(
         /**
          * 渲染 while / do-while 循环表达式。
          */
-        override fun visitLoopExpression(loop: CfirLoopExpression) {
-            val kind = if (loop.isDoWhile) "DO_WHILE" else "WHILE"
+        override fun visitLoopExpression(loopExpression: CfirLoopExpression) {
+            val kind = if (loopExpression.isDoWhile) "DO_WHILE" else "WHILE"
             println("$kind {")
             printer.pushIndent()
             println("condition:")
             printer.pushIndent()
-            loop.condition.accept(this)
+            loopExpression.condition.accept(this)
             printer.popIndent()
             println("body:")
             printer.pushIndent()
-            loop.body.accept(this)
+            loopExpression.body.accept(this)
             printer.popIndent()
             printer.popIndent()
             println("}")
@@ -1150,19 +1151,19 @@ class CfirRenderer(
         /**
          * 渲染 for-in 表达式。
          */
-        override fun visitForInExpression(forIn: CfirForInExpression) {
-            val variableName = renderPatternVariableName(forIn.variable)
+        override fun visitForInExpression(forInExpression: CfirForInExpression) {
+            val variableName = renderPatternVariableName(forInExpression.variable)
             print("FOR_IN($variableName: ")
-            renderType(forIn.variable.returnTypeRef)
+            renderType(forInExpression.variable.returnTypeRef)
             println(") {")
             printer.pushIndent()
             println("iterable:")
             printer.pushIndent()
-            forIn.iterable.accept(this)
+            forInExpression.iterable.accept(this)
             printer.popIndent()
             println("body:")
             printer.pushIndent()
-            forIn.body.accept(this)
+            forInExpression.body.accept(this)
             printer.popIndent()
             printer.popIndent()
             println("}")
@@ -1172,10 +1173,11 @@ class CfirRenderer(
          * 渲染 return 表达式。
          */
         override fun visitReturnExpression(returnExpression: CfirReturnExpression) {
+           //TODO 是否处理了空return语句？
             if (returnExpression.result != null) {
                 println("RETURN {")
                 printer.pushIndent()
-                returnExpression.result!!.accept(this)
+                returnExpression.result.accept(this)
                 printer.popIndent()
                 println("}")
             } else {
@@ -1270,12 +1272,12 @@ class CfirRenderer(
         /**
          * 渲染区间表达式。
          */
-        override fun visitRangeExpression(range: CfirRangeExpression) {
-            val op = if (range.isInclusive) "..=" else ".."
+        override fun visitRangeExpression(rangeExpression: CfirRangeExpression) {
+            val op = if (rangeExpression.isInclusive) "..=" else ".."
             println("RANGE($op) {")
             printer.pushIndent()
-            range.start.accept(this)
-            range.end.accept(this)
+            rangeExpression.start.accept(this)
+            rangeExpression.end.accept(this)
             printer.popIndent()
             println("}")
         }
@@ -1283,10 +1285,10 @@ class CfirRenderer(
         /**
          * 渲染数组字面量。
          */
-        override fun visitArrayLiteral(array: CfirArrayLiteral) {
+        override fun visitArrayLiteral(arrayLiteral: CfirArrayLiteral) {
             println("ARRAY_LITERAL {")
             printer.pushIndent()
-            array.elements.forEach { it.accept(this) }
+            arrayLiteral.elements.forEach { it.accept(this) }
             printer.popIndent()
             println("}")
         }
@@ -1294,10 +1296,10 @@ class CfirRenderer(
         /**
          * 渲染元组字面量。
          */
-        override fun visitTupleLiteral(tuple: CfirTupleLiteral) {
+        override fun visitTupleLiteral(tupleLiteral: CfirTupleLiteral) {
             println("TUPLE_LITERAL {")
             printer.pushIndent()
-            tuple.elements.forEach { it.accept(this) }
+            tupleLiteral.elements.forEach { it.accept(this) }
             printer.popIndent()
             println("}")
         }
@@ -1305,10 +1307,10 @@ class CfirRenderer(
         /**
          * 渲染 spawn 表达式。
          */
-        override fun visitSpawnExpression(spawn: CfirSpawnExpression) {
+        override fun visitSpawnExpression(spawnExpression: CfirSpawnExpression) {
             println("SPAWN {")
             printer.pushIndent()
-            spawn.body.accept(this)
+            spawnExpression.body.accept(this)
             printer.popIndent()
             println("}")
         }
@@ -1361,16 +1363,16 @@ class CfirRenderer(
         /**
          * 渲染下标表达式。
          */
-        override fun visitSubscriptExpression(subscript: CfirSubscriptExpression) {
+        override fun visitSubscriptExpression(subscriptExpression: CfirSubscriptExpression) {
             println("SUBSCRIPT {")
             printer.pushIndent()
             println("receiver:")
             printer.pushIndent()
-            subscript.receiver.accept(this)
+            subscriptExpression.receiver.accept(this)
             printer.popIndent()
             println("indices:")
             printer.pushIndent()
-            subscript.indices.forEach { it.accept(this) }
+            subscriptExpression.indices.forEach { it.accept(this) }
             printer.popIndent()
             printer.popIndent()
             println("}")
@@ -1428,8 +1430,8 @@ class CfirRenderer(
         /**
          * 渲染 VArray 类型引用。
          */
-        override fun visitVArrayTypeRef(varrayTypeRef: CfirVArrayTypeRef) {
-            renderType(varrayTypeRef)
+        override fun visitVArrayTypeRef(vArrayTypeRef: CfirVArrayTypeRef) {
+            renderType(vArrayTypeRef)
         }
 
         /**

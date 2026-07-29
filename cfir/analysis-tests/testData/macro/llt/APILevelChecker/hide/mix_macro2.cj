@@ -137,7 +137,7 @@ public open class C {
 public open class D {
 }
 
-@!Hide[isChecked: true]
+<!HIDE_MUST_AT_END!>@!Hide[isChecked: true]
 @C
 public struct E {
-}
+}<!>

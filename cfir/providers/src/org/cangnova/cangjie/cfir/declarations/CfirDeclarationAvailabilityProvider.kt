@@ -268,7 +268,7 @@ private fun CfirAnnotationCall.argumentExpression(
     name: String,
     positionalIndex: Int? = null,
 ): CfirExpression? {
-    argumentList.arguments
+    explicitArguments()
         .filterIsInstance<CfirNamedArgumentExpression>()
         .firstOrNull { it.argumentName.asString() == name }
         ?.let { return it.expression }
@@ -278,7 +278,7 @@ private fun CfirAnnotationCall.argumentExpression(
     }
 
     return positionalIndex
-        ?.let(argumentList.arguments::getOrNull)
+        ?.let(explicitArguments()::getOrNull)
         ?.unwrapNamedArgument()
 }
 
@@ -299,3 +299,15 @@ private tailrec fun CfirExpression.unwrapNamedArgument(): CfirExpression = when 
     is CfirNamedArgumentExpression -> expression.unwrapNamedArgument()
     else -> this
 }
+
+/**
+ * 返回源码显式实参，而不是只返回已成功映射到形参的 resolved argument。
+ *
+ * 平台可用性语义消费 annotation 源码参数；当 annotation constructor resolve
+ * 失败或部分失败时，参数仍然必须参与 APILevel/Hide 判断。
+ */
+private fun CfirAnnotationCall.explicitArguments(): List<CfirExpression> =
+    (argumentList as? CfirResolvedArgumentList)
+        ?.originalArgumentList
+        ?.arguments
+        ?: argumentList.arguments
