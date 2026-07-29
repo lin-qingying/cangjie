@@ -815,11 +815,25 @@ class ErrorNodeDiagnosticCollectorComponent(
                 ) {
                     continue
                 }
+                if (
+                    coneDiagnostic.factoryName in STATIC_GENERIC_DEPENDENCY_CASCADE_DIAGNOSTICS &&
+                    (
+                        context.hasStaticGenericDependency(source) ||
+                            context.hasStaticGenericDependency(callOrAssignmentSource)
+                        )
+                ) {
+                    continue
+                }
                 reporter.report(coneDiagnostic, context)
             }
         }
     }
 }
+
+private val STATIC_GENERIC_DEPENDENCY_CASCADE_DIAGNOSTICS = setOf(
+    "CFIR_GENERIC_NO_MEMBER_MATCH_IN_UPPER_BOUNDS",
+    "CFIR_GENERIC_NO_METHOD_MATCH_IN_UPPER_BOUNDS",
+)
 
 /**
  * 官方 lambda 参数推断失败时只报告首个省略参数，body 内由该 placeholder

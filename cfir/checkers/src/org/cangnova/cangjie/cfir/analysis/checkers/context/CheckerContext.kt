@@ -108,6 +108,12 @@ abstract class CheckerContext : DiagnosticContext, SessionAndScopeSessionHolder 
     /** 判断指定 source 或其宿主调用是否属于已确认的泛型实例化成员冲突。 */
     abstract fun hasGenericInstantiationMemberConflict(source: CjSourceElement?): Boolean
 
+    /** 记录当前 source 已经由 static 泛型参数依赖拥有根诊断。 */
+    abstract fun recordStaticGenericDependency(source: CjSourceElement)
+
+    /** 判断指定 source 或其宿主调用是否包含已确认的 static 泛型参数依赖。 */
+    abstract fun hasStaticGenericDependency(source: CjSourceElement?): Boolean
+
     /** 根据 suppress 名称和 suppress-all 标记判断诊断是否应被抑制。 */
     override fun isDiagnosticSuppressed(diagnostic: CjDiagnostic): Boolean {
         val suppressedByAll = when (diagnostic.severity) {
@@ -236,6 +242,8 @@ class MutableCheckerContext(
         Collections.newSetFromMap(IdentityHashMap<CfirAnonymousFunction, Boolean>()),
     /** 当前诊断轮次中已由泛型实例化成员冲突拥有的调用范围。 */
     private val genericInstantiationMemberConflictRanges: MutableSet<Pair<Int, Int>> = linkedSetOf(),
+    /** 当前诊断轮次中已由 static 泛型参数依赖拥有的 source 范围。 */
+    private val staticGenericDependencyRanges: MutableSet<Pair<Int, Int>> = linkedSetOf(),
     /** 当前作用域中被显式 suppress 的诊断名称集合。 */
     override val suppressedDiagnostics: Set<String> = emptySet(),
     /** 当前作用域是否 suppress 所有 info 级别诊断。 */
@@ -291,6 +299,18 @@ class MutableCheckerContext(
         }
     }
 
+    override fun recordStaticGenericDependency(source: CjSourceElement) {
+        staticGenericDependencyRanges += source.startOffset to source.endOffset
+    }
+
+    override fun hasStaticGenericDependency(source: CjSourceElement?): Boolean {
+        source ?: return false
+        return staticGenericDependencyRanges.any { (start, end) ->
+            start >= source.startOffset && end <= source.endOffset ||
+                source.startOffset >= start && source.endOffset <= end
+        }
+    }
+
     /** 创建带有新增 suppress 信息的 context。 */
     override fun addSuppressedDiagnostics(
         diagnosticNames: Collection<String>,
@@ -311,6 +331,7 @@ class MutableCheckerContext(
             mutableAnnotationContainers = mutableAnnotationContainers,
             lambdaParameterShapeDiagnostics = lambdaParameterShapeDiagnostics,
             genericInstantiationMemberConflictRanges = genericInstantiationMemberConflictRanges,
+            staticGenericDependencyRanges = staticGenericDependencyRanges,
             suppressedDiagnostics = suppressedDiagnostics + diagnosticNames,
             allInfosSuppressed = this.allInfosSuppressed || allInfosSuppressed,
             allWarningsSuppressed = this.allWarningsSuppressed || allWarningsSuppressed,
