@@ -83,6 +83,29 @@ class MacroCallForestTest {
     }
 
     /**
+     * 验证同一声明 carrier 上的 annotation surface 按官方 MacroExpandDecl wrapper
+     * 链恢复为 declaration input 边。
+     */
+    @Test
+    fun `declaration surfaces sharing carrier form input wrapper chain`() {
+        val carrier = Any()
+        val outer = declarationSurface(id = 1, name = "APILevel", start = 0, end = 9, carrier = carrier)
+        val middle = declarationSurface(id = 2, name = "M", start = 10, end = 12, carrier = carrier)
+        val inner = declarationSurface(id = 3, name = "CustomAnno", start = 13, end = 24, carrier = carrier)
+
+        val forest = MacroCallForestBuilder.build(listOf(middle, inner, outer))
+        val root = forest.roots.single()
+        val middleEdge = root.childEdges.single()
+        val innerEdge = middleEdge.child.childEdges.single()
+
+        assertEquals("APILevel", root.surface.qualifiedName!!.shortName().asString())
+        assertEquals("M", middleEdge.child.surface.qualifiedName!!.shortName().asString())
+        assertEquals("CustomAnno", innerEdge.child.surface.qualifiedName!!.shortName().asString())
+        assertEquals(MacroPayloadChannel.INPUT, middleEdge.channel)
+        assertEquals(MacroPayloadChannel.INPUT, innerEdge.channel)
+    }
+
+    /**
      * 验证直接子节点没有展开结果时父节点不会继续执行。
      */
     @Test
@@ -180,6 +203,46 @@ class MacroCallForestTest {
                 isInsideBlock = true,
             ),
             replaceHandle = CfirReplaceHandle(id),
+        )
+    }
+
+    /**
+     * 构造共享 declaration carrier 的测试 surface。
+     */
+    private fun declarationSurface(
+        id: Long,
+        name: String,
+        start: Int,
+        end: Int,
+        carrier: Any,
+    ): MacroSurfaceDecl {
+        return MacroSurfaceDecl(
+            surfaceId = id,
+            qualifiedName = FqName(name),
+            kind = MacroSurface.Kind.PLAIN,
+            hasParenthesis = false,
+            attrTokens = emptyList(),
+            inputTokens = emptyList(),
+            sourceRange = MacroSurfaceSourceRange(
+                source = null,
+                startOffset = start,
+                endOffset = end,
+            ),
+            scopeContext = MacroSurfaceScopeContext(
+                packageFqName = FqName("test"),
+                enclosingClassFqName = null,
+                enclosingFunctionName = null,
+            ),
+            modifiers = emptyList(),
+            carriedAnnotations = emptyList(),
+            capturedRawSyntax = null,
+            containerContext = MacroSurfaceContainerContext(
+                outerDeclarationKind = MacroSurfaceContainerContext.OuterDeclarationKind.TOP_LEVEL,
+                isInsidePrimaryConstructor = false,
+                isInsideEnumBody = false,
+                isInsideBlock = false,
+            ),
+            replaceHandle = CfirReplaceHandle(id, carrier),
         )
     }
 

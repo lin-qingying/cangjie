@@ -25,7 +25,10 @@
 package org.cangnova.cangjie.cfir.lightTree
 
 import com.intellij.lang.LighterASTNode
+import com.intellij.lang.PsiBuilderFactory
+import com.intellij.openapi.util.Ref
 import com.intellij.psi.TokenType
+import com.intellij.psi.tree.IElementType
 import com.intellij.util.diff.FlyweightCapableTreeStructure
 import org.cangnova.cangjie.CjSourceFile
 import org.cangnova.cangjie.cfir.CfirFunctionTarget
@@ -57,12 +60,15 @@ import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.builder.buildUserTypeRef
 import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.descriptors.Visibility
+import org.cangnova.cangjie.lexer.CangJieLexer
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.OperatorNameConventions
 import org.cangnova.cangjie.name.OperatorNameConventions.asOperatorName
 import org.cangnova.cangjie.name.SpecialNames
+import org.cangnova.cangjie.parsing.CangJieLightParser
+import org.cangnova.cangjie.parsing.CangJieParserDefinition
 import org.cangnova.cangjie.psi.CjNodeTypes
 import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 import org.cangnova.cangjie.source.CjFakeSourceElementKind
@@ -70,6 +76,9 @@ import org.cangnova.cangjie.source.CjLightSourceElement
 import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.source.CjSourceFileLinesMapping
 import org.cangnova.cangjie.source.fakeElement
+
+/** LightTree 宏式 annotation attr 重解析使用的 synthetic call 前缀，结尾包含左括号。 */
+private const val LIGHT_TREE_SYNTHETIC_MACRO_ATTR_CALL_PREFIX: String = "let __macro_attr__ = __macro_attr__("
 
 /**
  * LightTree → Raw CFIR 声明构建器（对齐 PsiRawCfirBuilder 的声明转换部分）。
@@ -1200,6 +1209,7 @@ class LightTreeRawCfirDeclarationBuilder(
             val annotationIndex = carrier.annotations.size
             carrier.replaceAnnotations(carrier.annotations + annotationCall)
             val valueArgumentList = findFirstDescendantByType(annotation, CjNodeTypes.VALUE_ARGUMENT_LIST)
+            val macroAttribute = findFirstDescendantByType(annotation, CjNodeTypes.MACRO_ATTR)
             val rawSyntax = annotation.asText()
             val isCompileTimeVisible = rawSyntax.trimStart().startsWith("@!")
             val snapshot = CfirAnnotationSlotSnapshot(
@@ -1211,7 +1221,7 @@ class LightTreeRawCfirDeclarationBuilder(
                 isCompileTimeVisible = isCompileTimeVisible,
                 annotationSource = annotation.toSource(),
                 qualifiedName = qualifiedName,
-                argumentText = valueArgumentList?.asText(),
+                argumentText = valueArgumentList?.asText() ?: macroAttribute?.asText(),
                 tokens = tokenizeFullAnnotation(annotation),
                 callSite = when (ownerKind) {
                     MacroSurfaceOwnerKind.DECLARATION -> MacroCallSite.DECLARATION
@@ -1260,9 +1270,27 @@ class LightTreeRawCfirDeclarationBuilder(
         typeRefOverride: CfirTypeRef? = null,
         calleeReferenceSourceOverride: CjSourceElement? = null,
         argumentListSourceOverride: CjSourceElement? = null,
+        macroAttributeOverride: LighterASTNode? = null,
+        macroAttributeTextOverride: String? = null,
+        macroAttributeStartOffsetOverride: Int? = null,
     ): CfirAnnotationCall {
-        val valueArgumentList = findFirstDescendantByType(annotation, CjNodeTypes.VALUE_ARGUMENT_LIST)
-        val arguments = convertAnnotationArguments(annotation, valueArgumentList)
+        val valueArgumentList = if (annotation.tokenType == CjNodeTypes.MACRO_EXPRESSION) {
+            null
+        } else {
+            findFirstDescendantByType(annotation, CjNodeTypes.VALUE_ARGUMENT_LIST)
+        }
+        val macroAttribute = macroAttributeOverride ?: if (annotation.tokenType == CjNodeTypes.MACRO_EXPRESSION) {
+            tree.findChildByType(annotation, CjNodeTypes.MACRO_ATTR)
+        } else {
+            findFirstDescendantByType(annotation, CjNodeTypes.MACRO_ATTR)
+        }
+        val arguments = convertAnnotationArguments(
+            annotation = annotation,
+            valueArgumentList = valueArgumentList,
+            macroAttribute = macroAttribute,
+            macroAttributeTextOverride = macroAttributeTextOverride,
+            macroAttributeStartOffsetOverride = macroAttributeStartOffsetOverride,
+        )
         return buildAnnotationCall {
             source = sourceOverride ?: annotation.toSource()
             typeRef = typeRefOverride ?: buildAnnotationTypeRef(rawName, annotation)
@@ -1283,11 +1311,28 @@ class LightTreeRawCfirDeclarationBuilder(
     private fun convertAnnotationArguments(
         annotation: LighterASTNode,
         valueArgumentList: LighterASTNode?,
+        macroAttribute: LighterASTNode? = null,
+        macroAttributeTextOverride: String? = null,
+        macroAttributeStartOffsetOverride: Int? = null,
     ): List<CfirExpression> {
+        if (macroAttributeTextOverride != null && macroAttributeStartOffsetOverride != null) {
+            val macroAttributeArguments = convertMacroAttributeArguments(
+                rawText = macroAttributeTextOverride,
+                startOffset = macroAttributeStartOffsetOverride,
+            )
+            if (macroAttributeArguments.isNotEmpty()) return macroAttributeArguments
+        }
+
         val valueArguments = valueArgumentList
             ?.let(expressionBuilder::convertValueArguments)
             .orEmpty()
         if (valueArguments.isNotEmpty()) return valueArguments
+
+        val macroAttributeArguments = convertMacroAttributeArguments(
+            rawText = macroAttribute?.asText(),
+            startOffset = macroAttribute?.startOffset,
+        )
+        if (macroAttributeArguments.isNotEmpty()) return macroAttributeArguments
 
         val callingConvention = findFirstDescendantByType(annotation, CjNodeTypes.ANNOTATION_CALLING_CONV)
         if (callingConvention != null) {
@@ -1299,6 +1344,57 @@ class LightTreeRawCfirDeclarationBuilder(
         }
 
         return emptyList()
+    }
+
+    /**
+     * 将宏式 annotation attr `[a: b]` 重解析成标准调用实参。
+     *
+     * LightTree 的 [CjNodeTypes.MACRO_ATTR] 内部是 quote token 容器，不产生
+     * `VALUE_ARGUMENT` 子树；平台注解、custom annotation 与 import 使用分析都
+     * 需要同一种结构化 argument IR，因此这里用仓颉 LightTree parser 重建
+     * synthetic call，再交给现有 expression builder 转换。
+     */
+    private fun convertMacroAttributeArguments(
+        rawText: String?,
+        startOffset: Int?,
+    ): List<CfirExpression> {
+        if (rawText == null || startOffset == null) return emptyList()
+        val openBracketIndex = rawText.indexOf('[')
+        val closeBracketIndex = rawText.lastIndexOf(']')
+        if (openBracketIndex < 0 || closeBracketIndex <= openBracketIndex) return emptyList()
+
+        val content = rawText.substring(openBracketIndex + 1, closeBracketIndex)
+        if (content.isBlank()) return emptyList()
+
+        val contentStartOffset = startOffset + openBracketIndex + 1
+        val padding = (contentStartOffset - LIGHT_TREE_SYNTHETIC_MACRO_ATTR_CALL_PREFIX.length)
+            .coerceAtLeast(0)
+        val fragmentText = buildString {
+            repeat(padding) { append(' ') }
+            append(LIGHT_TREE_SYNTHETIC_MACRO_ATTR_CALL_PREFIX)
+            append(content)
+            append(')')
+        }
+        val parserDefinition = CangJieParserDefinition()
+        val psiBuilder = PsiBuilderFactory.getInstance().createBuilder(
+            parserDefinition,
+            CangJieLexer(),
+            fragmentText,
+        )
+        val parsedTree = CangJieLightParser.parse(psiBuilder)
+        val valueArgumentList = parsedTree.findFirstParsedNode(CjNodeTypes.VALUE_ARGUMENT_LIST)
+            ?: return emptyList()
+        val parsedBuilder = LightTreeRawCfirDeclarationBuilder(
+            session = baseSession,
+            baseScopeProvider = baseScopeProvider,
+            tree = parsedTree,
+            source = fragmentText,
+            context = Context(),
+            bodyBuildingMode = bodyBuildingMode,
+        )
+        return parsedBuilder.withPackageContext(packageFqName) {
+            parsedBuilder.expressionBuilder.convertValueArguments(valueArgumentList)
+        }
     }
 
     /** 根据原始 annotation 名称构造 user type ref。 */
@@ -1353,14 +1449,21 @@ class LightTreeRawCfirDeclarationBuilder(
         val attrNode = findFirstDescendantByType(annotation, CjNodeTypes.MACRO_ATTR)
         val inputNode = findFirstDescendantByType(annotation, CjNodeTypes.MACRO_INPUT)
             ?: findFirstDescendantByType(annotation, CjNodeTypes.VALUE_ARGUMENT_LIST)
+        val hasParenthesis = annotationMacroSurfaceHasParenthesis(annotation, inputNode)
         val attrTokens = tokenizeSurfacePayload(attrNode)
-        val inputTokens = tokenizeSurfacePayload(inputNode)
+        val inputTokens = declarationAnnotationMacroInputTokens(
+            ownerNode = ownerNode,
+            annotation = annotation,
+            ownerKind = ownerKind,
+            shortName = shortName,
+            hasParenthesis = hasParenthesis,
+        ) ?: tokenizeSurfacePayload(inputNode)
         val isForced = annotation.asText().trimStart().startsWith("@!")
         val common = MacroSurfaceCommon(
             surfaceId = surfaceId,
             qualifiedName = qualifiedName,
             kind = if (isForced) MacroSurface.Kind.FORCED else MacroSurface.Kind.PLAIN,
-            hasParenthesis = inputNode != null,
+            hasParenthesis = hasParenthesis,
             attrTokens = attrTokens,
             inputTokens = inputTokens,
             sourceRange = MacroSurfaceSourceRange(
@@ -1434,6 +1537,36 @@ class LightTreeRawCfirDeclarationBuilder(
     }
 
     /**
+     * 声明 annotation macro 省略 input 括号时，input 是当前 annotation 后方的
+     * 同一 carrier 声明剩余源码，而不是 annotation 节点自身的空 `MACRO_INPUT`。
+     */
+    private fun declarationAnnotationMacroInputTokens(
+        ownerNode: LighterASTNode,
+        annotation: LighterASTNode,
+        ownerKind: MacroSurfaceOwnerKind,
+        shortName: String,
+        hasParenthesis: Boolean,
+    ): List<MacroSurfaceToken>? {
+        if (ownerKind != MacroSurfaceOwnerKind.DECLARATION) return null
+        if (shortName == "IfAvailable") return null
+        if (hasParenthesis) return null
+        return tokenizeSourceSlice(annotation.endOffset, ownerNode.endOffset)
+    }
+
+    /** 判断 annotation surface 是否显式携带 `(...)` macro input。 */
+    private fun annotationMacroSurfaceHasParenthesis(
+        annotation: LighterASTNode,
+        inputNode: LighterASTNode?,
+    ): Boolean {
+        if (annotation.tokenType == CjNodeTypes.MACRO_EXPRESSION) {
+            val rawText = annotation.asText()
+            val scan = scanMacroExpressionName(rawText)
+            if (scan != null) return macroExpressionHasParenthesizedInput(rawText, scan)
+        }
+        return inputNode?.asText()?.trimStart()?.startsWith("(") == true
+    }
+
+    /**
      * 构造 macro surface 时共享的字段集合。
      *
      * @property surfaceId construction 期唯一 surface id。
@@ -1475,10 +1608,15 @@ class LightTreeRawCfirDeclarationBuilder(
 
     /** 对 surface payload 节点执行 lexer tokenization。 */
     private fun tokenizeSurfacePayload(node: LighterASTNode?): List<MacroSurfaceToken> {
-        return MacroPayloadTokenizer.tokenize(
+        return tokenizeSurfacePayload(
             payload = node?.asText(),
             baseOffset = node?.startOffset ?: 0,
-        ).map { token ->
+        )
+    }
+
+    /** 对已恢复的 surface payload 文本执行 lexer tokenization。 */
+    private fun tokenizeSurfacePayload(payload: String?, baseOffset: Int): List<MacroSurfaceToken> {
+        return MacroPayloadTokenizer.tokenize(payload = payload, baseOffset = baseOffset).map { token ->
             MacroSurfaceToken(
                 text = token.text,
                 startOffset = token.startOffset,
@@ -1486,6 +1624,13 @@ class LightTreeRawCfirDeclarationBuilder(
                 kindName = token.kindName,
             )
         }
+    }
+
+    /** 按宿主文件绝对 offset 切片并保持 token offset 与原文件一致。 */
+    private fun tokenizeSourceSlice(startOffset: Int, endOffset: Int): List<MacroSurfaceToken> {
+        val start = startOffset.coerceIn(0, source.length)
+        val end = endOffset.coerceIn(start, source.length)
+        return tokenizeSurfacePayload(source.subSequence(start, end).toString(), start)
     }
 
     /** 对完整 annotation 文本执行 lexer tokenization。 */
@@ -1528,6 +1673,44 @@ class LightTreeRawCfirDeclarationBuilder(
             get() = segmentSources.lastOrNull() ?: nameSource
     }
 
+    /**
+     * 当前 macro-expression wrapper 头部的名称扫描结果。
+     *
+     * LightTree 的 macro-expression 子树会包含 input declaration 的 annotation /
+     * macro 子节点；本层 macro 名称必须来自 wrapper 自身开头的 `@` / `@!`
+     * 语法前缀，不能从整棵子树搜索引用节点。
+     */
+    private data class MacroExpressionNameScan(
+        /** 扫描出的原始限定名文本。 */
+        val rawName: String,
+        /** 名称整体在 wrapper 文本中的起止区间。 */
+        val nameRange: MacroExpressionTextRange,
+        /** 每个限定名段在 wrapper 文本中的起止区间。 */
+        val segmentRanges: List<MacroExpressionTextRange>,
+        /** 本层 wrapper 的属性区间，包含左右方括号。 */
+        val attrRange: MacroExpressionTextRange?,
+    )
+
+    /** wrapper 文本中的半开区间。 */
+    private data class MacroExpressionTextRange(
+        /** 起始偏移，相对 wrapper 文本。 */
+        val startOffset: Int,
+        /** 结束偏移，相对 wrapper 文本。 */
+        val endOffset: Int,
+    )
+
+    /** macro-expression input 文本中恢复出的直接 annotation 语法。 */
+    private data class MacroExpressionInputAnnotationSyntax(
+        /** 完整 annotation 文本，包含 `@` 前缀。 */
+        val rawSyntax: String,
+        /** annotation 本体在 wrapper 文本中的区间。 */
+        val annotationRange: MacroExpressionTextRange,
+        /** 标准 `(...)` 实参列表区间。 */
+        val argumentRange: MacroExpressionTextRange?,
+        /** 宏式 `[...]` attr 区间。 */
+        val macroAttributeRange: MacroExpressionTextRange?,
+    )
+
     /** 提取普通 annotation 节点的名称信息。 */
     private fun annotationNameInfo(annotation: LighterASTNode): AnnotationNameInfo? {
         val nameNode = findAnnotationNameNode(annotation) ?: return null
@@ -1541,14 +1724,234 @@ class LightTreeRawCfirDeclarationBuilder(
 
     /** 提取 macro-expression annotation 包装的名称信息。 */
     private fun macroExpressionAnnotationNameInfo(node: LighterASTNode): AnnotationNameInfo? {
-        val nameNode = findMacroExpressionAnnotationNameNode(node) ?: return null
-        val rawName = nameNode.asText().trim().takeIf { it.isNotEmpty() } ?: return null
+        val scan = scanMacroExpressionName(node.asText()) ?: return null
+        val wrapperSource = node.toSource()
         return AnnotationNameInfo(
-            rawName = rawName,
-            nameSource = nameNode.toSource(),
-            segmentSources = collectAnnotationNameSegmentSources(nameNode),
+            rawName = scan.rawName,
+            nameSource = wrapperSource.sliceMacroExpressionSource(scan.nameRange),
+            segmentSources = scan.segmentRanges.map { range -> wrapperSource.sliceMacroExpressionSource(range) },
         )
     }
+
+    /**
+     * 从当前 macro-expression wrapper 文本开头扫描本层名称。
+     *
+     * 扫描范围只覆盖 `@` / `@!` 后的限定名；一旦遇到 attr、input 或空白后的
+     * 非名称字符即停止，因此不会越过本层 wrapper 读到 input declaration。
+     */
+    private fun scanMacroExpressionName(rawText: String): MacroExpressionNameScan? {
+        var index = rawText.indexOf('@')
+        if (index < 0) return null
+        index++
+        if (rawText.getOrNull(index) == '!') index++
+        while (index < rawText.length && rawText[index].isWhitespace()) index++
+
+        val nameStart = index
+        val segments = mutableListOf<MacroExpressionTextRange>()
+        var expectIdentifier = true
+        var lastIdentifierEnd = -1
+        while (index < rawText.length) {
+            val current = rawText[index]
+            when {
+                current.isMacroIdentifierStart() -> {
+                    val segmentStart = index
+                    index++
+                    while (index < rawText.length && rawText[index].isMacroIdentifierPart()) index++
+                    lastIdentifierEnd = index
+                    segments += MacroExpressionTextRange(segmentStart, index)
+                    expectIdentifier = false
+                }
+                current == '.' && !expectIdentifier -> {
+                    index++
+                    expectIdentifier = true
+                }
+                else -> break
+            }
+        }
+
+        if (lastIdentifierEnd <= nameStart || expectIdentifier) return null
+
+        while (index < rawText.length && rawText[index].isWhitespace()) index++
+        val attrRange = if (rawText.getOrNull(index) == '[') {
+            scanMacroAttributeRange(rawText, index)
+        } else null
+
+        return MacroExpressionNameScan(
+            rawName = rawText.substring(nameStart, lastIdentifierEnd),
+            nameRange = MacroExpressionTextRange(nameStart, lastIdentifierEnd),
+            segmentRanges = segments,
+            attrRange = attrRange,
+        )
+    }
+
+    /**
+     * 扫描 macro-expression wrapper input 中位于 carrier 声明前的直接 annotation 序列。
+     *
+     * 调用方提供的区间由 wrapper 头部结束位置和 carrier 声明起点构成；
+     * 本函数不越过该区间，因此不会递归进入 class body 或 block。
+     */
+    private fun scanMacroExpressionInputAnnotationSyntax(
+        rawText: String,
+        startOffset: Int,
+        endOffset: Int,
+    ): List<MacroExpressionInputAnnotationSyntax> {
+        val result = mutableListOf<MacroExpressionInputAnnotationSyntax>()
+        var index = startOffset.coerceIn(0, rawText.length)
+        val limit = endOffset.coerceIn(index, rawText.length)
+
+        while (index < limit) {
+            while (index < limit && rawText[index].isWhitespace()) index++
+            if (index >= limit || rawText[index] != '@') break
+
+            val annotationStart = index
+            index++
+            if (rawText.getOrNull(index) == '!') index++
+            while (index < limit && rawText[index].isWhitespace()) index++
+
+            val nameStart = index
+            var expectIdentifier = true
+            var lastIdentifierEnd = -1
+            while (index < limit) {
+                val current = rawText[index]
+                when {
+                    current.isMacroIdentifierStart() -> {
+                        index++
+                        while (index < limit && rawText[index].isMacroIdentifierPart()) index++
+                        lastIdentifierEnd = index
+                        expectIdentifier = false
+                    }
+                    current == '.' && !expectIdentifier -> {
+                        index++
+                        expectIdentifier = true
+                    }
+                    else -> break
+                }
+            }
+            if (lastIdentifierEnd <= nameStart || expectIdentifier) break
+
+            while (index < limit && rawText[index].isWhitespace()) index++
+            var argumentRange: MacroExpressionTextRange? = null
+            var macroAttributeRange: MacroExpressionTextRange? = null
+            when (rawText.getOrNull(index)) {
+                '(' -> {
+                    argumentRange = scanBalancedMacroRange(rawText, index, '(', ')') ?: break
+                    index = argumentRange.endOffset
+                }
+                '[' -> {
+                    macroAttributeRange = scanMacroAttributeRange(rawText, index) ?: break
+                    index = macroAttributeRange.endOffset
+                }
+            }
+
+            result += MacroExpressionInputAnnotationSyntax(
+                rawSyntax = rawText.substring(annotationStart, index),
+                annotationRange = MacroExpressionTextRange(annotationStart, index),
+                argumentRange = argumentRange,
+                macroAttributeRange = macroAttributeRange,
+            )
+        }
+
+        return result
+    }
+
+    /** 扫描 wrapper 头部的平衡方括号 attr 区间，跳过字符串 literal 内部括号。 */
+    private fun scanMacroAttributeRange(rawText: String, openBracketIndex: Int): MacroExpressionTextRange? {
+        return scanBalancedMacroRange(rawText, openBracketIndex, '[', ']')
+    }
+
+    /** 扫描平衡括号区间，跳过字符串 literal 内部括号。 */
+    private fun scanBalancedMacroRange(
+        rawText: String,
+        openIndex: Int,
+        openChar: Char,
+        closeChar: Char,
+    ): MacroExpressionTextRange? {
+        if (rawText.getOrNull(openIndex) != openChar) return null
+        var index = openIndex
+        var bracketDepth = 0
+        var quote: Char? = null
+        var escaped = false
+        while (index < rawText.length) {
+            val current = rawText[index]
+            if (quote != null) {
+                when {
+                    escaped -> escaped = false
+                    current == '\\' -> escaped = true
+                    current == quote -> quote = null
+                }
+            } else {
+                when (current) {
+                    '"', '\'' -> quote = current
+                    openChar -> bracketDepth++
+                    closeChar -> {
+                        bracketDepth--
+                        if (bracketDepth == 0) {
+                            return MacroExpressionTextRange(openIndex, index + 1)
+                        }
+                    }
+                }
+            }
+            index++
+        }
+        return null
+    }
+
+    /** 构造 wrapper 内局部文本区间对应的 LightTree source。 */
+    private fun CjSourceElement.sliceMacroExpressionSource(range: MacroExpressionTextRange): CjSourceElement {
+        check(this is CjLightSourceElement) {
+            "Macro expression source must be a LightTree source element."
+        }
+        return CjLightSourceElement(
+            lighterASTNode = lighterASTNode,
+            startOffset = startOffset + range.startOffset,
+            endOffset = startOffset + range.endOffset,
+            treeStructure = treeStructure,
+            kind = kind,
+        )
+    }
+
+    /** 返回当前 wrapper 头部 attr 文本，优先使用源码扫描结果。 */
+    private fun macroExpressionAttributeText(
+        rawText: String,
+        scan: MacroExpressionNameScan,
+        attrNode: LighterASTNode?,
+    ): String? {
+        return scan.attrRange
+            ?.let { range -> rawText.substring(range.startOffset, range.endOffset) }
+            ?: attrNode?.asText()
+    }
+
+    /** 返回当前 wrapper 头部 attr source，优先使用源码扫描结果。 */
+    private fun macroExpressionAttributeSource(
+        node: LighterASTNode,
+        scan: MacroExpressionNameScan,
+        attrNode: LighterASTNode?,
+    ): CjSourceElement? {
+        return scan.attrRange
+            ?.let { range -> node.toSource().sliceMacroExpressionSource(range) }
+            ?: attrNode?.toSource()
+    }
+
+    /**
+     * 判断 wrapper 头部是否显式写了 macro input 括号。
+     *
+     * LightTree 的 `MACRO_INPUT` 在无括号 declaration macro 上可能仍有空占位；
+     * 这里只信任 wrapper 原始文本中 attr 之后的下一个有效字符。
+     */
+    private fun macroExpressionHasParenthesizedInput(
+        rawText: String,
+        scan: MacroExpressionNameScan,
+    ): Boolean {
+        var index = scan.attrRange?.endOffset ?: scan.nameRange.endOffset
+        while (index < rawText.length && rawText[index].isWhitespace()) index++
+        return rawText.getOrNull(index) == '('
+    }
+
+    /** macro / annotation 名称首字符。 */
+    private fun Char.isMacroIdentifierStart(): Boolean = this == '_' || isLetter()
+
+    /** macro / annotation 名称后续字符。 */
+    private fun Char.isMacroIdentifierPart(): Boolean = this == '_' || isLetterOrDigit()
 
     /**
      * 返回 macro-expression wrapper 中完整 annotation 的精确 source，不包含其输入声明。
@@ -1556,10 +1959,10 @@ class LightTreeRawCfirDeclarationBuilder(
     private fun macroExpressionAnnotationSource(
         node: LighterASTNode,
         annotationName: AnnotationNameInfo,
-        attrNode: LighterASTNode?,
+        attrSource: CjSourceElement?,
     ): CjSourceElement {
         val wrapperSource = node.toSource()
-        val annotationEndOffset = attrNode?.toSource()?.endOffset ?: annotationName.nameSource.endOffset
+        val annotationEndOffset = attrSource?.endOffset ?: annotationName.nameSource.endOffset
         check(annotationEndOffset in wrapperSource.startOffset..wrapperSource.endOffset) {
             "Macro annotation source must stay inside its wrapper source range."
         }
@@ -1671,13 +2074,31 @@ class LightTreeRawCfirDeclarationBuilder(
     /** 查找第一个 token type 为 [tokenType] 的后代节点。 */
     private fun findFirstDescendantByType(
         node: LighterASTNode,
-        tokenType: com.intellij.psi.tree.IElementType,
+        tokenType: IElementType,
     ): LighterASTNode? {
         if (node.tokenType == tokenType) return node
         tree.forEachChildren(node) { child ->
             findFirstDescendantByType(child, tokenType)?.let { return it }
         }
         return null
+    }
+
+    /** 在指定 parsed tree 中查找第一个 token type 为 [tokenType] 的节点。 */
+    private fun FlyweightCapableTreeStructure<LighterASTNode>.findFirstParsedNode(
+        tokenType: IElementType,
+    ): LighterASTNode? {
+        fun visit(node: LighterASTNode): LighterASTNode? {
+            if (node.tokenType == tokenType) return node
+            val childrenRef = Ref<Array<LighterASTNode?>>()
+            getChildren(node, childrenRef)
+            val children = childrenRef.get() ?: return null
+            for (child in children) {
+                if (child == null) break
+                visit(child)?.let { return it }
+            }
+            return null
+        }
+        return visit(root)
     }
 
     /** 将 surface 原始名称提升为 FQN。 */
@@ -1951,7 +2372,8 @@ class LightTreeRawCfirDeclarationBuilder(
         val carrier = convertDeclaration(declarationNode)
         macroExpressions.forEach { macroExpression ->
             repairMacroExpressionCarrierShape(macroExpression, carrier)
-            applyTopLevelMacroExpression(macroExpression, carrier)
+            applyTopLevelMacroExpression(macroExpression, declarationNode, carrier)
+            collectMacroInputAnnotationSurfaces(macroExpression, declarationNode, carrier)
         }
         return carrier
     }
@@ -1968,14 +2390,314 @@ class LightTreeRawCfirDeclarationBuilder(
         while (current != null && current.tokenType == CjNodeTypes.MACRO_EXPRESSION) {
             macroExpressions += current
             val inputNode = tree.findChildByType(current, CjNodeTypes.MACRO_INPUT) ?: return null
-            findDirectDeclarationChild(inputNode)?.let { declarationNode ->
-                return declarationNode to macroExpressions.toList()
+            findDirectMacroExpressionChild(inputNode)?.let { macroExpression ->
+                current = macroExpression
+                return@let
+            } ?: run {
+                findDirectDeclarationChild(inputNode)?.let { declarationNode ->
+                    return declarationNode to macroExpressions.toList()
+                }
+                current = null
             }
-            current = findDirectMacroExpressionChild(inputNode)
         }
 
         return null
     }
+
+    /**
+     * 收集 macro wrapper input 中与 carrier 声明同层的直接 annotation surface。
+     *
+     * LightTree 中 `@Outer @Inner decl` 可能只把 `@Outer` 建成顶层 wrapper，
+     * 而把 `@Inner` 保留在 `Outer` 的 [CjNodeTypes.MACRO_INPUT] 直接子层。
+     * 这些 annotation 与 wrapper 共享同一个 carrier，是 official
+     * `MacroExpandDecl.invocation.decl` 链的一部分，不能等最终声明自行采集。
+     */
+    private fun collectMacroInputAnnotationSurfaces(
+        macroExpression: LighterASTNode,
+        declarationNode: LighterASTNode,
+        carrier: CfirDeclaration,
+    ) {
+        val inputNode = tree.findChildByType(macroExpression, CjNodeTypes.MACRO_INPUT) ?: return
+        val directAnnotations = collectDirectMacroInputAnnotations(inputNode)
+        val reparsedAnnotations = reparseInputAnnotationsBeforeCarrier(macroExpression, declarationNode)
+        if (directAnnotations.isEmpty() && reparsedAnnotations.isEmpty()) return
+
+        val attachedRanges = collectDirectDeclarationAnnotationRanges(declarationNode)
+        val detachedAnnotations = directAnnotations.filter { (it.startOffset to it.endOffset) !in attachedRanges }
+        collectMacroSurfacesFromAnnotations(
+            ownerNode = declarationNode,
+            modifiers = LightTreeModifierList(tree, modifierListNode = null, annotations = detachedAnnotations),
+            ownerKind = MacroSurfaceOwnerKind.DECLARATION,
+            carrier = carrier,
+        )
+        collectReparsedMacroInputAnnotationSurfaces(
+            declarationNode = declarationNode,
+            annotations = reparsedAnnotations,
+            carrier = carrier,
+        )
+    }
+
+    /** 只读取当前 macro input 的直接 annotation，遇到嵌套 wrapper 或 carrier 声明即停止。 */
+    private fun collectDirectMacroInputAnnotations(inputNode: LighterASTNode): List<LighterASTNode> {
+        val annotations = mutableListOf<LighterASTNode>()
+        var stopped = false
+        tree.forEachChildren(inputNode) { child ->
+            if (stopped) return@forEachChildren
+            when (child.tokenType) {
+                CjStubElementTypes.ANNOTATIONS -> {
+                    tree.forEachChildren(child) { annotation ->
+                        if (isAnnotationSurfaceNode(annotation)) {
+                            annotations += annotation
+                        }
+                    }
+                }
+                CjNodeTypes.ANNOTATION -> annotations += child
+                CjNodeTypes.MACRO_EXPRESSION -> stopped = true
+                else -> {
+                    if (LightTreeRawCfirExpressionBuilder.isDeclarationToken(child.tokenType)) {
+                        stopped = true
+                    }
+                }
+            }
+        }
+        return annotations
+    }
+
+    /** 收集声明节点已经直接携带的 annotation range，用于避免重复 annotation slot。 */
+    private fun collectDirectDeclarationAnnotationRanges(declarationNode: LighterASTNode): Set<Pair<Int, Int>> {
+        val ranges = mutableSetOf<Pair<Int, Int>>()
+        tree.forEachChildren(declarationNode) { child ->
+            when (child.tokenType) {
+                CjStubElementTypes.ANNOTATIONS -> {
+                    tree.forEachChildren(child) { annotation ->
+                        if (isAnnotationSurfaceNode(annotation)) {
+                            ranges += annotation.startOffset to annotation.endOffset
+                        }
+                    }
+                }
+                CjNodeTypes.ANNOTATION,
+                CjNodeTypes.MACRO_EXPRESSION,
+                    -> ranges += child.startOffset to child.endOffset
+            }
+        }
+        return ranges
+    }
+
+    /** 判断 LightTree 节点是否是 annotation surface 本体。 */
+    private fun isAnnotationSurfaceNode(node: LighterASTNode): Boolean {
+        return node.tokenType == CjNodeTypes.ANNOTATION || node.tokenType == CjNodeTypes.MACRO_EXPRESSION
+    }
+
+    /** 从 wrapper 原始文本中恢复 LightTree 未建模的 input annotation。 */
+    private fun reparseInputAnnotationsBeforeCarrier(
+        macroExpression: LighterASTNode,
+        declarationNode: LighterASTNode,
+    ): List<ReparsedMacroInputAnnotation> {
+        val rawText = macroExpression.asText()
+        val headScan = scanMacroExpressionName(rawText) ?: return emptyList()
+        val scanStart = headScan.attrRange?.endOffset ?: headScan.nameRange.endOffset
+        val declarationStart = (declarationNode.startOffset - macroExpression.startOffset)
+            .coerceIn(scanStart, rawText.length)
+        val syntaxes = scanMacroExpressionInputAnnotationSyntax(rawText, scanStart, declarationStart)
+        if (syntaxes.isEmpty()) return emptyList()
+
+        return syntaxes.mapNotNull { syntax ->
+            val (parsedBuilder, annotationNode) = parseMacroInputAnnotationSyntax(syntax.rawSyntax)
+                ?: return@mapNotNull null
+            val annotationSource = macroExpression.toSource().sliceMacroExpressionSource(syntax.annotationRange)
+            val sourceOffsetDelta = sourceOffsetDelta(annotationSource, annotationNode)
+            ReparsedMacroInputAnnotation(
+                builder = parsedBuilder,
+                annotation = annotationNode,
+                rawSyntax = syntax.rawSyntax,
+                annotationSource = annotationSource,
+                sourceOffsetDelta = sourceOffsetDelta,
+                argumentListSource = syntax.argumentRange
+                    ?.let { range -> macroExpression.toSource().sliceMacroExpressionSource(range) },
+                macroAttributeText = syntax.macroAttributeRange
+                    ?.let { range -> rawText.substring(range.startOffset, range.endOffset) },
+                macroAttributeStartOffset = syntax.macroAttributeRange
+                    ?.let { range -> macroExpression.startOffset + range.startOffset },
+            )
+        }
+    }
+
+    /** 将 wrapper 文本重解析出的 annotation slot 与 surface 挂到当前 carrier。 */
+    private fun collectReparsedMacroInputAnnotationSurfaces(
+        declarationNode: LighterASTNode,
+        annotations: List<ReparsedMacroInputAnnotation>,
+        carrier: CfirDeclaration,
+    ) {
+        if (annotations.isEmpty()) return
+        val metadataRegistry = baseSession.ensureAnnotationMetadataRegistry()
+        val modifiers = LightTreeModifierList.from(tree, declarationNode).modifierTexts
+        val carriedAnnotations = annotations.map { it.rawSyntax }
+        val containingSymbol = when (carrier) {
+            is CfirValueParameter -> carrier.containingDeclarationSymbol
+            else -> carrier.symbol
+        }
+
+        for (reparsed in annotations) {
+            val parsedBuilder = reparsed.builder
+            val annotationName = parsedBuilder.annotationNameInfo(reparsed.annotation) ?: continue
+            val annotationCall = parsedBuilder.withPackageContext(packageFqName) {
+                parsedBuilder.buildRawAnnotationCall(
+                    annotation = reparsed.annotation,
+                    rawName = annotationName.rawName,
+                    containingSymbol = containingSymbol,
+                    sourceOverride = reparsed.annotationSource,
+                    typeRefOverride = parsedBuilder.buildAnnotationTypeRef(annotationName, reparsed.sourceOffsetDelta),
+                    calleeReferenceSourceOverride = annotationName.calleeReferenceSource.shiftedBy(reparsed.sourceOffsetDelta),
+                    argumentListSourceOverride = reparsed.argumentListSource,
+                    macroAttributeTextOverride = reparsed.macroAttributeText,
+                    macroAttributeStartOffsetOverride = reparsed.macroAttributeStartOffset,
+                )
+            }
+            val annotationIndex = carrier.annotations.size
+            carrier.replaceAnnotations(carrier.annotations + annotationCall)
+            val isCompileTimeVisible = reparsed.rawSyntax.trimStart().startsWith("@!")
+            val snapshot = CfirAnnotationSlotSnapshot(
+                owner = carrier,
+                annotationIndex = annotationIndex,
+                originalAnnotation = annotationCall,
+                rawSyntax = reparsed.rawSyntax,
+                forcedCustom = isCompileTimeVisible,
+                isCompileTimeVisible = isCompileTimeVisible,
+                annotationSource = reparsed.annotationSource,
+                qualifiedName = macroSurfaceQualifiedName(annotationName.rawName),
+                argumentText = parsedBuilder.findFirstDescendantByType(reparsed.annotation, CjNodeTypes.VALUE_ARGUMENT_LIST)?.asText()
+                    ?: reparsed.macroAttributeText,
+                tokens = tokenizeSurfacePayload(reparsed.rawSyntax, reparsed.annotationSource.startOffset),
+                callSite = MacroCallSite.DECLARATION,
+            )
+            val annotationCarrier = metadataRegistry.record(snapshot)
+            collectedMacroSurfaces += buildReparsedMacroInputAnnotationSurface(
+                declarationNode = declarationNode,
+                rawName = annotationName.rawName,
+                reparsed = reparsed,
+                annotationCarrier = annotationCarrier,
+                modifiers = modifiers,
+                carriedAnnotations = carriedAnnotations,
+                carrier = carrier,
+            )
+        }
+    }
+
+    /** 解析单个 annotation 文本，返回绑定到临时 LightTree 的 builder 与 annotation 节点。 */
+    private fun parseMacroInputAnnotationSyntax(
+        rawSyntax: String,
+    ): Pair<LightTreeRawCfirDeclarationBuilder, LighterASTNode>? {
+        val fragmentText = "$rawSyntax public class __MacroInputAnnotationCarrier {}"
+        val parserDefinition = CangJieParserDefinition()
+        val psiBuilder = PsiBuilderFactory.getInstance().createBuilder(
+            parserDefinition,
+            CangJieLexer(),
+            fragmentText,
+        )
+        val parsedTree = CangJieLightParser.parse(psiBuilder)
+        val annotation = parsedTree.findFirstParsedNode(CjNodeTypes.ANNOTATION)
+            ?: parsedTree.findFirstParsedNode(CjNodeTypes.MACRO_EXPRESSION)
+            ?: return null
+        val parsedBuilder = LightTreeRawCfirDeclarationBuilder(
+            session = baseSession,
+            baseScopeProvider = baseScopeProvider,
+            tree = parsedTree,
+            source = fragmentText,
+            context = Context(),
+            bodyBuildingMode = bodyBuildingMode,
+        )
+        return parsedBuilder to annotation
+    }
+
+    /** 构造从 wrapper 文本恢复出的 declaration annotation surface。 */
+    private fun buildReparsedMacroInputAnnotationSurface(
+        declarationNode: LighterASTNode,
+        rawName: String,
+        reparsed: ReparsedMacroInputAnnotation,
+        annotationCarrier: CfirAnnotationReplaceCarrier,
+        modifiers: List<String>,
+        carriedAnnotations: List<String>,
+        carrier: CfirDeclaration,
+    ): MacroSurface {
+        val surfaceId = MacroSurfaceIdGenerator.next()
+        val shortName = rawName.substringAfterLast('.')
+        val valueArgumentList = reparsed.builder.findFirstDescendantByType(reparsed.annotation, CjNodeTypes.VALUE_ARGUMENT_LIST)
+        val inputTokens = if (shortName == "IfAvailable") valueArgumentList?.let { argumentList ->
+            tokenizeSurfacePayload(argumentList.asText(), argumentList.startOffset + reparsed.sourceOffsetDelta)
+        }.orEmpty() else tokenizeSourceSlice(reparsed.annotationSource.endOffset, declarationNode.endOffset)
+        val attrTokens = reparsed.macroAttributeText?.let { macroAttributeText ->
+            tokenizeSurfacePayload(macroAttributeText, reparsed.macroAttributeStartOffset ?: 0)
+        }.orEmpty()
+        val replaceHandle = CfirReplaceHandle(
+            handleId = surfaceId,
+            carrier = carrier,
+            annotationCarrier = annotationCarrier,
+        )
+        val sourceRange = MacroSurfaceSourceRange(
+            source = reparsed.annotationSource,
+            startOffset = reparsed.annotationSource.startOffset,
+            endOffset = reparsed.annotationSource.endOffset,
+        )
+        val common = MacroSurfaceCommon(
+            surfaceId = surfaceId,
+            qualifiedName = macroSurfaceQualifiedName(rawName),
+            kind = if (reparsed.rawSyntax.trimStart().startsWith("@!")) MacroSurface.Kind.FORCED else MacroSurface.Kind.PLAIN,
+            hasParenthesis = valueArgumentList != null,
+            attrTokens = attrTokens,
+            inputTokens = inputTokens,
+            sourceRange = sourceRange,
+            scopeContext = macroSurfaceScopeContext(),
+            modifiers = modifiers,
+            carriedAnnotations = carriedAnnotations,
+            capturedRawSyntax = reparsed.rawSyntax,
+            containerContext = macroSurfaceContainerContext(declarationNode),
+            replaceHandle = replaceHandle,
+        )
+        if (shortName == "IfAvailable") {
+            return IfAvailableSurface(
+                surfaceId = common.surfaceId,
+                qualifiedName = common.qualifiedName,
+                kind = common.kind,
+                hasParenthesis = common.hasParenthesis,
+                attrTokens = common.attrTokens,
+                inputTokens = common.inputTokens,
+                sourceRange = common.sourceRange,
+                scopeContext = common.scopeContext,
+                modifiers = common.modifiers,
+                carriedAnnotations = common.carriedAnnotations,
+                capturedRawSyntax = common.capturedRawSyntax,
+                containerContext = common.containerContext,
+                replaceHandle = common.replaceHandle,
+                branchTokens = inputTokens,
+            )
+        }
+        return MacroSurfaceDecl(
+            surfaceId = common.surfaceId,
+            qualifiedName = common.qualifiedName,
+            kind = common.kind,
+            hasParenthesis = common.hasParenthesis,
+            attrTokens = common.attrTokens,
+            inputTokens = common.inputTokens,
+            sourceRange = common.sourceRange,
+            scopeContext = common.scopeContext,
+            modifiers = common.modifiers,
+            carriedAnnotations = common.carriedAnnotations,
+            capturedRawSyntax = common.capturedRawSyntax,
+            containerContext = common.containerContext,
+            replaceHandle = common.replaceHandle,
+        )
+    }
+
+    private data class ReparsedMacroInputAnnotation(
+        val builder: LightTreeRawCfirDeclarationBuilder,
+        val annotation: LighterASTNode,
+        val rawSyntax: String,
+        val annotationSource: CjSourceElement,
+        val sourceOffsetDelta: Int,
+        val argumentListSource: CjSourceElement?,
+        val macroAttributeText: String?,
+        val macroAttributeStartOffset: Int?,
+    )
 
     /**
      * 将顶层 [CjNodeTypes.MACRO_EXPRESSION] 恢复成 CFIR annotation 与 macro surface。
@@ -1985,16 +2707,22 @@ class LightTreeRawCfirDeclarationBuilder(
      */
     private fun applyTopLevelMacroExpression(
         node: LighterASTNode,
+        declarationNode: LighterASTNode,
         carrier: CfirDeclaration,
     ) {
         val inputNode = tree.findChildByType(node, CjNodeTypes.MACRO_INPUT) ?: return
+        val rawWrapperText = node.asText()
+        val headScan = scanMacroExpressionName(rawWrapperText) ?: return
         val annotationName = macroExpressionAnnotationNameInfo(node) ?: return
         val rawName = annotationName.rawName
         val surfaceId = MacroSurfaceIdGenerator.next()
         val attrNode = tree.findChildByType(node, CjNodeTypes.MACRO_ATTR)
-        val rawAnnotationSyntax = macroExpressionAnnotationSyntax(node, rawName, attrNode)
-        val annotationSource = macroExpressionAnnotationSource(node, annotationName, attrNode)
+        val macroAttributeText = macroExpressionAttributeText(rawWrapperText, headScan, attrNode)
+        val macroAttributeSource = macroExpressionAttributeSource(node, headScan, attrNode)
+        val rawAnnotationSyntax = macroExpressionAnnotationSyntax(node, rawName, macroAttributeText)
+        val annotationSource = macroExpressionAnnotationSource(node, annotationName, macroAttributeSource)
         val isCompileTimeVisible = rawAnnotationSyntax.trimStart().startsWith("@!")
+        val hasParenthesizedInput = macroExpressionHasParenthesizedInput(rawWrapperText, headScan)
         val containingSymbol = when (carrier) {
             is CfirValueParameter -> carrier.containingDeclarationSymbol
             else -> carrier.symbol
@@ -2006,7 +2734,10 @@ class LightTreeRawCfirDeclarationBuilder(
             sourceOverride = annotationSource,
             typeRefOverride = buildAnnotationTypeRef(annotationName),
             calleeReferenceSourceOverride = annotationName.calleeReferenceSource,
-            argumentListSourceOverride = attrNode?.toSource(),
+            argumentListSourceOverride = macroAttributeSource,
+            macroAttributeOverride = attrNode,
+            macroAttributeTextOverride = macroAttributeText,
+            macroAttributeStartOffsetOverride = macroAttributeSource?.startOffset,
         )
         val annotationIndex = carrier.annotations.size
         carrier.replaceAnnotations(carrier.annotations + annotationCall)
@@ -2020,7 +2751,7 @@ class LightTreeRawCfirDeclarationBuilder(
                 isCompileTimeVisible = isCompileTimeVisible,
                 annotationSource = annotationSource,
                 qualifiedName = macroSurfaceQualifiedName(rawName),
-                argumentText = attrNode?.asText(),
+                argumentText = macroAttributeText,
                 tokens = tokenizeMacroExpressionAnnotationSyntax(rawAnnotationSyntax, node.startOffset),
                 callSite = MacroCallSite.DECLARATION,
             )
@@ -2028,10 +2759,18 @@ class LightTreeRawCfirDeclarationBuilder(
         collectedMacroSurfaces += MacroSurfaceDecl(
             surfaceId = surfaceId,
             qualifiedName = macroSurfaceQualifiedName(rawName),
-            kind = if (node.asText().trimStart().startsWith("@!")) MacroSurface.Kind.FORCED else MacroSurface.Kind.PLAIN,
-            hasParenthesis = inputNode.asText().trimStart().startsWith("("),
-            attrTokens = tokenizeSurfacePayload(attrNode),
-            inputTokens = tokenizeSurfacePayload(inputNode),
+            kind = if (rawWrapperText.trimStart().startsWith("@!")) MacroSurface.Kind.FORCED else MacroSurface.Kind.PLAIN,
+            hasParenthesis = hasParenthesizedInput,
+            attrTokens = tokenizeSurfacePayload(
+                payload = macroAttributeText,
+                baseOffset = macroAttributeSource?.startOffset ?: 0,
+            ),
+            inputTokens = macroExpressionDeclarationInputTokens(
+                inputNode = inputNode,
+                annotationSource = annotationSource,
+                declarationNode = declarationNode,
+                hasParenthesizedInput = hasParenthesizedInput,
+            ),
             sourceRange = MacroSurfaceSourceRange(
                 source = node.toSource(),
                 startOffset = node.startOffset,
@@ -2040,7 +2779,7 @@ class LightTreeRawCfirDeclarationBuilder(
             scopeContext = macroSurfaceScopeContext(),
             modifiers = emptyList(),
             carriedAnnotations = emptyList(),
-            capturedRawSyntax = node.asText(),
+            capturedRawSyntax = rawWrapperText,
             containerContext = MacroSurfaceContainerContext(
                 outerDeclarationKind = MacroSurfaceContainerContext.OuterDeclarationKind.TOP_LEVEL,
                 isInsidePrimaryConstructor = false,
@@ -2053,6 +2792,23 @@ class LightTreeRawCfirDeclarationBuilder(
                 annotationCarrier = annotationCarrier,
             ),
         )
+    }
+
+    /**
+     * 捕获 declaration macro 的真实 input token。
+     *
+     * 官方 `@Outer @Inner decl` 是外层 macro 的声明输入包装内层 wrapper；LightTree 的
+     * `MACRO_INPUT` 在无括号声明宏上可能只保留空占位，因此这里必须用 wrapper annotation
+     * 头结束到最终 carrier 声明结束的源码切片恢复输入。
+     */
+    private fun macroExpressionDeclarationInputTokens(
+        inputNode: LighterASTNode,
+        annotationSource: CjSourceElement,
+        declarationNode: LighterASTNode,
+        hasParenthesizedInput: Boolean,
+    ): List<MacroSurfaceToken> {
+        if (hasParenthesizedInput) return tokenizeSurfacePayload(inputNode)
+        return tokenizeSourceSlice(annotationSource.endOffset, declarationNode.endOffset)
     }
 
     /**
@@ -2147,10 +2903,10 @@ class LightTreeRawCfirDeclarationBuilder(
     private fun macroExpressionAnnotationSyntax(
         node: LighterASTNode,
         rawName: String,
-        attrNode: LighterASTNode?,
+        attrText: String?,
     ): String {
         val prefix = if (node.asText().trimStart().startsWith("@!")) "@!" else "@"
-        return prefix + rawName + attrNode?.asText().orEmpty()
+        return prefix + rawName + attrText.orEmpty()
     }
 
     /**

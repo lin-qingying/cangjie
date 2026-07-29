@@ -1,5 +1,7 @@
 package org.cangnova.cangjie.cfir.resolve.providers.macro
 
+import java.util.IdentityHashMap
+
 /**
  * Macro 调用 forest（baseline 第 8 节 + 第 12 节 Batch 7）。
  *
@@ -133,10 +135,12 @@ object MacroCallForestBuilder {
     fun build(surfaces: List<MacroSurface>): MacroCallForest {
         if (surfaces.isEmpty()) return MacroCallForest(emptyList())
 
+        val carrierEffectiveEndOffsets = declarationCarrierEffectiveEndOffsets(surfaces)
+
         // 1) 计算每个 surface 的有效 source range（缺失时记 -1 / +inf 推到尾）
         val ranges: List<Triple<Int, Int, MacroSurface>> = surfaces.map { s ->
             val start = s.sourceRange?.startOffset ?: Int.MAX_VALUE
-            val end = s.sourceRange?.endOffset ?: Int.MIN_VALUE
+            val end = carrierEffectiveEndOffsets[s] ?: s.sourceRange?.endOffset ?: Int.MIN_VALUE
             Triple(start, end, s)
         }
 
@@ -192,6 +196,7 @@ object MacroCallForestBuilder {
 
     /** 判定 [child] 的源码范围落在当前 surface 的 attr、input 还是未知通道。 */
     private fun MacroSurface.payloadChannelFor(child: MacroSurface): MacroPayloadChannel {
+        if (isDeclarationCarrierInputChild(child)) return MacroPayloadChannel.INPUT
         val range = child.sourceRange ?: return MacroPayloadChannel.UNRESOLVED
         return when {
             inputTokens.containsSurfaceRange(range) -> MacroPayloadChannel.INPUT
@@ -200,9 +205,74 @@ object MacroCallForestBuilder {
         }
     }
 
+    /**
+     * 同一声明 carrier 上，源码位置更靠前的 declaration surface 包装后续 surface。
+     *
+     * 官方 `MacroExpandDecl.invocation.decl` 把 `@Outer @Inner decl` 建成
+     * `Outer(input = Inner(input = decl))`；该关系不一定体现在 annotation
+     * 自身的 token payload 中，因此必须由 raw builder 写入的 stable carrier
+     * 恢复为 declaration input 边。
+     */
+    private fun MacroSurface.isDeclarationCarrierInputChild(child: MacroSurface): Boolean {
+        if (this !is MacroSurfaceDecl || child !is MacroSurfaceDecl) return false
+        val carrier = replaceHandle.carrier ?: return false
+        if (carrier !== child.replaceHandle.carrier) return false
+        val parentRange = sourceRange ?: return false
+        val childRange = child.sourceRange ?: return false
+        return parentRange.startOffset < childRange.startOffset
+    }
+
     /** 判断 token 列表是否覆盖 [range] 对应的 surface 范围。 */
     private fun List<MacroSurfaceToken>.containsSurfaceRange(range: MacroSurfaceSourceRange): Boolean {
         return any { token -> token.startOffset >= range.startOffset && token.endOffset <= range.endOffset }
+    }
+
+    /**
+     * 同一 declaration carrier 上的多个 surface 代表官方 `MacroExpandDecl` 外到内链。
+     *
+     * PSI / LightTree 有时只能给单个 annotation 本体范围，导致纯 sourceRange 包含关系
+     * 无法恢复 `@A @B decl` 中 `A -> B` 的 wrapper 边。stable splice 的 carrier
+     * 是 raw builder 对该链的结构化 owner，因此同一 carrier 内按源码顺序把前一个
+     * declaration surface 的有效 end 扩展到后续 surface 末尾。
+     */
+    private fun declarationCarrierEffectiveEndOffsets(
+        surfaces: List<MacroSurface>,
+    ): IdentityHashMap<MacroSurface, Int> {
+        val surfacesByCarrier = IdentityHashMap<Any, MutableList<MacroSurface>>()
+        for (surface in surfaces) {
+            if (surface !is MacroSurfaceDecl) continue
+            if (surface.sourceRange == null) continue
+            val carrier = surface.replaceHandle.carrier ?: continue
+            surfacesByCarrier.getOrPutIdentity(carrier) { mutableListOf() } += surface
+        }
+
+        val effectiveEndOffsets = IdentityHashMap<MacroSurface, Int>()
+        for (carrierSurfaces in surfacesByCarrier.values) {
+            if (carrierSurfaces.size < 2) continue
+            var currentEnd = Int.MIN_VALUE
+            val ordered = carrierSurfaces.sortedWith(
+                compareBy(
+                    { it.sourceRange?.startOffset ?: Int.MAX_VALUE },
+                    { it.surfaceId },
+                )
+            )
+            for (surface in ordered.asReversed()) {
+                val endOffset = surface.sourceRange?.endOffset ?: continue
+                currentEnd = maxOf(currentEnd, endOffset)
+                effectiveEndOffsets[surface] = currentEnd
+            }
+        }
+        return effectiveEndOffsets
+    }
+
+    /** IdentityHashMap 版 getOrPut，避免 carrier 的结构化 equals 合并不同 CFIR 对象。 */
+    private inline fun <K : Any, V> IdentityHashMap<K, V>.getOrPutIdentity(
+        key: K,
+        defaultValue: () -> V,
+    ): V {
+        val existing = this[key]
+        if (existing != null) return existing
+        return defaultValue().also { this[key] = it }
     }
 }
 
