@@ -66,8 +66,8 @@ fun packageDirectiveVisitor(block: (CjPackageDirective) -> Unit) =
         /**
          * 实现 `visitPackageDirective` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
          */
-        override fun visitPackageDirective(packageDirective: CjPackageDirective) {
-            block(packageDirective)
+        override fun visitPackageDirective(directive: CjPackageDirective) {
+            block(directive)
         }
     }
 /**

@@ -13,6 +13,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirAssignmentTypeMismatchPrimaryDi
 import org.cangnova.cangjie.cfir.expressions.CfirAssignmentTypeMismatchOutcome
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
 import org.cangnova.cangjie.cfir.expressions.CfirSubscriptExpression
+import org.cangnova.cangjie.cfir.expressions.CfirTupleLiteral
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.diagnostic.ConeMismatchedTypesMultipleAssignError
 import org.cangnova.cangjie.cfir.types.ConeErrorType
@@ -68,6 +69,9 @@ object CfirAssignmentTypeMismatchChecker : CfirAssignmentChecker() {
             return
         }
         if (lValue is CfirQualifiedAccessExpression && CfirMutationTargetClassifier.isVArraySizeAccess(lValue)) return
+
+        val targetType = lValue.coneTypeOrNull.takeUnless { lValue is CfirTupleLiteral }
+        if (targetType != null && checkTargetTypedExpression(expression.rValue, targetType).isHandled) return
 
         val outcome = expression.typeMismatchOutcome ?: return
         reportOrdinaryAssignmentMismatch(expression, outcome)

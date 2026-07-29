@@ -69,6 +69,7 @@ abstract class CangJieStubBaseImpl<T : CjElementImplStub<*>>(parent: StubElement
     /**
      * 实现 `getStubType` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
      */
+    @Deprecated("Deprecated in Java")
     override fun getStubType(): IStubElementType<out StubElement<*>, *> =
         super.getStubType() as IStubElementType<out StubElement<*>, *>
 

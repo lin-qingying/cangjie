@@ -2347,10 +2347,15 @@ open class CfirExpressionsResolveTransformer(
         ifExpression: CfirIfExpression,
         data: ResolutionMode,
     ): CfirExpression {
-        val branchResolutionMode = (data as? ResolutionMode.WithExpectedType)
-            ?.takeUnless { it.fromCast }
-            ?.copy(forceFullCompletion = false)
-            ?: ResolutionMode.ContextDependent
+        val isIfWithoutEndingElse = ifExpression.isIfExpressionWithoutEndingElse()
+        val branchResolutionMode = if (isIfWithoutEndingElse) {
+            ResolutionMode.ContextDependent
+        } else {
+            (data as? ResolutionMode.WithExpectedType)
+                ?.takeUnless { it.fromCast }
+                ?.copy(forceFullCompletion = false)
+                ?: ResolutionMode.ContextDependent
+        }
 
         if (ifExpression.condition.containsLetPatternCondition()) {
             withNewLocalScope {
@@ -2371,6 +2376,7 @@ open class CfirExpressionsResolveTransformer(
             // 分支错误已经由分支表达式自身报告；if 只传播 InvalidTy 语义，
             // 避免把同一个分支诊断重新挂到组合表达式上。
             branchErrorType != null -> ConeErrorType(ConeUnreportedDuplicateDiagnostic(branchErrorType.diagnostic))
+            isIfWithoutEndingElse -> builtinTypes.unitType
             thenType == null -> elseType ?: builtinTypes.unitType
             elseType == null -> builtinTypes.unitType
             thenType == elseType -> thenType
@@ -2380,6 +2386,24 @@ open class CfirExpressionsResolveTransformer(
         recordAssignmentRhsTypeMismatchIfNeeded(ifExpression, resultType)
         ifExpression.replaceConeTypeOrNull(resultType)
         return ifExpression
+    }
+
+    /**
+     * 对齐官方 `IsIfExprWithoutElse`：`if/else if` 链只有最终存在普通 `else`，
+     * 才能作为双分支表达式参与 Join 或继承外层 target type；否则整个表达式类型固定为 `Unit`。
+     */
+    private fun CfirIfExpression.isIfExpressionWithoutEndingElse(): Boolean {
+        val elseBranch = elseBranch?.unwrapIfElseChainWrapper() ?: return true
+        return elseBranch is CfirIfExpression && elseBranch.isIfExpressionWithoutEndingElse()
+    }
+
+    /** 去掉 else 分支外层包装，识别源码上的 `else if` 链。 */
+    private fun CfirExpression.unwrapIfElseChainWrapper(): CfirExpression {
+        var current = this
+        while (current is CfirWrappedExpression) {
+            current = current.expression
+        }
+        return current
     }
 
     /**

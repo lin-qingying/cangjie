@@ -1,6 +1,8 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.expression.checkTargetTypedExpression
+import org.cangnova.cangjie.cfir.analysis.checkers.expression.isHandled
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
@@ -24,6 +26,7 @@ object CfirValueParameterDefaultValueTypeMismatchChecker : CfirValueParameterChe
     override fun check(declaration: CfirValueParameter) {
         val expectedType = (declaration.returnTypeRef as? CfirResolvedTypeRef)?.coneType ?: return
         val defaultValue = declaration.defaultValue?.takeIf { it !is CfirErrorExpression } ?: return
+        if (checkTargetTypedExpression(defaultValue, expectedType).isHandled) return
         val actualType = defaultValue.coneTypeOrNull ?: return
         val source = declaration.source as? AbstractCjSourceElement ?: return
 

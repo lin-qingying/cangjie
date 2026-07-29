@@ -40,8 +40,8 @@ fun checkTypeMismatch(
     source: AbstractCjSourceElement,
     preferredSpecializedSource: AbstractCjSourceElement? = null,
     diagnosticFactory: CjDiagnosticFactory3<ConeCangJieType, ConeCangJieType, Boolean>,
-) {
-    if (actualType is ConeErrorType || expectedType is ConeErrorType) return
+): Boolean {
+    if (actualType is ConeErrorType || expectedType is ConeErrorType) return false
     val effectiveActualType = IdealTypeResolver.resolveIfIdeal(actualType, expectedType)
     val diagnosticSource = preferredSpecializedSource ?: source
     specificTypeMismatchDiagnostic(
@@ -52,13 +52,13 @@ fun checkTypeMismatch(
         session = context.session,
     )?.let { diagnostic ->
         reporter.report(diagnostic, context)
-        return
+        return true
     }
 
     val normalizedActualType = effectiveActualType.normalizeForSubtypeCheck()
     val normalizedExpectedType = expectedType.normalizeForSubtypeCheck()
-    if (AbstractTypeChecker.isSubtypeOf(context.session.typeContext, normalizedActualType, normalizedExpectedType) == true) return
-    if (expectedType.isCompatibleWithInitializerActualTypeModuloInferencePlaceholders(effectiveActualType)) return
+    if (AbstractTypeChecker.isSubtypeOf(context.session.typeContext, normalizedActualType, normalizedExpectedType) == true) return false
+    if (expectedType.isCompatibleWithInitializerActualTypeModuloInferencePlaceholders(effectiveActualType)) return false
     reporter.reportOn(
         diagnosticSource,
         diagnosticFactory,
@@ -66,6 +66,7 @@ fun checkTypeMismatch(
         actualType,
         false,
     )
+    return true
 }
 
 /**

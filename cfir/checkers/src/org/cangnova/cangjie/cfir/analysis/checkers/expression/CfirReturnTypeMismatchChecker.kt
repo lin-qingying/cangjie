@@ -109,6 +109,8 @@ object CfirReturnTypeMismatchChecker : CfirReturnExpressionChecker( ) {
             }
         }
 
+        if (checkTargetTypedExpression(result, expectedType).isHandled) return
+
         specificTypeMismatchDiagnostic(
             source = source,
             expectedType = expectedType,
