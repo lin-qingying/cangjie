@@ -1,6 +1,8 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.expression.checkTargetTypedExpression
+import org.cangnova.cangjie.cfir.analysis.checkers.expression.isHandled
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
@@ -37,6 +39,7 @@ object CfirPatternVariableInitializerTypeMismatchChecker : CfirPatternVariableCh
         val initializer = declaration.initializer?.takeIf { it !is CfirErrorExpression } ?: return
         if (initializer.hasResolutionDiagnostic()) return
         if (initializer.isBareEnumConstructorAccess()) return
+        if (checkTargetTypedExpression(initializer, expectedType).isHandled) return
         val actualType = initializer.coneTypeOrNull ?: return
         val initializerSource = initializer.source as? AbstractCjSourceElement
         val isEnumConstructorInitializer = initializer.isEnumConstructorAccess()

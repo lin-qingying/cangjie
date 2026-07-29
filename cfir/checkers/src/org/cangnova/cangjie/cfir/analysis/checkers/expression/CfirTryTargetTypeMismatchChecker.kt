@@ -13,13 +13,7 @@ object CfirTryTargetTypeMismatchChecker : CfirTryExpressionChecker() {
     /** 检查 target-typed try/catch block 尾表达式是否符合外层期望类型。 */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirTryExpression) {
-        if (expression.resources.isNotEmpty()) return
-        if (expression.handlers.isNotEmpty()) return
-
         val expectedType = expression.expectedTypeFromTargetContext(context) ?: return
-        checkTargetTypedBlockTail(expression.tryBlock, expectedType)
-        expression.catches.forEach { catchClause ->
-            checkTargetTypedBlockTail(catchClause.body, expectedType)
-        }
+        checkTargetTypedExpression(expression, expectedType)
     }
 }

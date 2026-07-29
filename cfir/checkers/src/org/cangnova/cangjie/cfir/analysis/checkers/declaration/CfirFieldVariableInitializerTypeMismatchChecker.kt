@@ -1,6 +1,8 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.expression.checkTargetTypedExpression
+import org.cangnova.cangjie.cfir.analysis.checkers.expression.isHandled
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
@@ -25,6 +27,7 @@ object CfirFieldVariableInitializerTypeMismatchChecker : CfirFieldVariableChecke
 
         val expectedType = (declaration.returnTypeRef as? CfirResolvedTypeRef)?.coneType ?: return
         val initializer = declaration.initializer?.takeIf { it !is CfirErrorExpression } ?: return
+        if (checkTargetTypedExpression(initializer, expectedType).isHandled) return
         val actualType = initializer.coneTypeOrNull ?: return
 
         checkTypeMismatch(

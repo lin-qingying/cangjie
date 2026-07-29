@@ -162,5 +162,11 @@ class IfGenerated : AbstractCfirLightTreeLlTDiagnosticsTest() {
     fun testIfCheckType8() {
         runTest("cfir/analysis-tests/testData/llt/if/if_check_type8.cj")
     }
+
+    @TestMetadata("target_typed_tail_contexts.cj")
+    @Test
+    fun testTargetTypedTailContexts() {
+        runTest("cfir/analysis-tests/testData/llt/if/target_typed_tail_contexts.cj")
+    }
 }
 

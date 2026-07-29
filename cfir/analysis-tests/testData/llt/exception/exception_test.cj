@@ -4,7 +4,7 @@ internal import std.core.*
 
 main(): Int64 {
     try {
-        throw <!UNRESOLVED_REFERENCE!>g<!>umentException();
+        throw <!UNRESOLVED_REFERENCE!>gumentException<!>();
     } catch (e: IllegalArgumentException) {
         print("in catch block!")
     } finally {

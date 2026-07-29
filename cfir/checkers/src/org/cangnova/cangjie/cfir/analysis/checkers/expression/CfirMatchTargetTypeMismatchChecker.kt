@@ -15,8 +15,6 @@ object CfirMatchTargetTypeMismatchChecker : CfirMatchExpressionChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirMatchExpression) {
         val expectedType = expression.expectedTypeFromTargetContext(context) ?: return
-        expression.branches.forEach { branch ->
-            checkTargetTypedBlockTail(branch.body, expectedType)
-        }
+        checkTargetTypedExpression(expression, expectedType)
     }
 }

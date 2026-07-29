@@ -83,6 +83,8 @@ object CfirFunctionBodyTypeMismatchChecker : CfirBasicExpressionChecker() {
         if (expectedType is ConeErrorType) return
         if (expectedType.isUnit) return
 
+        if (tailExpression != null && checkTargetTypedExpression(tailExpression, expectedType).isHandled) return
+
         specificTypeMismatchDiagnostic(
             source = resultSource,
             expectedType = expectedType,

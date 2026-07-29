@@ -24,22 +24,8 @@
 
 package org.cangnova.cangjie.parsing
 
-import org.cangnova.cangjie.lang.CangJieFileType
-import org.cangnova.cangjie.lang.CangJieLanguage
-import org.cangnova.cangjie.lexer.CangJieLexer
-import org.cangnova.cangjie.lexer.CjToken
-import org.cangnova.cangjie.lexer.CjTokens
-import org.cangnova.cangjie.psi.CjFile
-import org.cangnova.cangjie.psi.CjNodeType
-import org.cangnova.cangjie.psi.CjNodeTypes
-import org.cangnova.cangjie.lexer.cdoc.lexer.CDocTokens
-import org.cangnova.cangjie.lexer.cdoc.parser.CDocElementType
-import org.cangnova.cangjie.lexer.cdoc.psi.impl.CDocLink
-import org.cangnova.cangjie.psi.stubs.elements.CjFileElementType
-import org.cangnova.cangjie.psi.stubs.elements.CjStubElementType
 import com.intellij.extapi.psi.ASTWrapperPsiElement
 import com.intellij.lang.ASTNode
-import com.intellij.lang.LanguageParserDefinitions
 import com.intellij.lang.ParserDefinition
 import com.intellij.lang.PsiParser
 import com.intellij.lexer.Lexer
@@ -48,9 +34,19 @@ import com.intellij.psi.FileViewProvider
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.impl.source.PsiPlainTextFileImpl
-import com.intellij.psi.tree.IElementType
 import com.intellij.psi.tree.IFileElementType
 import com.intellij.psi.tree.TokenSet
+import org.cangnova.cangjie.lang.CangJieFileType
+import org.cangnova.cangjie.lexer.CangJieLexer
+import org.cangnova.cangjie.lexer.CjTokens
+import org.cangnova.cangjie.lexer.cdoc.lexer.CDocTokens
+import org.cangnova.cangjie.lexer.cdoc.parser.CDocElementType
+import org.cangnova.cangjie.lexer.cdoc.psi.impl.CDocLink
+import org.cangnova.cangjie.psi.CjFile
+import org.cangnova.cangjie.psi.CjNodeType
+import org.cangnova.cangjie.psi.CjNodeTypes
+import org.cangnova.cangjie.psi.stubs.elements.CjFileElementType
+import org.cangnova.cangjie.psi.stubs.elements.CjStubElementType
 
 /**
  * 表示 `CangJieParserDefinition`，承载仓颉语法解析中的语法节点、索引桩或辅助模型。
@@ -72,32 +68,6 @@ class CangJieParserDefinition : ParserDefinition {
      */
     override fun getFileNodeType(): IFileElementType = CjFileElementType.INSTANCE
 
-    /**
-     * 保存 `EOL_COMMENT`，供仓颉语法解析流程读取节点结构或语义信息。
-     */
-    val EOL_COMMENT = CjToken("EOL_COMMENT", 4)
-    /**
-     * 保存 `BLOCK_COMMENT`，供仓颉语法解析流程读取节点结构或语义信息。
-     */
-    val BLOCK_COMMENT = CjToken("BLOCK_COMMENT", 3)
-    /**
-     * 保存 `DOC_COMMENT`，供仓颉语法解析流程读取节点结构或语义信息。
-     */
-    val DOC_COMMENT: IElementType = CDocTokens.CDOC
-
-    /**
-     * 保存 `SHEBANG_COMMENT`，供仓颉语法解析流程读取节点结构或语义信息。
-     */
-    val SHEBANG_COMMENT = CjToken("SHEBANG_COMMENT", 5)
-    /**
-     * 保存 `COMMENTS`，供仓颉语法解析流程读取节点结构或语义信息。
-     */
-    val COMMENTS = TokenSet.create(
-        EOL_COMMENT,
-        BLOCK_COMMENT,
-        DOC_COMMENT,
-        SHEBANG_COMMENT,
-    )
 
     /**
      * 实现 `getCommentTokens` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
@@ -146,6 +116,7 @@ class CangJieParserDefinition : ParserDefinition {
 
 
 }
+
 /**
  * 提供 `CangJieParserDefinitionUtil` 单例，集中承载仓颉语法解析的共享状态、工厂或工具行为。
  */
@@ -155,9 +126,5 @@ object CangJieParserDefinitionUtil {
      */
     const val STD_SCRIPT_SUFFIX = "cj"
 
-    /**
-     * 保存 `STD_SCRIPT_EXT`，供仓颉语法解析流程读取节点结构或语义信息。
-     */
-    @JvmField
-    val STD_SCRIPT_EXT = ".$STD_SCRIPT_SUFFIX"
+
 }
