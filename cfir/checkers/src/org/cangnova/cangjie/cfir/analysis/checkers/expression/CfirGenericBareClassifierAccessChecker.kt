@@ -1,5 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
+import org.cangnova.cangjie.cfir.analysis.checkers.hasInvalidDeclaredUpperBoundsInCurrentContext
+import org.cangnova.cangjie.cfir.calls.resolvedQualifierTypeParameter
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
@@ -8,7 +10,9 @@ import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
+import org.cangnova.cangjie.cfir.references.CfirErrorNamedReference
 import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
+import org.cangnova.cangjie.cfir.references.CfirReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedErrorReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.references.impl.CfirResolvedAppliedCallableReference
@@ -25,6 +29,7 @@ import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeTypeVariableType
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.contains
+import org.cangnova.cangjie.cfir.types.isTypeParameterWithInvalidDeclaredUpperBounds
 
 /**
  * 裸泛型 classifier 被当作值或限定符使用时，需要落到专门的 generic 诊断，
@@ -173,6 +178,47 @@ object CfirGenericBareClassifierAccessChecker : CfirQualifiedAccessChecker() {
             is CfirResolvedAppliedCallableReference -> resolvedSymbol as? CfirEnumConstructorSymbol
             else -> null
         }
+}
+
+/**
+ * 类型参数 receiver 的非法 static 成员暴露访问检查器。
+ *
+ * 官方 `GetMemberAccessExposedTarget` 在类型参数上界非法且找不到 static 成员时报告
+ * `sema_invalid_field_expose_access`，LLT 期望沿用现有 CFIR 诊断
+ * `STATIC_VARIABLE_USE_GENERIC_PARAMETER`。
+ */
+object CfirInvalidFieldExposeAccessChecker : CfirQualifiedAccessChecker() {
+    /** 检查 `T.x` 中非法上界类型参数 receiver 的失败 static 成员访问。 */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    override fun check(expression: CfirQualifiedAccessExpression) {
+        val receiver = expression.explicitReceiver ?: return
+        val typeParameter = receiver.resolvedQualifierTypeParameter() ?: return
+        val receiverType = receiver.coneTypeOrNull as? ConeTypeParameterType
+        val hasInvalidUpperBounds = typeParameter.cfir.hasInvalidDeclaredUpperBoundsInCurrentContext() ||
+                receiverType?.isTypeParameterWithInvalidDeclaredUpperBounds(context.session) == true
+        if (!hasInvalidUpperBounds) return
+        if (expression.calleeReference.isResolvedMemberReference()) return
+
+        val diagnosticSource = receiver.source ?: expression.source
+        reporter.reportOn(
+            source = diagnosticSource,
+            factory = CfirErrors.STATIC_VARIABLE_USE_GENERIC_PARAMETER,
+            a = typeParameter.name,
+        )
+        diagnosticSource?.let(context::recordStaticGenericDependency)
+    }
+
+    /**
+     * 已解析引用（包括携带诊断但保留候选的 resolved-error）交给现有候选诊断映射处理；
+     * 当前 checker 只补没有候选的 member-not-found 分支。
+     */
+    private fun CfirReference.isResolvedMemberReference(): Boolean = when (this) {
+        is CfirResolvedAppliedCallableReference -> true
+        is CfirResolvedNamedReference -> true
+        is CfirNamedReferenceWithCandidateBase -> true
+        is CfirErrorNamedReference -> false
+        else -> false
+    }
 }
 
 /**

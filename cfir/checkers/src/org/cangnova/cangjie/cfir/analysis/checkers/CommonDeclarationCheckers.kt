@@ -126,6 +126,7 @@ object CommonDeclarationCheckers : DeclarationCheckers() {
             CfirExtendImmutableMemberChecker,
             CfirExtendSpecializationConflictChecker,
             CfirExtendInheritanceDeepChecker,
+            CfirExtendStaticGenericDependencyChecker,
             CfirExtendExtraChecker,
             CfirConstExtendDeclarationChecker,
         )

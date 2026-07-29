@@ -437,18 +437,18 @@ object CfirClassStructSemanticsChecker : CfirClassLikeChecker() {
     override fun check(declaration: CfirClassLikeDeclaration) {
         if (declaration is CfirClass) {
             checkSealedOnlyOnAbstract(declaration)
-            checkStaticVariableGenericParameterDependency(declaration)
+            CfirStaticGenericDependencySemantics.check(declaration)
             checkFinalizerConstraints(declaration)
         }
         if (declaration is CfirStruct) {
-            checkStaticVariableGenericParameterDependency(declaration)
+            CfirStaticGenericDependencySemantics.check(declaration)
             checkCStructCannotImplInterfaces(declaration)
         }
         if (declaration is CfirEnum) {
-            checkStaticVariableGenericParameterDependency(declaration)
+            CfirStaticGenericDependencySemantics.check(declaration)
         }
         if (declaration is CfirInterface) {
-            checkStaticVariableGenericParameterDependency(declaration)
+            CfirStaticGenericDependencySemantics.check(declaration)
         }
     }
 
@@ -513,17 +513,52 @@ object CfirClassStructSemanticsChecker : CfirClassLikeChecker() {
         }
     }
 
+}
+
+/** extend static var / prop / init 不能依赖 extend 自身的泛型参数。 */
+object CfirExtendStaticGenericDependencyChecker : CfirExtendChecker() {
     /**
-     * static var / prop 不能依赖所属 class-like 的泛型参数。
-     *
-     * 官方 Sema 在 static 成员内部遍历 `RefType` / `RefExpr` 节点，并把诊断报在实际依赖
-     * 泛型参数的类型或表达式节点上；因此这里不能把 source 挂在整个字段/属性声明上。
-    */
+     * 检查 extend 成员中的 static 泛型参数依赖。
+     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
-    private fun checkStaticVariableGenericParameterDependency(classLike: CfirClassLikeDeclaration) {
-        val typeParameterNames = classLike.staticGenericDependencyParameterNames()
+    override fun check(declaration: CfirExtend) {
+        CfirStaticGenericDependencySemantics.check(declaration)
+    }
+}
+
+/**
+ * static var / prop / init 不能依赖所属 generic owner 的类型参数。
+ *
+ * 官方 Sema 对 class-like 和 extend 使用同一类规则：在 static 成员内部遍历 `RefType` /
+ * `RefExpr` 节点，并把诊断报在实际依赖泛型参数的类型或表达式节点上。
+ */
+private object CfirStaticGenericDependencySemantics {
+    /** 检查 class-like static 成员是否依赖所属 class-like 的类型参数。 */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    fun check(classLike: CfirClassLikeDeclaration) {
+        checkStaticMembers(
+            declarations = classLike.declarations,
+            typeParameterNames = classLike.staticGenericDependencyParameterNames(),
+        )
+    }
+
+    /** 检查 extend static 成员是否依赖所属 extend 的类型参数。 */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    fun check(extend: CfirExtend) {
+        checkStaticMembers(
+            declarations = extend.declarations,
+            typeParameterNames = extend.typeParameters.map { it.name }.toSet(),
+        )
+    }
+
+    /** 对拥有声明列表的 generic owner 执行统一 static 成员扫描。 */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun checkStaticMembers(
+        declarations: List<CfirDeclaration>,
+        typeParameterNames: Set<Name>,
+    ) {
         if (typeParameterNames.isEmpty()) return
-        for (member in classLike.declarations) {
+        for (member in declarations) {
             if (member is CfirFieldVariable && member.status.isStatic) {
                 val reported = mutableSetOf<StaticGenericDependencyReportKey>()
                 member.returnTypeRef.reportStaticGenericDependency(typeParameterNames, reported)
@@ -535,10 +570,14 @@ object CfirClassStructSemanticsChecker : CfirClassLikeChecker() {
                 member.getter?.body?.reportStaticGenericDependency(typeParameterNames, reported)
                 member.setter?.body?.reportStaticGenericDependency(typeParameterNames, reported)
             }
+            if (member is CfirConstructor && member.status.isStatic) {
+                val reported = mutableSetOf<StaticGenericDependencyReportKey>()
+                member.body?.reportStaticGenericDependency(typeParameterNames, reported)
+            }
         }
     }
 
-    /** 检查类型引用本身是否依赖 static 成员所属 class-like 的类型参数。 */
+    /** 检查类型引用本身是否依赖 static 成员所属 generic owner 的类型参数。 */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun CfirTypeRef.reportStaticGenericDependency(
         typeParameterNames: Set<Name>,
@@ -547,7 +586,7 @@ object CfirClassStructSemanticsChecker : CfirClassLikeChecker() {
         return coneTypeOrNull.reportStaticGenericDependency(source, typeParameterNames, reported)
     }
 
-    /** 遍历表达式及其嵌套类型引用，查找 static 成员中对 class-like 类型参数的依赖。 */
+    /** 遍历表达式及其嵌套类型引用，查找 static 成员中对 generic owner 类型参数的依赖。 */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun CfirExpression.reportStaticGenericDependency(
         typeParameterNames: Set<Name>,
@@ -592,6 +631,14 @@ object CfirClassStructSemanticsChecker : CfirClassLikeChecker() {
                         source = expression.source,
                         typeParameterNames = typeParameterNames,
                         reported = reported,
+                    )
+                ) {
+                    return
+                }
+                if (expression.explicitReceiver?.coneTypeOrNull.reportStaticGenericDependency(
+                        expression.explicitReceiver?.source ?: expression.source,
+                        typeParameterNames,
+                        reported,
                     )
                 ) {
                     return
@@ -664,6 +711,7 @@ object CfirClassStructSemanticsChecker : CfirClassLikeChecker() {
             factory = CfirErrors.STATIC_VARIABLE_USE_GENERIC_PARAMETER,
             a = typeParameterName,
         )
+        source?.let(context::recordStaticGenericDependency)
         return true
     }
 
