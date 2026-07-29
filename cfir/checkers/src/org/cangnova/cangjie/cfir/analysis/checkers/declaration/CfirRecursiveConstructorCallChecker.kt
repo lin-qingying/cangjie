@@ -300,6 +300,7 @@ private class RecursiveConstructorGraph(
      */
     private fun CfirFunctionCall.resolvedConstructorSymbolOrNull(): CfirConstructorSymbol? =
         when (val reference = calleeReference) {
+            is CfirResolvedErrorReference -> null
             is CfirResolvedNamedReference -> reference.resolvedSymbol as? CfirConstructorSymbol
             else -> null
         }
