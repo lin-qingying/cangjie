@@ -2,6 +2,7 @@ package org.cangnova.cangjie.analysis.api.components
 
 import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.lifetime.CaSessionComponent
+import org.cangnova.cangjie.analysis.api.lifetime.CaSessionComponentImplementationDetail
 import org.cangnova.cangjie.analysis.api.renderer.declarations.CaDeclarationRenderer
 import org.cangnova.cangjie.analysis.api.renderer.declarations.impl.CaDeclarationRendererForSource
 import org.cangnova.cangjie.analysis.api.renderer.types.CaTypeRenderer
@@ -33,6 +34,7 @@ fun CaDeclarationSymbol.render(
  *
  * 对齐 Kotlin Analysis API 的 `KaRenderer`。
  */
+@OptIn(CaSessionComponentImplementationDetail::class)
 interface CaRenderer : CaSessionComponent {
     /**
      * 按 [renderer] 描述的策略把声明符号渲染为字符串。

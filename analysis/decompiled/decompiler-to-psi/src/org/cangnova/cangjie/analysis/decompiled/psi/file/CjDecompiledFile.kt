@@ -127,7 +127,7 @@ private object CompiledStubBuilder : StubBuilder {
         } else {
             val text = """
                 // Could not decompile the file: CangJie file stub is not found
-                // Please report an issue: https://kotl.in/issue
+                // Please report an issue: https://github.com/lin-qingying/cangjie/issues
             """.trimIndent()
 
             CangJieFileStubImpl.forInvalid(text)

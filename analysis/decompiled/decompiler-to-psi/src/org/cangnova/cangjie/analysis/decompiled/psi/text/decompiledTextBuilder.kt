@@ -56,8 +56,11 @@ internal fun buildDecompiledText(fileStub: CangJieFileStubImpl): String = Pretty
     appendLine("// Implementation of declarations is not available")
     appendLine()
 
+    // 仅对 hard 关键字（isSoft == false）转义：soft 关键字（get/set/file/vararg）与 soft modifier
+    // （sealed/abstract/open）在标识符位置官方 lexer 不识别为关键字，加反引号属冗余转义。
     val keywordNames = CjTokens.KEYWORDALL.types
         .filterIsInstance<CjKeywordToken>()
+        .filter { keyword -> !keyword.isSoft }
         .mapTo(hashSetOf()) { keyword -> keyword.value }
 
     fun renderIdentifier(identifier: String): String {
@@ -65,7 +68,7 @@ internal fun buildDecompiledText(fileStub: CangJieFileStubImpl): String = Pretty
     }
 
     fun renderFqName(fqName: org.cangnova.cangjie.name.FqName): String {
-        return fqName.pathSegments().joinToString(".") { segment -> renderIdentifier(segment.asString()) }
+        return fqName.pathSegments().joinToString(".") { segment -> segment.asString() }
     }
 
     val packageFqName = fileStub.getPackageFqName()
@@ -386,7 +389,9 @@ internal fun buildDecompiledText(fileStub: CangJieFileStubImpl): String = Pretty
         }
 
         override fun visitTypeConstraint(constraint: CjTypeConstraint) {
-            append(constraint.subjectTypeParameterName?.text.orEmpty())
+            // 类型参数名走 renderIdentifier：与 hard 关键字重名时（如 where func : Base）必须转义，
+            // 否则 parser 重新解析会把 func 当关键字，where 子句语法错。
+            append(constraint.subjectTypeParameterName?.text?.let(::renderIdentifier).orEmpty())
             append(" : ")
             constraint.boundTypeReference?.getTypeText()?.takeIf(String::isNotBlank)?.let(::append)
         }

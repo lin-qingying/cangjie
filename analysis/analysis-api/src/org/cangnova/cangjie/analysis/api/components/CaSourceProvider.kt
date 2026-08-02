@@ -1,10 +1,7 @@
 package org.cangnova.cangjie.analysis.api.components
 
-import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeOwner
 import org.cangnova.cangjie.analysis.api.lifetime.CaSessionComponent
-import org.cangnova.cangjie.analysis.api.symbols.CaDeclarationSymbol
-import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
-import org.cangnova.cangjie.psi.CjFile
+import org.cangnova.cangjie.analysis.api.lifetime.CaSessionComponentImplementationDetail
 
 /**
  * 库源码定位协议。
@@ -15,4 +12,5 @@ import org.cangnova.cangjie.psi.CjFile
  *
  * 对齐 Kotlin Analysis API 的 `KaSourceProvider`。
  */
+@OptIn(CaSessionComponentImplementationDetail::class)
 interface CaSourceProvider : CaSessionComponent

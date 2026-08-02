@@ -391,6 +391,9 @@ internal fun createEnumConstructorStub(
         typeCount = declaration.valueParameters.size,
         enumFqName = StringRef.fromString(context.owningClassFqName?.asString()),
     )
+    // 对齐其它声明 stub 入口：parser 解析 enum 构造项时稳定生成空 ANNOTATIONS 与空 MODIFIER_LIST，
+    // 缺失会导致 stub 数与 AST 节点数不对账，在 calcStubTree reconcile 时抛 AssertionError。
+    createEmptyDeclarationHeaderStubs(enumConstructorStub)
     if (declaration.valueParameters.isNotEmpty()) {
         val typeListStub = CangJiePlaceHolderStubImpl<CjEnumConstructorTypeEntry>(
             enumConstructorStub,
