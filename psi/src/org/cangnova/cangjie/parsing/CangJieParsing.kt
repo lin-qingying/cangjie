@@ -3750,7 +3750,7 @@ class CangJieParsing private constructor(
             }
         } else {
             // 函数名
-            builder.tokenType
+//            builder.tokenType
             parseIdentifier()
         }
 
