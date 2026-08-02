@@ -69,11 +69,11 @@ include(":psi")
 // Code Insight，共享 IDE 与 LSP 的编辑器能力
 include(":code-insight")
 include(":code-insight:api")
-include(":code-insight:fixes-k2")
+include(":code-insight:fixes")
 include(":code-insight:formatting")
 include(":code-insight:folding")
 include(":code-insight:highlighting")
-include(":code-insight:override-implement-k2")
+include(":code-insight:override-implement")
 include(":code-insight:refactoring")
 
 

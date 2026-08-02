@@ -2,12 +2,12 @@ plugins {
     kotlin("jvm")
 }
 
-description = "IDE 插件依赖：源码桥接 code-insight quick-fix API、K2 fixes 与 override/implement 子模块。"
+description = "IDE 插件依赖：源码桥接 code-insight quick-fix API、fixes 与 override/implement 子模块。"
 
 dependencies {
     api(project(":code-insight:api"))
-    api(project(":code-insight:fixes-k2"))
-    api(project(":code-insight:override-implement-k2"))
+    api(project(":code-insight:fixes"))
+    api(project(":code-insight:override-implement"))
     api(project(":analysis:analysis-api"))
     api(project(":analysis:analysis-api-cfir"))
 }
