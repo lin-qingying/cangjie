@@ -2156,7 +2156,7 @@ open class CangJieExpressionParsing(
                     doneConstantPattern(constantPattern)
                 }
 
-                IDENTIFIER_Id -> {
+                 IDENTIFIER_Id -> {
                     constantPattern.drop()
                     parseIdentifierPattern()
                 }
@@ -2166,9 +2166,16 @@ open class CangJieExpressionParsing(
                     doneConstantPattern(constantPattern)
                 }
 
-                else -> {
-                    error(CangJieParsingBundle.message("parsing.error.pattern.expression"))
-                    constantPattern.drop()
+                else -> when{
+//                    具有软关键字的判断，由于上面已经做了IDENTIFIER的判断，这里做一个最小更改，后期可以尝试统一判断优化
+                    at(IDENTIFIER) ->{
+                        constantPattern.drop()
+                        parseIdentifierPattern()
+                    }
+                    else -> {
+                        error(CangJieParsingBundle.message("parsing.error.pattern.expression"))
+                        constantPattern.drop()
+                    }
                 }
             }
         }

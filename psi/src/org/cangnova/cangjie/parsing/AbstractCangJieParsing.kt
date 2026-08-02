@@ -161,7 +161,7 @@ abstract class AbstractCangJieParsing(
             val ANNOTATION_ONLY = ParsingContext(disableMacroParsing = true, enableCustomAnnotation = true)
 
 
-//            /** 严格模式 */
+            //            /** 严格模式 */
 //            val STRICT = ParsingContext(strictMode = true)
 //
 //            /** 遗留模式（禁用自定义注解） */
@@ -205,7 +205,6 @@ abstract class AbstractCangJieParsing(
                 CangJieExpressionParsing.EXPRESSION_FIRST
             }
     }
-
 
 
     /**
@@ -345,27 +344,21 @@ abstract class AbstractCangJieParsing(
 
         // Property delegate for lazy initialization
         private val SOFT_KEYWORD_TEXTS by lazy {
-            buildMap<String, CjKeywordToken> {
-                CjTokens.SOFT_KEYWORDS.types.forEach { type ->
+            buildMap {
+                SOFT_KEYWORDS.types.forEach { type ->
                     val keywordToken = type as CjKeywordToken
                     require(keywordToken.isSoft) { "Must be soft keyword: $keywordToken" }
                     put(keywordToken.value, keywordToken)
                 }
             }
         }
-//        init {
-//            for (type in CjTokens.SOFT_KEYWORDS.getTypes()) {
-//                val keywordToken = type as CjKeywordToken
-//                assert(keywordToken.isSoft)
-//                SOFT_KEYWORD_TEXTS.put(keywordToken.value, keywordToken)
-//            }
-//        }
+
 
         init {
 
-            for (token in CjTokens.KEYWORDS.getTypes()) {
-                assert(token is CjKeywordToken) { "Must be CjKeywordToken: " + token }
-                assert(!(token as CjKeywordToken).isSoft) { "Must not be soft: " + token }
+            for (token in  KEYWORDS.getTypes()) {
+                assert(token is CjKeywordToken) { "Must be CjKeywordToken: $token" }
+                assert(!(token as CjKeywordToken).isSoft) { "Must not be soft: $token" }
             }
         }
 
@@ -1326,6 +1319,7 @@ abstract class AbstractCangJieParsing(
      * 保存 `productions`，供仓颉语法解析流程读取节点结构或语义信息。
      */
     val productions: MutableList<out SyntaxTreeBuilder.Production> get() = builder.getProductions()
+
     /**
      * 提供 `getSafeTokenType` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
      */
@@ -1791,6 +1785,7 @@ abstract class AbstractCangJieParsing(
          * 保存 `recoveryBlock` 的内部状态，供仓颉语法解析实现维护节点缓存或解析上下文。
          */
         private var recoveryBlock: ((Throwable) -> Unit)? = null
+
         /**
          * 保存 `finallyBlock` 的内部状态，供仓颉语法解析实现维护节点缓存或解析上下文。
          */

@@ -143,10 +143,10 @@ public interface CjTokens {
     int ELVIS_Id = 98;
     int PIPELINE_Id = 99;
     int WHERE_KEYWORD_Id = 106;
-        int ATEXCL_Id = 107;
+    int ATEXCL_Id = 107;
     int GET_KEYWORD_Id = 108;
     int SET_KEYWORD_Id = 109;
-int COALESCING_Id = 110;
+    int COALESCING_Id = 110;
     int INIT_KEYWORD_Id = 111;
     int SEALED_KEYWORD_Id = 112;
     int ABSTRACT_KEYWORD_Id = 113;
@@ -275,13 +275,13 @@ int COALESCING_Id = 110;
     CjSingleValueToken HASH = new CjSingleValueToken("HASH", "#", HASH_Id);
     CjSingleValueToken QUOTESYMBOL = new CjSingleValueToken("QUOTESYMBOL", "`", QUOTESYMBOL_Id);
     CjSingleValueToken DOLLAR = new CjSingleValueToken("DOLLAR", "$", DOLLAR_Id);
-    CjKeywordToken FILE_KEYWORD    = CjKeywordToken.softKeyword("file", FILE_KEYWORD_Id);
+    CjKeywordToken FILE_KEYWORD = CjKeywordToken.softKeyword("file", FILE_KEYWORD_Id);
 
 
     CjToken BLOCK_COMMENT = new CjToken("BLOCK_COMMENT", BLOCK_COMMENT_Id);
     CjToken EOL_COMMENT = new CjToken("EOL_COMMENT", EOL_COMMENT_Id);
     CjToken SHEBANG_COMMENT = new CjToken("SHEBANG_COMMENT", SHEBANG_COMMENT_Id);
-    CjModifierKeywordToken VARARG_KEYWORD    = CjModifierKeywordToken.softKeywordModifier("vararg", VARARG_KEYWORD_Id);
+    CjModifierKeywordToken VARARG_KEYWORD = CjModifierKeywordToken.softKeywordModifier("vararg", VARARG_KEYWORD_Id);
 
     CjToken INTEGER_LITERAL = new CjToken("INTEGER_LITERAL", INTEGER_LITERAL_Id);
     CjToken FLOAT_LITERAL = new CjToken("FLOAT_LITERAL", FLOAT_LITERAL_Id);
@@ -444,7 +444,6 @@ int COALESCING_Id = 110;
     CjSingleValueToken OPERATION_OR = new CjSingleValueToken("OPERATION_OR", "|", OPERATION_OR_Id);
 
 
-
     CjSingleValueToken LTLTEQ = new CjSingleValueToken("LTLTEQ", "<<=", LTLTEQ_Id);
     CjSingleValueToken GTGTEQ = new CjSingleValueToken("GTGTEQ", ">>=", GTGTEQ_Id);
 
@@ -480,12 +479,12 @@ int COALESCING_Id = 110;
     CjModifierKeywordToken ABSTRACT_KEYWORD = CjModifierKeywordToken.softKeywordModifier("abstract", ABSTRACT_KEYWORD_Id);
     CjModifierKeywordToken OPEN_KEYWORD = CjModifierKeywordToken.softKeywordModifier("open", OPEN_KEYWORD_Id);
 
-    CjModifierKeywordToken OVERRIDE_KEYWORD = CjModifierKeywordToken.keywordModifier("override", OVERRIDE_KEYWORD_Id);
-    CjModifierKeywordToken PRIVATE_KEYWORD = CjModifierKeywordToken.keywordModifier("private", PRIVATE_KEYWORD_Id);
-    CjModifierKeywordToken PUBLIC_KEYWORD = CjModifierKeywordToken.keywordModifier("public", PUBLIC_KEYWORD_Id);
+    CjModifierKeywordToken OVERRIDE_KEYWORD = CjModifierKeywordToken.softKeywordModifier("override", OVERRIDE_KEYWORD_Id);
+    CjModifierKeywordToken PRIVATE_KEYWORD = CjModifierKeywordToken.softKeywordModifier("private", PRIVATE_KEYWORD_Id);
+    CjModifierKeywordToken PUBLIC_KEYWORD = CjModifierKeywordToken.softKeywordModifier("public", PUBLIC_KEYWORD_Id);
     CjModifierKeywordToken STATIC_KEYWORD = CjModifierKeywordToken.keywordModifier("static", STATIC_KEYWORD_Id);
-    CjModifierKeywordToken INTERNAL_KEYWORD = CjModifierKeywordToken.keywordModifier("internal", INTERNAL_KEYWORD_Id);
-    CjModifierKeywordToken PROTECTED_KEYWORD = CjModifierKeywordToken.keywordModifier("protected", PROTECTED_KEYWORD_Id);
+    CjModifierKeywordToken INTERNAL_KEYWORD = CjModifierKeywordToken.softKeywordModifier("internal", INTERNAL_KEYWORD_Id);
+    CjModifierKeywordToken PROTECTED_KEYWORD = CjModifierKeywordToken.softKeywordModifier("protected", PROTECTED_KEYWORD_Id);
     //    Class修饰符
     CjKeywordToken[] CLASS_MODIFIER_KEYWORDS_ARRAY = new CjKeywordToken[]{
             OPEN_KEYWORD,
@@ -517,7 +516,7 @@ int COALESCING_Id = 110;
     CjKeywordToken RESUME_KEYWORD = CjKeywordToken.keyword("resume", RESUME_KEYWORD_Id);
     CjKeywordToken THROWING_KEYWORD = CjKeywordToken.keyword("throwing", THROWING_KEYWORD_Id);
     CjKeywordToken INOUT_KEYWORD = CjKeywordToken.keyword("inout", INOUT_KEYWORD_Id);
-    CjModifierKeywordToken REDEF_KEYWORD = CjModifierKeywordToken.keywordModifier("redef", REDEF_KEYWORD_Id);
+    CjModifierKeywordToken REDEF_KEYWORD = CjModifierKeywordToken.softKeywordModifier("redef", REDEF_KEYWORD_Id);
     CjKeywordToken QUOTE_KEYWORD = CjKeywordToken.keyword("quote", QUOTE_KEYWORD_Id);
     //    特殊修饰符
     CjKeywordToken FOREIGN_KEYWORD = CjKeywordToken.keyword("foreign", FOREIGN_KEYWORD_Id);
@@ -563,8 +562,8 @@ int COALESCING_Id = 110;
 //                    UNSAFE_KEYWORD,
             };
 
-    TokenSet MODIFIER_KEYWORDS =         TokenSet.create(MODIFIER_KEYWORDS_ARRAY  );
-//    TokenSet MODIFIER_KEYWORDS = TokenSet.andSet(
+    TokenSet MODIFIER_KEYWORDS = TokenSet.create(MODIFIER_KEYWORDS_ARRAY);
+    //    TokenSet MODIFIER_KEYWORDS = TokenSet.andSet(
 //            TokenSet.create(MODIFIER_KEYWORDS_ARRAY  ),TokenSet.create(CONST_KEYWORD)
 //    );
     //    类成员函数修饰符
@@ -632,10 +631,18 @@ int COALESCING_Id = 110;
     );
 
 
-    TokenSet SOFT_KEYWORDS = TokenSet.create(GET_KEYWORD,
-            SET_KEYWORD, OPEN_KEYWORD,
+    TokenSet SOFT_KEYWORDS = TokenSet.create(
+            GET_KEYWORD,
+            SET_KEYWORD,
+            OPEN_KEYWORD,
             ABSTRACT_KEYWORD,
-            SEALED_KEYWORD
+            SEALED_KEYWORD,
+            INTERNAL_KEYWORD,
+            PUBLIC_KEYWORD,
+            PRIVATE_KEYWORD,
+            PROTECTED_KEYWORD,
+            OVERRIDE_KEYWORD,
+            REDEF_KEYWORD
 
     );
     TokenSet MODALITY_MODIFIERS = TokenSet.create(ABSTRACT_KEYWORD, SEALED_KEYWORD, OPEN_KEYWORD);
@@ -664,32 +671,53 @@ int COALESCING_Id = 110;
             UNIT_KEYWORD
     );
     TokenSet KEYWORDS = TokenSet.orSet(
-            TokenSet.create(PACKAGE_KEYWORD, AS_KEYWORD, CLASS_KEYWORD, INTERFACE_KEYWORD,
-                    THIS_KEYWORD_UPPER,    THIS_KEYWORD, SUPER_KEYWORD, LET_KEYWORD, VAR_KEYWORD, CONST_KEYWORD, FUNC_KEYWORD, FOR_KEYWORD,
-                    MAIN_KEYWORD, STRUCT_KEYWORD, EXTEND_KEYWORD,
-                    TRUE_KEYWORD, FALSE_KEYWORD, IS_KEYWORD,
+            TokenSet.create(PACKAGE_KEYWORD,
+                    AS_KEYWORD, CLASS_KEYWORD,
+                    INTERFACE_KEYWORD,
+                    THIS_KEYWORD_UPPER,
+                    THIS_KEYWORD, SUPER_KEYWORD,
+                    LET_KEYWORD,
+                    VAR_KEYWORD,
+                    CONST_KEYWORD,
+                    FUNC_KEYWORD,
+                    FOR_KEYWORD,
+                    MAIN_KEYWORD,
+                    STRUCT_KEYWORD,
+                    EXTEND_KEYWORD,
+                    TRUE_KEYWORD,
+                    FALSE_KEYWORD,
+                    IS_KEYWORD,
                     VARRAY_KEYWORD,
-                    IN_KEYWORD, THROW_KEYWORD, RETURN_KEYWORD, BREAK_KEYWORD, CONTINUE_KEYWORD, IF_KEYWORD,
-                    ELSE_KEYWORD, WHILE_KEYWORD, DO_KEYWORD, TRY_KEYWORD, MATCH_KEYWORD, CASE_KEYWORD,
+                    IN_KEYWORD,
+                    THROW_KEYWORD,
+                    RETURN_KEYWORD,
+                    BREAK_KEYWORD,
+                    CONTINUE_KEYWORD,
+                    IF_KEYWORD,
+                    ELSE_KEYWORD,
+                    WHILE_KEYWORD,
+                    DO_KEYWORD,
+                    TRY_KEYWORD,
+                    MATCH_KEYWORD,
+                    CASE_KEYWORD,
                     TYPEOF_KEYWORD,
                     MACRO_KEYWORD,
-                    PROP_KEYWORD, ENUM_KEYWORD,
+                    PROP_KEYWORD,
+                    ENUM_KEYWORD,
                     WHERE_KEYWORD,
-
-
                     IMPORT_KEYWORD,
-                    OVERRIDE_KEYWORD, PRIVATE_KEYWORD, PUBLIC_KEYWORD, PROTECTED_KEYWORD, INTERNAL_KEYWORD,
-                    CATCH_KEYWORD, FINALLY_KEYWORD, HANDLE_KEYWORD, PERFORM_KEYWORD, RESUME_KEYWORD, THROWING_KEYWORD,
+                    CATCH_KEYWORD,
+                    FINALLY_KEYWORD,
+                    HANDLE_KEYWORD,
+                    PERFORM_KEYWORD,
+                    RESUME_KEYWORD,
+                    THROWING_KEYWORD,
                     INIT_KEYWORD,
                     STATIC_KEYWORD,
-                    REDEF_KEYWORD,
-
                     MUT_KEYWORD,
-                    OPERATOR_KEYWORD
-//            INT8_KEYWORD, INT16_KEYWORD, INT32_KEYWORD, INT64_KEYWORD, UINT8_KEYWORD, UINT16_KEYWORD, UINT32_KEYWORD, UINT64_KEYWORD, FLOAT32_KEYWORD, FLOAT64_KEYWORD, BOOL_KEYWORD, CHAR_KEYWORD, UNIT_KEYWORD
-
-                    , TYPE_KEYWORD
-                    , SPAWN_KEYWORD,
+                    OPERATOR_KEYWORD,
+                    TYPE_KEYWORD,
+                    SPAWN_KEYWORD,
                     SYNCHRONIZED_KEYWORD,
                     FOREIGN_KEYWORD,
                     UNSAFE_KEYWORD
@@ -705,7 +733,7 @@ int COALESCING_Id = 110;
             RANGE, RANGEEQ, EQ, MULTEQ, DIVEQ, PERCEQ, PLUSEQ, MINUSEQ,
             COALESCING,
             AND, OR, XOR,
-            ANDEQ, OREQ, XOREQ, ANDANDEQ,OROREQ,
+            ANDEQ, OREQ, XOREQ, ANDANDEQ, OROREQ,
             LTLT, GTGT, LTLTEQ, GTGTEQ,
 
             COMPOSITION, PIPELINE
@@ -738,33 +766,33 @@ int COALESCING_Id = 110;
             OPERATION_OR
     );
 
-//    Int类型默认支持的操作符
+    //    Int类型默认支持的操作符
     TokenSet INT_SUPPORT_OPERATOR = TokenSet.create(
-        PLUS,DIV,MUL,MULMUL,MINUS,PERC
-);
-//Float类型默认支持的操作符
-TokenSet FLOAT_SUPPORT_OPERATOR = TokenSet.create(
-        PLUS,DIV,MUL,MULMUL,MINUS
-);
+            PLUS, DIV, MUL, MULMUL, MINUS, PERC
+    );
+    //Float类型默认支持的操作符
+    TokenSet FLOAT_SUPPORT_OPERATOR = TokenSet.create(
+            PLUS, DIV, MUL, MULMUL, MINUS
+    );
     //比较运算符  返回值Bool
     TokenSet COMPARISON_OPERATIONS = TokenSet.create(
-            LT, GT, LTEQ, GTEQ,EXCLEQ,EQEQ
+            LT, GT, LTEQ, GTEQ, EXCLEQ, EQEQ
     );
 
     //    二进制运算符 返回值需要推断
-    TokenSet BINARY_OPERATIONS= TokenSet.create(
-            PLUS,DIV,MUL,MULMUL,MINUS,PERC,GTGT,LTLT
+    TokenSet BINARY_OPERATIONS = TokenSet.create(
+            PLUS, DIV, MUL, MULMUL, MINUS, PERC, GTGT, LTLT
     );
 
 //    逻辑运算符
 
-    TokenSet  LOGICAL_OPERATORS = TokenSet.create(
-            ANDAND,OROR
+    TokenSet LOGICAL_OPERATORS = TokenSet.create(
+            ANDAND, OROR
     );
 
-//    赋值运算符
+    //    赋值运算符
     TokenSet ALL_ASSIGNMENTS = TokenSet.create(EQ, PLUSEQ, MINUSEQ, MULTEQ, PERCEQ, DIVEQ);
-//复合赋值
+    //复合赋值
     TokenSet AUGMENTED_ASSIGNMENTS = TokenSet.create(PLUSEQ, MINUSEQ, MULTEQ, PERCEQ, DIVEQ);
 
     TokenSet STRINGS = TokenSet.create(RUNE_LITERAL, REGULAR_STRING_PART);
