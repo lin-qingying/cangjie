@@ -1051,7 +1051,7 @@ open class CfirDeclarationsResolveTransformer(
         val containingDeclaration = context.containerIfAny
         withFunctionContext {
             if (shouldResolveEverything) {
-                function.transformTypeParameters(this, ResolutionMode.ContextIndependent)
+                transformTypeParameterHeaders(function)
             }
 
             // 局部嵌套函数（不在类体/文件顶层）需要先把签名解析好，
@@ -1090,6 +1090,21 @@ open class CfirDeclarationsResolveTransformer(
                 )
             }
         }
+    }
+
+    /**
+     * 在函数签名、默认参数和函数体之前解析真实类型参数的注解与上界。
+     *
+     * 类型参数节点本身会落入 declaration fallback；因此这里与 Kotlin
+     * `doTransformTypeParameters` 一样，只通过 BODY_RESOLVE dispatcher 转换 children，
+     * 让局部函数的 where 上界在 qualifier/member scope 构造前成为 resolved type ref。
+     */
+    private fun transformTypeParameterHeaders(function: CfirFunction) {
+        function.typeParameters
+            .filterIsInstance<CfirTypeParameter>()
+            .forEach { typeParameter ->
+                typeParameter.transformChildren(transformer, ResolutionMode.ContextIndependent)
+            }
     }
 
     /**

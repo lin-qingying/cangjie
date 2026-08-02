@@ -47,7 +47,7 @@ internal enum class CangJieTarget(val description: String, val isDefault: Boolea
     STRUCT("struct", false),
     ENUM("enum", false),
     INTERFACE("interface", false),
-    ENUM_ENTRY("enum constructor", false),
+    ENUM_CONSTRUCTOR("enum constructor", false),
     PROPERTY("property"),
     VARIABLE("variable"),
     TYPEALIAS("typealias", false),
@@ -99,7 +99,7 @@ internal enum class CangJieTarget(val description: String, val isDefault: Boolea
         /** enum 声明默认目标组合。 */
         val ENUM_LIST = listOf(ENUM, CLASS)
         /** enum 构造器默认目标组合。 */
-        val ENUM_ENTRY_LIST = listOf(ENUM_ENTRY, PROPERTY, VARIABLE, FIELD)
+        val ENUM_CONSTRUCTOR_LIST = listOf(ENUM_CONSTRUCTOR, PROPERTY, VARIABLE, FIELD)
         /** extend 声明默认目标组合。 */
         val EXTEND_LIST = listOf(EXTEND)
         /** 函数默认目标组合。 */
@@ -269,7 +269,7 @@ internal val possibleParentTargetPredicateMap: Map<CjKeywordToken, TargetAllowed
         CangJieTarget.STRUCT,
         CangJieTarget.INTERFACE,
         CangJieTarget.ENUM,
-        CangJieTarget.ENUM_ENTRY,
+        CangJieTarget.ENUM_CONSTRUCTOR,
     ),
     PROTECTED_KEYWORD to always(
         CangJieTarget.FILE,
@@ -282,14 +282,14 @@ internal val possibleParentTargetPredicateMap: Map<CjKeywordToken, TargetAllowed
         CangJieTarget.CLASS_ONLY,
         CangJieTarget.STRUCT,
         CangJieTarget.ENUM,
-        CangJieTarget.ENUM_ENTRY,
+        CangJieTarget.ENUM_CONSTRUCTOR,
         CangJieTarget.FILE,
     ),
     PRIVATE_KEYWORD to always(
         CangJieTarget.CLASS_ONLY,
         CangJieTarget.STRUCT,
         CangJieTarget.ENUM,
-        CangJieTarget.ENUM_ENTRY,
+        CangJieTarget.ENUM_CONSTRUCTOR,
         CangJieTarget.EXTEND,
         CangJieTarget.FILE,
     ),
@@ -323,7 +323,7 @@ internal fun CheckerContext.actualTargetsFor(declaration: CfirDeclaration): List
     } else {
         AnnotationTargetLists.T_VALUE_PARAMETER_WITHOUT_LET.defaultTargets
     }
-    is CfirEnumConstructor -> CangJieTarget.ENUM_ENTRY_LIST
+    is CfirEnumConstructor -> CangJieTarget.ENUM_CONSTRUCTOR_LIST
     is CfirConstructor -> if (declaration.status.isStatic) {
         AnnotationTargetLists.T_STATIC_INITIALIZER.defaultTargets
     } else {
@@ -345,7 +345,7 @@ internal fun CheckerContext.actualTargetsFor(declaration: CfirDeclaration): List
 internal fun CheckerContext.actualParentTargets(): List<CangJieTarget> = when (val parent = closestModifierContainingDeclaration()) {
     is CfirClassLikeDeclaration -> CangJieTarget.classActualTargets(parent)
     is CfirExtend -> CangJieTarget.EXTEND_LIST
-    is CfirEnumConstructor -> CangJieTarget.ENUM_ENTRY_LIST
+    is CfirEnumConstructor -> CangJieTarget.ENUM_CONSTRUCTOR_LIST
     is CfirConstructor -> AnnotationTargetLists.T_CONSTRUCTOR.defaultTargets
     is CfirFunction -> CangJieTarget.FUNCTION_LIST
     else -> CangJieTarget.FILE_LIST

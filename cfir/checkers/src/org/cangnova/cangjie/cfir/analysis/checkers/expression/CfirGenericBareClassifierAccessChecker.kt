@@ -20,6 +20,7 @@ import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirErrorNamedValueSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirTypeAliasSymbol
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterLookupTag
@@ -215,7 +216,8 @@ object CfirInvalidFieldExposeAccessChecker : CfirQualifiedAccessChecker() {
     private fun CfirReference.isResolvedMemberReference(): Boolean = when (this) {
         is CfirResolvedAppliedCallableReference -> true
         is CfirResolvedNamedReference -> true
-        is CfirNamedReferenceWithCandidateBase -> true
+        // 无候选分支会创建 CfirErrorNamedValueSymbol 保留错误表达式形状，不能把它当成已解析成员。
+        is CfirNamedReferenceWithCandidateBase -> candidateSymbol !is CfirErrorNamedValueSymbol
         is CfirErrorNamedReference -> false
         else -> false
     }
