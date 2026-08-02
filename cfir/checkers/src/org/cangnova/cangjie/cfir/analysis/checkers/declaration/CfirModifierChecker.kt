@@ -31,6 +31,8 @@ import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
+import org.cangnova.cangjie.cfir.analysis.checkers.modifier.ModifierTarget
+import org.cangnova.cangjie.cfir.analysis.checkers.modifier.ModifierTargetPredicate
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.lexer.CjTokens
@@ -77,12 +79,14 @@ object CfirModifierChecker : CfirBasicDeclarationChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkTarget(
         modifier: SourceModifier,
-        actualTargets: List<CangJieTarget>,
+        actualTargets: List<ModifierTarget>,
     ): Boolean {
         val modifierToken = modifier.token
+        val possiblePredicate = possibleTargetMap[modifierToken]
 
-        val isWrongTarget = actualTargets.none {
-            possibleTargetMap[modifierToken]?.contains(it) == true
+        // 不在允许表中的修饰符视为无目标约束，直接通过。
+        val isWrongTarget = possiblePredicate == null || actualTargets.none {
+            possiblePredicate.isAllowed(it, context.languageVersionSettings)
         }
         if (isWrongTarget) {
             reporter.reportOn(
@@ -94,8 +98,9 @@ object CfirModifierChecker : CfirBasicDeclarationChecker() {
             return false
         }
 
-        val deprecatedTargets = deprecatedTargetMap[modifierToken]
-        if (deprecatedTargets != null && actualTargets.any { it in deprecatedTargets }) {
+        // 弃用目标谓词表，当前仓颉主干未启用项，保留作扩展点（对齐 Kotlin `deprecatedTargetPredicateMap`）。
+        val deprecatedPredicate = deprecatedTargetMap[modifierToken]
+        if (deprecatedPredicate != null && actualTargets.any { deprecatedPredicate.isAllowed(it, context.languageVersionSettings) }) {
             reporter.reportOn(
                 modifier.source,
                 CfirErrors.DEPRECATED_MODIFIER_FOR_TARGET,
@@ -105,8 +110,8 @@ object CfirModifierChecker : CfirBasicDeclarationChecker() {
             return true
         }
 
-        val redundantTargets = redundantTargetMap[modifierToken]
-        if (redundantTargets != null && actualTargets.any { it in redundantTargets }) {
+        val redundantPredicate = redundantTargetMap[modifierToken]
+        if (redundantPredicate != null && actualTargets.any { redundantPredicate.isAllowed(it, context.languageVersionSettings) }) {
             reporter.reportOn(
                 modifier.source,
                 CfirErrors.REDUNDANT_MODIFIER_FOR_TARGET,
@@ -124,12 +129,13 @@ object CfirModifierChecker : CfirBasicDeclarationChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkParent(
         modifier: SourceModifier,
-        actualParents: List<CangJieTarget>,
+        actualParents: List<ModifierTarget>,
     ): Boolean {
         val modifierToken = modifier.token
 
-        val deprecatedParents = deprecatedParentTargetMap[modifierToken]
-        if (deprecatedParents != null && actualParents.any { it in deprecatedParents }) {
+        // 弃用父目标谓词表，当前仓颉主干未启用项，保留作扩展点（对齐 Kotlin `deprecatedParentTargetMap`）。
+        val deprecatedParentPredicate = deprecatedParentTargetMap[modifierToken]
+        if (deprecatedParentPredicate != null && actualParents.any { deprecatedParentPredicate.isAllowed(it, context.languageVersionSettings) }) {
             reporter.reportOn(
                 modifier.source,
                 CfirErrors.DEPRECATED_MODIFIER_CONTAINING_DECLARATION,
