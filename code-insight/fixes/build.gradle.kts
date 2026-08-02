@@ -12,7 +12,7 @@ dependencies {
 
     implementation(project(":analysis:analysis-api-cfir"))
     implementation(project(":code-insight:api"))
-    implementation(project(":code-insight:override-implement-k2"))
+    implementation(project(":code-insight:override-implement"))
 
     testImplementation(intellijCore())
     testImplementation(kotlin("test"))
