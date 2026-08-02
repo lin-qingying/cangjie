@@ -43,6 +43,7 @@ import org.cangnova.cangjie.cfir.references.CfirResolvedErrorReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertyAccessorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
@@ -1303,18 +1304,101 @@ private class CfirInitializationFlowAnalyzer(
         val body = declaration.body ?: return StaticInitializerProcessingResult(initialState, nextVisitOrder)
         var state = initialState
         var order = nextVisitOrder
+        val assignedStaticVariables = linkedSetOf<CfirBasedSymbol<*>>()
+
+        order = collectStaticInitializerVariableDependencies(
+            declaration = declaration,
+            body = body,
+            trackedBySymbol = trackedBySymbol,
+            nextVisitOrder = order,
+            assignedStaticVariables = assignedStaticVariables,
+            destination = recursiveStaticFunctionReads,
+        )
 
         state = analyzeStatements(body.statements, state)
         for (variable in trackedBySymbol.values) {
             if (variable.initialized) continue
             if (!state.isInitialized(variable.symbol)) continue
             variable.initialized = true
-            variable.visitOrder = order++
+            if (variable.symbol.initializationSymbol() !in assignedStaticVariables) {
+                variable.visitOrder = order++
+            }
         }
 
         declaration.visitOrder = order++
         collectRecursiveStaticFunctionReads(body, declaration.visitOrder, trackedBySymbol, recursiveStaticFunctionReads)
         return StaticInitializerProcessingResult(state, order)
+    }
+
+    /**
+     * 为 `static init` 中首次初始化 static 字段的赋值建立字段级依赖图根。
+     *
+     * 官方 `GlobalVarChecker::CollectForStaticInit` 会在 `field = rhs` 处把当前
+     * `DefNode` 切换为 field，并只从 rhs 收集递归 callable 依赖。字段是否在所有
+     * 控制流路径上完成初始化仍由 [analyzeStatements] 决定；这里仅维护图顺序，
+     * 不能把分支或未调用嵌套函数中的写入当成 definite assignment。
+     */
+    private fun collectStaticInitializerVariableDependencies(
+        declaration: StaticGlobalInitializerDeclaration,
+        body: CfirBlock,
+        trackedBySymbol: Map<CfirBasedSymbol<*>, StaticGlobalInitializerVariable>,
+        nextVisitOrder: Int,
+        assignedStaticVariables: MutableSet<CfirBasedSymbol<*>>,
+        destination: MutableList<StaticGlobalUseEdge>,
+    ): Int {
+        var order = nextVisitOrder
+
+        body.accept(object : org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid() {
+            override fun visitElement(element: CfirElement) {
+                element.acceptChildren(this, null)
+            }
+
+            // 声明 callable 不表示执行；只有立即调用的 lambda 才进入当前 static init 路径。
+            override fun visitFunction(function: CfirFunction) = Unit
+
+            override fun visitProperty(property: CfirProperty) = Unit
+
+            override fun visitAnonymousFunctionExpression(anonymousFunctionExpression: CfirAnonymousFunctionExpression) = Unit
+
+            override fun visitFunctionCall(functionCall: CfirFunctionCall) {
+                val receiver = functionCall.explicitReceiver
+                if (receiver is CfirAnonymousFunctionExpression) {
+                    receiver.anonymousFunction.body?.accept(this, null)
+                } else {
+                    receiver?.accept(this, null)
+                }
+                functionCall.argumentList.arguments.forEach { argument -> argument.accept(this, null) }
+            }
+
+            override fun visitAssignment(assignment: CfirAssignment) {
+                val targetSymbol = (assignment.lValue as? CfirQualifiedAccessExpression)
+                    ?.resolvedAccessSymbolOrNull()
+                    ?.initializationSymbol()
+                val targetVariable = targetSymbol?.let(trackedBySymbol::get)
+                val isCurrentOwnerStaticField = targetVariable?.field?.status?.isStatic == true &&
+                        targetVariable.nominalOwnerClassId == declaration.nominalOwnerClassId &&
+                        !targetVariable.initialized
+
+                if (
+                    targetSymbol != null && targetVariable != null && isCurrentOwnerStaticField &&
+                    assignedStaticVariables.add(targetSymbol)
+                ) {
+                    targetVariable.visitOrder = order++
+                    collectRecursiveStaticFunctionReads(
+                        root = assignment.rValue,
+                        ownerVisitOrder = targetVariable.visitOrder,
+                        trackedBySymbol = trackedBySymbol,
+                        destination = destination,
+                    )
+                    return
+                }
+
+                assignment.rValue.accept(this, null)
+                assignment.lValue.accept(this, null)
+            }
+        }, null)
+
+        return order
     }
 
     /**
@@ -1327,79 +1411,50 @@ private class CfirInitializationFlowAnalyzer(
         destination: MutableList<StaticGlobalUseEdge>,
     ) {
         val visitedFunctions = linkedSetOf<CfirFunction>()
+        var reachableCallableDepth = 0
+        lateinit var visitor: org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
 
         fun collectFromFunction(function: CfirFunction) {
             if (!visitedFunctions.add(function)) return
             val functionBody = function.body ?: return
-            functionBody.accept(object : org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid() {
-                override fun visitElement(element: CfirElement) {
-                    element.acceptChildren(this, null)
-                }
-
-                override fun visitAnonymousFunctionExpression(anonymousFunctionExpression: CfirAnonymousFunctionExpression) = Unit
-
-                override fun visitAssignment(assignment: CfirAssignment) {
-                    assignment.rValue.accept(this, null)
-                    assignment.lValue.accept(this, null)
-                }
-
-                override fun visitFunctionCall(functionCall: CfirFunctionCall) {
-                    functionCall.resolvedStaticOrGlobalFunctionOrNull()?.let(::collectFromFunction)
-                    visitFunctionCallReceiver(functionCall)
-                    for (argument in functionCall.argumentList.arguments) {
-                        argument.accept(this, null)
-                    }
-                }
-
-                override fun visitQualifiedAccessExpression(qualifiedAccessExpression: CfirQualifiedAccessExpression) {
-                    qualifiedAccessExpression.explicitReceiver?.accept(this, null)
-                    collectUseEdge(qualifiedAccessExpression)
-                    qualifiedAccessExpression.resolvedStaticOrGlobalFunctionOrNull()?.let(::collectFromFunction)
-                }
-
-                override fun visitNamedAccessExpression(namedAccessExpression: CfirNamedAccessExpression) {
-                    namedAccessExpression.explicitReceiver?.accept(this, null)
-                    collectUseEdge(namedAccessExpression)
-                    namedAccessExpression.resolvedStaticOrGlobalFunctionOrNull()?.let(::collectFromFunction)
-                }
-
-                private fun visitFunctionCallReceiver(functionCall: CfirFunctionCall) {
-                    val receiver = functionCall.explicitReceiver
-                    if (receiver is CfirAnonymousFunctionExpression) {
-                        receiver.anonymousFunction.body?.accept(this, null)
-                    } else {
-                        receiver?.accept(this, null)
-                    }
-                }
-
-                private fun collectUseEdge(access: CfirQualifiedAccessExpression) {
-                    val symbol = access.resolvedAccessSymbolOrNull()?.initializationSymbol() ?: return
-                    val variable = trackedBySymbol[symbol] ?: return
-                    destination += StaticGlobalUseEdge(
-                        ownerVisitOrder = ownerVisitOrder,
-                        usedVariable = variable,
-                        source = access.calleeReference.source ?: access.source,
-                        diagnosticName = access.calleeReference.referenceNameOrNull() ?: variable.diagnosticName,
-                    )
-                }
-            }, null)
+            reachableCallableDepth++
+            try {
+                functionBody.accept(visitor, null)
+            } finally {
+                reachableCallableDepth--
+            }
         }
 
-        root.accept(object : org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid() {
+        visitor = object : org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid() {
             override fun visitElement(element: CfirElement) {
                 element.acceptChildren(this, null)
             }
 
+            // callable 声明属于 called-later 子图，不能因普通树遍历而进入。
+            override fun visitFunction(function: CfirFunction) = Unit
+
+            override fun visitProperty(property: CfirProperty) = Unit
+
             override fun visitAnonymousFunctionExpression(anonymousFunctionExpression: CfirAnonymousFunctionExpression) = Unit
 
-            override fun visitPatternVariable(patternVariable: CfirPatternVariable) {
-                val initializer = patternVariable.initializer ?: return
-                if (initializer is CfirAnonymousFunctionExpression) return
-                initializer.accept(this, null)
+            override fun visitAssignment(assignment: CfirAssignment) {
+                assignment.rValue.accept(this, null)
+                visitWriteTarget(assignment.lValue)
+            }
+
+            override fun visitIncrementDecrementExpression(incrementDecrementExpression: CfirIncrementDecrementExpression) {
+                val target = incrementDecrementExpression.expression
+                if (target is CfirQualifiedAccessExpression) {
+                    visitAccess(target, InitializationAccessMode.READ)
+                    visitAccess(target, InitializationAccessMode.WRITE_TARGET, visitReceiver = false)
+                } else {
+                    target.accept(this, null)
+                }
             }
 
             override fun visitFunctionCall(functionCall: CfirFunctionCall) {
-                functionCall.resolvedStaticOrGlobalFunctionOrNull()?.let(::collectFromFunction)
+                functionCall.resolvedInitializationCallableOrNull(InitializationAccessMode.READ)
+                    ?.let(::collectFromFunction)
                 visitFunctionCallReceiver(functionCall)
                 for (argument in functionCall.argumentList.arguments) {
                     argument.accept(this, null)
@@ -1409,12 +1464,56 @@ private class CfirInitializationFlowAnalyzer(
             private fun visitFunctionCallReceiver(functionCall: CfirFunctionCall) {
                 val receiver = functionCall.explicitReceiver
                 if (receiver is CfirAnonymousFunctionExpression) {
-                    receiver.anonymousFunction.body?.accept(this, null)
+                    collectFromFunction(receiver.anonymousFunction)
                 } else {
                     receiver?.accept(this, null)
                 }
             }
-        }, null)
+
+            override fun visitQualifiedAccessExpression(qualifiedAccessExpression: CfirQualifiedAccessExpression) {
+                visitAccess(qualifiedAccessExpression, InitializationAccessMode.READ)
+            }
+
+            override fun visitNamedAccessExpression(namedAccessExpression: CfirNamedAccessExpression) {
+                visitAccess(namedAccessExpression, InitializationAccessMode.READ)
+            }
+
+            private fun visitWriteTarget(target: CfirExpression) {
+                when (target) {
+                    is CfirQualifiedAccessExpression -> visitAccess(target, InitializationAccessMode.WRITE_TARGET)
+                    is CfirTupleLiteral -> target.elements.forEach(::visitWriteTarget)
+                    else -> target.accept(this, null)
+                }
+            }
+
+            /** 读 property 进入 getter，写目标进入 setter；变量写目标不形成 use edge。 */
+            private fun visitAccess(
+                access: CfirQualifiedAccessExpression,
+                accessMode: InitializationAccessMode,
+                visitReceiver: Boolean = true,
+            ) {
+                if (visitReceiver) {
+                    access.explicitReceiver?.accept(this, null)
+                }
+                if (accessMode == InitializationAccessMode.READ && reachableCallableDepth > 0) {
+                    collectUseEdge(access)
+                }
+                access.resolvedInitializationCallableOrNull(accessMode)?.let(::collectFromFunction)
+            }
+
+            private fun collectUseEdge(access: CfirQualifiedAccessExpression) {
+                val symbol = access.resolvedAccessSymbolOrNull()?.initializationSymbol() ?: return
+                val variable = trackedBySymbol[symbol] ?: return
+                destination += StaticGlobalUseEdge(
+                    ownerVisitOrder = ownerVisitOrder,
+                    usedVariable = variable,
+                    source = access.calleeReference.source ?: access.source,
+                    diagnosticName = access.calleeReference.referenceNameOrNull() ?: variable.diagnosticName,
+                )
+            }
+        }
+
+        root.accept(visitor, null)
     }
 
     /**
@@ -2751,37 +2850,61 @@ private fun CfirFunctionCall.resolvedCallableSymbolOrNull(): CfirBasedSymbol<*>?
     }
 }
 
-/**
- * 解析 static init 可递归进入的 static/global 函数。
- */
-private fun CfirFunctionCall.resolvedStaticOrGlobalFunctionOrNull(): CfirFunction? {
-    val function = when (val symbol = resolvedCallableSymbolOrNull()) {
-        is CfirNamedFunctionSymbol -> if (symbol.isBound) symbol.cfir else null
-        else -> null
-    } ?: return null
+/** 从调用表达式解析初始化依赖图需要进入的真实 callable。 */
+private fun CfirFunctionCall.resolvedInitializationCallableOrNull(
+    accessMode: InitializationAccessMode,
+): CfirFunction? = resolvedCallableSymbolOrNull()?.resolvedInitializationCallableOrNull(accessMode)
 
-    return if (function.symbol.callableId.classId == null || function.status.isStatic) {
-        function
+/** 从普通访问表达式解析初始化依赖图需要进入的真实 callable。 */
+private fun CfirQualifiedAccessExpression.resolvedInitializationCallableOrNull(
+    accessMode: InitializationAccessMode,
+): CfirFunction? = resolvedAccessSymbolOrNull()?.resolvedInitializationCallableOrNull(accessMode)
+
+/**
+ * 将解析符号映射为 global/static 初始化图中的 callable 子图。
+ *
+ * property 读取只进入 getter，赋值目标只进入 setter；普通函数、构造器和访问器
+ * 都回到 substitution/fake/delegated override 的真实声明，避免使用点视图丢失 body。
+ */
+private fun CfirBasedSymbol<*>.resolvedInitializationCallableOrNull(
+    accessMode: InitializationAccessMode,
+): CfirFunction? = when (this) {
+    is CfirPropertyAccessorSymbol -> {
+        if (!isBound) {
+            null
+        } else {
+            val property = propertySymbol.resolvedInitializationPropertyOrNull()
+            if (isGetter) property?.getter else property?.setter
+        }
+    }
+
+    is CfirPropertySymbol -> resolvedInitializationPropertyOrNull()?.let { property ->
+        when (accessMode) {
+            InitializationAccessMode.READ -> property.getter
+            InitializationAccessMode.WRITE_TARGET -> property.setter
+        }
+    }
+
+    is CfirFunctionSymbol<*> -> if (isBound) {
+        unwrapSubstitutionOverrides()
+            .unwrapFakeOverridesOrDelegated()
+            .cfir as? CfirFunction
     } else {
         null
     }
+
+    else -> null
 }
 
-/**
- * 解析函数值引用可递归进入的 static/global 函数。
- */
-private fun CfirQualifiedAccessExpression.resolvedStaticOrGlobalFunctionOrNull(): CfirFunction? {
-    val function = when (val symbol = resolvedAccessSymbolOrNull()) {
-        is CfirNamedFunctionSymbol -> if (symbol.isBound) symbol.cfir else null
-        else -> null
-    } ?: return null
-
-    return if (function.symbol.callableId.classId == null || function.status.isStatic) {
-        function
+/** 取得 property 使用点背后的真实声明。 */
+private fun CfirPropertySymbol.resolvedInitializationPropertyOrNull(): CfirProperty? =
+    if (isBound) {
+        unwrapSubstitutionOverrides()
+            .unwrapFakeOverridesOrDelegated()
+            .cfir
     } else {
         null
     }
-}
 
 /**
  * 从 qualified access 中解析访问目标符号。
