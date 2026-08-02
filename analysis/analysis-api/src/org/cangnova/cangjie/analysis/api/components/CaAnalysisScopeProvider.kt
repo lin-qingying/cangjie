@@ -5,6 +5,7 @@ import com.intellij.psi.search.GlobalSearchScope
 import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeOwner
 import org.cangnova.cangjie.analysis.api.lifetime.CaSessionComponent
+import org.cangnova.cangjie.analysis.api.lifetime.CaSessionComponentImplementationDetail
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 
 /**
@@ -16,6 +17,7 @@ import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
  *
  * 对齐 Kotlin Analysis API 的 `KaAnalysisScopeProvider`。
  */
+@OptIn(CaSessionComponentImplementationDetail::class)
 interface CaAnalysisScopeProvider : CaSessionComponent {
     /**
      * 当前 session 覆盖的全局搜索作用域;
