@@ -27,8 +27,6 @@ class CliDiagnosticsCollector(
             MutableCheckerContext(
                 sessionHolder = this,
                 returnTypeCalculator = ReturnTypeCalculatorForFullBodyResolve.Default,
-                containingFileSymbol = null,
-                reporter = reporter,
             ),
             components,
         )

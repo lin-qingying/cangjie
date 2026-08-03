@@ -8,6 +8,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
+import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
@@ -39,7 +40,7 @@ object CfirCaptureHasShadowVariableChecker : CfirQualifiedAccessChecker() {
         if (target is CfirValueParameter) return
 
         val variableName = target.variableName
-        val containingFunctions = context.containingDeclarations.asReversed().filterIsInstance<CfirFunction>()
+        val containingFunctions = context.containingDeclarations.asReversed().filterIsInstance<CfirFunctionSymbol<*>>().map { it.cfir }
         if (containingFunctions.size < 2) return
         for (function in containingFunctions) {
             if (function.containsDeclarationInOwnScope(target)) return

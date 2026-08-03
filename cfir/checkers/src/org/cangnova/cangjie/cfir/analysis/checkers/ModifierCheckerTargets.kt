@@ -17,15 +17,28 @@
 
 package org.cangnova.cangjie.cfir.analysis.checkers
 
-import org.cangnova.cangjie.LanguageVersionSettings
 import org.cangnova.cangjie.cfir.correspondingProperty
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosest
 import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
 import org.cangnova.cangjie.cfir.analysis.checkers.modifier.DeclarationKind
 import org.cangnova.cangjie.cfir.analysis.checkers.modifier.ModifierTarget
 import org.cangnova.cangjie.cfir.analysis.checkers.modifier.ModifierTargetPredicate
 import org.cangnova.cangjie.cfir.analysis.checkers.modifier.Site
 import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirConstructorSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirEnumSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirExtendSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirInterfaceSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirMacroDeclarationSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
+import org.cangnova.cangjie.cfir.symbols.CfirStructSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirTypeAliasSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirAnonymousFunctionSymbol
 import org.cangnova.cangjie.lexer.CjKeywordToken
 import org.cangnova.cangjie.lexer.CjTokens.*
 import org.cangnova.cangjie.source.CjFakeSourceElementKind
@@ -195,6 +208,24 @@ private val CLASS_LIKE_PARENTS: Set<DeclarationKind> = setOf(
     DeclarationKind.ENUM_CONSTRUCTOR,
 )
 
+/**
+ * 允许 `private`/`internal` 成员的 class-like 容器集合——**不含 INTERFACE**。
+ *
+ * 仓颉语义里 interface 成员默认 public，`private`/`internal` 修饰符对 interface 成员无意义，
+ * 应由 [possibleParentTargetPredicateMap] 的 `PRIVATE_KEYWORD`/`INTERNAL_KEYWORD` 谓词排除 INTERFACE 头，
+ * 致使 `checkParent` 报 `WRONG_MODIFIER_CONTAINING_DECLARATION`。
+ *
+ * 不直接改 [CLASS_LIKE_PARENTS]——那条常量被 `OVERRIDE`/`PROTECTED` 共享，
+ * interface 成员 override 是合法路径，不能误伤。
+ */
+private val PRIVATE_OR_INTERNAL_PARENTS: Set<DeclarationKind> = setOf(
+    DeclarationKind.CLASS,
+    DeclarationKind.STRUCT,
+    DeclarationKind.ENUM,
+    DeclarationKind.EXTEND,
+    DeclarationKind.ENUM_CONSTRUCTOR,
+)
+
 /** 每个修饰符允许出现的父声明目标谓词表。 */
 internal val possibleParentTargetPredicateMap: Map<CjKeywordToken, ModifierTargetPredicate> = mapOf(
     OVERRIDE_KEYWORD to ModifierTargetPredicate.headOf(*CLASS_LIKE_PARENTS.toTypedArray()),
@@ -203,11 +234,11 @@ internal val possibleParentTargetPredicateMap: Map<CjKeywordToken, ModifierTarge
         ModifierTargetPredicate.headOf(DeclarationKind.FILE),
     ),
     INTERNAL_KEYWORD to ModifierTargetPredicate.anyOf(
-        ModifierTargetPredicate.headOf(*CLASS_LIKE_PARENTS.toTypedArray()),
+        ModifierTargetPredicate.headOf(*PRIVATE_OR_INTERNAL_PARENTS.toTypedArray()),
         ModifierTargetPredicate.headOf(DeclarationKind.FILE),
     ),
     PRIVATE_KEYWORD to ModifierTargetPredicate.anyOf(
-        ModifierTargetPredicate.headOf(*CLASS_LIKE_PARENTS.toTypedArray()),
+        ModifierTargetPredicate.headOf(*PRIVATE_OR_INTERNAL_PARENTS.toTypedArray()),
         ModifierTargetPredicate.headOf(DeclarationKind.FILE),
     ),
 )
@@ -227,6 +258,7 @@ internal fun CheckerContext.actualTargetsFor(declaration: CfirDeclaration): List
             listOf(ModifierTarget.head(DeclarationKind.VARIABLE))
         }
     }
+
     is CfirFieldVariable -> {
         if (declaration.isLocal) {
             listOf(ModifierTarget.local(DeclarationKind.VARIABLE))
@@ -234,6 +266,7 @@ internal fun CheckerContext.actualTargetsFor(declaration: CfirDeclaration): List
             listOf(ModifierTarget.member(DeclarationKind.VARIABLE, container = closestContainingTypeKind()))
         }
     }
+
     is CfirValueParameter -> {
         if (declaration.correspondingProperty != null) {
             listOf(
@@ -244,6 +277,7 @@ internal fun CheckerContext.actualTargetsFor(declaration: CfirDeclaration): List
             listOf(ModifierTarget.member(DeclarationKind.VALUE_PARAMETER))
         }
     }
+
     is CfirEnumConstructor -> listOf(ModifierTarget.head(DeclarationKind.ENUM_CONSTRUCTOR))
     is CfirConstructor -> {
         if (declaration.status.isStatic) {
@@ -252,6 +286,7 @@ internal fun CheckerContext.actualTargetsFor(declaration: CfirDeclaration): List
             listOf(ModifierTarget.head(DeclarationKind.CONSTRUCTOR))
         }
     }
+
     is CfirMacroDeclaration -> listOf(ModifierTarget.head(DeclarationKind.MACRO))
     is CfirAnonymousFunction -> listOf(ModifierTarget.local(DeclarationKind.LAMBDA))
     is CfirMainFunction -> listOf(ModifierTarget.head(DeclarationKind.FUNCTION))
@@ -262,40 +297,84 @@ internal fun CheckerContext.actualTargetsFor(declaration: CfirDeclaration): List
             listOf(ModifierTarget.member(DeclarationKind.FUNCTION, container = closestContainingTypeKind()))
         }
     }
+
     is CfirNamedFunction -> {
         if (declaration.isLocal) {
             listOf(ModifierTarget.local(DeclarationKind.FUNCTION))
         } else {
-            listOf(ModifierTarget.member(DeclarationKind.FUNCTION, container = closestContainingTypeKind()))
+            listOfModifierTargetForNonLocalFunction(closestContainingTypeKind())
         }
     }
-    is CfirFunction -> listOf(ModifierTarget.member(DeclarationKind.FUNCTION, container = closestContainingTypeKind()))
+
+    is CfirFunction -> listOfModifierTargetForNonLocalFunction(closestContainingTypeKind())
     is CfirTypeAlias -> listOf(ModifierTarget.head(DeclarationKind.TYPEALIAS))
     is CfirFile -> listOf(ModifierTarget.head(DeclarationKind.FILE))
     is CfirTypeParameter -> listOf(ModifierTarget.head(DeclarationKind.TYPE_PARAMETER))
     else -> emptyList()
 }
 
-/** 根据当前声明栈推导修饰符所在父级声明的目标列表。 */
-internal fun CheckerContext.actualParentTargets(): List<ModifierTarget> = when (val parent = closestModifierContainingDeclaration()) {
-    is CfirClass -> listOf(ModifierTarget.head(DeclarationKind.CLASS))
-    is CfirStruct -> listOf(ModifierTarget.head(DeclarationKind.STRUCT))
-    is CfirInterface -> listOf(ModifierTarget.head(DeclarationKind.INTERFACE))
-    is CfirEnum -> listOf(ModifierTarget.head(DeclarationKind.ENUM))
-    is CfirExtend -> listOf(ModifierTarget.head(DeclarationKind.EXTEND))
-    is CfirEnumConstructor -> listOf(ModifierTarget.head(DeclarationKind.ENUM_CONSTRUCTOR))
-    is CfirConstructor -> listOf(ModifierTarget.head(DeclarationKind.CONSTRUCTOR))
-    is CfirFunction -> listOf(ModifierTarget.head(DeclarationKind.FUNCTION))
-    else -> listOf(ModifierTarget.head(DeclarationKind.FILE))
-}
+/**
+ * 推导非局部函数（顶层头或类型成员）的修饰符目标。
+ *
+ * 容器种类为空 → 顶层声明头（[Site.HEAD]）；否则 → 类型成员（[Site.MEMBER]），携带容器种类。
+ * 修复点：顶层函数此前一律被错打为 `member(FUNCTION, container=null)`，
+ * 致使 `headOf(...)` 谓词错过它、`memberOf(...)` 谓词误命中它，触发误报或漏报。
+ */
+private fun listOfModifierTargetForNonLocalFunction(container: DeclarationKind?): List<ModifierTarget> =
+    if (container == null) {
+        listOf(ModifierTarget.head(DeclarationKind.FUNCTION))
+    } else {
+        listOf(ModifierTarget.member(DeclarationKind.FUNCTION, container = container))
+    }
 
-/** 查找对修饰符归属有意义的最近外层声明。 */
-private fun CheckerContext.closestModifierContainingDeclaration(): CfirDeclaration? =
-    containingDeclarations.asReversed().firstOrNull { declaration ->
-        // 对齐 Kotlin FirModifierChecker：属性参数修饰符的包含声明应越过主构造和 fake property，落到外层类型。
-        declaration !is CfirProperty &&
-                !(declaration is CfirConstructor && declaration.isPrimary) &&
-                declaration.source?.kind !is CjFakeSourceElementKind
+
+/**
+ * 根据当前声明栈推导修饰符所在父级声明的目标列表。
+ *
+ * 修复点：
+ * - lambda（[CfirAnonymousFunction]）单列分支，输出 [DeclarationKind.LAMBDA] 而非 FUNCTION，
+ *   致使诊断文案显示 `lambda` 不显示 `function`。
+ * - 父声明为 null（查不到有意义外层）时返回空列表，不再兜底为 FILE——避免误把 lambda 链等无容器场景放行。
+ */
+internal fun CheckerContext.actualParentTargets(): List<ModifierTarget> =
+    when (val parent = closestModifierContainingSymbol()) {
+        is CfirClassSymbol -> listOf(ModifierTarget.head(DeclarationKind.CLASS))
+        is CfirStructSymbol -> listOf(ModifierTarget.head(DeclarationKind.STRUCT))
+        is CfirInterfaceSymbol -> listOf(ModifierTarget.head(DeclarationKind.INTERFACE))
+        is CfirEnumSymbol -> listOf(ModifierTarget.head(DeclarationKind.ENUM))
+        is CfirExtendSymbol -> listOf(ModifierTarget.head(DeclarationKind.EXTEND))
+
+        is CfirMacroDeclarationSymbol -> listOf(ModifierTarget.head(DeclarationKind.MACRO))
+        is CfirEnumConstructorSymbol -> listOf(ModifierTarget.head(DeclarationKind.ENUM_CONSTRUCTOR))
+        is CfirConstructorSymbol -> listOf(ModifierTarget.head(DeclarationKind.CONSTRUCTOR))
+        is CfirAnonymousFunctionSymbol -> listOf(ModifierTarget.head(DeclarationKind.LAMBDA))
+        is CfirFunctionSymbol<*> -> listOf(ModifierTarget.head(DeclarationKind.FUNCTION))
+        is CfirTypeAliasSymbol -> listOf(ModifierTarget.head(DeclarationKind.TYPEALIAS))
+        null -> emptyList()
+        else -> listOf(ModifierTarget.head(DeclarationKind.FILE))
+    }
+
+/**
+ * 查找对修饰符归属有意义的最近外层声明的**符号**。
+ *
+ * 对齐 Kotlin `FirModifierChecker` 的 `findClosest<FirBasedSymbol<*>>`：直接复用 [findClosest]，
+ * 谓词按声明节点（经 `symbol.cfir` 反解）判别——跳过主构造、property、fake source。
+ *
+ * @param propertyParameterMode 是否处于 property 参数修饰符的查父场景，需要越过主构造和 fake property。
+ */
+private fun CheckerContext.closestModifierContainingSymbol(
+    propertyParameterMode: Boolean = false,
+): CfirBasedSymbol<*>? =
+    findClosest<CfirBasedSymbol<*>> { symbol ->
+        val declaration = symbol.cfir
+        if (propertyParameterMode) {
+            // 对齐 Kotlin FirModifierChecker：属性参数修饰符的包含声明应越过主构造和 fake property，落到外层类型。
+            declaration !is CfirProperty &&
+                    !(declaration is CfirConstructor && declaration.isPrimary) &&
+                    declaration.source?.kind !is CjFakeSourceElementKind
+        } else {
+            declaration.source?.kind !is CjFakeSourceElementKind
+        }
     }
 
 /** 返回最近外层 class-like 容器种类，用于成员目标的 container 维度。 */
@@ -317,7 +396,7 @@ private fun CheckerContext.closestContainingTypeKind(): DeclarationKind? =
 internal fun List<ModifierTarget>.firstOrThisDescription(): String =
     firstOrNull()?.let { target ->
         if (target.isHead) {
-            "${target.kind.description}"
+            target.kind.description
         } else {
             "${target.site.name.lowercase()} ${target.kind.description}"
         }

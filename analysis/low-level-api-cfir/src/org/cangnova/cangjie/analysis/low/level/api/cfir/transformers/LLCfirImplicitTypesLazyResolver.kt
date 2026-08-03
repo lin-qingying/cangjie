@@ -21,12 +21,17 @@ import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
+import org.cangnova.cangjie.cfir.expressions.withCfirSymbolEntry
 
 import org.cangnova.cangjie.cfir.resolve.body.CfirImplicitAwareBodyResolveTransformer
-import org.cangnova.cangjie.cfir.resolve.body.CfirImplicitBodyResolveComputationSession
+import org.cangnova.cangjie.cfir.resolve.body.ImplicitBodyResolveComputationSession
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
+import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 import org.cangnova.cangjie.utils.exceptions.requireWithAttachment
 import org.cangnova.cangjie.utils.exceptions.withCfirEntry
+import org.cangnova.cangjie.utils.setMultimapOf
 
 /**
  * low-level 的隐式类型阶段解析器。
@@ -50,11 +55,88 @@ internal object LLCfirImplicitTypesLazyResolver : LLCfirLazyResolver(CfirResolve
     }
 }
 
-/**
- * 与主干 `CfirImplicitBodyResolveComputationSession` 同构复用。
- * low-level 不再自造一套独立状态机类型。
- */
-internal typealias LLImplicitBodyResolveComputationSession = CfirImplicitBodyResolveComputationSession
+internal class LLImplicitBodyResolveComputationSession : ImplicitBodyResolveComputationSession() {
+    /**
+     * The symbol on which foreign annotations will be postponed
+     *
+     * @see withAnchorForForeignAnnotations
+     * @see postponeForeignAnnotationResolution
+     */
+    private var anchorForForeignAnnotations: CfirCallableSymbol<*>? = null
+
+    inline fun <T> withAnchorForForeignAnnotations(symbol: CfirCallableSymbol<*>, action: () -> T): T {
+        val previousSymbol = anchorForForeignAnnotations
+        return try {
+            anchorForForeignAnnotations = symbol
+            action()
+        } finally {
+            anchorForForeignAnnotations = previousSymbol
+        }
+    }
+
+    override fun <D : CfirCallableDeclaration> executeTransformation(symbol: CfirCallableSymbol<*>, transformation: () -> D): D {
+        // Do not store local declarations as we can postpone only non-local callables
+        return if (symbol.cannotResolveAnnotationsOnDemand()) {
+            transformation()
+        } else {
+            withAnchorForForeignAnnotations(symbol, transformation)
+        }
+    }
+
+    private val postponedSymbols = setMultimapOf<CfirCallableSymbol<*>, CfirBasedSymbol<*>>()
+
+    /**
+     * Postpone the resolution request to [symbol] until [annotation arguments][CfirResolvePhase.ANNOTATION_ARGUMENTS] phase
+     * of the declaration which is used this foreign annotation.
+     *
+     * @see postponedSymbols
+     */
+    fun postponeForeignAnnotationResolution(symbol: CfirBasedSymbol<*>) {
+        // We should unwrap local symbols to avoid recursion
+        // We cannot resolve them on demand, so we shouldn't postpone them
+        val symbolToPostpone = symbol.symbolToPostponeIfCanBeResolvedOnDemand() ?: return
+        val currentSymbol = anchorForForeignAnnotations ?: errorWithAttachment("Unexpected state: the current symbol have to be here") {
+            withCfirSymbolEntry("symbol to postpone", symbolToPostpone)
+        }
+
+        // There is no sense to postpone itself as it will lead to recursion
+        if (currentSymbol == symbolToPostpone) return
+
+        postponedSymbols.put(currentSymbol, symbolToPostpone)
+    }
+
+    /**
+     * @return all symbols postponed with [postponeForeignAnnotationResolution] for the [target] element
+     *
+     * @see postponeForeignAnnotationResolution
+     */
+    fun postponedSymbols(target: CfirCallableDeclaration): Collection<CfirBasedSymbol<*>> {
+        return postponedSymbols[target.symbol]
+    }
+
+    private var cycledSymbol: CfirCallableSymbol<*>? = null
+
+    /**
+     * Push [symbol] with a recursion return type to be able to report it later
+     *
+     * @param symbol is a symbol with the recursion error in the return type
+     *
+     * @see popCycledSymbolIfExists
+     * @see LLCfirImplicitBodyTargetResolver.handleCycleInResolution
+     */
+    fun pushCycledSymbol(symbol: CfirCallableSymbol<*>) {
+        requireWithAttachment(cycledSymbol == null, { "Nested recursion is not allowed" })
+        cycledSymbol = symbol
+    }
+
+    /**
+     * Pop [CfirCallableSymbol] with a recursion return type if it was [pushed][pushCycledSymbol]
+     *
+     * @see pushCycledSymbol
+     * @see org.jetbrains.kotlin.analysis.low.level.api.fir.element.builder.LLCfirReturnTypeCalculatorWithJump.resolveDeclaration
+     */
+    fun popCycledSymbolIfExists(): CfirCallableSymbol<*>? = cycledSymbol?.also { cycledSymbol = null }
+}
 
 /**
  * IMPLICIT_TYPES 阶段的 low-level body 目标解析器。

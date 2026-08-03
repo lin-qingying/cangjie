@@ -336,7 +336,7 @@ class CfirOverloadByLambdaBodyResolver(
          */
         fun restore(
             candidate: Candidate,
-            implicitBodyResolveComputationSession: org.cangnova.cangjie.cfir.resolve.body.CfirImplicitBodyResolveComputationSession?,
+            implicitBodyResolveComputationSession: org.cangnova.cangjie.cfir.resolve.body.ImplicitBodyResolveComputationSession?,
         ) {
             resolutionSnapshot.restore()
             postponedAtomStates.restore()

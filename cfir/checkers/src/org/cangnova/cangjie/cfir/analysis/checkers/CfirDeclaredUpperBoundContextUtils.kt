@@ -137,8 +137,8 @@ private fun CfirUserTypeRef.classLikeConeTypeInCurrentContextOrNull(): ConeLooku
  * 从内到外查找当前可见的类型参数符号。
  */
 private fun CheckerContext.findVisibleTypeParameterSymbol(name: Name): CfirTypeParameterSymbol? {
-    for (declaration in containingDeclarations.asReversed()) {
-        val owner = declaration as? CfirTypeParameterRefsOwner ?: continue
+    for (symbol in containingDeclarations.asReversed()) {
+        val owner = symbol.cfir as? CfirTypeParameterRefsOwner ?: continue
         owner.typeParameters.firstOrNull { it.symbol.name == name }?.let { return it.symbol }
     }
     return null

@@ -250,3 +250,30 @@ inline fun <reified T : Any> Iterable<*>.firstIsInstanceOrNull(): T? {
  * @return true if the flag is set, false otherwise
  */
 infix fun Int.hasFlag(flag: Int): Boolean = (this and flag) == flag
+
+/**
+ * Note that this iterator don't properly support throwing of [ConcurrentModificationException]
+ * if one of underlying collections was modified
+ */
+class ChainedIterator<T>(delegates: Collection<Iterator<T>>) : Iterator<T> {
+    private var metaIterator = delegates.iterator()
+    private var currentIterator: Iterator<T>? = null
+
+    private fun promote() {
+        if (currentIterator?.hasNext() == true) return
+        while (metaIterator.hasNext()) {
+            currentIterator = metaIterator.next()
+            if (currentIterator!!.hasNext()) return
+        }
+    }
+
+    override fun hasNext(): Boolean {
+        promote()
+        return currentIterator?.hasNext() == true
+    }
+
+    override fun next(): T {
+        promote()
+        return currentIterator?.next() ?: throw NoSuchElementException()
+    }
+}

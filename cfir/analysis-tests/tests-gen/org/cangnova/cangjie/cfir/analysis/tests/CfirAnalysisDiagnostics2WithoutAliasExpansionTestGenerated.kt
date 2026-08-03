@@ -67,6 +67,8 @@ class CfirAnalysisDiagnostics2WithoutAliasExpansionTestGenerated : AbstractCfirL
 
     // Package: mock -> MockGenerated
 
+    // Package: modifier -> ModifierGenerated
+
     // Package: mut -> MutGenerated
 
     // Package: operator -> OperatorGenerated

@@ -5,9 +5,8 @@ import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.resolve.ResolutionMode
 import org.cangnova.cangjie.cfir.resolve.body.CfirBodyResolveTransformer
 import org.cangnova.cangjie.cfir.resolve.body.CfirImplicitAwareBodyResolveTransformer
-import org.cangnova.cangjie.cfir.resolve.body.CfirImplicitBodyResolveComputationSession
+import org.cangnova.cangjie.cfir.resolve.body.ImplicitBodyResolveComputationSession
 import org.cangnova.cangjie.cfir.ScopeSession
-import org.cangnova.cangjie.cfir.resolve.transformers.ReturnTypeCalculatorForFullBodyResolve
 import org.cangnova.cangjie.cfir.resolve.body.ReturnTypeCalculatorWithJump
 import org.cangnova.cangjie.cfir.session.CfirSession
 
@@ -26,9 +25,9 @@ internal class CfirImplicitTypesResolveProcessor(
     phase = CfirResolvePhase.IMPLICIT_TYPES,
 ) {
     /** 隐式类型计算会话，缓存 callable 隐式返回类型状态。 */
-    private val computationSession = CfirImplicitBodyResolveComputationSession()
+    private val computationSession = ImplicitBodyResolveComputationSession()
     /** 支持 designated jump 的返回类型计算器。 */
-    private val returnTypeCalculator = ReturnTypeCalculatorWithJump(session, scopeSession, computationSession)
+    private val returnTypeCalculator = ReturnTypeCalculatorWithJump(scopeSession, computationSession)
 
     /** IMPLICIT_TYPES 阶段使用的 body resolve transformer。 */
     private val implicitTypesTransformer = CfirImplicitAwareBodyResolveTransformer(

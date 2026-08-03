@@ -1,18 +1,15 @@
 ﻿package org.cangnova.cangjie.cfir.analysis.checkers.context
 
-import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.LanguageVersionSettings
 import org.cangnova.cangjie.cfir.CfirAnnotationContainer
+import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.SessionAndScopeSessionHolder
 import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.diagnostic.ConeDiagnosticWithSingleCandidate
-import org.cangnova.cangjie.cfir.diagnostics.CjDiagnostic
-import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
-import org.cangnova.cangjie.cfir.diagnostics.DiagnosticContext
-import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
-import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
-import org.cangnova.cangjie.cfir.diagnostics.Severity
+import org.cangnova.cangjie.cfir.diagnostics.*
 import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirResolvable
@@ -20,29 +17,18 @@ import org.cangnova.cangjie.cfir.expressions.CfirStatement
 import org.cangnova.cangjie.cfir.references.CfirErrorNamedReference
 import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
+import org.cangnova.cangjie.cfir.resolve.transformers.ReturnTypeCalculator
 import org.cangnova.cangjie.cfir.session.languageVersionSettings
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFileSymbol
-import org.cangnova.cangjie.LanguageVersionSettings
-import org.cangnova.cangjie.source.CjSourceElement
-import org.cangnova.cangjie.cfir.SessionAndScopeSessionHolder
-import org.cangnova.cangjie.cfir.resolve.transformers.ReturnTypeCalculator
-import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
-import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
-import org.cangnova.cangjie.cfir.types.CfirTypeRef
-import org.cangnova.cangjie.cfir.types.ConeDiagnostic
-import org.cangnova.cangjie.cfir.types.ConeErrorType
-import org.cangnova.cangjie.cfir.types.ConeUnreportedDuplicateDiagnostic
-import org.cangnova.cangjie.cfir.types.coneTypeOrNull
-import org.cangnova.cangjie.cfir.types.contains
+import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
-import java.util.Collections
-import java.util.IdentityHashMap
+import org.cangnova.cangjie.source.CjSourceElement
+import java.util.*
 
 /** checker 执行期间可读取的诊断上下文，暴露当前 session、作用域和遍历栈信息。 */
 abstract class CheckerContext : DiagnosticContext, SessionAndScopeSessionHolder {
-    /** 当前 checker 使用的诊断 reporter。 */
-    abstract val reporter: DiagnosticReporter
 
     /** 提供 session 与 scopeSession 的持有者。 */
     abstract val sessionHolder: SessionAndScopeSessionHolder
@@ -51,7 +37,7 @@ abstract class CheckerContext : DiagnosticContext, SessionAndScopeSessionHolder 
     abstract val returnTypeCalculator: ReturnTypeCalculator
 
     /** 从外到内记录当前遍历位置所在的声明栈。 */
-    abstract val containingDeclarations: List<CfirDeclaration>
+    abstract val containingDeclarations: List<CfirBasedSymbol<*>>
 
     /** 从外到内记录当前遍历位置所在的语句栈。 */
     abstract val containingStatements: List<CfirStatement>
@@ -122,8 +108,8 @@ abstract class CheckerContext : DiagnosticContext, SessionAndScopeSessionHolder 
             Severity.ERROR -> allErrorsSuppressed
         }
         return suppressedByAll ||
-            diagnostic.factoryName in suppressedDiagnostics ||
-            diagnostic.isDerivedFromRecursiveImplicitReturn()
+                diagnostic.factoryName in suppressedDiagnostics ||
+                diagnostic.isDerivedFromRecursiveImplicitReturn()
     }
 
     /**
@@ -161,6 +147,7 @@ private fun CfirExpression.dependsOnRecursiveImplicitReturnType(): Boolean {
                     found = true
                     return
                 }
+
                 element is CfirResolvable && element.recursiveImplicitReturnCallableOrNull() != null -> {
                     found = true
                     return
@@ -181,6 +168,7 @@ private fun CfirResolvable.recursiveImplicitReturnCallableOrNull(): CfirCallable
         is CfirNamedReferenceWithCandidateBase -> reference.candidateSymbol
         is CfirErrorNamedReference ->
             (reference.diagnostic as? ConeDiagnosticWithSingleCandidate)?.candidateSymbol
+
         else -> null
     } as? CfirCallableSymbol<*> ?: return null
 
@@ -217,43 +205,43 @@ private fun ConeDiagnostic.isRecursiveImplicitTypeDiagnostic(): Boolean {
 private fun ConeDiagnostic.unwrapUnreportedDuplicateDiagnostic(): ConeDiagnostic =
     (this as? ConeUnreportedDuplicateDiagnostic)?.original ?: this
 
-/** 诊断收集 visitor 使用的可变 checker context 实现。 */
-class MutableCheckerContext(
+/**
+ * 诊断收集 visitor 使用的可变 checker context 实现，对齐 Kotlin `MutableCheckerContext`。
+ *
+ * 主构造私有，公开副构造只占 `sessionHolder`/`returnTypeCalculator` 两个必填参数，
+ * 其余栈字段在 `: this(...)` 调主构造时填默认值——避免公开主构造带默认参数后调用方误传mutableDeclarations=` mutableListOf()` 走错分支。
+ */
+class MutableCheckerContext private constructor(
     /** 提供 session 与 scopeSession 的持有者。 */
     override val sessionHolder: SessionAndScopeSessionHolder,
     /** 当前诊断流程使用的函数返回类型计算器。 */
     override val returnTypeCalculator: ReturnTypeCalculator,
-    /** 当前 checker 使用的诊断 reporter。 */
-    override val reporter: DiagnosticReporter,
     /** 当前正在遍历的文件 symbol。 */
     override var containingFileSymbol: CfirFileSymbol?,
-    /** 可变声明栈。 */
-    private val mutableDeclarations: MutableList<CfirDeclaration> = mutableListOf(),
+    /** 可变声明符号栈（对齐 Kotlin `containingDeclarations: MutableList<FirBasedSymbol<*>>`，压 `declaration.symbol` 而非声明节点本身）。 */
+    override val containingDeclarations: MutableList<CfirBasedSymbol<*>>,
     /** 可变语句栈。 */
-    private val mutableStatements: MutableList<CfirStatement> = mutableListOf(),
+    override val containingStatements: MutableList<CfirStatement>,
     /** 可变元素栈。 */
-    private val mutableElements: MutableList<CfirElement> = mutableListOf(),
+    override val containingElements: MutableList<CfirElement>,
     /** 可变调用或赋值节点栈。 */
-    private val mutableCallsOrAssignments: MutableList<CfirElement> = mutableListOf(),
+    override val callsOrAssignments: MutableList<CfirElement>,
     /** 可变注解容器栈。 */
-    private val mutableAnnotationContainers: MutableList<CfirAnnotationContainer> = mutableListOf(),
+    override val annotationContainers: MutableList<CfirAnnotationContainer>,
     /** 当前诊断收集轮次内已经产生 lambda 参数形状诊断的函数集合。 */
-    private val lambdaParameterShapeDiagnostics: MutableSet<CfirAnonymousFunction> =
-        Collections.newSetFromMap(IdentityHashMap<CfirAnonymousFunction, Boolean>()),
+    private val lambdaParameterShapeDiagnostics: MutableSet<CfirAnonymousFunction>,
     /** 当前诊断轮次中已由泛型实例化成员冲突拥有的调用范围。 */
-    private val genericInstantiationMemberConflictRanges: MutableSet<Pair<Int, Int>> = linkedSetOf(),
+    private val genericInstantiationMemberConflictRanges: MutableSet<Pair<Int, Int>>,
     /** 当前诊断轮次中已由 static 泛型参数依赖拥有的 source 范围。 */
-    private val staticGenericDependencyRanges: MutableSet<Pair<Int, Int>> = linkedSetOf(),
+    private val staticGenericDependencyRanges: MutableSet<Pair<Int, Int>>,
     /** 当前作用域中被显式 suppress 的诊断名称集合。 */
-    override val suppressedDiagnostics: Set<String> = emptySet(),
+    override val suppressedDiagnostics: Set<String>,
     /** 当前作用域是否 suppress 所有 info 级别诊断。 */
-    override val allInfosSuppressed: Boolean = false,
+    override val allInfosSuppressed: Boolean,
     /** 当前作用域是否 suppress 所有 warning 级别诊断。 */
-    override val allWarningsSuppressed: Boolean = false,
+    override val allWarningsSuppressed: Boolean,
     /** 当前作用域是否 suppress 所有 error 级别诊断。 */
-    override val allErrorsSuppressed: Boolean = false,
-
-
+    override val allErrorsSuppressed: Boolean,
 ) : CheckerContextForProvider(
     sessionHolder = sessionHolder,
     returnTypeCalculator = returnTypeCalculator,
@@ -261,25 +249,27 @@ class MutableCheckerContext(
     allWarningsSuppressed = allWarningsSuppressed,
     allErrorsSuppressed = allErrorsSuppressed,
 ) {
-    /** 当前声明栈的只读视图。 */
-    override val containingDeclarations: List<CfirDeclaration>
-        get() = mutableDeclarations
-
-    /** 当前语句栈的只读视图。 */
-    override val containingStatements: List<CfirStatement>
-        get() = mutableStatements
-
-    /** 当前元素栈的只读视图。 */
-    override val containingElements: List<CfirElement>
-        get() = mutableElements
-
-    /** 当前调用或赋值节点栈的只读视图。 */
-    override val callsOrAssignments: List<CfirElement>
-        get() = mutableCallsOrAssignments
-
-    /** 当前注解容器栈的只读视图。 */
-    override val annotationContainers: List<CfirAnnotationContainer>
-        get() = mutableAnnotationContainers
+    /** 创建空的 mutable context——所有栈初始化为空、suppress 标志为 false。 */
+    constructor(
+        sessionHolder: SessionAndScopeSessionHolder,
+        returnTypeCalculator: ReturnTypeCalculator,
+    ) : this(
+        sessionHolder = sessionHolder,
+        returnTypeCalculator = returnTypeCalculator,
+        containingFileSymbol = null,
+        containingDeclarations = mutableListOf(),
+        containingStatements = mutableListOf(),
+        containingElements = mutableListOf(),
+        callsOrAssignments = mutableListOf(),
+        annotationContainers = mutableListOf(),
+        lambdaParameterShapeDiagnostics = Collections.newSetFromMap(IdentityHashMap()),
+        genericInstantiationMemberConflictRanges = linkedSetOf(),
+        staticGenericDependencyRanges = linkedSetOf(),
+        suppressedDiagnostics = emptySet(),
+        allInfosSuppressed = false,
+        allWarningsSuppressed = false,
+        allErrorsSuppressed = false,
+    )
 
     override fun hasLambdaParameterShapeDiagnostic(lambda: CfirAnonymousFunction): Boolean =
         lambda in lambdaParameterShapeDiagnostics
@@ -307,7 +297,7 @@ class MutableCheckerContext(
         source ?: return false
         return staticGenericDependencyRanges.any { (start, end) ->
             start >= source.startOffset && end <= source.endOffset ||
-                source.startOffset >= start && source.endOffset <= end
+                    source.startOffset >= start && source.endOffset <= end
         }
     }
 
@@ -323,12 +313,11 @@ class MutableCheckerContext(
             sessionHolder = sessionHolder,
             returnTypeCalculator = returnTypeCalculator,
             containingFileSymbol = containingFileSymbol,
-            reporter = reporter,
-            mutableDeclarations = mutableDeclarations,
-            mutableStatements = mutableStatements,
-            mutableElements = mutableElements,
-            mutableCallsOrAssignments = mutableCallsOrAssignments,
-            mutableAnnotationContainers = mutableAnnotationContainers,
+            containingDeclarations = containingDeclarations,
+            containingStatements = containingStatements,
+            containingElements = containingElements,
+            callsOrAssignments = callsOrAssignments,
+            annotationContainers = annotationContainers,
             lambdaParameterShapeDiagnostics = lambdaParameterShapeDiagnostics,
             genericInstantiationMemberConflictRanges = genericInstantiationMemberConflictRanges,
             staticGenericDependencyRanges = staticGenericDependencyRanges,
@@ -341,54 +330,48 @@ class MutableCheckerContext(
 
     /** 将声明压入声明栈。 */
     override fun addDeclaration(declaration: CfirDeclaration): CheckerContextForProvider {
-        mutableDeclarations += declaration
+        containingDeclarations.add(declaration.symbol)
         return this
     }
 
     /** 弹出最近压入的声明。 */
     override fun dropDeclaration() {
-        if (mutableDeclarations.isNotEmpty()) {
-            mutableDeclarations.removeLast()
-        }
+        containingDeclarations.removeLast()
+
     }
 
     /** 将语句压入语句栈。 */
     override fun addStatement(statement: CfirStatement): CheckerContextForProvider {
-        mutableStatements += statement
+        containingStatements += statement
         return this
     }
 
     /** 弹出最近压入的语句。 */
     override fun dropStatement() {
-        if (mutableStatements.isNotEmpty()) {
-            mutableStatements.removeLast()
-        }
+        containingStatements.removeLast()
+
     }
 
     /** 将调用或赋值节点压入对应上下文栈。 */
     override fun addCallOrAssignment(qualifiedAccessOrAnnotationCall: CfirStatement): CheckerContextForProvider {
-        mutableCallsOrAssignments += qualifiedAccessOrAnnotationCall
+        callsOrAssignments += qualifiedAccessOrAnnotationCall
         return this
     }
 
     /** 弹出最近压入的调用或赋值节点。 */
     override fun dropCallOrAssignment() {
-        if (mutableCallsOrAssignments.isNotEmpty()) {
-            mutableCallsOrAssignments.removeLast()
-        }
+        callsOrAssignments.removeLast()
     }
 
     /** 将注解容器压入注解容器栈。 */
     override fun addAnnotationContainer(annotationContainer: CfirAnnotationContainer): CheckerContextForProvider {
-        mutableAnnotationContainers += annotationContainer
+        annotationContainers += annotationContainer
         return this
     }
 
     /** 弹出最近压入的注解容器。 */
     override fun dropAnnotationContainer() {
-        if (mutableAnnotationContainers.isNotEmpty()) {
-            mutableAnnotationContainers.removeLast()
-        }
+        annotationContainers.removeLast()
     }
 
     /** 进入 contract body；当前上下文无需额外状态。 */
@@ -411,24 +394,38 @@ class MutableCheckerContext(
 
     /** 将元素压入元素栈；避免同一元素连续重复入栈。 */
     override fun addElement(element: CfirElement): CheckerContextForProvider {
-        if (mutableElements.lastOrNull() !== element) {
-            mutableElements += element
+        if (containingElements.lastOrNull() !== element) {
+            containingElements += element
         }
         return this
     }
 
     /** 弹出最近压入的元素。 */
     override fun dropElement() {
-        if (mutableElements.isNotEmpty()) {
-            mutableElements.removeLast()
+        if (containingElements.isNotEmpty()) {
+            containingElements.removeLast()
         }
     }
+}
+
+/**
+ * Returns the closest to the end of context.containingDeclarations instance of type [T] or null if no such item could be found.
+ * By specifying [check] you can filter which exact declaration should be found
+ * E.g., property accessor is either getter or setter, but a type-based search could return, say,
+ *   the closest setter, while we want to keep searching for a getter.
+ */
+inline fun <reified T : CfirBasedSymbol<*>> CheckerContext.findClosest(check: (T) -> Boolean = { true }): T? {
+    for (it in containingDeclarations.asReversed()) {
+        return (it as? T)?.takeIf(check) ?: continue
+    }
+
+    return null
 }
 
 /** 从当前声明栈由内向外查找第一个满足谓词的声明。 */
 inline fun <reified T : CfirDeclaration> CheckerContext.findClosestDeclaration(noinline check: (T) -> Boolean = { true }): T? {
     for (declaration in containingDeclarations.asReversed()) {
-        val typed = declaration as? T ?: continue
+        val typed = declaration.cfir as? T ?: continue
         if (check(typed)) {
             return typed
         }

@@ -418,10 +418,11 @@ private sealed class CfirFileStructureNode(val element: CfirDeclaration) {
          * It is based on [org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder], but [mappingName] may rewrite/simplify some rules.
          */
         fun mappingNameByPsi(declaration: CjDeclaration): Name? = when (declaration) {
-            is CjConstructor<*> -> SpecialNames.INIT
-            is CjCodeFragment -> SpecialNames.NO_NAME_PROVIDED
             is CjEnumConstructor -> declaration.name?.let(Name::identifier)
             is CjPatternVariable -> PATTERN_VARIABLE_MAPPING_NAME
+            is CjConstructor<*> -> SpecialNames.INIT
+            is CjCodeFragment -> SpecialNames.NO_NAME_PROVIDED
+
             is CjTypeStatement, is CjTypeAlias, is CjNamedFunction, is CjProperty -> declaration.nameAsSafeName
             else -> null
         }
