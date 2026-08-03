@@ -9,6 +9,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.declarations.lambdaParameterShapeExpectedFunctionType
+import org.cangnova.cangjie.cfir.symbols.CfirVariableSymbol
 import org.cangnova.cangjie.cfir.diagnostic.ConeDiagnosticWithSingleCandidate
 import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
 import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
@@ -81,7 +82,8 @@ private fun CfirAnonymousFunction.expectedFunctionTypeFromContainingVariable(
 ): ConeFunctionType? {
     val variable = context.containingDeclarations
         .asReversed()
-        .filterIsInstance<CfirVariable>()
+        .filterIsInstance<CfirVariableSymbol<*>>()
+        .map { it.cfir }
         .firstOrNull { variable ->
             variable.initializer?.isExpressionForAnonymousFunction(this) == true
         }

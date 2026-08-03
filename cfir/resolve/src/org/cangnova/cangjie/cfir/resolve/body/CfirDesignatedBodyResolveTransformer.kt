@@ -18,7 +18,7 @@ open class CfirDesignatedBodyResolveTransformerForReturnTypeCalculator(
     private val designation: Iterator<CfirElement>,
     session: CfirSession,
     scopeSession: ScopeSession,
-    implicitBodyResolveComputationSession: CfirImplicitBodyResolveComputationSession,
+    implicitBodyResolveComputationSession: ImplicitBodyResolveComputationSession,
     returnTypeCalculator: ReturnTypeCalculatorWithJump,
 ) : CfirImplicitAwareBodyResolveTransformer(
     session = session,

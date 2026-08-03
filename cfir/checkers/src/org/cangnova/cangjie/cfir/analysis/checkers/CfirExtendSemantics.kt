@@ -28,6 +28,7 @@ import org.cangnova.cangjie.builtins.StandardNames
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
+import org.cangnova.cangjie.cfir.symbols.CfirExtendSymbol
 import org.cangnova.cangjie.cfir.references.CfirReference
 import org.cangnova.cangjie.cfir.references.CfirSuperReference
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
@@ -212,7 +213,7 @@ internal object CfirExtendSemantics {
      * 判断 source 是否位于任意当前可见 extend 头部中触发 immutable-mut-interface 错误的 supertype。
      */
     fun isSourceInsideImmutableMutInterfaceExtendHeader(context: CheckerContext, source: CjSourceElement): Boolean {
-        val stackExtends = context.containingDeclarations.asSequence().filterIsInstance<CfirExtend>()
+        val stackExtends = context.containingDeclarations.asSequence().filterIsInstance<CfirExtendSymbol>().map { it.cfir }
         val fileExtends = context.containingFileSymbol
             ?.cfir
             ?.declarations

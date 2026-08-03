@@ -9,6 +9,8 @@ import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
 import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirVariableSymbol
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
@@ -360,18 +362,10 @@ private fun CheckerContext.isSubscriptIndexExpression(source: AbstractCjSourceEl
  * 只在变量、字段和模式变量拥有源码类型引用时返回目标类型，用于常量表达式按初始化目标范围检查。
  */
 private fun CheckerContext.expectedInitializerTypeFor(source: AbstractCjSourceElement): ConeCangJieType? {
-    for (declaration in containingDeclarations.asReversed()) {
-        when (declaration) {
-            is CfirVariable ->
-                if (declaration.initializer?.source.contains(source)) return declaration.returnTypeRef.explicitConeTypeOrNull()
-
-            is CfirFieldVariable ->
-                if (declaration.initializer?.source.contains(source)) return declaration.returnTypeRef.explicitConeTypeOrNull()
-
-            is CfirPatternVariable ->
-                if (declaration.initializer?.source.contains(source)) return declaration.returnTypeRef.explicitConeTypeOrNull()
-
-            else -> Unit
+    for (symbol in containingDeclarations.asReversed()) {
+        val declaration = (symbol as? CfirVariableSymbol<*>)?.cfir ?: continue
+        if (declaration.initializer?.source.contains(source)) {
+            return declaration.returnTypeRef.explicitConeTypeOrNull()
         }
     }
     return null

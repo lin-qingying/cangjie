@@ -24,10 +24,9 @@ import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
  * [LLCfirImplicitBodyTargetResolver]，确保锁、缓存与局部 LL lazy resolve 状态一致。
  */
 internal class LLCfirReturnTypeCalculatorWithJump(
-    session: CfirSession,
     scopeSession: ScopeSession,
     implicitBodyResolveComputationSession: LLImplicitBodyResolveComputationSession,
-) : ReturnTypeCalculatorWithJump(session, scopeSession, implicitBodyResolveComputationSession) {
+) : ReturnTypeCalculatorWithJump(scopeSession, implicitBodyResolveComputationSession) {
     /**
      * 解析 [declaration] 的返回类型，并在需要隐式类型计算时跳转到 LL 懒解析流程。
      */
@@ -44,7 +43,7 @@ internal class LLCfirReturnTypeCalculatorWithJump(
         declaration.lazyResolveToPhase(CfirResolvePhase.IMPLICIT_TYPES.previous)
 
         val designation = declaration.collectDesignation().asResolveTarget()
-        val computationSession = implicitBodyResolveComputationSession
+        val computationSession = implicitBodyResolveComputationSession as LLImplicitBodyResolveComputationSession
         val resolver = LLCfirImplicitBodyTargetResolver(
             designation,
             llImplicitBodyResolveComputationSessionParameter = computationSession,

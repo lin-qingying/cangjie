@@ -55,12 +55,11 @@ import org.cangnova.cangjie.utils.exceptions.withCfirEntry
  * 按需推进；callable copy 的延迟返回类型通过 [CallableCopyTypeCalculator] 委托回同一条计算路径。
  */
 open class ReturnTypeCalculatorWithJump(
-    /** 当前 CFIR session。 */
-    protected val session: CfirSession,
+
     /** 当前 scope session。 */
     protected val scopeSession: ScopeSession,
     /** 隐式 body resolve 计算会话。 */
-    val implicitBodyResolveComputationSession: CfirImplicitBodyResolveComputationSession,
+    val implicitBodyResolveComputationSession: ImplicitBodyResolveComputationSession,
 ) : ReturnTypeCalculator() {
     /** callable copy 延迟返回类型计算器。 */
     override val callableCopyTypeCalculator: CallableCopyTypeCalculator = CallableCopyTypeCalculatorWithJump()
@@ -150,6 +149,8 @@ open class ReturnTypeCalculatorWithJump(
      * 该方法先恢复文件、外层 class-like 和 extend designation，再只解析目标 callable 的必要路径。
      */
     protected open fun resolveDeclaration(declaration: CfirCallableDeclaration): CfirResolvedTypeRef {
+        val session = declaration.moduleData.session
+
         val file = session.cfirProvider.getContainingFile(declaration.symbol)
         val containingExtend = session.extendProviderOrNull?.getContainingExtend(declaration.symbol)
         val containingClassLookupTag = declaration.symbol.containingClassLookupTag()
@@ -195,6 +196,7 @@ open class ReturnTypeCalculatorWithJump(
         declaration: CfirPatternBindingVariable,
     ): CfirResolvedTypeRef? {
         (declaration.returnTypeRef as? CfirResolvedTypeRef)?.let { return it }
+        val session = declaration.moduleData.session
 
         val owner = session.cfirProvider.getCfirPatternVariableForBinding(declaration.symbol) ?: return null
         if (implicitBodyResolveComputationSession.getStatus(owner.symbol) is CfirImplicitBodyResolveComputationStatus.Computing) {

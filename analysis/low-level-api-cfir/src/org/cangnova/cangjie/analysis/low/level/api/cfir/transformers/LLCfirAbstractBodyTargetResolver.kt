@@ -32,7 +32,6 @@ internal sealed class LLCfirAbstractBodyTargetResolver(
      * 创建允许跳转到 LL 懒解析的返回类型计算器。
      */
     protected fun createReturnTypeCalculator(): LLCfirReturnTypeCalculatorWithJump = LLCfirReturnTypeCalculatorWithJump(
-        resolveTargetSession,
         resolveTargetScopeSession,
         llImplicitBodyResolveComputationSession,
     )

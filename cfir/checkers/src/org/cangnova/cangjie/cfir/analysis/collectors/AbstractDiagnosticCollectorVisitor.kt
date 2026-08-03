@@ -348,23 +348,33 @@ abstract class AbstractDiagnosticCollectorVisitor(
     }
     // --- 上下文管理 ---
 
-    /** 临时把声明压入 context 声明栈并执行代码块。 */
-    protected inline fun <R> withDeclaration(decl: CfirDeclaration, block: () -> R): R {
-        context.addDeclaration(decl)
+
+    @OptIn(PrivateForInline::class)
+    inline fun <R> withDeclaration(declaration: CfirDeclaration, block: () -> R): R {
+        val existingContext = context
+        context = context.addDeclaration(declaration)
         try {
-            return block()
+            return whileAnalysing(context.session, declaration) {
+                block()
+            }
         } finally {
-            context.dropDeclaration()
+            existingContext.dropDeclaration()
+            context = existingContext
         }
     }
-
     /** 临时把语句压入 context 语句栈并执行代码块。 */
+    @OptIn(PrivateForInline::class)
     protected inline fun <R> withStatement(stmt: CfirStatement, block: () -> R): R {
-        context.addStatement(stmt)
+        val existingContext = context
+        context = context.addStatement(stmt)
         try {
-            return block()
+            return whileAnalysing(context.session, stmt) {
+                block()
+            }
+
         } finally {
-            context.dropStatement()
+            existingContext.dropStatement()
+            context = existingContext
         }
     }
 

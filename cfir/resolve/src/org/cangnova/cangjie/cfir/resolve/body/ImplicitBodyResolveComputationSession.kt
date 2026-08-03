@@ -54,7 +54,7 @@ sealed class CfirImplicitBodyResolveComputationStatus {
  * 隐式类型推断计算会话。
  * 负责管理所有可调用声明的计算状态，并提供递归保护与结果缓存。
  */
-class CfirImplicitBodyResolveComputationSession {
+open class  ImplicitBodyResolveComputationSession {
 
     /** callable symbol 到其隐式 body resolve 计算状态的映射。 */
     private val statusMap = HashMap<CfirCallableSymbol<*>, CfirImplicitBodyResolveComputationStatus>()
@@ -69,6 +69,9 @@ class CfirImplicitBodyResolveComputationSession {
     fun getStatus(symbol: CfirCallableSymbol<*>): CfirImplicitBodyResolveComputationStatus {
         return statusMap[symbol] ?: CfirImplicitBodyResolveComputationStatus.NotComputed
     }
+    protected open fun <D : CfirCallableDeclaration> executeTransformation(symbol: CfirCallableSymbol<*>, transformation: () -> D): D {
+        return transformation()
+    }
 
     /**
      * 捕获当前隐式 body resolve 计算状态。
@@ -81,7 +84,6 @@ class CfirImplicitBodyResolveComputationSession {
             statusMap = HashMap(statusMap),
             computingSymbolsStack = computingSymbolsStack.toList(),
             nonTrivialLoops = nonTrivialLoops.toSet(),
-            cycledSymbol = cycledSymbol,
         )
 
     /**
@@ -94,7 +96,6 @@ class CfirImplicitBodyResolveComputationSession {
         computingSymbolsStack.addAll(snapshot.computingSymbolsStack)
         nonTrivialLoops.clear()
         nonTrivialLoops.addAll(snapshot.nonTrivialLoops)
-        cycledSymbol = snapshot.cycledSymbol
     }
 
     /**
@@ -152,26 +153,6 @@ class CfirImplicitBodyResolveComputationSession {
         return symbol in nonTrivialLoops
     }
 
-    /** jumping resolve 当前检测到的递归符号；为空表示没有待消费递归。 */
-    private var cycledSymbol: CfirCallableSymbol<*>? = null
-
-    /**
-     * 记录 jumping resolve 检测到递归时对应的符号。
-     */
-    fun pushCycledSymbol(symbol: CfirCallableSymbol<*>) {
-        requireWithAttachment(cycledSymbol == null, { "Nested recursion is not allowed" })
-        cycledSymbol = symbol
-    }
-
-    /**
-     * 取出并清空 jumping resolve 检测到的递归符号。
-     */
-    fun popCycledSymbolIfExists(): CfirCallableSymbol<*>? {
-        return cycledSymbol?.also {
-            cycledSymbol = null
-        }
-    }
-
     /** 从变换后的声明中提取已解析的返回类型。 */
     private fun extractResolvedType(declaration: CfirCallableDeclaration): org.cangnova.cangjie.cfir.types.ConeCangJieType {
         val typeRef = when (declaration) {
@@ -194,7 +175,7 @@ class CfirImplicitBodyResolveComputationSession {
 }
 
 /**
- * [CfirImplicitBodyResolveComputationSession] 的浅快照。
+ * [ImplicitBodyResolveComputationSession] 的浅快照。
  *
  * 状态值本身绑定的是 CFIR symbol 与已转换声明对象；对象字段由外层 CFIR 快照负责恢复，
  * 这里仅恢复“哪些 symbol 已经被计算/正在计算”的事务边界。
@@ -206,6 +187,4 @@ class CfirImplicitBodyResolveComputationSessionSnapshot internal constructor(
     internal val computingSymbolsStack: List<CfirCallableSymbol<*>>,
     /** 捕获时已识别出的非平凡递归环成员集合。 */
     internal val nonTrivialLoops: Set<CfirCallableSymbol<*>>,
-    /** 捕获时 jumping resolve 尚未消费的递归符号。 */
-    internal val cycledSymbol: CfirCallableSymbol<*>?,
 )

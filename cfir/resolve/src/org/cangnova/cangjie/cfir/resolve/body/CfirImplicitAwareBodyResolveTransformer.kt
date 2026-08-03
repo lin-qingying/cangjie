@@ -36,7 +36,7 @@ import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 /**
  * 感知隐式类型的 body resolve transformer。
  * 它包装 [CfirBodyResolveTransformer]，并借助
- * [CfirImplicitBodyResolveComputationSession] 做缓存和递归保护。
+ * [ImplicitBodyResolveComputationSession] 做缓存和递归保护。
  */
 open class CfirImplicitAwareBodyResolveTransformer(
     session: CfirSession,
@@ -46,7 +46,7 @@ open class CfirImplicitAwareBodyResolveTransformer(
      *
      * 该状态负责缓存已计算声明并阻断递归 implicit type 解析。
      */
-    private val implicitBodyResolveComputationSession: CfirImplicitBodyResolveComputationSession,
+    private val implicitBodyResolveComputationSession: ImplicitBodyResolveComputationSession,
     phase: CfirResolvePhase,
     implicitTypeOnly: Boolean,
     returnTypeCalculator: ReturnTypeCalculator,

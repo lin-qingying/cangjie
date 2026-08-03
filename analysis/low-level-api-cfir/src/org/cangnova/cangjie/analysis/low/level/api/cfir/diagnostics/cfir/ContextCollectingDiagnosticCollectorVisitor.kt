@@ -34,15 +34,13 @@ private class ContextCollectingDiagnosticCollectorVisitor private constructor(
      * 根据 designation 路径推进 visitor 并在目标位置快照 checker context。
      */
     private val contextCollector = object : ContextByDesignationCollector<CheckerContextForProvider>(designation) {
-        override fun getCurrentContext(): CheckerContextForProvider =
-            PersistentCheckerContextFactory.createPersistenceCheckerContextSnapshot(context)
-
-        override fun getCurrentContextForTarget(target: CfirElementWithResolveState): CheckerContextForProvider =
-            PersistentCheckerContextFactory.createPersistenceCheckerContextSnapshot(context, target as CfirDeclaration)
+        override fun getCurrentContext(): CheckerContextForProvider = context
 
         override fun goToNestedDeclaration(target: CfirElementWithResolveState) {
             target.accept(this@ContextCollectingDiagnosticCollectorVisitor, null)
         }
+
+
     }
 
     /**

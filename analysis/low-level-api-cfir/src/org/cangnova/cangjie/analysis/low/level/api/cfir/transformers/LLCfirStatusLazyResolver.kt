@@ -435,8 +435,8 @@ private class LLCfirStatusTargetResolver(
         /**
          * interface 状态由外层 resolver 显式处理。
          */
-        override fun transformInterface(interfaceDeclaration: CfirInterface, data: Nothing?): CfirInterface {
-            return interfaceDeclaration
+        override fun transformInterface(`interface`: CfirInterface, data: Nothing?): CfirInterface {
+            return `interface`
         }
     }
 }

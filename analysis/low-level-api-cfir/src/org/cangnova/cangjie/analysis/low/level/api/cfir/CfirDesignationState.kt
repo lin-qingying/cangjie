@@ -33,10 +33,6 @@ abstract class ContextByDesignationCollector<C : Any>(
      */
     protected abstract fun getCurrentContext(): C
 
-    /**
-     * 返回目标声明本身需要记录的上下文，默认复用当前上下文。
-     */
-    protected open fun getCurrentContextForTarget(target: CfirElementWithResolveState): C = getCurrentContext()
 
     /**
      * 进入下一个嵌套声明，使子类同步推进自身持有的解析上下文。
@@ -54,15 +50,17 @@ abstract class ContextByDesignationCollector<C : Any>(
     /**
      * 沿 designation 路径前进一步，或在到达目标时保存目标上下文。
      */
+
     fun nextStep() {
         if (designationState.canGoNext()) {
             designationState.goNext()
-            val currentDeclaration = designationState.currentDeclaration
-            goToNestedDeclaration(currentDeclaration)
-        } else {
             if (designationState.currentDeclarationIfPresent == designation.target) {
                 check(context == null)
-                context = getCurrentContextForTarget(designation.target)
+                context = getCurrentContext()
+            }
+            goToNestedDeclaration(designationState.currentDeclaration)
+        } else {
+            if (designationState.currentDeclarationIfPresent == designation.target) {
                 designationState.goToInnerDeclaration()
             }
         }

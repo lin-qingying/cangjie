@@ -374,10 +374,10 @@ object CfirExtendImmutableMutInterfaceChecker : CfirExtendChecker() {
      * 检查不可变目标是否通过 extend super interface 泄漏 mut 接口能力。
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
-    override fun check(extend: CfirExtend) {
-        for (superTypeRef in extend.superTypeRefs) {
-            val leak = CfirExtendSemantics.immutableMutInterfaceLeak(context, extend, superTypeRef) ?: continue
-            val diagnosticSource = extend.source?.let { source ->
+    override fun check(declaration: CfirExtend) {
+        for (superTypeRef in declaration.superTypeRefs) {
+            val leak = CfirExtendSemantics.immutableMutInterfaceLeak(context, declaration, superTypeRef) ?: continue
+            val diagnosticSource = declaration.source?.let { source ->
                 CjOffsetsOnlySourceElement(source.startOffset, source.endOffset)
             } ?: superTypeRef.source
             reporter.reportOn(

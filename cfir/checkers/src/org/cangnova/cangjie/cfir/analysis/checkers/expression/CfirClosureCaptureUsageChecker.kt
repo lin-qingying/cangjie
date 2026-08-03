@@ -7,6 +7,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
+import org.cangnova.cangjie.cfir.symbols.CfirVariableSymbol
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
@@ -265,7 +266,8 @@ private enum class ClosureValueUsage { ASSIGN, RETURN, PARAMETER, EXPRESSION }
 /** 根据 checker 上下文恢复闭包值所处的赋值、返回、参数或普通表达式位置。 */
 private fun CfirExpression.valueUsage(context: CheckerContext): ClosureValueUsage {
     if (context.containingDeclarations.asReversed()
-            .filterIsInstance<CfirVariable>()
+            .filterIsInstance<CfirVariableSymbol<*>>()
+            .map { it.cfir }
             .any { variable -> variable.initializer.containsElement(this) }
     ) {
         return ClosureValueUsage.ASSIGN
