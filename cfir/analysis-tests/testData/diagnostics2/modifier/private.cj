@@ -12,8 +12,9 @@ private class B {
     private func bbb(){}
 }
 private interface A {
-    private prop cc: Int {
+    <!WRONG_MODIFIER_CONTAINING_DECLARATION!>private<!> prop cc: Int {
         get() {1}
     }
-    private func bbb(){}
+     public func bbsdb(){}
+    <!WRONG_MODIFIER_CONTAINING_DECLARATION!>private<!> func bbb(){}
 }

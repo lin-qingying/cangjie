@@ -316,7 +316,6 @@
       <module name="intellij.cangjie.analysis.analysis-api-cfir.analysis-api-cfir-generator.main~4" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-cfir.analysis-api-cfir-generator.main~5" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-cfir.analysis-api-cfir-generator.main~6" target="21" />
-      <module name="intellij.cangjie.analysis.analysis-api-cfir.analysis-api-cfir-generator.main~7" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-cfir.analysis-api-cfir-generator.main~8" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-cfir.analysis-api-cfir-generator.test" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-cfir.analysis-api-cfir-generator.test~1" target="21" />
@@ -327,7 +326,6 @@
       <module name="intellij.cangjie.analysis.analysis-api-cfir.analysis-api-cfir-generator.test~4" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-cfir.analysis-api-cfir-generator.test~5" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-cfir.analysis-api-cfir-generator.test~6" target="21" />
-      <module name="intellij.cangjie.analysis.analysis-api-cfir.analysis-api-cfir-generator.test~7" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-cfir.analysis-api-cfir-generator.test~8" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-cfir.main" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-cfir.main~11" target="21" />
@@ -338,7 +336,6 @@
       <module name="intellij.cangjie.analysis.analysis-api-cfir.main~5" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-cfir.main~6" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-cfir.main~7" target="21" />
-      <module name="intellij.cangjie.analysis.analysis-api-cfir.main~8" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-cfir.main~9" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-cfir.test" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-cfir.testFixtures" target="21" />
@@ -350,7 +347,6 @@
       <module name="intellij.cangjie.analysis.analysis-api-cfir.testFixtures~5" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-cfir.testFixtures~6" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-cfir.testFixtures~7" target="21" />
-      <module name="intellij.cangjie.analysis.analysis-api-cfir.testFixtures~8" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-cfir.testFixtures~9" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-cfir.test~11" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-cfir.test~12" target="21" />
@@ -360,7 +356,6 @@
       <module name="intellij.cangjie.analysis.analysis-api-cfir.test~5" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-cfir.test~6" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-cfir.test~7" target="21" />
-      <module name="intellij.cangjie.analysis.analysis-api-cfir.test~8" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-cfir.test~9" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-impl-base.main" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-impl-base.main~11" target="21" />
@@ -371,7 +366,6 @@
       <module name="intellij.cangjie.analysis.analysis-api-impl-base.main~5" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-impl-base.main~6" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-impl-base.main~7" target="21" />
-      <module name="intellij.cangjie.analysis.analysis-api-impl-base.main~8" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-impl-base.main~9" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-impl-base.test" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-impl-base.testFixtures" target="21" />
@@ -383,7 +377,6 @@
       <module name="intellij.cangjie.analysis.analysis-api-impl-base.testFixtures~5" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-impl-base.testFixtures~6" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-impl-base.testFixtures~7" target="21" />
-      <module name="intellij.cangjie.analysis.analysis-api-impl-base.testFixtures~8" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-impl-base.testFixtures~9" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-impl-base.test~11" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-impl-base.test~12" target="21" />
@@ -393,7 +386,6 @@
       <module name="intellij.cangjie.analysis.analysis-api-impl-base.test~5" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-impl-base.test~6" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-impl-base.test~7" target="21" />
-      <module name="intellij.cangjie.analysis.analysis-api-impl-base.test~8" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-impl-base.test~9" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-platform-interface.main" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-platform-interface.main~11" target="21" />
@@ -404,7 +396,6 @@
       <module name="intellij.cangjie.analysis.analysis-api-platform-interface.main~5" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-platform-interface.main~6" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-platform-interface.main~7" target="21" />
-      <module name="intellij.cangjie.analysis.analysis-api-platform-interface.main~8" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-platform-interface.main~9" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-platform-interface.test" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-platform-interface.test~11" target="21" />
@@ -415,7 +406,6 @@
       <module name="intellij.cangjie.analysis.analysis-api-platform-interface.test~5" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-platform-interface.test~6" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-platform-interface.test~7" target="21" />
-      <module name="intellij.cangjie.analysis.analysis-api-platform-interface.test~8" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-platform-interface.test~9" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-standalone.main" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-standalone.main~11" target="21" />
@@ -426,7 +416,6 @@
       <module name="intellij.cangjie.analysis.analysis-api-standalone.main~5" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-standalone.main~6" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-standalone.main~7" target="21" />
-      <module name="intellij.cangjie.analysis.analysis-api-standalone.main~8" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-standalone.main~9" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-standalone.test" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-standalone.testFixtures" target="21" />
@@ -438,7 +427,6 @@
       <module name="intellij.cangjie.analysis.analysis-api-standalone.testFixtures~4" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-standalone.testFixtures~5" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-standalone.testFixtures~6" target="21" />
-      <module name="intellij.cangjie.analysis.analysis-api-standalone.testFixtures~7" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-standalone.testFixtures~8" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-standalone.test~11" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-standalone.test~12" target="21" />
@@ -448,7 +436,6 @@
       <module name="intellij.cangjie.analysis.analysis-api-standalone.test~5" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-standalone.test~6" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-standalone.test~7" target="21" />
-      <module name="intellij.cangjie.analysis.analysis-api-standalone.test~8" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-standalone.test~9" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api.main" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api.main~11" target="21" />
@@ -459,7 +446,6 @@
       <module name="intellij.cangjie.analysis.analysis-api.main~5" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api.main~6" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api.main~7" target="21" />
-      <module name="intellij.cangjie.analysis.analysis-api.main~8" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api.main~9" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api.test" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api.test~11" target="21" />
@@ -470,7 +456,6 @@
       <module name="intellij.cangjie.analysis.analysis-api.test~5" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api.test~6" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api.test~7" target="21" />
-      <module name="intellij.cangjie.analysis.analysis-api.test~8" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api.test~9" target="21" />
       <module name="intellij.cangjie.analysis.analysis-internal-utils.main" target="21" />
       <module name="intellij.cangjie.analysis.analysis-internal-utils.main~11" target="21" />
@@ -481,7 +466,6 @@
       <module name="intellij.cangjie.analysis.analysis-internal-utils.main~5" target="21" />
       <module name="intellij.cangjie.analysis.analysis-internal-utils.main~6" target="21" />
       <module name="intellij.cangjie.analysis.analysis-internal-utils.main~7" target="21" />
-      <module name="intellij.cangjie.analysis.analysis-internal-utils.main~8" target="21" />
       <module name="intellij.cangjie.analysis.analysis-internal-utils.main~9" target="21" />
       <module name="intellij.cangjie.analysis.analysis-internal-utils.test" target="21" />
       <module name="intellij.cangjie.analysis.analysis-internal-utils.test~11" target="21" />
@@ -492,7 +476,6 @@
       <module name="intellij.cangjie.analysis.analysis-internal-utils.test~5" target="21" />
       <module name="intellij.cangjie.analysis.analysis-internal-utils.test~6" target="21" />
       <module name="intellij.cangjie.analysis.analysis-internal-utils.test~7" target="21" />
-      <module name="intellij.cangjie.analysis.analysis-internal-utils.test~8" target="21" />
       <module name="intellij.cangjie.analysis.analysis-internal-utils.test~9" target="21" />
       <module name="intellij.cangjie.analysis.analysis-test-framework.main" target="21" />
       <module name="intellij.cangjie.analysis.analysis-test-framework.main~11" target="21" />
@@ -503,7 +486,6 @@
       <module name="intellij.cangjie.analysis.analysis-test-framework.main~5" target="21" />
       <module name="intellij.cangjie.analysis.analysis-test-framework.main~6" target="21" />
       <module name="intellij.cangjie.analysis.analysis-test-framework.main~7" target="21" />
-      <module name="intellij.cangjie.analysis.analysis-test-framework.main~8" target="21" />
       <module name="intellij.cangjie.analysis.analysis-test-framework.main~9" target="21" />
       <module name="intellij.cangjie.analysis.analysis-test-framework.test" target="21" />
       <module name="intellij.cangjie.analysis.analysis-test-framework.testFixtures" target="21" />
@@ -515,7 +497,6 @@
       <module name="intellij.cangjie.analysis.analysis-test-framework.testFixtures~5" target="21" />
       <module name="intellij.cangjie.analysis.analysis-test-framework.testFixtures~6" target="21" />
       <module name="intellij.cangjie.analysis.analysis-test-framework.testFixtures~7" target="21" />
-      <module name="intellij.cangjie.analysis.analysis-test-framework.testFixtures~8" target="21" />
       <module name="intellij.cangjie.analysis.analysis-test-framework.testFixtures~9" target="21" />
       <module name="intellij.cangjie.analysis.analysis-test-framework.test~11" target="21" />
       <module name="intellij.cangjie.analysis.analysis-test-framework.test~12" target="21" />
@@ -525,7 +506,6 @@
       <module name="intellij.cangjie.analysis.analysis-test-framework.test~5" target="21" />
       <module name="intellij.cangjie.analysis.analysis-test-framework.test~6" target="21" />
       <module name="intellij.cangjie.analysis.analysis-test-framework.test~7" target="21" />
-      <module name="intellij.cangjie.analysis.analysis-test-framework.test~8" target="21" />
       <module name="intellij.cangjie.analysis.analysis-test-framework.test~9" target="21" />
       <module name="intellij.cangjie.analysis.analysis-tools.main" target="21" />
       <module name="intellij.cangjie.analysis.analysis-tools.main~11" target="21" />
@@ -536,7 +516,6 @@
       <module name="intellij.cangjie.analysis.analysis-tools.main~5" target="21" />
       <module name="intellij.cangjie.analysis.analysis-tools.main~6" target="21" />
       <module name="intellij.cangjie.analysis.analysis-tools.main~7" target="21" />
-      <module name="intellij.cangjie.analysis.analysis-tools.main~8" target="21" />
       <module name="intellij.cangjie.analysis.analysis-tools.main~9" target="21" />
       <module name="intellij.cangjie.analysis.analysis-tools.test" target="21" />
       <module name="intellij.cangjie.analysis.analysis-tools.test~11" target="21" />
@@ -547,7 +526,6 @@
       <module name="intellij.cangjie.analysis.analysis-tools.test~5" target="21" />
       <module name="intellij.cangjie.analysis.analysis-tools.test~6" target="21" />
       <module name="intellij.cangjie.analysis.analysis-tools.test~7" target="21" />
-      <module name="intellij.cangjie.analysis.analysis-tools.test~8" target="21" />
       <module name="intellij.cangjie.analysis.analysis-tools.test~9" target="21" />
       <module name="intellij.cangjie.analysis.cj-references.main" target="21" />
       <module name="intellij.cangjie.analysis.cj-references.main~11" target="21" />
@@ -558,7 +536,6 @@
       <module name="intellij.cangjie.analysis.cj-references.main~5" target="21" />
       <module name="intellij.cangjie.analysis.cj-references.main~6" target="21" />
       <module name="intellij.cangjie.analysis.cj-references.main~7" target="21" />
-      <module name="intellij.cangjie.analysis.cj-references.main~8" target="21" />
       <module name="intellij.cangjie.analysis.cj-references.main~9" target="21" />
       <module name="intellij.cangjie.analysis.cj-references.test" target="21" />
       <module name="intellij.cangjie.analysis.cj-references.test~11" target="21" />
@@ -569,7 +546,6 @@
       <module name="intellij.cangjie.analysis.cj-references.test~5" target="21" />
       <module name="intellij.cangjie.analysis.cj-references.test~6" target="21" />
       <module name="intellij.cangjie.analysis.cj-references.test~7" target="21" />
-      <module name="intellij.cangjie.analysis.cj-references.test~8" target="21" />
       <module name="intellij.cangjie.analysis.cj-references.test~9" target="21" />
       <module name="intellij.cangjie.analysis.decompiled.decompiler-to-file-stubs.main" target="21" />
       <module name="intellij.cangjie.analysis.decompiled.decompiler-to-file-stubs.main~11" target="21" />
@@ -580,7 +556,6 @@
       <module name="intellij.cangjie.analysis.decompiled.decompiler-to-file-stubs.main~5" target="21" />
       <module name="intellij.cangjie.analysis.decompiled.decompiler-to-file-stubs.main~6" target="21" />
       <module name="intellij.cangjie.analysis.decompiled.decompiler-to-file-stubs.main~7" target="21" />
-      <module name="intellij.cangjie.analysis.decompiled.decompiler-to-file-stubs.main~8" target="21" />
       <module name="intellij.cangjie.analysis.decompiled.decompiler-to-file-stubs.main~9" target="21" />
       <module name="intellij.cangjie.analysis.decompiled.decompiler-to-file-stubs.test" target="21" />
       <module name="intellij.cangjie.analysis.decompiled.decompiler-to-file-stubs.test~11" target="21" />
@@ -591,7 +566,6 @@
       <module name="intellij.cangjie.analysis.decompiled.decompiler-to-file-stubs.test~5" target="21" />
       <module name="intellij.cangjie.analysis.decompiled.decompiler-to-file-stubs.test~6" target="21" />
       <module name="intellij.cangjie.analysis.decompiled.decompiler-to-file-stubs.test~7" target="21" />
-      <module name="intellij.cangjie.analysis.decompiled.decompiler-to-file-stubs.test~8" target="21" />
       <module name="intellij.cangjie.analysis.decompiled.decompiler-to-file-stubs.test~9" target="21" />
       <module name="intellij.cangjie.analysis.decompiled.decompiler-to-psi.main" target="21" />
       <module name="intellij.cangjie.analysis.decompiled.decompiler-to-psi.main~11" target="21" />
@@ -602,7 +576,6 @@
       <module name="intellij.cangjie.analysis.decompiled.decompiler-to-psi.main~5" target="21" />
       <module name="intellij.cangjie.analysis.decompiled.decompiler-to-psi.main~6" target="21" />
       <module name="intellij.cangjie.analysis.decompiled.decompiler-to-psi.main~7" target="21" />
-      <module name="intellij.cangjie.analysis.decompiled.decompiler-to-psi.main~8" target="21" />
       <module name="intellij.cangjie.analysis.decompiled.decompiler-to-psi.main~9" target="21" />
       <module name="intellij.cangjie.analysis.decompiled.decompiler-to-psi.test" target="21" />
       <module name="intellij.cangjie.analysis.decompiled.decompiler-to-psi.testFixtures" target="21" />
@@ -614,7 +587,6 @@
       <module name="intellij.cangjie.analysis.decompiled.decompiler-to-psi.testFixtures~4" target="21" />
       <module name="intellij.cangjie.analysis.decompiled.decompiler-to-psi.testFixtures~5" target="21" />
       <module name="intellij.cangjie.analysis.decompiled.decompiler-to-psi.testFixtures~6" target="21" />
-      <module name="intellij.cangjie.analysis.decompiled.decompiler-to-psi.testFixtures~7" target="21" />
       <module name="intellij.cangjie.analysis.decompiled.decompiler-to-psi.testFixtures~8" target="21" />
       <module name="intellij.cangjie.analysis.decompiled.decompiler-to-psi.test~11" target="21" />
       <module name="intellij.cangjie.analysis.decompiled.decompiler-to-psi.test~12" target="21" />
@@ -624,7 +596,6 @@
       <module name="intellij.cangjie.analysis.decompiled.decompiler-to-psi.test~5" target="21" />
       <module name="intellij.cangjie.analysis.decompiled.decompiler-to-psi.test~6" target="21" />
       <module name="intellij.cangjie.analysis.decompiled.decompiler-to-psi.test~7" target="21" />
-      <module name="intellij.cangjie.analysis.decompiled.decompiler-to-psi.test~8" target="21" />
       <module name="intellij.cangjie.analysis.decompiled.decompiler-to-psi.test~9" target="21" />
       <module name="intellij.cangjie.analysis.decompiled.decompiler-to-stubs.main" target="21" />
       <module name="intellij.cangjie.analysis.decompiled.decompiler-to-stubs.main~11" target="21" />
@@ -635,7 +606,6 @@
       <module name="intellij.cangjie.analysis.decompiled.decompiler-to-stubs.main~5" target="21" />
       <module name="intellij.cangjie.analysis.decompiled.decompiler-to-stubs.main~6" target="21" />
       <module name="intellij.cangjie.analysis.decompiled.decompiler-to-stubs.main~7" target="21" />
-      <module name="intellij.cangjie.analysis.decompiled.decompiler-to-stubs.main~8" target="21" />
       <module name="intellij.cangjie.analysis.decompiled.decompiler-to-stubs.main~9" target="21" />
       <module name="intellij.cangjie.analysis.decompiled.decompiler-to-stubs.test" target="21" />
       <module name="intellij.cangjie.analysis.decompiled.decompiler-to-stubs.test~11" target="21" />
@@ -646,7 +616,6 @@
       <module name="intellij.cangjie.analysis.decompiled.decompiler-to-stubs.test~5" target="21" />
       <module name="intellij.cangjie.analysis.decompiled.decompiler-to-stubs.test~6" target="21" />
       <module name="intellij.cangjie.analysis.decompiled.decompiler-to-stubs.test~7" target="21" />
-      <module name="intellij.cangjie.analysis.decompiled.decompiler-to-stubs.test~8" target="21" />
       <module name="intellij.cangjie.analysis.decompiled.decompiler-to-stubs.test~9" target="21" />
       <module name="intellij.cangjie.analysis.decompiled.light-declarations-for-decompiled.main" target="21" />
       <module name="intellij.cangjie.analysis.decompiled.light-declarations-for-decompiled.main~11" target="21" />
@@ -657,7 +626,6 @@
       <module name="intellij.cangjie.analysis.decompiled.light-declarations-for-decompiled.main~5" target="21" />
       <module name="intellij.cangjie.analysis.decompiled.light-declarations-for-decompiled.main~6" target="21" />
       <module name="intellij.cangjie.analysis.decompiled.light-declarations-for-decompiled.main~7" target="21" />
-      <module name="intellij.cangjie.analysis.decompiled.light-declarations-for-decompiled.main~8" target="21" />
       <module name="intellij.cangjie.analysis.decompiled.light-declarations-for-decompiled.main~9" target="21" />
       <module name="intellij.cangjie.analysis.decompiled.light-declarations-for-decompiled.test" target="21" />
       <module name="intellij.cangjie.analysis.decompiled.light-declarations-for-decompiled.test~11" target="21" />
@@ -668,7 +636,6 @@
       <module name="intellij.cangjie.analysis.decompiled.light-declarations-for-decompiled.test~5" target="21" />
       <module name="intellij.cangjie.analysis.decompiled.light-declarations-for-decompiled.test~6" target="21" />
       <module name="intellij.cangjie.analysis.decompiled.light-declarations-for-decompiled.test~7" target="21" />
-      <module name="intellij.cangjie.analysis.decompiled.light-declarations-for-decompiled.test~8" target="21" />
       <module name="intellij.cangjie.analysis.decompiled.light-declarations-for-decompiled.test~9" target="21" />
       <module name="intellij.cangjie.analysis.decompiled.main" target="21" />
       <module name="intellij.cangjie.analysis.decompiled.main~11" target="21" />
@@ -679,7 +646,6 @@
       <module name="intellij.cangjie.analysis.decompiled.main~5" target="21" />
       <module name="intellij.cangjie.analysis.decompiled.main~6" target="21" />
       <module name="intellij.cangjie.analysis.decompiled.main~7" target="21" />
-      <module name="intellij.cangjie.analysis.decompiled.main~8" target="21" />
       <module name="intellij.cangjie.analysis.decompiled.main~9" target="21" />
       <module name="intellij.cangjie.analysis.decompiled.test" target="21" />
       <module name="intellij.cangjie.analysis.decompiled.test~11" target="21" />
@@ -690,7 +656,6 @@
       <module name="intellij.cangjie.analysis.decompiled.test~5" target="21" />
       <module name="intellij.cangjie.analysis.decompiled.test~6" target="21" />
       <module name="intellij.cangjie.analysis.decompiled.test~7" target="21" />
-      <module name="intellij.cangjie.analysis.decompiled.test~8" target="21" />
       <module name="intellij.cangjie.analysis.decompiled.test~9" target="21" />
       <module name="intellij.cangjie.analysis.light-declarations.main" target="21" />
       <module name="intellij.cangjie.analysis.light-declarations.main~11" target="21" />
@@ -701,7 +666,6 @@
       <module name="intellij.cangjie.analysis.light-declarations.main~5" target="21" />
       <module name="intellij.cangjie.analysis.light-declarations.main~6" target="21" />
       <module name="intellij.cangjie.analysis.light-declarations.main~7" target="21" />
-      <module name="intellij.cangjie.analysis.light-declarations.main~8" target="21" />
       <module name="intellij.cangjie.analysis.light-declarations.main~9" target="21" />
       <module name="intellij.cangjie.analysis.light-declarations.test" target="21" />
       <module name="intellij.cangjie.analysis.light-declarations.test~11" target="21" />
@@ -712,7 +676,6 @@
       <module name="intellij.cangjie.analysis.light-declarations.test~5" target="21" />
       <module name="intellij.cangjie.analysis.light-declarations.test~6" target="21" />
       <module name="intellij.cangjie.analysis.light-declarations.test~7" target="21" />
-      <module name="intellij.cangjie.analysis.light-declarations.test~8" target="21" />
       <module name="intellij.cangjie.analysis.light-declarations.test~9" target="21" />
       <module name="intellij.cangjie.analysis.low-level-api-cfir.main" target="21" />
       <module name="intellij.cangjie.analysis.low-level-api-cfir.main~11" target="21" />
@@ -723,7 +686,6 @@
       <module name="intellij.cangjie.analysis.low-level-api-cfir.main~5" target="21" />
       <module name="intellij.cangjie.analysis.low-level-api-cfir.main~6" target="21" />
       <module name="intellij.cangjie.analysis.low-level-api-cfir.main~7" target="21" />
-      <module name="intellij.cangjie.analysis.low-level-api-cfir.main~8" target="21" />
       <module name="intellij.cangjie.analysis.low-level-api-cfir.main~9" target="21" />
       <module name="intellij.cangjie.analysis.low-level-api-cfir.test" target="21" />
       <module name="intellij.cangjie.analysis.low-level-api-cfir.testFixtures" target="21" />
@@ -735,7 +697,6 @@
       <module name="intellij.cangjie.analysis.low-level-api-cfir.testFixtures~5" target="21" />
       <module name="intellij.cangjie.analysis.low-level-api-cfir.testFixtures~6" target="21" />
       <module name="intellij.cangjie.analysis.low-level-api-cfir.testFixtures~7" target="21" />
-      <module name="intellij.cangjie.analysis.low-level-api-cfir.testFixtures~8" target="21" />
       <module name="intellij.cangjie.analysis.low-level-api-cfir.testFixtures~9" target="21" />
       <module name="intellij.cangjie.analysis.low-level-api-cfir.test~11" target="21" />
       <module name="intellij.cangjie.analysis.low-level-api-cfir.test~12" target="21" />
@@ -745,7 +706,6 @@
       <module name="intellij.cangjie.analysis.low-level-api-cfir.test~5" target="21" />
       <module name="intellij.cangjie.analysis.low-level-api-cfir.test~6" target="21" />
       <module name="intellij.cangjie.analysis.low-level-api-cfir.test~7" target="21" />
-      <module name="intellij.cangjie.analysis.low-level-api-cfir.test~8" target="21" />
       <module name="intellij.cangjie.analysis.low-level-api-cfir.test~9" target="21" />
       <module name="intellij.cangjie.analysis.stubs.main" target="21" />
       <module name="intellij.cangjie.analysis.stubs.main~11" target="21" />
@@ -756,7 +716,6 @@
       <module name="intellij.cangjie.analysis.stubs.main~5" target="21" />
       <module name="intellij.cangjie.analysis.stubs.main~6" target="21" />
       <module name="intellij.cangjie.analysis.stubs.main~7" target="21" />
-      <module name="intellij.cangjie.analysis.stubs.main~8" target="21" />
       <module name="intellij.cangjie.analysis.stubs.main~9" target="21" />
       <module name="intellij.cangjie.analysis.stubs.test" target="21" />
       <module name="intellij.cangjie.analysis.stubs.test~11" target="21" />
@@ -767,7 +726,6 @@
       <module name="intellij.cangjie.analysis.stubs.test~5" target="21" />
       <module name="intellij.cangjie.analysis.stubs.test~6" target="21" />
       <module name="intellij.cangjie.analysis.stubs.test~7" target="21" />
-      <module name="intellij.cangjie.analysis.stubs.test~8" target="21" />
       <module name="intellij.cangjie.analysis.stubs.test~9" target="21" />
       <module name="intellij.cangjie.analysis.symbol-light-declarations.main" target="21" />
       <module name="intellij.cangjie.analysis.symbol-light-declarations.main~11" target="21" />
@@ -778,7 +736,6 @@
       <module name="intellij.cangjie.analysis.symbol-light-declarations.main~5" target="21" />
       <module name="intellij.cangjie.analysis.symbol-light-declarations.main~6" target="21" />
       <module name="intellij.cangjie.analysis.symbol-light-declarations.main~7" target="21" />
-      <module name="intellij.cangjie.analysis.symbol-light-declarations.main~8" target="21" />
       <module name="intellij.cangjie.analysis.symbol-light-declarations.main~9" target="21" />
       <module name="intellij.cangjie.analysis.symbol-light-declarations.test" target="21" />
       <module name="intellij.cangjie.analysis.symbol-light-declarations.test~11" target="21" />
@@ -789,7 +746,6 @@
       <module name="intellij.cangjie.analysis.symbol-light-declarations.test~5" target="21" />
       <module name="intellij.cangjie.analysis.symbol-light-declarations.test~6" target="21" />
       <module name="intellij.cangjie.analysis.symbol-light-declarations.test~7" target="21" />
-      <module name="intellij.cangjie.analysis.symbol-light-declarations.test~8" target="21" />
       <module name="intellij.cangjie.analysis.symbol-light-declarations.test~9" target="21" />
       <module name="intellij.cangjie.cfir.analysis-tests.main" target="21" />
       <module name="intellij.cangjie.cfir.analysis-tests.main~11" target="21" />
@@ -800,7 +756,6 @@
       <module name="intellij.cangjie.cfir.analysis-tests.main~5" target="21" />
       <module name="intellij.cangjie.cfir.analysis-tests.main~6" target="21" />
       <module name="intellij.cangjie.cfir.analysis-tests.main~7" target="21" />
-      <module name="intellij.cangjie.cfir.analysis-tests.main~8" target="21" />
       <module name="intellij.cangjie.cfir.analysis-tests.main~9" target="21" />
       <module name="intellij.cangjie.cfir.analysis-tests.test" target="21" />
       <module name="intellij.cangjie.cfir.analysis-tests.testFixtures" target="21" />
@@ -812,7 +767,6 @@
       <module name="intellij.cangjie.cfir.analysis-tests.testFixtures~5" target="21" />
       <module name="intellij.cangjie.cfir.analysis-tests.testFixtures~6" target="21" />
       <module name="intellij.cangjie.cfir.analysis-tests.testFixtures~7" target="21" />
-      <module name="intellij.cangjie.cfir.analysis-tests.testFixtures~8" target="21" />
       <module name="intellij.cangjie.cfir.analysis-tests.testFixtures~9" target="21" />
       <module name="intellij.cangjie.cfir.analysis-tests.test~11" target="21" />
       <module name="intellij.cangjie.cfir.analysis-tests.test~12" target="21" />
@@ -822,7 +776,6 @@
       <module name="intellij.cangjie.cfir.analysis-tests.test~5" target="21" />
       <module name="intellij.cangjie.cfir.analysis-tests.test~6" target="21" />
       <module name="intellij.cangjie.cfir.analysis-tests.test~7" target="21" />
-      <module name="intellij.cangjie.cfir.analysis-tests.test~8" target="21" />
       <module name="intellij.cangjie.cfir.analysis-tests.test~9" target="21" />
       <module name="intellij.cangjie.cfir.cfir-common.main" target="21" />
       <module name="intellij.cangjie.cfir.cfir-common.main~11" target="21" />
@@ -833,7 +786,6 @@
       <module name="intellij.cangjie.cfir.cfir-common.main~5" target="21" />
       <module name="intellij.cangjie.cfir.cfir-common.main~6" target="21" />
       <module name="intellij.cangjie.cfir.cfir-common.main~7" target="21" />
-      <module name="intellij.cangjie.cfir.cfir-common.main~8" target="21" />
       <module name="intellij.cangjie.cfir.cfir-common.main~9" target="21" />
       <module name="intellij.cangjie.cfir.cfir-common.test" target="21" />
       <module name="intellij.cangjie.cfir.cfir-common.test~11" target="21" />
@@ -844,7 +796,6 @@
       <module name="intellij.cangjie.cfir.cfir-common.test~5" target="21" />
       <module name="intellij.cangjie.cfir.cfir-common.test~6" target="21" />
       <module name="intellij.cangjie.cfir.cfir-common.test~7" target="21" />
-      <module name="intellij.cangjie.cfir.cfir-common.test~8" target="21" />
       <module name="intellij.cangjie.cfir.cfir-common.test~9" target="21" />
       <module name="intellij.cangjie.cfir.cfir-cones.main" target="21" />
       <module name="intellij.cangjie.cfir.cfir-cones.main~11" target="21" />
@@ -855,7 +806,6 @@
       <module name="intellij.cangjie.cfir.cfir-cones.main~5" target="21" />
       <module name="intellij.cangjie.cfir.cfir-cones.main~6" target="21" />
       <module name="intellij.cangjie.cfir.cfir-cones.main~7" target="21" />
-      <module name="intellij.cangjie.cfir.cfir-cones.main~8" target="21" />
       <module name="intellij.cangjie.cfir.cfir-cones.main~9" target="21" />
       <module name="intellij.cangjie.cfir.cfir-cones.test" target="21" />
       <module name="intellij.cangjie.cfir.cfir-cones.test~11" target="21" />
@@ -866,7 +816,6 @@
       <module name="intellij.cangjie.cfir.cfir-cones.test~5" target="21" />
       <module name="intellij.cangjie.cfir.cfir-cones.test~6" target="21" />
       <module name="intellij.cangjie.cfir.cfir-cones.test~7" target="21" />
-      <module name="intellij.cangjie.cfir.cfir-cones.test~8" target="21" />
       <module name="intellij.cangjie.cfir.cfir-cones.test~9" target="21" />
       <module name="intellij.cangjie.cfir.cfir-serialization.main" target="21" />
       <module name="intellij.cangjie.cfir.cfir-serialization.main~11" target="21" />
@@ -877,7 +826,6 @@
       <module name="intellij.cangjie.cfir.cfir-serialization.main~5" target="21" />
       <module name="intellij.cangjie.cfir.cfir-serialization.main~6" target="21" />
       <module name="intellij.cangjie.cfir.cfir-serialization.main~7" target="21" />
-      <module name="intellij.cangjie.cfir.cfir-serialization.main~8" target="21" />
       <module name="intellij.cangjie.cfir.cfir-serialization.main~9" target="21" />
       <module name="intellij.cangjie.cfir.cfir-serialization.test" target="21" />
       <module name="intellij.cangjie.cfir.cfir-serialization.test~11" target="21" />
@@ -888,7 +836,6 @@
       <module name="intellij.cangjie.cfir.cfir-serialization.test~5" target="21" />
       <module name="intellij.cangjie.cfir.cfir-serialization.test~6" target="21" />
       <module name="intellij.cangjie.cfir.cfir-serialization.test~7" target="21" />
-      <module name="intellij.cangjie.cfir.cfir-serialization.test~8" target="21" />
       <module name="intellij.cangjie.cfir.cfir-serialization.test~9" target="21" />
       <module name="intellij.cangjie.cfir.cfir-tree.main" target="21" />
       <module name="intellij.cangjie.cfir.cfir-tree.main~11" target="21" />
@@ -899,7 +846,6 @@
       <module name="intellij.cangjie.cfir.cfir-tree.main~5" target="21" />
       <module name="intellij.cangjie.cfir.cfir-tree.main~6" target="21" />
       <module name="intellij.cangjie.cfir.cfir-tree.main~7" target="21" />
-      <module name="intellij.cangjie.cfir.cfir-tree.main~8" target="21" />
       <module name="intellij.cangjie.cfir.cfir-tree.main~9" target="21" />
       <module name="intellij.cangjie.cfir.cfir-tree.test" target="21" />
       <module name="intellij.cangjie.cfir.cfir-tree.test~11" target="21" />
@@ -910,7 +856,6 @@
       <module name="intellij.cangjie.cfir.cfir-tree.test~5" target="21" />
       <module name="intellij.cangjie.cfir.cfir-tree.test~6" target="21" />
       <module name="intellij.cangjie.cfir.cfir-tree.test~7" target="21" />
-      <module name="intellij.cangjie.cfir.cfir-tree.test~8" target="21" />
       <module name="intellij.cangjie.cfir.cfir-tree.test~9" target="21" />
       <module name="intellij.cangjie.cfir.cfir-tree.tree-generator.main" target="21" />
       <module name="intellij.cangjie.cfir.cfir-tree.tree-generator.main~11" target="21" />
@@ -921,7 +866,6 @@
       <module name="intellij.cangjie.cfir.cfir-tree.tree-generator.main~5" target="21" />
       <module name="intellij.cangjie.cfir.cfir-tree.tree-generator.main~6" target="21" />
       <module name="intellij.cangjie.cfir.cfir-tree.tree-generator.main~7" target="21" />
-      <module name="intellij.cangjie.cfir.cfir-tree.tree-generator.main~8" target="21" />
       <module name="intellij.cangjie.cfir.cfir-tree.tree-generator.main~9" target="21" />
       <module name="intellij.cangjie.cfir.cfir-tree.tree-generator.test" target="21" />
       <module name="intellij.cangjie.cfir.cfir-tree.tree-generator.test~11" target="21" />
@@ -932,7 +876,6 @@
       <module name="intellij.cangjie.cfir.cfir-tree.tree-generator.test~5" target="21" />
       <module name="intellij.cangjie.cfir.cfir-tree.tree-generator.test~6" target="21" />
       <module name="intellij.cangjie.cfir.cfir-tree.tree-generator.test~7" target="21" />
-      <module name="intellij.cangjie.cfir.cfir-tree.tree-generator.test~8" target="21" />
       <module name="intellij.cangjie.cfir.cfir-tree.tree-generator.test~9" target="21" />
       <module name="intellij.cangjie.cfir.checkers.checkers-component-generator.main" target="21" />
       <module name="intellij.cangjie.cfir.checkers.checkers-component-generator.main~11" target="21" />
@@ -943,7 +886,6 @@
       <module name="intellij.cangjie.cfir.checkers.checkers-component-generator.main~5" target="21" />
       <module name="intellij.cangjie.cfir.checkers.checkers-component-generator.main~6" target="21" />
       <module name="intellij.cangjie.cfir.checkers.checkers-component-generator.main~7" target="21" />
-      <module name="intellij.cangjie.cfir.checkers.checkers-component-generator.main~8" target="21" />
       <module name="intellij.cangjie.cfir.checkers.checkers-component-generator.main~9" target="21" />
       <module name="intellij.cangjie.cfir.checkers.checkers-component-generator.test" target="21" />
       <module name="intellij.cangjie.cfir.checkers.checkers-component-generator.test~11" target="21" />
@@ -954,7 +896,6 @@
       <module name="intellij.cangjie.cfir.checkers.checkers-component-generator.test~5" target="21" />
       <module name="intellij.cangjie.cfir.checkers.checkers-component-generator.test~6" target="21" />
       <module name="intellij.cangjie.cfir.checkers.checkers-component-generator.test~7" target="21" />
-      <module name="intellij.cangjie.cfir.checkers.checkers-component-generator.test~8" target="21" />
       <module name="intellij.cangjie.cfir.checkers.checkers-component-generator.test~9" target="21" />
       <module name="intellij.cangjie.cfir.checkers.main" target="21" />
       <module name="intellij.cangjie.cfir.checkers.main~11" target="21" />
@@ -965,7 +906,6 @@
       <module name="intellij.cangjie.cfir.checkers.main~5" target="21" />
       <module name="intellij.cangjie.cfir.checkers.main~6" target="21" />
       <module name="intellij.cangjie.cfir.checkers.main~7" target="21" />
-      <module name="intellij.cangjie.cfir.checkers.main~8" target="21" />
       <module name="intellij.cangjie.cfir.checkers.main~9" target="21" />
       <module name="intellij.cangjie.cfir.checkers.test" target="21" />
       <module name="intellij.cangjie.cfir.checkers.test~11" target="21" />
@@ -976,7 +916,6 @@
       <module name="intellij.cangjie.cfir.checkers.test~5" target="21" />
       <module name="intellij.cangjie.cfir.checkers.test~6" target="21" />
       <module name="intellij.cangjie.cfir.checkers.test~7" target="21" />
-      <module name="intellij.cangjie.cfir.checkers.test~8" target="21" />
       <module name="intellij.cangjie.cfir.checkers.test~9" target="21" />
       <module name="intellij.cangjie.cfir.diagnostic-renderers.main" target="21" />
       <module name="intellij.cangjie.cfir.diagnostic-renderers.main~11" target="21" />
@@ -987,7 +926,6 @@
       <module name="intellij.cangjie.cfir.diagnostic-renderers.main~5" target="21" />
       <module name="intellij.cangjie.cfir.diagnostic-renderers.main~6" target="21" />
       <module name="intellij.cangjie.cfir.diagnostic-renderers.main~7" target="21" />
-      <module name="intellij.cangjie.cfir.diagnostic-renderers.main~8" target="21" />
       <module name="intellij.cangjie.cfir.diagnostic-renderers.main~9" target="21" />
       <module name="intellij.cangjie.cfir.diagnostic-renderers.test" target="21" />
       <module name="intellij.cangjie.cfir.diagnostic-renderers.test~11" target="21" />
@@ -998,7 +936,6 @@
       <module name="intellij.cangjie.cfir.diagnostic-renderers.test~5" target="21" />
       <module name="intellij.cangjie.cfir.diagnostic-renderers.test~6" target="21" />
       <module name="intellij.cangjie.cfir.diagnostic-renderers.test~7" target="21" />
-      <module name="intellij.cangjie.cfir.diagnostic-renderers.test~8" target="21" />
       <module name="intellij.cangjie.cfir.diagnostic-renderers.test~9" target="21" />
       <module name="intellij.cangjie.cfir.entrypoint.main" target="21" />
       <module name="intellij.cangjie.cfir.entrypoint.main~11" target="21" />
@@ -1009,7 +946,6 @@
       <module name="intellij.cangjie.cfir.entrypoint.main~5" target="21" />
       <module name="intellij.cangjie.cfir.entrypoint.main~6" target="21" />
       <module name="intellij.cangjie.cfir.entrypoint.main~7" target="21" />
-      <module name="intellij.cangjie.cfir.entrypoint.main~8" target="21" />
       <module name="intellij.cangjie.cfir.entrypoint.main~9" target="21" />
       <module name="intellij.cangjie.cfir.entrypoint.test" target="21" />
       <module name="intellij.cangjie.cfir.entrypoint.test~11" target="21" />
@@ -1020,7 +956,6 @@
       <module name="intellij.cangjie.cfir.entrypoint.test~5" target="21" />
       <module name="intellij.cangjie.cfir.entrypoint.test~6" target="21" />
       <module name="intellij.cangjie.cfir.entrypoint.test~7" target="21" />
-      <module name="intellij.cangjie.cfir.entrypoint.test~8" target="21" />
       <module name="intellij.cangjie.cfir.entrypoint.test~9" target="21" />
       <module name="intellij.cangjie.cfir.providers.main" target="21" />
       <module name="intellij.cangjie.cfir.providers.main~11" target="21" />
@@ -1031,7 +966,6 @@
       <module name="intellij.cangjie.cfir.providers.main~5" target="21" />
       <module name="intellij.cangjie.cfir.providers.main~6" target="21" />
       <module name="intellij.cangjie.cfir.providers.main~7" target="21" />
-      <module name="intellij.cangjie.cfir.providers.main~8" target="21" />
       <module name="intellij.cangjie.cfir.providers.main~9" target="21" />
       <module name="intellij.cangjie.cfir.providers.test" target="21" />
       <module name="intellij.cangjie.cfir.providers.test~11" target="21" />
@@ -1042,7 +976,6 @@
       <module name="intellij.cangjie.cfir.providers.test~5" target="21" />
       <module name="intellij.cangjie.cfir.providers.test~6" target="21" />
       <module name="intellij.cangjie.cfir.providers.test~7" target="21" />
-      <module name="intellij.cangjie.cfir.providers.test~8" target="21" />
       <module name="intellij.cangjie.cfir.providers.test~9" target="21" />
       <module name="intellij.cangjie.cfir.raw-cfir.light-tree2cfir.main" target="21" />
       <module name="intellij.cangjie.cfir.raw-cfir.light-tree2cfir.main~11" target="21" />
@@ -1053,7 +986,6 @@
       <module name="intellij.cangjie.cfir.raw-cfir.light-tree2cfir.main~5" target="21" />
       <module name="intellij.cangjie.cfir.raw-cfir.light-tree2cfir.main~6" target="21" />
       <module name="intellij.cangjie.cfir.raw-cfir.light-tree2cfir.main~7" target="21" />
-      <module name="intellij.cangjie.cfir.raw-cfir.light-tree2cfir.main~8" target="21" />
       <module name="intellij.cangjie.cfir.raw-cfir.light-tree2cfir.main~9" target="21" />
       <module name="intellij.cangjie.cfir.raw-cfir.light-tree2cfir.test" target="21" />
       <module name="intellij.cangjie.cfir.raw-cfir.light-tree2cfir.testFixtures" target="21" />
@@ -1065,7 +997,6 @@
       <module name="intellij.cangjie.cfir.raw-cfir.light-tree2cfir.testFixtures~5" target="21" />
       <module name="intellij.cangjie.cfir.raw-cfir.light-tree2cfir.testFixtures~6" target="21" />
       <module name="intellij.cangjie.cfir.raw-cfir.light-tree2cfir.testFixtures~7" target="21" />
-      <module name="intellij.cangjie.cfir.raw-cfir.light-tree2cfir.testFixtures~8" target="21" />
       <module name="intellij.cangjie.cfir.raw-cfir.light-tree2cfir.testFixtures~9" target="21" />
       <module name="intellij.cangjie.cfir.raw-cfir.light-tree2cfir.test~11" target="21" />
       <module name="intellij.cangjie.cfir.raw-cfir.light-tree2cfir.test~12" target="21" />
@@ -1075,7 +1006,6 @@
       <module name="intellij.cangjie.cfir.raw-cfir.light-tree2cfir.test~5" target="21" />
       <module name="intellij.cangjie.cfir.raw-cfir.light-tree2cfir.test~6" target="21" />
       <module name="intellij.cangjie.cfir.raw-cfir.light-tree2cfir.test~7" target="21" />
-      <module name="intellij.cangjie.cfir.raw-cfir.light-tree2cfir.test~8" target="21" />
       <module name="intellij.cangjie.cfir.raw-cfir.light-tree2cfir.test~9" target="21" />
       <module name="intellij.cangjie.cfir.raw-cfir.psi2cfir.main" target="21" />
       <module name="intellij.cangjie.cfir.raw-cfir.psi2cfir.main~11" target="21" />
@@ -1086,7 +1016,6 @@
       <module name="intellij.cangjie.cfir.raw-cfir.psi2cfir.main~5" target="21" />
       <module name="intellij.cangjie.cfir.raw-cfir.psi2cfir.main~6" target="21" />
       <module name="intellij.cangjie.cfir.raw-cfir.psi2cfir.main~7" target="21" />
-      <module name="intellij.cangjie.cfir.raw-cfir.psi2cfir.main~8" target="21" />
       <module name="intellij.cangjie.cfir.raw-cfir.psi2cfir.main~9" target="21" />
       <module name="intellij.cangjie.cfir.raw-cfir.psi2cfir.test" target="21" />
       <module name="intellij.cangjie.cfir.raw-cfir.psi2cfir.testFixtures" target="21" />
@@ -1098,7 +1027,6 @@
       <module name="intellij.cangjie.cfir.raw-cfir.psi2cfir.testFixtures~5" target="21" />
       <module name="intellij.cangjie.cfir.raw-cfir.psi2cfir.testFixtures~6" target="21" />
       <module name="intellij.cangjie.cfir.raw-cfir.psi2cfir.testFixtures~7" target="21" />
-      <module name="intellij.cangjie.cfir.raw-cfir.psi2cfir.testFixtures~8" target="21" />
       <module name="intellij.cangjie.cfir.raw-cfir.psi2cfir.testFixtures~9" target="21" />
       <module name="intellij.cangjie.cfir.raw-cfir.psi2cfir.test~11" target="21" />
       <module name="intellij.cangjie.cfir.raw-cfir.psi2cfir.test~12" target="21" />
@@ -1108,7 +1036,6 @@
       <module name="intellij.cangjie.cfir.raw-cfir.psi2cfir.test~5" target="21" />
       <module name="intellij.cangjie.cfir.raw-cfir.psi2cfir.test~6" target="21" />
       <module name="intellij.cangjie.cfir.raw-cfir.psi2cfir.test~7" target="21" />
-      <module name="intellij.cangjie.cfir.raw-cfir.psi2cfir.test~8" target="21" />
       <module name="intellij.cangjie.cfir.raw-cfir.psi2cfir.test~9" target="21" />
       <module name="intellij.cangjie.cfir.raw-cfir.raw-cfir-common.main" target="21" />
       <module name="intellij.cangjie.cfir.raw-cfir.raw-cfir-common.main~11" target="21" />
@@ -1119,7 +1046,6 @@
       <module name="intellij.cangjie.cfir.raw-cfir.raw-cfir-common.main~5" target="21" />
       <module name="intellij.cangjie.cfir.raw-cfir.raw-cfir-common.main~6" target="21" />
       <module name="intellij.cangjie.cfir.raw-cfir.raw-cfir-common.main~7" target="21" />
-      <module name="intellij.cangjie.cfir.raw-cfir.raw-cfir-common.main~8" target="21" />
       <module name="intellij.cangjie.cfir.raw-cfir.raw-cfir-common.main~9" target="21" />
       <module name="intellij.cangjie.cfir.raw-cfir.raw-cfir-common.test" target="21" />
       <module name="intellij.cangjie.cfir.raw-cfir.raw-cfir-common.test~11" target="21" />
@@ -1130,7 +1056,6 @@
       <module name="intellij.cangjie.cfir.raw-cfir.raw-cfir-common.test~5" target="21" />
       <module name="intellij.cangjie.cfir.raw-cfir.raw-cfir-common.test~6" target="21" />
       <module name="intellij.cangjie.cfir.raw-cfir.raw-cfir-common.test~7" target="21" />
-      <module name="intellij.cangjie.cfir.raw-cfir.raw-cfir-common.test~8" target="21" />
       <module name="intellij.cangjie.cfir.raw-cfir.raw-cfir-common.test~9" target="21" />
       <module name="intellij.cangjie.cfir.resolve.main" target="21" />
       <module name="intellij.cangjie.cfir.resolve.main~11" target="21" />
@@ -1141,7 +1066,6 @@
       <module name="intellij.cangjie.cfir.resolve.main~5" target="21" />
       <module name="intellij.cangjie.cfir.resolve.main~6" target="21" />
       <module name="intellij.cangjie.cfir.resolve.main~7" target="21" />
-      <module name="intellij.cangjie.cfir.resolve.main~8" target="21" />
       <module name="intellij.cangjie.cfir.resolve.main~9" target="21" />
       <module name="intellij.cangjie.cfir.resolve.test" target="21" />
       <module name="intellij.cangjie.cfir.resolve.test~11" target="21" />
@@ -1152,7 +1076,6 @@
       <module name="intellij.cangjie.cfir.resolve.test~5" target="21" />
       <module name="intellij.cangjie.cfir.resolve.test~6" target="21" />
       <module name="intellij.cangjie.cfir.resolve.test~7" target="21" />
-      <module name="intellij.cangjie.cfir.resolve.test~8" target="21" />
       <module name="intellij.cangjie.cfir.resolve.test~9" target="21" />
       <module name="intellij.cangjie.cfir.semantics.main" target="21" />
       <module name="intellij.cangjie.cfir.semantics.main~11" target="21" />
@@ -1163,7 +1086,6 @@
       <module name="intellij.cangjie.cfir.semantics.main~5" target="21" />
       <module name="intellij.cangjie.cfir.semantics.main~6" target="21" />
       <module name="intellij.cangjie.cfir.semantics.main~7" target="21" />
-      <module name="intellij.cangjie.cfir.semantics.main~8" target="21" />
       <module name="intellij.cangjie.cfir.semantics.main~9" target="21" />
       <module name="intellij.cangjie.cfir.semantics.test" target="21" />
       <module name="intellij.cangjie.cfir.semantics.test~11" target="21" />
@@ -1174,7 +1096,6 @@
       <module name="intellij.cangjie.cfir.semantics.test~5" target="21" />
       <module name="intellij.cangjie.cfir.semantics.test~6" target="21" />
       <module name="intellij.cangjie.cfir.semantics.test~7" target="21" />
-      <module name="intellij.cangjie.cfir.semantics.test~8" target="21" />
       <module name="intellij.cangjie.cfir.semantics.test~9" target="21" />
       <module name="intellij.cangjie.common.diagnostics.main" target="21" />
       <module name="intellij.cangjie.common.diagnostics.main~11" target="21" />
@@ -1185,7 +1106,6 @@
       <module name="intellij.cangjie.common.diagnostics.main~5" target="21" />
       <module name="intellij.cangjie.common.diagnostics.main~6" target="21" />
       <module name="intellij.cangjie.common.diagnostics.main~7" target="21" />
-      <module name="intellij.cangjie.common.diagnostics.main~8" target="21" />
       <module name="intellij.cangjie.common.diagnostics.main~9" target="21" />
       <module name="intellij.cangjie.common.diagnostics.test" target="21" />
       <module name="intellij.cangjie.common.diagnostics.test~11" target="21" />
@@ -1196,7 +1116,6 @@
       <module name="intellij.cangjie.common.diagnostics.test~5" target="21" />
       <module name="intellij.cangjie.common.diagnostics.test~6" target="21" />
       <module name="intellij.cangjie.common.diagnostics.test~7" target="21" />
-      <module name="intellij.cangjie.common.diagnostics.test~8" target="21" />
       <module name="intellij.cangjie.common.diagnostics.test~9" target="21" />
       <module name="intellij.cangjie.compiler.arguments.main" target="21" />
       <module name="intellij.cangjie.compiler.arguments.main~11" target="21" />
@@ -1207,7 +1126,6 @@
       <module name="intellij.cangjie.compiler.arguments.main~5" target="21" />
       <module name="intellij.cangjie.compiler.arguments.main~6" target="21" />
       <module name="intellij.cangjie.compiler.arguments.main~7" target="21" />
-      <module name="intellij.cangjie.compiler.arguments.main~8" target="21" />
       <module name="intellij.cangjie.compiler.arguments.main~9" target="21" />
       <module name="intellij.cangjie.compiler.arguments.test" target="21" />
       <module name="intellij.cangjie.compiler.arguments.test~11" target="21" />
@@ -1218,7 +1136,6 @@
       <module name="intellij.cangjie.compiler.arguments.test~5" target="21" />
       <module name="intellij.cangjie.compiler.arguments.test~6" target="21" />
       <module name="intellij.cangjie.compiler.arguments.test~7" target="21" />
-      <module name="intellij.cangjie.compiler.arguments.test~8" target="21" />
       <module name="intellij.cangjie.compiler.arguments.test~9" target="21" />
       <module name="intellij.cangjie.compiler.chir.main" target="21" />
       <module name="intellij.cangjie.compiler.chir.main~10" target="21" />
@@ -1249,7 +1166,6 @@
       <module name="intellij.cangjie.compiler.codegen.main~5" target="21" />
       <module name="intellij.cangjie.compiler.codegen.main~6" target="21" />
       <module name="intellij.cangjie.compiler.codegen.main~7" target="21" />
-      <module name="intellij.cangjie.compiler.codegen.main~8" target="21" />
       <module name="intellij.cangjie.compiler.codegen.main~9" target="21" />
       <module name="intellij.cangjie.compiler.codegen.test" target="21" />
       <module name="intellij.cangjie.compiler.codegen.testFixtures" target="21" />
@@ -1261,7 +1177,6 @@
       <module name="intellij.cangjie.compiler.codegen.testFixtures~5" target="21" />
       <module name="intellij.cangjie.compiler.codegen.testFixtures~6" target="21" />
       <module name="intellij.cangjie.compiler.codegen.testFixtures~7" target="21" />
-      <module name="intellij.cangjie.compiler.codegen.testFixtures~8" target="21" />
       <module name="intellij.cangjie.compiler.codegen.testFixtures~9" target="21" />
       <module name="intellij.cangjie.compiler.codegen.test~11" target="21" />
       <module name="intellij.cangjie.compiler.codegen.test~12" target="21" />
@@ -1271,7 +1186,6 @@
       <module name="intellij.cangjie.compiler.codegen.test~5" target="21" />
       <module name="intellij.cangjie.compiler.codegen.test~6" target="21" />
       <module name="intellij.cangjie.compiler.codegen.test~7" target="21" />
-      <module name="intellij.cangjie.compiler.codegen.test~8" target="21" />
       <module name="intellij.cangjie.compiler.codegen.test~9" target="21" />
       <module name="intellij.cangjie.compiler.config.main" target="21" />
       <module name="intellij.cangjie.compiler.config.main~11" target="21" />
@@ -1282,7 +1196,6 @@
       <module name="intellij.cangjie.compiler.config.main~5" target="21" />
       <module name="intellij.cangjie.compiler.config.main~6" target="21" />
       <module name="intellij.cangjie.compiler.config.main~7" target="21" />
-      <module name="intellij.cangjie.compiler.config.main~8" target="21" />
       <module name="intellij.cangjie.compiler.config.main~9" target="21" />
       <module name="intellij.cangjie.compiler.config.test" target="21" />
       <module name="intellij.cangjie.compiler.config.test~11" target="21" />
@@ -1293,7 +1206,6 @@
       <module name="intellij.cangjie.compiler.config.test~5" target="21" />
       <module name="intellij.cangjie.compiler.config.test~6" target="21" />
       <module name="intellij.cangjie.compiler.config.test~7" target="21" />
-      <module name="intellij.cangjie.compiler.config.test~8" target="21" />
       <module name="intellij.cangjie.compiler.config.test~9" target="21" />
       <module name="intellij.cangjie.compiler.frontend-arguments-generator.main" target="21" />
       <module name="intellij.cangjie.compiler.frontend-arguments-generator.main~11" target="21" />
@@ -1304,7 +1216,6 @@
       <module name="intellij.cangjie.compiler.frontend-arguments-generator.main~5" target="21" />
       <module name="intellij.cangjie.compiler.frontend-arguments-generator.main~6" target="21" />
       <module name="intellij.cangjie.compiler.frontend-arguments-generator.main~7" target="21" />
-      <module name="intellij.cangjie.compiler.frontend-arguments-generator.main~8" target="21" />
       <module name="intellij.cangjie.compiler.frontend-arguments-generator.main~9" target="21" />
       <module name="intellij.cangjie.compiler.frontend-arguments-generator.test" target="21" />
       <module name="intellij.cangjie.compiler.frontend-arguments-generator.test~11" target="21" />
@@ -1315,7 +1226,6 @@
       <module name="intellij.cangjie.compiler.frontend-arguments-generator.test~5" target="21" />
       <module name="intellij.cangjie.compiler.frontend-arguments-generator.test~6" target="21" />
       <module name="intellij.cangjie.compiler.frontend-arguments-generator.test~7" target="21" />
-      <module name="intellij.cangjie.compiler.frontend-arguments-generator.test~8" target="21" />
       <module name="intellij.cangjie.compiler.frontend-arguments-generator.test~9" target="21" />
       <module name="intellij.cangjie.compiler.frontend.main" target="21" />
       <module name="intellij.cangjie.compiler.frontend.main~11" target="21" />
@@ -1326,7 +1236,6 @@
       <module name="intellij.cangjie.compiler.frontend.main~5" target="21" />
       <module name="intellij.cangjie.compiler.frontend.main~6" target="21" />
       <module name="intellij.cangjie.compiler.frontend.main~7" target="21" />
-      <module name="intellij.cangjie.compiler.frontend.main~8" target="21" />
       <module name="intellij.cangjie.compiler.frontend.main~9" target="21" />
       <module name="intellij.cangjie.compiler.frontend.test" target="21" />
       <module name="intellij.cangjie.compiler.frontend.test~11" target="21" />
@@ -1337,7 +1246,6 @@
       <module name="intellij.cangjie.compiler.frontend.test~5" target="21" />
       <module name="intellij.cangjie.compiler.frontend.test~6" target="21" />
       <module name="intellij.cangjie.compiler.frontend.test~7" target="21" />
-      <module name="intellij.cangjie.compiler.frontend.test~8" target="21" />
       <module name="intellij.cangjie.compiler.frontend.test~9" target="21" />
       <module name="intellij.cangjie.compiler.phaser.main" target="21" />
       <module name="intellij.cangjie.compiler.phaser.main~11" target="21" />
@@ -1348,7 +1256,6 @@
       <module name="intellij.cangjie.compiler.phaser.main~5" target="21" />
       <module name="intellij.cangjie.compiler.phaser.main~6" target="21" />
       <module name="intellij.cangjie.compiler.phaser.main~7" target="21" />
-      <module name="intellij.cangjie.compiler.phaser.main~8" target="21" />
       <module name="intellij.cangjie.compiler.phaser.main~9" target="21" />
       <module name="intellij.cangjie.compiler.phaser.test" target="21" />
       <module name="intellij.cangjie.compiler.phaser.test~11" target="21" />
@@ -1359,7 +1266,6 @@
       <module name="intellij.cangjie.compiler.phaser.test~5" target="21" />
       <module name="intellij.cangjie.compiler.phaser.test~6" target="21" />
       <module name="intellij.cangjie.compiler.phaser.test~7" target="21" />
-      <module name="intellij.cangjie.compiler.phaser.test~8" target="21" />
       <module name="intellij.cangjie.compiler.phaser.test~9" target="21" />
       <module name="intellij.cangjie.compiler.plugin.main" target="21" />
       <module name="intellij.cangjie.compiler.plugin.main~11" target="21" />
@@ -1370,7 +1276,6 @@
       <module name="intellij.cangjie.compiler.plugin.main~5" target="21" />
       <module name="intellij.cangjie.compiler.plugin.main~6" target="21" />
       <module name="intellij.cangjie.compiler.plugin.main~7" target="21" />
-      <module name="intellij.cangjie.compiler.plugin.main~8" target="21" />
       <module name="intellij.cangjie.compiler.plugin.main~9" target="21" />
       <module name="intellij.cangjie.compiler.plugin.test" target="21" />
       <module name="intellij.cangjie.compiler.plugin.test~11" target="21" />
@@ -1381,7 +1286,6 @@
       <module name="intellij.cangjie.compiler.plugin.test~5" target="21" />
       <module name="intellij.cangjie.compiler.plugin.test~6" target="21" />
       <module name="intellij.cangjie.compiler.plugin.test~7" target="21" />
-      <module name="intellij.cangjie.compiler.plugin.test~8" target="21" />
       <module name="intellij.cangjie.compiler.plugin.test~9" target="21" />
       <module name="intellij.cangjie.dependencies.intellij-core.main" target="21" />
       <module name="intellij.cangjie.dependencies.intellij-core.main~11" target="21" />
@@ -1392,7 +1296,6 @@
       <module name="intellij.cangjie.dependencies.intellij-core.main~5" target="21" />
       <module name="intellij.cangjie.dependencies.intellij-core.main~6" target="21" />
       <module name="intellij.cangjie.dependencies.intellij-core.main~7" target="21" />
-      <module name="intellij.cangjie.dependencies.intellij-core.main~8" target="21" />
       <module name="intellij.cangjie.dependencies.intellij-core.main~9" target="21" />
       <module name="intellij.cangjie.dependencies.intellij-core.test" target="21" />
       <module name="intellij.cangjie.dependencies.intellij-core.test~11" target="21" />
@@ -1403,7 +1306,6 @@
       <module name="intellij.cangjie.dependencies.intellij-core.test~5" target="21" />
       <module name="intellij.cangjie.dependencies.intellij-core.test~6" target="21" />
       <module name="intellij.cangjie.dependencies.intellij-core.test~7" target="21" />
-      <module name="intellij.cangjie.dependencies.intellij-core.test~8" target="21" />
       <module name="intellij.cangjie.dependencies.intellij-core.test~9" target="21" />
       <module name="intellij.cangjie.deveco-cangjie.product" target="21" />
       <module name="intellij.cangjie.llvm-interop.llvm-interop-api.main" target="21" />
@@ -1415,7 +1317,6 @@
       <module name="intellij.cangjie.llvm-interop.llvm-interop-api.main~5" target="21" />
       <module name="intellij.cangjie.llvm-interop.llvm-interop-api.main~6" target="21" />
       <module name="intellij.cangjie.llvm-interop.llvm-interop-api.main~7" target="21" />
-      <module name="intellij.cangjie.llvm-interop.llvm-interop-api.main~8" target="21" />
       <module name="intellij.cangjie.llvm-interop.llvm-interop-api.main~9" target="21" />
       <module name="intellij.cangjie.llvm-interop.llvm-interop-api.test" target="21" />
       <module name="intellij.cangjie.llvm-interop.llvm-interop-api.test~11" target="21" />
@@ -1426,7 +1327,6 @@
       <module name="intellij.cangjie.llvm-interop.llvm-interop-api.test~5" target="21" />
       <module name="intellij.cangjie.llvm-interop.llvm-interop-api.test~6" target="21" />
       <module name="intellij.cangjie.llvm-interop.llvm-interop-api.test~7" target="21" />
-      <module name="intellij.cangjie.llvm-interop.llvm-interop-api.test~8" target="21" />
       <module name="intellij.cangjie.llvm-interop.llvm-interop-api.test~9" target="21" />
       <module name="intellij.cangjie.llvm-interop.llvm-interop-jni.main" target="21" />
       <module name="intellij.cangjie.llvm-interop.llvm-interop-jni.main~11" target="21" />
@@ -1437,7 +1337,6 @@
       <module name="intellij.cangjie.llvm-interop.llvm-interop-jni.main~5" target="21" />
       <module name="intellij.cangjie.llvm-interop.llvm-interop-jni.main~6" target="21" />
       <module name="intellij.cangjie.llvm-interop.llvm-interop-jni.main~7" target="21" />
-      <module name="intellij.cangjie.llvm-interop.llvm-interop-jni.main~8" target="21" />
       <module name="intellij.cangjie.llvm-interop.llvm-interop-jni.main~9" target="21" />
       <module name="intellij.cangjie.llvm-interop.llvm-interop-jni.test" target="21" />
       <module name="intellij.cangjie.llvm-interop.llvm-interop-jni.test~11" target="21" />
@@ -1448,7 +1347,6 @@
       <module name="intellij.cangjie.llvm-interop.llvm-interop-jni.test~5" target="21" />
       <module name="intellij.cangjie.llvm-interop.llvm-interop-jni.test~6" target="21" />
       <module name="intellij.cangjie.llvm-interop.llvm-interop-jni.test~7" target="21" />
-      <module name="intellij.cangjie.llvm-interop.llvm-interop-jni.test~8" target="21" />
       <module name="intellij.cangjie.llvm-interop.llvm-interop-jni.test~9" target="21" />
       <module name="intellij.cangjie.macro.macro-common.main" target="21" />
       <module name="intellij.cangjie.macro.macro-common.main~11" target="21" />
@@ -1459,7 +1357,6 @@
       <module name="intellij.cangjie.macro.macro-common.main~5" target="21" />
       <module name="intellij.cangjie.macro.macro-common.main~6" target="21" />
       <module name="intellij.cangjie.macro.macro-common.main~7" target="21" />
-      <module name="intellij.cangjie.macro.macro-common.main~8" target="21" />
       <module name="intellij.cangjie.macro.macro-common.main~9" target="21" />
       <module name="intellij.cangjie.macro.macro-common.test" target="21" />
       <module name="intellij.cangjie.macro.macro-common.test~11" target="21" />
@@ -1470,7 +1367,6 @@
       <module name="intellij.cangjie.macro.macro-common.test~5" target="21" />
       <module name="intellij.cangjie.macro.macro-common.test~6" target="21" />
       <module name="intellij.cangjie.macro.macro-common.test~7" target="21" />
-      <module name="intellij.cangjie.macro.macro-common.test~8" target="21" />
       <module name="intellij.cangjie.macro.macro-common.test~9" target="21" />
       <module name="intellij.cangjie.macro.macro-process.main" target="21" />
       <module name="intellij.cangjie.macro.macro-process.main~11" target="21" />
@@ -1481,7 +1377,6 @@
       <module name="intellij.cangjie.macro.macro-process.main~5" target="21" />
       <module name="intellij.cangjie.macro.macro-process.main~6" target="21" />
       <module name="intellij.cangjie.macro.macro-process.main~7" target="21" />
-      <module name="intellij.cangjie.macro.macro-process.main~8" target="21" />
       <module name="intellij.cangjie.macro.macro-process.main~9" target="21" />
       <module name="intellij.cangjie.macro.macro-process.test" target="21" />
       <module name="intellij.cangjie.macro.macro-process.test~11" target="21" />
@@ -1492,7 +1387,6 @@
       <module name="intellij.cangjie.macro.macro-process.test~5" target="21" />
       <module name="intellij.cangjie.macro.macro-process.test~6" target="21" />
       <module name="intellij.cangjie.macro.macro-process.test~7" target="21" />
-      <module name="intellij.cangjie.macro.macro-process.test~8" target="21" />
       <module name="intellij.cangjie.macro.macro-process.test~9" target="21" />
       <module name="intellij.cangjie.macro.macro-stub.main" target="21" />
       <module name="intellij.cangjie.macro.macro-stub.main~11" target="21" />
@@ -1503,7 +1397,6 @@
       <module name="intellij.cangjie.macro.macro-stub.main~5" target="21" />
       <module name="intellij.cangjie.macro.macro-stub.main~6" target="21" />
       <module name="intellij.cangjie.macro.macro-stub.main~7" target="21" />
-      <module name="intellij.cangjie.macro.macro-stub.main~8" target="21" />
       <module name="intellij.cangjie.macro.macro-stub.main~9" target="21" />
       <module name="intellij.cangjie.macro.macro-stub.test" target="21" />
       <module name="intellij.cangjie.macro.macro-stub.test~11" target="21" />
@@ -1514,7 +1407,6 @@
       <module name="intellij.cangjie.macro.macro-stub.test~5" target="21" />
       <module name="intellij.cangjie.macro.macro-stub.test~6" target="21" />
       <module name="intellij.cangjie.macro.macro-stub.test~7" target="21" />
-      <module name="intellij.cangjie.macro.macro-stub.test~8" target="21" />
       <module name="intellij.cangjie.macro.macro-stub.test~9" target="21" />
       <module name="intellij.cangjie.prepare.analysis-test-framework.main" target="21" />
       <module name="intellij.cangjie.prepare.analysis-test-framework.main~11" target="21" />
@@ -1525,7 +1417,6 @@
       <module name="intellij.cangjie.prepare.analysis-test-framework.main~5" target="21" />
       <module name="intellij.cangjie.prepare.analysis-test-framework.main~6" target="21" />
       <module name="intellij.cangjie.prepare.analysis-test-framework.main~7" target="21" />
-      <module name="intellij.cangjie.prepare.analysis-test-framework.main~8" target="21" />
       <module name="intellij.cangjie.prepare.analysis-test-framework.main~9" target="21" />
       <module name="intellij.cangjie.prepare.analysis-test-framework.test" target="21" />
       <module name="intellij.cangjie.prepare.analysis-test-framework.test~11" target="21" />
@@ -1536,7 +1427,6 @@
       <module name="intellij.cangjie.prepare.analysis-test-framework.test~5" target="21" />
       <module name="intellij.cangjie.prepare.analysis-test-framework.test~6" target="21" />
       <module name="intellij.cangjie.prepare.analysis-test-framework.test~7" target="21" />
-      <module name="intellij.cangjie.prepare.analysis-test-framework.test~8" target="21" />
       <module name="intellij.cangjie.prepare.analysis-test-framework.test~9" target="21" />
       <module name="intellij.cangjie.prepare.frontend-embeddable.main" target="21" />
       <module name="intellij.cangjie.prepare.frontend-embeddable.main~11" target="21" />
@@ -1547,7 +1437,6 @@
       <module name="intellij.cangjie.prepare.frontend-embeddable.main~5" target="21" />
       <module name="intellij.cangjie.prepare.frontend-embeddable.main~6" target="21" />
       <module name="intellij.cangjie.prepare.frontend-embeddable.main~7" target="21" />
-      <module name="intellij.cangjie.prepare.frontend-embeddable.main~8" target="21" />
       <module name="intellij.cangjie.prepare.frontend-embeddable.main~9" target="21" />
       <module name="intellij.cangjie.prepare.frontend-embeddable.test" target="21" />
       <module name="intellij.cangjie.prepare.frontend-embeddable.test~11" target="21" />
@@ -1558,7 +1447,6 @@
       <module name="intellij.cangjie.prepare.frontend-embeddable.test~5" target="21" />
       <module name="intellij.cangjie.prepare.frontend-embeddable.test~6" target="21" />
       <module name="intellij.cangjie.prepare.frontend-embeddable.test~7" target="21" />
-      <module name="intellij.cangjie.prepare.frontend-embeddable.test~8" target="21" />
       <module name="intellij.cangjie.prepare.frontend-embeddable.test~9" target="21" />
       <module name="intellij.cangjie.prepare.frontend.main" target="21" />
       <module name="intellij.cangjie.prepare.frontend.main~11" target="21" />
@@ -1569,7 +1457,6 @@
       <module name="intellij.cangjie.prepare.frontend.main~5" target="21" />
       <module name="intellij.cangjie.prepare.frontend.main~6" target="21" />
       <module name="intellij.cangjie.prepare.frontend.main~7" target="21" />
-      <module name="intellij.cangjie.prepare.frontend.main~8" target="21" />
       <module name="intellij.cangjie.prepare.frontend.main~9" target="21" />
       <module name="intellij.cangjie.prepare.frontend.test" target="21" />
       <module name="intellij.cangjie.prepare.frontend.test~11" target="21" />
@@ -1580,7 +1467,6 @@
       <module name="intellij.cangjie.prepare.frontend.test~5" target="21" />
       <module name="intellij.cangjie.prepare.frontend.test~6" target="21" />
       <module name="intellij.cangjie.prepare.frontend.test~7" target="21" />
-      <module name="intellij.cangjie.prepare.frontend.test~8" target="21" />
       <module name="intellij.cangjie.prepare.frontend.test~9" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-analysis-api-cfir-for-ide-module.main" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-analysis-api-cfir-for-ide-module.main~11" target="21" />
@@ -1590,7 +1476,6 @@
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-analysis-api-cfir-for-ide-module.main~4" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-analysis-api-cfir-for-ide-module.main~6" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-analysis-api-cfir-for-ide-module.main~7" target="21" />
-      <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-analysis-api-cfir-for-ide-module.main~8" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-analysis-api-cfir-for-ide-module.main~9" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-analysis-api-cfir-for-ide-module.test" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-analysis-api-cfir-for-ide-module.test~11" target="21" />
@@ -1600,7 +1485,6 @@
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-analysis-api-cfir-for-ide-module.test~4" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-analysis-api-cfir-for-ide-module.test~6" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-analysis-api-cfir-for-ide-module.test~7" target="21" />
-      <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-analysis-api-cfir-for-ide-module.test~8" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-analysis-api-cfir-for-ide-module.test~9" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-analysis-api-for-ide-module.main" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-analysis-api-for-ide-module.main~11" target="21" />
@@ -1610,7 +1494,6 @@
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-analysis-api-for-ide-module.main~4" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-analysis-api-for-ide-module.main~6" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-analysis-api-for-ide-module.main~7" target="21" />
-      <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-analysis-api-for-ide-module.main~8" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-analysis-api-for-ide-module.main~9" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-analysis-api-for-ide-module.test" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-analysis-api-for-ide-module.test~11" target="21" />
@@ -1620,7 +1503,6 @@
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-analysis-api-for-ide-module.test~4" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-analysis-api-for-ide-module.test~6" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-analysis-api-for-ide-module.test~7" target="21" />
-      <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-analysis-api-for-ide-module.test~8" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-analysis-api-for-ide-module.test~9" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-analysis-api-standalone-for-ide-module.main" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-analysis-api-standalone-for-ide-module.main~11" target="21" />
@@ -1630,7 +1512,6 @@
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-analysis-api-standalone-for-ide-module.main~4" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-analysis-api-standalone-for-ide-module.main~6" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-analysis-api-standalone-for-ide-module.main~7" target="21" />
-      <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-analysis-api-standalone-for-ide-module.main~8" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-analysis-api-standalone-for-ide-module.main~9" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-analysis-api-standalone-for-ide-module.test" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-analysis-api-standalone-for-ide-module.test~11" target="21" />
@@ -1640,7 +1521,6 @@
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-analysis-api-standalone-for-ide-module.test~4" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-analysis-api-standalone-for-ide-module.test~6" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-analysis-api-standalone-for-ide-module.test~7" target="21" />
-      <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-analysis-api-standalone-for-ide-module.test~8" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-analysis-api-standalone-for-ide-module.test~9" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-cfir-for-ide-module.main" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-cfir-for-ide-module.main~11" target="21" />
@@ -1650,7 +1530,6 @@
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-cfir-for-ide-module.main~4" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-cfir-for-ide-module.main~6" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-cfir-for-ide-module.main~7" target="21" />
-      <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-cfir-for-ide-module.main~8" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-cfir-for-ide-module.main~9" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-cfir-for-ide-module.test" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-cfir-for-ide-module.test~11" target="21" />
@@ -1660,7 +1539,6 @@
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-cfir-for-ide-module.test~4" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-cfir-for-ide-module.test~6" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-cfir-for-ide-module.test~7" target="21" />
-      <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-cfir-for-ide-module.test~8" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-cfir-for-ide-module.test~9" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-common-for-ide-module.main" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-common-for-ide-module.main~11" target="21" />
@@ -1671,7 +1549,6 @@
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-common-for-ide-module.main~5" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-common-for-ide-module.main~6" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-common-for-ide-module.main~7" target="21" />
-      <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-common-for-ide-module.main~8" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-common-for-ide-module.main~9" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-common-for-ide-module.test" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-common-for-ide-module.test~11" target="21" />
@@ -1682,7 +1559,6 @@
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-common-for-ide-module.test~5" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-common-for-ide-module.test~6" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-common-for-ide-module.test~7" target="21" />
-      <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-common-for-ide-module.test~8" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-common-for-ide-module.test~9" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-psi-for-ide-module.main" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-psi-for-ide-module.main~11" target="21" />
@@ -1693,7 +1569,6 @@
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-psi-for-ide-module.main~5" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-psi-for-ide-module.main~6" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-psi-for-ide-module.main~7" target="21" />
-      <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-psi-for-ide-module.main~8" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-psi-for-ide-module.main~9" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-psi-for-ide-module.test" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-psi-for-ide-module.test~11" target="21" />
@@ -1704,7 +1579,6 @@
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-psi-for-ide-module.test~5" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-psi-for-ide-module.test~6" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-psi-for-ide-module.test~7" target="21" />
-      <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-psi-for-ide-module.test~8" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-psi-for-ide-module.test~9" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-cfir-for-ide.main" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-cfir-for-ide.main~11" target="21" />
@@ -1715,7 +1589,6 @@
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-cfir-for-ide.main~5" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-cfir-for-ide.main~6" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-cfir-for-ide.main~7" target="21" />
-      <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-cfir-for-ide.main~8" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-cfir-for-ide.main~9" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-cfir-for-ide.test" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-cfir-for-ide.test~11" target="21" />
@@ -1726,7 +1599,6 @@
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-cfir-for-ide.test~5" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-cfir-for-ide.test~6" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-cfir-for-ide.test~7" target="21" />
-      <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-cfir-for-ide.test~8" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-cfir-for-ide.test~9" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-for-ide.main" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-for-ide.main~11" target="21" />
@@ -1737,7 +1609,6 @@
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-for-ide.main~5" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-for-ide.main~6" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-for-ide.main~7" target="21" />
-      <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-for-ide.main~8" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-for-ide.main~9" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-for-ide.test" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-for-ide.test~11" target="21" />
@@ -1748,7 +1619,6 @@
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-for-ide.test~5" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-for-ide.test~6" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-for-ide.test~7" target="21" />
-      <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-for-ide.test~8" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-for-ide.test~9" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-standalone-for-ide.main" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-standalone-for-ide.main~11" target="21" />
@@ -1759,7 +1629,6 @@
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-standalone-for-ide.main~5" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-standalone-for-ide.main~6" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-standalone-for-ide.main~7" target="21" />
-      <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-standalone-for-ide.main~8" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-standalone-for-ide.main~9" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-standalone-for-ide.test" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-standalone-for-ide.test~11" target="21" />
@@ -1770,7 +1639,6 @@
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-standalone-for-ide.test~5" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-standalone-for-ide.test~6" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-standalone-for-ide.test~7" target="21" />
-      <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-standalone-for-ide.test~8" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-standalone-for-ide.test~9" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-cfir-for-ide.main" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-cfir-for-ide.main~11" target="21" />
@@ -1781,7 +1649,6 @@
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-cfir-for-ide.main~5" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-cfir-for-ide.main~6" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-cfir-for-ide.main~7" target="21" />
-      <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-cfir-for-ide.main~8" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-cfir-for-ide.main~9" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-cfir-for-ide.test" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-cfir-for-ide.test~11" target="21" />
@@ -1792,7 +1659,6 @@
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-cfir-for-ide.test~5" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-cfir-for-ide.test~6" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-cfir-for-ide.test~7" target="21" />
-      <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-cfir-for-ide.test~8" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-cfir-for-ide.test~9" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-common-for-ide.main" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-common-for-ide.main~11" target="21" />
@@ -1803,7 +1669,6 @@
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-common-for-ide.main~5" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-common-for-ide.main~6" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-common-for-ide.main~7" target="21" />
-      <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-common-for-ide.main~8" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-common-for-ide.main~9" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-common-for-ide.test" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-common-for-ide.test~11" target="21" />
@@ -1814,7 +1679,6 @@
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-common-for-ide.test~5" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-common-for-ide.test~6" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-common-for-ide.test~7" target="21" />
-      <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-common-for-ide.test~8" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-common-for-ide.test~9" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-psi-for-ide.main" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-psi-for-ide.main~11" target="21" />
@@ -1824,7 +1688,6 @@
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-psi-for-ide.main~4" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-psi-for-ide.main~6" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-psi-for-ide.main~7" target="21" />
-      <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-psi-for-ide.main~8" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-psi-for-ide.main~9" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-psi-for-ide.test" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-psi-for-ide.test~11" target="21" />
@@ -1835,7 +1698,6 @@
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-psi-for-ide.test~5" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-psi-for-ide.test~6" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-psi-for-ide.test~7" target="21" />
-      <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-psi-for-ide.test~8" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-psi-for-ide.test~9" target="21" />
       <module name="intellij.cangjie.prepare.test-infrastructure.main" target="21" />
       <module name="intellij.cangjie.prepare.test-infrastructure.main~11" target="21" />
@@ -1846,7 +1708,6 @@
       <module name="intellij.cangjie.prepare.test-infrastructure.main~5" target="21" />
       <module name="intellij.cangjie.prepare.test-infrastructure.main~6" target="21" />
       <module name="intellij.cangjie.prepare.test-infrastructure.main~7" target="21" />
-      <module name="intellij.cangjie.prepare.test-infrastructure.main~8" target="21" />
       <module name="intellij.cangjie.prepare.test-infrastructure.main~9" target="21" />
       <module name="intellij.cangjie.prepare.test-infrastructure.test" target="21" />
       <module name="intellij.cangjie.prepare.test-infrastructure.test~11" target="21" />
@@ -1857,7 +1718,6 @@
       <module name="intellij.cangjie.prepare.test-infrastructure.test~5" target="21" />
       <module name="intellij.cangjie.prepare.test-infrastructure.test~6" target="21" />
       <module name="intellij.cangjie.prepare.test-infrastructure.test~7" target="21" />
-      <module name="intellij.cangjie.prepare.test-infrastructure.test~8" target="21" />
       <module name="intellij.cangjie.prepare.test-infrastructure.test~9" target="21" />
       <module name="intellij.cangjie.tests.test-infrastructure.main" target="21" />
       <module name="intellij.cangjie.tests.test-infrastructure.main~11" target="21" />
@@ -1868,7 +1728,6 @@
       <module name="intellij.cangjie.tests.test-infrastructure.main~5" target="21" />
       <module name="intellij.cangjie.tests.test-infrastructure.main~6" target="21" />
       <module name="intellij.cangjie.tests.test-infrastructure.main~7" target="21" />
-      <module name="intellij.cangjie.tests.test-infrastructure.main~8" target="21" />
       <module name="intellij.cangjie.tests.test-infrastructure.main~9" target="21" />
       <module name="intellij.cangjie.tests.test-infrastructure.test" target="21" />
       <module name="intellij.cangjie.tests.test-infrastructure.testFixtures" target="21" />
@@ -1880,7 +1739,6 @@
       <module name="intellij.cangjie.tests.test-infrastructure.testFixtures~5" target="21" />
       <module name="intellij.cangjie.tests.test-infrastructure.testFixtures~6" target="21" />
       <module name="intellij.cangjie.tests.test-infrastructure.testFixtures~7" target="21" />
-      <module name="intellij.cangjie.tests.test-infrastructure.testFixtures~8" target="21" />
       <module name="intellij.cangjie.tests.test-infrastructure.testFixtures~9" target="21" />
       <module name="intellij.cangjie.tests.test-infrastructure.test~11" target="21" />
       <module name="intellij.cangjie.tests.test-infrastructure.test~12" target="21" />
@@ -1890,7 +1748,6 @@
       <module name="intellij.cangjie.tests.test-infrastructure.test~5" target="21" />
       <module name="intellij.cangjie.tests.test-infrastructure.test~6" target="21" />
       <module name="intellij.cangjie.tests.test-infrastructure.test~7" target="21" />
-      <module name="intellij.cangjie.tests.test-infrastructure.test~8" target="21" />
       <module name="intellij.cangjie.tests.test-infrastructure.test~9" target="21" />
       <module name="org.cangnova.cangjie.build.gradle-build-conventions.analysis-coverage-convention" target="21" />
       <module name="org.cangnova.cangjie.build.gradle-build-conventions.analysis-coverage-convention.main" target="21" />
