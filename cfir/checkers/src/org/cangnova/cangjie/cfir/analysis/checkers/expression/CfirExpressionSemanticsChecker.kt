@@ -432,9 +432,7 @@ object CfirStaticContextNonStaticMemberAccessChecker : CfirQualifiedAccessChecke
      * 识别当前表达式所在的 static 函数或 static lambda 上下文。
      */
     private fun CheckerContext.staticNonStaticAccessKind(): StaticNonStaticAccessKind? {
-        val closestFunction = containingDeclarations.asReversed()
-            .filterIsInstance<CfirFunction>()
-            .firstOrNull()
+        val closestFunction = findClosestDeclaration<CfirFunction>()
             ?: return null
 
         if (closestFunction is CfirAnonymousFunction) {
@@ -457,10 +455,11 @@ object CfirStaticContextNonStaticMemberAccessChecker : CfirQualifiedAccessChecke
      * lambda 和本地函数本身不带 static 状态；它们从外层 static 函数或 static 存储成员继承 static 语境。
      */
     private fun CheckerContext.hasStaticEnclosingDeclarationAfter(function: CfirFunction): Boolean {
+        val functionSymbol = function.symbol
         return containingDeclarations.asReversed()
-            .dropWhile { declaration -> declaration !== function }
+            .dropWhile { symbol -> symbol !== functionSymbol }
             .drop(1)
-            .any { declaration -> declaration is CfirCallableDeclaration && declaration.status.isStatic }
+            .any { symbol -> (symbol as? CfirCallableSymbol<*>)?.cfir?.status?.isStatic == true }
     }
 
     /**
@@ -661,7 +660,7 @@ object CfirAbstractSuperMemberAccessChecker : CfirQualifiedAccessChecker() {
  * 只有调用栈中存在构造器且最近 class 为 open 或 abstract 时返回 owner。
  */
 private fun CheckerContext.openClassConstructorOwner(): CfirClass? {
-    containingDeclarations.asReversed().firstOrNull { it is CfirConstructor } ?: return null
+    findClosestDeclaration<CfirConstructor>() ?: return null
     val owner = findClosestDeclaration<CfirClass>() ?: return null
     return owner.takeIf { it.status.isOpen || it.status.isAbstract }
 }

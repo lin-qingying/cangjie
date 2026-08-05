@@ -573,7 +573,5 @@ private class ConstructorMemberAccessBeforeInitializationVisitor(
  * 取得当前 checker 上下文中最近的函数类声明。
  */
 private fun CheckerContext.closestFunctionLikeDeclaration(): CfirFunction? {
-    return containingDeclarations
-        .asReversed()
-        .firstOrNull { declaration -> declaration is CfirFunction } as? CfirFunction
+    return findClosestDeclaration<CfirFunction>()
 }

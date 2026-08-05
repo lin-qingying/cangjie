@@ -3,9 +3,7 @@
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 
-import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
-import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
-import org.cangnova.cangjie.cfir.declarations.CfirVariable
+import org.cangnova.cangjie.cfir.symbols.CfirVariableSymbol
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedNameError
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
@@ -164,18 +162,10 @@ object CfirSignedLiteralNumericOverflowChecker : CfirFunctionCallChecker() {
  * 查找包含当前字面量的显式声明初始化目标类型。
  */
 private fun CheckerContext.expectedInitializerTypeFor(source: AbstractCjSourceElement): ConeCangJieType? {
-    for (declaration in containingDeclarations.asReversed()) {
-        when (declaration) {
-            is CfirVariable ->
-                if (declaration.initializer?.source.contains(source)) return declaration.returnTypeRef.explicitConeTypeOrNull()
-
-            is CfirFieldVariable ->
-                if (declaration.initializer?.source.contains(source)) return declaration.returnTypeRef.explicitConeTypeOrNull()
-
-            is CfirPatternVariable ->
-                if (declaration.initializer?.source.contains(source)) return declaration.returnTypeRef.explicitConeTypeOrNull()
-
-            else -> Unit
+    for (symbol in containingDeclarations.asReversed()) {
+        val declaration = (symbol as? CfirVariableSymbol<*>)?.cfir ?: continue
+        if (declaration.initializer?.source.contains(source)) {
+            return declaration.returnTypeRef.explicitConeTypeOrNull()
         }
     }
     return null

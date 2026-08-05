@@ -40,6 +40,7 @@ import org.cangnova.cangjie.cfir.session.cjMappingConfigProvider
 import org.cangnova.cangjie.cfir.session.noPrelude
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirInterfaceSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.types.*
@@ -775,7 +776,7 @@ object CfirPropertySemanticsChecker : CfirPropertyChecker() {
     private fun checkPropertyAccessors(property: CfirProperty) {
         if (property.isCatchParameter == true) return
         if (property.source?.kind == CjFakeSourceElementKind.PropertyFromParameter) return
-        if (context.containingDeclarations.lastOrNull() is CfirInterface) return
+        if (context.containingDeclarations.lastOrNull() is CfirInterfaceSymbol) return
         if (property.status.isAbstract || property.symbol.isAbstractLike(context)) return
         if (property.getter == null && property.setter == null) {
             reporter.reportOn(

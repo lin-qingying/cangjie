@@ -57,9 +57,13 @@ import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
 import org.cangnova.cangjie.cfir.session.extendProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirExtendSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFieldVariableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirInterfaceSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
+import org.cangnova.cangjie.cfir.symbols.CfirStructSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirVariableSymbol
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
@@ -206,14 +210,15 @@ object CfirImmutableValueCannotAccessMutableFunctionChecker : CfirFunctionCallCh
  * 当前函数必须位于 struct 或 interface 中且自身没有 `mut` 标记。
  */
 private fun CheckerContext.currentImmutableStructFunction(): CfirNamedFunction? {
-    val ownerIndex = containingDeclarations.indexOfLast { declaration ->
-        declaration is CfirStruct || declaration is CfirInterface || declaration is CfirExtend
+    val ownerIndex = containingDeclarations.indexOfLast { symbol ->
+        symbol is CfirStructSymbol || symbol is CfirInterfaceSymbol || symbol is CfirExtendSymbol
     }
     if (ownerIndex < 0) return null
     val function = containingDeclarations
         .drop(ownerIndex + 1)
-        .filterIsInstance<CfirNamedFunction>()
-        .firstOrNull() ?: return null
+        .filterIsInstance<CfirNamedFunctionSymbol>()
+        .firstOrNull()
+        ?.cfir ?: return null
     return function.takeUnless { it.status.isMut }
 }
 
@@ -239,10 +244,10 @@ private data class StructCaptureContext(
  */
 private fun CheckerContext.currentStructOwnerAndIndex(): Pair<CfirStruct, Int>? {
     for (index in containingDeclarations.indices.reversed()) {
-        when (val declaration = containingDeclarations[index]) {
-            is CfirStruct -> return declaration to index
-            is CfirExtend -> {
-                val target = CfirExtendSemantics.targetDeclaration(this, declaration) as? CfirStruct ?: continue
+        when (val symbol = containingDeclarations[index]) {
+            is CfirStructSymbol -> return symbol.cfir to index
+            is CfirExtendSymbol -> {
+                val target = CfirExtendSemantics.targetDeclaration(this, symbol.cfir) as? CfirStruct ?: continue
                 return target to index
             }
 
@@ -263,9 +268,10 @@ private fun CheckerContext.currentImmutableStructMutationContext(): StructMutati
     val (owner, ownerIndex) = currentStructOwnerAndIndex() ?: return null
     val outerFunction = containingDeclarations
         .drop(ownerIndex + 1)
-        .filterIsInstance<CfirFunction>()
+        .filterIsInstance<CfirFunctionSymbol<*>>()
         .firstOrNull()
-    if (outerFunction is CfirConstructor || outerFunction?.status?.isMut == true) return null
+        ?.cfir
+    if (outerFunction is CfirConstructor || outerFunction?.isMutStructMemberContext() == true) return null
     if (outerFunction?.isStaticStructMemberContext() == true) return null
     return StructMutationContext(owner, outerFunction)
 }
@@ -280,6 +286,17 @@ private fun CfirFunction.isStaticStructMemberContext(): Boolean =
     status.isStatic || this is CfirPropertyAccessor && propertySymbol.cfir.status.isStatic
 
 /**
+ * 判断函数语境是否具备 struct 可变语义。
+ *
+ * 普通函数直接读取自身 `mut` 标记；属性访问器按访问器种类判定，而不是读取所属属性的 `mut`：
+ * 官方在 `DeclAttributeChecker::CheckStructAttribute` 中为 struct 非 static 属性的 setter 统一
+ * 打开 `Attribute::MUT`，并在 getter 上显式关闭该属性，因此 setter 天然具备可变语义，getter 不具备，
+ * 与属性自身是否书写 `mut` 无关。struct/extend-of-struct 的判定入口已在调用方收敛。
+ */
+private fun CfirFunction.isMutStructMemberContext(): Boolean =
+    status.isMut || this is CfirPropertyAccessor && !isGetter
+
+/**
  * 判断字段引用是否位于构造器或 mut 函数的嵌套函数中。
  */
 private fun CheckerContext.currentStructCaptureContext(field: CfirFieldVariable): StructCaptureContext? {
@@ -288,10 +305,11 @@ private fun CheckerContext.currentStructCaptureContext(field: CfirFieldVariable)
     if (owner.declarations.filterIsInstance<CfirFieldVariable>().none { it.symbol == field.symbol }) return null
     val functions = containingDeclarations
         .drop(ownerIndex + 1)
-        .filterIsInstance<CfirFunction>()
+        .filterIsInstance<CfirFunctionSymbol<*>>()
+        .map { it.cfir }
     if (functions.size < 2) return null
     val outerFunction = functions.first()
-    if (outerFunction !is CfirConstructor && outerFunction.status.isMut.not()) return null
+    if (outerFunction !is CfirConstructor && !outerFunction.isMutStructMemberContext()) return null
     return StructCaptureContext(outerFunction)
 }
 

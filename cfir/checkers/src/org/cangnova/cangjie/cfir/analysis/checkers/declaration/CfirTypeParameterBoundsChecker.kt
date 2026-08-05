@@ -335,10 +335,10 @@ private fun List<ConeCangJieType>.hasInconsistentUpperBoundTypes(): Boolean {
  */
 context(context: CheckerContext)
 private fun CfirTypeParameter.upperBoundConstraintDiagnosticSource(): CjSourceElement? {
-    for (containingDeclaration in context.containingDeclarations.asReversed()) {
-        val owner = containingDeclaration as? CfirTypeParameterRefsOwner ?: continue
+    for (containingSymbol in context.containingDeclarations.asReversed()) {
+        val ownerDeclaration = containingSymbol.cfir
+        val owner = ownerDeclaration as? CfirTypeParameterRefsOwner ?: continue
         if (owner.typeParameters.none { it.symbol == symbol }) continue
-        val ownerDeclaration = containingDeclaration as? CfirDeclaration ?: continue
         return ownerDeclaration.attributes.typeConstraintDiagnosticData
             ?.typeConstraints
             ?.firstOrNull { it.parameterName == name }

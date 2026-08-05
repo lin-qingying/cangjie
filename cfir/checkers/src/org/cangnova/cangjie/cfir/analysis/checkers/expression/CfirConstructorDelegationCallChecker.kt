@@ -55,7 +55,5 @@ private fun CfirFunctionCallOrigin.constructorDelegationKeyword(): String? {
 
 /** 查找当前上下文中最近的函数级声明。 */
 private fun CheckerContext.closestFunctionLikeDeclaration(): CfirFunction? {
-    return containingDeclarations
-        .asReversed()
-        .firstOrNull { declaration -> declaration is CfirFunction } as? CfirFunction
+    return findClosestDeclaration<CfirFunction>()
 }
