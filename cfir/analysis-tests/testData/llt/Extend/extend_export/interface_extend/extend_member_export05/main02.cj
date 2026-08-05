@@ -1,3 +1,4 @@
+// DIAGNOSTICS: -warnings
 // FILE: testa.cj
 
 
@@ -45,9 +46,6 @@ extend<T> Foo<T> <: I1 {
 }
 
 // FILE: main02.cj
-
-
-// DIAGNOSTICS: -warnings
 
 
 package b.a
