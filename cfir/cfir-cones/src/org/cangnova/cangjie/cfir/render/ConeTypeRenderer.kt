@@ -176,16 +176,12 @@ open class ConeTypeRenderer(
             }
 
             is ConeSimpleCangJieType ->
-
-
-
-                    renderSimpleType(type)
-
-
+                renderSimpleType(type)
 
             else -> builder.append(type.toString())
         }
     }
+
     /**
      * 渲染分类器类型自身携带的类型实参。
      */
@@ -206,7 +202,7 @@ open class ConeTypeRenderer(
      *
      * 默认实现先渲染类型构造器，再为 class-like 类型补充类型实参。
      */
-    protected open fun renderSimpleType(type: ConeSimpleCangJieType, ) {
+    protected open fun renderSimpleType(type: ConeSimpleCangJieType) {
         val hasTypeArguments = type is ConeClassLikeType && type.typeArguments.isNotEmpty()
         renderConstructor(type.getConstructor())
         if (hasTypeArguments) {
@@ -215,6 +211,7 @@ open class ConeTypeRenderer(
 
 
     }
+
     /**
      * 理想字面量类型渲染。
      *
@@ -228,11 +225,13 @@ open class ConeTypeRenderer(
                 builder.append(type.value)
                 builder.append(")")
             }
+
             is ConeIdealFloatConstantType -> {
                 builder.append("IdealFloat(")
                 builder.append(type.value)
                 builder.append(")")
             }
+
             is ConeIdealIntLiteralType -> builder.append("IdealInt")
             is ConeIdealFloatLiteralType -> builder.append("IdealFloat")
         }
