@@ -22,6 +22,7 @@ import org.cangnova.cangjie.cfir.resolve.providers.getContainingClass
 import org.cangnova.cangjie.cfir.resolve.providers.getContainingFile
 import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
@@ -220,8 +221,8 @@ private fun CfirConstructor.canSeePrivateConstructorOwner(): Boolean {
         ?: return false
     return context.containingDeclarations
         .asSequence()
-        .filterIsInstance<CfirClassLikeDeclaration>()
-        .any { declaration -> declaration.symbol.classId == ownerClassId }
+        .filterIsInstance<CfirClassLikeSymbol<*>>()
+        .any { ownerSymbol -> ownerSymbol.classId == ownerClassId }
 }
 
 /**

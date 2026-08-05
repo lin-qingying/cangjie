@@ -25,6 +25,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
@@ -45,7 +46,7 @@ object CfirMemberBodyDeclarationChecker : CfirDeclarationChecker<CfirMemberDecla
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirMemberDeclaration) {
         val member = declaration.bodyRequiredMemberInfo() ?: return
-        val owner = context.containingDeclarations.asReversed().firstOrNull { it is CfirClass } as? CfirClass
+        val owner = context.findClosestDeclaration<CfirClass>()
             ?: return
 
         if (!member.status.isAbstract) return

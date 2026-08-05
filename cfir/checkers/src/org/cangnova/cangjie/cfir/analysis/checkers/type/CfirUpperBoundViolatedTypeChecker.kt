@@ -3,10 +3,10 @@ package org.cangnova.cangjie.cfir.analysis.checkers.type
 import org.cangnova.cangjie.cfir.analysis.checkers.CfirExtendSemantics
 import org.cangnova.cangjie.cfir.analysis.checkers.checkUpperBoundViolated
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
-import org.cangnova.cangjie.cfir.declarations.CfirExtend
-import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
+import org.cangnova.cangjie.cfir.symbols.CfirExtendSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirTypeAliasSymbol
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 
 /**
@@ -19,8 +19,11 @@ object CfirUpperBoundViolatedTypeChecker : CfirResolvedTypeRefChecker() {
     /** 对一个已解析类型引用执行 use-site 泛型上界检查，并跳过类型别名本体等特殊上下文。 */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(typeRef: CfirResolvedTypeRef) {
-        if (context.containingDeclarations.lastOrNull() is CfirTypeAlias) return
-        val containingExtend = context.containingDeclarations.asReversed().filterIsInstance<CfirExtend>().firstOrNull()
+        if (context.containingDeclarations.lastOrNull() is CfirTypeAliasSymbol) return
+        val containingExtend = context.containingDeclarations.asReversed()
+            .filterIsInstance<CfirExtendSymbol>()
+            .firstOrNull()
+            ?.cfir
         if (
             containingExtend != null &&
             CfirExtendSemantics.isInsideImmutableMutInterfaceSupertype(context, containingExtend, typeRef)

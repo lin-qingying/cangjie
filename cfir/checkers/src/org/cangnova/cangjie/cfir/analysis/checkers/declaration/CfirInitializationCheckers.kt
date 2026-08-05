@@ -43,6 +43,7 @@ import org.cangnova.cangjie.cfir.references.CfirResolvedErrorReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertyAccessorSymbol
@@ -95,17 +96,21 @@ internal enum class CfirInitializationAssignmentKind {
  * 声明 checker 在进入函数节点前触发，当前函数本身通常尚未压入栈；而分析嵌套函数时
  * 栈中还可能同时存在多个 function。这里优先使用函数之前的声明，再从内向外寻找
  * 最近的 class-like，避免把嵌套函数误绑定到错误的 owner。
+ *
+ * 声明栈保存的是 [CfirBasedSymbol]，因此定位以函数符号身份为准，再把 class-like 符号投影回声明节点。
  */
 private fun CheckerContext.ownerOf(function: CfirFunction): CfirClassLikeDeclaration? {
-    val functionIndex = containingDeclarations.indexOfLast { declaration -> declaration === function }
+    val functionSymbol = function.symbol
+    val functionIndex = containingDeclarations.indexOfLast { declaration -> declaration === functionSymbol }
     val declarationsBeforeFunction = if (functionIndex >= 0) {
         containingDeclarations.take(functionIndex)
     } else {
         containingDeclarations
     }
     return declarationsBeforeFunction.asReversed()
-        .filterIsInstance<CfirClassLikeDeclaration>()
+        .filterIsInstance<CfirClassLikeSymbol<*>>()
         .firstOrNull()
+        ?.cfir
 }
 
 /**
@@ -1726,7 +1731,8 @@ internal object CfirInitializationAssignmentClassifier {
         }
         var classification = CfirInitializationAssignmentKind.NOT_TRACKED
         val enclosingFunctions = context.containingDeclarations
-            .filterIsInstance<CfirFunction>()
+            .filterIsInstance<CfirFunctionSymbol<*>>()
+            .map { it.cfir }
             .asReversed()
 
         for (function in enclosingFunctions) {
