@@ -116,6 +116,7 @@ object TestGeneratorForCfirAnalysisTests {
             outputRelativePath = "cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisMacroTestGenerated.kt",
             generatedClassName = "CfirAnalysisMacroTestGenerated",
             baseClassName = "AbstractCfirLightTreeMacroDiagnosticsTest",
+            generationMode = SuiteGenerationMode.SINGLE_CLASS
         )
         generateDiagnosticsSuite(
             projectRoot = projectRoot,
@@ -123,6 +124,8 @@ object TestGeneratorForCfirAnalysisTests {
             outputRelativePath = "cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisMacroPsiTestGenerated.kt",
             generatedClassName = "CfirAnalysisMacroPsiTestGenerated",
             baseClassName = "AbstractCfirPsiMacroDiagnosticsTest",
+            generationMode = SuiteGenerationMode.SINGLE_CLASS
+
         )
     }
 
@@ -137,7 +140,7 @@ object TestGeneratorForCfirAnalysisTests {
         outputRelativePath: String,
         generatedClassName: String,
         baseClassName: String = "AbstractCfirLightTreeDiagnosticsTest",
-        generationMode: SuiteGenerationMode = SuiteGenerationMode.PER_PACKAGE,
+        generationMode: SuiteGenerationMode = SuiteGenerationMode.SINGLE_CLASS,
         basePackage: String = "org.cangnova.cangjie.cfir.analysis.tests",
     ) {
         val testDataRoot = projectRoot.resolve(relativeTestDataRoot)
