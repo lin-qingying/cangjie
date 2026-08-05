@@ -3117,25 +3117,12 @@ class CfirCallResolver(
         val candidateFactory = CandidateFactory(transformer.resolutionContext, callInfo)
         val argumentCount = callInfo.arguments.size
 
-        val arrayCandidates = if (argumentCount > 2) {
-            listOf(
-                candidateFactory.createBuiltinArrayConstructorCandidate(
-                    callInfo = callInfo,
-                    kind = BuiltinArrayConstructorKind.INIT_FUNCTION,
-                    target = target,
-                ).also { candidate ->
-                    candidate.addDiagnostic(TooManyArguments(functionCall, callInfo.name))
-                },
+        val arrayCandidates = builtinArrayConstructorKinds(functionCall, target, argumentCount).map { kind ->
+            candidateFactory.createBuiltinArrayConstructorCandidate(
+                callInfo = callInfo,
+                kind = kind,
+                target = target,
             )
-        } else {
-            val arrayCandidateKinds = builtinArrayConstructorKinds(functionCall, target, argumentCount)
-            arrayCandidateKinds.map { kind ->
-                candidateFactory.createBuiltinArrayConstructorCandidate(
-                    callInfo = callInfo,
-                    kind = kind,
-                    target = target,
-                )
-            }
         }
         val (reducedCandidates, applicability) = reduceCollectedCandidates(
             candidates = arrayCandidates,
@@ -3175,31 +3162,21 @@ class CfirCallResolver(
     ): ResolutionResult {
         val callInfo = createBuiltinConstructorCallInfo(functionCall, name, resolutionMode)
         val candidateFactory = CandidateFactory(transformer.resolutionContext, callInfo)
-        val argumentCount = callInfo.arguments.size
 
-        val candidates = if (argumentCount > 1) {
-            listOf(
-                candidateFactory.createBuiltinPointerConstructorCandidate(
-                    callInfo = callInfo,
-                    kind = BuiltinPointerConstructorKind.CONVERT_POINTER,
-                    target = target,
-                ).also { candidate ->
-                    candidate.addDiagnostic(TooManyArguments(functionCall, callInfo.name))
-                },
-            )
-        } else {
-            val kind = when (argumentCount) {
-                0 -> BuiltinPointerConstructorKind.EMPTY
-                else -> BuiltinPointerConstructorKind.CONVERT_POINTER
-            }
-            listOf(
-                candidateFactory.createBuiltinPointerConstructorCandidate(
-                    callInfo = callInfo,
-                    kind = kind,
-                    target = target,
-                ),
-            )
+        // 零实参是空指针构造，其余一律按指针转换形状建候选。
+        // 实参数量是否合法由 CfirMapArguments 在参数映射阶段唯一判定，
+        // 这里不再预挂参数数量诊断，避免与映射阶段产出互相冲突的调用级诊断。
+        val kind = when (callInfo.arguments.size) {
+            0 -> BuiltinPointerConstructorKind.EMPTY
+            else -> BuiltinPointerConstructorKind.CONVERT_POINTER
         }
+        val candidates = listOf(
+            candidateFactory.createBuiltinPointerConstructorCandidate(
+                callInfo = callInfo,
+                kind = kind,
+                target = target,
+            ),
+        )
         val (reducedCandidates, applicability) = reduceCollectedCandidates(
             candidates = candidates,
             collectorApplicability = CandidateApplicability.HIDDEN,
@@ -3264,32 +3241,41 @@ class CfirCallResolver(
      *
      * 普通 Array 区分空数组、collection 构造、init 函数和重复元素；
      * VArray 的单实参命名形式代表重复元素，否则优先按 init 函数处理。
+     *
+     * 实参数量超出全部内建构造形状的最大形参数量时，仍然只合成 init 函数形状的单一候选，
+     * 由 `CfirMapArguments` 在参数映射阶段唯一判定并报告参数数量错误；
+     * 本函数只决定候选形状，不产出任何诊断。
      */
     private fun builtinArrayConstructorKinds(
         functionCall: CfirFunctionCall,
         target: BuiltinArrayConstructorTarget,
         argumentCount: Int,
-    ): List<BuiltinArrayConstructorKind> = when (target) {
-        BuiltinArrayConstructorTarget.Array -> when (argumentCount) {
-            0 -> listOf(BuiltinArrayConstructorKind.EMPTY)
-            1 -> if (functionCall.hasTrailingLambda) {
-                listOf(BuiltinArrayConstructorKind.INIT_FUNCTION)
-            } else {
-                listOf(BuiltinArrayConstructorKind.COLLECTION)
-            }
-            else -> listOf(
-                BuiltinArrayConstructorKind.INIT_FUNCTION,
-                BuiltinArrayConstructorKind.REPEAT_ELEMENT,
-            )
+    ): List<BuiltinArrayConstructorKind> {
+        if (argumentCount > BUILTIN_ARRAY_CONSTRUCTOR_MAX_ARITY) {
+            return listOf(BuiltinArrayConstructorKind.INIT_FUNCTION)
         }
-        is BuiltinArrayConstructorTarget.VArray -> when (argumentCount) {
-            0 -> listOf(BuiltinArrayConstructorKind.EMPTY)
-            1 -> if (functionCall.argumentList.arguments.singleOrNull()?.hasExplicitArgumentName() == true) {
-                listOf(BuiltinArrayConstructorKind.REPEAT_ELEMENT)
-            } else {
-                listOf(BuiltinArrayConstructorKind.INIT_FUNCTION)
+        return when (target) {
+            BuiltinArrayConstructorTarget.Array -> when (argumentCount) {
+                0 -> listOf(BuiltinArrayConstructorKind.EMPTY)
+                1 -> if (functionCall.hasTrailingLambda) {
+                    listOf(BuiltinArrayConstructorKind.INIT_FUNCTION)
+                } else {
+                    listOf(BuiltinArrayConstructorKind.COLLECTION)
+                }
+                else -> listOf(
+                    BuiltinArrayConstructorKind.INIT_FUNCTION,
+                    BuiltinArrayConstructorKind.REPEAT_ELEMENT,
+                )
             }
-            else -> listOf(BuiltinArrayConstructorKind.REPEAT_ELEMENT)
+            is BuiltinArrayConstructorTarget.VArray -> when (argumentCount) {
+                0 -> listOf(BuiltinArrayConstructorKind.EMPTY)
+                1 -> if (functionCall.argumentList.arguments.singleOrNull()?.hasExplicitArgumentName() == true) {
+                    listOf(BuiltinArrayConstructorKind.REPEAT_ELEMENT)
+                } else {
+                    listOf(BuiltinArrayConstructorKind.INIT_FUNCTION)
+                }
+                else -> listOf(BuiltinArrayConstructorKind.REPEAT_ELEMENT)
+            }
         }
     }
 
@@ -3684,6 +3670,14 @@ class CfirCallResolver(
             )
         }.maxOrNull() ?: fallback
 }
+
+/**
+ * 内建 `Array<T>` / `VArray<T, $N>` 构造形状中最大的形参数量。
+ *
+ * 官方 `ArrayExpr` 最多接受 `(size, initElement)` 或 `(size, repeat!: T)` 两个形参；
+ * 实参数量超过该值时只保留单一候选形状，参数数量诊断由 `CfirMapArguments` 唯一产出。
+ */
+private const val BUILTIN_ARRAY_CONSTRUCTOR_MAX_ARITY = 2
 
 /** overload candidate set 中的一个候选及其是否属于当前最佳候选集合。 */
 data class OverloadCandidate(val candidate: Candidate, val isInBestCandidates: Boolean)

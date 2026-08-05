@@ -75,7 +75,24 @@ class CfirTypeAwareSupertypeProviderImpl(
     private var cachedExtendIndexVersion: Long = Long.MIN_VALUE
 
     /**
+     * 当前调用栈上正在计算直接父类型的类型集合。
+     *
+     * 父类型计算本身是可重入的：官方 `TypeManager::GetAllExtendInterfaceTyHelper`
+     * 在收集 extend 接口之前先用 `CheckGenericDeclInstantiation` 求值 extend 的 where 约束，
+     * 后者再调用 `IsSubtype`，而子类型判定又会回来查询父类型。递归只发生在同一调用栈内，
+     * 因此用线程封闭状态记录“计算中”标记，既能覆盖所有调用入口，
+     * 又不改变 [directSupertypesCache] 既有的 `synchronized` 语义。
+     */
+    private val computingSupertypes: ThreadLocal<MutableSet<ConeCangJieType>> =
+        ThreadLocal.withInitial { linkedSetOf() }
+
+    /**
      * 获取具体类型的直接父类型列表。
+     *
+     * 已完成计算的类型仍然优先返回缓存结果；只有在对“计算中”的类型重入时，
+     * 才按最小不动点返回空父类型列表，即“该 extend 在这条回边上不贡献自己的接口”。
+     * 这与官方 `TypeManager::IsSubtype` 先把 `(leaf, root, ...)` 以 `false`
+     * 预置进 `subtypeCache`、再用真实结果覆盖的做法语义一致。
      */
     override fun getDirectSupertypes(type: ConeCangJieType): List<ConeCangJieType> {
         ensureCacheFresh()
@@ -83,10 +100,58 @@ class CfirTypeAwareSupertypeProviderImpl(
             directSupertypesCache[type]?.let { return it }
         }
 
-        val computed = computeDirectSupertypes(type)
+        val semanticType = type.fullyExpandedType(session)
+        val computingTypes = computingSupertypes.get()
+        if (semanticType.isSupertypeComputationReentry(computingTypes)) return emptyList()
+
+        computingTypes += semanticType
+        val computed = try {
+            computeDirectSupertypes(semanticType)
+        } finally {
+            computingTypes -= semanticType
+        }
 
         synchronized(directSupertypesCache) {
             return directSupertypesCache.getOrPut(type) { computed }
+        }
+    }
+
+    /**
+     * 判断当前类型是否构成对进行中父类型计算的递归回边。
+     *
+     * 判定分两级，命中任意一级都视为重入，从而在该回边上取最小不动点（空父类型列表）：
+     *
+     * 1. 精确回边：结构完全相同的类型再次进入。`class A<X>` 配合
+     *    `extend<V> A<V> <: I where V <: I` 与 `T <: A<T>` 就是这种形状：
+     *    计算 `A<T>` 的父类型要求 `T <: I`，而 `T` 的唯一上界又是 `A<T>`，
+     *    于是重新查询 `A<T>`。官方编译器在这里读到的正是预置的 `false`。
+     * 2. 膨胀回边：类型构造器相同，且新查询把某个进行中的类型整体包含为真子项。
+     *    这类回边每层都生成结构更大的类型，精确相等永远不会再次成立，
+     *    是唯一可能让“计算中”键空间无界增长的形状，必须一并截断。
+     *    截断不会改变不动点：这条更大的查询要成立，仍必须在下一层回来判定被包含的进行中类型，
+     *    那一步会命中第 1 级，同样得到“不贡献”。
+     *
+     * 反过来，构造器相同但结构更小或互不包含的实例化必须照常计算：官方 `subtypeCache`
+     * 以完整实参类型（而非类型构造器）为键，若只按构造器截断，
+     * 计算 `A<A<B>>` 期间对 `A<B>` 的查询会被误判为重入，
+     * 从而把官方判定为成立的 `A<A<B>> <: I` 错误地变成不成立。
+     *
+     * 终止性：固定任一类型构造器，其嵌套查询链上的类型两两不等（第 1 级），
+     * 且后出现的类型不包含先出现的类型（第 2 级）。链上所有类型都由当前程序中有限的
+     * 源码类型表达式经代换得到，而代换引起结构增长的唯一形状就是
+     * “把进行中的类型代入它自身的上界”，已被第 2 级截断，因此嵌套链必然有限。
+     */
+    private fun ConeCangJieType.isSupertypeComputationReentry(
+        computingTypes: Set<ConeCangJieType>,
+    ): Boolean {
+        if (computingTypes.isEmpty()) return false
+        val queriedType = this
+        val classifierKey = queriedType.expandedExtendTargetKey
+        return computingTypes.any { computingType ->
+            computingType == queriedType ||
+                    classifierKey != null &&
+                    computingType.expandedExtendTargetKey == classifierKey &&
+                    queriedType.contains { nestedType -> nestedType == computingType }
         }
     }
 
@@ -103,10 +168,12 @@ class CfirTypeAwareSupertypeProviderImpl(
     }
 
     /**
-     * 计算具体类型的声明父类型与 extend 父类型。
+     * 计算已完全展开的语义类型的声明父类型与 extend 父类型。
+     *
+     * typealias 展开由 [getDirectSupertypes] 统一完成，保证“计算中”标记与这里消费的
+     * 是同一份语义类型，别名拼写不会绕开递归回边判定。
      */
-    private fun computeDirectSupertypes(type: ConeCangJieType): List<ConeCangJieType> {
-        val semanticType = type.fullyExpandedType(session)
+    private fun computeDirectSupertypes(semanticType: ConeCangJieType): List<ConeCangJieType> {
         if (!semanticType.isSupportedClassifierType()) return emptyList()
 
         val declaredSupertypes = resolveDeclaredDirectSupertypes(semanticType)
