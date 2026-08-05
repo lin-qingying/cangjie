@@ -60,6 +60,9 @@ object LanguageVersions {
      * 仓颉 1.0.5 语言版本。
      */
     val V_1_0_5: LanguageVersion = LanguageVersion(1, 0, 5)
+    val V_1_1_0: LanguageVersion = LanguageVersion(1, 1, 0)
+    val V_1_1_3: LanguageVersion = LanguageVersion(1, 1, 3)
+
     /**
      * 默认面向用户启用的最新稳定语言版本。
      */

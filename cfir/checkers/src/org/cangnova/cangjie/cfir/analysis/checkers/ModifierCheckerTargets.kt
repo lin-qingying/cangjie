@@ -101,10 +101,19 @@ internal val deprecatedParentTargetMap: Map<CjKeywordToken, ModifierTargetPredic
  * 避免手工列举笛卡尔积子项产生不一致。
  */
 internal val possibleTargetMap: Map<CjKeywordToken, ModifierTargetPredicate> = mapOf(
-    STATIC_KEYWORD to ModifierTargetPredicate.memberOf(
-        DeclarationKind.FUNCTION,
-        DeclarationKind.PROPERTY,
-        DeclarationKind.VARIABLE,
+    // 静态初始化器与位置无关：`static` 正是把 init 判定为 STATIC_INITIALIZER 的那个修饰符，
+    // 因此没有任何 Site 能让它变得非法——若不放行，目标分类会自我否定（带 static 才归为
+    // STATIC_INITIALIZER，而 STATIC_INITIALIZER 又不许带 static）。cjc 1.0.5 接受 class 与
+    // struct 体内的 `static init()`（均 exit 0）；interface / extend 体内的非法性由解析器
+    // 报告（`unexpected constructor in interface body`），不经修饰符目标检查，故此处无需按容器细分。
+    // 与同表中 `defaultVisibilityKinds` 及 CONST_KEYWORD 对 STATIC_INITIALIZER 的位置无关处理一致。
+    STATIC_KEYWORD to ModifierTargetPredicate.anyOf(
+        ModifierTargetPredicate.memberOf(
+            DeclarationKind.FUNCTION,
+            DeclarationKind.PROPERTY,
+            DeclarationKind.VARIABLE,
+        ),
+        ModifierTargetPredicate.anySiteOf(DeclarationKind.STATIC_INITIALIZER),
     ),
 
     ABSTRACT_KEYWORD to ModifierTargetPredicate.headOf(DeclarationKind.CLASS),
