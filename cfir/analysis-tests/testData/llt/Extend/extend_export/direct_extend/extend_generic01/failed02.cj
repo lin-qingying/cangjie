@@ -1,3 +1,4 @@
+// DIAGNOSTICS: -warnings
 // FILE: a.cj
 
 
@@ -17,8 +18,6 @@ extend<T> A<T> where T <: Upper {
 
 // FILE: failed02.cj
 
-
-// DIAGNOSTICS: -warnings
 
 import a.Upper
 
