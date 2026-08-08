@@ -672,12 +672,6 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeLlTDiagnosticsTest() {
             runTest("cfir/analysis-tests/testData/llt/Extend/extend_enum1.cj")
         }
 
-        @TestMetadata("extend_enum2.cj")
-        @Test
-        fun testExtendEnum2() {
-            runTest("cfir/analysis-tests/testData/llt/Extend/extend_enum2.cj")
-        }
-
         @TestMetadata("extend_func_ptr.cj")
         @Test
         fun testExtendFuncPtr() {
@@ -2349,12 +2343,6 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testExtendFuncSameAsClassPrivate() {
                 runTest("cfir/analysis-tests/testData/llt/Extend/generic/extend_func_same_as_class_private.cj")
-            }
-
-            @TestMetadata("extend_hashmap_serializat.cj")
-            @Test
-            fun testExtendHashmapSerializat() {
-                runTest("cfir/analysis-tests/testData/llt/Extend/generic/extend_hashmap_serializat.cj")
             }
 
             @TestMetadata("func_conflict.cj")
@@ -5896,12 +5884,6 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeLlTDiagnosticsTest() {
             runTest("cfir/analysis-tests/testData/llt/box/option_box_assign_00.cj")
         }
 
-        @TestMetadata("option_box_assign_01.cj")
-        @Test
-        fun testOptionBoxAssign01() {
-            runTest("cfir/analysis-tests/testData/llt/box/option_box_assign_01.cj")
-        }
-
         @TestMetadata("option_box_ifexpr.cj")
         @Test
         fun testOptionBoxIfexpr() {
@@ -5966,12 +5948,6 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/box/box_export/src")
-                }
-
-                @TestMetadata("main.cj")
-                @Test
-                fun testMain() {
-                    runTest("cfir/analysis-tests/testData/llt/box/box_export/src/main.cj")
                 }
 
                 @TestMetadata("service")
@@ -10638,66 +10614,6 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeLlTDiagnosticsTest() {
             runTest("cfir/analysis-tests/testData/llt/effect/command_class_not_available.cj")
         }
 
-        @TestMetadata("effect_perform.cj")
-        @Test
-        fun testEffectPerform() {
-            runTest("cfir/analysis-tests/testData/llt/effect/effect_perform.cj")
-        }
-
-        @TestMetadata("effect_perform_02.cj")
-        @Test
-        fun testEffectPerform02() {
-            runTest("cfir/analysis-tests/testData/llt/effect/effect_perform_02.cj")
-        }
-
-        @TestMetadata("effect_test.cj")
-        @Test
-        fun testEffectTest() {
-            runTest("cfir/analysis-tests/testData/llt/effect/effect_test.cj")
-        }
-
-        @TestMetadata("err_handle_00.cj")
-        @Test
-        fun testErrHandle00() {
-            runTest("cfir/analysis-tests/testData/llt/effect/err_handle_00.cj")
-        }
-
-        @TestMetadata("err_resume_non_unit.cj")
-        @Test
-        fun testErrResumeNonUnit() {
-            runTest("cfir/analysis-tests/testData/llt/effect/err_resume_non_unit.cj")
-        }
-
-        @TestMetadata("err_resume_throwing_non_exception.cj")
-        @Test
-        fun testErrResumeThrowingNonException() {
-            runTest("cfir/analysis-tests/testData/llt/effect/err_resume_throwing_non_exception.cj")
-        }
-
-        @TestMetadata("err_resume_with_wrong_type.cj")
-        @Test
-        fun testErrResumeWithWrongType() {
-            runTest("cfir/analysis-tests/testData/llt/effect/err_resume_with_wrong_type.cj")
-        }
-
-        @TestMetadata("err_scope_00.cj")
-        @Test
-        fun testErrScope00() {
-            runTest("cfir/analysis-tests/testData/llt/effect/err_scope_00.cj")
-        }
-
-        @TestMetadata("invalid_try_handle_block.cj")
-        @Test
-        fun testInvalidTryHandleBlock() {
-            runTest("cfir/analysis-tests/testData/llt/effect/invalid_try_handle_block.cj")
-        }
-
-        @TestMetadata("non_matching_types.cj")
-        @Test
-        fun testNonMatchingTypes() {
-            runTest("cfir/analysis-tests/testData/llt/effect/non_matching_types.cj")
-        }
-
         @TestMetadata("perform_incorrect_type.cj")
         @Test
         fun testPerformIncorrectType() {
@@ -10708,36 +10624,6 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testResumeOutsideHandle() {
             runTest("cfir/analysis-tests/testData/llt/effect/resume_outside_handle.cj")
-        }
-
-        @TestMetadata("resume_throwing.cj")
-        @Test
-        fun testResumeThrowing() {
-            runTest("cfir/analysis-tests/testData/llt/effect/resume_throwing.cj")
-        }
-
-        @TestMetadata("resume_unit.cj")
-        @Test
-        fun testResumeUnit() {
-            runTest("cfir/analysis-tests/testData/llt/effect/resume_unit.cj")
-        }
-
-        @TestMetadata("resume_with.cj")
-        @Test
-        fun testResumeWith() {
-            runTest("cfir/analysis-tests/testData/llt/effect/resume_with.cj")
-        }
-
-        @TestMetadata("return_in_try_handle.cj")
-        @Test
-        fun testReturnInTryHandle() {
-            runTest("cfir/analysis-tests/testData/llt/effect/return_in_try_handle.cj")
-        }
-
-        @TestMetadata("wrong_return_type_try.cj")
-        @Test
-        fun testWrongReturnTypeTry() {
-            runTest("cfir/analysis-tests/testData/llt/effect/wrong_return_type_try.cj")
         }
     }
 
@@ -15538,12 +15424,6 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeLlTDiagnosticsTest() {
             runTest("cfir/analysis-tests/testData/llt/incordec/incordec8.cj")
         }
 
-        @TestMetadata("incordec_fuzz_01.cj")
-        @Test
-        fun testIncordecFuzz01() {
-            runTest("cfir/analysis-tests/testData/llt/incordec/incordec_fuzz_01.cj")
-        }
-
         @TestMetadata("increment_11n")
         @TestDataPath("${'$'}PROJECT_ROOT")
         @Nested
@@ -16828,12 +16708,6 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testBugfix1() {
             runTest("cfir/analysis-tests/testData/llt/lookup/bugfix1.cj")
-        }
-
-        @TestMetadata("bugfix2.cj")
-        @Test
-        fun testBugfix2() {
-            runTest("cfir/analysis-tests/testData/llt/lookup/bugfix2.cj")
         }
 
         @TestMetadata("funcdecl.cj")

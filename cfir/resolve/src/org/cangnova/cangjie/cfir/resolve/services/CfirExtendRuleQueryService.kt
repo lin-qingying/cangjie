@@ -174,6 +174,18 @@ class CfirExtendRuleQueryServiceImpl(
         indexStore.otherPackageExtendedInterfaceClassIds(targetKey, currentPackage)
 
     /**
+     * 返回 extend 继承接口连同传递父接口的语义列表。
+     */
+    override fun inheritedInterfaceClosureOf(declaration: Any): List<CfirExtendInheritedInterfaceSemantic> =
+        indexStore.modelForDeclaration(declaration)?.inheritedInterfaceClosure.orEmpty()
+
+    /**
+     * 返回其他包 extend（含目标父类型上的 extend）注入的接口语义 key 集合。
+     */
+    override fun otherPackageExtendedInterfaceSemanticKeys(targetClassId: ClassId, currentPackage: FqName): Set<String> =
+        indexStore.otherPackageExtendedInterfaceSemanticKeys(targetClassId, currentPackage)
+
+    /**
      * 判断声明是否是目标 classId 上的第一个 extend。
      */
     override fun isFirstExtendForTarget(declaration: Any, targetClassId: ClassId): Boolean =

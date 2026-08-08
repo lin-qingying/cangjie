@@ -136,11 +136,20 @@ interface CfirExtendRuleQueryService : CfirSessionComponent {
      * 获取其他包中对同一目标类已 extend 过的接口 [ClassId] 集合（含传递父接口）。
      */
     fun otherPackageExtendedInterfaceClassIds(targetClassId: ClassId, currentPackage: FqName): Set<ClassId>
-
     /**
      * 获取其他包中对同一目标键已 extend 过的接口 [ClassId] 集合（含传递父接口）。
      */
     fun otherPackageExtendedInterfaceClassIds(targetKey: CfirExtendTargetKey, currentPackage: FqName): Set<ClassId>
+
+    /**
+     * 获取 extend 继承接口连同其传递父接口的语义列表（实例化后）。
+     */
+    fun inheritedInterfaceClosureOf(declaration: Any): List<CfirExtendInheritedInterfaceSemantic>
+
+    /**
+     * 获取其他包中对同一目标（含其父类型）已 extend 过的接口语义 key 集合。
+     */
+    fun otherPackageExtendedInterfaceSemanticKeys(targetClassId: ClassId, currentPackage: FqName): Set<String>
 
     /**
      * 判断给定 extend 声明是否在源码序中排在同一目标的所有 extend 的首位。

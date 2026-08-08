@@ -1,8 +1,8 @@
 
 var r1 = match (((),())) {
-    case (b:Int64, a:Int64) => 2
+    case <!UNREACHABLE_PATTERN!>(b:Int64, a:Int64)<!> => 2
     case (b:Unit, a:Unit) => 0
-    case _ => 1
+    case <!UNREACHABLE_PATTERN!>_<!> => 1
 }
 
 main() : Int64 {

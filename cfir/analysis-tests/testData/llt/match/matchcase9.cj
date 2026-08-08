@@ -4,7 +4,7 @@
 func foo(): Option<ToString> {
     let sub: ToString = 1
     match (1) {
-        case 2 => sub
+        case <!UNREACHABLE_PATTERN!>2<!> => sub
         case _ => None<ToString>
     }
 }

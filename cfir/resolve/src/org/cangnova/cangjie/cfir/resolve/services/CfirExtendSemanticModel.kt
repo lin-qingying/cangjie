@@ -44,6 +44,8 @@ data class CfirExtendSemanticModel(
     val inheritedInterfaceClassIds: List<ClassId>,
     /** extend 继承接口的稳定语义 key 列表。 */
     val inheritedInterfaceSemanticKeys: List<String>,
+    /** extend 继承接口连同其传递父接口的语义列表（实例化后）。 */
+    val inheritedInterfaceClosure: List<CfirExtendInheritedInterfaceSemantic>,
     /** 目标类型自身声明的接口语义列表。 */
     val targetOwnInterfaces: List<CfirExtendInheritedInterfaceSemantic>,
     /** 目标类型自身接口的稳定语义 key 列表。 */

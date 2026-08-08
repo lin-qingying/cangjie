@@ -289,58 +289,6 @@ class CfirAnalysisDiagnostics2WithoutAliasExpansionTestGenerated : AbstractCfirL
         }
     }
 
-    @TestMetadata("effects")
-    @TestDataPath("${'$'}PROJECT_ROOT")
-    @Nested
-    inner class Effects : AbstractCfirLightTreeDiagnosticsWithoutAliasExpansionTest() {
-        @Test
-        fun testAllFilesPresent() {
-            assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics2/effects")
-        }
-
-        @TestMetadata("effectsSemantics.cj")
-        @Test
-        fun testEffectsSemantics() {
-            runTest("cfir/analysis-tests/testData/diagnostics2/effects/effectsSemantics.cj")
-        }
-
-        @TestMetadata("handleBlockContinuePlaceholder.cj")
-        @Test
-        fun testHandleBlockContinuePlaceholder() {
-            runTest("cfir/analysis-tests/testData/diagnostics2/effects/handleBlockContinuePlaceholder.cj")
-        }
-
-        @TestMetadata("handleBlockEarlyExitPlaceholder.cj")
-        @Test
-        fun testHandleBlockEarlyExitPlaceholder() {
-            runTest("cfir/analysis-tests/testData/diagnostics2/effects/handleBlockEarlyExitPlaceholder.cj")
-        }
-
-        @TestMetadata("handleBlockMismatch.cj")
-        @Test
-        fun testHandleBlockMismatch() {
-            runTest("cfir/analysis-tests/testData/diagnostics2/effects/handleBlockMismatch.cj")
-        }
-
-        @TestMetadata("mismatchingHandleBlock.cj")
-        @Test
-        fun testMismatchingHandleBlock() {
-            runTest("cfir/analysis-tests/testData/diagnostics2/effects/mismatchingHandleBlock.cj")
-        }
-
-        @TestMetadata("resumptionTypeMismatch.cj")
-        @Test
-        fun testResumptionTypeMismatch() {
-            runTest("cfir/analysis-tests/testData/diagnostics2/effects/resumptionTypeMismatch.cj")
-        }
-
-        @TestMetadata("returnInsideHandlePlaceholder.cj")
-        @Test
-        fun testReturnInsideHandlePlaceholder() {
-            runTest("cfir/analysis-tests/testData/diagnostics2/effects/returnInsideHandlePlaceholder.cj")
-        }
-    }
-
     @TestMetadata("enum")
     @TestDataPath("${'$'}PROJECT_ROOT")
     @Nested

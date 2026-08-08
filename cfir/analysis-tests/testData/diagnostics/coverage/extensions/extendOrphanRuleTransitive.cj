@@ -14,7 +14,7 @@ import other.*
 interface LocalInterface <: ForeignChild {}
 
 // 目标是外部类，被使用到的接口闭包仍然完全来自外部包，仍然违反 orphan rule
-extend <!EXTEND_ORPHAN_RULE!>Foreign<!> <: LocalInterface {}    // imported type 'Foreign' cannot extend imported interface, used external interface: Interface-ForeignChild Interface-ForeignInterface
+extend <!TYPE_CANNOT_EXTEND_IMPORTED_INTERFACE!>Foreign<!> <: LocalInterface {}    // imported type 'Foreign' cannot extend imported interface, used external interface: Interface-ForeignChild Interface-ForeignInterface
 
 // 目标是外部类，接口完全外部 → orphan rule 违规
-extend <!EXTEND_ORPHAN_RULE!>Foreign<!> <: ForeignInterface {}  // imported type 'Foreign' cannot extend imported interface, used external interface: Interface-ForeignInterface
+extend <!TYPE_CANNOT_EXTEND_IMPORTED_INTERFACE!>Foreign<!> <: ForeignInterface {}  // imported type 'Foreign' cannot extend imported interface, used external interface: Interface-ForeignInterface

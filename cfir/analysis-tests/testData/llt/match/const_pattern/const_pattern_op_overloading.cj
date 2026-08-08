@@ -13,7 +13,7 @@ main(): Int64 {
 
     let x: Int64 = match (a) {
         case b => 0
-        case _ => 1
+        case <!UNREACHABLE_PATTERN!>_<!> => 1
     }
 
     return x;

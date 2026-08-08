@@ -14,14 +14,14 @@ let f3 = {_: C => ()}
 main() {
     let f = match (1) {
         case 1 => f2
-        case 2 => f1
-        case 3 => f2
-        case 4 => f1
-        case 5 => f3
-        case 6 => f1
-        case 7 => f2
-        case 8 => f1
-        case _ => f2
+        case <!UNREACHABLE_PATTERN!>2<!> => f1
+        case <!UNREACHABLE_PATTERN!>3<!> => f2
+        case <!UNREACHABLE_PATTERN!>4<!> => f1
+        case <!UNREACHABLE_PATTERN!>5<!> => f3
+        case <!UNREACHABLE_PATTERN!>6<!> => f1
+        case <!UNREACHABLE_PATTERN!>7<!> => f2
+        case <!UNREACHABLE_PATTERN!>8<!> => f1
+        case <!UNREACHABLE_PATTERN!>_<!> => f2
     }
     f(C())
 }

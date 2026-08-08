@@ -17,7 +17,7 @@ main() {
             } else {
                 -1
             }
-        case _ => 1
+        case <!UNREACHABLE_PATTERN!>_<!> => 1
     }
     let v2 = match (if (true) {
         func func1<T0>(): Int64 {
@@ -29,7 +29,7 @@ main() {
         v1
     }) {
         case a: Int64 => 0
-        case _ => 1
+        case <!UNREACHABLE_PATTERN!>_<!> => 1
     }
     v2
 }
