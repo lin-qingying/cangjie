@@ -8,6 +8,6 @@ func f(x: Int) {
 main() {
     let v = f(f(f(f(f(f(f(f(f(f(f(f(f(f(f(f(f(f(f(f(f(f(match (1) {
         case _ => 0
-        case 2 => 2
+        case <!UNREACHABLE_PATTERN!>2<!> => 2
     }))))))))))))))))))))))
 }

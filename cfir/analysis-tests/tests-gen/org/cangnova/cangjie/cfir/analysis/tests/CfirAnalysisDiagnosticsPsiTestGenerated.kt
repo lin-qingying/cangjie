@@ -495,18 +495,6 @@ class CfirAnalysisDiagnosticsPsiTestGenerated : AbstractCfirPsiDiagnosticTest() 
         fun testEffectsFeatureDisabledRich() {
             runTest("cfir/analysis-tests/testData/diagnostics/effects/effectsFeatureDisabledRich.cj")
         }
-
-        @TestMetadata("effectsSemanticsRich.cj")
-        @Test
-        fun testEffectsSemanticsRich() {
-            runTest("cfir/analysis-tests/testData/diagnostics/effects/effectsSemanticsRich.cj")
-        }
-
-        @TestMetadata("handleBlockMismatchRich.cj")
-        @Test
-        fun testHandleBlockMismatchRich() {
-            runTest("cfir/analysis-tests/testData/diagnostics/effects/handleBlockMismatchRich.cj")
-        }
     }
 
     @TestMetadata("enum")

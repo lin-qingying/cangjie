@@ -6,7 +6,7 @@ main() {
     }
     var res = match (a) {
         case x: Unit => 0
-        case _ => 1
+        case <!UNREACHABLE_PATTERN!>_<!> => 1
     }
     return res
 }

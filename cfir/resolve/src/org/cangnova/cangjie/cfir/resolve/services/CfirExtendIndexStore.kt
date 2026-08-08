@@ -81,6 +81,8 @@ class CfirExtendIndexStore(
     private var interfaceClosureByClassId: Map<ClassId, Set<ClassId>> = emptyMap()
     /** extend 目标类自身继承接口集合的缓存。 */
     private var targetClassOwnInterfacesByClassId: Map<ClassId, Set<ClassId>> = emptyMap()
+    /** extend 目标类到「自身 + 传递父类型」class-like ClassId 闭包的缓存。 */
+    private var targetSupertypeClassIdsByClassId: Map<ClassId, Set<ClassId>> = emptyMap()
 
     /**
      * 基于当前文件集合重建所有 extend 语义索引。
@@ -109,6 +111,7 @@ class CfirExtendIndexStore(
         defaultIndependentMembersByInterface = buildDefaultIndependentMembersMap(next, resolver)
         interfaceClosureByClassId = buildInterfaceClosureMap(next, resolver)
         targetClassOwnInterfacesByClassId = buildTargetClassOwnInterfacesMap(next, resolver)
+        targetSupertypeClassIdsByClassId = buildTargetSupertypeClassIdsMap(next, resolver)
         modificationCount++
     }
 
@@ -283,6 +286,25 @@ class CfirExtendIndexStore(
     }
 
     /**
+     * 查询其他包对指定目标（含其父类型）扩展过的接口语义 key 集合。
+     *
+     * 对齐官方 `CheckExtendOrphanRule` 收集 `otherPackageExtendInterfaceTy` 的第二步：
+     * 目标类型及其父类型上、位于其他包的 extend 所引入的接口闭包，
+     * 都算作目标「已经具备」的接口，本包再次引入不属于新增外部接口。
+     */
+    fun otherPackageExtendedInterfaceSemanticKeys(targetClassId: ClassId, currentPackage: FqName): Set<String> {
+        val relatedClassIds = targetSupertypeClassIdsByClassId[targetClassId] ?: setOf(targetClassId)
+        val result = linkedSetOf<String>()
+        for (relatedClassId in relatedClassIds) {
+            for (model in modelsForClass(relatedClassId)) {
+                if (model.packageFqName == currentPackage) continue
+                model.inheritedInterfaceClosure.mapTo(result) { it.semanticKey }
+            }
+        }
+        return result
+    }
+
+    /**
      * 判断声明是否是指定 class-like 目标的第一条 extend。
      */
     fun isFirstExtendForTarget(declaration: Any, targetClassId: ClassId): Boolean {
@@ -342,6 +364,7 @@ class CfirExtendIndexStore(
         }
         val inheritedInterfaceClassIds = inheritedInterfaces.mapNotNull { it.classId }
         val inheritedInterfaceSemanticKeys = inheritedInterfaces.map { it.semanticKey }
+        val inheritedInterfaceClosure = superTypeRefs.collectInterfaceClosureSemantics(semanticNormalizer, resolver)
         val targetOwnInterfaces = targetClass.collectTargetOwnInterfaceSemantics(extendedTypeRef, semanticNormalizer, resolver)
         val targetOwnInterfaceSemanticKeys = targetOwnInterfaces.map { it.semanticKey }
         return CfirExtendSemanticModel(
@@ -358,6 +381,7 @@ class CfirExtendIndexStore(
             inheritedInterfaces = inheritedInterfaces,
             inheritedInterfaceClassIds = inheritedInterfaceClassIds,
             inheritedInterfaceSemanticKeys = inheritedInterfaceSemanticKeys,
+            inheritedInterfaceClosure = inheritedInterfaceClosure,
             targetOwnInterfaces = targetOwnInterfaces,
             targetOwnInterfaceSemanticKeys = targetOwnInterfaceSemanticKeys,
             origin = origin.toExtendSemanticOrigin(),
@@ -456,6 +480,45 @@ class CfirExtendIndexStore(
     }
 
     /**
+     * 建立 extend 目标类到「自身 + 传递父类型」class-like ClassId 闭包的索引。
+     *
+     * orphan rule 的豁免集合必须穿过父类链：官方 `CollectAllRelatedExtends`
+     * 会把父类型上的 extend 一并算作目标已具备的接口来源，
+     * 因此 `class B <: A` 且 `extend A <: I` 位于其他包时，`B` 也已经具备 `I`。
+     */
+    private fun buildTargetSupertypeClassIdsMap(
+        models: List<CfirExtendSemanticModel>,
+        resolver: CfirTypeResolver,
+    ): Map<ClassId, Set<ClassId>> {
+        val targetClassIds = models.mapNotNull { it.targetClassId }.toSet()
+        val result = linkedMapOf<ClassId, Set<ClassId>>()
+        for (targetClassId in targetClassIds) {
+            val closure = linkedSetOf<ClassId>()
+            collectSupertypeClassIds(targetClassId, resolver, closure)
+            result[targetClassId] = closure
+        }
+        return result
+    }
+
+    /**
+     * 递归收集 class-like 声明自身及其全部父类型的 ClassId。
+     */
+    private fun collectSupertypeClassIds(
+        classId: ClassId,
+        resolver: CfirTypeResolver,
+        result: MutableSet<ClassId>,
+    ) {
+        if (!result.add(classId)) return
+        val declaration = resolver.resolveClass(classId) ?: return
+        for (superTypeRef in declaration.superTypeRefsOrEmpty()) {
+            val supertype = superTypeRef.coneTypeOrNull?.semanticExpandedType(resolver) as? ConeLookupTagBasedType
+                ?: continue
+            val superClassId = supertype.classIdOrPrimitiveClassId ?: continue
+            collectSupertypeClassIds(superClassId, resolver, result)
+        }
+    }
+
+    /**
      * 当前 extend 声明与目标类已继承接口比较时，必须先把目标类型模式代入目标类接口闭包。
      *
      * 例如 `class B<T> <: I<T>` 与 `extend<T> B<T> <: I<T>` 比较时，
@@ -481,6 +544,34 @@ class CfirExtendIndexStore(
             val supertype = superTypeRef.coneTypeOrNull ?: continue
             collectInterfaceSemantics(
                 interfaceType = substitutor.substituteOrSelf(supertype),
+                semanticNormalizer = semanticNormalizer,
+                resolver = resolver,
+                result = result,
+                visiting = visiting,
+                validityMemo = validityMemo,
+            )
+        }
+        return result.values.toList()
+    }
+
+    /**
+     * 收集一组 supertype 引用连同其传递父接口的实例化接口语义。
+     *
+     * 与 [collectTargetOwnInterfaceSemantics] 共用同一套遍历和语义键生成，
+     * 保证 orphan rule 中「目标已具备的接口」与「本次 extend 引入的接口」
+     * 落在同一个键空间里，泛型实参不同的接口实例不会被误判为同一个。
+     */
+    private fun List<CfirTypeRef>.collectInterfaceClosureSemantics(
+        semanticNormalizer: CfirExtendTypeSemanticNormalizer,
+        resolver: CfirTypeResolver,
+    ): List<CfirExtendInheritedInterfaceSemantic> {
+        val result = linkedMapOf<String, CfirExtendInheritedInterfaceSemantic>()
+        val visiting = linkedSetOf<String>()
+        val validityMemo = linkedMapOf<ClassId, Boolean>()
+        for (superTypeRef in this) {
+            val supertype = superTypeRef.coneTypeOrNull?.semanticExpandedType(resolver) ?: continue
+            collectInterfaceSemantics(
+                interfaceType = supertype,
                 semanticNormalizer = semanticNormalizer,
                 resolver = resolver,
                 result = result,

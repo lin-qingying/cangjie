@@ -312,7 +312,17 @@ object CfirExtendCheckSequenceChecker : CfirExtendChecker() {
 /**
  * extend orphan rule 检查器。
  *
- * 当 extend 不在目标类型声明包中时，不能引入新的外部接口闭包。
+ * 对齐官方 `TypeChecker::TypeCheckerImpl::CheckExtendOrphanRule`
+ * （`external/cangjie_compiler/src/Sema/TypeCheckExtend.cpp:519`）：
+ * 只有当「被扩展类型来自其他包或是 builtin/primitive」且「本次 extend 引入了
+ * 目标尚未具备的其他包接口」时才报错。目标已经具备的接口有两个来源，
+ * 二者都不算新引入：
+ *
+ * 1. 目标类型自身（含父类链）声明继承的接口；
+ * 2. 其他包中对目标类型或其父类型所作 extend 引入的接口。
+ *
+ * 该检查是官方 orphan rule 在 CFIR 中的唯一实现，诊断名与官方
+ * `sema_type_cannot_extend_imported_interface` 对齐。
  */
 object CfirExtendOrphanRuleChecker : CfirExtendChecker() {
     /**
@@ -322,22 +332,39 @@ object CfirExtendOrphanRuleChecker : CfirExtendChecker() {
     override fun check(extend: CfirExtend) {
         val query = context.session.extendRuleQueryServiceOrNull ?: return
         val declarationPackage = query.packageFqNameOf(extend) ?: return
-        val targetClassId = query.targetClassIdOf(extend) ?: return
-        if (CfirExtendSemantics.isTargetDeclaredInPackage(context, extend, declarationPackage)) return
 
-        val currentInterfaceClosure = query.inheritedInterfaceClosureClassIdsOf(extend)
-        val currentExternalInterfaces = currentInterfaceClosure
-            .filterTo(linkedSetOf()) { interfaceClassId -> interfaceClassId.packageFqName != declarationPackage }
-        if (currentExternalInterfaces.isEmpty()) return
+        val targetDeclaration = CfirExtendSemantics.targetDeclaration(context, extend)
+        val targetType = extend.extendedTypeRef.coneTypeOrNull
+            ?.fullyExpandedTypeUsingAbbreviation(context.session)
+        val isPrimitiveTarget = targetType is ConePrimitiveType
+        if (!isPrimitiveTarget) {
+            if (targetDeclaration == null) return
+            if (CfirExtendSemantics.isTargetDeclaredInPackage(context, extend, declarationPackage)) return
+        }
 
-        val otherPackageClosure = query.otherPackageExtendedInterfaceClassIds(targetClassId, declarationPackage)
-        val newlyIntroducedExternalInterfaces = currentExternalInterfaces - otherPackageClosure
-        if (newlyIntroducedExternalInterfaces.isEmpty()) return
+        val alreadyAvailableKeys = linkedSetOf<String>()
+        query.targetOwnInterfacesOf(extend).mapTo(alreadyAvailableKeys) { it.semanticKey }
+        val targetClassId = query.targetClassIdOf(extend)
+        if (targetClassId != null) {
+            alreadyAvailableKeys += query.otherPackageExtendedInterfaceSemanticKeys(targetClassId, declarationPackage)
+        }
 
+        val introducedExternalInterfaces = query.inheritedInterfaceClosureOf(extend).filter { inheritedInterface ->
+            val interfaceClassId = inheritedInterface.classId ?: return@filter false
+            if (CfirExtendSemantics.isProtectedInterface(interfaceClassId)) return@filter false
+            interfaceClassId.packageFqName != declarationPackage &&
+                inheritedInterface.semanticKey !in alreadyAvailableKeys
+        }
+        if (introducedExternalInterfaces.isEmpty()) return
+
+        val targetName = targetDeclaration?.symbol?.classId?.shortClassName
+            ?: targetClassId?.shortClassName
+            ?: return
         reporter.reportOn(
-            source = extend.extendedTypeRef.source,
-            factory = CfirErrors.EXTEND_ORPHAN_RULE,
-            a = targetClassId.shortClassName,
+            source = extend.extendedTypeRef.source ?: extend.source,
+            factory = CfirErrors.TYPE_CANNOT_EXTEND_IMPORTED_INTERFACE,
+            a = if (isPrimitiveTarget) "primitive" else "imported",
+            b = targetName,
         )
     }
 }

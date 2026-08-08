@@ -79,7 +79,6 @@ import org.cangnova.cangjie.type.model.TypeConstructorMarker
  * - EXTEND_ILLEGAL_MEMBER: extend 中不允许的成员类型（如构造器、字段）
  * - EXTEND_A_JAVA_TYPE: 不能 extend @Java 标注的类型
  * - EXTEND_REF_TARGET_CANNOT_BE_JAVA_IMPL: extend 不能指向 @JavaImpl 声明
- * - TYPE_CANNOT_EXTEND_IMPORTED_INTERFACE: 不能 extend 导入的接口
  */
 object CfirExtendExtraChecker : CfirExtendChecker() {
     /**
@@ -115,7 +114,6 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
         checkExtendJavaImplTarget(declaration)
         checkOverrideInExtend(declaration)
         checkMemberShadowing(declaration)
-        checkExtendImportedInterface(declaration)
     }
 
     /**
@@ -590,47 +588,5 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
         is CfirNamedFunction -> name
         is CfirProperty -> name
         else -> null
-    }
-
-    /**
-     * 不能 extend 导入的接口（只能在定义包中 extend）。
-     *
-     * 对齐 C++ DiagKind::sema_type_cannot_extend_imported_interface
-     */
-    context(context: CheckerContext, reporter: DiagnosticReporter)
-    private fun checkExtendImportedInterface(extend: CfirExtend) {
-        if (!extend.hasImportedOrBuiltinTarget(context)) return
-
-        for (superTypeRef in extend.superTypeRefs) {
-            val superType = (superTypeRef as? CfirResolvedTypeRef)?.coneType as? ConeClassLikeType ?: continue
-            if (CfirExtendSemantics.isProtectedInterface(superType.classId)) continue
-            val superDecl = context.session.symbolProvider
-                .getClassLikeSymbolByClassId(superType.classId)?.cfir
-                as? org.cangnova.cangjie.cfir.declarations.CfirInterface ?: continue
-
-            // 检查接口是否在当前模块中定义
-            val interfaceModuleData = superDecl.moduleData
-            val extendModuleData = extend.moduleData
-            if (interfaceModuleData != extendModuleData) {
-                if (extend.duplicatesInheritedTargetInterface(superTypeRef)) continue
-                reporter.reportOn(
-                    source = extend.extendedTypeRef.source ?: extend.source,
-                    factory = CfirErrors.TYPE_CANNOT_EXTEND_IMPORTED_INTERFACE,
-                    a = "extend",
-                    b = superType.classId.shortClassName,
-                )
-            }
-        }
-    }
-
-    /**
-     * 官方 orphan rule 只在 extend 目标本身来自外部包或 builtin/primitive 时，
-     * 才禁止继续引入新的外部接口；本包声明扩展外部接口是允许的。
-     */
-    private fun CfirExtend.hasImportedOrBuiltinTarget(context: CheckerContext): Boolean {
-        val targetType = extendedTypeRef.coneTypeOrNull ?: return false
-        if (targetType is ConePrimitiveType) return true
-        val targetDeclaration = CfirExtendSemantics.targetDeclaration(context, this) ?: return false
-        return targetDeclaration.moduleData != moduleData
     }
 }
