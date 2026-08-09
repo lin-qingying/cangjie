@@ -2,7 +2,7 @@
 
 
 main(): Int64 {
-    if (<!SUPER_TYPES_DUPLICATE!>B<!><String>().m != 1) {
+    if (<!SUPER_TYPES_DUPLICATE!>B<String><!>().m != 1) {
         return 1
     }
     return 0

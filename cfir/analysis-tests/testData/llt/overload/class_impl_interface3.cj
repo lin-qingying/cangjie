@@ -7,7 +7,7 @@ interface Base {
 }
 
 abstract class Data <: Base {
-    public func <!INHERIT_MEMBER_KIND_INCONSISTENT!>foo<!>() {
+    public func <!STATIC_AND_NON_STATIC_MEMBER_CANNOT_HAVE_SAME_NAME!>foo<!>() {
         return 1
     }
 }
