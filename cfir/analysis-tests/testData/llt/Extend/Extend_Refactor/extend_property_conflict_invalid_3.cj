@@ -20,7 +20,7 @@ interface I2 {
 class C1 {}
 
 extend C1 {
-    public func <!EXTEND_MEMBER_CANNOT_SHADOW!>foo<!>(): Int64 {
+    public func <!INHERIT_MEMBER_KIND_INCONSISTENT!>foo<!>(): Int64 {
         3
     }
 }

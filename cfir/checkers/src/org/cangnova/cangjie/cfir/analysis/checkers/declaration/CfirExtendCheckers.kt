@@ -5,10 +5,12 @@ import org.cangnova.cangjie.cfir.analysis.checkers.firstCharacterDiagnosticSourc
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirInterface
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
+import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnmatchedTypeArgumentsError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedTypeQualifierError
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
@@ -20,7 +22,9 @@ import org.cangnova.cangjie.cfir.resolve.providers.semanticExtendedType
 import org.cangnova.cangjie.cfir.resolve.toSymbol
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.extendRuleQueryServiceOrNull
+import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.types.CfirBasicTypeRef
 import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
@@ -533,11 +537,12 @@ object CfirExtendSpecializationConflictChecker : CfirExtendChecker() {
 }
 
 /**
- * extend 默认实现冲突检查器。
+ * 泛型接口独立默认成员的重复 extend 检查器。
  *
- * 当同一目标的多个 extend 引入相同接口且该接口含有独立默认成员时，需要报告默认实现冲突。
+ * 同一 nominal 目标的多个 extend 以不同实例化形式引入同一泛型接口时，接口中不依赖
+ * 接口类型参数的默认成员会成为同一份实现。官方将 shadow 诊断定位到该接口成员原声明。
  */
-object CfirExtendDefaultImplementationConflictChecker : CfirExtendChecker() {
+object CfirExtendDefaultIndependentMemberShadowChecker : CfirExtendChecker() {
     /**
      * 检查当前 extend 与同目标其它 extend 引入接口默认实现是否冲突。
      */
@@ -545,6 +550,7 @@ object CfirExtendDefaultImplementationConflictChecker : CfirExtendChecker() {
     override fun check(declaration: CfirExtend) {
         val query = context.session.extendRuleQueryServiceOrNull ?: return
         val targetKey = query.targetKeyOf(declaration) ?: return
+        if (query.isFirstExtendForTarget(declaration, targetKey)) return
         val localInterfaces = query.inheritedInterfacesOf(declaration)
         if (localInterfaces.isEmpty()) return
 
@@ -559,17 +565,74 @@ object CfirExtendDefaultImplementationConflictChecker : CfirExtendChecker() {
             if (interfaceClassId !in foreignInterfaceIds) continue
             val conflictMembers = query.defaultIndependentMembersOfInterface(interfaceClassId)
             if (conflictMembers.isEmpty()) continue
-
-            val sourceTypeRef = declaration.superTypeRefs.getOrNull(index)
+            val interfaceDeclaration = context.session.symbolProvider
+                .getClassLikeSymbolByClassId(interfaceClassId)
+                ?.cfir as? CfirInterface ?: continue
+            val memberDeclarations = interfaceDeclaration.declarations
+                .mapNotNull { member ->
+                    when (member) {
+                        is CfirNamedFunction -> member.name to member
+                        is CfirProperty -> member.name to member
+                        else -> null
+                    }
+                }
+                .groupBy({ it.first }, { it.second })
+                .mapValues { (_, declarations) -> declarations.iterator() }
+            val targetName = query.targetClassIdOf(declaration)?.shortClassName
+                ?: declaration.extendedTypeRef.toApproxName()
             for (memberName in conflictMembers) {
+                val declarations = memberDeclarations[memberName] ?: continue
+                if (!declarations.hasNext()) continue
+                val member = declarations.next()
+                if (!member.isDefaultIndependentOf(interfaceDeclaration.typeParameters, context)) continue
+                val source = when (member) {
+                    is CfirNamedFunction -> member.functionNameDiagnosticSource()
+                    is CfirProperty -> member.propertyNameDiagnosticSource()
+                    else -> null
+                }
                 reporter.reportOn(
-                    source = sourceTypeRef?.source,
-                    factory = CfirErrors.EXTEND_DEFAULT_IMPLEMENTATION_CONFLICT,
+                    source = source ?: member.source ?: declaration.superTypeRefs.getOrNull(index)?.source,
+                    factory = CfirErrors.EXTEND_MEMBER_CANNOT_SHADOW,
                     a = memberName,
-                    b = interfaceClassId.shortClassName,
+                    b = targetName,
                 )
             }
         }
+    }
+}
+
+/**
+ * 使用 checker 阶段已经推断完成的 callable 类型判断默认成员是否依赖接口类型参数。
+ *
+ * EXTENSIONS 阶段建立的索引只能保守收录隐式返回类型成员；官方检查读取的是类型检查
+ * 完成后的 `member->ty`，因此最终判定必须包含推断返回类型，不能只看早期 type ref。
+ */
+private fun CfirDeclaration.isDefaultIndependentOf(
+    interfaceTypeParameters: List<CfirTypeParameter>,
+    context: CheckerContext,
+): Boolean {
+    val parameterSymbols = interfaceTypeParameters.mapTo(linkedSetOf()) { it.symbol }
+    if (parameterSymbols.isEmpty()) return true
+
+    fun ConeCangJieType.isValidAndIndependent(): Boolean =
+        !containsErrorType() && !containsAnyTypeParameter(parameterSymbols)
+
+    return when (this) {
+        is CfirNamedFunction -> {
+            val returnType = context.returnTypeCalculator.tryCalculateReturnType(this).coneType
+            if (!returnType.isValidAndIndependent()) return false
+            valueParameters.all { parameter ->
+                val parameterType = parameter.returnTypeRef.coneTypeOrNull ?: return false
+                parameterType.isValidAndIndependent()
+            }
+        }
+
+        is CfirProperty -> {
+            val propertyType = context.returnTypeCalculator.tryCalculateReturnType(this).coneType
+            propertyType.isValidAndIndependent()
+        }
+
+        else -> false
     }
 }
 
@@ -666,6 +729,26 @@ private fun ConeCangJieType.containsTypeParameterInConstructor(parameterName: St
     is ConeIntersectionType -> intersectedTypes.any { it.containsTypeParameter(parameterName) }
     is ConeUnionType -> unionTypes.any { it.containsTypeParameter(parameterName) }
     else -> arrayElementType?.containsTypeParameter(parameterName) == true
+}
+
+/** 在 Cone 类型结构中按符号身份查找接口类型参数。 */
+private fun ConeCangJieType.containsAnyTypeParameter(
+    parameterSymbols: Set<CfirTypeParameterSymbol>,
+): Boolean = when (this) {
+    is ConeTypeParameterType -> lookupTag.typeParameterSymbol in parameterSymbols
+    is ConeClassLikeType -> typeArguments.any { it.type.containsAnyTypeParameter(parameterSymbols) }
+    is ConeStructType -> typeArguments.any { it.type.containsAnyTypeParameter(parameterSymbols) }
+    is ConeEnumType -> typeArguments.any { it.type.containsAnyTypeParameter(parameterSymbols) }
+    is ConeTypeAliasType -> typeArguments.any { it.type.containsAnyTypeParameter(parameterSymbols) } ||
+        (expandedType?.containsAnyTypeParameter(parameterSymbols) == true)
+    is ConeFunctionType -> parameterTypes.any { it.containsAnyTypeParameter(parameterSymbols) } ||
+        returnType.containsAnyTypeParameter(parameterSymbols)
+    is ConeTupleType -> elementTypes.any { it.containsAnyTypeParameter(parameterSymbols) }
+    is ConeVArrayType -> elementType.containsAnyTypeParameter(parameterSymbols)
+    is ConePointerType -> pointeeType.containsAnyTypeParameter(parameterSymbols)
+    is ConeIntersectionType -> intersectedTypes.any { it.containsAnyTypeParameter(parameterSymbols) }
+    is ConeUnionType -> unionTypes.any { it.containsAnyTypeParameter(parameterSymbols) }
+    else -> arrayElementType?.containsAnyTypeParameter(parameterSymbols) == true
 }
 
 /**

@@ -98,6 +98,11 @@ interface CfirExtendRuleQueryService : CfirSessionComponent {
     fun areExtendsInInheritRelation(firstDeclaration: Any, secondDeclaration: Any): Boolean
 
     /**
+     * 判断 [childDeclaration] 的直接接口中是否存在继承自 [parentDeclaration] 直接接口的接口。
+     */
+    fun doesExtendInheritFrom(childDeclaration: Any, parentDeclaration: Any): Boolean
+
+    /**
      * 判断 [declaration] 与同目标其他 extend 的检查顺序是否存在无法决定的继承关系。
      */
     fun hasUndecidableExtendCheckSequence(declaration: Any): Boolean

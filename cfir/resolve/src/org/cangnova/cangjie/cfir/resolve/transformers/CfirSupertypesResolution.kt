@@ -79,6 +79,7 @@ import org.cangnova.cangjie.cfir.types.builder.buildErrorTypeRef
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRefCopy
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.coneTypeSafe
+import org.cangnova.cangjie.cfir.types.forEachType
 import org.cangnova.cangjie.cfir.visitors.CfirDefaultTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirDefaultVisitor
 import org.cangnova.cangjie.cfir.withFileAnalysisExceptionWrapping
@@ -264,21 +265,23 @@ open class SupertypeComputationSession {
 
     /** 标记指定 class-like 声明开始计算超类型。 */
     fun startComputingSupertypes(classLikeDeclaration: CfirClassLikeDeclaration) {
+        require(getSupertypesComputationStatus(classLikeDeclaration) is SupertypeComputationStatus.NotComputed) {
+            "Unexpected supertype computation status for ${classLikeDeclaration.symbol.classId.asString()}: " +
+                getSupertypesComputationStatus(classLikeDeclaration)
+        }
         computationStatus[classLikeDeclaration] = SupertypeComputationStatus.Computing
     }
 
     /** 保存指定 class-like 声明解析完成的直接超类型列表。 */
     fun storeSupertypes(classLikeDeclaration: CfirClassLikeDeclaration, supertypeRefs: List<CfirResolvedTypeRef>) {
+        require(getSupertypesComputationStatus(classLikeDeclaration) is SupertypeComputationStatus.Computing) {
+            "Unexpected supertype computation status for ${classLikeDeclaration.symbol.classId.asString()}: " +
+                getSupertypesComputationStatus(classLikeDeclaration)
+        }
         computationStatus[classLikeDeclaration] = SupertypeComputationStatus.Computed(supertypeRefs)
         if (classLikeDeclaration is CfirTypeAlias && supertypeRefs.size == 1) {
             resolvedExpandedTypeRefs[classLikeDeclaration] = supertypeRefs.single()
         }
-    }
-
-    /** 保存 typealias 的已解析 expanded typeRef，并同步更新其计算状态。 */
-    fun storeExpandedTypeRef(typeAlias: CfirTypeAlias, expandedTypeRef: CfirResolvedTypeRef) {
-        resolvedExpandedTypeRefs[typeAlias] = expandedTypeRef
-        computationStatus[typeAlias] = SupertypeComputationStatus.Computed(listOf(expandedTypeRef))
     }
 
     /** 返回指定 class-like 声明当前的超类型计算状态。 */
@@ -355,6 +358,7 @@ open class SupertypeComputationSession {
         val declarations = LinkedHashSet<CfirClassLikeDeclaration>()
         declarations += declarationIndex.values
         declarations += localClassesNavigationInfo?.parentForClass?.keys.orEmpty()
+        breakTypeAliasLoops(declarations.filterIsInstance<CfirTypeAlias>(), session)
         val extendCoveredDeclarations = reportExtendInheritanceCycles(declarations, session)
 
         for (declaration in declarations) {
@@ -381,6 +385,76 @@ open class SupertypeComputationSession {
     }
 
     /**
+     * 在任何 typealias 展开前检查完整 RHS 类型图，并把环上每个声明改写为结构化错误。
+     *
+     * 官方 `TypeAliasCircleCheck` 会遍历 RHS 根类型和所有嵌套类型；因此这里按 alias 声明
+     * 建图，而不是调用 [fullyExpandedType]。后续展开器只消费已经断环的图，不承担兜底职责。
+     */
+    private fun breakTypeAliasLoops(typeAliases: List<CfirTypeAlias>, session: CfirSession) {
+        val visitStatus = linkedMapOf<CfirTypeAlias, InheritanceVisitStatus>()
+        val path = ArrayList<CfirTypeAlias>()
+        val cyclePathByAlias = linkedMapOf<CfirTypeAlias, String>()
+
+        fun recordCycle(cycle: List<CfirTypeAlias>) {
+            for ((index, typeAlias) in cycle.withIndex()) {
+                cyclePathByAlias.putIfAbsent(
+                    typeAlias,
+                    (cycle.drop(index) + cycle.take(index) + typeAlias)
+                        .joinToString("->") { declaration -> declaration.name.asString() },
+                )
+            }
+        }
+
+        fun visit(typeAlias: CfirTypeAlias) {
+            when (visitStatus[typeAlias]) {
+                InheritanceVisitStatus.Visiting -> {
+                    val cycleStart = path.indexOf(typeAlias).takeIf { it >= 0 } ?: return
+                    recordCycle(path.drop(cycleStart))
+                    return
+                }
+
+                InheritanceVisitStatus.Visited -> return
+                null -> Unit
+            }
+
+            visitStatus[typeAlias] = InheritanceVisitStatus.Visiting
+            path += typeAlias
+            for (dependency in directTypeAliasDependencies(typeAlias, session)) {
+                visit(dependency)
+            }
+            path.removeAt(path.lastIndex)
+            visitStatus[typeAlias] = InheritanceVisitStatus.Visited
+        }
+
+        typeAliases.forEach(::visit)
+        for ((typeAlias, cyclePath) in cyclePathByAlias) {
+            val originalTypeRef = resolvedExpandedTypeRefs[typeAlias] ?: continue
+            val errorTypeRef = createErrorTypeRef(
+                sourceElement = originalTypeRef.source ?: typeAlias.expandedTypeRef.source,
+                message = cyclePath,
+                kind = DiagnosticKind.RecursiveTypealiasExpansion,
+                delegatedTypeRef = originalTypeRef,
+            )
+            resolvedExpandedTypeRefs[typeAlias] = errorTypeRef
+            computationStatus[typeAlias] = SupertypeComputationStatus.Computed(listOf(errorTypeRef))
+        }
+    }
+
+    /** 返回 typealias RHS 完整类型树中直接引用的所有 typealias 声明。 */
+    private fun directTypeAliasDependencies(
+        typeAlias: CfirTypeAlias,
+        session: CfirSession,
+    ): List<CfirTypeAlias> {
+        val expandedType = resolvedExpandedTypeRefs[typeAlias]?.coneType ?: return emptyList()
+        val dependencies = linkedSetOf<CfirTypeAlias>()
+        expandedType.forEachType { nestedType ->
+            val dependency = nestedType.toReferencedDeclaration(session) as? CfirTypeAlias ?: return@forEachType
+            dependencies += dependency
+        }
+        return dependencies.toList()
+    }
+
+    /**
      * 检查单个已解析 typeRef 是否会形成继承环，并在需要时替换为错误 typeRef。
      *
      * [currentPath] 保存当前递归路径，用于区分直接自环、间接继承环和 typealias 递归展开。
@@ -397,7 +471,7 @@ open class SupertypeComputationSession {
         if (!hitsCurrentPath) return typeRef
 
         val message = if (owner is CfirTypeAlias) {
-            "Recursive typealias expansion for ${owner.symbol.classId.asString()}"
+            owner.name.asString()
         } else if (target == owner) {
             "Self-reference in supertype definition for ${owner.symbol.classId.asString()}"
         } else {
@@ -407,7 +481,7 @@ open class SupertypeComputationSession {
             sourceElement = if (target == owner || owner is CfirTypeAlias) typeRef.source else owner.source ?: typeRef.source,
             message = message,
             kind = when {
-                owner is CfirTypeAlias -> DiagnosticKind.Other
+                owner is CfirTypeAlias -> DiagnosticKind.RecursiveTypealiasExpansion
                 target == owner -> DiagnosticKind.SupertypeSelfReference
                 else -> DiagnosticKind.LoopInSupertype
             },
@@ -684,44 +758,27 @@ internal open class CfirSupertypeResolverVisitor(
      * 递归 typealias 会被转换成错误 typeRef；正常结果写入 [SupertypeComputationSession]。
      */
     private fun resolveTypeAliasSupertype(typeAlias: CfirTypeAlias): CfirResolvedTypeRef {
-        supertypeComputationSession.rememberDeclaration(typeAlias)
-        when (val status = supertypeComputationSession.getSupertypesComputationStatus(typeAlias)) {
-            is SupertypeComputationStatus.Computed -> return supertypeComputationSession.getResolvedExpandedTypeRef(typeAlias)
-            is SupertypeComputationStatus.Computing -> {
-                return createErrorTypeRef(
+        return resolveSpecificClassLikeSupertypes(typeAlias) { transformer, configuration ->
+            val transformed = typeAlias.expandedTypeRef.transform<CfirTypeRef, CfirTypeResolutionConfiguration>(
+                transformer,
+                configuration,
+            )
+            val resolvedTypeRef = when (transformed) {
+                is CfirResolvedTypeRef -> transformed
+                else -> createErrorTypeRef(
                     typeAlias.expandedTypeRef.source,
-                    "Recursive typealias expansion for ${typeAlias.symbol.classId.asString()}",
+                    "Unresolved expanded type: ${typeAlias.expandedTypeRef.renderReadable()}",
+                    DiagnosticKind.UnresolvedSupertype,
                 )
             }
 
-            SupertypeComputationStatus.NotComputed -> Unit
-        }
-
-        supertypeComputationSession.startComputingSupertypes(typeAlias)
-        val resolvedExpandedType = typeAlias.expandedTypeRef.transform<CfirTypeRef, CfirTypeResolutionConfiguration>(
-            CfirSpecificTypeResolverTransformer(
-                session = session,
-                supertypeSupplier = supertypeComputationSession.supertypesSupplier,
-                expandTypeAliases = false,
-            ),
-            createTypeResolutionConfiguration(typeAlias, prepareScopes(typeAlias)),
-        )
-        val resolvedTypeRef = when (resolvedExpandedType) {
-            is CfirResolvedTypeRef -> {
-                if (resolvedExpandedType.coneType is ConeErrorType) {
-                    resolvedExpandedType.toErrorTypeRef()
-                } else {
-                    resolvedExpandedType
-                }
+            resolvedTypeRef.coneType.forEachType { nestedType ->
+                val referencedTypeAlias = nestedType.toReferencedDeclaration(session) as? CfirTypeAlias
+                    ?: return@forEachType
+                visitTypeAlias(referencedTypeAlias, null)
             }
-            else -> createErrorTypeRef(
-                typeAlias.expandedTypeRef.source,
-                "Unresolved expanded type: ${typeAlias.expandedTypeRef.renderReadable()}",
-                DiagnosticKind.UnresolvedSupertype,
-            )
-        }
-        supertypeComputationSession.storeExpandedTypeRef(typeAlias, resolvedTypeRef)
-        return resolvedTypeRef
+            listOf(resolvedTypeRef)
+        }.single()
     }
 
     /**
@@ -780,8 +837,12 @@ internal open class CfirSupertypeResolverVisitor(
                 return listOf(
                     createErrorTypeRef(
                         classLikeDeclaration.source,
-                        "Loop in supertype definition for ${classLikeDeclaration.symbol.classId.asString()}",
-                        DiagnosticKind.LoopInSupertype,
+                        classLikeDeclaration.name.asString(),
+                        if (classLikeDeclaration is CfirTypeAlias) {
+                            DiagnosticKind.RecursiveTypealiasExpansion
+                        } else {
+                            DiagnosticKind.LoopInSupertype
+                        },
                     )
                 )
             }

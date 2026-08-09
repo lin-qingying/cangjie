@@ -40,6 +40,7 @@ import org.cangnova.cangjie.cfir.scopes.CfirImportScope
 import org.cangnova.cangjie.cfir.scopes.CfirScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassDeclaredMemberScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirExtendMemberScope
+import org.cangnova.cangjie.cfir.scopes.impl.CfirFileDeclaredTopLevelScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirLocalScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirPackageMemberScope
 import org.cangnova.cangjie.name.Name
@@ -363,6 +364,8 @@ private fun classifyNonLocalScope(scope: CfirScope, importedDepth: Int): CfirTow
         is CfirClassDeclaredMemberScope -> CfirTowerGroup.NON_LOCAL
         is CfirLocalScope -> CfirTowerGroup.local(0)
         is CfirExtendMemberScope -> CfirTowerGroup.EXTEND
+        // 官方查找中，非函数源码声明会遮蔽导入声明；当前文件 scope 不能落入最低优先级的 package 兜底组。
+        is CfirFileDeclaredTopLevelScope -> CfirTowerGroup.NON_LOCAL
         is CfirImportScope -> CfirTowerGroup.imported(importedDepth)
         is CfirPackageMemberScope -> CfirTowerGroup.PACKAGE
         else -> CfirTowerGroup.PACKAGE

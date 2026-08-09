@@ -13,8 +13,10 @@ import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 /**
@@ -522,6 +524,45 @@ class CfirExtendIndexStoreTest {
             linkedSetOf(leafInterfaceId, rootInterfaceId),
             query.inheritedInterfaceClosureClassIdsOf(duplicatedExtend),
         )
+    }
+
+    /**
+     * 验证 extend 接口继承查询保留 child 到 parent 的方向。
+     */
+    @Test
+    fun `extend interface inheritance relation is directional`() {
+        val (_, moduleData) = ExtendTestFixtures.newSessionAndModule()
+        val packageFqName = FqName("sample.pkg")
+        val targetClassId = ClassId(packageFqName, Name.identifier("Target"))
+        val parentInterfaceId = ClassId(packageFqName, Name.identifier("IParent"))
+        val childInterfaceId = ClassId(packageFqName, Name.identifier("IChild"))
+
+        val declarations = linkedMapOf(
+            targetClassId to ExtendTestFixtures.newClass(moduleData, "Target"),
+            parentInterfaceId to ExtendTestFixtures.newInterface(moduleData, "IParent"),
+            childInterfaceId to ExtendTestFixtures.newInterface(
+                moduleData = moduleData,
+                name = "IChild",
+                superTypeRefs = listOf(ExtendTestFixtures.classTypeRef(parentInterfaceId, isInterface = true)),
+            ),
+        )
+        val parentExtend = ExtendTestFixtures.newExtend(
+            moduleData = moduleData,
+            extendedTypeRef = ExtendTestFixtures.classTypeRef(targetClassId),
+            superTypeRefs = listOf(ExtendTestFixtures.classTypeRef(parentInterfaceId, isInterface = true)),
+        )
+        val childExtend = ExtendTestFixtures.newExtend(
+            moduleData = moduleData,
+            extendedTypeRef = ExtendTestFixtures.classTypeRef(targetClassId),
+            superTypeRefs = listOf(ExtendTestFixtures.classTypeRef(childInterfaceId, isInterface = true)),
+        )
+        val file = ExtendTestFixtures.newFile(moduleData, packageFqName, listOf(parentExtend, childExtend))
+        val store = CfirExtendIndexStore()
+        store.rebuild(listOf(file), MapBackedTypeResolver(declarations))
+        val query = CfirExtendRuleQueryServiceImpl(store)
+
+        assertTrue(query.doesExtendInheritFrom(childExtend, parentExtend))
+        assertFalse(query.doesExtendInheritFrom(parentExtend, childExtend))
     }
 }
 

@@ -96,6 +96,11 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
             if (!candidate.hasScopeOwnedInstanceMemberSubstitution(declaration) &&
                 bareStaticExtendTypeParameters.isEmpty()
             ) {
+                /*
+                 * 具体 static qualifier（包括完整实例化的 typealias）必须保留 provider 已经
+                 * 从 extend target 与 use-site receiver 匹配出的声明参数映射。只有语义上仍裸的
+                 * qualifier 才跳过该映射，并把 extend 参数交给当前调用的 fresh-variable 系统。
+                 */
                 putAll(
                     createCallableOwnerUseSiteSubstitutionMap(
                         session = context.session,
@@ -658,6 +663,7 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
         if (receiver.typeArguments.isNotEmpty()) return emptyList()
 
         val ownerSymbol = receiver.resolvedQualifierClassifier(session) ?: return emptyList()
+        if (!receiver.isSemanticallyBareStaticQualifier(session, ownerSymbol)) return emptyList()
         val extendTargetType = resolveExtendTypeRef(session, ownerExtend, ownerExtend.extendedTypeRef)
             ?.fullyExpandedType(session) as? ConeLookupTagBasedType
             ?: return emptyList()
@@ -665,6 +671,25 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
         if (extendTargetType.classIdOrPrimitiveClassId != ownerSymbol.classId) return emptyList()
 
         return ownerExtend.typeParameters
+    }
+
+    /**
+     * 判断 static qualifier 在类型展开后是否仍缺少决定 extend 参数的实际类型。
+     *
+     * typealias 名称没有显式类型实参，不代表其目标类型仍裸：`li = Array<Rune>` 已经提供
+     * `T = Rune`，应消费共享 owner-use-site matcher 的结果；`Alias<X> = Array<X>` 的裸调用
+     * 则先保留 `extend.T -> Alias.X`，再由 alias 参数的 fresh variable 继续参与调用推断。
+     */
+    private fun CfirQualifiedAccessExpression.isSemanticallyBareStaticQualifier(
+        session: CfirSession,
+        ownerSymbol: CfirClassLikeSymbol<*>,
+    ): Boolean {
+        collectBareTypeAliasQualifierTypeParameters(this)?.let { referencedAliasParameters ->
+            return referencedAliasParameters.isNotEmpty()
+        }
+
+        val semanticReceiverType = coneTypeOrNull?.fullyExpandedType(session) ?: return false
+        return semanticReceiverType.isBareOrDeclarationSelfTypeOf(ownerSymbol)
     }
 
     /**

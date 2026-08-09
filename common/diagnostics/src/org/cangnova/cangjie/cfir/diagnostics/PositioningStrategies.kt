@@ -23,6 +23,7 @@ import org.cangnova.cangjie.psi.CjPatternVariable
 import org.cangnova.cangjie.psi.CjParenthesizedExpression
 import org.cangnova.cangjie.psi.CjQualifiedExpression
 import org.cangnova.cangjie.psi.CjReferenceExpression
+import org.cangnova.cangjie.psi.CjSimpleNameExpression
 import org.cangnova.cangjie.psi.CjThrowExpression
 import org.cangnova.cangjie.psi.CjTypeReference
 import org.cangnova.cangjie.psi.CjUnaryExpression
@@ -283,6 +284,9 @@ object PositioningStrategies {
 
             while (locateReferencedName && result is CjParenthesizedExpression) {
                 result = result.expression ?: break
+            }
+            if (locateReferencedName && result is CjSimpleNameExpression) {
+                result = result.referencedNameElement
             }
             return super.mark(result)
         }

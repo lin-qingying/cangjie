@@ -100,10 +100,10 @@ object CfirSupertypesChecker : CfirClassLikeChecker() {
             substitutor = ConeSubstitutor.Empty,
             passedDeclarations = linkedSetOf(),
         ) ?: return false
-        val source = declaration.classLikeDeclarationHeaderDiagnosticSource() ?: return false
+        val source = declaration.classLikeNameOffsetsDiagnosticSource() ?: return false
 
-        // 官方 PreCheck 对声明自身执行重复父接口递归检查；IDE 侧按项目 range policy
-        // 报在声明头部。声明级重复已覆盖时不再额外产出直接 typeRef 重复诊断。
+        // 实例化后才显现的重复无法归属于某一个源码父类型；IDE 侧按项目 range policy
+        // 报在完整声明名 token。声明级重复已覆盖时不再额外产出直接 typeRef 重复诊断。
         reporter.reportOn(
             source = source,
             factory = CfirErrors.SUPER_TYPES_DUPLICATE,

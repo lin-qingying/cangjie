@@ -2,14 +2,14 @@
 
 
 extend A {
-    <!STATIC_AND_NON_STATIC_MEMBER_CANNOT_HAVE_SAME_NAME!>p<!>ublic func x1() {}
+    public func <!STATIC_AND_NON_STATIC_MEMBER_CANNOT_HAVE_SAME_NAME!>x1<!>() {}
     public static func <!EXTEND_MEMBER_CANNOT_SHADOW!>x2<!>() {}
     public func <!EXTEND_MEMBER_CANNOT_SHADOW!>y1<!>() {}
-    <!STATIC_AND_NON_STATIC_MEMBER_CANNOT_HAVE_SAME_NAME!>p<!>ublic static func y2() {}
-    <!STATIC_AND_NON_STATIC_MEMBER_CANNOT_HAVE_SAME_NAME!>p<!>ublic func <!EXTEND_MEMBER_CANNOT_SHADOW!>f1<!>() {}
+    public static func <!STATIC_AND_NON_STATIC_MEMBER_CANNOT_HAVE_SAME_NAME!>y2<!>() {}
+    public func <!EXTEND_MEMBER_CANNOT_SHADOW, STATIC_AND_NON_STATIC_MEMBER_CANNOT_HAVE_SAME_NAME!>f1<!>() {}
     public static func <!EXTEND_MEMBER_CANNOT_SHADOW!>f2<!>() {}
     public func <!EXTEND_MEMBER_CANNOT_SHADOW!>g1<!>() {}
-    <!STATIC_AND_NON_STATIC_MEMBER_CANNOT_HAVE_SAME_NAME!>p<!>ublic static func <!EXTEND_MEMBER_CANNOT_SHADOW!>g2<!>() {}
+    public static func <!EXTEND_MEMBER_CANNOT_SHADOW, STATIC_AND_NON_STATIC_MEMBER_CANNOT_HAVE_SAME_NAME!>g2<!>() {}
 }
 
 extend A {

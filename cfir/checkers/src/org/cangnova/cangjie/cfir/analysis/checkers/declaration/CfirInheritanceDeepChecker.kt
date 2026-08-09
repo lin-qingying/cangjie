@@ -933,7 +933,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                         symbol.inheritedMemberInfoOrNull(context)?.let(::add)
                     }
                     if (inheritedSource.includeDirectExtends) {
-                        addAll(collectDirectExtendMemberInfos(superType, name, context))
+                        addAll(collectEffectiveExtendMemberInfos(superType, name, context))
                         addAll(collectEffectiveExtendInterfaceMemberInfos(superType, name, context))
                     }
                 }
@@ -962,7 +962,9 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
 
                         if (ownInfo.kind != superInfo.kind) {
                             if (!hasStaticConflict && reportedKindConflicts.add(ownInfo.name)) {
-                                if (subject.isExtendSubject) {
+                                if (subject.isExtendSubject &&
+                                    superInfo.requiresExtendShadowDiagnostic(inheritedSource, superClassId, context)
+                                ) {
                                     reporter.reportOn(
                                         source = ownInfo.nameSource ?: subject.source,
                                         factory = CfirErrors.EXTEND_MEMBER_CANNOT_SHADOW,
@@ -1025,6 +1027,19 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                             }
                         }
 
+                        if (subject.classLikeDeclaration != null && ownInfo.overridesExtendMember(superInfo, superType, context)) {
+                            val key = ownInfo.overrideDiagnosticKey(superInfo)
+                            if (reportedExtendOverrides.add(key)) {
+                                reporter.reportOn(
+                                    source = ownInfo.nameSource ?: ownInfo.source ?: subject.source,
+                                    factory = CfirErrors.EXTEND_FUNCTION_CANNOT_OVERRIDDEN,
+                                    a = ownInfo.kind,
+                                    b = ownInfo.name,
+                                )
+                            }
+                            continue
+                        }
+
                         if (classDecl != null &&
                             !ownInfo.isOverride &&
                             !ownInfo.isRedef &&
@@ -1048,19 +1063,6 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                                 factory = CfirErrors.MEMBER_VARIABLE_CAN_NOT_SHADOW,
                                 a = ownInfo.name,
                             )
-                        }
-
-                        if (subject.classLikeDeclaration != null && ownInfo.overridesExtendMember(superInfo, superType, context)) {
-                            val key = ownInfo.overrideDiagnosticKey(superInfo)
-                            if (reportedExtendOverrides.add(key)) {
-                                reporter.reportOn(
-                                    source = ownInfo.nameSource ?: ownInfo.source ?: subject.source,
-                                    factory = CfirErrors.EXTEND_FUNCTION_CANNOT_OVERRIDDEN,
-                                    a = ownInfo.kind,
-                                    b = ownInfo.name,
-                                )
-                            }
-                            continue
                         }
 
                         if (classDecl != null && ownInfo.canNotOverride(superInfo, classDecl, context)) {
@@ -1493,6 +1495,28 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
     }
 
     /**
+     * 判断 extend 的异种同名冲突是否属于目标成员 shadow。
+     *
+     * 官方 `CheckSameNameInheritanceInfo` 对其他 extend 成员和 inherited-interface 成员
+     * 直接报告 `INHERIT_MEMBER_KIND_INCONSISTENT`；只有目标类型自身或其 class 父链成员
+     * 才进入 `CheckExtendMemberValid` 并报告 extend shadow。
+     */
+    private fun InheritedMemberInfo.requiresExtendShadowDiagnostic(
+        inheritedSource: InheritedMemberSource,
+        inheritedSourceClassId: ClassId,
+        context: CheckerContext,
+    ): Boolean {
+        val callable = symbol?.unwrapSubstitutionOverrides() ?: return true
+        if (context.session.extendProvider.getContainingExtend(callable) != null) return false
+
+        val ownerSymbol = context.ownerClassSymbol(callable) ?: return true
+        val ownerDeclaration = ownerSymbol.cfir
+        if (ownerDeclaration !is CfirInterface) return true
+
+        return inheritedSource.isExtendTarget && ownerSymbol.classId == inheritedSourceClassId
+    }
+
+    /**
      * `extend C <: I` 引入的 interface default member 被子类声明同签名成员时，
      * 官方 `IsExtendedDefaultImpl` 与普通接口继承区分处理，统一报 extend override 冲突。
      */
@@ -1536,6 +1560,31 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
     ): Boolean {
         return collectDirectExtendInterfaceTypes(context).any {
             it.classIdOrPrimitiveClassId == targetInterfaceClassId
+        }
+    }
+
+    /**
+     * 收集当前类型及其非接口父类链上的可见 extend 成员。
+     *
+     * 官方 `GetInheritedSuperMembers` 会在每一层父类合并该声明对应的 extend；这里只查
+     * 直接 receiver 会漏掉 `class C <: B`, `class B <: A`, `extend A.foo`。父类型遍历沿用
+     * 声明替换器，因此泛型父类上的 extend 成员以实际继承实参进入统一冲突分类。
+     */
+    private fun collectEffectiveExtendMemberInfos(
+        receiverType: ConeCangJieType,
+        name: Name,
+        context: CheckerContext,
+    ): List<InheritedMemberInfo> {
+        val visited = linkedSetOf<ConeCangJieType>()
+        return buildList {
+            fun visit(type: ConeCangJieType) {
+                if (!visited.add(type)) return
+                addAll(collectDirectExtendMemberInfos(type, name, context))
+                for (supertype in type.declaredNonInterfaceSupertypes(context)) {
+                    visit(supertype)
+                }
+            }
+            visit(receiverType)
         }
     }
 
@@ -2027,12 +2076,15 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
      *
      * @property typeRef 父类型或 extend 目标类型引用。
      * @property includeDirectExtends 是否额外收集该类型上的直接 extend 成员。
+     * @property isExtendTarget 该来源是否为 extend 的被扩展目标。
      */
     private data class InheritedMemberSource(
         /** 父类型或 extend 目标类型引用。 */
         val typeRef: CfirTypeRef,
         /** 是否额外收集该类型上的直接 extend 成员。 */
         val includeDirectExtends: Boolean,
+        /** 是否为 extend 的被扩展目标，而不是其实现接口。 */
+        val isExtendTarget: Boolean,
     )
 
     /**
@@ -2041,7 +2093,9 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
     private fun CfirClassLikeDeclaration.memberInheritanceSubject(): MemberInheritanceSubject =
         MemberInheritanceSubject(
             declarations = declarations,
-            inheritedSources = superTypeRefs.map { InheritedMemberSource(it, includeDirectExtends = true) },
+            inheritedSources = superTypeRefs.map {
+                InheritedMemberSource(it, includeDirectExtends = true, isExtendTarget = false)
+            },
             source = source,
             classLikeDeclaration = this,
         )
@@ -2056,8 +2110,10 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         MemberInheritanceSubject(
             declarations = declarations,
             inheritedSources = buildList {
-                add(InheritedMemberSource(extendedTypeRef, includeDirectExtends = false))
-                addAll(superTypeRefs.map { InheritedMemberSource(it, includeDirectExtends = false) })
+                add(InheritedMemberSource(extendedTypeRef, includeDirectExtends = true, isExtendTarget = true))
+                addAll(superTypeRefs.map {
+                    InheritedMemberSource(it, includeDirectExtends = false, isExtendTarget = false)
+                })
             },
             source = source,
             classLikeDeclaration = null,

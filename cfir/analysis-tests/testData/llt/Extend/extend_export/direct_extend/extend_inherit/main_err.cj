@@ -30,7 +30,7 @@ class C <: B {
     func foo2() {
         <!AMBIGUOUS_FUNCTION_CALL!>foo<!>()
     }
-    func <!EXTEND_MEMBER_CANNOT_SHADOW!>foo<!>() {
+    func <!EXTEND_FUNCTION_CANNOT_OVERRIDDEN!>foo<!>() {
         2
     }
 }

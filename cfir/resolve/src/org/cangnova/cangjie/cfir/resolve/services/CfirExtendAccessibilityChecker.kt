@@ -7,7 +7,6 @@ import org.cangnova.cangjie.cfir.resolve.providers.canAccessPackageInternalDecla
 import org.cangnova.cangjie.cfir.resolve.providers.canAccessPackageProtectedDeclaration
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.extendIndexStoreOrNull
-import org.cangnova.cangjie.cfir.session.importBindingStoreOrNull
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
@@ -171,26 +170,8 @@ class CfirExtendAccessibilityChecker(
          * 当前文件包名。
          */
         private val filePackage = file.packageDirective.packageFqName
-        /**
-         * 当前文件显式导入的 classId 集合。
-         */
-        private val importedClassIds: Set<ClassId>
-        /**
-         * 当前文件通过包导入暴露的包集合。
-         */
-        private val importedPackages: Set<FqName>
-
-        init {
-            val bindings = session.importBindingStoreOrNull?.getBindings(file)
-            importedClassIds = bindings?.imports.orEmpty()
-                .flatMapTo(mutableSetOf()) { binding ->
-                    binding.targets.filterIsInstance<CfirResolvedImportTarget.ClassLike>().map { it.classId }
-                }
-            importedPackages = bindings?.imports.orEmpty()
-                .flatMapTo(mutableSetOf()) { binding ->
-                    binding.targets.filterIsInstance<CfirResolvedImportTarget.Package>().map { it.fqName }
-                }
-        }
+        /** 当前检查绑定的 use-site 文件。 */
+        private val useSiteFile: CfirFile = file
 
         /**
          * 判断类型引用在当前文件中是否可访问。
@@ -205,10 +186,7 @@ class CfirExtendAccessibilityChecker(
          */
         fun isTypeAccessible(classId: ClassId): Boolean {
             if (!isClassIdVisibleFromPackage(classId, filePackage)) return false
-            if (classId.packageFqName == filePackage) return true
-            if (classId in importedClassIds) return true
-            if (classId.packageFqName in importedPackages) return true
-            return false
+            return useSiteFile.isClassIdReachableByImports(session, classId) == true
         }
     }
 
