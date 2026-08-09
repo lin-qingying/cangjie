@@ -100,10 +100,11 @@ object CfirSupertypesChecker : CfirClassLikeChecker() {
             substitutor = ConeSubstitutor.Empty,
             passedDeclarations = linkedSetOf(),
         ) ?: return false
-        val source = declaration.classLikeNameOffsetsDiagnosticSource() ?: return false
+        val source = declaration.classLikeDeclarationHeaderDiagnosticSource() ?: return false
 
-        // 实例化后才显现的重复无法归属于某一个源码父类型；IDE 侧按项目 range policy
-        // 报在完整声明名 token。声明级重复已覆盖时不再额外产出直接 typeRef 重复诊断。
+        // 实例化后才显现的重复无法归属于某一个源码父类型。官方 cjc 把该诊断锚在声明起点
+        // （`class`/`interface` 关键字所在列），IDE 侧按项目 range policy 展宽为完整声明头，
+        // 即从关键字到名称与类型参数列表结束。声明级重复已覆盖时不再额外产出直接 typeRef 重复诊断。
         reporter.reportOn(
             source = source,
             factory = CfirErrors.SUPER_TYPES_DUPLICATE,

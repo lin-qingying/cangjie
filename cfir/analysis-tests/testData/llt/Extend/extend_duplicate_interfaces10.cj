@@ -3,7 +3,7 @@
 
 main(): Int64 {
     var a = B<String, Int32>() // ok
-    var b = <!SUPER_TYPES_DUPLICATE!>B<!><String, String>() // error
+    var b = <!SUPER_TYPES_DUPLICATE!>B<String, String><!>() // error
     return 0
 }
 

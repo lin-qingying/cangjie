@@ -3185,3 +3185,31 @@ Flagged while gathering evidence for the extend upper-bound recursion problem ty
 - focused verification outcome: both selected methods passed (`2/2`) and all production prerequisites compiled.
 - family verification command: `.\gradlew.bat :cfir:analysis-tests:test --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTTestGenerated$Extend' --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTPsiTestGenerated$Extend' -x :cfir:analysis-tests:generateTestGeneratorForCfirAnalysisTestsTests --no-daemon --max-workers=1 --quiet --no-build-cache --no-configuration-cache`.
 - family verification outcome: fresh XML executed 870 Extend tests with 102 failures, down from 104. The corrected per-test marker parser reports `CANNOT_WEAKEN_ACCESS_PRIVILEGE missing=0 extra=0` and retains `EXTEND_MEMBER_CANNOT_SHADOW missing=0 extra=0` across complete PSI and LightTree slices; the remaining failures belong to separately clustered families.
+
+## 子类型 static/非 static 同名成员使用官方的 static_and_non_static 诊断
+
+- problem type: Diagnostics（诊断选择）。子类型成员与继承成员同名但 static 属性不同时，应报 `STATIC_AND_NON_STATIC_MEMBER_CANNOT_HAVE_SAME_NAME`，而非 `INHERIT_MEMBER_KIND_INCONSISTENT`。
+- root cause: 测试数据错误。CFIR 的实现本来就与官方一致；8 个 `llt/overload` fixture 把官方 `sema_static_and_non_static_member_cannot_have_same_name` 误标成了 `INHERIT_MEMBER_KIND_INCONSISTENT`，标记范围（子类成员标识符 `foo`）双方一致，只有诊断名不同。
+- official Cangjie evidence: `cjc` 1.0.5 `--diagnostic-format=json` 对 8 个 fixture 去标记后逐个编译，全部输出 `"DiagKind": "sema_static_and_non_static_member_cannot_have_same_name"`（例如 `class_extends_class1.cj` 10:5，消息 `static member 'foo' cannot have the same name with non-static member in parent class or interfaces`）。`external/cangjie_compiler/src/Sema/InheritanceChecker/StructInheritanceChecker.cpp:1082-1104` 的 `CheckSameNameInheritanceInfo` 先判断 `child.TestAttr(STATIC) != parentDecl->TestAttr(STATIC)`，命中即报 `sema_static_and_non_static_member_cannot_have_same_name` 并 `return`；`sema_inherit_member_kind_inconsistent` 只在 astKind 不同（1097 行）或 const/非 const 不一致（1412 行）时产生。反向验证：仓库中另外 5 个使用 `INHERIT_MEMBER_KIND_INCONSISTENT` 的 fixture（`class_shadow10/11`、`const_evaluation/err_interface`、`Extend_Refactor/extend_property_conflict_invalid_2/3`）经 `cjc` 确认确实是 `sema_inherit_member_kind_inconsistent`，属于 kind/const 不一致，不在本族内。
+- Kotlin counterpart files consulted: 无需 —— 本次是 fixture 期望与官方诊断选择不符，CFIR 侧检查器结构未改动。
+- CFIR owner files changed: 无（实现无需修改）。
+- repair principle: 诊断名归属按官方 `CheckSameNameInheritanceInfo` 的判定顺序划分——static 属性不一致优先于 kind 不一致；据此把整族 fixture 一次性对齐，而不是按单个用例改实现输出。
+- fixtures covered: `llt/overload/class_extends_class1.cj`、`class_extends_class2.cj`、`class_extends_class4.cj`、`class_extends_class5.cj`、`class_impl_interface1.cj`、`class_impl_interface2.cj`、`class_impl_interface3.cj`、`class_impl_interface4.cj`（PSI 与 LightTree 两条路径）。
+- fixture correction: 上述 8 个文件的 `<!INHERIT_MEMBER_KIND_INCONSISTENT!>` 改为 `<!STATIC_AND_NON_STATIC_MEMBER_CANNOT_HAVE_SAME_NAME!>`，范围保持在成员标识符不变。
+- verification command: `.\gradlew.bat -I cfir/analysis-tests/build/full-log-init.gradle.kts :cfir:analysis-tests:test --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTTestGenerated$Overload' --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTPsiTestGenerated$Overload' --console=plain`
+- verification outcome: BUILD SUCCESSFUL；两条路径的 `Overload` 套件各 14 个用例，`failures=0 errors=0`（修复前该族 16 个用例失败）。
+
+## OPEN（已取证、未修复）：继承而来的未初始化 `let` 字段在子类构造器中被误报不可变
+
+- problem type: Flow Analysis / Diagnostics。子类构造器给父类**没有初始化器**的 `let` 字段赋值时，CFIR 误报 `CANNOT_ASSIGN_TO_IMMUTABLE`。
+- official Cangjie evidence:
+  - `let_in_init10-1.cj`（去标记后）经 `cjc` 1.0.5 编译，`sema_cannot_assign_to_immutable` 只出现在第 26、30 行（`class D <: E`，父类 `E.b` 有初始化器），`class C <: A` 第 10、14 行对父类未初始化 `A.b` 的赋值不报错。
+  - 探针 `open class A { public let b: Int32; public init() { b = 1 } }` + `class C <: A { public init() { super(); this.b = 0 } }` → `sema_cannot_assign_to_immutable`。说明父字段一旦被其所属类初始化，子类构造器再写入即非法。
+  - 探针 `open class A { public let b: Int32 }` + `class C <: A { public init() { this.b = 0; this.b = 1 } }` → 只在第二次赋值报 `sema_cannot_assign_to_immutable`。说明官方在**子类构造器内也跟踪继承字段的初始化状态**，首次赋值合法、重复赋值非法。
+  - `external/cangjie_compiler/src/Sema/LegalityOfUsage/InitializationChecker.cpp:165` `NotAssignableVariable`：`!isVar && (TestAnyAttr(GLOBAL, INITIALIZED, ENUM_CONSTRUCTOR) || ((IN_STRUCT|IN_CLASSLIKE) && !inInitFunction) || ...)`——判定只看「是否已初始化」与「是否在构造器内」，**不区分字段属于当前类还是父类**。
+- CFIR 责任方（已定位，未改）：
+  - `cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirAssignmentLegalityChecker.kt:372` `isImmutableFieldAssignmentForbidden` 对无初始化器字段回落到 `CfirInitializationAssignmentClassifier.classifyAssignment`。
+  - `cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirInitializationCheckers.kt:387` `analyzeFunctionBody` 构造器路径调用 `owner.instanceFieldInfos(context)`（`includeInherited` 默认 false），继承字段不在跟踪集合内 → 分类为 `NOT_TRACKED` → 被判为不可写。
+  - 同文件 `instanceFieldInfos(context, includeInherited = true)`（第 307 行实例成员初始化器路径已在用）与 `inheritedInstanceFieldInfos`（第 2670 行）已具备所需能力，缺的是构造器路径接入，以及「继承字段的预初始化集合」如何计算（父类自身是否确实完成初始化）。
+- 未修复原因：该改动会同时影响 `USED_BEFORE_INITIALIZATION`、`CLASS_UNINITIALIZED_FIELD` 两个仍在失败的族，需要与它们一起设计并验证，不宜在未覆盖这两族时单独改动。
+- fixtures covered（待修复后验证）：`class/let_in_init/let_in_init10-1.cj`、`let_in_init10-2.cj`、`let_in_init11-1.cj`、`let_in_init12-1.cj`、`Extend/GenericParamDeclCallInMemberFunc/generics_00038.cj`、`function/mut_function_09.cj`、`generics/generic_call_static_impl02.cj`、`03`、`04`、`InitializationCheck/variable_assignment_terminated_04_2.cj`。

@@ -11,7 +11,7 @@ abstract class Base {
 }
 
 class Data <: Base {
-    public func <!INHERIT_MEMBER_KIND_INCONSISTENT!>foo<!>(): Int32 {
+    public func <!STATIC_AND_NON_STATIC_MEMBER_CANNOT_HAVE_SAME_NAME!>foo<!>(): Int32 {
         return 4
     }
 }
