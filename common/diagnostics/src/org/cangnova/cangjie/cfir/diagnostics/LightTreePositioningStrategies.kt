@@ -338,7 +338,7 @@ object LightTreePositioningStrategies {
             endOffset: Int,
             tree: FlyweightCapableTreeStructure<LighterASTNode>,
         ): List<TextRange> {
-            val nodeToMark = when (node.tokenType) {
+            var nodeToMark = when (node.tokenType) {
                 CjNodeTypes.DOT_QUALIFIED_EXPRESSION,
                 CjNodeTypes.SAFE_ACCESS_EXPRESSION,
                 -> {
@@ -353,7 +353,6 @@ object LightTreePositioningStrategies {
                 CjNodeTypes.CALL_EXPRESSION -> tree.referenceExpression(node, locateReferencedName) ?: node
                 CjNodeTypes.IMPORT_DIRECTIVE -> tree.findLastDescendantByType(node, CjNodeTypes.REFERENCE_EXPRESSION) ?: node
                 CjNodeTypes.TYPE_REFERENCE -> tree.findDescendantByType(node, CjNodeTypes.REFERENCE_EXPRESSION) ?: node
-
                 CjNodeTypes.BINARY_EXPRESSION,
                 CjNodeTypes.BINARY_WITH_TYPE,
                 CjNodeTypes.PREFIX_EXPRESSION,
@@ -361,6 +360,9 @@ object LightTreePositioningStrategies {
                 -> tree.findChildByType(node, CjNodeTypes.OPERATION_REFERENCE) ?: node
 
                 else -> node
+            }
+            if (locateReferencedName && nodeToMark.tokenType == CjNodeTypes.REFERENCE_EXPRESSION) {
+                nodeToMark = tree.referencedNameIdentifier(nodeToMark) ?: nodeToMark
             }
             return markElement(nodeToMark, startOffset, endOffset, tree, node)
         }
@@ -463,6 +465,17 @@ private fun FlyweightCapableTreeStructure<LighterASTNode>.nameIdentifier(node: L
     findChildByType(node, CjTokens.IDENTIFIER)
         ?: findChildByType(node, CjNodeTypes.OPERATION_NAME)
         ?: findChildByType(node, CjTokens.INIT_KEYWORD)
+
+/**
+ * 返回名称引用节点中的完整名称 token，不包含同一引用节点携带的泛型实参。
+ */
+private fun FlyweightCapableTreeStructure<LighterASTNode>.referencedNameIdentifier(
+    node: LighterASTNode,
+): LighterASTNode? =
+    findChildByType(node, CjTokens.IDENTIFIER)
+        ?: findChildByType(node, CjTokens.THIS_KEYWORD)
+        ?: findChildByType(node, CjTokens.SUPER_KEYWORD)
+        ?: findChildByType(node, CjTokens.VARRAY_KEYWORD)
 
 /**
  * 收集指定类型的所有后代节点。

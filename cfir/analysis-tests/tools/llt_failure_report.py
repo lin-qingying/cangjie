@@ -25,7 +25,7 @@ RESULT_GLOB = "cfir/analysis-tests/build/test-results/test/*.xml"
 
 # 断言消息中的分隔标题（渲染为中文），用宽松模式匹配以避开编码差异
 SPLIT_RE = re.compile(r"={3,}[^\n=]*={3,}")
-MARKER_RE = re.compile(r"<!([A-Za-z_0-9]+(?:!!)?[A-Za-z_0-9]*)!>")
+MARKER_RE = re.compile(r"<!([^!]+)!>")
 
 
 def load_failures(result_glob: str = RESULT_GLOB):
@@ -52,7 +52,12 @@ def split_expected_actual(message: str):
 
 
 def marker_counter(text: str) -> Counter:
-    return Counter(MARKER_RE.findall(text or ""))
+    diagnostics = (
+        name.strip()
+        for marker in MARKER_RE.findall(text or "")
+        for name in marker.split(",")
+    )
+    return Counter(name for name in diagnostics if name)
 
 
 def diff_markers(expected: str, actual: str):

@@ -15,7 +15,6 @@ import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeFunctionType
-import org.cangnova.cangjie.cfir.types.ConeLookupTagBasedType
 import org.cangnova.cangjie.cfir.types.ConeTupleType
 import org.cangnova.cangjie.cfir.types.StdlibClassIds
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
@@ -117,7 +116,7 @@ private fun CfirUserTypeRef.visibleTypeParameterSymbolOrNull(): CfirTypeParamete
  * 是否已经把 type-ref 原地改写完成。
  */
 context(context: CheckerContext)
-private fun CfirUserTypeRef.classLikeConeTypeInCurrentContextOrNull(): ConeLookupTagBasedType? {
+private fun CfirUserTypeRef.classLikeConeTypeInCurrentContextOrNull(): ConeCangJieType? {
     if (qualifier.size != 1) return null
 
     val part = qualifier.single()

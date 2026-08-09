@@ -750,13 +750,13 @@
       </method>
     </configuration>
     <list>
-      <item itemvalue="Gradle.Run IDE with Plugin" />
       <item itemvalue="Gradle.ModifierGenerated" />
       <item itemvalue="Gradle.SoftKeywordTest.testPublicSortKeywordPatternVariable" />
-      <item itemvalue="Gradle.cangjie [generateKotlinFlatBuffers]" />
       <item itemvalue="Gradle.cangjie [:cfir:analysis-tests:test]" />
+      <item itemvalue="Gradle.cangjie [generateKotlinFlatBuffers]" />
       <item itemvalue="Gradle.intellij-ide [:product:idea-plugin:runIde]" />
       <item itemvalue="JUnit.未命名" />
+      <item itemvalue="Gradle.Run IDE with Plugin" />
     </list>
     <recent_temporary>
       <list>

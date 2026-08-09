@@ -29,6 +29,9 @@ import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
+import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
+import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
+import org.cangnova.cangjie.cfir.symbols.constructType
 import org.cangnova.cangjie.cfir.symbols.toLookupTag
 import org.cangnova.cangjie.cfir.types.ConeAnyType
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
@@ -65,7 +68,6 @@ object CfirTypeParameterBoundsChecker : CfirTypeParameterChecker() {
         val nonErrorBounds = declaration
             .declaredUpperBoundTypesInCurrentContext()
             .filterNot { it is ConeErrorType }
-        if (nonErrorBounds.isEmpty()) return
 
         val uniqueBounds = linkedMapOf<String, ConeCangJieType>()
         nonErrorBounds.forEach { bound ->
@@ -84,7 +86,12 @@ object CfirTypeParameterBoundsChecker : CfirTypeParameterChecker() {
         }
         if (invalidBounds.isNotEmpty()) return
 
-        val boundsWithExposedClassConstraints = uniqueBounds.values.withExposedClassUpperBounds()
+        val boundsWithExposedClassConstraints =
+            (declaration.containingDeclarationSymbol.cfir as? CfirTypeParameterRefsOwner)
+                ?.collectAssumptionUpperBounds()
+                ?.get(declaration.symbol)
+                ?: uniqueBounds.values.toList()
+        if (boundsWithExposedClassConstraints.isEmpty()) return
 
         val classBounds = boundsWithExposedClassConstraints
             .filter { it.upperBoundKind() == UpperBoundKind.CLASS }
@@ -99,34 +106,45 @@ object CfirTypeParameterBoundsChecker : CfirTypeParameterChecker() {
 }
 
 /**
- * 返回直接上界以及泛型 class/interface 上界通过声明约束暴露出的上界。
+ * 按官方 `Assumption` 阶段构建当前声明的泛型约束环境。
  *
- * 例如 `X <: A<X>` 且 `class A<T> where T <: C1` 时，官方会同时把
- * `A<X>` 与 `C1` 看作 `X` 的 class 上界并做冲突检查；这里在 checker
- * 入口统一展开，避免各个诊断路径分别补同一条泛型约束传播规则。
+ * class/interface 上界声明中的约束必须归属到代换后的泛型实参：
+ * `X <: A<X>` 会把 `A.T <: C1` 归入 `X`，而 `X <: A<Y>` 会归入 `Y`。
+ * 因此该计算以整个 owner 为单位，不能从单个待检查参数局部展开。
  */
 context(context: CheckerContext)
-private fun Collection<ConeCangJieType>.withExposedClassUpperBounds(): List<ConeCangJieType> {
-    val result = linkedMapOf<String, ConeCangJieType>()
-    val queue = ArrayDeque<ConeCangJieType>()
-    queue.addAll(this)
+private fun CfirTypeParameterRefsOwner.collectAssumptionUpperBounds(): Map<CfirTypeParameterSymbol, List<ConeCangJieType>> {
+    val ownerParameters = typeParameters.mapTo(linkedSetOf()) { it.symbol }
+    val result = ownerParameters.associateWithTo(linkedMapOf()) { linkedMapOf<String, ConeCangJieType>() }
+    val queue = ArrayDeque<Pair<CfirTypeParameterSymbol, ConeCangJieType>>()
 
-    while (queue.isNotEmpty()) {
-        val current = queue.removeFirst().fullyExpandTypeAlias()
-        if (current is ConeErrorType) continue
-        if (result.putIfAbsent(current.stableBoundKey(), current) != null) continue
-
-        queue.addAll(current.exposedClassLikeUpperBounds())
+    for (typeParameter in typeParameters) {
+        typeParameter.symbol.cfir
+            .declaredUpperBoundTypesInCurrentContext()
+            .forEach { queue += typeParameter.symbol to it }
     }
 
-    return result.values.toList()
+    while (queue.isNotEmpty()) {
+        val (targetParameter, rawBound) = queue.removeFirst()
+        val current = rawBound.fullyExpandTypeAlias()
+        if (current is ConeErrorType) continue
+        val targetBounds = result.getValue(targetParameter)
+        if (targetBounds.putIfAbsent(current.stableBoundKey(), current) != null) continue
+
+        current.assumptionConstraints(ownerParameters).forEach(queue::addLast)
+    }
+
+    return result.mapValues { (_, bounds) -> bounds.values.toList() }
 }
 
 /**
- * 对 class/interface 实例 `A<X>` 展开其声明侧类型参数上界，并以当前实参替换。
+ * 将 class/interface 实例声明侧的泛型约束代换为当前 owner 的约束边。
+ * 只有代换后的约束左侧仍是 owner 类型参数时，才对应官方 `AddConstraint` 可写入的关系。
  */
 context(context: CheckerContext)
-private fun ConeCangJieType.exposedClassLikeUpperBounds(): List<ConeCangJieType> {
+private fun ConeCangJieType.assumptionConstraints(
+    ownerParameters: Set<CfirTypeParameterSymbol>,
+): List<Pair<CfirTypeParameterSymbol, ConeCangJieType>> {
     val lookupType = fullyExpandTypeAlias() as? ConeLookupTagBasedType ?: return emptyList()
     val declaration = lookupType.toResolvedClassLikeDeclaration() as? CfirTypeParameterRefsOwner ?: return emptyList()
     if (declaration.typeParameters.isEmpty() || declaration.typeParameters.size != lookupType.typeArguments.size) {
@@ -134,10 +152,22 @@ private fun ConeCangJieType.exposedClassLikeUpperBounds(): List<ConeCangJieType>
     }
 
     val substitutor = declaration.createDeclarationTypeSubstitutor(lookupType)
-    return declaration.typeParameters.flatMap { typeParameter ->
-        typeParameter.declaredUpperBoundTypesForExposure()
-            .map { substitutor.substituteOrSelf(it) }
-            .filterNot { it is ConeErrorType }
+    return buildList {
+        for (typeParameter in declaration.typeParameters) {
+            val substitutedSubject = substitutor.substituteOrSelf(typeParameter.symbol.constructType())
+            val targetParameter = (substitutedSubject as? ConeTypeParameterType)
+                ?.lookupTag
+                ?.typeParameterSymbol
+                ?.takeIf { it in ownerParameters }
+                ?: continue
+
+            for (bound in typeParameter.declaredUpperBoundTypesForExposure()) {
+                val substitutedBound = substitutor.substituteOrSelf(bound)
+                if (substitutedBound !is ConeErrorType) {
+                    add(targetParameter to substitutedBound)
+                }
+            }
+        }
     }
 }
 

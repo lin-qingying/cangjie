@@ -511,7 +511,7 @@ public interface CjTokens {
     CjKeywordToken MACRO_KEYWORD = CjKeywordToken.keyword("macro", MACRO_KEYWORD_Id);
     CjKeywordToken CATCH_KEYWORD = CjKeywordToken.keyword("catch", CATCH_KEYWORD_Id);
     CjKeywordToken FINALLY_KEYWORD = CjKeywordToken.keyword("finally", FINALLY_KEYWORD_Id);
-    CjKeywordToken HANDLE_KEYWORD = CjKeywordToken.keyword("handle", HANDLE_KEYWORD_Id);
+    CjKeywordToken HANDLE_KEYWORD = CjKeywordToken.softKeyword("handle", HANDLE_KEYWORD_Id);
     CjKeywordToken PERFORM_KEYWORD = CjKeywordToken.keyword("perform", PERFORM_KEYWORD_Id);
     CjKeywordToken RESUME_KEYWORD = CjKeywordToken.keyword("resume", RESUME_KEYWORD_Id);
     CjKeywordToken THROWING_KEYWORD = CjKeywordToken.keyword("throwing", THROWING_KEYWORD_Id);
@@ -642,7 +642,8 @@ public interface CjTokens {
             PRIVATE_KEYWORD,
             PROTECTED_KEYWORD,
             OVERRIDE_KEYWORD,
-            REDEF_KEYWORD
+            REDEF_KEYWORD,
+            HANDLE_KEYWORD
 
     );
     TokenSet MODALITY_MODIFIERS = TokenSet.create(ABSTRACT_KEYWORD, SEALED_KEYWORD, OPEN_KEYWORD);
@@ -708,7 +709,6 @@ public interface CjTokens {
                     IMPORT_KEYWORD,
                     CATCH_KEYWORD,
                     FINALLY_KEYWORD,
-                    HANDLE_KEYWORD,
                     PERFORM_KEYWORD,
                     RESUME_KEYWORD,
                     THROWING_KEYWORD,
@@ -805,7 +805,6 @@ public interface CjTokens {
     TokenSet WHITE_SPACE_OR_COMMENT_BIT_SET = TokenSet.orSet(COMMENTS, WHITESPACES);
     CjToken EOF = new CjToken("EOF", EOF_Id);
 }
-
 
 
 

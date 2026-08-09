@@ -29,6 +29,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirInterface
+import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityFileScope
 import org.cangnova.cangjie.cfir.resolve.providers.CfirDirectSupertypeProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirExtendProvider
@@ -1026,37 +1027,48 @@ class CfirClassUseSiteMemberScope private constructor(
 
     /**
      * 返回 [type] 的直接父类型。
+     *
+     * 成员 scope 遍历必须消费完全展开后的名义类型。父边可能由 typealias 写出，
+     * 若直接按别名 ClassId 构造 scope，会在别名声明处中断，无法进入实际父接口。
      */
     private fun directParentTypesOf(type: ConeCangJieType): List<ConeCangJieType> {
-        if (scopeKind == CfirClassMemberScopeKind.DECLARATION_SITE ||
+        val directParentTypes = if (scopeKind == CfirClassMemberScopeKind.DECLARATION_SITE ||
             scopeKind == CfirClassMemberScopeKind.BODY_LOOKUP
         ) {
             val substitutor = classSymbol.createDeclarationSubstitutor(type)
-            return classSymbol.cfir.superTypeRefs.mapNotNull { superTypeRef ->
+            classSymbol.cfir.superTypeRefs.mapNotNull { superTypeRef ->
                 val supertype = superTypeRef
                     .classifyDeclaredSupertype(session)
                     .scopeTraversalTypeOrNull()
                     ?: return@mapNotNull null
                 substitutor?.substituteOrSelf(supertype) ?: supertype
             }
-        }
-
-        val classId = type.classIdOrPrimitiveClassId ?: classSymbol.classId
-        if (excludingExtend != null && directSupertypeProvider != null) {
-            return directParentTypesFromEdges(type, classId, excludingExtend)
-        }
-
-        session.typeAwareSupertypeProviderOrNull?.let { provider ->
-            return provider.getDirectSupertypes(type)
-        }
-        directSupertypeProvider?.let { provider ->
-            return provider.getDirectSuperTypes(classId).mapNotNull { superTypeRef ->
-                superTypeRef.classifyDeclaredSupertype(session).scopeTraversalTypeOrNull()
+        } else {
+            val classId = type.classIdOrPrimitiveClassId ?: classSymbol.classId
+            val typeAwareSupertypeProvider = session.typeAwareSupertypeProviderOrNull
+            when {
+                excludingExtend != null && directSupertypeProvider != null -> {
+                    directParentTypesFromEdges(type, classId, excludingExtend)
+                }
+                typeAwareSupertypeProvider != null -> {
+                    typeAwareSupertypeProvider.getDirectSupertypes(type)
+                }
+                directSupertypeProvider != null -> {
+                    directSupertypeProvider.getDirectSuperTypes(classId).mapNotNull { superTypeRef ->
+                        superTypeRef.classifyDeclaredSupertype(session).scopeTraversalTypeOrNull()
+                    }
+                }
+                else -> {
+                    classSymbol.cfir.superTypeRefs.mapNotNull { superTypeRef ->
+                        superTypeRef.classifyDeclaredSupertype(session).scopeTraversalTypeOrNull()
+                    }
+                }
             }
         }
-        return classSymbol.cfir.superTypeRefs.mapNotNull { superTypeRef ->
-            superTypeRef.classifyDeclaredSupertype(session).scopeTraversalTypeOrNull()
-        }
+
+        return directParentTypes
+            .map { supertype -> supertype.fullyExpandedType(session) }
+            .distinct()
     }
 
     /**

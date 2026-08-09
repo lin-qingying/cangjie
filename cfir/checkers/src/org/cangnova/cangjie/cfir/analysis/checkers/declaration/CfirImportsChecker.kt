@@ -415,6 +415,11 @@ object CfirImportsChecker : CfirFileChecker() {
         val ownerExtend = session.extendProviderOrNull
             ?.getContainingExtend(originalSymbol)
             ?: return
+        for (typeParameter in ownerExtend.typeParameters) {
+            for (bound in typeParameter.bounds) {
+                bound.coneTypeOrNull?.classId?.let(classIds::add)
+            }
+        }
         for (superTypeRef in ownerExtend.superTypeRefs) {
             superTypeRef.coneTypeOrNull?.classId?.let(classIds::add)
         }

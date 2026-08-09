@@ -16,7 +16,6 @@ import org.cangnova.cangjie.cfir.symbols.constructType
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.cfir.symbols.toLookupTag
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
-import org.cangnova.cangjie.cfir.types.ConeLookupTagBasedType
 import org.cangnova.cangjie.cfir.types.ConeTypeProjection
 import org.cangnova.cangjie.cfir.types.ConeTypeVariableType
 import org.cangnova.cangjie.name.ClassId
@@ -172,7 +171,7 @@ private class CfirTypeVariableReceiverMemberScopeProvider(
     /**
      * 构造分类器声明自身对应的 owner type。
      */
-    private fun CfirClassLikeSymbol<*>.declarationSelfType(): ConeLookupTagBasedType {
+    private fun CfirClassLikeSymbol<*>.declarationSelfType(): ConeCangJieType {
         val typeArguments: List<ConeTypeProjection> = cfir.typeParameters.map { typeParameter ->
             ConeTypeParameterTypeImpl(typeParameter.symbol.toLookupTag())
         }

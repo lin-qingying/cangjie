@@ -5,6 +5,8 @@ import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedTypeQualifierError
+import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
+import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
@@ -22,11 +24,6 @@ import org.cangnova.cangjie.cfir.types.containsErrorType
  */
 object CfirTypeAliasExpandedTypeChecker : CfirTypeAliasChecker() {
     /**
-     * 递归 typealias 展开错误的诊断文本前缀。
-     */
-    private const val RECURSIVE_TYPEALIAS_PREFIX = "Recursive typealias expansion"
-
-    /**
      * 检查 typealias RHS 根类型是否应补报 `NOT_A_TYPE`。
      *
      * unresolved qualifier 和递归 typealias 已有专门诊断时跳过，其他错误类型引用取根 qualifier
@@ -38,7 +35,8 @@ object CfirTypeAliasExpandedTypeChecker : CfirTypeAliasChecker() {
 
         if (expandedTypeRef is CfirErrorTypeRef) {
             if (expandedTypeRef.diagnostic is ConeUnresolvedTypeQualifierError) return
-            if (expandedTypeRef.diagnostic.reason.startsWith(RECURSIVE_TYPEALIAS_PREFIX)) return
+            val simpleDiagnostic = expandedTypeRef.diagnostic as? ConeSimpleDiagnostic
+            if (simpleDiagnostic?.kind == DiagnosticKind.RecursiveTypealiasExpansion) return
         } else if (!expandedTypeRef.coneType.containsErrorType()) {
             return
         }

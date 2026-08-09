@@ -75,8 +75,8 @@ class CfirExtendIndexStore(
     private var modelByDeclaration: Map<CfirExtend, CfirExtendSemanticModel> = emptyMap()
     /** extend 成员符号到 owner extend 声明的索引。 */
     private var containingExtendByCallableSymbol: Map<CfirCallableSymbol<*>, CfirExtend> = emptyMap()
-    /** 默认实现不依赖接口类型参数的接口成员索引。 */
-    private var defaultIndependentMembersByInterface: Map<ClassId, List<Name>> = emptyMap()
+    /** 最近一次重建索引使用的类型解析器，查询接口成员的最终签名时继续复用。 */
+    private lateinit var typeResolver: CfirTypeResolver
     /** 接口 ClassId 到“自身 + 传递父接口”闭包的缓存。 */
     private var interfaceClosureByClassId: Map<ClassId, Set<ClassId>> = emptyMap()
     /** extend 目标类自身继承接口集合的缓存。 */
@@ -91,6 +91,7 @@ class CfirExtendIndexStore(
      */
     @Synchronized
     fun rebuild(files: List<CfirFile>, resolver: CfirTypeResolver) {
+        typeResolver = resolver
         val collected = buildList {
             for (file in files) {
                 for ((declarationIndex, declaration) in file.declarations.withIndex()) {
@@ -108,7 +109,6 @@ class CfirExtendIndexStore(
         modelsByPackage = next.groupBy { it.packageFqName }
         modelsByOrigin = next.groupBy { it.origin }
         containingExtendByCallableSymbol = buildContainingExtendIndex(next)
-        defaultIndependentMembersByInterface = buildDefaultIndependentMembersMap(next, resolver)
         interfaceClosureByClassId = buildInterfaceClosureMap(next, resolver)
         targetClassOwnInterfacesByClassId = buildTargetClassOwnInterfacesMap(next, resolver)
         targetSupertypeClassIdsByClassId = buildTargetSupertypeClassIdsMap(next, resolver)
@@ -159,10 +159,15 @@ class CfirExtendIndexStore(
     fun containingExtendOf(symbol: CfirCallableSymbol<*>): CfirExtend? = containingExtendByCallableSymbol[symbol]
 
     /**
-     * 返回接口中默认实现且不依赖接口类型参数的成员名。
+     * 返回接口中默认实现且最终 callable 签名不依赖接口类型参数的成员名。
+     *
+     * extend 索引在 EXTENSIONS 阶段建立，此时隐式函数返回类型尚未完成 body inference。
+     * 因此该项不能缓存早期 type ref，必须在 checker 查询时读取同一声明的最终返回类型。
      */
-    fun defaultIndependentMembersOfInterface(interfaceClassId: ClassId): List<Name> =
-        defaultIndependentMembersByInterface[interfaceClassId].orEmpty()
+    fun defaultIndependentMembersOfInterface(interfaceClassId: ClassId): List<Name> {
+        check(::typeResolver.isInitialized) { "Extend index must be rebuilt before querying interface members" }
+        return buildDefaultIndependentMembersForInterface(interfaceClassId, typeResolver)
+    }
 
     /**
      * 返回目标类自身声明或继承到的接口 ClassId 集合。
@@ -196,6 +201,19 @@ class CfirExtendIndexStore(
         if (first.targetKey == null || first.targetKey != second.targetKey) return false
         return hasDirectInterfaceInheritedFrom(first, second) ||
             hasDirectInterfaceInheritedFrom(second, first)
+    }
+
+    /**
+     * 判断 child extend 的直接接口是否继承 parent extend 的某个直接接口。
+     *
+     * 该方向对应官方 `DeterminingSkipExtendByInheritanceRelationship`：检查 child 时应收集
+     * parent，反向检查 parent 时则跳过 child，不能用对称的继承关系查询替代。
+     */
+    fun doesExtendInheritFrom(childDeclaration: Any, parentDeclaration: Any): Boolean {
+        val child = modelForDeclaration(childDeclaration) ?: return false
+        val parent = modelForDeclaration(parentDeclaration) ?: return false
+        if (child.targetKey == null || child.targetKey != parent.targetKey) return false
+        return hasDirectInterfaceInheritedFrom(child, parent)
     }
 
     /**
@@ -425,38 +443,23 @@ class CfirExtendIndexStore(
     }
 
     /**
-     * 构建默认实现不依赖接口类型参数的成员索引。
-     *
-     * 该索引用于判断 extend 默认接口成员合并时是否存在可跨类型实参复用的成员。
+     * 读取单个接口中默认实现不依赖接口类型参数的成员。
      */
-    private fun buildDefaultIndependentMembersMap(
-        models: List<CfirExtendSemanticModel>,
+    private fun buildDefaultIndependentMembersForInterface(
+        interfaceId: ClassId,
         resolver: CfirTypeResolver,
-    ): Map<ClassId, List<Name>> {
-        val interfaceIds = models
+    ): List<Name> {
+        val interfaceDeclaration = resolver.resolveClass(interfaceId) ?: return emptyList()
+        if (interfaceDeclaration.classKindOrNull() != CfirClassKind.INTERFACE) return emptyList()
+        val typeParameters = interfaceDeclaration.typeParametersOrEmpty()
+        if (typeParameters.isEmpty()) return emptyList()
+
+        return interfaceDeclaration.declarations
             .asSequence()
-            .flatMap { model -> model.inheritedInterfaces.asSequence() }
-            .mapNotNull { inherited -> inherited.classId }
-            .toSortedSet(compareBy(ClassId::asString))
-
-        val result = linkedMapOf<ClassId, List<Name>>()
-        for (interfaceId in interfaceIds) {
-            val interfaceDeclaration = resolver.resolveClass(interfaceId) ?: continue
-            if (interfaceDeclaration.classKindOrNull() != CfirClassKind.INTERFACE) continue
-            val typeParameters = interfaceDeclaration.typeParametersOrEmpty()
-            if (typeParameters.isEmpty()) continue
-
-            val members = interfaceDeclaration.declarations
-                .asSequence()
-                .filter { declaration -> declaration.hasDefaultImplementation() }
-                .filter { declaration -> declaration.doesNotDependOnTypeParameters(typeParameters) }
-                .mapNotNull { declaration -> declaration.memberNameOrNull() }
-                .toList()
-            if (members.isNotEmpty()) {
-                result[interfaceId] = members
-            }
-        }
-        return result
+            .filter { declaration -> declaration.hasDefaultImplementation() }
+            .filter { declaration -> declaration.doesNotDependOnTypeParameters(typeParameters) }
+            .mapNotNull { declaration -> declaration.memberNameOrNull() }
+            .toList()
     }
 
     /**

@@ -28,9 +28,9 @@ object CfirTypeAliasUnusedTypeParameterChecker : CfirTypeAliasChecker() {
 
         val expandedTypeRef = declaration.expandedTypeRef as? CfirResolvedTypeRef ?: return
         if (expandedTypeRef is CfirErrorTypeRef && expandedTypeRef.diagnostic is ConeUnresolvedTypeQualifierError) return
-        if (expandedTypeRef.coneType.containsErrorType()) return
 
         val expandedType = expandedTypeRef.typeForUnusedParameterCheck() ?: return
+        if (expandedType.containsErrorType()) return
 
         val usedTypeParameterSymbols = linkedSetOf<org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol>()
         expandedType.forEachType { type ->

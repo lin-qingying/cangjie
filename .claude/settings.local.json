@@ -76,7 +76,21 @@
       "Bash(git restore *)",
       "Bash(git add *)",
       "Bash(git commit -m ' *)",
-      "Bash(git submodule *)"
+      "Bash(git submodule *)",
+      "Bash(powershell -NoProfile -Command 'Get-CimInstance Win32_Process -Filter \"Name='\\\\''java.exe'\\\\''\" | Select-Object ProcessId,@{n='\\\\''cmd'\\\\'';e={$_.CommandLine.Substring\\(0,[Math]::Min\\(150,$_.CommandLine.Length\\)\\)}} | Format-Table -AutoSize | Out-String -Width 200')",
+      "Bash(awk '{s+=$1} END {print \"total tests:\",s}')",
+      "Bash(awk '{s+=$1} END {print \"failures:\",s}')",
+      "Bash(./gradlew.bat :cfir:analysis-tests:test --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTTestGenerated' --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTPsiTestGenerated' --console=plain)",
+      "Bash(echo \"EXIT=$?\")",
+      "Read(//tmp/**)",
+      "Bash(./gradlew.bat -I cfir/analysis-tests/build/full-log-init.gradle.kts :cfir:analysis-tests:test --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTTestGenerated' --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTPsiTestGenerated' --console=plain)",
+      "Bash(python cfir/analysis-tests/tools/llt_console_report.py /tmp/llt_full.log --top 30)",
+      "Bash(py -3 cfir/analysis-tests/tools/llt_console_report.py /tmp/llt_full.log --top 30)",
+      "Bash(py -3 cfir/analysis-tests/tools/llt_console_report.py /tmp/llt_full.log --cluster --top 25)",
+      "Bash(iconv -f UTF-8 -t UTF-8)",
+      "Bash(py -3 cfir/analysis-tests/tools/llt_console_report.py /tmp/llt_full.log --diag LAMBDA_MUST_HAVE_TYPE_ANNOTATION)",
+      "Bash(sed -n '/LAMBDA_MUST_HAVE_TYPE_ANNOTATION ./,$p' /tmp/lambda.txt)",
+      "Bash(py -3 cfir/analysis-tests/tools/llt_range_report.py /tmp/llt_full.log --top 25)"
     ]
   }
 }

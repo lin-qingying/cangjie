@@ -1343,6 +1343,14 @@ private fun ConeAmbiguityError.mapConeAmbiguityError(
 ): List<CjDiagnostic> {
     if (isErrorArgumentCascade) return emptyList()
 
+    val operatorDiagnosticSource = callOrAssignmentSource ?: source
+    if (operatorDiagnosticSource != null) {
+        if (isOperatorAmbiguityCascadeFromErrorOperand()) return emptyList()
+        invalidBinaryOperatorDiagnosticForOperatorAmbiguity(source, operatorDiagnosticSource, session)?.let { diagnostic ->
+            return listOf(diagnostic)
+        }
+    }
+
     sharedOverloadArgumentTypeMismatchDiagnostic(session)?.let { return listOf(it) }
 
     @OptIn(ApplicabilityDetail::class)
@@ -1406,11 +1414,6 @@ private fun ConeAmbiguityError.mapConeAmbiguityError(
     val callLikeProbeSource = source ?: callOrAssignmentSource ?: diagnosticSource
     val psi = callLikeProbeSource.psi
     val isCallLikeContext = psi is CjCallExpression || PsiTreeUtil.getParentOfType(psi, CjCallExpression::class.java, false) != null
-
-    if (isOperatorAmbiguityCascadeFromErrorOperand()) return emptyList()
-    invalidBinaryOperatorDiagnosticForOperatorAmbiguity(source, diagnosticSource, session)?.let { diagnostic ->
-        return listOf(diagnostic)
-    }
 
     // 检查是否为基本类型扩展歧义
     if (isCallLike || isCallLikeContext) {

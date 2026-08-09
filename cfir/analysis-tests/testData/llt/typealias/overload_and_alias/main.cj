@@ -4,7 +4,7 @@
 package a
 
 import std.time.DateTime
-import std.collection.ArrayList
+import <!UNUSED_IMPORT!>std.collection.ArrayList<!>
 
 public type List<T> = MetaList<T>
 

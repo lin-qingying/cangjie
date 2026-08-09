@@ -5,6 +5,8 @@ import org.cangnova.cangjie.cfir.resolve.ExtendTestFixtures
 import org.cangnova.cangjie.cfir.session.builtinTypes
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassDeclaredMemberScope
 import org.cangnova.cangjie.cfir.symbols.CfirPrimitiveTypeSymbol
+import org.cangnova.cangjie.cfir.symbols.constructType
+import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.Name
@@ -29,6 +31,7 @@ class CfirBuiltinSymbolProviderTest {
         val symbol = provider.getClassLikeSymbolByClassId(primitiveClassId) as? CfirPrimitiveTypeSymbol
         assertNotNull(symbol)
         assertEquals(PrimitiveTypeKind.INT64, symbol?.kind)
+        assertEquals(ConePrimitiveType.INT64, symbol?.constructType())
         assertTrue(
             provider.symbolNamesProvider.getTopLevelClassifierNamesInPackage(StandardNames.BASIC_PACKAGE_FQ_NAME)
                 .orEmpty()

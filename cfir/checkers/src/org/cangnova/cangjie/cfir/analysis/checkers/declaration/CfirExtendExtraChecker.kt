@@ -45,6 +45,7 @@ import org.cangnova.cangjie.cfir.scopes.impl.CfirExtendMemberScope
 import org.cangnova.cangjie.cfir.scopes.overrideSignatureKey
 import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
 import org.cangnova.cangjie.cfir.session.extendProvider
+import org.cangnova.cangjie.cfir.session.extendRuleQueryServiceOrNull
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.toLookupTag
@@ -265,7 +266,7 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
     ): CfirTypeScope? {
         if (!visited.add(this)) return null
         val scopes = buildList {
-            classTargetShadowScope(excludingExtend)?.let(::add)
+            classTargetShadowScope()?.let(::add)
             extendTargetShadowScope(excludingExtend)?.let(::add)
             for (supertype in directShadowSuperTypes(excludingExtend)) {
                 supertype.createTargetShadowScope(
@@ -302,12 +303,31 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
 
         val directSupertypes = graphEdges.mapNotNull { edge ->
             if (edge.sourceExtend === excludingExtend) return@mapNotNull null
+            if (!edge.isShadowInterfaceEdgeVisibleFrom(excludingExtend, context)) return@mapNotNull null
             edge.toUseSiteSupertype(
                 ownerType = this,
                 declarationSubstitutor = declarationSubstitutor,
             )
         }
         return directSupertypes.withImplicitObjectSuperclass(ownerDeclaration)
+    }
+
+    /**
+     * 判断 sibling extend 注入的接口边是否属于当前 extend 的 shadow 检查序列。
+     *
+     * 官方 `CollectExtendByInterfaceInherit` 不会把不相关 sibling 接口逐个作为当前成员的
+     * shadow parent；这些接口先在 effective member graph 中合并，abstract 成员被删除，
+     * 多 default 冲突由继承检查分类。当前 extend 没有接口时不存在该合并目标，因此仍需
+     * 看见 sibling 接口；存在父子接口关系时则按同一检查序列保留。
+     */
+    private fun CfirSuperTypeGraphEdge.isShadowInterfaceEdgeVisibleFrom(
+        currentExtend: CfirExtend,
+        context: CheckerContext,
+    ): Boolean {
+        val siblingExtend = sourceExtend ?: return true
+        val query = context.session.extendRuleQueryServiceOrNull ?: return false
+        if (query.inheritedInterfacesOf(currentExtend).isEmpty()) return true
+        return query.doesExtendInheritFrom(currentExtend, siblingExtend)
     }
 
     /**
@@ -379,10 +399,14 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
     }
 
     /**
-     * 为 class-like/primitive classifier 目标构造 use-site 成员 scope。
+     * 为 class-like/primitive classifier 目标构造声明侧成员 scope。
+     *
+     * extend 成员及其注入的父接口由 [extendTargetShadowScope] 和
+     * [directShadowSuperTypes] 按来源显式加入。这里若使用 use-site scope，会把同一批
+     * extend 成员再次展平进 class scope，导致当前实现目标和其它 extend 的来源身份丢失。
      */
     context(context: CheckerContext)
-    private fun ConeCangJieType.classTargetShadowScope(excludingExtend: CfirExtend): CfirTypeScope? {
+    private fun ConeCangJieType.classTargetShadowScope(): CfirTypeScope? {
         val targetClassId = expandedClassIdOrPrimitiveClassId ?: return null
         val targetSymbol = context.session.symbolProvider.getClassLikeSymbolByClassId(targetClassId)
             as? CfirClassLikeSymbol<*> ?: return null
@@ -390,12 +414,9 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
             session = context.session,
             classSymbol = targetSymbol,
             symbolProvider = context.session.symbolProvider,
-            extendProvider = context.session.extendProvider,
-            directSupertypeProvider = context.session.directSupertypeProviderOrNull,
             ownerType = this,
             dispatchReceiverType = this,
-            scopeKind = CfirClassMemberScopeKind.USE_SITE,
-            excludingExtend = excludingExtend,
+            scopeKind = CfirClassMemberScopeKind.DECLARATION_SITE,
         )
         return CfirClassSubstitutionScope(
             session = context.session,
@@ -436,34 +457,22 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
     private fun CfirDeclaration.shadowsExistingMember(
         targetScope: org.cangnova.cangjie.cfir.scopes.CfirTypeScope,
         context: CheckerContext,
-        extend: CfirExtend,
+        currentExtend: CfirExtend,
         targetType: ConeCangJieType,
     ): Boolean {
-        return when (this) {
-            is CfirNamedFunction -> {
-                val signature = symbol.overrideSignatureKey()
-                var found = false
-                targetScope.processFunctionsByName(name) { candidate ->
-                    if (candidate.canShadowThis(this, signature, context, extend, targetType)) {
-                        found = true
-                    }
-                }
-                found
-            }
-
-            is CfirProperty -> {
-                val signature = symbol.overrideSignatureKey()
-                var found = false
-                targetScope.processPropertiesByName(name) { candidate ->
-                    if (candidate.canShadowThis(this, signature, context, extend, targetType)) {
-                        found = true
-                    }
-                }
-                found
-            }
-
-            else -> false
+        val symbol = when (this) {
+            is CfirNamedFunction -> symbol
+            is CfirProperty -> symbol
+            else -> return false
         }
+        val signature = symbol.overrideSignatureKey()
+        var found = false
+        targetScope.processCallablesByName(symbol.name) { candidate ->
+            if (candidate.canShadowThis(this, signature, context, currentExtend, targetType)) {
+                found = true
+            }
+        }
+        return found
     }
 
     /**
@@ -480,14 +489,37 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
         targetType: ConeCangJieType,
     ): Boolean {
         if (!isBound) return false
-        if (unwrapSubstitutionOverrides().cfir === currentMember) return false
+        val original = unwrapSubstitutionOverrides()
+        if (original.cfir === currentMember) return false
 
         // 官方 RemoveMembersShouldNotInherit / IsInvisibleMember 会排除 private 成员。
-        if (cfir.status.visibility == Visibilities.Private) return false
-        if (isSyntheticPrimitiveBuiltinOperatorExcludedFromShadow(context)) return false
-        if (isCurrentExtendImplementationTarget(context, currentExtend, targetType)) return false
-        if (isInterfaceRequirementMember(context)) return false
+        if (original.cfir.status.visibility == Visibilities.Private) return false
+        if (original.isSyntheticPrimitiveBuiltinOperatorExcludedFromShadow(context)) return false
+        if (original.isCurrentExtendImplementationTarget(context, currentExtend, targetType)) return false
+        if (original.isInterfaceRequirementMember(context)) return false
+        if (!original.cfir.hasSameShadowMemberKind(currentMember)) {
+            // 官方 CheckSameNameInheritanceInfo 对 inherited-interface 的 cross-kind 成员
+            // 只报告 kind inconsistency；只有目标类型自身的不同种类成员才继续进入 shadow 分类。
+            if (context.ownerClassSymbol(original)?.cfir is CfirInterface) return false
+            return original.cfir.shadowMemberStaticStatus() == currentMember.shadowMemberStaticStatus()
+        }
         return overrideSignatureKey() == currentSignature
+    }
+
+    /**
+     * 官方同名继承检查在签名比较前先区分声明种类；函数与属性同名时即构成 shadow，
+     * 不要求二者能够形成普通 override 签名。
+     */
+    private fun CfirDeclaration.hasSameShadowMemberKind(other: CfirDeclaration): Boolean =
+        (this is CfirNamedFunction && other is CfirNamedFunction) ||
+            (this is CfirProperty && other is CfirProperty)
+
+    /** 返回参与 shadow 分类的成员 static 状态。 */
+    private fun CfirDeclaration.shadowMemberStaticStatus(): Boolean? = when (this) {
+        is CfirNamedFunction -> status.isStatic
+        is CfirProperty -> status.isStatic
+        is CfirFieldVariable -> status.isStatic
+        else -> null
     }
 
     /**
@@ -523,11 +555,9 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
         kind in primitiveEqualityShadowKinds && name in primitiveEqualityShadowNames
 
     /**
-     * 判断候选是否来自当前 extend 正在实现的接口。
-     *
-     * 当前 extend 的 super interface 是实现目标，不是“目标类型已有成员”；但如果
-     * 目标类型在排除当前 extend 后已经声明/继承了同一个接口，则该接口成员仍是
-     * 已有成员，必须保留为 shadow 来源。
+     * 当前 extend 接口闭包中的成员属于实现目标，不构成 shadow 来源；但若目标类型在
+     * 排除当前 extend 后已经通过声明继承或其他适用 extend 具备该接口，则该成员已经
+     * 是目标的有效成员，仍需参与 shadow 检查。
      */
     private fun org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol<*>.isCurrentExtendImplementationTarget(
         context: CheckerContext,
@@ -535,16 +565,35 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
         targetType: ConeCangJieType,
     ): Boolean {
         val ownerSymbol = context.ownerClassSymbol(this) ?: return false
-        if (ownerSymbol.cfir !is org.cangnova.cangjie.cfir.declarations.CfirInterface) return false
-        val ownerClassId = ownerSymbol.classId
-        if (!currentExtend.superTypeRefs.any { it.coneTypeOrNull?.classIdOrPrimitiveClassId == ownerClassId }) {
-            return false
-        }
-        return !targetType.hasExistingSuperInterface(ownerClassId, currentExtend, context, linkedSetOf())
+        if (ownerSymbol.cfir !is CfirInterface) return false
+        val currentInterfaceClosure = context.session.extendRuleQueryServiceOrNull
+            ?.inheritedInterfaceClosureClassIdsOf(currentExtend)
+            .orEmpty()
+        if (ownerSymbol.classId !in currentInterfaceClosure) return false
+        return !targetType.hasExistingSuperInterface(ownerSymbol.classId, currentExtend, context, linkedSetOf())
     }
 
     /**
-     * 在排除当前 extend 自己贡献的 edge 后，检查目标类型是否已经继承指定接口。
+     * 判断候选是否只是接口的抽象实现需求。
+     *
+     * 官方 `GetVisibleExtendMembersForExtend` 在合并 sibling extend 的接口成员后删除 abstract
+     * 项；它们用于实现义务检查，不是 extend shadow parent。
+     */
+    private fun org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol<*>.isInterfaceRequirementMember(
+        context: CheckerContext,
+    ): Boolean {
+        val owner = context.ownerClassSymbol(this)?.cfir
+        if (owner !is CfirInterface) return false
+        return when (val declaration = cfir) {
+            is CfirFunction -> declaration.body == null || declaration.status.isAbstract
+            is CfirProperty -> declaration.status.isAbstract ||
+                (declaration.getter?.body == null && declaration.setter?.body == null)
+            else -> declaration.status.isAbstract
+        }
+    }
+
+    /**
+     * 在排除当前 extend 自己贡献的 graph edge 后，检查目标类型是否已经具备指定接口。
      */
     private fun ConeCangJieType.hasExistingSuperInterface(
         interfaceClassId: ClassId,
@@ -561,24 +610,6 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
             if (supertype.hasExistingSuperInterface(interfaceClassId, excludingExtend, context, visited)) return true
         }
         return false
-    }
-
-    /**
-     * 判断目标符号是否只是接口需求成员。
-     *
-     * 接口抽象需求不构成 extend 成员对已有实现成员的遮蔽，因此 shadow 检查需要排除。
-     */
-    private fun org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol<*>.isInterfaceRequirementMember(
-        context: CheckerContext,
-    ): Boolean {
-        val owner = context.ownerClassSymbol(this)?.cfir
-        if (owner !is org.cangnova.cangjie.cfir.declarations.CfirInterface) return false
-        return when (val declaration = cfir) {
-            is CfirFunction -> declaration.body == null || declaration.status.isAbstract
-            is CfirProperty -> declaration.status.isAbstract ||
-                (declaration.getter?.body == null && declaration.setter?.body == null)
-            else -> declaration.status.isAbstract
-        }
     }
 
     /**

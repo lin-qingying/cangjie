@@ -115,6 +115,12 @@ class CfirExtendRuleQueryServiceImpl(
         indexStore.areExtendsInInheritRelation(firstDeclaration, secondDeclaration)
 
     /**
+     * 判断第一个 extend 的接口检查序列是否位于第二个 extend 之后。
+     */
+    override fun doesExtendInheritFrom(childDeclaration: Any, parentDeclaration: Any): Boolean =
+        indexStore.doesExtendInheritFrom(childDeclaration, parentDeclaration)
+
+    /**
      * 判断声明是否存在无法判定的 extend 检查序列。
      */
     override fun hasUndecidableExtendCheckSequence(declaration: Any): Boolean =

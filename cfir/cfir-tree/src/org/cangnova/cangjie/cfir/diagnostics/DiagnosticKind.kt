@@ -59,6 +59,11 @@ enum class DiagnosticKind {
     SupertypeSelfReference,
 
     /**
+     * typealias 展开图中发现递归引用。
+     */
+    RecursiveTypealiasExpansion,
+
+    /**
      * 重复父类型错误。
      */
     DuplicateSupertype,

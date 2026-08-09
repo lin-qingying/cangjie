@@ -29,9 +29,8 @@ import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityFileScope
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
 import org.cangnova.cangjie.cfir.resolve.providers.canAccessPackageInternalDeclaration
 import org.cangnova.cangjie.cfir.resolve.providers.canAccessPackageProtectedDeclaration
-import org.cangnova.cangjie.cfir.resolve.services.CfirResolvedImportTarget
+import org.cangnova.cangjie.cfir.resolve.services.isClassIdReachableByImports
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
-import org.cangnova.cangjie.cfir.session.importBindingStoreOrNull
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.session.typeAwareSupertypeProviderOrNull
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterLookupTag
@@ -336,22 +335,8 @@ interface ConeInferenceContext : TypeSystemInferenceExtensionContext, ConeTypeCo
         // 同包 → 可访问
         if (filePackage == declPackage) return true
 
-        // 检查 import 可见性
-        val bindings = session.importBindingStoreOrNull?.getBindings(file) ?: return true
-        for (binding in bindings.imports) {
-            for (target in binding.targets) {
-                when (target) {
-                    is CfirResolvedImportTarget.ClassLike -> {
-                        if (target.classId == lookupTag.classId) return true
-                    }
-                    is CfirResolvedImportTarget.Package -> {
-                        if (target.fqName == declPackage) return true
-                    }
-                    else -> {}
-                }
-            }
-        }
-        return false
+        // IMPORTS 尚未完成时延迟名字可达性判定；已有 binding 时统一计入显式与默认导入。
+        return file.isClassIdReachableByImports(session, lookupTag.classId) ?: true
     }
 
     // =========================================================================

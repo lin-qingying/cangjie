@@ -20,7 +20,7 @@ interface I2 {
 class C1 {}
 
 <!INTERFACE_MEMBER_MUST_BE_IMPLEMENTED!>e<!>xtend C1 <: I1 {
-    func <!EXTEND_MEMBER_CANNOT_SHADOW!>foo<!>(): Int64 {
+    func <!INHERIT_MEMBER_KIND_INCONSISTENT!>foo<!>(): Int64 {
         3
     }
 }

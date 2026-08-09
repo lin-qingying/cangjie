@@ -195,6 +195,8 @@ class CfirDeclDeserializer(
         val CONSTRUCTOR = Attribute.CONSTRUCTOR.ordinal
         /** enum constructor 标记在 AST AttributePack 中的 bit 下标。 */
         val ENUM_CONSTRUCTOR = Attribute.ENUM_CONSTRUCTOR.ordinal
+        /** 参数具有默认值的标记；非字面量默认表达式不会写入 ParamInfo.defaultVal。 */
+        val HAS_INITIAL = Attribute.HAS_INITIAL.ordinal
     }
 
     /** 测试 [decl] 的原始 AttributePack 中是否包含指定 bit。 */
@@ -1489,9 +1491,12 @@ class CfirDeclDeserializer(
         }
         val returnTypeRef = buildTypeRef(decl.type)
         val isNamed = info?.isNamedParam ?: false
-        val defaultValue = info?.defaultVal
-            ?.let(::decodeExprRef)
-            ?.let { buildLibraryDefaultValueMarker(returnTypeRef) }
+        val serializedDefaultValue = info?.defaultVal?.let(::decodeExprRef)
+        val defaultValue = if (testAttr(decl, AttrBit.HAS_INITIAL) || serializedDefaultValue != null) {
+            buildLibraryDefaultValueMarker(returnTypeRef)
+        } else {
+            null
+        }
         val cfirParam = CfirValueParameterImpl(
             source = null,
             isNamed = isNamed,
@@ -1518,7 +1523,8 @@ class CfirDeclDeserializer(
     }
 
     /**
-     * `.cjo` 的 ParamInfo.defaultVal 只在调用解析阶段需要恢复“该参数有默认值”这一事实。
+     * `.cjo` 的 `HAS_INITIAL` 属性是参数具有默认值的权威标记；`ParamInfo.defaultVal`
+     * 只保存工具生成或常量默认表达式，普通库默认表达式可能没有可加载的表达式索引。
      *
      * 官方 ASTLoader 会把 defaultVal 反序列化回 FuncParam.assignment；当前 CFIR 反序列化层尚未实现
      * flatbuffer 表达式到 CFIR 表达式的完整转换，因此这里构造一个带参数类型的占位表达式，保留调用匹配语义。
