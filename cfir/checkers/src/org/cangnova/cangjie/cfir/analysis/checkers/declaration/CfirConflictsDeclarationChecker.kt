@@ -165,7 +165,12 @@ object CfirConflictsDeclarationChecker : CfirBasicDeclarationChecker() {
         container: CfirDeclaration,
     ) {
         declarationConflictingSymbols.forEach { (conflictingDeclaration, symbols) ->
-            if (conflictingDeclaration.hasLaterFunctionConflictRepresentative(declarationConflictingSymbols)) {
+            // 同签名函数簇只由较晚的声明承载 CONFLICTING_OVERLOADS。但本声明若同时与非函数式
+            // 声明（如 let/prop/class）同名，官方仍会在本声明上单独报 sema_redefinition，
+            // 因此只有在不存在此类非函数式冲突时才整体跳过本声明。
+            val isOverloadClusterPredecessor =
+                conflictingDeclaration.hasLaterFunctionConflictRepresentative(declarationConflictingSymbols)
+            if (isOverloadClusterPredecessor && symbols.all { it.isFunctionLikeRedeclaration() }) {
                 return@forEach
             }
 
@@ -191,7 +196,12 @@ object CfirConflictsDeclarationChecker : CfirBasicDeclarationChecker() {
 
             val dispatcher = context.session.conflictDeclarationsDiagnosticDispatcher
                 ?: CfirPlatformConflictDeclarationsDiagnosticDispatcher.DEFAULT
-            val factory = dispatcher.getDiagnostic(conflictingDeclaration, symbols) ?: return@forEach
+            val factory = if (isOverloadClusterPredecessor) {
+                // 重载簇诊断已由较晚的同签名声明承载，本声明此处只剩与非函数式声明的同名冲突。
+                CfirErrors.REDECLARATION
+            } else {
+                dispatcher.getDiagnostic(conflictingDeclaration, symbols) ?: return@forEach
+            }
             val renderedNames = symbols.renderNames()
             val patternVariable = (conflictingDeclaration as? CfirCallableSymbol<*>)?.cfir as? CfirPatternVariable
             if (patternVariable != null) {

@@ -560,10 +560,35 @@ private fun CfirLiteralExpression.isCompatibleWith(expectedType: ConeCangJieType
     CfirLiteralKind.BOOLEAN -> expectedType is ConePrimitiveType && expectedType.kind == PrimitiveTypeKind.BOOLEAN
     CfirLiteralKind.INT -> expectedType is ConePrimitiveType && expectedType.kind != PrimitiveTypeKind.BOOLEAN && expectedType.kind != PrimitiveTypeKind.UNIT
     CfirLiteralKind.RUNE -> expectedType is ConePrimitiveType
-    CfirLiteralKind.STRING -> expectedType.classIdOrPrimitiveClassId?.shortClassName?.asString() == "String"
+    CfirLiteralKind.STRING ->
+        expectedType.classIdOrPrimitiveClassId?.shortClassName?.asString() == "String" ||
+            (isSingleCharacterStringLiteral() && expectedType.isCharacterLikePatternType())
     CfirLiteralKind.UNIT -> expectedType is ConePrimitiveType && expectedType.kind == PrimitiveTypeKind.UNIT
     else -> true
 }
+
+/**
+ * 判断字符串字面量是否恰好只含一个字符。
+ *
+ * 仓颉中 `'A'`、`"A"`、`'''A'''`、`"""A"""` 都是字符串字面量；只有**单字符**形式才能作为
+ * 字符类类型的 const pattern。
+ */
+private fun CfirLiteralExpression.isSingleCharacterStringLiteral(): Boolean {
+    val text = value as? String ?: return false
+    return text.isNotEmpty() && text.codePointCount(0, text.length) == 1
+}
+
+/**
+ * 判断类型是否可由单字符字符串字面量匹配。
+ *
+ * 官方 `cjc` 1.0.5 探针：`match (r: Rune) { case 'A' => ... }` 与
+ * `match (b: UInt8) { case 'A' => ... }` 均无诊断；同形态的 `Int64` 报
+ * `sema_mismatched_types`，多字符字面量 `'AB'` 对 `Rune` 同样报错。
+ * 因此仅 `Rune` 与 `UInt8`（字节）属于该集合，不可放宽到其他整数类型。
+ */
+private fun ConeCangJieType.isCharacterLikePatternType(): Boolean =
+    this is ConePrimitiveType &&
+        (kind == PrimitiveTypeKind.RUNE || kind == PrimitiveTypeKind.UINT8)
 
 /**
  * 判断类型是否具有 match const pattern 所需的内建相等比较。
