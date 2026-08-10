@@ -98,6 +98,15 @@ interface CaSession : CaLifetimeOwner,
 }
 
 /**
+ * The [CaSession] of the current analysis context.
+ */
+// Auto-generated bridge. DO NOT EDIT MANUALLY!
+
+context(session: CaSession)
+val useSiteSession: CaSession
+    get() = with(session) { useSiteSession }
+
+/**
  * 在当前会话中按 [pointer] 恢复单个 symbol。
  *
  * - 若指针所指对象在当前 session 不可见(如来自其他模块、声明已被移除)则返回 `null`;

@@ -1,9 +1,11 @@
 package org.cangnova.cangjie.analysis.api.components
 
+import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeOwner
 import org.cangnova.cangjie.analysis.api.symbols.CaClassLikeSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaValueParameterSymbol
 import org.cangnova.cangjie.analysis.api.types.CaType
+import org.cangnova.cangjie.psi.CjTypeReference
 
 /**
  * 类型构造与查询协议(从声明侧出发)。
@@ -27,3 +29,16 @@ interface CaTypeProvider : CaLifetimeOwner {
      */
     val CaValueParameterSymbol.varargArrayType: CaType?
 }
+
+
+
+/**
+ * Resolves the given [CjTypeReference] to its corresponding [CaType].
+ *
+ * This may raise an exception if the resolution ends up with an unexpected result.
+ */
+// Auto-generated bridge. DO NOT EDIT MANUALLY!
+
+context(session: CaSession)
+public val CjTypeReference.type: CaType
+    get() = with(session) { type }
