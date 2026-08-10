@@ -1264,16 +1264,6 @@
 "kind": "name-delta"
 },
 {
-"cls": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTPsiTestGenerated$Main$ModFilesMain061C$Mod1$Src",
-"test": "testDefault()",
-"file": "default.cj",
-"miss": {},
-"extra": {
-"UNRESOLVED_IMPORT": 1
-},
-"kind": "name-delta"
-},
-{
 "cls": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTTestGenerated$Linkage$PrivateLimit$PrivateDup02",
 "test": "testTestb()",
 "file": "testb.cj",
@@ -1907,16 +1897,6 @@
 "extra": {
 "RETURN_TYPE_MISMATCH": 1,
 "UNRESOLVED_REFERENCE": 1
-},
-"kind": "name-delta"
-},
-{
-"cls": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTTestGenerated$Main$ModFilesMain061C$Mod1$Src",
-"test": "testDefault()",
-"file": "default.cj",
-"miss": {},
-"extra": {
-"UNRESOLVED_IMPORT": 1
 },
 "kind": "name-delta"
 },
@@ -3535,16 +3515,6 @@
 },
 {
 "cls": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTPsiTestGenerated$ConstraintCheck",
-"test": "testConstraintCheckTest42n()",
-"file": "constraint_check_test4_2n.cj",
-"miss": {},
-"extra": {
-"GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT": 1
-},
-"kind": "name-delta"
-},
-{
-"cls": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTPsiTestGenerated$ConstraintCheck",
 "test": "testConstraintCheckTest52n()",
 "file": "constraint_check_test5_2n.cj",
 "miss": {
@@ -4747,16 +4717,6 @@
 },
 {
 "cls": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTPsiTestGenerated$Forin",
-"test": "testImportedForinrange()",
-"file": "imported_forinrange.cj",
-"miss": {},
-"extra": {
-"UNRESOLVED_IMPORT": 1
-},
-"kind": "name-delta"
-},
-{
-"cls": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTPsiTestGenerated$Forin",
 "test": "testForin2()",
 "file": "forin2.cj",
 "miss": {},
@@ -5166,16 +5126,6 @@
 "miss": {},
 "extra": {},
 "kind": "range/order-only"
-},
-{
-"cls": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTPsiTestGenerated$Incordec$Increment45$Src",
-"test": "testIncrement45()",
-"file": "increment_45.cj",
-"miss": {},
-"extra": {
-"UNRESOLVED_IMPORT": 1
-},
-"kind": "name-delta"
 },
 {
 "cls": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTPsiTestGenerated$Incordec",
@@ -7777,16 +7727,6 @@
 },
 {
 "cls": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTTestGenerated$ConstraintCheck",
-"test": "testConstraintCheckTest42n()",
-"file": "constraint_check_test4_2n.cj",
-"miss": {},
-"extra": {
-"GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT": 1
-},
-"kind": "name-delta"
-},
-{
-"cls": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTTestGenerated$ConstraintCheck",
 "test": "testConstraintCheckTest52n()",
 "file": "constraint_check_test5_2n.cj",
 "miss": {
@@ -9012,16 +8952,6 @@
 },
 {
 "cls": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTTestGenerated$Forin",
-"test": "testImportedForinrange()",
-"file": "imported_forinrange.cj",
-"miss": {},
-"extra": {
-"UNRESOLVED_IMPORT": 1
-},
-"kind": "name-delta"
-},
-{
-"cls": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTTestGenerated$Forin",
 "test": "testForin2()",
 "file": "forin2.cj",
 "miss": {},
@@ -9514,16 +9444,6 @@
 "miss": {},
 "extra": {},
 "kind": "range/order-only"
-},
-{
-"cls": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTTestGenerated$Incordec$Increment45$Src",
-"test": "testIncrement45()",
-"file": "increment_45.cj",
-"miss": {},
-"extra": {
-"UNRESOLVED_IMPORT": 1
-},
-"kind": "name-delta"
 },
 {
 "cls": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTTestGenerated$Incordec",

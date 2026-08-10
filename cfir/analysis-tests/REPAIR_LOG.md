@@ -3459,19 +3459,95 @@ Flagged while gathering evidence for the extend upper-bound recursion problem ty
 - verification command: `.\gradlew.bat :cfir:analysis-tests:test --continue --console=plain`（全量）
 - verification outcome: 全量 8415 例，范围内失败由 1064 降至 1060；`testOkRune00` 与 `testCharByte00` 两条路径共 4 例转绿，**新增回归 0**。
 
-## OPEN（部分取证）：多包目录 fixture 的 `import` 被误报 `UNRESOLVED_IMPORT`
+## 多包目录 fixture 用 `DEPENDENCE` 声明同级子包源（已修复并验证）
 
-- problem type: Resolve / Imports。目录型 fixture 中同级子目录声明的包，`import` 时被 CFIR 报 `UNRESOLVED_IMPORT`。
-- official Cangjie evidence（`cjc` 1.0.5，两步编译）：`llt/incordec/increment_45/src/` 下有 `increment_45.cj`（`internal import pkga.*`，使用 `i`）与 `pkga/pkga.cj`（`package pkga` + `public var i = -2`）。
-  - 步骤一 `cjc -p pkga --output-type=staticlib -o out/libpkga.a` → 无诊断，产出 `pkga.cjo`；
-  - 步骤二 `cjc --import-path out increment_45.cj -o out/main.exe` → **无诊断**。
-  - 结论：该多包布局官方合法，CFIR 的 `UNRESOLVED_IMPORT` 属多报。
-  - 注意：把两个文件当作**同一编译单元**一起传给 `cjc`（`cjc pkga/pkga.cj increment_45.cj`）会报 `package_multiple_package_declarations` + `package_search_error`，那是调用方式错误，不能作为语义证据。
-- **本族形态不一致，不可整体立族**（按「先验形态再立族」纪律）：
-  - `llt/incordec/increment_45/src/increment_45.cj`：被导入包 `pkga` **确实存在**于同级 `src/pkga/` → 真实多报，如上取证。
-  - `llt/forin/imported_forinrange.cj`：单文件，`import a.*` 并调用 `foo(3)`，但 `forin/` 目录下**不存在包 `a`** 的任何源码 → 该 import 本就无法解析，fixture 期望零诊断的前提存疑，需单独判定 fixture 是否残缺。
-  - `default.cj`（`Main$ModFilesMain061C$Src` / `$Mod1$Src`，4 例）：按 `main061`/`Main061` 检索**未能定位到 testData 路径**，尚未确认其布局。
-- owner 定位进度（未完成）：`AbstractCfirAnalysisTestCase.createTestSession()`（`cfir/analysis-tests/testFixtures/.../AbstractCfirAnalysisTestCase.kt:62-89`）只构造**单个** `CfirSourceModuleData`（`dependencies = emptyList()`），不注册任何额外包；但该 helper 服务于单元式测试，**尚未确认 LLT 生成测试（`AbstractCfirLightTreeLlTDiagnosticsTest` / `AbstractCfirPsiLlTDiagnosticsTest`）是否走这条路径**。因此「根因在测试基建的多包注册」目前只是**未经证实的推测**，不可据此动手。
-- 下一步：先确认 LLT 目录型 fixture 的 session 由哪个 base class 构建、子目录包如何注册，再决定 owner 是测试环境配置还是 import 解析本身。
+- problem type: Resolve / Imports（测试编译单元声明）。目录型 fixture 导入同级子目录中声明的包时被报 `UNRESOLVED_IMPORT`。
+- root cause: **fixture 未声明自身编译单元**，非 CFIR 实现缺陷。`LltCompanionSourceFilesProvider`（`cfir/analysis-tests/testFixtures/.../services/LltCompanionSourceFilesProvider.kt`）共四条 companion 收集路径：`DEPENDENCE` 指令、`LLT_COMPANION_SOURCES` 指令、`collectPackageCompanionFiles`（只找同目录 `pkg.cj` / `<name>.pkg.cj`）、`collectMultiFileDirectoryCompanions`（需 `// FILE:` 指令）。**没有一条会自动递归同级子目录**，因此子包源根本不进入编译单元。该文件注释明确写明 `DEPENDENCE` 的存在正是为了避免「静默改变测试编译单元」，所以自动递归收集与既有设计相悖，正确做法是由 fixture 显式声明。
+- official Cangjie evidence（`cjc` 1.0.5，两步编译）：
+  - `increment_45`：`cjc -p pkga --output-type=staticlib` 产出 `pkga.cjo` 无诊断；`cjc --import-path out increment_45.cj` → **无诊断**。
+  - `mod_files_main_06_1_c/mod1`：`cjc --module-name mod1 -p mod1/src/p1 --output-type=staticlib` 产出 `mod1.p1.cjo`（仅 unused-variable 警告）；`cjc --module-name mod1 --import-path out mod1/src/default.cj` → **无任何 `sema_*` 诊断**，只有 `ld.lld: undefined symbol` 链接错误（因未传静态库）。链接失败不属诊断测试范围，语义层 import 已正确解析。
+  - 反证：把子包与主文件当作**同一编译单元**传给 `cjc` 会报 `package_multiple_package_declarations` + `package_search_error`——那是调用方式错误，不可作为语义证据。
+- 结构化定位（非按诊断名聚类）：扫描 `testData/llt` 全部目录，找出「导入了同级子目录所声明的包、且没有 `DEPENDENCE` / `LLT_COMPANION_SOURCES` / `// FILE:` 声明」的 fixture，共 **3 个**：`incordec/increment_45/src/increment_45.cj`、`main/mod_files_main_06_1_c/mod1/src/default.cj`、`operator_overload/err_module/err_undefined.cj`（第三个本就通过，未在失败集内，未改动）。
+- CFIR owner files changed: 无（实现无需修改）。
+- fixture correction: 为两个 fixture 各加一行 `// DEPENDENCE:` —— `increment_45.cj` 加 `pkga/pkga.cj`，`mod1/src/default.cj` 加 `p1/a.cj`。这是**补全 fixture 的输入声明**（框架为此专设的机制），不是修改诊断期望；两者期望仍为零诊断，且已由上述 `cjc` 证据支持。
+- repair principle: 用框架既有的 `DEPENDENCE` 机制显式声明多包 fixture 的编译单元，而不是让 companion provider 自动递归子目录（后者会静默改变大量 fixture 的编译单元，与该 provider 的既定设计相反）。
+- 未处理项：`main/mod_files_main_06_1_c/src/default.cj`（2 例，仍失败）同时 `import mod1.p1.*` 与 `mod1.default.*`，而 `mod1/src/default.cj` 自身含 `main()`。若用 `DEPENDENCE` 把它拉进同一编译单元会出现**两个 `main()`**，属于以一个失败换另一个失败。该 fixture 需要 `// MODULE:` 多模块结构（参照 `llt/record/struct_1.cj` 的写法），不是加一行指令能解决，另立条目。
+- verification command: 先 `.\gradlew.bat :cfir:analysis-tests:test --continue --tests '*Incordec$Increment45*'` 与 `--tests '*ModFilesMain061C*'`，后全量 `.\gradlew.bat :cfir:analysis-tests:test --continue`
+- verification outcome: `Increment45$Src` 与 `ModFilesMain061C$Mod1$Src` 两条路径共 4 例转绿；全量 8415 例，范围内失败由 1060 降至 1054，**新增回归 0**。
+- **归因更正**：同批 diff 显示 `Forin.testImportedForinrange()` 两条路径也由失败转为通过，但该 fixture **本次未被修改**（`git diff` 内容为空，仅行尾差异），其转绿**不可归因于本次改动**。该用例的包 `a` 由同目录 `imported_forinrange.lib.cj` 提供，而现有四条 companion 收集路径均不显式处理 `.lib.cj`；其在两次全量之间状态翻转，怀疑与 provider 的 `ancestorAggregateFilesCache` 目录级缓存或用例执行顺序有关，**存在 flaky 嫌疑**。后续复核：连续两次定向重跑 `*LLTTestGenerated$Forin`，`testImportedForinrange` **两次均通过**，套件失败数稳定为 6，说明当前状态稳定、并非持续抖动；但它确实在相邻两次全量之间由失败翻转为通过，翻转原因未查明。另已确认 `LltCompanionSourceFilesProvider` 的四条收集路径**均不处理 `.lib.cj`**（`isPackageCompanionFile` 只认 `pkg.cj` / `*.pkg.cj`），因此该 fixture 取得包 `a` 的实际机制仍未定位。因此本条目只认领 4 例，该 2 例不计入。
+
+
+## 无效上界不抑制类型实参约束检查：补齐 `constraint_check_test4_2n` 缺失期望（已修复并验证）
+
+- problem type: Diagnostics（fixture 缺失期望）。泛型上界本身非法时，官方**仍然**对显式类型实参做约束检查。
+- root cause: 测试数据缺失一条期望。`constraint_check_test4_2n.cj` 只标注了 `UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE`，漏标了调用点 `foo<Bool>()` 上的 `GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT`；CFIR 的输出本来就与官方一致。
+- official Cangjie evidence（`cjc` 1.0.5，去标记后编译）：
+  - `constraint_check_test4_2n.cj` → **两条**诊断：`sema_upper_bound_must_be_class_or_interface`（L5 C10，`T`）与 `sema_generic_type_argument_not_match_constraint`（L10 C9-10，note `'Bool' is not a subtype of 'Int32'`）。cjc 窄锚在 `Bool` 首字符，按项目 range policy 展宽为完整 token `Bool`，与 CFIR 实际输出一致。
+- **重要反证（推翻了「无效上界应抑制后续约束检查」的假设）**：同批取证的 `solveTypeArgs/f_bounded_1.cj`（`func f<Y, Z>(a: Y) where Y <: Z, Z <: I<Y>`）经 cjc 编译**只有** `sema_upper_bound_must_be_class_or_interface` 一条，没有约束不匹配诊断。两个 fixture 方向相反，说明官方**不存在**「上界非法即抑制约束检查」的统一规则：
+  - `test4_2n` 的上界是具体类型 `Int32`，显式实参 `Bool` 与之比较有确定结论 → 报；
+  - `f_bounded_1` 的上界是类型参数 `Z`，且实参需推断 → 不报。
+  若按抑制假设动手，会把 `test4_2n` 这条**官方确实报告**的诊断误删。故本轮只做 fixture 修正，不动实现。
+- CFIR owner files changed: 无（实现正确）。
+- fixture correction: `testData/llt/constraint_check/constraint_check_test4_2n.cj` 第 10 行加 `foo<<!GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT!>Bool<!>>()`。
+- 同族其余 fixture 已核，形态互不相同、**不并入本条**：`f_bounded_1.cj`（CFIR 真多报，见上）、`assumption3_test.cj`（递归 F-bounded 约束 `C<X> where X <: C<C<C<C<Int32>>>>`）、`solve1.cj`（`A<T> where T <: C1` 多层继承求解）、`Generics$GenericMember10/main.cj`（未展开）。
+- verification command: 先 `.\gradlew.bat :cfir:analysis-tests:test --continue --tests '*ConstraintCheck'`，后全量 `.\gradlew.bat :cfir:analysis-tests:test --continue`
+- verification outcome: `testConstraintCheckTest42n` 两条路径转绿；全量 8415 例，范围内失败降至 1052，**新增回归 0**。
+
+## OPEN（已取证、需决策）：泛型推断候选冲突时 CFIR 完全不报错
+
+- problem type: Type Inference。同一类型参数被推出互相冲突的候选（如 `chooseGeneric<T>(first: T, second: T)` 调用 `chooseGeneric(1, true)`）时，CFIR **一条诊断都不产出**，静默接受。
+- official Cangjie evidence（`cjc` 1.0.5，探针 inf1）：
+  ```
+  func chooseGeneric<T>(first: T, second: T): T { return first }
+  main(): Int64 { let _ = chooseGeneric(1, true); let _ = chooseGeneric(1, 1.0); return 0 }
+  ```
+  → `sema_unable_to_infer_generic_func` ×2，消息 `unable to infer generic argument of this function`，位置 L6 C13-26 / L7 C13-26，即**被调函数标识符 `chooseGeneric` 的完整 token**（与项目 range policy 一致）。`Errors=2`。
+- CFIR 实际输出（`diagnostics2/inference/inferencePlaceholder.cj`，LightTree 路径）：四处调用**全部无诊断** ——
+  `let _ = chooseGeneric(1, true)`、`builderLike({ => 1 }, { => true })`、`chooseGeneric(1, 1.0)`、`chooseGeneric(true, 1)` 均原样通过。属**漏报**，非诊断名不符。
+- 机制现状：`UNABLE_TO_INFER_GENERIC_FUNC` 与 `NEW_INFERENCE_ERROR` 在本仓库**都已定义且都在使用**（后者由 `coneDiagnosticToCfirDiagnostic.kt:495/758/2173` 三处产出）；语料中 `UNABLE_TO_INFER_GENERIC_FUNC` 亦有多报与漏报记录，说明推断失败上报机制**存在但触发条件过窄**，未覆盖「同一类型参数得到互斥候选」这一情形。
+- **待决策的命名问题**：这 6 个 fixture 期望的是 `NEW_INFERENCE_ERROR`，而官方对该构造报的是 `sema_unable_to_infer_generic_func`（对应仓库的 `UNABLE_TO_INFER_GENERIC_FUNC`）。修复前必须先定：本构造应上报哪一个项目诊断？若定为 `UNABLE_TO_INFER_GENERIC_FUNC`，则这 6 个 fixture 的期望名同时需要修正。该问题不能由实现方单方面决定，属仓库诊断面归属决策。
+- 未实施原因：这是类型推断的**功能缺口**（需要在约束求解失败时判定「无单一 T 满足全部约束」并上报），不是条件放宽；且叠加上述命名决策未定。贸然实现可能同时选错诊断名与错误的触发时机。
+- fixtures covered（待决策后验证）：`diagnostics2/inference/inferencePlaceholder.cj`(×6 处)、`builderInferenceMultiLambdaRestriction.cj`(×6)、`intersectionCollapsePlaceholder.cj`(×2)、`newInferenceErrorConflict.cj`(×2)、`genericReturnTypeInferencePlaceholder.cj`(×1)、`diagnostics/type-mismatch/genericArgumentConstraintConflict.cj`(×1)，PSI 与 LightTree 两条路径共 12 例。
 - 尝试计数：本 problem type 尚未使用修复尝试（0/2）。
-- fixtures covered（待判定后验证）：`llt/incordec/increment_45/src/increment_45.cj`（2 例，已确认真实多报）；`llt/forin/imported_forinrange.cj`（2 例，fixture 前提存疑）；`default.cj`（4 例，路径待定位）。
+
+## OPEN（已完整取证、seam 已定位）：跨包 extend 的成员导出未考虑所实现接口的可见性
+
+- problem type: Visibility / Resolve。外包 `extend` 通过不可见接口引入的成员，在使用方包中仍被解析成功；官方报「不是该类的成员」。CFIR 漏报 `NOT_MEMBER_OF`。
+- official Cangjie evidence（`cjc` 1.0.5，真实三包构建）：把 `extend_member_export05/main02.cj` 的 `// FILE:` 段落还原为真实目录（`a/testa.cj`、`b/c/testb1.cj`、`b/a/main02.cj`），依次 `cjc -p a`、`cjc --import-path out -p b/c`、`cjc --import-path out -p b/a`，最后一步输出：
+  ```
+  error: 'f1' is not a member of class 'Foo<Int64>'   b/a/main02.cj:9:18
+  error: 'f2' is not a member of class 'Foo<Int64>'   b/a/main02.cj:10:18
+  error: 'f3' is not a member of class 'Foo<Int64>'   b/a/main02.cj:11:18
+  ```
+  `f0()` **无错误**。范围锚在成员标识符（col 18-20），与 fixture 的 `<!NOT_MEMBER_OF!>f1<!>` 一致。
+- **判别式（含反例，勿采用朴素规则）**：
+  - `f0`：`extend<T> Foo<T> <: I0` 位于包 `a`，`I0` 是 `private`，`Foo` 也在包 `a`；使用点在包 `b.a` → **可访问**。
+  - `f1/f2/f3`：`extend<T> Foo<T> <: I1`（`private`）/ `<: I2`（`internal`）位于包 `b.c`，`Foo` 在包 `a`；使用点 `b.a` → **不可访问**。
+  - 两者的接口都对使用点不可见，但结论相反。因此「所实现接口在使用点可见」**不能**单独作为判据，否则会误杀 `f0`。真正的区分是：extend 与**被扩展类型是否同包**——同包 extend 的成员属于该类型自身表面，照常导出；**跨包** extend 才要求其所实现的接口对使用点可见。
+- CFIR seam（已定位，未改）：`cfir/providers/src/org/cangnova/cangjie/cfir/scopes/impl/CfirExtendMemberScope.kt`
+  - 第 186 行 `if (!extend.isMemberExportedToUseSite(declaration)) continue` 是唯一的导出门；
+  - 第 258-265 行 `isMemberExportedToUseSite` **只看成员自身可见性**：`if (member.status.visibility != Visibilities.Private) return true`。本族的 `f1/f2/f3` 都声明为 `public func`，直接放行，从未考察所实现接口。
+  - 需要补充的信息：被扩展类型所在包（判定是否跨包 extend）、以及 extend 所实现接口在使用点的可见性。该类已持有 `useSitePackage` 与 `extendProvider.getPackageFqName(this)`，缺的是「被扩展类型的包」与「接口可见性」两项查询。
+- 未实施原因：这是可见性/导出面的新增判定（非放宽条件），且必须同时满足上述反例；本轮预算已用于三包 cjc 取证，不足以完成实现 + 全量验证（当前全量 13–21 分钟）。
+- fixtures covered（待修复后验证）：`Extend/extend_export/interface_extend/extend_member_export05/main02.cj`、`main03.cj`、`main07.cj`，以及同族两个 `main.cj`（`Extend$ExtendExport$InterfaceExtend$*`），PSI 与 LightTree 两条路径共 10 例。
+- **第一次尝试及其失败（已回退，尝试计数 1/2）**：实现为「跨包 extend 若无任何 use-site 可见接口，则其成员整体不导出」（per-extend 全有全无），并以 `接口 public 或与 use-site 同包` 作为可见性判据。定向重跑 `*ExtendMemberExport05*` 结果 **22 例中 18 例失败**（基线 14），即净变差：`main04/05/06/08/09/10` 被新引入失败，且 `main02` 的 `f1` 仍未修好。
+- **由该失败测得的真实规则（下轮据此实施）**：对照 `main02`（use-site 包 `b.a`）与 `main04`（use-site 包 `b.c.d`，是 extend 所在包 `b.c` 的**子包**）：
+  - `main04` 的 extend 实现 `internal I2`，声明 `f1..f4`；期望 `f0` ok、`f1` **error**、`f2` **ok**、`f3` **error**。
+  - 若按 per-extend 全有全无，`f1..f4` 会同进同出，无法解释 `f2` 单独 ok。
+  - 唯一自洽解释：**导出是按成员判定的——只有「实现了某个 use-site 可见接口的成员」才导出**。`I2` 只声明 `f2`，故仅 `f2` 经 `I2` 导出；`f1/f3/f4` 是 extend 的额外成员，不随之导出。
+  - 该规则同时解释 `main02`：extend 实现 `private I1`，从 `b.a` 看 `I1` 不可见 → 无成员导出 → `f1/f2/f3` 全报错（与 fixture 完全一致）。
+  - 另外可见性判据也需修正：`internal` 在仓颉中对**声明包及其子包**可见（`main04` 从 `b.c.d` 能看见 `b.c` 的 `internal I2`），不能简化为「同包或 public」。
+- **第二次尝试与关键反转（尝试计数 2/2，代码已回退）**：按「逐成员 + 仓颉可见性（`internal` 含子包）」实现后，定向重跑仍为 22 例中 18 例失败，失败形态与第一次**完全相同**。追查发现两点：
+  1. 我此前把 `main04.cj` 里的 `// error` / `// ok` **源码注释**当成了测试期望。该 fixture 的期望行**没有任何 `<!...!>` 标记**，即它期望「无诊断」。以注释推导规则本身就是错的。
+  2. 随后对 `main04` 做了真实三包 cjc 验证（`a` → `b.c` → `b.c.d`，use-site 为 `b.c` 的子包）：
+     ```
+     error: 'f1' is not a member of class 'Foo<Int64>'
+     error: 'f3' is not a member of class 'Foo<Int64>'
+     ```
+     即 **官方确实报 `f1`/`f3` 不是成员，`f2` 可访问** —— 与我第二次实现的输出**完全一致**。
+- **结论反转**：第二次实现在语义上很可能是**正确**的；`main04.cj`（以及同批 `main05` 等）缺少 `<!NOT_MEMBER_OF!>` 标记，是 **fixture 期望有误**，其 `// error` 注释反而描述了官方真实行为。因此「18 例失败」这个度量是拿实现去对齐**错误的期望**，不能作为否定该实现的依据。
+- **仍未解决的真实缺口**：`main02.cj` 的 `f1` 在两次实现下均未被标记（cjc 确认它应报错）；`f2`/`f3` 已能正确标记。怀疑 `private` 跨包接口 `I1` 的符号解析返回 null，落入实现里 `?: return@any true` 的保守分支而被放行，但未证实。
+- **升级请求（2/2 尝试已用尽，按技能规则停止自行重试）**：需要决定
+  (a) 是否认定 `extend_member_export05` 中 `main04`/`main05` 等 fixture 缺标记、应按 cjc 补齐期望；若是，则第二次实现可直接重新应用并配合 fixture 修正一起验证；
+  (b) 还是先单独查清 `main02.f1` 的符号解析问题再整体实施。
+  建议 (a) 优先：官方证据已覆盖 main02（`b.a`）与 main04（`b.c.d`）两种 use-site，规则自洽。

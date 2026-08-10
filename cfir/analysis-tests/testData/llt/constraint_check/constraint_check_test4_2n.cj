@@ -7,5 +7,5 @@ func foo<<!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>T<!>>() where T <: Int32 {
 }
 
 main(): Int64 {
-    foo<Bool>()
+    foo<<!GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT!>Bool<!>>()
 }

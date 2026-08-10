@@ -55,7 +55,7 @@ import b.c.*
 
 main() {
     Foo<Int64>().f0() // ok
-    Foo<Int64>().f1() // error
-    Foo<Int64>().f2() // error
+    Foo<Int64>().<!NOT_MEMBER_OF!>f1<!>() // error
+    Foo<Int64>().<!NOT_MEMBER_OF!>f2<!>() // error
     Foo<Int64>().f3() // ok
 }
