@@ -20,12 +20,12 @@ class <!CLASSIFIER_REDECLARATION!>abc<!> {
 
     let <!REDECLARATION!>a<!> = 1
 
-    <!CONFLICTING_OVERLOADS!>func a()<!> {
+    func <!CONFLICTING_OVERLOADS!>a<!>() {
     }
 }
 
 func <!REDECLARATION!>abc<!>() {}
-<!CONFLICTING_OVERLOADS!>func abc()<!> {}
+func <!CONFLICTING_OVERLOADS!>abc<!>() {}
 
 let <!REDECLARATION!>abc<!> = 1
 

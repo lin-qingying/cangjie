@@ -3199,17 +3199,279 @@ Flagged while gathering evidence for the extend upper-bound recursion problem ty
 - verification command: `.\gradlew.bat -I cfir/analysis-tests/build/full-log-init.gradle.kts :cfir:analysis-tests:test --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTTestGenerated$Overload' --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTPsiTestGenerated$Overload' --console=plain`
 - verification outcome: BUILD SUCCESSFUL；两条路径的 `Overload` 套件各 14 个用例，`failures=0 errors=0`（修复前该族 16 个用例失败）。
 
-## OPEN（已取证、未修复）：继承而来的未初始化 `let` 字段在子类构造器中被误报不可变
+## 继承字段的初始化状态纳入子类构造器跟踪（已修复并验证）
 
-- problem type: Flow Analysis / Diagnostics。子类构造器给父类**没有初始化器**的 `let` 字段赋值时，CFIR 误报 `CANNOT_ASSIGN_TO_IMMUTABLE`。
-- official Cangjie evidence:
-  - `let_in_init10-1.cj`（去标记后）经 `cjc` 1.0.5 编译，`sema_cannot_assign_to_immutable` 只出现在第 26、30 行（`class D <: E`，父类 `E.b` 有初始化器），`class C <: A` 第 10、14 行对父类未初始化 `A.b` 的赋值不报错。
-  - 探针 `open class A { public let b: Int32; public init() { b = 1 } }` + `class C <: A { public init() { super(); this.b = 0 } }` → `sema_cannot_assign_to_immutable`。说明父字段一旦被其所属类初始化，子类构造器再写入即非法。
-  - 探针 `open class A { public let b: Int32 }` + `class C <: A { public init() { this.b = 0; this.b = 1 } }` → 只在第二次赋值报 `sema_cannot_assign_to_immutable`。说明官方在**子类构造器内也跟踪继承字段的初始化状态**，首次赋值合法、重复赋值非法。
-  - `external/cangjie_compiler/src/Sema/LegalityOfUsage/InitializationChecker.cpp:165` `NotAssignableVariable`：`!isVar && (TestAnyAttr(GLOBAL, INITIALIZED, ENUM_CONSTRUCTOR) || ((IN_STRUCT|IN_CLASSLIKE) && !inInitFunction) || ...)`——判定只看「是否已初始化」与「是否在构造器内」，**不区分字段属于当前类还是父类**。
-- CFIR 责任方（已定位，未改）：
-  - `cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirAssignmentLegalityChecker.kt:372` `isImmutableFieldAssignmentForbidden` 对无初始化器字段回落到 `CfirInitializationAssignmentClassifier.classifyAssignment`。
-  - `cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirInitializationCheckers.kt:387` `analyzeFunctionBody` 构造器路径调用 `owner.instanceFieldInfos(context)`（`includeInherited` 默认 false），继承字段不在跟踪集合内 → 分类为 `NOT_TRACKED` → 被判为不可写。
-  - 同文件 `instanceFieldInfos(context, includeInherited = true)`（第 307 行实例成员初始化器路径已在用）与 `inheritedInstanceFieldInfos`（第 2670 行）已具备所需能力，缺的是构造器路径接入，以及「继承字段的预初始化集合」如何计算（父类自身是否确实完成初始化）。
-- 未修复原因：该改动会同时影响 `USED_BEFORE_INITIALIZATION`、`CLASS_UNINITIALIZED_FIELD` 两个仍在失败的族，需要与它们一起设计并验证，不宜在未覆盖这两族时单独改动。
-- fixtures covered（待修复后验证）：`class/let_in_init/let_in_init10-1.cj`、`let_in_init10-2.cj`、`let_in_init11-1.cj`、`let_in_init12-1.cj`、`Extend/GenericParamDeclCallInMemberFunc/generics_00038.cj`、`function/mut_function_09.cj`、`generics/generic_call_static_impl02.cj`、`03`、`04`、`InitializationCheck/variable_assignment_terminated_04_2.cj`。
+- problem type: Flow Analysis / Diagnostics。子类构造器给父类字段赋值/读取时，`CANNOT_ASSIGN_TO_IMMUTABLE` 与 `USED_BEFORE_INITIALIZATION` 的判定。
+- root cause: `analyzeFunctionBody` 的构造器路径调用 `owner.instanceFieldInfos(context)`（`includeInherited` 默认 false），继承字段根本不在跟踪集合内，被分类为 `NOT_TRACKED`，进而一律判为不可写 → 误报 `CANNOT_ASSIGN_TO_IMMUTABLE`。
+- official Cangjie evidence（`cjc` 1.0.5）：
+  - `let_in_init10-1.cj` 去标记后编译：`sema_cannot_assign_to_immutable` 只出现在 `class D <: E`（父类 `E.b` **有**初始化器）的两处赋值；`class C <: A`（父类 `A.b` **无**初始化器）对 `A.b` 的赋值**不报错**。
+  - 探针 `open class A { public let b: Int32; public init() { b = 1 } }` + `class C <: A { init() { super(); this.b = 0 } }` → 报 `sema_cannot_assign_to_immutable`：父字段一旦被其所属类初始化，子类再写入即非法。
+  - 探针 `open class A { public let b: Int32 }` + `class C <: A { init() { this.b = 0; this.b = 1 } }` → 只在**第二次**赋值报错：官方在子类构造器内确实跟踪继承字段的初始化状态，首次赋值合法。
+- Kotlin counterpart files consulted: 无需新增 —— 修复复用本仓库既有能力（`instanceFieldInfos(includeInherited = true)` 的文档已引用官方 `InitializationChecker::GetNonFuncDeclsInSuperClass`）。
+- CFIR owner files changed: `cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirInitializationCheckers.kt`
+  - 构造器路径改用 `instanceFieldInfos(context, includeInherited = true)`；
+  - 新增 `inheritedPreInitializedFieldSymbols`，把「已由所属父类完成初始化」的继承字段并入 `preInitializedFields`。
+- 「父类是否已初始化自己的字段」的判据（关键）：与同文件 `reportFieldsLeftUninitializedByDefaultConstructor` 保持同一判据——父类只要存在**带函数体的实例构造器**，即视为由它自己负责初始化全部实例字段（此时父类不会报 `CLASS_UNINITIALIZED_FIELD`）；此外带初始化器的字段与主构造成员属性同样计入。父类既无初始化器又无构造器体的字段才是真正未初始化，允许子类构造器首次赋值。
+- repair principle: 让继承字段与本类字段走同一套「跟踪集合 + 预初始化集合」机制，并复用仓库既有的「父类是否自行初始化」判据，从而同时修正写入侧（误报不可变）与读取侧（误报未初始化），而不是对某个 fixture 放宽可变性判定。
+- fixtures covered: `llt/class/let_in_init/let_in_init10-1.cj`、`let_in_init10-2.cj`、`let_in_init11-1.cj`、`let_in_init12-1.cj`（PSI 与 LightTree 两条路径，共 8 例）。回归对照：`llt/class/class_initialization7.cj`、`llt/Users/UsersTest2/super.cj` 覆盖读取侧。
+- 修复过程（两次尝试）：第一版只把「带初始化器 + 主构造成员属性」计入预初始化集合，导致父类在**构造器体内**初始化的字段被当成未初始化，`super.a` / `this.x` 的**读取**被误报 `USED_BEFORE_INITIALIZATION`（`class_initialization7.cj`、`super.cj` 两条路径共 4 例回归）。第二版引入上述「父类有构造器体即自行初始化」判据后回归清零。
+- verification command: `.\gradlew.bat :cfir:analysis-tests:test --continue --console=plain`（全量）
+- verification outcome: 全量 8415 例，范围内失败由基线 1088 降至 1078；`let_in_init10-1/10-2/11-1/12-1` 两条路径共 8 例转绿，**新增回归 0**。基线取自 `DIFF_CORPUS_2026-08-10.json`。
+
+## 重复父接口诊断锚点：声明级报在声明头，实例化级报在使用点完整类型引用
+
+- problem type: Diagnostics（诊断范围/锚点）。`SUPER_TYPES_DUPLICATE` 在声明级重复时范围过窄（只有名字标识符），在实例化后才显现的重复上 fixture 把锚点错放在声明处。
+- root cause:
+  - `CfirSupertypesChecker.checkInstantiatedDuplicateSuperInterfaces` 用 `classLikeNameOffsetsDiagnosticSource()` 取范围，只覆盖名字标识符，产出 `interface <!D!>II<!><T>`；testData 中 21 个使用该诊断的文件无一例外把范围写成完整声明头 `<!D!>interface II<T><!>`。
+  - `interface_duplicated_02/04/05` 与 `extend_duplicate_interfaces6/10` 的 fixture 锚点/宽度与同族其它 fixture（`interface_duplicated_01`、`_07`）自相矛盾。
+- official Cangjie evidence（`cjc` 1.0.5 `--diagnostic-format=json`，取 MainHint Range）:
+  - 声明级重复锚在声明起点、宽度 1 列：`interface_duplicated_06` → `10:1-10:2`、`14:1-14:2`、`16:1-16:2`（分别是 `class A<T>`、`class C`、`interface I2` 所在行首）；`interface_duplicated_12` → `6:1-6:2`；`interface_generic3` → `8:1-8:2`；`interface_generic7` → `10:1`、`14:1`、`16:1`、`26:1`、`38:1`、`42:1`。
+  - 实例化后才显现的重复锚在**使用点**，不在声明：`interface_duplicated_01` → `9:13-9:14`（`var b = A<Int64>()` 的 `A`）；`interface_duplicated_02` → `9:12-9:13`（`var b: A<Int64>`）；`interface_duplicated_04` → `15:13-15:14`；`extend_duplicate_interfaces6` → `5:9-5:10`（`B<String>()` 的 `B`）。
+  - 官方诊断名统一是 `sema_inherit_duplicate_interface`（extend 场景另有 `sema_extend_duplicate_interface`）。
+  - 由此得到统一规则：`cjc` 把主位置压成「目标语法元素起点的 1 个字符」；本项目 Diagnostic Range Policy 要求展宽为该元素的完整范围——声明 → 从 `class`/`interface` 关键字到名称与类型参数列表结束；使用点 → 完整类型引用（含类型实参）。
+- Kotlin counterpart files consulted: 本次是范围策略问题，按 skill 的 Diagnostic Range Policy 直接裁定（policy 自身即证据）；CFIR 侧已有对应实现 `classLikeDeclarationHeaderDiagnosticSource()`，其文档注释即描述「从声明起点到声明名（含类型参数）结束」，无需新建策略。
+- CFIR owner files changed: `cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirSupertypesChecker.kt`（`checkInstantiatedDuplicateSuperInterfaces` 改用 `classLikeDeclarationHeaderDiagnosticSource()`）。
+- repair principle: 声明级重复父接口的诊断源统一走已有的「声明头」source 计算，而不是名字 token；这样同一个 source helper 同时覆盖 PSI 与 LightTree 两条路径上的全部 class/interface/struct/enum 声明，而不是逐 fixture 调整偏移。
+- fixtures covered: `interface_duplicated_06.cj`、`interface_duplicated_12.cj`、`interface_generic3.cj`、`interface_generic4.cj`、`interface_generic5.cj`、`interface_generic6.cj`、`interface_generic7.cj`（实现修复）；`interface_duplicated_02.cj`、`interface_duplicated_04.cj`、`interface_duplicated_05.cj`、`extend_duplicate_interfaces6.cj`、`extend_duplicate_interfaces10.cj`（fixture 修正）。均覆盖 PSI 与 LightTree 两条路径。
+- fixture correction:
+  - `interface_duplicated_02/04/05`：删除声明处 `<!SUPER_TYPES_DUPLICATE!>class A<Q><!>` 标记，改标在 `cjc` 实际报告的使用点 `A<Int64>` / `A<Rune>`。
+  - `extend_duplicate_interfaces6/10`：使用点标记由裸标识符 `B` 展宽为完整类型引用 `B<String>` / `B<String, String>`，与同族 `interface_duplicated_01`、`_07` 的写法一致。
+- verification command: `.\gradlew.bat -I cfir/analysis-tests/build/full-log-init.gradle.kts :cfir:analysis-tests:test --tests '...LLTTestGenerated$ExtendsImplementsInterfaceDuplicated' --tests '...LLTPsiTestGenerated$ExtendsImplementsInterfaceDuplicated' --tests '...LLTTestGenerated$Interface$GenericInterfaceInheritance' --tests '...LLTPsiTestGenerated$Interface$GenericInterfaceInheritance' --tests '...LLTTestGenerated$Extend' --tests '...LLTPsiTestGenerated$Extend' --console=plain`
+- verification outcome: 938 个用例、106 个失败（全部为该族之外的既有失败）。12 个目标 fixture 的 24 个用例（PSI + LightTree）全部由失败转为通过；与修复前的失败集合逐条比对，**新增失败为 0**。
+- 残留（同族但不同子问题，未处理）：`generic_interface_import1/2/case.cj` 中 `III5/III10/III16/III18` 期望同时出现「声明头」与「重复父类型引用」两个标记，而 `cjc` 对同构造（`interface_generic7` 的 `III5<T> <: II<T> & II<T>`）只报一个声明级诊断；跨包 import 变体是否真的多报一个需要单独用多文件 `cjc` 探针确认。`extend_duplicate_interfaces1/9`、`interface_duplicated_08/13` 属既有失败，本次未触及。
+
+## 泛型实例化后才显现的重复父接口应报在实例化处，而非声明处
+
+- problem type: Diagnostics（诊断报告位置 + range）。`SUPER_TYPES_DUPLICATE` 在「父接口仅在特定类型实参下才重复」时的归属位置。
+- root cause: 测试数据错误。CFIR 实现本来就与官方一致——把该诊断报在**实例化处**并按项目 range policy 展宽为完整类型 token；`interface_duplicated_08.cj` 仍保留旧的**声明处**标记 `<!SUPER_TYPES_DUPLICATE!>class A<Q><!>`，属于同族 02/04/05 已修正后遗漏的最后一个文件。
+- official Cangjie evidence（`cjc` 1.0.5 `--diagnostic-format=json`，本会话 `external/cangjie_compiler` 目录为空、不可用，故仅以 cjc 取证）：
+  - 探针 p2/p4/p5/p6：`class A<Q> <: I0<Q> & I0<Int64> {}`（以及其 interface 对应形态）在**没有冲突实例化**时**完全不报错**——声明本身合法，`A<String>` 这类非冲突实例化同样不报错。
+  - 探针 p1：加上 `var b: A<Int64>` 后报 `sema_inherit_duplicate_interface`，位置在**实例化处** `A`（L6 C12-13），而非声明行。
+  - 去标记后的 `interface_duplicated_08.cj` 经 cjc 编译：`Errors=2`，均为 `sema_inherit_duplicate_interface`，分别位于 L25 C12（`var a: A<Int64>`）与 L26 C13（`var b = A<Int64>()`）；第 18 行 `class A<Q>` 声明处**无任何诊断**。文件内 I2/I3/I4/I5 的实例化亦无诊断。
+  - 对照探针 p3：`class A <: I0 & I0 {}`（非泛型、字面重复）才报在**声明处**（L3 C1）。两类子情形的归属位置不同，08 属于前一类。
+- Kotlin counterpart files consulted: 无需 —— 本次为 fixture 期望与官方诊断位置不符，CFIR 检查器结构未改动。
+- CFIR owner files changed: 无（实现无需修改）。
+- repair principle: 按官方「重复是否需要类型实参代入才显现」划分归属位置——需代入才显现的报在实例化处、字面重复的报在声明处；据此把整族 fixture 一次性对齐，而不是按单个用例改实现输出。
+- fixtures covered: `llt/extends_implements_interface_duplicated/interface_duplicated_02.cj`、`_04.cj`、`_05.cj`（先前已修正）、`_08.cj`（本次补齐），PSI 与 LightTree 两条路径。
+- fixture correction: `_08.cj` 删除第 18 行声明处标记，改为在第 25/26 行两处实例化标记 `<!SUPER_TYPES_DUPLICATE!>A<Int64><!>`（range 按项目 policy 展宽至完整 `A<Int64>` token，官方窄锚为首字符 `A`）。
+- verification command: `.\gradlew.bat :cfir:analysis-tests:test --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTTestGenerated$ExtendsImplementsInterfaceDuplicated' --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTPsiTestGenerated$ExtendsImplementsInterfaceDuplicated' --console=plain`
+- verification outcome: 两条路径各 12 个用例，failures 由 2 降为 1（合计 4 → 2）；`testInterfaceDuplicated08` 两条路径均通过，剩余唯一失败为 `_13`（见下方 OPEN 条目）。
+
+## 继承环中的 interface 父类型不再多报 `INTERFACE_CANNOT_INHERIT_CLASS`（已修复并验证）
+
+- problem type: Diagnostics / Inheritance。interface 处于继承环中时，CFIR 对因环而解析失败的父类型额外报 `INTERFACE_CANNOT_INHERIT_CLASS`，官方只报环诊断。
+- root cause: `checkInterfaceSupertypes` 绕开了项目自己的共享语义边界 `DeclaredSupertypeClassification`。class 路径（`checkConcreteSupertypeRules`）用 `classifyDeclaredSupertype` 分类父类型，interface 路径却用私有 helper `toResolvedSupertypeForInterfaceLegality()` 只看「完整类型树是否含 ConeErrorType」。继承环必然在类型树里留下 ConeErrorType，于是环的 broken edge 被误判成「父类型不是 interface」。
+- official Cangjie evidence（`cjc` 1.0.5；本会话 `external/cangjie_compiler` 目录为空不可用，故仅以 cjc 取证）：
+  - 探针 p7（`I1<T> <: I3<T>` / `I2<K> <: I1<K>` / `I3<Q> <: I2<Q> & I2<Int32>` 构成环）：只报 `sema_inheritance_cycle` 与 `sema_inherit_duplicate_interface`，**没有** `sema_interface_inherit_non_interface`。
+  - 探针 p9（`interface I2 <: I1<Undefined>`，类型实参未解析）：**报** `sema_interface_inherit_non_interface`。证明「类型实参未解析使整个继承类型无效」这条既有判定是官方正确的，不能一并放宽。
+  - 探针 p10（`interface I2 <: C1`，真正继承 class）：报 `sema_interface_inherit_non_interface`。真阳性路径须保留。
+  - 结论：判别式恰好是「是否为继承环」，而非「类型树是否含错误类型」。
+- Kotlin counterpart files consulted: 无需新增 —— 修复方式是让 interface 路径复用本仓库既有的 `DeclaredSupertypeClassification` 边界，与 class 路径对齐；该边界的文档已写明 `LoopError` 的 broken edge 只供 NON_INHERITABLE 与递归构造调用等独立检查使用。
+- CFIR owner files changed: `cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirSupertypesChecker.kt`（`checkInterfaceSupertypes` 增加 `LoopError` 短路）。
+- repair principle: 让 interface 父类型合法性检查与 class 路径共用同一个 `DeclaredSupertypeClassification` 分类边界，环的 broken edge 由 `INHERITANCE_CYCLE` 独占，从而一次性覆盖「任何处于继承环中的 interface」，而不是针对某个 fixture 放宽错误类型判定。
+- fixtures covered: `llt/Extend/extend_inheritance_circle3.cj`（PSI + LightTree，已转绿）；`llt/extends_implements_interface_duplicated/interface_duplicated_13.cj` 的多报部分已消除（该文件仍因下方 OPEN 的漏报项失败）；`llt/Extend/extend_inheritance_circle4.cj`、`llt/class/class_inheritance_cycle_01.cj`、`llt/class/class1.cj`、`llt/class/declared_supertype_recoverable_nominal.cj` 为同族回归对照，均未受影响。
+- verification command: `.\gradlew.bat :cfir:analysis-tests:test --continue --tests '...$ExtendsImplementsInterfaceDuplicated' --tests '...$Extend' --tests '...$Class' --tests '...$Interface'`（PSI 与 LightTree 各一份）
+- verification outcome: 重跑 218 个测试类，失败由 190 降至 188；`testExtendInheritanceCircle3()` 两条路径均转绿，**新增回归 0**。基线取自同日全量运行快照 `cfir/analysis-tests/FAILURE_INVENTORY_2026-08-10.txt`。
+
+## OPEN（已取证、未修复）：继承环恢复态下漏报声明处 `SUPER_TYPES_DUPLICATE`
+
+- problem type: Diagnostics / Inheritance。存在继承环时，官方会在**声明**里对「代入后重复的父接口」补报一条 `sema_inherit_duplicate_interface`，CFIR 未复刻。
+- official Cangjie evidence（`cjc` 1.0.5）：
+  - 探针 p5（`interface I3<Q> <: I0<Q> & I0<Int32>`，无环）与 p8（`I1`/`I2`/`I3` 链，无环）：官方**均不报**重复。
+  - 探针 p7（同样结构但构成继承环）：官方在 `I3` 声明的第二个 `I2<Int32>` 上补报 `sema_inherit_duplicate_interface`。
+  - 结论：该诊断只在**继承环恢复态**下出现，属官方错误恢复的次生产物，而非独立语言规则。
+- CFIR 当前输出（多报项已于上一条修复后消除，PSI 与 LightTree 一致）：
+  `<!INHERITANCE_CYCLE!>interface I1<T><!> <: I3<T> {}` … `var i3: <!SUPER_TYPES_DUPLICATE!>I3<Int32><!>`。
+  即环诊断 ✅、实例化处重复 ✅、**仅剩**声明处 L8 重复漏报 ❌。
+- 未修复原因：复刻一条只在环恢复态下才出现的次生诊断，是否符合本项目 IDE 诊断取向需要单独决策；在环已被 `INHERITANCE_CYCLE` 明确标记的前提下，再叠加一条声明级重复诊断可能属于噪声。建议与用户确认后再定。
+- fixtures covered（待决策后验证）：`llt/extends_implements_interface_duplicated/interface_duplicated_13.cj`（PSI 与 LightTree 两条路径）。
+
+## BLOCKED（已取证、非前端职责）：`UNREACHABLE_PATTERN` 缺失的 22 例属 CHIR 阶段诊断
+
+- problem type: Flow Analysis / Diagnostics。11 个 fixture（×2 条路径 = 22 例失败）期望 `UNREACHABLE_PATTERN`，CFIR 不产出。
+- root cause: 官方把「不可达分支」拆成**两个不同阶段的诊断**，本仓库 fixture 用同一个项目名 `UNREACHABLE_PATTERN` 承载了两者，而 CFIR 只实现（且只应实现）其中的前端那一个。
+- official Cangjie evidence（`cjc` 1.0.5 `--diagnostic-format=json`）：
+  - 探针 p11（`func f(e: E)`，被匹配值**未知**；`case _` 在前、`case A` 在后）→ `sema_unreachable_pattern`（L6 C14，warning）。属**模式包含关系**，前端 Sema 阶段。
+  - 去标记的 `llt/enum/enum12.cj` → `chir_unreachable_pattern` ×2（L21 C14、L30 C14，warning）。
+  - 去标记的 `llt/Extend/autobox_match1.cj` → `chir_unreachable_pattern` ×3（L15/L16/L17 C14）。
+  - 二者判定依据不同：`sema_` 靠前序模式覆盖后序模式；`chir_` 靠**被匹配值的具体 enum 构造器已被静态确定**（如 `var i = a<Int64>(1)` 后 `case aNil` 永不成立）。`enum12` 中 `a(x)` 与 `aNil` 是互斥构造器，**不存在**包含关系，因此前端 usefulness 算法在语义上不可能、也不应该判定其不可达。
+- CFIR 现状（正确，无需改）：`cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirMatchUnreachablePatternChecker.kt` 文档注释明确写「对齐 C++ DiagKind::sema_unreachable_pattern」，实现复用 Maranget usefulness 模型判断前序分支覆盖，与官方 `sema_` 语义一致。
+- 为何不在前端补：`chir_unreachable_pattern` 需要对被匹配值做常量/构造器传播，官方在 CHIR 阶段（常量传播与 DCE 之后）产出——同批输出里的 `chir_dce_unused_variable` 也印证该阶段归属。在前端 checker 里凑出这一判定，等于把 CHIR 的数据流分析挪进 Sema checker，属技能明令禁止的「近似实现 / 错置 owner」。本仓库对应模块为可选后端 `:chir:cfir2chir` / `:chir:chir-tree`，当前不在前端管线内。
+- 建议决策（待用户）：三选一——(a) 在 CHIR 侧实现常量传播后补该诊断；(b) 为两类不可达引入不同项目诊断名，并把这 11 个 fixture 标为后端阶段用例、暂排除于前端 LLT；(c) 维持现状并接受这 22 例长期失败。
+- fixtures covered（待决策）：`llt/Extend/autobox_match1.cj`、`autobox_match2.cj`、`llt/enum/enum12.cj`、`enum14.cj`、`llt/type/type06.cj`、`llt/as_expr/as_expr_00.cj`、`defaultParameter3.cj`、`unbox_autobox_enumPattern_01.cj`、`unbox_box_tuplePattern.cj`、`unbox_enumPattern.cj`、`unbox_optionbox.cj`（PSI 与 LightTree 两条路径）。
+
+## 结论修正（已取证）：「多报 `INVALID_BINARY_OPERATOR`」不是单一问题族，至少分解为三种根因
+
+- 背景：`DIFF_CORPUS_2026-08-10.json` 统计显示 `INVALID_BINARY_OPERATOR` 是最大单点多报（198 处出现，涉及 24 个用例 / 12 个 fixture ×2 路径）。据 `inc_dec_0.cj` 的取证曾假设根因统一为「操作数已出错时外层二元操作符未抑制级联」。**该假设经逐 fixture 核对不成立**，特此更正。
+- CFIR 现状核查：级联抑制其实**已经实现**于诊断映射层的全部三处出口，均带 `containsErrorType()` 短路——
+  `cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/diagnostics/coneDiagnosticToCfirDiagnostic.kt:1303`（候选存在但实参不适用）、`:1674`（operator 歧义级联）、`:1972`（operator 解析失败）。
+  另有同一约定的既有实现：`CfirExpressionsResolveTransformer.kt:3447`（`&&`/`||`）与 `:4180-4189`（下标，注释明确写「避免派生出重复的下标诊断」）。因此「加一个 error 类型短路」并不是本族的修复点。
+- 实际分解（均有 `cjc` 1.0.5 取证）：
+  1. **类型推断**（`binary_clear.cj`）：`func id<T>(x: T) { x }` + `let v = id(1) + id(2) + Int32(3)`。探针 p13 显示官方**完全不报错**（仅 `chir_dce_unused_variable` 后端警告）——说明期望类型应沿二元操作符链回传，使 `id(1)`/`id(2)` 推断出 `T = Int32`。CFIR 把它们急切定为 `Int64`，再对 `Int64 + Int32` 报 `INVALID_BINARY_OPERATOR`。根因是**期望类型未传播进泛型调用实参**，与级联抑制无关。
+  2. **诊断锚点/未受保护路径**（`err_undefined_symbol.cj`）：`retur * A()[[1]]`，左操作数未解析。官方只报 `sema_undeclared_identifier`。CFIR 除正确的 `UNRESOLVED_REFERENCE` 外，还在**右操作数 `A()[[1]]`** 上多报 `INVALID_BINARY_OPERATOR`——注意锚点不在 `*` 运算符 token 上，说明它并非来自上述三个已带短路的出口，而是另一条未受保护的路径，需单独定位。
+  3. **待定**（`range_0.cj`）：差异位于文件靠后位置，未在本轮截取范围内，需单独取证。
+  4. `inc_dec_0.cj` 本身仍属真实级联问题，但成因是 `x++`（`x: Bool`）**未被赋予错误类型**而是沿用了 `Bool`，导致 `Bool + Int64` 合法地走到「无匹配操作符」分支。即缺的是**错误类型的产生**，而非抑制。
+- 结论：该 198 处多报**不可用单一框架改动收敛**。后续应按上述 1/2/4 三条分别立族，各自取证与验证；其中 (1) 属 Type Inference，(2) 属 Diagnostics 归属，(4) 属错误类型产生。
+- 未做改动：本轮未修改任何实现文件；仅更正问题分类，避免下一轮据错误假设动工。
+
+## `UNUSED_IMPORT` 范围统一为 import item（已修复并验证）
+
+- problem type: Diagnostics（诊断范围）。`UNUSED_IMPORT` 的标记范围应覆盖 **import item**，不含 `import` 关键字。
+- root cause: 测试数据错误。`unused017.cj` 把标记写成 `<!UNUSED_IMPORT!>import a.X<!>`（含关键字），与同目录 30+ 个同族 fixture 的约定相反。
+- 证据（本仓库诊断范围约定，属 Diagnostic Range Policy 范畴，无需 cjc 反证）：
+  - 同族压倒性约定为 item 级、不含关键字：`<!UNUSED_IMPORT!>std.collection.ArrayList<!>`（8 处）、`<!UNUSED_IMPORT!>std.collection.*<!>`（4 处）、`<!UNUSED_IMPORT!>std.collection.ArrayList as b<!>`（4 处）等。
+  - 多 item 形式只能是 item 级：`import std.collection.{<!UNUSED_IMPORT!>ArrayList<!>, <!UNUSED_IMPORT!>Map<!>}`——单个 item 未使用时无法用整条 directive 作范围，故 item 级是唯一自洽规则，单 item 形式必须同规则。
+  - `unused005/006/007/008/009/010.cj` 与 `unused017.cj` 同在 `unusedImport001/` 目录，约定应一致。
+- CFIR 现状（正确，无需改）：`cfir/raw-cfir/psi2cfir/src/org/cangnova/cangjie/cfir/builder/PsiRawCfirBuilder.kt:3932` `buildImports` 用 `source = item.toCjPsiSourceElement()`，即 item 级 source；`CfirImportsChecker.kt:205/215` 直接 `reportOn(import.source, ...)`。二者与 item 级约定一致。
+- CFIR owner files changed: 无（实现无需修改）。
+- repair principle: 以「多 item import 只能按 item 标注」推出单一自洽规则，据此对齐越界的 fixture，而不是为个别文件放宽实现的 source 选择。
+- fixtures covered: `llt/unusedImport/unusedImport001/unused017/unused017.cj`（PSI + LightTree）。同族其余 UNUSED_IMPORT fixture 经核对已符合 item 级约定，无需改动。
+- fixture correction: `unused017.cj` 两处 `<!UNUSED_IMPORT!>import a.X<!>` / `import a.I` 改为 `import <!UNUSED_IMPORT!>a.X<!>` / `import <!UNUSED_IMPORT!>a.I<!>`。
+- verification command: `.\gradlew.bat :cfir:analysis-tests:test --continue --tests '*CfirAnalysisLLTTestGenerated$UnusedImport*' --tests '*CfirAnalysisLLTPsiTestGenerated$UnusedImport*'`
+- verification outcome: UnusedImport 族失败由 6 降至 4，`unused017` 两条路径均转绿，无新增回归。剩余 `unused019.cj`（见下）与 `unused015.cj`（name-delta，另族）。
+
+## OPEN（已定位、未修复）：`::` 限定包路径的 import item source 被截断为首段
+
+- problem type: Diagnostics（诊断范围）/ PSI 结构。
+- 现象：`import org1::a.A` 中 CFIR 把 `UNUSED_IMPORT` 锚在 `org1`（`import <!UNUSED_IMPORT!>org1<!>::a.A`），按上条确立的 item 级约定应为完整 item `org1::a.A`。
+- 责任方：**不在** raw builder。`PsiRawCfirBuilder.buildImports` 取的是 `item.toCjPsiSourceElement()`，结构上已是 item 级；说明 `:psi` 模块对 `::` 限定包路径解析出的 import item PSI 元素本身只覆盖首段 `org1`。owner 属 `:psi` 解析层，与本条 checker/builder 无关。
+- 未修复原因：全仓库仅 `unused019.cj` 一个 fixture 使用 `::` 限定 import，样本不足以验证「族」级修复；且 owner 在 parser 层，需按 PSI 结构单独取证与回归。
+- fixtures covered（待修复后验证）：`llt/unusedImport/unusedImport001/unused019/unused019.cj`（PSI 与 LightTree 两条路径）。注意该 fixture 的期望范围同样越界（写成含 `import` 关键字），修 parser 后需一并按 item 级改为 `import <!UNUSED_IMPORT!>org1::a.A<!>`。
+
+## OPEN（已精确隔离、修复未成功）：继承而来的成员调用中 `This` 绑定到声明类而非 receiver 实际类型
+
+- problem type: Type Inference / Resolve。`This` 返回类型在**继承成员**调用点被绑定为成员声明所在类，导致链式调用后续成员误报 `NOT_MEMBER_OF`。
+- 精确隔离证据（两个 fixture 除调用顺序外**逐字节相同**）：
+  - `llt/class/ThisType/class_dynamic_binding_thistype_ok_1.cj`：`obj.foo2().foo1()`，`foo2` 声明在 receiver 自身类 `C2` 上 → **通过**。
+  - `llt/class/ThisType/class_dynamic_binding_thistype_ok_2.cj`：`obj.foo1().foo2()`，`foo1` **继承自父类 `C1`** → **失败**，`obj.foo1()` 结果类型退化为 `C1`，`.foo2()` 报 `NOT_MEMBER_OF`。
+  - 结论：判别式是「被调成员是否声明于 receiver 自身类」，与是否泛型、是否显式标注 `This` 均无关。
+- official Cangjie evidence（`cjc` 1.0.5）：`class_infer_thistype_ok_1.cj` 与 `class_generic_infer_thistype_ok_1.cj` 原样编译**均无任何诊断**（clean compile），证明 CFIR 的 `NOT_MEMBER_OF` 属多报。
+- 排除项（重要，避免下一轮重复走弯路）：
+  - **不是隐式推断缺失**。`class_infer_thistype_ok_1.cj` 中显式标注的 `public func foo4(): This` 同样失败，说明 `commonThisReturnTypeOrNull`（`CfirDeclarationsResolveTransformer.kt:1262`）的推断路径不是本问题所在。
+  - **不是 `This` 机制整体缺失**。ThisType 套件 33 例中 26 例通过，含 `ok_1/3/4/6`、`testClassInferThistypeOk2` 等，替换机制 `Candidate.replaceThisTypeWithDispatchReceiver`（`Candidate.kt:764`）在多数场景有效。
+  - **不是 explicit receiver 类型取错**。已试改 `thisTypeBindingReceiverType()` 优先返回 `callInfo.explicitReceiver?.coneTypeOrNull`，ThisType 套件失败数**纹丝不动**（仍 7 例），该改动已回退。说明 `explicitReceiver` 的 coneType 在继承成员场景下同样已是声明类，或该分支根本未被走到。
+- 已排除（第二轮静态核实，勿重走）：
+  - **不是 `Synthetic.FakeFunction` origin 跳过分支**。`Candidate.substitutedReturnType`（`Candidate.kt:753-757`）确实会在 origin 为 `Synthetic.FakeFunction` 时跳过 `replaceThisTypeWithDispatchReceiver`，但继承成员并不使用该 origin：本仓库的 fake override 由 `originalForSubstitutionOverride` / `baseForIntersectionOverride` 标记（`cfir/cfir-tree/src/org/cangnova/cangjie/cfir/ClassMembers.kt:105-127`），而 `Synthetic.FakeFunction` 仅由 `CfirBuiltinSymbolProvider`、`CandidateFactory:492/513`、`CfirSyntheticCallGenerator:239/304` 产出（builtin 与合成调用）。上一轮记录的该假设**证伪**。
+  - **不是 dispatch receiver 表达式取错**。`dispatchReceiverExpression()`（`Candidate.kt:632`）直接返回 `dispatchReceiver?.expression`，即调用点的 `obj` 表达式本身。
+- 当前剩余最可能方向（未证实）：`isThisType` 是 `ConeClassLikeType` 上的**普通字段**（`ConeClassLikeType.kt:93`），任何重建该类型而未透传该字段的路径都会静默丢标记——`approximateThisTypeForDeclaration`（同文件 133-136 行）即以 `ConeClassLikeType(lookupTag, typeArguments, attributes, isInterface)` 重建并**刻意丢弃**该标记。继承成员经 substitution override 时 `substitutor.substituteOrSelf(declared)` 是否同样丢标记，需要运行期证据确认（静态追踪未定位到具体 substitutor 实现）。若属实，框架级修复应是让类型重建路径统一透传 `isThisType`，而非在调用点补救。
+- 同套件非同族提示：`class_generic_infer_thistype_ok_3.cj` 的实际症状是 `let b: Sub = g(a)` 处多报 `UNRESOLVED_REFERENCE`（非 `NOT_MEMBER_OF`），与上述 4 个 fixture **症状不同**，立族前需单独确认；`class_thistype_invalid5/7.cj` 亦未产出可比对的诊断差异，可能属非断言型失败。
+- 尝试计数：该 problem type 已用 1 次修复尝试（explicit receiver 方案，已回退），按技能规则仅剩 1 次，故本轮未再动代码。
+- fixtures covered（待修复后验证）：`class_dynamic_binding_thistype_ok_2.cj`、`class_infer_thistype_ok_1.cj`、`class_generic_dynamic_binding_thistype_ok_2.cj`、`class_generic_infer_thistype_ok_1.cj`、`class_generic_infer_thistype_ok_3.cj`（PSI 与 LightTree 两条路径，共 10 例）；另有 `class_thistype_invalid5/7.cj` 属同套件但方向相反（漏报），需单独判定。
+
+## `CONFLICTING_OVERLOADS` 范围对齐为标识符（fixture 修正，已验证生效）
+
+- problem type: Diagnostics（诊断范围）。`CONFLICTING_OVERLOADS` 应锚在**函数标识符**上，而非 `func xxx()` 整个片段。
+- root cause: 测试数据错误。`diagnostics/redeclaration/simple.cj` 与 `diagnostics2/redeclaration/simple.cj` 把范围写成 `<!CONFLICTING_OVERLOADS!>func abc()<!>`。
+- official Cangjie evidence（`cjc` 1.0.5，去标记后编译 `simple.cj`）：`sema_overload_conflicts` 三处范围分别为 L7 C6-8（`ab`）、L22 C14-15（`a`）、L28 C6-9（`abc`），**均只覆盖标识符本身**。与本项目 Diagnostic Range Policy 的示例（`func abc` 的范围是整个 `abc`）一致，CFIR 现有输出正确。
+- CFIR owner files changed: 无（实现正确）。
+- repair principle: 按官方诊断范围与项目 range policy 共同确认的「标识符即完整 token」修正两份 fixture，而非迁就 fixture 去放宽实现的 source 选择。
+- fixtures covered: `testData/diagnostics/redeclaration/simple.cj`（3 处）、`testData/diagnostics2/redeclaration/simple.cj`（2 处；该副本的 `ab` 一处原本已正确）。
+- verification command: `.\gradlew.bat :cfir:analysis-tests:test --continue --tests '*Redeclaration*'`
+- verification outcome: 6 个套件（Diagnostics / Diagnostics2 / WithoutAliasExpansion × PSI、LightTree）的差异中，**`CONFLICTING_OVERLOADS` 相关不符已全部消失**；这 6 个用例仍失败，剩余差异只剩下方 OPEN 条目所述的 `REDECLARATION` 漏报。
+
+## 函数与非函数同名冲突时，函数一侧补报 `REDECLARATION`（已修复并验证）
+
+- problem type: Diagnostics（诊断选择）。同一名字既被函数又被非函数（`let`/`prop`/`class`）声明时，官方对**两侧都报** `sema_redefinition`；CFIR 此前只报非函数一侧。
+- root cause: `hasLaterFunctionConflictRepresentative`（`CfirConflictsDeclarationChecker.kt:256`）的抑制范围过宽。该抑制原意是「同签名函数重载簇只由较晚的声明承载 `CONFLICTING_OVERLOADS`，较早的不再单独报」；但它对命中的声明**整体 `return@forEach`**，于是同一声明与非函数式声明的同名冲突也被一并丢弃 —— `func a()`(L19) 因存在同签名的 `func a()`(L22) 被整体跳过，连它与 `let a`(L21) 的冲突都不再上报。
+- official Cangjie evidence（`cjc` 1.0.5，`diagnostics/redeclaration/simple.cj` 去标记后编译，`Errors=13`）：
+  - `sema_redefinition` 出现在 L9 C7（`class abc`）、L12 C7（`class abc`）、**L19 C6（`func a` 的 `a`）**、L21 C9（`let a`）、**L27 C6（`func abc` 的 `abc`）**、L31 C5（`let abc`）、L33 C6 与 C10（`let (abc, abc)`）。函数一侧确实单独上报。
+  - `sema_overload_conflicts` 只出现在真正的同签名重复处：L7 C6-8（第二个 `func ab`）、L22 C14-15（第二个 `func a`）、L28 C6-9（第二个 `func abc`）。
+  - 即官方按**配对关系**判定：`func a` 撞 `let a` → redefinition；第二个 `func a()` 撞第一个 → overload conflict。二者互不吞并。
+- Kotlin counterpart files consulted: 无需新增 —— 分歧点在本仓库自有的重载簇抑制逻辑，非 FIR 结构差异。
+- CFIR owner files changed: `cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirConflictsDeclarationChecker.kt`（`reportConflicts`）。
+  - 抑制条件收窄为「命中重载簇抑制**且**冲突集合全部为函数式声明」才整体跳过；
+  - 命中抑制但仍存在非函数式冲突时，不跳过并直接选用 `REDECLARATION`（重载簇诊断已由较晚的同签名声明承载）。
+- repair principle: 把「重载簇代表选择」与「函数/非函数同名冲突」两类判定解耦，使前者的抑制不再吞掉后者应有的诊断，从而覆盖所有「函数与非函数同名」场景，而非针对某个 fixture 放行。
+- fixtures covered: `testData/diagnostics/redeclaration/simple.cj`、`testData/diagnostics2/redeclaration/simple.cj`（Diagnostics / Diagnostics2 / WithoutAliasExpansion × PSI、LightTree 共 6 例）。`llt/Exception/err_scope_01.cj` 经全量核对**不属本族**（其 `REDECLARATION` 漏报未被本修复覆盖，仍失败，需另行取证）。
+- verification command: 先 `.\gradlew.bat :cfir:analysis-tests:test --continue --tests '*Redeclaration*'`，后全量 `.\gradlew.bat :cfir:analysis-tests:test --continue`
+- verification outcome: Redeclaration 套件 12 例**全部通过**（修复前 6 例失败）；全量 8415 例，范围内失败由 1078 降至 1072，**新增回归 0**。
+
+
+## 父类经 extend 获得的成员计入子类的接口实现义务（已修复并验证）
+
+- problem type: Inheritance / Resolve。子类实现接口时，父类通过 `extend` 获得的成员应算作已实现；CFIR 此前多报 `ABSTRACT_MEMBER_NOT_IMPLEMENTED`。
+- root cause: `CfirNotImplementedOverrideChecker.createOwnMemberScope` 使用 `CfirClassMemberScopeKind.DECLARATION_SITE` 构造成员 scope，该模式**完全排除 extend 成员**。原注释「extend 是外部扩展，不应影响本体的抽象成员实现检查」只对「extend 挂在类自身」成立，对「extend 挂在父类型」过宽：父类型经 extend 获得的成员本应随继承进入子类成员集合。
+- official Cangjie evidence（`cjc` 1.0.5）：
+  - 探针 q2：`interface I1 { func foo(): Unit }` + `open class A {}` + `extend A { public func foo(): Unit {} }` + `class B <: A & I1 {}` → **零诊断**。父类经 extend 获得的成员**可**满足子类接口义务。
+  - 探针 q1：`class C <: I1 {}` + `extend C { public func foo(): Unit {} }`（extend 挂在类自身）→ **报** `sema_class_need_abstract_modifier_or_func_need_impl`，note 为 `unimplemented interface function foo`。类自身的 extend **不能**解除自己的义务。
+  - 四个 fixture `implement_by_super_extend02/03/04/06.cj` 原样编译**全部零诊断**。
+  - 判别式：extend 挂在**自身**不计入，挂在**父类型**按正常继承计入。
+- Kotlin counterpart files consulted: 无需新增 —— 所需语义已由本仓库既有的 `CfirClassMemberScopeKind.BODY_LOOKUP` 表达，其文档明确对齐官方 `LookUpImpl::ProcessStructDeclBody`。
+- CFIR owner files changed: `cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirNotImplementedOverrideChecker.kt`（`createOwnMemberScope` 改用 `BODY_LOOKUP`，并统一 class/struct 两个分支的 scope 构造）。
+- 为何 `BODY_LOOKUP` 恰好正确（三条同时满足，见 `CfirClassUseSiteMemberScope.kt`）：
+  - 第 260 行 `extendScope` 仅在 `USE_SITE` 下构造 → 本体自身的 extend 成员不可见（满足 q1）；
+  - 第 1147 行 `parentScopeKind()` 把 `BODY_LOOKUP` 映射为父级 `USE_SITE` → 父类型经 extend 获得的成员可见（满足 q2）；
+  - 第 1035 行 `directParentTypesOf` 对 `BODY_LOOKUP` 仍取源码声明的 `superTypeRefs` → extend 引入的父接口不构成本体义务（保持原有正确行为）。
+- repair principle: 选用已对齐官方查找语义的既有 scope 模式，让「自身 extend / 父类型 extend / extend 引入的父接口」三者各归其位，而不是在检查器内对某类 extend 成员做特例放行。
+- fixtures covered: `llt/generics/override_super_extend/implement_by_super_extend02.cj`、`03`、`04`、`06`（PSI 与 LightTree 两条路径，共 8 例）。同套件 `implement_by_super_extend07.cj`（漏报 + `NEED_MEMBER_IMPLEMENTATION` 多报）与 `override_by_super_extend01/05.cj`（漏报 `EXTEND_FUNCTION_CANNOT_OVERRIDDEN`）**不属本族**，修复前后均失败，需另行取证。
+- verification command: 先 `.\gradlew.bat :cfir:analysis-tests:test --continue --tests '*Generics$OverrideSuperExtend*'`，后全量 `.\gradlew.bat :cfir:analysis-tests:test --continue`
+- verification outcome: OverrideSuperExtend 套件失败由 14 降至 6（全部剩余项在基线即失败且诊断签名不同）；全量 8415 例，范围内失败由 1072 降至 1064，**新增回归 0**。反向用例（`class_impl_interface_abstract_func2/12.cj`、`interface_implement_invalid_2.cj`、`class_no_override_modifier_invalid_6/7.cj`、`class15.cj`、`interface_implement_4.cj` 等期望该诊断的 fixture）全部保持通过。
+
+
+## OPEN（已取证、owner 已定位、未修复）：父类 extend 成员与接口默认实现冲突时漏报 `EXTEND_FUNCTION_CANNOT_OVERRIDDEN`
+
+- problem type: Inheritance / Override。类同时继承「父类经 extend 获得的成员」与「带默认实现的接口成员」时，官方报冲突；CFIR 完全不报。
+- official Cangjie evidence（`cjc` 1.0.5，去标记后编译）：
+  - `override_by_super_extend01.cj` → `sema_cannot_override`，消息 `cannot override function 'foo'`，位置 L19 C1-27（`class B<T> <: A<T> & I1 {}` 整条声明），note：`member function 'foo' in 'A''s extension conflict with that in interface 'I1'`。
+  - `override_by_super_extend05.cj` → 同诊断，L21 C1-44。
+- 与已修复族的判别式（关键，勿混淆）：
+  - `implement_by_super_extend02/03/04/06.cj`：接口成员 `func foo(): Unit` **无函数体**（抽象）→ 父类 extend 成员**实现**它 → 官方**零诊断**（该族已修复，见上文条目）。
+  - `override_by_super_extend01/05.cj`：接口成员 `func foo(): Unit { println(1) }` **有默认实现** → 父类 extend 成员将构成**覆盖** → 官方**报错**。
+  - 即判别式为「接口成员是否带默认实现」。修复本族时必须保持前一族继续零诊断。
+- CFIR 现状与分歧点（两处都不覆盖本形态）：
+  1. `CfirExtendExtraChecker.checkOverrideInExtend`（`CfirExtendExtraChecker.kt:190-201`）只在 extend 成员**显式标注 `override`** 时报告（`member.status.isOverride`）。本族 fixture 的 extend 成员没有 `override` 修饰，且官方诊断位置在 **class 声明**上而非 extend 成员上，形态不符。
+  2. `CfirInheritanceDeepChecker` 第 1030-1040 行确有类级 `EXTEND_FUNCTION_CANNOT_OVERRIDDEN` 上报，但它位于「类的**自有成员** ownInfo vs **继承成员** superInfo」的比较循环内，触发条件是 `ownInfo.overridesExtendMember(superInfo, ...)`。本族的 `class B<T> <: A<T> & I1 {}` **不声明任何成员**，冲突发生在两个**继承来源**之间（父类 extend 成员 vs 接口默认实现），该循环结构上不可能覆盖。
+- **真实判别式（第一次尝试失败后测得，务必以此为准）**：不是「是否同时存在 extend 成员与接口默认实现」，而是「**子类的类型参数约束是否蕴含 extend 的约束**」。同目录五个 fixture 的完整对照：
+
+  | fixture | extend 约束 | 子类 B 约束 | B 是否蕴含 extend 约束 | 官方 |
+  |---|---|---|---|---|
+  | `override_by_super_extend01` | `where T <: I2` | 无 | **否** | **报错** |
+  | `override_by_super_extend02` | 无 | 无 | 是（extend 恒适用） | 零诊断 |
+  | `override_by_super_extend03` | `where T <: I2<T>` | `where T <: I2<T>` | 是（完全一致） | 零诊断 |
+  | `override_by_super_extend04` | `where T <: I2<T>` | `where T <: I3<T>`（`I3<T> <: I2<T>`） | 是（I3 蕴含 I2） | 零诊断 |
+  | `override_by_super_extend05` | `where T <: I3<T>` | `where T <: I2<T>` | **否**（I2 不蕴含 I3） | **报错** |
+
+  即：extend 对子类的**所有**实例化都必然适用时，成员归属确定，合法；只是**可能适用**时才报 `sema_cannot_override`。
+- 第一次尝试及其失败原因（已回退）：新增了一趟「继承 vs 继承」检查，条件为「接口侧存在 default 成员 且 父类型经 `collectEffectiveExtendMemberInfos` 取到同名具体成员」。结果**恰好选中了补集**——02/03/04 转为多报、01/05 仍然漏报。原因是 `collectEffectiveExtendMemberInfos`（`CfirInheritanceDeepChecker.kt:1573`）**本身已按约束可满足性过滤** extend：约束成立的（02/03/04）才被收集，约束不成立的（01/05）被滤掉。因此按「能取到 extend 成员」来判定，方向与真实规则正好相反。
+- 修正后的修复方向（未实施）：需要枚举父类型上的 extend **而不经约束满足性过滤**，再判定「子类约束集合是否蕴含该 extend 的约束集合」，仅在**不蕴含**时于类声明上报 `EXTEND_FUNCTION_CANNOT_OVERRIDDEN`。关键缺口是「约束蕴含」判定（需要 `T <: I3<T>` ⟹ `T <: I2<T>` 这类子接口推导），尚未在仓库中定位到可直接复用的实现；`collectDirectExtendMemberInfos` 一侧的约束检查逻辑是找该能力的起点。
+- 风险提示：本族与刚修复的 `implement_by_super_extend*` 族形态高度接近，仅差「接口成员有无默认实现」。实现时必须以该判别式为准，否则会让刚转绿的 8 例重新失败，需全量回归确认两族同时正确。
+- 尝试计数：已使用 1/2 次修复尝试（上述反向实现，已回退，工作树干净）。
+- fixtures covered（待修复后验证）：`llt/generics/override_super_extend/override_by_super_extend01.cj`、`override_by_super_extend05.cj`（PSI 与 LightTree 两条路径，共 4 例）。
+
+## 单字符字符串字面量可作为 `Rune` / `UInt8` 的 const pattern（已修复并验证）
+
+- problem type: Diagnostics / Pattern Matching。`match` 的 const pattern 用 `'A'` / `"A"` 形式的字符串字面量匹配 `Rune` 或 `UInt8` 时，CFIR 多报 `PATTERN_NOT_MATCH`。
+- root cause: `CfirLiteralExpression.isCompatibleWith`（`CfirMatchPatternLegalityChecker.kt:559`）对 `CfirLiteralKind.STRING` 只允许 `String`：
+  `CfirLiteralKind.STRING -> expectedType.classIdOrPrimitiveClassId?.shortClassName?.asString() == "String"`。
+  仓颉里 `'A'`、`"A"`、`'''A'''`、`"""A"""` 都归类为字符串字面量，因此所有非 `r'...'` 写法匹配字符类类型时全部被判为不兼容。
+- official Cangjie evidence（`cjc` 1.0.5）：
+  - 正向：去标记的 `llt/PatternMatching/ConstPattern/char_byte_00.cj`（`match (x: UInt8) { case 'A' | 'B' => ... }`）编译**零诊断**。
+  - 正向探针 pat1：`match (x: Rune) { case '仓' }`、`case "仓"`、以及 `match (b: UInt8) { case 'A' | 'B' }` 合并编译，只输出 `chir_unreachable_pattern`（CHIR 阶段警告，属另一挂起族），**无任何 sema 模式类型错误**。
+  - 负向探针 neg1：`match (n: Int64) { case 'A' }` → `sema_mismatched_types`。证明不可放宽到一般整数类型。
+  - 负向探针 neg2：`match (r: Rune) { case 'AB' }` → `sema_mismatched_types`。证明必须限定**单字符**字面量。
+- Kotlin counterpart files consulted: 无需 —— 该判定是仓颉字面量分类与字符类类型的语言规则，Kotlin 无对应构造。
+- CFIR owner files changed: `cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirMatchPatternLegalityChecker.kt`
+  - `STRING` 分支增加「单字符字面量 + 字符类类型」的兼容路径；
+  - 新增 `isSingleCharacterStringLiteral()`（按 code point 计数，正确处理 `仓` 这类非 BMP/多字节字符）；
+  - 新增 `isCharacterLikePatternType()`，集合严格限定为 `Rune` 与 `UInt8`。
+- repair principle: 在字面量兼容性这一唯一判定入口上按官方规则补齐「单字符字符串字面量 ↔ 字符类类型」这一条，而不是对某个 fixture 放行 `PATTERN_NOT_MATCH`；两条负向探针同时把放宽范围钉死在单字符与 Rune/UInt8 两个维度上。
+- fixtures covered: `llt/PatternMatching/ConstPattern/ok_rune_00.cj`（`case '仓'`、`case "仓"`、`case '''仓'''`、`case """仓"""` 四处）、`char_byte_00.cj`（`case 'A' | 'B'`），PSI 与 LightTree 两条路径共 4 例。同目录 `err_string_interpolation_00.cj` 为漏报 `INTERPOLATION_IN_CONST_PATTERN`，**不属本族**，修复前后均失败。
+- verification command: `.\gradlew.bat :cfir:analysis-tests:test --continue --console=plain`（全量）
+- verification outcome: 全量 8415 例，范围内失败由 1064 降至 1060；`testOkRune00` 与 `testCharByte00` 两条路径共 4 例转绿，**新增回归 0**。
+
+## OPEN（部分取证）：多包目录 fixture 的 `import` 被误报 `UNRESOLVED_IMPORT`
+
+- problem type: Resolve / Imports。目录型 fixture 中同级子目录声明的包，`import` 时被 CFIR 报 `UNRESOLVED_IMPORT`。
+- official Cangjie evidence（`cjc` 1.0.5，两步编译）：`llt/incordec/increment_45/src/` 下有 `increment_45.cj`（`internal import pkga.*`，使用 `i`）与 `pkga/pkga.cj`（`package pkga` + `public var i = -2`）。
+  - 步骤一 `cjc -p pkga --output-type=staticlib -o out/libpkga.a` → 无诊断，产出 `pkga.cjo`；
+  - 步骤二 `cjc --import-path out increment_45.cj -o out/main.exe` → **无诊断**。
+  - 结论：该多包布局官方合法，CFIR 的 `UNRESOLVED_IMPORT` 属多报。
+  - 注意：把两个文件当作**同一编译单元**一起传给 `cjc`（`cjc pkga/pkga.cj increment_45.cj`）会报 `package_multiple_package_declarations` + `package_search_error`，那是调用方式错误，不能作为语义证据。
+- **本族形态不一致，不可整体立族**（按「先验形态再立族」纪律）：
+  - `llt/incordec/increment_45/src/increment_45.cj`：被导入包 `pkga` **确实存在**于同级 `src/pkga/` → 真实多报，如上取证。
+  - `llt/forin/imported_forinrange.cj`：单文件，`import a.*` 并调用 `foo(3)`，但 `forin/` 目录下**不存在包 `a`** 的任何源码 → 该 import 本就无法解析，fixture 期望零诊断的前提存疑，需单独判定 fixture 是否残缺。
+  - `default.cj`（`Main$ModFilesMain061C$Src` / `$Mod1$Src`，4 例）：按 `main061`/`Main061` 检索**未能定位到 testData 路径**，尚未确认其布局。
+- owner 定位进度（未完成）：`AbstractCfirAnalysisTestCase.createTestSession()`（`cfir/analysis-tests/testFixtures/.../AbstractCfirAnalysisTestCase.kt:62-89`）只构造**单个** `CfirSourceModuleData`（`dependencies = emptyList()`），不注册任何额外包；但该 helper 服务于单元式测试，**尚未确认 LLT 生成测试（`AbstractCfirLightTreeLlTDiagnosticsTest` / `AbstractCfirPsiLlTDiagnosticsTest`）是否走这条路径**。因此「根因在测试基建的多包注册」目前只是**未经证实的推测**，不可据此动手。
+- 下一步：先确认 LLT 目录型 fixture 的 session 由哪个 base class 构建、子目录包如何注册，再决定 owner 是测试环境配置还是 import 解析本身。
+- 尝试计数：本 problem type 尚未使用修复尝试（0/2）。
+- fixtures covered（待判定后验证）：`llt/incordec/increment_45/src/increment_45.cj`（2 例，已确认真实多报）；`llt/forin/imported_forinrange.cj`（2 例，fixture 前提存疑）；`default.cj`（4 例，路径待定位）。

@@ -4,7 +4,7 @@ type A = Int64
 interface abc {
 func ab(): Unit
 
-<!CONFLICTING_OVERLOADS!>func ab()<!>: Unit
+func <!CONFLICTING_OVERLOADS!>ab<!>(): Unit
     }
 class <!CLASSIFIER_REDECLARATION!>abc<!> {
 
@@ -19,13 +19,13 @@ class <!CLASSIFIER_REDECLARATION!>abc<!> {
 func <!REDECLARATION!>a<!>() {}
 
     let <!REDECLARATION!>a<!> = 1
-        <!CONFLICTING_OVERLOADS!>func a()<!> {
+        func <!CONFLICTING_OVERLOADS!>a<!>() {
 
         }
 }
 
 func <!REDECLARATION!>abc<!>() {}
-<!CONFLICTING_OVERLOADS!>func abc()<!> {}
+func <!CONFLICTING_OVERLOADS!>abc<!>() {}
 
 
 let <!REDECLARATION!>abc<!>  = 1

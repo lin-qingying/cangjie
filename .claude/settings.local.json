@@ -46,7 +46,8 @@
       "Read(//d/d/code/intellij/cangjie/**)",
       "Read(//tmp/**)",
       "Bash(sed -i 's|<!SUPER_TYPES_DUPLICATE!>B<!><String>\\(\\)|<!SUPER_TYPES_DUPLICATE!>B<String><!>\\(\\)|' Extend/extend_duplicate_interfaces6.cj)",
-      "Bash(sed -i 's|<!SUPER_TYPES_DUPLICATE!>B<!><String, String>\\(\\)|<!SUPER_TYPES_DUPLICATE!>B<String, String><!>\\(\\)|' Extend/extend_duplicate_interfaces10.cj)"
+      "Bash(sed -i 's|<!SUPER_TYPES_DUPLICATE!>B<!><String, String>\\(\\)|<!SUPER_TYPES_DUPLICATE!>B<String, String><!>\\(\\)|' Extend/extend_duplicate_interfaces10.cj)",
+      "Bash(./gradlew.bat -I cfir/analysis-tests/build/full-log-init.gradle.kts :cfir:analysis-tests:test --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTTestGenerated' --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTPsiTestGenerated' --console=plain)"
     ]
   }
 }

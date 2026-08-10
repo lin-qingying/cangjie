@@ -81,34 +81,26 @@ object CfirNotImplementedOverrideChecker : CfirClassLikeChecker() {
     }
 
     /**
-     * 创建仅包含本体声明的成员 scope（不含 extend 引入的接口/成员）。
-     * extend 是外部扩展，不应影响类/struct 本体的抽象成员实现检查。
+     * 创建抽象成员实现义务检查所用的成员 scope。
      *
-     * 注意：directSupertypeProvider 也不传，因为 CfirSuperTypeGraphStore 会合并
-     * extend 引入的超类型。传 null 让 scope 退回到 declaration.superTypeRefs，
-     * 这只包含本体直接声明的继承关系。
+     * 采用 [CfirClassMemberScopeKind.BODY_LOOKUP]，其语义对齐官方
+     * `LookUpImpl::ProcessStructDeclBody`，恰好是本检查需要的三条规则：
+     * - 本体自身的 extend 成员**不可见**：类自身的 extend 不能解除它自己的抽象成员实现义务；
+     * - 沿父类型递归时按 use-site 处理，因此**父类型经 extend 获得的成员可见**：这些成员随
+     *   继承进入本体成员集合，可以满足接口实现义务；
+     * - 直接父类型仍取自源码声明的 `superTypeRefs`，因此 extend 引入的父接口不构成本体义务。
      */
     context(context: CheckerContext)
     private fun createOwnMemberScope(declaration: CfirClassLikeDeclaration): CfirTypeScope {
-        return when (declaration) {
-            is CfirClass -> context.session.cangjieScopeProvider.getDeclarationSiteMemberScope(
-                declaration,
-                context.session,
-                context.scopeSession,
-            )
-
-            else -> {
-                val classLikeSymbol = declaration.symbol as? CfirClassLikeSymbol<*> ?: return CfirTypeScope.Empty
-                CfirClassUseSiteMemberScope(
-                    session = context.session,
-                    classLikeSymbol,
-                    context.session.symbolProvider,
-                    extendProvider = context.session.extendProvider,
-                    directSupertypeProvider = context.session.directSupertypeProviderOrNull,
-                    scopeKind = CfirClassMemberScopeKind.DECLARATION_SITE,
-                )
-            }
-        }
+        val classLikeSymbol = declaration.symbol as? CfirClassLikeSymbol<*> ?: return CfirTypeScope.Empty
+        return CfirClassUseSiteMemberScope(
+            session = context.session,
+            classLikeSymbol,
+            context.session.symbolProvider,
+            extendProvider = context.session.extendProvider,
+            directSupertypeProvider = context.session.directSupertypeProviderOrNull,
+            scopeKind = CfirClassMemberScopeKind.BODY_LOOKUP,
+        )
     }
 }
 

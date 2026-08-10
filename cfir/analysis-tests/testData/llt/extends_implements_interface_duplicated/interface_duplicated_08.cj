@@ -15,15 +15,15 @@ interface I4<Y1, R1, R2> <: I & I3<Y1, R1> & I0<Int64> {}
 
 interface I5<R1, R2> <: I2<Int64> & I0<R2> & I {}
 
-<!SUPER_TYPES_DUPLICATE!>class A<Q><!> <: I0<Q> & I0<Int64> {
+class A<Q> <: I0<Q> & I0<Int64> {
     public func doit(): Int64 {
         return 5
     }
 }
 
 main() {
-    var a: A<Int64>
-    var b = A<Int64>()
+    var a: <!SUPER_TYPES_DUPLICATE!>A<Int64><!>
+    var b = <!SUPER_TYPES_DUPLICATE!>A<Int64><!>()
     var i2: I2<Int64>
     var i3: I3<Int64, Int64>
     var i4: I4<Int64, Rune, Int32>

@@ -385,7 +385,10 @@ private class CfirInitializationFlowAnalyzer(
             )
         }
         val fieldInfos = if (function is CfirConstructor && function.isInstanceConstructor && owner != null) {
-            owner.instanceFieldInfos(context)
+            // 官方 `InitializationChecker::NotAssignableVariable` 只看字段「是否已初始化」与
+            // 「是否在构造器内」，不区分字段属于当前类还是父类；继承字段必须进入跟踪集合，
+            // 否则会被判为 NOT_TRACKED 而误报不可变。
+            owner.instanceFieldInfos(context, includeInherited = true)
         } else {
             emptyList()
         }
@@ -393,6 +396,9 @@ private class CfirInitializationFlowAnalyzer(
             buildSet<CfirBasedSymbol<*>> {
                 owner.instanceFieldsWithInitializer().mapTo(this, CfirFieldVariable::symbol)
                 owner.primaryConstructorInitializedPropertiesFor(function).mapTo(this, CfirProperty::symbol)
+                // 父类字段一旦由其所属类完成初始化，子类构造器再写入即非法；未被父类初始化的
+                // 父类字段则允许子类构造器首次赋值。
+                addAll(owner.inheritedPreInitializedFieldSymbols(context, visitedClasses = linkedSetOf()))
             }
         } else {
             emptySet()
@@ -2748,6 +2754,54 @@ private fun CfirClassLikeDeclaration.instanceFieldsWithInitializer(): List<CfirF
     return declarations
         .filterIsInstance<CfirFieldVariable>()
         .filter { field -> !field.status.isStatic && field.initializer != null }
+}
+
+/**
+ * 收集可见父类中已由其所属类完成初始化的实例字段与主构造成员属性。
+ *
+ * 官方 `InitializationChecker::NotAssignableVariable` 的判定只看字段是否已初始化，
+ * 不区分字段归属；因此父类中带初始化器的字段、以及父类主构造器参数对应的成员属性，
+ * 在子类构造器进入时已处于已初始化状态，再次写入应报不可变。反之，父类中没有初始化器
+ * 且未被主构造器初始化的字段在子类构造器内允许首次赋值。
+ *
+ * 遍历方式与 [inheritedInstanceFieldInfos] 保持一致，同样跳过 private 父类字段并防环。
+ */
+private fun CfirClassLikeDeclaration.inheritedPreInitializedFieldSymbols(
+    context: CheckerContext,
+    visitedClasses: MutableSet<ClassId>,
+): List<CfirBasedSymbol<*>> = buildList {
+    for (superTypeRef in superTypeRefs) {
+        val superType = (superTypeRef as? CfirResolvedTypeRef)?.coneType as? ConeClassLikeType ?: continue
+        val superClassId = superType.classId
+        if (!visitedClasses.add(superClassId)) continue
+
+        val superClass = context.session.symbolProvider
+            .getClassLikeSymbolByClassId(superClassId)
+            ?.cfir as? CfirClass ?: continue
+
+        // 与 `reportFieldsLeftUninitializedByDefaultConstructor` 采用同一判据：父类只要存在
+        // 带函数体的实例构造器，就由它自己负责初始化全部实例字段（此时父类不会报
+        // CLASS_UNINITIALIZED_FIELD）。子类构造器进入时这些字段已初始化，读取合法、再次写入非法。
+        // 反之，父类既无初始化器又无构造器体的字段确实处于未初始化状态，允许子类构造器首次赋值。
+        val superInitializesOwnFields = superClass.declarations
+            .filterIsInstance<CfirConstructor>()
+            .any { constructor -> constructor.isInstanceConstructor && constructor.body != null }
+        if (superInitializesOwnFields) {
+            superClass.declarations
+                .filterIsInstance<CfirFieldVariable>()
+                .filter { field -> !field.status.isStatic && field.status.visibility != Visibilities.Private }
+                .mapTo(this, CfirFieldVariable::symbol)
+        }
+        superClass.instanceFieldsWithInitializer()
+            .filter { field -> field.status.visibility != Visibilities.Private }
+            .mapTo(this, CfirFieldVariable::symbol)
+        superClass.primaryConstructorPropertyInfos()
+            .filter { propertyInfo ->
+                (propertyInfo.symbol as? CfirPropertySymbol)?.cfir?.status?.visibility != Visibilities.Private
+            }
+            .mapTo(this, TrackedVariableInfo::symbol)
+        addAll(superClass.inheritedPreInitializedFieldSymbols(context, visitedClasses))
+    }
 }
 
 /**

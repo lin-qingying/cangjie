@@ -25,13 +25,12 @@ public class A <: X {}
 
 // FILE: unused017.cj
 package c
-<!UNUSED_IMPORT!>import a.X<!>
-<!UNUSED_IMPORT!>import a.I<!>
+import <!UNUSED_IMPORT!>a.X<!>
+import <!UNUSED_IMPORT!>a.I<!>
 import b.A
 
 main() {
    var a = Array<A>()
    return 0
 }
-
 
