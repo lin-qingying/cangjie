@@ -1,0 +1,4 @@
+interface:
+  display_name: "仓颉官方诊断更新"
+  short_description: "用官方 cjc 诊断更新测试数据"
+  default_prompt: "使用 $cangjie-official-testdata-inline-diagnostics 通过官方 cjc 编译仓颉测试数据，并根据 JSON 诊断输出更新内联诊断。"
