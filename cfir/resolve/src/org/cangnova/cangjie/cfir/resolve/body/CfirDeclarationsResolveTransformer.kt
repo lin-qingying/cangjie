@@ -25,6 +25,7 @@
 package org.cangnova.cangjie.cfir.resolve.body
 
 import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.hasImplicitOrInferredReturnType
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.builder.buildImport
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
@@ -329,7 +330,8 @@ open class CfirDeclarationsResolveTransformer(
 
         val body = function.body
         if (body != null) {
-            val declaredReturnTypeRef = function.returnTypeRef.takeUnless { it is CfirImplicitTypeRef }
+            val declaredReturnTypeRef = function.returnTypeRef
+                .takeUnless { function.hasImplicitOrInferredReturnType() }
             val bodyResolutionMode = when {
                 function !is CfirAnonymousFunction && declaredReturnTypeRef?.coneTypeOrNull?.isUnit == true ->
                     ResolutionMode.ContextIndependent
@@ -637,10 +639,17 @@ open class CfirDeclarationsResolveTransformer(
 
         context.withContainer(variable) {
             context.withVariableInitializer(variable) {
-                variable.initializer?.let {
-                    variable.transformInitializer(transformer, initializerMode)
+                variable.initializer?.let { initializer ->
+                    val expectedInitializerType = (explicitTypeRef as? CfirResolvedTypeRef)?.coneType
+                    if (expectedInitializerType != null) {
+                        context.withInitializerExpectedType(initializer, expectedInitializerType) {
+                            variable.transformInitializer(transformer, initializerMode)
+                        }
+                    } else {
+                        variable.transformInitializer(transformer, initializerMode)
+                    }
                     variable.initializer?.applySingleRuneStringLiteralConversion(
-                        (explicitTypeRef as? CfirResolvedTypeRef)?.coneType,
+                        expectedInitializerType,
                     )
                 }
                 reportInitializerMismatchToOverloadByLambdaCandidate(
@@ -688,10 +697,21 @@ open class CfirDeclarationsResolveTransformer(
             valueParameter.replaceReturnTypeRef(
                 resolveExplicitTypeRefIfNeeded(valueParameter.returnTypeRef, valueParameter.typeParameters),
             )
-            transformDeclarationContent(
-                valueParameter,
-                withExpectedType(valueParameter.returnTypeRef),
-            ) as CfirValueParameter
+            val expectedType = (valueParameter.returnTypeRef as? CfirResolvedTypeRef)?.coneType
+            val defaultValue = valueParameter.defaultValue
+            if (defaultValue != null && expectedType != null) {
+                context.withInitializerExpectedType(defaultValue, expectedType) {
+                    transformDeclarationContent(
+                        valueParameter,
+                        withExpectedType(valueParameter.returnTypeRef),
+                    ) as CfirValueParameter
+                }
+            } else {
+                transformDeclarationContent(
+                    valueParameter,
+                    withExpectedType(valueParameter.returnTypeRef),
+                ) as CfirValueParameter
+            }
         }.also { resolvedParameter ->
             reportInitializerMismatchToOverloadByLambdaCandidate(
                 expectedTypeRef = resolvedParameter.returnTypeRef as? CfirResolvedTypeRef,
@@ -741,9 +761,16 @@ open class CfirDeclarationsResolveTransformer(
             context.withFieldInitializer(fieldVariable) {
                 dataFlowAnalyzer.enterFieldInitializer(fieldVariable)
                 try {
-                    fieldVariable.transformInitializer(transformer, initializerMode)
+                    val expectedInitializerType = (explicitTypeRef as? CfirResolvedTypeRef)?.coneType
+                    if (expectedInitializerType != null) {
+                        context.withInitializerExpectedType(initializer, expectedInitializerType) {
+                            fieldVariable.transformInitializer(transformer, initializerMode)
+                        }
+                    } else {
+                        fieldVariable.transformInitializer(transformer, initializerMode)
+                    }
                     fieldVariable.initializer?.applySingleRuneStringLiteralConversion(
-                        (explicitTypeRef as? CfirResolvedTypeRef)?.coneType,
+                        expectedInitializerType,
                     )
                     reportInitializerMismatchToOverloadByLambdaCandidate(
                         expectedTypeRef = explicitTypeRef as? CfirResolvedTypeRef,
@@ -845,7 +872,14 @@ open class CfirDeclarationsResolveTransformer(
         val initializer = patternVariable.initializer
         if (initializer != null) {
             context.withVariableInitializer(bindingVariables) {
-                patternVariable.transformInitializer(transformer, initializerMode)
+                val expectedInitializerType = (explicitTypeRef as? CfirResolvedTypeRef)?.coneType
+                if (expectedInitializerType != null) {
+                    context.withInitializerExpectedType(initializer, expectedInitializerType) {
+                        patternVariable.transformInitializer(transformer, initializerMode)
+                    }
+                } else {
+                    patternVariable.transformInitializer(transformer, initializerMode)
+                }
             }
             reportInitializerMismatchToOverloadByLambdaCandidate(
                 expectedTypeRef = explicitTypeRef as? CfirResolvedTypeRef,
@@ -1118,7 +1152,7 @@ open class CfirDeclarationsResolveTransformer(
         inferImplicitReturnType: Boolean = true,
     ): F {
         val resolutionModeForBody = function.returnTypeRef
-            .takeUnless { returnTypeRef -> returnTypeRef is CfirImplicitTypeRef }
+            .takeUnless { function.hasImplicitOrInferredReturnType() }
             ?.let(::withExpectedType)
             ?: ResolutionMode.ContextIndependent
         @Suppress("UNCHECKED_CAST")

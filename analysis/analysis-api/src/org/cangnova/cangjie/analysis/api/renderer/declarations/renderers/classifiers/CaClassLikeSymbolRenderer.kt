@@ -33,6 +33,8 @@ fun interface CaClassLikeSymbolRenderer {
             printer {
                 declarationRenderer.modifiersRenderer.renderDeclarationModifiers(analysisSession, symbol, this)
                 append(keyword)
+//                declarationRenderer.keywordsRenderer.renderKeywords(analysisSession, keyword, symbol, printer)
+//
                 append(" ")
                 declarationRenderer.typeRenderer.classIdRenderer.renderClassIdQualifier(symbol.classId, this)
                 declarationRenderer.nameRenderer.renderName(analysisSession, symbol, declarationRenderer, this)

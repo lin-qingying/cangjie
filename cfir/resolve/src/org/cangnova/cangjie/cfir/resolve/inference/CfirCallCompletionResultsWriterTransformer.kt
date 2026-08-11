@@ -135,7 +135,7 @@ class CfirCallCompletionResultsWriterTransformer(
         qualifiedAccessExpression: T,
         calleeReference: CfirNamedReferenceWithCandidate,
         forcedResultType: ConeCangJieType? = null,
-        preserveResolvedReferenceForAssignmentExpectedTypeMismatch: Boolean = false,
+        preserveResolvedReferenceForExpectedTypeRootMismatch: Boolean = false,
     ): T {
         val subCandidate = calleeReference.candidate
 
@@ -162,7 +162,7 @@ class CfirCallCompletionResultsWriterTransformer(
 
         val resolvedReference = calleeReference.toResolvedReference(
             preserveResolvedReference =
-                forcedResultType != null || preserveResolvedReferenceForAssignmentExpectedTypeMismatch,
+                forcedResultType != null || preserveResolvedReferenceForExpectedTypeRootMismatch,
         )
 
         qualifiedAccessExpression.replaceCalleeReference(resolvedReference)
@@ -345,12 +345,12 @@ class CfirCallCompletionResultsWriterTransformer(
         }
 
         val calleeReference = functionCall.calleeReference as? CfirNamedReferenceWithCandidate ?: return functionCall
-        val assignmentExpectedTypeMismatchOnly =
-            calleeReference.isAssignmentRhsExpectedTypeMismatchOnly(functionCall)
+        val expectedTypeRootMismatchOnly =
+            calleeReference.isExpectedTypeRootMismatchOnly(functionCall, context)
         val result = prepareQualifiedTransform(
             functionCall,
             calleeReference,
-            preserveResolvedReferenceForAssignmentExpectedTypeMismatch = assignmentExpectedTypeMismatchOnly,
+            preserveResolvedReferenceForExpectedTypeRootMismatch = expectedTypeRootMismatchOnly,
         )
         val candidate = calleeReference.candidate
         candidate.commitCallableReferenceResults()
@@ -395,7 +395,7 @@ class CfirCallCompletionResultsWriterTransformer(
         )
 
         val callDiagnostic = calleeReference.callDiagnosticForResultType(
-            ignoreAssignmentExpectedTypeMismatch = assignmentExpectedTypeMismatchOnly,
+            ignoreExpectedTypeRootMismatch = expectedTypeRootMismatchOnly,
         )
         val invalidChildType = result.firstInvalidReceiverOrArgumentType()
         val resultType = when {
@@ -406,10 +406,10 @@ class CfirCallCompletionResultsWriterTransformer(
                 enumConstructorInferenceDiagnostic.asPropagatedCallErrorType(completedResultType)
             else -> completedResultType
         }
-        recordAssignmentRhsExpectedTypeMismatch(
+        recordExpectedTypeRootMismatch(
             expression = functionCall,
             actualType = resultType,
-            assignmentExpectedTypeMismatchOnly = assignmentExpectedTypeMismatchOnly,
+            expectedTypeRootMismatchOnly = expectedTypeRootMismatchOnly,
         )
 
         result.replaceConeTypeOrNull(resultType)
@@ -455,17 +455,17 @@ class CfirCallCompletionResultsWriterTransformer(
      * frame 以对象 identity 限定根节点，调用参数、receiver 和嵌套调用不会写入外层
      * assignment outcome；错误结果不会再派生赋值类型不匹配。
      */
-    private fun recordAssignmentRhsExpectedTypeMismatch(
+    private fun recordExpectedTypeRootMismatch(
         expression: CfirExpression,
         actualType: ConeCangJieType?,
-        assignmentExpectedTypeMismatchOnly: Boolean,
+        expectedTypeRootMismatchOnly: Boolean,
     ) {
-        if (!assignmentExpectedTypeMismatchOnly) return
+        if (!expectedTypeRootMismatchOnly) return
         val actual = actualType ?: return
         if (actual is ConeErrorType) return
-        val expected = context.assignmentRhsExpectedTypeFor(expression) ?: return
+        val expected = context.expectedTypeForRoot(expression) ?: return
         if (AbstractTypeChecker.isSubtypeOf(session.typeContext, actual, expected) == true) return
-        context.recordAssignmentRhsExpectedTypeMismatch(
+        context.recordExpectedTypeRootMismatch(
             expression = expression,
             actualType = actual,
             primaryDiagnostic = CfirAssignmentTypeMismatchPrimaryDiagnostic.TypeMismatch,
@@ -919,18 +919,18 @@ class CfirCallCompletionResultsWriterTransformer(
         val candidate = calleeReference.candidate
         val forcedResultType = data?.getExpectedType(qualifiedAccessExpression)
             ?.let { expectedType -> candidate.noArgEnumConstructorTargetType(expectedType, session) }
-        val assignmentExpectedTypeMismatchOnly =
-            calleeReference.isAssignmentRhsExpectedTypeMismatchOnly(qualifiedAccessExpression)
+        val expectedTypeRootMismatchOnly =
+            calleeReference.isExpectedTypeRootMismatchOnly(qualifiedAccessExpression, context)
         val result = prepareQualifiedTransform(
             qualifiedAccessExpression,
             calleeReference,
             forcedResultType,
-            preserveResolvedReferenceForAssignmentExpectedTypeMismatch = assignmentExpectedTypeMismatchOnly,
+            preserveResolvedReferenceForExpectedTypeRootMismatch = expectedTypeRootMismatchOnly,
         )
         result.transformChildren(this, data)
         val completedActualType = forcedResultType ?: result.coneTypeOrNull?.substituteType(candidate)
         val resultType = calleeReference.callDiagnosticForResultType(
-            ignoreAssignmentExpectedTypeMismatch = assignmentExpectedTypeMismatchOnly,
+            ignoreExpectedTypeRootMismatch = expectedTypeRootMismatchOnly,
         )?.let { diagnostic ->
             ConeErrorType(ConeUnreportedDuplicateDiagnostic(diagnostic))
         } ?: completedActualType
@@ -944,13 +944,13 @@ class CfirCallCompletionResultsWriterTransformer(
             val approximatedActualType = completedActualType?.let { actualType ->
                 integerOperatorApproximator.approximateType(
                     actualType,
-                    context.assignmentRhsExpectedTypeFor(qualifiedAccessExpression),
+                    context.expectedTypeForRoot(qualifiedAccessExpression),
                 ) ?: actualType
             }
-            recordAssignmentRhsExpectedTypeMismatch(
+            recordExpectedTypeRootMismatch(
                 expression = qualifiedAccessExpression,
                 actualType = approximatedActualType,
-                assignmentExpectedTypeMismatchOnly = assignmentExpectedTypeMismatchOnly,
+                expectedTypeRootMismatchOnly = expectedTypeRootMismatchOnly,
             )
             result.replaceConeTypeOrNull(approximatedType)
             session.lookupTracker?.recordTypeResolveAsLookup(
@@ -1506,33 +1506,11 @@ class CfirCallCompletionResultsWriterTransformer(
      */
     @OptIn(ApplicabilityDetail::class)
     private fun CfirNamedReferenceWithCandidate.callDiagnosticForResultType(
-        ignoreAssignmentExpectedTypeMismatch: Boolean,
+        ignoreExpectedTypeRootMismatch: Boolean,
     ): ConeDiagnostic? {
-        if (ignoreAssignmentExpectedTypeMismatch) return null
+        if (ignoreExpectedTypeRootMismatch) return null
         if (this is CfirErrorReferenceWithCandidate) return diagnostic
         return candidate.callFailureDiagnosticForResultType()
-    }
-
-    /**
-     * 判断当前候选失败是否只来自赋值 RHS 根的 expected-type 约束。
-     *
-     * resolution、receiver、可见性、实参映射或实参类型错误都会降低候选适用性，不能在
-     * assignment 层消费。只有候选仍具备成功适用性，且约束系统中的每个错误都明确来自
-     * [ConeExpectedTypeConstraintPosition] 时，才允许保留正常引用和失效前结果类型。
-     */
-    @OptIn(ApplicabilityDetail::class)
-    private fun CfirNamedReferenceWithCandidate.isAssignmentRhsExpectedTypeMismatchOnly(
-        expression: CfirExpression,
-    ): Boolean {
-        if (context.assignmentRhsExpectedTypeFor(expression) == null) return false
-        if (this is CfirErrorReferenceWithCandidate) return false
-
-        val resolvedCandidate = candidate
-        if (!resolvedCandidate.lowestApplicability.isSuccess || resolvedCandidate.isSuccessful) return false
-        val constraintErrors = resolvedCandidate.errors
-        return constraintErrors.isNotEmpty() && constraintErrors.all { error ->
-            error is ConstraintMismatch && error.position.from is ConeExpectedTypeConstraintPosition
-        }
     }
 
     @OptIn(ApplicabilityDetail::class)

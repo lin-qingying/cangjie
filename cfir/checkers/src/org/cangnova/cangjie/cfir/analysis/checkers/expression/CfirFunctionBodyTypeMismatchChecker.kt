@@ -9,6 +9,7 @@ import org.cangnova.cangjie.cfir.analysis.checkers.lambdaExpectedFunctionType
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.analysis.diagnostics.specificTypeMismatchDiagnostic
 import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.hasImplicitOrInferredReturnType
 import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
@@ -26,7 +27,6 @@ import org.cangnova.cangjie.cfir.expressions.CfirResolvable
 import org.cangnova.cangjie.cfir.expressions.CfirStatement
 import org.cangnova.cangjie.cfir.expressions.CfirThrowExpression
 import org.cangnova.cangjie.cfir.expressions.CfirTryExpression
-import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
@@ -53,7 +53,7 @@ object CfirFunctionBodyTypeMismatchChecker : CfirBasicExpressionChecker() {
         ) {
             return
         }
-        if (containingFunction.returnTypeRef is CfirImplicitTypeRef) return
+        if (containingFunction.hasImplicitOrInferredReturnType()) return
 
         if (block.statements.dropLast(1).any { it is CfirReturnExpression }) return
         val tailStatement = block.statements.lastOrNull()

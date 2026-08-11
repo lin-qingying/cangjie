@@ -3,8 +3,8 @@ package org.cangnova.cangjie.cfir.resolve.services
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.scopes.defaultImportsProvider
 import org.cangnova.cangjie.cfir.session.CfirSession
-import org.cangnova.cangjie.cfir.session.importBindingStoreOrNull
 import org.cangnova.cangjie.name.ClassId
+import org.cangnova.cangjie.cfir.session.importBindingStoreOrNull
 
 /**
  * 判断 [classId] 是否通过当前包、显式导入或语言默认导入在 [CfirFile] 中名字可达。

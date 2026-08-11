@@ -181,6 +181,9 @@ class CfirCallCompleter(
          *   TYPE_MISMATCH 不会被完成结果覆盖，内层 lambda 同时可以获得 mapped expected type。
          */
         if (reference.isError) {
+            if (reference.isExpectedTypeRootMismatchOnly(call, transformer.context)) {
+                return call.transformSingle(createCompletionResultsWriter(ConeSubstitutor.Empty), null)
+            }
             when (candidate.argumentMappingOutcome?.hasMappingFailure) {
                 true -> return call.transformSingle(createCompletionResultsWriter(ConeSubstitutor.Empty), null)
                 null -> return call
@@ -986,13 +989,13 @@ class CfirCallCompleter(
     /**
      * 判断 synthetic fake function 是否应把期望类型作为 equality 约束参与完成。
      *
-     * 赋值右侧保留初始化表达式自己的类型检查路径；非赋值场景下 fake function 需要 equality
+     * 赋值右侧和显式类型初始化器保留表达式自己的类型检查路径；其他场景下 fake function 需要 equality
      * 来避免把目标类型仅作为宽松 subtype 约束而丢失表达式精确类型。
      */
     private fun Candidate.isSyntheticFunctionCallThatShouldUseEqualityConstraint(
         expectedType: ConeCangJieType,
     ): Boolean {
-        if (components.context.isInsideAssignmentRhs) return false
+        if (components.context.isInsideAssignmentOrInitializerValue) return false
         val symbol = symbol as? CfirCallableSymbol ?: return false
         return symbol.origin == CfirDeclarationOrigin.Synthetic.FakeFunction && !expectedType.isUnitOrAny()
     }

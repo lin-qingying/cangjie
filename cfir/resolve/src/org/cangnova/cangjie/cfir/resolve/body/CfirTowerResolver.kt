@@ -25,9 +25,7 @@
 package org.cangnova.cangjie.cfir.resolve.body
 
 import org.cangnova.cangjie.cfir.SessionHolder
-import org.cangnova.cangjie.cfir.calls.resolvedQualifierClassifier
-import org.cangnova.cangjie.cfir.calls.resolvedQualifierSymbol
-import org.cangnova.cangjie.cfir.calls.resolvedQualifierTypeParameter
+import org.cangnova.cangjie.cfir.calls.isResolvedTypeQualifier
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
@@ -130,8 +128,7 @@ class CfirTowerResolver(
                 // 对齐 Kotlin FirTowerResolver：已解析的类型/包限定符不作为普通表达式接收者处理，
                 // 而是从限定符自身的静态 callable scope 中收集候选。
                 if (
-                    receiver.resolvedQualifierClassifier(session) != null ||
-                    receiver.resolvedQualifierTypeParameter() != null ||
+                    receiver.isResolvedTypeQualifier(session) ||
                     receiver.importedPackageQualifierScopeOrNull(components.file, session) != null
                 ) {
                     mainTask.runResolverForQualifierReceiver(info, receiver)

@@ -86,7 +86,6 @@ abstract class AbstractConeSubstitutor(
             is ConeIntersectionType -> substituteIntersectionType()
             is ConeUnionType -> substituteUnionType()
             is ConeRigidType -> substituteArguments()
-            else -> null
         }
     }
 
@@ -301,7 +300,9 @@ inline fun TypeSubstitutorMarker.asCone(): ConeSubstitutor = this as ConeSubstit
 /**
  * 保留给旧调用点的冗余转换函数。
  */
-@Deprecated(message = "This call is redundant, please just drop it", level = DeprecationLevel.ERROR)
+@Deprecated(message = "This call is redundant, please just drop it", level = DeprecationLevel.ERROR,
+    replaceWith = ReplaceWith("this")
+)
 fun ConeSubstitutor.asCone(): ConeSubstitutor = this
 
 /**
@@ -320,7 +321,6 @@ private fun ConeCangJieType.typeConstructorForSubstitution(): TypeConstructorMar
         is ConeTypeVariableType -> typeConstructor
         is ConeStubType -> constructor
         is ConeTypeConstructorMarker -> this
-        else -> null
     }
 }
 

@@ -695,6 +695,15 @@ fun CfirExpression.resolvedQualifierSymbol(session: CfirSession): CfirClassifier
 }
 
 /**
+ * 判断表达式是否已经解析为类型限定符，而不是运行时值接收者。
+ *
+ * CFIR 当前复用 qualified-access 表达 class-like、typealias 与类型参数限定符；所有后续阶段
+ * 必须通过同一个符号分类入口区分类型限定符和值接收者，不能再从表达式类型反向猜测角色。
+ */
+fun CfirExpression.isResolvedTypeQualifier(session: CfirSession): Boolean =
+    resolvedQualifierSymbol(session) != null
+
+/**
  * 返回 qualifier 表达式解析出的类型参数 symbol。
  */
 fun CfirExpression.resolvedQualifierTypeParameter(): CfirTypeParameterSymbol? {
