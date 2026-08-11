@@ -37,16 +37,25 @@
   <component name="ChangeListManager">
     <list default="true" id="7e15012e-e26c-4b45-a5dc-4283160ad6fc" name="更改" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/CaSession.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/CaSession.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/components/CaTypeProvider.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/components/CaTypeProvider.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/DIFF_CORPUS_CURRENT.json" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/DIFF_CORPUS_CURRENT.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/REPAIR_LOG.md" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/REPAIR_LOG.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/Extend/extend_export/interface_extend/extend_member_export05/main04.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/Extend/extend_export/interface_extend/extend_member_export05/main04.cj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/Extend/extend_export/interface_extend/extend_member_export05/main05.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/Extend/extend_export/interface_extend/extend_member_export05/main05.cj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/constraint_check/constraint_check_test4_2n.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/constraint_check/constraint_check_test4_2n.cj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/providers/src/org/cangnova/cangjie/cfir/scopes/impl/CfirExtendMemberScope.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/providers/src/org/cangnova/cangjie/cfir/scopes/impl/CfirExtendMemberScope.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/diagnostics/varray/varraySizeMismatchRich.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/diagnostics/varray/varraySizeMismatchRich.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/diagnostics2/varray/varraySizeMismatch.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/diagnostics2/varray/varraySizeMismatch.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testFixtures/org/cangnova/cangjie/cfir/analysis/tests/golden/DiagnosticNameMapper.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testFixtures/org/cangnova/cangjie/cfir/analysis/tests/golden/DiagnosticNameMapper.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisDiagnostics2PsiTestGenerated.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisDiagnostics2PsiTestGenerated.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisDiagnostics2TestGenerated.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisDiagnostics2TestGenerated.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisDiagnostics2WithoutAliasExpansionTestGenerated.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisDiagnostics2WithoutAliasExpansionTestGenerated.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisDiagnosticsPsiTestGenerated.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisDiagnosticsPsiTestGenerated.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisDiagnosticsTestGenerated.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisDiagnosticsTestGenerated.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisDiagnosticsWithoutAliasExpansionTestGenerated.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisDiagnosticsWithoutAliasExpansionTestGenerated.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangnova/cangjie/cfir/expressions/CfirAssignmentTypeMismatchOutcome.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangnova/cangjie/cfir/expressions/CfirAssignmentTypeMismatchOutcome.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirAssignmentTypeMismatchChecker.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirAssignmentTypeMismatchChecker.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirFunctionBodyTypeMismatchChecker.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirFunctionBodyTypeMismatchChecker.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirReturnTypeMismatchChecker.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirReturnTypeMismatchChecker.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/diagnostics/CfirTypeSemanticsDiagnostics.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/diagnostics/CfirTypeSemanticsDiagnostics.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/dfa/cfg/ControlFlowGraphBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/dfa/cfg/ControlFlowGraphBuilder.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/external/kotlin" beforeDir="false" afterPath="$PROJECT_DIR$/external/kotlin" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/main/kotlin/org/cangnova/cangjie/highlighter/CangJieIdeDeclarationRenderer.kt" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/main/kotlin/org/cangnova/cangjie/highlighter/CangJieIdeDeclarationRenderer.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/documentation/CangJieDocumentationTarget.kt" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/documentation/CangJieDocumentationTarget.kt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -346,6 +355,7 @@
     "Gradle.CjoSdkDeserializationIntegrationTest.executor": "Run",
     "Gradle.CjoSdkDeserializationIntegrationTest.sdk cjo fixtures can be deserialized with expected version.executor": "Debug",
     "Gradle.CjoSearchPathTest.executor": "Debug",
+    "Gradle.CommonSuperType2.testTest.executor": "Run",
     "Gradle.ConeSubtypeCheckerTest.executor": "Run",
     "Gradle.ConstEval.testConstEvalArithmeticOverflow.executor": "Run",
     "Gradle.ConstEval.testConstEvalDivideByZero.executor": "Run",
@@ -448,7 +458,7 @@
     "Gradle.intellij-ide [:cangjie:analysis:analysis-api-cfir:analysis-api-cfir-generator:org.cangnova.cangjie.analysis.api.cfir.generator.MainKt.main()].executor": "Run",
     "Gradle.intellij-ide [:product:idea-plugin:buildPlugin].executor": "Run",
     "Gradle.intellij-ide [:product:idea-plugin:dependencies --configuration runtimeClasspath > deps.txt].executor": "Run",
-    "Gradle.intellij-ide [:product:idea-plugin:runIde].executor": "Debug",
+    "Gradle.intellij-ide [:product:idea-plugin:runIde].executor": "Run",
     "Gradle.下载 IntelliJ 平台源.executor": "Run",
     "Gradle.下载源代码.executor": "Run",
     "Gradle.加载 Gradle 依赖项.executor": "Run",
@@ -484,7 +494,7 @@
     "git-widget-placeholder": "main",
     "junie.onboarding.icon.badge.shown": "true",
     "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "D:/code/intellij/cangjie/cfir/analysis-tests/testData/llt/typealias",
+    "last_opened_file_path": "D:/code/intellij/cangjie/.agents/skills",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.jshint": "true",
     "node.js.detected.package.tslint": "true",
@@ -514,11 +524,11 @@
   </component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="D:\code\intellij\cangjie\.agents\skills" />
       <recent name="D:\code\intellij\cangjie\cfir\analysis-tests\testData\llt\typealias" />
       <recent name="D:\code\intellij\cangjie\analysis\decompiled\decompiler-to-psi\src\org\cangnova\cangjie\analysis\decompiled\psi" />
       <recent name="D:\code\intellij\cangjie\analysis\analysis-api-cfir" />
       <recent name="D:\code\intellij\cangjie\deveco\lib\plugin\cangjie" />
-      <recent name="D:\code\intellij\cangjie\prepare\ide-plugin-dependencies-module" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
       <recent name="D:\code\intellij\cangjie\docs" />
@@ -549,6 +559,33 @@
     </option>
   </component>
   <component name="RunManager" selected="Gradle.cangjie [:cfir:analysis-tests:test]">
+    <configuration name="CommonSuperType2.testTest" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$/intellij-ide" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" value="" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list>
+            <option value=":cangjie:cfir:analysis-tests:test" />
+            <option value="--tests" />
+            <option value="&quot;org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTPsiTestGenerated$Accessibility$CommonSuperType2.testTest&quot;" />
+          </list>
+        </option>
+        <option name="vmOptions" />
+      </ExternalSystemSettings>
+      <ExternalSystemDebugServerProcess>false</ExternalSystemDebugServerProcess>
+      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <ExternalSystemDebugDisabled>false</ExternalSystemDebugDisabled>
+      <DebugAllEnabled>false</DebugAllEnabled>
+      <RunAsTest>true</RunAsTest>
+      <GradleProfilingDisabled>false</GradleProfilingDisabled>
+      <GradleCoverageDisabled>false</GradleCoverageDisabled>
+      <method v="2" />
+    </configuration>
     <configuration name="ExtendsImplementsInterfaceDuplicated.testInterfaceDuplicated08" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
@@ -590,33 +627,6 @@
             <option value=":cangjie:cfir:analysis-tests:test" />
             <option value="--tests" />
             <option value="&quot;org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisDiagnostics2PsiTest.diagnostics2.modifier.ModifierGenerated&quot;" />
-          </list>
-        </option>
-        <option name="vmOptions" />
-      </ExternalSystemSettings>
-      <ExternalSystemDebugServerProcess>false</ExternalSystemDebugServerProcess>
-      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
-      <ExternalSystemDebugDisabled>false</ExternalSystemDebugDisabled>
-      <DebugAllEnabled>false</DebugAllEnabled>
-      <RunAsTest>true</RunAsTest>
-      <GradleProfilingDisabled>false</GradleProfilingDisabled>
-      <GradleCoverageDisabled>false</GradleCoverageDisabled>
-      <method v="2" />
-    </configuration>
-    <configuration name="SoftKeywordTest.testPublicSortKeywordPatternVariable" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
-      <ExternalSystemSettings>
-        <option name="executionName" />
-        <option name="externalProjectPath" value="$PROJECT_DIR$/intellij-ide" />
-        <option name="externalSystemIdString" value="GRADLE" />
-        <option name="scriptParameters" value="" />
-        <option name="taskDescriptions">
-          <list />
-        </option>
-        <option name="taskNames">
-          <list>
-            <option value=":cangjie:psi:test" />
-            <option value="--tests" />
-            <option value="&quot;org.cangnova.cangjie.psi.SoftKeywordTest.testPublicSortKeywordPatternVariable&quot;" />
           </list>
         </option>
         <option name="vmOptions" />
@@ -702,9 +712,9 @@
     </configuration>
     <list>
       <item itemvalue="Gradle.Run IDE with Plugin" />
+      <item itemvalue="Gradle.CommonSuperType2.testTest" />
       <item itemvalue="Gradle.ExtendsImplementsInterfaceDuplicated.testInterfaceDuplicated08" />
       <item itemvalue="Gradle.ModifierGenerated" />
-      <item itemvalue="Gradle.SoftKeywordTest.testPublicSortKeywordPatternVariable" />
       <item itemvalue="Gradle.cangjie [:cfir:analysis-tests:test]" />
       <item itemvalue="Gradle.intellij-ide [:product:idea-plugin:runIde]" />
       <item itemvalue="JUnit.未命名" />
@@ -712,10 +722,10 @@
     <recent_temporary>
       <list>
         <item itemvalue="Gradle.cangjie [:cfir:analysis-tests:test]" />
+        <item itemvalue="Gradle.CommonSuperType2.testTest" />
         <item itemvalue="Gradle.intellij-ide [:product:idea-plugin:runIde]" />
         <item itemvalue="Gradle.ExtendsImplementsInterfaceDuplicated.testInterfaceDuplicated08" />
         <item itemvalue="Gradle.ModifierGenerated" />
-        <item itemvalue="Gradle.SoftKeywordTest.testPublicSortKeywordPatternVariable" />
       </list>
     </recent_temporary>
   </component>
@@ -1311,6 +1321,26 @@
           <url>file://$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirModifierChecker.kt</url>
           <line>152</line>
           <option name="timeStamp" value="372" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="kotlin-line">
+          <url>file://$PROJECT_DIR$/intellij-ide/modules/ide/base/src/main/kotlin/org/cangnova/cangjie/highlighter/CangJieIdeDeclarationRenderer.kt</url>
+          <line>91</line>
+          <option name="timeStamp" value="397" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="kotlin-line">
+          <url>file://$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/renderer/base/CaKeywordsRenderer.kt</url>
+          <line>30</line>
+          <option name="timeStamp" value="398" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="kotlin-line">
+          <url>file://$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/renderer/base/CaKeywordsRenderer.kt</url>
+          <line>40</line>
+          <option name="timeStamp" value="399" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="kotlin-line">
+          <url>file://$PROJECT_DIR$/intellij-ide/modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/documentation/CangJieDocumentationTarget.kt</url>
+          <line>231</line>
+          <option name="timeStamp" value="401" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
