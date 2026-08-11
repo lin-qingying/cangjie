@@ -3580,3 +3580,18 @@ Flagged while gathering evidence for the extend upper-bound recursion problem ty
 - fixtures covered: `llt/accessibility/common_super_type2/test.cj` 的 PSI 与 LightTree 路径。
 - verification command: `.\gradlew.bat :cfir:analysis-tests:test --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTTestGenerated$Accessibility$CommonSuperType2.testTest' --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTPsiTestGenerated$Accessibility$CommonSuperType2.testTest' -x :cfir:analysis-tests:generateTestGeneratorForCfirAnalysisTestsTests --no-daemon --no-configuration-cache --max-workers=1 --console=plain`。
 - verification outcome: `BUILD SUCCESSFUL`；PSI 与 LightTree 目标测试均通过。扩展验证 `--tests '*Accessibility*'` 生成 20 份 XML、共 61 个测试，`failures=0, errors=0`。
+
+## VArray 长度专用诊断仅适用于数组字面量
+
+- problem type: Diagnostics。目标 `VArray` 的长度不匹配必须区分数组字面量构造与两个已定型 VArray 值之间的普通类型不兼容。
+- root cause: `CfirTypeSemanticsDiagnostics.classifySpecificTypeMismatch` 仅比较 expected/actual `ConeVArrayType` 的长度，导致调用实参、初始化器和 return 中的 `VArray<Int64, $3>` 变量错误地抢占为 `VARRAY_SIZE_MISMATCH`；普通赋值未经过该分支，反而保留了通用 `TYPE_MISMATCH`。
+- official Cangjie evidence: `cjc 1.0.5` 对 `$3` VArray 值传给、初始化、赋给或 return 为 `$2` VArray 的四个语境均报告 `sema_mismatched_types`；等价的 `[1, 2, 3]` 数组字面量在四个语境均报告 `sema_varray_size_match`。`external/cangjie_compiler/src/Sema/TypeCheckBuiltinExpr.cpp` 的 `TypeCheckerImpl::ChkArrayLit` 只在目标为 VArray 且 `ArrayLit.children.size()` 不同时时报告专用诊断；`src/Sema/TypeManager.cpp` 的 `IsVArraySubtype` 要求两个 VArray 长度相等。
+- Kotlin counterpart files consulted: `external/kotlin/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/expression/FirAssignmentTypeMismatchChecker.kt`、`external/kotlin/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/FirHelpers.kt`。assignment checker 持有 RHS 表达式并委派共享 type-mismatch 分类，诊断上下文不从容器类型形状反推。
+- CFIR owner files changed: `cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/diagnostics/CfirTypeSemanticsDiagnostics.kt`、`cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirAssignmentTypeMismatchChecker.kt`、`CfirReturnTypeMismatchChecker.kt`、`CfirFunctionBodyTypeMismatchChecker.kt`。
+- repair principle: 共享分类器只在 RHS/实参/返回表达式为数组字面量（允许 CFIR 包装）且其实际元素数量不同于目标 VArray 长度时产生 `VARRAY_SIZE_MISMATCH`；已定型 VArray 值继续由各语境原有的通用诊断工厂分类。
+- fixture corrections and guards: `diagnostics2/varray/varraySizeMismatch.cj` 与 `diagnostics/varray/varraySizeMismatchRich.cj` 改为 `ARGUMENT_TYPE_MISMATCH`、`TYPE_MISMATCH`、`RETURN_TYPE_MISMATCH`；新增 `diagnostics2/varray/varrayArrayLiteralSizeMismatch.cj` 和 `diagnostics/varray/varrayArrayLiteralSizeMismatchRich.cj`，覆盖调用、初始化、普通赋值、return 四个数组字面量语境；保留 `llt/varray/varray04.cj`。
+- diagnostic-name mapping: `DiagnosticNameMapper` 将 `VARRAY_SIZE_MISMATCH` 更正映射为官方实际名称 `sema_varray_size_match`。
+- focused verification command: `./gradlew.bat :cfir:analysis-tests:test`，选择六个 diagnostics Varray 套件及 `CfirAnalysisLLTTestGenerated$Varray.testVarray04`、`CfirAnalysisLLTPsiTestGenerated$Varray.testVarray04`，并使用 `--no-daemon --max-workers=1 --console=plain --no-build-cache --no-configuration-cache`。
+- focused verification outcome: `BUILD SUCCESSFUL in 3m 26s`；六个 diagnostics XML 各为 `3 tests, 0 failures, 0 errors`，两个 LLT XML 各为 `1 test, 0 failures, 0 errors`。
+- full verification command: `./gradlew.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain --no-build-cache --no-configuration-cache`。
+- full verification outcome: 任务执行完成但全套件仍有失败，Gradle 退出为失败；新鲜 XML 合计 `8421 tests, 1286 failures, 0 errors, 306 skipped`。本条覆盖的 12 个 diagnostics 方法和 2 个 `varray04` 方法均通过；同一轮 LLT Varray 的其余失败为 `varrayAlias01`、`varrayAlias01Err`、`varraySize02`（PSI/LightTree 各一），另有宏 Varray 失败，未并入本问题类型。

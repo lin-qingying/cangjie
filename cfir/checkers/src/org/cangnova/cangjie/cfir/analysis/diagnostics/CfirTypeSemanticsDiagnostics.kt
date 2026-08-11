@@ -3,19 +3,19 @@ package org.cangnova.cangjie.cfir.analysis.diagnostics
 import org.cangnova.cangjie.cfir.diagnostics.CjDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticContext
 import org.cangnova.cangjie.cfir.diagnostics.InternalDiagnosticFactoryMethod
+import org.cangnova.cangjie.cfir.expressions.CfirArrayLiteral
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralKind
+import org.cangnova.cangjie.cfir.expressions.CfirWrappedExpression
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.languageVersionSettings
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeVArrayType
 import org.cangnova.cangjie.cfir.types.isRune
-import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.source.AbstractCjSourceElement
 import org.cangnova.cangjie.source.CjSourceElement
-import org.cangnova.cangjie.type.AbstractTypeChecker
 
 /**
  * 专门承接“通用 type mismatch 之下还能继续细分的语义”。
@@ -35,18 +35,18 @@ internal sealed interface CfirSpecificTypeMismatch {
         /** 目标类型。 */
         val expectedType: ConeCangJieType,
     ) : CfirSpecificTypeMismatch
-    /** VArray 元素类型相同但长度不同导致的细分 type mismatch。 */
+    /** VArray 数组字面量长度与目标类型长度不一致。 */
     data class VArraySizeMismatch(
-        /** 两个 VArray 共同的元素类型。 */
+        /** 目标 VArray 的元素类型。 */
         val elementType: ConeCangJieType,
         /** 期望类型中的 VArray 长度。 */
         val expectedSize: Long,
-        /** 实际类型中的 VArray 长度。 */
+        /** 数组字面量中的元素数量。 */
         val actualSize: Long,
     ) : CfirSpecificTypeMismatch
 }
 
-/** 在通用 type mismatch 的 expected/actual 类型对中识别 CFIR 专属的细分 mismatch。 */
+/** 在通用 type mismatch 中识别由目标类型和表达式语法共同决定的 CFIR 专属细分诊断。 */
 internal fun classifySpecificTypeMismatch(
     expectedType: ConeCangJieType,
     actualType: ConeCangJieType,
@@ -59,25 +59,24 @@ internal fun classifySpecificTypeMismatch(
             expectedType = expectedType,
         )
     }
-    val expandedExpectedType = expectedType.fullyExpandedType(session)
-    val expandedActualType = actualType.fullyExpandedType(session)
-
-    val expectedVArray = expandedExpectedType as? ConeVArrayType ?: return null
-    val actualVArray = expandedActualType as? ConeVArrayType ?: return null
-    if (expectedVArray.size == actualVArray.size) return null
-
-    val sameElementType = AbstractTypeChecker.equalTypes(
-        session.typeContext,
-        expectedVArray.elementType,
-        actualVArray.elementType,
-    )
-    if (!sameElementType) return null
+    val arrayLiteral = expression?.unwrapWrappedExpression() as? CfirArrayLiteral ?: return null
+    val expectedVArray = expectedType.fullyExpandedType(session) as? ConeVArrayType ?: return null
+    val actualSize = arrayLiteral.elements.size.toLong()
+    if (expectedVArray.size == actualSize) return null
 
     return CfirSpecificTypeMismatch.VArraySizeMismatch(
         elementType = expectedVArray.elementType,
         expectedSize = expectedVArray.size,
-        actualSize = actualVArray.size,
+        actualSize = actualSize,
     )
+}
+
+/**
+ * VArray 长度诊断只认可数组字面量语法；括号等 CFIR 包装不改变该语义事实。
+ */
+private tailrec fun CfirExpression.unwrapWrappedExpression(): CfirExpression = when (this) {
+    is CfirWrappedExpression -> expression.unwrapWrappedExpression()
+    else -> this
 }
 
 /** 根据细分 type mismatch 创建更精确的 CFIR 诊断；没有细分语义时返回空。 */

@@ -89,6 +89,7 @@ object CfirFunctionBodyTypeMismatchChecker : CfirBasicExpressionChecker() {
             source = resultSource,
             expectedType = expectedType,
             actualType = actualType,
+            expression = tailExpression,
             session = context.session,
         )?.let { diagnostic ->
             reporter.report(diagnostic, context)

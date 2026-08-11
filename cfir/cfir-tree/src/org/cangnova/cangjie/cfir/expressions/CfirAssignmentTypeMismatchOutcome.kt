@@ -6,7 +6,8 @@ import org.cangnova.cangjie.cfir.types.ConeCangJieType
  * 普通赋值在 RHS 目标类型检查完成后的结构化类型不匹配结果。
  *
  * 该结果只属于当前赋值节点，不改变 RHS 在 initializer、return、调用实参或 Join 中共享的
- * 全局表达式类型。resolve 阶段负责写入完整语义，checker 只负责按该结果渲染诊断。
+ * 全局表达式类型。resolve 阶段负责写入类型关系和根有效性；checker 只按该结果渲染基础诊断，
+ * 并把赋值节点保留的 RHS 语法交给共享分类器选择官方规定的专用诊断。
  *
  * @property expectedType 左值要求的目标类型。
  * @property actualType RHS 根节点失效前捕获的实际类型。
@@ -35,7 +36,7 @@ enum class CfirAssignmentRhsRootValidity {
  * RHS expected-type 检查产生的结构化基础诊断。
  *
  * 该结果由真实的 RHS 类型检查 owner 写入 frame；assignment checker 不再根据表达式
- * 语法或接收者重新推导诊断类别。
+ * 语法或接收者重新推导类型关系与根有效性。
  */
 sealed interface CfirAssignmentTypeMismatchPrimaryDiagnostic {
     /** 使用通用 `TYPE_MISMATCH`。 */

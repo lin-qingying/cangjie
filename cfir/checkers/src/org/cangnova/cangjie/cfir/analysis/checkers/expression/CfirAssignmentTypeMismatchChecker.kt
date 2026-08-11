@@ -37,7 +37,7 @@ object CfirAssignmentTypeMismatchChecker : CfirAssignmentChecker() {
      *
      * VArray 下标赋值需要在这里按元素类型处理，普通下标赋值仍由 operator set 调用解析负责。
      * 普通赋值只消费 resolve 阶段写入的 assignment-local mismatch outcome，不再根据 receiver
-     * 或 RHS 语法反推 expected-type 检查后的根有效性。
+     * 重新推导 expected-type 检查后的根有效性；RHS 语法仅交给共享分类器选择官方规定的专用诊断。
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirAssignment) {
@@ -98,6 +98,17 @@ object CfirAssignmentTypeMismatchChecker : CfirAssignmentChecker() {
             }
 
             CfirAssignmentTypeMismatchPrimaryDiagnostic.TypeMismatch -> Unit
+        }
+
+        specificTypeMismatchDiagnostic(
+            source = rValueSource,
+            expectedType = outcome.expectedType,
+            actualType = outcome.actualType,
+            expression = expression.rValue,
+            session = context.session,
+        )?.let { diagnostic ->
+            reporter.report(diagnostic, context)
+            return
         }
 
         if (outcome.rhsRootValidity == CfirAssignmentRhsRootValidity.VALID_AFTER_MISMATCH) {

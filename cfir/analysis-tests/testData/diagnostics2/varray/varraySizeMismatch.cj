@@ -11,17 +11,17 @@ func keepTwo(values: TwoNums): TwoNums {
 }
 
 func argumentMismatch(values: ThreeNums) {
-    acceptTwo(<!NEW_INFERENCE_ERROR!>values<!>)
+    acceptTwo(<!ARGUMENT_TYPE_MISMATCH!>values<!>)
 }
 
 func initializerMismatch(values: ThreeNums, current: TwoNums) {
-    let copy: TwoNums = <!VARRAY_SIZE_MISMATCH!>values<!>
+    let copy: TwoNums = <!TYPE_MISMATCH!>values<!>
     var target: TwoNums = current
-    target = <!VARRAY_SIZE_MISMATCH!>values<!>
+    target = <!TYPE_MISMATCH!>values<!>
 }
 
 func returnMismatch(values: ThreeNums): TwoNums {
-    return <!VARRAY_SIZE_MISMATCH!>values<!>
+    return <!RETURN_TYPE_MISMATCH!>values<!>
 }
 
 func ok(values: TwoNums) {
