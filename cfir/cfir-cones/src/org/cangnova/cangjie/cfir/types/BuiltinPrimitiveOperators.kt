@@ -219,6 +219,16 @@ object BuiltinPrimitiveOperators {
             .groupBy { signature -> signature.name to signature.parameterKinds.size }
 
     /**
+     * 存在内建候选的一元运算符名称集合。
+     *
+     * 对应官方 `UNARY_EXPR_TYPE_MAP` 的键集合：只有这些运算符存在内建一元候选类型表。
+     */
+    private val unaryOperatorNames: Set<Name> =
+        signaturesByNameAndParameterCount.keys
+            .filter { (_, parameterCount) -> parameterCount == 0 }
+            .mapTo(mutableSetOf()) { (name, _) -> name }
+
+    /**
      * 返回 [receiverKind] 可暴露的 primitive 内建运算签名。
      */
     fun signaturesFor(receiverKind: PrimitiveTypeKind): List<BuiltinPrimitiveOperatorSignature> =
@@ -285,6 +295,13 @@ object BuiltinPrimitiveOperators {
         argumentKinds: List<PrimitiveTypeKind>,
     ): BuiltinPrimitiveOperatorSignature? {
         if (argumentKinds.isEmpty()) {
+            // 对齐官方 SynBuiltinUnaryExpr：候选按 IsSubtype(操作数, 候选 primitive) 匹配，
+            // 而 `Nothing` 是任意类型的子类型，故任一内建一元运算符都会命中首个候选；
+            // 命中后结果类型取操作数类型本身（官方 `ue.ty = ue.expr->ty`），仍为 `Nothing`。
+            if (receiverKind == PrimitiveTypeKind.NOTHING) {
+                if (name !in unaryOperatorNames) return null
+                return signature(name, PrimitiveTypeKind.NOTHING, emptyList(), PrimitiveTypeKind.NOTHING)
+            }
             return signaturesFor(receiverKind).firstOrNull { candidate ->
                 candidate.name == name && candidate.parameterKinds.isEmpty()
             }

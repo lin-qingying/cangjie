@@ -319,7 +319,7 @@ open class CfirExpressionsResolveTransformer(
                     literalExpression.isSingleRuneStringLiteral() &&
                     (context.variableBeingInitialized != null ||
                             context.fieldBeingInitialized != null ||
-                            context.isInsideAssignmentRhs) -> ConePrimitiveType.RUNE
+                            context.isInsideAssignmentOrInitializerValue) -> ConePrimitiveType.RUNE
             expectedType != null -> IdealTypeResolver.resolveIfIdeal(synthesized, expectedType)
             else -> synthesized
         }
@@ -340,7 +340,7 @@ open class CfirExpressionsResolveTransformer(
         literalExpression: CfirLiteralExpression,
         actualType: ConeCangJieType,
     ) {
-        val expectedType = context.assignmentRhsExpectedTypeFor(literalExpression) ?: return
+        val expectedType = context.assignmentExpectedTypeForRoot(literalExpression) ?: return
         val integerRangeMismatch = literalExpression.isOutOfAssignmentIntegerRange(expectedType)
         if (!integerRangeMismatch &&
             AbstractTypeChecker.isSubtypeOf(session.typeContext, actualType, expectedType) == true
@@ -371,7 +371,7 @@ open class CfirExpressionsResolveTransformer(
                 CfirAssignmentTypeMismatchPrimaryDiagnostic.TypeMismatch to
                         CfirAssignmentRhsRootValidity.INVALID_AFTER_MISMATCH
         }
-        context.recordAssignmentRhsExpectedTypeMismatch(
+        context.recordExpectedTypeRootMismatch(
             expression = literalExpression,
             actualType = actualType,
             primaryDiagnostic = primaryDiagnostic,
@@ -861,9 +861,25 @@ open class CfirExpressionsResolveTransformer(
         functionCall.tryResolveBuiltinOperatorWithFreshLambdaOperands(callee.name, data.expectedTypeOrNull)
             ?.let { return it }
         functionCall.tryResolveOperatorWithOnlyFreshLambdaOperands(callee.name)?.let { return it }
-        val receiverType = explicitReceiver.stableBuiltinOperatorOperandTypeOrNull() ?: return null
+
+        data.expectedTypeOrNull
+            ?.primitiveOperatorCheckTargetOrNull()
+            ?.takeIf { expectedType -> functionCall.resolveHomogeneousBuiltinOperatorAgainst(expectedType) }
+            ?.let { return functionCall }
+
+        val rightCheckTarget = functionCall.argumentList.arguments.singleOrNull()
+            ?.coneTypeOrNull
+            ?.primitiveOperatorCheckTargetOrNull()
+        val nestedReceiver = explicitReceiver as? CfirFunctionCall
+        if (rightCheckTarget != null && nestedReceiver != null) {
+            nestedReceiver.resolveHomogeneousBuiltinOperatorAgainst(rightCheckTarget)
+        }
+
+        val receiverType = explicitReceiver.stableBuiltinOperatorOperandTypeOrNull() ?: return functionCall
+            .invalidPrimitiveBoundBinaryOperatorOrNull(callee)
         val argumentTypes = functionCall.argumentList.arguments.map { argument ->
-            argument.stableBuiltinOperatorOperandTypeOrNull() ?: return null
+            argument.stableBuiltinOperatorOperandTypeOrNull() ?: return functionCall
+                .invalidPrimitiveBoundBinaryOperatorOrNull(callee)
         }
         val propagatedArgumentError = argumentTypes.firstNotNullOfOrNull { argumentType ->
             argumentType.propagatedErrorTypeOrNull()
@@ -896,6 +912,111 @@ open class CfirExpressionsResolveTransformer(
         }
         functionCall.replaceConeTypeOrNull(returnType)
         return functionCall
+    }
+
+    /**
+     * 按右侧或外层给出的确定 primitive 目标重新检查同构 operator 子树。
+     *
+     * 这对应官方 binary check-mode：右操作数先提供目标，左侧嵌套链再在该目标下重检。
+     * 因此后续出现的具体 primitive 可以使此前的 ideal/type-parameter 链合法化，而右侧新出现的
+     * 非法 primitive-bound 类型参数仍会成为当前 operator 的错误 pivot。
+     */
+    private fun CfirFunctionCall.resolveHomogeneousBuiltinOperatorAgainst(expectedType: ConePrimitiveType): Boolean {
+        if (origin != CfirFunctionCallOrigin.Operator) return false
+        val callee = calleeReference as? CfirNamedReference ?: return false
+        val argumentExpressions = argumentList.arguments
+        val signature = BuiltinPrimitiveOperators.signaturesForOperator(callee.name, argumentExpressions.size)
+            .singleOrNull { candidate ->
+                candidate.receiverKind == expectedType.kind &&
+                        candidate.returnKind == expectedType.kind &&
+                        candidate.parameterKinds.all { parameterKind -> parameterKind == expectedType.kind }
+            } ?: return false
+        val receiver = explicitReceiver ?: return false
+        if (!receiver.resolvePrimitiveOperatorOperandAgainst(ConePrimitiveType(signature.receiverKind))) return false
+        for ((argument, parameterKind) in argumentExpressions.zip(signature.parameterKinds)) {
+            if (!argument.resolvePrimitiveOperatorOperandAgainst(ConePrimitiveType(parameterKind))) return false
+        }
+
+        replaceCalleeReference(
+            buildNamedReference {
+                source = callee.source
+                name = callee.name
+            }
+        )
+        replaceConeTypeOrNull(ConePrimitiveType(signature.returnKind))
+        return true
+    }
+
+    /** 将单个表达式按确定 primitive operator 形参类型检查并写回。 */
+    private fun CfirExpression.resolvePrimitiveOperatorOperandAgainst(expectedType: ConePrimitiveType): Boolean {
+        if (this is CfirFunctionCall && resolveHomogeneousBuiltinOperatorAgainst(expectedType)) return true
+        val operandType = coneTypeOrNull ?: return false
+        return when (val operand = operandType.classifyOperatorOperand(session)) {
+            is ConeOperatorOperandClassification.Primitive -> {
+                val actualType = IdealTypeResolver.resolveIfIdeal(operand.type, expectedType)
+                val actualKind = BuiltinPrimitiveOperators.primitiveOperandKind(actualType)
+                if (actualKind != expectedType.kind && actualKind != PrimitiveTypeKind.NOTHING) return false
+                if (actualType != operandType) replaceConeTypeOrNull(actualType)
+                true
+            }
+
+            is ConeOperatorOperandClassification.PrimitiveUpperBoundTypeParameter ->
+                operand.hasInvalidDeclaredUpperBounds &&
+                        operand.primitiveUpperBounds.any { upperBound -> upperBound.kind == expectedType.kind }
+
+            is ConeOperatorOperandClassification.Error,
+            is ConeOperatorOperandClassification.Other,
+            -> false
+        }
+    }
+
+    /** 把 primitive/ideal 操作数规范化为 binary check-mode 可使用的目标类型。 */
+    private fun ConeCangJieType.primitiveOperatorCheckTargetOrNull(): ConePrimitiveType? {
+        val primitiveKind = (classifyOperatorOperand(session) as? ConeOperatorOperandClassification.Primitive)
+            ?.kind
+            ?: return null
+        val targetKind = when (primitiveKind) {
+            PrimitiveTypeKind.IDEAL_INT -> PrimitiveTypeKind.INT64
+            PrimitiveTypeKind.IDEAL_FLOAT -> PrimitiveTypeKind.FLOAT64
+            PrimitiveTypeKind.NOTHING -> return null
+            else -> primitiveKind
+        }
+        return ConePrimitiveType(targetKind)
+    }
+
+    /**
+     * 非法 primitive 声明上界参与二元运算时生成独立 operator 根诊断。
+     */
+    private fun CfirFunctionCall.invalidPrimitiveBoundBinaryOperatorOrNull(
+        callee: CfirNamedReference,
+    ): CfirFunctionCall? {
+        if (!context.isInsideExplicitReturnResult) return null
+        val receiver = explicitReceiver ?: return null
+        val argument = argumentList.arguments.singleOrNull() ?: return null
+        val receiverType = receiver.coneTypeOrNull ?: return null
+        val argumentType = argument.coneTypeOrNull ?: return null
+        val hasInvalidPrimitiveBoundOperand = listOf(receiverType, argumentType).any { operandType ->
+            val operand = operandType.classifyOperatorOperand(session)
+            operand is ConeOperatorOperandClassification.PrimitiveUpperBoundTypeParameter &&
+                    operand.hasInvalidDeclaredUpperBounds
+        }
+        if (!hasInvalidPrimitiveBoundOperand) return null
+        val operatorToken = OperatorNameConventions.TOKENS_BY_OPERATOR_NAME[callee.name] ?: return null
+        val diagnostic = ConeUnresolvedNameError(
+            callee.name,
+            operatorToken,
+            receiver.invalidBinaryOperatorOperandType(receiverType),
+            listOf(argument.invalidBinaryOperatorOperandType(argumentType)),
+        )
+        replaceCalleeReference(
+            buildErrorNamedReference {
+                source = callee.source
+                name = callee.name
+                this.diagnostic = diagnostic
+            }
+        )
+        replaceConeTypeOrNull(ConeErrorType(diagnostic))
+        return this
     }
 
     /**
@@ -2578,10 +2699,14 @@ open class CfirExpressionsResolveTransformer(
         data: ResolutionMode,
     ): CfirExpression {
         components.dataFlowAnalyzer.enterJump(returnExpression)
-        val expectedReturnTypeRef = (returnExpression.target.labeledElement.returnTypeRef as? CfirResolvedTypeRef)
+        val targetFunction = returnExpression.target.labeledElement
+        val expectedReturnTypeRef = (targetFunction.returnTypeRef
+            .takeUnless { targetFunction.hasImplicitOrInferredReturnType() } as? CfirResolvedTypeRef)
             ?.takeUnless { it.coneType is ConeErrorType }
         val resultResolutionMode = expectedReturnTypeRef?.let(::withExpectedType) ?: ResolutionMode.ContextIndependent
-        returnExpression.transformResult(transformer, resultResolutionMode)
+        context.withExplicitReturnResult {
+            returnExpression.transformResult(transformer, resultResolutionMode)
+        }
         returnExpression.transformAnnotations(transformer, ResolutionMode.ContextIndependent)
         returnExpression.replaceConeTypeOrNull(ConePrimitiveType.NOTHING)
         components.dataFlowAnalyzer.exitJump(returnExpression)
@@ -2943,7 +3068,7 @@ open class CfirExpressionsResolveTransformer(
             arrayLiteral.transformChildren(transformer, ResolutionMode.ContextIndependent)
             val actualType = arrayLiteral.constructArrayTypeFromElements()
             recordAssignmentRhsTypeMismatchIfNeeded(arrayLiteral, actualType)
-            return if (context.assignmentRhsExpectedTypeFor(arrayLiteral) != null && actualType !is ConeErrorType) {
+            return if (context.assignmentExpectedTypeForRoot(arrayLiteral) != null && actualType !is ConeErrorType) {
                 // assignment frame 负责根诊断；节点保留失效前类型，避免通用错误节点
                 // collector 再次报告同一个类型不匹配。
                 arrayLiteral.replaceConeTypeOrNull(actualType)
@@ -2975,9 +3100,9 @@ open class CfirExpressionsResolveTransformer(
         val assignmentRootActualType = resolvedArrayLiteral.actualArrayTypeBeforeExpectedElementFailure(
             expectedType = expectedType,
         )
-        if (assignmentRootActualType != null && context.assignmentRhsExpectedTypeFor(arrayLiteral) != null) {
+        if (assignmentRootActualType != null && context.assignmentExpectedTypeForRoot(arrayLiteral) != null) {
             recordAssignmentRhsTypeMismatchIfNeeded(arrayLiteral, assignmentRootActualType)
-            val assignmentExpectedType = context.assignmentRhsExpectedTypeFor(arrayLiteral)
+            val assignmentExpectedType = context.assignmentExpectedTypeForRoot(arrayLiteral)
             if (assignmentExpectedType != null &&
                 AbstractTypeChecker.isSubtypeOf(
                     session.typeContext,
@@ -3449,11 +3574,12 @@ open class CfirExpressionsResolveTransformer(
         }
 
         val operatorName = logicalOperatorName()
-        CfirBuiltinOperatorResolver.tryResolveBuiltinOperator(
-            operatorName,
-            leftType,
-            listOf(rightType),
-        )?.let { return it.returnType }
+        val boolType = builtinTypes.boolType
+        if (AbstractTypeChecker.isSubtypeOf(session.typeContext, leftType, boolType) &&
+            AbstractTypeChecker.isSubtypeOf(session.typeContext, rightType, boolType)
+        ) {
+            return boolType
+        }
 
         val diagnostic = ConeUnresolvedNameError(
             operatorName,
@@ -4900,9 +5026,9 @@ open class CfirExpressionsResolveTransformer(
     ) {
         val actual = actualType ?: return
         if (actual is ConeErrorType) return
-        val expected = context.assignmentRhsExpectedTypeFor(expression) ?: return
+        val expected = context.assignmentExpectedTypeForRoot(expression) ?: return
         if (AbstractTypeChecker.isSubtypeOf(session.typeContext, actual, expected) == true) return
-        context.recordAssignmentRhsExpectedTypeMismatch(
+        context.recordExpectedTypeRootMismatch(
             expression = expression,
             actualType = actual,
             primaryDiagnostic = primaryDiagnostic,

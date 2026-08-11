@@ -233,6 +233,14 @@ class NamedParameterNotFound(
 object InapplicableCandidate : ResolutionDiagnostic(CandidateApplicability.INAPPLICABLE)
 
 /**
+ * 候选的返回类型与调用点目标类型不兼容。
+ *
+ * 此诊断由返回类型预筛阶段产生。它仍使候选不适用于 overload 选择，但保留失败来源，
+ * 以便显式目标类型的消费点在调用完成后恢复已解析 callee 并报告 TYPE_MISMATCH。
+ */
+object InapplicableCandidateByExpectedReturnType : ResolutionDiagnostic(CandidateApplicability.INAPPLICABLE)
+
+/**
  * 函数引用实参在当前期望函数类型下没有可适用声明。
  *
  * 该诊断对齐 Kotlin FIR `UnsuccessfulCallableReferenceArgument`：resolve 阶段记录

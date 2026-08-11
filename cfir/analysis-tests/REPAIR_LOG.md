@@ -3551,3 +3551,32 @@ Flagged while gathering evidence for the extend upper-bound recursion problem ty
   (a) 是否认定 `extend_member_export05` 中 `main04`/`main05` 等 fixture 缺标记、应按 cjc 补齐期望；若是，则第二次实现可直接重新应用并配合 fixture 修正一起验证；
   (b) 还是先单独查清 `main02.f1` 的符号解析问题再整体实施。
   建议 (a) 优先：官方证据已覆盖 main02（`b.a`）与 main04（`b.c.d`）两种 use-site，规则自洽。
+
+## 类型参数限定符与可变泛型值使用统一 receiver 角色
+
+- problem type: `CANNOT_ASSIGN_TO_IMMUTABLE` 只能约束不可变运行时值；类型参数限定符访问 `mut static prop` 以及 `var` 泛型值访问 `mut prop` 都必须保持可写。
+- root cause: resolver 已把 `M.p2` 的 `M` 识别为类型参数 qualifier，但 `isImmutableStructValueAccess` 只排除了 class-like qualifier，随后把类型参数 qualifier 当成未知 struct 值。同一函数还对所有“可能为 struct”的 `var` 类型参数值强制返回 immutable，绕过了变量声明自身的 `isVar` 契约。
+- official Cangjie evidence: `cjc` 1.0.5 编译去标记的 `generics_00038.cj` 只报告两处 `sema_extend_member_cannot_shadow`，在第 104/105 行的 `v1.p1 = 2`、`M.p2 = 2` 均无不可变诊断；等价正向探针编译与运行均为 exit 0。接口单上界对照探针中，`var value: T; value.x = 1` 无诊断，而 `let value: T; value.x = 1` 和参数 `input.x = 1` 分别报告 `sema_cannot_assign_to_immutable`。`external/cangjie_compiler/src/Sema/TypeCheckExpr/NameReferenceExpr.cpp:634-697,901-940,1015-1039` 将泛型静态访问与实例访问分流并按全部上界查找成员；`external/cangjie_compiler/src/Sema/LegalityOfUsage/InitializationChecker.cpp:675-750` 只在 receiver 变量 `!isVar && MayBeStructTy` 时禁止通过 struct 值修改成员；`external/cangjie_compiler/src/Sema/Desugar/AfterTypeCheck.cpp:207-267` 对可变属性生成 setter 调用。
+- Kotlin counterpart files consulted: `external/kotlin/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/expression/FirReassignmentAndInvisibleSetterChecker.kt`；`external/kotlin/compiler/fir/tree/gen/org/jetbrains/kotlin/fir/expressions/FirResolvedQualifier.kt`；`external/kotlin/compiler/fir/resolve/src/org/jetbrains/kotlin/fir/resolve/calls/tower/FirTowerResolver.kt`、`FirTowerResolveTask.kt`；`external/kotlin/compiler/fir/resolve/src/org/jetbrains/kotlin/fir/resolve/calls/QualifierReceiver.kt`。Kotlin FIR 让 qualifier 与 runtime value receiver 走独立节点和 tower 路径，赋值 checker 只消费解析后的目标属性/变量契约。
+- CFIR owner files changed: `cfir/providers/src/org/cangnova/cangjie/cfir/calls/CfirReceivers.kt`、`cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirTowerResolver.kt`、`cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirMutabilityCheckers.kt`。
+- repair principle: 在 providers 建立共享的 resolved type-qualifier 角色判定并由 resolver/checker 共同消费，同时让泛型值的成员修改严格服从 receiver 变量的 `var`/`let` 契约，不再从上界可能包含 struct 反向冻结可变变量。
+- fixtures covered: PSI 与 LightTree `Extend/generic_param_decl_call_in_member_func/generics_00038.cj`；正向静态 qualifier guards 为 `generics/generic_call_static_impl02.cj`、`03.cj`、`04.cj`，不可变 receiver guards 为 `let/mut_1.cj`、`mut_3.cj`。
+- fixture correction: none。
+- focused verification command: `.\gradlew.bat :cfir:analysis-tests:test`，显式选择上述 6 个 fixture 的 PSI/LightTree 生成方法，共 12 个方法，并排除 test generator。
+- focused verification outcome: `BUILD SUCCESSFUL in 5m 4s`；新 XML 精确记录 `tests=12, failures=0, errors=0`。
+- shared-owner regression command: 当前生成器下 PSI/LightTree `Function.testMutErr*`、`Function.testMutFunction*`、`Record.Mut.testRecordMut*`、`Record.Mut.testRecordExtendMut*`，共执行 106 个方法。
+- shared-owner regression outcome: 106 个方法中 38 个为当前分支既有的独立 mut-reference/capture 失败；逐测试 marker multiset 显示 `CANNOT_ASSIGN_TO_IMMUTABLE missing=0, extra=2`，两处 extra 均为已单独分类的 `function/mut_function_09.cj`，本修复没有删除任何合法不可变赋值诊断。
+- family verification command: `.\gradlew.bat :cfir:analysis-tests:test --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTTestGenerated$Extend' --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTPsiTestGenerated$Extend' -x :cfir:analysis-tests:generateTestGeneratorForCfirAnalysisTestsTests --no-daemon --max-workers=1 --quiet --no-build-cache --no-configuration-cache`。
+- family verification outcome: fresh XML 执行 870 个 Extend 测试，92 个属于其它已聚类问题；`CANNOT_ASSIGN_TO_IMMUTABLE missing=0 extra=0`，且先前关闭的 `CANNOT_WEAKEN_ACCESS_PRIVILEGE`、`EXTEND_MEMBER_CANNOT_SHADOW` 继续保持 0/0。
+
+## 显式类型初始化器的返回类型预筛不能把已解析调用降级为未解析引用（已修复并验证）
+
+- problem type: Resolve / Expected type。`llt/accessibility/common_super_type2/test.cj` 中 `foo(): Array<Any>` 初始化 `Array<ToTokens>` 时，CFIR 在 `foo` 上报 `UNRESOLVED_REFERENCE`；官方只在整个 `foo()` 上报类型不匹配。
+- root cause: `CfirCheckExpectedReturnTypeBeforeArguments` 使用通用 `InapplicableCandidate` 标记返回类型与目标类型不兼容。`CfirCallResolver` 因此创建 `CfirErrorReferenceWithCandidate`，而 `CfirCallCompleter` 对参数映射尚未建立的错误引用直接返回，completion writer 无法恢复已解析 callee 及其实际返回类型。
+- official Cangjie evidence: `cjc` 1.0.5 编译该 fixture 的去标记源码，将 `foo()` 推断为 `Array<Any>`；赋给 `Array<ToTokens>` 时只在调用表达式上诊断类型不匹配，不把 `foo` 视为未解析名称。
+- Kotlin counterpart files consulted: `external/kotlin/compiler/fir/resolve/src/org/jetbrains/kotlin/fir/resolve/inference/FirCallCompleter.kt`；Kotlin 的 completion 在候选选择后继续处理 expected type，不以错误引用的提前返回替换解析结果。
+- CFIR owner files changed: `cfir/semantics/src/org/cangnova/cangjie/cfir/diagnostic/ResolutionDiagnostic.kt`、`cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/stages/CfirCheckExpectedReturnTypeBeforeArguments.kt`、`cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/inference/ExpectedTypeRootMismatch.kt`、`CfirCallCompleter.kt`、`CfirCallCompletionResultsWriterTransformer.kt`。
+- repair principle: 用 `InapplicableCandidateByExpectedReturnType` 保存预筛失败来源；只在显式目标类型根、唯一失败为该诊断、没有约束系统或参数映射错误时完成错误引用。该调用恢复为 resolved callee，随后仍由目标类型 owner 对实际类型报告 `TYPE_MISMATCH`；真实未解析、可见性、receiver、实参和约束失败仍沿用原错误路径。
+- fixtures covered: `llt/accessibility/common_super_type2/test.cj` 的 PSI 与 LightTree 路径。
+- verification command: `.\gradlew.bat :cfir:analysis-tests:test --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTTestGenerated$Accessibility$CommonSuperType2.testTest' --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTPsiTestGenerated$Accessibility$CommonSuperType2.testTest' -x :cfir:analysis-tests:generateTestGeneratorForCfirAnalysisTestsTests --no-daemon --no-configuration-cache --max-workers=1 --console=plain`。
+- verification outcome: `BUILD SUCCESSFUL`；PSI 与 LightTree 目标测试均通过。扩展验证 `--tests '*Accessibility*'` 生成 20 份 XML、共 61 个测试，`failures=0, errors=0`。

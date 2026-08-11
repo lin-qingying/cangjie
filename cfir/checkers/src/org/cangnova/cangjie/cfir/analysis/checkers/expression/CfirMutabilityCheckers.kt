@@ -30,6 +30,7 @@ import org.cangnova.cangjie.cfir.analysis.checkers.hasInvalidDeclaredUpperBounds
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
+import org.cangnova.cangjie.cfir.calls.isResolvedTypeQualifier
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
@@ -389,19 +390,16 @@ private fun CfirQualifiedAccessExpression.resolvedVariableOrPropertySymbolOrNull
 context(context: CheckerContext)
 internal fun CfirExpression.isImmutableStructValueAccess(): Boolean {
     if (this is CfirThisReceiverExpression || this is CfirSuperReceiverExpression) return false
+    if (isResolvedTypeQualifier(context.session)) return false
     if (!coneTypeOrNull.mayBeStructValueTypeInCurrentContext()) return false
 
     val access = this as? CfirQualifiedAccessExpression ?: return true
     val symbol = access.resolvedVariableOrPropertySymbolOrNull()
-    // 类型限定符（例如 `A.a` 中的 `A`）不是一个可被复制/冻结的 struct 值。
-    // static 成员写入的可变性由目标成员自身决定，不能沿限定符伪造值接收者限制。
-    if (symbol is CfirClassLikeSymbol<*>) return false
     val receiver = access.explicitReceiver ?: access.dispatchReceiver
     return when (symbol) {
         is CfirVariableSymbol<*> -> {
             val variable = symbol.takeIf { it.isBound }?.cfir ?: return true
             if (!variable.isVar) return true
-            if (access.coneTypeOrNull.mayBeStructTypeParameterInCurrentContext()) return true
             receiver?.isImmutableStructValueAccess() == true
         }
 
@@ -409,13 +407,6 @@ internal fun CfirExpression.isImmutableStructValueAccess(): Boolean {
         else -> true
     }
 }
-
-/**
- * 类型参数 receiver 即使声明为 `var` 形式的参数，也不能获得可写 struct 左值能力。
- */
-context(context: CheckerContext)
-private fun ConeCangJieType?.mayBeStructTypeParameterInCurrentContext(): Boolean =
-    this is ConeTypeParameterType && mayBeStructValueTypeInCurrentContext()
 
 /**
  * 取得不可变值诊断中用于展示的接收者名称。

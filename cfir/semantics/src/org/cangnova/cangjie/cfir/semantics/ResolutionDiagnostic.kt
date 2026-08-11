@@ -46,6 +46,14 @@ object ErrorTypeInCandidateSignature : ResolutionDiagnostic(CandidateApplicabili
 object AmbiguousClassifierTypeInCandidateSignature : ResolutionDiagnostic(CandidateApplicability.INAPPLICABLE)
 
 /**
+ * overload 集合中的 callable 均具有错误返回类型，不能形成合法调用结果。
+ *
+ * 单一 callable 的错误返回类型只保留声明或函数体根诊断；该诊断只由候选集合规约阶段在
+ * 多个同名候选全部失效时附加，用于产生官方调用级 no-match。
+ */
+object InvalidCallableReturnTypeInOverloadSet : ResolutionDiagnostic(CandidateApplicability.INAPPLICABLE)
+
+/**
  * smart cast 不稳定，不能作为候选所需类型使用。
  *
  * @property argument 发生 smart cast 的表达式。

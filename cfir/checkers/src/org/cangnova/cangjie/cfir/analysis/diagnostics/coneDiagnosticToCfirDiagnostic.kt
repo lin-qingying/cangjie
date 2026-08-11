@@ -50,6 +50,7 @@ import org.cangnova.cangjie.cfir.semantics.AbstractCallCandidate
 import org.cangnova.cangjie.cfir.semantics.AmbiguousClassifierTypeInCandidateSignature
 import org.cangnova.cangjie.cfir.semantics.ErrorTypeInCandidateSignature
 import org.cangnova.cangjie.cfir.semantics.ErrorTypeInArguments
+import org.cangnova.cangjie.cfir.semantics.InvalidCallableReturnTypeInOverloadSet
 import org.cangnova.cangjie.cfir.semantics.ResolutionDiagnostic
 import org.cangnova.cangjie.cfir.semantics.isSuccess
 import org.cangnova.cangjie.cfir.session.CfirSession
@@ -626,6 +627,7 @@ private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
     var suppressedErrorTypeInArguments = false
     var suppressedErrorTypeInCandidateSignature = false
     var suppressedAmbiguousClassifierTypeInCandidateSignature = false
+    var invalidCallableReturnTypeInOverloadSet = false
     val hasErrorTypeInArguments = candidate.diagnostics.any {
         it == ErrorTypeInArguments ||
             it == ErrorTypeInCandidateSignature ||
@@ -645,6 +647,11 @@ private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
 
             AmbiguousClassifierTypeInCandidateSignature -> {
                 suppressedAmbiguousClassifierTypeInCandidateSignature = true
+                null
+            }
+
+            InvalidCallableReturnTypeInOverloadSet -> {
+                invalidCallableReturnTypeInOverloadSet = true
                 null
             }
 
@@ -840,6 +847,9 @@ private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
     }
     if (suppressedErrorTypeInCandidateSignature) return listOfNotNull(noMatchingInvokeDiagnostic)
     if (suppressedErrorTypeInArguments) return listOfNotNull(noMatchingInvokeDiagnostic)
+    if (invalidCallableReturnTypeInOverloadSet) {
+        return listOfNotNull(candidate.invalidReturnTypeOverloadNoMatchDiagnostic(session))
+    }
 
     noMatchingInvokeDiagnostic?.let { return listOf(it) }
 
@@ -848,6 +858,14 @@ private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
 
     val diagnosticSource = qualifiedAccessSource ?: source ?: return emptyList()
     return listOfNotNull(CfirErrors.UNRESOLVED_REFERENCE.on(diagnosticSource, candidateSymbol.debugName, null, session))
+}
+
+/** 错误返回类型使整个 overload 集合失效时，在 callable 名称上报告调用级 no-match。 */
+private fun AbstractCallCandidate<*>.invalidReturnTypeOverloadNoMatchDiagnostic(session: CfirSession): CjDiagnostic? {
+    if (callInfo.semanticCallKind != AbstractCallKind.Function) return null
+    val call = callInfo.callSite as? CfirFunctionCall ?: return null
+    val calleeSource = call.calleeReference.source ?: return null
+    return CfirErrors.NO_MATCH_FUNCTION_DECLARATION_FOR_CALL.on(calleeSource, session)
 }
 
 /** 候选参数签名含 classifier 类型歧义时，在普通函数调用 callee 上保留官方 no-match。 */

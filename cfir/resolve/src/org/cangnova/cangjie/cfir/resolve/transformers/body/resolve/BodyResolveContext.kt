@@ -190,27 +190,28 @@ class BodyResolveContext(
     )
 
     /**
-     * 普通赋值 RHS 的 expected-type 检查帧。
+     * 显式目标类型消费点的根表达式检查帧。
      *
-     * [rootExpression] 使用对象 identity 区分真正的 RHS 根与 block/if/match 等向下传播
-     * expected type 后解析到的嵌套尾表达式。只有根节点自己的类型检查 owner 可以写入
-     * [outcome]，因此不会把嵌套 String 字面量的有效状态错误提升到组合表达式根。
+     * [rootExpression] 使用对象 identity 区分真正的赋值或初始化器根与 block/if/match 等
+     * 向下传播 expected type 后解析到的嵌套尾表达式。普通赋值才会捕获 [assignmentMismatchOutcome]；
+     * 初始化器只借此保留“仅目标类型不匹配”的调用语义，并交由声明 checker 报告诊断。
      */
-    private data class AssignmentRhsExpectedTypeFrame(
+    private data class ExpectedTypeRootFrame(
         val rootExpression: CfirExpression,
         val expectedType: ConeCangJieType,
-        var outcome: CfirAssignmentTypeMismatchOutcome? = null,
+        val capturesAssignmentMismatchOutcome: Boolean,
+        var assignmentMismatchOutcome: CfirAssignmentTypeMismatchOutcome? = null,
     )
 
     /** overload-by-lambda 解析过程中待报告诊断的候选栈。 */
     private val overloadByLambdaCandidateStack: ArrayDeque<OverloadByLambdaCandidateFrame> = ArrayDeque()
 
-    /** 普通赋值 RHS expected-type 检查帧栈。 */
-    private val assignmentRhsExpectedTypeStack: ArrayDeque<AssignmentRhsExpectedTypeFrame> = ArrayDeque()
+    /** 赋值和显式类型初始化器共享的 expected-type 根检查帧栈。 */
+    private val expectedTypeRootStack: ArrayDeque<ExpectedTypeRootFrame> = ArrayDeque()
 
-    /** 当前是否正在解析赋值表达式右侧。 */
+    /** 当前是否正在解析赋值 RHS 或显式类型初始化器值。 */
     @set:PrivateForInline
-    var isInsideAssignmentRhs: Boolean = false
+    var isInsideAssignmentOrInitializerValue: Boolean = false
 
     /** 当前正在解析 initializer 的局部变量栈。 */
     private val variableInitializerStack: ArrayDeque<List<CfirVariable>> = ArrayDeque()
@@ -255,6 +256,9 @@ class BodyResolveContext(
     /** 当前是否正在预解析某个外层调用的实参表达式。 */
     private var callArgumentResolutionDepth: Int = 0
 
+    /** 当前是否正在解析显式 `return` 的结果表达式。 */
+    private var explicitReturnResultDepth: Int = 0
+
     /**
      * 在外层调用实参预解析上下文中执行 [block]。
      *
@@ -273,6 +277,25 @@ class BodyResolveContext(
     /** 是否处于外层调用实参预解析过程。 */
     val isInsideCallArgumentResolution: Boolean
         get() = callArgumentResolutionDepth > 0
+
+    /**
+     * 在显式 `return` 结果语境中执行 [block]。
+     *
+     * 仓颉会完整检查被返回值的 operator 表达式；与之相对，单独作为语句且结果未被消费的
+     * operator 仍按普通错误恢复规则处理。该语境由 return owner 建立，而不是从源码范围猜测。
+     */
+    fun <T> withExplicitReturnResult(block: () -> T): T {
+        explicitReturnResultDepth += 1
+        return try {
+            block()
+        } finally {
+            explicitReturnResultDepth -= 1
+        }
+    }
+
+    /** 当前表达式是否属于显式 `return` 的结果子树。 */
+    val isInsideExplicitReturnResult: Boolean
+        get() = explicitReturnResultDepth > 0
 
     // ── File entry ─────────────────────────────────────────────────────────
 
@@ -1236,56 +1259,96 @@ class BodyResolveContext(
     }
 
     /**
-     * 在普通赋值 RHS 上建立 assignment-local expected-type 检查帧。
+     * 在赋值或显式类型初始化器值上建立 expected-type 根检查帧。
      *
-     * resolve owner 通过 [assignmentRhsExpectedTypeFor] 只识别当前根节点，并通过
-     * [recordAssignmentRhsExpectedTypeMismatch] 写入结构化结果。frame 退出后把结果交还
-     * assignment 节点，不修改 RHS 在其他 expected-type 消费位置共享的类型语义。
+     * 根 identity 保证 completion 不会把嵌套表达式的约束错误冒充为外层消费点的类型不匹配。
+     * 普通赋值通过 [capturesAssignmentMismatchOutcome] 额外收集 assignment 节点需要的结构化结果；
+     * 初始化器仅使用同一边界恢复已解析调用的实际类型。
      */
+    @OptIn(PrivateForInline::class)
+    private fun <T> withExpectedTypeRoot(
+        rootExpression: CfirExpression,
+        expectedType: ConeCangJieType?,
+        capturesAssignmentMismatchOutcome: Boolean,
+        block: (ExpectedTypeRootFrame?) -> T,
+    ): T {
+        val old = isInsideAssignmentOrInitializerValue
+        isInsideAssignmentOrInitializerValue = true
+        val frame = expectedType?.let {
+            ExpectedTypeRootFrame(rootExpression, it, capturesAssignmentMismatchOutcome)
+        }
+        if (frame != null) {
+            expectedTypeRootStack.addLast(frame)
+        }
+        return try {
+            block(frame)
+        } finally {
+            if (frame != null) {
+                check(expectedTypeRootStack.removeLast() === frame)
+            }
+            isInsideAssignmentOrInitializerValue = old
+        }
+    }
+
+    /** 在普通赋值 RHS 上建立并收集 assignment-local mismatch outcome 的 expected-type 根帧。 */
     @OptIn(PrivateForInline::class)
     fun withAssignmentRhs(
         rootExpression: CfirExpression,
         expectedType: ConeCangJieType?,
         block: () -> Unit,
-    ): CfirAssignmentTypeMismatchOutcome? {
-        val old = isInsideAssignmentRhs
-        isInsideAssignmentRhs = true
-        val frame = expectedType?.let { AssignmentRhsExpectedTypeFrame(rootExpression, it) }
-        if (frame != null) {
-            assignmentRhsExpectedTypeStack.addLast(frame)
-        }
-        return try {
-            block()
-            frame?.outcome
-        } finally {
-            if (frame != null) {
-                check(assignmentRhsExpectedTypeStack.removeLast() === frame)
-            }
-            isInsideAssignmentRhs = old
-        }
+    ): CfirAssignmentTypeMismatchOutcome? = withExpectedTypeRoot(
+        rootExpression = rootExpression,
+        expectedType = expectedType,
+        capturesAssignmentMismatchOutcome = true,
+    ) { frame ->
+        block()
+        frame?.assignmentMismatchOutcome
     }
 
-    /** 返回 [expression] 作为当前赋值 RHS 根时的 expected type。 */
-    fun assignmentRhsExpectedTypeFor(expression: CfirExpression): ConeCangJieType? {
-        val frame = assignmentRhsExpectedTypeStack.lastOrNull() ?: return null
+    /** 在显式类型初始化器上建立 expected-type 根帧，不把结果写入 assignment 节点。 */
+    fun <T> withInitializerExpectedType(
+        rootExpression: CfirExpression,
+        expectedType: ConeCangJieType,
+        block: () -> T,
+    ): T = withExpectedTypeRoot(
+        rootExpression = rootExpression,
+        expectedType = expectedType,
+        capturesAssignmentMismatchOutcome = false,
+    ) {
+        block()
+    }
+
+    /** 返回 [expression] 作为当前赋值或初始化器根时的 expected type。 */
+    fun expectedTypeForRoot(expression: CfirExpression): ConeCangJieType? {
+        val frame = expectedTypeRootStack.lastOrNull() ?: return null
+        return frame.expectedType.takeIf { frame.rootExpression === expression }
+    }
+
+    /** 返回 [expression] 作为普通赋值 RHS 根时的 expected type。 */
+    fun assignmentExpectedTypeForRoot(expression: CfirExpression): ConeCangJieType? {
+        val frame = expectedTypeRootStack.lastOrNull() ?: return null
+        if (!frame.capturesAssignmentMismatchOutcome) return null
         return frame.expectedType.takeIf { frame.rootExpression === expression }
     }
 
     /**
-     * 记录真正 RHS 根 owner 已确认的 expected-type mismatch。
+     * 记录真正 expected-type 根 owner 已确认的普通赋值 mismatch。
      *
      * 该 sink 不执行 subtype 重算；actual type、基础诊断和根有效性均必须由失效前仍持有
-     * 完整语义的 owner 提供。重复写入被拒绝，确保一个根只有一个最终检查结论。
+     * 完整语义的 owner 提供。初始化器帧不捕获 assignment outcome，仍由声明 checker 消费实际类型。
      */
-    fun recordAssignmentRhsExpectedTypeMismatch(
+    fun recordExpectedTypeRootMismatch(
         expression: CfirExpression,
         actualType: ConeCangJieType,
         primaryDiagnostic: CfirAssignmentTypeMismatchPrimaryDiagnostic,
         rhsRootValidity: CfirAssignmentRhsRootValidity,
     ) {
-        val frame = assignmentRhsExpectedTypeStack.lastOrNull() ?: return
-        if (frame.rootExpression !== expression || frame.outcome != null) return
-        frame.outcome = CfirAssignmentTypeMismatchOutcome(
+        val frame = expectedTypeRootStack.lastOrNull() ?: return
+        if (!frame.capturesAssignmentMismatchOutcome ||
+            frame.rootExpression !== expression ||
+            frame.assignmentMismatchOutcome != null
+        ) return
+        frame.assignmentMismatchOutcome = CfirAssignmentTypeMismatchOutcome(
             expectedType = frame.expectedType,
             actualType = actualType,
             primaryDiagnostic = primaryDiagnostic,

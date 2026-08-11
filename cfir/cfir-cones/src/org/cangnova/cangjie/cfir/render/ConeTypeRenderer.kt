@@ -178,7 +178,7 @@ open class ConeTypeRenderer(
             is ConeSimpleCangJieType ->
                 renderSimpleType(type)
 
-            else -> builder.append(type.toString())
+
         }
     }
 

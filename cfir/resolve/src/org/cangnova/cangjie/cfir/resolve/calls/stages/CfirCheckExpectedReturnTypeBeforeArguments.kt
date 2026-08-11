@@ -1,6 +1,6 @@
 package org.cangnova.cangjie.cfir.resolve.calls.stages
 
-import org.cangnova.cangjie.cfir.diagnostic.InapplicableCandidate
+import org.cangnova.cangjie.cfir.diagnostic.InapplicableCandidateByExpectedReturnType
 import org.cangnova.cangjie.cfir.resolve.ResolutionMode
 import org.cangnova.cangjie.cfir.resolve.expectedType
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
@@ -57,7 +57,7 @@ object CfirCheckExpectedReturnTypeBeforeArguments : ResolutionStage() {
         if (currentExpectedType.hasUncertainExpectedTypeCompatibilityShape()) return
 
         if (!AbstractTypeChecker.isSubtypeOf(context.session.typeContext, candidateReturnType, currentExpectedType)) {
-            sink.yieldDiagnostic(InapplicableCandidate)
+            sink.yieldDiagnostic(InapplicableCandidateByExpectedReturnType)
         }
     }
 }

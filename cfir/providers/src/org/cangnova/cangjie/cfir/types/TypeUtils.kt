@@ -93,6 +93,71 @@ fun ConeTypeParameterType.collectUpperBounds(typeContext: ConeTypeContext): Set<
 }
 
 /**
+ * operator 解析使用的操作数结构化分类。
+ *
+ * 类型参数的 primitive 上界虽然在声明侧非法，仍必须保留其“直接 primitive 上界”事实：
+ * 该事实可参与理想字面量签名选择和逻辑运算子类型检查，但不能把类型参数伪装成普通
+ * primitive 值接收者并开放成员 scope。
+ */
+sealed interface ConeOperatorOperandClassification {
+    /** 操作数未经近似的原始类型。 */
+    val type: ConeCangJieType
+
+    /** 可直接进入内建 operator 表的 primitive 操作数。 */
+    data class Primitive(
+        override val type: ConeCangJieType,
+        val kind: PrimitiveTypeKind,
+    ) : ConeOperatorOperandClassification
+
+    /** 声明了直接 primitive 上界的类型参数或其 fresh type variable。 */
+    data class PrimitiveUpperBoundTypeParameter(
+        override val type: ConeCangJieType,
+        val primitiveUpperBounds: Set<ConePrimitiveType>,
+        val hasInvalidDeclaredUpperBounds: Boolean,
+    ) : ConeOperatorOperandClassification
+
+    /** 已存在的根错误，后续 operator 只能传播，不能重新分类。 */
+    data class Error(
+        override val type: ConeErrorType,
+    ) : ConeOperatorOperandClassification
+
+    /** 不属于 primitive operator 特殊语义的普通类型。 */
+    data class Other(
+        override val type: ConeCangJieType,
+    ) : ConeOperatorOperandClassification
+}
+
+/**
+ * 按声明类型和直接上界分类 operator 操作数，不执行成员查找或候选解析。
+ */
+fun ConeCangJieType.classifyOperatorOperand(session: CfirSession): ConeOperatorOperandClassification {
+    if (this is ConeErrorType) return ConeOperatorOperandClassification.Error(this)
+
+    BuiltinPrimitiveOperators.primitiveOperandKind(this)?.let { kind ->
+        return ConeOperatorOperandClassification.Primitive(this, kind)
+    }
+
+    val lookupTag = when (this) {
+        is ConeTypeParameterType -> lookupTag
+        is ConeTypeVariableType -> typeConstructor.originalTypeParameter as? ConeTypeParameterLookupTag
+        else -> null
+    } ?: return ConeOperatorOperandClassification.Other(this)
+
+    val primitiveUpperBounds = lookupTag.declaredUpperBoundRefsAfterTypeResolve()
+        .mapNotNull { boundRef -> boundRef.declaredUpperBoundConeTypeOrNull() }
+        .map { boundType -> boundType.fullyExpandedType(session) }
+        .mapNotNull(BuiltinPrimitiveOperators::normalizePrimitiveOperand)
+        .toSet()
+    if (primitiveUpperBounds.isEmpty()) return ConeOperatorOperandClassification.Other(this)
+
+    return ConeOperatorOperandClassification.PrimitiveUpperBoundTypeParameter(
+        type = this,
+        primitiveUpperBounds = primitiveUpperBounds,
+        hasInvalidDeclaredUpperBounds = lookupTag.hasInvalidDeclaredUpperBounds(session),
+    )
+}
+
+/**
  * 判断类型参数声明侧 upper bounds 是否已经违反 class/interface 上界规则。
  *
  * 官方 `GenericsTy::isUpperBoundLegal` 会阻断基于非法上界的成员查找，避免在根因

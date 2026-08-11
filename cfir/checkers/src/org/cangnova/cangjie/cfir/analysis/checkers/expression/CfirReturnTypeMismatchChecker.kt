@@ -14,6 +14,8 @@ import org.cangnova.cangjie.cfir.declarations.CfirErrorFunction
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirMacroDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirMainFunction
+import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
+import org.cangnova.cangjie.cfir.hasImplicitOrInferredReturnType
 import org.cangnova.cangjie.cfir.diagnostic.ConeTypeMismatchError
 import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
@@ -52,6 +54,13 @@ object CfirReturnTypeMismatchChecker : CfirReturnExpressionChecker( ) {
     override fun check(expression: CfirReturnExpression) {
         val result = expression.result ?: return
         val source = result.source as? AbstractCjSourceElement ?: return
+        val containingFunction = expression.target.labeledElement
+        if (
+            containingFunction is CfirNamedFunction &&
+            containingFunction.hasImplicitOrInferredReturnType()
+        ) {
+            return
+        }
         val rawActualType = result.coneTypeOrNull ?: return
         val returnTypeMismatch = result.returnTypeMismatchError(rawActualType)
         val actualType = returnTypeMismatch?.actualType ?: rawActualType
@@ -63,8 +72,6 @@ object CfirReturnTypeMismatchChecker : CfirReturnExpressionChecker( ) {
             return
         }
         if (expression.source?.kind == CjFakeSourceElementKind.DelegatedPropertyAccessor) return
-
-        val containingFunction = expression.target.labeledElement
 
         if (
             containingFunction is CfirAnonymousFunction &&

@@ -87,7 +87,6 @@ interface ConeInferenceContext : TypeSystemInferenceExtensionContext, ConeTypeCo
             is ConeTypeVariableType -> typeConstructor
             is ConeStubType -> constructor
             is ConeTypeConstructorMarker -> this
-            else -> error("无法获取类型构造器: $this (${this::class})")
         }
     }
 
@@ -111,7 +110,7 @@ interface ConeInferenceContext : TypeSystemInferenceExtensionContext, ConeTypeCo
                     is CfirTypeAlias -> decl.typeParameters
                     else -> return emptyList()
                 }
-                typeParams.mapNotNull { (it.symbol as? org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol)?.toLookupTag() }
+                typeParams.map { it.symbol.toLookupTag() }
             }
             is ConeTypeParameterLookupTag -> emptyList()
             is ConeTypeVariableTypeConstructor -> emptyList()
@@ -309,25 +308,27 @@ interface ConeInferenceContext : TypeSystemInferenceExtensionContext, ConeTypeCo
         val symbol = runCatching { session.symbolProvider.getClassLikeSymbolByClassId(lookupTag.classId) }
             .getOrNull() ?: return true
         if (!symbol.isBound) return true
-        val declaration = symbol.cfir as? org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration ?: return true
+        val declaration = symbol.cfir as? CfirMemberDeclaration ?: return true
 
         // === 可见性语义检查 ===
         val file = CfirAccessibilityFileScope.get() ?: return true
         val filePackage = file.packageDirective.packageFqName
         val declPackage = lookupTag.classId.packageFqName
         val visibility = declaration.status.visibility
-        when {
-            visibility == Visibilities.Public -> Unit
-            visibility == Visibilities.Protected -> {
+        when (visibility) {
+            Visibilities.Public -> Unit
+            Visibilities.Protected -> {
                 if (!canAccessPackageProtectedDeclaration(filePackage, declPackage)) {
                     return false
                 }
             }
-            visibility == Visibilities.Internal -> {
+
+            Visibilities.Internal -> {
                 if (!canAccessPackageInternalDeclaration(filePackage, declPackage)) {
                     return false
                 }
             }
+
             else -> return false  // Private, Local 等
         }
 
