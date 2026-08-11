@@ -1364,6 +1364,12 @@ class CfirAnalysisDiagnostics2TestGenerated : AbstractCfirLightTreeDiagnosticsTe
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics2/varray")
         }
 
+        @TestMetadata("varrayArrayLiteralSizeMismatch.cj")
+        @Test
+        fun testVarrayArrayLiteralSizeMismatch() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/varray/varrayArrayLiteralSizeMismatch.cj")
+        }
+
         @TestMetadata("varraySizeMismatch.cj")
         @Test
         fun testVarraySizeMismatch() {

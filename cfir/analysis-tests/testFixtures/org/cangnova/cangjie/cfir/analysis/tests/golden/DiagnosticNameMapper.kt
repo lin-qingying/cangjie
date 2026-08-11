@@ -248,7 +248,7 @@ object DiagnosticNameMapper {
         "ANNOTATION_NO_CONST_INIT" to "sema_annotation_no_const_init",
 
         // ── Varray ──
-        "VARRAY_SIZE_MISMATCH" to "sema_varray_size_mismatch",
+        "VARRAY_SIZE_MISMATCH" to "sema_varray_size_match",
         "VARRAY_IN_CFUNC" to "sema_varray_in_cfunc",
         "VARRAY_SUBSCRIPT_NUM" to "sema_varray_subscript_num",
         "VARRAY_ARGS_NUMBER_MISMATCH" to "sema_varray_args_number_mismatch",

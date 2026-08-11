@@ -1194,6 +1194,12 @@ class CfirAnalysisDiagnosticsPsiTestGenerated : AbstractCfirPsiDiagnosticTest() 
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics/varray")
         }
 
+        @TestMetadata("varrayArrayLiteralSizeMismatchRich.cj")
+        @Test
+        fun testVarrayArrayLiteralSizeMismatchRich() {
+            runTest("cfir/analysis-tests/testData/diagnostics/varray/varrayArrayLiteralSizeMismatchRich.cj")
+        }
+
         @TestMetadata("varraySizeMismatchRich.cj")
         @Test
         fun testVarraySizeMismatchRich() {

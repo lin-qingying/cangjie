@@ -122,6 +122,7 @@ object CfirReturnTypeMismatchChecker : CfirReturnExpressionChecker( ) {
             source = source,
             expectedType = expectedType,
             actualType = actualType,
+            expression = result,
             session = context.session,
         )?.let { diagnostic ->
             reporter.report(diagnostic, context)
