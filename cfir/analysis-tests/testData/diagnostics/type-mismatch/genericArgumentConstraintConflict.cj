@@ -5,5 +5,5 @@ func choose<T>(first: T, second: T): T {
 
 main(): Unit {
 
-    let _ = <!NEW_INFERENCE_ERROR!>choose<!>(1, true)
+    let _ = <!UNABLE_TO_INFER_GENERIC_FUNC!>choose<!>(1, true)
 }

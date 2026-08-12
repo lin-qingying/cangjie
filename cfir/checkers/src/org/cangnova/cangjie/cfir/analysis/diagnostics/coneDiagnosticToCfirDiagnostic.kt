@@ -2082,6 +2082,8 @@ private fun ConeDiagnostic.mapOtherDiagnostic(
     returnExpressionSource: AbstractCjSourceElement? = null,
 ): CjDiagnostic? {
     val diagnosticSource = callOrAssignmentSource ?: source ?: return null
+    // 官方 `DiagnoseForCallInference` 把泛型推断失败锚定在 callee 表达式而非整个调用。
+    val genericInferenceAnchorSource = diagnosticSource.genericInferenceCalleeAnchorSource()
     val genericCallSource = callOrAssignmentSource ?: source
     val genericCallDiagnosticSource = genericCallSource
         ?.genericInferenceCallCalleeSource()
@@ -2093,13 +2095,13 @@ private fun ConeDiagnostic.mapOtherDiagnostic(
 
         is ConeCannotInferGenericFunctionTypeParameterType ->
             CfirErrors.UNABLE_TO_INFER_GENERIC_FUNC.on(
-                diagnosticSource,
+                genericInferenceAnchorSource,
                 session,
             )
 
         is ConeCannotInferTypeParameterType ->
             CfirErrors.UNABLE_TO_INFER_GENERIC_FUNC.on(
-                diagnosticSource,
+                genericInferenceAnchorSource,
                 session,
             )
 
@@ -2364,7 +2366,7 @@ private fun ConeDiagnostic.mapOtherDiagnostic(
         )
 
         is ConeUnableToInferGenericFuncError -> CfirErrors.UNABLE_TO_INFER_GENERIC_FUNC.on(
-            diagnosticSource, session,
+            genericInferenceAnchorSource, session,
         )
 
         is ConeGenericFunctionReferenceWithoutTypeArgumentsError ->
@@ -2733,13 +2735,14 @@ private fun ConeConstraintSystemHasContradiction.unableToInferGenericFunctionDia
 ): CjDiagnostic? {
     /**
      * 官方仓颉将泛型调用实参无法推断归一为
-     * `unable to infer generic argument of this function`。
-     * 这里保留 Kotlin FIR 的 constraint-system 分层，只在诊断表面映射为
-     * 仓颉诊断名，并把调用表达式作为默认范围，匹配 LLT 的 inline 夹注格式。
+     * `unable to infer generic argument of this function`，并在
+     * `DiagnoseForCallInference` 中把诊断锚定在 `ce.baseFunc`（callee 表达式）上，
+     * 覆盖完整限定 callee 而不包含实参括号。这里保留 Kotlin FIR 的 constraint-system
+     * 分层，只在诊断表面映射为仓颉诊断名与官方锚点。
      */
-    val diagnosticSource = qualifiedAccessSource?.genericInferenceWholeCallSource()
-        ?: candidate.callInfo.callSite.source?.genericInferenceWholeCallSource()
-        ?: source?.genericInferenceWholeCallSource()
+    val diagnosticSource = qualifiedAccessSource?.genericInferenceCalleeAnchorSource()
+        ?: candidate.callInfo.callSite.source?.genericInferenceCalleeAnchorSource()
+        ?: source?.genericInferenceCalleeAnchorSource()
         ?: return null
 
     return CfirErrors.UNABLE_TO_INFER_GENERIC_FUNC.on(
@@ -2970,12 +2973,35 @@ private fun org.cangnova.cangjie.cfir.CfirElement.genericInferenceCalleeSource()
 private fun CjSourceElement.genericInferenceCallCalleeSource(): CjSourceElement? {
     val psiSource = when (this) {
         is CjPsiSourceElement -> this
-        is CjLightSourceElement -> this.unwrapToCjPsiSourceElement()
+        // 纯 LightTree 路径没有 PSI 背书，必须在轻量树上取同一个 callee 子节点，
+        // 否则 PSI 与非 PSI 两条 LLT 路径会给出不同的诊断范围。
+        is CjLightSourceElement -> this.unwrapToCjPsiSourceElement() ?: return lightTreeCallCalleeSource()
         else -> null
     } ?: return this
 
     val callExpression = psiSource.psi as? CjCallExpression ?: return this
     return callExpression.calleeExpression?.toCjPsiSourceElement() ?: this
+}
+
+/**
+ * 在轻量树上取调用表达式的 callee 子节点 source。
+ *
+ * 解析器先完成 callee 子树再 `done(CALL_EXPRESSION)`，因此 callee 是第一个有效子节点；
+ * 类型实参列表与实参列表都排在其后，与 PSI 侧 `calleeExpression` 的范围一致。
+ */
+private fun CjLightSourceElement.lightTreeCallCalleeSource(): CjSourceElement {
+    if (lighterASTNode.tokenType != CjNodeTypes.CALL_EXPRESSION) return this
+    val childrenRef = Ref<Array<LighterASTNode>>()
+    treeStructure.getChildren(lighterASTNode, childrenRef)
+    val callee = childrenRef.get().firstOrNull { child ->
+        child.tokenType != CjTokens.WHITE_SPACE && child.tokenType !in CjTokens.COMMENTS
+    } ?: return this
+    return callee.toCjLightSourceElement(
+        tree = treeStructure,
+        kind = kind,
+        startOffset = treeStructure.getStartOffset(callee),
+        endOffset = treeStructure.getEndOffset(callee),
+    )
 }
 
 /**
@@ -2990,6 +3016,17 @@ private fun CjSourceElement.genericInferenceWholeCallSource(): CjSourceElement {
 
     return psiSource.psi.containingCallExpressionOrNull()?.toCjPsiSourceElement() ?: this
 }
+
+/**
+ * 获取泛型推断失败诊断的官方锚点 source。
+ *
+ * 官方 `DiagnoseForCallInference` 把 `sema_unable_to_infer_generic_func` 报在
+ * `ce.baseFunc` 上：先定位所在调用表达式，再取其 callee 表达式，因此范围覆盖完整
+ * 限定 callee（`B.test`、`TypeClass`）而不包含实参括号；裸引用没有调用外壳时
+ * callee 就是引用自身。
+ */
+private fun CjSourceElement.genericInferenceCalleeAnchorSource(): CjSourceElement =
+    genericInferenceWholeCallSource().genericInferenceCallCalleeSource() ?: this
 
 /**
  * 判断 source 所在调用是否为未写显式类型实参的隐式泛型调用。

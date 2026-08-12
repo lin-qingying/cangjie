@@ -4,11 +4,11 @@ func chooseGeneric<T>(first: T, second: T): T {
 }
 
 func emptyIntersectionLike(): Unit {
-    let value = <!NEW_INFERENCE_ERROR!>chooseGeneric<!>(1, 1.0)
+    let value = <!UNABLE_TO_INFER_GENERIC_FUNC!>chooseGeneric<!>(1, 1.0)
     let _ = value
 }
 
 func possibleEmptyIntersectionLike(): Unit {
-    let value = <!NEW_INFERENCE_ERROR!>chooseGeneric<!>(true, 1)
+    let value = <!UNABLE_TO_INFER_GENERIC_FUNC!>chooseGeneric<!>(true, 1)
     let _ = value
 }

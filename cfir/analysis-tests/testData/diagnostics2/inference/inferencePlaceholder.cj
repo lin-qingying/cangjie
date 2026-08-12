@@ -8,11 +8,11 @@ func builderLike<T>(block1: () -> T, block2: () -> T): T {
 }
 
 func placeholders(): Unit {
-    let _ = <!NEW_INFERENCE_ERROR!>chooseGeneric<!>(1, true)
+    let _ = <!UNABLE_TO_INFER_GENERIC_FUNC!>chooseGeneric<!>(1, true)
 
-    let _ = <!NEW_INFERENCE_ERROR!>builderLike<!>(<!NEW_INFERENCE_ERROR!>{ => 1 }<!>, <!NEW_INFERENCE_ERROR!>{ => true }<!>)
+    let _ = <!UNABLE_TO_INFER_GENERIC_FUNC!>builderLike<!>(<!UNABLE_TO_INFER_GENERIC_FUNC!>{ => 1 }<!>, <!UNABLE_TO_INFER_GENERIC_FUNC!>{ => true }<!>)
 
-    let _ = <!NEW_INFERENCE_ERROR!>chooseGeneric<!>(1, 1.0)
+    let _ = <!UNABLE_TO_INFER_GENERIC_FUNC!>chooseGeneric<!>(1, 1.0)
 
-    let _ = <!NEW_INFERENCE_ERROR!>chooseGeneric<!>(true, 1)
+    let _ = <!UNABLE_TO_INFER_GENERIC_FUNC!>chooseGeneric<!>(true, 1)
 }

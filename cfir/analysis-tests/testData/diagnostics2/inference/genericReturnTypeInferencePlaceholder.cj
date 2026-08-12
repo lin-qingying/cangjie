@@ -12,6 +12,6 @@ func inferredFromReturn(): Int64 {
 }
 
 func conflictingReturnInference(): Unit {
-    let value = <!NEW_INFERENCE_ERROR!>choose<!>(1, true)
+    let value = <!UNABLE_TO_INFER_GENERIC_FUNC!>choose<!>(1, true)
     let _ = value
 }
