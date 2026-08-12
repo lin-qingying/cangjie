@@ -35,6 +35,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirResolvable
+import org.cangnova.cangjie.cfir.expressions.CfirReturnExpression
 import org.cangnova.cangjie.cfir.expressions.CfirStatement
 import org.cangnova.cangjie.cfir.expressions.CfirWrappedExpression
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
@@ -1178,7 +1179,7 @@ open class CfirDeclarationsResolveTransformer(
     }
 
     /**
-     * 从当前函数 CFG 提取到的返回结果里推断函数返回类型。
+     * 从当前函数 body 的官方 AST 返回语义推断函数返回类型。
      *
      * 返回结果统一包含：
      * - 显式 `return expr`
@@ -1189,23 +1190,26 @@ open class CfirDeclarationsResolveTransformer(
      * 这种尾表达式即使在控制流上不可达，仍会让返回类型推断失败。
      */
     private fun inferFunctionReturnType(function: CfirFunction): ConeCangJieType {
-        val returnExpressions = components.dataFlowAnalyzer.returnExpressionsOfFunction(function)
-        if (returnExpressions.isEmpty()) {
+        val returnTypeInputs = function.collectReturnTypeInputsFromBody()
+        if (returnTypeInputs.expressions.isEmpty() && !returnTypeInputs.hasUnitTail) {
             return session.builtinTypes.unitType
         }
 
-        returnExpressions.firstNotNullOfOrNull { expression ->
+        returnTypeInputs.expressions.firstNotNullOfOrNull { expression ->
             expression.recursionInImplicitTypeErrorOrNull()
         }?.let { return it }
 
-        if (returnExpressions.any { expression -> expression.referencesImplicitReturnOwner(function) }) {
+        if (returnTypeInputs.expressions.any { expression -> expression.referencesImplicitReturnOwner(function) }) {
             return ConeErrorType(ConeSimpleDiagnostic("Recursive implicit type", DiagnosticKind.RecursionInImplicitTypes))
         }
 
-        val expressionTypes = returnExpressions.map { expression ->
+        val expressionTypes = returnTypeInputs.expressions.map { expression ->
             expression.coneTypeOrNull ?: ConeErrorType(
                 ConeSimpleDiagnostic("Postponed inference", DiagnosticKind.InferenceError)
             )
+        }.toMutableList()
+        if (returnTypeInputs.hasUnitTail) {
+            expressionTypes += session.builtinTypes.unitType
         }
 
         // 返回表达式已经携带结构化错误时，函数返回类型必须保留该根因。
@@ -1229,6 +1233,54 @@ open class CfirDeclarationsResolveTransformer(
         ) { "'$it'" }
         return ConeErrorType(ConeSimpleDiagnostic(message, DiagnosticKind.InferenceError))
     }
+
+    /**
+     * 从函数自身的 CFIR body 收集隐式返回类型输入。
+     *
+     * 返回类型推导与 CFG 可达性不同：顶层尾语句和同一函数的所有 `return` 都是输入；
+     * 尾语句为声明时按 `Unit` 处理。嵌套函数/lambda 的 return 属于各自 owner，必须跳过。
+     */
+    private fun CfirFunction.collectReturnTypeInputsFromBody(): FunctionReturnTypeInputs {
+        val functionBody = body ?: return FunctionReturnTypeInputs(emptyList(), hasUnitTail = false)
+        val functionSymbol = symbol
+        val expressions = linkedSetOf<CfirExpression>()
+        val lastStatement = functionBody.statements.lastOrNull()
+        val hasUnitTail = lastStatement is CfirDeclaration
+
+        (lastStatement as? CfirExpression)
+            ?.takeUnless { it is CfirReturnExpression }
+            ?.let(expressions::add)
+
+        functionBody.acceptChildren(object : CfirVisitorVoid() {
+            override fun visitReturnExpression(returnExpression: CfirReturnExpression) {
+                if (returnExpression.target.labeledElement.symbol == functionSymbol) {
+                    expressions += returnExpression.result
+                }
+            }
+
+            override fun visitNamedFunction(namedFunction: CfirNamedFunction) = Unit
+
+            override fun visitMainFunction(mainFunction: CfirMainFunction) = Unit
+
+            override fun visitMacroDeclaration(macroDeclaration: CfirMacroDeclaration) = Unit
+
+            override fun visitAnonymousFunction(anonymousFunction: CfirAnonymousFunction) = Unit
+
+            override fun visitAnonymousFunctionExpression(anonymousFunctionExpression: CfirAnonymousFunctionExpression) = Unit
+
+            override fun visitElement(element: CfirElement) {
+                element.acceptChildren(this, null)
+            }
+        }, null)
+
+        return FunctionReturnTypeInputs(expressions.toList(), hasUnitTail)
+    }
+
+    /** 函数 body 为隐式返回类型提供的表达式与声明尾部 Unit 输入。 */
+    private data class FunctionReturnTypeInputs(
+        val expressions: List<CfirExpression>,
+        val hasUnitTail: Boolean,
+    )
 
     /**
      * 返回表达式内部若已出现隐式返回类型递归，函数返回类型推断必须保留该根因。

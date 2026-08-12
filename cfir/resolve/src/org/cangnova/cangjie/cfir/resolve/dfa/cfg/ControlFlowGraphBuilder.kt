@@ -585,9 +585,7 @@ class ControlFlowGraphBuilder private constructor(
         exitNode.previousNodes
             .filter {
                 val edge = exitNode.edgeFrom(it)
-                // return 后的尾表达式位于 CFG 死路径，但仍属于函数体的返回类型推断输入。
-                // `usedInCfa` 保留异常/非控制流边的排除；不能再按 deadness 丢弃该候选。
-                edge.kind.usedInCfa && edge.label == NormalPath
+                edge.kind.usedInCfa && !edge.kind.isDead && edge.label == NormalPath
             }
             .mapNotNullTo(result) { it.returnExpression() }
         nonDirectJumps[exitNode].mapNotNullTo(result) { it.returnExpression() }
