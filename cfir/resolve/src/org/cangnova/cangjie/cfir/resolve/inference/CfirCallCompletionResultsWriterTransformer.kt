@@ -90,6 +90,7 @@ import org.cangnova.cangjie.source.CjFakeSourceElementKind
 import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.source.fakeElement
 import org.cangnova.cangjie.name.ClassId
+import org.cangnova.cangjie.name.OperatorNameConventions
 import org.cangnova.cangjie.type.AbstractTypeChecker
 import org.cangnova.cangjie.type.model.TypeConstructorMarker
 import org.cangnova.cangjie.types.TypeApproximatorConfiguration

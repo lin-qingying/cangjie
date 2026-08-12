@@ -207,18 +207,18 @@ internal class ScopeBasedTowerLevel(
             } else {
                 null
             }
+            val enumConstructorCandidates = mutableListOf<CfirEnumConstructorSymbol>()
             scope.processCallablesByName(info.name) { symbol ->
                 val enumConstructorSymbol = symbol as? CfirEnumConstructorSymbol ?: return@processCallablesByName
+                // enum 体内的词法遮蔽是硬性可见性规则，不参与目标类型细化的回滚。
                 if (lexicalOwnerClassId != null &&
-                    components.session.cfirProvider.getContainingClass(enumConstructorSymbol)?.classId != lexicalOwnerClassId
+                    enumConstructorSymbol.enumOwnerClassId() != lexicalOwnerClassId
                 ) {
                     return@processCallablesByName
                 }
-                if (expectedOwnerClassId != null &&
-                    components.session.cfirProvider.getContainingClass(enumConstructorSymbol)?.classId != expectedOwnerClassId
-                ) {
-                    return@processCallablesByName
-                }
+                enumConstructorCandidates += enumConstructorSymbol
+            }
+            for (enumConstructorSymbol in enumConstructorCandidates.refineByExpectedEnumOwner(expectedOwnerClassId)) {
                 result = ProcessResult.FOUND
                 consumeCallableCandidate(enumConstructorSymbol, processor)
             }
@@ -279,6 +279,31 @@ internal class ScopeBasedTowerLevel(
         }
         return null
     }
+
+    /**
+     * 目标类型对 enum sugar 候选只做优先级细化，不是可见性过滤。
+     *
+     * 官方 `EnumSugarTargetsFinder::RefineTargets` 在按目标类型细化后候选为空时会回滚候选集：
+     * 优先恢复当前包（非导入）候选，候选全部来自导入时恢复全部。因此目标类型属于其它 enum
+     * 的写法（`let c: A = None1`、`let f: Option1<Int64> = None`）仍能解析到 enum constructor，
+     * 由后续裸泛型访问 checker 或类型不匹配检查报告真实语义错误，而不是退化成 unresolved。
+     */
+    private fun List<CfirEnumConstructorSymbol>.refineByExpectedEnumOwner(
+        expectedOwnerClassId: org.cangnova.cangjie.name.ClassId?,
+    ): List<CfirEnumConstructorSymbol> {
+        if (expectedOwnerClassId == null || isEmpty()) return this
+        val refined = filter { it.enumOwnerClassId() == expectedOwnerClassId }
+        if (refined.isNotEmpty()) return refined
+        return filter { it.isDeclaredInSource() }.ifEmpty { this }
+    }
+
+    /** 读取 enum constructor 所属 enum 的 class id。 */
+    private fun CfirEnumConstructorSymbol.enumOwnerClassId(): org.cangnova.cangjie.name.ClassId? =
+        components.session.cfirProvider.getContainingClass(this)?.classId
+
+    /** 判断 enum constructor 是否来自源码而非导入产物，对齐官方 `Attribute::IMPORTED` 判定。 */
+    private fun CfirEnumConstructorSymbol.isDeclaredInSource(): Boolean =
+        takeIf { it.isBound }?.cfir?.origin?.fromSource == true
 
     /**
      * 判断变量符号是否可以作为直接 callable value 调用。
