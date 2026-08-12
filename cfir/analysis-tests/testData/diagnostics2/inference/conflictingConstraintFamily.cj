@@ -10,6 +10,6 @@ func chooseBounded<T>(first: T, second: T): T where T <: Named & Indexed {
 }
 
 func conflictingUpperBounds(): Unit {
-    let value = <!NEW_INFERENCE_ERROR!>chooseBounded<!>(NamedOnly(), IndexedOnly())
+    let value = <!UNABLE_TO_INFER_GENERIC_FUNC!>chooseBounded<!>(NamedOnly(), IndexedOnly())
     let _ = value
 }
