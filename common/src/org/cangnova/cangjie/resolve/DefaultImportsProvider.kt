@@ -10,7 +10,7 @@ abstract class DefaultImportsProvider {
     /**
      * 所有平台共享的默认导入。
      */
-    private val defaultImports: List<ImportPath> = listOf(
+    open val defaultImports: List<ImportPath> = listOf(
         "std.core.*",
 
     ).map { ImportPath.fromString(it) }
