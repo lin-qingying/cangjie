@@ -1237,8 +1237,11 @@ private fun argumentTypeMismatch(
     }
 
     // 官方 `ChkLitConstExprOf*` 在字面量与目标标量类型不兼容时报告 `sema_cannot_convert_literal`，
-    // 该判定与调用/赋值/返回上下文无关，实参位置同样适用。
-    literalConversionDiagnostic(source, expectedType, argument, session)?.let { return it }
+    // 该判定与调用/赋值/返回上下文无关。但 operator 调用另有归类：官方对 `0.1 + 1` 报
+    // `sema_invalid_binary_expr`，因此 operator origin 不走字面量分支。
+    if (candidate.callInfo.origin != CfirFunctionCallOrigin.Operator) {
+        literalConversionDiagnostic(source, expectedType, argument, session)?.let { return it }
+    }
 
     return CfirErrors.ARGUMENT_TYPE_MISMATCH.on(
         source,

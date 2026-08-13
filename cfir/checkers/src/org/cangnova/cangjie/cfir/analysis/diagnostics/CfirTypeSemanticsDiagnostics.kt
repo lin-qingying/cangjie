@@ -62,7 +62,6 @@ internal fun classifySpecificTypeMismatch(
             expectedType = expectedType,
         )
     }
-    literalConversionMismatch(expectedType, expression, session)?.let { return it }
     val arrayLiteral = expression?.unwrapWrappedExpression() as? CfirArrayLiteral ?: return null
     val expectedVArray = expectedType.fullyExpandedType(session) as? ConeVArrayType ?: return null
     val actualSize = arrayLiteral.elements.size.toLong()
