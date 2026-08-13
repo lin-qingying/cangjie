@@ -61,14 +61,13 @@ import org.cangnova.cangjie.utils.exceptions.withPsiEntry
 @OptIn(PrivateSessionConstructor::class, SessionConfiguration::class)
 internal abstract class LLCfirAbstractSessionFactory(protected val project: Project) {
     /**
-     * 开发者特性开关：是否禁用仓颉默认 prelude（标准库 std.core 自动导入）。
+     * 开发者特性开关：是否禁用仓颉默认 prelude（标准库 std.core 隐式导入）。
      *
-     * 仅开发者可见，不对最终用户暴露。设为 `true` 时禁用 prelude，`false` 时默认启用 prelude。
-     * 开发者手动切换此值以验证 IDE 侧 CFIR 在无 prelude 情下的语义分析行为。
-     *
-     * TODO: 后续若需运行时控制，可改为环境变量或系统属性读取；当前直接硬编码切换。
+     * 仅开发者可见，不对最终用户暴露。环境变量 `CANGJIE_DEV_NO_PRELUDE=1` 时禁用 prelude，
+     * 省略或非 1 时默认启用 prelude。IDE 进程一次启动读一次，所有 session 复用。
      */
-    private val devNoPreludeEnabled: Boolean = true
+    private val devNoPreludeEnabled: Boolean =
+        System.getenv("CANGJIE_DEV_NO_PRELUDE")?.equals("1", ignoreCase = true) == true
 
     @CaCachedService
     /**
@@ -164,7 +163,8 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
             val dependencyProvider = LLDependenciesSymbolProvider(this) {
                 buildList {
                     addMerged(session, computeDependencySymbolProviders(module))
-                    add(builtinsSession.symbolProvider)
+                    // prelude 关闭时不注入 builtins 符号，对齐官方 --no-prelude 只禁隐式导入、保留显式 import 的语义
+                    if (!this@apply.noPrelude) add(builtinsSession.symbolProvider)
                 }
             }
 
@@ -260,7 +260,8 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
             val dependencyProvider = LLDependenciesSymbolProvider(this) {
                 buildList {
                     addMerged(session, computeDependencySymbolProviders(session.dependencies))
-                    add(builtinsSession.symbolProvider)
+                    // prelude 关闭时不注入 builtins 符号，对齐官方 --no-prelude 只禁隐式导入、保留显式 import 的语义
+                    if (!this@apply.noPrelude) add(builtinsSession.symbolProvider)
                 }
             }
 
@@ -356,7 +357,8 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
 
             val dependencyProvider = LLDependenciesSymbolProvider(this) {
                 buildList {
-                    if (module !is CaBuiltinsModule) {
+                    if (module !is CaBuiltinsModule && !this@apply.noPrelude) {
+                        // prelude 关闭时不注入 builtins 符号，对齐官方 --no-prelude 只禁隐式导入、保留显式 import 的语义
                         add(builtinsSession.symbolProvider)
                     }
 
@@ -430,7 +432,8 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
                 LLDependenciesSymbolProvider(this) {
                     // A binary library session should not have any dependencies (apart from fallback builtins), as library module
                     // dependencies only apply to *resolvable* sessions, including fallback dependencies.
-                    listOf(builtinsSession.symbolProvider)
+                    // prelude 关闭时不注入 builtins 符号，对齐官方 --no-prelude 只禁隐式导入、保留显式 import 的语义
+                    if (this@apply.noPrelude) emptyList() else listOf(builtinsSession.symbolProvider)
                 },
             )
 
@@ -546,7 +549,8 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
                         }
                     }
 
-                    add(builtinsSession.symbolProvider)
+                    // prelude 关闭时不注入 builtins 符号，对齐官方 --no-prelude 只禁隐式导入、保留显式 import 的语义
+                    if (!this@apply.noPrelude) add(builtinsSession.symbolProvider)
                 }
             }
 
@@ -702,6 +706,7 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
         registerResolveComponents(CjRegisteredDiagnosticFactoriesStorage())
         // 对齐编译器侧 CfirAbstractSessionFactory.kt:247 的注入链：让 IDE 侧 session 也吃 prelude 开关，
         // 使 CfirSession.noPrelude getter 与 CfirGeneralSemanticsChecker 在 IDE 侧能生效。
+        // 开发者特性开关由环境变量 CANGJIE_DEV_NO_PRELUDE 控制，详见 devNoPreludeEnabled 字段注释。
         register(CfirPreludeSettingsComponent::class, CfirPreludeSettingsComponent(devNoPreludeEnabled))
     }
 

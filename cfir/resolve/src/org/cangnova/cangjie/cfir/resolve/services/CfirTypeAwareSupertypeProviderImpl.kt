@@ -361,6 +361,7 @@ class CfirTypeAwareSupertypeProviderImpl(
      */
     private fun ConeCangJieType.shouldInheritExtendsFromSuperclassChain(): Boolean {
         return when (this) {
+
             is ConeClassLikeType -> !isInterface
             is ConeStructType, is ConeEnumType -> true
             else -> false
