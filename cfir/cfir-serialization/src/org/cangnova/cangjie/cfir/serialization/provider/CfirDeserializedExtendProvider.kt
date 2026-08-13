@@ -2,7 +2,9 @@ package org.cangnova.cangjie.cfir.serialization.provider
 
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
+import org.cangnova.cangjie.cfir.resolve.providers.CfirCompositeSymbolProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirExtendProvider
+import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
 import org.cangnova.cangjie.cfir.session.services.CfirExtendTargetKey
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
@@ -101,4 +103,18 @@ class CfirDeserializedExtendProvider(
         /** extend 声明到所属包名的反查索引。 */
         val byDeclarationPackage: Map<CfirExtend, FqName>,
     )
+}
+
+/**
+ * 展开 [CfirSymbolProvider] 树中的反序列化 provider。
+ *
+ * 该工具用于从任意符号 provider 集合中提取二进制 extend 元数据来源，供 entrypoint 的库
+ * extend provider 与 LL/IDE 侧组合 extend provider 共用。
+ */
+fun CfirSymbolProvider.flattenDeserializedProviders(): List<AbstractCfirDeserializedSymbolProvider> {
+    return when (this) {
+        is CfirCompositeSymbolProvider -> providers.flatMap(CfirSymbolProvider::flattenDeserializedProviders)
+        is AbstractCfirDeserializedSymbolProvider -> listOf(this)
+        else -> emptyList()
+    }
 }
