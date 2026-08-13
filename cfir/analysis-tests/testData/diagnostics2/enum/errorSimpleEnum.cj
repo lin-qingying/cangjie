@@ -29,7 +29,7 @@ func identity1<T>(value: T): T {
 }
 
 func name(): Unit {
-    <!NEW_INFERENCE_ERROR!>name1<!>(1)
+    <!UNABLE_TO_INFER_GENERIC_FUNC!>name1<!>(1)
     let a = A1(1)
 
     let b = <!NO_MATCHING_OPERATOR_INVOKE!>A<!>(1)
@@ -39,8 +39,8 @@ func name(): Unit {
     let e = None<Int64>
     let f: Option1<Int64> = <!GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT!>None<!>
 
-    let g = <!NEW_INFERENCE_ERROR!>Some2<!>(1)
+    let g = <!UNABLE_TO_INFER_GENERIC_FUNC!>Some2<!>(1)
 
-    let fStd = <!NEW_INFERENCE_ERROR!>Some<Float64><!>(1)
+    let fStd = Some<Float64>(<!CANNOT_CONVERT_LITERAL!>1<!>)
     let gStd = None<Int64>
 }

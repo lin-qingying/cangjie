@@ -15,6 +15,7 @@ import org.cangnova.cangjie.analysis.api.types.CaTypePointer
 import org.cangnova.cangjie.analysis.api.types.CaTypeProjection
 import org.cangnova.cangjie.analysis.api.types.CaUnionType
 import org.cangnova.cangjie.analysis.api.types.CaUsualClassType
+import org.cangnova.cangjie.analysis.api.types.CaVArrayType
 import org.cangnova.cangjie.cfir.types.abbreviatedType
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
@@ -24,6 +25,7 @@ import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.ConeTupleType
 import org.cangnova.cangjie.cfir.types.ConeTypeProjection
 import org.cangnova.cangjie.cfir.types.ConeUnionType
+import org.cangnova.cangjie.cfir.types.ConeVArrayType
 import org.cangnova.cangjie.cfir.types.type
 
 /**
@@ -85,6 +87,12 @@ internal fun restoreFunctionType(coneType: ConeFunctionType, session: CaCfirSess
  */
 internal fun restoreTupleType(coneType: ConeTupleType, session: CaCfirSession): CaTupleType? =
     coneType.asCaType(session) as? CaTupleType
+
+/**
+ * 恢复 VArray type 指针。
+ */
+internal fun restoreVArrayType(coneType: ConeVArrayType, session: CaCfirSession): CaVArrayType? =
+    coneType.asCaType(session) as? CaVArrayType
 
 /**
  * 恢复 intersection type 指针。

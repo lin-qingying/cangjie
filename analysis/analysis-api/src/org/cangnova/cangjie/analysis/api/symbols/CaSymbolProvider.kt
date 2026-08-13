@@ -8,6 +8,7 @@ import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjBindingPattern
 import org.cangnova.cangjie.psi.CjConstructor
 import org.cangnova.cangjie.psi.CjDeclaration
+import org.cangnova.cangjie.psi.CjElement
 import org.cangnova.cangjie.psi.CjEnumConstructor
 import org.cangnova.cangjie.psi.CjExtend
 import org.cangnova.cangjie.psi.CjFieldVariable
@@ -168,6 +169,7 @@ interface CaSymbolProvider : CaLifetimeOwner {
      */
     fun getExtendSymbols(targetClassId: ClassId): List<CaExtendSymbol>
 }
+
 /**
  * 在 [CaSession] 上下文中从任意声明 PSI 恢复其公开声明符号。
  *
@@ -175,5 +177,33 @@ interface CaSymbolProvider : CaLifetimeOwner {
  * provider 的调用方使用：`analyze { someDeclaration.symbol }`。
  */
 context(session: CaSession)
-val CjDeclaration.symbol: CaDeclarationSymbol
+internal val CjDeclaration.symbol: CaDeclarationSymbol
     get() = with(session) { symbol }
+
+/**
+ * 在 [CaSession] 上下文中从任意声明 PSI 恢复其公开声明符号。
+ *
+ * 这是 [CaSymbolProvider.symbol] 的 context-receiver 形式入口，便于不显式构造
+ * provider 的调用方使用：`analyze { someDeclaration.symbol }`。
+ */
+context(session: CaSession)
+internal val CjBindingPattern.symbol: CaDeclarationSymbol
+    get() = with(session) { symbol }
+
+/**
+ * 在 [CaSession] 上下文中从任意声明 PSI 恢复其公开声明符号。
+ *
+ * 这是 [CaSymbolProvider.symbol] 的 context-receiver 形式入口，便于不显式构造
+ * provider 的调用方使用：`analyze { someDeclaration.symbol }`。
+ */
+context(session: CaSession)
+val CjElement.symbol: CaDeclarationSymbol
+    get() {
+        return when (this) {
+            is CjDeclaration -> symbol
+            is CjBindingPattern -> symbol
+            else -> error("Unsupported PSI element for symbol resolution: ${this::class.simpleName}")
+        }
+    }
+
+
