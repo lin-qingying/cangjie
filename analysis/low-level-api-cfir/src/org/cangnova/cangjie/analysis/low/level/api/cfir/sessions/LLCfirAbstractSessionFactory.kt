@@ -60,6 +60,16 @@ import org.cangnova.cangjie.utils.exceptions.withPsiEntry
  */
 @OptIn(PrivateSessionConstructor::class, SessionConfiguration::class)
 internal abstract class LLCfirAbstractSessionFactory(protected val project: Project) {
+    /**
+     * 开发者特性开关：是否禁用仓颉默认 prelude（标准库 std.core 自动导入）。
+     *
+     * 仅开发者可见，不对最终用户暴露。设为 `true` 时禁用 prelude，`false` 时默认启用 prelude。
+     * 开发者手动切换此值以验证 IDE 侧 CFIR 在无 prelude 情下的语义分析行为。
+     *
+     * TODO: 后续若需运行时控制，可改为环境变量或系统属性读取；当前直接硬编码切换。
+     */
+    private val devNoPreludeEnabled: Boolean = true
+
     @CaCachedService
     /**
      * 工程级全局解析组件，包含 lock provider 等跨 session 共享设施。
@@ -690,6 +700,9 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
         registerIdeComponents(project, languageVersionSettings, annotationSearchScope)
         registerCommonComponents(languageVersionSettings)
         registerResolveComponents(CjRegisteredDiagnosticFactoriesStorage())
+        // 对齐编译器侧 CfirAbstractSessionFactory.kt:247 的注入链：让 IDE 侧 session 也吃 prelude 开关，
+        // 使 CfirSession.noPrelude getter 与 CfirGeneralSemanticsChecker 在 IDE 侧能生效。
+        register(CfirPreludeSettingsComponent::class, CfirPreludeSettingsComponent(devNoPreludeEnabled))
     }
 
     /**

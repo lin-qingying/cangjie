@@ -13,6 +13,9 @@ import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.languageVersionSettings
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeVArrayType
+import org.cangnova.cangjie.cfir.types.isBoolean
+import org.cangnova.cangjie.cfir.types.isFloatType
+import org.cangnova.cangjie.cfir.types.isIntegerType
 import org.cangnova.cangjie.cfir.types.isRune
 import org.cangnova.cangjie.source.AbstractCjSourceElement
 import org.cangnova.cangjie.source.CjSourceElement
@@ -59,6 +62,7 @@ internal fun classifySpecificTypeMismatch(
             expectedType = expectedType,
         )
     }
+    literalConversionMismatch(expectedType, expression, session)?.let { return it }
     val arrayLiteral = expression?.unwrapWrappedExpression() as? CfirArrayLiteral ?: return null
     val expectedVArray = expectedType.fullyExpandedType(session) as? ConeVArrayType ?: return null
     val actualSize = arrayLiteral.elements.size.toLong()
@@ -77,6 +81,45 @@ internal fun classifySpecificTypeMismatch(
 private tailrec fun CfirExpression.unwrapWrappedExpression(): CfirExpression = when (this) {
     is CfirWrappedExpression -> expression.unwrapWrappedExpression()
     else -> this
+}
+
+/**
+ * 识别数值/布尔字面量落入官方 `ChkLitConstExprOf*` 的“无法转换”分支。
+ *
+ * 官方在目标类型不是该字面量的合法子类型、且不可装箱、也不是 `Any`/`CType` 时报告
+ * `sema_cannot_convert_literal`（`Sema/TypeCheckExpr/LitConstExpr.cpp`）。这里只覆盖
+ * 标量基础类型目标——装箱与 `Any`/`CType` 逃逸路径在这些目标上不成立，因此结论与官方一致。
+ */
+internal fun literalConversionMismatch(
+    expectedType: ConeCangJieType,
+    expression: CfirExpression?,
+    session: CfirSession,
+): CfirSpecificTypeMismatch.CannotConvertLiteral? {
+    val literal = expression?.unwrapWrappedExpression() as? CfirLiteralExpression ?: return null
+    val target = expectedType.fullyExpandedType(session)
+    if (!target.isIntegerType && !target.isFloatType && !target.isBoolean && !target.isRune) return null
+    val description = when (literal.kind) {
+        CfirLiteralKind.INT -> "integer".takeIf { !target.isIntegerType }
+        CfirLiteralKind.FLOAT -> "floating-point".takeIf { !target.isFloatType }
+        CfirLiteralKind.BOOLEAN -> "boolean".takeIf { !target.isBoolean }
+        else -> null
+    } ?: return null
+    return CfirSpecificTypeMismatch.CannotConvertLiteral(
+        literalDescription = description,
+        expectedType = expectedType,
+    )
+}
+
+/** 直接构造字面量转换失败诊断；不属于该语义时返回空。 */
+internal fun literalConversionDiagnostic(
+    source: AbstractCjSourceElement?,
+    expectedType: ConeCangJieType,
+    expression: CfirExpression?,
+    session: CfirSession,
+): CjDiagnostic? {
+    val diagnosticSource = source as? CjSourceElement ?: return null
+    val mismatch = literalConversionMismatch(expectedType, expression, session) ?: return null
+    return createCannotConvertLiteralDiagnostic(diagnosticSource, mismatch, session)
 }
 
 /** 根据细分 type mismatch 创建更精确的 CFIR 诊断；没有细分语义时返回空。 */

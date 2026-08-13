@@ -35,6 +35,7 @@ import org.cangnova.cangjie.analysis.api.cfir.types.CaCfirTupleType
 import org.cangnova.cangjie.analysis.api.cfir.types.CaCfirTypeParameterType
 import org.cangnova.cangjie.analysis.api.cfir.types.CaCfirUnionType
 import org.cangnova.cangjie.analysis.api.cfir.types.CaCfirUsualClassType
+import org.cangnova.cangjie.analysis.api.cfir.types.CaCfirVArrayType
 import org.cangnova.cangjie.analysis.api.cfir.utils.asPublicTypeProjection
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
 import org.cangnova.cangjie.analysis.api.platform.packages.CangJiePackageProvider
@@ -62,6 +63,7 @@ import org.cangnova.cangjie.analysis.api.types.CaSubstitutor
 import org.cangnova.cangjie.analysis.api.types.CaType
 import org.cangnova.cangjie.analysis.api.types.CaTypeProjection
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.errorWithCfirSpecificEntries
+import org.cangnova.cangjie.builtins.StandardNames
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
@@ -118,11 +120,18 @@ import org.cangnova.cangjie.cfir.types.ConeStubType
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.resolve.toSymbol
+import org.cangnova.cangjie.cfir.symbols.constructClassType
+import org.cangnova.cangjie.cfir.symbols.toLookupTag
+import org.cangnova.cangjie.cfir.types.ConeAnyType
+import org.cangnova.cangjie.cfir.types.ConeCStringType
 import org.cangnova.cangjie.cfir.types.ConeTupleType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeLookupTag
+import org.cangnova.cangjie.cfir.types.ConePointerType
 import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
 import org.cangnova.cangjie.cfir.types.ConeTypeProjection
 import org.cangnova.cangjie.cfir.types.ConeUnionType
+import org.cangnova.cangjie.cfir.types.ConeVArrayType
+import org.cangnova.cangjie.cfir.types.StdlibClassIds
 import org.cangnova.cangjie.cfir.types.coneType
 import org.cangnova.cangjie.cfir.types.contains
 import org.cangnova.cangjie.cfir.types.forEachType
@@ -628,7 +637,23 @@ companion object{
                     errorMessageImpl = "Quest type cannot be exposed as a stable public type",
                     presentableTextImpl = publicConeType.renderForDebugging(),
                 )
+                ConeAnyType -> CaCfirUsualClassType(
+                    StdlibClassIds.Any.toLookupTag().constructClassType(),
+                    this@CaSymbolByCfirBuilder,
+                )
+                is ConeCStringType -> CaCfirUsualClassType(
+                    ClassId(StandardNames.FqNames.core, StandardNames.CSTRING).toLookupTag().constructClassType(),
+                    this@CaSymbolByCfirBuilder,
+                )
 
+                is ConePointerType -> CaCfirUsualClassType(
+                    ClassId(StandardNames.FqNames.core, StandardNames.CPOINTER).toLookupTag().constructClassType(
+                        typeArguments = listOf(publicConeType.pointeeType),
+                    ),
+                    this@CaSymbolByCfirBuilder,
+                )
+
+                is ConeVArrayType -> CaCfirVArrayType(publicConeType, analysisSession)
                 else -> error("Unsupported CFIR public type projection: ${publicConeType::class.qualifiedName}")
             }
         }

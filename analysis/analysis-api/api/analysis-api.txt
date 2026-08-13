@@ -1428,6 +1428,11 @@ public interface CaUnresolvedClassTypeQualifier : CaClassTypeQualifier
 package org.cangnova.cangjie.analysis.api.types
 public abstract class CaUsualClassType : CaClassLikeType()
 CaUsualClassType.public abstract override fun createPointer(): CaTypePointer<CaUsualClassType>
+## org/cangnova/cangjie/analysis/api/types/CaVArrayType.kt
+package org.cangnova.cangjie.analysis.api.types
+public interface CaVArrayType : CaType
+CaVArrayType.public val elementType: CaType
+CaVArrayType.public val size: Long
 ## org/cangnova/cangjie/analysis/api/types/typeUtils.kt
 package org.cangnova.cangjie.analysis.api.types
 public val CaType.symbol: CaClassLikeSymbol?
