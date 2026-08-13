@@ -3595,3 +3595,26 @@ Flagged while gathering evidence for the extend upper-bound recursion problem ty
 - focused verification outcome: `BUILD SUCCESSFUL in 3m 26s`；六个 diagnostics XML 各为 `3 tests, 0 failures, 0 errors`，两个 LLT XML 各为 `1 test, 0 failures, 0 errors`。
 - full verification command: `./gradlew.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain --no-build-cache --no-configuration-cache`。
 - full verification outcome: 任务执行完成但全套件仍有失败，Gradle 退出为失败；新鲜 XML 合计 `8421 tests, 1286 failures, 0 errors, 306 skipped`。本条覆盖的 12 个 diagnostics 方法和 2 个 `varray04` 方法均通过；同一轮 LLT Varray 的其余失败为 `varrayAlias01`、`varrayAlias01Err`、`varraySize02`（PSI/LightTree 各一），另有宏 Varray 失败，未并入本问题类型。
+
+## 裸 enum constructor 的目标类型细化被误实现为硬过滤
+
+- problem type: Resolve —— 无 receiver 的 enum sugar 引用在目标类型属于其它 enum 时应仍能解析到构造器，再由裸泛型/类型不匹配诊断报告，而不是退化成 `UNRESOLVED_REFERENCE`。
+- root cause: `TowerLevelHandler.processFunctionsByName` 对 `CallKind.EnumConstructorCall` 用 `expectedOwnerClassId` 做硬过滤，候选被清空后作用域为空，`CfirCallResolver` 回落到普通函数搜索也找不到名字。`CfirCallCompleter.shouldUseExpectedTypeForCompletion` 与 `CfirGenericBareClassifierAccessChecker` 的正确逻辑因此永远拿不到候选。
+- official Cangjie evidence: `cjc 1.0.5` 对 `let c: A = None1` / `let f: Option1<Int64> = None` 报 `sema_generic_type_without_type_argument`，对 `let d: A = None1<Int64>` 报 `sema_mismatched_types`（expected 'Enum-A', found 'Enum-Option1<Int64>'），均非 unresolved。实现见 `external/cangjie_compiler/src/Sema/EnumSugarTargetsFinder.cpp` 的 `RefineTargets()`：按目标类型细化后候选为空时回滚候选集（优先当前包非导入候选，全为导入则恢复全部）；`src/Sema/TypeCheckExpr/NameReferenceExpr.cpp:37-41` `CheckInferrableEnumReference` 在 `RefineTargetTy` 失败时报告该诊断。另用 `enum E1{N|S(Int64)} enum E2{N|S(Bool)}` 验证目标类型确实起消歧作用（`let c = N` 才报 `sema_multiple_constructor_in_enum`）。
+- Kotlin counterpart files consulted: FIR tower level 候选消费与 `ResolutionMode.WithExpectedType` 的“期望类型只影响候选排序/完成、不影响可见性”分层。
+- CFIR owner files changed: `cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/tower/TowerLevelHandler.kt`。
+- repair principle: 在 tower 层把目标 enum owner 从可见性过滤降级为候选细化，并实现官方的“空则回滚”，让后续 completer 与 checker 承担真实语义诊断。词法 enum 体遮蔽仍是硬过滤，不参与回滚。
+- fixtures covered: `diagnostics/enum/errorSimpleEnum.cj`、`diagnostics2/enum/errorSimpleEnum.cj` 的 PSI / LightTree / no-alias-expansion 共 6 个生成用例。
+- verification command: `./gradlew.bat :cfir:analysis-tests:test --tests '*Diagnostics2PsiTestGenerated$Enum' --tests '*Diagnostics2TestGenerated$Enum' --tests '*DiagnosticsPsiTestGenerated$Enum' --tests '*DiagnosticsTestGenerated$Enum' --no-daemon --max-workers=1`
+- verification outcome: 4 个 Enum 套件全部通过；`None1` / `None` 三处诊断与 cjc 完全一致，且未多报 TYPE_MISMATCH。
+
+## 泛型推断失败诊断锚点应为 callee 而非整个调用（部分完成）
+
+- problem type: Diagnostics（range）—— `UNABLE_TO_INFER_GENERIC_FUNC` 的范围。
+- root cause: `unableToInferGenericFunctionDiagnostic` 与 cone 映射分支都用整个调用表达式作为 source（注释自述为“匹配 LLT 的 inline 夹注格式”，属于按 fixture 反推实现）；LightTree 路径的 `genericInferenceCallCalleeSource` 依赖 PSI 反解，纯 LightTree 下直接退回整段调用，导致 PSI 与非 PSI 两条路径范围不一致。
+- official Cangjie evidence: `external/cangjie_compiler/src/Sema/TypeArgumentInference.cpp:154` `DiagnoseForCallInference` 把 `sema_unable_to_infer_generic_func` 报在 `*ce.baseFunc`。cjc 实测：`f()`→`f`、`test(1)`→`test`、`f(Map(), Road(), City())`→`f`、`B.test(arr)`→`B.test`、`TypeClass()`→`TypeClass`、`Some(a)`→`Some`，一律只覆盖完整限定 callee，不含实参括号。
+- Kotlin counterpart files consulted: FIR 诊断 source 选择与 `SourceElementPositioningStrategies`。
+- CFIR owner files changed: `cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/diagnostics/coneDiagnosticToCfirDiagnostic.kt`（新增 `genericInferenceCalleeAnchorSource` 与 LightTree 侧 `lightTreeCallCalleeSource`）。
+- repair principle: 统一用官方锚点（先定位所在调用表达式，再取其 callee 子节点），并让 LightTree 路径在轻量树上取同一子节点，消除双路径分裂。
+- fixtures covered（已验证）: 两个 `errorSimpleEnum.cj` 的 6 个生成用例。
+- 未完成: 约 20 个 LLT fixture（`llt/ErrMsgs/type_arg_infer*`、`llt/call/call11`、`llt/typealias/typealias32`、`llt/type_infer/*`、`llt/ffi/cpointer_generic_reverse*` 等）仍把范围写成整个调用，按 cjc 属 fixture 错，需逐个用 `tools/cjc_apply_markers.py` 依官方跨度重写。

@@ -2,6 +2,8 @@ package org.cangnova.cangjie.cfir.serialization.cjo
 
 import PackageFormat.Package
 import org.cangnova.cangjie.cfir.serialization.CjoConstants
+import org.cangnova.cangjie.cfir.types.coneTypeOrNull
+import org.cangnova.cangjie.cfir.types.expandedExtendTargetKey
 import java.nio.ByteBuffer
 import java.nio.file.Files
 import kotlin.io.path.createDirectories
@@ -89,6 +91,219 @@ class CjoSdkDeserializationIntegrationTest {
             )
             val loadedPackage = assertNotNull(manager.loadPackage(fullPkgName), "should load full package for $fullPkgName")
             assertEquals(fullPkgName, loadedPackage.fullPkgName)
+        } finally {
+            tempDir.toFile().deleteRecursively()
+        }
+    }
+
+    /**
+     * 诊断：dump 真实 SDK std.core 包中所有顶层声明的 kind/isTopLevel，检查 extend 提取链路。
+     */
+    @Test
+    fun `diagnose top level extend extraction in real sdk package`() {
+        val fixture = "cjo-sdk/windows_x86_64_cjnative/std/std.core.cjo"
+        val bytes = resourceBytes(fixture)
+        val pkg = Package.getRootAsPackage(ByteBuffer.wrap(bytes))
+
+        val byKind = linkedMapOf<UShort, Int>()
+        val kindNames = mapOf(
+            PackageFormat.DeclKind.InvalidDecl to "InvalidDecl",
+            PackageFormat.DeclKind.ClassDecl to "ClassDecl",
+            PackageFormat.DeclKind.InterfaceDecl to "InterfaceDecl",
+            PackageFormat.DeclKind.FuncDecl to "FuncDecl",
+            PackageFormat.DeclKind.PropDecl to "PropDecl",
+            PackageFormat.DeclKind.VarDecl to "VarDecl",
+            PackageFormat.DeclKind.VarWithPatternDecl to "VarWithPatternDecl",
+            PackageFormat.DeclKind.FuncParam to "FuncParam",
+            PackageFormat.DeclKind.StructDecl to "StructDecl",
+            PackageFormat.DeclKind.EnumDecl to "EnumDecl",
+            PackageFormat.DeclKind.ExtendDecl to "ExtendDecl",
+            PackageFormat.DeclKind.TypeAliasDecl to "TypeAliasDecl",
+            PackageFormat.DeclKind.GenericParamDecl to "GenericParamDecl",
+            PackageFormat.DeclKind.BuiltInDecl to "BuiltInDecl",
+        )
+        var extTopLevel = 0
+        var extNonTopLevel = 0
+        var extTopLevelIdentified = 0
+        val extSamples = mutableListOf<String>()
+        for (index in 0 until pkg.allDeclsLength) {
+            val decl = pkg.allDecls(index) ?: continue
+            val kind = decl.kind
+            byKind[kind] = (byKind[kind] ?: 0) + 1
+            if (kind == PackageFormat.DeclKind.ExtendDecl) {
+                if (decl.isTopLevel) {
+                    extTopLevel++
+                    if (!decl.identifier.isNullOrBlank()) extTopLevelIdentified++
+                    if (extSamples.size < 5) {
+                        extSamples += "index=$index isTopLevel=${decl.isTopLevel} id=${decl.identifier ?: "<null>"} type=${decl.type}"
+                    }
+                } else {
+                    extNonTopLevel++
+                }
+            }
+        }
+        println("=== std.core allDecls kind histogram ===")
+        byKind.forEach { (kind, count) -> println("kind=$kind (${kindNames[kind] ?: "?"}): $count") }
+        println("ExtendDecl total=${extTopLevel + extNonTopLevel} (topLevel=$extTopLevel, nested=$extNonTopLevel)")
+        println("extend top-level samples: $extSamples")
+        println("extend with identifier among top-level: $extTopLevelIdentified")
+
+        val header = CjoPackageHeader.fromPackage(pkg)
+        println("topLevelExtendIndices = ${header.topLevelExtendIndices}")
+    }
+
+    /**
+     * 诊断：对真实 SDK 包的顶层 extend 执行完整反序列化，检查 convertExtend 产出与 targetKey。
+     */
+    @Test
+    fun `diagnose extend deserialization in real sdk package`() {
+        val fixture = "cjo-sdk/windows_x86_64_cjnative/std/std.core.cjo"
+        val bytes = resourceBytes(fixture)
+        val tempDir = Files.createTempDirectory("cjo-extend-diag-")
+        try {
+            val target = tempDir.resolve(CjoConstants.packageNameToPath("std.core"))
+            target.parent?.createDirectories()
+            target.outputStream().use { it.write(bytes) }
+
+            val manager = CjoManager(
+                CjoSearchPath { key ->
+                    when (key) {
+                        "CANGJIE_STDLIB_MODULE" -> tempDir.toString()
+                        else -> null
+                    }
+                }
+            )
+            val header = assertNotNull(manager.loadPackageHeader("std.core"), "header")
+            val pkg = assertNotNull(manager.loadPackage("std.core"), "pkg")
+            val context = org.cangnova.cangjie.cfir.serialization.deserialize.CfirDeserializationContext(
+                pkg = pkg,
+                header = header,
+                moduleData = DiagModuleData,
+                cjoManager = manager,
+            )
+
+            val indices = header.topLevelExtendIndices
+            var ok = 0
+            var fail = 0
+            val targetKeyCounts = linkedMapOf<String, Int>()
+            for (index in indices) {
+                try {
+                    val decl = context.createDeclDeserializer().deserializeDecl(index)
+                    if (decl is org.cangnova.cangjie.cfir.declarations.CfirExtend) {
+                        ok++
+                        val cone = decl.extendedTypeRef.coneTypeOrNull
+                        val key = cone?.expandedExtendTargetKey
+                        val keyText = key?.toString() ?: "<null>"
+                        targetKeyCounts[keyText] = (targetKeyCounts[keyText] ?: 0) + 1
+                        if (ok <= 5) {
+                            println(
+                                "EXTEND[$index] -> CfirExtend typeRefCone=$cone " +
+                                    "targetKey=$key superTypes=${decl.superTypeRefs.size} members=${decl.declarations.size}",
+                            )
+                        }
+                    } else {
+                        fail++
+                        println("EXTEND[$index] -> ${decl?.let { it::class.simpleName }} NOT CfirExtend")
+                    }
+                } catch (e: Throwable) {
+                    fail++
+                    println("EXTEND[$index] -> EXCEPTION ${e::class.simpleName}: ${e.message}")
+                }
+            }
+            println("extend deserialize result: ok=$ok fail=$fail (total ${indices.size})")
+            println("targetKey histogram:")
+            targetKeyCounts.forEach { (key, count) -> println("  $key: $count") }
+        } finally {
+            tempDir.toFile().deleteRecursively()
+        }
+    }
+
+    /**
+     * 诊断测试使用的库模块数据 mock。
+     */
+    private object DiagModuleData : org.cangnova.cangjie.cfir.common.CfirModuleData() {
+        override val name = org.cangnova.cangjie.name.Name.identifier("diag")
+        override val dependencies: List<org.cangnova.cangjie.cfir.common.CfirModuleData> = emptyList()
+        override val refinementDependencies: List<org.cangnova.cangjie.cfir.common.CfirModuleData> = emptyList()
+        override val allRefinementDependencies: List<org.cangnova.cangjie.cfir.common.CfirModuleData> = emptyList()
+        override val targetPlatform = org.cangnova.cangjie.platform.CangJiePlatforms.defaultCangJiePlatform
+        override val platform: org.cangnova.cangjie.cfir.common.CfirPlatform = org.cangnova.cangjie.cfir.common.CfirPlatform.DEFAULT
+        override val isCommon: Boolean = false
+        override val stableModuleName: String = "diag"
+        override val session: org.cangnova.cangjie.cfir.session.CfirSession
+            get() = DiagSession
+
+        init {
+            bindSession(DiagSession)
+        }
+    }
+
+    /**
+     * 诊断测试使用的库 session mock。
+     */
+    private object DiagSession : org.cangnova.cangjie.cfir.session.CfirSession(org.cangnova.cangjie.cfir.session.CfirSession.Kind.Library)
+
+    /**
+     * 诊断：验证 LLT 同构场景——deserialized provider + deserialized extend provider 查询 Int64。
+     */
+    @Test
+    fun `diagnose deserialized extend provider query for Int64`() {
+        val fixture = "cjo-sdk/windows_x86_64_cjnative/std/std.core.cjo"
+        val bytes = resourceBytes(fixture)
+        val tempDir = Files.createTempDirectory("cjo-extend-diag-")
+        try {
+            // 拷贝真实 SDK 全部 cjo 到 tempDir，复现 LLT 多包场景
+            val sdkRootUrl = javaClass.classLoader.getResource("cjo-sdk/windows_x86_64_cjnative")
+                ?: fail("cjo-sdk root not on classpath")
+            val sdkRoot = java.io.File(sdkRootUrl.toURI())
+            if (sdkRoot.isDirectory) {
+                sdkRoot.walkTopDown().filter { it.isFile && it.extension == "cjo" }.forEach { f ->
+                    val rel = f.relativeTo(sdkRoot)
+                    val target = tempDir.resolve(rel.path)
+                    target.parent?.createDirectories()
+                    target.outputStream().use { it.write(f.readBytes()) }
+                }
+            } else {
+                // 单包 fallback
+                val target = tempDir.resolve(CjoConstants.packageNameToPath("std.core"))
+                target.parent?.createDirectories()
+                target.outputStream().use { it.write(bytes) }
+            }
+
+            val manager = CjoManager(
+                CjoSearchPath { key ->
+                    when (key) {
+                        "CANGJIE_STDLIB_MODULE" -> tempDir.toString()
+                        else -> null
+                    }
+                }
+            )
+            val provider = org.cangnova.cangjie.cfir.serialization.provider.CfirDeserializedSymbolProvider(
+                session = DiagSession,
+                cjoManager = manager,
+                cangjieScopeProvider = org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider(),
+                libraryModuleData = DiagModuleData,
+            )
+            DiagSession.register(org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider::class, provider)
+            val extendProvider = org.cangnova.cangjie.cfir.serialization.provider.CfirDeserializedExtendProvider(listOf(provider))
+
+            val packageNames = provider.symbolNamesProvider.getPackageNames()
+            println("getPackageNames = $packageNames")
+
+            val extends = extendProvider.getExtendsForBuiltinType(org.cangnova.cangjie.cfir.types.PrimitiveTypeKind.INT64)
+            println("getExtendsForBuiltinType(INT64) size=${extends.size}")
+            extends.take(10).forEach { e ->
+                val cone = e.extendedTypeRef.coneTypeOrNull
+                println("  extend: cone=${cone?.let { "${it::class.simpleName}: $it" }} " +
+                    "key=${cone?.expandedExtendTargetKey} superTypes=${e.superTypeRefs.map { it.toString() }}")
+            }
+
+            val hashableClassId = org.cangnova.cangjie.name.ClassId(
+                org.cangnova.cangjie.name.FqName("std.core"),
+                org.cangnova.cangjie.name.Name.identifier("Hashable"),
+            )
+            val byClass = extendProvider.getExtendsForClass(hashableClassId)
+            println("getExtendsForClass(std.core.Hashable) size=${byClass.size}")
         } finally {
             tempDir.toFile().deleteRecursively()
         }
