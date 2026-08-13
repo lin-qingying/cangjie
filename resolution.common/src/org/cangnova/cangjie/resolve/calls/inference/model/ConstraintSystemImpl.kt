@@ -124,7 +124,7 @@ class ConstraintSystemImpl(
 
     /**
      * @see [org.cangnova.cangjie.resolve.calls.inference.components.VariableFixationFinder.Context.typeVariablesThatAreNotCountedAsProperTypes]
-     * @see [org.cangnova.cangjie.fir.resolve.transformers.body.resolve.FirDeclarationsResolveTransformer.fixInnerVariablesForProvideDelegateIfNeeded]
+     * @see [org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.CfirDeclarationsResolveTransformer.cfixInnerVariablesForProvideDelegateIfNeeded]
      */
     /**
      * 在 [block] 执行期间把指定 [typeVariables] 临时视为 proper type。
