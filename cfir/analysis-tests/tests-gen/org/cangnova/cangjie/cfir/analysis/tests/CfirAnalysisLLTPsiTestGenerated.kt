@@ -4023,6 +4023,22 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiLlTDiagnosticsTest() {
         }
     }
 
+    @TestMetadata("Int64ExtendDiag")
+    @TestDataPath("${'$'}PROJECT_ROOT")
+    @Nested
+    inner class Int64ExtendDiag : AbstractCfirPsiLlTDiagnosticsTest() {
+        @Test
+        fun testAllFilesPresent() {
+            assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Int64ExtendDiag")
+        }
+
+        @TestMetadata("test.cj")
+        @Test
+        fun testTest() {
+            runTest("cfir/analysis-tests/testData/llt/Int64ExtendDiag/test.cj")
+        }
+    }
+
     @TestMetadata("IsOrAsExpr")
     @TestDataPath("${'$'}PROJECT_ROOT")
     @Nested
