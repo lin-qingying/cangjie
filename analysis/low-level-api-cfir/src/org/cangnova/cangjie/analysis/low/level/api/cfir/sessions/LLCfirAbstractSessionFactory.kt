@@ -27,8 +27,8 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.*
 import org.cangnova.cangjie.analysis.low.level.api.cfir.providers.LLCfirIdeRegisteredPluginAnnotations
 import org.cangnova.cangjie.analysis.low.level.api.cfir.providers.LLCfirLibrarySessionProvider
 import org.cangnova.cangjie.analysis.low.level.api.cfir.providers.LLCfirProvider
-import org.cangnova.cangjie.analysis.low.level.api.cfir.providers.LLCfirSessionExtendProvider
 import org.cangnova.cangjie.analysis.low.level.api.cfir.providers.LLNameConflictsTracker
+import org.cangnova.cangjie.analysis.low.level.api.cfir.providers.createLLCfirExtendProvider
 import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.*
 import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.combined.LLCombinedCangJieSymbolProvider
 import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.combined.LLCombinedPackageDelegationSymbolProvider
@@ -155,10 +155,6 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
 
             register(CfirProvider::class, provider)
             register(CfirLazyDeclarationResolver::class, LLCfirLazyDeclarationResolver())
-            register(
-                CfirExtendProvider::class,
-                LLCfirSessionExtendProvider(this, extendIndexStore),
-            )
 
             val dependencyProvider = LLDependenciesSymbolProvider(this) {
                 buildList {
@@ -167,6 +163,11 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
                     if (!this@apply.noPrelude) add(builtinsSession.symbolProvider)
                 }
             }
+
+            register(
+                CfirExtendProvider::class,
+                createLLCfirExtendProvider { dependencyProvider.providers },
+            )
 
             register(
                 CfirSymbolProvider::class,
@@ -248,10 +249,6 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
 
             register(CfirProvider::class, cfirProvider)
             register(CfirLazyDeclarationResolver::class, LLCfirLazyDeclarationResolver())
-            register(
-                CfirExtendProvider::class,
-                LLCfirSessionExtendProvider(this, extendIndexStore),
-            )
 
             registerCompilerPluginServices(project, resolutionScope)
             registerCompilerPluginExtensions(project, module)
@@ -264,6 +261,11 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
                     if (!this@apply.noPrelude) add(builtinsSession.symbolProvider)
                 }
             }
+
+            register(
+                CfirExtendProvider::class,
+                createLLCfirExtendProvider { dependencyProvider.providers },
+            )
 
             register(DEPENDENCIES_SYMBOL_PROVIDER_QUALIFIED_KEY, dependencyProvider)
 
@@ -345,10 +347,6 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
             register(CfirProvider::class, cfirProvider)
 
             register(CfirLazyDeclarationResolver::class, LLCfirLazyDeclarationResolver())
-            register(
-                CfirExtendProvider::class,
-                LLCfirSessionExtendProvider(this, extendIndexStore),
-            )
 
             // We need CfirRegisteredPluginAnnotations during extensions' registration process
             val annotationsResolver = project.createAnnotationResolver(binaryContentScope)
@@ -378,6 +376,11 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
                     }
                 }
             }
+
+            register(
+                CfirExtendProvider::class,
+                createLLCfirExtendProvider { dependencyProvider.providers },
+            )
 
             register(DEPENDENCIES_SYMBOL_PROVIDER_QUALIFIED_KEY, dependencyProvider)
 
@@ -491,10 +494,6 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
 
             register(CfirProvider::class, cfirProvider)
             register(CfirLazyDeclarationResolver::class, LLCfirLazyDeclarationResolver())
-            register(
-                CfirExtendProvider::class,
-                LLCfirSessionExtendProvider(this, extendIndexStore),
-            )
 
             register(CfirRegisteredPluginAnnotations::class, CfirRegisteredPluginAnnotationsImpl(session))
             register(CfirPredicateBasedProvider::class, CfirEmptyPredicateBasedProvider)
@@ -553,6 +552,11 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
                     if (!this@apply.noPrelude) add(builtinsSession.symbolProvider)
                 }
             }
+
+            register(
+                CfirExtendProvider::class,
+                createLLCfirExtendProvider { dependencyProvider.providers },
+            )
 
             register(DEPENDENCIES_SYMBOL_PROVIDER_QUALIFIED_KEY, dependencyProvider)
 

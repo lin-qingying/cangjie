@@ -44,6 +44,7 @@ import org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider
 import org.cangnova.cangjie.cfir.scopes.CfirDefaultImportsProviderHolder
 import org.cangnova.cangjie.cfir.serialization.provider.AbstractCfirDeserializedSymbolProvider
 import org.cangnova.cangjie.cfir.serialization.provider.CfirDeserializedExtendProvider
+import org.cangnova.cangjie.cfir.serialization.provider.flattenDeserializedProviders
 import org.cangnova.cangjie.cfir.session.*
 import org.cangnova.cangjie.config.*
 import org.cangnova.cangjie.name.Name
@@ -513,17 +514,4 @@ private fun combineExtendProviders(
         addAll(dependencyProviders.filter { it !== ownProvider })
     }.distinct()
     return if (providers.size == 1) providers.single() else CfirCompositeExtendProvider(providers)
-}
-
-/**
- * 展开 provider 树中的反序列化 provider。
- *
- * 该工具仅用于构造库 extend provider，确保 extend 元数据来源与二进制符号 provider 保持一致。
- */
-private fun CfirSymbolProvider.flattenDeserializedProviders(): List<AbstractCfirDeserializedSymbolProvider> {
-    return when (this) {
-        is CfirCompositeSymbolProvider -> providers.flatMap(CfirSymbolProvider::flattenDeserializedProviders)
-        is AbstractCfirDeserializedSymbolProvider -> listOf(this)
-        else -> emptyList()
-    }
 }
