@@ -42,9 +42,7 @@ import org.cangnova.cangjie.cfir.resolve.inference.CfirInferenceLogger
 import org.cangnova.cangjie.cfir.resolve.providers.*
 import org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider
 import org.cangnova.cangjie.cfir.scopes.CfirDefaultImportsProviderHolder
-import org.cangnova.cangjie.cfir.serialization.provider.AbstractCfirDeserializedSymbolProvider
-import org.cangnova.cangjie.cfir.serialization.provider.CfirDeserializedExtendProvider
-import org.cangnova.cangjie.cfir.serialization.provider.flattenDeserializedProviders
+import org.cangnova.cangjie.cfir.serialization.provider.CfirExtendProviderComposer
 import org.cangnova.cangjie.cfir.session.*
 import org.cangnova.cangjie.config.*
 import org.cangnova.cangjie.name.Name
@@ -96,7 +94,7 @@ abstract class CfirAbstractSessionFactory<CONTEXT> {
             val symbolProvider = CfirCompositeSymbolProvider(this, providers)
             register(CfirSymbolProvider::class, symbolProvider)
             register(CfirProvider::class, CfirLibrarySessionProvider(symbolProvider))
-            register(CfirExtendProvider::class, createLibraryExtendProvider(providers))
+            register(CfirExtendProvider::class, CfirExtendProviderComposer.fromSymbolProviders(providers))
         }
     }
 
@@ -197,8 +195,8 @@ abstract class CfirAbstractSessionFactory<CONTEXT> {
             // 10. 注册 Extend Provider (仓颉特有)
             register(
                 CfirExtendProvider::class,
-                combineExtendProviders(
-                    ownProvider = createLibraryExtendProvider(providers),
+                CfirExtendProviderComposer.combine(
+                    ownProvider = CfirExtendProviderComposer.fromSymbolProviders(providers),
                     dependencyProviders = listOfNotNull(sharedLibrarySession.extendProviderOrNull),
                 ),
             )
@@ -273,12 +271,6 @@ abstract class CfirAbstractSessionFactory<CONTEXT> {
             register(CfirProvider::class, cfirProvider)
             val sourceExtendProvider = CfirSessionExtendProvider(this, extendIndexStore)
 
-            // 注册 extend 声明提供器（惰性初始化，首次查询时才扫描所有文件）
-            register(
-                CfirExtendProvider::class,
-                sourceExtendProvider,
-            )
-
             CfirSessionConfigurator(this).apply {
                 registerCommonCheckers()
                 registerPlatformCheckers()
@@ -333,7 +325,7 @@ abstract class CfirAbstractSessionFactory<CONTEXT> {
 
             register(
                 CfirExtendProvider::class,
-                combineExtendProviders(
+                CfirExtendProviderComposer.combine(
                     ownProvider = sourceExtendProvider,
                     dependencyProviders = moduleData.dependencies
                         .distinctBy { it.session }
@@ -480,38 +472,4 @@ abstract class CfirAbstractSessionFactory<CONTEXT> {
         return result
     }
 
-}
-
-/**
- * 从库符号 provider 列表中构造 extend provider。
- *
- * 只有反序列化 provider 能提供二进制依赖中的 extend 元数据；当依赖中没有这类 provider 时返回
- * 空实现，避免库会话暴露不存在的 extend 查询能力。
- */
-private fun createLibraryExtendProvider(providers: List<CfirSymbolProvider>): CfirExtendProvider {
-    val deserializedProviders = providers
-        .flatMap(CfirSymbolProvider::flattenDeserializedProviders)
-        .distinct()
-    return if (deserializedProviders.isEmpty()) {
-        CfirEmptyExtendProvider()
-    } else {
-        CfirDeserializedExtendProvider(deserializedProviders)
-    }
-}
-
-/**
- * 合并当前会话与依赖会话的 extend provider。
- *
- * 当前会话 provider 始终位于第一位，依赖 provider 去重后追加，保证源码 extend 查询优先使用
- * 当前模块索引，再回退到依赖模块。
- */
-private fun combineExtendProviders(
-    ownProvider: CfirExtendProvider,
-    dependencyProviders: List<CfirExtendProvider>,
-): CfirExtendProvider {
-    val providers = buildList {
-        add(ownProvider)
-        addAll(dependencyProviders.filter { it !== ownProvider })
-    }.distinct()
-    return if (providers.size == 1) providers.single() else CfirCompositeExtendProvider(providers)
 }

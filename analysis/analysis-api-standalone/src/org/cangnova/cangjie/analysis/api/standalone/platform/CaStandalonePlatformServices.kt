@@ -10,6 +10,7 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFileSystemItem
 import com.intellij.psi.search.GlobalSearchScope
 import org.cangnova.cangjie.LanguageVersionSettings
+import org.cangnova.cangjie.LanguageVersionSettingsImpl
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.analysis.api.standalone.projectStructure.PluginStructureProvider
 import org.cangnova.cangjie.analysis.api.platform.CaDeserializedDeclarationsOrigin
@@ -215,7 +216,7 @@ class CaStandaloneProjectStructureProvider(
      * standalone 全局语言版本设置。
      */
     override val globalLanguageVersionSettings: LanguageVersionSettings
-        get() = LanguageVersionSettings.DEFAULT
+        get() = LanguageVersionSettingsImpl.DEFAULT
 }
 
 /**

@@ -4,6 +4,7 @@ import org.cangnova.cangjie.cfir.resolve.CfirTypeResolver
 import org.cangnova.cangjie.cfir.resolve.ExtendTestFixtures
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.resolve.services.CfirExtendIndexStore
+import org.cangnova.cangjie.cfir.types.classId
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
@@ -65,7 +66,7 @@ class CfirSessionExtendProviderTest {
     fun `provider resolves builtin extends by builtin short name`() {
         val (session, moduleData) = ExtendTestFixtures.newSessionAndModule()
         val packageFqName = FqName("std.core")
-        val int64ClassId = ClassId(packageFqName, Name.identifier("Int64"))
+        val int64ClassId = org.cangnova.cangjie.cfir.types.PrimitiveTypeKind.INT64.classId
 
         val int64Extend = ExtendTestFixtures.newExtend(
             moduleData = moduleData,
@@ -98,7 +99,9 @@ private object NoopTypeResolver : CfirTypeResolver() {
         expandTypeAliases: Boolean,
     ): org.cangnova.cangjie.cfir.resolve.CfirTypeResolutionResult {
         return org.cangnova.cangjie.cfir.resolve.CfirTypeResolutionResult(
-            type = org.cangnova.cangjie.cfir.types.ConeErrorType("NoopTypeResolver"),
+            type = org.cangnova.cangjie.cfir.types.ConeErrorType(
+                org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic("NoopTypeResolver"),
+            ),
             diagnostic = null,
         )
     }

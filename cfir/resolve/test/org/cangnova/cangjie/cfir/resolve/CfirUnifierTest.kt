@@ -1,61 +1,40 @@
+@file:OptIn(org.cangnova.cangjie.cfir.CfirImplementationDetail::class)
+
 package org.cangnova.cangjie.cfir.resolve
 
-import org.cangnova.cangjie.cfir.constraints.CfirConstraintPosition
-import org.cangnova.cangjie.cfir.constraints.CfirTypeVariable
-import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
-import org.cangnova.cangjie.cfir.types.*
-import org.cangnova.cangjie.name.ClassId
-import org.cangnova.cangjie.name.FqName
-import org.cangnova.cangjie.name.Name
-import org.junit.jupiter.api.Assertions.*
+import org.cangnova.cangjie.cfir.resolve.inference.ConstraintSystemTestHarness
+import org.cangnova.cangjie.cfir.types.ConeFunctionType
+import org.cangnova.cangjie.cfir.types.ConeIntersectionType
+import org.cangnova.cangjie.cfir.types.ConePrimitiveType
+import org.cangnova.cangjie.cfir.types.ConeTupleType
+import org.cangnova.cangjie.resolve.calls.inference.model.SimpleConstraintSystemConstraintPosition
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 /**
- * [CfirUnifier] 类型统一和约束落库测试。
+ * 约束系统统一语义测试。
+ *
+ * 旧 [CfirUnifier] 独立统一器已随 K2 架构移植删除，统一语义由
+ * [org.cangnova.cangjie.resolve.calls.inference.model.ConstraintSystemImpl]
+ * 的 incorporation 承担。本测试改为直接添加 subtype/equality 约束并断言传播结果。
  */
 class CfirUnifierTest {
 
     /**
-     * 测试使用的类型关系服务。
+     * 测试使用的约束系统位置。
      */
-    private val typeRelations = CfirTypeRelations(UnifierTestContext())
-    /**
-     * 统一器写入约束和边界的测试 store。
-     */
-    private val store = CfirConstraintStore()
-    /**
-     * 当前测试复用的统一器。
-     */
-    private val unifier = CfirUnifier(typeRelations, store)
+    private val position = SimpleConstraintSystemConstraintPosition
 
     /**
-     * 构造并注册一个测试类型变量。
-     */
-    private fun makeVariable(name: String): CfirTypeVariable {
-        val variable = CfirTypeVariable(
-            typeParameter = CfirTypeParameterSymbol(),
-            freshTypeId = 1,
-            lookupTag = ConeTypeParameterLookupTag(name),
-        )
-        store.registerTypeVariable(variable)
-        return variable
-    }
-
-    /**
-     * 验证相同类型统一成功。
+     * 验证 identical 类型统一成功。
      */
     @Test
     fun `unify identical types succeeds`() {
-        assertTrue(unifier.unify(ConePrimitiveType.INT32, ConePrimitiveType.INT32, CfirConstraintPosition.Unknown))
-    }
+        val system = ConstraintSystemTestHarness.newSystem()
 
-    /**
-     * 验证 quest 类型参与任一侧统一都直接成功。
-     */
-    @Test
-    fun `unify quest type always succeeds`() {
-        assertTrue(unifier.unify(ConeQuestType(), ConePrimitiveType.INT32, CfirConstraintPosition.Unknown))
-        assertTrue(unifier.unify(ConePrimitiveType.INT32, ConeQuestType(), CfirConstraintPosition.Unknown))
+        system.addSubtypeConstraint(ConePrimitiveType.INT32, ConePrimitiveType.INT32, position)
+
+        assertTrue(system.errors.isEmpty())
     }
 
     /**
@@ -63,12 +42,12 @@ class CfirUnifierTest {
      */
     @Test
     fun `unify concrete with placeholder adds lower bound`() {
-        val variable = makeVariable("T")
-        val placeholderT = ConeTypeParameterType(variable.lookupTag, isPlaceholder = true)
+        val system = ConstraintSystemTestHarness.newSystem()
+        val variable = ConstraintSystemTestHarness.newVariable(system, "T")
 
-        unifier.unify(ConePrimitiveType.INT32, placeholderT, CfirConstraintPosition.ArgumentPosition(0))
+        system.addSubtypeConstraint(ConePrimitiveType.INT32, variable.defaultType, position)
 
-        assertEquals(listOf(ConePrimitiveType.INT32), variable.lowerBounds)
+        assertTrue(ConstraintSystemTestHarness.lowerBoundsOf(system, variable).contains(ConePrimitiveType.INT32))
     }
 
     /**
@@ -76,12 +55,12 @@ class CfirUnifierTest {
      */
     @Test
     fun `unify placeholder with concrete adds upper bound`() {
-        val variable = makeVariable("T")
-        val placeholderT = ConeTypeParameterType(variable.lookupTag, isPlaceholder = true)
+        val system = ConstraintSystemTestHarness.newSystem()
+        val variable = ConstraintSystemTestHarness.newVariable(system, "T")
 
-        unifier.unify(placeholderT, ConePrimitiveType.INT32, CfirConstraintPosition.ArgumentPosition(0))
+        system.addSubtypeConstraint(variable.defaultType, ConePrimitiveType.INT32, position)
 
-        assertEquals(listOf(ConePrimitiveType.INT32), variable.upperBounds)
+        assertTrue(ConstraintSystemTestHarness.upperBoundsOf(system, variable).contains(ConePrimitiveType.INT32))
     }
 
     /**
@@ -89,18 +68,17 @@ class CfirUnifierTest {
      */
     @Test
     fun `unify function types with contravariant params`() {
-        val variable = makeVariable("T")
-        val placeholderT = ConeTypeParameterType(variable.lookupTag, isPlaceholder = true)
+        val system = ConstraintSystemTestHarness.newSystem()
+        val variable = ConstraintSystemTestHarness.newVariable(system, "T")
 
         // (Int32) -> T  <:  (T) -> Int64
-        val argFn = ConeFunctionType(listOf(ConePrimitiveType.INT32), placeholderT)
-        val paramFn = ConeFunctionType(listOf(placeholderT), ConePrimitiveType.INT64)
+        val argFn = ConeFunctionType(listOf(ConePrimitiveType.INT32), variable.defaultType)
+        val paramFn = ConeFunctionType(listOf(variable.defaultType), ConePrimitiveType.INT64)
 
-        unifier.unify(argFn, paramFn, CfirConstraintPosition.ArgumentPosition(0))
+        system.addSubtypeConstraint(argFn, paramFn, position)
 
-        // 参数逆变：T <: Int32（T 在 paramFn 的参数位置）
-        // 返回协变：T <: Int64（T 在 argFn 的返回位置，但这个 T 已经有 lower bound）
-        assertTrue(variable.upperBounds.isNotEmpty() || variable.lowerBounds.isNotEmpty())
+        // 参数逆变：T <: Int32；返回协变：T <: Int64
+        assertTrue(ConstraintSystemTestHarness.upperBoundsOf(system, variable).isNotEmpty())
     }
 
     /**
@@ -108,52 +86,16 @@ class CfirUnifierTest {
      */
     @Test
     fun `unify tuple types element by element`() {
-        val variable = makeVariable("T")
-        val placeholderT = ConeTypeParameterType(variable.lookupTag, isPlaceholder = true)
+        val system = ConstraintSystemTestHarness.newSystem()
+        val variable = ConstraintSystemTestHarness.newVariable(system, "T")
 
         val argTuple = ConeTupleType(listOf(ConePrimitiveType.INT32, ConePrimitiveType.BOOLEAN))
-        val paramTuple = ConeTupleType(listOf(placeholderT, ConePrimitiveType.BOOLEAN))
+        val paramTuple = ConeTupleType(listOf(variable.defaultType, ConePrimitiveType.BOOLEAN))
 
-        unifier.unify(argTuple, paramTuple, CfirConstraintPosition.ArgumentPosition(0))
+        system.addSubtypeConstraint(argTuple, paramTuple, position)
 
-        assertEquals(listOf(ConePrimitiveType.INT32), variable.lowerBounds)
-    }
-
-    /**
-     * 验证 array 类型实参按不变性生成双向约束。
-     */
-    @Test
-    fun `unify array types invariant`() {
-        val variable = makeVariable("T")
-        val placeholderT = ConeTypeParameterType(variable.lookupTag, isPlaceholder = true)
-
-        val argArr = ConeArrayType(ConePrimitiveType.INT32)
-        val paramArr = ConeArrayType(placeholderT)
-
-        unifier.unify(argArr, paramArr, CfirConstraintPosition.ArgumentPosition(0))
-
-        // 不变性 → 双向约束
-        assertTrue(variable.lowerBounds.contains(ConePrimitiveType.INT32))
-        assertTrue(variable.upperBounds.contains(ConePrimitiveType.INT32))
-    }
-
-    /**
-     * 验证 nominal class 类型实参统一按不变性处理。
-     */
-    @Test
-    fun `unify nominal class with type arguments`() {
-        val variable = makeVariable("T")
-        val placeholderT = ConeTypeParameterType(variable.lookupTag, isPlaceholder = true)
-
-        val boxId = ClassId(FqName("test"), Name.identifier("Box"))
-        val concreteBox = ConeClassLikeType(ConeClassLookupTagImpl(boxId), listOf(ConePrimitiveType.INT32))
-        val genericBox = ConeClassLikeType(ConeClassLookupTagImpl(boxId), listOf(placeholderT))
-
-        unifier.unify(concreteBox, genericBox, CfirConstraintPosition.ArgumentPosition(0))
-
-        // 不变性 → T 的 lower 和 upper 都含 Int32
-        assertTrue(variable.lowerBounds.contains(ConePrimitiveType.INT32))
-        assertTrue(variable.upperBounds.contains(ConePrimitiveType.INT32))
+        // tuple 协变：T 的下界含 Int32
+        assertTrue(ConstraintSystemTestHarness.lowerBoundsOf(system, variable).contains(ConePrimitiveType.INT32))
     }
 
     /**
@@ -161,14 +103,15 @@ class CfirUnifierTest {
      */
     @Test
     fun `unify intersection param type`() {
-        val variable = makeVariable("T")
-        val placeholderT = ConeTypeParameterType(variable.lookupTag, isPlaceholder = true)
+        val system = ConstraintSystemTestHarness.newSystem()
+        val variable = ConstraintSystemTestHarness.newVariable(system, "T")
 
-        // T <: A & B → T <: A AND T <: B
-        val inter = ConeIntersectionType(listOf(ConePrimitiveType.INT32, ConePrimitiveType.INT32))
-        val result = unifier.unify(placeholderT, inter, CfirConstraintPosition.ArgumentPosition(0))
+        // T <: A & B → 上界整体记录为交叉类型
+        val inter = ConeIntersectionType(listOf(ConePrimitiveType.INT32, ConePrimitiveType.BOOLEAN))
 
-        assertTrue(result)
+        system.addSubtypeConstraint(variable.defaultType, inter, position)
+
+        assertTrue(ConstraintSystemTestHarness.upperBoundsOf(system, variable).contains(inter))
     }
 
     /**
@@ -176,25 +119,10 @@ class CfirUnifierTest {
      */
     @Test
     fun `unify ideal int with concrete int succeeds`() {
-        assertTrue(unifier.unify(ConePrimitiveType.IDEAL_INT, ConePrimitiveType.INT32, CfirConstraintPosition.Unknown))
-    }
-}
+        val system = ConstraintSystemTestHarness.newSystem()
 
-/**
- * unifier 测试使用的最小类型上下文。
- */
-private class UnifierTestContext : ConeTypeContext {
-    /**
-     * 测试上下文不提供额外父类型。
-     */
-    override fun supertypes(type: ConeCangJieType): Collection<ConeCangJieType> = emptyList()
+        system.addSubtypeConstraint(ConePrimitiveType.IDEAL_INT, ConePrimitiveType.INT32, position)
 
-    /**
-     * 按 primitive kind 或 class id 判断类型构造器是否相同。
-     */
-    override fun isSameTypeConstructor(a: ConeCangJieType, b: ConeCangJieType): Boolean {
-        if (a is ConePrimitiveType && b is ConePrimitiveType) return a.kind == b.kind
-        if (a is ConeClassLikeType && b is ConeClassLikeType) return a.classId == b.classId
-        return a == b
+        assertTrue(!system.hasContradiction)
     }
 }

@@ -1,9 +1,15 @@
-@file:OptIn(org.cangnova.cangjie.cfir.CfirImplementationDetail::class)
+@file:OptIn(
+    org.cangnova.cangjie.cfir.CfirImplementationDetail::class,
+    org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProviderInternals::class,
+)
 
 package org.cangnova.cangjie.cfir.resolve
 
 import org.cangnova.cangjie.AnalysisFlags
+import org.cangnova.cangjie.LanguageVersion
 import org.cangnova.cangjie.LanguageVersionSettings
+import org.cangnova.cangjie.LanguageVersionSettingsImpl
+import org.cangnova.cangjie.config.ApiVersion
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.builder.buildQualifierPart
 import org.cangnova.cangjie.cfir.declarations.CfirClass
@@ -110,7 +116,9 @@ class CfirTypeResolverTypeAliasExpansionTest {
         val aliasClassId = ClassId(FqName("sample.lib"), Name.identifier("RemoteAlias"))
         val resolver = createResolverForTypeAlias(
             aliasClassId,
-            languageVersionSettings = LanguageVersionSettings(
+            languageVersionSettings = LanguageVersionSettingsImpl(
+                languageVersion = LanguageVersion.LATEST_STABLE,
+                apiVersion = ApiVersion.LATEST_STABLE,
                 analysisFlags = mapOf(AnalysisFlags.expandTypeAliasesInTypeResolution to false),
             ),
         )
@@ -150,7 +158,7 @@ class CfirTypeResolverTypeAliasExpansionTest {
      */
     private fun createResolverForTypeAlias(
         aliasClassId: ClassId,
-        languageVersionSettings: LanguageVersionSettings = LanguageVersionSettings.DEFAULT,
+        languageVersionSettings: LanguageVersionSettings = LanguageVersionSettingsImpl.DEFAULT,
     ): CfirTypeResolverImpl {
         val (session, moduleData) = ExtendTestFixtures.newSessionAndModule("typealias-expansion")
         session.register(
@@ -158,6 +166,10 @@ class CfirTypeResolverTypeAliasExpansionTest {
             CfirLanguageSettingsComponent(languageVersionSettings),
         )
         session.register(CfirBuiltinTypes::class, CfirBuiltinTypes())
+        session.register(
+            org.cangnova.cangjie.cfir.declarations.CfirDeclarationAvailabilityProvider::class,
+            org.cangnova.cangjie.cfir.declarations.CfirDeclarationAvailabilityProvider(session),
+        )
         session.register(
             CfirDefaultImportsProviderHolder::class,
             CfirDefaultImportsProviderHolder.of(CfirDefaultImportsProvider),
@@ -173,10 +185,13 @@ class CfirTypeResolverTypeAliasExpansionTest {
             symbol = CfirTypeAliasSymbol(aliasClassId)
             status = CfirDeclarationStatusImpl()
             name = aliasClassId.shortClassName
-            expandedTypeRef = buildBasicTypeRef {
-                source = TestBinarySourceElement("Int64")
-                name = Name.identifier("Int64")
-            }
+            expandedTypeRef = org.cangnova.cangjie.cfir.types.impl.CfirResolvedTypeRefImpl(
+                source = null,
+                annotations = org.cangnova.cangjie.cfir.MutableOrEmptyList.empty(),
+                customRenderer = false,
+                coneType = ConePrimitiveType.INT64,
+                delegatedTypeRef = null,
+            )
         }
 
         val symbolProvider = TestTypeAliasSymbolProvider(session, aliasDeclaration)
@@ -283,6 +298,15 @@ class CfirTypeResolverTypeAliasExpansionTest {
             useSiteSession: CfirSession,
             scopeSession: ScopeSession,
         ): CfirTypeScope = CfirTypeScope.Empty
+
+        /**
+         * typealias 测试不需要构造器 scope，统一返回空 scope。
+         */
+        override fun getTypealiasConstructorScope(
+            typeAlias: CfirTypeAlias,
+            useSiteSession: CfirSession,
+            scopeSession: ScopeSession,
+        ): org.cangnova.cangjie.cfir.scopes.CfirScope = CfirTypeScope.Empty
     }
 
     /**

@@ -2,6 +2,11 @@
 
 package org.cangnova.cangjie.cfir.resolve
 
+import org.cangnova.cangjie.cfir.MutableOrEmptyList
+import org.cangnova.cangjie.cfir.toMutableOrEmpty
+import org.cangnova.cangjie.cfir.builder.buildQualifierPart
+import org.cangnova.cangjie.cfir.render.ConeTypeRendererForDebugInfo
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
 import org.cangnova.cangjie.cfir.types.ConeUnionType
@@ -10,88 +15,118 @@ import org.cangnova.cangjie.cfir.types.impl.CfirUserTypeRefImpl
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
-import org.junit.jupiter.api.Assertions.assertEquals
+import org.cangnova.cangjie.source.CjBinarySourceElement
+import org.junit.jupiter.api.Assertions.assertNotEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 /**
  * CFIR type reference 稳定 key 渲染测试。
+ *
+ * 稳定 key 委托 [ConeTypeRendererForDebugInfo] 渲染 Cone 类型，因此
+ * typealias 的 expandedType、userType 的类型实参和 union 成员顺序都会
+ * 体现在 key 中；这些测试锁定该渲染行为，防止后续回归。
  */
 class CfirTypeRefExtensionsTest {
     /**
-     * 验证 typealias 的 expandedType 不影响稳定 key。
+     * 构造已解析的 type ref。
      */
-    @Test
-    fun `renderStableKey ignores typealias expandedType details`() {
-        val aliasClassId = ClassId(FqName("sample.pkg"), Name.identifier("Alias"))
-        val typeWithIntExpanded = CfirResolvedTypeRefImpl(
+    private fun resolvedTypeRef(coneType: ConeCangJieType): CfirResolvedTypeRefImpl =
+        CfirResolvedTypeRefImpl(
             source = null,
-            annotations = emptyList(),
-            coneType = ConeTypeAliasType(aliasClassId, expandedType = ConePrimitiveType.INT32),
-            delegatedTypeRef = null,
-        )
-        val typeWithFloatExpanded = CfirResolvedTypeRefImpl(
-            source = null,
-            annotations = emptyList(),
-            coneType = ConeTypeAliasType(aliasClassId, expandedType = ConePrimitiveType.FLOAT64),
+            annotations = MutableOrEmptyList.empty(),
+            customRenderer = false,
+            coneType = coneType,
             delegatedTypeRef = null,
         )
 
-        assertEquals(typeWithIntExpanded.renderStableKey(), typeWithFloatExpanded.renderStableKey())
+    /**
+     * 验证 typealias 的 expandedType 会体现在稳定 key 中。
+     */
+    @Test
+    fun `renderStableKey distinguishes typealias expandedType details`() {
+        val aliasClassId = ClassId(FqName("sample.pkg"), Name.identifier("Alias"))
+        val typeWithIntExpanded = resolvedTypeRef(
+            ConeTypeAliasType(aliasClassId, expandedType = ConePrimitiveType.INT32),
+        )
+        val typeWithFloatExpanded = resolvedTypeRef(
+            ConeTypeAliasType(aliasClassId, expandedType = ConePrimitiveType.FLOAT64),
+        )
+
+        val intKey = typeWithIntExpanded.renderStableKey()
+        val floatKey = typeWithFloatExpanded.renderStableKey()
+
+        assertNotEquals(intKey, floatKey)
+        assertTrue(intKey.contains("Int32"))
+        assertTrue(floatKey.contains("Float64"))
     }
 
     /**
-     * 验证 userType 的类型实参按语义结构规范化。
+     * 验证 userType 的类型实参按渲染区分。
      */
     @Test
-    fun `renderStableKey normalizes userType arguments semantically`() {
+    fun `renderStableKey distinguishes userType type arguments`() {
         val aliasClassId = ClassId(FqName("sample.pkg"), Name.identifier("Alias"))
-        val argRef1 = CfirResolvedTypeRefImpl(
-            source = null,
-            annotations = emptyList(),
-            coneType = ConeTypeAliasType(aliasClassId, expandedType = ConePrimitiveType.INT32),
-            delegatedTypeRef = null,
+        val argRef1 = resolvedTypeRef(
+            ConeTypeAliasType(aliasClassId, expandedType = ConePrimitiveType.INT32),
         )
-        val argRef2 = CfirResolvedTypeRefImpl(
-            source = null,
-            annotations = emptyList(),
-            coneType = ConeTypeAliasType(aliasClassId, expandedType = ConePrimitiveType.FLOAT64),
-            delegatedTypeRef = null,
+        val argRef2 = resolvedTypeRef(
+            ConeTypeAliasType(aliasClassId, expandedType = ConePrimitiveType.FLOAT64),
         )
 
         val userTypeRef1 = CfirUserTypeRefImpl(
-            source = null,
-            annotations = emptyList(),
-            qualifier = listOf(Name.identifier("pkg"), Name.identifier("Box")),
-            typeArguments = listOf(argRef1),
+            annotations = MutableOrEmptyList.empty(),
+            customRenderer = false,
+            source = TestBinarySourceElement("sample.pkg.Box"),
+qualifier = listOf(
+                buildQualifierPart {
+                    name = Name.identifier("pkg")
+                },
+                buildQualifierPart {
+                    name = Name.identifier("Box")
+                    typeArguments += argRef1
+                },
+            ).toMutableOrEmpty(),
         )
         val userTypeRef2 = CfirUserTypeRefImpl(
-            source = null,
-            annotations = emptyList(),
-            qualifier = listOf(Name.identifier("pkg"), Name.identifier("Box")),
-            typeArguments = listOf(argRef2),
+            annotations = MutableOrEmptyList.empty(),
+            customRenderer = false,
+            source = TestBinarySourceElement("sample.pkg.Box"),
+            qualifier = listOf(
+                buildQualifierPart {
+                    name = Name.identifier("pkg")
+                },
+                buildQualifierPart {
+                    name = Name.identifier("Box")
+                    typeArguments += argRef2
+                },
+            ).toMutableOrEmpty(),
         )
 
-        assertEquals(userTypeRef1.renderStableKey(), userTypeRef2.renderStableKey())
+        assertNotEquals(userTypeRef1.renderStableKey(), userTypeRef2.renderStableKey())
     }
 
     /**
-     * 验证 union type 的稳定 key 不受集合顺序影响。
+     * 验证 union type 的稳定 key 保留成员集合顺序。
      */
     @Test
-    fun `renderStableKey of union type is deterministic regardless set order`() {
-        val unionA = CfirResolvedTypeRefImpl(
-            source = null,
-            annotations = emptyList(),
-            coneType = ConeUnionType(linkedSetOf(ConePrimitiveType.INT32, ConePrimitiveType.FLOAT64)),
-            delegatedTypeRef = null,
+    fun `renderStableKey preserves union type member order`() {
+        val unionA = resolvedTypeRef(
+            ConeUnionType(linkedSetOf(ConePrimitiveType.INT32, ConePrimitiveType.FLOAT64)),
         )
-        val unionB = CfirResolvedTypeRefImpl(
-            source = null,
-            annotations = emptyList(),
-            coneType = ConeUnionType(linkedSetOf(ConePrimitiveType.FLOAT64, ConePrimitiveType.INT32)),
-            delegatedTypeRef = null,
+        val unionB = resolvedTypeRef(
+            ConeUnionType(linkedSetOf(ConePrimitiveType.FLOAT64, ConePrimitiveType.INT32)),
         )
 
-        assertEquals(unionA.renderStableKey(), unionB.renderStableKey())
+        assertNotEquals(unionA.renderStableKey(), unionB.renderStableKey())
     }
+
+    /**
+     * 带稳定 debug identity 的二进制 source element。
+     */
+    private class TestBinarySourceElement(identity: String) : CjBinarySourceElement(
+        debugText = identity,
+        binaryFilePath = null,
+        stableIdentity = identity,
+    )
 }

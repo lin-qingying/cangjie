@@ -118,7 +118,6 @@ internal class TypeCjoStubBuilder {
             is CfirOptionTypeRef -> createOptionTypeReferenceStub(parent, typeRef.componentTypeRef)
             is CfirVArrayTypeRef -> createVArrayTypeReferenceStub(parent, typeRef.elementTypeRef, typeRef.sizeLiteral)
             is CfirImplicitTypeRef -> Unit
-            else -> createBasicTypeReferenceStub(parent, renderDecompiledTypeRef(typeRef))
         }
     }
 

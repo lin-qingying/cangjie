@@ -1,4 +1,7 @@
-@file:OptIn(org.cangnova.cangjie.cfir.CfirImplementationDetail::class)
+@file:OptIn(
+    org.cangnova.cangjie.cfir.CfirImplementationDetail::class,
+    org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProviderInternals::class,
+)
 
 package org.cangnova.cangjie.cfir.resolve.providers
 
@@ -11,18 +14,27 @@ import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
+import org.cangnova.cangjie.cfir.declarations.EmptyDeprecationsProvider
 import org.cangnova.cangjie.cfir.declarations.impl.CfirClassImpl
 import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
 import org.cangnova.cangjie.cfir.declarations.impl.CfirInterfaceImpl
 import org.cangnova.cangjie.cfir.declarations.initDefaultResolveState
 import org.cangnova.cangjie.cfir.resolve.ExtendTestFixtures
 import org.cangnova.cangjie.cfir.resolve.services.CfirTypeAwareSupertypeProviderImpl
+import org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider
+import org.cangnova.cangjie.LanguageVersionSettingsImpl
+import org.cangnova.cangjie.cfir.session.CfirLanguageSettingsComponent
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.services.CfirExtendTargetKey
 import org.cangnova.cangjie.cfir.session.typeAwareSupertypeProviderOrNull
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirDummyCompilerLazyDeclarationResolver
 import org.cangnova.cangjie.cfir.symbols.CfirInterfaceSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirLazyDeclarationResolver
+import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
 import org.cangnova.cangjie.cfir.symbols.toLookupTag
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
@@ -30,7 +42,7 @@ import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeInferenceContext
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
-import org.cangnova.cangjie.cfir.types.ConeTypeProjection
+import org.cangnova.cangjie.cfir.types.TypeComponents
 import org.cangnova.cangjie.cfir.types.classId
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
 import org.cangnova.cangjie.name.ClassId
@@ -38,7 +50,6 @@ import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.type.AbstractTypeChecker
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertIterableEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -93,13 +104,14 @@ class CfirTypeAwareSupertypeProviderTest {
         val iterableInt = interfaceType(iterableClassId, ConePrimitiveType.INT32)
 
         assertIterableEquals(
-            listOf(iterableInt),
+            listOf(objectType(), iterableInt),
             session.typeAwareSupertypeProviderOrNull?.getDirectSupertypes(boxInt),
         )
         assertTrue(AbstractTypeChecker.isSubtypeOf(typeContext, boxInt, iterableInt))
         assertTrue(
             with(typeContext) {
-                boxInt.anySuperTypeConstructor { constructor ->
+                boxInt.anySuperTypeConstructor { supertype ->
+                    val constructor = supertype.typeConstructor()
                     constructor is org.cangnova.cangjie.cfir.types.ConeClassLikeLookupTag &&
                             constructor.classId == iterableClassId
                 }
@@ -262,11 +274,16 @@ class CfirTypeAwareSupertypeProviderTest {
         val bInt64 = interfaceType(bClassId, ConePrimitiveType.INT64)
 
         assertIterableEquals(
-            listOf(bInt32),
+            listOf(objectType(), bInt32),
             session.typeAwareSupertypeProviderOrNull?.getDirectSupertypes(aInt32),
         )
         assertTrue(AbstractTypeChecker.isSubtypeOf(typeContext, aInt32, bInt32))
-        assertFalse(AbstractTypeChecker.isSubtypeOf(typeContext, aInt64, bInt64))
+        // BFS 通过构造器级 supertypes 遍历声明型父类型，use-site 约束过滤发生在
+        // provider 的 getDirectSupertypes 入口：A<Int64> 不满足 `T <: EQ`，因此不贡献 B<Int64>。
+        assertIterableEquals(
+            listOf(objectType()),
+            session.typeAwareSupertypeProviderOrNull?.getDirectSupertypes(aInt64),
+        )
     }
 }
 
@@ -280,6 +297,9 @@ private fun CfirSession.registerTestTypeContext(
     register(CfirSymbolProvider::class, TestSymbolProvider(this, declarations))
     register(CfirExtendProvider::class, TestExtendProvider(extends))
     register(CfirTypeAwareSupertypeProvider::class, CfirTypeAwareSupertypeProviderImpl(this))
+    register(CfirLazyDeclarationResolver::class, CfirDummyCompilerLazyDeclarationResolver)
+    register(CfirLanguageSettingsComponent::class, CfirLanguageSettingsComponent(LanguageVersionSettingsImpl.DEFAULT))
+    register(TypeComponents::class, TypeComponents(this))
     return object : ConeInferenceContext {
         override val session: CfirSession
             get() = this@registerTestTypeContext
@@ -299,6 +319,11 @@ private class TestSymbolProvider(
     private val declarationsByClassId = declarations.associateBy { it.symbol.classId }
 
     /**
+     * 名称索引查询一律保守返回可能命中，让真实 symbol lookup 决定结果。
+     */
+    override val symbolNamesProvider: CfirSymbolNamesProvider = CfirNullSymbolNamesProvider
+
+    /**
      * 按 ClassId 返回测试 class-like symbol。
      */
     override fun getClassLikeSymbolByClassId(classId: ClassId): CfirClassLikeSymbol<*>? =
@@ -307,8 +332,32 @@ private class TestSymbolProvider(
     /**
      * 测试 provider 不暴露 callable symbol。
      */
-    override fun getTopLevelCallableSymbols(packageFqName: FqName, name: Name): List<CfirCallableSymbol<*>> =
-        emptyList()
+    override fun getTopLevelCallableSymbolsTo(
+        destination: MutableList<CfirCallableSymbol<*>>,
+        packageFqName: FqName,
+        name: Name,
+    ) {
+    }
+
+    /**
+     * 测试 provider 不暴露函数 symbol。
+     */
+    override fun getTopLevelFunctionSymbolsTo(
+        destination: MutableList<CfirNamedFunctionSymbol>,
+        packageFqName: FqName,
+        name: Name,
+    ) {
+    }
+
+    /**
+     * 测试 provider 不暴露属性 symbol。
+     */
+    override fun getTopLevelPropertySymbolsTo(
+        destination: MutableList<CfirPropertySymbol>,
+        packageFqName: FqName,
+        name: Name,
+    ) {
+    }
 
     /**
      * 当内存声明表中存在对应包声明时认为包存在。
@@ -338,6 +387,12 @@ private class TestExtendProvider(
      */
     override fun getExtendsForClass(classId: ClassId): List<CfirExtend> =
         extendsByClassId[classId].orEmpty()
+
+    /**
+     * 按规范化目标 key 查询 extend：测试 fixture 只支持 ClassLike 目标。
+     */
+    override fun getExtendsForTarget(targetKey: CfirExtendTargetKey): List<CfirExtend> =
+        (targetKey as? CfirExtendTargetKey.ClassLike)?.let { getExtendsForClass(it.classId) } ?: emptyList()
 
     /**
      * 返回指定包内所有 extend。
@@ -372,7 +427,8 @@ private fun newClass(
         annotations = MutableOrEmptyList.empty(),
         origin = CfirDeclarationOrigin.Library,
         attributes = CfirDeclarationAttributes.EMPTY,
-        isLocal = false,
+        deprecationsProvider = EmptyDeprecationsProvider,
+        scopeProvider = CfirCangJieScopeProvider(),
         status = CfirDeclarationStatusImpl(),
         typeParameters = typeParameters.toMutableList(),
         symbol = symbol,
@@ -399,7 +455,8 @@ private fun newInterface(
         annotations = MutableOrEmptyList.empty(),
         origin = CfirDeclarationOrigin.Library,
         attributes = CfirDeclarationAttributes.EMPTY,
-        isLocal = false,
+        deprecationsProvider = EmptyDeprecationsProvider,
+        scopeProvider = CfirCangJieScopeProvider(),
         declarations = mutableListOf<CfirDeclaration>(),
         status = CfirDeclarationStatusImpl(),
         typeParameters = typeParameters.toMutableList(),
@@ -421,7 +478,15 @@ private fun typeParameterType(typeParameter: CfirTypeParameter): ConeCangJieType
 private fun classType(classId: ClassId, vararg typeArguments: ConeCangJieType): ConeClassLikeType =
     ConeClassLikeType(
         lookupTag = classId.toLookupTag(),
-        typeArguments = typeArguments.map(::ConeTypeProjection),
+        typeArguments = typeArguments.toList(),
+    )
+
+/**
+ * 构造隐式补入的 std.core.Object 类型。
+ */
+private fun objectType(): ConeClassLikeType =
+    ConeClassLikeType(
+        lookupTag = org.cangnova.cangjie.cfir.types.StdlibClassIds.Object.toLookupTag(),
     )
 
 /**
@@ -430,7 +495,7 @@ private fun classType(classId: ClassId, vararg typeArguments: ConeCangJieType): 
 private fun interfaceType(classId: ClassId, vararg typeArguments: ConeCangJieType): ConeClassLikeType =
     ConeClassLikeType(
         lookupTag = classId.toLookupTag(),
-        typeArguments = typeArguments.map(::ConeTypeProjection),
+        typeArguments = typeArguments.toList(),
         isInterface = true,
     )
 
@@ -440,7 +505,8 @@ private fun interfaceType(classId: ClassId, vararg typeArguments: ConeCangJieTyp
 private fun primitiveTypeRef(type: ConePrimitiveType): CfirTypeRef =
     org.cangnova.cangjie.cfir.types.impl.CfirResolvedTypeRefImpl(
         source = null,
-        annotations = emptyList(),
+        annotations = MutableOrEmptyList.empty(),
+        customRenderer = false,
         coneType = type,
         delegatedTypeRef = null,
     )

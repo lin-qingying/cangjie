@@ -310,6 +310,91 @@ class CjoSdkDeserializationIntegrationTest {
     }
 
     /**
+     * 验证共享装配入口 [CfirExtendProviderComposer] 的三种组合语义。
+     *
+     * 主编译器与 LL/IDE 侧共用该 composer 构造 session 级 extend 视图；这里用真实 SDK CJO
+     * 证明：组合后的视图包含库中 extend 元数据，且惰性版本只在首次查询时求值一次。
+     */
+    @Test
+    fun `extend provider composer combines own and deserialized extend sources`() {
+        val fixture = "cjo-sdk/windows_x86_64_cjnative/std/std.core.cjo"
+        val bytes = resourceBytes(fixture)
+        val tempDir = Files.createTempDirectory("cjo-composer-")
+        try {
+            // 拷贝真实 SDK 全部 cjo 到 tempDir，复现 LLT 多包场景（std.core 的 extend 目标类型依赖其他包）
+            val sdkRootUrl = javaClass.classLoader.getResource("cjo-sdk/windows_x86_64_cjnative")
+                ?: fail("cjo-sdk root not on classpath")
+            val sdkRoot = java.io.File(sdkRootUrl.toURI())
+            if (sdkRoot.isDirectory) {
+                sdkRoot.walkTopDown().filter { it.isFile && it.extension == "cjo" }.forEach { f ->
+                    val rel = f.relativeTo(sdkRoot)
+                    val target = tempDir.resolve(rel.path)
+                    target.parent?.createDirectories()
+                    target.outputStream().use { it.write(f.readBytes()) }
+                }
+            } else {
+                val target = tempDir.resolve(CjoConstants.packageNameToPath("std.core"))
+                target.parent?.createDirectories()
+                target.outputStream().use { it.write(bytes) }
+            }
+
+            val manager = CjoManager(
+                CjoSearchPath { key ->
+                    when (key) {
+                        "CANGJIE_STDLIB_MODULE" -> tempDir.toString()
+                        else -> null
+                    }
+                }
+            )
+            val provider = org.cangnova.cangjie.cfir.serialization.provider.CfirDeserializedSymbolProvider(
+                session = DiagSession,
+                cjoManager = manager,
+                cangjieScopeProvider = org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider(),
+                libraryModuleData = DiagModuleData,
+            )
+            DiagSession.register(org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider::class, provider)
+            val empty = org.cangnova.cangjie.cfir.resolve.providers.CfirEmptyExtendProvider()
+
+            // 1. fromSymbolProviders：从符号 provider 树提取真实 SDK 的 extend 元数据
+            val library = org.cangnova.cangjie.cfir.serialization.provider.CfirExtendProviderComposer
+                .fromSymbolProviders(listOf(provider))
+            val int64Extends = library.getExtendsForBuiltinType(org.cangnova.cangjie.cfir.types.PrimitiveTypeKind.INT64)
+            assertTrue(int64Extends.isNotEmpty(), "std.core Int64 extends should be visible through composer")
+
+            // 2. combine：仅 own 自身时直接返回原实例，不引入多余包装
+            val same = org.cangnova.cangjie.cfir.serialization.provider.CfirExtendProviderComposer
+                .combine(empty, listOf(empty))
+            assertTrue(same === empty, "combine with only own provider should return it as is")
+
+            // 3. combine：own 与依赖 provider 合并后查询结果等于依赖视图
+            val combined = org.cangnova.cangjie.cfir.serialization.provider.CfirExtendProviderComposer
+                .combine(empty, listOf(library))
+            assertEquals(int64Extends, combined.getExtendsForBuiltinType(org.cangnova.cangjie.cfir.types.PrimitiveTypeKind.INT64))
+
+            // 4. lazy 版本：providersRef 惰性求值、只求值一次、结果缓存
+            var providerRefInvocations = 0
+            val lazy = org.cangnova.cangjie.cfir.serialization.provider.CfirExtendProviderComposer
+                .lazyFromSymbolProviders {
+                    providerRefInvocations++
+                    listOf(provider)
+                }
+            assertEquals(0, providerRefInvocations, "providersRef should be lazy until first query")
+            assertEquals(int64Extends, lazy.getExtendsForBuiltinType(org.cangnova.cangjie.cfir.types.PrimitiveTypeKind.INT64))
+            assertEquals(1, providerRefInvocations, "providersRef should be evaluated exactly once")
+            assertEquals(int64Extends, lazy.getExtendsForBuiltinType(org.cangnova.cangjie.cfir.types.PrimitiveTypeKind.INT64))
+            assertEquals(1, providerRefInvocations, "lazy result should be cached after first query")
+
+            // 5. lazy 空降级：无 deserialized provider 时查询返回空结果
+            val lazyEmpty = org.cangnova.cangjie.cfir.serialization.provider.CfirExtendProviderComposer
+                .lazyFromSymbolProviders { emptyList() }
+            assertTrue(lazyEmpty.getExtendsForBuiltinType(org.cangnova.cangjie.cfir.types.PrimitiveTypeKind.INT64).isEmpty())
+            assertTrue(lazyEmpty.isExtendAccessible(int64Extends.first()), "empty provider should keep default accessibility")
+        } finally {
+            tempDir.toFile().deleteRecursively()
+        }
+    }
+
+    /**
      * 从测试 classpath 读取指定 CJO fixture 字节。
      */
     private fun resourceBytes(path: String): ByteArray {

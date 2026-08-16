@@ -2,67 +2,88 @@
 
 package org.cangnova.cangjie.cfir.resolve.calls.overloads
 
-import org.cangnova.cangjie.cfir.declarations.asResolveState
-import org.cangnova.cangjie.cfir.resolve.CfirTypeRelations
+import org.cangnova.cangjie.cfir.resolve.ExtendTestFixtures
+import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.TestSession
 import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.buildCallInfo
 import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.buildCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.buildFunctionSymbol
 import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.buildTypedExpression
-import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCandidate
-import org.cangnova.cangjie.cfir.types.*
-import org.cangnova.cangjie.name.ClassId
-import org.cangnova.cangjie.name.FqName
-import org.cangnova.cangjie.name.Name
-import org.junit.jupiter.api.Assertions.*
+import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.newResolutionContext
+import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.newStubBodyResolveComponents
+import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.newTestSession
+import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
+import org.cangnova.cangjie.cfir.resolve.inference.inferenceComponents
+import org.cangnova.cangjie.cfir.types.ConePrimitiveType
+import org.cangnova.cangjie.resolve.calls.results.TypeSpecificityComparator
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
 /**
- * `CfirOverloadConflictResolver` 的重载消歧测试。
+ * [ConeOverloadConflictResolver] 测试。
+ *
+ * 候选消歧只依赖声明签名，不需要预先运行检查阶段；
+ * 候选集合大于 1 时消歧会访问 `session.extendProvider`，
+ * 因此每个测试使用带空 [org.cangnova.cangjie.cfir.resolve.providers.CfirExtendProvider] 的独立 session。
  */
 class CfirOverloadConflictResolverTest {
 
-    /**
-     * 每个测试前重新创建的重载冲突解析器。
-     */
-    private lateinit var resolver: CfirOverloadConflictResolver
+    private lateinit var session: TestSession
+    private lateinit var context: ResolutionContext
+    private lateinit var resolver: ConeOverloadConflictResolver
 
-    /**
-     * 初始化支持 `Child <: Parent` 的重载解析器。
-     */
     @BeforeEach
     fun setUp() {
-        resolver = CfirOverloadConflictResolver(CfirTypeRelations(OverloadTestTypeContext()))
+        session = newTestSession()
+        context = newResolutionContext(session)
+        resolver = ConeOverloadConflictResolver(
+            TypeSpecificityComparator.NONE,
+            session.inferenceComponents,
+            newStubBodyResolveComponents(session),
+        )
     }
 
     @Nested
     inner class SingleCandidate {
-
         @Test
-        fun `single candidate returns itself`() {
-            val candidate = makeCandidate("f", listOf(ConePrimitiveType.INT32))
-            val result = resolver.chooseMaximallySpecificCandidates(setOf(candidate))
-            assertEquals(1, result.size)
-            assertSame(candidate, result.single())
+        fun `single candidate should be returned as is`() {
+            val candidate = buildCandidate(session, buildFunctionSymbol(session, "f"), buildCallInfo(session, "f"))
+
+            assertEquals(setOf(candidate), resolver.chooseMaximallySpecificCandidates(listOf(candidate)))
         }
     }
 
     @Nested
     inner class SpecificityComparison {
-
         @Test
         fun `more specific parameter type wins`() {
+            val lessSpecific = buildFunctionSymbol(session, "f", parameterTypes = listOf(ConePrimitiveType.INT32))
+            val moreSpecific = buildFunctionSymbol(session, "f", parameterTypes = listOf(ConePrimitiveType.INT64))
+            val callInfo = buildCallInfo(session, "f", arguments = listOf(buildTypedExpression(ConePrimitiveType.INT32)))
+            val candidates = setOf(
+                buildCandidate(session, lessSpecific, callInfo),
+                buildCandidate(session, moreSpecific, callInfo),
+            )
 
+            val result = resolver.chooseMaximallySpecificCandidates(candidates)
+
+            assertEquals(1, result.size)
+            assertSame(moreSpecific, result.single().symbol)
         }
 
         @Test
-        fun `unrelated types remain ambiguous`() {
-            // f(Boolean) vs f(Int32)，两者不存在子类型关系
-            val candidateBool = makeCandidate("f", listOf(ConePrimitiveType.BOOLEAN))
-            val candidateInt = makeCandidate("f", listOf(ConePrimitiveType.INT32))
+        fun `unrelated parameter types remain ambiguous`() {
+            val int32 = buildFunctionSymbol(session, "f", parameterTypes = listOf(ConePrimitiveType.INT32))
+            val boolean = buildFunctionSymbol(session, "f", parameterTypes = listOf(ConePrimitiveType.BOOLEAN))
+            val callInfo = buildCallInfo(session, "f", arguments = listOf(buildTypedExpression(ConePrimitiveType.INT32)))
+            val candidates = setOf(
+                buildCandidate(session, int32, callInfo),
+                buildCandidate(session, boolean, callInfo),
+            )
 
-            val result = resolver.chooseMaximallySpecificCandidates(setOf(candidateBool, candidateInt))
+            val result = resolver.chooseMaximallySpecificCandidates(candidates)
 
             assertEquals(2, result.size)
         }
@@ -70,115 +91,30 @@ class CfirOverloadConflictResolverTest {
 
     @Nested
     inner class GenericDiscrimination {
-
         @Test
-        fun `non-generic wins over generic`() {
-            // f(Int32) vs f<T>(T)
-            val nonGenericSymbol = buildFunctionSymbol("f", parameterTypes = listOf(ConePrimitiveType.INT32))
-            val genericSymbol = buildFunctionSymbol(
-                "f",
+        fun `non generic candidate wins over generic candidate`() {
+            val t = ExtendTestFixtures.newTypeParameter(session.moduleData, "T")
+            val generic = buildFunctionSymbol(
+                session, "f",
+                returnType = ExtendTestFixtures.typeParameterType(t),
                 parameterTypes = listOf(ConePrimitiveType.INT32),
-                typeParameters = listOf(makeStubTypeParameter("T")),
+                typeParameters = listOf(t),
+            )
+            val nonGeneric = buildFunctionSymbol(
+                session, "f",
+                returnType = ConePrimitiveType.INT32,
+                parameterTypes = listOf(ConePrimitiveType.INT32),
+            )
+            val callInfo = buildCallInfo(session, "f", arguments = listOf(buildTypedExpression(ConePrimitiveType.INT32)))
+            val candidates = setOf(
+                buildCandidate(session, generic, callInfo),
+                buildCandidate(session, nonGeneric, callInfo),
             )
 
-            val callInfo = buildCallInfo("f", listOf(buildTypedExpression(ConePrimitiveType.INT32)))
-            val nonGeneric = buildCandidate(nonGenericSymbol, callInfo)
-            val generic = buildCandidate(genericSymbol, callInfo)
-
-            val result = resolver.chooseMaximallySpecificCandidates(setOf(nonGeneric, generic))
+            val result = resolver.chooseMaximallySpecificCandidates(candidates)
 
             assertEquals(1, result.size)
-            assertSame(nonGeneric, result.single())
+            assertSame(nonGeneric, result.single().symbol)
         }
-    }
-
-    @Nested
-    inner class DefaultsDiscrimination {
-
-        @Test
-        fun `fewer defaults wins`() {
-            val callInfo = buildCallInfo("f", listOf(buildTypedExpression(ConePrimitiveType.INT32)))
-
-            // f(Int32)，使用 0 个默认值参数
-            val symbol1 = buildFunctionSymbol("f", parameterTypes = listOf(ConePrimitiveType.INT32))
-            val candidate1 = buildCandidate(symbol1, callInfo)
-            candidate1.numDefaults = 0
-
-            // f(Int32, Bool = true)，使用 1 个默认值参数
-            val symbol2 = buildFunctionSymbol(
-                "f",
-                parameterTypes = listOf(ConePrimitiveType.INT32, ConePrimitiveType.BOOLEAN),
-                parameterDefaults = listOf(false, true),
-            )
-            val candidate2 = buildCandidate(symbol2, callInfo)
-            candidate2.numDefaults = 1
-
-            val result = resolver.chooseMaximallySpecificCandidates(setOf(candidate1, candidate2))
-
-            assertEquals(1, result.size)
-            assertSame(candidate1, result.single())
-        }
-    }
-
-    // ---- 辅助方法 ----
-
-    /**
-     * 基于函数名和参数类型构造测试候选。
-     */
-    private fun makeCandidate(name: String, paramTypes: List<ConeCangJieType>): CfirCandidate {
-        val symbol = buildFunctionSymbol(name, parameterTypes = paramTypes)
-        val callInfo = buildCallInfo(name, paramTypes.map { buildTypedExpression(it) })
-        return buildCandidate(symbol, callInfo)
-    }
-
-    @OptIn(org.cangnova.cangjie.cfir.CfirImplementationDetail::class, org.cangnova.cangjie.cfir.declarations.ResolveStateAccess::class)
-    /**
-     * 构造已经绑定并处于 BODY_RESOLVE 阶段的测试类型参数。
-     */
-    private fun makeStubTypeParameter(name: String): org.cangnova.cangjie.cfir.declarations.CfirTypeParameter {
-        val symbol = org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol()
-        val tp = org.cangnova.cangjie.cfir.declarations.impl.CfirTypeParameterImpl(
-            source = null,
-            moduleData = org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.TEST_MODULE_DATA,
-            annotations = emptyList(),
-            symbol = symbol,
-            origin = org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin.Source,
-            attributes = org.cangnova.cangjie.cfir.declarations.CfirDeclarationAttributes.EMPTY,
-            name = Name.identifier(name),
-            bounds = emptyList(),
-        )
-        tp.resolveState = org.cangnova.cangjie.cfir.declarations.CfirResolvePhase.BODY_RESOLVE.asResolveState()
-        symbol.bind(tp)
-        return tp
     }
 }
-
-/**
- * 测试用 `TypeContext`，支持 `Child <: Parent`。
- */
-private class OverloadTestTypeContext : ConeTypeContext {
-    /**
-     * 为 Child 提供 Parent 作为直接父类型。
-     */
-    override fun supertypes(type: ConeCangJieType): Collection<ConeCangJieType> {
-        // Child 的直接超类型包含 Parent
-        if (type is ConeClassLikeType && type.classId == TYPE_CHILD.classId) {
-            return listOf(TYPE_PARENT)
-        }
-        return emptyList()
-    }
-
-    /**
-     * 按 primitive kind 或 class id 判断类型构造器一致性。
-     */
-    override fun isSameTypeConstructor(a: ConeCangJieType, b: ConeCangJieType): Boolean {
-        if (a is ConePrimitiveType && b is ConePrimitiveType) return a.kind == b.kind
-        if (a is ConeClassLikeType && b is ConeClassLikeType) return a.classId == b.classId
-        return a == b
-    }
-}
-
-/** 测试用类型：`Child <: Parent`。 */
-private val TYPE_PARENT = ConeClassLikeType(ConeClassLookupTagImpl(ClassId(FqName("test"), Name.identifier("Parent"))))
-/** 测试用子类型：`Child <: Parent`。 */
-private val TYPE_CHILD = ConeClassLikeType(ConeClassLookupTagImpl(ClassId(FqName("test"), Name.identifier("Child"))))

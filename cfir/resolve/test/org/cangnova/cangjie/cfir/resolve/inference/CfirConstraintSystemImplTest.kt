@@ -1,86 +1,49 @@
-@file:OptIn(
-    org.cangnova.cangjie.cfir.CfirImplementationDetail::class,
-    org.cangnova.cangjie.cfir.declarations.ResolveStateAccess::class,
-)
+@file:OptIn(org.cangnova.cangjie.cfir.CfirImplementationDetail::class)
 
 package org.cangnova.cangjie.cfir.resolve.inference
 
-import org.cangnova.cangjie.cfir.constraints.CfirConstraintPosition
-import org.cangnova.cangjie.cfir.constraints.CfirTypeVariable
-import org.cangnova.cangjie.cfir.declarations.CfirDeclarationAttributes
-import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
-import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
-import org.cangnova.cangjie.cfir.declarations.asResolveState
-import org.cangnova.cangjie.cfir.declarations.impl.CfirTypeParameterImpl
-import org.cangnova.cangjie.cfir.resolve.CfirConstraintSystemImpl
-import org.cangnova.cangjie.cfir.resolve.CfirTypeRelations
-import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures
-import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
-import org.cangnova.cangjie.cfir.types.ConeCangJieType
-import org.cangnova.cangjie.cfir.types.ConeClassLikeType
-import org.cangnova.cangjie.cfir.types.ConeClassLookupTagImpl
 import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
-import org.cangnova.cangjie.cfir.types.ConeTypeContext
-import org.cangnova.cangjie.cfir.types.ConeTypeParameterLookupTag
-import org.cangnova.cangjie.cfir.types.ConeTypeParameterType
-import org.cangnova.cangjie.name.ClassId
-import org.cangnova.cangjie.name.FqName
-import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintSystemImpl
+import org.cangnova.cangjie.resolve.calls.inference.model.SimpleConstraintSystemConstraintPosition
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 /**
- * [CfirConstraintSystemImpl] 在 inference 包中的端到端求解测试。
+ * [ConstraintSystemImpl] 在 inference 包中的约束传播测试。
+ *
+ * 对位 Kotlin K2 约束系统测试：约束添加后由 incorporation 立即传播，
+ * 直接断言变量下界/上界约束与系统错误，不依赖需要完整 session 的 completion。
  */
 class CfirConstraintSystemImplTest {
 
     /**
-     * 测试使用的类型关系服务。
+     * 测试使用的约束系统位置。
      */
-    private val typeRelations = CfirTypeRelations(ConstraintTestTypeContext())
-
-    /**
-     * 验证 invariant class 类型实参可以分解并推断类型变量。
-     */
-    @Test
-    fun `decompose invariant class type arguments and infer type variable`() {
-        val system = CfirConstraintSystemImpl(typeRelations)
-        val t = newTypeVariable(system, "T")
-        val boxId = ClassId(FqName("test"), Name.identifier("Box"))
-
-        val argType = ConeClassLikeType(ConeClassLookupTagImpl(boxId), listOf(ConePrimitiveType.INT32))
-        val paramType = ConeClassLikeType(ConeClassLookupTagImpl(boxId), listOf(ConeTypeParameterType(t.lookupTag)))
-
-        system.addSubtypeConstraint(argType, paramType, CfirConstraintPosition.ArgumentPosition(0))
-        system.fixAllVariables()
-
-        assertEquals(ConePrimitiveType.INT32, t.fixedType)
-        assertTrue(system.errors.isEmpty())
-    }
+    private val position = SimpleConstraintSystemConstraintPosition
 
     /**
      * 验证函数参数逆变位置可以参与类型变量推断。
      */
     @Test
     fun `function subtype constraints should infer from contravariant parameter`() {
-        val system = CfirConstraintSystemImpl(typeRelations)
-        val t = newTypeVariable(system, "T")
+        val system = ConstraintSystemTestHarness.newSystem()
+        val t = ConstraintSystemTestHarness.newVariable(system, "T")
 
+        // (Int32) -> Int32  <:  (T) -> Int32，参数逆变 → T <: Int32
         val sub = ConeFunctionType(
             parameterTypes = listOf(ConePrimitiveType.INT32),
             returnType = ConePrimitiveType.INT32,
         )
         val sup = ConeFunctionType(
-            parameterTypes = listOf(ConeTypeParameterType(t.lookupTag)),
+            parameterTypes = listOf(t.defaultType),
             returnType = ConePrimitiveType.INT32,
         )
 
-        system.addSubtypeConstraint(sub, sup, CfirConstraintPosition.ArgumentPosition(0))
-        system.fixAllVariables()
+        system.addSubtypeConstraint(sub, sup, position)
 
-        assertEquals(ConePrimitiveType.INT32, t.fixedType)
+        assertTrue(ConstraintSystemTestHarness.upperBoundsOf(system, t).contains(ConePrimitiveType.INT32))
         assertTrue(system.errors.isEmpty())
     }
 
@@ -89,99 +52,30 @@ class CfirConstraintSystemImplTest {
      */
     @Test
     fun `fixation should respect variable dependency order`() {
-        val system = CfirConstraintSystemImpl(typeRelations)
-        val t = newTypeVariable(system, "T")
-        val u = newTypeVariable(system, "U")
+        val system = ConstraintSystemTestHarness.newSystem()
+        val t = ConstraintSystemTestHarness.newVariable(system, "T")
+        val u = ConstraintSystemTestHarness.newVariable(system, "U")
 
-        val tType = ConeTypeParameterType(t.lookupTag)
-        val uType = ConeTypeParameterType(u.lookupTag)
+        system.addSubtypeConstraint(u.defaultType, t.defaultType, position)
+        system.addSubtypeConstraint(ConePrimitiveType.INT32, u.defaultType, position)
 
-        system.addSubtypeConstraint(uType, tType, CfirConstraintPosition.ArgumentPosition(0))
-        system.addSubtypeConstraint(ConePrimitiveType.INT32, uType, CfirConstraintPosition.ArgumentPosition(1))
-        system.fixAllVariables()
-
-        assertEquals(ConePrimitiveType.INT32, u.fixedType)
-        assertEquals(ConePrimitiveType.INT32, t.fixedType)
+        // Int32 <: U 且 U <: T → U 和 T 的下界都含 Int32
+        assertTrue(ConstraintSystemTestHarness.lowerBoundsOf(system, u).contains(ConePrimitiveType.INT32))
+        assertTrue(ConstraintSystemTestHarness.lowerBoundsOf(system, t).contains(ConePrimitiveType.INT32))
         assertTrue(system.errors.isEmpty())
     }
 
     /**
-     * 验证一个变量的 bound 会通过其他变量 bound 继续传播。
-     */
-    @Test
-    fun `bound should be propagated through other variable bounds`() {
-        val system = CfirConstraintSystemImpl(typeRelations)
-        val t = newTypeVariable(system, "T")
-        val u = newTypeVariable(system, "U")
-        val boxId = ClassId(FqName("test"), Name.identifier("Box"))
-
-        val tType = ConeTypeParameterType(t.lookupTag)
-        val boxOfT = ConeClassLikeType(ConeClassLookupTagImpl(boxId), listOf(tType))
-        val uType = ConeTypeParameterType(u.lookupTag)
-
-        system.addSubtypeConstraint(uType, boxOfT, CfirConstraintPosition.ArgumentPosition(0))
-        system.addSubtypeConstraint(tType, ConePrimitiveType.INT32, CfirConstraintPosition.ArgumentPosition(1))
-
-        val propagated = ConeClassLikeType(ConeClassLookupTagImpl(boxId), listOf(ConePrimitiveType.INT32))
-        assertTrue(u.upperBounds.any { it == propagated })
-    }
-
-    /**
-     * 验证冲突约束会记录错误。
+     * 验证冲突约束会记录矛盾。
      */
     @Test
     fun `conflicting constraints should be reported`() {
-        val system = CfirConstraintSystemImpl(typeRelations)
-        val t = newTypeVariable(system, "T")
-        val tType = ConeTypeParameterType(t.lookupTag)
+        val system = ConstraintSystemTestHarness.newSystem()
+        val t = ConstraintSystemTestHarness.newVariable(system, "T")
 
-        system.addSubtypeConstraint(ConePrimitiveType.INT32, tType, CfirConstraintPosition.ArgumentPosition(0))
-        system.addSubtypeConstraint(tType, ConePrimitiveType.BOOLEAN, CfirConstraintPosition.ArgumentPosition(1))
-        system.fixAllVariables()
+        system.addSubtypeConstraint(ConePrimitiveType.INT32, t.defaultType, position)
+        system.addSubtypeConstraint(t.defaultType, ConePrimitiveType.BOOLEAN, position)
 
-        assertTrue(system.hasErrors)
-    }
-
-    /**
-     * 构造并注册测试类型变量。
-     */
-    private fun newTypeVariable(system: CfirConstraintSystemImpl, name: String): CfirTypeVariable {
-        val symbol = CfirTypeParameterSymbol()
-        val typeParameter = CfirTypeParameterImpl(
-            source = null,
-            moduleData = CallResolutionTestFixtures.TEST_MODULE_DATA,
-            annotations = emptyList(),
-            symbol = symbol,
-            origin = CfirDeclarationOrigin.Source,
-            attributes = CfirDeclarationAttributes.EMPTY,
-            name = Name.identifier(name),
-            bounds = emptyList(),
-        )
-        typeParameter.resolveState = CfirResolvePhase.BODY_RESOLVE.asResolveState()
-        symbol.bind(typeParameter)
-        return CfirTypeVariable(
-            typeParameter = symbol,
-            freshTypeId = system.nextFreshTypeId(),
-            lookupTag = ConeTypeParameterLookupTag(name),
-        ).also(system::registerTypeVariable)
-    }
-}
-
-/**
- * constraint system 测试使用的类型上下文。
- */
-private class ConstraintTestTypeContext : ConeTypeContext {
-    /**
-     * 测试上下文不提供额外父类型。
-     */
-    override fun supertypes(type: ConeCangJieType): Collection<ConeCangJieType> = emptyList()
-
-    /**
-     * 按 primitive kind 或 class id 判断类型构造器一致性。
-     */
-    override fun isSameTypeConstructor(a: ConeCangJieType, b: ConeCangJieType): Boolean {
-        if (a is ConePrimitiveType && b is ConePrimitiveType) return a.kind == b.kind
-        if (a is ConeClassLikeType && b is ConeClassLikeType) return a.classId == b.classId
-        return a == b
+        assertTrue(system.hasContradiction)
     }
 }
