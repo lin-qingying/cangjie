@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.config
 
 import org.cangnova.cangjie.LanguageVersionSettings
+import org.cangnova.cangjie.LanguageVersionSettingsImpl
 import org.cangnova.cangjie.cfir.diagnostics.impl.BaseDiagnosticsCollector
 import org.cangnova.cangjie.messages.MessageCollector
 import org.cangnova.cangjie.config.CommonConfigurationKeys.DIAGNOSTICS_COLLECTOR
@@ -93,7 +94,7 @@ object CommonConfigurationKeys {
  * 对齐 Kotlin 声明：`CompilerConfiguration.languageVersionSettings`。
  */
 var CompilerConfiguration.languageVersionSettings: LanguageVersionSettings
-    get() = get(CommonConfigurationKeys.LANGUAGE_VERSION_SETTINGS, LanguageVersionSettings.DEFAULT)
+    get() = get(CommonConfigurationKeys.LANGUAGE_VERSION_SETTINGS, LanguageVersionSettingsImpl.DEFAULT)
     set(value) {
         put(CommonConfigurationKeys.LANGUAGE_VERSION_SETTINGS, value)
     }

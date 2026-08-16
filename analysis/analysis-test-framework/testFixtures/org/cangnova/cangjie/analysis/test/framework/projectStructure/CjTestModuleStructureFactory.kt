@@ -7,6 +7,7 @@ import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiFileSystemItem
 import com.intellij.psi.PsiManager
 import org.cangnova.cangjie.LanguageVersionSettings
+import org.cangnova.cangjie.LanguageVersionSettingsImpl
 import org.cangnova.cangjie.analysis.api.CaExperimentalApi
 import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryFallbackDependenciesModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryModule
@@ -155,7 +156,7 @@ object CjTestModuleStructureFactory {
         testServices: TestServices,
         dependencyBinaryRoots: List<Path>,
     ): TestModuleSet {
-        val languageVersionSettings = testModule.languageVersionSettings ?: LanguageVersionSettings.DEFAULT
+        val languageVersionSettings = testModule.languageVersionSettings ?: LanguageVersionSettingsImpl.DEFAULT
         val moduleName = testModule.name
 
         return when (moduleKind) {

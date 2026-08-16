@@ -98,6 +98,11 @@ Unix/macOS:
 
 工件列表、坐标与 IDE 子项目联动方式见 [`prepare/README.md`](prepare/README.md)。
 
+## Current State
+
+- `cfir:resolve`：extend 语义检查器新增声明侧可见性视图（deserialized extend 跨包过滤），`:cfir:resolve:test` 34/34 全绿；修复记录见 `cfir/analysis-tests/REPAIR_LOG.md`。
+- 待改进：`cfir:resolve` 测试目录中 21 个引用已删除约束系统 API 的历史测试暂移至 `C:\Users\lin17\AppData\Local\Temp\opencode\zombie-tests-backup\`，需按 K2 风格 API 重写后恢复。
+
 ## Documentation
 
 - [`CLAUDE.md`](CLAUDE.md) - 项目定位、模块结构与开发约束

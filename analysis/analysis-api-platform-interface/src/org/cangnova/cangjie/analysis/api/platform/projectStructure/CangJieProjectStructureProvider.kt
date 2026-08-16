@@ -5,6 +5,7 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFileSystemItem
+import org.cangnova.cangjie.LanguageVersionSettingsImpl
 import org.cangnova.cangjie.analysis.api.CaPlatformInterface
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaNotUnderContentRootModule
@@ -116,7 +117,7 @@ interface CangJieProjectStructureProvider {
      * such as [CaNotUnderContentRootModule].
      */
     val globalLanguageVersionSettings: LanguageVersionSettings
-        get() = LanguageVersionSettings.DEFAULT
+        get() = LanguageVersionSettingsImpl.DEFAULT
 
     /**
      * Project-global [LanguageVersionSettings] for library-related modules.

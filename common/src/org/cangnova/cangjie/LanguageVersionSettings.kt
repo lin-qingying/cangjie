@@ -1,14 +1,30 @@
 package org.cangnova.cangjie
 
+import org.cangnova.cangjie.config.ApiVersion
+import org.cangnova.cangjie.util.DescriptionAware
 import kotlin.properties.ReadOnlyProperty
 import kotlin.reflect.KProperty
+import java.util.*
 
-/**
- * 表示编译器理解的仓颉语言版本号。
- *
- * 版本按 `major.minor.patch` 三段比较，用于语言特性开关、诊断降级和兼容性判断。
- */
-data class LanguageVersion(
+interface LanguageOrApiVersion : DescriptionAware {
+    val versionString: String
+
+    val isStable: Boolean
+
+    val isDeprecated: Boolean
+
+    val isUnsupported: Boolean
+
+    override val description: String
+        get() = when {
+            !isStable -> "$versionString (experimental)"
+            isDeprecated -> "$versionString (deprecated)"
+            isUnsupported -> "$versionString (unsupported)"
+            else -> versionString
+        }
+}
+
+enum class LanguageVersion(
     /**
      * 主版本号，表达不兼容语言语义变化。
      */
@@ -21,73 +37,96 @@ data class LanguageVersion(
      * 修订版本号，表达补丁级语言行为或标准库同步版本。
      */
     val patch: Int,
-) : Comparable<LanguageVersion> {
-    /**
-     * 按主版本、次版本、修订版本顺序比较两个语言版本。
-     */
-    override fun compareTo(other: LanguageVersion): Int {
-        if (major != other.major) return major.compareTo(other.major)
-        if (minor != other.minor) return minor.compareTo(other.minor)
-        return patch.compareTo(other.patch)
-    }
+    val preReleaseTag: String? = null
+) : DescriptionAware, LanguageOrApiVersion {
 
-    /**
-     * 渲染为配置文件和命令行使用的三段式版本字符串。
-     */
-    override fun toString(): String = "$major.$minor.$patch"
+    CANGJIE_1_0_0(1, 0, 0),
+    CANGJIE_1_0_5(1, 0, 5),
+    CANGJIE_1_1_0(1, 1, 0),
+    CANGJIE_1_1_3(1, 1, 3);
+
+
+    override val isStable: Boolean
+        get() = this <= LATEST_STABLE
+
+
+    override val isDeprecated: Boolean
+        get() = this in FIRST_SUPPORTED..<FIRST_NON_DEPRECATED
+
+    override val isUnsupported: Boolean
+        get() = this < FIRST_SUPPORTED
+
+    override val versionString: String = "$major.$minor"
+
+    override fun toString() = versionString
 
     companion object {
-        /**
-         * 从 `major.minor.patch` 格式解析语言版本，格式或数字非法时返回 null。
-         */
-        fun parse(value: String): LanguageVersion? {
-            val parts = value.split('.')
-            if (parts.size != 3) return null
-
-            val major = parts[0].toIntOrNull() ?: return null
-            val minor = parts[1].toIntOrNull() ?: return null
-            val patch = parts[2].toIntOrNull() ?: return null
-            return LanguageVersion(major, minor, patch)
+        fun parse(versionString: String): LanguageVersion {
+            val parts = versionString.split('.')
+            if (parts.size < 2) error("Invalid version string: $versionString")
+            val major = parts[0].toIntOrNull() ?: error("Invalid major version: ${parts[0]}")
+            val minor = parts[1].toIntOrNull() ?: error("Invalid minor version: ${parts[1]}")
+            val patch = if (parts.size > 2) parts[2].toIntOrNull() ?: error("Invalid patch version: ${parts[2]}") else 0
+            return entries.firstOrNull { it.major == major && it.minor == minor && it.patch == patch }
+                ?: error("Version not found: $versionString")
         }
+
+        @JvmField
+        val FIRST_SUPPORTED = CANGJIE_1_0_0
+
+        @JvmField
+        val FIRST_API_SUPPORTED = CANGJIE_1_0_0
+
+        @JvmField
+        val FIRST_NON_DEPRECATED = CANGJIE_1_0_0
+
+        @JvmField
+        val LATEST_STABLE = CANGJIE_1_0_5
+
     }
 }
 
-/**
- * 当前编译器内置的语言版本常量。
- */
-object LanguageVersions {
-    /**
-     * 仓颉 1.0.5 语言版本。
-     */
-    val V_1_0_5: LanguageVersion = LanguageVersion(1, 0, 5)
-    val V_1_1_0: LanguageVersion = LanguageVersion(1, 1, 0)
-    val V_1_1_3: LanguageVersion = LanguageVersion(1, 1, 3)
-
-    /**
-     * 默认面向用户启用的最新稳定语言版本。
-     */
-    val LATEST_STABLE: LanguageVersion = V_1_0_5
+sealed class LanguageFeatureBehaviorAfterSinceVersion {
+    data object CannotBeDisabled : LanguageFeatureBehaviorAfterSinceVersion()
+    data class CanStillBeDisabledForNow(val relevantTicketId: String) : LanguageFeatureBehaviorAfterSinceVersion()
 }
+
+const val NO_ISSUE_SPECIFIED = "No issue"
 
 /**
  * 可由语言版本设置显式开启的语言特性。
  *
  * 这些开关用于在同一编译器中承载实验特性、兼容行为和诊断策略差异。
  */
-enum class LanguageFeature {
+enum class LanguageFeature(
+    val sinceVersion: LanguageVersion?,
+    val sinceApiVersion: ApiVersion = ApiVersion.CANGJIE_1_0_0,
+    val issue: String = NO_ISSUE_SPECIFIED,
+    private val enabledInProgressiveMode: Boolean = false,
+    val forcesPreReleaseBinaries: Boolean = false,
+    val testOnly: Boolean = false,
+    val hintUrl: String? = null,
+    val behaviorAfterSinceVersion: LanguageFeatureBehaviorAfterSinceVersion = LanguageFeatureBehaviorAfterSinceVersion.CannotBeDisabled,
+) {
     /**
      * Enables data-flow-analysis based warnings in frontend diagnostics.
      */
-    EnableDfaWarnings,
+    EnableDfaWarnings(LanguageVersion.CANGJIE_1_0_0),
+
     /**
      * Reports lambda/function value mismatch as ARGUMENT_TYPE_MISMATCH instead of
      * RETURN_TYPE_MISMATCH on lambda body return expression.
      */
-    LambdaReturnTypeMismatchAsArgumentTypeMismatch,
-    InvalidBinaryOperatorDiagnostics,
-    LexicographicVariableReadinessCalculation,
-    EffectHandlers,
+    LambdaReturnTypeMismatchAsArgumentTypeMismatch(LanguageVersion.CANGJIE_1_0_0),
+    InvalidBinaryOperatorDiagnostics(LanguageVersion.CANGJIE_1_0_0),
+    LexicographicVariableReadinessCalculation(LanguageVersion.CANGJIE_1_0_0),
+    EffectHandlers(LanguageVersion.CANGJIE_1_0_0),
     ;
+
+    enum class State(override val description: String) : DescriptionAware {
+        ENABLED("Enabled"),
+        DISABLED("Disabled");
+    }
 
     companion object {
         /**
@@ -171,6 +210,7 @@ class AnalysisFlag<out T> internal constructor(
              */
             operator fun provideDelegate(instance: Any?, property: KProperty<*>) = Delegate(property.name, defaultValue)
         }
+
         /**
          * 警告级别映射开关委托，用于按诊断名称覆盖 warning/error/disabled。
          */
@@ -178,11 +218,11 @@ class AnalysisFlag<out T> internal constructor(
             /**
              * 根据属性名创建警告级别映射分析开关。
              */
-            operator fun provideDelegate(instance: Any?, property: KProperty<*>):  AnalysisFlag.Delegate<Map<String, WarningLevel>> = Delegate(property.name, emptyMap())
+            operator fun provideDelegate(
+                instance: Any?,
+                property: KProperty<*>
+            ): AnalysisFlag.Delegate<Map<String, WarningLevel>> = Delegate(property.name, emptyMap())
         }
-
-
-
 
 
     }
@@ -202,16 +242,14 @@ object AnalysisFlags {
      */
     @JvmStatic
     val ideMode by AnalysisFlag.Delegates.Boolean
-    /**
-     * 是否允许源码使用 Kotlin 包名兼容路径。
-     */
-    @JvmStatic
-    val allowKotlinPackage by AnalysisFlag.Delegates.Boolean
+
+
     /**
      * 是否处于标准库自身编译模式。
      */
     @JvmStatic
     val stdlibCompilation by AnalysisFlag.Delegates.Boolean
+
     /**
      * 是否跳过预导入和前置标准定义。
      */
@@ -229,40 +267,75 @@ object AnalysisFlags {
 
 }
 
-/**
- * 单次分析使用的语言版本、启用特性和分析开关集合。
- */
-data class LanguageVersionSettings(
-    /**
-     * 当前分析会话采用的语言版本。
-     */
-    val languageVersion: LanguageVersion = LanguageVersions.LATEST_STABLE,
-    /**
-     * 在当前语言版本之外额外启用的语言特性集合。
-     */
-    val enabledFeatures: Set<LanguageFeature> = emptySet(),
-    /**
-     * 以 [AnalysisFlag] 为键的分析配置覆盖值。
-     */
-    val analysisFlags: Map<AnalysisFlag<*>, Any?> = emptyMap(),
-) {
-    /**
-     * 判断当前设置是否启用了指定语言特性。
-     */
-    fun supportsFeature(feature: LanguageFeature): Boolean = feature in enabledFeatures
+interface LanguageVersionSettings {
+    fun getFeatureSupport(feature: LanguageFeature): LanguageFeature.State
 
-    /**
-     * 读取指定分析开关的值；未配置时返回该开关声明的默认值。
-     */
-    @Suppress("UNCHECKED_CAST")
-    fun <T> getFlag(flag: AnalysisFlag<T>): T {
-        return analysisFlags[flag] as? T ?: flag.defaultValue
-    }
+    fun supportsFeature(feature: LanguageFeature): Boolean =
+        getFeatureSupport(feature) == LanguageFeature.State.ENABLED
+
+    fun getCustomizedLanguageFeatures(): Map<LanguageFeature, LanguageFeature.State>
+
+    fun isPreRelease(): Boolean
+
+    fun <T> getFlag(flag: AnalysisFlag<T>): T
+
+    val apiVersion: ApiVersion
+
+    // Please do not use this to enable/disable specific features/checks. Instead add a new LanguageFeature entry and call supportsFeature
+    val languageVersion: LanguageVersion
 
     companion object {
-        /**
-         * 面向普通编译场景的默认语言版本设置。
-         */
-        val DEFAULT: LanguageVersionSettings = LanguageVersionSettings()
+        const val RESOURCE_NAME_TO_ALLOW_READING_FROM_ENVIRONMENT = "META-INF/allow-configuring-from-environment"
     }
 }
+
+class LanguageVersionSettingsImpl @JvmOverloads constructor(
+    override val languageVersion: LanguageVersion,
+    override val apiVersion: ApiVersion,
+    analysisFlags: Map<AnalysisFlag<*>, Any?> = emptyMap(),
+    specificFeatures: Map<LanguageFeature, LanguageFeature.State> = emptyMap()
+) : LanguageVersionSettings {
+    private val analysisFlags: Map<AnalysisFlag<*>, *> = Collections.unmodifiableMap(analysisFlags)
+    private val specificFeatures: Map<LanguageFeature, LanguageFeature.State> =
+        Collections.unmodifiableMap(specificFeatures)
+
+    override fun getFeatureSupport(feature: LanguageFeature): LanguageFeature.State {
+        specificFeatures[feature]?.let { return it }
+
+        return if (isEnabledByDefault(feature)) {
+            LanguageFeature.State.ENABLED
+        } else {
+            LanguageFeature.State.DISABLED
+        }
+    }
+
+    override fun getCustomizedLanguageFeatures(): Map<LanguageFeature, LanguageFeature.State> = specificFeatures
+
+
+    @Suppress("UNCHECKED_CAST")
+    override fun <T> getFlag(flag: AnalysisFlag<T>): T = analysisFlags[flag] as T? ?: flag.defaultValue
+
+    override fun isPreRelease(): Boolean = languageVersion.isPreRelease() ||
+            specificFeatures.any { (feature, state) ->
+                state == LanguageFeature.State.ENABLED && feature.forcesPreReleaseBinariesIfEnabled()
+            }
+
+    companion object {
+        @JvmField
+        val DEFAULT = LanguageVersionSettingsImpl(LanguageVersion.LATEST_STABLE, ApiVersion.LATEST_STABLE)
+    }
+}
+
+fun LanguageVersion.isPreRelease(): Boolean {
+    if (!isStable) return true
+
+    return this.preReleaseTag != null && this == LanguageVersion.LATEST_STABLE
+}
+
+fun LanguageFeature.forcesPreReleaseBinariesIfEnabled(): Boolean {
+    val isFeatureNotReleasedYet = sinceVersion?.isStable != true
+    return isFeatureNotReleasedYet && forcesPreReleaseBinaries
+}
+
+fun LanguageVersionSettings.isEnabledByDefault(languageFeature: LanguageFeature): Boolean =
+    languageFeature.sinceVersion != null && languageVersion >= languageFeature.sinceVersion && apiVersion >= languageFeature.sinceApiVersion

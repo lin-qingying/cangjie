@@ -71,6 +71,7 @@ import org.cangnova.cangjie.cfir.types.ConeLookupTagBasedType
 import org.cangnova.cangjie.cfir.types.ConeTypeIntersector
 import org.cangnova.cangjie.cfir.types.ConeTypeVariableType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
+import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
 import org.cangnova.cangjie.cfir.types.ConeTupleType
 import org.cangnova.cangjie.cfir.types.ConeUnreportedDuplicateDiagnostic
 import org.cangnova.cangjie.cfir.types.ConeVArrayType
@@ -744,12 +745,21 @@ internal object ArgumentCheckingProcessor {
         ) return
         if (addNoArgEnumConstructorShapeConstraintForCurrentInferenceVariable(expression, argumentType, expectedType, position)) return
         if (addLocalLambdaParameterShapeConstraint(argumentType, expectedType, position)) return
-        // IdealInt/IdealFloat 在具体形参类型下按候选局部目标类型参与适用性检查。
+// IdealInt/IdealFloat 在具体形参类型下按候选局部目标类型参与适用性检查。
         // 嵌套调用的共享字面量节点可能已被先前候选具体化，因此从不可变 literal kind 重建
         // candidate-local ideal 类型；这里只替换约束输入，最终 winner 仍由 completion writer 写回类型。
-        val candidateLocalArgumentType = when ((expression as? CfirLiteralExpression)?.kind) {
-            CfirLiteralKind.INT -> ConePrimitiveType.IDEAL_INT
-            CfirLiteralKind.FLOAT -> ConePrimitiveType.IDEAL_FLOAT
+        // 重建只适用于数值字面量：非数值实参（class-like/函数/字符串等）即使落在字面量表达式
+        // 节点上（如测试夹具构造的类型化表达式）也必须保留原类型参与检查。
+        val candidateLocalArgumentType = when (argumentType) {
+            is ConePrimitiveType -> when (argumentType.kind) {
+                PrimitiveTypeKind.IDEAL_INT -> ConePrimitiveType.IDEAL_INT
+                PrimitiveTypeKind.IDEAL_FLOAT -> ConePrimitiveType.IDEAL_FLOAT
+                else -> when ((expression as? CfirLiteralExpression)?.kind) {
+                    CfirLiteralKind.INT -> ConePrimitiveType.IDEAL_INT
+                    CfirLiteralKind.FLOAT -> ConePrimitiveType.IDEAL_FLOAT
+                    else -> argumentType
+                }
+            }
             else -> argumentType
         }
         val argumentTypeForSubtypeCheck = if (csBuilder.isProperType(expectedType)) {

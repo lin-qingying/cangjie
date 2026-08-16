@@ -2,177 +2,118 @@
 
 package org.cangnova.cangjie.cfir.resolve.calls.stages
 
-import org.cangnova.cangjie.cfir.diagnostic.ArgumentTypeMismatch
+import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.TestSession
 import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.buildCallInfo
 import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.buildCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.buildFunctionSymbol
 import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.buildTypedExpression
-import org.cangnova.cangjie.cfir.resolve.body.CfirBodyResolveContext
-import org.cangnova.cangjie.cfir.resolve.body.CfirDataFlowAnalyzerContext
-import org.cangnova.cangjie.cfir.resolve.body.ReturnTypeCalculator
-import org.cangnova.cangjie.cfir.resolve.CfirTypeRelations
-import org.cangnova.cangjie.cfir.semantics.CandidateApplicability
-import org.cangnova.cangjie.cfir.types.*
-import org.junit.jupiter.api.Assertions.*
+import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.newResolutionContext
+import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.newTestSession
+import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.runStagesForTest
+import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
+import org.cangnova.cangjie.cfir.diagnostic.ArgumentTypeMismatch
+import org.cangnova.cangjie.cfir.semantics.ErrorTypeInArguments
+import org.cangnova.cangjie.cfir.types.ConeErrorType
+import org.cangnova.cangjie.cfir.types.ConePrimitiveType
+import org.cangnova.cangjie.resolve.calls.tower.CandidateApplicability
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
 /**
- * `CfirCheckArguments` 参数类型检查阶段测试。
+ * [CfirCheckArguments] 阶段测试：实参类型与形参类型的兼容性检查。
  */
 class CfirCheckArgumentsTest {
 
-    /**
-     * 参数检查阶段测试使用的 resolution context。
-     */
-    private lateinit var context: CfirResolutionContext
+    private lateinit var session: TestSession
+    private lateinit var context: ResolutionContext
 
-    /**
-     * 初始化支持 ideal 类型兼容判断的测试上下文。
-     */
     @BeforeEach
     fun setUp() {
-        context = CfirResolutionContext(
-            session = StubSession,
-            bodyResolveContext = CfirBodyResolveContext(ReturnTypeCalculator.Default, CfirDataFlowAnalyzerContext()),
-            typeRelations = CfirTypeRelations(TestTypeContext()),
-        )
+        session = newTestSession()
+        context = newResolutionContext(session)
+    }
+
+    private fun runArgumentCheck(
+        parameterTypes: List<ConePrimitiveType>,
+        argumentTypes: List<ConePrimitiveType>,
+    ) = runArgumentCheckWithExpressions(parameterTypes, argumentTypes.map { buildTypedExpression(it) })
+
+    private fun runArgumentCheckWithExpressions(
+        parameterTypes: List<ConePrimitiveType>,
+        arguments: List<CfirExpression>,
+    ): Candidate {
+        val symbol = buildFunctionSymbol(session, "f", parameterTypes = parameterTypes)
+        val callInfo = buildCallInfo(session, "f", arguments = arguments)
+        val candidate = buildCandidate(session, symbol, callInfo)
+        runStagesForTest(candidate, context, CfirMapArguments, CfirCheckArguments)
+        return candidate
     }
 
     @Nested
     inner class TypeCompatible {
-
         @Test
         fun `same type is compatible`() {
-            val symbol = buildFunctionSymbol("f", parameterTypes = listOf(ConePrimitiveType.INT32))
-            val callInfo = buildCallInfo("f", arguments = listOf(buildTypedExpression(ConePrimitiveType.INT32)))
-            val candidate = buildCandidate(symbol, callInfo)
-            // 先执行参数映射
-            CfirMapArguments.check(candidate, CfirCheckerSinkImpl(candidate), context)
+            val candidate = runArgumentCheck(listOf(ConePrimitiveType.INT32), listOf(ConePrimitiveType.INT32))
 
-            CfirCheckArguments.check(candidate, CfirCheckerSinkImpl(candidate), context)
-
-            assertEquals(CandidateApplicability.RESOLVED, candidate.lowestApplicability)
+            assertEquals(CandidateApplicability.RESOLVED, candidate.applicability)
+            assertTrue(candidate.diagnostics.isEmpty())
+            assertEquals(1, candidate.argumentMapping.size)
         }
 
         @Test
-        fun `IdealInt is compatible with Int32`() {
-            val symbol = buildFunctionSymbol("f", parameterTypes = listOf(ConePrimitiveType.INT32))
-            val callInfo = buildCallInfo("f", arguments = listOf(buildTypedExpression(ConePrimitiveType.IDEAL_INT)))
-            val candidate = buildCandidate(symbol, callInfo)
-            CfirMapArguments.check(candidate, CfirCheckerSinkImpl(candidate), context)
+        fun `int32 is not compatible with boolean`() {
+            val candidate = runArgumentCheck(listOf(ConePrimitiveType.BOOLEAN), listOf(ConePrimitiveType.INT32))
 
-            CfirCheckArguments.check(candidate, CfirCheckerSinkImpl(candidate), context)
-
-            assertEquals(CandidateApplicability.RESOLVED, candidate.lowestApplicability)
+            assertEquals(CandidateApplicability.INAPPLICABLE, candidate.applicability)
+            assertEquals(1, candidate.diagnostics.size)
+            assertTrue(candidate.diagnostics.single() is ArgumentTypeMismatch)
         }
 
         @Test
-        fun `IdealFloat is compatible with Float64`() {
-            val symbol = buildFunctionSymbol("f", parameterTypes = listOf(ConePrimitiveType.FLOAT64))
-            val callInfo = buildCallInfo("f", arguments = listOf(buildTypedExpression(ConePrimitiveType.IDEAL_FLOAT)))
-            val candidate = buildCandidate(symbol, callInfo)
-            CfirMapArguments.check(candidate, CfirCheckerSinkImpl(candidate), context)
+        fun `boolean is not compatible with int32`() {
+            val candidate = runArgumentCheck(listOf(ConePrimitiveType.INT32), listOf(ConePrimitiveType.BOOLEAN))
 
-            CfirCheckArguments.check(candidate, CfirCheckerSinkImpl(candidate), context)
-
-            assertEquals(CandidateApplicability.RESOLVED, candidate.lowestApplicability)
-        }
-    }
-
-    @Nested
-    inner class TypeIncompatible {
-
-        @Test
-        fun `Int32 is not compatible with Bool`() {
-            val symbol = buildFunctionSymbol("f", parameterTypes = listOf(ConePrimitiveType.BOOLEAN))
-            val callInfo = buildCallInfo("f", arguments = listOf(buildTypedExpression(ConePrimitiveType.INT32)))
-            val candidate = buildCandidate(symbol, callInfo)
-            CfirMapArguments.check(candidate, CfirCheckerSinkImpl(candidate), context)
-
-            CfirCheckArguments.check(candidate, CfirCheckerSinkImpl(candidate), context)
-
-            assertEquals(CandidateApplicability.INAPPLICABLE, candidate.lowestApplicability)
-            assertTrue(candidate.diagnostics.any {
-                it is ArgumentTypeMismatch
-            })
+            assertEquals(CandidateApplicability.INAPPLICABLE, candidate.applicability)
+            assertTrue(candidate.diagnostics.single() is ArgumentTypeMismatch)
         }
 
         @Test
-        fun `Bool is not compatible with Int32`() {
-            val symbol = buildFunctionSymbol("f", parameterTypes = listOf(ConePrimitiveType.INT32))
-            val callInfo = buildCallInfo("f", arguments = listOf(buildTypedExpression(ConePrimitiveType.BOOLEAN)))
-            val candidate = buildCandidate(symbol, callInfo)
-            CfirMapArguments.check(candidate, CfirCheckerSinkImpl(candidate), context)
-
-            CfirCheckArguments.check(candidate, CfirCheckerSinkImpl(candidate), context)
-
-            assertEquals(CandidateApplicability.INAPPLICABLE, candidate.lowestApplicability)
-        }
-
-        @Test
-        fun `second argument type mismatch`() {
-            val symbol = buildFunctionSymbol(
-                "f",
-                parameterTypes = listOf(ConePrimitiveType.INT32, ConePrimitiveType.BOOLEAN),
+        fun `second argument mismatch makes the whole candidate inapplicable`() {
+            val candidate = runArgumentCheck(
+                listOf(ConePrimitiveType.INT32, ConePrimitiveType.BOOLEAN),
+                listOf(ConePrimitiveType.INT32, ConePrimitiveType.INT32),
             )
-            val callInfo = buildCallInfo(
-                "f",
-                arguments = listOf(
-                    buildTypedExpression(ConePrimitiveType.INT32),
-                    buildTypedExpression(ConePrimitiveType.INT32), // 应该是 Bool
-                ),
-            )
-            val candidate = buildCandidate(symbol, callInfo)
-            CfirMapArguments.check(candidate, CfirCheckerSinkImpl(candidate), context)
 
-            CfirCheckArguments.check(candidate, CfirCheckerSinkImpl(candidate), context)
-
-            assertEquals(CandidateApplicability.INAPPLICABLE, candidate.lowestApplicability)
+            assertEquals(CandidateApplicability.INAPPLICABLE, candidate.applicability)
+            assertEquals(1, candidate.diagnostics.size)
+            assertTrue(candidate.diagnostics.single() is ArgumentTypeMismatch)
         }
-    }
-
-    @Nested
-    inner class ErrorTypeHandling {
 
         @Test
-        fun `error type argument is silently skipped`() {
-            val symbol = buildFunctionSymbol("f", parameterTypes = listOf(ConePrimitiveType.INT32))
-            val callInfo = buildCallInfo("f", arguments = listOf(buildTypedExpression(ConeErrorType("test error"))))
-            val candidate = buildCandidate(symbol, callInfo)
-            CfirMapArguments.check(candidate, CfirCheckerSinkImpl(candidate), context)
+        fun `ideal int and ideal float are compatible with concrete numeric types`() {
+            val idealInt = runArgumentCheck(listOf(ConePrimitiveType.INT32), listOf(ConePrimitiveType.IDEAL_INT))
+            assertEquals(CandidateApplicability.RESOLVED, idealInt.applicability)
 
-            CfirCheckArguments.check(candidate, CfirCheckerSinkImpl(candidate), context)
-
-            assertEquals(CandidateApplicability.RESOLVED, candidate.lowestApplicability)
+            val idealFloat = runArgumentCheck(listOf(ConePrimitiveType.FLOAT64), listOf(ConePrimitiveType.IDEAL_FLOAT))
+            assertEquals(CandidateApplicability.RESOLVED, idealFloat.applicability)
         }
-    }
-}
 
-// ---- Stub 对象 ----
+        @Test
+        fun `error type argument is not applicable`() {
+            val errorArgument = buildTypedExpression(ConeErrorType(ConeSimpleDiagnostic("test error")))
+            val candidate = runArgumentCheckWithExpressions(listOf(ConePrimitiveType.INT32), listOf(errorArgument))
 
-/**
- * 参数检查测试使用的最小 session。
- */
-private object StubSession : org.cangnova.cangjie.cfir.session.CfirSession(Kind.Source) {
-    /**
-     * 返回稳定的调试名称。
-     */
-    override fun toString(): String = "StubSession"
-}
-
-/** 支持 `IdealInt` / `IdealFloat` 子类型判定的测试 `TypeContext`。 */
-private class TestTypeContext : ConeTypeContext {
-    /**
-     * 测试上下文不提供额外父类型。
-     */
-    override fun supertypes(type: ConeCangJieType): Collection<ConeCangJieType> = emptyList()
-    /**
-     * 按 primitive kind 或结构相等判断类型构造器一致性。
-     */
-    override fun isSameTypeConstructor(a: ConeCangJieType, b: ConeCangJieType): Boolean {
-        if (a is ConePrimitiveType && b is ConePrimitiveType) return a.kind == b.kind
-        return a == b
+            // 与旧实现“error 类型静默跳过并保持 RESOLVED”不同，
+            // 新实现通过 ErrorTypeInArguments 让整个候选不可用。
+            assertEquals(CandidateApplicability.INAPPLICABLE, candidate.applicability)
+            assertEquals(1, candidate.diagnostics.size)
+            assertTrue(candidate.diagnostics.single() is ErrorTypeInArguments)
+        }
     }
 }

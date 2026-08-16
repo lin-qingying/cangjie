@@ -5,8 +5,9 @@ import org.cangnova.cangjie.AnalysisFlags
 import org.cangnova.cangjie.LanguageFeature
 import org.cangnova.cangjie.LanguageVersion
 import org.cangnova.cangjie.LanguageVersionSettings
-import org.cangnova.cangjie.LanguageVersions
+import org.cangnova.cangjie.LanguageVersionSettingsImpl
 import org.cangnova.cangjie.WarningLevel
+import org.cangnova.cangjie.config.ApiVersion
 import org.cangnova.cangjie.test.directives.LanguageSettingsDirectives
 import org.cangnova.cangjie.test.directives.model.RegisteredDirectives
 import org.cangnova.cangjie.test.directives.model.singleOrZeroValue
@@ -31,7 +32,7 @@ class LanguageVersionSettingsBuilder {
     /**
      * 维护 `languageVersion`，供测试配置构建在测试执行期间读取或传递。
      */
-    var languageVersion: LanguageVersion = LanguageVersions.LATEST_STABLE
+    var languageVersion: LanguageVersion = LanguageVersion.LATEST_STABLE
 
     /**
      * 保存 `enabledFeatures`，供测试配置构建在测试执行期间读取或传递。
@@ -121,10 +122,11 @@ class LanguageVersionSettingsBuilder {
      * 执行 `build` 对应的测试配置构建流程，维持测试框架的阶段契约。
      */
     fun build(): LanguageVersionSettings {
-        return LanguageVersionSettings(
+        return LanguageVersionSettingsImpl(
             languageVersion = languageVersion,
-            enabledFeatures = enabledFeatures.toSet(),
+            apiVersion = ApiVersion.LATEST_STABLE,
             analysisFlags = analysisFlags.toMap(),
+            specificFeatures = enabledFeatures.toSet().associateWith { LanguageFeature.State.ENABLED },
         )
     }
 }

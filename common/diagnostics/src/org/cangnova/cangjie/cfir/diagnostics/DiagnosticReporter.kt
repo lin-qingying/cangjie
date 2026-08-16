@@ -1,6 +1,7 @@
 ﻿package org.cangnova.cangjie.cfir.diagnostics
 
 import org.cangnova.cangjie.LanguageVersionSettings
+import org.cangnova.cangjie.LanguageVersionSettingsImpl
 import org.cangnova.cangjie.source.AbstractCjSourceElement
 
 
@@ -43,7 +44,7 @@ interface DiagnosticContext : DiagnosticBaseContext {
         /**
          * 默认语言版本设置。
          */
-        override val languageVersionSettings: LanguageVersionSettings get() = LanguageVersionSettings.DEFAULT
+        override val languageVersionSettings: LanguageVersionSettings get() = LanguageVersionSettingsImpl.DEFAULT
         /**
          * 默认上下文没有文件路径。
          */

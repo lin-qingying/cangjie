@@ -9,6 +9,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.psi.SmartPointerManager
 import com.intellij.psi.search.GlobalSearchScope
 import org.cangnova.cangjie.LanguageVersionSettings
+import org.cangnova.cangjie.LanguageVersionSettingsImpl
 import org.cangnova.cangjie.analysis.api.CaImplementationDetail
 import org.cangnova.cangjie.analysis.api.CaPlatformInterface
 import org.cangnova.cangjie.analysis.api.projectStructure.CaDanglingFileModule
@@ -87,7 +88,7 @@ class CaDanglingFileModuleImpl(
      * dangling 模块继承源码上下文模块的语言版本设置。
      */
     override val languageVersionSettings: LanguageVersionSettings
-        get() = (contextModule as? CaSourceModule)?.languageVersionSettings ?: LanguageVersionSettings.DEFAULT
+        get() = (contextModule as? CaSourceModule)?.languageVersionSettings ?: LanguageVersionSettingsImpl.DEFAULT
 
     /**
      * dangling 模块的 PSI 根即 dangling 文件自身。

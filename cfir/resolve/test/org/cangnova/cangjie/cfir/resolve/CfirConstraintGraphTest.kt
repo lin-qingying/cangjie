@@ -1,140 +1,97 @@
+@file:OptIn(org.cangnova.cangjie.cfir.CfirImplementationDetail::class)
+
 package org.cangnova.cangjie.cfir.resolve
 
-import org.cangnova.cangjie.cfir.constraints.CfirTypeVariable
-import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
-import org.cangnova.cangjie.cfir.types.*
-import org.junit.jupiter.api.Assertions.*
+import org.cangnova.cangjie.cfir.resolve.inference.ConstraintSystemTestHarness
+import org.cangnova.cangjie.cfir.types.ConePrimitiveType
+import org.cangnova.cangjie.resolve.calls.inference.model.SimpleConstraintSystemConstraintPosition
+import org.cangnova.cangjie.type.model.TypeConstructorMarker
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 /**
- * [CfirConstraintGraph] 变量依赖拓扑排序和替换传播测试。
+ * 约束系统变量依赖图测试。
+ *
+ * 旧独立 [CfirConstraintGraph] 已随 K2 架构移植删除，依赖信息由
+ * [org.cangnova.cangjie.resolve.calls.inference.model.ConstraintSystemImpl]
+ * 的 [org.cangnova.cangjie.resolve.calls.inference.ConstraintSystem.asReadOnlyStorage]
+ * 暴露的 [org.cangnova.cangjie.resolve.calls.inference.model.ConstraintStorage.typeVariableDependencies]
+ * 承担。本测试直接断言该依赖图。
  */
 class CfirConstraintGraphTest {
 
     /**
-     * 构造带固定 lookup name 的测试类型变量。
+     * 测试使用的约束系统位置。
      */
-    private fun makeVariable(name: String, id: Int = 1): CfirTypeVariable {
-        return CfirTypeVariable(
-            typeParameter = CfirTypeParameterSymbol(),
-            freshTypeId = id,
-            lookupTag = ConeTypeParameterLookupTag(name),
-        )
-    }
+    private val position = SimpleConstraintSystemConstraintPosition
 
     /**
-     * 验证互不依赖的变量会在同一批次返回。
+     * 验证互不依赖的变量之间没有依赖边。
      */
     @Test
     fun `independent variables returned in single batch`() {
-        val store = CfirConstraintStore()
-        val t = makeVariable("T", 1)
-        val u = makeVariable("U", 2)
-        t.lowerBounds += ConePrimitiveType.INT32
-        u.lowerBounds += ConePrimitiveType.BOOLEAN
-        store.registerTypeVariable(t)
-        store.registerTypeVariable(u)
+        val system = ConstraintSystemTestHarness.newSystem()
+        val t = ConstraintSystemTestHarness.newVariable(system, "T")
+        val u = ConstraintSystemTestHarness.newVariable(system, "U")
 
-        val graph = CfirConstraintGraph(listOf(t, u), store)
-        val batch = graph.topoOnce()
+        system.addSubtypeConstraint(ConePrimitiveType.INT32, t.defaultType, position)
+        system.addSubtypeConstraint(ConePrimitiveType.BOOLEAN, u.defaultType, position)
 
-        assertEquals(2, batch.size)
-        assertFalse(graph.hasNext())
+        val dependencies = system.asReadOnlyStorage().typeVariableDependencies
+        assertFalse(dependencies[t.typeConstructor]?.contains(u.typeConstructor) ?: false)
+        assertFalse(dependencies[u.typeConstructor]?.contains(t.typeConstructor) ?: false)
     }
 
     /**
-     * 验证依赖其他变量的变量会在依赖变量求解后返回。
+     * 验证引用了其他变量的变量会记录依赖边。
      */
     @Test
     fun `dependent variable returned after dependency`() {
-        val store = CfirConstraintStore()
-        val t = makeVariable("T", 1)
-        val u = makeVariable("U", 2)
-        // U 的下界引用了 T → U 依赖 T
-        u.lowerBounds += ConeTypeParameterType(ConeTypeParameterLookupTag("T"), isPlaceholder = true)
-        t.lowerBounds += ConePrimitiveType.INT32
-        store.registerTypeVariable(t)
-        store.registerTypeVariable(u)
+        val system = ConstraintSystemTestHarness.newSystem()
+        val t = ConstraintSystemTestHarness.newVariable(system, "T")
+        val u = ConstraintSystemTestHarness.newVariable(system, "U")
 
-        val graph = CfirConstraintGraph(listOf(t, u), store)
+        // U <: T → U 的约束引用 T，U 依赖 T
+        system.addSubtypeConstraint(u.defaultType, t.defaultType, position)
 
-        val batch1 = graph.topoOnce()
-        assertEquals(1, batch1.size)
-        assertEquals("T", batch1.first().lookupTag.name)
-
-        assertTrue(graph.hasNext())
-
-        // 应用 T 的解
-        graph.applySubstitution(mapOf("T" to ConePrimitiveType.INT32))
-
-        val batch2 = graph.topoOnce()
-        assertEquals(1, batch2.size)
-        assertEquals("U", batch2.first().lookupTag.name)
+        val dependencies = system.asReadOnlyStorage().typeVariableDependencies
+        assertTrue(dependencies[u.typeConstructor]?.contains(t.typeConstructor) ?: false)
     }
 
     /**
-     * 验证链式依赖按 T、U、V 的顺序逐批求解。
+     * 验证链式依赖 T-U-V 的依赖边完整记录。
      */
     @Test
     fun `chain dependency T-U-V solved in order`() {
-        val store = CfirConstraintStore()
-        val t = makeVariable("T", 1)
-        val u = makeVariable("U", 2)
-        val v = makeVariable("V", 3)
+        val system = ConstraintSystemTestHarness.newSystem()
+        val t = ConstraintSystemTestHarness.newVariable(system, "T")
+        val u = ConstraintSystemTestHarness.newVariable(system, "U")
+        val v = ConstraintSystemTestHarness.newVariable(system, "V")
 
-        t.lowerBounds += ConePrimitiveType.INT32
-        u.lowerBounds += ConeTypeParameterType(ConeTypeParameterLookupTag("T"), isPlaceholder = true)
-        v.lowerBounds += ConeTypeParameterType(ConeTypeParameterLookupTag("U"), isPlaceholder = true)
+        // T <: U，U <: V → U 依赖 T，V 依赖 U
+        system.addSubtypeConstraint(t.defaultType, u.defaultType, position)
+        system.addSubtypeConstraint(u.defaultType, v.defaultType, position)
 
-        store.registerTypeVariable(t)
-        store.registerTypeVariable(u)
-        store.registerTypeVariable(v)
-
-        val graph = CfirConstraintGraph(listOf(t, u, v), store)
-
-        val batch1 = graph.topoOnce()
-        assertEquals(1, batch1.size)
-        assertEquals("T", batch1.first().lookupTag.name)
-
-        graph.applySubstitution(mapOf("T" to ConePrimitiveType.INT32))
-        val batch2 = graph.topoOnce()
-        assertEquals(1, batch2.size)
-        assertEquals("U", batch2.first().lookupTag.name)
-
-        graph.applySubstitution(mapOf("U" to ConePrimitiveType.INT32))
-        val batch3 = graph.topoOnce()
-        assertEquals(1, batch3.size)
-        assertEquals("V", batch3.first().lookupTag.name)
-
-        assertFalse(graph.hasNext())
+        val dependencies = system.asReadOnlyStorage().typeVariableDependencies
+        assertTrue(dependencies[u.typeConstructor]?.contains(t.typeConstructor) ?: false)
+        assertTrue(dependencies[v.typeConstructor]?.contains(u.typeConstructor) ?: false)
     }
 
     /**
-     * 验证嵌套类型实参中的类型变量引用可以被收集。
+     * 验证未固定变量保留在存储中并携带自身构造器。
      */
     @Test
-    fun `collectVariableNames finds nested references`() {
-        val classType = ConeClassLikeType(
-            ConeClassLookupTagImpl(
-                org.cangnova.cangjie.name.ClassId(
-                    org.cangnova.cangjie.name.FqName("test"),
-                    org.cangnova.cangjie.name.Name.identifier("Box"),
-                ),
-            ),
-            listOf(ConeTypeParameterType(ConeTypeParameterLookupTag("T"))),
-        )
+    fun `unfixed variables stay in storage keyed by constructor`() {
+        val system = ConstraintSystemTestHarness.newSystem()
+        val t = ConstraintSystemTestHarness.newVariable(system, "T")
 
-        val vars = classType.collectVariableNames(setOf("T", "U"))
-        assertEquals(setOf("T"), vars)
-    }
+        system.addSubtypeConstraint(ConePrimitiveType.INT32, t.defaultType, position)
 
-    /**
-     * 验证类型变量替换能把 placeholder 替换为具体类型。
-     */
-    @Test
-    fun `substituteVariables replaces type parameter`() {
-        val original = ConeTypeParameterType(ConeTypeParameterLookupTag("T"))
-        val result = original.substituteVariables(mapOf("T" to ConePrimitiveType.INT32))
-        assertEquals(ConePrimitiveType.INT32, result)
+        val storage = system.asReadOnlyStorage()
+        val marker: TypeConstructorMarker = t.typeConstructor
+        assertTrue(storage.notFixedTypeVariables.containsKey(marker))
+        assertEquals(t, storage.notFixedTypeVariables.getValue(marker).typeVariable)
     }
 }

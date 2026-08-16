@@ -1,3 +1,5 @@
+@file:OptIn(org.cangnova.cangjie.cfir.CfirImplementationDetail::class)
+
 package org.cangnova.cangjie.cfir.resolve.body
 
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationAttributes
@@ -10,6 +12,7 @@ import org.cangnova.cangjie.cfir.expressions.builder.buildBlock
 import org.cangnova.cangjie.cfir.expressions.builder.buildLiteralExpression
 import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures
 import org.cangnova.cangjie.cfir.symbols.CfirCodeFragmentSymbol
+import org.cangnova.cangjie.source.CjBinarySourceElement
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotSame
@@ -86,16 +89,18 @@ class CfirDataFlowAnalyzerContextTest {
      * 构造包含单个 literal 的 code fragment，用于 data-flow 图构建测试。
      */
     private fun buildCodeFragmentWithLiteral(): Pair<org.cangnova.cangjie.cfir.declarations.CfirCodeFragment, CfirLiteralExpression> {
+        val session = CallResolutionTestFixtures.newTestSession()
         val literal = buildLiteralExpression {
             kind = CfirLiteralKind.INT
             value = 1
         }
         val symbol = CfirCodeFragmentSymbol()
         val fragment = buildCodeFragment {
-            moduleData = CallResolutionTestFixtures.TEST_MODULE_DATA
+            moduleData = session.moduleData
             resolvePhase = CfirResolvePhase.BODY_RESOLVE
             origin = CfirDeclarationOrigin.Source
             attributes = CfirDeclarationAttributes.EMPTY
+            source = TestBinarySourceElement("test code fragment")
             this.symbol = symbol
             block = buildBlock {
                 statements += literal
@@ -104,6 +109,15 @@ class CfirDataFlowAnalyzerContextTest {
         symbol.bind(fragment)
         return fragment to literal
     }
+
+    /**
+     * 带稳定 debug identity 的二进制 source element。
+     */
+    private class TestBinarySourceElement(identity: String) : CjBinarySourceElement(
+        debugText = identity,
+        binaryFilePath = null,
+        stableIdentity = identity,
+    )
 
     /**
      * 不改变 symbol 与 element 身份的快照 mapper。

@@ -9,8 +9,10 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.sessions
 
 import com.intellij.openapi.project.Project
 import com.intellij.psi.search.GlobalSearchScope
+import org.cangnova.cangjie.AnalysisFlags
 import org.cangnova.cangjie.LanguageFeature
 import org.cangnova.cangjie.LanguageVersionSettings
+import org.cangnova.cangjie.LanguageVersionSettingsImpl
 import org.cangnova.cangjie.analysis.api.platform.CaCachedService
 import org.cangnova.cangjie.analysis.api.platform.declarations.*
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaDanglingFileModuleImpl
@@ -27,8 +29,8 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.*
 import org.cangnova.cangjie.analysis.low.level.api.cfir.providers.LLCfirIdeRegisteredPluginAnnotations
 import org.cangnova.cangjie.analysis.low.level.api.cfir.providers.LLCfirLibrarySessionProvider
 import org.cangnova.cangjie.analysis.low.level.api.cfir.providers.LLCfirProvider
+import org.cangnova.cangjie.analysis.low.level.api.cfir.providers.LLCfirSessionExtendProvider
 import org.cangnova.cangjie.analysis.low.level.api.cfir.providers.LLNameConflictsTracker
-import org.cangnova.cangjie.analysis.low.level.api.cfir.providers.createLLCfirExtendProvider
 import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.*
 import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.combined.LLCombinedCangJieSymbolProvider
 import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.combined.LLCombinedPackageDelegationSymbolProvider
@@ -41,6 +43,7 @@ import org.cangnova.cangjie.cfir.diagnostics.CjRegisteredDiagnosticFactoriesStor
 import org.cangnova.cangjie.cfir.extensions.*
 import org.cangnova.cangjie.cfir.resolve.providers.*
 import org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider
+import org.cangnova.cangjie.cfir.serialization.provider.CfirExtendProviderComposer
 import org.cangnova.cangjie.cfir.session.*
 import org.cangnova.cangjie.cfir.symbols.CfirDummyCompilerLazyDeclarationResolver
 import org.cangnova.cangjie.cfir.symbols.CfirLazyDeclarationResolver
@@ -60,14 +63,6 @@ import org.cangnova.cangjie.utils.exceptions.withPsiEntry
  */
 @OptIn(PrivateSessionConstructor::class, SessionConfiguration::class)
 internal abstract class LLCfirAbstractSessionFactory(protected val project: Project) {
-    /**
-     * 开发者特性开关：是否禁用仓颉默认 prelude（标准库 std.core 隐式导入）。
-     *
-     * 仅开发者可见，不对最终用户暴露。环境变量 `CANGJIE_DEV_NO_PRELUDE=1` 时禁用 prelude，
-     * 省略或非 1 时默认启用 prelude。IDE 进程一次启动读一次，所有 session 复用。
-     */
-    private val devNoPreludeEnabled: Boolean =
-        System.getenv("CANGJIE_DEV_NO_PRELUDE")?.equals("1", ignoreCase = true) == true
 
     @CaCachedService
     /**
@@ -125,7 +120,8 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
      * 该 session 仍按源码模块注册 resolver、provider 和扩展索引，但依赖集合来自模块本身的项目结构信息。
      */
     fun createNotUnderContentRootResolvableSession(module: CaNotUnderContentRootModule): LLCfirNotUnderContentRootResolvableModuleSession {
-        val builtinsSession = LLCfirBuiltinsSessionFactory.getInstance(project).getBuiltinsSession(module.targetPlatform)
+        val builtinsSession =
+            LLCfirBuiltinsSessionFactory.getInstance(project).getBuiltinsSession(module.targetPlatform)
         val languageVersionSettings = projectStructureProvider.globalLanguageVersionSettings
         val scopeProvider = CfirCangJieScopeProvider()
         val components = LLCfirModuleResolveComponents(module, globalResolveComponents, scopeProvider)
@@ -164,10 +160,7 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
                 }
             }
 
-            register(
-                CfirExtendProvider::class,
-                createLLCfirExtendProvider { dependencyProvider.providers },
-            )
+            registerLLCfirExtendProvider { dependencyProvider.providers }
 
             register(
                 CfirSymbolProvider::class,
@@ -219,7 +212,8 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
         scopeProvider: CfirCangJieScopeProvider = CfirCangJieScopeProvider(),
         additionalSessionConfiguration: LLCfirSourcesSession.(context: SourceSessionCreationContext) -> Unit,
     ): LLCfirSourcesSession {
-        val builtinsSession = LLCfirBuiltinsSessionFactory.getInstance(project).getBuiltinsSession(module.targetPlatform)
+        val builtinsSession =
+            LLCfirBuiltinsSessionFactory.getInstance(project).getBuiltinsSession(module.targetPlatform)
         val languageVersionSettings = wrapLanguageVersionSettings(module.languageVersionSettings)
 
         val components = LLCfirModuleResolveComponents(module, globalResolveComponents, scopeProvider)
@@ -262,10 +256,7 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
                 }
             }
 
-            register(
-                CfirExtendProvider::class,
-                createLLCfirExtendProvider { dependencyProvider.providers },
-            )
+            registerLLCfirExtendProvider { dependencyProvider.providers }
 
             register(DEPENDENCIES_SYMBOL_PROVIDER_QUALIFIED_KEY, dependencyProvider)
 
@@ -318,13 +309,15 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
             }
         }
 
-        val builtinsSession = LLCfirBuiltinsSessionFactory.getInstance(project).getBuiltinsSession(module.targetPlatform)
+        val builtinsSession =
+            LLCfirBuiltinsSessionFactory.getInstance(project).getBuiltinsSession(module.targetPlatform)
         val languageVersionSettings = projectStructureProvider.libraryLanguageVersionSettings
 
         val scopeProvider = CfirCangJieScopeProvider()
         val components = LLCfirModuleResolveComponents(module, globalResolveComponents, scopeProvider)
 
-        val session = LLCfirLibraryOrLibrarySourceResolvableModuleSession(module, components, builtinsSession.builtinTypes)
+        val session =
+            LLCfirLibraryOrLibrarySourceResolvableModuleSession(module, components, builtinsSession.builtinTypes)
         components.session = session
 
         val moduleData = createModuleData(session)
@@ -350,7 +343,10 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
 
             // We need CfirRegisteredPluginAnnotations during extensions' registration process
             val annotationsResolver = project.createAnnotationResolver(binaryContentScope)
-            register(CfirRegisteredPluginAnnotations::class, LLCfirIdeRegisteredPluginAnnotations(this, annotationsResolver))
+            register(
+                CfirRegisteredPluginAnnotations::class,
+                LLCfirIdeRegisteredPluginAnnotations(this, annotationsResolver)
+            )
             register(CfirPredicateBasedProvider::class, CfirEmptyPredicateBasedProvider)
 
             val dependencyProvider = LLDependenciesSymbolProvider(this) {
@@ -365,22 +361,21 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
                     addMerged(session, computeDependencySymbolProviders(binaryModule))
 
                     if (binaryModule is CaLibraryModule) {
-                        CangJieAnchorModuleProvider.getInstance(project)?.getAnchorModule(binaryModule)?.let { anchorModule ->
-                            val anchorModuleSession = LLCfirSessionCache.getInstance(project).getSession(anchorModule)
-                            val anchorModuleSymbolProvider =
-                                anchorModuleSession.symbolProvider as LLModuleWithDependenciesSymbolProvider
+                        CangJieAnchorModuleProvider.getInstance(project)?.getAnchorModule(binaryModule)
+                            ?.let { anchorModule ->
+                                val anchorModuleSession =
+                                    LLCfirSessionCache.getInstance(project).getSession(anchorModule)
+                                val anchorModuleSymbolProvider =
+                                    anchorModuleSession.symbolProvider as LLModuleWithDependenciesSymbolProvider
 
-                            addAll(anchorModuleSymbolProvider.providers)
-                            addAll(anchorModuleSymbolProvider.dependencyProvider.providers)
-                        }
+                                addAll(anchorModuleSymbolProvider.providers)
+                                addAll(anchorModuleSymbolProvider.dependencyProvider.providers)
+                            }
                     }
                 }
             }
 
-            register(
-                CfirExtendProvider::class,
-                createLLCfirExtendProvider { dependencyProvider.providers },
-            )
+            registerLLCfirExtendProvider { dependencyProvider.providers }
 
             register(DEPENDENCIES_SYMBOL_PROVIDER_QUALIFIED_KEY, dependencyProvider)
 
@@ -410,7 +405,8 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
                     "`${CaLibraryFallbackDependenciesModule::class.simpleName}`. Instead got: `${module::class.simpleName}`."
         }
 
-        val builtinsSession = LLCfirBuiltinsSessionFactory.getInstance(project).getBuiltinsSession(module.targetPlatform)
+        val builtinsSession =
+            LLCfirBuiltinsSessionFactory.getInstance(project).getBuiltinsSession(module.targetPlatform)
 
         val session = LLCfirLibrarySession(module, builtinsSession.builtinTypes)
 
@@ -466,7 +462,8 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
         contextSession: LLCfirSession,
         additionalSessionConfiguration: LLCfirDanglingFileSession.(DanglingFileSessionCreationContext) -> Unit,
     ): LLCfirSession {
-        val builtinsSession = LLCfirBuiltinsSessionFactory.getInstance(project).getBuiltinsSession(module.targetPlatform)
+        val builtinsSession =
+            LLCfirBuiltinsSessionFactory.getInstance(project).getBuiltinsSession(module.targetPlatform)
         val languageVersionSettings = wrapLanguageVersionSettings(contextSession.languageVersionSettings)
         val scopeProvider = CfirCangJieScopeProvider()
 
@@ -521,14 +518,16 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
                             // Exclude dependencies of the context module as they are submitted below
                             val ownDependencies = allDependencies - contextDependencies
                             if (ownDependencies.isNotEmpty()) {
-                                val dependencySessions = computeDependencySessionsFromDependencyModules(ownDependencies, module)
+                                val dependencySessions =
+                                    computeDependencySessionsFromDependencyModules(ownDependencies, module)
                                 addMerged(session, computeDependencySymbolProviders(dependencySessions))
                             }
                             // Share symbol providers (and their caches) with the context session
                             addMerged(session, computeDependencySymbolProviders(listOf(contextSession)))
                         } else {
                             // Dependencies are original, so we need a separate set of providers
-                            val dependencySessions = computeDependencySessionsFromDependencyModules(allDependencies, module)
+                            val dependencySessions =
+                                computeDependencySessionsFromDependencyModules(allDependencies, module)
                             addMerged(session, computeDependencySymbolProviders(dependencySessions))
                         }
                     } else {
@@ -542,6 +541,7 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
                             val contextDependencies = contextSession.dependenciesSymbolProvider
                             add(LLDanglingFileDependenciesSymbolProvider(contextDependencies))
                         }
+
                         else -> {
                             val contextDependencies = contextSession.dependenciesSymbolProvider
                             add(contextDependencies)
@@ -553,10 +553,7 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
                 }
             }
 
-            register(
-                CfirExtendProvider::class,
-                createLLCfirExtendProvider { dependencyProvider.providers },
-            )
+            registerLLCfirExtendProvider { dependencyProvider.providers }
 
             register(DEPENDENCIES_SYMBOL_PROVIDER_QUALIFIED_KEY, dependencyProvider)
 
@@ -595,7 +592,14 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
         return if (original.supportsFeature(LanguageFeature.EnableDfaWarnings)) {
             original
         } else {
-            original.copy(enabledFeatures = original.enabledFeatures + LanguageFeature.EnableDfaWarnings)
+            // 对位 Kotlin：LanguageVersionSettingsImpl 通过 specificFeatures 承载特性开关，
+            // 在保留原有定制特性的基础上追加 DFA warnings。
+            LanguageVersionSettingsImpl(
+                languageVersion = original.languageVersion,
+                apiVersion = original.apiVersion,
+                specificFeatures = original.getCustomizedLanguageFeatures() +
+                    (LanguageFeature.EnableDfaWarnings to LanguageFeature.State.ENABLED),
+            )
         }
     }
 
@@ -627,14 +631,19 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
      *
      * Builtins 由调用方单独加入；unstable dangling module 不能作为依赖。
      */
-    private fun computeDependencySessionsFromDependencyModules(dependencyModules: Set<CaModule>, module: CaModule): List<LLCfirSession> {
+    private fun computeDependencySessionsFromDependencyModules(
+        dependencyModules: Set<CaModule>,
+        module: CaModule
+    ): List<LLCfirSession> {
         val sessionCache = LLCfirSessionCache.getInstance(project)
 
         fun getOrCreateSessionForDependency(dependency: CaModule): LLCfirSession? = when (dependency) {
             is CaBuiltinsModule -> null // Built-ins are already added
 
             is CaDanglingFileModule -> {
-                requireWithAttachment(dependency.isStable, message = { "Unstable dangling modules cannot be used as a dependency" }) {
+                requireWithAttachment(
+                    dependency.isStable,
+                    message = { "Unstable dangling modules cannot be used as a dependency" }) {
                     withCaModuleEntry("module", module)
                     withCaModuleEntry("dependency", dependency)
                     dependency.files.forEachIndexed { index, file -> withPsiEntry("dependencyFile$index", file) }
@@ -672,7 +681,12 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
         buildList {
             dependencySessions.forEach { session ->
                 when (val dependencyProvider = session.symbolProvider) {
-                    is LLModuleWithDependenciesSymbolProvider -> dependencyProvider.providers.forEach { it.flattenTo(this) }
+                    is LLModuleWithDependenciesSymbolProvider -> dependencyProvider.providers.forEach {
+                        it.flattenTo(
+                            this
+                        )
+                    }
+
                     else -> dependencyProvider.flattenTo(this)
                 }
             }
@@ -707,11 +721,14 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
     ) {
         registerIdeComponents(project, languageVersionSettings, annotationSearchScope)
         registerCommonComponents(languageVersionSettings)
+        register(
+            CfirPreludeSettingsComponent::class, CfirPreludeSettingsComponent(
+                languageVersionSettings.getFlag(
+                    AnalysisFlags.noPrelude
+                )
+            )
+        )
         registerResolveComponents(CjRegisteredDiagnosticFactoriesStorage())
-        // 对齐编译器侧 CfirAbstractSessionFactory.kt:247 的注入链：让 IDE 侧 session 也吃 prelude 开关，
-        // 使 CfirSession.noPrelude getter 与 CfirGeneralSemanticsChecker 在 IDE 侧能生效。
-        // 开发者特性开关由环境变量 CANGJIE_DEV_NO_PRELUDE 控制，详见 devNoPreludeEnabled 字段注释。
-        register(CfirPreludeSettingsComponent::class, CfirPreludeSettingsComponent(devNoPreludeEnabled))
     }
 
     /**
@@ -722,10 +739,36 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
     }
 
     /**
+     * 注册低阶源码类 session 的组合 extend provider。
+     *
+     * 装配语义与主编译器 `CfirAbstractSessionFactory` 完全一致（共用
+     * [CfirExtendProviderComposer]）：own 部分覆盖当前 session 缓存文件中的源码 extend，
+     * 依赖部分惰性提取反序列化 provider 的 extend 元数据。若只注册 own 部分，二进制依赖
+     * （std.core 等 .cjo 包）中的 extend 声明不可见，例如 `extend Int64 <: Hashable`
+     * 不成立，公共超类型交集退化为 `Any`。
+     *
+     * [dependencyProvidersRef] 惰性捕获依赖符号 provider 集合：extend provider 注册早于
+     * 依赖 provider 创建，只能在首次 extend 查询时求值。
+     */
+    protected fun LLCfirResolvableModuleSession.registerLLCfirExtendProvider(
+        dependencyProvidersRef: () -> List<CfirSymbolProvider>,
+    ) {
+        val ownProvider = LLCfirSessionExtendProvider(this, extendIndexStore)
+        val deserializedProvider = CfirExtendProviderComposer.lazyFromSymbolProviders(dependencyProvidersRef)
+        register(
+            CfirExtendProvider::class,
+            CfirExtendProviderComposer.combine(ownProvider, listOf(deserializedProvider))
+        )
+    }
+
+    /**
      * Merges dependency symbol providers of the same kind, and adds the result to the receiver [MutableList].
      * See [mergeDependencySymbolProvidersInto] for more information on symbol provider merging.
      */
-    private fun MutableList<CfirSymbolProvider>.addMerged(session: LLCfirSession, dependencies: List<CfirSymbolProvider>) {
+    private fun MutableList<CfirSymbolProvider>.addMerged(
+        session: LLCfirSession,
+        dependencies: List<CfirSymbolProvider>
+    ) {
         dependencies.mergeDependencySymbolProvidersInto(session, this)
     }
 
@@ -746,7 +789,12 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
 
             // We place the combined CangJie library symbol provider before the combined Java symbol provider because the former is generally
             // faster due to package and name set checks.
-            merge<LLCangJieStubBasedLibrarySymbolProvider> { LLCombinedPackageDelegationSymbolProvider.merge(session, it) }
+            merge<LLCangJieStubBasedLibrarySymbolProvider> {
+                LLCombinedPackageDelegationSymbolProvider.merge(
+                    session,
+                    it
+                )
+            }
         }
     }
 
@@ -755,7 +803,10 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
      *
      * Otherwise, returns `null`.
      */
-    private fun createScopedDeclarationProviderForFiles(scope: GlobalSearchScope, files: List<CjFile>): CangJieDeclarationProvider? {
+    private fun createScopedDeclarationProviderForFiles(
+        scope: GlobalSearchScope,
+        files: List<CjFile>
+    ): CangJieDeclarationProvider? {
         if (files.isEmpty()) {
             return null
         }

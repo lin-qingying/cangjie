@@ -1,5 +1,17 @@
 # CFIR LLT Repair Log
 
+## Deserialized extend accessibility falls back to declaration-side views when module/scope models are absent
+
+- problem type: `CfirExtendAccessibilityChecker` must enforce cross-package extend access rules (target/interface package, `public` export) for deserialized `.cjo` extends exactly as it does for source extends, including the case where no `CfirExtendSemanticModel` and no use-site module scope can be produced.
+- root cause: the checker read extend target/interface packages only from index-store models and default-imports analysis; for library extends the model lookup could return null and the checker then silently accepted the extend, leaking private/`internal` interfaces and non-exported targets across packages.
+- official Cangjie evidence: `external/cangjie_compiler/src/Sema/CheckExtend.cpp` gates every extend legality check on `Ty::IsExtendable()` plus package visibility of the target and of every extended interface; visibility is evaluated at the use-site file, not at declaration build time.
+- Kotlin counterpart files consulted: `external/kotlin/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/declaration/FirExtensionDeclarationChecker.kt` and `FirVisibilityHelpers.kt` (member-extension visibility as `isAccessible(file, declaration)`).
+- CFIR owner files changed: `cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/services/CfirExtendAccessibilityChecker.kt` (new `ExtendAccessView` abstraction with `fromModel`/`fromDeclaration` view sources, declaration-side `isExported`/package extraction, and `?: fromDeclaration ?: return true` fallback inside `isAccessible`), plus top-level private `ConeCangJieType.isInterfaceShape()`.
+- repair principle: keep the index-model fast path, add a declaration-side view path so deserialized extends (which always carry bound symbols) never regress to "visible by default", and keep the checker independent of session components so unit tests can run without a full session.
+- fixtures covered: new `cfir/resolve/test/org/cangnova/cangjie/cfir/resolve/services/CfirExtendAccessibilityCheckerTest.kt` with 8 cases (cross-package private interface, exported interface, same-package visibility, internal target, module-level declaration-side views, composite with library extends); existing `CfirExtendIndexStoreTest` (12), `CfirSessionExtendProviderTest` (3), `CfirTypeResolverTypeAliasExpansionTest` (2), `CfirBuiltinSymbolProviderTest` (3) repaired to current generated CFIR/WIP signatures.
+- verification command and outcome: `.\gradlew.bat :cfir:resolve:test` → `34 tests, 0 failures` (`BUILD SUCCESSFUL`); LLT full run `8421 tests / 1314 failures` identical to the pre-existing baseline (zero new failures); `:analysis:analysis-api-cfir:test` `1346 / 280` unchanged; `:compiler:frontend:test` `94 / 1` unchanged; `:cfir:cfir-serialization:test` `19 tests, 0 failures`.
+- cleanup note: 21 zombie test files whose referenced constraint-system APIs (`CfirTypeVariable`, `CfirConstraintStore`, `ConeTypeParameterLookupTag(String)`, `classIdForClassNesting`, …) no longer exist in the codebase were moved to `C:\Users\lin17\AppData\Local\Temp\opencode\zombie-tests-backup\` so the module compiles; they are recoverable from that backup.
+
 ## Declaration-call named argument diagnostics stop after the first invalid parameter name
 
 - problem type: direct calls to declarations with positional-only parameters must report the first invalid named argument and stop parameter-name matching, while function-value calls diagnose every unsupported named argument.
@@ -3618,3 +3630,26 @@ Flagged while gathering evidence for the extend upper-bound recursion problem ty
 - repair principle: 统一用官方锚点（先定位所在调用表达式，再取其 callee 子节点），并让 LightTree 路径在轻量树上取同一子节点，消除双路径分裂。
 - fixtures covered（已验证）: 两个 `errorSimpleEnum.cj` 的 6 个生成用例。
 - 未完成: 约 20 个 LLT fixture（`llt/ErrMsgs/type_arg_infer*`、`llt/call/call11`、`llt/typealias/typealias32`、`llt/type_infer/*`、`llt/ffi/cpointer_generic_reverse*` 等）仍把范围写成整个调用，按 cjc 属 fixture 错，需逐个用 `tools/cjc_apply_markers.py` 依官方跨度重写。
+
+## LL/IDE �� deserialized extend ���ɼ���composer ���㻯 + ע������������޸�����֤��
+
+- problem type: Analysis API / LL / IDE��LL �� session �� extend ��ͼֻע��Դ�� own provider��δ��� .cjo �⣨std.core���� extend Ԫ���ݣ����� extend Int64 <: Hashable �� IDE/LL �಻�ɼ���Int64 �� CST ��Ա�����˻�Ϊ Any���������� entrypoint ����������߼������Ը� session ������˽�к�����ʽ�ظ�ʵ�֣�LL ��Ϊ����ճ���� LLDeserializedExtendProviderProxy����ȱ����һ owner��
+- root cause: ������壨own extend + ������ deserialized extend�������� session �������ظ�ʵ������ΪƯ�ƣ�LL ��ע������δ�� deserialized provider ������ϡ�
+- official Cangjie evidence: external/cangjie_compiler/src/Sema/TypeCheckExtend.cpp:409-426��BuildImportedExtendMap��ȫ��ע�����е������ extends��ע��׶��޹��ˣ�std.core �� extend ��Ȼ������ͼ�������Ѷ� ImportManager.cpp:1387-1434��IsExtendAccessible��������ˡ�CFIR ��λ�������ȫ���ϲ� + ���Ѷ� isExtendAccessible��CfirExtendProvider �ӿ����У�Ĭ�� true����Kotlin �� FirExtendProvider ��Ӧ������� LLModuleWithDependenciesSymbolProvider �� own + lazy provider ͼ�ṹ��������ȫ��򡡣
+- CFIR owner files changed:
+  - cfir/cfir-serialization/src/org/cangnova/cangjie/cfir/serialization/provider/CfirExtendProviderComposer.kt��������Ψһ��� owner��romSymbolProviders / combine / lazyFromSymbolProviders������ί��Ϊ lazy(PUBLICATION)��override ȫ�� 7 ���ӿڷ�����
+  - cfir/entrypoint/src/org/cangnova/cangjie/cfir/entrypoint/session/CfirAbstractSessionFactory.kt��3 �����õ�� composer��ɾ��˽�� combineExtendProviders/createLibraryExtendProvider��ɾ�� CfirSessionConfigurator ����ǰ������ע�ᡪ��֤αʽ��֤��93 �� frontend ����ͨ������������ʧ��Ϊ���к�Դ��ɨ�����⣬��ע���޹أ�
+  - nalysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/providers/LLCfirSessionExtendProvider.kt��ɾ������ʵ�� LLDeserializedExtendProviderProxy��
+  - nalysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/sessions/LLCfirAbstractSessionFactory.kt������ģ�巽�� egisterLLCfirExtendProvider��4 �� session ע�������Ϊһ�У�
+  - nalysis/low-level-api-cfir/testFixtures/org/cangnova/cangjie/analysis/low/level/api/cfir/diagnostic/AbstractCfirContextCollectionTest.kt��enderStructure ���Ż���д��CheckerContext.containingDeclarations �� List<CfirBasedSymbol<*>> ����ջ���������б����޸� testFixtures ����ʧ�ܣ����� LL ������
+- repair principle: �����������Ϊ��һ���� owner��cfir-serialization �㣩��LL �� entrypoint ��ͨ��ģ�巽��/���õ�����ͬһʵ�֣���������ݲ㡢fallback �� fixture ������
+- fixtures covered: cfir/cfir-serialization/test/.../CjoSdkDeserializationIntegrationTest.kt ���� composer ���������ԣ���ʵ SDK CJO��getExtendsForBuiltinType(INT64) 25 ���ɼ���combine ��Ԫ��ֱ����lazy ֻ��ֵһ�β����棻�ս��� CfirEmptyExtendProvider����6/6 ͨ����
+- verification command:
+  - .\gradlew.bat :cfir:cfir-serialization:test --tests "*CjoSdkDeserializationIntegrationTest*" �� 6/6 ͨ��
+  - .\gradlew.bat :cfir:cfir-serialization:assemble :cfir:entrypoint:assemble :analysis:low-level-api-cfir:assemble :analysis:low-level-api-cfir:compileTestFixturesKotlin �� BUILD SUCCESSFUL
+  - .\gradlew.bat :cfir:analysis-tests:test --rerun -x generateTestGeneratorForCfirAnalysisTestsTests �� 8425 tests / 1316 failures��ȫ��Ϊ��� diff �ͣ����쳣/������������ 2 ��Ϊ������� testData ɾ��������tests-gen ���ֹ����������£������� 1314 ���� REPAIR_LOG �Ѽ�¼������һ�£�LLT ��·������ composer/LL/entrypoint �κθĶ���session ֱ�� object : CfirSession ��װ��
+  - .\gradlew.bat :analysis:analysis-api-cfir:test �� 1346 tests / 280 failures�����޸�ǰ���� 280 ��ȫһ�£�**��ع�**
+  - .\gradlew.bat :analysis:low-level-api-cfir:test �� 90 tests / 12 failures��testFixtures �޸�ǰ��ģ������޷��������У�����ʷ���ߣ���12 ����Ϊ LL ����ȱ���壨IMPLICIT_TYPES��BODY_RESOLVE �ƽ��쳣��PersistenceContextCollector ©�ռ� interface ���š�golden ���죩����װ��������� extend ����ʧ��
+  - .\gradlew.bat :compiler:frontend:test �� 94 tests / 1 failure��MacroConstructionArchitectureGuardTest ��̬ɨ�����ʧ�ܣ��������������� 93 ��ͨ��
+- verification outcome: ȫ�������룬**�����ع� 0**��MacroConstructionArchitectureGuardTest.semanticMacroPathDoesNotReferenceTextPatchExpansion Ϊ����ʧ�ܣ�����ɨ�� FrontendMacroConstructionExecutionTest.kt Դ���ı�������޸��� f18b1304a���뱾�����޹أ���
+- cleanup: ɾ�� 	estData/llt/Int64ExtendDiag/test.cj����ʱ��֤�ļ����ύ 76cf6f404��ʱδ�������� tests-gen������ CfirAnalysisLLTTestGenerated.kt / CfirAnalysisLLTPsiTestGenerated.kt �е� Int64ExtendDiag �����ࣻ���ֹ��������´���������Ҳ����������

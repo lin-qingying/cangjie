@@ -13,6 +13,7 @@ import com.intellij.psi.SmartPointerManager
 import com.intellij.psi.SmartPsiElementPointer
 import com.intellij.psi.search.GlobalSearchScope
 import org.cangnova.cangjie.LanguageVersionSettings
+import org.cangnova.cangjie.LanguageVersionSettingsImpl
 import org.cangnova.cangjie.lang.CangJieFileType
 import org.cangnova.cangjie.analysis.api.permissions.CaAnalysisPermissionRegistry
 import org.cangnova.cangjie.analysis.api.platform.CaDeserializedDeclarationsOrigin
@@ -665,7 +666,7 @@ internal class CaLspSourceModule(
      * 源码模块使用的语言版本设置。
      */
     override val languageVersionSettings: LanguageVersionSettings
-        get() = LanguageVersionSettings.DEFAULT
+        get() = LanguageVersionSettingsImpl.DEFAULT
 
     /**
      * 该源码模块暴露给 Analysis API 的 PSI 根。
@@ -759,7 +760,7 @@ internal class CaLspDanglingFileModule(
      * dangling module 使用的语言版本设置。
      */
     override val languageVersionSettings: LanguageVersionSettings
-        get() = LanguageVersionSettings.DEFAULT
+        get() = LanguageVersionSettingsImpl.DEFAULT
 
     /**
      * 当前仍然有效的打开文档 PSI 文件。
@@ -918,7 +919,7 @@ internal class AnalysisApiLspProjectStructureProvider(
      * 全局语言版本设置。
      */
     override val globalLanguageVersionSettings: LanguageVersionSettings
-        get() = LanguageVersionSettings.DEFAULT
+        get() = LanguageVersionSettingsImpl.DEFAULT
 }
 
 /**

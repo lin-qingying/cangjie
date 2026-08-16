@@ -22,27 +22,27 @@ import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFile
-import org.cangnova.cangjie.cfir.declarations.CfirPropertyAccessor
-import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
-import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
-import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
-import org.cangnova.cangjie.cfir.declarations.CfirClass
-import org.cangnova.cangjie.cfir.declarations.CfirConstructor
-import org.cangnova.cangjie.cfir.declarations.CfirEnum
-import org.cangnova.cangjie.cfir.declarations.CfirExtend
-import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
-import org.cangnova.cangjie.cfir.declarations.CfirFinalizer
-import org.cangnova.cangjie.cfir.declarations.CfirInterface
-import org.cangnova.cangjie.cfir.declarations.CfirMacroDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirMainFunction
-import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
-import org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable
-import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
-import org.cangnova.cangjie.cfir.declarations.CfirProperty
-import org.cangnova.cangjie.cfir.declarations.CfirStruct
 import org.cangnova.cangjie.cfir.resolve.SessionHolderImpl
-import org.cangnova.cangjie.cfir.psi
-import org.cangnova.cangjie.cfir.renderer.CfirRenderer
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirConstructorSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirEnumSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirExtendSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirFieldVariableSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirFileSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirFinalizerSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirInterfaceSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirMacroDeclarationSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirMainFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirPatternBindingSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirPatternVariableSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirPropertyAccessorSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
+import org.cangnova.cangjie.cfir.symbols.CfirStructSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirTypeAliasSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
 import org.cangnova.cangjie.name.SpecialNames
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.test.services.AssertionsService
@@ -126,11 +126,6 @@ abstract class AbstractCfirContextCollectionTest : AbstractAnalysisApiBasedTest(
         private val assertions: AssertionsService,
     ) : BeforeElementDiagnosticCollectionHandler() {
         /**
-         * 以可读形式渲染 CFIR 节点，保证 extend 等声明在断言文本中稳定可辨。
-         */
-        private val cfirRenderer = CfirRenderer.withReadability()
-
-        /**
          * 当前测试文件中需要验证上下文的结构化声明列表。
          */
         lateinit var elementsToCheckContext: List<CfirDeclaration>
@@ -163,46 +158,39 @@ abstract class AbstractCfirContextCollectionTest : AbstractAnalysisApiBasedTest(
 
         /**
          * 只比较 low-level 主干真实提供的声明路径，不把尚未接入的 checker 细节混进断言。
+         *
+         * `CheckerContext.containingDeclarations` 对齐 Kotlin FIR 压入的是符号（`CfirBasedSymbol<*>`）
+         * 而非声明节点，因此这里按符号类型渲染稳定的上下文路径。
          */
-        private fun List<CfirDeclaration>.renderStructure(): String =
-            filterIndexed { index, declaration -> index == 0 || this[index - 1] !== declaration }
-                .joinToString(separator = " -> ") { declaration ->
-                when (declaration) {
-                    is CfirFile -> "file:${declaration.name}"
-                    is CfirTypeAlias -> "typealias:${declaration.symbol.classId.asString()}"
-                    is CfirClass -> "class:${declaration.symbol.classId.asString()}"
-                    is CfirInterface -> "interface:${declaration.symbol.classId.asString()}"
-                    is CfirStruct -> "struct:${declaration.symbol.classId.asString()}"
-                    is CfirEnum -> "enum:${declaration.symbol.classId.asString()}"
-                    is CfirExtend -> "extend:${cfirRenderer.renderElementAsString(declaration.extendedTypeRef)}"
-                    is CfirConstructor -> "ctor:${declaration.valueParameters.renderParameterNames()}"
-                    is CfirNamedFunction -> "func:${declaration.symbol.name.renderSafeName()}"
-                    is CfirMainFunction -> "main:${declaration.symbol.name.renderSafeName()}"
-                    is CfirMacroDeclaration -> "macro:${declaration.symbol.name.renderSafeName()}"
-                    is CfirFinalizer -> "finalizer"
-                    is CfirProperty -> "property:${declaration.name.renderSafeName()}"
-                    is CfirPropertyAccessor -> if (declaration.isGetter) {
-                        "getter:${declaration.propertySymbol.name.renderSafeName()}"
-                    } else {
-                        "setter:${declaration.propertySymbol.name.renderSafeName()}"
-                    }
-                    is CfirFieldVariable -> "field:${declaration.symbol.name.renderSafeName()}"
-                    is CfirPatternVariable -> "pattern:${declaration.symbol.name.renderSafeName()}"
-                    is CfirPatternBindingVariable -> "patternBinding:${declaration.symbol.name.renderSafeName()}"
-                    is CfirValueParameter -> "value:${declaration.name.renderSafeName()}"
-                    is CfirTypeParameter -> "type:${declaration.name.renderSafeName()}"
-                    else -> declaration::class.simpleName ?: "<unknown>"
+        private fun List<CfirBasedSymbol<*>>.renderStructure(): String =
+            filterIndexed { index, symbol -> index == 0 || this[index - 1] !== symbol }
+                .joinToString(separator = " -> ") { symbol ->
+                when (symbol) {
+                    is CfirFileSymbol -> "file:${symbol.sourceFile?.name ?: "<unknown>"}"
+                    is CfirTypeAliasSymbol -> "typealias:${symbol.classId.asString()}"
+                    is CfirClassSymbol -> "class:${symbol.classId.asString()}"
+                    is CfirInterfaceSymbol -> "interface:${symbol.classId.asString()}"
+                    is CfirStructSymbol -> "struct:${symbol.classId.asString()}"
+                    is CfirEnumSymbol -> "enum:${symbol.classId.asString()}"
+                    is CfirExtendSymbol -> "extend"
+                    is CfirConstructorSymbol -> "ctor:${symbol.name.renderSafeName()}"
+                    is CfirNamedFunctionSymbol -> "func:${symbol.name.renderSafeName()}"
+                    is CfirMainFunctionSymbol -> "main:${symbol.name.renderSafeName()}"
+                    is CfirMacroDeclarationSymbol -> "macro:${symbol.name.renderSafeName()}"
+                    is CfirFinalizerSymbol -> "finalizer"
+                    is CfirPropertySymbol -> "property:${symbol.name.renderSafeName()}"
+                    is CfirPropertyAccessorSymbol -> "accessor:${if (symbol.isGetter) "getter" else "setter"}"
+                    is CfirFieldVariableSymbol -> "field:${symbol.name.renderSafeName()}"
+                    is CfirPatternVariableSymbol -> "pattern:${symbol.name.renderSafeName()}"
+                    is CfirPatternBindingSymbol -> "patternBinding:${symbol.name.renderSafeName()}"
+                    is CfirValueParameterSymbol -> "value:${symbol.name.renderSafeName()}"
+                    is CfirTypeParameterSymbol -> "type:${symbol.name.renderSafeName()}"
+                    else -> symbol::class.simpleName ?: "<unknown>"
                 }
             }
 
         /**
-         * 将构造函数值参数列表渲染为稳定的逗号分隔名称，用于上下文路径断言。
-         */
-        private fun List<CfirValueParameter>.renderParameterNames(): String =
-            joinToString(separator = ",") { parameter -> parameter.name.renderSafeName() }
-
-        /**
-         * 渲染声明名称，并把编译器内部的无名占位符转换成可读文本。
+         * 渲染符号名称，并把编译器内部的无名占位符转换成可读文本。
          */
         private fun org.cangnova.cangjie.name.Name.renderSafeName(): String =
             if (this == SpecialNames.NO_NAME_PROVIDED) "<no name provided>" else asString()

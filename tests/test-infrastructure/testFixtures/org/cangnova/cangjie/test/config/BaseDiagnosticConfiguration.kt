@@ -1,6 +1,6 @@
 package org.cangnova.cangjie.test.config
 
-import org.cangnova.cangjie.LanguageVersions
+import org.cangnova.cangjie.LanguageVersion
 import org.cangnova.cangjie.test.CfirParser
 import org.cangnova.cangjie.test.Constructor
 import org.cangnova.cangjie.test.builders.CFIR_HANDLERS_STEP_NAME
@@ -171,7 +171,7 @@ fun TestConfigurationBuilder.configureCommonDiagnosticTestPaths(
  */
 fun TestConfigurationBuilder.configurationForTestWithLatestLanguageVersion() {
     defaultDirectives {
-        LANGUAGE_VERSION with LanguageVersions.LATEST_STABLE.toString()
+        LANGUAGE_VERSION with LanguageVersion.LATEST_STABLE.toString()
         +ALLOW_DANGEROUS_LANGUAGE_VERSION_TESTING
     }
     useAfterAnalysisCheckers(::CfirTestDataConsistencyHandler)

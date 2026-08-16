@@ -6,6 +6,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProviderBase
 import org.cangnova.cangjie.LanguageVersionSettings
+import org.cangnova.cangjie.LanguageVersionSettingsImpl
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaNotUnderContentRootModule
 import org.cangnova.cangjie.analysis.test.framework.projectStructure.CaNotUnderContentRootModuleImpl
@@ -51,7 +52,7 @@ class CaTestProjectStructureProvider(
      * 测试环境默认使用全局默认语言版本设置。
      */
     override val globalLanguageVersionSettings: LanguageVersionSettings
-        get() = LanguageVersionSettings.DEFAULT
+        get() = LanguageVersionSettingsImpl.DEFAULT
 
     /**
      * 创建不属于内容 root 的临时兜底模块。

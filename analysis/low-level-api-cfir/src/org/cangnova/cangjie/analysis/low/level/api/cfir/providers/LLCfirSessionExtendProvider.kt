@@ -5,14 +5,9 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirResolvabl
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
-import org.cangnova.cangjie.cfir.resolve.providers.CfirCompositeExtendProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirExtendProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSessionExtendProvider
-import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
 import org.cangnova.cangjie.cfir.resolve.services.CfirExtendIndexStore
-import org.cangnova.cangjie.cfir.serialization.provider.CfirDeserializedExtendProvider
-import org.cangnova.cangjie.cfir.serialization.provider.flattenDeserializedProviders
-import org.cangnova.cangjie.cfir.session.extendIndexStore
 import org.cangnova.cangjie.cfir.session.services.CfirExtendTargetKey
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.session.typeResolver
@@ -143,72 +138,4 @@ internal class LLCfirSessionExtendProvider(
             }
         }
     }
-}
-
-/**
- * 为低阶源码类 session 创建组合 extend provider。
- *
- * 对齐主编译器 `CfirAbstractSessionFactory.combineExtendProviders`：源码 `CfirExtendIndexStore`
- * 只覆盖当前 session 缓存文件中的 extend，二进制依赖（std.core 等 .cjo 包）的 extend 声明
- * 必须来自反序列化 provider。LL 侧原先只注册单独的 [LLCfirSessionExtendProvider]，导致依赖库
- * 中的 extend 完全不可见：例如 `extend Int64 <: Hashable` 不成立，公共超类型交集退化为 `Any`。
- *
- * [dependencyProvidersRef] 惰性捕获依赖符号 provider 集合：extend provider 注册早于依赖
- * provider 创建，因此只能在首次 extend 查询时求值，避免 eager session 创建。
- */
-internal fun LLCfirResolvableModuleSession.createLLCfirExtendProvider(
-    dependencyProvidersRef: () -> List<CfirSymbolProvider>,
-): CfirExtendProvider {
-    val ownProvider = LLCfirSessionExtendProvider(this, extendIndexStore)
-    val deserializedProvider = LLDeserializedExtendProviderProxy(dependencyProvidersRef)
-    return CfirCompositeExtendProvider(listOf(ownProvider, deserializedProvider))
-}
-
-/**
- * 惰性代理反序列化 extend provider 的包装器。
- *
- * 首次查询时才从依赖符号 provider 中提取反序列化 provider 并构造
- * [CfirDeserializedExtendProvider]；依赖中没有此类 provider 时所有查询返回空结果。
- */
-private class LLDeserializedExtendProviderProxy(
-    private val dependencyProvidersRef: () -> List<CfirSymbolProvider>,
-) : CfirExtendProvider {
-    /**
-     * 延迟构造的反序列化 extend provider，仅在依赖中存在反序列化 provider 时创建。
-     */
-    private val delegate: CfirDeserializedExtendProvider? by lazy(LazyThreadSafetyMode.PUBLICATION) {
-        dependencyProvidersRef()
-            .flatMap(CfirSymbolProvider::flattenDeserializedProviders)
-            .distinct()
-            .takeIf { it.isNotEmpty() }
-            ?.let(::CfirDeserializedExtendProvider)
-    }
-
-    /** 查询目标 key 对应的库扩展声明。 */
-    override fun getExtendsForTarget(targetKey: CfirExtendTargetKey): List<CfirExtend> =
-        delegate?.getExtendsForTarget(targetKey).orEmpty()
-
-    /** 查询作用于指定 class id 的库扩展声明。 */
-    override fun getExtendsForClass(classId: ClassId): List<CfirExtend> =
-        delegate?.getExtendsForClass(classId).orEmpty()
-
-    /** 查询库中指定包内的扩展声明。 */
-    override fun getExtendsInPackage(packageFqName: FqName): List<CfirExtend> =
-        delegate?.getExtendsInPackage(packageFqName).orEmpty()
-
-    /** 查询作用于内建基本类型的库扩展声明。 */
-    override fun getExtendsForBuiltinType(kind: PrimitiveTypeKind): List<CfirExtend> =
-        delegate?.getExtendsForBuiltinType(kind).orEmpty()
-
-    /** 查询库中 [symbol] 所属的扩展声明。 */
-    override fun getContainingExtend(symbol: CfirCallableSymbol<*>): CfirExtend? =
-        delegate?.getContainingExtend(symbol)
-
-    /** 查询库中 [extend] 所在包名。 */
-    override fun getPackageFqName(extend: CfirExtend): FqName? =
-        delegate?.getPackageFqName(extend)
-
-    /** 库 extend 默认视为可访问（导出面由反序列化 provider 自身维护）。 */
-    override fun isExtendAccessible(extend: CfirExtend): Boolean =
-        delegate?.isExtendAccessible(extend) ?: true
 }
