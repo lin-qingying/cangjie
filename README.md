@@ -100,8 +100,10 @@ Unix/macOS:
 
 ## Current State
 
-- `cfir:resolve`：extend 语义检查器新增声明侧可见性视图（deserialized extend 跨包过滤），`:cfir:resolve:test` 34/34 全绿；修复记录见 `cfir/analysis-tests/REPAIR_LOG.md`。
+- **泛型推断失败不再静默成功**：参数约束对推断输入（expectedType 非 proper）改为直接添加（矛盾保留，不事务回滚），配合 `ResultTypeResolver` 1a/1b + `ConstraintSystemCompleter.fixVariable` 拦截，`conflictingConstraintFamily` 等 12+ 处 fixture 统一上报 `UNABLE_TO_INFER_GENERIC_FUNC` 并锚定 callee（与官方 `sema_unable_to_infer_generic_func` 一致）；Psi 版 lambda 参数锚定与 LightTree 对齐。交集推断结果由特性开关 `AllowIntersectionTypesInInference`（默认全版本关闭）控制，关闭 = 官方对齐，开启 = Kotlin K2 兼容。修复记录见 `cfir/analysis-tests/REPAIR_LOG.md`。
+- `cfir:resolve`：extend 语义检查器新增声明侧可见性视图（deserialized extend 跨包过滤），`:cfir:resolve:test` 34/34 全绿。
 - 待改进：`cfir:resolve` 测试目录中 21 个引用已删除约束系统 API 的历史测试暂移至 `C:\Users\lin17\AppData\Local\Temp\opencode\zombie-tests-backup\`，需按 K2 风格 API 重写后恢复。
+- 待改进：`llt/ErrMsgs/type_arg_infer*` 等约 20 个 LLT fixture 的 `UNABLE_TO_INFER_GENERIC_FUNC` 范围仍写为整个调用，按官方 cjc 应锚定 callee，需依官方跨度重写期望。
 
 ## Documentation
 

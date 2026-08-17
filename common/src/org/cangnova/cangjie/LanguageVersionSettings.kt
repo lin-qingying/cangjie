@@ -121,6 +121,16 @@ enum class LanguageFeature(
     InvalidBinaryOperatorDiagnostics(LanguageVersion.CANGJIE_1_0_0),
     LexicographicVariableReadinessCalculation(LanguageVersion.CANGJIE_1_0_0),
     EffectHandlers(LanguageVersion.CANGJIE_1_0_0),
+
+    /**
+     * 允许类型推断将互斥下界约束收敛出的交集类型作为固定结果。
+     *
+     * 默认全版本关闭（sinceVersion = null）：关闭时对齐官方 cjc 行为，当多个下界
+     * 约束无法收敛到单一具体类型（例如 `choose(1, true)` 产生 `Hashable & ToString`
+     * 交集候选）时推断失败并报告 UNABLE_TO_INFER_GENERIC_FUNC；开启后保持 Kotlin
+     * K2 兼容的推断行为，交集候选继续按现状近似为公共父类型完成推断。
+     */
+    AllowIntersectionTypesInInference(null),
     ;
 
     enum class State(override val description: String) : DescriptionAware {

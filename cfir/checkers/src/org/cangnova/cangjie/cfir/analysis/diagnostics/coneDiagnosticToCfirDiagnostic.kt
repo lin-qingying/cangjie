@@ -397,7 +397,16 @@ private fun ConeConstraintSystemHasContradiction.mapSystemHasContradictionError(
         }
         .takeIf { it.isNotEmpty() }
         ?.let { return it }
-    if (candidate.callInfo.arguments.any { it.containsErrorDiagnosticInArgument() }) return emptyList()
+    if (candidate.callInfo.arguments.any { it.containsErrorDiagnosticInArgument() }) {
+        if (errors.any { it is NotEnoughInformationForTypeParameter<*> && it.typeVariable is ConeTypeParameterBasedTypeVariable } &&
+            !candidate.hasExplicitTypeArgumentsInCall()
+        ) {
+            // 泛型参数被推断为失败类型且调用未提供显式实参时，即使实参子树自身含有错误
+            // 诊断，也应保留 callee 锚点的无法推断诊断（与官方 sema_unable_to_infer_generic_func 对齐）。
+            return listOfNotNull(unableToInferGenericFunctionDiagnostic(source, qualifiedAccessSource, session))
+        }
+        return emptyList()
+    }
     if (errors.hasExplicitTypeArgumentConstraintMismatch()) {
         // 约束系统已经保留显式 type argument source、实际类型和替换后的声明上界，
         // 这里直接映射专用诊断。错误候选在 completion 后不保证仍以普通 qualified access
@@ -3013,6 +3022,11 @@ private fun CjLightSourceElement.lightTreeCallCalleeSource(): CjSourceElement {
 
 /**
  * 获取泛型推断诊断需要覆盖的完整调用表达式 source。
+ *
+ * 只有 source 落在调用表达式的 callee 表达式范围内时才上溯到外层调用；
+ * 实参子树内部的错误位置（如 lambda 参数 typeRef）保持自身，与 LightTree
+ * 路径（`lightTreeCallCalleeSource` 只在节点自身是 CALL_EXPRESSION 时取
+ * callee 子节点）保持一致，避免把 lambda 参数推断失败错误地锚定到外层 callee。
  */
 private fun CjSourceElement.genericInferenceWholeCallSource(): CjSourceElement {
     val psiSource = when (this) {
@@ -3021,7 +3035,14 @@ private fun CjSourceElement.genericInferenceWholeCallSource(): CjSourceElement {
         else -> null
     } ?: return this
 
-    return psiSource.psi.containingCallExpressionOrNull()?.toCjPsiSourceElement() ?: this
+    val callExpression = psiSource.psi.containingCallExpressionOrNull() ?: return this
+    val callee = callExpression.calleeExpression ?: return this
+    val psi = psiSource.psi
+    return if (psi == callee || PsiTreeUtil.isAncestor(callee, psi, false)) {
+        callExpression.toCjPsiSourceElement() ?: this
+    } else {
+        this
+    }
 }
 
 /**

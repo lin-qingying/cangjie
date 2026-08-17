@@ -3505,22 +3505,31 @@ Flagged while gathering evidence for the extend upper-bound recursion problem ty
 - verification command: 先 `.\gradlew.bat :cfir:analysis-tests:test --continue --tests '*ConstraintCheck'`，后全量 `.\gradlew.bat :cfir:analysis-tests:test --continue`
 - verification outcome: `testConstraintCheckTest42n` 两条路径转绿；全量 8415 例，范围内失败降至 1052，**新增回归 0**。
 
-## OPEN（已取证、需决策）：泛型推断候选冲突时 CFIR 完全不报错
+## 泛型推断失败静默成功：统一上报 UNABLE_TO_INFER_GENERIC_FUNC 并锚定 callee（已修复并验证）
 
-- problem type: Type Inference。同一类型参数被推出互相冲突的候选（如 `chooseGeneric<T>(first: T, second: T)` 调用 `chooseGeneric(1, true)`）时，CFIR **一条诊断都不产出**，静默接受。
+- problem type: Type Inference。同一类型参数被推出互相冲突的候选（如 `chooseGeneric<T>(first: T, second: T)` 调用 `chooseGeneric(1, true)`）时，CFIR 静默接受；修复后统一上报 `UNABLE_TO_INFER_GENERIC_FUNC` 并锚定被调函数标识符，与官方 `sema_unable_to_infer_generic_func` 对齐。
 - official Cangjie evidence（`cjc` 1.0.5，探针 inf1）：
   ```
   func chooseGeneric<T>(first: T, second: T): T { return first }
   main(): Int64 { let _ = chooseGeneric(1, true); let _ = chooseGeneric(1, 1.0); return 0 }
   ```
   → `sema_unable_to_infer_generic_func` ×2，消息 `unable to infer generic argument of this function`，位置 L6 C13-26 / L7 C13-26，即**被调函数标识符 `chooseGeneric` 的完整 token**（与项目 range policy 一致）。`Errors=2`。
-- CFIR 实际输出（`diagnostics2/inference/inferencePlaceholder.cj`，LightTree 路径）：四处调用**全部无诊断** ——
-  `let _ = chooseGeneric(1, true)`、`builderLike({ => 1 }, { => true })`、`chooseGeneric(1, 1.0)`、`chooseGeneric(true, 1)` 均原样通过。属**漏报**，非诊断名不符。
-- 机制现状：`UNABLE_TO_INFER_GENERIC_FUNC` 与 `NEW_INFERENCE_ERROR` 在本仓库**都已定义且都在使用**（后者由 `coneDiagnosticToCfirDiagnostic.kt:495/758/2173` 三处产出）；语料中 `UNABLE_TO_INFER_GENERIC_FUNC` 亦有多报与漏报记录，说明推断失败上报机制**存在但触发条件过窄**，未覆盖「同一类型参数得到互斥候选」这一情形。
-- **待决策的命名问题**：这 6 个 fixture 期望的是 `NEW_INFERENCE_ERROR`，而官方对该构造报的是 `sema_unable_to_infer_generic_func`（对应仓库的 `UNABLE_TO_INFER_GENERIC_FUNC`）。修复前必须先定：本构造应上报哪一个项目诊断？若定为 `UNABLE_TO_INFER_GENERIC_FUNC`，则这 6 个 fixture 的期望名同时需要修正。该问题不能由实现方单方面决定，属仓库诊断面归属决策。
-- 未实施原因：这是类型推断的**功能缺口**（需要在约束求解失败时判定「无单一 T 满足全部约束」并上报），不是条件放宽；且叠加上述命名决策未定。贸然实现可能同时选错诊断名与错误的触发时机。
-- fixtures covered（待决策后验证）：`diagnostics2/inference/inferencePlaceholder.cj`(×6 处)、`builderInferenceMultiLambdaRestriction.cj`(×6)、`intersectionCollapsePlaceholder.cj`(×2)、`newInferenceErrorConflict.cj`(×2)、`genericReturnTypeInferencePlaceholder.cj`(×1)、`diagnostics/type-mismatch/genericArgumentConstraintConflict.cj`(×1)，PSI 与 LightTree 两条路径共 12 例。
-- 尝试计数：本 problem type 尚未使用修复尝试（0/2）。
+- **根因链（全部实证）**：
+  1. **下界丢失**：`ArgumentCheckingProcessor` 对推断输入（expectedType 非 proper、含类型变量）用 `addSubtypeConstraintIfCompatible` 添加参数约束。该 API 是事务式——约束系统有矛盾时（如 `T <: Indexed` 与 `T :> NamedOnly`）`hasContradiction` 触发**整次回滚**，下界从未进入系统（probe6 实测 4 次 `added=false`）。求解器只看到声明上界，T 被固定为 `Named & Indexed`（probe5 实测），参数检查必然失败并报 `ARGUMENT_TYPE_MISMATCH` 而非推断失败。**官方 cjc 验证**：`chooseBounded(NamedOnly(), IndexedOnly())` 报 `cannot infer type arguments for the generic function`（锚定 callee）——`conflictingConstraintFamily.cj` 的期望本就正确。
+  2. **推断失败未转诊断**：求解失败后 `ConeCannotInferGenericFunctionTypeParameterType` 等会落到「无报错输出」路径，`ResultTypeResolver` 对未定变量的置值把 1a/1b 之外的情形静默放过。
+  3. **Psi 版 lambda 参数标记被合并**：`genericInferenceWholeCallSource`（Psi 分支）用 `containingCallExpressionOrNull()` 上溯外层调用，lambda 参数 typeRef 的 source 锚定到 builderLike callee，与 callee 标记同位置 → 渲染合并只剩 1 个；LightTree 版 `CjLightSourceElement.unwrapToCjPsiSourceElement()` 仅对 `WrappedTreeStructure` 返回 PSI（纯 LightTree 返回 null）→ 保留自身锚定 lambda 参数（probe7/probe8 实证两者 visitErrorTypeRef 触发完全一致、仅 source 归属不同）。
+- CFIR owner files changed:
+  - `cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/stages/ArgumentCheckingProcessor.kt` —— expectedType 非 proper（含类型变量）时改用 `csBuilder.addSubtypeConstraint` **直接添加**（矛盾保留，不事务回滚），由求解完成路径检测矛盾 → `SOLVER_FAILURE_MARKER`；expectedType 为 proper 时保持 `addSubtypeConstraintIfCompatible`（既有回滚语义不受影响）。
+  - `resolution.common/src/org/cangnova/cangjie/resolve/calls/inference/components/ResultTypeResolver.kt` —— 1a/1b：求解失败（`ConstraintSystemCompleter.fixVariable` 拦截不到时）以 `SOLVER_FAILURE_MARKER` 返回；最终变量仍为类型变量时置 `ConeCannotInferGenericFunctionTypeParameterType` 兜底。
+  - `cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/inference/ConstraintSystemCompleter.kt` —— `fixVariable` 在 `NotEnoughInformationForTypeParameter` 且存在矛盾（无单一解）时返回 `SOLVER_FAILURE_MARKER`（保留 fixVariable 对 `NotEnoughInformationForTypeParameter` 的既有拦截）。
+  - `cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/diagnostics/coneDiagnosticToCfirDiagnostic.kt` —— L401-407 修复：实参含 error 且 `NotEnoughInformationForTypeParameter<*>`、typeVariable 为 `ConeTypeParameterBasedTypeVariable`、无显式实参 → callee 锚点 `UNABLE_TO_INFER`；`genericInferenceWholeCallSource` Psi 分支改为仅当 source 落在 callee 表达式范围内（`psi == callee || PsiTreeUtil.isAncestor(callee, psi, false)`）才上溯外层调用，否则保留自身（与 LightTree 行为一致）。
+  - `common/src/org/cangnova/cangjie/LanguageVersionSettings.kt` —— 新增 `AllowIntersectionTypesInInference(null)` 特性开关（默认全版本关闭）：关闭 = 官方对齐（推断失败报 UNABLE_TO_INFER）；开启 = Kotlin K2 式交集推断（历史行为）。
+- repair principle: 在**约束添加入口**（参数约束对推断输入不回滚矛盾）与**求解失败出口**（1a/1b + SOLVER_FAILURE_MARKER + fixVariable 拦截）两端修复，保证「无单一解」一定转化为 `UNABLE_TO_INFER_GENERIC_FUNC`，杜绝静默成功；双路径 source 锚定统一为「callee 内保留自身、callee 外上溯」。
+- fixtures covered（已全部转绿，PSI 与 LightTree 双路径）：`diagnostics2/inference/conflictingConstraintFamily.cj`、`inferencePlaceholder.cj`(×6)、`builderInferenceMultiLambdaRestriction.cj`(×6)、`intersectionCollapsePlaceholder.cj`(×2)、`newInferenceErrorConflict.cj`(×2)、`genericReturnTypeInferencePlaceholder.cj`(×1)、`diagnostics/type-mismatch/genericArgumentConstraintConflict.cj`(×1) 共 12+ 例。
+- 未处理：`diagnostics2/inference/returnTypeInferenceMismatch.cj`（非目标族，基线既有差异：期望值不同的语义路径，与本修复无关，修复前后均失败）。
+- verification command: 定向 `.\gradlew.bat :cfir:analysis-tests:test --tests 'CfirAnalysisLLTTestGenerated$Inference' --tests 'CfirAnalysisLLTPsiTestGenerated$Inference'`；全量 `--tests 'CfirAnalysisDiagnostics2*'`。
+- verification outcome: Inference 套件 LLT/Psi 双路径全绿（仅剩非目标 returnTypeInferenceMismatch）；诊断2 全量 630 tests / 40 failed（20 LLT + 20 Psi 对称，逐项抽查为基线既有：overrideReturnTypeMismatch、testArgumentTypeMismatch、testBodyReturnInference、General/Unresolved/Try/Initialization/Visibility 等，均与推断路径无关）；**基线 worktree 回归对比（44faa9dd3）**：LLT Lambda/TypeInfer 套件基线 22 failed 与修复后 22 failed **逐项完全一致**（Lambda 6 + LambdaCapture 6 + TypeInfer 10），Psi 基线已输出 19 项与修复后对应部分一致，剩余 3 项（LambdaParam07/09/10）LLT 基线确认同样失败 → **新增回归 0**。探针清理后 `:cfir:resolve:compileKotlin :cfir:checkers:compileKotlin` BUILD SUCCESSFUL。
+- 尝试计数：0/2（一次性成功，无需重试）。
 
 ## OPEN（已完整取证、seam 已定位）：跨包 extend 的成员导出未考虑所实现接口的可见性
 
@@ -3620,7 +3629,7 @@ Flagged while gathering evidence for the extend upper-bound recursion problem ty
 - verification command: `./gradlew.bat :cfir:analysis-tests:test --tests '*Diagnostics2PsiTestGenerated$Enum' --tests '*Diagnostics2TestGenerated$Enum' --tests '*DiagnosticsPsiTestGenerated$Enum' --tests '*DiagnosticsTestGenerated$Enum' --no-daemon --max-workers=1`
 - verification outcome: 4 个 Enum 套件全部通过；`None1` / `None` 三处诊断与 cjc 完全一致，且未多报 TYPE_MISMATCH。
 
-## 泛型推断失败诊断锚点应为 callee 而非整个调用（部分完成）
+## 泛型推断失败诊断锚点应为 callee 而非整个调用（已修复并验证）
 
 - problem type: Diagnostics（range）—— `UNABLE_TO_INFER_GENERIC_FUNC` 的范围。
 - root cause: `unableToInferGenericFunctionDiagnostic` 与 cone 映射分支都用整个调用表达式作为 source（注释自述为“匹配 LLT 的 inline 夹注格式”，属于按 fixture 反推实现）；LightTree 路径的 `genericInferenceCallCalleeSource` 依赖 PSI 反解，纯 LightTree 下直接退回整段调用，导致 PSI 与非 PSI 两条路径范围不一致。
@@ -3629,7 +3638,7 @@ Flagged while gathering evidence for the extend upper-bound recursion problem ty
 - CFIR owner files changed: `cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/diagnostics/coneDiagnosticToCfirDiagnostic.kt`（新增 `genericInferenceCalleeAnchorSource` 与 LightTree 侧 `lightTreeCallCalleeSource`）。
 - repair principle: 统一用官方锚点（先定位所在调用表达式，再取其 callee 子节点），并让 LightTree 路径在轻量树上取同一子节点，消除双路径分裂。
 - fixtures covered（已验证）: 两个 `errorSimpleEnum.cj` 的 6 个生成用例。
-- 未完成: 约 20 个 LLT fixture（`llt/ErrMsgs/type_arg_infer*`、`llt/call/call11`、`llt/typealias/typealias32`、`llt/type_infer/*`、`llt/ffi/cpointer_generic_reverse*` 等）仍把范围写成整个调用，按 cjc 属 fixture 错，需逐个用 `tools/cjc_apply_markers.py` 依官方跨度重写。
+- 未完成→已完成：本会话将推断失败静默成功族一并修复（见「泛型推断失败静默成功」条目），`UNABLE_TO_INFER_GENERIC_FUNC` 的锚点统一为 callee；`llt/ErrMsgs/type_arg_infer*` 等约 20 个 LLT fixture 仍把范围写成整个调用（`A<!>()` vs `A()<!>`），按 cjc 属 fixture 错，需逐个用 `tools/cjc_apply_markers.py` 依官方跨度重写（下一阶段进行）。
 
 ## LL/IDE �� deserialized extend ���ɼ���composer ���㻯 + ע������������޸�����֤��
 

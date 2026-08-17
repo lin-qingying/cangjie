@@ -24,6 +24,7 @@ import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeTypeVariable
 import org.cangnova.cangjie.resolve.calls.inference.components.ConstraintSystemCompletionContext
 import org.cangnova.cangjie.resolve.calls.inference.components.ConstraintSystemCompletionMode
+import org.cangnova.cangjie.resolve.calls.inference.components.ResultTypeResolver
 import org.cangnova.cangjie.resolve.calls.inference.components.TypeVariableDependencyInformationProvider
 import org.cangnova.cangjie.resolve.calls.inference.components.TypeVariableDirectionCalculator
 import org.cangnova.cangjie.resolve.calls.inference.components.VariableFixationFinder
@@ -111,6 +112,7 @@ class ConstraintSystemCompleter(
         context: ResolutionContext,
         analyzer: PostponedAtomAnalyzer,
     ) {
+        val atomExpr = topLevelAtoms.firstOrNull()?.expression
         c.runCompletion(completionMode, topLevelAtoms, candidateReturnType, context, analyzer)
     }
 
@@ -375,10 +377,10 @@ class ConstraintSystemCompleter(
         completionMode: ConstraintSystemCompletionMode,
         topLevelAtoms: List<ConeResolutionAtom>,
     ): Boolean {
-        val variableWithConstraints = notFixedTypeVariables.getValue(variableForFixation.variable)
+val variableWithConstraints = notFixedTypeVariables.getValue(variableForFixation.variable)
         if (!variableForFixation.isReady) return false
 
-        fixVariable(this, variableWithConstraints)
+        fixVariable(this, variableWithConstraints, topLevelAtoms)
         return true
     }
 
@@ -534,18 +536,29 @@ class ConstraintSystemCompleter(
         return result.toList()
     }
 
-    /**
+/**
      * 根据当前约束计算类型变量结果类型并固定该变量。
+     *
+     * 当结果类型是推断失败标记（[ResultTypeResolver.SOLVER_FAILURE_MARKER]）时，
+     * 不直接固定该中性错误类型，而是复用"无法推断"错误路径（[processVariableWhenNotEnoughInformation]）
+     * 报告 UNABLE_TO_INFER_GENERIC_FUNC 并固定为带具体参数名的错误类型，确保互斥下界、
+     * 约束矛盾等推断失败场景产生用户可见诊断。
      */
     private fun fixVariable(
         c: ConstraintSystemCompletionContext,
         variableWithConstraints: VariableWithConstraints,
+        topLevelAtoms: List<ConeResolutionAtom>,
     ) {
         val resultType = with(c) {
             inferenceComponents.resultTypeResolver.findResultType(
                 variableWithConstraints,
                 TypeVariableDirectionCalculator.ResolveDirection.UNKNOWN,
             )
+        }
+
+        if (resultType is ConeErrorType && resultType.diagnostic.reason == ResultTypeResolver.SOLVER_FAILURE_MARKER) {
+            with(c) { processVariableWhenNotEnoughInformation(variableWithConstraints, topLevelAtoms) }
+            return
         }
 
         val variable = variableWithConstraints.typeVariable
