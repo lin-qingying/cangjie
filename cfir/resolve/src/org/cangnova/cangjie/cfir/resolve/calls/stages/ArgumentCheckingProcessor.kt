@@ -776,7 +776,13 @@ internal object ArgumentCheckingProcessor {
                 position,
             )
         ) return
-        if (csBuilder.addSubtypeConstraintIfCompatible(argumentTypeForSubtypeCheck, expectedType, position)) return
+val added = if (csBuilder.isProperType(expectedType)) {
+            csBuilder.addSubtypeConstraintIfCompatible(argumentTypeForSubtypeCheck, expectedType, position)
+        } else {
+            csBuilder.addSubtypeConstraint(argumentTypeForSubtypeCheck, expectedType, position)
+            true
+        }
+        if (added) return
         if (argumentType.isIdealTypeForTypeParameterExpectedType(expectedType)) return
         if (isReceiver) {
             csBuilder.addSubtypeConstraint(argumentType, expectedType, position)

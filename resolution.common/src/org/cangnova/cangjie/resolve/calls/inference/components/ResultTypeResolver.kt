@@ -5,6 +5,7 @@
 
 package org.cangnova.cangjie.resolve.calls.inference.components
 
+import org.cangnova.cangjie.LanguageFeature
 import org.cangnova.cangjie.LanguageVersionSettings
 import org.cangnova.cangjie.resolve.calls.CommonSuperTypeCalculator
 import org.cangnova.cangjie.resolve.calls.inference.ConstraintSystemBuilder
@@ -134,10 +135,21 @@ class ResultTypeResolver(
         variableWithConstraints: VariableWithConstraints,
         direction: ResolveDirection,
     ): CangJieTypeMarker? {
-        val resultTypeFromEqualConstraint = findResultIfThereIsEqualsConstraint(variableWithConstraints, isStrictMode = false)
+val resultTypeFromEqualConstraint = findResultIfThereIsEqualsConstraint(variableWithConstraints, isStrictMode = false)
         if (resultTypeFromEqualConstraint?.isAppropriateResultTypeFromEqualityConstraints() == true) return resultTypeFromEqualConstraint
 
         val subType = variableWithConstraints.findSubType()
+        val subTypeIsIntersection = subType?.typeConstructor()?.isIntersection() == true
+        val allowIntersectionResult =
+            languageVersionSettings.supportsFeature(LanguageFeature.AllowIntersectionTypesInInference)
+        if (subTypeIsIntersection && !allowIntersectionResult) {
+            // 多个互斥下界约束收敛出的交集候选（如 choose(1, true) 得到 Hashable & ToString）：
+            // 公共父类型计算（filterStrictSupertypes）保证交集成员互不可比，因此不存在能同时
+            // 满足全部下界约束的单一具体类型；对齐官方 cjc 的 sema_unable_to_infer_generic_func
+            // 直接报告推断失败，由固定阶段生成用户可见诊断。
+            // 特性开关开启时跳过该处理，保持 Kotlin K2 兼容的推断行为。
+            return c.createErrorType(SOLVER_FAILURE_MARKER, null)
+        }
         val superType = variableWithConstraints.findSuperType()
 
         val (preparedSubType, preparedSuperType) = variableWithConstraints.prepareSubAndSuperTypes(subType, superType)
@@ -154,14 +166,29 @@ class ResultTypeResolver(
         // - if one type is null, we return another one
         // - we return type from UPPER/LOWER constraints if it's more precise (in fact, only Int/Short/Byte/Long is allowed here)
         // - otherwise we return ILT-based type
-        return when {
+        val resultType = when {
             resultTypeFromEqualConstraint == null -> resultTypeFromDirection
             resultTypeFromDirection == null -> resultTypeFromEqualConstraint
             !resultTypeFromDirection.typeConstructor().isNothingConstructor() &&
                     AbstractTypeChecker.isSubtypeOf(c, resultTypeFromDirection, resultTypeFromEqualConstraint) -> resultTypeFromDirection
             else -> resultTypeFromEqualConstraint
         }
+        if (resultType != null) return resultType
+
+        // 存在 proper 约束却仍无法确定结果类型（约束矛盾或互斥候选），且不是被特性
+        // 开关允许的交集场景时，报告推断失败，由固定阶段生成 UNABLE_TO_INFER_GENERIC_FUNC。
+        if (variableWithConstraints.hasProperConstraints() && !(subTypeIsIntersection && allowIntersectionResult)) {
+            return c.createErrorType(SOLVER_FAILURE_MARKER, null)
+        }
+        return null
     }
+
+    /**
+     * 判断变量是否含有可用于固定的 proper 约束。
+     */
+    context(c: Context)
+    private fun VariableWithConstraints.hasProperConstraints(): Boolean =
+        constraints.any { it.isProperConstraint() }
 
     /**
      * 判断等价约束得到的结果类型是否已经不含整型字面量常量构造器。
@@ -527,4 +554,15 @@ class ResultTypeResolver(
         firstOrNull {
             it.position.from is ExplicitTypeParameterConstraintPosition<*> && it.position.initialConstraint.a == typeVariable.defaultType()
         }
+
+    companion object {
+        /**
+         * 推断失败的中性错误类型标记（createErrorType 的 debugName/reason）。
+         *
+         * 该标记本身不携带用户可见诊断；固定阶段检测到该标记时统一走"无法推断"
+         * 错误路径（UNABLE_TO_INFER_GENERIC_FUNC），与既有无法推断场景共用同一
+         * 报告逻辑，避免在 ResultTypeResolver 与诊断收集器之间泄漏内部类型。
+         */
+        const val SOLVER_FAILURE_MARKER = "CJ_SOLVER_FAILURE_MARKER"
+    }
 }
