@@ -1,7 +1,7 @@
 # LLM 提供商可用性检测（OpenAI 兼容接口）
 #
 # 行为：
-# 1. 向 https://anyrouter.top/v1/chat/completions 发送测试消息 "hi"（模型 gpt-5.6-sol），
+# 1. 向 https://anyrouter.top/v1/responses 发送输入 "hi"（模型 gpt-5.6-sol，Responses 接口），
 #    直到返回 HTTP 200；
 # 2. 返回 200 后通过创建 GitHub Issue 通知仓库所有者；
 # 3. 超过最大请求次数仍未返回 200，本次运行以失败结束（可配合仓库的
@@ -40,9 +40,9 @@ permissions:
 env:
   # OpenAI 兼容接口地址
   API_BASE: https://anyrouter.top/v1
-  # 测试模型（anyrouter 模型 id，只测 gpt-5.6-sol）
+  # 待检测模型（anyrouter 模型 id，只检测 gpt-5.6-sol）
   MODEL: gpt-5.6-sol
-  # 测试消息内容
+  # 测试输入内容
   TEST_MESSAGE: "hi"
   # 通知 Issue 标题（创建后需手动关闭，避免重复通知刷屏）
   ISSUE_TITLE: "✅ anyrouter LLM 服务恢复可用"
@@ -85,8 +85,8 @@ jobs:
               --max-time 30 \
               -H "Authorization: Bearer ${ANYKEY}" \
               -H "Content-Type: application/json" \
-              -d "{\"model\": \"${MODEL}\", \"messages\": [{\"role\": \"user\", \"content\": \"${TEST_MESSAGE}\"}]}" \
-              "${API_BASE}/chat/completions" || true)"
+              -d "{\"model\": \"${MODEL}\", \"input\": \"${TEST_MESSAGE}\"}" \
+              "${API_BASE}/responses" || true)"
 
             if [ "${http_code}" = "200" ]; then
               echo "✔ 第 ${attempt} 次请求返回 HTTP 200，服务可用"
@@ -134,9 +134,9 @@ jobs:
 
           ✅ **anyrouter LLM 服务已恢复可用**
 
-          - 接口地址：${API_BASE}/chat/completions
+          - 接口地址：${API_BASE}/responses
           - 测试消息：${TEST_MESSAGE}
-          - 测试模型：${MODEL}
+          - 检测模型：${MODEL}
           - 状态码：HTTP 200
           - 成功请求：第 ${ATTEMPT} 次
           - 检测时间：${now}
