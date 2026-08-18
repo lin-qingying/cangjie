@@ -1,0 +1,152 @@
+# LLM 提供商可用性检测（OpenAI 兼容接口）
+#
+# 行为：
+# 1. 向 https://anyrouter.top/v1/chat/completions 发送测试消息 "hi"（模型 gpt-5.6-sol），
+#    直到返回 HTTP 200；
+# 2. 返回 200 后通过创建 GitHub Issue 通知仓库所有者；
+# 3. 超过最大请求次数仍未返回 200，本次运行以失败结束（可配合仓库的
+#    “Actions 运行失败”通知使用）。
+#
+# 使用前：
+# - 在仓库 Settings → Secrets and variables → Actions 中新建 secret：ANYKEY，
+#   值为 API Key，工作流通过环境变量 ANYKEY 读取（鉴权头 Bearer ANYKEY）。
+# - 仅手动触发（workflow_dispatch）：在 Actions 页面选中该工作流 → Run workflow。
+
+name: LLM 提供商可用性检测
+
+on:
+  workflow_dispatch:
+    inputs:
+      max_attempts:
+        description: "最大请求次数（默认 30）"
+        required: false
+        default: "30"
+        type: number
+      interval_seconds:
+        description: "相邻两次请求的间隔秒数（默认 60）"
+        required: false
+        default: "60"
+        type: number
+
+concurrency:
+  # 同一时间只允许一个检测任务在跑，避免重复手动触发叠加
+  group: llm-availability-check
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  issues: write
+
+env:
+  # OpenAI 兼容接口地址
+  API_BASE: https://anyrouter.top/v1
+  # 测试模型（anyrouter 模型 id，只测 gpt-5.6-sol）
+  MODEL: gpt-5.6-sol
+  # 测试消息内容
+  TEST_MESSAGE: "hi"
+  # 通知 Issue 标题（创建后需手动关闭，避免重复通知刷屏）
+  ISSUE_TITLE: "✅ anyrouter LLM 服务恢复可用"
+  # 去重关键字（不带 emoji，保证 GitHub 搜索可用）
+  ISSUE_KEYWORD: "anyrouter LLM 服务恢复可用"
+  MAX_ATTEMPTS: ${{ inputs.max_attempts || '30' }}
+  INTERVAL_SECONDS: ${{ inputs.interval_seconds || '60' }}
+
+jobs:
+  check-availability:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: 校验 ANYKEY 环境变量
+        env:
+          ANYKEY: ${{ secrets.ANYKEY }}
+        run: |
+          if [ -z "${ANYKEY:-}" ]; then
+            echo "::error::ANYKEY 未配置。请在仓库 Settings → Secrets and variables → Actions 中新建 secret：ANYKEY"
+            exit 1
+          fi
+          echo "ANYKEY 已配置 ✔"
+
+      # 根据上一次请求结果决定是否继续：200 → 通知并停止；非 200 → 间隔后继续请求
+      - name: 循环请求直到返回 HTTP 200
+        id: probe
+        env:
+          ANYKEY: ${{ secrets.ANYKEY }}
+          API_BASE: ${{ env.API_BASE }}
+          MODEL: ${{ env.MODEL }}
+          TEST_MESSAGE: ${{ env.TEST_MESSAGE }}
+          MAX_ATTEMPTS: ${{ env.MAX_ATTEMPTS }}
+          INTERVAL_SECONDS: ${{ env.INTERVAL_SECONDS }}
+        run: |
+          set -u
+          attempt=0
+          while :; do
+            attempt=$((attempt + 1))
+            http_code="$(curl -sS -o /tmp/llm_probe_body -w '%{http_code}' \
+              --max-time 30 \
+              -H "Authorization: Bearer ${ANYKEY}" \
+              -H "Content-Type: application/json" \
+              -d "{\"model\": \"${MODEL}\", \"messages\": [{\"role\": \"user\", \"content\": \"${TEST_MESSAGE}\"}]}" \
+              "${API_BASE}/chat/completions" || true)"
+
+            if [ "${http_code}" = "200" ]; then
+              echo "✔ 第 ${attempt} 次请求返回 HTTP 200，服务可用"
+              echo "available=true" >> "${GITHUB_OUTPUT}"
+              echo "attempt=${attempt}" >> "${GITHUB_OUTPUT}"
+              break
+            fi
+
+            echo "✘ 第 ${attempt}/${MAX_ATTEMPTS} 次请求返回 HTTP ${http_code}"
+            echo "  响应摘要：$(head -c 200 /tmp/llm_probe_body 2>/dev/null | tr -d '\0' || true)"
+            if [ "${attempt}" -ge "${MAX_ATTEMPTS}" ]; then
+              echo "::error::连续 ${MAX_ATTEMPTS} 次请求均未返回 200，本次检测放弃"
+              exit 1
+            fi
+            echo "  ${INTERVAL_SECONDS} 秒后继续请求..."
+            sleep "${INTERVAL_SECONDS}"
+          done
+
+      # 仅当返回 200 时执行：通过 GitHub Issue 通知
+      - name: 通过 GitHub Issue 通知可用
+        if: steps.probe.outputs.available == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          API_BASE: ${{ env.API_BASE }}
+          MODEL: ${{ env.MODEL }}
+          TEST_MESSAGE: ${{ env.TEST_MESSAGE }}
+          ISSUE_TITLE: ${{ env.ISSUE_TITLE }}
+          ISSUE_KEYWORD: ${{ env.ISSUE_KEYWORD }}
+          ATTEMPT: ${{ steps.probe.outputs.attempt }}
+        run: |
+          set -u
+          now="$(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+
+          # 若已存在未关闭的同标题 Issue（说明之前已通知过），跳过，避免刷屏
+          existing="$(gh issue list --repo "${GITHUB_REPOSITORY}" --state open \
+            --search "in:title \"${ISSUE_KEYWORD}\"" \
+            --json number --jq '.[0].number // empty' 2>/dev/null || true)"
+          if [ -n "${existing}" ]; then
+            echo "已存在通知 Issue #${existing}，本次不再重复通知"
+            exit 0
+          fi
+
+          body="$(cat <<EOF
+          @${GITHUB_REPOSITORY_OWNER}
+
+          ✅ **anyrouter LLM 服务已恢复可用**
+
+          - 接口地址：${API_BASE}/chat/completions
+          - 测试消息：${TEST_MESSAGE}
+          - 测试模型：${MODEL}
+          - 状态码：HTTP 200
+          - 成功请求：第 ${ATTEMPT} 次
+          - 检测时间：${now}
+          - 运行记录：[Actions run #${GITHUB_RUN_NUMBER}](https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID})
+
+          > 关闭本 Issue 后，下次检测到可用时才会重新通知。
+          EOF
+          )"
+
+          gh issue create --repo "${GITHUB_REPOSITORY}" \
+            --title "${ISSUE_TITLE}" \
+            --body "${body}"
+          echo "已创建通知 Issue ✔"
