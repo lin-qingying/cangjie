@@ -5,8 +5,11 @@ import org.cangnova.cangjie.cfir.diagnostic.ConeInapplicableCandidateError
 import org.cangnova.cangjie.cfir.diagnostic.InapplicableCandidateByExpectedReturnType
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirErrorReferenceWithCandidate
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirNamedReferenceWithCandidate
+import org.cangnova.cangjie.cfir.resolve.inference.model.ConeExpectedTypeConstraintPosition
 import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.BodyResolveContext
+import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintMismatch
 
 /**
  * 判断不可适用候选是否仅由显式目标类型消费点的根约束造成。
@@ -25,7 +28,21 @@ internal fun CfirNamedReferenceWithCandidate.isExpectedTypeRootMismatchOnly(
         diagnostic !is ConeConstraintSystemHasContradiction
     ) return false
 
-    return candidate.diagnostics.singleOrNull() === InapplicableCandidateByExpectedReturnType &&
-        candidate.errors.isEmpty() &&
+    val expectedReturnFilterMismatch = candidate.diagnostics.singleOrNull() === InapplicableCandidateByExpectedReturnType &&
+        candidate.errors.isEmpty()
+    return (expectedReturnFilterMismatch || candidate.hasExplicitTypeArgumentExpectedTypeMismatch()) &&
         candidate.argumentMappingOutcome?.hasMappingFailure != true
 }
+
+/**
+ * 显式类型实参已经唯一确定调用的名义结果类型；若唯一的矛盾来自根 expected type，
+ * 这是赋值/初始化不匹配而非泛型实参推断失败。普通隐式泛型调用仍由推断诊断负责，
+ * 因而不能把它们的同类约束冲突归为根类型不匹配。
+ */
+private fun Candidate.hasExplicitTypeArgumentExpectedTypeMismatch(): Boolean =
+    callInfo.hasExplicitTypeArguments &&
+        diagnostics.isEmpty() &&
+        errors.isNotEmpty() &&
+        errors.all { error ->
+            error is ConstraintMismatch && error.position.from is ConeExpectedTypeConstraintPosition
+        }

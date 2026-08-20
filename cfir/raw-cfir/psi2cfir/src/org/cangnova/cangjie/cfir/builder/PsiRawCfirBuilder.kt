@@ -2369,6 +2369,9 @@ class PsiRawCfirBuilder(
 
             if (opToken.isAssignmentToken()) {
                 if (opToken == CjTokens.EQ) {
+                    if (left is CfirTupleLiteral) {
+                        return desugarDestructuringAssignment(psi, left, right)
+                    }
                     return buildAssignment {
                         source = psi.toCjPsiSourceElement()
                         lValue = left
@@ -2424,7 +2427,130 @@ class PsiRawCfirBuilder(
             }
         }
 
-        /** 转换 range 表达式，保留起点、终点、步长与闭区间标志。 */
+        /**
+         * 把元组解构赋值脱糖为「临时绑定 + 逐元素赋值」的 block。
+         *
+         * `(a, b) = rhs` 展开为：
+         * ```
+         * let <destructuring-0> = rhs
+         * a = <destructuring-0>[0]
+         * b = <destructuring-0>[1]
+         * ```
+         *
+         * 引入临时绑定是为了让右值只求值一次；每条合成赋值的 source 锚定在对应左值元素上，
+         * 使左值可写性、初始化、const 求值等诊断落在元素本身而不是整条赋值上。
+         *
+         * 脱糖在建树期完成，因此所有下游消费方（赋值合法性检查、初始化流分析、const 求值、
+         * DFA）看到的都是普通赋值，无需各自重新实现元组左值语义。
+         */
+        private fun desugarDestructuringAssignment(
+            psi: CjBinaryExpression,
+            targets: CfirTupleLiteral,
+            rValue: CfirExpression,
+        ): CfirExpression {
+            val fakeSource = psi.toCjPsiSourceElement()
+                .fakeElement(CjFakeSourceElementKind.DesugaredDestructuringAssignment)
+            val statements = mutableListOf<CfirStatement>()
+            expandDestructuringTargets(targets, rValue, fakeSource, statements, nextTemporaryId = 0)
+            return buildBlock {
+                source = fakeSource
+                this.statements.addAll(statements)
+            }
+        }
+
+        /**
+         * 逐层展开解构目标，把生成的临时绑定与赋值语句追加到 [out]。
+         *
+         * 嵌套元组各自分配临时绑定；名字必须逐层唯一，否则内层绑定会遮蔽外层，
+         * 导致外层后续元素的下标读取解析到错误的绑定上。返回下一个可用的临时绑定编号。
+         */
+        private fun expandDestructuringTargets(
+            targets: CfirTupleLiteral,
+            rValue: CfirExpression,
+            fakeSource: CjSourceElement,
+            out: MutableList<CfirStatement>,
+            nextTemporaryId: Int,
+        ): Int {
+            val temporaryName = Name.special("<destructuring-$nextTemporaryId>")
+            var temporaryId = nextTemporaryId + 1
+            out.add(buildDestructuringTemporary(temporaryName, rValue, fakeSource))
+
+            targets.elements.forEachIndexed { index, target ->
+                val elementRead = buildSubscriptExpression {
+                    source = fakeSource
+                    receiver = buildNamedAccessExpression {
+                        source = fakeSource
+                        calleeReference = buildNamedReference(temporaryName, fakeSource)
+                    }
+                    indices.add(
+                        buildLiteralExpression {
+                            source = fakeSource
+                            kind = CfirLiteralKind.INT
+                            value = index.toString()
+                        }
+                    )
+                }
+
+                if (target is CfirTupleLiteral) {
+                    temporaryId = expandDestructuringTargets(target, elementRead, fakeSource, out, temporaryId)
+                } else {
+                    out.add(
+                        buildAssignment {
+                            // 锚点落在左值元素上，而不是整条 `(a, b) = rhs`
+                            source = target.source ?: fakeSource
+                            this.lValue = target
+                            this.rValue = elementRead
+                        }
+                    )
+                }
+            }
+            return temporaryId
+        }
+
+        /**
+         * 构造承载解构右值的不可变合成局部绑定。
+         *
+         * 仓颉的局部 `let` 是模式绑定，名字由 binding pattern 承载，
+         * 因此这里构造 [CfirPatternVariable] 而非 property，
+         * 使其能像普通局部变量一样在 body resolve 阶段进入作用域并被后续下标读取引用。
+         */
+        private fun buildDestructuringTemporary(
+            name: Name,
+            rValue: CfirExpression,
+            fakeSource: CjSourceElement,
+        ): CfirPatternVariable {
+            val temporaryStatus = cloneDeclarationStatus(CfirDeclarationStatusImpl.DEFAULT)
+            return buildSourceDeclaration(CfirPatternVariableSymbol(callableIdFor(name))) { symbol ->
+                buildPatternVariable {
+                    resolvePhase = CfirResolvePhase.RAW_CFIR
+                    source = fakeSource
+                    this.symbol = symbol
+                    origin = CfirDeclarationOrigin.Source
+                    moduleData = baseModuleData
+
+                    attributes = CfirDeclarationAttributes.EMPTY
+                    isLocal = true
+                    status = temporaryStatus
+                    returnTypeRef = buildImplicitTypeRef()
+                    pattern = buildBindingPattern {
+                        source = fakeSource
+                        this.name = name
+                        bindingVariable = createPatternBindingVariable(
+                            source = fakeSource,
+                            name = name,
+                            status = temporaryStatus,
+                            isLocal = true,
+                            isVar = false,
+                            returnTypeRef = buildImplicitTypeRef(),
+                        )
+                    }
+                    initializer = rValue
+                    isVar = false
+                }
+            }
+        }
+
+
         private fun convertRange(psi: CjRangeExpression): CfirRangeExpression {
             val start = psi.left?.let { convertExpression(it) }
                 ?: buildErrorExpression(reason = "Missing range start")

@@ -646,13 +646,26 @@ open class CfirExpressionsResolveTransformer(
             val withTransformedArguments = if (!choosingOptionForAugmentedAssignment) {
                 components.dataFlowAnalyzer.enterCallArguments(functionCall, functionCall.argumentList.arguments)
 
-                val withResolvedExplicitReceiver = when (callResolutionMode) {
-                    CallResolutionMode.PROVIDE_DELEGATE -> functionCall
+                /*
+                 * 内建同构 primitive binary operator 需要按官方 type-check 的方向解析：
+                 * 先综合右操作数获得 primitive target，再用该 target 检查左侧树。这样
+                 * `id(1) + id(2) + Int32(3)` 的最右侧 Int32 能在左树中的泛型调用被
+                 * receiver completion 固定前参与推断。
+                 */
+                val operandsResolvedRightToLeft =
+                    callResolutionMode != CallResolutionMode.PROVIDE_DELEGATE &&
+                            functionCall.tryTransformHomogeneousBuiltinOperatorOperands(data)
+                val withResolvedExplicitReceiver = when {
+                    operandsResolvedRightToLeft -> functionCall
+                    callResolutionMode == CallResolutionMode.PROVIDE_DELEGATE -> functionCall
                     else -> transformExplicitReceiverOf(functionCall)
                 }
 
                 components.dataFlowAnalyzer.exitCallExplicitReceiver()
                 if (withResolvedExplicitReceiver.hasErrorExplicitReceiver()) {
+                    components.dataFlowAnalyzer.exitCallArguments()
+                    withResolvedExplicitReceiver
+                } else if (operandsResolvedRightToLeft) {
                     components.dataFlowAnalyzer.exitCallArguments()
                     withResolvedExplicitReceiver
                 } else {
@@ -719,7 +732,7 @@ open class CfirExpressionsResolveTransformer(
                 components.dataFlowAnalyzer.exitFunctionCall(result, data.forceFullCompletion)
             }
 
-            result
+            result.restoreInvalidSourceOperatorCall()
         }
 
     /**
@@ -847,7 +860,48 @@ open class CfirExpressionsResolveTransformer(
             skipEvenPartialCompletion = skipEvenPartialCompletion,
         )
         components.dataFlowAnalyzer.exitFunctionCall(result, data.forceFullCompletion)
-        return result
+        return result.restoreInvalidSourceOperatorCall()
+    }
+
+    /**
+     * 把“选中了 operator 候选、但其隐式返回类型无法形成结果”的调用恢复为源码二元运算
+     * 的根诊断。
+     *
+     * 运算符在 raw CFIR 中以普通 [CfirFunctionCall] 表示，然而官方二元表达式检查会在
+     * 解糖调用不能产生有效结果时回到原 operator token 报错。只有 receiver 与实参均有效、
+     * 且选中的候选引用仍为 resolved 时，结果错误才属于调用自身；子表达式错误继续由其原始
+     * 节点拥有，不能由外层 operator 覆盖。
+     */
+    private fun CfirExpression.restoreInvalidSourceOperatorCall(): CfirExpression {
+        val functionCall = this as? CfirFunctionCall ?: return this
+        if (functionCall.origin != CfirFunctionCallOrigin.Operator) return functionCall
+        val callee = functionCall.calleeReference as? CfirResolvedNamedReference ?: return functionCall
+        val resultType = functionCall.coneTypeOrNull as? ConeErrorType ?: return functionCall
+        val receiver = functionCall.explicitReceiver ?: return functionCall
+        val receiverType = receiver.coneTypeOrNull ?: return functionCall
+        val argumentTypes = functionCall.argumentList.arguments.map { argument ->
+            argument.coneTypeOrNull ?: return functionCall
+        }
+        if (receiverType is ConeErrorType || argumentTypes.any { it is ConeErrorType }) return functionCall
+
+        val operatorToken = OperatorNameConventions.TOKENS_BY_OPERATOR_NAME[callee.name] ?: return functionCall
+        val diagnostic = ConeUnresolvedNameError(
+            name = callee.name,
+            operator = operatorToken,
+            receiverType = receiver.invalidBinaryOperatorOperandType(receiverType),
+            argumentTypes = functionCall.argumentList.arguments.zip(argumentTypes) { argument, argumentType ->
+                argument.invalidBinaryOperatorOperandType(argumentType)
+            },
+        )
+        functionCall.replaceCalleeReference(
+            buildErrorNamedReference {
+                source = callee.source
+                name = callee.name
+                this.diagnostic = diagnostic
+            }
+        )
+        functionCall.replaceConeTypeOrNull(ConeErrorType(diagnostic, delegatedType = resultType.delegatedType))
+        return functionCall
     }
 
     /** 尝试直接解析内建操作符调用，避免进入普通 overload resolution。 */
@@ -912,6 +966,89 @@ open class CfirExpressionsResolveTransformer(
         }
         functionCall.replaceConeTypeOrNull(returnType)
         return functionCall
+    }
+
+    /**
+     * 按官方 binary check-mode 解析可能为内建 primitive 运算的操作数。
+     *
+     * `+` 等 token 同时可以解析为用户定义操作符，因此只有源级 operator 名称存在内建
+     * primitive 签名时才改变操作数解析方向；最终是否使用内建签名仍由
+     * [tryResolveBuiltinOperatorCall] 的完整类型检查决定。右侧无法提供 primitive target
+     * 时，左接收者保持常规 receiver 解析，避免把没有语义依据的 expected type 注入调用。
+     */
+    private fun CfirFunctionCall.tryTransformHomogeneousBuiltinOperatorOperands(
+        data: ResolutionMode,
+    ): Boolean {
+        if (origin != CfirFunctionCallOrigin.Operator) return false
+        val callee = calleeReference as? CfirNamedReference ?: return false
+        if (explicitReceiver == null || argumentList.arguments.size != 1) return false
+        if (BuiltinPrimitiveOperators.signaturesForOperator(callee.name, argumentList.arguments.size).isEmpty()) return false
+
+        val expectedTarget = data.expectedTypeOrNull
+            ?.concretePrimitiveOperatorCheckTargetOrNull()
+            ?.takeIf { target -> hasHomogeneousBuiltinOperatorSignature(target) }
+        val syntacticRightTarget = argumentList.arguments.single()
+            .explicitPrimitiveConversionTargetOrNull()
+            ?.takeIf { target -> hasHomogeneousBuiltinOperatorSignature(target) }
+        /*
+         * 只有已经由外层上下文或源码显式构造确定的 primitive 才能改变解析方向。
+         * 理想字面量、普通调用和嵌套 operator 的 concrete type 都是其自身解析过程的
+         * 结果，不能反过来作为同构运算的目标；否则会把正常的 widening、幂运算和
+         * 参数形状诊断错误地改写为 homogeneous operator 检查。
+        */
+        val target = expectedTarget ?: syntacticRightTarget ?: return false
+        // 显式 primitive 转换的结果类型由转换目标决定；把外层 target 传给它会改变
+        // 其解析边界，进而丢失该 target 向左侧嵌套 operator 树传播的时机。
+        val argumentResolutionMode = expectedTarget?.let(::withExpectedType) ?: ResolutionMode.ContextDependent
+        val transformedArgumentList: CfirArgumentList = context.withCallArgumentResolution {
+            argumentList.transform(transformer, argumentResolutionMode)
+        }
+        replaceArgumentList(transformedArgumentList)
+        transformExplicitReceiver(transformer, withExpectedType(target))
+        explicitReceiver?.materializeResolvedReceiverType()
+        return true
+    }
+
+    /** 判断给定 primitive 类型能否形成 receiver、实参与返回值完全同构的内建签名。 */
+    private fun CfirFunctionCall.hasHomogeneousBuiltinOperatorSignature(expectedType: ConePrimitiveType): Boolean {
+        val callee = calleeReference as? CfirNamedReference ?: return false
+        return BuiltinPrimitiveOperators.signaturesForOperator(callee.name, argumentList.arguments.size).any { candidate ->
+            candidate.receiverKind == expectedType.kind &&
+                    candidate.returnKind == expectedType.kind &&
+                    candidate.parameterKinds.all { parameterKind -> parameterKind == expectedType.kind }
+        }
+    }
+
+    /**
+     * 仅将已经是 concrete primitive 的外层期望类型作为 binary check-mode target。
+     *
+     * [primitiveOperatorCheckTargetOrNull] 会为实际内建运算把理想字面量归一化为默认
+     * Int64/Float64；该归一化不代表调用上下文已经选择了目标类型，因而不能用于决定
+     * 操作数解析顺序。
+     */
+    private fun ConeCangJieType.concretePrimitiveOperatorCheckTargetOrNull(): ConePrimitiveType? {
+        val primitive = classifyOperatorOperand(session) as? ConeOperatorOperandClassification.Primitive
+            ?: return null
+        if (primitive.kind.isIdeal || primitive.kind == PrimitiveTypeKind.NOTHING) return null
+        return ConePrimitiveType(primitive.kind)
+    }
+
+    /**
+     * 识别源码直接写出的 primitive 数值转换，例如 `Int32(3)`。
+     *
+     * raw CFIR 在 PSI 和 LightTree 路径都会把这类语法规范化为 [CfirTypeConversion]，
+     * 因而必须从 [CfirBasicTypeRef] 读取其目标名称，而不能把它误当成普通函数调用。
+     * 这是无需先解析左子树即可确定的右侧 target；Ideal/Nothing 等内部类型不参与。
+     */
+    private fun CfirExpression.explicitPrimitiveConversionTargetOrNull(): ConePrimitiveType? {
+        val conversion = this as? CfirTypeConversion ?: return null
+        val targetTypeRef = conversion.targetTypeRef as? CfirBasicTypeRef ?: return null
+        val primitiveKind = PrimitiveTypeKind.entries.singleOrNull { primitiveKind ->
+            primitiveKind.typeName == targetTypeRef.name.asString() &&
+                    !primitiveKind.isIdeal &&
+                    primitiveKind != PrimitiveTypeKind.NOTHING
+        } ?: return null
+        return ConePrimitiveType(primitiveKind)
     }
 
     /**
@@ -1613,8 +1750,9 @@ open class CfirExpressionsResolveTransformer(
         data: ResolutionMode,
     ): CfirFunctionCall? {
         val originalCallee = originalCalleeReference as? CfirNamedReference ?: return null
-        val diagnostic = (resolvedCall.calleeReference as? CfirDiagnosticHolder)?.diagnostic
-        val noArgEnumValueCalledWithArguments = diagnostic.isNoArgEnumValueCalledWithArguments(originalCall)
+        val resolvedCalleeReference = resolvedCall.calleeReference
+        val diagnostic = (resolvedCalleeReference as? CfirDiagnosticHolder)?.diagnostic
+        val noArgEnumValueInvocation = resolvedCalleeReference.isNoArgEnumValueInvocation()
         val noArgEnumValueOnValueReceiver =
             diagnostic is ConeNotMemberOfError &&
                 callResolver.isNoArgEnumConstructorOnValueReceiver(
@@ -1624,16 +1762,16 @@ open class CfirExpressionsResolveTransformer(
         val isVArraySizeCall = originalCall.isVArraySizeCall()
         if (
             originalCall.explicitReceiver != null &&
-            !noArgEnumValueCalledWithArguments &&
+            !noArgEnumValueInvocation &&
             !noArgEnumValueOnValueReceiver &&
             !isVArraySizeCall
         ) return null
 
         val shouldPreserveOriginalDiagnostic =
             diagnostic !is ConeUnresolvedNameError &&
-                !noArgEnumValueCalledWithArguments &&
+                !noArgEnumValueInvocation &&
                 !noArgEnumValueOnValueReceiver
-        val canTryImplicitInvoke = when (diagnostic) {
+        val canTryImplicitInvoke = noArgEnumValueInvocation || when (diagnostic) {
             is ConeUnresolvedNameError -> true
             is ConeNotMemberOfError -> noArgEnumValueOnValueReceiver
             is ConeInapplicableCandidateError ->
@@ -1808,22 +1946,26 @@ open class CfirExpressionsResolveTransformer(
 
     /**
      * 仓颉无参 enum constructor 是 enum 值，不是可调用声明。
-     * 当源码写成 `Enum.Entry(args)` 时，应先把 `Entry` 解析成值，再走 `invoke` 失败；
-     * 有参 enum constructor 仍保留参数映射诊断（缺参、参数类型错误等）。
+     *
+     * 无论括号内是否有实参，`Enum.Entry(...)` 都必须先把 `Entry` 解析为值，再统一查找
+     * `operator ()`。成功候选也必须参与该分类：零实参调用会让普通 constructor 参数映射
+     * 成功，若只检查错误诊断就会把 `Enum.Entry()` 错当成合法构造调用。
      */
-    private fun ConeDiagnostic?.isNoArgEnumValueCalledWithArguments(originalCall: CfirFunctionCall): Boolean {
-        if (originalCall.argumentList.arguments.isEmpty()) return false
-
-        /** 判断候选是否绑定到无参 enum constructor，用于把调用错误改写成 enum 值的 `invoke` 错误。 */
+    private fun CfirReference.isNoArgEnumValueInvocation(): Boolean {
+        /** 判断候选是否绑定到无参 enum constructor。 */
         fun AbstractCandidate.isNoArgEnumConstructorCandidate(): Boolean {
             val enumConstructor = symbol.takeIf { it.isBound }?.cfir as? CfirEnumConstructor ?: return false
             return enumConstructor.valueParameters.isEmpty()
         }
 
-        return when (this) {
-            is ConeInapplicableCandidateError -> candidate.isNoArgEnumConstructorCandidate()
-            is ConeConstraintSystemHasContradiction -> candidate.isNoArgEnumConstructorCandidate()
-            is ConeAmbiguityError -> !applicability.isSuccess && candidates.all { it.isNoArgEnumConstructorCandidate() }
+        if (this is CfirNamedReferenceWithCandidate && candidate.isNoArgEnumConstructorCandidate()) return true
+
+        return when (val diagnostic = (this as? CfirDiagnosticHolder)?.diagnostic) {
+            is ConeInapplicableCandidateError -> diagnostic.candidate.isNoArgEnumConstructorCandidate()
+            is ConeConstraintSystemHasContradiction -> diagnostic.candidate.isNoArgEnumConstructorCandidate()
+            is ConeAmbiguityError ->
+                !diagnostic.applicability.isSuccess &&
+                        diagnostic.candidates.all { it.isNoArgEnumConstructorCandidate() }
             else -> false
         }
     }

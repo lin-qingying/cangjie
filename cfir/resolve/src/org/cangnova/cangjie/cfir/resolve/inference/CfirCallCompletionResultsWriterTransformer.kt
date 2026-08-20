@@ -918,6 +918,14 @@ class CfirCallCompletionResultsWriterTransformer(
         val calleeReference = qualifiedAccessExpression.calleeReference as? CfirNamedReferenceWithCandidate
             ?: return qualifiedAccessExpression
         val candidate = calleeReference.candidate
+        /*
+         * 无参 generic enum constructor 在没有同 owner 目标类型时必须保留 fresh owner variable。
+         * 它不是可默认成 `Any` 的普通泛型调用：后续 generic-bare-access checker 需要该
+         * 未定型变量来报告缺失的 enum owner type argument。合法的同 owner 目标定型已在
+         * CfirCallCompleter/EnumConstructorTargetTyping 中先行完成，此处只保护剩余路径。
+         */
+        val unresolvedNoArgEnumOwnerType = qualifiedAccessExpression.coneTypeOrNull
+            ?.takeIf { type -> candidate.isUnfixedNoArgEnumConstructorOwner(type) }
         val forcedResultType = data?.getExpectedType(qualifiedAccessExpression)
             ?.let { expectedType -> candidate.noArgEnumConstructorTargetType(expectedType, session) }
         val expectedTypeRootMismatchOnly =
@@ -929,7 +937,9 @@ class CfirCallCompletionResultsWriterTransformer(
             preserveResolvedReferenceForExpectedTypeRootMismatch = expectedTypeRootMismatchOnly,
         )
         result.transformChildren(this, data)
-        val completedActualType = forcedResultType ?: result.coneTypeOrNull?.substituteType(candidate)
+        val completedActualType = forcedResultType
+            ?: unresolvedNoArgEnumOwnerType
+            ?: result.coneTypeOrNull?.substituteType(candidate)
         val resultType = calleeReference.callDiagnosticForResultType(
             ignoreExpectedTypeRootMismatch = expectedTypeRootMismatchOnly,
         )?.let { diagnostic ->
@@ -964,6 +974,31 @@ class CfirCallCompletionResultsWriterTransformer(
             result.addNonFatalDiagnostics(candidate)
         }
         return result
+    }
+
+    /** 判断无参 enum constructor 的 owner 泛型是否仍由当前候选的 fresh variable 表示。 */
+    private fun Candidate.isUnfixedNoArgEnumConstructorOwner(type: ConeCangJieType): Boolean {
+        val enumConstructor = symbol.takeIf { it.isBound }?.cfir as? CfirEnumConstructor ?: return false
+        if (enumConstructor.valueParameters.isNotEmpty() || callInfo.hasExplicitTypeArguments) return false
+
+        val notFixedTypeConstructors = system.currentStorage().notFixedTypeVariables.keys
+        return type.containsUnfixedOwnerInferenceVariable(notFixedTypeConstructors)
+    }
+
+    /** 仅识别当前候选仍拥有的 inference variable，避免把外层调用的变量误保留。 */
+    private fun ConeCangJieType.containsUnfixedOwnerInferenceVariable(
+        notFixedTypeConstructors: Set<TypeConstructorMarker>,
+    ): Boolean = when (this) {
+        is ConeTypeVariableType -> typeConstructor in notFixedTypeConstructors
+        is ConeLookupTagBasedType -> typeArguments.any { it.type.containsUnfixedOwnerInferenceVariable(notFixedTypeConstructors) }
+        is ConeFunctionType -> parameterTypes.any { it.containsUnfixedOwnerInferenceVariable(notFixedTypeConstructors) } ||
+                returnType.containsUnfixedOwnerInferenceVariable(notFixedTypeConstructors)
+        is ConeTupleType -> elementTypes.any { it.containsUnfixedOwnerInferenceVariable(notFixedTypeConstructors) }
+        is ConeVArrayType -> elementType.containsUnfixedOwnerInferenceVariable(notFixedTypeConstructors)
+        is ConePointerType -> pointeeType.containsUnfixedOwnerInferenceVariable(notFixedTypeConstructors)
+        is ConeTypeAliasType -> typeArguments.any { it.type.containsUnfixedOwnerInferenceVariable(notFixedTypeConstructors) } ||
+                expandedType?.containsUnfixedOwnerInferenceVariable(notFixedTypeConstructors) == true
+        else -> false
     }
 
     /**

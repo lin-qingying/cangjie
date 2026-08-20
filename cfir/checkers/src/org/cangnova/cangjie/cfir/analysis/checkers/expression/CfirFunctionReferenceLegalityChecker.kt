@@ -6,8 +6,6 @@ import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
-import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
-import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
@@ -16,7 +14,6 @@ import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
-import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
 
 /**
  * 函数值引用合法性检查。
@@ -61,13 +58,6 @@ object CfirFunctionReferenceLegalityChecker : CfirQualifiedAccessChecker() {
         }
 
         val targetFunction = targetDeclaration as? CfirNamedFunction ?: return
-        if (targetFunction.returnTypeRef.hasRecursiveImplicitReturnType()) {
-            reporter.reportOn(
-                source = (expression.source ?: diagnosticSource).firstCharacterDiagnosticSource(),
-                factory = CfirErrors.NO_MATCH_FUNCTION_DECLARATION_FOR_REF,
-            )
-            return
-        }
 
         if (targetFunction.status.isMut) {
             reporter.reportOn(
@@ -98,11 +88,5 @@ object CfirFunctionReferenceLegalityChecker : CfirQualifiedAccessChecker() {
             is CfirNamedReferenceWithCandidateBase -> reference.candidateSymbol as? CfirCallableSymbol<*>
             else -> null
         }
-    }
-
-    /** 函数引用目标仍处在隐式返回类型递归中时，引用本身不能形成合法函数值。 */
-    private fun org.cangnova.cangjie.cfir.types.CfirTypeRef.hasRecursiveImplicitReturnType(): Boolean {
-        val diagnostic = (this as? CfirErrorTypeRef)?.diagnostic as? ConeSimpleDiagnostic ?: return false
-        return diagnostic.kind == DiagnosticKind.RecursionInImplicitTypes
     }
 }

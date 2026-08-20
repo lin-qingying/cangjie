@@ -966,8 +966,7 @@ class CfirCallResolver(
             }
             if (nextPartials.isEmpty()) {
                 if (atom.failureKind == null) {
-                    atom.failureKind = CallableReferenceFailureKind.NO_MATCH
-                    atom.markResolved()
+                    atom.markNoMatchingFunctionReference()
                 }
                 return CallableReferenceResolutionResult.FAILURE
             }
@@ -1048,6 +1047,34 @@ class CfirCallResolver(
         resultingTypeForCallableReference = ConeErrorType(diagnostic, delegatedType = expectedType)
         failureKind = CallableReferenceFailureKind.AMBIGUITY
         markResolved()
+    }
+
+    /**
+     * 将目标函数类型下没有可用声明的 callable reference 物化为错误引用。
+     *
+     * Eager resolve 会同时把失败记到外层候选，使该候选退出 overload 集；但错误诊断
+     * 的源码归属属于函数引用自身。必须在 postponed atom 上写回错误引用，completion
+     * 和 checker 才能保留该锚点，而不会把它降级为外层 synthetic invoke 的失败。
+     */
+    private fun ConeResolvedCallableReferenceAtom.markNoMatchingFunctionReference() {
+        val expression = expression as? CfirNamedAccessExpression
+        val reference = expression?.calleeReference as? CfirNamedReference
+        if (expression == null || reference == null) {
+            failureKind = CallableReferenceFailureKind.NO_MATCH
+            markResolved()
+            return
+        }
+
+        val diagnostic = ConeNoMatchingFunctionReferenceError(reference.name)
+        resultingReference = buildErrorNamedReference {
+            source = reference.source
+            name = reference.name
+            this.diagnostic = diagnostic
+        }
+        resultingTypeForCallableReference = ConeErrorType(diagnostic, delegatedType = expectedType)
+        failureKind = CallableReferenceFailureKind.NO_MATCH
+        markResolved()
+        commitResultingCallableReference()
     }
 
     /**
@@ -1611,7 +1638,7 @@ class CfirCallResolver(
         expression: CfirNamedAccessExpression,
         expectedFunctionType: ConeFunctionType,
     ): ConeCangJieType? {
-        if (!hasCompatibleFunctionValueParameterShape(expectedFunctionType)) return null
+        if (!hasCompatibleCallableReferenceParameterShape(expectedFunctionType, session.typeContext)) return null
 
         val callInfo = expression.callableReferenceCallInfo(expectedFunctionType)
         val probeCandidate = CandidateFactory(transformer.resolutionContext, callInfo)
@@ -1642,30 +1669,6 @@ class CfirCallResolver(
                 expectedFunctionType,
             )
         }
-    }
-
-    /**
-     * 先按目标函数类型的参数形状过滤函数值 overload。
-     *
-     * 参数已经不匹配的候选不需要、也不应该计算隐式返回类型；否则递归函数值引用会在
-     * 一个本来应被参数过滤掉的 overload 上制造伪递归。
-     */
-    private fun Candidate.hasCompatibleFunctionValueParameterShape(expectedFunctionType: ConeFunctionType): Boolean {
-        val function = symbol.takeIf { it.isBound }?.cfir as? CfirFunction ?: return false
-        if (function.valueParameters.size != expectedFunctionType.parameterTypes.size) return false
-        if (expectedFunctionType.parameterTypes.any { parameterType -> parameterType.contains { it is ConeTypeVariableType } }) {
-            return true
-        }
-        return function.valueParameters.zip(expectedFunctionType.parameterTypes)
-            .all { (parameter, expectedParameterType) ->
-                val parameterType = (parameter.returnTypeRef as? CfirResolvedTypeRef)?.coneType ?: return false
-                val substitutedParameterType = substitutor.substituteOrSelf(parameterType)
-                AbstractTypeChecker.isSubtypeOfForFunctionReference(
-                    session.typeContext,
-                    expectedParameterType,
-                    substitutedParameterType,
-                )
-            }
     }
 
     /**
