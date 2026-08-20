@@ -16,7 +16,7 @@ interface I2 {
 class C1 {}
 
 extend C1 <: I1 & I2 {
-    public func <!OVERRIDING_RETURN_TYPE_MISMATCH!>foo<!>(): Int32 {
+    public func <!RETURN_TYPE_INCOMPATIBLE!>foo<!>(): Int32 {
         2
     }
 }

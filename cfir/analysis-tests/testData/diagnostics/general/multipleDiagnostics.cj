@@ -11,5 +11,5 @@ func badReturn(): Int64 {
 
 main(): Unit {
 
-    takesInt(<!ARGUMENT_TYPE_MISMATCH!>true<!>)
+    takesInt(<!CANNOT_CONVERT_LITERAL!>true<!>)
 }

@@ -17,13 +17,13 @@ func help3(): Unit {
     return
 }
 
-func <!UNABLE_TO_INFER_RETURN_TYPE!>exit<!>() {
+func exit() {
     if (true) {
         return 0
     } else {
         return ""
     };
-    return
+    <!INCOMPATIBLE_FUNC_BODY_AND_RETURN_TYPE!>return<!>
 }
 //func exit2() {if (true {return 0} else) {}}
 func exit3() {
@@ -61,14 +61,14 @@ func foo(): Int32 {
     return callFunc(<!NO_MATCH_FUNCTION_DECLARATION_FOR_REF!>f<!>un)
 }
 
-func <!UNABLE_TO_INFER_RETURN_TYPE!>bar<!>() {
+func bar() {
     return true;
-    1
+    <!INCOMPATIBLE_FUNC_BODY_AND_RETURN_TYPE!>1<!>
 }
 
-func <!UNABLE_TO_INFER_RETURN_TYPE!>baz<!>() {
+func baz() {
     while (true) {
         return false
     };
-    1
+    <!INCOMPATIBLE_FUNC_BODY_AND_RETURN_TYPE!>1<!>
 }

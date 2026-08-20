@@ -6,7 +6,7 @@ struct A {
     public let a: Int64
     public let b: Int64
     public let c: Int64
-    <!CLASS_UNINITIALIZED_FIELD!>public init(x: Int64, y: Int64)<!> {
+    public <!CLASS_UNINITIALIZED_FIELD!>init<!>(x: Int64, y: Int64) {
         this.a = x
         this.b = y
     }

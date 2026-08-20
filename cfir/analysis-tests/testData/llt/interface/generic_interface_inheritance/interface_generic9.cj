@@ -14,12 +14,12 @@ interface II<T> <: I<T> & I<Int32> & I<Float64> {
     static func fs(a: Float64): Float64
 }
 
-<!SUPER_TYPES_DUPLICATE!>interface III2<!> <: <!GENERIC_INSTANTIATION_CAUSES_AMBIGUOUS_FUNCTIONS, SUPER_TYPES_DUPLICATE!>II<Int32><!> {
+interface <!SUPER_TYPES_DUPLICATE!>III2<!> <: <!GENERIC_INSTANTIATION_CAUSES_AMBIGUOUS_FUNCTIONS, SUPER_TYPES_DUPLICATE!>II<Int32><!> {
     func foo(a: Int32): Int32
     static func fs(a: Int32): Int32
 }
 
-<!SUPER_TYPES_DUPLICATE!>interface III3<!> <: <!GENERIC_INSTANTIATION_CAUSES_AMBIGUOUS_FUNCTIONS, SUPER_TYPES_DUPLICATE!>II<Int32><!> {
+interface <!SUPER_TYPES_DUPLICATE!>III3<!> <: <!GENERIC_INSTANTIATION_CAUSES_AMBIGUOUS_FUNCTIONS, SUPER_TYPES_DUPLICATE!>II<Int32><!> {
     func foo(a: Int32): Int32
     static func fs(a: Int32): Int32
 }
@@ -34,7 +34,7 @@ interface III5<T> <: II<T> & <!GENERIC_INSTANTIATION_CAUSES_AMBIGUOUS_FUNCTIONS,
     static func fs(a: Float64): Float64
 }
 
-<!SUPER_TYPES_DUPLICATE!>interface III6<!> <: II<Int64> & II<Int64> {
+interface <!SUPER_TYPES_DUPLICATE!>III6<!> <: II<Int64> & II<Int64> {
     func foo(a: Int64): Int64
     static func fs(a: Int64): Int64
 }

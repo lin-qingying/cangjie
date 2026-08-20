@@ -408,6 +408,9 @@ private class TestExtendProvider(
      */
     override fun getExtendsForBuiltinType(kind: org.cangnova.cangjie.cfir.types.PrimitiveTypeKind): List<CfirExtend> =
         extendsByClassId[kind.classId].orEmpty()
+
+    /** 测试声明统一属于稳定的虚拟包，确保父边 provenance 完整。 */
+    override fun getPackageFqName(extend: CfirExtend): FqName = FqName("test.extend")
 }
 
 /**

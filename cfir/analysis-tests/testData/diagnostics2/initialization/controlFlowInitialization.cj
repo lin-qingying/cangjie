@@ -2,7 +2,7 @@
 func localReadAfterWhile(flag: Bool): Int64 {
     let value: Int64
     while (flag) {
-        value = 1
+        <!CANNOT_ASSIGN_TO_IMMUTABLE!>value<!> = 1
         break
     }
     return <!USED_BEFORE_INITIALIZATION!>value<!>
@@ -11,7 +11,7 @@ func localReadAfterWhile(flag: Bool): Int64 {
 func localReadAfterDoWhile(flag: Bool): Int64 {
     let value: Int64
     do {
-        value = 1
+        <!CANNOT_ASSIGN_TO_IMMUTABLE!>value<!> = 1
     } while (flag)
     return value
 }
@@ -26,7 +26,7 @@ func localReadAfterTryCatch(flag: Bool): Int64 {
         }
     } catch (e: Exception) {
         let _ = e
-        value = 3
+        <!CANNOT_ASSIGN_TO_IMMUTABLE!>value<!> = 3
     } finally {
         let done = true
         let _ = done

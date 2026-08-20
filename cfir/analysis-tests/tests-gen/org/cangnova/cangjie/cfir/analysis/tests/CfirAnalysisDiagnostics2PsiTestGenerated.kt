@@ -1398,6 +1398,12 @@ class CfirAnalysisDiagnostics2PsiTestGenerated : AbstractCfirPsiDiagnosticTest()
             runTest("cfir/analysis-tests/testData/diagnostics2/visibility/invisibleReferenceAndMember.cj")
         }
 
+        @TestMetadata("nonPublicTopLevelTypeImport.cj")
+        @Test
+        fun testNonPublicTopLevelTypeImport() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/visibility/nonPublicTopLevelTypeImport.cj")
+        }
+
         @TestMetadata("privateMemberAccess.cj")
         @Test
         fun testPrivateMemberAccess() {

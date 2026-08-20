@@ -11,5 +11,5 @@ main(): Unit {
     takesInt1<Int>
     takesInt
     takesInt1<Float64>(<!TYPE_MISMATCH!>1<!>)
-    takesInt(<!ARGUMENT_TYPE_MISMATCH!>true<!>)
+    takesInt(<!CANNOT_CONVERT_LITERAL!>true<!>)
 }

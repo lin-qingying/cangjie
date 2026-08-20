@@ -1,7 +1,7 @@
 
 
 class A {
-    <!CLASS_UNINITIALIZED_FIELD!>public init()<!> {}
+    public <!CLASS_UNINITIALIZED_FIELD!>init<!>() {}
 
     public var a: UInt
     public mut static prop v: UInt64 {

@@ -1,3 +1,3 @@
 
 
-main(): Int64 <!TYPE_MISMATCH!>{}<!>
+main(): Int64 <!RETURN_TYPE_MISMATCH!>{}<!>

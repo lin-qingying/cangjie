@@ -3,7 +3,7 @@
 main(): Int64 {
     B<Int32>().<!NOT_MEMBER_OF!>a<!>
     var a = [1, 2]
-    <!CANNOT_ASSIGN_TO_IMMUTABLE!>a.size = 1<!>
+    a.<!CANNOT_ASSIGN_TO_IMMUTABLE!>size<!> = 1
     return 0
 }
 

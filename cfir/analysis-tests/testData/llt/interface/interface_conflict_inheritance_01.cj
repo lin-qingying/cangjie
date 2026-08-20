@@ -22,7 +22,7 @@ interface I2 {
 interface <!INHERIT_MEMBER_TYPE_INCONSISTENT!>II<!> <: I0 & I1 & I2 {}
 
 interface III <: I1 & I2 {
-    func <!OVERRIDING_RETURN_TYPE_MISMATCH!>foo<!>(): E
+    func <!RETURN_TYPE_INCOMPATIBLE!>foo<!>(): E
 }
 
 main() {

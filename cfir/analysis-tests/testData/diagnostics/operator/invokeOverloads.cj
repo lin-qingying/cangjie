@@ -23,7 +23,7 @@ func testCorrectOverloads(): Unit {
 
 func testOverloadArgMismatch(): Unit {
     let h = Handler()
-    <!NO_MATCHING_OPERATOR_INVOKE!>h<!>(<!ARGUMENT_TYPE_MISMATCH!>1.0<!>)  // 错误：Float64 不匹配任何重载
+    <!NO_MATCHING_OPERATOR_INVOKE!>h<!>(<!CANNOT_CONVERT_LITERAL!>1.0<!>)  // 错误：Float64 不匹配任何重载
 }
 
 // 变量类型的 invoke 返回值参与类型检查
@@ -31,5 +31,5 @@ func testInvokeReturnInContext(): Unit {
     let h = Handler()
     h(1)                    // OK：返回 Int64
     h(true)                 // OK：返回 Bool
-    let _: Int64 = <!NO_MATCHING_OPERATOR_INVOKE!>h<!>(<!ARGUMENT_TYPE_MISMATCH!>true<!>)  // 错误：invoke 返回值与期望类型不匹配
+    let _: Int64 = <!NO_MATCHING_OPERATOR_INVOKE!>h<!>(<!CANNOT_CONVERT_LITERAL!>true<!>)  // 错误：invoke 返回值与期望类型不匹配
 }

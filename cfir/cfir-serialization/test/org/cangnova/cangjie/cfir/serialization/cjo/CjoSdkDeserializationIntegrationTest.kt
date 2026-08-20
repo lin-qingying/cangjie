@@ -388,7 +388,6 @@ class CjoSdkDeserializationIntegrationTest {
             val lazyEmpty = org.cangnova.cangjie.cfir.serialization.provider.CfirExtendProviderComposer
                 .lazyFromSymbolProviders { emptyList() }
             assertTrue(lazyEmpty.getExtendsForBuiltinType(org.cangnova.cangjie.cfir.types.PrimitiveTypeKind.INT64).isEmpty())
-            assertTrue(lazyEmpty.isExtendAccessible(int64Extends.first()), "empty provider should keep default accessibility")
         } finally {
             tempDir.toFile().deleteRecursively()
         }

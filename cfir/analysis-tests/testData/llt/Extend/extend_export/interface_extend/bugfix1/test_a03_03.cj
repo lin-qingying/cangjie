@@ -48,7 +48,6 @@ import b.{MyClass,I1}
 main() {
     var myClassImpl = MyClass()
     myClassImpl.test1()
-    myClassImpl.<!NO_MATCH_FUNCTION_DECLARATION_FOR_CALL!>t<!>est2()
+    myClassImpl.<!NO_MATCH_FUNCTION_DECLARATION_FOR_CALL!>test2<!>()
 }
-
 

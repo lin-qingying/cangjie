@@ -15,7 +15,7 @@ extend A {
 
 main() {
     let a: A = A()
-    a.<!NO_MATCH_FUNCTION_DECLARATION_FOR_CALL!>t<!>est()
+    a.<!NO_MATCH_FUNCTION_DECLARATION_FOR_CALL!>test<!>()
     a.foo()
     0
 }

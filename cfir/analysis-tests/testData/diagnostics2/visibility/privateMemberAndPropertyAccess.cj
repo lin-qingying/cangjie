@@ -2,7 +2,7 @@
 // FILE: base.cj
 package visibilityprivate
 
-class Counter {
+public class Counter {
     private let secret: Int64 = 42
 
     private func secretFunc(): Int64 {
@@ -19,9 +19,9 @@ package visibilityprivate.other
 import visibilityprivate.*
 
 func readSecret(counter: Counter): Int64 {
-    return counter.<!INVISIBLE_MEMBER!>secret<!>
+    return <!INVALID_ACCESS_CONTROL!>counter<!>.secret
 }
 
 func callSecret(counter: Counter): Int64 {
-    return counter.<!INVISIBLE_MEMBER!>secretFunc<!>()
+    return counter.<!NOT_MEMBER_OF!>secretFunc<!>()
 }

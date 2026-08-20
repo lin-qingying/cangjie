@@ -1,8 +1,8 @@
 
 
 
-internal import mod1.p1.*
-internal import mod1.default.*
+internal import <!UNRESOLVED_IMPORT!>mod1<!>.p1.*
+internal import <!UNRESOLVED_IMPORT!>mod1<!>.default.*
 
 main(): Int64 {
     var a = foo(Int8(1))

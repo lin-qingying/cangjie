@@ -34,10 +34,10 @@ var testA = A()
 
 func run(): Int64 {
     test.b = 1
-    <!UNQUALIFIED_LEFT_VALUE_ASSIGNED!>test.foo<!> = a
-    <!UNQUALIFIED_LEFT_VALUE_ASSIGNED!>Test.foo1<!> = a
-    <!UNQUALIFIED_LEFT_VALUE_ASSIGNED!>testA.foo<!> = a
-    <!UNQUALIFIED_LEFT_VALUE_ASSIGNED!>A.foo1<!> = a
+    test.<!UNQUALIFIED_LEFT_VALUE_ASSIGNED!>foo<!> = a
+    Test.<!UNQUALIFIED_LEFT_VALUE_ASSIGNED!>foo1<!> = a
+    testA.<!UNQUALIFIED_LEFT_VALUE_ASSIGNED!>foo<!> = a
+    A.<!UNQUALIFIED_LEFT_VALUE_ASSIGNED!>foo1<!> = a
     return Int64(test.b + test.foo() - 6)
 }
 

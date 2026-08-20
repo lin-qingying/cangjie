@@ -18,7 +18,7 @@ open class A {
 }
 
 class B <: A {
-    public override func <!OVERRIDING_RETURN_TYPE_MISMATCH!>f<!>(): Bar {
+    public override func <!RETURN_TYPE_INCOMPATIBLE!>f<!>(): Bar {
         return Foo()
     }
 }

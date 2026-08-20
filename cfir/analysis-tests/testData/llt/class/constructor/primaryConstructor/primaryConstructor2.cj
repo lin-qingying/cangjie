@@ -30,7 +30,7 @@ class J {
 }
 
 class K {
-    <!CLASS_UNINITIALIZED_FIELD!>public K(var k: Int64, var <!REDECLARATION!>k<!>!: Int64 = 1)<!> {}
+    public <!CLASS_UNINITIALIZED_FIELD!>K<!>(var k: Int64, var <!REDECLARATION!>k<!>!: Int64 = 1) {}
 }
 
 open class D {
