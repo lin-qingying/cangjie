@@ -5,15 +5,18 @@ import org.cangnova.cangjie.cfir.diagnostic.IllegalAccessNonStaticMember
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCallOrigin
 import org.cangnova.cangjie.cfir.resolve.providers.findExtendDeclarationSubstitution
 import org.cangnova.cangjie.cfir.resolve.providers.semanticExtendedType
+import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessContext
+import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessKind
+import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityResult
+import org.cangnova.cangjie.cfir.resolve.providers.getContainingExtend
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CheckerSink
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.yieldIfNeed
-import org.cangnova.cangjie.cfir.session.extendProvider
+import org.cangnova.cangjie.cfir.session.accessibilityChecker
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
-import org.cangnova.cangjie.cfir.unwrapSubstitutionOverrides
 import org.cangnova.cangjie.name.OperatorNameConventions
 
 /**
@@ -57,10 +60,18 @@ object CfirCheckExtensionReceiver : ResolutionStage() {
     /** 计算候选在当前 use-site 下实际期望的 extend receiver 类型。 */
     private fun Candidate.expectedExtensionReceiverType(): ConeCangJieType? {
         val callableSymbol = symbol as? CfirCallableSymbol<*> ?: return null
-        val originalSymbol = callableSymbol.unwrapSubstitutionOverrides()
-        val extendProvider = context.session.extendProvider
-        val ownerExtend = extendProvider.getContainingExtend(originalSymbol)
-            ?.takeIf(extendProvider::isExtendAccessible)
+        val ownerExtend = callableSymbol.getContainingExtend()
+            ?.takeIf {
+                context.session.accessibilityChecker.checkExtend(
+                    it,
+                    CfirAccessContext(
+                        useSiteFile = callInfo.containingFile,
+                        containingDeclarations = callInfo.containingDeclarations,
+                        receiverType = givenExtensionReceiver?.expression?.coneTypeOrNull,
+                        kind = CfirAccessKind.EXTEND,
+                    ),
+                ) is CfirAccessibilityResult.Accessible
+            }
             ?: return null
         val actualReceiverType = givenExtensionReceiver?.expression?.coneTypeOrNull
         if (actualReceiverType != null) {

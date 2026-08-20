@@ -30,20 +30,28 @@ import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirInterface
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
-import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityFileScope
 import org.cangnova.cangjie.cfir.resolve.providers.CfirDirectSupertypeProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirExtendProvider
+import org.cangnova.cangjie.cfir.resolve.providers.CfirInstantiatedSupertypeDescriptor
+import org.cangnova.cangjie.cfir.resolve.providers.CfirInstantiatedSupertypeOrigin
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSuperTypeGraphEdge
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
 import org.cangnova.cangjie.cfir.resolve.providers.DeclaredSupertypeClassification
 import org.cangnova.cangjie.cfir.resolve.providers.classifyDeclaredSupertype
 import org.cangnova.cangjie.cfir.resolve.providers.createCallableOwnerUseSiteSubstitutor
 import org.cangnova.cangjie.cfir.resolve.providers.createExtendDeclarationSubstitution
+import org.cangnova.cangjie.cfir.resolve.providers.getContainingClass
+import org.cangnova.cangjie.cfir.resolve.providers.getContainingExtend
+import org.cangnova.cangjie.cfir.resolve.providers.getDeclarationPackage
 import org.cangnova.cangjie.cfir.resolve.providers.scopeTraversalTypeOrNull
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
+import org.cangnova.cangjie.cfir.scopes.CfirCallableLookupProvenance
+import org.cangnova.cangjie.cfir.scopes.CfirCallableLookupProvenanceScope
+import org.cangnova.cangjie.cfir.scopes.CfirCallableWithLookupProvenance
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.scopes.isStaticMemberForOverride
 import org.cangnova.cangjie.cfir.scopes.overrideSignatureKey
+import org.cangnova.cangjie.cfir.scopes.processCallablesByNameWithLookupProvenance
 import org.cangnova.cangjie.cfir.session.*
 import org.cangnova.cangjie.cfir.session.services.CfirExtendTargetKey
 import org.cangnova.cangjie.cfir.symbols.*
@@ -51,7 +59,6 @@ import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.cfir.unwrapSubstitutionOverrides
 import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.name.ClassId
-import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.type.AbstractTypeChecker
 import org.cangnova.cangjie.type.model.TypeConstructorMarker
@@ -111,6 +118,8 @@ data class CfirFunctionInheritanceProvenance(
     val member: CfirNamedFunctionSymbol,
     val identity: CfirFunctionInheritanceIdentity,
     val baseScope: CfirTypeScope,
+    /** 该函数进入当前 effective member graph 时的 extend/interface 来源。 */
+    val lookupProvenance: CfirCallableLookupProvenance,
 )
 
 /**
@@ -186,15 +195,14 @@ class CfirClassUseSiteMemberScope private constructor(
      * 在 extend 声明体内构造 scope 时需要排除的当前 extend。
      */
     private val excludingExtend: CfirExtend? = null,
-    /**
-     * 当前 use-site 文件包名，用于 private/protected extend 成员可见性。
-     */
-    private val useSitePackage: FqName? = CfirAccessibilityFileScope.currentPackageFqName(),
+    /** 当前 scope 是否经某条 extend 接口边进入 receiver 的继承图。 */
+    private val inheritedLookupProvenance: CfirCallableLookupProvenance = CfirCallableLookupProvenance.None,
     /**
      * 当前父类型展开路径，用于阻断继承图中的递归 class id。
      */
     private val supertypePath: CfirSupertypePath = CfirSupertypePath.root(classSymbol.classId),
-) : CfirTypeScope(), CfirFunctionInheritanceScope, CfirMemberLookupCompletenessScope {
+) : CfirTypeScope(), CfirFunctionInheritanceScope, CfirCallableLookupProvenanceScope,
+    CfirMemberLookupCompletenessScope {
     /**
      * 创建 class-like use-site 成员 scope。
      */
@@ -210,7 +218,6 @@ class CfirClassUseSiteMemberScope private constructor(
         scopeKind: CfirClassMemberScopeKind = CfirClassMemberScopeKind.USE_SITE,
         allowBareGenericStaticQualifierExtends: Boolean = false,
         excludingExtend: CfirExtend? = null,
-        useSitePackage: FqName? = CfirAccessibilityFileScope.currentPackageFqName(),
     ) : this(
         session = session,
         classSymbol = classSymbol,
@@ -223,7 +230,7 @@ class CfirClassUseSiteMemberScope private constructor(
         scopeKind = scopeKind,
         allowBareGenericStaticQualifierExtends = allowBareGenericStaticQualifierExtends,
         excludingExtend = excludingExtend,
-        useSitePackage = useSitePackage,
+        inheritedLookupProvenance = CfirCallableLookupProvenance.None,
         supertypePath = CfirSupertypePath.root(classSymbol.classId),
     )
 
@@ -245,9 +252,121 @@ class CfirClassUseSiteMemberScope private constructor(
         inheritanceProvenanceOwnerType = declarationSelfType(classSymbol),
         dispatchReceiverType = declarationSelfType(classSymbol),
         scopeKind = CfirClassMemberScopeKind.USE_SITE,
-        useSitePackage = CfirAccessibilityFileScope.currentPackageFqName(),
+        inheritedLookupProvenance = CfirCallableLookupProvenance.None,
         supertypePath = CfirSupertypePath.root(classSymbol.classId),
     )
+
+    companion object {
+        /**
+         * 为任意具体接收者类型创建来源保留的结构性 use-site member scope。
+         *
+         * class-like/primitive 目标统一复用本类的父边 descriptor；tuple、函数等没有
+         * nominal class id 的目标则组合直接 extend scope 与实例化父边。整个工厂只构造
+         * 结构成员图，不读取文件可见性；调用方必须把完整 provenance 交给统一访问 checker。
+         */
+        fun createForUseSiteType(
+            session: CfirSession,
+            ownerType: ConeCangJieType,
+            excludingExtend: CfirExtend? = null,
+        ): CfirTypeScope? = createForUseSiteType(
+            session = session,
+            ownerType = ownerType,
+            provenanceOwnerType = ownerType,
+            dispatchReceiverType = ownerType,
+            excludingExtend = excludingExtend,
+            inheritedLookupProvenance = CfirCallableLookupProvenance.None,
+            typePath = emptySet(),
+        )
+
+        /**
+         * 沿非 nominal 类型父边递归创建 scope；每个分支独立维护路径，保留菱形图中的
+         * 多个真实来源，同时阻断非法循环。
+         */
+        private fun createForUseSiteType(
+            session: CfirSession,
+            ownerType: ConeCangJieType,
+            provenanceOwnerType: ConeCangJieType,
+            dispatchReceiverType: ConeCangJieType,
+            excludingExtend: CfirExtend?,
+            inheritedLookupProvenance: CfirCallableLookupProvenance,
+            typePath: Set<ConeCangJieType>,
+        ): CfirTypeScope? {
+            if (ownerType in typePath) return null
+            val nextTypePath = typePath + ownerType
+
+            val classId = ownerType.expandedClassIdOrPrimitiveClassId
+            if (classId != null) {
+                val classSymbol = session.symbolProvider.getClassLikeSymbolByClassId(classId) ?: return null
+                val rawScope = CfirClassUseSiteMemberScope(
+                    session = session,
+                    classSymbol = classSymbol,
+                    symbolProvider = session.symbolProvider,
+                    extendProvider = session.extendProvider,
+                    directSupertypeProvider = session.directSupertypeProviderOrNull,
+                    ownerType = ownerType,
+                    inheritanceProvenanceOwnerType = provenanceOwnerType,
+                    dispatchReceiverType = dispatchReceiverType,
+                    scopeKind = CfirClassMemberScopeKind.USE_SITE,
+                    excludingExtend = excludingExtend,
+                    inheritedLookupProvenance = inheritedLookupProvenance,
+                    supertypePath = CfirSupertypePath.root(classId),
+                )
+                return CfirClassSubstitutionScope(
+                    session = session,
+                    useSiteMemberScope = rawScope,
+                    dispatchReceiverType = dispatchReceiverType,
+                    substitutionOwnerType = ownerType,
+                )
+            }
+
+            val targetKey = ownerType.expandedExtendTargetKey ?: return null
+            val scopes = buildList {
+                val directExtendScope = CfirExtendMemberScope(
+                    targetKey = targetKey,
+                    extendProvider = session.extendProvider,
+                    session = session,
+                    receiverType = ownerType,
+                    excludingExtend = excludingExtend,
+                )
+                add(
+                    CfirClassSubstitutionScope(
+                        session = session,
+                        useSiteMemberScope = directExtendScope,
+                        dispatchReceiverType = dispatchReceiverType,
+                        substitutionOwnerType = ownerType,
+                    )
+                )
+
+                for (descriptor in session.typeAwareSupertypeProviderOrNull
+                    ?.getDirectSupertypeDescriptors(ownerType)
+                    .orEmpty()
+                ) {
+                    val descriptorExtend = (descriptor.origin as? CfirInstantiatedSupertypeOrigin.Extend)
+                        ?.sourceExtend
+                    if (descriptorExtend === excludingExtend) continue
+                    val parentLookupProvenance = if (descriptorExtend != null) {
+                        CfirCallableLookupProvenance.inheritedThroughExtend(descriptor)
+                    } else {
+                        inheritedLookupProvenance
+                    }
+                    createForUseSiteType(
+                        session = session,
+                        ownerType = descriptor.type,
+                        provenanceOwnerType = descriptor.provenanceType,
+                        dispatchReceiverType = dispatchReceiverType,
+                        excludingExtend = excludingExtend,
+                        inheritedLookupProvenance = parentLookupProvenance,
+                        typePath = nextTypePath,
+                    )?.let(::add)
+                }
+            }
+            return when (scopes.size) {
+                0 -> null
+                1 -> scopes.single()
+                else -> CfirCompositeTypeScope(scopes, session)
+            }
+        }
+    }
 
     /**
      * 声明成员 scope。
@@ -269,7 +388,6 @@ class CfirClassUseSiteMemberScope private constructor(
                 receiverType = receiverType,
                 allowBareGenericStaticQualifierExtends = allowBareGenericStaticQualifierExtends,
                 excludingExtend = excludingExtend,
-                useSitePackage = useSitePackage,
             )
         }
 
@@ -315,7 +433,7 @@ class CfirClassUseSiteMemberScope private constructor(
     /**
      * 按名称缓存的属性结果。
      */
-    private val properties = hashMapOf<Name, Collection<CfirPropertySymbol>>()
+    private val properties = hashMapOf<Name, Collection<MemberWithBaseScope<CfirPropertySymbol>>>()
 
     /**
      * 父 scope 函数候选缓存。
@@ -510,7 +628,7 @@ class CfirClassUseSiteMemberScope private constructor(
         scopeKind = scopeKind,
         allowBareGenericStaticQualifierExtends = allowBareGenericStaticQualifierExtends,
         excludingExtend = excludingExtend,
-        useSitePackage = useSitePackage,
+        inheritedLookupProvenance = inheritedLookupProvenance,
         supertypePath = supertypePath,
     )
 
@@ -596,13 +714,13 @@ class CfirClassUseSiteMemberScope private constructor(
 
         properties.getOrPut(name) {
             collectProperties(name)
-        }.forEach(processor)
+        }.forEach { processor(it.symbol) }
     }
 
     /**
      * 收集本 scope 与父 scope 中的可见属性。
      */
-    private fun collectProperties(name: Name): Collection<CfirPropertySymbol> = buildList {
+    private fun collectProperties(name: Name): Collection<MemberWithBaseScope<CfirPropertySymbol>> = buildList {
         val local = mutableListOf<CfirPropertySymbol>()
         declaredScope.processPropertiesByName(name) { local += it }
         if (local.isEmpty()) {
@@ -611,12 +729,18 @@ class CfirClassUseSiteMemberScope private constructor(
         if (local.isNotEmpty()) {
             for (symbol in local) {
                 directOverriddenProperties[symbol] = computeDirectOverriddenForDeclaredProperty(symbol)
-                add(symbol)
+                add(
+                    MemberWithBaseScope(
+                        symbol = symbol,
+                        scope = this@CfirClassUseSiteMemberScope,
+                        lookupProvenance = symbol.localCallableLookupProvenance(),
+                    )
+                )
             }
             return@buildList
         }
         for (candidate in getPropertiesFromParentsByName(name)) {
-            add(candidate.symbol)
+            add(candidate)
         }
     }
 
@@ -668,7 +792,14 @@ class CfirClassUseSiteMemberScope private constructor(
         return propertiesFromParents.getOrPut(name) {
             val parentCandidates = mutableListOf<MemberWithBaseScope<CfirPropertySymbol>>()
             for (parent in parentScopes) {
-                parent.processPropertiesByName(name) { parentCandidates += MemberWithBaseScope(it, parent) }
+                parent.processCallablesByNameWithLookupProvenance(name) { candidate ->
+                    val property = candidate.symbol as? CfirPropertySymbol ?: return@processCallablesByNameWithLookupProvenance
+                    parentCandidates += MemberWithBaseScope(
+                        symbol = property,
+                        scope = parent,
+                        lookupProvenance = candidate.provenance,
+                    )
+                }
             }
             val inheritableParentCandidates = parentCandidates.filterInheritedForCurrentScope()
             filterOutOverridden(
@@ -769,7 +900,7 @@ class CfirClassUseSiteMemberScope private constructor(
      * 读取 callable 所属 class id；substitution/intersection override 可回退到 provider 记录。
      */
     private fun CfirCallableSymbol<*>.ownerClassIdForCurrentScope(): ClassId? =
-        callableId.classId ?: session.cfirProvider.getContainingClass(this)?.classId
+        callableId.classId ?: getContainingClass()?.classId
 
     /**
      * 判断当前属性是否可以实现父属性候选。
@@ -796,7 +927,62 @@ class CfirClassUseSiteMemberScope private constructor(
                 inheritanceOwnerType = inheritanceProvenanceOwnerType,
             ),
             baseScope = this@CfirClassUseSiteMemberScope,
+            lookupProvenance = localCallableLookupProvenance(),
         )
+    }
+
+    /** 返回当前 scope 中直接 callable 的结构来源。 */
+    private fun CfirCallableSymbol<*>.localCallableLookupProvenance(): CfirCallableLookupProvenance {
+        val ownerExtend = getContainingExtend()
+        return if (ownerExtend != null) {
+            CfirCallableLookupProvenance.directExtendMember(ownerExtend)
+        } else {
+            inheritedLookupProvenance
+        }
+    }
+
+    /**
+     * 按名称暴露完整 callable provenance。结构 scope 只收集候选；访问控制仍由 use-site
+     * checker 处理。函数和属性统一走这里，避免属性路径退化为无来源 symbol。
+     */
+    override fun processCallablesByNameWithLookupProvenance(
+        name: Name,
+        processor: (CfirCallableWithLookupProvenance) -> Unit,
+    ) {
+        if (name !in getCallableNames()) return
+
+        val emitted = linkedSetOf<CfirCallableWithLookupProvenance>()
+        processFunctionsByNameWithProvenance(name) { provenance ->
+            val candidate = CfirCallableWithLookupProvenance(
+                symbol = provenance.member,
+                provenance = provenance.lookupProvenance,
+            )
+            if (emitted.add(candidate)) processor(candidate)
+        }
+        properties.getOrPut(name) {
+            collectProperties(name)
+        }.forEach { property ->
+            val candidate = CfirCallableWithLookupProvenance(
+                symbol = property.symbol,
+                provenance = property.lookupProvenance,
+            )
+            if (emitted.add(candidate)) processor(candidate)
+        }
+        val local = mutableListOf<CfirCallableSymbol<*>>()
+        declaredScope.processCallablesByName(name) { local += it }
+        extendScope?.processCallablesByName(name) { local += it }
+        local.forEach { symbol ->
+            val candidate = CfirCallableWithLookupProvenance(
+                symbol = symbol,
+                provenance = symbol.localCallableLookupProvenance(),
+            )
+            if (emitted.add(candidate)) processor(candidate)
+        }
+        for (parent in parentScopes) {
+            parent.processCallablesByNameWithLookupProvenance(name) { candidate ->
+                if (emitted.add(candidate)) processor(candidate)
+            }
+        }
     }
 
     /**
@@ -846,7 +1032,7 @@ class CfirClassUseSiteMemberScope private constructor(
      */
     private fun CfirNamedFunctionSymbol.isExtendMemberForOverrideResolution(): Boolean {
         val original = unwrapSubstitutionOverrides()
-        return extendProvider?.getContainingExtend(original) != null
+        return original.getContainingExtend() != null
     }
 
     /**
@@ -857,7 +1043,7 @@ class CfirClassUseSiteMemberScope private constructor(
      */
     private fun CfirNamedFunctionSymbol.overrideSubstitutorForOwnFunction(): ConeSubstitutor {
         val original = unwrapSubstitutionOverrides()
-        if (extendProvider?.getContainingExtend(original) == null) return ownerSubstitutor
+        if (original.getContainingExtend() == null) return ownerSubstitutor
         val receiverType = dispatchReceiverType ?: ownerType ?: return ConeSubstitutor.Empty
         return createCallableOwnerUseSiteSubstitutor(session, original, receiverType)
     }
@@ -868,29 +1054,24 @@ class CfirClassUseSiteMemberScope private constructor(
     private fun buildParentScopes(): List<CfirTypeScope> {
         val rootType = ownerType ?: return emptyList()
         val provenanceRootType = inheritanceProvenanceOwnerType ?: rootType
-        val parentTypes = if (provenanceRootType == rootType) {
-            directParentTypesOf(rootType).map { it to it }
-        } else {
-            val provenanceToConcreteSubstitutor = provenanceRootType.provenanceToConcreteSubstitutor(rootType)
-            val provenanceParents = directParentTypesOf(provenanceRootType).map { provenanceSupertype ->
-                val concreteSupertype = provenanceToConcreteSubstitutor
-                    .substituteOrSelf(provenanceSupertype)
-                concreteSupertype to provenanceSupertype
-            }
-            val representedConcreteTypes = provenanceParents.mapTo(linkedSetOf()) { it.first }
-            buildList {
-                addAll(provenanceParents)
-                for (concreteSupertype in directParentTypesOf(rootType)) {
-                    if (concreteSupertype in representedConcreteTypes) continue
-                    // 仅具体类型适用的 extend 父边仍参与最终 scope；其 identity 不会通过 generic guard。
-                    add(concreteSupertype to concreteSupertype)
-                }
-            }
-        }
-        return parentTypes.mapNotNull { (supertype, provenanceSupertype) ->
+        val parentDescriptors = directParentDescriptorsOf(
+            concreteType = rootType,
+            provenanceType = provenanceRootType,
+        )
+
+        return parentDescriptors.mapNotNull { descriptor ->
+            val supertype = descriptor.type
             val classId = supertype.classIdOrPrimitiveClassId ?: return@mapNotNull null
             if (supertypePath.contains(classId)) return@mapNotNull null
             val parentSymbol = symbolProvider.getClassLikeSymbolByClassId(classId) ?: return@mapNotNull null
+            val parentLookupProvenance = when (descriptor.origin) {
+                is CfirInstantiatedSupertypeOrigin.Extend ->
+                    CfirCallableLookupProvenance.inheritedThroughExtend(descriptor)
+
+                is CfirInstantiatedSupertypeOrigin.Declared,
+                is CfirInstantiatedSupertypeOrigin.ImplicitObject,
+                -> inheritedLookupProvenance
+            }
             val parentScope = CfirClassUseSiteMemberScope(
                 session = session,
                 classSymbol = parentSymbol,
@@ -898,15 +1079,51 @@ class CfirClassUseSiteMemberScope private constructor(
                 extendProvider = extendProvider,
                 directSupertypeProvider = directSupertypeProvider,
                 ownerType = supertype,
-                inheritanceProvenanceOwnerType = provenanceSupertype,
+                inheritanceProvenanceOwnerType = descriptor.provenanceType,
                 dispatchReceiverType = dispatchReceiverType ?: rootType,
                 scopeKind = parentScopeKind(),
                 allowBareGenericStaticQualifierExtends = allowBareGenericStaticQualifierExtends,
                 excludingExtend = excludingExtend,
-                useSitePackage = useSitePackage,
+                inheritedLookupProvenance = parentLookupProvenance,
                 supertypePath = supertypePath.child(classId),
             )
             parentScope.substitutionScopeForSupertype(parentSymbol, supertype)
+        }
+    }
+
+    /**
+     * 返回当前具体 owner 的直接父边，同时保留泛型实例化前的父类型身份。
+     *
+     * 先从 provenance owner 建立每条来源边，再统一代入 concrete owner；仅在具体实例化后
+     * 新满足约束的 extend 边才从 concrete 视图追加。来源比较使用完整 origin，禁止按
+     * ClassId 或父类型压平。
+     */
+    private fun directParentDescriptorsOf(
+        concreteType: ConeCangJieType,
+        provenanceType: ConeCangJieType,
+    ): List<CfirInstantiatedSupertypeDescriptor> {
+        if (concreteType == provenanceType) {
+            return directParentDescriptorsFor(concreteType)
+        }
+
+        val provenanceToConcreteSubstitutor = provenanceType.provenanceToConcreteSubstitutor(concreteType)
+        val provenanceDescriptors = directParentDescriptorsFor(provenanceType).map { descriptor ->
+            descriptor.copy(
+                type = provenanceToConcreteSubstitutor
+                    .substituteOrSelf(descriptor.type)
+                    .fullyExpandedType(session),
+                provenanceType = descriptor.type.fullyExpandedType(session),
+            )
+        }
+        val representedOrigins = provenanceDescriptors.mapTo(linkedSetOf()) { it.origin }
+
+        return buildList {
+            addAll(provenanceDescriptors)
+            for (descriptor in directParentDescriptorsFor(concreteType)) {
+                if (descriptor.origin in representedOrigins) continue
+                // 仅具体类型适用的 extend 父边不属于泛型声明形态，但仍是当前成员图的独立输入。
+                add(descriptor)
+            }
         }
     }
 
@@ -1010,7 +1227,6 @@ class CfirClassUseSiteMemberScope private constructor(
                 scopeKind = parentScopeKind(),
                 allowBareGenericStaticQualifierExtends = allowBareGenericStaticQualifierExtends,
                 excludingExtend = excludingExtend,
-                useSitePackage = useSitePackage,
                 supertypePath = supertypePath.child(classId),
             )
             addNames(parentScope.declaredScope.collectDeclaredNames())
@@ -1032,7 +1248,20 @@ class CfirClassUseSiteMemberScope private constructor(
      * 若直接按别名 ClassId 构造 scope，会在别名声明处中断，无法进入实际父接口。
      */
     private fun directParentTypesOf(type: ConeCangJieType): List<ConeCangJieType> {
-        val directParentTypes = if (scopeKind == CfirClassMemberScopeKind.DECLARATION_SITE ||
+        return directParentDescriptorsFor(type)
+            .map(CfirInstantiatedSupertypeDescriptor::type)
+            .distinct()
+    }
+
+    /**
+     * 返回 [type] 的来源保留直接父边。
+     *
+     * declaration/body 模式只读取声明边；use-site 模式优先消费类型感知 provider 的完整
+     * descriptor。graph fallback 也在这里实例化，所有入口最终形成同一种结构模型。
+     */
+    private fun directParentDescriptorsFor(type: ConeCangJieType): List<CfirInstantiatedSupertypeDescriptor> {
+        val descriptors = if (
+            scopeKind == CfirClassMemberScopeKind.DECLARATION_SITE ||
             scopeKind == CfirClassMemberScopeKind.BODY_LOOKUP
         ) {
             val substitutor = classSymbol.createDeclarationSubstitutor(type)
@@ -1041,44 +1270,56 @@ class CfirClassUseSiteMemberScope private constructor(
                     .classifyDeclaredSupertype(session)
                     .scopeTraversalTypeOrNull()
                     ?: return@mapNotNull null
-                substitutor?.substituteOrSelf(supertype) ?: supertype
+                CfirInstantiatedSupertypeDescriptor(
+                    type = substitutor?.substituteOrSelf(supertype) ?: supertype,
+                    origin = CfirInstantiatedSupertypeOrigin.Declared(superTypeRef),
+                )
             }
         } else {
             val classId = type.classIdOrPrimitiveClassId ?: classSymbol.classId
             val typeAwareSupertypeProvider = session.typeAwareSupertypeProviderOrNull
             when {
                 excludingExtend != null && directSupertypeProvider != null -> {
-                    directParentTypesFromEdges(type, classId, excludingExtend)
+                    directParentDescriptorsFromEdges(type, classId, excludingExtend)
                 }
                 typeAwareSupertypeProvider != null -> {
-                    typeAwareSupertypeProvider.getDirectSupertypes(type)
+                    typeAwareSupertypeProvider.getDirectSupertypeDescriptors(type)
                 }
                 directSupertypeProvider != null -> {
-                    directSupertypeProvider.getDirectSuperTypes(classId).mapNotNull { superTypeRef ->
-                        superTypeRef.classifyDeclaredSupertype(session).scopeTraversalTypeOrNull()
-                    }
+                    directParentDescriptorsFromEdges(type, classId, excludedExtend = null)
                 }
                 else -> {
+                    val substitutor = classSymbol.createDeclarationSubstitutor(type)
                     classSymbol.cfir.superTypeRefs.mapNotNull { superTypeRef ->
-                        superTypeRef.classifyDeclaredSupertype(session).scopeTraversalTypeOrNull()
+                        val supertype = superTypeRef
+                            .classifyDeclaredSupertype(session)
+                            .scopeTraversalTypeOrNull()
+                            ?: return@mapNotNull null
+                        CfirInstantiatedSupertypeDescriptor(
+                            type = substitutor?.substituteOrSelf(supertype) ?: supertype,
+                            origin = CfirInstantiatedSupertypeOrigin.Declared(superTypeRef),
+                        )
                     }
                 }
             }
         }
 
-        return directParentTypes
-            .map { supertype -> supertype.fullyExpandedType(session) }
-            .distinct()
+        return descriptors.map { descriptor ->
+            descriptor.copy(
+                type = descriptor.type.fullyExpandedType(session),
+                provenanceType = descriptor.provenanceType.fullyExpandedType(session),
+            )
+        }
     }
 
     /**
      * 在 extend 声明体内查询父类型时按 graph edge 来源跳过当前 extend 自己贡献的接口。
      */
-    private fun directParentTypesFromEdges(
+    private fun directParentDescriptorsFromEdges(
         type: ConeCangJieType,
         classId: ClassId,
-        excludedExtend: CfirExtend,
-    ): List<ConeCangJieType> {
+        excludedExtend: CfirExtend?,
+    ): List<CfirInstantiatedSupertypeDescriptor> {
         val ownerSymbol = symbolProvider.getClassLikeSymbolByClassId(classId)
         val ownerDeclaration = ownerSymbol?.cfir as? CfirClassLikeDeclaration
         val declarationSubstitutor = ownerSymbol?.createDeclarationSubstitutor(type)
@@ -1086,19 +1327,19 @@ class CfirClassUseSiteMemberScope private constructor(
             ?.getDirectSuperTypeEdges(classId)
             .orEmpty()
             .mapNotNull { edge ->
-                if (edge.sourceExtend === excludedExtend) return@mapNotNull null
-                edge.toUseSiteSupertype(type, declarationSubstitutor)
+                if (excludedExtend != null && edge.sourceExtend === excludedExtend) return@mapNotNull null
+                edge.toUseSiteDescriptor(type, declarationSubstitutor)
             }
         return directSupertypes.withImplicitObjectSuperclass(ownerDeclaration)
     }
 
     /**
-     * 将 supertype graph edge 还原为当前 owner type 上的 use-site 父类型。
+     * 将 supertype graph edge 还原为当前 owner type 上的来源保留父边。
      */
-    private fun CfirSuperTypeGraphEdge.toUseSiteSupertype(
+    private fun CfirSuperTypeGraphEdge.toUseSiteDescriptor(
         ownerType: ConeCangJieType,
         declarationSubstitutor: ConeSubstitutor?,
-    ): ConeCangJieType? {
+    ): CfirInstantiatedSupertypeDescriptor? {
         val supertype = typeRef.coneType
         val extend = sourceExtend
         if (extend != null) {
@@ -1109,27 +1350,42 @@ class CfirClassUseSiteMemberScope private constructor(
                 targetPattern = targetPattern,
                 concreteReceiverType = ownerType,
             ) ?: return null
-            return substitution.substitutor.substituteOrSelf(supertype)
+            return CfirInstantiatedSupertypeDescriptor(
+                type = substitution.substitutor.substituteOrSelf(supertype),
+                origin = CfirInstantiatedSupertypeOrigin.Extend(
+                    sourceExtend = extend,
+                    declarationPackage = requireNotNull(extend.getDeclarationPackage()) {
+                        "Extend declaration package is not indexed: ${extend.symbol}"
+                    },
+                    sourceTypeRef = typeRef,
+                ),
+            )
         }
-        return declarationSubstitutor?.substituteOrSelf(supertype) ?: supertype
+        return CfirInstantiatedSupertypeDescriptor(
+            type = declarationSubstitutor?.substituteOrSelf(supertype) ?: supertype,
+            origin = CfirInstantiatedSupertypeOrigin.Declared(typeRef),
+        )
     }
 
     /**
      * graph edge 不包含官方隐式 `Object` 父类；edge 路径需要显式补回。
      */
-    private fun List<ConeCangJieType>.withImplicitObjectSuperclass(
+    private fun List<CfirInstantiatedSupertypeDescriptor>.withImplicitObjectSuperclass(
         declaration: CfirClassLikeDeclaration?,
-    ): List<ConeCangJieType> {
+    ): List<CfirInstantiatedSupertypeDescriptor> {
         if (declaration !is CfirClass) return this
         if (declaration.symbol.classId == StdlibClassIds.Any) return this
-        if (any { it.isConcreteSuperclassCandidate() }) return this
+        if (any { it.type.isConcreteSuperclassCandidate() }) return this
 
         val implicitSuperclass = if (declaration.symbol.classId == StdlibClassIds.Object) {
             ConeClassLikeType(StdlibClassIds.Any.toLookupTag(), isInterface = true)
         } else {
             ConeClassLikeType(StdlibClassIds.Object.toLookupTag())
         }
-        return (this + implicitSuperclass).distinct()
+        return this + CfirInstantiatedSupertypeDescriptor(
+            type = implicitSuperclass,
+            origin = CfirInstantiatedSupertypeOrigin.ImplicitObject(declaration.symbol.classId),
+        )
     }
 
     /**
@@ -1246,6 +1502,8 @@ private data class MemberWithBaseScope<S : CfirCallableSymbol<*>>(
      * 该候选来自的类型 scope。
      */
     val scope: CfirTypeScope,
+    /** 该成员沿 effective graph 到达当前 scope 的来源身份。 */
+    val lookupProvenance: CfirCallableLookupProvenance = CfirCallableLookupProvenance.None,
 )
 
 /**
@@ -1380,6 +1638,7 @@ private fun Collection<CfirFunctionInheritanceProvenance>.mergeEquivalentInherit
             directInputMember = directInput,
             inheritanceOwnerType = candidate.identity.inheritanceOwnerType,
             instantiatedSignature = symbol.overrideSignatureKey(),
+            lookupProvenance = candidate.lookupProvenance,
             defaultImplementationOwner = directInput
                 .takeIf { it.isBound && it.cfir.status.isDefault }
                 ?.callableId
@@ -1406,6 +1665,9 @@ private data class InheritedFunctionMergeKey(
 
     /** 沿父类型边完成实例化后的签名。 */
     val instantiatedSignature: String,
+
+    /** 同一接口契约由不同真实 extend 注入时仍属于独立成员图输入。 */
+    val lookupProvenance: CfirCallableLookupProvenance,
 
     /**
      * 接口 default implementation 的声明 owner。

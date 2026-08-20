@@ -27,7 +27,6 @@ package org.cangnova.cangjie.cfir.resolve.body
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.hasImplicitOrInferredReturnType
 import org.cangnova.cangjie.cfir.declarations.*
-import org.cangnova.cangjie.cfir.declarations.builder.buildImport
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
 import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
@@ -41,6 +40,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirWrappedExpression
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.resolve.CfirTypeResolutionConfiguration
 import org.cangnova.cangjie.cfir.resolve.ResolutionMode
+import org.cangnova.cangjie.cfir.resolve.createFileLookupScopes
 import org.cangnova.cangjie.cfir.resolve.createCurrentScopeList
 import org.cangnova.cangjie.cfir.resolve.dfa.CfirControlFlowGraphReferenceImpl
 import org.cangnova.cangjie.cfir.resolve.localLambdaInitializerInferenceData
@@ -49,12 +49,8 @@ import org.cangnova.cangjie.cfir.resolve.transformers.CfirSpecificTypeResolverTr
 import org.cangnova.cangjie.cfir.resolve.withExpectedType
 import org.cangnova.cangjie.cfir.resolvedTypeFromPrototype
 import org.cangnova.cangjie.cfir.patterns.visibleBindingVariables
-import org.cangnova.cangjie.cfir.scopes.CfirScope
-import org.cangnova.cangjie.cfir.scopes.defaultImportsProvider
 import org.cangnova.cangjie.cfir.scopes.impl.*
 import org.cangnova.cangjie.cfir.session.builtinTypes
-import org.cangnova.cangjie.cfir.session.importBindingStoreOrNull
-import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.ConeClassLikeLookupTagImpl
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
 import org.cangnova.cangjie.cfir.types.*
@@ -122,7 +118,11 @@ open class CfirDeclarationsResolveTransformer(
         val savedContext = context.towerDataContext
         try {
             return context.withFile(file) {
-                val importScopes = createImportingScopes(file)
+                val importScopes = session.createFileLookupScopes(
+                    file,
+                    components.scopeSession,
+                ).towerInsertionScopes
+                context.fileImportsScope.addAll(importScopes)
                 context.addNonLocalScopes(importScopes)
 
                 dataFlowAnalyzer.enterFile(file, buildGraph = transformer.buildCfgForFiles)
@@ -974,37 +974,6 @@ open class CfirDeclarationsResolveTransformer(
             ?.let { localLambdaInitializerInferenceData = it }
     }
 
-    /**
-     * 构造 body resolve 使用的导入和本地声明 scope 列表。
-     *
-     * 该列表保持声明解析阶段的查找优先级：默认导入最低，本地文件声明和显式 simple import 位于高优先级侧。
-     */
-    private fun createImportingScopes(file: CfirFile): List<CfirScope> {
-        val symbolProvider = session.symbolProvider
-        val imports = file.imports
-        val resolvedImports = session.importBindingStoreOrNull?.getBindings(file)?.imports
-        val defaultImportsProvider = session.defaultImportsProvider
-        val defaultImports = defaultImportsProvider.getDefaultImports(includeLowPriorityImports = true)
-            .filter { it.fqName !in defaultImportsProvider.excludedImports }
-            .map { importPath ->
-                buildImport {
-                    source = null
-                    importedFqName = importPath.fqName
-                    isAllUnder = importPath.isAllUnder
-                    aliasName = importPath.alias
-                    aliasSource = null
-                }
-        }
-        return buildList {
-            // Scope 列表按低优先级到高优先级排列，声明解析阶段同样保持本地声明优先。
-            add(CfirExplicitStarImportingScope(defaultImports, symbolProvider))
-            add(CfirExplicitSimpleImportingScope(defaultImports, symbolProvider))
-            add(CfirExplicitStarImportingScope(imports, symbolProvider, resolvedImports))
-            add(CfirPackageMemberScope(file.packageDirective.packageFqName, session))
-            add(CfirFileDeclaredTopLevelScope(file))
-            add(CfirExplicitSimpleImportingScope(imports, symbolProvider, resolvedImports))
-        }
-    }
     // ── Named function ────────────────────────────────────────────────────
 
     /**
@@ -1168,9 +1137,15 @@ open class CfirDeclarationsResolveTransformer(
             result.transformReturnTypeRef(transformer, ResolutionMode.UpdateImplicitTypeRef(alreadyResolvedReturnTypeRef))
         } else if (inferImplicitReturnType && result.returnTypeRef is CfirImplicitTypeRef) {
             val inferredType = inferFunctionReturnType(result)
+            // 推断失败（ConeErrorType）时，错误类型 ref 使用 body 尾语句作为失败位置，
+            // 对齐官方 cjc CalcFuncRetTyFromBody 在 *lastNode 上报告
+            // sema_incompatible_func_body_and_return_type；其余场景保持隐式返回类型 ref 自身位置。
+            val fallbackSource = (inferredType as? ConeErrorType)?.let {
+                result.body?.statements?.lastOrNull()?.source
+            } ?: result.returnTypeRef.source
             val resolved = result.returnTypeRef.resolvedTypeFromPrototype(
                 inferredType,
-                result.returnTypeRef.source,
+                fallbackSource,
             )
             result.replaceReturnTypeRef(resolved)
         }
@@ -1231,7 +1206,14 @@ open class CfirDeclarationsResolveTransformer(
             prefix = "The types ",
             postfix = " do not have the smallest common supertype",
         ) { "'$it'" }
-        return ConeErrorType(ConeSimpleDiagnostic(message, DiagnosticKind.InferenceError))
+        // 对齐官方 cjc Join 失败（FindSmallestTy 返回 InvalidTy →
+        // sema_incompatible_func_body_and_return_type）。结构化标记使 checker 能区分
+        // 该失败与递归/其他推断失败，无需解析诊断文本。
+        return ConeErrorType(
+            object : ConeNoSmallestCommonSupertypeDiagnostic {
+                override val reason: String = message
+            }
+        )
     }
 
     /**
@@ -1356,10 +1338,12 @@ open class CfirDeclarationsResolveTransformer(
      * 函数隐式返回类型不能只因为所有候选都可装箱到 `Any` 就吞掉推断失败。
      *
      * 官方 `CalcFuncRetTyFromBody` 允许自定义 class/struct/enum 返回值与基本类型共同推断为
-     * `Any`；但纯标准库值类型候选之间若唯一公共父类型退化到 `Any`，仍要求报告
-     * “没有最小公共父类型”。
+     * `Any`；但纯标准库值类型候选之间若唯一公共父类型退化到 `Any`，或公共 Join 只能表达为
+     * 交集类型时，仍要求报告“没有最小公共父类型”。交集是公共类型计算的中间结果，不能直接
+     * 作为仓颉隐式函数返回类型写回。
      */
     private fun ConeCangJieType.isAcceptableInferredReturnType(expressionTypes: List<ConeCangJieType>): Boolean {
+        if (this is ConeIntersectionType) return false
         if (!isAnyType()) return true
         return expressionTypes.any { it.isUserDefinedClassifierType() }
     }

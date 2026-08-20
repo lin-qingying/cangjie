@@ -1,8 +1,11 @@
 package org.cangnova.cangjie.cfir.scopes.impl
 
 import org.cangnova.cangjie.cfir.ScopeSession
+import org.cangnova.cangjie.cfir.scopes.CfirCallableLookupProvenanceScope
+import org.cangnova.cangjie.cfir.scopes.CfirCallableWithLookupProvenance
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.scopes.overrideSignatureKey
+import org.cangnova.cangjie.cfir.scopes.processCallablesByNameWithLookupProvenance
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.ProcessorAction
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
@@ -27,7 +30,7 @@ class CfirCompositeTypeScope(
      * 类型等价判断使用的 use-site session。
      */
     private val session: CfirSession,
-) : CfirTypeScope() {
+) : CfirTypeScope(), CfirCallableLookupProvenanceScope {
 
     /**
      * 在所有子 scope 中处理直接覆盖函数。
@@ -142,6 +145,24 @@ class CfirCompositeTypeScope(
             }
         }
         remainingCallables.forEach(processor)
+    }
+
+    /**
+     * 保留每个子 scope 的完整 callable 来源。
+     *
+     * 普通查询仍可使用上面的 effective 合并结果；访问敏感消费者则必须先看到所有
+     * 结构输入并按 use-site 过滤，不能让组合 scope 按 symbol 或签名提前吞掉来源。
+     */
+    override fun processCallablesByNameWithLookupProvenance(
+        name: Name,
+        processor: (CfirCallableWithLookupProvenance) -> Unit,
+    ) {
+        val emitted = linkedSetOf<CfirCallableWithLookupProvenance>()
+        for (scope in scopes) {
+            scope.processCallablesByNameWithLookupProvenance(name) { candidate ->
+                if (emitted.add(candidate)) processor(candidate)
+            }
+        }
     }
 
     /**

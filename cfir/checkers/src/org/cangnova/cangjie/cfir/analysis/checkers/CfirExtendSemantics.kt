@@ -122,28 +122,6 @@ internal object CfirExtendSemantics {
         classId == cTypeClassId
 
     /**
-     * 标准库以 builtin extend 形式为原始类型提供的隐式接口。
-     *
-     * 这些接口不是原始类型合成声明的普通 `superTypeRefs`，但官方
-     * `TypeManager::GetAllExtendInterfaceTy` 会把它们纳入继承/重复接口判断。
-     */
-    fun implicitPrimitiveInterfaceClassIds(
-        context: CheckerContext,
-        targetType: ConeCangJieType,
-    ): Set<ClassId> {
-        val semanticType = targetType.fullyExpandedType(context.session)
-        return when (semanticType) {
-            is ConePrimitiveType -> primitiveImplicitInterfaceClassIds
-            else -> emptySet()
-        }
-    }
-
-    /** 原始类型默认隐式扩展的标准库接口集合。 */
-    private val primitiveImplicitInterfaceClassIds: Set<ClassId> = setOf(
-        StdlibClassIds.ToString,
-    )
-
-    /**
      * 判断引用是否表示 `super`。
      *
      * 正常路径使用 [CfirSuperReference]；部分错误恢复或候选引用路径会退化为

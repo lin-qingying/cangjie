@@ -25,18 +25,13 @@
 package org.cangnova.cangjie.cfir.types
 
 import org.cangnova.cangjie.cfir.declarations.*
-import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityFileScope
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
-import org.cangnova.cangjie.cfir.resolve.providers.canAccessPackageInternalDeclaration
-import org.cangnova.cangjie.cfir.resolve.providers.canAccessPackageProtectedDeclaration
-import org.cangnova.cangjie.cfir.resolve.services.isClassIdReachableByImports
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.session.typeAwareSupertypeProviderOrNull
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterLookupTag
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.cfir.symbols.toLookupTag
-import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.FqNameUnsafe
 import org.cangnova.cangjie.name.Name
@@ -293,52 +288,6 @@ interface ConeInferenceContext : TypeSystemInferenceExtensionContext, ConeTypeCo
     }
 
 
-
-    // =========================================================================
-    // 可访问性检查
-    // =========================================================================
-
-    /**
-     * 判断类型构造器对应的类型声明是否可访问。
-     * 对齐 C++ ImportManager::IsTyAccessible。
-     */
-    override fun TypeConstructorMarker.isTypeAccessible(): Boolean {
-        // 非名义类型（原始类型、函数类型、元组类型等）始终可访问
-        val lookupTag = this as? ConeClassLikeLookupTag ?: return true
-        val symbol = runCatching { session.symbolProvider.getClassLikeSymbolByClassId(lookupTag.classId) }
-            .getOrNull() ?: return true
-        if (!symbol.isBound) return true
-        val declaration = symbol.cfir as? CfirMemberDeclaration ?: return true
-
-        // === 可见性语义检查 ===
-        val file = CfirAccessibilityFileScope.get() ?: return true
-        val filePackage = file.packageDirective.packageFqName
-        val declPackage = lookupTag.classId.packageFqName
-        val visibility = declaration.status.visibility
-        when (visibility) {
-            Visibilities.Public -> Unit
-            Visibilities.Protected -> {
-                if (!canAccessPackageProtectedDeclaration(filePackage, declPackage)) {
-                    return false
-                }
-            }
-
-            Visibilities.Internal -> {
-                if (!canAccessPackageInternalDeclaration(filePackage, declPackage)) {
-                    return false
-                }
-            }
-
-            else -> return false  // Private, Local 等
-        }
-
-        // === 名字可达性检查（对齐 C++ IsDeclAccessible）===
-        // 同包 → 可访问
-        if (filePackage == declPackage) return true
-
-        // IMPORTS 尚未完成时延迟名字可达性判定；已有 binding 时统一计入显式与默认导入。
-        return file.isClassIdReachableByImports(session, lookupTag.classId) ?: true
-    }
 
     // =========================================================================
     // 简单类型谓词

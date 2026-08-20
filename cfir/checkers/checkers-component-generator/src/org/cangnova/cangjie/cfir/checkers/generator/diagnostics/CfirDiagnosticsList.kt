@@ -855,7 +855,12 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
             parameter<String>("visibility")
         }
 
-        // override 返回类型不协变
+        /**
+         * 已废弃：官方编译器没有 override 专用的返回类型诊断（无 `sema_override_return_type_mismatch`），
+         * override/redef/implement 的返回类型不兼容统一由官方 `sema_return_type_incompatible` 覆盖，
+         * 对应项目诊断 `RETURN_TYPE_INCOMPATIBLE`（见 `CfirInheritanceDeepChecker`）。
+         * 该工厂保留仅用于兼容已生成代码（CfirErrors.kt / analysis-api 转换器），任何 checker 不得再发射。
+         */
         val OVERRIDING_RETURN_TYPE_MISMATCH by error<PsiElement>(PositioningStrategy.ACTUAL_DECLARATION_NAME) {
             parameter<ConeCangJieType>("actualType")
             parameter<ConeCangJieType>("expectedType")
@@ -1051,6 +1056,10 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
     val FUNCTION by object : DiagnosticGroup("Function") {
         // 无法推断返回类型
         val UNABLE_TO_INFER_RETURN_TYPE by error<PsiElement>()
+
+        // 函数体与所有 return 表达式无法收敛出公共返回类型
+        // 对齐 C++ sema_incompatible_func_body_and_return_type
+        val INCOMPATIBLE_FUNC_BODY_AND_RETURN_TYPE by error<PsiElement>()
 
         // 无法推断泛型函数的类型参数
         val UNABLE_TO_INFER_GENERIC_FUNC by error<PsiElement>()

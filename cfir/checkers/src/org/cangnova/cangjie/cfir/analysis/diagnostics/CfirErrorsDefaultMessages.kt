@@ -780,6 +780,10 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
         // Function
         // ================================================================
         map.put(CfirErrors.UNABLE_TO_INFER_RETURN_TYPE, "unable to infer return type, please add type annotation")
+        map.put(
+            CfirErrors.INCOMPATIBLE_FUNC_BODY_AND_RETURN_TYPE,
+            "the return type of this function cannot be calculated from the function body and all the return expressions",
+        )
         map.put(CfirErrors.UNABLE_TO_INFER_GENERIC_FUNC, "unable to infer generic argument of this function")
         map.put(CfirErrors.INVALID_CALLED_OBJECT, "called object is not a function or constructor")
         map.put(CfirErrors.INVALID_RETURN, "'return' must be used inside a function body")

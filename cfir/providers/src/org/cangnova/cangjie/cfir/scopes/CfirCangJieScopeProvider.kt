@@ -6,7 +6,6 @@ import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
-import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityFileScope
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
 import org.cangnova.cangjie.cfir.scopes.impl.CfirScopeWithCallableCopyReturnTypeUpdater
 import org.cangnova.cangjie.cfir.scopes.CallableCopyTypeCalculator
@@ -38,8 +37,7 @@ open class CfirCangJieScopeProvider : CfirScopeProvider(), CfirSessionComponent 
         scopeSession: ScopeSession,
     ): CfirTypeScope {
         val classSymbol = klass.symbol as? CfirClassSymbol ?: return CfirTypeScope.Empty
-        val useSitePackage = CfirAccessibilityFileScope.currentPackageFqName()
-        return scopeSession.getOrBuild(CfirUseSiteMemberScopeKey(useSiteSession, classSymbol, useSitePackage), USE_SITE) {
+        return scopeSession.getOrBuild(CfirUseSiteMemberScopeKey(useSiteSession, classSymbol), USE_SITE) {
             val rawScope = CfirClassUseSiteMemberScope(
                 session = useSiteSession,
                 classSymbol = classSymbol,
@@ -47,7 +45,6 @@ open class CfirCangJieScopeProvider : CfirScopeProvider(), CfirSessionComponent 
                 extendProvider = useSiteSession.extendProvider,
                 directSupertypeProvider = useSiteSession.directSupertypeProviderOrNull,
                 scopeKind = CfirClassMemberScopeKind.USE_SITE,
-                useSitePackage = useSitePackage,
             )
             CfirClassSubstitutionScope(useSiteSession, rawScope, classSymbol.constructType())
         }
@@ -144,7 +141,6 @@ fun CfirClassLikeDeclaration.unsubstitutedScope(
                 extendProvider = useSiteSession.extendProvider,
                 directSupertypeProvider = useSiteSession.directSupertypeProviderOrNull,
                 scopeKind = CfirClassMemberScopeKind.USE_SITE,
-                useSitePackage = CfirAccessibilityFileScope.currentPackageFqName(),
             )
         }
     }

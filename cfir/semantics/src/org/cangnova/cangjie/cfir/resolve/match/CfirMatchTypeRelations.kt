@@ -1,7 +1,10 @@
 package org.cangnova.cangjie.cfir.resolve.match
 
 import org.cangnova.cangjie.cfir.resolve.providers.createExtendDeclarationSubstitution
+import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessContext
+import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityResult
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.accessibilityChecker
 import org.cangnova.cangjie.cfir.session.extendProviderOrNull
 import org.cangnova.cangjie.cfir.session.typeAwareSupertypeProviderOrNull
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
@@ -31,12 +34,13 @@ import java.util.ArrayDeque
 fun ConeCangJieType.isMatchSubtypeOf(
     superType: ConeCangJieType,
     session: CfirSession,
+    accessContext: CfirAccessContext?,
 ): Boolean {
     if (AbstractTypeChecker.isSubtypeOf(session.typeContext, this, superType) == true) return true
     if (this is ConeTupleType && superType is ConeTupleType) {
         return elementTypes.size == superType.elementTypes.size &&
                 elementTypes.zip(superType.elementTypes).all { (leafElement, rootElement) ->
-                    leafElement.isMatchSubtypeOf(rootElement, session)
+                    leafElement.isMatchSubtypeOf(rootElement, session, accessContext)
                 }
     }
     if (this is ConeFunctionType && superType is ConeFunctionType) {
@@ -44,12 +48,12 @@ fun ConeCangJieType.isMatchSubtypeOf(
                 isCFunc == superType.isCFunc &&
                 hasVariableLenArg == superType.hasVariableLenArg &&
                 parameterTypes.zip(superType.parameterTypes).all { (leafParameter, rootParameter) ->
-                    rootParameter.isMatchSubtypeOf(leafParameter, session)
+                    rootParameter.isMatchSubtypeOf(leafParameter, session, accessContext)
                 } &&
-                returnType.isMatchSubtypeOf(superType.returnType, session)
+                returnType.isMatchSubtypeOf(superType.returnType, session, accessContext)
     }
     return hasTypeAwareSupertype(superType, session)
-            || hasVisibleExtendSupertype(superType, session)
+            || hasVisibleExtendSupertype(superType, session, accessContext)
 }
 
 /**
@@ -151,12 +155,15 @@ private fun ConeCangJieType.hasTypeAwareSupertype(
 private fun ConeCangJieType.hasVisibleExtendSupertype(
     superType: ConeCangJieType,
     session: CfirSession,
+    accessContext: CfirAccessContext?,
 ): Boolean {
+    accessContext ?: return false
+    accessContext.useSiteFile ?: return false
     val targetKey = expandedExtendTargetKey ?: return false
     val extendProvider = session.extendProviderOrNull ?: return false
 
     for (extend in extendProvider.getExtendsForTarget(targetKey)) {
-        if (!extendProvider.isExtendAccessible(extend)) continue
+        if (session.accessibilityChecker.checkExtend(extend, accessContext) !is CfirAccessibilityResult.Accessible) continue
         val targetPattern = (extend.extendedTypeRef as? CfirResolvedTypeRef)?.coneType ?: continue
         val substitution = createExtendDeclarationSubstitution(
             session = session,

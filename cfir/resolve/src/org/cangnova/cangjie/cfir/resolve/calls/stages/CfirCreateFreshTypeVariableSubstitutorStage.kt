@@ -39,6 +39,11 @@ import org.cangnova.cangjie.cfir.resolve.calls.candidate.CheckerSink
 import org.cangnova.cangjie.cfir.resolve.providers.createCallableOwnerUseSiteSubstitutionMap
 import org.cangnova.cangjie.cfir.resolve.providers.createExtendDeclarationSubstitutionForConstraintDerivation
 import org.cangnova.cangjie.cfir.resolve.providers.isBareOrDeclarationSelfTypeOf
+import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessContext
+import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessKind
+import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityResult
+import org.cangnova.cangjie.cfir.resolve.providers.getContainingClass
+import org.cangnova.cangjie.cfir.resolve.providers.getContainingExtend
 import org.cangnova.cangjie.cfir.resolve.inference.model.ConeDeclaredUpperBoundConstraintPosition
 import org.cangnova.cangjie.cfir.resolve.inference.model.ConeExplicitTypeParameterConstraintPosition
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
@@ -50,6 +55,7 @@ import org.cangnova.cangjie.cfir.scopes.impl.typeAliasConstructorInfo
 import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeParameterBasedTypeVariable
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.cfirProvider
+import org.cangnova.cangjie.cfir.session.accessibilityChecker
 import org.cangnova.cangjie.cfir.session.extendProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.session.typeResolver
@@ -657,7 +663,14 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
         if (!callable.status.isStatic) return emptyList()
 
         val callableSymbol = candidate.symbol as? CfirCallableSymbol<*> ?: return emptyList()
-        val ownerExtend = callableSymbol.containingAccessibleExtendOrNull(session) ?: return emptyList()
+        val ownerExtend = callableSymbol.containingAccessibleExtendOrNull(
+            session,
+            CfirAccessContext(
+                useSiteFile = candidate.callInfo.containingFile,
+                containingDeclarations = candidate.callInfo.containingDeclarations,
+                kind = CfirAccessKind.EXTEND,
+            ),
+        ) ?: return emptyList()
 
         val receiver = candidate.bareStaticQualifierExpression() ?: return emptyList()
         if (receiver.typeArguments.isNotEmpty()) return emptyList()
@@ -710,7 +723,14 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
             return emptyMap()
         }
         val callableSymbol = candidate.symbol as? CfirCallableSymbol<*> ?: return emptyMap()
-        val ownerExtend = callableSymbol.containingAccessibleExtendOrNull(session) ?: return emptyMap()
+        val ownerExtend = callableSymbol.containingAccessibleExtendOrNull(
+            session,
+            CfirAccessContext(
+                useSiteFile = candidate.callInfo.containingFile,
+                containingDeclarations = candidate.callInfo.containingDeclarations,
+                kind = CfirAccessKind.EXTEND,
+            ),
+        ) ?: return emptyMap()
         val receiver = candidate.bareStaticQualifierExpression() ?: return emptyMap()
         if (receiver.typeArguments.isNotEmpty()) return emptyMap()
         val ownerSymbol = receiver.resolvedQualifierClassifier(session) ?: return emptyMap()
@@ -776,9 +796,17 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
         val callableSymbol = candidate.symbol as? CfirCallableSymbol<*>
         if (extensionReceiverExpression != null && dispatchReceiverExpression == null) {
             val ownerExtend = callableSymbol
-                ?.unwrapSubstitutionOverrides()
-                ?.let(session.extendProvider::getContainingExtend)
-                ?.takeIf(session.extendProvider::isExtendAccessible)
+                ?.getContainingExtend()
+                ?.takeIf {
+                    session.accessibilityChecker.checkExtend(
+                        it,
+                        CfirAccessContext(
+                            useSiteFile = candidate.callInfo.containingFile,
+                            containingDeclarations = candidate.callInfo.containingDeclarations,
+                            kind = CfirAccessKind.EXTEND,
+                        ),
+                    ) is CfirAccessibilityResult.Accessible
+                }
             if (ownerExtend != null) {
                 return ownerExtend.typeParameters
             }
@@ -853,7 +881,7 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
             val constructor = symbol.cfir
             val expectedOwnerClassId = (ownerDeclaration as? CfirClassLikeDeclaration)?.symbol?.classId
                 ?: return false
-            val constructorOwnerClassId = session.cfirProvider.getContainingClass(symbol)?.classId
+            val constructorOwnerClassId = symbol.getContainingClass()?.classId
                 ?: return false
             return constructor.valueParameters.isEmpty() && constructorOwnerClassId == expectedOwnerClassId
         }
@@ -1006,7 +1034,7 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
         val callableSymbol = candidate.symbol as? CfirCallableSymbol<*> ?: return null
         val originalCallableSymbol = callableSymbol.unwrapSubstitutionOverrides()
 
-        return session.cfirProvider.getContainingClass(originalCallableSymbol)?.classId
+        return originalCallableSymbol.getContainingClass()?.classId
             ?: (originalCallableSymbol.cfir as? CfirEnumConstructor)?.let {
                 val receiver = candidate.bareStaticQualifierExpression()
                 receiver?.coneTypeOrNull

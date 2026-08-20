@@ -25,11 +25,9 @@
 package org.cangnova.cangjie.cfir.resolve
 
 import org.cangnova.cangjie.AnalysisFlags
-import org.cangnova.cangjie.ImportPath
 import org.cangnova.cangjie.builtins.StandardNames
 import org.cangnova.cangjie.cfir.CfirQualifierPart
 import org.cangnova.cangjie.cfir.declarations.*
-import org.cangnova.cangjie.cfir.declarations.declarationAvailabilityProvider
 import org.cangnova.cangjie.cfir.diagnostic.ConeAmbiguityError
 import org.cangnova.cangjie.cfir.diagnostic.ConeGenericArgumentNoMatchError
 import org.cangnova.cangjie.cfir.diagnostic.ConeNotATypeError
@@ -41,8 +39,12 @@ import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
 import org.cangnova.cangjie.cfir.resolve.body.resolveImportedPackageQualifier
 import org.cangnova.cangjie.cfir.resolve.constants.CfirIntConstantEvalUtils
+import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessContext
+import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessKind
+import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityResult
+import org.cangnova.cangjie.cfir.resolve.providers.CfirLookupOrigin
+import org.cangnova.cangjie.cfir.resolve.providers.lookupOriginForAccessibility
 import org.cangnova.cangjie.cfir.scopes.CfirTypeParameterScope
-import org.cangnova.cangjie.cfir.scopes.defaultImportsProvider
 import org.cangnova.cangjie.cfir.semantics.AbstractCandidate
 import org.cangnova.cangjie.cfir.session.*
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
@@ -514,70 +516,12 @@ class CfirTypeResolverImpl(
     private fun resolveSimpleClassLike(
         shortName: Name,
         configuration: TypeResolutionConfiguration,
-    ): SimpleClassLikeCandidate? {
-        for (scope in configuration.scopes) {
-            var resolvedFromScope: CfirClassLikeSymbol<*>? = null
-            scope.processClassifiersByName(shortName) { classifier ->
-                when (classifier) {
-                    is org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol<*> -> {
-                        if (resolvedFromScope == null) {
-                            resolvedFromScope = classifier
-                        }
-                    }
-                }
-            }
-            if (resolvedFromScope != null) {
-                // scope 已经给出了真实符号，这里不能再退回 provider 重新按 ClassId 查询，
-                // 否则当前文件尚未入索引时，同文件声明仍会被默认导入覆盖。
-                return SimpleClassLikeCandidate(resolvedFromScope!!.classId, resolvedFromScope)
-            }
-        }
-
-        val file = configuration.useSiteFile
-        val packageCandidates = LinkedHashSet<ClassId>()
-        val explicitImportCandidates = LinkedHashSet<ClassId>()
-        if (file != null) {
-            findSameFileTopLevelClassifier(file, shortName)?.let { declaration ->
-                return SimpleClassLikeCandidate(declaration.symbol.classId, declaration.symbol)
-            }
-
-            // 与 file importing scopes 的顺序保持一致：
-            // 当前文件顶层声明优先于同包其他声明；同包声明优先于显式导入，显式导入优先于默认导入。
-            // 这样可以保证无包源码里的本地 `Box` / `Hashable` 不会被 `std.core.*` 中的同名声明抢先解析。
-            packageCandidates += ClassId(file.packageDirective.packageFqName, shortName)
-
-            val simpleName = shortName.asString()
-            for (importInfo in file.imports) {
-                val importedFqName = importInfo.importedFqName ?: continue
-                if (importInfo.isAllUnder) {
-                    explicitImportCandidates += ClassId(importedFqName, shortName)
-                    continue
-                }
-                val importedName = importInfo.aliasName?.asString() ?: importedFqName.shortName().asString()
-                if (importedName == simpleName) {
-                    explicitImportCandidates += ClassId.topLevel(importedFqName)
-                }
-            }
-        }
-
-        val defaultImportCandidates = LinkedHashSet<ClassId>()
-        val defaultImportsProvider = session.defaultImportsProvider
-        val defaultImports = defaultImportsProvider.getDefaultImports(includeLowPriorityImports = true)
-            .filter { it.fqName !in defaultImportsProvider.excludedImports }
-        addDefaultImportCandidates(defaultImportCandidates, defaultImports, shortName)
-
-        for (classId in sequenceOf(
-            packageCandidates,
-            explicitImportCandidates,
-            defaultImportCandidates,
-        ).flatMap { it.asSequence() }) {
-            val symbol = classLikeCandidates(
-                classId,
-                preferredSymbol = null,
-            ).firstOrNull() ?: continue
-            return SimpleClassLikeCandidate(classId, symbol)
-        }
-        return null
+    ): CfirTypeCandidateCollector.TypeCandidate? {
+        return CfirTypeCandidateCollector(
+            session = session,
+            context = configuration.accessContext(CfirAccessKind.TYPE),
+        ).firstVisibleScopeCandidate(configuration.scopes, shortName)
+            ?.takeIf { it.symbol is CfirClassLikeSymbol<*> }
     }
 
     /**
@@ -594,10 +538,13 @@ class CfirTypeResolverImpl(
                 lastQualifier.name,
                 configuration,
             )
-            val classId = simpleCandidate?.classId ?: ClassId(FqName.ROOT, lastQualifier.name)
+            val simpleSymbol = simpleCandidate?.symbol as? CfirClassLikeSymbol<*>
+            val classId = simpleSymbol?.classId ?: ClassId(FqName.ROOT, lastQualifier.name)
             val candidates = classLikeCandidates(
                 classId,
-                preferredSymbol = simpleCandidate?.symbol,
+                preferredCandidate = simpleCandidate,
+                lookupOrigin = simpleCandidate?.lookupOrigin ?: CfirLookupOrigin.LEXICAL,
+                configuration = configuration,
             )
             classifierRedeclarationAmbiguity(typeRef, candidates)?.let { diagnostic ->
                 return QualifiedClassLikeResolution(classId, null, diagnostic)
@@ -644,6 +591,7 @@ class CfirTypeResolverImpl(
                 packageFqName = packageSegments.toFqName(),
                 lastQualifier = lastQualifier,
                 typeRef = typeRef,
+                configuration = configuration,
             )
         }
 
@@ -651,6 +599,7 @@ class CfirTypeResolverImpl(
             packageFqName = qualifierNames.dropLast(1).toFqName(),
             lastQualifier = lastQualifier,
             typeRef = typeRef,
+            configuration = configuration,
         )
     }
 
@@ -664,12 +613,15 @@ class CfirTypeResolverImpl(
         packageFqName: FqName,
         lastQualifier: CfirQualifierPart,
         typeRef: CfirUserTypeRef,
+        configuration: TypeResolutionConfiguration,
     ): QualifiedClassLikeResolution {
         val fullPackageFqName = packageFqName
         val fullClassId = ClassId(fullPackageFqName, lastQualifier.name)
         val candidates = classLikeCandidates(
             fullClassId,
-            preferredSymbol = null,
+            preferredCandidate = null,
+            lookupOrigin = CfirLookupOrigin.QUALIFIED_PACKAGE,
+            configuration = configuration,
         )
         classifierRedeclarationAmbiguity(typeRef, candidates)?.let { diagnostic ->
             return QualifiedClassLikeResolution(fullClassId, null, diagnostic)
@@ -728,11 +680,17 @@ class CfirTypeResolverImpl(
      */
     private fun classLikeCandidates(
         classId: ClassId,
-        preferredSymbol: CfirClassLikeSymbol<*>?,
-    ): List<CfirClassLikeSymbol<*>> = buildList {
-        preferredSymbol?.let(::add)
-        addAll(session.declarationAvailabilityProvider.classLikeCandidates(classId))
-    }.distinct()
+        preferredCandidate: CfirTypeCandidateCollector.TypeCandidate?,
+        lookupOrigin: CfirLookupOrigin,
+        configuration: TypeResolutionConfiguration,
+    ): List<CfirClassLikeSymbol<*>> = CfirTypeCandidateCollector(
+        session = session,
+        context = configuration.accessContext(CfirAccessKind.TYPE),
+    ).collectClassIdCandidates(
+        classId = classId,
+        preferredCandidate = preferredCandidate,
+        lookupOrigin = lookupOrigin,
+    ).mapNotNull { it.symbol as? CfirClassLikeSymbol<*> }
 
     /**
      * 根据 class-like 声明种类构造最终 cone 类型。
@@ -796,26 +754,28 @@ class CfirTypeResolverImpl(
         if (isEmpty()) FqName.ROOT else FqName(joinToString(".") { it.asString() })
 
     /**
+     * 类型解析已经携带文件与外围类/容器信息；在这里一次性转换为 providers 层
+     * 可访问性上下文，避免各个 type lookup 再回读全局文件状态。
+     */
+    private fun TypeResolutionConfiguration.accessContext(kind: CfirAccessKind): CfirAccessContext {
+        val declarations = buildList<CfirDeclaration> {
+            topContainer?.let(::add)
+            addAll(containingClassDeclarations.asReversed())
+        }.distinct()
+        return CfirAccessContext(
+            useSiteFile = useSiteFile,
+            containingDeclarations = declarations,
+            kind = kind,
+        )
+    }
+
+    /**
      * 判断包是否存在。
      */
     private fun packageExists(packageFqName: FqName): Boolean {
         if (packageFqName.isRoot) return true
         val packageNames = session.symbolProvider.symbolNamesProvider.getPackageNames() ?: return true
         return packageFqName.asString() in packageNames
-    }
-
-    /**
-     * 在当前文件顶层声明中查找同名 class-like。
-     */
-    private fun findSameFileTopLevelClassifier(
-        file: CfirFile,
-        shortName: Name,
-    ): CfirClassLikeDeclaration? {
-        return file.declarations
-            .asSequence()
-            .filterIsInstance<CfirClassLikeDeclaration>()
-            .filter { declaration -> declaration.name == shortName }
-            .firstOrNull()
     }
 
     /**
@@ -830,44 +790,21 @@ class CfirTypeResolverImpl(
     ): Boolean {
         for (scope in configuration.scopes) {
             var found = false
-            scope.processCallablesByName(shortName) { found = true }
+            scope.processCallablesByName(shortName) { symbol ->
+                if (
+                    session.accessibilityChecker.checkCallable(
+                        symbol,
+                        configuration.accessContext(CfirAccessKind.CALLABLE).copy(
+                            lookupOrigin = scope.lookupOriginForAccessibility(),
+                        ),
+                    ) is CfirAccessibilityResult.Accessible
+                ) {
+                    found = true
+                }
+            }
             if (found) return true
         }
-
-        val file = configuration.useSiteFile ?: return false
-        if (
-            file.declarations
-                .asSequence()
-                .filterIsInstance<CfirCallableDeclaration>()
-                .any { declaration -> declaration.symbol.callableId.callableName == shortName }
-        ) {
-            return true
-        }
-
-        return session.symbolProvider
-            .getTopLevelCallableSymbols(file.packageDirective.packageFqName, shortName)
-            .isNotEmpty()
-    }
-
-    /**
-     * 根据默认导入列表追加可能的 classId 候选。
-     */
-    private fun addDefaultImportCandidates(
-        candidates: MutableSet<ClassId>,
-        imports: List<ImportPath>,
-        shortName: Name,
-    ) {
-        val simpleName = shortName.asString()
-        for (importPath in imports) {
-            if (importPath.isAllUnder) {
-                candidates += ClassId(importPath.fqName, shortName)
-                continue
-            }
-            val importedName = importPath.alias?.asString() ?: importPath.fqName.shortName().asString()
-            if (importedName == simpleName) {
-                candidates += ClassId.topLevel(importPath.fqName)
-            }
-        }
+        return false
     }
 
     /**
@@ -886,12 +823,6 @@ class CfirTypeResolverImpl(
          * 解析失败时携带的诊断。
          */
         val diagnostic: ConeDiagnostic?,
-    )
-
-    /** 简名 scope 解析保留真实 symbol，避免当前文件尚未入 provider 索引时丢失候选。 */
-    private data class SimpleClassLikeCandidate(
-        val classId: ClassId,
-        val symbol: CfirClassLikeSymbol<*>,
     )
 
     /** 类型解析歧义使用的轻量 classifier 候选。 */

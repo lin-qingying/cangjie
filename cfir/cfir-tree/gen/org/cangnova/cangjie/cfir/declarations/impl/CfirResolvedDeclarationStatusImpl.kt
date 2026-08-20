@@ -20,6 +20,7 @@ internal class CfirResolvedDeclarationStatusImpl(
     override val visibility: Visibility,
     override val isVisibilityExplicit: Boolean,
     override val isModalityExplicit: Boolean,
+    override val isAbstractExplicit: Boolean,
     override val isOverride: Boolean,
     override val isOperator: Boolean,
     override val isStatic: Boolean,

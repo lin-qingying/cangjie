@@ -4,11 +4,10 @@ import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirResolvable
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
-import org.cangnova.cangjie.cfir.resolve.CfirImportBindingResolver
 import org.cangnova.cangjie.cfir.resolve.services.CfirResolvedImportTarget
 import org.cangnova.cangjie.cfir.scopes.impl.CfirPackageMemberScope
 import org.cangnova.cangjie.cfir.session.CfirSession
-import org.cangnova.cangjie.cfir.session.importBindingStoreOrNull
+import org.cangnova.cangjie.cfir.session.importBindingStore
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 
@@ -53,12 +52,7 @@ internal fun CfirFile.resolveImportedPackageQualifier(
     name: Name,
     session: CfirSession,
 ): CfirImportedPackageQualifier? {
-    val store = session.importBindingStoreOrNull
-    val bindings = store?.getBindings(this)?.imports ?: run {
-        val resolvedImports = imports.map { CfirImportBindingResolver(session).resolveImportBinding(it) }
-        store?.record(this, resolvedImports)
-        resolvedImports
-    }
+    val bindings = session.importBindingStore.requireBindings(this).imports
     val matchingBindings = bindings
         .asSequence()
         .filter { binding -> binding.effectiveName == name && !binding.importDirective.isAllUnder }

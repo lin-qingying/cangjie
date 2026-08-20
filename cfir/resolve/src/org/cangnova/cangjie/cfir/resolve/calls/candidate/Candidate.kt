@@ -41,9 +41,11 @@ import org.cangnova.cangjie.cfir.resolve.calls.ConePostponedResolvedAtom
 import org.cangnova.cangjie.cfir.resolve.calls.ConeResolutionAtom
 import org.cangnova.cangjie.cfir.resolve.calls.stages.TypeArgumentMapping
 import org.cangnova.cangjie.cfir.resolve.inference.InferenceComponents
+import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityResult
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.BodyResolveContext
 import org.cangnova.cangjie.cfir.scopes.CfirScope
+import org.cangnova.cangjie.cfir.scopes.CfirCallableLookupProvenance
 import org.cangnova.cangjie.cfir.semantics.AbstractCallCandidate
 import org.cangnova.cangjie.cfir.semantics.ResolutionDiagnostic
 import org.cangnova.cangjie.cfir.semantics.isSuccess
@@ -74,6 +76,17 @@ internal data class FreshReceiverConstraintToDrop(
 )
 
 /**
+ * all-candidates 路径的结构候选身份。
+ *
+ * 同一个最终 symbol 可以由不同 extend/interface 父边到达；这些来源具有不同访问面和
+ * 诊断含义，不能再按 symbol 单独去重。
+ */
+internal data class CfirCandidateLookupIdentity(
+    val symbol: CfirBasedSymbol<*>,
+    val lookupProvenance: CfirCallableLookupProvenance,
+)
+
+/**
  * 单个调用解析候选。
  *
  * Candidate 持有候选符号、receiver、实参映射、约束系统、适用性诊断、变参信息、
@@ -99,6 +112,16 @@ class Candidate(
     override val callInfo: CallInfo,
     /** 产生该候选的 scope。 */
     val originScope: CfirScope?,
+    /**
+     * tower 名字发现阶段已经计算出的语言级可访问性结果。
+     *
+     * `null` 表示当前候选由非 tower 的合成入口创建，可见性阶段需要根据显式
+     * [CallInfo] 重新调用统一 checker。该字段只缓存本次候选的 use-site 结果，
+     * 不进入 scope/session 缓存。
+     */
+    val discoveryAccessibilityResult: CfirAccessibilityResult? = null,
+    /** 候选从 effective member graph 到达 tower 时保留的 extend/interface 来源。 */
+    val lookupProvenance: CfirCallableLookupProvenance = CfirCallableLookupProvenance.None,
     /** 候选是否来自 companion object 类型 scope。 */
     val isFromCompanionObjectTypeScope: Boolean = false,
     // It's only true if we're in the member scope of smart cast receiver and this particular candidate came from original type
@@ -949,3 +972,7 @@ class Candidate(
         return "$okOrFail($step): $symbol"
     }
 }
+
+/** 返回候选在来源保留成员图中的稳定身份。 */
+internal fun Candidate.lookupIdentity(): CfirCandidateLookupIdentity =
+    CfirCandidateLookupIdentity(symbol, lookupProvenance)

@@ -118,9 +118,20 @@ internal val possibleTargetMap: Map<CjKeywordToken, ModifierTargetPredicate> = m
 
     ABSTRACT_KEYWORD to ModifierTargetPredicate.headOf(DeclarationKind.CLASS),
 
-    MUT_KEYWORD to ModifierTargetPredicate.memberOf(
-        DeclarationKind.FUNCTION,
-        DeclarationKind.PROPERTY,
+    // `mut` 的容器细分规则（官方 `ParserModifierRules.cpp` 修饰符表 + cjc 1.0.5 实测）：
+    // - 成员函数：仅允许 interface / struct / struct 的扩展；class / enum 体内官方报
+    //   `parse_illegal_modifier_in_scope`，映射为 WRONG_MODIFIER_TARGET；
+    // - 成员属性：class / interface / struct / extend 均允许（enum 除外，官方 PROP 表无 MUT）。
+    // 历史：为放行 struct 扩展曾放宽到所有容器，导致 class 成员 `mut func` 漏报。
+    MUT_KEYWORD to ModifierTargetPredicate.anyOf(
+        ModifierTargetPredicate.memberOfIn(
+            setOf(DeclarationKind.STRUCT, DeclarationKind.INTERFACE, DeclarationKind.EXTEND),
+            DeclarationKind.FUNCTION,
+        ),
+        ModifierTargetPredicate.memberOfIn(
+            setOf(DeclarationKind.CLASS, DeclarationKind.INTERFACE, DeclarationKind.STRUCT, DeclarationKind.EXTEND),
+            DeclarationKind.PROPERTY,
+        ),
     ),
 
     OPEN_KEYWORD to ModifierTargetPredicate.anyOf(

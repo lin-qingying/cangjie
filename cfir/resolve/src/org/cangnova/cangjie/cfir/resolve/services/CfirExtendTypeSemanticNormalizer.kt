@@ -43,12 +43,15 @@ internal class CfirExtendTypeSemanticNormalizer(
     private val session: CfirSession?,
     /** typealias 声明解析器。 */
     private val resolver: CfirTypeResolver,
+    /** 是否把当前 extend 类型参数的 where bound 编入占位符名称。 */
+    private val includeTypeParameterBounds: Boolean = true,
 ) {
     /**
-     * extend 语义键不能只保留“第几个类型参数”，还要把约束信息编码进去。
+     * 完整 extend 语义键不仅保留“第几个类型参数”，还会把约束信息编码进去。
      *
-     * 否则 `extend<T where T <: A>` 与 `extend<T where T <: B>` 在接口形状相同的情况下
-     * 会退化成同一个稳定键，导致复杂特化冲突被错误忽略。
+     * specialization/applicability 使用带 bounds fingerprint 的键；官方重复接口汇总则
+     * 显式以 [includeTypeParameterBounds] 关闭该维度，使不同 where bound 的同形目标仍落入
+     * 同一 occurrence 分组。两种键域必须分离，不能相互替代。
      */
     private val substitutor = run {
         val baseSubstitutor = CfirTypeSubstitutorByMap(
@@ -58,6 +61,9 @@ internal class CfirExtendTypeSemanticNormalizer(
                 }
             },
         )
+        if (!includeTypeParameterBounds) {
+            return@run baseSubstitutor
+        }
         val boundFingerprints = buildMap<TypeConstructorMarker, ConeCangJieType> {
             extend.typeParameters.forEachIndexed { index, typeParameter ->
                 val fingerprint = typeParameter.bounds

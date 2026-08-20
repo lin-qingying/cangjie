@@ -42,6 +42,8 @@ import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.resolve.inference.AnonymousFunctionBasedMultiLambdaBuilderInferenceRestriction
 import org.cangnova.cangjie.cfir.resolve.inference.model.*
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
+import org.cangnova.cangjie.cfir.resolve.providers.getContainingClass
+import org.cangnova.cangjie.cfir.resolve.providers.getContainingExtend
 import org.cangnova.cangjie.cfir.resolve.toSymbol
 import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeParameterBasedTypeVariable
 import org.cangnova.cangjie.cfir.scopes.impl.typeAliasConstructorInfo
@@ -54,14 +56,12 @@ import org.cangnova.cangjie.cfir.semantics.InvalidCallableReturnTypeInOverloadSe
 import org.cangnova.cangjie.cfir.semantics.ResolutionDiagnostic
 import org.cangnova.cangjie.cfir.semantics.isSuccess
 import org.cangnova.cangjie.cfir.session.CfirSession
-import org.cangnova.cangjie.cfir.session.cfirProvider
-import org.cangnova.cangjie.cfir.session.extendProvider
 import org.cangnova.cangjie.cfir.session.languageVersionSettings
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.types.*
-import org.cangnova.cangjie.cfir.unwrapSubstitutionOverrides
 import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
+import org.cangnova.cangjie.lexer.CangJieLexer
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.Name
@@ -112,6 +112,9 @@ fun ConeDiagnostic.toCfirDiagnostics(
                 session,
             )
         )
+        is ConeNoMatchingFunctionCallError -> listOfNotNull(
+            mapNoMatchingFunctionCallError(source, callOrAssignmentSource, session)
+        )
         is ConeUnresolvedNameError -> mapConeUnresolvedNameError(source, callOrAssignmentSource, session)
         is ConeHiddenCandidateError -> mapConeHiddenCandidateError(source, callOrAssignmentSource, session)
         is ConeVisibilityError -> listOfNotNull(mapConeVisibilityError(source, callOrAssignmentSource, session))
@@ -129,6 +132,29 @@ fun ConeDiagnostic.toCfirDiagnostics(
             )
         )
     }
+}
+
+/**
+ * 把“名字已发现但 callable 全部被排除”的结果映射到完整函数标识符。
+ *
+ * LightTree 的 callee source 可能只有首字符；项目诊断范围策略要求按函数名长度恢复
+ * 完整 token。该映射不读取 Candidate，也不复用普通 visibility/hidden-candidate 路径。
+ */
+private fun ConeNoMatchingFunctionCallError.mapNoMatchingFunctionCallError(
+    source: CjSourceElement?,
+    callOrAssignmentSource: CjSourceElement?,
+    session: CfirSession,
+): CjDiagnostic? {
+    val anchor = source ?: callOrAssignmentSource ?: return null
+    val tokenEnd = anchor.startOffset + name.asString().length
+    val boundedEnd = callOrAssignmentSource
+        ?.endOffset
+        ?.let { callEnd -> tokenEnd.coerceAtMost(callEnd) }
+        ?: tokenEnd
+    return CfirErrors.NO_MATCH_FUNCTION_DECLARATION_FOR_CALL.on(
+        CjOffsetsOnlySourceElement(anchor.startOffset, boundedEnd.coerceAtLeast(anchor.endOffset)),
+        session,
+    )
 }
 
 /**
@@ -1214,16 +1240,6 @@ private fun argumentTypeMismatch(
         )
     }
 
-    if (expectedType.isFunctionTypeLike() && actualType.isFunctionTypeLike()) {
-        return CfirErrors.TYPE_MISMATCH.on(
-            source,
-            expectedType,
-            actualType,
-            isMismatchDueToNullability,
-            session,
-        )
-    }
-
     if (anonymousFunction != null) {
         val lambdaSource = anonymousFunction.source ?: source
         return CfirErrors.TYPE_MISMATCH.on(
@@ -1452,7 +1468,7 @@ private fun ConeAmbiguityError.mapConeAmbiguityError(
     // 检查是否为基本类型扩展歧义
     if (isCallLike || isCallLikeContext) {
         val extendOriginNames = candidateSymbols
-            .mapNotNull { symbol -> (symbol as? CfirCallableSymbol<*>)?.primitiveExtendReceiverName(session) }
+            .mapNotNull { symbol -> (symbol as? CfirCallableSymbol<*>)?.primitiveExtendReceiverName() }
         if (extendOriginNames.size >= 2) {
             // 如果候选来自不同的 extend 目标类型，报告 AMBIGUOUS_MATCH_PRIMITIVE_EXTEND
             val distinctOrigins = extendOriginNames.distinct()
@@ -1737,8 +1753,8 @@ private fun ConeAmbiguityError.invalidBinaryOperatorDiagnosticForOperatorAmbigui
 /**
  * 获取 primitive extend 候选的接收者类型名称。
  */
-private fun CfirCallableSymbol<*>.primitiveExtendReceiverName(session: CfirSession): Name? {
-    val ownerExtend = session.extendProvider.getContainingExtend(this) ?: return null
+private fun CfirCallableSymbol<*>.primitiveExtendReceiverName(): Name? {
+    val ownerExtend = getContainingExtend() ?: return null
     val receiverType = ownerExtend.extendedTypeRef.coneTypeOrNull as? ConePrimitiveType ?: return null
     if (receiverType.kind.isIdeal) return null
     return receiverType.kind.classId.shortClassName
@@ -2052,8 +2068,7 @@ private fun ConeVisibilityError.mapConeVisibilityError(
     }
     val isMemberAccess = when (invisibleSymbol) {
         is CfirCallableSymbol<*> -> {
-            session.cfirProvider.getContainingClass(invisibleSymbol) != null ||
-                    session.extendProvider.getContainingExtend(invisibleSymbol.unwrapSubstitutionOverrides()) != null
+            invisibleSymbol.getContainingClass() != null || invisibleSymbol.getContainingExtend() != null
         }
         else -> false
     }
@@ -2062,7 +2077,7 @@ private fun ConeVisibilityError.mapConeVisibilityError(
         if (invisibleSymbol is CfirCallableSymbol<*> && invisibleSymbol.cfir is CfirNamedFunction) {
             CfirErrors.INVISIBLE_MEMBER.on(diagnosticSource, invisibleName, visibilityText, session)
         } else {
-            val accessSource = (callOrAssignmentSource ?: diagnosticSource).firstCharacterDiagnosticSource()
+            val accessSource = (callOrAssignmentSource ?: diagnosticSource).receiverTokenDiagnosticSource()
             CfirErrors.INVALID_ACCESS_CONTROL.on(accessSource, session)
         }
     } else {
@@ -3320,7 +3335,7 @@ private fun AbstractCallCandidate<*>.genericInferenceDeclaredTypeParameters(
     callableSymbol.cfir.typeParameters.mapTo(result) { it.symbol }
 
     if (callableSymbol is CfirEnumConstructorSymbol) {
-        session.cfirProvider.getContainingClass(callableSymbol)
+        callableSymbol.getContainingClass()
             ?.cfir
             ?.typeParameters
             ?.mapTo(result) { it.symbol }
@@ -3396,6 +3411,35 @@ private fun CjSourceElement.toApproxTypeName(): Name {
  */
 private fun CjSourceElement.firstCharacterDiagnosticSource(): CjOffsetsOnlySourceElement {
     return CjOffsetsOnlySourceElement(startOffset, (startOffset + 1).coerceAtMost(endOffset))
+}
+
+/**
+ * 返回成员访问最左侧显式 receiver 的完整 token 范围。
+ *
+ * PSI 路径直接使用 receiver 语法节点；LightTree 路径用同一仓颉 lexer 取得首个实际 token，
+ * 避免把官方单字符锚点扩展成整个访问表达式。
+ */
+private fun CjSourceElement.receiverTokenDiagnosticSource(): AbstractCjSourceElement {
+    val receiverPsi = when (val sourcePsi = psi) {
+        is CjQualifiedExpression -> sourcePsi.receiverExpression
+        is CjCallExpression -> (sourcePsi.calleeExpression as? CjQualifiedExpression)?.receiverExpression
+        is CjBinaryExpression -> (sourcePsi.left as? CjQualifiedExpression)?.receiverExpression
+        else -> null
+    }
+    if (receiverPsi != null) return receiverPsi.toCjPsiSourceElement()
+
+    val sourceText = text?.toString().orEmpty()
+    if (sourceText.isEmpty()) return this
+    val lexer = CangJieLexer()
+    lexer.start(sourceText, 0, sourceText.length)
+    if (lexer.tokenType == null) return this
+    val tokenStart = lexer.tokenStart
+    val tokenEnd = lexer.tokenEnd
+    if (tokenEnd <= tokenStart) return this
+    return CjOffsetsOnlySourceElement(
+        startOffset + tokenStart,
+        (startOffset + tokenEnd).coerceAtMost(endOffset),
+    )
 }
 
 /**

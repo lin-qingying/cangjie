@@ -4,7 +4,6 @@ import org.cangnova.cangjie.cfir.analysis.checkers.CfirExtendSemantics
 import org.cangnova.cangjie.cfir.analysis.checkers.firstCharacterDiagnosticSource
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
-import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirInterface
@@ -19,11 +18,10 @@ import org.cangnova.cangjie.cfir.resolve.fullyExpandedTypeUsingAbbreviation
 import org.cangnova.cangjie.cfir.resolve.providers.createExtendDeclarationSubstitutionForConstraintDerivation
 import org.cangnova.cangjie.cfir.resolve.providers.semanticExtendType
 import org.cangnova.cangjie.cfir.resolve.providers.semanticExtendedType
-import org.cangnova.cangjie.cfir.resolve.toSymbol
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.extendRuleQueryServiceOrNull
+import org.cangnova.cangjie.cfir.session.services.CfirExtendTargetInterfaceView
 import org.cangnova.cangjie.cfir.session.symbolProvider
-import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.types.CfirBasicTypeRef
@@ -33,7 +31,6 @@ import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
-import org.cangnova.cangjie.cfir.types.ConeClassifierType
 import org.cangnova.cangjie.cfir.types.ConeEnumType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeFunctionType
@@ -172,27 +169,14 @@ object CfirExtendDuplicateInterfaceChecker : CfirExtendChecker() {
     override fun check(declaration: CfirExtend) {
         val query = context.session.extendRuleQueryServiceOrNull ?: return
 
-        val localSeen = linkedSetOf<String>()
-        val localSemanticKeys = query.inheritedInterfaceSemanticKeysOf(declaration)
-        val sameTargetDeclarations = query
-            .extendDeclarationsForSameTarget(declaration)
-            .filterIsInstance<CfirExtend>()
-
         for ((index, superTypeRef) in declaration.superTypeRefs.withIndex()) {
             val localInterface = query.inheritedInterfacesOf(declaration).getOrNull(index) ?: continue
             if (localInterface.classId == null) continue
 
-            val key = localSemanticKeys.getOrNull(index) ?: superTypeRef.toSemanticStableKey()
-            val firstInDeclaration = localSeen.add(key)
-            val duplicatedInsideDeclaration = !firstInDeclaration &&
-                localSemanticKeys.drop(index + 1).none { laterKey -> laterKey == key }
-            val declarationsWithSameInterface = sameTargetDeclarations.filter { candidate ->
-                key in query.inheritedInterfaceSemanticKeysOf(candidate)
-            }
-            val duplicatedAcrossExtends = declarationsWithSameInterface.size > 1 &&
-                declarationsWithSameInterface.last() === declaration
+            val occurrence = query.duplicateInterfaceOccurrenceOf(declaration, index) ?: continue
             val duplicatedWithTarget = declaration.duplicatesInheritedTargetInterface(superTypeRef, index)
-            if (!duplicatedInsideDeclaration && !duplicatedAcrossExtends && !duplicatedWithTarget) continue
+            val duplicatedAcrossTargetOccurrences = occurrence.occurrenceCount > 1
+            if (!occurrence.isLastOccurrence || (!duplicatedAcrossTargetOccurrences && !duplicatedWithTarget)) continue
 
             reporter.reportOn(
                 source = superTypeRef.source ?: (superTypeRef as? CfirResolvedTypeRef)?.delegatedTypeRef?.source,
@@ -215,83 +199,10 @@ internal fun CfirExtend.duplicatesInheritedTargetInterface(
     val semanticKey = index
         ?.let { query.inheritedInterfaceSemanticKeysOf(this).getOrNull(it) }
         ?: superTypeRef.toSemanticStableKey()
-
-    val targetOwnSemanticKeys = query.targetOwnInterfacesOf(this).mapTo(linkedSetOf()) { it.semanticKey }
-    if (semanticKey in targetOwnSemanticKeys) {
-        return true
-    }
-
-    val localInterfaceType = superTypeRef.coneTypeOrNull
-        ?.fullyExpandedTypeUsingAbbreviation(context.session) as? ConeClassifierType
-    val localInterfaceKey = localInterfaceType?.instantiatedInterfaceKey()
-    val targetInheritedInterfaceKeys = instantiatedTargetInheritedInterfaceKeys()
-    if (localInterfaceKey != null && localInterfaceKey in targetInheritedInterfaceKeys) {
-        return true
-    }
-
-    val targetType = extendedTypeRef.coneTypeOrNull
-    val superClassId = (localInterfaceType as? ConeClassLikeType)?.classId
-    if (
-        targetType != null &&
-        superClassId in CfirExtendSemantics.implicitPrimitiveInterfaceClassIds(context, targetType)
-    ) {
-        return true
-    }
-
-    return false
-}
-
-/**
- * 收集 extend 目标类型在实际类型实参替换后的已继承接口 key。
- */
-context(context: CheckerContext)
-private fun CfirExtend.instantiatedTargetInheritedInterfaceKeys(): Set<String> {
-    val targetType = extendedTypeRef.coneTypeOrNull as? ConeClassifierType ?: return emptySet()
-    val targetDeclaration = (targetType.toSymbol(context.session) as? CfirClassLikeSymbol<*>)
-        ?.cfir as? CfirClassLikeDeclaration ?: return emptySet()
-    val substitutor = targetDeclaration.createDeclarationTypeSubstitutor(targetType)
-    val result = linkedSetOf<String>()
-    val visiting = linkedSetOf<String>()
-
-    for (superTypeRef in targetDeclaration.superTypeRefs) {
-        val supertype = superTypeRef.coneTypeOrNull ?: continue
-        collectInstantiatedInheritedInterfaceKeys(
-            classLikeType = substitutor.substituteOrSelf(supertype),
-            result = result,
-            visiting = visiting,
-        )
-    }
-    return result
-}
-
-/**
- * 递归收集 class-like 类型及其父类型中实例化后的接口 key。
- */
-context(context: CheckerContext)
-private fun collectInstantiatedInheritedInterfaceKeys(
-    classLikeType: ConeCangJieType,
-    result: MutableSet<String>,
-    visiting: MutableSet<String>,
-) {
-    val classifierType = classLikeType as? ConeClassifierType ?: return
-    val symbol = classifierType.toSymbol(context.session) as? CfirClassLikeSymbol<*> ?: return
-    val declaration = symbol.cfir as? CfirClassLikeDeclaration ?: return
-    val classLikeKey = classifierType.instantiatedInterfaceKey() ?: return
-    if (!visiting.add(classLikeKey)) return
-    if (declaration is CfirInterface) {
-        result += classLikeKey
-    }
-
-    val substitutor = declaration.createDeclarationTypeSubstitutor(classifierType)
-    for (superTypeRef in declaration.superTypeRefs) {
-        val supertype = superTypeRef.coneTypeOrNull ?: continue
-        collectInstantiatedInheritedInterfaceKeys(
-            classLikeType = substitutor.substituteOrSelf(supertype),
-            result = result,
-            visiting = visiting,
-        )
-    }
-    visiting.remove(classLikeKey)
+    return query.targetAvailableInterfacesOf(
+        declaration = this,
+        view = CfirExtendTargetInterfaceView.DUPLICATE_BASELINE,
+    ).any { it.semanticKey == semanticKey }
 }
 
 /**
@@ -335,7 +246,7 @@ object CfirExtendOrphanRuleChecker : CfirExtendChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(extend: CfirExtend) {
         val query = context.session.extendRuleQueryServiceOrNull ?: return
-        val declarationPackage = query.packageFqNameOf(extend) ?: return
+        val declarationPackage = query.packageFqNameOf(extend)
 
         val targetDeclaration = CfirExtendSemantics.targetDeclaration(context, extend)
         val targetType = extend.extendedTypeRef.coneTypeOrNull
@@ -346,12 +257,11 @@ object CfirExtendOrphanRuleChecker : CfirExtendChecker() {
             if (CfirExtendSemantics.isTargetDeclaredInPackage(context, extend, declarationPackage)) return
         }
 
-        val alreadyAvailableKeys = linkedSetOf<String>()
-        query.targetOwnInterfacesOf(extend).mapTo(alreadyAvailableKeys) { it.semanticKey }
         val targetClassId = query.targetClassIdOf(extend)
-        if (targetClassId != null) {
-            alreadyAvailableKeys += query.otherPackageExtendedInterfaceSemanticKeys(targetClassId, declarationPackage)
-        }
+        val alreadyAvailableKeys = query.targetAvailableInterfacesOf(
+            declaration = extend,
+            view = CfirExtendTargetInterfaceView.ORPHAN_BASELINE,
+        ).mapTo(linkedSetOf()) { it.semanticKey }
 
         val introducedExternalInterfaces = query.inheritedInterfaceClosureOf(extend).filter { inheritedInterface ->
             val interfaceClassId = inheritedInterface.classId ?: return@filter false
@@ -381,16 +291,16 @@ object CfirExtendGenericUsageChecker : CfirExtendChecker() {
      * 检查 extend 声明的类型参数是否至少出现在目标类型中。
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
-    override fun check(extend: CfirExtend) {
-        if (extend.typeParameters.isEmpty()) return
-        val allTypeRefs = listOf(extend.extendedTypeRef)
-        val unusedTypeParameters = extend.typeParameters.filter { typeParameter ->
+    override fun check(declaration: CfirExtend) {
+        if (declaration.typeParameters.isEmpty()) return
+        val allTypeRefs = listOf(declaration.extendedTypeRef)
+        val unusedTypeParameters = declaration.typeParameters.filter { typeParameter ->
             allTypeRefs.none { typeRef -> typeRef.containsTypeParameter(typeParameter.name.asString()) }
         }
         if (unusedTypeParameters.isEmpty()) return
 
         reporter.reportOn(
-            source = extend.extendedTypeRef.source,
+            source = declaration.extendedTypeRef.source,
             factory = CfirErrors.EXTEND_GENERIC_USAGE,
             a = unusedTypeParameters.joinToString(", ") { it.name.asString() },
         )
@@ -428,11 +338,11 @@ object CfirExtendImmutableMemberChecker : CfirExtendChecker() {
      * 检查不可变目标不能声明 mut 属性或 index assignment operator。
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
-    override fun check(extend: CfirExtend) {
-        val targetConeType = (extend.extendedTypeRef as? CfirResolvedTypeRef)?.coneType ?: return
+    override fun check(declaration: CfirExtend) {
+        val targetConeType = (declaration.extendedTypeRef as? CfirResolvedTypeRef)?.coneType ?: return
         if (!CfirExtendSemantics.isImmutableTarget(targetConeType)) return
 
-        for (declaration in extend.declarations) {
+        for (declaration in declaration.declarations) {
             when {
                 declaration is CfirProperty && declaration.status.isMut -> {
                     reporter.reportOn(

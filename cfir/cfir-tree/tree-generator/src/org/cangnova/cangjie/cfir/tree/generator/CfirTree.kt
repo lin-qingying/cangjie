@@ -854,6 +854,7 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
         generateBooleanFields(
             "visibilityExplicit",
             "modalityExplicit",
+            "abstractExplicit",
             "override",
             "operator",
             "static",

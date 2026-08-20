@@ -30,6 +30,8 @@ import org.cangnova.cangjie.cfir.declarations.builder.*
 import org.cangnova.cangjie.cfir.originalForSubstitutionOverride
 import org.cangnova.cangjie.cfir.originalForSubstitutionOverrideAttr
 import org.cangnova.cangjie.cfir.resolve.providers.createCallableOwnerUseSiteSubstitutor
+import org.cangnova.cangjie.cfir.resolve.providers.getContainingClass
+import org.cangnova.cangjie.cfir.resolve.providers.getContainingExtend
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.scopes.*
 import org.cangnova.cangjie.cfir.session.*
@@ -67,7 +69,8 @@ class CfirClassSubstitutionScope(
      * 可选的替换 owner 类型；父类型替换时与 dispatch receiver 区分。
      */
     private val substitutionOwnerType: ConeCangJieType? = null,
-) : CfirTypeScope(), CfirFunctionInheritanceScope, CfirMemberLookupCompletenessScope {
+) : CfirTypeScope(), CfirFunctionInheritanceScope, CfirCallableLookupProvenanceScope,
+    CfirMemberLookupCompletenessScope {
     /** substitution 只改变成员签名，lookup completeness 来源保持不变。 */
     override val memberLookupBlockers: List<CfirMemberLookupBlocker>
         get() = (useSiteMemberScope as? CfirMemberLookupCompletenessScope)
@@ -215,6 +218,20 @@ class CfirClassSubstitutionScope(
     override fun processCallablesByName(name: Name, processor: (CfirCallableSymbol<*>) -> Unit) {
         useSiteMemberScope.processCallablesByName(name) { original ->
             processor(substituteCallableSymbol(original))
+        }
+    }
+
+    /** 替换 callable 后保留底层 effective member graph 的来源身份。 */
+    override fun processCallablesByNameWithLookupProvenance(
+        name: Name,
+        processor: (CfirCallableWithLookupProvenance) -> Unit,
+    ) {
+        useSiteMemberScope.processCallablesByNameWithLookupProvenance(name) { candidate ->
+            processor(
+                candidate.copy(
+                    symbol = substituteCallableSymbol(candidate.symbol),
+                )
+            )
         }
     }
 
@@ -732,7 +749,7 @@ class CfirClassSubstitutionScope(
      * 计算 substitution override 的声明 origin。
      */
     private fun substitutionOverrideOrigin(symbol: CfirCallableSymbol<*>): CfirDeclarationOrigin {
-        val ownerExtend = session.extendProvider.getContainingExtend(symbol)
+        val ownerExtend = symbol.getContainingExtend()
         if (ownerExtend != null) {
             val ownerClassId = (ownerExtend.extendedTypeRef as? CfirResolvedTypeRef)
                 ?.coneType
@@ -764,7 +781,7 @@ class CfirClassSubstitutionScope(
      * 返回 callable 所属 owner class id。
      */
     private fun ownerClassIdForCallable(symbol: CfirCallableSymbol<*>): ClassId? {
-        return session.cfirProvider.getContainingClass(symbol)?.classId
+        return symbol.getContainingClass()?.classId
             ?: (symbol as? CfirEnumConstructorSymbol)?.let {
                 dispatchReceiverType.expandedClassIdOrPrimitiveClassId
             }

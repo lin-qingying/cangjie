@@ -2791,6 +2791,7 @@ class PsiRawCfirBuilder(
                     source = psi.toCjPsiSourceElement()
                     calleeReference = ref
                     argumentList = buildArgumentList {
+                        source = selector.valueArgumentList?.toCjPsiSourceElement()
                         arguments.addAll(callArguments)
                     }
                     explicitReceiver = receiver
@@ -3544,6 +3545,7 @@ class PsiRawCfirBuilder(
             ).also { copied ->
                 copied.isVisibilityExplicit = status.isVisibilityExplicit
                 copied.isModalityExplicit = status.isModalityExplicit
+                copied.isAbstractExplicit = status.isAbstractExplicit
                 copied.isOverride = status.isOverride
                 copied.isOperator = status.isOperator
                 copied.isStatic = status.isStatic
@@ -3861,6 +3863,7 @@ class PsiRawCfirBuilder(
                 },
                 isVisibilityExplicit = isVisibilityExplicit,
                 isModalityExplicit = isModalityExplicit,
+                isAbstractExplicit = hasModifier(CjTokens.ABSTRACT_KEYWORD),
                 isAbstract = hasModifier(CjTokens.ABSTRACT_KEYWORD) ||
                         isImplicitAbstractClassLikeMember(declaration, owner),
                 isOpen = hasModifier(CjTokens.OPEN_KEYWORD),

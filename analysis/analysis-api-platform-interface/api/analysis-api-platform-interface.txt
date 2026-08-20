@@ -18,6 +18,13 @@ CaPlatformSettings.public val allowUseSiteLibraryModuleAnalysis: Boolean
 CaPlatformSettings.public companion object
 CaPlatformSettings.Companion.public fun getInstance(project: Project): CaPlatformSettings
 public enum class CaDeserializedDeclarationsOrigin
+## org/cangnova/cangjie/analysis/api/platform/CangJieAnalysisInWriteActionListener.kt
+package org.cangnova.cangjie.analysis.api.platform
+public interface CangJieAnalysisInWriteActionListener
+CangJieAnalysisInWriteActionListener.public fun onEnteringAnalysisInWriteAction()
+CangJieAnalysisInWriteActionListener.public fun afterLeavingAnalysisInWriteAction()
+CangJieAnalysisInWriteActionListener.public companion object
+CangJieAnalysisInWriteActionListener.Companion.public val TOPIC: Topic<CangJieAnalysisInWriteActionListener>
 ## org/cangnova/cangjie/analysis/api/platform/CangJieComposableProvider.kt
 package org.cangnova.cangjie.analysis.api.platform
 public interface CangJieComposableProvider
@@ -32,13 +39,6 @@ CangJieMessageBusProvider.public fun getMessageBus(): MessageBus
 CangJieMessageBusProvider.public companion object
 CangJieMessageBusProvider.Companion.public fun getInstance(project: Project): CangJieMessageBusProvider
 public val Project.analysisMessageBus: MessageBus
-## org/cangnova/cangjie/analysis/api/platform/CangJieAnalysisInWriteActionListener.kt
-package org.cangnova.cangjie.analysis.api.platform
-public interface KotlinAnalysisInWriteActionListener
-KotlinAnalysisInWriteActionListener.public fun onEnteringAnalysisInWriteAction()
-KotlinAnalysisInWriteActionListener.public fun afterLeavingAnalysisInWriteAction()
-KotlinAnalysisInWriteActionListener.public companion object
-KotlinAnalysisInWriteActionListener.Companion.public val TOPIC: Topic<KotlinAnalysisInWriteActionListener>
 ## org/cangnova/cangjie/analysis/api/platform/annotations.kt
 package org.cangnova.cangjie.analysis.api.platform
 public annotation class CaCachedService
@@ -131,7 +131,9 @@ CangJieEmptyDeclarationProvider.public override val hasSpecificClassifierPackage
 CangJieEmptyDeclarationProvider.public override val hasSpecificCallablePackageNamesComputation: Boolean
 ## org/cangnova/cangjie/analysis/api/platform/declarations/CangJieFileBasedDeclarationProvider.kt
 package org.cangnova.cangjie.analysis.api.platform.declarations
-public class CangJieFileBasedDeclarationProvider(val cangjieFile: CjFile) : CangJieDeclarationProvider
+public class CangJieFileBasedDeclarationProvider( val cangjieFile: CjFile, ) : CangJieDeclarationProvider
+CangJieFileBasedDeclarationProvider.public val virtualFile
+CangJieFileBasedDeclarationProvider.public val file
 CangJieFileBasedDeclarationProvider.public override fun getClassLikeDeclarationByClassId(classId: ClassId): CjClassLikeDeclaration?
 CangJieFileBasedDeclarationProvider.public override fun getAllClassesByClassId(classId: ClassId): Collection<CjTypeStatement>
 CangJieFileBasedDeclarationProvider.public override fun getAllTypeAliasesByClassId(classId: ClassId): Collection<CjTypeAlias>

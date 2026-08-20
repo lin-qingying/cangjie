@@ -156,6 +156,7 @@ class LightTreeModifierList(
         status.isSealed = isSealed
         status.isVisibilityExplicit = isVisibilityExplicit
         status.isModalityExplicit = isModalityExplicit
+        status.isAbstractExplicit = isAbstract
         status.isStatic = isStatic
         status.isConst = isConst
         status.isMut = isMut

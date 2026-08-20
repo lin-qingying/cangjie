@@ -1709,6 +1709,12 @@ private fun CaDiagnosticConverterBuilder.addConversions74() {
             token,
         )
     }
+    add(CfirErrors.INCOMPATIBLE_FUNC_BODY_AND_RETURN_TYPE) { cfirDiagnostic ->
+        IncompatibleFuncBodyAndReturnTypeImpl(
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
     add(CfirErrors.DEPRECATION_REDEF_WARNING) { cfirDiagnostic ->
         DeprecationRedefWarningImpl(
             cfirDiagnostic.a,

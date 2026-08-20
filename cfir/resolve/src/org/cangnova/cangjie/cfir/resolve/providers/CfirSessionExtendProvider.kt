@@ -1,7 +1,7 @@
 package org.cangnova.cangjie.cfir.resolve.providers
 
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
-import org.cangnova.cangjie.cfir.resolve.services.CfirExtendAccessibilityChecker
+import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.resolve.services.CfirExtendIndexStore
 import org.cangnova.cangjie.cfir.resolve.services.CfirExtendSemanticModel
 import org.cangnova.cangjie.cfir.session.CfirSession
@@ -29,11 +29,6 @@ class CfirSessionExtendProvider(
      */
     private val indexStore: CfirExtendIndexStore,
 ) : CfirExtendProvider {
-
-    /**
-     * 按当前使用点文件懒构造的 extend 可访问性检查器。
-     */
-    private val accessibilityChecker by lazy { CfirExtendAccessibilityChecker(session) }
 
     /**
      * 查询目标键对应的所有 extend 声明。
@@ -82,11 +77,9 @@ class CfirSessionExtendProvider(
         return indexStore.modelForDeclaration(extend)?.packageFqName
     }
 
-    /**
-     * 判断 extend 在当前文件使用点是否可访问。
-     */
-    override fun isExtendAccessible(extend: CfirExtend): Boolean {
-        val file = CfirAccessibilityFileScope.get() ?: return true
-        return accessibilityChecker.isAccessible(file, extend)
+    /** 返回索引中记录的源码 extend 所属文件。 */
+    override fun getContainingFile(extend: CfirExtend): CfirFile? {
+        return indexStore.modelForDeclaration(extend)?.containingFile
     }
+
 }

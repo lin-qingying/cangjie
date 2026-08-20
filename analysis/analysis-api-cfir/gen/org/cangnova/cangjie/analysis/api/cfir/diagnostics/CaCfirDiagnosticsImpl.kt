@@ -1149,6 +1149,11 @@ internal class UnableToInferReturnTypeImpl(
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.UnableToInferReturnType
 
+internal class IncompatibleFuncBodyAndReturnTypeImpl(
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.IncompatibleFuncBodyAndReturnType
+
 internal class UnableToInferGenericFuncImpl(
     cfirDiagnostic: CjPsiDiagnostic,
     token: CaLifetimeToken,

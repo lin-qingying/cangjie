@@ -1,7 +1,7 @@
 package org.cangnova.cangjie.cfir.scopes.impl
 
-import org.cangnova.cangjie.cfir.declarations.CfirImport
-import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.CfirLookupOrigin
+import org.cangnova.cangjie.cfir.resolve.providers.CfirLookupOriginScope
 import org.cangnova.cangjie.cfir.resolve.services.CfirResolvedImportBinding
 import org.cangnova.cangjie.cfir.resolve.services.CfirResolvedImportTarget
 import org.cangnova.cangjie.cfir.scopes.CfirImportScope
@@ -9,7 +9,6 @@ import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
-import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.Name
 
 /**
@@ -21,112 +20,52 @@ import org.cangnova.cangjie.name.Name
  * 参考 K2 FirExplicitSimpleImportingScope。
  */
 class CfirExplicitSimpleImportingScope(
-    imports: List<CfirImport>,
-    /**
-     * 用于按 import FQ name 查询 symbol 的 provider。
-     */
-    private val symbolProvider: CfirSymbolProvider,
-    resolvedImports: List<CfirResolvedImportBinding>? = null,
-) : CfirImportScope() {
+    resolvedImports: List<CfirResolvedImportBinding>,
+) : CfirImportScope(), CfirLookupOriginScope {
 
-    /**
-     * 按有效名称（别名或短名称）索引的导入条目。
-     */
-    private val importsByName: Map<Name, List<CfirImport>>
+    /** 当前 simple import scope 的结构性来源。 */
+    override val lookupOrigin: CfirLookupOrigin = resolvedImports.singleImportLookupOrigin()
 
     /**
      * 按有效名称索引的已解析导入绑定。
      */
-    private val resolvedImportsByName: Map<Name, List<CfirResolvedImportBinding>>?
+    private val resolvedImportsByName: Map<Name, List<CfirResolvedImportBinding>>
 
     init {
-        val map = HashMap<Name, MutableList<CfirImport>>()
-        for (import in imports) {
-            if (import.isAllUnder) continue // 忽略星号导入
-            val importedFqName = import.importedFqName
-            val effectiveName = import.aliasName ?: importedFqName?.shortName() ?: continue
-            map.getOrPut(effectiveName) { mutableListOf() }.add(import)
+        require(resolvedImports.none { it.importDirective.isAllUnder }) {
+            "Simple importing scope received an all-under import binding"
         }
-        importsByName = map
         resolvedImportsByName = resolvedImports
-            ?.filter { !it.importDirective.isAllUnder }
-            ?.groupBy { it.effectiveName }
+            .groupBy { it.effectiveName }
     }
 
     /**
      * 按名称处理精确导入的 classifier。
      */
     override fun processClassifiersByName(name: Name, processor: (CfirClassLikeSymbol<*>) -> Unit) {
-        val resolvedImports = resolvedImportsByName?.get(name)
-        if (resolvedImports != null) {
-            resolvedImports.forEachTarget<CfirResolvedImportTarget.ClassLike> { processor(it.symbol) }
-            return
-        }
-
-        val imports = importsByName[name] ?: return
-        for (import in imports) {
-            val importedFqName = import.importedFqName ?: continue
-            val classId = ClassId.topLevel(importedFqName)
-            val symbol = symbolProvider.getClassLikeSymbolByClassId(classId)
-            if (symbol != null) processor(symbol)
-        }
+        resolvedImportsByName[name]
+            ?.forEachTarget<CfirResolvedImportTarget.ClassLike> { processor(it.symbol) }
     }
 
     /**
      * 按名称处理精确导入的函数。
      */
     override fun processFunctionsByName(name: Name, processor: (CfirNamedFunctionSymbol) -> Unit) {
-        val resolvedImports = resolvedImportsByName?.get(name)
-        if (resolvedImports != null) {
-            resolvedImports.forEachCallableTarget<CfirNamedFunctionSymbol>(processor)
-            return
-        }
-
-        val imports = importsByName[name] ?: return
-        for (import in imports) {
-            val fqName = import.importedFqName ?: continue
-            val packageFqName = fqName.parent()
-            val callableName = fqName.shortName()
-            symbolProvider.getTopLevelFunctionSymbols(packageFqName, callableName).forEach(processor)
-        }
+        resolvedImportsByName[name]?.forEachCallableTarget(processor)
     }
 
     /**
      * 按名称处理精确导入的 callable。
      */
     override fun processCallablesByName(name: Name, processor: (CfirCallableSymbol<*>) -> Unit) {
-        val resolvedImports = resolvedImportsByName?.get(name)
-        if (resolvedImports != null) {
-            resolvedImports.forEachCallableTarget(processor)
-            return
-        }
-
-        val imports = importsByName[name] ?: return
-        for (import in imports) {
-            val fqName = import.importedFqName ?: continue
-            val packageFqName = fqName.parent()
-            val callableName = fqName.shortName()
-            symbolProvider.getTopLevelCallableSymbols(packageFqName, callableName).forEach(processor)
-        }
+        resolvedImportsByName[name]?.forEachCallableTarget(processor)
     }
 
     /**
      * 按名称处理精确导入的属性。
      */
     override fun processPropertiesByName(name: Name, processor: (CfirPropertySymbol) -> Unit) {
-        val resolvedImports = resolvedImportsByName?.get(name)
-        if (resolvedImports != null) {
-            resolvedImports.forEachCallableTarget<CfirPropertySymbol>(processor)
-            return
-        }
-
-        val imports = importsByName[name] ?: return
-        for (import in imports) {
-            val fqName = import.importedFqName ?: continue
-            val packageFqName = fqName.parent()
-            val callableName = fqName.shortName()
-            symbolProvider.getTopLevelPropertySymbols(packageFqName, callableName).forEach(processor)
-        }
+        resolvedImportsByName[name]?.forEachCallableTarget(processor)
     }
 
     /**
@@ -148,4 +87,12 @@ class CfirExplicitSimpleImportingScope(
             target.symbols.filterIsInstance<S>().forEach(processor)
         }
     }
+}
+
+/** simple/star importing scope 共享的单一 origin 不变量。 */
+internal fun List<CfirResolvedImportBinding>.singleImportLookupOrigin(): CfirLookupOrigin {
+    require(isNotEmpty()) { "Importing scope requires at least one resolved import binding" }
+    val origins = mapTo(linkedSetOf()) { it.lookupOrigin }
+    require(origins.size == 1) { "Importing scope cannot mix lookup origins: $origins" }
+    return origins.single()
 }

@@ -354,6 +354,19 @@ private class LLCfirStatusTargetResolver(
         else -> false
     }
 
+    /** 在解析 callable 状态前收集 override 目标，并把 override 集合交给 [transform]。 */
+    private inline fun <T : CfirCallableDeclaration> performResolveWithOverriddenCallables(
+        target: T,
+        getOverridden: (T) -> List<T>,
+        crossinline transform: (T, List<T>) -> Unit,
+    ) {
+        if (checkAnalysisReadiness(target, containingDeclarations, resolverPhase)) return
+        val overriddenDeclarations = getOverridden(target)
+        performCustomResolveUnderLock(target) {
+            transform(target, overriddenDeclarations)
+        }
+    }
+
     /**
      * 解析 class-like 声明本身的状态、类型参数和必要的 callable 成员状态。
      */
@@ -387,22 +400,6 @@ private class LLCfirStatusTargetResolver(
             transformer.statusComputationSession.endComputing(classLike)
         } else {
             transformer.statusComputationSession.computeOnlyDeclarationStatus(classLike)
-        }
-    }
-
-    /**
-     * 在解析 callable 状态前收集 override 目标，并把 override 集合交给 [transform]。
-     */
-    private inline fun <T : CfirCallableDeclaration> performResolveWithOverriddenCallables(
-        target: T,
-        getOverridden: (T) -> List<T>,
-        crossinline transform: (T, List<T>) -> Unit,
-    ) {
-        if (checkAnalysisReadiness(target, containingDeclarations, resolverPhase)) return
-
-        val overriddenDeclarations = getOverridden(target)
-        performCustomResolveUnderLock(target) {
-            transform(target, overriddenDeclarations)
         }
     }
 

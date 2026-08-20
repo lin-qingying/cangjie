@@ -1541,7 +1541,7 @@ open class CfirExpressionsResolveTransformer(
     /** 从 resolved super typeRef 同时保留完整父类型和对应声明。 */
     private fun CfirTypeRef.toDelegatingConstructorTargetOrNull(): DelegatingConstructorTarget? {
         val constructedType = classifyDeclaredSupertype(session)
-            .constructorDependencyTypeOrNull(includeLoopError = false)
+            .constructorDependencyTypeOrNull()
             ?: return null
         val declaration = constructedType.toResolvedSuperDeclarationOrNull() ?: return null
         return DelegatingConstructorTarget(declaration, constructedType)
@@ -4759,18 +4759,10 @@ open class CfirExpressionsResolveTransformer(
      * 配置会补充当前容器链上的类型参数，保证 handler 内的局部/成员类型参数能够被 pattern 类型引用看到。
      */
     private fun resolveCommandPatternTypeRefs(commandPattern: CfirCommandTypePattern) {
-        val additionalTypeParameters = context.containers
-            .asSequence()
-            .filterIsInstance<CfirDeclaration>()
-            .flatMap { extractTypeParameters(it).asSequence() }
-            .toList()
-
-        val config = CfirTypeResolutionConfiguration(
-            useSiteFile = context.file,
-            topContainer = context.containers.lastOrNull(),
-        ).withAdditionalTypeParameters(additionalTypeParameters)
-
-        commandPattern.transformTypeRefs(specificTypeResolverTransformer, config)
+        commandPattern.transformTypeRefs(
+            specificTypeResolverTransformer,
+            currentTypeResolutionConfiguration(),
+        )
     }
 
     /**
@@ -4807,18 +4799,10 @@ open class CfirExpressionsResolveTransformer(
      * 与 command pattern 一样，这里显式补充当前容器的类型参数作用域，避免局部泛型 catch 类型解析失败。
      */
     private fun resolveCatchPatternTypeRefs(catchPattern: CfirCatchPattern) {
-        val additionalTypeParameters = context.containers
-            .asSequence()
-            .filterIsInstance<CfirDeclaration>()
-            .flatMap { extractTypeParameters(it).asSequence() }
-            .toList()
-
-        val config = CfirTypeResolutionConfiguration(
-            useSiteFile = context.file,
-            topContainer = context.containers.lastOrNull(),
-        ).withAdditionalTypeParameters(additionalTypeParameters)
-
-        catchPattern.transformTypeRefs(specificTypeResolverTransformer, config)
+        catchPattern.transformTypeRefs(
+            specificTypeResolverTransformer,
+            currentTypeResolutionConfiguration(),
+        )
     }
 
     /** 提取 catch pattern 中已经解析成功的异常类型列表。 */
@@ -5087,17 +5071,7 @@ open class CfirExpressionsResolveTransformer(
      */
     private fun <T : CfirQualifiedAccessExpression> resolveAccessTypeArguments(access: T): T {
         if (access.typeArguments.isEmpty()) return access
-
-        val additionalTypeParameters = context.containers
-            .asSequence()
-            .filterIsInstance<CfirDeclaration>()
-            .flatMap { extractTypeParameters(it).asSequence() }
-            .toList()
-
-        val config = CfirTypeResolutionConfiguration(
-            useSiteFile = context.file,
-            topContainer = context.containers.lastOrNull(),
-        ).withAdditionalTypeParameters(additionalTypeParameters)
+        val config = currentTypeResolutionConfiguration()
 
         val resolvedTypeArguments = access.typeArguments.map { typeRef ->
             when (typeRef) {
@@ -5118,19 +5092,10 @@ open class CfirExpressionsResolveTransformer(
      */
     private fun resolveSuperTypeRef(typeRef: CfirTypeRef): CfirTypeRef {
         if (typeRef is CfirResolvedTypeRef || typeRef is CfirImplicitTypeRef) return typeRef
-
-        val additionalTypeParameters = context.containers
-            .asSequence()
-            .filterIsInstance<CfirDeclaration>()
-            .flatMap { extractTypeParameters(it).asSequence() }
-            .toList()
-
-        val config = CfirTypeResolutionConfiguration(
-            useSiteFile = context.file,
-            topContainer = context.containers.lastOrNull(),
-        ).withAdditionalTypeParameters(additionalTypeParameters)
-
-        return specificTypeResolverTransformer.transformTypeRef(typeRef, config)
+        return specificTypeResolverTransformer.transformTypeRef(
+            typeRef,
+            currentTypeResolutionConfiguration(),
+        )
     }
 
     /**

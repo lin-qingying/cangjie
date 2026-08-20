@@ -21,6 +21,7 @@ class CfirResolvedDeclarationStatusBuilder {
     lateinit var visibility: Visibility
     var isVisibilityExplicit: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
     var isModalityExplicit: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
+    var isAbstractExplicit: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
     var isOverride: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
     var isOperator: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
     var isStatic: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
@@ -43,6 +44,7 @@ class CfirResolvedDeclarationStatusBuilder {
             visibility,
             isVisibilityExplicit,
             isModalityExplicit,
+            isAbstractExplicit,
             isOverride,
             isOperator,
             isStatic,

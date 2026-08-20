@@ -21,6 +21,8 @@ import org.cangnova.cangjie.cfir.resolve.CfirDiagnosticReporter
 import org.cangnova.cangjie.cfir.resolve.CfirTypeResolver
 import org.cangnova.cangjie.cfir.resolve.inference.InferenceComponents
 import org.cangnova.cangjie.cfir.resolve.providers.CfirDirectSupertypeProvider
+import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityChecker
+import org.cangnova.cangjie.cfir.resolve.providers.CfirExtendExportSurfaceService
 import org.cangnova.cangjie.cfir.resolve.providers.CfirTypeAwareSupertypeProvider
 import org.cangnova.cangjie.cfir.resolve.calls.visibility.CfirModuleVisibilityChecker
 import org.cangnova.cangjie.cfir.resolve.services.CfirImportBindingStore
@@ -256,6 +258,8 @@ private fun CfirSession.registerCoreResolveServices(
     // import 绑定存储：持久化每个文件的 import 解析结果
     // （由 CfirImportResolveTransformer 写入，由类型解析阶段读取）
     register(CfirImportBindingStore::class, CfirImportBindingStore())
+    register(CfirExtendExportSurfaceService::class, CfirExtendExportSurfaceService(this))
+    register(CfirAccessibilityChecker::class, CfirAccessibilityChecker(this))
 
     // 父类型图存储：记录类型继承关系，用于：
     //  1. 检测循环继承（A extends B extends A）
@@ -272,7 +276,7 @@ private fun CfirSession.registerCoreResolveServices(
 
     val extendIndexStore = CfirExtendIndexStore(this)
     register(CfirExtendIndexStore::class, extendIndexStore)
-    register(CfirExtendRuleQueryService::class, CfirExtendRuleQueryServiceImpl(extendIndexStore))
+    register(CfirExtendRuleQueryService::class, CfirExtendRuleQueryServiceImpl(this, extendIndexStore))
 
     // 类型解析器：将 CFIR 树中的类型引用解析为 ConeType（CFIR 的内部类型表示）
     register(CfirTypeResolver::class, CfirTypeResolverImpl(this))

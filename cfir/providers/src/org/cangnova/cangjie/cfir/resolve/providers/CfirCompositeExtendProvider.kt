@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.resolve.providers
 
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
+import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.session.services.CfirExtendTargetKey
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
@@ -55,9 +56,8 @@ class CfirCompositeExtendProvider(
     override fun getPackageFqName(extend: CfirExtend): FqName? =
         providers.firstNotNullOfOrNull { it.getPackageFqName(extend) }
 
-    /**
-     * 所有子 provider 均认为可访问时，组合结果才可访问。
-     */
-    override fun isExtendAccessible(extend: CfirExtend): Boolean =
-        providers.all { it.isExtendAccessible(extend) }
+    /** 按 provider 顺序返回 extend 的结构性声明文件。 */
+    override fun getContainingFile(extend: CfirExtend): CfirFile? =
+        providers.firstNotNullOfOrNull { it.getContainingFile(extend) }
+
 }

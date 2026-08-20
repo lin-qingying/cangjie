@@ -472,7 +472,6 @@ fun convertPattern(
             }
         }
 
-        else -> listOf(CfirMatchPattern.Error.copy(cfirPattern = pattern))
     }
 }
 
@@ -487,7 +486,7 @@ fun isSameType(a: ConeCangJieType, b: ConeCangJieType): Boolean {
  */
 private fun ConeCangJieType.coversExpectedType(expectedType: ConeCangJieType, session: CfirSession): Boolean {
     if (isNothing) return false
-    return AbstractTypeChecker.isSubtypeOf(session.typeContext, expectedType, this) == true
+    return AbstractTypeChecker.isSubtypeOf(session.typeContext, expectedType, this)
 }
 
 /** 从表达式上读取已解析类型；表达式或类型缺失时使用 [fallback]。 */

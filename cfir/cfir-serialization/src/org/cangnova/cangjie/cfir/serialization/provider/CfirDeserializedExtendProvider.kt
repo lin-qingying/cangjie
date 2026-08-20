@@ -2,6 +2,7 @@ package org.cangnova.cangjie.cfir.serialization.provider
 
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
+import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.resolve.providers.CfirCompositeSymbolProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirExtendProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
@@ -51,6 +52,9 @@ class CfirDeserializedExtendProvider(
     /** 反查反序列化 extend 所属包名。 */
     override fun getPackageFqName(extend: CfirExtend): FqName? =
         index.byDeclarationPackage[extend]
+
+    /** 反序列化声明不携带可作为 use-site 身份的源码文件。 */
+    override fun getContainingFile(extend: CfirExtend): CfirFile? = null
 
     /**
      * 遍历所有反序列化包并建立 extend 查询索引。

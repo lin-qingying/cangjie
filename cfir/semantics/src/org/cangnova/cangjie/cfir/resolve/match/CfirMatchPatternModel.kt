@@ -633,7 +633,6 @@ fun convertPattern(
             }
         }
 
-        else -> listOf(CfirMatchPattern.Error.copy(cfirPattern = pattern))
     }
 }
 

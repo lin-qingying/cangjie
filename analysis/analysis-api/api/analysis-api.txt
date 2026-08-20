@@ -5,6 +5,7 @@ package org.cangnova.cangjie.analysis.api
 public interface CaSession : CaLifetimeOwner, CaResolver, CaSymbolRelationProvider, CaSymbolProvider, CaSymbolInformationProvider, CaSignatureSubstitutor, CaDiagnosticProvider, CaScopeProvider, CaAnalysisScopeProvider, CaDefaultImportsProvider, CaCompletionCandidateChecker, CaExpressionTypeProvider, CaExpressionInformationProvider, CaEvaluator, CaDataFlowProvider, CaTypeProvider, CaTypeInformationProvider, CaTypeRelationChecker, CaTypeCreator, CaSubstitutorProvider, CaReferenceShortener, CaImportOptimizer, CaRenderer, CaVisibilityChecker, CaOriginalPsiProvider, CaSourceProvider, CaCInteropComponent, CaCDocProvider
 CaSession.public val useSiteModule: CaModule
 CaSession.public val useSiteSession: CaSession
+public val useSiteSession: CaSession
 public fun <S : CaSymbol> CaSession.restoreSymbol(pointer: CaSymbolPointer<S>): S?
 public fun <T : CaType> CaSession.restoreType(pointer: CaTypePointer<T>): T?
 public fun <S : CaSymbol> CaSession.restoreSymbols( pointers: Collection<CaSymbolPointer<S>>, ): List<S?>
@@ -170,6 +171,7 @@ CaExpressionInformationProvider.public val CjExpression.isCompileTimeConstant: B
 package org.cangnova.cangjie.analysis.api.components
 public interface CaExpressionTypeProvider : CaLifetimeOwner
 CaExpressionTypeProvider.public val CjExpression.expressionType: CaType?
+CaExpressionTypeProvider.public val PsiElement.expectedType: CaType?
 CaExpressionTypeProvider.public val CjCallableDeclaration.returnType: CaType?
 ## org/cangnova/cangjie/analysis/api/components/CaImportOptimizer.kt
 package org.cangnova.cangjie.analysis.api.components
@@ -298,6 +300,8 @@ CaTypeInformationProvider.public val CaType.classLikeSymbol: CaClassLikeSymbol?
 package org.cangnova.cangjie.analysis.api.components
 public interface CaTypeProvider : CaLifetimeOwner
 CaTypeProvider.public val CaClassLikeSymbol.defaultType: CaType
+CaTypeProvider.public val CaValueParameterSymbol.varargArrayType: CaType?
+public val CjTypeReference.type: CaType
 ## org/cangnova/cangjie/analysis/api/components/CaTypeRelationChecker.kt
 package org.cangnova.cangjie.analysis.api.components
 public interface CaTypeRelationChecker : CaLifetimeOwner
@@ -565,10 +569,10 @@ CaModule.public val allDirectDependencies: List<CaModule>
 CaModule.public val baseContentScope: GlobalSearchScope
 CaModule.public val contentScope: GlobalSearchScope
 CaModule.public val project: Project
-CaModule.public val targetPlatform: TargetPlatform
 CaModule.public val moduleDescription: String
 CaModule.public class.simpleName ?: "CaModule"
 CaModule.public val stableModuleName: String?
+CaModule.public val targetPlatform: TargetPlatform
 CaModule.public val isResolvable: Boolean
 ## org/cangnova/cangjie/analysis/api/projectStructure/CaModuleProvider.kt
 package org.cangnova.cangjie.analysis.api.projectStructure
@@ -594,6 +598,8 @@ CaSourceModule.public override val stableModuleName: String?
 ## org/cangnova/cangjie/analysis/api/projectStructure/danglingFiles.kt
 package org.cangnova.cangjie.analysis.api.projectStructure
 public enum class CaDanglingFileResolutionMode
+public var CjFile.explicitModule: CaModule?
+public val virtualFile
 ## org/cangnova/cangjie/analysis/api/renderer/base/CaKeywordRenderer.kt
 package org.cangnova.cangjie.analysis.api.renderer.base
 public fun interface CaKeywordRenderer
@@ -1299,7 +1305,8 @@ CaSymbolProvider.public fun getTopLevelClassLikeSymbols(packageFqName: FqName, n
 CaSymbolProvider.public fun getTopLevelCallableSymbols(packageFqName: FqName, name: Name): List<CaCallableSymbol>
 CaSymbolProvider.public fun getTopLevelExtendSymbols(packageFqName: FqName): List<CaExtendSymbol>
 CaSymbolProvider.public fun getExtendSymbols(targetClassId: ClassId): List<CaExtendSymbol>
-public val CjDeclaration.symbol: CaDeclarationSymbol
+public val CjElement.symbol: CaDeclarationSymbol
+public class.simpleName}")
 ## org/cangnova/cangjie/analysis/api/symbols/CaSymbolVisibility.kt
 package org.cangnova.cangjie.analysis.api.symbols
 public enum class CaSymbolVisibility

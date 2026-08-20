@@ -41,10 +41,17 @@ import org.cangnova.cangjie.cfir.resolve.calls.isInstanceExtendMemberCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallInfo
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallKind
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CandidateFactory
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCallableLookupOutcome
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCandidateCollector
-import org.cangnova.cangjie.cfir.resolve.calls.processFunctionsAndConstructorsByName
+import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessContext
+import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessKind
+import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityResult
+import org.cangnova.cangjie.cfir.resolve.providers.CfirLookupDisposition
+import org.cangnova.cangjie.cfir.resolve.providers.lookupOriginForAccessibility
 import org.cangnova.cangjie.cfir.scopes.CfirContainingNamesAwareScope
+import org.cangnova.cangjie.cfir.scopes.CfirCallableLookupProvenance
 import org.cangnova.cangjie.cfir.scopes.CfirScope
+import org.cangnova.cangjie.cfir.scopes.processCallablesByNameWithLookupProvenance
 import org.cangnova.cangjie.cfir.scopes.impl.CfirMemberLookupCompletenessScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirLocalScope
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
@@ -52,6 +59,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.cfir.session.cfirProvider
+import org.cangnova.cangjie.cfir.session.accessibilityChecker
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
@@ -60,6 +68,7 @@ import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.resolvedType
+import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.OperatorNameConventions
 import org.cangnova.cangjie.resolve.calls.tasks.ExplicitReceiverKind
 import org.cangnova.cangjie.resolve.calls.tower.CandidateApplicability
@@ -162,12 +171,70 @@ internal class ScopeBasedTowerLevel(
     private fun consumeCallableCandidate(
         symbol: CfirCallableSymbol<*>,
         processor: TowerLevelProcessor,
-    ) {
+        lookupProvenance: CfirCallableLookupProvenance = CfirCallableLookupProvenance.None,
+    ): CallableCandidateDiscovery {
         symbol.lazyResolveToPhase(CfirResolvePhase.TYPES)
-        if (givenExtensionReceiver != null && !symbol.isInstanceExtendMemberCandidate(components.session)) {
-            return
+        val accessKind = when (processor.callInfo.callKind) {
+            CallKind.NamedValueAccess -> if (
+                processor.callInfo.callSite is org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
+            ) {
+                /*
+                 * `f()` 的 callable-value 探测仍属于调用发现；独立 `obj.f` 才是函数值引用。
+                 * 两者必须显式区分，否则不可访问函数会在 fallback 中被重新解释为访问错误，
+                 * 或把真正的函数引用错误降成 call no-match。
+                 */
+                CfirAccessKind.CALLABLE
+            } else {
+                CfirAccessKind.NAMED_VALUE
+            }
+
+            else -> CfirAccessKind.CALLABLE
         }
-        processor.consumeCandidate(symbol, scope, dispatchReceiver, givenExtensionReceiver)
+        val accessContext = CfirAccessContext(
+            useSiteFile = processor.callInfo.containingFile,
+            containingDeclarations = processor.callInfo.containingDeclarations,
+            receiverType = dispatchReceiver?.type ?: givenExtensionReceiver?.type,
+            lookupOrigin = scope.lookupOriginForAccessibility(),
+            kind = accessKind,
+        )
+        val accessibility = components.session.accessibilityChecker.checkCallable(
+            symbol = symbol,
+            context = accessContext,
+            provenance = lookupProvenance,
+        )
+        if (accessibility is CfirAccessibilityResult.Inaccessible) {
+            when (accessibility.disposition) {
+                CfirLookupDisposition.NOT_DISCOVERABLE ->
+                    return CallableCandidateDiscovery.NOT_DISCOVERABLE
+
+                CfirLookupDisposition.EXCLUDE_CALLABLE -> {
+                    processor.consumeLookupOutcome(
+                        symbol = symbol,
+                        lookupProvenance = lookupProvenance,
+                        accessibilityResult = accessibility,
+                    )
+                    return CallableCandidateDiscovery.EXCLUDED_CALLABLE
+                }
+
+                CfirLookupDisposition.REPORT_ACCESS_ERROR -> Unit
+            }
+        }
+        if (givenExtensionReceiver != null && !symbol.isInstanceExtendMemberCandidate(
+                components.session,
+                accessContext.copy(kind = CfirAccessKind.EXTEND),
+            )
+        ) {
+            return CallableCandidateDiscovery.NOT_DISCOVERABLE
+        }
+        processor.consumeCandidate(
+            symbol = symbol,
+            scope = scope,
+            dispatchReceiver = dispatchReceiver,
+            givenExtensionReceiver = givenExtensionReceiver,
+            accessibilityResult = accessibility,
+            lookupProvenance = lookupProvenance,
+        )
+        return CallableCandidateDiscovery.CONSUMED
     }
 
     /**
@@ -175,15 +242,17 @@ internal class ScopeBasedTowerLevel(
      */
     override fun processCallablesByName(info: CallInfo, processor: TowerLevelProcessor): ProcessResult {
         var result = ProcessResult.SCOPE_EMPTY
-        scope.processCallablesByName(info.name) { symbol ->
+        scope.processCallablesByNameWithLookupProvenance(info.name) { candidate ->
+            val symbol = candidate.symbol
             // 仓颉 enum constructor 在普通名字访问中不是普通 callable。
             // 裸 enum 值访问由 CfirCallResolver 的 EnumConstructorCall fallback 单独进入，
             // 否则同名顶层变量/函数会被错误地与 enum constructor 合并成歧义。
             if (info.callKind == CallKind.NamedValueAccess && symbol is CfirEnumConstructorSymbol) {
-                return@processCallablesByName
+                return@processCallablesByNameWithLookupProvenance
             }
-            result = ProcessResult.FOUND
-            consumeCallableCandidate(symbol, processor)
+            if (consumeCallableCandidate(symbol, processor, candidate.provenance).isFoundByThisLevel) {
+                result = ProcessResult.FOUND
+            }
         }
         return result.forwardMemberLookupBlockers(processor)
     }
@@ -219,20 +288,25 @@ internal class ScopeBasedTowerLevel(
                 enumConstructorCandidates += enumConstructorSymbol
             }
             for (enumConstructorSymbol in enumConstructorCandidates.refineByExpectedEnumOwner(expectedOwnerClassId)) {
-                result = ProcessResult.FOUND
-                consumeCallableCandidate(enumConstructorSymbol, processor)
+                if (consumeCallableCandidate(enumConstructorSymbol, processor).isFoundByThisLevel) {
+                    result = ProcessResult.FOUND
+                }
             }
             return result.forwardMemberLookupBlockers(processor)
         }
 
         var result = ProcessResult.SCOPE_EMPTY
-        val constructorFilter = when (givenExtensionReceiver) {
-            null -> ConstructorFilter.OnlyNested
-            else -> ConstructorFilter.Both
+        processConstructorsByName(info) { symbol ->
+            if (consumeCallableCandidate(symbol, processor).isFoundByThisLevel) {
+                result = ProcessResult.FOUND
+            }
         }
-        scope.processFunctionsAndConstructorsByName(info, components, constructorFilter) { symbol ->
-            result = ProcessResult.FOUND
-            consumeCallableCandidate(symbol, processor)
+        scope.processCallablesByNameWithLookupProvenance(info.name) { candidate ->
+            val function = candidate.symbol as? org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
+                ?: return@processCallablesByNameWithLookupProvenance
+            if (consumeCallableCandidate(function, processor, candidate.provenance).isFoundByThisLevel) {
+                result = ProcessResult.FOUND
+            }
         }
 
         if (info.callKind == CallKind.Function && result == ProcessResult.SCOPE_EMPTY) {
@@ -243,20 +317,68 @@ internal class ScopeBasedTowerLevel(
                 if (!symbol.isDirectCallableValueCandidate()) return
                 if (!consumedCallableValues.add(symbol)) return
 
-                result = ProcessResult.FOUND
-                consumeCallableCandidate(symbol, processor)
+                if (consumeCallableCandidate(symbol, processor).isFoundByThisLevel) {
+                    result = ProcessResult.FOUND
+                }
             }
 
             if (scope is CfirLocalScope) {
                 scope.processVariablesByName(info.name, ::consumeCallableValue)
             }
 
-            scope.processCallablesByName(info.name) { symbol ->
-                consumeCallableValue(symbol)
+            scope.processCallablesByNameWithLookupProvenance(info.name) { candidate ->
+                val symbol = candidate.symbol
+                if (symbol is CfirFunctionSymbol<*>) return@processCallablesByNameWithLookupProvenance
+                if (!symbol.isDirectCallableValueCandidate()) return@processCallablesByNameWithLookupProvenance
+                if (!consumedCallableValues.add(symbol)) return@processCallablesByNameWithLookupProvenance
+
+                if (consumeCallableCandidate(symbol, processor, candidate.provenance).isFoundByThisLevel) {
+                    result = ProcessResult.FOUND
+                }
             }
         }
 
         return result.forwardMemberLookupBlockers(processor)
+    }
+
+    /**
+     * 从当前结构 scope 中收集构造器。
+     *
+     * 构造器来源于 classifier，而普通函数来源于 callable graph；两条结构入口必须分开，
+     * 否则把它们合并在旧 helper 中会迫使函数候选丢失 extend/interface provenance。
+     */
+    private fun processConstructorsByName(
+        info: CallInfo,
+        processor: (CfirFunctionSymbol<*>) -> Unit,
+    ) {
+        val constructorFilter = when (givenExtensionReceiver) {
+            null -> ConstructorFilter.OnlyNested
+            else -> ConstructorFilter.Both
+        }
+        val seen = linkedSetOf<org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol<*>>()
+        scope.processClassifiersByName(info.name) { classifier ->
+            if (!seen.add(classifier)) return@processClassifiersByName
+
+            classifier.lazyResolveToPhase(CfirResolvePhase.TYPES)
+            if (classifier is org.cangnova.cangjie.cfir.symbols.CfirTypeAliasSymbol) {
+                classifier.cfir.scopeProvider
+                    .getTypealiasConstructorScope(
+                        classifier.cfir,
+                        components.session,
+                        components.scopeSession,
+                    )
+                    .processDeclaredConstructors(processor)
+                return@processClassifiersByName
+            }
+
+            val declaration = classifier.cfir as? CfirClassLikeDeclaration ?: return@processClassifiersByName
+            if (declaration is CfirEnum || !constructorFilter.accepts(declaration)) return@processClassifiersByName
+            declaration.declarations
+                .asSequence()
+                .filterIsInstance<org.cangnova.cangjie.cfir.declarations.CfirConstructor>()
+                .map { it.symbol }
+                .forEach(processor)
+        }
     }
 
     /** 查找裸 enum constructor 访问的最近 lexical enum owner。 */
@@ -313,6 +435,23 @@ internal class ScopeBasedTowerLevel(
         val declaration = cfir as? CfirVariable ?: return false
         return declaration.returnTypeRef.coneTypeOrNull.recoverableFunctionTypeOrNull() != null
     }
+}
+
+/**
+ * scope 的结构性候选交给统一 checker 后，在 tower 内的处理结果。
+ *
+ * `NOT_DISCOVERABLE` 不构成当前层命中，让普通 unresolved/not-member 路径继续接管；
+ * `EXCLUDED_CALLABLE` 构成结构性命中但不创建 Candidate，使调用停留在当前 tower level
+ * 并由正常的空候选结果生成 no-match；只有 `CONSUMED` 真正进入候选检查流水线。
+ */
+private enum class CallableCandidateDiscovery {
+    NOT_DISCOVERABLE,
+    EXCLUDED_CALLABLE,
+    CONSUMED,
+    ;
+
+    val isFoundByThisLevel: Boolean
+        get() = this != NOT_DISCOVERABLE
 }
 
 /**
@@ -462,6 +601,24 @@ internal class TowerLevelProcessor(
     val context: ResolutionContext,
 ) {
     /**
+     * 把名字已发现但不创建 Candidate 的调用排除结果写入共享 collector。
+     */
+    fun consumeLookupOutcome(
+        symbol: CfirCallableSymbol<*>,
+        lookupProvenance: CfirCallableLookupProvenance,
+        accessibilityResult: CfirAccessibilityResult.Inaccessible,
+    ) {
+        resultCollector.consumeLookupOutcome(
+            CfirCallableLookupOutcome.Excluded(
+                group = group,
+                symbol = symbol,
+                lookupProvenance = lookupProvenance,
+                accessibilityResult = accessibilityResult,
+            )
+        )
+    }
+
+    /**
      * 消费普通 callable 符号并创建候选。
      */
     fun consumeCandidate(
@@ -469,6 +626,8 @@ internal class TowerLevelProcessor(
         scope: CfirScope?,
         dispatchReceiver: ReceiverValue? = null,
         givenExtensionReceiver: ReceiverValue? = null,
+        accessibilityResult: CfirAccessibilityResult? = null,
+        lookupProvenance: CfirCallableLookupProvenance = CfirCallableLookupProvenance.None,
     ): CandidateApplicability {
         return resultCollector.consumeCandidate(
             group,
@@ -479,6 +638,8 @@ internal class TowerLevelProcessor(
                 explicitReceiverKind = explicitReceiverKind,
                 dispatchReceiver = dispatchReceiver,
                 givenExtensionReceiver = givenExtensionReceiver,
+                accessibilityResult = accessibilityResult,
+                lookupProvenance = lookupProvenance,
             ),
             context,
         )
@@ -541,7 +702,7 @@ internal class FunctionTypeInvokeTowerLevel(
 /**
  * 判断作用域是否可能包含指定名称。
  */
-internal fun CfirScope.mayContainName(name: org.cangnova.cangjie.name.Name): Boolean {
+internal fun CfirScope.mayContainName(name: Name): Boolean {
     if (this is CfirContainingNamesAwareScope) {
         if (name in getCallableNames() || name in getClassifierNames()) return true
     }

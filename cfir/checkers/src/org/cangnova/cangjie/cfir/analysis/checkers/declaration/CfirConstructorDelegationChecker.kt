@@ -364,18 +364,16 @@ internal fun CfirConstructor.requiredParameterCount(): Int =
 /**
  * 解析 class-like 声明的直接具体父类声明。
  *
- * 接口父类型会被过滤；当 includeLoopInSupertypeError 为 true 时，允许从
- * `LoopInSupertype` 错误类型的 delegated typeRef 中恢复父类型，供循环继承诊断使用。
+ * 接口父类型会被过滤；父类型分类统一决定合法父边和间接继承环是否进入构造器依赖。
  */
 internal fun CfirClassLikeDeclaration.directConcreteSuperDeclaration(
     context: CheckerContext,
-    includeLoopInSupertypeError: Boolean = false,
 ): CfirClassLikeDeclaration? {
     return superTypeRefs
         .mapNotNull { superTypeRef ->
             val dependencyType = superTypeRef
                 .classifyDeclaredSupertype(context.session)
-                .constructorDependencyTypeOrNull(includeLoopInSupertypeError)
+                .constructorDependencyTypeOrNull()
                 ?: return@mapNotNull null
             dependencyType.toResolvedSuperDeclaration(context)
         }

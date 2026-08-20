@@ -259,6 +259,7 @@ abstract class AbstractRawCfirBuilder<T : Any>(
         visibility: Visibility,
         isVisibilityExplicit: Boolean = false,
         isModalityExplicit: Boolean = false,
+        isAbstractExplicit: Boolean = false,
         isAbstract: Boolean = false,
         isOpen: Boolean = false,
         isSealed: Boolean = false,
@@ -281,6 +282,7 @@ abstract class AbstractRawCfirBuilder<T : Any>(
         status.isSealed = isSealed
         status.isVisibilityExplicit = isVisibilityExplicit
         status.isModalityExplicit = isModalityExplicit
+        status.isAbstractExplicit = isAbstractExplicit
         status.isStatic = isStatic
         status.isConst = isConst
         status.isMut = isMut

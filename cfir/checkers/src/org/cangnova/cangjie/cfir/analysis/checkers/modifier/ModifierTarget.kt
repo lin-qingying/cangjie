@@ -201,6 +201,15 @@ public fun interface ModifierTargetPredicate {
                 target.site == Site.MEMBER && target.kind in kinds
             }
 
+        /** 创建一个只允许给定种类集合在指定容器种类的成员位置出现的谓词（容器细分）。 */
+        public fun memberOfIn(
+            containers: Set<DeclarationKind>,
+            vararg kinds: DeclarationKind,
+        ): ModifierTargetPredicate =
+            ModifierTargetPredicate { target, _ ->
+                target.site == Site.MEMBER && target.kind in kinds && target.container in containers
+            }
+
         /** 创建一个只允许给定种类集合作为声明头出现的谓词。 */
         public fun headOf(vararg kinds: DeclarationKind): ModifierTargetPredicate =
             ModifierTargetPredicate { target, _ ->

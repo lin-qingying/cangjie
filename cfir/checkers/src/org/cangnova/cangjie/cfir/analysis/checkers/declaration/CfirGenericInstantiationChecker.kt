@@ -2,6 +2,7 @@ package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.context.accessContext
 import org.cangnova.cangjie.cfir.analysis.checkers.firstCharacterDiagnosticSource
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.calls.resolvedQualifierClassifier
@@ -27,6 +28,8 @@ import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
 import org.cangnova.cangjie.cfir.references.CfirResolvedErrorReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.resolve.providers.createExtendDeclarationSubstitution
+import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessKind
+import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityResult
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.resolve.toSymbol
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassMemberScopeKind
@@ -36,6 +39,7 @@ import org.cangnova.cangjie.cfir.scopes.impl.CfirFunctionInheritanceIdentity
 import org.cangnova.cangjie.cfir.scopes.impl.CfirFunctionInheritanceProvenance
 import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
 import org.cangnova.cangjie.cfir.session.extendProvider
+import org.cangnova.cangjie.cfir.session.accessibilityChecker
 import org.cangnova.cangjie.cfir.session.ProcessorAction
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.session.services.CfirExtendTargetKey
@@ -903,7 +907,12 @@ private class GenericInstantiationAnalyzer(
         val signatures = mutableListOf<InstantiatedMemberSignature>()
         val extendProvider = checkerContext.session.extendProvider
         for (extend in extendProvider.getExtendsForTarget(targetKey)) {
-            if (!extendProvider.isExtendAccessible(extend)) continue
+            if (
+                checkerContext.session.accessibilityChecker.checkExtend(
+                    extend,
+                    checkerContext.accessContext(CfirAccessKind.EXTEND),
+                ) !is CfirAccessibilityResult.Accessible
+            ) continue
             val targetPattern = extend.extendedTypeRef.coneTypeOrNull ?: continue
             val substitution = createExtendDeclarationSubstitution(
                 session = checkerContext.session,

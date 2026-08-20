@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.serialization.provider
 
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
+import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.resolve.providers.CfirCompositeExtendProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirEmptyExtendProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirExtendProvider
@@ -19,7 +20,7 @@ import org.cangnova.cangjie.name.FqName
  * 必须只有一个实现，否则两处行为漂移会导致库（.cjo）中的 extend 对某一侧不可见。
  *
  * 语义对齐官方编译器 `BuildImportedExtendMap`（`TypeCheckExtend.cpp`）：注册阶段对所有可见
- * 来源做全量合并、不做可见性预判；可见性判定留到消费端 `CfirExtendProvider.isExtendAccessible`，
+ * 来源做全量合并、不做可见性预判；可见性判定留到消费端的会话级 accessibility checker，
  * 与官方 `IsExtendAccessible`（`ImportManager.cpp`）"注册全量、消费过滤"的设计一致。
  */
 object CfirExtendProviderComposer {
@@ -90,8 +91,9 @@ object CfirExtendProviderComposer {
             override fun getPackageFqName(extend: CfirExtend): FqName? =
                 delegate.getPackageFqName(extend)
 
-            override fun isExtendAccessible(extend: CfirExtend): Boolean =
-                delegate.isExtendAccessible(extend)
+            override fun getContainingFile(extend: CfirExtend): CfirFile? =
+                delegate.getContainingFile(extend)
+
         }
     }
 }
