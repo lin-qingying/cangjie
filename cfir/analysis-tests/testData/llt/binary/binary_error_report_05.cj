@@ -16,7 +16,7 @@ class Boo {
         }
         set(input) {
             var a = 0;
-            <!CONST_EVAL_DIVIDE_BY_ZERO!>m /= a<!>
+            m /= a
         }
     }
 }

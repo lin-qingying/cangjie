@@ -10,6 +10,7 @@ import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CheckerSink
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.hasCompatibleCallableReferenceParameterShape
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.yieldDiagnostic
 import org.cangnova.cangjie.cfir.resolve.body.CallableReferenceResolutionResult
 import org.cangnova.cangjie.cfir.resolve.expectedType
@@ -43,15 +44,22 @@ object CfirCheckCallableReferenceExpectedType : ResolutionStage() {
         val expectedType = candidate.callInfo.resolutionMode.expectedType ?: return
         val expectedFunctionType = expectedType.fullyExpandedType(context.session) as? ConeFunctionType
         val function = candidate.symbol.takeIf { it.isBound }?.cfir as? CfirFunction ?: return
-        if (expectedFunctionType != null && !candidate.hasCompatibleParameterShape(function, expectedFunctionType)) {
+        if (
+            expectedFunctionType != null &&
+            !candidate.hasCompatibleCallableReferenceParameterShape(expectedFunctionType, context.typeContext)
+        ) {
             sink.yieldDiagnostic(InapplicableCandidate)
             return
         }
-        val resultingType = candidate.buildResultingCallableReferenceType(function, context)
-        if (resultingType.hasRecursiveImplicitReturnType()) {
+        // 返回类型中的递归占位是 ReturnTypeCalculator 在声明解析期间发布的结构化错误。
+        // 先在声明原始类型上检查：candidate substitution 和 this-type 近似可能会抹平
+        // ConeErrorType，导致带期望函数类型的引用错误地继续参与候选匹配。
+        val calculatedReturnType = context.returnTypeCalculator.tryCalculateReturnType(function).coneType
+        if (calculatedReturnType.hasRecursiveImplicitReturnType()) {
             sink.yieldDiagnostic(InapplicableCandidate)
             return
         }
+        val resultingType = candidate.buildResultingCallableReferenceType(function, calculatedReturnType)
 
         candidate.initializeCallableReferenceAdaptation(
             callableReferenceAdaptation = null,
@@ -91,7 +99,7 @@ object CfirCheckCallableReferenceExpectedType : ResolutionStage() {
     /** 根据函数声明与候选替换器构造 callable reference 表达式的结果函数类型。 */
     private fun Candidate.buildResultingCallableReferenceType(
         function: CfirFunction,
-        context: ResolutionContext,
+        calculatedReturnType: ConeCangJieType,
     ): ConeCangJieType {
         val parameterTypes = function.valueParameters.map { parameter ->
             val parameterType = (parameter.returnTypeRef as? CfirResolvedTypeRef)?.coneType
@@ -99,16 +107,9 @@ object CfirCheckCallableReferenceExpectedType : ResolutionStage() {
             substitutor.substituteOrSelf(parameterType)
         }
 
-        val calculatedReturnType = context.returnTypeCalculator.tryCalculateReturnType(function).coneType
         val returnType = substitutedReturnType(calculatedReturnType).approximateThisTypeForDeclaration()
         return ConeFunctionType(parameterTypes, returnType)
     }
-
-    /** 先检查参数形状，避免明显不匹配的 overload 触发隐式返回类型计算。 */
-    private fun Candidate.hasCompatibleParameterShape(
-        function: CfirFunction,
-        expectedType: ConeFunctionType,
-    ): Boolean = function.valueParameters.size == expectedType.parameterTypes.size
 
     /** 判断函数引用结果类型是否依赖正在计算的隐式返回类型。 */
     private fun ConeCangJieType.hasRecursiveImplicitReturnType(): Boolean =

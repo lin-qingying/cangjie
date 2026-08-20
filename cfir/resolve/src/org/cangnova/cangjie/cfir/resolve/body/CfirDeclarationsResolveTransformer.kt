@@ -1135,14 +1135,30 @@ open class CfirDeclarationsResolveTransformer(
         val alreadyResolvedReturnTypeRef = (result.returnTypeRef as? ResolvedImplicitTypeRef)?.typeRef
         if (alreadyResolvedReturnTypeRef != null) {
             result.transformReturnTypeRef(transformer, ResolutionMode.UpdateImplicitTypeRef(alreadyResolvedReturnTypeRef))
+        } else if (
+            inferImplicitReturnType &&
+            result.returnTypeRef.isRecursiveImplicitReturnType() &&
+            !result.mustRetainRecursiveImplicitReturnType()
+        ) {
+            // 递归占位会在 call resolution 时立即发布，供依赖调用保持稳定；但若本函数
+            // 最终只因一个独立的源码错误（例如不合法 operator）无法取得类型，那个源码
+            // 错误才是唯一 owner，不能再保留函数名级的递归占位诊断。
+            val inferredType = inferFunctionReturnType(result)
+            val resolved = result.returnTypeRef.resolvedTypeFromPrototype(
+                inferredType,
+                result.returnTypeRef.source,
+            )
+            result.replaceReturnTypeRef(resolved)
         } else if (inferImplicitReturnType && result.returnTypeRef is CfirImplicitTypeRef) {
             val inferredType = inferFunctionReturnType(result)
-            // 推断失败（ConeErrorType）时，错误类型 ref 使用 body 尾语句作为失败位置，
-            // 对齐官方 cjc CalcFuncRetTyFromBody 在 *lastNode 上报告
-            // sema_incompatible_func_body_and_return_type；其余场景保持隐式返回类型 ref 自身位置。
-            val fallbackSource = (inferredType as? ConeErrorType)?.let {
-                result.body?.statements?.lastOrNull()?.source
-            } ?: result.returnTypeRef.source
+            // 只有函数体各返回路径没有可见公共类型时，函数返回类型推断本身才拥有该错误，
+            // 并且应按 CalcFuncRetTyFromBody 的规则落在 body 尾语句。body 内既有的解析/调用错误
+            // 会作为 inferred type 向上传播，但其诊断 owner 仍是原表达式，不能再以 return 语句
+            // 重复报告一次函数级错误。
+            val fallbackSource = (inferredType as? ConeErrorType)
+                ?.takeIf { it.diagnostic is ConeNoSmallestCommonSupertypeDiagnostic }
+                ?.let { result.body?.statements?.lastOrNull()?.source }
+                ?: result.returnTypeRef.source
             val resolved = result.returnTypeRef.resolvedTypeFromPrototype(
                 inferredType,
                 fallbackSource,
@@ -1170,21 +1186,19 @@ open class CfirDeclarationsResolveTransformer(
             return session.builtinTypes.unitType
         }
 
-        returnTypeInputs.expressions.firstNotNullOfOrNull { expression ->
-            expression.recursionInImplicitTypeErrorOrNull()
-        }?.let { return it }
-
-        if (returnTypeInputs.expressions.any { expression -> expression.referencesImplicitReturnOwner(function) }) {
-            return ConeErrorType(ConeSimpleDiagnostic("Recursive implicit type", DiagnosticKind.RecursionInImplicitTypes))
-        }
-
         val expressionTypes = returnTypeInputs.expressions.map { expression ->
             expression.coneTypeOrNull ?: ConeErrorType(
                 ConeSimpleDiagnostic("Postponed inference", DiagnosticKind.InferenceError)
             )
-        }.toMutableList()
+        }.filterNotTo(mutableListOf()) { type -> type.containsRecursiveImplicitReturnType() }
         if (returnTypeInputs.hasUnitTail) {
             expressionTypes += session.builtinTypes.unitType
+        }
+
+        // 递归占位只属于发起该递归的函数签名；调用者不应把该恢复用错误再次固化为自己的
+        // 返回类型。没有其他返回值时，函数按正常语句流出推断为 Unit。
+        if (expressionTypes.isEmpty()) {
+            return session.builtinTypes.unitType
         }
 
         // 返回表达式已经携带结构化错误时，函数返回类型必须保留该根因。
@@ -1265,10 +1279,10 @@ open class CfirDeclarationsResolveTransformer(
     )
 
     /**
-     * 返回表达式内部若已出现隐式返回类型递归，函数返回类型推断必须保留该根因。
+     * 判断返回表达式是否依赖递归隐式返回类型占位。
      *
-     * 根表达式可能仍被 operator/match 层算出一个普通类型；只看根类型会丢失官方
-     * `unable to infer return type` 的递归诊断，并让 body 内部级联错误冒出。
+     * 该信息只用于决定当前函数是否必须保留自己已经发布的递归占位；调用者的推断会
+     * 丢弃该占位并继续依据自身其他返回路径完成，以免循环错误向整个调用链级联。
      */
     private fun CfirExpression.recursionInImplicitTypeErrorOrNull(): ConeErrorType? {
         (coneTypeOrNull as? ConeErrorType)
@@ -1292,29 +1306,6 @@ open class CfirDeclarationsResolveTransformer(
         return result
     }
 
-    /**
-     * 隐式返回类型的返回表达式若直接引用当前函数，返回类型计算会依赖自身。
-     *
-     * 这种自引用不一定在根表达式上形成错误类型，例如 `return temp % match (foo)` 仍可能
-     * 被后续 operator/match 层推成普通类型；因此需要在 join 之前按解析后的 symbol 扫描。
-     */
-    private fun CfirExpression.referencesImplicitReturnOwner(function: CfirFunction): Boolean {
-        var found = false
-        acceptChildren(object : CfirVisitorVoid() {
-            override fun visitElement(element: CfirElement) {
-                if (found) return
-                if (element is CfirAnonymousFunctionExpression) return
-                val resolvedReference = (element as? CfirResolvable)?.calleeReference as? CfirResolvedNamedReference
-                if (resolvedReference?.resolvedSymbol == function.symbol) {
-                    found = true
-                    return
-                }
-                element.acceptChildren(this, null)
-            }
-        }, null)
-        return found
-    }
-
     /** 判断错误类型是否来自隐式类型递归检测。 */
     private fun ConeErrorType.isRecursionInImplicitTypeError(): Boolean {
         val diagnostic = diagnostic.unwrapUnreportedDuplicateDiagnostic() as? ConeSimpleDiagnostic ?: return false
@@ -1323,6 +1314,35 @@ open class CfirDeclarationsResolveTransformer(
 
     private fun ConeDiagnostic.unwrapUnreportedDuplicateDiagnostic(): ConeDiagnostic =
         (this as? ConeUnreportedDuplicateDiagnostic)?.original ?: this
+
+    /** 返回类型树是否包含隐式返回类型递归占位。 */
+    private fun ConeCangJieType.containsRecursiveImplicitReturnType(): Boolean =
+        contains { type ->
+            type is ConeErrorType && type.isRecursionInImplicitTypeError()
+        }
+
+    /** 当前声明 return type ref 是否是 ReturnTypeCalculator 发布的递归占位。 */
+    private fun CfirTypeRef.isRecursiveImplicitReturnType(): Boolean =
+        (this as? CfirErrorTypeRef)?.diagnostic
+            ?.unwrapUnreportedDuplicateDiagnostic()
+            .let { diagnostic ->
+                diagnostic is ConeSimpleDiagnostic && diagnostic.kind == DiagnosticKind.RecursionInImplicitTypes
+            }
+
+    /**
+     * 非平凡环的入口必须保留其递归占位；平凡自调用仅在返回表达式确实依赖该占位时保留。
+     *
+     * 这使 `f -> g -> f` 只由环入口 `f` 拥有函数签名诊断，而 `operator f() = ...` 中
+     * 已独立失败的源码运算仍能以该运算自身作为诊断 owner。
+     */
+    private fun CfirFunction.mustRetainRecursiveImplicitReturnType(): Boolean {
+        val isNonTrivialLoop = (components.returnTypeCalculator as? ReturnTypeCalculatorWithJump)
+            ?.implicitBodyResolveComputationSession
+            ?.belongToSomeNonTrivialLoop(symbol) == true
+        return isNonTrivialLoop || collectReturnTypeInputsFromBody().expressions.any { expression ->
+            expression.recursionInImplicitTypeErrorOrNull() != null
+        }
+    }
 
     /**
      * 如果所有返回表达式都是同一个 `This` 类型，则直接把该 `This` 类型作为公共返回类型。

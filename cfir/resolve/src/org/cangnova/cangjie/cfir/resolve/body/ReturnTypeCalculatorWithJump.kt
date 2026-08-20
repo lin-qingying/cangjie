@@ -108,7 +108,13 @@ open class ReturnTypeCalculatorWithJump(
         return computeReturnTypeRef(declaration)
     }
 
-    /** 构造递归隐式类型错误，把根错误写回声明，并把参与递归的符号记录到计算会话。 */
+    /**
+     * 构造递归隐式类型的瞬时返回值，并把参与递归的符号记录到计算会话。
+     *
+     * `Computing` 说明当前调用依赖尚未完成的 callable；占位类型必须立刻发布给所有
+     * 依赖调用，令它们在后续的解析与诊断中稳定地观察同一个递归失败。函数 body 的
+     * 共享推断 owner 再负责让已有的源码表达式错误优先于该占位错误。
+     */
     protected fun recursionInImplicitTypeRef(declaration: CfirCallableDeclaration): CfirResolvedTypeRef {
         val errorTypeRef = buildErrorTypeRef {
             source = declaration.returnTypeRef.source

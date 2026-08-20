@@ -3722,3 +3722,76 @@ Flagged while gathering evidence for the extend upper-bound recursion problem ty
 - full verification command: `.\gradlew.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain`。
 - full verification outcome: 任务完整执行，终端汇总 `8426 tests completed, 1300 failed, 307 skipped`，Gradle 因仓库既有失败退出 1。新鲜 XML 精确交集为：六套 Visibility `48 tests, 0 failures, 0 errors, 14 skipped`；InterfaceExtend 双路径 `58/58` 通过；ExtendExport 双路径 `98/98` 通过；`class_static04` 双路径 `2/2` 通过；`extend_access_control1/2` 双路径 `4/4` 通过。仅 `Extend$Visibility.testGenericDefaultImplProp` 双路径仍失败，实际差异是字面量诊断 `CANNOT_CONVERT_LITERAL` 与 `RETURN_TYPE_MISMATCH`，不经过访问控制或导出判定，属于独立既有问题类型。
 - closure: 本条以统一 checker、显式 context、结构 scope 缓存和完整回归关闭前文“OPEN：跨包 extend 的成员导出未考虑所实现接口的可见性”，并取代早期依赖 `CfirAccessibilityFileScope` / `CfirExtendAccessibilityChecker` 的临时架构记录。
+
+## Try/catch 构造器初始化 fixture 纠正（已修复并验证）
+
+- problem type: Initialization。try/catch 各正常分支对 class field 的构造器赋值不产生 `TYPE_MISMATCH`；只有控制流结束时仍可能未初始化的读取才报告初始化诊断。
+- root cause: 两个 initialization fixtures 保留了旧的六处 `TYPE_MISMATCH` 标记，错误地把合法字段赋值当成类型不兼容。
+- official Cangjie evidence: `cjc 1.0.5` 探针仅在 while 后读取和完全未初始化的 try 后读取报告 `sema_used_before_initialization`，对 `CompleteByTryCatch.value = 1/2/3` 均不报告诊断；实现见 `external/cangjie_compiler/src/Sema/LegalityOfUsage/InitializationChecker.cpp:862-1149`。
+- Kotlin counterpart files consulted: `external/kotlin/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/cfa/FirPropertyInitializationAnalyzer.kt`、`cfa/util/PropertyInitializationInfoCollector.kt`、`analysis/checkers/declaration/FirMemberPropertiesChecker.kt`，用于对照由 CFG 统一聚合构造器属性初始化事实的架构。
+- CFIR owner files changed: fixture corrections in `cfir/analysis-tests/testData/diagnostics/initialization/controlFlowInitializationRich.cj` and `tryCatchInitializationSmoke.cj`。
+- repair principle: 保留共享初始化分析器的当前官方行为，只按 cjc 证据删除错误 fixture 期望，不用测试补丁改变生产语义。
+- fixtures covered: 两个 fixture 的 LightTree、PSI、WithoutAliasExpansion 入口，共 6 个 generated entries。
+- verification command: `./gradlew.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain -x :cfir:analysis-tests:generateTestGeneratorForCfirAnalysisTestsTests`，覆盖六套 Initialization generated suites。
+- verification outcome: 相关完整定向切片与 DeclarationStatus/Override 一并执行为 `48 tests, 0 failures, 0 errors, 12 skipped`；完整独占回归中 6 个目标 entries 为 `0 failures, 0 errors`，其中 2 个 no-alias entries 按 directive skipped。完整回归 Gradle 汇总为 `8426 tests, 1284 failures, 307 skipped`；新鲜 XML 汇总为 `8427 tests, 1284 failures, 0 errors, 308 skipped`，其余为仓库既有失败族。
+
+## Override/redef 缺省可见性保留 raw status（已修复并验证）
+
+- problem type: Override / Visibility。未显式写可见性的 override/redef 普通成员必须保持仓颉缺省 `internal`，不能从父成员继承 `public`；interface 自身成员的 raw default 仍为 `public`。
+- root cause: STATUS resolver 曾对未显式可见性的成员沿直接 override 链取最宽父状态，把 `implemented.cj` 的 `d`、`h`、`g` 从 raw `internal` 错误提升为 `public`，漏报 `CANNOT_WEAKEN_ACCESS_PRIVILEGE`。
+- official Cangjie evidence: `cjc 1.0.5` 对显式 private 的 `c` 以及未写可见性的 `d`、`h`、`g` 均报告 `sema_weak_visibility`。普通声明缺省为 `internal`，见 `external/cangjie_compiler/src/Parse/ParserModifierRules.cpp` 与 `external/cangjie_compiler/src/Sema/DeclAttributeChecker.cpp:149-181`；弱化可见性矩阵见 `external/cangjie_compiler/src/Sema/InheritanceChecker/StructInheritanceChecker.cpp:1174-1201`。
+- Kotlin counterpart files consulted: `external/kotlin/compiler/fir/resolve/src/org/jetbrains/kotlin/fir/resolve/transformers/FirStatusResolver.kt:241-367` 及 STATUS transformer；Kotlin raw FIR 使用 `Unknown` 再从 override 链解析，而 CFIR 的 `PsiRawCfirBuilder.kt` 与 `LightTreeModifierList.kt` 已物化仓颉具体默认可见性，因此只复用统一 STATUS 发布架构，不照搬 Kotlin 的 inherited visibility 语义。
+- CFIR owner files changed: `cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/transformers/CfirStatusResolveProcessor.kt`。
+- repair principle: 由 STATUS 统一 owner 保留 raw builder/deserializer 已确定的仓颉默认可见性，使所有函数、属性、访问器和 static redef 路径消费同一 resolved status，而不是在诊断 checker 中逐 fixture 补报。
+- fixtures covered: `diagnostics/override/implemented.cj` 的 LightTree、PSI、WithoutAliasExpansion 入口；LLT/PSI `class_access_control3.cj`、`class_access_control4.cj`、`class_access_control5.cj`、`class_access_control20.cj`、`class_access_control21.cj`、`class/class_property/property11.cj`。
+- verification command: 同一完整 generated-family 定向命令；另显式选择上述 15 个 LLT/PSI/Diagnostics methods 执行弱化可见性矩阵。
+- verification outcome: 显式矩阵 `15 tests, 0 failures, 0 errors, 1 skipped`（`BUILD SUCCESSFUL`）；完整独占回归中 15 个目标 entries 为 `0 failures, 0 errors`，其中 no-alias `implemented` 按 directive skipped。`covariance.cj` 的弱化可见性标记本身已产生，但该 fixture 仍因独立的 `ABSTRACT_MEMBER_NOT_IMPLEMENTED` 与 tuple/function covariance 差异失败，未并入本问题类型。
+
+## Binary 静态成员对象访问诊断覆盖完整标识符（已修复并验证）
+
+- problem type: Diagnostics / range-only。`binary_error_report_01.cj` 已正确报告对象不能访问 static 成员，但旧期望只覆盖变量名 `value` 的首字符 `v`。
+- root cause: fixture 保留了命令行编译器式的窄锚点，与本项目 IDE 诊断覆盖完整相关 token 的统一范围策略不一致；生产诊断 source 已经正确覆盖完整标识符。
+- official Cangjie evidence: 纯诊断范围问题；依据 `cangjie-cfir-llt-repair` 的 Diagnostic Range Policy，项目诊断应覆盖完整 `value` token，无需按 `cjc` 的单字符锚点收窄。
+- Kotlin counterpart files consulted: 不适用；该 fixture 的实际 PSI 与 LightTree 输出已经共同覆盖完整标识符，没有生产 source-selection 缺口。
+- CFIR owner files changed: 无生产代码变更；修正 `cfir/analysis-tests/testData/llt/binary/binary_error_report_01.cj` 的 inline diagnostic 范围。
+- repair principle: 保持共享诊断范围实现不变，只纠正违背项目完整 token 策略的陈旧期望，避免为单一 fixture 收窄生产诊断。
+- fixtures covered: PSI 与 LightTree `Binary.testBinaryErrorReport01`。
+- verification command: `.\gradlew.bat :cfir:analysis-tests:test --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTTestGenerated$Binary.testBinaryErrorReport01' --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTPsiTestGenerated$Binary.testBinaryErrorReport01' --no-daemon --max-workers=1 --console=plain --no-build-cache --no-configuration-cache`。
+- verification outcome: `BUILD SUCCESSFUL in 3m 20s`；新鲜 XML 中 PSI 与 LightTree 各执行 1 个目标测试，均为 `failures=0, errors=0`。
+
+## 无 payload enum value 调用统一走 implicit invoke（已修复并验证）
+
+- problem type: Resolve / implicit invoke。无 payload 的 enum constructor 表示 enum 值；源码形态 `Enum.Entry(...)` 必须先解析该值，再查找其 `operator ()`。这同时覆盖空实参 `Entry()` 与带实参的 `Entry(args)`。
+- root cause: `CfirExpressionsResolveTransformer` 原本只把“带实参且 enum constructor 参数映射失败”的候选重写为 implicit invoke。空实参会先被无 payload constructor 当作成功候选，遗漏值调用分类，因而无法得到 `NO_MATCHING_OPERATOR_INVOKE`。
+- official Cangjie evidence: `cjc 1.0.5` 对 `Option<Unit>.None()` 在 O0、O2 下均报告 `sema_no_match_operator_function_call`。`external/cangjie_compiler/src/Sema/TypeCheckCall.cpp:170-183` 将 enum constructor 的非函数 target 标识为后续调用候选；`2958-2982` 在 enum constructor 候选参数匹配不成立时清除 constructor call 的 base type，重新进行 function/operator() call 检查，统一保留 enum constructor 与 `operator ()` 的解析路径。
+- Kotlin counterpart files consulted: `external/kotlin/compiler/fir/resolve/src/org/jetbrains/kotlin/fir/resolve/calls/FirCallResolver.kt:93-150`（先以 variable access 收集可调用值、再 `copyAsImplicitInvokeCall`）；`calls/tower/FirInvokeResolveTowerExtension.kt:304-385`（以该值作为 explicit receiver 解析 `invoke`）；`transformers/body/resolve/FirExpressionsResolveTransformer.kt:641-705`（shared call completion owner）。
+- CFIR owner files changed: `cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirExpressionsResolveTransformer.kt`。
+- repair principle: 由共享调用解析器根据 resolved 或 failed enum-constructor candidate 的“无 payload 值”属性决定 implicit invoke，而不依赖某个参数映射错误或单个 fixture，使 `Entry()` 和 `Entry(args)` 使用同一语言级调用流程。
+- fixtures covered: `binary/binary_error_report_03.cj` 的 LightTree、PSI；正常 enum constructor overload `enum/enum_ctor_same_name.cj` 的双路径；enum value 自身声明 `operator ()` 的 `enum/enum_operator_overload.cj` 双路径。
+- verification command: `.\gradlew.bat :cfir:analysis-tests:test --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTTestGenerated$Binary.testBinaryErrorReport03' --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTPsiTestGenerated$Binary.testBinaryErrorReport03' --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTTestGenerated$Enum.testEnumCtorSameName' --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTPsiTestGenerated$Enum.testEnumCtorSameName' --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTTestGenerated$Enum.testEnumOperatorOverload' --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTPsiTestGenerated$Enum.testEnumOperatorOverload' --no-daemon --max-workers=1 --console=plain --no-build-cache --no-configuration-cache`。
+- verification outcome: 新鲜 XML 中上述 6 个 target tests 全部为 `failures=0, errors=0`。同一次扩展探索中 `enum25_3.cj` 与 `function_shadow_02.cj` 双路径仍失败，但实际差异分别为既有 `NO_CONSTRUCTOR`/match usefulness 与 local function scope 的 `UNRESOLVED_REFERENCE`，不经过本次 qualified enum constructor 的 implicit-invoke 分支，未并入本问题类型。
+
+## 递归隐式返回类型的目标函数引用失败归属（已修复并验证）
+
+- problem type: Resolve / callable reference。带目标函数类型的函数引用若目标函数的隐式返回类型递归，必须同时保留函数声明上的 `UNABLE_TO_INFER_RETURN_TYPE`，并在引用表达式上报告 `NO_MATCH_FUNCTION_DECLARATION_FOR_REF`；裸函数值访问不应因此产生后者。
+- root cause: callable-reference expected-type stage 在 candidate substitution 和 This 类型近似之后才检查返回类型，递归 `ConeErrorType` 可能被掩盖；它也只按参数个数预筛 candidate，导致参数类型本不兼容的 overload 仍会计算隐式返回类型并制造伪递归。即使候选被判为不可用，`resolveCallableReferenceArguments` 只标记 atom 为失败，没有把 no-match 物化为引用自己的 error reference，导致 completion/checker 无法保留该引用的诊断锚点。
+- official Cangjie evidence: `cjc 1.0.5` 对去 marker 的 `nest_function_use_02` 同时报 `sema_unable_to_infer_return_type`（`foo`）与 `sema_no_match_function_declaration_for_ref`（作为有目标函数类型实参的 `foo<Int64>`）；`let b = foo<Int64>` 的探针只报前者。实现见 `external/cangjie_compiler/src/Sema/TypeCheckReference.cpp:42-50` 与 `src/Sema/TypeCheckExpr/NameReferenceExpr.cpp:327-375`：有 target type 的函数引用延后检查，不能形成有效引用时由 `ChkRefExpr` 产生 no-match-ref。
+- Kotlin counterpart files consulted: `external/kotlin/compiler/fir/resolve/src/org/jetbrains/kotlin/fir/resolve/calls/FirCallResolver.kt:561-659`、`calls/stages/ResolutionStages.kt:802-825`、`calls/stages/CheckCallableReferenceExpectedType.kt`。Kotlin 在 eager resolve 失败时为 postponed atom 写入 error reference，并由外层候选持有结构化失败。
+- CFIR owner files changed: `cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/candidate/CfirCallableReferenceCandidateCompatibility.kt`、`calls/stages/CfirCheckCallableReferenceExpectedType.kt`、`body/CfirCallResolver.kt`。
+- repair principle: 用共享的 target-function 参数逆变兼容规则在返回类型求值前消除不可能 overload，在 callable-reference resolver 中以 atom 的 error reference 物化 target-type no-match，并从未近似的声明返回类型识别递归占位；不使用无上下文 checker 对所有函数值引用补报。
+- fixtures covered: `llt/function/nest_function_use_01.cj` 至 `nest_function_use_09.cj` 的 PSI 与 LightTree 路径；其中 02/03/04 覆盖递归引用的 no-match，05 覆盖参数不兼容 overload 不得制造伪递归。
+- verification command: `.\gradlew.bat :cfir:analysis-tests:test '-Pcangjie.flatc.path=D:\code\cangjie\cjodome\fbs\flatc.exe' --tests '*Function.testNestFunctionUse*'`。
+- verification outcome: `BUILD SUCCESSFUL`；18 个目标测试（两条路径 × 九个 fixture）均通过。
+
+## Enum constructor target typing and ideal-literal expected-type constraints (已修复并验证)
+
+- problem type: Resolve / Type Inference / Diagnostics。仓颉枚举声明中的名称在调用解析中是 enum constructor；无参泛型 enum constructor 必须保留未定型 owner，以便裸构造器诊断或同 owner 目标类型定型；显式类型实参但 owner 与目标类型不一致时必须报告 `TYPE_MISMATCH`。理想浮点字面量不能被错误定型为 `Int64`，否则泛型调用的 `UNABLE_TO_INFER_GENERIC_FUNC` 会被静默吞掉。
+- root cause: expected-return 预筛把未定型 enum constructor 当普通泛型函数提前施加跨 owner 约束；completion writer 又把未定型 owner 近似掉，导致 `GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT` 丢失。理想字面量上下文近似没有校验 ideal 数值族，`IdealFloat` 可错误改写为整数 primitive。显式类型实参的根 expected-type 约束未归类为外层类型不匹配。
+- official Cangjie evidence: `cjc 1.0.5` 对 `let c: A = None1`、`let f: Option1<Int64> = None` 报 `sema_generic_type_without_type_argument`，对 `let d: A = None1<Int64>` 报 `sema_mismatched_types`，对 `let a: Int64 = name(1.1)` 报 `sema_unable_to_infer_generic_func`。`external/cangjie_compiler/src/Sema/EnumSugarTargetsFinder.cpp:RefineTargets` 仅按同一 enum owner 细化 enum constructor 目标类型并在无匹配时保留候选；`TypeArgumentInference.cpp` 保留理想字面量约束直到最终推断。
+- Kotlin counterpart files consulted: `external/kotlin/compiler/fir/resolve/src/org/jetbrains/kotlin/fir/resolve/calls/stages/ArgumentCheckingProcessor.kt`、`external/kotlin/compiler/fir/resolve/src/org/jetbrains/kotlin/fir/resolve/transformers/FirCallCompletionResultsWriterTransformer.kt`、`external/kotlin/compiler/fir/resolve/src/org/jetbrains/kotlin/fir/resolve/inference/FirCallCompleter.kt`，用于对照 expected-type 约束、候选完成与根类型不匹配的分层。
+- CFIR owner files changed: `cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/stages/ArgumentCheckingProcessor.kt`、`CfirCheckExpectedReturnTypeBeforeArguments.kt`、`cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/inference/CfirCallCompletionResultsWriterTransformer.kt`、`ExpectedTypeRootMismatch.kt`。
+- repair principle: 在共享 candidate staging、inference constraint system、completion writer 与 root-mismatch 分类层修复 owner/expected-type 生命周期；enum constructor 语义始终通过 `CfirEnumConstructor` 建模，不按 fixture 名称或“entry”分支。
+- fixtures covered: `diagnostics/enum/errorSimpleEnum.cj`、`diagnostics2/enum/errorSimpleEnum.cj` 的 LightTree/PSI 路径，以及 `diagnostics/type-mismatch/simple.cj` 的 LightTree/PSI 路径。
+- fixture correction: none。
+- verification command: `.\gradlew.bat :cfir:analysis-tests:test '-Pcangjie.flatc.path=D:\code\cangjie\cjodome\fbs\flatc.exe' --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisDiagnosticsTestGenerated$Enum.testErrorSimpleEnum' --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisDiagnosticsPsiTestGenerated$Enum.testErrorSimpleEnum' --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisDiagnostics2TestGenerated$Enum.testErrorSimpleEnum' --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisDiagnostics2PsiTestGenerated$Enum.testErrorSimpleEnum' --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisDiagnosticsTestGenerated$TypeMismatch.testSimple' --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisDiagnosticsPsiTestGenerated$TypeMismatch.testSimple' -x :cfir:analysis-tests:generateTestGeneratorForCfirAnalysisTestsTests --no-daemon --max-workers=1 --console=plain --no-build-cache`
+- verification outcome: 定向六条切片 `BUILD SUCCESSFUL`，6/6 通过；diagnostics2 的 LightTree/PSI `errorSimpleEnum` 各 1/1 通过。完整 `:cfir:analysis-tests:test` 执行完成但仓库仍有 1,252 个既有失败（8,426 tests，307 skipped），未发现本条目标用例回归。

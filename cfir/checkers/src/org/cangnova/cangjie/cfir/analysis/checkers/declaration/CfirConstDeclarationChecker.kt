@@ -331,7 +331,27 @@ private class CfirConstExpressionEvaluator(
         is CfirThisReceiverExpression,
         is CfirSuperReceiverExpression -> true
 
-        is CfirWrappedExpression -> checkExpression(expression.expression, isWeak, allowReturn)
+        // CfirWrappedExpression 的每个子类都必须在此显式表态，不设兜底透传：
+        // 包装节点是否为合法 const 表达式属于语义决策，新增子类应当在编译期暴露为
+        // `when` 不穷尽，而不是被兜底分支静默放行。
+        is CfirNamedArgumentExpression -> checkExpression(expression.expression, isWeak, allowReturn)
+        is CfirInoutArgumentExpression -> checkExpression(expression.expression, isWeak, allowReturn)
+
+        // `?.` 链整体不是 const 表达式，且不再下探链内成员：
+        // 其求值语义是"接收者为 None 时短路"，需要运行期分支，与链上成员是否 const 无关。
+        // 诊断锚点覆盖整条链，与官方一致。
+        is CfirOptionalChainExpression -> {
+            reportExpectExpression(expression, isWeak)
+            false
+        }
+
+        // 单个 `?` 后缀只出现在 optional chain 内部（见 CangJieExpressionParsing 的后缀链解析），
+        // 外层 chain 已拒绝且不下探，因此这里实际不可达；保留分支以维持子类穷尽。
+        is CfirOptionalExpression -> {
+            reportExpectExpression(expression, isWeak)
+            false
+        }
+
         is CfirTypeOperator -> checkExpression(expression.argument, isWeak, allowReturn)
         is CfirTypeConversion -> checkExpression(expression.argument, isWeak, allowReturn)
         is CfirBinaryOp -> checkExpression(expression.left, isWeak, allowReturn) and
@@ -375,9 +395,6 @@ private class CfirConstExpressionEvaluator(
             reportExpectExpression(expression, isWeak)
             false
         }
-
-        is CfirOptionalExpression,
-        is CfirOptionalChainExpression -> checkExpression(expression.expression, isWeak, allowReturn)
 
         else -> {
             reportExpectExpression(expression, isWeak)
@@ -673,7 +690,18 @@ private class CfirConstExpressionEvaluator(
             receiver?.let { checkReceiverForMemberAccess(it, isWeak) }
         }
 
-        is CfirWrappedExpression -> checkMutatingTargetAccess(expression.expression, isWeak, allowReturn)
+        // 与 checkExpression 一致：包装节点逐个显式表态，不设兜底透传。
+        is CfirNamedArgumentExpression -> checkMutatingTargetAccess(expression.expression, isWeak, allowReturn)
+        is CfirInoutArgumentExpression -> checkMutatingTargetAccess(expression.expression, isWeak, allowReturn)
+
+        // `a?.b = x` 的被修改对象位于短路链上，整体不是 const 表达式，
+        // 诊断锚点保持在整条链，不下探到链内接收者。
+        is CfirOptionalChainExpression,
+        is CfirOptionalExpression -> {
+            reportExpectExpression(expression, isWeak)
+            false
+        }
+
         is CfirTypeOperator -> checkMutatingTargetAccess(expression.argument, isWeak, allowReturn)
         is CfirTypeConversion -> checkMutatingTargetAccess(expression.argument, isWeak, allowReturn)
         else -> null

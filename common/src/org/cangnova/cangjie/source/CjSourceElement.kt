@@ -197,6 +197,24 @@ sealed class CjFakeSourceElementKind(
     object DesugaredForLoop : CjFakeSourceElementKind()
 
     /**
+     * 元组解构赋值脱糖产生的 fake source。
+     *
+     * ```
+     * (a, b) = rhs
+     * ```
+     * 脱糖为
+     * ```
+     * let <destructuring-0> = rhs
+     * a = <destructuring-0>[0]
+     * b = <destructuring-0>[1]
+     * ```
+     * 其中承载脱糖结果的 block、临时绑定及其下标读取都标记为 fake，
+     * 而每条合成赋值保留对应左值元素的真实 source，
+     * 使左值相关诊断落在元素本身而不是整条赋值上。
+     */
+    object DesugaredDestructuringAssignment : CjFakeSourceElementKind()
+
+    /**
      * 隐式 invoke 调用生成的 fake source。
      */
     object ImplicitInvokeCall : CjFakeSourceElementKind()

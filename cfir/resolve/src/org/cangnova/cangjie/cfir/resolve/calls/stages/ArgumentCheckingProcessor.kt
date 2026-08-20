@@ -1053,8 +1053,47 @@ val added = if (csBuilder.isProperType(expectedType)) {
         if (argumentType !is ConeIdealLiteralType && (argumentType !is ConePrimitiveType || !argumentType.kind.isIdeal)) {
             return false
         }
-        val approximatedArgumentType = IdealTypeResolver.resolveIfIdeal(argumentType)
+        /*
+         * 泛型返回目标会在实参检查前为当前 fresh variable 注入 concrete primitive
+         * upper bound。理想字面量必须以该上下文 primitive 参与下界约束，不能无条件
+         * 退化为默认 Int64/Float64；否则 `id(1): Int32` 会同时得到 `Int64 <: T` 与
+         * `T <: Int32`，把本应由 expected type 定型的调用错误地判为不可推断。
+         */
+        val approximatedArgumentType = contextualPrimitiveTargetForIdealLiteral(argumentType)
+            ?: IdealTypeResolver.resolveIfIdeal(argumentType)
         return csBuilder.addSubtypeConstraintIfCompatible(approximatedArgumentType, expectedType, position)
+    }
+
+    /**
+     * 从当前 fresh variable 的确定 primitive 上界中取得唯一的字面量上下文目标。
+     *
+     * 只接受 upper/equality 约束中的唯一 concrete primitive；如只有 Any、类型参数或多个
+     * 不同 primitive 约束，保持既有默认 ideal 近似，避免把不确定上下文伪造成目标类型。
+     */
+    private fun ArgumentContext.contextualPrimitiveTargetForIdealLiteral(
+        argumentType: ConeCangJieType,
+    ): ConePrimitiveType? {
+        val variableType = expectedType as? ConeTypeVariableType ?: return null
+        val constraints = csBuilder.currentStorage()
+            .notFixedTypeVariables[variableType.typeConstructor]
+            ?.constraints
+            .orEmpty()
+        return constraints.asSequence()
+            .filter { constraint ->
+                constraint.kind == ConstraintKind.UPPER || constraint.kind == ConstraintKind.EQUALITY
+            }
+            .mapNotNull { constraint -> constraint.type as? ConePrimitiveType }
+            .filter { primitiveType -> !primitiveType.kind.isIdeal }
+            .distinct()
+            .singleOrNull()
+            ?.takeIf { targetType ->
+                /*
+                 * 目标类型只能细化同一 ideal 数值族：IdealInt 可成为具体整数，
+                 * IdealFloat 可成为具体浮点。不能把 `1.1` 改写为 Int64，否则
+                 * `Float64 <: T` 这个真实推断输入会丢失，进而掩盖约束矛盾。
+                 */
+                IdealTypeResolver.resolveIfIdeal(argumentType, targetType) == targetType
+            }
     }
 
     /**
