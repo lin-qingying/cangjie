@@ -2,6 +2,8 @@
 
 本文面向本仓库的仓颉前端、CFIR、诊断、测试数据和 Analysis API 实现，用规约化方式整理仓颉语言的核心语法与语义。本文依据官方仓颉语言手册条目整理，不把本仓库当前实现行为当作语言真相源。
 
+**维护基线：** 本文的语义来源为官方仓颉语言手册与官方编译器。改动语言规则或示例时，先复核官方章节；存在疑义时，使用最小程序经 `cjc` 验证。本文不替代官方规范，也不声明特定 `cjc` 发行版的永久行为。
+
 ## 1. 范围与真相源
 
 ### 1.1 规约范围
@@ -1319,7 +1321,7 @@ PSI/AST 必须保留以下语义差异：
 
 ## 20. 官方依据条目
 
-本文整理依据的官方手册条目包括：
+本文整理依据的官方手册条目包括。在线入口为[仓颉语言开发指南](https://docs.cangjie-lang.cn/cjnative/user_manual/source_zh_cn/first_understanding/basic.html)：
 
 - `manual_source_zh_cn_program_structure`
 - `manual_source_zh_cn_prop`

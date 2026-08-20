@@ -50,7 +50,4 @@ llvm-interop/
 
 ## 与 codegen 集成
 
-`compiler/codegen` 通过 `LlvmBackendFactory` 在 `JNI` 与 `IN_MEMORY` 两种后端间选择：
-
-- JNI 可用时优先使用 `JniLlvmBackend`
-- 不可用时按配置降级到 `IN_MEMORY`
+`compiler/codegen` 通过 `LlvmBackendFactory` 创建 `JniLlvmBackend`。当前 `LlvmBackendKind` 只有 `JNI`：请求 bitcode 或 object code 时会初始化 JNI 后端并校验所需 LLVM 主版本；不存在文档化的内存后端降级路径。

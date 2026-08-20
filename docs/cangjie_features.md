@@ -1,7 +1,12 @@
 # 仓颉语言特性整理
 
-> 基于官方文档 [仓颉编程语言开发指南 v1.1.0-beta.24](https://docs.cangjie-lang.cn/cjnative/user_manual/source_zh_cn/first_understanding/basic.html) 整理
-> 面向编译器开发参考用途
+> 面向编译器开发的参考索引。语义以[仓颉语言开发指南](https://docs.cangjie-lang.cn/cjnative/user_manual/source_zh_cn/first_understanding/basic.html)、官方编译器和 `cjc` 实测为准；本文不以本仓库当前实现行为反推语言规则。
+
+## 使用边界
+
+- 本页汇总常用语言主题，不能替代官方手册或标准库 API 文档。
+- 修改本页的语义或示例前，应复核相应官方章节；有歧义时用最小程序经 `cjc` 编译验证。
+- 编译器实现和测试数据还应遵循[语言规范白皮书](cangjie-language-spec-whitepaper.md)与[测试约定](../TESTING_CONVENTIONS.md)。
 
 ---
 

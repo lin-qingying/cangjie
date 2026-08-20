@@ -1,6 +1,12 @@
 # 资料来源
 
-本教程依据仓颉语言官方资料校对语法和语义，示例按任务本学习路径重新组织。正文不逐段标注来源，集中列出如下校对范围。
+本教程依据仓颉语言官方资料校对语法和语义，示例按任务本学习路径重新组织。正文不逐段标注来源，集中列出如下校对范围。遇到语言语义或诊断位置疑义时，以官方 `cjc` 的最小可复现结果复核，不能按本仓库实现行为反推。
+
+## 官方入口
+
+- [仓颉语言开发指南](https://docs.cangjie-lang.cn/cjnative/user_manual/source_zh_cn/first_understanding/basic.html)
+- [仓颉官方编译器](https://gitcode.com/Cangjie/cangjie_compiler)
+- [主仓库语言规范白皮书](https://github.com/lin-qingying/cangjie/blob/main/docs/cangjie-language-spec-whitepaper.md)
 
 ## 入门与工具链
 

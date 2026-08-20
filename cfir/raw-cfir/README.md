@@ -1,6 +1,6 @@
 # cfir/raw-cfir/ — Raw CFIR 构建（聚合）
 
-前端管线阶段 6 `CFIR_BUILD` 的实现。从源码树（PSI 或 LightTree）构建 Raw CFIR 骨架——结构完整，但类型引用未解析。对齐 Kotlin K2 `compiler/fir/raw-fir`。
+前端的 Raw CFIR 构建层。从源码树（PSI 或 LightTree）构建结构完整、尚未解析类型引用的 Raw CFIR。对齐 Kotlin K2 `compiler/fir/raw-fir`。
 
 本目录是**聚合命名空间**，自身无源码，下挂 3 个子模块。
 
@@ -18,17 +18,13 @@
 - PSI 专属逻辑只放在 `:cfir:raw-cfir:psi2cfir`
 - LightTree 实现共享 `raw-cfir-common` 的干净底座，不被 PSI 反向污染
 
-## 含 BUILD 内嵌的子步骤
+## 构建边界
 
-按官方编译器，本阶段内含：
+Raw builder 负责把声明、表达式、类型引用和源码位置信息转换为 CFIR 骨架；名称、类型、调用和函数体语义由后续 ordinary resolve 完成。宏调用面和注解槽位会在构建期间记录，供后续宏构造使用。
 
-1. **增量判断**（AST_DIFF）：比较 AST 快照，未变更声明从缓存加载，跳过 BUILD + RESOLVE
-2. **前置脱糖**（DesugarBeforeTypeCheck）：源码树 → Raw CFIR 转换中一并完成简单脱糖
-3. **CFIR 构建**：建立声明节点、作用域树、符号引用占位符
+## 语法恢复
 
-## 错误处理
-
-未覆盖节点统一构造错误节点：
+对不完整或未覆盖的语法，builder 保留错误节点，使后续诊断能够继续报告：
 
 - 声明：`CfirInvalidDeclaration { reason = "Unsupported declaration: ..." }`
 - 表达式：`buildErrorExpression(...)`，`Unsupported expression: ...`
@@ -49,6 +45,6 @@
 
 ## 相关文档
 
-- `../../docs/cjfir-compiler-stages.md` 第 6 阶段
-- `../../docs/psi-cfir-ast-chir-alignment.md` — PSI ↔ CFIR 节点对照
+- `../../docs/cjfir-compiler-stages.md` — Raw CFIR、宏构造和 ordinary resolve 的边界
+- `../README.md` — CFIR 子系统目录
 - `psi2cfir/testData/rawBuilder/README.md` — 测试数据组织

@@ -1,6 +1,6 @@
 # cfir/checkers/ — 诊断检查器框架
 
-CFIR_RESOLVE 末尾 Phase `CHECKERS` 的实现。按 Kotlin K2 风格分层：声明 checkers / 表达式 checkers / 类型 checkers，每层下挂多个具体 checker，由生成的 `Common*Checkers` 注册链路装配。
+在所需 CFIR resolve 信息可用后运行的独立诊断管线。它按 Kotlin K2 风格分为声明、表达式和类型 checker；每层下挂多个具体 checker，并由生成的 `Common*Checkers` 注册链路装配。`CHECKERS` 不是 `CfirResolvePhase` 的枚举成员。
 
 ## 关键包
 
@@ -21,7 +21,7 @@ CFIR_RESOLVE 末尾 Phase `CHECKERS` 的实现。按 Kotlin K2 风格分层：�
 - `propertyCheckers` / `typeAliasCheckers` / `valueParameterCheckers`
 - `mainFunctionCheckers` / `anonymousFunctionCheckers` / `enumConstructorCheckers`
 
-`CommonExpressionCheckers`、`CommonTypeCheckers` 同理。当前部分扩展点为空，详见 `../analysis-tests/diagnostics-coverage-gap-vs-cpp.md`。
+`CommonExpressionCheckers`、`CommonTypeCheckers` 同理。可用 checker 及其注册位置以这些组件和生成代码为准。
 
 ## 子生成器
 
@@ -41,6 +41,5 @@ CFIR_RESOLVE 末尾 Phase `CHECKERS` 的实现。按 Kotlin K2 风格分层：�
 
 ## 相关文档
 
-- `../analysis-tests/diagnostics-coverage-gap-vs-cpp.md` — 当前诊断覆盖缺口
-- `../../docs/diagnostics-gap-vs-official-cpp-sema-status-2026-04-06.md` — 与官方 sema 诊断对照
 - `../../docs/official-compiler-diagnostics.md` — 官方诊断清单
+- `../../docs/cjfir-compiler-stages.md` — resolve 与诊断的管线边界

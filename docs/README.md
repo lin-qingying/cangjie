@@ -1,53 +1,38 @@
-# docs/ — 文档索引
+# Cangjie documentation
 
-本目录收录仓颉前端项目的架构 / 对齐 / 设计 / 评估 / 计划 / 对照类文档。
-真相源始终是代码与 `settings.gradle.kts`；本目录的文档用于解释**为什么**这样设计，以及与 Kotlin K2 / 官方 C++ 编译器的**差异与对齐策略**。
+[中文](README.zh-CN.md) | [Project README](../README.md)
 
-## 顶层导览
+This index contains maintained documentation for the Kotlin/JVM Cangjie frontend. Architecture and module claims are verified against the source tree and Gradle build; language claims are verified against official Cangjie sources.
 
-| 文件 | 角色 | 说明 |
-|---|---|---|
-| [`module-organization.md`](module-organization.md) | 模块规划 | 12 阶段管线与 K2 对齐目标驱动的模块拆分规划 |
-| [`compiler-module-design.md`](compiler-module-design.md) | 模块设计 | 按子系统划分编译器模块的设计基线 |
-| [`k2-module-alignment.md`](k2-module-alignment.md) | 模块对照 | 仓颉模块 ↔ Kotlin K2 模块的逐一对照表 |
-| [`psi-cfir-ast-chir-alignment.md`](psi-cfir-ast-chir-alignment.md) | 节点对照 | PSI ↔ CFIR ↔ 官方 AST ↔ CHIR 的节点级对照 |
+## Start here
 
-## CFIR / 语义设计
+- [Development conventions](../DEVELOPMENT_CONVENTIONS.md)
+- [Testing conventions](../TESTING_CONVENTIONS.md)
+- [Module catalog](module-catalog.md)
+- [Compiler stages](cjfir-compiler-stages.md)
+- [Architecture diagram](project-architecture-diagram.md)
 
-| 文件 | 角色 | 说明 |
-|---|---|---|
-| [`cfir-body-resolve-constraint-system-design.md`](cfir-body-resolve-constraint-system-design.md) | 设计 | `BODY_RESOLVE` 阶段的约束系统与类型对比系统设计 |
-| [`type-inference-four-systems-comparison.md`](type-inference-four-systems-comparison.md) | 对照 | 四套类型推断 / 约束系统对照表 |
-| [`cfir-semantic-analysis-gap.md`](cfir-semantic-analysis-gap.md) | 评估快照 | 2026-03-13 时点的语义分析基础设施完备性分析（已被更新版评估覆盖） |
-| [`cfir-semantic-analysis-maturity-vs-official-2026-04-08.md`](cfir-semantic-analysis-maturity-vs-official-2026-04-08.md) | 评估快照 | 2026-04-08 CFIR 语义分析相对官方编译器的实现程度评估 |
+## Architecture and implementation
 
-## 诊断对照
+- [Current module organization](module-organization.md)
+- [Compiler subsystem design](compiler-module-design.md)
+- [Kotlin K2 alignment](k2-module-alignment.md)
+- [PSI parser comparison](../psi/docs/psi-parser-comparison.md)
+- [CFIR subsystem](../cfir/README.md)
+- [Analysis subsystem](../analysis/README.md)
 
-| 文件 | 角色 | 说明 |
-|---|---|---|
-| [`official-compiler-diagnostics.md`](official-compiler-diagnostics.md) | 对照 | 官方仓颉编译器诊断清单 |
-| [`diagnostics-gap-vs-official-cpp-full.md`](diagnostics-gap-vs-official-cpp-full.md) | 对照 | 与官方 C++ 编译器全量诊断 gap |
-| [`diagnostics-gap-vs-official-cpp-sema-detailed.md`](diagnostics-gap-vs-official-cpp-sema-detailed.md) | 对照 | 语义诊断详细 gap |
-| [`diagnostics-gap-vs-official-cpp-sema-status-2026-04-06.md`](diagnostics-gap-vs-official-cpp-sema-status-2026-04-06.md) | 状态快照 | 2026-04-06 语义诊断补齐主计划完成状态 |
+## Language reference
 
-## 语言特性
+- [Language feature reference](cangjie_features.md)
+- [Language specification whitepaper](cangjie-language-spec-whitepaper.md)
+- [Official compiler diagnostics catalog](official-compiler-diagnostics.md)
+- [Cangjie language tutorial](cangjie-tutorial/README.md)
 
-| 文件 | 角色 | 说明 |
-|---|---|---|
-| [`cangjie_features.md`](cangjie_features.md) | 参考 | 基于官方文档整理的仓颉语言特性清单 |
-| [`cangjie-language-spec-whitepaper.md`](cangjie-language-spec-whitepaper.md) | 规约 | 仓颉语言核心语法与语义规约白皮书，重点区分变量、属性、类型、表达式和扩展语义 |
-| [`cangjie-tutorial/`](cangjie-tutorial/) | 教程站 | 使用 VitePress 构建的多文件仓颉语言教程，按命令行任务本学习路径组织 |
+## Independent projects
 
-## 计划
+- [IntelliJ Platform plugin](../intellij-ide/README.md)
+- [DevEco integration](../deveco/README.md)
 
-| 文件 | 角色 | 说明 |
-|---|---|---|
-| [`plan-conflicting-type-constraints.md`](plan-conflicting-type-constraints.md) | 计划 | 冲突类型约束处理计划 |
-| [`plan-operator-overload-numeric-widening.md`](plan-operator-overload-numeric-widening.md) | 计划 | 运算符重载数值扩宽计划 |
+## Documentation boundary
 
-## 阅读建议
-
-- 想了解**当前实际模块**：以项目根 `settings.gradle.kts` 为准，并结合根 `README.md` 阅读。
-- 想了解**应该如何拆**：先看 `compiler-module-design.md` 与 `module-organization.md`。
-- 想了解**与 Kotlin K2 的对应关系**：看 `k2-module-alignment.md`。
-- 想了解**前端 / IR 实现进度**：看时间最新的 `cfir-semantic-analysis-maturity-vs-official-*.md` 与 `diagnostics-gap-vs-official-cpp-sema-status-*.md`。
+OpenSpec change records, repair logs, changelogs, generated reports, test fixtures, and vendor documentation are historical or generated material. They are intentionally not part of this current-documentation index.

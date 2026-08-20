@@ -2,6 +2,8 @@
 
 本目录是一个独立的 VitePress 教程站。VitePress 会把 `docs/` 下按学习路径拆分的 Markdown 页面构建成静态网页。
 
+教程导航由 `docs/.vitepress/config.mts` 维护；语言语义和代码示例以官方仓颉资料与 `cjc` 为准，不以本仓库的 CFIR 实现状态为准。资料入口见[教程资料来源](docs/appendix/sources.md)和[主仓库语言参考](../README.zh-CN.md)。
+
 ## 本地使用
 
 ```bash

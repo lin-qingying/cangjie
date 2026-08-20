@@ -1,9 +1,6 @@
 # Official C++ CodeGen to Kotlin Mapping Matrix
 
-This document covers task `1.3` of `port-cpp-chir-to-cangjie`.
-
-Its job is to map the official C++ backend architecture to the Kotlin modules
-that must be created or expanded for parity.
+This document maps the official C++ backend architecture to the Kotlin backend modules and records the current boundary of `:compiler:codegen`.
 
 ## Source Baseline
 
@@ -33,21 +30,9 @@ Current Kotlin targets:
 | Runtime helpers and utils | `src/CodeGen/Utils/*`, helper calls in lowering code | Missing | `codegen/runtime`, `codegen/utils` |
 | Parity tests and baselines | official backend outputs | Minimal test resources only | `compiler/codegen/testResources/chir-parity` and tests |
 
-## Current Kotlin Reality
+## Current Kotlin boundary
 
-The `compiler:codegen` module currently contains:
-
-- [README.md](/D:/code/intellij/cangjie/compiler/codegen/README.md)
-- [build.gradle.kts](/D:/code/intellij/cangjie/compiler/codegen/build.gradle.kts)
-- minimal parity fixture resources under
-  `compiler/codegen/testResources/chir-parity`
-
-It does not currently contain:
-
-- source files under `compiler/codegen/src`
-- active lowering pipeline implementation
-- LLVM context/module/function abstractions
-- dispatcher or type-lowering code
+`:compiler:codegen` receives a `ChirCodegenInput` whose source is the CHIR package model from `:chir:chir-tree`. The module owns LLVM-facing code generation and its parity checks; CHIR construction belongs to `:chir:cfir2chir`, and CFIR construction and resolution remain upstream.
 
 ## Entry-Point Mapping
 
@@ -71,21 +56,8 @@ It does not currently contain:
 | Runtime / intrinsic bridging | `IRBuilder.h`, `Utils/CGUtils.*` | Missing |
 | Type info and layout | `Base/CGTypes/CGType.cpp` and related files | Missing |
 
-## Immediate Build-Out Order
-
-Recommended Kotlin build-out order:
-
-1. `codegen/api`
-2. `codegen/context`
-3. `codegen/module`
-4. `codegen/function`
-5. `codegen/ir`
-6. `codegen/types`
-7. `codegen/dispatcher`
-8. `codegen/runtime`
-9. parity tests
-
 ## Related Baselines
 
-- CHIR mapping: [cpp-chir-mapping.md](/D:/code/intellij/cangjie/chir/chir-tree/docs/cpp-chir-mapping.md)
-- Baseline fixtures: [README.md](/D:/code/intellij/cangjie/compiler/codegen/testResources/chir-parity/README.md)
+- [CHIR mapping](../../../chir/chir-tree/docs/cpp-chir-mapping.md)
+- [Codegen module](../README.md)
+- [CHIR subsystem](../../../chir/README.md)

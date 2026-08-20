@@ -15,12 +15,8 @@
 
 ## Parity Baselines
 
-- Official mapping matrix:
-  [cpp-codegen-mapping.md](/D:/code/intellij/cangjie/compiler/codegen/docs/cpp-codegen-mapping.md)
-- CHIR parity fixtures:
-  [chir-parity/README.md](/D:/code/intellij/cangjie/compiler/codegen/testResources/chir-parity/README.md)
-- Sample manifest:
-  [manifest.txt](/D:/code/intellij/cangjie/compiler/codegen/testResources/chir-parity/manifest.txt)
+- [Codegen mapping](docs/cpp-codegen-mapping.md) records the maintained relationship to the official CodeGen layout.
+- Test fixtures are internal test resources, not public documentation.
 
 ## TestData-Driven Parity Tests
 

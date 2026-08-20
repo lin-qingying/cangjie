@@ -1,56 +1,30 @@
-# 开发规范（项目约定）
+# Development conventions
 
-本文件为项目级开发规范，默认对所有一方模块生效（`external/` 除外）。
-目标是保证可维护性、可协作性与可回滚性。
+[中文](DEVELOPMENT_CONVENTIONS.zh-CN.md) | [Documentation](docs/README.md)
 
-## 一、核心原则（必须遵守）
+These conventions apply to every first-party module included by settings.gradle.kts. They define repository-wide engineering expectations; module contracts and language semantics remain governed by their implementation and official Cangjie sources.
 
-- 可读性优先于炫技
-- 一致性优先于个人习惯
-- 明确优先于隐式
-- 不可变优先于可变
-- 接口隔离优先于大而全
-- 领域建模优先于过程堆砌
+## Core principles
 
-## 二、结构与模块规范
+- Prefer readability, explicit contracts, and stable domain models over clever or implicit control flow.
+- Keep module boundaries and dependency directions explicit; expose independent capabilities through interfaces rather than leaking implementations.
+- Prefer immutable public values and read-only collections unless mutation is an essential part of the contract.
+- Document non-obvious invariants, ownership, lifecycle, failure semantics, and intentional deviations from Kotlin K2.
 
-- 模块边界清晰：
-  每个模块只暴露稳定接口，不跨模块泄露实现细节。
-- 依赖方向单向：
-  依赖应从高层策略指向低层实现，禁止环依赖。
-- 领域模型稳定：
-  核心领域对象优先建模，流程逻辑围绕模型组织。
-- 接口契约明确：
-  输入、输出、失败语义、线程/生命周期语义必须清晰。
+## Implementation and module design
 
-## 三、文件与实现规范
+- Give each file a single cohesive responsibility and keep extension APIs in dedicated files when that improves discovery.
+- Name types, functions, and modules by their domain responsibility; remove obsolete transitional names when changing the relevant boundary.
+- Use structured compiler errors and diagnostics for normal invalid-program paths. Reserve exceptions and require/check for failed programmer invariants.
+- Keep public contracts explicit about input, output, nullability, failure, threading, and lifecycle semantics.
 
-- 一个文件只做一种功能：
-  避免在同一文件中混合多种职责（模型、流程、工具、适配器）。
-- 扩展写到单独文件：
-  extension function / extension property 需放在专用扩展文件中，避免主实现臃肿。
-- 命名规范化：
-  采用“职责 + 领域”命名，避免历史过渡命名长期残留。
-- 默认不可变：
-  优先 `val`、只读集合与不可变返回值，确需可变时显式标注原因。
-- 要有文档注释：
-  复杂逻辑、边界条件、设计决策必须有文档注释说明，接口必须有使用说明。
+## Quality and change control
 
-## 四、测试与质量规范
+- Cover unit behaviour, module/phase integration, and critical end-to-end paths at the appropriate layer.
+- Preserve diagnosability in compiler phases through stable diagnostics, contextual logging, and traceable state.
+- Run the narrow affected build and tests before broad verification; do not mix unrelated refactors into a feature or repair.
+- Update maintained documentation whenever a module boundary, architecture contract, or test strategy changes.
 
-- 测试层次完整：
-  单元测试、阶段/模块集成测试、端到端关键路径测试分层覆盖。
-- 可观测性内建：
-  关键阶段需具备稳定诊断、可定位日志与可追踪上下文。
-- 工程治理自动化：
-  将编译、测试、规范检查接入统一 Gradle 入口，避免人工兜底。
+## Documentation ownership
 
-## 五、变更治理规范
-
-- 变更可控、回滚可行：
-  每次变更应可按模块/阶段回退，避免一次性不可逆改动。
-- 最小改动原则：
-  不在 feature/bugfix 中混入无关重构。
-- 文档同步原则：
-  涉及架构边界、模块契约或测试策略变化时，同步更新文档。
-
+The module list is maintained in [docs/module-catalog.md](docs/module-catalog.md). Documentation validation is part of the root Gradle check lifecycle.

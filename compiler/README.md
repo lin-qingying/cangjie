@@ -19,7 +19,7 @@
 
 | 子模块 | 职责 |
 |---|---|
-| `chir` | CHIR（Cangjie High-level IR）数据模型与 pass 框架（详见 `chir/README.md`） |
+| `:chir:chir-tree` | CHIR（Cangjie High-level IR）数据模型与 pass 框架（见 [`../chir/README.md`](../chir/README.md)） |
 | `codegen` | CHIR → LLVM IR 代码生成后端（详见 `codegen/README.md`） |
 
 ## 与管线对应
@@ -29,6 +29,5 @@
 ## 相关文档
 
 - `../docs/cjfir-compiler-stages.md` — 完整阶段设计
-- `../docs/compiler-module-design.md` — 模块组织设计
-- `chir/docs/module-boundary.md` — CHIR 模块边界
+- `../chir/chir-tree/docs/module-boundary.md` — CHIR 模块边界
 - `codegen/docs/cpp-codegen-mapping.md` — CodeGen 官方对照

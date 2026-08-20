@@ -1,14 +1,13 @@
 ﻿# 仓颉官方编译器诊断消息保护清单
 
-本文档用于在本项目内保护（冻结快照）官方编译器诊断消息，避免后续重构导致消息文本漂移。
+本文档是官方诊断定义的仓库内快照，供诊断名称和消息对照使用；它不是本项目的诊断支持矩阵，也不保证每个条目都由 CFIR 实现。语言与诊断的权威来源是官方仓颉编译器和官方语言资料。
 
-## 1. 数据来源
+## 1. 来源与快照边界
 
-- 官方实现目录：`external/cangjie_compiler/include/cangjie/Basic`
-- 入口文件：
-  - `DiagnosticsAll.def`（legacy 诊断集）
-  - `DiagRefactor/DiagnosticAll.def`（refactor 诊断集）
-- 提取日期：2026-03-16
+- 官方实现来源：`external/cangjie_compiler/include/cangjie/Basic`。
+- 定义入口：`DiagnosticsAll.def`（legacy 诊断集）和 `DiagRefactor/DiagnosticAll.def`（refactor 诊断集）。
+- 本快照提取于 2026-03-16；更新 `external/cangjie_compiler` 时必须重新提取、复核数量并提交快照差异。
+- 对具体诊断的位置、严重性和触发条件，应使用待验证的源码调用官方 `cjc`；不能只从本目录的消息文本推断语义。
 
 ## 2. 统计
 
@@ -2005,78 +2004,10 @@
 | Basic/DiagRefactor/DiagnosticAll.def | WARNING | `sema_unused_import` | unused import '%s' \| unused import |
 | Basic/DiagRefactor/DiagnosticAll.def | ERROR | `sema_diag_end` |  |
 
-## 6. 代码示例（官方消息触发场景）
+## 6. 使用方式
 
-以下示例用于帮助理解官方诊断文本对应的典型触发条件。
+- 在本项目新增或调整诊断时，先以官方定义名和消息作为候选，再用最小仓颉程序经 `cjc` 验证实际触发行为和位置。
+- CFIR 的诊断实现、映射和测试期望是独立维护对象；不得将“目录中存在”解释为“本项目已支持”。
+- 需要更新快照时，记录上游修订来源和提取命令，并同时复核本节的统计值。
 
-### 6.1 `sema_undeclared_identifier`
-```cangjie
-main() {
-    let x = y
-}
-```
-
-### 6.2 `sema_redefinition`
-```cangjie
-let a = 1
-let a = 2
-```
-
-### 6.3 `sema_invalid_loop_control`
-```cangjie
-main() {
-    break
-}
-```
-
-### 6.4 `sema_throw_expr_with_wrong_type`
-```cangjie
-main() {
-    throw 123
-}
-```
-
-### 6.5 `sema_wrong_forin_guard`
-```cangjie
-main() {
-    for (x in [1, 2, 3], 42) {
-    }
-}
-```
-
-### 6.6 `sema_typealias_cycle`
-```cangjie
-typealias A = B
-typealias B = A
-```
-
-### 6.7 `sema_nonexhuastive_patterns`
-```cangjie
-enum Color { Red | Green | Blue }
-main(c: Color) {
-    match (c) {
-        case Color.Red => 1
-    }
-}
-```
-
-### 6.8 `macro_undeclared_identifier`
-```cangjie
-@SomeMissingMacro
-func f() {}
-```
-
-### 6.9 `chir_used_before_initialization`
-```cangjie
-main() {
-    var x: Int64
-    let y = x
-}
-```
-
-## 7. 维护建议
-
-- 当 `external/cangjie_compiler` 更新时，重新提取并比对第 5 节表格。
-- 若本项目新增/调整 CFIR 诊断，优先对齐官方消息文本（必要时记录差异原因）。
-- 建议后续增加自动校验脚本：检查官方 ID 是否都已在本项目映射（或显式标记未支持）。
-
+相关入口：[测试约定](../TESTING_CONVENTIONS.md)、[CFIR 诊断框架](../cfir/checkers/README.md)、[官方仓颉编译器](https://gitcode.com/Cangjie/cangjie_compiler)。
