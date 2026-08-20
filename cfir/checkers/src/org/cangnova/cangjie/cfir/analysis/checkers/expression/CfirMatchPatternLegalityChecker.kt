@@ -25,6 +25,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.context.accessContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
@@ -34,6 +35,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirLiteralKind
 import org.cangnova.cangjie.cfir.expressions.CfirMatchExpression
 import org.cangnova.cangjie.cfir.patterns.*
 import org.cangnova.cangjie.cfir.resolve.match.isMatchSubtypeOf
+import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessKind
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassMemberScopeKind
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
 import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
@@ -336,8 +338,9 @@ private fun typesMayOverlap(
     expectedType: ConeCangJieType,
     context: CheckerContext,
 ): Boolean {
-    if (patternType.isMatchSubtypeOf(expectedType, context.session)) return true
-    if (expectedType.isMatchSubtypeOf(patternType, context.session)) return true
+    val accessContext = context.accessContext(CfirAccessKind.EXTEND)
+    if (patternType.isMatchSubtypeOf(expectedType, context.session, accessContext)) return true
+    if (expectedType.isMatchSubtypeOf(patternType, context.session, accessContext)) return true
     return expectedType.needsRuntimeTypeCheckAgainst(patternType, context)
 }
 

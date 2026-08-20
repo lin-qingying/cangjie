@@ -61,6 +61,12 @@ ApplicationServiceRegistration.public fun <DATA> registerWithCustomRegistration(
 ApplicationServiceRegistration.public class.qualifiedName ?: error("A service registrar should have a qualified name.")
 ## org/cangnova/cangjie/analysis/api/standalone/projectStructure/CaStandaloneModules.kt
 package org.cangnova.cangjie.analysis.api.standalone.projectStructure
+public class, org.cangnova.cangjie.analysis.api.CaImplementationDetail::class, )
+public sealed class CaStandaloneModule( final override val project: Project, scopeRoots: List<PsiFileSystemItem>, final override val targetPlatform: TargetPlatform = CangJiePlatforms.defaultCangJiePlatform, ) : CaModuleBase()
+CaStandaloneModule.public final override val directRegularDependencies: MutableList<CaModule>
+CaStandaloneModule.public final override val directDependsOnDependencies: MutableList<CaModule>
+CaStandaloneModule.public final override val directFriendDependencies: MutableList<CaModule>
+CaStandaloneModule.public override val baseContentScope: GlobalSearchScope
 public class CaStandaloneSourceModule( override val name: String, override val languageVersionSettings: LanguageVersionSettings, project: Project, override val psiRoots: List<PsiFileSystemItem>, targetPlatform: TargetPlatform = CangJiePlatforms.defaultCangJiePlatform, ) : CaStandaloneModule(project, psiRoots, targetPlatform), CaSourceModule
 public class CaStandaloneLibraryModule( override val libraryName: String, project: Project, override val binaryRoots: List<PsiFileSystemItem>, targetPlatform: TargetPlatform = CangJiePlatforms.defaultCangJiePlatform, ) : CaStandaloneModule(project, binaryRoots, targetPlatform), CaLibraryModule
 public class CaStandaloneLibrarySourceModule( override val libraryName: String, override val binaryLibraryModule: CaLibraryModule, project: Project, override val sourceRoots: List<PsiFileSystemItem>, targetPlatform: TargetPlatform = binaryLibraryModule.targetPlatform, ) : CaStandaloneModule(project, sourceRoots, targetPlatform), CaLibrarySourceModule
@@ -88,6 +94,7 @@ CaStandaloneProjectStructure.public override fun getResolutionScope(module: CaMo
 CaStandaloneProjectStructure.public override fun getModuleByStableName(stableModuleName: String): CaModule?
 CaStandaloneProjectStructure.public override fun getModuleModificationCount(module: CaModule): Long
 CaStandaloneProjectStructure.public override fun invalidate(modules: Set<CaModule>)
+CaStandaloneProjectStructure.public companion object
 ## org/cangnova/cangjie/analysis/api/standalone/projectStructure/PluginStructureProvider.kt
 package org.cangnova.cangjie.analysis.api.standalone.projectStructure
 public object PluginStructureProvider

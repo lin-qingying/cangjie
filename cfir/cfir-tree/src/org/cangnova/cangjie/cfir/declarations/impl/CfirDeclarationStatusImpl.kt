@@ -116,6 +116,18 @@ open class CfirDeclarationStatusImpl(
         }
 
     /**
+     * abstract 是否由源码显式写出。
+     *
+     * 它记录 raw CFIR 的来源事实，不能用 [isAbstract] 推断：后者还会携带无 body 成员
+     * 推导出的抽象语义。STATUS 阶段依赖该位区分非法的 `static abstract` 与合法的隐式 abstract。
+     */
+    override var isAbstractExplicit: Boolean
+        get() = this[Modifier.ABSTRACT_EXPLICIT]
+        set(value) {
+            this[Modifier.ABSTRACT_EXPLICIT] = value
+        }
+
+    /**
      * 声明是否带有 operator 修饰。
      */
     override var isOperator: Boolean
@@ -302,6 +314,10 @@ open class CfirDeclarationStatusImpl(
          * default 修饰符 bit。
          */
         DEFAULT(0x8000),
+        /**
+         * abstract 由源码显式写出的来源标记 bit。
+         */
+        ABSTRACT_EXPLICIT(0x10000),
     }
 
     /**

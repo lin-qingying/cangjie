@@ -1,6 +1,8 @@
 package org.cangnova.cangjie.cfir.scopes.impl
 
 import org.cangnova.cangjie.cfir.ScopeSession
+import org.cangnova.cangjie.cfir.resolve.providers.CfirLookupOrigin
+import org.cangnova.cangjie.cfir.resolve.providers.CfirLookupOriginScope
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
 import org.cangnova.cangjie.cfir.scopes.CfirPackageScope
 import org.cangnova.cangjie.cfir.session.CfirSession
@@ -42,7 +44,10 @@ class CfirPackageMemberScope(
      */
     private val excludedNames: Set<Name> = emptySet(),
 
-) : CfirPackageScope() {
+    /** 当前 package scope 是本包词法查询还是显式包限定查询。 */
+    override val lookupOrigin: CfirLookupOrigin = CfirLookupOrigin.PACKAGE,
+
+) : CfirPackageScope(), CfirLookupOriginScope {
 
     /**
      * classifier 查询缓存。

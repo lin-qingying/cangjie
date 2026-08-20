@@ -24,6 +24,7 @@
 
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
+import org.cangnova.cangjie.cfir.analysis.checkers.CfirExtendSemantics
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
 import org.cangnova.cangjie.cfir.analysis.checkers.hasInvalidDeclaredUpperBoundsInCurrentContext
@@ -36,6 +37,7 @@ import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
+import org.cangnova.cangjie.cfir.types.ConeNoSmallestCommonSupertypeDiagnostic
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.name.SpecialNames
 import org.cangnova.cangjie.source.AbstractCjSourceElement
@@ -126,14 +128,32 @@ object CfirFunctionDeclarationStatusChecker : CfirSimpleFunctionChecker() {
     /**
      * 检查 `mut func` 的声明位置。
      *
-     * `mut` 只允许出现在 struct 或 interface 的非局部成员函数上；源码显式修饰符已经由
-     * 通用 modifier checker 处理时，这里避免重复报告。
+     * `mut` 函数只允许出现在 struct / interface 及 struct 的扩展内（官方 mut.md）；
+     * class / enum 成员由通用 modifier checker 以 WRONG_MODIFIER_TARGET 报告
+     * （对应官方 `parse_illegal_modifier_in_scope`），此处不重复。extend 的非 struct
+     * 目标（class / 原始类型 / enum）由官方 `sema_invalid_mut_modifier_extend_of_struct`
+     * 管辖，映射为 MUT_ONLY_ON_FUNCTION，报告锚定 `mut` 关键字（与官方位置一致）。
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkMutFunction(function: CfirNamedFunction) {
         if (!function.status.isMut) return
-        if (!function.isLocal && context.closestContainingTypeDeclaration() is CfirStruct) return
-        if (!function.isLocal && context.closestContainingTypeDeclaration() is CfirInterface) return
+        if (function.isLocal) return
+        val containingDeclaration = context.closestContainingTypeDeclaration()
+        if (containingDeclaration is CfirStruct) return
+        if (containingDeclaration is CfirInterface) return
+        if (containingDeclaration is CfirExtend) {
+            val target = CfirExtendSemantics.targetDeclaration(context, containingDeclaration)
+            if (target is CfirStruct) return
+            val mutSource = function.source?.realSourceModifiers()?.modifierByToken(CjTokens.MUT_KEYWORD)?.source
+            reporter.reportOn(
+                source = mutSource ?: function.functionNameDiagnosticSource(),
+                factory = CfirErrors.MUT_ONLY_ON_FUNCTION,
+                a = function.name,
+            )
+            return
+        }
+        // class / enum 成员的源码显式 `mut` 由通用 modifier checker 诊断，
+        // 这里只覆盖无源码 mut 修饰符的隐式 mut 状态（如接口实现继承），避免重复报告。
         if (function.hasSourceModifier(CjTokens.MUT_KEYWORD)) return
 
         reporter.reportOn(
@@ -174,7 +194,7 @@ object CfirFunctionDeclarationStatusChecker : CfirSimpleFunctionChecker() {
      * 取得当前函数最近的类型或 extend 容器声明。
      */
     private fun CheckerContext.closestContainingTypeDeclaration() =
-        findClosestDeclaration<org.cangnova.cangjie.cfir.declarations.CfirDeclaration> { declaration ->
+        findClosestDeclaration<CfirDeclaration> { declaration ->
             declaration is CfirClassLikeDeclaration || declaration is CfirExtend
         }
 
@@ -188,7 +208,9 @@ object CfirFunctionDeclarationStatusChecker : CfirSimpleFunctionChecker() {
 /**
  * 函数返回类型推断检查器
  *
- * 对齐 C++ DiagKind::sema_unable_to_infer_return_type
+ * 对齐 C++：
+ * - `DiagKind::sema_unable_to_infer_return_type`（递归/其他推断失败，位置=函数名）
+ * - `DiagKind::sema_incompatible_func_body_and_return_type`（Join 失败，位置=尾表达式）
  */
 object CfirFunctionReturnTypeInferenceChecker : CfirFunctionChecker() {
     /**
@@ -202,10 +224,20 @@ object CfirFunctionReturnTypeInferenceChecker : CfirFunctionChecker() {
                 return
             }
             if (declaration is CfirNamedFunction && declaration.body != null) {
-                reporter.reportOn(
-                    source = declaration.functionNameDiagnosticSource(),
-                    factory = CfirErrors.UNABLE_TO_INFER_RETURN_TYPE,
-                )
+                // Join 失败（对齐官方 sema_incompatible_func_body_and_return_type）：
+                // 错误类型 ref 的 source 由推断层指向 body 尾语句（CalcFuncRetTyFromBody 的 *lastNode）。
+                if (returnTypeRef.diagnostic is ConeNoSmallestCommonSupertypeDiagnostic) {
+                    reporter.reportOn(
+                        source = returnTypeRef.source ?: declaration.functionNameDiagnosticSource(),
+                        factory = CfirErrors.INCOMPATIBLE_FUNC_BODY_AND_RETURN_TYPE,
+                    )
+                } else {
+                    // 递归/其他推断失败（对齐官方 sema_unable_to_infer_return_type，位置=函数名）。
+                    reporter.reportOn(
+                        source = declaration.functionNameDiagnosticSource(),
+                        factory = CfirErrors.UNABLE_TO_INFER_RETURN_TYPE,
+                    )
+                }
             }
         }
     }
@@ -219,12 +251,15 @@ object CfirFunctionReturnTypeInferenceChecker : CfirFunctionChecker() {
      */
     private fun CfirErrorTypeRef.isFunctionReturnTypeInferenceFailure(): Boolean {
         if (delegatedTypeRef != null) return false
-        val simpleDiagnostic = diagnostic as? ConeSimpleDiagnostic ?: return false
-        return when (simpleDiagnostic.kind) {
-            DiagnosticKind.InferenceError,
-            DiagnosticKind.RecursionInImplicitTypes,
-            -> true
+        return when (val diagnostic = diagnostic) {
+            is ConeNoSmallestCommonSupertypeDiagnostic -> true
+            is ConeSimpleDiagnostic -> when (diagnostic.kind) {
+                DiagnosticKind.InferenceError,
+                DiagnosticKind.RecursionInImplicitTypes,
+                -> true
 
+                else -> false
+            }
             else -> false
         }
     }

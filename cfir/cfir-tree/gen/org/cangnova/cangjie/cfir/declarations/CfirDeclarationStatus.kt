@@ -21,6 +21,7 @@ interface CfirDeclarationStatus : CfirElement {
     val modality: Modality?
     val isVisibilityExplicit: Boolean
     val isModalityExplicit: Boolean
+    val isAbstractExplicit: Boolean
     val isOverride: Boolean
     val isOperator: Boolean
     val isStatic: Boolean

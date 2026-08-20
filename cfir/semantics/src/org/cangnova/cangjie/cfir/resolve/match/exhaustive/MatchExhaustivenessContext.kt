@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.cfir.resolve.match.exhaustive
 
+import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessContext
 import org.cangnova.cangjie.cfir.session.CfirSession
 
 /**
@@ -13,14 +14,23 @@ interface MatchExhaustivenessContext {
     val session: CfirSession
 
     /**
+     * 触发 match 分析的真实 use-site；没有来源的公共语义 API 保持 `null`，
+     * 因而不会将 access-sensitive extend 关系注入结果。
+     */
+    val accessContext: CfirAccessContext?
+
+    /**
      * 上下文构造工具。
      */
     companion object {
         /**
          * 使用 session 创建最小穷尽性分析上下文。
          */
-        fun fromSession(session: CfirSession): MatchExhaustivenessContext {
-            return SessionMatchExhaustivenessContext(session)
+        fun fromSession(
+            session: CfirSession,
+            accessContext: CfirAccessContext? = null,
+        ): MatchExhaustivenessContext {
+            return SessionMatchExhaustivenessContext(session, accessContext)
         }
     }
 }
@@ -35,4 +45,5 @@ data class SessionMatchExhaustivenessContext(
      * 当前分析使用的 CFIR session。
      */
     override val session: CfirSession,
+    override val accessContext: CfirAccessContext? = null,
 ) : MatchExhaustivenessContext

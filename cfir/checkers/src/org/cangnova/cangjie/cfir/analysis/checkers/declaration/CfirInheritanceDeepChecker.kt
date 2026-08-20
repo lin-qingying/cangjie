@@ -25,14 +25,19 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.context.accessContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.resolve.providers.createExtendDeclarationSubstitution
+import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessKind
+import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityResult
+import org.cangnova.cangjie.cfir.resolve.providers.CfirLookupOrigin
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.resolve.providers.findExtendDeclarationSubstitution
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
+import org.cangnova.cangjie.cfir.scopes.CfirCallableLookupProvenance
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassMemberScopeKind
 import org.cangnova.cangjie.cfir.scopes.impl.CfirCompositeTypeScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirExtendMemberScope
@@ -43,6 +48,7 @@ import org.cangnova.cangjie.cfir.scopes.overrideSignatureKey
 import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
 import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
 import org.cangnova.cangjie.cfir.session.extendProvider
+import org.cangnova.cangjie.cfir.session.accessibilityChecker
 import org.cangnova.cangjie.cfir.session.extendRuleQueryServiceOrNull
 import org.cangnova.cangjie.cfir.session.services.CfirExtendRuleQueryService
 import org.cangnova.cangjie.cfir.session.symbolProvider
@@ -118,7 +124,15 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkExtendTargetMemberCompatibility(extend: CfirExtend) {
         val receiverType = extend.extendedTypeRef.coneTypeOrNull ?: return
-        val targetScope = extend.extendedTypeRef.resolvedUseSiteMemberScope(excludingExtend = extend) ?: return
+        val targetScope = CfirClassUseSiteMemberScope.createForUseSiteType(
+            session = context.session,
+            ownerType = receiverType,
+            excludingExtend = extend,
+        ) ?: return
+        val memberAccessContext = context.accessContext(CfirAccessKind.CALLABLE).copy(
+            receiverType = receiverType,
+            lookupOrigin = CfirLookupOrigin.MEMBER,
+        )
         val targetClassId = (extend.extendedTypeRef as? CfirResolvedTypeRef)
             ?.coneType
             ?.expandedClassIdOrPrimitiveClassId
@@ -133,6 +147,8 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         val reportedPropertyTypeConflicts = mutableSetOf<String>()
         val reportedPropertyMutabilityConflicts = mutableSetOf<String>()
         val reportedFunctionReturnTypeConflicts = mutableSetOf<String>()
+        val nonExportExtendDependencyNames = linkedSetOf<Name>()
+        val currentExtendIsExported = context.session.accessibilityChecker.isExtendExported(extend)
         var hasUnimplementedMember = false
 
         for (superTypeRef in extend.superTypeRefs) {
@@ -152,27 +168,59 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                 }
 
                 val implementationCandidates = buildList {
-                    targetScope.processCallablesByName(superInfo.name) { symbol ->
-                        symbol.inheritedMemberInfoOrNull(context)?.let { info ->
-                            add(ExtendImplementationCandidate(info, extend.extendedTypeRef.source, null))
-                        }
-                    }
-                    if (targetClassId != null) {
-                        for (info in collectDirectExtendMemberInfos(receiverType, superInfo.name, context, excludingExtend = extend)) {
-                            add(ExtendImplementationCandidate(info, extend.extendedTypeRef.source, null))
+                    context.session.accessibilityChecker.processAccessibleCallablesByName(
+                        scope = targetScope,
+                        name = superInfo.name,
+                        context = memberAccessContext,
+                    ) { candidate ->
+                        candidate.symbol.inheritedMemberInfoOrNull(context)?.let { info ->
+                            add(
+                                ExtendImplementationCandidate(
+                                    info = info,
+                                    diagnosticSource = extend.extendedTypeRef.source,
+                                    declarationSource = null,
+                                    lookupProvenance = candidate.provenance,
+                                )
+                            )
                         }
                     }
                     for (info in ownMemberInfosByName[superInfo.name].orEmpty()) {
-                        add(ExtendImplementationCandidate(info, info.nameSource ?: info.source ?: extend.source, info.source))
+                        add(
+                            ExtendImplementationCandidate(
+                                info = info,
+                                diagnosticSource = info.nameSource ?: info.source ?: extend.source,
+                                declarationSource = info.source,
+                                lookupProvenance = CfirCallableLookupProvenance.directExtendMember(extend),
+                            )
+                        )
                     }
                     for (info in inheritedDefaultImplementationsByName[superInfo.name].orEmpty()) {
-                        add(ExtendImplementationCandidate(info, info.nameSource ?: info.source ?: superTypeRef.source, null))
+                        add(
+                            ExtendImplementationCandidate(
+                                info = info,
+                                diagnosticSource = info.nameSource ?: info.source ?: superTypeRef.source,
+                                declarationSource = null,
+                                lookupProvenance = CfirCallableLookupProvenance.None,
+                            )
+                        )
                     }
                 }
 
                 for (candidate in implementationCandidates) {
                     val implementationInfo = candidate.info
                     if (!implementationInfo.canImplement(superInfo)) continue
+
+                    val implementationExtend = candidate.lookupProvenance.sourceExtend
+                    if (
+                        currentExtendIsExported &&
+                        !implementationInfo.isAbstract &&
+                        implementationExtend != null &&
+                        implementationExtend !== extend &&
+                        superInfo.hasExportedClassLikeOwner(context) &&
+                        !context.session.accessibilityChecker.isExtendExported(implementationExtend)
+                    ) {
+                        nonExportExtendDependencyNames += superInfo.name
+                    }
 
                     val propertyTypeMismatch = implementationInfo.propertyTypeMismatch(superInfo)
                     if (propertyTypeMismatch != null) {
@@ -275,6 +323,13 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                 a = extend.targetDisplayName(),
             )
         }
+        if (nonExportExtendDependencyNames.isNotEmpty()) {
+            reporter.reportOn(
+                source = extend.source,
+                factory = CfirErrors.EXPORT_EXTEND_DEPEND_NON_EXPORT_EXTEND,
+                a = nonExportExtendDependencyNames,
+            )
+        }
     }
 
     /**
@@ -318,7 +373,12 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         val targetKey = query.targetKeyOf(extend) ?: return
         val relatedExtends = context.session.extendProvider
             .getExtendsForTarget(targetKey)
-            .filter(context.session.extendProvider::isExtendAccessible)
+            .filter { relatedExtend ->
+                context.session.accessibilityChecker.checkExtend(
+                    relatedExtend,
+                    context.accessContext(CfirAccessKind.EXTEND),
+                ) is CfirAccessibilityResult.Accessible
+            }
         if (relatedExtends.isEmpty()) return
 
         val occurrencesBySignature = relatedExtends
@@ -1217,7 +1277,12 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
 
         val targetKey = expandedExtendTargetKey ?: return false
         for (extend in context.session.extendProvider.getExtendsForTarget(targetKey)) {
-            if (!context.session.extendProvider.isExtendAccessible(extend)) continue
+            if (
+                context.session.accessibilityChecker.checkExtend(
+                    extend,
+                    context.accessContext(CfirAccessKind.EXTEND),
+                ) !is CfirAccessibilityResult.Accessible
+            ) continue
             val targetPattern = extend.extendedTypeRef.coneTypeOrNull ?: continue
             val substitution = createExtendDeclarationSubstitution(
                 session = context.session,
@@ -1397,7 +1462,12 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         return buildList {
             for (extend in provider.getExtendsForTarget(targetKey)) {
                 if (extend === excludingExtend) continue
-                if (!provider.isExtendAccessible(extend)) continue
+                if (
+                    context.session.accessibilityChecker.checkExtend(
+                        extend,
+                        context.accessContext(CfirAccessKind.EXTEND),
+                    ) !is CfirAccessibilityResult.Accessible
+                ) continue
                 if (findExtendDeclarationSubstitution(context.session, extend, receiverType) == null) continue
                 for (member in extend.declarations) {
                     when (member) {
@@ -1646,7 +1716,12 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         val targetKey = expandedExtendTargetKey ?: return emptyList()
         val result = mutableListOf<ConeCangJieType>()
         for (extend in context.session.extendProvider.getExtendsForTarget(targetKey)) {
-            if (!context.session.extendProvider.isExtendAccessible(extend)) continue
+            if (
+                context.session.accessibilityChecker.checkExtend(
+                    extend,
+                    context.accessContext(CfirAccessKind.EXTEND),
+                ) !is CfirAccessibilityResult.Accessible
+            ) continue
             val targetPattern = extend.extendedTypeRef.coneTypeOrNull ?: continue
             val substitution = createExtendDeclarationSubstitution(
                 session = context.session,
@@ -1737,6 +1812,18 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         if (isStatic != superInfo.isStatic) return false
         if (kind != "function" && kind != "property") return false
         return hasSameOverrideSignature(superInfo)
+    }
+
+    /**
+     * 判断 requirement 的真实 class-like owner 是否属于导出声明面。
+     *
+     * export dependence 必须读取 requirement symbol 的外层接口，不能从当前 extend、目标类型
+     * 或最终合并后的 implementation owner 反推。
+     */
+    private fun InheritedMemberInfo.hasExportedClassLikeOwner(context: CheckerContext): Boolean {
+        val callable = symbol ?: return false
+        val owner = context.ownerClassSymbol(callable) ?: return false
+        return context.session.accessibilityChecker.isClassLikeExported(owner)
     }
 
     /**
@@ -1938,6 +2025,8 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         val diagnosticSource: AbstractCjSourceElement?,
         /** 候选来自当前 extend 声明时的声明 source。 */
         val declarationSource: CjSourceElement?,
+        /** 候选在 effective member graph 中的真实 extend/interface 来源。 */
+        val lookupProvenance: CfirCallableLookupProvenance,
     )
 
     /**

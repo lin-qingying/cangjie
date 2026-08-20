@@ -35,6 +35,16 @@ interface ConeRecoverableNominalDiagnostic : ConeDiagnostic
 interface ConeClassifierAmbiguityDiagnostic : ConeDiagnostic
 
 /**
+ * 类型 Join 失败：公共父类型候选集合中不存在唯一最小候选。
+ *
+ * 对齐官方 cjc `FindSmallestTy` 返回 InvalidTy 的语义（对应诊断
+ * `sema_incompatible_func_body_and_return_type`，消息为 "The types 'X' and 'Y'
+ * do not have the smallest common supertype"）。该标记位于 cones 公共层，
+ * 使 checkers 能结构化识别 Join 失败诊断，而不依赖解析诊断文本。
+ */
+interface ConeNoSmallestCommonSupertypeDiagnostic : ConeDiagnostic
+
+/**
  * 不会被重复上报的诊断包装。
  *
  * 当 type ref、reference 等多个 CFIR 节点都携带同一错误时，用该包装保留错误类型语义，

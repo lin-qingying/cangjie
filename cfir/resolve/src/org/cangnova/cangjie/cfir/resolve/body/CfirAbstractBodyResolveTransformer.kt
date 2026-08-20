@@ -37,7 +37,6 @@ import org.cangnova.cangjie.cfir.resolve.createCurrentScopeList
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
 import org.cangnova.cangjie.cfir.resolve.calls.stages.ResolutionStageRunner
 import org.cangnova.cangjie.cfir.resolve.inference.CfirCallCompleter
-import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityFileScope
 import org.cangnova.cangjie.cfir.resolve.providers.CfirExtendProvider
 import org.cangnova.cangjie.cfir.resolve.transformers.CfirSpecificTypeResolverTransformer
 import org.cangnova.cangjie.cfir.resolve.transformers.CfirSyntheticCallGenerator
@@ -45,14 +44,8 @@ import org.cangnova.cangjie.cfir.resolve.transformers.IntegerLiteralAndOperatorA
 import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.BodyResolveContext
 import org.cangnova.cangjie.cfir.resolve.transformers.CfirAbstractPhaseTransformer
 import org.cangnova.cangjie.cfir.scopes.CfirScope
-import org.cangnova.cangjie.cfir.scopes.defaultImportsProvider
-import org.cangnova.cangjie.cfir.scopes.impl.CfirExplicitSimpleImportingScope
-import org.cangnova.cangjie.cfir.scopes.impl.CfirExplicitStarImportingScope
-import org.cangnova.cangjie.cfir.scopes.impl.CfirFileDeclaredTopLevelScope
-import org.cangnova.cangjie.cfir.scopes.impl.CfirPackageMemberScope
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.extendProvider
-import org.cangnova.cangjie.cfir.session.importBindingStoreOrNull
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
 import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
@@ -60,7 +53,6 @@ import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.builder.buildErrorTypeRef
 import org.cangnova.cangjie.cfir.visitors.transformSingle
-import org.cangnova.cangjie.cfir.declarations.builder.buildImport
 import kotlinx.collections.immutable.toPersistentList
 import org.cangnova.cangjie.cfir.resolve.transformers.ReturnTypeCalculator
 import org.cangnova.cangjie.util.PrivateForInline
@@ -137,9 +129,9 @@ abstract class CfirAbstractBodyResolveTransformer(
         /** 当前声明路径上的容器声明列表。 */
         override val containingDeclarations: List<CfirDeclaration>
             get() = context.containers.toList()
-        /** 当前文件的导入 scope；必要时从文件 imports 和默认 imports 现场构造。 */
+        /** 当前文件由 file resolve 入口显式安装的结构性 lookup scope。 */
         override val fileImportsScope: List<CfirScope>
-            get() = context.fileImportsScope.ifEmpty { createImportingScopes(context.file) }
+            get() = context.fileImportsScope
         /** tower resolve 使用的接收者、scope 与隐式值元素列表。 */
         override val towerDataElements: List<CfirTowerDataElement>
             get() = context.towerDataContext.towerDataElements
@@ -222,38 +214,6 @@ abstract class CfirAbstractBodyResolveTransformer(
                 session.extendProvider
             } catch (_: Exception) {
                 null
-            }
-        }
-
-        /**
-         * 为文件构造导入相关 scope 列表。
-         *
-         * 列表按低优先级到高优先级排列，tower resolver 反向遍历时能优先命中文件内声明和显式导入。
-         */
-        private fun createImportingScopes(file: CfirFile): List<CfirScope> {
-            val imports = file.imports
-            val resolvedImports = session.importBindingStoreOrNull?.getBindings(file)?.imports
-            val defaultImportsProvider = session.defaultImportsProvider
-            val defaultImports = defaultImportsProvider.getDefaultImports(includeLowPriorityImports = true)
-                .filter { it.fqName !in defaultImportsProvider.excludedImports }
-                .map { importPath ->
-                    buildImport {
-                        source = null
-                        importedFqName = importPath.fqName
-                        isAllUnder = importPath.isAllUnder
-                        aliasName = importPath.alias
-                        aliasSource = null
-                    }
-                }
-
-            return buildList {
-                // Scope 列表按低优先级到高优先级排列，tower 反向遍历时会先命中当前文件声明。
-                add(CfirExplicitStarImportingScope(defaultImports, symbolProvider))
-                add(CfirExplicitSimpleImportingScope(defaultImports, symbolProvider))
-                add(CfirExplicitStarImportingScope(imports, symbolProvider, resolvedImports))
-                add(CfirPackageMemberScope(file.packageDirective.packageFqName, session))
-                add(CfirFileDeclaredTopLevelScope(file))
-                add(CfirExplicitSimpleImportingScope(imports, symbolProvider, resolvedImports))
             }
         }
 
@@ -375,13 +335,16 @@ abstract class CfirAbstractBodyResolveTransformerDispatcher(
         return data.newTypeRef.transformSingle(this, data)
     }
 
-    /** 转换文件 body，并在文件作用域内建立可访问性上下文。 */
+    /**
+     * 转换文件 body。
+     *
+     * 可见性所需的文件身份由 `BodyResolveContext` 传给 type/call resolver；这里不能
+     * 以 ThreadLocal 暗中改变 scope cache 的语义。
+     */
     override fun transformFile(file: CfirFile, data: ResolutionMode): CfirFile {
         checkSessionConsistency(file)
         return try {
-            CfirAccessibilityFileScope.with(file) {
-                declarationsTransformer.transformFile(file, data)
-            }
+            declarationsTransformer.transformFile(file, data)
         } finally {
             // expected-return discovery 的 owner 是一次完整的 body-resolve 事务，
             // 不能随着 session 继续存活；嵌套声明转换共享同一 resolver，但不会
@@ -576,10 +539,10 @@ abstract class CfirAbstractBodyResolveTransformerDispatcher(
 
     /** 将命名访问表达式 body resolve 分发给表达式 transformer。 */
     override fun transformNamedAccessExpression(
-        namedAccess: CfirNamedAccessExpression,
+        namedAccessExpression: CfirNamedAccessExpression,
         data: ResolutionMode,
     ): CfirExpression {
-        return expressionsTransformer.transformNamedAccessExpression(namedAccess, data)
+        return expressionsTransformer.transformNamedAccessExpression(namedAccessExpression, data)
     }
 
     /** 将 super receiver 表达式 body resolve 分发给表达式 transformer。 */
@@ -592,10 +555,10 @@ abstract class CfirAbstractBodyResolveTransformerDispatcher(
 
     /** 将限定访问表达式 body resolve 分发给表达式 transformer。 */
     override fun transformQualifiedAccessExpression(
-        qualifiedAccess: CfirQualifiedAccessExpression,
+        qualifiedAccessExpression: CfirQualifiedAccessExpression,
         data: ResolutionMode,
     ): CfirExpression {
-        return expressionsTransformer.transformQualifiedAccessExpression(qualifiedAccess, data)
+        return expressionsTransformer.transformQualifiedAccessExpression(qualifiedAccessExpression, data)
     }
 
     /** 将函数调用表达式 body resolve 分发给表达式 transformer。 */
@@ -648,10 +611,10 @@ abstract class CfirAbstractBodyResolveTransformerDispatcher(
 
     /** 将循环跳转表达式 body resolve 分发给表达式 transformer。 */
     override fun transformLoopJump(
-        jumpExpression: CfirLoopJump,
+        loopJump: CfirLoopJump,
         data: ResolutionMode,
     ): CfirExpression {
-        return expressionsTransformer.transformLoopJump(jumpExpression, data)
+        return expressionsTransformer.transformLoopJump(loopJump, data)
     }
 
     /** 将 break 表达式 body resolve 分发给表达式 transformer。 */

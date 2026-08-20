@@ -1,7 +1,9 @@
 package org.cangnova.cangjie.cfir.resolve.calls.candidate
 
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityResult
 import org.cangnova.cangjie.cfir.scopes.CfirScope
+import org.cangnova.cangjie.cfir.scopes.CfirCallableLookupProvenance
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.resolve.calls.tasks.ExplicitReceiverKind
@@ -24,6 +26,10 @@ data class CfirCallableCandidateDiscovery(
     val explicitReceiverKind: ExplicitReceiverKind,
     /** 产生该声明的 tower scope。 */
     val originScope: CfirScope?,
+    /** 名字发现阶段计算出的语言级可访问性结果。 */
+    val accessibilityResult: CfirAccessibilityResult?,
+    /** effective member graph 的 extend/interface 来源。 */
+    val lookupProvenance: CfirCallableLookupProvenance,
     /** 是否来自 companion object 类型 scope。 */
     val isFromCompanionObjectTypeScope: Boolean,
     /** smart-cast receiver 下是否来自原始类型。 */

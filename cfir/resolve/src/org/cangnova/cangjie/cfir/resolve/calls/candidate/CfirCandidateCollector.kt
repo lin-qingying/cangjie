@@ -5,7 +5,11 @@ import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
 import org.cangnova.cangjie.cfir.resolve.calls.stages.ResolutionStageRunner
 import org.cangnova.cangjie.cfir.resolve.calls.tower.CfirTowerGroup
+import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityResult
+import org.cangnova.cangjie.cfir.resolve.providers.CfirLookupDisposition
+import org.cangnova.cangjie.cfir.scopes.CfirCallableLookupProvenance
 import org.cangnova.cangjie.cfir.semantics.ResolutionDiagnostic
+import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.resolve.calls.tower.ApplicabilityDetail
 import org.cangnova.cangjie.resolve.calls.tower.CandidateApplicability
 import org.cangnova.cangjie.resolve.calls.tower.CandidateApplicability.INAPPLICABLE_ARGUMENTS_MAPPING_ERROR
@@ -13,6 +17,46 @@ import org.cangnova.cangjie.resolve.calls.tower.CandidateApplicability.INAPPLICA
 import org.cangnova.cangjie.resolve.calls.tower.CandidateApplicability.RESOLVED_LOW_PRIORITY
 import org.cangnova.cangjie.resolve.calls.tower.isSuccess
 import org.cangnova.cangjie.resolve.calls.tower.shouldStopResolve
+
+/**
+ * callable 名称发现阶段产生、但不会创建普通 [Candidate] 的结构化结果。
+ *
+ * [Excluded] 表示声明已在当前 tower group 被发现，但官方调用语义要求把它排除在
+ * overload 集合之外。该状态必须进入 collector，才能同时约束 tower 截止与最终诊断，
+ * 不能只停留在某个 tower level 的局部返回值中。
+ */
+sealed interface CfirCallableLookupOutcome {
+    /** 发现声明的 tower group。 */
+    val group: CfirTowerGroup
+
+    /** 被结构性发现的 callable。 */
+    val symbol: CfirCallableSymbol<*>
+
+    /** effective member graph 保留下来的完整查找来源。 */
+    val lookupProvenance: CfirCallableLookupProvenance
+
+    /** 统一 accessibility checker 给出的使用点结果。 */
+    val accessibilityResult: CfirAccessibilityResult.Inaccessible
+
+    /**
+     * 名字已发现但必须排除出调用候选集合。
+     *
+     * 普通访问控制候选不会使用该类型；`REPORT_ACCESS_ERROR` 仍创建 [Candidate]，
+     * `NOT_DISCOVERABLE` 则完全不留下名称发现结果。
+     */
+    data class Excluded(
+        override val group: CfirTowerGroup,
+        override val symbol: CfirCallableSymbol<*>,
+        override val lookupProvenance: CfirCallableLookupProvenance,
+        override val accessibilityResult: CfirAccessibilityResult.Inaccessible,
+    ) : CfirCallableLookupOutcome {
+        init {
+            require(accessibilityResult.disposition == CfirLookupDisposition.EXCLUDE_CALLABLE) {
+                "Excluded callable lookup outcome requires EXCLUDE_CALLABLE disposition"
+            }
+        }
+    }
+}
 
 /**
  * tower resolve 候选收集器。
@@ -36,6 +80,11 @@ open class CfirCandidateCollector(
     private val candidates = mutableListOf<Candidate>()
     /** tower 每个 group 实际发现的全部候选，不按适用性等级删除。 */
     private val discoveredCandidatesByGroup = linkedMapOf<CfirTowerGroup, MutableList<Candidate>>()
+    /** tower 每个 group 中被调用语义排除的结构性 callable。 */
+    private val excludedCallableLookupsByGroup =
+        linkedMapOf<CfirTowerGroup, LinkedHashMap<CfirCandidateLookupIdentity, CfirCallableLookupOutcome.Excluded>>()
+    /** 形成名称查找截止面的最高优先级 excluded-callable group。 */
+    private var excludedCallableBarrierGroup: CfirTowerGroup? = null
     /**
      * 需要转发的解析诊断。
      */
@@ -67,6 +116,8 @@ open class CfirCandidateCollector(
     open fun newDataSet() {
         candidates.clear()
         discoveredCandidatesByGroup.clear()
+        excludedCallableLookupsByGroup.clear()
+        excludedCallableBarrierGroup = null
         forwardedDiagnostics.clear()
         functionValueCandidates.clear()
         functionValueCandidatesGroup = null
@@ -110,6 +161,25 @@ open class CfirCandidateCollector(
     }
 
     /**
+     * 记录名字已发现但被排除出 overload 集合的 callable。
+     *
+     * 该结果不创建伪候选，也不改变候选适用性；它只建立当前名称的 tower 截止面，
+     * 并被最终 [org.cangnova.cangjie.cfir.resolve.body.CfirCallResolver] 规约为 call no-match。
+     */
+    fun consumeLookupOutcome(outcome: CfirCallableLookupOutcome.Excluded) {
+        val barrierGroup = excludedCallableBarrierGroup
+        if (barrierGroup == null || outcome.group < barrierGroup) {
+            excludedCallableBarrierGroup = outcome.group
+        }
+        excludedCallableLookupsByGroup
+            .getOrPut(outcome.group) { linkedMapOf() }
+            .putIfAbsent(
+                CfirCandidateLookupIdentity(outcome.symbol, outcome.lookupProvenance),
+                outcome,
+            )
+    }
+
+    /**
      * 追加需要转发的诊断。
      */
     fun addForwardedDiagnostic(diagnostic: ResolutionDiagnostic) {
@@ -134,6 +204,14 @@ open class CfirCandidateCollector(
      */
     fun candidatesDiscoveredInBestGroup(): List<Candidate> =
         bestGroup?.let(discoveredCandidatesByGroup::get).orEmpty()
+
+    /** 返回最高优先级名称截止面中的全部 excluded callable 结果。 */
+    fun excludedCallableLookupOutcomes(): List<CfirCallableLookupOutcome.Excluded> =
+        excludedCallableBarrierGroup
+            ?.let(excludedCallableLookupsByGroup::get)
+            ?.values
+            ?.toList()
+            .orEmpty()
 
     /**
      * 无目标类型的函数名作为值使用时，同一作用域中的函数候选必须先作为重载集合保留。
@@ -172,8 +250,13 @@ open class CfirCandidateCollector(
      * 判断 tower resolve 是否应停止在指定 group 之前。
      */
     open fun shouldStopAtTheGroup(group: CfirTowerGroup): Boolean {
-        val currentBestGroup = bestGroup ?: return false
-        return shouldStopResolve && currentBestGroup < group
+        val shouldStopForCandidate = bestGroup?.let { currentBestGroup ->
+            shouldStopResolve && currentBestGroup < group
+        } == true
+        val shouldStopForExcludedCallable = excludedCallableBarrierGroup?.let { barrierGroup ->
+            barrierGroup < group
+        } == true
+        return shouldStopForCandidate || shouldStopForExcludedCallable
     }
 
     /**
@@ -199,10 +282,8 @@ open class CfirAllCandidatesCollector(
     components: CfirAbstractBodyResolveTransformer.BodyResolveTransformerComponents,
     resolutionStageRunner: ResolutionStageRunner,
 ) : CfirCandidateCollector(components, resolutionStageRunner) {
-    /**
-     * 按符号去重保存的全部候选。
-     */
-    private val allCandidates = LinkedHashMap<org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol<*>, Candidate>()
+    /** 按 symbol 与完整 lookup provenance 共同去重保存全部结构候选。 */
+    private val allCandidates = LinkedHashMap<CfirCandidateLookupIdentity, Candidate>()
 
     /**
      * 保存候选后继续走普通最佳候选收集逻辑。
@@ -212,7 +293,7 @@ open class CfirAllCandidatesCollector(
         candidate: Candidate,
         context: ResolutionContext,
     ): CandidateApplicability {
-        allCandidates.putIfAbsent(candidate.symbol, candidate)
+        allCandidates.putIfAbsent(candidate.lookupIdentity(), candidate)
         return super.consumeCandidate(group, candidate, context)
     }
 

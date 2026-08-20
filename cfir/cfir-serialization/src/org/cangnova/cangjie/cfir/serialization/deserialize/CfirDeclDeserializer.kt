@@ -1213,6 +1213,7 @@ class CfirDeclDeserializer(
         ).also { copied ->
             copied.isVisibilityExplicit = status.isVisibilityExplicit
             copied.isModalityExplicit = status.isModalityExplicit
+            copied.isAbstractExplicit = status.isAbstractExplicit
             copied.isOverride = status.isOverride
             copied.isOperator = status.isOperator
             copied.isStatic = status.isStatic

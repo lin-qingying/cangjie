@@ -360,7 +360,7 @@ private class CfirInitializationFlowAnalyzer(
             .forEach { fieldInfo ->
                 with(context) {
                     reporter.reportOn(
-                        source = constructor.constructorDeclarationHeaderDiagnosticSource(),
+                        source = constructor.constructorNameDiagnosticSource(),
                         factory = CfirErrors.CLASS_UNINITIALIZED_FIELD,
                         a = fieldInfo.diagnosticName,
                     )
@@ -836,8 +836,11 @@ private class CfirInitializationFlowAnalyzer(
         state: InitializationState,
     ): InitializationState {
         val tryState = analyzeScopedBlock(expression.tryBlock, state)
+        // 官方 `CheckInitInTryExpr` 先分析 try 块再分析 catch 块：try 块中已全路径初始化的
+        // `let` 变量在 catch 块中再次赋值属于重复赋值（CANNOT_ASSIGN_TO_IMMUTABLE），
+        // 因此 catch 块的入口状态必须是 try 块分析后的状态，而不是 try 之前的状态。
         val catchStates = expression.catches.map { catchClause ->
-            analyzeScopedBlock(catchClause.body, state)
+            analyzeScopedBlock(catchClause.body, tryState)
         }
 
         val mergedWithoutFinally = (listOf(tryState) + catchStates).reduce(::mergeBranchStates)

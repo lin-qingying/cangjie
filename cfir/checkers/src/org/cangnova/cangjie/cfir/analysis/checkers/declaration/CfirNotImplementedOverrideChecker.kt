@@ -25,6 +25,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.context.accessContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
@@ -32,11 +33,14 @@ import org.cangnova.cangjie.cfir.declarations.CfirInterface
 import org.cangnova.cangjie.cfir.declarations.CfirStruct
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
+import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessContext
+import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessKind
+import org.cangnova.cangjie.cfir.resolve.providers.CfirLookupOrigin
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassMemberScopeKind
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
 import org.cangnova.cangjie.cfir.scopes.overrideSignatureKey
-import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
+import org.cangnova.cangjie.cfir.session.accessibilityChecker
 import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
 import org.cangnova.cangjie.cfir.session.extendProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
@@ -44,6 +48,9 @@ import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
+import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
+import org.cangnova.cangjie.cfir.symbols.constructType
+import org.cangnova.cangjie.cfir.symbols.toLookupTag
 import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.name.Name
 
@@ -70,8 +77,19 @@ object CfirNotImplementedOverrideChecker : CfirClassLikeChecker() {
         if (declaration.status.isAbstract || declaration.status.isSealed) return
         if (declaration.hasAnnotation(OBJC_CJ_MAPPING) && declaration.superTypeRefs.isNotEmpty()) return
 
+        val classLikeSymbol = declaration.symbol as? CfirClassLikeSymbol<*> ?: return
+        val receiverType = classLikeSymbol.constructType(
+            declaration.typeParameters.map { typeParameter ->
+                ConeTypeParameterTypeImpl(typeParameter.symbol.toLookupTag())
+            }
+        )
+        val accessContext = context.accessContext(CfirAccessKind.CALLABLE).copy(
+            receiverType = receiverType,
+            qualifierSymbol = classLikeSymbol,
+            lookupOrigin = CfirLookupOrigin.MEMBER,
+        )
         val classScope = createOwnMemberScope(declaration)
-        if (!classScope.hasUnimplementedAbstractMember(declaration, context)) return
+        if (!classScope.hasUnimplementedAbstractMember(declaration, context, accessContext)) return
 
         reporter.reportOn(
             source = declaration.classLikeNameOffsetsDiagnosticSource(),
@@ -110,17 +128,27 @@ object CfirNotImplementedOverrideChecker : CfirClassLikeChecker() {
 private fun CfirTypeScope.hasUnimplementedAbstractMember(
     ownerDeclaration: CfirClassLikeDeclaration,
     context: CheckerContext,
+    accessContext: CfirAccessContext,
 ): Boolean {
     for (name in getCallableNames()) {
         val functionSymbols = mutableListOf<CfirFunctionSymbol<*>>()
-        processFunctionsByName(name) { functionSymbols += it }
-        if (functionSymbols.hasUnimplementedAbstractBySignature(ownerDeclaration, context)) {
+        val propertySymbols = mutableListOf<CfirPropertySymbol>()
+        context.session.accessibilityChecker.processAccessibleCallablesByName(
+            scope = this,
+            name = name,
+            context = accessContext,
+        ) { candidate ->
+            when (val symbol = candidate.symbol) {
+                is CfirFunctionSymbol<*> -> functionSymbols += symbol
+                is CfirPropertySymbol -> propertySymbols += symbol
+                else -> Unit
+            }
+        }
+        if (functionSymbols.distinct().hasUnimplementedAbstractBySignature(ownerDeclaration, context)) {
             return true
         }
 
-        val propertySymbols = mutableListOf<CfirPropertySymbol>()
-        processPropertiesByName(name) { propertySymbols += it }
-        if (propertySymbols.hasUnimplementedAbstractBySignature(ownerDeclaration, context)) {
+        if (propertySymbols.distinct().hasUnimplementedAbstractBySignature(ownerDeclaration, context)) {
             return true
         }
     }
@@ -139,7 +167,6 @@ private fun <S : CfirCallableSymbol<*>> List<S>.hasUnimplementedAbstractBySignat
     val visibleGroups = this
         .asSequence()
         .filter { it.isBound }
-        .filter { it.isVisibleIn(ownerDeclaration, context) }
         .groupBy { it.overrideSignatureKey() }
 
     for ((_, symbols) in visibleGroups) {

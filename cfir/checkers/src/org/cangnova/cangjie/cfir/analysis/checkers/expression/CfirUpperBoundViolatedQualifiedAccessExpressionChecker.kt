@@ -3,6 +3,7 @@ package org.cangnova.cangjie.cfir.analysis.checkers.expression
 import org.cangnova.cangjie.cfir.analysis.checkers.checkUpperBoundViolated
 import org.cangnova.cangjie.cfir.analysis.checkers.checkUpperBoundViolatedForTypealiasExpansion
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.context.accessContext
 import org.cangnova.cangjie.cfir.analysis.checkers.createGenericUseSiteSubstitutor
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameterRefsOwner
@@ -13,6 +14,7 @@ import org.cangnova.cangjie.cfir.references.CfirResolvedErrorReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.resolve.providers.createCallableOwnerUseSiteSubstitutionMap
+import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessKind
 import org.cangnova.cangjie.cfir.scopes.impl.typeAliasConstructorInfo
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
@@ -105,6 +107,10 @@ object CfirUpperBoundViolatedQualifiedAccessExpressionChecker : CfirQualifiedAcc
         val receiverType = (explicitReceiver ?: dispatchReceiver)
             ?.coneTypeOrNull
             ?.fullyExpandedType(context.session)
-        return createCallableOwnerUseSiteSubstitutionMap(context.session, callableSymbol, receiverType)
+        return createCallableOwnerUseSiteSubstitutionMap(
+            session = context.session,
+            callableSymbol = callableSymbol,
+            receiverType = receiverType,
+        )
     }
 }

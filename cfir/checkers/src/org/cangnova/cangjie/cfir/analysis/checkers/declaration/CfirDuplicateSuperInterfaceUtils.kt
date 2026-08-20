@@ -1,16 +1,20 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.context.accessContext
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirInterface
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameterRefsOwner
 import org.cangnova.cangjie.cfir.resolve.providers.createExtendDeclarationSubstitution
+import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessKind
+import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityResult
 import org.cangnova.cangjie.cfir.resolve.providers.classifyDeclaredSupertype
 import org.cangnova.cangjie.cfir.resolve.providers.ordinarySupertypeTypeOrNull
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.resolve.toSymbol
 import org.cangnova.cangjie.cfir.session.extendProvider
+import org.cangnova.cangjie.cfir.session.accessibilityChecker
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.symbols.toLookupTag
@@ -112,7 +116,12 @@ private fun collectInstantiatedExtendInterfaceInCurrentDeclaration(
     val targetKey = instantiatedSelfType.expandedExtendTargetKey ?: return null
     val extendProvider = context.session.extendProvider
     for (extend in extendProvider.getExtendsForTarget(targetKey)) {
-        if (!extendProvider.isExtendAccessible(extend)) continue
+        if (
+            context.session.accessibilityChecker.checkExtend(
+                extend,
+                context.accessContext(CfirAccessKind.EXTEND),
+            ) !is CfirAccessibilityResult.Accessible
+        ) continue
         val targetPattern = extend.extendedTypeRef.coneTypeOrNull ?: continue
         val substitution = createExtendDeclarationSubstitution(
             session = context.session,

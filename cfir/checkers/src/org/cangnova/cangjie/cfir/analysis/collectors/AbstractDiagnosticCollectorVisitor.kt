@@ -30,7 +30,6 @@ import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContextForProv
 import org.cangnova.cangjie.cfir.analysis.checkers.context.MutableCheckerContext
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.expressions.*
-import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityFileScope
 import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
@@ -413,7 +412,7 @@ abstract class AbstractDiagnosticCollectorVisitor(
         val existingContext = context
         context = context.enterFile(file)
         try {
-            return CfirAccessibilityFileScope.with(file, block)
+            return block()
         } finally {
             existingContext.exitFile(file)
             context = existingContext

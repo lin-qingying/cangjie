@@ -39,6 +39,7 @@ val DEFAULT_STATUS_FOR_STATUSLESS_DECLARATIONS: CfirResolvedDeclarationStatus =
         visibility = Visibilities.Public
         isVisibilityExplicit = false
         isModalityExplicit = false
+        isAbstractExplicit = false
         isOverride = false
         isOperator = false
         isStatic = false
@@ -70,6 +71,7 @@ fun CfirDeclarationStatus.resolvedForStatuslessDeclaration(): CfirResolvedDeclar
         visibility = this@resolvedForStatuslessDeclaration.visibility
         isVisibilityExplicit = this@resolvedForStatuslessDeclaration.isVisibilityExplicit
         isModalityExplicit = this@resolvedForStatuslessDeclaration.isModalityExplicit
+        isAbstractExplicit = this@resolvedForStatuslessDeclaration.isAbstractExplicit
         isOverride = this@resolvedForStatuslessDeclaration.isOverride
         isOperator = this@resolvedForStatuslessDeclaration.isOperator
         isStatic = this@resolvedForStatuslessDeclaration.isStatic

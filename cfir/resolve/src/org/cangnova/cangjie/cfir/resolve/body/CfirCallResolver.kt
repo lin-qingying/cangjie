@@ -24,7 +24,6 @@
 
 package org.cangnova.cangjie.cfir.resolve.body
 
-import org.cangnova.cangjie.ImportPath
 import org.cangnova.cangjie.builtins.StandardNames
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.SessionHolder
@@ -64,13 +63,16 @@ import org.cangnova.cangjie.cfir.resolve.calls.stages.fullyProcessCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.tower.CfirTowerGroup
 import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.CfirPCLAInferenceSession
 import org.cangnova.cangjie.cfir.resolve.providers.findExtendDeclarationSubstitution
+import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessContext
+import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessKind
+import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityResult
+import org.cangnova.cangjie.cfir.resolve.providers.getContainingExtend
 import org.cangnova.cangjie.cfir.resolve.providers.getContainingFile
 import org.cangnova.cangjie.cfir.resolve.providers.semanticExtendedType
 import org.cangnova.cangjie.cfir.resolve.withExpectedType
 import org.cangnova.cangjie.cfir.resolve.inference.inferenceComponents
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeParameterBasedTypeVariable
-import org.cangnova.cangjie.cfir.scopes.defaultImportsProvider
 import org.cangnova.cangjie.cfir.scopes.CfirScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassMemberScopeKind
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassSubstitutionScope
@@ -82,14 +84,11 @@ import org.cangnova.cangjie.cfir.semantics.InvalidCallableReturnTypeInOverloadSe
 import org.cangnova.cangjie.cfir.semantics.ResolutionDiagnostic
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.builtinTypes
-import org.cangnova.cangjie.cfir.session.cfirProvider
-import org.cangnova.cangjie.cfir.session.extendProvider
-import org.cangnova.cangjie.cfir.session.extendProviderOrNull
+import org.cangnova.cangjie.cfir.session.accessibilityChecker
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
-import org.cangnova.cangjie.cfir.unwrapSubstitutionOverrides
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.Name
@@ -201,7 +200,7 @@ class CfirCallResolver(
     /**
      * 解析函数调用并把最终候选或错误诊断写回 callee reference。
      *
-     * 该入口覆盖普通函数、enum constructor、class constructor、同文件 classifier fallback、
+     * 该入口覆盖普通函数、enum constructor、class constructor、
      * 内建 Array/VArray/Pointer/CString 构造以及 collection literal 外层候选语境。
      */
     fun resolveCallAndSelectCandidate(
@@ -215,11 +214,6 @@ class CfirCallResolver(
             functionCall.replaceDispatchReceiver(null)
         }
         val isCollectionLiteralCall = collectionLiteralContext != null
-        val sameFileClassifierForCall = if (!isCollectionLiteralCall && functionCall.explicitReceiver == null) {
-            findSameFileTopLevelClassifier(components.file, callee.name)?.symbol
-        } else {
-            null
-        }
         val result = collectCandidates(
             qualifiedAccess = functionCall,
             name = callee.name,
@@ -232,54 +226,50 @@ class CfirCallResolver(
         var expectedCandidates: Collection<Candidate>? = null
         var matchedClassifier: CfirClassLikeSymbol<*>? = null
         var classLikeCallResolved = false
-        if (!isCollectionLiteralCall) {
-            if (sameFileClassifierForCall != null && result.candidates.isEmpty()) {
-                effectiveResult = collectClassConstructorCandidates(
+        if (!isCollectionLiteralCall && !result.hasExcludedCallableLookup) {
+            val directVArrayTarget = functionCall.directVArrayConstructorTargetOrNull(callee.name)
+            if (directVArrayTarget != null) {
+                effectiveResult = collectBuiltinArrayConstructorCandidates(
                     functionCall = functionCall,
-                    classifier = sameFileClassifierForCall,
+                    name = callee.name,
+                    target = directVArrayTarget,
                     resolutionMode = resolutionMode,
                 )
                 classLikeCallResolved = true
-            } else {
-                val directVArrayTarget = functionCall.directVArrayConstructorTargetOrNull(callee.name)
-                if (directVArrayTarget != null) {
+            } else if (callee.name.asString() == "CPointer" && result.candidates.isEmpty()) {
+                effectiveResult = collectBuiltinPointerConstructorCandidates(
+                    functionCall = functionCall,
+                    name = callee.name,
+                    target = BuiltinPointerConstructorTarget(),
+                    resolutionMode = resolutionMode,
+                )
+                classLikeCallResolved = true
+            } else if (callee.name.asString() == "CString" && result.candidates.isEmpty()) {
+                effectiveResult = collectBuiltinCStringConstructorCandidates(
+                    functionCall = functionCall,
+                    name = callee.name,
+                    resolutionMode = resolutionMode,
+                )
+                classLikeCallResolved = true
+            } else if (callee.name.asString() == "Array") {
+                val classifier = findClassifierForCall(functionCall, callee.name)
+                if (classifier != null && classifier.isStdlibArrayClassifier()) {
                     effectiveResult = collectBuiltinArrayConstructorCandidates(
                         functionCall = functionCall,
-                        name = callee.name,
-                        target = directVArrayTarget,
+                        name = classifier.name,
+                        target = BuiltinArrayConstructorTarget.Array,
                         resolutionMode = resolutionMode,
                     )
                     classLikeCallResolved = true
-                } else if (callee.name.asString() == "CPointer" && result.candidates.isEmpty()) {
-                    effectiveResult = collectBuiltinPointerConstructorCandidates(
-                        functionCall = functionCall,
-                        name = callee.name,
-                        target = BuiltinPointerConstructorTarget(),
-                        resolutionMode = resolutionMode,
-                    )
-                    classLikeCallResolved = true
-                } else if (callee.name.asString() == "CString" && result.candidates.isEmpty()) {
-                    effectiveResult = collectBuiltinCStringConstructorCandidates(
-                        functionCall = functionCall,
-                        name = callee.name,
-                        resolutionMode = resolutionMode,
-                    )
-                    classLikeCallResolved = true
-                } else if (callee.name.asString() == "Array") {
-                    val classifier = findClassifierForCall(functionCall, callee.name)
-                    if (classifier != null && classifier.isStdlibArrayClassifier()) {
-                        effectiveResult = collectBuiltinArrayConstructorCandidates(
-                            functionCall = functionCall,
-                            name = classifier.name,
-                            target = BuiltinArrayConstructorTarget.Array,
-                            resolutionMode = resolutionMode,
-                        )
-                        classLikeCallResolved = true
-                    }
                 }
             }
         }
-        if (!classLikeCallResolved && result.candidates.isEmpty() && !isCollectionLiteralCall) {
+        if (
+            !classLikeCallResolved &&
+            result.candidates.isEmpty() &&
+            !result.hasExcludedCallableLookup &&
+            !isCollectionLiteralCall
+        ) {
             // 阶段2a：普通函数搜索为空时，先尝试枚举构造器搜索（对齐官方两阶段语义：普通函数完全遮蔽枚举构造器）
             val enumResult = collectCandidates(
                 functionCall,
@@ -288,7 +278,7 @@ class CfirCallResolver(
                 origin = functionCall.origin,
                 resolutionMode = resolutionMode,
             )
-            if (enumResult.candidates.isNotEmpty()) {
+            if (enumResult.candidates.isNotEmpty() || enumResult.hasExcludedCallableLookup) {
                 effectiveResult = enumResult
             } else {
                 // 阶段2b：枚举构造器也未找到，先按无参值访问解析 callee，再决定是否作为函数值调用。
@@ -301,34 +291,43 @@ class CfirCallResolver(
                     callSite = functionCall,
                     resolutionMode = resolutionMode,
                 )
-                matchedClassifier = findClassifierForCall(functionCall, callee.name)
-                val constructorResult = matchedClassifier?.let { classifier ->
-                    collectClassConstructorCandidates(
-                        functionCall = functionCall,
-                        classifier = classifier,
-                        resolutionMode = resolutionMode,
-                    )
-                }
-                if (constructorResult != null && constructorResult.candidates.isNotEmpty()) {
-                    effectiveResult = constructorResult
-                    matchedClassifier = null
+                if (variableAccessResult.hasExcludedCallableLookup) {
+                    effectiveResult = variableAccessResult
                 } else {
-                    val callableValueInvokeResult = collectCallableValueInvokeCandidates(
-                        functionCall = functionCall,
-                        name = callee.name,
-                        valueAccessResult = variableAccessResult,
-                    )
-                    if (callableValueInvokeResult != null) {
-                        effectiveResult = callableValueInvokeResult
-                    } else if (variableAccessResult.candidates.isNotEmpty()) {
-                        expectedCallKind = CallKind.NamedValueAccess
-                        expectedCandidates = variableAccessResult.candidates
+                    matchedClassifier = findClassifierForCall(functionCall, callee.name)
+                    val constructorResult = matchedClassifier?.let { classifier ->
+                        collectClassConstructorCandidates(
+                            functionCall = functionCall,
+                            classifier = classifier,
+                            resolutionMode = resolutionMode,
+                        )
+                    }
+                    if (constructorResult != null && constructorResult.candidates.isNotEmpty()) {
+                        effectiveResult = constructorResult
+                        matchedClassifier = null
+                    } else {
+                        val callableValueInvokeResult = collectCallableValueInvokeCandidates(
+                            functionCall = functionCall,
+                            name = callee.name,
+                            valueAccessResult = variableAccessResult,
+                        )
+                        if (callableValueInvokeResult != null) {
+                            effectiveResult = callableValueInvokeResult
+                        } else if (variableAccessResult.candidates.isNotEmpty()) {
+                            expectedCallKind = CallKind.NamedValueAccess
+                            expectedCandidates = variableAccessResult.candidates
+                        }
                     }
                 }
             }
         }
 
-        if (matchedClassifier == null && effectiveResult.candidates.isEmpty() && expectedCandidates == null) {
+        if (
+            matchedClassifier == null &&
+            effectiveResult.candidates.isEmpty() &&
+            !effectiveResult.hasExcludedCallableLookup &&
+            expectedCandidates == null
+        ) {
             matchedClassifier = findClassifierForCall(functionCall, callee.name)
         }
 
@@ -344,6 +343,7 @@ class CfirCallResolver(
             expectedCallKind = expectedCallKind,
             expectedCandidates = expectedCandidates,
             forwardedDiagnostics = effectiveResult.forwardedDiagnostics,
+            callableLookupOutcomes = effectiveResult.callableLookupOutcomes,
         )
 
         functionCall.replaceCalleeReference(nameReference)
@@ -742,7 +742,6 @@ class CfirCallResolver(
             if (!result.isSuccess || (isUsedAsReceiver && result.candidates.all { it.symbol is CfirClassLikeSymbol<*> })) {
                 val classifier = towerResolver.findClassifiers(callee.name)
                     .firstOrNull { it.isValidClassifierExpression(isUsedAsReceiver) }
-                    ?: resolveTopLevelClassifierByShortName(callee.name)
                 if (classifier != null) {
                     transformedAccess.replaceCalleeReference(
                         buildResolvedNamedReference {
@@ -919,8 +918,14 @@ class CfirCallResolver(
             }
         }
 
+        val bestCandidateIdentities = result.candidates.mapTo(linkedSetOf()) { candidate ->
+            candidate.lookupIdentity()
+        }
         return collector.allCandidates.map { candidate ->
-            OverloadCandidate(candidate, isInBestCandidates = candidate in result.candidates)
+            OverloadCandidate(
+                candidate,
+                isInBestCandidates = candidate.lookupIdentity() in bestCandidateIdentities,
+            )
         }
     }
 
@@ -1313,6 +1318,7 @@ class CfirCallResolver(
             applicability = applicability,
             candidates = reducedCandidates,
             forwardedDiagnostics = resultCollector.forwardedDiagnostics(),
+            callableLookupOutcomes = resultCollector.excludedCallableLookupOutcomes(),
         )
         if (callSite is CfirQualifiedAccessExpression) {
             result = result.reduceCandidatesByLambdaBody(callSite)
@@ -1360,6 +1366,8 @@ class CfirCallResolver(
                 givenExtensionReceiverExpression = candidate.givenExtensionReceiver?.expression,
                 explicitReceiverKind = candidate.explicitReceiverKind,
                 originScope = candidate.originScope,
+                accessibilityResult = candidate.discoveryAccessibilityResult,
+                lookupProvenance = candidate.lookupProvenance,
                 isFromCompanionObjectTypeScope = candidate.isFromCompanionObjectTypeScope,
                 isFromOriginalTypeInPresenceOfSmartCast = candidate.isFromOriginalTypeInPresenceOfSmartCast,
                 deterministicReturnType = deterministicReturnType,
@@ -2051,10 +2059,17 @@ class CfirCallResolver(
     /** 计算 extension 候选在当前 use-site 下的 receiver 类型。 */
     private fun Candidate.expectedExtensionReceiverType(): ConeCangJieType? {
         val callableSymbol = symbol as? CfirCallableSymbol<*> ?: return null
-        val originalSymbol = callableSymbol.unwrapSubstitutionOverrides()
-        val extendProvider = session.extendProvider
-        val ownerExtend = extendProvider.getContainingExtend(originalSymbol)
-            ?.takeIf(extendProvider::isExtendAccessible)
+        val ownerExtend = callableSymbol.getContainingExtend()
+            ?.takeIf {
+                session.accessibilityChecker.checkExtend(
+                    it,
+                    CfirAccessContext(
+                        useSiteFile = components.file,
+                        containingDeclarations = transformer.components.containingDeclarations,
+                        kind = CfirAccessKind.EXTEND,
+                    ),
+                ) is CfirAccessibilityResult.Accessible
+            }
             ?: return null
         val actualReceiverType = givenExtensionReceiver?.expression?.coneTypeOrNull
         if (actualReceiverType != null) {
@@ -2252,6 +2267,7 @@ class CfirCallResolver(
         expectedCallKind: CallKind? = null,
         expectedCandidates: Collection<Candidate>? = null,
         forwardedDiagnostics: List<ResolutionDiagnostic> = emptyList(),
+        callableLookupOutcomes: List<CfirCallableLookupOutcome.Excluded> = emptyList(),
     ): CfirNamedReference {
         val source = reference.source
         val operatorToken = runIf(callInfo.origin == CfirFunctionCallOrigin.Operator) {
@@ -2350,6 +2366,17 @@ class CfirCallResolver(
                     receiver.enumConstructorMemberOnValueReceiver(name)
                 }
                 when {
+                    callableLookupOutcomes.isNotEmpty() && operatorToken == null ->
+                        ConeNoMatchingFunctionCallError(name)
+
+                    callableLookupOutcomes.isNotEmpty() ->
+                        ConeUnresolvedNameError(
+                            name = name,
+                            operator = operatorToken,
+                            receiverType = explicitReceiver?.coneTypeOrNull,
+                            argumentTypes = argumentTypes,
+                        )
+
                     enumConstructorOnValueReceiver != null -> {
                         val receiverType = explicitReceiver.coneTypeOrNull
                             ?.fullyExpandedType(session)
@@ -2870,9 +2897,17 @@ class CfirCallResolver(
         receiver: CfirQualifiedAccessExpression,
     ): List<CfirTypeParameterRef> {
         val callableSymbol = symbol as? CfirCallableSymbol<*> ?: return owner.typeParameters
-        val ownerExtend = session.extendProviderOrNull
-            ?.getContainingExtend(callableSymbol.unwrapSubstitutionOverrides())
-            ?.takeIf { session.extendProviderOrNull?.isExtendAccessible(it) == true }
+        val ownerExtend = callableSymbol.getContainingExtend()
+            ?.takeIf {
+                session.accessibilityChecker.checkExtend(
+                    it,
+                    CfirAccessContext(
+                        useSiteFile = components.file,
+                        containingDeclarations = transformer.components.containingDeclarations,
+                        kind = CfirAccessKind.EXTEND,
+                    ),
+                ) is CfirAccessibilityResult.Accessible
+            }
         if (ownerExtend != null) return ownerExtend.typeParameters
 
         receiver.resolvedQualifierTypeAliasSymbol()?.cfir?.let { typeAlias ->
@@ -3519,16 +3554,14 @@ class CfirCallResolver(
         if (towerResolver.findClassifiers(name)
                 .any { it.isValidClassifierExpression(isUsedAsReceiver = true) }
         ) return false
-        if (resolveTopLevelClassifierByShortName(name) != null) return false
-
         return true
     }
 
     /**
      * 查找可能被当前调用语法当成构造调用目标的 classifier。
      *
-     * 有显式 receiver 时只在 qualifier 的静态 scope 中查找；裸名调用会先走 tower classifier，
-     * 再按同文件、显式 import、默认 import 兜底查找顶层 classifier。
+     * 有显式 receiver 时在 qualifier 的静态 scope 中查找；裸名调用统一走 tower 中已经
+     * 安装的文件、包、显式 import 与默认 import scope。
      */
     private fun findClassifierForCall(
         qualifiedAccess: CfirQualifiedAccessExpression,
@@ -3541,90 +3574,6 @@ class CfirCallResolver(
             towerResolver.findClassifiers(name)
                 .filterIsInstance<CfirClassLikeSymbol<*>>()
                 .firstOrNull()
-                ?: resolveTopLevelClassifierByShortName(name)
-        }
-    }
-
-    /**
-     * 按短名解析顶层 class-like 符号。
-     *
-     * 查找顺序为同文件声明、显式 import / star import、当前包、primitive 基础包、默认 import；
-     * 该逻辑补足 tower 在某些构造调用 fallback 中无法直接拿到 classifier 的场景。
-     */
-    private fun resolveTopLevelClassifierByShortName(name: Name): CfirClassLikeSymbol<*>? {
-        val file = components.file
-        val packageCandidates = LinkedHashSet<ClassId>()
-        val explicitImportCandidates = LinkedHashSet<ClassId>()
-        val builtinPrimitiveCandidates = LinkedHashSet<ClassId>()
-
-        findSameFileTopLevelClassifier(file, name)?.let { declaration ->
-            return declaration.symbol
-        }
-
-        for (importInfo in file.imports) {
-            val importedFqName = importInfo.importedFqName ?: continue
-            if (importInfo.isAllUnder) {
-                explicitImportCandidates += ClassId(importedFqName, name)
-                continue
-            }
-
-            val importedName = importInfo.aliasName?.asString() ?: importedFqName.shortName().asString()
-            if (importedName == name.asString()) {
-                explicitImportCandidates += ClassId.topLevel(importedFqName)
-            }
-        }
-
-        packageCandidates += ClassId(file.packageDirective.packageFqName, name)
-        builtinPrimitiveCandidates += ClassId(StandardNames.BASIC_PACKAGE_FQ_NAME, name)
-
-        val defaultImportCandidates = LinkedHashSet<ClassId>()
-        val defaultImportsProvider = session.defaultImportsProvider
-        val defaultImports = defaultImportsProvider.getDefaultImports(includeLowPriorityImports = true)
-            .filter { it.fqName !in defaultImportsProvider.excludedImports }
-        addDefaultImportCandidates(defaultImportCandidates, defaultImports, name)
-
-        return sequenceOf(
-            packageCandidates,
-            explicitImportCandidates,
-            builtinPrimitiveCandidates,
-            defaultImportCandidates,
-        ).flatMap { it.asSequence() }
-            .firstNotNullOfOrNull(components.symbolProvider::getClassLikeSymbolByClassId)
-    }
-
-    /** 在当前文件顶层声明中按短名查找 class-like 声明。 */
-    private fun findSameFileTopLevelClassifier(
-        file: CfirFile,
-        shortName: Name,
-    ): CfirClassLikeDeclaration? {
-        return file.declarations
-            .asSequence()
-            .filterIsInstance<CfirClassLikeDeclaration>()
-            .filter { declaration -> declaration.name == shortName }
-            .firstOrNull()
-    }
-
-    /**
-     * 将默认导入路径转换成指定短名可能对应的 [ClassId] 候选。
-     *
-     * star import 追加包下短名；普通 import 需要短名或别名与目标短名一致。
-     */
-    private fun addDefaultImportCandidates(
-        candidates: MutableSet<ClassId>,
-        imports: List<ImportPath>,
-        shortName: Name,
-    ) {
-        val simpleName = shortName.asString()
-        for (importPath in imports) {
-            if (importPath.isAllUnder) {
-                candidates += ClassId(importPath.fqName, shortName)
-                continue
-            }
-
-            val importedName = importPath.alias?.asString() ?: importPath.fqName.shortName().asString()
-            if (importedName == simpleName) {
-                candidates += ClassId.topLevel(importPath.fqName)
-            }
         }
     }
 
@@ -3636,20 +3585,30 @@ class CfirCallResolver(
     private fun findClassifierInQualifierScope(
         receiver: CfirExpression,
         name: Name,
-    ): CfirClassLikeSymbol<*>? {
+    ): CfirClassLikeSymbol<*>? = qualifierClassifierCandidates(receiver, name)
+        .firstOrNull()
+        ?.symbol as? CfirClassLikeSymbol<*>
+
+    /** 通过统一 type candidate collector 查找 qualifier scope 中的 classifier。 */
+    private fun qualifierClassifierCandidates(
+        receiver: CfirExpression,
+        name: Name,
+    ): List<CfirTypeCandidateCollector.TypeCandidate> {
         val unwrappedReceiver = receiver.unwrapSmartcastExpression()
-        var result: CfirClassLikeSymbol<*>? = null
-        sequenceOf(
+        val scopes = sequenceOf(
             unwrappedReceiver.importedPackageQualifierScopeOrNull(components.file, session),
             unwrappedReceiver.qualifierScopeOrNull(session, components.scopeSession),
-        ).filterNotNull().forEach { scope ->
-            scope.processClassifiersByName(name) { classifier ->
-                if (result == null) {
-                    result = classifier
-                }
-            }
-        }
-        return result
+        ).filterNotNull().toList()
+        return CfirTypeCandidateCollector(
+            session = session,
+            context = CfirAccessContext(
+                useSiteFile = components.file,
+                containingDeclarations = components.containingDeclarations,
+                receiverType = unwrappedReceiver.resolvedType,
+                qualifierSymbol = unwrappedReceiver.resolvedQualifierClassifier(session),
+                kind = CfirAccessKind.TYPE,
+            ),
+        ).firstVisibleScopeCandidates(scopes, name)
     }
 
     /** 返回构造目标 classifier 在当前查找位置携带的 use-site substitutor。 */
@@ -3659,14 +3618,10 @@ class CfirCallResolver(
     ): ConeSubstitutor {
         val explicitReceiver =
             access.explicitReceiver ?: return towerResolver.findClassifierSubstitutor(classifier.name, classifier)
-        val scope = explicitReceiver.unwrapSmartcastExpression()
-            .qualifierScopeOrNull(session, components.scopeSession)
-            ?: return ConeSubstitutor.Empty
-        var result: ConeSubstitutor? = null
-        scope.processClassifiersByNameWithSubstitution(classifier.name) { symbol, substitutor ->
-            if (symbol == classifier && result == null) result = substitutor
-        }
-        return result ?: ConeSubstitutor.Empty
+        return qualifierClassifierCandidates(explicitReceiver, classifier.name)
+            .firstOrNull { it.symbol == classifier }
+            ?.substitutor
+            ?: ConeSubstitutor.Empty
     }
 
     /**
@@ -3732,7 +3687,13 @@ class CfirCallResolver(
         val candidates: Collection<Candidate>,
         /** tower resolver 转发出的非候选诊断。 */
         val forwardedDiagnostics: List<ResolutionDiagnostic>,
-    )
+        /** 名字已发现但未创建 Candidate 的结构化 callable 查找结果。 */
+        val callableLookupOutcomes: List<CfirCallableLookupOutcome.Excluded> = emptyList(),
+    ) {
+        /** 当前名称是否已经在某个 tower group 形成 callable 排除截止面。 */
+        val hasExcludedCallableLookup: Boolean
+            get() = callableLookupOutcomes.isNotEmpty()
+    }
 
     /**
      * 对已规约候选集合继续执行 lambda body 重载缩减，并同步候选集合整体适用性。
@@ -3857,8 +3818,8 @@ class AllCandidatesCollector(
     components as CfirAbstractBodyResolveTransformer.BodyResolveTransformerComponents,
     resolutionStageRunner
 ) {
-    /** 按符号去重保存所有被 tower 访问到的候选。 */
-    private val allCandidatesMap = mutableMapOf<CfirBasedSymbol<*>, Candidate>()
+    /** 按 symbol 与完整 lookup provenance 共同去重保存所有结构候选。 */
+    private val allCandidatesMap = mutableMapOf<CfirCandidateLookupIdentity, Candidate>()
 
     /** 记录候选后继续执行普通 collector 的适用性处理。 */
     override fun consumeCandidate(
@@ -3866,7 +3827,7 @@ class AllCandidatesCollector(
         candidate: Candidate,
         context: ResolutionContext
     ): CandidateApplicability {
-        allCandidatesMap.getOrPut(candidate.symbol) { candidate }
+        allCandidatesMap.getOrPut(candidate.lookupIdentity()) { candidate }
         return super.consumeCandidate(group, candidate, context)
     }
 
@@ -3877,6 +3838,3 @@ class AllCandidatesCollector(
     val allCandidates: Collection<Candidate>
         get() = allCandidatesMap.values
 }
-
-
-

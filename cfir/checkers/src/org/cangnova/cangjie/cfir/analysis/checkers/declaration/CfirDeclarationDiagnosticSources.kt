@@ -287,34 +287,6 @@ internal fun CfirConstructor.constructorNameDiagnosticSource(
         ?: source
 
 /**
- * 取得构造器声明头的诊断 source。
- *
- * 构造器完成性错误是声明级错误，但 source 不能覆盖函数体；Kotlin FIR 对未初始化属性
- * 使用声明签名级定位，仓颉这里对应收窄到构造器头（修饰符/名称/参数列表）。
- */
-internal fun CfirConstructor.constructorDeclarationHeaderDiagnosticSource(): AbstractCjSourceElement? {
-    val declarationSource = source ?: return null
-    declarationSource.psi?.let { psi ->
-        val constructorPsi = checkNotNull(when (psi) {
-            is CjConstructor<*> -> psi
-            else -> PsiTreeUtil.getParentOfType(psi, CjConstructor::class.java, false)
-                ?: PsiTreeUtil.findChildOfType(psi, CjConstructor::class.java)
-        }) { "构造器 CFIR 的 PSI source 必须对应合法的构造器声明" }
-        val parameterList = checkNotNull(constructorPsi.valueParameterList) {
-            "合法构造器声明必须包含参数列表，才能建立精确的声明头诊断范围"
-        }
-        return CjOffsetsOnlySourceElement(
-            startOffset = constructorPsi.textRange.startOffset,
-            endOffset = parameterList.textRange.endOffset,
-        )
-    }
-    val lightTreeSource = declarationSource as? CjLightSourceElement ?: return null
-    return checkNotNull(lightTreeSource.findConstructorDeclarationHeaderSource()) {
-        "构造器 CFIR 的 LightTree source 必须包含完整的构造器声明头"
-    }
-}
-
-/**
  * 取得字段变量名称的诊断 source。
  */
 internal fun CfirFieldVariable.fieldVariableNameDiagnosticSource(): AbstractCjSourceElement? =
@@ -650,28 +622,6 @@ private fun CjSourceElement.findConstructorNameSource(
         return CjOffsetsOnlySourceElement(
             startOffset = treeStructure.getStartOffset(primaryConstructorNameToken),
             endOffset = treeStructure.getEndOffset(primaryConstructorNameToken),
-        )
-    }
-
-    return null
-}
-
-/**
- * 在 light-tree source 中查找构造器声明头范围。
- *
- * 范围从构造器声明起点开始，到参数列表右括号结束；缺少参数列表表示 source 不满足构造器不变量。
- */
-private fun CjSourceElement.findConstructorDeclarationHeaderSource(): AbstractCjSourceElement? {
-    val tokens = collectLeafTokens()
-    if (tokens.isEmpty()) return null
-
-    val rightParen = tokens.asSequence()
-        .takeWhile { it.tokenType != CjTokens.LBRACE }
-        .lastOrNull { it.tokenType == CjTokens.RPAR }
-    if (rightParen != null) {
-        return CjOffsetsOnlySourceElement(
-            startOffset = treeStructure.getStartOffset(tokens.first()),
-            endOffset = treeStructure.getEndOffset(rightParen),
         )
     }
 

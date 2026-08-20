@@ -102,13 +102,19 @@ public sealed class CaBaseClassTypeBuilder : CaClassTypeBuilder
 CaBaseClassTypeBuilder.public override val arguments: List<CaTypeProjection>
 CaBaseClassTypeBuilder.public override fun argument(argument: CaTypeProjection): Unit
 CaBaseClassTypeBuilder.public override fun argument(type: CaType ): Unit
-CaBaseClassTypeBuilder.public class ByClassId(classId: ClassId, override val token: CaLifetimeToken) : CaBaseClassTypeBuilder()
+CaBaseClassTypeBuilder.public class ByClassId( classId: ClassId, override val token: CaLifetimeToken, ) : CaBaseClassTypeBuilder()
 CaBaseClassTypeBuilder.ByClassId.public val classId: ClassId
-CaBaseClassTypeBuilder.public class BySymbol(symbol: CaClassLikeSymbol, override val token: CaLifetimeToken) : CaBaseClassTypeBuilder()
+CaBaseClassTypeBuilder.public class BySymbol( symbol: CaClassLikeSymbol, override val token: CaLifetimeToken, ) : CaBaseClassTypeBuilder()
 CaBaseClassTypeBuilder.BySymbol.public val symbol: CaClassLikeSymbol
 public sealed class CaBaseTypeParameterTypeBuilder : CaTypeParameterTypeBuilder
-CaBaseTypeParameterTypeBuilder.public class BySymbol(symbol: CaTypeParameterSymbol, override val token: CaLifetimeToken) : CaBaseTypeParameterTypeBuilder()
+CaBaseTypeParameterTypeBuilder.public class BySymbol( symbol: CaTypeParameterSymbol, override val token: CaLifetimeToken, ) : CaBaseTypeParameterTypeBuilder()
 CaBaseTypeParameterTypeBuilder.BySymbol.public val symbol: CaTypeParameterSymbol
+## org/cangnova/cangjie/analysis/api/impl/base/components/CaBaseTypeProvider.kt
+package org.cangnova.cangjie.analysis.api.impl.base.components
+public abstract class CaBaseTypeProvider<T : CaSession> : CaBaseSessionComponent<T>(), CaTypeProvider
+CaBaseTypeProvider.public override val CaValueParameterSymbol.varargArrayType: CaType?
+CaBaseTypeProvider.public val arrayType
+CaBaseTypeProvider.public val elementType
 ## org/cangnova/cangjie/analysis/api/impl/base/import/CaBaseDefaultImportsProvider.kt
 package org.cangnova.cangjie.analysis.api.impl.base.import
 public abstract class CaBaseDefaultImportsProvider : CaDefaultImportsProvider
@@ -165,6 +171,10 @@ CaMapBackedSubstitutor.public fun getAsMap(): Map<CaTypeParameterSymbol, CaType>
 public interface CaChainedSubstitutor : CaSubstitutor
 CaChainedSubstitutor.public val first: CaSubstitutor
 CaChainedSubstitutor.public val second: CaSubstitutor
+## org/cangnova/cangjie/analysis/api/impl/base/symbols/pointers/CaBaseCachedSymbolPointer.kt
+package org.cangnova.cangjie.analysis.api.impl.base.symbols.pointers
+public abstract class CaBaseCachedSymbolPointer<out S : CaSymbol>( originalSymbol: S?, ) : CaSymbolPointer<S>
+CaBaseCachedSymbolPointer.public final override fun restoreSymbol(session: CaSession): S?
 ## org/cangnova/cangjie/analysis/api/impl/base/symbols/pointers/CaBasePsiSymbolPointer.kt
 package org.cangnova.cangjie.analysis.api.impl.base.symbols.pointers
 public interface SmartPointerIncompatiblePsiFile

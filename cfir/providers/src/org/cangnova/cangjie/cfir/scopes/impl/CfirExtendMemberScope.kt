@@ -4,11 +4,9 @@ import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
-import org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.callableNameOrNull
-import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityFileScope
 import org.cangnova.cangjie.cfir.resolve.providers.CfirExtendProvider
 import org.cangnova.cangjie.cfir.resolve.providers.createExtendDeclarationSubstitution
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
@@ -28,8 +26,6 @@ import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.idealExtendLookupTypes
 import org.cangnova.cangjie.cfir.types.toPrimitiveTypeKindOrNull
-import org.cangnova.cangjie.descriptors.Visibilities
-import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 
 /**
@@ -64,10 +60,6 @@ class CfirExtendMemberScope(
      * 构造 extend 体内成员 scope 时需要排除的当前 extend 声明。
      */
     private val excludingExtend: CfirExtend? = null,
-    /**
-     * 当前 use-site 包名，用于 private extend 成员导出过滤。
-     */
-    private val useSitePackage: FqName? = CfirAccessibilityFileScope.currentPackageFqName(),
 ) : CfirTypeScope() {
 
     /**
@@ -184,7 +176,6 @@ class CfirExtendMemberScope(
             if (extend === excludingExtend) continue
             if (!extend.isApplicableAtReceiver(concreteReceiverType)) continue
             for (declaration in extend.declarations) {
-                if (!extend.isMemberExportedToUseSite(declaration)) continue
                 indexDeclaration(
                     declaration = declaration,
                     classifiers = classifiers,
@@ -235,7 +226,6 @@ class CfirExtendMemberScope(
      * 官方成员访问流程会在候选阶段删除这些目标。
      */
     private fun CfirExtend.isApplicableAtReceiver(concreteReceiverType: ConeCangJieType): Boolean {
-        if (!extendProvider.isExtendAccessible(this)) return false
         val targetPattern = extendedTypeRef.coneTypeOrNull ?: return false
         val substitution = createExtendDeclarationSubstitution(
             session = session,
@@ -248,88 +238,6 @@ class CfirExtendMemberScope(
         }
 
         return canDeferBareGenericStaticQualifierApplicability(targetPattern, concreteReceiverType)
-    }
-
-    /**
-     * 跨包使用 extend 时按 CJO 导出面处理：private extend 成员不进入 use-site scope。
-     *
-     * 同包仍保留 private 成员候选，让后续访问控制给出函数 no-match / 字段 invalid-access；
-     * 这和官方源码同包路径的 `IsLegalAccess` 行为一致。
-     */
-    private fun CfirExtend.isMemberExportedToUseSite(declaration: CfirDeclaration): Boolean {
-        val member = declaration as? CfirMemberDeclaration ?: return true
-        if (member.status.visibility == Visibilities.Private) {
-            val useSitePackage = useSitePackage ?: return true
-            val extendPackage = extendProvider.getPackageFqName(this) ?: return true
-            if (useSitePackage != extendPackage) return false
-        }
-        return isMemberExportedThroughVisibleInterface(declaration)
-    }
-
-    /**
-     * 跨包 extend 只导出「实现了 use-site 可见接口成员」的那些成员。
-     *
-     * 官方行为（`cjc` 1.0.5，按 `extend_member_export05` 各 fixture 还原真实多包目录后编译）：
-     * - `Foo` 声明于包 `a`；包 `a` 内 `extend Foo <: I0`（`I0` 为 private）的 `f0` 在所有 use-site 均可访问，
-     *   说明与被扩展类型同包的 extend 属该类型自身表面，不受接口可见性约束。
-     * - 包 `b.c` 内 `extend Foo <: I2`（internal `I2`，仅声明 `f2`）另外声明了 `f1`/`f3`/`f4`：
-     *   use-site 为 `b.a`（`I2` 不可见）时 `f1`/`f2`/`f3` 全部报 `'fx' is not a member of ...`；
-     *   use-site 为 `b.c.d`（`b.c` 的子包，`I2` 可见）时仅 `f1`/`f3` 报错，`f2` 可访问。
-     * 因此导出必须**逐成员**判定：成员需实现某个 use-site 可见接口所声明的成员。
-     *
-     * 不带接口的 extend 不在上述取证范围内，保持原有行为不变。
-     */
-    private fun CfirExtend.isMemberExportedThroughVisibleInterface(declaration: CfirDeclaration): Boolean {
-        if (superTypeRefs.isEmpty()) return true
-        val useSitePackage = useSitePackage ?: return true
-        val extendPackage = extendProvider.getPackageFqName(this) ?: return true
-        val extendedPackage = extendedTypeRef.coneTypeOrNull
-            ?.classIdOrPrimitiveClassId
-            ?.packageFqName
-            ?: return true
-        if (extendPackage == extendedPackage) return true
-
-        val memberName = declaration.exportedMemberNameOrNull() ?: return true
-        return superTypeRefs.any { superTypeRef ->
-            val interfaceClassId = superTypeRef.coneTypeOrNull?.classIdOrPrimitiveClassId ?: return@any true
-            val interfaceDeclaration = session.symbolProvider
-                .getClassLikeSymbolByClassId(interfaceClassId)
-                ?.takeIf { it.isBound }
-                ?.cfir as? CfirClassLikeDeclaration
-                ?: return@any true
-            if (!isInterfaceVisibleAtUseSite(interfaceClassId.packageFqName, interfaceDeclaration, useSitePackage)) {
-                return@any false
-            }
-            interfaceDeclaration.declarations.any { it.exportedMemberNameOrNull() == memberName }
-        }
-    }
-
-    /**
-     * 按仓颉可见性语义判断接口对 use-site 包是否可见。
-     *
-     * `public` 处处可见；同包始终可见；`private` 仅声明包可见；
-     * `internal` / `protected` 对声明包及其**子包**可见（`b.c.d` 能看见 `b.c` 的 internal 接口）。
-     */
-    private fun isInterfaceVisibleAtUseSite(
-        interfacePackage: FqName,
-        interfaceDeclaration: CfirClassLikeDeclaration,
-        useSitePackage: FqName,
-    ): Boolean {
-        val visibility = (interfaceDeclaration as? CfirMemberDeclaration)?.status?.visibility ?: return true
-        if (visibility == Visibilities.Public) return true
-        if (useSitePackage == interfacePackage) return true
-        if (visibility == Visibilities.Private) return false
-        return useSitePackage.startsWith(interfacePackage)
-    }
-
-    /**
-     * 取得 extend / 接口成员用于导出匹配的名称。
-     */
-    private fun CfirDeclaration.exportedMemberNameOrNull(): Name? = when (this) {
-        is CfirNamedFunction -> name
-        is CfirProperty -> name
-        is CfirFieldVariable -> name
-        else -> null
     }
 
     /**

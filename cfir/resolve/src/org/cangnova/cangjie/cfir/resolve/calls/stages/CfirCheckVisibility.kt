@@ -1,17 +1,16 @@
 package org.cangnova.cangjie.cfir.resolve.calls.stages
 
-import org.cangnova.cangjie.cfir.declarations.CfirConstructor
-import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration
-import org.cangnova.cangjie.cfir.diagnostic.HiddenCandidate
 import org.cangnova.cangjie.cfir.diagnostic.VisibilityError
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCallOrigin
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
-import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallKind
+import org.cangnova.cangjie.cfir.resolve.calls.accessibilityResult
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CheckerSink
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.yieldDiagnostic
 import org.cangnova.cangjie.cfir.resolve.calls.visibility.visibilityChecker
+import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityResult
+import org.cangnova.cangjie.cfir.resolve.providers.CfirLookupDisposition
 
 /** 候选可见性检查阶段。 */
 object CfirCheckVisibility : ResolutionStage() {
@@ -22,34 +21,22 @@ object CfirCheckVisibility : ResolutionStage() {
 
         val declaration = candidate.symbol.cfir as? CfirMemberDeclaration ?: return
 
-        if (declaration is CfirConstructor) {
-            // TODO 仓颉 singleton/enum object 构造可见性细节，后续对齐语言规则。
-        }
-
         val visibilityChecker = candidate.callInfo.session.visibilityChecker
-        if (!visibilityChecker.isVisible(declaration, candidate)) {
-            val diagnostic = if (declaration.isHiddenFunctionCandidate(candidate.callInfo.callKind)) {
-                HiddenCandidate()
-            } else {
-                VisibilityError(candidate.symbol)
+        when (val result = candidate.accessibilityResult(visibilityChecker, declaration)) {
+            CfirAccessibilityResult.Accessible -> Unit
+            is CfirAccessibilityResult.Inaccessible -> {
+                when (result.disposition) {
+                    CfirLookupDisposition.NOT_DISCOVERABLE,
+                    CfirLookupDisposition.EXCLUDE_CALLABLE,
+                    -> error(
+                        "${result.disposition} candidate `${candidate.symbol}` reached CfirCheckVisibility; " +
+                            "tower discovery must handle it before Candidate creation",
+                    )
+
+                    CfirLookupDisposition.REPORT_ACCESS_ERROR ->
+                        sink.yieldDiagnostic(VisibilityError(result.reportingOwner))
+                }
             }
-            sink.yieldDiagnostic(diagnostic)
-        }
-    }
-
-    /**
-     * 官方成员/名字查找会把不可访问函数候选从可调用集合里滤掉，
-     * 之后由普通调用解析报告 no-match；属性/变量访问仍保留可见性诊断。
-     */
-    private fun CfirMemberDeclaration.isHiddenFunctionCandidate(callKind: CallKind): Boolean {
-        if (this !is CfirFunction) return false
-        return when (callKind) {
-            CallKind.Function,
-            CallKind.DelegatingConstructorCall,
-            CallKind.EnumConstructorCall,
-            -> true
-
-            CallKind.NamedValueAccess -> false
         }
     }
 }

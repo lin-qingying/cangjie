@@ -27,7 +27,6 @@ package org.cangnova.cangjie.cfir.scopes.impl
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.ScopeSessionKey
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
-import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityFileScope
 import org.cangnova.cangjie.cfir.resolve.providers.isBareOrDeclarationSelfTypeOf
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.scopes.CfirContainingNamesAwareScope
@@ -249,8 +248,7 @@ fun CfirClassLikeSymbol<*>.staticScopeForQualifierType(
     qualifierType: ConeCangJieType = constructType(),
 ): CfirContainingNamesAwareScope {
     val expandedQualifierType = qualifierType.fullyExpandedType(session)
-    val useSitePackage = CfirAccessibilityFileScope.currentPackageFqName()
-    val cacheKey = StaticScopeForQualifierTypeKey(classId, expandedQualifierType, useSitePackage)
+    val cacheKey = StaticScopeForQualifierTypeKey(classId, expandedQualifierType)
     return scopeSession.getOrBuild(cacheKey, StaticScopeForQualifierTypeScopeKey) {
         val allowBareGenericStaticQualifierExtends =
             expandedQualifierType is ConeLookupTagBasedType &&
@@ -266,7 +264,6 @@ fun CfirClassLikeSymbol<*>.staticScopeForQualifierType(
             dispatchReceiverType = expandedQualifierType,
             scopeKind = CfirClassMemberScopeKind.USE_SITE,
             allowBareGenericStaticQualifierExtends = allowBareGenericStaticQualifierExtends,
-            useSitePackage = useSitePackage,
         )
         CfirClassStaticScope(CfirClassSubstitutionScope(session, useSiteScope, expandedQualifierType))
     }
@@ -286,8 +283,7 @@ fun ConeCangJieType.staticScopeForBuiltinQualifierType(
     val targetKey = expandedQualifierType.extendTargetKey ?: return null
     if (targetKey is CfirExtendTargetKey.ClassLike) return null
 
-    val useSitePackage = CfirAccessibilityFileScope.currentPackageFqName()
-    val cacheKey = StaticScopeForBuiltinQualifierTypeKey(targetKey, expandedQualifierType, useSitePackage)
+    val cacheKey = StaticScopeForBuiltinQualifierTypeKey(targetKey, expandedQualifierType)
     return scopeSession.getOrBuild(cacheKey, StaticScopeForBuiltinQualifierTypeScopeKey) {
         CfirClassStaticScope(
             CfirExtendMemberScope(
@@ -295,7 +291,6 @@ fun ConeCangJieType.staticScopeForBuiltinQualifierType(
                 extendProvider = session.extendProvider,
                 session = session,
                 receiverType = expandedQualifierType,
-                useSitePackage = useSitePackage,
             )
         )
     }
@@ -572,7 +567,6 @@ private data class StaticMemberWithScope<S : CfirCallableSymbol<*>>(
  *
  * @property classId qualifier class id。
  * @property qualifierType qualifier 的具体类型。
- * @property useSitePackage 当前 use-site 包名。
  */
 private data class StaticScopeForQualifierTypeKey(
     /**
@@ -583,10 +577,6 @@ private data class StaticScopeForQualifierTypeKey(
      * qualifier 在当前 use-site 的具体类型。
      */
     val qualifierType: ConeCangJieType,
-    /**
-     * 当前 use-site 包名，用于过滤 extend 静态成员可见性。
-     */
-    val useSitePackage: FqName?,
 )
 
 /**
@@ -601,10 +591,6 @@ private data class StaticScopeForBuiltinQualifierTypeKey(
      * qualifier 在当前 use-site 的具体类型。
      */
     val qualifierType: ConeCangJieType,
-    /**
-     * 当前 use-site 包名，用于过滤 extend 静态成员可见性。
-     */
-    val useSitePackage: FqName?,
 )
 
 /**

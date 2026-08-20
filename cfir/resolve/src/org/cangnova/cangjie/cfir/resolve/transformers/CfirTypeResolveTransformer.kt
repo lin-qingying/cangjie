@@ -27,7 +27,6 @@ package org.cangnova.cangjie.cfir.resolve.transformers
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.builder.buildConstructor
-import org.cangnova.cangjie.cfir.declarations.builder.buildImport
 import org.cangnova.cangjie.cfir.declarations.impl.CfirClassImpl
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
@@ -35,18 +34,12 @@ import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.resolve.CfirTypeResolutionConfiguration
 import org.cangnova.cangjie.cfir.resolve.ThisTypeResolutionContext
+import org.cangnova.cangjie.cfir.resolve.createFileLookupScopes
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.resolve.providers.semanticExtendedType
 import org.cangnova.cangjie.cfir.toCfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.resolvedTypeFromPrototype
-import org.cangnova.cangjie.cfir.scopes.CfirScope
-import org.cangnova.cangjie.cfir.scopes.defaultImportsProvider
-import org.cangnova.cangjie.cfir.scopes.impl.CfirExplicitSimpleImportingScope
-import org.cangnova.cangjie.cfir.scopes.impl.CfirExplicitStarImportingScope
-import org.cangnova.cangjie.cfir.scopes.impl.CfirFileDeclaredTopLevelScope
-import org.cangnova.cangjie.cfir.scopes.impl.CfirPackageMemberScope
 import org.cangnova.cangjie.cfir.session.CfirSession
-import org.cangnova.cangjie.cfir.session.importBindingStoreOrNull
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.types.*
@@ -820,7 +813,7 @@ class CfirTypeResolveTransformer(
         currentFile?.let { file ->
             configuration = configuration
                 .withUseSiteFile(file)
-                .withScopes(createImportingScopes(file))
+                .withScopes(session.createFileLookupScopes(file, scopeSession).typeResolutionScopes)
         }
 
         val containingClasses = classDeclarationsStack.filterIsInstance<CfirClass>()
@@ -832,40 +825,6 @@ class CfirTypeResolveTransformer(
         }
 
         return configuration
-    }
-
-    /**
-     * 构造 TYPES 阶段类型名查找使用的导入 scope 列表。
-     *
-     * 顺序从高到低排列：文件声明、当前包成员、显式 simple import、显式 star import、
-     * 默认 simple import、默认 star import。
-     */
-    private fun createImportingScopes(file: CfirFile): List<CfirScope> {
-        val symbolProvider = session.symbolProvider
-        val imports = file.imports
-        val resolvedImports = session.importBindingStoreOrNull?.getBindings(file)?.imports
-        val defaultImports = session.defaultImportsProvider
-            .getDefaultImports(includeLowPriorityImports = true)
-            .filter { it.fqName !in session.defaultImportsProvider.excludedImports }
-            .map { importPath ->
-                buildImport {
-                    source = null
-                    importedFqName = importPath.fqName
-                    isAllUnder = importPath.isAllUnder
-                    aliasName = importPath.alias
-                    aliasSource = null
-                }
-            }
-
-        return buildList {
-            // CfirTypeResolver 按顺序查找 scope；这里必须高优先级在前。
-            add(CfirFileDeclaredTopLevelScope(file))
-            add(CfirPackageMemberScope(file.packageDirective.packageFqName, session))
-            add(CfirExplicitSimpleImportingScope(imports, symbolProvider, resolvedImports))
-            add(CfirExplicitStarImportingScope(imports, symbolProvider, resolvedImports))
-            add(CfirExplicitSimpleImportingScope(defaultImports, symbolProvider))
-            add(CfirExplicitStarImportingScope(defaultImports, symbolProvider))
-        }
     }
 
     /**

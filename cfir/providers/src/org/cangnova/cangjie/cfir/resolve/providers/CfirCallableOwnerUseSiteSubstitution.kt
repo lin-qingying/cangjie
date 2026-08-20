@@ -7,7 +7,6 @@ import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.cfirProvider
-import org.cangnova.cangjie.cfir.session.extendProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.session.typeAwareSupertypeProviderOrNull
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
@@ -40,13 +39,12 @@ fun createCallableOwnerUseSiteSubstitutionMap(
 ): Map<TypeConstructorMarker, ConeCangJieType> {
     if (callableSymbol == null || receiverType == null) return emptyMap()
     val originalCallableSymbol = callableSymbol.unwrapSubstitutionOverrides()
-    val ownerExtend = session.extendProvider.getContainingExtend(originalCallableSymbol)
-        ?.takeIf(session.extendProvider::isExtendAccessible)
+    val ownerExtend = originalCallableSymbol.getContainingExtend()
     if (ownerExtend != null) {
         return createExtendOwnerSubstitutionMap(session, ownerExtend, receiverType)
     }
 
-    val ownerClassId = session.cfirProvider.getContainingClass(originalCallableSymbol)?.classId
+    val ownerClassId = originalCallableSymbol.getContainingClass()?.classId
         ?: enumConstructorOwnerClassId(originalCallableSymbol, receiverType, session)
         ?: return emptyMap()
     val concreteOwnerType = findConcreteOwnerType(session, receiverType, ownerClassId)

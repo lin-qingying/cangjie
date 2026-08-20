@@ -45,6 +45,9 @@ import org.cangnova.cangjie.cfir.resolve.calls.ConeResolutionAtom
 import org.cangnova.cangjie.cfir.resolve.calls.ConeResolutionAtomWithSingleChild
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
 import org.cangnova.cangjie.cfir.resolve.calls.isInstanceExtendMemberCandidate
+import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessContext
+import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessKind
+import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityResult
 import org.cangnova.cangjie.cfir.resolve.CfirLocalLambdaInitializerInferenceData
 import org.cangnova.cangjie.cfir.resolve.CfirLocalLambdaInitializerInferenceReference
 import org.cangnova.cangjie.cfir.resolve.localLambdaInitializerInferenceReferenceOrNull
@@ -279,6 +282,8 @@ class CandidateFactory(
             baseSystem = baseSystem,
             callInfo = callInfo,
             originScope = originalCandidate.originScope,
+            discoveryAccessibilityResult = originalCandidate.discoveryAccessibilityResult,
+            lookupProvenance = originalCandidate.lookupProvenance,
             isFromCompanionObjectTypeScope = originalCandidate.isFromCompanionObjectTypeScope,
             isFromOriginalTypeInPresenceOfSmartCast = originalCandidate.isFromOriginalTypeInPresenceOfSmartCast,
             bodyResolveContext = context.bodyResolveContext,
@@ -303,6 +308,8 @@ class CandidateFactory(
         baseSystem = baseSystem,
         callInfo = callInfo,
         originScope = discovery.originScope,
+        discoveryAccessibilityResult = discovery.accessibilityResult,
+        lookupProvenance = discovery.lookupProvenance,
         isFromCompanionObjectTypeScope = discovery.isFromCompanionObjectTypeScope,
         isFromOriginalTypeInPresenceOfSmartCast = discovery.isFromOriginalTypeInPresenceOfSmartCast,
         bodyResolveContext = context.bodyResolveContext,
@@ -340,6 +347,7 @@ class CandidateFactory(
             ),
             callInfo = callInfo,
             originScope = callableValueCandidate.originScope,
+            discoveryAccessibilityResult = callableValueCandidate.discoveryAccessibilityResult,
             isFromCompanionObjectTypeScope = callableValueCandidate.isFromCompanionObjectTypeScope,
             isFromOriginalTypeInPresenceOfSmartCast = callableValueCandidate.isFromOriginalTypeInPresenceOfSmartCast,
             bodyResolveContext = context.bodyResolveContext,
@@ -436,11 +444,22 @@ class CandidateFactory(
         dispatchReceiver: ReceiverValue? = null,
         givenExtensionReceiver: ReceiverValue? = null,
         baseSystem: ConstraintStorage = this.baseSystem,
+        accessibilityResult: CfirAccessibilityResult? = null,
+        lookupProvenance: org.cangnova.cangjie.cfir.scopes.CfirCallableLookupProvenance =
+            org.cangnova.cangjie.cfir.scopes.CfirCallableLookupProvenance.None,
     ): Candidate {
         val useDispatchReceiverAsExtensionReceiver =
             givenExtensionReceiver == null &&
                 dispatchReceiver != null &&
-                symbol.isInstanceExtendMemberCandidate(context.session)
+                symbol.isInstanceExtendMemberCandidate(
+                    context.session,
+                    CfirAccessContext(
+                        useSiteFile = callInfo.containingFile,
+                        containingDeclarations = callInfo.containingDeclarations,
+                        receiverType = dispatchReceiver.type,
+                        kind = CfirAccessKind.EXTEND,
+                    ),
+                )
         val effectiveDispatchReceiver = if (useDispatchReceiverAsExtensionReceiver) null else dispatchReceiver
         val effectiveExtensionReceiver = givenExtensionReceiver ?: dispatchReceiver.takeIf {
             useDispatchReceiverAsExtensionReceiver
@@ -460,6 +479,8 @@ class CandidateFactory(
             baseSystem = effectiveBaseSystem,
             callInfo = callInfo,
             originScope = originScope,
+            discoveryAccessibilityResult = accessibilityResult,
+            lookupProvenance = lookupProvenance,
             bodyResolveContext = context.bodyResolveContext,
         )
         if (localLambdaInitializer != null) {

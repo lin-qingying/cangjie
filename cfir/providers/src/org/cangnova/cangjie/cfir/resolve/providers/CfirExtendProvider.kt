@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.resolve.providers
 
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
+import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.session.services.CfirExtendTargetKey
 import org.cangnova.cangjie.cfir.session.CfirSessionComponent
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
@@ -56,9 +57,11 @@ interface CfirExtendProvider : CfirSessionComponent {
     fun getPackageFqName(extend: CfirExtend): FqName? = null
 
     /**
-     * 判断 [extend] 对当前查询上下文是否可见。
+     * 返回 extend 的声明文件。
      *
-     * 该判定用于 provider 层过滤 CJO/跨包导出面，不替代后续 callable visibility check。
+     * 这是 provider 的结构索引事实；它不代表调用方的 use-site，也不执行可见性判断。
+     * 反序列化声明没有可复用的源码文件时返回 `null`。
      */
-    fun isExtendAccessible(extend: CfirExtend): Boolean = true
+    fun getContainingFile(extend: CfirExtend): CfirFile? = null
+
 }

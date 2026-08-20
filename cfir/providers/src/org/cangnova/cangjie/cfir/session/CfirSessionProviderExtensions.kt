@@ -1,7 +1,9 @@
 package org.cangnova.cangjie.cfir.session
 
 import org.cangnova.cangjie.cfir.resolve.providers.CfirDirectSupertypeProvider
+import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityChecker
 import org.cangnova.cangjie.cfir.resolve.providers.CfirExtendProvider
+import org.cangnova.cangjie.cfir.resolve.providers.CfirExtendExportSurfaceService
 import org.cangnova.cangjie.cfir.resolve.providers.CfirProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirTypeAwareSupertypeProvider
@@ -10,6 +12,12 @@ import org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider
 
 /** 当前 session 的统一符号 provider。 */
 val CfirSession.symbolProvider: CfirSymbolProvider by CfirSession.sessionComponentAccessor()
+
+/** 当前 session 的唯一语言级可见性服务。 */
+val CfirSession.accessibilityChecker: CfirAccessibilityChecker by CfirSession.sessionComponentAccessor()
+
+/** 当前 session 的 extend 成员导出面服务。 */
+val CfirSession.extendExportSurfaceService: CfirExtendExportSurfaceService by CfirSession.sessionComponentAccessor()
 
 /** 当前 session 的 CFIR 声明 provider。 */
 val CfirSession.cfirProvider: CfirProvider by CfirSession.sessionComponentAccessor()

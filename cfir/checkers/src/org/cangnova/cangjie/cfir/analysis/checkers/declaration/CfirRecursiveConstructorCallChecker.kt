@@ -238,10 +238,7 @@ private class RecursiveConstructorGraph(
     private fun CfirConstructor.implicitSuperConstructorDependencyOrNull(): CfirConstructor? {
         if (body?.statements?.firstOrNull().constructorDelegationCallOrNull() != null) return null
         val owner = ownerClassLikeDeclarationOrNull() as? CfirClass ?: return null
-        val superDeclaration = owner.directConcreteSuperDeclaration(
-            context = context,
-            includeLoopInSupertypeError = true,
-        ) ?: return null
+        val superDeclaration = owner.directConcreteSuperDeclaration(context) ?: return null
         return superDeclaration.declarations
             .filterIsInstance<CfirConstructor>()
             .firstOrNull { constructor -> constructor.requiredParameterCount() == 0 }

@@ -25,8 +25,11 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.context.accessContext
 import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.firstCharacterDiagnosticSource
+import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessKind
+import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityResult
 import org.cangnova.cangjie.cfir.analysis.collectors.components.ErrorNodeDiagnosticCollectorComponent
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
@@ -56,6 +59,7 @@ import org.cangnova.cangjie.cfir.references.CfirSuperReference
 import org.cangnova.cangjie.cfir.resolve.constants.CfirIntConstantEvalUtils
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.session.extendProviderOrNull
+import org.cangnova.cangjie.cfir.session.accessibilityChecker
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
@@ -595,7 +599,10 @@ object CfirOpenConstructorMemberAccessChecker : CfirQualifiedAccessChecker() {
         if (dispatchReceiverType != null) return true
         val extendProvider = context.session.extendProviderOrNull ?: return false
         val ownerExtend = extendProvider.getContainingExtend(symbol.unwrapSubstitutionOverrides()) ?: return false
-        return extendProvider.isExtendAccessible(ownerExtend)
+        return context.session.accessibilityChecker.checkExtend(
+            ownerExtend,
+            context.accessContext(CfirAccessKind.EXTEND),
+        ) is CfirAccessibilityResult.Accessible
     }
 
     /**

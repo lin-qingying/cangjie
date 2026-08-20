@@ -5,7 +5,6 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toPersistentList
 import org.cangnova.cangjie.builtins.StandardNames
 import org.cangnova.cangjie.AnalysisFlags
-import org.cangnova.cangjie.ImportPath
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.toCfirResolvedTypeRef
@@ -20,7 +19,6 @@ import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.CfirStruct
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
-import org.cangnova.cangjie.cfir.declarations.builder.buildImport
 import org.cangnova.cangjie.cfir.declarations.impl.CfirClassImpl
 import org.cangnova.cangjie.cfir.declarations.impl.CfirEnumImpl
 import org.cangnova.cangjie.cfir.declarations.impl.CfirExtendImpl
@@ -32,10 +30,10 @@ import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
 
 import org.cangnova.cangjie.cfir.resolve.CfirTypeResolutionConfiguration
 import org.cangnova.cangjie.cfir.resolve.SupertypeSupplier
+import org.cangnova.cangjie.cfir.resolve.createFileLookupScopes
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedTypeUsingAbbreviation
 import org.cangnova.cangjie.cfir.resolve.providers.CfirProviderImpl
-import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSuperTypeGraphEdge
 import org.cangnova.cangjie.cfir.resolve.providers.DeclaredSupertypeClassification
 import org.cangnova.cangjie.cfir.resolve.providers.classifyDeclaredSupertype
@@ -43,15 +41,9 @@ import org.cangnova.cangjie.cfir.resolve.providers.inheritanceCycleDependencyTyp
 import org.cangnova.cangjie.cfir.resolve.providers.ordinarySupertypeTypeOrNull
 import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.LocalClassesNavigationInfo
 import org.cangnova.cangjie.cfir.scopes.CfirScope
-import org.cangnova.cangjie.cfir.scopes.defaultImportsProvider
-import org.cangnova.cangjie.cfir.scopes.impl.CfirExplicitSimpleImportingScope
-import org.cangnova.cangjie.cfir.scopes.impl.CfirExplicitStarImportingScope
-import org.cangnova.cangjie.cfir.scopes.impl.CfirFileDeclaredTopLevelScope
-import org.cangnova.cangjie.cfir.scopes.impl.CfirPackageMemberScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirTypeParameterScopeImpl
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.cfirProvider
-import org.cangnova.cangjie.cfir.session.importBindingStoreOrNull
 import org.cangnova.cangjie.cfir.session.languageVersionSettings
 import org.cangnova.cangjie.cfir.session.superTypeGraphStoreOrNull
 import org.cangnova.cangjie.cfir.session.symbolProvider
@@ -738,7 +730,7 @@ internal open class CfirSupertypeResolverVisitor(
             // 高优先级 scope 在前，低优先级 scope 在后。
             // SUPER_TYPES 阶段如果把它反转，就会让默认导入先于当前文件声明命中，
             // 从而把本地 `Box/Hashable` 解析成 `std.core.*`。
-            createImportingScopes(file, session).toPersistentList()
+            session.createFileLookupScopes(file, scopeSession).typeResolutionScopes.toPersistentList()
         }
     }
 
@@ -1104,7 +1096,7 @@ private class CfirExtendSupertypesCollector(
                 .withUseSiteFile(file)
                 // extend 超类型采集与正式 SUPER_TYPES 解析必须共享同一套作用域优先级，
                 // 否则索引阶段会先把本地类型错误解析成默认导入类型，后续所有 extend 规则都会被污染。
-                .withScopes(createImportingScopes(file, session).toPersistentList())
+                .withScopes(session.createFileLookupScopes(file, scopeSession).typeResolutionScopes.toPersistentList())
             withFile(file) {
                 file.declarations.forEach { declaration ->
                     declaration.accept(this, configuration)
@@ -1192,40 +1184,6 @@ private class CfirExtendSupertypesCollector(
             useSiteFile = previous
         }
     }
-}
-
-/**
- * 构造 supertype 类型解析使用的文件导入 scope 列表。
- *
- * 返回顺序遵循 [CfirTypeResolutionConfiguration] 的高优先级在前契约。
- */
-private fun createImportingScopes(file: CfirFile, session: CfirSession): List<CfirScope> {
-    val symbolProvider: CfirSymbolProvider = session.symbolProvider
-    val imports = file.imports
-    val resolvedImports = session.importBindingStoreOrNull?.getBindings(file)?.imports
-    val defaultImports = session.defaultImportsProvider
-        .getDefaultImports(includeLowPriorityImports = true)
-        .filter { it.fqName !in session.defaultImportsProvider.excludedImports }
-        .map(ImportPath::toImport)
-
-    return buildList {
-        // CfirTypeResolver 按顺序查找 scope；supertype 解析同样必须高优先级在前。
-        add(CfirFileDeclaredTopLevelScope(file))
-        add(CfirPackageMemberScope(file.packageDirective.packageFqName, session))
-        add(CfirExplicitSimpleImportingScope(imports, symbolProvider, resolvedImports))
-        add(CfirExplicitStarImportingScope(imports, symbolProvider, resolvedImports))
-        add(CfirExplicitSimpleImportingScope(defaultImports, symbolProvider))
-        add(CfirExplicitStarImportingScope(defaultImports, symbolProvider))
-    }
-}
-
-/** 把导入路径转换成 CFIR import 节点，供导入 scope 复用。 */
-private fun ImportPath.toImport() = buildImport {
-    source = null
-    importedFqName = fqName
-    isAllUnder = this@toImport.isAllUnder
-    aliasName = alias
-    aliasSource = null
 }
 
 /** 为 class-like 自身类型参数构造局部类型参数 scope。 */

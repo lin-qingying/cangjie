@@ -4,6 +4,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.session.CfirSessionComponent
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirExtendSymbol
 import org.cangnova.cangjie.name.ClassId
 
 /**
@@ -91,7 +92,7 @@ fun mergeSuperTypes(
     if (declared.isEmpty()) return extended
     if (extended.isEmpty()) return declared
 
-    val merged = LinkedHashMap<String, CfirSuperTypeGraphEdge>()
+    val merged = LinkedHashMap<CfirSuperTypeGraphEdgeKey, CfirSuperTypeGraphEdge>()
     for (edge in declared) {
         merged.putIfAbsent(edge.stableKey(), edge)
     }
@@ -102,8 +103,22 @@ fun mergeSuperTypes(
 }
 
 /**
+ * 超类型图边的结构身份。
+ *
+ * 完整类型文本区分同一泛型接口的不同实例；extend symbol 区分声明边与 extend 边，
+ * 以及多个真实 extend 对同一接口类型的独立贡献。
+ */
+data class CfirSuperTypeGraphEdgeKey(
+    val resolvedClassId: ClassId?,
+    val renderedType: String,
+    val sourceExtendSymbol: CfirExtendSymbol?,
+)
+
+/**
  * 计算超类型边的稳定去重 key。
  */
-fun CfirSuperTypeGraphEdge.stableKey(): String {
-    return resolvedClassSymbol?.classId?.asString() ?: renderedType
-}
+fun CfirSuperTypeGraphEdge.stableKey(): CfirSuperTypeGraphEdgeKey = CfirSuperTypeGraphEdgeKey(
+    resolvedClassId = resolvedClassSymbol?.classId,
+    renderedType = renderedType,
+    sourceExtendSymbol = sourceExtend?.symbol,
+)

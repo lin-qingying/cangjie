@@ -11,9 +11,13 @@ import org.cangnova.cangjie.cfir.declarations.resolvePhase
 import org.cangnova.cangjie.cfir.resolve.CfirDiagnosticReporter
 import org.cangnova.cangjie.cfir.resolve.CfirImportBindingResolver
 import org.cangnova.cangjie.cfir.resolve.CfirImportConflictReporter
+import org.cangnova.cangjie.cfir.resolve.providers.CfirLookupOrigin
+import org.cangnova.cangjie.cfir.resolve.services.CfirDefaultImportPriority
+import org.cangnova.cangjie.cfir.resolve.services.CfirImportBindingStore
 import org.cangnova.cangjie.cfir.ScopeSession
+import org.cangnova.cangjie.cfir.scopes.defaultImportsProvider
 import org.cangnova.cangjie.cfir.session.CfirSession
-import org.cangnova.cangjie.cfir.session.importBindingStoreOrNull
+import org.cangnova.cangjie.cfir.session.importBindingStore
 
 /**
  * IMPORTS 阶段处理器。
@@ -83,12 +87,15 @@ class CfirImportResolveTransformer(
      * body resolve 无法通过同一文件对象读取 import 绑定。
      */
     private fun recordImportBindingsIfNeeded(file: CfirFile) {
-        val store = session.importBindingStoreOrNull ?: return
+        val store = session.importBindingStore
+        val bindingResolver = CfirImportBindingResolver(session)
+        recordDefaultImportBindingsIfNeeded(store, bindingResolver)
         if (store.getBindings(file) != null) return
 
-        val bindingResolver = CfirImportBindingResolver(session)
         val conflictReporter = CfirImportConflictReporter(diagnosticReporter)
-        val resolvedImports = file.imports.map { bindingResolver.resolveImportBinding(it) }
+        val resolvedImports = file.imports.map { importDirective ->
+            bindingResolver.resolveImportBinding(importDirective, CfirLookupOrigin.EXPLICIT_IMPORT)
+        }
         conflictReporter.reportUnresolvedTargets(resolvedImports)
         conflictReporter.reportConflicts(resolvedImports)
         store.record(file, resolvedImports)
@@ -100,6 +107,35 @@ class CfirImportResolveTransformer(
                     resolvedImport.importDirective.importedFqName?.asString(),
                 )
             }
+        }
+    }
+
+    /**
+     * 默认 import 与显式 import 同属 IMPORTS 阶段产物，只是默认 import 按 session
+     * 共享。后续文件 scope 和可见性服务必须读取该 binding，不能再次解析 provider。
+     */
+    private fun recordDefaultImportBindingsIfNeeded(
+        store: CfirImportBindingStore,
+        bindingResolver: CfirImportBindingResolver,
+    ) {
+        val provider = session.defaultImportsProvider
+        if (store.getDefaultImportBindings(CfirDefaultImportPriority.HIGH) == null) {
+            store.recordDefaultImportBindings(
+                CfirDefaultImportPriority.HIGH,
+                bindingResolver.resolveDefaultImportBindings(
+                    provider.getDefaultImports(includeLowPriorityImports = false),
+                    provider.excludedImports,
+                ),
+            )
+        }
+        if (store.getDefaultImportBindings(CfirDefaultImportPriority.LOW) == null) {
+            store.recordDefaultImportBindings(
+                CfirDefaultImportPriority.LOW,
+                bindingResolver.resolveDefaultImportBindings(
+                    provider.defaultLowPriorityImports,
+                    provider.excludedImports,
+                ),
+            )
         }
     }
 }

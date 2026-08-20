@@ -274,12 +274,12 @@ open class CfirReferenceRenderer {
             append("this")
             reference.boundSymbol?.let { append(" -> ").append(it) }
         }
+
         is CfirSuperReference -> "super"
         is CfirErrorReference -> "ERROR_REF(${reference.reason})"
         is CfirControlFlowGraphReference -> "<cfg-ref>"
     }
 }
-
 
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -602,7 +602,12 @@ class CfirRenderer(
             resolvePhaseRenderer?.render(`interface`)
             annotationRenderer?.render(`interface`)
             modifierRenderer?.renderModifiers(`interface`)
-            printClassLikeHeader("interface", `interface`.name.asString(), `interface`.typeParameters, `interface`.superTypeRefs)
+            printClassLikeHeader(
+                "interface",
+                `interface`.name.asString(),
+                `interface`.typeParameters,
+                `interface`.superTypeRefs
+            )
             printer.pushIndent()
             `interface`.declarations.forEach { it.accept(this) }
             printer.popIndent()
@@ -1173,16 +1178,13 @@ class CfirRenderer(
          * 渲染 return 表达式。
          */
         override fun visitReturnExpression(returnExpression: CfirReturnExpression) {
-           //TODO 是否处理了空return语句？
-            if (returnExpression.result != null) {
-                println("RETURN {")
-                printer.pushIndent()
-                returnExpression.result.accept(this)
-                printer.popIndent()
-                println("}")
-            } else {
-                println("RETURN")
-            }
+
+            println("RETURN {")
+            printer.pushIndent()
+            returnExpression.result.accept(this)
+            printer.popIndent()
+            println("}")
+
         }
 
         /**

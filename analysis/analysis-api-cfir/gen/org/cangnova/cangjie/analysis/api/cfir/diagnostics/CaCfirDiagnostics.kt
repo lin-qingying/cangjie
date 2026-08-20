@@ -964,6 +964,10 @@ sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
         override val diagnosticClass get() = UnableToInferReturnType::class
     }
 
+    interface IncompatibleFuncBodyAndReturnType : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = IncompatibleFuncBodyAndReturnType::class
+    }
+
     interface UnableToInferGenericFunc : CaCfirDiagnostic<PsiElement> {
         override val diagnosticClass get() = UnableToInferGenericFunc::class
     }

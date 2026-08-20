@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.context.accessContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirEnum
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
@@ -31,6 +32,7 @@ import org.cangnova.cangjie.cfir.resolve.match.isMatchSubtypeOf
 import org.cangnova.cangjie.cfir.resolve.match.exhaustive.MatchExhaustivenessContext
 import org.cangnova.cangjie.cfir.resolve.match.exhaustive.inria.MarangetChecker
 import org.cangnova.cangjie.cfir.resolve.match.exhaustive.inria.Usefulness
+import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessKind
 import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
@@ -67,7 +69,10 @@ object CfirMatchUnreachablePatternChecker : CfirMatchExpressionChecker() {
         if (subjectType is ConeErrorType) return
         if (expression.hasPatternLegalityProblem(context)) return
 
-        val matchContext = MatchExhaustivenessContext.fromSession(context.session)
+        val matchContext = MatchExhaustivenessContext.fromSession(
+            session = context.session,
+            accessContext = context.accessContext(CfirAccessKind.EXTEND),
+        )
         /*
          * subject value-domain 来自官方 CHIR 常量分析阶段。Sema 已判定 match 非穷尽时，
          * 官方编译流程会在进入 CHIR 前终止；此时仍保留 Sema usefulness 的分支覆盖检查，
@@ -425,7 +430,7 @@ object CfirMatchUnreachablePatternChecker : CfirMatchExpressionChecker() {
     private fun ConeCangJieType.isSubtypeOf(
         superType: ConeCangJieType,
         context: MatchExhaustivenessContext,
-    ): Boolean = isMatchSubtypeOf(superType, context.session)
+    ): Boolean = isMatchSubtypeOf(superType, context.session, context.accessContext)
 
     /**
      * 判断当前类型是否为标准库 Option 类型。

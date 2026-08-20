@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.resolve.providers
 
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
+import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.session.services.CfirExtendTargetKey
 import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
 import org.cangnova.cangjie.name.ClassId
@@ -29,4 +30,7 @@ class CfirEmptyExtendProvider : CfirExtendProvider {
      * 空 provider 不包含任何 builtin primitive extend。
      */
     override fun getExtendsForBuiltinType(kind: PrimitiveTypeKind): List<CfirExtend> = emptyList()
+
+    /** 空 provider 不拥有任何 extend 的声明文件。 */
+    override fun getContainingFile(extend: CfirExtend): CfirFile? = null
 }

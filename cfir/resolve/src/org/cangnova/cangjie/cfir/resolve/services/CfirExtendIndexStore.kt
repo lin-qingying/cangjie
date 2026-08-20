@@ -21,6 +21,7 @@ import org.cangnova.cangjie.cfir.resolve.CfirTypeResolver
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.CfirSessionComponent
 import org.cangnova.cangjie.cfir.session.services.CfirExtendInheritedInterfaceSemantic
+import org.cangnova.cangjie.cfir.session.services.CfirExtendInterfaceOccurrence
 import org.cangnova.cangjie.cfir.session.services.CfirExtendTargetKey
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
@@ -67,6 +68,8 @@ class CfirExtendIndexStore(
     private var modelsByTargetKey: Map<CfirExtendTargetKey, List<CfirExtendSemanticModel>> = emptyMap()
     /** 按完整实例化目标模式分组的 extend 模型。 */
     private var modelsByTargetSemanticKey: Map<String, List<CfirExtendSemanticModel>> = emptyMap()
+    /** extend 声明及 supertype 下标到重复接口 occurrence 判定结果的索引。 */
+    private var duplicateInterfaceOccurrenceByDeclaration: Map<CfirExtend, Map<Int, CfirExtendInterfaceOccurrence>> = emptyMap()
     /** 按声明所在包分组的 extend 模型。 */
     private var modelsByPackage: Map<FqName, List<CfirExtendSemanticModel>> = emptyMap()
     /** 按语义来源分组的 extend 模型。 */
@@ -79,10 +82,6 @@ class CfirExtendIndexStore(
     private lateinit var typeResolver: CfirTypeResolver
     /** 接口 ClassId 到“自身 + 传递父接口”闭包的缓存。 */
     private var interfaceClosureByClassId: Map<ClassId, Set<ClassId>> = emptyMap()
-    /** extend 目标类自身继承接口集合的缓存。 */
-    private var targetClassOwnInterfacesByClassId: Map<ClassId, Set<ClassId>> = emptyMap()
-    /** extend 目标类到「自身 + 传递父类型」class-like ClassId 闭包的缓存。 */
-    private var targetSupertypeClassIdsByClassId: Map<ClassId, Set<ClassId>> = emptyMap()
 
     /**
      * 基于当前文件集合重建所有 extend 语义索引。
@@ -106,12 +105,11 @@ class CfirExtendIndexStore(
         modelByDeclaration = next.associateBy { it.declaration }
         modelsByTargetKey = next.filter { it.targetKey != null }.groupBy { it.targetKey!! }
         modelsByTargetSemanticKey = next.filter { it.targetSemanticKey != null }.groupBy { it.targetSemanticKey!! }
+        duplicateInterfaceOccurrenceByDeclaration = buildDuplicateInterfaceOccurrences(next)
         modelsByPackage = next.groupBy { it.packageFqName }
         modelsByOrigin = next.groupBy { it.origin }
         containingExtendByCallableSymbol = buildContainingExtendIndex(next)
         interfaceClosureByClassId = buildInterfaceClosureMap(next, resolver)
-        targetClassOwnInterfacesByClassId = buildTargetClassOwnInterfacesMap(next, resolver)
-        targetSupertypeClassIdsByClassId = buildTargetSupertypeClassIdsMap(next, resolver)
         modificationCount++
     }
 
@@ -136,6 +134,20 @@ class CfirExtendIndexStore(
      */
     fun modelsForSemanticTarget(targetSemanticKey: String): List<CfirExtendSemanticModel> =
         modelsByTargetSemanticKey[targetSemanticKey].orEmpty()
+
+    /**
+     * 查询指定直接接口的重复检查 occurrence 信息。
+     *
+     * 分组数量和最终 owner 已在 rebuild 阶段按稳定源码顺序确定，避免 checker 对
+     * declaration 级 `.last()` 做二次推断并把同一声明中的多个引用错误地同时标记。
+     */
+    fun duplicateInterfaceOccurrenceOf(
+        declaration: Any,
+        superTypeIndex: Int,
+    ): CfirExtendInterfaceOccurrence? =
+        (declaration as? CfirExtend)
+            ?.let(duplicateInterfaceOccurrenceByDeclaration::get)
+            ?.get(superTypeIndex)
 
     /**
      * 查询指定 class-like 目标上的所有 extend 模型。
@@ -168,12 +180,6 @@ class CfirExtendIndexStore(
         check(::typeResolver.isInitialized) { "Extend index must be rebuilt before querying interface members" }
         return buildDefaultIndependentMembersForInterface(interfaceClassId, typeResolver)
     }
-
-    /**
-     * 返回目标类自身声明或继承到的接口 ClassId 集合。
-     */
-    fun targetClassOwnInterfaceClassIds(targetClassId: ClassId): Set<ClassId> =
-        targetClassOwnInterfacesByClassId[targetClassId].orEmpty()
 
     /**
      * 返回单条 extend 声明直接接口及其传递父接口组成的稳定闭包。
@@ -283,46 +289,6 @@ class CfirExtendIndexStore(
         this != superInterface && superInterface in interfaceClosureByClassId[this].orEmpty()
 
     /**
-     * 查询其他包对指定 class-like 目标扩展过的接口闭包集合。
-     */
-    fun otherPackageExtendedInterfaceClassIds(targetClassId: ClassId, currentPackage: FqName): Set<ClassId> =
-        otherPackageExtendedInterfaceClassIds(CfirExtendTargetKey.ClassLike(targetClassId), currentPackage)
-
-    /**
-     * 查询其他包对指定目标键扩展过的接口闭包集合。
-     */
-    fun otherPackageExtendedInterfaceClassIds(targetKey: CfirExtendTargetKey, currentPackage: FqName): Set<ClassId> {
-        return modelsForTarget(targetKey)
-            .asSequence()
-            .filter { it.packageFqName != currentPackage }
-            .flatMap { model ->
-                model.inheritedInterfaceClassIds.asSequence().flatMap { interfaceClassId ->
-                    interfaceClosureByClassId[interfaceClassId].orEmpty().asSequence()
-                }
-            }
-            .toSet()
-    }
-
-    /**
-     * 查询其他包对指定目标（含其父类型）扩展过的接口语义 key 集合。
-     *
-     * 对齐官方 `CheckExtendOrphanRule` 收集 `otherPackageExtendInterfaceTy` 的第二步：
-     * 目标类型及其父类型上、位于其他包的 extend 所引入的接口闭包，
-     * 都算作目标「已经具备」的接口，本包再次引入不属于新增外部接口。
-     */
-    fun otherPackageExtendedInterfaceSemanticKeys(targetClassId: ClassId, currentPackage: FqName): Set<String> {
-        val relatedClassIds = targetSupertypeClassIdsByClassId[targetClassId] ?: setOf(targetClassId)
-        val result = linkedSetOf<String>()
-        for (relatedClassId in relatedClassIds) {
-            for (model in modelsForClass(relatedClassId)) {
-                if (model.packageFqName == currentPackage) continue
-                model.inheritedInterfaceClosure.mapTo(result) { it.semanticKey }
-            }
-        }
-        return result
-    }
-
-    /**
      * 判断声明是否是指定 class-like 目标的第一条 extend。
      */
     fun isFirstExtendForTarget(declaration: Any, targetClassId: ClassId): Boolean {
@@ -372,6 +338,12 @@ class CfirExtendIndexStore(
         resolver: CfirTypeResolver,
     ): CfirExtendSemanticModel {
         val semanticNormalizer = CfirExtendTypeSemanticNormalizer(this, session, resolver)
+        val duplicateSemanticNormalizer = CfirExtendTypeSemanticNormalizer(
+            extend = this,
+            session = session,
+            resolver = resolver,
+            includeTypeParameterBounds = false,
+        )
         val targetClassId = extendedTypeRef.toClassIdOrNull(resolver)
         val targetClass = targetClassId?.let(resolver::resolveClass)
         val inheritedInterfaces = superTypeRefs.map { superTypeRef ->
@@ -382,16 +354,19 @@ class CfirExtendIndexStore(
         }
         val inheritedInterfaceClassIds = inheritedInterfaces.mapNotNull { it.classId }
         val inheritedInterfaceSemanticKeys = inheritedInterfaces.map { it.semanticKey }
+        val duplicateInterfaceSemanticKeys = superTypeRefs.map { superTypeRef ->
+            duplicateSemanticNormalizer.semanticKeyOrNull(superTypeRef) ?: superTypeRef.toString()
+        }
         val inheritedInterfaceClosure = superTypeRefs.collectInterfaceClosureSemantics(semanticNormalizer, resolver)
-        val targetOwnInterfaces = targetClass.collectTargetOwnInterfaceSemantics(extendedTypeRef, semanticNormalizer, resolver)
-        val targetOwnInterfaceSemanticKeys = targetOwnInterfaces.map { it.semanticKey }
         return CfirExtendSemanticModel(
             declaration = this,
+            containingFile = file,
             packageFqName = file.packageDirective.packageFqName,
             fileName = file.name,
             declarationIndexInFile = declarationIndexInFile,
             targetKey = extendedTypeRef.toExtendTargetKeyOrNull(resolver),
             targetSemanticKey = semanticNormalizer.semanticKeyOrNull(extendedTypeRef),
+            duplicateTargetSemanticKey = duplicateSemanticNormalizer.semanticKeyOrNull(extendedTypeRef),
             declaredTargetKey = extendedTypeRef.toDeclaredExtendTargetKeyOrNull(),
             targetClassId = targetClassId,
             declaredTargetClassId = extendedTypeRef.toDeclaredClassIdOrNull(),
@@ -399,11 +374,65 @@ class CfirExtendIndexStore(
             inheritedInterfaces = inheritedInterfaces,
             inheritedInterfaceClassIds = inheritedInterfaceClassIds,
             inheritedInterfaceSemanticKeys = inheritedInterfaceSemanticKeys,
+            duplicateInterfaceSemanticKeys = duplicateInterfaceSemanticKeys,
             inheritedInterfaceClosure = inheritedInterfaceClosure,
-            targetOwnInterfaces = targetOwnInterfaces,
-            targetOwnInterfaceSemanticKeys = targetOwnInterfaceSemanticKeys,
             origin = origin.toExtendSemanticOrigin(),
         )
+    }
+
+    /**
+     * 建立官方重复接口检查所需的 occurrence 索引。
+     *
+     * 只有已经解析成有效 interface 的直接引用进入索引；非 interface 的主诊断仍由
+     * declaration checker 负责，但不会凭空制造重复接口 occurrence。每个目标身份的
+     * occurrence 顺序继承 [semanticModelComparator] 的稳定源码顺序，再保持 supertype
+     * 列表顺序，从而可唯一选择官方最后一次实现位置。
+     */
+    private fun buildDuplicateInterfaceOccurrences(
+        models: List<CfirExtendSemanticModel>,
+    ): Map<CfirExtend, Map<Int, CfirExtendInterfaceOccurrence>> {
+        data class IndexedOccurrence(
+            val declaration: CfirExtend,
+            val superTypeIndex: Int,
+            val classId: ClassId,
+            val semanticKey: String,
+            val duplicateSemanticKey: String,
+        )
+
+        val occurrencesByTarget = linkedMapOf<String, MutableList<IndexedOccurrence>>()
+        for (model in models) {
+            val duplicateTargetKey = model.duplicateTargetSemanticKey ?: continue
+            for ((index, inheritedInterface) in model.inheritedInterfaces.withIndex()) {
+                val classId = inheritedInterface.classId ?: continue
+                val duplicateInterfaceKey = model.duplicateInterfaceSemanticKeys.getOrNull(index) ?: continue
+                occurrencesByTarget.getOrPut(duplicateTargetKey) { mutableListOf() } += IndexedOccurrence(
+                    declaration = model.declaration,
+                    superTypeIndex = index,
+                    classId = classId,
+                    semanticKey = inheritedInterface.semanticKey,
+                    duplicateSemanticKey = duplicateInterfaceKey,
+                )
+            }
+        }
+
+        val result = linkedMapOf<CfirExtend, MutableMap<Int, CfirExtendInterfaceOccurrence>>()
+        for (targetOccurrences in occurrencesByTarget.values) {
+            for (interfaceOccurrences in targetOccurrences.groupBy { it.duplicateSemanticKey }.values) {
+                val lastOccurrence = interfaceOccurrences.last()
+                for (occurrence in interfaceOccurrences) {
+                    result.getOrPut(occurrence.declaration) { linkedMapOf() }[occurrence.superTypeIndex] =
+                        CfirExtendInterfaceOccurrence(
+                            superTypeIndex = occurrence.superTypeIndex,
+                            classId = occurrence.classId,
+                            semanticKey = occurrence.semanticKey,
+                            duplicateSemanticKey = occurrence.duplicateSemanticKey,
+                            occurrenceCount = interfaceOccurrences.size,
+                            isLastOccurrence = occurrence === lastOccurrence,
+                        )
+                }
+            }
+        }
+        return result.mapValues { (_, occurrences) -> occurrences.toMap() }
     }
 
     /**
@@ -463,106 +492,9 @@ class CfirExtendIndexStore(
     }
 
     /**
-     * 构建目标类自身声明的接口集合映射。
-     * 收集每个 extend 目标类的 inheritedTypes 中所有接口的 ClassId。
-     */
-    private fun buildTargetClassOwnInterfacesMap(
-        models: List<CfirExtendSemanticModel>,
-        resolver: CfirTypeResolver,
-    ): Map<ClassId, Set<ClassId>> {
-        val targetClassIds = models.mapNotNull { it.targetClassId }.toSet()
-        val result = linkedMapOf<ClassId, Set<ClassId>>()
-        for (targetClassId in targetClassIds) {
-            val declaration = resolver.resolveClass(targetClassId) ?: continue
-            val ownInterfaces = collectOwnInterfaceClassIds(declaration, resolver)
-            if (ownInterfaces.isNotEmpty()) {
-                result[targetClassId] = ownInterfaces
-            }
-        }
-        return result
-    }
-
-    /**
-     * 建立 extend 目标类到「自身 + 传递父类型」class-like ClassId 闭包的索引。
-     *
-     * orphan rule 的豁免集合必须穿过父类链：官方 `CollectAllRelatedExtends`
-     * 会把父类型上的 extend 一并算作目标已具备的接口来源，
-     * 因此 `class B <: A` 且 `extend A <: I` 位于其他包时，`B` 也已经具备 `I`。
-     */
-    private fun buildTargetSupertypeClassIdsMap(
-        models: List<CfirExtendSemanticModel>,
-        resolver: CfirTypeResolver,
-    ): Map<ClassId, Set<ClassId>> {
-        val targetClassIds = models.mapNotNull { it.targetClassId }.toSet()
-        val result = linkedMapOf<ClassId, Set<ClassId>>()
-        for (targetClassId in targetClassIds) {
-            val closure = linkedSetOf<ClassId>()
-            collectSupertypeClassIds(targetClassId, resolver, closure)
-            result[targetClassId] = closure
-        }
-        return result
-    }
-
-    /**
-     * 递归收集 class-like 声明自身及其全部父类型的 ClassId。
-     */
-    private fun collectSupertypeClassIds(
-        classId: ClassId,
-        resolver: CfirTypeResolver,
-        result: MutableSet<ClassId>,
-    ) {
-        if (!result.add(classId)) return
-        val declaration = resolver.resolveClass(classId) ?: return
-        for (superTypeRef in declaration.superTypeRefsOrEmpty()) {
-            val supertype = superTypeRef.coneTypeOrNull?.semanticExpandedType(resolver) as? ConeLookupTagBasedType
-                ?: continue
-            val superClassId = supertype.classIdOrPrimitiveClassId ?: continue
-            collectSupertypeClassIds(superClassId, resolver, result)
-        }
-    }
-
-    /**
-     * 当前 extend 声明与目标类已继承接口比较时，必须先把目标类型模式代入目标类接口闭包。
-     *
-     * 例如 `class B<T> <: I<T>` 与 `extend<T> B<T> <: I<T>` 比较时，
-     * 目标类的 `I<T>` 要先变成 extend 声明侧的 `I<__EXT_TP_0>`，否则只能按 ClassId
-     * 比较会把 `I<Int32>` / `I<Int64>` 这类不同实例误判成重复接口。
-     *
-     * 这里的“已继承接口”包含父类链上的接口，官方 `GetDupSuperInterface`
-     * 会穿过 `B <: A <: Foo` 的 `A` 继续收集 `Foo`，不能只看目标类直接接口。
-     */
-    private fun CfirClassLikeDeclaration?.collectTargetOwnInterfaceSemantics(
-        targetTypeRef: CfirTypeRef,
-        semanticNormalizer: CfirExtendTypeSemanticNormalizer,
-        resolver: CfirTypeResolver,
-    ): List<CfirExtendInheritedInterfaceSemantic> {
-        val declaration = this ?: return emptyList()
-        val targetType = targetTypeRef.coneTypeOrNull?.semanticExpandedType(resolver) ?: return emptyList()
-        val substitutor = declaration.createDeclarationTypeSubstitutor(targetType)
-        val result = linkedMapOf<String, CfirExtendInheritedInterfaceSemantic>()
-        val visiting = linkedSetOf<String>()
-        val validityMemo = linkedMapOf<ClassId, Boolean>()
-
-        for (superTypeRef in declaration.superTypeRefsOrEmpty()) {
-            val supertype = superTypeRef.coneTypeOrNull ?: continue
-            collectInterfaceSemantics(
-                interfaceType = substitutor.substituteOrSelf(supertype),
-                semanticNormalizer = semanticNormalizer,
-                resolver = resolver,
-                result = result,
-                visiting = visiting,
-                validityMemo = validityMemo,
-            )
-        }
-        return result.values.toList()
-    }
-
-    /**
      * 收集一组 supertype 引用连同其传递父接口的实例化接口语义。
      *
-     * 与 [collectTargetOwnInterfaceSemantics] 共用同一套遍历和语义键生成，
-     * 保证 orphan rule 中「目标已具备的接口」与「本次 extend 引入的接口」
-     * 落在同一个键空间里，泛型实参不同的接口实例不会被误判为同一个。
+     * 该闭包供全部 extend 规则共享，泛型实参不同的接口实例不会被误判为同一个。
      */
     private fun List<CfirTypeRef>.collectInterfaceClosureSemantics(
         semanticNormalizer: CfirExtendTypeSemanticNormalizer,
@@ -652,23 +584,6 @@ class CfirExtendIndexStore(
             typeParameter.symbol.toLookupTag() as TypeConstructorMarker to argument.type
         }
         return CfirTypeSubstitutorByMap(substitutions)
-    }
-
-    /**
-     * 递归收集一个声明的所有超类型中的接口 ClassId（含传递）
-     */
-    private fun collectOwnInterfaceClassIds(
-        declaration: CfirClassLikeDeclaration,
-        resolver: CfirTypeResolver,
-    ): Set<ClassId> {
-        val result = linkedSetOf<ClassId>()
-        val memo = linkedMapOf<ClassId, Set<ClassId>>()
-        val validityMemo = linkedMapOf<ClassId, Boolean>()
-        for (superTypeRef in declaration.superTypeRefsOrEmpty()) {
-            val classId = superTypeRef.toClassIdOrNull(resolver) ?: continue
-            result.addAll(collectInterfaceClosure(classId, resolver, memo, linkedSetOf(), validityMemo))
-        }
-        return result
     }
 
     /**

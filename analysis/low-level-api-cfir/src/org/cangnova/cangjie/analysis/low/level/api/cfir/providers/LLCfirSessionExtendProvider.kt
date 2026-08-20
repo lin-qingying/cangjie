@@ -95,12 +95,10 @@ internal class LLCfirSessionExtendProvider(
         return delegate.getPackageFqName(extend)
     }
 
-    /**
-     * 判断 [extend] 在当前 session 中是否可访问。
-     */
-    override fun isExtendAccessible(extend: CfirExtend): Boolean {
+    /** 查询 [extend] 的结构性源码文件归属。 */
+    override fun getContainingFile(extend: CfirExtend): CfirFile? {
         ensureIndexIsFresh()
-        return delegate.isExtendAccessible(extend)
+        return delegate.getContainingFile(extend)
     }
 
     /**

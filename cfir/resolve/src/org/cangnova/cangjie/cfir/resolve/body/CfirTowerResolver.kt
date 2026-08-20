@@ -29,6 +29,7 @@ import org.cangnova.cangjie.cfir.calls.isResolvedTypeQualifier
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
+import org.cangnova.cangjie.cfir.resolve.CfirTypeCandidateCollector
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallInfo
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CandidateFactory
@@ -38,6 +39,8 @@ import org.cangnova.cangjie.cfir.resolve.calls.tower.CandidateFactoriesAndCollec
 import org.cangnova.cangjie.cfir.resolve.calls.tower.CfirTowerResolveTask
 import org.cangnova.cangjie.cfir.resolve.calls.tower.TowerDataElementsForName
 import org.cangnova.cangjie.cfir.resolve.calls.tower.TowerResolveManager
+import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessContext
+import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessKind
 import org.cangnova.cangjie.cfir.scopes.CfirScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirLocalScope
 import org.cangnova.cangjie.cfir.session.CfirSession
@@ -197,12 +200,9 @@ class CfirTowerResolver(
      */
     fun findClassifiers(name: Name): List<CfirClassifierSymbol<*>> {
         val scopes = components.towerDataContext.towerDataElements.asReversed().flatMap { it.getAvailableScopes() }
-        for (scope in scopes) {
-            val result = mutableListOf<CfirClassifierSymbol<*>>()
-            scope.processClassifiersByNameWithSubstitution(name) { symbol, _ -> result += symbol }
-            if (result.isNotEmpty()) return result
-        }
-        return emptyList()
+        return createTypeCandidateCollector()
+            .firstVisibleScopeCandidates(scopes, name)
+            .map { it.symbol }
     }
 
     /** 返回指定 classifier 在首个可见 tower scope 中携带的 use-site substitutor。 */
@@ -211,15 +211,22 @@ class CfirTowerResolver(
         target: CfirClassifierSymbol<*>,
     ): org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor {
         val scopes = components.towerDataContext.towerDataElements.asReversed().flatMap { it.getAvailableScopes() }
-        for (scope in scopes) {
-            var result: org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor? = null
-            scope.processClassifiersByNameWithSubstitution(name) { symbol, substitutor ->
-                if (symbol == target && result == null) result = substitutor
-            }
-            if (result != null) return result!!
-        }
-        return org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor.Empty
+        return createTypeCandidateCollector()
+            .firstVisibleScopeCandidates(scopes, name)
+            .firstOrNull { it.symbol == target }
+            ?.substitutor
+            ?: org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor.Empty
     }
+
+    /** 为当前动态声明栈创建 classifier 统一候选收集器。 */
+    private fun createTypeCandidateCollector(): CfirTypeCandidateCollector = CfirTypeCandidateCollector(
+        session = session,
+        context = CfirAccessContext(
+            useSiteFile = components.file,
+            containingDeclarations = components.containingDeclarations,
+            kind = CfirAccessKind.TYPE,
+        ),
+    )
 
     /**
      * 在当前 tower 可见作用域中查找类型参数符号。

@@ -3,6 +3,7 @@
 import org.cangnova.cangjie.cfir.declarations.CfirClassKind
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
+import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.session.services.CfirExtendInheritedInterfaceSemantic
 import org.cangnova.cangjie.cfir.session.services.CfirExtendTargetKey
 import org.cangnova.cangjie.name.ClassId
@@ -20,6 +21,8 @@ enum class CfirExtendSemanticOrigin {
 data class CfirExtendSemanticModel(
     /** 原始 CFIR extend 声明。 */
     val declaration: CfirExtend,
+    /** extend 声明实际所属的源文件。 */
+    val containingFile: CfirFile,
     /** extend 所在包名。 */
     val packageFqName: FqName,
     /** extend 所在文件名。 */
@@ -30,6 +33,13 @@ data class CfirExtendSemanticModel(
     val targetKey: CfirExtendTargetKey?,
     /** 被扩展目标完整实例化模式的稳定语义 key。 */
     val targetSemanticKey: String?,
+    /**
+     * 供官方重复接口汇总使用的目标身份。
+     *
+     * 该键只做 typealias 展开和 extend 类型参数 alpha-renaming，不编码 where bound；
+     * [targetSemanticKey] 仍保留完整约束信息，不能用本字段替代特化匹配键。
+     */
+    val duplicateTargetSemanticKey: String?,
     /** 源码中声明的目标 key；typealias 目标保留 alias 声明身份。 */
     val declaredTargetKey: CfirExtendTargetKey?,
     /** 被扩展真实目标的 classId。 */
@@ -44,12 +54,12 @@ data class CfirExtendSemanticModel(
     val inheritedInterfaceClassIds: List<ClassId>,
     /** extend 继承接口的稳定语义 key 列表。 */
     val inheritedInterfaceSemanticKeys: List<String>,
+    /**
+     * extend 直接接口用于重复汇总的无 bounds 语义 key 列表，与 [inheritedInterfaces] 对齐。
+     */
+    val duplicateInterfaceSemanticKeys: List<String>,
     /** extend 继承接口连同其传递父接口的语义列表（实例化后）。 */
     val inheritedInterfaceClosure: List<CfirExtendInheritedInterfaceSemantic>,
-    /** 目标类型自身声明的接口语义列表。 */
-    val targetOwnInterfaces: List<CfirExtendInheritedInterfaceSemantic>,
-    /** 目标类型自身接口的稳定语义 key 列表。 */
-    val targetOwnInterfaceSemanticKeys: List<String>,
     /** extend 声明来源。 */
     val origin: CfirExtendSemanticOrigin,
 )

@@ -258,6 +258,7 @@ object CfirErrors : CjDiagnosticsContainer() {
 
     // Function
     val UNABLE_TO_INFER_RETURN_TYPE: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_UNABLE_TO_INFER_RETURN_TYPE", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
+    val INCOMPATIBLE_FUNC_BODY_AND_RETURN_TYPE: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_INCOMPATIBLE_FUNC_BODY_AND_RETURN_TYPE", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val UNABLE_TO_INFER_GENERIC_FUNC: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_UNABLE_TO_INFER_GENERIC_FUNC", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val INVALID_CALLED_OBJECT: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_INVALID_CALLED_OBJECT", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val INVALID_RETURN: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_INVALID_RETURN", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())

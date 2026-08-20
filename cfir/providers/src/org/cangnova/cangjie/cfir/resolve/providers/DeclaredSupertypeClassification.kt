@@ -23,9 +23,19 @@ import org.cangnova.cangjie.source.CjOffsetsOnlySourceElement
  * 该模型是 checker、继承环、类型系统父类型提供器和成员作用域的共同语义边界。
  * 不同消费者必须显式选择自己的投影：只有 [ValidNominal] 是普通父类型并提供继承成员；
  * [RecoverableNominalError] 仍能提供继承环与 final-class 检查所需的 owner，但不能进入
- * 普通类型关系、构造器依赖或成员作用域；[LoopError] 只保留独立声明检查所需的信息。
+ * 普通类型关系、构造器依赖或成员作用域；[LoopError] 保留环的来源，供构造器依赖投影
+ * 区分直接自继承与间接继承环。
  */
 sealed interface DeclaredSupertypeClassification {
+    /** 声明父类型环的来源。 */
+    enum class LoopOrigin {
+        /** 声明直接继承自身，不形成隐式 super() 构造依赖。 */
+        DIRECT_SELF_REFERENCE,
+
+        /** 经由其他声明或 typealias 形成的继承环，仍参与构造依赖图。 */
+        INHERITANCE_CYCLE,
+    }
+
     /** 已解析为合法 class/interface 的普通声明父类型。 */
     data class ValidNominal(val type: ConeClassLikeType) : DeclaredSupertypeClassification
 
@@ -47,12 +57,13 @@ sealed interface DeclaredSupertypeClassification {
     data class PrimaryResolutionError(val errorType: ConeErrorType?) : DeclaredSupertypeClassification
 
     /**
-     * 继承环错误。broken edge 不进入图或成员作用域，但 delegated nominal 类型仍供
-     * NON_INHERITABLE 和递归构造调用等独立检查使用。
+     * 继承环错误。broken edge 不进入普通继承图或成员作用域；[origin] 决定 delegated
+     * nominal 类型是否仍应投影为构造器依赖。
      */
     data class LoopError(
         val errorType: ConeErrorType,
         val delegatedNominalType: ConeClassLikeType?,
+        val origin: LoopOrigin,
     ) : DeclaredSupertypeClassification
 }
 
@@ -101,11 +112,14 @@ private fun CfirTypeRef.classifyDeclaredSupertype(
     }
 
     val diagnostic = (resolvedTypeRef as? CfirErrorTypeRef)?.diagnostic ?: errorType.diagnostic
-    if (diagnostic is ConeSimpleDiagnostic && diagnostic.kind.isDeclaredSupertypeLoopKind()) {
+    val loopOrigin = (diagnostic as? ConeSimpleDiagnostic)
+        ?.kind
+        ?.declaredSupertypeLoopOriginOrNull()
+    if (loopOrigin != null) {
         val delegatedNominal = resolvedTypeRef.delegatedTypeRef
             ?.classifyDeclaredSupertype(expandType, visitedTypeRefs)
             .nominalTypeForLoopCheckOrNull()
-        return DeclaredSupertypeClassification.LoopError(errorType, delegatedNominal)
+        return DeclaredSupertypeClassification.LoopError(errorType, delegatedNominal, loopOrigin)
     }
 
     if (diagnostic is ConeClassifierAmbiguityDiagnostic) {
@@ -142,8 +156,12 @@ private fun classifyResolvedDeclaredSupertype(type: ConeCangJieType): DeclaredSu
 private fun CfirTypeRef.errorTypeOrNull(): ConeErrorType? =
     (this as? CfirResolvedTypeRef)?.coneType as? ConeErrorType
 
-private fun DiagnosticKind.isDeclaredSupertypeLoopKind(): Boolean =
-    this == DiagnosticKind.LoopInSupertype || this == DiagnosticKind.SupertypeSelfReference
+private fun DiagnosticKind.declaredSupertypeLoopOriginOrNull(): DeclaredSupertypeClassification.LoopOrigin? =
+    when (this) {
+        DiagnosticKind.SupertypeSelfReference -> DeclaredSupertypeClassification.LoopOrigin.DIRECT_SELF_REFERENCE
+        DiagnosticKind.LoopInSupertype -> DeclaredSupertypeClassification.LoopOrigin.INHERITANCE_CYCLE
+        else -> null
+    }
 
 private fun DeclaredSupertypeClassification?.nominalTypeForLoopCheckOrNull(): ConeClassLikeType? = when (this) {
     is DeclaredSupertypeClassification.ValidNominal -> type
@@ -179,14 +197,17 @@ fun DeclaredSupertypeClassification.independentNominalCheckTypeOrNull(): ConeCla
 /**
  * 返回构造器委托依赖可以使用的 concrete 父类型视图。
  *
- * 普通构造器依赖只接受合法父边；循环构造诊断显式请求时，才允许读取已经标记为
- * [LoopError] 的 delegated nominal。可恢复的泛型实参数量错误始终不属于构造器依赖。
+ * 合法父类型和间接继承环保留 concrete superclass 构造依赖；直接自继承不能产生
+ * 隐式 super() 调用。可恢复的泛型实参数量错误始终不属于构造器依赖。
+ *
+ * 该投影是 constructor delegation、body resolve 与递归构造检查的统一边界，消费者
+ * 不得再根据局部错误类型改变是否纳入依赖图。
  */
-fun DeclaredSupertypeClassification.constructorDependencyTypeOrNull(
-    includeLoopError: Boolean,
-): ConeClassLikeType? = when (this) {
+fun DeclaredSupertypeClassification.constructorDependencyTypeOrNull(): ConeClassLikeType? = when (this) {
     is DeclaredSupertypeClassification.ValidNominal -> type
-    is DeclaredSupertypeClassification.LoopError -> delegatedNominalType.takeIf { includeLoopError }
+    is DeclaredSupertypeClassification.LoopError -> delegatedNominalType.takeIf {
+        origin == DeclaredSupertypeClassification.LoopOrigin.INHERITANCE_CYCLE
+    }
     else -> null
 }
 

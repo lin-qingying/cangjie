@@ -239,6 +239,20 @@ class ConeNoMatchingFunctionReferenceError(
 }
 
 /**
+ * 名字已经发现，但调用语义排除全部 callable 后没有可用函数声明。
+ *
+ * 该状态对应官方 `sema_no_match_function_declaration_for_call`。它与普通未解析名称、
+ * 成员不存在以及携带访问控制错误的 Candidate 都不同，因此必须作为独立 Cone 诊断传播。
+ */
+class ConeNoMatchingFunctionCallError(
+    /** 被调用的函数名。 */
+    val name: Name,
+) : ConeDiagnostic {
+    /** 面向普通诊断渲染的失败原因。 */
+    override val reason: String get() = "No matching function declaration for call: $name"
+}
+
+/**
  * 只关联单个调用候选的 Cone 诊断。
  */
 interface ConeDiagnosticWithSingleCandidate : ConeDiagnosticWithCandidates {
