@@ -7,8 +7,8 @@ description = "IDE 插件依赖：打包 code-insight quick-fix API、K2 fixes �
 publishCangjieJarsForIde(
     listOf(
         ":code-insight:api",
-        ":code-insight:fixes-k2",
-        ":code-insight:override-implement-k2",
+        ":code-insight:fixes",
+        ":code-insight:override-implement",
         ":analysis:analysis-api",
         ":analysis:analysis-api-cfir",
     ),
