@@ -5,5 +5,5 @@ func takesInt(x: Int64): Int64 {
 
 main(): Unit {
     // Supports CFIR_ prefixed diagnostic names from factoryName.
-    takesInt(<!ARGUMENT_TYPE_MISMATCH!>true<!>)
+    takesInt(<!CANNOT_CONVERT_LITERAL!>true<!>)
 }

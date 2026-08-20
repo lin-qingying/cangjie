@@ -5,7 +5,7 @@ func foo(a: A): Int32 {
     123
     return 1
     1.2
-    return <!TYPE_MISMATCH!>"hello"<!>
+    return <!RETURN_TYPE_MISMATCH!>"hello"<!>
 }
 
 class A {}

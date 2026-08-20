@@ -55,7 +55,7 @@ import b.c.*
 
 main() {
     Foo<Int64>().f0() // ok
-    Foo<Int64>().<!NO_MATCH_FUNCTION_DECLARATION_FOR_CALL!>f<!>1() // error
-    Foo<Int64>().<!NO_MATCH_FUNCTION_DECLARATION_FOR_CALL!>f<!>2() // error
+    Foo<Int64>().<!NO_MATCH_FUNCTION_DECLARATION_FOR_CALL!>f1<!>() // error
+    Foo<Int64>().<!NO_MATCH_FUNCTION_DECLARATION_FOR_CALL!>f2<!>() // error
     Foo<Int64>().f3() // ok
 }

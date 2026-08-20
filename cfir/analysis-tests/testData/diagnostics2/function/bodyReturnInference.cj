@@ -24,9 +24,9 @@ func inferJoined(flag: Bool) {
     2
 }
 
-func <!UNABLE_TO_INFER_RETURN_TYPE!>unreachableTail<!>() {
+func unreachableTail() {
     return 1
-    ""
+    <!INCOMPATIBLE_FUNC_BODY_AND_RETURN_TYPE!>""<!>
 }
 
 func inferUnit() {
@@ -34,11 +34,11 @@ func inferUnit() {
     let _ = x
 }
 
-func <!UNABLE_TO_INFER_RETURN_TYPE!>inferConflict<!>(flag: Bool) {
+func inferConflict(flag: Bool) {
     if (flag) {
         return 1
     }
-    ""
+    <!INCOMPATIBLE_FUNC_BODY_AND_RETURN_TYPE!>""<!>
 }
 
 func declaredOk(): Int64 {

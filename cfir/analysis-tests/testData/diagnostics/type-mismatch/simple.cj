@@ -5,5 +5,5 @@ return a
 
 
 func test():Unit{
-        let a:Int64 = <!NEW_INFERENCE_ERROR!>name<!>(1.1)
+        let a:Int64 = <!UNABLE_TO_INFER_GENERIC_FUNC!>name<!>(1.1)
 }

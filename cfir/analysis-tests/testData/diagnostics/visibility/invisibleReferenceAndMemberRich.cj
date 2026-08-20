@@ -20,11 +20,11 @@ open class Base {
 package visibilitycase
 
 func useHiddenTopLevel(): Int64 {
-    return <!INVISIBLE_REFERENCE!>hiddenTopLevel<!>()
+    return <!UNRESOLVED_REFERENCE!>hiddenTopLevel<!>()
 }
 
 class Child <: Base {
     func useHiddenMember(): Int64 {
-        return this.<!INVISIBLE_MEMBER!>hiddenMember<!>()
+        return this.<!NO_MATCH_FUNCTION_DECLARATION_FOR_CALL!>hiddenMember<!>()
     }
 }

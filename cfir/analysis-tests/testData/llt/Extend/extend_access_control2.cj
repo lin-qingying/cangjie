@@ -8,7 +8,7 @@ class A {
 
 extend A {
     func foo() {
-        <!NO_MATCH_FUNCTION_DECLARATION_FOR_CALL!>g<!>oo()
+        <!NO_MATCH_FUNCTION_DECLARATION_FOR_CALL!>goo<!>()
         0
     }
 }

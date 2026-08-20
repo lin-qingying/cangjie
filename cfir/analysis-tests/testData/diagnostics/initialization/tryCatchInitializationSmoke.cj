@@ -5,12 +5,12 @@ class ValueHolder {
     init(flag: Bool) {
         try {
             if (flag) {
-                <!TYPE_MISMATCH!>value = 1<!>
+                value = 1
             } else {
-                <!TYPE_MISMATCH!>value = 2<!>
+                value = 2
             }
         } catch (e: Exception) {
-            <!TYPE_MISMATCH!>value = 3<!>
+            value = 3
         } finally {
             let _ = true
         }

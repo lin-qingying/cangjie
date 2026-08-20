@@ -2,7 +2,7 @@
 // FILE: base_same_package.cj
 package visibilitymatrix
 
-open class Base {
+public open class Base {
     protected func protectedValue(): Int64 {
         return 1
     }
@@ -53,9 +53,9 @@ package outsider
 import visibilitymatrix.*
 
 func unrelatedPackageInternal(base: Base): Int64 {
-    return base.<!INVISIBLE_MEMBER!>internalValue<!>()
+    return base.<!NO_MATCH_FUNCTION_DECLARATION_FOR_CALL!>internalValue<!>()
 }
 
 func unrelatedPackageProtected(base: Base): Int64 {
-    return base.protectedValue()
+    return base.<!NO_MATCH_FUNCTION_DECLARATION_FOR_CALL!>protectedValue<!>()
 }

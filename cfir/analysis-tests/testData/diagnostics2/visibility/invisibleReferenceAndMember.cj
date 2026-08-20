@@ -6,7 +6,7 @@ private func hiddenTopLevel(): Int64 {
     return 1
 }
 
-open class Box {
+public open class Box {
     private func hiddenMember(): Int64 {
         return 2
     }
@@ -21,11 +21,11 @@ package visibilitydirect.other
 import visibilitydirect.*
 
 func hiddenTopLevelUse(): Int64 {
-    return <!INVISIBLE_REFERENCE!>hiddenTopLevel<!>()
+    return <!UNRESOLVED_REFERENCE!>hiddenTopLevel<!>()
 }
 
 class Child <: Box {
     func hiddenMemberUse(): Int64 {
-        return this.<!INVISIBLE_MEMBER!>hiddenMember<!>()
+        return this.<!NOT_MEMBER_OF!>hiddenMember<!>()
     }
 }

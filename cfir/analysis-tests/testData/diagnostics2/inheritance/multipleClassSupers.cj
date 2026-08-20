@@ -4,6 +4,6 @@ open class BaseB {}
 open class BaseC {}
 interface Marker {}
 
-class ChildOne <: BaseA & <!MULTIPLE_CLASS_SUPER_TYPES!>BaseB<!> & Marker {}
+class ChildOne <: BaseA & <!ILLEGAL_MULTI_INHERITANCE!>BaseB<!> & Marker {}
 
-class ChildTwo <: BaseA & <!MULTIPLE_CLASS_SUPER_TYPES!>BaseB<!> & <!MULTIPLE_CLASS_SUPER_TYPES!>BaseC<!> {}
+class ChildTwo <: BaseA & <!ILLEGAL_MULTI_INHERITANCE!>BaseB<!> & <!ILLEGAL_MULTI_INHERITANCE!>BaseC<!> {}

@@ -1,8 +1,8 @@
 // RUN_PIPELINE_TILL: FRONTEND
-func takesMissing(x: <!UNRESOLVED_REFERENCE!>MissingType<!>): Unit {
+func takesMissing(x: <!UNDECLARED_TYPE_NAME!>MissingType<!>): Unit {
     let _ = x
 }
 
-func returnsMissing(): <!UNRESOLVED_REFERENCE!>MissingReturnType<!> {
+func returnsMissing(): <!UNDECLARED_TYPE_NAME!>MissingReturnType<!> {
     return 0
 }

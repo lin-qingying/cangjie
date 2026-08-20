@@ -1222,6 +1222,12 @@ class CfirAnalysisDiagnosticsTestGenerated : AbstractCfirLightTreeDiagnosticsTes
             runTest("cfir/analysis-tests/testData/diagnostics/visibility/invisibleReferenceAndMemberRich.cj")
         }
 
+        @TestMetadata("nonPublicTopLevelTypeImportRich.cj")
+        @Test
+        fun testNonPublicTopLevelTypeImportRich() {
+            runTest("cfir/analysis-tests/testData/diagnostics/visibility/nonPublicTopLevelTypeImportRich.cj")
+        }
+
         @TestMetadata("privateMemberAccess.cj")
         @Test
         fun testPrivateMemberAccess() {

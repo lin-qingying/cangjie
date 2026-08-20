@@ -37,6 +37,6 @@ import b.*
 
 main() {
     A().f1()
-    A().f2() // error
+    A().<!NOT_MEMBER_OF!>f2<!>() // error
     A().f3()
 }

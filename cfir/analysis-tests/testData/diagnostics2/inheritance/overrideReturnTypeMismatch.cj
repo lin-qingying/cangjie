@@ -9,7 +9,7 @@ open class Parent {
 }
 
 class Child <: Parent {
-    public override func <!OVERRIDING_RETURN_TYPE_MISMATCH!>value<!>(): Base {
+    public override func <!RETURN_TYPE_INCOMPATIBLE!>value<!>(): Base {
         return Base()
     }
 }

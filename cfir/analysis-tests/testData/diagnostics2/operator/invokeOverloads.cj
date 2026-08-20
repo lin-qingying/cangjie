@@ -21,13 +21,13 @@ func testCorrectOverloads(): Unit {
 
 func testOverloadArgMismatch(): Unit {
     let h = Handler()
-    <!NO_MATCHING_OPERATOR_INVOKE!>h<!>(<!ARGUMENT_TYPE_MISMATCH!>1.0<!>)
+    <!NO_MATCHING_OPERATOR_INVOKE!>h<!>(<!CANNOT_CONVERT_LITERAL!>1.0<!>)
 }
 
 func testInvokeReturnInContext(): Unit {
     let h = Handler()
     h(1)
     h(true)
-    let _: Int64 = <!NO_MATCHING_OPERATOR_INVOKE!>h<!>(<!ARGUMENT_TYPE_MISMATCH!>true<!>)
+    let _: Int64 = <!NO_MATCHING_OPERATOR_INVOKE!>h<!>(<!CANNOT_CONVERT_LITERAL!>true<!>)
 
 }

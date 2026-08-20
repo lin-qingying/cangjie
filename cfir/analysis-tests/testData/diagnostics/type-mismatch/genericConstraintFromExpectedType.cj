@@ -4,5 +4,5 @@ func identity<T>(value: T): T {
 }
 
 main(): Unit {
-    let _: Int64 = <!NEW_INFERENCE_ERROR!>identity<!>("hello")
+    let _: Int64 = <!UNABLE_TO_INFER_GENERIC_FUNC!>identity<!>("hello")
 }

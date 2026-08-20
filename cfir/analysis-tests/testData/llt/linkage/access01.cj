@@ -2,7 +2,7 @@
 
 
 package a.b.c
-
+//这个定位是正确的，而不是报告在整个语句上
 import <!UNRESOLVED_IMPORT!>a<!>.b.*
 
 main() {

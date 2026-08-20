@@ -33,7 +33,7 @@ class D {
 
 func testInvokeArgTypeMismatch(): Unit {
     let d = D()
-    <!NO_MATCHING_OPERATOR_INVOKE!>d<!>(<!ARGUMENT_TYPE_MISMATCH!>1.0<!>)
+    <!NO_MATCHING_OPERATOR_INVOKE!>d<!>(<!CANNOT_CONVERT_LITERAL!>1.0<!>)
 
 }
 
