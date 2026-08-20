@@ -952,6 +952,22 @@ class CfirClassUseSiteMemberScope private constructor(
         if (name !in getCallableNames()) return
 
         val emitted = linkedSetOf<CfirCallableWithLookupProvenance>()
+        val local = mutableListOf<CfirCallableSymbol<*>>()
+        declaredScope.processCallablesByName(name) { local += it }
+        extendScope?.processCallablesByName(name) { local += it }
+        local.forEach { symbol ->
+            val candidate = CfirCallableWithLookupProvenance(
+                symbol = symbol,
+                provenance = symbol.localCallableLookupProvenance(),
+            )
+            if (emitted.add(candidate)) processor(candidate)
+        }
+
+        // provenance 只补充 effective member graph 的结构来源，不能重新引入已经被当前
+        // value-like 成员隐藏的父成员。这个截断必须与 processCallablesByName 保持相同
+        // 的优先级，否则 tower 会把 Base.value 与 Derived.value 同时作为调用实参候选。
+        if (local.any { it.isValueLikeCallable() }) return
+
         processFunctionsByNameWithProvenance(name) { provenance ->
             val candidate = CfirCallableWithLookupProvenance(
                 symbol = provenance.member,
@@ -968,19 +984,17 @@ class CfirClassUseSiteMemberScope private constructor(
             )
             if (emitted.add(candidate)) processor(candidate)
         }
-        val local = mutableListOf<CfirCallableSymbol<*>>()
-        declaredScope.processCallablesByName(name) { local += it }
-        extendScope?.processCallablesByName(name) { local += it }
-        local.forEach { symbol ->
-            val candidate = CfirCallableWithLookupProvenance(
-                symbol = symbol,
-                provenance = symbol.localCallableLookupProvenance(),
-            )
-            if (emitted.add(candidate)) processor(candidate)
-        }
+
+        // 函数和属性已经由上面的 effective collection 合并；只透传没有专用 collection
+        // 的 callable，避免 provenance 路径绕开 inherited override/shadow 过滤。
         for (parent in parentScopes) {
             parent.processCallablesByNameWithLookupProvenance(name) { candidate ->
-                if (emitted.add(candidate)) processor(candidate)
+                if (candidate.symbol !is CfirNamedFunctionSymbol &&
+                    candidate.symbol !is CfirPropertySymbol &&
+                    emitted.add(candidate)
+                ) {
+                    processor(candidate)
+                }
             }
         }
     }

@@ -11,8 +11,8 @@ interface I<T> {
 class A <: I<Rune> & I<Int32> {}
 
 func test<T>(a: T) where T <: I<Rune> & I<Int32> {
-    let f = <!AMBIGUOUS_USE!>a.test<!>
-    <!AMBIGUOUS_USE!>a.test<!>
+    let f = a.<!AMBIGUOUS_USE!>test<!>
+    a.<!AMBIGUOUS_USE!>test<!>
     return 1
 }
 
