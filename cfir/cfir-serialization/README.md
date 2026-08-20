@@ -1,43 +1,38 @@
-# cfir/cfir-serialization/ — .cjo 序列化与反序列化
+# cfir/cfir-serialization/ — `.cjo` 元数据与反序列化
 
-承载前端管线阶段 4 `IMPORT_PACKAGE` 与阶段 10 `SAVE_CJO` 的序列化层。
+提供前端使用的 FlatBuffers `.cjo` 集成：包头加载、声明与类型反序列化、跨模块符号 provider，以及包级元数据写出。
 
-**当前状态**：反序列化路径完整可用；序列化写入侧仍在补齐。
+## 边界
+
+`CjoPackageWriter` 只写出其数据模型覆盖的包级字段：包身份与版本、导入、源文件条目和顶层导出声明索引。这些工件服务于宏工件解析、反序列化索引和前端编排；它不宣称序列化完整的 CFIR 或 CHIR 函数体。
+
+读取路径加载 `.cjo` 包头、解析导入包索引，并为反序列化 symbol provider 重建受支持的声明和类型。格式覆盖范围以模块测试为准。
 
 ## 关键包
 
 | 包 | 职责 |
-|---|---|
-| `cfir.serialization.cjo` | `.cjo` 文件格式编解码（FlatBuffers schema 由 `:flatbuffers-gen` 提供） |
-| `cfir.serialization.deserialize` | 反序列化主流程：`.cjo` → CFIR |
-| `cfir.serialization.provider` | 跨模块符号 provider（基于反序列化结果） |
-| `cfir.deserialization` | 反序列化数据模型（与 `serialization.deserialize` 分层） |
-
-## 阶段映射
-
-- **阶段 4 IMPORT_PACKAGE**：本模块读取 `.cjo` 文件，向 CFIR 注入外部包符号（class / function / property / typealias），供跨包类型引用与重载解析使用。
-- **阶段 10 SAVE_CJO**：将当前包的 CFIR 序列化为 `.cjo` 文件 + `.cjo.flag` 标志，供下游包导入。
-
-## 格式
-
-- 序列化使用 FlatBuffers（schema 见 `:flatbuffers-gen`，参考官方 `PackageFormat.fbs` / `NodeFormat.fbs` / `ModuleFormat.fbs`）
-- 启用 `-g` 或 `--coverage` 时包含绝对源码路径
-- `.cjo` 等价于 Kotlin 的 `.klib`
+| --- | --- |
+| `cfir.serialization.cjo` | `.cjo` 包头、包管理器和 FlatBuffers 元数据 writer |
+| `cfir.serialization.deserialize` | 声明、类型和包索引反序列化 |
+| `cfir.serialization.provider` | 跨模块的反序列化符号与 extend provider |
+| `cfir.deserialization` | 前端入口使用的共享反序列化模型 |
 
 ## 依赖
 
 - `:cfir:cfir-tree`、`:cfir:cfir-cones`、`:cfir:cfir-common`
 - `:flatbuffers-gen`
 
-## 命令
+## 构建与测试
 
 ```bash
 ./gradlew :cfir:cfir-serialization:assemble
 ./gradlew :cfir:cfir-serialization:test
 ```
 
-测试资源含 `cjo-sdk/`，详见 `testResources/cjo-sdk/README.md`。
+测试资源包含 `cjo-sdk/`；夹具来源见 `testResources/cjo-sdk/README.md`。
 
 ## 相关文档
 
-- `../../docs/cjfir-compiler-stages.md` 第 4、10 阶段 — IMPORT_PACKAGE / SAVE_CJO 设计
+- `../../docs/cjfir-compiler-stages.md` — 前端输出与 `.cjo` 集成边界
+- `../README.md` — CFIR 子系统目录
+- `../../docs/module-catalog.md` — Gradle 模块目录

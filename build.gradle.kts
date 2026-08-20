@@ -23,14 +23,23 @@
  */
 
 import java.io.ByteArrayOutputStream
+import java.io.File
 import java.io.OutputStream
 import java.net.URI
 import java.nio.file.Files
+import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
 import java.util.zip.ZipInputStream
+import org.gradle.api.file.ConfigurableFileCollection
+import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.PathSensitive
+import org.gradle.api.tasks.PathSensitivity
+import org.gradle.api.tasks.TaskAction
 
 plugins {
     base
@@ -118,6 +127,252 @@ tasks.register("verifyAnalysisCoverage") {
 
 tasks.matching { it.name == "checkAnalysisFramework" }.configureEach {
     dependsOn("verifyAnalysisCoverage")
+}
+
+/**
+ * 校验维护中文档的链接、双语入口和 Gradle 模块目录。
+ *
+ * 历史记录、生成物、测试夹具和外部镜像不在此任务范围内，避免把非维护材料
+ * 误当作项目文档的质量门槛。
+ */
+abstract class ValidateDocumentationTask : DefaultTask() {
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val documentationFiles: ConfigurableFileCollection
+
+    @get:InputFile
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val settingsFile: RegularFileProperty
+
+    @get:InputDirectory
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val repositoryRoot: DirectoryProperty
+
+    @TaskAction
+    fun validate() {
+        val rootDirectory = repositoryRoot.get().asFile.canonicalFile
+        val documents = documentationFiles.files
+            .filter(File::isFile)
+            .sortedBy { it.relativeTo(rootDirectory).invariantSeparatorsPath }
+        val errors = mutableListOf<String>()
+
+        documents.forEach { document ->
+            val relativePath = document.relativeTo(rootDirectory).invariantSeparatorsPath
+            val content = document.readText(Charsets.UTF_8).removePrefix("\uFEFF")
+            val prose = content.stripMarkdownCode()
+
+            if (!h1Pattern.containsMatchIn(prose)) {
+                errors += "$relativePath: maintained Markdown documents must contain one H1 heading."
+            }
+
+            if (absoluteWorkspacePathPattern.containsMatchIn(prose.stripInlineCode())) {
+                errors += "$relativePath: contains an absolute workspace path. Use a repository-relative link instead."
+            }
+
+            validateRelativeLinks(document, prose, rootDirectory, errors)
+        }
+
+        validateBilingualEntrypoints(rootDirectory, errors)
+        validateModuleCatalog(rootDirectory, errors)
+
+        if (errors.isNotEmpty()) {
+            errors.sorted().forEach(logger::error)
+            error("Documentation validation failed with ${errors.size} violation(s).")
+        }
+    }
+
+    private fun validateRelativeLinks(
+        document: File,
+        prose: String,
+        rootDirectory: File,
+        errors: MutableList<String>,
+    ) {
+        val documentPath = document.relativeTo(rootDirectory).invariantSeparatorsPath
+        markdownLinkPattern.findAll(prose).forEach { match ->
+            val rawTarget = match.groupValues[1].trim().removeSurrounding("<", ">")
+            if (rawTarget.isBlank() || rawTarget.startsWith("mailto:") || rawTarget.contains("://")) return@forEach
+
+            val targetParts = rawTarget.split('#', limit = 2)
+            val pathPart = targetParts[0]
+            val fragment = targetParts.getOrNull(1)
+            if (pathPart.startsWith("/") || windowsAbsolutePathPattern.containsMatchIn(pathPart)) {
+                errors += "$documentPath: link '$rawTarget' must be repository-relative."
+                return@forEach
+            }
+
+            val targetFile = resolveLinkTarget(document, pathPart)
+            if (targetFile == null || !targetFile.exists()) {
+                errors += "$documentPath: link '$rawTarget' does not resolve to a tracked document target."
+                return@forEach
+            }
+            if (!targetFile.canonicalFile.toPath().startsWith(rootDirectory.toPath())) {
+                errors += "$documentPath: link '$rawTarget' escapes the repository."
+                return@forEach
+            }
+
+            if (!fragment.isNullOrBlank()) {
+                val anchors = targetFile.readText(Charsets.UTF_8).removePrefix("\uFEFF").stripMarkdownCode().markdownAnchors()
+                if (fragment !in anchors) {
+                    errors += "$documentPath: anchor '#$fragment' is missing from '${targetFile.relativeTo(rootDirectory).invariantSeparatorsPath}'."
+                }
+            }
+        }
+    }
+
+    private fun resolveLinkTarget(document: File, pathPart: String): File? {
+        if (pathPart.isEmpty()) return document
+        val target = File(document.parentFile, pathPart).canonicalFile
+        if (!target.isDirectory) return target
+        return sequenceOf("README.md", "README.zh-CN.md")
+            .map { File(target, it) }
+            .firstOrNull(File::isFile)
+    }
+
+    private fun validateBilingualEntrypoints(rootDirectory: File, errors: MutableList<String>) {
+        bilingualEntrypoints.forEach { (englishPath, chinesePath) ->
+            val english = rootDirectory.resolve(englishPath)
+            val chinese = rootDirectory.resolve(chinesePath)
+            if (!english.isFile || !chinese.isFile) {
+                errors += "Bilingual entrypoint '$englishPath' and '$chinesePath' must both exist."
+                return@forEach
+            }
+
+            val englishLink = chinese.relativeTo(english.parentFile).invariantSeparatorsPath
+            val chineseLink = english.relativeTo(chinese.parentFile).invariantSeparatorsPath
+            if (!english.readText(Charsets.UTF_8).removePrefix("\uFEFF").contains("]($englishLink)")) {
+                errors += "$englishPath: must link to its Chinese counterpart '$englishLink'."
+            }
+            if (!chinese.readText(Charsets.UTF_8).removePrefix("\uFEFF").contains("]($chineseLink)")) {
+                errors += "$chinesePath: must link to its English counterpart '$chineseLink'."
+            }
+        }
+    }
+
+    private fun validateModuleCatalog(rootDirectory: File, errors: MutableList<String>) {
+        val settingsModules = includePattern.findAll(settingsFile.get().asFile.readText(Charsets.UTF_8).removePrefix("\uFEFF"))
+            .map { match -> match.groupValues[1].trim().let { if (it.startsWith(':')) it else ":$it" } }
+            .toSet()
+        val catalog = rootDirectory.resolve("docs/module-catalog.md")
+        if (!catalog.isFile) {
+            errors += "docs/module-catalog.md is required."
+            return
+        }
+        val catalogSection = catalog.readText(Charsets.UTF_8).removePrefix("\uFEFF")
+            .substringAfter("<!-- module-catalog:start -->", missingDelimiterValue = "")
+            .substringBefore("<!-- module-catalog:end -->", missingDelimiterValue = "")
+        if (catalogSection.isBlank()) {
+            errors += "docs/module-catalog.md: module-catalog markers are required."
+            return
+        }
+        val catalogModules = catalogModulePattern.findAll(catalogSection)
+            .map { it.groupValues[1] }
+            .toSet()
+        val missing = settingsModules - catalogModules
+        val stale = catalogModules - settingsModules
+        if (missing.isNotEmpty()) errors += "docs/module-catalog.md: missing Gradle modules ${missing.sorted().joinToString()}."
+        if (stale.isNotEmpty()) errors += "docs/module-catalog.md: stale Gradle modules ${stale.sorted().joinToString()}."
+    }
+
+    private fun String.stripMarkdownCode(): String =
+        replace(Regex("(?s)```.*?```"), "")
+
+    private fun String.stripInlineCode(): String =
+        replace(Regex("`[^`]*`"), "")
+
+    private fun String.markdownAnchors(): Set<String> =
+        lineSequence()
+            .mapNotNull { heading -> headingRegex.matchEntire(heading)?.groupValues?.get(1) }
+            .map(::githubAnchor)
+            .toSet()
+
+    private fun githubAnchor(heading: String): String =
+        heading
+            .replace(Regex("`([^`]*)`"), "$1")
+            .replace(Regex("\\[([^]]*)]\\([^)]*\\)"), "$1")
+            .lowercase(Locale.ROOT)
+            .replace(Regex("[^\\p{L}\\p{N}\\s-]"), "")
+            .trim()
+            .replace(Regex("\\s+"), "-")
+
+    private companion object {
+        val h1Pattern = Regex("(?m)^#\\s+\\S")
+        val headingRegex = Regex("^#{1,6}\\s+(.+?)\\s*$")
+        val markdownLinkPattern = Regex("(?m)(?<![!\\`])\\[[^]]+]\\(([^)\\s]+)(?:\\s+[^)]*)?\\)")
+        val windowsAbsolutePathPattern = Regex("(?i)^[a-z]:[\\\\/]")
+        val absoluteWorkspacePathPattern = Regex("(?i)(?:\\b[a-z]:[\\\\/]|file://|/d:/)")
+        val includePattern = Regex("include\\(\\\"([^\\\"]+)\\\"\\)")
+        val catalogModulePattern = Regex("`(:[A-Za-z0-9_.:-]+)`")
+        val bilingualEntrypoints = listOf(
+            "README.md" to "README.zh-CN.md",
+            "DEVELOPMENT_CONVENTIONS.md" to "DEVELOPMENT_CONVENTIONS.zh-CN.md",
+            "TESTING_CONVENTIONS.md" to "TESTING_CONVENTIONS.zh-CN.md",
+            "docs/README.md" to "docs/README.zh-CN.md",
+            "docs/cjfir-compiler-stages.md" to "docs/cjfir-compiler-stages.zh-CN.md",
+            "docs/project-architecture-diagram.md" to "docs/project-architecture-diagram.zh-CN.md",
+            "intellij-ide/README.md" to "intellij-ide/README.zh-CN.md",
+            "deveco/README.md" to "deveco/README.zh-CN.md",
+        )
+    }
+}
+
+val validateDocumentation by tasks.registering(ValidateDocumentationTask::class) {
+    group = "verification"
+    description = "Validate maintained documentation links, bilingual entrypoints, and the Gradle module catalog."
+    documentationFiles.from(
+        fileTree(project.rootDir) {
+            include(
+                "README.md",
+                "README.zh-CN.md",
+                "DEVELOPMENT_CONVENTIONS*.md",
+                "TESTING_CONVENTIONS*.md",
+                "docs/**/*.md",
+                "analysis/**/README.md",
+                "cfir/**/README.md",
+                "chir/**/README.md",
+                "chir/**/docs/**/*.md",
+                "code-insight/**/README.md",
+                "common/**/README.md",
+                "compiler/**/README.md",
+                "compiler/**/docs/**/*.md",
+                "flatbuffers-gen/**/README.md",
+                "generators/**/README.md",
+                "llvm-interop/**/README.md",
+                "lsp/**/README.md",
+                "macro/**/README.md",
+                "prepare/**/README.md",
+                "psi/**/README.md",
+                "psi/**/docs/**/*.md",
+                "resolution.common/**/README.md",
+                "tests/**/README.md",
+                "util/**/README.md",
+                "intellij-ide/**/*.md",
+                "deveco/README*.md",
+            )
+            exclude(
+                "**/build/**",
+                "**/bin/**",
+                "**/out/**",
+                "**/node_modules/**",
+                "**/external/**",
+                "**/testData/**",
+                "**/testResources/**",
+                "**/REPAIR_LOG.md",
+                "**/test-failure-analysis.md",
+                "**/CHANGELOG.md",
+                "**/PROJECT_RESTRUCTURE.md",
+                "**/*rollback-plan.md",
+                "**/*baseline-report.md",
+                "**/*gap-register.md",
+                "**/*state-inventory.md",
+            )
+        },
+    )
+    settingsFile.set(layout.projectDirectory.file("settings.gradle.kts"))
+    repositoryRoot.set(layout.projectDirectory)
+}
+
+tasks.named("check") {
+    dependsOn(validateDocumentation)
 }
 
 abstract class CodeStatsToolTask : DefaultTask() {

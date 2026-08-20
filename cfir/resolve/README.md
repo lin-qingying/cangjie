@@ -1,6 +1,6 @@
 # cfir/resolve/ — CFIR 语义解析引擎
 
-前端管线阶段 7 `CFIR_RESOLVE` 的核心实现。多 Phase 渐进式语义解析，每个声明独立跟踪已完成的 Phase。对齐 Kotlin K2 `compiler/fir/resolve`。
+ordinary CFIR resolve 的核心实现。它以多个阶段渐进式完成语义解析，每个声明独立跟踪已完成的 resolve phase。对齐 Kotlin K2 `compiler/fir/resolve`。
 
 ## Phase 顺序
 
@@ -13,7 +13,6 @@ RAW_CFIR
   → EXTENSIONS      extend 声明（仓颉特有）
   → IMPLICIT_TYPES  隐式类型推断
   → BODY_RESOLVE    方法体推断、重载解析
-  → CHECKERS        诊断检查器
 ```
 
 宏构造不属于 ordinary resolve phase。它在 source final provider 注册前完成：
@@ -36,8 +35,8 @@ RAW_CFIR
 ## 设计要点
 
 - **惰性分阶段**：同一文件中不同声明可处于不同 Phase，按需推进
-- **不依赖 checkers**：硬约束，CHECKERS Phase 由 `:cfir:checkers` 提供，resolve 只负责推进到 CHECKERS
-- **CfirResolveComponentsRegistrar**：单一切换点，便于按 Phase 回滚（见 `../cfir-tree/resolve-rollback-plan.md`）
+- **诊断边界独立**：`:cfir:checkers` 在所需 resolve 信息可用后运行诊断管线；它不是 `CfirResolvePhase` 的枚举成员
+- **CfirResolveComponentsRegistrar**：解析组件的集中装配点
 - **WithExpectedType**：通过 `expectedTypeRef.coneType` 读取期望类型，lambda 期望类型传播时补齐 `CfirResolvedTypeRef`
 
 ## 依赖
@@ -61,7 +60,6 @@ RAW_CFIR
 
 ## 相关文档
 
-- `../../docs/cjfir-compiler-stages.md` 第 7 阶段
-- `../../docs/cfir-body-resolve-constraint-system-design.md` — BODY_RESOLVE 约束系统
-- `../../docs/type-inference-four-systems-comparison.md` — 四套类型推断对照
-- `../cfir-tree/resolve-rollback-plan.md` — Phase-by-phase 回滚预案
+- `../../docs/cjfir-compiler-stages.md` — 前端阶段与诊断边界
+- `../README.md` — CFIR 子系统目录
+- `../../docs/module-catalog.md` — Gradle 模块目录

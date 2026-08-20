@@ -11,7 +11,7 @@
 | `cfir.entrypoint.session` | `CfirSession` 工厂（注册 components、registrar、resolver、providers） |
 | `cfir.entrypoint.configuration` | Session / Pipeline 配置 |
 | `cfir.entrypoint.checkers` | 默认 checkers 装配（`CheckersContainers`） |
-| `cfir.pipeline` | 阶段串联（CFIR_BUILD → CFIR_RESOLVE → CHECKERS） |
+| `cfir.pipeline` | 普通 resolve 与诊断调用编排；完整入口按“宏准备 → ordinary resolve → check”组织 |
 | `cfir.extensions` | 前端扩展点 |
 | `cfir.deserialization` | 反序列化接入（与 `:cfir:cfir-serialization` 协作） |
 

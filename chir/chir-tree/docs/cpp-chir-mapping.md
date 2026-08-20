@@ -1,8 +1,5 @@
 # Official C++ CHIR to Kotlin CHIR Mapping Matrix
 
-This document is the implementation baseline for tasks `1.1` and `1.2` of
-`port-cpp-chir-to-cangjie`.
-
 It answers two questions:
 
 1. Which official C++ CHIR areas must be mirrored in Kotlin?
@@ -107,8 +104,8 @@ Current Kotlin implementation status:
 - The internal mapping is still shaped around the reduced Kotlin model.
 - Full official field semantics remain an active parity task.
 
-## Immediate Follow-up Files
+## Related documentation
 
-- Gap register: [chir-parity-gap-register.md](/D:/code/intellij/cangjie/chir/chir-tree/docs/chir-parity-gap-register.md)
-- Codegen mapping: [cpp-codegen-mapping.md](/D:/code/intellij/cangjie/compiler/codegen/docs/cpp-codegen-mapping.md)
-- Baseline fixtures: [README.md](/D:/code/intellij/cangjie/compiler/codegen/testResources/chir-parity/README.md)
+- [CHIR module boundary](module-boundary.md)
+- [Codegen mapping](../../../compiler/codegen/docs/cpp-codegen-mapping.md)
+- [CHIR subsystem](../../README.md)

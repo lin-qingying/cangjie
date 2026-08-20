@@ -1,12 +1,12 @@
 # macro/ — 宏展开模块
 
-前端管线阶段 5 `MACRO_EXPAND` 的实现。
+前端准备阶段的宏构造实现。它在普通 source provider 最终注册之前生成并记录扩展后的 Raw CFIR 输入，不属于 `CfirResolvePhase`。
 
 对应官方 C++ 编译器的 `MacroExpansion::Execute()` 四步流程：`CollectMacros` → `EvaluateMacros` → `ProcessMacros` → `ReplaceAST`。
 
 ## 实现方案
 
-本项目基于 JVM，无法 `dlopen` 仓颉 native 宏动态库，因此通过**外部进程 `LSPMacroServer`** 执行宏函数。三件套模块解耦：
+生产实现通过**外部进程 `LSPMacroServer`** 执行宏函数。三个模块按接口和运行时实现解耦：
 
 ```
 macro-common  ─┬─→ macro-process  (生产实现)
@@ -46,5 +46,5 @@ macro-common  ─┬─→ macro-process  (生产实现)
 
 ## 相关文档
 
-- `../docs/cjfir-compiler-stages.md` 第 5 阶段 — 宏展开设计
-- `../intellij-ide/docs/macro-psi-replacement-design.md` — IDE 侧宏 PSI 替换设计
+- `../docs/cjfir-compiler-stages.md` — 前端准备、ordinary resolve 与诊断的边界
+- `../docs/module-catalog.md` — 宏模块及其 Gradle 路径

@@ -17,7 +17,7 @@ CFIR 是仓颉前端的中间表示（Cangjie Frontend IR），对齐 Kotlin K2 
 | `providers` | 符号 / 扩展点 providers |
 | `diagnostic-renderers` | 诊断渲染器 |
 
-### CFIR 构建（阶段 6 CFIR_BUILD）
+### Raw CFIR 构建
 
 | 子模块 | 职责 |
 |---|---|
@@ -25,18 +25,18 @@ CFIR 是仓颉前端的中间表示（Cangjie Frontend IR），对齐 Kotlin K2 
 | `raw-cfir/psi2cfir` | PSI → Raw CFIR 转换 |
 | `raw-cfir/light-tree2cfir` | LightTree → Raw CFIR 转换 |
 
-### CFIR 语义解析（阶段 7 CFIR_RESOLVE）
+### CFIR 语义解析与诊断
 
 | 子模块 | 职责 |
 |---|---|
-| `resolve` | 多 Phase 语义解析引擎（IMPORTS / SUPER_TYPES / TYPES / STATUS / EXTENSIONS / IMPLICIT_TYPES / BODY_RESOLVE / CHECKERS） |
-| `checkers` | 诊断检查器框架（Declaration / Expression / Type checkers），含 `checkers-component-generator` |
+| `resolve` | ordinary resolve 引擎（IMPORTS / SUPER_TYPES / TYPES / STATUS / EXTENSIONS / IMPLICIT_TYPES / BODY_RESOLVE） |
+| `checkers` | 在所需 resolve 信息可用后运行的独立诊断管线（Declaration / Expression / Type checkers），含 `checkers-component-generator` |
 
 ### 序列化与编排
 
 | 子模块 | 职责 |
 |---|---|
-| `cfir-serialization` | `.cjo` 反序列化与跨模块符号加载（序列化写入侧仍在补齐） |
+| `cfir-serialization` | `.cjo` 序列化、反序列化与跨模块符号加载 |
 | `entrypoint` | CFIR 前端入口（Session 工厂、Pipeline 配置） |
 
 ### 测试
@@ -45,22 +45,19 @@ CFIR 是仓颉前端的中间表示（Cangjie Frontend IR），对齐 Kotlin K2 
 |---|---|
 | `analysis-tests` | CFIR 分析测试套件（基于 `:tests:test-infrastructure`） |
 
-## 阶段对应
+## 管线边界
 
-CFIR 各子模块在前端管线中的位置（见 `../docs/cjfir-compiler-stages.md`）：
+CFIR 子模块在前端管线中的位置（见 `../docs/cjfir-compiler-stages.md`）：
 
 ```
-阶段 6 CFIR_BUILD     → raw-cfir/*
-阶段 7 CFIR_RESOLVE   → resolve + checkers (+ providers + semantics)
-阶段 4 IMPORT_PACKAGE → cfir-serialization (反序列化)
-阶段 10 SAVE_CJO      → cfir-serialization (写入侧待补)
+Raw CFIR 构建                         → raw-cfir/*
+ordinary resolve（至 BODY_RESOLVE）   → resolve (+ providers + semantics)
+独立诊断管线                          → checkers + diagnostic-renderers
+.cjo 读取、反序列化与元数据写出       → cfir-serialization
 ```
 
 ## 相关文档
 
 - `../docs/cjfir-compiler-stages.md` — 阶段设计
-- `../docs/cfir-body-resolve-constraint-system-design.md` — BODY_RESOLVE 约束系统
-- `../docs/cfir-semantic-analysis-maturity-vs-official-2026-04-08.md` — 实现成熟度评估
 - `cfir-tree/tree-generator/Readme.md` — CFIR 节点生成器
-- `cfir-tree/resolve-rollback-plan.md` — CFIR_RESOLVE 迁移回滚预案
-- `analysis-tests/diagnostics-coverage-gap-vs-cpp.md` — 诊断覆盖缺口
+- `../docs/module-catalog.md` — Gradle 模块目录

@@ -1,113 +1,134 @@
 # Cangjie
 
+[![Main tests](https://github.com/lin-qingying/cangjie/actions/workflows/main-tests.yml/badge.svg?branch=main)](https://github.com/lin-qingying/cangjie/actions/workflows/main-tests.yml)
 ![Kotlin/JVM](https://img.shields.io/badge/Kotlin%2FJVM-7F52FF?logo=kotlin&logoColor=white)
-![JDK 17](https://img.shields.io/badge/JDK-17-ED8B00?logo=openjdk&logoColor=white)
 ![Gradle Kotlin DSL](https://img.shields.io/badge/Gradle-Kotlin%20DSL-02303A?logo=gradle&logoColor=white)
 ![CFIR](https://img.shields.io/badge/IR-CFIR-455A64)
 ![Analysis API](https://img.shields.io/badge/API-Analysis%20API-1976D2)
 ![LSP / IDE](https://img.shields.io/badge/Tooling-LSP%20%2F%20IDE-5C6BC0)
-![IntelliJ Platform](https://img.shields.io/badge/IntelliJ%20Platform-253.29346.379-000000?logo=intellijidea&logoColor=white)
 
-本仓库是仓颉编程语言前端的 Kotlin/JVM 工程。它围绕 Kotlin K2 风格的前端架构组织代码，并以官方仓颉编译器前端语义为对齐目标。
+[中文](README.zh-CN.md) · [Documentation](docs/README.md) · [Compiler stages](docs/cjfir-compiler-stages.md) · [Module catalog](docs/module-catalog.md) · [Official Cangjie compiler](https://gitcode.com/Cangjie/cangjie_compiler)
 
-## Overview
+> A Kotlin/JVM implementation of the Cangjie frontend and language-tooling infrastructure.
 
-Cangjie 前端覆盖从源码到语义模型的主要链路：
+Cangjie provides the compiler-facing and IDE-facing layers for the Cangjie language: source parsing, semantic analysis, diagnostics, language APIs, and editor services. It uses Kotlin K2 design ideas where they fit the project while treating the [official Cangjie compiler](https://gitcode.com/Cangjie/cangjie_compiler) as the language-semantics reference.
 
-- 词法、语法、PSI 与 LightTree 输入
-- Raw CFIR 构建与 CFIR 数据模型
-- 多阶段语义解析、诊断检查与诊断渲染
-- `.cjo` 序列化与跨模块符号加载
-- Analysis API、Low-Level API、stub、反编译与 light declarations
-- LSP 与 IDE 共享编辑能力
-- 宏展开协议与执行器
-- CHIR、CodeGen、LLVM 互操作等后端相关模块
+## About this repository
+
+The main build is a reusable frontend and tooling codebase, not a standalone replacement for the official `cjc` distribution. It supplies the components that a compiler host, an IDE, an LSP host, or a test environment needs to understand Cangjie source code.
+
+Its independently built host integrations are kept in [`intellij-ide/`](intellij-ide/README.md) and [`deveco/`](deveco/README.md). Public frontend and test-framework artifacts are assembled by [`prepare/`](prepare/README.md).
+
+## Key capabilities
+
+| Area | What it provides |
+| --- | --- |
+| Source frontends | Lexer, parser, PSI, and LightTree inputs for Raw CFIR construction |
+| Semantic frontend | The CFIR model, staged declaration and body resolution, diagnostics, and `.cjo` integration |
+| Tooling APIs | Public and low-level Analysis APIs, references, stubs, decompilation, light declarations, code insight, and LSP services |
+| Extensible integrations | Macro execution, CHIR, JVM/LLVM code generation, and LLVM interoperation behind separate module boundaries |
+| IDE integrations | Independently built IntelliJ Platform and DevEco Studio projects consuming frontend and tooling artifacts |
+
+The project keeps source representation, semantic resolution, diagnostics, APIs, and host integrations in separate Gradle modules. `settings.gradle.kts` defines the main build; the [module catalog](docs/module-catalog.md) maps every included module to its responsibility and owner documentation.
 
 ## Architecture
 
 ```text
-source (.cj)
-  -> PARSE
-  -> MACRO_EXPAND
-  -> CFIR_BUILD
-  -> CFIR_RESOLVE
-  -> SAVE_CJO
-
-optional backend:
-CFIR -> CHIR -> LLVM IR
+Cangjie source (.cj)
+        │
+        ▼
+PSI / LightTree ──► Raw CFIR ──► macro preparation (when needed)
+                                            │
+                                            ▼
+                          source providers and semantic resolution
+                                            │
+                                            ▼
+                                      diagnostics
+                                            │
+                    ┌───────────────────────┼───────────────────────┐
+                    ▼                       ▼                       ▼
+             Analysis API / LSP         .cjo integration       CHIR / backends
 ```
 
-完整阶段设计见 [`docs/cjfir-compiler-stages.md`](docs/cjfir-compiler-stages.md)，主构建包含的模块以 [`settings.gradle.kts`](settings.gradle.kts) 为准。
+Macro preparation is outside the ordinary `CfirResolvePhase` sequence. The resolve phases end at body resolution; `:cfir:checkers` then runs the diagnostics pipeline with the resolve information it needs. See [compiler stages](docs/cjfir-compiler-stages.md) for the verified pipeline and [the architecture diagram](docs/project-architecture-diagram.md) for module ownership.
 
-## Repository Layout
+## Build from source
 
-| Path | Purpose |
-|---|---|
-| `common/`, `util/`, `generators/` | 公共模型、工具与代码生成基础设施 |
-| `compiler/` | 编译器配置、阶段框架、参数、前端入口、CHIR 与 CodeGen |
-| `psi/` | 仓颉词法、语法与 PSI |
-| `cfir/` | CFIR 数据模型、Raw CFIR、语义解析、诊断检查、序列化与分析测试 |
-| `analysis/` | Analysis API、低层 API、standalone、stub、反编译与 light declarations |
-| `code-insight/` | IDE 与 LSP 共享的编辑能力 |
-| `lsp/` | Language Server 模块 |
-| `macro/` | 宏展开接口、协议与执行器 |
-| `llvm-interop/` | LLVM API 与 JNI 互操作 |
-| `tests/` | 测试基础设施 |
-| `prepare/` | Maven 发布工件门面 |
-| `docs/` | 架构、设计、对照与计划文档 |
-| `openspec/` | 规格与变更提案 |
-
-主构建包含的模块以 [`settings.gradle.kts`](settings.gradle.kts) 为准。
-
-## Related Repositories
-
-- [IntelliJ Cangjie plugin](https://github.com/lin-qingying/intellij-cangjie)
-
-## Build From Source
+Install Git and JDK 21, then use the checked-in Gradle Wrapper from the repository root. The main build configures JDK 21 Gradle toolchains and registers the Foojay resolver; no system Gradle installation is required.
 
 ```powershell
+# Windows PowerShell
 .\gradlew.bat assemble
 .\gradlew.bat test
+.\gradlew.bat check
 ```
-
-Unix/macOS:
 
 ```bash
+# Linux and macOS
 ./gradlew assemble
 ./gradlew test
+./gradlew check
 ```
 
-常见定向入口：
+The first build downloads Gradle dependencies and any required toolchain. CI runs the main test workflow on JDK 21.
 
-```powershell
-.\gradlew.bat :compiler:frontend:build
-.\gradlew.bat :cfir:cfir-tree:build
-.\gradlew.bat :analysis:analysis-api-cfir:test
-```
+### Common Gradle tasks
 
-测试约定见 [`TESTING_CONVENTIONS.md`](TESTING_CONVENTIONS.md)。
+| Task | Purpose |
+| --- | --- |
+| `assemble` | Build production artifacts in the main Gradle build |
+| `test` | Run the repository test suites on the JUnit Platform |
+| `check` | Run the broader verification lifecycle, including documentation validation |
+| `validateDocumentation` | Check maintained Markdown links, anchors, bilingual entrypoints, absolute paths, and the module catalog |
+| `:compiler:frontend:build` | Build the frontend coordination module and its dependencies |
+| `:cfir:resolve:test` | Run focused CFIR resolution tests |
+| `:analysis:analysis-api-cfir:test` | Run focused Analysis API CFIR tests |
 
-## Packages
+The [testing conventions](TESTING_CONVENTIONS.md) define test-data, generated-test, and Analysis API requirements.
 
-发布工件由 `prepare/` 门面模块聚合：
+## Use published artifacts
+
+The `prepare` modules publish the public frontend and test-framework facades:
+
+| Artifact | Intended use |
+| --- | --- |
+| `cangjie-frontend` | Frontend integration in a controlled JVM or IntelliJ classpath |
+| `cangjie-frontend-embeddable` | Shaded frontend integration in an uncontrolled host classpath |
+| `cangjie-frontend-test-infrastructure` | Reusable compiler and frontend test infrastructure |
+| `cangjie-frontend-analysis-test-framework` | Reusable Analysis API test infrastructure |
+
+Install the artifacts in Maven Local or publish them to the configured Maven target:
 
 ```powershell
 .\gradlew.bat installPublicArtifacts
 .\gradlew.bat publishPublicArtifacts
 ```
 
-工件列表、坐标与 IDE 子项目联动方式见 [`prepare/README.md`](prepare/README.md)。
+The [publication guide](prepare/README.md) lists the complete artifact set, including IDE dependency assemblies, and explains how the IntelliJ and DevEco builds consume them.
 
-## Current State
+## Repository layout
 
-- **泛型推断失败不再静默成功**：参数约束对推断输入（expectedType 非 proper）改为直接添加（矛盾保留，不事务回滚），配合 `ResultTypeResolver` 1a/1b + `ConstraintSystemCompleter.fixVariable` 拦截，`conflictingConstraintFamily` 等 12+ 处 fixture 统一上报 `UNABLE_TO_INFER_GENERIC_FUNC` 并锚定 callee（与官方 `sema_unable_to_infer_generic_func` 一致）；Psi 版 lambda 参数锚定与 LightTree 对齐。交集推断结果由特性开关 `AllowIntersectionTypesInInference`（默认全版本关闭）控制，关闭 = 官方对齐，开启 = Kotlin K2 兼容。修复记录见 `cfir/analysis-tests/REPAIR_LOG.md`。
-- `cfir:resolve`：extend 语义检查器新增声明侧可见性视图（deserialized extend 跨包过滤），`:cfir:resolve:test` 34/34 全绿。
-- 待改进：`cfir:resolve` 测试目录中 21 个引用已删除约束系统 API 的历史测试暂移至 `C:\Users\lin17\AppData\Local\Temp\opencode\zombie-tests-backup\`，需按 K2 风格 API 重写后恢复。
-- 待改进：`llt/ErrMsgs/type_arg_infer*` 等约 20 个 LLT fixture 的 `UNABLE_TO_INFER_GENERIC_FUNC` 范围仍写为整个调用，按官方 cjc 应锚定 callee，需依官方跨度重写期望。
+| Path | Purpose |
+| --- | --- |
+| `compiler/`, `psi/`, `cfir/` | Compiler configuration, source representation, CFIR construction, resolution, diagnostics, serialization, and frontend tests |
+| `analysis/`, `code-insight/`, `lsp/` | Analysis APIs and language services shared by IDE and LSP consumers |
+| `common/`, `util/`, `generators/`, `resolution.common/` | Shared model, utilities, generators, and type-inference infrastructure |
+| `macro/`, `chir/`, `llvm-interop/`, `compiler/*-codegen` | Macro and optional backend integrations |
+| `prepare/`, `tests/` | Published-artifact assembly and reusable test infrastructure |
+| `intellij-ide/`, `deveco/` | Independently built IntelliJ Platform and DevEco Studio integrations |
+| `docs/` | Maintained architecture, module, and language-reference documentation |
 
 ## Documentation
 
-- [`CLAUDE.md`](CLAUDE.md) - 项目定位、模块结构与开发约束
-- [`DEVELOPMENT_CONVENTIONS.md`](DEVELOPMENT_CONVENTIONS.md) - 项目级开发规范
-- [`TESTING_CONVENTIONS.md`](TESTING_CONVENTIONS.md) - 测试组织与 test data 约定
-- [`docs/README.md`](docs/README.md) - 文档索引
+- [Documentation index](docs/README.md) — architecture, governance, module, and language-reference entry points
+- [Compiler stages](docs/cjfir-compiler-stages.md) — frontend flow, resolve phases, macro boundary, and diagnostics boundary
+- [Architecture diagram](docs/project-architecture-diagram.md) — subsystem ownership and integration points
+- [Module catalog](docs/module-catalog.md) — all Gradle modules in the main build
+- [Development conventions](DEVELOPMENT_CONVENTIONS.md) — repository-wide implementation and change rules
+- [Testing conventions](TESTING_CONVENTIONS.md) — test organization and acceptance expectations
+
+## Contributing
+
+Before changing a first-party module, read the development and testing conventions together with that module's owner documentation. Run the focused build or test for the module you change, then run the broader verification appropriate to the change. Updates to module boundaries, public contracts, architecture, or testing strategy must update the corresponding maintained documentation.
+
+For language behavior or diagnostics, verify the intended result against the official Cangjie materials and `cjc`; do not infer the language rule solely from this repository's current implementation.
