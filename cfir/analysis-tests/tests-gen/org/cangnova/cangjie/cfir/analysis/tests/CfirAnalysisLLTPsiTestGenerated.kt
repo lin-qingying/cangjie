@@ -4142,6 +4142,18 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiLlTDiagnosticsTest() {
             runTest("cfir/analysis-tests/testData/llt/Loops/break_continue_pattern_guards.cj")
         }
 
+        @TestMetadata("break_guard_binds_outer_forin.cj")
+        @Test
+        fun testBreakGuardBindsOuterForin() {
+            runTest("cfir/analysis-tests/testData/llt/Loops/break_guard_binds_outer_forin.cj")
+        }
+
+        @TestMetadata("break_guard_binds_outer_while.cj")
+        @Test
+        fun testBreakGuardBindsOuterWhile() {
+            runTest("cfir/analysis-tests/testData/llt/Loops/break_guard_binds_outer_while.cj")
+        }
+
         @TestMetadata("break_scope_1.cj")
         @Test
         fun testBreakScope1() {
@@ -4152,6 +4164,24 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiLlTDiagnosticsTest() {
         @Test
         fun testBreakScope3() {
             runTest("cfir/analysis-tests/testData/llt/Loops/break_scope_3.cj")
+        }
+
+        @TestMetadata("break_while_condition_binds_outer.cj")
+        @Test
+        fun testBreakWhileConditionBindsOuter() {
+            runTest("cfir/analysis-tests/testData/llt/Loops/break_while_condition_binds_outer.cj")
+        }
+
+        @TestMetadata("break_while_condition_toplevel.cj")
+        @Test
+        fun testBreakWhileConditionToplevel() {
+            runTest("cfir/analysis-tests/testData/llt/Loops/break_while_condition_toplevel.cj")
+        }
+
+        @TestMetadata("continue_guard_binds_outer_while.cj")
+        @Test
+        fun testContinueGuardBindsOuterWhile() {
+            runTest("cfir/analysis-tests/testData/llt/Loops/continue_guard_binds_outer_while.cj")
         }
 
         @TestMetadata("continue_scope_1.cj")

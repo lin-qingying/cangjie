@@ -142,7 +142,9 @@ val ConeCangJieType.isArray: Boolean
  * 提取标准库 `Array<T>` 的元素类型。
  *
  * 这里故意只识别名义 `Array<T>`，不再依赖已经被移除的 `ConeArrayType`。
- * 仓颉普通变参也依赖这个 Array-only 语义，不能把 `VArray<T, N>` 混入这里。
+ * 交集类型在其唯一成员为 `Array<T>` 时仍保证数组能力，必须保留该投影；否则
+ * composition 等泛型调用在约束收敛为 `Any & Array<T>` 后会丢失最后一个数组
+ * 形参的普通变参语义。`VArray<T, N>` 不属于这一规则，也不会被交集分支接受。
  */
 val ConeCangJieType.arrayElementType: ConeCangJieType?
     get() = when (this) {
@@ -154,6 +156,9 @@ val ConeCangJieType.arrayElementType: ConeCangJieType?
         is ConeStructType ->
             if (classId == StdlibClassIds.Array) typeArguments.singleOrNull()?.type else null
         is ConeTypeAliasType -> expandedType?.arrayElementType
+        is ConeIntersectionType -> intersectedTypes
+            .mapNotNull { it.arrayElementType }
+            .singleOrNull()
         else -> null
     }
 

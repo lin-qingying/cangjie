@@ -58,6 +58,8 @@ import org.cangnova.cangjie.cfir.resolve.providers.scopeTraversalTypeOrNull
 import org.cangnova.cangjie.cfir.resolve.transformers.CfirSpecificTypeResolverTransformer
 import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.CfirPCLAInferenceSession
 import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.CfirTowerDataMode
+import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.LoopJumpScope
+import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.LoopJumpTargetResolver
 import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.resultType
 import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeVariableForLambdaParameterType
 import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeVariableForPostponedAtom
@@ -2867,11 +2869,27 @@ open class CfirExpressionsResolveTransformer(
         return transformLoopJumpLike(loopJump, data)
     }
 
+    /**
+     * 在 [scope] 区域中执行 [block]，用于维护 loop jump 可见性区域栈。
+     *
+     * 区域栈按循环结构压栈/出栈，保证 `while (break)` 与 `do {} while (break)`
+     * 这类“jump 位于条件内”的场景能按官方 `IsRefLoop` 语义绑定到外层循环。
+     */
+    private inline fun <T> withLoopJumpScope(scope: LoopJumpScope, block: () -> T): T {
+        components.context.loopJumpScopes.addLast(scope)
+        return try {
+            block()
+        } finally {
+            components.context.loopJumpScopes.removeLast()
+        }
+    }
+
     /** 解析 `break` 表达式，并将其类型固定为 `Nothing`。 */
     override fun transformBreakExpression(
         breakExpression: CfirBreakExpression,
         data: ResolutionMode,
     ): CfirExpression {
+        LoopJumpTargetResolver.bindLoopJump(breakExpression, components.context.loopJumpScopes)
         return transformLoopJumpLike(breakExpression, data)
     }
 
@@ -2880,6 +2898,7 @@ open class CfirExpressionsResolveTransformer(
         continueExpression: CfirContinueExpression,
         data: ResolutionMode,
     ): CfirExpression {
+        LoopJumpTargetResolver.bindLoopJump(continueExpression, components.context.loopJumpScopes)
         return transformLoopJumpLike(continueExpression, data)
     }
 
@@ -4162,7 +4181,9 @@ open class CfirExpressionsResolveTransformer(
         forInExpression: CfirForInExpression,
         data: ResolutionMode,
     ): CfirExpression {
-        forInExpression.iterable.resolveIndependently()
+        withLoopJumpScope(LoopJumpScope.ConditionPart(forInExpression)) {
+            forInExpression.iterable.resolveIndependently()
+        }
         val iterVarType = inferIterableElementType(forInExpression.iterable.coneTypeOrNull)
 
         val varDecl = forInExpression.variable
@@ -4192,10 +4213,21 @@ open class CfirExpressionsResolveTransformer(
             typeResolver = specificTypeResolverTransformer,
         )
 
+        // for-in 使用 while(true) 形态的 CFG 结构；break/continue 边依赖该结构，
+        // 否则循环体内的 jump 在 CFG 中会静默悬空。
+        components.dataFlowAnalyzer.enterWhileLoop(forInExpression)
+        components.dataFlowAnalyzer.exitWhileLoopCondition(forInExpression)
+
         withNewLocalScope {
             registerPatternBindings(varDecl.pattern)
-            forInExpression.transformBody(transformer, ResolutionMode.ContextIndependent)
+            withLoopJumpScope(LoopJumpScope.ConditionPart(forInExpression)) {
+                forInExpression.transformPatternGuard(transformer, ResolutionMode.ContextIndependent)
+            }
+            withLoopJumpScope(LoopJumpScope.Body(forInExpression)) {
+                forInExpression.transformBody(transformer, ResolutionMode.ContextIndependent)
+            }
         }
+        components.dataFlowAnalyzer.exitWhileLoop(forInExpression)
 
         forInExpression.replaceConeTypeOrNull(builtinTypes.unitType)
         return forInExpression
@@ -4237,23 +4269,35 @@ open class CfirExpressionsResolveTransformer(
         loopExpression.transformAnnotations(transformer, data)
         if (loopExpression.isDoWhile) {
             components.dataFlowAnalyzer.enterDoWhileLoop(loopExpression)
-            loopExpression.transformBody(transformer, ResolutionMode.ContextIndependent)
+            withLoopJumpScope(LoopJumpScope.Body(loopExpression)) {
+                loopExpression.transformBody(transformer, ResolutionMode.ContextIndependent)
+            }
             components.dataFlowAnalyzer.enterDoWhileLoopCondition(loopExpression)
-            loopExpression.transformCondition(transformer, ResolutionMode.ContextIndependent)
+            withLoopJumpScope(LoopJumpScope.ConditionPart(loopExpression)) {
+                loopExpression.transformCondition(transformer, ResolutionMode.ContextIndependent)
+            }
             components.dataFlowAnalyzer.exitDoWhileLoop(loopExpression)
         } else {
             components.dataFlowAnalyzer.enterWhileLoop(loopExpression)
             if (loopExpression.condition.containsLetPatternCondition()) {
                 withNewLocalScope {
-                    resolveConditionWithPatternBindings(loopExpression.condition)
+                    withLoopJumpScope(LoopJumpScope.ConditionPart(loopExpression)) {
+                        resolveConditionWithPatternBindings(loopExpression.condition)
+                    }
                     components.dataFlowAnalyzer.exitWhileLoopCondition(loopExpression)
-                    loopExpression.transformBody(transformer, ResolutionMode.ContextIndependent)
+                    withLoopJumpScope(LoopJumpScope.Body(loopExpression)) {
+                        loopExpression.transformBody(transformer, ResolutionMode.ContextIndependent)
+                    }
                     components.dataFlowAnalyzer.exitWhileLoop(loopExpression)
                 }
             } else {
-                loopExpression.transformCondition(transformer, ResolutionMode.ContextIndependent)
+                withLoopJumpScope(LoopJumpScope.ConditionPart(loopExpression)) {
+                    loopExpression.transformCondition(transformer, ResolutionMode.ContextIndependent)
+                }
                 components.dataFlowAnalyzer.exitWhileLoopCondition(loopExpression)
-                loopExpression.transformBody(transformer, ResolutionMode.ContextIndependent)
+                withLoopJumpScope(LoopJumpScope.Body(loopExpression)) {
+                    loopExpression.transformBody(transformer, ResolutionMode.ContextIndependent)
+                }
                 components.dataFlowAnalyzer.exitWhileLoop(loopExpression)
             }
         }

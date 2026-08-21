@@ -137,19 +137,9 @@ abstract class AbstractRawCfirBuilder<T : Any>(
         }
     }
 
-    /** 将 raw builder 构造出的 [function] 绑定到已创建的 [target]。 */
+/** 将 raw builder 构造出的 [function] 绑定到已创建的 [target]。 */
     protected open fun bindFunctionTarget(target: CfirFunctionTarget, function: CfirFunction) {
         target.bind(function)
-    }
-
-    /** 进入循环 target 作用域执行 [block]，用于绑定 break/continue 目标。 */
-    protected inline fun <R> withLoopTarget(target: CfirLoopTarget, block: () -> R): R {
-        context.enterLoop(target)
-        return try {
-            block()
-        } finally {
-            context.exitLoop()
-        }
     }
 
     /** 根据当前包、容器和局部语境构造 callable id。 */
@@ -333,84 +323,30 @@ abstract class AbstractRawCfirBuilder<T : Any>(
         }
     }
 
-    /**
-     * 参考 Kotlin FIR raw builder：
-     * `break/continue` 在构建阶段就要绑定到“当前函数内最近的循环”。
-     *
-     * 仓颉当前还没有公开的显式 loop target 语义，因此这里先只实现隐式最近循环绑定。
-     * 同时对齐 Kotlin FIR，把 `break` / `continue` 拆成不同节点，而不是再依赖枚举字段。
-     *
-     * 若当前函数内没有可见循环，就直接在 jump 自身上挂 `JumpOutsideLoop` 诊断。
+/**
+     * 构造 break 表达式，target 在 body resolve 阶段由
+     * [LoopJumpTargetResolver][org.cangnova.cangjie.cfir.resolve.body.resolve.LoopJumpTargetResolver]
+     * 按结构式区域栈绑定；raw 构建期不依赖循环顺序编码。
      */
-    protected fun buildBreakExpressionWithImplicitLoopTarget(
+    protected fun buildBreakExpression(
         source: CjSourceElement?,
     ): CfirBreakExpression {
-        return buildLoopJumpWithImplicitLoopTarget(source) { target, diagnostic ->
-            buildBreakExpression {
-                this.source = source
-                this.target = target
-                this.coneTypeOrNull = diagnostic?.let(::ConeErrorType)
-            }
+        return buildBreakExpression {
+            this.source = source
+            this.target = CfirLoopTarget(labelName = null)
         }
     }
 
     /**
-     * 构造绑定到当前函数内最近循环的 continue 表达式。
-     *
-     * 若当前函数体内没有可见循环，则构造带 `JumpOutsideLoop` 诊断的错误 loop target。
+     * 构造 continue 表达式，target 绑定策略与 [buildBreakExpression] 相同。
      */
-    protected fun buildContinueExpressionWithImplicitLoopTarget(
+    protected fun buildContinueExpression(
         source: CjSourceElement?,
     ): CfirContinueExpression {
-        return buildLoopJumpWithImplicitLoopTarget(source) { target, diagnostic ->
-            buildContinueExpression {
-                this.source = source
-                this.target = target
-                this.coneTypeOrNull = diagnostic?.let(::ConeErrorType)
-            }
-        }
-    }
-
-    /**
-     * 统一封装 loop jump 的隐式 target 绑定策略。
-     *
-     * target 负责回答“跳到哪个循环”，具体的 break/continue 形态
-     * 由调用方提供的 concrete builder 决定。
-     */
-    private inline fun <TJump : CfirLoopJump> buildLoopJumpWithImplicitLoopTarget(
-        source: CjSourceElement?,
-        buildJump: (target: CfirLoopTarget, diagnostic: ConeSimpleDiagnostic?) -> TJump,
-    ): TJump {
-        val currentTarget = context.currentLoopTargetInCurrentFunction()
-        val diagnostic = if (currentTarget == null) {
-            ConeSimpleDiagnostic(
-                reason = "'break' or 'continue' must be used inside a loop",
-                kind = DiagnosticKind.JumpOutsideLoop,
-            )
-        } else {
-            null
-        }
-        val target = currentTarget ?: buildErrorLoopTarget(source, diagnostic!!)
-        return buildJump(target, diagnostic)
-    }
-
-    /** 构造并绑定一个带 [diagnostic] 的错误循环 target。 */
-    protected fun buildErrorLoopTarget(
-        source: CjSourceElement?,
-        diagnostic: ConeSimpleDiagnostic,
-    ): CfirLoopTarget {
-        val target = CfirLoopTarget(labelName = null)
-        val errorLoop: CfirLoopExpression = buildLoopExpression {
+        return buildContinueExpression {
             this.source = source
-            this.condition = buildErrorExpression(source as? AbstractCjSourceElement, diagnostic.reason)
-            this.body = buildBlock {
-                this.source = source
-            }
-            this.isDoWhile = false
-            this.coneTypeOrNull = ConeErrorType(diagnostic)
+            this.target = CfirLoopTarget(labelName = null)
         }
-        target.bind(errorLoop)
-        return target
     }
 
     /**

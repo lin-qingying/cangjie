@@ -214,7 +214,14 @@ class CfirCallResolver(
             functionCall.replaceDispatchReceiver(null)
         }
         val isCollectionLiteralCall = collectionLiteralContext != null
-        val result = collectCandidates(
+        /*
+         * `~>` 产生的 `composition` 不是用户源码名字查找：官方通过
+         * `CreateRefExprInCore("composition")` 直接引用 core 声明。当前 LLT 使用的
+         * std.core cjo 没有导出这项内部声明，因此不能把它交给普通 tower，也不能让
+         * 当前文件的同名声明参与候选。其余调用仍保持统一的 scope-based discovery。
+         */
+        val compilerCoreIntrinsicResult = functionCall.compilerCoreIntrinsicResultOrNull(callee.name, resolutionMode)
+        val result = compilerCoreIntrinsicResult ?: collectCandidates(
             qualifiedAccess = functionCall,
             name = callee.name,
             origin = functionCall.origin,
@@ -225,8 +232,8 @@ class CfirCallResolver(
         var expectedCallKind: CallKind? = null
         var expectedCandidates: Collection<Candidate>? = null
         var matchedClassifier: CfirClassLikeSymbol<*>? = null
-        var classLikeCallResolved = false
-        if (!isCollectionLiteralCall && !result.hasExcludedCallableLookup) {
+        var classLikeCallResolved = compilerCoreIntrinsicResult != null
+        if (!classLikeCallResolved && !isCollectionLiteralCall && !result.hasExcludedCallableLookup) {
             val directVArrayTarget = functionCall.directVArrayConstructorTargetOrNull(callee.name)
             if (directVArrayTarget != null) {
                 effectiveResult = collectBuiltinArrayConstructorCandidates(
@@ -351,6 +358,24 @@ class CfirCallResolver(
         reportBodyResolutionErrorToOverloadByLambdaCandidate(nameReference, candidate)
         candidate?.updateSourcesOfReceivers()
         return functionCall
+    }
+
+    /**
+     * 为已有对应 CFIR 调用来源的 compiler-core intrinsic 建立候选。
+     *
+     * 这里不把缺失的 core 实现回退到普通 import/provider 查询；每个分支都必须有
+     * 官方解糖代码和固定签名作为依据。未知 intrinsic 返回 null，由调用者保留既有解析路径，
+     * 直到它拥有自己的语义模型。
+     */
+    private fun CfirFunctionCall.compilerCoreIntrinsicResultOrNull(
+        name: Name,
+        resolutionMode: ResolutionMode,
+    ): ResolutionResult? {
+        if (origin != CfirFunctionCallOrigin.CompilerCoreIntrinsic) return null
+        return when (name.asString()) {
+            "composition" -> collectCompilerCoreCompositionCandidates(this, name, resolutionMode)
+            else -> null
+        }
     }
 
     /**
@@ -3373,6 +3398,40 @@ class CfirCallResolver(
     }
 
     /**
+     * 收集 `std.core.composition<T1, T2, T3>` 的 compiler-core 候选。
+     *
+     * 官方定义的固定形状是
+     * `(T1 -> T2, T2 -> T3) -> T1 -> T3`。该声明是 `~>` 解糖的内部目标，
+     * 不是用户可见的普通顶层函数；因此以合成声明承载统一的泛型推断、参数映射和
+     * lambda 完成流程，而不依赖当前 std.core cjo 是否导出该内部符号。
+     */
+    private fun collectCompilerCoreCompositionCandidates(
+        functionCall: CfirFunctionCall,
+        name: Name,
+        resolutionMode: ResolutionMode,
+    ): ResolutionResult {
+        val callInfo = createCompilerCoreIntrinsicCallInfo(functionCall, name, resolutionMode)
+        val candidateFactory = CandidateFactory(transformer.resolutionContext, callInfo)
+        val candidate = candidateFactory.createCompilerCoreCompositionCandidate(callInfo)
+        val (reducedCandidates, applicability) = reduceCollectedCandidates(
+            candidates = listOf(candidate),
+            collectorApplicability = CandidateApplicability.HIDDEN,
+            isCandidateSuccessful = Candidate::isSuccessful,
+            candidateApplicability = Candidate::lowestApplicability,
+            fullyProcessCandidate = { currentCandidate ->
+                components.resolutionStageRunner.fullyProcessCandidate(currentCandidate, transformer.resolutionContext)
+            },
+            chooseMostSpecific = { currentCandidates -> currentCandidates },
+        )
+        return ResolutionResult(
+            info = callInfo,
+            applicability = applicability,
+            candidates = reducedCandidates,
+            forwardedDiagnostics = emptyList(),
+        ).reduceCandidatesByLambdaBody(functionCall)
+    }
+
+    /**
      * 根据目标数组种类和实参数量给出内建 Array/VArray 构造候选形状。
      *
      * 普通 Array 区分空数组、collection 构造、init 函数和重复元素；
@@ -3493,6 +3552,26 @@ class CfirCallResolver(
         name = name,
         origin = functionCall.origin,
         explicitReceiver = functionCall.explicitReceiver,
+        arguments = functionCall.argumentList.arguments,
+        isUsedAsGetClassReceiver = false,
+        typeArguments = functionCall.typeArguments,
+        session = session,
+        containingFile = components.file,
+        containingDeclarations = transformer.components.containingDeclarations,
+        resolutionMode = resolutionMode,
+    )
+
+    /** 为 compiler-core intrinsic 创建与源码调用共享的 [CallInfo]。 */
+    private fun createCompilerCoreIntrinsicCallInfo(
+        functionCall: CfirFunctionCall,
+        name: Name,
+        resolutionMode: ResolutionMode,
+    ): CallInfo = CallInfo(
+        callSite = functionCall,
+        callKind = CallKind.Function,
+        name = name,
+        origin = functionCall.origin,
+        explicitReceiver = null,
         arguments = functionCall.argumentList.arguments,
         isUsedAsGetClassReceiver = false,
         typeArguments = functionCall.typeArguments,

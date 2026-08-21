@@ -1277,10 +1277,11 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
     /**
      * for-in 循环表达式节点。
      */
-    val forInExpression: Element by element(Expression, name = "ForInExpression") {
+val forInExpression: Element by element(Expression, name = "ForInExpression") {
         parent(loopExpression)
         +field("variable", patternVariable, withTransform = true)
         +field("iterable", expression, withTransform = true)
+        +field("patternGuard", expression, nullable = true, withTransform = true)
         +field("body", block, withTransform = true)
     }
 

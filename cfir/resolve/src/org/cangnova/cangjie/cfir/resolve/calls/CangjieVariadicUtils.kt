@@ -21,9 +21,6 @@ import org.cangnova.cangjie.name.OperatorNameConventions
 internal fun Candidate.cangjieVariadicParameterForMapping(
     parameters: List<CfirValueParameter> = declaredParametersForMapping(),
 ): CfirValueParameter? {
-    // callable value 的参数来自函数值类型，不是声明上的普通 Array 形参；
-    // 函数值 arity 必须严格匹配，不能把最后一个 Array 参数重新解释成 variadic。
-    if (isCallableValueCall) return null
     val declaration = symbol.takeIf { it.isBound }?.cfir as? CfirDeclaration
     return parameters.cangjieVariadicParameterOrNull(declaration)
 }

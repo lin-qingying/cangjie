@@ -174,6 +174,7 @@ class CfirEnumTagFlowAnalyzer(
             val incoming = data.copy()
             val iterated = incoming.copy()
             forInExpression.variable.accept(this, iterated)
+            forInExpression.patternGuard?.accept(this, iterated)
             forInExpression.body.accept(this, iterated)
             data.replaceWith(FlowState.join(listOf(incoming, iterated)))
         }

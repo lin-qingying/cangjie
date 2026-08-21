@@ -24,6 +24,7 @@
 
 package org.cangnova.cangjie.cfir.resolve.calls.candidate
 
+import org.cangnova.cangjie.builtins.StandardNames
 import org.cangnova.cangjie.cfir.calls.ReceiverValue
 import org.cangnova.cangjie.cfir.common.moduleData
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationAttributes
@@ -1062,6 +1063,84 @@ class CandidateFactory(
                 coneType = ConeCStringType()
             }
             valueParameters.add(valueParameter)
+            body = null
+            this.symbol = symbol
+            name = callInfo.name
+            isMut = false
+        }
+
+        return createCandidate(
+            callInfo = callInfo,
+            symbol = symbol,
+            originScope = null,
+        )
+    }
+
+    /**
+     * 构造 compiler-core `composition<T1, T2, T3>` 候选。
+     *
+     * 官方 `DesugarCompositionExpr` 把 `f ~> g` 固定解糖为
+     * `std.core.composition(f, g)`，其签名为
+     * `(T1 -> T2, T2 -> T3) -> T1 -> T3`。此符号是编译器内部引用，
+     * 不能因为测试 stdlib cjo 未导出该实现就退化为用户作用域里的同名函数。
+     */
+    internal fun createCompilerCoreCompositionCandidate(callInfo: CallInfo): Candidate {
+        val symbol = CfirNamedFunctionSymbol(CallableId(StandardNames.FqNames.core, callInfo.name))
+        val typeParameters = buildSyntheticTypeParameters(
+            ownerSymbol = symbol,
+            parameters = listOf(
+                BuiltinConstructorTypeParameter(Name.identifier("T1")),
+                BuiltinConstructorTypeParameter(Name.identifier("T2")),
+                BuiltinConstructorTypeParameter(Name.identifier("T3")),
+            ),
+            source = callInfo.callSite.source,
+            origin = CfirDeclarationOrigin.Synthetic.Default,
+        )
+        val (inputType, intermediateType, outputType) = typeParameters.map { typeParameter ->
+            ConeTypeParameterTypeImpl(typeParameter.symbol.toLookupTag())
+        }
+        val firstFunctionType = ConeFunctionType(
+            parameterTypes = listOf(inputType),
+            returnType = intermediateType,
+        )
+        val secondFunctionType = ConeFunctionType(
+            parameterTypes = listOf(intermediateType),
+            returnType = outputType,
+        )
+        val valueParameters = listOf(
+            buildSyntheticValueParameter(
+                ownerSymbol = symbol,
+                parameterName = Name.identifier("f"),
+                parameterType = firstFunctionType,
+                isNamed = false,
+                source = callInfo.arguments.getOrNull(0)?.source ?: callInfo.callSite.source,
+                origin = CfirDeclarationOrigin.Synthetic.Default,
+            ),
+            buildSyntheticValueParameter(
+                ownerSymbol = symbol,
+                parameterName = Name.identifier("g"),
+                parameterType = secondFunctionType,
+                isNamed = false,
+                source = callInfo.arguments.getOrNull(1)?.source ?: callInfo.callSite.source,
+                origin = CfirDeclarationOrigin.Synthetic.Default,
+            ),
+        )
+
+        buildNamedFunction {
+            source = callInfo.callSite.source
+            moduleData = context.session.moduleData
+            resolvePhase = CfirResolvePhase.BODY_RESOLVE
+            origin = CfirDeclarationOrigin.Synthetic.Default
+            attributes = CfirDeclarationAttributes.EMPTY
+            isLocal = false
+            dispatchReceiverType = null
+            status = CfirDeclarationStatusImpl()
+            this.typeParameters.addAll(typeParameters)
+            returnTypeRef = buildResolvedTypeRef {
+                source = callInfo.callSite.source
+                coneType = ConeFunctionType(parameterTypes = listOf(inputType), returnType = outputType)
+            }
+            this.valueParameters.addAll(valueParameters)
             body = null
             this.symbol = symbol
             name = callInfo.name

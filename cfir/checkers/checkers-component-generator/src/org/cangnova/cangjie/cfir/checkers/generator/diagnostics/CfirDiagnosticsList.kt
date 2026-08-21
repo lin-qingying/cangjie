@@ -370,7 +370,9 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
         }
 
         // 函数值调用的实参数量与函数类型参数数量不一致
-        val WRONG_NUMBER_OF_ARGUMENTS by error<PsiElement>(PositioningStrategy.VALUE_ARGUMENTS_LIST)
+        // 函数值调用在参数映射阶段已经为 arity 错误构造精确的参数区域 source。
+        // 不能再次由 PSI/LT 定位策略回推，否则调用节点会覆盖该范围并把 callee 一并标红。
+        val WRONG_NUMBER_OF_ARGUMENTS by error<PsiElement>(PositioningStrategy.DEFAULT)
 
         // 泛型调用的类型映射无法使形参与实参兼容
         val PARAMETERS_AND_ARGUMENTS_MISMATCH by error<PsiElement>()

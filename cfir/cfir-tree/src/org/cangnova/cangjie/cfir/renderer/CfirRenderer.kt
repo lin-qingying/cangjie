@@ -1166,6 +1166,13 @@ class CfirRenderer(
             printer.pushIndent()
             forInExpression.iterable.accept(this)
             printer.popIndent()
+            val patternGuard = forInExpression.patternGuard
+            if (patternGuard != null) {
+                println("patternGuard:")
+                printer.pushIndent()
+                patternGuard.accept(this)
+                printer.popIndent()
+            }
             println("body:")
             printer.pushIndent()
             forInExpression.body.accept(this)
