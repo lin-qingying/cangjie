@@ -29,6 +29,7 @@ class CfirForInExpressionImpl @CfirImplementationDetail constructor(
     override val isDoWhile: Boolean,
     override var variable: CfirPatternVariable,
     override var iterable: CfirExpression,
+    override var patternGuard: CfirExpression?,
     override var body: CfirBlock,
 ) : CfirForInExpression() {
 
@@ -37,6 +38,7 @@ class CfirForInExpressionImpl @CfirImplementationDetail constructor(
         condition.accept(visitor, data)
         variable.accept(visitor, data)
         iterable.accept(visitor, data)
+        patternGuard?.accept(visitor, data)
         body.accept(visitor, data)
     }
 
@@ -45,6 +47,7 @@ class CfirForInExpressionImpl @CfirImplementationDetail constructor(
         transformCondition(transformer, data)
         transformVariable(transformer, data)
         transformIterable(transformer, data)
+        transformPatternGuard(transformer, data)
         transformBody(transformer, data)
         return this
     }
@@ -66,6 +69,11 @@ class CfirForInExpressionImpl @CfirImplementationDetail constructor(
 
     override fun <D> transformIterable(transformer: CfirTransformer<D>, data: D): CfirForInExpressionImpl {
         iterable = iterable.transform(transformer, data)
+        return this
+    }
+
+    override fun <D> transformPatternGuard(transformer: CfirTransformer<D>, data: D): CfirForInExpressionImpl {
+        patternGuard = patternGuard?.transform(transformer, data)
         return this
     }
 

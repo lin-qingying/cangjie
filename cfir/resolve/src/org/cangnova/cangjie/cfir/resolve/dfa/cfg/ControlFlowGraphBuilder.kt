@@ -38,6 +38,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirWrappedExpression
 import org.cangnova.cangjie.cfir.resolve.dfa.Stack
 import org.cangnova.cangjie.cfir.resolve.dfa.controlFlowGraph
 import org.cangnova.cangjie.cfir.resolve.dfa.cfg.CFGNode.Companion.addEdge as addEdgeStatic
+import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.resolve.dfa.isEmpty
 import org.cangnova.cangjie.cfir.resolve.dfa.isNotEmpty
 import org.cangnova.cangjie.cfir.resolve.dfa.stackOf
@@ -737,7 +738,12 @@ class ControlFlowGraphBuilder private constructor(
         }
     }
 
-    /** 退出 jump 表达式，并连接 return/break/continue 的非直接跳转边。 */
+/**
+     * 退出 jump 表达式，并连接 return/break/continue 的非直接跳转边。
+     *
+     * 带错误类型（如 `JumpOutsideLoop`）的 break/continue 没有合法目标，其 target
+     * 在 resolve 阶段不会绑定，这里跳过目标查找直接返回，等价于旧的错误 loop 行为。
+     */
     fun exitJump(jump: CfirJump<*>): JumpNode {
         val node = createJumpNode(jump)
         addNonSuccessfullyTerminatingNode(node)
@@ -746,10 +752,12 @@ class ControlFlowGraphBuilder private constructor(
             jumpDataFlowFromPostponedLambdas(jump.target.labeledElement.symbol)
         }
 
-        val nextNode = when (jump) {
-            is CfirReturnExpression -> exitTargetsForReturn[jump.target.labeledElement.symbol]
-            is CfirContinueExpression -> loopConditionEnterNodes[jump.target.labeledElement]
-            is CfirBreakExpression -> loopExitNodes[jump.target.labeledElement]
+        val nextNode = when {
+            jump.coneTypeOrNull is ConeErrorType -> null
+            jump is CfirReturnExpression -> exitTargetsForReturn[jump.target.labeledElement.symbol]
+            jump is CfirContinueExpression -> loopConditionEnterNodes[jump.target.labeledElement]
+            jump is CfirBreakExpression -> loopExitNodes[jump.target.labeledElement]
+            else -> null
         } ?: return node
 
         val nextFinally = finallyEnterNodes.topOrNull()?.takeIf { it.level > nextNode.level }

@@ -2195,9 +2195,9 @@ class PsiRawCfirBuilder(
             is CjWhileExpression -> convertWhile(psi)
             is CjDoWhileExpression -> convertDoWhile(psi)
             is CjReturnExpression -> convertReturn(psi)
-            is CjBreakExpression -> buildBreakExpressionWithImplicitLoopTarget(psi.toCjPsiSourceElement())
+            is CjBreakExpression -> buildBreakExpression(psi.toCjPsiSourceElement())
 
-            is CjContinueExpression -> buildContinueExpressionWithImplicitLoopTarget(psi.toCjPsiSourceElement())
+            is CjContinueExpression -> buildContinueExpression(psi.toCjPsiSourceElement())
 
             is CjThrowExpression -> convertThrow(psi)
             is CjPerformExpression -> convertPerform(psi)
@@ -3137,26 +3137,24 @@ class PsiRawCfirBuilder(
             }
             val iterable = psi.loopRange?.let { convertExpression(it) }
                 ?: buildErrorExpression(reason = "Missing for-in iterable")
-            val target = CfirLoopTarget(labelName = null)
-            val loop = withLoopTarget(target) {
-                val body = psi.body?.let { toBlock(it) } ?: buildBlock {
+            val patternGuard = psi.patternGuard
+                ?.children?.filterIsInstance<CjExpression>()?.firstOrNull()
+                ?.let { convertExpression(it) }
+            val loop = buildForInExpression {
+                source = psi.toCjPsiSourceElement()
+                this.condition = buildLiteralExpression {
                     source = psi.toCjPsiSourceElement()
+                    kind = CfirLiteralKind.BOOLEAN
+                    value = true
                 }
-
-                buildForInExpression {
+                this.isDoWhile = false
+                this.variable = variable
+                this.iterable = iterable
+                this.patternGuard = patternGuard
+                this.body = psi.body?.let { toBlock(it) } ?: buildBlock {
                     source = psi.toCjPsiSourceElement()
-                    this.condition = buildLiteralExpression {
-                        source = psi.toCjPsiSourceElement()
-                        kind = CfirLiteralKind.BOOLEAN
-                        value = true
-                    }
-                    this.isDoWhile = false
-                    this.variable = variable
-                    this.iterable = iterable
-                    this.body = body
                 }
             }
-            target.bind(loop)
             return loop
         }
 
@@ -3165,38 +3163,28 @@ class PsiRawCfirBuilder(
             val condition = psi.letExpression?.let { convertLetPatternExpression(it) }
                 ?: psi.condition?.let { convertExpression(it) }
                 ?: buildErrorExpression(reason = "Missing while condition")
-            val target = CfirLoopTarget(labelName = null)
-            val loop = withLoopTarget(target) {
-                buildLoopExpression {
+            return buildLoopExpression {
+                source = psi.toCjPsiSourceElement()
+                this.condition = condition
+                this.body = psi.body?.let { toBlock(it) } ?: buildBlock {
                     source = psi.toCjPsiSourceElement()
-                    this.condition = condition
-                    this.body = psi.body?.let { toBlock(it) } ?: buildBlock {
-                        source = psi.toCjPsiSourceElement()
-                    }
-                    isDoWhile = false
                 }
+                isDoWhile = false
             }
-            target.bind(loop)
-            return loop
         }
 
-        /** 转换 do-while 循环，并绑定其 loop target。 */
+        /** 转换 do-while 循环。 */
         private fun convertDoWhile(psi: CjDoWhileExpression): CfirLoopExpression {
-            val target = CfirLoopTarget(labelName = null)
-            val loop = withLoopTarget(target) {
-                val condition = psi.condition?.let { convertExpression(it) }
-                    ?: buildErrorExpression(reason = "Missing do-while condition")
-                buildLoopExpression {
+            val condition = psi.condition?.let { convertExpression(it) }
+                ?: buildErrorExpression(reason = "Missing do-while condition")
+            return buildLoopExpression {
+                source = psi.toCjPsiSourceElement()
+                this.condition = condition
+                this.body = psi.body?.let { toBlock(it) } ?: buildBlock {
                     source = psi.toCjPsiSourceElement()
-                    this.condition = condition
-                    this.body = psi.body?.let { toBlock(it) } ?: buildBlock {
-                        source = psi.toCjPsiSourceElement()
-                    }
-                    isDoWhile = true
                 }
+                isDoWhile = true
             }
-            target.bind(loop)
-            return loop
         }
 
         // ---- Jump & Exception ----

@@ -157,6 +157,15 @@ class BodyResolveContext(
     @set:PrivateForInline
     var containers: ArrayDeque<CfirDeclaration> = ArrayDeque()
 
+    /**
+     * 当前 loop jump 可见性区域栈。
+     *
+     * 由表达式 transformer 按循环结构区域维护（见 [LoopJumpScope]）；函数边界
+     * 由函数 body 解析入口统一压栈。`BodyResolveContext` 按文件共享，因此函数
+     * 边界的显式维护是必需而非优化。
+     */
+    val loopJumpScopes: ArrayDeque<LoopJumpScope> = ArrayDeque()
+
     /** 当前最内层声明容器；没有容器时返回 null。 */
     val containerIfAny: CfirDeclaration?
         get() = containers.lastOrNull()

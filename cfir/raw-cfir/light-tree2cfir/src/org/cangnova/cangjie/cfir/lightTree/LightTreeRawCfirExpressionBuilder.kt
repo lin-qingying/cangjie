@@ -28,7 +28,6 @@ import com.intellij.lang.LighterASTNode
 import com.intellij.psi.tree.IElementType
 import com.intellij.util.diff.FlyweightCapableTreeStructure
 import org.cangnova.cangjie.cfir.CfirFunctionTarget
-import org.cangnova.cangjie.cfir.CfirLoopTarget
 import org.cangnova.cangjie.cfir.builder.*
 import org.cangnova.cangjie.cfir.builder.macro.MacroPayloadTokenizer
 import org.cangnova.cangjie.cfir.declarations.*
@@ -132,8 +131,8 @@ class LightTreeRawCfirExpressionBuilder(
 
         // 跳转 / 异常
         CjNodeTypes.RETURN -> convertReturn(node)
-        CjNodeTypes.BREAK -> buildBreakExpressionWithImplicitLoopTarget(node.toSource())
-        CjNodeTypes.CONTINUE -> buildContinueExpressionWithImplicitLoopTarget(node.toSource())
+        CjNodeTypes.BREAK -> buildBreakExpression(node.toSource())
+        CjNodeTypes.CONTINUE -> buildContinueExpression(node.toSource())
         CjNodeTypes.THROW -> convertThrow(node)
         CjNodeTypes.PERFORM -> convertPerform(node)
         CjNodeTypes.RESUME -> convertResume(node)
@@ -1568,11 +1567,13 @@ class LightTreeRawCfirExpressionBuilder(
     private fun convertFor(node: LighterASTNode): CfirForInExpression {
         var patternNode: LighterASTNode? = null
         var rangeNode: LighterASTNode? = null
+        var guardNode: LighterASTNode? = null
         var bodyNode: LighterASTNode? = null
 
         tree.forEachChildren(node) { child ->
             when (child.tokenType) {
                 CjNodeTypes.LOOP_RANGE -> rangeNode = findFirstExpression(child)
+                CjNodeTypes.PATTERN_GUARD -> guardNode = findFirstExpression(child)
                 CjNodeTypes.BODY -> bodyNode = findFirstExpression(child)
                 else -> if (isPatternToken(child.tokenType)) {
                     patternNode = child
@@ -1609,24 +1610,21 @@ class LightTreeRawCfirExpressionBuilder(
 
         val iterable = rangeNode?.let { convertExpression(it) }
             ?: buildErrorExpression(reason = "Missing for-in iterable")
-        val target = CfirLoopTarget(labelName = null)
-        val loop = withLoopTarget(target) {
-            val body = bodyNode?.let { toBlock(it) } ?: buildBlock { source = node.toSource() }
+        val patternGuard = guardNode?.let { convertExpression(it) }
 
-            buildForInExpression {
+        val loop = buildForInExpression {
+            source = node.toSource()
+            this.condition = buildLiteralExpression {
                 source = node.toSource()
-                this.condition = buildLiteralExpression {
-                    source = node.toSource()
-                    kind = CfirLiteralKind.BOOLEAN
-                    value = true
-                }
-                this.isDoWhile = false
-                this.variable = variable
-                this.iterable = iterable
-                this.body = body
+                kind = CfirLiteralKind.BOOLEAN
+                value = true
             }
+            this.isDoWhile = false
+            this.variable = variable
+            this.iterable = iterable
+            this.patternGuard = patternGuard
+            this.body = bodyNode?.let { toBlock(it) } ?: buildBlock { source = node.toSource() }
         }
-        target.bind(loop)
         return loop
     }
 
@@ -1644,17 +1642,12 @@ class LightTreeRawCfirExpressionBuilder(
 
         val condition = condNode?.let { convertExpression(it) }
             ?: buildErrorExpression(reason = "Missing while condition")
-        val target = CfirLoopTarget(labelName = null)
-        val loop = withLoopTarget(target) {
-            buildLoopExpression {
-                source = node.toSource()
-                this.condition = condition
-                this.body = bodyNode?.let { toBlock(it) } ?: buildBlock { source = node.toSource() }
-                isDoWhile = false
-            }
+        return buildLoopExpression {
+            source = node.toSource()
+            this.condition = condition
+            this.body = bodyNode?.let { toBlock(it) } ?: buildBlock { source = node.toSource() }
+            isDoWhile = false
         }
-        target.bind(loop)
-        return loop
     }
 
     /** 转换 do-while 循环。 */
@@ -1669,19 +1662,14 @@ class LightTreeRawCfirExpressionBuilder(
             }
         }
 
-        val target = CfirLoopTarget(labelName = null)
-        val loop = withLoopTarget(target) {
-            val condition = condNode?.let { convertExpression(it) }
-                ?: buildErrorExpression(reason = "Missing do-while condition")
-            buildLoopExpression {
-                source = node.toSource()
-                this.condition = condition
-                this.body = bodyNode?.let { toBlock(it) } ?: buildBlock { source = node.toSource() }
-                isDoWhile = true
-            }
+        val condition = condNode?.let { convertExpression(it) }
+            ?: buildErrorExpression(reason = "Missing do-while condition")
+        return buildLoopExpression {
+            source = node.toSource()
+            this.condition = condition
+            this.body = bodyNode?.let { toBlock(it) } ?: buildBlock { source = node.toSource() }
+            isDoWhile = true
         }
-        target.bind(loop)
-        return loop
     }
 
     // ===== Jump & Exception =====

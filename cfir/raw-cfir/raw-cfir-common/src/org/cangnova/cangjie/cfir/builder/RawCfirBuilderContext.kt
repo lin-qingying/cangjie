@@ -1,7 +1,6 @@
 ﻿package org.cangnova.cangjie.cfir.builder
 
 import org.cangnova.cangjie.cfir.CfirFunctionTarget
-import org.cangnova.cangjie.cfir.CfirLoopTarget
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.types.ConeSimpleCangJieType
@@ -37,10 +36,6 @@ class Context<T> {
     private val localContextStack: ArrayDeque<Boolean> = ArrayDeque()
     /** 当前可绑定 return 的函数 target 栈。 */
     private val functionTargets: ArrayDeque<CfirFunctionTarget> = ArrayDeque()
-    /** 每个函数入口处 loop target 栈的基准大小。 */
-    private val loopBaseSizeAtFunctionEntry: ArrayDeque<Int> = ArrayDeque()
-    /** 当前可绑定 break/continue 的循环 target 栈。 */
-    private val loopTargets: ArrayDeque<CfirLoopTarget> = ArrayDeque()
     /** 当前可见 label 名称栈。 */
     private val labelNames: ArrayDeque<Name> = ArrayDeque()
     /** 当前声明容器符号栈。 */
@@ -110,51 +105,20 @@ class Context<T> {
     fun currentDispatchReceiverType(): ConeSimpleCangJieType? =
         dispatchReceiverTypesStack.lastOrNull()
 
-    /** 进入函数构建上下文，并记录该函数入口处 loop 栈基准。 */
+    /** 进入函数构建上下文。 */
     fun enterFunction(target: CfirFunctionTarget) {
         functionTargets.addLast(target)
-        loopBaseSizeAtFunctionEntry.addLast(loopTargets.size)
     }
 
-    /** 退出函数构建上下文，并恢复函数入口记录。 */
+    /** 退出函数构建上下文。 */
     fun exitFunction() {
         if (functionTargets.isNotEmpty()) {
             functionTargets.removeLast()
-        }
-        if (loopBaseSizeAtFunctionEntry.isNotEmpty()) {
-            loopBaseSizeAtFunctionEntry.removeLast()
         }
     }
 
     /** 当前可绑定 return 的函数 target。 */
     fun currentFunctionTarget(): CfirFunctionTarget? = functionTargets.lastOrNull()
-
-    /** 进入循环构建上下文。 */
-    fun enterLoop(target: CfirLoopTarget) {
-        loopTargets.addLast(target)
-    }
-
-    /** 退出循环构建上下文；空栈时保持幂等。 */
-    fun exitLoop() {
-        if (loopTargets.isNotEmpty()) {
-            loopTargets.removeLast()
-        }
-    }
-
-    /** 当前最近的 loop target，不考虑函数边界。 */
-    fun currentLoopTarget(): CfirLoopTarget? = loopTargets.lastOrNull()
-
-    /**
-     * 仅返回“当前函数边界以内”可见的最近循环目标。
-     *
-     * 这让 raw builder 可以像 Kotlin FIR 一样，在构建 jump 时区分：
-     * - 同一函数体内的隐式最近循环
-     * - 跨函数边界的外层循环（当前不允许 break/continue 穿透）
-     */
-    fun currentLoopTargetInCurrentFunction(): CfirLoopTarget? {
-        val visibleLoopBase = loopBaseSizeAtFunctionEntry.lastOrNull() ?: 0
-        return if (loopTargets.size > visibleLoopBase) loopTargets.lastOrNull() else null
-    }
 
     /** 压入当前 label 名称。 */
     fun pushLabel(name: Name) {

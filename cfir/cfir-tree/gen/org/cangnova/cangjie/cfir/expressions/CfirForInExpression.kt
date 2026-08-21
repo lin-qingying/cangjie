@@ -23,6 +23,7 @@ abstract class CfirForInExpression : CfirLoopExpression() {
     abstract override val isDoWhile: Boolean
     abstract val variable: CfirPatternVariable
     abstract val iterable: CfirExpression
+    abstract val patternGuard: CfirExpression?
     abstract override val body: CfirBlock
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
@@ -43,6 +44,8 @@ abstract class CfirForInExpression : CfirLoopExpression() {
     abstract fun <D> transformVariable(transformer: CfirTransformer<D>, data: D): CfirForInExpression
 
     abstract fun <D> transformIterable(transformer: CfirTransformer<D>, data: D): CfirForInExpression
+
+    abstract fun <D> transformPatternGuard(transformer: CfirTransformer<D>, data: D): CfirForInExpression
 
     abstract override fun <D> transformBody(transformer: CfirTransformer<D>, data: D): CfirForInExpression
 }

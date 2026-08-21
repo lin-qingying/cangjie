@@ -259,6 +259,15 @@ object CfirMapArguments : ResolutionStage() {
             ),
         )
         candidate.initializeVariadicEligibleArguments(variadicEligibleArguments)
+        if (result === variadicResult) {
+            /*
+             * 官方 `ChkVariadicCallExpr` 仅在普通调用的形参映射已失败时，才把
+             * 该组位置实参整体解糖为一个 ArrayLit 后重试。此时每个实参都属于
+             * 该合成数组的元素，包括本身为数组字面量的实参；不能再把其中一部分
+             * 当作原 Array 形参做普通检查，否则 `f([1, 2], 3)` 会被错误接受。
+             */
+            variadicEligibleArguments.forEach(candidate::markVariadicArgument)
+        }
         if (result.isEmptyVariadicCall) candidate.markEmptyVariadicCall()
         candidate.numDefaults = result.numDefaults
         result.nonBlockingDiagnostics.forEach(candidate::addNonBlockingResolutionDiagnostic)
@@ -301,6 +310,24 @@ object CfirMapArguments : ResolutionStage() {
             // 函数值的形参没有可引用的声明名称；命名语法逐项报告，但仍严格按位置映射，
             // 使同一个实参可以继续进入普通期望类型与类型不匹配检查。
             if (candidate.isCallableValueCall) {
+                /*
+                 * 函数值的最后一个 `Array<T>` 同样遵循普通变参规则。这里不能因为
+                 * 函数值不支持命名形参就绕过 [variadicInfo]：否则 `f(1)` 会仍以
+                 * `Array<T>` 检查 `1`，而不是在普通数组形参检查失败后以元素类型
+                 * `T` 重试。后续 CfirCheckArguments 依据 eligible 集合决定是否真正
+                 * 采用该重试，故 Array 实参本身仍保留普通调用语义。
+                 */
+                if (variadicInfo != null && nextPositionalIndex >= variadicInfo.fixedPositionalArity) {
+                    usedParameters.add(variadicInfo.parameter)
+                    argumentMapping[argument.atom] = variadicInfo.parameter
+                    variadicEligibleArguments += argument.atom
+                    nextPositionalIndex = variadicInfo.fixedPositionalArity + 1
+                    if (argumentName != null) {
+                        nonBlockingDiagnostics += UnsupportedNamedArgument(argument.nameSourceOrFail())
+                    }
+                    continue
+                }
+
                 val parameter = parameters.getOrNull(nextPositionalIndex)
                 if (parameter == null) {
                     diagnostics.addWrongNumberOfArguments(callShape, parameters.size)

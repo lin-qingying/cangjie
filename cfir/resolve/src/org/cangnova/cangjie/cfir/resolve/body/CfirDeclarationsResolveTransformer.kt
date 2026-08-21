@@ -46,6 +46,7 @@ import org.cangnova.cangjie.cfir.resolve.dfa.CfirControlFlowGraphReferenceImpl
 import org.cangnova.cangjie.cfir.resolve.localLambdaInitializerInferenceData
 import org.cangnova.cangjie.cfir.semantics.ErrorTypeInArguments
 import org.cangnova.cangjie.cfir.resolve.transformers.CfirSpecificTypeResolverTransformer
+import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.LoopJumpScope
 import org.cangnova.cangjie.cfir.resolve.withExpectedType
 import org.cangnova.cangjie.cfir.resolvedTypeFromPrototype
 import org.cangnova.cangjie.cfir.patterns.visibleBindingVariables
@@ -313,36 +314,40 @@ open class CfirDeclarationsResolveTransformer(
      * 当 `shouldResolveEverything` 为 true 时先解析签名和注解，再按返回类型决定 body 的期望类型，
      * 最后退出函数级 DFA 并把 CFG 写回函数。
      */
-    protected open fun transformFunctionContent(
+protected open fun transformFunctionContent(
         function: CfirFunction,
         resolutionModeForBody: ResolutionMode,
         shouldResolveEverything: Boolean,
     ): CfirFunction {
         dataFlowAnalyzer.enterFunction(function)
-
-        if (shouldResolveEverything) {
-            // 对齐 Kotlin FIR：函数完整 body resolve 必须先解析返回类型、参数默认值和注解，
-            // 否则默认参数里的调用不会进入统一的调用解析与诊断流水线。
-            function
-                .transformReturnTypeRef(transformer, ResolutionMode.ContextIndependent)
-                .transformValueParameters(transformer, ResolutionMode.ContextIndependent)
-                .transformAnnotations(transformer, ResolutionMode.ContextIndependent)
-        }
-
-        val body = function.body
-        if (body != null) {
-            val declaredReturnTypeRef = function.returnTypeRef
-                .takeUnless { function.hasImplicitOrInferredReturnType() }
-            val bodyResolutionMode = when {
-                function !is CfirAnonymousFunction && declaredReturnTypeRef?.coneTypeOrNull?.isUnit == true ->
-                    ResolutionMode.ContextIndependent
-                declaredReturnTypeRef != null -> withExpectedType(declaredReturnTypeRef)
-                else -> resolutionModeForBody
+        context.loopJumpScopes.addLast(LoopJumpScope.FunctionBoundary)
+        try {
+            if (shouldResolveEverything) {
+                // 对齐 Kotlin FIR：函数完整 body resolve 必须先解析返回类型、参数默认值和注解，
+                // 否则默认参数里的调用不会进入统一的调用解析与诊断流水线。
+                function
+                    .transformReturnTypeRef(transformer, ResolutionMode.ContextIndependent)
+                    .transformValueParameters(transformer, ResolutionMode.ContextIndependent)
+                    .transformAnnotations(transformer, ResolutionMode.ContextIndependent)
             }
-            function.transformBody(transformer, bodyResolutionMode)
+
+            val body = function.body
+            if (body != null) {
+                val declaredReturnTypeRef = function.returnTypeRef
+                    .takeUnless { function.hasImplicitOrInferredReturnType() }
+                val bodyResolutionMode = when {
+                    function !is CfirAnonymousFunction && declaredReturnTypeRef?.coneTypeOrNull?.isUnit == true ->
+                        ResolutionMode.ContextIndependent
+                    declaredReturnTypeRef != null -> withExpectedType(declaredReturnTypeRef)
+                    else -> resolutionModeForBody
+                }
+                function.transformBody(transformer, bodyResolutionMode)
+            }
+            function.replaceControlFlowGraphReference(dataFlowAnalyzer.exitFunction(function))
+            return function
+        } finally {
+            context.loopJumpScopes.removeLast()
         }
-        function.replaceControlFlowGraphReference(dataFlowAnalyzer.exitFunction(function))
-        return function
     }
 
     /**
@@ -427,25 +432,29 @@ open class CfirDeclarationsResolveTransformer(
     ): CfirConstructor {
         val owningClass = context.containerIfAny as? CfirClass
 
-        dataFlowAnalyzer.enterFunction(constructor)
+dataFlowAnalyzer.enterFunction(constructor)
+        context.loopJumpScopes.addLast(LoopJumpScope.FunctionBoundary)
+        try {
+            context.forConstructor(constructor) {
+                constructor.transformTypeParameters(transformer, data)
+                    .transformAnnotations(transformer, data)
+                    .transformReturnTypeRef(transformer, data)
 
-        context.forConstructor(constructor) {
-            constructor.transformTypeParameters(transformer, data)
-                .transformAnnotations(transformer, data)
-                .transformReturnTypeRef(transformer, data)
+                context.forConstructorParameters(constructor, owningClass, components) {
+                    constructor.transformValueParameters(transformer, data)
+                }
+                transformDelegatedConstructorCall(constructor, data)
+                context.forConstructorBody(constructor, session) {
+                    constructor.transformBody(transformer, data)
+                }
+            }
 
-            context.forConstructorParameters(constructor, owningClass, components) {
-                constructor.transformValueParameters(transformer, data)
-            }
-            transformDelegatedConstructorCall(constructor, data)
-            context.forConstructorBody(constructor, session) {
-                constructor.transformBody(transformer, data)
-            }
+            val controlFlowGraphReference = dataFlowAnalyzer.exitFunction(constructor)
+            constructor.replaceControlFlowGraphReference(controlFlowGraphReference)
+            return constructor
+        } finally {
+            context.loopJumpScopes.removeLast()
         }
-
-        val controlFlowGraphReference = dataFlowAnalyzer.exitFunction(constructor)
-        constructor.replaceControlFlowGraphReference(controlFlowGraphReference)
-        return constructor
     }
 
     /**

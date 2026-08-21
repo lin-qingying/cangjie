@@ -29,6 +29,7 @@ class CfirForInExpressionBuilder {
     var isDoWhile: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
     lateinit var variable: CfirPatternVariable
     lateinit var iterable: CfirExpression
+    var patternGuard: CfirExpression? = null
     lateinit var body: CfirBlock
 
     @OptIn(CfirImplementationDetail::class)
@@ -41,6 +42,7 @@ class CfirForInExpressionBuilder {
             isDoWhile,
             variable,
             iterable,
+            patternGuard,
             body,
         )
     }
@@ -68,6 +70,7 @@ inline fun buildForInExpressionCopy(original: CfirForInExpression, init: CfirFor
     copyBuilder.isDoWhile = original.isDoWhile
     copyBuilder.variable = original.variable
     copyBuilder.iterable = original.iterable
+    copyBuilder.patternGuard = original.patternGuard
     copyBuilder.body = original.body
     return copyBuilder.apply(init).build()
 }
