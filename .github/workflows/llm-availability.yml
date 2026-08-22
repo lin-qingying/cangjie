@@ -2,9 +2,9 @@
 #
 # 行为：
 # 1. 向 https://anyrouter.top/v1/responses 发送输入 "hi"（模型 gpt-5.6-sol，Responses 接口），
-#    直到返回 HTTP 200；
-# 2. 返回 200 后通过创建 GitHub Issue 通知仓库所有者；
-# 3. 超过最大请求次数仍未返回 200，本次运行以失败结束（可配合仓库的
+#    直到返回 HTTP 200 或 HTTP 400（400 说明服务端已正常处理并响应，视为可用）；
+# 2. 返回 200/400 后通过创建 GitHub Issue 通知仓库所有者；
+# 3. 超过最大请求次数仍未返回 200/400，本次运行以失败结束（可配合仓库的
 #    “Actions 运行失败”通知使用）。
 #
 # 使用前：
@@ -66,8 +66,8 @@ jobs:
           fi
           echo "ANYKEY 已配置 ✔"
 
-      # 根据上一次请求结果决定是否继续：200 → 通知并停止；非 200 → 间隔后继续请求
-      - name: 循环请求直到返回 HTTP 200
+      # 根据上一次请求结果决定是否继续：200/400 → 通知并停止；其他 → 间隔后继续请求
+      - name: 循环请求直到返回 HTTP 200 或 400
         id: probe
         env:
           ANYKEY: ${{ secrets.ANYKEY }}
@@ -88,24 +88,25 @@ jobs:
               -d "{\"model\": \"${MODEL}\", \"input\": \"${TEST_MESSAGE}\"}" \
               "${API_BASE}/responses" || true)"
 
-            if [ "${http_code}" = "200" ]; then
-              echo "✔ 第 ${attempt} 次请求返回 HTTP 200，服务可用"
+            if [ "${http_code}" = "200" ] || [ "${http_code}" = "400" ]; then
+              echo "✔ 第 ${attempt} 次请求返回 HTTP ${http_code}，服务可用（200/400 均视为成功）"
               echo "available=true" >> "${GITHUB_OUTPUT}"
               echo "attempt=${attempt}" >> "${GITHUB_OUTPUT}"
+              echo "http_code=${http_code}" >> "${GITHUB_OUTPUT}"
               break
             fi
 
             echo "✘ 第 ${attempt}/${MAX_ATTEMPTS} 次请求返回 HTTP ${http_code}"
             echo "  响应摘要：$(head -c 200 /tmp/llm_probe_body 2>/dev/null | tr -d '\0' || true)"
             if [ "${attempt}" -ge "${MAX_ATTEMPTS}" ]; then
-              echo "::error::连续 ${MAX_ATTEMPTS} 次请求均未返回 200，本次检测放弃"
+              echo "::error::连续 ${MAX_ATTEMPTS} 次请求均未返回 200/400，本次检测放弃"
               exit 1
             fi
             echo "  ${INTERVAL_SECONDS} 秒后继续请求..."
             sleep "${INTERVAL_SECONDS}"
           done
 
-      # 仅当返回 200 时执行：通过 GitHub Issue 通知
+      # 仅当返回 200/400 时执行：通过 GitHub Issue 通知
       - name: 通过 GitHub Issue 通知可用
         if: steps.probe.outputs.available == 'true'
         env:
@@ -116,6 +117,7 @@ jobs:
           ISSUE_TITLE: ${{ env.ISSUE_TITLE }}
           ISSUE_KEYWORD: ${{ env.ISSUE_KEYWORD }}
           ATTEMPT: ${{ steps.probe.outputs.attempt }}
+          HTTP_CODE: ${{ steps.probe.outputs.http_code }}
         run: |
           set -u
           now="$(date -u '+%Y-%m-%d %H:%M:%S UTC')"
@@ -137,7 +139,7 @@ jobs:
           - 接口地址：${API_BASE}/responses
           - 测试消息：${TEST_MESSAGE}
           - 检测模型：${MODEL}
-          - 状态码：HTTP 200
+          - 状态码：HTTP ${HTTP_CODE}（200/400 均视为可用）
           - 成功请求：第 ${ATTEMPT} 次
           - 检测时间：${now}
           - 运行记录：[Actions run #${GITHUB_RUN_NUMBER}](https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID})
