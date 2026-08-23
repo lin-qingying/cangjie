@@ -1,15 +1,17 @@
 
 
 
+
 class X {}
 
 interface Y {}
 
 class R<T> where T <: X & Y {}
 
-var a = <!GENERIC_ARGUMENT_NO_MATCH!>R<X>()<!>
-var b = <!GENERIC_ARGUMENT_NO_MATCH!>R<Y>()<!>
+var a = R<<!GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT, GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT!>X<!>>()
+var b = R<<!GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT, GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT!>Y<!>>()
 
 main(): Int64 {
     return 0
 }
+

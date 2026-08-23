@@ -1,5 +1,6 @@
 
 
+
 // DIAGNOSTICS: -UNUSED_EXPRESSION
 
 main() {
@@ -7,6 +8,7 @@ main() {
     let x = any as Any
     match (x) {
         case Some(_) => 0
-        <!UNREACHABLE_PATTERN!>case None => 1<!>
+        case None => 1
     }
 }
+

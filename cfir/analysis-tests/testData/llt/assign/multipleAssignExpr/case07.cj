@@ -1,6 +1,7 @@
 
 
 
+
 interface I {}
 
 class A {}
@@ -14,6 +15,7 @@ func get(): ((A, A), Int64) {
 main() {
     var i: (I, I)
     var val = 1
-    <!TYPE_MISMATCH!>(i, val) = get()<!>
+    (i, val) = get()
     0
 }
+

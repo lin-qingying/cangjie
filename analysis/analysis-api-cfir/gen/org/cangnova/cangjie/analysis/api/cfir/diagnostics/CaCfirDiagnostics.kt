@@ -768,10 +768,6 @@ sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
         val typeName: Name
     }
 
-    interface ParseThisTypeNotAllow : CaCfirDiagnostic<CjTypeReference> {
-        override val diagnosticClass get() = ParseThisTypeNotAllow::class
-    }
-
     interface InvalidPositionOfThisType : CaCfirDiagnostic<CjTypeReference> {
         override val diagnosticClass get() = InvalidPositionOfThisType::class
     }

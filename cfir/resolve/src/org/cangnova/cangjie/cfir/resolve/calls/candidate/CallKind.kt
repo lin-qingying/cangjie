@@ -4,6 +4,7 @@ import org.cangnova.cangjie.cfir.resolve.calls.stages.CfirCheckArguments
 import org.cangnova.cangjie.cfir.resolve.calls.stages.CfirCheckCallableReferenceExpectedType
 import org.cangnova.cangjie.cfir.resolve.calls.stages.CfirCheckDispatchReceiver
 import org.cangnova.cangjie.cfir.resolve.calls.stages.CfirCheckExtensionReceiver
+import org.cangnova.cangjie.cfir.resolve.calls.stages.CfirCheckExpectedReturnTypeAfterArguments
 import org.cangnova.cangjie.cfir.resolve.calls.stages.CfirCheckExpectedReturnTypeBeforeArguments
 import org.cangnova.cangjie.cfir.resolve.calls.stages.CfirCheckVisibility
 import org.cangnova.cangjie.cfir.resolve.calls.stages.CfirCreateFreshTypeVariableSubstitutorStage
@@ -33,6 +34,7 @@ sealed class CallKind(
         CfirCheckExtensionReceiver,
         CfirCheckExpectedReturnTypeBeforeArguments,
         CfirCheckArguments,
+        CfirCheckExpectedReturnTypeAfterArguments,
         CfirEagerResolveOfCallableReferences,
     )
 
@@ -78,6 +80,7 @@ sealed class CallKind(
         CfirCheckDispatchReceiver,
         CfirCheckExpectedReturnTypeBeforeArguments,
         CfirCheckArguments,
+        CfirCheckExpectedReturnTypeAfterArguments,
         CfirEagerResolveOfCallableReferences,
     )
 }

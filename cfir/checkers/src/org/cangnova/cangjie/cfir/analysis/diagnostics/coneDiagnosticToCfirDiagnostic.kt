@@ -859,7 +859,13 @@ private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
             is WrongNumberOfArguments -> CfirErrors.WRONG_NUMBER_OF_ARGUMENTS.on(
                 rootCause.source,
                 session,
-            )
+            ).also {
+                System.err.println(
+                    "CFIR_VARIADIC_ARITY_DIAGNOSTIC root=${rootCause.source.startOffset}..${rootCause.source.endOffset} " +
+                        "source=${source?.startOffset}..${source?.endOffset} " +
+                        "call=${qualifiedAccessSource?.startOffset}..${qualifiedAccessSource?.endOffset}"
+                )
+            }
 
             else -> genericDiagnostic
         }
@@ -2267,9 +2273,6 @@ private fun ConeDiagnostic.mapOtherDiagnostic(
                 // CaptureBeforeInitialization 需要变量名，但 ConeSimpleDiagnostic 不携带。
                 // 使用 reason 字符串中提取的名称，或者使用结构化 Cone 诊断类。
                 null
-
-            DiagnosticKind.ThisTypeNotAllowed ->
-                CfirErrors.parse_this_type_not_allow.on(source ?: diagnosticSource, session)
 
             DiagnosticKind.InvalidThisTypePosition ->
                 CfirErrors.INVALID_POSITION_OF_THIS_TYPE.on(source ?: diagnosticSource, session)

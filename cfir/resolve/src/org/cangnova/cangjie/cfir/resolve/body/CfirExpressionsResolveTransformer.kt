@@ -2104,6 +2104,22 @@ open class CfirExpressionsResolveTransformer(
     // ── Block ─────────────────────────────────────────────────────────────────
 
     /**
+     * 解析 `unsafe` 块表达式。
+     *
+     * `unsafe` 只放开非安全操作，不改变结果类型：表达式类型即块体类型。官方探针
+     * `let v: Int64 = unsafe { this }` 报告 `found 'This'`，即 `This` 视图也原样穿过。
+     * 表达式类型缺失会让所有以 `coneTypeOrNull` 为前提的检查静默跳过整段 `unsafe` 结果。
+     */
+    override fun transformUnsafeExpression(
+        unsafeExpression: CfirUnsafeExpression,
+        data: ResolutionMode,
+    ): CfirExpression {
+        unsafeExpression.transformBody(transformer, data)
+        unsafeExpression.replaceConeTypeOrNull(unsafeExpression.body.coneTypeOrNull)
+        return unsafeExpression
+    }
+
+    /**
      * 解析块表达式并把块类型同步为尾表达式类型。
      *
      * 非尾语句独立解析，尾语句继承外层 expected type；这保证 `if`、`try`、`match`
@@ -2637,15 +2653,22 @@ open class CfirExpressionsResolveTransformer(
         val elseType = ifExpression.elseBranch?.coneTypeOrNull
         val branchErrorType = listOfNotNull(thenType as? ConeErrorType, elseType as? ConeErrorType)
             .firstOrNull()
+        // 对齐官方 `SynIfExpr`（`external/cangjie_compiler/src/Sema/TypeCheckExpr/IfExpr.cpp`）：
+        // 综合模式下两个分支类型先经 `ReplaceThisTy` 把 `This` 视图退化为普通类类型再 Join，
+        // 因此 `(if (c) { this } else { this }).foo()` 的接收者是普通类类型而非 `This`。
+        // 带目标类型的 `ChkIfExpr` 路径不做该退化，`func f(): This { if ... }` 的分支仍保持 `This`。
+        val isSynthesizedIfExpression = data.expectedTypeOrNull == null
+        val joinedThenType = if (isSynthesizedIfExpression) thenType?.approximateThisTypeForDeclaration() else thenType
+        val joinedElseType = if (isSynthesizedIfExpression) elseType?.approximateThisTypeForDeclaration() else elseType
         val mergedType = when {
             // 分支错误已经由分支表达式自身报告；if 只传播 InvalidTy 语义，
             // 避免把同一个分支诊断重新挂到组合表达式上。
             branchErrorType != null -> ConeErrorType(ConeUnreportedDuplicateDiagnostic(branchErrorType.diagnostic))
             isIfWithoutEndingElse -> builtinTypes.unitType
-            thenType == null -> elseType ?: builtinTypes.unitType
-            elseType == null -> builtinTypes.unitType
-            thenType == elseType -> thenType
-            else -> commonSupertype(listOf(thenType, elseType))
+            joinedThenType == null -> joinedElseType ?: builtinTypes.unitType
+            joinedElseType == null -> builtinTypes.unitType
+            joinedThenType == joinedElseType -> joinedThenType
+            else -> commonSupertype(listOf(joinedThenType, joinedElseType))
         }
         val resultType = IdealTypeResolver.resolveIfIdeal(mergedType, data.expectedTypeOrNull)
         recordAssignmentRhsTypeMismatchIfNeeded(ifExpression, resultType)

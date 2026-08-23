@@ -839,10 +839,9 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
             parameter<Name>("typeName")
         }
 
-        // This 类型只允许出现在 class 实例成员函数返回类型中。
-        val parse_this_type_not_allow by error<CjTypeReference>()
-
         // This 类型出现在 parser 允许、但 Sema 禁止的位置，例如 class static 成员函数返回类型。
+        // 对齐官方 `sema_invalid_position_of_this_type`；其余 `This` 位置由 parser 负责，
+        // CFIR 作为语义层不重复报告（官方 `CheckThisTypeOfFuncBody` 同样只检查 static）。
         val INVALID_POSITION_OF_THIS_TYPE by error<CjTypeReference>()
 
         // 可见性错误：成员在当前上下文不可见

@@ -35,9 +35,9 @@ import org.cangnova.cangjie.cfir.types.ConeCangJieType
 /**
  * `This` 类型解析语境。
  *
- * 仓颉官方编译器即使在 static、extend 或嵌套函数等非法位置报告
- * `This` 诊断，也会保留足够的 ClassThisTy/接收者类型信息供后续调用结果绑定，
- * 避免把一个非法 `This` 级联成无关的成员找不到或类型推断失败。
+ * 仓颉官方编译器即使在 static 等非法位置报告 `This` 诊断，也会保留足够的
+ * ClassThisTy/接收者类型信息供后续调用结果绑定，避免把一个非法 `This` 级联成
+ * 无关的成员找不到或类型推断失败。
  */
 data class ThisTypeResolutionContext(
     /**
@@ -51,16 +51,8 @@ data class ThisTypeResolutionContext(
     /**
      * 禁止使用 `This` 时应报告的诊断种类。
      */
-    val disallowedDiagnosticKind: DiagnosticKind = DiagnosticKind.ThisTypeNotAllowed,
-) {
-    /**
-     * 复用当前接收者类型创建“不允许使用”的语境。
-     *
-     * 解析器仍保留 [type] 以便后续成员绑定继续工作，诊断阶段通过 [isAllowed] 决定是否报告。
-     */
-    fun asDisallowed(): ThisTypeResolutionContext =
-        if (!isAllowed) this else copy(isAllowed = false)
-}
+    val disallowedDiagnosticKind: DiagnosticKind = DiagnosticKind.InvalidThisTypePosition,
+)
 
 /**
  * 对齐 Kotlin `TypeResolutionConfiguration` 的类型解析配置。

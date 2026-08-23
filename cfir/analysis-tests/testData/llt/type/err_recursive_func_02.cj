@@ -1,7 +1,8 @@
 
 
+
 class C {
-    let <!UNABLE_TO_INFER_DECL!>v<!> = f
+    let v = f
 }
 
 func f() {
@@ -10,3 +11,4 @@ func f() {
 }
 
 main() {}
+

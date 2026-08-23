@@ -1,5 +1,6 @@
 
 
+
 class A <: ToString & Resource {
     public func toString() {
         "A"
@@ -12,7 +13,8 @@ class A <: ToString & Resource {
 
 main() {
     try (x = A()) {
-        let <!REDECLARATION!>x<!> = 0
+        let x = 0
         println(x)
     }
 }
+

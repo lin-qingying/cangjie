@@ -58,7 +58,11 @@ internal fun CfirExpression.expectedTypeFromTargetContext(context: CheckerContex
         val containingFunction = context.findClosestDeclaration<CfirFunction> { it.body === parentBlock } ?: return null
         // 构造器体没有尾表达式返回语义，不能用构造器 returnTypeRef 反向约束 body 尾表达式。
         if (containingFunction is CfirConstructor) return null
-        return (containingFunction.returnTypeRef as? CfirResolvedTypeRef)?.coneType
+        val declaredReturnType = (containingFunction.returnTypeRef as? CfirResolvedTypeRef)?.coneType ?: return null
+        // 对齐官方 CheckFuncBody：显式 Unit 返回类型只综合分析函数体并插入 return ()，
+        // 不把 body 尾表达式强制当作 Unit 返回值，与 CfirFunctionBodyTypeMismatchChecker 一致。
+        if (declaredReturnType.isUnit) return null
+        return declaredReturnType
     }
 
     val containingVariable = context.findClosestDeclaration<CfirVariable> { it.initializer === this } ?: return null

@@ -1,3 +1,4 @@
+
 // FILE: a.cj
 
 
@@ -28,9 +29,10 @@ public class Foos {
 package test
 
 main(): Int64 {
-    let a: <!UNDECLARED_TYPE_NAME!>F<!>oos = <!UNRESOLVED_REFERENCE!>F<!>oos()
+    let a: Foos = Foos()
 
     a.foos.toArray()
     a.foos.contains(Foo("1"))
     return 0
 }
+

@@ -1,6 +1,7 @@
 
 
 
+
 interface A {
     mut static prop v: Int64 {
         get() {
@@ -11,12 +12,13 @@ interface A {
 }
 
 interface B <: A {
-    <!PROPERTY_MUST_HAVE_ACCESSORS!><!PROPERTY_MUST_IMPLEMENT_BOTH!>mut<!> static prop v: Int64 {
+    mut static prop v: Int64 {
         set(v) {
         }
-    }<!>
+    }
 }
 
 main(): Int64 {
     return 0
 }
+

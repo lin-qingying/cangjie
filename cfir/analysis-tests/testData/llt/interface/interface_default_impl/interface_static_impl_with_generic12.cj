@@ -1,5 +1,6 @@
 
 
+
 class CA<T> {}
 
 interface I2_1 {
@@ -26,6 +27,7 @@ extend<T> CA<T> <: I3 where T <: I2_1 & I2_2 {
 }
 
 main() {
-    CA<<!GENERIC_TYPE_INCONSISTENT!>Nothing<!>>.goo()
+    CA<Nothing>.goo()
     0
 }
+

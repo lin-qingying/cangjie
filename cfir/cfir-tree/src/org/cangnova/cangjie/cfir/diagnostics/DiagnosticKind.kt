@@ -134,11 +134,6 @@ enum class DiagnosticKind {
     CaptureBeforeInitialization,
 
     /**
-     * 当前位置不允许 this 类型。
-     */
-    ThisTypeNotAllowed,
-
-    /**
      * this 类型出现的位置非法。
      */
     InvalidThisTypePosition,

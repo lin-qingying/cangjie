@@ -28,7 +28,6 @@ import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.builder.buildValueParameter
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
-import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
 import org.cangnova.cangjie.cfir.expressions.CfirArrayLiteral
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirNamedAccessExpression
@@ -777,33 +776,57 @@ class Candidate(
         return if (declaration is CfirFunction && declaration.origin == CfirDeclarationOrigin.Synthetic.FakeFunction) {
             substituted
         } else {
-            substituted.replaceThisTypeWithDispatchReceiver()
+            bindThisTypeToCallSite(substituted)
         }
     }
 
     /**
-     * 将返回类型中的 `This` 类型替换为当前 receiver 绑定类型。
+     * 把候选声明返回类型中的 `This` 视图绑定到调用点。
+     *
+     * 对齐官方 `TypeChecker::TypeCheckerImpl::GetCallTy`
+     * （`external/cangjie_compiler/src/Sema/TypeCheckCall.cpp`）：
+     * - `instance.f()` 的结果类型是接收者表达式的静态类型；
+     * - `SomeClass.staticF()` 的结果类型是 owner 类型；
+     * - 类体内无限定调用仍保持当前类的 `This` 视图。
+     *
+     * 声明返回类型转成调用表达式类型的转换只在这里发生一次，body-resolve 与
+     * completion 写回共用同一实现，避免任一路径漏掉 `This` 绑定。
      */
-    private fun ConeCangJieType.replaceThisTypeWithDispatchReceiver(): ConeCangJieType {
-        val fallbackType = when {
-            this is ConeClassLikeType && isThisType -> this
-            this is ConeErrorType && diagnostic.isThisTypeNotAllowed -> delegatedType ?: return this
-            else -> return this
+    fun bindThisTypeToCallSite(type: ConeCangJieType): ConeCangJieType {
+        val thisTypeView = type.thisTypeViewOrNull() ?: return type
+        if (callInfo.explicitReceiver != null) {
+            // 官方 GetCallTy 在 MemberAccess 分支上区分 static：static 成员即使声明了
+            // `This`，调用结果也退化为 owner 类型。
+            if (isStaticCallable()) return thisTypeView.approximateThisTypeForDeclaration()
+            return explicitCallSiteReceiverType() ?: thisTypeView
         }
-        return thisTypeBindingReceiverType()
-            ?: fallbackType
+        return containingClassThisType()
+            ?: explicitCallSiteReceiverType()
+            ?: thisTypeView
     }
 
     /**
-     * 计算当前调用能绑定 `This` 的 receiver 类型。
+     * 取得类型中承载的 `This` 视图。
+     *
+     * `This` 出现在非法位置时解析结果是携带 delegated 类型的错误类型；官方在这些位置
+     * 由声明处报告诊断，调用结果仍按 owner/接收者类型继续，因此这里同样向下取 `This` 视图。
      */
-    private fun thisTypeBindingReceiverType(): ConeCangJieType? {
-        if (callInfo.explicitReceiver == null) {
-            containingClassThisType()?.let { return it }
-        }
-        return dispatchReceiverExpression()?.coneTypeOrNull
+    private fun ConeCangJieType.thisTypeViewOrNull(): ConeClassLikeType? = when {
+        this is ConeClassLikeType && isThisType -> this
+        this is ConeErrorType -> delegatedType?.thisTypeViewOrNull()
+        else -> null
+    }
+
+    /** 候选是否为 static callable。 */
+    private fun isStaticCallable(): Boolean {
+        if (!symbol.isBound) return false
+        return (symbol.cfir as? CfirCallableDeclaration)?.status?.isStatic == true
+    }
+
+    /** 显式接收者调用可绑定 `This` 的接收者类型。 */
+    private fun explicitCallSiteReceiverType(): ConeCangJieType? =
+        dispatchReceiverExpression()?.coneTypeOrNull
             ?: chosenExtensionReceiverExpression()?.coneTypeOrNull
-    }
 
     /**
      * 构造当前包含 class 的 `This` 类型。
@@ -820,10 +843,6 @@ class Candidate(
         }
         return classSymbol.constructThisType(typeArguments)
     }
-
-    /** 诊断是否表示 `This` 类型位置不允许。 */
-    private val ConeDiagnostic.isThisTypeNotAllowed: Boolean
-        get() = (this as? ConeSimpleDiagnostic)?.kind == DiagnosticKind.ThisTypeNotAllowed
 
     /**
      * 计算 enum constructor 的 owner enum 类型。

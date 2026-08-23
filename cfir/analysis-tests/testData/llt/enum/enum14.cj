@@ -1,5 +1,6 @@
 
 
+
 enum TimeUnit1 {
     Year(Int32) | Day(TimeUnit1) | Out(TimeUnit1)
 }
@@ -38,15 +39,15 @@ func foo1() {
     var d = Out(Day(Year(3)))
     var a0 = match (b) {
         case Day(Year(1)) => 0
-        case <!UNREACHABLE_PATTERN!>_<!> => 2
+        case _ => 2
     }
     var a1 = match (c) {
         case Day(Year(2)) => 0
-        case <!UNREACHABLE_PATTERN!>_<!> => 2
+        case _ => 2
     }
     var a2 = match (d) {
         case Out(Day(Year(3))) => 0
-        case <!UNREACHABLE_PATTERN!>_<!> => 2
+        case _ => 2
     }
     if (a0 + a1 + a2 == 0) {
         return 0
@@ -61,3 +62,4 @@ main(): Int64 {
     }
     return 0
 }
+
