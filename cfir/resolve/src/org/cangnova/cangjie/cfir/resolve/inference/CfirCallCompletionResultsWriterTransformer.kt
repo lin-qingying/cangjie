@@ -146,7 +146,8 @@ class CfirCallCompletionResultsWriterTransformer(
             computeNamedValueFunctionType(declaration, subCandidate)
         } else if (declaration is CfirCallableDeclaration) {
             val calculated = typeCalculator.tryCalculateReturnType(declaration)
-            calculated.coneType
+            // 与 body-resolve 使用同一个调用点 `This` 绑定，完成写回不能退回声明所属类的 `This`。
+            subCandidate.bindThisTypeToCallSite(calculated.coneType)
         } else {
             // this branch is for cases when we have
             // some invalid qualified access expression itself.

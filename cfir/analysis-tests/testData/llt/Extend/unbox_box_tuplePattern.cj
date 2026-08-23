@@ -1,5 +1,6 @@
 
 
+
 class B {
     func g(): Int64 {
         println("func g in B");
@@ -26,8 +27,9 @@ main(): Int64 {
             x.f()
             y.f()
             y.g()
-        case <!UNREACHABLE_PATTERN!>_<!> => 0
+        case _ => 0
     }
 
     res
 }
+

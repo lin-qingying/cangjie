@@ -705,7 +705,6 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
             "generic type ''{0}'' should be used with type argument",
             RENDER_NAME,
         )
-        map.put(CfirErrors.parse_this_type_not_allow, "'This' type is only allowed as an instance member function return type")
         map.put(CfirErrors.INVALID_POSITION_OF_THIS_TYPE, "'This' type is not allowed here")
         map.put(
             CfirErrors.ABSTRACT_MEMBER_NOT_IMPLEMENTED,

@@ -160,9 +160,20 @@ object CfirMapArguments : ResolutionStage() {
                     hasMappingFailure = true,
                 ),
             )
-            sink.reportDiagnostic(
-                WrongNumberOfArguments(callShape.arityDiagnosticSource, parameters.size, argumentAtoms.size),
+            val arityDiagnostic = WrongNumberOfArguments(
+                callShape.arityDiagnosticSource,
+                parameters.size,
+                argumentAtoms.size,
             )
+            if (candidate.callInfo.name.asString() == "f") {
+                System.err.println(
+                    "CFIR_VARIADIC_ARITY_REPORTED source=${arityDiagnostic.source.startOffset}..${arityDiagnostic.source.endOffset} " +
+                        "kind=${candidate.callInfo.callKind} implicit=${candidate.callInfo.isImplicitInvoke} " +
+                        "receiver=${candidate.callInfo.candidateForCommonInvokeReceiver?.symbol?.debugName} " +
+                        "symbol=${candidate.symbol.debugName}"
+                )
+            }
+            sink.reportDiagnostic(arityDiagnostic)
             return
         }
 
@@ -182,9 +193,20 @@ object CfirMapArguments : ResolutionStage() {
                     hasMappingFailure = true,
                 ),
             )
-            sink.reportDiagnostic(
-                WrongNumberOfArguments(callShape.arityDiagnosticSource, parameters.size, argumentAtoms.size),
+            val arityDiagnostic = WrongNumberOfArguments(
+                callShape.arityDiagnosticSource,
+                parameters.size,
+                argumentAtoms.size,
             )
+            if (candidate.callInfo.name.asString() == "f") {
+                System.err.println(
+                    "CFIR_VARIADIC_ARITY_REPORTED source=${arityDiagnostic.source.startOffset}..${arityDiagnostic.source.endOffset} " +
+                        "kind=${candidate.callInfo.callKind} implicit=${candidate.callInfo.isImplicitInvoke} " +
+                        "receiver=${candidate.callInfo.candidateForCommonInvokeReceiver?.symbol?.debugName} " +
+                        "symbol=${candidate.symbol.debugName}"
+                )
+            }
+            sink.reportDiagnostic(arityDiagnostic)
             return
         }
 
@@ -201,9 +223,20 @@ object CfirMapArguments : ResolutionStage() {
                     hasMappingFailure = true,
                 ),
             )
-            sink.reportDiagnostic(
-                WrongNumberOfArguments(callShape.arityDiagnosticSource, parameters.size, argumentAtoms.size),
+            val arityDiagnostic = WrongNumberOfArguments(
+                callShape.arityDiagnosticSource,
+                parameters.size,
+                argumentAtoms.size,
             )
+            if (candidate.callInfo.name.asString() == "f") {
+                System.err.println(
+                    "CFIR_VARIADIC_ARITY_REPORTED source=${arityDiagnostic.source.startOffset}..${arityDiagnostic.source.endOffset} " +
+                        "kind=${candidate.callInfo.callKind} implicit=${candidate.callInfo.isImplicitInvoke} " +
+                        "receiver=${candidate.callInfo.candidateForCommonInvokeReceiver?.symbol?.debugName} " +
+                        "symbol=${candidate.symbol.debugName}"
+                )
+            }
+            sink.reportDiagnostic(arityDiagnostic)
             return
         }
 
@@ -607,11 +640,20 @@ object CfirMapArguments : ResolutionStage() {
             "Invalid call-shape source range: $startOffset..$endOffset"
         }
 
+        val arityDiagnosticSource = CjOffsetsOnlySourceElement(startOffset, endOffset)
+        if (isCallableValueCall && callInfo.name.asString() == "f") {
+            System.err.println(
+                "CFIR_VARIADIC_ARITY_SHAPE call=${callSiteSource?.startOffset}..${callSiteSource?.endOffset} " +
+                    "argumentList=${argumentListSource?.startOffset}..${argumentListSource?.endOffset} " +
+                    "shape=${arityDiagnosticSource.startOffset}..${arityDiagnosticSource.endOffset}"
+            )
+        }
+
         return CallShape(
             actualArgumentCount = arguments.size,
             namedArgumentCount = arguments.count { it.name != null },
             trailingLambdaCount = arguments.count { it.isTrailingLambda },
-            arityDiagnosticSource = CjOffsetsOnlySourceElement(startOffset, endOffset),
+            arityDiagnosticSource = arityDiagnosticSource,
         )
     }
 }

@@ -165,7 +165,9 @@ fun BodyResolveComponents.typeFromCallee(calleeReference: CfirReference): ConeCa
             }
             when (candidate.callInfo.callKind) {
                 CallKind.NamedValueAccess -> typeFromNamedValueCandidate(candidate)
-                else -> typeFromSymbol(candidate.symbol)
+                // 声明返回类型进入调用表达式时必须先把 `This` 视图绑定到调用点接收者，
+                // 否则 `recv.f()` 会停留在声明所属类的 `This` 上，后续成员解析看不到子类成员。
+                else -> candidate.bindThisTypeToCallSite(typeFromSymbol(candidate.symbol))
             }
         }
 

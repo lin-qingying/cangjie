@@ -1,5 +1,6 @@
 
 
+
 main(): Int64 {
     return run()
 }
@@ -16,9 +17,10 @@ var b: Int32 = 4
 let score: Int32 = 90
 
 func Foo(c!: String = match (score) {
-        case <!UNREACHABLE_PATTERN!>0<!> => "zero"
+        case 0 => "zero"
         case 90 => "good"
-        case <!UNREACHABLE_PATTERN!>_<!> => "not a valid score"
+        case _ => "not a valid score"
     }): String {
     return c
 }
+

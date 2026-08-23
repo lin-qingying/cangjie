@@ -1,5 +1,6 @@
 
 
+
 enum B<T> {
     a(Bool) | bNil
 }
@@ -18,7 +19,7 @@ main(): Int64 {
             } else {
                 0
             }
-        case <!UNREACHABLE_PATTERN!>aNil<!> => 0
+        case aNil => 0
     }
     let ret2 = match (j) {
         case a(x) =>
@@ -27,10 +28,11 @@ main(): Int64 {
             } else {
                 0
             }
-        case <!UNREACHABLE_PATTERN!>bNil<!> => 0
+        case bNil => 0
     }
     if (ret1 + ret2 == 2) {
         return 0
     }
     return 1
 }
+

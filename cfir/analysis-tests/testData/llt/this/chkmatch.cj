@@ -1,5 +1,6 @@
 
 
+
 class Test {
     func f(x: Int64): This <!TYPE_MISMATCH!>{
         return match (x) {
@@ -13,3 +14,4 @@ class Test {
         }
     }<!>
 }
+

@@ -293,8 +293,13 @@ class CfirAccessibilityChecker(
          * 成员的 public 修饰符不能穿透 private/internal/protected 的外围类。
          * 所有 container 逐层走同一判断，reporting owner 保留第一个实际不可访问
          * 的外围声明，调用方不会再把根因误归到 public member 本身。
+         *
+         * 外围链的起点是成员的实际访问路径，而不是声明该成员的类型。继承成员经
+         * receiver 或类型限定符到达时，使用点需要命名的只有该 receiver/限定符的类型；
+         * 声明该成员的父类型能否被使用点看见，由该父类型自身的类型解析负责，不构成
+         * 成员访问的额外条件。
          */
-        var containingClass = declarationSymbol.getContainingClass()
+        var containingClass = memberAccessPathRoot(declarationSymbol, context)
         while (containingClass != null) {
             val containingDeclaration = containingClass.cfir as? CfirMemberDeclaration
             if (containingDeclaration != null) {
@@ -310,6 +315,34 @@ class CfirAccessibilityChecker(
 
         return checkDeclarationVisibility(declarationSymbol, declaration, context)
             ?: CfirAccessibilityResult.Accessible
+    }
+
+    /**
+     * 成员外围可见性链的起点。
+     *
+     * 通过 receiver 值或类型限定符到达的成员，其访问路径就是该 receiver/限定符的类型；
+     * 只有没有访问路径的直接词法引用才回退到声明该成员的外围类。对齐 Kotlin
+     * `FirVisibilityChecker.containingNonLocalClass` 的 dispatchReceiver 与
+     * staticQualifierClassForCallable 分支。
+     */
+    private fun memberAccessPathRoot(
+        declarationSymbol: CfirBasedSymbol<*>,
+        context: CfirAccessContext,
+    ): CfirClassLikeSymbol<*>? {
+        if (declarationSymbol is CfirCallableSymbol<*>) {
+            context.qualifierSymbol?.let { return it }
+            context.receiverType?.let { receiverType ->
+                classLikeSymbolOf(receiverType)?.let { return it }
+            }
+        }
+        return declarationSymbol.getContainingClass()
+    }
+
+    /** 解析 cone 类型对应的 class-like 符号；typealias 按展开后的目标解析。 */
+    private fun classLikeSymbolOf(type: ConeCangJieType): CfirClassLikeSymbol<*>? = when (type) {
+        is ConeTypeAliasType -> type.expandedType?.let { classLikeSymbolOf(it) }
+        else -> type.classIdOrPrimitiveClassId
+            ?.let { classId -> session.symbolProvider.getClassLikeSymbolByClassId(classId) }
     }
 
     /** `null` 表示 [declaration] 对 [context] 可访问。 */

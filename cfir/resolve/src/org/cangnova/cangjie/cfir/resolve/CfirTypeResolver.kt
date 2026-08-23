@@ -417,7 +417,7 @@ class CfirTypeResolverImpl(
     private fun thisTypeNotAllowedError(
         reason: String = THIS_TYPE_NOT_ALLOWED_REASON,
         delegatedType: ConeCangJieType? = null,
-        kind: DiagnosticKind = DiagnosticKind.ThisTypeNotAllowed,
+        kind: DiagnosticKind = DiagnosticKind.InvalidThisTypePosition,
     ): ConeErrorType {
         return ConeErrorType(ConeSimpleDiagnostic(reason, kind), delegatedType = delegatedType)
     }

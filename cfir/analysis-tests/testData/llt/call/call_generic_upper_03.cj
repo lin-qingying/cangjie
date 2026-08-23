@@ -1,6 +1,7 @@
 
 
 
+
 interface I<T> {
     func foo(a: T) {}
 }
@@ -17,6 +18,7 @@ class D <: I<B> & I<I2> {} // exist func foo(a: B);  func foo(a: I2)
 
 main() {
     let d = D()
-    d.<!AMBIGUOUS_FUNCTION_CALL!>foo<!>(C())
+    d.foo(C())
     return 1
 }
+

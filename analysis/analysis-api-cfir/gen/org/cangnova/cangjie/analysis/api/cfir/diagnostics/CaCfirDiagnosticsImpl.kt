@@ -915,11 +915,6 @@ internal class GenericTypeShouldBeUsedWithTypeArgumentImpl(
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.GenericTypeShouldBeUsedWithTypeArgument
 
-internal class ParseThisTypeNotAllowImpl(
-    cfirDiagnostic: CjPsiDiagnostic,
-    token: CaLifetimeToken,
-) : CaAbstractCfirDiagnostic<CjTypeReference>(cfirDiagnostic, token), CaCfirDiagnostic.ParseThisTypeNotAllow
-
 internal class InvalidPositionOfThisTypeImpl(
     cfirDiagnostic: CjPsiDiagnostic,
     token: CaLifetimeToken,

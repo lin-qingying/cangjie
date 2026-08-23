@@ -1,6 +1,7 @@
 
 
 
+
 interface I1 {
     func f(): Bool {
         true
@@ -13,7 +14,8 @@ interface I2 {
 
 class E <: Exception {}
 
-class <!INHERIT_MEMBER_TYPE_INCONSISTENT!>A<!> <: I1 & I2 {}
+class A <: I1 & I2 {}
 
 main() {
 }
+

@@ -1,5 +1,6 @@
 
 
+
 public class TestThis {
     public func a(): This {
         this
@@ -10,3 +11,4 @@ public class TestThis {
 }
 
 main() {}
+

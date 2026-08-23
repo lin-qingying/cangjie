@@ -281,7 +281,11 @@ class CfirTypeResolveTransformer(
     /**
      * 计算函数返回类型位置可见的 `This` 类型解析上下文。
      *
-     * class 成员函数可在非 static 返回类型中使用 `This`；static 成员和 extend 语境下会保留诊断信息或禁用标记。
+     * 对齐官方 `TypeChecker::TypeCheckerImpl::CheckThisTypeOfFuncBody`
+     * （`external/cangjie_compiler/src/Sema/TypeChecker.cpp`）：语义层只拒绝 static 成员函数
+     * 返回 `This`，其余非法位置由 parser 负责（官方注释：“'This' type used in non-class decl
+     * or nested function are reported by parser. Do not check again.”）。CFIR 只做语义分析，
+     * 因此这里同样只保留 static 这一条语义规则，其余位置按当前实例类型解析、不报诊断。
      */
     private fun thisTypeContextForFunctionReturn(
         function: CfirFunction,
@@ -289,28 +293,24 @@ class CfirTypeResolveTransformer(
     ): ThisTypeResolutionContext? {
         if (function !is CfirNamedFunction) return null
 
-        val inherited = data.thisTypeContext?.asDisallowed()
-        return when (val containingDeclaration = data.topContainer) {
-            is CfirClass -> {
-                val thisType = containingDeclaration.constructClassThisType() ?: return inherited
-                ThisTypeResolutionContext(
-                    type = thisType,
-                    isAllowed = !function.status.isStatic,
-                    disallowedDiagnosticKind = if (function.status.isStatic) {
-                        DiagnosticKind.InvalidThisTypePosition
-                    } else {
-                        DiagnosticKind.ThisTypeNotAllowed
-                    },
-                )
-            }
+        val instanceType = when (val containingDeclaration = data.topContainer) {
+            is CfirClass -> containingDeclaration.constructClassThisType()
+            is CfirExtend -> containingDeclaration.semanticExtendedType(session)
+            else -> null
+        } ?: data.thisTypeContext?.type ?: return null
 
-            is CfirExtend -> inherited ?: thisTypeContextForExtend(containingDeclaration)
-            else -> inherited
-        }
+        return ThisTypeResolutionContext(
+            type = instanceType,
+            isAllowed = !function.status.isStatic,
+            disallowedDiagnosticKind = DiagnosticKind.InvalidThisTypePosition,
+        )
     }
 
     /**
-     * 为 extend 声明创建禁用状态的 `This` 类型解析上下文。
+     * 为 extend 声明父类型位置创建 `This` 类型解析上下文。
+     *
+     * `This` 不是合法的父类型，这里保留被扩展类型只是为了让诊断后的成员绑定继续工作；
+     * extend 成员函数返回类型的 `This` 由 [thisTypeContextForFunctionReturn] 单独建立。
      */
     private fun thisTypeContextForExtend(extend: CfirExtend): ThisTypeResolutionContext? {
         val extendedType = extend.semanticExtendedType(session) ?: return null

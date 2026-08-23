@@ -1,5 +1,6 @@
 
 
+
 open class A {}
 
 class B <: A {
@@ -10,8 +11,9 @@ class B <: A {
 
 main(): Int64 {
     let x = (A(), 1);
-    if (x <!INVALID_BINARY_OPERATOR!>==<!> (B(), 1)) {
+    if (x == (B(), 1)) {
         return 0;
     }
     return 1;
 }
+

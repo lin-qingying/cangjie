@@ -1,6 +1,7 @@
 
 
 
+
 interface I1 {
     mut static prop a: Int64 {
         get() {
@@ -12,8 +13,9 @@ interface I1 {
 }
 
 interface I2 <: I1 {
-    <!INVALID_OVERRIDE_OR_REDEFINE_MEMBER_IN_INTERFACE!>m<!>ut static prop a: Int64
-    <!INVALID_OVERRIDE_OR_REDEFINE_MEMBER_IN_INTERFACE!>s<!>tatic func f(): Unit
+    mut static prop a: Int64
+    static func f(): Unit
 }
 
 main() {}
+

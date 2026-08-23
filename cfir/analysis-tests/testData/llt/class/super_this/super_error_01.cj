@@ -1,5 +1,6 @@
 
 
+
 open class Base {
     public var b: Int32 = 6
     public init(x: Int32) {
@@ -9,11 +10,11 @@ open class Base {
 
 class Test<T> <: Base {
     public var a: Int32 = 3
-    <!EXPLICIT_SUPER_CALL_REQUIRED!>public Test()<!> {
+    public <!NO_NON_PARAM_CONSTRUCTOR_IN_SUPER_CLASS!>Test<!>() {
         this.a == a
     }
 
-    <!EXPLICIT_SUPER_CALL_REQUIRED!>public init(x: Int32)<!> {
+    public <!NO_NON_PARAM_CONSTRUCTOR_IN_SUPER_CLASS!>init<!>(x: Int32) {
         super.b = x
         this.a = x
     }
@@ -27,3 +28,4 @@ main(): Int64 {
     }
     return 1
 }
+

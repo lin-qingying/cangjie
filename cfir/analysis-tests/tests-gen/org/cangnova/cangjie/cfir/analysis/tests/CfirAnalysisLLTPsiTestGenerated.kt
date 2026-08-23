@@ -5136,22 +5136,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiLlTDiagnosticsTest() {
             fun testTest() {
                 runTest("cfir/analysis-tests/testData/llt/accessibility/common_super_type/test.cj")
             }
-
-            @TestMetadata("pb")
-            @TestDataPath("${'$'}PROJECT_ROOT")
-            @Nested
-            inner class Pb : AbstractCfirPsiLlTDiagnosticsTest() {
-                @Test
-                fun testAllFilesPresent() {
-                    assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/accessibility/common_super_type/pb")
-                }
-
-                @TestMetadata("b2.cj")
-                @Test
-                fun testB2() {
-                    runTest("cfir/analysis-tests/testData/llt/accessibility/common_super_type/pb/b2.cj")
-                }
-            }
         }
 
         @TestMetadata("common_super_type2")
@@ -5989,40 +5973,10 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiLlTDiagnosticsTest() {
                         assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/box/box_export/src/service")
                     }
 
-                    @TestMetadata("ActivatorUtilties.cj")
+                    @TestMetadata("main.cj")
                     @Test
-                    fun testActivatorUtilties() {
-                        runTest("cfir/analysis-tests/testData/llt/box/box_export/src/service/ActivatorUtilties.cj")
-                    }
-
-                    @TestMetadata("ReflectUtilities.cj")
-                    @Test
-                    fun testReflectUtilities() {
-                        runTest("cfir/analysis-tests/testData/llt/box/box_export/src/service/ReflectUtilities.cj")
-                    }
-
-                    @TestMetadata("ServiceDescriptor.cj")
-                    @Test
-                    fun testServiceDescriptor() {
-                        runTest("cfir/analysis-tests/testData/llt/box/box_export/src/service/ServiceDescriptor.cj")
-                    }
-
-                    @TestMetadata("ServiceLifetime.cj")
-                    @Test
-                    fun testServiceLifetime() {
-                        runTest("cfir/analysis-tests/testData/llt/box/box_export/src/service/ServiceLifetime.cj")
-                    }
-
-                    @TestMetadata("ServiceProvider.cj")
-                    @Test
-                    fun testServiceProvider() {
-                        runTest("cfir/analysis-tests/testData/llt/box/box_export/src/service/ServiceProvider.cj")
-                    }
-
-                    @TestMetadata("ServiceProviderBuilder.cj")
-                    @Test
-                    fun testServiceProviderBuilder() {
-                        runTest("cfir/analysis-tests/testData/llt/box/box_export/src/service/ServiceProviderBuilder.cj")
+                    fun testMain() {
+                        runTest("cfir/analysis-tests/testData/llt/box/box_export/src/service/main.cj")
                     }
                 }
             }

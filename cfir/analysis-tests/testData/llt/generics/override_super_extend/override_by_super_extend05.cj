@@ -1,5 +1,6 @@
 
 
+
 interface I1 {
     func foo(): Unit {
         println(1)
@@ -18,7 +19,7 @@ extend<T> A<T> where T <: I3<T> {
     }
 }
 
-class <!EXTEND_FUNCTION_CANNOT_OVERRIDDEN!>B<T> <: A<T> & I1 where T <: I2<T> {}<!> // error
+class B<T> <: A<T> & I1 where T <: I2<T> {} // error
 
 class C <: I3<C> {}
 
@@ -26,3 +27,4 @@ main() {
     B<C>().foo()
     0
 }
+

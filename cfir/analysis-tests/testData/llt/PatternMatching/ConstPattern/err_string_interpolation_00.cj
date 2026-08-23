@@ -1,8 +1,9 @@
 
 
+
 func f(x: String) {
     match (x) {
-        case <!INTERPOLATION_IN_CONST_PATTERN!>"${x.size}"<!> => 0
+        case "${x.size}" => 0
         case _ => 1
     }
 }
@@ -10,3 +11,4 @@ func f(x: String) {
 main() {
     f("1")
 }
+

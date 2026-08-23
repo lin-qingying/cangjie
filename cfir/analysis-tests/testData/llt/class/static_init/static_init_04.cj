@@ -1,12 +1,13 @@
 
 
 
+
 class A {
     static init() {
         if (1 > 2) {
-            <!INVALID_RETURN_IN_STATIC_INIT!>return<!>
+            return
         } else {
-            <!INVALID_RETURN_IN_STATIC_INIT!>return<!>
+            return
         }
     }
 }
@@ -14,3 +15,4 @@ class A {
 main() {
     return 0
 }
+
