@@ -56,13 +56,17 @@ import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 import org.cangnova.cangjie.utils.exceptions.withCfirEntry
 
 /**
- * 取得候选符号的初始表达式类型，并应用候选当前 substitutor。
+ * 取得候选在当前调用语法中的初始表达式类型，并应用候选当前 substitutor。
+ *
+ * 同一变量在 `f` 与 `f(...)` 中分别表示函数值和调用结果。expected-return 阶段、
+ * 重载规约及 lambda body completion 必须共享这一投影，否则会把 `(P) -> R` 错当作
+ * `f(...)` 的结果类型并提前淘汰合法候选。
  */
 fun BodyResolveComponents.initialTypeOfCandidate(candidate: Candidate): ConeCangJieType {
-    if (candidate.symbol.cfir is CfirEnumConstructor) {
-        // enum constructor 的表达式结果是 owner enum 类型，不是声明 returnTypeRef。
-        // candidate.substitutedReturnType 已应用声明类型参数替换，这里只继续应用当前约束系统，
-        // 供 expected-return 过滤和嵌套调用目标类型选择读取真实 owner 类型。
+    if (candidate.usesCallResultTypeForInitialProjection()) {
+        // enum constructor 的表达式结果是 owner enum 类型；函数值变量的调用结果是函数类型的
+        // return type。candidate.substitutedReturnType 已应用声明类型参数替换，这里只继续应用
+        // 当前约束系统，供 expected-return 过滤和嵌套调用目标类型选择读取真实调用结果类型。
         val system = candidate.system
         return system.buildCurrentSubstitutor()
             .safeSubstitute(system, candidate.substitutedReturnType())
@@ -71,6 +75,11 @@ fun BodyResolveComponents.initialTypeOfCandidate(candidate: Candidate): ConeCang
     val type = typeFromSymbol(candidate.symbol)
     return type.initialTypeOfCandidate(candidate)
 }
+
+/** 需要使用调用结果类型而非符号作为值时的声明类型。 */
+private fun Candidate.usesCallResultTypeForInitialProjection(): Boolean =
+    symbol.cfir is CfirEnumConstructor ||
+            (callInfo.callKind == CallKind.Function && symbol.cfir is CfirVariable)
 
 /**
  * 类型参数符号对应的默认类型。
