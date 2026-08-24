@@ -323,7 +323,8 @@ class CfirDeclDeserializer(
         val (kind, value) = when (literal.constKind) {
             LitConstKind.Integer -> CfirLiteralKind.INT to rawValue
             LitConstKind.Float -> CfirLiteralKind.FLOAT to rawValue
-            LitConstKind.RuneByte,
+            // 官方 RUNE_BYTE 定型 UInt8，与 Rune 分开建模。
+            LitConstKind.RuneByte -> CfirLiteralKind.BYTE to rawValue
             LitConstKind.Rune,
             -> CfirLiteralKind.RUNE to rawValue
             LitConstKind.String,

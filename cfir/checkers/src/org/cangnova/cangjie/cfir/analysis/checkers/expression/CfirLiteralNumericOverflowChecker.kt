@@ -37,6 +37,7 @@ object CfirLiteralNumericOverflowChecker : CfirLiteralExpressionChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirLiteralExpression) {
         if (context.isAssignmentSpecificLiteralConversion(expression)) return
+        if (context.hasTypeConversionOverflow(expression.source)) return
         if (checkSourceSignedLiteral(expression)) return
         if (context.isReceiverOfUnarySignedLiteral(expression)) return
 

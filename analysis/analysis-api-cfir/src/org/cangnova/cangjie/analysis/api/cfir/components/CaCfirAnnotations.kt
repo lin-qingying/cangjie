@@ -222,6 +222,7 @@ private fun CfirLiteralExpression.literalAsPublicAnnotationValue(
         CfirLiteralKind.RUNE -> CaBaseAnnotationValues.runeValue((value as? Number)?.toInt() ?: source?.text?.toString().orEmpty().parseRuneLiteral(), sourcePsi)
         CfirLiteralKind.STRING -> CaBaseAnnotationValues.stringValue(value?.toString().orEmpty(), sourcePsi)
         CfirLiteralKind.INT -> CaBaseAnnotationValues.int64Value((value as? Number)?.toLong() ?: source?.text?.toString().orEmpty().removeNumericSuffix().toLongOrNull() ?: 0L, sourcePsi)
+        CfirLiteralKind.BYTE -> CaBaseAnnotationValues.int64Value((value as? Number)?.toLong() ?: source?.text?.toString().orEmpty().removeNumericSuffix().toLongOrNull() ?: 0L, sourcePsi)
         CfirLiteralKind.FLOAT -> CaBaseAnnotationValues.float64Value((value as? Number)?.toDouble() ?: source?.text?.toString().orEmpty().removeNumericSuffix().toDoubleOrNull() ?: 0.0, sourcePsi)
         CfirLiteralKind.UNIT -> CaBaseAnnotationValues.errorValue("Unit is not a valid annotation constant", sourcePsi)
     }

@@ -2317,6 +2317,7 @@ class PsiRawCfirBuilder(
                 INTEGER_CONSTANT -> CfirLiteralKind.INT to text
                 FLOAT_CONSTANT -> CfirLiteralKind.FLOAT to text
                 RUNE_CONSTANT -> CfirLiteralKind.RUNE to text
+                CHARACTER_BYTE_CONSTANT -> CfirLiteralKind.BYTE to byteLiteralCodePointOrNull(text)
                 BOOLEAN_CONSTANT -> CfirLiteralKind.BOOLEAN to (text == "true")
                 UNIT_CONSTANT -> CfirLiteralKind.UNIT to null
                 else -> CfirLiteralKind.STRING to text

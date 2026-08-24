@@ -562,6 +562,8 @@ private fun CfirExpressionPattern.isCompatibleWith(expectedType: ConeCangJieType
 private fun CfirLiteralExpression.isCompatibleWith(expectedType: ConeCangJieType): Boolean = when (kind) {
     CfirLiteralKind.BOOLEAN -> expectedType is ConePrimitiveType && expectedType.kind == PrimitiveTypeKind.BOOLEAN
     CfirLiteralKind.INT -> expectedType is ConePrimitiveType && expectedType.kind != PrimitiveTypeKind.BOOLEAN && expectedType.kind != PrimitiveTypeKind.UNIT
+    // 官方 RUNE_BYTE 与 INTEGER 同走 ChkLitConstExprOfTypeInteger，只适配整数目标。
+    CfirLiteralKind.BYTE -> expectedType is ConePrimitiveType && expectedType.kind != PrimitiveTypeKind.BOOLEAN && expectedType.kind != PrimitiveTypeKind.UNIT
     CfirLiteralKind.RUNE -> expectedType is ConePrimitiveType
     CfirLiteralKind.STRING ->
         expectedType.classIdOrPrimitiveClassId?.shortClassName?.asString() == "String" ||

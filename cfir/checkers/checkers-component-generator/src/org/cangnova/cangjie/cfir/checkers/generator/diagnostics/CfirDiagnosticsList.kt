@@ -925,6 +925,12 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
             parameter<ConeCangJieType>("targetType")  // 目标类型（如Int32、Int64等）
         }
 
+        // 整数常量在显式数值类型转换时超出目标类型范围。
+        val TYPECAST_OVERFLOW by error<PsiElement> {
+            parameter<ConeCangJieType>("sourceType")
+            parameter<ConeCangJieType>("targetType")
+        }
+
         // 常量求值除以零：在编译期求值时，被除数为0
         val CONST_EVAL_DIVIDE_BY_ZERO by error<PsiElement> {
             parameter<String>("operatorName")  // 运算符名称（如 "div"、"rem"）

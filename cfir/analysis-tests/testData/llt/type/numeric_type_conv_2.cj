@@ -1,7 +1,6 @@
 
-
 func f(): Option<Int64> {
-    return <!TYPE_MISMATCH!>Int32(4)<!>
+    return <!RETURN_TYPE_MISMATCH!>Int32(4)<!>
 }
 
 main(): Int64 {

@@ -212,6 +212,7 @@ sealed class CfirConstantValue : Comparable<CfirConstantValue> {
             return when (literal.kind) {
                 CfirLiteralKind.BOOLEAN -> (literal.value as? Boolean)?.let(::BooleanConst)
                 CfirLiteralKind.INT -> fromIntLiteral(literal.value, fallbackType)
+                CfirLiteralKind.BYTE -> fromIntLiteral(literal.value, fallbackType)
                 CfirLiteralKind.RUNE -> fromRuneLiteral(literal.value)
                 CfirLiteralKind.STRING -> (literal.value as? String)?.let(::StringConst)
                 CfirLiteralKind.UNIT -> UnitConst

@@ -25,6 +25,14 @@ enum class CfirLiteralKind {
     RUNE,
 
     /**
+     * 字节字面量（`b'x'` 语法）。
+     *
+     * 对齐官方 `LitConstKind::RUNE_BYTE`：`GetNumLitTypeKind` 固定返回
+     * `TYPE_UINT8`，因此该字面量是定型 `UInt8` 值，不参与 ideal int 收敛。
+     */
+    BYTE,
+
+    /**
      * 字符串字面量。
      */
     STRING,

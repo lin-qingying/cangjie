@@ -13,5 +13,5 @@ class A {}
 func bar(b: Int32): Int32 {
     123
     1
-    <!TYPE_MISMATCH!>12.0<!>
+    <!RETURN_TYPE_MISMATCH!>12.0<!>
 }

@@ -82,6 +82,10 @@ abstract class ControlFlowGraphVisitor<out R, in D> {
     open fun visitMatchBranchConditionEnterNode(node: MatchBranchConditionEnterNode, data: D): R = visitNode(node, data)
     /** 访问 match 分支条件出口节点。 */
     open fun visitMatchBranchConditionExitNode(node: MatchBranchConditionExitNode, data: D): R = visitNode(node, data)
+    /** 访问 match 原子模式判定节点。 */
+    open fun visitMatchPatternDecisionNode(node: MatchPatternDecisionNode, data: D): R = visitNode(node, data)
+    /** 访问 match 分支失败汇合节点。 */
+    open fun visitMatchBranchFailureNode(node: MatchBranchFailureNode, data: D): R = visitNode(node, data)
     /** 访问 match 分支结果入口节点。 */
     open fun visitMatchBranchResultEnterNode(node: MatchBranchResultEnterNode, data: D): R = visitNode(node, data)
     /** 访问 match 分支结果出口节点。 */

@@ -1,6 +1,17 @@
 package org.cangnova.cangjie.cfir.semantics
 
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
+import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
+import org.cangnova.cangjie.cfir.declarations.CfirFunction
+import org.cangnova.cangjie.cfir.diagnostic.ConeGenericFunctionReferenceWithoutTypeArgumentsError
+import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
+import org.cangnova.cangjie.cfir.expressions.CfirNamedAccessExpression
+import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
+import org.cangnova.cangjie.cfir.references.CfirResolvedErrorReference
+import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
+import org.cangnova.cangjie.cfir.references.impl.CfirResolvedAppliedCallableReference
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.resolve.calls.inference.ConstraintSystem
 import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintSystemError
@@ -79,4 +90,37 @@ abstract class AbstractCallCandidate<P : AbstractConeResolutionAtom> : AbstractC
         }
         _cangjieVariadicRegularCallDiagnostics = diagnostics
     }
+}
+
+/**
+ * payload enum 调用的实参是否已经是未实例化泛型函数值引用。
+ *
+ * 这个形态只依赖候选的跨模块语义信息：payload enum constructor、调用的显式类型实参和
+ * 已构建的实参表达式。它必须由 semantics 层定义，供 resolve completion 与 checkers
+ * diagnostics 共享，避免 diagnostics 反向依赖 resolve 的 [Candidate] 实现。
+ */
+fun AbstractCallCandidate<*>.hasBareGenericFunctionReferencePayloadArgument(): Boolean {
+    val enumConstructor = symbol.takeIf { it.isBound }?.cfir as? CfirEnumConstructor ?: return false
+    if (enumConstructor.valueParameters.isEmpty() || callInfo.hasExplicitTypeArguments) return false
+    return callInfo.arguments.any { argument -> argument.isBareGenericFunctionReference() }
+}
+
+/** 判断实参是否为未提供函数自身类型实参的函数声明引用。 */
+private fun CfirExpression.isBareGenericFunctionReference(): Boolean {
+    if (this is CfirFunctionCall) return false
+    val access = this as? CfirNamedAccessExpression ?: return false
+    if (access.typeArguments.isNotEmpty()) return false
+    val reference = access.calleeReference
+    if ((reference as? CfirDiagnosticHolder)?.diagnostic is ConeGenericFunctionReferenceWithoutTypeArgumentsError) {
+        return true
+    }
+    val symbol = when (reference) {
+        is CfirNamedReferenceWithCandidateBase -> reference.candidateSymbol
+        is CfirResolvedErrorReference -> reference.resolvedSymbol
+        is CfirResolvedNamedReference -> reference.resolvedSymbol
+        is CfirResolvedAppliedCallableReference -> reference.resolvedSymbol
+        else -> null
+    }
+    val function = symbol?.takeIf { it.isBound }?.cfir as? CfirFunction ?: return false
+    return function.typeParameters.isNotEmpty()
 }

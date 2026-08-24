@@ -100,6 +100,12 @@ abstract class CheckerContext : DiagnosticContext, SessionAndScopeSessionHolder 
     /** 判断指定 source 或其宿主调用是否包含已确认的 static 泛型参数依赖。 */
     abstract fun hasStaticGenericDependency(source: CjSourceElement?): Boolean
 
+    /** 记录当前 source 已由显式类型转换溢出拥有根诊断。 */
+    abstract fun recordTypeConversionOverflow(source: CjSourceElement)
+
+    /** 判断指定 source 是否位于已确认的显式类型转换溢出范围内。 */
+    abstract fun hasTypeConversionOverflow(source: CjSourceElement?): Boolean
+
     /** 根据 suppress 名称和 suppress-all 标记判断诊断是否应被抑制。 */
     override fun isDiagnosticSuppressed(diagnostic: CjDiagnostic): Boolean {
         val suppressedByAll = when (diagnostic.severity) {
@@ -234,6 +240,8 @@ class MutableCheckerContext private constructor(
     private val genericInstantiationMemberConflictRanges: MutableSet<Pair<Int, Int>>,
     /** 当前诊断轮次中已由 static 泛型参数依赖拥有的 source 范围。 */
     private val staticGenericDependencyRanges: MutableSet<Pair<Int, Int>>,
+    /** 当前诊断轮次中已由显式类型转换溢出拥有的 source 范围。 */
+    private val typeConversionOverflowRanges: MutableSet<Pair<Int, Int>>,
     /** 当前作用域中被显式 suppress 的诊断名称集合。 */
     override val suppressedDiagnostics: Set<String>,
     /** 当前作用域是否 suppress 所有 info 级别诊断。 */
@@ -265,6 +273,7 @@ class MutableCheckerContext private constructor(
         lambdaParameterShapeDiagnostics = Collections.newSetFromMap(IdentityHashMap()),
         genericInstantiationMemberConflictRanges = linkedSetOf(),
         staticGenericDependencyRanges = linkedSetOf(),
+        typeConversionOverflowRanges = linkedSetOf(),
         suppressedDiagnostics = emptySet(),
         allInfosSuppressed = false,
         allWarningsSuppressed = false,
@@ -301,6 +310,17 @@ class MutableCheckerContext private constructor(
         }
     }
 
+    override fun recordTypeConversionOverflow(source: CjSourceElement) {
+        typeConversionOverflowRanges += source.startOffset to source.endOffset
+    }
+
+    override fun hasTypeConversionOverflow(source: CjSourceElement?): Boolean {
+        source ?: return false
+        return typeConversionOverflowRanges.any { (start, end) ->
+            source.startOffset >= start && source.endOffset <= end
+        }
+    }
+
     /** 创建带有新增 suppress 信息的 context。 */
     override fun addSuppressedDiagnostics(
         diagnosticNames: Collection<String>,
@@ -321,6 +341,7 @@ class MutableCheckerContext private constructor(
             lambdaParameterShapeDiagnostics = lambdaParameterShapeDiagnostics,
             genericInstantiationMemberConflictRanges = genericInstantiationMemberConflictRanges,
             staticGenericDependencyRanges = staticGenericDependencyRanges,
+            typeConversionOverflowRanges = typeConversionOverflowRanges,
             suppressedDiagnostics = suppressedDiagnostics + diagnosticNames,
             allInfosSuppressed = this.allInfosSuppressed || allInfosSuppressed,
             allWarningsSuppressed = this.allWarningsSuppressed || allWarningsSuppressed,

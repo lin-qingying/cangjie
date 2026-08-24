@@ -54,6 +54,7 @@ import org.cangnova.cangjie.cfir.semantics.ErrorTypeInCandidateSignature
 import org.cangnova.cangjie.cfir.semantics.ErrorTypeInArguments
 import org.cangnova.cangjie.cfir.semantics.InvalidCallableReturnTypeInOverloadSet
 import org.cangnova.cangjie.cfir.semantics.ResolutionDiagnostic
+import org.cangnova.cangjie.cfir.semantics.hasBareGenericFunctionReferencePayloadArgument
 import org.cangnova.cangjie.cfir.semantics.isSuccess
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.languageVersionSettings
@@ -317,7 +318,9 @@ private fun ConstraintSystemError.mapConstraintSystemError(
         }
 
         is NotEnoughInformationForTypeParameter<*> ->
-            if (candidate.hasNonCallBareStaticGenericQualifierTypeVariable(typeVariable, session)) {
+            if (candidate.hasBareGenericFunctionReferencePayloadArgument()) {
+                null
+            } else if (candidate.hasNonCallBareStaticGenericQualifierTypeVariable(typeVariable, session)) {
                 null
             } else if (candidate.hasExplicitTypeArgumentError()) {
                 null
@@ -428,8 +431,13 @@ private fun ConeConstraintSystemHasContradiction.mapSystemHasContradictionError(
             !candidate.hasExplicitTypeArgumentsInCall()
         ) {
             // 泛型参数被推断为失败类型且调用未提供显式实参时，即使实参子树自身含有错误
-            // 诊断，也应保留 callee 锚点的无法推断诊断（与官方 sema_unable_to_infer_generic_func 对齐）。
-            return listOfNotNull(unableToInferGenericFunctionDiagnostic(source, qualifiedAccessSource, session))
+            // 诊断，也通常应保留 callee 锚点的无法推断诊断。只有裸泛型函数值引用已拥有
+            // 自身的“缺少类型实参”主错误，不能再把它提升为外层 enum payload 推断失败。
+            return if (candidate.hasBareGenericFunctionReferencePayloadArgument()) {
+                emptyList()
+            } else {
+                listOfNotNull(unableToInferGenericFunctionDiagnostic(source, qualifiedAccessSource, session))
+            }
         }
         return emptyList()
     }
@@ -451,7 +459,9 @@ private fun ConeConstraintSystemHasContradiction.mapSystemHasContradictionError(
             )
         )
     }
-    if (candidate.hasGenericCallNotEnoughTypeInformation(session)) {
+    if (!candidate.hasBareGenericFunctionReferencePayloadArgument() &&
+        candidate.hasGenericCallNotEnoughTypeInformation(session)
+    ) {
         return listOfNotNull(unableToInferGenericFunctionDiagnostic(source, qualifiedAccessSource, session))
     }
     if (isImplicitEnumConstructorPayloadInferenceMismatch()) {
@@ -947,6 +957,13 @@ private fun AbstractCallCandidate<*>.unsuccessfulCallableReferenceArgumentDiagno
     // receiver / qualifier 已拥有结构性主错误时，函数引用 no-match 只是同一错误的派生结果。
     // 该层统一拥有候选失败到用户诊断的映射，因此也应在这里截断级联诊断。
     if (diagnostic.argument.hasPrimaryErrorInCallableReferenceReceiver()) return emptyList()
+
+    // 裸泛型函数引用已经在 argument 的 error reference 上报告“缺少类型实参”。
+    // 该 structured provenance 只负责阻断任意外层调用的派生推断/无匹配诊断，
+    // 不属于 enum constructor 的专用恢复规则。
+    if (diagnostic.failureKind == CallableReferenceFailureKind.GENERIC_TYPE_ARGUMENT_REQUIRED) {
+        return emptyList()
+    }
 
     if (diagnostic.failureKind == CallableReferenceFailureKind.AMBIGUITY) {
         // 普通声明调用需要同时报告外层 no-match 与内层函数引用歧义；函数值 synthetic invoke
@@ -2404,8 +2421,9 @@ private fun ConeDiagnostic.mapOtherDiagnostic(
         )
 
         is ConeGenericFunctionReferenceWithoutTypeArgumentsError ->
-            CfirErrors.UNABLE_TO_INFER_GENERIC_FUNC.on(
+            CfirErrors.GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT.on(
                 source ?: diagnosticSource,
+                functionName,
                 session,
             )
 
@@ -2518,9 +2536,10 @@ private fun ConeConstraintSystemHasContradiction.hasGenericInferenceConstraintMi
  * 判断是否为隐式 enum constructor payload 约束导致的官方泛型函数推断失败。
  *
  * `Some(a): ??I` 这类调用的失败根因是 owner 泛型参数 `T` 同时受到 payload 下界
- * 和目标返回类型上界约束，官方诊断为 `sema_unable_to_infer_generic_func`，范围覆盖整段调用。
+ * 和目标返回类型上界约束，官方诊断为 `sema_unable_to_infer_generic_func`，范围定位到 callee。
  */
 private fun ConeConstraintSystemHasContradiction.isImplicitEnumConstructorPayloadInferenceMismatch(): Boolean {
+    if (candidate.hasBareGenericFunctionReferencePayloadArgument()) return false
     val enumConstructor = (candidate.symbol as? CfirEnumConstructorSymbol)
         ?.takeIf { it.isBound }
         ?.cfir

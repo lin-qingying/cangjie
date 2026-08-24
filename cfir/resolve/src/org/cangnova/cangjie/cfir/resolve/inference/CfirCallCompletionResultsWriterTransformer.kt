@@ -518,7 +518,7 @@ class CfirCallCompletionResultsWriterTransformer(
      *
      * `Some(None)` 中外层 `Some` 的 owner 参数在完成后会表现为返回类型内部的无法推断错误；
      * 若仍把引用写成普通 resolved reference，后续只能把它误判为裸 generic classifier。
-     * 这里把该完成结果提升为调用引用诊断，使统一诊断映射在整个调用范围报告
+     * 这里把该完成结果提升为调用引用诊断，使统一诊断映射在 callee 范围报告
      * `UNABLE_TO_INFER_GENERIC_FUNC`。
      */
     private fun Candidate.payloadEnumConstructorInferenceDiagnostic(
@@ -527,6 +527,8 @@ class CfirCallCompletionResultsWriterTransformer(
         val enumConstructor = symbol.takeIf { it.isBound }?.cfir as? CfirEnumConstructor ?: return null
         if (enumConstructor.valueParameters.isEmpty()) return null
         if (callInfo.hasExplicitTypeArguments) return null
+        // 裸泛型函数引用已在实参节点报告自身缺失的类型实参；不能再把该子树错误提升为外层 enum 调用。
+        if (hasBareGenericFunctionReferencePayloadArgument) return null
         if (postponedAtoms.filterIsInstance<ConeResolvedCallableReferenceAtom>().any { atom ->
                 atom.failureKind == CallableReferenceFailureKind.GENERIC_TYPE_ARGUMENT_REQUIRED
             }

@@ -16,7 +16,6 @@ import org.cangnova.cangjie.cfir.resolve.body.CallableReferenceResolutionResult
 import org.cangnova.cangjie.cfir.resolve.expectedType
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.resolve.inference.model.ConeArgumentConstraintPosition
-import org.cangnova.cangjie.cfir.semantics.ErrorTypeInArguments
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeDiagnostic
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
@@ -153,7 +152,10 @@ object CfirEagerResolveOfCallableReferences : ResolutionStage() {
                                 AmbiguousArgumentType(candidate.callInfo.callSite, atom.expression)
 
                             CallableReferenceFailureKind.GENERIC_TYPE_ARGUMENT_REQUIRED ->
-                                ErrorTypeInArguments
+                                UnsuccessfulCallableReferenceArgument(
+                                    atom.expression,
+                                    CallableReferenceFailureKind.GENERIC_TYPE_ARGUMENT_REQUIRED,
+                                )
 
                             else ->
                                 UnsuccessfulCallableReferenceArgument(

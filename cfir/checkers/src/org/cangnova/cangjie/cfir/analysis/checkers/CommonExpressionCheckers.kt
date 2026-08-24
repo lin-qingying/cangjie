@@ -44,6 +44,7 @@ object CommonExpressionCheckers : ExpressionCheckers() {
             org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirEffectsBasicChecker,
             org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirRangeSemanticsChecker,
             org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirQuoteImportChecker,
+            CfirTypeConversionOverflowChecker,
         )
 
     /** 对 `if` 表达式条件类型执行的 checker 集合。 */

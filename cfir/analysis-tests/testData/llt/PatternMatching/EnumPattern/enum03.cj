@@ -8,11 +8,11 @@ enum TimeUnit {
 main(): Int64 {
     var time = Year(1)
     var b = match (time) {
-        case Month(1, 2) => 1
-        case Year(c) =>
+        case <!UNREACHABLE_PATTERN!>Month(1, 2)<!> => 1
+        case <!UNREACHABLE_PATTERN!>Year(c)<!> =>
             print(c.toString())
             0
-        case _ => -1
+        case <!UNREACHABLE_PATTERN!>_<!> => -1
     }
     return b
 }

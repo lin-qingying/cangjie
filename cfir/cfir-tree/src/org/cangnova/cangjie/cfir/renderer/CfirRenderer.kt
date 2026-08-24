@@ -890,6 +890,7 @@ class CfirRenderer(
             val value = when (literalExpression.kind) {
                 CfirLiteralKind.STRING -> "\"${literalExpression.value}\""
                 CfirLiteralKind.RUNE -> "'${literalExpression.value}'"
+                CfirLiteralKind.BYTE -> "b'${literalExpression.value}'"
                 CfirLiteralKind.UNIT -> "()"
                 else -> "${literalExpression.value}"
             }

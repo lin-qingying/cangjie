@@ -176,8 +176,12 @@ class PostponedArgumentsAnalyzer(
                         AmbiguousArgumentType(candidate.callInfo.callSite, atom.expression),
                     )
 
-                    CallableReferenceFailureKind.GENERIC_TYPE_ARGUMENT_REQUIRED ->
-                        candidate.addDiagnostic(ErrorTypeInArguments)
+                    CallableReferenceFailureKind.GENERIC_TYPE_ARGUMENT_REQUIRED -> candidate.addDiagnostic(
+                        UnsuccessfulCallableReferenceArgument(
+                            atom.expression,
+                            CallableReferenceFailureKind.GENERIC_TYPE_ARGUMENT_REQUIRED,
+                        )
+                    )
 
                     else -> candidate.addDiagnostic(
                         UnsuccessfulCallableReferenceArgument(
@@ -282,7 +286,12 @@ class PostponedArgumentsAnalyzer(
             }
 
             hasIgnoredGenericCandidate -> {
-                topLevelCandidate.addDiagnostic(ErrorTypeInArguments)
+                topLevelCandidate.addDiagnostic(
+                    UnsuccessfulCallableReferenceArgument(
+                        expression,
+                        CallableReferenceFailureKind.GENERIC_TYPE_ARGUMENT_REQUIRED,
+                    )
+                )
                 ConeSimpleDiagnostic(
                     "generic function reference should be used with type argument",
                     DiagnosticKind.GenericTypeWithoutTypeArgument,

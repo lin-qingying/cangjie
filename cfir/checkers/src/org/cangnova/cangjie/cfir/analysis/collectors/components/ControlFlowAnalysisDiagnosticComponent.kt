@@ -1,65 +1,38 @@
 package org.cangnova.cangjie.cfir.analysis.collectors.components
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
-import org.cangnova.cangjie.cfir.analysis.checkers.declaration.DeclarationCheckers
-import org.cangnova.cangjie.cfir.declarations.CfirClass
-import org.cangnova.cangjie.cfir.declarations.CfirConstructor
-import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
+import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
-import org.cangnova.cangjie.cfir.declarations.CfirProperty
-import org.cangnova.cangjie.cfir.declarations.CfirPropertyAccessor
 import org.cangnova.cangjie.cfir.diagnostics.PendingDiagnosticReporter
+import org.cangnova.cangjie.cfir.resolve.dfa.controlFlowGraph
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.source.AbstractCjSourceElement
 
 /**
- * 对齐 Kotlin `ControlFlowAnalysisDiagnosticComponent` 的 low-level 组装入口。
+ * 函数 CFG 的控制流诊断组件。
  *
- * 当前仓颉主干尚未把 CFA checker 家族正式拆入 `DeclarationCheckers` 主契约，
- * 因此该组件先承接统一入口与遍历边界，避免 low-level-api-cfir 继续私有绕开主干模块。
- * 具体 CFA checker 家族补齐后，只需要在 `analyze(...)` 中接入主干实现。
- *
- * @param session 当前组件所属的 CFIR session。
- * @param reporter 当前诊断收集流程的 pending reporter。
- * @property declarationCheckers 当前 CFA 入口将来要复用的声明 checker 聚合。
+ * 它在函数子树的 Sema checker 已完成后消费完整 CFG。这样 matrix 覆盖诊断与常量分支
+ * 可达性各自保有独立 owner：前者属于表达式 checker，后者对位官方 CHIR
+ * `ConstAnalysis` 加 `UnreachableBranchCheck` 的后端控制流阶段。
  */
 class ControlFlowAnalysisDiagnosticComponent(
     session: CfirSession,
     reporter: PendingDiagnosticReporter,
-    /** 当前 CFA 入口将来要复用的声明 checker 聚合。 */
-    private val declarationCheckers: DeclarationCheckers,
 ) : AbstractDiagnosticCollectorComponent(session, reporter) {
-    /** CFA checker 家族的统一接入点；当前保留 declaration checker 聚合的依赖边界。 */
-    private fun analyze() {
-        declarationCheckers.hashCode()
-    }
-
-    /** 在文件节点边界触发 CFA 入口。 */
-    override fun visitFile(file: CfirFile, data: CheckerContext) {
-        analyze()
-    }
-
-    /** 在 class 节点边界触发 CFA 入口。 */
-    override fun visitClass(klass: CfirClass, data: CheckerContext) {
-        analyze()
-    }
-
-    /** 在属性节点边界触发 CFA 入口。 */
-    override fun visitProperty(property: CfirProperty, data: CheckerContext) {
-        analyze()
-    }
-
-    /** 在函数节点边界触发 CFA 入口。 */
-    override fun visitFunction(function: CfirFunction, data: CheckerContext) {
-        analyze()
-    }
-
-    /** 在属性访问器节点边界触发 CFA 入口。 */
-    override fun visitPropertyAccessor(propertyAccessor: CfirPropertyAccessor, data: CheckerContext) {
-        analyze()
-    }
-
-    /** 在构造器节点边界触发 CFA 入口。 */
-    override fun visitConstructor(constructor: CfirConstructor, data: CheckerContext) {
-        analyze()
+    /** 退出函数后才能得到完整且冻结的 CFG。 */
+    override fun onDeclarationExit(declaration: CfirDeclaration, data: CheckerContext) {
+        val function = declaration as? CfirFunction ?: return
+        val graph = function.controlFlowGraphReference?.controlFlowGraph ?: return
+        // 与官方 CHIR UnreachableBranchCheck 相同，CFA 只消费 CFG 常量分支目标；
+        // Sema pattern legality 诊断不参与这一后端控制流判定。
+        val unreachablePatterns = CfirControlFlowConstAnalysis().collectUnreachablePatterns(graph)
+        for (pattern in unreachablePatterns) {
+            reportOn(
+                source = pattern.source as? AbstractCjSourceElement,
+                factory = CfirErrors.UNREACHABLE_PATTERN,
+                context = data,
+            )
+        }
     }
 }

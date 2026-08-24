@@ -279,15 +279,16 @@ internal class ScopeBasedTowerLevel(
             val enumConstructorCandidates = mutableListOf<CfirEnumConstructorSymbol>()
             scope.processCallablesByName(info.name) { symbol ->
                 val enumConstructorSymbol = symbol as? CfirEnumConstructorSymbol ?: return@processCallablesByName
-                // enum 体内的词法遮蔽是硬性可见性规则，不参与目标类型细化的回滚。
-                if (lexicalOwnerClassId != null &&
-                    enumConstructorSymbol.enumOwnerClassId() != lexicalOwnerClassId
-                ) {
-                    return@processCallablesByName
-                }
                 enumConstructorCandidates += enumConstructorSymbol
             }
-            for (enumConstructorSymbol in enumConstructorCandidates.refineByExpectedEnumOwner(expectedOwnerClassId)) {
+            // 当前 enum/extend 只遮蔽同名的局部 constructor。若局部 owner 根本没有该名称，
+            // 同包的其它 enum value（例如 `A.test` 中的 `B1.test()`）仍是合法 enum sugar。
+            val lexicallyVisibleCandidates = enumConstructorCandidates
+                .filter { candidate ->
+                    lexicalOwnerClassId == null || candidate.enumOwnerClassId() == lexicalOwnerClassId
+                }
+                .ifEmpty { enumConstructorCandidates }
+            for (enumConstructorSymbol in lexicallyVisibleCandidates.refineByExpectedEnumOwner(expectedOwnerClassId)) {
                 if (consumeCallableCandidate(enumConstructorSymbol, processor).isFoundByThisLevel) {
                     result = ProcessResult.FOUND
                 }

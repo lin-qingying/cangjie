@@ -15,8 +15,8 @@ main(): Int64 {
     var time = Twounit(year, month)
     var d = match (time) {
         case Twounit(Day(1, 2, 3), Month(2, 3)) => 1
-        case Twounit(Year(1), Month(2, 3)) => 0
-        case _ => -1
+        case <!UNREACHABLE_PATTERN!>Twounit(Year(1), Month(2, 3))<!> => 0
+        case <!UNREACHABLE_PATTERN!>_<!> => -1
     }
     return d
 }

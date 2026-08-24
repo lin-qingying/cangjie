@@ -35,6 +35,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirTryExpression
 import org.cangnova.cangjie.cfir.expressions.CfirTypeOperator
 import org.cangnova.cangjie.cfir.expressions.CfirUnsafeExpression
 import org.cangnova.cangjie.cfir.expressions.CfirWrappedExpression
+import org.cangnova.cangjie.cfir.patterns.CfirPattern
 import org.cangnova.cangjie.cfir.resolve.dfa.FlowPath
 import org.cangnova.cangjie.cfir.resolve.dfa.PersistentFlow
 import org.cangnova.cangjie.cfir.resolve.dfa.controlFlowGraph
@@ -551,7 +552,13 @@ class MatchExitNode(owner: ControlFlowGraph, override val fir: CfirMatchExpressi
 }
 
 /** match 分支条件入口节点。 */
-class MatchBranchConditionEnterNode(owner: ControlFlowGraph, override val fir: CfirMatchBranch, level: Int) : CFGNode<CfirMatchBranch>(owner, level), EnterNodeMarker {
+class MatchBranchConditionEnterNode(
+    owner: ControlFlowGraph,
+    override val fir: CfirMatchBranch,
+    /** 分支所属的 match；CFG 后续分析不得通过 tree identity 反查该关系。 */
+    val matchExpression: CfirMatchExpression,
+    level: Int,
+) : CFGNode<CfirMatchBranch>(owner, level), EnterNodeMarker {
     /**
      * 将 match 分支条件入口节点分派给 CFG visitor。
      */
@@ -559,11 +566,65 @@ class MatchBranchConditionEnterNode(owner: ControlFlowGraph, override val fir: C
 }
 
 /** match 分支条件出口节点。 */
-class MatchBranchConditionExitNode(owner: ControlFlowGraph, override val fir: CfirMatchBranch, level: Int) : CFGNode<CfirMatchBranch>(owner, level), ExitNodeMarker {
+class MatchBranchConditionExitNode(
+    owner: ControlFlowGraph,
+    override val fir: CfirMatchBranch,
+    /** 分支所属的 match；常量流据此取得 selector 并限定 failure 链扫描范围。 */
+    val matchExpression: CfirMatchExpression,
+    level: Int,
+) : CFGNode<CfirMatchBranch>(owner, level), ExitNodeMarker {
     /**
      * 将 match 分支条件出口节点分派给 CFG visitor。
      */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitMatchBranchConditionExitNode(this, data)
+}
+
+/**
+ * match 模式中的一个原子判定节点。
+ *
+ * 一个 source-level case 可能先后检查 enum tag、嵌套 payload 和常量模式。把每个会分叉的
+ * 判定保存在 CFG 中，常量流才能像 CHIR 一样选择实际 successor，并把被拒绝路径的诊断
+ * 精确归属到 [reportSource]。其中 [subjectPath] 是从 match selector 到当前 payload 的索引链。
+ */
+class MatchPatternDecisionNode(
+    owner: ControlFlowGraph,
+    /** 当前原子判定所属的完整 case。 */
+    val branch: CfirMatchBranch,
+    /** 当前要检查的原子模式；guard 判定节点为空。 */
+    val pattern: CfirPattern?,
+    /** 当前 branch guard；模式判定节点为空。 */
+    val guard: CfirExpression?,
+    /** 该原子模式在 match subject 中的 payload 路径。 */
+    val subjectPath: List<Int>,
+    /** 对应 CHIR block debug location 的 source pattern。 */
+    val reportSource: CfirPattern,
+    /** 当前判定所属的 match。 */
+    val matchExpression: CfirMatchExpression,
+    level: Int,
+) : CFGNode<CfirMatchBranch>(owner, level) {
+    /** CFG 节点的通用 CFIR owner 与 [branch] 保持一致。 */
+    override val fir: CfirMatchBranch
+        get() = branch
+
+    /** 将原子模式判定节点分派给 CFG visitor。 */
+    override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitMatchPatternDecisionNode(this, data)
+}
+
+/**
+ * 一个 case 所有原子模式判定失败后的汇合节点。
+ *
+ * 该节点让后续 case 和 synthetic else 继续沿正常 CFG 构造；它本身不是条件节点，常量分析
+ * 只在 [MatchPatternDecisionNode] 的 success/failure 边上作出唯一 successor 选择。
+ */
+class MatchBranchFailureNode(
+    owner: ControlFlowGraph,
+    override val fir: CfirMatchBranch,
+    /** 分支所属的 match。 */
+    val matchExpression: CfirMatchExpression,
+    level: Int,
+) : CFGNode<CfirMatchBranch>(owner, level) {
+    /** 将分支失败汇合节点分派给 CFG visitor。 */
+    override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitMatchBranchFailureNode(this, data)
 }
 
 /** match 分支结果入口节点。 */
