@@ -18,6 +18,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirJump
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirHandleClause
+import org.cangnova.cangjie.cfir.expressions.CfirIncrementDecrementExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLoopExpression
 import org.cangnova.cangjie.cfir.expressions.CfirMatchBranch
@@ -561,6 +562,18 @@ class CfirDataFlowAnalyzer(
     fun exitVariableAssignment(assignment: CfirAssignment) {
         if (hasActiveGraph) {
             graphBuilder.exitVariableAssignment(assignment)
+        }
+    }
+
+    /**
+     * 退出自增/自减表达式的 CFG。
+     *
+     * `CfirIncrementDecrementExpression` 不会转换成普通 assignment，因此必须通过专用
+     * 节点向 CFG 暴露它对左值的写入效果。
+     */
+    fun exitIncrementDecrementExpression(expression: CfirIncrementDecrementExpression) {
+        if (hasActiveGraph) {
+            graphBuilder.exitIncrementDecrementExpression(expression)
         }
     }
 

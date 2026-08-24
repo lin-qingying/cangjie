@@ -23,6 +23,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirContinueExpression
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirHandleClause
+import org.cangnova.cangjie.cfir.expressions.CfirIncrementDecrementExpression
 import org.cangnova.cangjie.cfir.expressions.CfirJump
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralKind
@@ -1155,6 +1156,15 @@ class ControlFlowGraphBuilder private constructor(
                 addEdge(node, finallyEnter, preferredKind = kind, propagateDeadness = false, label = UncaughtExceptionPath)
             }
         }
+
+    /**
+     * 退出自增/自减表达式并记录其对左值的写入。
+     *
+     * 该语法节点不经过 [CfirAssignment]，但和赋值一样必须占据一个稳定的 CFG 程序点；
+     * 否则任何以局部状态为输入的后续分析都会错误保留旧事实。
+     */
+    fun exitIncrementDecrementExpression(expression: CfirIncrementDecrementExpression): IncrementDecrementNode =
+        createIncrementDecrementNode(expression).also(::addNewSimpleNode)
 
     /** 进入可选链表达式。 */
     fun enterOptionalChain(optionalChainExpression: CfirOptionalChainExpression): EnterOptionalChainNode =

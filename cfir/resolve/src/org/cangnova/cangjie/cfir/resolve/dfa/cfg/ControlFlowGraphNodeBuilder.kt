@@ -18,6 +18,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirHandleClause
 import org.cangnova.cangjie.cfir.expressions.CfirIfExpression
+import org.cangnova.cangjie.cfir.expressions.CfirIncrementDecrementExpression
 import org.cangnova.cangjie.cfir.expressions.CfirJump
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLoopExpression
@@ -385,6 +386,10 @@ fun ControlFlowGraphBuilder.createVariableDeclarationExitNode(fir: CfirVariable)
 /** 创建变量赋值节点。 */
 fun ControlFlowGraphBuilder.createVariableAssignmentNode(fir: CfirAssignment): VariableAssignmentNode =
     VariableAssignmentNode(currentGraph, fir, levelCounter)
+
+/** 创建自增/自减的写入完成节点。 */
+fun ControlFlowGraphBuilder.createIncrementDecrementNode(fir: CfirIncrementDecrementExpression): IncrementDecrementNode =
+    IncrementDecrementNode(currentGraph, fir, levelCounter)
 
 // ----------------------------------- Optional chain (仓颉 ?.) -----------------------------------
 

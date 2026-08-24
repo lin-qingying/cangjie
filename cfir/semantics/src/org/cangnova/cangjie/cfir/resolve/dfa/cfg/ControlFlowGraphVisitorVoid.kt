@@ -163,6 +163,8 @@ abstract class ControlFlowGraphVisitorVoid : ControlFlowGraphVisitor<Unit, Nothi
     open fun visitVariableDeclarationExitNode(node: VariableDeclarationExitNode) = visitNode(node)
     /** 访问变量赋值节点。 */
     open fun visitVariableAssignmentNode(node: VariableAssignmentNode) = visitNode(node)
+    /** 访问自增/自减写入节点。 */
+    open fun visitIncrementDecrementNode(node: IncrementDecrementNode) = visitNode(node)
     /** 访问 optional chain 入口节点。 */
     open fun visitEnterOptionalChainNode(node: EnterOptionalChainNode) = visitNode(node)
     /** 访问 optional chain 出口节点。 */
@@ -323,6 +325,8 @@ abstract class ControlFlowGraphVisitorVoid : ControlFlowGraphVisitor<Unit, Nothi
     final override fun visitVariableDeclarationExitNode(node: VariableDeclarationExitNode, data: Nothing?) = visitVariableDeclarationExitNode(node)
     /** 桥接变量赋值节点的双参数访问到无 data 访问。 */
     final override fun visitVariableAssignmentNode(node: VariableAssignmentNode, data: Nothing?) = visitVariableAssignmentNode(node)
+    /** 桥接自增/自减写入节点的双参数访问到无 data 访问。 */
+    final override fun visitIncrementDecrementNode(node: IncrementDecrementNode, data: Nothing?) = visitIncrementDecrementNode(node)
     /** 桥接 optional chain 入口节点的双参数访问到无 data 访问。 */
     final override fun visitEnterOptionalChainNode(node: EnterOptionalChainNode, data: Nothing?) = visitEnterOptionalChainNode(node)
     /** 桥接 optional chain 出口节点的双参数访问到无 data 访问。 */
