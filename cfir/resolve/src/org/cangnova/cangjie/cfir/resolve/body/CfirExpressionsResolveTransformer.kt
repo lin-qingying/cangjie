@@ -602,6 +602,8 @@ open class CfirExpressionsResolveTransformer(
 
             // 仓颉 `++` / `--` 不是可重载调用；合法表达式的结果类型固定为 Unit。
             incrementDecrementExpression.replaceConeTypeOrNull(builtinTypes.unitType)
+            // 专用语法节点不经过 transformAssignment；在 operand 完成求值后显式写入 CFG。
+            components.dataFlowAnalyzer.exitIncrementDecrementExpression(incrementDecrementExpression)
             incrementDecrementExpression
         }
 

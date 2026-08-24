@@ -170,6 +170,8 @@ abstract class ControlFlowGraphVisitor<out R, in D> {
     open fun visitVariableDeclarationExitNode(node: VariableDeclarationExitNode, data: D): R = visitNode(node, data)
     /** 访问变量赋值节点。 */
     open fun visitVariableAssignmentNode(node: VariableAssignmentNode, data: D): R = visitNode(node, data)
+    /** 访问自增/自减写入节点。 */
+    open fun visitIncrementDecrementNode(node: IncrementDecrementNode, data: D): R = visitNode(node, data)
 
     /** 访问 optional chain 入口节点。 */
     open fun visitEnterOptionalChainNode(node: EnterOptionalChainNode, data: D): R = visitNode(node, data)

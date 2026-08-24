@@ -371,6 +371,10 @@ internal class ControlFlowGraphCopier : ControlFlowGraphVisitor<CFGNode<*>, Unit
     override fun visitVariableAssignmentNode(node: VariableAssignmentNode, data: Unit): CFGNode<*> =
         VariableAssignmentNode(get(node.owner), node.fir, node.level)
 
+    /** 复制自增/自减写入节点。 */
+    override fun visitIncrementDecrementNode(node: IncrementDecrementNode, data: Unit): CFGNode<*> =
+        IncrementDecrementNode(get(node.owner), node.fir, node.level)
+
     /** 复制可选链入口节点。 */
     override fun visitEnterOptionalChainNode(node: EnterOptionalChainNode, data: Unit): CFGNode<*> =
         EnterOptionalChainNode(get(node.owner), node.fir, node.level)

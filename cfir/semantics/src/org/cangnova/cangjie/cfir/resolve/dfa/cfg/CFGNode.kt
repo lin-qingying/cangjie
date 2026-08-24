@@ -21,6 +21,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirHandleClause
 import org.cangnova.cangjie.cfir.expressions.CfirIfExpression
+import org.cangnova.cangjie.cfir.expressions.CfirIncrementDecrementExpression
 import org.cangnova.cangjie.cfir.expressions.CfirJump
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
 import org.cangnova.cangjie.cfir.expressions.CfirMatchBranch
@@ -967,6 +968,22 @@ class VariableAssignmentNode(owner: ControlFlowGraph, override val fir: CfirAssi
      * 将变量赋值节点分派给 CFG visitor。
      */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitVariableAssignmentNode(this, data)
+}
+
+/**
+ * 自增/自减表达式的写入完成节点。
+ *
+ * `++` / `--` 在 CFIR 中保留为专用语法节点，而不是普通 [CfirAssignment]。该节点把它
+ * 对左值的真实写入显式放入 CFG，避免局部状态分析把 `i++` 误当作纯读取。
+ */
+class IncrementDecrementNode(
+    owner: ControlFlowGraph,
+    override val fir: CfirIncrementDecrementExpression,
+    level: Int,
+) : CFGNode<CfirIncrementDecrementExpression>(owner, level) {
+    /** 将自增/自减写入分派给 CFG visitor。 */
+    override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R =
+        visitor.visitIncrementDecrementNode(this, data)
 }
 
 /** optional chain 入口节点。 */
