@@ -8,5 +8,5 @@ class A <: ToString {
 
 main(): Int64 {
     var a = A()
-    <!TYPE_MISMATCH!>print(a)<!>
+    <!RETURN_TYPE_MISMATCH!>print(a)<!>
 }

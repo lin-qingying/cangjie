@@ -3987,3 +3987,58 @@ Flagged while gathering evidence for the extend upper-bound recursion problem ty
   - focused `enum33` plus `enum_operator_overload` PSI/LightTree regression: `4 tests, 0 failures, 0 errors`.
   - complete `CfirAnalysisLLTTestGenerated$Enum` and `CfirAnalysisLLTPsiTestGenerated$Enum`: `182 tests, 0 failures, 0 errors` (91 tests per entry path).
   - unfiltered `.\gradlew.bat :cfir:analysis-tests:test -x :cfir:analysis-tests:generateTestGeneratorForCfirAnalysisTestsTests --no-daemon --max-workers=1 --console=plain --no-configuration-cache`: `8422 tests, 996 failures, 307 skipped`; the fresh XML reports zero failures and zero errors in every `llt/enum` suite, so the remaining global failures are outside this completed Enum slice.
+
+## 函数值调用的 expected-return 结果类型投影（已修复并验证）
+
+- problem type: Resolve / Type Inference（函数值调用）。
+- regression trigger and root cause: 8d4246122 为已确认的函数类型 callable-value 候选增加了 implicit-invoke 恢复防护；该防护是正确的，不能回退。它使既有缺陷显现：ResolveUtils.initialTypeOfCandidate 对 CallKind.Function 的 CfirVariable 仍按 NamedValueAccess 读取函数值类型 (P) -> R，而不是 f(...) 的调用结果 R。expected-return 过滤于是提前淘汰 block() 与 produce(1) 的合法候选，最终留下 UNRESOLVED_REFERENCE。
+- official Cangjie evidence: cjc 1.0.5 对 block: () -> Int64 的 block() 调用无语义诊断；produce(1) 传入 expectInt 无诊断；produce(true) 仅保留 produce 调用自身的泛型推断诊断，不应派生 block 的未解析引用。官方 TypeCheckCall 的函数类型调用路径同样把函数类型的 return type 作为调用表达式类型。
+- Kotlin counterpart files consulted: external/kotlin/compiler/fir/resolve/src/org/jetbrains/kotlin/fir/resolve/ResolveUtils.kt（initialTypeOfCandidate / candidate.substitutedReturnType 的候选投影）。
+- CFIR owner files changed: cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/ResolveUtils.kt（为 enum constructor 与 CallKind.Function + CfirVariable 统一使用 candidate.substitutedReturnType，再应用当前约束系统；NamedValueAccess 保持函数值类型）。
+- repair principle: 根据调用语法而不是符号种类决定候选初始投影；所有 expected-return、重载规约和 lambda completion 共享同一调用结果类型，因此不需要恢复 implicit-invoke 或为具体 fixture 分支。
+- fixtures covered: diagnostics2/inference/returnTypeInferenceMismatch.cj；diagnostics/type-mismatch/lambdaReturnConstraintMismatch.cj、lambdaReturnConstraintMismatchAsArgumentFeature.cj、lambdaParameterInference.cj；以及 Inference 与 TypeMismatch 两个 generated family 的 PSI、LightTree、WithoutAliasExpansion 入口。
+- verification commands and outcome:
+  - 定向：.\gradlew.bat :cfir:analysis-tests:test --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisDiagnostics2TestGenerated$Inference' --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisDiagnostics2PsiTestGenerated$Inference' --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisDiagnostics2WithoutAliasExpansionTestGenerated$Inference' --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisDiagnosticsTestGenerated$TypeMismatch' --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisDiagnosticsPsiTestGenerated$TypeMismatch' --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisDiagnosticsWithoutAliasExpansionTestGenerated$TypeMismatch' → Inference 的 PSI / LightTree 各 9/9 通过，TypeMismatch 的 PSI / LightTree 各 18/18 通过；两个 WithoutAliasExpansion 入口仅执行非跳过项且 0 failures。
+  - 全量：.\gradlew.bat :cfir:analysis-tests:test → 控制台为 8422 tests completed、996 failed、307 skipped；新鲜 XML 中全部 9 个 Inference / TypeMismatch suite 均为 0 failures、0 errors，包含 returnTypeInferenceMismatch 的 PSI 与 LightTree。
+
+## 变参 arity 诊断调试输出清理（已修复并验证）
+
+- problem type: Diagnostics / Test infrastructure（stdout/stderr 污染，非语义变更）。
+- regression source: ebe914ca0 在 CfirMapArguments 的三个 WrongNumberOfArguments 分支、CallShape 构造和 coneDiagnosticToCfirDiagnostic 的诊断映射中加入 CFIR_VARIADIC_ARITY_* System.err.println。打印覆盖所有参数个数错误，并非变参语义，因此污染每次 LLT 运行的日志。
+- official Cangjie evidence: cjc 1.0.5 与 external/cangjie_compiler 的变参检查均确认，参数个数错误必须仍关联原始调用的 argument-list；现有 CallShape.arityDiagnosticSource 已用 CjOffsetsOnlySourceElement 保留该范围，不需要改变 mapper 或 fixture。
+- Kotlin counterpart files consulted: 不适用；本项只移除调试副作用，不改变解析、约束或诊断选择。
+- CFIR owner files changed: cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/stages/CfirMapArguments.kt；cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/diagnostics/coneDiagnosticToCfirDiagnostic.kt。
+- repair principle: 参数映射与诊断映射保持原有结构化诊断对象及 source range，只移除无条件 stderr 副作用，所以所有普通调用、函数值调用和变参调用共用相同无噪声路径。
+- fixtures covered: llt/call/variadic_class.cj、variadic_compose.cj、variadic_enum.cj、variadic_err_ambiguous.cj、variadic_err_ambiguous_01.cj、variadic_err_enum.cj、variadic_err_generic.cj、variadic_err_num.cj、variadic_err_static.cj、variadic_err_static_call_non.cj、variadic_err_ty.cj、variadic_func.cj、variadic_generic.cj、variadic_lambda.cj、variadic_lambda_01.cj、variadic_op_call.cj、variadic_op_call_1.cj、variadic_pipeline.cj、variadic_static_generic_01.cj、variadic_static_generic_02.cj、variadic_subscript.cj、variadic_var.cj；每份均覆盖 PSI 与 LightTree。
+- verification commands and outcome:
+  - 全族：.\gradlew.bat :cfir:analysis-tests:test --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTTestGenerated$Call' --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTPsiTestGenerated$Call' → 两条入口各 22 个 variadic 用例均 0 failures、0 errors；Call 超集的其余各 11 个失败已由 XML 确认为非 variadic 既有失败。
+  - 全量：同上；rg -n CFIR_VARIADIC_ARITY cfir/resolve cfir/checkers 无输出，当前完整回归不再产生该调试前缀。
+
+## Enum 局部常量域的调用与自增写入语义（已修复并验证）
+
+- problem type: Control-flow constant analysis / unreachable pattern。
+- root cause: 常量域把每个普通函数调用都当作未知副作用而清空所有局部事实；同时 `CfirIncrementDecrementExpression` 在 CFG 中只有 operand 的读取、没有代表其写入效果的程序点。因此 `enum25_3` 丢失调用前的 enum constructor tag，而 `enum32_1` 在 `i++` 后仍保留 `i = 0` 的过期事实。
+- official Cangjie evidence: `cjc 1.0.5` 对 `enum25_3.cj` 在 `case a` 报 `chir_unreachable_pattern`，证明无关普通调用不使 `x = A.b(10)` 失效；对完整 `enum32_1.cj` 不报 `chir_unreachable_pattern`。`external/cangjie_compiler/src/CHIR/Analysis/ConstAnalysis.cpp:415` 对普通 `APPLY` 直接返回；`src/Sema/Desugar/DesugarBeforeTypeCheck.cpp:289` 将 `i++` 降糖为 `i += 1`，随后 `TranslateAssignExpr.cpp:157` 产生 `Load → ADD → Store`。
+- Kotlin counterpart files consulted: `external/kotlin/compiler/fir/resolve/src/org/jetbrains/kotlin/fir/resolve/transformers/body/resolve/FirExpressionsResolveTransformer.kt`（自增/自减按赋值写回建模）、`FirDataFlowAnalyzer.kt` 与 `ControlFlowGraphBuilder.kt`（写入 CFG 节点）。Kotlin 仅用于 CFG 结构对齐，语义由官方 Cangjie 证据决定。
+- CFIR owner files changed: `cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/collectors/components/CfirControlFlowConstAnalysis.kt`；`cfir/semantics/src/org/cangnova/cangjie/cfir/resolve/dfa/cfg/{CFGNode.kt,ControlFlowGraphVisitor.kt,ControlFlowGraphVisitorVoid.kt}`；`cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/dfa/cfg/{ControlFlowGraphNodeBuilder.kt,ControlFlowGraphBuilder.kt,ControlFlowGraphCopier.kt}`；`cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/{CfirDataFlowAnalyzer.kt,CfirExpressionsResolveTransformer.kt}`。
+- repair principle: 普通调用只影响其结果而不擦除无关局部常量；`++/--` 作为共享 CFG 写入点精确更新可表示的整数值，未知目标或溢出仅移除旧事实；不可达边在常量状态达到不动点后才报告，避免循环首轮的暂态结论泄漏。
+- fixtures covered: `llt/enum/enum25_3.cj`、`llt/enum/enum32_1.cj`，各覆盖 `CfirAnalysisLLTTestGenerated` 与 `CfirAnalysisLLTPsiTestGenerated`。
+- fixture correction: none.
+- verification commands and outcome:
+  - 精确：`testEnum253`、`testEnum321` 的 PSI/LightTree 四个 selector 全部通过。
+  - 全族：`CfirAnalysisLLTPsiTestGenerated$Enum` 与 `CfirAnalysisLLTTestGenerated$Enum` 的新鲜 XML 均为 `69 tests, 0 failures, 0 errors`，其中 `testEnum253()`、`testEnum321()` 均无 failure/error。
+- 全量：`.\gradlew.bat :cfir:analysis-tests:test -x :cfir:analysis-tests:generateTestGeneratorForCfirAnalysisTestsTests --no-configuration-cache --no-daemon --max-workers=1 --console=plain` 完成，控制台为 `8422 tests completed, 964 failed, 307 skipped`；失败仍是仓库既有的非 Enum 及 macro 簇，两个 Enum 报告保持零失败。
+
+## 固定 tuple 内建下标的越界诊断
+
+- problem type: Diagnostics / 内建下标。
+- root cause: `CfirExpressionsResolveTransformer` 已为越界或非固定 tuple 下标生成错误类型，但所有 `CfirSubscriptExpression` 共用的 `CfirSubscriptAssignmentChecker` 只处理 `ConeVArrayType`，所以 `ConeTupleType` 没有将可确定的越界转为 `BUILTIN_INDEX_IN_BOUND`。
+- official Cangjie evidence: `cjc 1.0.5 --diagnostic-format json` 对 `tuple4.cj` 的 `(a, b, c)[3]` 与 `tuple5.cj` 的 `d[0][2]` 均报告 `sema_builtin_index_in_bound`，位置分别为原 fixture 的 `6:30-31`、`8:18-19`。`external/cangjie_compiler/src/Sema/TypeCheckExpr/SubscriptExpr.cpp:81-100` 的 `ChkTupleAccess` 对单个 `LIT_CONST_EXPR` 的 Int64 索引在 `index >= tupleTy.typeArgs.size()` 时报告相同诊断。
+- Kotlin counterpart files consulted: `external/kotlin/compiler/fir/raw-fir/psi2fir/src/org/jetbrains/kotlin/fir/builder/PsiRawFirBuilder.kt`、`external/kotlin/compiler/fir/raw-fir/light-tree2fir/src/org/jetbrains/kotlin/fir/lightTree/converter/LightTreeRawFirExpressionBuilder.kt`、`external/kotlin/compiler/fir/resolve/src/org/jetbrains/kotlin/fir/resolve/transformers/body/resolve/FirExpressionsResolveTransformer.kt`；Kotlin 将两个前端入口收敛到统一 indexed-access IR/resolve 路径，仅作为架构参照。
+- CFIR owner files changed: `cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirExpressionSemanticsChecker.kt`。共享 checker 按 fully-expanded receiver type 分发：保留 VArray 的现有单索引、类型与 receiver-range 规则；对 tuple 的单个无后缀或 `i64` 整数字面量执行固定长度上界检查，并在 index token 报 `BUILTIN_INDEX_IN_BOUND`。
+- repair principle: 在两个 raw builder 已共享的 `CfirSubscriptExpression` checker 中统一内建下标边界报告；resolver 继续只负责 tuple 元素类型恢复和错误类型，避免 PSI、LightTree 或 fixture 分别补报。
+- fixtures covered: 全部 `llt/tuple`（37 个 fixture，PSI/LightTree）及 `llt/ErrMsgs/question_mark_0.cj` 的可选 tuple 下标。
+- verification commands and outcome:
+  - `CfirAnalysisLLTTestGenerated$Tuple`：19 tests, 0 failures, 0 errors；`CfirAnalysisLLTPsiTestGenerated$Tuple`：19 tests, 0 failures, 0 errors。
+  - `ErrMsgs.testQuestionMark0` 的 PSI 与 LightTree XML 均包含正确的 `optTup?[<!BUILTIN_INDEX_IN_BOUND!>2<!>]`。该 method 仍因 `(err)?...` 上三处既有 `OPTIONAL_CHAIN_NON_OPTIONAL` / `INVALID_BINARY_OPERATOR` 差异失败，和 tuple marker 无关。
+  - 全量 `./gradlew.bat :cfir:analysis-tests:test --console=plain`：8422 tests, 958 failures, 307 skipped；两个 `Tuple` suite 在新鲜 XML 中均为 0 failures、0 errors。
