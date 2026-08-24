@@ -4042,3 +4042,29 @@ Flagged while gathering evidence for the extend upper-bound recursion problem ty
   - `CfirAnalysisLLTTestGenerated$Tuple`：19 tests, 0 failures, 0 errors；`CfirAnalysisLLTPsiTestGenerated$Tuple`：19 tests, 0 failures, 0 errors。
   - `ErrMsgs.testQuestionMark0` 的 PSI 与 LightTree XML 均包含正确的 `optTup?[<!BUILTIN_INDEX_IN_BOUND!>2<!>]`。该 method 仍因 `(err)?...` 上三处既有 `OPTIONAL_CHAIN_NON_OPTIONAL` / `INVALID_BINARY_OPERATOR` 差异失败，和 tuple marker 无关。
   - 全量 `./gradlew.bat :cfir:analysis-tests:test --console=plain`：8422 tests, 958 failures, 307 skipped；两个 `Tuple` suite 在新鲜 XML 中均为 0 failures、0 errors。
+
+## AMBIGUOUS_FUNCTION_CALL 误报/漏报家族（已修复并验证）
+
+- problem type: Resolve / Diagnostics（重载消歧与调用点歧义诊断）。LLT 全量中 99 个用例因 AMBIGUOUS_FUNCTION_CALL 相关差异失败：67 例误报（官方无歧义）、2 例漏报（官方有歧义）。
+- root cause（四个共享缺陷，各自位于其语义的共享 owner）:
+  1. 实参表达式携带 error 类型时，多候选失败仍渲染 AMBIGUOUS_FUNCTION_CALL。官方 `TypeCheckCall.cpp::DiagnoseForCall` 对"候选检查前非空、检查后全部淘汰且任一实参 `Ty::IsTyCorrect` 为假"的调用直接返回；CFIR 的 mapper 缺少这条级联抑制（既有 `isErrorArgumentCascade` 只覆盖 constructor 候选）。
+  2. 交叉 upper bound（`T <: C & I & I2<U>`）成员查找把每个 bound scope 的同名成员全部保留为独立候选并落入歧义分支。官方 `ResolveOverload` 有两条消重规则：参数完全一致的 class/struct 实现（含 extend 提供的实现）支配接口声明/抽象成员（TypeCheckCall.cpp:754-766）；不同接口 owner 的替换后同签名成员只保留一个（TypeCheckCall.cpp:792 + IsInterfaceFuncWithSameSignature:321-333）。
+  3. 局部 lambda 初始化器 body 重算后返回占位仍未固定，函数值调用的结果类型以未固定 TypeVariable 泄漏给外层调用，使 `println` 全部 16 个 std.core 重载同时适用、most-specific 无法收敛（实参类型为 `TypeVariable(_R)` 与误报告高度相关，已由调试探针证实）。
+  4. 包级 scope 被 tower 归入最低优先级 PACKAGE 组并被当前文件 scope 的成功候选提前截止：同包其他文件的同名顶层函数永远进不了候选集合（private foo + public foo 调用漏报歧义）。
+- official Cangjie evidence: cjc 1.0.5 探针——`println(f1_2(true,false))` 等 Bool/String 插值/数值实参零诊断；`println(undeclared(1))` 只报 undeclared identifier；`T <: C & I` 冲突 bound 只报 bound 不一致、`x.foo()` 干净；`U <: C & I<U> & I2<U>` 的 `a.foo(a)` 干净；`T <: IA & IB` 不同签名两调用都干净；同包 private+public 同名 `foo()` 报 `sema_ambiguous_match` 且列出两个候选。官方实现定位：`external/cangjie_compiler/src/Sema/TypeCheckCall.cpp:754-766, 792, 321-333, 2583-2659`；诊断定义 `include/cangjie/Basic/DiagnosticSema.def:86`。
+- Kotlin counterpart files consulted: `external/kotlin/compiler/fir/resolve/src/org/jetbrains/kotlin/fir/resolve/calls/stages/ArgumentCheckingProcessor.kt:282`（ErrorTypeInArguments）、`fir/checkers/src/org/jetbrains/kotlin/fir/analysis/diagnostics/coneDiagnosticToFirDiagnostic.kt:163`（映射为 null）、`FirCallResolver.kt`（多失败候选 → ConeAmbiguityError 携带 per-candidate 错误）、FirSyntheticCallGenerator 同构结构。Kotlin 仅提供框架分层，语义以 cjc/官方源码为准。
+- CFIR owner files changed:
+  - `cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/diagnostics/coneDiagnosticToCfirDiagnostic.kt`：`mapConeAmbiguityError` 新增 `hasErroneousArgument()` 级联抑制（对齐官方 invalid 实参早退）。
+  - `cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/overloads/ConeOverloadConflictResolver.kt`：新增 `collapseCrossOwnerSameSignatureMembers`（filterOverrides 后调用），仅作用于类型参数接收者，按官方两条规则消重；extend 成员视为具体实现参与规则 1。
+  - `cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/tower/CfirTowerResolveTask.kt`：`classifyNonLocalScope` 将 `CfirPackageMemberScope` 归入 NON_LOCAL 组，与当前文件 scope 同组并列，跨文件同名顶层重载不再被截止。
+  - `cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/transformers/CfirSyntheticCallGenerator.kt`：body 重算后 `constrainLambdaReturnPlaceholderFromBody` 把已确定的末表达式类型约束到未固定的返回占位，阻断未固定变量向函数值调用结果泄漏。
+- repair principle: 每条规则落在其语义的共享 owner——错误实参级联在诊断映射层、bound 成员消重在冲突解析器、跨文件顶层重载在 tower 分组、lambda 自推断在 synthetic-call completion；全部按候选/接收者/实参的结构化属性判定，不含 fixture 名称或单文件特判。
+- fixtures covered（PSI 与 LightTree 双路径）: ErrMsgs/AccessNotImported01-03、ExtendImport/err_extend_primitive、Function/Import00/err_ambiguous_01、UnusedImport002/unused015-016、ConstraintCheck/expose5、Generics/GenericConstraint/generic_constraint_and_4、Generics/GenericConstraintInheritance/generic_upper_constraint_inheritance_08-10、TypeInfer/lambda_param_01（03/07/09 见遗留）、Concurrency/spawn10、Array/array_builin_ctype、FlowExpr/composition_*、Forin/*、Linkage/access*、Match/matchpattern_guard、OperatorOverload/err_unary01 与 timeout07、Ffi/Bugfix1、redefinition/private_func/03_public、Extend/default_implement/multi_default_impl_04-05、Class/interface_implement_4、Extend_import/import6-import7。
+- 遗留相关失败（不同根因，未在本轮处理）:
+  - TypeInfer lambda_param_03/07/09（双路径）: PCLA 无法从 body 一致固定 lambda 参数（CFIR 还额外多报 GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT / TYPE_MISMATCH，官方不报）；println 歧义是该缺口的下游产物，owner 在 PCLA 参数固定侧。
+  - OperatorOverload/timeout07、MatchNoSelector fuzz001、Array/array_builin_ctype: 错误隐藏在 postponed atom / 操作符操作数内部，实参顶层类型不是 ConeErrorType，`hasErroneousArgument` 的官方同构判定覆盖不到；需要 postponed-atom 错误传播的专门证据链。
+  - ConstraintCheck/expose5 剩余差异为 INTERFACE_MEMBER_MUST_BE_IMPLEMENTED vs ABSTRACT_MEMBER_NOT_IMPLEMENTED（继承检查器家族）；expose4 为 GENERIC_NO_MEMBER_MATCH_IN_UPPER_BOUNDS vs GENERIC_NO_METHOD... 命名差异。
+- verification commands and outcome:
+  - 全量：`.\gradlew.bat :cfir:analysis-tests:test --continue --console=plain` → 新鲜 XML 汇总 **8423 tests, 922 failures**（本轮起点基线 958，净减 36；AMBIGUOUS_FUNCTION_CALL 相关差异从 99 例降至 32 例 SAME + 12 例 SPURIOUS，MISSING 归零）。
+  - 定向：GenericConstraintInheritance 全 suite 通过（08/09/10 转绿）；redefinition/private_func/03_public test2 双路径通过；multi_default_impl_04/05、interface_implement_4、import7 回归守卫后保持通过；lambda_param_01 双路径转绿。
+  - 单元：`:cfir:resolve:test` 114 tests, 3 failed——与 main 基线完全相同的 3 个既有失败（CfirTypeResolverTypeAliasExpansionTest ×2、CfirMapTypeArgumentsTest/conflicting declaration bound），非本次回归。

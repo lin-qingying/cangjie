@@ -367,7 +367,11 @@ private fun classifyNonLocalScope(scope: CfirScope, importedDepth: Int): CfirTow
         // 官方查找中，非函数源码声明会遮蔽导入声明；当前文件 scope 不能落入最低优先级的 package 兜底组。
         is CfirFileDeclaredTopLevelScope -> CfirTowerGroup.NON_LOCAL
         is CfirImportScope -> CfirTowerGroup.imported(importedDepth)
-        is CfirPackageMemberScope -> CfirTowerGroup.PACKAGE
+        // 官方把整个包的顶层函数视为同一张重载表：同包其他文件的声明与当前文件声明
+        // 共同参与候选（cjc 对同包 private foo + public foo 的调用报告 ambiguous match）。
+        // 因此包级 scope 必须与当前文件 scope 同组并列，不能被文件 scope 的成功候选
+        // 提前截止，否则跨文件同名重载在调用点丢失歧义。
+        is CfirPackageMemberScope -> CfirTowerGroup.NON_LOCAL
         else -> CfirTowerGroup.PACKAGE
     }
 }

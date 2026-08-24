@@ -26,6 +26,7 @@ package org.cangnova.cangjie.cfir.resolve.transformers
 
 import org.cangnova.cangjie.cfir.toCfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.common.moduleData
+import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationAttributes
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
@@ -61,6 +62,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
 import org.cangnova.cangjie.cfir.types.ConeAnyType
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeDiagnostic
+import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.types.ConeTypeVariableType
 import org.cangnova.cangjie.cfir.types.asCone
@@ -209,6 +211,12 @@ class CfirSyntheticCallGenerator(
                     expression,
                     null,
                 )
+                // 官方对无期望类型的 lambda 字面量按 body 结果自推断返回类型；若重算后
+                // 返回占位仍是未固定推断变量而 body 末表达式类型已确定，必须把该类型
+                // 约束到占位上。否则占位变量会随函数值调用的结果类型泄漏给外层调用，
+                // 使 `println(f(...))` 这类重载集合因实参为未固定变量而整体保持"全部
+                // 适用"，最终误报 AMBIGUOUS_FUNCTION_CALL。
+                constrainLambdaReturnPlaceholderFromBody(lambda, pclaInferenceSession)
             }
             pclaInferenceSession.applyResultsToMainCandidate()
         }
@@ -221,6 +229,23 @@ class CfirSyntheticCallGenerator(
             completedStorage = completedStorage,
             restoreBodyResolveState = false,
         )
+    }
+
+    /**
+     * body 重算后把已确定的末表达式类型约束到仍未固定的返回占位。
+     *
+     * 仅当返回类型仍是推断变量且末表达式类型本身确定（非推断变量、非 error）时才生效；
+     * 其余情况保持原状，交由真实调用点的 expected type 或既有诊断路径处理。
+     */
+    private fun constrainLambdaReturnPlaceholderFromBody(
+        lambda: org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction,
+        pclaInferenceSession: CfirPCLAInferenceSession,
+    ) {
+        val returnPlaceholder = lambda.returnTypeRef.coneTypeOrNull as? ConeTypeVariableType ?: return
+        val lastExpression = lambda.body?.statements?.lastOrNull() as? CfirExpression ?: return
+        val bodyResultType = lastExpression.coneTypeOrNull ?: return
+        if (bodyResultType is ConeTypeVariableType || bodyResultType is ConeErrorType) return
+        pclaInferenceSession.addSubtypeConstraintIfCompatible(bodyResultType, returnPlaceholder)
     }
 
     /** 构造接受单个指定类型参数的合成函数候选引用。 */
