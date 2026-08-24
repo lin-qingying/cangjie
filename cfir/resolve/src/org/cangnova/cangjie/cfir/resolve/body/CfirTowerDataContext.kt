@@ -41,6 +41,7 @@ import org.cangnova.cangjie.cfir.resolve.providers.scopeTraversalTypeOrNull
 import org.cangnova.cangjie.cfir.scopes.CfirContainingNamesAwareScope
 import org.cangnova.cangjie.cfir.scopes.CfirScope
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
+import org.cangnova.cangjie.cfir.scopes.impl.CfirClassMemberScopeKind
 import org.cangnova.cangjie.cfir.scopes.impl.CfirLocalScope
 import org.cangnova.cangjie.cfir.scopes.impl.staticScopeForQualifierType
 import org.cangnova.cangjie.cfir.session.CfirSession
@@ -364,7 +365,14 @@ fun SessionAndScopeSessionHolder.collectTowerDataElementsForClass(
 
     return CfirTowerElementsForClass(
         thisReceiver = thisReceiver,
-        staticScope = owner.staticScope(session, scopeSession, defaultType),
+        // 类体中的静态 scope 只是未限定 static 成员的词法入口，不能重新启用
+        // 当前类型的 extend 成员图；否则 receiver 的 BODY_LOOKUP 过滤会被此 tower level 绕过。
+        staticScope = owner.staticScope(
+            session,
+            scopeSession,
+            defaultType,
+            CfirClassMemberScopeKind.BODY_LOOKUP,
+        ),
         superClassesStaticScopes = superClassesStatics.toList().asReversed(),
     )
 }
@@ -382,9 +390,15 @@ fun CfirClassLikeDeclaration.staticScope(
     session: CfirSession,
     scopeSession: ScopeSession,
     qualifierType: ConeCangJieType? = null,
+    memberScopeKind: CfirClassMemberScopeKind = CfirClassMemberScopeKind.USE_SITE,
 ): CfirContainingNamesAwareScope? {
     val symbol = symbol as? CfirClassLikeSymbol<*> ?: return null
-    return symbol.staticScopeForQualifierType(session, scopeSession, qualifierType ?: symbol.constructType())
+    return symbol.staticScopeForQualifierType(
+        session,
+        scopeSession,
+        qualifierType ?: symbol.constructType(),
+        memberScopeKind,
+    )
 }
 
 /**
@@ -422,7 +436,14 @@ private fun collectSuperClassesStaticScopes(
         val superDeclaration = superSymbol.cfir
         if (superDeclaration !is CfirClassLikeDeclaration || superDeclaration is CfirInterface) continue
 
-        superDeclaration.staticScope(session, scopeSession, supertype)
+        // 父类静态 scope 也属于当前类型本体的词法查找链。实例 extend 成员只能由
+        // dispatch receiver 的父成员图引入，不能经 static scope 回退重新进入候选集。
+        superDeclaration.staticScope(
+            session,
+            scopeSession,
+            supertype,
+            CfirClassMemberScopeKind.BODY_LOOKUP,
+        )
             ?.asTowerDataElementForStaticScope(superSymbol)
             ?.let(result::add)
 

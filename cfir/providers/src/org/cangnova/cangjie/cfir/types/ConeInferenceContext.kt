@@ -133,7 +133,9 @@ interface ConeInferenceContext : TypeSystemInferenceExtensionContext, ConeTypeCo
                 typeParameterSymbol.resolvedBounds.map { it.coneType }
             }
 
-            // 结构类型/原始类型默认以 Any 为父类型
+            // 结构类型/原始类型默认以 Any 为父类型。
+            // `CPointer` / `CString` 例外：它们可以被 extend 注入接口父边，必须复用
+            // type-aware provider，否则成员图已看见接口而通用子类型检查仍把它当作孤立类型。
             is ConeAnyType -> emptyList()
             is ConePrimitiveType -> if (kind == PrimitiveTypeKind.NOTHING) {
                 emptyList()
@@ -142,6 +144,11 @@ interface ConeInferenceContext : TypeSystemInferenceExtensionContext, ConeTypeCo
                     ?.getDirectSupertypes(this)
                     .orEmpty()
             }
+            is ConePointerType,
+            is ConeCStringType,
+            -> session.typeAwareSupertypeProviderOrNull
+                ?.getDirectSupertypes(this)
+                .orEmpty()
             is ConeIntersectionType -> intersectedTypes.toList()
             else -> listOf()
         }

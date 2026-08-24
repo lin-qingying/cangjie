@@ -10,6 +10,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
+import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
@@ -375,6 +376,67 @@ internal fun CfirDeclarationCollector<CfirBasedSymbol<*>>.collectClassMembers(cl
             }
 
             else -> Unit
+        }
+    }
+}
+
+/**
+ * 收集单个 `extend` 声明自身成员函数的同签名冲突。
+ *
+ * `extend` 是独立的声明所有者，不能借用被扩展类型的 class-member collector：后者会把目标类型
+ * 及其他 extend 的成员混入当前作用域，而这里的 `CONFLICTING_OVERLOADS` 只描述同一 extend 块内
+ * 的重复声明。继承成员冲突仍由 `CfirInheritanceDeepChecker` 统一处理。
+ */
+context(context: CheckerContext)
+internal fun CfirDeclarationCollector<CfirBasedSymbol<*>>.collectExtendMembers(extend: CfirExtend) {
+    val functionDeclarations = mutableMapOf<String, MutableSet<CfirBasedSymbol<*>>>()
+    val functionNamesBySignature = mutableMapOf<String, Name>()
+    val staticSignatures = mutableMapOf<String, Boolean>()
+    val nonStaticFunctionNames = mutableSetOf<Name>()
+
+    for (declaration in extend.declarations) {
+        if (declaration !is CfirFunction) continue
+        if (declaration is CfirConstructor && declaration.status.isStatic) continue
+
+        val declaredFunction = declaration.symbol as? CfirFunctionSymbol<*> ?: continue
+        if (!declaredFunction.isCollectable()) continue
+
+        // static 属性属于函数重定义签名；static/non-static 同名规则由
+        // CfirFunctionOverloadChecker 单独报告，不能在此降格为 CONFLICTING_OVERLOADS。
+        val representation = CfirRedeclarationPresenter.represent(declaredFunction)
+            ?.let { signature -> "${declaration.status.isStatic}:$signature" }
+            ?: continue
+        functionNamesBySignature[representation] = declaredFunction.name
+        staticSignatures[representation] = declaration.status.isStatic
+        if (!declaration.status.isStatic) {
+            nonStaticFunctionNames += declaredFunction.name
+        }
+        // `collect` 会在加入成员的同时把冲突边写入 declarationConflictingSymbols。
+        // static/non-static 规则依赖完整的同名组，必须先完成纯分组，再决定该签名组
+        // 是否应参与 CONFLICTING_OVERLOADS；否则后续排除无法撤销已经写入的边。
+        functionDeclarations.getOrPut(representation) { linkedSetOf() } += declaredFunction
+    }
+
+    // extend 内的同签名函数共享一个声明所有者；冲突图必须对每个参与者保留边，
+    // 以便诊断层能够在每个源码声明位置渲染该冲突。
+    for ((signature, sameSignatureFunctions) in functionDeclarations) {
+        // 官方 static/non-static 函数冲突以同名组为单位，而不是以签名组为单位；
+        // 同名 non-static 函数存在时，静态函数仅由 CfirFunctionOverloadChecker 报告。
+        if (staticSignatures[signature] == true && functionNamesBySignature[signature] in nonStaticFunctionNames) {
+            continue
+        }
+
+        for (function in sameSignatureFunctions) {
+            val conflicts = SmartSet.create<CfirBasedSymbol<*>>()
+            for (anotherFunction in sameSignatureFunctions) {
+                if (
+                    anotherFunction != function &&
+                    getConflictState(function, anotherFunction) == ConflictState.Conflict
+                ) {
+                    conflicts += anotherFunction
+                }
+            }
+            declarationConflictingSymbols.mergeConflicts(function, conflicts)
         }
     }
 }

@@ -111,7 +111,10 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     internal fun checkExtend(declaration: CfirExtend) {
-        checkInheritedMemberKindConsistency(declaration.memberInheritanceSubject())
+        checkInheritedMemberKindConsistency(
+            subject = declaration.memberInheritanceSubject(),
+            excludingExtend = declaration,
+        )
         checkExtendTargetMemberCompatibility(declaration)
     }
 
@@ -910,7 +913,10 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
      * - INHERIT_NOT_RETURN_THIS: open 函数返回 This 类型时 override 必须保持
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
-    private fun checkInheritedMemberKindConsistency(subject: MemberInheritanceSubject) {
+    private fun checkInheritedMemberKindConsistency(
+        subject: MemberInheritanceSubject,
+        excludingExtend: CfirExtend? = null,
+    ) {
         val ownMembers = subject.declarations.mapNotNull { member ->
             when (member) {
                 is CfirNamedFunction -> InheritedMemberInfo(
@@ -984,7 +990,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
             val superClassId = (superType as? ConeClassLikeType)?.classId ?: continue
             val superSymbol = context.session.symbolProvider.getClassLikeSymbolByClassId(superClassId) ?: continue
             val superDecl = superSymbol.cfir as? CfirClassLikeDeclaration ?: continue
-            val superScope = inheritedSource.typeRef.resolvedUseSiteMemberScope()
+            val superScope = inheritedSource.typeRef.resolvedUseSiteMemberScope(excludingExtend)
                 ?: context.createUseSiteMemberScope(superDecl)
 
             for (name in ownMembers.keys) {
@@ -993,7 +999,14 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                         symbol.inheritedMemberInfoOrNull(context)?.let(::add)
                     }
                     if (inheritedSource.includeDirectExtends) {
-                        addAll(collectEffectiveExtendMemberInfos(superType, name, context))
+                        addAll(
+                            collectEffectiveExtendMemberInfos(
+                                receiverType = superType,
+                                name = name,
+                                context = context,
+                                excludingExtend = excludingExtend,
+                            )
+                        )
                         addAll(collectEffectiveExtendInterfaceMemberInfos(superType, name, context))
                     }
                 }
@@ -1644,12 +1657,13 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         receiverType: ConeCangJieType,
         name: Name,
         context: CheckerContext,
+        excludingExtend: CfirExtend? = null,
     ): List<InheritedMemberInfo> {
         val visited = linkedSetOf<ConeCangJieType>()
         return buildList {
             fun visit(type: ConeCangJieType) {
                 if (!visited.add(type)) return
-                addAll(collectDirectExtendMemberInfos(type, name, context))
+                addAll(collectDirectExtendMemberInfos(type, name, context, excludingExtend))
                 for (supertype in type.declaredNonInterfaceSupertypes(context)) {
                     visit(supertype)
                 }

@@ -24,6 +24,7 @@
 
 package org.cangnova.cangjie.cfir.calls
 
+import org.cangnova.cangjie.builtins.StandardNames
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.SessionAndScopeSessionHolder
 import org.cangnova.cangjie.cfir.declarations.CfirClass
@@ -32,6 +33,8 @@ import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.references.buildImplicitThisReference
+import org.cangnova.cangjie.cfir.references.impl.CfirNamedReferenceImpl
+import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.scopes.CfirCompositeScope
 import org.cangnova.cangjie.cfir.scopes.CfirScope
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
@@ -697,11 +700,11 @@ fun CfirExpression.resolvedQualifierSymbol(session: CfirSession): CfirClassifier
 /**
  * 判断表达式是否已经解析为类型限定符，而不是运行时值接收者。
  *
- * CFIR 当前复用 qualified-access 表达 class-like、typealias 与类型参数限定符；所有后续阶段
- * 必须通过同一个符号分类入口区分类型限定符和值接收者，不能再从表达式类型反向猜测角色。
+ * CFIR 当前复用 qualified-access 表达 class-like、typealias、类型参数和无 classifier 的内建类型
+ * 限定符；所有后续阶段必须通过同一个入口区分类型限定符和值接收者，不能再从表达式类型反向猜测角色。
  */
 fun CfirExpression.isResolvedTypeQualifier(session: CfirSession): Boolean =
-    resolvedQualifierSymbol(session) != null
+    resolvedQualifierSymbol(session) != null || builtinTypeQualifierOrNull(session) != null
 
 /**
  * 返回 qualifier 表达式解析出的类型参数 symbol。
@@ -724,10 +727,30 @@ fun CfirExpression.qualifierScopeOrNull(
         return classifier.staticScopeForQualifierType(session, scopeSession, qualifierType)
     }
 
-    coneTypeOrNull?.staticScopeForBuiltinQualifierType(session, scopeSession)?.let { return it }
+    builtinTypeQualifierOrNull(session)?.staticScopeForBuiltinQualifierType(session, scopeSession)?.let { return it }
 
     val typeParameter = resolvedQualifierTypeParameter() ?: return null
     return typeParameter.staticScopeForQualifierType(session, scopeSession)
+}
+
+/**
+ * 返回已在 receiver 解析阶段确认的无 classifier 内建类型 qualifier。
+ *
+ * `CPointer<T>` 与 `CString` 的 cone type 同时也是普通运行时值的类型，因而不能仅凭
+ * [coneTypeOrNull] 把任意 pointer/string 表达式改按静态成员查询。只有调用解析已经保留为
+ * 未绑定名称引用、且源名称和已写入的内建类型完全一致时，它才是 `CString.foo` / `CPointer<T>.foo`
+ * 这种 qualifier；局部变量、属性和其他已绑定声明一律走实例 receiver 路径。
+ */
+private fun CfirExpression.builtinTypeQualifierOrNull(session: CfirSession): ConeCangJieType? {
+    val access = this as? CfirQualifiedAccessExpression ?: return null
+    if (access.explicitReceiver != null) return null
+    val reference = access.calleeReference as? CfirNamedReferenceImpl ?: return null
+    val type = access.coneTypeOrNull?.fullyExpandedType(session) ?: return null
+    return when (reference.name) {
+        StandardNames.CSTRING -> (type as? ConeCStringType)
+        StandardNames.CPOINTER -> (type as? ConePointerType)
+        else -> null
+    }
 }
 
 /**
