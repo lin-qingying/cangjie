@@ -98,6 +98,11 @@ class LightTreeRawCfirExpressionBuilder(
         CjNodeTypes.INTEGER_CONSTANT -> convertLiteral(node, CfirLiteralKind.INT)
         CjNodeTypes.FLOAT_CONSTANT -> convertLiteral(node, CfirLiteralKind.FLOAT)
         CjNodeTypes.RUNE_CONSTANT -> convertLiteral(node, CfirLiteralKind.RUNE)
+        CjNodeTypes.CHARACTER_BYTE_CONSTANT -> buildLiteralExpression {
+            source = node.toSource()
+            kind = CfirLiteralKind.BYTE
+            value = byteLiteralCodePointOrNull(node.asText())
+        }
         CjNodeTypes.BOOLEAN_CONSTANT -> convertBooleanLiteral(node)
         CjNodeTypes.UNIT_CONSTANT -> buildLiteralExpression {
             source = node.toSource(); kind = CfirLiteralKind.UNIT; value = null
@@ -2285,7 +2290,8 @@ class LightTreeRawCfirExpressionBuilder(
         fun isExpressionToken(tt: IElementType): Boolean = when (tt) {
             CjNodeTypes.BLOCK, CjNodeTypes.CASE_BLOCK,
             CjNodeTypes.INTEGER_CONSTANT, CjNodeTypes.FLOAT_CONSTANT,
-            CjNodeTypes.RUNE_CONSTANT, CjNodeTypes.BOOLEAN_CONSTANT,
+            CjNodeTypes.RUNE_CONSTANT, CjNodeTypes.CHARACTER_BYTE_CONSTANT,
+            CjNodeTypes.BOOLEAN_CONSTANT,
             CjNodeTypes.UNIT_CONSTANT, CjNodeTypes.STRING_TEMPLATE,
             CjNodeTypes.BINARY_WITH_TYPE, CjNodeTypes.BINARY_EXPRESSION, CjNodeTypes.RANGE_EXPRESSION,
             CjNodeTypes.PREFIX_EXPRESSION, CjNodeTypes.POSTFIX_EXPRESSION,

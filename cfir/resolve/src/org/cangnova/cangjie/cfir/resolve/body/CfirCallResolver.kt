@@ -796,13 +796,42 @@ class CfirCallResolver(
                 name = callee.name,
                 forceCallKind = CallKind.EnumConstructorCall,
                 isUsedAsGetClassReceiver = isUsedAsGetClassReceiver,
-                callSite = callSite,
+                // implicit invoke 必须先取得 enum 值本身。若沿用外层 `Entry(args)`
+                // 作为 callSite，参数映射会把 `args` 错当成 enum constructor 的 payload，
+                // 无 payload entry 因而永远不能进入后续 `operator ()` 解析。
+                callSite = if (purpose == NamedValueAccessPurpose.ImplicitInvokeReceiver) {
+                    transformedAccess
+                } else {
+                    callSite
+                },
                 resolutionMode = resolutionMode,
             )
-            val enumValueCandidates = enumResult.candidates.filter { candidate ->
-                (candidate.symbol.takeIf { it.isBound }?.cfir as? CfirEnumConstructor)
-                    ?.valueParameters
-                    ?.isEmpty() == true
+            val enumConstructorCandidates = enumResult.candidates.filter { candidate ->
+                candidate.symbol.takeIf { it.isBound }?.cfir is CfirEnumConstructor
+            }
+            val enumValueCandidates = when (purpose) {
+                NamedValueAccessPurpose.Regular -> {
+                    /*
+                     * 非调用形式的 `E.a` 是 enum value access。若同名 overload 中存在
+                     * 零 payload constructor，它就是可直接取得的 enum 值；带 payload
+                     * constructor 只能经 `E.a(...)` 构造。没有零 payload 候选时保留全部
+                     * constructor，交由统一 legality 路径报告 bare constructor 的错误。
+                     */
+                    enumConstructorCandidates.filter { candidate ->
+                        (candidate.symbol.takeIf { it.isBound }?.cfir as? CfirEnumConstructor)
+                            ?.valueParameters
+                            ?.isEmpty() == true
+                    }.ifEmpty { enumConstructorCandidates }
+                }
+
+                NamedValueAccessPurpose.ImplicitInvokeReceiver ->
+                    enumConstructorCandidates.filter { candidate ->
+                        (candidate.symbol.takeIf { it.isBound }?.cfir as? CfirEnumConstructor)
+                            ?.valueParameters
+                            ?.isEmpty() == true
+                    }
+
+                NamedValueAccessPurpose.PatternConstructorProbe -> enumConstructorCandidates
             }
             if (enumValueCandidates.isNotEmpty()) {
                 result = enumResult.withCandidates(enumValueCandidates)
@@ -2322,7 +2351,7 @@ class CfirCallResolver(
 
             functionReferenceTargetDiagnostic != null -> functionReferenceTargetDiagnostic
             callInfo.isStandaloneGenericFunctionValueSet(candidates) ->
-                ConeGenericFunctionReferenceWithoutTypeArgumentsError()
+                ConeGenericFunctionReferenceWithoutTypeArgumentsError(name)
 
             expectedCallKind != null -> when (expectedCallKind) {
                 CallKind.Function,
@@ -2506,7 +2535,7 @@ class CfirCallResolver(
                     enumConstructorValueReceiverDiagnostic != null -> enumConstructorValueReceiverDiagnostic
                     genericTypeInconsistentError != null -> genericTypeInconsistentError
                     candidate.isGenericFunctionReferenceWithoutTypeArguments() ->
-                        ConeGenericFunctionReferenceWithoutTypeArgumentsError()
+                        ConeGenericFunctionReferenceWithoutTypeArgumentsError(name)
 
                     candidate.hasUninferableBareStaticGenericQualifier() -> ConeUnableToInferGenericFuncError()
                     !candidate.isSuccessful -> createConeDiagnosticForCandidateWithError(applicability, candidate)
@@ -2613,8 +2642,9 @@ class CfirCallResolver(
     }
 
     /**
-     * 多构造候选共享同一个带 nested 根诊断的 error argument 时，构造歧义只是错误恢复级联。
-     * 仅接受 `ConeUnreportedDuplicateDiagnostic` 载体，普通独立实参错误不触发该抑制。
+     * 多构造候选继续共享同一个带 nested 根诊断的原始 error argument 时，构造歧义只是错误恢复级联。
+     * 一旦某个候选按自己的 payload 类型生成局部实参替换，该候选拥有独立解析结果，
+     * 外层歧义不能再按原始节点的 error type 被吞掉。
      */
     private fun Collection<Candidate>.isErrorArgumentCascade(arguments: List<CfirExpression>): Boolean {
         if (isEmpty() || any { candidate ->
@@ -2627,7 +2657,11 @@ class CfirCallResolver(
         }
         return arguments.any { argument ->
             val errorType = argument.coneTypeOrNull as? ConeErrorType ?: return@any false
-            errorType.diagnostic is ConeUnreportedDuplicateDiagnostic
+            errorType.diagnostic is ConeUnreportedDuplicateDiagnostic &&
+                    // 共享原始节点上的 error type 不能代表候选局部解析状态。只要任一
+                    // constructor 候选已按自身 payload 类型重解该实参，外层歧义就是
+                    // 独立根诊断，必须保留。
+                    none { candidate -> candidate.argumentReplacements?.containsKey(argument) == true }
         }
     }
 

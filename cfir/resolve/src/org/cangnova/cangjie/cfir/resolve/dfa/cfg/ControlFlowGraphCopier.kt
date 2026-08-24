@@ -196,11 +196,28 @@ internal class ControlFlowGraphCopier : ControlFlowGraphVisitor<CFGNode<*>, Unit
 
     /** 复制 match 分支条件入口节点。 */
     override fun visitMatchBranchConditionEnterNode(node: MatchBranchConditionEnterNode, data: Unit): CFGNode<*> =
-        MatchBranchConditionEnterNode(get(node.owner), node.fir, node.level)
+        MatchBranchConditionEnterNode(get(node.owner), node.fir, node.matchExpression, node.level)
 
     /** 复制 match 分支条件出口节点。 */
     override fun visitMatchBranchConditionExitNode(node: MatchBranchConditionExitNode, data: Unit): CFGNode<*> =
-        MatchBranchConditionExitNode(get(node.owner), node.fir, node.level)
+        MatchBranchConditionExitNode(get(node.owner), node.fir, node.matchExpression, node.level)
+
+    /** 复制 match 原子模式判定节点。 */
+    override fun visitMatchPatternDecisionNode(node: MatchPatternDecisionNode, data: Unit): CFGNode<*> =
+        MatchPatternDecisionNode(
+            get(node.owner),
+            node.branch,
+            node.pattern,
+            node.guard,
+            node.subjectPath,
+            node.reportSource,
+            node.matchExpression,
+            node.level,
+        )
+
+    /** 复制 match 分支失败汇合节点。 */
+    override fun visitMatchBranchFailureNode(node: MatchBranchFailureNode, data: Unit): CFGNode<*> =
+        MatchBranchFailureNode(get(node.owner), node.fir, node.matchExpression, node.level)
 
     /** 复制 match 分支结果入口节点。 */
     override fun visitMatchBranchResultEnterNode(node: MatchBranchResultEnterNode, data: Unit): CFGNode<*> =

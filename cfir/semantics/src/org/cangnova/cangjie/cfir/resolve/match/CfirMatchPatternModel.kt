@@ -287,11 +287,23 @@ sealed class CfirConstantValue : Comparable<CfirConstantValue> {
          * 从 CFIR 字面量表达式恢复常量值。
          */
         fun fromLiteral(literal: CfirLiteralExpression, fallbackType: ConeCangJieType?): CfirConstantValue? {
-            return when (literal.kind) {
-                CfirLiteralKind.BOOLEAN -> (literal.value as? Boolean)?.let(::BooleanConst)
-                CfirLiteralKind.INT -> fromIntLiteral(literal.value, fallbackType)
-                CfirLiteralKind.RUNE -> fromRuneLiteral(literal.value)
-                CfirLiteralKind.STRING -> (literal.value as? String)?.let(::StringConst)
+            return fromLiteral(literal.kind, literal.value, fallbackType)
+        }
+
+        /**
+         * 从保存在数据流值域中的字面量快照恢复常量值。
+         */
+        fun fromLiteral(
+            kind: CfirLiteralKind,
+            value: Any?,
+            fallbackType: ConeCangJieType?,
+        ): CfirConstantValue? {
+            return when (kind) {
+                CfirLiteralKind.BOOLEAN -> (value as? Boolean)?.let(::BooleanConst)
+                CfirLiteralKind.INT -> fromIntLiteral(value, fallbackType)
+                CfirLiteralKind.BYTE -> fromIntLiteral(value, fallbackType)
+                CfirLiteralKind.RUNE -> fromRuneLiteral(value)
+                CfirLiteralKind.STRING -> (value as? String)?.let(::StringConst)
                 CfirLiteralKind.UNIT -> UnitConst
                 else -> null
             }

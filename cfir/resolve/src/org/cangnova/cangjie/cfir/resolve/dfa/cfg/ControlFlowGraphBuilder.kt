@@ -12,6 +12,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
+import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.expressions.CfirAssignment
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
@@ -35,6 +36,12 @@ import org.cangnova.cangjie.cfir.expressions.CfirOptionalChainExpression
 import org.cangnova.cangjie.cfir.expressions.CfirThrowExpression
 import org.cangnova.cangjie.cfir.expressions.CfirTryExpression
 import org.cangnova.cangjie.cfir.expressions.CfirWrappedExpression
+import org.cangnova.cangjie.cfir.patterns.CfirBindingPattern
+import org.cangnova.cangjie.cfir.patterns.CfirEnumPattern
+import org.cangnova.cangjie.cfir.patterns.CfirOrPattern
+import org.cangnova.cangjie.cfir.patterns.CfirPattern
+import org.cangnova.cangjie.cfir.patterns.CfirTuplePattern
+import org.cangnova.cangjie.cfir.patterns.CfirWildcardPattern
 import org.cangnova.cangjie.cfir.resolve.dfa.Stack
 import org.cangnova.cangjie.cfir.resolve.dfa.controlFlowGraph
 import org.cangnova.cangjie.cfir.resolve.dfa.cfg.CFGNode.Companion.addEdge as addEdgeStatic
@@ -336,10 +343,11 @@ class ControlFlowGraphBuilder private constructor(
         node: CFGNode<*>,
         isDead: Boolean = false,
         preferredKind: EdgeKind = EdgeKind.Forward,
+        label: EdgeLabel = NormalPath,
     ): CFGNode<*> {
         val lastNode = lastNodes.pop()
         val kind = if (isDead) preferredKind.toDead() else preferredKind
-        addEdgeStatic(lastNode, node, kind, propagateDeadness = true)
+        addEdgeStatic(lastNode, node, kind, propagateDeadness = true, label = label)
         lastNodes.push(node)
         return node
     }
@@ -620,16 +628,144 @@ class ControlFlowGraphBuilder private constructor(
         return node
     }
 
-    /** 进入 match 分支条件。 */
+    /** 进入 match 分支条件；前一分支的失败汇合节点会顺序连接到这里。 */
     fun enterMatchBranchCondition(branch: CfirMatchBranch): MatchBranchConditionEnterNode =
-        createMatchBranchConditionEnterNode(branch).also { addNewSimpleNode(it) }
+        createMatchBranchConditionEnterNode(branch, matchExitNodes.top().fir).also(::addNewSimpleNode)
 
-    /** 退出 match 分支条件并进入分支结果。 */
+    /**
+     * 退出 match 分支条件并把完整模式下沉为原子判定 CFG。
+     *
+     * CHIR 会把一个嵌套模式翻译成 tag / payload / 常量判定的控制流图；若继续只保留一条
+     * case condition，后端常量分析无法区分被拒绝的 payload successor 与整个分支。这里的
+     * [MatchPatternDecisionNode] 保留该结构，而 [MatchBranchFailureNode] 统一承接每个原子
+     * 判定的 failure 边，供下一 case 或 synthetic else 连接。
+     */
     fun exitMatchBranchCondition(branch: CfirMatchBranch): Pair<MatchBranchConditionExitNode, MatchBranchResultEnterNode> {
-        val conditionExit = createMatchBranchConditionExitNode(branch).also { addNewSimpleNode(it) }
-        lastNodes.push(conditionExit)
-        val resultEnter = createMatchBranchResultEnterNode(branch).also { addNewSimpleNode(it) }
+        val matchExpression = matchExitNodes.top().fir
+        val conditionEnter = lastNodes.pop()
+        val conditionExit = createMatchBranchConditionExitNode(branch, matchExpression)
+        val failureNode = createMatchBranchFailureNode(branch, matchExpression)
+        val guardTarget = branch.guard?.let { guard ->
+            createMatchGuardDecisionNode(branch, guard, branch.pattern, matchExpression).also { guardDecision ->
+                addEdge(guardDecision, conditionExit, label = MatchBranchSuccess)
+                addEdge(guardDecision, failureNode, label = MatchBranchFailure)
+            }
+        } ?: conditionExit
+        val decisionEntry = createPatternDecisionGraph(
+            branch = branch,
+            pattern = branch.pattern,
+            subjectPath = emptyList(),
+            reportSource = branch.pattern,
+            successTarget = guardTarget,
+            failureTarget = failureNode,
+            matchExpression = matchExpression,
+        )
+        addEdge(conditionEnter, decisionEntry)
+
+        // 通配/纯绑定模式没有原子判定，却仍须保留一条结构上的 failure 边：CFG 冻结按
+        // 前驱计数排序，缺少这条边会让 failureNode 成为不可达孤点。该边是语义上的死边，
+        // 因而不会参与 CFA 传播，也不会让后续 case 重新变成可达。
+        if (decisionEntry === conditionExit) {
+            addEdge(
+                conditionExit,
+                failureNode,
+                preferredKind = EdgeKind.DeadForward,
+                label = MatchBranchFailure,
+            )
+        }
+
+        val resultEnter = createMatchBranchResultEnterNode(branch)
+        addEdge(conditionExit, resultEnter, label = MatchBranchSuccess)
+        // 分支体解析期间 resultEnter 必须是当前 last node；退出分支体后留下 failureNode，
+        // 后续 case 会从该汇合点继续构图。
+        lastNodes.push(failureNode)
+        lastNodes.push(resultEnter)
         return conditionExit to resultEnter
+    }
+
+    /**
+     * 为一个模式递归建立判定图，返回其入口节点；没有运行时判定的绑定/通配模式直接返回
+     * [successTarget]。所有原子节点保留外层 [reportSource]，对应 CHIR 为同一 case pattern
+     * 写入的 block debug location。
+     */
+    private fun createPatternDecisionGraph(
+        branch: CfirMatchBranch,
+        pattern: CfirPattern,
+        subjectPath: List<Int>,
+        reportSource: CfirPattern,
+        successTarget: CFGNode<*>,
+        failureTarget: CFGNode<*>,
+        matchExpression: CfirMatchExpression,
+    ): CFGNode<*> = when (pattern) {
+        is CfirWildcardPattern -> successTarget
+
+        is CfirBindingPattern -> pattern.nestedPattern?.let { nestedPattern ->
+            createPatternDecisionGraph(
+                branch,
+                nestedPattern,
+                subjectPath,
+                reportSource,
+                successTarget,
+                failureTarget,
+                matchExpression,
+            )
+        } ?: successTarget
+
+        is CfirTuplePattern -> {
+            var continuation = successTarget
+            for (index in pattern.elements.indices.reversed()) {
+                continuation = createPatternDecisionGraph(
+                    branch,
+                    pattern.elements[index],
+                    subjectPath + index,
+                    reportSource,
+                    continuation,
+                    failureTarget,
+                    matchExpression,
+                )
+            }
+            continuation
+        }
+
+        is CfirEnumPattern -> {
+            var continuation = successTarget
+            for (index in pattern.arguments.indices.reversed()) {
+                continuation = createPatternDecisionGraph(
+                    branch,
+                    pattern.arguments[index],
+                    subjectPath + index,
+                    reportSource,
+                    continuation,
+                    failureTarget,
+                    matchExpression,
+                )
+            }
+            createMatchPatternDecisionNode(branch, pattern, subjectPath, reportSource, matchExpression).also { decision ->
+                addEdge(decision, continuation, label = MatchBranchSuccess)
+                addEdge(decision, failureTarget, label = MatchBranchFailure)
+            }
+        }
+
+        is CfirOrPattern -> {
+            var continuation = failureTarget
+            for (alternative in pattern.alternatives.asReversed()) {
+                continuation = createPatternDecisionGraph(
+                    branch,
+                    alternative,
+                    subjectPath,
+                    alternative,
+                    successTarget,
+                    continuation,
+                    matchExpression,
+                )
+            }
+            continuation
+        }
+
+        else -> createMatchPatternDecisionNode(branch, pattern, subjectPath, reportSource, matchExpression).also { decision ->
+            addEdge(decision, successTarget, label = MatchBranchSuccess)
+            addEdge(decision, failureTarget, label = MatchBranchFailure)
+        }
     }
 
     /** 退出 match 分支结果并连接到当前 match 出口。 */
@@ -651,11 +787,11 @@ class ControlFlowGraphBuilder private constructor(
         val lastConditionExit = lastNodes.pop()
         val syntheticElse = if (syntheticElseDecision == MatchSyntheticElseDecision.Required) {
             createMatchSyntheticElseBranchNode(matchExpression).also {
-                addEdge(lastConditionExit, it)
+                addEdge(lastConditionExit, it, label = MatchBranchFailure)
                 addEdge(it, exitNode, propagateDeadness = false)
             }
         } else {
-            addEdge(lastConditionExit, exitNode, propagateDeadness = false)
+            addEdge(lastConditionExit, exitNode, propagateDeadness = false, label = MatchBranchFailure)
             null
         }
         mergeDataFlowFromPostponedLambdas(exitNode, callCompleted)
@@ -973,6 +1109,24 @@ class ControlFlowGraphBuilder private constructor(
         }
         return exitNode
     }
+
+    /**
+     * 进入局部变量声明。
+     *
+     * initializer 的 CFG 节点必须位于 declaration enter/exit 之间，保证后续 CFA 在
+     * declaration exit 后才能把已求值的 initializer 作为该变量的流事实写入状态。
+     */
+    fun enterVariableDeclaration(variable: CfirVariable): VariableDeclarationEnterNode =
+        createVariableDeclarationEnterNode(variable).also { addNewSimpleNode(it) }
+
+    /**
+     * 退出局部变量声明。
+     *
+     * 此节点是所有变量流分析（初始化、常量传播、captured write）的统一事实写入点，
+     * 不能由后续 match checker 从 tree 回溯替代。
+     */
+    fun exitVariableDeclaration(variable: CfirVariable): VariableDeclarationExitNode =
+        createVariableDeclarationExitNode(variable).also { addNewSimpleNode(it) }
 
     // ----------------------------------- Simple terminal nodes -----------------------------------
 

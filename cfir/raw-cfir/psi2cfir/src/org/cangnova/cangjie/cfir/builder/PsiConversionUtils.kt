@@ -96,10 +96,26 @@ private fun CjTypeElement.toCfirTypeRef(
     is CjTupleType -> toCfirTupleTypeRef(ref, toSource)
     is CjVArrayType -> toCfirVArrayTypeRef(ref, toSource)
     is CjThisType -> toCfirThisTypeRef(ref, toSource)
+    is CjParenthesizedType -> toCfirParenthesizedTypeRef(ref, toSource)
     else -> buildErrorTypeRef {
         source = ref.toCjSourceElementOrNull(toSource)
         diagnostic =  ConeSimpleDiagnostic("Unsupported type element: ${javaClass.simpleName}")
     }
+}
+
+/**
+ * 括号类型不引入类型构造器；raw CFIR 保留其中唯一的类型引用，和 LightTree 转换保持同一语义。
+ */
+private fun CjParenthesizedType.toCfirParenthesizedTypeRef(
+    ref: CjTypeReference,
+    toSource: (com.intellij.psi.PsiElement) -> AbstractCjSourceElement,
+): CfirTypeRef {
+    val innerTypeElement = getType()
+        ?: return buildErrorTypeRef {
+            source = ref.toCjSourceElementOrNull(toSource)
+            diagnostic = ConeSimpleDiagnostic("Malformed parenthesized type: missing component type")
+        }
+    return innerTypeElement.toCfirTypeRef(ref, toSource)
 }
 
 /** 将可选类型 PSI 转换为 [CfirTypeRef]，缺少内部类型时生成 error type ref。 */

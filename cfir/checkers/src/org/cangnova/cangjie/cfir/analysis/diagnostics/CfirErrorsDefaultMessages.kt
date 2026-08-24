@@ -39,6 +39,7 @@ import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.INFERRED_TYPE_V
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.INFERRED_TYPE_VARIABLE_INTO_POSSIBLE_EMPTY_INTERSECTION
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.INVALID_OPERATOR_PARAMETER_COUNT
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.LITERAL_NUMERIC_OVERFLOW
+import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.TYPECAST_OVERFLOW
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.NEW_INFERENCE_ERROR
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.NO_CONSTRUCTOR
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.PATTERN_INITIALIZER_TYPE_MISMATCH
@@ -633,6 +634,12 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
             LITERAL_NUMERIC_OVERFLOW,
             "Numeric literal ''{0}'' is out of range for target type ''{1}''.",
             RENDER_STRING,
+            RENDER_TYPE,
+        )
+        map.put(
+            TYPECAST_OVERFLOW,
+            "Type conversion from ''{0}'' to ''{1}'' would overflow.",
+            RENDER_TYPE,
             RENDER_TYPE,
         )
         map.put(

@@ -80,6 +80,10 @@ abstract class ControlFlowGraphVisitorVoid : ControlFlowGraphVisitor<Unit, Nothi
     open fun visitMatchBranchConditionEnterNode(node: MatchBranchConditionEnterNode) = visitNode(node)
     /** 访问 match 分支条件出口节点。 */
     open fun visitMatchBranchConditionExitNode(node: MatchBranchConditionExitNode) = visitNode(node)
+    /** 访问 match 原子模式判定节点。 */
+    open fun visitMatchPatternDecisionNode(node: MatchPatternDecisionNode) = visitNode(node)
+    /** 访问 match 分支失败汇合节点。 */
+    open fun visitMatchBranchFailureNode(node: MatchBranchFailureNode) = visitNode(node)
     /** 访问 match 分支结果入口节点。 */
     open fun visitMatchBranchResultEnterNode(node: MatchBranchResultEnterNode) = visitNode(node)
     /** 访问 match 分支结果出口节点。 */
@@ -239,6 +243,10 @@ abstract class ControlFlowGraphVisitorVoid : ControlFlowGraphVisitor<Unit, Nothi
     final override fun visitMatchBranchConditionEnterNode(node: MatchBranchConditionEnterNode, data: Nothing?) = visitMatchBranchConditionEnterNode(node)
     /** 桥接 match 分支条件出口节点的双参数访问到无 data 访问。 */
     final override fun visitMatchBranchConditionExitNode(node: MatchBranchConditionExitNode, data: Nothing?) = visitMatchBranchConditionExitNode(node)
+    /** 桥接 match 原子模式判定节点的双参数访问到无 data 访问。 */
+    final override fun visitMatchPatternDecisionNode(node: MatchPatternDecisionNode, data: Nothing?) = visitMatchPatternDecisionNode(node)
+    /** 桥接 match 分支失败汇合节点的双参数访问到无 data 访问。 */
+    final override fun visitMatchBranchFailureNode(node: MatchBranchFailureNode, data: Nothing?) = visitMatchBranchFailureNode(node)
     /** 桥接 match 分支结果入口节点的双参数访问到无 data 访问。 */
     final override fun visitMatchBranchResultEnterNode(node: MatchBranchResultEnterNode, data: Nothing?) = visitMatchBranchResultEnterNode(node)
     /** 桥接 match 分支结果出口节点的双参数访问到无 data 访问。 */

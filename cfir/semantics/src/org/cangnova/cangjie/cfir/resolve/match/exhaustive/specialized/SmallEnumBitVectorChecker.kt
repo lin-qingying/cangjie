@@ -59,6 +59,10 @@ class SmallEnumBitVectorChecker : ExhaustivenessChecker {
     ): Boolean {
         val enumType = type.expandedPatternEnumType(context.session) ?: return false
         if (enumType.isNonExhaustiveEnum(context.session)) return false
+        // 位图只能表达“整个顶层 constructor 已覆盖”。一旦 payload 由常量、
+        // type、嵌套 enum 等模式继续收窄，同一顶层 constructor 可能需要多行
+        // 共同覆盖，必须交给完整的 Maranget 矩阵分析。
+        if (patterns.any(CfirMatchPattern::hasRefinedPayload)) return false
         val variantCount = CfirConstructor.allConstructors(enumType, context.session)
             .count { it is CfirConstructor.Enum }
         return variantCount in 1..maxVariants
@@ -123,4 +127,14 @@ class SmallEnumBitVectorChecker : ExhaustivenessChecker {
         /** 默认小 enum bit-vector checker 实例。 */
         val INSTANCE = SmallEnumBitVectorChecker()
     }
+}
+
+/** payload 不是通配或绑定时，顶层 constructor 不能独立代表完整覆盖。 */
+private fun CfirMatchPattern.hasRefinedPayload(): Boolean = when (val kind = kind) {
+    is CfirMatchPatternKind.Enum -> kind.subPatterns.any { subPattern ->
+        subPattern.kind != CfirMatchPatternKind.Wild &&
+                subPattern.kind !is CfirMatchPatternKind.Binding
+    }
+
+    else -> false
 }

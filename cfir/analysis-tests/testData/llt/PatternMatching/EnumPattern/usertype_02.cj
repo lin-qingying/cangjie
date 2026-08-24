@@ -9,8 +9,8 @@ main() {
     let x = E.A(0)
     match (x) {
         case A(0) => 0
-        case E.A(1) => 1
-        case A(_) => 2
-        case E.A(_, _) => 3
+        case <!UNREACHABLE_PATTERN!>E.A(1)<!> => 1
+        case <!UNREACHABLE_PATTERN!>A(_)<!> => 2
+        case <!UNREACHABLE_PATTERN!>E.A(_, _)<!> => 3
     }
 }

@@ -7,9 +7,8 @@ import org.cangnova.cangjie.cfir.declarations.CfirCodeFragment
 import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
-import org.cangnova.cangjie.cfir.declarations.CfirMatchSubjectValueDomainData
-import org.cangnova.cangjie.cfir.declarations.matchSubjectValueDomainData
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
+import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.expressions.CfirAssignment
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
@@ -31,7 +30,6 @@ import org.cangnova.cangjie.cfir.expressions.CfirTryExpression
 import org.cangnova.cangjie.cfir.expressions.CfirWrappedExpression
 import org.cangnova.cangjie.cfir.references.CfirControlFlowGraphReference
 import org.cangnova.cangjie.cfir.resolve.dfa.CfirControlFlowGraphReferenceImpl
-import org.cangnova.cangjie.cfir.resolve.dfa.CfirEnumTagFlowAnalyzer
 import org.cangnova.cangjie.cfir.resolve.dfa.cfg.ControlFlowGraph
 import org.cangnova.cangjie.cfir.resolve.dfa.cfg.ControlFlowGraphBuilder.MatchSyntheticElseDecision
 import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.BodyResolveContext
@@ -191,12 +189,6 @@ class CfirDataFlowAnalyzer(
      * 退出函数 CFG 和局部变量赋值分析作用域，并返回函数 CFG 引用。
      */
     fun exitFunction(function: CfirFunction): CfirControlFlowGraphReference? {
-        function.matchSubjectValueDomainData = CfirMatchSubjectValueDomainData(
-            enumConstructorTags = CfirEnumTagFlowAnalyzer(
-                session = session,
-                localVariableAssignmentAnalyzer = variableAssignmentAnalyzer,
-            ).analyze(function),
-        )
         variableAssignmentAnalyzer.exitFunction()
         val graph = if (function is CfirAnonymousFunction) {
             graphBuilder.exitAnonymousFunction(function).third
@@ -204,6 +196,20 @@ class CfirDataFlowAnalyzer(
             graphBuilder.exitFunction(function).second
         }
         return CfirControlFlowGraphReferenceImpl(graph)
+    }
+
+    /** 在变量 initializer 求值前写入 CFG declaration enter 节点。 */
+    fun enterVariableDeclaration(variable: CfirVariable) {
+        if (hasActiveGraph) {
+            graphBuilder.enterVariableDeclaration(variable)
+        }
+    }
+
+    /** 在变量已进入作用域且 initializer 完成求值后写入 CFG declaration exit 节点。 */
+    fun exitVariableDeclaration(variable: CfirVariable) {
+        if (hasActiveGraph) {
+            graphBuilder.exitVariableDeclaration(variable)
+        }
     }
 
     /**

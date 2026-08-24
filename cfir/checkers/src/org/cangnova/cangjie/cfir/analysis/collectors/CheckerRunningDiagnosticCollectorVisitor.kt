@@ -28,6 +28,9 @@ open class CheckerRunningDiagnosticCollectorVisitor(
 
     /** 在文件声明遍历结束时提交仍挂起的文件级诊断。 */
     override fun onDeclarationExit(declaration: CfirDeclaration) {
+        components.regularComponents.forEach { component ->
+            component.onDeclarationExit(declaration, context)
+        }
         if (declaration !is CfirFile) return
         components.reportCommitter.endOfFile(declaration, context)
     }

@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.resolve.dfa.cfg
 
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+import org.cangnova.cangjie.cfir.expressions.CfirMatchBranch
 
 /**
  * 对位 Kotlin FIR `ControlFlowGraph` 的完整图模型。
@@ -231,6 +232,28 @@ object NormalPath : EdgeLabel {
      * 普通路径没有额外渲染标签。
      */
     override val label: String? get() = null
+}
+
+/**
+ * match 分支条件成立后的控制流边。
+ *
+ * 条件出口节点自身携带对应 [CfirMatchBranch]，因此标签不重复保存树节点，避免 CFG
+ * snapshot/copy 时产生跨树引用。
+ */
+data object MatchBranchSuccess : EdgeLabel {
+    /** 成功边在 CFG 渲染中的标签。 */
+    override val label: String get() = "match-success"
+}
+
+/**
+ * match 分支条件不成立后的控制流边。
+ *
+ * 该边通向下一 case 条件或末尾 synthetic else；CFA 常量传播只在已知条件值时保留
+ * success/failure 中的唯一目标边。
+ */
+data object MatchBranchFailure : EdgeLabel {
+    /** 失败边在 CFG 渲染中的标签。 */
+    override val label: String get() = "match-failure"
 }
 
 /** 未捕获异常路径。 */

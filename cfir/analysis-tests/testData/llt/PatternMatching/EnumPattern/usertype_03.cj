@@ -8,10 +8,10 @@ enum MyList<T> {
 main() {
     let x = Cons(0, Cons(1, Cons(2, Nil)))
     match (x) {
-        case MyList<Int64>.Nil => 0
+        case <!UNREACHABLE_PATTERN!>MyList<Int64>.Nil<!> => 0
         case Cons(_, Nil) => 1
-        case Cons(_, MyList<Int64>.Cons(_, Nil)) => 2
-        case MyList<Int64>.Cons(_, Cons(_, MyList<Int64>.Cons(_, MyList<Int64>.Nil))) => 3
-        case _ => 4
+        case <!UNREACHABLE_PATTERN!>Cons(_, MyList<Int64>.Cons(_, Nil))<!> => 2
+        case <!UNREACHABLE_PATTERN!>MyList<Int64>.Cons(_, Cons(_, MyList<Int64>.Cons(_, MyList<Int64>.Nil)))<!> => 3
+        case <!UNREACHABLE_PATTERN!>_<!> => 4
     }
 }

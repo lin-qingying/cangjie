@@ -63,6 +63,10 @@ class NestedFlattenChecker : ExhaustivenessChecker {
     ): Boolean {
         val enumType = type.expandedPatternEnumType(context.session) ?: return false
         if (enumType.isNonExhaustiveEnum(context.session)) return false
+        // 该路径展开器只保留 constructor 名称文本，无法表示同名不同 payload arity
+        // 或 payload 内的细化覆盖。此类矩阵必须保留完整 constructor 身份并由
+        // Maranget 算法处理，不能在这里丢失子模式信息。
+        if (patterns.any(CfirMatchPattern::hasRefinedPayload)) return false
         val flattenedCount = estimateFlattenedConstructors(enumType, context, 0)
         return flattenedCount in 1..maxFlattenedConstructors
     }
@@ -192,4 +196,14 @@ private sealed class FlattenedPattern {
      * @property prefix 展开路径前缀。
      */
     data class Prefix(val prefix: String) : FlattenedPattern()
+}
+
+/** payload 不是通配或绑定时，路径字符串不足以保持完整的覆盖关系。 */
+private fun CfirMatchPattern.hasRefinedPayload(): Boolean = when (val kind = kind) {
+    is CfirMatchPatternKind.Enum -> kind.subPatterns.any { subPattern ->
+        subPattern.kind != CfirMatchPatternKind.Wild &&
+                subPattern.kind !is CfirMatchPatternKind.Binding
+    }
+
+    else -> false
 }

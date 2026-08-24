@@ -1022,12 +1022,15 @@ class ConeUnableToInferGenericFuncError : ConeDiagnostic {
 /**
  * 独立泛型函数值引用缺少显式类型实参且没有目标函数类型。
  *
- * 该诊断与普通泛型函数调用的推断失败共享用户可见诊断名，但语义锚点固定为函数 selector，
- * 使诊断映射无需从 PSI/LightTree 宿主形状反推当前错误属于函数值引用还是调用。
+ * 函数值引用缺失的是函数自身的类型实参，而不是一次调用的推断结果；诊断映射据此复用
+ * `GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT`，并保留 [functionName] 供消息渲染。
  */
-class ConeGenericFunctionReferenceWithoutTypeArgumentsError : ConeDiagnostic {
+class ConeGenericFunctionReferenceWithoutTypeArgumentsError(
+    /** 未实例化函数声明的名称。 */
+    val functionName: Name,
+) : ConeDiagnostic {
     /** 面向普通诊断渲染的失败原因。 */
-    override val reason: String get() = "generic function reference requires explicit type arguments"
+    override val reason: String get() = "generic function reference ${functionName.asString()} requires explicit type arguments"
 }
 
 /**

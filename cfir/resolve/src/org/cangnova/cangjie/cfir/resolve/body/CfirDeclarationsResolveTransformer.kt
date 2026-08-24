@@ -647,6 +647,9 @@ dataFlowAnalyzer.enterFunction(constructor)
             ResolutionMode.ContextIndependent
         }
 
+        // 对齐 Kotlin FIR：局部变量 initializer 必须落在 CFG declaration enter/exit 之间。
+        // 这样 exit 节点才是常量与初始化流事实的唯一写入点。
+        dataFlowAnalyzer.enterVariableDeclaration(variable)
         context.withContainer(variable) {
             context.withVariableInitializer(variable) {
                 variable.initializer?.let { initializer ->
@@ -658,8 +661,9 @@ dataFlowAnalyzer.enterFunction(constructor)
                     } else {
                         variable.transformInitializer(transformer, initializerMode)
                     }
-                    variable.initializer?.applySingleRuneStringLiteralConversion(
+                    variable.initializer?.applySingleQuoteStringConversion(
                         expectedInitializerType,
+                        session,
                     )
                 }
                 reportInitializerMismatchToOverloadByLambdaCandidate(
@@ -674,6 +678,7 @@ dataFlowAnalyzer.enterFunction(constructor)
         // 这样同名引用会继续查找外层变量、分类器或 enum constructor，
         // 而真正不存在外层声明的递归自引用仍由普通名称解析报告 unresolved。
         context.storeVariable(variable, session)
+        dataFlowAnalyzer.exitVariableDeclaration(variable)
 
         bumpPhase(variable)
         return variable
@@ -755,6 +760,13 @@ dataFlowAnalyzer.enterFunction(constructor)
         fieldVariable: CfirFieldVariable,
         data: ResolutionMode,
     ): CfirFieldVariable {
+        // `CfirFieldVariable` 同时承载真实成员字段和函数体内的 `var`。
+        // 后者是局部声明，必须和普通变量共享函数 CFG 的 declaration 生命周期，不能
+        // 建立独立 FieldInitializer 子图，否则后续 CFG 分析看不到它写入的流事实。
+        if (fieldVariable.isLocal) {
+            return transformLocalFieldVariableContent(fieldVariable, data)
+        }
+
         fieldVariable.replaceReturnTypeRef(
             resolveExplicitTypeRefIfNeeded(fieldVariable.returnTypeRef, fieldVariable.typeParameters),
         )
@@ -771,21 +783,7 @@ dataFlowAnalyzer.enterFunction(constructor)
             context.withFieldInitializer(fieldVariable) {
                 dataFlowAnalyzer.enterFieldInitializer(fieldVariable)
                 try {
-                    val expectedInitializerType = (explicitTypeRef as? CfirResolvedTypeRef)?.coneType
-                    if (expectedInitializerType != null) {
-                        context.withInitializerExpectedType(initializer, expectedInitializerType) {
-                            fieldVariable.transformInitializer(transformer, initializerMode)
-                        }
-                    } else {
-                        fieldVariable.transformInitializer(transformer, initializerMode)
-                    }
-                    fieldVariable.initializer?.applySingleRuneStringLiteralConversion(
-                        expectedInitializerType,
-                    )
-                    reportInitializerMismatchToOverloadByLambdaCandidate(
-                        expectedTypeRef = explicitTypeRef as? CfirResolvedTypeRef,
-                        initializer = fieldVariable.initializer,
-                    )
+                    resolveFieldVariableInitializer(fieldVariable, explicitTypeRef, initializerMode, initializer)
                 } finally {
                     // 仓颉 CfirFieldVariable 不是 CfirControlFlowGraphOwner：
                     // 字段初始化器的 CFG 归属包含它的 class initializer / primary constructor，
@@ -801,6 +799,74 @@ dataFlowAnalyzer.enterFunction(constructor)
 
         bumpPhase(fieldVariable)
         return fieldVariable
+    }
+
+    /**
+     * 解析函数体内用 [CfirFieldVariable] 表示的局部 `var`。
+     *
+     * 它复用普通局部变量的顺序：先进入函数 CFG，再在变量 initializer 上下文中解析，
+     * 类型确定后写入当前 scope，最后退出 declaration。即使 initializer 解析抛出，
+     * `finally` 也会平衡 CFG builder 的 enter/exit，避免污染同一函数后续声明的图。
+     */
+    protected open fun transformLocalFieldVariableContent(
+        fieldVariable: CfirFieldVariable,
+        data: ResolutionMode,
+    ): CfirFieldVariable {
+        fieldVariable.replaceReturnTypeRef(
+            resolveExplicitTypeRefIfNeeded(fieldVariable.returnTypeRef, fieldVariable.typeParameters),
+        )
+
+        val explicitTypeRef = fieldVariable.returnTypeRef
+        val initializerMode = if (explicitTypeRef is CfirResolvedTypeRef) {
+            ResolutionMode.WithExpectedType(explicitTypeRef)
+        } else {
+            ResolutionMode.ContextIndependent
+        }
+
+        dataFlowAnalyzer.enterVariableDeclaration(fieldVariable)
+        try {
+            context.withContainer(fieldVariable) {
+                context.withVariableInitializer(fieldVariable) {
+                    fieldVariable.initializer?.let { initializer ->
+                        resolveFieldVariableInitializer(fieldVariable, explicitTypeRef, initializerMode, initializer)
+                    }
+                    fieldVariable.resolveImplicitReturnTypeFromInitializer()
+                }
+            }
+
+            // 和普通局部变量相同：initializer 结束后才将名称加入当前 lexical scope。
+            context.storeVariable(fieldVariable, session)
+        } finally {
+            dataFlowAnalyzer.exitVariableDeclaration(fieldVariable)
+        }
+
+        bumpPhase(fieldVariable)
+        return fieldVariable
+    }
+
+    /** 将字段变量的 initializer 解析、字面量归一和 overload-lambda 失配上报保持为同一实现。 */
+    private fun resolveFieldVariableInitializer(
+        fieldVariable: CfirFieldVariable,
+        explicitTypeRef: CfirTypeRef,
+        initializerMode: ResolutionMode,
+        initializer: CfirExpression,
+    ) {
+        val expectedInitializerType = (explicitTypeRef as? CfirResolvedTypeRef)?.coneType
+        if (expectedInitializerType != null) {
+            context.withInitializerExpectedType(initializer, expectedInitializerType) {
+                fieldVariable.transformInitializer(transformer, initializerMode)
+            }
+        } else {
+            fieldVariable.transformInitializer(transformer, initializerMode)
+        }
+        fieldVariable.initializer?.applySingleQuoteStringConversion(
+            expectedInitializerType,
+            session,
+        )
+        reportInitializerMismatchToOverloadByLambdaCandidate(
+            expectedTypeRef = explicitTypeRef as? CfirResolvedTypeRef,
+            initializer = fieldVariable.initializer,
+        )
     }
 
     // ── Declaration (generic fallback) ────────────────────────────────────
@@ -879,34 +945,42 @@ dataFlowAnalyzer.enterFunction(constructor)
         }
 
         val bindingVariables = patternVariable.pattern.visibleBindingVariables()
-        val initializer = patternVariable.initializer
-        if (initializer != null) {
-            context.withVariableInitializer(bindingVariables) {
-                val expectedInitializerType = (explicitTypeRef as? CfirResolvedTypeRef)?.coneType
-                if (expectedInitializerType != null) {
-                    context.withInitializerExpectedType(initializer, expectedInitializerType) {
+        // pattern variable 是语法容器，后续名称解析实际指向其中的 binding variable。
+        // 因此 CFG 必须以这些 binding 为 declaration owner：initializer 在 enter/exit
+        // 之间求值，随后每个可见 binding 在同一函数 CFG 中获得自己的值事实。
+        bindingVariables.forEach(dataFlowAnalyzer::enterVariableDeclaration)
+        try {
+            val initializer = patternVariable.initializer
+            if (initializer != null) {
+                context.withVariableInitializer(bindingVariables) {
+                    val expectedInitializerType = (explicitTypeRef as? CfirResolvedTypeRef)?.coneType
+                    if (expectedInitializerType != null) {
+                        context.withInitializerExpectedType(initializer, expectedInitializerType) {
+                            patternVariable.transformInitializer(transformer, initializerMode)
+                        }
+                    } else {
                         patternVariable.transformInitializer(transformer, initializerMode)
                     }
-                } else {
-                    patternVariable.transformInitializer(transformer, initializerMode)
                 }
+                reportInitializerMismatchToOverloadByLambdaCandidate(
+                    expectedTypeRef = explicitTypeRef as? CfirResolvedTypeRef,
+                    initializer = patternVariable.initializer,
+                )
             }
-            reportInitializerMismatchToOverloadByLambdaCandidate(
-                expectedTypeRef = explicitTypeRef as? CfirResolvedTypeRef,
-                initializer = patternVariable.initializer,
+
+            patternVariable.resolveImplicitReturnTypeFromInitializer()
+            propagateWholeInitializerToSimplePatternBinding(patternVariable.pattern, patternVariable.initializer)
+
+            patternVariable.transformPattern(transformer, ResolutionMode.ContextIndependent)
+            resolvePatternBindingTypes(
+                pattern = patternVariable.pattern,
+                expectedType = patternVariable.returnTypeRef.coneTypeOrNull,
+                typeResolver = specificTypeResolverTransformer,
             )
+            registerPatternBindings(patternVariable.pattern)
+        } finally {
+            bindingVariables.forEach(dataFlowAnalyzer::exitVariableDeclaration)
         }
-
-        patternVariable.resolveImplicitReturnTypeFromInitializer()
-        propagateWholeInitializerToSimplePatternBinding(patternVariable.pattern, patternVariable.initializer)
-
-        patternVariable.transformPattern(transformer, ResolutionMode.ContextIndependent)
-        resolvePatternBindingTypes(
-            pattern = patternVariable.pattern,
-            expectedType = patternVariable.returnTypeRef.coneTypeOrNull,
-            typeResolver = specificTypeResolverTransformer,
-        )
-        registerPatternBindings(patternVariable.pattern)
 
         bumpPhase(patternVariable)
         return patternVariable

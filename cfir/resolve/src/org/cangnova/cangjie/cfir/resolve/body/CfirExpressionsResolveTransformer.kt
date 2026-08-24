@@ -45,6 +45,7 @@ import org.cangnova.cangjie.cfir.references.impl.CfirNamedReferenceImpl
 import org.cangnova.cangjie.cfir.references.impl.CfirResolvedAppliedCallableReference
 import org.cangnova.cangjie.cfir.resolve.*
 import org.cangnova.cangjie.cfir.resolve.calls.CandidateProcessingMode
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.resolve.calls.applySpawnExpectedFutureType
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirNamedReferenceWithCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.futureTypeOrNull
@@ -317,11 +318,13 @@ open class CfirExpressionsResolveTransformer(
         val synthesized = synthesizeLiteralType(literalExpression.kind)
         val expectedType = data.expectedTypeOrNull
         val resolvedType = when {
-            expectedType?.isRune == true &&
-                    literalExpression.isSingleRuneStringLiteral() &&
+            // 官方声明初始化/赋值消费点上的单字符 String 目标类型改写（Rune/UInt8）。
+            expectedType != null &&
                     (context.variableBeingInitialized != null ||
                             context.fieldBeingInitialized != null ||
-                            context.isInsideAssignmentOrInitializerValue) -> ConePrimitiveType.RUNE
+                            context.isInsideAssignmentOrInitializerValue) ->
+                literalExpression.singleQuoteStringConversionTargetOrNull(expectedType, session)
+                    ?: IdealTypeResolver.resolveIfIdeal(synthesized, expectedType)
             expectedType != null -> IdealTypeResolver.resolveIfIdeal(synthesized, expectedType)
             else -> synthesized
         }
@@ -365,6 +368,11 @@ open class CfirExpressionsResolveTransformer(
                 CfirAssignmentTypeMismatchPrimaryDiagnostic.CannotConvertLiteral("character") to
                         CfirAssignmentRhsRootValidity.INVALID_AFTER_MISMATCH
 
+            // 官方 `b'…'` 走 `ChkLitConstExprOfTypeInteger`，失败文案同整数字面量。
+            CfirLiteralKind.BYTE ->
+                CfirAssignmentTypeMismatchPrimaryDiagnostic.CannotConvertLiteral("integer") to
+                        CfirAssignmentRhsRootValidity.INVALID_AFTER_MISMATCH
+
             CfirLiteralKind.STRING ->
                 CfirAssignmentTypeMismatchPrimaryDiagnostic.TypeMismatch to
                         CfirAssignmentRhsRootValidity.VALID_AFTER_MISMATCH
@@ -404,6 +412,8 @@ open class CfirExpressionsResolveTransformer(
         CfirLiteralKind.FLOAT   -> ConePrimitiveType.IDEAL_FLOAT
         CfirLiteralKind.BOOLEAN -> builtinTypes.boolType
         CfirLiteralKind.RUNE    -> ConePrimitiveType.RUNE
+        // 官方 `GetNumLitTypeKind` 对 RUNE_BYTE 固定返回 TYPE_UINT8。
+        CfirLiteralKind.BYTE    -> ConePrimitiveType.UINT8
         CfirLiteralKind.STRING  -> stdlibStringType()
         CfirLiteralKind.UNIT    -> builtinTypes.unitType
     }
@@ -1755,6 +1765,7 @@ open class CfirExpressionsResolveTransformer(
         val resolvedCalleeReference = resolvedCall.calleeReference
         val diagnostic = (resolvedCalleeReference as? CfirDiagnosticHolder)?.diagnostic
         val noArgEnumValueInvocation = resolvedCalleeReference.isNoArgEnumValueInvocation()
+        val noConstructorDiagnostic = diagnostic === ConeNoConstructorError
         val noArgEnumValueOnValueReceiver =
             diagnostic is ConeNotMemberOfError &&
                 callResolver.isNoArgEnumConstructorOnValueReceiver(
@@ -1777,13 +1788,16 @@ open class CfirExpressionsResolveTransformer(
             is ConeUnresolvedNameError -> true
             is ConeNotMemberOfError -> noArgEnumValueOnValueReceiver
             is ConeInapplicableCandidateError ->
-                diagnostic.candidateSymbol is CfirEnumConstructorSymbol ||
-                        diagnostic.candidateSymbol is CfirVariableSymbol<*>
+                !diagnostic.candidate.isFunctionTypeCallableValueCandidate() &&
+                        (diagnostic.candidateSymbol is CfirEnumConstructorSymbol ||
+                                diagnostic.candidateSymbol is CfirVariableSymbol<*>)
             is ConeConstraintSystemHasContradiction ->
-                diagnostic.candidateSymbol is CfirEnumConstructorSymbol ||
-                        diagnostic.candidateSymbol is CfirVariableSymbol<*>
+                !diagnostic.candidate.isFunctionTypeCallableValueCandidate() &&
+                        (diagnostic.candidateSymbol is CfirEnumConstructorSymbol ||
+                                diagnostic.candidateSymbol is CfirVariableSymbol<*>)
             is ConeAmbiguityError -> !diagnostic.applicability.isSuccess &&
                     diagnostic.candidateSymbols.all { it is CfirEnumConstructorSymbol }
+            ConeNoConstructorError -> true
             else -> false
         }
         if (!canTryImplicitInvoke) return null
@@ -1803,7 +1817,10 @@ open class CfirExpressionsResolveTransformer(
             isUsedAsReceiver = true,
             isUsedAsGetClassReceiver = false,
             callSite = originalCall,
-            resolutionMode = data,
+            // receiver 的值类型不能被整个 invoke 表达式的期望返回类型约束。
+            // `Entry(args)` 先解析为 `Entry`，再以该 enum 值作为 `operator ()` 的 receiver；
+            // 外层 expected type 只应参与后面的 invoke call。
+            resolutionMode = ResolutionMode.ContextIndependent,
             purpose = NamedValueAccessPurpose.ImplicitInvokeReceiver,
         ) as? CfirQualifiedAccessExpression ?: return null
         // 构造器匹配已有诊断时，只有裸 enum value 访问本身成功，才继续尝试 `operator ()`。
@@ -1822,6 +1839,9 @@ open class CfirExpressionsResolveTransformer(
 
             else -> return null
         }
+        // `NO_CONSTRUCTOR` 也可能来自普通 class-like 调用。只有真正恢复为无 payload
+        // enum 值时，才允许把源码 `Entry(args)` 改写成该值的 `operator ()` 调用。
+        if (noConstructorDiagnostic && !resolvedAccess.isNoArgEnumConstructorValueAccess()) return null
 
         resolvedAccess.applyFreshFunctionInvokeShape(originalCall.argumentList.arguments)
 
@@ -1874,6 +1894,25 @@ open class CfirExpressionsResolveTransformer(
         }
 
         return null
+    }
+
+    /** 函数类型调用已经拥有自己的参数映射语义，不能被 operator-invoke 恢复覆盖。 */
+    private fun AbstractCallCandidate<*>.isFunctionTypeCallableValueCandidate(): Boolean =
+        (this as? Candidate)?.isFunctionTypeCallableValueCall == true
+
+    /** 判断 named-value 恢复是否已解析为可作为运行值使用的无 payload enum entry。 */
+    private fun CfirQualifiedAccessExpression.isNoArgEnumConstructorValueAccess(): Boolean {
+        val symbol = when (val reference = calleeReference) {
+            is CfirResolvedNamedReference -> reference.resolvedSymbol
+            is CfirNamedReferenceWithCandidateBase -> reference.candidateSymbol
+            else -> null
+        }
+        return symbol
+            ?.takeIf { it.isBound }
+            ?.cfir
+            .let { it as? CfirEnumConstructor }
+            ?.valueParameters
+            ?.isEmpty() == true
     }
 
     /**
@@ -3094,7 +3133,7 @@ open class CfirExpressionsResolveTransformer(
                 actualType = assignment.rValue.coneTypeOrNull,
             )
         }
-        assignment.rValue.applySingleRuneStringLiteralConversion(lValueType)
+        assignment.rValue.applySingleQuoteStringConversion(lValueType, session)
         val resolvedRValueType = assignment.rValue.coneTypeOrNull
         assignment.replaceTypeMismatchOutcome(typeMismatchOutcome)
         val multipleAssignmentMismatch = (assignment.lValue as? CfirTupleLiteral)

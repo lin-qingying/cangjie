@@ -206,7 +206,9 @@ internal class CaCfirExpressionTypeProvider(
         return when (constantKind) {
             ConstantValueKind.BOOLEAN_CONSTANT -> builtinTypes.boolType.asCaType()
             ConstantValueKind.FLOAT_CONSTANT -> builtinTypes.float64Type.asCaType()
-            ConstantValueKind.RUNE_CONSTANT, ConstantValueKind.CHARACTER_BYTE_CONSTANT -> builtinTypes.runeType.asCaType()
+            ConstantValueKind.RUNE_CONSTANT -> builtinTypes.runeType.asCaType()
+            // 官方 RUNE_BYTE 定型为 UInt8（GetNumLitTypeKind），不得并入 Rune。
+            ConstantValueKind.CHARACTER_BYTE_CONSTANT -> builtinTypes.uint8Type.asCaType()
             ConstantValueKind.INTEGER_CONSTANT -> builtinTypes.int64Type.asCaType()
             ConstantValueKind.UNIT_CONSTANT -> builtinTypes.unitType.asCaType()
             null -> null

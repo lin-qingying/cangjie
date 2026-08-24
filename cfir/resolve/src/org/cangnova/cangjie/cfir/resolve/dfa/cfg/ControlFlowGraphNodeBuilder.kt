@@ -23,6 +23,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLoopExpression
 import org.cangnova.cangjie.cfir.expressions.CfirMatchBranch
 import org.cangnova.cangjie.cfir.expressions.CfirMatchExpression
+import org.cangnova.cangjie.cfir.patterns.CfirPattern
 import org.cangnova.cangjie.cfir.expressions.CfirOptionalChainExpression
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
 import org.cangnova.cangjie.cfir.expressions.CfirSpawnExpression
@@ -171,12 +172,44 @@ fun ControlFlowGraphBuilder.createMatchExitNode(fir: CfirMatchExpression): Match
     MatchExitNode(currentGraph, fir, levelCounter)
 
 /** 创建 match 分支条件入口节点。 */
-fun ControlFlowGraphBuilder.createMatchBranchConditionEnterNode(fir: CfirMatchBranch): MatchBranchConditionEnterNode =
-    MatchBranchConditionEnterNode(currentGraph, fir, levelCounter)
+fun ControlFlowGraphBuilder.createMatchBranchConditionEnterNode(
+    fir: CfirMatchBranch,
+    matchExpression: CfirMatchExpression,
+): MatchBranchConditionEnterNode =
+    MatchBranchConditionEnterNode(currentGraph, fir, matchExpression, levelCounter)
 
 /** 创建 match 分支条件出口节点。 */
-fun ControlFlowGraphBuilder.createMatchBranchConditionExitNode(fir: CfirMatchBranch): MatchBranchConditionExitNode =
-    MatchBranchConditionExitNode(currentGraph, fir, levelCounter)
+fun ControlFlowGraphBuilder.createMatchBranchConditionExitNode(
+    fir: CfirMatchBranch,
+    matchExpression: CfirMatchExpression,
+): MatchBranchConditionExitNode =
+    MatchBranchConditionExitNode(currentGraph, fir, matchExpression, levelCounter)
+
+/** 创建 match 原子模式判定节点。 */
+fun ControlFlowGraphBuilder.createMatchPatternDecisionNode(
+    branch: CfirMatchBranch,
+    pattern: CfirPattern,
+    subjectPath: List<Int>,
+    reportSource: CfirPattern,
+    matchExpression: CfirMatchExpression,
+): MatchPatternDecisionNode =
+    MatchPatternDecisionNode(currentGraph, branch, pattern, null, subjectPath, reportSource, matchExpression, levelCounter)
+
+/** 创建 match guard 判定节点。 */
+fun ControlFlowGraphBuilder.createMatchGuardDecisionNode(
+    branch: CfirMatchBranch,
+    guard: CfirExpression,
+    reportSource: CfirPattern,
+    matchExpression: CfirMatchExpression,
+): MatchPatternDecisionNode =
+    MatchPatternDecisionNode(currentGraph, branch, null, guard, emptyList(), reportSource, matchExpression, levelCounter)
+
+/** 创建 match 分支失败汇合节点。 */
+fun ControlFlowGraphBuilder.createMatchBranchFailureNode(
+    branch: CfirMatchBranch,
+    matchExpression: CfirMatchExpression,
+): MatchBranchFailureNode =
+    MatchBranchFailureNode(currentGraph, branch, matchExpression, levelCounter)
 
 /** 创建 match 分支结果入口节点。 */
 fun ControlFlowGraphBuilder.createMatchBranchResultEnterNode(fir: CfirMatchBranch): MatchBranchResultEnterNode =

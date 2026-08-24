@@ -30,7 +30,6 @@ import org.cangnova.cangjie.cfir.declarations.builder.buildValueParameter
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.expressions.CfirArrayLiteral
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
-import org.cangnova.cangjie.cfir.expressions.CfirNamedAccessExpression
 import org.cangnova.cangjie.cfir.resolve.CfirSamResolver
 import org.cangnova.cangjie.cfir.resolve.CfirLocalLambdaInitializerInferenceReference
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
@@ -47,6 +46,7 @@ import org.cangnova.cangjie.cfir.scopes.CfirScope
 import org.cangnova.cangjie.cfir.scopes.CfirCallableLookupProvenance
 import org.cangnova.cangjie.cfir.semantics.AbstractCallCandidate
 import org.cangnova.cangjie.cfir.semantics.ResolutionDiagnostic
+import org.cangnova.cangjie.cfir.semantics.hasBareGenericFunctionReferencePayloadArgument
 import org.cangnova.cangjie.cfir.semantics.isSuccess
 import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
@@ -724,6 +724,42 @@ class Candidate(
         get() = callInfo.candidateForCommonInvokeReceiver != null ||
                 isSyntheticFunctionTypeInvoke() ||
                 symbol.takeIf { it.isBound }?.cfir is CfirVariable
+
+    /**
+     * payload enum 调用的实参是否已经是未实例化泛型函数值引用。
+     *
+     * 这类实参的主错误属于函数引用自身：例如 `Time.Day(getTime)` 中 `getTime`
+     * 缺少函数类型实参。外层 enum owner 因而无法从该错误实参取得稳定类型，但不能把
+     * 同一个根因再次提升为 `Time.Day` 的泛型推断失败。无参 enum value（如 `None`）
+     * 不属于函数声明，仍由 payload enum 的正常推断路径处理。
+     */
+    val hasBareGenericFunctionReferencePayloadArgument: Boolean
+        get() = (this as AbstractCallCandidate<*>).hasBareGenericFunctionReferencePayloadArgument()
+
+    /**
+     * 当前候选是否已由函数类型语义接管。
+     *
+     * [isCallableValueCall] 还会覆盖任意变量候选，以便普通对象在初次调用失败后仍能尝试
+     * `operator ()`。本属性只识别已确认的函数类型调用；这类调用的失败必须保留在函数值
+     * 参数映射路径，不能再被隐式 invoke 恢复改写。
+     */
+    val isFunctionTypeCallableValueCall: Boolean
+        get() {
+            if (callInfo.candidateForCommonInvokeReceiver != null || isSyntheticFunctionTypeInvoke()) {
+                return true
+            }
+            if (callableValueInvokeFunctionShape != null) return true
+
+            val variable = symbol.takeIf { it.isBound }?.cfir as? CfirVariable ?: return false
+            val declaredType = variable.returnTypeRef
+                .resolvedConeTypeOrNull()
+                ?.fullyExpandedType(callInfo.session)
+                ?: return false
+            return declaredType is ConeFunctionType ||
+                    (declaredType as? ConeErrorType)
+                        ?.delegatedType
+                        ?.fullyExpandedType(callInfo.session) is ConeFunctionType
+        }
 
     /** 函数类型 receiver 上合成的 `invoke` 候选。 */
     private fun isSyntheticFunctionTypeInvoke(): Boolean {

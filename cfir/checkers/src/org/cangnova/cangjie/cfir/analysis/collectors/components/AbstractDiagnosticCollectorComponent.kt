@@ -2,6 +2,7 @@
 
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.diagnostics.AbstractSourceElementPositioningStrategy
 import org.cangnova.cangjie.cfir.diagnostics.CjDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticFactory0
@@ -30,6 +31,14 @@ abstract class AbstractDiagnosticCollectorComponent(
 
     /** 执行不依赖具体 CFIR 元素的全局设置检查。 */
     open fun checkSettings(data: CheckerContext) {}
+
+    /**
+     * 在一个声明的完整子树已完成普通 checker 遍历后执行声明级分析。
+     *
+     * CFA 必须在这里消费完整函数 CFG：此时 Sema checker 已经处理了函数体中的模式
+     * 合法性和 matrix 覆盖诊断，且不会把 CFG 分析混入树节点的 pre-order 分派。
+     */
+    open fun onDeclarationExit(declaration: CfirDeclaration, data: CheckerContext) {}
 
     /** 根据元素 source 提交 pending 诊断。 */
     protected fun checkAndCommitReportsOn(element: CfirElement, context: DiagnosticContext, commitEverything: Boolean) {

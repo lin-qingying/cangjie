@@ -91,6 +91,11 @@ class PersistentCheckerContext private constructor(
 
     override fun hasStaticGenericDependency(source: CjSourceElement?): Boolean = false
 
+    /** 持久快照不记录类型转换溢出范围——由 mutable 收集轮承担。 */
+    override fun recordTypeConversionOverflow(source: CjSourceElement) {}
+
+    override fun hasTypeConversionOverflow(source: CjSourceElement?): Boolean = false
+
     /** 持久快照不弹栈，由调用方持有旧引用实现"弹"。 */
     override fun dropDeclaration() {}
 
