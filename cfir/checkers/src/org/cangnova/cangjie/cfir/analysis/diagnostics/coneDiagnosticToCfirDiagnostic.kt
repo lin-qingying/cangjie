@@ -866,16 +866,7 @@ private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
                 session,
             )
 
-            is WrongNumberOfArguments -> CfirErrors.WRONG_NUMBER_OF_ARGUMENTS.on(
-                rootCause.source,
-                session,
-            ).also {
-                System.err.println(
-                    "CFIR_VARIADIC_ARITY_DIAGNOSTIC root=${rootCause.source.startOffset}..${rootCause.source.endOffset} " +
-                        "source=${source?.startOffset}..${source?.endOffset} " +
-                        "call=${qualifiedAccessSource?.startOffset}..${qualifiedAccessSource?.endOffset}"
-                )
-            }
+            is WrongNumberOfArguments -> CfirErrors.WRONG_NUMBER_OF_ARGUMENTS.on(rootCause.source, session)
 
             else -> genericDiagnostic
         }
