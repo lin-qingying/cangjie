@@ -1406,6 +1406,9 @@ private fun ConeAmbiguityError.mapConeAmbiguityError(
     session: CfirSession,
 ): List<CjDiagnostic> {
     if (isErrorArgumentCascade) return emptyList()
+    // 官方 `TypeCheckCall.cpp::DiagnoseForCall`：实参表达式自身携带 error 类型时，
+    // 调用点的 no-match / ambiguity 都是已报告内部错误的级联，不再追加诊断。
+    if (hasErroneousArgument()) return emptyList()
 
     val operatorDiagnosticSource = callOrAssignmentSource ?: source
     if (operatorDiagnosticSource != null) {
@@ -1519,6 +1522,22 @@ private fun ConeAmbiguityError.mapConeAmbiguityError(
         source ?: diagnosticSource
     }
     return listOfNotNull(factory.on(ambiguitySource, name, session))
+}
+
+/**
+ * 实参表达式自身携带 error 类型时，多候选歧义只是内部错误的调用级联。
+ *
+ * 官方 `TypeCheckCall.cpp::DiagnoseForCall` 在 `candidatesBeforeCheck` 非空、检查后候选
+ * 全部淘汰且任一实参 `Ty::IsTyCorrect` 为假时直接返回，不报告任何调用级诊断；
+ * `cjc` 对 `println(undeclared(1))` 也只报 undeclared identifier。Kotlin FIR 的
+ * 对应结构是候选级 `ErrorTypeInArguments` 在诊断映射中返回 null。
+ */
+private fun ConeAmbiguityError.hasErroneousArgument(): Boolean {
+    val callCandidates = candidatesWithErrors.keys.filterIsInstance<AbstractCallCandidate<*>>()
+    if (callCandidates.isEmpty()) return false
+    return callCandidates.first().callInfo.arguments.any { argument ->
+        argument.coneTypeOrNull is ConeErrorType
+    }
 }
 
 /**
