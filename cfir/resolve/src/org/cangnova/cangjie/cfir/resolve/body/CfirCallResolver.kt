@@ -915,6 +915,15 @@ class CfirCallResolver(
 
             else -> return null
         }
+        // 内建类型没有可写入 CfirResolvedNamedReference 的 classifier symbol；若保留
+        // 普通查找留下的 error reference，限定符已经携带正确的内建类型仍会渲染为未解析。
+        // 恢复为无诊断的名称引用，让后续 qualifier scope 统一提供静态 extend 成员。
+        access.replaceCalleeReference(
+            buildNamedReference {
+                source = callee.source
+                name = callee.name
+            }
+        )
         access.replaceConeTypeOrNull(builtinType)
         return access
     }

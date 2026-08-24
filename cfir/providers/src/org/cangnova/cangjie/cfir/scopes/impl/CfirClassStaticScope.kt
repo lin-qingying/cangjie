@@ -246,12 +246,14 @@ fun CfirClassLikeSymbol<*>.staticScopeForQualifierType(
     session: CfirSession,
     scopeSession: ScopeSession,
     qualifierType: ConeCangJieType = constructType(),
+    memberScopeKind: CfirClassMemberScopeKind = CfirClassMemberScopeKind.USE_SITE,
 ): CfirContainingNamesAwareScope {
     val expandedQualifierType = qualifierType.fullyExpandedType(session)
-    val cacheKey = StaticScopeForQualifierTypeKey(classId, expandedQualifierType)
+    val cacheKey = StaticScopeForQualifierTypeKey(classId, expandedQualifierType, memberScopeKind)
     return scopeSession.getOrBuild(cacheKey, StaticScopeForQualifierTypeScopeKey) {
         val allowBareGenericStaticQualifierExtends =
-            expandedQualifierType is ConeLookupTagBasedType &&
+            memberScopeKind == CfirClassMemberScopeKind.USE_SITE &&
+                    expandedQualifierType is ConeLookupTagBasedType &&
                     expandedQualifierType.isBareOrDeclarationSelfTypeOf(this) &&
                     cfir.typeParameters.isNotEmpty()
         val useSiteScope = CfirClassUseSiteMemberScope(
@@ -262,7 +264,7 @@ fun CfirClassLikeSymbol<*>.staticScopeForQualifierType(
             directSupertypeProvider = session.directSupertypeProviderOrNull,
             ownerType = expandedQualifierType,
             dispatchReceiverType = expandedQualifierType,
-            scopeKind = CfirClassMemberScopeKind.USE_SITE,
+            scopeKind = memberScopeKind,
             allowBareGenericStaticQualifierExtends = allowBareGenericStaticQualifierExtends,
         )
         CfirClassStaticScope(CfirClassSubstitutionScope(session, useSiteScope, expandedQualifierType))
@@ -567,6 +569,7 @@ private data class StaticMemberWithScope<S : CfirCallableSymbol<*>>(
  *
  * @property classId qualifier class id。
  * @property qualifierType qualifier 的具体类型。
+ * @property memberScopeKind 当前 scope 的成员图可见性模式。
  */
 private data class StaticScopeForQualifierTypeKey(
     /**
@@ -577,6 +580,11 @@ private data class StaticScopeForQualifierTypeKey(
      * qualifier 在当前 use-site 的具体类型。
      */
     val qualifierType: ConeCangJieType,
+    /**
+     * 同一 qualifier 类型在类型本体与外部 use-site 的 extend 可见性不同，
+     * 因而不能复用同一个缓存 scope。
+     */
+    val memberScopeKind: CfirClassMemberScopeKind,
 )
 
 /**

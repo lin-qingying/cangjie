@@ -137,6 +137,20 @@ object CfirConflictsDeclarationChecker : CfirBasicDeclarationChecker() {
                 reportConflicts(inspector.declarationConflictingSymbols, declaration)
             }
 
+            is CfirExtend -> {
+                if (declaration.source?.kind !is CjFakeSourceElementKind) {
+                    checkForLocalRedeclarations(declaration.typeParameters)
+                }
+
+                val inspector = CfirDeclarationCollector<CfirBasedSymbol<*>>(context)
+                inspector.collectExtendMembers(declaration)
+                reportConflicts(
+                    declarationConflictingSymbols = inspector.declarationConflictingSymbols,
+                    container = declaration,
+                    reportAllFunctionConflictParticipants = true,
+                )
+            }
+
             else -> {
                 if (declaration.source?.kind !is CjFakeSourceElementKind && declaration is CfirTypeParameterRefsOwner) {
                     checkForLocalRedeclarations(declaration.typeParameters)
@@ -163,13 +177,15 @@ object CfirConflictsDeclarationChecker : CfirBasicDeclarationChecker() {
     private fun reportConflicts(
         declarationConflictingSymbols: Map<CfirBasedSymbol<*>, SmartSet<CfirBasedSymbol<*>>>,
         container: CfirDeclaration,
+        reportAllFunctionConflictParticipants: Boolean = false,
     ) {
         declarationConflictingSymbols.forEach { (conflictingDeclaration, symbols) ->
             // 同签名函数簇只由较晚的声明承载 CONFLICTING_OVERLOADS。但本声明若同时与非函数式
             // 声明（如 let/prop/class）同名，官方仍会在本声明上单独报 sema_redefinition，
             // 因此只有在不存在此类非函数式冲突时才整体跳过本声明。
             val isOverloadClusterPredecessor =
-                conflictingDeclaration.hasLaterFunctionConflictRepresentative(declarationConflictingSymbols)
+                !reportAllFunctionConflictParticipants &&
+                    conflictingDeclaration.hasLaterFunctionConflictRepresentative(declarationConflictingSymbols)
             if (isOverloadClusterPredecessor && symbols.all { it.isFunctionLikeRedeclaration() }) {
                 return@forEach
             }

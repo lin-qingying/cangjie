@@ -9,13 +9,13 @@ class A {
 }
 
 extend A {
-    <!STATIC_AND_NON_STATIC_MEMBER_CANNOT_HAVE_SAME_NAME!>p<!>ublic static func <!EXTEND_MEMBER_CANNOT_SHADOW!>foo1<!>() {
+    public static func <!EXTEND_MEMBER_CANNOT_SHADOW, STATIC_AND_NON_STATIC_MEMBER_CANNOT_HAVE_SAME_NAME!>foo1<!>() {
         return 0
     }
 }
 
 extend A {
-    <!STATIC_AND_NON_STATIC_MEMBER_CANNOT_HAVE_SAME_NAME!>p<!>ublic static func foo1(a: Int32) {
+    public static func <!STATIC_AND_NON_STATIC_MEMBER_CANNOT_HAVE_SAME_NAME!>foo1<!>(a: Int32) {
         return 0
     }
 }

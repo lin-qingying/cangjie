@@ -120,12 +120,17 @@ object CfirSupertypesChecker : CfirClassLikeChecker() {
     private fun checkInterfaceSupertypes(declaration: CfirInterface) {
         val ownerName = declaration.classLikeName()
         for (superTypeRef in declaration.superTypeRefs) {
-            // 继承环的 broken edge 由 INHERITANCE_CYCLE 独占诊断。环会让完整类型树带上
-            // ConeErrorType，若继续走下面的合法性判定就会多报 INTERFACE_CANNOT_INHERIT_CLASS；
-            // 官方 cjc 对处于环中的 interface 父类型只报 sema_inheritance_cycle。
-            // 见 DeclaredSupertypeClassification.LoopError 契约：broken edge 不参与常规父类型检查。
-            if (superTypeRef.classifyDeclaredSupertype(context.session) is DeclaredSupertypeClassification.LoopError) {
-                continue
+            // 继承环和名称/类型位置的主解析错误都由各自的根诊断独占。不能仅凭
+            // ConeErrorType 再派生 INTERFACE_CANNOT_INHERIT_CLASS：前者是可继续检查
+            // 的 nominal 恢复态，后者（例如未声明的 T）没有可判定的父类型种类。
+            // 复用声明父类型分类边界，保证接口路径与 class 路径使用同一恢复语义。
+            when (superTypeRef.classifyDeclaredSupertype(context.session)) {
+                is DeclaredSupertypeClassification.PrimaryResolutionError,
+                is DeclaredSupertypeClassification.LoopError -> continue
+
+                is DeclaredSupertypeClassification.ValidNominal,
+                is DeclaredSupertypeClassification.RecoverableNominalError,
+                is DeclaredSupertypeClassification.InvalidTargetKind -> Unit
             }
 
             val superType = superTypeRef.toResolvedSupertypeForInterfaceLegality() ?: continue

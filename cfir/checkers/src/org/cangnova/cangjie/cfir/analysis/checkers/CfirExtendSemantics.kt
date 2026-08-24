@@ -32,6 +32,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirExtendSymbol
 import org.cangnova.cangjie.cfir.references.CfirReference
 import org.cangnova.cangjie.cfir.references.CfirSuperReference
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
+import org.cangnova.cangjie.cfir.resolve.providers.semanticExtendType
 import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.types.*
@@ -145,9 +146,17 @@ internal object CfirExtendSemantics {
 
     /**
      * 解析 extend 目标类型对应的 class-like 声明。
+     *
+     * extend 规则以实际目标类型为语义单位。源码别名只保留用户书写的名称，不能作为
+     * orphan、FFI 边界或成员规则的声明 owner；否则 `type Local = imported.A` 会把
+     * imported.A 错当成本包的 Local。这里与 extend 索引使用同一展开入口，先恢复
+     * 可识别的错误类型，再完整展开 typealias 后解析真正的目标声明。
      */
     fun targetDeclaration(context: CheckerContext, extend: CfirExtend): CfirClassLikeDeclaration? {
-        val targetClassId = extend.extendedTypeRef.toClassIdOrNull() ?: return null
+        val targetClassId = extend.extendedTypeRef
+            .semanticExtendType(context.session)
+            ?.classIdOrPrimitiveClassId
+            ?: return null
         return resolveDeclaration(context, targetClassId)
     }
 
@@ -268,7 +277,9 @@ internal object CfirExtendSemantics {
         extend: CfirExtend,
         currentPackage: FqName,
     ): Boolean {
-        val targetClassId = extend.extendedTypeRef.toClassIdOrNull()
+        val targetClassId = extend.extendedTypeRef
+            .semanticExtendType(context.session)
+            ?.classIdOrPrimitiveClassId
         if (targetClassId?.packageFqName == currentPackage) {
             return true
         }
