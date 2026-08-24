@@ -677,19 +677,26 @@ private fun CheckerContext.openClassConstructorOwner(): CfirClass? {
  *
  * 对齐 C++ TypeCheckExpr/SubscriptExpr.cpp:
  * - resolve 阶段产生的 subscript operator 错误由 Cone 诊断统一映射；
- * - 这里只检查不依赖 operator resolve 的 subscript 语义。
+ * - 这里只检查不依赖 operator resolve 的 VArray 与 tuple 内建下标语义。
  */
 object CfirSubscriptAssignmentChecker : CfirSubscriptExpressionChecker() {
     /**
-     * 检查 VArray 下标表达式的内建语义。
+     * 检查内建下标表达式的共享语义。
      *
-     * VArray 只允许单个 Int64 兼容索引，常量索引必须位于 `[0, size)` 范围内。
+     * VArray 保留既有的单索引、Int64 兼容性与接收者范围定位；tuple 只对无显式后缀
+     * 或 `i64` 后缀的单个整数字面量做固定长度边界检查，并将诊断定位到 index token。
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirSubscriptExpression) {
-        val receiverType = expression.receiver.coneTypeOrNull
-            ?.fullyExpandedType(context.session) as? ConeVArrayType ?: return
+        when (val receiverType = expression.receiver.coneTypeOrNull?.fullyExpandedType(context.session)) {
+            is ConeVArrayType -> checkVArraySubscript(expression, receiverType)
+            is ConeTupleType -> checkTupleSubscript(expression, receiverType)
+            else -> Unit
+        }
+    }
 
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun checkVArraySubscript(expression: CfirSubscriptExpression, receiverType: ConeVArrayType) {
         if (expression.indices.size != 1) {
             reporter.reportOn(
                 source = expression.source,
@@ -716,16 +723,48 @@ object CfirSubscriptAssignmentChecker : CfirSubscriptExpressionChecker() {
             return
         }
 
-        val parsedIndex = CfirIntConstantEvalUtils.parseSignedIntExpression(index) ?: return
-        if (parsedIndex.explicitSuffix != null && parsedIndex.explicitSuffix != "i64") return
-
         val size = BigInteger.valueOf(receiverType.size)
-        if (parsedIndex.value < BigInteger.ZERO || parsedIndex.value >= size) {
+        val indexValue = index.builtinSubscriptIndexValueOrNull() ?: return
+        if (indexValue < BigInteger.ZERO || indexValue >= size) {
             reporter.reportOn(
                 source = expression.receiver.source ?: index.source ?: expression.source,
                 factory = CfirErrors.BUILTIN_INDEX_IN_BOUND,
             )
         }
+    }
+
+    /**
+     * tuple 的内建访问只允许单个固定索引；多索引和非字面量索引继续由 resolve 的
+     * tuple 下标失败路径处理。这里仅补充其可确定的上界检查。
+     */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun checkTupleSubscript(expression: CfirSubscriptExpression, receiverType: ConeTupleType) {
+        val index = expression.indices.singleOrNull() ?: return
+        if (index !is CfirLiteralExpression) return
+        val indexType = index.coneTypeOrNull
+        val int64Type = ConePrimitiveType(PrimitiveTypeKind.INT64)
+        if (
+            indexType == null ||
+            indexType is ConeErrorType ||
+            AbstractTypeChecker.isSubtypeOf(context.session.typeContext, indexType, int64Type) != true
+        ) {
+            return
+        }
+        val indexValue = index.builtinSubscriptIndexValueOrNull() ?: return
+        val size = BigInteger.valueOf(receiverType.elementTypes.size.toLong())
+        if (indexValue >= size) {
+            reporter.reportOn(
+                source = index.source ?: expression.source,
+                factory = CfirErrors.BUILTIN_INDEX_IN_BOUND,
+            )
+        }
+    }
+
+    /** 解析两个内建下标类型共享的常量索引形态。 */
+    private fun CfirExpression.builtinSubscriptIndexValueOrNull(): BigInteger? {
+        val parsedIndex = CfirIntConstantEvalUtils.parseSignedIntExpression(this) ?: return null
+        if (parsedIndex.explicitSuffix != null && parsedIndex.explicitSuffix != "i64") return null
+        return parsedIndex.value
     }
 }
 
