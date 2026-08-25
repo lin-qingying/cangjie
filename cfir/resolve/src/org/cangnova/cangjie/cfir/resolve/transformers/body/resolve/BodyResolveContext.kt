@@ -54,6 +54,7 @@ import org.cangnova.cangjie.cfir.semantics.ResolutionDiagnostic
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeTypeVariable
 import org.cangnova.cangjie.cfir.types.ConeTypeVariableType
 import org.cangnova.cangjie.cfir.types.asCone
@@ -66,6 +67,7 @@ import org.cangnova.cangjie.name.SpecialNames.UNDERSCORE_FOR_UNUSED_VAR
 import org.cangnova.cangjie.resolve.calls.inference.addSubtypeConstraintIfCompatible
 import org.cangnova.cangjie.resolve.calls.inference.buildCurrentSubstitutor
 import org.cangnova.cangjie.resolve.calls.inference.components.ConstraintSystemCompletionMode
+import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintKind
 import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintStorage
 import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintSystemImpl
 import org.cangnova.cangjie.resolve.calls.inference.model.ReceiverConstraintPosition
@@ -1694,6 +1696,19 @@ abstract class CfirInferenceSession {
         ownerTypes: List<ConeCangJieType>,
     ): Set<ConeCangJieType>? = null
 
+    /**
+     * fresh lambda 形参在当前会话中的已知类型界。
+     *
+     * 官方 `ChkLambda` 逐语句分析，前序语句的调用完成即固定形参类型，后续成员访问
+     * 按已固定的具体类型解析。CFIR 的 PCLA_POSTPONED_CALL 把参数检查推迟到 body
+     * 转换之后，前序约束不会出现在共享系统的即时视图里；PCLA 会话通过读取已排队
+     * postponed 调用的参数映射补足同一信息（如 `getB19(x)` 的映射携带 `x -> B19`），
+     * 使后续 `x.foo19(y)` 的 owner 收窄与官方一致。
+     */
+    open fun knownBoundsForFreshReceiver(
+        receiverTypeConstructor: TypeConstructorMarker,
+    ): List<ConeCangJieType> = emptyList()
+
     companion object {
         /** 默认推断会话，不改变普通调用解析行为。 */
         val DEFAULT: CfirInferenceSession = object : CfirInferenceSession() {}
@@ -1808,6 +1823,53 @@ class CfirPCLAInferenceSession(
     /** 将 PCLA common system 的最终结果提交回外层候选。 */
     fun applyResultsToMainCandidate() {
         outerCandidate.system.replaceContentWith(currentCommonSystem.currentStorage())
+    }
+
+    /**
+     * 从已排队 postponed 调用中提取 fresh 形参的已知类型界。
+     *
+     * 每个排队调用的参数映射里，凡以该 receiver 变量为实参的参数位都给出一个
+     * `变量 <: 参数类型` 上界（按该候选自己的当前替换结果换算）；候选系统内已记录
+     * 的显式约束与固定解也一并返回。
+     */
+    override fun knownBoundsForFreshReceiver(
+        receiverTypeConstructor: TypeConstructorMarker,
+    ): List<ConeCangJieType> {
+        val bounds = mutableListOf<ConeCangJieType>()
+        for (atom in outerCandidate.postponedPCLACalls.filterIsInstance<ConeAtomWithCandidate>()) {
+            val candidate = atom.candidate
+            if (candidate.argumentMappingInitialized) {
+                val substitutor = candidate.system.currentStorage()
+                    .buildCurrentSubstitutor(inferenceComponents.session.typeContext, emptyMap())
+                    .asCone()
+                for ((argument, parameter) in candidate.argumentMapping) {
+                    val argumentType = argument.expression.coneTypeOrNull as? ConeTypeVariableType ?: continue
+                    if (argumentType.typeConstructor != receiverTypeConstructor) continue
+                    val parameterType = parameter.returnTypeRef.coneTypeOrNull?.let { declared ->
+                        substitutor.substituteOrNull(declared) ?: declared
+                    } ?: continue
+                    if (parameterType is ConeErrorType) continue
+                    bounds += parameterType
+                }
+            }
+
+            val constraints = candidate.system.currentStorage()
+                .notFixedTypeVariables[receiverTypeConstructor]?.constraints.orEmpty()
+            for (constraint in constraints) {
+                if (constraint.kind != ConstraintKind.UPPER &&
+                    constraint.kind != ConstraintKind.LOWER &&
+                    constraint.kind != ConstraintKind.EQUALITY
+                ) continue
+                val constraintType = constraint.type as? ConeCangJieType ?: continue
+                if (constraintType is ConeErrorType) continue
+                bounds += constraintType
+            }
+            (candidate.system.currentStorage().fixedTypeVariables[receiverTypeConstructor]
+                as? ConeCangJieType)?.let { fixedType ->
+                if (fixedType !is ConeErrorType) bounds += fixedType
+            }
+        }
+        return bounds.distinctBy { it.toString() }
     }
 
     /** 把 expected-type subtype 约束加入当前 common system。 */
