@@ -4114,3 +4114,22 @@ Flagged while gathering evidence for the extend upper-bound recursion problem ty
   3. 返回占位约束改走非 IfCompatible 通道或在丢弃时报告冲突；
   4. synthetic 重算路径把 variable 传入 applyCompletionResult 完成声明写回（或统一由投影侧读取，如本次改动）；
   5. lambda_param_03 的 same(1, x) 求解顺序单独取证（ideal literal 应先于 fresh 形参固定 T）。
+
+## PCLA 路线图第 2 步的四组对照实验与回归修正（未转绿，决定性门控已定位）
+
+- problem type: Resolve / Type Inference（PCLA 逐语句语义，上一条目路线图第 2 步的实施与证伪）。
+- 本轮实验（全部基于 3ac9514e9，逐组加入、逐组以 `testLambdaParam07` 双路径验证）:
+  1. **候选系统种子注入**：`Candidate.system` 惰性初始化时，对 dispatch/extension receiver 为 fresh lambda 占位变量的候选，把 `knownBoundsForFreshReceiver` 的界以 expected-type 位置注入候选系统。探针证实注入发生（`CFIR_SEED_DEBUG ctor=... bounds=[B19] session=CfirPCLAInferenceSession` ×6），输出零变化。
+  2. **会话层 owner 收窄消费已知界**：`refineFreshReceiverCandidateOwners` 在交集计算前按「owner 与每个已知界互不为子类型即淘汰」过滤。输出零变化。
+  3. **提升收窄器到 ARGUMENT_SHAPE 门控之前**：`chooseMostSpecific` 的 ARGUMENT_SHAPE 早退使 body 转换轮完全跳过候选规约；将 `reduceFreshTypeVariableReceiverCandidates` 提到该门控前执行。输出零变化。
+  4. **裸 HEAD 对照**：还原全部实验后单跑 `testLambdaParam07`，得到与四组实验逐字节相同的实际输出。
+- 决定性发现:
+  - **ARGUMENT_SHAPE 门控是收窄失效的直接原因**：body 重算期间语句以 `candidateProcessingMode == ARGUMENT_SHAPE` 解析，原实现下 arity/syntax/expectedType 过滤与 fresh-receiver 规约全部被早退跳过；规约只在后续非 shape 轮运行，为时已晚——错误侧 owner（A19.foo19）的代表 receiver 约束已经过 PPRC `replaceContentWith` 反向固定形参。
+  - **326e03b70 存在单 fixture 级回归**：round-2 基线（8d666f12e）的 lambdaParam07 差异为 3 处（foo23 RETURN_TYPE_MISMATCH + println(f19)/println(f23) 歧义）；3ac9514e9 上同 fixture 差异为 6 处，新增 `getB19(ARGUMENT_TYPE_MISMATCH x)`、`f22 LAMBDA_MUST_HAVE_TYPE_ANNOTATION`、`println(f22(ARGUMENT_TYPE_MISMATCH 123))`。全量计数 920 不变，但"零回归"结论仅在计数维度成立。新差异的机制：错误侧代表候选经 postponed 队列把 `x := A19` 写入共享系统，污染后续 getB19 参数检查。
+- official Cangjie evidence: 同上一条目（cjc 对整个 fixture 零诊断）。
+- CFIR owner files changed: 无（四组实验均已还原，工作树与 3ac9514e9 一致；实验补丁存档于本轮工作记录 `build/pcla_experiments.patch`）。
+- repair principle: 推断引擎的批处理架构（postponed 队列 + shape 轮免规约）决定了任何"候选选择层"的单点修补都无法恢复逐语句顺序语义；必须先完成路线图第 1 步的完成时机重排，或至少在 ARGUMENT_SHAPE 轮内为等价签名收窄建立受控提交通道并同步清理错误轮次的树状态。
+- fixtures covered: TypeInfer/lambda_param_07（PSI 与 LightTree 双路径，多轮对照）。
+- verification commands and outcome:
+  - 全量未重跑（无代码变更）；定向 `testLambdaParam07` 双路径 ×6 轮对照，四组实验输出与裸 HEAD 逐字节一致。
+- 对路线图的修订建议: 第 2 步的前提是第 1 步；在完成时机重排落地前，应先把 326e03b70 在 lambda_param_07 引入的三类新差异作为独立回归处理（候选方向：代表候选的 receiver 约束在写入共享系统前用 knownBounds 校验可行性，不可行则回退为不提交并保留双候选歧义）。
