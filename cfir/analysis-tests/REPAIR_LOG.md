@@ -4068,3 +4068,22 @@ Flagged while gathering evidence for the extend upper-bound recursion problem ty
   - 全量：`.\gradlew.bat :cfir:analysis-tests:test --continue --console=plain` → 新鲜 XML 汇总 **8423 tests, 922 failures**（本轮起点基线 958，净减 36；AMBIGUOUS_FUNCTION_CALL 相关差异从 99 例降至 32 例 SAME + 12 例 SPURIOUS，MISSING 归零）。
   - 定向：GenericConstraintInheritance 全 suite 通过（08/09/10 转绿）；redefinition/private_func/03_public test2 双路径通过；multi_default_impl_04/05、interface_implement_4、import7 回归守卫后保持通过；lambda_param_01 双路径转绿。
   - 单元：`:cfir:resolve:test` 114 tests, 3 failed——与 main 基线完全相同的 3 个既有失败（CfirTypeResolverTypeAliasExpansionTest ×2、CfirMapTypeArgumentsTest/conflicting declaration bound），非本次回归。
+
+## 错误实参级联抑制扩展与实现遮蔽规则解耦接收者（已修复并验证）
+
+- problem type: Resolve / Diagnostics（AMBIGUOUS_FUNCTION_CALL 家族第二轮收尾）。
+- root cause:
+  1. postponed lambda 体内部的已报告错误（如 `!!!!-a` 的 INVALID_UNARY_EXPR、match 块操作数内的 UNRESOLVED_REFERENCE）不会体现在实参顶层类型或候选诊断上——歧义创建时两个 `(A)->A`/`(B)->B` 候选全部 RESOLVED 且零诊断；`hasErroneousArgument` 首版只查顶层 ConeErrorType，且被"候选全部成功"守卫挡住。
+  2. `CString.toString()`（array_builin_ctype）的两个候选是 std.core 泛型 extend 提供的 ToString 实现与 ToString 接口需求成员；规则 1 本应让实现侧胜出，但 (a) 被首版的"仅类型参数接收者"限制挡住，(b) CString/CPointer 是无 ClassId 的内建类型，extend 形状提取 `classIdOrPrimitiveClassId` 返回 null 导致整个消重中止。
+- official Cangjie evidence: cjc 1.0.5 对 `f({a => !!!!-a})`（双函数类型重载）与 `var316 > {含未解析类型的 block}` 只报内部错误、调用点零诊断（同 DiagnoseForCall invalid-实参语义）；对 `CString.toString()` 无歧义。官方 CompareFuncCandidates 规则 A 按候选 owner 判定实现遮蔽接口声明，与接收者是类型参数还是具体实例无关。
+- Kotlin counterpart files consulted: 同上一条目的 ErrorTypeInArguments→null 映射与 use-site member scope 对已实现需求的去重行为。
+- CFIR owner files changed:
+  - `cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/diagnostics/coneDiagnosticToCfirDiagnostic.kt`：`hasErroneousArgument` 改用既有递归助手 `containsErrorDiagnosticInArgument`（与单候选失败路径 line~429 同判定），并把该检查移到"候选全部成功"守卫之前——官方在检查阶段即淘汰带错实参的候选，不存在实参带错的真实成功歧义；保留全体候选仅因 ErrorTypeInArguments 失败的抑制分支。
+  - `cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/overloads/ConeOverloadConflictResolver.kt`：规则 1 与接收者种类解耦（规则 2 维持仅类型参数接收者）；`MemberOwnerShape.ownerClassId` 允许为 null 以接纳 CPointer/CString 内建 extend 目标。
+- repair principle: 级联抑制复用单候选路径已有的递归错误判定，保持单候选与多候选渲染一致；消重规则按官方判据（owner 种类 + 参数一致性）而非接收者语法形态分派。
+- fixtures covered: OperatorOverload/timeout_07、MatchNoSelector/match_no_selector_fuzz_001、Array/array_builin_ctype（PSI 与 LightTree 双路径）。
+- verification commands and outcome:
+  - 全量：`.\gradlew.bat :cfir:analysis-tests:test --continue --console=plain` → 新鲜 XML 汇总 **8423 tests, 920 failures**（第一轮修复后为 922）；AMBIGUOUS_FUNCTION_CALL 相关差异降至 **32 SAME + 6 SPURIOUS**，SPURIOUS 仅剩 lambda_param_03/07/09 双路径。
+  - 定向：testTimeout07 双路径转绿；testMatchNoSelectorFuzz001 转绿；testArrayBuilinCtype 的 AMBIGUOUS 标记归零（残余 TYPE_MISMATCH 属 CPointer 构造家族既有差异）。
+- 遗留相关失败（根因探明，属 PCLA 推断家族，非本轮范围）:
+  - lambda_param_03/07/09: 调试探针证实 f19/f23 等 lambda 初始化器在 body 重算时形参仍为 fresh 变量，语句间约束不传播（getB19(x) 固定 x 后，下一条 x.foo19(y) 的成员查找仍以 fresh receiver 收集候选并命中 `Ambiguity: foo19, [/A19.foo19, /A19_.foo19]`），导致返回占位无法固定、函数值调用结果以 TypeVariable(_R) 泄漏给外层 println 重载集合；lambda_param_03 另有 CFIR 多报 GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT / TYPE_MISMATCH（官方不报）。owner 在 PCLA 会话的语句级参数固定与 fresh-receiver 成员查找，需要独立证据链处理。
