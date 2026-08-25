@@ -4133,3 +4133,6 @@ Flagged while gathering evidence for the extend upper-bound recursion problem ty
 - verification commands and outcome:
   - 全量未重跑（无代码变更）；定向 `testLambdaParam07` 双路径 ×6 轮对照，四组实验输出与裸 HEAD 逐字节一致。
 - 对路线图的修订建议: 第 2 步的前提是第 1 步；在完成时机重排落地前，应先把 326e03b70 在 lambda_param_07 引入的三类新差异作为独立回归处理（候选方向：代表候选的 receiver 约束在写入共享系统前用 knownBounds 校验可行性，不可行则回退为不提交并保留双候选歧义）。
+- 第五、六组实验（同日补充，均已还原）:
+  - **第五组：stage 层立即矛盾判定**——`CfirCheckDispatchReceiver` 的 fresh-receiver 分支先注入已知界、加 receiver 约束后立即检查 `hasContradiction`，不可行 owner 当场报 `InapplicableWrongReceiver`。该层不受 ARGUMENT_SHAPE 门控影响。首版把 owner-sum 集合事实（f30 的 `x.v30_2` 后 x 须同落 A30 与 B30）当硬界，误杀 `{x => x.v30_2; x.v30_3}` 全部候选；第六组在 `knownBoundsForFreshReceiver` 中排除"自身也是 fresh-receiver 成员访问"的排队调用后 f30 过杀消失。最终全量 **920 failures 与基线持平**、AMBIGUOUS 分类不变（32 SAME + 6 SPURIOUS）：改动全局中性——目标用例由更深层的 postponed 批处理与陈旧树状态主导，候选检查层的正确过滤无法翻转终态。
+  - 结论强化：六组实验共同证明，在完成时机重排（路线图第 1 步）落地前，发现层/规约层/检查层的任何单点修补都不产生可观测收益；lambda_param_07 的三类新差异应作为独立回归随第 1 步一并处理。
