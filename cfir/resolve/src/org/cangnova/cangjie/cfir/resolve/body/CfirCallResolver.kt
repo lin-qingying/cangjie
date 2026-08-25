@@ -2013,12 +2013,14 @@ class CfirCallResolver(
         receiverTypeConstructor: TypeConstructorMarker,
         receiverExpression: CfirExpression,
     ): Set<Candidate>? {
+        val knownBounds = components.context.inferenceSession.knownBoundsForFreshReceiver(receiverTypeConstructor)
         val filtered = candidates.filterTo(linkedSetOf()) { candidate ->
             val ownerType = candidate.freshReceiverExpectedOwnerType() ?: return@filterTo false
             candidate.isFreshReceiverOwnerCompatibleWithKnownConstraints(
                 receiverTypeConstructor,
                 receiverExpression,
                 ownerType,
+                knownBounds,
             )
         }
         return filtered.takeIf { it.isNotEmpty() && it.size < candidates.size }
@@ -2242,7 +2244,18 @@ class CfirCallResolver(
         receiverTypeConstructor: TypeConstructorMarker,
         receiverExpression: CfirExpression,
         ownerType: ConeCangJieType,
+        knownBounds: List<ConeCangJieType>,
     ): Boolean {
+        // 前序语句经 postponed 参数映射给出的已知界（如 `getB19(x)` 携带 `x -> B19`）。
+        // x 的真实类型必须同时是 bound 的子类型且落在 owner 内，因此 owner 与每个
+        // bound 之间必须存在子类型方向的可达性；互不为子类型的 owner（如 A19 对
+        // bound B19）不可行，直接淘汰。
+        for (bound in knownBounds) {
+            val boundToOwner = AbstractTypeChecker.isSubtypeOf(session.typeContext, bound, ownerType)
+            val ownerToBound = AbstractTypeChecker.isSubtypeOf(session.typeContext, ownerType, bound)
+            if (!boundToOwner && !ownerToBound) return false
+        }
+
         val constraints = system.currentStorage()
             .notFixedTypeVariables[receiverTypeConstructor]
             ?.constraints
@@ -2258,6 +2271,23 @@ class CfirCallResolver(
             }
             .mapNotNull { constraint -> constraint.type as? ConeCangJieType }
             .filterNot { constraintType -> constraintType is ConeErrorType }
+
+        // 前序语句的完成可能已经把形参变量固定（如 `getB19(x)` 解出 x := B19）。
+        // 固定后的变量从 notFixedTypeVariables 移入 fixedTypeVariables，但它的解同样
+        // 约束 owner 选择——官方逐语句分析在后续成员访问前会按当前替换结果查看
+        // receiver 类型，这里保持同一语义。
+        val receiverVariableType = receiverExpression.coneTypeOrNull as? ConeTypeVariableType
+        if (receiverVariableType != null) {
+            val storage = system.currentStorage()
+            val fixedType = (storage.fixedTypeVariables[receiverTypeConstructor] ?:
+                    storage.buildCurrentSubstitutor(session.typeContext, emptyMap())
+                        .asCone()
+                        .substituteOrNull(receiverVariableType)
+                        ?.takeIf { it != receiverVariableType }) as? ConeCangJieType
+            if (fixedType != null && fixedType !is ConeTypeVariableType && fixedType !is ConeErrorType) {
+                return AbstractTypeChecker.isSubtypeOf(session.typeContext, fixedType, ownerType)
+            }
+        }
 
         if (constraints.isEmpty()) return true
         return constraints.all { constraintType ->
