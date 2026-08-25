@@ -107,18 +107,20 @@ class ConeOverloadConflictResolver(
      * 配对不受本规则影响——官方保留两者并在声明侧报告 EXTEND_FUNCTION_CANNOT_OVERRIDDEN，
      * 调用侧仍允许真实歧义。顶层函数与同 owner 重载也走正常 most-specific 比较。
      *
-     * 两条规则只作用于**类型参数接收者**（`T <: ...` 的交叉 upper bound 成员查找）。
-     * 具体类实例接收者上经 extend/继承聚合出的同签名接口默认成员仍保留歧义——官方对
-     * `C().foo()`（C 经两个 extend 分别实现 I3/I4 默认成员）报告 ambiguous match。
+     * 两条规则的接收者适用面不同：
+     * - 规则 1 与接收者种类无关——`CString.toString()`（std.core 泛型 extend 提供
+     *   ToString 实现的同时，接口需求成员也进入候选）在具体接收者上同样由实现侧胜出；
+     * - 规则 2 只作用于**类型参数接收者**（`T <: ...` 的交叉 upper bound 成员查找）。
+     *   具体类实例接收者上经 extend/继承聚合出的同签名接口默认成员仍保留歧义——官方对
+     *   `C().foo()`（C 经两个 extend 分别实现 I3/I4 默认成员）报告 ambiguous match。
      */
     private fun collapseCrossOwnerSameSignatureMembers(candidateSet: Set<Candidate>): Set<Candidate> {
         if (candidateSet.size <= 1) return candidateSet
 
-        // 仅类型参数接收者参与官方 bound-merge 消重；其余接收者保持原语义。
+        // 规则 2 仅类型参数接收者参与官方 bound-merge 消重；其余接收者保持原语义。
         val receiverIsTypeParameter = candidateSet.all { candidate ->
             candidate.callInfo.explicitReceiver?.coneTypeOrNull is ConeTypeParameterType
         }
-        if (!receiverIsTypeParameter) return candidateSet
 
         val memberShapes = linkedMapOf<Candidate, MemberOwnerShape>()
         for (candidate in candidateSet) {
@@ -153,8 +155,10 @@ class ConeOverloadConflictResolver(
                     break
                 }
 
-                // 规则 2：不同接口 owner 的完全一致签名只保留先出现的一个。
-                if (shapeI.ownerKind == MemberOwnerKind.INTERFACE && shapeJ.ownerKind == MemberOwnerKind.INTERFACE &&
+                // 规则 2：不同接口 owner 的完全一致签名只保留先出现的一个；
+                // 仅类型参数接收者参与（具体接收者的双接口默认成员保持歧义）。
+                if (receiverIsTypeParameter &&
+                    shapeI.ownerKind == MemberOwnerKind.INTERFACE && shapeJ.ownerKind == MemberOwnerKind.INTERFACE &&
                     shapeI.ownerClassId != shapeJ.ownerClassId &&
                     shapeI.hasIdenticalFullSignature(shapeJ)
                 ) {
@@ -175,8 +179,11 @@ class ConeOverloadConflictResolver(
      * 跨 owner 消重使用的成员形状：owner 分类 + 替换后参数/返回类型。
      */
     private data class MemberOwnerShape(
-        /** owner ClassId；成员必有。 */
-        val ownerClassId: ClassId,
+        /**
+         * owner ClassId；class-like/接口成员必有。extend 目标为 CPointer/CString 这类
+         * 无 ClassId 内建类型时为 null——只参与规则 1，不参与按 ClassId 判异的规则 2。
+         */
+        val ownerClassId: ClassId?,
         /** owner 分类。 */
         val ownerKind: MemberOwnerKind,
         /** 函数自身是否 abstract。 */
@@ -236,9 +243,9 @@ class ConeOverloadConflictResolver(
         val containingExtend = callableSymbol.getContainingExtend()
         if (containingExtend != null) {
             // extend 成员：官方把 extend 视为对扩展类型的具体实现参与成员遮蔽判定。
+            // CPointer/CString 等内建目标没有 ClassId，ownerClassId 允许为 null。
             val extendedClassId = containingExtend.extendedTypeRef?.coneTypeOrNull
                 ?.fullyExpandedType()?.classIdOrPrimitiveClassId
-                ?: return null
             return MemberOwnerShape(
                 ownerClassId = extendedClassId,
                 ownerKind = MemberOwnerKind.EXTEND,
