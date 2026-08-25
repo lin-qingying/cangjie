@@ -32,6 +32,7 @@ import org.cangnova.cangjie.cfir.calls.InaccessibleImplicitReceiverValue
 import org.cangnova.cangjie.cfir.correspondingProperty
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.expressions.*
+import org.cangnova.cangjie.cfir.toCfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.resolve.ImplicitValueStorage
 import org.cangnova.cangjie.cfir.resolve.body.*
 import org.cangnova.cangjie.cfir.resolve.body.asTowerDataElement
@@ -1709,6 +1710,18 @@ abstract class CfirInferenceSession {
         receiverTypeConstructor: TypeConstructorMarker,
     ): List<ConeCangJieType> = emptyList()
 
+    /**
+     * 语句级推断边界：块内每条语句解析完成后回调。
+     *
+     * 官方 `ChkLambda`/`SynLamExpr` 按语句顺序分析 lambda body，前序语句完成即固定
+     * 已有唯一解的形参 tyvar，后续语句按具体类型解析。CFIR 的 PCLA_POSTPONED_CALL
+     * 把调用参数检查推迟到 body 转换之后，该回调给推断会话一个在语句边界即时消化
+     * 本语句排队 postponed 调用的机会。默认无操作，仅 synthetic 顶层 lambda 的 PCLA
+     * 会话启用逐语句处理。
+     */
+    open fun onStatementResolved(statement: CfirStatement) {
+    }
+
     companion object {
         /** 默认推断会话，不改变普通调用解析行为。 */
         val DEFAULT: CfirInferenceSession = object : CfirInferenceSession() {}
@@ -1737,6 +1750,14 @@ class CfirPCLAInferenceSession(
     private val outerCandidate: Candidate,
     /** 构造约束系统和访问会话类型上下文所需的推断组件。 */
     private val inferenceComponents: InferenceComponents,
+    /**
+     * 启用逐语句 postponed 处理时所属的 lambda（synthetic 顶层 lambda 的首轮与重算路径）。
+     *
+     * 官方 `ChkLambda` 对该类 lambda 按语句顺序分析并在 tyvar 有解时立即替换；
+     * 非 null 时 [onStatementResolved] 会在每条语句完成后消化本语句排队的调用，
+     * 把已有唯一解的形参占位写回具体类型。默认 null 保持既有批处理语义。
+     */
+    private val statementProcessingOwnerLambda: CfirAnonymousFunction? = null,
 ) : CfirInferenceSession() {
     /** 当前 PCLA 共享 common constraint system。 */
     private var currentCommonSystem: ConstraintSystemImpl = prepareSharedBaseSystem(outerCandidate.system, inferenceComponents)
@@ -1746,6 +1767,8 @@ class CfirPCLAInferenceSession(
     /** fresh lambda receiver 对应的候选 owner 集合。 */
     private val freshReceiverCandidateOwnersByTypeVariable =
         linkedMapOf<TypeConstructorMarker, MutableList<ConeCangJieType>>()
+    /** 逐语句处理已消费的 postponed 调用队列水位；从会话创建时的队列长度起步，只消化本会话新增的调用。 */
+    private var processedPostponedCallsCount = outerCandidate.postponedPCLACalls.size
 
     /** 返回当前候选应使用的共享基础约束存储。 */
     override fun baseConstraintStorageForCandidate(
@@ -1838,6 +1861,11 @@ class CfirPCLAInferenceSession(
         val bounds = mutableListOf<ConeCangJieType>()
         for (atom in outerCandidate.postponedPCLACalls.filterIsInstance<ConeAtomWithCandidate>()) {
             val candidate = atom.candidate
+            // 「自身就是对该 fresh receiver 的成员访问」的排队调用不提供硬界：
+            // 其 argumentMapping 与 receiver 约束表达的是 owner-sum 集合事实
+            // （官方 TryInitializeBaseSum 的候选 owner 集合），不是类型硬界；
+            // 当作硬界会在 `{x => x.v30_2; x.v30_3}` 这类多 owner 交集场景误杀合法候选。
+            if (candidate.isFreshReceiverMemberAccessOn(receiverTypeConstructor)) continue
             if (candidate.argumentMappingInitialized) {
                 val substitutor = candidate.system.currentStorage()
                     .buildCurrentSubstitutor(inferenceComponents.session.typeContext, emptyMap())
@@ -1872,6 +1900,125 @@ class CfirPCLAInferenceSession(
         return bounds.distinctBy { it.toString() }
     }
 
+    /** 判断排队调用的 dispatch/extension receiver 是否正是查询中的 fresh lambda 形参变量。 */
+    private fun Candidate.isFreshReceiverMemberAccessOn(
+        receiverTypeConstructor: TypeConstructorMarker,
+    ): Boolean {
+        val receiverExpression = dispatchReceiver?.expression
+            ?: givenExtensionReceiver?.expression
+            ?: return false
+        val receiverType = receiverExpression.coneTypeOrNull as? ConeTypeVariableType ?: return false
+        return receiverType.typeConstructor == receiverTypeConstructor
+    }
+
+    /**
+     * synthetic 顶层 lambda 的逐语句 postponed 处理。
+     *
+     * 每条语句解析完成后消化该语句排队的 postponed 调用：从新增调用的 argumentMapping
+     * 提取「形参变量 -> 参数类型」硬界，对已有唯一解的形参占位按官方 `ChkLambda`
+     * 「tyvar 有解立即替换」语义写回具体类型，使后续语句的成员查找直接按具体类型解析。
+     */
+    override fun onStatementResolved(statement: CfirStatement) {
+        if (statementProcessingOwnerLambda == null) return
+
+        val queueSize = outerCandidate.postponedPCLACalls.size
+        val fromIndex = processedPostponedCallsCount.coerceAtMost(queueSize)
+        processedPostponedCallsCount = queueSize
+        if (fromIndex >= queueSize) return
+
+        val newAtoms = outerCandidate.postponedPCLACalls
+            .subList(fromIndex, queueSize)
+            .filterIsInstance<ConeAtomWithCandidate>()
+        for (parameter in statementProcessingOwnerLambda.valueParameters) {
+            fixLambdaParameterFromHardBounds(parameter, newAtoms)
+        }
+    }
+
+    /**
+     * 用语句边界内累积的硬界求解并写回 lambda 形参类型引用。
+     *
+     * 只处理仍为 fresh 占位的形参；多个硬界迭代求交，交集失败、解含未固定推断变量或与
+     * common system 既有约束冲突时放弃固定，交由既有诊断路径报告真实错误。
+     */
+    private fun fixLambdaParameterFromHardBounds(
+        parameter: CfirValueParameter,
+        newAtoms: List<ConeAtomWithCandidate>,
+    ) {
+        val placeholderType = parameter.returnTypeRef.coneTypeOrNull as? ConeTypeVariableType ?: return
+        val variableConstructor = placeholderType.typeConstructor
+        val hardBounds = collectHardBoundsForVariable(variableConstructor, newAtoms)
+        if (hardBounds.isEmpty()) return
+        val solution = solveUniqueSolution(variableConstructor, hardBounds) ?: return
+        parameter.replaceReturnTypeRef(
+            solution.toCfirResolvedTypeRef(parameter.returnTypeRef.source, parameter.returnTypeRef),
+        )
+    }
+
+    /**
+     * 从语句边界内新增排队调用提取指定形参变量的硬界。
+     *
+     * 仅消费 argumentMapping（实参按候选自身替换结果换算到形参声明类型）；
+     * 自身就是对该变量的成员访问的调用不提供硬界——那是 owner-sum 集合事实。
+     */
+    private fun collectHardBoundsForVariable(
+        variableConstructor: TypeConstructorMarker,
+        atoms: List<ConeAtomWithCandidate>,
+    ): List<ConeCangJieType> {
+        val bounds = mutableListOf<ConeCangJieType>()
+        for (atom in atoms) {
+            val candidate = atom.candidate
+            if (candidate.isFreshReceiverMemberAccessOn(variableConstructor)) continue
+            if (!candidate.argumentMappingInitialized) continue
+            val substitutor = candidate.system.currentStorage()
+                .buildCurrentSubstitutor(inferenceComponents.session.typeContext, emptyMap())
+                .asCone()
+            for ((argument, parameter) in candidate.argumentMapping) {
+                val argumentType = argument.expression.coneTypeOrNull as? ConeTypeVariableType ?: continue
+                if (argumentType.typeConstructor != variableConstructor) continue
+                val parameterType = parameter.returnTypeRef.coneTypeOrNull?.let { declared ->
+                    substitutor.substituteOrNull(declared) ?: declared
+                } ?: continue
+                if (parameterType is ConeErrorType) continue
+                bounds += parameterType
+            }
+        }
+        return bounds.distinctBy { it.toString() }
+    }
+
+    /**
+     * 判断一组硬界是否存在唯一确定解。
+     *
+     * 解为全部硬界的交集；交集为 error、仍含未固定推断变量，或与 common system 中
+     * 该变量的既有约束矛盾时返回 null（保守放弃，不制造新的错误路径）。
+     */
+    private fun solveUniqueSolution(
+        variableConstructor: TypeConstructorMarker,
+        hardBounds: List<ConeCangJieType>,
+    ): ConeCangJieType? {
+        val typeContext = inferenceComponents.session.typeContext
+        val solution = org.cangnova.cangjie.cfir.types.ConeTypeIntersector.intersectTypes(typeContext, hardBounds)
+        if (solution is ConeErrorType) return null
+        val storage = currentCommonSystem.currentStorage()
+        if (solution.contains { type ->
+                type is ConeTypeVariableType && type.typeConstructor in storage.notFixedTypeVariables
+            }
+        ) {
+            return null
+        }
+        for (constraint in storage.notFixedTypeVariables[variableConstructor]?.constraints.orEmpty()) {
+            val constraintType = constraint.type as? ConeCangJieType ?: continue
+            if (constraintType is ConeErrorType) continue
+            val compatible = when (constraint.kind) {
+                ConstraintKind.UPPER -> AbstractTypeChecker.isSubtypeOf(typeContext, solution, constraintType)
+                ConstraintKind.LOWER -> AbstractTypeChecker.isSubtypeOf(typeContext, constraintType, solution)
+                ConstraintKind.EQUALITY -> AbstractTypeChecker.equalTypes(typeContext, solution, constraintType)
+                else -> true
+            }
+            if (!compatible) return null
+        }
+        return solution
+    }
+
     /** 把 expected-type subtype 约束加入当前 common system。 */
     override fun addSubtypeConstraintIfCompatible(
         lowerType: ConeCangJieType,
@@ -1880,6 +2027,23 @@ class CfirPCLAInferenceSession(
         currentCommonSystem.addSubtypeConstraintIfCompatible(
             lowerType,
             upperType,
+            ConeExpectedTypeConstraintPosition,
+        )
+    }
+
+    /**
+     * 把重算后的末表达式类型约束到返回占位，返回该约束是否被接受。
+     *
+     * `false` 表示与共享系统既有约束冲突而被丢弃——这正是返回占位以
+     * TypeVariable 泄漏给外层调用的直接来源。
+     */
+    fun constrainLambdaReturnPlaceholder(
+        lowerType: ConeCangJieType,
+        upperPlaceholder: ConeCangJieType,
+    ): Boolean {
+        return currentCommonSystem.addSubtypeConstraintIfCompatible(
+            lowerType,
+            upperPlaceholder,
             ConeExpectedTypeConstraintPosition,
         )
     }
