@@ -4087,3 +4087,30 @@ Flagged while gathering evidence for the extend upper-bound recursion problem ty
   - 定向：testTimeout07 双路径转绿；testMatchNoSelectorFuzz001 转绿；testArrayBuilinCtype 的 AMBIGUOUS 标记归零（残余 TYPE_MISMATCH 属 CPointer 构造家族既有差异）。
 - 遗留相关失败（根因探明，属 PCLA 推断家族，非本轮范围）:
   - lambda_param_03/07/09: 调试探针证实 f19/f23 等 lambda 初始化器在 body 重算时形参仍为 fresh 变量，语句间约束不传播（getB19(x) 固定 x 后，下一条 x.foo19(y) 的成员查找仍以 fresh receiver 收集候选并命中 `Ambiguity: foo19, [/A19.foo19, /A19_.foo19]`），导致返回占位无法固定、函数值调用结果以 TypeVariable(_R) 泄漏给外层 println 重载集合；lambda_param_03 另有 CFIR 多报 GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT / TYPE_MISMATCH（官方不报）。owner 在 PCLA 会话的语句级参数固定与 fresh-receiver 成员查找，需要独立证据链处理。
+
+## PCLA 逐语句语义对齐的第一批基础与完整缺口测绘（部分修复，遗留项已完全定位）
+
+- problem type: Resolve / Type Inference（PCLA 无期望类型 lambda 初始化器的逐语句推断）。
+- root cause（调试探针逐层证实，以 lambda_param_07 的 `let f19 = {x, y => getB19(x); x.foo19(y)}` 为样本）:
+  1. **推迟检查破坏语句顺序语义**：body 内普通调用以 PCLA_POSTPONED_CALL 入队，参数检查延迟到 body 转换结束之后；`getB19(x)` 的 `x <: B19` 约束在 `x.foo19(y)` 成员查找时既不在共享系统（commonConstraints=[]）也不在候选视图（candidateConstraints 只含本访问自己注入的 UPPER:A19）。
+  2. **已固定变量对 owner 过滤不可见**：变量一旦 fix 即移入 fixedTypeVariables，`isFreshReceiverOwnerCompatibleWithKnownConstraints` 只读 notFixedTypeVariables。
+  3. **代表候选以 fresh receiver 参加适用性检查而 INAPPLICABLE**：owner-sum 选出 `/A19_.foo19` 后，参数检查时 receiver 仍是 fresh 占位，末表达式带 ERROR TYPE，返回占位 `_R` 无法约束。
+  4. **IfCompatible 静默丢弃返回约束**：f21={x => x.v20} 的末表达式已是 Int64，但 `addSubtypeConstraintIfCompatible(Int64, _R)` 被既有约束冲突静默拒绝，最终函数类型仍含 `_R`（PROJ_DEBUG finalReturn=TypeVariable(_R)）。
+  5. **参数占位不回填**：f19 最终函数类型 params=[A19_, TypeVariable(_RP1)]——y 从未从 foo19(x: A19_, y: Int) 的映射回填。
+  6. **变量声明不接收最终函数类型**：synthetic 路径的 applyCompletionResult 以 variable=null 运行，writeCompletionResult 的 variable 分支永不执行；函数值调用投影读到的声明类型停留在占位状态。
+- official Cangjie evidence: cjc 1.0.5 编译整个 fixture 零诊断；官方 `ChkLambda`/`SynLamExpr` 按语句顺序分析、tyvar 有解立即替换，后续语句按具体类型解析（external/cangjie_compiler/src/Sema/TypeCheckExpr/LambdaExpr.cpp 与 Desugar/DesugarBeforeTypeCheck.cpp 的逐表达式 InstCtxScope 语义）。
+- CFIR owner files changed（三块基础，全量 8423 tests / 920 failures 与轮次前持平，零回归）:
+  - `cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/transformers/body/resolve/BodyResolveContext.kt`：`CfirInferenceSession.knownBoundsForFreshReceiver` + PCLA 会话实现——扫描已排队 postponedPCLACalls 的 argumentMapping 提取「形参变量 -> 参数类型」上界、候选系统显式约束与 fixedTypeVariables 固定解。
+  - `cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirCallResolver.kt`：fresh-receiver owner 过滤消费上述已知界（owner 与任一 bound 互不为子类型即淘汰）+ 候选系统 fixedTypeVariables 直查。
+  - `cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/ResolveUtils.kt`：函数值调用投影优先读局部 lambda 初始化器重算后的真实返回类型（initializer 匿名函数表达式的 ConeFunctionType.returnType），声明类型不再作为占位泄漏源。
+- repair principle: 三块改动各自独立成立且零回归——已知界提取是纯增量信息源（空队列时行为不变）、owner 过滤只收紧可行域、投影只在数据完备时替换。剩余缺口的修复必须重排 PCLA_POSTPONED_CALL 的完成时机或引入逐语句强制检查，属推断引擎核心改动，需独立会话管理回归风险。
+- fixtures covered: TypeInfer/lambda_param_03、07、09（PSI 与 LightTree 双路径，仍 SPURIOUS——本轮未转绿，缺口见上）。
+- verification commands and outcome:
+  - 全量：`.\gradlew.bat :cfir:analysis-tests:test --continue --console=plain` → 新鲜 XML 汇总 **8423 tests, 920 failures**（与本轮起点持平；AMBIGUOUS_FUNCTION_CALL 相关保持 32 SAME + 6 SPURIOUS，无新增 MISSING）。
+  - 探针证据链：CFIR_BOUNDS_DEBUG queue=1 bounds=[B19]（已知界提取生效）；CFIR_PROJ_DEBUG finalReturn=TypeVariable(_R)/params=[A19_, TypeVariable(_RP1)]（投影读到未完成状态）；RET_DEBUG bodyType=ERROR TYPE: Inapplicable(INAPPLICABLE): /A19_.foo19（代表候选适用性失败）；f21 的 Int64 返回约束被静默丢弃。
+- 后续会话的修复路线图（按依赖顺序）:
+  1. 让 PCLA 会话内每个语句完成后即时处理该语句排队的 postponed 调用（等价官方逐语句 ChkLambda），使共享系统在后续成员查找前持有前序约束；
+  2. owner-sum 代表候选的参数检查改用「receiver 已知界下的可行 owner」而非 fresh 占位本身；
+  3. 返回占位约束改走非 IfCompatible 通道或在丢弃时报告冲突；
+  4. synthetic 重算路径把 variable 传入 applyCompletionResult 完成声明写回（或统一由投影侧读取，如本次改动）；
+  5. lambda_param_03 的 same(1, x) 求解顺序单独取证（ideal literal 应先于 fresh 形参固定 T）。
