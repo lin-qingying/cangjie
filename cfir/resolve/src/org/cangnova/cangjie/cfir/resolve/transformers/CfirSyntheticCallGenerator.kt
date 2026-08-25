@@ -204,7 +204,11 @@ class CfirSyntheticCallGenerator(
 
         val expression = lambdaExpression
         val lambda = expression.anonymousFunction
-        val pclaInferenceSession = CfirPCLAInferenceSession(candidate, session.inferenceComponents)
+        val pclaInferenceSession = CfirPCLAInferenceSession(
+            candidate,
+            session.inferenceComponents,
+            statementProcessingOwnerLambda = lambda,
+        )
         components.context.withAnonymousFunctionTowerDataContext(lambda.symbol) {
             components.context.withInferenceSession(pclaInferenceSession) {
                 components.transformer.declarationsTransformer.doTransformAnonymousFunctionBodyFromCallCompletion(
@@ -232,7 +236,11 @@ class CfirSyntheticCallGenerator(
     }
 
     /**
-     * body 重算后把已确定的末表达式类型约束到仍未固定的返回占位。
+     * body 重算后把已确定的末表达式类型定型到仍未固定的返回占位。
+     *
+     * 对齐官方 `SynLamExpr`「body 完成即定型返回 tyvar」：约束写入共享系统保证后续
+     * completion 一致，同时直接写回树上的返回类型引用——此后没有完成轮再固定该占位，
+     * 只靠约束会让 `TypeVariable(_R)` 经最终函数类型泄漏给外层重载集合。
      *
      * 仅当返回类型仍是推断变量且末表达式类型本身确定（非推断变量、非 error）时才生效；
      * 其余情况保持原状，交由真实调用点的 expected type 或既有诊断路径处理。
@@ -245,7 +253,10 @@ class CfirSyntheticCallGenerator(
         val lastExpression = lambda.body?.statements?.lastOrNull() as? CfirExpression ?: return
         val bodyResultType = lastExpression.coneTypeOrNull ?: return
         if (bodyResultType is ConeTypeVariableType || bodyResultType is ConeErrorType) return
-        pclaInferenceSession.addSubtypeConstraintIfCompatible(bodyResultType, returnPlaceholder)
+        pclaInferenceSession.constrainLambdaReturnPlaceholder(bodyResultType, returnPlaceholder)
+        lambda.replaceReturnTypeRef(
+            bodyResultType.toCfirResolvedTypeRef(lambda.returnTypeRef.source, lambda.returnTypeRef),
+        )
     }
 
     /** 构造接受单个指定类型参数的合成函数候选引用。 */

@@ -4136,3 +4136,27 @@ Flagged while gathering evidence for the extend upper-bound recursion problem ty
 - 第五、六组实验（同日补充，均已还原）:
   - **第五组：stage 层立即矛盾判定**——`CfirCheckDispatchReceiver` 的 fresh-receiver 分支先注入已知界、加 receiver 约束后立即检查 `hasContradiction`，不可行 owner 当场报 `InapplicableWrongReceiver`。该层不受 ARGUMENT_SHAPE 门控影响。首版把 owner-sum 集合事实（f30 的 `x.v30_2` 后 x 须同落 A30 与 B30）当硬界，误杀 `{x => x.v30_2; x.v30_3}` 全部候选；第六组在 `knownBoundsForFreshReceiver` 中排除"自身也是 fresh-receiver 成员访问"的排队调用后 f30 过杀消失。最终全量 **920 failures 与基线持平**、AMBIGUOUS 分类不变（32 SAME + 6 SPURIOUS）：改动全局中性——目标用例由更深层的 postponed 批处理与陈旧树状态主导，候选检查层的正确过滤无法翻转终态。
   - 结论强化：六组实验共同证明，在完成时机重排（路线图第 1 步）落地前，发现层/规约层/检查层的任何单点修补都不产生可观测收益；lambda_param_07 的三类新差异应作为独立回归随第 1 步一并处理。
+
+## PCLA 路线图第 1 步落地：逐语句即时处理 postponed 调用，lambda_param_03/07 双路径转绿
+
+- problem type: Resolve / Type Inference（PCLA 无期望类型 lambda 初始化器的语句顺序语义；上一条目路线图第 1 步的实施）。
+- root cause（本轮探针逐层定位，样本 lambda_param_07 的 f19/f21 与全量回归对比）:
+  1. **首轮 body resolve（LambdaAnalyzerImpl 的 PCLA 会话）同样缺少语句边界**：语句 2 的 fresh-receiver 成员查找在语句 1 约束合并后仍以 fresh 占位收集候选，错误侧 owner-sum 代表候选经 PPRC `replaceContentWith` 把 `x := A19_` 反向写入共享系统与树；round B 恢复快照后被 `applyCompletionResult` 原样写回——这是 326e03b70 三类新增差异的源头。
+  2. **PCLA 会话内形参读取被错误化为 `Unresolved return type`**：形参裸读取因 `usedOuterCs` 走完整候选路径，`Candidate.substitutedReturnType` 的 `CfirVariable` 分支把 lambda 形参当函数值变量处理（无 invoke shape、引用非函数类型即返回 null），实参检查收到 `ErrorTypeInArguments`，逐语句固定与约束传播同时被阻断。
+  3. **返回占位无完成轮可固定**：`constrainLambdaReturnPlaceholderFromBody` 的约束即使被接受，其后没有 completion 运行，`TypeVariable(_R)` 经最终函数类型泄漏给外层 println 重载集合（f19/f23 的 AMBIGUOUS 由此而来）。
+- official Cangjie evidence: cjc 1.0.5 对 lambda_param_03/07/09 全 fixture 零诊断；官方 `ChkLambda`/`SynLamExpr` 按语句顺序分析、tyvar 有解立即替换（external/cangjie_compiler/src/Sema/TypeCheckExpr/LambdaExpr.cpp）。
+- CFIR changes（5 文件）:
+  - `BodyResolveContext.kt`：`CfirInferenceSession.onStatementResolved(statement)` 新增语句级推断边界回调（默认无操作）；`CfirPCLAInferenceSession` 实现水位记账 + 从本语句排队 atom 的 argumentMapping 提取「形参变量 -> 参数类型」硬界、多界求交求解（交集 error/含未固定变量/与既有约束矛盾即放弃）+ 形参 returnTypeRef 写回；`knownBoundsForFreshReceiver` 排除「自身就是对该 fresh receiver 的成员访问」的排队调用（第六组实验结论正式落地）；新增带布尔结果的 `constrainLambdaReturnPlaceholder`。
+  - `CfirExpressionsResolveTransformer.kt`：`transformBlock` 语句循环每条语句解析完成后触发会话回调（嵌套块自然获得更细边界，接近官方逐表达式 InstCtxScope）。
+  - `CfirSyntheticCallGenerator.kt`：重算路径会话传入所属 lambda 启用逐语句处理；`constrainLambdaReturnPlaceholderFromBody` 在约束写入共享系统的同时直接把末表达式类型写回树上的返回类型引用（对齐官方「body 完成即定型」，此后无完成轮再固定该占位）。
+  - `CfirCallCompleter.kt`：`reanalyzeLocalLambdaInitializersAfterCompletion` 与 `analyzeAndGetLambdaReturnArguments` 两个会话创建点接线；后者仅在 `callInfo.callSite is CfirAnonymousFunctionExpression`（synthetic accept 形状）时启用逐语句处理，普通 expected-type lambda 保持既有批处理语义。
+  - `Candidate.kt`：`callableValueReturnType` 对仍为 fresh 占位（无原始类型参数的推断变量）的 lambda 形参返回其自身类型引用；具体类型形参与其他 CfirVariable 保持既有函数值投影行为（首版对所有 CfirValueParameter 生效导致 TrailingClosure/Lambda 等 34 个 fixture 回归，收窄后归零——错误类型抑制路径在期望型 lambda 场景是承重的）。
+- repair principle: 六组对照实验的定论在本轮得到验证——完成时机重排是唯一有效杠杆。语句边界固定使后续成员查找直接走具体类型的普通塔式查找，fresh-receiver 代表候选机制不再介入，三类回归结构性消失而非修补。硬界只认 argumentMapping（调用实参映射），owner-sum 集合事实永远不当类型硬界使用。
+- fixtures covered: TypeInfer/lambda_param_03、lambda_param_07（PSI 与 LightTree 双路径转绿）；lambda_param_09 剩余 6 差异属三类新机制（见下）。
+- verification commands and outcome:
+  - 全量：`:cfir:analysis-tests:test --continue --console=plain` → **8423 tests, 916 failures**（基线 920 − 新转绿 4 = 03/07 双路径），FIXED=4 / REGRESSED=0，逐 fixture 与基线快照比对确认无其他变化。
+- 遗留与下一步路线图（lambda_param_09 的三类子问题，均已探针定位到机制层）:
+  1. **f29 `{x => g29(x.v)}`**：实参是 fresh 变量的成员访问结果时，argumentMapping 只能给出「x.v <: String」而不能给 x 本身硬界。需要新机制：从排队调用的实参侧约束反推 owner 可行性（v: String 的 owner 只有 B29），并入 `refineFreshReceiverCandidateOwners` 的交集语义。
+  2. **f34 `{x => x.foo34(); x + x}`**：后向精化——语句 1 的 foo34 候选集 {Int64 扩展, Unit 扩展} 无唯一解须保持开放，语句 2 的操作符解析固定 x := Int64 后需要回溯重解前序成员访问。现有机制只有语句 N 固定供语句 N+1 使用，无反向传播。
+  3. **f35 `{a, b => while (let (Some(x), y) <- (a, b)) ...}`**：while-let 解构模式驱动的元组/Option 形参推断，属模式推断子系统，与前两类独立。
+- 关联提交: 本条目对应工作树 ambiguous-function-call 分支 PCLA 第 1 步实现提交。

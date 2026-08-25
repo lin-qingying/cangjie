@@ -2188,6 +2188,10 @@ open class CfirExpressionsResolveTransformer(
                 else -> data
             }
             statements[index] = statements[index].transform(transformer, statementMode)
+            // 语句级推断边界：synthetic 顶层 lambda 的 PCLA 会话在此消化本语句排队的
+            // postponed 调用并固定已有唯一解的形参占位（官方 ChkLambda 逐语句语义）；
+            // 其余会话为无操作。
+            components.context.inferenceSession.onStatementResolved(statements[index])
         }
         block.transformOtherChildren(transformer, data)
         val lastExpr = block.statements.lastOrNull()
