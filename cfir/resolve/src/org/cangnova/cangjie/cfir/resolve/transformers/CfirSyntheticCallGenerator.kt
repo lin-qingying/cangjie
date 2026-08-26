@@ -26,6 +26,7 @@ package org.cangnova.cangjie.cfir.resolve.transformers
 
 import org.cangnova.cangjie.cfir.toCfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.common.moduleData
+import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationAttributes
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
@@ -61,6 +62,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
 import org.cangnova.cangjie.cfir.types.ConeAnyType
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeDiagnostic
+import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.types.ConeTypeVariableType
 import org.cangnova.cangjie.cfir.types.asCone
@@ -189,6 +191,29 @@ class CfirSyntheticCallGenerator(
     private fun CfirLocalLambdaInitializerInferenceData.reanalyzeTopLevelLambdaBodyIfPossible(
         reference: CfirNamedReferenceWithCandidate,
     ) {
+        val lambda = lambdaExpression.anonymousFunction
+        // 官方两遍模型：第一遍逐语句收集约束并在 body 末统一求解，只有形参真的解出来
+        // 才执行 ResetLambdaForReinfer 清空 body 重查第二遍。CFIR 的语句边界钩子只在本
+        // 通道新建的 PCLA 会话里生效，所以首轮重算同时承担官方第一遍的「收集+求解」；
+        // 若形参恰在该轮内由 owner-sum 收敛定型（如 `{x => g29(x.v)}` 解出 x := B29），
+        // 必须再重查一遍，否则体内成员访问会停在形参未知时的歧义结果上。
+        var remainingPasses = MAX_LAMBDA_REINFER_PASSES
+        while (remainingPasses-- > 0) {
+            val parameterTypesBeforePass = lambda.currentValueParameterTypes()
+            if (!runLambdaBodyReinferPass(reference)) return
+            if (!lambda.currentValueParameterTypes().newlyDeterminedComparedTo(parameterTypesBeforePass)) return
+        }
+    }
+
+    /**
+     * 执行一遍「恢复 body 前状态 + 按当前替换结果定型形参 + 重解 body」。
+     *
+     * 返回 false 表示当前替换结果还不足以写回 lambda 函数类型（[applyCompletionResult]
+     * 拒绝），此时保持既有状态不再重试。
+     */
+    private fun CfirLocalLambdaInitializerInferenceData.runLambdaBodyReinferPass(
+        reference: CfirNamedReferenceWithCandidate,
+    ): Boolean {
         val candidate = reference.candidate
         val storage = candidate.system.currentStorage()
         val substitutor = storage.buildCurrentSubstitutor(session.typeContext, emptyMap()).asCone()
@@ -198,17 +223,27 @@ class CfirSyntheticCallGenerator(
             completedStorage = storage,
             restoreBodyResolveState = true,
         )
-        if (!applied) return
+        if (!applied) return false
 
         val expression = lambdaExpression
         val lambda = expression.anonymousFunction
-        val pclaInferenceSession = CfirPCLAInferenceSession(candidate, session.inferenceComponents)
+        val pclaInferenceSession = CfirPCLAInferenceSession(
+            candidate,
+            session.inferenceComponents,
+            statementProcessingOwnerLambda = lambda,
+        )
         components.context.withAnonymousFunctionTowerDataContext(lambda.symbol) {
             components.context.withInferenceSession(pclaInferenceSession) {
                 components.transformer.declarationsTransformer.doTransformAnonymousFunctionBodyFromCallCompletion(
                     expression,
                     null,
                 )
+                // 官方对无期望类型的 lambda 字面量按 body 结果自推断返回类型；若重算后
+                // 返回占位仍是未固定推断变量而 body 末表达式类型已确定，必须把该类型
+                // 约束到占位上。否则占位变量会随函数值调用的结果类型泄漏给外层调用，
+                // 使 `println(f(...))` 这类重载集合因实参为未固定变量而整体保持"全部
+                // 适用"，最终误报 AMBIGUOUS_FUNCTION_CALL。
+                constrainLambdaReturnPlaceholderFromBody(lambda, pclaInferenceSession)
             }
             pclaInferenceSession.applyResultsToMainCandidate()
         }
@@ -220,6 +255,52 @@ class CfirSyntheticCallGenerator(
             substitutor = completedSubstitutor,
             completedStorage = completedStorage,
             restoreBodyResolveState = false,
+        )
+        return true
+    }
+
+    /** lambda 各值形参当前的类型（未解析时为 null）。 */
+    private fun org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction.currentValueParameterTypes():
+            List<ConeCangJieType?> = valueParameters.map { it.returnTypeRef.coneTypeOrNull }
+
+    /**
+     * 是否有形参从「仍含未定推断变量」变成了完全确定的类型。
+     *
+     * 只有这种「本轮真的解出了新形参」才值得再重查一遍；形参始终未定或本来就确定时
+     * 继续重查不会产生新信息，只会重复劳动甚至无法终止。
+     */
+    private fun List<ConeCangJieType?>.newlyDeterminedComparedTo(previous: List<ConeCangJieType?>): Boolean {
+        if (size != previous.size) return false
+        return indices.any { index ->
+            val before = previous[index]
+            val after = this[index]
+            before != null && after != null &&
+                    before.contains { it is ConeTypeVariableType } &&
+                    !after.contains { it is ConeTypeVariableType }
+        }
+    }
+
+    /**
+     * body 重算后把已确定的末表达式类型定型到仍未固定的返回占位。
+     *
+     * 对齐官方 `SynLamExpr`「body 完成即定型返回 tyvar」：约束写入共享系统保证后续
+     * completion 一致，同时直接写回树上的返回类型引用——此后没有完成轮再固定该占位，
+     * 只靠约束会让 `TypeVariable(_R)` 经最终函数类型泄漏给外层重载集合。
+     *
+     * 仅当返回类型仍是推断变量且末表达式类型本身确定（非推断变量、非 error）时才生效；
+     * 其余情况保持原状，交由真实调用点的 expected type 或既有诊断路径处理。
+     */
+    private fun constrainLambdaReturnPlaceholderFromBody(
+        lambda: org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction,
+        pclaInferenceSession: CfirPCLAInferenceSession,
+    ) {
+        val returnPlaceholder = lambda.returnTypeRef.coneTypeOrNull as? ConeTypeVariableType ?: return
+        val lastExpression = lambda.body?.statements?.lastOrNull() as? CfirExpression ?: return
+        val bodyResultType = lastExpression.coneTypeOrNull ?: return
+        if (bodyResultType is ConeTypeVariableType || bodyResultType is ConeErrorType) return
+        pclaInferenceSession.constrainLambdaReturnPlaceholder(bodyResultType, returnPlaceholder)
+        lambda.replaceReturnTypeRef(
+            bodyResultType.toCfirResolvedTypeRef(lambda.returnTypeRef.source, lambda.returnTypeRef),
         )
     }
 
@@ -349,5 +430,14 @@ class CfirSyntheticCallGenerator(
     private companion object {
         val SYNTHETIC_ACCEPT_SPECIFIC_TYPE_NAME: Name = Name.special("<synthetic-accept-specific-type>")
         val SYNTHETIC_ACCEPT_PARAMETER_NAME: Name = Name.identifier("argument")
+
+        /**
+         * lambda body 重算的最大遍数，对齐官方两遍模型。
+         *
+         * 第一遍承担「逐语句收集约束 + body 末求解」，第二遍即官方
+         * `ResetLambdaForReinfer` 后按已定型形参的重查；给出上界保证形参类型意外反复
+         * 变化时也能终止。
+         */
+        const val MAX_LAMBDA_REINFER_PASSES: Int = 2
     }
 }

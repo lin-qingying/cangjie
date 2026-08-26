@@ -1406,6 +1406,9 @@ private fun ConeAmbiguityError.mapConeAmbiguityError(
     session: CfirSession,
 ): List<CjDiagnostic> {
     if (isErrorArgumentCascade) return emptyList()
+    // 官方 `TypeCheckCall.cpp::DiagnoseForCall`：实参表达式自身携带 error 类型时，
+    // 调用点的 no-match / ambiguity 都是已报告内部错误的级联，不再追加诊断。
+    if (hasErroneousArgument()) return emptyList()
 
     val operatorDiagnosticSource = callOrAssignmentSource ?: source
     if (operatorDiagnosticSource != null) {
@@ -1519,6 +1522,42 @@ private fun ConeAmbiguityError.mapConeAmbiguityError(
         source ?: diagnosticSource
     }
     return listOfNotNull(factory.on(ambiguitySource, name, session))
+}
+
+/**
+ * 实参表达式自身携带 error 类型时，多候选歧义只是内部错误的调用级联。
+ *
+ * 官方 `TypeCheckCall.cpp::DiagnoseForCall` 在 `candidatesBeforeCheck` 非空、检查后候选
+ * 全部淘汰且任一实参 `Ty::IsTyCorrect` 为假时直接返回，不报告任何调用级诊断；
+ * `cjc` 对 `println(undeclared(1))` 也只报 undeclared identifier。Kotlin FIR 的
+ * 对应结构是候选级 `ErrorTypeInArguments` 在诊断映射中返回 null。
+ *
+ * postponed lambda/collection 实参内部的已报告错误不会体现在实参顶层类型上，
+ * 而是经 [ErrorTypeInArguments] 传播到每个候选（官方同场景下实参 ty 同样标记为
+ * invalid 并被同一早退吞掉）；全体候选都只因该级联失败时同样抑制。
+ */
+private fun ConeAmbiguityError.hasErroneousArgument(): Boolean {
+    val callCandidates = candidatesWithErrors.keys.filterIsInstance<AbstractCallCandidate<*>>()
+    if (callCandidates.isEmpty() || callCandidates.size != candidatesWithErrors.size) return false
+    // 实参子树内已报告的错误（含 postponed lambda 体内部错误）与官方"实参 ty invalid"
+    // 同构。官方在检查阶段就会因该错误淘汰候选，因此不存在"实参带错且候选全部成功"
+    // 的真实歧义状态；无论本层适用性如何，调用点都不再追加歧义诊断。单候选失败路径
+    // 已按同一判定渲染空诊断，多候选路径必须保持一致。
+    if (callCandidates.first().callInfo.arguments.any { argument ->
+            argument.containsErrorDiagnosticInArgument()
+        }
+    ) {
+        return true
+    }
+    // 仍有成功候选的重载冲突是真实歧义，不按级联抑制。
+    @OptIn(ApplicabilityDetail::class)
+    val anySuccessful = applicability.isSuccess
+    if (anySuccessful) return false
+    // postponed lambda 返回原子携带已报告错误时经 ErrorTypeInArguments 传播到候选，
+    // Kotlin FIR 将其映射为 null；全体候选都只因它失败时同样抑制。
+    return callCandidates.all { candidate ->
+        candidate.diagnostics.any { it is ErrorTypeInArguments }
+    }
 }
 
 /**
