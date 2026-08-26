@@ -68,12 +68,31 @@ fun BodyResolveComponents.initialTypeOfCandidate(candidate: Candidate): ConeCang
         // return type。candidate.substitutedReturnType 已应用声明类型参数替换，这里只继续应用
         // 当前约束系统，供 expected-return 过滤和嵌套调用目标类型选择读取真实调用结果类型。
         val system = candidate.system
+        val declaredResultType = candidate.localLambdaInitializerFinalResultTypeOrNull()
+            ?: candidate.substitutedReturnType()
         return system.buildCurrentSubstitutor()
-            .safeSubstitute(system, candidate.substitutedReturnType())
+            .safeSubstitute(system, declaredResultType)
             .asCone()
     }
     val type = typeFromSymbol(candidate.symbol)
     return type.initialTypeOfCandidate(candidate)
+}
+
+/**
+ * 无期望类型的局部 lambda 初始化器完成 body 重算后，最终函数类型写在 initializer 的
+ * 匿名函数表达式上；变量声明自身的 returnTypeRef 不会回写（synthetic 路径的
+ * `applyCompletionResult` 以 `variable = null` 运行）。函数值调用投影若继续读声明类型，
+ * 未固定的形参/返回占位会以 TypeVariable 泄漏给外层重载集合，使 `println(f19(...))`
+ * 这类调用误报 AMBIGUOUS_FUNCTION_CALL。这里取重算后的真实返回类型。
+ */
+private fun Candidate.localLambdaInitializerFinalResultTypeOrNull(): ConeCangJieType? {
+    val variable = symbol.cfir as? CfirVariable ?: return null
+    val lambdaExpression = variable.initializer as? org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
+        ?: return null
+    if (variable.localLambdaInitializerInferenceDataOrNull() == null) return null
+    val finalFunctionType = lambdaExpression.coneTypeOrNull as? org.cangnova.cangjie.cfir.types.ConeFunctionType
+        ?: return null
+    return finalFunctionType.returnType
 }
 
 /** 需要使用调用结果类型而非符号作为值时的声明类型。 */

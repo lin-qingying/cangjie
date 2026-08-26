@@ -1071,7 +1071,11 @@ class CfirCallCompleter(
 
             val lambdaExpression = inferenceData.lambdaExpression
             val lambda = lambdaExpression.anonymousFunction
-            val pclaInferenceSession = CfirPCLAInferenceSession(candidate, session.inferenceComponents)
+            val pclaInferenceSession = CfirPCLAInferenceSession(
+                candidate,
+                session.inferenceComponents,
+                statementProcessingOwnerLambda = lambda,
+            )
             transformer.context.withAnonymousFunctionTowerDataContext(lambda.symbol) {
                 transformer.context.withInferenceSession(pclaInferenceSession) {
                     transformer.declarationsTransformer.doTransformAnonymousFunctionBodyFromCallCompletion(
@@ -1232,7 +1236,20 @@ class CfirCallCompleter(
                 val declarationsTransformer = transformer.declarationsTransformer
                 val pclaInferenceSession = runIf(withPCLASession) {
                     candidate.lambdasAnalyzedWithPCLA += lambda
-                    CfirPCLAInferenceSession(candidate, session.inferenceComponents)
+                    /*
+                     * 仅 synthetic 顶层 lambda 启用逐语句 postponed 处理：
+                     * 这类 lambda 的形参在首轮 body resolve 时仍是 fresh 占位，
+                     * 必须按官方 ChkLambda 在语句边界立即固定唯一解，否则后续语句的
+                     * fresh-receiver 代表候选会把错误侧 owner 约束反向写入共享系统。
+                     * 普通 expected-type lambda 的形参已有具体类型，保持既有批处理语义。
+                     */
+                    val statementProcessingOwnerLambda =
+                        if (candidate.callInfo.callSite is CfirAnonymousFunctionExpression) lambda else null
+                    CfirPCLAInferenceSession(
+                        candidate,
+                        session.inferenceComponents,
+                        statementProcessingOwnerLambda = statementProcessingOwnerLambda,
+                    )
                 }
 
                 if (pclaInferenceSession != null) {

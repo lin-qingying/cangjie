@@ -1,6 +1,8 @@
 package org.cangnova.cangjie.cfir.resolve.calls.overloads
 
 import org.cangnova.cangjie.cfir.unwrapSubstitutionOverrides
+import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.resolve.BodyResolveComponents
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
@@ -74,9 +76,11 @@ class ConeOverloadConflictResolver(
 
         val fixedCandidates = chooseCandidatesWithMostSpecificInvokeReceiver(candidates)
         val candidatesWithoutOverrides = filterOverrides(fixedCandidates)
+        val candidatesWithoutCrossOwnerDuplicates =
+            collapseCrossOwnerSameSignatureMembers(candidatesWithoutOverrides)
 
         return chooseMaximallySpecificCandidates(
-            candidatesWithoutOverrides,
+            candidatesWithoutCrossOwnerDuplicates,
             DiscriminationFlags(
                 lowPrioritySAMs = true,
                 adaptationsInPostponedAtoms = true,
@@ -85,6 +89,184 @@ class ConeOverloadConflictResolver(
                 suspendConversions = true,
                 byUnwrappedSmartCastOrigin = true,
             )
+        )
+    }
+
+    /**
+     * 对齐官方 `ResolveOverload` 的两条跨 owner 成员消重规则
+     * （`TypeCheckCall.cpp:754-766` 与 `TypeCheckCall.cpp:792, 321-333`）：
+     *
+     * 1. 参数类型完全一致的普通类实现成员支配接口声明（或抽象）成员——
+     *    官方注释明确"interface allows multiple inheritance...resolve shadow case"，
+     *    因此 `T <: C & I` 且 `foo` 在 C 与 I 各有一份时，调用点选择 C.foo，不报歧义；
+     * 2. 不同接口 owner 下替换后签名完全一致的候选只保留一个——
+     *    `T <: I<U> & I2<U>` 时同名同签名的接口默认成员不会构成调用歧义。
+     *
+     * 规则 1 的"具体实现"侧包含 class/struct 成员与 extend 提供的成员（fixture 09/10 的
+     * extend C { foo } vs I.foo 与官方行为一致）；class/struct 成员与 extend 成员之间的
+     * 配对不受本规则影响——官方保留两者并在声明侧报告 EXTEND_FUNCTION_CANNOT_OVERRIDDEN，
+     * 调用侧仍允许真实歧义。顶层函数与同 owner 重载也走正常 most-specific 比较。
+     *
+     * 两条规则的接收者适用面不同：
+     * - 规则 1 与接收者种类无关——`CString.toString()`（std.core 泛型 extend 提供
+     *   ToString 实现的同时，接口需求成员也进入候选）在具体接收者上同样由实现侧胜出；
+     * - 规则 2 只作用于**类型参数接收者**（`T <: ...` 的交叉 upper bound 成员查找）。
+     *   具体类实例接收者上经 extend/继承聚合出的同签名接口默认成员仍保留歧义——官方对
+     *   `C().foo()`（C 经两个 extend 分别实现 I3/I4 默认成员）报告 ambiguous match。
+     */
+    private fun collapseCrossOwnerSameSignatureMembers(candidateSet: Set<Candidate>): Set<Candidate> {
+        if (candidateSet.size <= 1) return candidateSet
+
+        // 规则 2 仅类型参数接收者参与官方 bound-merge 消重；其余接收者保持原语义。
+        val receiverIsTypeParameter = candidateSet.all { candidate ->
+            candidate.callInfo.explicitReceiver?.coneTypeOrNull is ConeTypeParameterType
+        }
+
+        val memberShapes = linkedMapOf<Candidate, MemberOwnerShape>()
+        for (candidate in candidateSet) {
+            val shape = candidate.memberOwnerShapeForConflictCollapse() ?: continue
+            memberShapes[candidate] = shape
+        }
+        // 非 member 函数候选存在时不做该消重，保持原有语义。
+        if (memberShapes.isEmpty() || memberShapes.size != candidateSet.size) return candidateSet
+
+        val entries = memberShapes.entries.toList()
+        val dominated = hashSetOf<Candidate>()
+        val sameSignatureInterfaceSeen = hashSetOf<Candidate>()
+
+        for (i in entries.indices) {
+            val (candidateI, shapeI) = entries[i]
+            if (candidateI in dominated || candidateI in sameSignatureInterfaceSeen) continue
+            for (j in i + 1 until entries.size) {
+                val (candidateJ, shapeJ) = entries[j]
+                if (candidateJ in dominated || candidateJ in sameSignatureInterfaceSeen) continue
+
+                // 两条规则都只针对参数列表完全一致的成员对；参数不同的候选交给
+                // 正常 most-specific 比较。
+                if (!shapeI.hasIdenticalParameterTypes(shapeJ)) continue
+
+                // 规则 1：class/struct/extend 提供的具体实现支配接口声明或抽象成员。
+                if (shapeI.isConcreteImplementationMember && shapeJ.isInterfaceOrAbstractDeclaration) {
+                    dominated += candidateJ
+                    continue
+                }
+                if (shapeJ.isConcreteImplementationMember && shapeI.isInterfaceOrAbstractDeclaration) {
+                    dominated += candidateI
+                    break
+                }
+
+                // 规则 2：不同接口 owner 的完全一致签名只保留先出现的一个；
+                // 仅类型参数接收者参与（具体接收者的双接口默认成员保持歧义）。
+                if (receiverIsTypeParameter &&
+                    shapeI.ownerKind == MemberOwnerKind.INTERFACE && shapeJ.ownerKind == MemberOwnerKind.INTERFACE &&
+                    shapeI.ownerClassId != shapeJ.ownerClassId &&
+                    shapeI.hasIdenticalFullSignature(shapeJ)
+                ) {
+                    sameSignatureInterfaceSeen += candidateJ
+                }
+            }
+        }
+
+        if (dominated.isEmpty() && sameSignatureInterfaceSeen.isEmpty()) return candidateSet
+        val result = candidateSet.filterTo(linkedSetOf()) { candidate ->
+            candidate !in dominated && candidate !in sameSignatureInterfaceSeen
+        }
+        require(result.isNotEmpty()) { "All candidates filtered out from $candidateSet" }
+        return result
+    }
+
+    /**
+     * 跨 owner 消重使用的成员形状：owner 分类 + 替换后参数/返回类型。
+     */
+    private data class MemberOwnerShape(
+        /**
+         * owner ClassId；class-like/接口成员必有。extend 目标为 CPointer/CString 这类
+         * 无 ClassId 内建类型时为 null——只参与规则 1，不参与按 ClassId 判异的规则 2。
+         */
+        val ownerClassId: ClassId?,
+        /** owner 分类。 */
+        val ownerKind: MemberOwnerKind,
+        /** 函数自身是否 abstract。 */
+        val isAbstractFunction: Boolean,
+        /** 替换后参数类型列表。 */
+        val parameterTypes: List<TypeWithConversion>,
+        /** 替换后返回类型。 */
+        val returnType: ConeCangJieType?,
+    ) {
+        /** 是否为 class/struct 成员或 extend 成员中的具体实现。 */
+        val isConcreteImplementationMember: Boolean
+            get() = !isAbstractFunction &&
+                (ownerKind == MemberOwnerKind.CLASS_LIKE || ownerKind == MemberOwnerKind.EXTEND)
+
+        /** 是否可被实现成员覆盖：接口声明成员或抽象成员。 */
+        val isInterfaceOrAbstractDeclaration: Boolean
+            get() = ownerKind == MemberOwnerKind.INTERFACE || isAbstractFunction
+    }
+
+    /** 冲突消重使用的成员 owner 分类。 */
+    private enum class MemberOwnerKind {
+        /** interface 声明成员。 */
+        INTERFACE,
+
+        /** class/struct/enum 成员。 */
+        CLASS_LIKE,
+
+        /** extend 提供的成员。 */
+        EXTEND,
+    }
+
+    /** 参数类型逐一 equalTypes 判定（不含返回类型）。 */
+    private fun MemberOwnerShape.hasIdenticalParameterTypes(other: MemberOwnerShape): Boolean =
+        parameterTypes.size == other.parameterTypes.size &&
+            parameterTypes.zip(other.parameterTypes).all { (left, right) ->
+                val leftType = left.resultType ?: return@all false
+                val rightType = right.resultType ?: return@all false
+                AbstractTypeChecker.equalTypes(inferenceComponents.session.typeContext, leftType, rightType)
+            }
+
+    /** 参数与返回类型都一致的全签名判定。 */
+    private fun MemberOwnerShape.hasIdenticalFullSignature(other: MemberOwnerShape): Boolean =
+        hasIdenticalParameterTypes(other) &&
+            returnType != null && other.returnType != null &&
+            AbstractTypeChecker.equalTypes(
+                inferenceComponents.session.typeContext,
+                returnType,
+                other.returnType,
+            )
+
+    /**
+     * 提取候选的跨 owner 消重形状；仅覆盖带 class-like/extend owner 的命名函数成员。
+     */
+    private fun Candidate.memberOwnerShapeForConflictCollapse(): MemberOwnerShape? {
+        val callableSymbol = symbol as? CfirNamedFunctionSymbol ?: return null
+        val declaration = callableSymbol.takeIf { it.isBound }?.cfir as? CfirFunction ?: return null
+        val containingExtend = callableSymbol.getContainingExtend()
+        if (containingExtend != null) {
+            // extend 成员：官方把 extend 视为对扩展类型的具体实现参与成员遮蔽判定。
+            // CPointer/CString 等内建目标没有 ClassId，ownerClassId 允许为 null。
+            val extendedClassId = containingExtend.extendedTypeRef?.coneTypeOrNull
+                ?.fullyExpandedType()?.classIdOrPrimitiveClassId
+            return MemberOwnerShape(
+                ownerClassId = extendedClassId,
+                ownerKind = MemberOwnerKind.EXTEND,
+                isAbstractFunction = declaration.status.isAbstract,
+                parameterTypes = computeSignatureTypes(this, declaration),
+                returnType = (declaration.returnTypeRef as? CfirResolvedTypeRef)?.coneType,
+            )
+        }
+        val ownerClassId = callableSymbol.callableId.classId ?: return null
+        val ownerSymbol = inferenceComponents.session.symbolProvider
+            .getClassLikeSymbolByClassId(ownerClassId) ?: return null
+        val ownerKind = when (ownerSymbol.cfir) {
+            is CfirInterface -> MemberOwnerKind.INTERFACE
+            else -> MemberOwnerKind.CLASS_LIKE
+        }
+        return MemberOwnerShape(
+            ownerClassId = ownerClassId,
+            ownerKind = ownerKind,
+            isAbstractFunction = declaration.status.isAbstract,
+            parameterTypes = computeSignatureTypes(this, declaration),
+            returnType = (declaration.returnTypeRef as? CfirResolvedTypeRef)?.coneType,
         )
     }
 

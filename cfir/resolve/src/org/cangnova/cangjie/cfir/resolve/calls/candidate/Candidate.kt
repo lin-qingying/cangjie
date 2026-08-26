@@ -914,11 +914,20 @@ class Candidate(
 
     /**
      * 对 callable value 候选提取函数类型返回类型。
+     *
+     * synthetic 顶层 lambda 的形参在 PCLA 会话内读取时因 `usedOuterCs` 走完整候选路径：
+     * 形参仍是 fresh 占位（无原始类型参数的推断变量）时必须按其自身类型引用取值，
+     * 否则会被错误地包装成 `Unresolved return type`，让下游调用收到
+     * `ErrorTypeInArguments` 并阻断逐语句固定。具体类型的形参与其他变量保持既有
+     * 函数值投影行为。
      */
     private fun callableValueReturnType(declaration: CfirVariable): ConeCangJieType? {
+        val declaredReturnType = declaration.returnTypeRef.resolvedConeTypeOrNull()
+        if (declaration is CfirValueParameter && declaredReturnType is ConeTypeVariableType) {
+            return declaredReturnType
+        }
         val functionType = callableValueInvokeFunctionShape
-            ?: declaration.returnTypeRef.resolvedConeTypeOrNull()
-                ?.recoverableFunctionTypeOrNull()
+            ?: declaredReturnType?.recoverableFunctionTypeOrNull()
             ?: return null
         return functionType.returnType
     }

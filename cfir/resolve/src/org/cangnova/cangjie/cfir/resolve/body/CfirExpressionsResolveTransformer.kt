@@ -1280,22 +1280,70 @@ open class CfirExpressionsResolveTransformer(
             ?.let { BuiltinPrimitiveOperators.primitiveOperandKind(it) }
         val freshConstructors = operandTypes.map { it.operatorInferenceTypeVariableConstructorOrNull() }
         if (freshConstructors.all { it == null }) return null
-        // 全部操作数都是待推断类型变量时，只有外层 expected return type 能提供 primitive 签名证据。
-        if (freshConstructors.all { it != null } && expectedReturnKind == null) return null
 
         val signatures = BuiltinPrimitiveOperators.signaturesForOperator(operatorName, argumentExpressions.size)
+        // 全部操作数都是待推断类型变量且无期望返回类型时，官方靠播种 sum 上的操作符可用性
+        // 收窄（`{x => x+x}` 中 Unit 无内建 `+`，sum={Int64,Unit} 收窄到唯一 Int64）；
+        // 这里向会话查询 owner-sum 并做同一收窄，恰有一个 owner 支持时按已知类型参与筛选。
+        var narrowingOutcome = "notApplicable"
+        val effectiveOperandTypes = if (freshConstructors.all { it != null } && expectedReturnKind == null) {
+            narrowAllFreshOperandTypesByOwnerOperatorSupport(
+                signatures = signatures,
+                operandTypes = operandTypes,
+                freshConstructors = freshConstructors,
+            ) ?: return null
+        } else {
+            operandTypes
+        }
         return signatures
             .filter { signature ->
                 if (expectedReturnKind != null && signature.returnKind != expectedReturnKind) return@filter false
 
                 val expectedKinds = listOf(signature.receiverKind) + signature.parameterKinds
                 operandTypes.indices.all { index ->
-                    val type = operandTypes[index]
+                    val type = effectiveOperandTypes[index]
                     type.operatorInferenceTypeVariableConstructorOrNull() != null ||
                             type.matchesPrimitiveOperatorExpectedKind(expectedKinds[index])
                 } && sameFreshOperandsHaveSameExpectedKind(freshConstructors, expectedKinds)
             }
             .singleOrNull()
+    }
+
+    /**
+     * 全 fresh 操作数场景下按会话维护 owner-sum 的操作符可用性收窄操作数类型。
+     *
+     * 对每个涉及的类型变量读取其候选 owner 集合，淘汰不支持该操作符（签名表无任何
+     * 签名能同时容纳该 owner 出现的全部位置）的 owner；恰有一个幸存者时把它作为该
+     * 变量的已知类型替换进操作数列表，后续筛选即等价于官方把 sum 收窄到该 owner。
+     * 任一变量缺少 owner 记录、owner 均不支持或多个 owner 都支持（如双数值 owner 的 `*`，
+     * 官方同样解不出）时返回 null，保持既有放弃行为。
+     */
+    private fun narrowAllFreshOperandTypesByOwnerOperatorSupport(
+        signatures: List<BuiltinPrimitiveOperatorSignature>,
+        operandTypes: List<ConeCangJieType>,
+        freshConstructors: List<TypeConstructorMarker?>,
+    ): List<ConeCangJieType>? {
+        val resolvedByConstructor = linkedMapOf<TypeConstructorMarker, ConeCangJieType>()
+        for (constructor in freshConstructors.filterNotNull().distinct()) {
+            val ownerTypes = components.context.inferenceSession
+                .knownCandidateOwnerTypesForFreshReceiver(constructor)
+            if (ownerTypes.isEmpty()) return null
+            val freshPositions = operandTypes.indices.filter { freshConstructors[it] == constructor }
+            val supportedOwners = ownerTypes.filter { owner ->
+                val ownerKind = BuiltinPrimitiveOperators.primitiveOperandKind(owner)
+                signatures.any { signature ->
+                    val expectedKinds = listOf(signature.receiverKind) + signature.parameterKinds
+                    freshPositions.all { position -> expectedKinds[position] == ownerKind }
+                }
+            }
+            val uniqueOwner = supportedOwners.singleOrNull() ?: return null
+            resolvedByConstructor[constructor] = uniqueOwner
+        }
+        return operandTypes.map { type ->
+            type.operatorInferenceTypeVariableConstructorOrNull()
+                ?.let { resolvedByConstructor[it] }
+                ?: type
+        }
     }
 
     /**
@@ -2219,6 +2267,10 @@ open class CfirExpressionsResolveTransformer(
                 else -> data
             }
             statements[index] = statements[index].transform(transformer, statementMode)
+            // 语句级推断边界：synthetic 顶层 lambda 的 PCLA 会话在此消化本语句排队的
+            // postponed 调用并固定已有唯一解的形参占位（官方 ChkLambda 逐语句语义）；
+            // 其余会话为无操作。
+            components.context.inferenceSession.onStatementResolved(statements[index])
         }
         block.transformOtherChildren(transformer, data)
         val lastExpr = block.statements.lastOrNull()
