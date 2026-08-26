@@ -39,6 +39,12 @@ class PendingDiagnosticsReporterImpl(
     override val hasWarningsForWError: Boolean
         get() = delegate.hasWarningsForWError
 
+    /**
+     * 同一 reporter 会连续处理多个源文件；后续阶段只关心当前文件已经提交的 Sema 错误。
+     */
+    override fun hasErrorsInFile(filePath: String): Boolean =
+        committedDiagnosticsByFilePath[filePath]?.any { it.severity.isError } == true
+
     override fun report(diagnostic: CjDiagnostic?, context: DiagnosticContext) {
         if (diagnostic == null) return
         val remappedDiagnostic = diagnostic.remapSourceIfNeeded()

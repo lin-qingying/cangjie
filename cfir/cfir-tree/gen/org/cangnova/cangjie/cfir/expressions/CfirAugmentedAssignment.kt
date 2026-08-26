@@ -13,33 +13,30 @@ import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.source.CjSourceElement
 
 /**
- * Generated from: [org.cangnova.cangjie.cfir.tree.generator.CfirTree.assignment]
+ * Generated from: [org.cangnova.cangjie.cfir.tree.generator.CfirTree.augmentedAssignment]
  */
-abstract class CfirAssignment : CfirExpression() {
+abstract class CfirAugmentedAssignment : CfirExpression() {
     abstract override val source: CjSourceElement?
     abstract override val annotations: List<CfirAnnotation>
     abstract override val coneTypeOrNull: ConeCangJieType?
-    abstract val lValue: CfirExpression
-    abstract val rValue: CfirExpression
-    abstract val augmentedOperation: Name?
-    abstract val typeMismatchOutcome: CfirAssignmentTypeMismatchOutcome?
+    abstract val operation: Name
+    abstract val leftArgument: CfirExpression
+    abstract val rightArgument: CfirExpression
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
-        visitor.visitAssignment(this, data)
+        visitor.visitAugmentedAssignment(this, data)
 
     @Suppress("UNCHECKED_CAST")
     override fun <E : CfirElement, D> transform(transformer: CfirTransformer<D>, data: D): E =
-        transformer.transformAssignment(this, data) as E
+        transformer.transformAugmentedAssignment(this, data) as E
 
     abstract override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
 
     abstract override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?)
 
-    abstract fun replaceTypeMismatchOutcome(newTypeMismatchOutcome: CfirAssignmentTypeMismatchOutcome?)
+    abstract override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirAugmentedAssignment
 
-    abstract override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirAssignment
+    abstract fun <D> transformLeftArgument(transformer: CfirTransformer<D>, data: D): CfirAugmentedAssignment
 
-    abstract fun <D> transformLValue(transformer: CfirTransformer<D>, data: D): CfirAssignment
-
-    abstract fun <D> transformRValue(transformer: CfirTransformer<D>, data: D): CfirAssignment
+    abstract fun <D> transformRightArgument(transformer: CfirTransformer<D>, data: D): CfirAugmentedAssignment
 }

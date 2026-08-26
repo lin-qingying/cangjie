@@ -2379,19 +2379,12 @@ class PsiRawCfirBuilder(
                         rValue = right
                     }
                 }
-                val opName = opToken.toCompoundAssignName()?.asString() ?: "<error>"
-                return buildAssignment {
+                val operation = opToken.toCompoundAssignName() ?: Name.identifier("<error>")
+                return buildAugmentedAssignment {
                     source = psi.toCjPsiSourceElement()
-                    lValue = left
-                    rValue = buildFunctionCall {
-                        source = psi.toCjPsiSourceElement()
-                        calleeReference = buildNamedReference(Name.identifier(opName), psi.toCjPsiSourceElement())
-                        argumentList = buildArgumentList {
-                            arguments.add(right)
-                        }
-                        explicitReceiver = left
-                        origin = CfirFunctionCallOrigin.Operator
-                    }
+                    this.operation = operation
+                    leftArgument = left
+                    rightArgument = right
                 }
             }
 

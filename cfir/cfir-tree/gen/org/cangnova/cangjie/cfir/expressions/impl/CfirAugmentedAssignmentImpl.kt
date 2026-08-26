@@ -7,12 +7,10 @@
 
 package org.cangnova.cangjie.cfir.expressions.impl
 
-import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.MutableOrEmptyList
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
-import org.cangnova.cangjie.cfir.expressions.CfirAssignment
-import org.cangnova.cangjie.cfir.expressions.CfirAssignmentTypeMismatchOutcome
+import org.cangnova.cangjie.cfir.expressions.CfirAugmentedAssignment
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
@@ -21,41 +19,40 @@ import org.cangnova.cangjie.cfir.visitors.transformInplace
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.source.CjSourceElement
 
-class CfirAssignmentImpl @CfirImplementationDetail constructor(
+internal class CfirAugmentedAssignmentImpl(
     override val source: CjSourceElement?,
     override var annotations: MutableOrEmptyList<CfirAnnotation>,
     override var coneTypeOrNull: ConeCangJieType?,
-    override var lValue: CfirExpression,
-    override var rValue: CfirExpression,
-    override val augmentedOperation: Name?,
-    override var typeMismatchOutcome: CfirAssignmentTypeMismatchOutcome?,
-) : CfirAssignment() {
+    override val operation: Name,
+    override var leftArgument: CfirExpression,
+    override var rightArgument: CfirExpression,
+) : CfirAugmentedAssignment() {
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
         annotations.forEach { it.accept(visitor, data) }
-        lValue.accept(visitor, data)
-        rValue.accept(visitor, data)
+        leftArgument.accept(visitor, data)
+        rightArgument.accept(visitor, data)
     }
 
-    override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirAssignmentImpl {
+    override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirAugmentedAssignmentImpl {
         transformAnnotations(transformer, data)
-        transformLValue(transformer, data)
-        transformRValue(transformer, data)
+        transformLeftArgument(transformer, data)
+        transformRightArgument(transformer, data)
         return this
     }
 
-    override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirAssignmentImpl {
+    override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirAugmentedAssignmentImpl {
         annotations.transformInplace(transformer, data)
         return this
     }
 
-    override fun <D> transformLValue(transformer: CfirTransformer<D>, data: D): CfirAssignmentImpl {
-        lValue = lValue.transform(transformer, data)
+    override fun <D> transformLeftArgument(transformer: CfirTransformer<D>, data: D): CfirAugmentedAssignmentImpl {
+        leftArgument = leftArgument.transform(transformer, data)
         return this
     }
 
-    override fun <D> transformRValue(transformer: CfirTransformer<D>, data: D): CfirAssignmentImpl {
-        rValue = rValue.transform(transformer, data)
+    override fun <D> transformRightArgument(transformer: CfirTransformer<D>, data: D): CfirAugmentedAssignmentImpl {
+        rightArgument = rightArgument.transform(transformer, data)
         return this
     }
 
@@ -65,9 +62,5 @@ class CfirAssignmentImpl @CfirImplementationDetail constructor(
 
     override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?) {
         coneTypeOrNull = newConeTypeOrNull
-    }
-
-    override fun replaceTypeMismatchOutcome(newTypeMismatchOutcome: CfirAssignmentTypeMismatchOutcome?) {
-        typeMismatchOutcome = newTypeMismatchOutcome
     }
 }

@@ -560,6 +560,14 @@ abstract class CfirTransformer<in D> : CfirVisitor<CfirElement, D>() {
         return transformAssignment(assignment, data)
     }
 
+    open fun transformAugmentedAssignment(augmentedAssignment: CfirAugmentedAssignment, data: D): CfirStatement {
+        return transformElement(augmentedAssignment, data)
+    }
+
+    final override fun visitAugmentedAssignment(augmentedAssignment: CfirAugmentedAssignment, data: D): CfirStatement {
+        return transformAugmentedAssignment(augmentedAssignment, data)
+    }
+
     open fun transformBinaryOp(binaryOp: CfirBinaryOp, data: D): CfirStatement {
         return transformElement(binaryOp, data)
     }

@@ -3,6 +3,7 @@ package org.cangnova.cangjie.cfir.analysis.collectors
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.SessionAndScopeSessionHolder
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.diagnostics.PendingDiagnosticReporter
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.lazyDeclarationResolver
@@ -28,6 +29,28 @@ abstract class AbstractDiagnosticCollector(
     /** 对一个 CFIR 声明子树执行完整诊断收集流程。 */
     fun collectDiagnostics(cfirDeclaration: CfirDeclaration, reporter: PendingDiagnosticReporter) {
         val components = createComponents(reporter)
+        runDiagnosticPass(cfirDeclaration, reporter, components)
+
+        if (components.postSemaComponents.isEmpty()) return
+        val file = cfirDeclaration as? CfirFile ?: return
+        val sourceFile = file.sourceFile ?: return
+        val filePath = sourceFile.path ?: return
+        if (reporter.hasErrorsInFile(filePath)) return
+
+        runDiagnosticPass(cfirDeclaration, reporter, components.postSemaPass())
+    }
+
+    /**
+     * 执行一个完整的诊断遍历阶段。
+     *
+     * 常规 Sema 组件与 CHIR 后续组件复用相同的 traversal、suppression 和提交规则，仅由
+     * [collectDiagnostics] 决定两阶段间是否跨越错误边界。
+     */
+    private fun runDiagnosticPass(
+        cfirDeclaration: CfirDeclaration,
+        reporter: PendingDiagnosticReporter,
+        components: DiagnosticCollectorComponents,
+    ) {
         val visitor = createVisitor(components, reporter)
         visitor.checkSettings()
         session.lazyDeclarationResolver.disableLazyResolveContractChecksInside {

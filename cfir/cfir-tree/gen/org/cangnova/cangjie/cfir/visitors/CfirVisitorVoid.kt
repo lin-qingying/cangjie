@@ -560,6 +560,14 @@ abstract class CfirVisitorVoid : CfirVisitor<Unit, Nothing?>() {
         visitElement(assignment)
     }
 
+    final override fun visitAugmentedAssignment(augmentedAssignment: CfirAugmentedAssignment, data: Nothing?) {
+        visitAugmentedAssignment(augmentedAssignment)
+    }
+
+    open fun visitAugmentedAssignment(augmentedAssignment: CfirAugmentedAssignment) {
+        visitElement(augmentedAssignment)
+    }
+
     final override fun visitBinaryOp(binaryOp: CfirBinaryOp, data: Nothing?) {
         visitBinaryOp(binaryOp)
     }

@@ -672,7 +672,10 @@ open class CfirExpressionsResolveTransformer(
                 val withResolvedExplicitReceiver = when {
                     operandsResolvedRightToLeft -> functionCall
                     callResolutionMode == CallResolutionMode.PROVIDE_DELEGATE -> functionCall
-                    else -> transformExplicitReceiverOf(functionCall)
+                    else -> transformExplicitReceiverOf(
+                        functionCall,
+                        receiverResolutionMode = functionCall.builtinExponentiationReceiverResolutionMode(data),
+                    )
                 }
 
                 components.dataFlowAnalyzer.exitCallExplicitReceiver()
@@ -1461,6 +1464,30 @@ open class CfirExpressionsResolveTransformer(
         return withExpectedType(ConePrimitiveType(expectedKind))
     }
 
+    /**
+     * 按官方指数运算的 target-based type-check 先检查底数。
+     *
+     * `-2 ** 63` 的底数必须在外层 `Int64` 目标下完成，随后指数才能以 `UInt64`
+     * 重新检查。若仍按普通 receiver-resolution 先独立完成负数字面量，调用完成阶段会
+     * 在指数签名匹配前丢失该目标，最终把合法指数运算误判为无效二元运算。
+     */
+    private fun CfirFunctionCall.builtinExponentiationReceiverResolutionMode(
+        data: ResolutionMode,
+    ): ResolutionMode? {
+        if (origin != CfirFunctionCallOrigin.Operator) return null
+        val callee = calleeReference as? CfirNamedReference ?: return null
+        if (callee.name != OperatorNameConventions.EXPONENTIATION) return null
+
+        val expectedType = data.expectedTypeOrNull?.fullyExpandedType() as? ConePrimitiveType ?: return null
+        return when (expectedType.kind) {
+            PrimitiveTypeKind.INT64,
+            PrimitiveTypeKind.FLOAT64,
+            -> withExpectedType(expectedType)
+
+            else -> null
+        }
+    }
+
     /** 判断表达式形态是否像无参类型构造调用。 */
     private fun CfirExpression.looksLikeConstructorCall(): Boolean {
         val call = this as? CfirFunctionCall ?: return false
@@ -2027,12 +2054,16 @@ open class CfirExpressionsResolveTransformer(
     }
 
     /** 解析限定访问或调用的显式 receiver。 */
-    fun <Q : CfirQualifiedAccessExpression> transformExplicitReceiverOf(qualifiedAccessExpression: Q): Q {
+    fun <Q : CfirQualifiedAccessExpression> transformExplicitReceiverOf(
+        qualifiedAccessExpression: Q,
+        receiverResolutionMode: ResolutionMode? = null,
+    ): Q {
         if (qualifiedAccessExpression.explicitReceiver == null) return qualifiedAccessExpression
-        val receiverResolutionMode = qualifiedAccessExpression.explicitReceiverResolutionMode()
+        val effectiveReceiverResolutionMode = receiverResolutionMode
+            ?: qualifiedAccessExpression.explicitReceiverResolutionMode()
         qualifiedAccessExpression.transformExplicitReceiver(
             transformer,
-            receiverResolutionMode,
+            effectiveReceiverResolutionMode,
         )
         qualifiedAccessExpression.explicitReceiver?.materializeResolvedReceiverType()
         return qualifiedAccessExpression
@@ -3085,6 +3116,37 @@ open class CfirExpressionsResolveTransformer(
     // ── Assignment ────────────────────────────────────────────────────────────
 
     /**
+     * 将 raw CFIR 的复合赋值在候选解析阶段解糖为带操作来源的普通赋值。
+     *
+     * raw 阶段保留 [CfirAugmentedAssignment]，使复合赋值专有的语义检查能够先于普通
+     * assignment mismatch 执行；只在此处构造 `a = a.<op>(b)` 的解析形态。
+     */
+    override fun transformAugmentedAssignment(
+        augmentedAssignment: CfirAugmentedAssignment,
+        data: ResolutionMode,
+    ): CfirExpression {
+        val assignment = buildAssignment {
+            source = augmentedAssignment.source
+            annotations.addAll(augmentedAssignment.annotations)
+            lValue = augmentedAssignment.leftArgument
+            rValue = buildFunctionCall {
+                source = augmentedAssignment.source
+                calleeReference = buildNamedReference {
+                    source = augmentedAssignment.source
+                    name = augmentedAssignment.operation
+                }
+                argumentList = buildArgumentList {
+                    arguments.add(augmentedAssignment.rightArgument)
+                }
+                explicitReceiver = augmentedAssignment.leftArgument
+                origin = CfirFunctionCallOrigin.Operator
+            }
+            augmentedOperation = augmentedAssignment.operation
+        }
+        return transformAssignment(assignment, data)
+    }
+
+    /**
      * 解析赋值表达式。
      *
      * 下标赋值会解糖到 `set` 操作符解析；普通赋值独立解析左右值并通知数据流分析器记录变量写入。
@@ -3108,11 +3170,22 @@ open class CfirExpressionsResolveTransformer(
              * 其 Unit 返回类型不能覆盖左值元素类型，否则后续会把 `a[i] += x` 误判为
              * `Unit <op> T`。这与 Kotlin FIR 对 indexed augmented assignment 分离
              * lhsGetCall 和 setCall 的结构一致。
-             */
+            */
             val compoundElementType = assignment.compoundSubscriptElementTypeOrNull(subscriptLValue)
-            resolveSubscriptSetAssignment(assignment, subscriptLValue, data)
-            if (compoundElementType != null && subscriptLValue.coneTypeOrNull !is ConeErrorType) {
+            val compoundOperationFailed =
+                assignment.augmentedOperation != null &&
+                    compoundElementType != null &&
+                    assignment.rValue.coneTypeOrNull is ConeErrorType
+            if (compoundOperationFailed) {
+                // get 已成功得到 lhs 元素类型、但 op 失败时，官方只报告 op 的根诊断。
+                // 不能再尝试 set 并用其失败覆盖该元素类型，否则错误 collector 会把 op
+                // 误判为「错误接收者上的级联」。
                 subscriptLValue.replaceConeTypeOrNull(compoundElementType)
+            } else {
+                resolveSubscriptSetAssignment(assignment, subscriptLValue, data)
+                if (compoundElementType != null && subscriptLValue.coneTypeOrNull !is ConeErrorType) {
+                    subscriptLValue.replaceConeTypeOrNull(compoundElementType)
+                }
             }
             assignment.replaceConeTypeOrNull(builtinTypes.unitType)
             components.dataFlowAnalyzer.exitVariableAssignment(assignment)
@@ -3122,7 +3195,15 @@ open class CfirExpressionsResolveTransformer(
         assignment.transformAnnotations(transformer, ResolutionMode.ContextIndependent)
         assignment.transformLValue(transformer, ResolutionMode.ContextIndependent)
         val lValueType = assignment.lValue.coneTypeOrNull?.takeUnless { it is ConeErrorType }
-        val rValueMode = lValueType?.let(::withExpectedType) ?: ResolutionMode.ContextIndependent
+        // 复合赋值先独立解析解糖后的 operator call，再由 AssignExpr 层比较其结果与左值。
+        // 官方 Sema 也先尝试完整的 operator-overload assignment，再对未重载情形执行
+        // compound-assignment precheck。若把左值类型直接传给 operator call，会在候选完成前
+        // 丢失真实返回类型，既无法判断非内建左值是否合法，也无法生成专有 TYPE_INCOMPATIBLE。
+        val rValueMode = when {
+            assignment.augmentedOperation != null -> ResolutionMode.ContextIndependent
+            lValueType != null -> withExpectedType(lValueType)
+            else -> ResolutionMode.ContextIndependent
+        }
         val ordinaryExpectedType = lValueType.takeUnless { assignment.lValue is CfirTupleLiteral }
         val assignmentRhsRoot = assignment.rValue
         val typeMismatchOutcome = context.withAssignmentRhs(

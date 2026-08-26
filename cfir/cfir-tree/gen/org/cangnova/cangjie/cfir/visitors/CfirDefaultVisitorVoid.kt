@@ -176,6 +176,10 @@ abstract class CfirDefaultVisitorVoid : CfirVisitorVoid() {
         visitExpression(assignment)
     }
 
+    override fun visitAugmentedAssignment(augmentedAssignment: CfirAugmentedAssignment) {
+        visitExpression(augmentedAssignment)
+    }
+
     override fun visitBinaryOp(binaryOp: CfirBinaryOp) {
         visitExpression(binaryOp)
     }

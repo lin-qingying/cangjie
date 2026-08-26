@@ -41,6 +41,10 @@ object CfirAssignmentTypeMismatchChecker : CfirAssignmentChecker() {
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirAssignment) {
+        // 复合赋值在 AssignExpr precheck 层拥有专用 TYPE_INCOMPATIBLE 语义；普通赋值
+        // checker 不能再把其解糖后的 operator 结果报告为 TYPE_MISMATCH。
+        if (expression.augmentedOperation != null) return
+
         val rootDiagnostic = (expression.coneTypeOrNull as? ConeErrorType)?.diagnostic
         val multipleAssignmentDiagnostic = when (rootDiagnostic) {
             is ConeMismatchedTypesMultipleAssignError -> rootDiagnostic

@@ -103,8 +103,15 @@ abstract class DiagnosticReporter {
  */
 abstract class PendingDiagnosticReporter : DiagnosticReporter() {
     /**
+     * 判断指定源文件是否已经提交了错误级诊断。
+     *
+     * Sema 成功后才能进入的诊断阶段必须按文件判断，而不能使用全局 [hasErrors]：一个包中
+     * 其他文件的失败不应阻断当前文件的后续阶段。
+     */
+    abstract fun hasErrorsInFile(filePath: String): Boolean
+
+    /**
      * 检查指定元素上的挂起诊断，并根据 suppress 上下文提交可见诊断。
      */
     abstract fun checkAndCommitReportsOn(element: AbstractCjSourceElement, context: DiagnosticContext, commitEverything: Boolean)
 }
-
