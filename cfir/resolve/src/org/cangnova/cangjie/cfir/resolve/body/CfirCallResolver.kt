@@ -62,6 +62,7 @@ import org.cangnova.cangjie.cfir.resolve.calls.stages.ResolutionStageRunner
 import org.cangnova.cangjie.cfir.resolve.calls.stages.fullyProcessCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.tower.CfirTowerGroup
 import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.CfirPCLAInferenceSession
+import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.FreshReceiverMemberAccessShape
 import org.cangnova.cangjie.cfir.resolve.providers.findExtendDeclarationSubstitution
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessContext
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessKind
@@ -1972,9 +1973,7 @@ class CfirCallResolver(
         if (candidates.size <= 1) return null
 
         val receiverTypeConstructor = candidates.first().freshTypeVariableReceiverConstructor() ?: return null
-        if (candidates.any { it.freshTypeVariableReceiverConstructor() != receiverTypeConstructor }) {
-            return null
-        }
+        if (candidates.any { it.freshTypeVariableReceiverConstructor() != receiverTypeConstructor }) return null
         if (candidates.any { !it.isSuccessful }) return null
 
         val receiverExpression = candidates.first().freshTypeVariableReceiverExpression() ?: return null
@@ -2007,6 +2006,10 @@ class CfirCallResolver(
      *
      * 例如 `getB19(x); x.foo19(y)` 中 `getB19(x)` 已产生 `x <: B19`，
      * 因此 `foo19` 的 owner 只能保留 `B19` 可作为子类型的候选 owner。
+     *
+     * 推不出声明 owner 的候选（内建原始类型操作符签名没有声明 owner）同样淘汰：官方对
+     * fresh receiver 的成员/操作符查找按**声明**候选播种 sum，`{a => !-a}` 正是靠它把
+     * 一元 `-` 的 19 个候选收窄到唯一声明者 A 并定型 `a := A`。
      */
     private fun reduceFreshReceiverCandidatesByKnownConstraints(
         candidates: Set<Candidate>,
@@ -2041,6 +2044,22 @@ class CfirCallResolver(
             candidate to ownerType
         }
         if (ownerTypesByCandidate.size != candidates.size) return null
+
+        // 官方 TryInitializeBaseSum 播种候选 owner 集时同时保留每个 owner 下的成员签名；
+        // 这里把本次访问的「owner -> 成员返回类型」形状交给会话，供语句边界实参侧
+        // FilterSumUpperbound（如 g29(x.v) 用形参 String 淘汰 A29）逐 owner 过滤。
+        components.context.inferenceSession.recordFreshReceiverMemberAccessShapes(
+            receiverTypeConstructor,
+            ownerTypesByCandidate.mapNotNull { (candidate, ownerType) ->
+                val memberShape = candidate.freshReceiverCallableShape() ?: return@mapNotNull null
+                val callableSymbol = candidate.symbol as? CfirCallableSymbol<*> ?: return@mapNotNull null
+                FreshReceiverMemberAccessShape(
+                    memberName = callableSymbol.name,
+                    ownerType = ownerType,
+                    returnType = memberShape.returnType,
+                )
+            },
+        )
 
         val refinedOwnerTypes = components.context.inferenceSession.refineFreshReceiverCandidateOwners(
             receiverTypeConstructor,

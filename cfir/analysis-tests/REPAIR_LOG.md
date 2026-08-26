@@ -4160,3 +4160,24 @@ Flagged while gathering evidence for the extend upper-bound recursion problem ty
   2. **f34 `{x => x.foo34(); x + x}`**：后向精化——语句 1 的 foo34 候选集 {Int64 扩展, Unit 扩展} 无唯一解须保持开放，语句 2 的操作符解析固定 x := Int64 后需要回溯重解前序成员访问。现有机制只有语句 N 固定供语句 N+1 使用，无反向传播。
   3. **f35 `{a, b => while (let (Some(x), y) <- (a, b)) ...}`**：while-let 解构模式驱动的元组/Option 形参推断，属模式推断子系统，与前两类独立。
 - 关联提交: 本条目对应工作树 ambiguous-function-call 分支 PCLA 第 1 步实现提交。
+
+## lambda_param_09：owner-sum 播种/收敛语义与官方两遍重查，D1/D2/D4/D5 转绿
+
+- problem type: Resolve / Type Inference（PCLA fresh-receiver owner-sum 的播种与收敛规则；官方 `ResetLambdaForReinfer` 第二遍时机）。
+- 前置证伪（重要，避免后续走弯路）: 上一轮交接把 lambda_param_09 的残留差异判为「同一份代码在不同测试执行环境下绿红不一」的非确定性/环境依赖，并提出 H-A（约束存储 HashMap 迭代序）与 H-B（std.core 惰性预热）两假说。本轮判别实验**双双否定**：`cleanTest + test` 连跑 3 次独立 JVM 的单跑 09 全红无翻转；三件套 03+07+09 同 JVM 下 03/07 绿而 09 照红；且单跑与三件套的 09 失败渲染**逐字节相同**。原「trio 全绿」是 XML 解析伪象（通过用例是自闭合 `<testcase .../>`，多 fixture 同类时 stderr 还会按运行中用例混流）。残留差异全部是确定性 bug。
+- root cause（三处，均由 PCLA_R4 全链路埋点逐事件定位）:
+  1. **owner-sum 允许被矛盾集合重新播种**（D2/D5 主因）：官方 `TryInitializeBaseSum` 仅在 sum 还是 `{Any}` 时播种，之后每次成员访问只在既有 sum 上过滤。CFIR `refineFreshReceiverCandidateOwners` 的空交集回退写作 `.ifEmpty { distinctOwnerTypes }`——**采纳新来集合**。f34 `{x => x.foo34(); x + x}` 中 `x + x` 收集到 33 个 `operator func +`，其中 32 个 receiver 既非 dispatch 也非本次 extension receiver（内建原始类型操作符无声明 owner），被已知界过滤按「无从判定=淘汰」丢弃，只剩 A36 的 `+(right: Any)`；`[Unit, Int64] ∩ [A36] = ∅` 后采纳 `[A36]`，单元素即被当成收敛结果写死 `x <: A36`。x 被毒化为 A36 ⇒ `foo34` 报 NOT_MEMBER_OF、`f34(1)` 报 ARGUMENT_TYPE_MISMATCH；且操作符收窄读到的 knownOwners 已是 `[A36]`（非原始类型，supported=0），第三轮实现的 `narrowAllFreshOperandTypesByOwnerOperatorSupport` 从来没有机会生效。
+  2. **owner-sum 收敛结果没有通路变成形参类型**（D4 主因之一）：`filterByBound`（官方 `FilterSumUpperbound`）已能在语句边界把 f29 的 `{A29, B29}` 正确淘汰到 `[B29]` 并写入共享系统的 subtype 约束，但 `collectHardBoundsForVariable` 只消费 argumentMapping，`hardBounds=0` ⇒ 形参永不定型。官方在候选归一到**单个类**后执行 `TryEnforceCandidate` 写 eq 约束定死形参。
+  3. **官方第二遍被提前用掉**（D4 主因之二）：语句边界钩子只在 `reanalyzeTopLevelLambdaBodyIfPossible` 新建的 PCLA 会话内生效，因此该通道实际承担的是官方**第一遍**（逐语句收集 + body 末求解）；形参在该遍结束时才定型，而重查遍已用完，没有第三遍。埋点实录 f29：`buildCompletion params=[TypeVariable(_RP0)]` → 重查（形参仍未知，`x.v` 仍歧义）→ `onStatementResolved` → `fixParamSolution solution=B29` → 结束。
+- official Cangjie evidence: cjc 1.0.5 对整个 fixture 零诊断。官方两遍模型 `LambdaExpr.cpp`：第一遍整体抑制诊断（:280-285 `DiagSuppressor`）、成员访问落在未解 tyvar 上只挂约束（`NameReferenceExpr.cpp:510-527` `TryInitializeBaseSum`，仅当 sum 仍为 `{Any}` 时播种）、body 末统一求解（:180-200 `SolveLamExprParamTys`）、全解则 `ResetLambdaForReinfer`（:166-178）清空 body 重查第二遍、未全解才在首个无注解形参报一条。实参侧淘汰见 `NameReferenceExpr.cpp:781-823` `FilterSumUpperbound`，归一定死见 `TypeCheckUtil.cpp:955-979` `TryEnforceCandidate`。
+- CFIR changes（3 文件）:
+  - `BodyResolveContext.kt`：`refineFreshReceiverCandidateOwners` 空交集回退由 `.ifEmpty { distinctOwnerTypes }` 改为 `.ifEmpty { previous }`（sum 只播种一次、之后只收窄，绝不采纳矛盾集合）；新增 `convergedFreshReceiverOwnerBounds` 把「收敛到唯一 owner」作为形参硬界来源接入 `fixLambdaParameterFromHardBounds`（排除仍含未定类型变量的泛型未替换轮表示，交由替换轮定型）。
+  - `CfirSyntheticCallGenerator.kt`：`reanalyzeTopLevelLambdaBodyIfPossible` 由单遍改为按官方两遍模型的有界循环（`MAX_LAMBDA_REINFER_PASSES = 2`），单遍逻辑抽出为 `runLambdaBodyReinferPass`；仅当本遍把某形参从「含未定推断变量」解成完全确定类型（`newlyDeterminedComparedTo`）才再跑一遍。`CfirResolutionSnapshot.restore()` 幂等，可重复恢复。
+  - `CfirCallResolver.kt` / `CfirExpressionsResolveTransformer.kt`：仅补充/修订注释（说明已知界过滤为何必须淘汰无声明 owner 的候选），无行为改动。
+- 一处被否决的改法（务必不要重做）: 把 `reduceFreshReceiverCandidatesByKnownConstraints` 中「推不出声明 owner ⇒ 淘汰」改为「保留」，可同时让 lambda_param_05 双路径转绿并使 09 只剩 1 条残留（FIXED=6），但**回归 OperatorOverload/timeout_07 双路径**：该 fixture 的 `{a => !!…!-a}` 正是依赖这条淘汰规则把一元 `-` 的 19 个候选收窄到唯一声明者 A、定型 `a := A`，再在 `!` 上报出期望的 INVALID_UNARY_EXPR；保留后 `a` 恒为 tyvar，诊断消失。两者的正确答案分歧（timeout_07 的 A 正确、f34/f35 的 A36 错误）源于官方那里由外层重载的期望类型驱动而非操作符播种，属独立的更深改造，不在本轮范围。
+- repair principle: 官方语义里 sum 是**单调收缩**的——播种一次，之后只过滤。任何让新候选集合覆盖既有 sum 的回退路径都会把「本次访问推不全的 owner 集」误当收敛结果写死约束，且错误约束会反过来让本该生效的收窄机制读到毒化输入而静默放弃。第二遍重查必须由「形参真的解出来」触发，不能无条件消耗。
+- fixtures covered: TypeInfer/lambda_param_09（PSI 与 LightTree 双路径，D1 别名+泛型收敛 / D2 扩展成员 NOT_MEMBER_OF / D4 println 歧义 / D5 f34 实参 mismatch 全消）；OperatorOverload/timeout_07 保持通过。
+- verification commands and outcome:
+  - 判别实验：`:cfir:analysis-tests:cleanTest :cfir:analysis-tests:test --tests '…$TypeInfer.testLambdaParam09'` ×3 独立 JVM → 3/3 失败，渲染一致；三件套 03+07+09 → 03/07 通过、09 失败且渲染与单跑逐字节相同。
+  - 全量（埋点已全部移除的最终代码）：`:cfir:analysis-tests:cleanTest :cfir:analysis-tests:test` → **8423 tests, 916 failures**，与基线快照逐 fixture 比对 FIXED=4（03/07 双路径，承自上一条目）/ **REGRESSED=0**。lambda_param_09 计数仍红，因其内部尚余 f35 两条。
+- 遗留: lambda_param_09 只剩 f35 一族两条——`LAMBDA_MUST_HAVE_TYPE_ANNOTATION @a` 与其下游 `println(f35(ARGUMENT_TYPE_MISMATCH Some(1), …))`，属 while-let 解构模式推断子系统（独立子任务，机制与缺口清单见上一条目遗留第 3 项）。埋点另观测到 f35 的 `OptionPatternElement0/1` 走的正是本条目根因 1 的同型路径（`x + y.getOrThrow() + 1` 只推导出声明者 A36 ⇒ 播种 `[A36]` ⇒ 写死 `x <: A36`），但此处无既有 sum 可保护，需靠字面量 `1` 的 Int64 证据或期望类型驱动，与 timeout_07 的分歧同源。
