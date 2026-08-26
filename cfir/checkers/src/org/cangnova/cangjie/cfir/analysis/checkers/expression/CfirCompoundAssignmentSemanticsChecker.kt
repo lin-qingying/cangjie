@@ -2,6 +2,7 @@ package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import java.math.BigInteger
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.declaration.firstCharacterDiagnosticSource
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
@@ -11,32 +12,45 @@ import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.resolve.constants.CfirIntConstantEvalUtils
+import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
+import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.OperatorNameConventions
 import org.cangnova.cangjie.source.AbstractCjSourceElement
+import org.cangnova.cangjie.type.AbstractTypeChecker
 
 /**
  * 复合赋值的内建语义检查。
  *
  * 官方 Sema 在 `AssignExpr` 层处理 `COMPOUND_ASSIGN_EXPR_MAP`：
  * 先按左值类型约束右值，再对 `<<=` / `>>=` 做移位计数检查。
- * 当前 CFIR 尚未引入独立的 AugmentedAssignment 节点，因此这里识别 raw builder
- * 生成的 `lValue = lValue <op> rValue` 承载形态，补齐同一层语义。
+ * raw CFIR 使用独立的 [org.cangnova.cangjie.cfir.expressions.CfirAugmentedAssignment]
+ * 保留复合赋值语法；body resolve 解糖为带 [CfirAssignment.augmentedOperation] 来源信息的
+ * 普通赋值后，本 checker 在 AssignExpr 层完成复合赋值专有的语义诊断。
  */
 object CfirCompoundAssignmentSemanticsChecker : CfirAssignmentChecker() {
     /**
      * 检查复合赋值 desugar 后的内建运算语义。
      *
-     * 该入口从普通赋值中识别 `lValue = lValue <op> rValue` 形态，再基于左值原始类型判断
+     * 该入口只消费 body resolve 为复合赋值保留来源信息的普通赋值；再基于左值原始类型判断
      * operator 是否可用，并对字面量范围和移位计数执行官方约束。
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirAssignment) {
         val call = expression.compoundAssignmentCall() ?: return
-        val operatorName = call.operatorName() ?: return
-        val leftType = expression.lValue.coneTypeOrNull as? ConePrimitiveType ?: return
+        val operatorName = expression.augmentedOperation ?: return
+        val leftType = expression.lValue.coneTypeOrNull
+        if (leftType !is ConePrimitiveType) {
+            // 重载解析失败时，operator call 自己拥有 INVALID_BINARY_OPERATOR 等语义诊断；
+            // AssignExpr 只能在调用成功、但返回值不能写回左值时报告 TYPE_INCOMPATIBLE。
+            if (call.coneTypeOrNull is ConeErrorType) return
+            if (!expression.hasApplicableNonPrimitiveCompoundOperation(context)) {
+                reportCompoundAssignmentTypeIncompatible(expression)
+            }
+            return
+        }
         val leftKind = leftType.kind
 
         val allowedKinds = allowedCompoundAssignmentKinds(operatorName) ?: return
@@ -55,6 +69,20 @@ object CfirCompoundAssignmentSemanticsChecker : CfirAssignmentChecker() {
         if (operatorName == OperatorNameConventions.LEFT_SHIFT || operatorName == OperatorNameConventions.RIGHT_SHIFT) {
             checkShiftCount(rightExpression, leftKind)
         }
+    }
+
+    /**
+     * 复合赋值必须在其专有 precheck 层报告类型不兼容，而不能把解糖后 operator 的结果
+     * 当作普通赋值 RHS 产生 `TYPE_MISMATCH`。官方定位在赋值左侧的首字符。
+     */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun reportCompoundAssignmentTypeIncompatible(expression: CfirAssignment) {
+        val source = expression.source as? AbstractCjSourceElement ?: return
+        reporter.reportOn(
+            source.firstCharacterDiagnosticSource(),
+            CfirErrors.TYPE_INCOMPATIBLE,
+            "compound assignment expression",
+        )
     }
 
     /**
@@ -103,17 +131,30 @@ object CfirCompoundAssignmentSemanticsChecker : CfirAssignmentChecker() {
 }
 
 /**
- * 识别 raw CFIR 中复合赋值右侧的 desugared operator call。
+ * 识别 body resolve 后带有复合赋值来源的 operator call。
  *
- * 只有赋值表达式和函数调用共享同一源码范围、且调用名属于复合赋值运算符集合时才认为匹配。
+ * body resolve 只为 [org.cangnova.cangjie.cfir.expressions.CfirAugmentedAssignment] 生成带
+ * [CfirAssignment.augmentedOperation] 的普通赋值；该 provenance 是复合赋值语义的唯一来源。
  */
 internal fun CfirAssignment.compoundAssignmentCall(): CfirFunctionCall? {
+    val operation = augmentedOperation ?: return null
     val call = rValue as? CfirFunctionCall ?: return null
-    val assignmentSource = source ?: return null
-    val callSource = call.source ?: return null
-    if (assignmentSource != callSource) return null
-    if (call.operatorName() !in COMPOUND_ASSIGNMENT_OPERATOR_NAMES) return null
+    if (operation !in COMPOUND_ASSIGNMENT_OPERATOR_NAMES) return null
     return call
+}
+
+/**
+ * 判断非内建复合赋值的 operator-overload 解糖是否已完整成功。
+ *
+ * 官方在 `InferAssignExprCheckCaseOverloading` 中只有当 `lhs.op(rhs)` 已成功解析、但其结果
+ * 不能写回 lhs 时，才由 AssignExpr 报告 `TYPE_INCOMPATIBLE`。调用本身解析失败时，必须保留
+ * operator call 的 `INVALID_BINARY_OPERATOR` 等根诊断，不能改写成赋值不兼容。
+ */
+private fun CfirAssignment.hasApplicableNonPrimitiveCompoundOperation(context: CheckerContext): Boolean {
+    val resultType = compoundAssignmentCall()?.coneTypeOrNull ?: return false
+    if (resultType is ConeErrorType) return false
+    val leftType = lValue.coneTypeOrNull ?: return false
+    return AbstractTypeChecker.isSubtypeOf(context.session.typeContext, resultType, leftType) == true
 }
 
 /**
@@ -124,19 +165,44 @@ internal fun CfirAssignment.compoundAssignmentCall(): CfirFunctionCall? {
  */
 internal fun CfirFunctionCall.isInvalidPrimitiveCompoundAssignmentCall(context: CheckerContext): Boolean {
     val operatorName = operatorName() ?: return false
-    val assignment = primitiveCompoundAssignment(context) ?: return false
+    val assignment = compoundAssignment(context) ?: return false
     val leftKind = (assignment.lValue.coneTypeOrNull as? ConePrimitiveType)?.kind ?: return false
     val allowedKinds = allowedCompoundAssignmentKinds(operatorName) ?: return false
     return leftKind !in allowedKinds
 }
 
 /**
- * 当前 raw CFIR 用普通函数调用承载复合赋值右侧的 desugared operator call。
+ * 判断当前 operator 调用是否属于应由 AssignExpr 统一报告的非法复合赋值。
+ *
+ * 内建左值由 operator 类型表判定；非内建左值只有完整重载结果可回写时才合法。该判定供
+ * error collector 抑制解糖调用的底层错误，保证用户只看到官方 AssignExpr 语义的
+ * `TYPE_INCOMPATIBLE`。
+ */
+internal fun CfirFunctionCall.isInvalidCompoundAssignmentCall(context: CheckerContext): Boolean {
+    val assignment = compoundAssignment(context) ?: return false
+    val leftType = assignment.lValue.coneTypeOrNull
+    return when (leftType) {
+        is ConePrimitiveType -> {
+            val operatorName = operatorName() ?: return false
+            operatorName in COMPOUND_ASSIGNMENT_OPERATOR_NAMES &&
+                leftType.kind !in (allowedCompoundAssignmentKinds(operatorName) ?: return false)
+        }
+
+        null -> false
+        else -> {
+            val resultType = assignment.compoundAssignmentCall()?.coneTypeOrNull ?: return false
+            resultType !is ConeErrorType && !assignment.hasApplicableNonPrimitiveCompoundOperation(context)
+        }
+    }
+}
+
+/**
+ * body resolve 后的函数调用承载复合赋值的 operator call。
  * 赋值语义由 [CfirCompoundAssignmentSemanticsChecker] 统一处理，函数调用检查器据此避免重复上报。
  */
 internal fun CfirFunctionCall.isPrimitiveCompoundAssignmentCall(context: CheckerContext): Boolean {
     val operatorName = operatorName() ?: return false
-    primitiveCompoundAssignment(context) ?: return false
+    compoundAssignment(context) ?: return false
     return allowedCompoundAssignmentKinds(operatorName) != null
 }
 
@@ -145,17 +211,16 @@ internal fun CfirFunctionCall.isPrimitiveCompoundAssignmentCall(context: Checker
  *
  * 该匹配依赖检查上下文中的调用/赋值栈，确保只把当前调用作为赋值右值时才返回对应赋值。
  */
-private fun CfirFunctionCall.primitiveCompoundAssignment(context: CheckerContext): CfirAssignment? {
+private fun CfirFunctionCall.compoundAssignment(context: CheckerContext): CfirAssignment? {
     val assignment = context.callsOrAssignments.asReversed()
         .filterIsInstance<CfirAssignment>()
         .firstOrNull { it.rValue === this && it.compoundAssignmentCall() === this }
         ?: return null
-    if (assignment.lValue.coneTypeOrNull !is ConePrimitiveType) return null
     return assignment
 }
 
 /**
- * raw builder 可用来承载复合赋值的 operator 名称集合。
+ * 复合赋值可使用的 operator 名称集合。
  */
 private val COMPOUND_ASSIGNMENT_OPERATOR_NAMES: Set<Name> = setOf(
     OperatorNameConventions.PLUS,

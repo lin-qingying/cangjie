@@ -52,6 +52,15 @@ internal class LLCfirDiagnosticReporter(
         get() = committedDiagnostics.any { (_, diagnostics) -> diagnostics.any { it.severity.isErrorWhenWError } }
 
     /**
+     * 低层分析在一个 reporter 中可能收集多个结构元素，必须按 PSI 所属文件判断 Sema gate。
+     */
+    override fun hasErrorsInFile(filePath: String): Boolean = committedDiagnostics
+        .asSequence()
+        .filter { (element, _) -> element.containingFile.virtualFile?.path == filePath }
+        .flatMap { (_, diagnostics) -> diagnostics.asSequence() }
+        .any { it.severity.isError }
+
+    /**
      * 接收 checker 报告的 diagnostic，过滤 suppressed 和隐式 import 相关诊断后进入 pending 集合。
      */
     override fun report(diagnostic: CjDiagnostic?, context: DiagnosticContext) {

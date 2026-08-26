@@ -4042,3 +4042,15 @@ Flagged while gathering evidence for the extend upper-bound recursion problem ty
   - `CfirAnalysisLLTTestGenerated$Tuple`：19 tests, 0 failures, 0 errors；`CfirAnalysisLLTPsiTestGenerated$Tuple`：19 tests, 0 failures, 0 errors。
   - `ErrMsgs.testQuestionMark0` 的 PSI 与 LightTree XML 均包含正确的 `optTup?[<!BUILTIN_INDEX_IN_BOUND!>2<!>]`。该 method 仍因 `(err)?...` 上三处既有 `OPTIONAL_CHAIN_NON_OPTIONAL` / `INVALID_BINARY_OPERATOR` 差异失败，和 tuple marker 无关。
   - 全量 `./gradlew.bat :cfir:analysis-tests:test --console=plain`：8422 tests, 958 failures, 307 skipped；两个 `Tuple` suite 在新鲜 XML 中均为 0 failures、0 errors。
+
+## Operator 常量算术诊断分层与复合赋值 IR
+
+- problem type: Operator LLT 的常量溢出诊断归属、幂运算目标类型解析，以及复合赋值的 get/operator/writeback 语义。
+- root cause: 常量算术检查在 Sema 错误尚未提交时就参与收集，导致 `mul_overflow` 的字面量溢出被派生的 CHIR 溢出抢报；幂运算没有把目标类型传入底数解析；普通 `CfirAssignment` 又不能保留复合赋值操作来源，因而无法把成功的重载调用、写回兼容性和原始 operator 错误区分开。
+- official Cangjie evidence: `cjc 1.0.5 --diagnostic-format json --error-count-limit all` 验证 `mul_overflow.cj` 中已有 Sema 数值越界时不应再派生 CHIR 算术溢出，`pow_overflow.cj` 应报告 CHIR 算术溢出；`llt/operator_overload/compound_assign.cj` 的 operator 调用失败只报告 `sema_invalid_binary_expr` 并定位 `+`。`external/cangjie_compiler` 的赋值/运算符语义与这一 Sema 优先、后续 CHIR 分析的分层一致。
+- Kotlin counterpart files consulted: `external/kotlin/compiler/fir/tree/gen/org/jetbrains/kotlin/fir/expressions/FirAugmentedAssignment.kt`、`external/kotlin/compiler/fir/tree/gen/org/jetbrains/kotlin/fir/expressions/FirIndexedAccessAugmentedAssignment.kt`、`external/kotlin/compiler/fir/resolve/src/org/jetbrains/kotlin/fir/resolve/transformers/body/resolve/FirExpressionsResolveTransformer.kt`；它们只用于 IR 结构和解析阶段的架构对齐。
+- CFIR owner files changed: `cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/collectors/components/CfirChirArithmeticDiagnosticCollectorComponent.kt` 及诊断收集组件注册；`cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/CfirTree.kt` 和生成的 `CfirAugmentedAssignment` 树/visitor/builder；两条 raw builder、`CfirExpressionsResolveTransformer.kt`、`CfirCompoundAssignmentSemanticsChecker.kt`、`CfirAssignmentTypeMismatchChecker.kt`，以及 IDE 诊断收集入口。
+- repair principle: 让 Sema 诊断先成为根诊断、CHIR 算术检查只分析 Sema 成功的表达式；将复合赋值建模为共享的 augmented-assignment IR，由 resolve 保留 get/operator/writeback 各自的语义状态，checker 据此只派生真正的写回不兼容，不覆盖 operator 根错误。
+- fixtures covered: `llt/operator/mul_overflow.cj`、`pow_overflow.cj`、`pow_no_overflow.cj`、`llt/operator/bitwise_operator/compound_assign.cj`、`llt/operator/bitwise_operator/shift/shift_var_ty.cj`，每份均覆盖 `CfirAnalysisLLTTestGenerated` 与 `CfirAnalysisLLTPsiTestGenerated`。
+- fixture correction: `shift_var_ty.cj` 将诊断范围改为完整 `<<` token，符合本仓库的完整相关 token 范围策略。
+- verification command and outcome: `:cfir:analysis-tests:test` 使用上述五份 fixture 的 PSI/LightTree 共 10 个精确 selector、`--no-build-cache` 运行完成，`BUILD SUCCESSFUL`。新鲜 XML 显示三项 overflow/pow 用例所在两份 Operator 报告均为 `tests=3, failures=0, errors=0`；compound-assignment 与 shift 用例所在四份报告均为 `tests=1, failures=0, errors=0`。

@@ -137,6 +137,9 @@ abstract class CfirDefaultVisitor<out R, in D> : CfirVisitor<R, D>() {
     override fun visitAssignment(assignment: CfirAssignment, data: D): R =
         visitExpression(assignment, data)
 
+    override fun visitAugmentedAssignment(augmentedAssignment: CfirAugmentedAssignment, data: D): R =
+        visitExpression(augmentedAssignment, data)
+
     override fun visitBinaryOp(binaryOp: CfirBinaryOp, data: D): R =
         visitExpression(binaryOp, data)
 

@@ -105,7 +105,6 @@ object CommonExpressionCheckers : ExpressionCheckers() {
         get() = setOf(
 //            CfirArgumentTypeMismatchChecker,
             CfirSignedLiteralNumericOverflowChecker,
-            CfirConstEvalArithmeticChecker,
             CfirConstructorDelegationCallChecker,
             CfirImmutableFunctionCannotAccessMutableFunctionChecker,
             CfirImmutableValueCannotAccessMutableFunctionChecker,

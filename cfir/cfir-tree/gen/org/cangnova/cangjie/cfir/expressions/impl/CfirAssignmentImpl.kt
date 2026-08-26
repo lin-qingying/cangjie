@@ -18,6 +18,7 @@ import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 import org.cangnova.cangjie.cfir.visitors.transformInplace
+import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.source.CjSourceElement
 
 class CfirAssignmentImpl @CfirImplementationDetail constructor(
@@ -26,6 +27,7 @@ class CfirAssignmentImpl @CfirImplementationDetail constructor(
     override var coneTypeOrNull: ConeCangJieType?,
     override var lValue: CfirExpression,
     override var rValue: CfirExpression,
+    override val augmentedOperation: Name?,
     override var typeMismatchOutcome: CfirAssignmentTypeMismatchOutcome?,
 ) : CfirAssignment() {
 

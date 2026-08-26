@@ -221,6 +221,9 @@ abstract class CfirVisitor<out R, in D> {
     open fun visitAssignment(assignment: CfirAssignment, data: D): R =
         visitElement(assignment, data)
 
+    open fun visitAugmentedAssignment(augmentedAssignment: CfirAugmentedAssignment, data: D): R =
+        visitElement(augmentedAssignment, data)
+
     open fun visitBinaryOp(binaryOp: CfirBinaryOp, data: D): R =
         visitElement(binaryOp, data)
 

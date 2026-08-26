@@ -25,9 +25,13 @@ object DiagnosticComponentsFactory {
             add(ErrorNodeDiagnosticCollectorComponent(session, reporter))
 //            add(LanguageVersionSettingsDiagnosticComponent(session, reporter))
         }.toTypedArray()
+        val postSemaComponents = arrayOf<AbstractDiagnosticCollectorComponent>(
+            CfirChirArithmeticDiagnosticCollectorComponent(session, reporter),
+        )
         return DiagnosticCollectorComponents(
-            regularComponents,
-            ReportCommitterDiagnosticComponent(session, reporter)
+            regularComponents = regularComponents,
+            postSemaComponents = postSemaComponents,
+            reportCommitter = ReportCommitterDiagnosticComponent(session, reporter),
         )
     }
 

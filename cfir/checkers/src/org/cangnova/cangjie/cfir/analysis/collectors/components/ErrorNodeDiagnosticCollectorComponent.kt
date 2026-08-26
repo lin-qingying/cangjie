@@ -7,7 +7,7 @@ import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.hasUninferredOmittedLambdaParameterType
 import org.cangnova.cangjie.cfir.analysis.checkers.isTypeParameterWithInvalidDeclaredUpperBoundsInCurrentContext
 import org.cangnova.cangjie.cfir.analysis.checkers.lambdaExpectedFunctionType
-import org.cangnova.cangjie.cfir.analysis.checkers.expression.isInvalidPrimitiveCompoundAssignmentCall
+import org.cangnova.cangjie.cfir.analysis.checkers.expression.isInvalidCompoundAssignmentCall
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.analysis.diagnostics.toCfirDiagnostics
 import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
@@ -304,7 +304,7 @@ class ErrorNodeDiagnosticCollectorComponent(
         }
 
         if (callOrAssignment is CfirFunctionCall &&
-            callOrAssignment.isInvalidPrimitiveCompoundAssignmentCall(context)
+            callOrAssignment.isInvalidCompoundAssignmentCall(context)
         ) return
 
         // 官方对整棵无效二元表达式树只报一个 INVALID_BINARY_OPERATOR：从 IS_OUTERMOST 根做

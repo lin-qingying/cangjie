@@ -20,6 +20,8 @@ import org.cangnova.cangjie.cfir.analysis.checkers.type.TypeCheckers
 import org.cangnova.cangjie.cfir.analysis.checkers.type.TypeCheckersDiagnosticComponent
 import org.cangnova.cangjie.cfir.analysis.collectors.AbstractDiagnosticCollector
 import org.cangnova.cangjie.cfir.analysis.collectors.DiagnosticCollectorComponents
+import org.cangnova.cangjie.cfir.analysis.collectors.components.AbstractDiagnosticCollectorComponent
+import org.cangnova.cangjie.cfir.analysis.collectors.components.CfirChirArithmeticDiagnosticCollectorComponent
 import org.cangnova.cangjie.cfir.analysis.collectors.components.ControlFlowAnalysisDiagnosticComponent
 import org.cangnova.cangjie.cfir.analysis.collectors.components.ErrorNodeDiagnosticCollectorComponent
 import org.cangnova.cangjie.cfir.analysis.collectors.components.ReportCommitterDiagnosticComponent
@@ -91,7 +93,17 @@ internal class LLCheckersFactory(val session: LLCfirSession) : CfirSessionCompon
             add(ControlFlowAnalysisDiagnosticComponent(session, reporter, declarationCheckers))
         }.toTypedArray()
 
-        return DiagnosticCollectorComponents(regularComponents, ReportCommitterDiagnosticComponent(session, reporter))
+        val postSemaComponents = if (filter.runDefaultCheckers) {
+            arrayOf<AbstractDiagnosticCollectorComponent>(CfirChirArithmeticDiagnosticCollectorComponent(session, reporter))
+        } else {
+            emptyArray()
+        }
+
+        return DiagnosticCollectorComponents(
+            regularComponents = regularComponents,
+            postSemaComponents = postSemaComponents,
+            reportCommitter = ReportCommitterDiagnosticComponent(session, reporter),
+        )
     }
 
     /**

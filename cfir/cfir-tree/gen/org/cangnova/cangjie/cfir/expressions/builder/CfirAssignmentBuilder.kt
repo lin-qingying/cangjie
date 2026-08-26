@@ -17,6 +17,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirAssignmentTypeMismatchOutcome
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.impl.CfirAssignmentImpl
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.source.CjSourceElement
 
 @CfirBuilderDsl
@@ -26,6 +27,7 @@ class CfirAssignmentBuilder {
     var coneTypeOrNull: ConeCangJieType? = null
     lateinit var lValue: CfirExpression
     lateinit var rValue: CfirExpression
+    var augmentedOperation: Name? = null
     var typeMismatchOutcome: CfirAssignmentTypeMismatchOutcome? = null
 
     @OptIn(CfirImplementationDetail::class)
@@ -36,6 +38,7 @@ class CfirAssignmentBuilder {
             coneTypeOrNull,
             lValue,
             rValue,
+            augmentedOperation,
             typeMismatchOutcome,
         )
     }
@@ -61,6 +64,7 @@ inline fun buildAssignmentCopy(original: CfirAssignment, init: CfirAssignmentBui
     copyBuilder.coneTypeOrNull = original.coneTypeOrNull
     copyBuilder.lValue = original.lValue
     copyBuilder.rValue = original.rValue
+    copyBuilder.augmentedOperation = original.augmentedOperation
     copyBuilder.typeMismatchOutcome = original.typeMismatchOutcome
     return copyBuilder.apply(init).build()
 }

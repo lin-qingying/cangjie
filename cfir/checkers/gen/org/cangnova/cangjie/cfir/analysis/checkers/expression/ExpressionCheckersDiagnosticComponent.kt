@@ -129,6 +129,10 @@ class ExpressionCheckersDiagnosticComponent(
         checkers.allBasicExpressionCheckers.check(wrappedExpression, data)
     }
 
+    override fun visitAugmentedAssignment(augmentedAssignment: CfirAugmentedAssignment, data: CheckerContext) {
+        checkers.allBasicExpressionCheckers.check(augmentedAssignment, data)
+    }
+
     override fun visitOptionalExpression(optionalExpression: CfirOptionalExpression, data: CheckerContext) {
         checkers.allBasicExpressionCheckers.check(optionalExpression, data)
     }

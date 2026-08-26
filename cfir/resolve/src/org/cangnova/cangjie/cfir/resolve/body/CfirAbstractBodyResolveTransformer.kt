@@ -641,6 +641,19 @@ abstract class CfirAbstractBodyResolveTransformerDispatcher(
         return expressionsTransformer.transformAssignment(assignment, data)
     }
 
+    /**
+     * 将 raw CFIR 保留的复合赋值语法分发给表达式 resolver。
+     *
+     * resolver 在该入口选择并解析其 `lhs = lhs.op(rhs)` 语义形态，同时保留复合赋值
+     * provenance，供后续 AssignExpr 级检查器作出专有诊断。
+     */
+    override fun transformAugmentedAssignment(
+        augmentedAssignment: CfirAugmentedAssignment,
+        data: ResolutionMode,
+    ): CfirExpression {
+        return expressionsTransformer.transformAugmentedAssignment(augmentedAssignment, data)
+    }
+
     /** 将 tuple 字面量 body resolve 分发给表达式 transformer。 */
     override fun transformTupleLiteral(
         tupleLiteral: CfirTupleLiteral,

@@ -82,6 +82,7 @@ fun main(args: Array<String>) {
                 alias<CfirStatement>("BasicExpressionChecker", false).let {
                     visitAlso<CfirExpression>(it)
                     visitAlso<CfirWrappedExpression>(it)
+                    visitAlso<CfirAugmentedAssignment>(it)
                     visitAlso<CfirOptionalExpression>(it)
                     visitAlso<CfirOptionalChainExpression>(it)
                     visitAlso<CfirBlock>(it)

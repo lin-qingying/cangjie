@@ -1108,7 +1108,22 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
         parent(expression)
         +field("lValue", expression, withTransform = true)
         +field("rValue", expression, withTransform = true)
+        +field("augmentedOperation", nameType, nullable = true)
         +field("typeMismatchOutcome", assignmentTypeMismatchOutcomeType, nullable = true, withReplace = true)
+    }
+
+    /**
+     * 复合赋值表达式节点。
+     *
+     * raw CFIR 保留操作符及左右操作数，body resolve 再根据候选选择构造普通赋值或
+     * operator 调用。这避免在 raw builder 阶段把 `a <op>= b` 退化为 `a = a <op> b`，
+     * 从而丢失 compound-assignment 专有的类型检查和诊断归属。
+     */
+    val augmentedAssignment: Element by element(Expression, name = "AugmentedAssignment") {
+        parent(expression)
+        +field("operation", nameType)
+        +field("leftArgument", expression, withTransform = true)
+        +field("rightArgument", expression, withTransform = true)
     }
 
     /**

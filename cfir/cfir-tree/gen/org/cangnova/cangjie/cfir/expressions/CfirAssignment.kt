@@ -9,6 +9,7 @@ import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
+import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.source.CjSourceElement
 
 /**
@@ -20,6 +21,7 @@ abstract class CfirAssignment : CfirExpression() {
     abstract override val coneTypeOrNull: ConeCangJieType?
     abstract val lValue: CfirExpression
     abstract val rValue: CfirExpression
+    abstract val augmentedOperation: Name?
     abstract val typeMismatchOutcome: CfirAssignmentTypeMismatchOutcome?
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =

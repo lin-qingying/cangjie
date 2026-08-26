@@ -329,19 +329,12 @@ class LightTreeRawCfirExpressionBuilder(
                     rValue = rightExpr
                 }
             }
-            val opName = op.toCompoundAssignName()?.asString() ?: "<error>"
-            return buildAssignment {
+            val operation = op.toCompoundAssignName() ?: Name.identifier("<error>")
+            return buildAugmentedAssignment {
                 source = node.toSource()
-                lValue = leftExpr
-                rValue = buildFunctionCall {
-                    source = node.toSource()
-                    calleeReference = buildNamedReference(Name.identifier(opName), node.toSource())
-                    argumentList = buildArgumentList {
-                        arguments.add(rightExpr)
-                    }
-                    explicitReceiver = leftExpr
-                    origin = CfirFunctionCallOrigin.Operator
-                }
+                this.operation = operation
+                leftArgument = leftExpr
+                rightArgument = rightExpr
             }
         }
 
