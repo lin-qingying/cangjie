@@ -4192,3 +4192,264 @@ Flagged while gathering evidence for the extend upper-bound recursion problem ty
   - 判别实验：`:cfir:analysis-tests:cleanTest :cfir:analysis-tests:test --tests '…$TypeInfer.testLambdaParam09'` ×3 独立 JVM → 3/3 失败，渲染一致；三件套 03+07+09 → 03/07 通过、09 失败且渲染与单跑逐字节相同。
   - 全量（埋点已全部移除的最终代码）：`:cfir:analysis-tests:cleanTest :cfir:analysis-tests:test` → **8423 tests, 916 failures**，与基线快照逐 fixture 比对 FIXED=4（03/07 双路径，承自上一条目）/ **REGRESSED=0**。lambda_param_09 计数仍红，因其内部尚余 f35 两条。
 - 遗留: lambda_param_09 只剩 f35 一族两条——`LAMBDA_MUST_HAVE_TYPE_ANNOTATION @a` 与其下游 `println(f35(ARGUMENT_TYPE_MISMATCH Some(1), …))`，属 while-let 解构模式推断子系统（独立子任务，机制与缺口清单见上一条目遗留第 3 项）。埋点另观测到 f35 的 `OptionPatternElement0/1` 走的正是本条目根因 1 的同型路径（`x + y.getOrThrow() + 1` 只推导出声明者 A36 ⇒ 播种 `[A36]` ⇒ 写死 `x <: A36`），但此处无既有 sum 可保护，需靠字面量 `1` 的 Int64 证据或期望类型驱动，与 timeout_07 的分歧同源。
+
+## lambda_param_05：fresh-receiver owner 占位变量未注册进 lambda 求解系统，双路径转绿
+
+- problem type: Resolve / Type Inference（PCLA 无期望类型 lambda 形参推断：成员访问驱动的 owner 泛型参数占位变量归属系统错误；lambda_param_03/07 修复后的下一层机制缺口）。
+- root cause（cjc 探针 + 逐层插桩定位）:
+  1. `l.iterator()` 的成员候选在 `CfirCreateFreshTypeVariableSubstitutorStage` 为 owner 泛型参数创建占位变量 `T_fresh`（官方 `ConstrainByCtor` 的 T-Fly 对应），但只登记在成员候选自己的临时系统；该调用独立完成、不经 `processPartiallyResolvedCall` 合并，接收者约束 `_RP0 <: Array<T_fresh>` 回流到 synthetic accept 系统时**变量登记不跟随**。
+  2. 初始 completion 据此把形参定型为 `Array<TypeVariable(T)>`（含未登记推断变量的非 proper 类型）；storage 判定「已全部求解」（notFixed=0、hasLocalLambdaPlaceholderFrom=false）→ 推断数据被丢弃 → 调用点重查不触发；reinfer 遍中 `v > max` 的约束写入也因 T_fresh 不在系统内被判矛盾拒绝。
+  3. 结果：`v`（经 i.next()/Some 解构绑定）永不定型 → INVALID_BINARY_OPERATOR、TYPE_MISMATCH、ARGUMENT_TYPE_MISMATCH 三条诊断。f11 之所以绿：for 循环迭代协议不写接收者约束，`_RP0` 保持开放，调用点从下界正常求解。
+- official Cangjie evidence: cjc 1.0.5 对完整 fixture 及 p_nomain（无 main、无调用点）均零诊断——定义点体内证据足以定型，调用点不参与；揭示探针 `f26(42)` 报 "cannot convert an integer literal to type 'Interface-Iterable<Int64>'"——官方把 `l` 定型为 `Iterable<Int64>`（最一般声明接口 + 元素类型由体内证据解出）；p_assign_only / p_compare_only 均零错误——赋值或比较任一路证据足够。官方机制：`LambdaExpr.cpp` TryInferFromSyntaxInfo → `TypeCheckUtil.cpp` TryEnforceCandidate（FindSmallestTy 唯一最一般声明 → ConstrainByCtor 挂 T-Fly 占位）→ `TypeManager.cpp` ConstrainByCtor 用 `AllocTyVar("T-Fly", true, &tv)` 创建**挂在 lambda tyvar 上**的占位 → `SolveLamExprParamTys` body 末统一求解。
+- Kotlin counterpart files consulted: K2 `ConstraintSystemImpl`/`MutableConstraintStorage`（replaceContentWith/doAddOtherSystem 变量登记转移语义）、`VariableFixationFinder`/`ConstraintSystemCompleter`（fixVariable 无约束变量修定路径）、`ConstraintInjector`（约束注入与 fork point 矛盾判定）——CFIR 均为 K2 移植层；成员候选独立完成路径丢失变量登记属 CFIR 侧组合缺口。
+- CFIR owner files changed（3 文件）:
+  - `BodyResolveContext.kt`：`CfirInferenceSession` 新增 `containsRegisteredInferenceVariable` API（默认 false，PCLA 实现按 common system allTypeVariables 判定）；`refineFreshReceiverCandidateOwners` 入口调用 `registerFreshReceiverOwnerInferenceVariables` 把 owner 类型中的推断变量补登记进会话系统；`addFreshReceiverOwnerConstraintIfSingle` 对含会话登记变量的 owner 跳过写回（禁止把含未解推断变量的 owner 当单 owner 收敛硬界）。
+  - `CfirCreateFreshTypeVariableSubstitutorStage.kt`：fresh lambda receiver 的 owner 泛型参数 fresh 变量创建后同步注册进活跃推断会话（`registerInferenceVariable`），使占位变量从创建时刻起属于 lambda 求解系统。
+  - `CfirCheckDispatchReceiver.kt`：fresh-lambda-receiver 分支在期望接收者类型含会话登记变量时跳过接收者约束写入（`x <: Array<T-Fly>` 不进入正在完成的系统），保持形参开放交由语句边界/body 末/调用点证据定型。
+- repair principle: 官方 ConstrainByCtor 的 T-Fly 是 **lambda 求解系统内的变量**（AllocTyVar 挂在 tv 上），形参定型只能是 body 末求解或调用点证据的结果；CFIR 必须在占位变量创建处同步注册进 PCLA 公共系统，并封死「含未解推断变量的 owner 集合事实」作为接收者约束/单 owner 硬界提前写回的路径——这正是既有「owner-sum 集合事实永远不当类型硬界使用」原则在「成员访问直连约束」路径上的补全。
+- fixtures covered: TypeInfer/lambda_param_05（PSI 与 LightTree 双路径稳定转绿，3 次独立运行验证）；lambda_param_09/10 渲染与修复前逐字节一致（无变化；切片运行中偶现的单路径绿经复核为运行顺序噪声，不归因于本修复）。
+- verification commands and outcome:
+  - 聚焦：`:cfir:analysis-tests:cleanTest :cfir:analysis-tests:test --tests '…LLTPsiTestGenerated$TypeInfer.testLambdaParam05' --tests '…LLTTestGenerated$TypeInfer.testLambdaParam05' --no-build-cache` → BUILD SUCCESSFUL（双路径绿），复跑确认稳定。
+  - 受影响类对照（同一工作树 ± 本修复，git stash 隔离）：`--tests '*Lambda*' '*Overload*' '*TrailingClosure*' '*Call*'`（两 suite）→ 基线 105 failures → 修复后 103 failures，**FIXED=2（lambda_param_05 双路径）/ REGRESSED=0**，其余失败逐项一致。
+  - 全量：`:cfir:analysis-tests:cleanTest :cfir:analysis-tests:test` → **8423 tests, 896 failures**（旧基线 916；注意工作区含另一会话的 typealias/inout 并发改动，全量计数含其影响，无法完全分离归因；受影响类对照为干净的零回归证据）。
+
+## typealias/VArray：声明头定位与 inout 期望类型修复
+
+- problem type: Diagnostics / Resolve（typealias 声明级诊断范围；`inout CPointer<T>` 参数投影与 VArray 固定长度保持）。
+- root cause:
+  1. typealias checker 过去把声明 source 收窄到首字符，导致 PSI/LightTree 期望中的声明头范围不一致；声明级诊断应覆盖 `type` 关键字至名称/类型参数列表末端。
+  2. `inout` 实参在候选检查中仍以 `CPointer<T>` 外壳比较，未按官方规则投影为 `T`；VArray 目标还需保留固定长度，否则会先产生无关的参数类型不匹配，遮蔽左值可修改性诊断。
+- official Cangjie evidence: cjc 1.0.5 对 `varray_alias01_err` 报 `sema_cannot_convert_literal`；对 `varray_size02` 只报 `sema_inout_must_be_var_variable`，不报参数类型不匹配。范围采用本项目 Diagnostic Range Policy（声明级诊断覆盖完整相关 token）。
+- Kotlin counterpart files consulted: Kotlin FIR declaration diagnostic source selection与 call-argument expected-type/check-arguments 结构；仅借鉴框架分层，不引入 Kotlin 语义。
+- CFIR owner files changed:
+  - `cfir/checkers/.../CfirDeclarationDiagnosticSources.kt`、`CfirTypeAliasCycleChecker.kt`、`CfirTypeAliasUnusedTypeParameterChecker.kt`：统一生成 typealias 声明头 source。
+  - `cfir/resolve/.../ArgumentUtils.kt`、`ConeResolutionAtom.kt`、`CfirCheckArguments.kt`：递归剥离命名 `inout` 包装、投影指针参数，并让 `inout` 表达式作为单子节点参与调用解析；VArray 投影保留实参长度。
+  - `cfir/analysis-tests/testData/llt/typealias/*`、`varray/varray_alias01_err.cj`：按范围策略及官方诊断定义更新期望标记。
+- repair principle: 把定位和参数投影放在共享 source/argument-resolution 层，使 PSI 与 LightTree 及所有调用点复用同一规则，不针对单个 fixture 加特判。
+- fixtures covered: typealias 相关声明级范围 fixtures（17、18、19、2、26、29、3、34、4、6、7、partial_infer_02、partial_infer_05）与完整 VArray 类（含 Generic 子类，PSI/LightTree 双路径）。
+- verification commands and outcome:
+  - `:cfir:analysis-tests:cleanTest :cfir:analysis-tests:test --tests '…CfirAnalysisLLTPsiTestGenerated$Varray' --tests '…CfirAnalysisLLTTestGenerated$Varray' --no-build-cache` → BUILD SUCCESSFUL；VArray 主测试 22 个及 Generic 2 个双路径全部通过。
+- typealias 双路径 92 tests：仅 `typealias11`、`typealias12`、`typealias_partial_infer_02` 各两条失败，差异均为既有 CHIR 阶段 `UNREACHABLE_PATTERN`，不是声明范围或 VArray/inout 修复回归。
+
+## if-let-expr/bugfix2：实例初始化流误把外部对象 receiver 当作当前 this
+
+- problem type: Initialization / Member Access（成员初始化表达式中的显式外部对象调用被错误套用当前实例的未初始化字段状态）。
+- official Cangjie evidence: 官方 `cjc 1.0.5` 编译 `bugfix2.cj` 返回 0 个错误，仅有 `ReentrantMutex` 弃用警告；`DateTime.now().toUnixTimeStamp()` 的 receiver 是已构造的外部对象，不应触发当前对象的 `USED_BEFORE_INITIALIZATION`。
+- root cause: `CfirInitializationFlowAnalyzer` 原先对所有实例成员函数/属性访问复用当前初始化状态，没有区分隐式当前实例 receiver 与显式其他对象 receiver，导致外部对象链式调用沿用当前 `this` 的未初始化字段集合并误报。
+- CFIR owner file changed: `cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirInitializationCheckers.kt`。统一将访问表达式传入成员初始化诊断入口，并仅对隐式 receiver、显式 `this` 或 `super` 执行当前实例初始化检查；显式其他对象 receiver 不消费当前对象状态。
+- repair principle: 初始化状态的所有权属于当前正在构造的实例，receiver 判别必须位于共享成员访问检查入口，保证 PSI 与 LightTree 共用同一语义，不对单个 fixture 添加特判。
+- fixtures covered: `IfLetExpr/testBugfix2` PSI 与 LightTree 双路径。
+- verification commands and outcome:
+  - 官方 `cjc 1.0.5`：`bugfix2.cj` 0 errors。
+  - 聚焦 PSI + LightTree：`testBugfix2()` 2/2 通过；全量生成 XML 中两个标准 `IfLetExpr` XML 的 `testBugfix2()` 均无 failure/error/skip。
+- 全量：`:cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain --stacktrace` → **8422 tests completed, 886 failed, 307 skipped**；失败为既有大范围基线差异，不能宣称全套件绿色。`InitializationCheck` PSI/LightTree 各保留 11 个既有失败，未出现本修复对应的 `bugfix2` 回归。
+
+## enhancedcondition/parse：缺失条件右括号时抑制模式语义诊断
+
+- problem type: Diagnostics / Syntax recovery（`if`/`while` let-pattern 条件缺少右括号时错误产生 `PATTERN_NOT_MATCH`）。
+- root cause: PSI 与 LightTree 的恢复树仍能构造 `Some(a)` 模式节点，`CfirLetConditionPatternChecker` 只看到该可继续构建的语义节点，未检查外围控制结构及条件子树的语法完整性，因此在解析错误之后继续执行模式合法性检查。
+- official Cangjie evidence: `cjc` 1.0.5 编译 if/while `missing_rparen.cj` 时只报告解析错误，不报告 `sema_pattern_not_match`；`external/cangjie_compiler/src/Sema/TypeCheckExpr/IfExpr.cpp:29-33,68-74` 表明 if 类型检查先通过 `CheckCondition` 处理条件，`external/cangjie_compiler/src/Sema/TypeCheckExpr/IfExpr.cpp:121-140` 的 let-pattern 检查建立在已构造且可检查的条件 AST 上。
+- Kotlin counterpart files consulted: `external/kotlin/compiler/fir/raw-fir/psi2fir/src/org/jetbrains/kotlin/fir/builder/PsiRawFirBuilder.kt:3112-3121,3310-3321`；`external/kotlin/compiler/fir/raw-fir/light-tree2fir/src/org/jetbrains/kotlin/fir/lightTree/converter/LightTreeRawFirExpressionBuilder.kt:1265-1283,1527-1538`；`external/kotlin/compiler/fir/resolve/src/org/jetbrains/kotlin/fir/resolve/transformers/body/resolve/FirControlFlowStatementsResolveTransformer.kt:28-35`；`external/kotlin/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/expression/FirForLoopStatementAssignmentChecker.kt:34-43`。两种 raw builder 都独立构造条件并在缺失节点时使用错误表达式；FIR checker 对前置失败的 `FirErrorExpression` 上下文跳过次生检查。
+- CFIR owner files changed: `cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirPatternExpressionChecker.kt`。在共享 `CfirLetConditionPatternChecker` 中沿 `CheckerContext` 找到外围 `if`/`while`，分别检查 PSI 的 `PsiErrorElement`、缺失 `RPAR` 和 LightTree 的错误节点/缺失 `RPAR`。
+- repair principle: 语法恢复只允许继续构建树，不应把不完整控制结构中的恢复模式当作可进行语义判定的有效条件；门控放在共享 let-condition checker，保证 PSI 与 LightTree 及所有同类控制结构一致。
+- fixtures covered: `if-let-expr/enhancedcondition/parse/missing_rparen.cj`、`if-let-expr/enhancedcondition/parse/or_and_var.cj`、`while-let-expr/enhancedcondition/parse/missing_rparen.cj`，均覆盖 PSI 与 LightTree。
+- verification commands and outcome:
+  - `:cfir:analysis-tests:test --tests '…CfirAnalysisLLTPsiTestGenerated$IfLetExpr$Enhancedcondition$Parse' --tests '…CfirAnalysisLLTTestGenerated$IfLetExpr$Enhancedcondition$Parse' --tests '…CfirAnalysisLLTPsiTestGenerated$WhileLetExpr$Enhancedcondition$Parse' --tests '…CfirAnalysisLLTTestGenerated$WhileLetExpr$Enhancedcondition$Parse'` → 目标 XML 全部通过：if 3/3、while 2/2。
+- 全量：`:cfir:analysis-tests:test` → **8422 tests completed, 882 failed, 307 skipped**；剩余失败属于工作树已有的大范围基线差异，目标 `missing_rparen` 用例无回归。
+  - `git diff --check` → 通过。
+
+## const_evaluation：解析错误不再追加 EXPECT_CONST
+
+- problem type: Constant Evaluation / Diagnostics（解析失败引用导致的 const 诊断级联）。
+- root cause: const evaluator 仅依据 qualified access 的 resolved/synthetic symbol 判断是否为 const；`CfirResolvedErrorReference` 为保留根诊断而携带的 synthetic symbol 被继续当作普通目标检查，因而在 `UNRESOLVED_REFERENCE` 之外错误追加 `EXPECT_CONST`。同类错误候选引用也可能通过 `CfirNamedReferenceWithCandidateBase` 进入该路径。
+- official Cangjie evidence: `external/cangjie_compiler/src/Sema/ConstEvaluationChecker.cpp:496-500` 的 `ChkExpr` 对 `IS_BROKEN/HAS_BROKEN` 表达式直接返回；`ChkRefExpr` 在 `GetTarget() == nullptr` 时仅返回失败（`external/cangjie_compiler/src/Sema/ConstEvaluationChecker.cpp:630-636`），不会报告 `DiagExpectConstExpr`。官方 cjc 1.0.5 对 `const x = t` 仅产生 `sema_undeclared_identifier`，没有 const 诊断。
+- Kotlin counterpart files consulted: `external/kotlin/compiler/fir/providers/src/org/jetbrains/kotlin/fir/expressions/FirConstChecks.kt`（解析失败访问返回 `RESOLUTION_ERROR`）；`external/kotlin/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/declaration/FirConstPropertyChecker.kt`（`RESOLUTION_ERROR` 不追加 const 初始化诊断）；`external/kotlin/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/expression/FirExpressionWithErrorTypeChecker.kt`（已有表达式/引用诊断时跳过级联错误）。
+- CFIR owner file changed: `cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirConstDeclarationChecker.kt`：在共享 `CfirConstExpressionEvaluator.checkQualifiedAccess` 入口识别 `CfirDiagnosticHolder`，对 `CfirErrorNamedReference`、`CfirResolvedErrorReference` 和携带错误候选的 `CfirNamedReferenceWithCandidateBase` 统一短路；已有解析诊断仍由 ErrorNode collector 报告，const evaluator 只返回失败。
+- repair principle: 把“已有解析诊断不再派生 const 诊断”的门控放在所有 const qualified-access 检查共用的 evaluator 入口，保证 PSI、LightTree、普通错误引用、已解析错误引用和错误候选路径保持同一错误所有权。
+- fixtures covered: `array_inc.cj`、`const_init_error.cj`、`const_init.cj`、`const_safe_not_std.cj`、`desugarexpr.cj`、`err_array_lit.cj`、`err_assign_2.cj`、`err_assign.cj`、`err_call_mut_func.cj`、`err_class_mut_prop.cj`、`err_class_no_init.cj`、`err_class_non_const_func.cj`、`err_class_non_const.cj`、`err_class_open_const.cj`、`err_class_var.cj`、`err_continue.cj`、`err_desugar_string.cj`、`err_extend_no_const_init.cj`、`err_func_class.cj`、`err_func_nest.cj`、`err_func_overloading.cj`、`err_func_param.cj`、`err_func_var.cj`、`err_global_func_use_let.cj`、`err_interface_call_non_const_func.cj`、`err_interface.cj`、`err_let.cj`、`err_lit_const.cj`、`err_no_target.cj`、`err_return.cj`、`err_struct_assign.cj`、`err_struct_mut_const.cj`、`err_sync.cj`、`err_this_00.cj`、`err_this_01.cj`、`err_this_02.cj`、`err_this_03.cj`、`err_try_with_resources.cj`、`err_tuple_lit.cj`、`err_unsafe.cj`、`ok_call.cj`、`ok_class_const_static.cj`、`ok_class_ctor.cj`、`ok_class_init.cj`、`ok_class_mut_prop.cj`、`ok_class_variables.cj`、`ok_desugar_string.cj`、`ok_enum_01.cj`、`ok_enum.cj`、`ok_func_nest.cj`、`ok_func_overloading.cj`、`ok_func.cj`、`ok_if.cj`、`ok_int64_op.cj`、`ok_interface.cj`、`ok_is_as.cj`、`ok_lambda.cj`、`ok_lit_const.cj`、`ok_match_no_selector.cj`、`ok_match.cj`、`ok_member_access_pkg.cj`、`ok_member_access.cj`、`ok_option.cj`、`ok_string_connection.cj`、`ok_string_op.cj`、`ok_struct.cj`、`ok_subscript.cj`、`ok_this_00.cj`、`ok_this_01.cj`、`ok_this_02.cj`、`ok_this_03.cj`、`ok_try.cj`、`ok_var_with_pattern.cj`、`ok_varray.cj`、`different_pkgs/ok.cj`（75 个数据文件，PSI/LightTree 双路径）。
+- verification commands and outcome:
+  - `cjc 1.0.5` 最小探针：仅 `sema_undeclared_identifier`。
+  - `.\gradlew.bat :cfir:analysis-tests:test --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTTestGenerated$ConstEvaluation' --no-daemon --max-workers=1 --console=plain` → 77 tests completed；`err_no_target` 通过，7 个其他既有 const 期望差异：`testErrClassOpenConst`、`testErrThis02`、`testErrThis03`、`testErrCallMutFunc`、`testConstSafeNotStd`、`testErrStructAssign`、`testDesugarexpr`。
+  - `.\gradlew.bat :cfir:analysis-tests:test --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTPsiTestGenerated$ConstEvaluation' --no-daemon --max-workers=1 --console=plain` → 77 tests completed；`err_no_target` 通过，残余 7 个与 LightTree 相同的既有差异，未出现本修复新增失败。
+
+## const/open 修饰符冲突不再派生 IGNORE_OPEN
+
+- problem type: Diagnostics / Declaration Status（`const`/`redef` 与 `open` 冲突时，保留 `INCOMPATIBLE_MODIFIERS`，但不能把冲突的 `open` 继续作为有效状态交给后续 open-member 检查）。
+- root cause: `CfirModifierChecker` 使用原始 status 正确报告修饰符冲突，但 `effectiveStatusFlags` 仍保留了冲突的 `open`；后续 `CfirOpenMemberChecker` 因此又追加 `IGNORE_OPEN`，形成官方不会产生的级联诊断。
+- official Cangjie evidence: 官方 `cjc 1.0.5` 对 `err_class_open_const.cj` 仅报告 `parse_conflict_modifier`，没有 `sema_ignore_open`；`external/cangjie_compiler/src/Parse/ParserModifierRules.cpp` 与 `ParseModifiers.cpp` 在冲突修饰符检查后从后续有效修饰符列表移除冲突项。
+- Kotlin counterpart files consulted: `external/kotlin/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/declaration/FirModifierChecker.kt`、`FirOpenMemberChecker.kt`；冲突修饰符检查与 open-member 检查分离，后者消费冲突处理后的有效状态。
+- CFIR owner file changed: `cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/transformers/CfirStatusResolveProcessor.kt`：在共享 `effectiveStatusFlags` 投影中清除 `const + open`、`redef + open` 的 effective `open`，不修改 raw status，因此冲突诊断仍由 `CfirModifierChecker` 负责。
+- repair principle: 在状态投影层统一实现“原始修饰符用于报告冲突、有效修饰符用于后续语义检查”的所有权边界，覆盖 PSI 与 LightTree 及所有同类声明，不针对单个 fixture 添加条件。
+- fixtures covered: `ConstEvaluation/err_class_open_const.cj`（PSI 与 LightTree 双路径）。
+- verification command and outcome:
+  - baseline：`build/codex-ab/from-scratch-before-20260827`，由 `.\gradlew.bat :cfir:analysis-tests:cleanTest :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain` 生成，`8422 tests completed, 882 failed, 307 skipped`。
+  - repaired：`build/codex-ab/from-scratch-after-20260827`，同一命令，`8422 tests completed, 878 failed, 307 skipped`。
+- XML 逐方法比较：`FIXED=4`（`testErrNoTarget` 与 `testErrClassOpenConst` 各 PSI/LightTree 一次）、`REGRESSED=0`；另有 5 个仍失败方法的断言文本因前一条 const evaluator 修复移除了级联 `EXPECT_CONST`，没有新增失败状态。
+
+## declaration_status：主构造器成员参数误报包含声明修饰符
+
+- problem type: Diagnostics / Declaration Status（主构造器 `private let`/`private var` 成员参数误报 `WRONG_MODIFIER_CONTAINING_DECLARATION`）。
+- root cause: `CfirValueParameter` 在生成对应成员属性后，`CfirModifierChecker` 仍使用普通父声明查询；最近的 `CfirConstructor` 是 primary constructor，因而 `private` 的父目标检查落到 constructor 并错误失败。已有的 `propertyParameterMode` 跳过 primary constructor 和 fake property 的逻辑没有从共享检查入口启用。
+- official Cangjie evidence: 官方 `cjc 1.0.5` 编译 `err_this_02.cj` 去除内联标记后的源码只报告 `sema_expect_const`，没有 `private` 修饰符诊断；`external/cangjie_compiler/src/Parse/ParserModifierRules.cpp:282-325` 将 primary-constructor body 的成员变量修饰符包含 `private`，`external/cangjie_compiler/src/Parse/ParseDecl.cpp:2505-2548` 在 primary-constructor 参数解析中按 variable/member-parameter 规则检查该修饰符。
+- Kotlin counterpart files consulted: `external/kotlin/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/declaration/FirModifierChecker.kt:61-72`，父声明查找跳过 primary constructor、property symbol 和 fake source，再按外层 class-like 声明检查参数修饰符。
+- CFIR owner files changed:
+  - `cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirModifierChecker.kt`：将当前声明传入统一父目标计算入口。
+  - `cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/ModifierCheckerTargets.kt`：仅对带 `correspondingProperty` 的主构造器参数启用跳过 primary constructor/fake property 的父声明查询。
+- repair principle: 在修饰符检查的共享父目标入口根据声明模型识别“参数同时声明成员属性”的结构，使 PSI 与 LightTree 都把成员参数修饰符归属到外层类型，不为单个 fixture 添加特判。
+- fixtures covered: `llt/const_evaluation/err_this_02.cj`；全量 A/B 中同类影响面还包括 `llt/const_evaluation/err_this_03.cj` 与 `llt/class/constructor/primaryConstructor2.cj` 的 PSI/LightTree 方法，后两者仍有其他既有差异但已移除该错误修饰符诊断。
+- verification commands and outcome:
+  - 官方探针：`cjc.exe --diagnostic-format json .../err_this_02.cj` → 仅 `sema_expect_const`。
+  - 聚焦双路径：`.\gradlew.bat :cfir:analysis-tests:test --tests '...CfirAnalysisLLTPsiTestGenerated$ConstEvaluation.testErrThis02' --tests '...CfirAnalysisLLTTestGenerated$ConstEvaluation.testErrThis02' --no-daemon --max-workers=1 --console=plain` → `BUILD SUCCESSFUL`。
+  - ConstEvaluation 双路径：154 tests，10 个既有失败；`err_this_02` 两条通过。
+  - 全量：`.\gradlew.bat :cfir:analysis-tests:cleanTest :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain` → `8422 tests completed, 876 failed, 307 skipped`；套件仍因既有失败为红，但没有宣称全绿。
+- 持久化快照：修复前 `build/codex-ab/from-scratch-after-20260827`，修复后 `build/codex-ab/from-scratch-after-modifier-20260827`；逐方法 XML 对比 `FIXED=2`（`testErrThis02` 的 PSI/LightTree）、`REGRESSED=0`、`MISSING=0`、`ADDED=0`。
+
+## constructor delegation：普通 lambda 未参与构造器语法候选筛选
+
+- problem type: Resolve / Overload Resolution / Constructor Delegation（括号内普通 lambda 的构造器候选筛选）。
+- root cause: `this({ => cond })` 同时面对 `() -> Bool` 与 `Bool` 构造器时，普通 lambda 在 CFIR 中保持 postponed，`Bool` 候选因此暂时表现为成功候选；委托构造调用路径缺少官方的 lambda 形状预筛选，most-specific 阶段最终错误保留两个候选并报告 `AMBIGUOUS_CONSTRUCTOR_CALL`。
+- official Cangjie evidence: 官方 `cjc 1.0.5` 编译 `err_this_03.cj` 仅报告 `sema_expect_const`，不报告构造器歧义；`external/cangjie_compiler/src/Sema/TypeCheckCall.cpp:464-505` 的 `SyntaxFilterCandidates` 按 lambda 实参与映射形参类型筛选函数类型、`Any`、泛型及 `Option` 包装，且 trailing closure 无匹配时保留候选以便后续参数数量诊断。
+- Kotlin counterpart files consulted: `external/kotlin/compiler/fir/resolve/src/org/jetbrains/kotlin/fir/resolve/calls/FirCallResolver.kt:321-342` 的候选规约；`external/kotlin/compiler/fir/resolve/src/org/jetbrains/kotlin/fir/resolve/calls/stages/ResolutionStages.kt:657-704,1121-1153` 的参数映射、lambda 形状/约束处理。仅借鉴候选阶段位置，不引入 Kotlin 语义。
+- CFIR owner file changed: `cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirCallResolver.kt`：在普通调用与 `this`/`super` 委托构造调用共用的候选规约入口加入按参数映射类型的普通 lambda 预筛选；保留调用级 trailing-closure 的原有筛选和“无匹配则保留候选”行为。
+- repair principle: 把 lambda 形状判断放在共享候选规约层，并区分普通 lambda 与 trailing closure，使所有调用入口在 postponed lambda 完成前都遵循同一官方候选集合边界，不针对单个构造器或 fixture 添加特判。
+- fixtures covered: `llt/const_evaluation/err_this_03.cj`、`llt/array/array_invalid_trailing_closure.cj`（PSI 与 LightTree 双路径）；前者转绿，后者保持原有通过状态。
+- verification commands and outcome:
+  - 官方 `cjc 1.0.5`：`err_this_03.cj` 仅 `sema_expect_const`。
+  - 定向双路径：`testErrThis03` 与 `testArrayInvalidTrailingClosure` → 4 tests，`BUILD SUCCESSFUL`。
+  - `ConstEvaluation` PSI/LightTree：各 77 tests，均保留 4 个既有差异；`err_this_03` 两条通过。
+  - 全量：`.\gradlew.bat :cfir:analysis-tests:cleanTest :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain` → 8422 tests completed，874 failed，307 skipped（XML 聚合 8423 tests、874 failures、308 skipped）。
+  - 持久化快照：`build/codex-ab/from-scratch-after-lambda-final-20260827`；相对 `build/codex-ab/from-scratch-after-modifier-20260827` 的逐方法 XML 比较为 `FIXED=2`（PSI/LightTree 的 `testErrThis03`）、`REGRESSED=0`、`MISSING=0`、`ADDED=0`；相对 `build/codex-ab/from-scratch-before-20260827` 为 `FIXED=8`、`REGRESSED=0`。
+
+## mutability：不可变显式 receiver 的 mut 函数诊断范围归属
+
+- problem type: Diagnostics / Mutability（不可变值调用 `mut` 成员函数时，诊断应标记 receiver 表达式而不是被调用函数名）。
+- root cause: `CfirImmutableValueCannotAccessMutableFunctionChecker` 原先使用 `calleeReference.source`，因此 `v.f3()` 的 `IMMUTABLE_FUNCTION_CANNOT_ACCESS_MUTABLE_FUNCTION` 落在 `f3`；对 raw CFIR 已剥离的 `CjParenthesizedExpression`，receiver source 还需要在 PSI 与 LightTree 上恢复外围分组括号，才能覆盖用户实际写出的完整 receiver。
+- official Cangjie evidence: 这是诊断范围问题，不涉及诊断触发语义；按本项目 Diagnostic Range Policy，identifier/token 及复杂相关表达式的诊断范围必须覆盖完整相关 source。该范围策略是本修复的证据，不以 `cjc` 的窄 CLI 锚点作为 IDE 范围标准。
+- Kotlin counterpart files consulted: `external/kotlin/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/expression/FirAssignmentOperatorCallChecker.kt`、`FirExpressionWithErrorTypeChecker.kt`；前者体现 call-level checker 消费完整 FIR expression source，后者体现已有引用/表达式错误由错误节点统一持有，避免把派生诊断归到错误子节点。仅借鉴 checker/source 所有权结构，不引入 Kotlin 语义。
+- CFIR owner file changed: `cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirMutabilityCheckers.kt`：共享 mutability call checker 以 receiver source 报告诊断，并新增 PSI/LightTree 对连续外围括号的统一 source 扩展。
+- repair principle: 将范围选择固定在共享成员调用检查器的 receiver 语义节点，并在两种 CFIR source 表示中恢复同一用户可见表达式范围，使所有不可变值访问 mut 函数的调用点遵循同一诊断归属，不针对单个 fixture 加特判。
+- fixtures covered: `llt/const_evaluation/err_call_mut_func.cj`、`llt/function/mut_err_op.cj`、`llt/function/mut_err_paren.cj`（PSI 与 LightTree 双路径）。
+- verification commands and outcome:
+  - 定向 mutability 回归：`testErrCallMutFunc`、`testMutErrOp`、`testMutErrParen` 的 PSI/LightTree 共 6 tests，全部 `PASSED`。
+  - 全量：`.\gradlew.bat :cfir:analysis-tests:cleanTest :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain --stacktrace` → **8422 tests completed, 872 failed, 307 skipped**；套件仍因既有失败为红。
+- 持久化快照：修复前 `build/codex-ab/from-scratch-after-lambda-final-20260827`，修复后 `build/codex-ab/from-scratch-after-mutability-20260827`；逐方法 XML 对比 `FIXED=2`（`testErrCallMutFunc` 的 PSI/LightTree）、`REGRESSED=0`、`MISSING=0`、`ADDED=0`。`testMutErrOp` 与 `testMutErrParen` 前后均通过。
+
+## 2026-08-27：const/annotation/constructor/mutability 六个 fixture 的最终全量 A/B 收口
+
+- scope: `err_no_target.cj`、`err_class_open_const.cj`、`err_this_02.cj`、`err_this_03.cj`、`err_call_mut_func.cj`、`const_safe_not_std.cj`，分别在 PSI 与 LightTree 生成测试中验证，共 12 条方法。
+- targeted result: 上述 12 条方法全部通过；6 个 fixture 未修改，修复均落在共享 CFIR owner 层。
+- from-scratch command: `.\gradlew.bat :cfir:analysis-tests:cleanTest :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain --stacktrace`。
+- final result: Gradle 汇总为 **8422 tests completed, 870 failed, 307 skipped**；套件仍因仓库既有失败为红。当前新鲜 XML 逐 testcase 统计为 8423 条（870 failed、7245 passed、308 skipped；与 Gradle 汇总存在 1 条聚合计数差异）。
+- A/B evidence: `build/codex-ab/from-scratch-before-20260827` 与本次新鲜 `cfir/analysis-tests/build/test-results/test` 逐方法比较，双方均为 8423 个 testcase key，`FIXED=12`、`REGRESSED=0`、`MISSING=0`、`ADDED=0`。修复项恰为上述 6 个 fixture 的 PSI/LightTree 方法：`testErrNoTarget`、`testErrClassOpenConst`、`testErrThis02`、`testErrThis03`、`testErrCallMutFunc`、`testConstSafeNotStd`。
+- intermediate snapshot audit: 相对 `build/codex-ab/from-scratch-after-const-safe-final-20260827`，最终状态恢复其 7 条临时宏回归，新增失败为 0；该中间快照的差异不归因于当前六项修复。
+- hygiene: `git diff --check` 通过；`rg -n "CFIR_(DEBUG|MACRO_DEBUG)" cfir` 无输出；未修改 `external/`。
+
+## 2026-08-27：普通 qualified immutable assignment 的范围期望统一
+
+- problem type: Diagnostics / Assignment Range（普通 qualified 左值的 `CANNOT_ASSIGN_TO_IMMUTABLE` 应标记最终 selector；自增自减仍标记完整表达式）。
+- root cause: `CfirAssignmentLegalityChecker` 已按共享规则从 qualified access 的 callee reference 选择最终 selector，但 `err_struct_assign.cj`、`desugarexpr.cj` 和 `global_variable_not_assignable_02/file1.cj` 仍保留迁移前的整赋值范围期望，导致只发生 source-range 差异。
+- official Cangjie evidence: 这是范围-only 问题，按仓库 Diagnostic Range Policy 处理；官方 CLI 的 `DiagCannotAssignToImmutable` 使用赋值表达式作 anchor，但该 CLI 锚点不覆盖本项目 IDE 诊断范围契约。
+- Kotlin counterpart files consulted: `external/kotlin/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt:884-885`、`external/kotlin/compiler/fir/checkers/checkers-component-generator/src/org/jetbrains/kotlin/fir/checkers/generator/diagnostics/FirDiagnosticsList.kt:1812-1816`、`external/kotlin/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/expression/FirReassignmentAndInvisibleSetterChecker.kt:64-72,96-101,157-167`；Kotlin 对该诊断声明 `SELECTOR_BY_QUALIFIED`，并从 lvalue source 进入定位。
+- CFIR owner files changed: 无 CFIR 源码修改；现有共享 owner `cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirAssignmentLegalityChecker.kt:98-120` 保持最终 selector 规则。
+- repair principle: 让所有普通 qualified immutable assignment fixture 与共享 checker/Kotlin selector positioning 契约一致，同时保留增量表达式、VArray size、subscript 等独立范围契约，不以单个测试特判 checker。
+- fixtures covered: `llt/const_evaluation/err_struct_assign.cj`、`llt/const_evaluation/desugarexpr.cj`、`llt/InitializationCheck/global_variable_not_assignable_02/file1.cj`，均覆盖 PSI 与 LightTree 双路径。
+- fixture correction: 仅修正三份既有 testData 的 inline marker 范围；未改变仓颉源代码语法、诊断名称或诊断触发语义。
+- verification commands and outcome:
+  - 定向：`.\gradlew.bat :cfir:analysis-tests:test --rerun --tests '*CfirAnalysisLLTTestGenerated$ConstEvaluation.testErrStructAssign' --tests '*CfirAnalysisLLTPsiTestGenerated$ConstEvaluation.testErrStructAssign' --tests '*CfirAnalysisLLTTestGenerated$ConstEvaluation.testDesugarexpr' --tests '*CfirAnalysisLLTPsiTestGenerated$ConstEvaluation.testDesugarexpr' --tests '*CfirAnalysisLLTTestGenerated$InitializationCheck$GlobalVariableNotAssignable02.testFile1' --tests '*CfirAnalysisLLTPsiTestGenerated$InitializationCheck$GlobalVariableNotAssignable02.testFile1'` → `BUILD SUCCESSFUL`，6/6 通过。
+  - 全量：`.\gradlew.bat :cfir:analysis-tests:cleanTest :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain --stacktrace` → `8422 tests completed, 864 failed, 307 skipped`；套件仍因仓库既有失败为红。
+  - 新鲜 XML：8423 testcase，864 failed、7251 passed、308 skipped；三个目标 fixture 的 PSI/LightTree 共 6 条均无 failure/error/skip。
+  - 持久化快照：`build/codex-ab/from-scratch-after-struct-assign-20260827`；与 `build/codex-ab/from-scratch-before-20260827` 逐方法比较为 `FIXED=18`、`REGRESSED=0`、`MISSING=0`、`ADDED=0`，本次三份 fixture 的 6 条方法均在 fixed 集合中。
+  - hygiene：`git diff --check` 通过；未修改 `external/`。
+
+## For-in 循环 pattern 语义检查：FORIN_PATTERN_MUST_BE_IRREFUTABLE + pattern legality（已修复并验证）
+
+- problem type: for-in 循环的 pattern 语义检查在 CFIR 中整体缺失：`FORIN_PATTERN_MUST_BE_IRREFUTABLE` 诊断未注册、不可反驳性检查不存在；pattern legality（如 `ENUM_PATTERN_PARAM_SIZE_ERROR`）只在 match 与 if-let 路径运行，for-in 路径从不执行。
+- root cause: CFIR 的 pattern 检查只有两条调用路径——`CfirMatchPatternLegalityChecker`（match 分支）与 `CfirLetConditionPatternChecker`（if-let 条件，CfirPatternExpressionChecker.kt:173 复用 checkPattern）；`transformForInExpression` 只做 pattern 解析与绑定类型推导，没有检查器消费 `CfirForInExpression.variable.pattern`；`FORIN_PATTERN_MUST_BE_IRREFUTABLE` 未进入 CfirDiagnosticsList。
+- official Cangjie evidence: cjc 1.0.5 探针（D:\cjc-probes-forin）：probe1（`for (E.A(x) in arr)`，enum E 双构造器）同时报 `sema_enum_pattern_param_size_error`（锚点 pattern 起始 token `E`）与 `sema_forin_pattern_must_be_irrefutable`（锚点 `for` 关键字）；probe2/3/4（const `2`、type `_: Int32`、双构造器 enum `Year(x)`）只报不可反驳；probe5（单构造器 enum）与 probe6（var/wildcard/tuple-of-vars）无诊断；probe7（tuple 对非 tuple 元素类型）报 `sema_mismatched_types` 证明 legality 检查确实在 for-in 运行；probe10（迭代对象无效）irrefutability 不受门控、legality 被门控。官方实现：`external/cangjie_compiler/src/Sema/TypeCheckExpr/LoopExprs.cpp:90-132`（:112 `Check(ctx, inPatternTy, pattern)`、:124-126 不可反驳检查）、`TypeCheckMatchExpr.cpp:464-493`（`IsIrrefutablePattern`：wildcard/var 恒真，const/type/invalid 恒假，tuple 全子项，enum 需类型为 enum 且构造器恰一个且实参全不可反驳）、`TypeCheckPattern.cpp:550`（param-size 锚定 EnumPattern 节点）、`Parse/ParsePattern.cpp:89-95`（for-in 的裸标识符按 `inDecl=true` 解析为 VAR_PATTERN，与大小写无关）。
+- Kotlin counterpart files consulted: `external/kotlin/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/expression/FirForLoopChecker.kt`（循环诊断锚定完整元素范围）、`FirWhenConditionChecker.kt` / `FirExhaustiveWhenChecker.kt`（pattern/condition 诊断锚定完整元素）、`frontend.common-psi/.../PositioningStrategies.kt`（DEFAULT = 完整 PsiElement 范围；关键字窄锚只经显式 positioning strategy）——据此按项目 Diagnostic Range Policy 将两处诊断范围定为完整元素（`for` 关键字、整个 pattern），不复刻 cjc 的 CLI 窄锚。
+- CFIR owner files changed: `cfir/checkers/checkers-component-generator/src/.../diagnostics/CfirDiagnosticsList.kt`（EXPRESSION 组新增诊断）、`.../diagnostics/model/RegularDiagnosticData.kt`（PositioningStrategy 枚举新增 FOR_KEYWORD）、`common/diagnostics/src/.../PositioningStrategies.kt` / `LightTreePositioningStrategies.kt` / `SourceElementPositioningStrategies.kt`（FOR_KEYWORD 策略，按 THROW_KEYWORD 模式）、`cfir/checkers/src/.../CfirErrorsDefaultMessages.kt`、`cfir/checkers/src/.../expression/CfirForInPatternChecker.kt`（新增：复用 `CfirMatchPatternLegalityChecker.checkPattern` 做 legality，私有递归 `isIrrefutable` 对齐官方 IsIrrefutablePattern）、`cfir/checkers/src/.../CommonExpressionCheckers.kt`（basicExpressionCheckers 注册）、`cfir/analysis-tests/testFixtures/.../DiagnosticNameMapper.kt`；生成物 `CfirErrors.kt` / `CfirNonSuppressibleErrorNames.kt` 经 `:cfir:checkers:generateCfirErrors` 再生成，diff 仅含新诊断一行（首次实现尝试因表达式体函数内 `return` 编译错误打回，改写成纯表达式结构后通过）。
+- repair principle: 在共享 basic-expression checker 注册表新增 for-in pattern 检查器，legality 直接复用 match/if-let 同一条 `checkPattern` 通路，不可反驳性按官方 `IsIrrefutablePattern` 结构递归实现，关键字锚点走既有 THROW_KEYWORD 定位策略框架——const/type/tuple/enum/var/wildcard 全部形态与 PSI/LightTree 双路径共享同一代码路径，而非针对单个 fixture。
+- fixtures covered: PSI 与 LightTree 双套件 `forin13.cj`（双诊断 + 加宽锚点）、`forin3.cj`（三处新增不可反驳标记）、`forin6.cj`（单构造器 enum 负例，保持无诊断）。
+- fixture correction: `forin13.cj` 两处锚点按 Diagnostic Range Policy 加宽（`f`→`for`、`E`→`E.A(x)`，与 match 家族同诊断名的整 pattern 锚点惯例一致）；`forin3.cj` 三处新增 `FORIN_PATTERN_MUST_BE_IRREFUTABLE` 标记（cjc probe 2/3/4 证明官方行为）。
+- verification commands: 聚焦 `:cfir:analysis-tests:test --tests '...CfirAnalysisLLTTestGenerated$Forin' --tests '...CfirAnalysisLLTPsiTestGenerated$Forin'`；全量 `:cfir:analysis-tests:cleanTest :cfir:analysis-tests:test --no-configuration-cache --no-daemon --max-workers=1 --console=plain`。
+- verification outcome: 聚焦 forin 切片每套件 27/27，pattern 三用例（forin3/6/13）双套件全绿；全量回归 run3（daemon, max-workers=1）8422/946 与 run4（规范命令）8422/912——forin 家族两次均为既有的 3 个失败/套件（forin14 try-resource REDECLARATION、forin2 泛型构造器 ARGUMENT_TYPE_MISMATCH、forin_expr_not_implement_iterator EXPR_IN_FORIN_MUST_HAS_ITERATOR，均属其他问题类型），forin3/6/13 全量下也全绿，日志零 `CfirForInPatternChecker` 崩溃记录；全量失败数与日志基线（864-886）的差值集中在 WIP 改造区域（Extend/Generics/Call 等），两次独立全量间约 130 个失败测试抖动，属工作树 WIP 中间态，与本次纯增量改动（可证明作用域仅限 for-in pattern 诊断）无关。套件仍因仓库既有失败为红。
+
+## enum14_1：候选上下文已解释的嵌套歧义不能吞掉外层歧义
+
+- problem type: Resolve / Overload Resolution（外层 enum constructor ambiguity 与候选分支内嵌套 constructor ambiguity 的诊断聚合）。
+- root cause: `ConeAmbiguityError.hasErroneousArgument()` 将嵌套 `Year(1)` 的已报告 ambiguity 一律视为错误实参，并提前抑制 `Day(Year(1))` 的外层歧义；但该嵌套诊断已登记在当前 ambiguity 的 `dominatedNestedDiagnostics` 中，表示每个 outer candidate 已在各自 expected type 上独立解释了该嵌套调用，不能再作为 outer ambiguity 的级联错误。
+- official Cangjie evidence: 官方 `cjc 1.0.5` 对 `Day(Year(1))` 只报告 outer `sema_multiple_constructor_in_enum`，而不是把 nested ambiguity 作为普通错误实参吞掉；`external/cangjie_compiler/src/Sema/TypeCheckCall.cpp:1165-1179,1957-2005,2096-2143,2583-2606` 在每个 outer candidate 的目标类型上下文中检查 nested call，并在候选集合最终仍有歧义时报告 outer enum-constructor ambiguity。
+- Kotlin counterpart files consulted: Kotlin FIR `ConeResolutionAtoms.kt`、`CandidateFactory.kt`、`CheckArguments.kt`、`FirCallResolver.kt`、`FirCallCompletionResultsWriterTransformer.kt`；这些实现将 nested resolution 保留为 candidate-bearing state，只有 winner 才完成替换，诊断聚合按实际候选上下文处理。仅借鉴候选状态与诊断聚合结构，不引入 Kotlin 语义。
+- CFIR owner file changed: `cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/diagnostics/coneDiagnosticToCfirDiagnostic.kt`：在共享 `hasErroneousArgument()` 过滤入口识别 exact `dominatedNestedDiagnostics` identity，只对当前 outer ambiguity 已上下文解决的 nested error 放行 outer ambiguity。
+- repair principle: 在统一 ambiguity-to-diagnostic 映射层区分“普通错误实参级联”和“已由所有 outer candidate 解释的 nested ambiguity”，保持嵌套诊断载体身份并让外层候选集合决定最终诊断，不为 `enum14_1` 或某个 constructor 添加特判。
+- fixtures covered: PSI 与 LightTree `llt/enum/enum14_1.cj`；`llt/enum/enum14.cj` 及完整 Enum generated slices 作为 nested-candidate ambiguity 回归护栏。
+- fixture correction: none。
+- verification commands and outcome:
+  - 官方探针：`cjc 1.0.5` 对 `Day(Year(1))` 报 outer `sema_multiple_constructor_in_enum`；`f(g(1))` 的 function ambiguity 保持正确。
+  - 定向 PSI/LightTree：`testEnum141` 各 1/1 通过。
+  - 完整 Enum slice：PSI 69 tests、LightTree 69 tests，均 0 failures。
+  - from-scratch full run：`.\gradlew.bat :cfir:analysis-tests:cleanTest :cfir:analysis-tests:test --no-build-cache --no-configuration-cache --no-daemon --max-workers=1 --console=plain`；Gradle 汇总为 `8422 tests completed, 860 failed, 307 skipped`，套件仍因仓库既有失败为红。
+  - fresh XML：`build/codex-ab/from-scratch-after-enum14-20260828` 共 1237 个 XML、8423 个 testcase，860 failed、7255 passed、308 skipped；与 Gradle 汇总存在 1 条测试聚合计数差异。
+  - persisted A/B：`build/codex-ab/from-scratch-before-20260827` 对比 `build/codex-ab/from-scratch-after-enum14-20260828`，双方均为 8423 个 testcase key，`FIXED=22`、`REGRESSED=0`、`MISSING=0`、`ADDED=0`；其中 `enum14_1` 的 PSI/LightTree 两条均 fixed。
+
+## 2026-08-28：干净基线快照（from-scratch-baseline-20260828）
+
+- 命令：`.\gradlew.bat :cfir:analysis-tests:cleanTest :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain --stacktrace`。
+- 结果：`8422 tests completed, 860 failed, 307 skipped`（XML 逐 testcase 聚合 8423 条：860 failed、0 errors、7255 passed、308 skipped，与 Gradle 汇总差 1 条，惯例同）。
+- 快照位置：`cfir/analysis-tests/build/codex-ab/from-scratch-baseline-20260828/`——1237 个逐类 XML + `failure-list.txt`（860 条短类名 key）+ `failure-by-class.txt` + `compare-baseline.py` + README。
+- 用途：后续任何全量/聚焦运行后，以控制台 FAILED 行转换 key 列表，与 failure-list.txt 对比得 FIXED/REGRESSED；XML 原目录会被下一次 test 运行清空，勿再直接读 build/test-results/test。
+- 环境备注：Gradle test 任务 finalization 在 Windows 上偶发 `NoSuchFileException: in-progress-results-*.bin`（worker 清理竞态）导致 XML 不落盘；带 `--stacktrace` 且复用配置缓存的规范命令当日连续成功（run5），daemon 模式（run3）与 `--no-configuration-cache`（run4）组合更易触发。run4（912 失败）对比基线为 `FIXED=0 REGRESSED=52`，多出项集中于 Extend/Enum/Generics/Call 等 WIP 改造区域。
+- 本次修复（for-in pattern 检查）已含于基线：forin 双套件各 27 测 3 失败（forin14/forin2/forinExprNotImplementIterator），forin3/6/13 全绿。
+
+## forin 目录剩余三类失败：try 资源作用域、Array 超类型目标定形、for-in 可迭代性检查（已修复并验证）
+
+- problem type: 三个互不相同但同处 forin 目录的问题类型——T1 try-resource 资源变量作用域泄漏导致 REDECLARATION 误报；T2 数组字面量实参在「`Array<E>` 超类型」目标（如 `Collection<T>`）下无法定形导致 ARGUMENT_TYPE_MISMATCH 误报；T3 for-in 可迭代性检查（`EXPR_IN_FORIN_MUST_HAS_ITERATOR`）在 CFIR 完全缺失。
+- root cause:
+  - T1：`CfirConflictsDeclarationChecker.LocalRedeclarationVisitor` 为每个引入子作用域的构造都写了显式 override（visitBlock/visitForInExpression/visitCatch/…），唯独缺 `visitTryExpression`，资源 `CfirFieldVariable` 因而经默认 `visitElement` 被 declare 进函数体作用域，与 try 之后的同名 `let` 同层冲突。
+  - T2：`ArgumentCheckingProcessor.arrayLiteralTypeFromExpectedType` 只经 `arrayLiteralElementType` 取元素类型，该函数仅识别 Array/VArray/Error/TypeAlias；目标为 `Collection<Int32>` 时返回 null，重定型整体跳过，字面量停留在无目标推断出的 `Array<Int64>`。运行时探针实证：期望类型链完全正确（`final=Collection<Int32>`，T→Int32 已应用），诊断在检查期即产生。这解释了此前静态无法解释的 pass/fail 边界——`ArrayList<Int64>([...])` 仅因 `Array<Int64> <: Collection<Int64>` 偶然成立而通过。
+  - T3：`inferIterableElementType` 对不可迭代类型返回 errorType 但不报诊断，且诊断名在 CFIR 中不存在。
+- official Cangjie evidence: cjc 1.0.5 探针（`D:\cjc-probes-forin\` t1a-e、t2a-d、t3a-d）：
+  - T1：资源变量作用域 = try 语句（头+体），体外不可见（t1c 报 `sema_undeclared_identifier`）、可遮蔽外层同名（t1b）、嵌套同名合法（t1d）、fixture 原样无 error（t1a）；`try (x = A()) { let x = 0 }` 官方报 `redefinition of declaration 'x'`（t1e），证明资源与 tryBlock 顶层**共享**同一作用域。官方实现 `external/cangjie_compiler/src/Sema/Collector.cpp:560-573` `CollectTryExpr` 单次 InitializeScope/FinalizeScope 覆盖 resources+tryBlock，catch 各自独立（583-589）。
+  - T2：`ArrayList<Int32>([1,2,3])`、`Box<Int32>([1,2,3])`、`Box<Int64>([1,2,3])`、`Box<Int32>([])` 全部无诊断（t2a/t2b，通用机制非 ArrayList 特例）；显式不匹配 `Box<Int32>([1.5,2.5])` 报 `sema_cannot_convert_literal`（t2c，负例门控）；`ArrayList([1,2,3])` 无类型参数亦合法（t2d）。
+  - T3：`sema_expr_in_forin_must_has_iterator` 触发于 Int64/Float64/未实现 Iterable 的类（t3a/t3c/t3d）；Array、range、**String**、实现 `Iterable<E>` 的类均可迭代（t3b/t3c/t3d）。官方 `LoopExprs.cpp:95-110` `GetIterableTy` 协议提升 + `CanSkipDiag` 门控。
+- Kotlin counterpart files consulted: `FirConflictsExpressionChecker.kt:29-50`（本地重声明只检查单 block 直接子语句，嵌套构造各自独立——CFIR 整树 visitor 必须为每个作用域构造建模）、`FirControlFlowStatementsResolveTransformer.kt:142-173`（try/catch 的 forBlock 形状）、`FirCallCompletionResultsWriterTransformer.kt:377-395`（`transformArrayLiteralInAnnotation` 以期望元素类型重定型数组字面量，不区分空/非空）、`FirForLoopChecker.kt:44-54`（循环诊断锚定 range/iterable 表达式完整 source）。
+- CFIR owner files changed: `cfir/checkers/src/.../declaration/CfirConflictsDeclarationChecker.kt`（T1，新增 visitTryExpression）；`cfir/resolve/src/.../calls/stages/ArgumentCheckingProcessor.kt` 与 `cfir/providers/src/org/cangnova/cangjie/cfir/resolve/CfirIterableSemantics.kt`（T2，新增 `arrayLiteralTypeForSupertypeTarget` 并在字面量定形中启用）；T3 新增 `CfirIterableSemantics.kt`（`iterableElementTypeOrNull` / `isIterableForForIn`，并把 `findCorrespondingClassLikeSupertype` 自 `cfir/resolve/.../ResolveUtils.kt` 迁入 providers 供 checkers 共用）、`CfirExpressionsResolveTransformer.inferIterableElementType` 改为委托该共享判别、`CfirForInPatternChecker.kt` 增加可迭代性职责（置于 pattern 检查之前，对齐官方 SynForInExpr 顺序）、`CfirDiagnosticsList.kt`/`CfirErrorsDefaultMessages.kt`/`DiagnosticNameMapper.kt` 三件套注册 + `:cfir:checkers:generateCfirErrors` 再生成。
+- repair principle: 每个问题类型都修在共享 owner——重声明作用域模型补齐唯一遗漏的构造、数组字面量定形统一支持「Array 的超类型」目标（并以 `Array<E> <: 目标` 校验排除 Range/String/HashMap 等不可由字面量构造的可迭代目标）、可迭代性判别由 resolver 与 checker 共用单一实现（消除两处漂移），三者均不含 fixture 特判。
+- fixtures covered: `forin/forin14.cj`（T1）、`forin/forin2.cj`（T2）、`forin/forin_expr_not_implement_iterator.cj` 与 `forin/forin.cj`（T3），均覆盖 PSI 与 LightTree 双路径；另 `ErrMsgs/try_0.cj` 因 T1 同一根因顺带转绿。
+- fixture correction: `forin/forin.cj:8` 新增 `EXPR_IN_FORIN_MUST_HAS_ITERATOR` 标记（`arr1: Int32` 不可迭代，cjc t3a 同形态实证）；`forin/forin_expr_not_implement_iterator.cj` 锚点由 cjc 单字符窄锚 `1<!>0` 改为整 token `10`（Diagnostic Range Policy）；`exception/err_scope_01.cj` 补 `<!REDECLARATION!>` 标记（该 fixture 以 `err_` 前缀命名却无标记，因作用域泄漏 bug 恰好通过；cjc t1e 实证官方报 redefinition）。
+- verification commands: 定向 forin 全家族 + Array/Varray/Exception/OperatorOverload 守卫切片（378 tests）；全量 `.\gradlew.bat :cfir:analysis-tests:cleanTest :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain --stacktrace`。
+- verification outcome: 守卫切片 A/B 为 FIXED=6、REGRESSED=0；全量 `8422 tests completed, 852 failed, 307 skipped`，对 `from-scratch-baseline-20260828`（860 失败）逐方法比对为 **FIXED=8、REGRESSED=0**（forin 三用例双路径 6 条 + `ErrMsgs.testTry0` 双路径 2 条）。至此 forin 目录 27 个用例在 PSI 与 LightTree 双套件全部通过。套件整体仍因仓库既有失败为红。
+
+## unsafe 表达式：保留 block 结果类型并传播子树错误
+
+- problem type: Type Resolution / Error Recovery / `unsafe` block result typing。
+- root cause: `CfirUnsafeExpression` 原先没有经过表达式 transformer 的专用 dispatcher，且只复制 block 最终类型；当 `unsafe { this }` 的结果用于声明为 `Int64` 的函数返回值时，`This` 类型没有沿 unsafe 表达式边界稳定保留，导致 `TYPE_MISMATCH` 缺失。另一方面，block 内已有未解析引用时只看最后一条语句的 `Unit` 类型，会把错误 block 当成合法结果并产生级联 `INVALID_BINARY_OPERATOR` 等诊断。
+- official Cangjie evidence: 官方 `cjc 1.0.5` 对 `func f(x: Int64): This { unsafe { this } }` 报 `TYPE_MISMATCH`；含未解析引用的等价 `unsafe` 探针只报告 `sema_undeclared_identifier`，不额外报告 `INVALID_BINARY_OPERATOR`。因此 unsafe 只改变安全检查上下文，不改变 block 的表达式结果类型；已有 block 错误应作为错误结果继续传播。
+- Kotlin counterpart files consulted: Kotlin FIR expression-transformer / body-resolve 的表达式分发与 block result typing 结构；仅借鉴“专用表达式节点必须经对应 transformer、错误类型沿表达式树传播”的框架组织，不引入 Kotlin 语义。
+- CFIR owner files changed: `cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirAbstractBodyResolveTransformer.kt`（新增 unsafe dispatcher）；`cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirExpressionsResolveTransformer.kt`（保留 unsafe body 类型，并在共享子树错误发现逻辑中以 `ConeUnreportedDuplicateDiagnostic` 传播已有错误，抑制级联诊断）。
+- repair principle: 在 unsafe 的共享 body-resolve/表达式-transformer 边界统一保留真实 block 结果类型并传递已有错误，不针对 `unsafe.cj` 或某一种外层操作符添加特判。
+- fixtures covered: `llt/this/unsafe.cj`（PSI 与 LightTree 双路径）；`llt/var/err_var_with_pattern_00.cj`（PSI 与 LightTree 双路径，验证 block 子树错误传播不会新增级联诊断）。两个 fixture 均未修改。
+- fixture correction: none。
+- verification commands and outcome:
+  - 定向：`.\gradlew.bat :cfir:analysis-tests:test --rerun --no-daemon --max-workers=1 --console=plain --tests '*CfirAnalysisLLTTestGenerated$This.testUnsafe' --tests '*CfirAnalysisLLTPsiTestGenerated$This.testUnsafe' --tests '*CfirAnalysisLLTTestGenerated$Var.testErrVarWithPattern00' --tests '*CfirAnalysisLLTPsiTestGenerated$Var.testErrVarWithPattern00'` → 4/4 通过。
+  - 全量 from-scratch：`.\gradlew.bat :cfir:analysis-tests:cleanTest :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain --stacktrace` → `8422 tests completed, 848 failed, 307 skipped`；套件仍因仓库既有失败为红。
+- fresh XML：`build/codex-ab/from-scratch-after-unsafe-20260828`，1237 个 XML、8423 个 testcase，848 failed、0 errors、7267 passed、308 skipped。
+- persisted A/B：与 `build/codex-ab/from-scratch-baseline-20260828` 逐 testcase key 对比，双方均为 8423；`FIXED=12`、`REGRESSED=0`、`MISSING=0`、`ADDED=0`。其中 `unsafe.cj` 的 PSI/LightTree 两条均 fixed；其余 fixed 为当前工作树相对该基线已存在的 `spawn10`、`try0` 与 for-in 相关改动，不能归因于 unsafe 修复本身。
+
+## 2026-08-28：星号导入的父包裸名保持未解析
+
+- problem type: Resolve / Diagnostics（package qualifier 与裸名包引用分类）。
+- root cause: `CfirCallResolver` 在无候选的裸名调用失败分支中，仅凭 `symbolProvider.hasPackage(FqName.topLevel(name))` 就生成 `CANNOT_REF_TO_PKG_NAME`。这把 `internal import std.collection.*` 暴露的成员查找空间错误地提升成了 `std` 的直接包绑定，覆盖了应保留的 `UNRESOLVED_REFERENCE`。
+- official Cangjie evidence: 官方 `cjc 1.0.5` 探针中，`internal import std.collection.*` 后独立引用 `std` 只报告 `sema_undeclared_identifier`；`import std`、`import std.collection` 或对应 alias 后，独立引用直接导入的包名才报告 `sema_cannot_ref_to_pkg_name`。`external/cangjie_compiler/src/Sema/TypeCheckReference.cpp` 的 `FilterAndCheckTargetsOfRef` 也只在唯一目标为 `PackageDecl` 且引用为独立引用时报告该诊断。
+- Kotlin counterpart files consulted: `external/kotlin/compiler/fir/resolve/src/org/jetbrains/kotlin/fir/resolve/QualifiedNameResolution.kt`、`external/kotlin/compiler/fir/resolve/src/org/jetbrains/kotlin/fir/scopes/ImportingScopes.kt`、`external/kotlin/compiler/fir/providers/src/org/jetbrains/kotlin/fir/scopes/impl/FirExplicitSimpleImportingScope.kt`、`FirExplicitStarImportingScope.kt`、`external/kotlin/compiler/fir/resolve/src/org/jetbrains/kotlin/fir/resolve/calls/tower/FirTowerResolver.kt`；包作为 qualifier 继续解析，simple/star import scope 的名称绑定保持分离。
+- CFIR owner file changed: `cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirCallResolver.kt`：裸名包诊断改为只消费 `resolveImportedPackageQualifier(name, session)?.packageFqName`，即当前文件 simple import 的唯一已解析 Package target；不再扫描全局 package provider。
+- repair principle: 包名诊断由当前文件的结构化 import binding 负责，星号导入只贡献成员 scope，统一保证 PSI 与 LightTree 入口的包 qualifier 语义一致，不针对 `assign_005.cj` 添加特判。
+- fixtures covered: `llt/assign/assign_005.cj`；包导入回归 `llt/unusedImport/unusedImport001/unused015.cj`、`unused016.cj`、`llt/array/array_constructor05.cj`、`llt/PatternMatching/EnumPattern/option_coalescing_00.cj`，均按可用入口验证。
+- fixture correction: none。
+- verification commands and outcome:
+  - `.\gradlew.bat :cfir:analysis-tests:test --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTTestGenerated$Assign.testAssign005' --no-daemon --max-workers=1 --console=plain --stacktrace` → BUILD SUCCESSFUL。
+  - `.\gradlew.bat :cfir:analysis-tests:test --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTPsiTestGenerated$Assign.testAssign005' --no-daemon --max-workers=1 --console=plain --stacktrace` → BUILD SUCCESSFUL。
+  - 包导入 guard：LightTree/PSI 的 `unused015`、`unused016`、`array_constructor05`、`option_coalescing_00` → 全部通过；同组其余 `unused014`、`unused019` 仍是既有 import 诊断差异。
+  - full from-scratch：`.\gradlew.bat :cfir:analysis-tests:cleanTest :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain --stacktrace` → Gradle 汇总 `8422 tests completed, 846 failed, 307 skipped`；套件仍因仓库既有失败为红。
+  - fresh XML snapshot：`build/codex-ab/from-scratch-after-assign005-20260828`，1237 个 XML、8423 个 testcase，846 failed、0 errors、7269 passed、308 skipped。
+  - persisted A/B：相对 `build/codex-ab/from-scratch-after-unsafe-20260828` 逐 testcase key 比较为 `FIXED=4`、`REGRESSED=0`、`MISSING=0`、`ADDED=0`；其中本修复对应 `assign_005` 的 PSI/LightTree 两条。相对最初 `build/codex-ab/from-scratch-before-20260827` 为 `FIXED=36`、`REGRESSED=0`、`MISSING=0`、`ADDED=0`。XML testcase 统计与 Gradle 控制台存在仓库既有的 1 条 tests/skip 聚合计数差异。

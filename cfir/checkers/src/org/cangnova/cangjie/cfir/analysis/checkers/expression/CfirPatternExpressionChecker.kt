@@ -1,5 +1,10 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
+import com.intellij.lang.LighterASTNode
+import com.intellij.openapi.util.Ref
+import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiErrorElement
+import com.intellij.psi.TokenType
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
@@ -27,7 +32,14 @@ import org.cangnova.cangjie.cfir.patterns.CfirVarOrEnumPattern
 import org.cangnova.cangjie.cfir.patterns.bindingOccurrences
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
+import org.cangnova.cangjie.lexer.CjTokens
+import org.cangnova.cangjie.psi.CjIfExpression
+import org.cangnova.cangjie.psi.CjLoopExpression
+import org.cangnova.cangjie.psi.CjNodeTypes
+import org.cangnova.cangjie.psi.CjWhileExpression
 import org.cangnova.cangjie.source.CjFakeSourceElementKind
+import org.cangnova.cangjie.source.CjLightSourceElement
+import org.cangnova.cangjie.source.CjPsiSourceElement
 import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.source.CjSourceElementOffsetStrategy
 import org.cangnova.cangjie.source.fakeElement
@@ -142,6 +154,15 @@ object CfirLetConditionPatternChecker : CfirBasicExpressionChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirStatement) {
         if (expression !is CfirLetPatternExpression) return
+        // 语法恢复后的 let-pattern 只保留可继续构建的语义节点；外围 if/while 若仍缺少
+        // 条件右括号或在条件内含有语法错误，官方编译器不会再对该模式发出语义诊断。
+        // 这个门控放在共享 let-condition checker，保证 PSI 与 LightTree 走同一规则。
+        val enclosingControl = (context.containingStatements.asReversed() + context.containingElements.asReversed())
+            .firstOrNull { it is CfirIfExpression || it is CfirLoopExpression }
+        val incompleteConditionSyntax = enclosingControl?.source?.hasIncompleteConditionSyntax() == true
+        if (incompleteConditionSyntax) {
+            return
+        }
         CfirOrPatternConstraintReporter.checkOrPatternConstraints(
             pattern = expression.pattern,
             reportVariableBindings = false,
@@ -151,6 +172,54 @@ object CfirLetConditionPatternChecker : CfirBasicExpressionChecker() {
         if (initializerType is ConeErrorType) return
         CfirMatchPatternLegalityChecker.checkPattern(expression.pattern, initializerType)
     }
+}
+
+/**
+ * 判断控制结构的条件是否仍处于语法恢复状态。
+ *
+ * `CjIfExpression`/`CjWhileExpression` 的条件节点本身不包含缺失的右括号，
+ * 因此仅检查 let-pattern source 的错误节点不足以发现 `if (let ...) {}` 这一类错误；
+ * 必须检查外围控制结构的 delimiter 和条件子树。LightTree 路径使用相同的直接子节点
+ * 结构判断，避免 PSI-only 的语法完整性差异。
+ */
+private fun CjSourceElement.hasIncompleteConditionSyntax(): Boolean = when (this) {
+    is CjPsiSourceElement -> when (val element = psi) {
+        is CjIfExpression -> element.rightParenthesis == null ||
+                element.condition?.hasPsiSyntaxError() == true
+        is CjWhileExpression -> element.rightParenthesis == null ||
+                element.condition?.hasPsiSyntaxError() == true
+        else -> false
+    }
+
+    is CjLightSourceElement -> {
+        val children = lighterASTNode.children(treeStructure)
+        val condition = children.firstOrNull { it.tokenType == CjNodeTypes.CONDITION }
+        val hasRightParenthesis = children.any { it.tokenType == CjTokens.RPAR }
+        !hasRightParenthesis || condition?.containsLightTreeSyntaxError(treeStructure) == true
+    }
+
+    else -> false
+}
+
+/** 递归识别 PSI 中的 parser error element。 */
+private fun PsiElement.hasPsiSyntaxError(): Boolean =
+    this is PsiErrorElement || children.any { it.hasPsiSyntaxError() }
+
+/** 返回 LightTree 节点的直接子节点。 */
+private fun LighterASTNode.children(
+    treeStructure: com.intellij.util.diff.FlyweightCapableTreeStructure<LighterASTNode>,
+): List<LighterASTNode> {
+    val childrenRef = Ref<Array<LighterASTNode?>>()
+    treeStructure.getChildren(this, childrenRef)
+    return childrenRef.get()?.filterNotNull().orEmpty()
+}
+
+/** 递归识别 parser 产生的错误节点及词法错误节点。 */
+private fun LighterASTNode.containsLightTreeSyntaxError(
+    treeStructure: com.intellij.util.diff.FlyweightCapableTreeStructure<LighterASTNode>,
+): Boolean {
+    if (tokenType == TokenType.ERROR_ELEMENT || tokenType == TokenType.BAD_CHARACTER) return true
+    return children(treeStructure).any { it.containsLightTreeSyntaxError(treeStructure) }
 }
 
 /**

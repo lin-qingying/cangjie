@@ -9,12 +9,16 @@ import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirAssignment
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
+import org.cangnova.cangjie.cfir.expressions.CfirRangeExpression
+import org.cangnova.cangjie.cfir.expressions.CfirSubscriptExpression
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.resolve.constants.CfirIntConstantEvalUtils
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
+import org.cangnova.cangjie.cfir.types.arrayElementType
+import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.OperatorNameConventions
@@ -41,6 +45,7 @@ object CfirCompoundAssignmentSemanticsChecker : CfirAssignmentChecker() {
     override fun check(expression: CfirAssignment) {
         val call = expression.compoundAssignmentCall() ?: return
         val operatorName = expression.augmentedOperation ?: return
+        if (expression.lValue.isBuiltinArrayRangeSubscript(context)) return
         val leftType = expression.lValue.coneTypeOrNull
         if (leftType !is ConePrimitiveType) {
             // 重载解析失败时，operator call 自己拥有 INVALID_BINARY_OPERATOR 等语义诊断；
@@ -128,6 +133,22 @@ object CfirCompoundAssignmentSemanticsChecker : CfirAssignmentChecker() {
             reporter.reportOn(source, CfirErrors.CONST_EVAL_SHIFT_COUNT_OVERFLOW)
         }
     }
+}
+
+/**
+ * Array 的 Range 下标复合赋值由 subscript set 语义负责。
+ *
+ * 官方 AssignExpr 在判断下标可赋值性失败后直接报告
+ * `CANNOT_ASSIGN_TO_SUBSCRIPT`，不会再把 `Array<T> += Array<T>` 作为普通复合运算
+ * 报告 `TYPE_INCOMPATIBLE`。该判断只描述内建 Array 的 Range 形态，用户自定义下标
+ * 仍继续经过普通 operator-overload 复合赋值检查。
+ */
+private fun CfirExpression.isBuiltinArrayRangeSubscript(context: CheckerContext): Boolean {
+    val subscript = this as? CfirSubscriptExpression ?: return false
+    if (subscript.indices.none { it is CfirRangeExpression }) return false
+    return subscript.receiver.coneTypeOrNull
+        ?.fullyExpandedType(context.session)
+        ?.arrayElementType != null
 }
 
 /**

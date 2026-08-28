@@ -65,13 +65,14 @@ data class MacroBuiltinRegistries(
          * 任何 [DEFAULT] 内 macros / annotations / nonMacros 名单变更都必须递增；
          * 上游 cache 据此整体失效。
          */
-        const val VERSION: Int = 2
+        const val VERSION: Int = 3
 
         /** 生产路径默认 builtin macro / annotation / non-macro 注册表。 */
         val DEFAULT: MacroBuiltinRegistries = MacroBuiltinRegistries(
             macros = BuiltinMacroRegistry.all.toSet(),
             // 仓颉内建/互操作 annotation 是普通 annotation site，不参与 macro executor 解析。
             annotations = setOf(
+                Name.identifier("Annotation"),
                 Name.identifier("C"),
                 Name.identifier("CallingConv"),
                 Name.identifier("CJMapping"),

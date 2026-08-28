@@ -22,6 +22,6 @@ func foo(f: () -> S2) {
 
 main() {
     let s2 = [S2()]
-    foo {=> S2()}.t2.<!IMMUTABLE_FUNCTION_CANNOT_ACCESS_MUTABLE_FUNCTION!>f<!>()
+    <!IMMUTABLE_FUNCTION_CANNOT_ACCESS_MUTABLE_FUNCTION!>foo {=> S2()}.t2<!>.f()
     println(s2[0].t2.t1.t0)
 }

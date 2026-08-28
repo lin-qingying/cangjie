@@ -166,6 +166,10 @@ class MacroDemandClassification private constructor(
      */
     private val builtinRegistries: MacroBuiltinRegistries,
 ) : CfirSessionComponent {
+    /** 当前 construction routing 使用的内建普通 annotation 名称。 */
+    val builtinAnnotationRegistry: Set<Name>
+        get() = builtinRegistries.annotations
+
     /** artifact definitions 回填后的最终决策快照；null 表示尚未冻结。 */
     private var frozenFinalDecisions: List<FinalMacroSurfaceDecision>? = null
 

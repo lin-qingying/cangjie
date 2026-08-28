@@ -1164,6 +1164,8 @@ class CfirStatusResolver(
         val incompatibleStaticOverride = status.isStatic && status.isOverride
         val incompatibleStaticOpen = status.isStatic && status.isOpen
         val incompatibleStaticOperator = status.isStatic && status.isOperator
+        val incompatibleConstOpen = status.isConst && status.isOpen
+        val incompatibleRedefOpen = status.isRedef && status.isOpen
         val invalidStaticAbstractClassMember =
             declaration is CfirCallableDeclaration &&
                     containingClass is CfirClass &&
@@ -1176,7 +1178,11 @@ class CfirStatusResolver(
                 !incompatibleStaticOpen &&
                 !incompatibleStaticOperator
         val effectiveOverride = status.isOverride && !incompatibleStaticOverride
-        val effectiveOpen = status.isOpen && !incompatibleStaticOpen
+        // 原始 status 供冲突诊断使用；后续声明检查只能消费去除冲突项后的有效状态。
+        val effectiveOpen = status.isOpen &&
+                !incompatibleStaticOpen &&
+                !incompatibleConstOpen &&
+                !incompatibleRedefOpen
         val effectiveOperator = status.isOperator && !incompatibleStaticOperator
         val effectiveAbstract = status.isAbstract && !invalidStaticAbstractClassMember
         val effectiveModalityExplicit = status.isModalityExplicit &&

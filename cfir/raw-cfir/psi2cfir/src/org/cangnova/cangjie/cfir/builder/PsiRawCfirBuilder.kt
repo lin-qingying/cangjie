@@ -1841,7 +1841,12 @@ class PsiRawCfirBuilder(
                 }
                 calleeReference = buildNamedReference(
                     annotation.shortName ?: Name.identifier("<error>"),
-                    calleeReferenceSourceOverride ?: annotation.toCjPsiSourceElement(),
+                    // callee 只拥有注解名称；完整 annotation source 会被错误收集器识别为
+                    // 注解节点，从而把名称未解析诊断当成重复错误吞掉。无名称的恢复节点
+                    // 才保留 annotation 本身作为唯一可用的 source。
+                    calleeReferenceSourceOverride
+                        ?: annotation.typeReference?.toCjPsiSourceElement()
+                        ?: annotation.toCjPsiSourceElement(),
                 )
                 containingDeclarationSymbol = containingSymbol
             }

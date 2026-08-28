@@ -10,5 +10,5 @@ class A {
 
 main() {
     let a = A()
-    ((((a)))).s.<!IMMUTABLE_FUNCTION_CANNOT_ACCESS_MUTABLE_FUNCTION!>f<!>()
+    <!IMMUTABLE_FUNCTION_CANNOT_ACCESS_MUTABLE_FUNCTION!>((((a)))).s<!>.f()
 }

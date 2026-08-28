@@ -2224,18 +2224,54 @@ open class CfirExpressionsResolveTransformer(
     // ── Block ─────────────────────────────────────────────────────────────────
 
     /**
+     * 查找 block 子树中第一个已经确定的错误类型。
+     *
+     * 官方 `SynBlock` 会把任一无效语句的错误传播到整个 block；不能只观察最后一条
+     * 声明的 `Unit` 类型，否则 `unsafe { let _ = unresolved }` 会被错误地当成合法
+     * `Unit`，让外层操作符再次报告级联诊断。
+     */
+    private fun CfirExpression.firstErrorTypeOrNull(): ConeErrorType? {
+        (coneTypeOrNull as? ConeErrorType)?.let { return it }
+
+        var result: ConeErrorType? = null
+        acceptChildren(object : CfirVisitorVoid() {
+            override fun visitElement(element: CfirElement) {
+                if (result != null) return
+                when (element) {
+                    is CfirExpression -> {
+                        result = element.coneTypeOrNull as? ConeErrorType
+                        if (result != null) return
+                        element.acceptChildren(this, null)
+                    }
+
+                    is CfirDiagnosticHolder -> {
+                        result = ConeErrorType(ConeUnreportedDuplicateDiagnostic(element.diagnostic))
+                    }
+
+                    else -> element.acceptChildren(this, null)
+                }
+            }
+        }, null)
+        return result
+    }
+
+    /**
      * 解析 `unsafe` 块表达式。
      *
      * `unsafe` 只放开非安全操作，不改变结果类型：表达式类型即块体类型。官方探针
      * `let v: Int64 = unsafe { this }` 报告 `found 'This'`，即 `This` 视图也原样穿过。
-     * 表达式类型缺失会让所有以 `coneTypeOrNull` 为前提的检查静默跳过整段 `unsafe` 结果。
+     * 若 block 内已经存在错误，则将其作为未上报重复诊断传播到 `unsafe` 结果，避免
+     * 外层组合表达式把 block 中的原始错误误判成新的操作符错误。
      */
     override fun transformUnsafeExpression(
         unsafeExpression: CfirUnsafeExpression,
         data: ResolutionMode,
     ): CfirExpression {
         unsafeExpression.transformBody(transformer, data)
-        unsafeExpression.replaceConeTypeOrNull(unsafeExpression.body.coneTypeOrNull)
+        val bodyType = unsafeExpression.body.coneTypeOrNull
+        unsafeExpression.replaceConeTypeOrNull(
+            unsafeExpression.body.firstErrorTypeOrNull()?.propagatedErrorTypeOrNull() ?: bodyType
+        )
         return unsafeExpression
     }
 
@@ -3214,7 +3250,23 @@ open class CfirExpressionsResolveTransformer(
             assignment.transformAnnotations(transformer, ResolutionMode.ContextIndependent)
             subscriptLValue.transformReceiver(transformer, ResolutionMode.ReceiverResolution)
             subscriptLValue.transformIndices(transformer, ResolutionMode.ContextIndependent)
-            assignment.transformRValue(transformer, ResolutionMode.ContextIndependent)
+            val isArrayRangeSubscript = subscriptLValue.receiver.coneTypeOrNull
+                ?.fullyExpandedType(session)
+                ?.arrayElementType != null &&
+                subscriptLValue.indices.any { it is CfirRangeExpression }
+            if (assignment.augmentedOperation != null && isArrayRangeSubscript) {
+                /*
+                 * 官方 AssignExpr 会先判定 Array 的 Range 下标不支持复合 set，
+                 * 不会先把 `Array<T> += Array<T>` 作为普通二元运算报告。只解析
+                 * 原始右实参，保留其自身诊断，随后由 set 入口生成专用诊断。
+                 */
+                (assignment.rValue as? CfirFunctionCall)?.argumentList?.transformArguments(
+                    transformer,
+                    ResolutionMode.ContextIndependent,
+                )
+            } else {
+                assignment.transformRValue(transformer, ResolutionMode.ContextIndependent)
+            }
 
             /*
              * 复合下标赋值的 rValue 会以同一个 subscript 节点作为 operator receiver，
@@ -3411,7 +3463,6 @@ open class CfirExpressionsResolveTransformer(
     ): CfirExpression {
         val expectedType = data.expectedTypeOrNull?.fullyExpandedType()
         val expectedElementType = expectedType?.arrayLiteralElementType
-
         if (expectedType is ConeErrorType && expectedElementType == null) {
             arrayLiteral.transformChildren(transformer, ResolutionMode.ContextIndependent)
             if (arrayLiteral.coneTypeOrNull == null) {
@@ -3432,10 +3483,11 @@ open class CfirExpressionsResolveTransformer(
                 arrayLiteral.replaceConeTypeOrNull(actualType)
                 arrayLiteral
             } else {
-                arrayLiteral.asTypeMismatchExpression(
+                val mismatch = arrayLiteral.asTypeMismatchExpression(
                     expectedType = expectedType,
                     actualType = actualType,
                 )
+                mismatch
             }
         }
 
@@ -3458,10 +3510,18 @@ open class CfirExpressionsResolveTransformer(
         val assignmentRootActualType = resolvedArrayLiteral.actualArrayTypeBeforeExpectedElementFailure(
             expectedType = expectedType,
         )
+        val hasExpectedElementTypeMismatch = expectedElementType != null &&
+                resolvedArrayLiteral.elements.any { element ->
+                    val actualType = element.coneTypeOrNull
+                    actualType != null &&
+                            actualType !is ConeErrorType &&
+                            !actualType.isCompatibleWith(expectedElementType)
+                }
         if (assignmentRootActualType != null && context.assignmentExpectedTypeForRoot(arrayLiteral) != null) {
             recordAssignmentRhsTypeMismatchIfNeeded(arrayLiteral, assignmentRootActualType)
             val assignmentExpectedType = context.assignmentExpectedTypeForRoot(arrayLiteral)
             if (assignmentExpectedType != null &&
+                !hasExpectedElementTypeMismatch &&
                 AbstractTypeChecker.isSubtypeOf(
                     session.typeContext,
                     assignmentRootActualType,
@@ -3656,6 +3716,9 @@ open class CfirExpressionsResolveTransformer(
      * 推断结果会先消解 ideal type，再过滤掉只能退到不可见/过宽 `Any` 的组合。
      */
     private fun CfirArrayLiteral.inferredElementTypeOrNull(elementTypes: List<ConeCangJieType>): ConeCangJieType? {
+        if (elementTypes.all { it is ConePrimitiveType } && !elementTypes.haveUniformPrimitiveArrayElementTypes()) {
+            return null
+        }
         elementTypes.firstOrNull()?.let { firstType ->
             if (elementTypes.all { it == firstType }) {
                 return IdealTypeResolver.resolveIfIdeal(firstType)
@@ -3664,6 +3727,25 @@ open class CfirExpressionsResolveTransformer(
         val commonType = session.typeContext.commonSuperTypeOrNull(elementTypes) ?: return null
         val resolvedType = IdealTypeResolver.resolveIfIdeal(commonType)
         return resolvedType.takeIf { it.isAcceptableInferredArrayElementType(elementTypes) }
+    }
+
+    /**
+     * 判断只含 primitive 的数组元素是否能按同一具体类型解释。
+     *
+     * primitive 在公共父类型计算中会通过标准库接口产生交叉类型，但这不是仓颉
+     * `SynArrayLit` 可接受的元素类型。IdealInt/IdealFloat 只允许与对应的具体
+     * 数值类型合并；不同的具体 primitive 必须保留数组字面量不一致错误。
+     */
+    private fun List<ConeCangJieType>.haveUniformPrimitiveArrayElementTypes(): Boolean {
+        val kinds = map { (it as ConePrimitiveType).kind }
+        val concreteKinds = kinds.filterNot { it.isIdeal }.distinct()
+        if (concreteKinds.size > 1) return false
+        val concreteKind = concreteKinds.singleOrNull() ?: return kinds.distinct().size == 1
+        return kinds.all { kind ->
+            kind == concreteKind ||
+                    kind == PrimitiveTypeKind.IDEAL_INT && concreteKind.isInteger ||
+                    kind == PrimitiveTypeKind.IDEAL_FLOAT && concreteKind.isFloat
+        }
     }
 
     /**
@@ -4433,24 +4515,14 @@ open class CfirExpressionsResolveTransformer(
     /**
      * 从 iterable 类型推断 `for-in` 元素类型。
      *
-     * 数组、VArray、Range 和泛型容器按已知结构提取元素类型；无法识别时返回错误类型，
+     * 判别逻辑统一由 [iterableElementTypeOrNull] 提供（与 checker 的
+     * `EXPR_IN_FORIN_MUST_HAS_ITERATOR` 判定共享单一实现）；无法识别时返回错误类型，
      * 使循环变量仍能继续以错误恢复类型参与后续解析。
      */
     private fun inferIterableElementType(iterableType: ConeCangJieType?): ConeCangJieType {
         if (iterableType == null) return errorType("iterable has no type")
-        val expandedIterableType = iterableType.fullyExpandedType(session)
-        expandedIterableType.arrayElementType?.let { return it }
-        val classifierType = expandedIterableType as? ConeClassifierType
-        if (classifierType?.lookupTag?.classId == StdlibClassIds.Range) {
-            return expandedIterableType.typeArguments.firstOrNull()?.type ?: ConePrimitiveType.INT64
-        }
-        expandedIterableType
-            .findCorrespondingClassLikeSupertype(session, StdlibClassIds.Iterable)
-            ?.typeArguments
-            ?.singleOrNull()
-            ?.type
-            ?.let { return it }
-        return errorType("cannot infer element type from: $iterableType")
+        return iterableType.iterableElementTypeOrNull(session)
+            ?: errorType("cannot infer element type from: $iterableType")
     }
 
     /**
@@ -4697,6 +4769,7 @@ open class CfirExpressionsResolveTransformer(
             return subscriptExpression
         }
         val expandedReceiverType = receiverType?.fullyExpandedType(session)
+        val hasRangeIndex = subscriptExpression.indices.any { it is CfirRangeExpression }
         val resultType = if (subscriptExpression.receiver.isTypeQualifierReceiver()) {
             if (receiverType != null) {
                 resolveSubscriptExpressionType(subscriptExpression, receiverType, data)
@@ -4718,7 +4791,11 @@ open class CfirExpressionsResolveTransformer(
                     ?: effectiveReceiverType.elementType
                 else -> {
                     val arrayElementType = effectiveReceiverType?.arrayElementType ?: receiverType?.arrayElementType
-                    arrayElementType?.propagatedErrorTypeOrNull() ?: arrayElementType
+                    if (hasRangeIndex && arrayElementType != null) {
+                        constructArrayType(arrayElementType)
+                    } else {
+                        arrayElementType?.propagatedErrorTypeOrNull() ?: arrayElementType
+                    }
                         ?: if (receiverType != null) {
                             resolveSubscriptExpressionType(subscriptExpression, receiverType, data)
                         } else {
@@ -4792,6 +4869,39 @@ open class CfirExpressionsResolveTransformer(
         val receiverType = subscriptExpression.receiver.coneTypeOrNull?.fullyExpandedType(session)
         if (receiverType is ConeVArrayType && !subscriptExpression.receiver.isTypeQualifierReceiver()) {
             subscriptExpression.replaceConeTypeOrNull(receiverType.elementType)
+            return
+        }
+
+        /*
+         * Array 的 Range 下标读操作产生 Array<T>，普通赋值只有在右值也是相同元素
+         * 类型的 Array 时才成立；它不是普通单元素 `set`。复合赋值必须先读取左值
+         * 再回写，而 Range 没有对应的可写 `set` 运算符。两种失败都保留 operator
+         * `[]` 的 unresolved 语义，让统一诊断映射定位到整个 subscript，而不是
+         * 错误的 Range 参数节点。
+         */
+        val rangeElementType = receiverType?.arrayElementType?.takeIf {
+            subscriptExpression.indices.any { it is CfirRangeExpression }
+        }
+        if (rangeElementType != null) {
+            val rangeValueElementType = assignment.rValue.coneTypeOrNull?.arrayElementType
+            val isValidRangeAssignment = assignment.augmentedOperation == null &&
+                rangeValueElementType != null &&
+                AbstractTypeChecker.equalTypes(session.typeContext, rangeElementType, rangeValueElementType)
+            if (isValidRangeAssignment) {
+                subscriptExpression.replaceConeTypeOrNull(builtinTypes.unitType)
+                return
+            }
+
+            val diagnostic = ConeUnresolvedNameError(
+                name = OperatorNameConventions.SET,
+                operator = "[]",
+                receiverType = receiverType,
+                argumentTypes = subscriptExpression.indices.mapNotNull { it.coneTypeOrNull } +
+                        listOf(assignment.rValue.coneTypeOrNull ?: errorType("subscript assignment value has no type")),
+            )
+            subscriptExpression.replaceConeTypeOrNull(
+                ConeErrorType(diagnostic, delegatedType = builtinTypes.unitType),
+            )
             return
         }
 

@@ -16,11 +16,11 @@ struct A <: IA {
 }
 
 func goo(a: A): Unit {
-    a.<!IMMUTABLE_FUNCTION_CANNOT_ACCESS_MUTABLE_FUNCTION!>f1<!>()
+    <!IMMUTABLE_FUNCTION_CANNOT_ACCESS_MUTABLE_FUNCTION!>a<!>.f1()
     a.f2()
 }
 
 func foo<T>(t: T): Unit where T <: IA {
-    t.<!IMMUTABLE_FUNCTION_CANNOT_ACCESS_MUTABLE_FUNCTION!>f1<!>()
+    <!IMMUTABLE_FUNCTION_CANNOT_ACCESS_MUTABLE_FUNCTION!>t<!>.f1()
     t.f2()
 }

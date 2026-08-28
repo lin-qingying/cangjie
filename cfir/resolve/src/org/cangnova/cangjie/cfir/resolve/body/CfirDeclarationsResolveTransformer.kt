@@ -641,8 +641,8 @@ dataFlowAnalyzer.enterFunction(constructor)
         variable.replaceReturnTypeRef(resolveExplicitTypeRefIfNeeded(variable.returnTypeRef))
 
         val explicitTypeRef = variable.returnTypeRef
-        val initializerMode = if (explicitTypeRef is CfirResolvedTypeRef) {
-            ResolutionMode.WithExpectedType(explicitTypeRef)
+        val initializerMode = if (explicitTypeRef.isExplicitDeclarationTypeRef()) {
+            ResolutionMode.WithExpectedType(explicitTypeRef.explicitDeclarationTypeRefOrNull()!!)
         } else {
             ResolutionMode.ContextIndependent
         }
@@ -653,7 +653,7 @@ dataFlowAnalyzer.enterFunction(constructor)
         context.withContainer(variable) {
             context.withVariableInitializer(variable) {
                 variable.initializer?.let { initializer ->
-                    val expectedInitializerType = (explicitTypeRef as? CfirResolvedTypeRef)?.coneType
+                    val expectedInitializerType = explicitTypeRef.explicitDeclarationConeTypeOrNull()
                     if (expectedInitializerType != null) {
                         context.withInitializerExpectedType(initializer, expectedInitializerType) {
                             variable.transformInitializer(transformer, initializerMode)
@@ -667,7 +667,7 @@ dataFlowAnalyzer.enterFunction(constructor)
                     )
                 }
                 reportInitializerMismatchToOverloadByLambdaCandidate(
-                    expectedTypeRef = explicitTypeRef as? CfirResolvedTypeRef,
+                    expectedTypeRef = explicitTypeRef.explicitDeclarationTypeRefOrNull(),
                     initializer = variable.initializer,
                 )
                 variable.resolveImplicitReturnTypeFromInitializer()
@@ -772,8 +772,8 @@ dataFlowAnalyzer.enterFunction(constructor)
         )
 
         val explicitTypeRef = fieldVariable.returnTypeRef
-        val initializerMode = if (explicitTypeRef is CfirResolvedTypeRef) {
-            ResolutionMode.WithExpectedType(explicitTypeRef)
+        val initializerMode = if (explicitTypeRef.isExplicitDeclarationTypeRef()) {
+            ResolutionMode.WithExpectedType(explicitTypeRef.explicitDeclarationTypeRefOrNull()!!)
         } else {
             ResolutionMode.ContextIndependent
         }
@@ -817,8 +817,8 @@ dataFlowAnalyzer.enterFunction(constructor)
         )
 
         val explicitTypeRef = fieldVariable.returnTypeRef
-        val initializerMode = if (explicitTypeRef is CfirResolvedTypeRef) {
-            ResolutionMode.WithExpectedType(explicitTypeRef)
+        val initializerMode = if (explicitTypeRef.isExplicitDeclarationTypeRef()) {
+            ResolutionMode.WithExpectedType(explicitTypeRef.explicitDeclarationTypeRefOrNull()!!)
         } else {
             ResolutionMode.ContextIndependent
         }
@@ -851,7 +851,7 @@ dataFlowAnalyzer.enterFunction(constructor)
         initializerMode: ResolutionMode,
         initializer: CfirExpression,
     ) {
-        val expectedInitializerType = (explicitTypeRef as? CfirResolvedTypeRef)?.coneType
+        val expectedInitializerType = explicitTypeRef.explicitDeclarationConeTypeOrNull()
         if (expectedInitializerType != null) {
             context.withInitializerExpectedType(initializer, expectedInitializerType) {
                 fieldVariable.transformInitializer(transformer, initializerMode)
@@ -864,7 +864,7 @@ dataFlowAnalyzer.enterFunction(constructor)
             session,
         )
         reportInitializerMismatchToOverloadByLambdaCandidate(
-            expectedTypeRef = explicitTypeRef as? CfirResolvedTypeRef,
+            expectedTypeRef = explicitTypeRef.explicitDeclarationTypeRefOrNull(),
             initializer = fieldVariable.initializer,
         )
     }
@@ -938,8 +938,8 @@ dataFlowAnalyzer.enterFunction(constructor)
         )
 
         val explicitTypeRef = patternVariable.returnTypeRef
-        val initializerMode = if (explicitTypeRef is CfirResolvedTypeRef) {
-            ResolutionMode.WithExpectedType(explicitTypeRef)
+        val initializerMode = if (explicitTypeRef.isExplicitDeclarationTypeRef()) {
+            ResolutionMode.WithExpectedType(explicitTypeRef.explicitDeclarationTypeRefOrNull()!!)
         } else {
             ResolutionMode.ContextIndependent
         }
@@ -953,7 +953,7 @@ dataFlowAnalyzer.enterFunction(constructor)
             val initializer = patternVariable.initializer
             if (initializer != null) {
                 context.withVariableInitializer(bindingVariables) {
-                    val expectedInitializerType = (explicitTypeRef as? CfirResolvedTypeRef)?.coneType
+                    val expectedInitializerType = explicitTypeRef.explicitDeclarationConeTypeOrNull()
                     if (expectedInitializerType != null) {
                         context.withInitializerExpectedType(initializer, expectedInitializerType) {
                             patternVariable.transformInitializer(transformer, initializerMode)
@@ -963,7 +963,7 @@ dataFlowAnalyzer.enterFunction(constructor)
                     }
                 }
                 reportInitializerMismatchToOverloadByLambdaCandidate(
-                    expectedTypeRef = explicitTypeRef as? CfirResolvedTypeRef,
+                    expectedTypeRef = explicitTypeRef.explicitDeclarationTypeRefOrNull(),
                     initializer = patternVariable.initializer,
                 )
             }
@@ -1043,6 +1043,23 @@ dataFlowAnalyzer.enterFunction(constructor)
         replaceReturnTypeRef(resolvedTypeRef)
         copyLocalLambdaInitializerInferenceDataFromInitializer()
     }
+
+    /**
+     * 声明 initializer 的 expected type 只来自源码中的显式类型标注。
+     *
+     * BODY_RESOLVE 之前的推断阶段也会把隐式声明的结果写成
+     * [CfirResolvedTypeRef]，但这类引用没有源码 source。若把它当作显式目标类型
+     * 再次解析 initializer，会把“先推断、后校验”错误地变成“按推断结果二次约束”，
+     * 从而覆盖官方应保留的数组字面量整体诊断等根错误。
+     */
+    private fun CfirTypeRef.isExplicitDeclarationTypeRef(): Boolean =
+        this is CfirResolvedTypeRef && source != null
+
+    private fun CfirTypeRef.explicitDeclarationTypeRefOrNull(): CfirResolvedTypeRef? =
+        takeIf { it.isExplicitDeclarationTypeRef() } as? CfirResolvedTypeRef
+
+    private fun CfirTypeRef.explicitDeclarationConeTypeOrNull(): ConeCangJieType? =
+        explicitDeclarationTypeRefOrNull()?.coneType
 
     /**
      * 局部 lambda initializer 的 placeholder 约束属于变量声明整体，而不只属于隐式类型收敛。

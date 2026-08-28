@@ -821,4 +821,12 @@ abstract class CfirAbstractBodyResolveTransformerDispatcher(
     ): CfirExpression {
         return expressionsTransformer.transformSpawnExpression(spawnExpression, data)
     }
+
+    /** 将 unsafe 表达式 body resolve 分发给表达式 transformer，保留其专用结果类型语义。 */
+    override fun transformUnsafeExpression(
+        unsafeExpression: CfirUnsafeExpression,
+        data: ResolutionMode,
+    ): CfirExpression {
+        return expressionsTransformer.transformUnsafeExpression(unsafeExpression, data)
+    }
 }

@@ -305,6 +305,8 @@ object CfirErrors : CjDiagnosticsContainer() {
     val INVALID_STRING_IMPLEMENTATION: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_INVALID_STRING_IMPLEMENTATION", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val CANNOT_REF_TO_PKG_NAME: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_CANNOT_REF_TO_PKG_NAME", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val USE_EXPR_WITHOUT_IMPORT: CjDiagnosticFactory2<FqName, String> = CjDiagnosticFactory2("CFIR_USE_EXPR_WITHOUT_IMPORT", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
+    val FORIN_PATTERN_MUST_BE_IRREFUTABLE: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_FORIN_PATTERN_MUST_BE_IRREFUTABLE", Severity.ERROR, SourceElementPositioningStrategies.FOR_KEYWORD, PsiElement::class, getRendererFactory())
+    val EXPR_IN_FORIN_MUST_HAS_ITERATOR: CjDiagnosticFactory1<ConeCangJieType> = CjDiagnosticFactory1("CFIR_EXPR_IN_FORIN_MUST_HAS_ITERATOR", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
 
     // GenericDeep
     val GENERIC_TYPE_INCONSISTENT: CjDiagnosticFactory1<Name> = CjDiagnosticFactory1("CFIR_GENERIC_TYPE_INCONSISTENT", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())

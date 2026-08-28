@@ -62,6 +62,13 @@ object SourceElementPositioningStrategies {
         PositioningStrategies.THROW_KEYWORD,
     )
     /**
+     * 标记 for-in 表达式中的 for 关键字。
+     */
+    val FOR_KEYWORD = SourceElementPositioningStrategy(
+        LightTreePositioningStrategies.FOR_KEYWORD,
+        PositioningStrategies.FOR_KEYWORD,
+    )
+    /**
      * 标记数组字面量左中括号。
      */
     val ARRAY_LITERAL_LEFT_BRACKET = SourceElementPositioningStrategy(

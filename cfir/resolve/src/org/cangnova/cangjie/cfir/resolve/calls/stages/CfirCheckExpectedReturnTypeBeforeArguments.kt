@@ -66,6 +66,7 @@ object CfirCheckExpectedReturnTypeBeforeArguments : ResolutionStage() {
          * placeholder、错误恢复类型和不确定 expected type 仍保持延迟，不提前淘汰候选。
          */
         if (
+            !candidate.callInfo.hasExplicitTypeArguments &&
             candidate.argumentMappingOutcome?.hasMappingFailure != true &&
             candidateReturnType.containsCurrentCandidateInferenceVariable(candidate) &&
             candidate.system.isProperType(expectedType) &&

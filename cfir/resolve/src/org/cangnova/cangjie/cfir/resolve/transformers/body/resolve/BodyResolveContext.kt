@@ -60,6 +60,13 @@ import org.cangnova.cangjie.cfir.types.ConeClassifierType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeTypeVariable
 import org.cangnova.cangjie.cfir.types.ConeTypeVariableType
+import org.cangnova.cangjie.cfir.types.ConeLookupTagBasedType
+import org.cangnova.cangjie.cfir.types.ConeFunctionType
+import org.cangnova.cangjie.cfir.types.ConeTupleType
+import org.cangnova.cangjie.cfir.types.ConeVArrayType
+import org.cangnova.cangjie.cfir.types.type
+import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeParameterBasedTypeVariable
+import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterLookupTag
 import org.cangnova.cangjie.cfir.types.asCone
 import org.cangnova.cangjie.cfir.types.coneType
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
@@ -1689,6 +1696,17 @@ abstract class CfirInferenceSession {
     }
 
     /**
+     * 判断类型中是否含当前推断会话系统已登记的推断变量。
+     *
+     * fresh lambda receiver 的成员候选会在 fresh-variable 阶段为 owner 泛型参数创建
+     * 占位变量（官方 `ConstrainByCtor` 的 T-Fly）；这些变量属于 lambda 的求解系统，
+     * 只能由 body 末或调用点证据定型。含这类变量的类型不能作为「单 owner 收敛」的
+     * 硬界写回（`x <: Array<T-Fly>` 会把形参定型成含未解变量的非 proper 类型），
+     * 默认会话不维护变量登记，恒为 false。
+     */
+    open fun containsRegisteredInferenceVariable(type: ConeCangJieType): Boolean = false
+
+    /**
      * 收窄 fresh lambda receiver 的成员 owner 候选集合。
      *
      * 默认推断会话不维护跨表达式候选集合；PCLA 会话用它模拟官方 `TryInferFromSyntaxInfo`
@@ -1858,7 +1876,6 @@ class CfirPCLAInferenceSession(
 
         val candidate = call.candidate()
         if (candidate?.usedOuterCs != true) return
-
         currentCommonSystem.replaceContentWith(candidate.system.currentStorage())
         candidate.freshReceiverConstraintToDrop?.let { constraintToDrop ->
             currentCommonSystem.removeConstraintsForVariable(constraintToDrop.receiverTypeConstructor) { constraint ->
@@ -2193,6 +2210,10 @@ class CfirPCLAInferenceSession(
         currentCommonSystem.registerVariable(variable)
     }
 
+    /** 判断类型中是否含当前 PCLA 公共系统已登记的推断变量。 */
+    override fun containsRegisteredInferenceVariable(type: ConeCangJieType): Boolean =
+        type.contains { it is ConeTypeVariableType && it.typeConstructor in currentCommonSystem.currentStorage().allTypeVariables }
+
     /**
      * 按官方 `SynLamExpr` 的语法候选收窄规则维护 fresh receiver owner 集合。
      *
@@ -2214,6 +2235,7 @@ class CfirPCLAInferenceSession(
     ): Set<ConeCangJieType>? {
         val distinctOwnerTypes = ownerTypes.distinctByConeType()
         if (distinctOwnerTypes.isEmpty()) return null
+        registerFreshReceiverOwnerInferenceVariables(distinctOwnerTypes)
 
         val previous = freshReceiverCandidateOwnersByTypeVariable[receiverTypeConstructor]
         val refined = when (previous) {
@@ -2231,6 +2253,41 @@ class CfirPCLAInferenceSession(
         freshReceiverCandidateOwnersByTypeVariable[receiverTypeConstructor] = refined.toMutableList()
         addFreshReceiverOwnerConstraintIfSingle(receiverTypeConstructor, refined)
         return refined.toSet()
+    }
+
+    /**
+     * 把 fresh lambda receiver 的候选 owner 类型中出现的推断变量注册进本会话公共系统。
+     *
+     * 官方 `TryEnforceCandidate`/`ConstrainByCtor` 为泛型接收者创建的类型实参占位
+     * （T-Fly）属于 lambda 自身的求解系统，随 body 证据（操作符/赋值/调用实参）求解；
+     * CFIR 中这些变量由成员候选的 fresh-variable 阶段创建，只登记在候选自己的临时系统里，
+     * 成员候选独立完成（不经 [processPartiallyResolvedCall] 合并）时，约束随替换结果回流
+     * 而变量登记不会——形参被定型为 `Array<TypeVariable(T)>` 这类含未登记变量的类型后，
+     * 会话按「已全部求解」丢弃推断数据，后续证据（`v > max`、调用点实参）再也无法约束该变量。
+     * 这里在 owner 收窄入口补登记，使占位变量始终属于 lambda 推断系统：保留推断数据、
+     * 让体内与调用点证据都能继续求解，最终定型为完整具体类型（如 `Iterable<Int64>`）。
+     */
+    private fun registerFreshReceiverOwnerInferenceVariables(ownerTypes: List<ConeCangJieType>) {
+        val storage = currentCommonSystem.currentStorage()
+        fun ConeCangJieType.registerVariables() {
+            when (this) {
+                is ConeTypeVariableType -> {
+                    val typeParameter = typeConstructor.originalTypeParameter as? ConeTypeParameterLookupTag ?: return
+                    if (typeConstructor !in storage.allTypeVariables) {
+                        registerInferenceVariable(ConeTypeParameterBasedTypeVariable(typeParameter.typeParameterSymbol))
+                    }
+                }
+                is ConeLookupTagBasedType -> typeArguments.forEach { it.type.registerVariables() }
+                is ConeFunctionType -> {
+                    parameterTypes.forEach { it.registerVariables() }
+                    returnType.registerVariables()
+                }
+                is ConeTupleType -> elementTypes.forEach { it.registerVariables() }
+                is ConeVArrayType -> elementType.registerVariables()
+                else -> Unit
+            }
+        }
+        ownerTypes.forEach { it.registerVariables() }
     }
 
     /**
@@ -2319,6 +2376,10 @@ class CfirPCLAInferenceSession(
         ownerTypes: List<ConeCangJieType>,
     ) {
         val ownerType = ownerTypes.singleOrNull() ?: return
+        // owner 仍是含未解推断变量的泛型实例（如 `Array<TypeVariable(T)>`）时不能作为
+        // 形参硬界写回：该变量属于 lambda 求解系统，只能由 body 末或调用点证据定型，
+        // 提前写 `x <: Array<T-Fly>` 会把形参定型为含未解变量的非 proper 类型。
+        if (containsRegisteredInferenceVariable(ownerType)) return
         val receiverType = (currentCommonSystem.currentStorage().allTypeVariables[receiverTypeConstructor] as? ConeTypeVariable)
             ?.defaultType
             ?: return

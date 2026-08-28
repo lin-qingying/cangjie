@@ -37,6 +37,7 @@ import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CheckerSink
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.yieldDiagnostic
 import org.cangnova.cangjie.cfir.resolve.calls.getExpectedType
+import org.cangnova.cangjie.cfir.resolve.calls.inoutExpectedTypeOrNull
 import org.cangnova.cangjie.cfir.resolve.calls.prepareArgumentType
 import org.cangnova.cangjie.cfir.resolve.calls.substituteExplicitTypeArgumentConstraints
 import org.cangnova.cangjie.cfir.resolve.transformers.ensureResolvedTypeDeclaration
@@ -166,12 +167,14 @@ private fun Candidate.prepareExpectedType(
     parameter: CfirValueParameter?,
 ): ConeCangJieType? {
     if (parameter == null) return null
-    val basicExpectedType = selectVariadicExpectedType(session, atom, argument, parameter)
-        ?: argument.getExpectedType(
-            session,
-            parameter,
-            unwrapCangjieVariadicParameter = false,
-        )
+    val declaredExpectedType = argument.getExpectedType(
+        session,
+        parameter,
+        unwrapCangjieVariadicParameter = false,
+    )
+    val basicExpectedType = argument.inoutExpectedTypeOrNull(declaredExpectedType, session)
+        ?: selectVariadicExpectedType(session, atom, argument, parameter)
+        ?: declaredExpectedType
 
     // 仓颉没有 SAM 转换，直接跳过那一步
     val expectedType =

@@ -27,7 +27,7 @@ class C {
 
 main() {
     let a = [S2()]
-    a[0].t2.<!IMMUTABLE_FUNCTION_CANNOT_ACCESS_MUTABLE_FUNCTION!>f<!>()
+    <!IMMUTABLE_FUNCTION_CANNOT_ACCESS_MUTABLE_FUNCTION!>a[0].t2<!>.f()
     let c = C()
     c.s2.t2.f()
 }

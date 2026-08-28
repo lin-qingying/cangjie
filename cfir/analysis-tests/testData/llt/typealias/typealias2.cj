@@ -1,7 +1,7 @@
 
 
 
-<!TYPEALIAS_UNUSED_TYPE_PARAMETERS!>t<!>ype A<T> = Int64
+<!TYPEALIAS_UNUSED_TYPE_PARAMETERS!>type A<T><!> = Int64
 
 main() {
     var a: A<Bool> = 10;

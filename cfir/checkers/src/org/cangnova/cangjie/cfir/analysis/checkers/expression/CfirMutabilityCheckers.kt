@@ -73,6 +73,13 @@ import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeStructType
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.psi.CjNodeTypes
+import org.cangnova.cangjie.psi.CjParenthesizedExpression
+import org.cangnova.cangjie.source.CjLightSourceElement
+import org.cangnova.cangjie.source.CjPsiSourceElement
+import org.cangnova.cangjie.source.CjSourceElement
+import org.cangnova.cangjie.source.toCjLightSourceElement
+import org.cangnova.cangjie.source.toCjPsiSourceElement
 
 /**
  * 对齐官方 `mut/immutable` 核心语义的第一步：
@@ -197,12 +204,54 @@ object CfirImmutableValueCannotAccessMutableFunctionChecker : CfirFunctionCallCh
         if (!receiver.isImmutableStructValueAccess()) return
 
         reporter.reportOn(
-            source = expression.calleeReference.source ?: expression.source ?: receiver.source,
+            // 显式不可变值访问 mut 函数时，官方以 member access 的 baseExpr 作为主诊断范围；
+            // 函数名属于附加语义信息，不能替代接收者的错误位置。
+            source = receiver.source?.includingEnclosingParentheses() ?: expression.source,
             factory = CfirErrors.IMMUTABLE_FUNCTION_CANNOT_ACCESS_MUTABLE_FUNCTION,
             a = receiver.diagnosticNameOr(targetFunction.name),
             b = targetFunction.name,
         )
     }
+}
+
+/**
+ * 将显式 receiver 的源码范围扩展到直接包围它的分组括号。
+ *
+ * raw CFIR 为了保持语义节点统一会剥离 `CjParenthesizedExpression`，但
+ * `IMMUTABLE_FUNCTION_CANNOT_ACCESS_MUTABLE_FUNCTION` 的相关表达式范围仍应覆盖
+ * 用户实际写出的完整 receiver；PSI 与 LightTree 必须在各自的源树上保持同一规则。
+ */
+private fun CjSourceElement.includingEnclosingParentheses(): CjSourceElement = when (this) {
+    is CjPsiSourceElement -> {
+        var enclosing = psi
+        var parent = enclosing.parent
+        while (parent is CjParenthesizedExpression) {
+            enclosing = parent
+            parent = enclosing.parent
+        }
+        if (enclosing === psi) this else enclosing.toCjPsiSourceElement(kind)
+    }
+
+    is CjLightSourceElement -> {
+        var enclosing = lighterASTNode
+        var parent = treeStructure.getParent(enclosing)
+        while (parent?.tokenType == CjNodeTypes.PARENTHESIZED) {
+            enclosing = parent
+            parent = treeStructure.getParent(enclosing)
+        }
+        if (enclosing === lighterASTNode) {
+            this
+        } else {
+            enclosing.toCjLightSourceElement(
+                tree = treeStructure,
+                kind = kind,
+                startOffset = treeStructure.getStartOffset(enclosing),
+                endOffset = treeStructure.getEndOffset(enclosing),
+            )
+        }
+    }
+
+    else -> this
 }
 
 /**

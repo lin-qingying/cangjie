@@ -5,6 +5,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
+import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.declarations.isLambdaParameterTypeOmitted
 import org.cangnova.cangjie.cfir.declarations.lambdaParameterShapeExpectedFunctionType
 import org.cangnova.cangjie.cfir.diagnostic.AmbiguousArgumentType
@@ -36,6 +37,7 @@ import org.cangnova.cangjie.cfir.references.impl.CfirResolvedAppliedCallableRefe
 import org.cangnova.cangjie.cfir.references.builder.buildErrorNamedReference
 import org.cangnova.cangjie.cfir.references.builder.buildNamedReference
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
+import org.cangnova.cangjie.cfir.resolve.arrayLiteralTypeForSupertypeTarget
 import org.cangnova.cangjie.cfir.resolve.withExpectedType
 import org.cangnova.cangjie.cfir.resolve.CfirResolutionSnapshot
 import org.cangnova.cangjie.cfir.resolve.calls.*
@@ -71,6 +73,7 @@ import org.cangnova.cangjie.cfir.types.ConeLookupTagBasedType
 import org.cangnova.cangjie.cfir.types.ConeTypeIntersector
 import org.cangnova.cangjie.cfir.types.ConeTypeVariableType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
+import org.cangnova.cangjie.cfir.types.ConePointerType
 import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
 import org.cangnova.cangjie.cfir.types.ConeTupleType
 import org.cangnova.cangjie.cfir.types.ConeUnreportedDuplicateDiagnostic
@@ -157,6 +160,17 @@ internal object ArgumentCheckingProcessor {
             sink?.reportDiagnostic(diagnostic)
         }
     }
+
+    /**
+     * 外层实参检查对嵌套调用的解析结果。
+     *
+     * 嵌套调用在当前外层候选的 expected type 下重检失败时，失败属于内层调用；
+     * 外层只能降低候选适用性，不能再把同一个失败重新分类为外层参数类型错误。
+     */
+    private data class NestedCallResolutionResult(
+        val atom: ConeResolutionAtom,
+        val failed: Boolean = false,
+    )
 
     /**
      * 解析并检查一个表达式实参。
@@ -325,7 +339,9 @@ internal object ArgumentCheckingProcessor {
      * 解析普通表达式实参类型。
      */
     private fun ArgumentContext.resolvePlainExpressionArgument(atom: ConeResolutionAtom) {
-        val resolvedAtom = resolveNestedCallForExpectedType(atom)
+        val nestedCallResult = resolveNestedCallForExpectedType(atom)
+        if (nestedCallResult.failed) return
+        val resolvedAtom = nestedCallResult.atom
         val targetTypedEnumType = expectedType?.let { expected ->
             resolvedAtom.expression.applyNoArgEnumConstructorTargetType(expected, session)
                 ?: enumConstructorTargetTypeFromExpectedVariable(resolvedAtom.expression, expected)
@@ -350,9 +366,13 @@ internal object ArgumentCheckingProcessor {
      * outer candidate 的目标。官方会在每个外层候选的形参类型下独立重检嵌套调用；
      * 这里通过隔离解析生成候选局部 replacement，并把内层约束系统合入当前候选。
      */
-    private fun ArgumentContext.resolveNestedCallForExpectedType(atom: ConeResolutionAtom): ConeResolutionAtom {
-        val functionCall = atom.expression as? CfirFunctionCall ?: return atom
-        val reference = functionCall.calleeReference as? CfirNamedReference ?: return atom
+    private fun ArgumentContext.resolveNestedCallForExpectedType(
+        atom: ConeResolutionAtom,
+    ): NestedCallResolutionResult {
+        val functionCall = atom.expression as? CfirFunctionCall
+            ?: return NestedCallResolutionResult(atom)
+        val reference = functionCall.calleeReference as? CfirNamedReference
+            ?: return NestedCallResolutionResult(atom)
         val currentCandidate = (reference as? CfirNamedReferenceWithCandidate)?.candidate
             ?: (atom as? ConeAtomWithCandidate)?.candidate
         val currentSymbol = currentCandidate?.symbol
@@ -370,27 +390,27 @@ internal object ArgumentCheckingProcessor {
                     it is CfirFunction || it is CfirEnumConstructor
                 }
             }
-        if (currentSymbol == null && !isCallableAmbiguity) return atom
+        if (currentSymbol == null && !isCallableAmbiguity) return NestedCallResolutionResult(atom)
         val currentDeclaration = currentSymbol?.takeIf { it.isBound }?.cfir
         if (!isCallableAmbiguity &&
             currentSymbol != null &&
             currentDeclaration !is CfirEnumConstructor &&
             currentDeclaration !is CfirFunction
         ) {
-            return atom
+            return NestedCallResolutionResult(atom)
         }
-        val targetExpectedType = expectedType ?: return atom
+        val targetExpectedType = expectedType ?: return NestedCallResolutionResult(atom)
         val expandedExpectedType = targetExpectedType.fullyExpandedType(session)
         val expectedOwnerClassId = expandedExpectedType.classIdOrPrimitiveClassId
         if (currentSymbol is CfirEnumConstructorSymbol && expectedOwnerClassId != null && !isCallableAmbiguity) {
             val currentReturnType = currentCandidate?.substitutedReturnType()
                 ?: (reference as? CfirResolvedAppliedCallableReference)?.substitutedReturnType
                 ?: functionCall.coneTypeOrNull
-                ?: return atom
+                ?: return NestedCallResolutionResult(atom)
             val currentOwnerClassId = (currentSymbol as? CfirEnumConstructorSymbol)
                 ?.let(session.cfirProvider::getContainingClass)
                 ?.classId
-                ?: return atom
+                ?: return NestedCallResolutionResult(atom)
             if (
                 currentOwnerClassId == expectedOwnerClassId &&
                 AbstractTypeChecker.equalTypes(
@@ -398,13 +418,13 @@ internal object ArgumentCheckingProcessor {
                     currentReturnType.fullyExpandedType(session),
                     expandedExpectedType,
                 )
-            ) return atom
+            ) return NestedCallResolutionResult(atom)
         }
         if (currentDeclaration is CfirFunction && !isCallableAmbiguity) {
             val currentReturnType = currentCandidate?.argumentExpressionType(context)
                 ?: (reference as? CfirResolvedAppliedCallableReference)?.substitutedReturnType
                 ?: functionCall.coneTypeOrNull
-                ?: return atom
+                ?: return NestedCallResolutionResult(atom)
             /*
              * 无歧义的嵌套泛型调用已经拥有唯一候选时，其 fresh 返回变量就是外层 expected type
              * 应继续约束的变量。若在这里重新复制调用并创建候选，会产生另一套 fresh variables：
@@ -418,7 +438,7 @@ internal object ArgumentCheckingProcessor {
                 currentCandidate.isSuccessful &&
                 currentCandidate.ownsNotFixedTypeVariableIn(currentReturnType)
             ) {
-                return atom
+                return NestedCallResolutionResult(atom)
             }
             if (
                 AbstractTypeChecker.isSubtypeOf(
@@ -426,7 +446,7 @@ internal object ArgumentCheckingProcessor {
                     currentReturnType.fullyExpandedType(session),
                     expandedExpectedType,
                 ) == true
-            ) return atom
+            ) return NestedCallResolutionResult(atom)
         }
 
         val isolatedCall = buildFunctionCallCopy(functionCall) {
@@ -461,20 +481,22 @@ internal object ArgumentCheckingProcessor {
         } finally {
             // buildFunctionCallCopy 会共享内层实参节点；下一 outer candidate 检查前必须恢复共享状态。
             resolutionSnapshot.restore()
-        } ?: return atom
+        } ?: return NestedCallResolutionResult(atom)
         val (resolvedCandidate, resolvedCall) = resolvedProbe
         if (!resolvedCandidate.isSuccessful) {
             candidate.addDiagnostic(ErrorTypeInArguments)
-            return atom
+            return NestedCallResolutionResult(atom, failed = true)
         }
         val resolvedDeclaration = resolvedCandidate.symbol.takeIf { it.isBound }?.cfir
-        if (resolvedDeclaration !is CfirEnumConstructor && resolvedDeclaration !is CfirFunction) return atom
+        if (resolvedDeclaration !is CfirEnumConstructor && resolvedDeclaration !is CfirFunction) {
+            return NestedCallResolutionResult(atom)
+        }
         if (resolvedDeclaration is CfirEnumConstructor && expectedOwnerClassId != null) {
             val resolvedOwnerClassId = (resolvedCandidate.symbol as? CfirEnumConstructorSymbol)
                 ?.let(session.cfirProvider::getContainingClass)
                 ?.classId
-                ?: return atom
-            if (resolvedOwnerClassId != expectedOwnerClassId) return atom
+                ?: return NestedCallResolutionResult(atom)
+            if (resolvedOwnerClassId != expectedOwnerClassId) return NestedCallResolutionResult(atom)
         }
         // 此处不能要求候选返回类型已经等于 expected type：泛型 enum constructor 的 owner
         // fresh variable 要在下面把 inner subsystem 合入 outer candidate 后，才由实参约束共同固定。
@@ -483,7 +505,7 @@ internal object ArgumentCheckingProcessor {
             functionCall,
             resolvedCall,
         )
-        return ConeAtomWithCandidate(resolvedCall, resolvedCandidate)
+        return NestedCallResolutionResult(ConeAtomWithCandidate(resolvedCall, resolvedCandidate))
     }
 
     /** 判断类型树中的 fresh variable 是否属于当前嵌套调用候选自己的约束系统。 */
@@ -556,8 +578,18 @@ internal object ArgumentCheckingProcessor {
     private fun ArgumentContext.arrayLiteralTypeFromExpectedType(expression: CfirExpression): ConeCangJieType? {
         val arrayLiteral = expression as? CfirArrayLiteral ?: return null
         val expandedExpectedType = expectedType?.fullyExpandedType(session) ?: return null
-        val expectedElementType = expandedExpectedType.arrayLiteralElementType ?: return null
-        if (expandedExpectedType is ConeVArrayType && expandedExpectedType.size != arrayLiteral.elements.size.toLong()) {
+        /*
+         * 目标类型是 `Array<E>` 的超类型时（如 `ArrayList<T>` 构造器形参 `Collection<T>`），
+         * 官方仍按元素视角 `E` 定形字面量。这里合成的必须是 `Array<E>` 本身，而不是该超类型。
+         * 含当前候选未固定变量的结果继续交给普通约束路径，避免把推断变量写进 CFIR 节点。
+         */
+        val targetArrayType = when {
+            expandedExpectedType.arrayLiteralElementType != null -> expandedExpectedType
+            else -> expandedExpectedType.arrayLiteralTypeForSupertypeTarget(session)
+                ?.takeUnless { typeContainsCurrentInferenceVariable(it) }
+        } ?: return null
+        val expectedElementType = targetArrayType.arrayLiteralElementType ?: return null
+        if (targetArrayType is ConeVArrayType && targetArrayType.size != arrayLiteral.elements.size.toLong()) {
             return null
         }
 
@@ -571,8 +603,8 @@ internal object ArgumentCheckingProcessor {
         }
         if (!elementsCompatible) return null
 
-        arrayLiteral.replaceConeTypeOrNull(expandedExpectedType)
-        return expandedExpectedType
+        arrayLiteral.replaceConeTypeOrNull(targetArrayType)
+        return targetArrayType
     }
 
     /**
@@ -704,6 +736,20 @@ internal object ArgumentCheckingProcessor {
             return
         }
 
+        /*
+         * `CPointer<T>(CPointer<U>)` 是仓颉的内建指针转换，而不是普通 invariant
+         * 泛型调用。官方 `PointerExpr` 允许任意 pointee 类型之间的转换；该规则
+         * 只适用于 synthetic pointer-conversion candidate，不能放宽用户泛型的
+         * 同构类型实参检查。
+         */
+        if (
+            candidate.isBuiltinPointerConstructorCandidate() &&
+            argumentType is ConePointerType &&
+            expectedType.fullyExpandedType(session) is ConePointerType
+        ) {
+            return
+        }
+
         fun subtypeError(actualExpectedType: ConeCangJieType): ResolutionDiagnostic {
             fun tryGetConeTypeThatCompatibleWithKtType(type: ConeCangJieType): ConeCangJieType {
                 if (type is ConeTypeVariableType) {
@@ -798,6 +844,13 @@ val added = if (csBuilder.isProperType(expectedType)) {
             }
         }
         reportDiagnostic(subtypeError(expectedType))
+    }
+
+    /** 判断当前候选是否是带一个指针实参的内建转换构造器。 */
+    private fun Candidate.isBuiltinPointerConstructorCandidate(): Boolean {
+        val declaration = symbol.takeIf { it.isBound }?.cfir as? CfirFunction ?: return false
+        return declaration.origin == CfirDeclarationOrigin.Synthetic.BuiltinPointerConstructor &&
+                declaration.valueParameters.size == 1
     }
 
     /** 还原错误恢复传播时包装的原始 Cone 诊断。 */

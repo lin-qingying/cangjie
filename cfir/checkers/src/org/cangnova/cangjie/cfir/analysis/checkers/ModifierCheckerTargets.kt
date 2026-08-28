@@ -356,8 +356,10 @@ private fun listOfModifierTargetForNonLocalFunction(container: DeclarationKind?)
  *   致使诊断文案显示 `lambda` 不显示 `function`。
  * - 父声明为 null（查不到有意义外层）时返回空列表，不再兜底为 FILE——避免误把 lambda 链等无容器场景放行。
  */
-internal fun CheckerContext.actualParentTargets(): List<ModifierTarget> =
-    when (val parent = closestModifierContainingSymbol()) {
+internal fun CheckerContext.actualParentTargets(declaration: CfirDeclaration): List<ModifierTarget> =
+    when (val parent = closestModifierContainingSymbol(
+        propertyParameterMode = declaration is CfirValueParameter && declaration.correspondingProperty != null,
+    )) {
         is CfirClassSymbol -> listOf(ModifierTarget.head(DeclarationKind.CLASS))
         is CfirStructSymbol -> listOf(ModifierTarget.head(DeclarationKind.STRUCT))
         is CfirInterfaceSymbol -> listOf(ModifierTarget.head(DeclarationKind.INTERFACE))

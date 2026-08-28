@@ -1,5 +1,5 @@
 public func foo(): Bool {
-    <!TYPE_MISMATCH!>if (let a <- 0) {
+    <!RETURN_TYPE_MISMATCH!>if (let a <- 0) {
     }<!>
 }
 

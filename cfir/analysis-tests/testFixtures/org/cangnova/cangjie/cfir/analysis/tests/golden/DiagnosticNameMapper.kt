@@ -198,6 +198,8 @@ object DiagnosticNameMapper {
         "NOT_MATCHED" to "sema_not_matched",
         "NON_EXHAUSTIVE_MATCH" to "sema_non_exhaustive_match",
         "ENUM_PATTERN_PARAM_SIZE_ERROR" to "sema_enum_pattern_param_size_error",
+        "FORIN_PATTERN_MUST_BE_IRREFUTABLE" to "sema_forin_pattern_must_be_irrefutable",
+        "EXPR_IN_FORIN_MUST_HAS_ITERATOR" to "sema_expr_in_forin_must_has_iterator",
         "TUPLE_PATTERN_NOT_MATCH" to "sema_tuple_pattern_not_match",
         "PATTERN_NOT_MATCH" to "sema_pattern_not_match",
 

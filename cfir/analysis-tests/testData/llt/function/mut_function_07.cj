@@ -18,6 +18,6 @@ struct S2 {
 
 main() {
     let s2 = S2()
-    s2.t2.<!IMMUTABLE_FUNCTION_CANNOT_ACCESS_MUTABLE_FUNCTION!>f<!>()
+    <!IMMUTABLE_FUNCTION_CANNOT_ACCESS_MUTABLE_FUNCTION!>s2.t2<!>.f()
     println(s2.t2.t1.t0)
 }

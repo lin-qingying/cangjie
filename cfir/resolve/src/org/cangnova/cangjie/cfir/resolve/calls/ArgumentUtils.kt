@@ -2,6 +2,8 @@ package org.cangnova.cangjie.cfir.resolve.calls
 
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.expressions.CfirInoutArgumentExpression
+import org.cangnova.cangjie.cfir.expressions.CfirNamedArgumentExpression
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.resolve.inference.model.ConeExplicitTypeParameterConstraintPosition
@@ -11,7 +13,9 @@ import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
 import org.cangnova.cangjie.cfir.types.CfirTypeSubstitutorByMap
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.ConePointerType
 import org.cangnova.cangjie.cfir.types.ConeTypeVariableType
+import org.cangnova.cangjie.cfir.types.ConeVArrayType
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.types.collectUpperBounds
 import org.cangnova.cangjie.cfir.types.coneType
@@ -26,6 +30,42 @@ import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintKind
  */
 internal fun prepareArgumentType(argumentType: ConeCangJieType, session: CfirSession): ConeCangJieType {
     return argumentType.fullyExpandedType(session)
+}
+
+/**
+ * 取得调用实参中 `inout` 修饰的真实表达式。
+ *
+ * 命名实参只改变参数映射，不改变 inout 的目标类型；因此这里递归剥离命名包装，
+ * 让候选检查和完成阶段共享同一套参数投影规则。
+ */
+internal fun CfirExpression.inoutArgumentTargetOrNull(): CfirExpression? = when (this) {
+    is CfirInoutArgumentExpression -> expression
+    is CfirNamedArgumentExpression -> expression.inoutArgumentTargetOrNull()
+    else -> null
+}
+
+/**
+ * 计算 `inout` 实参对应的候选期望类型。
+ *
+ * 官方 `ChkFuncArgWithInout` 将 `CPointer<T>` 形参投影为 `T`；当实参是 VArray
+ * 时，指针形参保留实参的固定长度，投影为同长度的 `VArray<T, N>`，从而只在
+ * 左值检查阶段报告不可修改的属性访问，而不会先产生无关的参数类型不匹配。
+ */
+internal fun CfirExpression.inoutExpectedTypeOrNull(
+    expectedType: ConeCangJieType,
+    session: CfirSession,
+): ConeCangJieType? {
+    val targetExpression = inoutArgumentTargetOrNull() ?: return null
+    val expandedExpectedType = expectedType.fullyExpandedType(session)
+    if (expandedExpectedType !is ConePointerType) return expectedType
+
+    val pointeeType = expandedExpectedType.pointeeType
+    val expandedArgumentType = targetExpression.coneTypeOrNull?.fullyExpandedType(session)
+    return if (expandedArgumentType is ConeVArrayType) {
+        ConeVArrayType(pointeeType, expandedArgumentType.size)
+    } else {
+        pointeeType
+    }
 }
 
 

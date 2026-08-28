@@ -13,7 +13,7 @@ class A <: ToString & Resource {
 
 main() {
     try (x = A()) {
-        let x = 0
+        let <!REDECLARATION!>x<!> = 0
         println(x)
     }
 }

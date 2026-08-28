@@ -9,5 +9,5 @@ struct S {
 
 main() {
     var a = S()
-    (S() + 1).<!IMMUTABLE_FUNCTION_CANNOT_ACCESS_MUTABLE_FUNCTION!>f<!>()
+    <!IMMUTABLE_FUNCTION_CANNOT_ACCESS_MUTABLE_FUNCTION!>(S() + 1)<!>.f()
 }
