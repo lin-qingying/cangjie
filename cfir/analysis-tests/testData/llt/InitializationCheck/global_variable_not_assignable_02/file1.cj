@@ -12,5 +12,5 @@ class A {
 
 main() {
     <!CANNOT_ASSIGN_TO_IMMUTABLE!>A.a++<!>
-    <!CANNOT_ASSIGN_TO_IMMUTABLE!>A.b<!> += 1
+    A.<!CANNOT_ASSIGN_TO_IMMUTABLE!>b<!> += 1
 }

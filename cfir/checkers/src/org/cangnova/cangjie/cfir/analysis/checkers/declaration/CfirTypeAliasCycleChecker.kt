@@ -28,7 +28,7 @@ object CfirTypeAliasCycleChecker : CfirTypeAliasChecker() {
         if (diagnostic.kind != DiagnosticKind.RecursiveTypealiasExpansion) return
 
         reporter.reportOn(
-            source = declaration.source?.firstCharacterDiagnosticSource(),
+            source = declaration.typeAliasDeclarationHeaderDiagnosticSource(),
             factory = CfirErrors.TYPEALIAS_CYCLE,
             a = diagnostic.reason,
         )

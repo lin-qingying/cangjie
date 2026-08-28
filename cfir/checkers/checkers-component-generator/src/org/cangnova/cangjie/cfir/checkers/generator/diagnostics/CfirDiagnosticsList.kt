@@ -1271,6 +1271,14 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
             parameter<FqName>("importPath")
             parameter<String>("exprKind")
         }
+
+        // for-in 的模式必须不可反驳（对齐官方 sema_forin_pattern_must_be_irrefutable，LoopExprs.cpp 的不可反驳模式检查）
+        val FORIN_PATTERN_MUST_BE_IRREFUTABLE by error<PsiElement>(PositioningStrategy.FOR_KEYWORD)
+
+        // 迭代对象类型未实现 Iterable（对齐官方 sema_expr_in_forin_must_has_iterator，LoopExprs.cpp GetIterableTy）
+        val EXPR_IN_FORIN_MUST_HAS_ITERATOR by error<PsiElement> {
+            parameter<ConeCangJieType>("type")
+        }
     }
 
     /**

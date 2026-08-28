@@ -150,6 +150,18 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
         )
         candidate.initializeSubstitutorAndVariables(substitutor, freshVariables)
 
+        // fresh lambda receiver 的 owner 泛型参数占位属于 lambda 求解系统（官方
+        // `ConstrainByCtor` 的 T-Fly 挂在 lambda tyvar 上）：除候选系统外同步注册进
+        // 活跃推断会话，使会话保留推断数据、后续语句/调用点证据能继续约束该变量。
+        val receiverOwnerParameters =
+            collectTypeVariableReceiverOwnerTypeParameters(context.session, candidate, declaration)
+        if (receiverOwnerParameters.isNotEmpty()) {
+            val receiverOwnerSymbols = receiverOwnerParameters.mapTo(mutableSetOf()) { it.symbol }
+            freshVariables.filterIsInstance<ConeTypeParameterBasedTypeVariable>()
+                .filter { it.typeParameterSymbol in receiverOwnerSymbols }
+                .forEach(context.bodyResolveContext.inferenceSession::registerInferenceVariable)
+        }
+
         // 声明侧存在矛盾（如上界冲突）——直接标记不可用
         if (csBuilder.hasContradiction) {
             sink.reportDiagnostic(InferenceConstraintError("declaration has contradicting upper bounds"))

@@ -22,6 +22,6 @@ public let obj = R1()
 import pkgs.*
 
 main(): Int64 {
-    obj.<!IMMUTABLE_FUNCTION_CANNOT_ACCESS_MUTABLE_FUNCTION!>foo<!>()
+    <!IMMUTABLE_FUNCTION_CANNOT_ACCESS_MUTABLE_FUNCTION!>obj<!>.foo()
     return 1
 }

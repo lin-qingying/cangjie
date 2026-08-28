@@ -355,6 +355,19 @@ class CfirCallCompletionResultsWriterTransformer(
             preserveResolvedReferenceForExpectedTypeRootMismatch = expectedTypeRootMismatchOnly,
         )
         val candidate = calleeReference.candidate
+        if (calleeReference.name.asString() in setOf("CPointer", "Array", "CString", "free")) {
+            System.err.println(
+                "CFIR-DEBUG writer ${calleeReference.name} source=${functionCall.source} explicit=${candidate.callInfo.hasExplicitTypeArguments} " +
+                    "typeArgs=${candidate.callInfo.typeArguments} diagnostics=${candidate.diagnostics} errors=${candidate.errors} " +
+                    "contradiction=${candidate.system.hasContradiction} " +
+                    "mode=${candidate.callInfo.resolutionMode} successful=${candidate.isSuccessful} applicability=${candidate.lowestApplicability} " +
+                    "result=${candidate.completedFunctionCallResultType(result.resolvedType, data?.getExpectedType(functionCall))} " +
+                    "expected=${data?.getExpectedType(functionCall)} " +
+                    "substituted=${candidate.substituteExplicitTypeArgumentConstraints(candidate.substitutedReturnType())} " +
+                    "notFixed=${candidate.system.currentStorage().notFixedTypeVariables.values.flatMap { it.constraints }} " +
+                    "fixed=${candidate.system.currentStorage().fixedTypeVariables}"
+            )
+        }
         candidate.commitCallableReferenceResults()
         result.transformCompletedFunctionCallReceiver(candidate)
         val originalArgumentList = result.argumentList

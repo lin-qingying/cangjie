@@ -518,9 +518,10 @@ class CfirCallResolver(
                 if (transformer.resolutionContext.candidateProcessingMode == CandidateProcessingMode.ARGUMENT_SHAPE) {
                     return@reduceCollectedCandidates currentCandidates
                 }
-                reduceArityOnlyErrorCandidates(functionCall, currentCandidates)
-                    ?: currentCandidates.singleOrNull()?.let(::setOf)
-                    ?: conflictResolver.chooseMaximallySpecificCandidates(currentCandidates)
+                val syntaxFilteredCandidates = reduceLambdaCandidatesByParameterType(callInfo, currentCandidates)
+                reduceArityOnlyErrorCandidates(functionCall, syntaxFilteredCandidates)
+                    ?: syntaxFilteredCandidates.singleOrNull()?.let(::setOf)
+                    ?: conflictResolver.chooseMaximallySpecificCandidates(syntaxFilteredCandidates)
             },
         )
         val reducedResult = ResolutionResult(
@@ -1592,29 +1593,47 @@ class CfirCallResolver(
     }
 
     /**
-     * 仓颉尾随 lambda 只参与最后一个函数类型形参的候选。
+     * 按仓颉官方 `SyntaxFilterCandidates` 的 lambda 形状规则预筛选候选。
      *
-     * 官方 `SyntaxFilterCandidates` 对 trailing closure 会直接检查最后一个
-     * parameter type 是否为函数类型；否则该候选属于语法层不匹配，不能进入
-     * lambda body 重载规约，否则 lambda 会失去目标函数类型并退化成参数标注错误。
+     * 该规则不只适用于 trailing closure：普通括号中的 lambda 也要求对应形参是
+     * 函数类型、`Any` 或尚未定型的泛型。若候选集中存在至少一个形状可接受的候选，
+     * 形状不可能匹配的候选必须在 most-specific 之前移除。否则像
+     * `this({ => cond })` 同时面对 `() -> Bool` 与 `Bool` 构造器时，后者会因为
+     * lambda 仍处于 postponed 状态而伪装成成功候选，最终错误地产生构造器歧义。
+     * 当所有候选都不满足形状时保留原集合，让参数检查阶段负责产生完整诊断。
      */
-    private fun reduceTrailingLambdaCandidatesByParameterType(
+    private fun reduceLambdaCandidatesByParameterType(
         info: CallInfo,
         candidates: Set<Candidate>,
     ): Set<Candidate> {
-        if (candidates.size <= 1 || !info.hasTrailingLambdaArgument()) return candidates
+        if (candidates.size <= 1) return candidates
+        if (candidates.any { candidate -> !candidate.argumentMappingInitialized }) return candidates
 
-        val matchingCandidates = candidates.filterTo(linkedSetOf()) { candidate ->
-            val lastParameterType = candidate.declaredParametersForMapping()
-                .lastOrNull()
-                ?.returnTypeRef
-                ?.coneTypeOrNull
-                ?.let(candidate.substitutor::substituteOrSelf)
-                ?.fullyExpandedType(session)
-
-            lastParameterType is ConeFunctionType
+        if (info.hasTrailingLambdaArgument()) {
+            val matchingCandidates = candidates.filterTo(linkedSetOf()) { candidate ->
+                candidate.declaredParametersForMapping()
+                    .lastOrNull()
+                    ?.returnTypeRef
+                    ?.coneTypeOrNull
+                    ?.let(candidate.substitutor::substituteOrSelf)
+                    ?.fullyExpandedType(session) is ConeFunctionType
+            }
+            return matchingCandidates.ifEmpty { candidates }
         }
 
+        val matchingCandidates = candidates.filterTo(linkedSetOf()) { candidate ->
+            candidate.arguments.all { argument ->
+                val lambda = (argument.expression as? CfirNamedArgumentExpression)?.expression
+                    ?: argument.expression
+                if (lambda !is CfirAnonymousFunctionExpression) return@all true
+
+                val parameter = candidate.argumentMapping[argument] ?: return@all true
+                val parameterType = candidate.substitutor
+                    .substituteOrSelf(parameter.returnTypeRef.coneType)
+                    .fullyExpandedType(session)
+                parameterType.isPotentialLambdaParameterType(session)
+            }
+        }
         return matchingCandidates.ifEmpty { candidates }
     }
 
@@ -1624,6 +1643,25 @@ class CfirCallResolver(
                 arguments.any { argument ->
                     (argument as? CfirAnonymousFunctionExpression)?.isTrailingLambda == true
                 }
+    }
+
+    /** 判断形参类型是否仍可能承接 lambda 实参。 */
+    private fun ConeCangJieType.isPotentialLambdaParameterType(session: CfirSession): Boolean {
+        val expanded = fullyExpandedType(session)
+        if (expanded is ConeFunctionType || expanded is ConeTypeParameterType || expanded is ConeErrorType) {
+            return true
+        }
+        if (expanded === ConeAnyType) return true
+        return when (expanded) {
+            is ConeClassLikeType -> expanded.classId == StdlibClassIds.Any ||
+                    expanded.classId == StdlibClassIds.Option &&
+                    expanded.typeArguments.singleOrNull()?.type?.isPotentialLambdaParameterType(session) == true
+
+            is ConeEnumType -> expanded.classId == StdlibClassIds.Option &&
+                    expanded.typeArguments.singleOrNull()?.type?.isPotentialLambdaParameterType(session) == true
+
+            else -> false
+        }
     }
 
     /**
@@ -1841,7 +1879,7 @@ class CfirCallResolver(
                 }
                 val arityFilteredCandidates = reduceCandidatesByArgumentCount(info, candidates)
                 val syntaxFilteredCandidates =
-                    reduceTrailingLambdaCandidatesByParameterType(info, arityFilteredCandidates)
+                    reduceLambdaCandidatesByParameterType(info, arityFilteredCandidates)
                 val expectedTypeFilteredCandidates =
                     reduceCandidatesByExpectedReturnType(info, syntaxFilteredCandidates)
                 val callSite = info.callSite as? CfirFunctionCall
@@ -2550,15 +2588,17 @@ class CfirCallResolver(
 
                     else -> {
                         val receiverType = explicitReceiver?.coneTypeOrNull
+                        val importedPackageFqName = if (explicitReceiver == null) {
+                            components.file.resolveImportedPackageQualifier(name, session)?.packageFqName
+                        } else {
+                            null
+                        }
                         when {
                             receiverType is ConeClassLikeType && receiverType.isInterface -> ConeNoConstructorError
-                            // 裸名若与已知包 FqName 重合,归类为"不能独立引用包名",
-                            // 对齐 C++ sema_cannot_ref_to_pkg_name。
-                            explicitReceiver == null && components.symbolProvider.hasPackage(
-                                org.cangnova.cangjie.name.FqName.topLevel(name)
-                            ) -> ConeCannotRefToPackageNameError(
-                                org.cangnova.cangjie.name.FqName.topLevel(name)
-                            )
+                            // 只有当前文件的 simple import 将裸名唯一绑定到包时，
+                            // 才能归类为“不能独立引用包名”。星号导入只把成员加入当前
+                            // 查找作用域，不会把包的父级名称（例如 `std`）绑定为裸名。
+                            importedPackageFqName != null -> ConeCannotRefToPackageNameError(importedPackageFqName)
                             // 保留 unresolved 兜底分类；macro/finalizer 等 function-like 声明
                             // 的局部可见性由 BODY_RESOLVE 入口建立作用域，这里不再为其做补丁判定。
                             else ->
@@ -3550,10 +3590,11 @@ class CfirCallResolver(
                     listOf(BuiltinArrayConstructorKind.COLLECTION)
                 }
 
-                else -> listOf(
-                    BuiltinArrayConstructorKind.INIT_FUNCTION,
-                    BuiltinArrayConstructorKind.REPEAT_ELEMENT,
-                )
+                else -> if (functionCall.argumentList.arguments.getOrNull(1)?.hasExplicitArgumentName() == true) {
+                    listOf(BuiltinArrayConstructorKind.REPEAT_ELEMENT)
+                } else {
+                    listOf(BuiltinArrayConstructorKind.INIT_FUNCTION)
+                }
             }
 
             is BuiltinArrayConstructorTarget.VArray -> when (argumentCount) {
@@ -3575,6 +3616,7 @@ class CfirCallResolver(
      * PSI 可用时直接读取 [CjValueArgument]；轻树/合成源不可用时通过源文本中的 `name:` 形态做保守识别。
      */
     private fun CfirExpression.hasExplicitArgumentName(): Boolean {
+        if (this is CfirNamedArgumentExpression) return true
         val source = when (this) {
             is CfirBlock -> source?.takeIf { statements.size == 1 }
             else -> source

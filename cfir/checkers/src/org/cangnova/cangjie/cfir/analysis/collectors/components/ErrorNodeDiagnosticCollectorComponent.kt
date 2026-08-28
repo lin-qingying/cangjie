@@ -60,6 +60,7 @@ import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
 import org.cangnova.cangjie.cfir.diagnostic.ConeInapplicableCandidateError
 import org.cangnova.cangjie.cfir.diagnostic.ConeTypeMismatchError
+import org.cangnova.cangjie.cfir.diagnostic.ConeUnmatchedTypeArgumentsError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedNameError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedReferenceError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedSymbolError
@@ -73,7 +74,39 @@ import org.cangnova.cangjie.cfir.types.containsErrorType
 import org.cangnova.cangjie.cfir.types.renderForDebugging
 import org.cangnova.cangjie.cfir.session.annotationMetadataRegistryOrNull
 import org.cangnova.cangjie.cfir.session.importBindingStoreOrNull
+import org.cangnova.cangjie.cfir.session.macroDemandClassificationOrNull
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroResolution
+import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjNodeTypes
+
+/** 官方 NAME_TO_ANNO_KIND 中不受 std-only 约束的内置 annotation 名称。 */
+private val BUILTIN_ANNOTATION_NAMES_EXCEPT_CONST_SAFE: Set<Name> = setOf(
+    Name.identifier("JavaMirror"),
+    Name.identifier("JavaImpl"),
+    Name.identifier("JavaHasDefault"),
+    Name.identifier("ObjCMirror"),
+    Name.identifier("ObjCImpl"),
+    Name.identifier("ObjCCJMapping"),
+    Name.identifier("ForeignGetterName"),
+    Name.identifier("ForeignSetterName"),
+    Name.identifier("ObjCInit"),
+    Name.identifier("ObjCOptional"),
+    Name.identifier("ForeignName"),
+    Name.identifier("CallingConv"),
+    Name.identifier("C"),
+    Name.identifier("Attribute"),
+    Name.identifier("Intrinsic"),
+    Name.identifier("OverflowThrowing"),
+    Name.identifier("OverflowWrapping"),
+    Name.identifier("OverflowSaturating"),
+    Name.identifier("When"),
+    Name.identifier("FastNative"),
+    Name.identifier("Annotation"),
+    Name.identifier("Deprecated"),
+    Name.identifier("Frozen"),
+    Name.identifier("EnsurePreparedToMock"),
+    Name.identifier("NonProduct"),
+)
 
 /**
  * 错误节点诊断收集组件（对应 Kotlin FIR 的 FirErrorNodeDiagnosticCollectorComponent）。
@@ -164,6 +197,12 @@ class ErrorNodeDiagnosticCollectorComponent(
         if (errorTypeRef.diagnostic.isUnresolvedCascadeAfterFailedImport(data)) return
         if (errorTypeRef.isMacroAnnotationTypeRef(data)) return
 
+        // 仓颉把 annotation callee 作为名称引用处理：未解析的 annotation 名称应报告
+        // UNRESOLVED_REFERENCE，而不是普通类型位置的 UNDECLARED_TYPE_NAME。该分支只
+        // 处理 annotation 自身的 unresolved qualifier，其他 annotation 类型错误仍沿用
+        // 通用 ConeDiagnostic 映射。
+        if (errorTypeRef.reportUnresolvedAnnotationType(data)) return
+
         val source = errorTypeRef.source
         if (source != null) {
             val key = ReportedConeDiagnosticKey(
@@ -186,20 +225,93 @@ class ErrorNodeDiagnosticCollectorComponent(
     /**
      * declaration macro annotation 的 callee 类型引用不属于普通类型解析域。
      *
-     * Raw builder 会把 `@pkg.Macro decl` 记录到 annotation metadata；即使 degraded
-     * construction 后 annotation 仍留在 final CFIR，也不能再把 `pkg` 当作类型限定符报错。
+     * Raw builder 会把所有 declaration annotation 记录到 annotation metadata；只有宏
+     * 分类结果确认该 surface 由宏构造消费时，annotation callee 才不属于普通类型解析域。
+     * 普通未解析 annotation 的 resolution 是 [MacroResolution.CustomAnnotation]，必须继续
+     * 报告其类型引用上的 unresolved 诊断。
      */
     private fun CfirErrorTypeRef.isMacroAnnotationTypeRef(context: CheckerContext): Boolean {
-        val annotation = (
-                context.callsOrAssignments.asReversed().asSequence() +
-                        context.containingElements.asReversed().asSequence()
+        val annotation = context.annotationCallContainingTypeRef(this)
+            ?: return false
+        // 自定义 annotation 的 callee 仍经过普通类型解析器。已解析到泛型 annotation
+        // 但省略类型实参时，通用类型诊断不属于 annotation 参数/目标检查；官方 parser
+        // 已经把该位置识别为 annotation callee，不能再把它作为普通裸泛型类型使用。
+        val unwrappedDiagnostic = diagnostic.unwrapUnreportedDuplicateDiagnostic()
+        if (unwrappedDiagnostic is ConeUnmatchedTypeArgumentsError &&
+            unwrappedDiagnostic.actualCount == 0
+        ) {
+            return true
+        }
+        val snapshot = context.session.annotationMetadataRegistryOrNull?.snapshot(annotation) ?: return false
+        val classification = context.session.macroDemandClassificationOrNull
+            ?.takeIf { it.isFinalFrozen }
+            ?: return false
+        val annotationName = snapshot.qualifiedName?.shortName() ?: return false
+        // 这些名称来自官方 Parser.h 的 NAME_TO_ANNO_KIND。它们是普通内置 annotation，
+        // 但不都参与 MacroBuiltinRegistries 的 construction routing（例如 Overflow*）；
+        // 因此这里不能用 construction registry 反推 annotation 的解析归属。
+        if (annotationName in BUILTIN_ANNOTATION_NAMES_EXCEPT_CONST_SAFE) return true
+        val decision = classification.finalDecisions.firstOrNull { decision ->
+            val carrier = decision.annotationCarrier ?: return@firstOrNull false
+            carrier.owner === snapshot.owner && carrier.annotationIndex == snapshot.annotationIndex
+        }
+        decision ?: return false
+        return when (decision.resolution) {
+            is MacroResolution.Builtin,
+            is MacroResolution.BuiltinNonMacro,
+            is MacroResolution.Resolved,
+            -> true
+
+            is MacroResolution.CustomAnnotation ->
+                decision.surface.qualifiedName?.shortName() in classification.builtinAnnotationRegistry
+
+            is MacroResolution.KindMismatch,
+            is MacroResolution.SamePackage,
+            is MacroResolution.Unresolved,
+            -> false
+        }
+    }
+
+    /** 查找当前错误类型引用所属的 annotation call。 */
+    private fun CheckerContext.annotationCallContainingTypeRef(typeRef: CfirTypeRef): CfirAnnotationCall? =
+        (
+                callsOrAssignments.asReversed().asSequence() +
+                        containingElements.asReversed().asSequence()
                 )
             .filterIsInstance<CfirAnnotationCall>()
-            .firstOrNull { it.typeRef.containsTypeRef(this) }
+            .firstOrNull { it.typeRef.containsTypeRef(typeRef) }
+
+    /**
+     * 把未解析 annotation callee 的类型解析错误还原为名称引用诊断。
+     *
+     * annotation 的 typeRef 仍复用普通类型解析器，因此其底层错误是
+     * [ConeUnresolvedTypeQualifierError]；但官方语义把 `@Missing` 中的 Missing
+     * 归类为 unresolved identifier。这里在 annotation 所有权边界上完成一次明确的
+     * 诊断工厂转换，避免修改通用类型名称诊断规则。
+     */
+    private fun CfirErrorTypeRef.reportUnresolvedAnnotationType(context: CheckerContext): Boolean {
+        if (context.annotationCallContainingTypeRef(this) == null) return false
+        val unresolved = diagnostic.unwrapUnreportedDuplicateDiagnostic()
+            as? ConeUnresolvedTypeQualifierError
             ?: return false
-        return context.session.annotationMetadataRegistryOrNull
-            ?.snapshot(annotation)
-            ?.qualifiedName != null
+        val qualifier = unresolved.qualifiers.lastOrNull() ?: return false
+        val source = qualifier.source ?: this.source ?: return false
+        val key = ReportedConeDiagnosticKey(
+            reason = unresolved.reason,
+            sourceStart = source.startOffset,
+            sourceEnd = source.endOffset,
+            callStart = null,
+            callEnd = null,
+        )
+        if (!reportedConeDiagnostics.add(key)) return true
+        reporter.reportOn(
+            source = source,
+            factory = CfirErrors.UNRESOLVED_REFERENCE,
+            a = qualifier.name.asString(),
+            b = null,
+            context = context,
+        )
+        return true
     }
 
     /**
@@ -245,7 +357,12 @@ class ErrorNodeDiagnosticCollectorComponent(
     override fun visitErrorExpression(errorExpression: CfirErrorExpression, data: CheckerContext) {
         if (errorExpression.diagnostic.isUnresolvedCascadeAfterFailedImport(data)) return
         val source = errorExpression.source as? CjSourceElement ?: return
-        reportConeDiagnostic(errorExpression.diagnostic, source, data)
+        reportCfirDiagnostic(
+            diagnostic = errorExpression.diagnostic,
+            source = source,
+            context = data,
+            allowErrorTypeMismatch = true,
+        )
     }
 
 
@@ -773,7 +890,8 @@ class ErrorNodeDiagnosticCollectorComponent(
         source: CjSourceElement?,
         context: CheckerContext,
         callOrAssignmentSource: CjSourceElement? = null,
-        valueParameter: CfirValueParameter? = null
+        valueParameter: CfirValueParameter? = null,
+        allowErrorTypeMismatch: Boolean = false,
 
     ) {
         if (diagnostic.isLambdaParameterInferenceCoveredByShapeDiagnostic(source, context)) return
@@ -789,6 +907,7 @@ class ErrorNodeDiagnosticCollectorComponent(
             callOrAssignmentSource = callOrAssignmentSource,
             valueParameter = valueParameter,
             returnExpressionSource = context.returnExpressionSourceForTypeMismatch(source, callOrAssignmentSource),
+            allowErrorTypeMismatch = allowErrorTypeMismatch,
         )
     }
 
@@ -839,6 +958,7 @@ class ErrorNodeDiagnosticCollectorComponent(
             callOrAssignmentSource: CjSourceElement? = null,
             valueParameter: CfirValueParameter? = null,
             returnExpressionSource: AbstractCjSourceElement? = null,
+            allowErrorTypeMismatch: Boolean = false,
         ) {
             // 抑制规则 1：委托属性访问器的 unresolved/ambiguous/inapplicable 错误
             // 由 DelegatedPropertyChecker 处理。
@@ -889,6 +1009,7 @@ class ErrorNodeDiagnosticCollectorComponent(
                 callOrAssignmentSource,
                 valueParameter,
                 returnExpressionSource,
+                allowErrorTypeMismatch,
             )) {
                 if (
                     coneDiagnostic.factoryName == "CFIR_UNABLE_TO_INFER_GENERIC_FUNC" &&

@@ -1,7 +1,7 @@
 
 
 
-<!TYPEALIAS_UNUSED_TYPE_PARAMETERS!>t<!>ype str<T> = String
+<!TYPEALIAS_UNUSED_TYPE_PARAMETERS!>type str<T><!> = String
 
 main(): Int64 {
     var str1: str<?Int32> = "hello"

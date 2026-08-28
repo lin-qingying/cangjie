@@ -91,13 +91,23 @@ object CfirCheckDispatchReceiver : ResolutionStage() {
          * 对这种 receiver，成员候选本身就是推断输入，不能先用普通 receiver
          * 适用性检查把候选判成 `InapplicableWrongReceiver`；后续实参检查和
          * completion 会继续筛选候选并固定该 type variable。
+         *
+         * 成员候选为泛型 owner 创建的占位实参变量（官方 `ConstrainByCtor` 的 T-Fly）
+         * 属于 lambda 自身的求解系统：声明侧接收者类型含这类变量时（如
+         * `Array<TypeVariable(T)>`），不能把 `x <: Array<T-Fly>` 写进正在完成的系统，
+         * 否则形参在 body 末求解前就被定型成含未解变量的非 proper 类型。此时跳过
+         * 约束写入，保持形参开放，交由语句边界/body 末/调用点证据定型。
          */
         if (actualType.isFreshLambdaReceiverTypeVariable()) {
-            candidate.system.addSubtypeConstraint(
-                actualType,
-                expectedType,
-                ConeReceiverConstraintPosition(receiver.expression, candidate.callInfo.callSite.source),
-            )
+            val expectedContainsSessionVariable = context.bodyResolveContext.inferenceSession
+                .containsRegisteredInferenceVariable(expectedType)
+            if (!expectedContainsSessionVariable) {
+                candidate.system.addSubtypeConstraint(
+                    actualType,
+                    expectedType,
+                    ConeReceiverConstraintPosition(receiver.expression, candidate.callInfo.callSite.source),
+                )
+            }
             sink.yieldIfNeed()
             return
         }

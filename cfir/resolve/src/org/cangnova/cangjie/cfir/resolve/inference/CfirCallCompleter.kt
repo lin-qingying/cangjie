@@ -335,7 +335,7 @@ class CfirCallCompleter(
         val system = candidate.system
 
         if (candidate.addBuiltinArrayConstructorExpectedElementConstraint(expectedType)) return
-        if (candidate.addBuiltinPointerConstructorExpectedPointeeConstraint(expectedType)) return
+        if (candidate.addBuiltinPointerConstructorExpectedPointeeConstraint(initialType, expectedType)) return
         if (candidate.addEnumConstructorExpectedTypeConstraint(initialType, expectedType)) return
         if (candidate.addEnumConstructorPayloadExpectedTypeConstraint(initialType, expectedType)) return
 
@@ -389,17 +389,34 @@ class CfirCallCompleter(
      * 普通子类型/extend 约束处理，避免把所有 C pointer 退化成同一个泛型实参。
      */
     private fun Candidate.addBuiltinPointerConstructorExpectedPointeeConstraint(
+        initialType: ConeCangJieType,
         expectedType: ConeCangJieType,
     ): Boolean {
         val callable = symbol.takeIf { it.isBound }?.cfir as? CfirFunction ?: return false
         if (callable.origin != CfirDeclarationOrigin.Synthetic.BuiltinPointerConstructor) return false
-        if (callInfo.hasExplicitTypeArguments) return false
 
         val expectedPointerType = expectedType.fullyExpandedType() as? ConePointerType ?: return false
+        if (callInfo.hasExplicitTypeArguments) {
+            /*
+             * 显式 `CPointer<T>` 已经在候选约束系统中固定 pointee 类型。
+             * 这里必须先读取该等式约束；若再拿仍含 fresh T 的 initialType
+             * 追加 `CPointer<T> <: CPointer<U>`，类型系统会把同一显式实参
+             * 错误地当成待推断变量，合法的空指针构造也会被判为矛盾。
+             * 不兼容的显式类型仍返回 false，让普通 expected-type 检查保留
+             * 调用级 TYPE_MISMATCH。
+             */
+            val explicitInitialType = system
+                .buildCurrentSubstitutor()
+                .asCone()
+                .substituteOrSelf(initialType)
+                .let(::substituteExplicitTypeArgumentConstraints)
+            return AbstractTypeChecker.equalTypes(session.typeContext, explicitInitialType, expectedPointerType)
+        }
         val pointeeVariableType = freshVariables.singleOrNull()?.defaultType as? ConeCangJieType ?: return false
         system.addSubtypeConstraint(pointeeVariableType, expectedPointerType.pointeeType, ConeExpectedTypeConstraintPosition)
         return true
     }
+
 
     /**
      * 检测 typealias 构造器展开后的真实 class 类型实参是否已经违反声明上界。

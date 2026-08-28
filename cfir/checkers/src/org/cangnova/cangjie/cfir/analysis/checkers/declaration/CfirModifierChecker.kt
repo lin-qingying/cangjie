@@ -60,7 +60,9 @@ object CfirModifierChecker : CfirBasicDeclarationChecker() {
         checkModifiersCompatibility(declaration, modifiers, reportedNodes)
 
         val actualTargets = context.actualTargetsFor(declaration)
-        val actualParents = context.actualParentTargets()
+        // 主构造器的 `let`/`var` 参数同时代表成员属性；参数修饰符的包含声明应落到外层类型，
+        // 不能把主构造器本身当作 `private`/`internal` 的父目标。
+        val actualParents = context.actualParentTargets(declaration)
 
         for (modifier in modifiers) {
             if (modifier in reportedNodes) continue

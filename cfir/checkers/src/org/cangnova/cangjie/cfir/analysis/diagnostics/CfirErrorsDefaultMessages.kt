@@ -582,6 +582,15 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
             "enum pattern's parameters size is wrong.",
         )
         map.put(
+            CfirErrors.FORIN_PATTERN_MUST_BE_IRREFUTABLE,
+            "the pattern in for-in expression must be irrefutable.",
+        )
+        map.put(
+            CfirErrors.EXPR_IN_FORIN_MUST_HAS_ITERATOR,
+            "the type ''{0}'' of expression in for-in expression does not implement Iterator",
+            RENDER_TYPE,
+        )
+        map.put(
             CfirErrors.NOT_OVERLOAD_IN_MATCH,
             "No overloaded '==' function in match case pattern.",
         )

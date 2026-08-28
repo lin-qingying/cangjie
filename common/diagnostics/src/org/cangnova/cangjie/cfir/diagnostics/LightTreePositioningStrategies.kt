@@ -196,6 +196,21 @@ object LightTreePositioningStrategies {
         }
     }
     /**
+     * 标记 for-in 表达式中的 for 关键字。
+     */
+    val FOR_KEYWORD: LightTreePositioningStrategy = object : LightTreePositioningStrategy() {
+        override fun mark(
+            node: LighterASTNode,
+            startOffset: Int,
+            endOffset: Int,
+            tree: FlyweightCapableTreeStructure<LighterASTNode>,
+        ): List<TextRange> {
+            val forKeyword = tree.findChildByType(node, CjTokens.FOR_KEYWORD)
+                ?: return super.mark(node, startOffset, endOffset, tree)
+            return markElement(forKeyword, startOffset, endOffset, tree, node)
+        }
+    }
+    /**
      * 标记数组字面量左中括号。
      */
     val ARRAY_LITERAL_LEFT_BRACKET: LightTreePositioningStrategy = object : LightTreePositioningStrategy() {

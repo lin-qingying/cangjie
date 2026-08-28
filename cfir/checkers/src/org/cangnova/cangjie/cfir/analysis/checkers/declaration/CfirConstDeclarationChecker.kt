@@ -30,6 +30,7 @@ import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaratio
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirMutationTargetClassifier
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.*
@@ -527,6 +528,8 @@ private class CfirConstExpressionEvaluator(
         expression: CfirQualifiedAccessExpression,
         isWeak: Boolean,
     ): Boolean {
+        // 解析错误已经由引用诊断负责，常量求值不能基于错误引用继续派生 EXPECT_CONST。
+        if (expression.calleeReference is CfirDiagnosticHolder) return false
         val target = expression.resolvedSymbolOrNull() ?: return false
         if (!target.isBound) return false
 

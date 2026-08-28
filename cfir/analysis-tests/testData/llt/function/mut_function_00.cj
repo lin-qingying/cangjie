@@ -19,7 +19,7 @@ class Bar <: I {
 }
 
 func g1<T>(v: T): Unit where T <: I {
-    v.<!IMMUTABLE_FUNCTION_CANNOT_ACCESS_MUTABLE_FUNCTION!>f<!>()
+    <!IMMUTABLE_FUNCTION_CANNOT_ACCESS_MUTABLE_FUNCTION!>v<!>.f()
 }
 
 func g2<T>(v: T): Unit where T <: Bar & I {

@@ -12,6 +12,7 @@ import org.cangnova.cangjie.psi.CjConstructor
 import org.cangnova.cangjie.psi.CjDotQualifiedExpression
 import org.cangnova.cangjie.psi.CjExpression
 import org.cangnova.cangjie.psi.CjFieldVariable
+import org.cangnova.cangjie.psi.CjForExpression
 import org.cangnova.cangjie.psi.CjFunction
 import org.cangnova.cangjie.psi.CjImportAlias
 import org.cangnova.cangjie.psi.CjImportDirective
@@ -174,6 +175,16 @@ object PositioningStrategies {
             val throwKeyword = throwExpression.node.findChildByType(CjTokens.THROW_KEYWORD)?.psi
                 ?: return super.mark(element)
             return markElement(throwKeyword)
+        }
+    }
+    /**
+     * 标记 for-in 表达式中的 for 关键字。
+     */
+    val FOR_KEYWORD: PositioningStrategy<PsiElement> = object : PositioningStrategy<PsiElement>() {
+        override fun mark(element: PsiElement): List<TextRange> {
+            val forExpression = element as? CjForExpression ?: return super.mark(element)
+            val forKeyword = forExpression.forKeyword ?: return super.mark(element)
+            return markElement(forKeyword)
         }
     }
     /**

@@ -1,7 +1,9 @@
 package org.cangnova.cangjie.cfir.resolve.inference
 
+import org.cangnova.cangjie.cfir.diagnostic.ArgumentTypeMismatch
 import org.cangnova.cangjie.cfir.diagnostic.ConeConstraintSystemHasContradiction
 import org.cangnova.cangjie.cfir.diagnostic.ConeInapplicableCandidateError
+import org.cangnova.cangjie.cfir.semantics.ErrorTypeInArguments
 import org.cangnova.cangjie.cfir.diagnostic.InapplicableCandidateByExpectedReturnType
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirErrorReferenceWithCandidate
@@ -41,8 +43,12 @@ internal fun CfirNamedReferenceWithCandidate.isExpectedTypeRootMismatchOnly(
  */
 private fun Candidate.hasExplicitTypeArgumentExpectedTypeMismatch(): Boolean =
     callInfo.hasExplicitTypeArguments &&
-        diagnostics.isEmpty() &&
-        errors.isNotEmpty() &&
-        errors.all { error ->
+        errors.any { error ->
             error is ConstraintMismatch && error.position.from is ConeExpectedTypeConstraintPosition
-        }
+        } &&
+        (
+            diagnostics.isEmpty() ||
+                diagnostics.any { diagnostic ->
+                    diagnostic is ArgumentTypeMismatch || diagnostic == ErrorTypeInArguments
+                }
+            )

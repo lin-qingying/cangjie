@@ -42,7 +42,7 @@ object CfirTypeAliasUnusedTypeParameterChecker : CfirTypeAliasChecker() {
         if (unusedTypeParameters.isEmpty()) return
 
         reporter.reportOn(
-            source = declaration.typeAliasDeclarationHeaderDiagnosticSource()?.firstCharacterDiagnosticSource(),
+            source = declaration.typeAliasDeclarationHeaderDiagnosticSource(),
             factory = CfirErrors.TYPEALIAS_UNUSED_TYPE_PARAMETERS,
             a = unusedTypeParameters.joinToString(",") { "Generics-${it.name.asString()}" },
         )

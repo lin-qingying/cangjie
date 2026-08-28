@@ -9,13 +9,13 @@ extend<F, K> I1<F, K> {}
 
 class I2<K> <: I1<Int64, K> {}
 
-<!TYPEALIAS_UNUSED_TYPE_PARAMETERS!>t<!>ype Y0<K> = I1<Int32, Int8>
+<!TYPEALIAS_UNUSED_TYPE_PARAMETERS!>type Y0<K><!> = I1<Int32, Int8>
 
 type Y1<K> = I1<Int32, K>
 
 type X0<K> = I2<K>
 
-<!TYPEALIAS_UNUSED_TYPE_PARAMETERS!>t<!>ype X1<K> = I2<Int64>
+<!TYPEALIAS_UNUSED_TYPE_PARAMETERS!>type X1<K><!> = I2<Int64>
 
 main() {
     Y0.a

@@ -702,6 +702,7 @@ private class CfirInitializationFlowAnalyzer(
             access.shouldSkipIllegalMemberAccessInMemberInitializer(afterReceiver) -> afterReceiver
 
             else -> reportIllegalMemberAccessIfNeeded(
+                access = access,
                 symbol = symbol,
                 diagnosticName = access.calleeReference.referenceNameOrNull()
                     ?: symbol.nameOrNull()
@@ -981,6 +982,7 @@ private class CfirInitializationFlowAnalyzer(
                 else -> if (expression.shouldSkipIllegalMemberAccessInMemberInitializer(currentState)) {
                     currentState
                 } else reportIllegalMemberAccessIfNeeded(
+                    access = expression,
                     symbol = callableSymbol,
                     diagnosticName = diagnosticName,
                     source = expression.calleeReference.source ?: expression.source,
@@ -1037,6 +1039,7 @@ private class CfirInitializationFlowAnalyzer(
             } else if (expression.shouldSkipIllegalMemberAccessInMemberInitializer(afterReceiver)) {
                 afterReceiver
             } else reportIllegalMemberAccessIfNeeded(
+                access = expression,
                 symbol = symbol,
                 diagnosticName = expression.calleeReference.referenceNameOrNull()
                     ?: symbol.nameOrNull()
@@ -1084,6 +1087,7 @@ private class CfirInitializationFlowAnalyzer(
             } else if (expression.shouldSkipIllegalMemberAccessInMemberInitializer(afterReceiver)) {
                 afterReceiver
             } else reportIllegalMemberAccessIfNeeded(
+                access = expression,
                 symbol = symbol,
                 diagnosticName = expression.calleeReference.referenceNameOrNull()
                     ?: symbol.nameOrNull()
@@ -1681,11 +1685,13 @@ private class CfirInitializationFlowAnalyzer(
      * 统一落到 `USED_BEFORE_INITIALIZATION`，位置使用被访问成员名。
      */
     private fun reportIllegalMemberAccessIfNeeded(
+        access: CfirQualifiedAccessExpression,
         symbol: CfirBasedSymbol<*>,
         diagnosticName: Name,
         source: org.cangnova.cangjie.source.CjSourceElement?,
         state: InitializationState,
     ): InitializationState {
+        if (!access.usesCurrentInstanceReceiver()) return state
         if (!state.hasUninitializedInstanceFields()) return state
         if (state.inNestedFunction && !state.inMemberInitializer) return state
         if (!symbol.isInstanceMemberFunctionOrProperty()) return state
@@ -1700,6 +1706,19 @@ private class CfirInitializationFlowAnalyzer(
             }
         }
         return state
+    }
+
+    /**
+     * 判断成员访问是否真正作用于当前正在初始化的实例。
+     *
+     * 初始化流中的未完成字段集合属于当前 `this`，不能传播到显式 receiver 的成员访问。
+     * `DateTime.now().toUnixTimeStamp()` 等调用的 receiver 是另一个已构造对象；只有隐式
+     * receiver、显式 `this` 或 `super` 才需要继续执行当前对象的成员初始化约束。
+     */
+    private fun CfirQualifiedAccessExpression.usesCurrentInstanceReceiver(): Boolean {
+        val receiver = dispatchReceiver ?: explicitReceiver ?: return true
+        return receiver.unwrapSmartcastExpression() is CfirThisReceiverExpression ||
+                receiver.unwrapSmartcastExpression() is CfirSuperReceiverExpression
     }
 }
 

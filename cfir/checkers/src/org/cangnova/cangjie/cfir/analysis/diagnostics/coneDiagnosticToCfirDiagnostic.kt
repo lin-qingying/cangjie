@@ -91,6 +91,7 @@ fun ConeDiagnostic.toCfirDiagnostics(
     callOrAssignmentSource: CjSourceElement?,
     valueParameter: CfirValueParameter? = null,
     returnExpressionSource: AbstractCjSourceElement? = null,
+    allowErrorTypeMismatch: Boolean = false,
 ): List<CjDiagnostic> {
     if (this is ConeUnreportedDuplicateDiagnostic) return emptyList()
     return when (this) {
@@ -130,6 +131,7 @@ fun ConeDiagnostic.toCfirDiagnostics(
                 callOrAssignmentSource,
                 session,
                 returnExpressionSource,
+                allowErrorTypeMismatch,
             )
         )
     }
@@ -1544,7 +1546,8 @@ private fun ConeAmbiguityError.hasErroneousArgument(): Boolean {
     // 的真实歧义状态；无论本层适用性如何，调用点都不再追加歧义诊断。单候选失败路径
     // 已按同一判定渲染空诊断，多候选路径必须保持一致。
     if (callCandidates.first().callInfo.arguments.any { argument ->
-            argument.containsErrorDiagnosticInArgument()
+            argument.containsErrorDiagnosticInArgument() &&
+                    !isContextuallyResolvedNestedErrorArgument(argument)
         }
     ) {
         return true
@@ -1558,6 +1561,18 @@ private fun ConeAmbiguityError.hasErroneousArgument(): Boolean {
     return callCandidates.all { candidate ->
         candidate.diagnostics.any { it is ErrorTypeInArguments }
     }
+}
+
+/**
+ * 嵌套调用的初始歧义已经被所有 outer candidate 按各自 expected type 独立解释时，
+ * 原始实参的 error type 只是候选分支共享的未完成状态，不能阻断 outer ambiguity。
+ */
+private fun ConeAmbiguityError.isContextuallyResolvedNestedErrorArgument(argument: CfirExpression): Boolean {
+    val nestedCall = argument as? CfirFunctionCall ?: return false
+    val nestedDiagnostic = (nestedCall.calleeReference as? CfirDiagnosticHolder)?.diagnostic
+        as? ConeAmbiguityError
+        ?: return false
+    return dominatedNestedDiagnostics.any { it === nestedDiagnostic }
 }
 
 /**
@@ -2164,6 +2179,7 @@ private fun ConeDiagnostic.mapOtherDiagnostic(
     callOrAssignmentSource: CjSourceElement?,
     session: CfirSession,
     returnExpressionSource: AbstractCjSourceElement? = null,
+    allowErrorTypeMismatch: Boolean = false,
 ): CjDiagnostic? {
     val diagnosticSource = callOrAssignmentSource ?: source ?: return null
     // 官方 `DiagnoseForCallInference` 把泛型推断失败锚定在 callee 表达式而非整个调用。
@@ -2477,6 +2493,7 @@ private fun ConeDiagnostic.mapOtherDiagnostic(
             isMismatchDueToNullability = false,
             session = session,
             returnExpressionSource = returnExpressionSource,
+            allowErrorTypes = allowErrorTypeMismatch,
         )
 
         is ConeMismatchedTypesBecauseError -> CfirErrors.MISMATCHED_TYPES_BECAUSE.on(
@@ -2921,9 +2938,10 @@ private fun typeMismatchDiagnostic(
     isMismatchDueToNullability: Boolean,
     session: CfirSession,
     returnExpressionSource: AbstractCjSourceElement? = null,
+    allowErrorTypes: Boolean = false,
 ): CjDiagnostic? {
     val diagnosticSource = source ?: return null
-    if (expectedType.containsErrorType() || actualType.containsErrorType()) return null
+    if (!allowErrorTypes && (expectedType.containsErrorType() || actualType.containsErrorType())) return null
     specificTypeMismatchDiagnostic(
         source = diagnosticSource,
         expectedType = expectedType,

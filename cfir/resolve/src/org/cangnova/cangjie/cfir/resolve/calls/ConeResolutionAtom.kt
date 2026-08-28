@@ -9,6 +9,7 @@ import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
 import org.cangnova.cangjie.cfir.diagnostic.CallableReferenceFailureKind
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
+import org.cangnova.cangjie.cfir.expressions.CfirInoutArgumentExpression
 import org.cangnova.cangjie.cfir.expressions.CfirNamedAccessExpression
 import org.cangnova.cangjie.cfir.expressions.CfirNamedArgumentExpression
 import org.cangnova.cangjie.cfir.expressions.CfirResolvable
@@ -66,6 +67,10 @@ sealed class ConeResolutionAtom : AbstractConeResolutionAtom() {
                     )
                 }
                 is CfirNamedArgumentExpression -> ConeResolutionAtomWithSingleChild(
+                    expression = expression,
+                    subAtom = createRawAtom(expression.expression),
+                )
+                is CfirInoutArgumentExpression -> ConeResolutionAtomWithSingleChild(
                     expression = expression,
                     subAtom = createRawAtom(expression.expression),
                 )

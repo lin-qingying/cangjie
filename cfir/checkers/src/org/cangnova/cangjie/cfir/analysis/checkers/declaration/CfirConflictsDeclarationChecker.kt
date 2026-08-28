@@ -40,6 +40,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirIfExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLetPatternExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLoopExpression
 import org.cangnova.cangjie.cfir.expressions.CfirMatchBranch
+import org.cangnova.cangjie.cfir.expressions.CfirTryExpression
 import org.cangnova.cangjie.cfir.patterns.bindingOccurrences
 import org.cangnova.cangjie.cfir.patterns.visibleBindingVariables
 import org.cangnova.cangjie.cfir.session.CfirSession
@@ -354,6 +355,22 @@ private class LocalRedeclarationVisitor(
         withScope {
             block.statements.forEach { it.accept(this) }
         }
+    }
+
+    /**
+     * try 资源变量与 tryBlock 顶层声明共享一个局部作用域。
+     *
+     * 该作用域到 try 语句结束为止；catch / handler 子句各自有独立作用域，
+     * finallyBlock 也是独立块作用域，均在 try 作用域之外遍历。
+     */
+    override fun visitTryExpression(tryExpression: CfirTryExpression) {
+        withScope {
+            tryExpression.resources.forEach { it.accept(this) }
+            tryExpression.tryBlock.statements.forEach { it.accept(this) }
+        }
+        tryExpression.catches.forEach { it.accept(this) }
+        tryExpression.handlers.forEach { it.accept(this) }
+        tryExpression.finallyBlock?.accept(this)
     }
 
     /**
