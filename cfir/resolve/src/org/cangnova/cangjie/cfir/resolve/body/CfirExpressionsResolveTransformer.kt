@@ -1005,13 +1005,20 @@ open class CfirExpressionsResolveTransformer(
             ?.concretePrimitiveOperatorCheckTargetOrNull()
             ?.takeIf { target -> hasHomogeneousBuiltinOperatorSignature(target) }
         val syntacticRightTarget = argumentList.arguments.single()
-            .explicitPrimitiveConversionTargetOrNull()
+            .syntacticPrimitiveOperatorCheckTargetOrNull()
             ?.takeIf { target -> hasHomogeneousBuiltinOperatorSignature(target) }
+        System.err.println(
+            "HOMOGENEOUS_DEBUG name=${callee.name} origin=$origin " +
+                    "receiver=${explicitReceiver!!::class.simpleName} " +
+                    "right=${argumentList.arguments.single()::class.simpleName} " +
+                    "expected=$expectedTarget syntactic=$syntacticRightTarget",
+        )
         /*
          * 只有已经由外层上下文或源码显式构造确定的 primitive 才能改变解析方向。
-         * 理想字面量、普通调用和嵌套 operator 的 concrete type 都是其自身解析过程的
-         * 结果，不能反过来作为同构运算的目标；否则会把正常的 widening、幂运算和
-         * 参数形状诊断错误地改写为 homogeneous operator 检查。
+         * 普通调用和嵌套 operator 的 concrete type 都是其自身解析过程的结果，不能反过来
+         * 作为同构运算的目标；否则会把正常的 widening、幂运算和参数形状诊断错误地改写
+         * 为 homogeneous operator 检查。裸数值字面量例外：官方 binary check-mode 会先
+         * 合成并替换其 ideal 类型，整数/浮点分别得到默认 Int64/Float64，再检查左树。
         */
         val target = expectedTarget ?: syntacticRightTarget ?: return false
         // 显式 primitive 转换的结果类型由转换目标决定；把外层 target 传给它会改变
@@ -1049,6 +1056,24 @@ open class CfirExpressionsResolveTransformer(
         if (primitive.kind.isIdeal || primitive.kind == PrimitiveTypeKind.NOTHING) return null
         return ConePrimitiveType(primitive.kind)
     }
+
+    /**
+     * 识别 binary check-mode 可以直接确定的右操作数 primitive 目标。
+     *
+     * 官方 `SynLiteralInBinaryExprFromRight` 会先把裸整数/浮点字面量的 ideal 类型收敛
+     * 为默认 `Int64`/`Float64`；显式 primitive 转换则直接使用其转换目标，例如 `Int32(3)`。
+     * 普通调用和嵌套 operator 不在这里提供目标，它们必须在自己的解析过程中定型。
+     */
+    private fun CfirExpression.syntacticPrimitiveOperatorCheckTargetOrNull(): ConePrimitiveType? =
+        when (this) {
+            is CfirLiteralExpression -> when (kind) {
+                CfirLiteralKind.INT -> ConePrimitiveType.INT64
+                CfirLiteralKind.FLOAT -> ConePrimitiveType.FLOAT64
+                else -> null
+            }
+
+            else -> explicitPrimitiveConversionTargetOrNull()
+        }
 
     /**
      * 识别源码直接写出的 primitive 数值转换，例如 `Int32(3)`。
@@ -4083,7 +4108,12 @@ open class CfirExpressionsResolveTransformer(
             CfirBinaryOpKind.COMPOSITION -> buildCompositionCall(binaryOp)
             else -> error("Expected flow binary operation, got ${binaryOp.kind}")
         }
-        val resolvedCall = transformFunctionCallInternal(desugaredCall, data, CallResolutionMode.REGULAR)
+        val callResolutionMode = data.takeFlowCallExpectedTypeIntoAccount(binaryOp.kind)
+        val resolvedCall = transformFunctionCallInternal(
+            desugaredCall,
+            callResolutionMode,
+            CallResolutionMode.REGULAR,
+        )
         val resultType = resolvedCall.coneTypeOrNull
         val flowResultType = binaryOp.flowOperandRootErrorOrNull(resultType)
             ?: resultType.takeUnless { resolvedCall.hasReportedCallDiagnostic() }
@@ -4092,6 +4122,26 @@ open class CfirExpressionsResolveTransformer(
         binaryOp.replaceConeTypeOrNull(flowResultType)
         return resolvedCall
     }
+
+    /**
+     * pipeline 的目标类型属于 flow 表达式整体，但解糖调用仍需使用同一个 expected type
+     * 完成候选检查；只有代码块尾表达式专用的 `lastStatementInBlock` 标志必须清除。
+     *
+     * 官方 `ChkFlowExpr` 先综合 flow 两侧并检查解糖调用。当解糖后的调用返回类型不符合
+     * 目标类型时，诊断归属于 flow 表达式，而不是把函数返回值错误分类成外层 return mismatch。
+     * 保留 composition 的 expected type，因为 composition 本身返回函数值，目标类型会
+     * 参与其泛型函数类型合成。
+     */
+    private fun ResolutionMode.takeFlowCallExpectedTypeIntoAccount(kind: CfirBinaryOpKind): ResolutionMode =
+        when (kind) {
+            // 官方 ChkFlowExpr 在解糖调用中使用 flow 自身的 target 做最终检查，
+            // 但不能让它参与普通候选发现/淘汰；否则 `0 |> f` 会把 f 的实参错误
+            // 错误地变成 `|>` 上的 unresolved。flow 结果的 target 检查由外层 owner
+            // 继续完成，合成调用必须先独立保留真实 callable 和参数诊断。
+            CfirBinaryOpKind.PIPELINE -> ResolutionMode.ContextIndependent
+            CfirBinaryOpKind.COMPOSITION -> this
+            else -> this
+        }
 
     /**
      * 将 pipeline 表达式 `a |> f` 构造成 `f(a)` 形式的函数调用节点。
@@ -4110,7 +4160,7 @@ open class CfirExpressionsResolveTransformer(
                 arguments.add(binaryOp.left)
             }
             typeArguments.addAll(functionPart.typeArguments)
-            origin = CfirFunctionCallOrigin.Regular
+            origin = CfirFunctionCallOrigin.Pipeline
         }
     }
 
@@ -5025,20 +5075,26 @@ open class CfirExpressionsResolveTransformer(
     /**
      * 解析 range 表达式并构造 `Range<T>` 类型。
      *
-     * 当外层 expected type 已经是 `Range<T>` 时直接使用其元素类型；否则按起止表达式类型推断元素类型。
+     * 外层目标既可能直接是 `Range<T>`，也可能是由 Range 实现的接口；两者都必须
+     * 先反推出具体 `Range<T>`，再以 `T` 检查两个端点。没有可用目标时才按端点类型推断。
      */
     override fun transformRangeExpression(
         rangeExpression: CfirRangeExpression,
         data: ResolutionMode,
     ): CfirExpression {
-        rangeExpression.transformChildren(transformer, ResolutionMode.ContextIndependent)
-        val expectedRangeType = data.expectedTypeOrNull?.rangeTypeOrNull()
+        val expectedRangeType = data.expectedTypeOrNull?.rangeTypeForExpectedType(session)
         val elementType = expectedRangeType?.typeArguments?.singleOrNull()?.type
-            ?: inferRangeElementType(rangeExpression)
+        val endpointResolutionMode = elementType?.let(::withExpectedType)
+            ?: ResolutionMode.ContextIndependent
+        rangeExpression.transformAnnotations(transformer, data)
+        rangeExpression.transformStart(transformer, endpointResolutionMode)
+        rangeExpression.transformEnd(transformer, endpointResolutionMode)
+        rangeExpression.transformStep(transformer, withExpectedType(ConePrimitiveType.INT64))
+        val resolvedElementType = elementType ?: inferRangeElementType(rangeExpression)
         rangeExpression.replaceConeTypeOrNull(
             constructNamedType(
                 classId = StdlibClassIds.Range,
-                typeArguments = listOf(elementType),
+                typeArguments = listOf(resolvedElementType),
             )
         )
         return rangeExpression
@@ -5209,6 +5265,9 @@ open class CfirExpressionsResolveTransformer(
         is CfirTypeAliasSymbol -> ConeTypeAliasType(classId, typeArguments = typeArguments)
 
         is CfirPrimitiveTypeSymbol -> ConePrimitiveType(symbol.kind)
+        is CfirBuiltInTypeSymbol -> error(
+            "Built-in type ${symbol.name} has no Cone mapping yet; complete its semantic type construction before using it"
+        )
         is CfirInterfaceSymbol -> ConeClassLikeType(classId.toLookupTag(), typeArguments, isInterface = true)
         is CfirStructSymbol -> ConeStructType(classId.toLookupTag(), typeArguments)
         is CfirEnumSymbol -> ConeEnumType(classId.toLookupTag(), typeArguments, isRefEnum = symbol.isRefEnum)
@@ -5547,14 +5606,6 @@ open class CfirExpressionsResolveTransformer(
         } else {
             normalized
         }
-    }
-
-    /** 判断类型是否是标准库 `Range`，并在 typealias 场景下沿展开类型继续查找。 */
-    private fun ConeCangJieType.rangeTypeOrNull(): ConeClassifierType? = when (this) {
-        is ConeClassLikeType -> takeIf { classId == StdlibClassIds.Range }
-        is ConeStructType -> takeIf { classId == StdlibClassIds.Range }
-        is ConeTypeAliasType -> expandedType?.rangeTypeOrNull()
-        else -> null
     }
 
     /**

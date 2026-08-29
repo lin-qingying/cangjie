@@ -148,7 +148,8 @@ class CfirDeclDeserializer(
             DeclKind.TypeAliasDecl -> convertTypeAlias(decl)
             DeclKind.GenericParamDecl -> convertTypeParameter(decl)
             DeclKind.FuncParam -> convertValueParameter(decl)
-            else -> null // InvalidDecl, BuiltInDecl 暂不处理
+            DeclKind.BuiltInDecl -> convertBuiltIn(decl)
+            else -> null // InvalidDecl
         }
     }
     // ---- 属性位域解析 ----
@@ -563,6 +564,84 @@ class CfirDeclDeserializer(
     }
 
     // ---- 声明转换方法 ----
+
+    /**
+     * `BuiltInDecl` → [CfirBuiltInDeclaration]。
+     *
+     * 官方 `ASTLoader::LoadBuiltInDecl` 只接受 `BuiltInInfo` union，并按 FlatBuffers
+     * `BuiltInType` 恢复声明种类、通用参数和约束。这里保持同样的严格边界：格式中的
+     * union 类型、内建编号、名称/class id、泛型参数数量和约束形状任一不一致都属于
+     * CJO 格式错误，不能静默跳过或降级为普通 class-like 声明。
+     */
+    private fun convertBuiltIn(decl: Decl): CfirBuiltInDeclaration {
+        check(decl.infoType == DeclInfo.BuiltInInfo) {
+            "BuiltInDecl '${decl.identifier ?: "<anonymous>"}' must contain BuiltInInfo, " +
+                "actual infoType=${decl.infoType}"
+        }
+        val info = decl.info(BuiltInInfo()) as? BuiltInInfo
+            ?: error("BuiltInDecl '${decl.identifier ?: "<anonymous>"}' has no BuiltInInfo payload")
+        val kind = when (info.builtInType) {
+            BuiltInType.Array -> CfirBuiltInTypeKind.ARRAY
+            BuiltInType.VArray -> CfirBuiltInTypeKind.VARRAY
+            BuiltInType.CPointer -> CfirBuiltInTypeKind.CPOINTER
+            BuiltInType.CString -> CfirBuiltInTypeKind.CSTRING
+            BuiltInType.CFunc -> CfirBuiltInTypeKind.CFUNC
+            else -> error(
+                "Unknown BuiltInType=${info.builtInType} for '${decl.identifier ?: "<anonymous>"}'",
+            )
+        }
+        val name = decl.classLikeName()
+        check(name == kind.classId.shortClassName) {
+            "BuiltInType ${kind.name} is encoded as '${name.asString()}', " +
+                "expected '${kind.classId.shortClassName.asString()}'"
+        }
+        val classId = resolveClassId(decl, name)
+        check(classId == kind.classId) {
+            "BuiltInType ${kind.name} has classId $classId, expected ${kind.classId}"
+        }
+
+        val generic = decl.generic
+        val serializedTypeParameterCount = generic?.typeParametersLength ?: 0
+        check(serializedTypeParameterCount == kind.typeParameterCount) {
+            "BuiltInType ${kind.name} has $serializedTypeParameterCount serialized type parameters, " +
+                "expected ${kind.typeParameterCount}"
+        }
+        val expectedConstraintCount = if (kind == CfirBuiltInTypeKind.CPOINTER) 1 else 0
+        val serializedConstraintCount = generic?.constraintsLength ?: 0
+        check(serializedConstraintCount == expectedConstraintCount) {
+            "BuiltInType ${kind.name} has $serializedConstraintCount serialized constraints, " +
+                "expected $expectedConstraintCount"
+        }
+
+        val symbol = CfirBuiltInTypeSymbol(classId, kind)
+        val typeParameters = withContainingDeclarationSymbol(symbol) {
+            deserializeTypeParameters(decl)
+        }
+        check(typeParameters.size == kind.typeParameterCount) {
+            "BuiltInType ${kind.name} materialized ${typeParameters.size} type parameters, " +
+                "expected ${kind.typeParameterCount}"
+        }
+        val typeParameterRefs: MutableList<CfirTypeParameterRef> = typeParameters
+            .mapTo(mutableListOf()) { it }
+
+        val declaration = CfirBuiltInDeclaration(
+            moduleData = context.moduleData,
+            symbol = symbol,
+            name = name,
+            kind = kind,
+            scopeProvider = context.moduleData.session.cangjieScopeProvider,
+            annotations = deserializeAnnotations(decl, symbol),
+            origin = CfirDeclarationOrigin.Library,
+            attributes = CfirDeclarationAttributes.EMPTY,
+            typeParameters = typeParameterRefs,
+            status = buildStatus(decl),
+            deprecationsProvider = EmptyDeprecationsProvider,
+            declarations = mutableListOf(),
+            superTypeRefs = mutableListOf(),
+        )
+        declaration.markResolved()
+        return declaration
+    }
 
     /** ClassDecl → CfirClass */
     private fun convertClass(decl: Decl): CfirClass {

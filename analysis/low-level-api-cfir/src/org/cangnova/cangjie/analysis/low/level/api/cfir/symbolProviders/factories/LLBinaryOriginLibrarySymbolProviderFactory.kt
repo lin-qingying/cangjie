@@ -41,12 +41,14 @@ internal object LLBinaryOriginLibrarySymbolProviderFactory : LLLibrarySymbolProv
         listOf(createDeserializedLibrarySymbolProvider(session))
 
     /**
-     * 创建 builtins session 使用的 primitive provider 与 `.cjo` 反序列化 provider。
+     * 创建 builtins session 使用的 `.cjo` 反序列化 provider 与 synthetic builtin provider。
+     *
+     * `.cjo` 中的真实 BuiltInDecl 必须优先于 synthetic 声明；后者只负责补缺。
      */
     override fun createBuiltinsSymbolProvider(session: LLCfirSession): List<CfirSymbolProvider> =
         listOf(
-            CfirBuiltinSymbolProvider(session),
             createBuiltinsDeserializedSymbolProvider(session),
+            CfirBuiltinSymbolProvider(session),
         )
 
     /**

@@ -37,7 +37,7 @@
 
 模块清单以 `settings.gradle.kts` 为准。常被改动的一方模块：
 
-- 基础设施：`common`、`common:diagnostics`、`util`、`generators`、`flatbuffers-gen`、`dependencies:intellij-core`
+- 基础设施：`common`、`common:diagnostics`、`util`、`gradle-queue-cli`（跨进程 gradle 调用全局排队器，详见 §4.1）、`generators`、`flatbuffers-gen`、`dependencies:intellij-core`
 - 编译器驱动：`compiler:config`、`compiler:phaser`、`compiler:arguments`、`compiler:frontend`（前端入口）、`compiler:plugin`
 - 类型推断公共层：`resolution.common`
 - PSI：`psi`
@@ -75,26 +75,54 @@
 - `intellij-ide/` — IntelliJ 平台插件（IntelliJ Platform Gradle Plugin 2.x）
 - `deveco/` — DevEco Studio 增强插件
 
+### §4.1 gradle-queue-cli：全局串行 Gradle 包装器
+
+当多个终端 / IDE / CI 进程同时在项目根目录跑 gradle 命令时，
+Gradle Daemon / `.gradle/**.lock` / 输出目录会出现锁等待甚至冲突。
+**所有并发执行 gradle 的场景，统一改用 `gradlew-queue.bat`**，
+由其在 `.gradle/queue/` 目录下通过跨进程 `FileChannel` 独占锁做全局串行。
+
+入口（Windows 项目根目录）：
+```powershell
+.\gradlew-queue.bat :cfir:cfir-cones:assemble        # 与 gradlew.bat 同参
+.\gradlew-queue.bat :cfir:cfir-cones:test --tests "*PrimitiveTypeKindTest*"
+.\gradlew-queue.bat --show-queue                     # 查看 WAITING / RUNNING / DONE 条目
+.\gradlew-queue.bat --kill-current                   # 强制杀死当前锁持有者（谨慎用）
+.\gradlew-queue.bat --timeout-minutes 15 help        # 15 分钟拿不到锁就放弃
+.\gradlew-queue.bat --force-no-daemon clean build    # 排障用：禁用 Gradle Daemon 复用
+```
+- 首次运行若 jar 不存在：脚本自动持 `bootstrap.lock` 去构建 `:gradle-queue-cli:shadowJar`，避免首跑并发冲突。
+- 退出码 / stdout / stderr：100% 等价于直接跑 `gradlew.bat`，可用于任何脚本/CI 替换。
+- 默认启用 Gradle Daemon（全局串行已避免多客户端并发抢 daemon 锁，速度显著优于 `--no-daemon`）。
+- 实现源码：[gradle-queue-cli/src/main/kotlin/org/cangnova/build/queue/](file:///d:/code/intellij/cangjie/gradle-queue-cli/src/main/kotlin/org/cangnova/build/queue/)
+  - `GradleQueueMain.kt` CLI 入口与参数解析
+  - `GlobalProjectLock.kt` 跨进程 FileChannel 锁 + 崩溃 owner 恢复
+  - `GradleProcessExecutor.kt` 真实 gradlew 启动与退出码透传
+  - `QueueJournal.kt` + `QueueEntry.kt` 队列 JSON 快照（纯可观测，失败不影响主流程）
+  - `ProcessHandleUtil.kt` PID 存活检查 / 强制销毁
+
 ## 5) 构建命令
 
 请在仓库根目录执行。
-Windows 使用 `gradlew.bat`；Unix/macOS 使用 `./gradlew`。
+**多终端 / 多进程并发场景一律使用 `gradlew-queue.bat`（Windows）或 `./gradlew-queue`（Unix，若已提供）**，
+确保全局串行，避免 Gradle 锁冲突与 daemon 被互杀。
+只有"明确单进程调用"的手动一次性命令，才允许直连 `gradlew.bat` / `./gradlew`。
 
 全仓库构建：
 ```bash
-./gradlew clean
-./gradlew assemble
-./gradlew build
-./gradlew check
-./gradlew test
+gradlew-queue.bat clean
+gradlew-queue.bat assemble
+gradlew-queue.bat build
+gradlew-queue.bat check
+gradlew-queue.bat test
 ```
 
 按模块示例：
 ```bash
-./gradlew :cfir:cfir-cones:assemble
-./gradlew :cfir:cfir-tree:build
-./gradlew :analysis:analysis-api-cfir:test
-./gradlew :compiler:frontend:build
+gradlew-queue.bat :cfir:cfir-cones:assemble
+gradlew-queue.bat :cfir:cfir-tree:build
+gradlew-queue.bat :analysis:analysis-api-cfir:test
+gradlew-queue.bat :compiler:frontend:build
 ```
 
 ## 6) Lint / 静态检查
@@ -107,33 +135,33 @@ Windows 使用 `gradlew.bat`；Unix/macOS 使用 `./gradlew`。
 
 运行全部测试：
 ```bash
-./gradlew test
+gradlew-queue.bat test
 ```
 
 运行单个模块：
 ```bash
-./gradlew :cfir:cfir-cones:test
-./gradlew :cfir:raw-cfir:psi2cfir:test
+gradlew-queue.bat :cfir:cfir-cones:test
+gradlew-queue.bat :cfir:raw-cfir:psi2cfir:test
 ```
 
 运行单个测试类：
 ```bash
-./gradlew :cfir:cfir-cones:test --tests "org.cangnova.cangjie.cfir.types.PrimitiveTypeKindTest"
+gradlew-queue.bat :cfir:cfir-cones:test --tests "org.cangnova.cangjie.cfir.types.PrimitiveTypeKindTest"
 ```
 
 运行单个测试方法：
 ```bash
-./gradlew :cfir:cfir-cones:test --tests "org.cangnova.cangjie.cfir.types.PrimitiveTypeKindTest.typeName matches expected strings"
+gradlew-queue.bat :cfir:cfir-cones:test --tests "org.cangnova.cangjie.cfir.types.PrimitiveTypeKindTest.typeName matches expected strings"
 ```
 
 模式匹配：
 ```bash
-./gradlew :cfir:cfir-cones:test --tests "*PrimitiveTypeKindTest"
+gradlew-queue.bat :cfir:cfir-cones:test --tests "*PrimitiveTypeKindTest"
 ```
 
 排障命令：
 ```bash
-./gradlew :<module>:test --tests "<pattern>" --info --stacktrace
+gradlew-queue.bat :<module>:test --tests "<pattern>" --info --stacktrace
 ```
 
 说明：`:cfir:raw-cfir:psi2cfir` 增加了测试 include-pattern 处理，选择外部测试类时可自动包含内部类。
@@ -202,8 +230,16 @@ Windows 使用 `gradlew.bat`；Unix/macOS 使用 `./gradlew`。
 ## 12) 快速命令模板
 
 ```bash
-./gradlew :<module>:assemble
-./gradlew :<module>:test --tests "com.example.YourTest"
-./gradlew :<module>:test --tests "com.example.YourTest.method name"
-./gradlew check
+gradlew-queue.bat :<module>:assemble
+gradlew-queue.bat :<module>:test --tests "com.example.YourTest"
+gradlew-queue.bat :<module>:test --tests "com.example.YourTest.method name"
+gradlew-queue.bat check
+gradlew-queue.bat --show-queue
+gradlew-queue.bat --force-no-daemon clean build     # 极端排障场景：禁用 daemon 复用
+gradlew-queue.bat --timeout-minutes 30 :module:assemble
 ```
+
+> 如果确定当前没有任何其它 gradle 进程（人工排查过），可以直接用 `gradlew.bat`；
+> 否则一律使用 `gradlew-queue.bat`。
+> 默认启用 Gradle Daemon（全局串行下不会发生 daemon 锁冲突，速度更快）；
+> 仅在怀疑 daemon 被污染 / CI 一性次构建 / 定位 daemon 相关 bug 时才加 `--force-no-daemon`。

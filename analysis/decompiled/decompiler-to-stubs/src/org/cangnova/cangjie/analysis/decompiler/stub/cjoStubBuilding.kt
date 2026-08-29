@@ -303,6 +303,7 @@ internal fun createDeclarationStub(
         is CfirAnonymousFunction,
         is CfirPatternBindingVariable,
         is CfirPrimitiveTypeDeclaration,
+        is CfirBuiltInDeclaration,
         is CfirTypeParameter,
         is CfirValueParameter,
         -> Unit

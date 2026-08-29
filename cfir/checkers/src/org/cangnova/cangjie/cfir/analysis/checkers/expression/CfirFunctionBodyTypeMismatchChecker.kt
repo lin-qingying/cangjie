@@ -5,7 +5,9 @@ import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaratio
 import org.cangnova.cangjie.cfir.analysis.checkers.diagnosticFactoryForReturnTypeMismatch
 import org.cangnova.cangjie.cfir.analysis.checkers.hasUninferredOmittedLambdaParameterType
 import org.cangnova.cangjie.cfir.analysis.checkers.isSubtypeForTypeMismatch
+import org.cangnova.cangjie.cfir.analysis.checkers.isFlowExpression
 import org.cangnova.cangjie.cfir.analysis.checkers.lambdaExpectedFunctionType
+import org.cangnova.cangjie.cfir.analysis.diagnostics.literalConversionDiagnostic
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.analysis.diagnostics.specificTypeMismatchDiagnostic
 import org.cangnova.cangjie.cfir.CfirElement
@@ -101,6 +103,17 @@ object CfirFunctionBodyTypeMismatchChecker : CfirBasicExpressionChecker() {
 
         if (tailExpression != null && checkTargetTypedExpression(tailExpression, expectedType).isHandled) return
 
+        // 目标类型直接检查字面量时，显式 return 与隐式尾表达式都使用同一专用诊断。
+        literalConversionDiagnostic(
+            source = resultSource,
+            expectedType = expectedType,
+            expression = tailExpression,
+            session = context.session,
+        )?.let { diagnostic ->
+            reporter.report(diagnostic, context)
+            return
+        }
+
         specificTypeMismatchDiagnostic(
             source = resultSource,
             expectedType = expectedType,
@@ -114,8 +127,10 @@ object CfirFunctionBodyTypeMismatchChecker : CfirBasicExpressionChecker() {
 
         if (!isSubtypeForTypeMismatch(context.session, context.session.typeContext, actualType, expectedType)) {
             val diagnosticFactory = when {
-                // 普通函数的 body 尾表达式是隐式返回值，必须和显式 `return expr`
-                // 使用同一套返回类型不匹配诊断；尾部声明不是返回表达式，只作为 Unit 流出。
+                // 官方 ChkFlowExpr 在 flow 节点本身报告通用 mismatched-types；
+                // flow 作为隐式尾返回值时不能退化成 RETURN_TYPE_MISMATCH。
+                tailExpression?.isFlowExpression() == true -> CfirErrors.TYPE_MISMATCH
+                // 函数体尾表达式就是隐式返回值，与显式 `return expr` 共享返回类型语义。
                 tailExpression != null -> diagnosticFactoryForReturnTypeMismatch(context.session, expectedType)
                 tailStatement != null -> CfirErrors.TYPE_MISMATCH
                 containingFunction is CfirAnonymousFunction && containingFunction.isLambda -> CfirErrors.TYPE_MISMATCH

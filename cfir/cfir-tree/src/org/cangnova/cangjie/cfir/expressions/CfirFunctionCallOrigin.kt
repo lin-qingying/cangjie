@@ -28,6 +28,14 @@ enum class CfirFunctionCallOrigin {
     MockIntrinsic,
 
     /**
+     * `a |> f` 解糖产生的调用。
+     *
+     * 该来源仍按普通用户调用执行候选解析和可见性检查，但必须保留 flow
+     * 语义，供调用完成后的目标类型诊断使用。
+     */
+    Pipeline,
+
+    /**
      * 编译器生成的 core 包内建调用。
      *
      * 对齐官方 AST `Attribute::IN_CORE`：这类引用不是用户源码中的普通名字查找，

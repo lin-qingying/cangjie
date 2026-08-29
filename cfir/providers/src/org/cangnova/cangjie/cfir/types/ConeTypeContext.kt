@@ -377,7 +377,7 @@ interface ConeTypeContext :
             val current = queue.removeFirst()
             if (!visitedTypes.add(current)) continue
 
-            for (supertype in supertypeProvider.getDirectSupertypes(current)) {
+            for (supertype in supertypeProvider.getPredicateSupertypes(current)) {
                 val rigidSupertype = supertype as? ConeRigidType ?: continue
                 if (areEqualTypeConstructors(rigidSupertype.typeConstructor(), constructor)) {
                     correspondingSupertypes += rigidSupertype
@@ -435,6 +435,6 @@ interface ConeTypeContext :
         classSymbol.lazyResolveToPhase(CfirResolvePhase.SUPER_TYPES)
         val declarationSelfType = declarationSelfType(classSymbol) ?: return emptyList()
         val supertypeProvider = session.typeAwareSupertypeProviderOrNull ?: return emptyList()
-        return supertypeProvider.getDirectSupertypes(declarationSelfType)
+        return supertypeProvider.getPredicateSupertypes(declarationSelfType)
     }
 }

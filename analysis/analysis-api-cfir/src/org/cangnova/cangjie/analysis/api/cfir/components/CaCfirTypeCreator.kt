@@ -23,6 +23,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedSymbolError
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirBuiltInTypeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirEnumSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirInterfaceSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPrimitiveTypeSymbol
@@ -198,6 +199,9 @@ internal class CaCfirTypeCreator(
         typeArguments: List<ConeTypeProjection>,
     ): ConeCangJieType = when (this) {
         is CfirPrimitiveTypeSymbol -> ConePrimitiveType(kind)
+        is CfirBuiltInTypeSymbol -> error(
+            "Built-in type ${name} has no Cone mapping yet; complete its semantic type construction before using it"
+        )
         is CfirClassSymbol -> ConeClassLikeType(
             lookupTag = toLookupTag(),
             typeArguments = typeArguments,

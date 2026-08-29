@@ -38,6 +38,7 @@ import org.cangnova.cangjie.cfir.resolve.providers.CfirTypeAwareSupertypeProvide
 import org.cangnova.cangjie.cfir.resolve.providers.classifyDeclaredSupertype
 import org.cangnova.cangjie.cfir.resolve.providers.createExtendDeclarationSubstitution
 import org.cangnova.cangjie.cfir.resolve.providers.getDeclarationPackage
+import org.cangnova.cangjie.cfir.resolve.providers.isExtendSuperTypeRefPredicateVisible
 import org.cangnova.cangjie.cfir.resolve.providers.ordinarySupertypeTypeOrNull
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.extendIndexStoreOrNull
@@ -114,7 +115,7 @@ class CfirTypeAwareSupertypeProviderImpl(
 
         computingTypes += semanticType
         val computed = try {
-            computeDirectSupertypeDescriptors(semanticType)
+            computeDirectSupertypeDescriptors(semanticType, rawType = type)
         } finally {
             computingTypes -= semanticType
         }
@@ -123,6 +124,22 @@ class CfirTypeAwareSupertypeProviderImpl(
             return directSupertypeDescriptorsCache.getOrPut(type) { computed }
         }
     }
+
+    /**
+     * 官方赋值/子类型谓词视图的直接父类型投影。
+     *
+     * 与 [getDirectSupertypes] 的唯一差异：接口类型中仍残留 extend 类型形参的
+     * extend 边（官方 `TypeManager::HasExtendInterfaceTyHelper` 的 direct-TyVar-only
+     * 映射规则下无法实例化的边）不参与本视图。成员查找、可达性遍历与 match 绑定
+     * 消费的 [getDirectSupertypes] 保持完整结构化语义。
+     */
+    override fun getPredicateSupertypes(type: ConeCangJieType): List<ConeCangJieType> =
+        getDirectSupertypeDescriptors(type).mapNotNull { descriptor ->
+            when (val origin = descriptor.origin) {
+                is CfirInstantiatedSupertypeOrigin.Extend -> descriptor.type.takeIf { origin.predicateVisible }
+                else -> descriptor.type
+            }
+        }.distinct()
 
     /**
      * 判断当前类型是否构成对进行中父类型计算的递归回边。
@@ -180,9 +197,14 @@ class CfirTypeAwareSupertypeProviderImpl(
      *
      * typealias 展开由 [getDirectSupertypeDescriptors] 统一完成，保证“计算中”标记与这里消费的
      * 是同一份语义类型，别名拼写不会绕开递归回边判定。
+     *
+     * [rawType] 是查询入口的原始拼写，仅在顶层 extend 匹配时供官方
+     * `HasExtendInterfaceTyHelper` 的 alias 拼写层 direct 映射使用；
+     * superclass 传播链上的中间类型没有独立的用户拼写，谓词判定按语义层进行。
      */
     private fun computeDirectSupertypeDescriptors(
         semanticType: ConeCangJieType,
+        rawType: ConeCangJieType,
     ): List<CfirInstantiatedSupertypeDescriptor> {
         if (!semanticType.isSupportedClassifierType()) return emptyList()
 
@@ -191,6 +213,7 @@ class CfirTypeAwareSupertypeProviderImpl(
             type = semanticType,
             visited = linkedSetOf(),
             propagationPath = emptyList(),
+            rawReceiverType = rawType.takeIf { it != semanticType },
         )
 
         if (declaredSupertypes.isEmpty() && effectiveExtendSupertypes.isEmpty()) return emptyList()
@@ -262,11 +285,12 @@ class CfirTypeAwareSupertypeProviderImpl(
         type: ConeCangJieType,
         visited: MutableSet<ConeCangJieType>,
         propagationPath: List<CfirTypeRef>,
+        rawReceiverType: ConeCangJieType?,
     ): List<CfirInstantiatedSupertypeDescriptor> {
         if (!visited.add(type)) return emptyList()
 
         val result = mutableListOf<CfirInstantiatedSupertypeDescriptor>()
-        result += resolveDirectExtendSupertypeDescriptors(type, propagationPath)
+        result += resolveDirectExtendSupertypeDescriptors(type, propagationPath, rawReceiverType)
 
         if (!type.shouldInheritExtendsFromSuperclassChain()) {
             return result
@@ -285,6 +309,7 @@ class CfirTypeAwareSupertypeProviderImpl(
                 type = supertype.type,
                 visited = visited,
                 propagationPath = nextPropagationPath,
+                rawReceiverType = null,
             )
         }
 
@@ -297,12 +322,13 @@ class CfirTypeAwareSupertypeProviderImpl(
     private fun resolveDirectExtendSupertypeDescriptors(
         type: ConeCangJieType,
         propagationPath: List<CfirTypeRef>,
+        rawReceiverType: ConeCangJieType?,
     ): List<CfirInstantiatedSupertypeDescriptor> {
         val extends = resolveExtends(type)
         if (extends.isEmpty()) return emptyList()
 
         return extends.flatMap { extend ->
-            instantiateExtendSupertypeDescriptors(extend, type, propagationPath)
+            instantiateExtendSupertypeDescriptors(extend, type, propagationPath, rawReceiverType)
         }
     }
 
@@ -313,6 +339,7 @@ class CfirTypeAwareSupertypeProviderImpl(
         extend: CfirExtend,
         concreteType: ConeCangJieType,
         propagationPath: List<CfirTypeRef>,
+        rawReceiverType: ConeCangJieType?,
     ): List<CfirInstantiatedSupertypeDescriptor> {
         val targetPattern = resolveExtendTypeRef(extend, extend.extendedTypeRef) ?: return emptyList()
         val substitutor = createExtendDeclarationSubstitution(
@@ -332,6 +359,14 @@ class CfirTypeAwareSupertypeProviderImpl(
                     },
                     sourceTypeRef = superTypeRef,
                     propagationPath = propagationPath,
+                    predicateVisible = isExtendSuperTypeRefPredicateVisible(
+                        session = session,
+                        extend = extend,
+                        targetPattern = targetPattern,
+                        concreteReceiverType = concreteType,
+                        superTypeRefType = coneType,
+                        rawReceiverType = rawReceiverType,
+                    ),
                 ),
             )
         }
@@ -432,9 +467,7 @@ class CfirTypeAwareSupertypeProviderImpl(
         return this is ConeClassLikeType ||
                 this is ConeStructType ||
                 this is ConeEnumType ||
-                this is ConePrimitiveType ||
-                this is ConePointerType ||
-                this is ConeCStringType
+                isBuiltin
     }
 
     /**

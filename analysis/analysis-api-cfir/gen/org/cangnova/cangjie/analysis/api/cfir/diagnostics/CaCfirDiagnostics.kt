@@ -843,6 +843,12 @@ sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
         val targetType: CaType
     }
 
+    interface TypecastOverflow : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = TypecastOverflow::class
+        val sourceType: CaType
+        val targetType: CaType
+    }
+
     interface ConstEvalDivideByZero : CaCfirDiagnostic<PsiElement> {
         override val diagnosticClass get() = ConstEvalDivideByZero::class
         val operatorName: String
@@ -1181,6 +1187,15 @@ sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
         override val diagnosticClass get() = UseExprWithoutImport::class
         val importPath: FqName
         val exprKind: String
+    }
+
+    interface ForinPatternMustBeIrrefutable : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = ForinPatternMustBeIrrefutable::class
+    }
+
+    interface ExprInForinMustHasIterator : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = ExprInForinMustHasIterator::class
+        val type: CaType
     }
 
     interface GenericTypeInconsistent : CaCfirDiagnostic<PsiElement> {

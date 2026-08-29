@@ -340,7 +340,6 @@ internal object ArgumentCheckingProcessor {
      */
     private fun ArgumentContext.resolvePlainExpressionArgument(atom: ConeResolutionAtom) {
         val nestedCallResult = resolveNestedCallForExpectedType(atom)
-        if (nestedCallResult.failed) return
         val resolvedAtom = nestedCallResult.atom
         val targetTypedEnumType = expectedType?.let { expected ->
             resolvedAtom.expression.applyNoArgEnumConstructorTargetType(expected, session)
@@ -822,7 +821,7 @@ internal object ArgumentCheckingProcessor {
                 position,
             )
         ) return
-val added = if (csBuilder.isProperType(expectedType)) {
+        val added = if (csBuilder.isProperType(expectedType)) {
             csBuilder.addSubtypeConstraintIfCompatible(argumentTypeForSubtypeCheck, expectedType, position)
         } else {
             csBuilder.addSubtypeConstraint(argumentTypeForSubtypeCheck, expectedType, position)
@@ -899,6 +898,16 @@ val added = if (csBuilder.isProperType(expectedType)) {
         val currentSubstitutor = csBuilder.buildCurrentSubstitutor().asCone()
         val substitutedArgumentType = currentSubstitutor.substituteOrNull(argumentType) ?: argumentType
         val substitutedExpectedType = currentSubstitutor.substituteOrNull(expectedType) ?: expectedType
+        val actualFunction = substitutedArgumentType.fullyExpandedType(session) as? ConeFunctionType
+        val expectedFunction = substitutedExpectedType.fullyExpandedType(session) as? ConeFunctionType
+        if (actualFunction != null || expectedFunction != null) {
+            if (actualFunction == null || expectedFunction == null) return false
+            return addFunctionTypeArgumentConstraintsInTransaction(
+                actualFunction,
+                expectedFunction,
+                position,
+            )
+        }
         val actualClassifier = substitutedArgumentType.fullyExpandedType(session) as? ConeLookupTagBasedType ?: return false
         val expectedClassifier = substitutedExpectedType.fullyExpandedType(session) as? ConeLookupTagBasedType ?: return false
         if (actualClassifier.expandedClassIdOrPrimitiveClassId != expectedClassifier.expandedClassIdOrPrimitiveClassId) {
@@ -935,6 +944,77 @@ val added = if (csBuilder.isProperType(expectedType)) {
             if (!csBuilder.addEqualityConstraintIfCompatible(currentVariableType, otherType, position)) {
                 return false
             }
+            hasAcceptedConstraint = true
+        }
+        return hasAcceptedConstraint
+    }
+
+    /**
+     * 按官方 `LocalTypeArgumentSynthesis::UnifyFuncTy` 的函数类型统一规则下沉约束。
+     *
+     * 普通 subtype 检查对函数参数使用逆变，因此 `(Float32) -> Float32` 作为
+     * `(T1) -> T2` 实参时只会得到 `T1 <: Float32`，不能为 flow composition 提供
+     * 可完成的 `T1 == Float32`。仓颉的泛型实参合成会逐个统一函数参数和返回值；
+     * 这里仅在函数类型树确实包含当前候选的推断变量时采用同一精确统一，并继续
+     * 复用 nominal 类型的同构分解，避免改变普通非泛型函数 subtype 语义。
+     */
+    private fun ArgumentContext.addFunctionTypeArgumentConstraintsInTransaction(
+        actualType: ConeFunctionType,
+        expectedType: ConeFunctionType,
+        position: ConstraintPosition,
+    ): Boolean {
+        if (actualType.parameterTypes.size != expectedType.parameterTypes.size) return false
+
+        var hasAcceptedConstraint = false
+
+        fun addComponentConstraint(
+            actualComponent: ConeCangJieType,
+            expectedComponent: ConeCangJieType,
+        ): Boolean {
+            val currentSubstitutor = csBuilder.buildCurrentSubstitutor().asCone()
+            val actual = currentSubstitutor.substituteOrNull(actualComponent) ?: actualComponent
+            val expected = currentSubstitutor.substituteOrNull(expectedComponent) ?: expectedComponent
+            val actualFunction = actual.fullyExpandedType(session) as? ConeFunctionType
+            val expectedFunction = expected.fullyExpandedType(session) as? ConeFunctionType
+            if (actualFunction != null || expectedFunction != null) {
+                if (actualFunction == null || expectedFunction == null) return false
+                return addFunctionTypeArgumentConstraintsInTransaction(actualFunction, expectedFunction, position)
+            }
+
+            val actualContainsInferenceVariable = typeContainsCurrentInferenceVariable(actual)
+            val expectedContainsInferenceVariable = typeContainsCurrentInferenceVariable(expected)
+            if (!actualContainsInferenceVariable && !expectedContainsInferenceVariable) {
+                return isInvariantArgumentCompatible(actual, expected, session)
+            }
+
+            val (currentVariableType, otherType) = when {
+                isCurrentInferenceVariableType(actual) -> actual to expected
+                isCurrentInferenceVariableType(expected) -> expected to actual
+                else -> null to null
+            }
+            if (currentVariableType != null && otherType != null) {
+                return csBuilder.addEqualityConstraintIfCompatible(currentVariableType, otherType, position)
+            }
+
+            val actualClassifier = actual.fullyExpandedType(session) as? ConeLookupTagBasedType ?: return false
+            val expectedClassifier = expected.fullyExpandedType(session) as? ConeLookupTagBasedType ?: return false
+            return addSameClassifierTypeArgumentConstraintsInTransaction(actualClassifier, expectedClassifier, position)
+        }
+
+        for ((actualParameter, expectedParameter) in actualType.parameterTypes.zip(expectedType.parameterTypes)) {
+            if (!addComponentConstraint(actualParameter, expectedParameter)) return false
+            if (
+                typeContainsCurrentInferenceVariable(actualParameter) ||
+                    typeContainsCurrentInferenceVariable(expectedParameter)
+            ) {
+                hasAcceptedConstraint = true
+            }
+        }
+        if (!addComponentConstraint(actualType.returnType, expectedType.returnType)) return false
+        if (
+            typeContainsCurrentInferenceVariable(actualType.returnType) ||
+                typeContainsCurrentInferenceVariable(expectedType.returnType)
+        ) {
             hasAcceptedConstraint = true
         }
         return hasAcceptedConstraint

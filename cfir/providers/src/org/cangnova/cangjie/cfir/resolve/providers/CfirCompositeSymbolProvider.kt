@@ -1,5 +1,7 @@
 package org.cangnova.cangjie.cfir.resolve.providers
 
+import org.cangnova.cangjie.cfir.declarations.CfirBuiltInDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
@@ -39,7 +41,39 @@ class CfirCompositeSymbolProvider(
 
     /** 聚合所有子 provider 的 class-like 候选，不在 provider 层提前丢失同身份声明。 */
     override fun getClassLikeSymbolsByClassId(classId: ClassId): List<CfirClassLikeSymbol<*>> =
-        providers.flatMap { provider -> provider.getClassLikeSymbolsByClassId(classId) }.distinct()
+        providers
+            .flatMap { provider -> provider.getClassLikeSymbolsByClassId(classId) }
+            .withoutBuiltinFallbackDuplicates()
+            .distinct()
+
+    /**
+     * 合并同一 ClassId 的 provider 结果时消除 builtin fallback 的伪重声明。
+     *
+     * 官方 `BuiltInDecl` 既可能从真实 `std.core.cjo` 反序列化，也可能由共享会话中的
+     * synthetic provider 补齐。后者只在前者缺失时有效；若两者同时进入类型候选集合，
+     * 普通 builtin 使用会被错误地诊断为 `AMBIGUOUS_USE`。其他 class-like 声明仍完整保留，
+     * 因为它们可能确实构成同 ClassId 的重声明。
+     */
+    private fun List<CfirClassLikeSymbol<*>>.withoutBuiltinFallbackDuplicates(): List<CfirClassLikeSymbol<*>> {
+        val hasMaterializedBuiltin = any { symbol ->
+            symbol.cfir is CfirBuiltInDeclaration &&
+                symbol.cfir.origin !is CfirDeclarationOrigin.Synthetic
+        }
+        var syntheticBuiltinKept = false
+        return filter { symbol ->
+            val isSyntheticBuiltin = symbol.cfir is CfirBuiltInDeclaration &&
+                symbol.cfir.origin is CfirDeclarationOrigin.Synthetic
+            when {
+                !isSyntheticBuiltin -> true
+                hasMaterializedBuiltin -> false
+                syntheticBuiltinKept -> false
+                else -> {
+                    syntheticBuiltinKept = true
+                    true
+                }
+            }
+        }
+    }
 
     /**
      * 将所有子 provider 命中的顶层 callable symbol 追加到 [destination]。

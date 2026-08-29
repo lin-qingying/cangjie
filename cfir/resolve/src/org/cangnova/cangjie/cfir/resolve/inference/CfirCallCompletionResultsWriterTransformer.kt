@@ -51,6 +51,7 @@ import org.cangnova.cangjie.cfir.render
 import org.cangnova.cangjie.cfir.resolve.body.CfirDataFlowAnalyzer
 import org.cangnova.cangjie.cfir.resolve.body.buildAppliedCallableReference
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
+import org.cangnova.cangjie.cfir.resolve.rangeTypeForExpectedType
 import org.cangnova.cangjie.cfir.resolve.calls.ConeResolutionAtom
 import org.cangnova.cangjie.cfir.resolve.calls.ConeResolutionAtomWithPostponedChild
 import org.cangnova.cangjie.cfir.resolve.calls.ConeResolvedCallableReferenceAtom
@@ -355,19 +356,6 @@ class CfirCallCompletionResultsWriterTransformer(
             preserveResolvedReferenceForExpectedTypeRootMismatch = expectedTypeRootMismatchOnly,
         )
         val candidate = calleeReference.candidate
-        if (calleeReference.name.asString() in setOf("CPointer", "Array", "CString", "free")) {
-            System.err.println(
-                "CFIR-DEBUG writer ${calleeReference.name} source=${functionCall.source} explicit=${candidate.callInfo.hasExplicitTypeArguments} " +
-                    "typeArgs=${candidate.callInfo.typeArguments} diagnostics=${candidate.diagnostics} errors=${candidate.errors} " +
-                    "contradiction=${candidate.system.hasContradiction} " +
-                    "mode=${candidate.callInfo.resolutionMode} successful=${candidate.isSuccessful} applicability=${candidate.lowestApplicability} " +
-                    "result=${candidate.completedFunctionCallResultType(result.resolvedType, data?.getExpectedType(functionCall))} " +
-                    "expected=${data?.getExpectedType(functionCall)} " +
-                    "substituted=${candidate.substituteExplicitTypeArgumentConstraints(candidate.substitutedReturnType())} " +
-                    "notFixed=${candidate.system.currentStorage().notFixedTypeVariables.values.flatMap { it.constraints }} " +
-                    "fixed=${candidate.system.currentStorage().fixedTypeVariables}"
-            )
-        }
         candidate.commitCallableReferenceResults()
         result.transformCompletedFunctionCallReceiver(candidate)
         val originalArgumentList = result.argumentList
@@ -1111,7 +1099,7 @@ class CfirCallCompletionResultsWriterTransformer(
             return replacement.transformSingle(this, data)
         }
 
-        val expectedRangeType = data?.getExpectedType(rangeExpression)?.rangeTypeOrNull()
+        val expectedRangeType = data?.getExpectedType(rangeExpression)?.rangeTypeForExpectedType(session)
         val endpointExpectedType = expectedRangeType?.typeArguments?.singleOrNull()?.type
         val endpointData = endpointExpectedType?.toExpectedType(
             argumentReplacements = data?.argumentReplacements,
@@ -1727,16 +1715,6 @@ sealed class ExpectedArgumentType(
 private fun ExpectedArgumentType.getExpectedType(argument: CfirElement): ConeCangJieType? = when (this) {
     is ExpectedArgumentType.ArgumentsMap -> map[argument]
     is ExpectedArgumentType.ExpectedType -> type
-}
-
-/**
- * 如果类型表示标准库 Range，则返回其 classifier 类型。
- */
-private fun ConeCangJieType.rangeTypeOrNull(): ConeClassifierType? = when (this) {
-    is ConeClassLikeType -> takeIf { classId == StdlibClassIds.Range }
-    is ConeStructType -> takeIf { classId == StdlibClassIds.Range }
-    is ConeTypeAliasType -> expandedType?.rangeTypeOrNull()
-    else -> null
 }
 
 /**

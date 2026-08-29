@@ -1,4 +1,4 @@
-﻿pluginManagement {
+pluginManagement {
     includeBuild("repo/gradle-settings-conventions")
     includeBuild("repo/gradle-build-conventions")
 
@@ -62,6 +62,7 @@ include(":prepare:ide-plugin-dependencies-module:cangjie-frontend-analysis-api-s
 
 
 include(":util")
+include(":gradle-queue-cli") // 跨进程 gradle 调用排队器，零内部依赖
 include(":lsp")
 // PSI 模块
 include(":psi")

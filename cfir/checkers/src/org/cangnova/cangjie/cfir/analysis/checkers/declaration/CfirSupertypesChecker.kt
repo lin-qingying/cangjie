@@ -5,6 +5,7 @@ import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirClassKind
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirBuiltInDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirEnum
 import org.cangnova.cangjie.cfir.declarations.CfirInterface
 import org.cangnova.cangjie.cfir.declarations.CfirPrimitiveTypeDeclaration
@@ -391,6 +392,7 @@ private fun ConeCangJieType.fullyExpandTypeAlias(): ConeCangJieType {
  */
 private fun CfirClassLikeDeclaration.classKindOrNull(): CfirClassKind? = when (this) {
     is CfirPrimitiveTypeDeclaration -> CfirClassKind.CLASS
+    is CfirBuiltInDeclaration -> CfirClassKind.CLASS
     is CfirClass -> CfirClassKind.CLASS
     is CfirInterface -> CfirClassKind.INTERFACE
     is CfirStruct -> CfirClassKind.STRUCT
@@ -403,6 +405,7 @@ private fun CfirClassLikeDeclaration.classKindOrNull(): CfirClassKind? = when (t
  */
 private fun CfirClassLikeDeclaration.classLikeName(): Name = when (this) {
     is CfirPrimitiveTypeDeclaration -> name
+    is CfirBuiltInDeclaration -> name
     is CfirClass -> name
     is CfirInterface -> name
     is CfirStruct -> name
@@ -415,6 +418,7 @@ private fun CfirClassLikeDeclaration.classLikeName(): Name = when (this) {
  */
 private fun CfirClassLikeDeclaration.classLikeIdentityKey(): String? = when (this) {
     is CfirPrimitiveTypeDeclaration -> "primitive:${kind.typeName}"
+    is CfirBuiltInDeclaration -> "builtin:${kind.typeName}"
     is CfirClass -> "class:${symbol.classId}"
     is CfirInterface -> "interface:${symbol.classId}"
     is CfirStruct -> "struct:${symbol.classId}"
@@ -427,6 +431,8 @@ private fun CfirClassLikeDeclaration.classLikeIdentityKey(): String? = when (thi
  */
 private fun CfirClassLikeDeclaration.requiresOpenForInheritance(): Boolean = when (this) {
     is CfirPrimitiveTypeDeclaration -> true
+    // 官方 BuiltInDecl 直接继承 Decl 而非 InheritableDecl，内建类型不可被继承。
+    is CfirBuiltInDeclaration -> true
     is CfirStruct -> true
     is CfirEnum -> true
     is CfirClass -> !status.isOpen && !status.isAbstract && !status.isSealed

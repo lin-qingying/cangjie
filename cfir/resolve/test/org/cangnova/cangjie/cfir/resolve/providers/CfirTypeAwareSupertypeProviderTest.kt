@@ -285,6 +285,174 @@ class CfirTypeAwareSupertypeProviderTest {
             session.typeAwareSupertypeProviderOrNull?.getDirectSupertypes(aInt64),
         )
     }
+
+    /**
+     * 官方 `HasExtendInterfaceTyHelper` 的 direct-TyVar-only 映射规则：
+     * 嵌套形状 extend（`extend<X> Box<List<X>> <: Iterable<X>`）在结构化成员视图中
+     * 贡献 `Iterable<Int32>`，但在子类型谓词视图中因接口实参残留 extend 类型形参
+     * 而不成立（cjc 对应 assign_012 的 mismatched types）。
+     */
+    @Test
+    fun `nested shape extend is invisible to subtype predicate but visible to member view`() {
+        val packageFqName = FqName("sample.nested")
+        val boxClassId = ClassId(packageFqName, Name.identifier("Box"))
+        val listClassId = ClassId(packageFqName, Name.identifier("List"))
+        val iterableClassId = ClassId(packageFqName, Name.identifier("Iterable"))
+
+        val (session, moduleData) = ExtendTestFixtures.newSessionAndModule()
+        val boxTypeParameter = ExtendTestFixtures.newTypeParameter(moduleData, "T")
+        val listTypeParameter = ExtendTestFixtures.newTypeParameter(moduleData, "E")
+        val extendTypeParameter = ExtendTestFixtures.newTypeParameter(moduleData, "X")
+        val boxClass = newClass(moduleData, boxClassId, typeParameters = listOf(boxTypeParameter))
+        val listClass = newClass(moduleData, listClassId, typeParameters = listOf(listTypeParameter))
+        val iterableInterface = newInterface(
+            moduleData = moduleData,
+            classId = iterableClassId,
+            typeParameters = listOf(extendTypeParameter),
+        )
+        val nestedExtend = ExtendTestFixtures.newExtend(
+            moduleData = moduleData,
+            typeParameters = listOf(extendTypeParameter),
+            extendedTypeRef = ExtendTestFixtures.classTypeRef(
+                classId = boxClassId,
+                typeArguments = listOf(classType(listClassId, typeParameterType(extendTypeParameter))),
+            ),
+            superTypeRefs = listOf(
+                ExtendTestFixtures.classTypeRef(
+                    classId = iterableClassId,
+                    typeArguments = listOf(typeParameterType(extendTypeParameter)),
+                    isInterface = true,
+                )
+            ),
+        )
+
+        val typeContext = session.registerTestTypeContext(
+            declarations = listOf(boxClass, listClass, iterableInterface),
+            extends = listOf(nestedExtend),
+        )
+
+        val boxListOfInt = classType(boxClassId, classType(listClassId, ConePrimitiveType.INT32))
+        val iterableInt = interfaceType(iterableClassId, ConePrimitiveType.INT32)
+        val supertypeProvider = session.typeAwareSupertypeProviderOrNull
+
+        // 成员图保持官方 GetAllExtendInterfaceTy 的结构化语义。
+        assertIterableEquals(
+            listOf(objectType(), iterableInt),
+            supertypeProvider?.getDirectSupertypes(boxListOfInt),
+        )
+        // 子类型谓词保持官方 HasExtendInterfaceTyHelper 的 direct-TyVar-only 语义。
+        assertIterableEquals(
+            listOf(objectType()),
+            supertypeProvider?.getPredicateSupertypes(boxListOfInt),
+        )
+        assertTrue(!AbstractTypeChecker.isSubtypeOf(typeContext, boxListOfInt, iterableInt))
+    }
+
+    /**
+     * 嵌套形状 extend 的接口实参为常量时无需嵌套映射，谓词视图保持该边
+     * （官方探针 `extend<X> A<B<X>> <: I<Int64>` 赋值通过）。
+     */
+    @Test
+    fun `nested shape extend with constant interface argument keeps predicate edge`() {
+        val packageFqName = FqName("sample.constant")
+        val boxClassId = ClassId(packageFqName, Name.identifier("Box"))
+        val listClassId = ClassId(packageFqName, Name.identifier("List"))
+        val counterClassId = ClassId(packageFqName, Name.identifier("Counter"))
+
+        val (session, moduleData) = ExtendTestFixtures.newSessionAndModule()
+        val boxTypeParameter = ExtendTestFixtures.newTypeParameter(moduleData, "T")
+        val extendTypeParameter = ExtendTestFixtures.newTypeParameter(moduleData, "X")
+        val boxClass = newClass(moduleData, boxClassId, typeParameters = listOf(boxTypeParameter))
+        val listClass = newClass(moduleData, listClassId, typeParameters = listOf(boxTypeParameter))
+        val counterInterface = newInterface(moduleData, counterClassId)
+        val constantExtend = ExtendTestFixtures.newExtend(
+            moduleData = moduleData,
+            typeParameters = listOf(extendTypeParameter),
+            extendedTypeRef = ExtendTestFixtures.classTypeRef(
+                classId = boxClassId,
+                typeArguments = listOf(classType(listClassId, typeParameterType(extendTypeParameter))),
+            ),
+            superTypeRefs = listOf(
+                ExtendTestFixtures.classTypeRef(counterClassId, isInterface = true)
+            ),
+        )
+
+        val typeContext = session.registerTestTypeContext(
+            declarations = listOf(boxClass, listClass, counterInterface),
+            extends = listOf(constantExtend),
+        )
+
+        val boxListOfInt = classType(boxClassId, classType(listClassId, ConePrimitiveType.INT32))
+        assertTrue(
+            AbstractTypeChecker.isSubtypeOf(typeContext, boxListOfInt, interfaceType(counterClassId))
+        )
+    }
+
+    /**
+     * 混合形状：只要接口实参不依赖"仅嵌套出现"的 extend 类型形参，谓词视图就保留该边
+     * （官方探针 `extend<X, Y> A<X, B<Y>> <: I<X>` 与 `extend<X> A<X> <: I<B<X>>` 均赋值通过）。
+     */
+    @Test
+    fun `predicate edge survives when interface arguments avoid nested-only parameters`() {
+        val packageFqName = FqName("sample.mixed")
+        val pairClassId = ClassId(packageFqName, Name.identifier("Pair2"))
+        val wrapClassId = ClassId(packageFqName, Name.identifier("Wrap"))
+        val iterableClassId = ClassId(packageFqName, Name.identifier("Iterable"))
+
+        val (session, moduleData) = ExtendTestFixtures.newSessionAndModule()
+        val firstParameter = ExtendTestFixtures.newTypeParameter(moduleData, "F")
+        val secondParameter = ExtendTestFixtures.newTypeParameter(moduleData, "S")
+        val extendFirst = ExtendTestFixtures.newTypeParameter(moduleData, "X")
+        val extendSecond = ExtendTestFixtures.newTypeParameter(moduleData, "Y")
+        val pairClass = newClass(
+            moduleData = moduleData,
+            classId = pairClassId,
+            typeParameters = listOf(firstParameter, secondParameter),
+        )
+        val wrapClass = newClass(moduleData, wrapClassId, typeParameters = listOf(firstParameter))
+        val iterableInterface = newInterface(
+            moduleData = moduleData,
+            classId = iterableClassId,
+            typeParameters = listOf(extendFirst),
+        )
+        val mixedShapeExtend = ExtendTestFixtures.newExtend(
+            moduleData = moduleData,
+            typeParameters = listOf(extendFirst, extendSecond),
+            extendedTypeRef = ExtendTestFixtures.classTypeRef(
+                classId = pairClassId,
+                typeArguments = listOf(
+                    typeParameterType(extendFirst),
+                    classType(wrapClassId, typeParameterType(extendSecond)),
+                ),
+            ),
+            superTypeRefs = listOf(
+                ExtendTestFixtures.classTypeRef(
+                    classId = iterableClassId,
+                    typeArguments = listOf(typeParameterType(extendFirst)),
+                    isInterface = true,
+                )
+            ),
+        )
+
+        val typeContext = session.registerTestTypeContext(
+            declarations = listOf(pairClass, wrapClass, iterableInterface),
+            extends = listOf(mixedShapeExtend),
+        )
+
+        val pairIntWrapInt = classType(
+            pairClassId,
+            ConePrimitiveType.INT32,
+            classType(wrapClassId, ConePrimitiveType.INT32),
+        )
+        val iterableInt = interfaceType(iterableClassId, ConePrimitiveType.INT32)
+        val supertypeProvider = session.typeAwareSupertypeProviderOrNull
+
+        assertIterableEquals(
+            listOf(objectType(), iterableInt),
+            supertypeProvider?.getPredicateSupertypes(pairIntWrapInt),
+        )
+        assertTrue(AbstractTypeChecker.isSubtypeOf(typeContext, pairIntWrapInt, iterableInt))
+    }
 }
 
 /**

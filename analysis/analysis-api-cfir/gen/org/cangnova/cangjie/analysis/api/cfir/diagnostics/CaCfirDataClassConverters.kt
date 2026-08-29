@@ -1904,6 +1904,12 @@ private fun CaDiagnosticConverterBuilder.addConversions85() {
             token,
         )
     }
+    add(CfirErrors.FORIN_PATTERN_MUST_BE_IRREFUTABLE) { cfirDiagnostic ->
+        ForinPatternMustBeIrrefutableImpl(
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
     add(CfirErrors.UNUSED_IMPORT) { cfirDiagnostic ->
         UnusedImportImpl(
             cfirDiagnostic.a,
@@ -2224,8 +2230,23 @@ private fun CaDiagnosticConverterBuilder.addConversions99() {
 }
 
 private fun CaDiagnosticConverterBuilder.addConversions101() {
+    add(CfirErrors.TYPECAST_OVERFLOW) { cfirDiagnostic ->
+        TypecastOverflowImpl(
+            cfirSymbolBuilder.typeBuilder.buildType(cfirDiagnostic.a),
+            cfirSymbolBuilder.typeBuilder.buildType(cfirDiagnostic.b),
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
     add(CfirErrors.UNABLE_TO_INFER_EXPR) { cfirDiagnostic ->
         UnableToInferExprImpl(
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
+    add(CfirErrors.EXPR_IN_FORIN_MUST_HAS_ITERATOR) { cfirDiagnostic ->
+        ExprInForinMustHasIteratorImpl(
+            cfirSymbolBuilder.typeBuilder.buildType(cfirDiagnostic.a),
             cfirDiagnostic as CjPsiDiagnostic,
             token,
         )

@@ -35,6 +35,13 @@ object CfirCheckDispatchReceiver : ResolutionStage() {
     /** 检查 dispatch receiver 的实际类型是否满足成员声明要求的接收者类型。 */
     override suspend fun check(candidate: Candidate) {
         val receiver = candidate.dispatchReceiver ?: return
+        if (candidate.callInfo.name.asString() == "getOrThrow") {
+            System.err.println(
+                "GET_OR_THROW_DISPATCH symbol=${candidate.symbol} receiver=${receiver.expression} " +
+                        "receiverType=${receiver.expression.coneTypeOrNull} " +
+                        "dispatchType=${(candidate.symbol as? CfirCallableSymbol<*>)?.dispatchReceiverType}",
+            )
+        }
         candidate.objectAccessedStaticMember(context)?.let { memberName ->
             sink.reportDiagnostic(ObjectCannotAccessStaticMember(memberName))
             sink.yieldIfNeed()
@@ -53,6 +60,14 @@ object CfirCheckDispatchReceiver : ResolutionStage() {
             ?.also { receiver.expression.replaceConeTypeOrNull(it) }
         val actualType = targetTypedEnumReceiverType ?: receiver.expression.coneTypeOrNull ?: return
         if (candidate.isStaticQualifierDispatchReceiver(context)) return
+
+        if (actualType.isFreshLambdaReceiverTypeVariable()) {
+            System.err.println(
+                "RECEIVER_DEBUG symbol=${candidate.symbol} actual=$actualType expected=$expectedType " +
+                        "expectedContainsSession=${context.bodyResolveContext.inferenceSession.containsRegisteredInferenceVariable(expectedType)} " +
+                        "vars=${candidate.system.currentStorage().notFixedTypeVariables.keys}",
+            )
+        }
 
         if (targetTypedEnumReceiverType != null) {
             candidate.system.addSubtypeConstraint(

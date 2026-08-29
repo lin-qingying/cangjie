@@ -120,9 +120,7 @@ open class CfirDefaultSessionFactory : CfirAbstractSessionFactory<CfirDefaultSes
             extensionRegistrars,
             createProviders = { session, cangjieScopeProvider ->
                 buildList {
-                    // Keep builtins reachable from library sessions by default.
-                    add(CfirBuiltinSymbolProvider(session))
-
+                    // Prefer declarations from CJO; the builtin provider is synthetic fallback.
                     context.cjoManager?.let { manager ->
                         add(
                             CfirDeserializedSymbolProvider(
@@ -133,6 +131,8 @@ open class CfirDefaultSessionFactory : CfirAbstractSessionFactory<CfirDefaultSes
                             )
                         )
                     }
+
+                    add(CfirBuiltinSymbolProvider(session))
 
                     addAll(context.additionalLibraryProviders(session, moduleDataProvider, cangjieScopeProvider))
                 }
@@ -180,7 +180,7 @@ open class CfirDefaultSessionFactory : CfirAbstractSessionFactory<CfirDefaultSes
     /**
      * 创建默认共享库 provider。
      *
-     * 默认 builtins provider 必须始终在列表首位，确保平台追加 provider 可以依赖内建符号已经可见。
+     * 共享 provider 中的真实声明优先于 synthetic builtin 声明；builtin provider 只补齐缺失项。
      */
     override fun createPlatformSpecificSharedProviders(
         session: CfirSession,
@@ -189,8 +189,8 @@ open class CfirDefaultSessionFactory : CfirAbstractSessionFactory<CfirDefaultSes
         context: Context,
     ): List<CfirSymbolProvider> {
         return buildList {
-            add(CfirBuiltinSymbolProvider(session))
             addAll(context.additionalSharedProviders(session, moduleData, scopeProvider))
+            add(CfirBuiltinSymbolProvider(session))
         }
     }
 

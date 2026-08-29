@@ -4452,4 +4452,101 @@ Flagged while gathering evidence for the extend upper-bound recursion problem ty
   - 包导入 guard：LightTree/PSI 的 `unused015`、`unused016`、`array_constructor05`、`option_coalescing_00` → 全部通过；同组其余 `unused014`、`unused019` 仍是既有 import 诊断差异。
   - full from-scratch：`.\gradlew.bat :cfir:analysis-tests:cleanTest :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain --stacktrace` → Gradle 汇总 `8422 tests completed, 846 failed, 307 skipped`；套件仍因仓库既有失败为红。
   - fresh XML snapshot：`build/codex-ab/from-scratch-after-assign005-20260828`，1237 个 XML、8423 个 testcase，846 failed、0 errors、7269 passed、308 skipped。
-  - persisted A/B：相对 `build/codex-ab/from-scratch-after-unsafe-20260828` 逐 testcase key 比较为 `FIXED=4`、`REGRESSED=0`、`MISSING=0`、`ADDED=0`；其中本修复对应 `assign_005` 的 PSI/LightTree 两条。相对最初 `build/codex-ab/from-scratch-before-20260827` 为 `FIXED=36`、`REGRESSED=0`、`MISSING=0`、`ADDED=0`。XML testcase 统计与 Gradle 控制台存在仓库既有的 1 条 tests/skip 聚合计数差异。
+- persisted A/B：相对 `build/codex-ab/from-scratch-after-unsafe-20260828` 逐 testcase key 比较为 `FIXED=4`、`REGRESSED=0`、`MISSING=0`、`ADDED=0`；其中本修复对应 `assign_005` 的 PSI/LightTree 两条。相对最初 `build/codex-ab/from-scratch-before-20260827` 为 `FIXED=36`、`REGRESSED=0`、`MISSING=0`、`ADDED=0`。XML testcase 统计与 Gradle 控制台存在仓库既有的 1 条 tests/skip 聚合计数差异。
+
+## range2：`1..Int64(10)` 不产生泛型实参不匹配
+
+- problem type: Test data / Diagnostics（Range 表达式的整数字面量与显式 `Int64` 构造调用）。
+- root cause: `range2.cj` 在 `range1` 上保留了不符合官方语义的 `GENERIC_ARGUMENT_NO_MATCH` 期望标记。`1..Int64(10)` 的两个端点均可用于 Range 推断，不应产生该诊断；CFIR 生产代码无需修改。
+- official Cangjie evidence: 官方 `cjc 1.0.5` 编译同形态源码时，`range1` 不报告诊断，仅报告后续 `true` 类型不匹配、Float range 的类型不匹配及零步长诊断；官方 Range 实现位于 `external/cangjie_compiler/src/Sema/TypeCheckExpr/RangeExpr.cpp:13-40`。
+- Kotlin counterpart files consulted: none; this is an official-semantics fixture correction, not a frontend implementation change。
+- CFIR owner file changed: none。
+- repair principle: 只修正错误的测试期望，保留 Cangjie 源码与其余诊断标记不变；不通过 fixture 迁就错误的实现行为。
+- fixtures covered: `cfir/analysis-tests/testData/llt/range/range2.cj`；PSI 与 LightTree `Range.testRange2` 双入口。
+- fixture correction: 移除 `1..Int64(10)` 外层错误的 `<!GENERIC_ARGUMENT_NO_MATCH!>...</!>` 标记。
+- verification commands and outcome:
+  - 官方探针：`cjc 1.0.5` 无 `range1` 诊断。
+  - 定向 Range 双入口：26 tests completed，2 failed；仅独立的 `range_class_03` PSI/LightTree 既有失败，`testRange2()` PSI/LightTree 均通过。
+  - full from-scratch：`.\gradlew.bat :cfir:analysis-tests:cleanTest :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain --stacktrace` → Gradle 汇总 `8422 tests completed, 848 failed, 307 skipped`；套件仍因仓库既有失败为红。
+  - full A/B：修复前 `8422 tests completed, 850 failed, 307 skipped`；修复后 `8422 tests completed, 848 failed, 307 skipped`，净减少 2 个失败、无新增失败。
+  - fresh XML：修复后共 8423 个 testcase，848 failed、0 errors、7267 passed、308 skipped；XML 与 Gradle 汇总存在仓库既有的 1 条聚合计数差异。
+
+## range_class_03：Range 赋值到泛型接口时反推元素类型
+
+- problem type: Resolve / Type Inference（Range 表达式在接口 expected type 下的元素类型推导）。
+- root cause: Range 表达式的 expected-type 处理只识别直接的 `Range<T>`，没有沿 `Range<T>` 的继承视图与外层接口目标统一类型参数；因此 `let v1: I<A<Int32>> = A(1)..A(10)` 未能把 `A<Int32>` 传播到两个端点，导致 `testRangeClass03` 的 PSI 与 LightTree 结果不一致。
+- official Cangjie evidence: 官方 `cjc 1.0.5` 编译 `range_class_03.cj` 无诊断并正常接受 `I<A<Int32>>` 赋值及后续 `is Range<A<Int32>>` 检查；官方 `external/cangjie_compiler/src/Sema/TypeCheckExpr/RangeExpr.cpp` 先按 expected type 确定 Range 元素类型，`external/cangjie_compiler/src/Sema/Promotion.cpp` 提供接口/超类型提升路径。
+- Kotlin counterpart files consulted: `external/kotlin/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/FirCastDiagnosticsHelpers.kt` 的 corresponding-supertype 与 unify 结构；仅借鉴 expected-type 反推的框架组织，不引入 Kotlin 语义。
+- CFIR owner files changed: `cfir/providers/src/org/cangnova/cangjie/cfir/resolve/CfirRangeSemantics.kt`；`cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirExpressionsResolveTransformer.kt`；`cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/inference/CfirCallCompletionResultsWriterTransformer.kt`。
+- repair principle: 在 providers 层集中实现直接 Range、typealias 和接口 corresponding-supertype 的统一反推，并让表达式解析与调用完成共用该实现，保证 PSI/LightTree 的 Range expected-type 语义一致；无泛型参数接口无法确定元素类型时回到端点推导。
+- fixtures covered: `cfir/analysis-tests/testData/llt/range/range_class_03.cj`；PSI 与 LightTree `Range.testRangeClass03`；同目录完整 `Range` slice（两入口各 11 tests）。
+- fixture correction: none。
+- verification commands and outcome:
+  - 官方探针：`cjc 1.0.5` 编译 `range_class_03.cj` 无诊断。
+  - 定向 Range 双入口：PSI/LightTree 各 `11 tests, 0 failures, 0 errors`；`testRangeClass03` 与 `testRange2` 均通过。
+  - full from-scratch：`.\gradlew.bat :cfir:analysis-tests:cleanTest :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain --stacktrace` → `8422 tests completed, 846 failed, 307 skipped`；套件仍因仓库既有失败为红。
+  - full A/B：本问题修复前 `8422 tests completed, 848 failed, 307 skipped`；修复后 `8422 tests completed, 846 failed, 307 skipped`，净减少 2 个失败、无新增失败；本问题对应 `testRangeClass03` 的 PSI/LightTree 两个入口。
+  - fresh XML：Range 两个 generated XML 各 `11 tests, 0 failures, 0 errors, 0 skipped`；全量 XML 聚合 `8423` 个 testcase，`846 failed`、`0 errors`、`7269 passed`、`308 skipped`，与 Gradle 汇总存在仓库既有的 1 条测试聚合计数差异。
+
+## Constructor candidate visibility pre-filtering in non-tower collection sites
+
+- problem type: Visibility / Tower Discovery / Constructor Candidate Dispatching.
+  Two failing fixture families shared one root:
+  (1) llt/class/class_private_init.cj 5× WRONG_NUMBER_OF_ARGUMENTS + 1× NON_INHERITABLE_SUPER_CLASS missing (plus a MultipleFailuresError wrapping an IllegalStateException: EXCLUDE_CALLABLE candidate reached CfirCheckVisibility);
+  (2) llt/record/record_private_init.cj 3× WRONG_NUMBER_OF_ARGUMENTS missing with the same exception shape.
+- root cause: CfirCallResolver bypassed Tower-level name discovery in two non-tower constructor-candidate collection loops:
+  (1) delegating super(...) / 	his(...) resolution (esolveDelegatingConstructorCallAndSelectCandidate);
+  (2) classifier-instantiation ClassName(args) calls.
+  Both loops did processDeclaredConstructors(::add) then createCandidate(...) for every symbol with discoveryAccessibilityResult = null, without running the unified CfirAccessibilityChecker before candidate creation. As a consequence, EXCLUDE_CALLABLE / NOT_DISCOVERABLE constructor symbols were packed into regular Candidates and then ullyProcessCandidate ran the CfirCheckVisibility stage, whose contract hard-asserts (rror()) that EXCLUDE_CALLABLE must be handled by tower discovery before candidate creation. The thrown IllegalStateException propagated through CfirCliExceptionHandler (whose handleExceptionOnFileAnalysis has return type Nothing and always rethrows) so nalyse.kt:237 runResolution never returned and nalyse.kt:238 runCheckers — where declaration checkers such as CfirSupertypesChecker emit NON_INHERITABLE_SUPER_CLASS — never executed. No-match WRONG_NUMBER_OF_ARGUMENTS diagnostics also never materialised because candidate selection short-circuited on the exception.
+- official Cangjie evidence:
+  * xternal/cangjie_compiler/src/Sema/Diags.cpp:56-64 + DiagnosticSema.def:28 emit sema_wrong_number_of_arguments when the _visible_ constructor candidate set does not match the call arity (private constructors are excluded from the visible set for use sites outside the declaring class).
+  * xternal/cangjie_compiler/src/Sema/TypeCheckClassLike.cpp:153-156 emit sema_non_inheritable_super_class when the direct superclass is neither OPEN nor ABSTRACT.
+  * Private/protected constructor visibility matches CFIR's CfirAccessibilityChecker.privateAccessible / protectedAccessible (verified via the same fixtures' successful internal A() / A(1) / A(1,1) calls inside the declaring class body).
+  * llt/record/record_private_init.cj exhibits the same outside-class WRONG_NUMBER_OF_ARGUMENTS pattern, confirming a shared failure family rather than a class-specific quirk.
+- Kotlin counterpart files consulted:
+  * xternal/kotlin/compiler/fir/resolve/src/org/jetbrains/kotlin/fir/resolve/calls/FirCallResolver.kt L689-718 esolveDelegatingConstructorCall delegates to 	owerResolver.runResolverForDelegatingConstructor (the Tower entry point), rather than privately rebuilding constructor candidates.
+  * xternal/kotlin/compiler/fir/resolve/src/org/jetbrains/kotlin/fir/resolve/calls/FirCallResolver.kt L295-321 routes ordinary classifier-instantiation ClassName(args) function shapes through the standard 	owerResolver.runResolver(info, ...) Tower path.
+  * xternal/kotlin/compiler/fir/resolve/src/org/jetbrains/kotlin/fir/resolve/calls/tower/FirTowerResolver.kt L99-146 consumes constructor candidates via consumeCandidate(TowerGroup.MEMBER, ..., candidateFactory.createCandidate(...)), i.e. every constructor candidate passes through the Tower's shared visibility-aware collector pipeline.
+  * xternal/kotlin/compiler/fir/resolve/src/org/jetbrains/kotlin/fir/resolve/calls/VisibilityUtils.kt L33-144 performs pure-Boolean isVisible checks before a Candidate reaches the overload-reduction stage (a softer invariant than CFIR's CfirCheckVisibility hard assertion, but confirming the framework invariant that visibility is pre-candidate work).
+- CFIR owner files changed:
+  1. **NEW** cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/CfirConstructorVisibilityPrecheck.kt — a shared internal helper prefilterConstructorVisibilityBeforeCreateCandidate(session, callInfo, constructorSymbol, originScope, provenance) that mirrors TowerLevelHandler.consumeCallableCandidate(L197-221)'s disposition handling: builds a CfirAccessContext(kind = CALLABLE, receiverType = null, ...) with the same scope.lookupOriginForAccessibility() used in Tower; calls session.accessibilityChecker.checkCallable(...); on NOT_DISCOVERABLE / EXCLUDE_CALLABLE it returns 
+ull (= skip this symbol without creating a Candidate); on Accessible / REPORT_ACCESS_ERROR it returns the structured result so the caller can store it into Candidate.discoveryAccessibilityResult for reuse by VisibilityUtils (L50) — preventing CfirCheckVisibility from re-discovering a bad disposition at stage-run time.
+  2. cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirCallResolver.kt — delegating-constructor loop (esolveDelegatingConstructorCallAndSelectCandidate, around former L498-508): converted constructorSymbols.map { ... } into mapNotNull { prefilter... ?: return@mapNotNull null; createCandidate(..., accessibilityResult = precheck) } with the new import added.
+  3. cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirCallResolver.kt — classifier-constructor loop (around former L3320-3340): same mapNotNull + prefilter... pattern with ccessibilityResult threaded through. The surrounding comment was updated to reflect that candidates now pass through Tower-equivalent visibility filtering before createCandidate.
+  4. **Unchanged (kept as guard)** cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/stages/CfirCheckVisibility.kt L28-34 — the hard rror(IllegalStateException) for EXCLUDE_CALLABLE / NOT_DISCOVERABLE reaching the stage runner remains in place and will continue to catch any future non-tower candidate-collection bypasses.
+- repair principle: in both non-tower constructor symbol → Candidate loops, always perform the same Tower-level visibility pre-dispatch (CfirAccessibilityChecker + four-disposition hand-off) **before** CandidateFactory.createCandidate; EXCLUDE_CALLABLE / NOT_DISCOVERABLE skip the candidate without crashing, and remaining candidates carry their discoveryAccessibilityResult forward through the resolution stage runner. All regular class / struct / record / enum constructors (delegating and classifier-instantiated) share the two patched entry points, so the fix is strictly broader than class_private_init or ecord_private_init alone.
+- fixtures covered:
+  * Primary: CfirAnalysisLLTTestGenerated.testClassPrivateInit (non-PSI), CfirAnalysisLLTPsiTestGenerated.testClassPrivateInit (PSI), CfirAnalysisLLTTestGenerated.testRecordPrivateInit, CfirAnalysisLLTPsiTestGenerated.testRecordPrivateInit — previously IllegalStateException("EXCLUDE_CALLABLE candidate reached CfirCheckVisibility") with 0 diagnostics rendered; after the fix both paths render 7/3 expected markers respectively, 0 exceptions.
+  * Problem-type slice: combined ClassGenerated / RecordGenerated PSI + non-PSI suites (all regular class / struct constructor instantiation and super(...) / 	his(...) delegation patterns across AccessModifiers, Constructor incl. AccessControl, InhertWithSameName, Protected, OpenModifier, SuperThis, OverrideUnvisible etc.).
+- NON_INHERITABLE_SUPER_CLASS recovery: this diagnostic was not corrected by a standalone owner change; it recovered automatically once unResolution completed normally (no longer throwing inside body resolve) so unCheckers could execute CfirSupertypesChecker.check (L210-218) against class C <: A without declaration OPEN/ABSTRACT/SEALED. Verification confirms the fixture's line-26 marker now appears as expected.
+- verification commands and outcome:
+  * Trigger fixture non-PSI: .\gradlew.bat :cfir:analysis-tests:test --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTTestGenerated.testClassPrivateInit' → BUILD SUCCESSFUL; XML TEST-...Class.xml reports 	ests="1" failures="0" errors="0" (	estClassPrivateInit() time=12.127s no failure, no suppressed throwable).
+  * Trigger fixture PSI: .\gradlew.bat :cfir:analysis-tests:test --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTPsiTestGenerated.testClassPrivateInit' → BUILD SUCCESSFUL in 39s; same XML ailures=0 errors=0 for PSI path.
+  * Record-family fixture: .\gradlew.bat :cfir:analysis-tests:test --tests '*CfirAnalysisLLTTestGenerated.testRecordPrivateInit*' --tests '*CfirAnalysisLLTPsiTestGenerated.testRecordPrivateInit*' → BUILD SUCCESSFUL in 1m 23s; both TEST-...Record.xml (PSI and non-PSI) show 	ests="1" failures="0" errors="0".
+  * Problem-type slice (Class + Record full suites): .\gradlew.bat :cfir:analysis-tests:test --tests '...' --tests '... (PSI)' --tests '...' --tests '... (PSI)'. Gradle reported 624 cascading NoClassDefFoundError entries due to an unrelated JVM test-executor crash (NoSuchFileException: .../test-results/test/binary/in-progress-results-generic...bin on the test-executor binary results stream), but the JUnit XML report for every Class/Record sub-suite is clean (ailures=0 errors=0 in every matching TEST-**.xml / TEST-**.xml). Isolated XML-aggregated check: (Get-ChildItem ... TEST-**.xml, TEST-**.xml) | failures/errors attributes = sum zero. Two unrelated FlowExpr (PSI) errors (erro_flow_lambda / err_pipeline_00) remain outside the patched owner/file set, confirming no regression.
+
+ 
+## 2026-08-29：FlowExpr 旧失败复核
+ 
+- problem type: Flow expression / Resolve / Diagnostics。`erro_flow_lambda.cj` 中 lambda 内部的构造器参数错误不应向外泄漏为 `NO_MATCHING_OPERATOR_INVOKE` 与 `UNRESOLVED_REFERENCE`；`err_pipeline_00.cj` 应在完整 pipeline 表达式上保留 `TYPE_MISMATCH`。
+- root cause: pipeline 解糖调用错误地继承了外层表达式 expected type，合成调用的候选筛选因此把合法的 flow 结构误判为不可调用，并产生二级 unresolved 诊断。pipeline 的 expected type 属于 flow 表达式整体，不属于合成的右侧函数调用返回值。
+- official Cangjie evidence: `external/cangjie_compiler/src/Sema/TypeCheckExpr/BinaryExpr.cpp:1004-1070` 在 `ChkFlowExpr` 中先抑制解析两侧诊断，再检查解糖后的普通调用；`external/cangjie_compiler/src/Sema/Desugar/DesugarInTypeCheck.cpp:32-66` 将 `a |> f` 构造成 `f(a)`。因此操作数内部的根错误由其自身负责，不能由外层 pipeline 候选失败重新生成。
+- Kotlin counterpart files consulted: `external/kotlin/compiler/fir/resolve/src/org/jetbrains/kotlin/fir/resolve/transformers/body/resolve/FirExpressionsResolveTransformer.kt`，用于合成调用仍经统一 call resolver 的结构参考。
+- CFIR owner file changed: `cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirExpressionsResolveTransformer.kt`：pipeline 合成调用使用 `ContextIndependent`，composition 继续保留函数值 expected type，并统一沿现有调用解析/错误恢复路径传播结果类型。
+- repair principle: 在 flow 解糖的共享调用入口区分“flow 整体目标类型”和“合成调用内部候选约束”，使 PSI 与 LightTree 都只报告官方根诊断，不针对单个 fixture 添加抑制。
+- fixtures covered: `cfir/analysis-tests/testData/llt/flow_expr/*.cj`；PSI 与 LightTree `FlowExprGenerated` 各 19 个测试，包括 `erro_flow_lambda.cj`、`err_pipeline_00.cj`、`composition1_1.cj`、`composition1_2.cj`、`composition3.cj`、`pipeline10.cj`。
+- fixture correction: none。
+- verification command: `.\\gradlew.bat :cfir:analysis-tests:cleanTest :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain --stacktrace`。
+- verification outcome: Gradle `8422 tests completed, 878 failed, 307 skipped`；fresh XML 聚合 `8423` 个 testcase，`878 failed, 0 errors, 308 skipped`。`TEST-...CfirAnalysisLLTTestGenerated$FlowExpr.xml` 与 `TEST-...CfirAnalysisLLTPsiTestGenerated$FlowExpr.xml` 均为 `tests=19 failures=0 errors=0 skipped=0`，目标 `testErroFlowLambda`、`testErrPipeline00` 及所有 FlowExpr 用例均无 failure 节点。全套件其余失败属于已有问题族。
+
+## 2026-08-29：本轮改动引入的 12 条回归复核
+
+- problem type: Resolve / Diagnostics regression audit，覆盖数组字面量、构造器候选、VArray/CPointer 显式类型实参路径；PSI 与 LightTree 各一条。
+- root cause: 三处共享逻辑被误删或收窄：错误表达式节点不再允许映射含 error type 的 `TYPE_MISMATCH`；构造器候选规约跳过 `reduceLambdaCandidatesByParameterType`；显式类型实参调用错误地进入 expected-return-type 预筛选。
+- official Cangjie evidence: `cjc 1.0.5` 对 `Array<Int64> = [[]]` 报 `sema_mismatched_types`，期望 `Int64`、实际 `Array`；其余构造器/VArray/CPointer 语义由对应 LLT 期望与官方调用解析规则验证。
+- Kotlin counterpart files consulted: `external/kotlin/compiler/fir/resolve/src/org/jetbrains/kotlin/fir/resolve/calls/FirCallResolver.kt` 及其 Tower/candidate reduction 路径。
+- CFIR owner files changed: `CfirCallResolver.kt`、`CfirCheckExpectedReturnTypeBeforeArguments.kt`、`ErrorNodeDiagnosticCollectorComponent.kt`、`coneDiagnosticToCfirDiagnostic.kt`。
+- repair principle: 恢复共享候选规约、显式实参延迟筛选和错误表达式 mismatch 映射通道，保持根诊断在其实际语义节点产生，不修改 fixture 期望。
+- fixtures covered: `array/arraylit1.cj`、`array/arraysizedlit1.cj`、`const_evaluation/err_this_03.cj`、`record/record_vardecl_cpointer/record_vardecl_cpointer.cj`、`varray/varray06.cj`、`varray/varray09.cj`；PSI/LightTree 共 12 条回归入口。
+- fixture correction: none。
+- verification commands and outcome: 12 条目标入口全部通过；全量 `cleanTest + test` 为 `8422 tests completed, 822 failed, 307 skipped`。与基线 XML 的共同 8422 条 testcase 比较：`FIXED=23`、`REGRESSED=0`、`MISSING=0`；fresh XML 额外存在 1 条聚合记录，未计入集合差。

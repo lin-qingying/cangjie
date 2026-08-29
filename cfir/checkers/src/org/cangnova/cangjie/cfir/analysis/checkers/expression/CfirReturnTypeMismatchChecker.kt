@@ -4,8 +4,10 @@ import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.diagnosticFactoryForReturnTypeMismatch
 import org.cangnova.cangjie.cfir.analysis.checkers.hasUninferredOmittedLambdaParameterType
 import org.cangnova.cangjie.cfir.analysis.checkers.isSubtypeForTypeMismatch
+import org.cangnova.cangjie.cfir.analysis.checkers.isFlowExpression
 import org.cangnova.cangjie.cfir.analysis.checkers.lambdaExpectedFunctionType
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
+import org.cangnova.cangjie.cfir.analysis.diagnostics.literalConversionDiagnostic
 import org.cangnova.cangjie.cfir.analysis.diagnostics.specificTypeMismatchDiagnostic
 import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
@@ -118,6 +120,17 @@ object CfirReturnTypeMismatchChecker : CfirReturnExpressionChecker( ) {
 
         if (checkTargetTypedExpression(result, expectedType).isHandled) return
 
+        // 显式 return 的字面量与函数体尾字面量都经过同一目标类型转换规则。
+        literalConversionDiagnostic(
+            source = source,
+            expectedType = expectedType,
+            expression = result,
+            session = context.session,
+        )?.let { diagnostic ->
+            reporter.report(diagnostic, context)
+            return
+        }
+
         specificTypeMismatchDiagnostic(
             source = source,
             expectedType = expectedType,
@@ -142,7 +155,9 @@ object CfirReturnTypeMismatchChecker : CfirReturnExpressionChecker( ) {
                 return
             }
             reporter.reportOn(
-                source, diagnosticFactoryForReturnTypeMismatch(context.session, expectedType),
+                source,
+                if (result.isFlowExpression()) CfirErrors.TYPE_MISMATCH
+                else diagnosticFactoryForReturnTypeMismatch(context.session, expectedType),
                 expectedType,
                 actualType,
                 false,

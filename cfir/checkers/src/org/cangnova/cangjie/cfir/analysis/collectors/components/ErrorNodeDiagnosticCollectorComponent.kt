@@ -822,7 +822,12 @@ class ErrorNodeDiagnosticCollectorComponent(
         source: CjSourceElement?,
         callOrAssignmentSource: CjSourceElement?,
     ): AbstractCjSourceElement? {
-        if (!isReturnResultSource(source) && !isReturnResultSource(callOrAssignmentSource)) return null
+        /*
+         * 只有实际诊断 source 位于返回值根的起点时，才表示返回值自身不匹配。
+         * 宿主调用 source 仅用于定位/去重，不能单独把调用内部的参数或 receiver
+         * mismatch 提升成 RETURN_TYPE_MISMATCH；解糖 pipeline 的参数约束正是这种情况。
+         */
+        if (!isReturnResultSource(source)) return null
         val returnExpression = closestReturnExpressionOrNull() ?: return null
         return returnExpression.result.source as? AbstractCjSourceElement
     }
@@ -892,7 +897,6 @@ class ErrorNodeDiagnosticCollectorComponent(
         callOrAssignmentSource: CjSourceElement? = null,
         valueParameter: CfirValueParameter? = null,
         allowErrorTypeMismatch: Boolean = false,
-
     ) {
         if (diagnostic.isLambdaParameterInferenceCoveredByShapeDiagnostic(source, context)) return
         if (diagnostic.isInsideFailedArgumentMappingLambdaParameterDiagnostic(source, context)) return

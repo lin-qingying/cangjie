@@ -1876,6 +1876,10 @@ class CfirPCLAInferenceSession(
 
         val candidate = call.candidate()
         if (candidate?.usedOuterCs != true) return
+        System.err.println(
+            "PCLA_PROCESS name=${candidate.callInfo.name} " +
+                    "candidateConstraints=${candidate.system.currentStorage().notFixedTypeVariables.values.map { it.constraints }}",
+        )
         currentCommonSystem.replaceContentWith(candidate.system.currentStorage())
         candidate.freshReceiverConstraintToDrop?.let { constraintToDrop ->
             currentCommonSystem.removeConstraintsForVariable(constraintToDrop.receiverTypeConstructor) { constraint ->
@@ -2002,11 +2006,16 @@ class CfirPCLAInferenceSession(
         val queueSize = outerCandidate.postponedPCLACalls.size
         val fromIndex = processedPostponedCallsCount.coerceAtMost(queueSize)
         processedPostponedCallsCount = queueSize
-        if (fromIndex >= queueSize) return
-
         val newAtoms = outerCandidate.postponedPCLACalls
             .subList(fromIndex, queueSize)
             .filterIsInstance<ConeAtomWithCandidate>()
+        System.err.println(
+            "PCLA_DEBUG statement=${statement::class.simpleName} " +
+                    "atoms=${newAtoms.size} params=" +
+                    statementProcessingOwnerLambda.valueParameters.joinToString { parameter ->
+                        "${parameter.name}:${parameter.returnTypeRef.coneTypeOrNull}"
+                    },
+        )
         for (parameter in statementProcessingOwnerLambda.valueParameters) {
             fixLambdaParameterFromHardBounds(parameter, newAtoms)
         }
@@ -2029,12 +2038,56 @@ class CfirPCLAInferenceSession(
         // 收窄 owner-sum，这里先消化同一证据再做硬界求解。
         refineOwnersFromOuterParameterBounds(variableConstructor, newAtoms)
         val hardBounds = collectHardBoundsForVariable(variableConstructor, newAtoms) +
+                collectProperDirectConstraintBounds(variableConstructor) +
                 convergedFreshReceiverOwnerBounds(variableConstructor)
+        System.err.println(
+            "PCLA_DEBUG fix=${parameter.name} placeholder=$placeholderType hardBounds=$hardBounds " +
+                    "owners=${freshReceiverCandidateOwnersByTypeVariable[variableConstructor]} " +
+                    "constraints=${currentCommonSystem.currentStorage().notFixedTypeVariables[variableConstructor]?.constraints}",
+        )
         if (hardBounds.isEmpty()) return
         val solution = solveUniqueSolution(variableConstructor, hardBounds) ?: return
+        System.err.println("PCLA_DEBUG solution=${parameter.name}:$solution")
         parameter.replaceReturnTypeRef(
             solution.toCfirResolvedTypeRef(parameter.returnTypeRef.source, parameter.returnTypeRef),
         )
+    }
+
+    /**
+     * 读取当前 common system 中直接挂在 lambda 形参上的可用上界。
+     *
+     * 模式 initializer 的约束不经过 postponed call 的 argumentMapping：例如
+     * `let (Some(x), y) <- (a, b)` 会直接产生 `a <: Option<T>`。这里不能只看调用
+     * 队列，否则这种约束永远到不了形参定型路径。先使用当前 substitutor 替换已经
+     * 求出的嵌套变量；只有替换后成为 proper type 的约束才可以作为本语句边界的定型
+     * 证据，避免把 `Option<T-Fly>` 泄漏到后续 body 解析。
+     */
+    private fun collectProperDirectConstraintBounds(
+        variableConstructor: TypeConstructorMarker,
+    ): List<ConeCangJieType> {
+        val storage = currentCommonSystem.currentStorage()
+        val variableConstraints = storage.notFixedTypeVariables[variableConstructor]?.constraints.orEmpty()
+        if (variableConstraints.isEmpty()) return emptyList()
+
+        val substitutor = storage
+            .buildCurrentSubstitutor(inferenceComponents.session.typeContext, emptyMap())
+            .asCone()
+        return variableConstraints
+            .asSequence()
+            .filter { constraint ->
+                constraint.kind == ConstraintKind.UPPER || constraint.kind == ConstraintKind.EQUALITY
+            }
+            .mapNotNull { constraint ->
+                val constraintType = constraint.type as? ConeCangJieType ?: return@mapNotNull null
+                val substitutedType = substitutor.substituteOrNull(constraintType) ?: constraintType
+                if (substitutedType is ConeErrorType || substitutedType.containsNotFixedVariable(storage)) {
+                    null
+                } else {
+                    substitutedType
+                }
+            }
+            .distinctBy { it.toString() }
+            .toList()
     }
 
     /**
@@ -2156,14 +2209,15 @@ class CfirPCLAInferenceSession(
         val solution = org.cangnova.cangjie.cfir.types.ConeTypeIntersector.intersectTypes(typeContext, hardBounds)
         if (solution is ConeErrorType) return null
         val storage = currentCommonSystem.currentStorage()
-        if (solution.contains { type ->
-                type is ConeTypeVariableType && type.typeConstructor in storage.notFixedTypeVariables
-            }
-        ) {
+        if (solution.containsNotFixedVariable(storage)) {
             return null
         }
+        val substitutor = storage
+            .buildCurrentSubstitutor(typeContext, emptyMap())
+            .asCone()
         for (constraint in storage.notFixedTypeVariables[variableConstructor]?.constraints.orEmpty()) {
-            val constraintType = constraint.type as? ConeCangJieType ?: continue
+            val rawConstraintType = constraint.type as? ConeCangJieType ?: continue
+            val constraintType = substitutor.substituteOrNull(rawConstraintType) ?: rawConstraintType
             if (constraintType is ConeErrorType) continue
             val compatible = when (constraint.kind) {
                 ConstraintKind.UPPER -> AbstractTypeChecker.isSubtypeOf(typeContext, solution, constraintType)
@@ -2175,6 +2229,12 @@ class CfirPCLAInferenceSession(
         }
         return solution
     }
+
+    /** 判断类型是否仍引用当前 common system 中未固定的推断变量。 */
+    private fun ConeCangJieType.containsNotFixedVariable(storage: ConstraintStorage): Boolean =
+        contains { type ->
+            type is ConeTypeVariableType && type.typeConstructor in storage.notFixedTypeVariables
+        }
 
     /** 把 expected-type subtype 约束加入当前 common system。 */
     override fun addSubtypeConstraintIfCompatible(
