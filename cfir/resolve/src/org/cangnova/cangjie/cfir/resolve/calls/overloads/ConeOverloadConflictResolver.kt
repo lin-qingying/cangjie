@@ -1287,6 +1287,11 @@ class ConeOverloadConflictResolver(
         return when (this) {
             is CfirClass -> typeParameters
             is CfirPrimitiveTypeDeclaration -> emptyList()
+            // 内建声明的 refs 在反序列化时必须已经物化为真实的 CfirTypeParameter；重载签名不能丢弃它们。
+            is CfirBuiltInDeclaration -> typeParameters.map { typeParameterRef ->
+                typeParameterRef as? CfirTypeParameter
+                    ?: error("内建声明 ${name.asString()} 的类型参数未物化为 CfirTypeParameter")
+            }
             is CfirInterface -> typeParameters
             is CfirStruct -> typeParameters
             is CfirEnum -> typeParameters

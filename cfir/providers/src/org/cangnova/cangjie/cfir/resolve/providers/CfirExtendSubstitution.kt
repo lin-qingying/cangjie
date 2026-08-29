@@ -25,6 +25,7 @@ import org.cangnova.cangjie.cfir.types.ConeVArrayType
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.types.collectUpperBounds
+import org.cangnova.cangjie.cfir.types.forEachType
 import org.cangnova.cangjie.cfir.types.idealExtendLookupTypes
 import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.cfir.types.typeContext
@@ -78,6 +79,109 @@ fun findExtendDeclarationSubstitution(
     }
 
     return null
+}
+
+/**
+ * 判断 extend 接口边在官方赋值/子类型谓词语义下是否成立。
+ *
+ * 官方 `TypeManager::HasExtendInterfaceTyHelper` 为谓词路径构建映射时，
+ * 在查询类型的原始拼写层取 `extendedType` 的**顶层实参**，且只对其中
+ * "直接的类型参数"（`DynamicCast<TyVar*>` 命中）建立代换；
+ * 嵌套实参（如 `extend<X> A<B<X>>` 中的 `B<X>`）不会展开。等价判据为：
+ * 接口类型中引用到的 extend 类型形参必须全部能由 direct 映射覆盖——
+ * 覆盖不全的边在官方路径上保持含 TyVar 的形状，永远无法与具体目标匹配。于是：
+ *
+ * - `extend<X> A<X> <: I<X>` 与 `A<Int64>`：映射 `{X|->Int64}` 覆盖 `I<X>` 中的 `X`，边成立；
+ * - `extend<X> A<B<X>> <: I<Int64>`：接口实参是常量，无需覆盖，边成立；
+ * - `extend<X> A<B<X>> <: I<X>`：映射为空，`I<X>` 中的 `X` 无法覆盖，边不成立（cjc 报 mismatched types）；
+ * - `extend<X, Y> A<X, B<Y>> <: I<X>`：`X` 直接映射覆盖，`Y` 未被接口引用，边成立；
+ * - `extend<Y> C<Y> <: I<Y>` 与 `C<Int64>`（`type C<X> = GennericClassA<Array<X>, Array<X>>`）：
+ *   官方在 alias 拼写层匹配，`C<Y>` 的顶层实参 `Y` 是 TyVar，映射 `{Y|->Int64}` 覆盖 `I<Y>`，边成立。
+ *   若先展开 typealias 再取顶层实参，`Y` 会沉入 `Array<Y>` 而被误判，因此 [rawReceiverType]
+ *   必须携带查询入口的原始拼写。
+ *
+ * 成员查找、可达性遍历等结构化语义（官方 `GetAllExtendInterfaceTyHelper`）不受本判据影响。
+ *
+ * @param rawReceiverType 查询入口的原始拼写类型（未做 typealias 展开）。
+ *   superclass 传播链上的中间类型没有独立的用户拼写，传 `null`，
+ *   此时按语义展开层判定——该层与官方"无 alias 拼写可保留"的行为一致。
+ */
+fun isExtendSuperTypeRefPredicateVisible(
+    session: CfirSession,
+    extend: CfirExtend,
+    targetPattern: ConeCangJieType,
+    concreteReceiverType: ConeCangJieType,
+    superTypeRefType: ConeCangJieType,
+    rawReceiverType: ConeCangJieType? = null,
+): Boolean {
+    val extendTypeParameterConstructors = extend.typeParameters.mapTo(linkedSetOf<TypeConstructorMarker>()) {
+        it.symbol.toLookupTag()
+    }
+    if (extendTypeParameterConstructors.isEmpty()) return true
+
+    println(
+        "PRED-DEBUG pattern=${targetPattern::class.simpleName}:${targetPattern} " +
+                "receiver=${concreteReceiverType::class.simpleName}:${concreteReceiverType} " +
+                "raw=${rawReceiverType?.let { it::class.simpleName.toString() + ":" + it }}",
+    )
+    runCatching {
+        java.io.File("D:/code/intellij/cangjie/pred_debug.log").appendText(
+            "pattern=${targetPattern::class.simpleName}:${targetPattern} | " +
+                    "receiver=${concreteReceiverType::class.simpleName}:${concreteReceiverType} | " +
+                    "raw=${rawReceiverType?.let { it::class.simpleName.toString() + ":" + it }}\n",
+        )
+    }
+
+    // 官方等价判据：direct-only 映射必须覆盖接口类型中引用到的全部 extend 类型形参。
+    // 覆盖完整的边等价于官方 `GetInstantiatedTy` 产出的可实例化边；覆盖不全的边
+    // 在官方路径上保持含 TyVar 的形状，永远无法与具体目标类型匹配。
+    val referencedExtendParameters = mutableSetOf<TypeConstructorMarker>()
+    superTypeRefType.forEachType { type ->
+        if (type is ConeTypeParameterType && type.lookupTag in extendTypeParameterConstructors) {
+            referencedExtendParameters += type.lookupTag
+        }
+    }
+    if (referencedExtendParameters.isEmpty()) return true
+
+    // alias 拼写层 direct 映射：官方 `GetTypeArgs(ty)` 保留 typealias 引用的原始实参，
+    // `C<Y>` 对 `C<Int64>` 在这一层才是 `Y` 的 direct 位置。构造器不一致说明
+    // 查询侧拼写已被展开或改写，官方在 size/匹配检查下同样无法建立映射，
+    // 此时回退到语义展开层的顶层判定。
+    val rawPatternArguments = (targetPattern as? ConeLookupTagBasedType)?.typeArguments
+    val rawReceiverArguments = rawReceiverType?.let { rawType ->
+        (rawType as? ConeLookupTagBasedType)?.typeArguments
+    }
+    val sameRawConstructor = rawReceiverType != null && rawPatternArguments != null &&
+            rawReceiverArguments != null &&
+            targetPattern.classIdOrPrimitiveClassId != null &&
+            targetPattern.classIdOrPrimitiveClassId == rawReceiverType.classIdOrPrimitiveClassId
+
+    val directSubstitutions = linkedMapOf<TypeConstructorMarker, ConeCangJieType>()
+    if (sameRawConstructor) {
+        rawPatternArguments?.forEachIndexed { index, patternArgument ->
+            val patternType = patternArgument.type
+            if (patternType is ConeTypeParameterType && patternType.lookupTag in extendTypeParameterConstructors) {
+                rawReceiverArguments?.getOrNull(index)?.type?.let { receiverArgument ->
+                    directSubstitutions.putIfAbsent(patternType.lookupTag, receiverArgument)
+                }
+            }
+        }
+    } else {
+        val semanticPattern = targetPattern.semanticExtendMatchType(session)
+        val semanticReceiver = concreteReceiverType.semanticExtendMatchType(session)
+        val patternArguments = (semanticPattern as? ConeLookupTagBasedType)?.typeArguments.orEmpty()
+        val receiverArguments = (semanticReceiver as? ConeLookupTagBasedType)?.typeArguments.orEmpty()
+        patternArguments.forEachIndexed { index, patternArgument ->
+            val patternType = patternArgument.type
+            if (patternType is ConeTypeParameterType && patternType.lookupTag in extendTypeParameterConstructors) {
+                receiverArguments.getOrNull(index)?.type?.let { receiverArgument ->
+                    directSubstitutions.putIfAbsent(patternType.lookupTag, receiverArgument)
+                }
+            }
+        }
+    }
+
+    return referencedExtendParameters.all { it in directSubstitutions }
 }
 
 /**

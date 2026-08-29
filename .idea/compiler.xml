@@ -2257,6 +2257,9 @@
       <module name="cangjie.generators" options="-proc:none" />
       <module name="cangjie.generators.main" options="-proc:none" />
       <module name="cangjie.generators.test" options="-proc:none" />
+      <module name="cangjie.gradle-queue-cli" options="-proc:none" />
+      <module name="cangjie.gradle-queue-cli.main" options="-proc:none" />
+      <module name="cangjie.gradle-queue-cli.test" options="-proc:none" />
       <module name="cangjie.intellij-ide.main" options="-proc:none" />
       <module name="cangjie.intellij-ide.test" options="-proc:none" />
       <module name="cangjie.llvm-interop" options="-proc:none" />

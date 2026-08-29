@@ -46,7 +46,7 @@ func declaredOk(): Int64 {
 }
 
 func declaredBoolMismatch(): Bool {
-    <!RETURN_TYPE_MISMATCH!>1<!>
+    <!CANNOT_CONVERT_LITERAL!>1<!>
 }
 
 func declaredUnitTailExpression(): Unit {

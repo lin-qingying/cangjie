@@ -842,6 +842,32 @@ object StandardNames {
     val CSTRING = Name.identifier("CString")
 
     /**
+     * 定长数组类型 `VArray` 的短名称。
+     *
+     * 对齐官方 `VARRAY_NAME`，由 `AddBuiltInVArrayDecl` 注入 `std.core`。
+     */
+    @JvmField
+    val VARRAY = Name.identifier("VArray")
+
+    /**
+     * C 互操作函数类型 `CFunc` 的短名称。
+     *
+     * 对齐官方 `CFUNC_NAME`，由 `AddBuiltinCFuncDecl` 注入 `std.core`。
+     */
+    @JvmField
+    val CFUNC = Name.identifier("CFunc")
+
+    /**
+     * 原始数组类型 `RawArray` 的短名称。
+     *
+     * 对齐官方 `RAW_ARRAY_NAME`，由 `AddBuiltInArrayDecl` 注入 `std.core`。
+     * 注意该声明在官方只带 `GLOBAL | GENERIC` 而没有 `PUBLIC`，仅 `std.core` 内部可见；
+     * 用户代码书写的 `Array<T>` 是标准库 struct（官方 `Ty::IsStructArray()`），并非此类型。
+     */
+    @JvmField
+    val RAW_ARRAY = Name.identifier("RawArray")
+
+    /**
      * C 互操作类型标记 `CType` 的短名称。
      */
     @JvmField
@@ -1285,6 +1311,42 @@ object StandardNames {
          */
         @JvmField
         val cstringUFqName: FqNameUnsafe = cstringFqName.toUnsafe()
+
+        /**
+         * 定长数组类型 `std.core.VArray` 的 FqName。
+         */
+        @JvmField
+        val varrayFqName: FqName = core.child(VARRAY)
+
+        /**
+         * 定长数组类型 `std.core.VArray` 的 unsafe FqName 形式。
+         */
+        @JvmField
+        val varrayUFqName: FqNameUnsafe = varrayFqName.toUnsafe()
+
+        /**
+         * C 互操作函数类型 `std.core.CFunc` 的 FqName。
+         */
+        @JvmField
+        val cfuncFqName: FqName = core.child(CFUNC)
+
+        /**
+         * C 互操作函数类型 `std.core.CFunc` 的 unsafe FqName 形式。
+         */
+        @JvmField
+        val cfuncUFqName: FqNameUnsafe = cfuncFqName.toUnsafe()
+
+        /**
+         * 原始数组类型 `std.core.RawArray` 的 FqName。
+         */
+        @JvmField
+        val rawArrayFqName: FqName = core.child(RAW_ARRAY)
+
+        /**
+         * 原始数组类型 `std.core.RawArray` 的 unsafe FqName 形式。
+         */
+        @JvmField
+        val rawArrayUFqName: FqNameUnsafe = rawArrayFqName.toUnsafe()
 
         /**
          * C 类型标记 `std.core.CType` 的 FqName。

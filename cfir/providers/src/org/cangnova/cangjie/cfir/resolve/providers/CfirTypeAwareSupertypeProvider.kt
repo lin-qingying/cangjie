@@ -27,7 +27,15 @@ sealed interface CfirInstantiatedSupertypeOrigin {
         val ownerClassId: ClassId,
     ) : CfirInstantiatedSupertypeOrigin
 
-    /** extend 注入的接口父边。 */
+    /**
+     * extend 注入的接口父边。
+     *
+     * @property predicateVisible 该边是否参与子类型谓词视图。
+     * 官方 `TypeManager::HasExtendInterfaceTyHelper` 为赋值/子类型判定构建映射时，
+     * 只把 extendedType 实参中"直接的类型参数"纳入代换；若接口类型中仍残留无法由
+     * 直接映射实例化的 extend 类型形参（如 `extend<X> A<B<X>> <: I<X>` 的 `X`），
+     * 该边在谓词视图下不成立。成员查找、可达性遍历等结构化消费方不受此标记影响。
+     */
     data class Extend(
         /** 真正贡献接口实现的 extend 声明。 */
         val sourceExtend: CfirExtend,
@@ -37,6 +45,8 @@ sealed interface CfirInstantiatedSupertypeOrigin {
         val sourceTypeRef: CfirTypeRef,
         /** 从当前 receiver 的 superclass 链传播到 source extend 的声明父边路径。 */
         val propagationPath: List<CfirTypeRef> = emptyList(),
+        /** 见上；默认 true 以保持非泛型/直接形状 extend 的既有行为。 */
+        val predicateVisible: Boolean = true,
     ) : CfirInstantiatedSupertypeOrigin
 }
 
@@ -77,4 +87,16 @@ interface CfirTypeAwareSupertypeProvider : CfirSessionComponent {
      */
     fun getDirectSupertypes(type: ConeCangJieType): List<ConeCangJieType> =
         getDirectSupertypeDescriptors(type).map(CfirInstantiatedSupertypeDescriptor::type).distinct()
+
+    /**
+     * 返回 [type] 在官方赋值/子类型谓词语义下的直接父类型。
+     *
+     * 与 [getDirectSupertypes] 的差异仅在 extend 边：按照官方
+     * `TypeManager::HasExtendInterfaceTyHelper` 的 direct-TyVar-only 映射规则，
+     * 接口类型中仍残留 extend 类型形参的边（如 `extend<X> A<B<X>> <: I<X>`
+     * 在 use-site `A<B<Int64>>` 上产生的 `I<X>` 边）不参与本视图。
+     * 仅子类型判定路径（AbstractTypeChecker 的 supertypes 查询）应消费本方法；
+     * 成员查找、可达性遍历与 match 绑定继续使用 [getDirectSupertypes]。
+     */
+    fun getPredicateSupertypes(type: ConeCangJieType): List<ConeCangJieType> = getDirectSupertypes(type)
 }

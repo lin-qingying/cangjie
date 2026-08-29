@@ -3,6 +3,7 @@ package org.cangnova.cangjie.cfir.resolve
 import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirBuiltInDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirEnum
 import org.cangnova.cangjie.cfir.declarations.CfirInterface
 import org.cangnova.cangjie.cfir.declarations.CfirPrimitiveTypeDeclaration
@@ -90,6 +91,7 @@ private fun String.toApproxName(): Name {
 private fun CfirClassLikeDeclaration.classLikeNameOrNull(): Name? = when (this) {
     is CfirClass -> name
     is CfirPrimitiveTypeDeclaration -> name
+    is CfirBuiltInDeclaration -> name
     is CfirInterface -> name
     is CfirStruct -> name
     is CfirEnum -> name

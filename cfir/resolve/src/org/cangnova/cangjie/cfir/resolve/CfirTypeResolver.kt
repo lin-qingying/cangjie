@@ -25,7 +25,6 @@
 package org.cangnova.cangjie.cfir.resolve
 
 import org.cangnova.cangjie.AnalysisFlags
-import org.cangnova.cangjie.builtins.StandardNames
 import org.cangnova.cangjie.cfir.CfirQualifierPart
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.diagnostic.ConeAmbiguityError
@@ -50,6 +49,7 @@ import org.cangnova.cangjie.cfir.session.*
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.ConeClassLikeLookupTagImpl
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
+import org.cangnova.cangjie.cfir.symbols.constructType
 import org.cangnova.cangjie.cfir.symbols.toLookupTag
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.name.ClassId
@@ -136,18 +136,6 @@ class CfirTypeResolverImpl(
      */
     private val session: CfirSession,
 ) : CfirTypeResolver() {
-    /**
-     * CFunc 内建类型名。
-     */
-    private val cFuncName = Name.identifier("CFunc")
-    /**
-     * CPointer 内建类型名。
-     */
-    private val cPointerName = StandardNames.CPOINTER
-    /**
-     * CString 内建类型名。
-     */
-    private val cStringName = StandardNames.CSTRING
     /**
      * This 类型名。
      */
@@ -258,10 +246,6 @@ class CfirTypeResolverImpl(
             if (qualifierPart.name == thisTypeName) {
                 return result(resolveThisType(qualifierPart, configuration))
             }
-            if (qualifierPart.name == cFuncName) {
-                return result(resolveCFuncUserType(qualifierPart, configuration, expandTypeAliases))
-            }
-            resolveSpecialBuiltinUserType(qualifierPart, configuration, expandTypeAliases)?.let { return result(it) }
             configuration.typeParameterTypeOrNull(qualifierPart.name)?.let { typeParameterType ->
                 if (qualifierPart.typeArguments.isEmpty()) {
                     return result(typeParameterType)
@@ -420,67 +404,6 @@ class CfirTypeResolverImpl(
         kind: DiagnosticKind = DiagnosticKind.InvalidThisTypePosition,
     ): ConeErrorType {
         return ConeErrorType(ConeSimpleDiagnostic(reason, kind), delegatedType = delegatedType)
-    }
-
-    /**
-     * 解析 `CFunc<fn>` 内建函数指针类型。
-     */
-    private fun resolveCFuncUserType(
-        qualifierPart: CfirQualifierPart,
-        configuration: TypeResolutionConfiguration,
-        expandTypeAliases: Boolean,
-    ): ConeCangJieType {
-        if (qualifierPart.typeArguments.size != 1) {
-            return ConeErrorType(ConeSimpleDiagnostic("CFunc expects exactly one function type argument"))
-        }
-
-        val functionType = resolveType(
-            qualifierPart.typeArguments.single(),
-            configuration,
-            areBareTypesAllowed = false,
-            isOperandOfIsOperator = false,
-            resolveDeprecations = true,
-            supertypeSupplier = SupertypeSupplier.Default,
-            expandTypeAliases = expandTypeAliases,
-        ).type as? ConeFunctionType ?: return ConeErrorType(
-            ConeSimpleDiagnostic("CFunc expects a function type argument")
-        )
-
-        return ConeFunctionType(
-            parameterTypes = functionType.parameterTypes,
-            returnType = functionType.returnType,
-            isCFunc = true,
-            isClosureType = functionType.isClosureType,
-            hasVariableLenArg = functionType.hasVariableLenArg,
-            attributes = functionType.attributes,
-        )
-    }
-
-    /**
-     * CPointer/CString 是官方前端的 non-primitive builtin types：
-     * 只有名字和类型实参数量完全匹配时才进入内建类型路径，保持同名用户类型与错误实参数量的普通解析行为。
-     */
-    private fun resolveSpecialBuiltinUserType(
-        qualifierPart: CfirQualifierPart,
-        configuration: TypeResolutionConfiguration,
-        expandTypeAliases: Boolean,
-    ): ConeCangJieType? {
-        return when {
-            qualifierPart.name == cPointerName && qualifierPart.typeArguments.size == 1 -> {
-                val pointeeType = resolveType(
-                    qualifierPart.typeArguments.single(),
-                    configuration,
-                    areBareTypesAllowed = false,
-                    isOperandOfIsOperator = false,
-                    resolveDeprecations = true,
-                    supertypeSupplier = SupertypeSupplier.Default,
-                    expandTypeAliases = expandTypeAliases,
-                ).type
-                ConePointerType(pointeeType)
-            }
-            qualifierPart.name == cStringName && qualifierPart.typeArguments.isEmpty() -> ConeCStringType()
-            else -> null
-        }
     }
 
     /**
@@ -704,6 +627,7 @@ class CfirTypeResolverImpl(
     ): ConeCangJieType {
         return when (resolvedClass) {
             is CfirPrimitiveTypeDeclaration -> ConePrimitiveType(resolvedClass.kind)
+            is CfirBuiltInDeclaration -> resolvedClass.symbol.constructType(resolvedArguments)
             is CfirClass -> ConeClassLikeType(
                 lookupTag = ConeClassLikeLookupTagImpl(classId),
                 typeArguments = resolvedArguments,

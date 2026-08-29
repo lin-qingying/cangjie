@@ -1004,6 +1004,13 @@ internal class LiteralNumericOverflowImpl(
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.LiteralNumericOverflow
 
+internal class TypecastOverflowImpl(
+    override val sourceType: CaType,
+    override val targetType: CaType,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.TypecastOverflow
+
 internal class ConstEvalDivideByZeroImpl(
     override val operatorName: String,
     cfirDiagnostic: CjPsiDiagnostic,
@@ -1411,6 +1418,17 @@ internal class UseExprWithoutImportImpl(
     cfirDiagnostic: CjPsiDiagnostic,
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.UseExprWithoutImport
+
+internal class ForinPatternMustBeIrrefutableImpl(
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.ForinPatternMustBeIrrefutable
+
+internal class ExprInForinMustHasIteratorImpl(
+    override val type: CaType,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.ExprInForinMustHasIterator
 
 internal class GenericTypeInconsistentImpl(
     override val typeParameterName: Name,

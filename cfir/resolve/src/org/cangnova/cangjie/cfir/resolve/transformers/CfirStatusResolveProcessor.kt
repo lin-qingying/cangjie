@@ -179,6 +179,7 @@ open class CfirStatusComputationSession(
             is CfirStructSymbol -> forceResolveStatusesOfClassLike(classLikeSymbol.cfir)
             is CfirEnumSymbol -> forceResolveStatusesOfClassLike(classLikeSymbol.cfir)
             is CfirPrimitiveTypeSymbol -> forceResolveStatusesOfClassLike(classLikeSymbol.cfir)
+            is CfirBuiltInTypeSymbol -> forceResolveStatusesOfClassLike(classLikeSymbol.cfir)
             is CfirTypeAliasSymbol -> {
                 for (expandedSymbol in superTypeToSymbols(classLikeSymbol.cfir.expandedTypeRef)) {
                     forceResolveStatusOfCorrespondingClass(expandedSymbol)

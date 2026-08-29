@@ -247,7 +247,8 @@ internal class CjoPackageIndex(
             kind == DeclKind.InterfaceDecl ||
             kind == DeclKind.StructDecl ||
             kind == DeclKind.EnumDecl ||
-            kind == DeclKind.TypeAliasDecl
+            kind == DeclKind.TypeAliasDecl ||
+            kind == DeclKind.BuiltInDecl
     }
 
     /** 解码 class 声明 body 中的子声明索引。 */

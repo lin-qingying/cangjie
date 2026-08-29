@@ -136,6 +136,15 @@ class CfirCallCompleter(
         val reference = call.calleeReference as? CfirNamedReferenceWithCandidate ?: return call
         val candidate = reference.candidate
         val initialType = components.typeFromCallee(call).initialTypeOfCandidate(candidate)
+        if (candidate.symbol.takeIf { it.isBound }?.cfir?.origin is CfirDeclarationOrigin.Synthetic &&
+            candidate.callInfo.name.asString() in setOf("CPointer", "CString")
+        ) {
+            System.err.println(
+                "BUILTIN_DEBUG complete-before name=${candidate.callInfo.name} initial=$initialType " +
+                    "expected=${(resolutionMode as? ResolutionMode.WithExpectedType)?.expectedType} fresh=${candidate.freshVariables} " +
+                    "diagnostics=${candidate.diagnostics} contradiction=${candidate.system.hasContradiction}"
+            )
+        }
 
         // Annotation types are resolved during type resolution, and generic arguments aren't inferred.
         // Updating the type of an annotation call is a no-op, it only checks if it's the same as the type of the annotation type ref.
@@ -196,6 +205,17 @@ class CfirCallCompleter(
             return call.transformSingle(createCompletionResultsWriter(ConeSubstitutor.Empty), null)
         }
         addConstraintFromExpectedType(candidate, initialType, resolutionMode)
+        if (candidate.symbol.takeIf { it.isBound }?.cfir?.origin is CfirDeclarationOrigin.Synthetic &&
+            candidate.callInfo.name.asString() in setOf("CPointer", "CString")
+        ) {
+            System.err.println(
+                "BUILTIN_DEBUG complete-after-expected name=${candidate.callInfo.name} initial=$initialType " +
+                    "expected=${(resolutionMode as? ResolutionMode.WithExpectedType)?.expectedType} fresh=${candidate.freshVariables} " +
+                    "notFixed=${candidate.system.currentStorage().notFixedTypeVariables.keys} " +
+                    "fixed=${candidate.system.currentStorage().fixedTypeVariables} " +
+                    "diagnostics=${candidate.diagnostics} contradiction=${candidate.system.hasContradiction}"
+            )
+        }
         candidate.addSameClassifierArgumentTypeConstraints()
 
         if (skipEvenPartialCompletion) return call

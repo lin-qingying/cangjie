@@ -67,6 +67,7 @@ class CjoPackageHeader(
             DeclKind.StructDecl,
             DeclKind.EnumDecl,
             DeclKind.TypeAliasDecl,
+            DeclKind.BuiltInDecl,
         )
 
         /** 能作为顶层 callable 名称导出的声明种类。 */

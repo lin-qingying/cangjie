@@ -2,12 +2,17 @@ package org.cangnova.cangjie.cfir.serialization.provider
 
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.common.CfirModuleData
+import org.cangnova.cangjie.cfir.declarations.CfirBuiltInDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirEnum
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
+import org.cangnova.cangjie.cfir.declarations.CfirInterface
+import org.cangnova.cangjie.cfir.declarations.CfirPrimitiveTypeDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirStruct
+import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolNamesProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProviderInternals
@@ -372,11 +377,12 @@ abstract class AbstractCfirDeserializedSymbolProvider(
     /** 提取 class-like 声明对应的源码级名称文本。 */
     private fun declSymbolName(declaration: CfirClassLikeDeclaration): String = when (declaration) {
         is CfirClass -> declaration.name.asString()
-        is org.cangnova.cangjie.cfir.declarations.CfirPrimitiveTypeDeclaration -> declaration.name.asString()
-        is org.cangnova.cangjie.cfir.declarations.CfirInterface -> declaration.name.asString()
-        is org.cangnova.cangjie.cfir.declarations.CfirStruct -> declaration.name.asString()
+        is CfirPrimitiveTypeDeclaration -> declaration.name.asString()
+        is CfirBuiltInDeclaration -> declaration.name.asString()
+        is CfirInterface -> declaration.name.asString()
+        is CfirStruct -> declaration.name.asString()
         is CfirEnum -> declaration.name.asString()
-        is org.cangnova.cangjie.cfir.declarations.CfirTypeAlias -> declaration.name.asString()
+        is CfirTypeAlias -> declaration.name.asString()
     }
 
     /**

@@ -833,6 +833,11 @@ class CfirTypeResolveTransformer(
     private fun CfirClassLikeDeclaration.typeParametersForResolution(): List<CfirTypeParameter> = when (this) {
         is CfirClass -> typeParameters
         is org.cangnova.cangjie.cfir.declarations.CfirPrimitiveTypeDeclaration -> emptyList()
+        // 内建声明的 refs 在反序列化时必须已经物化为真实的 CfirTypeParameter；类型解析不能丢弃它们。
+        is org.cangnova.cangjie.cfir.declarations.CfirBuiltInDeclaration -> typeParameters.map { typeParameterRef ->
+            typeParameterRef as? CfirTypeParameter
+                ?: error("内建声明 ${name.asString()} 的类型参数未物化为 CfirTypeParameter")
+        }
         is CfirInterface -> typeParameters
         is CfirStruct -> typeParameters
         is CfirEnum -> typeParameters

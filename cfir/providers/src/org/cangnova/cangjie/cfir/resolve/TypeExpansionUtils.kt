@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.resolve
 
 import org.cangnova.cangjie.cfir.SessionHolder
+import org.cangnova.cangjie.cfir.declarations.CfirBuiltInTypeKind
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.declarations.util.expandedConeType
@@ -14,10 +15,15 @@ import org.cangnova.cangjie.cfir.types.AbbreviatedTypeAttribute
 import org.cangnova.cangjie.cfir.types.AbstractConeSubstitutor
 import org.cangnova.cangjie.cfir.types.abbreviatedType
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeClassifierType
+import org.cangnova.cangjie.cfir.types.ConeCStringType
+import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.types.ConeLookupTagBasedType
+import org.cangnova.cangjie.cfir.types.ConePointerType
 import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
 import org.cangnova.cangjie.cfir.types.ConeTypeProjection
+import org.cangnova.cangjie.cfir.types.ConeVArrayType
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.types.forEachType
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
@@ -213,6 +219,27 @@ private fun mapTypeAliasArguments(
  */
 fun CfirTypeAlias.fullyExpandedConeType(useSiteSession: CfirSession): ConeCangJieType? {
     return expandedConeType?.fullyExpandedType(useSiteSession)
+}
+
+/**
+ * 返回当前 typealias 展开后的官方 BuiltInDecl 种类。
+ *
+ * 内建声明的声明层身份和 Cone 类型层身份并不一一同形：CPointer、CString、VArray
+ * 和 CFunc 在 Cone 中分别由专用类型承载，RawArray 在当前模型中保留其 classifier
+ * ClassId。调用方只需要这个统一结果，不应再次按名字或按 Cone 类型写多套判断。
+ */
+fun CfirTypeAlias.expandedBuiltInKind(useSiteSession: CfirSession): CfirBuiltInTypeKind? {
+    lazyResolveToPhase(CfirResolvePhase.SUPER_TYPES)
+    val expandedType = expandedConeType?.fullyExpandedType(useSiteSession) ?: return null
+    return when (expandedType) {
+        is ConeClassLikeType ->
+            CfirBuiltInTypeKind.fromClassIdOrNull(expandedType.classId)
+        is ConePointerType -> CfirBuiltInTypeKind.CPOINTER
+        is ConeCStringType -> CfirBuiltInTypeKind.CSTRING
+        is ConeVArrayType -> CfirBuiltInTypeKind.VARRAY
+        is ConeFunctionType -> if (expandedType.isCFunc) CfirBuiltInTypeKind.CFUNC else null
+        else -> null
+    }
 }
 
 /**

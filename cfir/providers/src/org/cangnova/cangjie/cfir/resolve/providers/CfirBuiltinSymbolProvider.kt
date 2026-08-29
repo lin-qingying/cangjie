@@ -1,30 +1,40 @@
 package org.cangnova.cangjie.cfir.resolve.providers
 
 import org.cangnova.cangjie.builtins.StandardNames
+import org.cangnova.cangjie.cfir.toCfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.common.CfirBinaryDependenciesModuleData
 import org.cangnova.cangjie.cfir.common.moduleData
 import org.cangnova.cangjie.cfir.common.nullableModuleData
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirBuiltInDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirBuiltInTypeKind
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationAttributes
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.declarations.CfirPrimitiveTypeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.declarations.CfirTypeParameterRef
 import org.cangnova.cangjie.cfir.declarations.DEFAULT_STATUS_FOR_STATUSLESS_DECLARATIONS
 import org.cangnova.cangjie.cfir.declarations.EmptyDeprecationsProvider
 import org.cangnova.cangjie.cfir.declarations.builder.buildNamedFunction
+import org.cangnova.cangjie.cfir.declarations.builder.buildTypeParameter
 import org.cangnova.cangjie.cfir.declarations.builder.buildValueParameter
 import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
 import org.cangnova.cangjie.cfir.declarations.initDefaultResolveState
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
+import org.cangnova.cangjie.cfir.symbols.CfirBuiltInTypeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPrimitiveTypeSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
+import org.cangnova.cangjie.cfir.symbols.toLookupTag
 import org.cangnova.cangjie.cfir.types.BuiltinPrimitiveOperators
+import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
+import org.cangnova.cangjie.cfir.types.StdlibClassIds
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.classId
 import org.cangnova.cangjie.cfir.types.isExposedBuiltinClassifier
@@ -34,10 +44,12 @@ import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 
 /**
- * 将 builtin primitive 类型暴露为合成 class-like 声明。
+ * 将 builtin 类型暴露为合成 class-like 声明。
  *
- * 这样 provider、scope 与 resolver 可以沿用普通 classifier 的统一架构，
- * 不需要在类型系统外层为 primitive 类型另开查询通道；整体设计对齐 Kotlin FIR builtin provider。
+ * primitive 没有普通声明，而 `RawArray` / `VArray` / `CPointer` / `CString` / `CFunc`
+ * 在官方编译器中是注入 `std.core` 的声明。这里为两组类型分别保留其语义身份，
+ * 让 provider、scope 与 resolver 沿用统一的 class-like 查询架构；真实 CJO 声明由
+ * deserialized provider 优先提供，本 provider 只负责在其缺失时合成对应声明。
  */
 class CfirBuiltinSymbolProvider(
     session: CfirSession,
@@ -53,9 +65,7 @@ class CfirBuiltinSymbolProvider(
             ?: CfirBinaryDependenciesModuleData(Name.identifier("<builtins>")).also { it.bindSession(session) }
     }
 
-    /**
-     * primitive ClassId 到合成声明的缓存。
-     */
+    /** primitive ClassId 到合成声明的缓存。 */
     private val primitiveDeclarationsByClassId: Map<ClassId, CfirPrimitiveTypeDeclaration> by lazy(LazyThreadSafetyMode.PUBLICATION) {
         PrimitiveTypeKind.entries.associateBy(
             keySelector = { it.classId },
@@ -63,16 +73,24 @@ class CfirBuiltinSymbolProvider(
         )
     }
 
+    /** 官方 BuiltInDecl ClassId 到合成声明的缓存。 */
+    private val builtInDeclarationsByClassId: Map<ClassId, CfirBuiltInDeclaration> by lazy(LazyThreadSafetyMode.PUBLICATION) {
+        CfirBuiltInTypeKind.entries.associate { kind ->
+            kind.classId to buildBuiltInDeclaration(kind)
+        }
+    }
+
     /**
-     * builtin provider 的名称索引，只暴露基础包下的 primitive classifier。
+     * builtin provider 的名称索引，同时暴露基础包 primitive 与 `std.core` BuiltInDecl。
      */
     override val symbolNamesProvider: CfirSymbolNamesProvider = BuiltinNamesProvider
 
     /**
-     * 返回 primitive 类型对应的合成 class-like symbol。
+     * 返回 primitive 或官方 BuiltInDecl 对应的合成 class-like symbol。
      */
     override fun getClassLikeSymbolByClassId(classId: ClassId): CfirClassLikeSymbol<*>? =
-        primitiveDeclarationsByClassId[classId]?.symbol
+        builtInDeclarationsByClassId[classId]?.symbol
+            ?: primitiveDeclarationsByClassId[classId]?.symbol
 
     /**
      * builtin provider 不提供顶层 callable symbol。
@@ -107,11 +125,71 @@ class CfirBuiltinSymbolProvider(
     ) {
     }
 
-    /**
-     * builtin primitive 声明只位于基础包。
-     */
+    /** builtin 声明只位于基础包或 `std.core`。 */
     override fun hasPackage(fqName: FqName): Boolean =
-        fqName == StandardNames.BASIC_PACKAGE_FQ_NAME
+        fqName == StandardNames.BASIC_PACKAGE_FQ_NAME || fqName == StandardNames.STD_CORE_PACKAGE_FQ_NAME
+
+    /**
+     * 构造一个官方 `BuiltInDecl` 的合成 class-like 声明。
+     *
+     * 这里只承载声明身份、真实类型参数和 `CPointer` 的上界；官方成员和父类型
+     * 不属于 BuiltInDecl 本身，必须留给后续专门的语义类型接线处理。
+     */
+    private fun buildBuiltInDeclaration(kind: CfirBuiltInTypeKind): CfirBuiltInDeclaration {
+        val symbol = CfirBuiltInTypeSymbol(kind.classId, kind)
+        return CfirBuiltInDeclaration(
+            moduleData = builtinModuleData,
+            symbol = symbol,
+            name = kind.classId.shortClassName,
+            kind = kind,
+            scopeProvider = session.cangjieScopeProvider,
+            typeParameters = buildBuiltInTypeParameters(kind, symbol),
+        )
+    }
+
+    /**
+     * 按官方声明构造 BuiltInDecl 的类型参数。
+     *
+     * `VArray` 的长度参数属于类型头部，不是声明类型参数；因此五项中只有四项
+     * 携带一个名为 `T` 的真实类型参数，`CString` 不携带类型参数。
+     */
+    private fun buildBuiltInTypeParameters(
+        kind: CfirBuiltInTypeKind,
+        containingDeclarationSymbol: CfirBuiltInTypeSymbol,
+    ): MutableList<CfirTypeParameterRef> = when (kind) {
+        CfirBuiltInTypeKind.ARRAY,
+        CfirBuiltInTypeKind.VARRAY,
+        CfirBuiltInTypeKind.CPOINTER,
+        CfirBuiltInTypeKind.CFUNC,
+        -> mutableListOf<CfirTypeParameterRef>(
+            buildBuiltInTypeParameter(
+                containingDeclarationSymbol = containingDeclarationSymbol,
+                hasCTypeBound = kind == CfirBuiltInTypeKind.CPOINTER,
+            )
+        )
+
+        CfirBuiltInTypeKind.CSTRING -> mutableListOf()
+    }
+
+    /** 构造单个官方 BuiltInDecl 类型参数及其可选上界。 */
+    private fun buildBuiltInTypeParameter(
+        containingDeclarationSymbol: CfirBuiltInTypeSymbol,
+        hasCTypeBound: Boolean,
+    ) = buildTypeParameter {
+        moduleData = builtinModuleData
+        resolvePhase = CfirResolvePhase.BODY_RESOLVE
+        origin = CfirDeclarationOrigin.Synthetic.Default
+        attributes = CfirDeclarationAttributes.EMPTY
+        this.containingDeclarationSymbol = containingDeclarationSymbol
+        symbol = CfirTypeParameterSymbol()
+        name = Name.identifier("T")
+        if (hasCTypeBound) {
+            bounds += ConeClassLikeType(
+                lookupTag = StdlibClassIds.CType.toLookupTag(),
+                isInterface = true,
+            ).toCfirResolvedTypeRef()
+        }
+    }
 
     /**
      * 构造一个 primitive 类型的合成 class-like 声明。
@@ -196,10 +274,13 @@ class CfirBuiltinSymbolProvider(
             .mapTo(linkedSetOf()) { Name.identifier(it.typeName) }
 
         /**
-         * builtin 声明只存在于基础包。
+         * builtin 声明存在于基础包和 `std.core`。
          */
         override fun getPackageNames(): Set<String> =
-            setOf(StandardNames.BASIC_PACKAGE_FQ_NAME.asString())
+            setOf(
+                StandardNames.BASIC_PACKAGE_FQ_NAME.asString(),
+                StandardNames.STD_CORE_PACKAGE_FQ_NAME.asString(),
+            )
 
         /**
          * classifier 包集合直接复用包名集合。
@@ -208,10 +289,18 @@ class CfirBuiltinSymbolProvider(
             get() = false
 
         /**
-         * 返回基础包中的 primitive classifier 名称。
+         * 返回基础包或 `std.core` 中的 builtin classifier 名称。
          */
         override fun getTopLevelClassifierNamesInPackage(packageFqName: FqName): Set<Name>? =
-            if (packageFqName == StandardNames.BASIC_PACKAGE_FQ_NAME) builtinClassifierNames else emptySet()
+            when (packageFqName) {
+                StandardNames.BASIC_PACKAGE_FQ_NAME -> builtinClassifierNames
+                StandardNames.STD_CORE_PACKAGE_FQ_NAME -> builtInClassifierNames
+                else -> emptySet()
+            }
+
+        /** `std.core` 中官方 BuiltInDecl 的短名称集合。 */
+        private val builtInClassifierNames: Set<Name> = CfirBuiltInTypeKind.entries
+            .mapTo(linkedSetOf()) { it.classId.shortClassName }
 
         /**
          * builtin provider 不需要专门 callable 包计算。

@@ -2,6 +2,12 @@ package org.cangnova.cangjie.cfir.analysis.checkers
 
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticFactory3
+import org.cangnova.cangjie.cfir.expressions.CfirBinaryOp
+import org.cangnova.cangjie.cfir.expressions.CfirBinaryOpKind
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
+import org.cangnova.cangjie.cfir.expressions.CfirFunctionCallOrigin
+import org.cangnova.cangjie.cfir.expressions.CfirWrappedExpression
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
@@ -59,4 +65,18 @@ fun diagnosticFactoryForReturnTypeMismatch(
     } else {
         CfirErrors.RETURN_TYPE_MISMATCH
     }
+}
+
+/**
+ * 判断表达式是否是仓颉 flow 表达式。
+ *
+ * flow 在官方语义中先作为二元表达式完成解糖调用，再由 flow 节点本身检查目标类型；
+ * 因此它作为隐式尾值或显式 `return` 值时都应使用同一个通用类型不匹配诊断。
+ */
+internal fun CfirExpression.isFlowExpression(): Boolean = when (this) {
+    is CfirBinaryOp -> kind == CfirBinaryOpKind.PIPELINE || kind == CfirBinaryOpKind.COMPOSITION
+    is CfirFunctionCall -> origin == CfirFunctionCallOrigin.Pipeline ||
+            origin == CfirFunctionCallOrigin.CompilerCoreIntrinsic
+    is CfirWrappedExpression -> expression.isFlowExpression()
+    else -> false
 }
