@@ -28,6 +28,13 @@ internal fun Candidate.hasCompatibleCallableReferenceParameterShape(
         .all { (parameter, expectedParameterType) ->
             val parameterType = (parameter.returnTypeRef as? CfirResolvedTypeRef)?.coneType ?: return false
             val substitutedParameterType = substitutor.substituteOrSelf(parameterType)
+            if (substitutedParameterType.contains { it is ConeTypeVariableType }) {
+                // 显式类型实参和外层 expected type 约束可能尚未完成固定；此时
+                // 不能把 fresh type variable 当成确定的参数类型来判定不兼容。
+                // 后续 callable-reference expected-type stage 会把完整函数类型
+                // 约束加入同一个候选系统并负责最终收敛或淘汰该候选。
+                return@all true
+            }
             AbstractTypeChecker.isSubtypeOfForFunctionReference(
                 typeContext,
                 expectedParameterType,
