@@ -4584,3 +4584,26 @@ ull (= skip this symbol without creating a Candidate); on Accessible / REPORT_AC
   * 问题类型切片（Array + Function 全套件，PSI+非PSI）：精化后 `292 tests completed, 26 failed`；与改动前基线（28 failed）相比仅恢复 `testDepthCall` 2 条（PSI+非PSI），其余 26 条为既有失败族（default parameter / overload / mut / array constructor / body return inference），零新增回归。
   * 全量回归：`cleanTest + test --no-daemon --max-workers=1 --console=plain` → `8422 tests completed, 852 failed, 307 skipped`，test-executor 未崩溃、XML 完整（852 条失败逐条可核对）；`testDepthCall`、`testArraysizedlit1/2` 均不在失败列表，确认目标修复且无新回归。
 
+## 2026-08-30：嵌套泛型调用推断失败统一归一为 UNABLE_TO_INFER_GENERIC_FUNC（returnTypeInferenceMismatch.cj）
+
+- problem type: Type Inference / Diagnostics —— 显式返回类型为 `() -> Int64` 的外层函数，其形参 `() -> Int64` 收到嵌套泛型调用 `produce(true)`（`produce<T>(value: T): () -> T`，无显式类型实参）时：内层因约束矛盾（`Bool <: T` 且 `T <: Int64`）无法推断，CFIR 实际只报 `UNRESOLVED_REFERENCE`（早期）/ `ARGUMENT_TYPE_MISMATCH + NEW_INFERENCE_ERROR`（中期），官方 `cjc` 只报锚定 `produce` 的 `unable to infer generic argument of this function`（`sema_unable_to_infer_generic_func`）。
+- root cause: 两处框架级偏差。
+  1. 诊断映射偏差：`ConeConstraintSystemHasContradiction.mapSystemHasContradictionError` 把"隐式泛型调用推断因约束矛盾失败"走 `hasGenericInferenceConstraintMismatch` 分支映射成 `NEW_INFERENCE_ERROR`，而官方对**所有**泛型调用推断失败（无论信息不足还是矛盾约束）统一报 `UNABLE_TO_INFER_GENERIC_FUNC`。
+  2. 级联抑制偏差：`ArgumentCheckingProcessor.resolveNestedCallForExpectedType` 在嵌套泛型调用推断失败后 write back 了失败调用节点，但 `resolvePlainExpressionArgument` 仍会用旧的成功候选返回类型对外层做 subtype 检查，追加 `ARGUMENT_TYPE_MISMATCH` 级联。
+- official Cangjie evidence: `external/cangjie_compiler/src/Sema/TypeArgumentInference.cpp:148-154` `DiagnoseForCallInference` 对所有无法求解的泛型调用推断（`CONFLICTING_CONSTRAINTS`/默认）统一 `sema_unable_to_infer_generic_func` 锚定 `ce.baseFunc`；其注释的 sub-branch（`SolvingErrStyle::CONFLICTING_CONSTRAINTS`，同文件 99-142 行）把矛盾约束作为该诊断的 note 展示，不改变主诊断名。`cjc 1.0.5` 实测两例均报 `unable to infer generic argument of this function`：
+  * `return expectInt(produce(true))` → 仅 `produce` 一个主诊断 + 两个约束 note，`expectInt` 无诊断。
+  * `let _: Int64 = pair(1, "oops")` → 同样仅 `pair` 一个主诊断（非 NEW_INFERENCE_ERROR）。
+- Kotlin counterpart files consulted: 框架参照 Kotlin FIR 的 constraint-system 分层（`mapSystemHasContradictionError`/`unableToInferGenericFunctionDiagnostic` 保留），仅调整表面诊断名的归一与锚点；语义归属来自 cjc，非 Kotlin。
+- CFIR owner files changed:
+  * `cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/diagnostics/coneDiagnosticToCfirDiagnostic.kt` —— `mapSystemHasContradictionError` 的 `hasGenericInferenceConstraintMismatch` 分支由 `genericInferenceErrorDiagnostic`（NEW_INFERENCE_ERROR）改为 `unableToInferGenericFunctionDiagnostic`（UNABLE_TO_INFER_GENERIC_FUNC），统一泛型调用推断失败的表面诊断名，锚定 callee（`genericInferenceCalleeAnchorSource`）。
+  * `cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/stages/ArgumentCheckingProcessor.kt` —— `NestedCallResolutionResult` 新增 `suppressOuterMismatch` 标志：只有 `resolveNestedCallForExpectedType` 判定 `isNestedGenericInferenceFailure`（内层泛型推断失败）时为 true；`resolvePlainExpressionArgument` 据此在 write back 后直接 return，外层不再对同一实参追加 `ARGUMENT_TYPE_MISMATCH`。不改变既有 `ErrorTypeInArguments`/`nestedCallResult.failed` 语义——内层调用合法但返回类型与期望不符的深度调用（depth_call）仍如实报外层 mismatch。
+- repair principle: 隐式泛型调用推断失败（信息不足或矛盾约束）在官方语义是"无法求解该调用的类型实参"，应归一为锚定 callee 的 `UNABLE_TO_INFER_GENERIC_FUNC`；当它作为嵌套实参出现时，内层根诊断由 write back 的调用节点负责，外层不得重复报类型不匹配。修复在两个共享 owner（诊断映射 + 嵌套实参检查）上完成，非针对单 fixture。
+- fixtures corrected:
+  * `diagnostics2/inference/returnTypeInferenceMismatch.cj`：期望由内层 `ARGUMENT_TYPE_MISMATCH + NEW_INFERENCE_ERROR` 修正为仅 `UNABLE_TO_INFER_GENERIC_FUNC`（锚定 `produce`），对齐官方 cjc。
+  * `diagnostics/type-mismatch/genericConstraintCascade.cj`：`pair(1, "oops")` 期望由 `NEW_INFERENCE_ERROR` 修正为 `UNABLE_TO_INFER_GENERIC_FUNC`（官方 cjc 实测），与共享映射归一结果一致。
+- verification commands and outcome:
+  * 定向：`--tests '*CfirAnalysisDiagnostics2*testReturnTypeInferenceMismatch*'` → BUILD SUCCESSFUL（3 tests，含 PSI 入口）。
+  * 共享映射归一同族：`--tests '*Diagnostics*testGenericConstraintCascade*'`（Generated/Psi/WithoutAlias 三套）→ BUILD SUCCESSFUL。
+  * 级联抑制回归断言：`--tests '*Diagnostics*testGenericConstraintCascade*' --tests '*LLT*testArraysizedlit2*' --tests '*LLTPsi*testArraysizedlit2*'` → BUILD SUCCESSFUL。
+  * 全量前后对比：修复前 `:cfir:analysis-tests:test` = `8422 tests, 850 failed`；修复后同参 = `8422 tests, 848 failed, 307 skipped`。纯 XML diff：FIXED 2（`testReturnTypeInferenceMismatch` PSI+非PSI）、NEW REGRESSIONS 0，净减 2 与数字吻合。`genericConstraintCascade` 由夹具期望同步更新净平衡，不进 diff。
+

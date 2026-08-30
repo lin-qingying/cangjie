@@ -470,7 +470,10 @@ private fun ConeConstraintSystemHasContradiction.mapSystemHasContradictionError(
         return listOfNotNull(unableToInferGenericFunctionDiagnostic(source, qualifiedAccessSource, session))
     }
     if (hasGenericInferenceConstraintMismatch(session)) {
-        return listOfNotNull(genericInferenceErrorDiagnostic(source, qualifiedAccessSource, session))
+        // 对齐官方 cjc `DiagnoseForCallInference`：隐式泛型调用推断失败——无论根因是
+        // 信息不足还是矛盾约束（CONFLICTING_CONSTRAINTS）——统一归一为
+        // `sema_unable_to_infer_generic_func`（UNABLE_TO_INFER_GENERIC_FUNC），锚定 callee。
+        return listOfNotNull(unableToInferGenericFunctionDiagnostic(source, qualifiedAccessSource, session))
     }
 
     val hasNotEnoughInformationError = errors.any { it is NotEnoughInformationForTypeParameter<*> }
