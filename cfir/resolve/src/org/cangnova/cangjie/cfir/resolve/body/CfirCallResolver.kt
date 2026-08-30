@@ -238,12 +238,6 @@ class CfirCallResolver(
             resolutionMode = resolutionMode,
             collectionLiteralContext = collectionLiteralContext,
         )
-        if (callee.name.asString() in setOf("CPointer", "CString", "CPointerHandle", "malloc", "testfunc", "freeMalloced")) {
-            System.err.println(
-                "BUILTIN_DEBUG name=${callee.name} candidates=${result.candidates.map { it.symbol }} " +
-                        "excluded=${result.callableLookupOutcomes} effective=${result.applicability}"
-            )
-        }
         var effectiveResult = result
         var expectedCallKind: CallKind? = null
         var expectedCandidates: Collection<Candidate>? = null
@@ -293,9 +287,6 @@ class CfirCallResolver(
                     effectiveResult = variableAccessResult
                 } else {
                     matchedClassifier = findClassifierForCall(functionCall, callee.name)
-                    if (callee.name.asString() in setOf("CPointer", "CString", "CPointerHandle")) {
-                        System.err.println("BUILTIN_DEBUG classifier name=${callee.name} classifier=$matchedClassifier")
-                    }
                     val constructorResult = matchedClassifier?.let { classifier ->
                         builtinCallResolver.tryResolveClassConstructor(
                             functionCall = functionCall,
@@ -351,7 +342,6 @@ class CfirCallResolver(
             forwardedDiagnostics = effectiveResult.forwardedDiagnostics,
             callableLookupOutcomes = effectiveResult.callableLookupOutcomes,
         )
-
         functionCall.replaceCalleeReference(nameReference)
         val candidate = (nameReference as? CfirNamedReferenceWithCandidate)?.candidate
         reportBodyResolutionErrorToOverloadByLambdaCandidate(nameReference, candidate)

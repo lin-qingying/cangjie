@@ -1,6 +1,8 @@
 package org.cangnova.cangjie.cfir.resolve.calls.stages
 
+import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
+import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.resolve.ResolutionMode
 import org.cangnova.cangjie.cfir.resolve.expectedType
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
@@ -10,9 +12,12 @@ import org.cangnova.cangjie.cfir.resolve.calls.hasUncertainExpectedTypeCompatibi
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CheckerSink
 import org.cangnova.cangjie.cfir.resolve.inference.model.ConeExpectedTypeConstraintPosition
+import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.ConePointerType
 import org.cangnova.cangjie.cfir.types.ConeTypeVariableType
 import org.cangnova.cangjie.cfir.types.contains
+import org.cangnova.cangjie.resolve.calls.inference.addEqualityConstraintIfCompatible
 
 /**
  * 在解析实参前为泛型候选注入 expected return type 约束。
@@ -60,6 +65,8 @@ object CfirCheckExpectedReturnTypeBeforeArguments : ResolutionStage() {
             return
         }
 
+        if (candidate.addBuiltinPointerExpectedPointeeConstraint(candidateReturnType, expectedType, context.session)) return
+
         /*
          * 官方泛型调用推断把 call target return 与实参约束同时求解。这里仅为当前
          * candidate 的 fresh return variable 注入确定的 expected type；外层 PCLA
@@ -94,4 +101,32 @@ object CfirCheckExpectedReturnTypeBeforeArguments : ResolutionStage() {
         (symbol.takeIf { it.isBound }?.cfir as? CfirEnumConstructor)
             ?.valueParameters
             ?.isEmpty() == true
+
+    /**
+     * 在实参检查前用目标 `CPointer<U>` 定型 synthetic `CPointer<T>` 的 pointee。
+     *
+     * `CPointer` 的构造调用不是普通 nominal 泛型调用：无显式类型实参时，空指针构造
+     * 和指针转换的目标类型都要参与 `T` 的推断。约束必须进入当前候选的系统，才能让
+     * 后续的指针实参检查看到已经确定的目标，而不是先按 `Any` 或未定 fresh 类型检查。
+     */
+    private fun Candidate.addBuiltinPointerExpectedPointeeConstraint(
+        candidateReturnType: ConeCangJieType,
+        expectedType: ConeCangJieType,
+        session: CfirSession,
+    ): Boolean {
+        val callable = symbol.takeIf { it.isBound }?.cfir as? CfirFunction ?: return false
+        if (callable.origin != CfirDeclarationOrigin.Synthetic.BuiltinPointerConstructor) return false
+        if (callInfo.hasExplicitTypeArguments) return false
+
+        val candidatePointerType = candidateReturnType as? ConePointerType ?: return false
+        val expectedPointerType = expectedType.fullyExpandedType(session) as? ConePointerType ?: return false
+        if (!candidatePointerType.pointeeType.containsCurrentCandidateInferenceVariable(this)) return false
+
+        system.addEqualityConstraintIfCompatible(
+            candidatePointerType.pointeeType,
+            expectedPointerType.pointeeType,
+            ConeExpectedTypeConstraintPosition,
+        )
+        return true
+    }
 }

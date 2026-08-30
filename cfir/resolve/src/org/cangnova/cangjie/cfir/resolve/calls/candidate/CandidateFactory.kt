@@ -200,7 +200,11 @@ internal data class BuiltinPointerConstructorTarget(
      * 指针构造目标的类型参数。
      */
     val typeParameters: List<BuiltinConstructorTypeParameter> =
-        listOf(BuiltinConstructorTypeParameter(Name.identifier("T"))),
+        listOf(
+            BuiltinConstructorTypeParameter(
+                name = Name.identifier("T"),
+            ),
+        ),
 )
 
 /**

@@ -89,7 +89,6 @@ internal class CfirBuiltInCallResolver(
         if (!hasNoCallableCandidates) return null
 
         val classifier = findClassifier(functionCall, name)
-        System.err.println("BUILTIN_DEBUG direct name=$name classifier=$classifier noCallable=$hasNoCallableCandidates")
         if (name == StandardNames.CPOINTER && classifier.isBuiltin(CfirBuiltInTypeKind.CPOINTER)) {
             return collectBuiltinPointerConstructorCandidates(
                 functionCall = functionCall,
@@ -230,6 +229,8 @@ internal class CfirBuiltInCallResolver(
         val appliedArguments = typeArgumentRefs.mapNotNull { it.coneTypeOrNull }
         val aliasType = ConeTypeAliasType(
             classId = symbol.classId,
+            // 即使没有显式类型实参，也必须保留 alias RHS，才能恢复其真实 builtin 形状。
+            expandedType = alias.expandedTypeRef.coneTypeOrNull,
             typeArguments = appliedArguments,
         )
         val expandedType = aliasType.fullyExpandedType(session) as? ConeVArrayType ?: return null
@@ -254,6 +255,9 @@ internal class CfirBuiltInCallResolver(
         val appliedArguments = typeArgumentRefs.mapNotNull { it.coneTypeOrNull }
         val aliasType = ConeTypeAliasType(
             classId = symbol.classId,
+            // 无显式类型实参时仍必须携带 alias RHS，才能把 C() 展开为 CPointer<T>，
+            // 再由合成候选的 fresh type parameter 接收 expected type 约束。
+            expandedType = alias.expandedTypeRef.coneTypeOrNull,
             typeArguments = appliedArguments,
         )
         val expandedType = aliasType.fullyExpandedType(session) as? ConePointerType ?: return null

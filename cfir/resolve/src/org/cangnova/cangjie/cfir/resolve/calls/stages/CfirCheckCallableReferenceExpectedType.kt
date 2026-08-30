@@ -60,6 +60,9 @@ object CfirCheckCallableReferenceExpectedType : ResolutionStage() {
         }
         val resultingType = candidate.buildResultingCallableReferenceType(function, calculatedReturnType)
 
+        val foreignFunctionReferenceToPointer =
+            function.status.isForeign && expectedType.fullyExpandedType(context.session) is org.cangnova.cangjie.cfir.types.ConePointerType
+
         candidate.initializeCallableReferenceAdaptation(
             callableReferenceAdaptation = null,
             resultingTypeForCallableReference = resultingType,
@@ -85,6 +88,7 @@ object CfirCheckCallableReferenceExpectedType : ResolutionStage() {
             sink.yieldDiagnostic(InapplicableCandidate)
             return
         }
+        if (foreignFunctionReferenceToPointer) return
         candidate.system.addSubtypeConstraint(
             resultingType,
             expectedType,
@@ -107,7 +111,11 @@ object CfirCheckCallableReferenceExpectedType : ResolutionStage() {
         }
 
         val returnType = substitutedReturnType(calculatedReturnType).approximateThisTypeForDeclaration()
-        return ConeFunctionType(parameterTypes, returnType)
+        return ConeFunctionType(
+            parameterTypes = parameterTypes,
+            returnType = returnType,
+            isCFunc = function.status.isForeign,
+        )
     }
 
     /** 判断函数引用结果类型是否依赖正在计算的隐式返回类型。 */
