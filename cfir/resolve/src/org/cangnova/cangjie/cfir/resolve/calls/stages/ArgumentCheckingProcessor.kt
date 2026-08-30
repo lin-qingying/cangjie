@@ -4,6 +4,7 @@ import org.cangnova.cangjie.cfir.SessionHolder
 import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
+import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.declarations.isLambdaParameterTypeOmitted
@@ -11,6 +12,7 @@ import org.cangnova.cangjie.cfir.declarations.lambdaParameterShapeExpectedFuncti
 import org.cangnova.cangjie.cfir.diagnostic.AmbiguousArgumentType
 import org.cangnova.cangjie.cfir.diagnostic.ArgumentTypeMismatch
 import org.cangnova.cangjie.cfir.diagnostic.ConeAmbiguityError
+import org.cangnova.cangjie.cfir.diagnostic.ConeConstraintSystemHasContradiction
 import org.cangnova.cangjie.cfir.diagnostic.InapplicableWrongReceiver
 import org.cangnova.cangjie.cfir.diagnostic.LambdaParameterCountMismatch
 import org.cangnova.cangjie.cfir.diagnostic.LambdaParameterTypeMismatch
@@ -63,6 +65,7 @@ import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterLookupTag
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
+import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeDiagnostic
@@ -339,6 +342,18 @@ internal object ArgumentCheckingProcessor {
      * 解析普通表达式实参类型。
      */
     private fun ArgumentContext.resolvePlainExpressionArgument(atom: ConeResolutionAtom) {
+        // 嵌套调用作为实参且其自身解析已经失败时，内层根诊断由嵌套调用自身报告；
+        // 外层不得再对同一实参表达式重复报告类型不匹配，否则会制造官方不存在的级联
+        // ARGUMENT_TYPE_MISMATCH（见 arraysizedlit2）。注意不能以"在期望类型下重检失败"
+        // 作为判据：内层调用合法但返回类型与期望不符时（如 depth_call），外层仍须如实
+        // 报告 ARGUMENT_TYPE_MISMATCH。
+        if (
+            atom is ConeAtomWithCandidate &&
+            atom.expression is CfirFunctionCall &&
+            !atom.candidate.isSuccessful
+        ) {
+            return
+        }
         val nestedCallResult = resolveNestedCallForExpectedType(atom)
         val resolvedAtom = nestedCallResult.atom
         val targetTypedEnumType = expectedType?.let { expected ->
@@ -453,6 +468,11 @@ internal object ArgumentCheckingProcessor {
                 source = reference.source
                 name = reference.name
             }
+            // 上下文敏感重解析的目标是用期望类型重新推断，因此必须丢弃上一轮推断写回、
+            // 没有源码位置的合成类型实参（source == null）；否则它们会被当成“显式类型实参”，
+            // 使 CfirCheckExpectedReturnTypeBeforeArguments 跳过期望类型注入，导致嵌套泛型调用
+            // 无法在返回类型下产生推断失败（如 returnTypeInferenceMismatch 的 `produce(true)`）。
+            typeArguments.retainAll { it.source != null }
         }
         val precollectedDiscoveries = context.bodyResolveComponents.callResolver
             .expectedTypeRefinementDiscovery(functionCall)
@@ -480,9 +500,22 @@ internal object ArgumentCheckingProcessor {
         } finally {
             // buildFunctionCallCopy 会共享内层实参节点；下一 outer candidate 检查前必须恢复共享状态。
             resolutionSnapshot.restore()
-        } ?: return NestedCallResolutionResult(atom)
+        } ?: run {
+            return NestedCallResolutionResult(atom)
+        }
         val (resolvedCandidate, resolvedCall) = resolvedProbe
         if (!resolvedCandidate.isSuccessful) {
+            /*
+             * 嵌套泛型调用在期望类型下无法推断类型实参（约束系统矛盾/信息不足）时，
+             * 官方根诊断是锚定被调函数标识符的 UNABLE_TO_INFER_GENERIC_FUNC，而不是把
+             * 整棵嵌套调用降级为外层 ARGUMENT_TYPE_MISMATCH 级联。把隔离解析的调用连同
+             * 其失败诊断写回真实调用节点，让共享诊断映射层按普通泛型调用失败渲染；
+             * 其余嵌套失败保持既有 ErrorTypeInArguments 语义。
+             */
+            if (resolvedCall.isNestedGenericInferenceFailure(resolvedCandidate)) {
+                candidate.setUpdatedArgumentFromContextSensitiveResolution(functionCall, resolvedCall)
+                return NestedCallResolutionResult(atom, failed = true)
+            }
             candidate.addDiagnostic(ErrorTypeInArguments)
             return NestedCallResolutionResult(atom, failed = true)
         }
@@ -505,6 +538,26 @@ internal object ArgumentCheckingProcessor {
             resolvedCall,
         )
         return NestedCallResolutionResult(ConeAtomWithCandidate(resolvedCall, resolvedCandidate))
+    }
+
+    /**
+     * 判断隔离重解析失败的嵌套调用是否属于「无显式类型实参的泛型调用在期望类型下无法推断
+     * 类型实参」。
+     *
+     * 官方对这类调用只报锚定被调函数标识符的 `UNABLE_TO_INFER_GENERIC_FUNC`
+     * （sema_unable_to_infer_generic_func），而不是把整棵嵌套调用降级为外层
+     * `ARGUMENT_TYPE_MISMATCH` 级联。特征是：被调对象是未提供显式类型实参的泛型
+     * 函数/构造器，且其失败根诊断是约束系统矛盾。
+     */
+    private fun CfirFunctionCall.isNestedGenericInferenceFailure(candidate: Candidate): Boolean {
+        if (candidate.symbol !is CfirCallableSymbol<*>) return false
+        if (candidate.symbol is CfirEnumConstructorSymbol) return false
+        if (candidate.callInfo.hasExplicitTypeArguments) return false
+        val declaration = candidate.symbol.takeIf { it.isBound }?.cfir
+        if (declaration !is CfirFunction && declaration !is CfirConstructor) return false
+        if (declaration.typeParameters.isEmpty()) return false
+        val diagnostic = (calleeReference as? CfirDiagnosticHolder)?.diagnostic
+        return diagnostic is ConeConstraintSystemHasContradiction
     }
 
     /** 判断类型树中的 fresh variable 是否属于当前嵌套调用候选自己的约束系统。 */
@@ -743,7 +796,8 @@ internal object ArgumentCheckingProcessor {
          */
         if (
             candidate.isBuiltinPointerConstructorCandidate() &&
-            argumentType is ConePointerType &&
+            (argumentType is ConePointerType ||
+                argumentType is ConeFunctionType && argumentType.isCFunc) &&
             expectedType.fullyExpandedType(session) is ConePointerType
         ) {
             return

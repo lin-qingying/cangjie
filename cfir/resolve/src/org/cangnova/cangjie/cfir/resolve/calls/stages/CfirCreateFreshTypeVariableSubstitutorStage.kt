@@ -449,8 +449,8 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
         val candidateExtends = when (semanticLowerType) {
             is ConePrimitiveType -> session.extendProvider.getExtendsForBuiltinType(semanticLowerType.kind)
             else -> {
-                val classId = semanticLowerType.classIdOrPrimitiveClassId ?: return null
-                session.extendProvider.getExtendsForClass(classId)
+                val targetKey = semanticLowerType.extendTargetKey ?: return null
+                session.extendProvider.getExtendsForTarget(targetKey)
             }
         }
         if (candidateExtends.isEmpty()) return null

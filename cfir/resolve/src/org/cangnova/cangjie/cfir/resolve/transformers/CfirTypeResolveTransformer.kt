@@ -626,22 +626,23 @@ class CfirTypeResolveTransformer(
      */
     private fun CfirExtend.exposeExtendedTypeAssumptionBounds() {
         if (typeParameters.isEmpty()) return
-        val extendedType = (extendedTypeRef as? CfirResolvedTypeRef)?.coneType as? ConeLookupTagBasedType ?: return
+        val extendedType = (extendedTypeRef as? CfirResolvedTypeRef)?.coneType ?: return
         val targetDeclaration = extendedType.toAssumptionTargetDeclaration() ?: return
         val targetTypeParameters = targetDeclaration.typeParameters
-        if (targetTypeParameters.isEmpty() || extendedType.typeArguments.isEmpty()) return
+        val targetTypeArguments = extendedType.assumptionTypeArguments()
+        if (targetTypeParameters.isEmpty() || targetTypeArguments.isEmpty()) return
 
         val reverseMapping = linkedMapOf<TypeConstructorMarker, MutableSet<TypeConstructorMarker>>()
         collectReverseTypeMapping(
             parameterTypes = targetTypeParameters.map { it.symbol.constructType() },
-            argumentTypes = extendedType.typeArguments.map { it.type },
+            argumentTypes = targetTypeArguments,
             destination = reverseMapping,
         )
         if (reverseMapping.isEmpty()) return
 
         val targetSubstitutor = CfirTypeSubstitutorByMap(
-            targetTypeParameters.zip(extendedType.typeArguments).associate { (parameter, argument) ->
-                parameter.symbol.toLookupTag() to argument.type
+            targetTypeParameters.zip(targetTypeArguments).associate { (parameter, argument) ->
+                parameter.symbol.toLookupTag() to argument
             },
         )
         val assumptionBounds = collectAssumptionBounds(targetDeclaration)
@@ -676,15 +677,14 @@ class CfirTypeResolveTransformer(
                 is ConeTypeParameterType -> {
                     destination.getOrPut(argumentType.lookupTag) { linkedSetOf() } += parameterType.lookupTag
                 }
-                is ConeLookupTagBasedType -> {
+                else -> {
                     val nestedDeclaration = argumentType.toAssumptionTargetDeclaration() ?: continue
                     collectReverseTypeMapping(
                         parameterTypes = nestedDeclaration.typeParameters.map { it.symbol.constructType() },
-                        argumentTypes = argumentType.typeArguments.map { it.type },
+                        argumentTypes = argumentType.assumptionTypeArguments(),
                         destination = destination,
                     )
                 }
-                else -> Unit
             }
         }
     }
@@ -725,11 +725,27 @@ class CfirTypeResolveTransformer(
     }
 
     /**
-     * 将 lookup-tag 类型解析为可继续收集 assumption bound 的声明。
+     * 将可参与 extend 类型实参投射的类型解析为其声明。
+     *
+     * 普通名义类型通过 lookup tag 携带声明；`CPointer<T>` 在 Cone 中是结构化的
+     * [ConePointerType]，没有 lookup tag，但官方 `PointerTy::GetTypeArgs` 仍把 pointee
+     * 作为唯一声明实参。因此这里按语义类型统一恢复两种声明入口，避免在 extend 处理器
+     * 中把 CPointer 单独当作 fixture 特例。
      */
-    private fun ConeLookupTagBasedType.toAssumptionTargetDeclaration(): CfirTypeParameterRefsOwner? {
-        val classId = classIdOrPrimitiveClassId ?: return null
+    private fun ConeCangJieType.toAssumptionTargetDeclaration(): CfirTypeParameterRefsOwner? {
+        val classId = when (this) {
+            is ConePointerType -> StdlibClassIds.CPointer
+            is ConeLookupTagBasedType -> classIdOrPrimitiveClassId ?: return null
+            else -> return null
+        }
         return session.symbolProvider.getClassLikeSymbolByClassId(classId)?.cfir as? CfirTypeParameterRefsOwner
+    }
+
+    /** 返回类型在 assumption-bound 投射中可见的声明侧直接类型实参。 */
+    private fun ConeCangJieType.assumptionTypeArguments(): List<ConeCangJieType> = when (this) {
+        is ConePointerType -> listOf(pointeeType)
+        is ConeLookupTagBasedType -> typeArguments.map { it.type }
+        else -> emptyList()
     }
 
     /**

@@ -8,5 +8,5 @@ func expectInt(block: () -> Int64): Int64 {
 }
 
 func badReturnInference(): Int64 {
-    return expectInt(<!ARGUMENT_TYPE_MISMATCH!>produce(true)<!>)
+    return expectInt(<!UNABLE_TO_INFER_GENERIC_FUNC!>produce<!>(true))
 }

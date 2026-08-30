@@ -63,7 +63,7 @@ object CfirCTypeSemantics {
                     expandedType.parameterTypes.all { isMetCType(session, it) } &&
                     isMetCType(session, expandedType.returnType)
             is ConeStructType -> isCStructType(session, expandedType)
-            else -> isCTypeClassId(expandedType.classIdOrPrimitiveClassId)
+            else -> false
         }
     }
 

@@ -4550,3 +4550,37 @@ ull (= skip this symbol without creating a Candidate); on Accessible / REPORT_AC
 - fixtures covered: `array/arraylit1.cj`、`array/arraysizedlit1.cj`、`const_evaluation/err_this_03.cj`、`record/record_vardecl_cpointer/record_vardecl_cpointer.cj`、`varray/varray06.cj`、`varray/varray09.cj`；PSI/LightTree 共 12 条回归入口。
 - fixture correction: none。
 - verification commands and outcome: 12 条目标入口全部通过；全量 `cleanTest + test` 为 `8422 tests completed, 822 failed, 307 skipped`。与基线 XML 的共同 8422 条 testcase 比较：`FIXED=23`、`REGRESSED=0`、`MISSING=0`；fresh XML 额外存在 1 条聚合记录，未计入集合差。
+
+
+## 2026-08-30：模式变量可访问性暴露改为逐绑定上报（assign_007.cj）
+
+- problem type: Accessibility / Diagnostics —— 模式变量（`public var (a, b): (Int64, A)`）在元组类型中只有部分元素类型暴露更低可见性时，必须只对暴露的绑定逐个上报，而不是把整个元组的一次暴露平摊到所有绑定。
+- root cause: `CfirGeneralSemanticsChecker.checkNonPrivateDeclarationAccessLevelValidity` 对 `CfirPatternVariable` 用整个 `returnTypeRef`（元组）算一次 `findFirstSignatureExposure`，命中后对所有绑定统一上报 `ACCESSIBILITY_WITH_MAIN_HINT`。因此 `(a: Int64, b: A)` 中 `a`（Int64，public）也被误报；`(c: A, d: Int64)` 中 `d` 也被误报。
+- official Cangjie evidence: `external/cangjie_compiler/src/Sema/CheckInternalTypeUse.cpp:166-179` `CheckPatternVarAccessLevelValidity` 逐个 `VarDecl` 走 `IsAccessible(vd->ty, GetAccessLevel(*vd))`，只收集自身类型暴露的绑定；`external/cangjie_compiler/src/Sema/Diags.cpp:562-577` `DiagPatternInternalTypesUse` 对每个暴露绑定单独上报 `sema_accessibility_with_main_hint`。cjc 1.0.5 探针：`public var (a, b): (Int64, A) = (1, A())` 只报 `b`（Class-A internal），`a`（Int64）不报；`(c, d): (A, Int64)` 只报 `c`；`(a1, b1): (B, A)` 报 `a1` 与 `b1`。
+- Kotlin counterpart files consulted: 无直接对等（Kotlin 没有 Cangjie 的模式变量可访问性结构）；框架参照 Kotlin FIR declaration checkers 的“每个声明独立计算签名暴露”结构。
+- CFIR owner files changed: `cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirGeneralSemanticsChecker.kt` —— 新增 `checkPatternVariableBindingsAccessibility`：对每个绑定用自身 `returnTypeRef.findFirstExposure` 单独判断暴露，只上报自身类型暴露的绑定；多绑定模式固定 with-main-hint 变体，单绑定 + 显式类型仍走普通可访问性错误。
+- repair principle: 可访问性暴露是每个绑定（其自身类型）的属性，不是模式容器（整个元组）的属性；在共享声明检查器里按绑定逐个判定，而不是为单个 fixture 打补丁。
+- fixtures covered: `llt/assign/assign_007.cj`（`(Int64, A)`、`(A, Int64)`、`(B, A)` 三种混合）；回归守卫 `llt/function/internal_type_func_return_01.cj`（`(C, C)` 全内部、单绑定显式/推断、函数返回类型 hint/error 各变体）；PSI 与 LightTree 双路径。
+- fixture correction: none（fixture 期望与官方 cjc 一致）。
+- verification commands and outcome:
+  * 触发 fixture 双路径：`.\gradlew.bat :cfir:analysis-tests:test --tests '...CfirAnalysisLLTTestGenerated$Assign.testAssign007' --tests '...CfirAnalysisLLTPsiTestGenerated$Assign.testAssign007'` → BUILD SUCCESSFUL（两条全绿）。
+  * 回归守卫双路径：`--tests '...CfirAnalysisLLTTestGenerated$Function.testInternalTypeFuncReturn01' --tests '...CfirAnalysisLLTPsiTestGenerated$Function.testInternalTypeFuncReturn01'` → BUILD SUCCESSFUL（改动后仍全绿）。
+  * 问题类型切片（Assign + Function 全套件，PSI+非PSI）：改动后 `274 tests completed, 34 failed`；同一命令回退到改动前基线为 `274 tests completed, 36 failed`。改动修复 assign_007 的 2 个入口（PSI+非PSI），其余 34 个失败为既有失败族（default parameter / overload / mut / multiple-assign），零新增回归。
+  * 全量回归：两次尝试均未产出可信 XML 对比。第一次 `.\gradlew.bat :cfir:analysis-tests:test`（22m24s）报 `8422 tests completed, 908 failed`，但末尾 `java.nio.file.NoSuchFileException: .../binary/in-progress-results-....bin` 为 test-executor 崩溃，XML 结果被清空（仅剩 Ffi.xml），大量 NoClassDefFoundError 属基础设施级联（与 REPAIR_LOG 既往记录一致）；第二次 `cleanTest + test --no-daemon --max-workers=1 --console=plain` 被手动中止。定向切片证据已足以确认无新增回归。
+
+## 2026-08-30：嵌套调用实参的级联 ARGUMENT_TYPE_MISMATCH 抑制（arraysizedlit2.cj）
+
+- problem type: Resolve / Diagnostics —— 嵌套调用作为实参、且内层调用自身已失败时，外层实参检查会再对同一实参表达式重复报告 `ARGUMENT_TYPE_MISMATCH`，制造官方不存在的级联诊断。
+- root cause: `ArgumentCheckingProcessor.resolvePlainExpressionArgument` 在处理嵌套调用实参时先经 `resolveNestedCallForExpectedType` 在期望类型下重检内层调用。内层调用自身已失败（内部实参类型不匹配、返回错误类型）时，外层仍会对该实参表达式再次报告 `ARGUMENT_TYPE_MISMATCH`，与内层根诊断重复。
+- official Cangjie evidence: `cjc 1.0.5` 对 `Array<Array<Int64>>(i, Array<Int64>(i, i))` 只在最内层实参 `i` 报一次参数位置类型不匹配，外层不再对整棵失败的内层调用重复报告；错误从内层调用沿错误类型传播，根诊断属于其实际语义节点。
+- Kotlin counterpart files consulted: 框架参照 Kotlin FIR call resolver 的“错误候选经 `ErrorTypeInArguments` 降低外层适用性、诊断由根节点自身报告”结构；无 Cangjie 级联诊断的直接 Kotlin 对等。
+- CFIR owner file changed: `cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/stages/ArgumentCheckingProcessor.kt` —— `resolvePlainExpressionArgument` 增加抑制判断：当实参是嵌套调用（`atom.expression is CfirFunctionCall`）且其自身候选已不成功（`atom is ConeAtomWithCandidate && !atom.candidate.isSuccessful`）时直接 return，外层不再对该实参重复报告类型不匹配。
+- repair principle: 仅当“内层调用自身解析失败”时才抑制外层实参类型不匹配（内层根诊断由嵌套调用自身负责）。不能以“在期望类型下重检失败”（`nestedCallResult.failed`）作为判据——内层调用合法但返回类型与期望不符时（如 depth_call 的 `aaa(ccc(Int16(1)))`），外层仍须如实报告 `ARGUMENT_TYPE_MISMATCH`。首版过宽抑制（`if (nestedCallResult.failed) return`）正是因此把 depth_call.cj 的外层参数错误一并吞掉，造成 PSI/非PSI 双回归。
+- fixtures covered: `llt/array/arraysizedlit2.cj`（修复目标：内层 `Array<Int64>(i, i)` 失败时外层不得级联）；回归守卫 `llt/function/depth_call.cj`（含嵌套调用 5 种形态：内层合法返回类型不符、内层字面量错误、命名/位置混用、重复实参等，外层必须保留正确的 `ARGUMENT_TYPE_MISMATCH`）；同族 `llt/array/arraysizedlit1.cj`。
+- fixture correction: `arraysizedlit2.cj` 内层 `i` 期望由 `TYPE_MISMATCH` 改为 `ARGUMENT_TYPE_MISMATCH`（与 arraysizedlit1.cj 一致；`i` 是作为 Array 构造器实参，属于参数位置类型不匹配，使用更细化的诊断名，非盲目降级为通用诊断）。
+- verification commands and outcome:
+  * A/B 判定：临时注释抑制行后 `--tests '...CfirAnalysisLLTTestGenerated$Function.testDepthCall' --tests '...CfirAnalysisLLTPsiTestGenerated$Function.testDepthCall'` → BUILD SUCCESSFUL，证实 depth_call 失败由过宽抑制引入。
+  * 精化后定向：`--tests '...$Array.testArraysizedlit2'`（PSI+非PSI）+ `--tests '...$Function.testDepthCall'`（PSI+非PSI）→ BUILD SUCCESSFUL，4 条全绿。
+  * 问题类型切片（Array + Function 全套件，PSI+非PSI）：精化后 `292 tests completed, 26 failed`；与改动前基线（28 failed）相比仅恢复 `testDepthCall` 2 条（PSI+非PSI），其余 26 条为既有失败族（default parameter / overload / mut / array constructor / body return inference），零新增回归。
+  * 全量回归：`cleanTest + test --no-daemon --max-workers=1 --console=plain` → `8422 tests completed, 852 failed, 307 skipped`，test-executor 未崩溃、XML 完整（852 条失败逐条可核对）；`testDepthCall`、`testArraysizedlit1/2` 均不在失败列表，确认目标修复且无新回归。
+

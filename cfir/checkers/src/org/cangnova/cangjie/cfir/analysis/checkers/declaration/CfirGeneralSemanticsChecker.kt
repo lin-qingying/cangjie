@@ -314,48 +314,67 @@ object CfirGeneralSemanticsChecker : CfirFileChecker() {
         if (Visibilities.isPrivate(ownVisibility)) return
 
         val effectiveVisibility = ownVisibility.effectiveInside(containingAccessLevel)
-        val exposure = declaration.findFirstSignatureExposure(effectiveVisibility)
-        if (exposure != null && declaration is CfirPatternVariable) {
-            val bindings = declaration.pattern.visibleBindingVariables()
-            val bindingsUseInferredTypes = bindings.size != 1 || declaration.returnTypeRef.isImplicitAccessibilityType()
-            bindings.forEach { binding ->
-                if (bindingsUseInferredTypes) {
-                    reporter.reportOn(
-                        source = binding.source,
-                        factory = CfirErrors.ACCESSIBILITY_WITH_MAIN_HINT,
-                        a = "variable",
-                        b = binding.name,
-                        c = exposure.visibility,
-                    )
-                } else {
-                    reporter.reportOn(
-                        source = binding.source,
-                        factory = CfirErrors.ACCESSIBILITY_ERROR,
-                        a = binding.name.asString(),
-                        b = exposure.visibility,
-                    )
-                }
+        if (declaration is CfirPatternVariable) {
+            checkPatternVariableBindingsAccessibility(declaration, effectiveVisibility)
+        } else {
+            val exposure = declaration.findFirstSignatureExposure(effectiveVisibility)
+            if (exposure?.inferred == true) {
+                reporter.reportOn(
+                    source = declaration.accessibilityDiagnosticSource(),
+                    factory = CfirErrors.ACCESSIBILITY_WITH_MAIN_HINT,
+                    a = if (declaration is CfirNamedFunction) "function" else "variable",
+                    b = declaration.declarationName() ?: Name.special("<unknown>"),
+                    c = exposure.visibility,
+                )
+            } else if (exposure != null) {
+                reporter.reportOn(
+                    source = declaration.accessibilityDiagnosticSource(),
+                    factory = CfirErrors.ACCESSIBILITY_ERROR,
+                    a = declaration.declarationName()?.asString() ?: "<unknown>",
+                    b = exposure.visibility,
+                )
             }
-        } else if (exposure?.inferred == true) {
-            reporter.reportOn(
-                source = declaration.accessibilityDiagnosticSource(),
-                factory = CfirErrors.ACCESSIBILITY_WITH_MAIN_HINT,
-                a = if (declaration is CfirNamedFunction) "function" else "variable",
-                b = declaration.declarationName() ?: Name.special("<unknown>"),
-                c = exposure.visibility,
-            )
-        } else if (exposure != null) {
-            reporter.reportOn(
-                source = declaration.accessibilityDiagnosticSource(),
-                factory = CfirErrors.ACCESSIBILITY_ERROR,
-                a = declaration.declarationName()?.asString() ?: "<unknown>",
-                b = exposure.visibility,
-            )
         }
 
         if (declaration is CfirClassLikeDeclaration) {
             for (member in declaration.declarations) {
                 checkNonPrivateDeclarationAccessLevelValidity(member, effectiveVisibility)
+            }
+        }
+    }
+
+    /**
+     * 模式变量按绑定逐个检查可访问性暴露。
+     *
+     * 对齐官方 `CheckPatternVarAccessLevelValidity` / `DiagPatternInternalTypesUse`：
+     * 对每个绑定只看它自身类型（元组解构中即对应元素类型）是否暴露更低可见性类型，
+     * 只上报那些自身类型有暴露的绑定，而不是把整个元组的一次暴露平摊到所有绑定上。
+     * 多绑定模式固定使用 with-main-hint 变体；单绑定 + 显式类型仍走普通可访问性错误。
+     */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun checkPatternVariableBindingsAccessibility(
+        declaration: CfirPatternVariable,
+        effectiveVisibility: Visibility,
+    ) {
+        val bindings = declaration.pattern.visibleBindingVariables()
+        val bindingsUseInferredTypes = bindings.size != 1 || declaration.returnTypeRef.isImplicitAccessibilityType()
+        for (binding in bindings) {
+            val exposure = binding.returnTypeRef.findFirstExposure(effectiveVisibility) ?: continue
+            if (bindingsUseInferredTypes) {
+                reporter.reportOn(
+                    source = binding.source,
+                    factory = CfirErrors.ACCESSIBILITY_WITH_MAIN_HINT,
+                    a = "variable",
+                    b = binding.name,
+                    c = exposure,
+                )
+            } else {
+                reporter.reportOn(
+                    source = binding.source,
+                    factory = CfirErrors.ACCESSIBILITY_ERROR,
+                    a = binding.name.asString(),
+                    b = exposure,
+                )
             }
         }
     }

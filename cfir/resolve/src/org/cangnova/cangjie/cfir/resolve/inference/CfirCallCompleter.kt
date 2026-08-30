@@ -136,15 +136,6 @@ class CfirCallCompleter(
         val reference = call.calleeReference as? CfirNamedReferenceWithCandidate ?: return call
         val candidate = reference.candidate
         val initialType = components.typeFromCallee(call).initialTypeOfCandidate(candidate)
-        if (candidate.symbol.takeIf { it.isBound }?.cfir?.origin is CfirDeclarationOrigin.Synthetic &&
-            candidate.callInfo.name.asString() in setOf("CPointer", "CString")
-        ) {
-            System.err.println(
-                "BUILTIN_DEBUG complete-before name=${candidate.callInfo.name} initial=$initialType " +
-                    "expected=${(resolutionMode as? ResolutionMode.WithExpectedType)?.expectedType} fresh=${candidate.freshVariables} " +
-                    "diagnostics=${candidate.diagnostics} contradiction=${candidate.system.hasContradiction}"
-            )
-        }
 
         // Annotation types are resolved during type resolution, and generic arguments aren't inferred.
         // Updating the type of an annotation call is a no-op, it only checks if it's the same as the type of the annotation type ref.
@@ -205,34 +196,15 @@ class CfirCallCompleter(
             return call.transformSingle(createCompletionResultsWriter(ConeSubstitutor.Empty), null)
         }
         addConstraintFromExpectedType(candidate, initialType, resolutionMode)
-        if (candidate.symbol.takeIf { it.isBound }?.cfir?.origin is CfirDeclarationOrigin.Synthetic &&
-            candidate.callInfo.name.asString() in setOf("CPointer", "CString")
-        ) {
-            System.err.println(
-                "BUILTIN_DEBUG complete-after-expected name=${candidate.callInfo.name} initial=$initialType " +
-                    "expected=${(resolutionMode as? ResolutionMode.WithExpectedType)?.expectedType} fresh=${candidate.freshVariables} " +
-                    "notFixed=${candidate.system.currentStorage().notFixedTypeVariables.keys} " +
-                    "fixed=${candidate.system.currentStorage().fixedTypeVariables} " +
-                    "diagnostics=${candidate.diagnostics} contradiction=${candidate.system.hasContradiction}"
-            )
-        }
         candidate.addSameClassifierArgumentTypeConstraints()
 
         if (skipEvenPartialCompletion) return call
 
-        val computedCompletionMode = if (
-            components.context.isInsideCallArgumentResolution &&
-            resolutionMode is ResolutionMode.ContextDependent &&
-            candidate.containsSystemNotFixedVariable(candidate.substitutedReturnType())
-        ) {
-            ConstraintSystemCompletionMode.PARTIAL
-        } else {
-            candidate.computeCompletionMode(
-                session.inferenceComponents,
-                resolutionMode,
-                initialType,
-            )
-        }
+        val computedCompletionMode = candidate.computeCompletionMode(
+            session.inferenceComponents,
+            resolutionMode,
+            initialType,
+        )
         val completionMode = when {
             candidate.isSyntheticCallForTopLevelLambdaWithoutExpectedFunctionType() ->
                 ConstraintSystemCompletionMode.PCLA_POSTPONED_CALL
@@ -403,10 +375,14 @@ class CfirCallCompleter(
     }
 
     /**
-     * 官方 `CPointer()` 在无显式类型实参时可从目标 `CPointer<T>` 反推 pointee 类型。
+     * 官方 `CPointer()` 的 expected type 要把完整目标 `CPointer<U>` 传回构造器，
+     * 因而 pointee `T` 与目标 `U` 是精确相等关系，而不是 `T <: U` 的普通返回类型约束。
+     * 前置 resolution stage 已经把该约束加入当前系统；完成器必须使用同一精确关系，
+     * 不能随后再注入 `CPointer<T> <: CPointer<U>`。
      *
-     * 目标为 `CType` 或某个 extend 接口时不能直接反推出 pointee；这些场景仍交给
-     * 普通子类型/extend 约束处理，避免把所有 C pointer 退化成同一个泛型实参。
+     * 显式类型实参已经通过等式约束固定 synthetic `T`，这里仅用替换后的完整指针类型
+     * 判断 expected type 是否相同；不相同时返回 false，交给通用 expected-type 检查保留
+     * 调用级类型不匹配诊断。无显式类型实参时补充 pointee 约束，兼容非标准调用入口。
      */
     private fun Candidate.addBuiltinPointerConstructorExpectedPointeeConstraint(
         initialType: ConeCangJieType,
@@ -417,14 +393,6 @@ class CfirCallCompleter(
 
         val expectedPointerType = expectedType.fullyExpandedType() as? ConePointerType ?: return false
         if (callInfo.hasExplicitTypeArguments) {
-            /*
-             * 显式 `CPointer<T>` 已经在候选约束系统中固定 pointee 类型。
-             * 这里必须先读取该等式约束；若再拿仍含 fresh T 的 initialType
-             * 追加 `CPointer<T> <: CPointer<U>`，类型系统会把同一显式实参
-             * 错误地当成待推断变量，合法的空指针构造也会被判为矛盾。
-             * 不兼容的显式类型仍返回 false，让普通 expected-type 检查保留
-             * 调用级 TYPE_MISMATCH。
-             */
             val explicitInitialType = system
                 .buildCurrentSubstitutor()
                 .asCone()
@@ -432,11 +400,15 @@ class CfirCallCompleter(
                 .let(::substituteExplicitTypeArgumentConstraints)
             return AbstractTypeChecker.equalTypes(session.typeContext, explicitInitialType, expectedPointerType)
         }
+
         val pointeeVariableType = freshVariables.singleOrNull()?.defaultType as? ConeCangJieType ?: return false
-        system.addSubtypeConstraint(pointeeVariableType, expectedPointerType.pointeeType, ConeExpectedTypeConstraintPosition)
+        system.addEqualityConstraint(
+            pointeeVariableType,
+            expectedPointerType.pointeeType,
+            ConeExpectedTypeConstraintPosition,
+        )
         return true
     }
-
 
     /**
      * 检测 typealias 构造器展开后的真实 class 类型实参是否已经违反声明上界。

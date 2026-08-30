@@ -119,19 +119,6 @@ fun isExtendSuperTypeRefPredicateVisible(
     }
     if (extendTypeParameterConstructors.isEmpty()) return true
 
-    println(
-        "PRED-DEBUG pattern=${targetPattern::class.simpleName}:${targetPattern} " +
-                "receiver=${concreteReceiverType::class.simpleName}:${concreteReceiverType} " +
-                "raw=${rawReceiverType?.let { it::class.simpleName.toString() + ":" + it }}",
-    )
-    runCatching {
-        java.io.File("D:/code/intellij/cangjie/pred_debug.log").appendText(
-            "pattern=${targetPattern::class.simpleName}:${targetPattern} | " +
-                    "receiver=${concreteReceiverType::class.simpleName}:${concreteReceiverType} | " +
-                    "raw=${rawReceiverType?.let { it::class.simpleName.toString() + ":" + it }}\n",
-        )
-    }
-
     // 官方等价判据：direct-only 映射必须覆盖接口类型中引用到的全部 extend 类型形参。
     // 覆盖完整的边等价于官方 `GetInstantiatedTy` 产出的可实例化边；覆盖不全的边
     // 在官方路径上保持含 TyVar 的形状，永远无法与具体目标类型匹配。
@@ -147,21 +134,17 @@ fun isExtendSuperTypeRefPredicateVisible(
     // `C<Y>` 对 `C<Int64>` 在这一层才是 `Y` 的 direct 位置。构造器不一致说明
     // 查询侧拼写已被展开或改写，官方在 size/匹配检查下同样无法建立映射，
     // 此时回退到语义展开层的顶层判定。
-    val rawPatternArguments = (targetPattern as? ConeLookupTagBasedType)?.typeArguments
-    val rawReceiverArguments = rawReceiverType?.let { rawType ->
-        (rawType as? ConeLookupTagBasedType)?.typeArguments
-    }
-    val sameRawConstructor = rawReceiverType != null && rawPatternArguments != null &&
-            rawReceiverArguments != null &&
-            targetPattern.classIdOrPrimitiveClassId != null &&
-            targetPattern.classIdOrPrimitiveClassId == rawReceiverType.classIdOrPrimitiveClassId
+    val rawPatternArguments = targetPattern.extendPredicateTypeArguments()
+    val rawReceiverArguments = rawReceiverType?.extendPredicateTypeArguments()
+    val sameRawConstructor = rawReceiverType != null &&
+            rawPatternArguments.size == rawReceiverArguments?.size &&
+            targetPattern.hasSameExtendPredicateConstructor(rawReceiverType)
 
     val directSubstitutions = linkedMapOf<TypeConstructorMarker, ConeCangJieType>()
     if (sameRawConstructor) {
-        rawPatternArguments?.forEachIndexed { index, patternArgument ->
-            val patternType = patternArgument.type
+        rawPatternArguments.forEachIndexed { index, patternType ->
             if (patternType is ConeTypeParameterType && patternType.lookupTag in extendTypeParameterConstructors) {
-                rawReceiverArguments?.getOrNull(index)?.type?.let { receiverArgument ->
+                rawReceiverArguments?.getOrNull(index)?.let { receiverArgument ->
                     directSubstitutions.putIfAbsent(patternType.lookupTag, receiverArgument)
                 }
             }
@@ -169,12 +152,12 @@ fun isExtendSuperTypeRefPredicateVisible(
     } else {
         val semanticPattern = targetPattern.semanticExtendMatchType(session)
         val semanticReceiver = concreteReceiverType.semanticExtendMatchType(session)
-        val patternArguments = (semanticPattern as? ConeLookupTagBasedType)?.typeArguments.orEmpty()
-        val receiverArguments = (semanticReceiver as? ConeLookupTagBasedType)?.typeArguments.orEmpty()
+        val patternArguments = semanticPattern.extendPredicateTypeArguments()
+        val receiverArguments = semanticReceiver.extendPredicateTypeArguments()
         patternArguments.forEachIndexed { index, patternArgument ->
-            val patternType = patternArgument.type
+            val patternType = patternArgument
             if (patternType is ConeTypeParameterType && patternType.lookupTag in extendTypeParameterConstructors) {
-                receiverArguments.getOrNull(index)?.type?.let { receiverArgument ->
+                receiverArguments.getOrNull(index)?.let { receiverArgument ->
                     directSubstitutions.putIfAbsent(patternType.lookupTag, receiverArgument)
                 }
             }
@@ -182,6 +165,36 @@ fun isExtendSuperTypeRefPredicateVisible(
     }
 
     return referencedExtendParameters.all { it in directSubstitutions }
+}
+
+/**
+ * 取得官方 `TypeManager::GetTypeArgs` 对当前类型的直接类型实参。
+ *
+ * `ConePointerType` 的通用 [ConeCangJieType.typeArguments] 为空，但官方
+ * `PointerTy` 仍把 pointee 放在 `typeArgs[0]`；函数与元组同样需要暴露其
+ * 结构性实参，才能让 extend 的顶层 direct mapping 与官方保持一致。
+ */
+private fun ConeCangJieType.extendPredicateTypeArguments(): List<ConeCangJieType> = when (this) {
+    is ConeFunctionType -> parameterTypes + returnType
+    is ConeTupleType -> elementTypes
+    is ConePointerType -> listOf(pointeeType)
+    else -> typeArguments.map { it.type }
+}
+
+/** 判断两个类型是否具有同一个 extend direct-mapping 构造器。 */
+private fun ConeCangJieType.hasSameExtendPredicateConstructor(other: ConeCangJieType): Boolean = when (this) {
+    is ConeFunctionType -> other is ConeFunctionType &&
+            isCFunc == other.isCFunc &&
+            isClosureType == other.isClosureType &&
+            hasVariableLenArg == other.hasVariableLenArg &&
+            parameterTypes.size == other.parameterTypes.size
+    is ConeTupleType -> other is ConeTupleType && elementTypes.size == other.elementTypes.size
+    is ConePointerType -> other is ConePointerType
+    is ConeVArrayType -> other is ConeVArrayType && size == other.size
+    is ConeLookupTagBasedType -> other is ConeLookupTagBasedType &&
+            classIdOrPrimitiveClassId == other.classIdOrPrimitiveClassId
+    is ConeTypeAliasType -> other is ConeTypeAliasType && classId == other.classId
+    else -> this::class == other::class
 }
 
 /**
