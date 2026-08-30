@@ -34,13 +34,17 @@ import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.declarations.CfirPrimitiveTypeDeclaration
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
+import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityResult
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessKind
 import org.cangnova.cangjie.cfir.resolve.providers.CfirLookupOrigin
+import org.cangnova.cangjie.cfir.resolve.providers.getContainingExtend
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
 import org.cangnova.cangjie.cfir.scopes.overrideSignatureKey
+import org.cangnova.cangjie.cfir.scopes.processCallablesByNameWithLookupProvenance
 import org.cangnova.cangjie.cfir.session.accessibilityChecker
 import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.cfir.types.BuiltinPrimitiveOperators
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
@@ -250,16 +254,45 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
             lookupOrigin = CfirLookupOrigin.MEMBER,
         )
         var found = false
-        context.session.accessibilityChecker.processAccessibleCallablesByName(
-            scope = targetScope,
-            name = symbol.name,
-            context = accessContext,
-        ) { candidate ->
+        /*
+         * shadow parent 是「extend 目标类型类层次的有效成员」，对齐官方
+         * `StructInheritanceChecker::CheckExtendMemberValid`：protected 成员即使对
+         * extend 所在包不可见也构成同名冲突，但 private 成员不参与。
+         *
+         * `checkCallable` 的 use-site 可见性会按 extend 所在包把跨包 protected 成员排除，
+         * 因此不能只消费 accessible 集合：需要把「非 extend 来源的 protected 类层次成员」
+         * 放回候选集，同时保留 accessibility 的 extend-export 过滤（非导出 sibling extend
+         * 成员仍是 shadow parent 之外）并排除 private。
+         *
+         * cjc 1.0.5 探针：protected（跨包）-> 报告 EXTEND_MEMBER_CANNOT_SHADOW；
+         * private -> 不报告。
+         */
+        targetScope.processCallablesByNameWithLookupProvenance(symbol.name) { candidate ->
+            val accessible = context.session.accessibilityChecker.checkCallable(
+                symbol = candidate.symbol,
+                context = accessContext,
+                provenance = candidate.provenance,
+            ) is CfirAccessibilityResult.Accessible
+            if (!accessible && !candidate.symbol.isShadowRelevantProtectedClassMember()) {
+                return@processCallablesByNameWithLookupProvenance
+            }
             if (candidate.symbol.canShadowThis(this, signature, context)) {
                 found = true
             }
         }
         return found
+    }
+
+    /**
+     * 判断候选是否为不会因 use-site 可见性被排除的 protected 类层次成员。
+     *
+     * 非导出 sibling extend 成员的可见性/导出过滤仍由 accessibility checker 负责，
+     * 不能靠此特例绕过；因此只有「非 extend 来源、显式 protected」的声明会被放行。
+     */
+    private fun org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol<*>.isShadowRelevantProtectedClassMember(): Boolean {
+        if (getContainingExtend() != null) return false
+        val declaration = unwrapSubstitutionOverrides().cfir as? CfirMemberDeclaration ?: return false
+        return declaration.status.visibility == Visibilities.Protected
     }
 
     /**
