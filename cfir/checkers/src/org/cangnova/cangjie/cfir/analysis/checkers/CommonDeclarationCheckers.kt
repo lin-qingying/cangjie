@@ -118,6 +118,7 @@ object CommonDeclarationCheckers : DeclarationCheckers() {
         get() = setOf(
             CfirExtendTargetLegalityChecker,
             CfirExtendInterfaceKindChecker,
+            CfirExtendThreadContextChecker,
             CfirExtendDuplicateInterfaceChecker,
             CfirExtendCheckSequenceChecker,
             CfirExtendOrphanRuleChecker,
