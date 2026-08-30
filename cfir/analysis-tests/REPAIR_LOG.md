@@ -4674,6 +4674,20 @@ ull (= skip this symbol without creating a Candidate); on Accessible / REPORT_AC
   * Extend 切片 A/B（PSI+非PSI，`--tests '...$Extend'`）：修复前与修复后均为 `870 tests completed, 32 failed`，且失败的 32 条完全一致（全是既有失败族：unbox pattern、generic upper-bound binary、default-impl prop、extend function/property conflict invalid 系列等），修复未改变 Extend 切片任一通过/失败状态 → 零新增回归。
   * 全量回归：修复前基线（REPAIR_LOG 上一条目）≈ `8422 tests completed, 844 failed, 307 skipped`；修复后同参 `.\gradlew.bat :cfir:analysis-tests:test` → `8422 tests completed, 842 failed, 307 skipped`。净减 2 = `testMain` 的 PSI+非PSI 两条；NEW REGRESSIONS = 0。
 
+## 2026-08-31：泛型继承成员归并未按语义签名去重（generic_subst_perf.cj）
+
+- problem type: Resolve / Generics / Inheritance —— 多层泛型 interface 继承图经过不同实例化路径汇合时，等价的 `foo` requirement 必须归并；`generic_subst_perf.cj` 中 `C` 通过 `J1`～`J9` 重复继承 `F1`～`F9` 的 `Int`、`String` 与 `Rune` 形状，LLT 与 LLT-PSI 原先均未正确完成该归并。
+- root cause: `CfirClassUseSiteMemberScope.mergeEquivalentInheritedFunctions` 原先把直接输入 symbol 与 inheritance owner identity 用作归并依据。不同泛型 interface 路径产生的 symbol/owner 实例虽然身份不同，但其直接输入函数契约相同；仅依赖对象身份会保留重复 requirement，破坏后续继承成员解析。修复改用直接输入成员的归一化 override 签名，同时保留实例化后的签名、lookup provenance、static 属性和 default implementation owner，以区分真实 overload、独立 extend 来源及不同 default 冲突。
+- official Cangjie evidence: official `cjc 1.0.5` 编译 `generic_subst_perf.cj` 无诊断，`C` 对重复泛型继承的三个实例化参数形状合法。`external/cangjie_compiler/src/Sema/InheritanceChecker/MergeInheritedMemberHelper.cpp:135-227` 的 `UpdateInheritedMemberIfNeeded` / `MergeInheritedMembers` 先按函数参数类型和 static/generic 状态归并，再应用 type substitution；语义归并依据是成员契约而非声明对象身份。
+- Kotlin counterpart files consulted: `external/kotlin/compiler/fir/providers/src/org/jetbrains/kotlin/fir/scopes/impl/FirClassUseSiteMemberScope.kt`、`FirFakeOverrideGenerator.kt`；Kotlin 的 use-site substitution/fake-override 结构用于确认继承成员应以替换后的 callable 形状参与统一归并，不把不同路径生成的 copy symbol 当成独立语义成员。
+- CFIR owner file changed: `cfir/providers/src/org/cangnova/cangjie/cfir/scopes/impl/CfirClassUseSiteMemberScope.kt` —— 在共享 use-site member scope 的继承函数归并入口统一构造 substitution 前后的语义签名 key，并保留 provenance/default 实现信息。
+- repair principle: 继承成员去重必须基于「原始 callable 契约 + 当前实例化签名 + 成员图来源」的共享语义 key；symbol/owner 对象身份只能作为实现细节，不能决定泛型继承 requirement 是否相等。
+- fixtures covered: `cfir/analysis-tests/testData/llt/generics/generic_subst_perf.cj`，覆盖 `CfirAnalysisLLTTestGenerated$Generics.testGenericSubstPerf` 与 `CfirAnalysisLLTPsiTestGenerated$Generics.testGenericSubstPerf`；相关 Generics 继承归并族的 PSI 与 LightTree 路径同步回归。
+- fixture correction: none（fixture 与 official `cjc` 语义一致）。
+- verification commands and outcome:
+  * 目标双路径：`.\gradlew.bat :cfir:analysis-tests:test --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTTestGenerated$Generics.testGenericSubstPerf' --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTPsiTestGenerated$Generics.testGenericSubstPerf' --no-daemon --max-workers=1 --console=plain` → BUILD SUCCESSFUL；LLT 与 LLT-PSI 均通过。
+  * 相关泛型族：PSI 与 LightTree 各 11 项，`failures=0, errors=0, skipped=0`。
+  * 全量回归：`:cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain` → `8422 tests completed, 824 failed, 307 skipped`，`errors=0`；修复前基线为 `8422 tests / 826 failed / 307 skipped`。按 `(suite, testcase)` 对比 FIXED=2（上述 LLT 与 LLT-PSI 两条 `testGenericSubstPerf`）、ADDED-regressions=0，净减少 2 个失败，测试总数与 skipped 数不变。新鲜 XML 聚合为 8423 个 testcase（含 1 条聚合记录）、824 failures、0 errors、308 skipped，与 Gradle 汇总的有效测试计数一致。
 ## 2026-08-31：泛型 callable reference 参数形状预筛提前淘汰合法候选（instantiate_02.cj）
 
 - problem type: Resolve / Generics / Callable Reference —— `test<A>` 赋值给 `(A, Int64) -> Unit` 时，带 `where T <: I` 的泛型候选应在显式类型实参已给出后继续参与 callable-reference 约束求解；LLT 与 LLT-PSI 原先均错误报告 `NO_MATCH_FUNCTION_DECLARATION_FOR_REF`。
