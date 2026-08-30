@@ -1636,10 +1636,9 @@ private fun Collection<CfirFunctionInheritanceProvenance>.filterOutAbstractFunct
  * 归并继承图中代表同一最终函数契约的父成员。
  *
  * 官方 `MergeInheritedMembers` 先归并继承图中原本等价的 requirement，再执行实例化替换。
- * 因此 key 同时包含直接输入成员、泛型 owner/interface 实例与当前已实例化签名：前两者区分
- * 原本独立、仅由当前 owner substitution 新制造的碰撞，后者区分同一原始 `I<T>.test` 经不同
- * 父类型实参得到的 `I<Float64>`/`I<(Int64, Float64)>` overload。三者都相同时，才是重复继承
- * 路径贡献的同一个 requirement。
+ * 因此 key 同时包含直接输入成员的归一化签名、实例化后的签名与 lookup 来源：原始签名区分
+ * 不同泛型函数契约，实例化签名区分同一契约经不同父类型实参得到的 overload，来源则保留
+ * 不同 extend 注入的独立成员图。三者都相同时，才是重复继承路径贡献的同一个 requirement。
  */
 private fun Collection<CfirFunctionInheritanceProvenance>.mergeEquivalentInheritedFunctions():
         Collection<CfirFunctionInheritanceProvenance> {
@@ -1649,11 +1648,10 @@ private fun Collection<CfirFunctionInheritanceProvenance>.mergeEquivalentInherit
         val directInput = candidate.identity.directInputMember
         val key = InheritedFunctionMergeKey(
             isStatic = directInput.isStaticMemberForOverride(),
-            directInputMember = directInput,
-            inheritanceOwnerType = candidate.identity.inheritanceOwnerType,
+            provenanceSignature = directInput.overrideSignatureKey(),
             instantiatedSignature = symbol.overrideSignatureKey(),
             lookupProvenance = candidate.lookupProvenance,
-            defaultImplementationOwner = directInput
+            defaultImplementationOwner = candidate.identity.directInputMember
                 .takeIf { it.isBound && it.cfir.status.isDefault }
                 ?.callableId
                 ?.classId,
@@ -1671,11 +1669,8 @@ private data class InheritedFunctionMergeKey(
     /** static 与实例成员不能归并。 */
     val isStatic: Boolean,
 
-    /** 当前 owner substitution 之前的直接输入成员。 */
-    val directInputMember: CfirNamedFunctionSymbol,
-
-    /** 直接输入成员沿父类型路径形成的泛型 owner/interface 实例。 */
-    val inheritanceOwnerType: ConeCangJieType?,
+    /** 当前 owner substitution 之前的函数参数签名。 */
+    val provenanceSignature: String,
 
     /** 沿父类型边完成实例化后的签名。 */
     val instantiatedSignature: String,
