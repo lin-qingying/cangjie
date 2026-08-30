@@ -278,7 +278,11 @@ private class CfirInitializationFlowAnalyzer(
      * static 字段按声明顺序初始化，而实例字段在 static 初始化上下文中不可视为已初始化。
      */
     private fun checkClassLikeStaticMemberInitialization(classLike: CfirClassLikeDeclaration) {
+        // static 初始化上下文不初始化任何实例成员，只跟踪 static 字段自身的初始化顺序；
+        // 实例字段被剔除后不再进入 used-before-init / capture-before-init 判定（对实例成员的
+        // 访问由 reportStaticVariableNonStaticMemberAccesses 与 STATIC_LAMBDA 检查负责）。
         val trackedFields = classLike.staticInitializerFieldInfos()
+            .filter { it.kind != TrackedVariableKind.INSTANCE_MEMBER }
         if (trackedFields.isEmpty()) return
 
         var state = InitializationState.empty().declareAll(
@@ -293,9 +297,11 @@ private class CfirInitializationFlowAnalyzer(
             val initializer = field.initializer
             if (initializer != null) {
                 reportStaticVariableNonStaticMemberAccesses(field, initializer)
-                state = analyzeExpression(initializer, state.withMemberInitializerContext(classLike))
-                    .withoutMemberInitializerContext()
-                state = state.markInitialized(field.symbol)
+                // static 初始化上下文不初始化任何实例成员：其体内对实例成员的访问由
+                // reportStaticVariableNonStaticMemberAccesses（直接访问）与 STATIC_LAMBDA
+                // 检查（嵌套 lambda）负责，不应再套用实例成员初始化 context，否则嵌套
+                // lambda 访问 f/x 会误报 USED_BEFORE_INITIALIZATION / ILLEGAL_USAGE_OF_MEMBER。
+                state = analyzeExpression(initializer, state).markInitialized(field.symbol)
             }
         }
     }
