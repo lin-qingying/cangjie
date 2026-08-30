@@ -2,8 +2,8 @@
 
 
 class C {
-    <!CONFLICTING_OVERLOADS!>static init()<!> {}
-    <!CONFLICTING_OVERLOADS!>static init()<!> {
+    static init() {}
+    static <!CONFLICTING_OVERLOADS!>init<!>() {
         1
     }
 }
