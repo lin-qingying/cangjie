@@ -4607,3 +4607,17 @@ ull (= skip this symbol without creating a Candidate); on Accessible / REPORT_AC
   * 级联抑制回归断言：`--tests '*Diagnostics*testGenericConstraintCascade*' --tests '*LLT*testArraysizedlit2*' --tests '*LLTPsi*testArraysizedlit2*'` → BUILD SUCCESSFUL。
   * 全量前后对比：修复前 `:cfir:analysis-tests:test` = `8422 tests, 850 failed`；修复后同参 = `8422 tests, 848 failed, 307 skipped`。纯 XML diff：FIXED 2（`testReturnTypeInferenceMismatch` PSI+非PSI）、NEW REGRESSIONS 0，净减 2 与数字吻合。`genericConstraintCascade` 由夹具期望同步更新净平衡，不进 diff。
 
+## 2026-08-30：TYPE_UNINITIALIZED_STATIC_FIELD 范围残留对齐（let_in_init3.cj / record_member_variable_init01.cj）
+
+- problem type: Diagnostics（仅范围，range-only）—— `TYPE_UNINITIALIZED_STATIC_FIELD` 的划线范围仍有两个夹具整段声明覆盖，与仓库范围策略及既有修复不一致。
+- root cause: `CfirInitializationCheckers.reportUninitializedStaticFields` 已统一在 `field.fieldVariableNameDiagnosticSource()`（字段名 token）上报该诊断；PSI 与非 PSI 双路径实际输出都是字段名 token 范围。`llt/class/let_in_init/let_in_init3.cj` 与 `llt/record/member_variable/record_member_variable_init01.cj` 两处夹具仍保留旧式整段声明（`<!...!>public static let b: Float32<!>`）期望，属于 2026-08-30 “Static/global initialization lambda boundary and diagnostic ranges” 条目修复时漏扫的残留夹具。
+- official Cangjie evidence: 无需 cjc 探针——这是 range-only 差异，直接适用本仓库 Diagnostic Range Policy：诊断范围覆盖完整相关 token（此处即未初始化 static 字段的名字 token），不是整段声明。既往 REPAIR_LOG “Static/global initialization lambda boundary and diagnostic ranges” 条目已据此把 11 个夹具修正为字段名 token 范围；本次补齐剩余 2 个。
+- Kotlin counterpart files consulted: 无（range-only，由项目 Diagnostic Range Policy 直接裁决，不涉及 Kotlin 语义）。
+- CFIR owner files changed: 无（实现已正确，PSI/非PSI 双路径输出一致为字段名 token 范围）。
+- repair principle: 范围策略是共享的，不需要为单个夹具改实现；只把残留的两处夹具期望对齐到仓库已确立的字段名 token 范围，使全部 13 个 `TYPE_UNINITIALIZED_STATIC_FIELD` 夹具一致。
+- fixtures covered: `llt/class/let_in_init/let_in_init3.cj`、`llt/record/member_variable/record_member_variable_init01.cj`。
+- fixture correction: `TYPE_UNINITIALIZED_STATIC_FIELD` 由整段声明（`<!...!>public static let b: Float32<!>`）收窄为字段名 token（`public static let <!...!>b<!>: Float32`），与其余 11 个夹具一致；诊断名与语义标记均未改变。
+- verification commands and outcome:
+  * 定向切片：`.\gradlew.bat :cfir:analysis-tests:test --tests '...CfirAnalysisLLTTestGenerated$Class$LetInInit' --tests '...CfirAnalysisLLTPsiTestGenerated$Class$LetInInit' --tests '...CfirAnalysisLLTTestGenerated$Record$MemberVariable' --tests '...CfirAnalysisLLTPsiTestGenerated$Record$MemberVariable' --no-daemon --max-workers=1 --console=plain` → 修复前 48 tests / 4 failed，修复后 BUILD SUCCESSFUL（48 tests 全绿）。
+  * 全量回归：`.\gradlew.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain` → `8422 tests completed, 844 failed, 307 skipped`，test-executor 未崩溃、XML 完整（1237 个 suite 文件聚合 tests=8423/failures=844/errors=0/skipped=308，多出的 1 条为聚合记录）。与上一基线 848 failed 相比净减 4，精确对应 `testLetInInit3`（PSI+非PSI）与 `testRecordMemberVariableInit01`（PSI+非PSI）；由于仅改夹具期望、未改任何实现，且两个夹具各只被上述 4 条生成测试引用，NEW REGRESSIONS = 0。
+
