@@ -11,7 +11,7 @@ open class Basei {
 class Data <: Basei {
     public var a = 2;
     public var resc = <!UNRESOLVED_REFERENCE!>temp<!>;
-    public var res = <!USED_BEFORE_INITIALIZATION!>getNum1<!>();
+    public var res = <!ILLEGAL_USAGE_OF_MEMBER!>getNum1<!>();
     public init() {}
 }
 

@@ -2,5 +2,5 @@
 
 class A {
     func a() {}
-    var c = this.<!USED_BEFORE_INITIALIZATION!>a<!>
+    var c = this.<!ILLEGAL_USAGE_OF_MEMBER!>a<!>
 }

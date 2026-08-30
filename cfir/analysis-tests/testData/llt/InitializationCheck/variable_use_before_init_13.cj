@@ -8,7 +8,7 @@ open class A<T> {
 }
 
 class B <: A<Int64> {
-    let y = <!USED_BEFORE_INITIALIZATION!>x<!>
+    let y = <!ILLEGAL_USAGE_OF_SUPER_MEMBER!>x<!>
     init(x: Int64) {
         super(x)
     }

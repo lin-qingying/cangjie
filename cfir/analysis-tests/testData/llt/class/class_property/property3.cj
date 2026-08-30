@@ -9,5 +9,5 @@ class A {
             return ()
         }
     }
-    public var b = <!USED_BEFORE_INITIALIZATION!>a<!>
+    public var b = <!ILLEGAL_USAGE_OF_MEMBER!>a<!>
 }

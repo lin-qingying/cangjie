@@ -7,14 +7,14 @@ struct Date {
     public func get_pub_Date(): Int64 {
         return Date
     }
-    public let pub_modifier: () -> Int64 = <!USED_BEFORE_INITIALIZATION!>get_pub_Date<!>
-    private let pri_modifier: () -> Int64 = <!USED_BEFORE_INITIALIZATION!>get_pub_Date<!>
+    public let pub_modifier: () -> Int64 = <!ILLEGAL_USAGE_OF_MEMBER!>get_pub_Date<!>
+    private let pri_modifier: () -> Int64 = <!ILLEGAL_USAGE_OF_MEMBER!>get_pub_Date<!>
 
     private func get_pri_Date1(): Int64 {
         return Date1
     }
-    public let pub_modifier1: () -> Int64 = <!USED_BEFORE_INITIALIZATION!>get_pri_Date1<!>
-    private let pri_modifier1: () -> Int64 = <!USED_BEFORE_INITIALIZATION!>get_pri_Date1<!>
+    public let pub_modifier1: () -> Int64 = <!ILLEGAL_USAGE_OF_MEMBER!>get_pri_Date1<!>
+    private let pri_modifier1: () -> Int64 = <!ILLEGAL_USAGE_OF_MEMBER!>get_pri_Date1<!>
 }
 
 main(): Int64 {

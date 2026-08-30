@@ -22,10 +22,10 @@ open class Boo {
 }
 
 class Doo <: Boo {
-    public var b: Int32 = <!USED_BEFORE_INITIALIZATION!>n<!>
-    public var c: Unit = (<!USED_BEFORE_INITIALIZATION!>m<!> = 1)
-    public var d: Int32 = <!USED_BEFORE_INITIALIZATION!>n<!>
-    public var e: Int32 = <!USED_BEFORE_INITIALIZATION!>m<!>
+    public var b: Int32 = <!ILLEGAL_USAGE_OF_MEMBER!>n<!>
+    public var c: Unit = (<!ILLEGAL_USAGE_OF_MEMBER!>m<!> = 1)
+    public var d: Int32 = <!ILLEGAL_USAGE_OF_MEMBER!>n<!>
+    public var e: Int32 = <!ILLEGAL_USAGE_OF_MEMBER!>m<!>
     public var e1: Int32 = <!THIS_OR_SUPER_NOT_ALLOWED_TO_INITIALIZE_NON_STATIC_MEMBER!>super<!>.m
     public func f1(): Int32 {
         m = 2

@@ -2,7 +2,7 @@
 
 class d {
     public func test() {}
-    public var b = <!USED_BEFORE_INITIALIZATION!>test<!>
+    public var b = <!ILLEGAL_USAGE_OF_MEMBER!>test<!>
 }
 
 main() {

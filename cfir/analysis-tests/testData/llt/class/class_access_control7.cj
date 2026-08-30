@@ -8,17 +8,17 @@ open class A {
 }
 
 class B <: A {
-    private var e = <!USED_BEFORE_INITIALIZATION!>a<!>
-    private var g = <!USED_BEFORE_INITIALIZATION!>d<!>
-    private var h = <!USED_BEFORE_INITIALIZATION!>c<!>
+    private var e = <!ILLEGAL_USAGE_OF_SUPER_MEMBER!>a<!>
+    private var g = <!ILLEGAL_USAGE_OF_SUPER_MEMBER!>d<!>
+    private var h = <!ILLEGAL_USAGE_OF_SUPER_MEMBER!>c<!>
 
-    public var i = <!USED_BEFORE_INITIALIZATION!>a<!>
-    public var k = <!USED_BEFORE_INITIALIZATION!>d<!>
-    public var l = <!USED_BEFORE_INITIALIZATION!>c<!>
+    public var i = <!ILLEGAL_USAGE_OF_SUPER_MEMBER!>a<!>
+    public var k = <!ILLEGAL_USAGE_OF_SUPER_MEMBER!>d<!>
+    public var l = <!ILLEGAL_USAGE_OF_SUPER_MEMBER!>c<!>
 
-    protected var m = <!USED_BEFORE_INITIALIZATION!>a<!>
-    protected var o = <!USED_BEFORE_INITIALIZATION!>d<!>
-    protected var p = <!USED_BEFORE_INITIALIZATION!>c<!>
+    protected var m = <!ILLEGAL_USAGE_OF_SUPER_MEMBER!>a<!>
+    protected var o = <!ILLEGAL_USAGE_OF_SUPER_MEMBER!>d<!>
+    protected var p = <!ILLEGAL_USAGE_OF_SUPER_MEMBER!>c<!>
 
     public func f() {
         if (e == 1 && g == 2 && h == 2 && i == 1 && k == 2 && l == 2 && m == 1 && o == 2 && p == 2) {

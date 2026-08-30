@@ -10,7 +10,7 @@ interface Base {
 class Data <: Base {
     public var m: Int32
     public init() {
-        m = <!USED_BEFORE_INITIALIZATION!>f2<!>()
+        m = <!ILLEGAL_USAGE_OF_MEMBER!>f2<!>()
     }
 
     public func f1(): Int32 {

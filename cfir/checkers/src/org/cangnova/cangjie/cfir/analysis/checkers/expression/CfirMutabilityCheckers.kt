@@ -32,6 +32,8 @@ import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaratio
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.calls.isResolvedTypeQualifier
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
+import org.cangnova.cangjie.cfir.declarations.CfirClass
+import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
@@ -58,6 +60,7 @@ import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
 import org.cangnova.cangjie.cfir.session.extendProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirExtendSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFieldVariableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
@@ -144,12 +147,13 @@ object CfirImmutableFunctionCannotAccessMutableFunctionChecker : CfirFunctionCal
 }
 
 /**
- * 检查 struct 构造器或 mut 成员函数中的嵌套函数是否捕获当前实例字段。
+ * 检查值类型构造器及可继承 class 构造器中的嵌套函数是否捕获当前实例字段，
+ * 同时检查 struct mut 成员函数的实例字段捕获。
  *
  * 官方把这类引用从普通不可变函数修改规则中分离：构造器使用
  * `ILLEGAL_CAPTURE_THIS`，mut 函数使用 `CAPTURE_THIS_OR_INSTANCE_FIELD_IN_FUNC`。
  */
-object CfirStructInstanceFieldCaptureChecker : CfirQualifiedAccessChecker() {
+object CfirInstanceFieldCaptureChecker : CfirQualifiedAccessChecker() {
     /** 对当前实例字段的嵌套捕获报告专用诊断。 */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirQualifiedAccessExpression) {
@@ -162,15 +166,28 @@ object CfirStructInstanceFieldCaptureChecker : CfirQualifiedAccessChecker() {
         // 名称误判成隐式 this 字段，否则构造器中的合法 lambda/local function 会
         // 被错误报告为 ILLEGAL_CAPTURE_THIS。
         if (field.status.isStatic) return
-        val captureContext = context.currentStructCaptureContext(field) ?: return
-        val source = expression.calleeReference.source ?: expression.source
+        val captureContext = context.currentInstanceFieldCaptureContext(field) ?: return
+        // `ILLEGAL_CAPTURE_THIS` 归属于被捕获的 this，而不是字段 selector；隐式
+        // receiver 没有独立源码节点时才回到字段引用本身（struct mut 语义）。
+        val source = (expression.explicitReceiver as? CfirThisReceiverExpression)?.source
+            ?: expression.calleeReference.source
+            ?: expression.source
 
         when (val outerFunction = captureContext.outerFunction) {
-            is CfirConstructor -> reporter.reportOn(
-                source = source,
-                factory = CfirErrors.ILLEGAL_CAPTURE_THIS,
-                a = "struct",
-            )
+            is CfirConstructor -> {
+                val captureOwner = captureContext.owner
+                val description = when {
+                    captureOwner is CfirStruct -> "struct"
+                    captureOwner is CfirClass && captureOwner.status.isOpen -> "open class"
+                    captureOwner is CfirClass && captureOwner.status.isAbstract -> "abstract class"
+                    else -> return
+                }
+                reporter.reportOn(
+                    source = source,
+                    factory = CfirErrors.ILLEGAL_CAPTURE_THIS,
+                    a = description,
+                )
+            }
 
             is CfirNamedFunction -> if (outerFunction.status.isMut) {
                 reporter.reportOn(
@@ -286,6 +303,7 @@ private data class StructMutationRoot(
 
 /** struct 嵌套函数捕获检查所需的最外层成员函数。 */
 private data class StructCaptureContext(
+    val owner: CfirClassLikeDeclaration,
     val outerFunction: CfirFunction,
 )
 
@@ -349,8 +367,8 @@ private fun CfirFunction.isMutStructMemberContext(): Boolean =
 /**
  * 判断字段引用是否位于构造器或 mut 函数的嵌套函数中。
  */
-private fun CheckerContext.currentStructCaptureContext(field: CfirFieldVariable): StructCaptureContext? {
-    val (owner, ownerIndex) = currentStructOwnerAndIndex() ?: return null
+private fun CheckerContext.currentInstanceFieldCaptureContext(field: CfirFieldVariable): StructCaptureContext? {
+    val (owner, ownerIndex) = currentInstanceFieldCaptureOwnerAndIndex() ?: return null
     if (field.status.isStatic) return null
     if (owner.declarations.filterIsInstance<CfirFieldVariable>().none { it.symbol == field.symbol }) return null
     val functions = containingDeclarations
@@ -359,8 +377,33 @@ private fun CheckerContext.currentStructCaptureContext(field: CfirFieldVariable)
         .map { it.cfir }
     if (functions.size < 2) return null
     val outerFunction = functions.first()
-    if (outerFunction !is CfirConstructor && !outerFunction.isMutStructMemberContext()) return null
-    return StructCaptureContext(outerFunction)
+    when {
+        outerFunction is CfirConstructor -> {
+            val inheritableClass = owner is CfirClass && (owner.status.isOpen || owner.status.isAbstract)
+            if (owner !is CfirStruct && !inheritableClass) return null
+        }
+
+        owner is CfirStruct && outerFunction.isMutStructMemberContext() -> Unit
+        else -> return null
+    }
+    return StructCaptureContext(owner, outerFunction)
+}
+
+/**
+ * 解析构造器/嵌套函数捕获所对应的实例 owner。
+ *
+ * 捕获规则需要同时保留 struct 与 class 的声明身份：struct 构造器始终禁止捕获，
+ * class 只有 open/abstract 构造器禁止捕获；普通 final class 的构造器捕获仍然合法。
+ */
+private fun CheckerContext.currentInstanceFieldCaptureOwnerAndIndex(): Pair<CfirClassLikeDeclaration, Int>? {
+    for (index in containingDeclarations.indices.reversed()) {
+        when (val symbol = containingDeclarations[index]) {
+            is CfirStructSymbol -> return symbol.cfir to index
+            is CfirClassSymbol -> return symbol.cfir to index
+            else -> Unit
+        }
+    }
+    return null
 }
 
 /**

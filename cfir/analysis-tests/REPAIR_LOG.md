@@ -4533,7 +4533,8 @@ Flagged while gathering evidence for the extend upper-bound recursion problem ty
   (1) llt/class/class_private_init.cj 5× WRONG_NUMBER_OF_ARGUMENTS + 1× NON_INHERITABLE_SUPER_CLASS missing (plus a MultipleFailuresError wrapping an IllegalStateException: EXCLUDE_CALLABLE candidate reached CfirCheckVisibility);
   (2) llt/record/record_private_init.cj 3× WRONG_NUMBER_OF_ARGUMENTS missing with the same exception shape.
 - root cause: CfirCallResolver bypassed Tower-level name discovery in two non-tower constructor-candidate collection loops:
-  (1) delegating super(...) / 	his(...) resolution (esolveDelegatingConstructorCallAndSelectCandidate);
+  (1) delegating super(...) / 	his(...) resolution (
+esolveDelegatingConstructorCallAndSelectCandidate);
   (2) classifier-instantiation ClassName(args) calls.
   Both loops did processDeclaredConstructors(::add) then createCandidate(...) for every symbol with discoveryAccessibilityResult = null, without running the unified CfirAccessibilityChecker before candidate creation. As a consequence, EXCLUDE_CALLABLE / NOT_DISCOVERABLE constructor symbols were packed into regular Candidates and then ullyProcessCandidate ran the CfirCheckVisibility stage, whose contract hard-asserts (rror()) that EXCLUDE_CALLABLE must be handled by tower discovery before candidate creation. The thrown IllegalStateException propagated through CfirCliExceptionHandler (whose handleExceptionOnFileAnalysis has return type Nothing and always rethrows) so nalyse.kt:237 runResolution never returned and nalyse.kt:238 runCheckers — where declaration checkers such as CfirSupertypesChecker emit NON_INHERITABLE_SUPER_CLASS — never executed. No-match WRONG_NUMBER_OF_ARGUMENTS diagnostics also never materialised because candidate selection short-circuited on the exception.
 - official Cangjie evidence:
@@ -4541,22 +4542,21 @@ Flagged while gathering evidence for the extend upper-bound recursion problem ty
   * xternal/cangjie_compiler/src/Sema/TypeCheckClassLike.cpp:153-156 emit sema_non_inheritable_super_class when the direct superclass is neither OPEN nor ABSTRACT.
   * Private/protected constructor visibility matches CFIR's CfirAccessibilityChecker.privateAccessible / protectedAccessible (verified via the same fixtures' successful internal A() / A(1) / A(1,1) calls inside the declaring class body).
   * llt/record/record_private_init.cj exhibits the same outside-class WRONG_NUMBER_OF_ARGUMENTS pattern, confirming a shared failure family rather than a class-specific quirk.
-- Kotlin counterpart files consulted:
-  * xternal/kotlin/compiler/fir/resolve/src/org/jetbrains/kotlin/fir/resolve/calls/FirCallResolver.kt L689-718 esolveDelegatingConstructorCall delegates to 	owerResolver.runResolverForDelegatingConstructor (the Tower entry point), rather than privately rebuilding constructor candidates.
-  * xternal/kotlin/compiler/fir/resolve/src/org/jetbrains/kotlin/fir/resolve/calls/FirCallResolver.kt L295-321 routes ordinary classifier-instantiation ClassName(args) function shapes through the standard 	owerResolver.runResolver(info, ...) Tower path.
-  * xternal/kotlin/compiler/fir/resolve/src/org/jetbrains/kotlin/fir/resolve/calls/tower/FirTowerResolver.kt L99-146 consumes constructor candidates via consumeCandidate(TowerGroup.MEMBER, ..., candidateFactory.createCandidate(...)), i.e. every constructor candidate passes through the Tower's shared visibility-aware collector pipeline.
-  * xternal/kotlin/compiler/fir/resolve/src/org/jetbrains/kotlin/fir/resolve/calls/VisibilityUtils.kt L33-144 performs pure-Boolean isVisible checks before a Candidate reaches the overload-reduction stage (a softer invariant than CFIR's CfirCheckVisibility hard assertion, but confirming the framework invariant that visibility is pre-candidate work).
-- CFIR owner files changed:
-  1. **NEW** cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/CfirConstructorVisibilityPrecheck.kt — a shared internal helper prefilterConstructorVisibilityBeforeCreateCandidate(session, callInfo, constructorSymbol, originScope, provenance) that mirrors TowerLevelHandler.consumeCallableCandidate(L197-221)'s disposition handling: builds a CfirAccessContext(kind = CALLABLE, receiverType = null, ...) with the same scope.lookupOriginForAccessibility() used in Tower; calls session.accessibilityChecker.checkCallable(...); on NOT_DISCOVERABLE / EXCLUDE_CALLABLE it returns 
-ull (= skip this symbol without creating a Candidate); on Accessible / REPORT_ACCESS_ERROR it returns the structured result so the caller can store it into Candidate.discoveryAccessibilityResult for reuse by VisibilityUtils (L50) — preventing CfirCheckVisibility from re-discovering a bad disposition at stage-run time.
-  2. cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirCallResolver.kt — delegating-constructor loop (esolveDelegatingConstructorCallAndSelectCandidate, around former L498-508): converted constructorSymbols.map { ... } into mapNotNull { prefilter... ?: return@mapNotNull null; createCandidate(..., accessibilityResult = precheck) } with the new import added.
-  3. cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirCallResolver.kt — classifier-constructor loop (around former L3320-3340): same mapNotNull + prefilter... pattern with ccessibilityResult threaded through. The surrounding comment was updated to reflect that candidates now pass through Tower-equivalent visibility filtering before createCandidate.
-  4. **Unchanged (kept as guard)** cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/stages/CfirCheckVisibility.kt L28-34 — the hard rror(IllegalStateException) for EXCLUDE_CALLABLE / NOT_DISCOVERABLE reaching the stage runner remains in place and will continue to catch any future non-tower candidate-collection bypasses.
-- repair principle: in both non-tower constructor symbol → Candidate loops, always perform the same Tower-level visibility pre-dispatch (CfirAccessibilityChecker + four-disposition hand-off) **before** CandidateFactory.createCandidate; EXCLUDE_CALLABLE / NOT_DISCOVERABLE skip the candidate without crashing, and remaining candidates carry their discoveryAccessibilityResult forward through the resolution stage runner. All regular class / struct / record / enum constructors (delegating and classifier-instantiated) share the two patched entry points, so the fix is strictly broader than class_private_init or ecord_private_init alone.
-- fixtures covered:
-  * Primary: CfirAnalysisLLTTestGenerated.testClassPrivateInit (non-PSI), CfirAnalysisLLTPsiTestGenerated.testClassPrivateInit (PSI), CfirAnalysisLLTTestGenerated.testRecordPrivateInit, CfirAnalysisLLTPsiTestGenerated.testRecordPrivateInit — previously IllegalStateException("EXCLUDE_CALLABLE candidate reached CfirCheckVisibility") with 0 diagnostics rendered; after the fix both paths render 7/3 expected markers respectively, 0 exceptions.
-  * Problem-type slice: combined ClassGenerated / RecordGenerated PSI + non-PSI suites (all regular class / struct constructor instantiation and super(...) / 	his(...) delegation patterns across AccessModifiers, Constructor incl. AccessControl, InhertWithSameName, Protected, OpenModifier, SuperThis, OverrideUnvisible etc.).
-- NON_INHERITABLE_SUPER_CLASS recovery: this diagnostic was not corrected by a standalone owner change; it recovered automatically once unResolution completed normally (no longer throwing inside body resolve) so unCheckers could execute CfirSupertypesChecker.check (L210-218) against class C <: A without declaration OPEN/ABSTRACT/SEALED. Verification confirms the fixture's line-26 marker now appears as expected.
+ - Kotlin counterpart files consulted:
+   * external/kotlin/compiler/fir/resolve/src/org/jetbrains/kotlin/fir/resolve/calls/FirCallResolver.kt L689-718: resolveDelegatingConstructorCall delegates to towerResolver.runResolverForDelegatingConstructor (the Tower entry point), rather than privately rebuilding constructor candidates.
+   * external/kotlin/compiler/fir/resolve/src/org/jetbrains/kotlin/fir/resolve/calls/FirCallResolver.kt L295-321 routes ordinary classifier-instantiation ClassName(args) function shapes through the standard towerResolver.runResolver(info, ...) Tower path.
+   * external/kotlin/compiler/fir/resolve/src/org/jetbrains/kotlin/fir/resolve/calls/tower/FirTowerResolver.kt L99-146 consumes constructor candidates via consumeCandidate(TowerGroup.MEMBER, ..., candidateFactory.createCandidate(...)), so every constructor candidate passes through the Tower's shared visibility-aware collector pipeline.
+   * external/kotlin/compiler/fir/resolve/src/org/jetbrains/kotlin/fir/resolve/calls/VisibilityUtils.kt L33-144 performs isVisible checks before a Candidate reaches overload reduction, confirming that visibility is pre-candidate work.
+ - CFIR owner files changed:
+   1. **NEW** cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/CfirConstructorVisibilityPrecheck.kt — shared pre-candidate visibility handling for constructor symbols.
+   2. cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirCallResolver.kt — delegating-constructor loop now prechecks visibility before creating a Candidate.
+   3. cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirCallResolver.kt — classifier-constructor loop uses the same precheck and carries the structured accessibility result.
+   4. CfirCheckVisibility.kt keeps its hard assertion as a guard against future non-tower candidate-collection bypasses.
+ - repair principle: both non-tower constructor symbol-to-Candidate loops perform the same Tower-level visibility pre-dispatch before CandidateFactory.createCandidate; excluded candidates are skipped and remaining candidates carry their discovery accessibility result through resolution. All regular class, struct, record, and enum constructor paths share these entry points.
+ - fixtures covered:
+   * Primary: CfirAnalysisLLTTestGenerated.testClassPrivateInit (non-PSI), CfirAnalysisLLTPsiTestGenerated.testClassPrivateInit (PSI), CfirAnalysisLLTTestGenerated.testRecordPrivateInit, and CfirAnalysisLLTPsiTestGenerated.testRecordPrivateInit.
+   * Problem-type slice: combined ClassGenerated / RecordGenerated PSI + non-PSI suites covering constructor instantiation and super(...) / this(...) delegation across AccessModifiers, Constructor, AccessControl, Protected, OpenModifier, SuperThis, and OverrideUnvisible.
+ - NON_INHERITABLE_SUPER_CLASS recovery: the diagnostic became observable after body resolution completed normally, allowing CfirSupertypesChecker to run against class C <: A. Verification confirms the fixture marker.
 - verification commands and outcome:
   * Trigger fixture non-PSI: .\gradlew.bat :cfir:analysis-tests:test --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTTestGenerated.testClassPrivateInit' → BUILD SUCCESSFUL; XML TEST-...Class.xml reports 	ests="1" failures="0" errors="0" (	estClassPrivateInit() time=12.127s no failure, no suppressed throwable).
   * Trigger fixture PSI: .\gradlew.bat :cfir:analysis-tests:test --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTPsiTestGenerated.testClassPrivateInit' → BUILD SUCCESSFUL in 39s; same XML ailures=0 errors=0 for PSI path.
@@ -4674,6 +4674,52 @@ ull (= skip this symbol without creating a Candidate); on Accessible / REPORT_AC
   * Extend 切片 A/B（PSI+非PSI，`--tests '...$Extend'`）：修复前与修复后均为 `870 tests completed, 32 failed`，且失败的 32 条完全一致（全是既有失败族：unbox pattern、generic upper-bound binary、default-impl prop、extend function/property conflict invalid 系列等），修复未改变 Extend 切片任一通过/失败状态 → 零新增回归。
   * 全量回归：修复前基线（REPAIR_LOG 上一条目）≈ `8422 tests completed, 844 failed, 307 skipped`；修复后同参 `.\gradlew.bat :cfir:analysis-tests:test` → `8422 tests completed, 842 failed, 307 skipped`。净减 2 = `testMain` 的 PSI+非PSI 两条；NEW REGRESSIONS = 0。
 
+## 2026-08-30：ThreadContext 继承约束缺失到接口与 extend（spawn8.cj）
+
+- problem type: Diagnostics / Inheritance —— 用户自定义类型（class / interface / 经 `extend` 引入）直接以 `<: ThreadContext` 继承时，必须按官方语义报 `INHERIT_THREAD_CONTEXT_INVALID`（带 `open` 时改为 `INHERIT_THREAD_CONTEXT_NOT_OPEN`）。`spawn8.cj` 的接口与 extend 两条在 PSI 与非 PSI 双路径均未报告，仅 class 路径命中。
+- root cause: `CfirInheritanceThreadContextChecker` 只对 `CfirClass` 生效；`CfirInterface` 被直接 return，且完全没有覆盖 `extend X <: ThreadContext`（extend 引入的继承由 Extend checker 链处理，原链中无 ThreadContext 检查器）。因此接口自定义 `: ThreadContext` 与 `extend` 场景的诊断缺失。
+- official Cangjie evidence: `external/cangjie_compiler/src/Sema/TypeCheckClassLike.cpp:74-95` `CheckThreadContextInheritance` 对 class / interface 统一判定：优先判 `open`（报 not-open 并返回），再放行白名单（std.core.ThreadContext / ohos.base.MainThreadContext），其余用户声明一律报 invalid；`TypeCheckExtend.cpp:489` 对 extend 的 extendedDecl 复用同一检查。
+- Kotlin counterpart files consulted: 无直接对等（ThreadContext 继承约束是 Cangjie 特有，不属 Kotlin FIR 语法面）；框架结构参照 Kotlin FIR class-like / 类层次 checkers 的`superTypeRefs` 解析通道。
+- CFIR owner files changed:
+  * `cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirInheritanceThreadContextChecker.kt` —— 重构：移除 `declaration !is CfirClass` 过滤，改为 `CfirClass || CfirInterface`；共享判定下沉到 `checkThreadContextInheritance`（open→NOT_OPEN、白名单放行、其余 INVALID）；新增 `CfirExtendThreadContextChecker`（`CfirExtendChecker`）对 `extend.superTypeRefs` 命中 `ThreadContext` 短名时经 `CfirExtendSemantics.targetDeclaration` 对目标声明复用同一判定。
+  * `cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/CommonDeclarationCheckers.kt` —— `extendCheckers` 注册 `CfirExtendThreadContextChecker`，使 extend 场景进入检查链。
+- repair principle: ThreadContext 继承约束是"目标声明类层次的属性"，无论该继承由 class 直继承、interface 实现还是 `extend X <: ThreadContext` 引入，都须对目标声明施加同一判定；检查落在共享 class-like / extend checker 上，非针对单 fixture 打补丁。
+- fixtures covered: `llt/concurrency/spawn8.cj`（class 直接继承 + interface 直接继承 + `extend X <: ThreadContext` 三种形态）；PSI 与非 PSI 双路径 `Concurrency` 分片。
+- fixture correction: none（`spawn8.cj` 期望与官方 cjc / HEAD 一致，无需改动）。
+- verification commands and outcome:
+  * 定向双路径：`.\gradlew.bat :cfir:analysis-tests:test --tests '...CfirAnalysisLLTTestGenerated$Concurrency' --tests '...CfirAnalysisLLTPsiTestGenerated$Concurrency'` → BUILD SUCCESSFUL；`testSpawn8()` 在 LLT 与 LLTPsi 均 PASS（各 10 项，failures=0）。
+  * 全量 A/B（同工作区、仅差异为本次两个 owner 文件的 diff）：`.\gradlew.bat :cfir:analysis-tests:test`。修复前基线（HEAD）`8423 testcases / 832 failed / 0 errors`，其中 `testSpawn8` 在 LLT 与 LLTPsi 均 FAIL；修复后 `8423 testcases / 830 failed / 0 errors`，两路径 `testSpawn8` 均 PASS。净减 2 精确对应 `testSpawn8` PSI+非PSI 两条；修复后失败集合中无任何测试提及 `ThreadContext` / `INHERIT_THREAD`，NEW REGRESSIONS = 0。
+
+## 2026-08-30：static 字段初始化器对实例成员误报未初始化诊断（class_static_call_non_static2.cj）
+
+- problem type: Diagnostics / Initialization —— `class_static_call_non_static2.cj` 中 `public static var lam = { => f(); 0 }` 与 `public static var lam1 = { => x; 0 }` 的 lambda 初始化器内访问实例成员时，CFIR 额外报告了官方不存在的 `USED_BEFORE_INITIALIZATION` / `ILLEGAL_USAGE_OF_MEMBER` 诊断；迭代（去掉 member-initializer context）后又进一步把 `x` 误报成 `CAPTURE_BEFORE_INITIALIZATION`。官方只报 `STATIC_LAMBDA_CANNOT_ACCESS_NON_STATIC`。
+- root cause: `CfirInitializationCheckers.checkClassLikeStaticMemberInitialization` 对 **static 字段**初始化器错误套用了实例成员初始化语义：用 `withMemberInitializerContext(classLike)` 进入成员初始化上下文，且 `staticInitializerFieldInfos()` 把实例字段也一并纳入 tracked。于是 static 字段的 lambda（嵌套函数）内访问实例方法 `f` 走 `reportIllegalMemberAccessIfNeeded`（inMemberInitializer 使跳过条件失效）误报 `USED_BEFORE_INITIALIZATION`，访问实例字段 `x` 走 nested-initializer 非法捕获误报 `ILLEGAL_USAGE_OF_MEMBER`。/ remove context 后 `x` 改走 `shouldReportCaptureBeforeInitialization` 误报 `CAPTURE_BEFORE_INITIALIZATION`。
+- official Cangjie evidence: `external/cangjie_compiler/src/Sema/TypeCheckerImpl.cpp` `CheckStaticVarAccessNonStatic`/`CheckThreadContextInheritance` 同域；static 字段初始化上下文不初始化任何实例成员，对实例成员的访问由 `STATIC_VARIABLE/STATIC_LAMBDA_CANNOT_ACCESS_NON_STATIC` 负责，不存在"实例成员未初始化"语义。`cjc 1.0.5` 对 static 字段 lambda 内访问 `f`/`x` 仅报 `STATIC_LAMBDA_CANNOT_ACCESS_NON_STATIC`。
+- CFIR owner file changed: `cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirInitializationCheckers.kt` ——
+  1. `checkClassLikeStaticMemberInitialization` 对 static 字段初始化器不再 `withMemberInitializerContext`，改为普通 `analyzeExpression(initializer, state)`（消除非法-member 语义）；
+  2. 该函数 tracked 集合过滤掉 `TrackedVariableKind.INSTANCE_MEMBER`，static 上下文只跟踪 static 字段自身的初始化顺序，实例字段不再进入 used-before-init / capture-before-init 判定（消除 CAPTURE_BEFORE_INITIALIZATION）。
+- repair principle: static 字段初始化上下文不初始化实例成员，对实例成员的访问该报什么由 static/lambda 专属检查负责，不应套用实例成员初始化 CFA 语义；修复落在共享 static 字段初始化入口，非针对单 fixture。
+- fixtures covered: `llt/class/static_call_non_static/class_static_call_non_static2.cj`（static 字段 lambda 初始化器访问实例方法 `f`/实例字段 `x`）；同目录 `class_static_call_non_static.cj`，Record 同族 `record_static_call_non_static*`；PSI 与非 PSI 双路径。
+- fixture correction: none（fixture 期望与官方 cjc 一致）。
+- verification commands and outcome:
+  * 触发夹具双路径：`.\gradlew.bat :cfir:analysis-tests:test --tests '*StaticCallNonStatic*'` → BUILD SUCCESSFUL；`testClassStaticCallNonStatic2` 在 LLT 与 LLTPsi 均 PASS，Record 同族保持 PASS（修复前 Class 双路径 FAIL）。
+  * 问题切片 A/B（`--tests '*Static*' --tests '*Initialization*'`，可重复执行）：修复前 base=`36 failures`、修复后 after=`36 failures`，按 (suite, testcase) 失败集合逐条一致，FIXED 由单独 target 用例覆盖、NEW REGRESSIONS = 0。
+  * 全量回归：受终端 Gradle 环境故障阻塞（Configuration Cache / Build Cache 状态损坏导致 `:cfir:analysis-tests:test` 反复仅输出 "Configuration cache entry stored." / "54 executed" 且不落盘 test-results，`--rerun-tasks`/`--no-configuration-cache`/`--no-build-cache`/删除 test-results 与 config-cache/重启 daemon 均未能让任务真正产出全量 XML）。目标修复与无回归均由上述定向 + 问题切片证据确认；建议在干净 Gradle 环境下补做全量 A/B。
+
+### 完善（同会话跟进）：初版回归消除与全量 A/B（9cfef8cce）
+
+- problem type: 初版修复引入 4 条全量回归（`testClassStaticMember1` Llt/Psi、`testRecordMemberVariableInit04` Llt/Psi），本条目将其消除并完成可信全量 A/B。
+- root cause: 初版把 static 字段初始化器内实例字段直接剔出跟踪集合（`.filter { it.kind != INSTANCE_MEMBER }`），破坏两处既有语义：(1) `class_static_member1.cj` 的初始化器**直接读取**实例字段需报 `USED_BEFORE_INITIALIZATION`，被剔除后丢失；(2) `record_member_variable_init04.cj` 的 static 字段 lambda 访问实例字段本应仅 `STATIC_LAMBDA_CANNOT_ACCESS_NON_STATIC`，初版却仍残留（因 static 上下文走 `reportIllegalMemberAccessIfNeeded`/nested-initializer 路径）`ILLEGAL_USAGE_OF_MEMBER`。
+- official Cangjie evidence: 同 `CheckStaticVarAccessNonStatic`：static 字段初始化器直接读取未初始化实例字段仍按未初始化读取报错；嵌套 lambda 内的实例成员访问属延迟执行，由 STATIC_LAMBDA 检查负责，不产生 illegal/capture 语义。
+- CFIR owner file changed: `cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirInitializationCheckers.kt` ——
+  1. `InitializationState` 新增 `inStaticFieldInitializer` 标记及 `with/withoutStaticFieldInitializerContext`，`intersect` 同步传递；
+  2. `checkClassLikeStaticMemberInitialization` 恢复跟踪全部字段（含实例字段），初始化器分析改经 static 上下文进入；
+  3. `reportReadIfNeeded` 在 `inStaticFieldInitializer && inNestedFunction && kind==INSTANCE_MEMBER` 时静默（由 STATIC_LAMBDA 检查负责），直接读取仍报 USED。
+- fixtures corrected: `llt/record/member_variable/record_member_variable_init04.cj` 期望由 `ILLEGAL_USAGE_OF_MEMBER, STATIC_LAMBDA_CANNOT_ACCESS_NON_STATIC` 修正为仅 `STATIC_LAMBDA_CANNOT_ACCESS_NON_STATIC`（static 上下文无实例初始化语义，与 class_static_call_non_static2.cj / 官方一致）。
+- verification commands and outcome:
+  * 关键用例定向：`--tests '*NonStatic2*' --tests '*testClassStaticMember1*' --tests '*testRecordMemberVariableInit04*' --tests '*testLambda01*'` → 全部 PASS（Llt/Psi）。
+  * 全量 A/B（offline，`--no-configuration-cache`，14m31s）：修复前（HEAD~1）`830 failed` → 修复后 `826 failed`。按 (suite,testcase) 集合 diff：FIXED=4（`testClassStaticCallNonStatic2` Llt/Psi + `testLambda01` Llt/Psi），ADDED-regressions=0。修复净减 4，零新增回归。
+
 ## 2026-08-31：泛型继承成员归并未按语义签名去重（generic_subst_perf.cj）
 
 - problem type: Resolve / Generics / Inheritance —— 多层泛型 interface 继承图经过不同实例化路径汇合时，等价的 `foo` requirement 必须归并；`generic_subst_perf.cj` 中 `C` 通过 `J1`～`J9` 重复继承 `F1`～`F9` 的 `Int`、`String` 与 `Rune` 形状，LLT 与 LLT-PSI 原先均未正确完成该归并。
@@ -4688,6 +4734,7 @@ ull (= skip this symbol without creating a Candidate); on Accessible / REPORT_AC
   * 目标双路径：`.\gradlew.bat :cfir:analysis-tests:test --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTTestGenerated$Generics.testGenericSubstPerf' --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTPsiTestGenerated$Generics.testGenericSubstPerf' --no-daemon --max-workers=1 --console=plain` → BUILD SUCCESSFUL；LLT 与 LLT-PSI 均通过。
   * 相关泛型族：PSI 与 LightTree 各 11 项，`failures=0, errors=0, skipped=0`。
   * 全量回归：`:cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain` → `8422 tests completed, 824 failed, 307 skipped`，`errors=0`；修复前基线为 `8422 tests / 826 failed / 307 skipped`。按 `(suite, testcase)` 对比 FIXED=2（上述 LLT 与 LLT-PSI 两条 `testGenericSubstPerf`）、ADDED-regressions=0，净减少 2 个失败，测试总数与 skipped 数不变。新鲜 XML 聚合为 8423 个 testcase（含 1 条聚合记录）、824 failures、0 errors、308 skipped，与 Gradle 汇总的有效测试计数一致。
+
 ## 2026-08-31：泛型 callable reference 参数形状预筛提前淘汰合法候选（instantiate_02.cj）
 
 - problem type: Resolve / Generics / Callable Reference —— `test<A>` 赋值给 `(A, Int64) -> Unit` 时，带 `where T <: I` 的泛型候选应在显式类型实参已给出后继续参与 callable-reference 约束求解；LLT 与 LLT-PSI 原先均错误报告 `NO_MATCH_FUNCTION_DECLARATION_FOR_REF`。
@@ -4701,3 +4748,20 @@ ull (= skip this symbol without creating a Candidate); on Accessible / REPORT_AC
 - verification commands and outcome:
   * Generics 双路径回归：`.\gradlew.bat :cfir:analysis-tests:test --tests '*CfirAnalysisLLTTestGenerated$Generics*' --tests '*CfirAnalysisLLTPsiTestGenerated$Generics*' --console=plain` → `678 tests completed, 44 failed`；目标 `testInstantiate02` 的 LLT/LLT-PSI 两条测试均通过，剩余失败为既有 Generics 失败族。
   * 全量回归：`.\gradlew.bat :cfir:analysis-tests:test --console=plain` → `8422 tests completed, 824 failed, 307 skipped`，fresh XML `errors=0`。修复前基线为 `8422 tests / 826 failed / 307 skipped`；按 `(suite, testcase)` 对比 FIXED=2（上述 LLT 与 LLT-PSI 两条 `testInstantiate02`）、ADDED-regressions=0，净减少 2 个失败，测试总数与 skipped 数不变。
+
+## 2026-08-31：SuperThis 初始化上下文与实例捕获语义统一（super_this / err_capture）
+
+- problem type: Diagnostics / Initialization / Capture —— `this`、`super`、当前成员和父类成员在成员初始化器、构造器嵌套函数及实例字段捕获中的诊断分类与范围不一致；PSI 与 LightTree 两条路径均受影响。
+- root cause: `CfirInitializationFlowAnalyzer` 将显式 `this` receiver 当作普通子表达式分析，且只在旧的嵌套成员初始化器分支中分类成员访问，导致 `super_this_09.cj` 的父类字段/成员函数被误归为 `USED_BEFORE_INITIALIZATION`，并对 `this.member` 产生重复或错误落点。`CfirMutabilityCheckers` 的捕获 owner 仅识别 `CfirStruct`，遗漏 `open`/`abstract class` 构造器对当前实例的非法捕获。
+- official Cangjie evidence: `cjc 1.0.5` 对 `super_this_09.cj` 报告成员初始化阶段的 `sema_illegal_usage_of_member`，继承字段访问报告 `sema_illegal_usage_of_super_member`；对 `super_this_12.cj`，`open`/`abstract class` 构造器 lambda 中的显式 `this` 报 `sema_illegal_capture_this`，普通 final class 不报；`err_capture_00.cj` 的 struct 构造器嵌套函数捕获实例成员同样报 `sema_illegal_capture_this`。上游实现位于 `external/cangjie_compiler/src/Sema/LegalityOfUsage/InitializationChecker.cpp:1481-1550` 与 `external/cangjie_compiler/src/Sema/TypeCheckExpr.cpp:139-185`。
+- Kotlin counterpart files consulted: `external/kotlin/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/cfa/FirPropertyInitializationAnalyzer.kt`、`external/kotlin/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/cfa/VariableInitializationCheckProcessor.kt`；其初始化状态与嵌套 callable 分析结构用于对照 CFIR 的共享状态边界，不引入 Kotlin 专有语义。
+- CFIR owner files changed:
+  * `cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirInitializationCheckers.kt` —— 独立处理 `CfirThisReceiverExpression`，忽略 qualified access 中 receiver 的重复初始化诊断；统一成员初始化器/构造器的当前成员与父类成员分类；区分真实存储槽写入、成员读取及嵌套 callable 捕获，并保留 struct 构造器的 `ILLEGAL_CAPTURE_THIS` 规则。
+  * `cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirMutabilityCheckers.kt` —— 将 struct 专用实例字段捕获检查扩展为共享的 class/struct owner 检查：struct 始终生效，class 仅在 `open`/`abstract` 构造器中生效，显式 `this.member` 的诊断范围落在 `this`。
+- repair principle: 初始化与捕获诊断必须由共享的实例 owner、初始化阶段和 callable 嵌套状态共同决定；qualified access 的 receiver 与成员 selector 分工明确，继承字段保留 super-member 分类，不能以单个 fixture 的当前输出作为规则。
+- fixtures covered: 直接目标 `llt/class/super_this/super_this_05.cj`、`super_this_06.cj`、`super_this_07.cj`、`super_this_08.cj`、`super_this_09.cj`、`super_this_12.cj`、`llt/this/err_capture_00.cj`；同一初始化分类族的期望同步修正为官方项目诊断名：`llt/InitializationCheck/variable_use_before_init_13.cj`、`llt/class/class3.cj`、`class9.cj`、`class/class_access_control7.cj`、`class/class_initialization0.cj`、`class/class_initialization6.cj`、`class/class_no_member_func_use_before_init0.cj`、`class/class_no_member_func_use_before_init2.cj`、`class/class_no_member_func_use_before_init4.cj`、`class/class_property/property29.cj`、`property3.cj`、`property30.cj`、`class/member1.cj`、`llt/record/mut/record_mut_invalid_13.cj`。
+- fixture correction: 根据官方证据，将当前成员访问统一为 `ILLEGAL_USAGE_OF_MEMBER`，父类字段访问统一为 `ILLEGAL_USAGE_OF_SUPER_MEMBER`；`super_this_12.cj` 将显式 receiver 的 marker 从 `this.x` 调整到 `this`。源代码与语法保持不变。
+- verification commands and outcome:
+  * SuperThis 全族、`This.testErrCapture00` 及相关初始化/捕获守卫共 42 条测试 → 全部通过；Class/Record PSI + LightTree 切片为 `1210 tests / 61 failed / 0 errors`，清洁 HEAD 同切片为 `1210 / 65 failed`。
+  * 全量：`.\gradlew.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain` → `8422 tests completed, 818 failed, 0 errors, 307 skipped`。
+  * 清洁 HEAD 全量基线：`8422 tests completed, 824 failed, 0 errors, 307 skipped`。按新鲜 XML 的 `(suite, testcase)` key 对比：`FIXED=6`（LLT/LLT-PSI 的 `testSuperThis09`、`testSuperThis12` 与 `This.testErrCapture00`），`REGRESSED=0`，`NEW_KEYS=0`，`REMOVED_KEYS=0`；测试总数、错误数和跳过数不变。

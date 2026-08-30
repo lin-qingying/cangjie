@@ -3,13 +3,13 @@
 class A {
     public let b: Int32 = 0
     public let c = {
-        => <!USED_BEFORE_INITIALIZATION!>foo<!>()
+        => <!ILLEGAL_USAGE_OF_MEMBER!>foo<!>()
     }
     public let d = {
         => let e = {
             => let f = {
                 => let g = {
-                    => <!USED_BEFORE_INITIALIZATION!>foo<!>()
+                    => <!ILLEGAL_USAGE_OF_MEMBER!>foo<!>()
                 }
             }
         }

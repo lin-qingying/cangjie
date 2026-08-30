@@ -36,6 +36,6 @@ struct Boo {
     }
     // a = 1,b = 1
     public var c: Unit = if (true) {
-        <!USED_BEFORE_INITIALIZATION!>m<!> = 1
+        <!ILLEGAL_USAGE_OF_MEMBER!>m<!> = 1
     }
 }

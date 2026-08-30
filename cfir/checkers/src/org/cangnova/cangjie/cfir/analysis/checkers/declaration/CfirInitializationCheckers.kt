@@ -543,6 +543,7 @@ private class CfirInitializationFlowAnalyzer(
             afterResult.terminate()
         }
         is CfirThrowExpression -> analyzeExpression(expression.exception, state).terminate()
+        is CfirThisReceiverExpression -> analyzeThisReceiver(expression, state)
         is CfirFunctionCall -> analyzeFunctionCall(expression, state)
         is CfirAnonymousFunctionExpression -> analyzeAnonymousFunctionExpression(expression, state)
         is CfirNamedAccessExpression -> analyzeVariableRead(expression, state, accessMode)
@@ -564,6 +565,41 @@ private class CfirInitializationFlowAnalyzer(
         is CfirUnsafeExpression -> analyzeChildrenSequentially(expression, state)
         is CfirSubscriptExpression -> analyzeChildrenSequentially(expression, state)
         else -> analyzeChildrenSequentially(expression, state)
+    }
+
+    /**
+     * 分析显式 receiver。
+     *
+     * `this` 是 qualified access 的 receiver 时，非法访问应归属于后续的成员名；
+     * 只有作为独立表达式时才由初始化流报告裸 `this` 的非法捕获。这样可以避免
+     * `this.member` 同时产生 receiver 与 member 两条相同根因的诊断。
+     */
+    private fun analyzeReceiver(
+        receiver: CfirExpression,
+        state: InitializationState,
+    ): InitializationState = if (receiver is CfirThisReceiverExpression) {
+        state
+    } else {
+        analyzeExpression(receiver, state)
+    }
+
+    /**
+     * 构造器中的嵌套函数不能捕获尚未完成初始化的当前实例。
+     *
+     * 成员初始化器中的裸 `this` 由官方初始化检查保持为普通闭包值，不经过
+     * `CheckIllegalMemberAccess`，因此这里只处理实例构造器嵌套函数语境。
+     */
+    private fun analyzeThisReceiver(
+        expression: CfirThisReceiverExpression,
+        state: InitializationState,
+    ): InitializationState {
+        if (!state.isIllegalThisCaptureContext()) return state
+        reportIllegalMemberAccess(
+            accessKind = NestedInitializerMemberAccessKind.CURRENT_MEMBER,
+            diagnosticName = Name.identifier("this"),
+            source = expression.calleeReference.source ?: expression.source,
+        )
+        return state
     }
 
     /**
@@ -639,7 +675,7 @@ private class CfirInitializationFlowAnalyzer(
     ): InitializationState {
         val diagnosticCountBeforeReceiver = reportedInitializationDiagnosticCount
         val afterReceiver = access.explicitReceiver?.let { receiver ->
-            analyzeExpression(receiver, state)
+            analyzeReceiver(receiver, state)
         } ?: state
         val targetPriorityDiagnostic = priorityDiagnostic ||
                 reportedInitializationDiagnosticCount != diagnosticCountBeforeReceiver
@@ -660,10 +696,46 @@ private class CfirInitializationFlowAnalyzer(
             }
 
             trackedVariable != null -> {
+                // 写入字段或可写主构造属性时，访问器只是存储槽的解析视图；它不能被当作
+                // 普通实例成员函数访问。构造器内的直接写入应先推进 definite-assignment，
+                // 嵌套函数中的首次写入则保留 CAPTURE_BEFORE_INITIALIZATION 分类。
+                if (access.isTrackedStorageWrite(symbol)) {
+                    if (afterReceiver.shouldReportCaptureBeforeInitialization(symbol)) {
+                        reportCaptureBeforeInitialization(
+                            diagnosticName = access.calleeReference.referenceNameOrNull()
+                                ?: symbol.nameOrNull()
+                                ?: Name.ERROR_NAME,
+                            source = access.calleeReference.source ?: access.source,
+                        )
+                        recordAssignmentClassification(
+                            assignment,
+                            CfirInitializationAssignmentKind.PRIORITY_INITIALIZATION_DIAGNOSTIC,
+                        )
+                        return afterReceiver
+                    }
+
+                    if (targetPriorityDiagnostic) {
+                        recordAssignmentClassification(
+                            assignment,
+                            CfirInitializationAssignmentKind.PRIORITY_INITIALIZATION_DIAGNOSTIC,
+                        )
+                    } else {
+                        val classification = if (
+                            afterReceiver.isPossiblyInitialized(symbol) || afterReceiver.mayRevisitAssignment(symbol)
+                        ) {
+                            CfirInitializationAssignmentKind.REASSIGNMENT
+                        } else {
+                            CfirInitializationAssignmentKind.INITIALIZATION
+                        }
+                        recordAssignmentClassification(assignment, classification)
+                    }
+                    return afterReceiver.markInitialized(symbol)
+                }
+
                 val nestedInitializerAccessKind =
-                    afterReceiver.illegalMemberAccessKindFromNestedInitializer(symbol)
+                    afterReceiver.illegalMemberAccessKindFromInitialization(symbol)
                 if (nestedInitializerAccessKind != null) {
-                    reportIllegalMemberAccessFromNestedInitializer(
+                    reportIllegalMemberAccess(
                         accessKind = nestedInitializerAccessKind,
                         diagnosticName = access.calleeReference.referenceNameOrNull()
                             ?: symbol.nameOrNull()
@@ -969,7 +1041,7 @@ private class CfirInitializationFlowAnalyzer(
     ): InitializationState {
         val diagnosticCountBeforeReceiver = reportedInitializationDiagnosticCount
         var currentState = expression.explicitReceiver?.let { receiver ->
-            analyzeExpression(receiver, state)
+            analyzeReceiver(receiver, state)
         } ?: state
         if (reportedInitializationDiagnosticCount != diagnosticCountBeforeReceiver) return currentState
 
@@ -1020,7 +1092,7 @@ private class CfirInitializationFlowAnalyzer(
         accessMode: InitializationAccessMode,
     ): InitializationState {
         val afterReceiver = expression.explicitReceiver?.let { receiver ->
-            analyzeExpression(receiver, state)
+            analyzeReceiver(receiver, state)
         } ?: state
 
         if (accessMode != InitializationAccessMode.READ) return afterReceiver
@@ -1068,7 +1140,7 @@ private class CfirInitializationFlowAnalyzer(
         accessMode: InitializationAccessMode,
     ): InitializationState {
         val afterReceiver = expression.explicitReceiver?.let { receiver ->
-            analyzeExpression(receiver, state)
+            analyzeReceiver(receiver, state)
         } ?: state
 
         if (accessMode != InitializationAccessMode.READ) return afterReceiver
@@ -1130,6 +1202,21 @@ private class CfirInitializationFlowAnalyzer(
     }
 
     /**
+     * 判断赋值访问是否对应可参与初始化流的实际存储槽。
+     *
+     * 主构造参数属性在解析后可能以 property、setter 或字段变量符号出现；三者都表示
+     * 写入同一个存储，但只有带 setter 的属性访问才可以作为 property 写目标处理。
+     */
+    private fun CfirQualifiedAccessExpression.isTrackedStorageWrite(
+        symbol: CfirBasedSymbol<*>,
+    ): Boolean = when (symbol) {
+        is CfirPropertyAccessorSymbol -> symbol.isSetter
+        is CfirPropertySymbol -> symbol.cfir.setter != null
+        is CfirVariableSymbol<*> -> true
+        else -> false
+    }
+
+    /**
      * 按子节点顺序分析普通元素。
      */
     private fun analyzeChildrenSequentially(
@@ -1185,9 +1272,9 @@ private class CfirInitializationFlowAnalyzer(
         source: org.cangnova.cangjie.source.CjSourceElement?,
         state: InitializationState,
     ): InitializationState {
-        val nestedInitializerAccessKind = state.illegalMemberAccessKindFromNestedInitializer(symbol)
+        val nestedInitializerAccessKind = state.illegalMemberAccessKindFromInitialization(symbol)
         if (nestedInitializerAccessKind != null) {
-            reportIllegalMemberAccessFromNestedInitializer(
+            reportIllegalMemberAccess(
                 accessKind = nestedInitializerAccessKind,
                 diagnosticName = diagnosticName,
                 source = source,
@@ -1254,12 +1341,12 @@ private class CfirInitializationFlowAnalyzer(
     }
 
     /**
-     * 报告成员初始化器嵌套 callable 对当前实例或继承实例存储的非法捕获。
+     * 报告初始化上下文中当前实例或继承实例成员的非法访问。
      *
      * 该语义与普通未初始化读取不同：对象仍处于成员初始化阶段，闭包可能在完整对象
      * 构造前逃逸，因此必须保留官方独立诊断，不能降级为 USED_BEFORE_INITIALIZATION。
      */
-    private fun reportIllegalMemberAccessFromNestedInitializer(
+    private fun reportIllegalMemberAccess(
         accessKind: NestedInitializerMemberAccessKind,
         diagnosticName: Name,
         source: org.cangnova.cangjie.source.CjSourceElement?,
@@ -1281,6 +1368,22 @@ private class CfirInitializationFlowAnalyzer(
                     a = diagnosticName,
                 )
             }
+        }
+    }
+
+    /** 报告 struct 构造器嵌套 callable 对当前实例成员函数/属性的捕获。 */
+    private fun reportIllegalThisCapture(
+        source: org.cangnova.cangjie.source.CjSourceElement?,
+    ) {
+        reportedInitializationDiagnosticCount++
+        if (!reportReadDiagnostics) return
+
+        with(context) {
+            reporter.reportOn(
+                source = source,
+                factory = CfirErrors.ILLEGAL_CAPTURE_THIS,
+                a = "struct",
+            )
         }
     }
 
@@ -1700,10 +1803,10 @@ private class CfirInitializationFlowAnalyzer(
     }
 
     /**
-     * 官方 `CheckIllegalMemberAccess` 在实例成员未全部初始化前禁止访问成员属性/函数。
+     * 对齐官方 `CheckIllegalMemberAccess` 的实例成员访问规则。
      *
-     * 本项目当前没有独立的 `sema_illegal_usage_of_member` 诊断面，LLT 中该语义
-     * 统一落到 `USED_BEFORE_INITIALIZATION`，位置使用被访问成员名。
+     * 成员初始化器与构造器嵌套 callable 的分类先由统一初始化上下文计算；普通构造器
+     * 成员函数访问只在实例字段尚未全部初始化时报告。其余访问继续走变量初始化流。
      */
     private fun reportIllegalMemberAccessIfNeeded(
         access: CfirQualifiedAccessExpression,
@@ -1713,6 +1816,22 @@ private class CfirInitializationFlowAnalyzer(
         state: InitializationState,
     ): InitializationState {
         if (!access.usesCurrentInstanceReceiver()) return state
+
+        if (state.isStructConstructorCaptureContext() && symbol.isInstanceMemberFunctionOrProperty()) {
+            reportIllegalThisCapture(source)
+            return state
+        }
+
+        val illegalMemberAccessKind = state.illegalMemberAccessKindFromInitialization(symbol)
+        if (illegalMemberAccessKind != null) {
+            reportIllegalMemberAccess(
+                accessKind = illegalMemberAccessKind,
+                diagnosticName = diagnosticName,
+                source = source,
+            )
+            return state
+        }
+
         if (!state.hasUninitializedInstanceFields()) return state
         if (state.inNestedFunction && !state.inMemberInitializer) return state
         if (!symbol.isInstanceMemberFunctionOrProperty()) return state
@@ -2154,26 +2273,61 @@ private data class InitializationState(
     }
 
     /**
-     * 成员初始化器中的嵌套函数会捕获尚未完成构造的当前对象。
+     * 计算初始化上下文中的成员访问诊断分类。
      *
-     * 因此读取或写入当前类/父类实例成员时，即使该单个字段已经按声明顺序完成初始化，
-     * 仍按官方 illegal-usage-of-member / super-member 语义报告成员非法访问。
+     * 成员初始化器和实例构造器是两个不同的初始化阶段：成员初始化器中的直接成员
+     * 函数访问本身就非法，嵌套 callable 对字段的访问则表示闭包捕获；构造器中只有
+     * 在所有实例字段完成初始化前，成员函数访问以及嵌套 callable 的成员访问才非法。
+     * 继承字段保留 `super-member` 分类，而函数/属性统一由官方规则归入 `member`。
      */
-    fun illegalMemberAccessKindFromNestedInitializer(
+    fun illegalMemberAccessKindFromInitialization(
         symbol: CfirBasedSymbol<*>,
     ): NestedInitializerMemberAccessKind? {
-        if (!inMemberInitializer || !inNestedFunction) return null
         val normalizedSymbol = symbol.initializationSymbol()
-        if (tracked[normalizedSymbol]?.kind != TrackedVariableKind.INSTANCE_MEMBER) return null
+        val variableInfo = tracked[normalizedSymbol]
+        val isInstanceField = variableInfo?.kind == TrackedVariableKind.INSTANCE_MEMBER
+        val isMemberFunctionOrProperty = symbol.isInstanceMemberFunctionOrProperty()
+        if (!isInstanceField && !isMemberFunctionOrProperty) return null
 
-        val currentOwnerClassId = memberInitializerOwner?.symbol?.classId ?: return null
-        val targetOwnerClassId = normalizedSymbol.initializationMemberOwnerClassId() ?: return null
+        val currentOwnerClassIdMaybe = memberInitializerOwner?.symbol?.classId
+            ?: (expectedReceiver as? CfirClassLikeSymbol<*>)?.classId
+        val targetOwnerClassIdMaybe = normalizedSymbol.initializationMemberOwnerClassId()
+        val isInheritedFieldInMemberInitializer =
+            inMemberInitializer && !inNestedFunction && isInstanceField &&
+                    currentOwnerClassIdMaybe != null && targetOwnerClassIdMaybe != null &&
+                    targetOwnerClassIdMaybe != currentOwnerClassIdMaybe
+        val hasUninitializedFields = hasUninitializedInstanceFields()
+        val shouldReport = when {
+            isInheritedFieldInMemberInitializer -> true
+            inMemberInitializer && isMemberFunctionOrProperty -> true
+            inMemberInitializer && inNestedFunction && isInstanceField -> hasUninitializedFields
+            expectedReceiver != null && inNestedFunction -> hasUninitializedFields
+            expectedReceiver != null && !inNestedFunction && isMemberFunctionOrProperty -> hasUninitializedFields
+            else -> false
+        }
+        if (!shouldReport) return null
+
+        // 函数/属性无论声明在当前类还是父类，都使用官方的 member 诊断；只有字段
+        // 的声明 owner 决定是否属于 super-member。
+        if (isMemberFunctionOrProperty) return NestedInitializerMemberAccessKind.CURRENT_MEMBER
+
+        val currentOwnerClassId = currentOwnerClassIdMaybe ?: return null
+        val targetOwnerClassId = targetOwnerClassIdMaybe ?: return null
         return if (targetOwnerClassId == currentOwnerClassId) {
             NestedInitializerMemberAccessKind.CURRENT_MEMBER
         } else {
             NestedInitializerMemberAccessKind.SUPER_MEMBER
         }
     }
+
+    /** 判断裸 `this` 是否位于尚未完成初始化的构造器嵌套函数中。 */
+    fun isIllegalThisCaptureContext(): Boolean =
+        expectedReceiver != null && inNestedFunction &&
+                (hasUninitializedInstanceFields() || expectedReceiver.cfir is CfirStruct)
+
+    /** 判断当前是否为 struct 构造器中的嵌套 callable。该规则与字段初始化状态无关。 */
+    fun isStructConstructorCaptureContext(): Boolean =
+        expectedReceiver?.cfir is CfirStruct && inNestedFunction
 
     /**
      * 判断嵌套函数中是否需要报告捕获未初始化存储。

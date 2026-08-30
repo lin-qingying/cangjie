@@ -128,7 +128,7 @@ object CommonExpressionCheckers : ExpressionCheckers() {
             CfirInvalidFieldExposeAccessChecker,
             CfirUpperBoundViolatedQualifiedAccessExpressionChecker,
             CfirCaptureHasShadowVariableChecker,
-            CfirStructInstanceFieldCaptureChecker,
+            CfirInstanceFieldCaptureChecker,
             CfirClassifierAsExpressionChecker,
             CfirMutFuncReferenceChecker,
             CfirUnsafeFuncReferenceChecker,
