@@ -1,7 +1,7 @@
 
 
 class A <: B {
-    public var a = <!USED_BEFORE_INITIALIZATION!>b<!>
+    public var a = <!ILLEGAL_USAGE_OF_SUPER_MEMBER!>b<!>
 }
 
 open class B {

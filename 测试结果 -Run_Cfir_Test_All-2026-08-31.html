@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>CFIR 全量测试结果 - SuperThis - 2026-08-31</title>
+  <style>
+    body { max-width: 960px; margin: 40px auto; padding: 0 24px; font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #202124; }
+    h1 { margin-bottom: 8px; }
+    .status { color: #b3261e; font-weight: 700; }
+    table { border-collapse: collapse; margin: 20px 0; width: 100%; }
+    th, td { border: 1px solid #dadce0; padding: 10px 12px; text-align: left; }
+    th { background: #f1f3f4; }
+    .ok { color: #137333; font-weight: 600; }
+    .note { color: #5f6368; }
+    code { background: #f1f3f4; padding: 2px 5px; }
+  </style>
+</head>
+<body>
+  <h1>CFIR 全量测试结果</h1>
+  <p>测试时间：2026-08-31；任务：<code>:cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain</code></p>
+  <p class="status">结果：存在仓库既有失败，Gradle 任务状态为 FAILED。</p>
+
+  <table>
+    <tr><th>项目</th><th>结果</th></tr>
+    <tr><td>有效测试数（Gradle 汇总）</td><td>8422</td></tr>
+    <tr><td>通过</td><td>7297</td></tr>
+    <tr><td>失败</td><td>818</td></tr>
+    <tr><td>错误</td><td>0</td></tr>
+    <tr><td>跳过</td><td>307</td></tr>
+    <tr><td>XML 聚合测试数</td><td>8423（含 1 条聚合记录）</td></tr>
+    <tr><td>XML 聚合跳过数</td><td>308（含 1 条聚合记录）</td></tr>
+  </table>
+
+  <h2>本次修复目标</h2>
+  <table>
+    <tr><th>测试入口</th><th>结果</th></tr>
+    <tr><td>CfirAnalysisLLTTestGenerated$Class$SuperThis.testSuperThis09</td><td class="ok">通过</td></tr>
+    <tr><td>CfirAnalysisLLTPsiTestGenerated$Class$SuperThis.testSuperThis09</td><td class="ok">通过</td></tr>
+    <tr><td>CfirAnalysisLLTTestGenerated$Class$SuperThis.testSuperThis12</td><td class="ok">通过</td></tr>
+    <tr><td>CfirAnalysisLLTPsiTestGenerated$Class$SuperThis.testSuperThis12</td><td class="ok">通过</td></tr>
+    <tr><td>CfirAnalysisLLTTestGenerated$This.testErrCapture00</td><td class="ok">通过</td></tr>
+    <tr><td>CfirAnalysisLLTPsiTestGenerated$This.testErrCapture00</td><td class="ok">通过</td></tr>
+  </table>
+
+  <h2>与修复前对比</h2>
+  <p>全量失败数由 <strong>824</strong> 降至 <strong>818</strong>，净修复 6 条，新增回归 0 条；测试总数和跳过数不变。</p>
+
+  <p><a href="cfir/analysis-tests/build/reports/tests/test/index.html">打开 Gradle 全量 HTML 明细报告</a></p>
+  <p class="note">明细报告由最新一次全量测试生成，包含各测试类及失败用例详情。</p>
+</body>
+</html>

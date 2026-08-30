@@ -1,7 +1,7 @@
 
 
 class A {
-    public var a = <!USED_BEFORE_INITIALIZATION!>f<!>
+    public var a = <!ILLEGAL_USAGE_OF_MEMBER!>f<!>
     public var b: () -> Int64
     public var d = g
     public static var e = g

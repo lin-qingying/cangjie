@@ -9,5 +9,5 @@ class A<T> {
             b = v
         }
     }
-    var b: String = "a${<!USED_BEFORE_INITIALIZATION!>a<!>}"
+    var b: String = "a${<!ILLEGAL_USAGE_OF_MEMBER!>a<!>}"
 }

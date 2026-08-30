@@ -7,7 +7,7 @@ struct R1 {
         i += 1
     }
 
-    public var fn = {=> <!USED_BEFORE_INITIALIZATION!>foo<!>()}
+    public var fn = {=> <!ILLEGAL_USAGE_OF_MEMBER!>foo<!>()}
 }
 
 main() {
