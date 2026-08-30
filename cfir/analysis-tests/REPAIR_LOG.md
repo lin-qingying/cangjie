@@ -1,5 +1,18 @@
 # CFIR LLT Repair Log
 
+## class/struct 含 static init 时隐式默认构造器未被合成，跨包 A<Int64>() 报 NO_MATCH_FUNCTION_DECLARATION_FOR_CALL
+
+- problem type: Resolve — 一个没有显式实例构造器的泛型 class/struct（如 `class A<T> {}`）在包含 `static init()` 时，跨包 `A<Int64>()` 应解析为对隐式默认构造器的调用；当前报 `NO_MATCH_FUNCTION_DECLARATION_FOR_CALL`。不含 static init 的同类可正常解析。
+- root cause: `static init()` 在 CFIR 中被建模为 `isStatic = true` 的 `CfirConstructor`，直接进入 class 的 `declarations`。所有「是否合成隐式默认构造器」的判据都只检查 `declarations.any/none { it is CfirConstructor }`，因此 static init 被误判为「已有构造器」，真正的无参实例主构造器从不被合成。构造调用 `A<Int64>()` 因此只能看到 static init 这一个无意义的构造器候选，候选集为空 → 映射为 `NO_MATCH_FUNCTION_DECLARATION_FOR_CALL`。
+- official Cangjie evidence: 官方编译器把 `static init()` 建模为独立的静态函数 `static.init`，而非构造器 `init` —— `external/cangjie_compiler/include/cangjie/Utils/ConstantsUtils.h` `STATIC_INIT_FUNC = "static.init"`、`src/CHIR/Value.cpp` `FuncBase::IsStaticInit`。因此 static init 既不是实例构造器候选，也不应阻止无参实例主构造器的合成；`A<T>()` 应命中合成出的默认构造器。
+- Kotlin counterpart files consulted: 无必要新增；修复只让 CFIR 既有的隐式构造器合成与构造器候选收集两处边界对「静态初始化器」做出正确过滤。
+- CFIR owner files changed: 隐式默认构造器合成闸门 —— `cfir/raw-cfir/psi2cfir/.../PsiRawCfirBuilder.kt`（class/struct/enum 三处 `declarations.none { it is CfirConstructor }`）、`cfir/raw-cfir/light-tree2cfir/.../LightTreeRawCfirDeclarationBuilder.kt`（三处）、`cfir/resolve/.../transformers/CfirTypeResolveTransformer.kt:788`（`ensureImplicitDefaultConstructorIfNeeded`）。构造器候选收集（静态初始化器不作为实例构造候选）—— `cfir/resolve/.../calls/ConstructorProcessing.kt`、`cfir/resolve/.../calls/tower/TowerLevelHandler.kt`、`cfir/providers/.../scopes/impl/CfirClassDeclaredMemberScope.kt`（`memberIndex.constructors`）。所有闸门从「任意 CfirConstructor」改为「非 static 的 CfirConstructor」。
+- repair principle: 在隐式构造器合成与构造器候选暴露这两个共享边界上，把静态初始化器（官方 `static.init`）与实例 `init` 当成两个独立命名空间，而不是为一个夹具在解析层打补丁；同时修复 raw 与 TYPES 双阶段，保证 PSI 与 light-tree 两条路径行为一致。
+- fixtures covered: `llt/class/static_init/generic_class_static_init_01/main.cj`、`llt/record/static_init/generic_struct_static_init_01/main.cj`（此前失败）；`llt/class/static_init/generic_class_static_init_02/main.cj` 作为无 static-init 的对照守卫，保持原有通过。两条路径（`CfirAnalysisLLTTestGenerated` 与 `CfirAnalysisLLTPsiTestGenerated`）均验证。
+- fixture correction: none。
+- verification command: full `.\gradlew.bat :cfir:analysis-tests:test`
+- verification outcome: `8422 tests, 834 failures, 307 skipped`，对照本任务开始时的已提交基线（上一轮 static_init_02 修复后）`8422 tests, 838 failures, 307 skipped` —— 恰好修复 4 个方法（`GenericClassStaticInit01` 与 `GenericStructStaticInit01` 的 testMain，各覆盖 LLT 与 PSI 路径），new=0、无回归。
+
 ## Duplicate `static init()` in a class/struct-body misses CONFLICTING_OVERLOADS
 
 - problem type: Diagnostics/Resolve — two same-signature static initializers (`static init()`) in one class-like body must report `CONFLICTING_OVERLOADS`. The compiler produced no diagnostic at all.

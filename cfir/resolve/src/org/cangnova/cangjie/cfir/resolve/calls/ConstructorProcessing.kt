@@ -69,6 +69,9 @@ private fun CfirScope.processConstructorsByName(
         declaration.declarations
             .asSequence()
             .filterIsInstance<CfirConstructor>()
+            // 静态初始化器（static init，官方 static.init）不是实例构造器，不能作为
+            // A<T>() 等构造调用的候选，否则会干扰隐式默认构造器的解析。
+            .filterNot { declaration -> declaration.status.isStatic }
             .map { it.symbol }
             .forEach(processor)
     }

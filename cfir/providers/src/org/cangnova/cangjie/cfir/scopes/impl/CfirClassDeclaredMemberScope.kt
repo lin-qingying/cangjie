@@ -145,7 +145,11 @@ class CfirClassDeclaredMemberScope(
                 }
 
                 is CfirConstructor -> {
-                    constructors += declaration.symbol
+                    // 静态初始化器（static init，官方 static.init）不是实例构造器，不能作为
+                    // A<T>() 等构造调用的候选，否则会干扰隐式默认构造器的解析。
+                    if (!declaration.status.isStatic) {
+                        constructors += declaration.symbol
+                    }
                 }
 
                 is CfirNamedFunction -> {

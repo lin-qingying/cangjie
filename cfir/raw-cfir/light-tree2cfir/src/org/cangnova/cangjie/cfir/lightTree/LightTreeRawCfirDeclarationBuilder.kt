@@ -332,7 +332,7 @@ class LightTreeRawCfirDeclarationBuilder(
                         val declarations = withDispatchReceiverType(symbol.rawDispatchReceiverType(typeParameters)) {
                             extractClassMembers(node).toMutableList().also { declarations ->
                                 addPrimaryConstructorParameterProperties(node, declarations)
-                                if (declarations.none { it is CfirConstructor }) {
+                                if (declarations.none { it is CfirConstructor && !it.status.isStatic }) {
                                     declarations.add(0, buildImplicitPrimaryConstructor(node))
                                 }
                             }
@@ -383,7 +383,7 @@ class LightTreeRawCfirDeclarationBuilder(
                         val declarations = withDispatchReceiverType(symbol.rawDispatchReceiverType(typeParameters)) {
                             extractClassMembers(node).toMutableList().also { declarations ->
                                 addPrimaryConstructorParameterProperties(node, declarations)
-                                if (declarations.none { it is CfirConstructor }) {
+                                if (declarations.none { it is CfirConstructor && !it.status.isStatic }) {
                                     declarations.add(0, buildImplicitPrimaryConstructor(node))
                                 }
                             }
@@ -411,7 +411,7 @@ class LightTreeRawCfirDeclarationBuilder(
                         val declarations = withDispatchReceiverType(symbol.rawDispatchReceiverType(typeParameters)) {
                             extractClassMembers(node).toMutableList().also { declarations ->
                                 addPrimaryConstructorParameterProperties(node, declarations)
-                                if (declarations.none { it is CfirConstructor }) {
+                                if (declarations.none { it is CfirConstructor && !it.status.isStatic }) {
                                     declarations.add(0, buildImplicitPrimaryConstructor(node))
                                 }
                                 val enumBody = tree.findChildByType(node, CjNodeTypes.ENUM_BODY)

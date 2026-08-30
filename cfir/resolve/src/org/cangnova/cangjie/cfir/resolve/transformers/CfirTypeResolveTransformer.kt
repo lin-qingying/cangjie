@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2026 LinQingYing. and contributors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -785,7 +785,7 @@ class CfirTypeResolveTransformer(
      * 该构造器在 TYPES 阶段获得 owner 类型作为返回类型，保证后续 low-level 阶段不会看到未完成声明头。
      */
     private fun ensureImplicitDefaultConstructorIfNeeded(klass: CfirClass) {
-        if (klass.declarations.any { it is CfirConstructor }) return
+        if (klass.declarations.any { it is CfirConstructor && !it.status.isStatic }) return
 
         val classImpl = klass as? CfirClassImpl ?: return
         // 隐式构造器同样必须携带真实 owner ClassId。后置声明元数据 checker 会从最终
