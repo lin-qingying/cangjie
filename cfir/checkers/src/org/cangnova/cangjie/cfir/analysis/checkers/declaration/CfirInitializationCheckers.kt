@@ -278,11 +278,10 @@ private class CfirInitializationFlowAnalyzer(
      * static 字段按声明顺序初始化，而实例字段在 static 初始化上下文中不可视为已初始化。
      */
     private fun checkClassLikeStaticMemberInitialization(classLike: CfirClassLikeDeclaration) {
-        // static 初始化上下文不初始化任何实例成员，只跟踪 static 字段自身的初始化顺序；
-        // 实例字段被剔除后不再进入 used-before-init / capture-before-init 判定（对实例成员的
-        // 访问由 reportStaticVariableNonStaticMemberAccesses 与 STATIC_LAMBDA 检查负责）。
+        // static 字段初始化按下声明顺序推进；实例字段仍被跟踪，以在初始化器直接读取它们
+        // 时报告 USED_BEFORE_INITIALIZATION（对齐 official CheckStaticVarAccessNonStatic + 
+        // InitializationChecker 对实例字段未初始化读取的语义）。
         val trackedFields = classLike.staticInitializerFieldInfos()
-            .filter { it.kind != TrackedVariableKind.INSTANCE_MEMBER }
         if (trackedFields.isEmpty()) return
 
         var state = InitializationState.empty().declareAll(
@@ -297,11 +296,15 @@ private class CfirInitializationFlowAnalyzer(
             val initializer = field.initializer
             if (initializer != null) {
                 reportStaticVariableNonStaticMemberAccesses(field, initializer)
-                // static 初始化上下文不初始化任何实例成员：其体内对实例成员的访问由
-                // reportStaticVariableNonStaticMemberAccesses（直接访问）与 STATIC_LAMBDA
-                // 检查（嵌套 lambda）负责，不应再套用实例成员初始化 context，否则嵌套
-                // lambda 访问 f/x 会误报 USED_BEFORE_INITIALIZATION / ILLEGAL_USAGE_OF_MEMBER。
-                state = analyzeExpression(initializer, state).markInitialized(field.symbol)
+                // static 字段初始化器不初始化任何实例成员：其体（收紧嵌套 lambda、预留
+                // 直接读取）内对实例成员的访问由 STATIC_VARIABLE / STATIC_LAMBDA 检查负责，
+                // 只在初始化器直接读取实例字段时报告 USED_BEFORE_INITIALIZATION；嵌套 lambda
+                // 内的实例成员访问不产生 illegal / capture 诊断。
+                state = analyzeExpression(
+                    initializer,
+                    state.withStaticFieldInitializerContext(),
+                ).withoutStaticFieldInitializerContext()
+                state = state.markInitialized(field.symbol)
             }
         }
     }
@@ -1191,6 +1194,18 @@ private class CfirInitializationFlowAnalyzer(
             )
             return state
         }
+
+        // static 字段初始化器中的嵌套 lambda 对实例字段的访问属于延迟执行，缺少"正在初始化的
+        // 实例"语义；由 STATIC_LAMBDA_CANNOT_ACCESS_NON_STATIC 检查负责，不报告
+        // USED/CAPTURE_BEFORE_INITIALIZATION（直接读取仍按未初始化实例字段报告 USED）。
+        if (
+            state.inStaticFieldInitializer &&
+            state.inNestedFunction &&
+            state.trackedVariable(symbol)?.kind == TrackedVariableKind.INSTANCE_MEMBER
+        ) {
+            return state
+        }
+
         if (!state.isTracked(symbol) || state.isInitialized(symbol)) return state
         if (state.shouldReportCaptureBeforeInitialization(symbol)) {
             reportCaptureBeforeInitialization(diagnosticName, source)
@@ -1991,6 +2006,15 @@ private data class InitializationState(
     val inNestedFunction: Boolean,
 
     /**
+     * 当前是否处于 static 字段初始化器求值上下文。
+     *
+     * static 初始化上下文不初始化任何实例成员，其体内（尤其嵌套 lambda）对实例成员的
+     * 访问由 `STATIC_VARIABLE/STATIC_LAMBDA_CANNOT_ACCESS_NON_STATIC` 检查负责，不产生
+     * 实例成员未初始化 / 捕获语义，因此需要单独标记以免复用实例成员初始化检查。
+     */
+    val inStaticFieldInitializer: Boolean,
+
+    /**
      * 当前所在的可重复执行区域深度，用于识别循环中的潜在重复初始化。
      */
     val repeatableDepth: Int,
@@ -2011,6 +2035,7 @@ private data class InitializationState(
             inMemberInitializer = false,
             memberInitializerOwner = null,
             inNestedFunction = false,
+            inStaticFieldInitializer = false,
             repeatableDepth = 0,
         )
     }
@@ -2182,6 +2207,18 @@ private data class InitializationState(
         if (!inMemberInitializer) this else copy(inMemberInitializer = false, memberInitializerOwner = null)
 
     /**
+     * 进入 static 字段初始化器求值上下文。
+     */
+    fun withStaticFieldInitializerContext(): InitializationState =
+        if (inStaticFieldInitializer) this else copy(inStaticFieldInitializer = true)
+
+    /**
+     * 离开 static 字段初始化器求值上下文。
+     */
+    fun withoutStaticFieldInitializerContext(): InitializationState =
+        if (!inStaticFieldInitializer) this else copy(inStaticFieldInitializer = false)
+
+    /**
      * 进入嵌套函数体上下文。
      */
     fun withNestedFunctionContext(): InitializationState =
@@ -2205,6 +2242,7 @@ private data class InitializationState(
             inMemberInitializer = inMemberInitializer && other.inMemberInitializer,
             memberInitializerOwner = commonMemberInitializerOwner(other),
             inNestedFunction = inNestedFunction && other.inNestedFunction,
+            inStaticFieldInitializer = inStaticFieldInitializer && other.inStaticFieldInitializer,
             repeatableDepth = minOf(repeatableDepth, other.repeatableDepth),
         )
     }
