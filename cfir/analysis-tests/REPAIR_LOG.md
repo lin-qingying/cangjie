@@ -1,5 +1,18 @@
 # CFIR LLT Repair Log
 
+## 无返回类型函数的 spawn 块内部 return 被误当作函数返回输入，导致 INCOMPATIBLE_FUNC_BODY_AND_RETURN_TYPE 与级联 NO_MATCH
+
+- problem type: 返回类型推断 / Resolve — 一个无显式返回类型的泛型函数（如 `func parallize<T>(initStatus: () -> T)`）体内以 `let f = spawn { … }` 结尾时，`spawn` 任务闭包内部的 `return` 被错误收集为外层函数的返回类型输入，使隐式返回类型推断把未绑定类型参数 `T` 与隐式 Unit 求公共父类型失败，误报 `INCOMPATIBLE_FUNC_BODY_AND_RETURN_TYPE`；由于该函数签名因此失效，调用点 `parallize<Int64>({=> 0})` 级联报 `NO_MATCH_FUNCTION_DECLARATION_FOR_CALL`。其它 spawn 夹具都在 `main(): Int64` 等显式返回类型里，不触发隐式推断，故只有 spawn5 暴露该缺陷。
+- root cause: `CfirDeclarationsResolveTransformer.collectReturnTypeInputsFromBody` 用 `CfirVisitorVoid` 遍历函数体收集「属于本函数」的 `return` 输入。该 visitor 已跳过 `visitNamedFunction` / `visitMainFunction` / `visitMacroDeclaration` / `visitAnonymousFunction` / `visitAnonymousFunctionExpression` 这些闭包边界，却漏掉了 `visitSpawnExpression`，于是向下递归进入 `spawn` 的任务块，把 spawn 闭包内部的 `return threadStatus` 当作外层函数的返回输入（类型为尚未绑定的 `T`）加入候选，与 Unit 尾合并失败。
+- official Cangjie evidence: `spawn { => … }` 启动独立任务，其闭包 `return` 返回的是该任务对应 `Future` 的值，不是外层函数的返回；外层函数以声明 `let f = spawn{…}` 结束时应推断为 `Unit`。官方对闭包边界的返回隔离从语言层面即为必然，CFIR 对匿名函数的隔离也印证该语义，spawn 属于同类边界。
+- Kotlin counterpart files consulted: 无需；修复与既有对匿名函数/lambda 边界的处理一致，只是补齐 spawn 这一漏网闭包容器。
+- CFIR owner files changed: `cfir/resolve/.../body/CfirDeclarationsResolveTransformer.kt` 的 `collectReturnTypeInputsFromBody` visitor 增加 `override fun visitSpawnExpression(...) = Unit`，与其它闭包边界一样不进入 spawn 任务块收集内部 return。
+- repair principle: 在「属于当前函数的返回类型输入」这一共享收集边界上，把 `spawn` 任务闭包视为与 lambda/匿名函数同级的独立作用域（其内部 return 属于任务函数，归 Future），补上漏掉的边界，而不是针对 spawn5 单夹具打补丁。
+- fixtures covered: `llt/Concurrency/spawn5.cj`（LLT 与 PSI 双路径）；同目录 `spawn1/2/3/4/6` 作为对照组保持原状态。
+- fixture correction: none。
+- verification command: full `.\gradlew.bat :cfir:analysis-tests:test`
+- verification outcome: `8422 tests, 832 failures, 307 skipped`，对照本任务开始时的提交基线（上一轮隐式默认构造器修复后）`8422 tests, 834 failures, 307 skipped` —— 恰好修复 `testSpawn5` 两个方法（LLT 与 PSI），new=0、无回归。残留 `testSpawn8`（ThreadContext 继承语义）属另一独立问题类型，未在本轮处理。
+
 ## class/struct 含 static init 时隐式默认构造器未被合成，跨包 A<Int64>() 报 NO_MATCH_FUNCTION_DECLARATION_FOR_CALL
 
 - problem type: Resolve — 一个没有显式实例构造器的泛型 class/struct（如 `class A<T> {}`）在包含 `static init()` 时，跨包 `A<Int64>()` 应解析为对隐式默认构造器的调用；当前报 `NO_MATCH_FUNCTION_DECLARATION_FOR_CALL`。不含 static init 的同类可正常解析。

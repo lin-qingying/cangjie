@@ -35,6 +35,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirResolvable
 import org.cangnova.cangjie.cfir.expressions.CfirReturnExpression
+import org.cangnova.cangjie.cfir.expressions.CfirSpawnExpression
 import org.cangnova.cangjie.cfir.expressions.CfirStatement
 import org.cangnova.cangjie.cfir.expressions.CfirWrappedExpression
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
@@ -1346,6 +1347,10 @@ dataFlowAnalyzer.enterFunction(constructor)
             override fun visitAnonymousFunction(anonymousFunction: CfirAnonymousFunction) = Unit
 
             override fun visitAnonymousFunctionExpression(anonymousFunctionExpression: CfirAnonymousFunctionExpression) = Unit
+
+            // spawn 块是独立的闭包边界：其内部 `return` 返回的是被 spawn 的任务函数的
+            // 返回值（对应 Future 的值），不应作为外层函数隐式返回类型的输入。
+            override fun visitSpawnExpression(spawnExpression: CfirSpawnExpression) = Unit
 
             override fun visitElement(element: CfirElement) {
                 element.acceptChildren(this, null)
