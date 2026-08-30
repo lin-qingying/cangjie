@@ -278,8 +278,6 @@ internal fun CfirDeclarationCollector<CfirBasedSymbol<*>>.collectClassMembers(cl
     for (declaration in classDeclaration.declarations) {
         when (declaration) {
             is CfirFunction -> {
-                if (declaration is CfirConstructor && declaration.status.isStatic) continue
-
                 val declaredFunction = declaration.symbol as? CfirFunctionSymbol<*> ?: continue
                 if (!declaredFunction.isCollectable()) continue
 
@@ -396,7 +394,6 @@ internal fun CfirDeclarationCollector<CfirBasedSymbol<*>>.collectExtendMembers(e
 
     for (declaration in extend.declarations) {
         if (declaration !is CfirFunction) continue
-        if (declaration is CfirConstructor && declaration.status.isStatic) continue
 
         val declaredFunction = declaration.symbol as? CfirFunctionSymbol<*> ?: continue
         if (!declaredFunction.isCollectable()) continue
@@ -849,7 +846,15 @@ internal object CfirRedeclarationPresenter {
             is CfirConstructorSymbol -> {
                 val ownerClassName = symbol.callableId.classId?.shortClassName ?: symbol.name
                 val constructor = symbol.cfir
-                constructorRepresentation(ownerClassName, constructor.valueParameters.map(CfirVariable::returnTypeRef))
+                // 静态初始化器 `static init()`（官方建模为 `static.init`）与普通构造器 `init`
+                // 语义不同：同签名不应互相冲突，只应与同签名静态初始化器冲突。因此用独立的
+                // static 前缀区分签名，避免把 `static init()` 与普通 `init()` 误判为重声明。
+                val ownerText = if (constructor.status.isStatic) {
+                    "static." + ownerClassName.asString()
+                } else {
+                    ownerClassName.asString()
+                }
+                constructorRepresentation(Name.identifier(ownerText), constructor.valueParameters.map(CfirVariable::returnTypeRef))
             }
 
             is CfirEnumConstructorSymbol -> {
