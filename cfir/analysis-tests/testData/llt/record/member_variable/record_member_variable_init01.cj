@@ -1,5 +1,5 @@
 
 
 struct A {
-    <!TYPE_UNINITIALIZED_STATIC_FIELD!>public static let a: Int64<!>
+    public static let <!TYPE_UNINITIALIZED_STATIC_FIELD!>a<!>: Int64
 }
