@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2026 LinQingYing. and contributors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -943,7 +943,7 @@ class PsiRawCfirBuilder(
                             val declarations = withDispatchReceiverType(symbol.rawDispatchReceiverType(typeParameters)) {
                                 convertClassMembers(psi).toMutableList().also { declarations ->
                                     addPrimaryConstructorParameterProperties(psi, declarations)
-                                    if (classKind != CfirClassKind.INTERFACE && declarations.none { it is CfirConstructor }) {
+                                    if (classKind != CfirClassKind.INTERFACE && declarations.none { it is CfirConstructor && !it.status.isStatic }) {
                                         declarations.add(0, buildImplicitPrimaryConstructor(psi))
                                     }
                                     if (psi is CjEnum) {
@@ -1001,7 +1001,7 @@ class PsiRawCfirBuilder(
                             val declarations = withDispatchReceiverType(symbol.rawDispatchReceiverType(typeParameters)) {
                                 convertClassMembers(psi).toMutableList().also { declarations ->
                                     addPrimaryConstructorParameterProperties(psi, declarations)
-                                    if (declarations.none { it is CfirConstructor }) {
+                                    if (declarations.none { it is CfirConstructor && !it.status.isStatic }) {
                                         declarations.add(0, buildImplicitPrimaryConstructor(psi))
                                     }
                                 }
@@ -1030,7 +1030,7 @@ class PsiRawCfirBuilder(
                             val declarations = withDispatchReceiverType(symbol.rawDispatchReceiverType(typeParameters)) {
                                 convertClassMembers(psi).toMutableList().also { declarations ->
                                     addPrimaryConstructorParameterProperties(psi, declarations)
-                                    if (declarations.none { it is CfirConstructor }) {
+                                    if (declarations.none { it is CfirConstructor && !it.status.isStatic }) {
                                         declarations.add(0, buildImplicitPrimaryConstructor(psi))
                                     }
                                     if (psi is CjEnum) {
