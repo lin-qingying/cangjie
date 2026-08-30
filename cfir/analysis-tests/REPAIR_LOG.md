@@ -4674,3 +4674,16 @@ ull (= skip this symbol without creating a Candidate); on Accessible / REPORT_AC
   * Extend 切片 A/B（PSI+非PSI，`--tests '...$Extend'`）：修复前与修复后均为 `870 tests completed, 32 failed`，且失败的 32 条完全一致（全是既有失败族：unbox pattern、generic upper-bound binary、default-impl prop、extend function/property conflict invalid 系列等），修复未改变 Extend 切片任一通过/失败状态 → 零新增回归。
   * 全量回归：修复前基线（REPAIR_LOG 上一条目）≈ `8422 tests completed, 844 failed, 307 skipped`；修复后同参 `.\gradlew.bat :cfir:analysis-tests:test` → `8422 tests completed, 842 failed, 307 skipped`。净减 2 = `testMain` 的 PSI+非PSI 两条；NEW REGRESSIONS = 0。
 
+## 2026-08-31：泛型 callable reference 参数形状预筛提前淘汰合法候选（instantiate_02.cj）
+
+- problem type: Resolve / Generics / Callable Reference —— `test<A>` 赋值给 `(A, Int64) -> Unit` 时，带 `where T <: I` 的泛型候选应在显式类型实参已给出后继续参与 callable-reference 约束求解；LLT 与 LLT-PSI 原先均错误报告 `NO_MATCH_FUNCTION_DECLARATION_FOR_REF`。
+- root cause: `CfirCallableReferenceCandidateCompatibility.hasCompatibleCallableReferenceParameterShape` 在完整 callable-reference 约束系统完成前执行参数形状预筛。泛型候选经过 substitutor 后仍包含未固定的 `ConeTypeVariableType`，旧逻辑立即将其送入确定性 subtype 判断并把合法候选判为不兼容，导致后续 expected-type stage 无候选可收敛。
+- official Cangjie evidence: official `cjc 1.0.5` 编译 `cfir/analysis-tests/testData/llt/generics/instantiate_02.cj` 无诊断；其中 `test<A>` 对 `(A, Int64) -> Unit` 的 callable reference 是合法用法。该结论与仓库中 generic instantiation / callable-reference 的约束式解析模型一致，fixture 不应修改。
+- Kotlin counterpart files consulted: `external/kotlin/compiler/fir/resolve/src/org/jetbrains/kotlin/fir/resolve/calls/stages/CheckCallableReferenceExpectedType.kt`（callable-reference expected-type 的延迟约束与 type-variable-aware 处理）；`external/kotlin/compiler/fir/resolve/src/org/jetbrains/kotlin/fir/resolve/calls/overloads/ConeOverloadConflictResolver.kt`（callable reference 重载选择不因泛型候选提前区分）。
+- CFIR owner file changed: `cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/candidate/CfirCallableReferenceCandidateCompatibility.kt` —— 参数形状预筛遇到仍含 `ConeTypeVariableType` 的替换类型时延迟判定，交由后续 callable-reference expected-type / constraint stage 最终收敛或淘汰。
+- repair principle: 预筛只拒绝已经确定不兼容的参数类型；未固定的泛型类型变量必须保留到共享 callable-reference 约束系统，避免把推断中间态误当成失败。
+- fixtures covered: `cfir/analysis-tests/testData/llt/generics/instantiate_02.cj`，覆盖 `CfirAnalysisLLTTestGenerated.testInstantiate02` 与 `CfirAnalysisLLTPsiTestGenerated.testInstantiate02` 两条入口。
+- fixture correction: none。
+- verification commands and outcome:
+  * Generics 双路径回归：`.\gradlew.bat :cfir:analysis-tests:test --tests '*CfirAnalysisLLTTestGenerated$Generics*' --tests '*CfirAnalysisLLTPsiTestGenerated$Generics*' --console=plain` → `678 tests completed, 44 failed`；目标 `testInstantiate02` 的 LLT/LLT-PSI 两条测试均通过，剩余失败为既有 Generics 失败族。
+  * 全量回归：`.\gradlew.bat :cfir:analysis-tests:test --console=plain` → `8422 tests completed, 824 failed, 307 skipped`，fresh XML `errors=0`。修复前基线为 `8422 tests / 826 failed / 307 skipped`；按 `(suite, testcase)` 对比 FIXED=2（上述 LLT 与 LLT-PSI 两条 `testInstantiate02`）、ADDED-regressions=0，净减少 2 个失败，测试总数与 skipped 数不变。
