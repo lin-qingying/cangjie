@@ -173,6 +173,7 @@ internal object ArgumentCheckingProcessor {
     private data class NestedCallResolutionResult(
         val atom: ConeResolutionAtom,
         val failed: Boolean = false,
+        val suppressOuterMismatch: Boolean = false,
     )
 
     /**
@@ -355,6 +356,9 @@ internal object ArgumentCheckingProcessor {
             return
         }
         val nestedCallResult = resolveNestedCallForExpectedType(atom)
+        // 嵌套泛型调用推断失败：内层 UNABLE_TO_INFER_GENERIC_FUNC 已由 write back 节点渲染，
+        // 外层直接跳过 subtype 检查，避免对同一实参追加 ARGUMENT_TYPE_MISMATCH 级联。
+        if (nestedCallResult.suppressOuterMismatch) return
         val resolvedAtom = nestedCallResult.atom
         val targetTypedEnumType = expectedType?.let { expected ->
             resolvedAtom.expression.applyNoArgEnumConstructorTargetType(expected, session)
@@ -514,7 +518,14 @@ internal object ArgumentCheckingProcessor {
              */
             if (resolvedCall.isNestedGenericInferenceFailure(resolvedCandidate)) {
                 candidate.setUpdatedArgumentFromContextSensitiveResolution(functionCall, resolvedCall)
-                return NestedCallResolutionResult(atom, failed = true)
+                /*
+                 * 内层泛型调用推断失败（约束矛盾/信息不足）的根诊断 UNABLE_TO_INFER_GENERIC_FUNC
+                 * 已由 write back 的调用节点在共享映射层渲染，且锚定内层 callee。外层不得再对同一
+                 * 实参报 ARGUMENT_TYPE_MISMATCH，否则会制造官方不存在的级联（如 returnTypeInferenceMismatch
+                 * 的 expectInt(produce(true))）。这里把「该外层参数已完成诊断、需要抑制 mismatch」的信号
+                 * 传回 resolvePlainExpressionArgument，使其跳过 subtype 检查。
+                 */
+                return NestedCallResolutionResult(atom, failed = true, suppressOuterMismatch = true)
             }
             candidate.addDiagnostic(ErrorTypeInArguments)
             return NestedCallResolutionResult(atom, failed = true)

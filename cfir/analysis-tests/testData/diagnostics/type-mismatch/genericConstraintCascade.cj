@@ -4,6 +4,6 @@ func pair<T>(left: T, right: T): T {
 }
 
 main(): Unit {
-    let _: Int64 = <!NEW_INFERENCE_ERROR!>pair<!>(1, "oops")
+    let _: Int64 = <!UNABLE_TO_INFER_GENERIC_FUNC!>pair<!>(1, "oops")
 
 }
