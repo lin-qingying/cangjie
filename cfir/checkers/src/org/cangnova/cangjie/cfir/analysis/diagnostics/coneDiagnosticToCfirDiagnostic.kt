@@ -3494,9 +3494,19 @@ private fun CjSourceElement.firstCharacterDiagnosticSource(): CjOffsetsOnlySourc
  */
 private fun CjSourceElement.receiverTokenDiagnosticSource(): AbstractCjSourceElement {
     val receiverPsi = when (val sourcePsi = psi) {
-        is CjQualifiedExpression -> sourcePsi.receiverExpression
-        is CjCallExpression -> (sourcePsi.calleeExpression as? CjQualifiedExpression)?.receiverExpression
-        is CjBinaryExpression -> (sourcePsi.left as? CjQualifiedExpression)?.receiverExpression
+        is CjConstructorCalleeExpression -> sourcePsi.constructorReferenceExpression?.referencedNameElement
+        is CjQualifiedExpression -> sourcePsi.receiverExpression.receiverNameElementOrNull()
+            ?: sourcePsi.receiverExpression
+        is CjCallExpression -> when (val calleeExpression = sourcePsi.calleeExpression) {
+            is CjConstructorCalleeExpression -> calleeExpression.constructorReferenceExpression?.referencedNameElement
+            is CjSimpleNameExpression -> calleeExpression.referencedNameElement
+            is CjQualifiedExpression -> calleeExpression.receiverExpression
+            else -> null
+        }
+        is CjBinaryExpression -> (sourcePsi.left as? CjQualifiedExpression)?.let { qualifiedExpression ->
+            qualifiedExpression.receiverExpression.receiverNameElementOrNull()
+                ?: qualifiedExpression.receiverExpression
+        }
         else -> null
     }
     if (receiverPsi != null) return receiverPsi.toCjPsiSourceElement()
@@ -3513,6 +3523,17 @@ private fun CjSourceElement.receiverTokenDiagnosticSource(): AbstractCjSourceEle
         startOffset + tokenStart,
         (startOffset + tokenEnd).coerceAtMost(endOffset),
     )
+}
+
+/** 从调用 receiver 中提取名称 token，避免范围覆盖类型实参和实参列表。 */
+private fun CjExpression.receiverNameElementOrNull(): PsiElement? = when (this) {
+    is CjConstructorCalleeExpression -> constructorReferenceExpression?.referencedNameElement
+    is CjCallExpression -> when (val calleeExpression = calleeExpression) {
+        is CjConstructorCalleeExpression -> calleeExpression.constructorReferenceExpression?.referencedNameElement
+        is CjSimpleNameExpression -> calleeExpression.referencedNameElement
+        else -> null
+    }
+    else -> null
 }
 
 /**

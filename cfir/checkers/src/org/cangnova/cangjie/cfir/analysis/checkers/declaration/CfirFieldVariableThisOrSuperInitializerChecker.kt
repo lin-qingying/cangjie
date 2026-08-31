@@ -442,9 +442,20 @@ private class ConstructorMemberAccessBeforeInitializationVisitor(
             else -> return
         }
 
-        if (target is CfirValueParameter && target.shouldReportUninitializedMemberParameterAccess()) {
+        val memberParameter = when (target) {
+            is CfirValueParameter -> target
+            else -> constructor?.valueParameters?.firstOrNull { parameter ->
+                parameter.correspondingProperty === target
+            }
+        }
+        val shadowingParameter = memberParameter?.takeIf {
+            it.shouldReportUninitializedMemberParameterAccess()
+        } ?: constructor?.valueParameters?.firstOrNull { parameter ->
+            parameter.name.asString() == name && parameter.shouldReportUninitializedMemberParameterAccess()
+        }
+        if (shadowingParameter != null) {
             reportIllegalMemberAccess(expression, name)
-            reportCaptureHasShadowVariable(expression, target)
+            reportCaptureHasShadowVariable(expression, shadowingParameter)
             return
         }
 

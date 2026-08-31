@@ -2425,6 +2425,10 @@ class CfirCallResolver(
             null
         }
         val functionReferenceTargetDiagnostic = functionReferenceTargetDiagnostic(callInfo, candidates)
+        val allExcludedCallablesAreConstructors = callableLookupOutcomes.isNotEmpty() &&
+                callableLookupOutcomes.all { outcome ->
+                    outcome.symbol.takeIf { it.isBound }?.cfir is CfirConstructor
+                }
 
         // 根据期望的调用种类生成诊断
         val diagnostic = when {
@@ -2508,6 +2512,9 @@ class CfirCallResolver(
                     receiver.enumConstructorMemberOnValueReceiver(name)
                 }
                 when {
+                    allExcludedCallablesAreConstructors && callInfo.callKind == CallKind.Function ->
+                        ConeNoConstructorError
+
                     callableLookupOutcomes.isNotEmpty() && operatorToken == null ->
                         ConeNoMatchingFunctionCallError(name)
 

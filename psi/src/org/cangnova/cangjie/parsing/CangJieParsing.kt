@@ -3518,7 +3518,13 @@ class CangJieParsing private constructor(
         builder.disableJoiningComplexTokens()
         // 类型参数
         if (at(LPAR)) {
-            parsePrimaryInitFuncValueParameterList()
+            // 主构造器与次构造器一样，先完整保留所有参数列表。
+            // 多参数列表虽然随后会被语义阶段判定为非法柯里化，但不能在
+            // 解析阶段把第二个列表误当成函数体恢复内容，否则 constructor
+            // checker 无法看到官方 AST 中的完整 FuncBody.paramLists。
+            do {
+                parsePrimaryInitFuncValueParameterList()
+            } while (at(LPAR))
         } else {
             // error("Expecting '(' ")  // 应该为'('
             errorAndAdvance(
