@@ -6,7 +6,7 @@ open class C1 {
 }
 
 class C2 <: C1 {
-    <!EXPLICIT_SUPER_CALL_REQUIRED!>public init()<!> {
+    public <!NO_NON_PARAM_CONSTRUCTOR_IN_SUPER_CLASS!>init<!>() {
     }
 }
 

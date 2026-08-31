@@ -150,14 +150,9 @@ object CfirConstructorDelegationChecker : CfirConstructorChecker() {
             .filter { constructor -> constructor.requiredParameterCount() == 0 }
         if (implicitSuperConstructors.any { constructor -> constructor.isVisibleForImplicitSuperCall() }) return
 
-        if (implicitSuperConstructors.isNotEmpty()) {
-            reporter.reportOn(
-                source = declaration.constructorNameDiagnosticSource()?.firstCharacterDiagnosticSource(),
-                factory = CfirErrors.NO_MATCH_FUNCTION_DECLARATION_FOR_CALL,
-            )
-            return
-        }
-
+        // 无论父类没有无参构造器，还是只有当前上下文不可访问的无参构造器，
+        // 隐式 super() 都属于“父类没有可用的非参数构造器”语义。只有显式
+        // super(...) 才进入普通调用解析并报告 NO_MATCH_FUNCTION_DECLARATION_FOR_CALL。
         reporter.reportOn(
             source = declaration.implicitPrimaryConstructorOwner(context)?.classLikeNameDiagnosticSource()
                 ?: declaration.constructorNameDiagnosticSource(),
