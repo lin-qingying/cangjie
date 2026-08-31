@@ -1113,7 +1113,11 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                             continue
                         }
 
+                        val cannotOverride = classDecl?.let {
+                            ownInfo.canNotOverride(superInfo, it, context)
+                        } == true
                         if (classDecl != null &&
+                            !cannotOverride &&
                             !ownInfo.isOverride &&
                             !ownInfo.isRedef &&
                             returnTypeConflict == null &&
@@ -1138,7 +1142,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                             )
                         }
 
-                        if (classDecl != null && ownInfo.canNotOverride(superInfo, classDecl, context)) {
+                        if (cannotOverride) {
                             val key = ownInfo.overrideDiagnosticKey(superInfo)
                             if (reportedCannotOverrides.add(key)) {
                                 reporter.reportOn(
