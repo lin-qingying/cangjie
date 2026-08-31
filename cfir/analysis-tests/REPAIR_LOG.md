@@ -4795,3 +4795,25 @@ esolveDelegatingConstructorCallAndSelectCandidate);
   * Class 切片：`.\gradlew.bat :cfir:analysis-tests:test --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTTestGenerated$Class*' --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTPsiTestGenerated$Class*' --no-daemon --max-workers=1 --console=plain` → `944 tests completed, 10 failed, 0 errors, 0 skipped`；目标 ShadowParent 两条均通过，10 条为修复前已存在的接口默认实现/构造器失败。
   * 全量：`.\gradlew.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain` → `8422 tests completed, 814 failed, 307 skipped`，`errors=0`；新鲜 XML 为 `8423 records / 814 failures / 0 errors / 308 skipped / 7301 passed`。
   * 修复前全量基线：`8422 tests completed, 816 failed, 307 skipped`；以修复前独立 HTML 的 816 个失败键与本次新鲜 XML 的 `(suite, testcase)` 键比较，`FIXED=2`（LLT/LLT-PSI 的 `ShadowParent.testFail`），`ADDED=0`，`REGRESSED=0`。测试总数、errors 和 skipped 数不变，净减少 2 个失败。
+
+## 2026-08-31：Constructor 参数列表、构造器诊断与成员参数遮蔽
+
+- problem type: Constructor / Diagnostics / Initialization —— 构造器多参数列表未保留并缺少 `CANNOT_CURRYING`，不可见构造器候选可能渲染为普通调用不匹配；构造器参数对应的成员属性遮蔽访问也可能漏报非法成员访问与捕获遮蔽诊断。Record 的同包多文件用例还需要把实际直接依赖源加入同一测试编译单元。
+- root cause: PSI 主构造器解析阶段只保留首个参数列表，语义 checker 因而无法观察官方语法结构；构造器候选收集在不可见候选全部被排除后没有统一归一到构造器专属诊断；成员参数与对应属性在初始化前访问时，visitor 只按解析出的 symbol 类型判断，未统一回到构造器参数的遮蔽模型；目录型 LLT 测试 provider 需要补充同包直接依赖，但不能把同目录独立 fixture 全部合并。
+- official Cangjie evidence: `external/cangjie_compiler/src/Sema/TypeChecker.cpp:1315`、`:1622` 的构造器检查保留多参数列表并报告非法柯里化；`external/cangjie_compiler/include/cangjie/Basic/DiagnosticSema.def:31` 定义对应诊断。官方构造器候选解析区分不可见构造器与普通函数调用，构造器不存在可用候选时使用构造器专属诊断；等价用例经官方 `cjc 1.0.5` 验证。
+- Kotlin counterpart files consulted: `external/kotlin/compiler/fir/analysis/checkers/declaration/FirCommonConstructorDelegationIssuesChecker.kt` 与构造器调用候选处理路径，仅用于检查器分层和候选阶段设计参照；Cangjie 诊断语义以官方 `cjc` 和上游实现为准。
+- CFIR owner files changed:
+  * `cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirConstructorDelegationChecker.kt`：统一检查构造器多参数列表和隐式/显式委托诊断。
+  * `psi/src/org/cangnova/cangjie/parsing/CangJieParsing.kt`：主构造器保留全部参数列表，交由语义阶段检查。
+  * `cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirCallResolver.kt`：不可见构造器候选全部排除时归一为构造器诊断。
+  * `cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/diagnostics/coneDiagnosticToCfirDiagnostic.kt`：构造器及调用诊断范围收窄到名称 token。
+  * `cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirFieldVariableThisOrSuperInitializerChecker.kt`：统一构造器参数与成员属性遮蔽访问。
+  * `cfir/analysis-tests/testFixtures/org/cangnova/cangjie/cfir/analysis/tests/services/LltCompanionSourceFilesProvider.kt`：仅按 package、直接标识符依赖和测试目录约定补充同包源，避免合并独立 fixture。
+- repair principle: 构造器语法信息必须完整进入共享语义检查；构造器候选必须先经过可见性筛选再选择专属诊断；参数/成员遮蔽必须按统一声明模型判定；测试编译单元只收集确定的直接依赖，不以 fixture 名称或预期输出打补丁。
+- fixtures covered: Class/Record Constructor、CannotCurrying、PrimaryConstructor、跨包构造器及 Record `pkg02` 同包多文件用例，均覆盖 CfirAnalysisLLTTestGenerated 与 CfirAnalysisLLTPsiTestGenerated。
+- fixture correction: none。
+- verification commands and outcome:
+  * Constructor 定向双路径：68 tests，`0 failures / 0 errors / 0 skipped`。
+  * 修复前独立 HEAD 基线：`8423 records / 814 failures / 0 errors / 308 skipped / 7301 passed`。
+  * 修复后全量 `:cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain`：Gradle 控制台为 `8422 tests completed, 798 failed, 307 skipped`；新鲜 XML 聚合为 `8423 records / 798 failures / 0 errors / 308 skipped / 7317 passed`。
+  * 按 `(suite, testcase)` 对比：`FIXED=16`、`REGRESSED=0`、`NEW_KEYS=0`、`REMOVED_KEYS=0`；16 条修复全部属于 Constructor，净减少 16 个失败。全量仓库仍有 798 条既有失败，不能称为全量全绿。

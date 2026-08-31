@@ -171,10 +171,37 @@ class LltCompanionSourceFilesProvider(
         if (testDataFile.isPackageCompanionFile()) return emptyList()
 
         val directory = testDataFile.parentFile ?: return emptyList()
+        val testDataText = testDataFile.readText()
+        val packageName = PACKAGE_DIRECTIVE.find(testDataText)?.groupValues?.get(1)
+        val referencedNames = IDENTIFIER.findAll(testDataText)
+            .mapTo(mutableSetOf()) { it.value }
+        // `// FILE:` 聚合源已经由虚拟 companion 逻辑拆分，不能再把同目录下的
+        // 其他聚合测试作为物理源加入当前编译单元，否则会重复声明同名包成员。
+        val samePackageFiles = packageName
+            ?.takeIf { currentPackageName ->
+                directory.name == currentPackageName.substringAfterLast('.') &&
+                        !FILE_DIRECTIVE.containsMatchIn(testDataText)
+            }
+            ?.let { currentPackageName ->
+                directory.listFiles().orEmpty()
+                    .asSequence()
+                    .filter { it.isFile && it.extension == "cj" }
+                    .filter { !it.isSameNormalizedFile(testDataFile) }
+                    .filter { file ->
+                        val fileText = file.readText()
+                        PACKAGE_DIRECTIVE.find(fileText)?.groupValues?.get(1) == currentPackageName &&
+                                !FILE_DIRECTIVE.containsMatchIn(fileText) &&
+                                TOP_LEVEL_DECLARATION.findAll(fileText).any { declaration ->
+                                    declaration.groupValues[1] in referencedNames
+                                }
+                    }
+                    .toList()
+            }.orEmpty()
         val sameNamePackageFile = directory.resolve("${testDataFile.nameWithoutExtension}.pkg.cj")
         val packageFile = directory.resolve("pkg.cj")
-        return listOf(sameNamePackageFile, packageFile)
+        return (samePackageFiles + sameNamePackageFile + packageFile)
             .filter { it.isFile && !it.isSameNormalizedFile(testDataFile) }
+            .distinctBy { it.normalizedAbsolutePath() }
             .sortedBy { it.name }
     }
 
@@ -401,5 +428,16 @@ class LltCompanionSourceFilesProvider(
          * 匹配官方多文件测试中的 `// FILE:` 指令。
          */
         private val FILE_DIRECTIVE = Regex("""(?m)^\s*//\s*FILE:\s*(.+)$""")
+
+        /** 匹配源文件顶层 package 声明，用于同包源文件的编译单元归并。 */
+        private val PACKAGE_DIRECTIVE = Regex("""(?m)^[ \t]*package[ \t]+([A-Za-z_][A-Za-z0-9_.]*)[ \t]*$""")
+
+        /** 匹配同包源文件暴露的顶层声明名，用于构造直接依赖集合。 */
+        private val TOP_LEVEL_DECLARATION = Regex(
+            """(?m)^[ \t]*(?:(?:public|private|internal|protected|open|abstract|sealed|static|const|unsafe|mut|override|redef)[ \t]+)*(?:class|struct|interface|enum|func|let|var|const|typealias)[ \t]+([A-Za-z_][A-Za-z0-9_]*)"""
+        )
+
+        /** 匹配源文本中的标识符，供同包直接依赖筛选使用。 */
+        private val IDENTIFIER = Regex("""[A-Za-z_][A-Za-z0-9_]*""")
     }
 }

@@ -9,6 +9,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirInterface
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
+import org.cangnova.cangjie.cfir.declarations.functionBodyDiagnosticData
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
@@ -33,6 +34,8 @@ import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
 import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
 import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.name.ClassId
+import org.cangnova.cangjie.source.AbstractCjSourceElement
+import org.cangnova.cangjie.source.CjOffsetsOnlySourceElement
 
 /**
  * 对齐 Kotlin FIR 的 constructor delegation issues checker 思路：
@@ -53,6 +56,7 @@ object CfirConstructorDelegationChecker : CfirConstructorChecker() {
         val body = declaration.body
 
         declaration.checkMultiplePrimaryConstructors(owner)
+        declaration.checkCurriedConstructor()
 
         val delegationCalls = body?.collectDelegationCalls().orEmpty()
         val firstStatementDelegation = body?.statements?.firstOrNull().asDelegationCallOrNull()
@@ -105,6 +109,34 @@ object CfirConstructorDelegationChecker : CfirConstructorChecker() {
                 }
             }
         }
+    }
+
+    /**
+     * 检查构造器不能使用多个参数列表。
+     *
+     * 官方 `TypeChecker::CheckConstructor` 与
+     * `CheckPrimaryCtorForClassOrStruct` 都把首个参数列表作为非法柯里化形态的
+     * 诊断位置。CFIR 的真实构造器签名仍由首个参数列表建立，额外列表只保留在
+     * raw 阶段的诊断元数据中，因此这里统一由构造器 checker 报告。
+     */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun CfirConstructor.checkCurriedConstructor() {
+        val parameterLists = attributes.functionBodyDiagnosticData?.valueParameterLists.orEmpty()
+        if (parameterLists.size <= 1) return
+
+        reporter.reportOn(
+            source = parameterLists.first().source.leftParenthesisSource(),
+            factory = CfirErrors.CANNOT_CURRYING,
+            a = "constructor",
+        )
+    }
+
+    /** 将参数列表源码范围收窄到首个左括号，保持构造器与其他函数体声明一致。 */
+    private fun AbstractCjSourceElement.leftParenthesisSource(): CjOffsetsOnlySourceElement {
+        return CjOffsetsOnlySourceElement(
+            startOffset = startOffset,
+            endOffset = minOf(startOffset + 1, endOffset),
+        )
     }
 
     /**
