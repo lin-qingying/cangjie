@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CFIR analysis-tests 全量测试结果 - ShadowParent</title>
+  <style>
+    :root { color-scheme: light; }
+    body { margin: 2rem auto; max-width: 60rem; padding: 0 1rem; color: #1f2937; background: #f8fafc; font-family: "Segoe UI", "Microsoft YaHei", sans-serif; }
+    h1 { margin-bottom: .35rem; }
+    .muted { color: #64748b; }
+    .cards { display: flex; flex-wrap: wrap; gap: 1rem; margin: 1.25rem 0; }
+    .card { min-width: 8rem; padding: 1rem 1.4rem; background: white; border: 1px solid #e2e8f0; border-radius: 8px; }
+    .value { font-size: 1.65rem; font-weight: 700; }
+    .failed { color: #b91c1c; }
+    .skipped { color: #92400e; }
+    .passed, .fixed { color: #166534; }
+    section { margin: 1rem 0; padding: 1rem; background: white; border: 1px solid #e2e8f0; border-radius: 8px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: .55rem .65rem; border-bottom: 1px solid #e2e8f0; text-align: left; vertical-align: top; }
+    th { background: #f1f5f9; }
+    code { overflow-wrap: anywhere; }
+    a { color: #2563eb; }
+  </style>
+</head>
+<body>
+  <h1>CFIR analysis-tests 全量测试结果</h1>
+  <p class="muted">ShadowParent 修复后 · 2026-08-31 · Windows / JDK 17</p>
+  <p class="muted">命令：<code>.\gradlew.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain</code></p>
+
+  <div class="cards">
+    <div class="card"><div class="value">8422</div><div>Gradle tests</div></div>
+    <div class="card"><div class="value passed">7301</div><div>passed</div></div>
+    <div class="card"><div class="value failed">814</div><div>failed</div></div>
+    <div class="card"><div class="value skipped">307</div><div>skipped</div></div>
+    <div class="card"><div class="value fixed">2</div><div>本次修复</div></div>
+  </div>
+
+  <section>
+    <h2>修复前后全量对比</h2>
+    <table>
+      <thead><tr><th>指标</th><th>修复前基线</th><th>修复后</th><th>变化</th></tr></thead>
+      <tbody>
+        <tr><td>Gradle tests</td><td>8422</td><td>8422</td><td>0</td></tr>
+        <tr><td>failed</td><td>816</td><td>814</td><td class="fixed">-2</td></tr>
+        <tr><td>errors</td><td>0</td><td>0</td><td>0</td></tr>
+        <tr><td>skipped</td><td>307</td><td>307</td><td>0</td></tr>
+        <tr><td>新增失败键</td><td>—</td><td>0</td><td class="fixed">无回归</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>本次修复用例</h2>
+    <table>
+      <thead><tr><th>测试入口</th><th>结果</th></tr></thead>
+      <tbody>
+        <tr><td><code>CfirAnalysisLLTTestGenerated$Class$ShadowParent.testFail()</code></td><td class="fixed">PASS</td></tr>
+        <tr><td><code>CfirAnalysisLLTPsiTestGenerated$Class$ShadowParent.testFail()</code></td><td class="fixed">PASS</td></tr>
+      </tbody>
+    </table>
+    <p>新鲜 XML 聚合：8423 条 testcase 记录、814 failed、0 errors、308 skipped、7301 passed。XML 比 Gradle 有效测试计数多 1 条聚合记录。</p>
+  </section>
+
+  <section>
+    <h2>完整明细</h2>
+    <p><a href="cfir/analysis-tests/build/reports/tests/test/index.html">打开 Gradle 原生全量 HTML 报告</a></p>
+    <p class="muted">剩余失败为修复前已存在的失败集合；本次按 (suite, testcase) 逐键比较，FIXED=2，ADDED=0。</p>
+  </section>
+</body>
+</html>
