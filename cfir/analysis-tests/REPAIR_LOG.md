@@ -4765,3 +4765,18 @@ esolveDelegatingConstructorCallAndSelectCandidate);
   * SuperThis 全族、`This.testErrCapture00` 及相关初始化/捕获守卫共 42 条测试 → 全部通过；Class/Record PSI + LightTree 切片为 `1210 tests / 61 failed / 0 errors`，清洁 HEAD 同切片为 `1210 / 65 failed`。
   * 全量：`.\gradlew.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain` → `8422 tests completed, 818 failed, 0 errors, 307 skipped`。
   * 清洁 HEAD 全量基线：`8422 tests completed, 824 failed, 0 errors, 307 skipped`。按新鲜 XML 的 `(suite, testcase)` key 对比：`FIXED=6`（LLT/LLT-PSI 的 `testSuperThis09`、`testSuperThis12` 与 `This.testErrCapture00`），`REGRESSED=0`，`NEW_KEYS=0`，`REMOVED_KEYS=0`；测试总数、错误数和跳过数不变。
+
+## 2026-08-31：隐式 super() 对不可访问父类无参构造器的诊断归一（Constructor）
+
+- problem type: Constructor Delegation / Diagnostics —— class 构造器没有显式 `this(...)` 或 `super(...)` 时，编译器合成的隐式 `super()` 若不存在可访问的非参数父类构造器，应报告 `NO_NON_PARAM_CONSTRUCTOR_IN_SUPER_CLASS`；不能把“存在但不可访问的无参构造器”误当作普通调用不匹配。
+- root cause: `CfirConstructorDelegationChecker.checkImplicitSuperRequirement` 在父类存在 required-parameter-count 为 0 的构造器、但这些构造器对当前上下文不可见时，提前走 `NO_MATCH_FUNCTION_DECLARATION_FOR_CALL`；这混淆了隐式合成 `super()` 的“无可用非参数构造器”语义与显式 `super(...)` 的普通候选解析语义。
+- official Cangjie evidence: `external/cangjie_compiler/src/Sema/TypeChecker.cpp:1517-1577` 的 `HasNonParamCtorForClass` 将 private 无参构造器排除在隐式可用构造器之外；`CheckConstructorSuper` 对 compiler-added、无实参的 `super()` 统一报告 `sema_no_non_param_constructor_in_super_class`。`external/cangjie_compiler/include/cangjie/Basic/DiagRefactor/DiagnosticSema.def:131-133` 定义了该官方诊断。官方 `cjc 1.0.5` 对本族用例确认：父类只有 private 无参构造器，或只有当前包不可见的无参构造器时，子类缺失显式委托均应报告该诊断；显式 `super(...)` 仍走普通调用匹配。
+- Kotlin counterpart files consulted: `external/kotlin/compiler/fir/analysis/checkers/declaration/FirCommonConstructorDelegationIssuesChecker.kt`（把未能解析的隐式父类委托作为构造器委托专属检查处理）与 `external/kotlin/compiler/fir/resolve/src/org/jetbrains/kotlin/fir/resolve/calls/FirCallResolver.kt:689-718`（构造器委托进入专用解析入口）。Kotlin 仅作为构造器委托检查/解析分层的架构参照，诊断语义以官方 Cangjie 为准。
+- CFIR owner file changed: `cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirConstructorDelegationChecker.kt` —— 隐式 `super()` 先收集无默认必需参数的父类构造器，再统一按当前上下文判断可见性；没有可见候选时报告 `NO_NON_PARAM_CONSTRUCTOR_IN_SUPER_CLASS`，不再分支为 `NO_MATCH_FUNCTION_DECLARATION_FOR_CALL`。显式委托仍保留普通调用解析路径。
+- repair principle: 只有显式构造器委托才使用普通调用候选失败诊断；编译器合成的隐式 `super()` 必须由共享构造器委托检查器依据“可访问的非参数构造器”这一语义条件统一归类。
+- fixtures covered: `llt/class/constructor/compiler_add_calling_constructor_invalid_1.cj`、`llt/class/call_private_ctor_in_other_package/main.cj`；两条夹具均覆盖 CfirAnalysisLLTTestGenerated 与 CfirAnalysisLLTPsiTestGenerated 的 LightTree/PSI 入口。
+- fixture correction: 根据官方 `cjc` 与上游 TypeChecker 语义，将两个隐式委托位置的旧 `EXPLICIT_SUPER_CALL_REQUIRED` / `NO_MATCH_FUNCTION_DECLARATION_FOR_CALL` 期望修正为 `NO_NON_PARAM_CONSTRUCTOR_IN_SUPER_CLASS`；源代码与语法未改动。
+- verification commands and outcome:
+  * Constructor 目标及同语义跨包用例双路径共 4 条 → 全部通过；新鲜 XML 中 `testCompilerAddCallingConstructorInvalid1`、`testMain`（`CallPrivateCtorInOtherPackage`）的 LLT/LLT-PSI 套件均为 `failures=0, errors=0`。
+  * 全量：`.\gradlew.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain` → `8422 tests completed, 816 failed, 307 skipped`，`errors=0`。
+  * 修复前全量基线：`8422 tests completed, 818 failed, 307 skipped`；按新鲜 XML 的 `(suite, testcase)` key 对比，Constructor 本次净减少 2 个失败，`REGRESSED=0`。其中 `testCompilerAddCallingConstructorInvalid1` 的 LLT/LLT-PSI 两条失败被修复；`CallPrivateCtorInOtherPackage.testMain` 的 LLT/LLT-PSI 旧期望同步为官方诊断并保持通过，因此对全量失败数为净平衡。测试总数与 skipped 数不变，全量剩余失败均为既有失败集合。

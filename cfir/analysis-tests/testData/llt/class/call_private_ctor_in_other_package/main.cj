@@ -14,9 +14,9 @@ public open class Foo {
 internal import pkg.*
 
 class Bar <: Foo {
-    <!NO_MATCH_FUNCTION_DECLARATION_FOR_CALL!>i<!>nit() {
+    <!NO_NON_PARAM_CONSTRUCTOR_IN_SUPER_CLASS!>init<!>() {
     }
-    <!NO_MATCH_FUNCTION_DECLARATION_FOR_CALL!>i<!>nit(a: Int64) {
+    <!NO_NON_PARAM_CONSTRUCTOR_IN_SUPER_CLASS!>init<!>(a: Int64) {
         let aNew = 1
     }
 }
