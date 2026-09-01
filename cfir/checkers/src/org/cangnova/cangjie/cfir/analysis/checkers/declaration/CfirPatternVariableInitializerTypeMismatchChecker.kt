@@ -2,6 +2,7 @@ package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.checkTargetTypedExpression
+import org.cangnova.cangjie.cfir.analysis.checkers.expression.explicitDeclaredTypeOrNull
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.isHandled
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
@@ -17,7 +18,6 @@ import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
 import org.cangnova.cangjie.cfir.references.CfirReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.references.impl.CfirResolvedAppliedCallableReference
-import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.source.AbstractCjSourceElement
 import org.cangnova.cangjie.source.text
 
@@ -36,7 +36,7 @@ object CfirPatternVariableInitializerTypeMismatchChecker : CfirPatternVariableCh
     override fun check(declaration: CfirPatternVariable) {
         val source = declaration.source as? AbstractCjSourceElement ?: return
 
-        val expectedType = (declaration.returnTypeRef as? CfirResolvedTypeRef)?.coneType ?: return
+        val expectedType = declaration.explicitDeclaredTypeOrNull() ?: return
         val initializer = declaration.initializer?.takeIf { it !is CfirErrorExpression } ?: return
         if (initializer.hasResolutionDiagnostic()) return
         if (initializer.isBareEnumConstructorAccess()) return

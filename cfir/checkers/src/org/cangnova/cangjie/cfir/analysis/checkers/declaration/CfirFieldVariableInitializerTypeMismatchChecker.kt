@@ -2,12 +2,12 @@ package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.checkTargetTypedExpression
+import org.cangnova.cangjie.cfir.analysis.checkers.expression.explicitDeclaredTypeOrNull
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.isHandled
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.expressions.CfirErrorExpression
-import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.source.AbstractCjSourceElement
 
 /**
@@ -25,7 +25,7 @@ object CfirFieldVariableInitializerTypeMismatchChecker : CfirFieldVariableChecke
     override fun check(declaration: CfirFieldVariable) {
         val source = declaration.source as? AbstractCjSourceElement ?: return
 
-        val expectedType = (declaration.returnTypeRef as? CfirResolvedTypeRef)?.coneType ?: return
+        val expectedType = declaration.explicitDeclaredTypeOrNull() ?: return
         val initializer = declaration.initializer?.takeIf { it !is CfirErrorExpression } ?: return
         if (checkTargetTypedExpression(initializer, expectedType).isHandled) return
         val actualType = initializer.coneTypeOrNull ?: return
