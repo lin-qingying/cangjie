@@ -4838,3 +4838,18 @@ esolveDelegatingConstructorCallAndSelectCandidate);
   * 全量回归：`.\gradlew.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain` → Gradle 控制台 `8422 tests completed, 747 failed, 307 skipped`，`errors=0`；最新 HTML 报告位于 `cfir/analysis-tests/build/reports/tests/test/index.html`。
   * 修复前 HEAD 基线：`8422 tests completed, 798 failed, 307 skipped`，`errors=0`。两次结果均由独立新鲜 XML 生成；XML 聚合记录为基线/当前分别 `8423 / 798 / 308` 与 `8423 / 747 / 308`（records / failures / skipped）。
   * 按 `(suite, testcase)` 失败键对比：`FIXED=51`、`REGRESSED=0`、`NEW_KEYS=0`、`REMOVED_KEYS=51`；测试总数、errors、skipped 均保持不变，净减少 51 个失败。当前全量仍有 747 条既有失败，不能称为全量全绿。
+
+## 2026-09-01：泛型继承 owner 实参必须参与成员归并（interface_default_implemented_func_invalid_6）
+
+- problem type: Inheritance / Generics / Interface Default Implementation —— `I<X>` 与 `I<Y>` 在具体实例化后提供同名同形函数时必须保留为两个独立继承来源并报告歧义；重复路径到同一契约（如 `generic_subst_perf.cj` 中的 `F1<Int>` 与 `F2<Int>`）仍必须归并。PSI 与 LightTree 两条入口均受影响。
+- root cause: `CfirClassUseSiteMemberScope.mergeEquivalentInheritedFunctions()` 仅按直接 callable 签名和替换后签名归并，缺少 inheritance owner 的类型实参结构，导致 `I<X>.foo` 与 `I<Y>.foo` 在 owner classifier 被有意抽象后错误折叠，`CfirGenericInstantiationChecker` 无法再观察 `testInterfaceDefaultImplementedFuncInvalid6` 的多来源冲突。
+- official Cangjie evidence: official `cjc 1.0.5` 对 `interface_default_implemented_func_invalid_6.cj` 报告四条 `sema_generic_instantiation_causes_ambiguous_functions`，并且不在 `class B<X, Y> <: A<X, Y>` 的声明转发处报告实例化歧义；`external/cangjie_compiler/src/Sema/InheritanceChecker/InstantiatedChecker.cpp` 的 `CheckInstMemberSignatures` / `DiagnoseForInstantiatedMember` 保留实例化后的不同继承来源。`external/cangjie_compiler/src/Sema/InheritanceChecker/MergeInheritedMemberHelper.cpp:135-227` 证明重复泛型继承的归并依据是 callable 契约而非声明对象身份。
+- Kotlin counterpart files consulted: `external/kotlin/compiler/fir/providers/src/org/jetbrains/kotlin/fir/scopes/impl/FirClassUseSiteMemberScope.kt`、`FirFakeOverrideGenerator.kt` 与 `FirTypeIntersectionScopeContext.kt`；Kotlin 的 use-site substitution/fake-override 分层用于确认 owner substitution 信息必须在 provider scope 中保留，具体 Cangjie 语义以 official `cjc` 和上游实现为准。
+- CFIR owner file changed: `cfir/providers/src/org/cangnova/cangjie/cfir/scopes/impl/CfirClassUseSiteMemberScope.kt` —— 将 inheritance owner 的类型实参结构加入共享 `InheritedFunctionMergeKey`，同时不把 owner classifier 身份重新作为归并条件，以兼顾独立实例化冲突和等价 requirement 去重。
+- repair principle: 泛型继承成员归并必须同时保留“契约签名”和“owner 实参结构”，只忽略不能表达语义差异的声明对象身份；因此同形不同实例化不折叠，重复路径同实参仍统一进入同一 requirement。
+- fixtures covered: `cfir/analysis-tests/testData/llt/class/interface_default_implemented_func_invalid_6.cj`，覆盖 `CfirAnalysisLLTTestGenerated$Class.testInterfaceDefaultImplementedFuncInvalid6` 与 `CfirAnalysisLLTPsiTestGenerated$Class.testInterfaceDefaultImplementedFuncInvalid6`；`generic_subst_perf.cj`、`interface_default_implemented_func_invalid_4/5.cj` 及 generic default implementation ok2/ok3 作为归并与非回归守卫。
+- fixture correction: none。
+- verification commands and outcome:
+  * 目标及守卫双路径：`testInterfaceDefaultImplementedFuncInvalid6`、`testInterfaceDefaultImplementedFuncInvalid5`、`testInterfaceDefaultImplementedFuncGenericOk2`、`testInterfaceDefaultImplementedFuncGenericOk3`、`testGenericSubstPerf` → 全部通过；目标 PSI/LightTree 两条测试在新鲜 XML 中均为 `failures=0, errors=0, skipped=0`。
+  * 全量回归：`.\gradlew.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain` → `8422 tests completed, 745 failed, 307 skipped`，`errors=0`；新鲜 XML 聚合为 `8423 records / 745 failures / 0 errors / 308 skipped / 7370 passed`。
+  * 修复前 HEAD 基线：`8422 tests completed, 747 failed, 307 skipped`，`errors=0`；按 `(suite, testcase)` 失败键对比 `FIXED=2`（目标 PSI/LightTree）、`REGRESSED=0`，测试总数、errors、skipped 均不变，净减少 2 个失败。当前全量仍有 745 条既有失败，不能称为全量全绿。
