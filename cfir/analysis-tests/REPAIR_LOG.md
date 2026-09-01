@@ -4906,3 +4906,23 @@ esolveDelegatingConstructorCallAndSelectCandidate);
   * Let 双路径定向回归：`CfirAnalysisLLTTestGenerated$Let` 与 `CfirAnalysisLLTPsiTestGenerated$Let` 共 18 个测试，`0 failures / 0 errors / 0 skipped`；两个 `testLet001()` testcase 在新鲜 XML 中均为通过。
   * 全量：`java -jar gradle-queue-cli/build/libs/gradle-queue-cli.jar --project-dir D:\code\intellij\cangjie :cfir:analysis-tests:test --no-configuration-cache --no-daemon --max-workers=1 --console=plain --no-build-cache` → `8422 tests completed, 741 failed, 307 skipped`，`errors=0`；新鲜 XML 逐 testcase 聚合为 `8423 records / 741 failures / 0 errors / 308 skipped / 7374 passed`（含 1 条聚合记录）。
   * 修复前 HEAD 基线：`8422 tests completed, 743 failed, 307 skipped`，新鲜 XML 基线为 `8423 records / 743 failures / 0 errors / 308 skipped`；本轮净减少 2 个失败，对应 LLT/LLT-PSI 的 `testLet001`，测试总数、errors、skipped 均不变；全量仍有 741 条既有失败，不能称为全量全绿。
+
+## 2026-09-01：Type 与 Property 解析、类型上界诊断归一
+
+- problem type: Type / Property / Generics / Diagnostics —— `Type` 族的括号泛型类型、子类型判断以及 `Property` 族的属性 callee 解析必须在 PSI 与 LightTree 两条入口保持一致；泛型上界实例化还必须区分多个无继承关系的 class 上界与普通冲突上界。
+- root cause: 类型括号节点在语义转换时丢失了透明包装信息，导致泛型类型参数和 subtype 检查接收到不完整的类型视图；属性访问和赋值合法性判断没有沿共享目标类型、setter 与限定符模型统一收敛。上界检查则只在声明层检查直接参数，嵌套实例化和 assumption 上界没有递归参与，多个 class 上界仍沿用旧的 `CONFLICTING_UPPER_BOUNDS` 分类。
+- official Cangjie evidence: `external/cangjie_compiler/src/Sema/PreCheck.cpp` 的 `CheckUpperBoundsLegality`、`CheckUpperBoundsLegalityRecursively`、`SanityCheckForClassUpperBounds` 与 `AssumptionSanityCheck` 对嵌套实例化递归检查，并将无继承关系的多个 class 上界归类为 `sema_multiple_class_upperbounds`；官方 `cjc 1.0.5` 对 `subtype_00.cj`、`paren_type_with_generic_type.cj`、`property_callee332.cj` 及等价上界探针确认了修复后的结果。
+- Kotlin counterpart files consulted: `external/kotlin/compiler/fir/providers/src/org/jetbrains/kotlin/fir/scopes/impl/FirClassUseSiteMemberScope.kt`、`external/kotlin/compiler/fir/resolve/src/org/jetbrains/kotlin/fir/resolve/TypeExpansionUtils.kt` 与属性/赋值 checker 的共享目标类型处理路径；仅用于对照类型展开、use-site substitution 和 property setter 分层，具体 Cangjie 诊断以官方 `cjc`/上游实现为准。
+- CFIR owner files changed:
+  * `cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirAssignmentLegalityChecker.kt`、`CfirMutabilityCheckers.kt`：统一属性 setter、限定符和可变性链的合法性判定。
+  * `cfir/raw-cfir/psi2cfir/src/org/cangnova/cangjie/cfir/builder/PsiConversionUtils.kt`、`psi/src/org/cangnova/cangjie/psi/CjParenthesizedType.kt`：保留括号类型的语义转换信息，使 PSI 类型视图与 LightTree 一致。
+  * `cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirTypeParameterBoundsChecker.kt`、`CfirUpperBoundViolatedHelpers.kt`、`CfirUpperBoundViolatedTypeChecker.kt`：把声明上界、嵌套泛型实参和 assumption 上界纳入递归后序检查，并只保留最深层有效诊断。
+  * `cfir/checkers/checkers-component-generator/src/org/cangnova/cangjie/cfir/checkers/generator/diagnostics/CfirDiagnosticsList.kt`、生成的 `CfirErrors.kt`、`CfirNonSuppressibleErrorNames.kt`、`CfirErrorsDefaultMessages.kt` 及 `DiagnosticNameMapper.kt`：注册并映射 `MULTIPLE_CLASS_UPPER_BOUNDS`。
+- repair principle: 类型与属性语义必须在共享转换、类型展开、目标类型和 setter/可变性边界完成，不按单个 fixture 增加分支；上界检查必须按官方的实例化递归与 class 继承关系分类，不能用旧诊断名掩盖不同语义。
+- fixtures covered: `cfir/analysis-tests/testData/llt/type/subtype_00.cj`、`cfir/analysis-tests/testData/llt/type/paren_type_with_generic_type.cj`、`cfir/analysis-tests/testData/llt/property/property_callee332.cj`，以及 `cfir/analysis-tests/testData/diagnostics/constraints/conflictingUpperBounds.cj`、`diagnostics2/constraints/conflictingUpperBounds.cj`、`llt/Extend/extend_instantiated_type/extend_instantiated_type_01_err.cj`；Type/Property 与上界相关入口均独立覆盖 PSI/LightTree。
+- fixture correction: 根据官方诊断定义，将 3 个仍使用旧 `CONFLICTING_UPPER_BOUNDS` 的无继承关系 class 上界期望更新为 `MULTIPLE_CLASS_UPPER_BOUNDS`；源代码和语法未改动。
+- verification commands and outcome:
+  * 精确生成类 `CfirAnalysisLLTTestGenerated$Type`、`$Property` 与对应 PSI 类共 64 条测试，`0 failures / 0 errors / 0 skipped`；清洁 HEAD 同一测试键为 7 条失败，净修复 7 条。
+  * 上界回归相关定向测试（4 个 diagnostics constraints 入口及 2 个 ExtendInstantiatedType 入口）全部通过。
+  * 最终全量：`java -jar gradle-queue-cli/build/libs/gradle-queue-cli.jar --project-dir D:\code\intellij\cangjie :cfir:analysis-tests:test --no-configuration-cache --no-daemon --max-workers=1 --console=plain --no-build-cache` → Gradle 控制台 `8422 tests completed, 718 failed, 307 skipped`，`errors=0`；新鲜 XML 为 `8423 records / 718 failures / 0 errors / 308 skipped / 7397 passed`（含 1 条聚合记录）。
+  * 清洁 HEAD 全量基线使用同一命令：`8422 tests completed, 729 failed, 307 skipped`，`errors=0`；新鲜 XML 为 `8423 records / 729 failures / 0 errors / 308 skipped / 7386 passed`。按 `(suite, testcase)` 失败键对比：`FIXED=11`、`REGRESSED=0`、`NEW_KEYS=0`、`REMOVED_KEYS=0`，净减少 11 个失败；全量仍有 718 条既有失败，不能称为全量全绿。

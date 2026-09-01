@@ -725,6 +725,9 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
 
         val REPEATED_BOUND by error<CjElement>()
 
+        /** 多个不具备子类型关系的 concrete class 上界。 */
+        val MULTIPLE_CLASS_UPPER_BOUNDS by error<CjElement>()
+
         val CONFLICTING_UPPER_BOUNDS by error<CjNamedDeclaration>(PositioningStrategy.ACTUAL_DECLARATION_NAME)
 
         val CANNOT_INFER_PARAMETER_TYPE by error<CjElement>(PositioningStrategy.REFERENCED_NAME_BY_QUALIFIED) {

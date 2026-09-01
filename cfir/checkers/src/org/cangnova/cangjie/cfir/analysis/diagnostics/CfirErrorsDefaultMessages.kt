@@ -757,6 +757,10 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
             "Type parameter already has this bound.",
         )
         map.put(
+            CfirErrors.MULTIPLE_CLASS_UPPER_BOUNDS,
+            "Generic parameter cannot have two or more class upper bounds without subtype relation.",
+        )
+        map.put(
             CfirErrors.CONFLICTING_UPPER_BOUNDS,
             "Type parameter has conflicting upper bounds.",
         )

@@ -35,6 +35,7 @@ object CfirUpperBoundViolatedTypeChecker : CfirResolvedTypeRefChecker() {
         checkUpperBoundViolated(
             typeRef = typeRef,
             isIgnoreTypeParameters = container is CfirTypeParameter,
+            useTypeArgumentStartSource = context.containingElements.any { it is CfirTypeParameter },
         )
     }
 }

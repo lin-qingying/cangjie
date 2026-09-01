@@ -322,6 +322,17 @@ internal object CfirMutationTargetClassifier {
                 }
             }
 
+            is CfirPropertyAccessorSymbol -> {
+                val property = resolvedSymbol.propertySymbol
+                    .takeIf { it.isBound }
+                    ?.cfir as? CfirProperty
+                if (property != null && !property.isEffectivelyWritable()) {
+                    MutationTarget.ImmutableValue
+                } else {
+                    MutationTarget.Assignable
+                }
+            }
+
             is CfirEnumConstructorSymbol -> MutationTarget.ImmutableValue
             is CfirFunctionSymbol<*> -> MutationTarget.NonAssignableName(referenceNameOrFallback())
             is CfirClassLikeSymbol<*> -> MutationTarget.NonAssignableName(referenceNameOrFallback())

@@ -6,7 +6,7 @@ open class Base {}
 
 class Balala {}
 
-func foo<<!CONFLICTING_UPPER_BOUNDS!>T<!>>() where T <: Base & Balala {}
+func foo<<!MULTIPLE_CLASS_UPPER_BOUNDS!>T<!>>() where T <: Base & Balala {}
 
 main(): Int64 {
     return 1

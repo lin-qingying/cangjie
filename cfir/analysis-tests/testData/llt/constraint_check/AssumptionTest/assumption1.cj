@@ -6,12 +6,12 @@ class C1 {}
 
 class A<T> where T <: C1 {}
 
-class B<<!CONFLICTING_UPPER_BOUNDS!>X<!>> where X <: A<X> {}
+class B<<!MULTIPLE_CLASS_UPPER_BOUNDS!>X<!>> where X <: A<X> {}
 
-class D<<!CONFLICTING_UPPER_BOUNDS!>U<!>, <!CONFLICTING_UPPER_BOUNDS!>V<!>> where U <: B<U>, V <: A<V> {}
+class D<<!MULTIPLE_CLASS_UPPER_BOUNDS!>U<!>, <!MULTIPLE_CLASS_UPPER_BOUNDS!>V<!>> where U <: B<U>, V <: A<V> {}
 
 class E<T> where T <: E<T> {}
 
-class F<<!CONFLICTING_UPPER_BOUNDS!>T<!>> where T <: G<T> {}
+class F<<!MULTIPLE_CLASS_UPPER_BOUNDS!>T<!>> where T <: G<T> {}
 
-class G<<!CONFLICTING_UPPER_BOUNDS!>T<!>> where T <: F<T> {}
+class G<<!MULTIPLE_CLASS_UPPER_BOUNDS!>T<!>> where T <: F<T> {}

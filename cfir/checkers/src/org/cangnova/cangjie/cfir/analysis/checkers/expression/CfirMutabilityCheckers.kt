@@ -66,6 +66,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirFieldVariableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirInterfaceSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirPropertyAccessorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.cfir.symbols.CfirStructSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
@@ -94,13 +95,32 @@ import org.cangnova.cangjie.source.toCjPsiSourceElement
  */
 object CfirImmutableFunctionCannotModifyFieldChecker : CfirAssignmentChecker() {
     /**
-     * 检查不可变 struct 成员函数中是否写入当前实例的可变字段。
+     * 检查不可变 struct 成员函数中是否写入当前实例的可变字段，或通过属性 setter
+     * 访问可变属性。
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirAssignment) {
         val mutationContext = context.currentImmutableStructMutationContext() ?: return
 
         val lValue = expression.lValue as? CfirQualifiedAccessExpression ?: return
+        val property = lValue.resolvedPropertySymbolOrNull()
+            ?.takeIf { it.isBound }
+            ?.cfir as? CfirProperty
+        if (property != null && property.status.isMut && !property.status.isStatic) {
+            val currentFunction = mutationContext.outerFunction ?: return
+            val currentFunctionName = when (currentFunction) {
+                is CfirPropertyAccessor -> Name.identifier(if (currentFunction.isGetter) "get" else "set")
+                is CfirNamedFunction -> currentFunction.name
+                else -> return
+            }
+            reporter.reportOn(
+                source = expression.source ?: lValue.source,
+                factory = CfirErrors.IMMUTABLE_FUNCTION_CANNOT_ACCESS_MUTABLE_FUNCTION,
+                a = currentFunctionName,
+                b = Name.identifier("set"),
+            )
+            return
+        }
         val root = lValue.currentStructMutationRoot(mutationContext.owner) ?: return
 
         reporter.reportOn(
@@ -470,6 +490,15 @@ private fun CfirQualifiedAccessExpression.resolvedVariableOrPropertySymbolOrNull
     return when (val reference = calleeReference) {
         is CfirResolvedNamedReference -> reference.resolvedSymbol
         is CfirNamedReferenceWithCandidateBase -> reference.candidateSymbol
+        else -> null
+    }
+}
+
+/** 从 qualified access 解析属性本体；赋值解析可能直接保留 property 或 setter symbol。 */
+private fun CfirQualifiedAccessExpression.resolvedPropertySymbolOrNull(): CfirPropertySymbol? {
+    return when (val symbol = resolvedVariableOrPropertySymbolOrNull()) {
+        is CfirPropertySymbol -> symbol
+        is CfirPropertyAccessorSymbol -> symbol.propertySymbol
         else -> null
     }
 }

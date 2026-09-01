@@ -173,6 +173,7 @@ object DiagnosticNameMapper {
         "NAME_IN_CONSTRAINT_IS_NOT_A_TYPE_PARAMETER" to "sema_name_in_constraint_is_not_a_type_parameter",
         "ONLY_ONE_CLASS_BOUND_ALLOWED" to "sema_only_one_class_bound_allowed",
         "REPEATED_BOUND" to "sema_repeated_bound",
+        "MULTIPLE_CLASS_UPPER_BOUNDS" to "sema_multiple_class_upperbounds",
         "CANNOT_CURRYING" to "sema_cannot_currying",
         "CANNOT_HAVE_PARAMETER" to "sema_cannot_have_parameter",
         "FORBID_GENERIC_FINALIZER" to "sema_forbid_generic_finalizer",
