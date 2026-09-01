@@ -3,6 +3,7 @@ package org.cangnova.cangjie.cfir.resolve
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.SessionAndScopeSessionHolder
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirLocalScopes
@@ -62,6 +63,8 @@ abstract class BodyResolveComponents : SessionAndScopeSessionHolder {
     abstract val file: CfirFile
     /** 当前 body resolve 容器声明。 */
     abstract val container: CfirDeclaration
+    /** 当前正在解析 initializer 的成员字段；非字段 initializer 时为 null。 */
+    open val fieldBeingInitialized: CfirFieldVariable? get() = null
     /** 调用解析阶段 runner。 */
     abstract val resolutionStageRunner: ResolutionStageRunner
     /** SAM 转换解析器。 */
