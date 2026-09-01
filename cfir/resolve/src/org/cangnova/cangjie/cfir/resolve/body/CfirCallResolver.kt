@@ -438,6 +438,7 @@ class CfirCallResolver(
         info: CallInfo,
         discoveries: List<CfirCallableCandidateDiscovery>,
     ): CfirCallableCandidateDiscovery? {
+        if (info.resolutionMode.isOperatorOperandInference) return null
         val expectedType = info.resolutionMode.expectedType
             ?.fullyExpandedType(session)
             ?: return null
@@ -1041,6 +1042,19 @@ class CfirCallResolver(
                     choices.distinctResultingTypes().size > 1
                 }
                 if (ambiguousArgumentAtom != null) {
+                    val choices = ambiguousArgumentAtom.value
+                    val expectedFunctionType = ambiguousArgumentAtom.key.expectedType
+                        ?.fullyExpandedType(session) as? ConeFunctionType
+                    if (expectedFunctionType != null) {
+                        /*
+                         * 目标函数类型下仍有多个可行声明时，歧义属于函数引用本身。
+                         * 只有 expected type 仍是待推断的普通类型（例如泛型 enum
+                         * constructor 的 payload）时，多个结果函数类型才表示外层参数类型
+                         * 无法确定，才使用 AMBIGUOUS_ARGUMENT_TYPE。
+                         */
+                        ambiguousArgumentAtom.key.markAmbiguousFunctionReference(choices)
+                        return CallableReferenceResolutionResult.FAILURE
+                    }
                     val representative = ambiguousArgumentAtom.value.firstOrNull()
                     if (representative != null) {
                         containingCallCandidate.system.replaceContentWith(representative.candidate.system.currentStorage())
@@ -1204,10 +1218,13 @@ class CfirCallResolver(
             val resultingType = candidate.currentFunctionReferenceType() ?: return@mapNotNull null
             CallableReferenceChoice(atom, expression, candidate, resultingType)
         }
-        if (choices.size <= 1) return choices
-
-        val mostSpecificCandidates = conflictResolver.chooseMaximallySpecificCandidates(choices.map { it.candidate })
-        return choices.filter { choice -> choice.candidate in mostSpecificCandidates }
+        /*
+         * 函数引用的目标类型只负责筛掉不兼容候选；多个候选仍然是引用歧义。
+         * 官方 `ChkRefExpr` 在 `matched > 1` 时直接报告 `sema_ambiguous_func_ref`，
+         * 不使用调用重载阶段的“最具体候选”规则。后者会把例如 `g(Base)` 与
+         * `g(Sub)` 在目标 `(Sub) -> R` 下错误压成一个候选，导致外层调用误选函数。
+         */
+        return choices
     }
 
     /**
@@ -1703,11 +1720,22 @@ class CfirCallResolver(
         if (candidates.any { candidate -> candidate.symbol.takeIf { it.isBound }?.cfir !is CfirFunction }) return null
         val expression = info.callSite as? CfirNamedAccessExpression ?: return null
 
+        val hasExplicitTypeArguments = info.hasExplicitTypeArguments
+        val genericCandidatesIgnored = !hasExplicitTypeArguments && candidates.any { candidate ->
+            val function = candidate.symbol.takeIf { it.isBound }?.cfir as? CfirFunction
+            function?.typeParameters?.isNotEmpty() == true
+        }
         val matchingCandidates = candidates.filter { candidate ->
-            candidate.completedFunctionReferenceType(expression, expectedFunctionType) != null
+            val function = candidate.symbol.takeIf { it.isBound }?.cfir as? CfirFunction
+            (hasExplicitTypeArguments || function?.typeParameters?.isNullOrEmpty() == true) &&
+                candidate.completedFunctionReferenceType(expression, expectedFunctionType) != null
         }
         return when (matchingCandidates.size) {
-            0 -> ConeNoMatchingFunctionReferenceError(info.name)
+            0 -> if (genericCandidatesIgnored) {
+                ConeGenericFunctionReferenceWithoutTypeArgumentsError(info.name)
+            } else {
+                ConeNoMatchingFunctionReferenceError(info.name)
+            }
             1 -> null
             else -> ConeAmbiguousFunctionReferenceError(
                 name = info.name,
@@ -1980,6 +2008,7 @@ class CfirCallResolver(
         info: CallInfo,
         candidates: Set<Candidate>,
     ): Set<Candidate> {
+        if (info.resolutionMode.isOperatorOperandInference) return candidates
         if (candidates.size <= 1) return candidates
         val expectedType = info.resolutionMode.expectedType?.fullyExpandedType() ?: return candidates
         val matchingCandidates = candidates.filterTo(linkedSetOf()) { candidate ->
@@ -2429,7 +2458,6 @@ class CfirCallResolver(
                 callableLookupOutcomes.all { outcome ->
                     outcome.symbol.takeIf { it.isBound }?.cfir is CfirConstructor
                 }
-
         // 根据期望的调用种类生成诊断
         val diagnostic = when {
             hasInvalidTypeParameterUpperBoundReceiver ->

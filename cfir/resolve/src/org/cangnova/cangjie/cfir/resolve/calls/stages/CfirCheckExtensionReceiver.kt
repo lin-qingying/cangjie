@@ -31,12 +31,6 @@ object CfirCheckExtensionReceiver : ResolutionStage() {
     /** 检查候选的给定 extension receiver 是否可转换为 owner extend 要求的接收者类型。 */
     override suspend fun check(candidate: Candidate) {
         val receiver = candidate.givenExtensionReceiver ?: return
-        if (candidate.callInfo.name.asString() == "getOrThrow") {
-            System.err.println(
-                "GET_OR_THROW_EXTENSION symbol=${candidate.symbol} receiver=${receiver.expression} " +
-                        "receiverType=${receiver.expression.coneTypeOrNull}",
-            )
-        }
         candidate.typeQualifierAccessedNonStaticExtensionMember(context)?.let { memberName ->
             sink.reportDiagnostic(IllegalAccessNonStaticMember(memberName))
             sink.yieldIfNeed()
@@ -45,15 +39,6 @@ object CfirCheckExtensionReceiver : ResolutionStage() {
         val expectedReceiverType = candidate.expectedExtensionReceiverType() ?: return
         val expectedType = candidate.substitutor.substituteOrSelf(expectedReceiverType)
         val actualType = receiver.expression.coneTypeOrNull ?: return
-
-        if (actualType is org.cangnova.cangjie.cfir.types.ConeTypeVariableType &&
-            actualType.typeConstructor.originalTypeParameter == null
-        ) {
-            System.err.println(
-                "EXTENSION_RECEIVER_DEBUG symbol=${candidate.symbol} actual=$actualType expected=$expectedType " +
-                        "vars=${candidate.system.currentStorage().notFixedTypeVariables.keys}",
-            )
-        }
 
         ArgumentCheckingProcessor.resolvePlainArgumentType(
             candidate = candidate,
@@ -66,15 +51,6 @@ object CfirCheckExtensionReceiver : ResolutionStage() {
             isDispatch = false,
             sourceForReceiver = candidate.callInfo.callSite.source,
         )
-
-        if (actualType is org.cangnova.cangjie.cfir.types.ConeTypeVariableType &&
-            actualType.typeConstructor.originalTypeParameter == null
-        ) {
-            System.err.println(
-                "EXTENSION_RECEIVER_DEBUG_AFTER symbol=${candidate.symbol} " +
-                        "constraints=${candidate.system.currentStorage().notFixedTypeVariables.values.map { it.constraints }}",
-            )
-        }
 
         candidate.chosenExtensionReceiver = receiver
         sink.yieldIfNeed()

@@ -5,6 +5,7 @@ import org.cangnova.cangjie.cfir.resolve.ResolutionMode
 import org.cangnova.cangjie.cfir.resolve.expectedType
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.resolve.initialTypeOfCandidate
+import org.cangnova.cangjie.cfir.resolve.isOperatorOperandInference
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
 import org.cangnova.cangjie.cfir.resolve.calls.hasUncertainExpectedTypeCompatibilityShape
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
@@ -39,6 +40,7 @@ object CfirCheckExpectedReturnTypeAfterArguments : ResolutionStage() {
             return
         }
         val expectedType = resolutionMode.expectedType ?: return
+        if (resolutionMode.isOperatorOperandInference) return
 
         // 对齐官方 CheckCandidate：实参兼容性失败时提前返回，返回类型比较不执行。
         if (candidate.argumentMappingOutcome?.hasMappingFailure == true) return

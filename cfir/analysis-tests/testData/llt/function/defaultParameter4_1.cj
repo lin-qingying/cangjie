@@ -13,7 +13,7 @@ func foo2(a: Int32, b!: Int32 = <!UNRESOLVED_REFERENCE!>b<!>) {
 }
 
 func run(): Int64 {
-    foo1(<!NEED_NAMED_ARGUMENT!>1<!>)
+    foo1<!WRONG_NUMBER_OF_ARGUMENTS!>(1)<!>
     return 1
 }
 

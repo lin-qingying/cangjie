@@ -383,11 +383,12 @@ object BuiltinPrimitiveOperators {
         argumentKind: PrimitiveTypeKind,
     ): BuiltinPrimitiveOperatorSignature? {
         val defaultedReceiverKind = receiverKind.defaultedIdealKind()
+        val defaultedArgumentKind = argumentKind.defaultedIdealKind()
         val isValid = when (defaultedReceiverKind) {
-            PrimitiveTypeKind.INT64 -> argumentKind == PrimitiveTypeKind.UINT64
+            PrimitiveTypeKind.INT64 -> defaultedArgumentKind == PrimitiveTypeKind.UINT64
 
-            PrimitiveTypeKind.FLOAT64 -> argumentKind == PrimitiveTypeKind.INT64 ||
-                    argumentKind == PrimitiveTypeKind.FLOAT64
+            PrimitiveTypeKind.FLOAT64 -> defaultedArgumentKind == PrimitiveTypeKind.INT64 ||
+                    defaultedArgumentKind == PrimitiveTypeKind.FLOAT64
 
             else -> false
         }

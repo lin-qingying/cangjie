@@ -151,6 +151,14 @@ open class CfirExpressionsResolveTransformer(
     // optional-chain 内部的 `?` 节点承担 Kotlin FIR checked safe-call subject 的角色。
     /** 当前嵌套 optional-chain 解析深度。 */
     private var optionalChainResolveDepth: Int = 0
+    /**
+     * 当前正在为 primitive binary operator 探测左接收者类型的深度。
+     *
+     * 裸 literal 右操作数需要先独立解析左侧以取得 concrete primitive target；
+     * 探测过程中遇到嵌套 operator 时不能再次开启同一探测，否则左结合表达式会
+     * 重复遍历自身的前缀链，甚至形成无限递归。
+     */
+    private var builtinOperatorReceiverProbeDepth: Int = 0
 
     /** 构造表达式解析阶段使用的错误类型。 */
     private fun errorType(
@@ -641,6 +649,27 @@ open class CfirExpressionsResolveTransformer(
                 return@whileAnalysing functionCall
             }
             if (calleeReference is CfirNamedReferenceWithCandidate) {
+                /*
+                 * 子树可能已经在无上下文遍历中完成了一轮候选解析；随后外层 binary
+                 * check-mode 才把确定的 operand target 传入。普通的 candidate 快速路径
+                 * 不能继续复用那一轮已经默认化的泛型调用（例如 `id(1)` 的 IdealInt
+                 * 已被固化为 Int64），必须清除候选并在当前 expected type 下重跑完整
+                 * call-resolution stages，让返回类型约束先于字面量默认化进入同一系统。
+                 * 这是所有“先独立解析、后获得 expected type”的调用共用的阶段边界，
+                 * 不针对某个 operator 或测试用例。
+                 */
+                if (
+                    data.expectedType != null &&
+                            calleeReference.candidate.callInfo.resolutionMode.expectedType == null
+                ) {
+                    functionCall.replaceCalleeReference(
+                        buildNamedReference {
+                            source = calleeReference.source
+                            name = calleeReference.name
+                        }
+                    )
+                    return@whileAnalysing transformFunctionCallInternal(functionCall, data, callResolutionMode)
+                }
                 if (functionCall.coneTypeOrNull == null) {
                     storeTypeFromCallee(functionCall)
                 }
@@ -938,12 +967,29 @@ open class CfirExpressionsResolveTransformer(
             ?.takeIf { expectedType -> functionCall.resolveHomogeneousBuiltinOperatorAgainst(expectedType) }
             ?.let { return functionCall }
 
-        val rightCheckTarget = functionCall.argumentList.arguments.singleOrNull()
-            ?.coneTypeOrNull
-            ?.primitiveOperatorCheckTargetOrNull()
-        val nestedReceiver = explicitReceiver as? CfirFunctionCall
-        if (rightCheckTarget != null && nestedReceiver != null) {
-            nestedReceiver.resolveHomogeneousBuiltinOperatorAgainst(rightCheckTarget)
+        /*
+         * 官方 ChkArithmeticExpr 会以当前候选 primitive 类型重新检查两个 operand。
+         * 当左侧已经是确定 primitive、右侧却是先独立综合出的嵌套 operator 时，必须
+         * 先把右侧 operator 子树放回左侧 target 下重检；否则例如
+         * `x: Int8 / (7 | 1)` 会把右树的 ideal literal 默认成 Int64，丢失官方
+         * 对 Int8 候选的检查机会。该路径只重检结构化的 operator 子树，普通变量
+         * 的异构 primitive 仍由完整 builtin signature 判定，不引入隐式兜底。
+         */
+        if (callee.name != OperatorNameConventions.EXPONENTIATION) {
+            val leftCheckTarget = explicitReceiver.coneTypeOrNull
+                ?.primitiveOperatorCheckTargetOrNull()
+            val nestedArgument = functionCall.argumentList.arguments.singleOrNull()
+            if (leftCheckTarget != null && nestedArgument != null) {
+                nestedArgument.resolvePrimitiveOperatorOperandAgainst(leftCheckTarget)
+            }
+
+            val rightCheckTarget = functionCall.argumentList.arguments.singleOrNull()
+                ?.coneTypeOrNull
+                ?.primitiveOperatorCheckTargetOrNull()
+            val nestedReceiver = explicitReceiver as? CfirFunctionCall
+            if (rightCheckTarget != null && nestedReceiver != null) {
+                nestedReceiver.resolveHomogeneousBuiltinOperatorAgainst(rightCheckTarget)
+            }
         }
 
         val receiverType = explicitReceiver.stableBuiltinOperatorOperandTypeOrNull() ?: return functionCall
@@ -1007,12 +1053,6 @@ open class CfirExpressionsResolveTransformer(
         val syntacticRightTarget = argumentList.arguments.single()
             .syntacticPrimitiveOperatorCheckTargetOrNull()
             ?.takeIf { target -> hasHomogeneousBuiltinOperatorSignature(target) }
-        System.err.println(
-            "HOMOGENEOUS_DEBUG name=${callee.name} origin=$origin " +
-                    "receiver=${explicitReceiver!!::class.simpleName} " +
-                    "right=${argumentList.arguments.single()::class.simpleName} " +
-                    "expected=$expectedTarget syntactic=$syntacticRightTarget",
-        )
         /*
          * 只有已经由外层上下文或源码显式构造确定的 primitive 才能改变解析方向。
          * 普通调用和嵌套 operator 的 concrete type 都是其自身解析过程的结果，不能反过来
@@ -1020,15 +1060,50 @@ open class CfirExpressionsResolveTransformer(
          * 为 homogeneous operator 检查。裸数值字面量例外：官方 binary check-mode 会先
          * 合成并替换其 ideal 类型，整数/浮点分别得到默认 Int64/Float64，再检查左树。
         */
-        val target = expectedTarget ?: syntacticRightTarget ?: return false
-        // 显式 primitive 转换的结果类型由转换目标决定；把外层 target 传给它会改变
-        // 其解析边界，进而丢失该 target 向左侧嵌套 operator 树传播的时机。
-        val argumentResolutionMode = expectedTarget?.let(::withExpectedType) ?: ResolutionMode.ContextDependent
+        val rightOperandIsLiteral = argumentList.arguments.single() is CfirLiteralExpression
+        /*
+         * 裸 literal 的 ideal 类型不是左操作数的目标类型。官方 binary check-mode
+         * 会让已经确定的左 primitive 决定 literal 的最终类型；否则
+         * `Data().foo() - 4` 会先把 `4` 的默认 Int64 反向传给 Int32 返回值的
+         * `foo()`，而 `S() + 1` 甚至会把结构体构造器错误地按 Int64 返回值筛掉。
+         * 因此 literal 右操作数必须先在无 expected type 下解析 receiver。
+         */
+        val receiverTarget = if (rightOperandIsLiteral && expectedTarget == null && builtinOperatorReceiverProbeDepth == 0) {
+            builtinOperatorReceiverProbeDepth++
+            try {
+                transformExplicitReceiver(transformer, ResolutionMode.ContextIndependent)
+                explicitReceiver?.coneTypeOrNull
+                    ?.primitiveOperatorCheckTargetOrNull()
+                    ?.takeIf { target -> hasHomogeneousBuiltinOperatorSignature(target) }
+            } finally {
+                builtinOperatorReceiverProbeDepth--
+            }
+        } else {
+            null
+        }
+        if (
+            rightOperandIsLiteral &&
+            receiverTarget == null &&
+            explicitReceiver?.coneTypeOrNull?.let { receiverType ->
+                receiverType !is ConeErrorType &&
+                        receiverType.classifyOperatorOperand(session) is ConeOperatorOperandClassification.Other
+            } == true
+        ) {
+            // 非 primitive receiver 的 literal 运算可能是用户定义 operator；它必须进入
+            // 普通 callable resolution，不能被 builtin operator 的 expected type 预解析截断。
+            return false
+        }
+        val target = receiverTarget ?: expectedTarget ?: syntacticRightTarget ?: return false
+        // 先确定 binary operator 的统一 primitive target，再按该 target 检查右操作数。
+        // 同一调用树只做一轮，避免嵌套 operator 在每层复制、回滚并再次遍历。
+        val argumentResolutionMode = withExpectedType(target)
         val transformedArgumentList: CfirArgumentList = context.withCallArgumentResolution {
             argumentList.transform(transformer, argumentResolutionMode)
         }
         replaceArgumentList(transformedArgumentList)
-        transformExplicitReceiver(transformer, withExpectedType(target))
+        if (receiverTarget == null) {
+            transformExplicitReceiver(transformer, withExpectedType(target))
+        }
         explicitReceiver?.materializeResolvedReceiverType()
         return true
     }
@@ -1111,9 +1186,15 @@ open class CfirExpressionsResolveTransformer(
                         candidate.parameterKinds.all { parameterKind -> parameterKind == expectedType.kind }
             } ?: return false
         val receiver = explicitReceiver ?: return false
-        if (!receiver.resolvePrimitiveOperatorOperandAgainst(ConePrimitiveType(signature.receiverKind))) return false
+        val receiverResolved = receiver.resolvePrimitiveOperatorOperandAgainst(ConePrimitiveType(signature.receiverKind))
+        if (!receiverResolved) {
+            return false
+        }
         for ((argument, parameterKind) in argumentExpressions.zip(signature.parameterKinds)) {
-            if (!argument.resolvePrimitiveOperatorOperandAgainst(ConePrimitiveType(parameterKind))) return false
+            val argumentResolved = argument.resolvePrimitiveOperatorOperandAgainst(ConePrimitiveType(parameterKind))
+            if (!argumentResolved) {
+                return false
+            }
         }
 
         replaceCalleeReference(
@@ -1128,7 +1209,27 @@ open class CfirExpressionsResolveTransformer(
 
     /** 将单个表达式按确定 primitive operator 形参类型检查并写回。 */
     private fun CfirExpression.resolvePrimitiveOperatorOperandAgainst(expectedType: ConePrimitiveType): Boolean {
+        if (this is CfirLiteralExpression) {
+            /*
+             * 官方 binary check-mode 会在每个候选 target 下清除 operand 后重新检查。
+             * 这里不能直接复用第一次综合得到的 Int64/Float64，否则裸字面量无法
+             * 接受当前候选的窄 primitive target。
+             */
+            transformLiteralExpression(this, withExpectedType(expectedType))
+        }
         if (this is CfirFunctionCall && resolveHomogeneousBuiltinOperatorAgainst(expectedType)) return true
+        if (this is CfirIfExpression) {
+            /*
+             * 官方 CheckWithNegCache 会把 primitive target 继续传入控制流表达式的
+             * 两个分支。if 在第一次独立综合时可能已因裸字面量得到 Int64；仅查看
+             * 合并后的 cone type 会错过重新检查分支的机会，因此必须重新走 if 的
+             * target-driven resolve 入口，让其 block 尾表达式也继承同一 target。
+             */
+            transformIfExpression(this, withExpectedType(expectedType))
+            val refreshedType = coneTypeOrNull ?: return false
+            val actualKind = BuiltinPrimitiveOperators.primitiveOperandKind(refreshedType)
+            return actualKind == expectedType.kind || actualKind == PrimitiveTypeKind.NOTHING
+        }
         val operandType = coneTypeOrNull ?: return false
         return when (val operand = operandType.classifyOperatorOperand(session)) {
             is ConeOperatorOperandClassification.Primitive -> {

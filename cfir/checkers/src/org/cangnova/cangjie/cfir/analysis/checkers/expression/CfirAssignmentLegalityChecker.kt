@@ -29,15 +29,19 @@ import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaratio
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirInitializationAssignmentClassifier
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirInitializationAssignmentKind
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
+import org.cangnova.cangjie.cfir.calls.isResolvedTypeQualifier
 import org.cangnova.cangjie.cfir.correspondingProperty
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirAssignment
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirIncrementDecrementExpression
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
 import org.cangnova.cangjie.cfir.expressions.CfirSubscriptExpression
+import org.cangnova.cangjie.cfir.expressions.CfirSuperReceiverExpression
+import org.cangnova.cangjie.cfir.expressions.CfirThisReceiverExpression
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
@@ -440,7 +444,7 @@ internal object CfirMutationTargetClassifier {
     context(context: CheckerContext)
     private fun CfirQualifiedAccessExpression.isImmutableStructReceiverMutationForbidden(): Boolean {
         val receiver = explicitReceiver ?: dispatchReceiver ?: return false
-        return receiver.isImmutableStructValueAccess()
+        return receiver.isImmutableStructMutationReceiverAccess()
     }
 
     /**
@@ -465,6 +469,57 @@ internal object CfirMutationTargetClassifier {
          * [name] 用于构造 `UNQUALIFIED_LEFT_VALUE_ASSIGNED` 诊断。
          */
         data class NonAssignableName(val name: Name) : MutationTarget
+    }
+}
+
+/**
+ * 判断作为赋值链中间节点的 struct 值是否不可变。
+ *
+ * 与调用 mut 函数的 receiver 规则不同，赋值链必须把 `mut prop` 视为可写存储契约：
+ * `mut prop t1: S0` 允许在 mut 函数中通过 `t1.t0` 修改并经 setter 写回。普通只读
+ * 属性、let/const 变量和临时 struct 值仍然阻止链式字段写入；判断沿 qualified access
+ * 的真实声明递归进行，从而同时覆盖隐式 this 与显式嵌套 receiver。
+ */
+context(context: CheckerContext)
+private fun CfirExpression.isImmutableStructMutationReceiverAccess(): Boolean {
+    if (this is CfirThisReceiverExpression || this is CfirSuperReceiverExpression) return false
+    if (isResolvedTypeQualifier(context.session)) return false
+    if (!coneTypeOrNull.mayBeStructValueType()) return false
+
+    val access = this as? CfirQualifiedAccessExpression ?: return true
+    val symbol = when (val reference = access.calleeReference) {
+        is CfirResolvedNamedReference -> reference.resolvedSymbol
+        is CfirNamedReferenceWithCandidateBase -> reference.candidateSymbol
+        else -> null
+    }
+    val receiver = access.explicitReceiver ?: access.dispatchReceiver
+
+    return when (symbol) {
+        is CfirFieldVariableSymbol -> {
+            val field = symbol.takeIf { it.isBound }?.cfir ?: return true
+            !field.isVar || receiver?.isImmutableStructMutationReceiverAccess() == true
+        }
+
+        is CfirVariableSymbol<*> -> {
+            val variable = symbol.takeIf { it.isBound }?.cfir ?: return true
+            !variable.isVar || receiver?.isImmutableStructMutationReceiverAccess() == true
+        }
+
+        is CfirPropertySymbol -> {
+            val property = symbol.takeIf { it.isBound }?.cfir as? CfirProperty ?: return true
+            !property.status.isMut ||
+                    context.findClosestDeclaration<CfirFunction>()?.isMutStructMemberContext() != true ||
+                    receiver?.isImmutableStructMutationReceiverAccess() == true
+        }
+
+        is CfirPropertyAccessorSymbol -> {
+            val property = symbol.propertySymbol.takeIf { it.isBound }?.cfir as? CfirProperty ?: return true
+            !property.status.isMut ||
+                    context.findClosestDeclaration<CfirFunction>()?.isMutStructMemberContext() != true ||
+                    receiver?.isImmutableStructMutationReceiverAccess() == true
+        }
+
+        else -> true
     }
 }
 
