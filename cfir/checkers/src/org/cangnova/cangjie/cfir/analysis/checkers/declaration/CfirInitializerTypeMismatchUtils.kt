@@ -6,6 +6,7 @@ import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticFactory3
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeFunctionType
@@ -19,6 +20,7 @@ import org.cangnova.cangjie.cfir.types.ConeUnionType
 import org.cangnova.cangjie.cfir.types.ConeVArrayType
 import org.cangnova.cangjie.cfir.types.IdealTypeResolver
 import org.cangnova.cangjie.cfir.types.contains
+import org.cangnova.cangjie.cfir.types.containsErrorType
 import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterLookupTag
@@ -41,7 +43,10 @@ fun checkTypeMismatch(
     preferredSpecializedSource: AbstractCjSourceElement? = null,
     diagnosticFactory: CjDiagnosticFactory3<ConeCangJieType, ConeCangJieType, Boolean>,
 ): Boolean {
-    if (actualType is ConeErrorType || expectedType is ConeErrorType) return false
+    // InvalidTy 不只表现为根节点 ConeErrorType。解析成功的外层类型仍可能携带错误类型实参，
+    // 而 typealias 的展开层也可能把错误藏在别名背后；这些类型只能继续传播原始诊断，
+    // 不能从 initializer 再派生一个普通 TYPE_MISMATCH。
+    if (actualType.hasErrorTypeInAliasExpansion() || expectedType.hasErrorTypeInAliasExpansion()) return false
     val effectiveActualType = IdealTypeResolver.resolveIfIdeal(actualType, expectedType)
     val diagnosticSource = preferredSpecializedSource ?: source
     specificTypeMismatchDiagnostic(
@@ -67,6 +72,18 @@ fun checkTypeMismatch(
         false,
     )
     return true
+}
+
+/**
+ * 判断类型本身或其顶层 typealias 展开结果是否包含错误类型。
+ *
+ * 变量声明的类型可能保留别名名义类型，也可能已经完成展开，因此两层都检查，
+ * 让 initializer、字段和 pattern variable 共用同一 InvalidTy 传播边界。
+ */
+context(context: CheckerContext)
+private fun ConeCangJieType.hasErrorTypeInAliasExpansion(): Boolean {
+    if (containsErrorType()) return true
+    return fullyExpandedType(context.session).containsErrorType()
 }
 
 /**

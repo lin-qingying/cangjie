@@ -19,14 +19,14 @@ main() {
             if (v != 11) {
                 return 1
             }
-        case _ => ()
+        case <!UNREACHABLE_PATTERN!>_<!> => ()
     }
     match (b) {
         case EE(v) =>
             if (v != 12) {
                 return 2
             }
-        case _ => ()
+        case <!UNREACHABLE_PATTERN!>_<!> => ()
     }
     let c = Y.EEE
     let d: E<Int32, Int8> = X.EEE
