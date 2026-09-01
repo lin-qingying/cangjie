@@ -66,7 +66,20 @@ internal fun CfirExpression.expectedTypeFromTargetContext(context: CheckerContex
     }
 
     val containingVariable = context.findClosestDeclaration<CfirVariable> { it.initializer === this } ?: return null
-    return (containingVariable.returnTypeRef as? CfirResolvedTypeRef)?.coneType
+    return containingVariable.explicitDeclaredTypeOrNull()
+}
+
+/**
+ * 返回变量声明中真实写出的目标类型。
+ *
+ * 无显式类型的变量在 body resolve 结束时会把 `CfirImplicitTypeRef` 替换为一个
+ * `source == null` 的 resolved type ref。这个 resolved 节点只记录 initializer 的推断结果，
+ * 不能重新作为 initializer 的 target type；否则 `let value = match { ... }` 会把推断出的
+ * match 类型反向施加到每个分支。源码类型引用则保留非空 source，只有它才是声明级 target。
+ */
+internal fun CfirVariable.explicitDeclaredTypeOrNull(): ConeCangJieType? {
+    val typeRef = returnTypeRef as? CfirResolvedTypeRef ?: return null
+    return typeRef.takeIf { it.source != null }?.coneType
 }
 
 /**
