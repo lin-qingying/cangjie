@@ -20,5 +20,5 @@ func foo(a: Int32, b!: Int64 = 10): Int64 {
 main(): Int64 {
     var f = foo
     var d = f(1, 1)
-    var e = f<!WRONG_NUMBER_OF_ARGUMENTS!>(1)<!>
+    <!TYPE_MISMATCH!>var e = f<!WRONG_NUMBER_OF_ARGUMENTS!>(1)<!><!>
 }

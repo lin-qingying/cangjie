@@ -12,6 +12,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirErrorExpression
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirNamedAccessExpression
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
+import org.cangnova.cangjie.cfir.expressions.CfirResolvable
 import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
 import org.cangnova.cangjie.cfir.references.CfirReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
@@ -60,8 +61,7 @@ object CfirPatternVariableInitializerTypeMismatchChecker : CfirPatternVariableCh
  */
 private fun CfirExpression.hasResolutionDiagnostic(): Boolean {
     return when (this) {
-        is CfirNamedAccessExpression -> calleeReference is CfirDiagnosticHolder
-        is CfirQualifiedAccessExpression -> calleeReference is CfirDiagnosticHolder
+        is CfirResolvable -> calleeReference is CfirDiagnosticHolder
         else -> false
     }
 }

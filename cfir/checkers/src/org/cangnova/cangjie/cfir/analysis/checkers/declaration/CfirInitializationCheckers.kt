@@ -610,7 +610,27 @@ private class CfirInitializationFlowAnalyzer(
         state: InitializationState,
     ): InitializationState {
         val diagnosticCountBeforeRightValue = reportedInitializationDiagnosticCount
-        val afterRightValue = analyzeExpression(assignment.rValue, state)
+        /*
+         * 复合赋值在 raw CFIR 中解糖为 `lhs = lhs.op(rhs)`，而合成 operator
+         * call 与 assignment 共享同一个 lhs 节点。初始化检查的左值路径随后还会
+         * 单独处理该节点；如果这里照普通调用先分析 receiver，就会把同一次左值
+         * 当成成员读取，额外产生 ILLEGAL_USAGE_OF_MEMBER。官方
+         * InitializationChecker 对复合赋值先检查左值，再检查右值，因此合成
+         * operator 的 receiver 不能再次进入读取路径，只需保留调用本身和实参分析。
+         */
+        val afterRightValue = if (state.inMemberInitializer && state.inNestedFunction) {
+            assignment.compoundOperatorCallWithSyntheticReceiverOrNull()
+                ?.let { operatorCall ->
+                    analyzeFunctionCall(
+                        expression = operatorCall,
+                        state = state,
+                        analyzeExplicitReceiver = false,
+                    )
+                }
+                ?: analyzeExpression(assignment.rValue, state)
+        } else {
+            analyzeExpression(assignment.rValue, state)
+        }
         val rightValueHasPriorityDiagnostic =
             reportedInitializationDiagnosticCount != diagnosticCountBeforeRightValue
         return analyzeAssignmentTarget(
@@ -619,6 +639,23 @@ private class CfirInitializationFlowAnalyzer(
             state = afterRightValue,
             priorityDiagnostic = rightValueHasPriorityDiagnostic,
         )
+    }
+
+    /**
+     * 取得复合赋值解糖生成的 operator call。
+     *
+     * 两条 raw-builder 路径通常保留同一 lhs 实例；树转换后也可能只保留相同源码
+     * 节点，因此同时使用 identity 与 source 作为结构性判定，不把普通用户调用纳入
+     * 该初始化流特殊路径。
+     */
+    private fun CfirAssignment.compoundOperatorCallWithSyntheticReceiverOrNull(): CfirFunctionCall? {
+        if (augmentedOperation == null) return null
+        val operatorCall = rValue as? CfirFunctionCall ?: return null
+        if (operatorCall.origin != CfirFunctionCallOrigin.Operator) return null
+        val receiver = operatorCall.explicitReceiver ?: return null
+        if (receiver === lValue) return operatorCall
+        if (receiver.source != null && receiver.source == lValue.source) return operatorCall
+        return null
     }
 
     /**
@@ -1038,11 +1075,12 @@ private class CfirInitializationFlowAnalyzer(
     private fun analyzeFunctionCall(
         expression: CfirFunctionCall,
         state: InitializationState,
+        analyzeExplicitReceiver: Boolean = true,
     ): InitializationState {
         val diagnosticCountBeforeReceiver = reportedInitializationDiagnosticCount
-        var currentState = expression.explicitReceiver?.let { receiver ->
+        var currentState = if (analyzeExplicitReceiver) expression.explicitReceiver?.let { receiver ->
             analyzeReceiver(receiver, state)
-        } ?: state
+        } ?: state else state
         if (reportedInitializationDiagnosticCount != diagnosticCountBeforeReceiver) return currentState
 
         val callableSymbol = expression.resolvedCallableSymbolOrNull()

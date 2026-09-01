@@ -83,6 +83,14 @@ sealed class ResolutionMode(
          */
         val arrayLiteralPosition: ArrayLiteralPosition? = null,
         /**
+         * 当前期望类型仅用于二元 primitive 操作数的类型推断。
+         *
+         * 该模式仍必须把 expected type 送入泛型约束系统，但不能把已经确定返回类型的
+         * 普通函数或构造器按该 target 提前淘汰；操作数最终是否适用于 operator 由外层
+         * operator 检查统一决定。
+         */
+        val isOperatorOperandInference: Boolean = false,
+        /**
          * 上下文敏感解析可使用的类型提示。
          */
         override val hintForContextSensitiveResolution: ConeCangJieType? = null,
@@ -106,6 +114,7 @@ sealed class ResolutionMode(
             lastStatementInBlock = lastStatementInBlock,
             fromCast = fromCast,
             arrayLiteralPosition = arrayLiteralPosition,
+            isOperatorOperandInference = isOperatorOperandInference,
             hintForContextSensitiveResolution = hintForContextSensitiveResolution,
             forceFullCompletion = forceFullCompletion,
         )
@@ -157,6 +166,10 @@ val ResolutionMode.expectedType: ConeCangJieType?
         else -> null
     }
 
+/** 当前期望类型是否仅用于 primitive operator 操作数的推断。 */
+val ResolutionMode.isOperatorOperandInference: Boolean
+    get() = (this as? ResolutionMode.WithExpectedType)?.isOperatorOperandInference == true
+
 /**
  * 根据类型引用创建解析模式。
  */
@@ -164,10 +177,12 @@ fun withExpectedType(
     expectedTypeRef: CfirTypeRef,
     arrayLiteralPosition: ResolutionMode.ArrayLiteralPosition? = null,
     hintForContextSensitiveResolution: ConeCangJieType? = null,
+    isOperatorOperandInference: Boolean = false,
 ): ResolutionMode = when (expectedTypeRef) {
     is CfirResolvedTypeRef -> ResolutionMode.WithExpectedType(
         expectedTypeRef = expectedTypeRef,
         arrayLiteralPosition = arrayLiteralPosition,
+        isOperatorOperandInference = isOperatorOperandInference,
         hintForContextSensitiveResolution = hintForContextSensitiveResolution,
     )
     else -> ResolutionMode.ContextIndependent
@@ -177,16 +192,30 @@ fun withExpectedType(
  * 根据可空 cone 类型创建解析模式。
  */
 @JvmName("withExpectedNullableType")
-fun withExpectedType(coneType: ConeCangJieType?, lastStatementInBlock: Boolean = false): ResolutionMode {
-    return coneType?.let { withExpectedType(it, lastStatementInBlock) } ?: ResolutionMode.ContextDependent
+fun withExpectedType(
+    coneType: ConeCangJieType?,
+    lastStatementInBlock: Boolean = false,
+    isOperatorOperandInference: Boolean = false,
+): ResolutionMode {
+    return coneType?.let {
+        withExpectedType(it, lastStatementInBlock, isOperatorOperandInference)
+    } ?: ResolutionMode.ContextDependent
 }
 
 /**
  * 根据非空 cone 类型创建带期望类型解析模式。
  */
-fun withExpectedType(coneType: ConeCangJieType, lastStatementInBlock: Boolean = false): ResolutionMode {
+fun withExpectedType(
+    coneType: ConeCangJieType,
+    lastStatementInBlock: Boolean = false,
+    isOperatorOperandInference: Boolean = false,
+): ResolutionMode {
     val typeRef = coneType.toCfirResolvedTypeRef()
-    return ResolutionMode.WithExpectedType(typeRef, lastStatementInBlock)
+    return ResolutionMode.WithExpectedType(
+        expectedTypeRef = typeRef,
+        lastStatementInBlock = lastStatementInBlock,
+        isOperatorOperandInference = isOperatorOperandInference,
+    )
 }
 
 /**

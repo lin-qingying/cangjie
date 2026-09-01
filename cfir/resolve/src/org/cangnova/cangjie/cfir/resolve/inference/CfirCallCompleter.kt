@@ -12,6 +12,7 @@ import org.cangnova.cangjie.cfir.diagnostic.ConeUnableToInferExpressionTypeError
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
 import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirResolvable
 import org.cangnova.cangjie.cfir.lookupTracker
 import org.cangnova.cangjie.cfir.resolve.ResolutionMode
@@ -24,9 +25,11 @@ import org.cangnova.cangjie.cfir.resolve.calls.ConeSimpleLeafResolutionAtom
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirNamedReferenceWithCandidate
+import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.resolve.calls.stages.TypeArgumentMapping
 import org.cangnova.cangjie.cfir.resolve.calls.substituteExplicitTypeArgumentConstraints
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
+import org.cangnova.cangjie.cfir.resolve.isOperatorOperandInference
 import org.cangnova.cangjie.cfir.resolve.inference.model.ConeDeclaredUpperBoundConstraintPosition
 import org.cangnova.cangjie.cfir.resolve.inference.model.ConeExplicitTypeParameterConstraintPosition
 import org.cangnova.cangjie.cfir.resolve.inference.model.ConeArgumentConstraintPosition
@@ -197,7 +200,6 @@ class CfirCallCompleter(
         }
         addConstraintFromExpectedType(candidate, initialType, resolutionMode)
         candidate.addSameClassifierArgumentTypeConstraints()
-
         if (skipEvenPartialCompletion) return call
 
         val computedCompletionMode = candidate.computeCompletionMode(
@@ -307,6 +309,7 @@ class CfirCallCompleter(
         if (resolutionMode !is ResolutionMode.WithExpectedType) return
         val expectedType = resolutionMode.expectedType.fullyExpandedType()
         if (!candidate.shouldUseExpectedTypeForCompletion(initialType, expectedType)) return
+        if (resolutionMode.isOperatorOperandInference && candidate.system.isProperType(initialType)) return
         if (
             resolutionMode.lastStatementInBlock &&
             candidate.system.isProperType(initialType)

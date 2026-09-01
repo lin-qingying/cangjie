@@ -69,7 +69,6 @@ import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.OperatorNameConventions
 import org.cangnova.cangjie.psi.*
 import org.cangnova.cangjie.psi.psiUtil.getAssignmentByLHS
-import org.cangnova.cangjie.resolve.calls.inference.buildAbstractResultingSubstitutor
 import org.cangnova.cangjie.resolve.calls.inference.model.*
 import org.cangnova.cangjie.resolve.calls.tower.ApplicabilityDetail
 import org.cangnova.cangjie.resolve.calls.tower.isSuccess
@@ -950,17 +949,6 @@ private fun AbstractCallCandidate<*>.unsuccessfulCallableReferenceArgumentDiagno
     val diagnostic = diagnostics.filterIsInstance<UnsuccessfulCallableReferenceArgument>().firstOrNull()
         ?: return null
 
-    // receiver / qualifier 已拥有结构性主错误时，函数引用 no-match 只是同一错误的派生结果。
-    // 该层统一拥有候选失败到用户诊断的映射，因此也应在这里截断级联诊断。
-    if (diagnostic.argument.hasPrimaryErrorInCallableReferenceReceiver()) return emptyList()
-
-    // 裸泛型函数引用已经在 argument 的 error reference 上报告“缺少类型实参”。
-    // 该 structured provenance 只负责阻断任意外层调用的派生推断/无匹配诊断，
-    // 不属于 enum constructor 的专用恢复规则。
-    if (diagnostic.failureKind == CallableReferenceFailureKind.GENERIC_TYPE_ARGUMENT_REQUIRED) {
-        return emptyList()
-    }
-
     if (diagnostic.failureKind == CallableReferenceFailureKind.AMBIGUITY) {
         // 普通声明调用需要同时报告外层 no-match 与内层函数引用歧义；函数值 synthetic invoke
         // 只保留内层歧义，避免为 `f2(a.g)` 额外制造一个官方不存在的外层调用错误。
@@ -972,6 +960,18 @@ private fun AbstractCallCandidate<*>.unsuccessfulCallableReferenceArgumentDiagno
                 session,
             )
         )
+    }
+
+    // receiver / qualifier 已拥有结构性主错误时，函数引用 no-match 只是同一错误的派生结果。
+    // 但 callable reference 自身的歧义在普通声明调用中还需要映射为外层 no-match，故该截断
+    // 必须位于 AMBIGUITY 分支之后。
+    if (diagnostic.argument.hasPrimaryErrorInCallableReferenceReceiver()) return emptyList()
+
+    // 裸泛型函数引用已经在 argument 的 error reference 上报告“缺少类型实参”。
+    // 该 structured provenance 只负责阻断任意外层调用的派生推断/无匹配诊断，
+    // 不属于 enum constructor 的专用恢复规则。
+    if (diagnostic.failureKind == CallableReferenceFailureKind.GENERIC_TYPE_ARGUMENT_REQUIRED) {
+        return emptyList()
     }
 
     // 裸函数名尚未进入目标类型判定时，主诊断仍属于该引用的 AMBIGUOUS_USE。
@@ -2558,14 +2558,20 @@ private fun mapSimpleDiagnosticByReason(
 }
 
 /**
- * 使用候选约束系统最终替换器替换类型变量。
+ * 使用候选约束系统当前已固定变量替换类型变量。
+ *
+ * 诊断映射发生在候选约束系统已经记录具体矛盾之后。未固定变量仍是约束中的有效
+ * 类型，不应在这里先转换成 ConeErrorType，否则后续的实参不匹配诊断会被错误类型
+ * 抑制，最终退化为引用未解析。
  */
 private fun ConeCangJieType.substituteTypeVariableTypes(
     candidate: AbstractCallCandidate<*>,
     session: CfirSession,
 ): ConeCangJieType {
-    val substitutor = candidate.system.asReadOnlyStorage()
-        .buildAbstractResultingSubstitutor(session.typeContext)
+    val nonErrorFixedTypeVariables = candidate.system.asReadOnlyStorage().fixedTypeVariables
+        .filterValues { it !is ConeErrorType }
+    val substitutor = session.typeContext
+        .typeSubstitutorByTypeConstructor(nonErrorFixedTypeVariables)
         .asCone()
     return substitutor.substituteOrSelf(this)
 }

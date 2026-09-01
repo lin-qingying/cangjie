@@ -41,6 +41,8 @@ import org.cangnova.cangjie.cfir.references.builder.buildNamedReference
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.resolve.arrayLiteralTypeForSupertypeTarget
 import org.cangnova.cangjie.cfir.resolve.withExpectedType
+import org.cangnova.cangjie.cfir.resolve.expectedType
+import org.cangnova.cangjie.cfir.resolve.ResolutionMode
 import org.cangnova.cangjie.cfir.resolve.CfirResolutionSnapshot
 import org.cangnova.cangjie.cfir.resolve.calls.*
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
@@ -329,6 +331,8 @@ internal object ArgumentCheckingProcessor {
         val expression = atom.expression as? CfirNamedAccessExpression ?: return false
         val targetExpectedType = expectedType
         if (targetExpectedType == null) return false
+        if (targetExpectedType.fullyExpandedType(session) !is ConeFunctionType) return false
+
         if (!expression.isFunctionReferenceCandidateSet()) return false
 
         val postponedAtom = ConeResolvedCallableReferenceAtom(
@@ -408,7 +412,12 @@ internal object ArgumentCheckingProcessor {
                     it is CfirFunction || it is CfirEnumConstructor
                 }
             }
+        // 没有现存声明候选时，当前嵌套调用并不是可安全复制的已解析调用。
+        // 继续按 expected type 重解析会再次进入同一入口；深层嵌套调用因此形成
+        // 指数级重复树（并最终耗尽测试堆）。只有已有的 callable ambiguity 才允许
+        // 进入后续按目标类型筛选流程。
         if (currentSymbol == null && !isCallableAmbiguity) return NestedCallResolutionResult(atom)
+        val targetExpectedType = expectedType ?: return NestedCallResolutionResult(atom)
         val currentDeclaration = currentSymbol?.takeIf { it.isBound }?.cfir
         if (!isCallableAmbiguity &&
             currentSymbol != null &&
@@ -417,7 +426,6 @@ internal object ArgumentCheckingProcessor {
         ) {
             return NestedCallResolutionResult(atom)
         }
-        val targetExpectedType = expectedType ?: return NestedCallResolutionResult(atom)
         val expandedExpectedType = targetExpectedType.fullyExpandedType(session)
         val expectedOwnerClassId = expandedExpectedType.classIdOrPrimitiveClassId
         if (currentSymbol is CfirEnumConstructorSymbol && expectedOwnerClassId != null && !isCallableAmbiguity) {
@@ -467,39 +475,53 @@ internal object ArgumentCheckingProcessor {
             ) return NestedCallResolutionResult(atom)
         }
 
-        val isolatedCall = buildFunctionCallCopy(functionCall) {
-            calleeReference = buildNamedReference {
-                source = reference.source
-                name = reference.name
-            }
-            // 上下文敏感重解析的目标是用期望类型重新推断，因此必须丢弃上一轮推断写回、
-            // 没有源码位置的合成类型实参（source == null）；否则它们会被当成“显式类型实参”，
-            // 使 CfirCheckExpectedReturnTypeBeforeArguments 跳过期望类型注入，导致嵌套泛型调用
-            // 无法在返回类型下产生推断失败（如 returnTypeInferenceMismatch 的 `produce(true)`）。
-            typeArguments.retainAll { it.source != null }
-        }
         val precollectedDiscoveries = context.bodyResolveComponents.callResolver
             .expectedTypeRefinementDiscovery(functionCall)
         val resolutionSnapshot = CfirResolutionSnapshot.capture(functionCall)
         val resolvedProbe = try {
             context.bodyResolveContext.dataFlowAnalyzerContext.withIsolatedContext {
-                // 名字查找结果不依赖 outer expected type。已有 callable ambiguity 能被目标返回类型
-                // 唯一规约时，只从 discovery 字段创建 fresh candidate 并重跑正常 stages；泛型或
-                // 仍有多个 survivor 的情况继续走完整 tower resolver。
-                if (precollectedDiscoveries != null) {
-                    context.bodyResolveComponents.callResolver.resolveCallFromPrecollectedCandidates(
-                        functionCall = isolatedCall,
-                        resolutionMode = withExpectedType(targetExpectedType),
-                        discoveries = precollectedDiscoveries,
-                    )?.let { return@withIsolatedContext it }
+                fun resolveProbe(resolutionMode: ResolutionMode): Pair<Candidate, CfirFunctionCall>? {
+                    val isolatedCall = buildFunctionCallCopy(functionCall) {
+                        calleeReference = buildNamedReference {
+                            source = reference.source
+                            name = reference.name
+                        }
+                        // 上下文敏感重解析的目标是用期望类型重新推断，因此必须丢弃上一轮推断写回、
+                        // 没有源码位置的合成类型实参（source == null）；否则它们会被当成“显式类型实参”，
+                        // 使 CfirCheckExpectedReturnTypeBeforeArguments 跳过期望类型注入，导致嵌套泛型调用
+                        // 无法在返回类型下产生推断失败（如 returnTypeInferenceMismatch 的 `produce(true)`）。
+                        typeArguments.retainAll { it.source != null }
+                    }
+                    // 名字查找结果不依赖 outer expected type。已有 callable ambiguity 能被目标返回类型
+                    // 唯一规约时，只从 discovery 字段创建 fresh candidate 并重跑正常 stages；泛型或
+                    // 仍有多个 survivor 的情况继续走完整 tower resolver。
+                    if (resolutionMode.expectedType != null && precollectedDiscoveries != null) {
+                        context.bodyResolveComponents.callResolver.resolveCallFromPrecollectedCandidates(
+                            functionCall = isolatedCall,
+                            resolutionMode = resolutionMode,
+                            discoveries = precollectedDiscoveries,
+                        )?.let { return it }
+                    }
+                    val resolvedCall = context.bodyResolveComponents.callResolver.resolveCallAndSelectCandidate(
+                        isolatedCall,
+                        resolutionMode,
+                    )
+                    val resolvedReference = resolvedCall.calleeReference as? CfirNamedReferenceWithCandidate
+                        ?: return null
+                    return resolvedReference.candidate to resolvedCall
                 }
-                val resolvedCall = context.bodyResolveComponents.callResolver.resolveCallAndSelectCandidate(
-                    isolatedCall,
-                    withExpectedType(targetExpectedType),
-                )
-                val resolvedReference = resolvedCall.calleeReference as? CfirNamedReferenceWithCandidate
-                    ?: return@withIsolatedContext null
-                resolvedReference.candidate to resolvedCall
+
+                val contextIndependentProbe = if (currentSymbol == null) {
+                    resolveProbe(ResolutionMode.ContextIndependent)
+                } else {
+                    null
+                }
+                if (contextIndependentProbe?.first?.isSuccessful == true) {
+                    contextIndependentProbe
+                } else {
+                    contextIndependentProbe?.let { resolutionSnapshot.restore() }
+                    resolveProbe(withExpectedType(targetExpectedType)) ?: contextIndependentProbe
+                }
             }
         } finally {
             // buildFunctionCallCopy 会共享内层实参节点；下一 outer candidate 检查前必须恢复共享状态。

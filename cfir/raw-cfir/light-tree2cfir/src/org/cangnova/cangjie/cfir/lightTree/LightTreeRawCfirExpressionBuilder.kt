@@ -113,6 +113,7 @@ class LightTreeRawCfirExpressionBuilder(
         CjNodeTypes.BINARY_WITH_TYPE -> convertTypeOperator(node)
         CjNodeTypes.BINARY_EXPRESSION -> convertBinary(node)
         CjNodeTypes.RANGE_EXPRESSION -> convertRange(node)
+        CjNodeTypes.SLICE_EXPRESSION -> convertSlice(node)
         CjNodeTypes.PREFIX_EXPRESSION -> convertPrefix(node)
         CjNodeTypes.POSTFIX_EXPRESSION -> convertPostfix(node)
 
@@ -528,6 +529,45 @@ class LightTreeRawCfirExpressionBuilder(
             this.end = end
             this.step = stepExpression
             this.isInclusive = isInclusive
+        }
+    }
+
+    /**
+     * 转换下标中的半范围表达式，例如 `array[2..]`、`array[..2]` 与 `array[..]`。
+     *
+     * LightTree 为这类节点使用独立的 `SLICE_EXPRESSION`，而 CFIR 统一以
+     * `CfirRangeExpression` 表示范围索引。缺少的端点必须保留为 error expression，
+     * 这样范围类型推断与后续下标语义仍能沿用完整的 Range 管线。
+     */
+    private fun convertSlice(node: LighterASTNode): CfirRangeExpression {
+        var startNode: LighterASTNode? = null
+        var endNode: LighterASTNode? = null
+        var rangeOperatorSeen = false
+
+        tree.forEachChildren(node) { child ->
+            when (child.tokenType) {
+                CjNodeTypes.OPERATION_REFERENCE -> rangeOperatorSeen = true
+                else -> if (isExpressionToken(child.tokenType)) {
+                    if (!rangeOperatorSeen && startNode == null) {
+                        startNode = child
+                    } else if (rangeOperatorSeen && endNode == null) {
+                        endNode = child
+                    }
+                }
+            }
+        }
+
+        val start = startNode?.let { convertExpression(it) }
+            ?: buildErrorExpression(reason = "Missing range start")
+        val end = endNode?.let { convertExpression(it) }
+            ?: buildErrorExpression(reason = "Missing range end")
+
+        return buildRangeExpression {
+            source = node.toSource()
+            this.start = start
+            this.end = end
+            step = null
+            isInclusive = false
         }
     }
 
@@ -2287,6 +2327,7 @@ class LightTreeRawCfirExpressionBuilder(
             CjNodeTypes.BOOLEAN_CONSTANT,
             CjNodeTypes.UNIT_CONSTANT, CjNodeTypes.STRING_TEMPLATE,
             CjNodeTypes.BINARY_WITH_TYPE, CjNodeTypes.BINARY_EXPRESSION, CjNodeTypes.RANGE_EXPRESSION,
+            CjNodeTypes.SLICE_EXPRESSION,
             CjNodeTypes.PREFIX_EXPRESSION, CjNodeTypes.POSTFIX_EXPRESSION,
             CjNodeTypes.OPTIONAL_EXPRESSION, CjNodeTypes.OPTIONAL_CHAIN_EXPRESSION,
             CjNodeTypes.DOT_QUALIFIED_EXPRESSION,

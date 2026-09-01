@@ -218,7 +218,7 @@ object CfirImmutableValueCannotAccessMutableFunctionChecker : CfirFunctionCallCh
         val receiver = expression.explicitReceiver ?: return
         val targetFunction = expression.resolvedOrDeclaredUpperBoundMutFunctionOrNull() ?: return
         if (!targetFunction.status.isMut || targetFunction.status.isConst) return
-        if (!receiver.isImmutableStructValueAccess()) return
+        if (!receiver.isImmutableStructValueForMutableFunctionAccess()) return
 
         reporter.reportOn(
             // 显式不可变值访问 mut 函数时，官方以 member access 的 baseExpr 作为主诊断范围；
@@ -361,7 +361,7 @@ private fun CfirFunction.isStaticStructMemberContext(): Boolean =
  * 打开 `Attribute::MUT`，并在 getter 上显式关闭该属性，因此 setter 天然具备可变语义，getter 不具备，
  * 与属性自身是否书写 `mut` 无关。struct/extend-of-struct 的判定入口已在调用方收敛。
  */
-private fun CfirFunction.isMutStructMemberContext(): Boolean =
+internal fun CfirFunction.isMutStructMemberContext(): Boolean =
     status.isMut || this is CfirPropertyAccessor && !isGetter
 
 /**
@@ -493,6 +493,35 @@ internal fun CfirExpression.isImmutableStructValueAccess(): Boolean {
             val variable = symbol.takeIf { it.isBound }?.cfir ?: return true
             if (!variable.isVar) return true
             receiver?.isImmutableStructValueAccess() == true
+        }
+
+        // 属性读取产生的是值结果；即使属性本身有 mut setter，读取出的 struct
+        // 仍不能作为值类型成员修改的可变接收者。属性赋值契约由赋值 checker 单独判定。
+        is CfirPropertySymbol -> true
+        else -> true
+    }
+}
+
+/**
+ * 按官方 CheckLetInstanceAccessMutableFunc 判定 mut 成员函数的接收者。
+ *
+ * 该规则与赋值左值规则不同：属性读取出的 struct 值即使声明了 mut setter，
+ * 仍不是可以承载 mut 成员函数调用的可变值；而赋值检查仍需依据 setter 契约
+ * 判断属性是否可写。因此这里保持独立语义入口，避免两个 checker 互相污染。
+ */
+context(context: CheckerContext)
+private fun CfirExpression.isImmutableStructValueForMutableFunctionAccess(): Boolean {
+    if (this is CfirThisReceiverExpression || this is CfirSuperReceiverExpression) return false
+    if (isResolvedTypeQualifier(context.session)) return false
+    if (!coneTypeOrNull.mayBeStructValueTypeInCurrentContext()) return false
+
+    val access = this as? CfirQualifiedAccessExpression ?: return true
+    val symbol = access.resolvedVariableOrPropertySymbolOrNull()
+    val receiver = access.explicitReceiver ?: access.dispatchReceiver
+    return when (symbol) {
+        is CfirVariableSymbol<*> -> {
+            val variable = symbol.takeIf { it.isBound }?.cfir ?: return true
+            if (!variable.isVar) true else receiver?.isImmutableStructValueForMutableFunctionAccess() == true
         }
 
         is CfirPropertySymbol -> true

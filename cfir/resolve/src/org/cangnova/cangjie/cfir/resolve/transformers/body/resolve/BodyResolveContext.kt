@@ -1876,10 +1876,6 @@ class CfirPCLAInferenceSession(
 
         val candidate = call.candidate()
         if (candidate?.usedOuterCs != true) return
-        System.err.println(
-            "PCLA_PROCESS name=${candidate.callInfo.name} " +
-                    "candidateConstraints=${candidate.system.currentStorage().notFixedTypeVariables.values.map { it.constraints }}",
-        )
         currentCommonSystem.replaceContentWith(candidate.system.currentStorage())
         candidate.freshReceiverConstraintToDrop?.let { constraintToDrop ->
             currentCommonSystem.removeConstraintsForVariable(constraintToDrop.receiverTypeConstructor) { constraint ->
@@ -2009,13 +2005,6 @@ class CfirPCLAInferenceSession(
         val newAtoms = outerCandidate.postponedPCLACalls
             .subList(fromIndex, queueSize)
             .filterIsInstance<ConeAtomWithCandidate>()
-        System.err.println(
-            "PCLA_DEBUG statement=${statement::class.simpleName} " +
-                    "atoms=${newAtoms.size} params=" +
-                    statementProcessingOwnerLambda.valueParameters.joinToString { parameter ->
-                        "${parameter.name}:${parameter.returnTypeRef.coneTypeOrNull}"
-                    },
-        )
         for (parameter in statementProcessingOwnerLambda.valueParameters) {
             fixLambdaParameterFromHardBounds(parameter, newAtoms)
         }
@@ -2040,14 +2029,8 @@ class CfirPCLAInferenceSession(
         val hardBounds = collectHardBoundsForVariable(variableConstructor, newAtoms) +
                 collectProperDirectConstraintBounds(variableConstructor) +
                 convergedFreshReceiverOwnerBounds(variableConstructor)
-        System.err.println(
-            "PCLA_DEBUG fix=${parameter.name} placeholder=$placeholderType hardBounds=$hardBounds " +
-                    "owners=${freshReceiverCandidateOwnersByTypeVariable[variableConstructor]} " +
-                    "constraints=${currentCommonSystem.currentStorage().notFixedTypeVariables[variableConstructor]?.constraints}",
-        )
         if (hardBounds.isEmpty()) return
         val solution = solveUniqueSolution(variableConstructor, hardBounds) ?: return
-        System.err.println("PCLA_DEBUG solution=${parameter.name}:$solution")
         parameter.replaceReturnTypeRef(
             solution.toCfirResolvedTypeRef(parameter.returnTypeRef.source, parameter.returnTypeRef),
         )

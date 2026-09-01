@@ -170,10 +170,24 @@ object CfirMapArguments : ResolutionStage() {
             return
         }
 
-        val requiredParameterCount = parameters.count { parameter ->
-            parameter != variadicParameter && parameter.defaultValue == null
-        }
-        if (!candidate.isCallableValueCall && argumentAtoms.size < requiredParameterCount) {
+        /*
+         * 官方 CheckCandidate 会先检查普通调用的参数形状：当实参总数与形参总数
+         * 不同，且位置实参数量又无法对应位置形参数量时，必须直接报告调用级
+         * WRONG_NUMBER_OF_ARGUMENTS。只有位置形状一致时，才进入
+         * CheckArgsWithParamName，进而报告 NEED_NAMED_ARGUMENT 或解析默认参数。
+         * 仅按 required 参数数量预检会把 `foo1(1)` 和 `foo0(1, 2)` 错误地降成
+         * NEED_NAMED_ARGUMENT；这条规则属于所有普通函数/构造器调用的共享映射边界。
+         */
+        val positionalParameterCount = parameters
+            .takeWhile { parameter -> !parameter.isNamed }
+            .size
+        val hasSamePositionalArgumentShape = positionalParameterCount == positionalArgumentCount
+        if (
+            !candidate.isCallableValueCall &&
+            variadicParameter == null &&
+            argumentAtoms.size != parameters.size &&
+            !hasSamePositionalArgumentShape
+        ) {
             candidate.initializeArgumentMapping(argumentAtoms, linkedMapOf())
             candidate.numDefaults = 0
             candidate.initializeArgumentMappingOutcome(

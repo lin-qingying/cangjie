@@ -310,35 +310,6 @@ internal class ScopeBasedTowerLevel(
             }
         }
 
-        if (info.callKind == CallKind.Function && result == ProcessResult.SCOPE_EMPTY) {
-            val consumedCallableValues = linkedSetOf<CfirCallableSymbol<*>>()
-
-            fun consumeCallableValue(symbol: CfirCallableSymbol<*>) {
-                if (symbol is CfirFunctionSymbol<*>) return
-                if (!symbol.isDirectCallableValueCandidate()) return
-                if (!consumedCallableValues.add(symbol)) return
-
-                if (consumeCallableCandidate(symbol, processor).isFoundByThisLevel) {
-                    result = ProcessResult.FOUND
-                }
-            }
-
-            if (scope is CfirLocalScope) {
-                scope.processVariablesByName(info.name, ::consumeCallableValue)
-            }
-
-            scope.processCallablesByNameWithLookupProvenance(info.name) { candidate ->
-                val symbol = candidate.symbol
-                if (symbol is CfirFunctionSymbol<*>) return@processCallablesByNameWithLookupProvenance
-                if (!symbol.isDirectCallableValueCandidate()) return@processCallablesByNameWithLookupProvenance
-                if (!consumedCallableValues.add(symbol)) return@processCallablesByNameWithLookupProvenance
-
-                if (consumeCallableCandidate(symbol, processor, candidate.provenance).isFoundByThisLevel) {
-                    result = ProcessResult.FOUND
-                }
-            }
-        }
-
         return result.forwardMemberLookupBlockers(processor)
     }
 
@@ -431,14 +402,6 @@ internal class ScopeBasedTowerLevel(
     private fun CfirEnumConstructorSymbol.isDeclaredInSource(): Boolean =
         takeIf { it.isBound }?.cfir?.origin?.fromSource == true
 
-    /**
-     * 判断变量符号是否可以作为直接 callable value 调用。
-     */
-    private fun CfirCallableSymbol<*>.isDirectCallableValueCandidate(): Boolean {
-        if (!isBound) return false
-        val declaration = cfir as? CfirVariable ?: return false
-        return declaration.returnTypeRef.coneTypeOrNull.recoverableFunctionTypeOrNull() != null
-    }
 }
 
 /**
