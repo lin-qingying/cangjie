@@ -4872,6 +4872,24 @@ esolveDelegatingConstructorCallAndSelectCandidate);
   * 全量：`java -jar gradle-queue-cli/build/libs/gradle-queue-cli.jar --project-dir D:\code\intellij\cangjie :cfir:analysis-tests:test --no-configuration-cache --no-daemon --max-workers=1 --console=plain --no-build-cache` → `8422 tests completed, 743 failed, 307 skipped`，`errors=0`；新鲜 XML 逐 testcase 聚合为 `8423 records / 743 failures / 0 errors / 308 skipped`（含 1 条聚合记录）。
   * 修复前 HEAD 基线：`8422 tests completed, 745 failed, 307 skipped`；按 `(suite, testcase)` 失败键对比，`FIXED=2`（LLT/LLT-PSI 的 `testVar2`）、`REGRESSED=0`，测试总数、errors、skipped 不变，净减少 2 个失败。全量仍有 743 条既有失败，不能称为全量全绿。
 
+## 2026-09-01：Typealias 语义展开、无效类型传播与别名模式覆盖
+
+- problem type: Typealias / Resolve / Generics / Diagnostics —— typealias 参与 extend-supertype 匹配、泛型构造器兼容性、枚举模式覆盖和无效 RHS initializer 时，必须使用语义展开后的类型；不能让别名的源码拼写制造额外类型映射，也不能从包含错误类型的别名继续派生二次 `TYPE_MISMATCH`。
+- root cause: `CfirTypeAwareSupertypeProviderImpl` 将查询入口的原始 typealias 类型继续传入 extend substitution predicate，`CfirExtendSubstitution` 因而在语义类型已经展开后又按别名拼写建立 direct substitution，导致 extend 关系和泛型构造器适用性偏离官方结果。数组字面量 expected type 和 initializer mismatch 只检查根 `ConeErrorType`，未识别藏在外层类型或 typealias 展开结果中的错误类型，于是 `typealias37` 的无效 RHS 继续产生多余初始化器诊断。
+- official Cangjie evidence: official `cjc 1.0.5` 对 `typealias11.cj`、`typealias12.cj` 和 `typealias_partial_infer_02.cj` 报告 `UNREACHABLE_PATTERN`；对 `typealias30.cj`、`typealias35.cj` 报告初始化器位置的 `TYPE_MISMATCH`；对 `typealias37.cj` 只报告 RHS 的 `NOT_A_TYPE` 与内部 `UNDECLARED_TYPE_NAME`，不报告数组初始化器 `TYPE_MISMATCH`。上游 `external/cangjie_compiler/src/Sema/TypeCheckExpr.cpp` 的 `HandleAlias`、`TypeCheckerImpl.h` 的 typealias 参数生成/替换、`TypeManager.cpp` 的 alias substitution，以及 `external/cangjie_compiler/src/Sema/PreCheck.cpp` 的 `GetTyFromASTType`/`CheckTypeAliasDecl` 共同证明：先完成 alias 语义替换，再由普通类型兼容性和声明检查器报告根诊断。
+- Kotlin counterpart files consulted: `external/kotlin/compiler/fir/resolve/src/org/jetbrains/kotlin/fir/resolve/TypeExpansionUtils.kt`、`external/kotlin/compiler/fir/providers/src/org/jetbrains/kotlin/fir/scopes/impl/TypeAliasConstructorsSubstitutingScope.kt`、`external/kotlin/compiler/fir/resolve/src/org/jetbrains/kotlin/fir/resolve/inference/FirCallCompleter.kt`；仅用于对照 typealias 展开、构造器 scope substitution 和错误类型传播的阶段边界，具体 Cangjie 语义以 `cjc`/上游实现为准。
+- CFIR owner files changed:
+  * `cfir/providers/src/org/cangnova/cangjie/cfir/resolve/providers/CfirExtendSubstitution.kt`、`cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/services/CfirTypeAwareSupertypeProviderImpl.kt`：extend-supertype predicate 统一消费语义展开类型，移除重复的 raw-alias direct mapping，并保持泛型 owner substitution 在同一层完成。
+  * `cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirInitializerTypeMismatchUtils.kt`、`cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirExpressionsResolveTransformer.kt`：递归检查 alias expansion 中的错误类型；错误 target 下的数组字面量独立恢复自身类型，不再生成遮蔽根错误的 initializer mismatch。
+- repair principle: typealias 只在语义展开阶段提供一个统一的类型视图，extend、构造器兼容性、initializer 和字面量恢复均复用该视图，不把源码别名拼写或错误中间态作为第二套语义输入。
+- fixtures covered: `cfir/analysis-tests/testData/llt/typealias/typealias11.cj`、`typealias12.cj`、`typealias_partial_infer_02.cj`、`typealias30.cj`、`typealias35.cj`、`typealias37.cj`；完整递归 `cfir/analysis-tests/testData/llt/typealias/` Typealias PSI/LightTree 双路径 92 测试作为同族回归，包含 `import_alias/typeaslias.cj` 和 `overload_and_alias/main.cj`。
+- fixture correction: 按官方 `cjc` 结果补充 `typealias11`、`typealias12`、`typealias_partial_infer_02` 的 `UNREACHABLE_PATTERN`，并补充 `typealias30`、`typealias35` 初始化器位置的 `TYPE_MISMATCH`；`typealias37` 源码和期望未改动。
+- verification commands and outcome:
+  * HEAD 基线（独立工作树）：Typealias PSI/LightTree 双路径共 `92 tests / 12 failures / 0 errors / 0 skipped`；失败为两条入口各自的 `testTypealias11`、`testTypealias12`、`testTypealiasPartialInfer02`、`testTypealias30`、`testTypealias35`、`testTypealias37`。
+  * 修复后 Typealias 全族：新鲜 XML 共 `92 tests / 0 failures / 0 errors / 0 skipped`，上述两条入口全部通过。
+  * 全量回归：`gradlew.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain` → `8422 tests completed, 729 failed, 307 skipped`，`errors=0`；新鲜 XML 聚合为 `8423 records / 729 failures / 0 errors / 308 skipped / 7386 passed`（含 1 条聚合记录）。
+  * 修复前 HEAD 全量基线：`8422 tests completed, 741 failed, 307 skipped`，`errors=0`；新鲜 XML 基线为 `8423 records / 741 failures / 0 errors / 308 skipped / 7374 passed`。测试总数、errors、skipped 均不变，净减少 `12` 个失败，正好对应 Typealias 双路径的 12 个失败键；全量仍有 729 条既有失败，不能称为全量全绿。
+
 ## 隐式推断变量不应把推断结果反向作为 initializer 的 target（let001）
 
 - problem type: Type Inference / Diagnostics / Variable Initializer —— 无显式类型的 `let`/`var` initializer 先推断自身类型，不能再把这个推断结果作为 initializer 的声明级 target；显式类型仍必须向 initializer 传播。`let001.cj` 同时覆盖成员字段、捕获 lambda、match 分支和未初始化不可变变量的诊断。

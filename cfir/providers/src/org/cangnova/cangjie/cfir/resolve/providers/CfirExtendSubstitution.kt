@@ -96,15 +96,11 @@ fun findExtendDeclarationSubstitution(
  * - `extend<X> A<B<X>> <: I<X>`：映射为空，`I<X>` 中的 `X` 无法覆盖，边不成立（cjc 报 mismatched types）；
  * - `extend<X, Y> A<X, B<Y>> <: I<X>`：`X` 直接映射覆盖，`Y` 未被接口引用，边成立；
  * - `extend<Y> C<Y> <: I<Y>` 与 `C<Int64>`（`type C<X> = GennericClassA<Array<X>, Array<X>>`）：
- *   官方在 alias 拼写层匹配，`C<Y>` 的顶层实参 `Y` 是 TyVar，映射 `{Y|->Int64}` 覆盖 `I<Y>`，边成立。
- *   若先展开 typealias 再取顶层实参，`Y` 会沉入 `Array<Y>` 而被误判，因此 [rawReceiverType]
- *   必须携带查询入口的原始拼写。
+ *   官方查询类型已经是展开后的 `GennericClassA<Array<Int64>, Array<Int64>>`，而 extend
+ *   目标的顶层实参是 `Array<Y>`，不是直接的 `TyVar`；因此不会建立 `Y -> Int64` 映射，
+ *   该接口边不成立。调用处的 typealias 原始拼写不能重新注入此谓词路径。
  *
  * 成员查找、可达性遍历等结构化语义（官方 `GetAllExtendInterfaceTyHelper`）不受本判据影响。
- *
- * @param rawReceiverType 查询入口的原始拼写类型（未做 typealias 展开）。
- *   superclass 传播链上的中间类型没有独立的用户拼写，传 `null`，
- *   此时按语义展开层判定——该层与官方"无 alias 拼写可保留"的行为一致。
  */
 fun isExtendSuperTypeRefPredicateVisible(
     session: CfirSession,
@@ -112,7 +108,6 @@ fun isExtendSuperTypeRefPredicateVisible(
     targetPattern: ConeCangJieType,
     concreteReceiverType: ConeCangJieType,
     superTypeRefType: ConeCangJieType,
-    rawReceiverType: ConeCangJieType? = null,
 ): Boolean {
     val extendTypeParameterConstructors = extend.typeParameters.mapTo(linkedSetOf<TypeConstructorMarker>()) {
         it.symbol.toLookupTag()
@@ -130,36 +125,18 @@ fun isExtendSuperTypeRefPredicateVisible(
     }
     if (referencedExtendParameters.isEmpty()) return true
 
-    // alias 拼写层 direct 映射：官方 `GetTypeArgs(ty)` 保留 typealias 引用的原始实参，
-    // `C<Y>` 对 `C<Int64>` 在这一层才是 `Y` 的 direct 位置。构造器不一致说明
-    // 查询侧拼写已被展开或改写，官方在 size/匹配检查下同样无法建立映射，
-    // 此时回退到语义展开层的顶层判定。
-    val rawPatternArguments = targetPattern.extendPredicateTypeArguments()
-    val rawReceiverArguments = rawReceiverType?.extendPredicateTypeArguments()
-    val sameRawConstructor = rawReceiverType != null &&
-            rawPatternArguments.size == rawReceiverArguments?.size &&
-            targetPattern.hasSameExtendPredicateConstructor(rawReceiverType)
-
+    // 官方 `HasExtendInterfaceTyHelper` 只检查已解析查询类型的顶层实参；
+    // typealias 的原始拼写已经在语义类型展开阶段消失，不能作为另一套映射来源。
+    val semanticPattern = targetPattern.semanticExtendMatchType(session)
+    val semanticReceiver = concreteReceiverType.semanticExtendMatchType(session)
+    val patternArguments = semanticPattern.extendPredicateTypeArguments()
+    val receiverArguments = semanticReceiver.extendPredicateTypeArguments()
     val directSubstitutions = linkedMapOf<TypeConstructorMarker, ConeCangJieType>()
-    if (sameRawConstructor) {
-        rawPatternArguments.forEachIndexed { index, patternType ->
-            if (patternType is ConeTypeParameterType && patternType.lookupTag in extendTypeParameterConstructors) {
-                rawReceiverArguments?.getOrNull(index)?.let { receiverArgument ->
-                    directSubstitutions.putIfAbsent(patternType.lookupTag, receiverArgument)
-                }
-            }
-        }
-    } else {
-        val semanticPattern = targetPattern.semanticExtendMatchType(session)
-        val semanticReceiver = concreteReceiverType.semanticExtendMatchType(session)
-        val patternArguments = semanticPattern.extendPredicateTypeArguments()
-        val receiverArguments = semanticReceiver.extendPredicateTypeArguments()
-        patternArguments.forEachIndexed { index, patternArgument ->
-            val patternType = patternArgument
-            if (patternType is ConeTypeParameterType && patternType.lookupTag in extendTypeParameterConstructors) {
-                receiverArguments.getOrNull(index)?.let { receiverArgument ->
-                    directSubstitutions.putIfAbsent(patternType.lookupTag, receiverArgument)
-                }
+    patternArguments.forEachIndexed { index, patternArgument ->
+        val patternType = patternArgument
+        if (patternType is ConeTypeParameterType && patternType.lookupTag in extendTypeParameterConstructors) {
+            receiverArguments.getOrNull(index)?.let { receiverArgument ->
+                directSubstitutions.putIfAbsent(patternType.lookupTag, receiverArgument)
             }
         }
     }
@@ -179,22 +156,6 @@ private fun ConeCangJieType.extendPredicateTypeArguments(): List<ConeCangJieType
     is ConeTupleType -> elementTypes
     is ConePointerType -> listOf(pointeeType)
     else -> typeArguments.map { it.type }
-}
-
-/** 判断两个类型是否具有同一个 extend direct-mapping 构造器。 */
-private fun ConeCangJieType.hasSameExtendPredicateConstructor(other: ConeCangJieType): Boolean = when (this) {
-    is ConeFunctionType -> other is ConeFunctionType &&
-            isCFunc == other.isCFunc &&
-            isClosureType == other.isClosureType &&
-            hasVariableLenArg == other.hasVariableLenArg &&
-            parameterTypes.size == other.parameterTypes.size
-    is ConeTupleType -> other is ConeTupleType && elementTypes.size == other.elementTypes.size
-    is ConePointerType -> other is ConePointerType
-    is ConeVArrayType -> other is ConeVArrayType && size == other.size
-    is ConeLookupTagBasedType -> other is ConeLookupTagBasedType &&
-            classIdOrPrimitiveClassId == other.classIdOrPrimitiveClassId
-    is ConeTypeAliasType -> other is ConeTypeAliasType && classId == other.classId
-    else -> this::class == other::class
 }
 
 /**

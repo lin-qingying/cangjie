@@ -3589,7 +3589,9 @@ open class CfirExpressionsResolveTransformer(
     ): CfirExpression {
         val expectedType = data.expectedTypeOrNull?.fullyExpandedType()
         val expectedElementType = expectedType?.arrayLiteralElementType
-        if (expectedType is ConeErrorType && expectedElementType == null) {
+        // InvalidTy 可能包在已解析的外层类型或 typealias 展开结果中；这时数组字面量只能
+        // 独立恢复自身类型，不能因为无效 target 没有元素类型而派生 TYPE_MISMATCH。
+        if (expectedType?.containsErrorType() == true) {
             arrayLiteral.transformChildren(transformer, ResolutionMode.ContextIndependent)
             if (arrayLiteral.coneTypeOrNull == null) {
                 arrayLiteral.replaceConeTypeOrNull(
