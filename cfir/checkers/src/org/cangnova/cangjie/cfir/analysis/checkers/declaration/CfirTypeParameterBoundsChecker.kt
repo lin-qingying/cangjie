@@ -4,6 +4,7 @@ import org.cangnova.cangjie.cfir.analysis.checkers.CfirExtendSemantics
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.declaredUpperBoundConeTypeInCurrentContextOrNull
 import org.cangnova.cangjie.cfir.analysis.checkers.declaredUpperBoundTypesInCurrentContext
+import org.cangnova.cangjie.cfir.analysis.checkers.firstCharacterDiagnosticSource
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirClass
@@ -35,6 +36,7 @@ import org.cangnova.cangjie.cfir.symbols.constructType
 import org.cangnova.cangjie.cfir.symbols.toLookupTag
 import org.cangnova.cangjie.cfir.types.ConeAnyType
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.ConeClassifierType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeLookupTagBasedType
@@ -42,6 +44,7 @@ import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
 import org.cangnova.cangjie.cfir.types.StdlibClassIds
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.types.createTypeSubstitutorByTypeConstructor
+import org.cangnova.cangjie.cfir.types.declaredUpperBoundConeTypeOrNull
 import org.cangnova.cangjie.cfir.types.declaredUpperBoundRefsAfterTypeResolve
 import org.cangnova.cangjie.cfir.types.renderForDebugging
 import org.cangnova.cangjie.cfir.types.type
@@ -63,6 +66,19 @@ object CfirTypeParameterBoundsChecker : CfirTypeParameterChecker() {
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirTypeParameter) {
+        val owner = declaration.containingDeclarationSymbol.cfir as? CfirTypeParameterRefsOwner
+        if (owner?.typeParameters?.firstOrNull()?.symbol == declaration.symbol) {
+            owner.findFirstInvalidNestedGenericUpperBoundInstantiation()?.let { violation ->
+                reporter.reportOn(
+                    source = owner.source?.firstCharacterDiagnosticSource(),
+                    factory = CfirErrors.GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT,
+                    a = violation.actualType,
+                    b = violation.upperBound,
+                    c = violation.genericType,
+                )
+            }
+        }
+
         if (with(context.session) { declaration.findFirstGenericUpperBoundRecursionIssueInOwner() } != null) return
 
         val nonErrorBounds = declaration
@@ -98,12 +114,137 @@ object CfirTypeParameterBoundsChecker : CfirTypeParameterChecker() {
             .map { it.fullyExpandTypeAlias() }
 
         if (classBounds.size > 1 && !classBounds.areInOneInheritanceChain()) {
-            reporter.reportOn(declaration.source, CfirErrors.CONFLICTING_UPPER_BOUNDS)
+            reporter.reportOn(declaration.source, CfirErrors.MULTIPLE_CLASS_UPPER_BOUNDS)
         }
 
         declaration.reportUpperBoundInheritedMemberTypeConsistency(boundsWithExposedClassConstraints)
     }
 }
+
+/**
+ * 对齐官方 `CheckUpperBoundsLegality`：检查声明上界中递归出现的泛型实例化。
+ *
+ * 该检查必须在声明级执行。类型引用 checker 只能把错误落到嵌套实参，无法补上
+ * 官方同时落在所属 class/function 声明头部的约束错误。
+ */
+context(context: CheckerContext)
+private fun CfirTypeParameterRefsOwner.findFirstInvalidNestedGenericUpperBoundInstantiation():
+    GenericUpperBoundInstantiationViolation? {
+    val visited = linkedSetOf<String>()
+    for (typeParameter in typeParameters) {
+        for (upperBound in typeParameter.declaredUpperBoundTypesForInstantiation()) {
+            upperBound.findFirstInvalidNestedGenericUpperBoundInstantiation(visited)?.let { return it }
+        }
+    }
+    return null
+}
+
+/** 在一个上界类型树中查找第一个不满足目标泛型声明约束的实例化。 */
+context(context: CheckerContext)
+private fun ConeCangJieType.findFirstInvalidNestedGenericUpperBoundInstantiation(
+    visited: MutableSet<String>,
+): GenericUpperBoundInstantiationViolation? {
+    val expandedType = fullyExpandTypeAlias()
+    val visitKey = expandedType.renderForDebugging()
+    if (!visited.add(visitKey)) return null
+
+    val classifierType = expandedType as? ConeClassifierType
+    if (classifierType != null && classifierType.typeArguments.isNotEmpty()) {
+        val targetDeclaration = expandedType.toResolvedClassLikeDeclaration()
+        val lookupType = expandedType as? ConeLookupTagBasedType
+        if (targetDeclaration != null && lookupType != null &&
+            targetDeclaration.typeParameters.size == classifierType.typeArguments.size
+        ) {
+            val substitutor = targetDeclaration.createDeclarationTypeSubstitutor(lookupType)
+            for ((index, targetParameter) in targetDeclaration.typeParameters.withIndex()) {
+                val targetBounds = targetParameter.declaredUpperBoundTypesForInstantiation()
+                if (targetBounds.isEmpty()) continue
+
+                val actualType = classifierType.typeArguments[index].type
+                if (actualType is ConeErrorType) continue
+
+                val substitutedBounds = targetBounds.map { bound ->
+                    substitutor.substituteOrSelf(bound)
+                }.filterNot { it is ConeErrorType }
+                if (substitutedBounds.isEmpty()) continue
+
+                if (!actualType.satisfiesGenericUpperBounds(substitutedBounds)) {
+                    return GenericUpperBoundInstantiationViolation(
+                        genericType = expandedType,
+                        actualType = actualType,
+                        upperBound = context.session.typeContext.intersectTypes(substitutedBounds) as ConeCangJieType,
+                    )
+                }
+            }
+        }
+    }
+
+    classifierType?.typeArguments?.forEach { argument ->
+        argument.type.findFirstInvalidNestedGenericUpperBoundInstantiation(visited)?.let { return it }
+    }
+    return null
+}
+
+/**
+ * 泛型实参满足声明约束的判断。
+ *
+ * 对具体类型要求其满足全部上界；对泛型实参则沿官方 `Assumption` 暴露的上界逐条
+ * 寻找满足关系，避免把 `X <: A<X>` 错误判成不满足 `A<T>` 自身的约束。
+ */
+context(context: CheckerContext)
+private fun ConeCangJieType.satisfiesGenericUpperBounds(
+    upperBounds: List<ConeCangJieType>,
+): Boolean {
+    val typeParameterType = this as? ConeTypeParameterType
+    if (typeParameterType == null) {
+        return upperBounds.all { upperBound ->
+            AbstractTypeChecker.isSubtypeOfWithoutOptionBoxing(
+                context.session.typeContext,
+                this,
+                upperBound,
+            )
+        }
+    }
+
+    val typeParameter = typeParameterType.lookupTag.typeParameterSymbol.cfir
+    val owner = typeParameter.containingDeclarationSymbol.cfir as? CfirTypeParameterRefsOwner
+    val exposedBounds = owner
+        ?.collectAssumptionUpperBounds()
+        ?.get(typeParameter.symbol)
+        .orEmpty()
+        .ifEmpty { typeParameter.declaredUpperBoundTypesForInstantiation() }
+
+    return upperBounds.all { upperBound ->
+        exposedBounds.any { exposedBound ->
+            AbstractTypeChecker.isSubtypeOfWithoutOptionBoxing(
+                context.session.typeContext,
+                exposedBound,
+                upperBound,
+            )
+        }
+    }
+}
+
+/** 读取目标泛型声明参数的已解析上界，并跳过错误中间态。 */
+context(context: CheckerContext)
+private fun CfirTypeParameterRef.declaredUpperBoundTypesForInstantiation(): List<ConeCangJieType> =
+    symbol.toLookupTag()
+        .declaredUpperBoundRefsAfterTypeResolve()
+        .mapNotNull { bound ->
+            bound.declaredUpperBoundConeTypeInCurrentContextOrNull()
+                ?: bound.declaredUpperBoundConeTypeOrNull()
+        }
+        .filterNot { it is ConeErrorType }
+
+/** 记录官方递归泛型实例化检查所需的三类语义类型。 */
+private data class GenericUpperBoundInstantiationViolation(
+    /** 发生约束检查的泛型实例化类型。 */
+    val genericType: ConeCangJieType,
+    /** 实际写出的泛型实参。 */
+    val actualType: ConeCangJieType,
+    /** 该实参必须满足的上界。 */
+    val upperBound: ConeCangJieType,
+)
 
 /**
  * 按官方 `Assumption` 阶段构建当前声明的泛型约束环境。

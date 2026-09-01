@@ -115,7 +115,12 @@ private fun CjParenthesizedType.toCfirParenthesizedTypeRef(
             source = ref.toCjSourceElementOrNull(toSource)
             diagnostic = ConeSimpleDiagnostic("Malformed parenthesized type: missing component type")
         }
-    return innerTypeElement.toCfirTypeRef(ref, toSource)
+    val innerTypeReference = getTypeReference()
+        ?: return buildErrorTypeRef {
+            source = ref.toCjSourceElementOrNull(toSource)
+            diagnostic = ConeSimpleDiagnostic("Malformed parenthesized type: missing component type reference")
+        }
+    return innerTypeElement.toCfirTypeRef(innerTypeReference, toSource)
 }
 
 /** 将可选类型 PSI 转换为 [CfirTypeRef]，缺少内部类型时生成 error type ref。 */

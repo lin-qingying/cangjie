@@ -60,6 +60,16 @@ class CjParenthesizedType : CjElementImplStub<CangJiePlaceHolderStub<CjParenthes
     }
 
     /**
+     * 返回括号内承载真实源码范围的类型引用。
+     *
+     * 类型转换和诊断定位必须使用内部 `TYPE_REFERENCE`，不能把外层括号类型节点
+     * 当作内部类型的 source；否则 `(Array)` 会把泛型类型诊断错误地扩大到括号。
+     */
+    fun getTypeReference(): CjTypeReference? {
+        return getStubOrPsiChild(CjStubElementTypes.TYPE_REFERENCE)
+    }
+
+    /**
      * 提供 `getTypeArguments` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
      */
     fun getTypeArguments(): List<CjTypeProjection> {
