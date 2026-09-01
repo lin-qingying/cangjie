@@ -1636,9 +1636,11 @@ private fun Collection<CfirFunctionInheritanceProvenance>.filterOutAbstractFunct
  * 归并继承图中代表同一最终函数契约的父成员。
  *
  * 官方 `MergeInheritedMembers` 先归并继承图中原本等价的 requirement，再执行实例化替换。
- * 因此 key 同时包含直接输入成员的归一化签名、实例化后的签名与 lookup 来源：原始签名区分
- * 不同泛型函数契约，实例化签名区分同一契约经不同父类型实参得到的 overload，来源则保留
- * 不同 extend 注入的独立成员图。三者都相同时，才是重复继承路径贡献的同一个 requirement。
+ * 因此 key 同时包含直接输入成员的归一化签名、owner 的类型实参结构、实例化后的签名与
+ * lookup 来源：原始签名区分不同泛型函数契约，owner 实参结构区分 `I<X>`/`I<Y>` 这类
+ * 实例化前独立的继承输入，实例化签名区分同一契约经不同父类型实参得到的 overload，
+ * 来源则保留不同 extend 注入的独立成员图。三者都相同时，才是重复继承路径贡献的同一
+ * 个 requirement。
  */
 private fun Collection<CfirFunctionInheritanceProvenance>.mergeEquivalentInheritedFunctions():
         Collection<CfirFunctionInheritanceProvenance> {
@@ -1649,6 +1651,9 @@ private fun Collection<CfirFunctionInheritanceProvenance>.mergeEquivalentInherit
         val key = InheritedFunctionMergeKey(
             isStatic = directInput.isStaticMemberForOverride(),
             provenanceSignature = directInput.overrideSignatureKey(),
+            inheritanceOwnerTypeArguments = candidate.identity.inheritanceOwnerType
+                ?.typeArguments
+                .orEmpty(),
             instantiatedSignature = symbol.overrideSignatureKey(),
             lookupProvenance = candidate.lookupProvenance,
             defaultImplementationOwner = candidate.identity.directInputMember
@@ -1671,6 +1676,14 @@ private data class InheritedFunctionMergeKey(
 
     /** 当前 owner substitution 之前的函数参数签名。 */
     val provenanceSignature: String,
+
+    /**
+     * 当前继承 owner 的类型实参结构。
+     *
+     * 这里只保留实参而不保留 owner classifier：`I<X>` 与 `I<Y>` 中的类型参数 tag
+     * 仍然不同，而 `F1<Int>` 与 `F2<Int>` 的同形实参可以按官方 requirement 规则归并。
+     */
+    val inheritanceOwnerTypeArguments: List<ConeTypeProjection>,
 
     /** 沿父类型边完成实例化后的签名。 */
     val instantiatedSignature: String,
