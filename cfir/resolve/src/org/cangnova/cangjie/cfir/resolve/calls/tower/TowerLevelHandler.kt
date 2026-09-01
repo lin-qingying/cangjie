@@ -173,6 +173,18 @@ internal class ScopeBasedTowerLevel(
         processor: TowerLevelProcessor,
         lookupProvenance: CfirCallableLookupProvenance = CfirCallableLookupProvenance.None,
     ): CallableCandidateDiscovery {
+        // 官方 LookUpImpl::FindRealResult 在变量 initializer 子树中排除当前 VarDecl，
+        // 但仍继续向父 scope 查找同名声明。对应到 tower，必须在成员 scope 的候选
+        // 消费前排除当前字段自身；否则该候选会使 tower 提前在隐式 this 层停止，
+        // 同文件的顶层声明永远没有机会参与解析。
+        if (
+            processor.callInfo.explicitReceiver == null &&
+            givenExtensionReceiver == null &&
+            dispatchReceiver != null &&
+            components.fieldBeingInitialized?.symbol == symbol
+        ) {
+            return CallableCandidateDiscovery.NOT_DISCOVERABLE
+        }
         symbol.lazyResolveToPhase(CfirResolvePhase.TYPES)
         val accessKind = when (processor.callInfo.callKind) {
             CallKind.NamedValueAccess -> if (

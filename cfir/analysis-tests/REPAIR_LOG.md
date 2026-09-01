@@ -4853,3 +4853,21 @@ esolveDelegatingConstructorCallAndSelectCandidate);
   * 目标及守卫双路径：`testInterfaceDefaultImplementedFuncInvalid6`、`testInterfaceDefaultImplementedFuncInvalid5`、`testInterfaceDefaultImplementedFuncGenericOk2`、`testInterfaceDefaultImplementedFuncGenericOk3`、`testGenericSubstPerf` → 全部通过；目标 PSI/LightTree 两条测试在新鲜 XML 中均为 `failures=0, errors=0, skipped=0`。
   * 全量回归：`.\gradlew.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain` → `8422 tests completed, 745 failed, 307 skipped`，`errors=0`；新鲜 XML 聚合为 `8423 records / 745 failures / 0 errors / 308 skipped / 7370 passed`。
   * 修复前 HEAD 基线：`8422 tests completed, 747 failed, 307 skipped`，`errors=0`；按 `(suite, testcase)` 失败键对比 `FIXED=2`（目标 PSI/LightTree）、`REGRESSED=0`，测试总数、errors、skipped 均不变，净减少 2 个失败。当前全量仍有 745 条既有失败，不能称为全量全绿。
+
+## 2026-09-01：成员字段 initializer 的当前声明遮蔽顶层 pattern binding（var2.cj）
+
+- problem type: Resolve / Scope / Variable Initializer —— 成员字段 initializer 中的裸名称若与当前字段同名，必须排除正在声明的字段自身，并继续按父作用域查找；`var2.cj` 中 `Basec.atest` 的 initializer 应解析到同文件顶层 `atest`，不能产生 `UNRESOLVED_REFERENCE`。
+- root cause: 字段 initializer 通过隐式 `this` 进入成员 scope 时，tower 将当前 `CfirFieldVariable` 当作已发现候选并在该层停止，未执行官方 initializer 子树中排除当前 `VarDecl` 后继续向父作用域查找的规则。顶层 `var (a, b)` 仍由 `CfirPatternVariable` 建模，其 binding variables 才进入顶层 callable scope；本修复没有改变该声明模型。
+- official Cangjie evidence: official `cjc 1.0.5` 编译 `cfir/analysis-tests/testData/llt/var/var2.cj` 无诊断；`external/cangjie_compiler/src/Sema/LookUpImpl.cpp:512-574` 的 `LookUpImpl::FindRealResult` 在变量 initializer 子树中通过 `IsNodeInVarDecl` 排除当前 `VarDecl`，`LookupImpl` 随后在 `:625` 继续父作用域查找。
+- Kotlin counterpart files consulted: `external/kotlin/compiler/fir/resolve/src/org/jetbrains/kotlin/fir/resolve/calls/FirCallResolver.kt` 与 tower candidate consumption 结构；仅用于确认候选发现层应允许当前层明确“不发现”并继续外层 lookup，不引入 Kotlin 专有语义。
+- CFIR owner files changed:
+  * `cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/BodyResolveComponents.kt`：暴露当前字段 initializer 上下文。
+  * `cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirAbstractBodyResolveTransformer.kt`：将 `BodyResolveContext.fieldBeingInitialized` 转发给 tower 组件。
+  * `cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/tower/TowerLevelHandler.kt`：在无显式 receiver 的字段 initializer 中排除当前字段候选，返回 `NOT_DISCOVERABLE`，保持父 scope 查找继续进行。
+- repair principle: initializer 中当前声明的排除必须位于共享 tower 候选发现层，并返回可继续外层查找的结构性结果；不改变 `CfirPatternVariable` / binding-variable 的建模，也不为单个 fixture 增加名称特判。
+- fixtures covered: `cfir/analysis-tests/testData/llt/var/var2.cj`，覆盖 `CfirAnalysisLLTTestGenerated$Var.testVar2` 与 `CfirAnalysisLLTPsiTestGenerated$Var.testVar2`；完整 `Var` PSI/LightTree 族均回归。
+- fixture correction: none（fixture 与官方 `cjc` 语义一致）。
+- verification commands and outcome:
+  * Var 双路径定向回归：18 tests completed，`0 failures / 0 errors / 0 skipped`；目标 `testVar2` 的 LLT 与 LLT-PSI 两条入口均通过。
+  * 全量：`java -jar gradle-queue-cli/build/libs/gradle-queue-cli.jar --project-dir D:\code\intellij\cangjie :cfir:analysis-tests:test --no-configuration-cache --no-daemon --max-workers=1 --console=plain --no-build-cache` → `8422 tests completed, 743 failed, 307 skipped`，`errors=0`；新鲜 XML 逐 testcase 聚合为 `8423 records / 743 failures / 0 errors / 308 skipped`（含 1 条聚合记录）。
+  * 修复前 HEAD 基线：`8422 tests completed, 745 failed, 307 skipped`；按 `(suite, testcase)` 失败键对比，`FIXED=2`（LLT/LLT-PSI 的 `testVar2`）、`REGRESSED=0`，测试总数、errors、skipped 不变，净减少 2 个失败。全量仍有 743 条既有失败，不能称为全量全绿。

@@ -164,6 +164,9 @@ abstract class CfirAbstractBodyResolveTransformer(
         /** 当前最内层声明容器；文件级解析时退回到文件本身。 */
         override val container: CfirDeclaration
             get() = context.containerIfAny ?: context.file
+        /** 当前字段 initializer 的语义上下文，供 tower 排除字段自身后继续向父 scope 查找。 */
+        override val fieldBeingInitialized
+            get() = context.fieldBeingInitialized
 
         /** 调用解析阶段流水线执行器。 */
         override val resolutionStageRunner: ResolutionStageRunner = ResolutionStageRunner()
