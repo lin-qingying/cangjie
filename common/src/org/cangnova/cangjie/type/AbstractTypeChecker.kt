@@ -356,6 +356,17 @@ object AbstractTypeChecker {
             return isSubtypeForSameConstructor(state, subType, superType)
         }
 
+        // 官方 TypeManager::IsStructOrEnumSubtype 只在 implicitBoxed=true 时允许值类型
+        // 实现接口。不能让后续的 nominal supertype BFS 绕过这个开关，否则 `(Foo, Foo)`
+        // 会错误地成为 `(Bar, Bar)` 的子类型，函数类型返回值也会得到同样的错误关系。
+        if (
+            !state.isImplicitBoxingAllowed &&
+            ctx.isValueTypeConstructor(subConstructor) &&
+            ctx.isInterface(superConstructor)
+        ) {
+            return false
+        }
+
         // 类型参数：检查上界
         if (ctx.isTypeParameterTypeConstructor(subConstructor)) {
             val classifier = ctx.getTypeParameterClassifier(subConstructor)
@@ -460,7 +471,12 @@ object AbstractTypeChecker {
             val subElementType = subElements[index]
             val superElementType = superElements[index]
             state.runWithArgumentsSettings(subElementType) {
-                if (!isSubtypeOf(state, subElementType, superElementType)) return false
+                // 官方 TypeManager::IsTupleSubtype 固定以 implicitBoxed=false 检查元素。
+                // 目标类型下的 tuple literal 会在表达式检查阶段逐元素完成装箱；这里只
+                // 处理两个已经定型的 tuple 值，不能再次把值类型提升为接口类型。
+                if (!runWithImplicitBoxing(false) { isSubtypeOf(state, subElementType, superElementType) }) {
+                    return false
+                }
             }
         }
 
@@ -682,6 +698,10 @@ private fun TypeSystemContext.isClassTypeConstructor(ctor: TypeConstructorMarker
 
 /** 桥接 [TypeSystemContext.isInterface] */
 private fun TypeSystemContext.isInterface(ctor: TypeConstructorMarker): Boolean = ctor.isInterface()
+
+/** 桥接 [TypeSystemContext.isValueTypeConstructor] */
+private fun TypeSystemContext.isValueTypeConstructor(ctor: TypeConstructorMarker): Boolean =
+    ctor.isValueTypeConstructor()
 
 /** 桥接 [TypeSystemContext.isClassType] */
 private fun TypeSystemContext.isClassType(type: RigidTypeMarker): Boolean = type.isClassType()

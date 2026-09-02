@@ -100,8 +100,6 @@ object CfirTypeParameterBoundsChecker : CfirTypeParameterChecker() {
                 b = declaration.name,
             )
         }
-        if (invalidBounds.isNotEmpty()) return
-
         val boundsWithExposedClassConstraints =
             (declaration.containingDeclarationSymbol.cfir as? CfirTypeParameterRefsOwner)
                 ?.collectAssumptionUpperBounds()
@@ -272,7 +270,7 @@ private fun CfirTypeParameterRefsOwner.collectAssumptionUpperBounds(): Map<CfirT
         val targetBounds = result.getValue(targetParameter)
         if (targetBounds.putIfAbsent(current.stableBoundKey(), current) != null) continue
 
-        current.assumptionConstraints(ownerParameters).forEach(queue::addLast)
+        current.assumptionConstraints(targetParameter, ownerParameters).forEach(queue::addLast)
     }
 
     return result.mapValues { (_, bounds) -> bounds.values.toList() }
@@ -284,8 +282,17 @@ private fun CfirTypeParameterRefsOwner.collectAssumptionUpperBounds(): Map<CfirT
  */
 context(context: CheckerContext)
 private fun ConeCangJieType.assumptionConstraints(
+    targetParameter: CfirTypeParameterSymbol,
     ownerParameters: Set<CfirTypeParameterSymbol>,
 ): List<Pair<CfirTypeParameterSymbol, ConeCangJieType>> {
+    val referencedTypeParameter = (this as? ConeTypeParameterType)?.lookupTag?.typeParameterSymbol
+    if (referencedTypeParameter != null) {
+        return referencedTypeParameter.cfir
+            .declaredUpperBoundTypesInCurrentContext()
+            .filterNot { it is ConeErrorType }
+            .map { bound -> targetParameter to bound }
+    }
+
     val lookupType = fullyExpandTypeAlias() as? ConeLookupTagBasedType ?: return emptyList()
     val declaration = lookupType.toResolvedClassLikeDeclaration() as? CfirTypeParameterRefsOwner ?: return emptyList()
     if (declaration.typeParameters.isEmpty() || declaration.typeParameters.size != lookupType.typeArguments.size) {

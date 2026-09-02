@@ -43,6 +43,8 @@ import org.cangnova.cangjie.cfir.scopes.impl.CfirCompositeTypeScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirExtendMemberScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassSubstitutionScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
+import org.cangnova.cangjie.cfir.scopes.impl.CfirFunctionInheritanceScope
+import org.cangnova.cangjie.cfir.scopes.impl.CfirPropertyInheritanceScope
 import org.cangnova.cangjie.cfir.scopes.createCallableTypeParameterSubstitutorForOverride
 import org.cangnova.cangjie.cfir.scopes.overrideSignatureKey
 import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
@@ -99,7 +101,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
             checkMemberVisibilityNotWiderThanClass(declaration)
         }
         checkInheritedMemberKindConsistency(declaration.memberInheritanceSubject())
-        checkSuperMembersKindConsistency(declaration)
+        checkSuperMembersKindConsistency(declaration.memberInheritanceSubject())
         checkInheritedMemberTypeConsistency(declaration)
     }
 
@@ -115,6 +117,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
             subject = declaration.memberInheritanceSubject(),
             excludingExtend = declaration,
         )
+        checkSuperMembersKindConsistency(declaration.memberInheritanceSubject())
         checkExtendTargetMemberCompatibility(declaration)
     }
 
@@ -621,9 +624,11 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
      * 对齐 C++ sema_inherit_super_member_kind_inconsistent
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
-    private fun checkSuperMembersKindConsistency(classDecl: CfirClassLikeDeclaration) {
+    private fun checkSuperMembersKindConsistency(subject: MemberInheritanceSubject) {
         val kindsByName = mutableMapOf<Name, MutableSet<String>>()
-        for (superTypeRef in classDecl.superTypeRefs) {
+        for (inheritedSource in subject.inheritedSources) {
+            if (inheritedSource.isExtendTarget) continue
+            val superTypeRef = inheritedSource.typeRef
             val type = (superTypeRef as? CfirResolvedTypeRef)?.coneType ?: continue
             if (type is ConeErrorType) continue
             val classId = (type as? ConeClassLikeType)?.classId ?: continue
@@ -640,7 +645,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         for ((name, kinds) in kindsByName) {
             if (kinds.size > 1) {
                 reporter.reportOn(
-                    source = classDecl.classLikeNameDiagnosticSource(),
+                    source = subject.classLikeDeclaration?.classLikeNameDiagnosticSource() ?: subject.source,
                     factory = CfirErrors.INHERIT_SUPER_MEMBER_KIND_INCONSISTENT,
                     a = name,
                 )
@@ -657,11 +662,27 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
     private fun checkInheritedMemberTypeConsistency(classDecl: CfirClassLikeDeclaration) {
         val ownerClassId = (classDecl.symbol as? CfirClassLikeSymbol<*>)?.classId
         val classScope = context.createUseSiteMemberScope(classDecl)
+        val functionInheritanceScope = classScope as? CfirFunctionInheritanceScope
+        val propertyInheritanceScope = classScope as? CfirPropertyInheritanceScope
         for (name in classScope.getCallableNames()) {
-            val inheritedFunctions = mutableListOf<CfirFunctionSymbol<*>>()
+            val ownFunctionSignatures = mutableSetOf<String>()
             classScope.processFunctionsByName(name) { symbol ->
-                if (symbol.ownerClassId(context) != ownerClassId) {
-                    inheritedFunctions += symbol
+                if (symbol.ownerClassId(context) == ownerClassId) {
+                    ownFunctionSignatures += symbol.overrideSignatureKey()
+                }
+            }
+            val inheritedFunctions = mutableListOf<CfirFunctionSymbol<*>>()
+            if (functionInheritanceScope != null) {
+                functionInheritanceScope.processUnmergedInheritedFunctionsByNameWithProvenance(name) { provenance ->
+                    if (provenance.member.ownerClassId(context) != ownerClassId) {
+                        inheritedFunctions += provenance.member
+                    }
+                }
+            } else {
+                classScope.processFunctionsByName(name) { symbol ->
+                    if (symbol.ownerClassId(context) != ownerClassId) {
+                        inheritedFunctions += symbol
+                    }
                 }
             }
             if (inheritedFunctions.hasStaticAndNonStaticMembers()) {
@@ -671,17 +692,59 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                 .filter { it.isBound }
                 .groupBy { it.overrideSignatureKey() }
             for ((_, symbols) in bySignature) {
+                if (symbols.firstOrNull()?.overrideSignatureKey() in ownFunctionSignatures) continue
                 val returnTypes = symbols.mapNotNull { it.resolvedReturnTypeOrNull(context) }
                     .filterNot { it is ConeErrorType }
                 if (returnTypes.size < 2 || !returnTypes.hasInconsistentInheritedTypes(context)) continue
                 reporter.reportOn(
-                    source = classDecl.source,
+                    source = classDecl.classLikeNameDiagnosticSource() ?: classDecl.source,
                     factory = CfirErrors.INHERIT_MEMBER_TYPE_INCONSISTENT,
                     a = "return types",
                     b = "function",
                     c = name,
                 )
                 return
+            }
+
+            val ownPropertyNames = mutableSetOf<Name>()
+            classScope.processPropertiesByName(name) { symbol ->
+                if (symbol.ownerClassId(context) == ownerClassId) {
+                    ownPropertyNames += symbol.name
+                }
+            }
+            val inheritedProperties = mutableListOf<CfirPropertySymbol>()
+            if (propertyInheritanceScope != null) {
+                propertyInheritanceScope.processUnmergedInheritedPropertiesByName(name) { symbol ->
+                    if (symbol.ownerClassId(context) != ownerClassId) {
+                        inheritedProperties += symbol
+                    }
+                }
+            } else {
+                classScope.processPropertiesByName(name) { symbol ->
+                    if (symbol.ownerClassId(context) != ownerClassId) {
+                        inheritedProperties += symbol
+                    }
+                }
+            }
+            if (name in ownPropertyNames) continue
+            val propertyTypes = inheritedProperties
+                .mapNotNull { it.resolvedPropertyTypeOrNull(context) }
+                .filterNot { it is ConeErrorType }
+            if (propertyTypes.size >= 2) {
+                val firstType = propertyTypes.first()
+                if (propertyTypes.drop(1).any {
+                        !AbstractTypeChecker.equalTypes(context.session.typeContext, firstType, it)
+                    }
+                ) {
+                    reporter.reportOn(
+                        source = classDecl.classLikeNameDiagnosticSource() ?: classDecl.source,
+                        factory = CfirErrors.INHERIT_MEMBER_TYPE_INCONSISTENT,
+                        a = "type",
+                        b = "property",
+                        c = name,
+                    )
+                    return
+                }
             }
         }
     }
@@ -715,6 +778,19 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
     ): ConeCangJieType? {
         if (!isBound) return null
         (cfir.returnTypeRef as? CfirResolvedTypeRef)?.coneType?.let { return it }
+        return context.returnTypeCalculator.tryCalculateReturnType(cfir).coneType
+    }
+
+    /**
+     * 获取属性声明的语义类型。
+     *
+     * 属性继承类型比较必须读取 getter/property 的解析结果，而不能把属性候选
+     * 的 scope 合并结果当作类型一致性的依据。
+     */
+    private fun CfirPropertySymbol.resolvedPropertyTypeOrNull(
+        context: CheckerContext,
+    ): ConeCangJieType? {
+        if (!isBound) return null
         return context.returnTypeCalculator.tryCalculateReturnType(cfir).coneType
     }
 
@@ -1072,7 +1148,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                             }
                         }
 
-                        if (!hasStaticConflict && subject is CfirStruct && ownInfo.hasMutFunctionConflict(superInfo)) {
+                        if (!hasStaticConflict && subject.classLikeDeclaration is CfirStruct && ownInfo.hasMutFunctionConflict(superInfo)) {
                             val key = ownInfo.overrideDiagnosticKey(superInfo)
                             if (reportedMutConflicts.add(key)) {
                                 reporter.reportOn(
