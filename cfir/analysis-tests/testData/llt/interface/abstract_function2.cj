@@ -9,6 +9,6 @@ class <!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>A<!> <: I {}
 
 interface I2 <: I {}
 
-class B {
-    static func <!STATIC_CANNOT_BE_OPEN_ABSTRACT_OVERRIDE!>a<!>(): Unit
+class <!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>B<!> {
+    <!MISSING_FUNC_BODY!>s<!>tatic func a(): Unit
 }

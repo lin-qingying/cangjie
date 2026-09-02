@@ -69,7 +69,7 @@ class CfirClassSubstitutionScope(
      * 可选的替换 owner 类型；父类型替换时与 dispatch receiver 区分。
      */
     private val substitutionOwnerType: ConeCangJieType? = null,
-) : CfirTypeScope(), CfirFunctionInheritanceScope, CfirCallableLookupProvenanceScope,
+) : CfirTypeScope(), CfirFunctionInheritanceScope, CfirPropertyInheritanceScope, CfirCallableLookupProvenanceScope,
     CfirMemberLookupCompletenessScope {
     /** substitution 只改变成员签名，lookup completeness 来源保持不变。 */
     override val memberLookupBlockers: List<CfirMemberLookupBlocker>
@@ -171,10 +171,39 @@ class CfirClassSubstitutionScope(
     }
 
     /**
+     * 转发归并前的继承输入，并仅替换成员签名；来源身份保持底层 scope 的结果。
+     */
+    override fun processUnmergedInheritedFunctionsByNameWithProvenance(
+        name: Name,
+        processor: (CfirFunctionInheritanceProvenance) -> Unit,
+    ) {
+        functionInheritanceDelegate().processUnmergedInheritedFunctionsByNameWithProvenance(name) {
+            provenance ->
+            processor(
+                provenance.copy(
+                    member = substituteFunctionSymbol(provenance.member),
+                    baseScope = this@CfirClassSubstitutionScope,
+                )
+            )
+        }
+    }
+
+    /**
      * 按名称处理替换后的属性。
      */
     override fun processPropertiesByName(name: Name, processor: (CfirPropertySymbol) -> Unit) {
         useSiteMemberScope.processPropertiesByName(name) { original ->
+            processor(substitutePropertySymbol(original))
+        }
+    }
+
+    /** 透传并替换归并前的父属性输入。 */
+    override fun processUnmergedInheritedPropertiesByName(
+        name: Name,
+        processor: (CfirPropertySymbol) -> Unit,
+    ) {
+        val inheritanceScope = useSiteMemberScope as? CfirPropertyInheritanceScope ?: return
+        inheritanceScope.processUnmergedInheritedPropertiesByName(name) { original ->
             processor(substitutePropertySymbol(original))
         }
     }

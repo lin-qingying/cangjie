@@ -135,11 +135,37 @@ interface CfirFunctionInheritanceScope {
         processor: (CfirFunctionInheritanceProvenance) -> Unit,
     )
 
+    /**
+     * 按名称处理归并前的直接继承输入及其来源。
+     *
+     * 普通成员解析必须消费 [processFunctionsByNameWithProvenance] 的 effective 结果；
+     * 继承一致性检查则需要在同一 scope 的成员归并前观察各个父类型输入，避免把不同
+     * 返回类型的接口函数错误压成一个代表成员。
+     */
+    fun processUnmergedInheritedFunctionsByNameWithProvenance(
+        name: Name,
+        processor: (CfirFunctionInheritanceProvenance) -> Unit,
+    )
+
     /** 处理函数的直接覆盖输入及其继承来源。 */
     fun processDirectOverriddenFunctionsWithProvenance(
         functionSymbol: CfirNamedFunctionSymbol,
         processor: (CfirFunctionInheritanceProvenance) -> ProcessorAction,
     ): ProcessorAction
+}
+
+/**
+ * 能够保留属性继承原始输入的 type scope。
+ *
+ * 普通属性解析消费过滤后的 effective candidates；继承类型一致性检查则需要观察
+ * 多个父类型的未归并属性，避免子类型属性被错误地当作已经兼容的唯一结果。
+ */
+interface CfirPropertyInheritanceScope {
+    /** 按名称处理归并前的直接继承属性。 */
+    fun processUnmergedInheritedPropertiesByName(
+        name: Name,
+        processor: (CfirPropertySymbol) -> Unit,
+    )
 }
 
 /**
@@ -201,7 +227,7 @@ class CfirClassUseSiteMemberScope private constructor(
      * 当前父类型展开路径，用于阻断继承图中的递归 class id。
      */
     private val supertypePath: CfirSupertypePath = CfirSupertypePath.root(classSymbol.classId),
-) : CfirTypeScope(), CfirFunctionInheritanceScope, CfirCallableLookupProvenanceScope,
+) : CfirTypeScope(), CfirFunctionInheritanceScope, CfirPropertyInheritanceScope, CfirCallableLookupProvenanceScope,
     CfirMemberLookupCompletenessScope {
     /**
      * 创建 class-like use-site 成员 scope。
@@ -441,9 +467,17 @@ class CfirClassUseSiteMemberScope private constructor(
     private val functionsFromParents = hashMapOf<Name, List<CfirFunctionInheritanceProvenance>>()
 
     /**
+     * 父 scope 归并前函数候选缓存。
+     */
+    private val unmergedFunctionsFromParents = hashMapOf<Name, List<CfirFunctionInheritanceProvenance>>()
+
+    /**
      * 父 scope 属性候选缓存。
      */
     private val propertiesFromParents = hashMapOf<Name, List<MemberWithBaseScope<CfirPropertySymbol>>>()
+
+    /** 父 scope 归并前属性候选缓存。 */
+    private val unmergedPropertiesFromParents = hashMapOf<Name, List<MemberWithBaseScope<CfirPropertySymbol>>>()
 
     /**
      * 直接覆盖函数缓存。
@@ -685,6 +719,17 @@ class CfirClassUseSiteMemberScope private constructor(
     }
 
     /**
+     * 按名称处理归并前的直接继承输入，并保留每个父 scope 的 provenance。
+     */
+    override fun processUnmergedInheritedFunctionsByNameWithProvenance(
+        name: Name,
+        processor: (CfirFunctionInheritanceProvenance) -> Unit,
+    ) {
+        if (name !in getCallableNames()) return
+        getUnmergedFunctionsFromParentsByName(name).forEach(processor)
+    }
+
+    /**
      * 收集本 scope 与父 scope 中的可见函数。
      */
     private fun collectFunctions(name: Name): Collection<CfirFunctionInheritanceProvenance> = buildList {
@@ -715,6 +760,15 @@ class CfirClassUseSiteMemberScope private constructor(
         properties.getOrPut(name) {
             collectProperties(name)
         }.forEach { processor(it.symbol) }
+    }
+
+    /** 按名称处理归并前的直接继承属性。 */
+    override fun processUnmergedInheritedPropertiesByName(
+        name: Name,
+        processor: (CfirPropertySymbol) -> Unit,
+    ) {
+        if (name !in getCallableNames()) return
+        getUnmergedPropertiesFromParentsByName(name).forEach { processor(it.symbol) }
     }
 
     /**
@@ -769,6 +823,22 @@ class CfirClassUseSiteMemberScope private constructor(
      */
     private fun getFunctionsFromParentsByName(name: Name): List<CfirFunctionInheritanceProvenance> {
         return functionsFromParents.getOrPut(name) {
+            getUnmergedFunctionsFromParentsByName(name)
+                .mergeEquivalentInheritedFunctions()
+                .toList()
+        }
+    }
+
+    /**
+     * 收集当前 scope 的直接父候选，并完成所有继承过滤，但保留归并前输入。
+     *
+     * 过滤与普通 effective member graph 共用，只有最后的等价 requirement 归并被延后，
+     * 使继承类型一致性检查可以读取完整的父接口输入而不改变调用解析结果。
+     */
+    private fun getUnmergedFunctionsFromParentsByName(
+        name: Name,
+    ): List<CfirFunctionInheritanceProvenance> {
+        return unmergedFunctionsFromParents.getOrPut(name) {
             val parentCandidates = mutableListOf<CfirFunctionInheritanceProvenance>()
             for (parent in parentScopes) {
                 parent.requireFunctionInheritanceScope().processFunctionsByNameWithProvenance(name) {
@@ -780,7 +850,6 @@ class CfirClassUseSiteMemberScope private constructor(
                 .filterOutOverriddenFunctions()
                 .filterOutAbstractFunctionsImplementedByConcrete()
                 .filterOutInterfaceDefaultFunctionsImplementedByConcrete()
-                .mergeEquivalentInheritedFunctions()
                 .toList()
         }
     }
@@ -790,6 +859,23 @@ class CfirClassUseSiteMemberScope private constructor(
      */
     private fun getPropertiesFromParentsByName(name: Name): List<MemberWithBaseScope<CfirPropertySymbol>> {
         return propertiesFromParents.getOrPut(name) {
+            val inheritableParentCandidates = getUnmergedPropertiesFromParentsByName(name)
+            filterOutOverridden(
+                inheritableParentCandidates,
+                CfirTypeScope::processDirectOverriddenPropertiesWithBaseScope,
+            ).filterOutAbstractMembersImplementedByConcrete(
+                { candidate -> canImplementPropertyCandidate(candidate) },
+            ).filterOutInterfaceDefaultMembersImplementedByConcrete(
+                { candidate -> canImplementPropertyCandidate(candidate) },
+            ).toList()
+        }
+    }
+
+    /** 收集父类型的属性输入，延后 effective candidate 过滤供继承检查读取。 */
+    private fun getUnmergedPropertiesFromParentsByName(
+        name: Name,
+    ): List<MemberWithBaseScope<CfirPropertySymbol>> {
+        return unmergedPropertiesFromParents.getOrPut(name) {
             val parentCandidates = mutableListOf<MemberWithBaseScope<CfirPropertySymbol>>()
             for (parent in parentScopes) {
                 parent.processCallablesByNameWithLookupProvenance(name) { candidate ->
@@ -801,15 +887,7 @@ class CfirClassUseSiteMemberScope private constructor(
                     )
                 }
             }
-            val inheritableParentCandidates = parentCandidates.filterInheritedForCurrentScope()
-            filterOutOverridden(
-                inheritableParentCandidates,
-                CfirTypeScope::processDirectOverriddenPropertiesWithBaseScope,
-            ).filterOutAbstractMembersImplementedByConcrete(
-                { candidate -> canImplementPropertyCandidate(candidate) },
-            ).filterOutInterfaceDefaultMembersImplementedByConcrete(
-                { candidate -> canImplementPropertyCandidate(candidate) },
-            ).toList()
+            parentCandidates.filterInheritedForCurrentScope()
         }
     }
 

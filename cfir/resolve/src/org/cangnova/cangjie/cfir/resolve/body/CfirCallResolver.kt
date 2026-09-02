@@ -1730,9 +1730,21 @@ class CfirCallResolver(
             (hasExplicitTypeArguments || function?.typeParameters?.isNullOrEmpty() == true) &&
                 candidate.completedFunctionReferenceType(expression, expectedFunctionType) != null
         }
+        val validCandidateType = candidates.asSequence()
+            .filter { candidate ->
+                val function = candidate.symbol.takeIf { it.isBound }?.cfir as? CfirFunction
+                hasExplicitTypeArguments || function?.typeParameters?.isNullOrEmpty() == true
+            }
+            .mapNotNull { candidate -> candidate.functionReferenceTypeForDiagnostic() }
+            .firstOrNull()
         return when (matchingCandidates.size) {
             0 -> if (genericCandidatesIgnored) {
                 ConeGenericFunctionReferenceWithoutTypeArgumentsError(info.name)
+            } else if (validCandidateType != null) {
+                // 官方 ChkRefExpr 会保留一个可确定的函数声明类型，并把它与目标函数
+                // 类型的冲突报告为 mismatched_types，而不是把“声明存在但类型不兼容”
+                // 误归类为 no_match_function_declaration_for_ref。
+                ConeTypeMismatchError(expectedFunctionType, validCandidateType)
             } else {
                 ConeNoMatchingFunctionReferenceError(info.name)
             }
@@ -1788,6 +1800,22 @@ class CfirCallResolver(
                 expectedFunctionType,
             )
         }
+    }
+
+    /**
+     * 返回类型不兼容时仍保留声明本身的函数类型，供 ChkRefExpr 风格的类型不匹配诊断使用。
+     *
+     * 该读取只消费 callable-reference stage 已经构造的结果类型，不重新运行候选阶段，
+     * 因而不会把 expected type 冲突再次转换成 `InapplicableCandidate`。
+     */
+    private fun Candidate.functionReferenceTypeForDiagnostic(): ConeCangJieType? {
+        val rawResultingType = resultingTypeForCallableReference ?: return null
+        val resultingSubstitutor = system.currentStorage()
+            .buildCurrentSubstitutor(session.typeContext, emptyMap())
+            .asCone()
+        return substituteExplicitTypeArgumentConstraints(
+            resultingSubstitutor.substituteOrSelf(rawResultingType),
+        )
     }
 
     /**

@@ -15,6 +15,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirInterface
+import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameterRef
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameterRefsOwner
@@ -37,6 +38,7 @@ import org.cangnova.cangjie.cfir.scopes.impl.CfirClassSubstitutionScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirFunctionInheritanceIdentity
 import org.cangnova.cangjie.cfir.scopes.impl.CfirFunctionInheritanceProvenance
+import org.cangnova.cangjie.cfir.scopes.impl.typeAliasConstructorInfo
 import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
 import org.cangnova.cangjie.cfir.session.extendProvider
 import org.cangnova.cangjie.cfir.session.accessibilityChecker
@@ -339,10 +341,13 @@ private class GenericInstantiationAnalyzer(
             if (resolvedTypeRef is CfirErrorTypeRef || resolvedTypeRef.coneType is ConeErrorType) return
             val source = resolvedTypeRef.source ?: resolvedTypeRef.delegatedTypeRef?.source
             val checkInstantiationConflicts = !resolvedTypeRef.isDeclarationSupertypeForwarding()
+            val checkStaticCompleteness = genericOwnerStack.lastOrNull()?.isTypeAlias == true
             collectTypeTriggers(
                 resolvedTypeRef.coneType,
                 source,
                 isNestedTypeArgument = false,
+                typeArgumentSources = resolvedTypeRef.explicitTypeArgumentSources(),
+                checkStaticCompleteness = checkStaticCompleteness,
                 checkDuplicateSupertypes = checkInstantiationConflicts,
                 checkMemberSignatures = checkInstantiationConflicts,
             )
@@ -383,6 +388,16 @@ private class GenericInstantiationAnalyzer(
             return resolvedTypeArguments.takeIf { it.isNotEmpty() }?.map { it.type }
         }
 
+        /** 保留当前类型引用中每个显式类型实参的源码位置。 */
+        private fun CfirResolvedTypeRef.explicitTypeArgumentSources(): List<CjSourceElement?> {
+            return (delegatedTypeRef as? CfirUserTypeRef)
+                ?.qualifier
+                ?.lastOrNull()
+                ?.typeArguments
+                ?.map { it.source }
+                .orEmpty()
+        }
+
         /** 把直接类型参数或 fresh variable 恢复为声明类型参数身份。 */
         private fun ConeCangJieType.declarationTypeParameterSymbolOrNull(): CfirTypeParameterSymbol? = when (this) {
             is ConeTypeParameterType -> lookupTag.typeParameterSymbol
@@ -395,10 +410,12 @@ private class GenericInstantiationAnalyzer(
             is CfirClassLikeDeclaration -> GenericOwnerContext(
                 superTypeRefs = superTypeRefs,
                 typeParameterSymbols = typeParameters.mapTo(linkedSetOf()) { it.symbol },
+                isTypeAlias = this is CfirTypeAlias,
             )
             is CfirExtend -> GenericOwnerContext(
                 superTypeRefs = superTypeRefs,
                 typeParameterSymbols = typeParameters.mapTo(linkedSetOf()) { it.symbol },
+                isTypeAlias = false,
             )
             else -> null
         }
@@ -502,10 +519,12 @@ private class GenericInstantiationAnalyzer(
             type: ConeCangJieType,
             source: CjSourceElement?,
             isNestedTypeArgument: Boolean,
+            typeArgumentSources: List<CjSourceElement?> = emptyList(),
             propagateSourceAsRoot: Boolean = true,
             checkExtendInterfaces: Boolean = false,
             duplicateSuperInterfaceSource: CjSourceElement? = source,
             checkDuplicateSupertypes: Boolean = true,
+            checkStaticCompleteness: Boolean = false,
             checkMemberSignatures: Boolean = false,
             ownMemberConflictSource: CjSourceElement? = source,
         ) {
@@ -518,12 +537,14 @@ private class GenericInstantiationAnalyzer(
                                 symbol = symbol,
                                 declaration = symbol.cfir,
                                 typeArguments = type.typeArguments.map { it.type },
+                                typeArgumentSources = typeArgumentSources,
                                 source = source,
                                 isNestedTypeArgument = isNestedTypeArgument,
                                 propagateSourceAsRoot = propagateSourceAsRoot,
                                 checkExtendInterfaces = checkExtendInterfaces,
                                 duplicateSuperInterfaceSource = duplicateSuperInterfaceSource,
                                 checkDuplicateSupertypes = checkDuplicateSupertypes,
+                                checkStaticCompleteness = checkStaticCompleteness,
                                 checkMemberSignatures = checkMemberSignatures,
                                 ownMemberConflictSource = ownMemberConflictSource,
                             )
@@ -536,6 +557,7 @@ private class GenericInstantiationAnalyzer(
                             isNestedTypeArgument = true,
                             propagateSourceAsRoot = propagateSourceAsRoot,
                             checkDuplicateSupertypes = checkDuplicateSupertypes,
+                            checkStaticCompleteness = false,
                             checkMemberSignatures = checkMemberSignatures,
                             ownMemberConflictSource = ownMemberConflictSource,
                         )
@@ -1786,6 +1808,9 @@ private data class GenericOwnerContext(
 
     /** owner 自己声明的类型参数身份。 */
     val typeParameterSymbols: Set<CfirTypeParameterSymbol>,
+
+    /** 当前类型引用是否位于 typealias 声明的 RHS。 */
+    val isTypeAlias: Boolean,
 )
 
 /**
@@ -1873,8 +1898,14 @@ private data class InstantiationTrigger(
      * 当前触发点对应的源码声明目标。
      */
     val targetDeclaration: CfirDeclaration?
-        get() = (declaration as? CfirDeclaration)
-            ?.takeIf { it.origin == CfirDeclarationOrigin.Source }
+        get() {
+            val typeAlias = (declaration as? CfirConstructor)
+                ?.typeAliasConstructorInfo
+                ?.typeAliasSymbol
+                ?.cfir
+            return typeAlias ?: (declaration as? CfirDeclaration)
+                ?.takeIf { it.origin == CfirDeclarationOrigin.Source }
+        }
 }
 
 /**

@@ -3557,7 +3557,8 @@ open class CfirExpressionsResolveTransformer(
         data: ResolutionMode,
     ): CfirExpression {
         tupleLiteral.transformAnnotations(transformer, ResolutionMode.ContextIndependent)
-        val expectedElementTypes = (data.expectedTypeOrNull?.fullyExpandedType() as? ConeTupleType)?.elementTypes
+        val expectedTupleType = data.expectedTypeOrNull?.tupleLiteralTargetTypeOrNull()
+        val expectedElementTypes = expectedTupleType?.elementTypes
         val elements = tupleLiteral.elements as? MutableList<CfirExpression>
             ?: error("CfirTupleLiteral elements must be mutable during body resolve")
         for (index in elements.indices) {
@@ -3571,10 +3572,40 @@ open class CfirExpressionsResolveTransformer(
         val elementTypes = tupleLiteral.elements.map {
             it.coneTypeOrNull ?: errorType("unresolved element")
         }
-        val resultType = ConeTupleType(elementTypes)
+        val targetTypeIsUsable = expectedTupleType != null &&
+                expectedTupleType.elementTypes.size == elementTypes.size &&
+                elementTypes.indices.all { index ->
+                    val elementType = elementTypes[index]
+                    val expectedElementType = expectedTupleType.elementTypes[index]
+                    elementType !is ConeErrorType &&
+                            expectedElementType !is ConeErrorType &&
+                            (AbstractTypeChecker.equalTypes(session.typeContext, elementType, expectedElementType) ||
+                                    AbstractTypeChecker.isSubtypeOf(
+                                        session.typeContext,
+                                        elementType,
+                                        expectedElementType,
+                                    ) == true)
+                }
+        val resultType = if (targetTypeIsUsable) expectedTupleType else ConeTupleType(elementTypes)
         recordAssignmentRhsTypeMismatchIfNeeded(tupleLiteral, resultType)
         tupleLiteral.replaceConeTypeOrNull(resultType)
         return tupleLiteral
+    }
+
+    /**
+     * 返回官方 `ChkTupleLit` 使用的 tuple 目标类型。
+     *
+     * `ChkTupleLit` 会先拆掉外层 Option，再把拆出的 tuple 类型逐元素下推给字面量；
+     * 普通已定型 tuple 值的子类型关系则由 [AbstractTypeChecker] 另行按
+     * `implicitBoxed=false` 检查，不能把两条语义混在一起。
+     */
+    private fun ConeCangJieType.tupleLiteralTargetTypeOrNull(): ConeTupleType? {
+        val expanded = fullyExpandedType()
+        if (expanded is ConeTupleType) return expanded
+        if (expanded is ConeClassLikeType && expanded.isOption) {
+            return expanded.typeArguments.singleOrNull()?.type as? ConeTupleType
+        }
+        return null
     }
 
     /**

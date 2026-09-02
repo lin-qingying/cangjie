@@ -4926,3 +4926,21 @@ esolveDelegatingConstructorCallAndSelectCandidate);
   * 上界回归相关定向测试（4 个 diagnostics constraints 入口及 2 个 ExtendInstantiatedType 入口）全部通过。
   * 最终全量：`java -jar gradle-queue-cli/build/libs/gradle-queue-cli.jar --project-dir D:\code\intellij\cangjie :cfir:analysis-tests:test --no-configuration-cache --no-daemon --max-workers=1 --console=plain --no-build-cache` → Gradle 控制台 `8422 tests completed, 718 failed, 307 skipped`，`errors=0`；新鲜 XML 为 `8423 records / 718 failures / 0 errors / 308 skipped / 7397 passed`（含 1 条聚合记录）。
   * 清洁 HEAD 全量基线使用同一命令：`8422 tests completed, 729 failed, 307 skipped`，`errors=0`；新鲜 XML 为 `8423 records / 729 failures / 0 errors / 308 skipped / 7386 passed`。按 `(suite, testcase)` 失败键对比：`FIXED=11`、`REGRESSED=0`、`NEW_KEYS=0`、`REMOVED_KEYS=0`，净减少 11 个失败；全量仍有 718 条既有失败，不能称为全量全绿。
+
+## 2026-09-02：Interface 抽象成员与静态泛型实现诊断归一
+
+- problem type: Interface / Generics / Diagnostics —— 抽象接口成员未实现与静态泛型实现使用不完整类型时，必须分别由声明级抽象成员检查和泛型实例化检查报告官方诊断；PSI 与 LightTree 两条入口必须一致。
+- root cause: `abstract_function2.cj` 中 class 对接口抽象成员的实现状态及无函数体的静态函数缺少对应的共享声明诊断；typealias RHS 中的泛型类型引用没有进入静态成员完整性检查，且 typealias 合成构造器触发点回溯不到源码 `CfirTypeAlias`，使 `interface_static_impl_with_generic13.cj` 在错误位置丢失 `CANNOT_INSTANTIATED_BY_INCOMPLETE_TYPE`。
+- official Cangjie evidence: official `cjc 1.0.5` 对 `abstract_function2.cj` 报告 `sema_missing_func_body` 及 class 缺失抽象成员/实现诊断；对 `interface_static_impl_with_generic13.cj` 在 typealias RHS 的不完整泛型实参处报告 `sema_cannot_instantiated_by_incomplete_type`。上游 `external/cangjie_compiler/src/Sema/InheritanceChecker/InstantiatedChecker.cpp` 与声明检查路径确认这些诊断分别归属于声明检查和实例化检查，而不是调用点兜底。
+- Kotlin counterpart files consulted: `external/kotlin/compiler/fir/analysis/checkers/declaration/FirImplementationMismatchChecker.kt`、`FirMissingBodyChecker.kt`、`external/kotlin/compiler/fir/providers/src/org/jetbrains/kotlin/fir/scopes/impl/TypeAliasConstructorsSubstitutingScope.kt`；仅用于对照抽象成员/函数体检查与 typealias 构造器 scope 的阶段边界，Cangjie 诊断语义以官方 `cjc`/上游实现为准。
+- CFIR owner files changed:
+  * `cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirGenericInstantiationChecker.kt`：typealias RHS 泛型引用进入静态成员完整性检查，保留显式类型实参 source，并将 typealias 构造器触发点回溯为源码 `CfirTypeAlias`。
+  * `cfir/analysis-tests/testData/llt/interface/abstract_function2.cj`：按官方结果修正 class 抽象成员和缺失函数体的诊断期望。
+- repair principle: 抽象声明合法性与泛型实例化完整性分别在其共享语义 owner 完成；typealias 只提供源码声明归属和精确实参位置，不把调用点或单个 fixture 作为诊断 owner。
+- fixtures covered: `cfir/analysis-tests/testData/llt/interface/abstract_function2.cj`、`cfir/analysis-tests/testData/llt/interface/interface_default_impl/interface_static_impl_with_generic13.cj`，覆盖 Interface 族的完整 PSI/LightTree 入口及同族泛型静态实现守卫。
+- fixture correction: `abstract_function2.cj` 按 official `cjc` 结果将 `B` 的旧 `STATIC_CANNOT_BE_OPEN_ABSTRACT_OVERRIDE` 修正为 `ABSTRACT_MEMBER_NOT_IMPLEMENTED` 与 `MISSING_FUNC_BODY`；源代码和语法未改动。
+- verification commands and outcome:
+  * Interface 双路径完整切片：`.\gradlew-queue.bat :cfir:analysis-tests:test --tests '*CfirAnalysisLLTTestGenerated$Interface*' --tests '*CfirAnalysisLLTPsiTestGenerated$Interface*' --no-daemon --max-workers=1 --console=plain` → `160 tests / 0 failures / 0 errors / 0 skipped`。
+  * Generics 目标 `testInstantiate02`、`testGenericSubstPerf` 与 Interface 目标 `testAbstractFunction2`、`testInterfaceStaticImplWithGeneric13` 均在本轮全量新鲜 XML 中通过（PSI/LightTree 共 8 条）。
+  * 最新全量回归：`.\gradlew-queue.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain` → Gradle 控制台 `8422 tests completed, 700 failed, 307 skipped`，`errors=0`；新鲜 XML 为 `8423 records / 700 failures / 0 errors / 308 skipped / 7415 passed`（含 1 条聚合记录）。
+  * 修复前全量基线采用用户确认的上一修复结果：`8422 tests completed, 719 failed, 307 skipped`；本轮测试总数、errors、skipped 均保持不变，净减少 `19` 个失败。当前工作区没有保存该 719 基线的逐 testcase 失败键快照，因此不能据此伪造 `FIXED/REGRESSED` 键集合；目标族的独立完整切片均为零失败，当前全量剩余 700 条失败仍不能称为全量全绿。
