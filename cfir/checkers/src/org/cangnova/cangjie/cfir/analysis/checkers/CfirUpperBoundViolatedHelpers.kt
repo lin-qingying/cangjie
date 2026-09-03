@@ -47,6 +47,7 @@ internal fun checkUpperBoundViolated(
     typeRef: CfirResolvedTypeRef,
     isIgnoreTypeParameters: Boolean = false,
     useTypeArgumentStartSource: Boolean = false,
+    reportDiagnostics: Boolean = true,
 ): Boolean {
     if (typeRef is CfirErrorTypeRef) return false
     val coneType = typeRef.coneType
@@ -56,6 +57,7 @@ internal fun checkUpperBoundViolated(
             notExpandedType = notExpandedType,
             fallbackSource = typeRef.source ?: typeRef.delegatedTypeRef?.source,
             useTypeArgumentStartSource = useTypeArgumentStartSource,
+            reportDiagnostics = reportDiagnostics,
         )
     }
     return checkUpperBoundViolated(
@@ -64,7 +66,27 @@ internal fun checkUpperBoundViolated(
         fallbackSource = typeRef.source,
         isIgnoreTypeParameters = isIgnoreTypeParameters,
         useTypeArgumentStartSource = useTypeArgumentStartSource,
+        reportDiagnostics = reportDiagnostics,
     )
+}
+
+/**
+ * 查询类型引用是否包含不能继续参与后续表达式语义的非法泛型实例化。
+ *
+ * 这与 [checkUpperBoundViolated] 的报告职责分离：上界检查器仍负责产生唯一的
+ * `GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT`，表达式检查器只消费这个结果来阻断
+ * `REF_NOT_BE_TYPE`、裸 classifier 和 interface static completeness 等级联诊断。
+ */
+context(context: CheckerContext, reporter: DiagnosticReporter)
+internal fun CfirTypeRef.hasInvalidGenericTypeArgument(): Boolean {
+    if (this is CfirErrorTypeRef) return true
+    val resolvedTypeRef = this as? CfirResolvedTypeRef ?: return false
+    if (resolvedTypeRef.coneType is ConeErrorType) return true
+    val result = checkUpperBoundViolated(
+        typeRef = resolvedTypeRef,
+        reportDiagnostics = false,
+    )
+    return result
 }
 
 /**
@@ -80,6 +102,7 @@ internal fun checkUpperBoundViolated(
     fallbackSource: CjSourceElement?,
     isIgnoreTypeParameters: Boolean = false,
     useTypeArgumentStartSource: Boolean = false,
+    reportDiagnostics: Boolean = true,
 ): Boolean {
     val expandedType = (type as? ConeClassifierType)
         ?.fullyExpandedType(context.session) as? ConeClassifierType
@@ -118,6 +141,7 @@ internal fun checkUpperBoundViolated(
         diagnosticGenericType = expandedType,
         isIgnoreTypeParameters = isIgnoreTypeParameters,
         useTypeArgumentStartSource = useTypeArgumentStartSource,
+        reportDiagnostics = reportDiagnostics,
     )
 }
 
@@ -132,6 +156,7 @@ internal fun checkUpperBoundViolatedForTypealiasExpansion(
     notExpandedType: ConeTypeAliasType,
     fallbackSource: CjSourceElement?,
     useTypeArgumentStartSource: Boolean = false,
+    reportDiagnostics: Boolean = true,
 ): Boolean {
     val expandedType = notExpandedType.fullyExpandedType(context.session) as? ConeClassifierType
         ?: return false
@@ -158,6 +183,7 @@ internal fun checkUpperBoundViolatedForTypealiasExpansion(
         substitutor = substitutor,
         diagnosticGenericType = notExpandedType,
         useTypeArgumentStartSource = useTypeArgumentStartSource,
+        reportDiagnostics = reportDiagnostics,
     )
 }
 
@@ -221,6 +247,7 @@ private fun checkUpperBoundViolated(
     diagnosticGenericType: ConeCangJieType?,
     isIgnoreTypeParameters: Boolean = false,
     useTypeArgumentStartSource: Boolean = false,
+    reportDiagnostics: Boolean = true,
 ): Boolean {
     var hasInvalidArgument = false
     val count = minOf(typeParameters.size, argumentTypes.size)
@@ -266,6 +293,7 @@ private fun checkUpperBoundViolated(
                 fallbackSource = argumentSource,
                 isIgnoreTypeParameters = isIgnoreTypeParameters,
                 useTypeArgumentStartSource = useTypeArgumentStartSource,
+                reportDiagnostics = reportDiagnostics,
             )
         }
 
@@ -273,7 +301,7 @@ private fun checkUpperBoundViolated(
          * 官方 `CheckUpperBoundsLegalityRecursively` 在发现更深层的非法实例化后，
          * 只保留最深层实参诊断；当前层由声明级诊断覆盖，不能再重复标记外层泛型名。
          */
-        if (violatesCurrentUpperBound && !hasInvalidNestedArgument) {
+        if (reportDiagnostics && violatesCurrentUpperBound && !hasInvalidNestedArgument) {
             if (argumentSource != null) {
                 reporter.reportOn(
                     source = argumentSource,

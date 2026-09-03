@@ -34,5 +34,5 @@ enum enum2<T> <: MyInterface<UInt32> {
 
 main() {
     var en1: enum1<MyInterface<UInt32>> = enum1<MyInterface<UInt32>>.A(
-        enum1<MyInterface<UInt32>>.foo2<UInt32>(enum1<MyInterface<UInt32>>.foo1() + enum1<MyInterface<<!GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT!>UInt16<!>>.foo1()))
+        enum1<MyInterface<UInt32>>.foo2<UInt32>(enum1<MyInterface<UInt32>>.foo1() + enum1<MyInterface<<!GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT!>UInt16<!>>>.foo1()))
 }

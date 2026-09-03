@@ -3,6 +3,7 @@ package org.cangnova.cangjie.cfir.analysis.checkers.expression
 import org.cangnova.cangjie.cfir.analysis.checkers.hasInvalidDeclaredUpperBoundsInCurrentContext
 import org.cangnova.cangjie.cfir.calls.resolvedQualifierTypeParameter
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.expression.hasInvalidGenericTypeArgument
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnableToInferExpressionTypeError
@@ -40,6 +41,7 @@ object CfirGenericBareClassifierAccessChecker : CfirQualifiedAccessChecker() {
     /** 检查裸泛型 classifier 访问是否缺少必须显式提供的类型实参。 */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirQualifiedAccessExpression) {
+        if (expression.hasInvalidGenericTypeArgument()) return
         if (expression.typeArguments.isNotEmpty()) return
         val resolvedSymbol = expression.calleeReference.resolvedBareAccessSymbol() ?: return
 

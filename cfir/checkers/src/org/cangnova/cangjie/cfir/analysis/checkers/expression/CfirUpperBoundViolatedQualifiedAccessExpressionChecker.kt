@@ -17,8 +17,10 @@ import org.cangnova.cangjie.cfir.resolve.providers.createCallableOwnerUseSiteSub
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessKind
 import org.cangnova.cangjie.cfir.scopes.impl.typeAliasConstructorInfo
 import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirConstructorSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirTypeAliasSymbol
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
@@ -39,12 +41,12 @@ object CfirUpperBoundViolatedQualifiedAccessExpressionChecker : CfirQualifiedAcc
         val typeArgumentRefs = expression.typeArguments
         if (typeArgumentRefs.isEmpty()) return
 
-        val callableSymbol = expression.resolvedCallableSymbolOrNull() ?: return
-        val typeParameters = callableSymbol.useSiteTypeParameters()
+        val resolvedSymbol = expression.resolvedSymbolOrNull() ?: return
+        val typeParameters = resolvedSymbol.useSiteTypeParameters()
         if (typeParameters.isEmpty() || typeArgumentRefs.size != typeParameters.size) return
 
         val typeArguments = typeArgumentRefs.map { it.coneTypeOrNull ?: return }
-        val typeAliasConstructorInfo = (callableSymbol as? CfirConstructorSymbol)?.typeAliasConstructorInfo
+        val typeAliasConstructorInfo = (resolvedSymbol as? CfirConstructorSymbol)?.typeAliasConstructorInfo
         if (typeAliasConstructorInfo != null) {
             val typeAlias = typeAliasConstructorInfo.typeAliasSymbol.cfir
             checkUpperBoundViolatedForTypealiasExpansion(
@@ -58,11 +60,26 @@ object CfirUpperBoundViolatedQualifiedAccessExpressionChecker : CfirQualifiedAcc
             return
         }
 
+        if (resolvedSymbol is CfirTypeAliasSymbol) {
+            val typeAlias = resolvedSymbol.cfir
+            checkUpperBoundViolatedForTypealiasExpansion(
+                notExpandedType = ConeTypeAliasType(
+                    classId = resolvedSymbol.classId,
+                    expandedType = typeAlias.expandedTypeRef.coneTypeOrNull,
+                    typeArguments = typeArguments,
+                ),
+                fallbackSource = expression.source,
+            )
+            return
+        }
+
         val substitutor = createGenericUseSiteSubstitutor(
             typeParameters = typeParameters,
             resolvedArguments = typeArguments,
             typeContext = context.session.typeContext,
-            additionalSubstitutions = expression.receiverTypeParameterSubstitutions(callableSymbol),
+            additionalSubstitutions = (resolvedSymbol as? CfirCallableSymbol<*>)
+                ?.let { callable -> expression.receiverTypeParameterSubstitutions(callable) }
+                .orEmpty(),
         )
 
         checkUpperBoundViolated(
@@ -73,12 +90,12 @@ object CfirUpperBoundViolatedQualifiedAccessExpressionChecker : CfirQualifiedAcc
         )
     }
 
-    /** 从限定访问 calleeReference 中提取已解析 callable symbol。 */
-    private fun CfirQualifiedAccessExpression.resolvedCallableSymbolOrNull(): CfirCallableSymbol<*>? =
+    /** 从限定访问 calleeReference 中提取已解析声明符号。 */
+    private fun CfirQualifiedAccessExpression.resolvedSymbolOrNull(): CfirBasedSymbol<*>? =
         when (val reference = calleeReference) {
-            is CfirResolvedErrorReference -> reference.resolvedSymbol as? CfirCallableSymbol<*>
-            is CfirResolvedNamedReference -> reference.resolvedSymbol as? CfirCallableSymbol<*>
-            is CfirNamedReferenceWithCandidateBase -> reference.candidateSymbol as? CfirCallableSymbol<*>
+            is CfirResolvedErrorReference -> reference.resolvedSymbol
+            is CfirResolvedNamedReference -> reference.resolvedSymbol
+            is CfirNamedReferenceWithCandidateBase -> reference.candidateSymbol
             else -> null
         }
 
@@ -88,10 +105,13 @@ object CfirUpperBoundViolatedQualifiedAccessExpressionChecker : CfirQualifiedAcc
      * use-site upper-bound 违例并保留后续成员解析所需的类型。
      */
     context(context: CheckerContext)
-    private fun CfirCallableSymbol<*>.useSiteTypeParameters(): List<org.cangnova.cangjie.cfir.declarations.CfirTypeParameterRef> {
+    private fun CfirBasedSymbol<*>.useSiteTypeParameters(): List<org.cangnova.cangjie.cfir.declarations.CfirTypeParameterRef> {
         val declaration = cfir
-        if (declaration !is CfirConstructor) return declaration.typeParameters
-        val ownerClassId = callableId.classId ?: return declaration.typeParameters
+        if (declaration !is CfirConstructor) {
+            return (declaration as? CfirTypeParameterRefsOwner)?.typeParameters.orEmpty()
+        }
+        val ownerClassId = (this as? CfirCallableSymbol<*>)?.callableId?.classId
+            ?: return declaration.typeParameters
         val owner = context.session.symbolProvider
             .getClassLikeSymbolByClassId(ownerClassId)
             ?.cfir as? CfirTypeParameterRefsOwner

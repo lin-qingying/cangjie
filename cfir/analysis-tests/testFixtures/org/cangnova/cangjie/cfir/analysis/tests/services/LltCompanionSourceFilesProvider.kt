@@ -39,6 +39,14 @@ class LltCompanionSourceFilesProvider(
     private val ancestorAggregateFilesCache: MutableMap<Path, List<File>> = mutableMapOf()
 
     /**
+     * 按测试数据目录缓存递归发现的包 companion 候选。
+     *
+     * 包源候选只依赖目录内容，与当前主文件的 import 筛选相互独立；缓存候选集合可以
+     * 避免同一目录中的多个 LLT 入口重复遍历文件树。
+     */
+    private val packageCompanionCandidatesCache: MutableMap<Path, List<PackageCompanionCandidate>> = mutableMapOf()
+
+    /**
      * 该 provider 使用的指令容器。
      */
     override val directiveContainers: List<DirectivesContainer>
@@ -67,11 +75,14 @@ class LltCompanionSourceFilesProvider(
         val parentMultiFileCompanions = testModuleStructure.originalTestDataFiles.flatMap(::collectParentMultiFileCompanions)
 
         val dependencePaths = dependenceCompanions.mapTo(mutableSetOf()) { it.file.normalizedAbsolutePath() }
+        val physicalCompanions = explicitCompanions.map { it.toFlatCompanionSourceFile() } +
+            packageCompanions +
+            multiFileCompanions.map { it.toFlatCompanionSourceFile() }
         val fileCompanions = dependenceCompanions.map { it.toTestFile() } +
-            (explicitCompanions + packageCompanions + multiFileCompanions)
-            .distinctBy { it.normalizedAbsolutePath() }
-            .filter { it.normalizedAbsolutePath() !in dependencePaths }
-            .map { it.toTestFile("lltCompanions") }
+            physicalCompanions
+            .distinctBy { it.file.normalizedAbsolutePath() }
+            .filter { it.file.normalizedAbsolutePath() !in dependencePaths }
+            .map { it.toTestFile() }
         val virtualCompanions = parentMultiFileCompanions
             .distinctBy { it.ownerFile.normalizedAbsolutePath() to it.relativePath }
             .map { it.toTestFile() }
@@ -88,7 +99,7 @@ class LltCompanionSourceFilesProvider(
     private fun collectDependenceCompanionFiles(
         module: TestModule,
         testModuleStructure: TestModuleStructure,
-    ): List<DependenceCompanionFile> {
+    ): List<CompanionSourceFile> {
         if (DEPENDENCE !in module.directives) return emptyList()
 
         val dependencies = module.directives[DEPENDENCE]
@@ -141,7 +152,7 @@ class LltCompanionSourceFilesProvider(
             require(testRelativePath !in occupiedRelativePaths && seenRelativePaths.add(testRelativePath)) {
                 "DEPENDENCE source '$dependency' produces duplicate test path '$testRelativePath' in ${originalTestDataFile.path}"
             }
-            DependenceCompanionFile(
+            CompanionSourceFile(
                 file = resolvedPath.toFile(),
                 relativePath = testRelativePath,
             )
@@ -166,15 +177,34 @@ class LltCompanionSourceFilesProvider(
      *
      * 包括 `<主文件名>.pkg.cj` 与 `pkg.cj`。
      */
-    private fun collectPackageCompanionFiles(testDataFile: File): List<File> {
+    private fun collectPackageCompanionFiles(testDataFile: File): List<CompanionSourceFile> {
         if (!testDataFile.invariantSeparatorsPath.contains("cfir/analysis-tests/testData/llt/")) return emptyList()
         if (testDataFile.isPackageCompanionFile()) return emptyList()
 
         val directory = testDataFile.parentFile ?: return emptyList()
-        val testDataText = testDataFile.readText()
+        val testDataText = testDataFile.readText(Charsets.UTF_8)
         val packageName = PACKAGE_DIRECTIVE.find(testDataText)?.groupValues?.get(1)
         val referencedNames = IDENTIFIER.findAll(testDataText)
             .mapTo(mutableSetOf()) { it.value }
+        val importedPackages = importedPackageNames(testDataText)
+        val companionFiles = linkedMapOf<Path, CompanionSourceFile>()
+
+        fun addCompanionFile(file: File) {
+            if (!file.isFile || file.isSameNormalizedFile(testDataFile)) return
+            val relativePath = directory.normalizedAbsolutePath()
+                .relativize(file.normalizedAbsolutePath())
+                .toString()
+                .replace('\\', '/')
+            if (relativePath == ".." || relativePath.startsWith("../")) return
+            companionFiles.putIfAbsent(
+                file.normalizedAbsolutePath(),
+                CompanionSourceFile(
+                    file = file,
+                    relativePath = "lltCompanions/$relativePath",
+                ),
+            )
+        }
+
         // `// FILE:` 聚合源已经由虚拟 companion 逻辑拆分，不能再把同目录下的
         // 其他聚合测试作为物理源加入当前编译单元，否则会重复声明同名包成员。
         val samePackageFiles = packageName
@@ -188,7 +218,7 @@ class LltCompanionSourceFilesProvider(
                     .filter { it.isFile && it.extension == "cj" }
                     .filter { !it.isSameNormalizedFile(testDataFile) }
                     .filter { file ->
-                        val fileText = file.readText()
+                        val fileText = file.readText(Charsets.UTF_8)
                         PACKAGE_DIRECTIVE.find(fileText)?.groupValues?.get(1) == currentPackageName &&
                                 !FILE_DIRECTIVE.containsMatchIn(fileText) &&
                                 TOP_LEVEL_DECLARATION.findAll(fileText).any { declaration ->
@@ -199,10 +229,76 @@ class LltCompanionSourceFilesProvider(
             }.orEmpty()
         val sameNamePackageFile = directory.resolve("${testDataFile.nameWithoutExtension}.pkg.cj")
         val packageFile = directory.resolve("pkg.cj")
-        return (samePackageFiles + sameNamePackageFile + packageFile)
-            .filter { it.isFile && !it.isSameNormalizedFile(testDataFile) }
-            .distinctBy { it.normalizedAbsolutePath() }
-            .sortedBy { it.name }
+        samePackageFiles.forEach(::addCompanionFile)
+        addCompanionFile(sameNamePackageFile)
+        addCompanionFile(packageFile)
+
+        /*
+         * 官方 LLT 的包目录不一定与主测试文件同级：例如
+         * `err_module/mod1/pkg.cj` 声明 `package mod1.pkg`，主文件则导入
+         * `mod1.pkg.a`。只按当前目录寻找 `pkg.cj` 会把整个 import 错误地变成
+         * UNRESOLVED_IMPORT。递归候选必须再与真实 package 声明和主文件的 import
+         * 包路径精确匹配，不能把测试目录下所有包源无条件并入当前编译单元。
+         */
+        if (importedPackages.isNotEmpty()) {
+            packageCompanionCandidates(directory)
+                .filter { candidate -> candidate.packageName in importedPackages }
+                .forEach { candidate -> addCompanionFile(candidate.file) }
+        }
+
+        return companionFiles.values.sortedBy { it.relativePath }
+    }
+
+    /**
+     * 收集当前测试目录树中有真实 package 声明的 `pkg.cj` / `*.pkg.cj` 文件。
+     */
+    private fun packageCompanionCandidates(directory: File): List<PackageCompanionCandidate> {
+        val directoryPath = directory.normalizedAbsolutePath()
+        return packageCompanionCandidatesCache.getOrPut(directoryPath) {
+            directory.walkTopDown()
+                .filter { file ->
+                    file.isFile &&
+                            file.isPackageCompanionFile() &&
+                            !FILE_DIRECTIVE.containsMatchIn(file.readText(Charsets.UTF_8))
+                }
+                .mapNotNull { file ->
+                    val packageName = PACKAGE_DIRECTIVE.find(file.readText(Charsets.UTF_8))
+                        ?.groupValues
+                        ?.get(1)
+                        ?: return@mapNotNull null
+                    PackageCompanionCandidate(file, packageName)
+                }
+                .toList()
+        }
+    }
+
+    /**
+     * 从 import 声明提取所有可能的包名前缀。
+     *
+     * 解析只用于定位测试 companion 文件，不参与编译语义；诊断标记和花括号形式会先
+     * 被规范化，使 `import mod1.pkg.a`、`import pkg.*` 与
+     * `import {std.collection.ArrayList}` 使用同一套包匹配逻辑。
+     */
+    private fun importedPackageNames(source: String): Set<String> {
+        val sourceWithoutDiagnosticMarkup = DIAGNOSTIC_MARKUP.replace(source, "")
+        val result = mutableSetOf<String>()
+        for (directive in IMPORT_DIRECTIVE.findAll(sourceWithoutDiagnosticMarkup)) {
+            val statement = directive.groupValues[1]
+                .replace('{', ' ')
+                .replace('}', ' ')
+            for (pathMatch in IMPORT_PATH.findAll(statement)) {
+                val segments = pathMatch.value
+                    .split('.')
+                    .map(String::trim)
+                    .filter(String::isNotEmpty)
+                var prefix = ""
+                for (segment in segments) {
+                    prefix = if (prefix.isEmpty()) segment else "$prefix.$segment"
+                    result += prefix
+                }
+            }
+        }
+        return result
     }
 
     /**
@@ -211,7 +307,7 @@ class LltCompanionSourceFilesProvider(
     private fun collectMultiFileDirectoryCompanions(testDataFile: File): List<File> {
         if (!testDataFile.invariantSeparatorsPath.contains("cfir/analysis-tests/testData/llt/")) return emptyList()
 
-        val fileEntries = FILE_DIRECTIVE.findAll(testDataFile.readText())
+        val fileEntries = FILE_DIRECTIVE.findAll(testDataFile.readText(Charsets.UTF_8))
             .map { it.groupValues[1].trim().replace('\\', '/') }
             .toList()
         if (fileEntries.isEmpty()) return emptyList()
@@ -275,7 +371,7 @@ class LltCompanionSourceFilesProvider(
                 directory.listFiles().orEmpty()
                     .asSequence()
                     .filter { it.isFile && it.extension == "cj" }
-                    .filter { FILE_DIRECTIVE.containsMatchIn(it.readText()) }
+                    .filter { FILE_DIRECTIVE.containsMatchIn(it.readText(Charsets.UTF_8)) }
                     .sortedBy { it.name }
                     .toList()
             }
@@ -293,7 +389,7 @@ class LltCompanionSourceFilesProvider(
         var currentStartLine = 0
         var currentLines = mutableListOf<String>()
 
-        aggregateFile.readLines().forEachIndexed { index, line ->
+        aggregateFile.readLines(Charsets.UTF_8).forEachIndexed { index, line ->
             val fileMatch = FILE_DIRECTIVE.matchEntire(line)
             if (fileMatch != null) {
                 currentName?.let { name ->
@@ -341,10 +437,10 @@ class LltCompanionSourceFilesProvider(
     /**
      * 将选择性依赖源转换为保留 LLT 根相对目录的附加测试文件。
      */
-    private fun DependenceCompanionFile.toTestFile(): TestFile {
+    private fun CompanionSourceFile.toTestFile(): TestFile {
         return TestFile(
             relativePath = relativePath,
-            originalContent = file.useLines { it.joinToString("\n") },
+            originalContent = file.useLines(Charsets.UTF_8) { it.joinToString("\n") },
             originalFile = file,
             startLineNumberInOriginalFile = 0,
             isAdditional = true,
@@ -358,6 +454,10 @@ class LltCompanionSourceFilesProvider(
     private fun File.isPackageCompanionFile(): Boolean {
         return name == "pkg.cj" || name.endsWith(".pkg.cj")
     }
+
+    /** 将普通物理 companion 映射为当前测试模块内的扁平路径。 */
+    private fun File.toFlatCompanionSourceFile(): CompanionSourceFile =
+        CompanionSourceFile(this, "lltCompanions/$name")
 
     /**
      * 返回不触发文件系统 canonicalize 的规范化绝对路径。
@@ -411,11 +511,19 @@ class LltCompanionSourceFilesProvider(
     /**
      * [DEPENDENCE] 选中的物理依赖源及其附加测试文件相对路径。
      */
-    private data class DependenceCompanionFile(
-        /** 依赖源物理文件。 */
+    private data class CompanionSourceFile(
+        /** companion 物理文件。 */
         val file: File,
-        /** 保留 LLT 根目录结构的附加测试文件路径。 */
+        /** 附加测试文件相对路径。 */
         val relativePath: String,
+    )
+
+    /** 递归发现的包 companion 及其真实 package 声明。 */
+    private data class PackageCompanionCandidate(
+        /** 包 companion 物理文件。 */
+        val file: File,
+        /** 源文件中的真实 package 名。 */
+        val packageName: String,
     )
 
     companion object {
@@ -431,6 +539,19 @@ class LltCompanionSourceFilesProvider(
 
         /** 匹配源文件顶层 package 声明，用于同包源文件的编译单元归并。 */
         private val PACKAGE_DIRECTIVE = Regex("""(?m)^[ \t]*package[ \t]+([A-Za-z_][A-Za-z0-9_.]*)[ \t]*$""")
+
+        /** 匹配源文件中的 import 声明。 */
+        private val IMPORT_DIRECTIVE = Regex(
+            """(?m)^[ \t]*(?:(?:public|private|internal|protected)[ \t]+)*import[ \t]+([^\r\n]+)"""
+        )
+
+        /** 匹配 import 声明中的点分标识符路径。 */
+        private val IMPORT_PATH = Regex(
+            """[A-Za-z_][A-Za-z0-9_]*(?:[ \t]*\.[ \t]*[A-Za-z_][A-Za-z0-9_]*)*"""
+        )
+
+        /** 移除 LLT 内联诊断标记后再分析 import 路径。 */
+        private val DIAGNOSTIC_MARKUP = Regex("""<![^>\r\n]*!>""")
 
         /** 匹配同包源文件暴露的顶层声明名，用于构造直接依赖集合。 */
         private val TOP_LEVEL_DECLARATION = Regex(

@@ -32,6 +32,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCallOrigin
 import org.cangnova.cangjie.cfir.expressions.CfirNamedAccessExpression
+import org.cangnova.cangjie.cfir.expressions.CfirOptionalChainExpression
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
 import org.cangnova.cangjie.cfir.expressions.CfirReturnExpression
 import org.cangnova.cangjie.cfir.expressions.CfirSuperReceiverExpression
@@ -50,6 +51,7 @@ import org.cangnova.cangjie.source.realElement
 import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.diagnostic.ConeAmbiguityError
 import org.cangnova.cangjie.cfir.diagnostic.ConeCannotInferValueParameterType
 import org.cangnova.cangjie.cfir.diagnostic.ConeConstraintSystemHasContradiction
@@ -77,6 +79,7 @@ import org.cangnova.cangjie.cfir.session.importBindingStoreOrNull
 import org.cangnova.cangjie.cfir.session.macroDemandClassificationOrNull
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroResolution
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.name.OperatorNameConventions
 import org.cangnova.cangjie.psi.CjNodeTypes
 
 /** 官方 NAME_TO_ANNO_KIND 中不受 std-only 约束的内置 annotation 名称。 */
@@ -588,7 +591,12 @@ class ErrorNodeDiagnosticCollectorComponent(
         val callOrAssignment = findOwningCallOrAssignment(owner, context)
         val callOrAssignmentSource = callOrAssignment?.source as? CjSourceElement
 
-        reportConeDiagnostic(diagnostic, sourceElement, context, callOrAssignmentSource)
+        reportConeDiagnostic(
+            diagnostic = diagnostic,
+            source = sourceElement.sourceForOptionalChainNonOptional(diagnostic, owner, context),
+            context = context,
+            callOrAssignmentSource = callOrAssignmentSource,
+        )
     }
 
     /**
@@ -948,6 +956,7 @@ class ErrorNodeDiagnosticCollectorComponent(
          * @param diagnostic           要报告的 cone 诊断
          * @param source               对应的源码节点（null 则跳过）
          * @param context              checker 上下文
+         * @param owner                携带错误类型的 CFIR 节点；用于选择需要提升的诊断范围
          * @param session              编译会话
          * @param reporter             诊断接收器
          * @param callOrAssignmentSource 宿主调用/赋值的源码节点（用于错误定位）
@@ -957,6 +966,7 @@ class ErrorNodeDiagnosticCollectorComponent(
             diagnostic: ConeDiagnostic,
             source: CjSourceElement?,
             context: CheckerContext,
+            owner: CfirElement? = null,
             session: CfirSession = context.session,
             reporter: DiagnosticReporter,
             callOrAssignmentSource: CjSourceElement? = null,
@@ -964,9 +974,14 @@ class ErrorNodeDiagnosticCollectorComponent(
             returnExpressionSource: AbstractCjSourceElement? = null,
             allowErrorTypeMismatch: Boolean = false,
         ) {
+            // Optional-chain 的错误类型属于链节点，但前缀逻辑非在 CFIR 中是包裹它的
+            // 独立 operator call。诊断 owner 仍是链节点时，用户可见范围必须提升到该
+            // 直接前缀调用；这个归一化放在统一报告入口，覆盖 expression checker 和
+            // 其他直接消费 ConeErrorType 的路径。
+            val effectiveSource = source?.sourceForOptionalChainNonOptional(diagnostic, owner, context)
             // 抑制规则 1：委托属性访问器的 unresolved/ambiguous/inapplicable 错误
             // 由 DelegatedPropertyChecker 处理。
-            if (source?.kind == CjFakeSourceElementKind.DelegatedPropertyAccessor &&
+            if (effectiveSource?.kind == CjFakeSourceElementKind.DelegatedPropertyAccessor &&
                 (diagnostic is ConeUnresolvedNameError ||
                         diagnostic is ConeAmbiguityError      ||
                         diagnostic is ConeInapplicableCandidateError)
@@ -975,19 +990,19 @@ class ErrorNodeDiagnosticCollectorComponent(
             }
 
             // 抑制规则 2 & 3：隐式构造器和脱糖 for-in 由专项 checker 处理。
-            if (source?.kind == CjFakeSourceElementKind.ImplicitConstructor ||
-                source?.kind == CjFakeSourceElementKind.DesugaredForLoop
+            if (effectiveSource?.kind == CjFakeSourceElementKind.ImplicitConstructor ||
+                effectiveSource?.kind == CjFakeSourceElementKind.DesugaredForLoop
             ) {
                 return
             }
 
             // 抑制规则 4：前缀自增/自减第二个 get 调用不重复报告。
-            if (source?.kind is CjFakeSourceElementKind.DesugaredPrefixSecondGetReference) {
+            if (effectiveSource?.kind is CjFakeSourceElementKind.DesugaredPrefixSecondGetReference) {
                 return
             }
 
             // 抑制规则 5：when 条件主语的引用错误已在 when 主语上报告过。
-            if (source?.kind is CjFakeSourceElementKind.UnresolvedWhenConditionSubject) {
+            if (effectiveSource?.kind is CjFakeSourceElementKind.UnresolvedWhenConditionSubject) {
                 return
             }
 
@@ -999,17 +1014,17 @@ class ErrorNodeDiagnosticCollectorComponent(
                 return
             }
 
-            if (diagnostic.isLambdaBodyCascadeFromUninferredLambdaParameter(source, context)) {
+            if (diagnostic.isLambdaBodyCascadeFromUninferredLambdaParameter(effectiveSource, context)) {
                 return
             }
-            if (diagnostic.isLambdaParameterInferenceCoveredByShapeDiagnostic(source, context)) {
+            if (diagnostic.isLambdaParameterInferenceCoveredByShapeDiagnostic(effectiveSource, context)) {
                 return
             }
 
             // 将 ConeDiagnostic 转换为具体的 CFIR 诊断列表并逐一提交。
             for (coneDiagnostic in diagnostic.toCfirDiagnostics(
                 session,
-                source,
+                effectiveSource,
                 callOrAssignmentSource,
                 valueParameter,
                 returnExpressionSource,
@@ -1018,7 +1033,7 @@ class ErrorNodeDiagnosticCollectorComponent(
                 if (
                     coneDiagnostic.factoryName == "CFIR_UNABLE_TO_INFER_GENERIC_FUNC" &&
                     (
-                        context.hasGenericInstantiationMemberConflict(source) ||
+                        context.hasGenericInstantiationMemberConflict(effectiveSource) ||
                             context.hasGenericInstantiationMemberConflict(callOrAssignmentSource)
                         )
                 ) {
@@ -1027,7 +1042,7 @@ class ErrorNodeDiagnosticCollectorComponent(
                 if (
                     coneDiagnostic.factoryName in STATIC_GENERIC_DEPENDENCY_CASCADE_DIAGNOSTICS &&
                     (
-                        context.hasStaticGenericDependency(source) ||
+                        context.hasStaticGenericDependency(effectiveSource) ||
                             context.hasStaticGenericDependency(callOrAssignmentSource)
                         )
                 ) {
@@ -1037,6 +1052,48 @@ class ErrorNodeDiagnosticCollectorComponent(
             }
         }
     }
+}
+
+/**
+ * 将 optional-chain 非 optional 诊断提升到其直接前缀逻辑非调用的完整源码范围。
+ *
+ * CFIR 将 `!value.member?()` 表示为 `operator !` 接收一个独立的
+ * [CfirOptionalChainExpression]。链节点的错误类型仍由链自身拥有，但诊断范围属于
+ * 语义上失败的完整前缀表达式；通过 checker context 的结构关系定位父调用，不依赖
+ * 具体文件、文本或测试 fixture。
+ */
+private fun CjSourceElement.sourceForOptionalChainNonOptional(
+    diagnostic: ConeDiagnostic,
+    owner: CfirElement?,
+    context: CheckerContext,
+): CjSourceElement {
+    if (diagnostic !is org.cangnova.cangjie.cfir.diagnostic.ConeOptionalChainNonOptionalError) {
+        return this
+    }
+
+    val optionalChain = (owner as? CfirOptionalChainExpression)?.takeIf { chain ->
+        val chainSource = chain.source ?: return@takeIf false
+        chainSource.startOffset == startOffset && chainSource.endOffset == endOffset
+    } ?: context.containingElements
+        .asReversed()
+        .filterIsInstance<CfirOptionalChainExpression>()
+        .firstOrNull { chain ->
+            val chainSource = chain.source ?: return@firstOrNull false
+            chainSource.startOffset == startOffset && chainSource.endOffset == endOffset
+        }
+        ?: return this
+
+    val prefixCall = context.callsOrAssignments
+        .asReversed()
+        .filterIsInstance<CfirFunctionCall>()
+        .firstOrNull { call ->
+            if (call.origin != CfirFunctionCallOrigin.Operator) return@firstOrNull false
+            val callee = call.calleeReference as? CfirNamedReference ?: return@firstOrNull false
+            callee.name == OperatorNameConventions.NOT && call.explicitReceiver === optionalChain
+        }
+        ?: return this
+
+    return prefixCall.source as? CjSourceElement ?: this
 }
 
 private val STATIC_GENERIC_DEPENDENCY_CASCADE_DIAGNOSTICS = setOf(

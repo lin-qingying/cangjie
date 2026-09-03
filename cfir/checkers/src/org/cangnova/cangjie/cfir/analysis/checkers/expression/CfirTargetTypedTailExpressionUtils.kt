@@ -3,6 +3,7 @@ package org.cangnova.cangjie.cfir.analysis.checkers.expression
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.checkTypeMismatch
+import org.cangnova.cangjie.cfir.analysis.checkers.functionTypeForLambdaShape
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
@@ -10,6 +11,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
+import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirIfExpression
 import org.cangnova.cangjie.cfir.expressions.CfirMatchExpression
@@ -100,6 +102,18 @@ internal fun checkTargetTypedExpression(
     }
 
     return when (unwrapped) {
+        is CfirAnonymousFunctionExpression -> {
+            // 官方 ChkLamExpr 在函数类型目标下直接把目标参数/返回类型下推到 lambda
+            // 子树；lambda 本身不是一个已经定型的普通函数值，不能在声明初始化器层再做
+            // 一次 `(P) -> Unit <: (P) -> Any` 的整体比较。参数与 body 的诊断分别由
+            // lambda declaration/body checkers 负责。只有目标不是函数类型时，才让调用方
+            // 按普通表达式报告 lambda 与目标类型不匹配。
+            if (expectedType.functionTypeForLambdaShape(context) != null) {
+                TargetTypedCheckOutcome.Handled(reported = false)
+            } else {
+                TargetTypedCheckOutcome.NotHandled
+            }
+        }
         is CfirBlock -> checkTargetTypedBlockTail(unwrapped, expectedType)
         is CfirIfExpression -> {
             if (unwrapped.isIfExpressionWithoutEndingElse()) {

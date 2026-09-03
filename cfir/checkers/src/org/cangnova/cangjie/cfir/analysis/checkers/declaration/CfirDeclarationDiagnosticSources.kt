@@ -29,6 +29,7 @@ import com.intellij.openapi.util.Ref
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.util.diff.FlyweightCapableTreeStructure
 import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.OperatorNameConventions.asOperatorString
@@ -232,6 +233,27 @@ internal fun CfirNamedFunction.functionNameDiagnosticSource(): AbstractCjSourceE
     }
         ?: (source as? CjSourceElement)?.findFunctionNameSource(name)
         ?: source
+
+/**
+ * 取得 `operator []` setter 返回类型诊断的源码范围。
+ *
+ * 有显式返回类型时，诊断归属于完整返回类型；省略返回类型时，归属于 `[]` 操作名。
+ * 这里必须使用 offsets-only source：返回类型 PSI 通常是 `CjTypeReference`，操作名是
+ * leaf PSI，而 `INVALID_SUBSCRIPT_ASSIGN_RETURN` 的诊断工厂参数类型是声明节点。
+ */
+internal fun CfirNamedFunction.subscriptAssignmentReturnDiagnosticSource(): AbstractCjSourceElement? {
+    if (returnTypeRef !is CfirImplicitTypeRef) {
+        return returnTypeRef.source?.let { typeSource ->
+            CjOffsetsOnlySourceElement(typeSource.startOffset, typeSource.endOffset)
+        } ?: functionNameDiagnosticSource()?.let { nameSource ->
+            CjOffsetsOnlySourceElement(nameSource.startOffset, nameSource.endOffset)
+        }
+    }
+
+    return functionNameDiagnosticSource()?.let { nameSource ->
+        CjOffsetsOnlySourceElement(nameSource.startOffset, nameSource.endOffset)
+    }
+}
 
 /**
  * 取得程序入口 `main` 名称的诊断 source。

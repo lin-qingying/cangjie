@@ -1846,7 +1846,12 @@ class CfirCallResolver(
                         discoveredFunctionValueCandidates
 
                     info.hasExplicitTypeArguments ->
-                        accessibleFunctionValueCandidates
+                        // 显式类型实参不会把函数名值引用变成普通调用。官方 ChkRefExpr
+                        // 仍保留同一 tower group 中的全部函数目标；其中某个泛型目标的
+                        // 约束失败不能提前抹掉另一个目标，否则 `foo<T>` 会从真实歧义
+                        // 错误地退化成唯一成功引用。调用路径仍通过普通 candidate
+                        // applicability 规约，不受此函数值引用集合影响。
+                        discoveredFunctionValueCandidates
 
                     else -> {
                         val nonGenericCandidates = selectableFunctionValueCandidates.filter { candidate ->

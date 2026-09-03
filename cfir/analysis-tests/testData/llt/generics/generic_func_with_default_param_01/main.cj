@@ -1,3 +1,5 @@
+// DEPENDENCE: pkg0/pkg0.cj
+
 // FILE: pkg1/pkg1.cj
 
 

@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.expression.hasInvalidGenericTypeArgument
 import org.cangnova.cangjie.cfir.analysis.diagnostics.renderInvalidBinaryOperatorType
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
@@ -15,6 +16,7 @@ import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
+import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.source.CjOffsetsOnlySourceElement
 import org.cangnova.cangjie.name.OperatorNameConventions
 
@@ -38,6 +40,7 @@ object CfirClassifierAsExpressionChecker : CfirQualifiedAccessChecker() {
             expression.reportInvalidBinaryOperatorForClassifierOperands()
             return
         }
+        if (expression.hasInvalidGenericTypeArgument()) return
         val resolvedReference = expression.calleeReference as? CfirResolvedNamedReference ?: return
         val source = resolvedReference.source ?: expression.source ?: return
         if (expression.isUsedAsOuterReceiver()) return
@@ -80,6 +83,9 @@ object CfirClassifierAsExpressionChecker : CfirQualifiedAccessChecker() {
         val operatorToken = OperatorNameConventions.TOKENS_BY_OPERATOR_NAME[callee.name] ?: return
         val left = explicitReceiver ?: return
         val right = argumentList.arguments.singleOrNull() ?: return
+        val leftInvalid = left.hasInvalidGenericTypeArgument()
+        val rightInvalid = right.hasInvalidGenericTypeArgument()
+        if (leftInvalid || rightInvalid) return
         if (!left.isClassifierAsExpressionOperand() && !right.isClassifierAsExpressionOperand()) return
 
         val source = source ?: return

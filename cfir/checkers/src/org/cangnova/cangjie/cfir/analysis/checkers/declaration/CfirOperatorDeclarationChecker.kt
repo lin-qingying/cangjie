@@ -178,7 +178,7 @@ object CfirOperatorDeclarationChecker : CfirSimpleFunctionChecker() {
         val returnType = (declaration.returnTypeRef as? CfirResolvedTypeRef)?.coneType
         if (returnType != null && !returnType.isUnit) {
             reporter.reportOn(
-                source = diagnosticSource,
+                source = declaration.subscriptAssignmentReturnDiagnosticSource() ?: diagnosticSource,
                 factory = CfirErrors.INVALID_SUBSCRIPT_ASSIGN_RETURN,
             )
         }

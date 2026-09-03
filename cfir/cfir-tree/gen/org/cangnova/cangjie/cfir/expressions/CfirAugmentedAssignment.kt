@@ -20,6 +20,7 @@ abstract class CfirAugmentedAssignment : CfirExpression() {
     abstract override val annotations: List<CfirAnnotation>
     abstract override val coneTypeOrNull: ConeCangJieType?
     abstract val operation: Name
+    abstract val operationSource: CjSourceElement?
     abstract val leftArgument: CfirExpression
     abstract val rightArgument: CfirExpression
 
