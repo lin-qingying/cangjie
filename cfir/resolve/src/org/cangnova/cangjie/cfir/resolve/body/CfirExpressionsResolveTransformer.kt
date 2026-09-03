@@ -2086,6 +2086,11 @@ open class CfirExpressionsResolveTransformer(
             } else {
                 originalCallee.source.enumValueAccessSource(originalCall.explicitReceiver?.source)
             }
+            // 隐式 invoke 失败后，原调用仍然是一个有确定 receiver 类型的错误表达式。
+            // 必须把该类型写回调用节点，才能让外层 operator/调用把它作为错误级联处理；
+            // 否则后续函数类型 tower 会对未完成的 CfirFunctionCall 读取 resolvedType，
+            // 将一个可恢复的语义错误升级为 CFIR phase-ordering 异常。
+            resolvedCall.replaceConeTypeOrNull(receiverType)
             resolvedCall.replaceCalleeReference(
                 buildErrorNamedReference {
                     source = diagnosticSource
@@ -3339,6 +3344,11 @@ open class CfirExpressionsResolveTransformer(
         augmentedAssignment: CfirAugmentedAssignment,
         data: ResolutionMode,
     ): CfirExpression {
+        // 复合赋值的语法 token（例如 `+=`）与其实际解析的二元 operator（`+`）不是同一个
+        // source。Kotlin FIR 在脱糖调用中保留 operation reference；这里同样保留真实的
+        // operator 锚点，并把复合 token 的尾部 `=` 排除，避免错误诊断覆盖整个 `+=`。
+        val operationSource = augmentedAssignment.operationSource
+            ?.desugaredAugmentedAssignOperatorSource(augmentedAssignment.operation)
         val assignment = buildAssignment {
             source = augmentedAssignment.source
             annotations.addAll(augmentedAssignment.annotations)
@@ -3346,7 +3356,7 @@ open class CfirExpressionsResolveTransformer(
             rValue = buildFunctionCall {
                 source = augmentedAssignment.source
                 calleeReference = buildNamedReference {
-                    source = augmentedAssignment.source
+                    source = operationSource ?: augmentedAssignment.source
                     name = augmentedAssignment.operation
                 }
                 argumentList = buildArgumentList {
@@ -3358,6 +3368,31 @@ open class CfirExpressionsResolveTransformer(
             augmentedOperation = augmentedAssignment.operation
         }
         return transformAssignment(assignment, data)
+    }
+
+    /**
+     * 将复合赋值 token 的 source 归一为脱糖后二元 operator 的 source。
+     *
+     * raw builder 保存的是用户实际写出的 `+=`/`<<=` 等完整 token，而 operator call
+     * 解析与诊断对应的是 `+`/`<<`。使用带自定义 offset 的 fake source 同时保留 PSI/
+     * LightTree 所需的 source 类型和脱糖 provenance。
+     */
+    private fun CjSourceElement.desugaredAugmentedAssignOperatorSource(operation: Name): CjSourceElement {
+        val operatorText = OperatorNameConventions.TOKENS_BY_OPERATOR_NAME[operation] ?: return this
+        val sourceEnd = (startOffset + operatorText.length).coerceAtMost(endOffset)
+        if (sourceEnd <= startOffset) return this
+        val sourceKind = when (operation) {
+            OperatorNameConventions.PLUS -> CjFakeSourceElementKind.DesugaredPlusAssign
+            OperatorNameConventions.MINUS -> CjFakeSourceElementKind.DesugaredMinusAssign
+            OperatorNameConventions.TIMES -> CjFakeSourceElementKind.DesugaredTimesAssign
+            OperatorNameConventions.DIV -> CjFakeSourceElementKind.DesugaredDivAssign
+            OperatorNameConventions.REM -> CjFakeSourceElementKind.DesugaredRemAssign
+            else -> CjFakeSourceElementKind.CalleeReferenceForOperatorOfCall
+        }
+        return fakeElement(
+            sourceKind,
+            CjSourceElementOffsetStrategy.Custom.Initialized(startOffset, sourceEnd),
+        )
     }
 
     /**
@@ -5103,19 +5138,96 @@ open class CfirExpressionsResolveTransformer(
             origin = CfirFunctionCallOrigin.Operator
         }
 
-        val resolvedCall = callResolver.resolveCallAndSelectCandidate(setCall, data)
-        (resolvedCall.calleeReference as? CfirDiagnosticHolder)?.diagnostic?.let { diagnostic ->
-            subscriptExpression.replaceConeTypeOrNull(ConeErrorType(diagnostic, delegatedType = builtinTypes.unitType))
-            return
+        /*
+         * `set(receiver, index..., value)` 是为验证下标赋值能力而构造的临时调用。
+         * 官方 Sema 在这段脱糖期间抑制参数检查诊断；如果调用失败，则恢复原始
+         * subscript/assignment，再根据原始操作数是否有效决定报告整个下标赋值错误。
+         *
+         * 这里的调用参数复用了原始 CFIR 节点。没有快照时，ArgumentCheckingProcessor
+         * 会把合成 set 的 expected type 写回原始 index（例如把 Rune 标成
+         * CANNOT_CONVERT_LITERAL），使本应落在 `b[r'c']` 上的
+         * CANNOT_ASSIGN_TO_SUBSCRIPT 被错误地挪到参数节点。
+         */
+        val resolutionSnapshot = CfirResolutionSnapshot.capture(assignment)
+        var resolutionCommitted = false
+        var snapshotRestored = false
+
+        fun restoreOriginalResolutionState() {
+            if (snapshotRestored) return
+            resolutionSnapshot.restore()
+            snapshotRestored = true
         }
 
-        val completedCall = components.callCompleter.completeCall(resolvedCall, data)
-        (completedCall.calleeReference as? CfirDiagnosticHolder)?.diagnostic?.let { diagnostic ->
-            subscriptExpression.replaceConeTypeOrNull(ConeErrorType(diagnostic, delegatedType = builtinTypes.unitType))
-            return
-        }
+        try {
+            var setResolutionFailed = false
+            var completedSetType: ConeCangJieType? = null
 
-        subscriptExpression.replaceConeTypeOrNull(completedCall.coneTypeOrNull ?: builtinTypes.unitType)
+            context.dataFlowAnalyzerContext.withIsolatedContext {
+                val resolvedCall = callResolver.resolveCallAndSelectCandidate(setCall, data)
+                val resolutionDiagnostic = (resolvedCall.calleeReference as? CfirDiagnosticHolder)?.diagnostic
+                if (resolutionDiagnostic != null) {
+                    setResolutionFailed = true
+                    return@withIsolatedContext
+                }
+
+                val completedCall = components.callCompleter.completeCall(resolvedCall, data)
+                val completionDiagnostic = (completedCall.calleeReference as? CfirDiagnosticHolder)?.diagnostic
+                if (completionDiagnostic != null) {
+                    setResolutionFailed = true
+                    return@withIsolatedContext
+                }
+                completedSetType = completedCall.coneTypeOrNull
+            }
+
+            if (setResolutionFailed) {
+                restoreOriginalResolutionState()
+
+                val operands = buildList {
+                    add(subscriptExpression.receiver)
+                    addAll(subscriptExpression.indices)
+                    add(assignment.rValue)
+                }
+                val operandDiagnostic = operands.asSequence()
+                    .mapNotNull { operand -> operand.rootErrorDiagnosticOrNull() }
+                    .firstOrNull()
+                val hasOperandError = operandDiagnostic != null || operands.any { operand ->
+                    operand.coneTypeOrNull?.containsErrorType() == true
+                }
+
+                if (hasOperandError) {
+                    // 子表达式自己的诊断优先；下标根只承载不重复传播的错误类型，
+                    // 不再把合成 set 的失败原因写成新的用户诊断。
+                    operandDiagnostic?.let { diagnostic ->
+                        subscriptExpression.replaceConeTypeOrNull(
+                            ConeErrorType(
+                                ConeUnreportedDuplicateDiagnostic(diagnostic),
+                                delegatedType = builtinTypes.unitType,
+                            ),
+                        )
+                    }
+                    return
+                }
+
+                val diagnostic = ConeUnresolvedNameError(
+                    name = OperatorNameConventions.SET,
+                    operator = "[]",
+                    receiverType = receiverType,
+                    argumentTypes = subscriptExpression.indices.mapNotNull { it.coneTypeOrNull } +
+                            listOf(assignment.rValue.coneTypeOrNull ?: errorType("subscript assignment value has no type")),
+                )
+                subscriptExpression.replaceConeTypeOrNull(
+                    ConeErrorType(diagnostic, delegatedType = builtinTypes.unitType),
+                )
+                return
+            }
+
+            subscriptExpression.replaceConeTypeOrNull(completedSetType ?: builtinTypes.unitType)
+            resolutionCommitted = true
+        } finally {
+            if (!resolutionCommitted) {
+                restoreOriginalResolutionState()
+            }
+        }
     }
 
     /**

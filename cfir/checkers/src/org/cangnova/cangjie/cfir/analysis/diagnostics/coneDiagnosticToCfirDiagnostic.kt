@@ -69,6 +69,7 @@ import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.OperatorNameConventions
 import org.cangnova.cangjie.psi.*
 import org.cangnova.cangjie.psi.psiUtil.getAssignmentByLHS
+import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 import org.cangnova.cangjie.resolve.calls.inference.model.*
 import org.cangnova.cangjie.resolve.calls.tower.ApplicabilityDetail
 import org.cangnova.cangjie.resolve.calls.tower.isSuccess
@@ -1514,7 +1515,9 @@ private fun ConeAmbiguityError.mapConeAmbiguityError(
         if (completeTypeUseSource != null) {
             CjOffsetsOnlySourceElement(completeTypeUseSource.startOffset, completeTypeUseSource.endOffset)
         } else if (isFunctionValueAmbiguity()) {
-            source ?: diagnosticSource
+            source.callableReferenceSelectorWithTypeArgumentsSource()
+                ?: source
+                ?: diagnosticSource
         } else {
             callOrAssignmentSource
                 ?.takeIf { source == null || it.startOffset < source.startOffset || it.endOffset > source.endOffset }
@@ -1688,6 +1691,59 @@ private fun ConeAmbiguityError.isFunctionValueAmbiguity(): Boolean {
                 candidate.callInfo.arguments.isEmpty() &&
                         candidate.symbol.takeIf { it.isBound }?.cfir is CfirFunction
             }
+}
+
+/**
+ * 函数值引用的歧义诊断只覆盖 selector；存在显式类型实参时还必须覆盖完整的
+ * `foo<T>`，不能停在函数名上。PSI 与 LightTree source 都先归一到同一 PSI selector。
+ */
+private fun CjSourceElement?.callableReferenceSelectorWithTypeArgumentsSource(): AbstractCjSourceElement? {
+    return when (this) {
+        is CjPsiSourceElement -> {
+            val selector = when (val psi = psi) {
+                is CjSimpleNameExpression -> psi
+                is CjQualifiedExpression -> psi.selectorExpression as? CjSimpleNameExpression
+                else -> null
+            } ?: return null
+            val typeArgumentList = selector.getTypeArgumentList() ?: return null
+            CjOffsetsOnlySourceElement(
+                startOffset = selector.textRange.startOffset,
+                endOffset = typeArgumentList.textRange.endOffset,
+            )
+        }
+
+        // 纯 LightTree 构建不会创建 PSI 包装树；直接沿轻量树取 selector 和其
+        // TYPE_ARGUMENT_LIST，保证函数值引用的诊断范围在两条 LLT 路径上相同。
+        is CjLightSourceElement -> callableReferenceSelectorWithTypeArgumentsLightTreeSource()
+        else -> null
+    }
+}
+
+/** 从 LightTree 的 qualified/reference 节点提取函数值引用的完整 selector。 */
+private fun CjLightSourceElement.callableReferenceSelectorWithTypeArgumentsLightTreeSource(): AbstractCjSourceElement? {
+    val selector = when (lighterASTNode.tokenType) {
+        CjNodeTypes.REFERENCE_EXPRESSION -> lighterASTNode
+        CjNodeTypes.DOT_QUALIFIED_EXPRESSION -> {
+            val childrenRef = Ref<Array<LighterASTNode>>()
+            treeStructure.getChildren(lighterASTNode, childrenRef)
+            childrenRef.get().lastOrNull { child ->
+                child.tokenType == CjNodeTypes.REFERENCE_EXPRESSION ||
+                    child.tokenType == CjStubElementTypes.BASIC_REFERENCE_EXPRESSION
+            }
+        }
+        else -> null
+    } ?: return null
+
+    val childrenRef = Ref<Array<LighterASTNode>>()
+    treeStructure.getChildren(selector, childrenRef)
+    val typeArgumentList = childrenRef.get().firstOrNull { child ->
+        child.tokenType == CjNodeTypes.TYPE_ARGUMENT_LIST
+    } ?: return null
+
+    return CjOffsetsOnlySourceElement(
+        startOffset = treeStructure.getStartOffset(selector),
+        endOffset = treeStructure.getEndOffset(typeArgumentList),
+    )
 }
 
 /**

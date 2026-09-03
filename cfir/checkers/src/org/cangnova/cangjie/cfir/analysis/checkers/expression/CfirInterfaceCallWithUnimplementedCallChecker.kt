@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.expression.hasInvalidGenericTypeArgument
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirStaticMemberCompleteness
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.calls.resolvedQualifierClassifier
@@ -38,6 +39,7 @@ object CfirInterfaceCallWithUnimplementedCallChecker : CfirQualifiedAccessChecke
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirQualifiedAccessExpression) {
+        if (expression.hasInvalidGenericTypeArgument()) return
         val qualifier = expression.explicitReceiver ?: return
         val qualifierClassifier = qualifier.resolvedQualifierClassifier(context.session) ?: return
 

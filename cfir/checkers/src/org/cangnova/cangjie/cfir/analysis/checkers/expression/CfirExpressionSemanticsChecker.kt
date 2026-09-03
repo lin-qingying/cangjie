@@ -202,6 +202,7 @@ object CfirExpressionWithErrorTypeChecker : CfirBasicExpressionChecker() {
                 diagnostic,
                 diagnosticSource,
                 context,
+                owner = expression,
                 reporter = reporter,
             )
         }

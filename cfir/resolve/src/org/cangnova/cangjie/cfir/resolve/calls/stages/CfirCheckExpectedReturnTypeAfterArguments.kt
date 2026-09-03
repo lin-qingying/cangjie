@@ -8,6 +8,7 @@ import org.cangnova.cangjie.cfir.resolve.initialTypeOfCandidate
 import org.cangnova.cangjie.cfir.resolve.isOperatorOperandInference
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
 import org.cangnova.cangjie.cfir.resolve.calls.hasUncertainExpectedTypeCompatibilityShape
+import org.cangnova.cangjie.cfir.resolve.calls.isBareNoArgumentEnumValueAccess
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CheckerSink
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.yieldDiagnostic
@@ -41,6 +42,11 @@ object CfirCheckExpectedReturnTypeAfterArguments : ResolutionStage() {
         }
         val expectedType = resolutionMode.expectedType ?: return
         if (resolutionMode.isOperatorOperandInference) return
+
+        // 裸无参 enum case 是值访问，不是以返回类型参与 overload applicability 的函数调用。
+        // 其表达式类型应保留为 enum owner，外层参数/操作符检查再报告真实的不兼容诊断；
+        // 显式 `Entry()` 的 callSite 是 CfirFunctionCall，不会走此分支。
+        if (candidate.isBareNoArgumentEnumValueAccess()) return
 
         // 对齐官方 CheckCandidate：实参兼容性失败时提前返回，返回类型比较不执行。
         if (candidate.argumentMappingOutcome?.hasMappingFailure == true) return

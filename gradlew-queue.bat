@@ -1,17 +1,17 @@
 @echo off
 REM ======================================================================
-REM  gradlew-queue.bat —— 全局串行化 gradlew 调用的包装入口（Windows）
+REM  gradlew-queue.bat -- global serialized wrapper for gradlew calls (Windows)
 REM
-REM  退出码：与真实 gradlew.bat 100% 对齐，可直接用于 CI。
+REM  Exit code: 100% aligned with the real gradlew.bat, safe to use in CI.
 REM
-REM  关键点：
+REM  Key points:
 REM   1) java -jar <queue-cli.jar> --project-dir <ROOT> <USER_ARGS>
-REM   2) 若 jar 不存在：自动先构建 :gradle-queue-cli:shadowJar，由全局 bootstrap.lock
-REM      保证同一时刻只有一个终端做首次构建，其余终端自动等待 jar 出现。
-REM   3) 为了避免 cmd.exe 在解析 %* 时把用户参数里形如 %FOO% 的字符串当作环境变量替换，
-REM      我们采用"先把原始命令行写入临时 UTF-16 文件 → Java 端用 sun.misc.Unsafe/JNA？不，没有
-REM      那么复杂：改为使用 PowerShell 转发原始 CLI 到 Java 进程"方案来彻底规避 cmd 的变量展开。
-REM      PowerShell 解析命令行时不做 %VAR% 替换，从而保证用户参数原样传到 JVM 的 main(args)。
+REM   2) If the jar is missing: first build :gradle-queue-cli:shadowJar automatically; the global
+REM      bootstrap.lock guarantees only one terminal performs the first build at a time, and the
+REM      other terminals wait for the jar to appear.
+REM   3) To prevent cmd.exe from expanding strings like %FOO% inside user args while parsing %*,
+REM      we forward the raw CLI to the Java process via PowerShell, which does not perform
+REM      %VAR% substitution, so user args reach JVM main(args) unchanged.
 REM ======================================================================
 setlocal EnableExtensions DisableDelayedExpansion
 
@@ -24,59 +24,59 @@ if not exist "%QUEUE_DIR%" mkdir "%QUEUE_DIR%" 2>nul
 set "JAR=%PROJECT_ROOT%\gradle-queue-cli\build\libs\gradle-queue-cli.jar"
 set "BOOTSTRAP_LOCK=%QUEUE_DIR%\bootstrap.lock"
 
-REM ======= 1) Jar 已存在 → 走 PS 转发原始命令行 =======
+REM ======= 1) Jar exists -> forward raw CLI via PowerShell =======
 if exist "%JAR%" goto :runJar
 
-REM ======= 2) 首次构建：PowerShell 拿 bootstrap.lock 再调 gradlew 构建 jar =======
+REM ======= 2) First build: acquire bootstrap.lock in PowerShell, then build jar via gradlew =======
 echo [GradleQueue] Jar missing. First-run: building gradle-queue-cli under bootstrap lock...
 
-REM 生成一次性 PS 脚本：持 File.Open FileShare=None 独占锁 → 构建 jar
+REM Generate a one-shot PS script: hold File.Open FileShare=None exclusive lock -> build jar
 set "PSBLD=%TEMP%\gq-bootstrap-%RANDOM%-%RANDOM%.ps1"
 >"%PSBLD%" (
 echo $ErrorActionPreference = 'Continue'
 echo $lockFile='%BOOTSTRAP_LOCK:'=''%'
 echo $jar='%JAR:'=''%'
 echo $gradlew='%PROJECT_ROOT:'=''%\gradlew.bat'
-echo $timeoutMs=[int](15 * 60 * 1000)
+echo $timeoutMs=[int]^(15 * 60 * 1000^)
 echo $pollMs=200
 echo $start=[DateTimeOffset]::Now.ToUnixTimeMilliseconds()
 echo $fs = $null
 echo function Release-Lock {
-echo   param([System.IO.FileStream]$s)
-echo   if($s){ try { $s.Close() } catch {} }
+echo   param^([System.IO.FileStream]^)$s
+echo   if^($s^){ try { $s.Close^() } catch {} }
 echo   Remove-Item -Path $lockFile -Force -ErrorAction SilentlyContinue
 echo }
-echo while($true) {
+echo while^($true^) {
 echo   try {
-echo     $fs = [System.IO.File]::Open($lockFile, [System.IO.FileMode]::OpenOrCreate, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::None)
+echo     $fs = [System.IO.File]::Open^($lockFile, [System.IO.FileMode]::OpenOrCreate, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::None^)
 echo     break
 echo   } catch [System.IO.IOException] {
-echo     $elapsed=[DateTimeOffset]::Now.ToUnixTimeMilliseconds()-$start
-echo     if($elapsed -gt $timeoutMs){ Write-Host '[GradleQueue] bootstrap lock timeout after 15min' -ForegroundColor Red; exit 4 }
+echo     $elapsed=[DateTimeOffset]::Now.ToUnixTimeMilliseconds^()-$start
+echo     if^($elapsed -gt $timeoutMs^){ Write-Host '[GradleQueue] bootstrap lock timeout after 15min' -ForegroundColor Red; exit 4 }
 echo     Start-Sleep -Milliseconds $pollMs
 echo   } catch {
-echo     Write-Host ('[GradleQueue] bootstrap lock error: '+$_.Exception.Message) -ForegroundColor Red
+echo     Write-Host ^('[GradleQueue] bootstrap lock error: '+$_.Exception.Message^) -ForegroundColor Red
 echo     exit 5
 echo   }
 echo }
 echo Write-Host '[GradleQueue] bootstrap lock acquired'
 echo try {
-echo   if(-not (Test-Path $jar)) {
+echo   if^(-not ^(Test-Path $jar^)^) {
 echo     Write-Host '[GradleQueue] running: gradlew.bat :gradle-queue-cli:shadowJar --no-daemon'
 echo     $psi=New-Object System.Diagnostics.ProcessStartInfo
 echo     $psi.FileName=$gradlew
 echo     $psi.Arguments=':gradle-queue-cli:shadowJar --no-daemon'
 echo     $psi.WorkingDirectory='%PROJECT_ROOT:'=''%'
 echo     $psi.UseShellExecute=$false
-echo     $p=[System.Diagnostics.Process]::Start($psi)
-echo     $p.WaitForExit()
+echo     $p=[System.Diagnostics.Process]::Start^($psi^)
+echo     $p.WaitForExit^()
 echo     $rc=$p.ExitCode
-echo     if($rc -ne 0){
+echo     if^($rc -ne 0^){
 echo       Write-Host "[GradleQueue] shadowJar failed exitCode=$rc" -ForegroundColor Red
 echo       Release-Lock $fs
 echo       exit $rc
 echo     }
-echo     if(-not (Test-Path $jar)){
+echo     if^(-not ^(Test-Path $jar^)^){
 echo       Write-Host "[GradleQueue] shadowJar succeeded but jar missing: $jar" -ForegroundColor Red
 echo       Release-Lock $fs
 echo       exit 6
@@ -104,15 +104,21 @@ if not exist "%JAR%" (
     exit /b 7
 )
 
-REM ======= 3) 调用 Java：用 PowerShell 转发，避免 cmd %VAR% 替换 =======
+REM ======= 3) Invoke Java: forward via PowerShell to avoid cmd %VAR% expansion =======
 :runJar
-REM 构造用户原始参数：%* 里可能含 ^ 百分号 毒字符，但在 DisableDelayedExpansion 下
-REM 用 %* 传参给 PS 时，PS 不做 %% 展开，因此可以把参数安全送达 JVM。
-powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command ^
-  "$jar='%JAR%';" ^
-  "$prj='%PROJECT_ROOT%';" ^
-  "$userArgs=@($args);" ^
-  "$cmdArgs=@('-jar',$jar,'--project-dir',$prj) + $userArgs;" ^
-  "& java @cmdArgs; exit $LASTEXITCODE" -- %*
-
-endlocal & exit /b %ERRORLEVEL%
+REM Build raw user args: %* may contain poison characters like ^ or %, but with
+REM DisableDelayedExpansion and passing %* to a -File script, PS stores them in
+REM $args without further %-expansion, so the args reach the JVM safely.
+set "PSRUN=%TEMP%\gq-run-%RANDOM%-%RANDOM%.ps1"
+>"%PSRUN%" (
+echo $ErrorActionPreference = 'Continue'
+echo $jar='%JAR:'=''%'
+echo $prj='%PROJECT_ROOT:'=''%'
+echo $cmdArgs=@^('-jar', $jar, '--project-dir', $prj^) + $args
+echo ^& java @cmdArgs
+echo exit $LASTEXITCODE
+)
+powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "%PSRUN%" %*
+set "RUN_RC=%ERRORLEVEL%"
+del "%PSRUN%" 2>nul
+endlocal & exit /b %RUN_RC%

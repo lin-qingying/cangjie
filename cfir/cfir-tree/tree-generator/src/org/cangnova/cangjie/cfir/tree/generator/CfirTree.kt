@@ -1122,6 +1122,7 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
     val augmentedAssignment: Element by element(Expression, name = "AugmentedAssignment") {
         parent(expression)
         +field("operation", nameType)
+        +field("operationSource", sourceElementType, nullable = true)
         +field("leftArgument", expression, withTransform = true)
         +field("rightArgument", expression, withTransform = true)
     }

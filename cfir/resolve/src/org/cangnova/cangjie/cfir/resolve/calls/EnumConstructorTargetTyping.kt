@@ -2,12 +2,14 @@ package org.cangnova.cangjie.cfir.resolve.calls
 
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
 import org.cangnova.cangjie.cfir.expressions.CfirResolvable
 import org.cangnova.cangjie.cfir.references.CfirResolvedErrorReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.references.builder.buildResolvedNamedReference
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallKind
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirNamedReferenceWithCandidate
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.session.CfirSession
@@ -18,6 +20,24 @@ import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeEnumType
 import org.cangnova.cangjie.cfir.types.StdlibClassIds
 import org.cangnova.cangjie.name.ClassId
+
+/**
+ * 判断候选是否对应源码中的裸无参 enum value 访问。
+ *
+ * 仓颉无参 enum case 在源码中是 value access；只有写出实际的函数调用节点时，
+ * 才应按 constructor call 检查参数与返回值适用性。调用解析目前为了复用 enum
+ * constructor 的 tower 查找而保留 [CallKind.EnumConstructorCall]，因此把这项
+ * 语言级形态集中在候选工具中，供各个 resolution stage 使用，避免每个 stage
+ * 依据节点类型重复推断或把显式 `Entry()` 误判为裸值。
+ */
+internal fun Candidate.isBareNoArgumentEnumValueAccess(): Boolean {
+    if (callInfo.callKind != CallKind.EnumConstructorCall) return false
+    val enumConstructor = symbol.takeIf { it.isBound }?.cfir as? CfirEnumConstructor ?: return false
+    return enumConstructor.valueParameters.isEmpty() &&
+            callInfo.arguments.isEmpty() &&
+            !callInfo.hasExplicitTypeArguments &&
+            callInfo.callSite !is CfirFunctionCall
+}
 
 /**
  * 按目标类型为无参 enum constructor 定型。

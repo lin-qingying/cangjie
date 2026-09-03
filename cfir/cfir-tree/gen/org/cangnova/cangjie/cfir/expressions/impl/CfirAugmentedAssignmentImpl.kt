@@ -24,6 +24,7 @@ internal class CfirAugmentedAssignmentImpl(
     override var annotations: MutableOrEmptyList<CfirAnnotation>,
     override var coneTypeOrNull: ConeCangJieType?,
     override val operation: Name,
+    override val operationSource: CjSourceElement?,
     override var leftArgument: CfirExpression,
     override var rightArgument: CfirExpression,
 ) : CfirAugmentedAssignment() {

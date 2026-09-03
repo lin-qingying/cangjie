@@ -296,6 +296,7 @@ class LightTreeRawCfirExpressionBuilder(
         var left: LighterASTNode? = null
         var right: LighterASTNode? = null
         var opToken: IElementType? = null
+        var opNode: LighterASTNode? = null
 
         tree.forEachChildren(node) { child ->
             when (child.tokenType) {
@@ -303,6 +304,7 @@ class LightTreeRawCfirExpressionBuilder(
                     // OPERATION_REFERENCE 内部包含实际操作符 Token
                     tree.forEachChildren(child) { opChild ->
                         opToken = opChild.tokenType
+                        opNode = opChild
                     }
                 }
                 else -> if (isExpressionToken(child.tokenType)) {
@@ -334,6 +336,7 @@ class LightTreeRawCfirExpressionBuilder(
             return buildAugmentedAssignment {
                 source = node.toSource()
                 this.operation = operation
+                operationSource = opNode?.toSource()
                 leftArgument = leftExpr
                 rightArgument = rightExpr
             }

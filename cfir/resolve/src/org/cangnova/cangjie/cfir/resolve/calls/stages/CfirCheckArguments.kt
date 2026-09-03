@@ -26,7 +26,6 @@ package org.cangnova.cangjie.cfir.resolve.calls.stages
 
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.diagnostic.InapplicableCandidate
-import org.cangnova.cangjie.cfir.expressions.CfirArrayLiteral
 import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.resolve.calls.ConeResolutionAtom
@@ -44,10 +43,11 @@ import org.cangnova.cangjie.cfir.resolve.transformers.ensureResolvedTypeDeclarat
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
-import org.cangnova.cangjie.cfir.types.arrayElementType
 import org.cangnova.cangjie.cfir.types.asCone
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.contains
+import org.cangnova.cangjie.cfir.types.typeContext
+import org.cangnova.cangjie.type.AbstractTypeChecker
 import org.cangnova.cangjie.type.model.safeSubstitute
 
 /**
@@ -211,27 +211,20 @@ private fun Candidate.selectVariadicExpectedType(
     val argumentType = argument.coneTypeOrNull ?: return null
     val normalExpectedType = this.substitutor.substituteOrSelf(argument.getExpectedType(session, parameter))
     if (argumentType is ConeErrorType || normalExpectedType is ConeErrorType) return null
-    if (argument is CfirArrayLiteral) return null
-
     val preparedArgumentType = prepareArgumentType(argumentType, session)
-    // 该位置的普通形参已确定是 Array；普通调用能否成立首先由实参的展开后根形状决定。
-    // 含 fresh owner T 的 `Array<T>` 不能用通用 compatibility 探测来判断 `Person`：
-    // 该探测可能把未固定变量当作可吸收任意输入，掩盖根 classifier 不同，随后才在
-    // 真正约束写入时产生 ARGUMENT_TYPE_MISMATCH。非 Array 根必然进入元素 variadic retry。
+    // 普通调用路径必须先按完整参数类型判断是否可用。特别是数组字面量也可能是
+    // 变参元素：`f(Array<Array<Int64>>)` 的 `f([1])` 在官方实现中会先尝试普通
+    // Array<Array<Int64>> 参数，失败后再把原实参作为合成 ArrayLit 的一个元素。
+    // 仅比较两侧“都是 Array”会把 Array<Int64> 错当成 Array<Array<Int64>>，从而
+    // 永远不会进入该恢复路径；完整 subtype 检查同时保留 `Array<T>` 的推断变量语义。
     val matchesNormalArrayParameter =
-        preparedArgumentType.isArrayArgumentForArrayParameter(normalExpectedType)
+        AbstractTypeChecker.isSubtypeOf(
+            session.typeContext,
+            preparedArgumentType,
+            normalExpectedType,
+        )
     if (matchesNormalArrayParameter) return null
 
     // 官方 cjc 会在普通调用匹配失败后把这部分位置实参收束成 ArrayLit。
     return markVariadicArgument(atom)
 }
-
-/**
- * 仓颉普通变参只在调用点提供元素序列时生效。
- *
- * 如果实参本身已经是 `Array<...>`，它应先走普通数组形参检查；即使元素类型里含
- * 待推断变量，也不能因为独立 subtype 探测暂时无法证明兼容，就把整个数组实参
- * 重新解释成变参元素。
- */
-private fun ConeCangJieType.isArrayArgumentForArrayParameter(expectedType: ConeCangJieType): Boolean =
-    arrayElementType != null && expectedType.arrayElementType != null

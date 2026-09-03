@@ -1,6 +1,8 @@
 package org.cangnova.cangjie.cfir.scopes.impl
 
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirEnum
+import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
@@ -9,6 +11,7 @@ import org.cangnova.cangjie.cfir.patterns.bindingVariables
 import org.cangnova.cangjie.cfir.scopes.CfirPackageScope
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.name.Name
@@ -82,6 +85,28 @@ class CfirFileDeclaredTopLevelScope(
     }
 
     /**
+     * 当前文件顶层 enum constructor 索引。
+     *
+     * 仓颉的 enum case 在无限定名称位置按 constructor 参与 enum sugar lookup；
+     * 它仍然保留在所属 [CfirEnum] 的声明列表中，但必须在文件级 callable scope
+     * 中以 constructor 身份暴露，才能让裸 `A` 进入统一的 enum constructor 解析链。
+     */
+    private val enumConstructorsByName: Map<Name, List<CfirEnumConstructorSymbol>> =
+        buildMap<Name, List<CfirEnumConstructorSymbol>> {
+        file.declarations
+            .asSequence()
+            .filterIsInstance<CfirEnum>()
+            .flatMap { declaration ->
+                declaration.declarations
+                    .asSequence()
+                    .filterIsInstance<CfirEnumConstructor>()
+            }
+            .forEach { declaration ->
+                put(declaration.name, get(declaration.name).orEmpty() + declaration.symbol)
+            }
+    }
+
+    /**
      * 当前文件顶层 callable 索引。
      */
     private val callablesByName: Map<Name, List<CfirCallableSymbol<*>>> = buildMap {
@@ -100,6 +125,10 @@ class CfirFileDeclaredTopLevelScope(
             .forEach { declaration -> append(declaration.name, declaration.symbol) }
 
         topLevelPatternBindingsByName.forEach { (name, symbols) ->
+            symbols.forEach { symbol -> append(name, symbol) }
+        }
+
+        enumConstructorsByName.forEach { (name, symbols) ->
             symbols.forEach { symbol -> append(name, symbol) }
         }
     }

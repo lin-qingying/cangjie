@@ -24,6 +24,7 @@ class CfirAugmentedAssignmentBuilder {
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
     var coneTypeOrNull: ConeCangJieType? = null
     lateinit var operation: Name
+    var operationSource: CjSourceElement? = null
     lateinit var leftArgument: CfirExpression
     lateinit var rightArgument: CfirExpression
 
@@ -33,6 +34,7 @@ class CfirAugmentedAssignmentBuilder {
             annotations.toMutableOrEmpty(),
             coneTypeOrNull,
             operation,
+            operationSource,
             leftArgument,
             rightArgument,
         )

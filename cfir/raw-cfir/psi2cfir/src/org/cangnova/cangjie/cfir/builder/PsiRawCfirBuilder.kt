@@ -2388,6 +2388,7 @@ class PsiRawCfirBuilder(
                 return buildAugmentedAssignment {
                     source = psi.toCjPsiSourceElement()
                     this.operation = operation
+                    operationSource = psi.operationReference.toCjPsiSourceElement()
                     leftArgument = left
                     rightArgument = right
                 }
