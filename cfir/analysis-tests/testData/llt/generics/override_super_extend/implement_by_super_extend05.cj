@@ -17,7 +17,7 @@ extend<T> A<T> where T <: I3<T> {
     }
 }
 
-class <!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>B<!><T> <: A<T> & I1 where T <: I2<T> {} // error
+class <!INTERFACE_MEMBER_MUST_BE_IMPLEMENTED!>B<!><T> <: A<T> & I1 where T <: I2<T> {} // error
 
 class C <: I3<C> {}
 

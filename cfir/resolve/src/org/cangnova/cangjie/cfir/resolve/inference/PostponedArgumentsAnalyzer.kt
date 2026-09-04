@@ -30,6 +30,7 @@ import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirNamedReferenceWithC
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.addSubsystemFromAtom
 import org.cangnova.cangjie.cfir.resolve.calls.stages.ArgumentCheckingProcessor
 import org.cangnova.cangjie.cfir.resolve.calls.stages.CheckerSinkImpl
+import org.cangnova.cangjie.cfir.resolve.calls.stages.expectedTypeMismatchDiagnostic
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.resolve.functionTypeForFunctionValueCandidate
 import org.cangnova.cangjie.cfir.resolve.inference.model.ConeArgumentConstraintPosition
@@ -170,6 +171,10 @@ class PostponedArgumentsAnalyzer(
         when (callResolver.resolveCallableReferenceArguments(candidate, listOf(atom))) {
             CallableReferenceResolutionResult.RESOLVED -> return
             CallableReferenceResolutionResult.POSTPONED -> return
+            CallableReferenceResolutionResult.TYPE_MISMATCH -> {
+                candidate.addDiagnostic(atom.expectedTypeMismatchDiagnostic())
+                return
+            }
             CallableReferenceResolutionResult.FAILURE -> {
                 when (atom.failureKind) {
                     CallableReferenceFailureKind.AMBIGUOUS_ARGUMENT_TYPE -> candidate.addDiagnostic(

@@ -19,7 +19,7 @@ extend<T> A<T> where T <: I2 {
 
 class B<T1> <: A<T1> {}
 
-<!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>extend<T2> B<T2> <: I1 {}<!> // error
+extend<T2> <!INTERFACE_MEMBER_MUST_BE_IMPLEMENTED!>B<T2><!> <: I1 {} // error
 
 class C<T1> <: A<T1> {}
 

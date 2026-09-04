@@ -19,7 +19,7 @@ extend<T> A<T> where T <: I3<T> {
     }
 }
 
-class B<T> <: A<T> & I1 where T <: I2<T> {} // error
+class <!CANNOT_OVERRIDE!>B<!><T> <: A<T> & I1 where T <: I2<T> {} // error
 
 class C <: I3<C> {}
 
@@ -27,4 +27,3 @@ main() {
     B<C>().foo()
     0
 }
-

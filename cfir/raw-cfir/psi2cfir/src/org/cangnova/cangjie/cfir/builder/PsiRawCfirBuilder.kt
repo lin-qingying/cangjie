@@ -4053,25 +4053,12 @@ class PsiRawCfirBuilder(
                 val fqName = item.importedFqName ?: return@mapNotNull null
                 buildImport {
                     source = item.toCjPsiSourceElement()
-                    importedFqName = normalizeImportFqName(fqName)
+                    importedFqName = fqName
                     isAllUnder = item.isAllUnder
                     aliasName = item.aliasName?.let { Name.identifier(it) }
                 }
             }
         }
-    }
-
-    /** 规范化 PSI 中可能重复包前缀的 import FQN。 */
-    private fun normalizeImportFqName(fqName: FqName): FqName {
-        val segments = fqName.pathSegments().map { it.asString() }
-        for (prefixLength in 1..(segments.size / 2)) {
-            val firstPrefix = segments.subList(0, prefixLength)
-            val secondPrefix = segments.subList(prefixLength, prefixLength * 2)
-            if (firstPrefix == secondPrefix) {
-                return FqName((firstPrefix + segments.drop(prefixLength * 2)).joinToString("."))
-            }
-        }
-        return fqName
     }
 
 

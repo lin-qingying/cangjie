@@ -160,6 +160,18 @@ class CfirCompositeTypeScope(
         val emitted = linkedSetOf<CfirCallableWithLookupProvenance>()
         for (scope in scopes) {
             scope.processCallablesByNameWithLookupProvenance(name) { candidate ->
+                if (candidate.symbol is CfirPropertySymbol) {
+                    // Intersection 上界中的同名属性若实例化后类型等价，代表同一个属性契约。
+                    // provenance 入口也必须应用与普通属性入口相同的归并，否则 tower 会把
+                    // 两个接口的等价属性当成两个独立候选并报告 AMBIGUOUS_USE。
+                    val equivalent = emitted.firstOrNull { previous ->
+                        previous.symbol is CfirPropertySymbol &&
+                            previous.symbol.hasEquivalentInstantiatedType(candidate.symbol)
+                    }
+                    if (equivalent != null) {
+                        return@processCallablesByNameWithLookupProvenance
+                    }
+                }
                 if (emitted.add(candidate)) processor(candidate)
             }
         }

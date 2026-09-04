@@ -29,7 +29,7 @@ public enum ServerEventType <: Enum<ServerEventType> {
     public operator func ==(value: ServerEventType) {
         match ((this, value)) {
             case (EVENTTYPE_UNDEFINED, EVENTTYPE_UNDEFINED) => true
-            case _ => false
+            case <!UNREACHABLE_PATTERN!>_<!> => false
         }
     }
 }

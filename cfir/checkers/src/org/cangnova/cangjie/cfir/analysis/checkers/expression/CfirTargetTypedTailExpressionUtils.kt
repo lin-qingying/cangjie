@@ -7,6 +7,7 @@ import org.cangnova.cangjie.cfir.analysis.checkers.functionTypeForLambdaShape
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
+import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
@@ -65,6 +66,11 @@ internal fun CfirExpression.expectedTypeFromTargetContext(context: CheckerContex
         // 不把 body 尾表达式强制当作 Unit 返回值，与 CfirFunctionBodyTypeMismatchChecker 一致。
         if (declaredReturnType.isUnit) return null
         return declaredReturnType
+    }
+
+    val containingValueParameter = context.findClosestDeclaration<CfirValueParameter> { it.defaultValue === this }
+    if (containingValueParameter != null) {
+        return (containingValueParameter.returnTypeRef as? CfirResolvedTypeRef)?.coneType
     }
 
     val containingVariable = context.findClosestDeclaration<CfirVariable> { it.initializer === this } ?: return null

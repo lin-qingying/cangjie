@@ -84,6 +84,7 @@ import org.cangnova.cangjie.cfir.semantics.AbstractCandidate
 import org.cangnova.cangjie.cfir.semantics.ErrorTypeInArguments
 import org.cangnova.cangjie.cfir.semantics.InvalidCallableReturnTypeInOverloadSet
 import org.cangnova.cangjie.cfir.semantics.ResolutionDiagnostic
+import org.cangnova.cangjie.cfir.semantics.isSuccess
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.builtinTypes
 import org.cangnova.cangjie.cfir.session.accessibilityChecker
@@ -123,6 +124,8 @@ import java.util.IdentityHashMap
 internal enum class CallableReferenceResolutionResult {
     RESOLVED,
     POSTPONED,
+    /** 候选能形成有效函数类型，但该类型与上下文目标类型不兼容。 */
+    TYPE_MISMATCH,
     FAILURE,
 }
 
@@ -1007,19 +1010,44 @@ class CfirCallResolver(
             )
         )
 
+        /** 把唯一解析路径的约束与函数引用结果提交到外层候选。 */
+        fun commitResolution(resolution: PartialResolution) {
+            containingCallCandidate.system.replaceContentWith(resolution.storage)
+            for (choice in resolution.choices) {
+                containingCallCandidate.additionalCompletionVariables +=
+                    choice.candidate.freshVariables.map { variable -> variable.typeConstructor }
+                containingCallCandidate.additionalCompletionVariables +=
+                    choice.candidate.additionalCompletionVariables
+                choice.candidate.system.replaceContentWith(resolution.storage)
+                choice.apply()
+            }
+        }
+
         for (atom in atoms) {
             /** 当前 atom 展开后形成的下一批部分解析路径。 */
             val nextPartials = mutableListOf<PartialResolution>()
+            /** 没有兼容路径时，用于保留官方 `validCandidateTy` 分类的路径。 */
+            val expectedTypeMismatchPartials = mutableListOf<PartialResolution>()
             for ((storage, choices1) in partials) {
-                val choices = callableReferenceChoices(atom, storage)
-                for (choice in choices) {
+                val choiceSet = callableReferenceChoices(atom, storage)
+                for (choice in choiceSet.compatibleChoices) {
                     nextPartials += PartialResolution(
+                        storage = choice.candidate.system.currentStorage(),
+                        choices = choices1 + choice,
+                    )
+                }
+                for (choice in choiceSet.expectedTypeMismatchChoices) {
+                    expectedTypeMismatchPartials += PartialResolution(
                         storage = choice.candidate.system.currentStorage(),
                         choices = choices1 + choice,
                     )
                 }
             }
             if (nextPartials.isEmpty()) {
+                expectedTypeMismatchPartials.firstOrNull()?.let { mismatchResolution ->
+                    commitResolution(mismatchResolution)
+                    return CallableReferenceResolutionResult.TYPE_MISMATCH
+                }
                 if (atom.failureKind == null) {
                     atom.markNoMatchingFunctionReference()
                 }
@@ -1080,15 +1108,7 @@ class CfirCallResolver(
         }
 
         val resolved = partials.single()
-        containingCallCandidate.system.replaceContentWith(resolved.storage)
-        for (choice in resolved.choices) {
-            containingCallCandidate.additionalCompletionVariables +=
-                choice.candidate.freshVariables.map { variable -> variable.typeConstructor }
-            containingCallCandidate.additionalCompletionVariables +=
-                choice.candidate.additionalCompletionVariables
-            choice.candidate.system.replaceContentWith(resolved.storage)
-            choice.apply()
-        }
+        commitResolution(resolved)
         return CallableReferenceResolutionResult.RESOLVED
     }
 
@@ -1159,21 +1179,40 @@ class CfirCallResolver(
         val candidate: Candidate,
         /** callable reference 解析后的函数类型。 */
         val resultingType: ConeCangJieType,
+        /** 类型有效但不兼容时保存的上下文目标类型；兼容候选为 `null`。 */
+        val expectedTypeMismatch: ConeCangJieType? = null,
     ) {
         /** 将 callable reference 候选正式写回表达式和 atom 状态。 */
         fun apply() {
             val reference = expression.calleeReference as? CfirNamedReference ?: return
             candidate.updateSourcesOfReceivers()
-            atom.resultingReference = CfirNamedReferenceWithCandidate(
-                reference.source,
-                reference.name,
-                candidate,
-            )
+            atom.resultingReference = if (expectedTypeMismatch != null) {
+                // 官方 `validCandidateTy` 已经确定声明目标；失败只属于该函数类型与上下文
+                // 目标类型的关系。保留 resolved reference，避免把同一节点再派生为 unresolved。
+                buildResolvedNamedReference {
+                    source = reference.source
+                    name = reference.name
+                    resolvedSymbol = candidate.symbol
+                }
+            } else {
+                CfirNamedReferenceWithCandidate(
+                    reference.source,
+                    reference.name,
+                    candidate,
+                )
+            }
             atom.resultingTypeForCallableReference = resultingType
+            atom.expectedTypeForCallableReferenceMismatch = expectedTypeMismatch
             atom.failureKind = null
             atom.markResolved()
         }
     }
+
+    /** 一个函数引用在当前外层约束快照下的兼容候选与有效但不兼容候选。 */
+    private data class CallableReferenceChoiceSet(
+        val compatibleChoices: List<CallableReferenceChoice>,
+        val expectedTypeMismatchChoices: List<CallableReferenceChoice>,
+    )
 
     /**
      * 为一个 callable reference atom 枚举在当前约束系统快照下可成功的候选选择。
@@ -1184,9 +1223,12 @@ class CfirCallResolver(
     private fun callableReferenceChoices(
         atom: ConeResolvedCallableReferenceAtom,
         baseSystem: ConstraintStorage,
-    ): List<CallableReferenceChoice> {
-        val expression = atom.expression as? CfirNamedAccessExpression ?: return emptyList()
-        val expectedType = atom.expectedTypeForCallableReference(baseSystem) ?: return emptyList()
+    ): CallableReferenceChoiceSet {
+        fun emptyChoiceSet(): CallableReferenceChoiceSet =
+            CallableReferenceChoiceSet(emptyList(), emptyList())
+
+        val expression = atom.expression as? CfirNamedAccessExpression ?: return emptyChoiceSet()
+        val expectedType = atom.expectedTypeForCallableReference(baseSystem) ?: return emptyChoiceSet()
         val callInfo = expression.callableReferenceCallInfo(expectedType)
         val collector = CfirCandidateCollector(components, components.resolutionStageRunner)
         val resultCollector = towerResolver.runResolver(
@@ -1199,6 +1241,16 @@ class CfirCallResolver(
         val functionCandidates = reducedCandidates.filter { candidate ->
             candidate.symbol.takeIf { it.isBound }?.cfir is CfirFunction
         }
+        /*
+         * 函数引用没有可用于推断泛型 class 限定符的值。即使 `test` 本身不是泛型函数，
+         * 官方检查器也会拒绝裸泛型 class 上的 `A.test`。这里把它保留为 postponed atom
+         * 的结构化失败；否则把候选中新建的 owner 类型变量导入外层调用后，会把限定符
+         * 诊断错误地转换成外层调用上无关的 `UNABLE_TO_INFER_GENERIC_FUNC`。
+         */
+        if (functionCandidates.any { candidate -> candidate.hasBareGenericStaticCallableReferenceQualifier() }) {
+            atom.failureKind = CallableReferenceFailureKind.GENERIC_TYPE_ARGUMENT_REQUIRED
+            return emptyChoiceSet()
+        }
         val hasExplicitTypeArguments = expression.typeArguments.isNotEmpty() || callInfo.hasExplicitTypeArguments
         val originalCandidates = if (hasExplicitTypeArguments) {
             functionCandidates
@@ -1210,13 +1262,27 @@ class CfirCallResolver(
         }
         if (!hasExplicitTypeArguments && originalCandidates.isEmpty() && functionCandidates.isNotEmpty()) {
             atom.markGenericTypeArgumentRequired()
-            return emptyList()
+            return emptyChoiceSet()
         }
-        if (originalCandidates.isEmpty()) return emptyList()
+        if (originalCandidates.isEmpty()) return emptyChoiceSet()
 
-        val choices = originalCandidates.mapNotNull { candidate ->
+        val compatibleChoices = originalCandidates.mapNotNull { candidate ->
             val resultingType = candidate.currentFunctionReferenceType() ?: return@mapNotNull null
             CallableReferenceChoice(atom, expression, candidate, resultingType)
+        }
+        if (compatibleChoices.isNotEmpty()) {
+            return CallableReferenceChoiceSet(compatibleChoices, emptyList())
+        }
+        val expectedTypeMismatchChoices = originalCandidates.mapNotNull { candidate ->
+            val resultingType = candidate.currentFunctionReferenceTypeForExpectedTypeMismatch()
+                ?: return@mapNotNull null
+            CallableReferenceChoice(
+                atom = atom,
+                expression = expression,
+                candidate = candidate,
+                resultingType = resultingType,
+                expectedTypeMismatch = expectedType,
+            )
         }
         /*
          * 函数引用的目标类型只负责筛掉不兼容候选；多个候选仍然是引用歧义。
@@ -1224,7 +1290,16 @@ class CfirCallResolver(
          * 不使用调用重载阶段的“最具体候选”规则。后者会把例如 `g(Base)` 与
          * `g(Sub)` 在目标 `(Sub) -> R` 下错误压成一个候选，导致外层调用误选函数。
          */
-        return choices
+        return CallableReferenceChoiceSet(emptyList(), expectedTypeMismatchChoices)
+    }
+
+    /** 判断 callable reference 的静态成员是否由裸泛型类型限定符接收。 */
+    private fun Candidate.hasBareGenericStaticCallableReferenceQualifier(): Boolean {
+        val function = symbol.takeIf { it.isBound }?.cfir as? CfirFunction ?: return false
+        if (!function.status.isStatic || callInfo.hasExplicitTypeArguments) return false
+        val receiver = callInfo.explicitReceiver as? CfirQualifiedAccessExpression ?: return false
+        if (receiver.typeArguments.isNotEmpty()) return false
+        return receiver.staticQualifierOwnerTypeParameterSymbols().isNotEmpty()
     }
 
     /**
@@ -1704,21 +1779,22 @@ class CfirCallResolver(
     }
 
     /**
-     * 将函数值 overload set 在完整目标函数类型下归类为成功、无匹配或函数引用歧义。
+     * 将函数值 overload set 在完整目标类型下归类为成功、类型不匹配、无匹配或函数引用歧义。
      *
-     * 含未固定类型变量的目标类型仍由 postponed argument completion 处理；这里仅在目标类型
-     * 已经确定时生成官方 `ChkRefExpr` 对应的结构化结果。
+     * 官方 `ChkRefExpr` 对任意目标类型执行 `IsSubtype(fdTy, target)`，而不只处理函数目标类型。
+     * 因此 `let x: Int32 = f` 也必须保留有效函数类型并报告类型不匹配，不能因候选约束已经
+     * 事务回滚而退化成未解析引用。含未固定类型变量的目标仍由 postponed completion 处理。
      */
     private fun functionReferenceTargetDiagnostic(
         info: CallInfo,
         candidates: Collection<Candidate>,
     ): ConeDiagnostic? {
         if (info.callKind != CallKind.NamedValueAccess || candidates.isEmpty()) return null
-        val expectedFunctionType = info.resolutionMode.expectedType
-            ?.fullyExpandedType() as? ConeFunctionType ?: return null
-        if (expectedFunctionType.contains { type -> type is ConeTypeVariableType }) return null
+        val expectedType = info.resolutionMode.expectedType?.fullyExpandedType() ?: return null
+        if (expectedType is ConeErrorType || expectedType.contains { type -> type is ConeTypeVariableType }) return null
         if (candidates.any { candidate -> candidate.symbol.takeIf { it.isBound }?.cfir !is CfirFunction }) return null
         val expression = info.callSite as? CfirNamedAccessExpression ?: return null
+        val expectedFunctionType = expectedType as? ConeFunctionType
 
         val hasExplicitTypeArguments = info.hasExplicitTypeArguments
         val genericCandidatesIgnored = !hasExplicitTypeArguments && candidates.any { candidate ->
@@ -1727,8 +1803,16 @@ class CfirCallResolver(
         }
         val matchingCandidates = candidates.filter { candidate ->
             val function = candidate.symbol.takeIf { it.isBound }?.cfir as? CfirFunction
-            (hasExplicitTypeArguments || function?.typeParameters?.isNullOrEmpty() == true) &&
+            if (!hasExplicitTypeArguments && function?.typeParameters?.isNotEmpty() == true) {
+                return@filter false
+            }
+            if (expectedFunctionType != null) {
                 candidate.completedFunctionReferenceType(expression, expectedFunctionType) != null
+            } else {
+                candidate.functionReferenceTypeForDiagnostic()?.let { functionType ->
+                    AbstractTypeChecker.isSubtypeOf(session.typeContext, functionType, expectedType)
+                } == true
+            }
         }
         val validCandidateType = candidates.asSequence()
             .filter { candidate ->
@@ -1741,10 +1825,10 @@ class CfirCallResolver(
             0 -> if (genericCandidatesIgnored) {
                 ConeGenericFunctionReferenceWithoutTypeArgumentsError(info.name)
             } else if (validCandidateType != null) {
-                // 官方 ChkRefExpr 会保留一个可确定的函数声明类型，并把它与目标函数
+                // 官方 ChkRefExpr 会保留一个可确定的函数声明类型，并把它与目标
                 // 类型的冲突报告为 mismatched_types，而不是把“声明存在但类型不兼容”
                 // 误归类为 no_match_function_declaration_for_ref。
-                ConeTypeMismatchError(expectedFunctionType, validCandidateType)
+                ConeTypeMismatchError(expectedType, validCandidateType)
             } else {
                 ConeNoMatchingFunctionReferenceError(info.name)
             }
@@ -1810,6 +1894,31 @@ class CfirCallResolver(
      */
     private fun Candidate.functionReferenceTypeForDiagnostic(): ConeCangJieType? {
         val rawResultingType = resultingTypeForCallableReference ?: return null
+        val resultingSubstitutor = system.currentStorage()
+            .buildCurrentSubstitutor(session.typeContext, emptyMap())
+            .asCone()
+        return substituteExplicitTypeArgumentConstraints(
+            resultingSubstitutor.substituteOrSelf(rawResultingType),
+        )
+    }
+
+    /**
+     * 提取“函数类型有效、仅目标类型不兼容”的候选结果。
+     *
+     * 约束添加必须已经事务回滚，因此这里不会把失败的目标类型约束导入外层系统；
+     * 其它可见性、receiver、参数形状或返回类型错误仍会拒绝该候选。
+     */
+    private fun Candidate.currentFunctionReferenceTypeForExpectedTypeMismatch(): ConeCangJieType? {
+        val rawResultingType = resultingTypeForCallableReference ?: return null
+        if (system.hasContradiction) return null
+        val unsuccessfulDiagnostics = diagnostics.filterNot { diagnostic ->
+            diagnostic.isSuccess
+        }
+        if (unsuccessfulDiagnostics.isEmpty() ||
+            unsuccessfulDiagnostics.any { diagnostic ->
+                diagnostic !== InapplicableCandidateByCallableReferenceExpectedType
+            }
+        ) return null
         val resultingSubstitutor = system.currentStorage()
             .buildCurrentSubstitutor(session.typeContext, emptyMap())
             .asCone()
@@ -1970,7 +2079,19 @@ class CfirCallResolver(
         info: CallInfo,
         collectorApplicability: CandidateApplicability,
     ): InvalidReturnTypeOverloadReduction {
-        if (overloadCandidates.size <= 1 || info.callKind != CallKind.Function) {
+        if (info.callKind != CallKind.Function) {
+            return InvalidReturnTypeOverloadReduction(selectedCandidates, collectorApplicability)
+        }
+        /*
+         * 同一声明可能通过文件 scope 与包 scope 各发现一次，并形成不同的 candidate
+         * 快照；它们不是语言级 overload。官方在返回类型候选检查前按 Decl 去重，因此
+         * 此处只用唯一 symbol 数量判断“多声明 overload”，但保留原候选集合给后续
+         * applicability 与 most-specific 规约，避免改变其它候选选择语义。
+         */
+        val overloadDeclarationCount = overloadCandidates
+            .mapTo(linkedSetOf()) { candidate -> candidate.symbol }
+            .size
+        if (overloadDeclarationCount <= 1) {
             return InvalidReturnTypeOverloadReduction(selectedCandidates, collectorApplicability)
         }
         val functions = overloadCandidates.map { candidate ->

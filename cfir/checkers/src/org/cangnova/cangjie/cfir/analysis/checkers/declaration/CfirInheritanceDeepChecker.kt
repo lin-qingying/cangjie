@@ -29,7 +29,9 @@ import org.cangnova.cangjie.cfir.analysis.checkers.context.accessContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.resolve.providers.createExtendDeclarationSubstitution
+import org.cangnova.cangjie.cfir.resolve.providers.createExtendDeclarationSubstitutionForConstraintDerivation
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessKind
+import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessContext
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityResult
 import org.cangnova.cangjie.cfir.resolve.providers.CfirLookupOrigin
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
@@ -61,6 +63,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
+import org.cangnova.cangjie.cfir.symbols.constructType
 import org.cangnova.cangjie.cfir.symbols.toLookupTag
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.cfir.types.withReplacedSourceAndType
@@ -99,6 +102,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
             checkSealedInheritanceScope(declaration)
             checkAbstractClassStaticUnimplemented(declaration)
             checkMemberVisibilityNotWiderThanClass(declaration)
+            checkIncompleteSuperExtendMemberCompatibility(declaration)
         }
         checkInheritedMemberKindConsistency(declaration.memberInheritanceSubject())
         checkSuperMembersKindConsistency(declaration.memberInheritanceSubject())
@@ -119,6 +123,92 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         )
         checkSuperMembersKindConsistency(declaration.memberInheritanceSubject())
         checkExtendTargetMemberCompatibility(declaration)
+    }
+
+    /**
+     * 检查父类泛型 extend 成员因 where 约束在当前 class 实例化上不可见的情况。
+     *
+     * 官方 `CheckIncompleteOverrideOrImplOfExtend` 不把这类成员当作普通“完全缺少实现”：
+     * 抽象接口成员逐成员报告必须实现，default 接口成员则报告不能覆盖。这里在完整
+     * 继承图上复用同一分类，避免 `CfirNotImplementedOverrideChecker` 把前者降级为
+     * 聚合的 `ABSTRACT_MEMBER_NOT_IMPLEMENTED`。
+     */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun checkIncompleteSuperExtendMemberCompatibility(declaration: CfirClass) {
+        val receiverType = declaration.declarationSelfTypeOrNull() ?: return
+        val targetScope = CfirClassUseSiteMemberScope.createForUseSiteType(
+            session = context.session,
+            ownerType = receiverType,
+        ) ?: return
+        val memberAccessContext = context.accessContext(CfirAccessKind.CALLABLE).copy(
+            receiverType = receiverType,
+            qualifierSymbol = declaration.symbol,
+            lookupOrigin = CfirLookupOrigin.MEMBER,
+        )
+        val reported = mutableSetOf<String>()
+
+        for (superTypeRef in declaration.superTypeRefs) {
+            val superDecl = superTypeRef.resolvedClassLikeDeclaration() as? CfirInterface ?: continue
+            for (superInfo in superTypeRef.collectInterfaceRequirementMemberInfos(superDecl)) {
+                val incompleteImplementations = receiverType
+                    .collectConstraintInapplicableEffectiveExtendMemberInfos(
+                        name = superInfo.name,
+                        context = context,
+                        includeReceiver = false,
+                        checkingReceiverType = receiverType,
+                    )
+                    .filter { implementation -> implementation.canImplement(superInfo) }
+                if (incompleteImplementations.isEmpty()) continue
+                if (targetScope.hasApplicableConcreteImplementation(
+                        superInfo = superInfo,
+                        accessContext = memberAccessContext,
+                        context = context,
+                    )
+                ) {
+                    continue
+                }
+
+                val diagnosticKey = superInfo.requirementDiagnosticKey()
+                if (!reported.add(diagnosticKey)) continue
+                if (superInfo.isDefaultInterfaceMember(context)) {
+                    reporter.reportOn(
+                        source = declaration.classLikeNameDiagnosticSource() ?: declaration.source,
+                        factory = CfirErrors.CANNOT_OVERRIDE,
+                        a = superInfo.kind,
+                        b = superInfo.name,
+                    )
+                } else {
+                    reporter.reportOn(
+                        source = declaration.classLikeNameDiagnosticSource() ?: declaration.source,
+                        factory = CfirErrors.INTERFACE_MEMBER_MUST_BE_IMPLEMENTED,
+                        a = superInfo.kind,
+                        b = superInfo.name,
+                        c = declaration.name.asString(),
+                    )
+                }
+            }
+        }
+    }
+
+    /**
+     * 判断指定抽象 requirement 是否已命中“父类 extend 结构匹配但约束不可见”的专用诊断。
+     *
+     * 该入口供普通抽象成员检查器按成员排除专用错误，仍保留同一 class 上其它真正缺失
+     * requirement 的聚合诊断，不能用 class 级布尔短路吞掉无关缺失成员。
+     */
+    context(context: CheckerContext)
+    internal fun hasConstraintInapplicableInheritedExtendImplementation(
+        declaration: CfirClass,
+        requirementSymbol: CfirCallableSymbol<*>,
+    ): Boolean {
+        val receiverType = declaration.declarationSelfTypeOrNull() ?: return false
+        val requirement = requirementSymbol.inheritedMemberInfoOrNull(context) ?: return false
+        return receiverType.collectConstraintInapplicableEffectiveExtendMemberInfos(
+            name = requirement.name,
+            context = context,
+            includeReceiver = false,
+            checkingReceiverType = receiverType,
+        ).any { implementation -> implementation.canImplement(requirement) }
     }
 
     /**
@@ -153,6 +243,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         val reportedPropertyTypeConflicts = mutableSetOf<String>()
         val reportedPropertyMutabilityConflicts = mutableSetOf<String>()
         val reportedFunctionReturnTypeConflicts = mutableSetOf<String>()
+        val reportedIncompleteSuperExtendMembers = mutableSetOf<String>()
         val nonExportExtendDependencyNames = linkedSetOf<Name>()
         val currentExtendIsExported = context.session.accessibilityChecker.isExtendExported(extend)
         var hasUnimplementedMember = false
@@ -309,12 +400,50 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                     }
                 }
 
+                val incompleteSuperExtendImplementations = receiverType
+                    .collectConstraintInapplicableEffectiveExtendMemberInfos(
+                        name = superInfo.name,
+                        context = context,
+                        includeReceiver = false,
+                        checkingReceiverType = receiverType,
+                    )
+                    .filter { implementation -> implementation.canImplement(superInfo) }
+
+                if (superInfo.isDefaultInterfaceMember(context) &&
+                    incompleteSuperExtendImplementations.isNotEmpty()
+                ) {
+                    val diagnosticKey = superInfo.requirementDiagnosticKey()
+                    if (reportedIncompleteSuperExtendMembers.add(diagnosticKey)) {
+                        reporter.reportOn(
+                            source = extend.extendedTypeRef.source ?: extend.source,
+                            factory = CfirErrors.CANNOT_OVERRIDE,
+                            a = superInfo.kind,
+                            b = superInfo.name,
+                        )
+                    }
+                    continue
+                }
+
                 val hasSatisfiedImplementation = implementationCandidates.any { candidate ->
                     val implementationInfo = candidate.info
                     implementationInfo.canImplement(superInfo) &&
                         implementationInfo.satisfiesExtendInterfaceRequirement(context)
                 } || builtinOperatorImplementation != null
                 if (hasSatisfiedImplementation) continue
+
+                if (incompleteSuperExtendImplementations.isNotEmpty()) {
+                    val diagnosticKey = superInfo.requirementDiagnosticKey()
+                    if (reportedIncompleteSuperExtendMembers.add(diagnosticKey)) {
+                        reporter.reportOn(
+                            source = extend.extendedTypeRef.source ?: extend.source,
+                            factory = CfirErrors.INTERFACE_MEMBER_MUST_BE_IMPLEMENTED,
+                            a = superInfo.kind,
+                            b = superInfo.name,
+                            c = extend.targetDisplayName(),
+                        )
+                    }
+                    continue
+                }
 
                 if (superInfo.isAbstract) {
                     hasUnimplementedMember = true
@@ -1083,6 +1212,21 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                                 excludingExtend = excludingExtend,
                             )
                         )
+                        val checkingReceiverType = subject.classLikeDeclaration?.declarationSelfTypeOrNull()
+                            ?: subject.inheritedSources
+                                .firstOrNull { source -> source.isExtendTarget }
+                                ?.typeRef
+                                ?.coneTypeOrNull
+                            ?: superType
+                        addAll(
+                            superType.collectConstraintInapplicableEffectiveExtendMemberInfos(
+                                name = name,
+                                context = context,
+                                includeReceiver = !(subject.isExtendSubject && inheritedSource.isExtendTarget),
+                                checkingReceiverType = checkingReceiverType,
+                                excludingExtend = excludingExtend,
+                            )
+                        )
                         addAll(collectEffectiveExtendInterfaceMemberInfos(superType, name, context))
                     }
                 }
@@ -1561,17 +1705,22 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                         context.accessContext(CfirAccessKind.EXTEND),
                     ) !is CfirAccessibilityResult.Accessible
                 ) continue
-                if (findExtendDeclarationSubstitution(context.session, extend, receiverType) == null) continue
+                val substitution = findExtendDeclarationSubstitution(context.session, extend, receiverType)
+                    ?: continue
                 for (member in extend.declarations) {
                     when (member) {
                         is CfirNamedFunction -> {
                             if (member.name != name) continue
-                            member.symbol?.inheritedMemberInfoOrNull(context)?.let(::add)
+                            member.symbol?.inheritedMemberInfoOrNull(context)?.let { info ->
+                                add(info.copy(ownerSubstitutor = substitution.substitutor))
+                            }
                         }
 
                         is CfirProperty -> {
                             if (member.name != name) continue
-                            member.symbol.inheritedMemberInfoOrNull(context)?.let(::add)
+                            member.symbol.inheritedMemberInfoOrNull(context)?.let { info ->
+                                add(info.copy(ownerSubstitutor = substitution.substitutor))
+                            }
                         }
 
                         else -> Unit
@@ -1579,6 +1728,119 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                 }
             }
         }
+    }
+
+    /**
+     * 收集父类链上目标类型结构匹配、但 where/upper-bound 约束在当前声明实例化中不成立的
+     * extend 成员。
+     *
+     * 普通成员查询必须继续严格过滤这些成员；只有继承诊断需要保留它们，以实现官方
+     * `CheckIncompleteOverrideOrImplOfExtend` 的“潜在实现不可见”分类。结构匹配与约束判断
+     * 分别复用 providers 层的两个既有入口，不能在 checker 中重新实现泛型匹配规则。
+     */
+    private fun ConeCangJieType.collectConstraintInapplicableEffectiveExtendMemberInfos(
+        name: Name,
+        context: CheckerContext,
+        includeReceiver: Boolean,
+        checkingReceiverType: ConeCangJieType,
+        excludingExtend: CfirExtend? = null,
+    ): List<InheritedMemberInfo> {
+        val visited = linkedSetOf<ConeCangJieType>()
+        return buildList {
+            fun visit(type: ConeCangJieType) {
+                if (!visited.add(type)) return
+                val targetKey = type.expandedExtendTargetKey
+                if (targetKey != null) {
+                    for (extend in context.session.extendProvider.getExtendsForTarget(targetKey)) {
+                        if (extend === excludingExtend) continue
+                        if (
+                            context.session.accessibilityChecker.checkExtend(
+                                extend,
+                                context.accessContext(CfirAccessKind.EXTEND),
+                            ) !is CfirAccessibilityResult.Accessible
+                        ) {
+                            continue
+                        }
+
+                        val targetPattern = extend.extendedTypeRef.coneTypeOrNull ?: continue
+                        val targetClassId = targetPattern.expandedClassIdOrPrimitiveClassId ?: continue
+                        val targetDeclaration = context.session.symbolProvider
+                            .getClassLikeSymbolByClassId(targetClassId)
+                            ?.cfir as? CfirClass ?: continue
+                        if (targetDeclaration.typeParameters.isEmpty()) continue
+
+                        val structuralSubstitution = createExtendDeclarationSubstitutionForConstraintDerivation(
+                            session = context.session,
+                            extend = extend,
+                            targetPattern = targetPattern,
+                            concreteReceiverType = type,
+                        ) ?: continue
+                        if (
+                            findExtendDeclarationSubstitution(
+                                session = context.session,
+                                extend = extend,
+                                concreteReceiverType = checkingReceiverType,
+                            ) != null
+                        ) {
+                            continue
+                        }
+
+                        for (member in extend.declarations) {
+                            val symbol = when (member) {
+                                is CfirNamedFunction -> member.symbol?.takeIf { member.name == name }
+                                is CfirProperty -> member.symbol.takeIf { member.name == name }
+                                else -> null
+                            } ?: continue
+                            symbol.inheritedMemberInfoOrNull(context)?.let { info ->
+                                add(info.copy(ownerSubstitutor = structuralSubstitution.substitutor))
+                            }
+                        }
+                    }
+                }
+
+                for (supertype in type.declaredNonInterfaceSupertypes(context)) {
+                    visit(supertype)
+                }
+            }
+
+            if (includeReceiver) {
+                visit(this@collectConstraintInapplicableEffectiveExtendMemberInfos)
+            } else {
+                for (supertype in declaredNonInterfaceSupertypes(context)) {
+                    visit(supertype)
+                }
+            }
+        }
+    }
+
+    /**
+     * 判断严格 use-site scope 中是否已有可见的 class/extend concrete 实现。
+     *
+     * 接口自身的 default 成员不算这里的替代实现：当约束不完整的父类 extend 与 default
+     * 接口成员相遇时，官方仍需报告 `CANNOT_OVERRIDE`。
+     */
+    private fun CfirTypeScope.hasApplicableConcreteImplementation(
+        superInfo: InheritedMemberInfo,
+        accessContext: CfirAccessContext,
+        context: CheckerContext,
+    ): Boolean {
+        var found = false
+        context.session.accessibilityChecker.processAccessibleCallablesByName(
+            scope = this,
+            name = superInfo.name,
+            context = accessContext,
+        ) { candidate ->
+            val info = candidate.symbol.inheritedMemberInfoOrNull(context)
+                ?: return@processAccessibleCallablesByName
+            if (
+                info.canImplement(superInfo) &&
+                !info.isAbstract &&
+                !info.isDefaultInterfaceMember(context)
+            ) {
+                found = true
+            }
+        }
+        return found
     }
 
     /**
@@ -1871,6 +2133,15 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
     }
 
     /**
+     * 构造 class-like 声明在自身类型参数空间中的 receiver 类型。
+     */
+    private fun CfirClassLikeDeclaration.declarationSelfTypeOrNull(): ConeCangJieType? {
+        val classLikeSymbol = symbol as? CfirClassLikeSymbol<*> ?: return null
+        val typeArguments = typeParameters.map { typeParameter -> typeParameter.symbol.constructType() }
+        return classLikeSymbol.constructType(typeArguments)
+    }
+
+    /**
      * 根据 class-like 声明的类型形参和当前实际类型实参创建声明替换器。
      */
     private fun CfirClassLikeDeclaration.createDeclarationSubstitutor(type: ConeCangJieType): ConeSubstitutor? {
@@ -1895,7 +2166,8 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         if (kind == "property") return true
         val ownSymbol = symbol ?: return false
         val superSymbol = superInfo.symbol ?: return false
-        return ownSymbol.overrideSignatureKey() == superSymbol.overrideSignatureKey()
+        return ownSymbol.overrideSignatureKey(ownerSubstitutor) ==
+            superSymbol.overrideSignatureKey(superInfo.ownerSubstitutor)
     }
 
     /**
@@ -2004,9 +2276,9 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
             append(':')
             append(name.asString())
             append(':')
-            append(symbol?.overrideSignatureKey().orEmpty())
+            append(symbol?.overrideSignatureKey(ownerSubstitutor).orEmpty())
             append(':')
-            append(superInfo.symbol?.overrideSignatureKey().orEmpty())
+            append(superInfo.symbol?.overrideSignatureKey(superInfo.ownerSubstitutor).orEmpty())
         }
 
     /**
@@ -2020,7 +2292,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
             append(':')
             append(isStatic)
             append(':')
-            append(symbol?.overrideSignatureKey().orEmpty())
+            append(symbol?.overrideSignatureKey(ownerSubstitutor).orEmpty())
         }
 
     /**
@@ -2068,6 +2340,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
      * @property nameSource 成员名称 source，用于名称级诊断。
      * @property ownerName 成员所属 class-like 名称。
      * @property symbol 成员绑定后的 callable symbol。
+     * @property ownerSubstitutor 成员 owner 在当前继承 use-site 的类型参数替换器。
      */
     private data class InheritedMemberInfo(
         /** 成员名称。 */
@@ -2098,6 +2371,8 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         val ownerName: Name?,
         /** 成员绑定后的 callable symbol。 */
         val symbol: CfirCallableSymbol<*>?,
+        /** 成员 owner 在当前继承 use-site 的类型参数替换器。 */
+        val ownerSubstitutor: ConeSubstitutor = ConeSubstitutor.Empty,
     ) {
         /**
          * 返回 static/non-static 的诊断展示文本。

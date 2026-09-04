@@ -17,7 +17,6 @@ extend<T> A<T> where T <: I2 {
     }
 }
 
-class B<T> <: A<T> & I1 {} // error
+class <!CANNOT_OVERRIDE!>B<!><T> <: A<T> & I1 {} // error
 
 main() {}
-

@@ -417,6 +417,14 @@ class ConeResolvedCallableReferenceAtom(
     /** callable reference 解析完成后得到的函数类型。 */
     var resultingTypeForCallableReference: ConeCangJieType? = null
         internal set
+    /**
+     * 候选能形成有效函数类型、但与上下文目标类型不兼容时保存的目标类型。
+     *
+     * 该状态只由 callable-reference 解析器写入，并与 [resultingTypeForCallableReference]
+     * 一起构成外层实参 `TYPE_MISMATCH` 的完整证据。
+     */
+    var expectedTypeForCallableReferenceMismatch: ConeCangJieType? = null
+        internal set
     /** 当前外层候选局部解析得到的引用，最终候选选定后才写回共享表达式。 */
     var resultingReference: CfirNamedReference? = null
         internal set

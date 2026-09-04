@@ -24,7 +24,13 @@ internal fun CfirNamedReferenceWithCandidate.isExpectedTypeRootMismatchOnly(
     expression: CfirExpression,
     context: BodyResolveContext,
 ): Boolean {
-    if (context.expectedTypeForRoot(expression) == null) return false
+    // 显式 return 的结果在 resolve 阶段通过 ResolutionMode.WithExpectedType 携带函数返回
+    // 类型，但不会建立 assignment/initializer 专用 root frame。expected-return filter
+    // 产生的候选失败仍必须保留为已解析调用，让 CfirReturnTypeMismatchChecker 在统一的
+    // return owner 上报告 RETURN_TYPE_MISMATCH；否则 error-call writer 会把该候选降为
+    // UNRESOLVED_REFERENCE，丢失真实的返回类型不匹配语义。
+    val hasExpectedTypeRoot = context.expectedTypeForRoot(expression) != null
+    if (!hasExpectedTypeRoot && !context.isInsideExplicitReturnResult) return false
     if (this is CfirErrorReferenceWithCandidate &&
         diagnostic !is ConeInapplicableCandidateError &&
         diagnostic !is ConeConstraintSystemHasContradiction

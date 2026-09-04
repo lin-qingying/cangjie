@@ -26,12 +26,39 @@ package org.cangnova.cangjie.cfir.declarations
 
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.CfirReference
+import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirEnumSymbol
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.type.model.TypeConstructorMarker
+
+/**
+ * 根据目标类型为无参 enum constructor 计算其完整的 use-site 类型。
+ *
+ * 无参 enum case 在表达式位置可以省略 owner 的类型实参，但只有目标类型确实是
+ * 同一个 enum（或标准库 Option）时才允许这样定型。该判断位于 providers 共享层，
+ * 让 resolve 与 checker 使用同一条 owner-identification 规则，避免默认参数、返回值
+ * 和普通调用分别实现一套容易漂移的匹配逻辑。
+ */
+fun CfirEnumConstructorSymbol.noArgEnumConstructorTargetType(
+    expectedType: ConeCangJieType,
+    session: CfirSession,
+): ConeCangJieType? {
+    val constructor = cfir
+    if (constructor.valueParameters.isNotEmpty()) return null
+    val ownerClassId = session.cfirProvider.getContainingClass(this)?.classId ?: return null
+    val expandedExpectedType = expectedType.fullyExpandedType(session)
+    val expectedOwnerClassId = when (expandedExpectedType) {
+        is ConeEnumType -> expandedExpectedType.classId
+        is ConeClassLikeType -> expandedExpectedType.classId.takeIf { it == StdlibClassIds.Option }
+        else -> null
+    }
+    return expandedExpectedType.takeIf { expectedOwnerClassId == ownerClassId }
+}
 
 /**
  * enum constructor payload 的 use-site 语义工具。

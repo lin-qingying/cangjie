@@ -2275,30 +2275,19 @@ class LightTreeRawCfirDeclarationBuilder(
 
         val itemFqName = fqNameText?.let { FqName(it) }
         val fqName = when {
-            directiveBaseFqName != null && itemFqName != null -> directiveBaseFqName.child(itemFqName)
+            directiveBaseFqName != null && itemFqName != null -> {
+                if (itemFqName.startsWith(directiveBaseFqName)) itemFqName else directiveBaseFqName.child(itemFqName)
+            }
             itemFqName != null -> itemFqName
             directiveBaseFqName != null -> directiveBaseFqName
             else -> null
-        }?.let(::normalizeImportFqName) ?: return null
+        } ?: return null
         return buildImport {
             source = item.toSource()
             importedFqName = fqName
             this.isAllUnder = isAllUnder
             this.aliasName = aliasName
         }
-    }
-
-    /** 规范化 LightTree 中可能重复包前缀的 import FQN。 */
-    private fun normalizeImportFqName(fqName: FqName): FqName {
-        val segments = fqName.pathSegments().map { it.asString() }
-        for (prefixLength in 1..(segments.size / 2)) {
-            val firstPrefix = segments.subList(0, prefixLength)
-            val secondPrefix = segments.subList(prefixLength, prefixLength * 2)
-            if (firstPrefix == secondPrefix) {
-                return FqName((firstPrefix + segments.drop(prefixLength * 2)).joinToString("."))
-            }
-        }
-        return fqName
     }
 
     /** 构造文件顶层声明列表。 */

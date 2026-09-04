@@ -1,13 +1,16 @@
 package org.cangnova.cangjie.cfir.resolve.calls.stages
 
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
+import org.cangnova.cangjie.cfir.diagnostic.ArgumentTypeMismatch
 import org.cangnova.cangjie.cfir.diagnostic.InapplicableCandidate
+import org.cangnova.cangjie.cfir.diagnostic.InapplicableCandidateByCallableReferenceExpectedType
 import org.cangnova.cangjie.cfir.diagnostic.AmbiguousArgumentType
 import org.cangnova.cangjie.cfir.diagnostic.UnsuccessfulCallableReferenceArgument
 import org.cangnova.cangjie.cfir.diagnostic.CallableReferenceFailureKind
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
+import org.cangnova.cangjie.cfir.resolve.calls.ConeResolvedCallableReferenceAtom
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CheckerSink
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.hasCompatibleCallableReferenceParameterShape
@@ -27,6 +30,7 @@ import org.cangnova.cangjie.cfir.types.approximateThisTypeForDeclaration
 import org.cangnova.cangjie.cfir.types.asCone
 import org.cangnova.cangjie.cfir.types.ConeUnreportedDuplicateDiagnostic
 import org.cangnova.cangjie.resolve.calls.inference.buildCurrentSubstitutor
+import org.cangnova.cangjie.resolve.calls.inference.addSubtypeConstraintIfCompatible
 import org.cangnova.cangjie.type.AbstractTypeChecker
 
 /**
@@ -85,17 +89,17 @@ object CfirCheckCallableReferenceExpectedType : ResolutionStage() {
                 expectedFunctionType,
             )
         ) {
-            sink.yieldDiagnostic(InapplicableCandidate)
+            sink.yieldDiagnostic(InapplicableCandidateByCallableReferenceExpectedType)
             return
         }
         if (foreignFunctionReferenceToPointer) return
-        candidate.system.addSubtypeConstraint(
-            resultingType,
-            expectedType,
-            ConeArgumentConstraintPosition(candidate.callInfo.callSite),
-        )
-        if (candidate.system.hasContradiction) {
-            sink.yieldDiagnostic(InapplicableCandidate)
+        if (!candidate.system.addSubtypeConstraintIfCompatible(
+                resultingType,
+                expectedType,
+                ConeArgumentConstraintPosition(candidate.callInfo.callSite),
+            )
+        ) {
+            sink.yieldDiagnostic(InapplicableCandidateByCallableReferenceExpectedType)
         }
     }
 
@@ -133,6 +137,19 @@ object CfirCheckCallableReferenceExpectedType : ResolutionStage() {
         (this as? ConeUnreportedDuplicateDiagnostic)?.original ?: this
 }
 
+/** 把已分类的有效函数引用目标类型冲突转换为外层实参类型诊断。 */
+internal fun ConeResolvedCallableReferenceAtom.expectedTypeMismatchDiagnostic(): ArgumentTypeMismatch =
+    ArgumentTypeMismatch(
+        expectedType = checkNotNull(expectedTypeForCallableReferenceMismatch) {
+            "Callable-reference type mismatch must retain its expected type"
+        },
+        actualType = checkNotNull(resultingTypeForCallableReference) {
+            "Callable-reference type mismatch must retain its resulting function type"
+        },
+        argument = expression,
+        isMismatchDueToNullability = false,
+    )
+
 /**
  * 在外层调用候选完成前解析函数引用实参。
  *
@@ -144,13 +161,23 @@ object CfirEagerResolveOfCallableReferences : ResolutionStage() {
     /** 提前解析候选内尚未分析的 postponed callable-reference atom。 */
     override suspend fun check(candidate: Candidate) {
         val callableReferenceAtoms = candidate.postponedAtoms
-            .filterIsInstance<org.cangnova.cangjie.cfir.resolve.calls.ConeResolvedCallableReferenceAtom>()
+            .filterIsInstance<ConeResolvedCallableReferenceAtom>()
             .filterNot { it.analyzed }
         if (callableReferenceAtoms.isEmpty()) return
 
         when (context.bodyResolveComponents.callResolver.resolveCallableReferenceArguments(candidate, callableReferenceAtoms)) {
             CallableReferenceResolutionResult.RESOLVED,
             CallableReferenceResolutionResult.POSTPONED -> return
+            CallableReferenceResolutionResult.TYPE_MISMATCH -> {
+                val mismatchDiagnostics = callableReferenceAtoms
+                    .filter { atom -> atom.expectedTypeForCallableReferenceMismatch != null }
+                    .map { atom -> atom.expectedTypeMismatchDiagnostic() }
+                check(mismatchDiagnostics.isNotEmpty()) {
+                    "Callable-reference type mismatch was not retained on an atom"
+                }
+                mismatchDiagnostics.dropLast(1).forEach(sink::reportDiagnostic)
+                sink.yieldDiagnostic(mismatchDiagnostics.last())
+            }
             CallableReferenceResolutionResult.FAILURE -> {
                 val failureDiagnostics = callableReferenceAtoms
                     .filter { atom -> atom.failureKind != null }

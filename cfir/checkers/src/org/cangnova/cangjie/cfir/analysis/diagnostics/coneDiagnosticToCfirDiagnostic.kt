@@ -429,6 +429,12 @@ private fun ConeConstraintSystemHasContradiction.mapSystemHasContradictionError(
         .takeIf { it.isNotEmpty() }
         ?.let { return it }
     if (candidate.callInfo.arguments.any { it.containsErrorDiagnosticInArgument() }) {
+        if (candidate.callInfo.arguments.any { it.containsClassifierAmbiguityDiagnosticInArgument() }) {
+            // 当实参的 classifier 类型本身因重声明而无法确定时，调用没有可用的
+            // 具体参数类型。官方 DiagnoseForCall 将这种候选归为调用级 no-match，
+            // 而不是把同一结构性错误继续泛化为泛型推断失败。
+            return listOfNotNull(candidate.ambiguousClassifierSignatureNoMatchDiagnostic(session))
+        }
         if (errors.any { it is NotEnoughInformationForTypeParameter<*> && it.typeVariable is ConeTypeParameterBasedTypeVariable } &&
             !candidate.hasExplicitTypeArgumentsInCall()
         ) {
@@ -1724,9 +1730,10 @@ private fun CjLightSourceElement.callableReferenceSelectorWithTypeArgumentsLight
     val selector = when (lighterASTNode.tokenType) {
         CjNodeTypes.REFERENCE_EXPRESSION -> lighterASTNode
         CjNodeTypes.DOT_QUALIFIED_EXPRESSION -> {
-            val childrenRef = Ref<Array<LighterASTNode>>()
-            treeStructure.getChildren(lighterASTNode, childrenRef)
-            childrenRef.get().lastOrNull { child ->
+            // getChildren 返回的数组包含 LightTree 的 null 哨兵；只能遍历有效子节点。
+            // 使用公共定位工具与 Kotlin LightTree helper 相同地过滤该哨兵，不能把它
+            // 当作语义节点读取 tokenType。
+            lightTreeChildren(lighterASTNode).lastOrNull { child ->
                 child.tokenType == CjNodeTypes.REFERENCE_EXPRESSION ||
                     child.tokenType == CjStubElementTypes.BASIC_REFERENCE_EXPRESSION
             }
@@ -1734,9 +1741,7 @@ private fun CjLightSourceElement.callableReferenceSelectorWithTypeArgumentsLight
         else -> null
     } ?: return null
 
-    val childrenRef = Ref<Array<LighterASTNode>>()
-    treeStructure.getChildren(selector, childrenRef)
-    val typeArgumentList = childrenRef.get().firstOrNull { child ->
+    val typeArgumentList = lightTreeChildren(selector).firstOrNull { child ->
         child.tokenType == CjNodeTypes.TYPE_ARGUMENT_LIST
     } ?: return null
 
@@ -1744,6 +1749,19 @@ private fun CjLightSourceElement.callableReferenceSelectorWithTypeArgumentsLight
         startOffset = treeStructure.getStartOffset(selector),
         endOffset = treeStructure.getEndOffset(typeArgumentList),
     )
+}
+
+/**
+ * 按 LightTree API 返回的有效子节点数量读取节点。
+ *
+ * [FlyweightCapableTreeStructure.getChildren] 会在复用数组中留下 null 哨兵；返回值才是
+ * 本次调用实际拥有的子节点数量。这里保留计数边界，避免把复用数组尾部当作 AST 节点。
+ */
+private fun CjLightSourceElement.lightTreeChildren(node: LighterASTNode): List<LighterASTNode> {
+    val childrenRef = Ref<Array<LighterASTNode?>>()
+    val count = treeStructure.getChildren(node, childrenRef)
+    if (count <= 0) return emptyList()
+    return childrenRef.get()?.take(count)?.filterNotNull().orEmpty()
 }
 
 /**
@@ -3332,6 +3350,44 @@ private fun org.cangnova.cangjie.cfir.expressions.CfirExpression.containsErrorDi
         }
     }, null)
     return hasErrorDiagnostic
+}
+
+/**
+ * 判断实参子树中是否存在由 classifier 重声明造成的类型使用歧义。
+ *
+ * 这种错误不是普通的“任意错误类型”：调用参数的声明类型无法建立唯一 classifier，
+ * 因而外层调用只能报告 no-match，不能再把约束系统的信息不足映射成泛型推断失败。
+ */
+private fun org.cangnova.cangjie.cfir.expressions.CfirExpression.containsClassifierAmbiguityDiagnosticInArgument(): Boolean {
+    tailrec fun ConeDiagnostic.unwrapDuplicate(): ConeDiagnostic =
+        if (this is ConeUnreportedDuplicateDiagnostic) original.unwrapDuplicate() else this
+
+    fun ConeDiagnostic.isClassifierAmbiguity(): Boolean = when (val unwrapped = unwrapDuplicate()) {
+        is ConeAmbiguityError -> unwrapped.typeUseSource != null || unwrapped.isCallLike
+        else -> false
+    }
+
+    if ((coneTypeOrNull as? ConeErrorType)?.diagnostic?.isClassifierAmbiguity() == true) return true
+    if ((this as? CfirDiagnosticHolder)?.diagnostic?.isClassifierAmbiguity() == true) return true
+    if (this is CfirResolvable && (calleeReference as? CfirDiagnosticHolder)?.diagnostic?.isClassifierAmbiguity() == true) {
+        return true
+    }
+
+    var found = false
+    acceptChildren(object : CfirVisitorVoid() {
+        override fun visitElement(element: org.cangnova.cangjie.cfir.CfirElement) {
+            if (found) return
+            val expression = element as? org.cangnova.cangjie.cfir.expressions.CfirExpression
+            if (expression != null && expression !== this@containsClassifierAmbiguityDiagnosticInArgument &&
+                expression.containsClassifierAmbiguityDiagnosticInArgument()
+            ) {
+                found = true
+                return
+            }
+            element.acceptChildren(this, null)
+        }
+    }, null)
+    return found
 }
 
 /**
