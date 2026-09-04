@@ -13,7 +13,7 @@ open class A<X> {
 }
 
 class B<X> <: A<X> {
-    public static redef func <!CANNOT_OVERRIDE!>test<!><T>(x: T): T {
+    public static <!NOTHING_TO_OVERRIDE!>redef<!> func test<T>(x: T): T {
         println("b");
         x
     }

@@ -310,7 +310,6 @@ internal object ArgumentCheckingProcessor {
             resolveArgumentExpression(fallback)
             return
         }
-
         val postponedAtom = ConeResolvedCallableReferenceAtom(
             expression = expression,
             expectedType = targetExpectedType,
@@ -622,7 +621,16 @@ internal object ArgumentCheckingProcessor {
         if (function != null && callInfo.callKind == CallKind.NamedValueAccess) {
             return context.bodyResolveComponents.functionTypeForFunctionValueCandidate(this, function)
         }
-        return substitutedReturnType()
+        /*
+         * 显式类型实参已经在 CreateFreshTypeVariableSubstitutorStage 中写入当前候选的
+         * equality constraint，但候选 substitutor 本身只负责“声明参数 -> fresh variable”，
+         * 不会把尚未运行最终 completion 的 equality 直接折叠进去。嵌套调用作为外层实参
+         * 时若继续读取裸 fresh variable（例如 `Array<R>()` 被读成 `Array<T>`），外层会
+         * 错误地建立 `Array<T> <: T` 的递归约束。这里复用参数检查的显式实参约束投影，
+         * 让已由源码明确的类型实参优先于外层 expected type，同时保留无显式实参调用的
+         * fresh variable 供正常反向推断。
+         */
+        return substituteExplicitTypeArgumentConstraints(substitutedReturnType())
     }
 
     /**
@@ -921,7 +929,9 @@ internal object ArgumentCheckingProcessor {
             reportDiagnostic(InapplicableWrongReceiver(expectedType, argumentType))
             return
         }
-        if (expression.isFunctionDeclarationReferenceArgument()) {
+        if (expectedType.fullyExpandedType(session) is ConeFunctionType &&
+            expression.isFunctionDeclarationReferenceArgument()
+        ) {
             val expandedArgumentType = argumentType.fullyExpandedType(session)
             val expandedExpectedType = expectedType.fullyExpandedType(session)
             if (expandedArgumentType is ConeFunctionType && expandedExpectedType is ConeFunctionType) {

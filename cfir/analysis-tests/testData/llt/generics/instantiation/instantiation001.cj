@@ -1,3 +1,4 @@
+import std.collection.*
 
 
 main(): Int64 {
@@ -9,6 +10,6 @@ main(): Int64 {
 }
 
 func foo2(): List<Int64> {
-    var a = List<Int64>([1, 2, 3])
+    var a = <!NO_CONSTRUCTOR!>List<!><Int64>([1, 2, 3])
     return a
 }

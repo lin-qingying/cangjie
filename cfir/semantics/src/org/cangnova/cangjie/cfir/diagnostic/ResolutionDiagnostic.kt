@@ -241,6 +241,15 @@ object InapplicableCandidate : ResolutionDiagnostic(CandidateApplicability.INAPP
 object InapplicableCandidateByExpectedReturnType : ResolutionDiagnostic(CandidateApplicability.INAPPLICABLE)
 
 /**
+ * 函数引用候选本身可以形成有效函数类型，但该类型与上下文目标类型不兼容。
+ *
+ * 该分类对应官方 `ChkRefExpr` 的 `validCandidateTy`：它与参数形状不匹配、递归隐式
+ * 返回类型等“无法形成有效函数引用”的失败不同，最终应在引用表达式上报告类型不匹配。
+ */
+object InapplicableCandidateByCallableReferenceExpectedType :
+    ResolutionDiagnostic(CandidateApplicability.INAPPLICABLE)
+
+/**
  * 函数引用实参在当前期望函数类型下没有可适用声明。
  *
  * 该诊断对齐 Kotlin FIR `UnsuccessfulCallableReferenceArgument`：resolve 阶段记录

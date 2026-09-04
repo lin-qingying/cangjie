@@ -15,6 +15,6 @@ extend<T> A<T> where T <: I2 {
     }
 }
 
-class <!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>B<!><T> <: A<T> & I1 {} // error
+class <!INTERFACE_MEMBER_MUST_BE_IMPLEMENTED!>B<!><T> <: A<T> & I1 {} // error
 
 main() {}

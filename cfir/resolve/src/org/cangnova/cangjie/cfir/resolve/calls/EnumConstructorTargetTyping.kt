@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.resolve.calls
 
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
+import org.cangnova.cangjie.cfir.declarations.noArgEnumConstructorTargetType
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
@@ -11,15 +12,9 @@ import org.cangnova.cangjie.cfir.references.builder.buildResolvedNamedReference
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallKind
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirNamedReferenceWithCandidate
-import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.session.CfirSession
-import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
-import org.cangnova.cangjie.cfir.types.ConeClassLikeType
-import org.cangnova.cangjie.cfir.types.ConeEnumType
-import org.cangnova.cangjie.cfir.types.StdlibClassIds
-import org.cangnova.cangjie.name.ClassId
 
 /**
  * 判断候选是否对应源码中的裸无参 enum value 访问。
@@ -110,23 +105,4 @@ internal fun CfirExpression.applyNoArgEnumConstructorTargetType(
         else -> Unit
     }
     return targetType
-}
-
-private fun CfirEnumConstructorSymbol.noArgEnumConstructorTargetType(
-    expectedType: ConeCangJieType,
-    session: CfirSession,
-): ConeCangJieType? {
-    val constructor = cfir
-    if (constructor.valueParameters.isNotEmpty()) return null
-    val ownerClassId = session.cfirProvider.getContainingClass(this)?.classId ?: return null
-    val expandedExpectedType = expectedType.fullyExpandedType(session)
-    return expandedExpectedType.takeIf {
-        it.enumConstructorOwnerClassIdOrNull() == ownerClassId
-    }
-}
-
-private fun ConeCangJieType.enumConstructorOwnerClassIdOrNull(): ClassId? = when (this) {
-    is ConeEnumType -> classId
-    is ConeClassLikeType -> classId.takeIf { it == StdlibClassIds.Option }
-    else -> null
 }

@@ -184,6 +184,13 @@ private fun <S : CfirCallableSymbol<*>> List<S>.hasUnimplementedAbstractBySignat
                     candidate.canImplementAbstractMember(abstractSymbol)
             }
             if (!hasConcreteImplementation) {
+                val diagnosedAsIncompleteSuperExtend = ownerDeclaration is CfirClass && with(context) {
+                    CfirInheritanceDeepChecker.hasConstraintInapplicableInheritedExtendImplementation(
+                        declaration = ownerDeclaration,
+                        requirementSymbol = abstractSymbol,
+                    )
+                }
+                if (diagnosedAsIncompleteSuperExtend) continue
                 return true
             }
         }

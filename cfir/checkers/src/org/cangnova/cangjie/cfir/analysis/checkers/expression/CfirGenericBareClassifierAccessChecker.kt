@@ -2,6 +2,7 @@ package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.hasInvalidDeclaredUpperBoundsInCurrentContext
 import org.cangnova.cangjie.cfir.calls.resolvedQualifierTypeParameter
+import org.cangnova.cangjie.cfir.declarations.noArgEnumConstructorTargetType
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.hasInvalidGenericTypeArgument
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
@@ -90,6 +91,12 @@ object CfirGenericBareClassifierAccessChecker : CfirQualifiedAccessChecker() {
         val ownerSymbol = context.session.cfirProvider.getContainingClass(symbol) ?: return
         val ownerTypeParameters = ownerSymbol.cfir.typeParameters.mapTo(mutableSetOf()) { it.symbol }
         if (ownerTypeParameters.isEmpty()) return
+        // 参数默认值、返回值等 target-typed 位置可以从目标 enum 类型确定 owner 的类型实参。
+        // 这种定型即使仍保留词法 owner 参数（例如 `A<T>`）也不是“裸泛型”错误。
+        val expectedType = expectedTypeFromTargetContext(context)
+        if (expectedType != null && symbol.noArgEnumConstructorTargetType(expectedType, context.session) != null) {
+            return
+        }
         val constructorType = coneTypeOrNull
         if (constructorType != null && !constructorType.containsUnfixedOwnerTypeParameter(ownerTypeParameters)) return
 
