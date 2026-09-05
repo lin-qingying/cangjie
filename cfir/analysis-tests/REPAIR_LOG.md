@@ -5001,3 +5001,18 @@ esolveDelegatingConstructorCallAndSelectCandidate);
 - result: 两个套件 `CfirAnalysisLLTTestGenerated` / `CfirAnalysisLLTPsiTestGenerated` 从控制台 `FAILED` 行提取共 `386` 个失败（PSI `194` + LightTree `192`），`errors=0`。日志末尾 Gradle/JVM 在全部用例跑完后于收尾阶段崩溃（exit 1073807364），未输出标准 `tests completed / failed` 汇总，故统一采用 `FAILED` 控制台行统计口径。
 - spawn 净影响确认：全量失败列表中**不存在任何 `spawn_0.cj`（`NOT_MEMBER_OF`）或 `spawn8.cj`（`INHERIT_THREAD_CONTEXT_INVALID`）相关 testcase**，`ErrMsgs` 双路径 `testSpawn0` 均已清零，且未检出 spawn 相关新增失败。ErrMsgs 剩余失败（decl0、sync1、memberaccess1、vardecl0、lambda0、coalescing0/1、subscript01、questionmark0、assignment1、incdec0、typearginfer3/5/6、range0、AccessNotImported01/02/03）均为基线已存在的、属于其它问题类型的独立失败，与本轮 spawn 修复无关。此前已修复的 `assignment_0` 与 `type_arg_infer1/2/4` 也未再出现在本次失败列表中，无回归。
 - caveat / honesty: 本次命令与近期标准全量（`--no-daemon --max-workers=1 --console=plain`，含 Gradle 汇总 650→694 等）口径不同，且因末尾 JVM 崩溃无法生成同一命令的修复前 XML 基线对；因此**不伪造**逐 testcase 的 `FIXED/REGRESSED` 精确键数与差值。spawn 修复目标已通过「干净全量失败列表 grep 不含任何 spawn 键」这一可复现证据确认达成；后续按既有分组继续推进剩余失败。
+
+## 2026-09-05：spawn 修复的严格前后全量对比（同命令 XML 级 diff，REGRESSED=0）
+
+- problem type: 严格验证 —— 用户要求确认「修复前全量」与「是否有新增回归」。上一条目因 JVM 收尾崩溃只有修复后 grep 证据，无同口径修复前基线。本次用**同一标准命令**分别在修复前与修复后各跑一遍全量，按 `(testsuite@name, testcase@name)` 逐键 diff 两份 XML，给出精确 `FIXED/REGRESSED`。
+- method:
+  * 修复前基线：`git worktree` 检出 spawn 修复系列之前提交 `449ccea65`（detached，位于 `wt-before/`），注入 `cangjie.flatc.path` 复用主仓库已就绪 flatc.exe 后，执行 `.\gradlew-queue.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain`。
+  * 修复后：当前 HEAD `a6d3621c4`（含 `4e49c412c` spawn body 级联、`c3f0f5fe0` spawn 错误类型综合）同命令全量。
+  * 失败键提取：解析 `cfir/analysis-tests/build/test-results/test/TEST-*.xml`，取 `testsuite@name + '.' + testcase@name` 且含 `failure`/`error` 节点的全部键（脚本 `scripts/xtract-llt-failures.ps1`），再以集合差求 `FIXED`/`REGRESSED`（`scripts/diff-failures.ps1`）。
+- result:
+  * 修复前（449ccea65）：Gradle 汇总 `8422 tests completed, 642 failed, 307 skipped`；XML 失败键 `642`。
+  * 修复后（a6d3621c4）：Gradle 汇总 `8422 tests completed, 640 failed, 307 skipped`；XML 失败键 `640`。
+  * 键级 diff：`FIXED=2`、`REGRESSED=0`、`STAYED=640`。测试总数 8422、skipped 307 在前后完全一致，无键增减抖动。
+  * FIXED 键：`CfirAnalysisLLTPsiTestGenerated$ErrMsgs.testSpawn0()` 与 `CfirAnalysisLLTTestGenerated$ErrMsgs.testSpawn0()` —— 恰好是 spawn 修复（`c3f0f5fe0` 错误类型综合）消灭的两个入口。
+  * REGRESSED=0：**spawn 修复未引入任何新增失败**。剩余 640 个失败全部与修复前一致，属基线既有、与本轮无关的其它问题类型。
+- honesty note: 修复前基线 `449ccea65` 与修复后 HEAD 之间除 spawn 两项修复外不夹带其它源码改动（`a6d3621c4` 仅追加 REPAIR_LOG），故该 diff 即 spawn 修复的净影响，`REGRESSED=0` 结论对「spawn 修复是否新增回归」为直接回答。worktree 与临时对比脚本均不进入主仓库提交历史。
