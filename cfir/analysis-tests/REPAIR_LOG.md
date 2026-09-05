@@ -1,5 +1,16 @@
 # CFIR LLT Repair Log
 
+## 2026-09-05：自增自减表达式在操作数为错误/非整数类型时短路为错误类型（inc_dec_0.cj）
+
+- problem type: Resolve / 错误类型产生。`x++` 的操作数不是整数（或为错误类型）时，自增自减表达式结果类型被无条件固定为 `Unit`，导致外层如 `x++ + 1` 以 `Unit + Int64` 继续解析，多报级联的 `INVALID_BINARY_OPERATOR`。
+- root cause: `CfirExpressionsResolveTransformer.transformIncrementDecrementExpression` 无条件 `replaceConeTypeOrNull(builtinTypes.unitType)`。官方 `SynIncOrDecExpr`（`external/cangjie_compiler/src/Sema/TypeCheckExpr/IncOrDecExpr.cpp`）在 `leftTy` 为错误类型（`!Ty::IsTyCorrect`）或非整数（`!leftTy->IsInteger()`）时均把 `ide.ty` 设为 `GetInvalidTy()`，只有整数操作数的合法表达式结果类型才走 desugar 得到 `Unit`。
+- official Cangjie evidence（cjc 1.0.5 `--diagnostic-format=json`，探针 `let x=false; x++`）：仅报 `sema_mismatched_types`（"expected 'integer type', found 'Bool'"，L3 C5-6）与 `sema_cannot_assign_to_immutable`（L3 C5-8），绝不报对 `x++ + 1` 结果的 `+` 运算错误。诊断集合与 CFIR 一致；`mismatched_types` 先于 `cannot_assign_to_immutable` 上报。
+- CFIR fix（框架级，共用 owner）：`transformIncrementDecrementExpression` 先变换操作数，再按 `incrementDecrementResultType()` 决定结果类型——操作数为 `ConeErrorType` 时传播其错误类型，非整数时返回一个以 `ConeUnreportedDuplicateDiagnostic` 承载的 `ConeErrorType`（实际 `TYPE_MISMATCH` 由 `CfirIncrementDecrementTypeChecker` 单独报告，避免重复），仅整数操作数返回 `null` 从而走 `Unit`。错误类型短路后 `x++ + 1` 不再产生 `INVALID_BINARY_OPERATOR`。
+- diagnostic range（fixture 修正）：`inc_dec_0.cj` 两处 `x++`/`x--` 的集合标记由 `TYPE_MISMATCH, CANNOT_ASSIGN_TO_IMMUTABLE` 改为 `CANNOT_ASSIGN_TO_IMMUTABLE, TYPE_MISMATCH`。`CodeMetaInfoRenderer.metaInfoComparator`（`tests/test-infrastructure/.../codeMetaInfo/CodeMetaInfoRenderer.kt:104`）按 `start → end 降序 → tag` 排序，同一 range 的多个诊断按 tag 名称字母序拼接（`CANNOT_ASSIGN_TO_IMMUTABLE < TYPE_MISMATCH`），与 checker 报告顺序无关，故原顺序不可能被渲染器产出。
+- owner files changed: `cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirExpressionsResolveTransformer.kt`（结果类型短路）、`cfir/analysis-tests/testData/llt/ErrMsgs/inc_dec_0.cj`（集合标记顺序）。
+- verification command: `.\gradlew.bat :cfir:analysis-tests:test --tests "*ErrMsgs*testIncDec0"`（LLT + PSI 双入口）。
+- verification outcome: 修复前该测试多报 `INVALID_BINARY_OPERATOR`（并带有既有的标记顺序不符）；修复后 `testIncDec0` 两个入口均通过。自增自减相关套件（`*Incordec*`、`*IncDec*`、`*Increment*`）全量零失败。ErrMsgs 其余 16 个失败（decl/sync/memberAccess/varDecl/lambda/coalescing/subscript/questionMark/assignment/typeArgInfer/accessNotImported）均为历史既有的非自增自减 fixture（均不含 `++`/`--`），与本改动无回归关系。
+
 ## 无返回类型函数的 spawn 块内部 return 被误当作函数返回输入，导致 INCOMPATIBLE_FUNC_BODY_AND_RETURN_TYPE 与级联 NO_MATCH
 
 - problem type: 返回类型推断 / Resolve — 一个无显式返回类型的泛型函数（如 `func parallize<T>(initStatus: () -> T)`）体内以 `let f = spawn { … }` 结尾时，`spawn` 任务闭包内部的 `return` 被错误收集为外层函数的返回类型输入，使隐式返回类型推断把未绑定类型参数 `T` 与隐式 Unit 求公共父类型失败，误报 `INCOMPATIBLE_FUNC_BODY_AND_RETURN_TYPE`；由于该函数签名因此失效，调用点 `parallize<Int64>({=> 0})` 级联报 `NO_MATCH_FUNCTION_DECLARATION_FOR_CALL`。其它 spawn 夹具都在 `main(): Int64` 等显式返回类型里，不触发隐式推断，故只有 spawn5 暴露该缺陷。
