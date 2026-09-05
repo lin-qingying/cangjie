@@ -52,25 +52,8 @@ object CfirSpawnSemanticsChecker : CfirBasicExpressionChecker() {
     override fun check(expression: CfirStatement) {
         if (expression !is CfirSpawnExpression) return
 
-        checkSpawnBodyType(expression)
         checkSpawnArgument(expression)
         checkCapturedVariables(expression)
-    }
-
-    /**
-     * spawn body 中的类型推断必须成功。
-     *
-     * 对齐 C++ DiagKind::sema_spawn_invalid_argument
-     */
-    context(context: CheckerContext, reporter: DiagnosticReporter)
-    private fun checkSpawnBodyType(spawn: CfirSpawnExpression) {
-        val bodyType = spawn.body.coneTypeOrNull
-        if (bodyType is ConeErrorType) {
-            reporter.reportOn(
-                source = spawn.source,
-                factory = CfirErrors.SPAWN_ARG_INVALID,
-            )
-        }
     }
 
     /** 对齐官方 `CheckSpawnArgValid`：参数必须是 `ThreadContext` 子类型并提供调度句柄函数。 */
