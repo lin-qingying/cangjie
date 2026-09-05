@@ -6,5 +6,5 @@ func f<T>(x: T, y: T) {
 }
 
 main() {
-    <!UNABLE_TO_INFER_GENERIC_FUNC!>f(1, "Hello")<!>
+    <!UNABLE_TO_INFER_GENERIC_FUNC!>f<!>(1, "Hello")
 }

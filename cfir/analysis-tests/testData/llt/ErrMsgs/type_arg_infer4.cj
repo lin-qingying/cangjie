@@ -7,5 +7,5 @@ func f<T>(a: Array<T>): Array<T> {
 }
 
 main() {
-    let v: Array<Array<String>> = <!UNABLE_TO_INFER_GENERIC_FUNC!>f([[1]])<!>
+    let v: Array<Array<String>> = <!UNABLE_TO_INFER_GENERIC_FUNC!>f<!>([[1]])
 }
