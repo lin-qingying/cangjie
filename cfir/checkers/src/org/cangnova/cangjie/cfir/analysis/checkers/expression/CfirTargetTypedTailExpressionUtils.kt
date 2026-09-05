@@ -17,6 +17,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirIfExpression
 import org.cangnova.cangjie.cfir.expressions.CfirMatchExpression
 import org.cangnova.cangjie.cfir.expressions.CfirReturnExpression
+import org.cangnova.cangjie.cfir.expressions.CfirSynchronizedExpression
 import org.cangnova.cangjie.cfir.expressions.CfirTryExpression
 import org.cangnova.cangjie.cfir.expressions.CfirWrappedExpression
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
@@ -136,6 +137,7 @@ internal fun checkTargetTypedExpression(
                 checkTargetTypedTryExpression(unwrapped, expectedType)
             }
         }
+        is CfirSynchronizedExpression -> checkTargetTypedBlockTail(unwrapped.body, expectedType)
         else -> TargetTypedCheckOutcome.NotHandled
     }
 }
@@ -189,6 +191,7 @@ internal fun checkTargetTypedTailExpression(
                 checkTargetTypedTryExpression(unwrapped, expectedType)
             }
         }
+        is CfirSynchronizedExpression -> checkTargetTypedBlockTail(unwrapped.body, expectedType)
         else -> checkTargetTypedLeaf(unwrapped, expectedType)
     }
 }

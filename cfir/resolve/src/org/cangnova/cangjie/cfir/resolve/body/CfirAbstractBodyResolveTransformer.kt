@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2026 LinQingYing. and contributors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -823,6 +823,14 @@ abstract class CfirAbstractBodyResolveTransformerDispatcher(
         data: ResolutionMode,
     ): CfirExpression {
         return expressionsTransformer.transformSpawnExpression(spawnExpression, data)
+    }
+
+    /** 将 synchronized 表达式 body resolve 分发给表达式 transformer，保留其锁检查与结果类型语义。 */
+    override fun transformSynchronizedExpression(
+        synchronizedExpression: CfirSynchronizedExpression,
+        data: ResolutionMode,
+    ): CfirExpression {
+        return expressionsTransformer.transformSynchronizedExpression(synchronizedExpression, data)
     }
 
     /** 将 unsafe 表达式 body resolve 分发给表达式 transformer，保留其专用结果类型语义。 */

@@ -35,6 +35,7 @@ import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
 import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.expressions.builder.*
+import org.cangnova.cangjie.cfir.expressions.impl.CfirSynchronizedExpressionImpl
 import org.cangnova.cangjie.cfir.patterns.*
 import org.cangnova.cangjie.cfir.patterns.builder.*
 import org.cangnova.cangjie.cfir.references.*
@@ -68,6 +69,7 @@ import org.cangnova.cangjie.cfir.session.builtinTypes
 import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.languageVersionSettings
 import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.session.typeResolver
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.semantics.AbstractCallCandidate
 import org.cangnova.cangjie.cfir.semantics.AbstractCandidate
@@ -5442,6 +5444,64 @@ open class CfirExpressionsResolveTransformer(
             ?: spawnExpression.synthesizeSpawnType(session)
         spawnExpression.replaceConeTypeOrNull(resultType)
         return spawnExpression
+    }
+
+    /**
+     * 解析 `synchronized(monitor) { body }` 表达式。
+     *
+     * 对齐官方 `ChkSyncExpr`（`external/cangjie_compiler/src/Sema/TypeCheckExpr/SynchronizedExpr.cpp`）：
+     * - 锁对象按 `std.sync.Lock` 检查，非 `Lock` 时对锁对象报告类型不匹配；即使锁对象 ill-typed 也会继续检查同步体；
+     * - 同步体在外层期望类型下检查（`tgtTy`），整个 `synchronized` 表达式的结果类型等于同步体类型；
+     * - 同步体综合错误时整个表达式为错误类型，避免外层对未来错误结果的成员访问产生级联诊断。
+     */
+    override fun transformSynchronizedExpression(
+        synchronizedExpression: CfirSynchronizedExpression,
+        data: ResolutionMode,
+    ): CfirExpression {
+        synchronizedExpression.transformAnnotations(transformer, data)
+
+        // 锁对象：先独立综合自身类型，再按 std.sync.Lock 校验；不匹配时把锁对象改写为 TYPE_MISMATCH 错误表达式。
+        synchronizedExpression.transformMonitor(transformer, ResolutionMode.ContextIndependent)
+        checkSynchronizedMonitor(synchronizedExpression)
+
+        // 同步体：继承外层期望类型（ChkSyncExpr 在目标 tgtTy 下检查 body），结果类型 = 同步体类型。
+        synchronizedExpression.transformBody(
+            transformer,
+            withExpectedType(data.expectedTypeOrNull),
+        )
+
+        val bodyType = synchronizedExpression.body.coneTypeOrNull ?: builtinTypes.unitType
+        val resultType = if (bodyType is ConeErrorType) {
+            bodyType.propagatedErrorTypeOrNull() ?: bodyType
+        } else {
+            IdealTypeResolver.resolveIfIdeal(bodyType, data.expectedTypeOrNull)
+        }
+        synchronizedExpression.replaceConeTypeOrNull(resultType)
+        return synchronizedExpression
+    }
+
+    /**
+     * 校验 `synchronized` 表达式的锁对象是否为 `std.sync.Lock` 类型。
+     *
+     * 官方 `ChkSyncExpr` 用 `Check(ctx, lockDecl->ty, se.mutex)` 检查锁对象：不匹配时报类型不匹配，
+     * 但仍需继续检查同步体，因此这里只改写锁对象节点本身，不短路同步体解析。
+     */
+    private fun checkSynchronizedMonitor(synchronizedExpression: CfirSynchronizedExpression) {
+        val monitorType = synchronizedExpression.monitor.coneTypeOrNull ?: return
+        if (monitorType is ConeErrorType) return
+        // `std.sync.Lock` 是编译器内建锁接口；无法解析时跳过锁校验，避免 std 缺失场景下引入噪音。
+        val lockClassId = ClassId(FqName("std.sync"), Name.identifier("Lock"))
+        val lockDeclaration = session.typeResolver.resolveClass(lockClassId)
+            ?: return
+        if (lockDeclaration !is CfirInterface) return
+        val lockType = ConeClassLikeType(
+            lookupTag = ConeClassLikeLookupTagImpl(lockClassId),
+            typeArguments = emptyList(),
+            isInterface = true,
+        )
+        if (AbstractTypeChecker.isSubtypeOf(session.typeContext, monitorType, lockType) == true) return
+        val wrappedMonitor = synchronizedExpression.monitor.asTypeMismatchExpression(lockType, monitorType)
+        (synchronizedExpression as CfirSynchronizedExpressionImpl).monitor = wrappedMonitor
     }
 
     /**
