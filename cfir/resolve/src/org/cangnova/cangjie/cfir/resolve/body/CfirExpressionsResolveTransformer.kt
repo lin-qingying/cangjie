@@ -242,6 +242,22 @@ open class CfirExpressionsResolveTransformer(
         data: ResolutionMode,
     ): CfirExpression {
         components.dataFlowAnalyzer.enterOptionalChain(optionalChainExpression)
+
+        val chainRoot = optionalChainExpression.expression.optionalChainRootExpression()
+        // 官方 ChkOptionalChainExpr / SynQuestSugarMatchCaseBody：先判 base 是否为错误类型，若是则
+        // 整条链短路为 InvalidTy 且不报任何诊断（尤其不报 OPTIONAL_CHAIN_NON_OPTIONAL）。ConeErrorType
+        // 的 classId 非 Option，若不提前短路会被误判为非可选而报 OPTIONAL_CHAIN_NON_OPTIONAL。
+        // 必须在 transformChildren 之前判定：错误类型的 base 上继续解析 selector（`?()` / `?[]` / `?.x`）
+        // 只会制造级联的 operator/member/subscript 诊断，链内真实错误已由 base 自身节点持有。
+        val earlyRootType = chainRoot?.let { root ->
+            root.coneTypeOrNull ?: runCatching { root.transformSingle(transformer, data) }.getOrNull()?.coneTypeOrNull
+        }
+        if (earlyRootType is ConeErrorType) {
+            optionalChainExpression.replaceConeTypeOrNull(earlyRootType.propagatedErrorTypeOrNull() ?: earlyRootType)
+            components.dataFlowAnalyzer.exitOptionalChain(optionalChainExpression)
+            return optionalChainExpression
+        }
+
         optionalChainResolveDepth++
         try {
             optionalChainExpression.transformChildren(transformer, data)
@@ -249,12 +265,17 @@ open class CfirExpressionsResolveTransformer(
             optionalChainResolveDepth--
         }
 
-        val chainRoot = optionalChainExpression.expression.optionalChainRootExpression()
         val rootType = chainRoot?.coneTypeOrNull
         if (rootType == null) {
             optionalChainExpression.replaceConeTypeOrNull(
                 ConeErrorType(ConeSimpleDiagnostic("optional chain root type is unresolved", DiagnosticKind.InferenceError))
             )
+            components.dataFlowAnalyzer.exitOptionalChain(optionalChainExpression)
+            return optionalChainExpression
+        }
+
+        if (rootType is ConeErrorType) {
+            optionalChainExpression.replaceConeTypeOrNull(rootType.propagatedErrorTypeOrNull() ?: rootType)
             components.dataFlowAnalyzer.exitOptionalChain(optionalChainExpression)
             return optionalChainExpression
         }
