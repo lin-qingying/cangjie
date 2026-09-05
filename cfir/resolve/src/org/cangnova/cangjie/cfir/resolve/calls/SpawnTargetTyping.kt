@@ -34,8 +34,16 @@ import org.cangnova.cangjie.type.AbstractTypeChecker
  * `ChkSpawnExpr` 在目标类型是 `Future<T>` 时把 task 按 `() -> T` 检查。
  * CFIR 的 body resolve 和调用实参检查都通过这里保持同一条语义路径。
  */
-internal fun CfirSpawnExpression.synthesizeSpawnType(session: CfirSession): ConeCangJieType =
-    constructFutureType(spawnTaskReturnType(expectedTaskReturnType = null, session))
+internal fun CfirSpawnExpression.synthesizeSpawnType(session: CfirSession): ConeCangJieType {
+    val taskReturnType = spawnTaskReturnType(expectedTaskReturnType = null, session)
+    // 官方 SynSpawnExpr：task 综合类型不是 well-typed（错误类型）时，整个 spawn 设为 invalid，
+    // 而不是继续包装成名义的 Future<Error>。与 applySpawnExpectedFutureType 的错误传播保持一致。
+    return if (taskReturnType is ConeErrorType) {
+        ConeErrorType(ConeUnreportedDuplicateDiagnostic(taskReturnType.diagnostic))
+    } else {
+        constructFutureType(taskReturnType)
+    }
+}
 
 /**
  * 按外层 `Future<T>` 目标类型检查 spawn task，并把最终类型写回 spawn 表达式。
