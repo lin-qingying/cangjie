@@ -5,5 +5,5 @@
 func f<T>() {}
 
 main() {
-    <!UNABLE_TO_INFER_GENERIC_FUNC!>f()<!>
+    <!UNABLE_TO_INFER_GENERIC_FUNC!>f<!>()
 }
