@@ -599,7 +599,7 @@ open class CfirExpressionsResolveTransformer(
     ): CfirExpression =
         transformFunctionCallInternal(functionCall, data, CallResolutionMode.REGULAR)
 
-    /** 解析 `++` / `--` 表达式，结果类型固定为 Unit。 */
+    /** 解析 `++` / `--` 表达式。合法表达式的结果类型固定为 Unit。 */
     override fun transformIncrementDecrementExpression(
         incrementDecrementExpression: CfirIncrementDecrementExpression,
         data: ResolutionMode,
@@ -608,12 +608,44 @@ open class CfirExpressionsResolveTransformer(
             incrementDecrementExpression.transformAnnotations(transformer, data)
             incrementDecrementExpression.transformExpression(transformer, ResolutionMode.ContextIndependent)
 
-            // 仓颉 `++` / `--` 不是可重载调用；合法表达式的结果类型固定为 Unit。
-            incrementDecrementExpression.replaceConeTypeOrNull(builtinTypes.unitType)
+            // 官方 SynIncOrDecExpr：操作数类型为错误，或不是整数类型时，整个表达式类型为 invalid，
+            // 只有整数操作数的合法自增自减表达式结果类型才固定为 Unit。错误类型短路后，
+            // 外层对自增自减结果的操作（如 `x++ + 1`）不再产生级联诊断。
+            // 非整数操作数的 TYPE_MISMATCH 由 CfirIncrementDecrementTypeChecker 单独报告。
+            incrementDecrementExpression.replaceConeTypeOrNull(
+                incrementDecrementExpression.incrementDecrementResultType() ?: builtinTypes.unitType,
+            )
             // 专用语法节点不经过 transformAssignment；在 operand 完成求值后显式写入 CFG。
             components.dataFlowAnalyzer.exitIncrementDecrementExpression(incrementDecrementExpression)
             incrementDecrementExpression
         }
+
+    /**
+     * 自增自减表达式的结果类型。
+     *
+     * 官方 `SynIncOrDecExpr` 中，当操作数类型为错误类型，或不是整数类型时，`ide.ty`
+     * 被设为 invalid。这里返回一个可被外层短路的错误类型；返回 `null` 表示操作数是合法
+     * 整数，表达式结果类型应固定为 `Unit`。
+     */
+    private fun CfirIncrementDecrementExpression.incrementDecrementResultType(): ConeErrorType? {
+        val operandType = expression.coneTypeOrNull ?: return null
+        if (operandType is ConeErrorType) {
+            return operandType.propagatedErrorTypeOrNull() ?: operandType
+        }
+        if ((operandType.fullyExpandedType(session) as? ConePrimitiveType)?.kind?.isInteger == true) {
+            return null
+        }
+        // 非整数操作数：置为 invalid 以便外层短路；实际 TYPE_MISMATCH 由
+        // CfirIncrementDecrementTypeChecker 报告，这里用不可上报的诊断承载错误状态。
+        return ConeErrorType(
+            ConeUnreportedDuplicateDiagnostic(
+                ConeSimpleDiagnostic(
+                    "increment or decrement operand is not of integer type",
+                    DiagnosticKind.Other,
+                ),
+            ),
+        )
+    }
 
     /**
      * 函数调用解析的统一入口。
