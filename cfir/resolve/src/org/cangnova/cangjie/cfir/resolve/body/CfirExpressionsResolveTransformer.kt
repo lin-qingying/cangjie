@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2026 LinQingYing. and contributors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -5337,13 +5337,29 @@ open class CfirExpressionsResolveTransformer(
         rangeExpression.transformEnd(transformer, endpointResolutionMode)
         rangeExpression.transformStep(transformer, withExpectedType(ConePrimitiveType.INT64))
         val resolvedElementType = elementType ?: inferRangeElementType(rangeExpression)
+        // 官方 ChkRangeExpr/SynRangeExpr：端点用推断出的元素类型检查失败（端点为错误表达式）时，
+        // 整个 range 表达式为 invalid 类型，而不是 Range<elemTy>。错误类型短路后，
+        // 外层对 range 的操作（+、invoke 等）不再产生级联诊断。
+        val errorEndpointType = rangeExpression.errorEndpointTypeOrNull()
         rangeExpression.replaceConeTypeOrNull(
-            constructNamedType(
-                classId = StdlibClassIds.Range,
-                typeArguments = listOf(resolvedElementType),
-            )
+            if (errorEndpointType != null) {
+                errorEndpointType.propagatedErrorTypeOrNull() ?: errorEndpointType
+            } else {
+                constructNamedType(
+                    classId = StdlibClassIds.Range,
+                    typeArguments = listOf(resolvedElementType),
+                )
+            }
         )
         return rangeExpression
+    }
+
+    /**
+     * 返回 range 表达式中类型为错误的端点类型（start/end/step），用于错误类型短路。
+     */
+    private fun CfirRangeExpression.errorEndpointTypeOrNull(): ConeCangJieType? {
+        return listOfNotNull(start.coneTypeOrNull, end.coneTypeOrNull, step?.coneTypeOrNull)
+            .firstOrNull { it is ConeErrorType }
     }
 
     // ── Spawn ─────────────────────────────────────────────────────────────────

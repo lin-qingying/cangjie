@@ -5016,3 +5016,19 @@ esolveDelegatingConstructorCallAndSelectCandidate);
   * FIXED 键：`CfirAnalysisLLTPsiTestGenerated$ErrMsgs.testSpawn0()` 与 `CfirAnalysisLLTTestGenerated$ErrMsgs.testSpawn0()` —— 恰好是 spawn 修复（`c3f0f5fe0` 错误类型综合）消灭的两个入口。
   * REGRESSED=0：**spawn 修复未引入任何新增失败**。剩余 640 个失败全部与修复前一致，属基线既有、与本轮无关的其它问题类型。
 - honesty note: 修复前基线 `449ccea65` 与修复后 HEAD 之间除 spawn 两项修复外不夹带其它源码改动（`a6d3621c4` 仅追加 REPAIR_LOG），故该 diff 即 spawn 修复的净影响，`REGRESSED=0` 结论对「spawn 修复是否新增回归」为直接回答。worktree 与临时对比脚本均不进入主仓库提交历史。
+
+## 2026-09-05：range 表达式端点错误类型短路（range_0.cj 的级联诊断误报）
+
+- problem type: Range / Type Inference / Diagnostics —— `range_0.cj` 中 `let range = err..10`（`err` 为错误表达式）时，CFIR 无条件构造 `Range<T>`，导致其上的 `range + false` 与 `range(true)` 分别级联误报 `INVALID_BINARY_OPERATOR` 和 `NO_MATCHING_OPERATOR_INVOKE`。官方语义：端点用推断元素类型检查失败（端点为错误表达式）时，整个 range 表达式为 invalid 类型，外层操作被错误类型短路。
+- root cause: `CfirExpressionsResolveTransformer.transformRangeExpression` 总是 `constructNamedType(StdlibClassIds.Range, [resolvedElementType])`（`resolvedElementType` 由 `inferRangeElementType` 给出，端点错误时回落到另一个端点或 `Int64`）。端点错误被丢弃，range 名义类型保持 `Range<Int64>` 等，外层对它的 `+`/invoke 继续按正常类型解析并报错误。
+- official Cangjie evidence: `external/cangjie_compiler/src/Sema/TypeCheckExpr/RangeExpr.cpp`：`ChkRangeExpr`/`SynRangeExpr` 先 `re.ty = GetInvalidTy()`，`SynRangeExprInferElemTy` 推断元素类型，`CheckRangeElements(ctx, elemTy, re)` 用该元素类型逐个 `Check` 端点；端点为错误表达式时 `Check` 失败、`isWellTyped=false`、`re.ty` 保持 invalid。`cjc 1.0.5` 对 `scripts/probe_range.cj`（`err..10`、`0..err` 及其上 `+`/invoke）只输出端点本身（`1 + false`）一个错误，后续操作零诊断，证实 invalid range 短路。
+- Kotlin counterpart files consulted: 无新增；本项目 spawn 修复（`SpawnTargetTyping.kt` 的 `synthesizeSpawnType`/`applySpawnExpectedFutureType`）已确立「子表达式错误类型 → 外层表达式错误类型」的短路先例，官方 `RangeExpr.cpp` 是唯一语义来源。
+- CFIR owner files changed: `cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirExpressionsResolveTransformer.kt`：`transformRangeExpression` 在构造类型前检查 start/end/step 是否含 `ConeErrorType`，若有则整个 range 为 `ConeErrorType`（复用 `propagatedErrorTypeOrNull` 包裹 `ConeUnreportedDuplicateDiagnostic`），否则维持 `Range<elemTy>`。新增辅助 `CfirRangeExpression.errorEndpointTypeOrNull()`。
+- repair principle: range 的「端点为错误表达式 → 整个 range 为 invalid」必须在 range 共享 owner 完成，而不是修 `range_0.cj` 一处；错误类型短路由外层通用的运算符/调用短路逻辑消化，这是框架级一致性修复。
+- fixtures covered: `cfir/analysis-tests/testData/llt/ErrMsgs/range_0.cj`；验证覆盖 `CfirAnalysisLLTTestGenerated$ErrMsgs.testRange0` 与 `CfirAnalysisLLTPsiTestGenerated$ErrMsgs.testRange0` 两个入口，外加整个 `Range` 生成族切片与整个 ErrMsgs 双路径切片，确认无 range 相关回归。
+- fixture correction: none；源代码与诊断期望均未为本轮修复而改写。
+- verification commands and outcome:
+  * 定向两入口通配：`.\gradlew-queue.bat :cfir:analysis-tests:test --tests "*ErrMsgs*testRange0"` → `BUILD SUCCESSFUL`；XML 中两个 `testRange0()` 均 PASS。
+  * ErrMsgs 完整双路径切片：`--tests "*ErrMsgs*"` → `96 tests completed, 34 failed`（修复前 36）；`testRange0` 不在失败列表，剩余 34 条为基线既有其它问题类型。
+  * Range 完整生成族切片：`--tests "*Range*"` → `BUILD SUCCESSFUL`，无回归。
+  * 全量严格前后对比（同命令 `--no-daemon --max-workers=1 --console=plain`，XML 键级 diff）：修复前（worktree 检出 `a0aead3ba`，注入 `cangjie.flatc.path`）`8422 tests, 640 failed`；修复后当前 HEAD `8422 tests, 638 failed`。`FIXED=2`（`testRange0` PSI/LLT 双入口）、`REGRESSED=0`、测试总数与 skipped 一致。
