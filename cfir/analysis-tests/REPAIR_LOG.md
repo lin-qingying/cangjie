@@ -8,8 +8,14 @@
 - CFIR fix（框架级，共用 owner）：`transformIncrementDecrementExpression` 先变换操作数，再按 `incrementDecrementResultType()` 决定结果类型——操作数为 `ConeErrorType` 时传播其错误类型，非整数时返回一个以 `ConeUnreportedDuplicateDiagnostic` 承载的 `ConeErrorType`（实际 `TYPE_MISMATCH` 由 `CfirIncrementDecrementTypeChecker` 单独报告，避免重复），仅整数操作数返回 `null` 从而走 `Unit`。错误类型短路后 `x++ + 1` 不再产生 `INVALID_BINARY_OPERATOR`。
 - diagnostic range（fixture 修正）：`inc_dec_0.cj` 两处 `x++`/`x--` 的集合标记由 `TYPE_MISMATCH, CANNOT_ASSIGN_TO_IMMUTABLE` 改为 `CANNOT_ASSIGN_TO_IMMUTABLE, TYPE_MISMATCH`。`CodeMetaInfoRenderer.metaInfoComparator`（`tests/test-infrastructure/.../codeMetaInfo/CodeMetaInfoRenderer.kt:104`）按 `start → end 降序 → tag` 排序，同一 range 的多个诊断按 tag 名称字母序拼接（`CANNOT_ASSIGN_TO_IMMUTABLE < TYPE_MISMATCH`），与 checker 报告顺序无关，故原顺序不可能被渲染器产出。
 - owner files changed: `cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirExpressionsResolveTransformer.kt`（结果类型短路）、`cfir/analysis-tests/testData/llt/ErrMsgs/inc_dec_0.cj`（集合标记顺序）。
-- verification command: `.\gradlew.bat :cfir:analysis-tests:test --tests "*ErrMsgs*testIncDec0"`（LLT + PSI 双入口）。
-- verification outcome: 修复前该测试多报 `INVALID_BINARY_OPERATOR`（并带有既有的标记顺序不符）；修复后 `testIncDec0` 两个入口均通过。自增自减相关套件（`*Incordec*`、`*IncDec*`、`*Increment*`）全量零失败。ErrMsgs 其余 16 个失败（decl/sync/memberAccess/varDecl/lambda/coalescing/subscript/questionMark/assignment/typeArgInfer/accessNotImported）均为历史既有的非自增自减 fixture（均不含 `++`/`--`），与本改动无回归关系。
+- verification command: ①定向 `.\gradlew.bat :cfir:analysis-tests:test --tests "*ErrMsgs*testIncDec0"`（LLT + PSI 双入口）；②严格全量前后对比（同一主目录，`--no-configuration-cache --no-build-cache :cfir:analysis-tests:test`，把两个 owner 文件临时切回修复前提交 `048a4ec55` 跑修复前全量）。
+- verification outcome: 定向入口 `testIncDec0` 两个入口均通过；自增自减相关套件（`*Incordec*`、`*IncDec*`、`*Increment*`）全量零失败。
+- full before/after（严格对比，修复前临时切回 `048a4ec55`，同机器同命令）：
+  - BEFORE（修复前）：`8422 tests, 638 failed, 307 skipped`
+  - AFTER（修复后）：`8422 tests, 636 failed, 307 skipped`
+  - FIXED = 2：`CfirAnalysisLLTTestGenerated$ErrMsgs#testIncDec0`、`CfirAnalysisLLTPsiTestGenerated$ErrMsgs#testIncDec0`
+  - REGRESSED = 0。净减少 2 与精确失败键 diff 完全一致，确认无任何新增回归。
+  - 注意：早期一次 `--rerun-tasks` 全量因本机内存（15.6GB 被 IDE/agent JVM 挤占后仅剩 ~2GB）触发 gradle daemon native OOM；改用去掉 `--rerun-tasks` 的轻量增量（仅重编 resolve/checkers，analysis-tests 测试任务按输入指纹自动重跑全部 8422 用例）后稳定完成，且不改变对比结论。
 
 ## 无返回类型函数的 spawn 块内部 return 被误当作函数返回输入，导致 INCOMPATIBLE_FUNC_BODY_AND_RETURN_TYPE 与级联 NO_MATCH
 
