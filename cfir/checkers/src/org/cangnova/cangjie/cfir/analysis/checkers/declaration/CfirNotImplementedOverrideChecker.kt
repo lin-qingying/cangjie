@@ -36,9 +36,13 @@ import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessContext
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessKind
 import org.cangnova.cangjie.cfir.resolve.providers.CfirLookupOrigin
+import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityResult
+import org.cangnova.cangjie.cfir.scopes.CfirCallableLookupProvenance
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassMemberScopeKind
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
+import org.cangnova.cangjie.cfir.scopes.impl.CfirFunctionInheritanceScope
+import org.cangnova.cangjie.cfir.scopes.impl.CfirPropertyInheritanceScope
 import org.cangnova.cangjie.cfir.scopes.overrideSignatureKey
 import org.cangnova.cangjie.cfir.session.accessibilityChecker
 import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
@@ -51,7 +55,6 @@ import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
 import org.cangnova.cangjie.cfir.symbols.constructType
 import org.cangnova.cangjie.cfir.symbols.toLookupTag
-import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.name.Name
 
 /**
@@ -133,16 +136,34 @@ private fun CfirTypeScope.hasUnimplementedAbstractMember(
     for (name in getCallableNames()) {
         val functionSymbols = mutableListOf<CfirFunctionSymbol<*>>()
         val propertySymbols = mutableListOf<CfirPropertySymbol>()
+        fun collectSymbol(symbol: CfirCallableSymbol<*>) {
+            when (symbol) {
+                is CfirFunctionSymbol<*> -> functionSymbols += symbol
+                is CfirPropertySymbol -> propertySymbols += symbol
+                else -> Unit
+            }
+        }
+
         context.session.accessibilityChecker.processAccessibleCallablesByName(
             scope = this,
             name = name,
             context = accessContext,
         ) { candidate ->
-            when (val symbol = candidate.symbol) {
-                is CfirFunctionSymbol<*> -> functionSymbols += symbol
-                is CfirPropertySymbol -> propertySymbols += symbol
-                else -> Unit
-            }
+            collectSymbol(candidate.symbol)
+        }
+
+        // 结构归并可以选中一个来自 extend 的实现，但使用点未导入对应接口时该实现
+        // 不可见。必须从未归并输入保留原抽象要求，不能让过滤实现同时抹掉实现义务。
+        fun collectAbstractRequirement(symbol: CfirCallableSymbol<*>, provenance: CfirCallableLookupProvenance) {
+            if (!symbol.isAbstractLike(context)) return
+            if (context.session.accessibilityChecker.checkCallable(symbol, accessContext, provenance) !is CfirAccessibilityResult.Accessible) return
+            collectSymbol(symbol)
+        }
+        (this as? CfirFunctionInheritanceScope)?.processUnmergedInheritedFunctionsByNameWithProvenance(name) {
+            collectAbstractRequirement(it.member, it.lookupProvenance)
+        }
+        (this as? CfirPropertyInheritanceScope)?.processUnmergedInheritedPropertiesByNameWithProvenance(name) {
+            collectAbstractRequirement(it.member, it.lookupProvenance)
         }
         if (functionSymbols.distinct().hasUnimplementedAbstractBySignature(ownerDeclaration, context)) {
             return true
@@ -178,10 +199,11 @@ private fun <S : CfirCallableSymbol<*>> List<S>.hasUnimplementedAbstractBySignat
         if (abstractSymbols.isEmpty()) continue
 
         for (abstractSymbol in abstractSymbols) {
+            // 集合已按使用点可见性过滤并按实现签名分组。具体成员即满足实现义务；
+            // 实现自身的弱可见性等兼容性错误由继承检查报告，不能再归类为缺少实现。
             val hasConcreteImplementation = symbols.any { candidate ->
                 candidate !== abstractSymbol &&
-                    !candidate.isAbstractLike(context) &&
-                    candidate.canImplementAbstractMember(abstractSymbol)
+                    !candidate.isAbstractLike(context)
             }
             if (!hasConcreteImplementation) {
                 val diagnosedAsIncompleteSuperExtend = ownerDeclaration is CfirClass && with(context) {
@@ -231,12 +253,4 @@ private fun <S : CfirCallableSymbol<*>> List<S>.hasConcreteInterfaceImplementati
     }.toSet()
 
     return inheritedConcreteInterfaceOwners.size > 1
-}
-
-/**
- * 判断候选 concrete 成员的可见性是否足以实现指定抽象成员。
- */
-private fun CfirCallableSymbol<*>.canImplementAbstractMember(abstractSymbol: CfirCallableSymbol<*>): Boolean {
-    val compareResult = Visibilities.compare(cfir.status.visibility, abstractSymbol.cfir.status.visibility)
-    return compareResult != null && compareResult >= 0
 }

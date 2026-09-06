@@ -1374,6 +1374,12 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeLlTDiagnosticsTest() {
             runTest("cfir/analysis-tests/testData/llt/Extend/inherit_check.cj")
         }
 
+        @TestMetadata("inherited_abstract_import_boundary.cj")
+        @Test
+        fun testInheritedAbstractImportBoundary() {
+            runTest("cfir/analysis-tests/testData/llt/Extend/inherited_abstract_import_boundary.cj")
+        }
+
         @TestMetadata("invariant_override_returntype_01.cj")
         @Test
         fun testInvariantOverrideReturntype01() {
