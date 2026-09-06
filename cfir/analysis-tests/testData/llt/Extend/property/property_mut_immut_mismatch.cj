@@ -34,7 +34,7 @@ extend A <: I {
         }
         set(v) {}
     }
-    <!PROPERTY_OVERRIDE_IMPLEMENT_TYPE_DIFF!>s<!>tatic prop <!WEAK_VISIBILITY!>p5<!>: Int64 {
+    static prop <!PROPERTY_OVERRIDE_IMPLEMENT_TYPE_DIFF, WEAK_VISIBILITY!>p5<!>: Int64 {
         get() {
             0
         }

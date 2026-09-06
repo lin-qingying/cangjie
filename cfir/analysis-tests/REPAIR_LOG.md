@@ -5100,3 +5100,20 @@ esolveDelegatingConstructorCallAndSelectCandidate);
   - 前后同一全量命令 `gradlew-queue.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g'`：Gradle 8424 → 8426 项，失败 636 → 634，跳过 307 → 307。新鲜 XML 8425 → 8427 records，通过 7481 → 7485，失败 636 → 634，跳过 308 → 308，errors 均为 0。
   - 完整测试键对比：FIXED=2、REGRESSED=0、NEW_KEYS=2（新增回归均 PASS）、REMOVED_KEYS=0，其它状态变化为 0。修复键恰好为两个 Extend.Visibility.testGenericDefaultImplProp。证据：`build/repair-20260906/{02-after,03-family,03-after}/`、`02-after--03-after.json`。
 - remaining failures: 全量 634；Extend 16、ExtendImport 10、ExtendsImplementsInterfaceDuplicated 6。既有模块目录文档缺少 `:gradle-queue-cli` 的校验失败保持不变。
+
+## 2026-09-06：继承属性类型冲突使用声明关系与实际实现归属
+
+- problem type: Extend / Property / Inheritance / Diagnostics —— 接口属性类型冲突属于引入接口关系的声明，属性实现类型不一致属于实际实现属性；没有 override 关键字的接口属性实现也必须检查类型不变性。
+- root cause: 继承类型一致性从目标类的完整 use-site scope 读取 extend 注入的接口，并且没有 extend 入口，错误落到目标类；实现候选同时保留当前显式属性和未归并的接口默认属性，默认输入先占用了诊断去重键；普通类属性检查又因缺少 override 而直接跳过。
+- official Cangjie evidence: cjc 1.0.5 对原 `Extend/Extend_Refactor/extend_property_conflict_invalid_6.cj` 仅在 extend 声明和显式 foo 属性各报一条。补充 `inheritance_property_owners.cj` 确认直接继承与扩展继承均报告声明冲突及实现属性错误，目标类型既有属性的错误仍落在该属性。官方 `external/cangjie_compiler/src/Sema/InheritanceChecker/StructInheritanceChecker.cpp:358-412,423-480,741-791,1301-1330` 分别处理声明接口归并、冲突声明与属性实现；`CheckPropertyInheritance` 不以 override 关键字作为类型检查前提。JSON 保存于 `build/repair-20260906/property-evidence/` 和 `evidence/{property_inheritance_owners,inheritance_property_owners,property9}.official.cjc.json`。
+- Kotlin counterpart files consulted: `external/kotlin/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/declaration/FirOverrideChecker.kt`、`FirMultipleDefaultsInheritedFromSupertypesChecker.kt`：按成员来源、声明 scope 与覆盖输入检查实现关系；Cangjie 属性一律保持类型不变的语义来自官方编译器。
+- CFIR owner files changed: `CfirInheritanceDeepChecker.kt` 将继承属性类型检查统一为 MemberInheritanceSubject，只收集声明引入的接口及其未归并属性；显式实现替代原始默认输入，ExtendImplementationOrigin 区分目标成员、当前成员和接口默认输入。`CfirOverrideChecker.kt` 检查无 override 的真实属性实现；`CfirOverrideCheckerUtils.kt` 允许调用方选择 BODY_LOOKUP，防止当前类型的 extend 成为类本体义务，构造器成员参数仍按变量处理。`CfirDeclarationDiagnosticSources.kt` 提供完整 extend 关键字定位，属性诊断统一定位到属性名。
+- repair principle: 在声明继承图、实现候选归并和属性兼容性三个共享边界保留真实归属，不通过改目标类型源码、移除接口或压制诊断修复。
+- fixtures covered: `Extend/Extend_Refactor/extend_property_conflict_invalid_6.cj`、新增 `inheritance_property_owners.cj`、`Extend/property/property_mut_immut_mismatch.cj`、`class/class_property/property9.cj`、`interface/interface_property/interface_property5.cj`；完整 Property、Extend 与 InterfaceConflictInheritance 切片共 1356 个测试键，保存在 `build/repair-20260906/04-family-final/results.json`。
+- fixture correction: 原 f7、property_mut_immut_mismatch 和 class/property9 只按 Diagnostic Range Policy 将首字符标记改为完整 extend 关键字或属性名，触发期望与仓颉语法未改。新增矩阵源代码已由 cjc 复核；两条生成入口由生成器更新。
+- verification commands and outcome:
+  - `gradlew-queue.bat :cfir:analysis-tests:test --tests '*Property*' --tests '*Extend*' --tests '*InterfaceConflictInheritance*' --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g' '-Pkotlin.compiler.execution.strategy=in-process'`：1356 项，1279 通过、45 失败、32 跳过。目标和新增测试均通过，45 条既有失败消息完全不变，切片 REGRESSED=0。
+  - 前后同一全量命令 `gradlew-queue.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g'`：Gradle 8426 → 8428 项，失败 634 → 632，跳过均 307；新鲜 XML 8427 → 8429 records，通过 7485 → 7489，失败 634 → 632，skipped 均 308，errors 均 0。
+  - 完整键级差异 FIXED=2、REGRESSED=0、NEW_KEYS=2（新增矩阵双入口均 PASS）、REMOVED_KEYS=0，其它状态变化为 0。修复键为两个 Extend.ExtendRefactor.testExtendPropertyConflictInvalid6。原始证据：`build/repair-20260906/{03-after,04-family-final,04-after}/` 与 `03-after--04-after.json`。
+- change isolation: 同文件既有函数返回类型跨路径去重 WIP 未混入本提交；A/B 始终保留该 WIP 不变。文档校验的既有模块目录缺项不变。
+- remaining failures: 全量 632；Extend 14、ExtendImport 10、ExtendsImplementsInterfaceDuplicated 6，两个 LLT 入口分别记录。

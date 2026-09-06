@@ -49,7 +49,10 @@ import org.cangnova.cangjie.name.ClassId
 /**
  * 为 class-like 声明创建 use-site 成员 scope。
  */
-internal fun CheckerContext.createUseSiteMemberScope(declaration: CfirClassLikeDeclaration): CfirTypeScope {
+internal fun CheckerContext.createUseSiteMemberScope(
+    declaration: CfirClassLikeDeclaration,
+    scopeKind: CfirClassMemberScopeKind = CfirClassMemberScopeKind.USE_SITE,
+): CfirTypeScope {
     return when (declaration) {
         is CfirClass -> {
             val symbol = declaration.symbol as? CfirClassLikeSymbol<*> ?: return CfirTypeScope.Empty
@@ -59,7 +62,7 @@ internal fun CheckerContext.createUseSiteMemberScope(declaration: CfirClassLikeD
                 symbolProvider = session.symbolProvider,
                 extendProvider = session.extendProvider,
                 directSupertypeProvider = session.directSupertypeProviderOrNull,
-                scopeKind = CfirClassMemberScopeKind.USE_SITE,
+                scopeKind = scopeKind,
             )
             CfirClassSubstitutionScope(session, rawScope, symbol.constructType())
         }
@@ -72,7 +75,7 @@ internal fun CheckerContext.createUseSiteMemberScope(declaration: CfirClassLikeD
                 symbolProvider = session.symbolProvider,
                 extendProvider = session.extendProvider,
                 directSupertypeProvider = session.directSupertypeProviderOrNull,
-                scopeKind = CfirClassMemberScopeKind.USE_SITE,
+                scopeKind = scopeKind,
             )
         }
 
@@ -84,7 +87,7 @@ internal fun CheckerContext.createUseSiteMemberScope(declaration: CfirClassLikeD
                 symbolProvider = session.symbolProvider,
                 extendProvider = session.extendProvider,
                 directSupertypeProvider = session.directSupertypeProviderOrNull,
-                scopeKind = CfirClassMemberScopeKind.USE_SITE,
+                scopeKind = scopeKind,
             )
         }
     }

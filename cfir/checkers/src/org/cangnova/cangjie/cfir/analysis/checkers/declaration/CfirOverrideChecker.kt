@@ -33,12 +33,14 @@ import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.scopes.createCallableTypeParameterSubstitutorForOverride
+import org.cangnova.cangjie.cfir.scopes.impl.CfirClassMemberScopeKind
 import org.cangnova.cangjie.cfir.scopes.overrideSignatureKey
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.cfir.unwrapSubstitutionOverrides
 import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.lexer.CjTokens
+import org.cangnova.cangjie.source.CjFakeSourceElementKind
 import org.cangnova.cangjie.type.AbstractTypeChecker
 
 /**
@@ -62,20 +64,33 @@ object CfirOverrideChecker : CfirClassLikeChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirClassLikeDeclaration) {
         val classScope = context.createUseSiteMemberScope(declaration)
+        val declarationScope by lazy(LazyThreadSafetyMode.NONE) {
+            context.createUseSiteMemberScope(declaration, CfirClassMemberScopeKind.BODY_LOOKUP)
+        }
 
         for (member in declaration.declarations) {
             val callable = member as? CfirCallableDeclaration ?: continue
             if (!callable.isSourceDeclaration) continue
             val hasOverrideLikeModifier = callable.hasOverrideLikeModifier()
             if (hasOverrideLikeModifier && !callable.isValidOverrideLikeDeclaration()) continue
-            if (!hasOverrideLikeModifier && !callable.status.isStatic) continue
+            // 实现接口属性不要求写 override；类型不变性仍须检查。主构造器成员参数
+            // 在 raw CFIR 中使用 property 节点承载，但语言语义上是变量，不能并入此规则。
+            val isImplicitPropertyImplementation = !hasOverrideLikeModifier && !callable.status.isStatic &&
+                    callable is CfirProperty && callable.source?.kind != CjFakeSourceElementKind.PropertyFromParameter
+            if (!hasOverrideLikeModifier && !callable.status.isStatic && !isImplicitPropertyImplementation) continue
+            val memberScope = if (isImplicitPropertyImplementation) declarationScope else classScope
 
             val overriddenCandidates = when (val symbol = callable.symbol) {
-                is CfirNamedFunctionSymbol -> classScope.collectDirectOverriddenFunctions(symbol)
+                is CfirNamedFunctionSymbol -> memberScope.collectDirectOverriddenFunctions(symbol)
                 is CfirFunctionSymbol<*> -> emptyList()
-                is CfirPropertySymbol -> classScope.collectDirectOverriddenProperties(symbol)
+                is CfirPropertySymbol -> memberScope.collectDirectOverriddenProperties(symbol)
                 else -> emptyList()
             }.filter { it.canParticipateInOverrideTargetSearch(declaration, context) }
+
+            if (isImplicitPropertyImplementation) {
+                checkReturnTypeCompatibility(callable, overriddenCandidates.filter { it.isVisibleIn(declaration, context) })
+                continue
+            }
 
             if (overriddenCandidates.isEmpty()) {
                 if (!hasOverrideLikeModifier) continue
@@ -329,7 +344,7 @@ object CfirOverrideChecker : CfirClassLikeChecker() {
 
             if (isPropertyOverride) {
                 reporter.reportOn(
-                    source = declaration.source?.firstCharacterDiagnosticSource(),
+                    source = (declaration as CfirProperty).propertyNameDiagnosticSource(),
                     factory = CfirErrors.PROPERTY_OVERRIDE_IMPLEMENT_TYPE_DIFF,
                     a = overridingReturnType,
                     b = overriddenReturnType,

@@ -45,7 +45,6 @@ import org.cangnova.cangjie.cfir.scopes.impl.CfirCompositeTypeScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirExtendMemberScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassSubstitutionScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
-import org.cangnova.cangjie.cfir.scopes.impl.CfirFunctionInheritanceScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirPropertyInheritanceScope
 import org.cangnova.cangjie.cfir.scopes.createCallableTypeParameterSubstitutorForOverride
 import org.cangnova.cangjie.cfir.scopes.overrideSignatureKey
@@ -106,7 +105,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         }
         checkInheritedMemberKindConsistency(declaration.memberInheritanceSubject())
         checkSuperMembersKindConsistency(declaration.memberInheritanceSubject())
-        checkInheritedMemberTypeConsistency(declaration)
+        checkInheritedMemberTypeConsistency(declaration.memberInheritanceSubject())
     }
 
     /**
@@ -123,6 +122,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         )
         checkSuperMembersKindConsistency(declaration.memberInheritanceSubject())
         checkExtendTargetMemberCompatibility(declaration)
+        checkInheritedMemberTypeConsistency(declaration.memberInheritanceSubject())
     }
 
     /**
@@ -264,8 +264,10 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                     )
                 }
 
+                val ownImplementations = ownMemberInfosByName[superInfo.name].orEmpty()
+                    .filter { it.canImplement(superInfo) }
                 val implementationCandidates = buildList {
-                    context.session.accessibilityChecker.processAccessibleCallablesByName(
+                    if (ownImplementations.isEmpty()) context.session.accessibilityChecker.processAccessibleCallablesByName(
                         scope = targetScope,
                         name = superInfo.name,
                         context = memberAccessContext,
@@ -277,27 +279,30 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                                     diagnosticSource = extend.extendedTypeRef.source,
                                     declarationSource = null,
                                     lookupProvenance = candidate.provenance,
+                                    origin = ExtendImplementationOrigin.TARGET_MEMBER,
                                 )
                             )
                         }
                     }
-                    for (info in ownMemberInfosByName[superInfo.name].orEmpty()) {
+                    for (info in ownImplementations) {
                         add(
                             ExtendImplementationCandidate(
                                 info = info,
                                 diagnosticSource = info.nameSource ?: info.source ?: extend.source,
                                 declarationSource = info.source,
                                 lookupProvenance = CfirCallableLookupProvenance.directExtendMember(extend),
+                                origin = ExtendImplementationOrigin.OWN_MEMBER,
                             )
                         )
                     }
-                    for (info in inheritedDefaultImplementationsByName[superInfo.name].orEmpty()) {
+                    if (ownImplementations.isEmpty()) for (info in inheritedDefaultImplementationsByName[superInfo.name].orEmpty()) {
                         add(
                             ExtendImplementationCandidate(
                                 info = info,
                                 diagnosticSource = info.nameSource ?: info.source ?: superTypeRef.source,
                                 declarationSource = null,
                                 lookupProvenance = CfirCallableLookupProvenance.None,
+                                origin = ExtendImplementationOrigin.INTERFACE_DEFAULT,
                             )
                         )
                     }
@@ -319,14 +324,18 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                         nonExportExtendDependencyNames += superInfo.name
                     }
 
-                    val propertyTypeMismatch = implementationInfo.propertyTypeMismatch(superInfo)
+                    // 尚未归并的接口默认属性是实现要求的输入，类型冲突归属于继承声明；
+                    // 只有实际实现成员才承担 PROPERTY_OVERRIDE_IMPLEMENT_TYPE_DIFF。
+                    val propertyTypeMismatch = if (candidate.origin == ExtendImplementationOrigin.INTERFACE_DEFAULT) {
+                        null
+                    } else {
+                        implementationInfo.propertyTypeMismatch(superInfo)
+                    }
                     if (propertyTypeMismatch != null) {
                         val key = implementationInfo.overrideDiagnosticKey(superInfo)
                         if (reportedPropertyTypeConflicts.add(key)) {
                             reporter.reportOn(
-                                source = candidate.declarationSource
-                                    ?.firstCharacterDiagnosticSource()
-                                    ?: candidate.diagnosticSource,
+                                source = implementationInfo.nameSource ?: candidate.diagnosticSource,
                                 factory = CfirErrors.PROPERTY_OVERRIDE_IMPLEMENT_TYPE_DIFF,
                                 a = propertyTypeMismatch.implementationType,
                                 b = propertyTypeMismatch.baseType,
@@ -783,117 +792,51 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
     }
 
     /**
-     * 多个父类型中同名函数成员的返回类型不一致（且非子类型关系）。
+     * 对声明直接引入的接口属性检查类型一致性。
      *
-     * 对齐 C++ sema_inherit_member_type_inconsistent
+     * 官方 GetAndCheckInheritedInterfaces 在接口成员归并时记录类型冲突；目标类型已有
+     * 成员属于后续实现检查，extend 注入的接口也不能反向成为目标类本体的继承义务。
+     * 使用声明作用域及其未归并输入保留泛型替换和传递继承，诊断归属于引入这些接口的声明。
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
-    private fun checkInheritedMemberTypeConsistency(classDecl: CfirClassLikeDeclaration) {
-        val ownerClassId = (classDecl.symbol as? CfirClassLikeSymbol<*>)?.classId
-        val classScope = context.createUseSiteMemberScope(classDecl)
-        val functionInheritanceScope = classScope as? CfirFunctionInheritanceScope
-        val propertyInheritanceScope = classScope as? CfirPropertyInheritanceScope
-        for (name in classScope.getCallableNames()) {
-            val ownFunctionSignatures = mutableSetOf<String>()
-            classScope.processFunctionsByName(name) { symbol ->
-                if (symbol.ownerClassId(context) == ownerClassId) {
-                    ownFunctionSignatures += symbol.overrideSignatureKey()
+    private fun checkInheritedMemberTypeConsistency(subject: MemberInheritanceSubject) {
+        val propertiesByName = linkedMapOf<Name, MutableSet<CfirPropertySymbol>>()
+        val kindsByName = mutableMapOf<Name, MutableSet<String>>()
+        for (inheritedSource in subject.inheritedSources) {
+            if (inheritedSource.isExtendTarget) continue
+            val superTypeRef = inheritedSource.typeRef
+            if (superTypeRef.coneTypeOrNull?.containsErrorType() == true) continue
+            if (superTypeRef.resolvedClassLikeDeclaration() !is CfirInterface) continue
+            val scope = superTypeRef.resolvedUseSiteMemberScope() ?: continue
+            for (name in scope.getCallableNames()) {
+                scope.processCallablesByName(name) { symbol ->
+                    val info = symbol.inheritedMemberInfoOrNull(context) ?: return@processCallablesByName
+                    kindsByName.getOrPut(name) { mutableSetOf() }.add(info.kind)
                 }
+                val properties = propertiesByName.getOrPut(name) { linkedSetOf() }
+                scope.processPropertiesByName(name, properties::add)
+                (scope as? CfirPropertyInheritanceScope)?.processUnmergedInheritedPropertiesByName(name, properties::add)
             }
-            val inheritedFunctions = mutableListOf<CfirFunctionSymbol<*>>()
-            if (functionInheritanceScope != null) {
-                functionInheritanceScope.processUnmergedInheritedFunctionsByNameWithProvenance(name) { provenance ->
-                    if (provenance.member.ownerClassId(context) != ownerClassId) {
-                        inheritedFunctions += provenance.member
-                    }
+        }
+
+        for ((name, properties) in propertiesByName) {
+            if (kindsByName[name].orEmpty().size > 1) continue
+            val propertyTypes = properties.mapNotNull { it.resolvedPropertyTypeOrNull(context) }
+                .filterNot { it is ConeErrorType }
+            val firstType = propertyTypes.firstOrNull() ?: continue
+            if (propertyTypes.drop(1).any {
+                    !AbstractTypeChecker.equalTypes(context.session.typeContext, firstType, it)
                 }
-            } else {
-                classScope.processFunctionsByName(name) { symbol ->
-                    if (symbol.ownerClassId(context) != ownerClassId) {
-                        inheritedFunctions += symbol
-                    }
-                }
-            }
-            if (inheritedFunctions.hasStaticAndNonStaticMembers()) {
-                continue
-            }
-            val bySignature = inheritedFunctions
-                .filter { it.isBound }
-                .groupBy { it.overrideSignatureKey() }
-            for ((_, symbols) in bySignature) {
-                if (symbols.firstOrNull()?.overrideSignatureKey() in ownFunctionSignatures) continue
-                val returnTypes = symbols.mapNotNull { it.resolvedReturnTypeOrNull(context) }
-                    .filterNot { it is ConeErrorType }
-                if (returnTypes.size < 2 || !returnTypes.hasInconsistentInheritedTypes(context)) continue
+            ) {
                 reporter.reportOn(
-                    source = classDecl.classLikeNameDiagnosticSource() ?: classDecl.source,
+                    source = subject.nameSource ?: subject.source,
                     factory = CfirErrors.INHERIT_MEMBER_TYPE_INCONSISTENT,
-                    a = "return types",
-                    b = "function",
+                    a = "type",
+                    b = "property",
                     c = name,
                 )
-                return
-            }
-
-            val ownPropertyNames = mutableSetOf<Name>()
-            classScope.processPropertiesByName(name) { symbol ->
-                if (symbol.ownerClassId(context) == ownerClassId) {
-                    ownPropertyNames += symbol.name
-                }
-            }
-            val inheritedProperties = mutableListOf<CfirPropertySymbol>()
-            if (propertyInheritanceScope != null) {
-                propertyInheritanceScope.processUnmergedInheritedPropertiesByName(name) { symbol ->
-                    if (symbol.ownerClassId(context) != ownerClassId) {
-                        inheritedProperties += symbol
-                    }
-                }
-            } else {
-                classScope.processPropertiesByName(name) { symbol ->
-                    if (symbol.ownerClassId(context) != ownerClassId) {
-                        inheritedProperties += symbol
-                    }
-                }
-            }
-            if (name in ownPropertyNames) continue
-            val propertyTypes = inheritedProperties
-                .mapNotNull { it.resolvedPropertyTypeOrNull(context) }
-                .filterNot { it is ConeErrorType }
-            if (propertyTypes.size >= 2) {
-                val firstType = propertyTypes.first()
-                if (propertyTypes.drop(1).any {
-                        !AbstractTypeChecker.equalTypes(context.session.typeContext, firstType, it)
-                    }
-                ) {
-                    reporter.reportOn(
-                        source = classDecl.classLikeNameDiagnosticSource() ?: classDecl.source,
-                        factory = CfirErrors.INHERIT_MEMBER_TYPE_INCONSISTENT,
-                        a = "type",
-                        b = "property",
-                        c = name,
-                    )
-                    return
-                }
             }
         }
-    }
-
-    /**
-     * 官方继承检查在同名成员已经发生 static/non-static 冲突后，不再继续报告类型不一致。
-     */
-    private fun List<CfirFunctionSymbol<*>>.hasStaticAndNonStaticMembers(): Boolean {
-        var hasStatic = false
-        var hasNonStatic = false
-        for (symbol in this) {
-            if (!symbol.isBound) continue
-            if (symbol.cfir.status.isStatic) {
-                hasStatic = true
-            } else {
-                hasNonStatic = true
-            }
-            if (hasStatic && hasNonStatic) return true
-        }
-        return false
     }
 
     /**
@@ -921,24 +864,6 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
     ): ConeCangJieType? {
         if (!isBound) return null
         return context.returnTypeCalculator.tryCalculateReturnType(cfir).coneType
-    }
-
-    /**
-     * 判断一组继承函数返回类型是否存在既不相等也不存在子类型关系的冲突。
-     */
-    private fun List<ConeCangJieType>.hasInconsistentInheritedTypes(context: CheckerContext): Boolean {
-        val typeCheckerState = context.session.typeContext
-        for (i in indices) {
-            for (j in i + 1 until size) {
-                val first = this[i]
-                val second = this[j]
-                if (AbstractTypeChecker.equalTypes(typeCheckerState, first, second)) continue
-                val related = AbstractTypeChecker.isSubtypeOf(typeCheckerState, first, second) ||
-                        AbstractTypeChecker.isSubtypeOf(typeCheckerState, second, first)
-                if (!related) return true
-            }
-        }
-        return false
     }
 
     /**
@@ -2396,7 +2321,16 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         val declarationSource: CjSourceElement?,
         /** 候选在 effective member graph 中的真实 extend/interface 来源。 */
         val lookupProvenance: CfirCallableLookupProvenance,
+        /** 区分实际实现与当前接口列表尚未归并的默认输入。 */
+        val origin: ExtendImplementationOrigin,
     )
+
+    /** 接口实现候选进入当前 extend 检查的语义来源。 */
+    private enum class ExtendImplementationOrigin {
+        TARGET_MEMBER,
+        OWN_MEMBER,
+        INTERFACE_DEFAULT,
+    }
 
     /**
      * 一个默认接口成员在某个 extend 声明中的出现记录。
@@ -2520,6 +2454,8 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         val inheritedSources: List<InheritedMemberSource>,
         /** 主体声明 source，用作兜底诊断位置。 */
         val source: CjSourceElement?,
+        /** 实际引入继承关系的声明名称或 extend 关键字。 */
+        val nameSource: AbstractCjSourceElement?,
         /** class-like 主体；extend 主体为 null。 */
         val classLikeDeclaration: CfirClassLikeDeclaration?,
     ) {
@@ -2555,6 +2491,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                 InheritedMemberSource(it, includeDirectExtends = true, isExtendTarget = false)
             },
             source = source,
+            nameSource = classLikeNameDiagnosticSource(),
             classLikeDeclaration = this,
         )
 
@@ -2574,6 +2511,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                 })
             },
             source = source,
+            nameSource = extendKeywordDiagnosticSource(),
             classLikeDeclaration = null,
         )
 

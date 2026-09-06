@@ -214,6 +214,17 @@ internal fun AbstractCjSourceElement.firstCharacterDiagnosticSource(): AbstractC
         endOffset = (startOffset + 1).coerceAtMost(endOffset),
     )
 
+/** extend 没有独立声明名；声明级诊断覆盖完整的 extend 关键字。 */
+internal fun CfirExtend.extendKeywordDiagnosticSource(): AbstractCjSourceElement? {
+    val declarationSource = source ?: return null
+    val keyword = declarationSource.collectLeafTokens().firstOrNull { it.tokenType == CjTokens.EXTEND_KEYWORD }
+        ?: return declarationSource
+    return CjOffsetsOnlySourceElement(
+        startOffset = declarationSource.treeStructure.getStartOffset(keyword),
+        endOffset = declarationSource.treeStructure.getEndOffset(keyword),
+    )
+}
+
 /**
  * 取得命名函数名称的诊断 source。
  *
