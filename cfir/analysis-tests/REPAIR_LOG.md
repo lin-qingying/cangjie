@@ -5134,3 +5134,19 @@ esolveDelegatingConstructorCallAndSelectCandidate);
   - 完整键比较 FIXED=6、REGRESSED=0、NEW_KEYS=0、REMOVED_KEYS=0，其它状态变化为 0，六个修复键正好是三份 fixture 的两条入口。证据保存在 `build/repair-20260906/{04-after,05-family,05-after}/` 与 `04-after--05-after.json`。
   - 中间一次全量在 7520 项时遇到 JVM native-memory OOM，未作为验证证据；最终重跑完整结束，使用新鲜 XML 对比。
 - remaining failures: 全量 626；Extend 8、ExtendImport 10、ExtendsImplementsInterfaceDuplicated 6。文档校验既有的模块目录缺项未改变。
+
+## 2026-09-07：不可变目标扩展 mut 接口的诊断定位到完整关键字
+
+- problem type: Diagnostic Range / Extend —— EXTEND_INTERFACE_NOT_EXTENDABLE 的不可变目标分支错误覆盖整个声明体。
+- root cause: `CfirExtendImmutableMutInterfaceChecker` 直接把 declaration.source 的全部 offsets 用作诊断位置，正文再长也全部被标记；原 basic_prop 期望只到声明头，与实际整块范围不同。
+- range policy evidence: 本技能 Diagnostic Range Policy 要求相关 token 的完整范围。extend 没有独立声明名称，统一使用已建立的 `extendKeywordDiagnosticSource` 定位完整 extend 关键字；诊断触发条件未改，不复制 cjc 的首字符范围。
+- official semantic evidence: 此前对 `Extend/interface_default_implement/basic_prop.cj` 的 cjc 1.0.5 取证确认 enum 与 Int32 两个扩展报告 EXTEND_INTERFACE_NOT_EXTENDABLE，属性读写本身无其它错误；本项只改变范围。
+- Kotlin counterpart files consulted: `external/kotlin/compiler/frontend.common-psi/src/org/jetbrains/kotlin/diagnostics/PositioningStrategies.kt`、`LightTreePositioningStrategies.kt` 的声明/reference 定位策略；复用本项目共享的声明 token 定位 owner。
+- CFIR owner files changed: `cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirExtendCheckers.kt`，不可变目标分支改用共享关键字 source；受保护 Any/CType 接口的独立类型引用定位保持原逻辑。
+- repair principle: 相同声明错误统一从共享 token 定位器取得范围，避免由声明正文长度决定划线。
+- fixtures covered and corrected: `Extend/interface_default_implement/basic_prop.cj`、`Extend/extend_mut_interface01.cj`、`Extend/extend_mut_interface03.cj`、`diagnostics/coverage/extensions/extendImmutableMutInterface.cj`，共 17 处同类范围同步为完整关键字；仓颉语法和诊断触发期望未改变。Any/CType 保护与完整 Extend 切片同时验证。
+- verification commands and outcome:
+  - `gradlew-queue.bat :cfir:analysis-tests:test --tests '*Extend*' --tests '*AnyInterface*' --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g' '-Pkotlin.compiler.execution.strategy=in-process'`：1210 项，1147 通过、35 失败、28 跳过。BasicProp 两入口通过，35 条剩余失败消息与基线完全相同。
+  - 同一全量命令 `gradlew-queue.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g'`：前后均 8428 项、307 跳过，失败 626 → 624；新鲜 XML 均 8429 records、308 skipped、0 errors，通过 7495 → 7497。
+  - 完整键级差异 FIXED=2、REGRESSED=0、NEW_KEYS=0、REMOVED_KEYS=0，其它状态变化为 0。修复键恰好为两个 Extend.InterfaceDefaultImplement.testBasicProp。证据：`build/repair-20260906/{05-after,06-family,06-after}/`、`05-after--06-after.json`。
+- remaining failures: 全量 624；Extend 6、ExtendImport 10、ExtendsImplementsInterfaceDuplicated 6。文档目录的既有校验缺项不变。

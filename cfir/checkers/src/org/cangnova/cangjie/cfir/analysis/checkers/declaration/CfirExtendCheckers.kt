@@ -53,7 +53,6 @@ import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.OperatorNameConventions
-import org.cangnova.cangjie.source.CjOffsetsOnlySourceElement
 import org.cangnova.cangjie.type.AbstractTypeChecker
 
 /**
@@ -318,9 +317,7 @@ object CfirExtendImmutableMutInterfaceChecker : CfirExtendChecker() {
     override fun check(declaration: CfirExtend) {
         for (superTypeRef in declaration.superTypeRefs) {
             val leak = CfirExtendSemantics.immutableMutInterfaceLeak(context, declaration, superTypeRef) ?: continue
-            val diagnosticSource = declaration.source?.let { source ->
-                CjOffsetsOnlySourceElement(source.startOffset, source.endOffset)
-            } ?: superTypeRef.source
+            val diagnosticSource = declaration.extendKeywordDiagnosticSource() ?: superTypeRef.source
             reporter.reportOn(
                 source = diagnosticSource,
                 factory = CfirErrors.EXTEND_INTERFACE_NOT_EXTENDABLE,

@@ -35,14 +35,14 @@ enum E {
     a
 }
 
-<!EXTEND_INTERFACE_NOT_EXTENDABLE!>extend E <: I {<!>
+<!EXTEND_INTERFACE_NOT_EXTENDABLE!>extend<!> E <: I {
     func f() {
         p = 0
         p
     }
 }
 
-<!EXTEND_INTERFACE_NOT_EXTENDABLE!>extend Int32 <: I {<!>
+<!EXTEND_INTERFACE_NOT_EXTENDABLE!>extend<!> Int32 <: I {
     func f() {
         p = 0
         p
