@@ -178,11 +178,10 @@ abstract class AbstractDiagnosticCollectorVisitor(
         }
     }
 
-    /** 访问表达式节点，并把表达式压入 statement 上下文栈。 */
+    /** 表达式同时进入语句栈与完整元素路径，保留比较、逻辑等非调用节点的父子关系。 */
     override fun visitExpression(expression: CfirExpression, data: Nothing?) {
         withStatement(expression) {
-            checkElement(expression)
-            expression.acceptChildren(this, null)
+            visitElement(expression, data)
         }
     }
 

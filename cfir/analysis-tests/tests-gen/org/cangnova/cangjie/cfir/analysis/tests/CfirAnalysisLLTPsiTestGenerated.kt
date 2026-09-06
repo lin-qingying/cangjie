@@ -2351,6 +2351,12 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiLlTDiagnosticsTest() {
                 runTest("cfir/analysis-tests/testData/llt/Extend/generic/array_static.cj")
             }
 
+            @TestMetadata("binary_call_diagnostic_pivots.cj")
+            @Test
+            fun testBinaryCallDiagnosticPivots() {
+                runTest("cfir/analysis-tests/testData/llt/Extend/generic/binary_call_diagnostic_pivots.cj")
+            }
+
             @TestMetadata("extend_func_same_as_class_private.cj")
             @Test
             fun testExtendFuncSameAsClassPrivate() {

@@ -27,6 +27,8 @@ import org.cangnova.cangjie.cfir.diagnostics.PendingDiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirAssignment
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
+import org.cangnova.cangjie.cfir.expressions.CfirBinaryOp
+import org.cangnova.cangjie.cfir.expressions.CfirComparisonExpression
 import org.cangnova.cangjie.cfir.expressions.CfirErrorExpression
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
@@ -42,6 +44,7 @@ import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.CfirReference
 import org.cangnova.cangjie.cfir.references.CfirSuperReference
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.semantics.InvalidCallableReturnTypeInOverloadSet
 import org.cangnova.cangjie.source.AbstractCjSourceElement
 import org.cangnova.cangjie.source.CjFakeSourceElementKind
 import org.cangnova.cangjie.source.CjSourceElementOffsetStrategy
@@ -57,6 +60,7 @@ import org.cangnova.cangjie.cfir.diagnostic.ConeCannotInferValueParameterType
 import org.cangnova.cangjie.cfir.diagnostic.ConeConstraintSystemHasContradiction
 import org.cangnova.cangjie.cfir.diagnostic.ConeGenericTypeArgumentNotMatchConstraintError
 import org.cangnova.cangjie.cfir.diagnostic.ConeNoMatchingInvokeOperatorError
+import org.cangnova.cangjie.cfir.diagnostic.ConeNoMatchingFunctionCallError
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
@@ -427,10 +431,9 @@ class ErrorNodeDiagnosticCollectorComponent(
             callOrAssignment.isInvalidCompoundAssignmentCall(context)
         ) return
 
-        // 官方对整棵无效二元表达式树只报一个 INVALID_BINARY_OPERATOR：从 IS_OUTERMOST 根做
-        // pivot 下降，落在最左侧深度优先第一个两侧操作数类型都正确的失败节点上
-        // （external/cangjie_compiler/src/Sema/TypeCheckExpr/BinaryExpr.cpp:781-849、977-980）。
-        if (isSuppressedNonPivotInvalidBinaryOperatorFailure(diagnostic, callOrAssignment, context)) return
+        // 官方从 IS_OUTERMOST 根按左优先 pivot 选择运算符及调用诊断；名称叶子仍独立解析。
+        // external/cangjie_compiler/src/Sema/TypeCheckExpr/BinaryExpr.cpp:781-849、894-925。
+        if (isSuppressedNonPivotBinaryDiagnostic(diagnostic, callOrAssignment, context)) return
 
 //        with(context) {
 //            source = source?.delegatedPropertySourceOrThis()
@@ -466,82 +469,109 @@ class ErrorNodeDiagnosticCollectorComponent(
     }
 
     /**
-     * 无效二元表达式树内，官方只在其 pivot（最左侧深度优先第一个两侧操作数类型都正确的
-     * 失败节点）报告一次 `INVALID_BINARY_OPERATOR`，其余同树失败节点都是同一失效的级联。
+     * 按官方 DiagnoseForBinaryExpr 选择二元错误树中实际检查的运算或调用。
      *
-     * 对齐官方 `TypeCheckerImpl::DiagnoseForBinaryExpr` 的下降算法
-     * （external/cangjie_compiler/src/Sema/TypeCheckExpr/BinaryExpr.cpp:781-849）：
-     * 先左后右地进入失效的二元子节点；左侧失效但不是二元失败节点时整棵树静默结束、
-     * 右侧子树独立诊断；两侧都正确即 pivot。非 pivot 节点在此抑制。
+     * arithmetic、comparison 和 logical 在 CFIR 中使用不同节点，必须共享同一棵诊断树。
+     * 名称解析诊断不走此过滤：官方 SynBinaryLeafs 仍会分析全部名称，以及成员访问的接收者。
      */
-    private fun isSuppressedNonPivotInvalidBinaryOperatorFailure(
+    private fun isSuppressedNonPivotBinaryDiagnostic(
         diagnostic: ConeDiagnostic,
-        callOrAssignment: CfirElement?,
+        owner: CfirElement?,
         context: CheckerContext,
     ): Boolean {
-        val call = callOrAssignment as? CfirFunctionCall ?: return false
-        if (call.origin != CfirFunctionCallOrigin.Operator) return false
-        // 一元运算调用没有显式接收者，官方由独立的 sema_invalid_unary 路径诊断，
-        // 不属于 DiagnoseForBinaryExpr 的二元树下降范围。
-        if (call.explicitReceiver == null || call.argumentList.arguments.size != 1) return false
-        if (diagnostic !is ConeUnresolvedNameError || diagnostic.operator == null) return false
+        val expression = owner as? CfirExpression ?: return false
+        val isBinaryOperatorFailure = diagnostic is ConeUnresolvedNameError &&
+                diagnostic.operator != null && expression.binaryDiagnosticOperandsOrNull() != null
+        if (!isBinaryOperatorFailure && !diagnostic.isNoMatchingCallDiagnostic()) return false
 
-        // 自当前失败调用向外收集极大「Operator-origin 且结果为错误类型」的直接操作数祖先链，
-        // 链的最外端即本棵无效二元树的根。
-        val ancestors = buildList {
-            addAll(context.callsOrAssignments)
-            addAll(context.containingElements)
-        }.asReversed()
-        var root = call
-        for (ancestor in ancestors) {
-            if (ancestor === root || ancestor === call) continue
-            val parent = ancestor as? CfirFunctionCall ?: continue
-            if (parent.origin != CfirFunctionCallOrigin.Operator) continue
-            if (parent.coneTypeOrNull?.containsErrorType() != true) continue
-            val isDirectOperandParent = parent.explicitReceiver === root ||
-                parent.argumentList.arguments.any { it === root }
-            if (isDirectOperandParent) root = parent
+        val elements = (context.containingElements + expression).distinct()
+        val functionBoundary = elements.indexOfLast { it is CfirFunction && it !is CfirAnonymousFunction }
+        val bodyElements = elements.drop(functionBoundary + 1)
+        var receiverBoundary = 0
+        for (element in bodyElements) {
+            val access = element as? CfirQualifiedAccessExpression ?: continue
+            val name = (access.calleeReference as? CfirNamedReference)?.name ?: continue
+            if (access is CfirFunctionCall && access.origin == CfirFunctionCallOrigin.Operator) continue
+            if (name == OperatorNameConventions.INVOKE ||
+                name == OperatorNameConventions.GET || name == OperatorNameConventions.SET
+            ) continue
+            val receiver = access.explicitReceiver ?: continue
+            val index = bodyElements.indexOfFirst { it === receiver }
+            if (index >= 0) receiverBoundary = maxOf(receiverBoundary, index)
         }
-        return !reachesInvalidBinaryPivot(root, call)
+        // 名称叶子的接收者必须重新综合；只限制该接收者内部的错误树，不受外层 pivot 屏蔽。
+        val diagnosticPath = bodyElements.drop(receiverBoundary)
+        return diagnosticPath.filterIsInstance<CfirExpression>().any { ancestor ->
+            ancestor.isErrorBinaryOperand() && ancestor.binaryDiagnosticOperandsOrNull() != null &&
+                    !reachesBinaryDiagnostic(ancestor, expression, diagnosticPath)
+        }
     }
 
-    /** 模拟官方 pivot 下降：返回下降最终报告的 pivot 是否就是 [target]。 */
-    private fun reachesInvalidBinaryPivot(node: CfirFunctionCall, target: CfirFunctionCall): Boolean {
-        var current = node
-        var steps = 0
-        while (steps++ < MAX_INVALID_BINARY_PIVOT_STEPS) {
-            val left = current.explicitReceiver
-            val right = current.argumentList.arguments.singleOrNull()
-            // 二元调用的接收者必然存在；null 视为结构异常，不当作失效左侧。
-            val leftIsError = left != null && left.isErrorBinaryOperand()
-            val rightIsError = right.isErrorBinaryOperand()
-            if (!leftIsError && !rightIsError) return current === target
-            if (leftIsError) {
-                val leftChild = left.asFailedOperatorChild()
-                if (leftChild != null) {
-                    current = leftChild
+    /** 候选集合失效与名称查找排空都属于调用级 no-match，必须经过相同的二元树选择。 */
+    private fun ConeDiagnostic.isNoMatchingCallDiagnostic(): Boolean = when (this) {
+        is ConeNoMatchingFunctionCallError -> true
+        is ConeInapplicableCandidateError -> InvalidCallableReturnTypeInOverloadSet in candidate.diagnostics
+        is ConeAmbiguityError -> isCallLike && candidatesWithErrors.isNotEmpty() &&
+                candidatesWithErrors.values.all { it?.isNoMatchingCallDiagnostic() == true }
+        else -> false
+    }
+
+    /**
+     * 模拟官方左优先下降。左侧失效的二元节点会接管诊断；左侧失效但为普通表达式时，
+     * 仍综合左右两个操作数。每次循环都下沉到严格子表达式，因此无需人为深度上限。
+     */
+    private fun reachesBinaryDiagnostic(
+        root: CfirExpression,
+        target: CfirExpression,
+        diagnosticPath: List<CfirElement>,
+    ): Boolean {
+        fun containsTarget(operand: CfirExpression): Boolean =
+            operand === target || diagnosticPath.any { it === operand }
+
+        var current = root
+        while (true) {
+            val (left, right) = current.binaryDiagnosticOperandsOrNull() ?: return containsTarget(current)
+            if (left.isErrorBinaryOperand()) {
+                if (left.binaryDiagnosticOperandsOrNull() != null) {
+                    current = left
                     continue
                 }
-                // 左侧失效且不是二元失败节点：官方静默结束本棵树，右侧子树独立诊断。
-                val rightChild = right.asFailedOperatorChild() ?: return false
-                return reachesInvalidBinaryPivot(rightChild, target)
+                if (containsTarget(left)) return true
+                if (right.isErrorBinaryOperand() && right.binaryDiagnosticOperandsOrNull() != null) {
+                    current = right
+                    continue
+                }
+                return containsTarget(right)
             }
-            val rightChild = right.asFailedOperatorChild() ?: return false
-            current = rightChild
+            if (right.isErrorBinaryOperand()) {
+                if (right.binaryDiagnosticOperandsOrNull() != null) {
+                    current = right
+                    continue
+                }
+                return containsTarget(right)
+            }
+            return current === target || containsTarget(left) || containsTarget(right)
         }
-        return false
     }
 
-    private fun CfirExpression?.asFailedOperatorChild(): CfirFunctionCall? {
-        val child = this as? CfirFunctionCall ?: return null
-        if (child.origin != CfirFunctionCallOrigin.Operator) return null
-        if (child.coneTypeOrNull?.containsErrorType() != true) return null
-        return child
+    /** 对齐官方 BinaryExpr；下标和 invoke 是独立操作数，不属于二元树节点。 */
+    private fun CfirExpression.binaryDiagnosticOperandsOrNull(): Pair<CfirExpression, CfirExpression>? = when (this) {
+        is CfirBinaryOp -> left to right
+        is CfirComparisonExpression -> left to right
+        is CfirFunctionCall -> {
+            val name = (calleeReference as? CfirNamedReference)?.name
+            val left = explicitReceiver
+            val right = argumentList.arguments.singleOrNull()
+            if (origin == CfirFunctionCallOrigin.Operator && left != null && right != null &&
+                name != OperatorNameConventions.INVOKE && name != OperatorNameConventions.GET &&
+                name != OperatorNameConventions.SET
+            ) left to right else null
+        }
+        else -> null
     }
 
-    /** null 操作数（无类型）与携带错误类型的操作数同样视为"已失效"。 */
-    private fun CfirExpression?.isErrorBinaryOperand(): Boolean =
-        this == null || coneTypeOrNull?.containsErrorType() == true
+    /** 错误类型会使当前二元子树失效，但名称本身的诊断仍由各自 reference owner 报告。 */
+    private fun CfirExpression.isErrorBinaryOperand(): Boolean = coneTypeOrNull?.containsErrorType() == true
 
     /**
      * qualified access 的歧义诊断应标完整访问表达式，例如 `Int64.test`，而不是只标 selector。
@@ -586,6 +616,7 @@ class ErrorNodeDiagnosticCollectorComponent(
         val sourceElement = source as? CjSourceElement ?: return
         // 只处理 ConeErrorType，普通类型直接跳过。
         val diagnostic = (coneType as? ConeErrorType)?.diagnostic ?: return
+        if (isSuppressedNonPivotBinaryDiagnostic(diagnostic, owner, context)) return
 
         // 找到宿主调用/赋值节点，其源码位置用于去重 key 的计算。
         val callOrAssignment = findOwningCallOrAssignment(owner, context)
@@ -1100,10 +1131,6 @@ private val STATIC_GENERIC_DEPENDENCY_CASCADE_DIAGNOSTICS = setOf(
     "CFIR_GENERIC_NO_MEMBER_MATCH_IN_UPPER_BOUNDS",
     "CFIR_GENERIC_NO_METHOD_MATCH_IN_UPPER_BOUNDS",
 )
-
-/** pivot 下降的防御性步数上限；官方树深度受源码表达式长度约束。 */
-private const val MAX_INVALID_BINARY_PIVOT_STEPS = 4096
-
 
 /**
  * 官方 lambda 参数推断失败时只报告首个省略参数，body 内由该 placeholder

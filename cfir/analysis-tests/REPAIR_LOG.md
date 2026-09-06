@@ -5167,3 +5167,21 @@ esolveDelegatingConstructorCallAndSelectCandidate);
   - 全量完整键差异 FIXED=2、REGRESSED=0、NEW_KEYS=2（新矩阵双入口均 PASS）、REMOVED_KEYS=0，其它状态变化为 0。修复键为 BugPartImport.testMain 的 PSI/LightTree 两项。完整证据：`build/repair-20260906/{06-after,07-family-final,07-after}/`、`06-after--07-after.json`。
 - change isolation: 原有函数返回类型去重和弃用诊断等 WIP 保持独立未提交。
 - remaining failures: 全量 622；Extend 4（upper_bound_float_binary、extend_property9 各双入口）、ExtendImport 10、ExtendsImplementsInterfaceDuplicated 6。
+
+## 2026-09-07：二元错误树统一选择调用与运算符诊断
+
+- problem type: Extend / Generics / Diagnostics —— 无效二元表达式内的调用 no-match 必须服从官方左优先诊断树，不能在未被选中的右侧子树重复报告。
+- root cause: 原过滤只识别 Operator-origin 的函数调用与 INVALID_BINARY_OPERATOR，遗漏 comparison/logical 节点及错误返回类型重载集合产生的调用诊断；普通表达式遍历只进入 statement 栈，没有保留完整 containingElements 路径。
+- official Cangjie evidence: cjc 1.0.5 原样编译 upper_bound_float_binary，右侧比较中的 g 调用不重复报告。新增矩阵验证两个直接失败操作数均报告、左失败比较屏蔽右比较、右侧独立失败仍报告、普通外层调用参数被屏蔽、未解析名称仍报告、命名成员访问的接收者仍检查、嵌套算术树只诊断左侧失败子树。源码与原始 JSON 在 `build/repair-20260906/evidence/binary_call_diagnostic_pivots{,.official}.cj`、`binary_call_diagnostic_pivots.official.cjc.json`。官方 `external/cangjie_compiler/src/Sema/TypeCheckExpr/BinaryExpr.cpp:31-44,781-849,894-925` 的 GetChildBinaryExpr、DiagnoseForBinaryExpr、SynBinaryLeafs 明确区分 pivot 下降与名称叶子解析；这不是逻辑短路求值规则。
+- Kotlin counterpart files consulted: `external/kotlin/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/collectors/AbstractDiagnosticCollectorVisitor.kt` 通过 visitElement/withAnnotationContainer 保留表达式上下文；同目录 `components/ErrorNodeDiagnosticCollectorComponent.kt` 在错误节点收集阶段按 owner 过滤级联。具体二元诊断选择语义来自仓颉官方实现。
+- CFIR owner files changed: `AbstractDiagnosticCollectorVisitor.kt` 补全表达式元素路径；`ErrorNodeDiagnosticCollectorComponent.kt` 统一算术、比较和逻辑节点的诊断视图，识别名称查找排空及重载返回类型失效两类 no-match，保留命名成员接收者的独立分析边界。下降过程每次进入严格子表达式，不再使用任意深度上限。
+- repair principle: 在所有入口共用的遍历和错误收集 owner 上保留真实表达式树，再按官方规则选择诊断，不跳过右侧解析、不隐藏 unresolved-name 根错误。
+- fixtures covered: 原 `Extend/generic/upper_bound_float_binary.cj`、新增 `Extend/generic/binary_call_diagnostic_pivots.cj` 的 PSI/LightTree 两入口；完整 Extend、ErrMsgs、Operator、FlowExpr 切片 1636 个键保存在 `build/repair-20260906/08-family-final/results.json`。
+- fixture correction: 原有 fixture 未修改；新矩阵的预期全部有上述 cjc 输出支持。
+- verification commands and outcome:
+  - `gradlew-queue.bat :cfir:analysis-tests:test --tests '*BinaryCallDiagnosticPivots*' --tests '*UpperBoundFloatBinary*' --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g' '-Pkotlin.compiler.execution.strategy=in-process'`：4/4 通过。
+  - `gradlew-queue.bat :cfir:analysis-tests:test --tests '*Extend*' --tests '*ErrMsgs*' --tests '*Operator*' --tests '*FlowExpr*' --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g' '-Pkotlin.compiler.execution.strategy=in-process'`：1636 项，1501 通过、65 失败、70 跳过；65 条既有失败消息完全一致，原目标和新增矩阵均通过。
+  - 前后同一全量命令 `gradlew-queue.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g'`：Gradle 8430 → 8432 项，失败 622 → 620，跳过均 307；新鲜 XML 8431 → 8433 records，通过 7501 → 7505，失败 622 → 620，跳过均 308、errors 均 0。
+  - 完整测试键对比 FIXED=2、REGRESSED=0、NEW_KEYS=2（全部 PASS）、REMOVED_KEYS=0、其它状态变化为 0；剩余 620 条失败消息与基线完全相同。证据：`build/repair-20260906/{07-after,08-focus-final,08-family-final,08-after}/`、`07-after--08-after.json`。
+- change isolation: 既有弃用诊断、extend primitive shadow、函数返回去重等 WIP 均保持独立；此前文档校验发现的 module-catalog 缺少 gradle-queue-cli 与本修改无关。
+- remaining failures: 全量 620；Extend 2（extend_property9 双入口）、ExtendImport 10、ExtendsImplementsInterfaceDuplicated 6。
