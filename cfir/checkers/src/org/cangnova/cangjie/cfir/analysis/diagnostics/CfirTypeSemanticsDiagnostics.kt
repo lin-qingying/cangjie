@@ -11,6 +11,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirWrappedExpression
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.languageVersionSettings
+import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeVArrayType
 import org.cangnova.cangjie.cfir.types.isBoolean
@@ -86,8 +87,9 @@ private tailrec fun CfirExpression.unwrapWrappedExpression(): CfirExpression = w
  * 识别数值/布尔字面量落入官方 `ChkLitConstExprOf*` 的“无法转换”分支。
  *
  * 官方在目标类型不是该字面量的合法子类型、且不可装箱、也不是 `Any`/`CType` 时报告
- * `sema_cannot_convert_literal`（`Sema/TypeCheckExpr/LitConstExpr.cpp`）。这里只覆盖
- * 标量基础类型目标——装箱与 `Any`/`CType` 逃逸路径在这些目标上不成立，因此结论与官方一致。
+ * `sema_cannot_convert_literal`（`Sema/TypeCheckExpr/LitConstExpr.cpp`）。标量基础类型
+ * 和声明类型参数均须执行该分类：类型参数的上界不等于该参数本身，不能通过字面量
+ * 构造任意 T。调用推断中的未固定类型变量仍由约束系统处理，不属于声明类型参数。
  */
 internal fun literalConversionMismatch(
     expectedType: ConeCangJieType,
@@ -96,11 +98,14 @@ internal fun literalConversionMismatch(
 ): CfirSpecificTypeMismatch.CannotConvertLiteral? {
     val literal = expression?.unwrapWrappedExpression() as? CfirLiteralExpression ?: return null
     val target = expectedType.fullyExpandedType(session)
-    if (!target.isIntegerType && !target.isFloatType && !target.isBoolean && !target.isRune) return null
+    if (target !is ConeTypeParameterType &&
+        !target.isIntegerType && !target.isFloatType && !target.isBoolean && !target.isRune
+    ) return null
     val description = when (literal.kind) {
-        CfirLiteralKind.INT -> "integer".takeIf { !target.isIntegerType }
+        CfirLiteralKind.INT, CfirLiteralKind.BYTE -> "integer".takeIf { !target.isIntegerType }
         CfirLiteralKind.FLOAT -> "floating-point".takeIf { !target.isFloatType }
         CfirLiteralKind.BOOLEAN -> "boolean".takeIf { !target.isBoolean }
+        CfirLiteralKind.RUNE -> "character".takeIf { !target.isRune }
         else -> null
     } ?: return null
     return CfirSpecificTypeMismatch.CannotConvertLiteral(

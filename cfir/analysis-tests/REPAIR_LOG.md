@@ -5084,3 +5084,19 @@ esolveDelegatingConstructorCallAndSelectCandidate);
   - 完整键级比较：`FIXED=4`，`REGRESSED=0`，`NEW_KEYS=0`，`REMOVED_KEYS=0`，其它状态变化为 0。四个修复键恰好是 `DefaultImplement.testDefaultImplement19` 与 `Extend.testExtendDuplicateFunction` 的两个入口。原始全量证据与差异：`build/repair-20260906/{01-after,02-after}/`、`01-after--02-after.json`。
 - change isolation: A/B 继续保留接手时其它未提交改动；本提交只包含 shadow 来源/继承关系修复及本条日志，同文件原有的 primitive operator shadow 改动保持未提交。
 - remaining failures: 全量 636；其中 Extend 18、ExtendImport 10、ExtendsImplementsInterfaceDuplicated 6，均按 PSI/LightTree 各半。文档校验的既有失败仍为 `docs/module-catalog.md` 缺少 `:gradle-queue-cli`，本条不改变模块目录。
+
+## 2026-09-06：声明类型参数上的标量字面量转换诊断归一
+
+- problem type: Extend / Generics / Diagnostics —— 泛型属性 getter、函数尾表达式和显式 return 中，标量字面量不能被转换成任意声明类型参数 T，必须报告 CANNOT_CONVERT_LITERAL。
+- root cause: 共享 `literalConversionMismatch` 只接受具体标量目标，提前排除了 `ConeTypeParameterType`；getter 的 `1` 因此落入普通 RETURN_TYPE_MISMATCH。字节字面量也未按官方整数转换分支分类。
+- official Cangjie evidence: cjc 1.0.5 编译原 `Extend/visibility/generic_default_impl_prop.cj`，报告 UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE 和 CANNOT_CONVERT_LITERAL。补充矩阵确认 integer、float、boolean、Rune、byte 对 T 的转换失败，字符串仍使用普通 mismatched-types；普通泛型实参推断及转换到 Any 不报错。原始 JSON：`build/repair-20260906/property-evidence/generic_default_impl_prop.json`、`build/repair-20260906/evidence/generic_literal_targets.official.cjc.json`。官方 `external/cangjie_compiler/src/Sema/TypeCheckExpr/LitConstExpr.cpp:26-129` 的各 ChkLitConstExprOfType 分支拒绝不能转换或装箱的声明类型参数；byte 通过 GetNumLitTypeKind 进入整数分支。
+- Kotlin counterpart files consulted: `external/kotlin/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/expression/FirFunctionReturnTypeMismatchChecker.kt`，显式返回和 property accessor 共用返回检查入口；仓颉专有的字面量转换分类继续放在本项目共享诊断语义层，未在 getter 添加特判。
+- CFIR owner files changed: `cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/diagnostics/CfirTypeSemanticsDiagnostics.kt`：把声明类型参数纳入目标类型分类，统一 integer/byte、float、boolean、Rune 的转换诊断。未固定推断变量保持由约束系统处理。
+- repair principle: 在 return、函数体尾表达式和其它诊断入口共用的分类器修正目标类型边界，不改变某个 getter 或某个无效上界的行为分支。
+- fixtures covered: `Extend/visibility/generic_default_impl_prop.cj` 双入口；新增 `generics/generic_literal_targets.cj` 双入口，覆盖五种标量、显式 return、六种 getter、字符串分类、泛型参数推断及 Any 正例；完整 `*Generics*`、`*Property*` 切片的 900 个测试键见 `build/repair-20260906/03-family/results.json`。
+- fixture correction: 原有 fixture 的仓颉源码和期望均未修改；只新增官方矩阵对应的回归数据并运行生成器。
+- verification commands and outcome:
+  - `gradlew-queue.bat :cfir:analysis-tests:test --tests '*Generics*' --tests '*Property*' --tests '*GenericDefaultImplProp*' --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g' '-Pkotlin.compiler.execution.strategy=in-process'`：900 项，892 通过、4 失败、4 跳过；4 条失败是既有的 extend_property9 / extend_property_conflict_invalid_6 双入口，消息与基线完全一致；原目标和新增测试均通过。
+  - 前后同一全量命令 `gradlew-queue.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g'`：Gradle 8424 → 8426 项，失败 636 → 634，跳过 307 → 307。新鲜 XML 8425 → 8427 records，通过 7481 → 7485，失败 636 → 634，跳过 308 → 308，errors 均为 0。
+  - 完整测试键对比：FIXED=2、REGRESSED=0、NEW_KEYS=2（新增回归均 PASS）、REMOVED_KEYS=0，其它状态变化为 0。修复键恰好为两个 Extend.Visibility.testGenericDefaultImplProp。证据：`build/repair-20260906/{02-after,03-family,03-after}/`、`02-after--03-after.json`。
+- remaining failures: 全量 634；Extend 16、ExtendImport 10、ExtendsImplementsInterfaceDuplicated 6。既有模块目录文档缺少 `:gradle-queue-cli` 的校验失败保持不变。
