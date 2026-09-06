@@ -38,11 +38,13 @@ import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityResult
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessKind
 import org.cangnova.cangjie.cfir.resolve.providers.CfirLookupOrigin
 import org.cangnova.cangjie.cfir.resolve.providers.getContainingExtend
+import org.cangnova.cangjie.cfir.scopes.CfirCallableLookupProvenance
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
 import org.cangnova.cangjie.cfir.scopes.overrideSignatureKey
 import org.cangnova.cangjie.cfir.scopes.processCallablesByNameWithLookupProvenance
 import org.cangnova.cangjie.cfir.session.accessibilityChecker
+import org.cangnova.cangjie.cfir.session.extendRuleQueryService
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.cfir.types.BuiltinPrimitiveOperators
@@ -276,7 +278,7 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
             if (!accessible && !candidate.symbol.isShadowRelevantProtectedClassMember()) {
                 return@processCallablesByNameWithLookupProvenance
             }
-            if (candidate.symbol.canShadowThis(this, signature, context)) {
+            if (candidate.symbol.canShadowThis(this, signature, candidate.provenance, context)) {
                 found = true
             }
         }
@@ -304,6 +306,7 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
     private fun org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol<*>.canShadowThis(
         currentMember: CfirDeclaration,
         currentSignature: String,
+        provenance: CfirCallableLookupProvenance,
         context: CheckerContext,
     ): Boolean {
         if (!isBound) return false
@@ -312,6 +315,7 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
 
         if (original.isSyntheticPrimitiveBuiltinOperatorExcludedFromShadow(context)) return false
         if (original.isInterfaceRequirementMember(context)) return false
+        if (original.isIndependentInterfaceDefault(currentMember, provenance, context)) return false
         if (!original.cfir.hasSameShadowMemberKind(currentMember)) {
             // 官方 CheckSameNameInheritanceInfo 对 inherited-interface 的 cross-kind 成员
             // 只报告 kind inconsistency；只有目标类型自身的不同种类成员才继续进入 shadow 分类。
@@ -386,6 +390,39 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
                 (declaration.getter?.body == null && declaration.setter?.body == null)
             else -> declaration.status.isAbstract
         }
+    }
+
+    /**
+     * 识别由互不继承的 sibling extend 接口共同形成的待实现默认成员。
+     *
+     * 官方 MergeInheritedMemberHelper 使用 IsExtendInheritRelation 区分默认实现冲突
+     * 与既有父实现：前者由当前 extend 的成员实现，后者仍参与 shadow 检查。
+     * 来源必须取自 use-site 成员图；目标类型自身继承的接口和相关 extend 引入的默认
+     * 成员已经是有效实现，不能仅因当前 extend 声明了接口便将其排除。
+     */
+    private fun org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol<*>.isIndependentInterfaceDefault(
+        currentMember: CfirDeclaration,
+        provenance: CfirCallableLookupProvenance,
+        context: CheckerContext,
+    ): Boolean {
+        val owner = context.ownerClassSymbol(this)?.cfir
+        if (owner !is CfirInterface) return false
+        val sourceExtend = provenance.sourceExtend ?: return false
+        if (provenance.requirementInterfaceType == null) return false
+        val currentExtend = when (currentMember) {
+            is CfirNamedFunction -> currentMember.symbol
+            is CfirProperty -> currentMember.symbol
+            else -> return false
+        }.getContainingExtend() ?: return false
+        val implementsInterface = currentExtend.superTypeRefs.any { superTypeRef ->
+            val classId = (superTypeRef as? CfirResolvedTypeRef)
+                ?.coneType
+                ?.classIdOrPrimitiveClassId
+                ?: return@any false
+            context.session.symbolProvider.getClassLikeSymbolByClassId(classId)?.cfir is CfirInterface
+        }
+        return implementsInterface &&
+                !context.session.extendRuleQueryService.areExtendsInInheritRelation(currentExtend, sourceExtend)
     }
 
     /**

@@ -5067,3 +5067,20 @@ esolveDelegatingConstructorCallAndSelectCandidate);
   - 基线为接手时的工作区（HEAD `dc7517163` 加既有未提交改动），原始差异已保存为 `build/repair-20260906/initial-worktree/diff.patch`；此次 A/B 期间其它问题的源码保持不变。数次 JVM native-memory 崩溃不计入测试结果，最终使用已完整收尾的新鲜 XML。
 - remaining failures: 全量仍有 640 项既有失败。扩展相关分桶为 Extend 22、ExtendImport 10、ExtendsImplementsInterfaceDuplicated 6；PSI/LightTree 各占一半。其它主要分组为 Macro 254、PatternMatching 47、Record 35、ErrMsgs 30、InitializationCheck 24、Call 22、Lambda 20、Match 20。
 - documentation validation: `gradlew-queue.bat validateDocumentation --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g'` 已执行，因既有 `docs/module-catalog.md` 缺少 `:gradle-queue-cli` 条目失败；该目录文档和 `settings.gradle.kts` 在本次工作中均未修改，不属于本修复的源码或测试回归。
+
+## 2026-09-06：扩展默认成员的 shadow 判定保留来源与接口继承关系
+
+- problem type: Extend / Shadow —— 目标类自身继承的默认成员、具有父子接口关系的 sibling extend 默认成员仍是既有实现；只有独立接口扩展形成的默认实现冲突才交由当前成员实现。
+- root cause: 接手时的 `isImplementedByCurrentExtend` 只判断当前 extend 是否实现了任意接口，丢弃了 use-site 候选已有的 `sourceExtend` / `requirementInterfaceType`，因此同时豁免了目标类型的既有成员和相关接口扩展的既有默认成员。
+- official Cangjie evidence: cjc 1.0.5 对 `default_implement_19.cj` 报四条 `sema_extend_member_cannot_shadow`，对 `extend_duplicate_function.cj` 报一条；原始 JSON 保存在 `build/repair-20260906/evidence/{default_implement_19,extend_duplicate_function}.official.cjc.json`。官方 `external/cangjie_compiler/src/Sema/InheritanceChecker/StructInheritanceChecker.cpp:358-412,511-559,656-710,1038-1072` 区分目标成员、sibling extend 来源与接口方向；`MergeInheritedMemberHelper.cpp:182-201` 用 `IsExtendInheritRelation` 决定独立默认实现是否仍待实现；`src/Sema/TypeManager.cpp:2040-2058` 定义接口继承关系。
+- Kotlin counterpart files consulted: `external/kotlin/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/declaration/FirExtensionShadowedByMemberChecker.kt`：从共享成员 scope 取得候选，再按可见性与真实签名判断 shadow；`FirMultipleDefaultsInheritedFromSupertypesChecker.kt` 和 `FirOverrideChecker.kt` 用声明来源与继承成员关系区分显式实现和继承输入。仓颉 extend 实现接口的特有规则来自上述官方代码。
+- CFIR owner files changed: `cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirExtendExtraChecker.kt`。把 `CfirCallableLookupProvenance` 传入统一 shadow predicate，`isIndependentInterfaceDefault` 只豁免来自独立 sibling extend 接口边的默认成员，并复用 `extendRuleQueryService.areExtendsInInheritRelation`。目标类自己的接口成员以及相关 extend 的默认成员继续参与签名冲突检查。
+- repair principle: 保留并消费 providers 已提供的完整成员来源，在共享 shadow owner 分类既有实现与待实现默认成员，不通过“存在任意接口”推测实现关系。
+- fixtures covered: 修复 `Extend/default_implement/default_implement_19.cj`、`Extend/extend_duplicate_function.cj` 的 PSI/LightTree 四个入口；边界守卫包括 `Extend/Extend_Refactor/extend_function_conflict_invalid_2.cj`、`extend_function_conflict_invalid_3.cj`、`extend_property_conflict_invalid_6.cj`、`Extend/extend_interface_in_inherit.cj`、`Extend/property/extend_property9.cj`、`Extend_import/import6/main.cj`。完整 `*Extend*` 切片的 1206 个测试键全部保存在 `build/repair-20260906/02-family/results.json`，覆盖原生/PSI、导入、record mut 与 macro 扩展入口。
+- fixture correction: none；本项未改动仓颉源码或测试期望。
+- verification commands and outcome:
+  - `gradlew-queue.bat :cfir:analysis-tests:test --tests '*Extend*' --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g' '-Pkotlin.compiler.execution.strategy=in-process'`：1206 项，1131 通过、47 失败、28 跳过。对比上一份全量的共同测试键，`FIXED=4`、`REGRESSED=0`；47 条剩余失败消息均与基线完全相同。
+  - 前后同一全量命令 `gradlew-queue.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g'`：Gradle 均为 8424 项、307 跳过，失败 640 → 636；XML 均为 8425 records、308 skipped、0 errors，通过 7477 → 7481。
+  - 完整键级比较：`FIXED=4`，`REGRESSED=0`，`NEW_KEYS=0`，`REMOVED_KEYS=0`，其它状态变化为 0。四个修复键恰好是 `DefaultImplement.testDefaultImplement19` 与 `Extend.testExtendDuplicateFunction` 的两个入口。原始全量证据与差异：`build/repair-20260906/{01-after,02-after}/`、`01-after--02-after.json`。
+- change isolation: A/B 继续保留接手时其它未提交改动；本提交只包含 shadow 来源/继承关系修复及本条日志，同文件原有的 primitive operator shadow 改动保持未提交。
+- remaining failures: 全量 636；其中 Extend 18、ExtendImport 10、ExtendsImplementsInterfaceDuplicated 6，均按 PSI/LightTree 各半。文档校验的既有失败仍为 `docs/module-catalog.md` 缺少 `:gradle-queue-cli`，本条不改变模块目录。
