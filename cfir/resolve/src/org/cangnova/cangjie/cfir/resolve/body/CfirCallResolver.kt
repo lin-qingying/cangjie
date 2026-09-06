@@ -1985,33 +1985,60 @@ class CfirCallResolver(
             }
         }
         val bestCandidates = collector.bestCandidates()
+        val upperBoundCandidates = if (info.callKind == CallKind.NamedValueAccess && info.hasUpperBoundMemberReceiver()) {
+            collector.candidatesDiscoveredInBestGroup()
+        } else {
+            emptyList()
+        }
+        val upperBoundFunctionCount = upperBoundCandidates.count { candidate ->
+            candidate.symbol.takeIf { it.isBound }?.cfir is CfirFunction
+        }
+        // 上界成员种类冲突属于名称发现阶段；expected type 不能先排掉函数而留下同名属性。
+        val preserveUpperBoundMemberKinds = upperBoundFunctionCount in 1 until upperBoundCandidates.size
+        val bestFunctionCandidateCount = bestCandidates.count { candidate ->
+            candidate.symbol.takeIf { it.isBound }?.cfir is CfirFunction
+        }
+        val hasStandaloneFunctionValueTarget =
+            info.isStandaloneFunctionValueAccess() && info.resolutionMode.expectedType != null &&
+                    !info.hasUpperBoundMemberReceiver()
         val preserveFunctionValueOverloadSet =
             info.callKind == CallKind.NamedValueAccess &&
-                    functionValueCandidates.size > 1 &&
+                    functionValueCandidates.isNotEmpty() &&
                     bestCandidates.isNotEmpty() &&
-                    bestCandidates.all { candidate ->
-                        candidate.symbol.takeIf { it.isBound }?.cfir is CfirFunction
-                    } &&
-                    collector.functionValueCandidatesGroup() == collector.bestGroup
+                    collector.functionValueCandidatesGroup() == collector.bestGroup &&
+                    (
+                            hasStandaloneFunctionValueTarget ||
+                                    (functionValueCandidates.size > 1 && bestFunctionCandidateCount == bestCandidates.size)
+                            )
+        // 官方 FilterAndGetTargetsOfObjAccess 在无目标类型时按名称查找顺序取首个可访问声明；
+        // 只有纯函数集合才进入函数引用歧义。带目标类型则使用 ma.targets 的函数集合，
+        // 即使同名属性类型与目标相同，也不能把函数引用改选成属性。
+        val hasMixedStandaloneValueCandidates = info.isStandaloneFunctionValueAccess() &&
+                info.resolutionMode.expectedType == null &&
+                !info.hasUpperBoundMemberReceiver() &&
+                bestFunctionCandidateCount in 1 until bestCandidates.size
         val namedValueCandidates = when {
+            preserveUpperBoundMemberKinds -> upperBoundCandidates
             preserveFunctionValueOverloadSet -> functionValueCandidates
+            hasMixedStandaloneValueCandidates -> bestCandidates.take(1)
             else -> bestCandidates
         }
         val overloadCandidates = when (info.callKind) {
             CallKind.Function -> collector.candidatesDiscoveredInBestGroup()
             else -> namedValueCandidates
         }
+        val preserveNamedValueCandidateSet = preserveUpperBoundMemberKinds || preserveFunctionValueOverloadSet
 
         return reduceCandidateSet(
             candidates = namedValueCandidates,
             overloadCandidates = overloadCandidates,
-            collectorApplicability = if (preserveFunctionValueOverloadSet) {
+            collectorApplicability = if (preserveNamedValueCandidateSet) {
                 CandidateApplicability.RESOLVED
             } else {
                 collector.currentApplicability
             },
             info = info,
-            preserveNamedValueCandidateSet = preserveFunctionValueOverloadSet,
+            preserveNamedValueCandidateSet = preserveNamedValueCandidateSet,
             resolutionContext = resolutionContext,
         )
     }
@@ -3112,6 +3139,16 @@ class CfirCallResolver(
     private fun CallInfo.isStandaloneFunctionValueAccess(): Boolean =
         callKind == CallKind.NamedValueAccess && callSite !is CfirFunctionCall &&
                 resolutionMode != ResolutionMode.ContextDependent.ForCallableReference
+
+    /**
+     * 官方 GetMemberAccessExposedTarget 在目标类型选择之前检查所有上界的成员种类。
+     * 不同上界提供函数与属性时是真实歧义，不能使用具体对象成员的查找顺序消解。
+     */
+    private fun CallInfo.hasUpperBoundMemberReceiver(): Boolean =
+        when (explicitReceiver?.coneTypeOrNull?.fullyExpandedType(session)) {
+            is ConeTypeParameterType, is ConeTypeVariableType, is ConeIntersectionType -> true
+            else -> false
+        }
 
     /**
      * 返回类型限定符上、可见性过滤前的 static 函数重载集合。
