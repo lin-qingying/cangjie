@@ -24,7 +24,7 @@ main(): Int64 {
 
     let res: Int64 = match (m) {
         case C(x: B) => x.f()
-        case _ => 0
+        case <!UNREACHABLE_PATTERN!>_<!> => 0
     }
 
     var n: E = F(B(), B())
@@ -34,7 +34,7 @@ main(): Int64 {
             x.f()
             y.f()
             y.g()
-        case _ => 0
+        case <!UNREACHABLE_PATTERN!>_<!> => 0
     }
 
     res + res2
@@ -43,4 +43,3 @@ main(): Int64 {
 enum E {
     C(I) | F(B, I)
 }
-
