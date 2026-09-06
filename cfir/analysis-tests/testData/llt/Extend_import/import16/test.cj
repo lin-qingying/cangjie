@@ -39,7 +39,7 @@ extend A <: I2 {}
 package pkg
 
 import pkg1.*
-import pkg2.*
+import <!UNUSED_IMPORT!>pkg2.*<!>
 
 main() {
     var a = A()
