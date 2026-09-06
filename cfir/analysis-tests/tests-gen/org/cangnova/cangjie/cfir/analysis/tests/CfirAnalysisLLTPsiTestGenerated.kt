@@ -11504,6 +11504,12 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiLlTDiagnosticsTest() {
             runTest("cfir/analysis-tests/testData/llt/flow_expr/composition9_2.cj")
         }
 
+        @TestMetadata("composition_reference_context.cj")
+        @Test
+        fun testCompositionReferenceContext() {
+            runTest("cfir/analysis-tests/testData/llt/flow_expr/composition_reference_context.cj")
+        }
+
         @TestMetadata("err_pipeline_00.cj")
         @Test
         fun testErrPipeline00() {

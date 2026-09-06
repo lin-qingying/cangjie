@@ -37,4 +37,4 @@ extend A15 {
 }
 
 let i = A15()
-let i2 = <!AMBIGUOUS_USE!>i.foo<!> ~> i.foo
+let i2 = i.<!AMBIGUOUS_USE!>foo<!> ~> i.foo

@@ -26,6 +26,7 @@ package org.cangnova.cangjie.cfir.resolve.body
 
 import java.math.BigInteger
 import org.cangnova.cangjie.LanguageFeature
+import org.cangnova.cangjie.psi.CjNodeTypes
 import org.cangnova.cangjie.cfir.*
 import org.cangnova.cangjie.cfir.calls.qualifierScopeOrNull
 import org.cangnova.cangjie.cfir.declarations.*
@@ -47,6 +48,7 @@ import org.cangnova.cangjie.cfir.references.impl.CfirResolvedAppliedCallableRefe
 import org.cangnova.cangjie.cfir.resolve.*
 import org.cangnova.cangjie.cfir.resolve.calls.CandidateProcessingMode
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirContextDependentNamedReference
 import org.cangnova.cangjie.cfir.resolve.calls.applySpawnExpectedFutureType
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirNamedReferenceWithCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.futureTypeOrNull
@@ -486,6 +488,15 @@ open class CfirExpressionsResolveTransformer(
     ): CfirExpression =
         whileAnalysing(session, qualifiedAccessExpression) {
             val calleeReference = qualifiedAccessExpression.calleeReference
+            if (calleeReference is CfirContextDependentNamedReference) {
+                if (data is ResolutionMode.ContextDependent) return@whileAnalysing qualifiedAccessExpression
+                qualifiedAccessExpression.replaceCalleeReference(
+                    buildNamedReference {
+                        source = calleeReference.source
+                        name = calleeReference.name
+                    }
+                )
+            }
             if (
                 isUsedAsReceiver &&
                 calleeReference is CfirErrorNamedReference &&
@@ -4327,6 +4338,21 @@ open class CfirExpressionsResolveTransformer(
         data: ResolutionMode,
     ): CfirExpression {
         binaryOp.transformAnnotations(transformer, data)
+        if (binaryOp.kind == CfirBinaryOpKind.COMPOSITION) {
+            // 官方 ChkFlowExpr 先独立综合左侧，只给直接右操作数后续函数类型上下文。
+            // 两侧都必须检查；有根错误时保留原表达式树，不创建 composition 合成调用。
+            binaryOp.transformLeft(transformer, ResolutionMode.ContextIndependent)
+            val rightMode = if (binaryOp.right.isDirectFlowFunctionReference()) {
+                ResolutionMode.ContextDependent.ForCallableReference
+            } else {
+                ResolutionMode.ContextIndependent
+            }
+            binaryOp.transformRight(transformer, rightMode)
+            binaryOp.flowOperandRootErrorOrNull(delegatedType = null)?.let { errorType ->
+                binaryOp.replaceConeTypeOrNull(errorType)
+                return binaryOp
+            }
+        }
         val desugaredCall = when (binaryOp.kind) {
             CfirBinaryOpKind.PIPELINE -> buildPipelineCall(binaryOp)
             CfirBinaryOpKind.COMPOSITION -> buildCompositionCall(binaryOp)
@@ -4464,6 +4490,17 @@ open class CfirExpressionsResolveTransformer(
         }
     }
 
+    /** Raw CFIR 去掉了分组括号；flow 上下文仍只属于源码中的直接命名操作数。 */
+    private fun CfirExpression.isDirectFlowFunctionReference(): Boolean {
+        if (this !is CfirNamedAccessExpression || this is CfirFunctionCall) return false
+        return when (val expressionSource = source) {
+            is CjPsiSourceElement -> expressionSource.psi.parent?.node?.elementType != CjNodeTypes.PARENTHESIZED
+            is CjLightSourceElement ->
+                expressionSource.treeStructure.getParent(expressionSource.lighterASTNode)?.tokenType != CjNodeTypes.PARENTHESIZED
+            else -> false
+        }
+    }
+
     /** 判断解糖后的 flow 调用是否已经携带调用层诊断。 */
     private fun CfirExpression.hasReportedCallDiagnostic(): Boolean =
         ((this as? CfirResolvable)?.calleeReference as? CfirDiagnosticHolder)?.diagnostic != null
@@ -4478,31 +4515,25 @@ open class CfirExpressionsResolveTransformer(
         left.rootErrorDiagnosticOrNull()?.let { diagnostic ->
             ConeErrorType(
                 ConeUnreportedDuplicateDiagnostic(diagnostic),
-                delegatedType = flowRecoverableDelegatedType(delegatedType, diagnostic),
+                delegatedType = flowDelegatedResultType(delegatedType),
             )
         } ?: right.rootErrorDiagnosticOrNull()?.let { diagnostic ->
             ConeErrorType(
                 ConeUnreportedDuplicateDiagnostic(diagnostic),
-                delegatedType = flowRecoverableDelegatedType(delegatedType, diagnostic),
+                delegatedType = flowDelegatedResultType(delegatedType),
             )
         }
 
     /**
-     * composition 的结果仍是函数值；操作数根错误已确定时，用错误函数类型承载恢复语境，
-     * 防止后续 `let h = f ~> g; h(...)` 退化为未解析变量调用。
+     * composition 已经完成函数类型推断时保留该类型的 IDE 信息。
+     * 预检查即失败的组合只有错误类型；函数签名必须来自真实的调用解析结果。
      */
-    private fun CfirBinaryOp.flowRecoverableDelegatedType(
+    private fun CfirBinaryOp.flowDelegatedResultType(
         delegatedType: ConeCangJieType?,
-        diagnostic: ConeDiagnostic,
     ): ConeCangJieType? {
         if (kind != CfirBinaryOpKind.COMPOSITION) return null
         if (delegatedType?.fullyExpandedType(session) is ConeFunctionType) return delegatedType
-        val duplicateDiagnostic = ConeUnreportedDuplicateDiagnostic(diagnostic)
-        val errorComponentType = ConeErrorType(duplicateDiagnostic)
-        return ConeFunctionType(
-            parameterTypes = listOf(errorComponentType),
-            returnType = errorComponentType,
-        )
+        return null
     }
 
     /**

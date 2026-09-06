@@ -863,6 +863,18 @@ class CfirCallResolver(
         )?.let { return it }
         if (!acceptCandidates(reducedCandidates)) return transformedAccess
 
+        // 具有后续函数类型上下文的命名函数值只完成发现阶段；多候选尚不是最终歧义。
+        // 变量、属性、无效接收者及不可访问成员仍走下方普通解析并保留各自的根诊断。
+        if (resolutionMode == ResolutionMode.ContextDependent.ForCallableReference &&
+            result.isSuccess && reducedCandidates.isNotEmpty() &&
+            reducedCandidates.all { candidate -> candidate.symbol.cfir is CfirFunction }
+        ) {
+            transformedAccess.replaceCalleeReference(
+                CfirContextDependentNamedReference(callee.source, callee.name, reducedCandidates.toList())
+            )
+            return transformedAccess
+        }
+
         val nameReference = createResolvedNamedReference(
             reference = callee,
             name = callee.name,
@@ -3098,7 +3110,8 @@ class CfirCallResolver(
      * 后两者必须保留完整函数候选集，继续由 Function call stages 和静态 qualifier 推断处理。
      */
     private fun CallInfo.isStandaloneFunctionValueAccess(): Boolean =
-        callKind == CallKind.NamedValueAccess && callSite !is CfirFunctionCall
+        callKind == CallKind.NamedValueAccess && callSite !is CfirFunctionCall &&
+                resolutionMode != ResolutionMode.ContextDependent.ForCallableReference
 
     /**
      * 返回类型限定符上、可见性过滤前的 static 函数重载集合。
