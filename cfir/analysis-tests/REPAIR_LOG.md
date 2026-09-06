@@ -5150,3 +5150,20 @@ esolveDelegatingConstructorCallAndSelectCandidate);
   - 同一全量命令 `gradlew-queue.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g'`：前后均 8428 项、307 跳过，失败 626 → 624；新鲜 XML 均 8429 records、308 skipped、0 errors，通过 7495 → 7497。
   - 完整键级差异 FIXED=2、REGRESSED=0、NEW_KEYS=0、REMOVED_KEYS=0，其它状态变化为 0。修复键恰好为两个 Extend.InterfaceDefaultImplement.testBasicProp。证据：`build/repair-20260906/{05-after,06-family,06-after}/`、`05-after--06-after.json`。
 - remaining failures: 全量 624；Extend 6、ExtendImport 10、ExtendsImplementsInterfaceDuplicated 6。文档目录的既有校验缺项不变。
+
+## 2026-09-07：不可见扩展实现不得抹去原抽象成员义务
+
+- problem type: Extend / Import Visibility / Abstract Implementation —— 从父类型继承到的扩展实现若在当前文件不可见，不能使直接声明的接口要求消失。
+- root cause: functions 的“未归并”父输入仍提前删除了被 concrete 成员实现的 abstract requirement；最终 scope 过滤掉未导入接口对应的扩展后，抽象检查拿到空集合。属性原始输入接口又没有保留 extend provenance，无法执行相同的使用点可见性判定。实现存在性还错误依赖“可见性至少与接口一样强”，造成已报告弱可见性的具体实现又被判为缺失。
+- official Cangjie evidence: cjc 1.0.5 按真实 package 依赖编译 `Extend/extend_export/bug_part_import/main.cj`，a/b 包成功，使用方报告 UNUSED_IMPORT(b.I1) 与 B 的 ABSTRACT_MEMBER_NOT_IMPLEMENTED。新增四包矩阵分别验证 function/property：仅导入无关接口时两个类缺实现，导入导出接口后两个类均合法。官方输出和逐包命令在 `build/repair-20260906/package-evidence/{bug-part-import,abstract-import-boundary}/`。官方 `StructInheritanceChecker.cpp` 的 GetAndCheckInheritedMembers、GetVisibleExtendMembersForExtend、DiagnoseForUnimplementedInterfaces 分别保留继承要求并检查可用实现；CheckImplementationRelation 在报告弱可见性后仍返回签名实现关系。cjc 对 `interface/covariance.cj` 只报告弱可见性及既有类型错误，不报告额外抽象缺失。
+- Kotlin counterpart files consulted: `external/kotlin/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/declaration/FirNotImplementedOverrideChecker.kt` 按 ImplementationStatus 分开未实现和不可见成员；Kotlin override checker 对实现兼容性另行诊断。Cangjie 的接口导入决定扩展可用性属于官方语言差异。
+- CFIR owner files changed: `cfir/providers/.../CfirClassUseSiteMemberScope.kt` 将覆盖/实现过滤留在 effective graph，原始函数输入真正保留 abstract requirement；新增与函数对应的 CfirPropertyInheritanceProvenance。`CfirClassSubstitutionScope.kt` 保留属性来源并替换成员。`CfirNotImplementedOverrideChecker.kt` 分别收集可见实现和可见的未归并抽象要求，再按签名判断实现存在性；弱可见性不再被误报为未实现。`CfirInheritanceDeepChecker.kt` 同步消费属性 provenance API。
+- repair principle: 在共享 scope 中保留原始要求、在使用点判定实现是否可用，避免结构归并与 import 过滤联合作用造成信息丢失。
+- fixtures covered: `Extend/extend_export/bug_part_import/main.cj`、新增 `Extend/inherited_abstract_import_boundary.cj`、`interface/covariance.cj`；完整 Extend/Class/Interface 切片 2631 个测试键见 `build/repair-20260906/07-family-final/results.json`。新增数据独立覆盖 function、property、无关接口导入及正确导入的正例。
+- fixture correction: 原有 fixture 未改变；只增加官方矩阵对应的新测试并运行生成器。
+- verification commands and outcome:
+  - `gradlew-queue.bat :cfir:analysis-tests:test --tests '*Extend*' --tests '*Class*' --tests '*Interface*' --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g' '-Pkotlin.compiler.execution.strategy=in-process'`：2631 项，2527 通过、54 失败、50 跳过。目标和新测试通过，54 条既有失败消息完全相同；中间 covariance 两项回归已按官方语义修复，最终切片 REGRESSED=0。
+  - 前后同一全量命令 `gradlew-queue.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g'`：Gradle 8428 → 8430 项，失败 624 → 622，跳过均 307；XML 8429 → 8431 records，通过 7497 → 7501，失败 624 → 622，skipped 均 308，errors 均 0。
+  - 全量完整键差异 FIXED=2、REGRESSED=0、NEW_KEYS=2（新矩阵双入口均 PASS）、REMOVED_KEYS=0，其它状态变化为 0。修复键为 BugPartImport.testMain 的 PSI/LightTree 两项。完整证据：`build/repair-20260906/{06-after,07-family-final,07-after}/`、`06-after--07-after.json`。
+- change isolation: 原有函数返回类型去重和弃用诊断等 WIP 保持独立未提交。
+- remaining failures: 全量 622；Extend 4（upper_bound_float_binary、extend_property9 各双入口）、ExtendImport 10、ExtendsImplementsInterfaceDuplicated 6。

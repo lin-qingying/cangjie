@@ -161,12 +161,19 @@ interface CfirFunctionInheritanceScope {
  * 多个父类型的未归并属性，避免子类型属性被错误地当作已经兼容的唯一结果。
  */
 interface CfirPropertyInheritanceScope {
-    /** 按名称处理归并前的直接继承属性。 */
-    fun processUnmergedInheritedPropertiesByName(
+    /** 按名称处理归并前的直接继承属性及其来源。 */
+    fun processUnmergedInheritedPropertiesByNameWithProvenance(
         name: Name,
-        processor: (CfirPropertySymbol) -> Unit,
+        processor: (CfirPropertyInheritanceProvenance) -> Unit,
     )
 }
+
+/** 属性继承输入与其 base scope、extend 接口来源不可分离。 */
+data class CfirPropertyInheritanceProvenance(
+    val member: CfirPropertySymbol,
+    val baseScope: CfirTypeScope,
+    val lookupProvenance: CfirCallableLookupProvenance,
+)
 
 /**
  * class-like 类型 use-site 成员 scope。
@@ -762,13 +769,15 @@ class CfirClassUseSiteMemberScope private constructor(
         }.forEach { processor(it.symbol) }
     }
 
-    /** 按名称处理归并前的直接继承属性。 */
-    override fun processUnmergedInheritedPropertiesByName(
+    /** 按名称处理归并前的直接继承属性及其来源。 */
+    override fun processUnmergedInheritedPropertiesByNameWithProvenance(
         name: Name,
-        processor: (CfirPropertySymbol) -> Unit,
+        processor: (CfirPropertyInheritanceProvenance) -> Unit,
     ) {
         if (name !in getCallableNames()) return
-        getUnmergedPropertiesFromParentsByName(name).forEach { processor(it.symbol) }
+        getUnmergedPropertiesFromParentsByName(name).forEach {
+            processor(CfirPropertyInheritanceProvenance(it.symbol, it.scope, it.lookupProvenance))
+        }
     }
 
     /**
@@ -824,16 +833,19 @@ class CfirClassUseSiteMemberScope private constructor(
     private fun getFunctionsFromParentsByName(name: Name): List<CfirFunctionInheritanceProvenance> {
         return functionsFromParents.getOrPut(name) {
             getUnmergedFunctionsFromParentsByName(name)
+                .filterOutOverriddenFunctions()
+                .filterOutAbstractFunctionsImplementedByConcrete()
+                .filterOutInterfaceDefaultFunctionsImplementedByConcrete()
                 .mergeEquivalentInheritedFunctions()
                 .toList()
         }
     }
 
     /**
-     * 收集当前 scope 的直接父候选，并完成所有继承过滤，但保留归并前输入。
+     * 收集当前 scope 的直接父候选，保留覆盖和实现关系归并前的输入。
      *
-     * 过滤与普通 effective member graph 共用，只有最后的等价 requirement 归并被延后，
-     * 使继承类型一致性检查可以读取完整的父接口输入而不改变调用解析结果。
+     * 这里只排除语言上不可继承的成员。是否由某个实现满足属于后续 effective graph
+     * 归并；抽象义务检查必须先保留 requirement，再判断实现是否在使用点可见。
      */
     private fun getUnmergedFunctionsFromParentsByName(
         name: Name,
@@ -847,9 +859,6 @@ class CfirClassUseSiteMemberScope private constructor(
             }
             parentCandidates
                 .filterInheritedFunctionsForCurrentScope()
-                .filterOutOverriddenFunctions()
-                .filterOutAbstractFunctionsImplementedByConcrete()
-                .filterOutInterfaceDefaultFunctionsImplementedByConcrete()
                 .toList()
         }
     }

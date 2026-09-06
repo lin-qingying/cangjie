@@ -815,7 +815,9 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                 }
                 val properties = propertiesByName.getOrPut(name) { linkedSetOf() }
                 scope.processPropertiesByName(name, properties::add)
-                (scope as? CfirPropertyInheritanceScope)?.processUnmergedInheritedPropertiesByName(name, properties::add)
+                (scope as? CfirPropertyInheritanceScope)?.processUnmergedInheritedPropertiesByNameWithProvenance(name) {
+                    properties += it.member
+                }
             }
         }
 

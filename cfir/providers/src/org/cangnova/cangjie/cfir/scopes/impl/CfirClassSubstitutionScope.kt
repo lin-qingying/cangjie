@@ -198,13 +198,18 @@ class CfirClassSubstitutionScope(
     }
 
     /** 透传并替换归并前的父属性输入。 */
-    override fun processUnmergedInheritedPropertiesByName(
+    override fun processUnmergedInheritedPropertiesByNameWithProvenance(
         name: Name,
-        processor: (CfirPropertySymbol) -> Unit,
+        processor: (CfirPropertyInheritanceProvenance) -> Unit,
     ) {
         val inheritanceScope = useSiteMemberScope as? CfirPropertyInheritanceScope ?: return
-        inheritanceScope.processUnmergedInheritedPropertiesByName(name) { original ->
-            processor(substitutePropertySymbol(original))
+        inheritanceScope.processUnmergedInheritedPropertiesByNameWithProvenance(name) { original ->
+            processor(
+                original.copy(
+                    member = substitutePropertySymbol(original.member),
+                    baseScope = this@CfirClassSubstitutionScope,
+                )
+            )
         }
     }
 
