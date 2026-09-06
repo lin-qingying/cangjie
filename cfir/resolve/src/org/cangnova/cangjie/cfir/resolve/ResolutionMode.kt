@@ -36,6 +36,12 @@ sealed class ResolutionMode(
          * 不携带类型提示的默认上下文相关模式。
          */
         companion object : ContextDependent(hintForContextSensitiveResolution = null)
+
+        /**
+         * 当前命名值具有后续函数类型上下文：先确定接收者和函数候选，最终选择交给 callable-reference atom。
+         * 仓颉函数引用使用普通名字语法，因此必须在名字查找后区分函数引用与普通变量访问。
+         */
+        data object ForCallableReference : ContextDependent(hintForContextSensitiveResolution = null)
     }
 
     /**

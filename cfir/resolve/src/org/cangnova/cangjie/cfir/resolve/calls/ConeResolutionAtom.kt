@@ -16,6 +16,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirResolvable
 import org.cangnova.cangjie.cfir.diagnostic.ConeAmbiguityError
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirContextDependentNamedReference
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirNamedReferenceWithCandidate
 import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeVariableForLambdaReturnType
 import org.cangnova.cangjie.cfir.semantics.AbstractConeResolutionAtom
@@ -126,6 +127,7 @@ internal fun CfirNamedAccessExpression.isFunctionReferenceCandidateSet(): Boolea
  * 只有没有歧义 payload 时才能使用已选择候选。
  */
 internal fun CfirNamedAccessExpression.callableReferenceFunctionCandidatesOrNull(): List<Candidate>? {
+    (calleeReference as? CfirContextDependentNamedReference)?.let { return it.candidates }
     val ambiguity = (calleeReference as? CfirDiagnosticHolder)?.diagnostic as? ConeAmbiguityError
     if (ambiguity != null) {
         val candidates = ambiguity.candidates.filterIsInstance<Candidate>()
