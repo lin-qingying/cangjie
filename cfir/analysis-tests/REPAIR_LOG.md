@@ -5221,3 +5221,18 @@ esolveDelegatingConstructorCallAndSelectCandidate);
   - 完整键级比较 FIXED=2、REGRESSED=0、NEW_KEYS=0、REMOVED_KEYS=0、其它状态变化为 0；剩余 616 条失败消息完全一致。证据：`build/repair-20260906/{09-after,10-extend,10-family,10-after}/`、`09-after--10-after.json`。
 - change isolation: 同文件既有函数返回类型去重 WIP 未混入本提交；原 REPAIR_LOG 空白修改和其余未提交工作保持原样。
 - remaining failures: 全量 616；Extend 0、ExtendImport 8、ExtendsImplementsInterfaceDuplicated 6。
+
+## 2026-09-07：冗余扩展导入补齐官方 unused-import 警告期望
+
+- problem type: Fixture Expectation / Extend Import —— import16 的消费者未使用 pkg2 的声明或扩展，却漏写 UNUSED_IMPORT 警告。
+- root cause: fixture 只保存了无语义错误的源程序，没有记录官方完整编译产生的未使用导入警告；现有 CFIR 已正确报告。
+- official Cangjie evidence: cjc 1.0.5 分别编译 pkg1、pkg2 静态库，再给消费者传入完整 -L/-l 依赖并链接可执行文件，三者均 exit 0；消费者仅报告 sema_unused_import(pkg2.*)，没有错误或其它警告。完整源码、命令、stdout/stderr 在 `build/repair-20260906/package-evidence/import16-executable-linked/`。官方 `external/cangjie_compiler/src/Sema/CheckUnusedImportImpl.cpp:275-298` 根据真实使用目标报告未使用导入。
+- Kotlin counterpart files consulted: `external/kotlin/compiler/frontend.common-psi/src/org/jetbrains/kotlin/diagnostics/PositioningStrategies.kt` 的 DEFAULT 元素定位；本项目 UNUSED_IMPORT 工厂声明为 CjImportItem + DEFAULT，故标记完整导入项 pkg2.*，不包含 import 关键字。
+- CFIR owner files changed: none。只修正 `cfir/analysis-tests/testData/llt/Extend_import/import16/test.cj` 的 inline warning 期望。
+- repair principle: 用官方完整编译结果补全测试期望，保留已有正确诊断，不改源码语法或导入列表。
+- fixtures covered: import16 的 PSI/LightTree 两入口；完整 ExtendImport 与 UnusedImport 切片 258 个测试键见 `build/repair-20260906/11-family/results.json`。
+- verification commands and outcome:
+  - `gradlew-queue.bat :cfir:analysis-tests:test --tests 'org.cangnova.cangjie.cfir.analysis.tests.*ExtendImport*' --tests 'org.cangnova.cangjie.cfir.analysis.tests.*UnusedImport*' --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g'`：258 项，240 通过、18 失败、0 跳过；18 条既有失败消息完全一致，REGRESSED=0。
+  - 前后同一全量命令 `gradlew-queue.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g'`：Gradle 均为 8434 项、307 跳过，失败 616 → 614；新鲜 XML 均为 8435 records、308 skipped、0 errors，通过 7511 → 7513。
+  - 完整测试键对比 FIXED=2、REGRESSED=0、NEW_KEYS=0、REMOVED_KEYS=0、其它状态变化为 0；其余 614 条失败消息完全不变。证据：`build/repair-20260906/{10-after,11-family,11-after}/`、`10-after--11-after.json`。
+- remaining failures: 全量 614；Extend 0、ExtendImport 6（import10/import14/import6，各两入口）、ExtendsImplementsInterfaceDuplicated 6。
