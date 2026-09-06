@@ -15,7 +15,7 @@ interface B {
 }
 
 class C <: A & B {
-    <!PROPERTY_OVERRIDE_IMPLEMENT_TYPE_DIFF!>p<!>ublic mut override prop i: Int64 {
+    public mut override prop <!PROPERTY_OVERRIDE_IMPLEMENT_TYPE_DIFF!>i<!>: Int64 {
         get() {
             return 1
         }
@@ -37,7 +37,7 @@ interface B1 {
 }
 
 class C1 <: A1 & B1 {
-    <!PROPERTY_OVERRIDE_IMPLEMENT_TYPE_DIFF!>p<!>ublic mut override prop i: Int64 {
+    public mut override prop <!PROPERTY_OVERRIDE_IMPLEMENT_TYPE_DIFF!>i<!>: Int64 {
         get() {
             return 1
         }

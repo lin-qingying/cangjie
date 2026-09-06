@@ -1598,6 +1598,12 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeLlTDiagnosticsTest() {
             fun testExtendPropertyOverrideInvalid1() {
                 runTest("cfir/analysis-tests/testData/llt/Extend/Extend_Refactor/extend_property_override_invalid_1.cj")
             }
+
+            @TestMetadata("inheritance_property_owners.cj")
+            @Test
+            fun testInheritancePropertyOwners() {
+                runTest("cfir/analysis-tests/testData/llt/Extend/Extend_Refactor/inheritance_property_owners.cj")
+            }
         }
 
         @TestMetadata("default_implement")

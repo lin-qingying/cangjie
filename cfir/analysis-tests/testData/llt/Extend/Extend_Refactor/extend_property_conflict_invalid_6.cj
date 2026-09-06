@@ -19,8 +19,8 @@ interface I2 {
 
 class C1 {}
 
-<!INHERIT_MEMBER_TYPE_INCONSISTENT!>e<!>xtend C1 <: I1 & I2 {
-    <!PROPERTY_OVERRIDE_IMPLEMENT_TYPE_DIFF!>p<!>ublic prop foo: Int64 {
+<!INHERIT_MEMBER_TYPE_INCONSISTENT!>extend<!> C1 <: I1 & I2 {
+    public prop <!PROPERTY_OVERRIDE_IMPLEMENT_TYPE_DIFF!>foo<!>: Int64 {
         get() {
             return 2
         }
