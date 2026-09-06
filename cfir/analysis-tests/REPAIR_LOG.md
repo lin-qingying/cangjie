@@ -5185,3 +5185,22 @@ esolveDelegatingConstructorCallAndSelectCandidate);
   - 完整测试键对比 FIXED=2、REGRESSED=0、NEW_KEYS=2（全部 PASS）、REMOVED_KEYS=0、其它状态变化为 0；剩余 620 条失败消息与基线完全相同。证据：`build/repair-20260906/{07-after,08-focus-final,08-family-final,08-after}/`、`07-after--08-after.json`。
 - change isolation: 既有弃用诊断、extend primitive shadow、函数返回去重等 WIP 均保持独立；此前文档校验发现的 module-catalog 缺少 gradle-queue-cli 与本修改无关。
 - remaining failures: 全量 620；Extend 2（extend_property9 双入口）、ExtendImport 10、ExtendsImplementsInterfaceDuplicated 6。
+
+## 2026-09-07：同名函数与属性按访问语境选择候选
+
+- problem type: Extend / Named Value Resolution / Generics —— 具体对象的已声明成员与扩展成员同名时，无目标类型的取值不应被当作纯函数重载歧义；有目标类型的函数引用与泛型上界暴露成员必须使用各自的候选规则。
+- root cause: shared named-value reduction 对函数/属性混合集合直接执行 most-specific，丢失官方按名称查找顺序选择可访问声明的规则；有目标类型时，匹配目标的属性又会先淘汰函数候选。泛型上界的成员种类冲突发生在名称发现阶段，不能被目标类型适用性过滤消解。
+- official Cangjie evidence: cjc 1.0.5 确认原 extend_property9 只报告声明处 EXTEND_MEMBER_CANNOT_SHADOW。四组正反向矩阵确认：公开的原声明优先、不可见原成员允许选择扩展成员、有目标类型时进入函数引用集合、匹配属性类型的目标不能改选属性、所选私有函数继续报告访问错误。另一个矩阵确认 T 的不同上界分别提供函数与属性时，无目标、函数目标、Int64 目标三者均报告 AMBIGUOUS_USE。原始源码和 JSON 在 `build/repair-20260906/evidence/{declared_value_extend_function,mixed_member_value_types,mixed_named_member_kinds,mixed_member_value_resolution,mixed_upper_bound_targets,generic_upperbound_reference_06}.official.cj` 及同名 `.cjc.json`。
+- official implementation: `external/cangjie_compiler/src/Sema/TypeCheckReference.cpp:376-397,499-548` 的 FilterTargetsForFuncReference 与 FilterAndGetTargetsOfObjAccess；`TypeCheckAccess.cpp:93-116` 保留可访问声明顺序；`TypeCheckExpr/NameReferenceExpr.cpp:900-939,944-1012` 将具体对象查找与 GetMemberAccessExposedTarget 分开，并在上界成员种类不同时先报告歧义。
+- Kotlin counterpart files consulted: `external/kotlin/compiler/fir/resolve/src/org/jetbrains/kotlin/fir/resolve/calls/FirCallResolver.kt:318-366` 在共享候选规约入口处理 collector 结果；`calls/tower/TowerLevels.kt:298-329` 保持函数和属性的声明种类边界。仓颉函数可直接作为值的语义来自官方编译器。
+- CFIR owner files changed: `cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirCallResolver.kt`：具体对象无目标类型混合集合选择首个可访问声明；有目标类型时保留同一 tower group 的函数集合；泛型/交集 receiver 的函数与值成员冲突保留适用性过滤前的结构候选，统一报告名称歧义。
+- repair principle: 在共享候选规约入口区分名称发现、访问控制和目标类型选择，既不从 scope 永久删除扩展函数，也不让目标类型掩盖上界种类冲突。
+- fixtures covered: 原 `Extend/property/extend_property9.cj`、新增 `Extend/property/mixed_member_value_resolution.cj`、`generics/generic_upperbound_reference_01.cj` 至 `generic_upperbound_reference_10.cj`（具体测试键以快照为准）；完整 Extend/Property/Call/Function/Visibility/Generics 切片共 2766 个键见 `build/repair-20260906/09-family-final/results.json`。
+- fixture correction: 原有 fixture 未修改；新矩阵保持官方验证过的源码与诊断，并覆盖公开/私有、两个声明种类方向、目标类型及三个上界歧义场景。
+- verification commands and outcome:
+  - `gradlew-queue.bat :cfir:analysis-tests:test --tests '*ExtendProperty9*' --tests '*MixedMemberValueResolution*' --tests '*GenericUpperboundReference*' --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g' '-Pkotlin.compiler.execution.strategy=in-process'`：24/24 通过。
+  - `gradlew-queue.bat :cfir:analysis-tests:test --tests '*Extend*' --tests '*Property*' --tests '*Call*' --tests '*Function*' --tests '*Visibility*' --tests '*Generics*' --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g' '-Pkotlin.compiler.execution.strategy=in-process'`：2766 项，2623 通过、70 失败、73 跳过；70 条既有失败消息完全相同，REGRESSED=0。
+  - 前后同一全量命令 `gradlew-queue.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g'`：Gradle 8432 → 8434 项，失败 620 → 618，跳过均 307；新鲜 XML 8433 → 8435 records，通过 7505 → 7509，失败 620 → 618，跳过均 308、errors 均 0。
+  - 完整键级差异 FIXED=2、REGRESSED=0、NEW_KEYS=2（全部 PASS）、REMOVED_KEYS=0、其它状态变化为 0；剩余 618 条失败消息完全相同。证据：`build/repair-20260906/{08-after,09-focus-final,09-family-final,09-after}/` 与 `08-after--09-after.json`。
+  - 中间全量暴露 generic_upperbound_reference_06 两入口回归；已按上述官方上界规则修正，未提交中间版本。含目标类型的新增上界场景也已通过。
+- remaining failures: 全量 618；Extend 0、ExtendImport 10、ExtendsImplementsInterfaceDuplicated 6。既有未提交 WIP 与模块目录文档缺项保持独立。

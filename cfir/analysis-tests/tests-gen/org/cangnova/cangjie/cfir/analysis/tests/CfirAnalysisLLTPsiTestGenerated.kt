@@ -2959,6 +2959,12 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiLlTDiagnosticsTest() {
                 runTest("cfir/analysis-tests/testData/llt/Extend/property/extend_property_override.cj")
             }
 
+            @TestMetadata("mixed_member_value_resolution.cj")
+            @Test
+            fun testMixedMemberValueResolution() {
+                runTest("cfir/analysis-tests/testData/llt/Extend/property/mixed_member_value_resolution.cj")
+            }
+
             @TestMetadata("prop_look_up.cj")
             @Test
             fun testPropLookUp() {
