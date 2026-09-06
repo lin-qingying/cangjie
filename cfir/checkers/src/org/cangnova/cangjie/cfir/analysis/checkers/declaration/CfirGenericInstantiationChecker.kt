@@ -1328,12 +1328,47 @@ private class GenericInstantiationAnalyzer(
     }
 
     /**
-     * 判断冲突双方是否都是继承来的接口默认实现。
+     * 判断冲突双方是否会被官方 `MergeInheritedMemberHelper` 合并为"待实现的接口成员"，
+     * 从而不应误报为泛型实例化歧义。
+     *
+     * 只有同时满足以下条件时官方才把同签名接口成员合并为 INTERFACE_MEMBER_MUST_BE_IMPLEMENTED，
+     * 否则照常报告 GENERIC_INSTANTIATION_CAUSES_AMBIGUOUS_FUNCTIONS：
+     * - 双方都是接口继承成员（非 static、非当前声明自身声明、来自某个接口）；
+     * - 双方来自不同接口（同一接口经不同类型实参重复到达仍属真实歧义，如
+     *   `I<X> & I<Y>`，见 main2-2 / interface_default_implemented_func_invalid_6）；
+     * - 双方返回类型一致（返回类型不一致仍属真实歧义，见 invariant_override_returntype_02）。
+     * static 接口成员不会并入 shouldBeImplemented，见 interface_static_impl_with_generic08；
+     * 当前声明自身声明的成员（含接口自身声明）也构成真实歧义，见 interface_generic11。
      */
     private fun InstantiatedMemberSignature.isInheritedDefaultInterfaceConflictWith(
         other: InstantiatedMemberSignature,
-    ): Boolean =
-        inheritedDefaultOwnerExtend != null && other.inheritedDefaultOwnerExtend != null
+    ): Boolean {
+        if (!isInterfaceInheritedMember() || !other.isInterfaceInheritedMember()) return false
+        if (function.status.isStatic || other.function.status.isStatic) return false
+        if (isOwnMember || other.isOwnMember) return false
+        val thisOwner = interfaceOwner()
+        val otherOwner = other.interfaceOwner()
+        if (thisOwner == null || otherOwner == null || thisOwner === otherOwner) return false
+        val thisReturnType = function.returnTypeRef.coneTypeOrNull ?: return false
+        val otherReturnType = other.function.returnTypeRef.coneTypeOrNull ?: return false
+        if (!AbstractTypeChecker.equalTypes(checkerContext.session.typeContext, thisReturnType, otherReturnType)) {
+            return false
+        }
+        return true
+    }
+
+    /**
+     * 该签名是否来自接口的继承成员（内建 extend 路径的接口默认实现，或 use-site 路径由
+     * interface owner 提供的成员），而非 class/extend 自身声明的成员。
+     */
+    private fun InstantiatedMemberSignature.isInterfaceInheritedMember(): Boolean =
+        inheritedDefaultOwnerExtend != null || interfaceOwner() != null
+
+    /**
+     * 签名原始函数所属的接口声明，非接口成员返回 null。
+     */
+    private fun InstantiatedMemberSignature.interfaceOwner(): CfirInterface? =
+        checkerContext.ownerClassSymbol(function.symbol)?.cfir as? CfirInterface
 
     /**
      * 渲染 class-like 声明的实例化名称。
