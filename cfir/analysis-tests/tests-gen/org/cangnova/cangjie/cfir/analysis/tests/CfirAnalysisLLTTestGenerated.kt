@@ -13116,6 +13116,12 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeLlTDiagnosticsTest() {
             runTest("cfir/analysis-tests/testData/llt/generics/generic_infinite_init_07.cj")
         }
 
+        @TestMetadata("generic_literal_targets.cj")
+        @Test
+        fun testGenericLiteralTargets() {
+            runTest("cfir/analysis-tests/testData/llt/generics/generic_literal_targets.cj")
+        }
+
         @TestMetadata("generic_override01.cj")
         @Test
         fun testGenericOverride01() {
