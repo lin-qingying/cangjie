@@ -12,4 +12,4 @@ interface B {
 
 class S {}
 
-<!INTERFACE_MEMBER_MUST_BE_IMPLEMENTED!>e<!>xtend S <: A & B {}
+<!INTERFACE_MEMBER_MUST_BE_IMPLEMENTED!>extend<!> S <: A & B {}

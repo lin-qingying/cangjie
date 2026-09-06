@@ -11,8 +11,8 @@ interface I2 {
 
 class A {}
 
-<!INTERFACE_MEMBER_MUST_BE_IMPLEMENTED!>e<!>xtend A <: I1 {}
+<!INTERFACE_MEMBER_MUST_BE_IMPLEMENTED!>extend<!> A <: I1 {}
 
-<!INTERFACE_MEMBER_MUST_BE_IMPLEMENTED!>e<!>xtend A <: I2 {}
+<!INTERFACE_MEMBER_MUST_BE_IMPLEMENTED!>extend<!> A <: I2 {}
 
 main() {}

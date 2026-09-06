@@ -551,7 +551,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
             if (!reported.add(signatureKey)) continue
 
             reporter.reportOn(
-                source = extend.source?.firstCharacterDiagnosticSource() ?: extend.extendedTypeRef.source,
+                source = extend.extendKeywordDiagnosticSource(),
                 factory = CfirErrors.INTERFACE_MEMBER_MUST_BE_IMPLEMENTED,
                 a = representative.kind,
                 b = representative.name,
