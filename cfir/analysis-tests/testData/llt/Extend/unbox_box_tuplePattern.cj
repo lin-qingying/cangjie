@@ -27,9 +27,8 @@ main(): Int64 {
             x.f()
             y.f()
             y.g()
-        case _ => 0
+        case <!UNREACHABLE_PATTERN!>_<!> => 0
     }
 
     res
 }
-

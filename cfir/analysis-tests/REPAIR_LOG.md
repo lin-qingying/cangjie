@@ -5117,3 +5117,20 @@ esolveDelegatingConstructorCallAndSelectCandidate);
   - 完整键级差异 FIXED=2、REGRESSED=0、NEW_KEYS=2（新增矩阵双入口均 PASS）、REMOVED_KEYS=0，其它状态变化为 0。修复键为两个 Extend.ExtendRefactor.testExtendPropertyConflictInvalid6。原始证据：`build/repair-20260906/{03-after,04-family-final,04-after}/` 与 `03-after--04-after.json`。
 - change isolation: 同文件既有函数返回类型跨路径去重 WIP 未混入本提交；A/B 始终保留该 WIP 不变。文档校验的既有模块目录缺项不变。
 - remaining failures: 全量 632；Extend 14、ExtendImport 10、ExtendsImplementsInterfaceDuplicated 6，两个 LLT 入口分别记录。
+
+## 2026-09-06：装箱与解箱模式测试补齐官方不可达警告期望
+
+- problem type: Fixture Expectation / CFA / Extend —— 三个无语义错误的装箱/解箱测试漏写了常量控制流已证明不可达的 wildcard 分支警告。
+- root cause: `unbox_box_tuplePattern.cj`、`unbox_enumPattern.cj`、`unbox_autobox_enumPattern_01.cj` 只保存源程序，没有记录官方实际产生的四条 unreachable pattern warning；现有 CFIR CFA 已正确报告它们。
+- official Cangjie evidence: 三份原样去 marker 源码分别用 `cjc --output-type exe --diagnostic-format json --error-count-limit all` 编译，均 exit 0，分别只产生 1、2、1 条 `chir_unreachable_pattern`，位置为 (30,14)、(27,14)/(37,14)、(30,14)。JSON 及命令保存在 `build/repair-20260906/evidence/unbox_*.official.cjc.json` 和对应 `.cjc-result.json`。官方 `external/cangjie_compiler/src/CHIR/Checker/UnreachableBranchCheck.cpp:55-108` 从常量分支目标报告该警告；官方文档 MCP `manual_source_zh_cn_match` 规定匹配到首个分支后退出 match。
+- Kotlin counterpart files consulted: `external/kotlin/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/collectors/components/ControlFlowAnalysisDiagnosticComponent.kt`，对完整函数 CFG 执行独立 CFA 检查；本项目对应 `ControlFlowAnalysisDiagnosticComponent` 也将该警告与 Sema 模式覆盖检查分开。
+- CFIR owner files changed: none；仅修改上述三份 LLT fixture 的 inline warning 标记。
+- repair principle: 测试期望记录官方完整编译实际产生的警告，保留现有正确的 CFA 报告及仓颉程序语法。
+- fixtures covered: PSI/LightTree 的 `Extend/autobox_match1.cj` 至 `autobox_match5.cj`、`box_tuplePattern.cj`、`unbox_array.cj`、`unbox_autobox_enumPattern_01.cj`、`unbox_autobox_enumPattern_02.cj`、`unbox_box_tuplePattern.cj`、`unbox_enumPattern.cj`、`unbox_multiEnumPattern.cj`、`unbox_optionbox.cj`，共 26 项。
+- fixture correction: 四个 wildcard 上新增项目诊断名 UNREACHABLE_PATTERN，保持 warning 级别和完整下划线 token 范围；未通过删除分支或改变初始化值消除警告。
+- verification commands and outcome:
+  - `gradlew-queue.bat :cfir:analysis-tests:test --tests '*Unbox*' --tests '*AutoboxMatch*' --tests '*BoxTuplePattern*' --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g'`：26/26 通过，0 failures/errors/skipped。
+  - 前后同一全量命令 `gradlew-queue.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g'`：均 8428 项、307 跳过，失败 632 → 626。XML 均 8429 records、308 skipped、0 errors，通过 7489 → 7495。
+  - 完整键比较 FIXED=6、REGRESSED=0、NEW_KEYS=0、REMOVED_KEYS=0，其它状态变化为 0，六个修复键正好是三份 fixture 的两条入口。证据保存在 `build/repair-20260906/{04-after,05-family,05-after}/` 与 `04-after--05-after.json`。
+  - 中间一次全量在 7520 项时遇到 JVM native-memory OOM，未作为验证证据；最终重跑完整结束，使用新鲜 XML 对比。
+- remaining failures: 全量 626；Extend 8、ExtendImport 10、ExtendsImplementsInterfaceDuplicated 6。文档校验既有的模块目录缺项未改变。
