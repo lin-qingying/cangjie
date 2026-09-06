@@ -15,9 +15,9 @@ interface I2<T> {
 
 class C1<T> {}
 
-<!INTERFACE_MEMBER_MUST_BE_IMPLEMENTED!>e<!>xtend<T> C1<T> <: I1<T> {}
+<!INTERFACE_MEMBER_MUST_BE_IMPLEMENTED!>extend<!><T> C1<T> <: I1<T> {}
 
-<!INTERFACE_MEMBER_MUST_BE_IMPLEMENTED!>e<!>xtend<T> C1<T> <: I2<T> {}
+<!INTERFACE_MEMBER_MUST_BE_IMPLEMENTED!>extend<!><T> C1<T> <: I2<T> {}
 
 main() {
     return -1

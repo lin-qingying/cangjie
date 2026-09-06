@@ -16,9 +16,9 @@ public interface I2<V> {
     }
 }
 
-<!INTERFACE_MEMBER_MUST_BE_IMPLEMENTED!>e<!>xtend<V> CPointer<V> <: I1<V> {}
+<!INTERFACE_MEMBER_MUST_BE_IMPLEMENTED!>extend<!><V> CPointer<V> <: I1<V> {}
 
-<!INTERFACE_MEMBER_MUST_BE_IMPLEMENTED!>e<!>xtend<V> CPointer<V> <: I2<V> {}
+<!INTERFACE_MEMBER_MUST_BE_IMPLEMENTED!>extend<!><V> CPointer<V> <: I2<V> {}
 
 main() {
     0

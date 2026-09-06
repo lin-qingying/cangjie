@@ -31,4 +31,4 @@ public interface I2 {
     func f(): Unit {}
 }
 
-<!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>extend Foo <: I2 {}<!>
+<!INTERFACE_MEMBER_MUST_BE_IMPLEMENTED!>extend<!> Foo <: I2 {}

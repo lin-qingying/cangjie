@@ -5204,3 +5204,20 @@ esolveDelegatingConstructorCallAndSelectCandidate);
   - 完整键级差异 FIXED=2、REGRESSED=0、NEW_KEYS=2（全部 PASS）、REMOVED_KEYS=0、其它状态变化为 0；剩余 618 条失败消息完全相同。证据：`build/repair-20260906/{08-after,09-focus-final,09-family-final,09-after}/` 与 `08-after--09-after.json`。
   - 中间全量暴露 generic_upperbound_reference_06 两入口回归；已按上述官方上界规则修正，未提交中间版本。含目标类型的新增上界场景也已通过。
 - remaining failures: 全量 618；Extend 0、ExtendImport 10、ExtendsImplementsInterfaceDuplicated 6。既有未提交 WIP 与模块目录文档缺项保持独立。
+
+## 2026-09-07：扩展默认实现冲突使用完整关键字诊断范围
+
+- problem type: Extend / Default Implementation / Diagnostic Range —— INTERFACE_MEMBER_MUST_BE_IMPLEMENTED 的默认实现冲突分支只标记 extend 的首字符；import7_1 同时误用了抽象成员汇总诊断名。
+- root cause: CfirInheritanceDeepChecker.checkDefaultInterfaceMemberConflicts 使用 firstCharacterDiagnosticSource，没有经过共享的声明 token 定位器。import7_1 的原期望把接口默认实现冲突写成 ABSTRACT_MEMBER_NOT_IMPLEMENTED。
+- official Cangjie evidence: 按真实包依赖编译 import7_1，A/B 两包成功，C 包仅报告 sema_interface_member_must_be_implemented，目标为 extend Foo 的函数 f。原始源码、命令与输出在 `build/repair-20260906/package-evidence/import7_1/`；默认实现冲突语义继续遵循官方 StructInheritanceChecker / MergeInheritedMemberHelper，本次不改变触发条件。
+- range policy evidence: Diagnostic Range Policy 要求完整相关 token；extend 没有独立声明名，复用 extendKeywordDiagnosticSource 标记完整关键字，不镜像官方首字符 CLI 锚点。
+- Kotlin counterpart files consulted: `external/kotlin/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/declaration/FirNotImplementedOverrideChecker.kt:219-237` 在声明上报告多个继承实现冲突；`checkers-component-generator/.../FirDiagnosticsList.kt:1388-1394` 使用 DECLARATION_NAME 定位。PositioningStrategies/LightTreePositioningStrategies 按完整 PSI/token 范围定位。
+- CFIR owner files changed: `cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirInheritanceDeepChecker.kt`，默认实现冲突分支改为调用共享 extendKeywordDiagnosticSource。
+- repair principle: 同一默认实现冲突在共享 owner 上统一声明关键字范围，函数、属性、普通及泛型扩展共同生效。
+- fixtures covered and corrected: `Extend/default_implement/multi_default_impl_05.cj`、`Extend/default_implement/inherit_relation_of_extend02/main_pointer.cj`、`Extend/default_implement/inherit_relation_of_extend02/main_int64.cj`、`Extend/default_implement/default_implement_17.cj`、`Extend/default_implement/default_implement_13.cj`、`Extend/default_implement/default_implement_12.cj`、`Extend/extend_interface_underscore_1.cj`、`Extend/extend_interface2.cj`、`Extend/Extend_Refactor/extend_function_conflict_invalid_5.cj`、`Extend/Extend_Refactor/extend_function_conflict_invalid_4.cj`、`Extend/Extend_Refactor/extend_function_conflict_invalid_1.cj`、`Extend/Extend_Refactor/extend_function_conflict_invalid_3.cj`、`Extend/Extend_Refactor/extend_property_conflict_invalid_2.cj`、`Extend/Extend_Refactor/extend_property_conflict_invalid_1.cj`、`Extend/Extend_Refactor/extend_property_conflict_invalid_5.cj`、`Extend/Extend_Refactor/extend_property_conflict_invalid_3.cj`、`Extend/Extend_Refactor/extend_property_conflict_invalid_4.cj`；上述 17 份 fixture 共 28 处范围修正，另 `Extend_import/import7_1/C.cj` 根据官方证据修正诊断名与范围，共 18 份 fixture。源码语法未改。
+- verification commands and outcome:
+  - `gradlew-queue.bat :cfir:analysis-tests:test --tests 'org.cangnova.cangjie.cfir.analysis.tests.*Extend*' --tests 'org.cangnova.cangjie.cfir.analysis.tests.*Default*' --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g'`：1424 项，1359 通过、37 失败、28 跳过；37 条剩余失败消息与基线完全一致，import7_1 两入口通过，REGRESSED=0。
+  - 前后同一全量命令 `gradlew-queue.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g'`：均为 Gradle 8434 项、307 跳过，失败 618 → 616；新鲜 XML 均为 8435 records、308 skipped、0 errors，通过 7509 → 7511。
+  - 完整键级比较 FIXED=2、REGRESSED=0、NEW_KEYS=0、REMOVED_KEYS=0、其它状态变化为 0；剩余 616 条失败消息完全一致。证据：`build/repair-20260906/{09-after,10-extend,10-family,10-after}/`、`09-after--10-after.json`。
+- change isolation: 同文件既有函数返回类型去重 WIP 未混入本提交；原 REPAIR_LOG 空白修改和其余未提交工作保持原样。
+- remaining failures: 全量 616；Extend 0、ExtendImport 8、ExtendsImplementsInterfaceDuplicated 6。
