@@ -976,35 +976,41 @@ open class CfirExpressionsResolveTransformer(
     }
 
     /**
-     * 把“选中了 operator 候选、但其隐式返回类型无法形成结果”的调用恢复为源码二元运算
-     * 的根诊断。
+     * 把无法产生有效结果的 operator 解糖调用恢复为源码运算的根诊断。
      *
      * 运算符在 raw CFIR 中以普通 [CfirFunctionCall] 表示，然而官方二元表达式检查会在
-     * 解糖调用不能产生有效结果时回到原 operator token 报错。只有 receiver 与实参均有效、
-     * 且选中的候选引用仍为 resolved 时，结果错误才属于调用自身；子表达式错误继续由其原始
-     * 节点拥有，不能由外层 operator 覆盖。
+     * 解糖调用不能产生有效结果时回到原 operator token 报错。候选歧义与选中候选后返回类型
+     * 推断失败都属于同一边界：失败的解糖候选不能继续充当最终引用目标，导入使用分析也只
+     * 读取恢复后的引用。子表达式错误继续由其原始节点拥有，外层只传播不重复报告的错误；
+     * receiver 与实参均有效时才在 operator 上创建新的根诊断。
      */
     private fun CfirExpression.restoreInvalidSourceOperatorCall(): CfirExpression {
         val functionCall = this as? CfirFunctionCall ?: return this
         if (functionCall.origin != CfirFunctionCallOrigin.Operator) return functionCall
-        val callee = functionCall.calleeReference as? CfirResolvedNamedReference ?: return functionCall
+        val callee = functionCall.calleeReference as? CfirNamedReference ?: return functionCall
+        // 名称解析器已把上界或 receiver 的失败归属给其他节点，不能重新创建 operator 根错误。
+        if ((callee as? CfirDiagnosticHolder)?.diagnostic is ConeUnreportedDuplicateDiagnostic) return functionCall
         val resultType = functionCall.coneTypeOrNull as? ConeErrorType ?: return functionCall
         val receiver = functionCall.explicitReceiver ?: return functionCall
-        val receiverType = receiver.coneTypeOrNull ?: return functionCall
-        val argumentTypes = functionCall.argumentList.arguments.map { argument ->
-            argument.coneTypeOrNull ?: return functionCall
-        }
-        if (receiverType is ConeErrorType || argumentTypes.any { it is ConeErrorType }) return functionCall
-
         val operatorToken = OperatorNameConventions.TOKENS_BY_OPERATOR_NAME[callee.name] ?: return functionCall
-        val diagnostic = ConeUnresolvedNameError(
-            name = callee.name,
-            operator = operatorToken,
-            receiverType = receiver.invalidBinaryOperatorOperandType(receiverType),
-            argumentTypes = functionCall.argumentList.arguments.zip(argumentTypes) { argument, argumentType ->
-                argument.invalidBinaryOperatorOperandType(argumentType)
-            },
-        )
+        val operandError = receiver.rootErrorDiagnosticOrNull()
+            ?: functionCall.argumentList.arguments.firstNotNullOfOrNull { it.rootErrorDiagnosticOrNull() }
+        val diagnostic = if (operandError != null) {
+            ConeUnreportedDuplicateDiagnostic(operandError.unwrapUnreportedDuplicate())
+        } else {
+            val receiverType = receiver.coneTypeOrNull ?: return functionCall
+            val argumentTypes = functionCall.argumentList.arguments.map { argument ->
+                argument.coneTypeOrNull ?: return functionCall
+            }
+            ConeUnresolvedNameError(
+                name = callee.name,
+                operator = operatorToken,
+                receiverType = receiver.invalidBinaryOperatorOperandType(receiverType),
+                argumentTypes = functionCall.argumentList.arguments.zip(argumentTypes) { argument, argumentType ->
+                    argument.invalidBinaryOperatorOperandType(argumentType)
+                },
+            )
+        }
         functionCall.replaceCalleeReference(
             buildErrorNamedReference {
                 source = callee.source

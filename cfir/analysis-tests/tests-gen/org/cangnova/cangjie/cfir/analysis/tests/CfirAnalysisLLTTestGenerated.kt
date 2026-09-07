@@ -20592,6 +20592,18 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeLlTDiagnosticsTest() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/unusedImport")
         }
 
+        @TestMetadata("ambiguous_function_targets.cj")
+        @Test
+        fun testAmbiguousFunctionTargets() {
+            runTest("cfir/analysis-tests/testData/llt/unusedImport/ambiguous_function_targets.cj")
+        }
+
+        @TestMetadata("operator_ambiguity_targets.cj")
+        @Test
+        fun testOperatorAmbiguityTargets() {
+            runTest("cfir/analysis-tests/testData/llt/unusedImport/operator_ambiguity_targets.cj")
+        }
+
         @TestMetadata("unusedImport001")
         @TestDataPath("${'$'}PROJECT_ROOT")
         @Nested
