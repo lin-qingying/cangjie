@@ -9,11 +9,15 @@ import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirImport
+import org.cangnova.cangjie.cfir.diagnostic.ConeAmbiguityError
+import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
+import org.cangnova.cangjie.cfir.references.CfirErrorNamedReference
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
+import org.cangnova.cangjie.cfir.references.CfirResolvedErrorReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.resolve.providers.isPackageVisibleSourceImport
 import org.cangnova.cangjie.cfir.resolve.providers.isUnusedImportCheckExempt
@@ -29,6 +33,7 @@ import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirUserTypeRef
+import org.cangnova.cangjie.cfir.types.ConeDiagnostic
 import org.cangnova.cangjie.cfir.types.classId
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.visitors.CfirDefaultVisitorVoid
@@ -277,10 +282,23 @@ object CfirImportsChecker : CfirFileChecker() {
             }
 
             override fun visitNamedReference(namedReference: CfirNamedReference) {
-                if (namedReference.source != null) {
+                // 独立歧义引用可能保留用于诊断的本地 candidate 占位符，但尚无实际 target。
+                // 官方此时清除目标，不把仅出现了该名字的导入算作已使用。
+                val diagnostic = (namedReference as? CfirDiagnosticHolder)?.diagnostic
+                val hasReferenceTarget = diagnostic !is ConeAmbiguityError || diagnostic.isCallLike
+                if (namedReference.source != null && hasReferenceTarget) {
                     result += namedReference.name
                 }
                 super.visitNamedReference(namedReference)
+            }
+
+            override fun visitErrorNamedReference(errorNamedReference: CfirErrorNamedReference) {
+                // ErrorNamedReference 的默认 visitor 不经过 NamedReference；普通调用候选仍消费显式导入名和别名。
+                if (errorNamedReference.diagnostic is ConeAmbiguityError) {
+                    visitNamedReference(errorNamedReference)
+                } else {
+                    super.visitErrorNamedReference(errorNamedReference)
+                }
             }
 
             override fun visitUserTypeRef(userTypeRef: CfirUserTypeRef) {
@@ -360,6 +378,16 @@ object CfirImportsChecker : CfirFileChecker() {
                 super.visitResolvedNamedReference(resolvedNamedReference)
             }
 
+            override fun visitErrorNamedReference(errorNamedReference: CfirErrorNamedReference) {
+                recordCallAmbiguityImportTargets(errorNamedReference.diagnostic, classIds, callablePackages, session)
+                super.visitErrorNamedReference(errorNamedReference)
+            }
+
+            override fun visitResolvedErrorReference(resolvedErrorReference: CfirResolvedErrorReference) {
+                recordCallAmbiguityImportTargets(resolvedErrorReference.diagnostic, classIds, callablePackages, session)
+                super.visitResolvedErrorReference(resolvedErrorReference)
+            }
+
             override fun visitNamedReferenceWithCandidateBase(namedReferenceWithCandidateBase: CfirNamedReferenceWithCandidateBase) {
                 recordCallableImportTargets(namedReferenceWithCandidateBase.candidateSymbol, classIds, callablePackages, session)
                 super.visitNamedReferenceWithCandidateBase(namedReferenceWithCandidateBase)
@@ -370,6 +398,23 @@ object CfirImportsChecker : CfirFileChecker() {
             callablePackages = callablePackages,
             macroPackages = macroPackages,
         )
+    }
+
+    /**
+     * 官方 AddUsedPackage 在调用失败时仍读取 GetTargets，保留全部调用候选的导出来源。
+     * 独立函数引用歧义会清空 target，不消费导入，因此不能把其候选也计入使用图。
+     */
+    private fun recordCallAmbiguityImportTargets(
+        diagnostic: ConeDiagnostic,
+        classIds: MutableSet<ClassId>,
+        callablePackages: MutableSet<FqName>,
+        session: CfirSession,
+    ) {
+        val ambiguity = diagnostic as? ConeAmbiguityError ?: return
+        if (!ambiguity.isCallLike) return
+        for (symbol in ambiguity.candidateSymbols) {
+            recordCallableImportTargets(symbol, classIds, callablePackages, session)
+        }
     }
 
     /**

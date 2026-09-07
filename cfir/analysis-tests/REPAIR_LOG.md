@@ -5255,3 +5255,17 @@ esolveDelegatingConstructorCallAndSelectCandidate);
   - 证据在 `build/repair-20260906/{11-after,12-before-focus,12-focus,12-family-final,12-after}/`、`11-after--12-after.json` 及 `evidence/varray_cstruct0{1,2}.official.cjc.json`。
 - separate finding: 另行取证发现上游数值字面量定型尚未保留显式整数/浮点后缀，详见 numeric_suffix_context 官方矩阵。本条只闭合数组目标定型规则，不宣称已修复数值后缀类型问题。
 - remaining failures: 全量 612；Extend 0、ExtendImport 4（import14/import6 各两入口）、ExtendsImplementsInterfaceDuplicated 6。
+
+## 2026-09-07：扩展修复阶段交接（第 13 项检查点，未完成验收）
+
+- 用户要求暂停继续修复、保存日志并提交回主分支。本条是明确标注的 WIP 交接，不计入已完成问题类型。
+- 已验收提交：`877aef5bc` 至 `b9130fe2a` 共 12 项；全量失败由 `00-before` 的 642 降至 `12-after` 的 612，核心 Extend 为 0，ExtendImport 剩 4。
+- 本次保存的改动：CfirImportsChecker 从错误调用引用收集真实候选及其扩展接口导出来源，区分裸歧义引用，并覆盖显式导入与别名；CfirExpressionsResolveTransformer 在 operator 解糖失败时恢复源码诊断，保留操作数根错误与已有 ConeUnreportedDuplicateDiagnostic。新增两份回归数据及 PSI/LightTree 生成入口。
+- 官方依据：`CheckUnusedImportImpl.cpp:124` 的 GetTarget/GetTargets；`TypeCheckExpr/BinaryExpr.cpp:843` 的失败解糖恢复；本地 `package-evidence/{ambiguous-function-targets-expanded,operator-ambiguity-import-targets,explicit-function-targets,ambiguous-variable-targets}`。Kotlin 对照为 FirReferenceResolveHelper.getCandidateSymbols、FirExpressionsResolveTransformer 的调用完成边界。
+- 最后已验收基线 `12-after`：Gradle 8436 项、7517 通过、612 失败、307 跳过；XML 8437 records、308 skipped、0 errors。
+- 交接时最新完整报告 `13-handoff-latest`：Gradle 8440 项、7519 通过、614 失败、307 跳过；XML 8441 records、308 skipped、0 errors。原始报告时间为 2026-09-07 15:45–16:00（UTC+8），daemon-43052.out.log 确认 8440 tests completed；该次 JVM 为 JDK 21 / daemon 3g，不能声称与基线 JDK 25 / daemon 1g 同命令验收。
+- 完整键比较：FIXED=0、REGRESSED=0、NEW_KEYS=4（2 PASS、2 FAIL）、REMOVED_KEYS=0、其它状态变化为 0。增加的两条失败都是新增 ambiguous_function_targets 的 PSI/LightTree 入口：explicit_no_match 期望 TYPE_MISMATCH，实际 ARGUMENT_TYPE_MISMATCH。原数据与实现均保留，交下一会话核对项目诊断映射后处理。
+- 既有失败消息变化：import6 两入口消除错误 UNUSED_IMPORT，但仍缺两个导入扩展成员的 shadow 诊断；NonExhaustiveEnum/BinaryCompat 的 change_abi、change_lib 共四条记录新增 UNUSED_IMPORT，其无目标变量歧义规则有官方探针依据。其余既有失败消息保持一致。
+- 仍待处理：第 13 项诊断分类差异；import6/import14 的消费包导入扩展冲突检查（4 条）；ExtendsImplementsInterfaceDuplicated（6 条）；另已发现但未实现的数值字面量显式后缀类型问题。
+- 验证与资源：最后本线程相关切片为 1111 项、59 失败、64 跳过；中间两次测试启动/运行曾受提交内存不足影响，不应计为语义回归。按用户要求，此交接阶段没有再启动构建或测试。
+- 证据：`build/repair-20260906/{12-after,13-full-check,13-root-diagnostics,13-handoff-latest}/`、`12-after--13-handoff-latest.json`。下一会话入口及具体操作注意事项见 `EXTEND_REPAIR_HANDOFF.md`。
