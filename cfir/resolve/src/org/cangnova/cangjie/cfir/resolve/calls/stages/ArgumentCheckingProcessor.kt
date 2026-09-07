@@ -39,7 +39,7 @@ import org.cangnova.cangjie.cfir.references.impl.CfirResolvedAppliedCallableRefe
 import org.cangnova.cangjie.cfir.references.builder.buildErrorNamedReference
 import org.cangnova.cangjie.cfir.references.builder.buildNamedReference
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
-import org.cangnova.cangjie.cfir.resolve.arrayLiteralTypeForSupertypeTarget
+import org.cangnova.cangjie.cfir.resolve.calls.contextualArrayLiteralTypeOrNull
 import org.cangnova.cangjie.cfir.resolve.withExpectedType
 import org.cangnova.cangjie.cfir.resolve.expectedType
 import org.cangnova.cangjie.cfir.resolve.ResolutionMode
@@ -676,25 +676,10 @@ internal object ArgumentCheckingProcessor {
          * 官方仍按元素视角 `E` 定形字面量。这里合成的必须是 `Array<E>` 本身，而不是该超类型。
          * 含当前候选未固定变量的结果继续交给普通约束路径，避免把推断变量写进 CFIR 节点。
          */
-        val targetArrayType = when {
-            expandedExpectedType.arrayLiteralElementType != null -> expandedExpectedType
-            else -> expandedExpectedType.arrayLiteralTypeForSupertypeTarget(session)
-                ?.takeUnless { typeContainsCurrentInferenceVariable(it) }
-        } ?: return null
-        val expectedElementType = targetArrayType.arrayLiteralElementType ?: return null
-        if (targetArrayType is ConeVArrayType && targetArrayType.size != arrayLiteral.elements.size.toLong()) {
+        val targetArrayType = arrayLiteral.contextualArrayLiteralTypeOrNull(expandedExpectedType, session) ?: return null
+        if (expandedExpectedType.arrayLiteralElementType == null && typeContainsCurrentInferenceVariable(targetArrayType)) {
             return null
         }
-
-        val elementsCompatible = arrayLiteral.elements.all { element ->
-            val elementType = element.coneTypeOrNull?.let { IdealTypeResolver.resolveIfIdeal(it, expectedElementType) }
-                ?: return@all false
-            elementType is ConeErrorType ||
-                    expectedElementType is ConeErrorType ||
-                    AbstractTypeChecker.equalTypes(session.typeContext, elementType, expectedElementType) ||
-                    AbstractTypeChecker.isSubtypeOf(session.typeContext, elementType, expectedElementType)
-        }
-        if (!elementsCompatible) return null
 
         arrayLiteral.replaceConeTypeOrNull(targetArrayType)
         return targetArrayType

@@ -5236,3 +5236,22 @@ esolveDelegatingConstructorCallAndSelectCandidate);
   - 前后同一全量命令 `gradlew-queue.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g'`：Gradle 均为 8434 项、307 跳过，失败 616 → 614；新鲜 XML 均为 8435 records、308 skipped、0 errors，通过 7511 → 7513。
   - 完整测试键对比 FIXED=2、REGRESSED=0、NEW_KEYS=0、REMOVED_KEYS=0、其它状态变化为 0；其余 614 条失败消息完全不变。证据：`build/repair-20260906/{10-after,11-family,11-after}/`、`10-after--11-after.json`。
 - remaining failures: 全量 614；Extend 0、ExtendImport 6（import10/import14/import6，各两入口）、ExtendsImplementsInterfaceDuplicated 6。
+
+## 2026-09-07：数组字面量目标定型先于普通变参选择
+
+- problem type: Extend Import / Array Literal / Argument Mapping —— 参数 Array<I> 接受可装箱到 I 的数组字面量，但 CFIR 把字面量按无上下文 Array<Int64> 判断后，错误地转成了元素类型 I 的变参实参。
+- root cause: 运行时 PROBE_ARRAY_CONTEXT 证明：最初 expected=Array<I> 时元素尚未解析，后续 selectVariadicExpectedType 只做已有数组类型的名义 subtype 比较，把整个数组改按 I 检查。参数检查和完成写回又分别维护数组目标逻辑，非空及嵌套字面量没有统一传播目标元素类型。
+- official Cangjie evidence: import10 的依赖库及可执行文件均通过 cjc 1.0.5 编译和链接，无诊断（`package-evidence/import10-executable-linked`）。新增矩阵确认数组字面量、变量元素、嵌套数组、真正的数组变参元素及函数值调用合法；先独立推断为 Array<Int64> 的变量传给 Array<I> 仍报类型不匹配，不能改变数组不变性。逐包源码和输出在 `package-evidence/array-element-context-regression/`。官方 `TypeCheckBuiltinExpr.cpp:76-128` 按元素目标检查并构造数组；`TypeCheckCall.cpp:2940-3095` 先匹配普通调用，再尝试变参调用。
+- Kotlin counterpart files consulted: `external/kotlin/compiler/fir/resolve/src/org/jetbrains/kotlin/fir/resolve/calls/stages/ArgumentCheckingProcessor.kt:408` 保留集合字面量 expected type；`calls/stages/FirArgumentsToParametersMapper.kt` 区分参数映射与 vararg 收集；`transformers/FirCallCompletionResultsWriterTransformer.kt:377-395` 向集合元素下传目标类型后写回数组类型。
+- CFIR owner files changed: 新增 `cfir/resolve/.../calls/CfirArrayLiteralExpectedType.kt` 提供不修改表达式的共享目标类型判定；ArgumentCheckingProcessor、CfirCheckArguments、CfirCallCompletionResultsWriterTransformer 分别复用于实参类型检查、普通/变参选择和最终写回。嵌套字面量递归传播目标，普通数组变量保持名义不变性。
+- repair principle: 让三个阶段消费同一表达式目标定型规则，普通数组构造确实不成立时才选择变参语义，避免为接口名称或单个调用添加特判。
+- fixtures covered: 原 `Extend_import/import10/main.cj`、新增 `Extend_import/array_element_context.cj`、`Call/variadic_enum.cj`，均验证 PSI/LightTree；另 `macro/llt/varray/varray_cffi/varray_cstruct01.cj`、`varray_cstruct02.cj` 的两入口消除了嵌套数组 TYPE_MISMATCH 误报。完整 Array/Varray/Variadic/Call/Generics/ExtendImport 切片的 1398 个键见 `12-family-final/results.json`。
+- fixture correction: 原有 fixture 未修改，只新增 cjc 验证的正反例矩阵。临时运行时追踪已从源码移除。
+- verification commands and outcome:
+  - `gradlew-queue.bat :cfir:analysis-tests:test --tests 'org.cangnova.cangjie.cfir.analysis.tests.*Import10*' --tests 'org.cangnova.cangjie.cfir.analysis.tests.*ArrayElementContext*' --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g' '-Pkotlin.compiler.execution.strategy=in-process'`：6/6 通过。
+  - `gradlew-queue.bat :cfir:analysis-tests:test --tests 'org.cangnova.cangjie.cfir.analysis.tests.*Array*' --tests 'org.cangnova.cangjie.cfir.analysis.tests.*Varray*' --tests 'org.cangnova.cangjie.cfir.analysis.tests.*Variadic*' --tests 'org.cangnova.cangjie.cfir.analysis.tests.*Call*' --tests 'org.cangnova.cangjie.cfir.analysis.tests.*Generics*' --tests 'org.cangnova.cangjie.cfir.analysis.tests.*ExtendImport*' --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g' '-Pkotlin.compiler.execution.strategy=in-process'`：1398 项，1306 通过、73 失败、19 跳过，REGRESSED=0。空数组获得目标后应重新定型，已修正中间 variadic_enum 回归；该原文件 cjc 可执行编译 exit 0。
+  - 前后同一全量命令 `gradlew-queue.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g'`：Gradle 8434 → 8436 项，失败 614 → 612，跳过均 307；新鲜 XML 8435 → 8437 records，通过 7513 → 7517，skipped 均 308、errors 均 0。
+  - 完整键比较 FIXED=2、REGRESSED=0、NEW_KEYS=2（全部 PASS）、REMOVED_KEYS=0、其它状态变化为 0。四条仍失败的 VarrayCstruct01/02 记录只减少 TYPE_MISMATCH，其余失败消息不变。cjc 证明 02 无 Sema 错误，01 只报 CStruct 成员不满足 CType，不报告数组字面量类型不匹配；CType 本身的遗留问题未伪装为通过。
+  - 证据在 `build/repair-20260906/{11-after,12-before-focus,12-focus,12-family-final,12-after}/`、`11-after--12-after.json` 及 `evidence/varray_cstruct0{1,2}.official.cjc.json`。
+- separate finding: 另行取证发现上游数值字面量定型尚未保留显式整数/浮点后缀，详见 numeric_suffix_context 官方矩阵。本条只闭合数组目标定型规则，不宣称已修复数值后缀类型问题。
+- remaining failures: 全量 612；Extend 0、ExtendImport 4（import14/import6 各两入口）、ExtendsImplementsInterfaceDuplicated 6。

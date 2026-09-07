@@ -41,6 +41,7 @@ import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.expressions.buildResolvedArgumentList
 import org.cangnova.cangjie.cfir.expressions.builder.buildArrayLiteral
+import org.cangnova.cangjie.cfir.resolve.calls.contextualArrayLiteralTypeOrNull
 import org.cangnova.cangjie.cfir.expressions.builder.buildBlockCopy
 import org.cangnova.cangjie.cfir.expressions.builder.buildReturnExpression
 import org.cangnova.cangjie.cfir.lookupTracker
@@ -1012,9 +1013,22 @@ class CfirCallCompletionResultsWriterTransformer(
         data?.argumentReplacements?.get(arrayLiteral)?.let { replacement ->
             return replacement.transformSingle(this, data)
         }
-        val expectedArrayType = data?.getExpectedType(arrayLiteral)?.fullyExpandedType()
-            ?.takeIf { it.arrayLiteralElementType != null }
-        if (arrayLiteral.elements.isEmpty() && expectedArrayType != null) {
+        // 空数组在无上下文时可能携带“无法推断”占位类型，已有目标后仍须完成定型。
+        val expectedArrayType = if (arrayLiteral.elements.isNotEmpty() && arrayLiteral.coneTypeOrNull is ConeErrorType) {
+            null
+        } else {
+            data?.getExpectedType(arrayLiteral)?.let { expectedType ->
+                arrayLiteral.contextualArrayLiteralTypeOrNull(expectedType, session)
+            }
+        }
+        if (expectedArrayType != null && data != null) {
+            val elementType = requireNotNull(expectedArrayType.arrayLiteralElementType)
+            val elementData = elementType.toExpectedType(
+                argumentReplacements = data.argumentReplacements,
+                argumentMappingFailed = data.argumentMappingFailed,
+            )
+            arrayLiteral.transformAnnotations(this, data)
+            arrayLiteral.transformElements(this, elementData)
             arrayLiteral.replaceConeTypeOrNull(expectedArrayType)
             return arrayLiteral
         }

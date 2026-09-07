@@ -3348,6 +3348,12 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiLlTDiagnosticsTest() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend_import")
         }
 
+        @TestMetadata("array_element_context.cj")
+        @Test
+        fun testArrayElementContext() {
+            runTest("cfir/analysis-tests/testData/llt/Extend_import/array_element_context.cj")
+        }
+
         @TestMetadata("err_extend_primitive.cj")
         @Test
         fun testErrExtendPrimitive() {
