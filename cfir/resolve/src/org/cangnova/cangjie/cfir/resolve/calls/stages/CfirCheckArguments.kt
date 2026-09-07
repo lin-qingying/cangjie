@@ -27,6 +27,7 @@ package org.cangnova.cangjie.cfir.resolve.calls.stages
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.diagnostic.InapplicableCandidate
 import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
+import org.cangnova.cangjie.cfir.expressions.CfirArrayLiteral
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.resolve.calls.ConeResolutionAtom
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
@@ -36,6 +37,7 @@ import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CheckerSink
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.yieldDiagnostic
 import org.cangnova.cangjie.cfir.resolve.calls.getExpectedType
+import org.cangnova.cangjie.cfir.resolve.calls.contextualArrayLiteralTypeOrNull
 import org.cangnova.cangjie.cfir.resolve.calls.inoutExpectedTypeOrNull
 import org.cangnova.cangjie.cfir.resolve.calls.prepareArgumentType
 import org.cangnova.cangjie.cfir.resolve.calls.substituteExplicitTypeArgumentConstraints
@@ -211,7 +213,11 @@ private fun Candidate.selectVariadicExpectedType(
     val argumentType = argument.coneTypeOrNull ?: return null
     val normalExpectedType = this.substitutor.substituteOrSelf(argument.getExpectedType(session, parameter))
     if (argumentType is ConeErrorType || normalExpectedType is ConeErrorType) return null
-    val preparedArgumentType = prepareArgumentType(argumentType, session)
+    // 数组字面量还可按普通形参的元素类型构造；不能用无上下文的 Array<Int64>
+    // 直接否定 Array<I>，否则尚未检查普通调用就错误地选成了变参元素 I。
+    val contextualArgumentType = (argument as? CfirArrayLiteral)
+        ?.contextualArrayLiteralTypeOrNull(normalExpectedType, session)
+    val preparedArgumentType = prepareArgumentType(contextualArgumentType ?: argumentType, session)
     // 普通调用路径必须先按完整参数类型判断是否可用。特别是数组字面量也可能是
     // 变参元素：`f(Array<Array<Int64>>)` 的 `f([1])` 在官方实现中会先尝试普通
     // Array<Array<Int64>> 参数，失败后再把原实参作为合成 ArrayLit 的一个元素。
