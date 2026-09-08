@@ -5362,3 +5362,31 @@ XML 分别为 8455 / 8467 records，均另含一条跳过的聚合记录；skipp
   - 非宏 328：PatternMatching 47、Record 35、ErrMsgs 30、InitializationCheck 24、Call 22、Match 20、Lambda 14、Assign 12、Linkage 12、ConstraintCheck 12、SolveTypeArgs 12、Ffi 10、UnusedImport 8、Exception 8、OptionalChain 8、ExtendsImplementsInterfaceDuplicated 6、NonExhaustiveEnum 6、Array 6、IfLetExpr 4、Effect 4、If 4、Lookup 4、WhileLetExpr 2、Box 2、Const 2、DesugarErrorReport 2、FuzzInvalidParse 2、IsOrAsExpr 2、JoinMeet 2、Native 2、OptionalModifiers 2、Synchronized 2。
   - Macro 252：Annotation 97、APILevelChecker 70、Varray 34、Function 10、QuoteExpr 10、Diagnostics2 7、UnusedImport 4、Root 4、Lookup 2、Diagnostics 2、Typealias 2、ConstEvaluation 2、Ffi 2、Operator 2、OperatorOverload 2、Type 2。
   - capture_transitive 的旧 fixture 仍期待 USE_FUNC_CAPTURE_VAR_ALONE，而官方为 FUNC_CAPTURE_VAR_CANNOT_EXPR；本项恢复其正确的实际诊断类别，期望名称的独立修正留在既有 Lambda 遗留中。
+
+## 2026-09-09：Call 的 IGNORE_OPEN 定位到完整修饰符
+
+- problem type: Diagnostics / Modifier source range。final class 中显式 open 成员的警告应覆盖完整 open token，不能标在声明首字符。
+- root cause: CfirOpenMemberChecker 已用 realSourceModifiers 找到 open，却丢弃该 source，改用 callable.source.firstCharacterDiagnosticSource()；public open func 因此标在 public 的首字母。
+- official Cangjie evidence: cjc 1.0.5 编译 call31.cj 成功并报告一条 sema_ignore_open warning，原始命令、源码和 JSON 在 build/repair-20260906/evidence/call31.official.*。external/cangjie_compiler/src/Sema/DeclAttributeChecker.cpp:322-355 对不可继承 class 的显式 open function/property 报告该警告。范围按 cangjie-cfir-llt-repair 的 Diagnostic Range Policy，覆盖相关完整 token。
+- Kotlin counterpart files consulted: FirOpenMemberChecker.kt；FirErrors.kt 的 NON_FINAL_MEMBER_IN_FINAL_CLASS 使用 SourceElementPositioningStrategies.OPEN_MODIFIER；frontend.common-psi 中 PositioningStrategies.kt:533-544 与 LightTreePositioningStrategies.kt:435-446 均取得 open modifier 的完整范围。
+- CFIR owner files changed: cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirOpenMemberChecker.kt，直接使用共享 SourceModifier.source。
+- repair principle: 在共享 class-member checker 保留真实修饰符 source，PSI 和 LightTree 复用同一 token 范围契约，不改变警告触发条件。
+- fixtures covered: llt/call/call31.cj；llt/class/open_modifier/class_open_modifier1.cj、class_open_modifier3.cj。
+- fixture correction: call31 补上官方已证明缺失的警告；另外两份测试把 public 首字符上的旧标记移至完整 open。已检索整个 testData 的 IGNORE_OPEN 标记，无其它同类旧范围。
+- verification commands and outcome:
+  - `gradlew-queue.bat :cfir:analysis-tests:test --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTTestGenerated$Call*' --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTPsiTestGenerated$Call*' --tests 'org.cangnova.cangjie.cfir.analysis.tests.*$Class$OpenModifier*' --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g' '-Pkotlin.compiler.execution.strategy=in-process'`：198 项，178 通过、20 既有失败；OpenModifier 26/26，Call 152/172。相同测试键 FIXED=2、REGRESSED=0，其余失败消息不变；证据 22-open-family。
+  - 修复前后完整命令相同：`gradlew-queue.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g'`。本次正常结束，用时 11m 15s；退出码 1 对应既有失败，无停滞或 worker 崩溃。
+  - 21-full-final → 22-open-full 完整键比较：FIXED=2（call31 的 PSI/LightTree）、REGRESSED=0、NEW_KEYS=0、REMOVED_KEYS=0、其它状态变化=0；仍失败的 578 项消息全部不变。证据为两份快照与 21-full-final--22-open-full.json。
+
+| 指标（Gradle） | 修复前 | 修复后 |
+| --- | ---: | ---: |
+| 测试总数 | 8466 | 8466 |
+| 通过 | 7579 | 7581 |
+| 失败 | 580 | 578 |
+| 跳过 | 307 | 307 |
+
+XML 均为 8467 records，另含一条 skipped 聚合记录（skipped=308），errors=0。
+
+- remaining failures: Call 仍有 20 项（10 份源码的双入口），按问题类型为函数候选作用域/返回类型、泛型调用与 enum owner 推断、非泛型类型实参分类、函数值诊断期望、构造器递归期望、parser recovery。全量其余 558 项保持原状态。
+  - `gradlew-queue.bat validateDocumentation --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx512m'`：BUILD SUCCESSFUL。
+- change isolation: 仅提交上述 checker、三份 fixture 和本日志；接手时其它用户 WIP 保持独立。

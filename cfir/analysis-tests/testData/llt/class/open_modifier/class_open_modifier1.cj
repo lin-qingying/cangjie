@@ -2,7 +2,7 @@
 
 
 class A {
-    <!IGNORE_OPEN!>p<!>ublic open func f(): Int32 {
+    public <!IGNORE_OPEN!>open<!> func f(): Int32 {
         return 0
     }
 
