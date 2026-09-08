@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.resolve.calls
 
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
+import org.cangnova.cangjie.cfir.declarations.instantiatedQualifierOwnerType
 import org.cangnova.cangjie.cfir.declarations.noArgEnumConstructorTargetType
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
@@ -113,6 +114,7 @@ internal fun Candidate.noArgEnumConstructorTargetType(
     if (enumConstructor.valueParameters.isNotEmpty()) return null
     if (callInfo.hasExplicitTypeArguments) return null
     val enumConstructorSymbol = symbol as? CfirEnumConstructorSymbol ?: return null
+    if (enumConstructorSymbol.instantiatedQualifierOwnerType(callInfo.explicitReceiver, session) != null) return null
     return enumConstructorSymbol.noArgEnumConstructorTargetType(expectedType, session)
 }
 
@@ -136,6 +138,8 @@ internal fun CfirExpression.noArgEnumConstructorTargetType(
         is CfirResolvedErrorReference -> reference.resolvedSymbol
         else -> null
     } as? CfirEnumConstructorSymbol ?: return null
+    val qualifier = (this as? CfirQualifiedAccessExpression)?.explicitReceiver
+    if (enumConstructorSymbol.instantiatedQualifierOwnerType(qualifier, session) != null) return null
     return enumConstructorSymbol.noArgEnumConstructorTargetType(expectedType, session)
 }
 

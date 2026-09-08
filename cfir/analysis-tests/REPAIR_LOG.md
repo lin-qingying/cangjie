@@ -5390,3 +5390,31 @@ XML 均为 8467 records，另含一条 skipped 聚合记录（skipped=308），e
 - remaining failures: Call 仍有 20 项（10 份源码的双入口），按问题类型为函数候选作用域/返回类型、泛型调用与 enum owner 推断、非泛型类型实参分类、函数值诊断期望、构造器递归期望、parser recovery。全量其余 558 项保持原状态。
   - `gradlew-queue.bat validateDocumentation --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx512m'`：BUILD SUCCESSFUL。
 - change isolation: 仅提交上述 checker、三份 fixture 和本日志；接手时其它用户 WIP 保持独立。
+
+## 2026-09-09：显式枚举限定符保留已实例化的 owner 类型
+
+- problem type: Call / Enum Target Typing。f(Option<Int64>.None) 与 f(Option<Nothing>.None) 已提供完整类型实参，不能再退化为泛型函数推断失败。
+- root cause: 无参 enum constructor completion 优先读取外层 expected type，覆盖了显式 qualifier 的已知 owner；实参和 completion writer 的共享目标定型 helper 又会再次覆盖该类型。初始化器检查同时把所有未在成员名后写类型实参的 enum value 当作裸构造器跳过，漏掉显式 owner 不兼容。
+- official Cangjie evidence: cjc 1.0.5 接受 call_error_report_04 的全部四种调用。qualified_enum_owner_inference 探针确认显式 Option/普通 enum/具体别名/泛型别名/外层 T 均可作为泛型推断输入；显式 Bool owner 传给或初始化 Int64 owner 时报告四条 sema_mismatched_types。源码和 JSON 在 build/repair-20260906/evidence/{call_error_report_04,qualified_enum_owner_inference}.official.*。
+  - external/cangjie_compiler/src/Sema/TypeCheckExpr/NameReferenceExpr.cpp:584-587 先读取成员声明类型再按 base 实例化；TypeCheckReference.cpp:551-581 的 InstantiateReferenceType 使用 GenerateGenericTypeMapping 保留已知映射；EnumSugarChecker.cpp:43-76 区分显式实例化与无类型实参的上下文推断；LocalTypeArgumentSynthesis.cpp:258-282 消费实参的真实 Option 类型。
+- Kotlin counterpart files consulted: FirCallCompleter.kt 的 initialTypeOfCandidate → expected constraints → completion writer 流程；CreateFreshTypeVariableSubstitutorStage.kt 的已知类型实参替换和声明参数实例化。仓颉无参枚举的目标定型规则仍取自上述官方实现。
+- CFIR owner files changed: providers/CfirEnumConstructorSemantics.kt；resolve/calls/EnumConstructorTargetTyping.kt；resolve/inference/CfirCallCompleter.kt；checkers/declaration/CfirPatternVariableInitializerTypeMismatchChecker.kt。
+- repair principle: 在 providers 共享层按 qualifier 声明参数 symbol 判定 owner 是否已实例化；所有目标定型入口只补全未定 owner，已实例化 owner 保持自身类型并参与普通参数/初始化检查。
+- fixtures covered: llt/call/call_error_report_04.cj；新增 llt/call/qualified_enum_owner_inference.cj（Option<Int64>/Nothing、普通 enum、具体与泛型别名、外层声明 T、裸 None、四处不兼容 owner），两套 LLT 生成类同步更新。既有 fixture 未调整期望。
+- verification commands and outcome:
+  - `gradlew-queue.bat :cfir:analysis-tests:test --tests 'org.cangnova.cangjie.cfir.analysis.tests.*$Call*' --tests 'org.cangnova.cangjie.cfir.analysis.tests.*$TypeInfer*' --tests 'org.cangnova.cangjie.cfir.analysis.tests.*$Generics*' --tests 'org.cangnova.cangjie.cfir.analysis.tests.*$Typealias*' --tests 'org.cangnova.cangjie.cfir.analysis.tests.*$Enum*' --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g' '-Pkotlin.compiler.execution.strategy=in-process'`：1362 项，1327 通过、24 既有失败、11 跳过；FIXED=2、REGRESSED=0、新增两项通过、其余失败消息不变。证据 23-enum-owner-family。
+  - 修复前后相同全量命令 `gradlew-queue.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g'`：本次 11m 50s 正常结束；22-open-full → 23-enum-owner-full 比较 FIXED=2、REGRESSED=0、NEW_KEYS=2（均通过）、REMOVED_KEYS=0、其它状态变化=0；576 项既有失败消息全部不变。
+  - Call 156/174；TypeInfer 76/76、Generics 680/680、非宏 Typealias 110/110。完整键、XML 与比较文件位于 build/repair-20260906。
+  - `gradlew-queue.bat validateDocumentation --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx512m'`：BUILD SUCCESSFUL。
+
+| 指标（Gradle） | 修复前 | 修复后 |
+| --- | ---: | ---: |
+| 测试总数 | 8466 | 8468 |
+| 通过 | 7581 | 7585 |
+| 失败 | 578 | 576 |
+| 跳过 | 307 | 307 |
+
+XML 为 8467 → 8469 records，均另含一条 skipped 聚合记录（skipped=308），errors=0。
+
+- remaining failures: Call 18 项（9 份源码的双入口），剩余类型为同签名函数遮蔽/扩展成员候选排序、隐式泛型约束重复诊断、非泛型成员的显式类型实参、函数值诊断期望、构造器递归期望与 parser recovery；其它 558 项保持原状态。
+- change isolation: 仅提交本项共享 owner、一个新增 fixture、两套对应生成方法和本日志；其它用户 WIP 保持独立。

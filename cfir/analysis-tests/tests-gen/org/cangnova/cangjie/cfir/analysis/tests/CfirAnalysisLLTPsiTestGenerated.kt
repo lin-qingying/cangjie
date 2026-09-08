@@ -6542,6 +6542,12 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiLlTDiagnosticsTest() {
             runTest("cfir/analysis-tests/testData/llt/call/nested_named_arg_02.cj")
         }
 
+        @TestMetadata("qualified_enum_owner_inference.cj")
+        @Test
+        fun testQualifiedEnumOwnerInference() {
+            runTest("cfir/analysis-tests/testData/llt/call/qualified_enum_owner_inference.cj")
+        }
+
         @TestMetadata("variadic_class.cj")
         @Test
         fun testVariadicClass() {

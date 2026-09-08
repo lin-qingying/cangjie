@@ -6,6 +6,7 @@ import org.cangnova.cangjie.cfir.analysis.checkers.expression.explicitDeclaredTy
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.isHandled
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
+import org.cangnova.cangjie.cfir.declarations.instantiatedQualifierOwnerType
 import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
 import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
@@ -72,6 +73,7 @@ private fun CfirExpression.hasResolutionDiagnostic(): Boolean {
  *
  * 这种场景会由 enum 构造器语义负责，不在普通初始化器 mismatch 中重复报告。
  */
+context(context: CheckerContext)
 private fun CfirExpression.isBareEnumConstructorAccess(): Boolean {
     if (this is CfirFunctionCall) return false
     val access = when (this) {
@@ -83,6 +85,7 @@ private fun CfirExpression.isBareEnumConstructorAccess(): Boolean {
 
     val symbol = access.calleeReference.enumConstructorSymbol() ?: return false
     val constructor = symbol.takeIf { it.isBound }?.cfir as? CfirEnumConstructor ?: return false
+    if (constructor.symbol.instantiatedQualifierOwnerType(access.explicitReceiver, context.session) != null) return false
     return constructor.valueParameters.isEmpty()
 }
 

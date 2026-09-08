@@ -30,6 +30,7 @@ import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirNamedReferenceWithC
 import org.cangnova.cangjie.cfir.resolve.calls.stages.TypeArgumentMapping
 import org.cangnova.cangjie.cfir.resolve.calls.substituteExplicitTypeArgumentConstraints
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
+import org.cangnova.cangjie.cfir.declarations.instantiatedQualifierOwnerType
 import org.cangnova.cangjie.cfir.resolve.isOperatorOperandInference
 import org.cangnova.cangjie.cfir.resolve.inference.model.ConeDeclaredUpperBoundConstraintPosition
 import org.cangnova.cangjie.cfir.resolve.inference.model.ConeExplicitTypeParameterConstraintPosition
@@ -738,6 +739,9 @@ class CfirCallCompleter(
         ownerClassId: ClassId,
         resolutionMode: ResolutionMode,
     ): EnumConstructorTargetTypeResult {
+        (symbol as? CfirEnumConstructorSymbol)
+            ?.instantiatedQualifierOwnerType(callInfo.explicitReceiver, session)
+            ?.let { return EnumConstructorTargetTypeResult.Resolved(it) }
         val expectedType = (resolutionMode as? ResolutionMode.WithExpectedType)
             ?.expectedType
             ?.fullyExpandedType()
