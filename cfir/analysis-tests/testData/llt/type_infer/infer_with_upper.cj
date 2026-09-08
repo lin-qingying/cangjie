@@ -13,7 +13,7 @@ struct B<T> where T <: I<T> {
 
 func test<T>() where T <: I<T> {
     // test for error report for this 'A()'
-    return <!UNABLE_TO_INFER_GENERIC_FUNC!>A()<!>
+    return <!UNABLE_TO_INFER_GENERIC_FUNC!>A<!>()
 }
 
 func test2<T>() where T <: I<T> {

@@ -5289,3 +5289,19 @@ esolveDelegatingConstructorCallAndSelectCandidate);
   - 前后同一完整命令 `gradlew-queue.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g'`：8440 → 8450 项，失败 608 → 608，跳过均 307；XML 8441 → 8451 records，通过 7525 → 7535，skipped 均 308、errors 均 0。
   - 完整键比较 FIXED=0、REGRESSED=0、NEW_KEYS=10（全部 PASS）、REMOVED_KEYS=0、其它状态变化=0；608 条既有失败消息完全一致。证据为 `18-full-before`、`18-after`、`18-full-before--18-after.json`。当前基线包含用户原有未提交工作，已在 initial-20260908 保存；本提交不混入弃用、primitive shadow、函数返回类型去重和普通接口返回类型检查的独立修改。
 - remaining failures: 全量 608；核心 Extend、ExtendImport 均 0；ExtendsImplementsInterfaceDuplicated 仍为 6；TypeInfer 12（六个 fixture 的两入口），以及上面列明的未提交 TypeInfer 工作引入的 20 条回归仍待继续处理。
+
+## 2026-09-08：泛型调用诊断范围一致性及 TypeInfer 回归复核
+
+- problem type: Diagnostics / Generic Call Source Range。普通构造器与 typealias 构造器的无法推断诊断统一覆盖完整 callee，不包含参数括号。
+- root cause: 接管的未提交 TypeInfer 修改按 constructor 类型扩大诊断范围，使 `Typealias32` 的三个名称错误都扩到整个调用；`infer_with_upper` 的旧期望 `A()` 也与同一符号范围规则不一致。已删除未提交的 constructor 分支，保持既有共享 callee 定位逻辑，并补充其一致性说明。
+- official Cangjie evidence: `evidence/infer_with_upper.official.cjc.json` 确认 A 的泛型参数无法推断；范围采用本项目 Diagnostic Range Policy。`external/cangjie_compiler/src/Sema/TypeArgumentInference.cpp` 的 DiagnoseForCallInference 使用 ce.baseFunc。
+- Kotlin counterpart files consulted: `external/kotlin/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/diagnostics/coneDiagnosticToFirDiagnostic.kt` 的 sourceOfCallToSymbolWith 以 calleeReference.source 定位相关符号；期望类型不匹配另使用 qualified-access 范围。
+- CFIR owner files changed: `cfir/checkers/.../diagnostics/coneDiagnosticToCfirDiagnostic.kt` 明确共享 callee 范围契约；`testData/llt/type_infer/infer_with_upper.cj` 仅将标记从 A() 改为完整名称 A，源码不变。接管修改尚未提交，因此删除错误分支本身不产生相对 HEAD 的实现差异。
+- repair principle: 同一种符号推断失败使用同一个 callee 定位 owner，不按普通构造器、别名构造器或函数的实现类别扩大范围。
+- fixtures covered: `typealias/typealias32.cj`、`type_infer/infer_with_upper.cj` 的 PSI/LightTree；完整 Generics、Typealias、TypeInfer 切片 891 项，完整键见 `19-three-families/results.json`。
+- verification commands and outcome:
+  - `gradlew-queue.bat :cfir:analysis-tests:test --tests 'org.cangnova.cangjie.cfir.analysis.tests.*TypeInfer*' --tests 'org.cangnova.cangjie.cfir.analysis.tests.*Generics*' --tests 'org.cangnova.cangjie.cfir.analysis.tests.*Typealias*' --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g' '-Pkotlin.compiler.execution.strategy=in-process'`：891 项，876 通过、12 失败、3 跳过。普通 Generics/Typealias 零失败；12 条为 TypeInfer 10 条及宏 Typealias 原有 2 条；既有通过项 REGRESSED=0。
+  - 固定全量 `gradlew-queue.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g'`：8450 → 8454 项，失败 608 → 592，通过 7535 → 7555，跳过均 307；XML 8451 → 8455 records，skipped 均 308，errors 均 0。
+  - `18-after` → `19-recovered-full` 完整键比较：FIXED=20、REGRESSED=0、NEW_KEYS=4（两个新 lambda 反例的双入口，均失败，留待下一项修复）、REMOVED_KEYS=0、其它状态变化=0。
+  - 全量同时核实已移除未提交的调用实参驱动 lambda 签名重写；CallInference04、VariadicPipeline、MemberFuncOverload1、GenericSubstPerf、LambdaParamInfer04、EnumAndVarPattern、LambdaParam04/05/07 和 Typealias32 的双入口全部恢复。这些移除是在工作区内清理接管修改，不将其它未验收的 TypeInfer 实现混入本范围提交。
+- remaining failures: 全量 592，包括原有 588 条与新增反例 4 条；TypeInfer 剩 enum 成员返回值、嵌套 Option 推断分类、lambda_param_09 的 while-let 参数推断，以及新增 lambda 定义点推断反例。初始工作区、官方证据、两次 XML 和完整比较文件均保存在 `build/repair-20260906`。
