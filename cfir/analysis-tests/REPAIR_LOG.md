@@ -5483,3 +5483,30 @@ XML 为 8471 → 8473 records，均另含一条 skipped 聚合记录（skipped=3
 
 - remaining failures: Call 14 项（7 份源码的双入口），剩同签名函数的词法遮蔽、非泛型成员类型实参分类、裸函数值及参数诊断期望、构造器递归期望、parser recovery；其它 556 项保持既有状态。
 - change isolation: 仅提交上述两个 owner、一个新增 fixture、两个生成方法和本日志，保留用户其它 WIP。
+
+## 2026-09-09：裸泛型函数引用使用既有的缺类型实参诊断
+
+- problem type: Diagnostics / Fixture Expectations。无目标类型的裸泛型函数值不是一次泛型函数调用，缺失类型实参应使用项目既有 GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT。
+- root cause: call_reference_inference_03.cj 与 call27.cj 仍期待 UNABLE_TO_INFER_GENERIC_FUNC，而共享 ConeGenericFunctionReferenceWithoutTypeArgumentsError 的映射及同族 Enum 用例早已使用上述项目诊断名。
+- official Cangjie evidence: cjc 1.0.5 分别在完整 test 与 case03 标识符上报告 sema_generic_func_without_type_arg；源码与 JSON 为 build/repair-20260906/evidence/{call_reference_inference_03,call27}.official.*。external/cangjie_compiler/src/Sema/TypeCheckReference.cpp:376-393 排除没有显式类型实参的泛型函数值，Diags.cpp:313-324 产生专用诊断。
+- Kotlin counterpart files consulted: FIR FirCallResolver 与 CheckCallableReferenceExpectedType.kt，用于确认函数值引用与普通调用的独立解析归属；仓颉是否要求类型实参仍由官方实现决定。
+- CFIR owner files changed: 无实现改动。已核实 CfirCallResolver 的 ConeGenericFunctionReferenceWithoutTypeArgumentsError 和 coneDiagnosticToCfirDiagnostic 的现有映射。
+- repair principle: 以官方语义和已建立的项目诊断表面纠正过时期望，保留语法与完整标识符范围。
+- fixtures covered: llt/call/call_reference_inference_03.cj、call27.cj。已检索全部 LLT 的裸 UNABLE_TO_INFER_GENERIC_FUNC 标记，此类旧标记仅这两份。
+- verification commands and outcome:
+  - `gradlew-queue.bat :cfir:analysis-tests:test --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTTestGenerated$Call*' --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTPsiTestGenerated$Call*' --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g' '-Pkotlin.compiler.execution.strategy=in-process'`：178 项，168 PASS、10 原有 FAIL；FIXED=4、REGRESSED=0，其余失败消息不变。证据 26-generic-reference-family。
+  - 修复前后同一全量命令 `gradlew-queue.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g'`：本次 11m 28s 正常结束；25-member-scope-full → 26-generic-reference-full：FIXED=4、REGRESSED=0、NEW_KEYS=0、REMOVED_KEYS=0、其它状态变化=0；566 项剩余失败消息全部不变。
+  - TypeInfer 76/76、Generics 680/680、非宏 Typealias 110/110 保持通过。
+  - `gradlew-queue.bat validateDocumentation --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx512m'`：BUILD SUCCESSFUL。
+
+| 指标（Gradle） | 修复前 | 修复后 |
+| --- | ---: | ---: |
+| 测试总数 | 8472 | 8472 |
+| 通过 | 7595 | 7599 |
+| 失败 | 570 | 566 |
+| 跳过 | 307 | 307 |
+
+XML 均为 8473 records，另含一条 skipped 聚合记录（skipped=308），errors=0。
+
+- remaining failures: Call 10 项（call25、call_inference_02、call_inference_11、call22、call_fuzz01 的双入口），其它 556 项保持既有状态。
+- change isolation: 本项只提交上述两份 fixture 和本日志；所有用户 WIP 保持独立。
