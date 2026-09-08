@@ -24,14 +24,20 @@
 
 package org.cangnova.cangjie.cfir.declarations
 
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.CfirReference
+import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirEnumSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
+import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterLookupTag
+import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.type.model.TypeConstructorMarker
@@ -58,6 +64,40 @@ fun CfirEnumConstructorSymbol.noArgEnumConstructorTargetType(
         else -> null
     }
     return expandedExpectedType.takeIf { expectedOwnerClassId == ownerClassId }
+}
+
+/**
+ * 返回无参 enum case 的限定符已经确定的 owner 类型。
+ *
+ * `Option<Int64>.None` 和具体枚举别名已经完成 owner 实例化，外层目标只能检查该类型，
+ * 不能重新定型。裸泛型限定符仍引用其声明参数，才允许由上下文补全；比较参数 symbol
+ * 而非名称，以保留 `Option<T>.None` 中来自外层声明的真实 T。
+ */
+fun CfirEnumConstructorSymbol.instantiatedQualifierOwnerType(
+    qualifier: CfirExpression?,
+    session: CfirSession,
+): ConeCangJieType? {
+    val access = qualifier as? CfirQualifiedAccessExpression ?: return null
+    val classifier = (access.calleeReference as? CfirResolvedNamedReference)
+        ?.resolvedSymbol as? CfirClassLikeSymbol<*> ?: return null
+    val parameters = classifier.cfir.typeParameters
+    if (access.typeArguments.isNotEmpty() && access.typeArguments.size != parameters.size) return null
+    val qualifierType = access.coneTypeOrNull?.fullyExpandedType(session) ?: return null
+    if (qualifierType.containsErrorType()) return null
+    if (access.typeArguments.isEmpty()) {
+        val parameterSymbols = parameters.mapTo(hashSetOf()) { it.symbol }
+        if (qualifierType.contains { type ->
+                when (type) {
+                    is ConeTypeParameterType -> type.lookupTag.typeParameterSymbol in parameterSymbols
+                    is ConeTypeVariableType ->
+                        (type.typeConstructor.originalTypeParameter as? ConeTypeParameterLookupTag)
+                            ?.typeParameterSymbol in parameterSymbols
+                    else -> false
+                }
+            }
+        ) return null
+    }
+    return noArgEnumConstructorTargetType(qualifierType, session)
 }
 
 /**
