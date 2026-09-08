@@ -29,8 +29,11 @@ class ResolutionContext(
     val bodyResolveContext: BodyResolveContext,
 ) : SessionHolder {
     /** 当前解析使用的候选阶段边界。 */
-    internal var candidateProcessingMode: CandidateProcessingMode = CandidateProcessingMode.FULL
-        private set
+    internal var candidateProcessingMode: CandidateProcessingMode
+        get() = bodyResolveContext.candidateProcessingMode
+        private set(value) {
+            bodyResolveContext.candidateProcessingMode = value
+        }
 
     /** 当前 session 的类型系统上下文。 */
     val typeContext: ConeInferenceContext

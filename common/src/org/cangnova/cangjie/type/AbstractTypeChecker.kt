@@ -433,11 +433,10 @@ object AbstractTypeChecker {
         for (index in 0 until returnIndex) {
             val subParameterType = subArguments[index]
             val superParameterType = superArguments[index]
-            state.runWithArgumentsSettings(subParameterType) {
-                if (!runWithImplicitBoxing(false) { isSubtypeOf(state, superParameterType, subParameterType) }) {
-                    return false
-                }
+            val correctArgument = state.runWithArgumentsSettings(subParameterType) {
+                runWithImplicitBoxing(false) { isSubtypeOf(state, superParameterType, subParameterType) }
             }
+            if (!correctArgument) return false
         }
 
         return state.runWithArgumentsSettings(subArguments[returnIndex]) {
@@ -470,14 +469,13 @@ object AbstractTypeChecker {
         for (index in subElements.indices) {
             val subElementType = subElements[index]
             val superElementType = superElements[index]
-            state.runWithArgumentsSettings(subElementType) {
+            val correctArgument = state.runWithArgumentsSettings(subElementType) {
                 // 官方 TypeManager::IsTupleSubtype 固定以 implicitBoxed=false 检查元素。
                 // 目标类型下的 tuple literal 会在表达式检查阶段逐元素完成装箱；这里只
                 // 处理两个已经定型的 tuple 值，不能再次把值类型提升为接口类型。
-                if (!runWithImplicitBoxing(false) { isSubtypeOf(state, subElementType, superElementType) }) {
-                    return false
-                }
+                runWithImplicitBoxing(false) { isSubtypeOf(state, subElementType, superElementType) }
             }
+            if (!correctArgument) return false
         }
 
         return true
@@ -533,9 +531,11 @@ object AbstractTypeChecker {
             val subArgType = ctx.getType(subArgument) ?: continue
             val superArgType = ctx.getType(superArgument) ?: continue
 
-            state.runWithArgumentsSettings(subArgType) {
-                if (!equalTypes(state, subArgType, superArgType)) return false
+            // 对齐 Kotlin：退出深度计数作用域后再返回失败，非局部 return 会跳过计数恢复。
+            val correctArgument = state.runWithArgumentsSettings(subArgType) {
+                equalTypes(state, subArgType, superArgType)
             }
+            if (!correctArgument) return false
         }
 
         return true

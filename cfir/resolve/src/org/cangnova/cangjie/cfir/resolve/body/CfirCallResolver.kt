@@ -38,6 +38,7 @@ import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
 import org.cangnova.cangjie.cfir.expressions.*
+import org.cangnova.cangjie.cfir.expressions.builder.buildFunctionCallCopy
 import org.cangnova.cangjie.cfir.expressions.builder.buildNamedAccessExpression
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.CfirErrorNamedReference
@@ -65,6 +66,7 @@ import org.cangnova.cangjie.cfir.resolve.calls.tower.CfirTowerGroup
 import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.CfirPCLAInferenceSession
 import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.FreshReceiverMemberAccessShape
 import org.cangnova.cangjie.cfir.resolve.providers.findExtendDeclarationSubstitution
+import org.cangnova.cangjie.cfir.resolve.findCorrespondingClassLikeSupertype
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessContext
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessKind
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityResult
@@ -92,11 +94,9 @@ import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
-import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.OperatorNameConventions
-import org.cangnova.cangjie.psi.CjValueArgument
 import org.cangnova.cangjie.resolve.calls.inference.buildCurrentSubstitutor
 import org.cangnova.cangjie.resolve.calls.inference.buildAbstractResultingSubstitutor
 import org.cangnova.cangjie.resolve.calls.inference.components.ConstraintSystemCompletionMode
@@ -109,7 +109,6 @@ import org.cangnova.cangjie.resolve.calls.tower.isSuccess
 import org.cangnova.cangjie.source.CjFakeSourceElementKind
 import org.cangnova.cangjie.source.fakeElement
 import org.cangnova.cangjie.source.psi
-import org.cangnova.cangjie.source.text
 import org.cangnova.cangjie.type.AbstractTypeChecker
 import org.cangnova.cangjie.type.model.TypeConstructorMarker
 import org.cangnova.cangjie.type.model.safeSubstitute
@@ -222,6 +221,49 @@ class CfirCallResolver(
         collectionLiteralContext: CollectionLiteralOuterCandidateContext? = null,
     ): CfirFunctionCall {
         val callee = functionCall.calleeReference as? CfirNamedReference ?: return functionCall
+        val collected = collectFunctionCallCandidates(functionCall, callee, resolutionMode, collectionLiteralContext)
+        return writeFunctionCallResolution(functionCall, callee, collected)
+    }
+
+    /**
+     * 在实参值解析前识别确定的命名实参错误。
+     *
+     * 形态探测仅收集候选及参数映射，不构造最终引用，也不消费 fresh 类型变量。
+     * 确认所有最佳候选均因命名形态失败后，才推进错误候选的其余阶段并写回引用；
+     * 参数检查阶段依据 mapping outcome 跳过实参值，保持官方 CheckArgsWithParamName 的边界。
+     */
+    internal fun resolveNamedArgumentShapeFailure(
+        functionCall: CfirFunctionCall,
+        resolutionMode: ResolutionMode,
+    ): Pair<CfirFunctionCall, List<NeedNamedArgument>>? {
+        val probe = buildFunctionCallCopy(functionCall) {}
+        val callee = probe.calleeReference as? CfirNamedReference ?: return null
+        val collected = transformer.resolutionContext.withCandidateProcessingMode(CandidateProcessingMode.ARGUMENT_SHAPE) {
+            collectFunctionCallCandidates(probe, callee, resolutionMode, collectionLiteralContext = null)
+        }
+        val candidates = collected.result.candidates
+        if (candidates.isEmpty()) return null
+        val failures = mutableListOf<NeedNamedArgument>()
+        for (candidate in candidates) {
+            if (candidate.diagnostics.isEmpty() || candidate.errors.isNotEmpty()) return null
+            for (diagnostic in candidate.diagnostics) {
+                failures += diagnostic as? NeedNamedArgument ?: return null
+            }
+        }
+
+        for (candidate in candidates) {
+            components.resolutionStageRunner.fullyProcessCandidate(candidate, transformer.resolutionContext)
+        }
+        return writeFunctionCallResolution(probe, callee, collected) to failures
+    }
+
+    /** 普通调用与参数形态探测共享名字查找、调用种类选择和候选收集。 */
+    private fun collectFunctionCallCandidates(
+        functionCall: CfirFunctionCall,
+        callee: CfirNamedReference,
+        resolutionMode: ResolutionMode,
+        collectionLiteralContext: CollectionLiteralOuterCandidateContext?,
+    ): FunctionCallCandidates {
         // 导入包限定符只参与静态包成员查找；函数调用路径同样不能把它保留为 dispatch receiver。
         if (functionCall.explicitReceiver?.importedPackageQualifierOrNull(components.file, session) != null) {
             functionCall.replaceDispatchReceiver(null)
@@ -332,18 +374,28 @@ class CfirCallResolver(
         }
 
 
+        return FunctionCallCandidates(effectiveResult, matchedClassifier, expectedCallKind, expectedCandidates)
+    }
+
+    /** 只在候选阶段已完成后构造调用引用，统一处理诊断、receiver 与 lambda body 错误归属。 */
+    private fun writeFunctionCallResolution(
+        functionCall: CfirFunctionCall,
+        callee: CfirNamedReference,
+        collected: FunctionCallCandidates,
+    ): CfirFunctionCall {
+        val result = collected.result
         val nameReference = createResolvedNamedReference(
             callee,
             callee.name,
-            effectiveResult.info,
-            effectiveResult.candidates,
-            effectiveResult.applicability,
+            result.info,
+            result.candidates,
+            result.applicability,
             functionCall.explicitReceiver,
-            matchedClassifier = matchedClassifier,
-            expectedCallKind = expectedCallKind,
-            expectedCandidates = expectedCandidates,
-            forwardedDiagnostics = effectiveResult.forwardedDiagnostics,
-            callableLookupOutcomes = effectiveResult.callableLookupOutcomes,
+            matchedClassifier = collected.matchedClassifier,
+            expectedCallKind = collected.expectedCallKind,
+            expectedCandidates = collected.expectedCandidates,
+            forwardedDiagnostics = result.forwardedDiagnostics,
+            callableLookupOutcomes = result.callableLookupOutcomes,
         )
         functionCall.replaceCalleeReference(nameReference)
         val candidate = (nameReference as? CfirNamedReferenceWithCandidate)?.candidate
@@ -351,6 +403,14 @@ class CfirCallResolver(
         candidate?.updateSourcesOfReceivers()
         return functionCall
     }
+
+    /** 调用种类发现结果；候选收集与最终引用写回之间不发布尚未完成的表达式。 */
+    private data class FunctionCallCandidates(
+        val result: ResolutionResult,
+        val matchedClassifier: CfirClassLikeSymbol<*>?,
+        val expectedCallKind: CallKind?,
+        val expectedCandidates: Collection<Candidate>?,
+    )
 
     /**
      * 为已有对应 CFIR 调用来源的 compiler-core intrinsic 建立候选。
@@ -1505,6 +1565,9 @@ class CfirCallResolver(
             forwardedDiagnostics = resultCollector.forwardedDiagnostics(),
             callableLookupOutcomes = resultCollector.excludedCallableLookupOutcomes(),
         )
+        // 参数形态阶段尚未创建 fresh substitutor；不能继续读取推断返回类型、解析 lambda
+        // body 或登记 expected-return 细化结果。这些步骤属于实参解析后的完整候选阶段。
+        if (resolutionContext.candidateProcessingMode == CandidateProcessingMode.ARGUMENT_SHAPE) return result
         if (callSite is CfirQualifiedAccessExpression) {
             result = result.reduceCandidatesByLambdaBody(callSite)
         }
@@ -1658,7 +1721,6 @@ class CfirCallResolver(
      */
     private fun Candidate.isCallableValueCandidate(): Boolean {
         val variable = symbol.takeIf { it.isBound }?.cfir as? CfirVariable ?: return false
-        if (variable.localLambdaInitializerInferenceDataOrNull() != null) return true
         val rawType = variable.returnTypeRef.coneTypeOrNull ?: return false
         if (isFreshLambdaValueParameterCallableCandidate(variable, rawType)) return true
         return when (val type = rawType.fullyExpandedType(session)) {
@@ -2238,12 +2300,12 @@ class CfirCallResolver(
         }
         val firstShape = shapes.first()
         if (shapes.drop(1).all { it.isEquivalentTo(firstShape) }) {
-            if (ownerFilteredCandidates.size > 1) {
-                firstShape.candidate.freshReceiverConstraintToDrop = FreshReceiverConstraintToDrop(
+            firstShape.candidate.freshReceiverConstraintToDrop = if (ownerFilteredCandidates.size > 1) {
+                FreshReceiverConstraintToDrop(
                     receiverTypeConstructor = receiverTypeConstructor,
                     receiverExpression = receiverExpression,
                 )
-            }
+            } else null
             return setOf(firstShape.candidate)
         }
 
@@ -2288,11 +2350,24 @@ class CfirCallResolver(
         candidates: Set<Candidate>,
         receiverTypeConstructor: TypeConstructorMarker,
     ): Set<Candidate>? {
-        val ownerTypesByCandidate = candidates.mapNotNull { candidate ->
+        val allOwnerTypesByCandidate = candidates.mapNotNull { candidate ->
             val ownerType = candidate.freshReceiverExpectedOwnerType() ?: return@mapNotNull null
             candidate to ownerType
         }
-        if (ownerTypesByCandidate.size != candidates.size) return null
+        if (allOwnerTypesByCandidate.size != candidates.size) return null
+
+        // 官方 TryEnforceCandidate 先选择唯一最一般声明，再建立 receiver 约束。
+        // 例如 ToString 与其多个实现同时可见时，形参应取接口，而非任意一个实现类型。
+        val mostGeneralOwner = allOwnerTypesByCandidate.firstOrNull { (_, possibleSupertype) ->
+            allOwnerTypesByCandidate.all { (_, ownerType) ->
+                ownerType.isCoveredByFreshReceiverOwner(possibleSupertype)
+            }
+        }?.second
+        val ownerTypesByCandidate = if (mostGeneralOwner != null) {
+            allOwnerTypesByCandidate.filter { (_, ownerType) -> ownerType.isSameTypeAs(mostGeneralOwner) }
+        } else {
+            allOwnerTypesByCandidate
+        }
 
         // 官方 TryInitializeBaseSum 播种候选 owner 集时同时保留每个 owner 下的成员签名；
         // 这里把本次访问的「owner -> 成员返回类型」形状交给会话，供语句边界实参侧
@@ -2320,6 +2395,20 @@ class CfirCallResolver(
             }
         }
         return filtered.takeIf { it.isNotEmpty() && it.size < candidates.size }
+    }
+
+    /**
+     * 泛型 owner 在这里表示待实例化的声明构造器，不是某一次调用中已确定的类型实参。
+     * 对齐 TryEnforceCandidate 的 Promotion：先比较声明继承关系，选择后再由候选自身
+     * 的 fresh 变量求出类型实参；已确定的 owner 仍按完整 subtype 关系比较。
+     */
+    private fun ConeCangJieType.isCoveredByFreshReceiverOwner(owner: ConeCangJieType): Boolean {
+        if (!owner.contains { it is ConeTypeVariableType || it is ConeTypeParameterType }) {
+            return AbstractTypeChecker.isSubtypeOf(session.typeContext, this, owner)
+        }
+        val ownerClassId = (owner as? ConeClassifierType)?.lookupTag?.classId ?: return false
+        if ((this as? ConeClassifierType)?.lookupTag?.classId == ownerClassId) return true
+        return findCorrespondingClassLikeSupertype(session, ownerClassId) != null
     }
 
     /**

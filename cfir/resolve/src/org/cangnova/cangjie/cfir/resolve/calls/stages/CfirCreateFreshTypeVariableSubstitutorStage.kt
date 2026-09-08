@@ -150,18 +150,6 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
         )
         candidate.initializeSubstitutorAndVariables(substitutor, freshVariables)
 
-        // fresh lambda receiver 的 owner 泛型参数占位属于 lambda 求解系统（官方
-        // `ConstrainByCtor` 的 T-Fly 挂在 lambda tyvar 上）：除候选系统外同步注册进
-        // 活跃推断会话，使会话保留推断数据、后续语句/调用点证据能继续约束该变量。
-        val receiverOwnerParameters =
-            collectTypeVariableReceiverOwnerTypeParameters(context.session, candidate, declaration)
-        if (receiverOwnerParameters.isNotEmpty()) {
-            val receiverOwnerSymbols = receiverOwnerParameters.mapTo(mutableSetOf()) { it.symbol }
-            freshVariables.filterIsInstance<ConeTypeParameterBasedTypeVariable>()
-                .filter { it.typeParameterSymbol in receiverOwnerSymbols }
-                .forEach(context.bodyResolveContext.inferenceSession::registerInferenceVariable)
-        }
-
         // 声明侧存在矛盾（如上界冲突）——直接标记不可用
         if (csBuilder.hasContradiction) {
             sink.reportDiagnostic(InferenceConstraintError("declaration has contradicting upper bounds"))
@@ -825,16 +813,14 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
         }
 
         if (callable.status.isStatic) return emptyList()
-        val ownerClassId = ownerClassIdForCallable(session, candidate)
-            ?: callableSymbol?.dispatchReceiverType
-                ?.fullyExpandedType(session)
-                ?.classIdOrPrimitiveClassId
-            ?: return emptyList()
-        val ownerDeclaration = session.symbolProvider.getClassLikeSymbolByClassId(ownerClassId)?.cfir
-            ?: session.cfirProvider.getCfirClassifierByFqName(ownerClassId)
-            ?: return emptyList()
-
-        return (ownerDeclaration as? CfirTypeParameterRefsOwner)?.typeParameters.orEmpty()
+        // substitution scope 可能已把 Base<E> 改写为 Base<T> 或 Base<(K,V)>。
+        // 未知 receiver 的 fresh 变量必须对应当前签名里的自由参数，不能重新取原声明的 E。
+        val ownerType = callable.dispatchReceiverType ?: return emptyList()
+        val parameters = linkedSetOf<CfirTypeParameterSymbol>()
+        ownerType.forEachType { type ->
+            if (type is ConeTypeParameterType) parameters += type.lookupTag.typeParameterSymbol
+        }
+        return parameters.map { it.cfir }
     }
 
     /**

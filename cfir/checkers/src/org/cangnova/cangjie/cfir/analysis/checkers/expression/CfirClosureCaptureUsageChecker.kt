@@ -21,6 +21,7 @@ import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
 import org.cangnova.cangjie.cfir.references.CfirResolvedErrorReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
+import org.cangnova.cangjie.source.CjFakeSourceElementKind
 import java.util.IdentityHashMap
 
 /**
@@ -272,7 +273,11 @@ private fun CfirExpression.valueUsage(context: CheckerContext): ClosureValueUsag
     ) {
         return ClosureValueUsage.ASSIGN
     }
-    if (context.containingElements.asReversed().any { it is CfirReturnExpression }) {
+    // 官方仅把源码 ReturnExpr 分类为返回使用；lambda 尾表达式的隐式 return 是 CFIR 包装。
+    if (context.containingElements.asReversed().any {
+            it is CfirReturnExpression && it.source?.kind !is CjFakeSourceElementKind.ImplicitReturn
+        }
+    ) {
         return ClosureValueUsage.RETURN
     }
     if (context.callsOrAssignments.asReversed()

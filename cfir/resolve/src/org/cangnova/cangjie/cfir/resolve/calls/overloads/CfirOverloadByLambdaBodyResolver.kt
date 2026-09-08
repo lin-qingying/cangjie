@@ -50,7 +50,8 @@ class CfirOverloadByLambdaBodyResolver(
      * 使用 lambda body 真实约束收敛重载候选集合。
      *
      * 该流程会对每个候选在对应函数类型下重检同一个 lambda，借助可回滚快照隔离副作用；
-     * 若只剩唯一最具体成功候选，则恢复该候选成功分析后的状态并返回收敛后的候选集合。
+     * 若只剩唯一最具体成功候选，则恢复其分析状态；全部 body 重检失败时，按官方
+     * CheckEmptyMatchResult 的顺序重新分析首个候选，提交该候选内部的诊断。
      */
     fun <T> reduceCandidates(
         call: T,
@@ -82,10 +83,10 @@ class CfirOverloadByLambdaBodyResolver(
             }
 
             val selected = when {
-                successfulCandidates.isEmpty() -> return candidates.also {
-                    snapshot.restore()
-                    atomStates.restore()
-                }
+                // 此处各候选已通过参数映射与非 lambda 实参检查，仅同一个 lambda body
+                // 尚未确定。全部失败时匹配实参数量相同，按候选顺序重放内部错误，
+                // 不能把最后一次试跑的参数类型留给无上下文 lambda 完成。
+                successfulCandidates.isEmpty() -> setOf(lambdas.keys.first())
 
                 successfulCandidates.size == candidates.size -> return candidates.also {
                     snapshot.restore()
@@ -363,8 +364,6 @@ class CfirOverloadByLambdaBodyResolver(
         private val postponedPCLACalls: List<ConeResolutionAtom>,
         /** 已经通过 PCLA 分析过的 lambda 列表副本。 */
         private val lambdasAnalyzedWithPCLA: List<CfirDeclaration>,
-        /** 局部 lambda initializer completion 列表副本。 */
-        private val localLambdaInitializerCompletions: List<org.cangnova.cangjie.cfir.resolve.CfirLocalLambdaInitializerInferenceReference>,
         /** PCLA 完成结果写回回调列表副本。 */
         private val completionCallbacks: List<(ConeSubstitutor) -> Unit>,
     ) {
@@ -382,8 +381,6 @@ class CfirOverloadByLambdaBodyResolver(
             candidate.postponedPCLACalls.addAll(postponedPCLACalls)
             candidate.lambdasAnalyzedWithPCLA.clear()
             candidate.lambdasAnalyzedWithPCLA.addAll(lambdasAnalyzedWithPCLA)
-            candidate.localLambdaInitializerCompletions.clear()
-            candidate.localLambdaInitializerCompletions.addAll(localLambdaInitializerCompletions)
             candidate.onPCLACompletionResultsWritingCallbacks.clear()
             candidate.onPCLACompletionResultsWritingCallbacks.addAll(completionCallbacks)
         }
@@ -409,7 +406,6 @@ class CfirOverloadByLambdaBodyResolver(
                     postponedAtoms = candidate.postponedAtoms.toList(),
                     postponedPCLACalls = candidate.postponedPCLACalls.toList(),
                     lambdasAnalyzedWithPCLA = candidate.lambdasAnalyzedWithPCLA.toList(),
-                    localLambdaInitializerCompletions = candidate.localLambdaInitializerCompletions.toList(),
                     completionCallbacks = candidate.onPCLACompletionResultsWritingCallbacks.toList(),
                 )
             }
@@ -466,7 +462,6 @@ class CfirOverloadByLambdaBodyResolver(
         /** 捕获时 PCLA lambda 列表长度。 */
         private val lambdasAnalyzedWithPCLASize: Int,
         /** 捕获时局部 lambda initializer completion 列表长度。 */
-        private val localLambdaInitializerCompletionsSize: Int,
         /** 捕获时 PCLA completion 回调列表长度。 */
         private val completionCallbacksSize: Int,
     ) {
@@ -479,7 +474,6 @@ class CfirOverloadByLambdaBodyResolver(
             candidate.postponedAtoms.removeTail(postponedAtomsSize)
             candidate.postponedPCLACalls.removeTail(postponedPCLACallsSize)
             candidate.lambdasAnalyzedWithPCLA.removeTail(lambdasAnalyzedWithPCLASize)
-            candidate.localLambdaInitializerCompletions.removeTail(localLambdaInitializerCompletionsSize)
             candidate.onPCLACompletionResultsWritingCallbacks.removeTail(completionCallbacksSize)
         }
 
@@ -496,7 +490,6 @@ class CfirOverloadByLambdaBodyResolver(
                 postponedAtomsSize = candidate.postponedAtoms.size,
                 postponedPCLACallsSize = candidate.postponedPCLACalls.size,
                 lambdasAnalyzedWithPCLASize = candidate.lambdasAnalyzedWithPCLA.size,
-                localLambdaInitializerCompletionsSize = candidate.localLambdaInitializerCompletions.size,
                 completionCallbacksSize = candidate.onPCLACompletionResultsWritingCallbacks.size,
             )
         }

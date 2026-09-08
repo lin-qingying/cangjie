@@ -1,17 +1,17 @@
 package org.cangnova.cangjie.cfir.types
 
+import org.cangnova.cangjie.type.AbstractTypeChecker
+
 /**
  * 仓颉类型交叉工具。
  *
- * 当前约束系统已经移除了 captured type 参与交叉的路径，因此这里仅负责对一组已知类型做
- * 轻量规范化：展开嵌套交叉类型、移除重复项，并在只剩单个候选时直接返回该类型。
- *
- * 更激进的 subtype 剪枝应继续留在统一类型检查器/近似器中，而不是在 resolve 诊断路径里
- * 额外引入一套独立规则。
+ * 对齐 FIR ConeTypeIntersector：展开交叉后移除严格父类型，再按类型系统的等价关系
+ * 去重。例如 Int64 与 Equal<Int64> 的交叉仍为 Int64，不能把冗余接口带入后续泛型调用。
+ * 仓颉的 Option 装箱属于表达式转换，不参与交叉类型的父类型剪枝。
  */
 object ConeTypeIntersector {
     /**
-     * 对 [types] 做轻量交叉规范化并返回交叉结果。
+     * 对 [types] 做交叉规范化并返回交叉结果。
      */
     fun intersectTypes(context: ConeTypeContext, types: Collection<ConeCangJieType>): ConeCangJieType {
         val normalized = linkedSetOf<ConeCangJieType>()
@@ -33,6 +33,29 @@ object ConeTypeIntersector {
             return normalized.single()
         }
 
-        return ConeIntersectionType(normalized.toList())
+        val result = normalized.toMutableList()
+        result.removeIfInRelation { candidate, other ->
+            AbstractTypeChecker.isSubtypeOfWithoutOptionBoxing(context, other, candidate) &&
+                    !AbstractTypeChecker.isSubtypeOfWithoutOptionBoxing(context, candidate, other)
+        }
+        result.removeIfInRelation { candidate, other ->
+            AbstractTypeChecker.equalTypes(context, candidate, other)
+        }
+        check(result.isNotEmpty()) { "Intersection normalization removed all types: $types" }
+        return result.singleOrNull() ?: ConeIntersectionType(result)
+    }
+
+    /** 使用类型关系去重，不依赖 Cone 实例的对象身份或渲染字符串。 */
+    private inline fun MutableList<ConeCangJieType>.removeIfInRelation(
+        predicate: (ConeCangJieType, ConeCangJieType) -> Boolean,
+    ) {
+        val iterator = iterator()
+        while (iterator.hasNext()) {
+            val candidate = iterator.next()
+            if (candidate !is ConeErrorType && any { other ->
+                    other !== candidate && other !is ConeErrorType && predicate(candidate, other)
+                }
+            ) iterator.remove()
+        }
     }
 }

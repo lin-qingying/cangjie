@@ -49,10 +49,6 @@ import org.cangnova.cangjie.cfir.resolve.calls.isInstanceExtendMemberCandidate
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessContext
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessKind
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityResult
-import org.cangnova.cangjie.cfir.resolve.CfirLocalLambdaInitializerInferenceData
-import org.cangnova.cangjie.cfir.resolve.CfirLocalLambdaInitializerInferenceReference
-import org.cangnova.cangjie.cfir.resolve.localLambdaInitializerInferenceReferenceOrNull
-import org.cangnova.cangjie.cfir.resolve.localLambdaInitializerInferenceDataOrNull
 import org.cangnova.cangjie.cfir.resolve.constants.CfirIntConstantEvalUtils
 import org.cangnova.cangjie.cfir.resolve.inference.model.ConeExpectedTypeConstraintPosition
 import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.CfirPCLAInferenceSession
@@ -66,7 +62,6 @@ import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeVariableForPostponedAtom
 import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.resolve.calls.components.PostponedArgumentsAnalyzerContext
-import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintKind
 import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintStorage
 import org.cangnova.cangjie.resolve.calls.inference.model.UnstableSystemMergeMode
 import org.cangnova.cangjie.resolve.calls.tasks.ExplicitReceiverKind
@@ -324,17 +319,13 @@ class CandidateFactory(
      * 基于已解析的函数值变量创建调用候选。
      *
      * `f(x)` 这种形态先要把 `f` 解析成普通值，再把该值的函数类型参数映射到
-     * 源码实参。若 `f` 来自无上下文 lambda initializer，还必须把 initializer
-     * 保存的 placeholder 约束系统并入当前调用，completion 后再统一写回变量和
-     * lambda 的最终函数类型。
+     * 源码实参。lambda 初始化器已在定义点完成，调用只消费已经发布的函数类型。
      */
     fun createCallableValueInvokeCandidate(
         callInfo: CallInfo,
         callableValueCandidate: Candidate,
     ): Candidate {
         val variable = (callableValueCandidate.symbol as? CfirVariableSymbol<*>)?.cfir
-        val localLambdaInitializerInference = variable?.localLambdaInitializerInferenceDataOrNull()
-        val localLambdaBoundaryStorage = localLambdaInitializerInference?.boundaryConstraintStorage(variable)
         val freshValueParameterInvokeShape = buildFreshValueParameterInvokeShape(
             callInfo = callInfo,
             callableValueCandidate = callableValueCandidate,
@@ -348,7 +339,6 @@ class CandidateFactory(
             constraintSystemFactory = context.inferenceComponents.constraintSystemFactory,
             baseSystem = baseSystem.withCallableValueReceiverSystems(
                 callableValueCandidate.system.currentStorage(),
-                localLambdaBoundaryStorage,
             ),
             callInfo = callInfo,
             originScope = callableValueCandidate.originScope,
@@ -358,9 +348,6 @@ class CandidateFactory(
             bodyResolveContext = context.bodyResolveContext,
         )
 
-        if (variable != null && localLambdaInitializerInference != null) {
-            candidate.registerLocalLambdaInitializerCompletion(variable, localLambdaInitializerInference)
-        }
         if (freshValueParameterInvokeShape != null) {
             candidate.registerFreshValueParameterInvokeShape(freshValueParameterInvokeShape)
         }
@@ -469,31 +456,19 @@ class CandidateFactory(
         val effectiveExtensionReceiver = givenExtensionReceiver ?: dispatchReceiver.takeIf {
             useDispatchReceiverAsExtensionReceiver
         }
-        val localLambdaInitializer = symbol.localLambdaInitializerForCallableValue(callInfo)
-        val localLambdaBoundaryStorage = localLambdaInitializer?.second?.boundaryConstraintStorage(localLambdaInitializer.first)
-        val effectiveBaseSystem = localLambdaInitializer?.second?.let { inferenceData ->
-            baseSystem.withLocalLambdaInitializerStorage(localLambdaBoundaryStorage ?: inferenceData.constraintStorage)
-        } ?: baseSystem
-
         val candidate = Candidate(
             symbol = symbol,
             dispatchReceiver = effectiveDispatchReceiver?.receiverExpression?.let(ConeResolutionAtom::createRawAtom),
             givenExtensionReceiver = effectiveExtensionReceiver?.receiverExpression?.let(ConeResolutionAtom::createRawAtom),
             explicitReceiverKind = explicitReceiverKind,
             constraintSystemFactory = context.inferenceComponents.constraintSystemFactory,
-            baseSystem = effectiveBaseSystem,
+            baseSystem = baseSystem,
             callInfo = callInfo,
             originScope = originScope,
             discoveryAccessibilityResult = accessibilityResult,
             lookupProvenance = lookupProvenance,
             bodyResolveContext = context.bodyResolveContext,
         )
-        if (localLambdaInitializer != null) {
-            candidate.registerLocalLambdaInitializerCompletion(
-                variable = localLambdaInitializer.first,
-                inferenceData = localLambdaInitializer.second,
-            )
-        }
         return candidate
     }
 
@@ -507,7 +482,6 @@ class CandidateFactory(
         explicitReceiverKind: ExplicitReceiverKind,
         dispatchReceiver: ReceiverValue,
     ): Candidate {
-        val localLambdaInitializerInference = receiverExpression.localLambdaInitializerInferenceReferenceOrNull()
         val symbol = CfirNamedFunctionSymbol(CallableId(callInfo.name))
         val valueParameters = functionType.parameterTypes.mapIndexed { index, parameterType ->
             val parameterName = Name.identifier("functionTypeInvokeArg$index")
@@ -560,16 +534,9 @@ class CandidateFactory(
             dispatchReceiver = dispatchReceiver,
             baseSystem = baseSystem.withSubsystemFromInvokeReceiver(
                 receiverExpression,
-                localLambdaInitializerInference?.data?.boundaryConstraintStorage(localLambdaInitializerInference.variable),
             ),
         )
         candidate.registerFunctionTypeInvokeCompletionVariables(functionType)
-        if (localLambdaInitializerInference != null) {
-            candidate.registerLocalLambdaInitializerCompletion(
-                variable = localLambdaInitializerInference.variable,
-                inferenceData = localLambdaInitializerInference.data,
-            )
-        }
         return candidate
     }
 
@@ -578,15 +545,11 @@ class CandidateFactory(
      */
     private fun ConstraintStorage.withSubsystemFromInvokeReceiver(
         receiverExpression: CfirExpression,
-        localLambdaInitializerStorage: ConstraintStorage?,
     ): ConstraintStorage {
         val receiverAtom = ConeResolutionAtom.createRawAtom(receiverExpression)
         val system = context.inferenceComponents.createConstraintSystem()
         system.setBaseSystem(this)
         system.addSubsystemFromAtom(receiverAtom)
-        if (localLambdaInitializerStorage != null) {
-            system.addOtherSystem(localLambdaInitializerStorage)
-        }
         return system.asReadOnlyStorage()
     }
 
@@ -634,211 +597,23 @@ class CandidateFactory(
     }
 
     /**
-     * 将函数值 receiver 候选和局部 lambda initializer 约束接入调用候选。
+     * 将函数值 receiver 候选的约束接入当前调用，保留上游 PCLA 的系统边界。
      */
     private fun ConstraintStorage.withCallableValueReceiverSystems(
         callableValueReceiverStorage: ConstraintStorage,
-        localLambdaInitializerStorage: ConstraintStorage?,
     ): ConstraintStorage {
         val system = context.inferenceComponents.createConstraintSystem()
-        system.setBaseSystem(this)
-        system.addOtherSystem(callableValueReceiverStorage)
-        if (localLambdaInitializerStorage != null) {
-            system.addOtherSystem(localLambdaInitializerStorage)
+        if (callableValueReceiverStorage.usesOuterCs && !usesOuterCs) {
+            /*
+             * 函数值 receiver 本身可能是 postponed PCLA 调用，必须作为 invoke 的外层
+             * 系统导入；把它作为根系统的普通同级子系统会破坏嵌套约束系统的不变量。
+             */
+            system.addOuterSystem(callableValueReceiverStorage)
+            system.addOtherSystem(this)
+        } else {
+            system.setBaseSystem(this)
+            system.addOtherSystem(callableValueReceiverStorage)
         }
-        return system.asReadOnlyStorage()
-    }
-
-    /**
-     * 函数值变量调用需要继承 initializer 的 lambda placeholder 约束。
-     */
-    private fun CfirCallableSymbol<*>.localLambdaInitializerForCallableValue(
-        callInfo: CallInfo,
-    ): Pair<CfirVariable, CfirLocalLambdaInitializerInferenceData>? {
-        if (callInfo.callKind != CallKind.Function) return null
-        val variable = takeIf { it.isBound }?.cfir as? CfirVariable ?: return null
-        val inferenceData = variable.localLambdaInitializerInferenceDataOrNull() ?: return null
-        return variable to inferenceData
-    }
-
-    /**
-     * 将函数值调用完成后的替换结果同步回局部 lambda initializer。
-     */
-    private fun Candidate.registerLocalLambdaInitializerCompletion(
-        variable: CfirVariable,
-        inferenceData: CfirLocalLambdaInitializerInferenceData,
-    ) {
-        additionalCompletionVariables += inferenceData.completionBoundaryTypeConstructors(variable)
-        postponedPCLACalls += inferenceData.postponedPCLACalls
-        lambdasAnalyzedWithPCLA += inferenceData.lambdaExpression.anonymousFunction
-        localLambdaInitializerCompletions += CfirLocalLambdaInitializerInferenceReference(variable, inferenceData)
-    }
-
-    /**
-     * 函数值调用第一轮 completion 固定 lambda 边界变量及其结构依赖变量。
-     *
-     * `match (x) { case Some(v) => ... }` 这类 body 语法会把参数 placeholder 约束成
-     * `Option<T>`。其中 `T` 虽然由 body 创建，但已经成为参数类型形状的一部分，必须随
-     * `_RP0` 一起导入函数值调用候选；否则调用点只能看到裸 placeholder，无法完成
-     * `f(Some(1))` / `f(None)` 这样的局部 lambda initializer。
-     */
-    private fun CfirLocalLambdaInitializerInferenceData.completionBoundaryTypeConstructors(
-        variable: CfirVariable,
-    ): Set<TypeConstructorMarker> {
-        val availableVariables = constraintStorage.allTypeVariables.keys
-        val result = linkedSetOf<TypeConstructorMarker>()
-
-        fun ConeCangJieType.collectBoundaryVariables() {
-            when (this) {
-                is ConeTypeVariableType -> {
-                    if (typeConstructor in availableVariables) {
-                        result += typeConstructor
-                    }
-                }
-                is ConeLookupTagBasedType -> typeArguments.forEach { it.type.collectBoundaryVariables() }
-                is ConeFunctionType -> {
-                    parameterTypes.forEach { it.collectBoundaryVariables() }
-                    returnType.collectBoundaryVariables()
-                }
-                is ConeTupleType -> elementTypes.forEach { it.collectBoundaryVariables() }
-                is ConeVArrayType -> elementType.collectBoundaryVariables()
-                is ConePointerType -> pointeeType.collectBoundaryVariables()
-                is ConeTypeAliasType -> {
-                    typeArguments.forEach { it.type.collectBoundaryVariables() }
-                    expandedType?.collectBoundaryVariables()
-                }
-                else -> Unit
-            }
-        }
-
-        val lambda = lambdaExpression.anonymousFunction
-        variable.returnTypeRef.coneTypeOrNull?.collectBoundaryVariables()
-        lambdaExpression.coneTypeOrNull?.collectBoundaryVariables()
-        lambda.typeRef.coneTypeOrNull?.collectBoundaryVariables()
-        lambda.valueParameters.forEach { parameter ->
-            parameter.returnTypeRef.coneTypeOrNull?.collectBoundaryVariables()
-        }
-        lambda.returnTypeRef.coneTypeOrNull?.collectBoundaryVariables()
-        expandBoundaryVariablesThroughConstraints(result, availableVariables)
-        return result
-    }
-
-    /**
-     * 沿已知边界变量上的约束闭包收集结构依赖变量。
-     *
-     * 只从已经属于边界的变量出发，且只接受当前 initializer 约束系统中真实注册的变量；
-     * completion 后 lambda body 会按最终参数类型重算，body 局部候选状态不会由这里伪造。
-     */
-    private fun CfirLocalLambdaInitializerInferenceData.expandBoundaryVariablesThroughConstraints(
-        boundaryConstructors: MutableSet<TypeConstructorMarker>,
-        availableVariables: Set<TypeConstructorMarker>,
-    ) {
-        var changed = true
-        while (changed) {
-            changed = false
-            for (constructor in boundaryConstructors.toList()) {
-                val constraints = constraintStorage.notFixedTypeVariables[constructor]?.constraints.orEmpty()
-                for (constraint in constraints) {
-                    val constraintType = constraint.type as? ConeCangJieType ?: continue
-                    if (constraintType.collectTypeVariables(boundaryConstructors, availableVariables)) {
-                        changed = true
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * 构造函数值调用需要导入的 initializer 边界约束系统。
-     *
-     * 这里只注册 lambda 函数类型边界及其结构依赖变量，并复制完全落在该闭包内的约束。
-     * 不在闭包内的 body 局部候选状态会在参数定型后的 body 重算中重新产生。
-     */
-    private fun CfirLocalLambdaInitializerInferenceData.boundaryConstraintStorage(
-        variable: CfirVariable,
-    ): ConstraintStorage {
-        val boundaryConstructors = completionBoundaryTypeConstructors(variable)
-        val system = context.inferenceComponents.createConstraintSystem()
-        for (constructor in boundaryConstructors) {
-            val typeVariable = constraintStorage.allTypeVariables[constructor] ?: continue
-            system.registerVariable(typeVariable)
-        }
-
-        for (constructor in boundaryConstructors) {
-            val typeVariable = constraintStorage.allTypeVariables[constructor] as? ConeTypeVariable ?: continue
-            val variableType = typeVariable.defaultType as ConeCangJieType
-            val constraints = constraintStorage.notFixedTypeVariables[constructor]?.constraints.orEmpty()
-            for (constraint in constraints) {
-                val constraintType = constraint.type as? ConeCangJieType ?: continue
-                if (constraintType.containsTypeVariableOutside(boundaryConstructors)) continue
-                when (constraint.kind) {
-                    ConstraintKind.LOWER -> system.addSubtypeConstraint(
-                        constraintType,
-                        variableType,
-                        constraint.position.from,
-                    )
-                    ConstraintKind.UPPER -> system.addSubtypeConstraint(
-                        variableType,
-                        constraintType,
-                        constraint.position.from,
-                    )
-                    ConstraintKind.EQUALITY -> system.addEqualityConstraint(
-                        variableType,
-                        constraintType,
-                        constraint.position.from,
-                    )
-                }
-            }
-        }
-        return system.asReadOnlyStorage()
-    }
-
-    /** 判断类型树是否引用了边界集合之外的推断变量。 */
-    private fun ConeCangJieType.containsTypeVariableOutside(
-        allowedConstructors: Set<TypeConstructorMarker>,
-    ): Boolean = when (this) {
-        is ConeTypeVariableType -> typeConstructor !in allowedConstructors
-        is ConeLookupTagBasedType -> typeArguments.any { it.type.containsTypeVariableOutside(allowedConstructors) }
-        is ConeFunctionType -> parameterTypes.any { it.containsTypeVariableOutside(allowedConstructors) } ||
-                returnType.containsTypeVariableOutside(allowedConstructors)
-        is ConeTupleType -> elementTypes.any { it.containsTypeVariableOutside(allowedConstructors) }
-        is ConeVArrayType -> elementType.containsTypeVariableOutside(allowedConstructors)
-        is ConePointerType -> pointeeType.containsTypeVariableOutside(allowedConstructors)
-        is ConeTypeAliasType -> typeArguments.any { it.type.containsTypeVariableOutside(allowedConstructors) } ||
-                expandedType?.containsTypeVariableOutside(allowedConstructors) == true
-        else -> false
-    }
-
-    /** 收集类型树中当前 initializer 约束系统拥有的推断变量。 */
-    private fun ConeCangJieType.collectTypeVariables(
-        target: MutableSet<TypeConstructorMarker>,
-        availableConstructors: Set<TypeConstructorMarker>,
-    ): Boolean = when (this) {
-        is ConeTypeVariableType -> typeConstructor in availableConstructors && target.add(typeConstructor)
-        is ConeLookupTagBasedType -> typeArguments.any { it.type.collectTypeVariables(target, availableConstructors) }
-        is ConeFunctionType -> {
-            val parametersChanged = parameterTypes.any { it.collectTypeVariables(target, availableConstructors) }
-            returnType.collectTypeVariables(target, availableConstructors) || parametersChanged
-        }
-        is ConeTupleType -> elementTypes.any { it.collectTypeVariables(target, availableConstructors) }
-        is ConeVArrayType -> elementType.collectTypeVariables(target, availableConstructors)
-        is ConePointerType -> pointeeType.collectTypeVariables(target, availableConstructors)
-        is ConeTypeAliasType -> {
-            val argumentsChanged = typeArguments.any { it.type.collectTypeVariables(target, availableConstructors) }
-            expandedType?.collectTypeVariables(target, availableConstructors) == true || argumentsChanged
-        }
-        else -> false
-    }
-
-    /**
-     * 在普通函数值候选基础系统中加入局部 lambda initializer 约束。
-     */
-    private fun ConstraintStorage.withLocalLambdaInitializerStorage(
-        localLambdaInitializerStorage: ConstraintStorage,
-    ): ConstraintStorage {
-        val system = context.inferenceComponents.createConstraintSystem()
-        system.setBaseSystem(this)
-        system.addOtherSystem(localLambdaInitializerStorage)
         return system.asReadOnlyStorage()
     }
 

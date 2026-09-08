@@ -46,7 +46,6 @@ import org.cangnova.cangjie.cfir.references.builder.buildResolvedNamedReference
 import org.cangnova.cangjie.cfir.references.impl.CfirNamedReferenceImpl
 import org.cangnova.cangjie.cfir.references.impl.CfirResolvedAppliedCallableReference
 import org.cangnova.cangjie.cfir.resolve.*
-import org.cangnova.cangjie.cfir.resolve.calls.CandidateProcessingMode
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirContextDependentNamedReference
 import org.cangnova.cangjie.cfir.resolve.calls.applySpawnExpectedFutureType
@@ -856,19 +855,16 @@ open class CfirExpressionsResolveTransformer(
     /**
      * 在实参值解析前提交确定的“必须使用命名实参”绑定失败。
      *
-     * probe 复用完整调用入口，因此普通函数、enum constructor 与 class constructor 共享同一套
-     * tower 和 fallback 规则；隔离副本保证未命中时不会把候选、错误引用或约束系统写回原调用。
+     * probe 复用调用候选收集入口，因此普通函数、enum constructor 与 class constructor 共享同一套
+     * 名字查找规则；隔离副本保证未命中时不会把候选、错误引用或约束系统写回原调用。
      * 只有最终最佳候选集合中的每个候选都仅包含 [NeedNamedArgument] 时才提交，避免 shape 阶段
      * 缺少实参类型证据时提前锁定其他 overload 失败。
      */
     private fun CfirFunctionCall.commitNeedNamedArgumentShapeFailure(
         resolutionMode: ResolutionMode,
     ): Boolean {
-        val probe = buildFunctionCallCopy(this) {}
-        val resolvedProbe = resolutionContext.withCandidateProcessingMode(CandidateProcessingMode.ARGUMENT_SHAPE) {
-            callResolver.resolveCallAndSelectCandidate(probe, resolutionMode)
-        }
-        val shapeFailures = resolvedProbe.needNamedArgumentShapeFailuresOrNull() ?: return false
+        val (resolvedProbe, shapeFailures) = callResolver.resolveNamedArgumentShapeFailure(this, resolutionMode)
+            ?: return false
 
         /*
          * 官方 PreCheck 会在调用值检查前解析显式类型引用。命名实参形态已经使实参值无效时，
@@ -884,26 +880,6 @@ open class CfirExpressionsResolveTransformer(
         replaceDispatchReceiver(resolvedProbe.dispatchReceiver)
         replaceConeTypeOrNull(resolvedProbe.coneTypeOrNull)
         return true
-    }
-
-    /**
-     * 返回 shape probe 最终最佳候选上的命名实参失败；任一候选含其他失败原因时拒绝提前提交。
-     */
-    private fun CfirFunctionCall.needNamedArgumentShapeFailuresOrNull(): List<NeedNamedArgument>? {
-        val diagnostic = (calleeReference as? CfirDiagnosticHolder)?.diagnostic ?: return null
-        val candidates = (diagnostic as? ConeDiagnosticWithCandidates)?.candidates
-            ?: return null
-        if (candidates.isEmpty()) return null
-
-        val failures = mutableListOf<NeedNamedArgument>()
-        for (candidate in candidates) {
-            val callCandidate = candidate as? AbstractCallCandidate<*> ?: return null
-            if (callCandidate.errors.isNotEmpty() || callCandidate.diagnostics.isEmpty()) return null
-            for (candidateDiagnostic in callCandidate.diagnostics) {
-                failures += candidateDiagnostic as? NeedNamedArgument ?: return null
-            }
-        }
-        return failures
     }
 
     /**
@@ -1483,8 +1459,11 @@ open class CfirExpressionsResolveTransformer(
         // 全部操作数都是待推断类型变量且无期望返回类型时，官方靠播种 sum 上的操作符可用性
         // 收窄（`{x => x+x}` 中 Unit 无内建 `+`，sum={Int64,Unit} 收窄到唯一 Int64）；
         // 这里向会话查询 owner-sum 并做同一收窄，恰有一个 owner 支持时按已知类型参与筛选。
-        var narrowingOutcome = "notApplicable"
-        val effectiveOperandTypes = if (freshConstructors.all { it != null } && expectedReturnKind == null) {
+        // ** 的合法类型对由官方 CheckExponentByBaseTy 独立规定；相同变量同时占据
+        // 两个位置时，签名一致性即可唯一确定 Float64，不要求预先有 nominal owner 候选。
+        val effectiveOperandTypes = if (freshConstructors.all { it != null } && expectedReturnKind == null &&
+            operatorName != OperatorNameConventions.EXPONENTIATION
+        ) {
             narrowAllFreshOperandTypesByOwnerOperatorSupport(
                 signatures = signatures,
                 operandTypes = operandTypes,
@@ -3169,7 +3148,7 @@ open class CfirExpressionsResolveTransformer(
                 classId = StdlibClassIds.Option,
                 typeArguments = listOf(elementVariable.defaultType),
             )
-            components.context.inferenceSession.addSubtypeConstraintIfCompatible(initializerType, optionType)
+            components.context.inferenceSession.addEqualityConstraintIfCompatible(initializerType, optionType)
             return optionType
         }
 
@@ -4832,6 +4811,15 @@ open class CfirExpressionsResolveTransformer(
      */
     private fun inferIterableElementType(iterableType: ConeCangJieType?): ConeCangJieType {
         if (iterableType == null) return errorType("iterable has no type")
+        if (iterableType is ConeTypeVariableType && components.context.inferenceSession is CfirPCLAInferenceSession) {
+            // 官方 GetIterableTy 对 placeholder 使用 Iterable<T-Fly> 构造器约束，
+            // 元素变量属于同一个 lambda 系统，循环体中的使用继续约束它。
+            val elementVariable = ConeTypeVariableForLambdaParameterType("IterableElement")
+            components.context.inferenceSession.registerInferenceVariable(elementVariable)
+            val iterableShape = constructNamedType(StdlibClassIds.Iterable, listOf(elementVariable.defaultType))
+            components.context.inferenceSession.addEqualityConstraintIfCompatible(iterableType, iterableShape)
+            return elementVariable.defaultType
+        }
         return iterableType.iterableElementTypeOrNull(session)
             ?: errorType("cannot infer element type from: $iterableType")
     }

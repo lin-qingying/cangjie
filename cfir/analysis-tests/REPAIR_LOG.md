@@ -5305,3 +5305,60 @@ esolveDelegatingConstructorCallAndSelectCandidate);
   - `18-after` → `19-recovered-full` 完整键比较：FIXED=20、REGRESSED=0、NEW_KEYS=4（两个新 lambda 反例的双入口，均失败，留待下一项修复）、REMOVED_KEYS=0、其它状态变化=0。
   - 全量同时核实已移除未提交的调用实参驱动 lambda 签名重写；CallInference04、VariadicPipeline、MemberFuncOverload1、GenericSubstPerf、LambdaParamInfer04、EnumAndVarPattern、LambdaParam04/05/07 和 Typealias32 的双入口全部恢复。这些移除是在工作区内清理接管修改，不将其它未验收的 TypeInfer 实现混入本范围提交。
 - remaining failures: 全量 592，包括原有 588 条与新增反例 4 条；TypeInfer 剩 enum 成员返回值、嵌套 Option 推断分类、lambda_param_09 的 while-let 参数推断，以及新增 lambda 定义点推断反例。初始工作区、官方证据、两次 XML 和完整比较文件均保存在 `build/repair-20260906`。
+
+## 2026-09-09：TypeInfer 完成与 Generics/Typealias 无回归验收
+
+- problem type: Type Inference / Lambda Completion / Enum Target Typing / Candidate State。无上下文 lambda 在定义点完成；嵌套调用保留同一候选的推断变量；同时修复此次完成流程暴露的泛型、指针、诊断分类与长调用链问题。
+- root cause:
+  - 旧流程把无上下文 lambda 的约束和树快照发布到变量，再由后续调用实参回填签名；定义点的未标注参数错误因此被推迟，已发布函数类型也会随调用变化。重查时旧 argument replacement 又会覆盖新结果。
+  - 参数形态模式保存在每次重新创建的 ResolutionContext 中而失效。模式修正后，形态候选仍进入最终引用写回并读取未初始化的 substitutor/freshVariables；候选收集和最终写回缺少阶段边界。
+  - 库实例成员缺 dispatch receiver，未知 receiver 的候选扫描包含未导入类型，继承成员 fresh 参数取自原声明而非替换后的签名，owner 身份比较也没有识别两代未固定变量。
+  - 条件 extend 的接口要求没有参与推断；交集没有统一规范化；泛型 override 又在替换到子声明参数空间前简化父约束，丢失传递上界。
+  - enum owner 的不变类型实参与 Option 表达式装箱混在一起。嵌套泛型函数已有候选复用规则，但递归 enum constructor 被遗漏，导致内层 Cons 被复制到另一个系统，外层得到没有有效诊断的错误类型。
+  - PCLA 错用了 K1 的 postponedTypeVariables。FIR 的系统替换假定该列表为空，长运算符链逐层重复追加后出现指数增长；timeout_07 因此耗时超过二十分钟并引发内存耗尽。
+  - 全部 lambda 候选重检失败后未按官方顺序重放诊断，最后一次试跑的参数类型污染最终结果。静态泛型依赖检查遗漏普通名字引用的类型，闭包使用分类又把合成 implicit return 当成源码 return。
+  - 类型检查在 runWithArgumentsSettings 内非局部返回，跳过深度计数恢复；新增条件约束路径暴露了这项问题。CPointer 同时需要自己的目标类型投影，不能从无类型实参的接口 where 条件反向推断 pointee。
+- official Cangjie evidence:
+  - build/repair-20260906/evidence 中的 lambda_identity_requires_annotation、lambda_signature_stability、lambda_imported_operator_owner、lambda_conditional_interface、option_payload_boxing、recursive_enum_constructor 的 .official.cj / .cjc.json / .cjc-result.json 保存源码、命令与结果。后续调用不能补救 identity lambda；导入 BigInt 后才可从 !x 推断该 owner；Option/Box 的条件 ToString 接口会约束输入；递归 Chain 构造推断为 Chain<Int64>。
+  - lambda_param_01/03/04/05/06/07/09/10、infer_member_access_with_enum_ctor_succ、infer_option_02 的既有官方证据用于定义点参数、成员与模式约束。LambdaExpr.cpp:166-197,251-307 的 ResetLambdaForReinfer / SolveLamExprParamTys / SynLamExpr 规定先求解再重查；TypeManager.cpp:1243-1277 在条件扩展分支中提交或重置约束。
+  - generic_upper_constraint_inheritance_04/05、function20_unitRetType_test2、typealias_partial_infer_01 已重新用 cjc 核实。StructInheritanceChecker.cpp:1211-1269 先映射父上界；LegalityOfUsage/LegalityOfUsage.cpp:90-135 读取 RefExpr 自身类型检查静态泛型依赖。
+  - timeout_07、unary_overload_order 与 lambda_failed_candidate_order 的 cjc 结果证明：A-first 报 !A，B-first 报 -B。TypeCheckCall.cpp:2049-2104 的 CheckEmptyMatchResult 在相同匹配实参数量下按候选顺序释放内部错误。
+  - cpointer_expected_inference / pointer_expected_inference / cpointer_generic_reverse2 证明直接指针、Option 包装指针和带类型实参的接口目标合法，无类型实参的接口目标不能反推。TypeCheckBuiltinExpr.cpp:471-519 使用去 Option 后的有效目标实参。
+  - usertype_03/04/05 与 test_fold 已用 cjc 核实；capture_transitive 的官方诊断是 sema_func_capture_var_cannot_expr，TypeChecker.cpp:1729-1754 仅对源码 ReturnExpr 使用返回类别；lambda_0 的官方诊断只在原始 + 上，后续重复诊断应减少。
+- Kotlin counterpart files consulted:
+  - compiler/fir/resolve 下的 FirSyntheticCallGenerator、FirCallCompleter、ConstraintSystemCompleter、FirPCLAInferenceSession、Candidate、CandidateFactory、ResolutionStageRunner、ArgumentCheckingProcessor，以及 overload-by-lambda resolver 的事务与状态恢复结构。
+  - compiler/fir/providers/.../ConeTypeIntersector.kt；compiler/fir/fir-deserialization/.../FirMemberDeserializer.kt 的 owner dispatchReceiver；core/compiler.common/.../AbstractTypeChecker.kt 的作用域外失败返回；compiler/resolution.common/.../TypeCheckerStateForConstraintSystem.kt 的 fork point；FirOverrideChecker、FirReturnSyntaxAndLabelChecker 的类型参数映射与 implicit-return 来源判断。仅采用仓颉证据允许的语义。
+- CFIR owner files changed:
+  - resolve：CfirLambdaBodyReinferenceData（新增）、LocalLambdaInitializerInferenceData（删除）、CfirSyntheticCallGenerator、CfirCallCompleter、ConstraintSystemCompleter、CfirCallCompletionResultsWriterTransformer、BodyResolveContext、Candidate、CandidateFactory、CfirOverloadByLambdaBodyResolver、ResolutionContext、ResolutionStageRunner、CfirCallResolver、CfirDeclarationsResolveTransformer、CfirExpressionsResolveTransformer、CfirPatternBindingResolution、ResolveUtils、EnumConstructorTargetTyping、ExpectedTypeCompatibility、ArgumentCheckingProcessor、CfirCheckArguments、CfirCheckExpectedReturnTypeBeforeArguments、CfirCreateFreshTypeVariableSubstitutorStage、CfirTypeVariableReceiverMemberScopeTowerLevel。
+  - providers：ConeInferenceContext、ConeTypeIntersector；common：TypeSystemContext、AbstractTypeChecker；resolution.common：TypeCheckerStateForConstraintSystem。
+  - serialization：CfirDeclDeserializer 的五处实例 receiver 与共享 helper；checkers：CfirGeneralSemanticsChecker、CfirOverrideChecker、CfirPatternVariableInitializerTypeMismatchChecker、CfirClosureCaptureUsageChecker。测试数据及两套生成测试类同步更新。
+- repair principle: 以定义点和候选子系统为推断状态的归属边界，使用现有 FIR/PCLA 完成与写回流程统一提交结果；目标类型、导入可见性和诊断来源均由各自共享 owner 决定。
+- fixtures covered:
+  - TypeInfer 全部 37 份源码（两入口含 all-files-present 共 76 项）：`bug_cache.cj`、`context_typearg.cj`、`func_resolv_None.cj`、`infer_member_access_with_enum_ctor_fail.cj`、`infer_member_access_with_enum_ctor_succ.cj`、`infer_multiple_return.cj`、`infer_option_01.cj`、`infer_option_02.cj`、`infer_return_fail.cj`、`infer_with_toptype.cj`、`infer_with_upper.cj`、`infer_with_upper_02.cj`、`init_constraints1.cj`、`lambda_conditional_interface.cj`、`lambda_identity_requires_annotation.cj`、`lambda_imported_operator_owner.cj`、`lambda_param_01.cj`、`lambda_param_02.cj`、`lambda_param_03.cj`、`lambda_param_04.cj`、`lambda_param_05.cj`、`lambda_param_06.cj`、`lambda_param_07.cj`、`lambda_param_08.cj`、`lambda_param_09.cj`、`lambda_param_10.cj`、`lambda_param_11.cj`、`lambda_signature_stability.cj`、`literal_binary_001.cj`、`matchcase1.cj`、`matchcase2.cj`、`option_payload_boxing.cj`、`re_enter_infer.cj`、`recursive_enum_constructor.cj`、`shift_unmatch_int.cj`、`uilang_bug1.cj`、`uilang_bug2.cj`。
+  - 新增的八份正式 fixture 为上述六份 lambda/Option/递归 enum 反例，以及 ffi/cpointer_expected_inference.cj、overload/lambda_failed_candidate_order.cj；相对 19-recovered-full 新增 12 个测试键，identity/signature 的四个键已在该基线中。
+  - 回归复核包括 Generics 的 Function20UnitRetTypeTest2、RearrangeInOpen02、ClassStaticFunction、Enum6Test、InstDupFunctions010、InPackageInst1、ClassInheritInterfaceStaticCall、GenericConstraint14、GenericUpperConstraintInheritance04/05、GenericStaticProp06/07、O2PartGi/ParamDesugarDecl、InstantiationRearrange01/Test、RearrangeMultiImpl/Main；TypealiasPartialInfer01/03/04、Typealias17；完整测试键见各快照 results.json。
+  - 同时覆盖 OperatorOverload/timeout_07、PatternMatching/EnumPattern/usertype_03/04/05、Lambda/test_fold、LambdaCapture/capture_transitive、ConstraintCheck/option_with_element_01、Ffi/cpointer_generic_reverse2，以及完整 PatternMatching、Lambda、Overload、Generics、Typealias、ConstraintCheck、Ffi 过滤集合。
+- fixture correction: infer_option_02.cj 仅把泛型推断诊断从 Some(a) 收窄到完整 callee token Some，遵循已提交的诊断范围契约；TYPE_MISMATCH 保持整个表达式。既有语义期望未为 CFIR 输出让步。官方取证脚本另修正了嵌套关闭标记的剥离顺序，并重新核实受影响证据。
+- verification commands and outcome:
+  - `gradlew-queue.bat :cfir:analysis-tests:test --tests 'org.cangnova.cangjie.cfir.analysis.tests.*PatternMatching*' --tests 'org.cangnova.cangjie.cfir.analysis.tests.*Lambda*' --tests 'org.cangnova.cangjie.cfir.analysis.tests.*Overload*' --tests 'org.cangnova.cangjie.cfir.analysis.tests.*TypeInfer*' --tests 'org.cangnova.cangjie.cfir.analysis.tests.*Generics*' --tests 'org.cangnova.cangjie.cfir.analysis.tests.*Typealias*' --tests 'org.cangnova.cangjie.cfir.analysis.tests.*ConstraintCheck*' --tests 'org.cangnova.cangjie.cfir.analysis.tests.*Ffi*' --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g' '-Pkotlin.compiler.execution.strategy=in-process'`：1658 项，1545 通过、97 既有失败、16 跳过；FIXED=10、REGRESSED=0。证据 21-enum-capture-family-green。
+  - 修复前后同一完整命令 `gradlew-queue.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g'`：最终运行正常结束，用时 14m 31s；退出码 1 对应 580 条既有失败，无 worker 崩溃或停滞。
+  - `gradlew-queue.bat validateDocumentation --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx512m'`：BUILD SUCCESSFUL。目录原有缺项 `:gradle-queue-cli` 已由独立文档提交 6bcc1054c 补齐。
+  - TypeInfer 76/76（PSI 38、LightTree 38），Generics 680/680，非宏 Typealias 110/110（含 Diagnostics 入口）。
+  - timeout_07 全量中 PSI 0.089s、LightTree 0.076s，诊断正确；旧正常基线分别为 0.247s / 0.169s。中途停滞的 JVM 栈保存在 evidence/21-timeout07-threads.json，临时跟踪和调试限额均已移除。
+  - 完整键比较：FIXED=12（TypeInfer 五个 fixture 的双入口，以及 Macro/Functionlinkage/UsedInternalDecl02 双入口）、REGRESSED=0、NEW_KEYS=12（全部 PASS）、REMOVED_KEYS=0、其它状态变化=0。仍失败的 580 条中 578 条消息不变；仅 ErrMsgs/lambda_0 双入口减少重复错误，与 cjc 一致。
+  - 全量证据为 build/repair-20260906/{19-recovered-full,21-full-final}/ 与 19-recovered-full--21-full-final.json。两次基线包含相同的用户既有工作；提交只纳入本项 owner、测试和本日志条目。验收后仅整理注释、日志及空行。
+- full comparison（Gradle 执行口径）：
+
+| 指标 | 修复前 19-recovered-full | 修复后 21-full-final |
+| --- | ---: | ---: |
+| 测试总数 | 8454 | 8466 |
+| 通过 | 7555 | 7579 |
+| 失败 | 592 | 580 |
+| 跳过 | 307 | 307 |
+
+XML 分别为 8455 / 8467 records，均另含一条跳过的聚合记录；skipped 均为 308，errors 均为 0。
+
+- remaining failures: TypeInfer 已无失败，全量仍有 580 条既有失败，完整列表在 21-full-final/results.json。
+  - 非宏 328：PatternMatching 47、Record 35、ErrMsgs 30、InitializationCheck 24、Call 22、Match 20、Lambda 14、Assign 12、Linkage 12、ConstraintCheck 12、SolveTypeArgs 12、Ffi 10、UnusedImport 8、Exception 8、OptionalChain 8、ExtendsImplementsInterfaceDuplicated 6、NonExhaustiveEnum 6、Array 6、IfLetExpr 4、Effect 4、If 4、Lookup 4、WhileLetExpr 2、Box 2、Const 2、DesugarErrorReport 2、FuzzInvalidParse 2、IsOrAsExpr 2、JoinMeet 2、Native 2、OptionalModifiers 2、Synchronized 2。
+  - Macro 252：Annotation 97、APILevelChecker 70、Varray 34、Function 10、QuoteExpr 10、Diagnostics2 7、UnusedImport 4、Root 4、Lookup 2、Diagnostics 2、Typealias 2、ConstEvaluation 2、Ffi 2、Operator 2、OperatorOverload 2、Type 2。
+  - capture_transitive 的旧 fixture 仍期待 USE_FUNC_CAPTURE_VAR_ALONE，而官方为 FUNC_CAPTURE_VAR_CANNOT_EXPR；本项恢复其正确的实际诊断类别，期望名称的独立修正留在既有 Lambda 遗留中。

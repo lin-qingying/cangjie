@@ -11444,6 +11444,12 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiLlTDiagnosticsTest() {
             runTest("cfir/analysis-tests/testData/llt/ffi/c_type_subtype.cj")
         }
 
+        @TestMetadata("cpointer_expected_inference.cj")
+        @Test
+        fun testCpointerExpectedInference() {
+            runTest("cfir/analysis-tests/testData/llt/ffi/cpointer_expected_inference.cj")
+        }
+
         @TestMetadata("cpointer_generic.cj")
         @Test
         fun testCpointerGeneric() {
@@ -18148,6 +18154,12 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiLlTDiagnosticsTest() {
             runTest("cfir/analysis-tests/testData/llt/overload/class_impl_interface4.cj")
         }
 
+        @TestMetadata("lambda_failed_candidate_order.cj")
+        @Test
+        fun testLambdaFailedCandidateOrder() {
+            runTest("cfir/analysis-tests/testData/llt/overload/lambda_failed_candidate_order.cj")
+        }
+
         @TestMetadata("overload_resolution_1.cj")
         @Test
         fun testOverloadResolution1() {
@@ -20216,6 +20228,24 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiLlTDiagnosticsTest() {
             runTest("cfir/analysis-tests/testData/llt/type_infer/init_constraints1.cj")
         }
 
+        @TestMetadata("lambda_conditional_interface.cj")
+        @Test
+        fun testLambdaConditionalInterface() {
+            runTest("cfir/analysis-tests/testData/llt/type_infer/lambda_conditional_interface.cj")
+        }
+
+        @TestMetadata("lambda_identity_requires_annotation.cj")
+        @Test
+        fun testLambdaIdentityRequiresAnnotation() {
+            runTest("cfir/analysis-tests/testData/llt/type_infer/lambda_identity_requires_annotation.cj")
+        }
+
+        @TestMetadata("lambda_imported_operator_owner.cj")
+        @Test
+        fun testLambdaImportedOperatorOwner() {
+            runTest("cfir/analysis-tests/testData/llt/type_infer/lambda_imported_operator_owner.cj")
+        }
+
         @TestMetadata("lambda_param_01.cj")
         @Test
         fun testLambdaParam01() {
@@ -20282,6 +20312,12 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiLlTDiagnosticsTest() {
             runTest("cfir/analysis-tests/testData/llt/type_infer/lambda_param_11.cj")
         }
 
+        @TestMetadata("lambda_signature_stability.cj")
+        @Test
+        fun testLambdaSignatureStability() {
+            runTest("cfir/analysis-tests/testData/llt/type_infer/lambda_signature_stability.cj")
+        }
+
         @TestMetadata("literal_binary_001.cj")
         @Test
         fun testLiteralBinary001() {
@@ -20300,10 +20336,22 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiLlTDiagnosticsTest() {
             runTest("cfir/analysis-tests/testData/llt/type_infer/matchcase2.cj")
         }
 
+        @TestMetadata("option_payload_boxing.cj")
+        @Test
+        fun testOptionPayloadBoxing() {
+            runTest("cfir/analysis-tests/testData/llt/type_infer/option_payload_boxing.cj")
+        }
+
         @TestMetadata("re_enter_infer.cj")
         @Test
         fun testReEnterInfer() {
             runTest("cfir/analysis-tests/testData/llt/type_infer/re_enter_infer.cj")
+        }
+
+        @TestMetadata("recursive_enum_constructor.cj")
+        @Test
+        fun testRecursiveEnumConstructor() {
+            runTest("cfir/analysis-tests/testData/llt/type_infer/recursive_enum_constructor.cj")
         }
 
         @TestMetadata("shift_unmatch_int.cj")

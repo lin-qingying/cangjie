@@ -31,6 +31,7 @@ import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
+import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.scopes.createCallableTypeParameterSubstitutorForOverride
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassMemberScopeKind
@@ -386,8 +387,8 @@ object CfirOverrideChecker : CfirClassLikeChecker() {
     /**
      * 检查泛型 override 是否放宽而不是收紧父声明的类型参数约束。
      *
-     * 同一父声明中的多个 bounds 先折叠为有效交集；多个同签名父声明的有效交集保持为
-     * accepted-domain 的并集。父类型参数替换到子类型参数空间后，按官方两段规则判断：
+     * 同一父声明中的多个 bounds 先替换到子类型参数空间，再折叠为有效交集；
+     * 多个同签名父声明的有效交集保持为 accepted-domain 的并集。按官方两段规则判断：
      * 子域至少覆盖一个父域，同时不能在非等价情况下严格窄于任一父域。每个子类型参数
      * 最多报告一次。
      */
@@ -414,15 +415,14 @@ object CfirOverrideChecker : CfirClassLikeChecker() {
 
             for (index in childTypeParameters.indices) {
                 val parentTypeParameter = parentTypeParameters.getOrNull(index) ?: continue
-                val parentDomain = parentTypeParameter.effectiveGenericConstraintDomain()
                 parentDomainsByTypeParameter[index] +=
-                    parentToChildSubstitutor.substituteOrSelf(parentDomain)
+                    parentTypeParameter.effectiveGenericConstraintDomain(parentToChildSubstitutor)
             }
         }
 
         for (index in childTypeParameters.indices) {
             val childTypeParameter = childTypeParameters[index]
-            val childDomain = childTypeParameter.effectiveGenericConstraintDomain()
+            val childDomain = childTypeParameter.effectiveGenericConstraintDomain(ConeSubstitutor.Empty)
             val parentDomains = parentDomainsByTypeParameter[index]
             if (parentDomains.isEmpty()) continue
 
@@ -474,9 +474,11 @@ private fun CfirCallableDeclaration.genericConstraintDiagnosticSource(
  * 该上界；它仍保留泛型上界节点，并沿泛型参数约束图收集传递上界。这样
  * `T1 <: T2 <: T3 <: T4` 会形成 `T2 & T3 & T4`，而不相关的 `T2`、`T4`
  * 仍保持为不同约束域。无显式约束最终以 `Any` 表示完整接受域。
+ * 必须先将每个 bound 替换到比较方的类型参数空间，再规范化交集：父声明的
+ * `T2 <: T3 <: T4` 在父空间可简化为 T2，但子声明的同名参数未必保留这条继承链。
  */
 context(context: CheckerContext)
-private fun CfirTypeParameterRef.effectiveGenericConstraintDomain(): ConeCangJieType {
+private fun CfirTypeParameterRef.effectiveGenericConstraintDomain(substitutor: ConeSubstitutor): ConeCangJieType {
     val collectedBounds = linkedSetOf<ConeCangJieType>()
     val pendingTypeParameters = ArrayDeque<CfirTypeParameterSymbol>()
     val visitedTypeParameters = linkedSetOf<CfirTypeParameterSymbol>()
@@ -501,7 +503,10 @@ private fun CfirTypeParameterRef.effectiveGenericConstraintDomain(): ConeCangJie
     }
 
     val effectiveBounds = collectedBounds.filterNot { it.isAnyBound() }
-    return ConeTypeIntersector.intersectTypes(context.session.typeContext, effectiveBounds)
+    return ConeTypeIntersector.intersectTypes(
+        context.session.typeContext,
+        effectiveBounds.map(substitutor::substituteOrSelf),
+    )
 }
 
 /**

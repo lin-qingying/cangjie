@@ -860,7 +860,7 @@ class CfirDeclDeserializer(
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
             isLocal = false,
-            dispatchReceiverType = null,
+            dispatchReceiverType = dispatchReceiverTypeForCurrentOwner(status),
             status = status,
             deprecationsProvider = EmptyDeprecationsProvider,
             typeParameters = typeParams,
@@ -932,6 +932,18 @@ class CfirDeclDeserializer(
     private fun callableIdForCurrentOwner(name: Name): CallableId {
         val containingClass = currentContainingDeclarationSymbol as? CfirClassLikeSymbol<*>
         return containingClass?.let { CallableId(it.classId, name) } ?: CallableId(packageFqName, name)
+    }
+
+    /**
+     * 库实例成员与源码成员共享声明接收者类型，类型参数复用当前 owner 的符号。
+     * 对齐 FIR 反序列化上下文的 dispatchReceiver；此时 owner 尚未 bind，不能读取其声明体。
+     */
+    private fun dispatchReceiverTypeForCurrentOwner(status: CfirDeclarationStatus): ConeSimpleCangJieType? {
+        if (status.isStatic) return null
+        val ownerSymbol = currentContainingDeclarationSymbol as? CfirClassLikeSymbol<*> ?: return null
+        val owner = checkNotNull(currentClassLikeOwner)
+        check(owner.classId == ownerSymbol.classId)
+        return ownerSymbol.constructType(owner.typeParameters.map { it.symbol.constructType() }) as ConeSimpleCangJieType
     }
 
     /**
@@ -1015,7 +1027,7 @@ class CfirDeclDeserializer(
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
             isLocal = false,
-            dispatchReceiverType = null,
+            dispatchReceiverType = dispatchReceiverTypeForCurrentOwner(status),
             status = status,
             deprecationsProvider = EmptyDeprecationsProvider,
             typeParameters = typeParams,
@@ -1056,7 +1068,7 @@ class CfirDeclDeserializer(
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
             isLocal = false,
-            dispatchReceiverType = null,
+            dispatchReceiverType = dispatchReceiverTypeForCurrentOwner(status),
             status = status,
             deprecationsProvider = EmptyDeprecationsProvider,
             typeParameters = typeParams,
@@ -1102,7 +1114,7 @@ class CfirDeclDeserializer(
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
             isLocal = false,
-            dispatchReceiverType = null,
+            dispatchReceiverType = dispatchReceiverTypeForCurrentOwner(status),
             status = status,
             deprecationsProvider = EmptyDeprecationsProvider,
             initializer = null,
@@ -1272,7 +1284,7 @@ class CfirDeclDeserializer(
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
             isLocal = outerIsLocal,
-            dispatchReceiverType = null,
+            dispatchReceiverType = dispatchReceiverTypeForCurrentOwner(status),
             status = status,
             deprecationsProvider = EmptyDeprecationsProvider,
             initializer = null,

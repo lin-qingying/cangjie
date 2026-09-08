@@ -4,12 +4,15 @@ import org.cangnova.cangjie.cfir.calls.ReceiverValue
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.resolve.BodyResolveComponents
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallInfo
+import org.cangnova.cangjie.cfir.resolve.services.CfirDefaultImportPriority
+import org.cangnova.cangjie.cfir.resolve.services.CfirResolvedImportTarget
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassMemberScopeKind
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassSubstitutionScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
 import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
 import org.cangnova.cangjie.cfir.session.extendProvider
+import org.cangnova.cangjie.cfir.session.importBindingStore
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
 import org.cangnova.cangjie.cfir.symbols.constructType
@@ -19,7 +22,6 @@ import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeTypeProjection
 import org.cangnova.cangjie.cfir.types.ConeTypeVariableType
 import org.cangnova.cangjie.name.ClassId
-import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 
 /**
@@ -115,28 +117,41 @@ private class CfirTypeVariableReceiverMemberScopeProvider(
         scopesByName.getOrPut(name) { collectMemberScopesForName(name) }
 
     /**
-     * 扫描顶层分类器索引，收集声明了指定成员名的 use-site member scope。
+     * 从当前包和已解析导入绑定枚举候选，避免未导入的库类型参与参数推断。
+     * 默认导入、别名和显式导入均消费 IMPORTS phase 的同一绑定事实。
      */
     private fun collectMemberScopesForName(name: Name): List<CfirTypeScope> {
-        val packageNames = components.symbolProvider.symbolNamesProvider
-            .getPackageNamesWithTopLevelClassifiers()
-            ?: return emptyList()
+        val importStore = components.session.importBindingStore
+        val bindings = importStore.requireBindings(components.file).imports +
+                CfirDefaultImportPriority.entries.flatMap(importStore::requireDefaultImportBindings)
+        val packageNames = linkedSetOf(components.file.packageDirective.packageFqName)
+        val classSymbols = linkedMapOf<ClassId, CfirClassLikeSymbol<*>>()
+        for (binding in bindings) {
+            for (target in binding.targets) {
+                when (target) {
+                    is CfirResolvedImportTarget.Package ->
+                        if (binding.importDirective.isAllUnder) packageNames += target.fqName
+                    is CfirResolvedImportTarget.ClassLike -> classSymbols[target.classId] = target.symbol
+                    is CfirResolvedImportTarget.Callable -> Unit
+                }
+            }
+        }
         val result = mutableListOf<CfirTypeScope>()
-        val seenClassIds = linkedSetOf<ClassId>()
 
-        for (packageName in packageNames) {
-            val packageFqName = FqName(packageName)
+        for (packageFqName in packageNames) {
             val classifierNames = components.symbolProvider.symbolNamesProvider
                 .getTopLevelClassifierNamesInPackage(packageFqName)
                 .orEmpty()
             for (classifierName in classifierNames) {
                 val classId = ClassId(packageFqName, classifierName)
-                if (!seenClassIds.add(classId)) continue
                 val classSymbol = components.symbolProvider.getClassLikeSymbolByClassId(classId) ?: continue
-                val scope = createUseSiteMemberScope(classSymbol) ?: continue
-                if (name in scope.getCallableNames()) {
-                    result += scope
-                }
+                classSymbols.putIfAbsent(classId, classSymbol)
+            }
+        }
+        for (classSymbol in classSymbols.values) {
+            val scope = createUseSiteMemberScope(classSymbol) ?: continue
+            if (name in scope.getCallableNames()) {
+                result += scope
             }
         }
 

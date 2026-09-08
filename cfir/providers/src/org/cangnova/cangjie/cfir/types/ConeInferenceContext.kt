@@ -26,12 +26,18 @@ package org.cangnova.cangjie.cfir.types
 
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.createExtendDeclarationSubstitutionForConstraintDerivation
+import org.cangnova.cangjie.cfir.resolve.providers.isExtendSuperTypeRefPredicateVisible
+import org.cangnova.cangjie.cfir.resolve.findCorrespondingClassLikeSupertype
+import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.session.extendProvider
 import org.cangnova.cangjie.cfir.session.typeAwareSupertypeProviderOrNull
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterLookupTag
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.cfir.symbols.toLookupTag
+import org.cangnova.cangjie.cfir.symbols.constructType
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.FqNameUnsafe
 import org.cangnova.cangjie.name.Name
@@ -57,6 +63,55 @@ private fun simpleDiagnostic(reason: String): ConeDiagnostic = object : ConeDiag
  * 可以理解为：K2 中 TypeSystemContext + InferenceContext 的组合
  */
 interface ConeInferenceContext : TypeSystemInferenceExtensionContext, ConeTypeContext {
+
+    /**
+     * 官方 HasExtendInterfaceTyHelper 在选择接口实现时同时求解 extend 的 where 约束。
+     * 例如 Option<X> <: ToString 会产生 X <: ToString；本方法只提供待求解的分支，
+     * 普通类型查询仍需通过完整的 extend 适用性检查。
+     */
+    override fun subtypeConstraintAlternatives(
+        subType: CangJieTypeMarker,
+        superType: CangJieTypeMarker,
+    ): List<List<Pair<CangJieTypeMarker, CangJieTypeMarker>>>? {
+        val lower = (subType as? ConeCangJieType)?.fullyExpandedType(session) ?: return null
+        if (!lower.contains { it is ConeTypeVariableType }) return null
+        val upper = (superType as? ConeCangJieType)?.fullyExpandedType(session) as? ConeClassifierType ?: return null
+        val upperClassId = upper.lookupTag.classId
+        if ((lower as? ConeClassifierType)?.lookupTag?.classId == upperClassId) return null
+        val targetKey = lower.extendTargetKey ?: return null
+        val alternatives = mutableListOf<List<Pair<CangJieTypeMarker, CangJieTypeMarker>>>()
+        for (extend in session.extendProvider.getExtendsForTarget(targetKey)) {
+            extend.symbol.lazyResolveToPhase(CfirResolvePhase.TYPES)
+            val pattern = extend.extendedTypeRef.coneTypeOrNull ?: continue
+            val substitution = createExtendDeclarationSubstitutionForConstraintDerivation(
+                session, extend, pattern, lower,
+            ) ?: continue
+            val bounds = mutableListOf<Pair<CangJieTypeMarker, CangJieTypeMarker>>()
+            for (parameter in extend.typeParameters) {
+                val actual = substitution.substitutor.substituteOrSelf(parameter.symbol.constructType())
+                for (bound in parameter.symbol.resolvedBounds) {
+                    val boundType = bound.coneTypeOrNull ?: continue
+                    bounds += actual to substitution.substitutor.substituteOrSelf(boundType)
+                }
+            }
+            for (superTypeRef in extend.superTypeRefs) {
+                val declaredSupertype = superTypeRef.coneTypeOrNull ?: continue
+                if (!isExtendSuperTypeRefPredicateVisible(session, extend, pattern, lower, declaredSupertype)) continue
+                val implemented = substitution.substitutor.substituteOrSelf(declaredSupertype)
+                val implementedClassId = (implemented as? ConeClassifierType)?.lookupTag?.classId
+                if (implementedClassId != upperClassId &&
+                    implemented.findCorrespondingClassLikeSupertype(session, upperClassId) == null
+                ) continue
+                alternatives += bounds + (implemented to upper)
+            }
+        }
+        if (alternatives.isEmpty()) return null
+        // 保留已有普通继承路径，与新发现的条件接口实现共同参与 fork 选择。
+        lower.findCorrespondingClassLikeSupertype(session, upperClassId)?.let { inherited ->
+            alternatives.add(0, listOf(inherited to upper))
+        }
+        return alternatives
+    }
 
     /**
      * 当前 session 的符号提供器
@@ -561,9 +616,7 @@ interface ConeInferenceContext : TypeSystemInferenceExtensionContext, ConeTypeCo
      * 创建交叉类型。
      */
     override fun intersectTypes(types: Collection<CangJieTypeMarker>): CangJieTypeMarker {
-        val coneTypes = types.map { it as ConeCangJieType }
-        if (coneTypes.size == 1) return coneTypes.single()
-        return ConeIntersectionType(coneTypes)
+        return ConeTypeIntersector.intersectTypes(this, types.map { it as ConeCangJieType })
     }
 
     /**
@@ -571,8 +624,7 @@ interface ConeInferenceContext : TypeSystemInferenceExtensionContext, ConeTypeCo
      */
     @Suppress("UNCHECKED_CAST")
     override fun intersectTypes(types: Collection<SimpleTypeMarker>): SimpleTypeMarker {
-        if (types.size == 1) return types.single()
-        return ConeIntersectionType(types.map { it as ConeCangJieType })
+        return ConeTypeIntersector.intersectTypes(this, types.map { it as ConeCangJieType }) as SimpleTypeMarker
     }
 
     /**

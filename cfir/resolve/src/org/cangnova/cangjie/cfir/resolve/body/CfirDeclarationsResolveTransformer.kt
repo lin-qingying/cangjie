@@ -33,18 +33,15 @@ import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
-import org.cangnova.cangjie.cfir.expressions.CfirResolvable
 import org.cangnova.cangjie.cfir.expressions.CfirReturnExpression
 import org.cangnova.cangjie.cfir.expressions.CfirSpawnExpression
 import org.cangnova.cangjie.cfir.expressions.CfirStatement
 import org.cangnova.cangjie.cfir.expressions.CfirWrappedExpression
-import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.resolve.CfirTypeResolutionConfiguration
 import org.cangnova.cangjie.cfir.resolve.ResolutionMode
 import org.cangnova.cangjie.cfir.resolve.createFileLookupScopes
 import org.cangnova.cangjie.cfir.resolve.createCurrentScopeList
 import org.cangnova.cangjie.cfir.resolve.dfa.CfirControlFlowGraphReferenceImpl
-import org.cangnova.cangjie.cfir.resolve.localLambdaInitializerInferenceData
 import org.cangnova.cangjie.cfir.semantics.ErrorTypeInArguments
 import org.cangnova.cangjie.cfir.resolve.transformers.CfirSpecificTypeResolverTransformer
 import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.LoopJumpScope
@@ -1026,7 +1023,6 @@ dataFlowAnalyzer.enterFunction(constructor)
      * 后续隐式类型缓存或 checker 继续看到裸 `CfirImplicitTypeRef`。
      */
     private fun CfirVariable.resolveImplicitReturnTypeFromInitializer() {
-        copyLocalLambdaInitializerInferenceDataFromInitializer()
         val implicitTypeRef = returnTypeRef as? CfirImplicitTypeRef ?: return
         val initType = initializer?.coneTypeOrNull
         val resolvedTypeRef = if (initType != null) {
@@ -1042,20 +1038,6 @@ dataFlowAnalyzer.enterFunction(constructor)
             }
         }
         replaceReturnTypeRef(resolvedTypeRef)
-        copyLocalLambdaInitializerInferenceDataFromInitializer()
-    }
-
-    /**
-     * 局部 lambda initializer 的 placeholder 约束属于变量声明整体，而不只属于隐式类型收敛。
-     *
-     * 声明返回类型可能已在更早阶段由 initializer 写成 resolved type ref；此时仍必须把
-     * lambda 保存的约束状态带到变量上，使后续 `f(arg)` 函数值调用可以继续完成参数类型。
-     */
-    private fun CfirVariable.copyLocalLambdaInitializerInferenceDataFromInitializer() {
-        (initializer as? CfirAnonymousFunctionExpression)
-            ?.anonymousFunction
-            ?.localLambdaInitializerInferenceData
-            ?.let { localLambdaInitializerInferenceData = it }
     }
 
     // ── Named function ────────────────────────────────────────────────────

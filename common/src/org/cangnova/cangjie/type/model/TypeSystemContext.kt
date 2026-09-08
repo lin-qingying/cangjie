@@ -290,6 +290,15 @@ interface TypeSystemInferenceExtensionContext : TypeSystemContext, TypeSystemBui
     TypeSystemCommonSuperTypesContext {
 
     /**
+     * 语言特有的条件父类型约束。每个分支内的关系同时成立，分支之间为或关系。
+     * null 表示没有额外分解规则，继续使用普通子类型检查；不能把候选父边直接视为已成立。
+     */
+    fun subtypeConstraintAlternatives(
+        subType: CangJieTypeMarker,
+        superType: CangJieTypeMarker,
+    ): List<List<Pair<CangJieTypeMarker, CangJieTypeMarker>>>? = null
+
+    /**
      * 判断类型（递归地）是否包含满足谓词的子类型
      * 用于检测类型变量是否出现在某个位置
      */
