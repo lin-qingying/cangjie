@@ -17,6 +17,6 @@ class A {
 
 main() {
     let a = A()
-    let b = a.<!UNABLE_TO_INFER_GENERIC_FUNC!>test<!>
+    let b = a.<!GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT!>test<!>
     return 0
 }

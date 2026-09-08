@@ -9,5 +9,5 @@ func case03<T>() {
 }
 
 func case04() {
-    <!UNABLE_TO_INFER_GENERIC_FUNC!>case03<!>
+    <!GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT!>case03<!>
 }
