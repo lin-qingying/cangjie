@@ -48,8 +48,7 @@ import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.asCone
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.contains
-import org.cangnova.cangjie.cfir.types.typeContext
-import org.cangnova.cangjie.type.AbstractTypeChecker
+import org.cangnova.cangjie.resolve.calls.inference.isSubtypeConstraintCompatible
 import org.cangnova.cangjie.type.model.safeSubstitute
 
 /**
@@ -223,12 +222,10 @@ private fun Candidate.selectVariadicExpectedType(
     // Array<Array<Int64>> 参数，失败后再把原实参作为合成 ArrayLit 的一个元素。
     // 仅比较两侧“都是 Array”会把 Array<Int64> 错当成 Array<Array<Int64>>，从而
     // 永远不会进入该恢复路径；完整 subtype 检查同时保留 `Array<T>` 的推断变量语义。
-    val matchesNormalArrayParameter =
-        AbstractTypeChecker.isSubtypeOf(
-            session.typeContext,
-            preparedArgumentType,
-            normalExpectedType,
-        )
+    val matchesNormalArrayParameter = system.getBuilder().isSubtypeConstraintCompatible(
+        preparedArgumentType,
+        normalExpectedType,
+    )
     if (matchesNormalArrayParameter) return null
 
     // 官方 cjc 会在普通调用匹配失败后把这部分位置实参收束成 ArrayLit。

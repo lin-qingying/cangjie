@@ -9,7 +9,6 @@ import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.declarations.isLambdaParameterTypeOmitted
 import org.cangnova.cangjie.cfir.declarations.lambdaParameterShapeExpectedFunctionType
-import org.cangnova.cangjie.cfir.diagnostic.AmbiguousArgumentType
 import org.cangnova.cangjie.cfir.diagnostic.ArgumentTypeMismatch
 import org.cangnova.cangjie.cfir.diagnostic.ConeAmbiguityError
 import org.cangnova.cangjie.cfir.diagnostic.ConeConstraintSystemHasContradiction
@@ -17,9 +16,7 @@ import org.cangnova.cangjie.cfir.diagnostic.InapplicableWrongReceiver
 import org.cangnova.cangjie.cfir.diagnostic.LambdaParameterCountMismatch
 import org.cangnova.cangjie.cfir.diagnostic.LambdaParameterTypeMismatch
 import org.cangnova.cangjie.cfir.diagnostic.UnsuccessfulCallableReferenceArgument
-import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
-import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
 import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.expressions.CfirArrayLiteral
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
@@ -36,7 +33,6 @@ import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
 import org.cangnova.cangjie.cfir.references.CfirResolvedErrorReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.references.impl.CfirResolvedAppliedCallableReference
-import org.cangnova.cangjie.cfir.references.builder.buildErrorNamedReference
 import org.cangnova.cangjie.cfir.references.builder.buildNamedReference
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.resolve.calls.contextualArrayLiteralTypeOrNull
@@ -57,7 +53,6 @@ import org.cangnova.cangjie.cfir.resolve.inference.model.ConeReceiverConstraintP
 import org.cangnova.cangjie.cfir.resolve.inference.model.ConeRegularLambdaArgumentConstraintPosition
 import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeVariableForLambdaParameterType
 import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeVariableForLambdaReturnType
-import org.cangnova.cangjie.cfir.semantics.AbstractCallCandidate
 import org.cangnova.cangjie.cfir.semantics.AmbiguousClassifierTypeInCandidateSignature
 import org.cangnova.cangjie.cfir.semantics.ErrorTypeInCandidateSignature
 import org.cangnova.cangjie.cfir.semantics.ErrorTypeInArguments
@@ -427,6 +422,22 @@ internal object ArgumentCheckingProcessor {
         }
         val expandedExpectedType = targetExpectedType.fullyExpandedType(session)
         val expectedOwnerClassId = expandedExpectedType.classIdOrPrimitiveClassId
+        if (!isCallableAmbiguity && atom is ConeAtomWithCandidate &&
+            currentCandidate === atom.candidate && currentCandidate.isSuccessful
+        ) {
+            val currentReturnType = currentCandidate.argumentExpressionType(context)
+            val keepsEnumOwner = currentSymbol !is CfirEnumConstructorSymbol || expectedOwnerClassId == null ||
+                    session.cfirProvider.getContainingClass(currentSymbol)?.classId == expectedOwnerClassId
+            /*
+             * 函数与枚举构造器的唯一候选遵循相同的子系统归属：保留尚未固定的返回变量，
+             * 让外层实参检查合入其原系统后共同求解。重新建枚举候选会把外层变量写入
+             * 隔离系统，却把旧变量留在原 atom 中，使递归 Cons(..., Cons(..., Nil)) 失去类型。
+             * 目标明确要求另一枚举 owner 时仍需重新查找构造器。
+             */
+            if (keepsEnumOwner && currentCandidate.ownsNotFixedTypeVariableIn(currentReturnType)) {
+                return NestedCallResolutionResult(atom)
+            }
+        }
         if (currentSymbol is CfirEnumConstructorSymbol && expectedOwnerClassId != null && !isCallableAmbiguity) {
             val currentReturnType = currentCandidate?.substitutedReturnType()
                 ?: (reference as? CfirResolvedAppliedCallableReference)?.substitutedReturnType
@@ -450,21 +461,6 @@ internal object ArgumentCheckingProcessor {
                 ?: (reference as? CfirResolvedAppliedCallableReference)?.substitutedReturnType
                 ?: functionCall.coneTypeOrNull
                 ?: return NestedCallResolutionResult(atom)
-            /*
-             * 无歧义的嵌套泛型调用已经拥有唯一候选时，其 fresh 返回变量就是外层 expected type
-             * 应继续约束的变量。若在这里重新复制调用并创建候选，会产生另一套 fresh variables：
-             * expected type 进入新系统，而 outer argument atom 仍持有旧系统，FULL completion 最终会
-             * 把旧变量误报为无法推断。保留原 atom 后，统一实参检查会先合入同一候选子系统，再把
-             * expected-type 约束写到该 fresh variable 上。
-             */
-            if (
-                atom is ConeAtomWithCandidate &&
-                currentCandidate === atom.candidate &&
-                currentCandidate.isSuccessful &&
-                currentCandidate.ownsNotFixedTypeVariableIn(currentReturnType)
-            ) {
-                return NestedCallResolutionResult(atom)
-            }
             if (
                 AbstractTypeChecker.isSubtypeOf(
                     session.typeContext,
@@ -1168,7 +1164,8 @@ internal object ArgumentCheckingProcessor {
             .allTypeVariables[expectedVariableType.typeConstructor]
         if (expectedVariable !is ConeTypeVariableForLambdaParameterType) return false
         if (!argumentType.hasCallableValueArgumentShape()) return false
-        return csBuilder.addEqualityConstraintIfCompatible(expectedType, argumentType, position)
+        val added = csBuilder.addEqualityConstraintIfCompatible(expectedType, argumentType, position)
+        return added
     }
 
     /**

@@ -46,8 +46,11 @@ class ResolutionStageRunner {
             val stageLimit = when (context.candidateProcessingMode) {
                 CandidateProcessingMode.FULL -> resolutionSequence.size
                 CandidateProcessingMode.ARGUMENT_SHAPE -> {
-                    val mapArgumentsIndex = resolutionSequence.indexOf(CfirMapArguments)
-                    if (mapArgumentsIndex >= 0) mapArgumentsIndex + 1 else resolutionSequence.size
+                    val mapArgumentsIndex = resolutionSequence.indexOfFirst {
+                        it == CfirMapArguments || it == CfirInitializeEmptyArgumentMap
+                    }
+                    check(mapArgumentsIndex >= 0) { "Argument-shape resolution requires an argument-mapping stage" }
+                    mapArgumentsIndex + 1
                 }
             }
             while (candidate.passedStages < stageLimit) {

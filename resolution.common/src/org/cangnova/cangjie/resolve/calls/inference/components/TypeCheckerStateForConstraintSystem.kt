@@ -88,10 +88,19 @@ abstract class TypeCheckerStateForConstraintSystem(
             answer = simplifyLowerConstraint(superType, subType, isNoInfer)
         }
 
-        return if (subType.anyBound(this::isMyTypeVariable)) {
+        val directResult = if (subType.anyBound(this::isMyTypeVariable)) {
             simplifyUpperConstraint(subType, superType, isNoInfer) && (answer ?: true)
         } else {
             simplifyConstraintForPossibleIntersectionSubType(subType, superType, isNoInfer) ?: answer
+        }
+        if (directResult != null) return directResult
+
+        val alternatives = extensionTypeContext.subtypeConstraintAlternatives(subType, superType) ?: return null
+        // 复用 FIR 的 fork-point 约束收集，隔离各个条件 extend，不能把多个可选实现合成 AND。
+        return runForkingPoint {
+            for (branch in alternatives) {
+                fork { branch.all { (lower, upper) -> isSubtypeOfByTypeChecker(lower, upper) } }
+            }
         }
     }
 

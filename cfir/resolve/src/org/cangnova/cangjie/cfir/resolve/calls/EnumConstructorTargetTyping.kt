@@ -15,6 +15,71 @@ import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirNamedReferenceWithC
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.ConeErrorType
+import org.cangnova.cangjie.cfir.types.ConeTypeVariableType
+import org.cangnova.cangjie.cfir.types.ConeLookupTagBasedType
+import org.cangnova.cangjie.cfir.types.StdlibClassIds
+import org.cangnova.cangjie.cfir.types.coneTypeOrNull
+import org.cangnova.cangjie.cfir.types.contains
+import org.cangnova.cangjie.cfir.types.expandedClassIdOrPrimitiveClassId
+import org.cangnova.cangjie.cfir.types.type
+import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
+import org.cangnova.cangjie.cfir.resolve.inference.model.ConeExpectedTypeConstraintPosition
+
+/**
+ * 同一个 enum owner 的目标类型按不变类型实参进入求解。
+ * 直接比较 Option<T> 与 Option<Option<A>> 会先触发表达式装箱并误解出 T=A；
+ * owner 映射应为 T=Option<A>，装箱只能在完成后的表达式类型检查中发生。
+ */
+internal fun Candidate.addExpectedEnumOwnerConstraints(
+    initialType: ConeCangJieType,
+    expectedType: ConeCangJieType,
+    session: CfirSession,
+): Boolean {
+    if (symbol.takeIf { it.isBound }?.cfir !is CfirEnumConstructor || callInfo.hasExplicitTypeArguments) return false
+    if (!shouldUseExpectedTypeForEnumConstructor(expectedType, session)) return false
+    val initial = initialType.fullyExpandedType(session) as? ConeLookupTagBasedType ?: return false
+    val expected = expectedType.fullyExpandedType(session) as? ConeLookupTagBasedType ?: return false
+    if (initial.expandedClassIdOrPrimitiveClassId != expected.expandedClassIdOrPrimitiveClassId) return false
+    if (initial.typeArguments.size != expected.typeArguments.size) return false
+    for ((argument, expectedArgument) in initial.typeArguments.zip(expected.typeArguments)) {
+        system.addEqualityConstraint(argument.type, expectedArgument.type, ConeExpectedTypeConstraintPosition)
+    }
+    return true
+}
+
+/**
+ * enum 的返回目标只有在同一 owner 中才参与泛型推断。
+ * Option 额外装箱由表达式检查负责：官方 LocalTypeArgumentSynthesis 不把额外外壳
+ * 写入已有确定 payload 的泛型映射。本判定同时供实参检查前的 stage 和 completion 使用。
+ */
+internal fun Candidate.shouldUseExpectedTypeForEnumConstructor(
+    expectedType: ConeCangJieType,
+    session: CfirSession,
+): Boolean {
+    val constructor = symbol.takeIf { it.isBound }?.cfir as? CfirEnumConstructor ?: return true
+    val ownerType = constructor.returnTypeRef.coneTypeOrNull?.fullyExpandedType(session) as? ConeLookupTagBasedType
+        ?: return true
+    val expected = expectedType.fullyExpandedType(session) as? ConeLookupTagBasedType ?: return false
+    if (ownerType.expandedClassIdOrPrimitiveClassId != expected.expandedClassIdOrPrimitiveClassId) return false
+    if (ownerType.expandedClassIdOrPrimitiveClassId != StdlibClassIds.Option ||
+        constructor.valueParameters.isEmpty() || callInfo.hasExplicitTypeArguments || !argumentMappingInitialized
+    ) return true
+    val expectedPayload = expected.typeArguments.singleOrNull()?.type ?: return true
+    val payload = argumentMapping.keys.singleOrNull()?.expression?.coneTypeOrNull ?: return true
+    if (payload.contains { it is ConeTypeVariableType || it is ConeErrorType }) return true
+    val expectedDepth = expectedPayload.optionNestingDepth(session) ?: return true
+    val actualDepth = payload.optionNestingDepth(session) ?: return true
+    return expectedDepth <= actualDepth
+}
+
+/** 统计展开别名后的 Option 外壳；不完整的裸泛型类型不提供层数证据。 */
+private fun ConeCangJieType.optionNestingDepth(session: CfirSession): Int? {
+    val expanded = fullyExpandedType(session) as? ConeLookupTagBasedType ?: return 0
+    if (expanded.expandedClassIdOrPrimitiveClassId != StdlibClassIds.Option) return 0
+    val inner = expanded.typeArguments.singleOrNull()?.type ?: return null
+    return inner.optionNestingDepth(session)?.let { it + 1 }
+}
 
 /**
  * 判断候选是否对应源码中的裸无参 enum value 访问。

@@ -59,6 +59,19 @@ internal fun CfirPartialBodyResolveTransformer.resolvePatternBindingTypes(
 ) {
     when (pattern) {
         is CfirVarOrEnumPattern -> Unit
+        is CfirConstPattern -> {
+            // 官方 ChkConstPattern 要求字面量与 selector 类型相等，不允许 Option 装箱。
+            // fresh selector 的等式必须进入共享推断系统，供 lambda 定义点完成使用。
+            if (expectedType is ConeTypeVariableType) {
+                val literalType = pattern.expression.coneTypeOrNull
+                if (literalType != null && literalType !is ConeErrorType) {
+                    context.inferenceSession.addEqualityConstraintIfCompatible(
+                        expectedType,
+                        IdealTypeResolver.resolveIfIdeal(literalType),
+                    )
+                }
+            }
+        }
         is CfirBindingPattern -> {
             val resolvedTypeRef = pattern.typeRef?.let { resolvePatternTypeRefIfNeeded(it, typeResolver) }
             if (resolvedTypeRef != null && resolvedTypeRef !== pattern.typeRef) {

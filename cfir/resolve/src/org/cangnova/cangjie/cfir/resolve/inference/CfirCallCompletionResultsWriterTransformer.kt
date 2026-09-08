@@ -64,8 +64,8 @@ import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirErrorReferenceWithCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirNamedReferenceWithCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.noArgEnumConstructorTargetType
+import org.cangnova.cangjie.cfir.resolve.calls.shouldUseExpectedTypeForEnumConstructor
 import org.cangnova.cangjie.cfir.resolve.calls.substituteExplicitTypeArgumentConstraints
-import org.cangnova.cangjie.cfir.resolve.inference.model.ConeExpectedTypeConstraintPosition
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.resolve.body.CfirDeclarationsResolveTransformer
 import org.cangnova.cangjie.cfir.resolve.toErrorReference
@@ -87,12 +87,10 @@ import org.cangnova.cangjie.cfir.visitors.transformSingle
 import org.cangnova.cangjie.resolve.calls.inference.buildCurrentSubstitutor
 import org.cangnova.cangjie.resolve.calls.tower.ApplicabilityDetail
 import org.cangnova.cangjie.resolve.calls.tower.isSuccess
-import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintMismatch
 import org.cangnova.cangjie.source.CjFakeSourceElementKind
 import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.source.fakeElement
 import org.cangnova.cangjie.name.ClassId
-import org.cangnova.cangjie.name.OperatorNameConventions
 import org.cangnova.cangjie.type.AbstractTypeChecker
 import org.cangnova.cangjie.type.model.TypeConstructorMarker
 import org.cangnova.cangjie.types.TypeApproximatorConfiguration
@@ -287,6 +285,7 @@ class CfirCallCompletionResultsWriterTransformer(
         expectedType: ConeCangJieType?,
     ): ConeSubstitutor? {
         expectedType ?: return null
+        if (!shouldUseExpectedTypeForEnumConstructor(expectedType, session)) return null
         val enumConstructor = symbol.takeIf { it.isBound }?.cfir as? CfirEnumConstructor ?: return null
         if (enumConstructor.valueParameters.isEmpty()) return null
         if (callInfo.hasExplicitTypeArguments) return null
@@ -1331,28 +1330,6 @@ class CfirCallCompletionResultsWriterTransformer(
 
         for (callback in candidate.onPCLACompletionResultsWritingCallbacks) {
             callback(finalSubstitutor)
-        }
-
-        for (completion in candidate.localLambdaInitializerCompletions) {
-            val lambdaExpression = completion.data.lambdaExpression
-            val lambda = lambdaExpression.anonymousFunction
-            val shouldRestoreAndReanalyze = !completion.data.bodyReanalyzedAfterCallableValueCompletion
-            val shouldReanalyze = completion.data.applyCompletionResult(
-                completion.variable,
-                finalSubstitutor,
-                candidate.system.currentStorage(),
-                restoreBodyResolveState = shouldRestoreAndReanalyze,
-            )
-            if (!shouldRestoreAndReanalyze || !shouldReanalyze) continue
-
-            context.withAnonymousFunctionTowerDataContext(lambda.symbol) {
-                declarationsTransformer.doTransformAnonymousFunctionBodyFromCallCompletion(
-                    lambdaExpression,
-                    null,
-                )
-            }
-            context.dropContextForAnonymousFunction(lambda)
-            completion.data.bodyReanalyzedAfterCallableValueCompletion = true
         }
 
         val typeVariablesAfterPCLATransformer = CfirTypeVariablesAfterPCLATransformer(finalSubstitutor)

@@ -47,7 +47,7 @@ import org.cangnova.cangjie.utils.runIf
  * 4. 将可修订期望类型的 atom 转换为带新函数期望类型的 atom
  * 5. 分析下一个就绪的延迟参数
  * 6. 固定下一个就绪的类型变量
- * 7. 尝试通过 PCLA 完成调用（特性开关控制）
+ * 7. 通过 PCLA 分析输入类型尚未固定的 lambda
  * 8. 报告无法推断的类型变量错误
  * 9. 强制分析剩余未分析的延迟参数
  */
@@ -265,7 +265,7 @@ class ConstraintSystemCompleter(
      * 尝试通过 PCLA（带 lambda 参数的延迟调用推断）完成推断。
      *
      * 场景：泛型函数接收 lambda，lambda 体内的调用需要反向推断外层类型参数。
-     * 通过特性开关控制是否启用，当前保留原始实现。
+     * 由完成模式决定是否分析这些 lambda，并将函数体约束保留在同一候选系统中。
      *
      * @return 若通过 PCLA 产生了新的正确约束则返回 true。
      */
@@ -294,25 +294,12 @@ class ConstraintSystemCompleter(
         fun ConeResolvedLambdaAtom.notFixedInputTypeVariables() =
             inputTypes.flatMap { it.inputTypeVariablesForPCLA() }.filter { it !in fixedTypeVariables }
 
-        val lambdaArgumentsWithNotFixedInputs = lambdaArguments.filter { it.notFixedInputTypeVariables().isNotEmpty() }
-        val dangerousMultiLambdaBuilderInference = lambdaArgumentsWithNotFixedInputs.size >= 2
-        val builder = getBuilder()
-
         var anyAnalyzed = false
-        for ((index, argument) in lambdaArgumentsWithNotFixedInputs.withIndex()) {
+        for (argument in lambdaArguments) {
             val notFixedInputTypeVariables = argument.notFixedInputTypeVariables()
-
-            if (dangerousMultiLambdaBuilderInference && index > 0) {
-                for (variable in notFixedInputTypeVariables) {
-                    val typeParameter = variable.typeParameter ?: continue
-                    addError(AnonymousFunctionBasedMultiLambdaBuilderInferenceRestriction(argument.anonymousFunction, typeParameter))
-                }
-                builder.markCouldBeResolvedWithUnrestrictedBuilderInference()
-            }
-
-            for (variable in notFixedInputTypeVariables) {
-                builder.markPostponedVariable(notFixedTypeVariables.getValue(variable).typeVariable)
-            }
+            if (notFixedInputTypeVariables.isEmpty()) continue
+            // 对齐 FIR：未固定输入由 lambda atom 与 PCLA common system 管理，不能写入
+            // K1 的 postponedTypeVariables。系统替换假定该列表为空，否则长调用链会反复追加旧变量。
             analyzer.analyze(argument, withPCLASession = true)
             anyAnalyzed = true
         }
@@ -377,7 +364,7 @@ class ConstraintSystemCompleter(
         completionMode: ConstraintSystemCompletionMode,
         topLevelAtoms: List<ConeResolutionAtom>,
     ): Boolean {
-val variableWithConstraints = notFixedTypeVariables.getValue(variableForFixation.variable)
+        val variableWithConstraints = notFixedTypeVariables.getValue(variableForFixation.variable)
         if (!variableForFixation.isReady) return false
 
         fixVariable(this, variableWithConstraints, topLevelAtoms)

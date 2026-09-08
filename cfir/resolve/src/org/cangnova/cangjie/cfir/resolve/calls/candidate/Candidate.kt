@@ -29,9 +29,9 @@ import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.builder.buildValueParameter
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.expressions.CfirArrayLiteral
+import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.resolve.CfirSamResolver
-import org.cangnova.cangjie.cfir.resolve.CfirLocalLambdaInitializerInferenceReference
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.resolve.calls.CallableReferenceAdaptation
 import org.cangnova.cangjie.cfir.resolve.calls.ArgumentMappingOutcome
@@ -190,8 +190,8 @@ class Candidate(
     /**
      * 候选外部导入的、需要在同一次 completion 中固定的类型变量。
      *
-     * 这类变量不属于当前 callable 声明的类型参数，例如无上下文 lambda initializer
-     * 暂存的参数 placeholder。它们的约束系统会并入当前候选；若不把变量本身暴露给
+     * 这类变量不属于当前 callable 声明的类型参数，例如模式推断创建的元素变量和
+     * 无上下文 lambda 的形参变量。它们属于当前完成过程；若不把变量本身暴露给
      * completion，约束虽存在但不会进入 fixation 队列。
      */
     val additionalCompletionVariables: MutableSet<TypeConstructorMarker> = linkedSetOf()
@@ -581,14 +581,25 @@ class Candidate(
     val postponedPCLACalls: MutableList<ConeResolutionAtom> = mutableListOf()
     /** 已经通过 PCLA 分析过的 lambda 声明。 */
     val lambdasAnalyzedWithPCLA: MutableList<CfirDeclaration> = mutableListOf()
-    /** 函数值调用 completion 后需要恢复并重算的局部 lambda initializer。 */
-    internal val localLambdaInitializerCompletions: MutableList<CfirLocalLambdaInitializerInferenceReference> = mutableListOf()
 
     // Retained as an upstream-aligned callback seam for delegated-property/PCLA completion-result writing.
     // In the current local direct chain there is no CfirDelegatedPropertyInferenceSession or writer-mode
     // call site that populates this list, so these callbacks remain structurally available but unreachable.
     /** PCLA 完成结果写回回调。 */
     val onPCLACompletionResultsWritingCallbacks: MutableList<(ConeSubstitutor) -> Unit> = mutableListOf()
+
+    /**
+     * synthetic lambda 重查时丢弃上一遍的表达式写回任务，保留已经收集的类型约束。
+     * 官方 ResetLambdaForReinfer 同样会重建 body；旧 replacement 不能覆盖第二遍成功的解析结果。
+     */
+    internal fun resetLambdaBodyResolutionResults() {
+        val lambda = callInfo.callSite as CfirAnonymousFunctionExpression
+        _updatedArguments = null
+        postponedPCLACalls.clear()
+        onPCLACompletionResultsWritingCallbacks.clear()
+        lambdasAnalyzedWithPCLA.clear()
+        lambdasAnalyzedWithPCLA += lambda.anonymousFunction
+    }
 
     // ---------------------------------------- Applicability ----------------------------------------
 

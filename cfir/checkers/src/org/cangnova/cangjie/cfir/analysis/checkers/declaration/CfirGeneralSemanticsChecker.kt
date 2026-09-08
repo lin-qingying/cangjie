@@ -32,6 +32,7 @@ import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
+import org.cangnova.cangjie.cfir.expressions.CfirNamedAccessExpression
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
 import org.cangnova.cangjie.cfir.isCatchParameter
 import org.cangnova.cangjie.cfir.patterns.visibleBindingVariables
@@ -664,6 +665,17 @@ private object CfirStaticGenericDependencySemantics {
                         source = expression.source,
                         ownerTypeParameters = ownerTypeParameters,
                         reported = reported,
+                    )
+                ) {
+                    return
+                }
+                // 官方检查 RefExpr 自身的类型。已解析的局部引用没有类型实参，
+                // 不能依赖子 TypeRef 的遍历来发现它对外层泛型参数的依赖。
+                if (expression is CfirNamedAccessExpression && expression.explicitReceiver == null &&
+                    expression.coneTypeOrNull.reportStaticGenericDependency(
+                        expression.source,
+                        ownerTypeParameters,
+                        reported,
                     )
                 ) {
                     return

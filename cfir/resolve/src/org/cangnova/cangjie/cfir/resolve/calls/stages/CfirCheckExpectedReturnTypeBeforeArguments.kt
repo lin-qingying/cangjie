@@ -9,6 +9,10 @@ import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.resolve.initialTypeOfCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
 import org.cangnova.cangjie.cfir.resolve.calls.hasUncertainExpectedTypeCompatibilityShape
+import org.cangnova.cangjie.cfir.resolve.calls.shouldUseExpectedTypeForEnumConstructor
+import org.cangnova.cangjie.cfir.resolve.calls.shouldUseExpectedTypeForBuiltinPointerConstructor
+import org.cangnova.cangjie.cfir.resolve.calls.builtinPointerExpectedTypeArgument
+import org.cangnova.cangjie.cfir.resolve.calls.addExpectedEnumOwnerConstraints
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CheckerSink
 import org.cangnova.cangjie.cfir.resolve.inference.model.ConeExpectedTypeConstraintPosition
@@ -45,6 +49,8 @@ object CfirCheckExpectedReturnTypeBeforeArguments : ResolutionStage() {
             return
         }
         val expectedType = resolutionMode.expectedType ?: return
+        if (!candidate.shouldUseExpectedTypeForEnumConstructor(expectedType, context.session)) return
+        if (!candidate.shouldUseExpectedTypeForBuiltinPointerConstructor(expectedType, context.session)) return
 
         // 隐式返回类型必须通过共享 returnTypeCalculator 读取；声明 returnTypeRef 在该阶段
         // 仍可能不是 resolved ref，直接调用 candidate.substitutedReturnType 会退化成错误类型。
@@ -66,6 +72,7 @@ object CfirCheckExpectedReturnTypeBeforeArguments : ResolutionStage() {
         }
 
         if (candidate.addBuiltinPointerExpectedPointeeConstraint(candidateReturnType, expectedType, context.session)) return
+        if (candidate.addExpectedEnumOwnerConstraints(candidateReturnType, expectedType, context.session)) return
 
         /*
          * 官方泛型调用推断把 call target return 与实参约束同时求解。这里仅为当前
@@ -103,7 +110,7 @@ object CfirCheckExpectedReturnTypeBeforeArguments : ResolutionStage() {
             ?.isEmpty() == true
 
     /**
-     * 在实参检查前用目标 `CPointer<U>` 定型 synthetic `CPointer<T>` 的 pointee。
+     * 在实参检查前用目标首个有效类型实参定型 synthetic `CPointer<T>` 的 pointee。
      *
      * `CPointer` 的构造调用不是普通 nominal 泛型调用：无显式类型实参时，空指针构造
      * 和指针转换的目标类型都要参与 `T` 的推断。约束必须进入当前候选的系统，才能让
@@ -119,12 +126,12 @@ object CfirCheckExpectedReturnTypeBeforeArguments : ResolutionStage() {
         if (callInfo.hasExplicitTypeArguments) return false
 
         val candidatePointerType = candidateReturnType as? ConePointerType ?: return false
-        val expectedPointerType = expectedType.fullyExpandedType(session) as? ConePointerType ?: return false
+        val expectedPointeeType = expectedType.builtinPointerExpectedTypeArgument(session) ?: return false
         if (!candidatePointerType.pointeeType.containsCurrentCandidateInferenceVariable(this)) return false
 
         system.addEqualityConstraintIfCompatible(
             candidatePointerType.pointeeType,
-            expectedPointerType.pointeeType,
+            expectedPointeeType,
             ConeExpectedTypeConstraintPosition,
         )
         return true
