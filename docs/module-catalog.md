@@ -70,6 +70,7 @@ Module-specific implementation notes belong to the linked subsystem document. In
 | `:dependencies:intellij-core` | Dependencies | IntelliJ platform dependency boundary | [owner](../README.md) |
 | `:flatbuffers-gen` | Infrastructure | FlatBuffers schemas and generated protocol sources | [owner](../flatbuffers-gen/README.md) |
 | `:generators` | Infrastructure | Code-generation framework | [owner](../generators/README.md) |
+| `:gradle-queue-cli` | Infrastructure | Cross-process serial Gradle execution | [owner](../AGENTS.md) |
 | `:llvm-interop` | LLVM interop | LLVM interop aggregation | [owner](../llvm-interop/README.md) |
 | `:llvm-interop:llvm-interop-api` | LLVM interop | LLVM interop API | [owner](../llvm-interop/README.md) |
 | `:llvm-interop:llvm-interop-jni` | LLVM interop | LLVM JNI implementation | [owner](../llvm-interop/README.md) |
