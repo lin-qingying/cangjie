@@ -24,11 +24,11 @@ fun CfirFile.isClassIdReachableByImports(
         store.requireBindings(this).imports,
         store.requireDefaultImportBindings(CfirDefaultImportPriority.HIGH),
         store.requireDefaultImportBindings(CfirDefaultImportPriority.LOW),
-    ).flatten().any { binding -> binding.reaches(session, classId) }
+    ).flatten().any { binding -> binding.reachesClassId(session, classId) }
 }
 
 /** 判断单条已解析 binding 是否把 [classId] 暴露给当前文件。 */
-private fun CfirResolvedImportBinding.reaches(session: CfirSession, classId: ClassId): Boolean = targets.any { target ->
+fun CfirResolvedImportBinding.reachesClassId(session: CfirSession, classId: ClassId): Boolean = targets.any { target ->
     when (target) {
         is CfirResolvedImportTarget.ClassLike -> target.classId == classId
         is CfirResolvedImportTarget.Package -> {

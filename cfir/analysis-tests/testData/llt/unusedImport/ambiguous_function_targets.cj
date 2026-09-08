@@ -78,6 +78,6 @@ main() {
 package explicitnomatch
 import one.select
 main() {
-    select(<!TYPE_MISMATCH!>"x"<!>)
+    select(<!ARGUMENT_TYPE_MISMATCH!>"x"<!>)
     return 0
 }

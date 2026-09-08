@@ -847,6 +847,7 @@ class CfirAccessibilityCheckerExtendTest {
         fun compositeWithLibraryExtend(libraryExtend: CfirExtend, libraryPackage: FqName): CfirExtendProvider {
             val own = CfirSessionExtendProvider(session, store)
             val stub = object : CfirExtendProvider {
+                override fun getAllExtends(): List<CfirExtend> = listOf(libraryExtend)
                 override fun getExtendsForTarget(targetKey: CfirExtendTargetKey): List<CfirExtend> = emptyList()
                 override fun getExtendsForClass(classId: ClassId): List<CfirExtend> = emptyList()
                 override fun getExtendsInPackage(packageFqName: FqName): List<CfirExtend> = emptyList()

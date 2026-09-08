@@ -47,6 +47,12 @@ internal class LLCfirSessionExtendProvider(
      */
     private var indexedFiles: Set<CfirFile> = emptySet()
 
+    /** 全量扩展枚举与定向查询使用相同的懒解析索引版本。 */
+    override fun getAllExtends(): List<CfirExtend> {
+        ensureIndexIsFresh()
+        return delegate.getAllExtends()
+    }
+
     /**
      * 查询目标 key 对应的扩展声明。
      */

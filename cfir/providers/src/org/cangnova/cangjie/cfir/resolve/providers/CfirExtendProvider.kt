@@ -21,6 +21,14 @@ import org.cangnova.cangjie.name.FqName
  */
 interface CfirExtendProvider : CfirSessionComponent {
     /**
+     * 返回当前 provider 管理的全部扩展声明。
+     *
+     * 导入后的继承检查需要同时观察源码与依赖库，不能按出现的成员调用或 primitive
+     * 名单重建扩展集合。调用方仍须按消费包的导出可见性和目标实例筛选。
+     */
+    fun getAllExtends(): List<CfirExtend>
+
+    /**
      * 返回与规范化目标 key 匹配的所有 extend 声明。
      */
     fun getExtendsForTarget(targetKey: CfirExtendTargetKey): List<CfirExtend>

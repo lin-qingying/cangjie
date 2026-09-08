@@ -3360,6 +3360,36 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiLlTDiagnosticsTest() {
             runTest("cfir/analysis-tests/testData/llt/Extend_import/err_extend_primitive.cj")
         }
 
+        @TestMetadata("imported_default_visibility.cj")
+        @Test
+        fun testImportedDefaultVisibility() {
+            runTest("cfir/analysis-tests/testData/llt/Extend_import/imported_default_visibility.cj")
+        }
+
+        @TestMetadata("imported_nominal_default_conflicts.cj")
+        @Test
+        fun testImportedNominalDefaultConflicts() {
+            runTest("cfir/analysis-tests/testData/llt/Extend_import/imported_nominal_default_conflicts.cj")
+        }
+
+        @TestMetadata("library_default_conflicts.cj")
+        @Test
+        fun testLibraryDefaultConflicts() {
+            runTest("cfir/analysis-tests/testData/llt/Extend_import/library_default_conflicts.cj")
+        }
+
+        @TestMetadata("library_default_visibility.cj")
+        @Test
+        fun testLibraryDefaultVisibility() {
+            runTest("cfir/analysis-tests/testData/llt/Extend_import/library_default_visibility.cj")
+        }
+
+        @TestMetadata("library_shadow_conflicts.cj")
+        @Test
+        fun testLibraryShadowConflicts() {
+            runTest("cfir/analysis-tests/testData/llt/Extend_import/library_shadow_conflicts.cj")
+        }
+
         @TestMetadata("import")
         @TestDataPath("${'$'}PROJECT_ROOT")
         @Nested

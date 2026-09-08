@@ -20,6 +20,8 @@ class CfirCompositeExtendProvider(
      */
     private val providers: List<CfirExtendProvider>,
 ) : CfirExtendProvider {
+    override fun getAllExtends(): List<CfirExtend> = providers.flatMap { it.getAllExtends() }.distinct()
+
     /**
      * 聚合所有 provider 中匹配目标 key 的 extend。
      */

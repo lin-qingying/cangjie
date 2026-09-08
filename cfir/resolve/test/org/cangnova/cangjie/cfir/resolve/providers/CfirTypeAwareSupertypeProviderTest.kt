@@ -538,8 +538,10 @@ private class TestSymbolProvider(
  * 基于内存 extend 列表的测试 extend provider。
  */
 private class TestExtendProvider(
-    extends: List<CfirExtend>,
+    private val extends: List<CfirExtend>,
 ) : CfirExtendProvider {
+    override fun getAllExtends(): List<CfirExtend> = extends
+
     /**
      * 按扩展目标 ClassId 分组的 extend 列表。
      */

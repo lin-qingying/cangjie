@@ -30,6 +30,9 @@ class CfirSessionExtendProvider(
     private val indexStore: CfirExtendIndexStore,
 ) : CfirExtendProvider {
 
+    override fun getAllExtends(): List<CfirExtend> =
+        indexStore.allModels().map(CfirExtendSemanticModel::declaration)
+
     /**
      * 查询目标键对应的所有 extend 声明。
      */

@@ -6,6 +6,7 @@ import com.intellij.psi.tree.IElementType
 import com.intellij.util.diff.FlyweightCapableTreeStructure
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.context.accessContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirImport
@@ -19,6 +20,8 @@ import org.cangnova.cangjie.cfir.references.CfirErrorNamedReference
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedErrorReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
+import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessKind
+import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityResult
 import org.cangnova.cangjie.cfir.resolve.providers.isPackageVisibleSourceImport
 import org.cangnova.cangjie.cfir.resolve.providers.isUnusedImportCheckExempt
 import org.cangnova.cangjie.cfir.resolve.services.CfirResolvedImportBinding
@@ -26,6 +29,7 @@ import org.cangnova.cangjie.cfir.resolve.services.CfirResolvedImportTarget
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.annotationMetadataRegistryOrNull
 import org.cangnova.cangjie.cfir.session.cfirProvider
+import org.cangnova.cangjie.cfir.session.accessibilityChecker
 import org.cangnova.cangjie.cfir.session.extendProviderOrNull
 import org.cangnova.cangjie.cfir.session.importBindingStoreOrNull
 import org.cangnova.cangjie.cfir.session.macroExpansionRegistry
@@ -34,6 +38,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirUserTypeRef
 import org.cangnova.cangjie.cfir.types.ConeDiagnostic
+import org.cangnova.cangjie.cfir.types.expandedExtendTargetKey
 import org.cangnova.cangjie.cfir.types.classId
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.visitors.CfirDefaultVisitorVoid
@@ -104,6 +109,37 @@ object CfirImportsChecker : CfirFileChecker() {
             .allCurrentConflictingImports()
             .toSet()
         reportUnusedImports(declaration, duplicateImports)
+        reportImportedExtendConflicts(declaration)
+    }
+
+    /**
+     * 在消费包复查可见的导入扩展，源码和 CJO 使用同一目标分组及成员检查。
+     *
+     * 官方 `TypeCheckExtend::BuildImportedExtendMap` 按导入包收集完整 extend 集合，
+     * 随后 `StructInheritanceChecker` 在消费包的 use-site 过滤后检查 shadow 与默认接口
+     * 冲突。扩展声明所属包的 declaration checker 没有这个 use-site 信息，因此不能承担
+     * 该跨包复查。
+     */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun reportImportedExtendConflicts(
+        declaration: CfirFile,
+    ) {
+        val provider = context.session.extendProviderOrNull ?: return
+        val useSiteAccessContext = context.accessContext(CfirAccessKind.EXTEND)
+        val importedExtends = provider.getAllExtends().filter { extend ->
+            provider.getPackageFqName(extend) != declaration.packageDirective.packageFqName &&
+                context.session.accessibilityChecker.checkExtend(extend, useSiteAccessContext) is CfirAccessibilityResult.Accessible
+        }
+        val groups = importedExtends.groupBy { it.extendedTypeRef.coneTypeOrNull?.expandedExtendTargetKey }
+        for ((targetKey, group) in groups) {
+            if (targetKey == null || group.map(provider::getPackageFqName).distinct().size < 2) continue
+            val participatingExtends = group.toSet()
+            for (extend in group) {
+                val importedContext = CfirImportedExtendCheckContext(participatingExtends, extend, declaration, context)
+                CfirExtendExtraChecker.checkMemberShadowing(extend, importedContext)
+                CfirInheritanceDeepChecker.checkImportedExtendDefaultInterfaceMemberConflicts(extend, importedContext)
+            }
+        }
     }
 
     /**

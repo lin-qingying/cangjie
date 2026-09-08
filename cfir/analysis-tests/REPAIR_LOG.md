@@ -5269,3 +5269,23 @@ esolveDelegatingConstructorCallAndSelectCandidate);
 - 仍待处理：第 13 项诊断分类差异；import6/import14 的消费包导入扩展冲突检查（4 条）；ExtendsImplementsInterfaceDuplicated（6 条）；另已发现但未实现的数值字面量显式后缀类型问题。
 - 验证与资源：最后本线程相关切片为 1111 项、59 失败、64 跳过；中间两次测试启动/运行曾受提交内存不足影响，不应计为语义回归。按用户要求，此交接阶段没有再启动构建或测试。
 - 证据：`build/repair-20260906/{12-after,13-full-check,13-root-diagnostics,13-handoff-latest}/`、`12-after--13-handoff-latest.json`。下一会话入口及具体操作注意事项见 `EXTEND_REPAIR_HANDOFF.md`。
+
+## 2026-09-08：统一源码与真实 CJO 的导入扩展冲突复查
+
+- problem type: Extend Import / Metadata / Visibility / Diagnostics —— 导入扩展复查不能依赖源码文件存在，不能让未导入接口参与 primitive 默认成员冲突，也不能遗漏普通类目标。
+- root cause: 上轮实现通过 getContainingFile != null 筛掉了全部真实 CJO；primitive 另走没有使用点可见性和实例化匹配的复制算法；普通类型没有进入默认冲突检查；库 DEFAULT 状态没有从 AttributePack 恢复。规则查询还依赖仅包含源码的 occurrence 索引，库扩展因没有源码模型而失去目标和接口继承关系。
+- official Cangjie evidence: `package-evidence/review-20260908-unimported-primitive` 的 a/b/root 全部编译并链接成功，无诊断；`review-20260908-nominal-default` 的消费包在两个库 extend 上报默认属性缺实现；`import6` 的真实库导入在 B/C 成员上报 shadow；新跑 `review-20260908-import7` 确认除调用歧义外还应在两个 extend 上报默认函数缺实现。官方 `StructInheritanceChecker.cpp:335-338,542-558,1449-1487` 规定消费包可见性、跨包分组与继承顺序；`MergeInheritedMemberHelper.cpp:180-205` 使用 DEFAULT 属性识别默认实现冲突；`AttributePack.h:88-96` 与 ASTWriter.GetRawAttrs 给出 DEFAULT 的二进制语义。
+- Kotlin counterpart files consulted: FirExtensionShadowedByMemberChecker 的 scope/visibility/signature 检查；FirConflictsDeclarationChecker 的声明来源定位；FirMemberDeserializer.kt:386,658 按序列化 flags 恢复声明状态；PendingDiagnosticsReporterImpl 的诊断提交边界。仓颉导入扩展复查及 DEFAULT 位语义取自官方 cjc/C++，不引入 Kotlin 扩展语言规则。
+- CFIR owner files changed: CfirExtendProvider 及 source/library/composite/lazy/LL/empty 实现统一枚举扩展；CfirExtendIndexStore/CfirExtendRuleQueryService 将已解析声明头部的结构查询与源码 occurrence 分开；CfirImportsChecker 按消费包可见性及不同包的同目标分组调度复查；CfirImportedExtendCheckContext 统一参与集合及源码/库诊断位置；CfirExtendExtraChecker/CfirInheritanceDeepChecker 复用已有 shadow/default owner，并过滤非参与扩展的实现；CfirDeclDeserializer 恢复 DEFAULT；PendingDiagnosticsReporterImpl 使用公共提交记录去重和记录文件错误状态；IDE collector 同步现有两参数 CFA 构造接口。
+- repair principle: 一个可见、可实例化的扩展集合同时驱动源码和 CJO 检查，声明元数据、成员图、诊断位置各自由共享 owner 负责，删除 primitive 特判、空替换器补洞和降级 import binding 回放。
+- fixtures covered: 原 Extend/ExtendImport/Interface/UnusedImport 全族；新增 imported_default_visibility、imported_nominal_default_conflicts、library_shadow_conflicts、library_default_conflicts、library_default_visibility 的 PSI/LightTree 两入口。`testData/libraries/extend_conflicts` 保存官方生成的 8 个 CJO 及相邻源文件，库测试仅通过 IMPORT_PATH 加载 CJO。
+- fixture correction: import7 原期望漏掉两个 INTERFACE_MEMBER_MUST_BE_IMPLEMENTED，已依官方分包编译补在完整 extend token；import14 使用前次已取证的诊断名称及完整导入项范围；同时保存已复核的 ambiguous_function_targets/explicit_no_match 项目 ARGUMENT_TYPE_MISMATCH 名称修正。源码语法未变。CJO 没有 IDE 可标记源码时，诊断定位到引入该扩展的实际完整 import item，位置选择不控制检查是否运行。
+- verification commands and outcome:
+  - 修正接管时 TypeInfer 工作中的 Kotlin cast 语法后建立 `18-full-before`：固定全量 8440 项、608 失败、307 跳过。与此前 `16-interface-after` 的 596 失败相比，既存未提交 TypeInfer 工作 FIXED=8、REGRESSED=20；这 20 条另列入后续 TypeInfer 修复，不计为本项引入。
+  - 临时审查矩阵（真实 CJO 与多包源码）加完整 ExtendImport：108/108 通过，证据 `18-import-probes-pass`。
+  - `gradlew-queue.bat :cfir:resolve:test --tests 'org.cangnova.cangjie.cfir.resolve.services.CfirExtendIndexStoreTest' --tests 'org.cangnova.cangjie.cfir.resolve.providers.CfirTypeAwareSupertypeProviderTest'`：18+7 项通过；`CfirAccessibilityCheckerExtendTest` 15 项通过。
+  - 正式 `*Extend*`、`*Interface*`、`*UnusedImport*` 切片：1774 项，1704 通过、35 既有失败、35 跳过；REGRESSED=0，10 条新增全通过，35 条失败消息完全不变。完整命令与结果见 `18-import-family`。
+  - `gradlew-queue.bat :analysis:low-level-api-cfir:test --tests 'org.cangnova.cangjie.analysis.low.level.api.cfir.DecompiledLibraryTypeAliasResolveTest' --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g' '-Pkotlin.compiler.execution.strategy=in-process'`：1/1 通过。先修正了原有 IDE 调用点向两参数 CFA 组件传三个参数的编译错误。
+  - 前后同一完整命令 `gradlew-queue.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g'`：8440 → 8450 项，失败 608 → 608，跳过均 307；XML 8441 → 8451 records，通过 7525 → 7535，skipped 均 308、errors 均 0。
+  - 完整键比较 FIXED=0、REGRESSED=0、NEW_KEYS=10（全部 PASS）、REMOVED_KEYS=0、其它状态变化=0；608 条既有失败消息完全一致。证据为 `18-full-before`、`18-after`、`18-full-before--18-after.json`。当前基线包含用户原有未提交工作，已在 initial-20260908 保存；本提交不混入弃用、primitive shadow、函数返回类型去重和普通接口返回类型检查的独立修改。
+- remaining failures: 全量 608；核心 Extend、ExtendImport 均 0；ExtendsImplementsInterfaceDuplicated 仍为 6；TypeInfer 12（六个 fixture 的两入口），以及上面列明的未提交 TypeInfer 工作引入的 20 条回归仍待继续处理。

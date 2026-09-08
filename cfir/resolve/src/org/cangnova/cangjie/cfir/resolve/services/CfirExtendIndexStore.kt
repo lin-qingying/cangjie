@@ -124,6 +124,19 @@ class CfirExtendIndexStore(
     fun modelForDeclaration(declaration: Any): CfirExtendSemanticModel? = modelByDeclaration[declaration]
 
     /**
+     * 目标身份来自已解析声明头部，与声明是否拥有源码文件无关。
+     * 库扩展不进入源码 occurrence 索引，但必须参与相同的继承关系查询。
+     */
+    fun targetKeyOf(declaration: Any): CfirExtendTargetKey? =
+        (declaration as? CfirExtend)?.extendedTypeRef?.coneTypeOrNull?.expandedExtendTargetKey
+
+    /** 源码和库声明共用已解析接口引用的有效性判定。 */
+    fun inheritedInterfaceClassIdsOf(declaration: Any): List<ClassId> =
+        (declaration as? CfirExtend)?.superTypeRefs
+            ?.mapNotNull { it.toDirectInterfaceClassIdOrNull(typeResolver) }
+            .orEmpty()
+
+    /**
      * 查询指定目标键上的所有 extend 模型。
      */
     fun modelsForTarget(targetKey: CfirExtendTargetKey): List<CfirExtendSemanticModel> =
@@ -188,12 +201,21 @@ class CfirExtendIndexStore(
      * 否则会出现 duplicate/orphan 两套规则对同一声明看到不同接口集合的问题。
      */
     fun inheritedInterfaceClosureClassIdsOf(declaration: Any): Set<ClassId> {
-        val model = modelForDeclaration(declaration) ?: return emptySet()
         return buildLinkedSet {
-            for (interfaceClassId in model.inheritedInterfaceClassIds) {
-                addAll(interfaceClosureByClassId[interfaceClassId].orEmpty())
+            for (interfaceClassId in inheritedInterfaceClassIdsOf(declaration)) {
+                addAll(interfaceClosureClassIds(interfaceClassId))
             }
         }
+    }
+
+    /** 按需将库接口加入同一闭包缓存，不构造虚假的源码文件或另一套继承图。 */
+    @Synchronized
+    private fun interfaceClosureClassIds(classId: ClassId): Set<ClassId> {
+        interfaceClosureByClassId[classId]?.let { return it }
+        val memo = interfaceClosureByClassId.toMutableMap()
+        val result = collectInterfaceClosure(classId, typeResolver, memo, linkedSetOf(), linkedMapOf())
+        interfaceClosureByClassId = memo
+        return result
     }
 
     /**
@@ -201,12 +223,10 @@ class CfirExtendIndexStore(
      * 两个 extend 只要存在“其中一个直接接口继承了另一个直接接口”的关系，就视为相关 extend。
      */
     fun areExtendsInInheritRelation(firstDeclaration: Any, secondDeclaration: Any): Boolean {
-        val first = modelForDeclaration(firstDeclaration) ?: return false
-        val second = modelForDeclaration(secondDeclaration) ?: return false
+        val first = firstDeclaration as? CfirExtend ?: return false
+        val second = secondDeclaration as? CfirExtend ?: return false
         if (first === second) return true
-        if (first.targetKey == null || first.targetKey != second.targetKey) return false
-        return hasDirectInterfaceInheritedFrom(first, second) ||
-            hasDirectInterfaceInheritedFrom(second, first)
+        return doesExtendInheritFrom(first, second) || doesExtendInheritFrom(second, first)
     }
 
     /**
@@ -216,25 +236,29 @@ class CfirExtendIndexStore(
      * parent，反向检查 parent 时则跳过 child，不能用对称的继承关系查询替代。
      */
     fun doesExtendInheritFrom(childDeclaration: Any, parentDeclaration: Any): Boolean {
-        val child = modelForDeclaration(childDeclaration) ?: return false
-        val parent = modelForDeclaration(parentDeclaration) ?: return false
-        if (child.targetKey == null || child.targetKey != parent.targetKey) return false
-        return hasDirectInterfaceInheritedFrom(child, parent)
+        val child = childDeclaration as? CfirExtend ?: return false
+        val parent = parentDeclaration as? CfirExtend ?: return false
+        val targetKey = targetKeyOf(child) ?: return false
+        if (targetKey != targetKeyOf(parent)) return false
+        return hasDirectInterfaceInheritedFrom(
+            inheritedInterfaceClassIdsOf(child),
+            inheritedInterfaceClassIdsOf(parent),
+        )
     }
 
     /**
      * 判断 `child` 的直接接口中是否存在继承自 `parent` 直接接口的接口。
      */
     private fun hasDirectInterfaceInheritedFrom(
-        child: CfirExtendSemanticModel,
-        parent: CfirExtendSemanticModel,
+        childInterfaces: List<ClassId>,
+        parentInterfaceIds: List<ClassId>,
     ): Boolean {
-        if (child.inheritedInterfaceClassIds.isEmpty() || parent.inheritedInterfaceClassIds.isEmpty()) {
+        if (childInterfaces.isEmpty() || parentInterfaceIds.isEmpty()) {
             return false
         }
-        val parentInterfaces = parent.inheritedInterfaceClassIds.toSet()
-        return child.inheritedInterfaceClassIds.any { childInterface ->
-            interfaceClosureByClassId[childInterface].orEmpty().any { it in parentInterfaces }
+        val parentInterfaces = parentInterfaceIds.toSet()
+        return childInterfaces.any { childInterface ->
+            interfaceClosureClassIds(childInterface).any { it in parentInterfaces }
         }
     }
 

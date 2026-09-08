@@ -40,14 +40,24 @@ class PendingDiagnosticsReporterImpl(
         get() = delegate.hasWarningsForWError
 
     /**
-     * 同一 reporter 会连续处理多个源文件；后续阶段只关心当前文件已经提交的 Sema 错误。
+     * 同一 reporter 会连续处理多个源文件；后续阶段不能在当前文件仍有待提交的
+     * Sema 错误时提前启动。官方按 package/file 的 Sema 阶段结果门控 CHIR，pending
+     * 诊断虽然尚未完成 suppression 提交，但已经足以阻止后端阶段。
      */
     override fun hasErrorsInFile(filePath: String): Boolean =
-        committedDiagnosticsByFilePath[filePath]?.any { it.severity.isError } == true
+        pendingDiagnosticsByFilePath[filePath]?.any { it.severity.isError } == true ||
+                committedDiagnosticsByFilePath[filePath]?.any { it.severity.isError } == true
 
     override fun report(diagnostic: CjDiagnostic?, context: DiagnosticContext) {
         if (diagnostic == null) return
         val remappedDiagnostic = diagnostic.remapSourceIfNeeded()
+        if (context.isCrossFileDiagnostic) {
+            if (!context.isDiagnosticSuppressed(remappedDiagnostic)) {
+                // 跨文件检查已提供目标声明上下文，仍须登记提交记录以保持去重和阶段错误状态。
+                commitDiagnostic(context.containingFilePath, remappedDiagnostic, context)
+            }
+            return
+        }
         when (val filePath = context.containingFilePath) {
             null -> delegate.report(remappedDiagnostic, context)
             else -> {

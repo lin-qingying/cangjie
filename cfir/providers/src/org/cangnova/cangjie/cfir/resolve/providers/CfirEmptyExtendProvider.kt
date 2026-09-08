@@ -11,6 +11,8 @@ import org.cangnova.cangjie.name.FqName
  * 最小可用的 extend provider。
  */
 class CfirEmptyExtendProvider : CfirExtendProvider {
+    override fun getAllExtends(): List<CfirExtend> = emptyList()
+
     /**
      * 空 provider 不包含任何目标 key 匹配的 extend。
      */

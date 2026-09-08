@@ -45,6 +45,7 @@ import org.cangnova.cangjie.cfir.scopes.overrideSignatureKey
 import org.cangnova.cangjie.cfir.scopes.processCallablesByNameWithLookupProvenance
 import org.cangnova.cangjie.cfir.session.accessibilityChecker
 import org.cangnova.cangjie.cfir.session.extendRuleQueryService
+import org.cangnova.cangjie.cfir.session.extendRuleQueryServiceOrNull
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.cfir.types.BuiltinPrimitiveOperators
@@ -193,14 +194,18 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
      * 对齐 C++ DiagKind::sema_extend_member_cannot_shadow
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
-    private fun checkMemberShadowing(extend: CfirExtend) {
+    internal fun checkMemberShadowing(
+        extend: CfirExtend,
+        importedContext: CfirImportedExtendCheckContext? = null,
+    ) {
         val targetTypeRef = extend.extendedTypeRef
         val targetType = (targetTypeRef as? CfirResolvedTypeRef)?.coneType ?: return
         val targetScope = targetType.createTargetShadowScope(extend) ?: return
+        val reportContext = importedContext ?: context
 
         for (member in extend.declarations) {
             val memberName = member.shadowableName() ?: continue
-            if (!member.shadowsExistingMember(targetScope, context, targetType)) continue
+            if (!member.shadowsExistingMember(targetScope, context, targetType, importedContext)) continue
 
             val typeName = targetType.classIdOrPrimitiveClassId?.shortClassName ?: continue
             val source = when (member) {
@@ -209,10 +214,13 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
                 else -> member.source
             }
             reporter.reportOn(
-                source = source ?: member.source ?: extend.source,
+                source = if (importedContext != null) {
+                    importedContext.sourceForDeclaration(source ?: member.source ?: extend.source)
+                } else source ?: member.source ?: extend.source,
                 factory = CfirErrors.EXTEND_MEMBER_CANNOT_SHADOW,
                 a = memberName,
                 b = typeName,
+                context = reportContext,
             )
         }
     }
@@ -244,6 +252,7 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
         targetScope: org.cangnova.cangjie.cfir.scopes.CfirTypeScope,
         context: CheckerContext,
         targetType: ConeCangJieType,
+        importedContext: CfirImportedExtendCheckContext?,
     ): Boolean {
         val symbol = when (this) {
             is CfirNamedFunction -> symbol
@@ -270,6 +279,9 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
          * private -> 不报告。
          */
         targetScope.processCallablesByNameWithLookupProvenance(symbol.name) { candidate ->
+            if (importedContext?.accepts(candidate.provenance.sourceExtend) == false) {
+                return@processCallablesByNameWithLookupProvenance
+            }
             val accessible = context.session.accessibilityChecker.checkCallable(
                 symbol = candidate.symbol,
                 context = accessContext,
@@ -278,7 +290,7 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
             if (!accessible && !candidate.symbol.isShadowRelevantProtectedClassMember()) {
                 return@processCallablesByNameWithLookupProvenance
             }
-            if (candidate.symbol.canShadowThis(this, signature, candidate.provenance, context)) {
+            if (candidate.symbol.canShadowThis(this, signature, candidate.provenance, context, importedContext != null)) {
                 found = true
             }
         }
@@ -308,10 +320,32 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
         currentSignature: String,
         provenance: CfirCallableLookupProvenance,
         context: CheckerContext,
+        ignoreInheritedExtendRelations: Boolean,
     ): Boolean {
         if (!isBound) return false
         val original = unwrapSubstitutionOverrides()
         if (original.cfir === currentMember) return false
+
+        // 同一目标上的父子 extend 关系已经由接口继承图归并；子 extend 的成员不应
+        // 反向把父 extend 的具体实现判为 shadow。无关 sibling extend 仍必须继续
+        // 进入 import6 这类消费包冲突检查。
+        val currentExtend = when (currentMember) {
+            is CfirNamedFunction -> currentMember.symbol
+            is CfirProperty -> currentMember.symbol
+            else -> null
+        }?.getContainingExtend()
+        val sourceExtend = provenance.sourceExtend
+        if (
+            ignoreInheritedExtendRelations &&
+            currentExtend != null &&
+            sourceExtend != null &&
+            context.session.extendRuleQueryServiceOrNull?.areExtendsInInheritRelation(
+                currentExtend,
+                sourceExtend,
+            ) == true
+        ) {
+            return false
+        }
 
         if (original.isSyntheticPrimitiveBuiltinOperatorExcludedFromShadow(context)) return false
         if (original.isInterfaceRequirementMember(context)) return false
