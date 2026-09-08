@@ -42,6 +42,7 @@ import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.resolve.inference.AnonymousFunctionBasedMultiLambdaBuilderInferenceRestriction
 import org.cangnova.cangjie.cfir.resolve.inference.model.*
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
+import org.cangnova.cangjie.cfir.resolve.calls.explicitTypeArgumentsSubstitutor
 import org.cangnova.cangjie.cfir.resolve.providers.getContainingClass
 import org.cangnova.cangjie.cfir.resolve.providers.getContainingExtend
 import org.cangnova.cangjie.cfir.resolve.toSymbol
@@ -2692,8 +2693,9 @@ private fun AbstractCallCandidate<*>.isTypeAliasConstructorCandidate(): Boolean 
 
 /**
  * 判断约束错误集合中是否包含显式类型实参约束不匹配。
+ * 该来源同时决定诊断映射与 post-resolve 上界检查的归属，避免两处重复报告。
  */
-private fun List<ConstraintSystemError>.hasExplicitTypeArgumentConstraintMismatch(): Boolean =
+internal fun List<ConstraintSystemError>.hasExplicitTypeArgumentConstraintMismatch(): Boolean =
     any { error ->
         error is ConstraintMismatch &&
             error.position.from is ConeExplicitTypeParameterConstraintPosition
@@ -2704,19 +2706,25 @@ private fun List<ConstraintSystemError>.hasExplicitTypeArgumentConstraintMismatc
  *
  * solver 与类型使用 checker 必须消费同一组声明上界；当候选因该约束成为 error reference 时，
  * 由 constraint position 保存的原始 type argument source 负责精确定位，避免依赖完成后的 AST 形态。
+ * 官方 CheckGenericDeclInstantiation 在首个上界违例后终止当前实例化；底层约束继续推导出的
+ * 其它违例不再成为同一次调用上的额外主诊断。
  */
 private fun AbstractCallCandidate<*>.explicitTypeArgumentConstraintDiagnostics(
     session: CfirSession,
     fallbackSource: CjSourceElement?,
 ): List<CjDiagnostic> {
     val typeParameters = explicitConstraintTypeParameters(session)
-    val diagnostics = linkedMapOf<String, CjDiagnostic>()
+    val explicitTypeSubstitutor = system.asReadOnlyStorage().explicitTypeArgumentsSubstitutor()
 
     for (error in errors) {
         val mismatch = error as? ConstraintMismatch ?: continue
         val position = mismatch.position.from as? ConeExplicitTypeParameterConstraintPosition ?: continue
-        val actualType = mismatch.lowerType as? ConeCangJieType ?: continue
-        val upperBound = mismatch.upperType as? ConeCangJieType ?: continue
+        val actualType = (mismatch.lowerType as? ConeCangJieType)
+            ?.substituteTypeVariableTypes(this, session)
+            ?.let(explicitTypeSubstitutor::substituteOrSelf) ?: continue
+        val upperBound = (mismatch.upperType as? ConeCangJieType)
+            ?.substituteTypeVariableTypes(this, session)
+            ?.let(explicitTypeSubstitutor::substituteOrSelf) ?: continue
         if (actualType is ConeErrorType || upperBound is ConeErrorType) continue
 
         val argumentIndex = callInfo.typeArguments.indexOfFirst { argument ->
@@ -2727,7 +2735,6 @@ private fun AbstractCallCandidate<*>.explicitTypeArgumentConstraintDiagnostics(
             ?.constructType()
             ?: upperBound
         val diagnosticSource = position.typeArgument.source ?: fallbackSource ?: continue
-        val key = "${diagnosticSource.startOffset}:${diagnosticSource.endOffset}:$actualType:$upperBound:$genericType"
         val diagnostic = CfirErrors.GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT.on(
             diagnosticSource,
             actualType,
@@ -2735,9 +2742,9 @@ private fun AbstractCallCandidate<*>.explicitTypeArgumentConstraintDiagnostics(
             genericType,
             session,
         ) ?: continue
-        diagnostics.putIfAbsent(key, diagnostic)
+        return listOf(diagnostic)
     }
-    return diagnostics.values.toList()
+    return emptyList()
 }
 
 /** 返回显式 callable/constructor type arguments 对应的声明类型参数序列。 */

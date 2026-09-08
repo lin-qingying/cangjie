@@ -6530,6 +6530,12 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeLlTDiagnosticsTest() {
             runTest("cfir/analysis-tests/testData/llt/call/call_reference_inference_04.cj")
         }
 
+        @TestMetadata("inferred_and_explicit_constraints.cj")
+        @Test
+        fun testInferredAndExplicitConstraints() {
+            runTest("cfir/analysis-tests/testData/llt/call/inferred_and_explicit_constraints.cj")
+        }
+
         @TestMetadata("nested_named_arg.cj")
         @Test
         fun testNestedNamedArg() {
