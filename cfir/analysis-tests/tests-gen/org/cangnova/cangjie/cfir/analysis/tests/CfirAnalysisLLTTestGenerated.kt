@@ -6536,6 +6536,12 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeLlTDiagnosticsTest() {
             runTest("cfir/analysis-tests/testData/llt/call/inferred_and_explicit_constraints.cj")
         }
 
+        @TestMetadata("member_overload_declaration_scope.cj")
+        @Test
+        fun testMemberOverloadDeclarationScope() {
+            runTest("cfir/analysis-tests/testData/llt/call/member_overload_declaration_scope.cj")
+        }
+
         @TestMetadata("nested_named_arg.cj")
         @Test
         fun testNestedNamedArg() {

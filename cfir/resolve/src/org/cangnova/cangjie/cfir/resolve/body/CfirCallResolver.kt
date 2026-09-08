@@ -1591,8 +1591,8 @@ class CfirCallResolver(
     /**
      * 把初次 tower 名字查找的完整成功候选集冻结成 expected-return 细化描述。
      *
-     * 任一候选仍不成功、符号不是 callable 或返回类型不能确定时，描述仍保留但其返回类型为空；
-     * 后续规约会整体回退完整 resolver，不会从不完整信息中删除候选。
+     * 这里只读取已确定的声明类型，不为落选候选启动隐式返回类型计算；否则保存信息就会
+     * 重入当前函数并发布伪递归错误。未确定的类型保留为空，由需要目标细化的调用走完整解析。
      */
     private fun buildExpectedTypeRefinementDiscovery(
         info: CallInfo,
@@ -1604,8 +1604,12 @@ class CfirCallResolver(
         val discoveries = ArrayList<CfirCallableCandidateDiscovery>(candidates.size)
         for (candidate in candidates) {
             val symbol = candidate.symbol as? CfirCallableSymbol<*> ?: return emptyList()
-            val returnType = components.initialTypeOfCandidate(candidate).fullyExpandedType(session)
-            val deterministicReturnType = returnType.takeIf {
+            val returnType = if (symbol.cfir.returnTypeRef is CfirResolvedTypeRef) {
+                components.initialTypeOfCandidate(candidate).fullyExpandedType(session)
+            } else {
+                null
+            }
+            val deterministicReturnType = returnType?.takeIf {
                 candidate.system.isProperType(it) && !it.hasUncertainExpectedTypeCompatibilityShape()
             }
             discoveries += CfirCallableCandidateDiscovery(

@@ -818,10 +818,15 @@ class BodyResolveContext(
 
     // ── Function body / lambda ────────────────────────────────────────────
 
-    /** 对齐 K2 `withNamedFunction`：注册局部函数，并在函数声明 container 外层安装函数类型参数作用域。 */
+    /**
+     * 对齐 K2 `withNamedFunction`：成员由其 owner scope 提供，不能额外注册成局部函数。
+     * Kotlin 的 FirClass 覆盖所有 class-like 种类；CFIR 还需覆盖独立的 extend owner。
+     */
     @OptIn(PrivateForInline::class)
     inline fun <T> withNamedFunction(namedFunction: CfirNamedFunction, session: CfirSession, f: () -> T): T {
-        if (namedFunction.isLocal || containerIfAny !is CfirClass) {
+        if (namedFunction.isLocal ||
+            (containerIfAny !is CfirClassLikeDeclaration && containerIfAny !is CfirExtend)
+        ) {
             storeFunction(namedFunction, session)
         }
         return withTypeParametersOf(namedFunction) {
