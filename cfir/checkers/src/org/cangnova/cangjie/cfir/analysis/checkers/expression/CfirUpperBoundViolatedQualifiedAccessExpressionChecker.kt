@@ -5,8 +5,12 @@ import org.cangnova.cangjie.cfir.analysis.checkers.checkUpperBoundViolatedForTyp
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.context.accessContext
 import org.cangnova.cangjie.cfir.analysis.checkers.createGenericUseSiteSubstitutor
+import org.cangnova.cangjie.cfir.analysis.diagnostics.hasExplicitTypeArgumentConstraintMismatch
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameterRefsOwner
+import org.cangnova.cangjie.cfir.diagnostic.ConeConstraintSystemHasContradiction
+import org.cangnova.cangjie.cfir.diagnostic.ConeInapplicableCandidateError
+import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
 import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
@@ -40,6 +44,9 @@ object CfirUpperBoundViolatedQualifiedAccessExpressionChecker : CfirQualifiedAcc
     override fun check(expression: CfirQualifiedAccessExpression) {
         val typeArgumentRefs = expression.typeArguments
         if (typeArgumentRefs.isEmpty()) return
+        // completion 也会写回推断出的类型实参，但它们没有源码 type-argument source。
+        // 隐式实参的约束失败归推断系统报告，不能在这里再派生显式实例化的上界诊断。
+        if (typeArgumentRefs.none { it.source != null }) return
 
         val resolvedSymbol = expression.resolvedSymbolOrNull() ?: return
         val typeParameters = resolvedSymbol.useSiteTypeParameters()
@@ -72,6 +79,15 @@ object CfirUpperBoundViolatedQualifiedAccessExpressionChecker : CfirQualifiedAcc
             )
             return
         }
+
+        // 错误候选已保留显式 type argument 的约束来源时，由 Cone diagnostic mapper
+        // 报告该上界错误；普通已解析访问及独立 typealias 展开继续使用本检查器。
+        val candidateErrors = when (val diagnostic = (expression.calleeReference as? CfirDiagnosticHolder)?.diagnostic) {
+            is ConeConstraintSystemHasContradiction -> diagnostic.candidate.errors
+            is ConeInapplicableCandidateError -> diagnostic.candidate.errors
+            else -> null
+        }
+        if (candidateErrors?.hasExplicitTypeArgumentConstraintMismatch() == true) return
 
         val substitutor = createGenericUseSiteSubstitutor(
             typeParameters = typeParameters,

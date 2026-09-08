@@ -5418,3 +5418,39 @@ XML 为 8467 → 8469 records，均另含一条 skipped 聚合记录（skipped=3
 
 - remaining failures: Call 18 项（9 份源码的双入口），剩余类型为同签名函数遮蔽/扩展成员候选排序、隐式泛型约束重复诊断、非泛型成员的显式类型实参、函数值诊断期望、构造器递归期望与 parser recovery；其它 558 项保持原状态。
 - change isolation: 仅提交本项共享 owner、一个新增 fixture、两套对应生成方法和本日志；其它用户 WIP 保持独立。
+
+## 2026-09-09：泛型调用约束诊断只由真实来源报告一次
+
+- problem type: Call / Generic Constraints / Diagnostics。隐式泛型调用推断失败不能重复报显式上界违例；显式实例化不能把一个失败上界的原始/替换形式或后续推导结果重复报为主错误。
+- root cause: completion 将推断类型实参写回 qualified access 后，上界 checker 未区分这些无 source 的内部实参与源码显式实参；显式错误候选又同时被 Cone mapper 和 post-resolve checker 报告。mapper 直接使用未替换的错误类型，Comparable<T> 与 Comparable<Plain> 形成两条诊断，并继续遍历同次实例化的全部上界违例。
+- official Cangjie evidence:
+  - call_inference_01 和 type_arg_infer6 的官方诊断只有 sema_unable_to_infer_generic_func；f_bounded_1 只有声明 Y 的非法上界错误，无调用处诊断。
+  - inferred_and_explicit_constraints / call_explicit_multiple_bounds 探针分别证明隐式失败、显式失败与多个上界同时违反的规则；constraint_instantiate_test4/5 每处实例化都只有一条上界错误。完整命令、源码和 JSON 保存在 build/repair-20260906/evidence 对应 .official.*。
+  - external/cangjie_compiler/src/Sema/TypeCheckGeneric.cpp:214-280 的 CheckGenericDeclInstantiation 在首个违反上界后直接 return false；TypeCheckCall.cpp:1112-1119 区分已提供实参与需要继续推断的调用。
+- Kotlin counterpart files consulted: FirUpperBoundViolatedQualifiedAccessExpressionChecker.kt、FirUpperBoundViolatedHelpers.kt、CreateFreshTypeVariableSubstitutorStage.kt；保留 type argument 的来源与使用点替换。报告数量与中止顺序依仓颉官方实现。
+- CFIR owner files changed:
+  - CfirUpperBoundViolatedQualifiedAccessExpressionChecker.kt：仅检查源码显式实参；候选保存显式约束错误时由 mapper 负责，typealias 展开仍归原 owner。
+  - coneDiagnosticToCfirDiagnostic.kt：共享显式约束来源判定，先应用固定变量与显式等式替换，再报告首个实例化上界错误。
+  - semantics/resolve/calls/ExplicitTypeArgumentConstraints.kt：从只读 ConstraintStorage 构造显式绑定替换器；resolve/calls/ArgumentUtils.kt 的已有参数/完成路径复用该实现。
+- repair principle: 以 type-argument source 和约束 position 确定诊断归属，所有消费者共享显式绑定；禁止把求解器内部重复约束当作多个源码错误。
+- fixtures covered: llt/call/call_inference_01.cj；新增 call/inferred_and_explicit_constraints.cj；constraint_check/constraint_instantiate_test4.cj、constraint_instantiate_test5.cj；solveTypeArgs/f_bounded_1.cj；ErrMsgs/type_arg_infer6.cj。两套新生成方法同步。
+- fixture correction: constraint_instantiate_test4/5 共四处旧双重标记改为单次，依据官方编译；已搜索全部 testData，同类双重标记仅这两份。其它既有 fixture 期望未改。
+- verification commands and outcome:
+  - 目标四份 fixture 的双入口 8/8 通过；多上界补充用例及完整切片已纳入最终回归。
+  - `gradlew-queue.bat :cfir:analysis-tests:test --tests 'org.cangnova.cangjie.cfir.analysis.tests.*$Call*' --tests 'org.cangnova.cangjie.cfir.analysis.tests.*$TypeInfer*' --tests 'org.cangnova.cangjie.cfir.analysis.tests.*$Generics*' --tests 'org.cangnova.cangjie.cfir.analysis.tests.*$Typealias*' --tests 'org.cangnova.cangjie.cfir.analysis.tests.*$ConstraintCheck*' --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g' '-Pkotlin.compiler.execution.strategy=in-process'`：1200 项，1163 PASS、30 原有 FAIL、7 SKIP；FIXED=2、REGRESSED=0、NEW_KEYS=2（PASS），原有失败消息不变。证据 24-constraints-family。
+  - 修复前后相同全量命令 `gradlew-queue.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g'`：本次 11m 27s 正常结束。23-enum-owner-full → 24-constraints-full：FIXED=4（CallInference01 与 FBounded1 双入口）、REGRESSED=0、NEW_KEYS=2（PASS）、REMOVED_KEYS=0、其它状态变化=0。
+  - 572 条仍失败记录中仅 type_arg_infer6 双入口消息变化：删除重复上界诊断，保留完整 f token 的推断诊断，与新跑 cjc 一致；fixture 的旧整调用范围待其所属 ErrMsgs 范围修正。
+  - Call 160/176；TypeInfer 76/76、Generics 680/680、非宏 Typealias 110/110。XML、完整键和比较文件均在 build/repair-20260906。
+  - `gradlew-queue.bat validateDocumentation --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx512m'`：BUILD SUCCESSFUL。
+
+| 指标（Gradle） | 修复前 | 修复后 |
+| --- | ---: | ---: |
+| 测试总数 | 8468 | 8470 |
+| 通过 | 7585 | 7591 |
+| 失败 | 576 | 572 |
+| 跳过 | 307 | 307 |
+
+XML 为 8469 → 8471 records，均另含一条 skipped 聚合记录（skipped=308），errors=0。
+
+- remaining failures: Call 16 项（8 份源码的双入口），剩作用域/扩展候选归属、非泛型成员类型实参分类、裸函数值及参数诊断期望、构造器递归期望、parser recovery；其它 556 项保持既有状态，除上述 ErrMsgs 两条的重复诊断减少。
+- change isolation: 仅提交本项四个实现文件、三份 fixture、两套新生成方法和本日志；临时约束跟踪已移除，用户 Deprecated 等 WIP 保持独立。
