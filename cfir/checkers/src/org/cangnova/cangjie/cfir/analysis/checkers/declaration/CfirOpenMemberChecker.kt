@@ -53,10 +53,10 @@ object CfirOpenMemberChecker : CfirClassLikeChecker() {
             if (callable is CfirConstructor || callable is CfirEnumConstructor) continue
             if (callable !is CfirNamedFunction && callable !is CfirProperty) continue
             if (!callable.status.isOpen) continue
-            if (callable.source?.realSourceModifiers()?.modifierByToken(CjTokens.OPEN_KEYWORD) == null) continue
+            val openModifier = callable.source?.realSourceModifiers()?.modifierByToken(CjTokens.OPEN_KEYWORD) ?: continue
 
             reporter.reportOn(
-                source = callable.source?.firstCharacterDiagnosticSource(),
+                source = openModifier.source,
                 factory = CfirErrors.IGNORE_OPEN,
             )
         }

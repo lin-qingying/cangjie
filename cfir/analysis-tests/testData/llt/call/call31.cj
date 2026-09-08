@@ -1,7 +1,7 @@
 
 
 public class Base {
-    public open func test(): Int64 {
+    public <!IGNORE_OPEN!>open<!> func test(): Int64 {
         return 1
     }
 }

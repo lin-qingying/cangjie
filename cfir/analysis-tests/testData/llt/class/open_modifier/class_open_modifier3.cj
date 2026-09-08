@@ -2,7 +2,7 @@
 
 
 class A {
-    <!IGNORE_OPEN!>p<!>ublic open func f(): Int32 {
+    public <!IGNORE_OPEN!>open<!> func f(): Int32 {
         return 0
     }
     public init() {
@@ -18,7 +18,7 @@ class B <: <!NON_INHERITABLE_SUPER_CLASS!>A<!> {
         }
         a()
     }
-    <!IGNORE_OPEN!>p<!>ublic open override func f(): Int32 {
+    public <!IGNORE_OPEN!>open<!> override func f(): Int32 {
         return 3
     }
 }
