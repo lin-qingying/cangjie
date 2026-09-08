@@ -2919,9 +2919,9 @@ private fun ConeConstraintSystemHasContradiction.unableToInferGenericFunctionDia
     /**
      * 官方仓颉将泛型调用实参无法推断归一为
      * `unable to infer generic argument of this function`，并在
-     * `DiagnoseForCallInference` 中把诊断锚定在 `ce.baseFunc`（callee 表达式）上，
-     * 覆盖完整限定 callee 而不包含实参括号。这里保留 Kotlin FIR 的 constraint-system
-     * 分层，只在诊断表面映射为仓颉诊断名与官方锚点。
+     * `DiagnoseForCallInference` 中把诊断锚定在 `ce.baseFunc`（callee 表达式）上。
+     * 普通函数、构造器及 typealias 构造器统一覆盖完整 callee，不包含实参括号；
+     * 诊断范围由推断失败所指向的符号决定，不随构造器的实现形式变化。
      */
     val diagnosticSource = qualifiedAccessSource?.genericInferenceCalleeAnchorSource()
         ?: candidate.callInfo.callSite.source?.genericInferenceCalleeAnchorSource()
