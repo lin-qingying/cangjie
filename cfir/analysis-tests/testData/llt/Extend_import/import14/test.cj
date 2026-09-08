@@ -15,7 +15,7 @@ public interface ValueType {
     }
 }
 
-<!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>extend Int64 <: ValueType {}<!>
+<!INTERFACE_MEMBER_MUST_BE_IMPLEMENTED!>extend<!> Int64 <: ValueType {}
 
 // FILE: pkgb.cj
 
@@ -34,7 +34,7 @@ public interface ValueType {
     }
 }
 
-<!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>extend Int64 <: ValueType {}<!>
+<!INTERFACE_MEMBER_MUST_BE_IMPLEMENTED!>extend<!> Int64 <: ValueType {}
 
 // FILE: test.cj
 
@@ -42,7 +42,7 @@ public interface ValueType {
 
 package pkg
 
-import pkg.a.<!UNUSED_IMPORT!>ValueType as AValueType<!>
-import pkg.b.<!UNUSED_IMPORT!>ValueType as BValueType<!>
+import <!UNUSED_IMPORT!>pkg.a.ValueType as AValueType<!>
+import <!UNUSED_IMPORT!>pkg.b.ValueType as BValueType<!>
 
 main() {}

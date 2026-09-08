@@ -37,6 +37,7 @@ import org.cangnova.cangjie.cfir.resolve.providers.CfirLookupOrigin
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.resolve.providers.findExtendDeclarationSubstitution
+import org.cangnova.cangjie.cfir.resolve.providers.getContainingExtend
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.scopes.CfirCallableLookupProvenance
@@ -48,6 +49,7 @@ import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirPropertyInheritanceScope
 import org.cangnova.cangjie.cfir.scopes.createCallableTypeParameterSubstitutorForOverride
 import org.cangnova.cangjie.cfir.scopes.overrideSignatureKey
+import org.cangnova.cangjie.cfir.scopes.processCallablesByNameWithLookupProvenance
 import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
 import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
 import org.cangnova.cangjie.cfir.session.extendProvider
@@ -477,6 +479,39 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
     }
 
     /**
+     * 在消费包重新检查一个由导入触达的 extend 的默认接口成员冲突。
+     *
+     * 扩展声明自身所属包的 checker 看不到消费包的 sibling extend 集合；官方
+     * `TypeCheckExtend` 则在导入包集合建成后于消费包统一复查。这里仅重用同一
+     * default-conflict owner，不重复执行其它 extend 诊断。
+     */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    internal fun checkImportedExtendDefaultInterfaceMemberConflicts(
+        extend: CfirExtend,
+        importedContext: CfirImportedExtendCheckContext,
+    ) {
+        val receiverType = extend.extendedTypeRef.coneTypeOrNull ?: return
+        val targetScope = CfirClassUseSiteMemberScope.createForUseSiteType(
+            session = context.session,
+            ownerType = receiverType,
+            excludingExtend = extend,
+        ) ?: return
+        val targetClassId = (extend.extendedTypeRef as? CfirResolvedTypeRef)
+            ?.coneType
+            ?.expandedClassIdOrPrimitiveClassId
+        val ownMemberInfosByName = extend.declarations
+            .mapNotNull { it.directMemberInfoOrNull(context) }
+            .groupBy { it.name }
+        checkDefaultInterfaceMemberConflicts(
+            extend = extend,
+            targetScope = targetScope,
+            targetClassId = targetClassId,
+            ownMemberInfosByName = ownMemberInfosByName,
+            importedContext = importedContext,
+        )
+    }
+
+    /**
      * 同一条 `extend T <: A & B` 中，接口 `A` 的默认成员可以满足接口 `B`
      * 的同签名抽象要求。官方继承检查在合并接口成员表后判断实现状态，
      * 因此这里把当前 extend 的默认接口成员纳入共享实现候选，而不是在
@@ -511,6 +546,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         targetScope: CfirTypeScope,
         targetClassId: ClassId?,
         ownMemberInfosByName: Map<Name, List<InheritedMemberInfo>>,
+        importedContext: CfirImportedExtendCheckContext? = null,
     ) {
         val receiverType = (extend.extendedTypeRef as? CfirResolvedTypeRef)?.coneType ?: return
         val query = context.session.extendRuleQueryServiceOrNull ?: return
@@ -518,7 +554,8 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         val relatedExtends = context.session.extendProvider
             .getExtendsForTarget(targetKey)
             .filter { relatedExtend ->
-                context.session.accessibilityChecker.checkExtend(
+                (importedContext == null || relatedExtend in importedContext.participatingExtends) &&
+                    context.session.accessibilityChecker.checkExtend(
                     relatedExtend,
                     context.accessContext(CfirAccessKind.EXTEND),
                 ) is CfirAccessibilityResult.Accessible
@@ -531,8 +568,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
             }
             .groupBy { it.info.defaultImplementationConflictKey() }
 
-        val reported = mutableSetOf<String>()
-        for ((signatureKey, occurrences) in occurrencesBySignature) {
+        for (occurrences in occurrencesBySignature.values) {
             val currentOccurrences = occurrences.filter { it.ownerExtend === extend }
             if (currentOccurrences.isEmpty()) continue
             if (!occurrences.hasDefaultImplementationConflictFor(extend, currentOccurrences, query)) continue
@@ -544,19 +580,23 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                     targetScope,
                     targetClassId,
                     ownMemberInfosByName,
+                    importedContext,
                 )
             ) {
                 continue
             }
-            if (!reported.add(signatureKey)) continue
-
             reporter.reportOn(
-                source = extend.extendKeywordDiagnosticSource(),
+                source = if (importedContext != null) {
+                    importedContext.sourceForDeclaration(extend.extendKeywordDiagnosticSource())
+                } else extend.extendKeywordDiagnosticSource(),
                 factory = CfirErrors.INTERFACE_MEMBER_MUST_BE_IMPLEMENTED,
                 a = representative.kind,
                 b = representative.name,
                 c = extend.targetDisplayName(),
+                context = importedContext ?: context,
             )
+            // 官方在同一个 extend 位置只释放一次该类默认实现冲突，普通与基础类型规则相同。
+            return
         }
     }
 
@@ -642,10 +682,22 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         targetScope: CfirTypeScope,
         targetClassId: ClassId?,
         ownMemberInfosByName: Map<Name, List<InheritedMemberInfo>>,
+        importedContext: CfirImportedExtendCheckContext? = null,
     ): Boolean {
         var found = false
-        targetScope.processCallablesByName(superInfo.name) { symbol ->
-            val info = symbol.inheritedMemberInfoOrNull(context) ?: return@processCallablesByName
+        val accessContext = context.accessContext(CfirAccessKind.CALLABLE).copy(
+            receiverType = extend.extendedTypeRef.coneTypeOrNull,
+            lookupOrigin = CfirLookupOrigin.MEMBER,
+        )
+        targetScope.processCallablesByNameWithLookupProvenance(superInfo.name) { candidate ->
+            if (importedContext?.accepts(candidate.provenance.sourceExtend) == false) {
+                return@processCallablesByNameWithLookupProvenance
+            }
+            if (context.session.accessibilityChecker.checkCallable(
+                    candidate.symbol, accessContext, candidate.provenance,
+                ) !is CfirAccessibilityResult.Accessible
+            ) return@processCallablesByNameWithLookupProvenance
+            val info = candidate.symbol.inheritedMemberInfoOrNull(context) ?: return@processCallablesByNameWithLookupProvenance
             if (info.isConcreteImplementationOf(superInfo, context)) {
                 found = true
             }
@@ -654,6 +706,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         if (targetClassId != null) {
             val receiverType = extend.extendedTypeRef.coneTypeOrNull ?: return false
             for (info in collectDirectExtendMemberInfos(receiverType, superInfo.name, context, excludingExtend = extend)) {
+                if (importedContext?.accepts(info.symbol?.getContainingExtend()) == false) continue
                 if (info.isConcreteImplementationOf(superInfo, context)) return true
             }
         }

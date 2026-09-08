@@ -957,6 +957,8 @@ private class TestTypeAwareSupertypeProvider(
 private class TestExtendProvider(
     private val packageByExtend: Map<CfirExtend, FqName>,
 ) : CfirExtendProvider {
+    override fun getAllExtends(): List<CfirExtend> = packageByExtend.keys.toList()
+
     override fun getExtendsForTarget(targetKey: CfirExtendTargetKey): List<CfirExtend> = emptyList()
 
     override fun getExtendsForClass(classId: ClassId): List<CfirExtend> = emptyList()

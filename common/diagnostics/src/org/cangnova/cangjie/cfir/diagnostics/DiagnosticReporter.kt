@@ -33,6 +33,15 @@ interface DiagnosticContext : DiagnosticBaseContext {
     val containingFilePath: String?
 
     /**
+     * 该诊断是否已经在所属源文件之外被发现。
+     *
+     * 跨包 extend 检查由消费文件触发，但诊断 source 属于依赖文件；这类诊断不能进入
+     * 当前文件的 pending bucket，否则当前文件提交时会把它错误地当作同文件诊断提交。
+     */
+    val isCrossFileDiagnostic: Boolean
+        get() = false
+
+    /**
      * 判断指定诊断是否被当前上下文 suppress。
      */
     fun isDiagnosticSuppressed(diagnostic: CjDiagnostic): Boolean

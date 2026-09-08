@@ -38,7 +38,7 @@ class CfirExtendRuleQueryServiceImpl(
      * 返回声明对应的 extend 目标键。
      */
     override fun targetKeyOf(declaration: Any): CfirExtendTargetKey? =
-        indexStore.modelForDeclaration(declaration)?.targetKey
+        indexStore.targetKeyOf(declaration)
 
     /**
      * 返回完整实例化目标模式相同的 extend 声明。
@@ -139,7 +139,7 @@ class CfirExtendRuleQueryServiceImpl(
      * 返回声明继承的 interface classId。
      */
     override fun inheritedInterfaceClassIdsOf(declaration: Any): List<ClassId> =
-        indexStore.modelForDeclaration(declaration)?.inheritedInterfaceClassIds.orEmpty()
+        indexStore.inheritedInterfaceClassIdsOf(declaration)
 
     /**
      * 按目标 classId 查询继承的 interface classId。

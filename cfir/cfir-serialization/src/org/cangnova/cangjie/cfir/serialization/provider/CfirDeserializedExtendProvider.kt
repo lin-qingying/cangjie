@@ -29,6 +29,8 @@ class CfirDeserializedExtendProvider(
     /** 延迟构造的 extend 查询索引，首次查询时遍历所有可见包。 */
     private val index: ExtendIndex by lazy(LazyThreadSafetyMode.PUBLICATION) { buildIndex() }
 
+    override fun getAllExtends(): List<CfirExtend> = index.byDeclarationPackage.keys.toList()
+
     /** 按规范化目标 key 查询库中声明的 extend。 */
     override fun getExtendsForTarget(targetKey: CfirExtendTargetKey): List<CfirExtend> =
         index.byTargetKey[targetKey].orEmpty()

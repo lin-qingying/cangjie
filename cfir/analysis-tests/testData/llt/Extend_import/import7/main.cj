@@ -13,7 +13,7 @@ public interface I1 {
     func f(): Unit {}
 }
 
-extend Foo <: I1 {}
+<!INTERFACE_MEMBER_MUST_BE_IMPLEMENTED!>extend<!> Foo <: I1 {}
 
 
 
@@ -26,7 +26,7 @@ public interface I2 {
     func f(): Unit {}
 }
 
-extend Foo <: I2 {}
+<!INTERFACE_MEMBER_MUST_BE_IMPLEMENTED!>extend<!> Foo <: I2 {}
 
 
 

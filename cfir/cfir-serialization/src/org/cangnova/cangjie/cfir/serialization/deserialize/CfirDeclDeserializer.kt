@@ -178,6 +178,8 @@ class CfirDeclDeserializer(
         val REDEF = Attribute.REDEF.ordinal
         /** `abstract` 修饰符在 AST AttributePack 中的 bit 下标。 */
         val ABSTRACT = Attribute.ABSTRACT.ordinal
+        /** 接口默认实现状态必须从 CJO 属性恢复，不能依赖未反序列化的函数体。 */
+        val DEFAULT = Attribute.DEFAULT.ordinal
         /** `sealed` 修饰符在 AST AttributePack 中的 bit 下标。 */
         val SEALED = Attribute.SEALED.ordinal
         /** `open` 修饰符在 AST AttributePack 中的 bit 下标。 */
@@ -374,6 +376,7 @@ class CfirDeclDeserializer(
         status.isVisibilityExplicit = visibility != Visibilities.Public
         status.isModalityExplicit = modality != Modality.FINAL
         status.isAbstract = testAttr(decl, AttrBit.ABSTRACT)
+        status.isDefault = testAttr(decl, AttrBit.DEFAULT)
         status.isOpen = testAttr(decl, AttrBit.OPEN)
         status.isSealed = testAttr(decl, AttrBit.SEALED)
         status.isStatic = testAttr(decl, AttrBit.STATIC)

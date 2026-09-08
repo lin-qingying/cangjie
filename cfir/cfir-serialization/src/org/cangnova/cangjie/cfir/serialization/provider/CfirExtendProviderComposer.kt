@@ -73,6 +73,8 @@ object CfirExtendProviderComposer {
                 fromSymbolProviders(providersRef())
             }
 
+            override fun getAllExtends(): List<CfirExtend> = delegate.getAllExtends()
+
             override fun getExtendsForTarget(targetKey: CfirExtendTargetKey): List<CfirExtend> =
                 delegate.getExtendsForTarget(targetKey)
 

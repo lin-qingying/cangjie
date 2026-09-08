@@ -552,8 +552,10 @@ object CallResolutionTestFixtures {
      * 基于内存 extend 列表的测试 extend provider（复刻 CfirTypeAwareSupertypeProviderTest）。
      */
     private class TestExtendProvider(
-        extends: List<CfirExtend>,
+        private val extends: List<CfirExtend>,
     ) : CfirExtendProvider {
+        override fun getAllExtends(): List<CfirExtend> = extends
+
         private val extendsByClassId: Map<ClassId, List<CfirExtend>> = extends.groupBy { extend ->
             val extendedType = extend.extendedTypeRef as? CfirResolvedTypeRef
                 ?: error("extend target must already be resolved in test fixtures")

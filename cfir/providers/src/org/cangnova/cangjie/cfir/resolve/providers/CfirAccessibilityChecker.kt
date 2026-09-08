@@ -25,6 +25,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.constructType
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
+import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
@@ -410,17 +411,24 @@ class CfirAccessibilityChecker(
     private fun CfirExtend.accessViewOrNull(
         extendPackage: org.cangnova.cangjie.name.FqName,
     ): ExtendAccessView? {
-        val targetClassId = extendedTypeRef.coneTypeOrNull?.classIdOrPrimitiveClassId
+        val targetType = extendedTypeRef.coneTypeOrNull
+        // Primitive 类型的 classId 只是 builtin lookup 身份，不是消费包需要 import
+        // 的 nominal target；跨包 primitive extend 的可达性只由 inherited interface
+        // 和其导出规则决定。
+        val targetClassId = targetType
+            ?.takeUnless { it is ConePrimitiveType }
+            ?.classIdOrPrimitiveClassId
         val inheritedInterfaceClassIds = superTypeRefs.mapNotNull { superTypeRef ->
             val type = superTypeRef.coneTypeOrNull ?: return@mapNotNull null
             if (!isInterfaceTypeShape(type)) return@mapNotNull null
             type.classIdOrPrimitiveClassId
         }
         /*
-         * 无 nominal target 的 primitive extend 仅 std.core 可以导出；其它情况缺少
-         * 可验证的目标身份，必须拒绝而不是以“可能是 primitive”宽松暴露。
+         * builtin target 没有 nominal ClassId，但跨包 extend 仍可通过其 public
+         * inherited interface 导出。消费包的 imported-extend 检查必须保留这类结构；
+         * target 本身的 builtin 身份由类型解析保证，接口与上界的导出/可达性仍由
+         * checkExtend 的 use-site 分支严格验证。
          */
-        if (targetClassId == null && extendPackage.asString() != STDLIB_CORE_PACKAGE) return null
         return ExtendAccessView(targetClassId, inheritedInterfaceClassIds)
     }
 
