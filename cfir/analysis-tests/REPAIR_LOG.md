@@ -5454,3 +5454,32 @@ XML 为 8469 → 8471 records，均另含一条 skipped 聚合记录（skipped=3
 
 - remaining failures: Call 16 项（8 份源码的双入口），剩作用域/扩展候选归属、非泛型成员类型实参分类、裸函数值及参数诊断期望、构造器递归期望、parser recovery；其它 556 项保持既有状态，除上述 ErrMsgs 两条的重复诊断减少。
 - change isolation: 仅提交本项四个实现文件、三份 fixture、两套新生成方法和本日志；临时约束跟踪已移除，用户 Deprecated 等 WIP 保持独立。
+
+## 2026-09-09：成员重载候选快照不再触发隐式返回类型假递归
+
+- problem type: Call / Member Overloads / Implicit Return Type。call_closet_rule_03 中 extend 的 test(?T) 调用更具体的 test(T) 是合法调用，不能报告 UNABLE_TO_INFER_RETURN_TYPE。
+- root cause: buildExpectedTypeRefinementDiscovery 在已完成候选规约之后，又为全部已发现候选调用 initialTypeOfCandidate；其中落选的当前函数返回类型仍在计算，快照构建因此重入 ReturnTypeCalculator 并把声明标为递归。withNamedFunction 还仅排除 CfirClass，未覆盖 CFIR 拆分的其他 class-like 与 extend 容器。
+- official Cangjie evidence: cjc 1.0.5 成功编译 call_closet_rule_03 与新 member_overload_declaration_scope（struct、enum、interface）；两个官方生成的可执行程序均退出 0，验证实际选择非递归的更具体重载。源码、编译命令和 JSON 在 build/repair-20260906/evidence 对应 .official.*，运行结果在 25-member-runtime.json。
+  - external/cangjie_compiler/src/Sema/TypeCheckCall.cpp:1365-1408,1670-1682,1960-2015 通过参数检查、候选比较与最终调用写回来确定实际依赖；不能因保存落选候选信息制造新的声明依赖。
+- Kotlin counterpart files consulted: compiler/fir/resolve/.../BodyResolveContext.kt:822-834 的 withNamedFunction 排除 FirClass 容器（覆盖 Kotlin 的全部 class-like 种类）；FirImplicitBodyResolve.kt:274-307 的瞬时递归类型与计算状态；FIR CandidateCollector / FirCallResolver 的候选收集及选择边界。
+- CFIR owner files changed: CfirCallResolver.kt 的 expected-return discovery 只读取已解析声明类型，未定类型保留为空；BodyResolveContext.kt 的成员 owner 分类覆盖 CfirClassLikeDeclaration 和 CfirExtend，保留局部及顶层函数行为。
+- repair principle: 候选信息快照必须无推断副作用；成员仍由真实 owner scope 提供，真正被选择的调用才进入原有返回类型计算流程。
+- fixtures covered: llt/call/call_closet_rule_03.cj；新增 call/member_overload_declaration_scope.cj，覆盖 struct/enum/interface 上声明顺序相反的 Optional 与非 Optional 重载。原 fixture 期望未改，两套生成方法同步。
+- verification commands and outcome:
+  - 上述两份 fixture 的 PSI/LightTree 目标测试 4/4 通过；临时线程跟踪保存在 25-member-return-trace/xml，证实触发点为 buildExpectedTypeRefinementDiscovery。ReturnTypeCalculatorWithJump 的临时跟踪已完全移除，该文件无提交改动。
+  - `gradlew-queue.bat :cfir:analysis-tests:test --tests 'org.cangnova.cangjie.cfir.analysis.tests.*$Call*' --tests 'org.cangnova.cangjie.cfir.analysis.tests.*$TypeInfer*' --tests 'org.cangnova.cangjie.cfir.analysis.tests.*$Generics*' --tests 'org.cangnova.cangjie.cfir.analysis.tests.*$Typealias*' --tests 'org.cangnova.cangjie.cfir.analysis.tests.*$Function.testNestFunctionUse*' --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g' '-Pkotlin.compiler.execution.strategy=in-process'`：1114 项，1091 PASS、16 既有 FAIL、7 SKIP；FIXED=2、REGRESSED=0、新增两项 PASS，原有失败消息不变。真实递归的 nest_function_use 既有测试继续通过。
+  - 修复前后相同全量命令 `gradlew-queue.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g'`：本次 12m 18s 正常结束；24-constraints-full → 25-member-scope-full：FIXED=2、REGRESSED=0、NEW_KEYS=2（PASS）、REMOVED_KEYS=0、其它状态变化=0，570 项剩余失败消息全部不变。
+  - Call 164/178；TypeInfer 76/76、Generics 680/680、非宏 Typealias 110/110。完整键与 XML 均保存在 build/repair-20260906。
+  - `gradlew-queue.bat validateDocumentation --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx512m'`：BUILD SUCCESSFUL。
+
+| 指标（Gradle） | 修复前 | 修复后 |
+| --- | ---: | ---: |
+| 测试总数 | 8470 | 8472 |
+| 通过 | 7591 | 7595 |
+| 失败 | 572 | 570 |
+| 跳过 | 307 | 307 |
+
+XML 为 8471 → 8473 records，均另含一条 skipped 聚合记录（skipped=308），errors=0。
+
+- remaining failures: Call 14 项（7 份源码的双入口），剩同签名函数的词法遮蔽、非泛型成员类型实参分类、裸函数值及参数诊断期望、构造器递归期望、parser recovery；其它 556 项保持既有状态。
+- change isolation: 仅提交上述两个 owner、一个新增 fixture、两个生成方法和本日志，保留用户其它 WIP。
