@@ -15,6 +15,7 @@ object CfirMatchTargetTypeMismatchChecker : CfirMatchExpressionChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirMatchExpression) {
         val expectedType = expression.expectedTypeFromTargetContext(context) ?: return
-        checkTargetTypedExpression(expression, expectedType)
+        // 官方逐 case 独立执行 ChkMatchCaseActions；模式绑定失效后，仍须检查合法分支体。
+        checkTargetTypedMatchExpression(expression, expectedType)
     }
 }

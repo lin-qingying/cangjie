@@ -2542,7 +2542,10 @@ open class CfirExpressionsResolveTransformer(
             resolveBranch(branch, patternSubjectType, branchResolutionMode)
         }
 
-        matchExpression.replaceExhaustiveness(resolveMatchExhaustiveness(matchExpression))
+        matchExpression.replaceExhaustiveness(
+            if (branchTypes.any { it is ConeErrorType }) CfirMatchExhaustivenessStatus.Unknown
+            else resolveMatchExhaustiveness(matchExpression)
+        )
         val resultType = computeMatchResultType(branchTypes, data.expectedTypeOrNull)
         recordAssignmentRhsTypeMismatchIfNeeded(matchExpression, resultType)
         matchExpression.replaceConeTypeOrNull(resultType)
@@ -2642,14 +2645,15 @@ open class CfirExpressionsResolveTransformer(
                 branch.pattern = resolveDeferredMatchPattern(branch.pattern, subjectType)
             }
             resolvePatternBindingTypes(branch.pattern, subjectType, specificTypeResolverTransformer)
-            registerPatternBindings(branch.pattern)
+            val bindingError = registerScopedPatternBindings(branch.pattern, CfirPatternBindingScope(branch.body))
 
             branch.transformGuard(transformer, ResolutionMode.ContextIndependent)
             components.dataFlowAnalyzer.exitMatchBranchCondition(branch)
-            branch.transformBody(transformer, bodyResolutionMode)
+            // 模式绑定和直接分支体属于同一作用域，嵌套 block 再自行引入新作用域。
+            transformBlock(branch.body, bodyResolutionMode)
             components.dataFlowAnalyzer.exitMatchBranchResult(branch)
 
-            val bodyType = branch.body.coneTypeOrNull ?: builtinTypes.unitType
+            val bodyType = bindingError ?: branch.body.coneTypeOrNull ?: builtinTypes.unitType
             branch.replaceConeTypeOrNull(bodyType)
             bodyType
         }
@@ -2982,8 +2986,9 @@ open class CfirExpressionsResolveTransformer(
 
         if (ifExpression.condition.containsLetPatternCondition()) {
             withNewLocalScope {
-                resolveConditionWithPatternBindings(ifExpression.condition)
-                ifExpression.transformThenBranch(transformer, branchResolutionMode)
+                val bindingScope = CfirPatternBindingScope(ifExpression.thenBranch)
+                resolveConditionWithPatternBindings(ifExpression.condition, bindingScope)
+                transformBlock(ifExpression.thenBranch, branchResolutionMode)
             }
         } else {
             ifExpression.transformCondition(transformer, withExpectedType(builtinTypes.boolType))
@@ -2993,7 +2998,11 @@ open class CfirExpressionsResolveTransformer(
 
         val thenType = ifExpression.thenBranch.coneTypeOrNull
         val elseType = ifExpression.elseBranch?.coneTypeOrNull
-        val branchErrorType = listOfNotNull(thenType as? ConeErrorType, elseType as? ConeErrorType)
+        val inputErrorType = listOfNotNull(
+            ifExpression.condition.coneTypeOrNull as? ConeErrorType,
+            thenType as? ConeErrorType,
+            elseType as? ConeErrorType,
+        )
             .firstOrNull()
         // 对齐官方 `SynIfExpr`（`external/cangjie_compiler/src/Sema/TypeCheckExpr/IfExpr.cpp`）：
         // 综合模式下两个分支类型先经 `ReplaceThisTy` 把 `This` 视图退化为普通类类型再 Join，
@@ -3003,9 +3012,9 @@ open class CfirExpressionsResolveTransformer(
         val joinedThenType = if (isSynthesizedIfExpression) thenType?.approximateThisTypeForDeclaration() else thenType
         val joinedElseType = if (isSynthesizedIfExpression) elseType?.approximateThisTypeForDeclaration() else elseType
         val mergedType = when {
-            // 分支错误已经由分支表达式自身报告；if 只传播 InvalidTy 语义，
+            // 条件或分支错误已有各自的诊断 owner；if 只传播 InvalidTy 语义，
             // 避免把同一个分支诊断重新挂到组合表达式上。
-            branchErrorType != null -> ConeErrorType(ConeUnreportedDuplicateDiagnostic(branchErrorType.diagnostic))
+            inputErrorType != null -> ConeErrorType(ConeUnreportedDuplicateDiagnostic(inputErrorType.diagnostic))
             isIfWithoutEndingElse -> builtinTypes.unitType
             joinedThenType == null -> joinedElseType ?: builtinTypes.unitType
             joinedElseType == null -> builtinTypes.unitType
@@ -3046,7 +3055,7 @@ open class CfirExpressionsResolveTransformer(
         letPatternExpression: CfirLetPatternExpression,
         data: ResolutionMode,
     ): CfirExpression {
-        resolveLetPatternExpression(letPatternExpression, registerBindings = false)
+        resolveLetPatternExpression(letPatternExpression, bindingScope = null)
         return letPatternExpression
     }
 
@@ -3064,18 +3073,25 @@ open class CfirExpressionsResolveTransformer(
      * `&&` / `||` 条件保持布尔结果类型，同时递归解析左右侧以保证嵌套 pattern 的绑定信息
      * 能进入当前控制流作用域；非 pattern 条件退回普通 `Bool` expected type 解析。
      */
-    private fun resolveConditionWithPatternBindings(condition: CfirExpression): CfirExpression {
+    private fun resolveConditionWithPatternBindings(
+        condition: CfirExpression,
+        bindingScope: CfirPatternBindingScope,
+    ): CfirExpression {
         return when (condition) {
             is CfirLetPatternExpression -> {
-                resolveLetPatternExpression(condition, registerBindings = true)
+                resolveLetPatternExpression(condition, bindingScope)
                 condition
             }
 
             is CfirBinaryOp if condition.kind == CfirBinaryOpKind.AND || condition.kind == CfirBinaryOpKind.OR -> {
                 condition.transformAnnotations(transformer, ResolutionMode.ContextIndependent)
-                resolveConditionWithPatternBindings(condition.left)
-                resolveConditionWithPatternBindings(condition.right)
-                condition.replaceConeTypeOrNull(builtinTypes.boolType)
+                resolveConditionWithPatternBindings(condition.left, bindingScope)
+                resolveConditionWithPatternBindings(condition.right, bindingScope)
+                condition.replaceConeTypeOrNull(
+                    condition.left.coneTypeOrNull?.propagatedErrorTypeOrNull()
+                        ?: condition.right.coneTypeOrNull?.propagatedErrorTypeOrNull()
+                        ?: builtinTypes.boolType
+                )
                 condition
             }
 
@@ -3087,11 +3103,11 @@ open class CfirExpressionsResolveTransformer(
      * 解析 `let pattern` 的 initializer、模式结构和绑定变量类型。
      *
      * 延迟的裸名字模式会在 initializer 类型已知后再决定是 enum pattern 还是 binding pattern；
-     * [registerBindings] 控制这些绑定是否写入当前局部作用域。
+     * [bindingScope] 表示条件与分支体共享的声明空间；独立 let-expression 不发布绑定。
      */
     private fun resolveLetPatternExpression(
         letPatternExpression: CfirLetPatternExpression,
-        registerBindings: Boolean,
+        bindingScope: CfirPatternBindingScope?,
     ) {
         letPatternExpression.transformInitializer(transformer, ResolutionMode.ContextIndependent)
         letPatternExpression.transformPattern(transformer, ResolutionMode.ContextIndependent)
@@ -3110,10 +3126,13 @@ open class CfirExpressionsResolveTransformer(
             expectedType = patternExpectedType,
             typeResolver = specificTypeResolverTransformer,
         )
-        if (registerBindings) {
-            registerPatternBindings(letPatternExpression.pattern)
+        val bindingError = bindingScope?.let {
+            registerScopedPatternBindings(letPatternExpression.pattern, it)
         }
-        letPatternExpression.replaceConeTypeOrNull(builtinTypes.boolType)
+        letPatternExpression.replaceConeTypeOrNull(
+            bindingError ?: letPatternExpression.initializer.coneTypeOrNull?.propagatedErrorTypeOrNull()
+                ?: builtinTypes.boolType
+        )
     }
 
     /**
@@ -4849,12 +4868,13 @@ open class CfirExpressionsResolveTransformer(
             components.dataFlowAnalyzer.enterWhileLoop(loopExpression)
             if (loopExpression.condition.containsLetPatternCondition()) {
                 withNewLocalScope {
+                    val bindingScope = CfirPatternBindingScope(loopExpression.body)
                     withLoopJumpScope(LoopJumpScope.ConditionPart(loopExpression)) {
-                        resolveConditionWithPatternBindings(loopExpression.condition)
+                        resolveConditionWithPatternBindings(loopExpression.condition, bindingScope)
                     }
                     components.dataFlowAnalyzer.exitWhileLoopCondition(loopExpression)
                     withLoopJumpScope(LoopJumpScope.Body(loopExpression)) {
-                        loopExpression.transformBody(transformer, ResolutionMode.ContextIndependent)
+                        transformBlock(loopExpression.body, ResolutionMode.ContextIndependent)
                     }
                     components.dataFlowAnalyzer.exitWhileLoop(loopExpression)
                 }

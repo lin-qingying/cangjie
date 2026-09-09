@@ -5820,3 +5820,41 @@ XML 均为 8483 records、308 skipped，另含一条 skipped 聚合记录；比�
 
 - remaining failures: If 2、IfLetExpr 2、WhileLetExpr 2、Match 18、PatternMatching 47，共 71 项；Loops 通过。其它 477 项失败消息保持原样，Call、Generics、TypeInfer、Typealias 保持通过。
 - change isolation: 仅提交三份 fixture 和本条日志，.idea/workspace.xml 保持独立。
+
+## 2026-09-10：模式绑定按共享声明作用域发布，保留独立分支检查
+
+- problem type: Resolve / Pattern bindings（条件和 case 绑定的声明空间、发布顺序、错误类型传播及类型通配符身份）。
+- root cause:
+  - IfLet、WhileLet、Match 在解析分支体前无条件发布所有模式绑定，未按同一作用域中的声明冲突撤销延迟绑定，导致 let b = b 错误解析到失效的条件绑定；模式子项也未遵守检查失败后的顺序边界。
+  - 条件绑定与直接分支体被放入额外的嵌套 lookup scope，且条件错误没有进入 if 结果类型，产生无关的分支 TYPE_MISMATCH。
+  - PSI 把 _: Type 建成普通名为 _ 的绑定，而 LightTree 已正确排除通配符。
+  - Match 整体变为错误类型后，目标类型 checker 跳过了所有分支体，掩盖 enum08 中独立存在的两个类型错误。
+- official Cangjie evidence: 原有 if/while samename 用例和新增 pattern_binding_scope.cj 均经 cjc 1.0.5 验证。完整探针及 JSON 为 build/repair-20260906/evidence/31-if-samename.official.*、31-while-samename.official.*、33-pattern-scope-probe.official.*、33-pattern-scope-order.official.*、33-pattern-binding-fixture.official.*。覆盖前后子绑定顺序、外层变量、多个 let 条件、guard、Match、普通局部变量、函数参数、for-in 和显式类型模式。
+- official implementation: external/cangjie_compiler/src/Sema/TypeCheckPattern.cpp 的 ChkVarPattern / ChkVarOrEnumPattern / ChkTuplePattern / IsFuncTyEnumPatternMatched；ChkVarOrEnumPattern 在检查失败后 RemoveDeclByName，保留此前成功的绑定，尚未检查的后续子绑定不可见。LookUpImpl.cpp:449-563 排除初始化器自身并允许继续查询外层。Parse/ParsePattern.cpp 的 ParseTypePattern 以 WildcardPattern 表示 _: Type。TypeCheckMatchExpr.cpp 的 SynNormalMatchCaseBody / ChkMatchExprHasSelector 独立检查模式、guard 和 actions；enum08 的官方证据含原有两个 sema_mismatched_types 及一个 sema_redefinition。
+- Kotlin counterpart files consulted: FirExpressionsResolveTransformer.kt 的 transformBlockInCurrentScope、FirDeclarationsResolveTransformer.kt 的局部变量 initializer 后入 scope、FirControlFlowStatementsResolveTransformer.kt 的 scope/branch/CFG 生命周期；PsiRawFirBuilder.kt 对未命名变量的身份处理。仓颉的延迟模式绑定及冲突撤销规则来自上述 cjc/C++。
+- CFIR owner files changed:
+  - resolve/body/CfirPatternBindingScope.kt：预收集直接分支体声明名称，按模式顺序发布有效绑定，分别保留显式类型绑定与撤销冲突的延迟绑定；错误诊断仍由声明 checker 负责。
+  - CfirExpressionsResolveTransformer.kt：IfLet、WhileLet、Match 共用该空间，直接分支体在当前 scope 解析；错误条件参与 if 类型合成，无效分支不参与穷尽性结果缓存。
+  - PsiConversionUtils.kt：类型通配符不创建绑定，保留反引号名称身份。
+  - CfirMatchPatternLegalityChecker.kt：错误绑定类型不能作为有效覆盖输入。
+  - CfirMatchTargetTypeMismatchChecker.kt / CfirTargetTypedTailExpressionUtils.kt：在独立 Match checker 中逐分支检查显式目标类型，不因其它分支或模式错误跳过合法 action。
+- repair principle: 绑定是否进入名称空间、结构性错误如何传播、各分支独立的类型义务分别由共享 owner 决定，禁止用重复声明诊断文字或 fixture 名称改变解析结果。
+- fixtures covered: 原有 if-let-expr/enhancedcondition/vars/samename_conditionandifbody.cj、while-let-expr/enhancedcondition/vars/samename_conditionandifbody.cj、PatternMatching/TypePattern/exhaustive_enum.cj、PatternMatching/EnumPattern/enum08.cj；新增 PatternMatching/MatchExpression/pattern_binding_scope.cj，16 个函数覆盖上述边界，两套测试方法由生成器更新。原有 fixture 期望均未改。
+- verification commands and outcome:
+  - 新回归与原有三个问题用例双入口，33-bindings-before 为 8 项中 7 失败；33-bindings-targeted 为 8/8 通过。补入 enum08 并验证独立分支检查后，33-bindings-targeted-final 为 10/10 通过。
+  - 首次家族验证 2817 项包含 If、IfLetExpr、WhileLetExpr、Loops、Match、PatternMatching、Call、Generics、TypeInfer、Typealias 及 CfirAnalysisDiagnostics*；发现 enum08 两项诊断遗漏并已修正。最终完整目标家族和 Diagnostics 的 33-bindings-family-final 共 1785 项：1413 通过、66 既有失败、306 跳过；FIXED=5、REGRESSED=0、新测试 2 项通过。定向命令均为 `gradlew-queue.bat :cfir:analysis-tests:test --tests '<家族过滤器>' --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g' '-Pkotlin.compiler.execution.strategy=in-process'`。
+  - 同一全量命令 `gradlew-queue.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g'`：15m 3s 正常结束。32-syntax-full → 33-bindings-full：FIXED=5、REGRESSED=0、NEW_KEYS=2（均 PASS）、REMOVED_KEYS=0、其它状态变化=0。
+  - `gradlew-queue.bat validateDocumentation --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx512m'`：BUILD SUCCESSFUL；`git diff --check` 通过。
+  - 逐项核对 changed_failure_messages：PSI match024 去除了 _ 的 VAR_IN_OR_PATTERN / REDECLARATION，并与 LightTree 同样报告后续不可达模式；其原有不可达期望问题仍待处理。Macro 的 DefaultParameterPkg02/test() 两入口减少一处派生 UNREACHABLE_PATTERN，PSI 另外去除类型通配符伪重复声明；其余主错误不变，宏 fixture 未修改。其它 540 项剩余失败消息完全一致。
+
+| 指标（Gradle） | 修复前 | 修复后 |
+| --- | ---: | ---: |
+| 测试总数 | 8482 | 8484 |
+| 通过 | 7627 | 7634 |
+| 失败 | 548 | 543 |
+| 跳过 | 307 | 307 |
+
+XML 为 8483 → 8485 records，均有 308 skipped（另含一条聚合记录）。完整结果为 33-bindings-full，比较文件为 32-syntax-full--33-bindings-full.json。
+
+- remaining failures: IfLetExpr 100/100、WhileLetExpr 64/64、Loops 26/26 全部通过；If 剩 2 项，Match 剩 18 项，PatternMatching 剩 46 项，共 66 项。Call 184/184、Generics 680/680、TypeInfer 76/76、Typealias 独立组 110/110 保持通过。
+- change isolation: 提交本类共享实现、新增回归、两套生成入口及本条日志；.idea/workspace.xml 独立保留。

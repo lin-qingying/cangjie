@@ -201,7 +201,8 @@ internal fun CfirMatchExpression.hasPatternLegalityProblem(context: CheckerConte
     val subjectType = subject?.coneTypeOrNull ?: return false
     if (subjectType is ConeErrorType) return false
     return branches.any { branch ->
-        branch.pattern.hasDuplicatePatternBindings() ||
+        branch.pattern.bindingVariables().any { it.returnTypeRef.coneTypeOrNull is ConeErrorType } ||
+                branch.pattern.hasDuplicatePatternBindings() ||
                 branch.pattern.hasPatternLegalityProblem(subjectType, context)
     }
 }

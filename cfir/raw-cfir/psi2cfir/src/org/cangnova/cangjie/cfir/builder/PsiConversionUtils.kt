@@ -39,8 +39,10 @@ internal val CjBindingPattern.cfirNameAsSafeName: Name
 internal val CjVarOrEnumPattern.cfirNameAsSafeName: Name
     get() = rawIdentifierName(nameIdentifier?.rawIdentifierTokenText()) ?: nameAsSafeName
 
+/** 类型通配符只有类型约束，不创建 `_` 绑定；反引号标识符仍保留独立身份。 */
 internal val CjTypePattern.cfirNameAsName: Name?
-    get() = rawIdentifierName(nameIdentifier?.rawIdentifierTokenText()) ?: nameAsName
+    get() = (rawIdentifierName(nameIdentifier?.rawIdentifierTokenText()) ?: nameAsName)
+        ?.takeUnless { it.asString() == "_" }
 
 /** 只把完整反引号 token 视为 raw 标识符，普通名称与操作符继续走既有归一化规则。 */
 private fun rawIdentifierName(text: String?): Name? = text
