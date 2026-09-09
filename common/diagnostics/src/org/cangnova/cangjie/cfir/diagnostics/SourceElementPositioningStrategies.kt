@@ -68,6 +68,11 @@ object SourceElementPositioningStrategies {
         LightTreePositioningStrategies.FOR_KEYWORD,
         PositioningStrategies.FOR_KEYWORD,
     )
+    /** 标记 match 表达式的完整关键字，两条 raw CFIR 入口使用同一策略。 */
+    val MATCH_KEYWORD = SourceElementPositioningStrategy(
+        LightTreePositioningStrategies.MATCH_KEYWORD,
+        PositioningStrategies.MATCH_KEYWORD,
+    )
     /**
      * 标记数组字面量左中括号。
      */

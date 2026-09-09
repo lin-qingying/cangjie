@@ -39,6 +39,7 @@ import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessKind
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassMemberScopeKind
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
 import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
+import org.cangnova.cangjie.cfir.session.builtinTypes
 import org.cangnova.cangjie.cfir.session.extendProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
@@ -49,6 +50,7 @@ import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.OperatorNameConventions
 import org.cangnova.cangjie.source.AbstractCjSourceElement
 import org.cangnova.cangjie.source.text
+import org.cangnova.cangjie.type.AbstractTypeChecker
 
 /**
  * 标准库 `Option.Some` 构造器名称。
@@ -201,7 +203,11 @@ internal fun CfirMatchExpression.hasPatternLegalityProblem(context: CheckerConte
     val subjectType = subject?.coneTypeOrNull ?: return false
     if (subjectType is ConeErrorType) return false
     return branches.any { branch ->
-        branch.pattern.bindingVariables().any { it.returnTypeRef.coneTypeOrNull is ConeErrorType } ||
+        branch.coneTypeOrNull is ConeErrorType ||
+                branch.guard?.coneTypeOrNull?.let { guardType ->
+                    AbstractTypeChecker.isSubtypeOf(context.session.typeContext, guardType, context.session.builtinTypes.boolType) != true
+                } == true ||
+                branch.pattern.bindingVariables().any { it.returnTypeRef.coneTypeOrNull is ConeErrorType } ||
                 branch.pattern.hasDuplicatePatternBindings() ||
                 branch.pattern.hasPatternLegalityProblem(subjectType, context)
     }

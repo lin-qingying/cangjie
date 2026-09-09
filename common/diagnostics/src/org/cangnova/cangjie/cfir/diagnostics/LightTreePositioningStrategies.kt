@@ -348,6 +348,18 @@ object LightTreePositioningStrategies {
             return markElement(argumentList, startOffset, endOffset, tree, node)
         }
     }
+    /** match 源节点必含 match token；按 token 的完整范围定位诊断。 */
+    val MATCH_KEYWORD: LightTreePositioningStrategy = object : LightTreePositioningStrategy() {
+        override fun mark(
+            node: LighterASTNode,
+            startOffset: Int,
+            endOffset: Int,
+            tree: FlyweightCapableTreeStructure<LighterASTNode>,
+        ): List<TextRange> {
+            val keyword = checkNotNull(tree.findChildByType(node, CjTokens.MATCH_KEYWORD))
+            return markElement(keyword, startOffset, endOffset, tree, node)
+        }
+    }
 
     /**
      * 标记限定表达式中的引用表达式。

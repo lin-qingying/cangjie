@@ -712,6 +712,8 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
 
         // 无 selector 的 match 中，某个 case 的结果类型无法计算
         val MATCH_CASE_HAS_NO_TYPE by error<PsiElement>()
+        // 无 selector 的 match 必须显式包含默认分支。
+        val MATCH_CASE_MUST_HAVE_DEFAULT by error<CjMatchExpression>(PositioningStrategy.MATCH_KEYWORD)
     }
     /**
      * where 约束和泛型上界相关诊断。

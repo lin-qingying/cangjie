@@ -2546,7 +2546,12 @@ open class CfirExpressionsResolveTransformer(
             if (branchTypes.any { it is ConeErrorType }) CfirMatchExhaustivenessStatus.Unknown
             else resolveMatchExhaustiveness(matchExpression)
         )
-        val resultType = computeMatchResultType(branchTypes, data.expectedTypeOrNull)
+        val resultType = if (matchExpression.exhaustiveness is CfirMatchExhaustivenessStatus.NonExhaustive) {
+            // 非穷尽诊断由 checker 报告；使用点只能传播 InvalidTy，不能派生返回类型错误。
+            ConeErrorType(ConeUnreportedDuplicateDiagnostic(ConeSimpleDiagnostic("Non-exhaustive match expression")))
+        } else {
+            computeMatchResultType(branchTypes, data.expectedTypeOrNull)
+        }
         recordAssignmentRhsTypeMismatchIfNeeded(matchExpression, resultType)
         matchExpression.replaceConeTypeOrNull(resultType)
         components.dataFlowAnalyzer.exitMatchExpression(
@@ -2640,23 +2645,41 @@ open class CfirExpressionsResolveTransformer(
     ): ConeCangJieType {
         return withNewLocalScope {
             components.dataFlowAnalyzer.enterMatchBranchCondition(branch)
-            branch.transformPattern(transformer, ResolutionMode.ContextIndependent)
+            val conditionMode = if (branch.pattern is CfirExpressionPattern) {
+                withExpectedType(builtinTypes.boolType)
+            } else {
+                ResolutionMode.ContextIndependent
+            }
+            branch.transformPattern(transformer, conditionMode)
             if (branch is org.cangnova.cangjie.cfir.expressions.impl.CfirMatchBranchImpl) {
                 branch.pattern = resolveDeferredMatchPattern(branch.pattern, subjectType)
             }
             resolvePatternBindingTypes(branch.pattern, subjectType, specificTypeResolverTransformer)
             val bindingError = registerScopedPatternBindings(branch.pattern, CfirPatternBindingScope(branch.body))
 
-            branch.transformGuard(transformer, ResolutionMode.ContextIndependent)
+            branch.transformGuard(transformer, withExpectedType(builtinTypes.boolType))
             components.dataFlowAnalyzer.exitMatchBranchCondition(branch)
             // 模式绑定和直接分支体属于同一作用域，嵌套 block 再自行引入新作用域。
             transformBlock(branch.body, bodyResolutionMode)
             components.dataFlowAnalyzer.exitMatchBranchResult(branch)
 
-            val bodyType = bindingError ?: branch.body.coneTypeOrNull ?: builtinTypes.unitType
+            val bodyType = bindingError ?: matchGuardErrorType(branch.guard)
+                ?: branch.body.coneTypeOrNull ?: builtinTypes.unitType
             branch.replaceConeTypeOrNull(bodyType)
             bodyType
         }
+    }
+
+    /**
+     * guard 失败使整个 case 无效，但保留 guard 的实际类型供独立 checker 精确报告。
+     * 尚未固定的推断变量由 expected Bool 约束继续完成，不提前定性为类型错误。
+     */
+    private fun matchGuardErrorType(guard: CfirExpression?): ConeErrorType? {
+        val type = guard?.coneTypeOrNull ?: return null
+        type.propagatedErrorTypeOrNull()?.let { return it }
+        if (type.contains { it is ConeTypeVariableType }) return null
+        if (AbstractTypeChecker.isSubtypeOf(session.typeContext, type, builtinTypes.boolType) == true) return null
+        return ConeErrorType(ConeUnreportedDuplicateDiagnostic(ConeSimpleDiagnostic("Match guard does not have Bool type")))
     }
 
     /**

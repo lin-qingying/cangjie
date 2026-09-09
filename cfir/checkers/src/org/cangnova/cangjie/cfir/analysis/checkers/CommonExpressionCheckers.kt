@@ -60,6 +60,7 @@ object CommonExpressionCheckers : ExpressionCheckers() {
     override val matchExpressionCheckers: Set<CfirMatchExpressionChecker>
         get() = setOf(
             CfirMatchCaseTypeChecker,
+            CfirMatchConditionTypeChecker,
             CfirMatchTargetTypeMismatchChecker,
             CfirMatchPatternLegalityChecker,
             CfirMatchExhaustivenessChecker,

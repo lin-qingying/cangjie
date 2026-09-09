@@ -17,6 +17,7 @@ import org.cangnova.cangjie.psi.CjFunction
 import org.cangnova.cangjie.psi.CjImportAlias
 import org.cangnova.cangjie.psi.CjImportDirective
 import org.cangnova.cangjie.psi.CjImportItem
+import org.cangnova.cangjie.psi.CjMatchExpression
 import org.cangnova.cangjie.psi.CjModifierListOwner
 import org.cangnova.cangjie.psi.CjNamedDeclaration
 import org.cangnova.cangjie.psi.CjOperationExpression
@@ -267,6 +268,10 @@ object PositioningStrategies {
             } ?: return super.mark(element)
             return markElement(argumentList)
         }
+    }
+    /** match 表达式级诊断覆盖完整 match 关键字，与 K2 WHEN_EXPRESSION 定位一致。 */
+    val MATCH_KEYWORD: PositioningStrategy<CjMatchExpression> = object : PositioningStrategy<CjMatchExpression>() {
+        override fun mark(element: CjMatchExpression): List<TextRange> = markElement(element.matchKeyword)
     }
 
     /**

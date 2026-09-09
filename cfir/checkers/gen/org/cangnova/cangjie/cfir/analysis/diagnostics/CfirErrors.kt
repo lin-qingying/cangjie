@@ -23,6 +23,7 @@ import org.cangnova.cangjie.psi.CjDeclaration
 import org.cangnova.cangjie.psi.CjElement
 import org.cangnova.cangjie.psi.CjExpression
 import org.cangnova.cangjie.psi.CjImportItem
+import org.cangnova.cangjie.psi.CjMatchExpression
 import org.cangnova.cangjie.psi.CjNamedDeclaration
 import org.cangnova.cangjie.psi.CjResumeExpression
 import org.cangnova.cangjie.psi.CjTypeReference
@@ -188,6 +189,7 @@ object CfirErrors : CjDiagnosticsContainer() {
     val ENUM_PATTERN_PARAM_SIZE_ERROR: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_ENUM_PATTERN_PARAM_SIZE_ERROR", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val NOT_OVERLOAD_IN_MATCH: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_NOT_OVERLOAD_IN_MATCH", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val MATCH_CASE_HAS_NO_TYPE: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_MATCH_CASE_HAS_NO_TYPE", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
+    val MATCH_CASE_MUST_HAVE_DEFAULT: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_MATCH_CASE_MUST_HAVE_DEFAULT", Severity.ERROR, SourceElementPositioningStrategies.MATCH_KEYWORD, CjMatchExpression::class, getRendererFactory())
 
     // Constraint
     val NAME_IN_CONSTRAINT_IS_NOT_A_TYPE_PARAMETER: CjDiagnosticFactory1<Name> = CjDiagnosticFactory1("CFIR_NAME_IN_CONSTRAINT_IS_NOT_A_TYPE_PARAMETER", Severity.ERROR, SourceElementPositioningStrategies.REFERENCED_NAME_BY_QUALIFIED, PsiElement::class, getRendererFactory())

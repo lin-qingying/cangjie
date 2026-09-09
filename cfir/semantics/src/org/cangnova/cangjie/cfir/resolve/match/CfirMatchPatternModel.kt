@@ -507,10 +507,10 @@ sealed class CfirConstructor {
 }
 
 /**
- * 将 match 表达式转换为单列模式矩阵。
+ * 将无 guard 的 match 分支转换为覆盖矩阵；即使 guard 为 true，也不贡献静态穷尽性。
  */
 fun CfirMatchExpression.calculateMatrix(subjectType: ConeCangJieType, session: CfirSession): CfirMatrix {
-    return branches.flatMap { branch ->
+    return branches.filter { it.guard == null }.flatMap { branch ->
         convertPattern(branch.pattern, subjectType, session).map { listOf(it) }
     }
 }
