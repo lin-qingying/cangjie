@@ -5688,3 +5688,36 @@ XML 为8475 → 8479 records，均另含一条 skipped 聚合记录（skipped=30
 
 - remaining failures: Call 4项，为call22（递归构造 Notes 被误标为主错误）和call_fuzz01（语法恢复契约）的双入口；其它556项保持原状态。
 - change isolation: 仅提交本项解析/诊断/定位 owner、测试与生成物及本日志，保留.idea/workspace.xml独立改动。
+
+## 2026-09-09：递归构造诊断的依赖 Notes 不再标为主错误
+
+- problem type: Diagnostics / Fixture Expectations / Constructor Dependency Notes。
+- root cause: call22.cj 与 record_vardecl_check.cj 把同一构造依赖环的 Notes 一并迁移为 RECURSIVE_CONSTRUCTOR_CALL，要求编译器对一个环重复报告主错误。Record 用例还把构造引用 A 的 token 范围写成了整个 A() 调用。
+- official Cangjie evidence:
+  - cjc 1.0.5 对 call22 仅在默认 init() 的完整 init 标识符处报告 sema_recursive_constructor_call，参数构造器 init(x) 与 Monday() 都属于 depends on Notes；V 的非法上界诊断仍保留。
+  - record_vardecl_check 仅在 class B 的字段初始化器 A 引用上报告递归构造主错误，struct A 内的 B() 是依赖 Note；另外仍报告既有下标和不可变赋值错误。
+  - 对同族 primaryConstructor8 重新编译，官方分别对 Data 与 Data2 两个独立环各报一次，确认不能机械删除所有多标记用例。三份源码、JSON 和 --executable 编译命令均保存在 build/repair-20260906/evidence。
+  - external/cangjie_compiler/src/Sema/Utils.cpp:187-210 的 DiagRecursiveConstructorCall 只对 path.back() 创建主诊断，其余环节点通过 builder.AddNote(..., "depends on") 输出。
+- Kotlin counterpart files consulted: FirCommonConstructorDelegationIssuesChecker.kt，用于核对类级构造图检查及构造符号依赖归属；单报主错误及 Notes 语义按仓颉官方实现，不引入 Kotlin 的逐委托调用报错规则。
+- CFIR owner files changed: 无实现变更。已核对 CfirRecursiveConstructorCallChecker 的 RecursiveConstructorGraph、cycle.head.diagnosticSource 和单次 reporter.reportOn；现有输出与上述官方主错误数量一致。
+- repair principle: 根据官方主诊断/依赖说明的边界修正期望，保留真实构造图与源程序；范围遵守项目完整 token 策略。
+- fixtures covered: 修改 llt/call/call22.cj、llt/record/record_vardecl_check.cj。检索全部 testData 共22份含 RECURSIVE_CONSTRUCTOR_CALL 的文件；除这两份和具有两个独立环的 primaryConstructor8 外，其余各仅一个标记。Call 及构造递归相关完整切片用于回归。
+- fixture correction: call22 删除两个 Note 标记，保留 init() 的主诊断及 V 上界错误；record_vardecl_check 删除 B() 的 Note 标记，A() 的范围收窄到完整 A token，其余期望不变。Record 用例的 INVALID_SUBSCRIPT_EXPR 与当前 WRONG_NUMBER_OF_ARGUMENTS 差异仍是独立的实现问题，不计为本项修复。
+- verification commands and outcome:
+  - `gradlew-queue.bat :cfir:analysis-tests:test --tests '*CfirAnalysisLLT*Generated$Call*' --tests '*testRecursiveCtor*' --tests '*testRecursiveConstructorCall*' --tests '*testDelegationAndConstructorsRich*' --tests '*testConstructorDelegationMatrix*' --tests '*testRecordVardeclCheck*' --tests '*testPrimaryConstructor8*' --tests '*testRecordThis*' --tests '*testVarray14*' --tests '*CfirAnalysisLLT*Generated$Class.testClass1' --tests '*testClassGenericRecursiveFunctionCall01*' --tests '*testClassInheritanceCycle01*' --tests '*testLangfuzz0109*' --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g' '-Pkotlin.compiler.execution.strategy=in-process'`：239项，232 PASS、4原有FAIL、3SKIP；FIXED=2、REGRESSED=0。证据29-constructor-notes-family。
+  - 同一全量命令 `gradlew-queue.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g'`：19m 49s正常结束。28-member-full → 29-constructor-notes-full：FIXED=2（Call22双入口）、REGRESSED=0、NEW_KEYS=0、REMOVED_KEYS=0、其它状态变化=0。
+  - changed_failure_messages仅RecordVardeclCheck双入口；已分别比对消息的“得到”部分，实际诊断内容完全相同，变化仅为删除已证伪的Note/范围期望。其余556项失败消息全部不变。
+  - Call 180/184 → 182/184；TypeInfer 76/76、Generics 680/680、Typealias 独立组110/110保持通过。
+  - `gradlew-queue.bat validateDocumentation --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx512m'`：BUILD SUCCESSFUL。
+
+| 指标（Gradle） | 修复前 | 修复后 |
+| --- | ---: | ---: |
+| 测试总数 | 8478 | 8478 |
+| 通过 | 7611 | 7613 |
+| 失败 | 560 | 558 |
+| 跳过 | 307 | 307 |
+
+XML均为8479 records，另含一条skipped聚合记录（skipped=308），errors=0。
+
+- remaining failures: Call仅剩call_fuzz01的双入口。用户已明确CFIR仅测语义，测试文件必须语法正确；该用例将先修正语法，再用官方cjc确定语义期望，作为下一独立问题处理。Record的下标错误差异单独保留。
+- change isolation: 仅提交两份fixture和本条日志，源程序声明和表达式保持原样，没有改构造图实现。

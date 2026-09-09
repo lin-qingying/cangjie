@@ -2,11 +2,11 @@
 
 struct A {
     public var b: Int64 = 1
-    public let c: B = <!RECURSIVE_CONSTRUCTOR_CALL!>B()<!>
+    public let c: B = B()
 }
 
 class B {
-    public let c: A = <!RECURSIVE_CONSTRUCTOR_CALL!>A()<!>
+    public let c: A = <!RECURSIVE_CONSTRUCTOR_CALL!>A<!>()
     public var d: Int64 = 1
 }
 
