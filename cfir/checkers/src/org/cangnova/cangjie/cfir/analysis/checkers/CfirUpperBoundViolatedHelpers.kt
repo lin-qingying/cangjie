@@ -74,8 +74,8 @@ internal fun checkUpperBoundViolated(
  * 查询类型引用是否包含不能继续参与后续表达式语义的非法泛型实例化。
  *
  * 这与 [checkUpperBoundViolated] 的报告职责分离：上界检查器仍负责产生唯一的
- * `GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT`，表达式检查器只消费这个结果来阻断
- * `REF_NOT_BE_TYPE`、裸 classifier 和 interface static completeness 等级联诊断。
+ * `GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT`；使用点检查器消费此结果判断后续语义，
+ * 包括父接口实例化合法性，以及表达式中的 classifier/interface 调用检查。
  */
 context(context: CheckerContext, reporter: DiagnosticReporter)
 internal fun CfirTypeRef.hasInvalidGenericTypeArgument(): Boolean {

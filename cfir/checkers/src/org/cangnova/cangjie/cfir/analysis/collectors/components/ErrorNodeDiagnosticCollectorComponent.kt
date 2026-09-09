@@ -2,6 +2,7 @@
 
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.analysis.checkers.CfirExtendSemantics
+import org.cangnova.cangjie.cfir.analysis.checkers.isUnresolvedCascadeAfterFailedImport
 import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.hasUninferredOmittedLambdaParameterType
@@ -79,7 +80,6 @@ import org.cangnova.cangjie.cfir.types.ConeUnreportedDuplicateDiagnostic
 import org.cangnova.cangjie.cfir.types.containsErrorType
 import org.cangnova.cangjie.cfir.types.renderForDebugging
 import org.cangnova.cangjie.cfir.session.annotationMetadataRegistryOrNull
-import org.cangnova.cangjie.cfir.session.importBindingStoreOrNull
 import org.cangnova.cangjie.cfir.session.macroDemandClassificationOrNull
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroResolution
 import org.cangnova.cangjie.name.Name
@@ -772,31 +772,6 @@ class ErrorNodeDiagnosticCollectorComponent(
     /** 解开用于去重占位的诊断包装，返回真正需要比较和分类的原始诊断。 */
     private fun ConeDiagnostic?.unwrapUnreportedDuplicateDiagnostic(): ConeDiagnostic? =
         (this as? ConeUnreportedDuplicateDiagnostic)?.original ?: this
-
-    /**
-     * 官方编译器在包导入失败后只报告 import 诊断，不继续把缺失包里的类型/引用扩散成
-     * 使用点 unresolved 噪声。导入诊断本身由 [CfirImportsChecker] 报告，这里只过滤
-     * 错误节点收集阶段从同一文件继续摘取到的 unresolved 级联。
-     */
-    private fun ConeDiagnostic.isUnresolvedCascadeAfterFailedImport(context: CheckerContext): Boolean {
-        if (!isUnresolvedCascadeDiagnostic()) return false
-        val file = context.containingFileSymbol?.takeIf { it.isBound }?.cfir ?: return false
-        val imports = context.session.importBindingStoreOrNull?.getBindings(file)?.imports ?: return false
-        return imports.any { binding ->
-            binding.targets.isEmpty() &&
-                binding.importDirective.source?.kind?.shouldSkipErrorTypeReporting != true
-        }
-    }
-
-    /** 判断诊断是否属于 unresolved 级联类别。 */
-    private fun ConeDiagnostic.isUnresolvedCascadeDiagnostic(): Boolean =
-        when (unwrapUnreportedDuplicateDiagnostic()) {
-            is ConeUnresolvedNameError,
-            is ConeUnresolvedReferenceError,
-            is ConeUnresolvedSymbolError,
-            is ConeUnresolvedTypeQualifierError -> true
-            else -> false
-        }
 
     /**
      * typealias 声明侧已经携带 unresolved 错误时，使用点不能继续扩散成员/调用错误。

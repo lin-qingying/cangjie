@@ -16,6 +16,7 @@ These conventions apply to all first-party Gradle modules. Select the smallest t
 - Keep test-data source files, directives, inline markers, and golden outputs together under the owning module.
 - Diagnostic expectations must use the repository diagnostic name and the source range required by the language contract.
 - For Cangjie semantic expectations, use the official compiler and official language sources as evidence before changing a fixture.
+- CFIR diagnostic fixtures test semantics and must be syntactically valid. Repair invalid syntax first, confirm parsing with the official compiler, then record semantic diagnostics while preserving the test scenario. Syntax-error coverage belongs in parser or PSI tests.
 - Generated test classes are derived artefacts. Update their source test-data and generator inputs rather than hand-editing generated output.
 
 ## Running tests
