@@ -11,7 +11,7 @@ func foo() {
     } else {
         (match (true) {
             case _ =>
-                var mtx: ReentrantMutex = ReentrantMutex()
+                var mtx: <!DEPRECATED_WARNING!>ReentrantMutex<!> = <!DEPRECATED_WARNING!>ReentrantMutex<!>()
                 (((((synchronized(mtx) {
                     try {
                         "1"

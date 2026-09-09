@@ -5767,3 +5767,29 @@ XML为8479 → 8483 records，均另含一条skipped聚合记录（skipped=308�
 - 本轮累计：28-before-full → 30-final-full，6项旧失败修复、8项新增测试全部通过、零回归；测试总数8474→8482，通过7605→7619，失败562→556，跳过307不变。剩余失败消息仅RecordVardeclCheck因问题29的期望修正发生变化，实际诊断不变。
 - remaining failures: Call已清零。其余556项按套件归并为Macro 252、PatternMatching/Match/NonExhaustiveEnum 73、Record/InitializationCheck 59、ErrMsgs 30、其它142；完整逐测试键分组保存在30-final-full/results.json。
 - change isolation: 仅提交本项共享诊断检查、三份语义fixture、对应生成方法、中英文测试约定及本日志；宏fixture保持原样，.idea/workspace.xml独立保留。
+
+## 2026-09-10：控制流用例补齐官方弃用警告期望
+
+- problem type: Diagnostics / Fixture（已弃用标准库类型在类型引用与构造调用处的警告期望缺失）。
+- root cause: if13、if-let-expr/bugfix2、synchronized_test1 未标注 ReentrantMutex 的弃用警告；两条 CFIR 入口均已正确报告。bugfix2 的实例初始化分析曾在前文修复，本次不存在该问题复发。
+- official Cangjie evidence: cjc 1.0.5 对 if13 和 bugfix2 编译成功，分别报告两条、一条 sema_deprecated_warning；synchronized_test1 同时报告原有 sema_mismatched_types 和一条 sema_deprecated_warning。源码、完整 JSON 与命令分别保存在 build/repair-20260906/evidence/31-if13.official.*、31-iflet-bugfix2.official.*、31-synchronized-test1.official.*。external/cangjie_compiler/src/Sema/TypeCheckReference.cpp 的 DiagnoseDeprecatedUsage / CheckUsageOfDeprecatedNominative 处理类型与构造使用点，范围覆盖完整名称。
+- Kotlin counterpart files consulted: external/kotlin/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/type/FirDeprecatedTypeChecker.kt 与 expression/FirDeprecationChecker.kt：类型引用和表达式分别消费同一声明的弃用信息。
+- CFIR owner files changed: 无；已核对 CfirDeprecatedTypeRefChecker 和既有调用诊断。本项仅修正测试期望，不改变编译器行为。
+- repair principle: 根据官方已确认的使用点补齐警告，保持既有初始化与类型检查规则。
+- fixtures covered: llt/if/if13.cj、llt/if-let-expr/bugfix2.cj、llt/synchronized/synchronized_test1.cj。全 testData 检索仅有五份使用 ReentrantMutex，另外两份 llt/ErrMsgs/sync_1.cj、llt/synchronized/synchronized_test.cj 已有正确标记，并纳入定向验证。
+- verification commands and outcome:
+  - `gradlew-queue.bat :cfir:analysis-tests:test --tests '*CfirAnalysisLLT*Generated$If*' --tests '*CfirAnalysisLLT*Generated$Synchronized*' --tests '*CfirAnalysisLLT*Generated$ErrMsgs.testSync1' --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g' '-Pkotlin.compiler.execution.strategy=in-process'`：160 项，156 通过、4 项既有失败；六项旧失败恢复，剩余消息不变。快照 31-deprecation-slice。
+  - 同一全量命令 `gradlew-queue.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g'`：21m 41s 正常结束。30-final-full → 31-deprecation-full：FIXED=6、REGRESSED=0、NEW_KEYS=0、REMOVED_KEYS=0、其它状态变化=0、changed_failure_messages=[]。
+  - `gradlew-queue.bat validateDocumentation --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx512m'`：BUILD SUCCESSFUL；`git diff --check` 通过。
+
+| 指标（Gradle） | 修复前 | 修复后 |
+| --- | ---: | ---: |
+| 测试总数 | 8482 | 8482 |
+| 通过 | 7619 | 7625 |
+| 失败 | 556 | 550 |
+| 跳过 | 307 | 307 |
+
+XML 均为 8483 records、308 skipped，另含一条 skipped 聚合记录。完整比较为 build/repair-20260906/30-final-full--31-deprecation-full.json。
+
+- remaining failures: 目标家族剩余 If 2、IfLetExpr 2、WhileLetExpr 2、Match 20、PatternMatching 47，共 73 项；Loops 通过。Call 184/184、Generics 680/680、TypeInfer 76/76、Typealias 独立组 110/110 保持通过。全量其他 477 项失败不变。
+- change isolation: 仅提交上述三份 fixture 和本条日志，.idea/workspace.xml 保持独立。

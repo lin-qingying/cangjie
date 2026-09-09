@@ -9,7 +9,7 @@ class LockInfo {
 
 public class IpLockMgr  {
     var ipInfo = HashMap<String, LockInfo>()
-    var locker = ReentrantMutex()
+    var locker = <!DEPRECATED_WARNING!>ReentrantMutex<!>()
     var failedCount = Int32(0)
     var failedInterval = Int64(0)
     var lockedExpired = Int64(0)
