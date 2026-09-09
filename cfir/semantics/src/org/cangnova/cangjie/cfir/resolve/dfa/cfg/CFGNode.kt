@@ -37,6 +37,8 @@ import org.cangnova.cangjie.cfir.expressions.CfirTypeOperator
 import org.cangnova.cangjie.cfir.expressions.CfirUnsafeExpression
 import org.cangnova.cangjie.cfir.expressions.CfirWrappedExpression
 import org.cangnova.cangjie.cfir.patterns.CfirPattern
+import org.cangnova.cangjie.cfir.patterns.CfirBindingPattern
+import org.cangnova.cangjie.cfir.patterns.CfirWildcardPattern
 import org.cangnova.cangjie.cfir.resolve.dfa.FlowPath
 import org.cangnova.cangjie.cfir.resolve.dfa.PersistentFlow
 import org.cangnova.cangjie.cfir.resolve.dfa.controlFlowGraph
@@ -603,6 +605,11 @@ class MatchPatternDecisionNode(
     val matchExpression: CfirMatchExpression,
     level: Int,
 ) : CFGNode<CfirMatchBranch>(owner, level) {
+    /** 不失败模式仍保留结构节点，其 failure 边为死亡边，不代表运行时条件分支。 */
+    val isAlwaysSuccessful: Boolean
+        get() = guard == null && (pattern is CfirWildcardPattern ||
+                pattern is CfirBindingPattern && pattern.nestedPattern == null)
+
     /** CFG 节点的通用 CFIR owner 与 [branch] 保持一致。 */
     override val fir: CfirMatchBranch
         get() = branch

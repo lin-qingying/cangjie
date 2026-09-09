@@ -182,7 +182,11 @@ internal class CfirControlFlowConstAnalysis {
             node.deadRegionPatternOrNull(owner)?.let { pattern -> destination += pattern }
             if (!node.continuesDeadRegion(owner)) continue
             node.followingNodes.forEach { successor ->
-                if (node.edgeTo(successor).kind.usedInCfa) {
+                val edge = node.edgeTo(successor)
+                // 不失败模式对应 CHIR 的无条件流，结构上的死亡 failure 边不能扩张运行时死区。
+                val structuralFailure = node is MatchPatternDecisionNode && node.isAlwaysSuccessful &&
+                        edge.label == MatchBranchFailure
+                if (edge.kind.usedInCfa && !structuralFailure) {
                     worklist += successor
                 }
             }
