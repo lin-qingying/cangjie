@@ -26,11 +26,13 @@ import org.cangnova.cangjie.psi.CjQualifiedExpression
 import org.cangnova.cangjie.psi.CjReferenceExpression
 import org.cangnova.cangjie.psi.CjSimpleNameExpression
 import org.cangnova.cangjie.psi.CjThrowExpression
+import org.cangnova.cangjie.psi.CjTypeArgumentList
 import org.cangnova.cangjie.psi.CjTypeReference
 import org.cangnova.cangjie.psi.CjUnaryExpression
 import org.cangnova.cangjie.psi.CjUserType
 import org.cangnova.cangjie.psi.CjValueArgument
 import org.cangnova.cangjie.psi.CjValueArgumentList
+import org.cangnova.cangjie.psi.getTypeArgumentList
 
 /**
  * PSI 前端使用的诊断定位策略集合。
@@ -248,6 +250,21 @@ object PositioningStrategies {
                 is CjValueArgumentList -> element
                 else -> null
             } ?: return VALUE_ARGUMENTS.mark(element)
+            return markElement(argumentList)
+        }
+    }
+
+    /** 标记当前调用或引用自身的完整类型实参列表，未提供列表时保留源节点范围。 */
+    val TYPE_ARGUMENT_LIST_OR_SELF: PositioningStrategy<PsiElement> = object : PositioningStrategy<PsiElement>() {
+        override fun mark(element: PsiElement): List<TextRange> {
+            val target = (element as? CjQualifiedExpression)?.selectorExpression ?: element
+            val argumentList = when (target) {
+                is CjCallExpression -> target.typeArgumentList
+                is CjSimpleNameExpression -> target.getTypeArgumentList()
+                is CjUserType -> target.typeArgumentList
+                is CjTypeArgumentList -> target
+                else -> null
+            } ?: return super.mark(element)
             return markElement(argumentList)
         }
     }

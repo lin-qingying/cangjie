@@ -11,7 +11,7 @@ extend<T> A<T> {
 
 main(): Int64 {
     var a = A<Int64>()
-    <!NON_GENERIC_FUNCTION_WITH_TYPE_ARGUMENT!>a<!>.test<Int64>(1)
-    <!NON_GENERIC_FUNCTION_WITH_TYPE_ARGUMENT!>a<!>.test<Rune>()
+    a.test<!NON_GENERIC_FUNCTION_WITH_TYPE_ARGUMENT!><Int64><!>(1)
+    a.test<!NON_GENERIC_FUNCTION_WITH_TYPE_ARGUMENT!><Rune><!>()
     return 0
 }

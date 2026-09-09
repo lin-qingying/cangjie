@@ -6560,10 +6560,22 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeLlTDiagnosticsTest() {
             runTest("cfir/analysis-tests/testData/llt/call/nested_named_arg_02.cj")
         }
 
+        @TestMetadata("non_generic_member_type_arguments.cj")
+        @Test
+        fun testNonGenericMemberTypeArguments() {
+            runTest("cfir/analysis-tests/testData/llt/call/non_generic_member_type_arguments.cj")
+        }
+
         @TestMetadata("qualified_enum_owner_inference.cj")
         @Test
         fun testQualifiedEnumOwnerInference() {
             runTest("cfir/analysis-tests/testData/llt/call/qualified_enum_owner_inference.cj")
+        }
+
+        @TestMetadata("upper_bound_member_type_arguments.cj")
+        @Test
+        fun testUpperBoundMemberTypeArguments() {
+            runTest("cfir/analysis-tests/testData/llt/call/upper_bound_member_type_arguments.cj")
         }
 
         @TestMetadata("variadic_class.cj")

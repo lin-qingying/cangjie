@@ -158,6 +158,9 @@ class WrongArgumentCount(
     val actualCount: Int,
 ) : ResolutionDiagnostic(CandidateApplicability.INAPPLICABLE_ARGUMENTS_MAPPING_ERROR)
 
+/** 对象成员调用试图用显式类型实参实例化非泛型函数。 */
+object NonGenericFunctionWithTypeArguments : ResolutionDiagnostic(CandidateApplicability.INAPPLICABLE)
+
 /**
  * 对齐 Kotlin FIR 的参数映射错误分层：
  * 参数绑定阶段先产出结构化 ResolutionDiagnostic，

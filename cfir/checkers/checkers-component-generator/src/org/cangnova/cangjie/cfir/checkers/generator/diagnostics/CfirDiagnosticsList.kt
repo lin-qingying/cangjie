@@ -1298,6 +1298,9 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
         // 类型参数个数不匹配
         val GENERIC_ARGUMENT_NO_MATCH by error<PsiElement>()
 
+        // 对象成员调用不能给非泛型函数提供类型实参
+        val NON_GENERIC_FUNCTION_WITH_TYPE_ARGUMENT by error<PsiElement>(PositioningStrategy.TYPE_ARGUMENT_LIST_OR_SELF)
+
         // 已显式给出 enum owner 后，enum member 不能再次携带类型实参
         val INVALID_TYPE_PARAM_OF_ENUM_MEMBER_ACCESS by error<PsiElement>(PositioningStrategy.REFERENCED_NAME_BY_QUALIFIED)
 

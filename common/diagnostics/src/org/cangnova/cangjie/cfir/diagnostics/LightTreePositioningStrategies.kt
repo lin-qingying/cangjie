@@ -326,6 +326,29 @@ object LightTreePositioningStrategies {
         }
     }
 
+    /** 标记当前调用或引用自身的完整类型实参列表，未提供列表时保留源节点范围。 */
+    val TYPE_ARGUMENT_LIST_OR_SELF: LightTreePositioningStrategy = object : LightTreePositioningStrategy() {
+        override fun mark(
+            node: LighterASTNode,
+            startOffset: Int,
+            endOffset: Int,
+            tree: FlyweightCapableTreeStructure<LighterASTNode>,
+        ): List<TextRange> {
+            val target = when (node.tokenType) {
+                CjNodeTypes.DOT_QUALIFIED_EXPRESSION, CjNodeTypes.SAFE_ACCESS_EXPRESSION ->
+                    tree.lastExpressionChild(node) ?: node
+                else -> node
+            }
+            val argumentList = when (target.tokenType) {
+                CjNodeTypes.CALL_EXPRESSION -> tree.findChildByType(target, CjNodeTypes.TYPE_ARGUMENT_LIST)
+                    ?: tree.firstExpressionChild(target)?.let { tree.calleeOwnTypeArgumentList(it) }
+                CjNodeTypes.TYPE_ARGUMENT_LIST -> target
+                else -> tree.calleeOwnTypeArgumentList(target)
+            } ?: return super.mark(node, startOffset, endOffset, tree)
+            return markElement(argumentList, startOffset, endOffset, tree, node)
+        }
+    }
+
     /**
      * 标记限定表达式中的引用表达式。
      */
@@ -382,6 +405,20 @@ object LightTreePositioningStrategies {
             return markElement(nodeToMark, startOffset, endOffset, tree, node)
         }
     }
+}
+
+/**
+ * 与 PSI CjCallExpression 的 calleeOwnTypeArgumentList 保持同一所有权规则。
+ * 只读取 callee 引用自身的列表，不进入作为 callee 的另一层调用、receiver 或实参。
+ */
+private fun FlyweightCapableTreeStructure<LighterASTNode>.calleeOwnTypeArgumentList(
+    node: LighterASTNode,
+): LighterASTNode? = when (node.tokenType) {
+    CjNodeTypes.REFERENCE_EXPRESSION, CjNodeTypes.USER_TYPE -> findChildByType(node, CjNodeTypes.TYPE_ARGUMENT_LIST)
+    CjNodeTypes.DOT_QUALIFIED_EXPRESSION, CjNodeTypes.SAFE_ACCESS_EXPRESSION -> lastExpressionChild(node)
+        ?.takeIf { it.tokenType == CjNodeTypes.REFERENCE_EXPRESSION }
+        ?.let { findChildByType(it, CjNodeTypes.TYPE_ARGUMENT_LIST) }
+    else -> null
 }
 
 /**

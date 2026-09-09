@@ -128,6 +128,11 @@ object SourceElementPositioningStrategies {
         LightTreePositioningStrategies.VALUE_ARGUMENTS_LIST,
         PositioningStrategies.VALUE_ARGUMENTS_LIST
     )
+    /** 标记当前调用或引用自身的完整类型实参列表。 */
+    val TYPE_ARGUMENT_LIST_OR_SELF = SourceElementPositioningStrategy(
+        LightTreePositioningStrategies.TYPE_ARGUMENT_LIST_OR_SELF,
+        PositioningStrategies.TYPE_ARGUMENT_LIST_OR_SELF,
+    )
     /**
      * 标记限定表达式中最终被引用的名称。
      */

@@ -58,6 +58,13 @@ object CfirMapTypeArguments : ResolutionStage() {
             return
         }
 
+        if (candidate.nonGenericInstanceMemberFunction() != null) {
+            // 对象成员的类型实参在值参数映射之后检查，不能提前作为普通名字的
+            // 泛型参数数量错误；函数自身也没有可供这些实参绑定的类型参数。
+            candidate.typeArgumentMapping = TypeArgumentMapping.NoExplicitArguments
+            return
+        }
+
         val mapping = buildTypeArgumentMapping(candidate)
         candidate.typeArgumentMapping = mapping
 
@@ -100,7 +107,7 @@ object CfirMapTypeArguments : ResolutionStage() {
     }
 
     /** 读取候选显式类型实参，优先使用 callInfo，必要时回退到 call-site。 */
-    private fun Candidate.resolvedExplicitTypeArguments(): List<CfirResolvedTypeRef> {
+    internal fun Candidate.resolvedExplicitTypeArguments(): List<CfirResolvedTypeRef> {
         val fromCallInfo = callInfo.typeArguments.mapNotNull { it as? CfirResolvedTypeRef }
         if (fromCallInfo.isNotEmpty()) return fromCallInfo
 

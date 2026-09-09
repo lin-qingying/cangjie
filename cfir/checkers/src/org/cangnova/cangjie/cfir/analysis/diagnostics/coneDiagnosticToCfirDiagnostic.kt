@@ -862,6 +862,11 @@ private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
                 session,
             )
 
+            NonGenericFunctionWithTypeArguments -> CfirErrors.NON_GENERIC_FUNCTION_WITH_TYPE_ARGUMENT.on(
+                qualifiedAccessSource ?: source ?: candidate.callInfo.callSite.source ?: return@mapNotNull null,
+                session,
+            )
+
             is NoValueForParameter -> CfirErrors.NO_VALUE_FOR_PARAMETER.on(
                 qualifiedAccessSource ?: source ?: return@mapNotNull null,
                 rootCause.valueParameter.name,

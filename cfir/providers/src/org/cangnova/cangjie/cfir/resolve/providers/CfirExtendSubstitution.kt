@@ -26,6 +26,7 @@ import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.types.collectUpperBounds
 import org.cangnova.cangjie.cfir.types.forEachType
+import org.cangnova.cangjie.cfir.types.hasInvalidDeclaredUpperBounds
 import org.cangnova.cangjie.cfir.types.idealExtendLookupTypes
 import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.cfir.types.typeContext
@@ -54,7 +55,7 @@ data class CfirExtendDeclarationSubstitution(
 )
 
 /**
- * 在接收者类型及其直接父类型链上匹配 extend 目标类型。
+ * 在接收者类型、类型参数的声明上界及其直接父类型链上匹配 extend 目标类型。
  *
  * 与 `CfirClassSubstitutionScope` 原有语义一致：extend 的所有类型参数都必须能从
  * 目标类型模式中被接收者约束，否则该 extend 对当前 use-site 不成立。
@@ -71,6 +72,16 @@ fun findExtendDeclarationSubstitution(
     while (queue.isNotEmpty()) {
         val current = queue.removeFirst()
         if (!visited.add(current)) continue
+
+        val typeParameterReceiver = current.fullyExpandedType(session) as? ConeTypeParameterType
+        if (typeParameterReceiver != null) {
+            // 类型参数的成员查找来自声明上界；官方 GenerateTypeMappingForUpperBounds
+            // 同样从实际上界生成 extend 映射，不能用尚未实例化的 extend owner 类型代替。
+            if (!typeParameterReceiver.hasInvalidDeclaredUpperBounds(session)) {
+                queue.addAll(typeParameterReceiver.collectUpperBounds(session.typeContext))
+            }
+            continue
+        }
 
         val targetPattern = extend.extendedTypeRef.coneTypeOrNull ?: return null
         createExtendDeclarationSubstitution(session, extend, targetPattern, current)?.let { return it }

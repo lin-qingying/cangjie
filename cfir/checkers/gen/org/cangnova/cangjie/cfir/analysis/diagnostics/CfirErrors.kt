@@ -312,6 +312,7 @@ object CfirErrors : CjDiagnosticsContainer() {
     // GenericDeep
     val GENERIC_TYPE_INCONSISTENT: CjDiagnosticFactory1<Name> = CjDiagnosticFactory1("CFIR_GENERIC_TYPE_INCONSISTENT", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val GENERIC_ARGUMENT_NO_MATCH: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_GENERIC_ARGUMENT_NO_MATCH", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
+    val NON_GENERIC_FUNCTION_WITH_TYPE_ARGUMENT: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_NON_GENERIC_FUNCTION_WITH_TYPE_ARGUMENT", Severity.ERROR, SourceElementPositioningStrategies.TYPE_ARGUMENT_LIST_OR_SELF, PsiElement::class, getRendererFactory())
     val INVALID_TYPE_PARAM_OF_ENUM_MEMBER_ACCESS: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_INVALID_TYPE_PARAM_OF_ENUM_MEMBER_ACCESS", Severity.ERROR, SourceElementPositioningStrategies.REFERENCED_NAME_BY_QUALIFIED, PsiElement::class, getRendererFactory())
     val GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT: CjDiagnosticFactory3<ConeCangJieType, ConeCangJieType, ConeCangJieType> = CjDiagnosticFactory3("CFIR_GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val GENERIC_CONSTRAINT_NOT_LOOSER: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_GENERIC_CONSTRAINT_NOT_LOOSER", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
