@@ -28,7 +28,14 @@ object CfirMatchExhaustivenessChecker : CfirMatchExpressionChecker( ) {
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirMatchExpression) {
-        val subject = expression.subject ?: return
+        val subject = expression.subject
+        if (subject == null) {
+            if (expression.branches.any { it.coneTypeOrNull is ConeErrorType }) return
+            if (checkerExhaustivenessStatus(expression, context) is CfirMatchExhaustivenessStatus.NonExhaustive) {
+                reporter.reportOn(expression.source, CfirErrors.MATCH_CASE_MUST_HAVE_DEFAULT)
+            }
+            return
+        }
         val source = subject.source as? AbstractCjSourceElement ?: return
         val subjectType = subject.coneTypeOrNull ?: return
         if (subjectType is ConeErrorType) return

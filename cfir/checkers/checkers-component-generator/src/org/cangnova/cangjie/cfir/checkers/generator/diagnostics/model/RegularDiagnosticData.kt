@@ -131,6 +131,7 @@ enum class PositioningStrategy {
     MUT_MODIFIER,
     THROW_KEYWORD,
     FOR_KEYWORD,
+    MATCH_KEYWORD,
     ARRAY_LITERAL_LEFT_BRACKET,
     DOT_BY_QUALIFIED,
     OPEN_MODIFIER,
@@ -225,5 +226,4 @@ enum class PositioningStrategy {
         const val importToAdd = "org.cangnova.cangjie.cfir.diagnostics.SourceElementPositioningStrategies"
     }
 }
-
 

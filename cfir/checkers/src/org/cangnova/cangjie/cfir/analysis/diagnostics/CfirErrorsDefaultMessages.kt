@@ -599,6 +599,10 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
             "This match case has no type.",
         )
         map.put(
+            CfirErrors.MATCH_CASE_MUST_HAVE_DEFAULT,
+            "A match expression without a selector must have a default case.",
+        )
+        map.put(
             CfirErrors.UNDECLARED_TYPE_NAME,
             "Undeclared type name ''{0}''.",
             RENDER_STRING,

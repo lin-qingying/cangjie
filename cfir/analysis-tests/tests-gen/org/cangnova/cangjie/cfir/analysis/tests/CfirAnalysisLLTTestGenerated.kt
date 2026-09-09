@@ -17072,6 +17072,12 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeLlTDiagnosticsTest() {
             runTest("cfir/analysis-tests/testData/llt/match/err_scope_00.cj")
         }
 
+        @TestMetadata("guarded_match_conditions.cj")
+        @Test
+        fun testGuardedMatchConditions() {
+            runTest("cfir/analysis-tests/testData/llt/match/guarded_match_conditions.cj")
+        }
+
         @TestMetadata("matchcase1.cj")
         @Test
         fun testMatchcase1() {

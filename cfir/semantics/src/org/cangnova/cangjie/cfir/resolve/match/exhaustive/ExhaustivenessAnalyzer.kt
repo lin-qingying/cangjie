@@ -27,6 +27,7 @@ package org.cangnova.cangjie.cfir.resolve.match.exhaustive
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirMatchExpression
 import org.cangnova.cangjie.cfir.patterns.CfirPattern
+import org.cangnova.cangjie.cfir.patterns.CfirWildcardPattern
 import org.cangnova.cangjie.cfir.resolve.match.CfirMatchPattern
 import org.cangnova.cangjie.cfir.resolve.match.CfirMatrix
 import org.cangnova.cangjie.cfir.resolve.match.calculateMatrix
@@ -35,6 +36,7 @@ import org.cangnova.cangjie.cfir.resolve.match.inferExpressionType
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
+import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 
 /**
  * 仓颉 match 穷尽性共享分析入口。
@@ -60,6 +62,18 @@ object ExhaustivenessAnalyzer {
         match: CfirMatchExpression,
         context: MatchExhaustivenessContext,
     ): ExhaustivenessResult {
+        if (match.branches.any { it.coneTypeOrNull is ConeErrorType }) return ExhaustivenessResult.Skipped
+        if (match.subject == null) {
+            // 官方无 selector 形式只认可显式 wildcard，case true 不能代替默认分支。
+            return if (match.branches.any { it.pattern is CfirWildcardPattern }) {
+                ExhaustivenessResult.Exhaustive
+            } else {
+                ExhaustivenessResult.NonExhaustive(
+                    listOf(CfirMatchPattern.wild(ConePrimitiveType.BOOLEAN)),
+                    CheckSource.TRIVIAL,
+                )
+            }
+        }
         val subjectType = inferExpressionType(match.subject)
         if (subjectType is ConeErrorType) return ExhaustivenessResult.Skipped
 

@@ -5886,3 +5886,37 @@ XML 为 8485 → 8487 records，均为 308 skipped（含一条聚合记录）。
 
 - remaining failures: If 54/54、IfLetExpr 100/100、WhileLetExpr 64/64、Loops 26/26 全部通过。目标剩余 Match 18、PatternMatching 46，共 64 项；Call、Generics、TypeInfer、Typealias 保持通过。其余 477 项既有失败不变。
 - change isolation: 仅提交公共边界算法、两份 fixture、两套生成入口及本条日志，.idea/workspace.xml 保持独立。
+
+## 2026-09-10：Match 条件类型、guard 覆盖与非穷尽错误传播
+
+- problem type: Flow Analysis / Match conditions and exhaustiveness。
+- root cause: 共享覆盖矩阵错误地计入带 where 的分支；guard 与无 selector 条件缺少 Bool 类型检查；无 selector 的 match 未要求显式默认分支；已知非穷尽 match 仍保留普通结果类型，派生了返回类型错误。
+- official Cangjie evidence: cjc 1.0.5 的 35-match-conditions / 35-guarded-fixture 探针验证 where true、where false 都不能单独证明穷尽，非法 guard 只报自身类型错误，无 selector 的 case true 仍不能替代默认分支，分支体已有错误时不追加非穷尽诊断。原用例的完整证据位于 build/repair-20260906/32-flow-syntax-before；新探针、命令及 JSON 位于 evidence/35-*.official.*。
+- official implementation: external/cangjie_compiler/src/Sema/PatternUsefulness.cpp:1020-1074 仅把无 guard 的 witnesses 加入矩阵；TypeCheckMatchExpr.cpp 的 SynNormalMatchCaseBody、ChkMatchCasePatGuard、SynMatchCaseNoSelector、CheckMatchExprNoSelectorExhaustiveness 区分条件、分支结果和默认分支义务，非穷尽时设为 InvalidTy。
+- Kotlin counterpart files consulted: FirWhenConditionChecker.kt、FirExhaustiveWhenChecker.kt、FirWhenExhaustivenessComputer.kt；frontend.common-psi 的 PositioningStrategies.WHEN_EXPRESSION 精确选择 whenKeyword。仓颉默认分支规则仍取自官方 C++，诊断范围对应完整 match token。
+- CFIR owner files changed:
+  - CfirMatchPatternModel / ExhaustivenessAnalyzer：guard 不进入覆盖矩阵，无效 case 不参与分析，无 selector 形式通过显式 wildcard 判定默认分支。
+  - CfirExpressionsResolveTransformer：为条件和 guard 提供 Bool 目标类型，传播 guard 失败；非穷尽 match 使用不重复报告的错误类型。
+  - CfirMatchConditionTypeChecker / CommonExpressionCheckers：共享条件检查独立报告字面量转换错误或 TYPE_MISMATCH。
+  - CfirMatchExhaustivenessChecker / CfirMatchPatternLegalityChecker：消费缓存结论，排除已无效输入，报告缺少默认分支的专用错误。
+  - Diagnostics DSL、消息表及自动生成诊断：新增 MATCH_CASE_MUST_HAVE_DEFAULT；common:diagnostics 的三层 MATCH_KEYWORD 策略统一 PSI/LightTree 完整关键字范围。
+- repair principle: 条件是否合法、哪些分支贡献静态覆盖及结果类型是否有效分别由共享语义 owner 决定，不能把运行时 guard 常量当作穷尽性证明。
+- fixtures covered: 新增 llt/match/guarded_match_conditions.cj（10 个函数）；原 matchcase3、matchcase8、matchpattern_guard、PatternMatching/MatchExpression/match019；同族 matchcase5、match_no_selector_002、match_no_selector_003。后三份原先缺少官方要求的错误期望，分别补齐默认分支错误、整数条件转换错误；matchcase8 补齐 NON_EXHAUSTIVE_MATCH，源码语法均不变。
+- verification commands and outcome:
+  - 五份核心 fixture 双入口：35-conditions-before 为 10/10 失败；35-conditions-targeted 为 8 通过、2 失败，剩余仅 matchpattern_guard 的四个初始化字面量诊断名称，guard / 穷尽性差异全部消除。
+  - 完整相关家族、Call、Generics、TypeInfer、Typealias 及 CfirAnalysisDiagnostics* 共 2821 项验证后，核对并修正上述三份缺期望 fixture；同一实现的完整 Match / PatternMatching 360 项复验：302 通过、58 既有失败，FIXED=6、REGRESSED=0、新增 2 项通过。快照 35-conditions-family-final；使用 `gradlew-queue.bat :cfir:analysis-tests:test --tests '*CfirAnalysisLLT*Generated$Match*' --tests '*CfirAnalysisLLT*Generated$PatternMatching*' --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g' '-Pkotlin.compiler.execution.strategy=in-process'`。
+  - 同一全量命令 `gradlew-queue.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g'`：13m 54s 正常结束。34-bounds-full → 35-conditions-full：FIXED=6、REGRESSED=0、NEW_KEYS=2（均 PASS）、REMOVED_KEYS=0、其它状态变化=0。
+  - `gradlew-queue.bat validateDocumentation --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx512m'`：BUILD SUCCESSFUL；`git diff --check` 通过。
+  - changed_failure_messages 共 5 项：matchpattern_guard 双入口补出了原本缺失的非穷尽错误；Macro/DefaultParameterPkg02/test 双入口减少一处无效分支上的派生不可达警告；LightTree Macro/test_macro 从 expression checker 异常推进到完整诊断断言，仍有既有差异。其余 530 项失败消息完全一致，宏 fixture 未修改。
+
+| 指标（Gradle） | 修复前 | 修复后 |
+| --- | ---: | ---: |
+| 测试总数 | 8486 | 8488 |
+| 通过 | 7638 | 7646 |
+| 失败 | 541 | 535 |
+| 跳过 | 307 | 307 |
+
+XML 为 8487 → 8489 records，均为 308 skipped（含一条聚合记录）。快照 35-conditions-full；完整比较为 34-bounds-full--35-conditions-full.json。
+
+- remaining failures: Match 14、PatternMatching 44，共 58 项；If、IfLetExpr、WhileLetExpr、Loops、Call、Generics、TypeInfer、Typealias 保持通过。Match 的初始化字面量专用诊断属于下一类问题，期望未退化为普通 TYPE_MISMATCH。
+- change isolation: 仅提交本类共享实现、诊断生成输入/产物、五份 fixture、生成测试入口和日志；.idea/workspace.xml 独立保留。
