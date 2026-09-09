@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test
 /**
  * [CfirTowerGroup] 的优先级与深度比较测试。
  *
- * 层级优先级：`EXPLICIT_MEMBER > LOCAL > EXTEND > NON_LOCAL > IMPLICIT_MEMBER > IMPORTED > PACKAGE`；
+ * 层级优先级：`EXPLICIT_MEMBER > LOCAL > EXTEND > IMPLICIT_MEMBER > NON_LOCAL > IMPORTED > PACKAGE`；
  * 同一层级中 depth 越小越靠近当前词法位置（`local(0) < local(1)`）。
  */
 class CfirTowerGroupTest {
@@ -51,6 +51,12 @@ class CfirTowerGroupTest {
         @Test
         fun `imported group is ordered before package group`() {
             assertTrue(CfirTowerGroup.imported(0) < CfirTowerGroup.PACKAGE)
+        }
+
+        @Test
+        fun `implicit members are ordered before file and package declarations`() {
+            assertTrue(CfirTowerGroup.IMPLICIT_MEMBER < CfirTowerGroup.NON_LOCAL)
+            assertTrue(CfirTowerGroup.IMPLICIT_MEMBER < CfirTowerGroup.PACKAGE)
         }
 
         @Test

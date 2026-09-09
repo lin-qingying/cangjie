@@ -1072,12 +1072,15 @@ class CfirClassUseSiteMemberScope private constructor(
             if (emitted.add(candidate)) processor(candidate)
         }
 
-        // 函数和属性已经由上面的 effective collection 合并；只透传没有专用 collection
-        // 的 callable，避免 provenance 路径绕开 inherited override/shadow 过滤。
+        // private 类函数不参与继承/override 图，但仍是同包调用发现的结构目标，
+        // 由统一 accessibility checker 排除并形成 no-match；跨包则不可发现。
+        // 其它函数/属性沿用上面的 effective collection，不能在这里重新引入被覆盖成员。
         for (parent in parentScopes) {
             parent.processCallablesByNameWithLookupProvenance(name) { candidate ->
-                if (candidate.symbol !is CfirNamedFunctionSymbol &&
-                    candidate.symbol !is CfirPropertySymbol &&
+                val symbol = candidate.symbol
+                val privateClassFunction = symbol is CfirNamedFunctionSymbol &&
+                        symbol.cfir.status.visibility == Visibilities.Private && symbol.getContainingExtend() == null
+                if ((privateClassFunction || (symbol !is CfirNamedFunctionSymbol && symbol !is CfirPropertySymbol)) &&
                     emitted.add(candidate)
                 ) {
                     processor(candidate)

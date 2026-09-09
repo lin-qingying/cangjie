@@ -2,6 +2,7 @@ package org.cangnova.cangjie.cfir.resolve.calls.candidate
 
 import org.cangnova.cangjie.cfir.resolve.body.CfirAbstractBodyResolveTransformer
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
+import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
 import org.cangnova.cangjie.cfir.resolve.calls.stages.ResolutionStageRunner
 import org.cangnova.cangjie.cfir.resolve.calls.tower.CfirTowerGroup
@@ -49,6 +50,8 @@ sealed interface CfirCallableLookupOutcome {
         override val symbol: CfirCallableSymbol<*>,
         override val lookupProvenance: CfirCallableLookupProvenance,
         override val accessibilityResult: CfirAccessibilityResult.Inaccessible,
+        /** 显式接收者或非函数声明会截止外层查找；无限定函数只按签名遮蔽。 */
+        val restrictsOuterScopes: Boolean,
     ) : CfirCallableLookupOutcome {
         init {
             require(accessibilityResult.disposition == CfirLookupDisposition.EXCLUDE_CALLABLE) {
@@ -83,6 +86,8 @@ open class CfirCandidateCollector(
     /** tower 每个 group 中被调用语义排除的结构性 callable。 */
     private val excludedCallableLookupsByGroup =
         linkedMapOf<CfirTowerGroup, LinkedHashMap<CfirCandidateLookupIdentity, CfirCallableLookupOutcome.Excluded>>()
+    /** 诊断使用的最高优先级排除组，不等同于词法查找截止面。 */
+    private var bestExcludedCallableGroup: CfirTowerGroup? = null
     /** 形成名称查找截止面的最高优先级 excluded-callable group。 */
     private var excludedCallableBarrierGroup: CfirTowerGroup? = null
     /**
@@ -117,6 +122,7 @@ open class CfirCandidateCollector(
         candidates.clear()
         discoveredCandidatesByGroup.clear()
         excludedCallableLookupsByGroup.clear()
+        bestExcludedCallableGroup = null
         excludedCallableBarrierGroup = null
         forwardedDiagnostics.clear()
         functionValueCandidates.clear()
@@ -161,14 +167,39 @@ open class CfirCandidateCollector(
     }
 
     /**
+     * 只按更近作用域已发现的声明签名排除外层函数，不使用实参或返回类型适用性。
+     * 在创建 Candidate 前调用，所有候选收集入口都不会得到被词法遮蔽的伪候选。
+     */
+    internal fun isShadowedInCloserScope(group: CfirTowerGroup, symbol: CfirCallableSymbol<*>): Boolean {
+        val function = symbol.cfir as? CfirNamedFunction ?: return false
+        fun shadows(symbol: CfirCallableSymbol<*>): Boolean {
+            val closer = symbol.cfir as? CfirNamedFunction ?: return false
+            return closer.hasSameParameterSignatureForScopeShadowing(function, components.session)
+        }
+        return discoveredCandidatesByGroup.any { (discoveredGroup, discoveries) ->
+            discoveredGroup.isCloserLexicalScopeThan(group) && discoveries.any { discovery ->
+                (discovery.symbol as? CfirCallableSymbol<*>)?.let(::shadows) == true
+            }
+        } || excludedCallableLookupsByGroup.any { (discoveredGroup, discoveries) ->
+            discoveredGroup.isCloserLexicalScopeThan(group) && discoveries.values.any { discovery ->
+                shadows(discovery.symbol)
+            }
+        }
+    }
+
+    /**
      * 记录名字已发现但被排除出 overload 集合的 callable。
      *
-     * 该结果不创建伪候选，也不改变候选适用性；它只建立当前名称的 tower 截止面，
-     * 并被最终 [org.cangnova.cangjie.cfir.resolve.body.CfirCallResolver] 规约为 call no-match。
+     * 该结果不创建伪候选，也不改变候选适用性。普通函数仍参与同签名遮蔽，但不阻断
+     * 外层不同签名重载；最终没有可用候选时由调用 resolver 产生 no-match。
      */
     fun consumeLookupOutcome(outcome: CfirCallableLookupOutcome.Excluded) {
+        val bestExcluded = bestExcludedCallableGroup
+        if (bestExcluded == null || outcome.group < bestExcluded) {
+            bestExcludedCallableGroup = outcome.group
+        }
         val barrierGroup = excludedCallableBarrierGroup
-        if (barrierGroup == null || outcome.group < barrierGroup) {
+        if (outcome.restrictsOuterScopes && (barrierGroup == null || outcome.group < barrierGroup)) {
             excludedCallableBarrierGroup = outcome.group
         }
         excludedCallableLookupsByGroup
@@ -205,9 +236,9 @@ open class CfirCandidateCollector(
     fun candidatesDiscoveredInBestGroup(): List<Candidate> =
         bestGroup?.let(discoveredCandidatesByGroup::get).orEmpty()
 
-    /** 返回最高优先级名称截止面中的全部 excluded callable 结果。 */
+    /** 返回最高优先级排除组的结构发现结果，供最终 no-match 诊断使用。 */
     fun excludedCallableLookupOutcomes(): List<CfirCallableLookupOutcome.Excluded> =
-        excludedCallableBarrierGroup
+        bestExcludedCallableGroup
             ?.let(excludedCallableLookupsByGroup::get)
             ?.values
             ?.toList()
@@ -271,6 +302,23 @@ open class CfirCandidateCollector(
     @OptIn(ApplicabilityDetail::class)
     val isSuccess: Boolean
         get() = currentApplicability.isSuccess
+}
+
+/**
+ * 词法声明层级与 tower 的搜索优先级分开：不同导入 scope 仍处于同一声明层级，
+ * extend 与普通成员也不能互相当成外层函数。只有局部深度或声明层级更近才形成遮蔽。
+ */
+private fun CfirTowerGroup.isCloserLexicalScopeThan(other: CfirTowerGroup): Boolean {
+    if (kind == CfirTowerGroup.Kind.EXPLICIT_MEMBER || other.kind == CfirTowerGroup.Kind.EXPLICIT_MEMBER) return false
+    if (kind == CfirTowerGroup.Kind.LOCAL && other.kind == CfirTowerGroup.Kind.LOCAL) return depth < other.depth
+    fun CfirTowerGroup.Kind.declarationLevel(): Int = when (this) {
+        CfirTowerGroup.Kind.EXPLICIT_MEMBER -> 3
+        CfirTowerGroup.Kind.LOCAL -> 2
+        CfirTowerGroup.Kind.EXTEND, CfirTowerGroup.Kind.IMPLICIT_MEMBER -> 1
+        CfirTowerGroup.Kind.NON_LOCAL, CfirTowerGroup.Kind.PACKAGE -> 0
+        CfirTowerGroup.Kind.IMPORTED -> -1
+    }
+    return kind.declarationLevel() > other.kind.declarationLevel()
 }
 
 /**
