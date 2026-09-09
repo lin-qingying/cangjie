@@ -21,8 +21,8 @@ class Monday <: Day<Monday> {
     public <!RECURSIVE_CONSTRUCTOR_CALL!>init<!>() {
         this(0)
     }
-    public <!RECURSIVE_CONSTRUCTOR_CALL!>init<!>(x: Int32) {
-        super(<!RECURSIVE_CONSTRUCTOR_CALL!>Monday()<!>)
+    public init(x: Int32) {
+        super(Monday())
         d = x
     }
 }
