@@ -1930,7 +1930,10 @@ class LightTreeRawCfirExpressionBuilder(
                 bodyNode?.let { convertBlock(it) }
             }
         }
-        val hasExplicitParameterList = valueParams.isNotEmpty()
+        // `=>` itself denotes an explicit (possibly empty) parameter list. Counting
+        // parameters loses the distinction between `{ => body }` and an implicit lambda
+        // `{ body }`, which prevents the expected function type from checking the former.
+        val hasExplicitParameterList = tree.findChildByType(funcLiteral, CjTokens.DOUBLE_ARROW) != null
 
         val anonymousFunction = buildSourceDeclaration(functionSymbol) { symbol ->
             buildAnonymousFunction {

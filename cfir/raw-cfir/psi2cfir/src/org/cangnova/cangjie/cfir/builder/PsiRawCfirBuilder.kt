@@ -3319,7 +3319,11 @@ class PsiRawCfirBuilder(
                     }
                 }
             }
-            val hasExplicitParameterList = psi.valueParameters.isNotEmpty()
+            // `=>` itself denotes an explicit (possibly empty) parameter list. Counting
+            // parameters loses the distinction between `{ => body }` and an implicit lambda
+            // `{ body }`, which prevents the expected function type from checking the former.
+            val hasExplicitParameterList =
+                psi.functionLiteral.node.findChildByType(CjTokens.DOUBLE_ARROW) != null
             val functionTarget = CfirFunctionTarget(labelName = null, isLambda = true)
             val body = withContainerSymbol(anonymousFunctionSymbol) {
                 withFunctionTarget(functionTarget) {

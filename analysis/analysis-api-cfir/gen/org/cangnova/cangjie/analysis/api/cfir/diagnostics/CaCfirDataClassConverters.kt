@@ -3710,6 +3710,12 @@ private fun CaDiagnosticConverterBuilder.addConversions175() {
             token,
         )
     }
+    add(CfirErrors.MULTIPLE_CLASS_UPPER_BOUNDS) { cfirDiagnostic ->
+        MultipleClassUpperBoundsImpl(
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
     add(CfirErrors.FORBID_GENERIC_FINALIZER) { cfirDiagnostic ->
         ForbidGenericFinalizerImpl(
             cfirDiagnostic.a,

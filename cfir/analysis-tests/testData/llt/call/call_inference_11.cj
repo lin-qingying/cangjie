@@ -12,6 +12,6 @@ func f3(x: (String) -> Any) {
 
 main() {
     let v: Any = f2("s")("s")
-    f3(<!TYPE_MISMATCH!>f<!>)
+    f3(<!ARGUMENT_TYPE_MISMATCH!>f<!>)
     ()
 }

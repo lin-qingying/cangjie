@@ -66,6 +66,13 @@ object CfirFunctionBodyTypeMismatchChecker : CfirBasicExpressionChecker() {
         ) {
             return
         }
+        if (
+            containingFunction is CfirAnonymousFunction &&
+            !containingFunction.hasUninferredOmittedLambdaParameterType() &&
+            containingFunction.hasLambdaShapeDiagnosticForBodyTypeCheck(context)
+        ) {
+            return
+        }
         if (containingFunction.hasImplicitOrInferredReturnType()) return
 
         val expectedType = when (containingFunction) {
@@ -130,10 +137,14 @@ object CfirFunctionBodyTypeMismatchChecker : CfirBasicExpressionChecker() {
                 // 官方 ChkFlowExpr 在 flow 节点本身报告通用 mismatched-types；
                 // flow 作为隐式尾返回值时不能退化成 RETURN_TYPE_MISMATCH。
                 tailExpression?.isFlowExpression() == true -> CfirErrors.TYPE_MISMATCH
+                // Lambda 的函数类型不匹配属于表达式整体的通用类型错误；该分支必须
+                // 先于普通尾表达式 RETURN_TYPE_MISMATCH 分支，否则 lambda body 会被
+                // 错分成返回类型错误。
+                containingFunction is CfirAnonymousFunction && containingFunction.isLambda ->
+                    CfirErrors.TYPE_MISMATCH
                 // 函数体尾表达式就是隐式返回值，与显式 `return expr` 共享返回类型语义。
                 tailExpression != null -> diagnosticFactoryForReturnTypeMismatch(context.session, expectedType)
                 tailStatement != null -> CfirErrors.TYPE_MISMATCH
-                containingFunction is CfirAnonymousFunction && containingFunction.isLambda -> CfirErrors.TYPE_MISMATCH
                 containingFunction is CfirPropertyAccessor && containingFunction.isGetter -> CfirErrors.TYPE_MISMATCH
                 else -> diagnosticFactoryForReturnTypeMismatch(context.session, expectedType)
             }

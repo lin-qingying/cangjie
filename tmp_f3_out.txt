@@ -1,0 +1,342 @@
+[GradleQueue] exec: cmd.exe /s /c "D:\code\intellij\cangjie\gradlew.bat :cfir:analysis-tests:test --tests *testExtendFunctionConflictInvalid3* --no-configuration-cache --console=plain"
+> Task :gradle-settings-conventions:jvm-toolchain-provisioning:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gradle-settings-conventions:jvm-toolchain-provisioning:generateExternalPluginSpecBuilders UP-TO-DATE
+> Task :gradle-settings-conventions:jvm-toolchain-provisioning:extractPrecompiledScriptPluginPlugins UP-TO-DATE
+> Task :gradle-settings-conventions:jvm-toolchain-provisioning:compilePluginsBlocks UP-TO-DATE
+> Task :gradle-settings-conventions:jvm-toolchain-provisioning:generatePrecompiledScriptPluginAccessors UP-TO-DATE
+> Task :gradle-settings-conventions:jvm-toolchain-provisioning:generateScriptPluginAdapters UP-TO-DATE
+> Task :gradle-settings-conventions:jvm-toolchain-provisioning:compileKotlin UP-TO-DATE
+> Task :gradle-settings-conventions:jvm-toolchain-provisioning:compileJava NO-SOURCE
+> Task :gradle-settings-conventions:jvm-toolchain-provisioning:pluginDescriptors UP-TO-DATE
+> Task :gradle-settings-conventions:jvm-toolchain-provisioning:processResources UP-TO-DATE
+> Task :gradle-settings-conventions:jvm-toolchain-provisioning:classes UP-TO-DATE
+> Task :gradle-settings-conventions:jvm-toolchain-provisioning:jar UP-TO-DATE
+> Task :gradle-build-conventions:gradle-plugins-common:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gradle-build-conventions:utilities:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gradle-build-conventions:buildsrc-compat:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gradle-build-conventions:project-tests-convention:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gradle-build-conventions:analysis-coverage-convention:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gradle-build-conventions:project-tests-convention:extractPrecompiledScriptPluginPlugins UP-TO-DATE
+> Task :gradle-build-conventions:gradle-plugins-common:pluginDescriptors UP-TO-DATE
+> Task :gradle-build-conventions:analysis-coverage-convention:extractPrecompiledScriptPluginPlugins UP-TO-DATE
+> Task :gradle-build-conventions:project-tests-convention:generateScriptPluginAdapters UP-TO-DATE
+> Task :gradle-build-conventions:buildsrc-compat:extractPrecompiledScriptPluginPlugins UP-TO-DATE
+> Task :gradle-build-conventions:analysis-coverage-convention:generateScriptPluginAdapters UP-TO-DATE
+> Task :gradle-build-conventions:buildsrc-compat:generateScriptPluginAdapters UP-TO-DATE
+> Task :gradle-build-conventions:analysis-coverage-convention:pluginDescriptors UP-TO-DATE
+> Task :gradle-build-conventions:project-tests-convention:pluginDescriptors UP-TO-DATE
+> Task :gradle-build-conventions:gradle-plugins-common:processResources NO-SOURCE
+> Task :gradle-build-conventions:buildsrc-compat:pluginDescriptors UP-TO-DATE
+> Task :gradle-build-conventions:analysis-coverage-convention:processResources UP-TO-DATE
+> Task :gradle-build-conventions:project-tests-convention:processResources UP-TO-DATE
+> Task :gradle-build-conventions:buildsrc-compat:processResources UP-TO-DATE
+> Task :gradle-build-conventions:utilities:compileKotlin UP-TO-DATE
+> Task :gradle-build-conventions:utilities:compileJava NO-SOURCE
+> Task :gradle-build-conventions:utilities:pluginDescriptors UP-TO-DATE
+> Task :gradle-build-conventions:utilities:processResources NO-SOURCE
+> Task :gradle-build-conventions:utilities:classes UP-TO-DATE
+> Task :gradle-build-conventions:gradle-plugins-common:compileKotlin NO-SOURCE
+> Task :gradle-build-conventions:utilities:jar UP-TO-DATE
+> Task :gradle-build-conventions:gradle-plugins-common:compileJava NO-SOURCE
+> Task :gradle-build-conventions:gradle-plugins-common:classes UP-TO-DATE
+> Task :gradle-build-conventions:gradle-plugins-common:jar UP-TO-DATE
+> Task :gradle-build-conventions:analysis-coverage-convention:generateExternalPluginSpecBuilders UP-TO-DATE
+> Task :gradle-build-conventions:project-tests-convention:generateExternalPluginSpecBuilders UP-TO-DATE
+> Task :gradle-build-conventions:buildsrc-compat:generateExternalPluginSpecBuilders UP-TO-DATE
+> Task :gradle-build-conventions:analysis-coverage-convention:compilePluginsBlocks UP-TO-DATE
+> Task :gradle-build-conventions:analysis-coverage-convention:generatePrecompiledScriptPluginAccessors UP-TO-DATE
+> Task :gradle-build-conventions:project-tests-convention:compilePluginsBlocks UP-TO-DATE
+> Task :gradle-build-conventions:buildsrc-compat:compilePluginsBlocks UP-TO-DATE
+> Task :gradle-build-conventions:project-tests-convention:generatePrecompiledScriptPluginAccessors UP-TO-DATE
+> Task :gradle-build-conventions:buildsrc-compat:generatePrecompiledScriptPluginAccessors UP-TO-DATE
+> Task :gradle-build-conventions:analysis-coverage-convention:compileKotlin UP-TO-DATE
+> Task :gradle-build-conventions:analysis-coverage-convention:compileJava NO-SOURCE
+> Task :gradle-build-conventions:analysis-coverage-convention:classes UP-TO-DATE
+> Task :gradle-build-conventions:analysis-coverage-convention:jar UP-TO-DATE
+> Task :gradle-build-conventions:buildsrc-compat:compileKotlin UP-TO-DATE
+> Task :gradle-build-conventions:project-tests-convention:compileKotlin UP-TO-DATE
+> Task :gradle-build-conventions:buildsrc-compat:compileJava NO-SOURCE
+> Task :gradle-build-conventions:buildsrc-compat:classes UP-TO-DATE
+> Task :gradle-build-conventions:project-tests-convention:compileJava NO-SOURCE
+> Task :gradle-build-conventions:project-tests-convention:classes UP-TO-DATE
+> Task :gradle-build-conventions:buildsrc-compat:jar UP-TO-DATE
+> Task :gradle-build-conventions:project-tests-convention:jar UP-TO-DATE
+> Task :gradle-build-conventions:generators:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gradle-build-conventions:generators:generateExternalPluginSpecBuilders UP-TO-DATE
+> Task :gradle-build-conventions:generators:extractPrecompiledScriptPluginPlugins UP-TO-DATE
+> Task :gradle-build-conventions:generators:compilePluginsBlocks UP-TO-DATE
+> Task :gradle-build-conventions:generators:generatePrecompiledScriptPluginAccessors UP-TO-DATE
+> Task :gradle-build-conventions:generators:generateScriptPluginAdapters UP-TO-DATE
+> Task :gradle-build-conventions:generators:compileKotlin UP-TO-DATE
+> Task :gradle-build-conventions:generators:compileJava NO-SOURCE
+> Task :gradle-build-conventions:generators:pluginDescriptors UP-TO-DATE
+> Task :gradle-build-conventions:generators:processResources UP-TO-DATE
+> Task :gradle-build-conventions:generators:classes UP-TO-DATE
+> Task :gradle-build-conventions:generators:jar UP-TO-DATE
+> Task :gradle-build-conventions:native-compile-plugin:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gradle-build-conventions:native-compile-plugin:compileKotlin UP-TO-DATE
+> Task :gradle-build-conventions:native-compile-plugin:compileJava NO-SOURCE
+> Task :gradle-build-conventions:native-compile-plugin:pluginDescriptors UP-TO-DATE
+> Task :gradle-build-conventions:native-compile-plugin:processResources UP-TO-DATE
+> Task :gradle-build-conventions:native-compile-plugin:classes UP-TO-DATE
+> Task :gradle-build-conventions:native-compile-plugin:jar UP-TO-DATE
+> Task :common:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :util:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :cfir:analysis-tests:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :flatbuffers-gen:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :psi:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :cfir:cfir-common:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :resolution.common:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :common:diagnostics:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :compiler:config:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :cfir:cfir-cones:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :common:processResources NO-SOURCE
+> Task :cfir:checkers:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :flatbuffers-gen:locateFlatc UP-TO-DATE
+> Task :cfir:cfir-serialization:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :cfir:checkers:checkers-component-generator:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :util:processResources NO-SOURCE
+> Task :cfir:analysis-tests:processResources NO-SOURCE
+> Task :compiler:config:processResources NO-SOURCE
+> Task :dependencies:intellij-core:compileJava NO-SOURCE
+> Task :cfir:cfir-tree:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :cfir:cfir-tree:tree-generator:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :cfir:cfir-cones:processResources NO-SOURCE
+> Task :generators:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :cfir:diagnostic-renderers:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :cfir:semantics:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :cfir:cfir-common:processResources NO-SOURCE
+> Task :cfir:checkers:checkers-component-generator:processResources NO-SOURCE
+> Task :resolution.common:processResources NO-SOURCE
+> Task :cfir:providers:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :cfir:resolve:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :cfir:entrypoint:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :common:diagnostics:processResources NO-SOURCE
+> Task :cfir:raw-cfir:light-tree2cfir:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :psi:generateCDocLexer UP-TO-DATE
+> Task :cfir:raw-cfir:raw-cfir-common:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :cfir:cfir-serialization:processResources NO-SOURCE
+> Task :cfir:providers:processResources NO-SOURCE
+> Task :generators:processResources NO-SOURCE
+> Task :cfir:cfir-tree:processResources NO-SOURCE
+> Task :cfir:raw-cfir:psi2cfir:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :cfir:checkers:processResources NO-SOURCE
+> Task :cfir:diagnostic-renderers:processResources NO-SOURCE
+> Task :cfir:cfir-tree:tree-generator:processResources NO-SOURCE
+> Task :compiler:arguments:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :cfir:semantics:processResources NO-SOURCE
+> Task :compiler:frontend-arguments-generator:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :compiler:phaser:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :macro:macro-common:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :cfir:resolve:processResources NO-SOURCE
+> Task :flatbuffers-gen:generateKotlinFlatBuffers UP-TO-DATE
+> Task :cfir:raw-cfir:light-tree2cfir:processResources NO-SOURCE
+> Task :macro:macro-process:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :psi:generateCangJieLexer UP-TO-DATE
+> Task :cfir:raw-cfir:psi2cfir:processResources NO-SOURCE
+> Task :cfir:raw-cfir:raw-cfir-common:processResources NO-SOURCE
+> Task :compiler:frontend:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :macro:macro-common:processResources NO-SOURCE
+> Task :compiler:frontend-arguments-generator:processResources NO-SOURCE
+> Task :tests:test-infrastructure:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :psi:generateLexers UP-TO-DATE
+> Task :cfir:entrypoint:processResources NO-SOURCE
+> Task :tests:test-infrastructure:processResources NO-SOURCE
+> Task :dependencies:intellij-core:processResources NO-SOURCE
+> Task :compiler:phaser:processResources NO-SOURCE
+> Task :compiler:arguments:processResources NO-SOURCE
+> Task :cfir:analysis-tests:compileKotlin NO-SOURCE
+> Task :macro:macro-process:processResources NO-SOURCE
+> Task :compiler:frontend:processResources NO-SOURCE
+> Task :psi:processResources UP-TO-DATE
+> Task :tests:test-infrastructure:processTestFixturesResources NO-SOURCE
+> Task :cfir:analysis-tests:compileJava NO-SOURCE
+> Task :cfir:analysis-tests:classes UP-TO-DATE
+> Task :cfir:analysis-tests:jar UP-TO-DATE
+> Task :cfir:analysis-tests:processTestFixturesResources NO-SOURCE
+> Task :cfir:analysis-tests:processTestResources NO-SOURCE
+> Task :flatbuffers-gen:compileKotlin UP-TO-DATE
+> Task :flatbuffers-gen:compileJava NO-SOURCE
+> Task :flatbuffers-gen:processResources NO-SOURCE
+> Task :flatbuffers-gen:classes UP-TO-DATE
+> Task :util:compileKotlin UP-TO-DATE
+> Task :util:compileJava NO-SOURCE
+> Task :util:classes UP-TO-DATE
+> Task :common:compileKotlin UP-TO-DATE
+> Task :common:compileJava NO-SOURCE
+> Task :common:classes UP-TO-DATE
+> Task :generators:compileKotlin UP-TO-DATE
+> Task :generators:compileJava NO-SOURCE
+> Task :generators:classes UP-TO-DATE
+> Task :resolution.common:compileKotlin UP-TO-DATE
+> Task :compiler:arguments:compileKotlin UP-TO-DATE
+> Task :resolution.common:compileJava UP-TO-DATE
+> Task :resolution.common:classes UP-TO-DATE
+> Task :compiler:arguments:compileJava NO-SOURCE
+> Task :compiler:arguments:classes UP-TO-DATE
+> Task :psi:compileKotlin UP-TO-DATE
+> Task :compiler:frontend-arguments-generator:compileKotlin UP-TO-DATE
+> Task :compiler:frontend-arguments-generator:compileJava NO-SOURCE
+> Task :compiler:frontend:generateFrontendArguments UP-TO-DATE
+> Task :psi:compileJava UP-TO-DATE
+> Task :psi:classes UP-TO-DATE
+> Task :common:diagnostics:compileKotlin UP-TO-DATE
+> Task :common:diagnostics:compileJava NO-SOURCE
+> Task :common:diagnostics:classes UP-TO-DATE
+> Task :tests:test-infrastructure:compileKotlin NO-SOURCE
+> Task :tests:test-infrastructure:compileJava NO-SOURCE
+> Task :tests:test-infrastructure:classes UP-TO-DATE
+> Task :tests:test-infrastructure:jar UP-TO-DATE
+> Task :compiler:config:compileKotlin UP-TO-DATE
+> Task :compiler:config:compileJava NO-SOURCE
+> Task :compiler:config:classes UP-TO-DATE
+> Task :compiler:phaser:compileKotlin UP-TO-DATE
+> Task :compiler:phaser:compileJava NO-SOURCE
+> Task :compiler:phaser:classes UP-TO-DATE
+> Task :cfir:cfir-common:compileKotlin UP-TO-DATE
+> Task :cfir:cfir-common:compileJava NO-SOURCE
+> Task :cfir:cfir-common:classes UP-TO-DATE
+> Task :cfir:cfir-cones:compileKotlin UP-TO-DATE
+> Task :cfir:cfir-cones:compileJava NO-SOURCE
+> Task :cfir:cfir-cones:classes UP-TO-DATE
+> Task :cfir:cfir-tree:tree-generator:compileKotlin UP-TO-DATE
+> Task :cfir:cfir-tree:tree-generator:compileJava NO-SOURCE
+> Task :cfir:cfir-tree:tree-generator:classes UP-TO-DATE
+> Task :cfir:cfir-tree:generateTree UP-TO-DATE
+> Task :cfir:cfir-tree:compileKotlin UP-TO-DATE
+> Task :cfir:cfir-tree:compileJava NO-SOURCE
+> Task :cfir:cfir-tree:classes UP-TO-DATE
+> Task :cfir:providers:compileKotlin UP-TO-DATE
+> Task :cfir:providers:compileJava NO-SOURCE
+> Task :cfir:providers:classes UP-TO-DATE
+> Task :macro:macro-common:compileKotlin UP-TO-DATE
+> Task :macro:macro-common:compileJava NO-SOURCE
+> Task :macro:macro-common:classes UP-TO-DATE
+> Task :cfir:checkers:checkers-component-generator:compileKotlin UP-TO-DATE
+> Task :cfir:diagnostic-renderers:compileKotlin UP-TO-DATE
+> Task :cfir:diagnostic-renderers:compileJava NO-SOURCE
+> Task :cfir:checkers:checkers-component-generator:compileJava NO-SOURCE
+> Task :cfir:diagnostic-renderers:classes UP-TO-DATE
+> Task :cfir:checkers:generateCheckersComponents UP-TO-DATE
+> Task :cfir:semantics:compileKotlin UP-TO-DATE
+> Task :cfir:semantics:compileJava NO-SOURCE
+> Task :cfir:cfir-serialization:compileKotlin UP-TO-DATE
+> Task :cfir:semantics:classes UP-TO-DATE
+> Task :cfir:cfir-serialization:compileJava NO-SOURCE
+> Task :cfir:cfir-serialization:classes UP-TO-DATE
+> Task :macro:macro-process:compileKotlin UP-TO-DATE
+> Task :macro:macro-process:compileJava NO-SOURCE
+> Task :macro:macro-process:classes UP-TO-DATE
+> Task :cfir:raw-cfir:raw-cfir-common:compileKotlin UP-TO-DATE
+> Task :cfir:raw-cfir:raw-cfir-common:compileJava NO-SOURCE
+> Task :cfir:raw-cfir:raw-cfir-common:classes UP-TO-DATE
+> Task :cfir:resolve:compileKotlin UP-TO-DATE
+> Task :cfir:resolve:compileJava NO-SOURCE
+> Task :cfir:resolve:classes UP-TO-DATE
+> Task :cfir:raw-cfir:light-tree2cfir:compileKotlin UP-TO-DATE
+> Task :cfir:raw-cfir:light-tree2cfir:compileJava NO-SOURCE
+> Task :cfir:raw-cfir:psi2cfir:compileKotlin UP-TO-DATE
+> Task :cfir:raw-cfir:light-tree2cfir:classes UP-TO-DATE
+> Task :cfir:raw-cfir:psi2cfir:compileJava NO-SOURCE
+> Task :cfir:raw-cfir:psi2cfir:classes UP-TO-DATE
+> Task :cfir:checkers:compileKotlin
+w: ATTENTION!
+This build uses unsafe internal compiler arguments:
+
+-XXLanguage:+ExplicitBackingFields
+
+This mode is not recommended for production use,
+as no stability/compatibility guarantees are given on
+compiler or generated code. Use it at your own risk!
+
+w: Following manually enabled features will force generation of pre-release binaries: ExplicitBackingFields
+w: file:///D:/code/intellij/cangjie/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirExtendCheckers.kt:70:24 The corresponding parameter in the supertype 'CfirDeclarationChecker' is named 'declaration'. This may cause problems when calling this function with named arguments.
+w: file:///D:/code/intellij/cangjie/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirExtendCheckers.kt:120:24 The corresponding parameter in the supertype 'CfirDeclarationChecker' is named 'declaration'. This may cause problems when calling this function with named arguments.
+w: file:///D:/code/intellij/cangjie/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirExtendCheckers.kt:216:24 The corresponding parameter in the supertype 'CfirDeclarationChecker' is named 'declaration'. This may cause problems when calling this function with named arguments.
+w: file:///D:/code/intellij/cangjie/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirExtendCheckers.kt:247:24 The corresponding parameter in the supertype 'CfirDeclarationChecker' is named 'declaration'. This may cause problems when calling this function with named arguments.
+w: file:///D:/code/intellij/cangjie/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirInheritanceThreadContextChecker.kt:55:24 The corresponding parameter in the supertype 'CfirDeclarationChecker' is named 'declaration'. This may cause problems when calling this function with named arguments.
+
+> Task :cfir:checkers:compileJava NO-SOURCE
+> Task :cfir:checkers:classes UP-TO-DATE
+
+> Task :cfir:entrypoint:compileKotlin
+w: ATTENTION!
+This build uses unsafe internal compiler arguments:
+
+-XXLanguage:+ExplicitBackingFields
+
+This mode is not recommended for production use,
+as no stability/compatibility guarantees are given on
+compiler or generated code. Use it at your own risk!
+
+w: Following manually enabled features will force generation of pre-release binaries: ExplicitBackingFields
+
+> Task :cfir:entrypoint:compileJava NO-SOURCE
+> Task :cfir:entrypoint:classes UP-TO-DATE
+
+> Task :compiler:frontend:compileKotlin
+w: ATTENTION!
+This build uses unsafe internal compiler arguments:
+
+-XXLanguage:+ExplicitBackingFields
+
+This mode is not recommended for production use,
+as no stability/compatibility guarantees are given on
+compiler or generated code. Use it at your own risk!
+
+w: Following manually enabled features will force generation of pre-release binaries: ExplicitBackingFields
+
+> Task :compiler:frontend:compileJava NO-SOURCE
+> Task :compiler:frontend:classes UP-TO-DATE
+
+> Task :tests:test-infrastructure:compileTestFixturesKotlin
+w: ATTENTION!
+This build uses unsafe internal compiler arguments:
+
+-XXLanguage:+ExplicitBackingFields
+
+This mode is not recommended for production use,
+as no stability/compatibility guarantees are given on
+compiler or generated code. Use it at your own risk!
+
+w: Following manually enabled features will force generation of pre-release binaries: ExplicitBackingFields
+w: file:///D:/code/intellij/cangjie/tests/test-infrastructure/testFixtures/org/cangnova/cangjie/test/config/BaseDiagnosticConfiguration.kt:153:1 Expected performance impact from inlining is insignificant. Inlining works best for functions with parameters of function types.
+
+> Task :tests:test-infrastructure:compileTestFixturesJava UP-TO-DATE
+
+> Task :cfir:analysis-tests:compileTestFixturesKotlin
+w: ATTENTION!
+This build uses unsafe internal compiler arguments:
+
+-XXLanguage:+ExplicitBackingFields
+
+This mode is not recommended for production use,
+as no stability/compatibility guarantees are given on
+compiler or generated code. Use it at your own risk!
+
+w: Following manually enabled features will force generation of pre-release binaries: ExplicitBackingFields
+
+> Task :cfir:analysis-tests:compileTestFixturesJava NO-SOURCE
+> Task :cfir:analysis-tests:testFixturesClasses UP-TO-DATE
+> Task :cfir:analysis-tests:testFixturesJar UP-TO-DATE
+> Task :cfir:analysis-tests:generateTestGeneratorForCfirAnalysisTestsTests
+
+> Task :cfir:analysis-tests:compileTestKotlin
+w: ATTENTION!
+This build uses unsafe internal compiler arguments:
+
+-XXLanguage:+ExplicitBackingFields
+
+This mode is not recommended for production use,
+as no stability/compatibility guarantees are given on
+compiler or generated code. Use it at your own risk!
+
+w: Following manually enabled features will force generation of pre-release binaries: ExplicitBackingFields
+
+> Task :cfir:analysis-tests:compileTestJava NO-SOURCE
+> Task :cfir:analysis-tests:testClasses UP-TO-DATE
+> Task :cfir:analysis-tests:test
+
+BUILD SUCCESSFUL in 1m 58s
+102 actionable tasks: 8 executed, 94 up-to-date
+[GradleQueue] gradlew finished success (exitCode=0)

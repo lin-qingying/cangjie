@@ -31,7 +31,6 @@ import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.unwrapSubstitutionOverrides
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
-import org.cangnova.cangjie.cfir.declarations.CfirPrimitiveTypeDeclaration
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityResult
@@ -52,12 +51,11 @@ import org.cangnova.cangjie.cfir.types.BuiltinPrimitiveOperators
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
-import org.cangnova.cangjie.cfir.types.ConePrimitiveType
-import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
+import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.name.Name
-import org.cangnova.cangjie.name.OperatorNameConventions
+import org.cangnova.cangjie.type.AbstractTypeChecker
 
 /**
  * Extend 补充检查器（ExtendExtra 分组）
@@ -79,19 +77,6 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
      * Java 实现类型注解名称。
      */
     private val JAVA_IMPL = Name.identifier("JavaImpl")
-
-    /**
-     * 官方 primitive equality 特例：Bool/Unit 的 `==`/`!=` 同时保留 shadow 诊断。
-     */
-    private val primitiveEqualityShadowKinds = setOf(PrimitiveTypeKind.BOOLEAN, PrimitiveTypeKind.UNIT)
-
-    /**
-     * 会参与 primitive equality shadow 特例的 operator 名称。
-     */
-    private val primitiveEqualityShadowNames = setOf(
-        OperatorNameConventions.EQUALS,
-        OperatorNameConventions.NOT_EQUALS,
-    )
 
     /**
      * 对单个 extend 声明执行额外语义检查。
@@ -347,7 +332,7 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
             return false
         }
 
-        if (original.isSyntheticPrimitiveBuiltinOperatorExcludedFromShadow(context)) return false
+        if (original.isSyntheticPrimitiveBuiltinOperatorExcludedFromShadow(currentMember, context)) return false
         if (original.isInterfaceRequirementMember(context)) return false
         if (original.isIndependentInterfaceDefault(currentMember, provenance, context)) return false
         if (!original.cfir.hasSameShadowMemberKind(currentMember)) {
@@ -380,32 +365,59 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
      *
      * 官方 `IsBuiltInOperatorFuncInExtend` 会把这些内建签名作为特殊实现/诊断入口，
      * 它们不是普通目标成员，不能再次参与 `extend member cannot shadow`。
+     *
+     * 同一内建签名可能以两种声明形式出现在 use-site scope 中，排除判定必须按形式区分：
+     * - builtin provider 构造的 synthetic FakeFunction 成员：语言内建运算符
+     *   （`+`/`-`/`<<` 等算术、位移运算符），在 std.core 中没有对应的 extend 声明，
+     *   官方 f5/g2 探针确认返回类型正确时也不报告 shadow；
+     * - std 库元数据反序列化的 Library 成员（PSI/light-tree 均可能）：比较运算符
+     *   （`==`/`!=`/`<`/`>` 等）在 std.core 中经 `extend <类型> <: Equatable/Comparable`
+     *   显式声明，是真正的 extend 成员，参与 shadow 检查。
+     *
+     * 命中内建签名后对 Library 成员按返回类型分派（对齐官方 `IsBuiltInOperatorFuncInExtend`）：
+     * - 返回类型与内建一致：该路径合成内建实现（无诊断），extend 成员仍作为普通成员参与
+     *   shadow 检查（官方 p1/f5 Bool `==`、g5 Int64 `==` 探针：返回类型正确时报告 shadow）；
+     * - 返回类型与内建不一致：该路径报告 `RETURN_TYPE_INCOMPATIBLE` 取代 shadow
+     *   （官方 p2/f5 Int64 `==`、g6 探针：返回类型错误时不报告 shadow）。
      */
     private fun org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol<*>.isSyntheticPrimitiveBuiltinOperatorExcludedFromShadow(
+        currentMember: CfirDeclaration,
         context: CheckerContext,
     ): Boolean {
         val function = cfir as? CfirNamedFunction ?: return false
-        if (function.origin != CfirDeclarationOrigin.Synthetic.FakeFunction) return false
         if (!function.status.isOperator) return false
-        val owner = context.ownerClassSymbol(this)?.cfir as? CfirPrimitiveTypeDeclaration ?: return false
+        // primitive receiver 取自当前 extend 的目标类型：针对同一个内建签名，std.core
+        // 以 `extend <类型> <: Equatable/Comparable` 引入的对象成员其宿主是接口而非 primitive，
+        // 因此不能从候选符号自身的 owner 取；receiver 永远是被扩展的 primitive 目标。
+        val currentFunction = currentMember as? CfirNamedFunction ?: return false
+        val receiverType = currentFunction.symbol.getContainingExtend()
+            ?.extendedTypeRef
+            ?.coneTypeOrNull
+            ?: return false
         val argumentTypes = function.valueParameters.map { parameter ->
             parameter.returnTypeRef.coneTypeOrNull ?: return false
         }
-        BuiltinPrimitiveOperators.resolve(
+        val match = BuiltinPrimitiveOperators.resolve(
             name = function.name,
-            receiverType = ConePrimitiveType(owner.kind),
+            receiverType = receiverType,
             argumentTypes = argumentTypes,
         ) ?: return false
-        if (function.isPrimitiveEqualityShadowException(owner.kind)) return false
-        return true
+        // 语言内建（synthetic）成员不构成 shadow parent：官方 f5/g2 探针中
+        // extend Int64 的 `+`/`-`/`<<`（返回类型正确）均无 shadow 诊断。
+        if (function.origin == CfirDeclarationOrigin.Synthetic.FakeFunction) return true
+        // std.core extend 成员按返回类型与内建是否一致分派（见上方 KDoc）。
+        val currentReturnType = currentFunction.resolvedReturnTypeOrNull(context) ?: return false
+        return !AbstractTypeChecker.equalTypes(context.session.typeContext, match.returnType, currentReturnType)
     }
 
     /**
-     * `Bool`/`Unit` 的 equality/inequality 在官方实现中仍作为 `extend Bool/Unit`
-     * 既有成员参与 shadow 检查，不能按普通 synthetic builtin operator 过滤掉。
+     * 读取函数声明的语义返回类型：优先使用已解析 type ref，否则经 checker context
+     * 的 return type calculator 计算，与其他 CFIR 检查器保持一致。
      */
-    private fun CfirNamedFunction.isPrimitiveEqualityShadowException(kind: PrimitiveTypeKind): Boolean =
-        kind in primitiveEqualityShadowKinds && name in primitiveEqualityShadowNames
+    private fun CfirNamedFunction.resolvedReturnTypeOrNull(context: CheckerContext): ConeCangJieType? {
+        (returnTypeRef as? CfirResolvedTypeRef)?.coneType?.let { return it }
+        return context.returnTypeCalculator.tryCalculateReturnType(this).coneType
+    }
 
     /**
      * 判断候选是否只是接口的抽象实现需求。

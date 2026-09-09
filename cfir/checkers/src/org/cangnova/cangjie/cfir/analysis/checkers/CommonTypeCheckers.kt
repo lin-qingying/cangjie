@@ -2,6 +2,7 @@ package org.cangnova.cangjie.cfir.analysis.checkers
 
 import org.cangnova.cangjie.cfir.analysis.checkers.type.CfirTypeProjectionModifierChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.type.CfirHideResolvedTypeRefChecker
+import org.cangnova.cangjie.cfir.analysis.checkers.type.CfirDeprecatedTypeRefChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.type.CfirUpperBoundViolatedTypeChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.type.CfirVArrayElementTypeChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.type.CfirVArraySizeLiteralChecker
@@ -22,5 +23,6 @@ object CommonTypeCheckers : TypeCheckers() {
             CfirUpperBoundViolatedTypeChecker,
             CfirVArrayElementTypeChecker,
             CfirHideResolvedTypeRefChecker,
+            CfirDeprecatedTypeRefChecker,
         )
 }

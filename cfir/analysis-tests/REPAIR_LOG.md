@@ -1,5 +1,21 @@
 # CFIR LLT Repair Log
 
+## 2026-09-06：extend 继承的接口默认成员实例化后误报 GENERIC_INSTANTIATION_CAUSES_AMBIGUOUS_FUNCTIONS（extend_function_conflict_invalid_3.cj）
+
+- problem type: 泛型实例化 / extend 接口默认成员合并。`extend<T> C1<T> <: I1<T> {}` 与 `<: I2<T> {}` 两个空 extend 各要求一个同签名接口默认实现 `foo(a:T):Int64`。CFIR 实例化检查把 I1.foo 与 I2.foo 视为冲突，在 C1 的每个 extend 内多报 2 条 `GENERIC_INSTANTIATION_CAUSES_AMBIGUOUS_FUNCTIONS`（锚定 `C1<T>`）。官方把两个接口的同签名默认实现合并为 `shouldBeImplemented`，只报 2 条 `INTERFACE_MEMBER_MUST_BE_IMPLEMENTED`，不报泛型歧义。
+- root cause: `CfirGenericInstantiationChecker.reportInstantiatedMemberSignatureConflicts` 的 `isInheritedDefaultInterfaceConflictWith` 仅依据 `inheritedDefaultOwnerExtend != null`。该字段只在「内建 extend 收集路径」（`collectDefaultInterfaceFunctionSignatures`）被赋值；类路径 `checkInstantiatedMemberSignatures → collectInstantiatedMemberSignatures`（use-site scope + provenance）恒置 `inheritedDefaultOwnerExtend = null`（原 `CfirFunctionInheritanceProvenance.toInstantiatedMemberSignature` 第 1164/1199 行），导致经 use-site scope 合并的接口默认成员永远无法进入抑制分支。
+- official Cangjie evidence: 空 extend 多接口同签名默认实现 → 每 extend 各 1 条 `sema_interface_member_must_be_implemented`，无 `GenericInstantiation`（探针 `f3`/`f3x`/`p5`，`StructInheritanceChecker::DiagnoseForUnimplementedInterfaces`、`MergeInheritedMemberHelper` 合并后 `shouldBeImplemented = true`）。
+- CFIR fix（框架级，共用 owner `CfirGenericInstantiationChecker`）：把「合并为待实现接口成员」的判定从 `inheritedDefaultOwnerExtend` 放宽为「双方都是接口继承成员」，并精确约束与官方 MergeInheritedMemberHelper 一致：
+  - `isInterfaceInheritedMember()`：`inheritedDefaultOwnerExtend != null`（内建路径）或 `function` 的 owner 是接口（use-site 路径）；
+  - 双方非 `status.isStatic`（static 接口成员不并入 shouldBeImplemented，见 `interface_static_impl_with_generic08`）；
+  - 双方非 `isOwnMember`（当前声明自身声明的接口成员仍属真实歧义，见 `interface_generic11`）；
+  - 双方来自**不同**接口（同一接口经不同实参重复到达仍属真实歧义，见 `main2-2` / `interface_default_implemented_func_invalid_6`）；
+  - 双方返回类型一致（不一致仍属真实歧义，见 `invariant_override_returntype_02`）。
+- owner files changed: `cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirGenericInstantiationChecker.kt` 的 `isInheritedDefaultInterfaceConflictWith` 及新增 `isInterfaceInheritedMember`/`interfaceOwner`（依赖同包 `CheckerContext.ownerClassSymbol`）。
+- fixtures covered: LLT + PSI `Extend/Extend_Refactor/extend_function_conflict_invalid_3.cj`（修复目标）；回归对照 `generics/inst_dup_functions001`、`interface/interface_default_impl/interface_static_impl_with_generic08`、`Extend/invariant_override_returntype_02`、`class/class_instantiation_check/main2-2`、`interface/generic_interface_inheritance/interface_generic11`、`class/interface_default_implemented_func_invalid_6`（均含 `GENERIC_INSTANTIATION_CAUSES_AMBIGUOUS_FUNCTIONS` 期望，须保持报出）。
+- verification command: 先定向（`--tests "*ExtendFunctionConflictInvalid3*" --tests "*InvariantOverrideReturntype02*" --tests "*InterfaceStaticImplWithGeneric08*" --tests "*InterfaceGeneric11*" --tests "*InterfaceDefaultImplementedFuncInvalid6*" --tests "*InstDupFunctions001*" --tests "*testMain22*"`）→ BUILD SUCCESSFUL；后全量 `.\gradlew-queue.bat :cfir:analysis-tests:test --no-configuration-cache`。
+- verification outcome: 全量 `8422 tests, 642 failed, 307 skipped`。**全量失败集合中没有任何用例再引用 `GENERIC_INSTANTIATION_CAUSES_AMBIGUOUS_FUNCTIONS`**，即所有泛型实例化歧义期望均已满足；7 个目标/对照 fixture 定向与全量双绿，新增回归 = 0。（中间一个过宽实现曾把上述 6 个对照 fixture 静音，已在本版本按官方规则收紧并全部恢复。）
+
 ## 2026-09-05：自增自减表达式在操作数为错误/非整数类型时短路为错误类型（inc_dec_0.cj）
 
 - problem type: Resolve / 错误类型产生。`x++` 的操作数不是整数（或为错误类型）时，自增自减表达式结果类型被无条件固定为 `Unit`，导致外层如 `x++ + 1` 以 `Unit + Int64` 继续解析，多报级联的 `INVALID_BINARY_OPERATOR`。
@@ -5269,6 +5285,81 @@ esolveDelegatingConstructorCallAndSelectCandidate);
 - 仍待处理：第 13 项诊断分类差异；import6/import14 的消费包导入扩展冲突检查（4 条）；ExtendsImplementsInterfaceDuplicated（6 条）；另已发现但未实现的数值字面量显式后缀类型问题。
 - 验证与资源：最后本线程相关切片为 1111 项、59 失败、64 跳过；中间两次测试启动/运行曾受提交内存不足影响，不应计为语义回归。按用户要求，此交接阶段没有再启动构建或测试。
 - 证据：`build/repair-20260906/{12-after,13-full-check,13-root-diagnostics,13-handoff-latest}/`、`12-after--13-handoff-latest.json`。下一会话入口及具体操作注意事项见 `EXTEND_REPAIR_HANDOFF.md`。
+
+## 2026-09-07：显式函数 no-match 使用项目实参不匹配诊断
+
+- problem type: Fixture Expectation / Diagnostics —— 单一显式导入函数候选的实参类型不匹配。
+- root cause: `ambiguous_function_targets.cj` 将 `select("x")` 期望写成 `TYPE_MISMATCH`；共享调用诊断入口对单一不可适用候选的 `ArgumentTypeMismatch` 统一映射为 `ARGUMENT_TYPE_MISMATCH`。多候选共同失败的 `no_match.cj` 仍由调用级共享 mismatch 入口映射为 `TYPE_MISMATCH`，两者不是同一 CFIR 路径。
+- official Cangjie evidence: `build/repair-20260906/package-evidence/ambiguous-function-targets-expanded/explicitnomatch.stderr.txt` 与 `explicit-function-targets/nomatch.stderr.txt` 均为官方 `sema_mismatched_types`，范围覆盖字符串实参；官方名称在项目 LLT 中按调用候选上下文分别映射。项目共享实现位于 `cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/diagnostics/coneDiagnosticToCfirDiagnostic.kt:642-750,1208-1299,1433-1640`；同类普通调用实参期望见 `llt/array/array_invalid_api.cj`、`llt/type/subtype_02.cj` 等。
+- Kotlin counterpart files consulted: no new Kotlin file was needed；本项是项目诊断名称映射与既有调用入口的 fixture 纠正，不导入 Kotlin 语义。
+- CFIR owner files changed: none。
+- repair principle: 保持单候选实参诊断与共享调用映射一致，只修正新增 fixture 的项目诊断名称，不为一条测试改变调用解析语义。
+- fixtures covered: `unusedImport/ambiguous_function_targets.cj` 的 PSI/LightTree 两入口；同文件 `ambiguous.cj`、`no_match.cj`、`explicit.cj`、`alias.cj`、`reference.cj`、`selected.cj` 均保持原期望。
+- fixture correction: `explicit_no_match.cj` 的字符串实参标记从 `TYPE_MISMATCH` 改为 `ARGUMENT_TYPE_MISMATCH`；仓颉源码未改。
+- verification commands and outcome:
+  - `gradlew-queue.bat :cfir:analysis-tests:test --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTTestGenerated*AmbiguousFunctionTargets*' --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTPsiTestGenerated*AmbiguousFunctionTargets*' --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g'`：2 项通过，0 failures/errors/skipped。
+- remaining failures: 交接基线中的 ExtendImport import6/import14 冲突检查及其它既有失败未因本项改变。
+
+## 2026-09-07：消费包复查导入扩展的 shadow 冲突
+
+- problem type: Extend Import / Shadow / Cross-file Diagnostics —— B/C 包的 `extend Foo <: I1/I2` 成员仅在消费包同时导入接口后形成 shadow 冲突，诊断必须落在 B.cj/C.cj 的成员名。
+- root cause: 扩展声明所属包的 declaration checker 没有消费包 import/use-site 上下文；将检查放在消费包 `CfirImportsChecker`，按显式导入包查询完整 extend 集合，并通过 provider 的 containing file 建立跨文件诊断上下文。
+- official Cangjie evidence: `build/repair-20260906/package-evidence/import6/root.stderr.txt`：root 只报一次调用歧义，并在 B.cj/C.cj 各报 `sema_extend_member_cannot_shadow`；B/C 单独编译无诊断。
+- Kotlin counterpart files consulted: `external/kotlin/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/checkers/analysis/FirExtensionShadowedByMemberChecker.kt` 的 use-site shadow 检查结构；本项复用现有 CFIR shadow owner。
+- CFIR owner files changed: `CfirImportsChecker.kt`、`CfirExtendExtraChecker.kt`；`DiagnosticReporter.kt` 与 `PendingDiagnosticsReporterImpl.kt` 增加跨文件诊断桶/提交边界；`CfirExtendExtraChecker` 的继承关系过滤避免 import16 父子 extend 误报。
+- repair principle: 由消费包统一提供可见性与文件归属，复用共享 shadow relation，不把跨包冲突复制到某个 fixture 或消费文件位置。
+- fixtures covered: `Extend_import/import6/main.cj` PSI/LightTree；同切片的 import7/import7_1/import16 均保持无回归（import16 的既有 UNUSED_IMPORT 期望继续通过）。
+- verification commands and outcome:
+  - `gradlew-queue.bat :cfir:analysis-tests:test --tests 'org.cangnova.cangjie.cfir.analysis.tests.*ExtendImport*' --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g' '-Pkotlin.compiler.execution.strategy=in-process'`：此前在 import14/import16 未完成前运行，import6、import7、import7_1、import16 的对应入口已通过；import14 仍为下一条未闭合问题。
+- remaining failures: import14 primitive default-property conflict尚未验收；完整 ExtendImport 及全量尚未重新运行。
+
+## 2026-09-07：消费包导入扩展冲突最终验收
+
+- problem type: Extend Import / Cross-file Shadow and Default-Implementation Diagnostics —— 消费包同时导入多个包后，必须复查被导入包中的全部 extend；import6 需要在依赖声明文件报告成员 shadow，import14 需要在各依赖声明文件报告默认接口属性冲突，并保持导入警告范围完整。
+- root cause: `CfirImportsChecker` 原先只检查消费文件自身的 import/unused 状态，缺少官方 `TypeCheckExtend` 的导入包扩展复查阶段。新增消费包入口后，跨文件诊断还必须携带真实 containing file；primitive target 的默认成员冲突复查按成员签名报告时，会在同一 `extend` 位置重复产生同一 factory，偏离 cjc 的按声明位置去重行为。
+- official Cangjie evidence: import6 的 `build/repair-20260906/package-evidence/import6/root.stderr.txt` 显示消费包调用歧义并在 B.cj/C.cj 各报告 `sema_extend_member_cannot_shadow`；import14 的 `build/repair-20260906/package-evidence/import14/pkg.stderr.txt` 显示两个依赖 extend 各报告一次 `sema_interface_member_must_be_implemented`（属性 `code`）及两个完整导入项的 `sema_unused_import`。官方实现为 `external/cangjie_compiler/src/Sema/TypeCheckExtend.cpp:409`、`external/cangjie_compiler/src/Sema/InheritanceChecker/StructInheritanceChecker.cpp:302-318,1449-1510`；同类多成员最小探针也确认 cjc 对同一 extend 位置只保留一条同类诊断。
+- Kotlin counterpart files consulted: `external/kotlin/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/checkers/analysis/FirExtensionShadowedByMemberChecker.kt` 的 use-site shadow 检查结构；`external/kotlin/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/checkers/analysis/FirConflictsDeclarationChecker.kt` 的声明冲突归属；`external/kotlin/compiler/fir/resolve/src/org/jetbrains/kotlin/fir/resolve/diagnostics/PendingDiagnosticsReporterImpl.kt` 的 pending 诊断提交边界。仓颉的导入扩展复查触发条件仍以官方 C++ 为准。
+- CFIR owner files changed: `cfir/checkers/.../declaration/CfirImportsChecker.kt` 在消费包收集可见导入包扩展并设置跨文件诊断上下文；`CfirExtendExtraChecker.kt` 复用 shadow owner 并过滤父子 extend 关系；`CfirInheritanceDeepChecker.kt` 复用默认接口冲突 owner，并按 extend 声明去重；`common/diagnostics/.../DiagnosticReporter.kt` 与 `PendingDiagnosticsReporterImpl.kt` 保持跨文件 source、suppression 和提交桶正确；`cfir/analysis-tests/testData/llt/Extend_import/import14/test.cj` 将 UNUSED_IMPORT 范围修正为完整 CjImportItem。
+- repair principle: 由消费包统一触发导入扩展的 use-site 复查，同时把诊断归属、可见性、继承关系过滤和同声明去重留在共享 owner 中，不把依赖包冲突复制成消费文件或 fixture 特判。
+- fixtures covered: `Extend_import/import6/main.cj`、`Extend_import/import14/test.cj` 的 PSI/LightTree 两入口；完整 `ExtendImport` 家族 98 项全部覆盖，既有 import7、import7_1、import10、import16 保持原状态。
+- fixture correction: import14 两个 `UNUSED_IMPORT` 标记从别名末端扩大到完整 `pkg.a.ValueType as AValueType` / `pkg.b.ValueType as BValueType` 导入项；源码语义和导入列表未改。
+- verification commands and outcome:
+  - `gradlew-queue.bat :cfir:analysis-tests:test --tests 'org.cangnova.cangjie.cfir.analysis.tests.*ExtendImport*' --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g' '-Pkotlin.compiler.execution.strategy=in-process'`：98 项，98 通过、0 失败、0 跳过。
+  - 固定全量 `gradlew-queue.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g'`：8440 tests completed，608 failed，307 skipped；XML 为 8441 records、7525 passed、608 failed、308 skipped、0 errors。
+  - 与同一全量基线 `build/repair-20260906/12-after` 的完整键比较：失败 612 → 608，FIXED=4（import6/import14 的 PSI/LightTree 各一条）、REGRESSED=0、NEW_KEYS=4（新增 ambiguous_function_targets/operator_ambiguity_targets 的 PSI/LightTree 全部 PASS）、REMOVED_KEYS=0、其它状态变化=0。证据：`build/repair-20260906/{12-after,14-full-after}/`、`12-after--14-full-after.json`。
+- remaining failures: 全量 608；ExtendImport 已无失败，`ExtendsImplementsInterfaceDuplicated` 仍有 6 条，其余为基线中已有的独立问题类型。
+
+## 2026-09-07：显式空参数 lambda 的函数类型检查与 Var 初始化诊断
+
+- problem type: Var / Lambda / Function Type Diagnostics —— `{=> body}` 是显式的、可以为空的 lambda 参数列表；将它误判为隐式 lambda 会漏掉变量初始化的函数类型不匹配，并在调用参数场景产生 body 级联或重复诊断。
+- root cause: PSI 与 LightTree raw builder 都以 `valueParameters.isNotEmpty()` 代替语法 token 判断 `hasExplicitParameterList`。空参数 `=>` 因而绕过 lambda 形状检查；同时 lambda body 的隐式返回检查在普通尾表达式分支之前选择 `RETURN_TYPE_MISMATCH`，且调用参数已有整体 mismatch 时 lambda checker 又重复报告同一 `TYPE_MISMATCH`。
+- official Cangjie evidence: `build/repair-20260906/evidence/{var,lambda15,lambda16}.official.cjc.json`：`{=> 1}` 赋给 `(Unit) -> Int32` 报 `sema_mismatched_types`；`lambda15` 的 `() -> Unit` 对 `(Int64) -> Int32` 报整体 mismatch；`lambda16` 第一处同时报告 `sema_param_miss_match` 与 body `sema_mismatched_types`，第二处报告整体函数类型 mismatch。官方实现 `external/cangjie_compiler/src/Sema/TypeCheckExpr/LambdaExpr.cpp:311-385` 先检查参数形状、再检查 body，`369-370` 对整体 lambda 类型使用 mismatched-types。
+- Kotlin counterpart files consulted: `external/kotlin/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/diagnostics/coneDiagnosticToFirDiagnostic.kt:121-139` 对匿名函数实参使用已解析函数类型并保留调用级 mismatch；FIR 的匿名函数诊断由调用约束与匿名函数 checker 分工，避免同一 lambda 重复释放同类错误。
+- CFIR owner files changed: `cfir/raw-cfir/psi2cfir/.../PsiRawCfirBuilder.kt` 与 `cfir/raw-cfir/light-tree2cfir/.../LightTreeRawCfirExpressionBuilder.kt` 按 `DOUBLE_ARROW` token 设置显式参数列表；`cfir/checkers/.../declaration/CfirFunctionLambdaChecker.kt` 对显式空参数列表报告整体 `TYPE_MISMATCH`，并跳过已有调用级整体 mismatch；`cfir/checkers/.../expression/CfirFunctionBodyTypeMismatchChecker.kt` 抑制同一 lambda 形状错误的 body 级联并优先使用通用类型 mismatch。
+- repair principle: 在 raw CFIR 建树阶段保留 lambda 语法形状，在 checker 阶段按“调用 owner 优先、变量 initializer 自身负责”的诊断归属分工统一检查 PSI/LightTree，而不是为 `var.cj` 或某个 lambda fixture 加特判。
+- fixtures covered: `llt/var/var.cj`、`llt/lambda/lambda15.cj`、`llt/lambda/lambda16.cj`、`llt/lambda/lambda_in_record.cj`、`llt/let/let001.cj` 的 PSI/LightTree 两入口；对应调用、记录字段和局部变量初始化路径均覆盖。
+- fixture correction: none。
+- verification commands and outcome:
+  - 定向 Var/Lambda 入口：Var 全族及 Lambda15/16 两入口 `BUILD SUCCESSFUL`；Var 与 Lambda15/16 均 0 failures。
+  - 固定全量 `gradlew-queue.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g'`：8440 tests completed，598 failed，307 skipped；XML 为 8441 records、7535 passed、598 failed、308 skipped、0 errors。
+  - 与 `build/repair-20260906/14-full-after` 的完整键比较：FIXED=10（Var、Lambda15/16、LambdaInRecord、Let001 的 PSI/LightTree）、REGRESSED=0、NEW_KEYS=0、REMOVED_KEYS=0、其它状态变化=0。证据：`build/repair-20260906/{14-full-after,15-var-after}/`、`14-full-after--15-var-after.json`。
+- remaining failures: 全量 598；本条覆盖的 Var 与显式空参数 lambda 失败已清零，其余为基线中的独立问题类型。
+
+## 2026-09-07：接口继承函数返回类型不一致诊断
+
+- problem type: Interface / Inheritance / Function Return-Type Consistency —— 多个接口父类型提供相同函数签名但互不相容的返回类型时，接口声明必须报告 `INHERIT_MEMBER_TYPE_INCONSISTENT`。
+- root cause: `CfirInheritanceDeepChecker.checkInheritedMemberTypeConsistency` 只收集并比较 inherited property 类型，未收集同名同 override signature 的 function 返回类型，因此 `interface II <: I0 & I1 & I2` 漏报；补齐后还需跳过当前声明已有 own override、以及 default/abstract 混合输入，分别由普通 override 和 default implementation 规则负责。
+- official Cangjie evidence: `build/repair-20260906/evidence/interface_conflict_inheritance_01.official.cjc.json` 报 `sema_inherit_member_type_inconsistent`（`II`）和 `sema_return_type_incompatible`（`III.foo`）。官方继承实现 `external/cangjie_compiler/src/Sema/InheritanceChecker/MergeInheritedMemberHelper.cpp:90-205` 记录合并成员的 inconsistent types，`StructInheritanceChecker.cpp:980-992,1369-1407` 在继承检查阶段分别释放成员类型冲突和 override 返回类型冲突。
+- Kotlin counterpart files consulted: `external/kotlin/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/declaration/FirOverrideChecker.kt:66-105,316-365` 先取得 direct overridden symbols，再用 `AbstractTypeChecker.isSubtypeOf` 检查 override 返回类型；继承 scope 的符号合并与 override signature 分组由 `external/kotlin/compiler/fir/providers/src/org/jetbrains/kotlin/fir/scopes/impl/FirStandardOverrideChecker.kt` 提供架构对照。
+- CFIR owner files changed: `cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirInheritanceDeepChecker.kt` 在共享继承一致性 owner 中按 `overrideSignatureKey` 收集函数，使用 equal/subtype 双向关系判断冲突，并复用 `INHERIT_MEMBER_TYPE_INCONSISTENT` 的 `return types/function` 参数。
+- repair principle: 在继承成员归并的共享 signature 层补齐 function/property 两类返回类型检查，并把 own override 与 default/abstract 关系留给各自 owner，不针对单个 `II` fixture 添加条件。
+- fixtures covered: 完整 `Interface` 家族 160 项，目标 `interface_conflict_inheritance_01.cj` 的 PSI/LightTree 两入口，以及 `interface_conflict_inheritance_06.cj`、`interface_inheritance_02.cj`、`GenericInterfaceInheritance/interface_generic13.cj`、`interface_generic14.cj` 等回归路径。
+- fixture correction: none。
+- verification commands and outcome:
+  - `gradlew-queue.bat :cfir:analysis-tests:test --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTTestGenerated$Interface*' --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTPsiTestGenerated$Interface*' --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g' '-Pkotlin.compiler.execution.strategy=in-process'`：160 项，全部通过。
+  - 固定全量 `gradlew-queue.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g'`：8440 tests completed，596 failed，307 skipped；XML 为 8441 records、7537 passed、596 failed、308 skipped、0 errors。
+  - 与 `build/repair-20260906/15-var-after` 的完整键比较：FIXED=2（Interface PSI/LightTree 的 `testInterfaceConflictInheritance01`）、REGRESSED=0、NEW_KEYS=0、REMOVED_KEYS=0、其它状态变化=0。证据：`build/repair-20260906/{15-var-after,16-interface-after}/`、`15-var-after--16-interface-after.json`。
+- remaining failures: 全量 596；本条 Interface 目标已闭合，其余为基线中的独立问题类型。
 
 ## 2026-09-08：统一源码与真实 CJO 的导入扩展冲突复查
 

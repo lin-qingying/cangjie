@@ -9,8 +9,18 @@ import org.cangnova.cangjie.LanguageVersionSettings
 import org.cangnova.cangjie.cfir.caches.CfirCache
 import org.cangnova.cangjie.cfir.caches.CfirCachesFactory
 import org.cangnova.cangjie.cfir.caches.createCache
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
+import org.cangnova.cangjie.cfir.expressions.CfirNamedArgumentExpression
+import org.cangnova.cangjie.cfir.expressions.CfirResolvedArgumentList
+import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
+import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.descriptors.annotations.AnnotationUseSiteTarget
+import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.resolve.deprecation.DeprecationLevelValue
 
 /**
@@ -143,4 +153,145 @@ abstract class CfirDeprecationInfo : Comparable<CfirDeprecationInfo> {
             levelResult
         }
     }
+}
+
+// ==================================== 注解驱动的弃用信息 ====================================
+
+/**
+ * 从单个 `@Deprecated` 注解调用解析出的弃用信息。
+ *
+ * @property deprecationLevel 弃用严格级别（strict=true 时为 ERROR，否则 WARNING）。
+ * @property message 弃用提示信息（`message` 参数或首个位置参数）。
+ * @property since 弃用起始版本（`since` 参数）。
+ */
+class CfirAnnotationDeprecationInfo(
+    override val deprecationLevel: DeprecationLevelValue,
+    private val message: String?,
+    private val since: String?,
+    override val propagatesToOverrides: Boolean,
+) : CfirDeprecationInfo() {
+    override fun getMessage(session: CfirSession): String? = message
+
+    override fun toString(): String =
+        "CfirAnnotationDeprecationInfo(level=$deprecationLevel, message=$message, since=$since)"
+}
+
+/**
+ * 基于 `@Deprecated` 注解调用惰性计算弃用信息。
+ *
+ * 对齐 C++ `ExtractArgumentsOfDeprecatedAnno`：
+ * - 无命名或名为 `message` 的参数 → 弃用提示信息；
+ * - 名为 `since` 的参数 → 弃用起始版本；
+ * - 名为 `strict` 的参数为 `true` → ERROR 级，否则 WARNING 级。
+ */
+class DeprecatedAnnotationDeprecationInfoProvider(
+    private val annotation: CfirAnnotationCall,
+) : DeprecationInfoProvider() {
+    override fun computeDeprecationInfo(languageVersionSettings: LanguageVersionSettings): CfirDeprecationInfo? {
+        val strict = annotation.booleanArgument("strict") == true
+        return CfirAnnotationDeprecationInfo(
+            deprecationLevel = if (strict) DeprecationLevelValue.ERROR else DeprecationLevelValue.WARNING,
+            message = annotation.deprecatedMessageOrNull(),
+            since = annotation.stringArgument("since"),
+            propagatesToOverrides = true,
+        )
+    }
+}
+
+/**
+ * 不依赖 [CfirCachesFactory] 的轻量弃用信息提供者。
+ *
+ * 弃用注解参数均为已解析字面量，每次读取时直接重算，开销可忽略；
+ * 供 CJO 反序列化等不保证注册缓存工厂的路径使用。
+ */
+class AnnotationDeprecationsProvider(
+    private val all: List<DeprecationInfoProvider>,
+) : DeprecationsProvider() {
+    override fun getDeprecationsInfo(languageVersionSettings: LanguageVersionSettings): DeprecationsPerUseSite {
+        val merged = all
+            .mapNotNull { it.computeDeprecationInfo(languageVersionSettings) }
+            .maxByOrNull { it.deprecationLevel }
+        return DeprecationsPerUseSite(merged, null)
+    }
+}
+
+/**
+ * 根据声明注解列表构建弃用信息提供者。
+ *
+ * 只识别短名为 `Deprecated` 的内置弃用注解；无匹配注解时返回 [EmptyDeprecationsProvider]。
+ * 返回的 provider 不依赖 session 级缓存工厂，可在反序列化/构建路径直接使用。
+ */
+fun buildDeprecationsProvider(annotations: List<CfirAnnotation>): DeprecationsProvider {
+    val all = annotations.mapNotNullTo(mutableListOf()) { annotation ->
+        if (!annotation.isDeprecatedAnnotation()) return@mapNotNullTo null
+        (annotation as? CfirAnnotationCall)?.let(::DeprecatedAnnotationDeprecationInfoProvider)
+    }
+    if (all.isEmpty()) return EmptyDeprecationsProvider
+    return AnnotationDeprecationsProvider(all)
+}
+
+/** 内置 `@Deprecated` 注解的短名。 */
+private val DEPRECATED_ANNOTATION_NAME: Name = Name.identifier("Deprecated")
+
+/** 判断注解是否表示内置 `@Deprecated`。 */
+private fun CfirAnnotation.isDeprecatedAnnotation(): Boolean =
+    deprecatedAnnotationShortNameOrNull() == DEPRECATED_ANNOTATION_NAME
+
+/** 从注解 typeRef（已解析）或 calleeReference 名称提取注解短名。 */
+private fun CfirAnnotation.deprecatedAnnotationShortNameOrNull(): Name? {
+    val typeRef = typeRef
+    if (typeRef is CfirResolvedTypeRef) {
+        val classId = (typeRef.coneType as? ConeClassLikeType)?.classId
+        if (classId != null) return classId.shortClassName
+    }
+    return (this as? CfirAnnotationCall)
+        ?.calleeReference
+        ?.let { it as? CfirNamedReference }
+        ?.name
+}
+
+/** 读取 `message` 命名参数或首个位置参数作为弃用提示信息。 */
+private fun CfirAnnotationCall.deprecatedMessageOrNull(): String? =
+    (argumentByName("message") ?: explicitArguments().firstOrNull())
+        ?.unwrapNamedArgument()
+        ?.literalStringOrNull()
+
+/** 读取指定命名字符串参数。 */
+private fun CfirAnnotationCall.stringArgument(name: String): String? =
+    argumentByName(name)?.unwrapNamedArgument()?.literalStringOrNull()
+
+/** 读取指定命名布尔参数。 */
+private fun CfirAnnotationCall.booleanArgument(name: String): Boolean? =
+    argumentByName(name)
+        ?.unwrapNamedArgument()
+        ?.let { (it as? CfirLiteralExpression)?.value as? Boolean }
+
+/** 去掉命名实参包装，取得注解实参的真实表达式。 */
+private tailrec fun CfirExpression.unwrapNamedArgument(): CfirExpression = when (this) {
+    is CfirNamedArgumentExpression -> expression.unwrapNamedArgument()
+    else -> this
+}
+
+/** 字面量表达式 → 字符串值；非字面量返回 null。 */
+private fun CfirExpression.literalStringOrNull(): String? =
+    (this as? CfirLiteralExpression)?.value?.toString()
+
+/** 返回注解调用在源码中显式写出的实参列表。 */
+private fun CfirAnnotationCall.explicitArguments(): List<CfirExpression> =
+    (argumentList as? CfirResolvedArgumentList)
+        ?.originalArgumentList
+        ?.arguments
+        ?: argumentList.arguments
+
+/** 根据命名实参或已解析实参映射查找指定名称的实参表达式。 */
+private fun CfirAnnotationCall.argumentByName(name: String): CfirExpression? {
+    explicitArguments()
+        .filterIsInstance<CfirNamedArgumentExpression>()
+        .firstOrNull { it.argumentName.asString() == name }
+        ?.let { return it.expression }
+    val resolved = argumentList as? CfirResolvedArgumentList ?: return null
+    return resolved.mapping.entries
+        .firstOrNull { (_, parameter) -> parameter.name.asString() == name }
+        ?.key
+        ?.unwrapNamedArgument()
 }
