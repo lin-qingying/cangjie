@@ -211,10 +211,11 @@ private fun checkTargetTypedIfExpression(
 
 /** 检查 `match` 每个分支 body 的尾结果表达式。 */
 context(context: CheckerContext, reporter: DiagnosticReporter)
-private fun checkTargetTypedMatchExpression(
+internal fun checkTargetTypedMatchExpression(
     expression: CfirMatchExpression,
     expectedType: ConeCangJieType,
 ): TargetTypedCheckOutcome {
+    if (expectedType is ConeErrorType) return TargetTypedCheckOutcome.Handled(reported = false)
     return expression.branches
         .map { branch -> checkTargetTypedBlockTail(branch.body, expectedType) }
         .combineTargetTypedOutcomes()

@@ -4801,6 +4801,12 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 runTest("cfir/analysis-tests/testData/llt/PatternMatching/MatchExpression/match031.cj")
             }
 
+            @TestMetadata("pattern_binding_scope.cj")
+            @Test
+            fun testPatternBindingScope() {
+                runTest("cfir/analysis-tests/testData/llt/PatternMatching/MatchExpression/pattern_binding_scope.cj")
+            }
+
             @TestMetadata("var_pattern_00.cj")
             @Test
             fun testVarPattern00() {
