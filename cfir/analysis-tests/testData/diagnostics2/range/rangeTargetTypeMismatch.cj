@@ -4,7 +4,7 @@ func expectIntRange(r: Range<Int64>): Range<Int64> {
 }
 
 func badTargetFromBoolStop(): Range<Int64> {
-    return expectIntRange(0..<!TYPE_MISMATCH!>true<!>)
+    return expectIntRange(0..<!CANNOT_CONVERT_LITERAL!>true<!>)
 }
 
 func goodTargetRange(): Range<Int64> {

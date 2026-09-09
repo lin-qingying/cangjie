@@ -10,6 +10,6 @@ func takesInt1<T>(x: T): T {
 main(): Unit {
     takesInt1<Int>
     takesInt
-    takesInt1<Float64>(<!TYPE_MISMATCH!>1<!>)
+    takesInt1<Float64>(<!CANNOT_CONVERT_LITERAL!>1<!>)
     takesInt(<!CANNOT_CONVERT_LITERAL!>true<!>)
 }

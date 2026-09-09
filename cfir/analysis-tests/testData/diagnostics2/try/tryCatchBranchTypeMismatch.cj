@@ -3,7 +3,7 @@ func mismatchCatchResult(flag: Bool): Int64 {
     return try {
         if (flag){ 1} else {2}
     } catch (e: Exception) {
-        <!TYPE_MISMATCH!>false<!>
+        <!CANNOT_CONVERT_LITERAL!>false<!>
     }
 }
 

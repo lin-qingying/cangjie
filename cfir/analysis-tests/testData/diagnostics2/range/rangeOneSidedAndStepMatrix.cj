@@ -10,11 +10,11 @@ func boundedRangeWithNegativeStep(): Unit {
 }
 
 func boundedRangeBadBoolStep(): Unit {
-    let broken = 0..10 : <!TYPE_MISMATCH!>false<!>
+    let broken = 0..10 : <!CANNOT_CONVERT_LITERAL!>false<!>
     let _ = broken
 }
 
 func boundedRangeBadFloatStep(): Unit {
-    let broken = 10..0 : <!TYPE_MISMATCH!>1.0<!>
+    let broken = 10..0 : <!CANNOT_CONVERT_LITERAL!>1.0<!>
     let _ = broken
 }

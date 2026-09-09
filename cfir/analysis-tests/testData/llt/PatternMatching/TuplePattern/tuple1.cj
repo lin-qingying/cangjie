@@ -43,7 +43,7 @@ func case60_4() {
 }
 
 func case60_5() {
-    let a: Float32 = <!TYPE_MISMATCH!>90<!>
+    let a: Float32 = <!CANNOT_CONVERT_LITERAL!>90<!>
     let b: Int32 = 0
     let scoreTuple = ("a", a)
     var result: String = match (scoreTuple) {
@@ -53,7 +53,7 @@ func case60_5() {
 }
 
 func case60_6() {
-    let a: Float32 = <!TYPE_MISMATCH!>90<!>
+    let a: Float32 = <!CANNOT_CONVERT_LITERAL!>90<!>
     let scoreTuple = ("a", a)
     var result: String = match (scoreTuple) {
         case ("a", b) => "No"

@@ -57,6 +57,8 @@ internal fun classifySpecificTypeMismatch(
     expression: CfirExpression?,
     session: CfirSession,
 ): CfirSpecificTypeMismatch? {
+    // 初始化器、返回值及调用实参共同消费目标类型驱动的标量字面量分类。
+    literalConversionMismatch(expectedType, expression, session)?.let { return it }
     if (expression is CfirLiteralExpression && expression.kind == CfirLiteralKind.RUNE && !expectedType.isRune) {
         return CfirSpecificTypeMismatch.CannotConvertLiteral(
             literalDescription = "character",

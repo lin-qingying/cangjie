@@ -1232,6 +1232,17 @@ private fun argumentTypeMismatch(
     ) {
         return null
     }
+    // Lambda 返回约束比较的是完整函数值，不能把其中的 literal 当作独立的目标类型转换。
+    if (anonymousFunction != null) {
+        val lambdaSource = anonymousFunction.source ?: source
+        return CfirErrors.TYPE_MISMATCH.on(
+            lambdaSource,
+            expectedType,
+            actualType,
+            isMismatchDueToNullability,
+            session,
+        )
+    }
     specificTypeMismatchDiagnostic(
         source = source,
         expectedType = expectedType,
@@ -1265,17 +1276,6 @@ private fun argumentTypeMismatch(
     if (candidate.hasExplicitCallableTypeArgumentsInCall()) {
         return CfirErrors.TYPE_MISMATCH.on(
             source,
-            expectedType,
-            actualType,
-            isMismatchDueToNullability,
-            session,
-        )
-    }
-
-    if (anonymousFunction != null) {
-        val lambdaSource = anonymousFunction.source ?: source
-        return CfirErrors.TYPE_MISMATCH.on(
-            lambdaSource,
             expectedType,
             actualType,
             isMismatchDueToNullability,

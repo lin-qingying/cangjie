@@ -14,7 +14,7 @@ func mismatchAcrossMultipleCatches(flag: Int64): Int64 {
     } catch (e: FirstEx) {
         2
     } catch (e: SecondEx) {
-        <!TYPE_MISMATCH!>false<!>
+        <!CANNOT_CONVERT_LITERAL!>false<!>
     }
 }
 
