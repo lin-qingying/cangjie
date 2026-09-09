@@ -2,5 +2,5 @@
 
 
 main() {
-    if (let Some(a) <- 1 {}
+    if (let <!PATTERN_NOT_MATCH!>Some(a)<!> <- 1) {}
 }

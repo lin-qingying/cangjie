@@ -5793,3 +5793,30 @@ XML 均为 8483 records、308 skipped，另含一条 skipped 聚合记录。完�
 
 - remaining failures: 目标家族剩余 If 2、IfLetExpr 2、WhileLetExpr 2、Match 20、PatternMatching 47，共 73 项；Loops 通过。Call 184/184、Generics 680/680、TypeInfer 76/76、Typealias 独立组 110/110 保持通过。全量其他 477 项失败不变。
 - change isolation: 仅提交上述三份 fixture 和本条日志，.idea/workspace.xml 保持独立。
+
+## 2026-09-10：控制流模式测试恢复合法语法后验证语义
+
+- problem type: Fixture / Syntax prerequisite（CFIR 语义测试不能依赖语法恢复树）。
+- root cause: if-let 和 while-let 的 missing_rparen 源码缺少条件右括号；value_binding_pattern_002 使用官方语法不支持的 c@_。前两份此前虽然测试通过，实际只检查了解析错误后的恢复行为，不满足当前测试约定。
+- official Cangjie evidence: 使用 cjc 1.0.5 逐文件编译 if、if-let-expr、while-let-expr、Loops、match、PatternMatching 六个目录的 267 份源码，只有上述三份有 parse_* 错误，无 driver 错误。完整源码、命令及 JSON 保存在 build/repair-20260906/32-flow-syntax-before。修正后 32-flow-syntax-after 的三份新编译和 264 份按源码 SHA-256 复用的证据共同证明 267 份均无语法错误。两份补齐括号的程序各只报告 sema_pattern_not_match；绑定模式改成 c 后编译成功，常量 11 分支报告 chir_unreachable_pattern。
+- official implementation: external/cangjie_compiler/src/Parse/ParsePattern.cpp 的 ParseTypePatternOrVarOrEnumPattern 定义裸名称绑定；src/Sema/TypeCheckPattern.cpp 的 ChkEnumPattern 判定 Some(a) 不能匹配整数；src/CHIR/Checker/UnreachableBranchCheck.cpp 依据常量后继报告不可达警告。官方文档 manual_source_zh_cn_match 同样以 case k 定义绑定模式。
+- Kotlin counterpart files consulted: FirExpressionsResolveTransformer.kt 的 transformBlockInCurrentScope 与 FirWhenConditionChecker.kt；只借鉴语法树进入共享语义检查的分层，不引入 Kotlin 绑定语法。
+- CFIR owner files changed: 无；修改三份测试源码及其官方诊断期望。既有 parser 恢复能力不变。
+- repair principle: 先保证源码可解析，再保留原来的 enum 与整数不匹配、常量分支及绑定变量场景，使用官方结果标注语义诊断。
+- fixtures covered: llt/if-let-expr/enhancedcondition/parse/missing_rparen.cj、llt/while-let-expr/enhancedcondition/parse/missing_rparen.cj、llt/match/value_binding_pattern/value_binding_pattern_002.cj。or_and_var.cj 经官方确认语法合法，保持不变。
+- verification commands and outcome:
+  - `gradlew-queue.bat :cfir:analysis-tests:test --tests '*CfirAnalysisLLT*Generated$IfLetExpr*' --tests '*CfirAnalysisLLT*Generated$WhileLetExpr*' --tests '*CfirAnalysisLLT*Generated$Loops*' --tests '*CfirAnalysisLLT*Generated$Match$ValueBindingPattern*' --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g' '-Pkotlin.compiler.execution.strategy=in-process'`：194 项，190 通过、4 项既有同名绑定失败。六条修改测试均通过，修复两项旧失败，剩余消息不变。快照 32-syntax-slice。
+  - 同一全量命令 `gradlew-queue.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g'`：19m 18s 正常结束。31-deprecation-full → 32-syntax-full：FIXED=2、REGRESSED=0、NEW_KEYS=0、REMOVED_KEYS=0、其它状态变化=0、changed_failure_messages=[]。
+  - `gradlew-queue.bat validateDocumentation --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx512m'`：BUILD SUCCESSFUL；`git diff --check` 通过。
+
+| 指标（Gradle） | 修复前 | 修复后 |
+| --- | ---: | ---: |
+| 测试总数 | 8482 | 8482 |
+| 通过 | 7625 | 7627 |
+| 失败 | 550 | 548 |
+| 跳过 | 307 | 307 |
+
+XML 均为 8483 records、308 skipped，另含一条 skipped 聚合记录；比较文件为 build/repair-20260906/31-deprecation-full--32-syntax-full.json。
+
+- remaining failures: If 2、IfLetExpr 2、WhileLetExpr 2、Match 18、PatternMatching 47，共 71 项；Loops 通过。其它 477 项失败消息保持原样，Call、Generics、TypeInfer、Typealias 保持通过。
+- change isolation: 仅提交三份 fixture 和本条日志，.idea/workspace.xml 保持独立。
