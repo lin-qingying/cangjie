@@ -2,5 +2,5 @@
 
 
 main() {
-    while (let Some(a) <- 1 {}
+    while (let <!PATTERN_NOT_MATCH!>Some(a)<!> <- 1) {}
 }
