@@ -1211,6 +1211,10 @@ sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
         override val diagnosticClass get() = GenericArgumentNoMatch::class
     }
 
+    interface NonGenericFunctionWithTypeArgument : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = NonGenericFunctionWithTypeArgument::class
+    }
+
     interface InvalidTypeParamOfEnumMemberAccess : CaCfirDiagnostic<PsiElement> {
         override val diagnosticClass get() = InvalidTypeParamOfEnumMemberAccess::class
     }

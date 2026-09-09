@@ -1446,6 +1446,11 @@ internal class GenericArgumentNoMatchImpl(
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.GenericArgumentNoMatch
 
+internal class NonGenericFunctionWithTypeArgumentImpl(
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.NonGenericFunctionWithTypeArgument
+
 internal class InvalidTypeParamOfEnumMemberAccessImpl(
     cfirDiagnostic: CjPsiDiagnostic,
     token: CaLifetimeToken,

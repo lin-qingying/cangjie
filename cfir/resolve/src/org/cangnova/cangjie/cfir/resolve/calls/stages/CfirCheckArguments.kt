@@ -26,6 +26,7 @@ package org.cangnova.cangjie.cfir.resolve.calls.stages
 
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.diagnostic.InapplicableCandidate
+import org.cangnova.cangjie.cfir.diagnostic.NonGenericFunctionWithTypeArguments
 import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.expressions.CfirArrayLiteral
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
@@ -68,6 +69,8 @@ object CfirCheckArguments : ResolutionStage() {
         // 错误引用写回继续运行剩余 stage，因此这里必须消费结构化 outcome，不能
         // 再让 partial mapping 或未映射实参进入类型检查和约束系统。
         if (candidate.argumentMappingOutcome?.hasMappingFailure == true) return
+        // 实例化已失败；错误候选的完整重放也不能继续产生实参类型不匹配。
+        if (NonGenericFunctionWithTypeArguments in candidate.diagnostics) return
 
         val contextArgumentsOfInvoke = candidate.expectedContextParameterCountForInvoke ?: 0
         val argumentMapping = candidate.argumentMapping

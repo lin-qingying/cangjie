@@ -5644,3 +5644,47 @@ XML 为8473 → 8475 records，均另含一条 skipped 聚合记录（skipped=30
 
 - remaining failures: Call 8项，为call_inference_02（非泛型成员类型实参）、call_inference_11（参数诊断期望）、call22（递归构造诊断期望）、call_fuzz01（语法恢复契约）的双入口；其它556项保持原状态。
 - change isolation: 只提交本项 owner、优先级单测、两份Call fixture、对应生成方法和本日志；用户其它 WIP 保持独立。
+
+## 2026-09-09：非泛型实例成员的类型实参检查与上界接收者替换
+
+- problem type: Call / Explicit Type Arguments / Receiver Instantiation。对象成员调用的显式类型实参检查需保留与普通名称、类型限定调用不同的官方语义。
+- root cause:
+  - MapTypeArguments 将所有非泛型调用过早归为 GENERIC_ARGUMENT_NO_MATCH，丢失对象成员专用诊断，并遮盖应优先报告的值参数数量错误。
+  - 诊断工厂缺 NON_GENERIC_FUNCTION_WITH_TYPE_ARGUMENT；生成器虽已有 TYPE_ARGUMENT_LIST_OR_SELF 枚举，PSI/LightTree/SourceElement 三种定位策略尚未实现。
+  - extend 匹配仅遍历 nominal 父类型；类型参数的声明上界不在该 provider 的父边视图中，因此已从上界发现的泛型 extend 成员在 receiver 检查时丢失实例化映射。新增正例确认带类型实参与不带类型实参的调用都存在此缺口。
+- official Cangjie evidence:
+  - cjc 1.0.5 的 call_type_argument_paths、non_generic_member_diagnostic_order、call_inference_02、non_generic_member_boundaries、non_generic_member_type_arguments 与 upper_bound_member_type_arguments 探针覆盖普通名称、静态类型限定符、实例成员、this/super、结构体、接口、泛型/非泛型 extend、上界成员、函数值和错误诊断优先级；源码、JSON、命令和退出码均保存于 build/repair-20260906/evidence。
+  - 普通名称/静态限定符保持 sema_generic_argument_no_match；普通实例成员及泛型 extend 的非泛型成员报告 sema_non_generic_function_with_type_argument；非泛型 extend 与类型参数上界成员接受额外类型实参。
+  - 缺值参数优先报告 arity 错误；错误 type-ref 只保留自身诊断；错误值实参仍与 non_generic 同时报出。嵌套 callbackFactory 调用的错误归属内层有类型实参的调用。
+  - external/cangjie_compiler/src/Sema/TypeCheckReference.cpp:254-279 的 IsRefTypeArgSizeValid、ExtraScopes.cpp:144-153/300-339 的 GenerateExtendGenericTypeMapping/SetRefDecl、TypeCheckUtil.cpp:379-389 的 IsGenericUpperBoundCall、TypeCheckExpr/NameReferenceExpr.cpp:901-1004 的上界成员发现，以及 TypeManager.cpp:529-595 的 GenerateTypeMappingForUpperBounds/GenerateExtendGenericMappingVisit。
+- Kotlin counterpart files consulted: FIR TypeArgumentMapping.kt、ResolutionStages.kt、FirDiagnosticsList.kt:972；frontend.common-psi 下 PSI/LightTree/SourceElementPositioningStrategies 的 TYPE_ARGUMENT_LIST_OR_SELF；providers/resolve/ScopeUtils.kt:94-113 与 LookupTagUtils.kt:88-122 的上界 scope/receiver 表示。调用种类和语义规则取自仓颉，定位与分层采用上述 Kotlin 对应实现。
+- CFIR owner files changed:
+  - CfirMapTypeArguments、CfirCheckNonGenericMemberTypeArguments、CallKind：真实非泛型实例方法使用空类型参数映射，值参数/receiver 检查后单独验证实例化；类型/包限定符与函数值 invoke 沿原有路径。
+  - CfirCheckArguments、CfirCheckExpectedReturnTypeBeforeArguments：完整重放错误候选时也不越过已终止的实例化，避免再产生值类型错误或触发隐式返回推断。
+  - CfirExtendSubstitution：共享匹配遍历合法类型参数的声明上界，同时服务 scope、owner map 与 receiver 检查；沿用原有 where 约束和循环闭合规则。
+  - ResolutionDiagnostic、CfirDiagnosticsList、CfirErrorsDefaultMessages、coneDiagnosticToCfirDiagnostic，以及诊断/Analysis API 生成物：补齐专用诊断链路。
+  - common/diagnostics 三套定位策略：标记本调用自己的完整类型实参列表，不能下降到 receiver、嵌套 callee 调用或值实参中的列表。
+- repair principle: 先按调用语法和真实声明归属建立实例化规则，再按官方阶段顺序验证；上界成员沿统一的上界替换路径解析，不能用普通数量错误或未实例化 owner 掩盖差异。
+- fixtures covered: llt/call/call_inference_02.cj；新增 non_generic_member_type_arguments.cj、upper_bound_member_type_arguments.cj，两套 LLT 均覆盖。检索全部 LLT 的 NON_GENERIC_FUNCTION_WITH_TYPE_ARGUMENT / GENERIC_ARGUMENT_NO_MATCH，旧专用错误期望仅 call_inference_02。
+- fixture correction: call_inference_02 的诊断种类保持原样，仅按项目范围策略从 receiver 移到完整类型实参列表。新 fixture 的 Missing 使用已有 UNDECLARED_TYPE_NAME 项目映射，源程序不变。
+- unit-test correction: CfirMapTypeArgumentsTest 的上界冲突用例登记真实 Parent，并验证约束系统矛盾及 InapplicableCandidate。原 ArgumentTypeMismatch 断言不符合泛型推断阶段：官方 generic_bound_stage_diagnostic 探针报 sema_unable_to_infer_generic_func，Kotlin CheckArguments.kt:53-54 使用同一约束失败出口；没有为旧断言修改实现。
+- targeted verification: 28-member-targeted 的三份 Call fixture 双入口 6/6；参数映射 4 项与父类型 provider 7 项共 11/11。28-member-family 的 2302 项为 2292 PASS、10 原有 FAIL；FIXED=2、REGRESSED=0、NEW_KEYS=4（全 PASS）、其余失败消息全部不变。
+- Analysis API verification: generateDiagnostics 已更新三份生成文件；compileKotlin 已成功完成。包含该任务的 --continue 批次因修正前的旧单测断言退出 1；上述单测随后单独重新验证通过。
+- verification commands and outcome:
+  - `gradlew-queue.bat :cfir:analysis-tests:test --tests '*CfirAnalysisLLT*Generated$Call.testCallInference02' --tests '*CfirAnalysisLLT*Generated$Call.testNonGenericMemberTypeArguments' --tests '*CfirAnalysisLLT*Generated$Call.testUpperBoundMemberTypeArguments' :cfir:resolve:test --tests '*CfirMapTypeArgumentsTest*' --tests '*CfirTypeAwareSupertypeProviderTest*' --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g' '-Pkotlin.compiler.execution.strategy=in-process'`：LLT 6/6；旧单测经上述证据修正后，两个单测类重新执行为 11/11。
+  - Call/Generics/TypeInfer/Typealias/Extend/Function 切片使用 `--tests '*CfirAnalysisLLT*Generated$家族*'` 过滤器，保持上述 Gradle 运行参数，2302项；结果见28-member-family。
+  - 同一全量命令 `gradlew-queue.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g'`：修复前15m 10s，修复后24m 7s，均正常结束；28-before-full → 28-member-full，FIXED=2、REGRESSED=0、NEW_KEYS=4（全PASS）、REMOVED_KEYS=0、其它状态变化=0、changed_failure_messages=[]。其余560项失败完全不变。
+  - Call 174/180 → 180/184；TypeInfer 76/76、Generics 680/680、Typealias 独立测试组110/110（LLT 92项、Diagnostics 18项）保持通过。
+  - `gradlew-queue.bat validateDocumentation --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx512m'`：BUILD SUCCESSFUL。与 API 编译组合执行曾触发 Gradle 的隐式任务依赖校验，按独立命令执行通过。
+
+| 指标（Gradle） | 修复前 | 修复后 |
+| --- | ---: | ---: |
+| 测试总数 | 8474 | 8478 |
+| 通过 | 7605 | 7611 |
+| 失败 | 562 | 560 |
+| 跳过 | 307 | 307 |
+
+XML 为8475 → 8479 records，均另含一条 skipped 聚合记录（skipped=308），errors=0。原始 XML、完整测试键与新文件 SHA-256 保存在对应快照。
+
+- remaining failures: Call 4项，为call22（递归构造 Notes 被误标为主错误）和call_fuzz01（语法恢复契约）的双入口；其它556项保持原状态。
+- change isolation: 仅提交本项解析/诊断/定位 owner、测试与生成物及本日志，保留.idea/workspace.xml独立改动。

@@ -857,6 +857,7 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
         // ================================================================
         map.put(CfirErrors.GENERIC_TYPE_INCONSISTENT, "generic types substitutions are inconsistent for ''{0}''", RENDER_NAME)
         map.put(CfirErrors.GENERIC_ARGUMENT_NO_MATCH, "type argument's number does not match type parameter's number")
+        map.put(CfirErrors.NON_GENERIC_FUNCTION_WITH_TYPE_ARGUMENT, "non-generic function should not be used with type argument")
         map.put(CfirErrors.INVALID_TYPE_PARAM_OF_ENUM_MEMBER_ACCESS, "type arguments are not allowed on an enum member when its owner is explicit")
         map.put(CfirErrors.GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT, "generic type argument ''{0}'' does not match upper bound ''{1}'' of ''{2}''", RENDER_TYPE, RENDER_TYPE, RENDER_TYPE)
         map.put(CfirErrors.GENERIC_CONSTRAINT_NOT_LOOSER, "the constraint of type parameter is not looser than parent's constraint")

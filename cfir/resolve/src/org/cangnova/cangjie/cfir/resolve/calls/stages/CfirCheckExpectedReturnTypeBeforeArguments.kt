@@ -3,6 +3,7 @@ package org.cangnova.cangjie.cfir.resolve.calls.stages
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
+import org.cangnova.cangjie.cfir.diagnostic.NonGenericFunctionWithTypeArguments
 import org.cangnova.cangjie.cfir.resolve.ResolutionMode
 import org.cangnova.cangjie.cfir.resolve.expectedType
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
@@ -42,6 +43,8 @@ import org.cangnova.cangjie.resolve.calls.inference.addEqualityConstraintIfCompa
 object CfirCheckExpectedReturnTypeBeforeArguments : ResolutionStage() {
     context(sink: CheckerSink, context: ResolutionContext)
     override suspend fun check(candidate: Candidate) {
+        // 非泛型成员实例化已终止，不能在错误候选重放时再触发返回类型推断。
+        if (NonGenericFunctionWithTypeArguments in candidate.diagnostics) return
         val resolutionMode = candidate.callInfo.resolutionMode
         if (resolutionMode is ResolutionMode.WithExpectedType && resolutionMode.lastStatementInBlock) {
             // 见类 KDoc：尾表达式的返回类型细化由候选完成后的 reduceCandidatesByExpectedReturnType

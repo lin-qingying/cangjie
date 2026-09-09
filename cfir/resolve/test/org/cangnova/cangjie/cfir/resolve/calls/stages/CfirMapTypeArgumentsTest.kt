@@ -14,7 +14,7 @@ import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.newTes
 import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.registerHierarchyProviders
 import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.runStagesForTest
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
-import org.cangnova.cangjie.cfir.diagnostic.ArgumentTypeMismatch
+import org.cangnova.cangjie.cfir.diagnostic.InapplicableCandidate
 import org.cangnova.cangjie.cfir.symbols.ConeClassLikeLookupTagImpl
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
@@ -111,6 +111,9 @@ val childType = classLikeOf(childId)
     @Test
     fun `conflicting declaration bound`() {
         val session = newTestSession()
+        // 本例验证合法声明的上界冲突，Parent 必须是真实登记的类型而非错误签名。
+        val parent = ExtendTestFixtures.newClass(session.moduleData, "Parent", parentId)
+        session.registerHierarchyProviders(listOf(parent))
         val context = newResolutionContext(session)
 
         val t = ExtendTestFixtures.newTypeParameter(
@@ -133,7 +136,9 @@ val childType = classLikeOf(childId)
         )
 
         assertEquals(CandidateApplicability.INAPPLICABLE, candidate.applicability)
-        assertTrue(candidate.diagnostics.single() is ArgumentTypeMismatch)
+        // 推断实参与声明上界形成约束矛盾，沿 Kotlin CheckArguments 的统一失败出口拒绝候选。
+        assertTrue(candidate.system.hasContradiction)
+        assertEquals(InapplicableCandidate, candidate.diagnostics.single())
     }
 
     @Test

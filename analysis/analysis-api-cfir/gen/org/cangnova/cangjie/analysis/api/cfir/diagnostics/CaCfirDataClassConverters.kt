@@ -2272,6 +2272,12 @@ private fun CaDiagnosticConverterBuilder.addConversions103() {
             token,
         )
     }
+    add(CfirErrors.NON_GENERIC_FUNCTION_WITH_TYPE_ARGUMENT) { cfirDiagnostic ->
+        NonGenericFunctionWithTypeArgumentImpl(
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
     add(CfirErrors.VARIABLE_OF_JAVA_TYPE) { cfirDiagnostic ->
         VariableOfJavaTypeImpl(
             cfirDiagnostic.a,
