@@ -5920,3 +5920,38 @@ XML 为 8487 → 8489 records，均为 308 skipped（含一条聚合记录）。
 
 - remaining failures: Match 14、PatternMatching 44，共 58 项；If、IfLetExpr、WhileLetExpr、Loops、Call、Generics、TypeInfer、Typealias 保持通过。Match 的初始化字面量专用诊断属于下一类问题，期望未退化为普通 TYPE_MISMATCH。
 - change isolation: 仅提交本类共享实现、诊断生成输入/产物、五份 fixture、生成测试入口和日志；.idea/workspace.xml 独立保留。
+
+## 2026-09-10：标量字面量转换诊断归一，保留 lambda 约束归属
+
+- problem type: Diagnostics / Literal conversion。
+- root cause: 初始化器、返回值和部分显式泛型实参经过 specificTypeMismatchDiagnostic 时，没有调用已有的 literalConversionMismatch 分类器，导致数值/布尔跨标量类别转换只报普通 TYPE_MISMATCH。接通共享分类后还必须优先识别 lambda 返回约束，它比较的是完整函数值而非内部字面量的直接目标定型。
+- official Cangjie evidence: cjc 1.0.5 逐文件验证 36-literal-evidence 的 31 份 fixture、36-lambda-evidence 的两份 lambda 用例，以及 36-errmsgs-evidence 的 sync_0 / var_decl_0；共 35 份均无 parse/driver 错误。前者确认 CANNOT_CONVERT_LITERAL 的类别及位置；lambda 两例均报告整个 `{ _ => true }` 的 sema_mismatched_types（期望 `(Int64)->Int64`，实际 `(Int64)->Bool`），所以不能改写其正确期望。证据包含隔离源码、命令及完整 JSON。
+- official implementation: external/cangjie_compiler/src/Sema/TypeCheckExpr/LitConstExpr.cpp:26-130 的 ChkLitConstExprOfTypeBool / Integer / Float / Char；普通标量转换失败有专用诊断，已作为函数值完成的 lambda 仍按函数类型兼容性判断。
+- Kotlin counterpart files consulted: external/kotlin/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/diagnostics/ConeDiagnosticToFirDiagnostic.kt:749-776，先根据 anonymousFunctionIfReturnExpression 识别返回约束的诊断 owner，再处理普通实参。
+- CFIR owner files changed: CfirTypeSemanticsDiagnostics.kt 在共享细分 mismatch 入口复用现有标量分类；coneDiagnosticToCfirDiagnostic.kt 将匿名函数返回约束的整函数诊断置于字面量细分之前。未改写类型推断或字面量值。
+- repair principle: 通过同一分类器覆盖直接标量消费点，以结构化约束来源保留 lambda 的完整函数诊断，禁止按测试名或局部文字改变输出。
+- fixtures covered / expectation corrections:
+  - diagnostics/type-mismatch/argumentTypeMismatch.cj；diagnostics2/type-mismatch/argumentTypeMismatch.cj。
+  - diagnostics2/range/rangeEndpointTypeMismatch.cj、rangeOneSidedAndStepMatrix.cj、rangeSingleEndpointInference.cj、rangeStepTypeMustBeInt64.cj、rangeTargetTypeMismatch.cj。
+  - diagnostics2/try/multiCatchJoinMismatch.cj、tryCatchBranchTypeMismatch.cj、tryMultipleCatchJoinMatrix.cj。
+  - llt/ErrMsgs/sync_1.cj、PatternMatching/TuplePattern/tuple1.cj（仅两个初始化点）、function/func_param_match.cj、match/matchcase1.cj、match/matchcase4.cj、range/range2.cj、range/range4.cj、toplevel/vardecl1.cj、var/var_literal_type_incompatible.cj。
+  - 原 llt/match/matchpattern_guard.cj 恢复通过，期望未改。两份 lambdaReturnConstraintMismatch fixture 及其 feature directive 保持原样。所有修正都由对应 cjc 专用错误证明，未将 lambda 类型约束或其它普通类型错误误归类。
+- verification commands and outcome:
+  - 36-literal-targeted-final：70 records，50 通过、20 跳过、0 失败，覆盖两份 lambda、完整 TypeMismatch 组、MatchpatternGuard 及变量跨标量转换。
+  - 36-literal-family-final：3293 项，2925 通过、62 既有失败、306 跳过；FIXED=2、REGRESSED=0。过滤器覆盖 If、WhileLetExpr、Loops、Match、PatternMatching、Generics、TypeInfer、Typealias、Call、Function、FlowExpr、Var、Range、Array、Toplevel 和 CfirAnalysisDiagnostics*，采用标准单 worker / 1 GiB Gradle 参数。
+  - 首次全量发现 ErrMsgs/sync_1 的两个同步块仍有旧期望，按事先保存的官方证据补齐；36-errmsgs-final 完整组 96 项中 66 通过、30 既有失败，零回归。
+  - 最终同一全量命令 `gradlew-queue.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g'`：12m 47s 正常结束。35-conditions-full → 36-literal-full：FIXED=2、REGRESSED=0、NEW_KEYS=0、REMOVED_KEYS=0、其它状态变化=0。
+  - `gradlew-queue.bat validateDocumentation --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx512m'`：BUILD SUCCESSFUL；`git diff --check` 通过。
+  - changed_failure_messages 为 sync_0、var_decl_0、Tuple1 的双入口，共 6 项，仅涉及已取证的专用字面量诊断或本次对应期望；各自其它既有语义问题仍在。其余 527 项失败消息不变。
+
+| 指标（Gradle） | 修复前 | 修复后 |
+| --- | ---: | ---: |
+| 测试总数 | 8488 | 8488 |
+| 通过 | 7646 | 7648 |
+| 失败 | 535 | 533 |
+| 跳过 | 307 | 307 |
+
+XML 均为 8489 records、308 skipped（含一条聚合记录）。最终快照 36-literal-full，比较文件 35-conditions-full--36-literal-full.json。
+
+- remaining failures: Match 12、PatternMatching 44，共 56 项；If、IfLetExpr、WhileLetExpr、Loops、Call、Generics、TypeInfer、Typealias 保持通过。
+- change isolation: 仅提交两处共享诊断实现、19 份经官方取证的 fixture 期望与本条日志，.idea/workspace.xml 保持独立。

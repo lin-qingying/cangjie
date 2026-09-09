@@ -1,7 +1,7 @@
 
 
 
-let a: Int64 = <!TYPE_MISMATCH!>1.8<!>
+let a: Int64 = <!CANNOT_CONVERT_LITERAL!>1.8<!>
 let b: Int32 = 8
 var c: Int64 = 88
 var d = 888

@@ -11,6 +11,6 @@ func multiCatchJoinMismatch(flag: Bool): Int64 {
     } catch (e: ExA) {
         2
     } catch (e: ExB) {
-        <!TYPE_MISMATCH!>false<!>
+        <!CANNOT_CONVERT_LITERAL!>false<!>
     }
 }

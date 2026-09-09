@@ -8,5 +8,5 @@ func boundedRangeMatchesContext(): Range<Int64> {
 }
 
 func boundedRangeBoolStartMismatch(): Range<Int64> {
-    return  expectIntRange(<!TYPE_MISMATCH!>true<!>..10)
+    return  expectIntRange(<!CANNOT_CONVERT_LITERAL!>true<!>..10)
 }
