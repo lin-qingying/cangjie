@@ -5721,3 +5721,49 @@ XML均为8479 records，另含一条skipped聚合记录（skipped=308），error
 
 - remaining failures: Call仅剩call_fuzz01的双入口。用户已明确CFIR仅测语义，测试文件必须语法正确；该用例将先修正语法，再用官方cjc确定语义期望，作为下一独立问题处理。Record的下标错误差异单独保留。
 - change isolation: 仅提交两份fixture和本条日志，源程序声明和表达式保持原样，没有改构造图实现。
+
+## 2026-09-09：Call 用例先保证语法正确，并补齐父接口实例化诊断
+
+- problem type: Semantic Fixture Validity / Interface Supertype Instantiation。
+- user contract: 用户明确要求CFIR只测语义，存在语法错误的测试源码必须先修正；本项据此修正源码，不再把解析恢复树的结果作为该Call用例的语义期望。中英文TESTING_CONVENTIONS已记录这一前置条件。
+- root cause:
+  - call_fuzz01有空lambda缺箭头、泛型闭合错误、条件括号错误和接口体中的游离表达式，官方cjc只报告5个语法错误，无法验证原fixture的语义。
+  - 恢复合法语法后，父接口a的类型实参违反约束；CFIR只根据外层interface符号与ConeErrorType判断合法性，遗漏已存在的共享泛型实例化校验结果。
+  - e1a807ab1将PrimaryResolutionError与继承环一同跳过，覆盖了此前已通过官方证据确认的未知父类型双诊断行为。多个非法父类型又会因CFIR诊断携带不同父类型名而重复报告同一接口级错误。
+  - 导入失败后的unresolved抑制原来只属于错误节点收集器，接口检查没有共享这个根因边界。首轮全量发现既有宏G1测试因缺失default.f2而多出接口诊断，已用共享条件消除该级联。
+- official Cangjie evidence:
+  - 同源generics/instantiation_test.cj给出原用例的合法结构。call_fuzz01仅修正语法并把i.k<Range<Int64>>引用放回原有l()函数体，保留原标识符g16、UInt和泛型/上界负例；官方对修正后的源码产生3个非法上界错误、1个类型实参约束错误和1个接口父类型错误。
+  - audit_call_syntax.py逐份编译Call目录91份源码：30-call-syntax-baseline只有call_fuzz01包含5个parse错误。30-call-syntax-after按源码SHA-256复用未变90份结果并重新编译该文件，91份均无parse/driver错误；另外检查全部诊断渠道，没有lex错误，error类别仅sema/chir。命令和原始输出均由manifest记录，复用结果明确标记reused_from。
+  - invalid_generic_superinterface与invalid_generic_superinterface_shapes探针覆盖直接泛型、别名、nominal嵌套、错误数量、未声明父类型、多非法父类型及继承环。tuple/function内部的Box<Bad>只报告内层上界错误，不增加接口错误；class的错误接口实参也不额外使用interface声明诊断。继承环仅报告环错误。
+  - 重新编译extend_invalid_type02确认Strbase的未知T与String两个非法父类型仍只产生一条接口级错误；每个类型引用的根错误独立保留。
+  - failed_import_superinterfaces探针只报告package_search_error，不派生直接未知父类型或嵌套未知实参的接口错误。该文件同时包含正常本地接口，区分缺失导入支配的unresolved与普通的父类型合法性规则。
+  - external/cangjie_compiler/src/Sema/TypeCheckClassLike.cpp:241-261的CheckInterfaceDecl先Synthesize父类型，结果不是InterfaceTy时报告sema_interface_inherit_non_interface；官方诊断按接口声明定位。原始证据保存在build/repair-20260906/evidence及30-call-syntax-*。
+- Kotlin counterpart files consulted: FirSupertypesChecker.kt及其interfaceWithSuperclassReported声明级控制；FirUpperBoundViolatedHelpers.kt、FirUpperBoundViolatedTypeChecker。架构保持父声明合法性与类型实参根诊断分离，具体触发规则使用仓颉官方证据。
+- CFIR owner files changed:
+  - CfirSupertypesChecker：复用hasInvalidGenericTypeArgument的无报告查询；只对继承环保留独立诊断，恢复其它无效父类型的接口诊断；同一接口声明只报告一次。
+  - CfirUpperBoundViolatedHelpers：更新查询用途的中文KDoc，校验算法和泛型根诊断的唯一报告职责不变。
+  - CfirImportErrorUtils、ErrorNodeDiagnosticCollectorComponent：抽取原有isUnresolvedCascadeAfterFailedImport判断供错误节点与声明检查共同消费；原收集器的条件不变，接口检查覆盖父类型及嵌套实参中的受支配错误。
+  - TESTING_CONVENTIONS.md及中文文档：明确CFIR语义fixture须先通过语法分析。
+- repair principle: 以语法正确的源码验证真实语义，由共享上界校验决定实例化合法性，接口级检查消费结果且每个声明只报告一次，不按fixture或具体类型特判。
+- fixtures covered: call/call_fuzz01.cj；新增interface/invalid_generic_superinterface.cj、failed_import_superinterfaces.cj及双入口生成方法；同源generics/instantiation_test.cj、extend_invalid_type02.cj和宏defaultParameter_pkg_02/g1/test2.cj保持期望不变，完整Call及接口/类/泛型/类型别名/扩展/TypeInfer/诊断切片用于回归。
+- targeted verification: 30-superinterface-targeted为6/6；首次扩大切片发现Strbase重复报告后已在共享owner修复，未提交中间版本。最终30-superinterface-family为4341项，4029 PASS、6原有FAIL、306SKIP，FIXED=2、REGRESSED=0、NEW_KEYS=2（均PASS），剩余失败消息完全不变。Call184/184。
+- import-cascade verification: 30-import-cascade-targeted共10项，8PASS、2原有MacroFAIL；FIXED=2、REGRESSED=0，新增两个Interface fixture的4项全部通过，两个宏用例的failure message与29-constructor-notes-full逐字一致。没有修改宏fixture来掩盖差异。
+- verification commands and outcome:
+  - 定向命令使用 `gradlew-queue.bat :cfir:analysis-tests:test --tests '*CfirAnalysisLLT*Generated$Call.testCallFuzz01' --tests '*CfirAnalysisLLT*Generated$Interface.testInvalidGenericSuperinterface' --tests '*CfirAnalysisLLT*Generated$Interface.testFailedImportSuperinterfaces' --tests '*CfirAnalysisLLT*Generated$Extend.testExtendInvalidType02' --tests '*CfirAnalysisMacro*Generated$Llt$Function$DefaultParameterPkg02$G1.testTest2' --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g' '-Pkotlin.compiler.execution.strategy=in-process'`，结果见30-import-cascade-targeted。
+  - 相关完整切片过滤器为Call、Interface、Class、Generics、Typealias、Extend、TypeInfer的双入口和CfirAnalysisDiagnostics*，保持上述Gradle参数，4341项结果见30-superinterface-family。
+  - 最终同一全量命令 `gradlew-queue.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g'`：23m 13s正常结束。29-constructor-notes-full → 30-final-full：FIXED=2（CallFuzz01双入口）、REGRESSED=0、NEW_KEYS=4（均PASS）、REMOVED_KEYS=0、其它状态变化=0、changed_failure_messages=[]。556项剩余失败逐字保持原样。
+  - Call LLT 184/184全部通过；Generics 680/680、TypeInfer 76/76、Typealias独立测试组110/110保持通过。Call目录91份源码均经官方语法审计，无语法错误。
+  - `gradlew-queue.bat validateDocumentation --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx512m'`：BUILD SUCCESSFUL。
+
+| 指标（Gradle） | 修复前 | 修复后 |
+| --- | ---: | ---: |
+| 测试总数 | 8478 | 8482 |
+| 通过 | 7613 | 7619 |
+| 失败 | 558 | 556 |
+| 跳过 | 307 | 307 |
+
+XML为8479 → 8483 records，均另含一条skipped聚合记录（skipped=308），errors=0。最终快照与比较文件为30-final-full及29-constructor-notes-full--30-final-full.json。
+
+- 本轮累计：28-before-full → 30-final-full，6项旧失败修复、8项新增测试全部通过、零回归；测试总数8474→8482，通过7605→7619，失败562→556，跳过307不变。剩余失败消息仅RecordVardeclCheck因问题29的期望修正发生变化，实际诊断不变。
+- remaining failures: Call已清零。其余556项按套件归并为Macro 252、PatternMatching/Match/NonExhaustiveEnum 73、Record/InitializationCheck 59、ErrMsgs 30、其它142；完整逐测试键分组保存在30-final-full/results.json。
+- change isolation: 仅提交本项共享诊断检查、三份语义fixture、对应生成方法、中英文测试约定及本日志；宏fixture保持原样，.idea/workspace.xml独立保留。

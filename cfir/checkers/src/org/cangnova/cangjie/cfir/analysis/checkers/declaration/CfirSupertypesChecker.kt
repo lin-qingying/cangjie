@@ -1,5 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
+import org.cangnova.cangjie.cfir.analysis.checkers.hasInvalidGenericTypeArgument
+import org.cangnova.cangjie.cfir.analysis.checkers.isUnresolvedCascadeAfterFailedImport
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirClass
@@ -121,25 +123,29 @@ object CfirSupertypesChecker : CfirClassLikeChecker() {
     private fun checkInterfaceSupertypes(declaration: CfirInterface) {
         val ownerName = declaration.classLikeName()
         for (superTypeRef in declaration.superTypeRefs) {
-            // 继承环和名称/类型位置的主解析错误都由各自的根诊断独占。不能仅凭
-            // ConeErrorType 再派生 INTERFACE_CANNOT_INHERIT_CLASS：前者是可继续检查
-            // 的 nominal 恢复态，后者（例如未声明的 T）没有可判定的父类型种类。
-            // 复用声明父类型分类边界，保证接口路径与 class 路径使用同一恢复语义。
+            // 继承环不改变父接口的种类，沿用环诊断；其它父类型解析/实例化失败时，
+            // 官方 CheckInterfaceDecl 还会报告 interface_inherit_non_interface。
             when (superTypeRef.classifyDeclaredSupertype(context.session)) {
-                is DeclaredSupertypeClassification.PrimaryResolutionError,
                 is DeclaredSupertypeClassification.LoopError -> continue
 
+                is DeclaredSupertypeClassification.PrimaryResolutionError,
                 is DeclaredSupertypeClassification.ValidNominal,
                 is DeclaredSupertypeClassification.RecoverableNominalError,
                 is DeclaredSupertypeClassification.InvalidTargetKind -> Unit
             }
 
             val superType = superTypeRef.toResolvedSupertypeForInterfaceLegality() ?: continue
+            // 未解析父类型若由导入失败支配，沿用错误节点收集的根因边界；同时覆盖嵌套实参。
+            if (superType.completeType.contains { type ->
+                    (type as? ConeErrorType)?.diagnostic?.isUnresolvedCascadeAfterFailedImport(context) == true
+                }
+            ) continue
 
-            // 外层 nominal 声明只负责提供父类型种类；完整类型树负责判定父类型是否有效。
-            // 例如 I<V> 即使能够解析到 interface I，未解析的 V 仍使整个继承类型无效。
+            // 可解析的 interface 名称不代表实例化成功；复用上界检查的无报告查询，
+            // 保持直接、嵌套及 typealias 实参使用同一规则，泛型根诊断仍由类型检查器报告。
             if (
                 !superType.completeType.contains { it is ConeErrorType } &&
+                !superTypeRef.hasInvalidGenericTypeArgument() &&
                 superType.nominalType.toResolvedSuperDeclaration(context)?.classKindOrNull() == CfirClassKind.INTERFACE
             ) {
                 continue
@@ -151,6 +157,8 @@ object CfirSupertypesChecker : CfirClassLikeChecker() {
                 a = ownerName,
                 b = superType.nominalType.supertypeDiagnosticName(context),
             )
+            // 该诊断属于接口声明；多个非法父类型只报告一次，各 typeRef 仍独立报告根错误。
+            return
         }
     }
 

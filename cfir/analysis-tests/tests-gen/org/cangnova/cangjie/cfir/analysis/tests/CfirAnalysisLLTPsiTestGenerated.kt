@@ -15638,6 +15638,12 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiLlTDiagnosticsTest() {
             runTest("cfir/analysis-tests/testData/llt/interface/default_member_01.cj")
         }
 
+        @TestMetadata("failed_import_superinterfaces.cj")
+        @Test
+        fun testFailedImportSuperinterfaces() {
+            runTest("cfir/analysis-tests/testData/llt/interface/failed_import_superinterfaces.cj")
+        }
+
         @TestMetadata("interface_conflict_inheritance_01.cj")
         @Test
         fun testInterfaceConflictInheritance01() {
@@ -15696,6 +15702,12 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiLlTDiagnosticsTest() {
         @Test
         fun testInterfaceInheritance02() {
             runTest("cfir/analysis-tests/testData/llt/interface/interface_inheritance_02.cj")
+        }
+
+        @TestMetadata("invalid_generic_superinterface.cj")
+        @Test
+        fun testInvalidGenericSuperinterface() {
+            runTest("cfir/analysis-tests/testData/llt/interface/invalid_generic_superinterface.cj")
         }
 
         @TestMetadata("var_pattern_any.cj")
