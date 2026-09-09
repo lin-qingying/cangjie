@@ -667,6 +667,10 @@ sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
         override val diagnosticClass get() = RepeatedBound::class
     }
 
+    interface MultipleClassUpperBounds : CaCfirDiagnostic<CjElement> {
+        override val diagnosticClass get() = MultipleClassUpperBounds::class
+    }
+
     interface ConflictingUpperBounds : CaCfirDiagnostic<CjNamedDeclaration> {
         override val diagnosticClass get() = ConflictingUpperBounds::class
     }

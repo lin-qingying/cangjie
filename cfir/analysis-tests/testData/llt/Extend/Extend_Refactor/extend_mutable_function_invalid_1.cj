@@ -15,7 +15,7 @@ interface I {
 struct R {
     public var a: Int32 = 8
     public mut func c(b: Int32): Int32 {
-        let c = <!UNRESOLVED_REFERENCE!>c<!>c
+        let c = <!UNRESOLVED_REFERENCE!>cc<!>
         a = c() + b
         return a
     }

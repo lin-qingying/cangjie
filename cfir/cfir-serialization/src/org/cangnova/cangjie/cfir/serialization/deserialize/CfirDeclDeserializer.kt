@@ -254,6 +254,15 @@ class CfirDeclDeserializer(
         return result.toMutableOrEmpty()
     }
 
+    /**
+     * 根据反序列化注解构建弃用信息提供者。
+     *
+     * 库声明的弃用信息必须从反序列化注解重建：`@Deprecated` 等内置注解语义
+     * 不能依赖源码侧 raw annotations 的保留。无匹配注解时返回 [EmptyDeprecationsProvider]。
+     */
+    private fun deprecationsProviderFor(annotations: List<CfirAnnotation>): DeprecationsProvider =
+        buildDeprecationsProvider(annotations)
+
     /** 恢复单个 CJO 注解调用。 */
     private fun deserializeAnnotation(
         serialized: Anno,
@@ -666,14 +675,15 @@ class CfirDeclDeserializer(
             }
         } ?: mutableListOf()
 
+        val deserializedAnnotations = deserializeAnnotations(decl, symbol)
         val cfirClass = CfirClassImpl(
             source = null,
             moduleData = context.moduleData,
             resolvePhase = CfirResolvePhase.BODY_RESOLVE,
-            annotations = deserializeAnnotations(decl, symbol),
+            annotations = deserializedAnnotations,
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
-            deprecationsProvider = EmptyDeprecationsProvider,
+            deprecationsProvider = deprecationsProviderFor(deserializedAnnotations),
             status = status,
             typeParameters = typeParams,
             symbol = symbol,
@@ -710,14 +720,15 @@ class CfirDeclDeserializer(
             }
         } ?: mutableListOf()
 
+        val deserializedAnnotations = deserializeAnnotations(decl, symbol)
         val cfirInterface = CfirInterfaceImpl(
             source = null,
             moduleData = context.moduleData,
             resolvePhase = CfirResolvePhase.BODY_RESOLVE,
-            annotations = deserializeAnnotations(decl, symbol),
+            annotations = deserializedAnnotations,
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
-            deprecationsProvider = EmptyDeprecationsProvider,
+            deprecationsProvider = deprecationsProviderFor(deserializedAnnotations),
             declarations = members,
             status = status,
             typeParameters = typeParams,
@@ -751,14 +762,15 @@ class CfirDeclDeserializer(
             }
         } ?: mutableListOf()
 
+        val deserializedAnnotations = deserializeAnnotations(decl, symbol)
         val cfirStruct = CfirStructImpl(
             source = null,
             moduleData = context.moduleData,
             resolvePhase = CfirResolvePhase.BODY_RESOLVE,
-            annotations = deserializeAnnotations(decl, symbol),
+            annotations = deserializedAnnotations,
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
-            deprecationsProvider = EmptyDeprecationsProvider,
+            deprecationsProvider = deprecationsProviderFor(deserializedAnnotations),
             status = status,
             typeParameters = typeParams,
             symbol = symbol,
@@ -796,14 +808,15 @@ class CfirDeclDeserializer(
             }
         } ?: mutableListOf()
 
+        val deserializedAnnotations = deserializeAnnotations(decl, symbol)
         val cfirEnum = CfirEnumImpl(
             source = null,
             moduleData = context.moduleData,
             resolvePhase = CfirResolvePhase.BODY_RESOLVE,
-            annotations = deserializeAnnotations(decl, symbol),
+            annotations = deserializedAnnotations,
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
-            deprecationsProvider = EmptyDeprecationsProvider,
+            deprecationsProvider = deprecationsProviderFor(deserializedAnnotations),
             status = status,
             typeParameters = typeParams,
             symbol = symbol,
@@ -851,18 +864,19 @@ class CfirDeclDeserializer(
             }
         }
 
+        val deserializedAnnotations = deserializeAnnotations(decl, symbol)
         val cfirFunc = CfirNamedFunctionImpl(
             source = null,
             moduleData = context.moduleData,
             resolvePhase = CfirResolvePhase.BODY_RESOLVE,
-            annotations = deserializeAnnotations(decl, symbol),
+            annotations = deserializedAnnotations,
             symbol = symbol,
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
             isLocal = false,
             dispatchReceiverType = dispatchReceiverTypeForCurrentOwner(status),
             status = status,
-            deprecationsProvider = EmptyDeprecationsProvider,
+            deprecationsProvider = deprecationsProviderFor(deserializedAnnotations),
             typeParameters = typeParams,
             returnTypeRef = returnTypeRef,
             name = name,
@@ -966,16 +980,17 @@ class CfirDeclDeserializer(
         }
         val returnTypeRef = buildClassConstructorReturnTypeRef(currentClassLikeOwner)
 
+        val deserializedAnnotations = deserializeAnnotations(decl, symbol)
         val constructor = if (isPrimary) {
             buildPrimaryConstructor {
                 source = null
                 moduleData = context.moduleData
                 resolvePhase = CfirResolvePhase.BODY_RESOLVE
-                annotations.addAll(deserializeAnnotations(decl, symbol))
+                annotations.addAll(deserializedAnnotations)
                 origin = CfirDeclarationOrigin.Library
                 attributes = CfirDeclarationAttributes.EMPTY
                 isLocal = false
-                deprecationsProvider = EmptyDeprecationsProvider
+                deprecationsProvider = deprecationsProviderFor(deserializedAnnotations)
                 dispatchReceiverType = null
                 this.status = status
                 this.typeParameters.addAll(typeParams)
@@ -989,11 +1004,11 @@ class CfirDeclDeserializer(
                 source = null
                 moduleData = context.moduleData
                 resolvePhase = CfirResolvePhase.BODY_RESOLVE
-                annotations.addAll(deserializeAnnotations(decl, symbol))
+                annotations.addAll(deserializedAnnotations)
                 origin = CfirDeclarationOrigin.Library
                 attributes = CfirDeclarationAttributes.EMPTY
                 isLocal = false
-                deprecationsProvider = EmptyDeprecationsProvider
+                deprecationsProvider = deprecationsProviderFor(deserializedAnnotations)
                 dispatchReceiverType = null
                 this.status = status
                 this.typeParameters.addAll(typeParams)
@@ -1018,18 +1033,19 @@ class CfirDeclDeserializer(
         }
         val returnTypeRef = buildTypeRef(decl.type)
 
+        val deserializedAnnotations = deserializeAnnotations(decl, symbol)
         val cfirProp = CfirPropertyImpl(
             source = null,
             moduleData = context.moduleData,
             resolvePhase = CfirResolvePhase.BODY_RESOLVE,
-            annotations = deserializeAnnotations(decl, symbol),
+            annotations = deserializedAnnotations,
             symbol = symbol,
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
             isLocal = false,
             dispatchReceiverType = dispatchReceiverTypeForCurrentOwner(status),
             status = status,
-            deprecationsProvider = EmptyDeprecationsProvider,
+            deprecationsProvider = deprecationsProviderFor(deserializedAnnotations),
             typeParameters = typeParams,
             returnTypeRef = returnTypeRef,
             name = name,
@@ -1059,18 +1075,19 @@ class CfirDeclDeserializer(
         val varInfo = if (decl.infoType == DeclInfo.VarInfo) decl.info(VarInfo()) as? VarInfo else null
         val isVar = varInfo?.isVar ?: false
 
+        val deserializedAnnotations = deserializeAnnotations(decl, symbol)
         val cfirVar = CfirFieldVariableImpl(
             source = null,
             moduleData = context.moduleData,
             resolvePhase = CfirResolvePhase.BODY_RESOLVE,
-            annotations = deserializeAnnotations(decl, symbol),
+            annotations = deserializedAnnotations,
             symbol = symbol,
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
             isLocal = false,
             dispatchReceiverType = dispatchReceiverTypeForCurrentOwner(status),
             status = status,
-            deprecationsProvider = EmptyDeprecationsProvider,
+            deprecationsProvider = deprecationsProviderFor(deserializedAnnotations),
             typeParameters = typeParams,
             returnTypeRef = returnTypeRef,
             name = name,
@@ -1106,17 +1123,18 @@ class CfirDeclDeserializer(
             outerIsVar = info?.isVar ?: false,
         )
 
+        val deserializedAnnotations = deserializeAnnotations(decl, symbol)
         val cfirVar = CfirPatternVariableImpl(
             source = null,
             moduleData = context.moduleData,
             resolvePhase = CfirResolvePhase.BODY_RESOLVE,
-            annotations = deserializeAnnotations(decl, symbol),
+            annotations = deserializedAnnotations,
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
             isLocal = false,
             dispatchReceiverType = dispatchReceiverTypeForCurrentOwner(status),
             status = status,
-            deprecationsProvider = EmptyDeprecationsProvider,
+            deprecationsProvider = deprecationsProviderFor(deserializedAnnotations),
             initializer = null,
             isVar = info?.isVar ?: false,
             symbol = symbol,
@@ -1274,19 +1292,20 @@ class CfirDeclDeserializer(
             if (outerIsLocal) CallableId(bindingName) else CallableId(packageFqName, bindingName),
         )
 
+        val deserializedAnnotations = bindingDecl
+            ?.let { deserializeAnnotations(it, symbol) }
+            ?: MutableOrEmptyList.empty()
         return CfirPatternBindingVariableImpl(
             source = null,
             moduleData = context.moduleData,
             resolvePhase = CfirResolvePhase.BODY_RESOLVE,
-            annotations = bindingDecl
-                ?.let { deserializeAnnotations(it, symbol) }
-                ?: MutableOrEmptyList.empty(),
+            annotations = deserializedAnnotations,
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
             isLocal = outerIsLocal,
             dispatchReceiverType = dispatchReceiverTypeForCurrentOwner(status),
             status = status,
-            deprecationsProvider = EmptyDeprecationsProvider,
+            deprecationsProvider = deprecationsProviderFor(deserializedAnnotations),
             initializer = null,
             isVar = outerIsVar,
             symbol = symbol,
@@ -1393,15 +1412,16 @@ class CfirDeclDeserializer(
             buildTypeRef(decl.type)
         }
 
+        val deserializedAnnotations = deserializeAnnotations(decl, symbol)
         val cfirAlias = CfirTypeAliasImpl(
             source = null,
             moduleData = context.moduleData,
             resolvePhase = CfirResolvePhase.BODY_RESOLVE,
-            annotations = deserializeAnnotations(decl, symbol),
+            annotations = deserializedAnnotations,
             symbol = symbol,
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
-            deprecationsProvider = EmptyDeprecationsProvider,
+            deprecationsProvider = deprecationsProviderFor(deserializedAnnotations),
             declarations = mutableListOf(),
             superTypeRefs = mutableListOf(),
             status = status,
@@ -1449,18 +1469,19 @@ class CfirDeclDeserializer(
         val status = buildStatus(decl)
         val typeParams = if (owner != null) mutableListOf() else deserializeTypeParameters(decl)
 
+        val deserializedAnnotations = deserializeAnnotations(decl, symbol)
         val enumCtor = CfirEnumConstructorImpl(
             source = null,
             moduleData = context.moduleData,
             resolvePhase = CfirResolvePhase.BODY_RESOLVE,
-            annotations = deserializeAnnotations(decl, symbol),
+            annotations = deserializedAnnotations,
             symbol = symbol,
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
             isLocal = false,
             dispatchReceiverType = null,
             status = status,
-            deprecationsProvider = EmptyDeprecationsProvider,
+            deprecationsProvider = deprecationsProviderFor(deserializedAnnotations),
             typeParameters = typeParams,
             returnTypeRef = buildEnumConstructorReturnTypeRef(owner),
             valueParameters = mutableListOf(),
@@ -1484,18 +1505,19 @@ class CfirDeclDeserializer(
             deserializeFunctionParameters(decl)
         }
 
+        val deserializedAnnotations = deserializeAnnotations(decl, symbol)
         val enumCtor = CfirEnumConstructorImpl(
             source = null,
             moduleData = context.moduleData,
             resolvePhase = CfirResolvePhase.BODY_RESOLVE,
-            annotations = deserializeAnnotations(decl, symbol),
+            annotations = deserializedAnnotations,
             symbol = symbol,
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
             isLocal = false,
             dispatchReceiverType = null,
             status = status,
-            deprecationsProvider = EmptyDeprecationsProvider,
+            deprecationsProvider = deprecationsProviderFor(deserializedAnnotations),
             typeParameters = typeParams,
             returnTypeRef = buildEnumConstructorReturnTypeRef(owner),
             valueParameters = valueParameters,
@@ -1593,12 +1615,13 @@ class CfirDeclDeserializer(
         } else {
             null
         }
+        val deserializedAnnotations = deserializeAnnotations(decl, symbol)
         val cfirParam = CfirValueParameterImpl(
             source = null,
             isNamed = isNamed,
             moduleData = context.moduleData,
             resolvePhase = CfirResolvePhase.BODY_RESOLVE,
-            annotations = deserializeAnnotations(decl, symbol),
+            annotations = deserializedAnnotations,
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
             isLocal = false,
@@ -1606,7 +1629,7 @@ class CfirDeclDeserializer(
             symbol = symbol,
             containingDeclarationSymbol = containingDeclarationSymbol,
             status = status,
-            deprecationsProvider = EmptyDeprecationsProvider,
+            deprecationsProvider = deprecationsProviderFor(deserializedAnnotations),
             typeParameters = typeParams,
             returnTypeRef = returnTypeRef,
             name = name,

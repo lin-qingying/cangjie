@@ -797,6 +797,11 @@ internal class RepeatedBoundImpl(
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<CjElement>(cfirDiagnostic, token), CaCfirDiagnostic.RepeatedBound
 
+internal class MultipleClassUpperBoundsImpl(
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<CjElement>(cfirDiagnostic, token), CaCfirDiagnostic.MultipleClassUpperBounds
+
 internal class ConflictingUpperBoundsImpl(
     cfirDiagnostic: CjPsiDiagnostic,
     token: CaLifetimeToken,

@@ -33,8 +33,9 @@ class ControlFlowAnalysisDiagnosticComponent(
     /** 退出函数后才能得到完整且冻结的 CFG。 */
     override fun onDeclarationExit(declaration: CfirDeclaration, data: CheckerContext) {
         val function = declaration as? CfirFunction ?: return
-        // 声明子树的 Sema 诊断此时已全部提交；存在错误即等同官方 CHIR 阶段未启动。
-        if (reporter.hasErrors) return
+        // 官方按 package/file 的 Sema 结果门控 CHIR；同一文件中前一个函数的
+        // pending/committed error 也必须阻断当前函数的 CFA，不能只看全局 reporter。
+        if (data.containingFilePath?.let(reporter::hasErrorsInFile) == true) return
         val graph = function.controlFlowGraphReference?.controlFlowGraph ?: return
         // 与官方 CHIR UnreachableBranchCheck 相同，CFA 只消费 CFG 常量分支目标；
         // Sema pattern legality 诊断不参与这一后端控制流判定。

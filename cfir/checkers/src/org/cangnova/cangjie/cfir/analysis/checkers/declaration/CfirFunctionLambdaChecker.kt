@@ -4,6 +4,7 @@ import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.explicitLambdaParameterType
 import org.cangnova.cangjie.cfir.analysis.checkers.firstOmittedLambdaParameterForInferenceFailure
 import org.cangnova.cangjie.cfir.analysis.checkers.hasOmittedLambdaParameterType
+import org.cangnova.cangjie.cfir.analysis.checkers.isExpressionForAnonymousFunction
 import org.cangnova.cangjie.cfir.analysis.checkers.lambdaExpectedFunctionType
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
@@ -11,6 +12,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.declarations.isInsideFailedArgumentMapping
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
+import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.resolve.calls.isLambdaTargetParameterSubtypeOfAnnotation
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeErrorType
@@ -67,7 +69,31 @@ object CfirLambdaParameterTypeChecker : CfirAnonymousFunctionChecker() {
         val hasOmittedParameterType = valueParameters.any { it.hasOmittedLambdaParameterType() }
 
         if (valueParameters.size != expectedFunctionType.parameterTypes.size) {
-            if (!hasOmittedParameterType) return false
+            if (!hasOmittedParameterType) {
+                if (!hasExplicitParameterList) return false
+                // A call argument already owns the complete expected-type mismatch. The
+                // call-level diagnostic is the single official report; repeating the same
+                // TYPE_MISMATCH from the anonymous-function checker creates two markers on
+                // one lambda. Variable initializers have no call owner and still report here.
+                if (context.callsOrAssignments
+                        .filterIsInstance<CfirFunctionCall>()
+                        .any { call ->
+                            call.argumentList.arguments.any { argument ->
+                                argument.isExpressionForAnonymousFunction(this)
+                            }
+                        }
+                ) {
+                    return false
+                }
+                reporter.reportOn(
+                    source = source,
+                    factory = CfirErrors.TYPE_MISMATCH,
+                    a = expectedFunctionType,
+                    b = actualLambdaFunctionType(expectedFunctionType),
+                    c = false,
+                )
+                return true
+            }
             reporter.reportOn(
                 source = lambdaParameterListSource() ?: source,
                 factory = CfirErrors.PARAM_COUNT_MISMATCH,

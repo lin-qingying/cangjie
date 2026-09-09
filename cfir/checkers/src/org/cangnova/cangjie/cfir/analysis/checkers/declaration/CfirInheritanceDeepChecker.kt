@@ -118,12 +118,16 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     internal fun checkExtend(declaration: CfirExtend) {
+        // `RETURN_TYPE_INCOMPATIBLE` 可能由两条独立路径产生（own member × 接口、接口默认实现
+        // 互比），官方只报一条（f4/extend_function_conflict_invalid_6）；共享去重集避免双报。
+        val sharedReturnTypeDedup = mutableSetOf<String>()
         checkInheritedMemberKindConsistency(
             subject = declaration.memberInheritanceSubject(),
             excludingExtend = declaration,
+            sharedReturnTypeDedup = sharedReturnTypeDedup,
         )
         checkSuperMembersKindConsistency(declaration.memberInheritanceSubject())
-        checkExtendTargetMemberCompatibility(declaration)
+        checkExtendTargetMemberCompatibility(declaration, sharedReturnTypeDedup)
         checkInheritedMemberTypeConsistency(declaration.memberInheritanceSubject())
     }
 
@@ -220,7 +224,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
      * 因此诊断落在 extend 声明本身。
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
-    private fun checkExtendTargetMemberCompatibility(extend: CfirExtend) {
+    private fun checkExtendTargetMemberCompatibility(extend: CfirExtend, sharedReturnTypeDedup: MutableSet<String>) {
         val receiverType = extend.extendedTypeRef.coneTypeOrNull ?: return
         val targetScope = CfirClassUseSiteMemberScope.createForUseSiteType(
             session = context.session,
@@ -244,7 +248,8 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         val reportedWeakVisibilities = mutableSetOf<String>()
         val reportedPropertyTypeConflicts = mutableSetOf<String>()
         val reportedPropertyMutabilityConflicts = mutableSetOf<String>()
-        val reportedFunctionReturnTypeConflicts = mutableSetOf<String>()
+        // 与 checkInheritedMemberKindConsistency 共享同一 RETURN 去重集（f4 双报根因）。
+        val reportedFunctionReturnTypeConflicts = sharedReturnTypeDedup
         val reportedIncompleteSuperExtendMembers = mutableSetOf<String>()
         val nonExportExtendDependencyNames = linkedSetOf<Name>()
         val currentExtendIsExported = context.session.accessibilityChecker.isExtendExported(extend)
@@ -854,6 +859,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkInheritedMemberTypeConsistency(subject: MemberInheritanceSubject) {
         val propertiesByName = linkedMapOf<Name, MutableSet<CfirPropertySymbol>>()
+        val functionsBySignature = linkedMapOf<String, MutableList<InheritedMemberInfo>>()
         val kindsByName = mutableMapOf<Name, MutableSet<String>>()
         for (inheritedSource in subject.inheritedSources) {
             if (inheritedSource.isExtendTarget) continue
@@ -865,6 +871,14 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                 scope.processCallablesByName(name) { symbol ->
                     val info = symbol.inheritedMemberInfoOrNull(context) ?: return@processCallablesByName
                     kindsByName.getOrPut(name) { mutableSetOf() }.add(info.kind)
+                    if (info.kind == "function") {
+                        val signatureKey = buildString {
+                            append(name.asString())
+                            append(':')
+                            append(info.symbol?.overrideSignatureKey(info.ownerSubstitutor).orEmpty())
+                        }
+                        functionsBySignature.getOrPut(signatureKey) { mutableListOf() } += info
+                    }
                 }
                 val properties = propertiesByName.getOrPut(name) { linkedSetOf() }
                 scope.processPropertiesByName(name, properties::add)
@@ -872,6 +886,45 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                     properties += it.member
                 }
             }
+        }
+
+        for ((_, functions) in functionsBySignature) {
+            val first = functions.firstOrNull() ?: continue
+            if (kindsByName[first.name].orEmpty().size > 1) continue
+            // A declaration on the current interface/class-like owns the override
+            // relationship; its return compatibility is diagnosed by the regular
+            // override path, not as an inherited-member conflict.
+            if (subject.declarations
+                    .mapNotNull { it.directMemberInfoOrNull(context) }
+                    .any { it.kind == "function" && it.canImplement(first) }
+            ) {
+                continue
+            }
+            // A default implementation and an abstract requirement are resolved by
+            // the implementation/override checks.  The inherited-type inconsistency
+            // diagnostic is for competing inherited requirements of the same kind.
+            if (functions.any { it.isDefault } && functions.any { !it.isDefault }) continue
+            val returnTypes = functions.mapNotNull { info ->
+                (info.symbol as? CfirFunctionSymbol<*>)?.resolvedReturnTypeOrNull(context)
+            }.filterNot { it is ConeErrorType }
+            if (returnTypes.size < 2) continue
+            val hasInconsistentReturnTypes = returnTypes.indices.any { i ->
+                (i + 1 until returnTypes.size).any { j ->
+                    val left = returnTypes[i]
+                    val right = returnTypes[j]
+                    !AbstractTypeChecker.equalTypes(context.session.typeContext, left, right) &&
+                        !AbstractTypeChecker.isSubtypeOf(context.session.typeContext, left, right) &&
+                        !AbstractTypeChecker.isSubtypeOf(context.session.typeContext, right, left)
+                }
+            }
+            if (!hasInconsistentReturnTypes) continue
+            reporter.reportOn(
+                source = subject.nameSource ?: subject.source,
+                factory = CfirErrors.INHERIT_MEMBER_TYPE_INCONSISTENT,
+                a = "return types",
+                b = "function",
+                c = first.name,
+            )
         }
 
         for ((name, properties) in propertiesByName) {
@@ -1101,6 +1154,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
     private fun checkInheritedMemberKindConsistency(
         subject: MemberInheritanceSubject,
         excludingExtend: CfirExtend? = null,
+        sharedReturnTypeDedup: MutableSet<String> = mutableSetOf(),
     ) {
         val ownMembers = subject.declarations.mapNotNull { member ->
             when (member) {
@@ -1163,7 +1217,9 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         val reportedKindConflicts = mutableSetOf<Name>()
         val reportedConstConflicts = mutableSetOf<String>()
         val reportedMutConflicts = mutableSetOf<String>()
-        val reportedReturnTypeConflicts = mutableSetOf<String>()
+        // extend 场景与 checkExtendTargetMemberCompatibility 共享，避免同一 RETURN 双报。
+        // class 场景沿用本函数级局部集合（默认参数值），跨路径去重不做。
+        val reportedReturnTypeConflicts = sharedReturnTypeDedup
         val reportedVariableShadows = mutableSetOf<Name>()
         val reportedCannotOverrides = mutableSetOf<String>()
         val reportedInvalidAbstractOverrides = mutableSetOf<String>()

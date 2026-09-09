@@ -1,0 +1,2309 @@
+[GradleQueue] exec: cmd.exe /s /c "D:\code\intellij\cangjie\gradlew.bat :cfir:analysis-tests:test --no-configuration-cache --console=plain"
+> Task :gradle-settings-conventions:jvm-toolchain-provisioning:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gradle-settings-conventions:jvm-toolchain-provisioning:generateExternalPluginSpecBuilders UP-TO-DATE
+> Task :gradle-settings-conventions:jvm-toolchain-provisioning:extractPrecompiledScriptPluginPlugins UP-TO-DATE
+> Task :gradle-settings-conventions:jvm-toolchain-provisioning:compilePluginsBlocks UP-TO-DATE
+> Task :gradle-settings-conventions:jvm-toolchain-provisioning:generatePrecompiledScriptPluginAccessors UP-TO-DATE
+> Task :gradle-settings-conventions:jvm-toolchain-provisioning:generateScriptPluginAdapters UP-TO-DATE
+> Task :gradle-settings-conventions:jvm-toolchain-provisioning:compileKotlin UP-TO-DATE
+> Task :gradle-settings-conventions:jvm-toolchain-provisioning:compileJava NO-SOURCE
+> Task :gradle-settings-conventions:jvm-toolchain-provisioning:pluginDescriptors UP-TO-DATE
+> Task :gradle-settings-conventions:jvm-toolchain-provisioning:processResources UP-TO-DATE
+> Task :gradle-settings-conventions:jvm-toolchain-provisioning:classes UP-TO-DATE
+> Task :gradle-settings-conventions:jvm-toolchain-provisioning:jar UP-TO-DATE
+> Task :gradle-build-conventions:utilities:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gradle-build-conventions:gradle-plugins-common:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gradle-build-conventions:buildsrc-compat:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gradle-build-conventions:analysis-coverage-convention:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gradle-build-conventions:project-tests-convention:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gradle-build-conventions:gradle-plugins-common:pluginDescriptors UP-TO-DATE
+> Task :gradle-build-conventions:buildsrc-compat:extractPrecompiledScriptPluginPlugins UP-TO-DATE
+> Task :gradle-build-conventions:project-tests-convention:extractPrecompiledScriptPluginPlugins UP-TO-DATE
+> Task :gradle-build-conventions:buildsrc-compat:generateScriptPluginAdapters UP-TO-DATE
+> Task :gradle-build-conventions:analysis-coverage-convention:extractPrecompiledScriptPluginPlugins UP-TO-DATE
+> Task :gradle-build-conventions:gradle-plugins-common:processResources NO-SOURCE
+> Task :gradle-build-conventions:buildsrc-compat:pluginDescriptors UP-TO-DATE
+> Task :gradle-build-conventions:project-tests-convention:generateScriptPluginAdapters UP-TO-DATE
+> Task :gradle-build-conventions:analysis-coverage-convention:generateScriptPluginAdapters UP-TO-DATE
+> Task :gradle-build-conventions:analysis-coverage-convention:pluginDescriptors UP-TO-DATE
+> Task :gradle-build-conventions:buildsrc-compat:processResources UP-TO-DATE
+> Task :gradle-build-conventions:project-tests-convention:pluginDescriptors UP-TO-DATE
+> Task :gradle-build-conventions:project-tests-convention:processResources UP-TO-DATE
+> Task :gradle-build-conventions:analysis-coverage-convention:processResources UP-TO-DATE
+> Task :gradle-build-conventions:utilities:compileKotlin UP-TO-DATE
+> Task :gradle-build-conventions:utilities:compileJava NO-SOURCE
+> Task :gradle-build-conventions:utilities:pluginDescriptors UP-TO-DATE
+> Task :gradle-build-conventions:utilities:processResources NO-SOURCE
+> Task :gradle-build-conventions:utilities:classes UP-TO-DATE
+> Task :gradle-build-conventions:gradle-plugins-common:compileKotlin NO-SOURCE
+> Task :gradle-build-conventions:gradle-plugins-common:compileJava NO-SOURCE
+> Task :gradle-build-conventions:utilities:jar UP-TO-DATE
+> Task :gradle-build-conventions:gradle-plugins-common:classes UP-TO-DATE
+> Task :gradle-build-conventions:gradle-plugins-common:jar UP-TO-DATE
+> Task :gradle-build-conventions:project-tests-convention:generateExternalPluginSpecBuilders UP-TO-DATE
+> Task :gradle-build-conventions:analysis-coverage-convention:generateExternalPluginSpecBuilders UP-TO-DATE
+> Task :gradle-build-conventions:buildsrc-compat:generateExternalPluginSpecBuilders UP-TO-DATE
+> Task :gradle-build-conventions:analysis-coverage-convention:compilePluginsBlocks UP-TO-DATE
+> Task :gradle-build-conventions:buildsrc-compat:compilePluginsBlocks UP-TO-DATE
+> Task :gradle-build-conventions:project-tests-convention:compilePluginsBlocks UP-TO-DATE
+> Task :gradle-build-conventions:analysis-coverage-convention:generatePrecompiledScriptPluginAccessors UP-TO-DATE
+> Task :gradle-build-conventions:project-tests-convention:generatePrecompiledScriptPluginAccessors UP-TO-DATE
+> Task :gradle-build-conventions:buildsrc-compat:generatePrecompiledScriptPluginAccessors UP-TO-DATE
+> Task :gradle-build-conventions:project-tests-convention:compileKotlin UP-TO-DATE
+> Task :gradle-build-conventions:analysis-coverage-convention:compileKotlin UP-TO-DATE
+> Task :gradle-build-conventions:project-tests-convention:compileJava NO-SOURCE
+> Task :gradle-build-conventions:project-tests-convention:classes UP-TO-DATE
+> Task :gradle-build-conventions:analysis-coverage-convention:compileJava NO-SOURCE
+> Task :gradle-build-conventions:analysis-coverage-convention:classes UP-TO-DATE
+> Task :gradle-build-conventions:buildsrc-compat:compileKotlin UP-TO-DATE
+> Task :gradle-build-conventions:project-tests-convention:jar UP-TO-DATE
+> Task :gradle-build-conventions:buildsrc-compat:compileJava NO-SOURCE
+> Task :gradle-build-conventions:buildsrc-compat:classes UP-TO-DATE
+> Task :gradle-build-conventions:analysis-coverage-convention:jar UP-TO-DATE
+> Task :gradle-build-conventions:buildsrc-compat:jar UP-TO-DATE
+> Task :gradle-build-conventions:generators:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gradle-build-conventions:generators:generateExternalPluginSpecBuilders UP-TO-DATE
+> Task :gradle-build-conventions:generators:extractPrecompiledScriptPluginPlugins UP-TO-DATE
+> Task :gradle-build-conventions:generators:compilePluginsBlocks UP-TO-DATE
+> Task :gradle-build-conventions:generators:generatePrecompiledScriptPluginAccessors UP-TO-DATE
+> Task :gradle-build-conventions:generators:generateScriptPluginAdapters UP-TO-DATE
+> Task :gradle-build-conventions:generators:compileKotlin UP-TO-DATE
+> Task :gradle-build-conventions:generators:compileJava NO-SOURCE
+> Task :gradle-build-conventions:generators:pluginDescriptors UP-TO-DATE
+> Task :gradle-build-conventions:generators:processResources UP-TO-DATE
+> Task :gradle-build-conventions:generators:classes UP-TO-DATE
+> Task :gradle-build-conventions:generators:jar UP-TO-DATE
+> Task :gradle-build-conventions:native-compile-plugin:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gradle-build-conventions:native-compile-plugin:compileKotlin UP-TO-DATE
+> Task :gradle-build-conventions:native-compile-plugin:compileJava NO-SOURCE
+> Task :gradle-build-conventions:native-compile-plugin:pluginDescriptors UP-TO-DATE
+> Task :gradle-build-conventions:native-compile-plugin:processResources UP-TO-DATE
+> Task :gradle-build-conventions:native-compile-plugin:classes UP-TO-DATE
+> Task :gradle-build-conventions:native-compile-plugin:jar UP-TO-DATE
+> Task :cfir:analysis-tests:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :psi:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :util:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :cfir:cfir-tree:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :generators:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :cfir:cfir-tree:tree-generator:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :compiler:config:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :resolution.common:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :cfir:cfir-common:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :cfir:cfir-cones:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :common:diagnostics:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :cfir:cfir-serialization:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :common:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :flatbuffers-gen:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :cfir:providers:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :cfir:cfir-tree:tree-generator:processResources NO-SOURCE
+> Task :util:processResources NO-SOURCE
+> Task :resolution.common:processResources NO-SOURCE
+> Task :common:diagnostics:processResources NO-SOURCE
+> Task :dependencies:intellij-core:compileJava NO-SOURCE
+> Task :cfir:analysis-tests:processResources NO-SOURCE
+> Task :cfir:cfir-common:processResources NO-SOURCE
+> Task :compiler:config:processResources NO-SOURCE
+> Task :cfir:cfir-tree:processResources NO-SOURCE
+> Task :cfir:cfir-cones:processResources NO-SOURCE
+> Task :generators:processResources NO-SOURCE
+> Task :cfir:cfir-serialization:processResources NO-SOURCE
+> Task :cfir:providers:processResources NO-SOURCE
+> Task :cfir:checkers:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :cfir:checkers:checkers-component-generator:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :psi:generateCDocLexer UP-TO-DATE
+> Task :common:processResources NO-SOURCE
+> Task :flatbuffers-gen:locateFlatc UP-TO-DATE
+> Task :cfir:semantics:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :cfir:resolve:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :cfir:entrypoint:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :cfir:raw-cfir:raw-cfir-common:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :cfir:raw-cfir:light-tree2cfir:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :cfir:diagnostic-renderers:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :cfir:semantics:processResources NO-SOURCE
+> Task :cfir:checkers:checkers-component-generator:processResources NO-SOURCE
+> Task :dependencies:intellij-core:processResources NO-SOURCE
+> Task :compiler:frontend:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :cfir:raw-cfir:psi2cfir:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :cfir:analysis-tests:compileKotlin NO-SOURCE
+> Task :compiler:arguments:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :cfir:raw-cfir:raw-cfir-common:processResources NO-SOURCE
+> Task :cfir:raw-cfir:light-tree2cfir:processResources NO-SOURCE
+> Task :cfir:diagnostic-renderers:processResources NO-SOURCE
+> Task :compiler:arguments:processResources NO-SOURCE
+> Task :compiler:phaser:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :compiler:frontend-arguments-generator:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :macro:macro-common:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :macro:macro-process:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :cfir:entrypoint:processResources NO-SOURCE
+> Task :cfir:checkers:processResources NO-SOURCE
+> Task :flatbuffers-gen:generateKotlinFlatBuffers UP-TO-DATE
+> Task :cfir:raw-cfir:psi2cfir:processResources NO-SOURCE
+> Task :cfir:resolve:processResources NO-SOURCE
+> Task :compiler:frontend-arguments-generator:processResources NO-SOURCE
+> Task :compiler:frontend:processResources NO-SOURCE
+> Task :macro:macro-common:processResources NO-SOURCE
+> Task :compiler:phaser:processResources NO-SOURCE
+> Task :cfir:analysis-tests:compileJava NO-SOURCE
+> Task :tests:test-infrastructure:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :psi:generateCangJieLexer UP-TO-DATE
+> Task :cfir:analysis-tests:classes UP-TO-DATE
+> Task :macro:macro-process:processResources NO-SOURCE
+> Task :tests:test-infrastructure:processResources NO-SOURCE
+> Task :psi:generateLexers UP-TO-DATE
+> Task :tests:test-infrastructure:processTestFixturesResources NO-SOURCE
+> Task :psi:processResources UP-TO-DATE
+> Task :cfir:analysis-tests:jar UP-TO-DATE
+> Task :cfir:analysis-tests:processTestFixturesResources NO-SOURCE
+> Task :cfir:analysis-tests:processTestResources NO-SOURCE
+> Task :flatbuffers-gen:compileKotlin UP-TO-DATE
+> Task :flatbuffers-gen:compileJava NO-SOURCE
+> Task :flatbuffers-gen:processResources NO-SOURCE
+> Task :flatbuffers-gen:classes UP-TO-DATE
+> Task :util:compileKotlin UP-TO-DATE
+> Task :util:compileJava NO-SOURCE
+> Task :util:classes UP-TO-DATE
+> Task :common:compileKotlin UP-TO-DATE
+> Task :common:compileJava NO-SOURCE
+> Task :common:classes UP-TO-DATE
+> Task :generators:compileKotlin UP-TO-DATE
+> Task :resolution.common:compileKotlin UP-TO-DATE
+> Task :generators:compileJava NO-SOURCE
+> Task :generators:classes UP-TO-DATE
+> Task :resolution.common:compileJava UP-TO-DATE
+> Task :resolution.common:classes UP-TO-DATE
+> Task :compiler:arguments:compileKotlin UP-TO-DATE
+> Task :compiler:arguments:compileJava NO-SOURCE
+> Task :compiler:arguments:classes UP-TO-DATE
+> Task :psi:compileKotlin UP-TO-DATE
+> Task :compiler:frontend-arguments-generator:compileKotlin UP-TO-DATE
+> Task :compiler:frontend-arguments-generator:compileJava NO-SOURCE
+> Task :psi:compileJava UP-TO-DATE
+> Task :psi:classes UP-TO-DATE
+> Task :compiler:frontend:generateFrontendArguments UP-TO-DATE
+> Task :common:diagnostics:compileKotlin UP-TO-DATE
+> Task :common:diagnostics:compileJava NO-SOURCE
+> Task :common:diagnostics:classes UP-TO-DATE
+> Task :tests:test-infrastructure:compileKotlin NO-SOURCE
+> Task :tests:test-infrastructure:compileJava NO-SOURCE
+> Task :tests:test-infrastructure:classes UP-TO-DATE
+> Task :tests:test-infrastructure:jar UP-TO-DATE
+> Task :compiler:config:compileKotlin UP-TO-DATE
+> Task :compiler:config:compileJava NO-SOURCE
+> Task :compiler:config:classes UP-TO-DATE
+> Task :compiler:phaser:compileKotlin UP-TO-DATE
+> Task :compiler:phaser:compileJava NO-SOURCE
+> Task :compiler:phaser:classes UP-TO-DATE
+> Task :cfir:cfir-common:compileKotlin UP-TO-DATE
+> Task :cfir:cfir-common:compileJava NO-SOURCE
+> Task :cfir:cfir-common:classes UP-TO-DATE
+> Task :cfir:cfir-cones:compileKotlin UP-TO-DATE
+> Task :cfir:cfir-cones:compileJava NO-SOURCE
+> Task :cfir:cfir-cones:classes UP-TO-DATE
+> Task :cfir:cfir-tree:tree-generator:compileKotlin UP-TO-DATE
+> Task :cfir:cfir-tree:tree-generator:compileJava NO-SOURCE
+> Task :cfir:cfir-tree:tree-generator:classes UP-TO-DATE
+> Task :cfir:cfir-tree:generateTree UP-TO-DATE
+> Task :cfir:cfir-tree:compileKotlin UP-TO-DATE
+> Task :cfir:cfir-tree:compileJava NO-SOURCE
+> Task :cfir:cfir-tree:classes UP-TO-DATE
+> Task :cfir:providers:compileKotlin UP-TO-DATE
+> Task :cfir:checkers:checkers-component-generator:compileKotlin UP-TO-DATE
+> Task :cfir:providers:compileJava NO-SOURCE
+> Task :macro:macro-common:compileKotlin UP-TO-DATE
+> Task :cfir:providers:classes UP-TO-DATE
+> Task :cfir:checkers:checkers-component-generator:compileJava NO-SOURCE
+> Task :macro:macro-common:compileJava NO-SOURCE
+> Task :macro:macro-common:classes UP-TO-DATE
+> Task :cfir:checkers:generateCheckersComponents UP-TO-DATE
+> Task :cfir:diagnostic-renderers:compileKotlin UP-TO-DATE
+> Task :cfir:diagnostic-renderers:compileJava NO-SOURCE
+> Task :cfir:diagnostic-renderers:classes UP-TO-DATE
+> Task :cfir:semantics:compileKotlin UP-TO-DATE
+> Task :cfir:semantics:compileJava NO-SOURCE
+> Task :cfir:cfir-serialization:compileKotlin UP-TO-DATE
+> Task :cfir:semantics:classes UP-TO-DATE
+> Task :cfir:cfir-serialization:compileJava NO-SOURCE
+> Task :cfir:cfir-serialization:classes UP-TO-DATE
+> Task :macro:macro-process:compileKotlin UP-TO-DATE
+> Task :cfir:raw-cfir:raw-cfir-common:compileKotlin UP-TO-DATE
+> Task :macro:macro-process:compileJava NO-SOURCE
+> Task :cfir:raw-cfir:raw-cfir-common:compileJava NO-SOURCE
+> Task :macro:macro-process:classes UP-TO-DATE
+> Task :cfir:raw-cfir:raw-cfir-common:classes UP-TO-DATE
+> Task :cfir:checkers:compileKotlin UP-TO-DATE
+> Task :cfir:resolve:compileKotlin UP-TO-DATE
+> Task :cfir:checkers:compileJava NO-SOURCE
+> Task :cfir:checkers:classes UP-TO-DATE
+> Task :cfir:resolve:compileJava NO-SOURCE
+> Task :cfir:resolve:classes UP-TO-DATE
+> Task :cfir:raw-cfir:light-tree2cfir:compileKotlin UP-TO-DATE
+> Task :cfir:raw-cfir:psi2cfir:compileKotlin UP-TO-DATE
+> Task :cfir:raw-cfir:light-tree2cfir:compileJava NO-SOURCE
+> Task :cfir:raw-cfir:light-tree2cfir:classes UP-TO-DATE
+> Task :cfir:raw-cfir:psi2cfir:compileJava NO-SOURCE
+> Task :cfir:raw-cfir:psi2cfir:classes UP-TO-DATE
+> Task :cfir:entrypoint:compileKotlin UP-TO-DATE
+> Task :cfir:entrypoint:compileJava NO-SOURCE
+> Task :cfir:entrypoint:classes UP-TO-DATE
+> Task :compiler:frontend:compileKotlin UP-TO-DATE
+> Task :compiler:frontend:compileJava NO-SOURCE
+> Task :compiler:frontend:classes UP-TO-DATE
+> Task :tests:test-infrastructure:compileTestFixturesKotlin UP-TO-DATE
+> Task :tests:test-infrastructure:compileTestFixturesJava UP-TO-DATE
+> Task :cfir:analysis-tests:compileTestFixturesKotlin UP-TO-DATE
+> Task :cfir:analysis-tests:compileTestFixturesJava NO-SOURCE
+> Task :cfir:analysis-tests:testFixturesClasses UP-TO-DATE
+> Task :cfir:analysis-tests:testFixturesJar UP-TO-DATE
+> Task :cfir:analysis-tests:generateTestGeneratorForCfirAnalysisTestsTests UP-TO-DATE
+> Task :cfir:analysis-tests:compileTestKotlin UP-TO-DATE
+> Task :cfir:analysis-tests:compileTestJava NO-SOURCE
+> Task :cfir:analysis-tests:testClasses UP-TO-DATE
+> Task :cfir:analysis-tests:test
+
+CfirAnalysisLLTPsiTestGenerated > Array > testArrayAccess4() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:5236
+
+CfirAnalysisLLTPsiTestGenerated > Array > testArraySort() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:5320
+
+CfirAnalysisLLTPsiTestGenerated > Array > testArrayConstructor02() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:5254
+
+CfirAnalysisLLTPsiTestGenerated > Assign > MultipleAssignExpr > testCase01() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:5499
+
+CfirAnalysisLLTPsiTestGenerated > Assign > MultipleAssignExpr > testCase03() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:5511
+
+CfirAnalysisLLTPsiTestGenerated > Assign > MultipleAssignExpr > testCase04() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:5517
+
+CfirAnalysisLLTPsiTestGenerated > Assign > MultipleAssignExpr > testCase05() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:5523
+
+CfirAnalysisLLTPsiTestGenerated > Assign > MultipleAssignExpr > testCase06() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:5529
+
+CfirAnalysisLLTPsiTestGenerated > Assign > MultipleAssignExpr > testErrOptionalChain00() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:5547
+
+CfirAnalysisLLTPsiTestGenerated > Box > BoxExport > Src > Service > testMain() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:5979
+
+CfirAnalysisLLTPsiTestGenerated > Call > testCallClosetRule03() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:6290
+
+CfirAnalysisLLTPsiTestGenerated > Call > testCallInference01() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:6374
+
+CfirAnalysisLLTPsiTestGenerated > Call > testCallInference02() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:6380
+
+CfirAnalysisLLTPsiTestGenerated > Call > testCallInference11() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:6434
+
+CfirAnalysisLLTPsiTestGenerated > Call > testCallReferenceInference03() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:6464
+
+CfirAnalysisLLTPsiTestGenerated > Call > testCallFuzz01() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:6332
+
+CfirAnalysisLLTPsiTestGenerated > Call > testCallErrorReport04() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:6326
+
+CfirAnalysisLLTPsiTestGenerated > Call > testCall22() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:6182
+
+CfirAnalysisLLTPsiTestGenerated > Call > testCall25() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:6194
+
+CfirAnalysisLLTPsiTestGenerated > Call > testCall27() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:6200
+
+CfirAnalysisLLTPsiTestGenerated > Call > testCall31() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:6230
+
+CfirAnalysisLLTPsiTestGenerated > Class > testInterfaceDefaultImplementedFuncInvalid6() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:7808
+
+CfirAnalysisLLTPsiTestGenerated > Class > ClassInstantiationCheck > testMain22() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:8459
+
+CfirAnalysisLLTPsiTestGenerated > Class > ClassInstantiationCheck > testMain24() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:8471
+
+CfirAnalysisLLTPsiTestGenerated > Class > ClassInstantiationCheck > ImportTest > Test1 > testMain() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:8513
+
+CfirAnalysisLLTPsiTestGenerated > Const > testOptionalchain() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:9750
+
+CfirAnalysisLLTPsiTestGenerated > ConstraintCheck > testExpose4() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:10446
+
+CfirAnalysisLLTPsiTestGenerated > ConstraintCheck > testExpose5() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:10452
+
+CfirAnalysisLLTPsiTestGenerated > ConstraintCheck > testConstraintInstantiateTest7() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:10422
+
+CfirAnalysisLLTPsiTestGenerated > ConstraintCheck > testOptionWithElement01() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:10476
+
+CfirAnalysisLLTPsiTestGenerated > ConstraintCheck > testConstraintCheckTest12() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:10290
+
+CfirAnalysisLLTPsiTestGenerated > ConstraintCheck > testSolve1() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:10488
+
+CfirAnalysisLLTPsiTestGenerated > DesugarErrorReport > testSubscribeInBinary() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:10582
+
+CfirAnalysisLLTPsiTestGenerated > Effect > testCommandClassNotAvailable() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:10598
+
+CfirAnalysisLLTPsiTestGenerated > Effect > testPerformIncorrectType() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:10604
+
+CfirAnalysisLLTPsiTestGenerated > ErrMsgs > testDecl0() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:224
+
+CfirAnalysisLLTPsiTestGenerated > ErrMsgs > testSync0() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:356
+
+CfirAnalysisLLTPsiTestGenerated > ErrMsgs > testMemberAccess1() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:302
+
+CfirAnalysisLLTPsiTestGenerated > ErrMsgs > testVarDecl0() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:416
+
+CfirAnalysisLLTPsiTestGenerated > ErrMsgs > testLambda0() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:272
+
+CfirAnalysisLLTPsiTestGenerated > ErrMsgs > testCoalescing0() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:200
+
+CfirAnalysisLLTPsiTestGenerated > ErrMsgs > testCoalescing1() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:206
+
+CfirAnalysisLLTPsiTestGenerated > ErrMsgs > testSubscript01() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:344
+
+CfirAnalysisLLTPsiTestGenerated > ErrMsgs > testAssignment1() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:182
+
+CfirAnalysisLLTPsiTestGenerated > ErrMsgs > testTypeArgInfer3() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:386
+
+CfirAnalysisLLTPsiTestGenerated > ErrMsgs > testTypeArgInfer5() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:398
+
+CfirAnalysisLLTPsiTestGenerated > ErrMsgs > testTypeArgInfer6() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:404
+
+CfirAnalysisLLTPsiTestGenerated > ErrMsgs > AccessNotImported01 > testMain() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:431
+
+CfirAnalysisLLTPsiTestGenerated > ErrMsgs > AccessNotImported02 > testMain() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:447
+
+CfirAnalysisLLTPsiTestGenerated > ErrMsgs > AccessNotImported03 > testMain() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:463
+
+CfirAnalysisLLTPsiTestGenerated > Exception > testTryWithResourceN() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:11286
+
+CfirAnalysisLLTPsiTestGenerated > Exception > testErrTryWithResources00() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:11238
+
+CfirAnalysisLLTPsiTestGenerated > Exception > testErrCatch00() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:11220
+
+CfirAnalysisLLTPsiTestGenerated > Exception > testExceptionInvalid00() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:11244
+
+CfirAnalysisLLTPsiTestGenerated > Extend > testInvariantOverrideReturntype02() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:1386
+
+CfirAnalysisLLTPsiTestGenerated > Extend > testUnboxBoxTuplePattern() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:1422
+
+CfirAnalysisLLTPsiTestGenerated > Extend > testExtendFunctionConflict() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:684
+
+CfirAnalysisLLTPsiTestGenerated > Extend > testUnboxEnumPattern() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:1428
+
+CfirAnalysisLLTPsiTestGenerated > Extend > testUnboxAutoboxEnumPattern01() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:1410
+
+CfirAnalysisLLTPsiTestGenerated > Extend > testExtendDuplicateFunction() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:606
+
+CfirAnalysisLLTPsiTestGenerated > Extend > DefaultImplement > testDefaultImplement19() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:1723
+
+CfirAnalysisLLTPsiTestGenerated > Extend > ExtendExport > BugPartImport > testMain() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:1860
+
+CfirAnalysisLLTPsiTestGenerated > Extend > ExtendRefactor > testExtendPropertyConflictInvalid6() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:1569
+
+CfirAnalysisLLTPsiTestGenerated > Extend > Generic > testUpperBoundFloatBinary() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:2411
+
+CfirAnalysisLLTPsiTestGenerated > Extend > InterfaceDefaultImplement > testBasicProp() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:2567
+
+CfirAnalysisLLTPsiTestGenerated > Extend > Property > testExtendProperty9() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:2935
+
+CfirAnalysisLLTPsiTestGenerated > Extend > Visibility > testGenericDefaultImplProp() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:3205
+
+CfirAnalysisLLTPsiTestGenerated > ExtendImport > Import10 > testMain() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:3377
+
+CfirAnalysisLLTPsiTestGenerated > ExtendImport > Import14 > testTest() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:3425
+
+CfirAnalysisLLTPsiTestGenerated > ExtendImport > Import16 > testTest() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:3457
+
+CfirAnalysisLLTPsiTestGenerated > ExtendImport > Import6 > testMain() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:3537
+
+CfirAnalysisLLTPsiTestGenerated > ExtendImport > Import71 > testC() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:3569
+
+CfirAnalysisLLTPsiTestGenerated > ExtendsImplementsInterfaceDuplicated > testInterfaceDuplicated06() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:11326
+
+CfirAnalysisLLTPsiTestGenerated > ExtendsImplementsInterfaceDuplicated > testInterfaceDuplicated12() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:11356
+
+CfirAnalysisLLTPsiTestGenerated > ExtendsImplementsInterfaceDuplicated > testInterfaceDuplicated13() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:11362
+
+CfirAnalysisLLTPsiTestGenerated > Ffi > testCpointerGenericReverse() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:11396
+
+CfirAnalysisLLTPsiTestGenerated > Ffi > testCpointerGenericReverse2() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:11402
+
+CfirAnalysisLLTPsiTestGenerated > Ffi > testCTypeSubtype() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:11384
+
+CfirAnalysisLLTPsiTestGenerated > Ffi > testInferTypeWithOption() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:11408
+
+CfirAnalysisLLTPsiTestGenerated > Ffi > Bugfix1 > testCFfi() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:11423
+
+CfirAnalysisLLTPsiTestGenerated > FuzzInvalidParse > testInvalidStructInheritance() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:12572
+
+CfirAnalysisLLTPsiTestGenerated > Generics > testInstDupFunctions001() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:13296
+
+CfirAnalysisLLTPsiTestGenerated > Generics > testInstDupFunctions002() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:13302
+
+CfirAnalysisLLTPsiTestGenerated > Generics > testInstDupFunctions004() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:13314
+
+CfirAnalysisLLTPsiTestGenerated > If > testIf13() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:14860
+
+CfirAnalysisLLTPsiTestGenerated > If > testIfCheckType8() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:14974
+
+CfirAnalysisLLTPsiTestGenerated > IfLetExpr > testBugfix2() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:15002
+
+CfirAnalysisLLTPsiTestGenerated > IfLetExpr > Enhancedcondition > Vars > testSamenameConditionandifbody() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:15294
+
+CfirAnalysisLLTPsiTestGenerated > InitializationCheck > testMatch() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:3756
+
+CfirAnalysisLLTPsiTestGenerated > InitializationCheck > testVariableAssignmentTerminated01() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:3792
+
+CfirAnalysisLLTPsiTestGenerated > InitializationCheck > testVariableAssignmentTerminated04() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:3810
+
+CfirAnalysisLLTPsiTestGenerated > InitializationCheck > testVariableAssignmentTerminated042() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:3816
+
+CfirAnalysisLLTPsiTestGenerated > InitializationCheck > testVariableUseBeforeInit01() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:3846
+
+CfirAnalysisLLTPsiTestGenerated > InitializationCheck > testVariableUseBeforeInit03() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:3858
+
+CfirAnalysisLLTPsiTestGenerated > InitializationCheck > testVariableUseBeforeInit04() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:3864
+
+CfirAnalysisLLTPsiTestGenerated > InitializationCheck > testVariableUseBeforeInit10() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:3900
+
+CfirAnalysisLLTPsiTestGenerated > InitializationCheck > testVariableUseBeforeInit12() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:3912
+
+CfirAnalysisLLTPsiTestGenerated > InitializationCheck > testVariableUseBeforeInit15() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:3930
+
+CfirAnalysisLLTPsiTestGenerated > InitializationCheck > testNamedArgs() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:3762
+
+CfirAnalysisLLTPsiTestGenerated > InitializationCheck > StaticVariableUseBeforeInit05 > testFile1() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:4005
+
+CfirAnalysisLLTPsiTestGenerated > Interface > testInterfaceConflictInheritance01() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:15530
+
+CfirAnalysisLLTPsiTestGenerated > Interface > GenericInterfaceInheritance > testInterfaceGeneric11() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:15617
+
+CfirAnalysisLLTPsiTestGenerated > Interface > GenericInterfaceInheritance > testInterfaceGeneric9() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:15695
+
+CfirAnalysisLLTPsiTestGenerated > Interface > InterfaceDefaultImpl > testInterfaceStaticImplWithGeneric08() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:15813
+
+CfirAnalysisLLTPsiTestGenerated > IsOrAsExpr > testAsError00() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:4068
+
+CfirAnalysisLLTPsiTestGenerated > JoinMeet > testJoinOrderedProblem2() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:16054
+
+CfirAnalysisLLTPsiTestGenerated > Lambda > testLambda15() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:16166
+
+CfirAnalysisLLTPsiTestGenerated > Lambda > testLambda16() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:16172
+
+CfirAnalysisLLTPsiTestGenerated > Lambda > testTestFold() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:16256
+
+CfirAnalysisLLTPsiTestGenerated > Lambda > testLambdaInRecord() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:16208
+
+CfirAnalysisLLTPsiTestGenerated > Lambda > LambdaCapture > testCaptureWarning() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:16391
+
+CfirAnalysisLLTPsiTestGenerated > Lambda > LambdaCapture > testLambdaClosures301() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:16397
+
+CfirAnalysisLLTPsiTestGenerated > Lambda > LambdaCapture > testCaptureNotInit01() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:16343
+
+CfirAnalysisLLTPsiTestGenerated > Lambda > LambdaCapture > testCaptureTransitive() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:16355
+
+CfirAnalysisLLTPsiTestGenerated > Lambda > LambdaCapture > testCapture1() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:16271
+
+CfirAnalysisLLTPsiTestGenerated > Lambda > LambdaCapture > testCapture4() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:16289
+
+CfirAnalysisLLTPsiTestGenerated > Let > testLet001() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:16538
+
+CfirAnalysisLLTPsiTestGenerated > Linkage > testAccessErr() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:16602
+
+CfirAnalysisLLTPsiTestGenerated > Linkage > testAccess01() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:16590
+
+CfirAnalysisLLTPsiTestGenerated > Linkage > testAccess02() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:16596
+
+CfirAnalysisLLTPsiTestGenerated > Linkage > PrivateLimit > PrivateDup01 > testTestb() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:16638
+
+CfirAnalysisLLTPsiTestGenerated > Linkage > PrivateLimit > PrivateDup02 > testTestb() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:16654
+
+CfirAnalysisLLTPsiTestGenerated > Linkage > PrivateLimit > PrivateDup03 > testTestb() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:16670
+
+CfirAnalysisLLTPsiTestGenerated > Lookup > testBugfix1() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:16694
+
+CfirAnalysisLLTPsiTestGenerated > Lookup > testFuncdecl() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:16700
+
+CfirAnalysisLLTPsiTestGenerated > Match > testMatchcaseFuzz03() FAILED
+    org.cangnova.cangjie.util.FileAnalysisException at CfirAnalysisLLTPsiTestGenerated.kt:16994
+        Caused by: org.cangnova.cangjie.utils.exceptions.CangJieIllegalArgumentExceptionWithAttachments at CfirAnalysisLLTPsiTestGenerated.kt:16994
+            Caused by: org.cangnova.cangjie.cfir.resolve.match.exhaustive.inria.MarangetException at CfirAnalysisLLTPsiTestGenerated.kt:16994
+
+CfirAnalysisLLTPsiTestGenerated > Match > testMatchpatternGuard() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:17000
+
+CfirAnalysisLLTPsiTestGenerated > Match > testMatchcase2() FAILED
+    org.gradle.internal.exceptions.DefaultMultiCauseException at CfirAnalysisLLTPsiTestGenerated.kt:16952
+        Caused by: org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:16952
+
+CfirAnalysisLLTPsiTestGenerated > Match > testMatchcase3() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:16958
+
+CfirAnalysisLLTPsiTestGenerated > Match > testMatchcase8() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:16982
+
+CfirAnalysisLLTPsiTestGenerated > Match > MatchNoSelector > testMatchNoSelectorFuzz001() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:17135
+
+CfirAnalysisLLTPsiTestGenerated > Match > TuplePattern > testTuplePattern001() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:17215
+
+CfirAnalysisLLTPsiTestGenerated > Match > TuplePattern > testTuplePattern003() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:17227
+
+CfirAnalysisLLTPsiTestGenerated > Match > TuplePattern > testTuplePattern006() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:17245
+
+CfirAnalysisLLTPsiTestGenerated > Match > ValueBindingPattern > testValueBindingPattern002() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:17261
+
+CfirAnalysisLLTPsiTestGenerated > Native > testCfuncAssign() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:17300
+
+CfirAnalysisLLTPsiTestGenerated > NonExhaustiveEnum > BinaryCompat > testChangeAbiRecursive() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:17395
+
+CfirAnalysisLLTPsiTestGenerated > NonExhaustiveEnum > BinaryCompat > testChangeAbi() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:17389
+
+CfirAnalysisLLTPsiTestGenerated > NonExhaustiveEnum > BinaryCompat > testChangeLib() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:17401
+
+CfirAnalysisLLTPsiTestGenerated > OptionalChain > testMemberAccess03() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:17944
+
+CfirAnalysisLLTPsiTestGenerated > OptionalChain > testMemberAccess05() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:17956
+
+CfirAnalysisLLTPsiTestGenerated > OptionalChain > testCall01() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:17902
+
+CfirAnalysisLLTPsiTestGenerated > OptionalChain > testErrAssign00() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:17914
+
+CfirAnalysisLLTPsiTestGenerated > OptionalModifiers > testOptionalModifiers06() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:4266
+
+CfirAnalysisLLTPsiTestGenerated > PatternMatching > EnumPattern > testEnum07() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:4401
+
+CfirAnalysisLLTPsiTestGenerated > PatternMatching > EnumPattern > testEnum12() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:4425
+
+CfirAnalysisLLTPsiTestGenerated > PatternMatching > MatchExpression > testErrDifferentPattern00() FAILED
+    org.gradle.internal.exceptions.DefaultMultiCauseException at CfirAnalysisLLTPsiTestGenerated.kt:4561
+        Caused by: org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:4561
+
+CfirAnalysisLLTPsiTestGenerated > PatternMatching > MatchExpression > testErrDifferentPattern01() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:4567
+
+CfirAnalysisLLTPsiTestGenerated > PatternMatching > MatchExpression > testMatch002() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:4597
+
+CfirAnalysisLLTPsiTestGenerated > PatternMatching > MatchExpression > testMatch005() FAILED
+    org.cangnova.cangjie.util.FileAnalysisException at CfirAnalysisLLTPsiTestGenerated.kt:4615
+        Caused by: org.cangnova.cangjie.utils.exceptions.CangJieIllegalArgumentExceptionWithAttachments at CfirAnalysisLLTPsiTestGenerated.kt:4615
+            Caused by: org.cangnova.cangjie.cfir.resolve.match.exhaustive.inria.MarangetException at CfirAnalysisLLTPsiTestGenerated.kt:4615
+
+CfirAnalysisLLTPsiTestGenerated > PatternMatching > MatchExpression > testMatch006() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:4621
+
+CfirAnalysisLLTPsiTestGenerated > PatternMatching > MatchExpression > testMatch011() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:4639
+
+CfirAnalysisLLTPsiTestGenerated > PatternMatching > MatchExpression > testMatch012() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:4645
+
+CfirAnalysisLLTPsiTestGenerated > PatternMatching > MatchExpression > testMatch016() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:4669
+
+CfirAnalysisLLTPsiTestGenerated > PatternMatching > MatchExpression > testMatch019() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:4681
+
+CfirAnalysisLLTPsiTestGenerated > PatternMatching > MatchExpression > testMatch023() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:4693
+
+CfirAnalysisLLTPsiTestGenerated > PatternMatching > MatchExpression > testMatch024() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:4699
+
+CfirAnalysisLLTPsiTestGenerated > PatternMatching > MatchExpression > testMatch025() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:4705
+
+CfirAnalysisLLTPsiTestGenerated > PatternMatching > MatchExpression > testMatch026() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:4711
+
+CfirAnalysisLLTPsiTestGenerated > PatternMatching > MatchExpression > testMatch027() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:4717
+
+CfirAnalysisLLTPsiTestGenerated > PatternMatching > MatchExpression > testMatch028() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:4723
+
+CfirAnalysisLLTPsiTestGenerated > PatternMatching > MatchExpression > testMatch029() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:4729
+
+CfirAnalysisLLTPsiTestGenerated > PatternMatching > MatchExpression > testMatch031() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:4741
+
+CfirAnalysisLLTPsiTestGenerated > PatternMatching > TuplePattern > testTuple1() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:4879
+
+CfirAnalysisLLTPsiTestGenerated > PatternMatching > TuplePattern > testTuple3() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:4891
+
+CfirAnalysisLLTPsiTestGenerated > PatternMatching > TuplePattern > testTuple4() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:4897
+
+CfirAnalysisLLTPsiTestGenerated > PatternMatching > TypePattern > testExhaustiveEnum() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:4913
+
+CfirAnalysisLLTPsiTestGenerated > PatternMatching > TypePattern > testType06() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:5009
+
+CfirAnalysisLLTPsiTestGenerated > Record > testRecordVardeclCheck() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:18518
+
+CfirAnalysisLLTPsiTestGenerated > Record > testRecordArgumentUnit() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:18452
+
+CfirAnalysisLLTPsiTestGenerated > Record > testRecord3() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:18380
+
+CfirAnalysisLLTPsiTestGenerated > Record > testRecordAccessControl() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:18422
+
+CfirAnalysisLLTPsiTestGenerated > Record > Mut > testRecordMutOk7() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:18949
+
+CfirAnalysisLLTPsiTestGenerated > Record > Mut > testRecordMutOk8() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:18955
+
+CfirAnalysisLLTPsiTestGenerated > Record > Mut > testRecordMutInvalid11() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:18817
+
+CfirAnalysisLLTPsiTestGenerated > Record > Mut > testRecordMutInvalid14() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:18835
+
+CfirAnalysisLLTPsiTestGenerated > Record > Mut > testRecordMutInvalid15() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:18841
+
+CfirAnalysisLLTPsiTestGenerated > Record > Mut > testRecordMutInvalid4() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:18877
+
+CfirAnalysisLLTPsiTestGenerated > Record > Mut > testRecordMutInvalid5() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:18883
+
+CfirAnalysisLLTPsiTestGenerated > Record > Mut > testRecordExtendMutInvalid10() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:18745
+
+CfirAnalysisLLTPsiTestGenerated > Record > Mut > testRecordExtendMutInvalid12() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:18757
+
+CfirAnalysisLLTPsiTestGenerated > Record > Mut > testRecordExtendMutInvalid1() FAILED
+    org.gradle.internal.exceptions.DefaultMultiCauseException at CfirAnalysisLLTPsiTestGenerated.kt:18739
+        Caused by: org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:18739
+
+CfirAnalysisLLTPsiTestGenerated > Record > Mut > testRecordExtendMutInvalid3() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:18781
+
+CfirAnalysisLLTPsiTestGenerated > Record > Mut > testRecordExtendMutInvalid4() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:18787
+
+CfirAnalysisLLTPsiTestGenerated > Record > Mut > testRecordExtendMutInvalid7() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:18799
+
+CfirAnalysisLLTPsiTestGenerated > Record > RecordImplementInterface > testRecordImplementInterfaceN1() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:19141
+
+CfirAnalysisLLTPsiTestGenerated > SolveTypeArgs > testInvalidCase() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:19466
+
+CfirAnalysisLLTPsiTestGenerated > SolveTypeArgs > testFBounded1() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:19436
+
+CfirAnalysisLLTPsiTestGenerated > SolveTypeArgs > testFBounded2() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:19442
+
+CfirAnalysisLLTPsiTestGenerated > SolveTypeArgs > testFBounded3() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:19448
+
+CfirAnalysisLLTPsiTestGenerated > SolveTypeArgs > testFBounded4() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:19454
+
+CfirAnalysisLLTPsiTestGenerated > SolveTypeArgs > testUnusedTyvar() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:19472
+
+CfirAnalysisLLTPsiTestGenerated > Synchronized > testSynchronizedTest1() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:19570
+
+CfirAnalysisLLTPsiTestGenerated > TypeInfer > testInferMemberAccessWithEnumCtorSucc() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:20096
+
+CfirAnalysisLLTPsiTestGenerated > TypeInfer > testInferReturnFail() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:20120
+
+CfirAnalysisLLTPsiTestGenerated > TypeInfer > testInferWithUpper() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:20132
+
+CfirAnalysisLLTPsiTestGenerated > TypeInfer > testInferOption02() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:20114
+
+CfirAnalysisLLTPsiTestGenerated > TypeInfer > testLambdaParam06() FAILED
+    org.cangnova.cangjie.util.SourceCodeAnalysisException at CfirAnalysisLLTPsiTestGenerated.kt:20180
+        Caused by: java.lang.IllegalArgumentException at CfirAnalysisLLTPsiTestGenerated.kt:20180
+
+CfirAnalysisLLTPsiTestGenerated > TypeInfer > testLambdaParam09() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:20198
+
+CfirAnalysisLLTPsiTestGenerated > TypeInfer > testLambdaParam10() FAILED
+    org.gradle.internal.exceptions.DefaultMultiCauseException at CfirAnalysisLLTPsiTestGenerated.kt:20204
+        Caused by: org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:20204
+
+CfirAnalysisLLTPsiTestGenerated > UnusedImport > UnusedImport001 > testUnused014() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:20643
+
+CfirAnalysisLLTPsiTestGenerated > UnusedImport > UnusedImport001 > Unused019 > testUnused019() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:20750
+
+CfirAnalysisLLTPsiTestGenerated > UnusedImport > UnusedImport002 > testUnused016() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:20779
+
+CfirAnalysisLLTPsiTestGenerated > UnusedImport > UnusedImport002 > Unused015 > testUnused015() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:20826
+
+CfirAnalysisLLTPsiTestGenerated > Var > testVar() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:21096
+
+CfirAnalysisLLTPsiTestGenerated > WhileLetExpr > Enhancedcondition > Vars > testSamenameConditionandifbody() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTPsiTestGenerated.kt:21522
+
+CfirAnalysisLLTTestGenerated > Array > testArrayAccess4() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:5236
+
+CfirAnalysisLLTTestGenerated > Array > testArraySort() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:5320
+
+CfirAnalysisLLTTestGenerated > Array > testArrayConstructor02() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:5254
+
+CfirAnalysisLLTTestGenerated > Assign > MultipleAssignExpr > testCase01() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:5499
+
+CfirAnalysisLLTTestGenerated > Assign > MultipleAssignExpr > testCase03() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:5511
+
+CfirAnalysisLLTTestGenerated > Assign > MultipleAssignExpr > testCase04() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:5517
+
+CfirAnalysisLLTTestGenerated > Assign > MultipleAssignExpr > testCase05() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:5523
+
+CfirAnalysisLLTTestGenerated > Assign > MultipleAssignExpr > testCase06() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:5529
+
+CfirAnalysisLLTTestGenerated > Assign > MultipleAssignExpr > testErrOptionalChain00() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:5547
+
+CfirAnalysisLLTTestGenerated > Box > BoxExport > Src > Service > testMain() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:5979
+
+CfirAnalysisLLTTestGenerated > Call > testCallClosetRule03() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:6290
+
+CfirAnalysisLLTTestGenerated > Call > testCallInference01() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:6374
+
+CfirAnalysisLLTTestGenerated > Call > testCallInference02() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:6380
+
+CfirAnalysisLLTTestGenerated > Call > testCallInference11() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:6434
+
+CfirAnalysisLLTTestGenerated > Call > testCallReferenceInference03() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:6464
+
+CfirAnalysisLLTTestGenerated > Call > testCallFuzz01() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:6332
+
+CfirAnalysisLLTTestGenerated > Call > testCallErrorReport04() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:6326
+
+CfirAnalysisLLTTestGenerated > Call > testCall22() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:6182
+
+CfirAnalysisLLTTestGenerated > Call > testCall25() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:6194
+
+CfirAnalysisLLTTestGenerated > Call > testCall27() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:6200
+
+CfirAnalysisLLTTestGenerated > Call > testCall31() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:6230
+
+CfirAnalysisLLTTestGenerated > Class > testInterfaceDefaultImplementedFuncInvalid6() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:7808
+
+CfirAnalysisLLTTestGenerated > Class > ClassInstantiationCheck > testMain22() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:8459
+
+CfirAnalysisLLTTestGenerated > Class > ClassInstantiationCheck > testMain24() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:8471
+
+CfirAnalysisLLTTestGenerated > Class > ClassInstantiationCheck > ImportTest > Test1 > testMain() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:8513
+
+CfirAnalysisLLTTestGenerated > Const > testOptionalchain() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:9750
+
+CfirAnalysisLLTTestGenerated > ConstraintCheck > testExpose4() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:10446
+
+CfirAnalysisLLTTestGenerated > ConstraintCheck > testExpose5() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:10452
+
+CfirAnalysisLLTTestGenerated > ConstraintCheck > testConstraintInstantiateTest7() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:10422
+
+CfirAnalysisLLTTestGenerated > ConstraintCheck > testOptionWithElement01() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:10476
+
+CfirAnalysisLLTTestGenerated > ConstraintCheck > testConstraintCheckTest12() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:10290
+
+CfirAnalysisLLTTestGenerated > ConstraintCheck > testSolve1() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:10488
+
+CfirAnalysisLLTTestGenerated > DesugarErrorReport > testSubscribeInBinary() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:10582
+
+CfirAnalysisLLTTestGenerated > Effect > testCommandClassNotAvailable() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:10598
+
+CfirAnalysisLLTTestGenerated > Effect > testPerformIncorrectType() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:10604
+
+CfirAnalysisLLTTestGenerated > ErrMsgs > testDecl0() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:224
+
+CfirAnalysisLLTTestGenerated > ErrMsgs > testSync0() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:356
+
+CfirAnalysisLLTTestGenerated > ErrMsgs > testMemberAccess1() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:302
+
+CfirAnalysisLLTTestGenerated > ErrMsgs > testVarDecl0() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:416
+
+CfirAnalysisLLTTestGenerated > ErrMsgs > testLambda0() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:272
+
+CfirAnalysisLLTTestGenerated > ErrMsgs > testCoalescing0() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:200
+
+CfirAnalysisLLTTestGenerated > ErrMsgs > testCoalescing1() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:206
+
+CfirAnalysisLLTTestGenerated > ErrMsgs > testSubscript01() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:344
+
+CfirAnalysisLLTTestGenerated > ErrMsgs > testAssignment1() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:182
+
+CfirAnalysisLLTTestGenerated > ErrMsgs > testTypeArgInfer3() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:386
+
+CfirAnalysisLLTTestGenerated > ErrMsgs > testTypeArgInfer5() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:398
+
+CfirAnalysisLLTTestGenerated > ErrMsgs > testTypeArgInfer6() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:404
+
+CfirAnalysisLLTTestGenerated > ErrMsgs > AccessNotImported01 > testMain() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:431
+
+CfirAnalysisLLTTestGenerated > ErrMsgs > AccessNotImported02 > testMain() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:447
+
+CfirAnalysisLLTTestGenerated > ErrMsgs > AccessNotImported03 > testMain() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:463
+
+CfirAnalysisLLTTestGenerated > Exception > testTryWithResourceN() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:11286
+
+CfirAnalysisLLTTestGenerated > Exception > testErrTryWithResources00() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:11238
+
+CfirAnalysisLLTTestGenerated > Exception > testErrCatch00() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:11220
+
+CfirAnalysisLLTTestGenerated > Exception > testExceptionInvalid00() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:11244
+
+CfirAnalysisLLTTestGenerated > Extend > testInvariantOverrideReturntype02() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:1386
+
+CfirAnalysisLLTTestGenerated > Extend > testUnboxBoxTuplePattern() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:1422
+
+CfirAnalysisLLTTestGenerated > Extend > testExtendFunctionConflict() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:684
+
+CfirAnalysisLLTTestGenerated > Extend > testUnboxEnumPattern() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:1428
+
+CfirAnalysisLLTTestGenerated > Extend > testUnboxAutoboxEnumPattern01() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:1410
+
+CfirAnalysisLLTTestGenerated > Extend > testExtendDuplicateFunction() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:606
+
+CfirAnalysisLLTTestGenerated > Extend > DefaultImplement > testDefaultImplement19() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:1723
+
+CfirAnalysisLLTTestGenerated > Extend > ExtendExport > BugPartImport > testMain() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:1860
+
+CfirAnalysisLLTTestGenerated > Extend > ExtendRefactor > testExtendPropertyConflictInvalid6() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:1569
+
+CfirAnalysisLLTTestGenerated > Extend > Generic > testUpperBoundFloatBinary() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:2411
+
+CfirAnalysisLLTTestGenerated > Extend > InterfaceDefaultImplement > testBasicProp() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:2567
+
+CfirAnalysisLLTTestGenerated > Extend > Property > testExtendProperty9() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:2935
+
+CfirAnalysisLLTTestGenerated > Extend > Visibility > testGenericDefaultImplProp() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:3205
+
+CfirAnalysisLLTTestGenerated > ExtendImport > Import10 > testMain() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:3377
+
+CfirAnalysisLLTTestGenerated > ExtendImport > Import14 > testTest() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:3425
+
+CfirAnalysisLLTTestGenerated > ExtendImport > Import16 > testTest() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:3457
+
+CfirAnalysisLLTTestGenerated > ExtendImport > Import6 > testMain() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:3537
+
+CfirAnalysisLLTTestGenerated > ExtendImport > Import71 > testC() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:3569
+
+CfirAnalysisLLTTestGenerated > ExtendsImplementsInterfaceDuplicated > testInterfaceDuplicated06() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:11326
+
+CfirAnalysisLLTTestGenerated > ExtendsImplementsInterfaceDuplicated > testInterfaceDuplicated12() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:11356
+
+CfirAnalysisLLTTestGenerated > ExtendsImplementsInterfaceDuplicated > testInterfaceDuplicated13() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:11362
+
+CfirAnalysisLLTTestGenerated > Ffi > testCpointerGenericReverse() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:11396
+
+CfirAnalysisLLTTestGenerated > Ffi > testCpointerGenericReverse2() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:11402
+
+CfirAnalysisLLTTestGenerated > Ffi > testCTypeSubtype() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:11384
+
+CfirAnalysisLLTTestGenerated > Ffi > testInferTypeWithOption() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:11408
+
+CfirAnalysisLLTTestGenerated > Ffi > Bugfix1 > testCFfi() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:11423
+
+CfirAnalysisLLTTestGenerated > FuzzInvalidParse > testInvalidStructInheritance() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:12572
+
+CfirAnalysisLLTTestGenerated > Generics > testInstDupFunctions001() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:13296
+
+CfirAnalysisLLTTestGenerated > Generics > testInstDupFunctions002() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:13302
+
+CfirAnalysisLLTTestGenerated > Generics > testInstDupFunctions004() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:13314
+
+CfirAnalysisLLTTestGenerated > If > testIf13() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:14860
+
+CfirAnalysisLLTTestGenerated > If > testIfCheckType8() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:14974
+
+CfirAnalysisLLTTestGenerated > IfLetExpr > testBugfix2() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:15002
+
+CfirAnalysisLLTTestGenerated > IfLetExpr > Enhancedcondition > Vars > testSamenameConditionandifbody() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:15294
+
+CfirAnalysisLLTTestGenerated > InitializationCheck > testMatch() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:3756
+
+CfirAnalysisLLTTestGenerated > InitializationCheck > testVariableAssignmentTerminated01() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:3792
+
+CfirAnalysisLLTTestGenerated > InitializationCheck > testVariableAssignmentTerminated04() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:3810
+
+CfirAnalysisLLTTestGenerated > InitializationCheck > testVariableAssignmentTerminated042() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:3816
+
+CfirAnalysisLLTTestGenerated > InitializationCheck > testVariableUseBeforeInit01() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:3846
+
+CfirAnalysisLLTTestGenerated > InitializationCheck > testVariableUseBeforeInit03() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:3858
+
+CfirAnalysisLLTTestGenerated > InitializationCheck > testVariableUseBeforeInit04() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:3864
+
+CfirAnalysisLLTTestGenerated > InitializationCheck > testVariableUseBeforeInit10() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:3900
+
+CfirAnalysisLLTTestGenerated > InitializationCheck > testVariableUseBeforeInit12() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:3912
+
+CfirAnalysisLLTTestGenerated > InitializationCheck > testVariableUseBeforeInit15() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:3930
+
+CfirAnalysisLLTTestGenerated > InitializationCheck > testNamedArgs() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:3762
+
+CfirAnalysisLLTTestGenerated > InitializationCheck > StaticVariableUseBeforeInit05 > testFile1() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:4005
+
+CfirAnalysisLLTTestGenerated > Interface > testInterfaceConflictInheritance01() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:15530
+
+CfirAnalysisLLTTestGenerated > Interface > GenericInterfaceInheritance > testInterfaceGeneric11() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:15617
+
+CfirAnalysisLLTTestGenerated > Interface > GenericInterfaceInheritance > testInterfaceGeneric9() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:15695
+
+CfirAnalysisLLTTestGenerated > Interface > InterfaceDefaultImpl > testInterfaceStaticImplWithGeneric08() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:15813
+
+CfirAnalysisLLTTestGenerated > IsOrAsExpr > testAsError00() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:4068
+
+CfirAnalysisLLTTestGenerated > JoinMeet > testJoinOrderedProblem2() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:16054
+
+CfirAnalysisLLTTestGenerated > Lambda > testLambda15() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:16166
+
+CfirAnalysisLLTTestGenerated > Lambda > testLambda16() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:16172
+
+CfirAnalysisLLTTestGenerated > Lambda > testTestFold() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:16256
+
+CfirAnalysisLLTTestGenerated > Lambda > testLambdaInRecord() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:16208
+
+CfirAnalysisLLTTestGenerated > Lambda > LambdaCapture > testCaptureWarning() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:16391
+
+CfirAnalysisLLTTestGenerated > Lambda > LambdaCapture > testLambdaClosures301() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:16397
+
+CfirAnalysisLLTTestGenerated > Lambda > LambdaCapture > testCaptureNotInit01() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:16343
+
+CfirAnalysisLLTTestGenerated > Lambda > LambdaCapture > testCaptureTransitive() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:16355
+
+CfirAnalysisLLTTestGenerated > Lambda > LambdaCapture > testCapture1() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:16271
+
+CfirAnalysisLLTTestGenerated > Lambda > LambdaCapture > testCapture4() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:16289
+
+CfirAnalysisLLTTestGenerated > Let > testLet001() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:16538
+
+CfirAnalysisLLTTestGenerated > Linkage > testAccessErr() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:16602
+
+CfirAnalysisLLTTestGenerated > Linkage > testAccess01() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:16590
+
+CfirAnalysisLLTTestGenerated > Linkage > testAccess02() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:16596
+
+CfirAnalysisLLTTestGenerated > Linkage > PrivateLimit > PrivateDup01 > testTestb() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:16638
+
+CfirAnalysisLLTTestGenerated > Linkage > PrivateLimit > PrivateDup02 > testTestb() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:16654
+
+CfirAnalysisLLTTestGenerated > Linkage > PrivateLimit > PrivateDup03 > testTestb() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:16670
+
+CfirAnalysisLLTTestGenerated > Lookup > testBugfix1() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:16694
+
+CfirAnalysisLLTTestGenerated > Lookup > testFuncdecl() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:16700
+
+CfirAnalysisLLTTestGenerated > Match > testMatchcaseFuzz03() FAILED
+    org.cangnova.cangjie.util.FileAnalysisException at CfirAnalysisLLTTestGenerated.kt:16994
+        Caused by: org.cangnova.cangjie.utils.exceptions.CangJieIllegalArgumentExceptionWithAttachments at CfirAnalysisLLTTestGenerated.kt:16994
+            Caused by: org.cangnova.cangjie.cfir.resolve.match.exhaustive.inria.MarangetException at CfirAnalysisLLTTestGenerated.kt:16994
+
+CfirAnalysisLLTTestGenerated > Match > testMatchpatternGuard() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:17000
+
+CfirAnalysisLLTTestGenerated > Match > testMatchcase2() FAILED
+    org.gradle.internal.exceptions.DefaultMultiCauseException at CfirAnalysisLLTTestGenerated.kt:16952
+        Caused by: org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:16952
+
+CfirAnalysisLLTTestGenerated > Match > testMatchcase3() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:16958
+
+CfirAnalysisLLTTestGenerated > Match > testMatchcase8() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:16982
+
+CfirAnalysisLLTTestGenerated > Match > MatchNoSelector > testMatchNoSelectorFuzz001() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:17135
+
+CfirAnalysisLLTTestGenerated > Match > TuplePattern > testTuplePattern001() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:17215
+
+CfirAnalysisLLTTestGenerated > Match > TuplePattern > testTuplePattern003() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:17227
+
+CfirAnalysisLLTTestGenerated > Match > TuplePattern > testTuplePattern006() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:17245
+
+CfirAnalysisLLTTestGenerated > Match > ValueBindingPattern > testValueBindingPattern002() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:17261
+
+CfirAnalysisLLTTestGenerated > Native > testCfuncAssign() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:17300
+
+CfirAnalysisLLTTestGenerated > NonExhaustiveEnum > BinaryCompat > testChangeAbiRecursive() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:17395
+
+CfirAnalysisLLTTestGenerated > NonExhaustiveEnum > BinaryCompat > testChangeAbi() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:17389
+
+CfirAnalysisLLTTestGenerated > NonExhaustiveEnum > BinaryCompat > testChangeLib() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:17401
+
+CfirAnalysisLLTTestGenerated > OptionalChain > testMemberAccess03() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:17944
+
+CfirAnalysisLLTTestGenerated > OptionalChain > testMemberAccess05() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:17956
+
+CfirAnalysisLLTTestGenerated > OptionalChain > testCall01() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:17902
+
+CfirAnalysisLLTTestGenerated > OptionalChain > testErrAssign00() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:17914
+
+CfirAnalysisLLTTestGenerated > OptionalModifiers > testOptionalModifiers06() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:4266
+
+CfirAnalysisLLTTestGenerated > PatternMatching > EnumPattern > testEnum07() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:4401
+
+CfirAnalysisLLTTestGenerated > PatternMatching > EnumPattern > testEnum12() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:4425
+
+CfirAnalysisLLTTestGenerated > PatternMatching > MatchExpression > testErrDifferentPattern00() FAILED
+    org.gradle.internal.exceptions.DefaultMultiCauseException at CfirAnalysisLLTTestGenerated.kt:4561
+        Caused by: org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:4561
+
+CfirAnalysisLLTTestGenerated > PatternMatching > MatchExpression > testErrDifferentPattern01() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:4567
+
+CfirAnalysisLLTTestGenerated > PatternMatching > MatchExpression > testMatch002() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:4597
+
+CfirAnalysisLLTTestGenerated > PatternMatching > MatchExpression > testMatch005() FAILED
+    org.cangnova.cangjie.util.FileAnalysisException at CfirAnalysisLLTTestGenerated.kt:4615
+        Caused by: org.cangnova.cangjie.utils.exceptions.CangJieIllegalArgumentExceptionWithAttachments at CfirAnalysisLLTTestGenerated.kt:4615
+            Caused by: org.cangnova.cangjie.cfir.resolve.match.exhaustive.inria.MarangetException at CfirAnalysisLLTTestGenerated.kt:4615
+
+CfirAnalysisLLTTestGenerated > PatternMatching > MatchExpression > testMatch006() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:4621
+
+CfirAnalysisLLTTestGenerated > PatternMatching > MatchExpression > testMatch011() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:4639
+
+CfirAnalysisLLTTestGenerated > PatternMatching > MatchExpression > testMatch012() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:4645
+
+CfirAnalysisLLTTestGenerated > PatternMatching > MatchExpression > testMatch016() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:4669
+
+CfirAnalysisLLTTestGenerated > PatternMatching > MatchExpression > testMatch019() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:4681
+
+CfirAnalysisLLTTestGenerated > PatternMatching > MatchExpression > testMatch023() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:4693
+
+CfirAnalysisLLTTestGenerated > PatternMatching > MatchExpression > testMatch024() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:4699
+
+CfirAnalysisLLTTestGenerated > PatternMatching > MatchExpression > testMatch025() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:4705
+
+CfirAnalysisLLTTestGenerated > PatternMatching > MatchExpression > testMatch026() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:4711
+
+CfirAnalysisLLTTestGenerated > PatternMatching > MatchExpression > testMatch027() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:4717
+
+CfirAnalysisLLTTestGenerated > PatternMatching > MatchExpression > testMatch028() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:4723
+
+CfirAnalysisLLTTestGenerated > PatternMatching > MatchExpression > testMatch029() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:4729
+
+CfirAnalysisLLTTestGenerated > PatternMatching > MatchExpression > testMatch031() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:4741
+
+CfirAnalysisLLTTestGenerated > PatternMatching > TuplePattern > testTuple1() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:4879
+
+CfirAnalysisLLTTestGenerated > PatternMatching > TuplePattern > testTuple3() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:4891
+
+CfirAnalysisLLTTestGenerated > PatternMatching > TuplePattern > testTuple4() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:4897
+
+CfirAnalysisLLTTestGenerated > PatternMatching > TypePattern > testType06() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:5009
+
+CfirAnalysisLLTTestGenerated > Record > testRecordVardeclCheck() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:18518
+
+CfirAnalysisLLTTestGenerated > Record > testRecordArgumentUnit() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:18452
+
+CfirAnalysisLLTTestGenerated > Record > testRecord3() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:18380
+
+CfirAnalysisLLTTestGenerated > Record > testRecordAccessControl() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:18422
+
+CfirAnalysisLLTTestGenerated > Record > Mut > testRecordMutOk7() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:18949
+
+CfirAnalysisLLTTestGenerated > Record > Mut > testRecordMutOk8() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:18955
+
+CfirAnalysisLLTTestGenerated > Record > Mut > testRecordMutInvalid11() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:18817
+
+CfirAnalysisLLTTestGenerated > Record > Mut > testRecordMutInvalid14() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:18835
+
+CfirAnalysisLLTTestGenerated > Record > Mut > testRecordMutInvalid15() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:18841
+
+CfirAnalysisLLTTestGenerated > Record > Mut > testRecordMutInvalid4() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:18877
+
+CfirAnalysisLLTTestGenerated > Record > Mut > testRecordMutInvalid5() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:18883
+
+CfirAnalysisLLTTestGenerated > Record > Mut > testRecordExtendMutInvalid10() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:18745
+
+CfirAnalysisLLTTestGenerated > Record > Mut > testRecordExtendMutInvalid12() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:18757
+
+CfirAnalysisLLTTestGenerated > Record > Mut > testRecordExtendMutInvalid3() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:18781
+
+CfirAnalysisLLTTestGenerated > Record > Mut > testRecordExtendMutInvalid4() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:18787
+
+CfirAnalysisLLTTestGenerated > Record > Mut > testRecordExtendMutInvalid7() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:18799
+
+CfirAnalysisLLTTestGenerated > Record > RecordImplementInterface > testRecordImplementInterfaceN1() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:19141
+
+CfirAnalysisLLTTestGenerated > SolveTypeArgs > testInvalidCase() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:19466
+
+CfirAnalysisLLTTestGenerated > SolveTypeArgs > testFBounded1() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:19436
+
+CfirAnalysisLLTTestGenerated > SolveTypeArgs > testFBounded2() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:19442
+
+CfirAnalysisLLTTestGenerated > SolveTypeArgs > testFBounded3() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:19448
+
+CfirAnalysisLLTTestGenerated > SolveTypeArgs > testFBounded4() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:19454
+
+CfirAnalysisLLTTestGenerated > SolveTypeArgs > testUnusedTyvar() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:19472
+
+CfirAnalysisLLTTestGenerated > Synchronized > testSynchronizedTest1() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:19570
+
+CfirAnalysisLLTTestGenerated > TypeInfer > testInferMemberAccessWithEnumCtorSucc() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:20096
+
+CfirAnalysisLLTTestGenerated > TypeInfer > testInferReturnFail() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:20120
+
+CfirAnalysisLLTTestGenerated > TypeInfer > testInferWithUpper() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:20132
+
+CfirAnalysisLLTTestGenerated > TypeInfer > testInferOption02() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:20114
+
+CfirAnalysisLLTTestGenerated > TypeInfer > testLambdaParam06() FAILED
+    org.cangnova.cangjie.util.SourceCodeAnalysisException at CfirAnalysisLLTTestGenerated.kt:20180
+        Caused by: java.lang.IllegalArgumentException at CfirAnalysisLLTTestGenerated.kt:20180
+
+CfirAnalysisLLTTestGenerated > TypeInfer > testLambdaParam09() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:20198
+
+CfirAnalysisLLTTestGenerated > TypeInfer > testLambdaParam10() FAILED
+    org.gradle.internal.exceptions.DefaultMultiCauseException at CfirAnalysisLLTTestGenerated.kt:20204
+        Caused by: org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:20204
+
+CfirAnalysisLLTTestGenerated > UnusedImport > UnusedImport001 > testUnused014() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:20643
+
+CfirAnalysisLLTTestGenerated > UnusedImport > UnusedImport001 > Unused019 > testUnused019() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:20750
+
+CfirAnalysisLLTTestGenerated > UnusedImport > UnusedImport002 > testUnused016() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:20779
+
+CfirAnalysisLLTTestGenerated > UnusedImport > UnusedImport002 > Unused015 > testUnused015() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:20826
+
+CfirAnalysisLLTTestGenerated > Var > testVar() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:21096
+
+CfirAnalysisLLTTestGenerated > WhileLetExpr > Enhancedcondition > Vars > testSamenameConditionandifbody() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisLLTTestGenerated.kt:21522
+
+CfirAnalysisMacroPsiTestGenerated > testSameProjectMacroPackageDeclarationReference() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:31
+
+CfirAnalysisMacroPsiTestGenerated > testSameProjectMacroPackageExpression() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:37
+
+CfirAnalysisMacroPsiTestGenerated > Diagnostics > Coverage > Extensions > testExtendCTypeNotAllowed() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:122
+
+CfirAnalysisMacroPsiTestGenerated > Diagnostics2 > Interop > testObjcInitMethodBoundaryPlaceholder() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:201
+
+CfirAnalysisMacroPsiTestGenerated > Diagnostics2 > Interop > testCallingConventionBoundaryPlaceholder() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:165
+
+CfirAnalysisMacroPsiTestGenerated > Diagnostics2 > Interop > testForeignNameLegalityPlaceholder() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:189
+
+CfirAnalysisMacroPsiTestGenerated > Diagnostics2 > Interop > testCallingConventionOnClassPlaceholder() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:171
+
+CfirAnalysisMacroPsiTestGenerated > Diagnostics2 > Interop > testCallingConventionPlacementPlaceholder() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:183
+
+CfirAnalysisMacroPsiTestGenerated > Llt > APILevelChecker > testIndex() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:233
+
+CfirAnalysisMacroPsiTestGenerated > Llt > APILevelChecker > Hide > testMixMacro2() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:362
+
+CfirAnalysisMacroPsiTestGenerated > Llt > APILevelChecker > Hide > testMixMacro2Use() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:368
+
+CfirAnalysisMacroPsiTestGenerated > Llt > APILevelChecker > Level > testMultiAnno() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:498
+
+CfirAnalysisMacroPsiTestGenerated > Llt > APILevelChecker > Level > testNonLiteral() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:504
+
+CfirAnalysisMacroPsiTestGenerated > Llt > APILevelChecker > Level > testDepErr() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:480
+
+CfirAnalysisMacroPsiTestGenerated > Llt > APILevelChecker > Level > testInvalidRef() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:492
+
+CfirAnalysisMacroPsiTestGenerated > Llt > APILevelChecker > Level > MergeAnno > testMerge1() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:525
+
+CfirAnalysisMacroPsiTestGenerated > Llt > APILevelChecker > Level > MergeAnno > testMerge2() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:531
+
+CfirAnalysisMacroPsiTestGenerated > Llt > APILevelChecker > Level > MergeAnno > testMerge3() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:537
+
+CfirAnalysisMacroPsiTestGenerated > Llt > APILevelChecker > Level > MergeAnno > Merge01 > testMerge1() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:552
+
+CfirAnalysisMacroPsiTestGenerated > Llt > APILevelChecker > Level > MergeAnno > Merge01 > testMerge2() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:558
+
+CfirAnalysisMacroPsiTestGenerated > Llt > APILevelChecker > Level > MergeAnno > Merge02 > testMerge3() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:574
+
+CfirAnalysisMacroPsiTestGenerated > Llt > APILevelChecker > Level > MergeAnno > Merge03 > testTest1() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:590
+
+CfirAnalysisMacroPsiTestGenerated > Llt > APILevelChecker > Level > MergeAnno > Merge04 > testTest1() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:636
+
+CfirAnalysisMacroPsiTestGenerated > Llt > APILevelChecker > Level > MergeAnno > Merge05 > testTest() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:670
+
+CfirAnalysisMacroPsiTestGenerated > Llt > APILevelChecker > Level > MergeAnno > MergeStd > testImportsingle() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:692
+
+CfirAnalysisMacroPsiTestGenerated > Llt > APILevelChecker > Level > MergeAnno > MergeStd > testImportall() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:686
+
+CfirAnalysisMacroPsiTestGenerated > Llt > APILevelChecker > LevelV1 > testCallConstruct() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:710
+
+CfirAnalysisMacroPsiTestGenerated > Llt > APILevelChecker > LevelV1 > testMultiAnno() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:734
+
+CfirAnalysisMacroPsiTestGenerated > Llt > APILevelChecker > LevelV1 > testTestDep01() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:746
+
+CfirAnalysisMacroPsiTestGenerated > Llt > APILevelChecker > LevelV1 > testNonLiteral() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:740
+
+CfirAnalysisMacroPsiTestGenerated > Llt > APILevelChecker > LevelV1 > testDepErr() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:716
+
+CfirAnalysisMacroPsiTestGenerated > Llt > APILevelChecker > LevelV1 > testDepOk1() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:722
+
+CfirAnalysisMacroPsiTestGenerated > Llt > APILevelChecker > LevelV1 > testInvalidRef() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:728
+
+CfirAnalysisMacroPsiTestGenerated > Llt > APILevelChecker > LevelV1 > MergeAnno > testMerge1() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:761
+
+CfirAnalysisMacroPsiTestGenerated > Llt > APILevelChecker > LevelV1 > MergeAnno > testMerge2() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:767
+
+CfirAnalysisMacroPsiTestGenerated > Llt > APILevelChecker > LevelV1 > MergeAnno > testMerge3() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:773
+
+CfirAnalysisMacroPsiTestGenerated > Llt > APILevelChecker > LevelV1 > MergeAnno > Merge01 > testMerge1() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:788
+
+CfirAnalysisMacroPsiTestGenerated > Llt > APILevelChecker > LevelV1 > MergeAnno > Merge01 > testMerge2() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:794
+
+CfirAnalysisMacroPsiTestGenerated > Llt > APILevelChecker > LevelV1 > MergeAnno > Merge02 > testMerge3() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:810
+
+CfirAnalysisMacroPsiTestGenerated > Llt > APILevelChecker > LevelV1 > MergeAnno > Merge03 > testTest1() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:826
+
+CfirAnalysisMacroPsiTestGenerated > Llt > APILevelChecker > LevelV1 > MergeAnno > Merge04 > testTest1() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:872
+
+CfirAnalysisMacroPsiTestGenerated > Llt > APILevelChecker > LevelV1 > MergeAnno > Merge05 > testTest() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:906
+
+CfirAnalysisMacroPsiTestGenerated > Llt > APILevelChecker > LevelV1 > MergeAnno > MergeStd > testImportall() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:922
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Annotation > testErrCustomAnnotationPlaceVar01() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:971
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Annotation > testErrCustomAnnotationPlaceVar02() FAILED
+    org.gradle.internal.exceptions.DefaultMultiCauseException at CfirAnalysisMacroPsiTestGenerated.kt:977
+        Caused by: org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:977
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Annotation > testErrOpen() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:983
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Annotation > testErrConstArg00() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:953
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Annotation > testErrConstArg01() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:959
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Annotation > testErrAbstract() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:941
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Annotation > testOkMemberInextend() FAILED
+    java.lang.AssertionError at CfirAnalysisMacroPsiTestGenerated.kt:1091
+        Caused by: java.lang.Throwable at CfirAnalysisMacroPsiTestGenerated.kt:1091
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Annotation > testErrSealed() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:989
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Annotation > testOkParam00() FAILED
+    java.lang.AssertionError at CfirAnalysisMacroPsiTestGenerated.kt:1103
+        Caused by: java.lang.Throwable at CfirAnalysisMacroPsiTestGenerated.kt:1103
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Annotation > testOkParam01() FAILED
+    java.lang.AssertionError at CfirAnalysisMacroPsiTestGenerated.kt:1109
+        Caused by: java.lang.Throwable at CfirAnalysisMacroPsiTestGenerated.kt:1109
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Annotation > testOkEnumFunc() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:1085
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Annotation > testErrCustomAnnotationPlaceFunc01() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:965
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Annotation > testErrAnnotationNoConstInit() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:947
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Annotation > testOkClass02() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:1007
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Annotation > testOkClass03() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:1013
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Annotation > testOkClass04() FAILED
+    java.lang.AssertionError at CfirAnalysisMacroPsiTestGenerated.kt:1019
+        Caused by: java.lang.Throwable at CfirAnalysisMacroPsiTestGenerated.kt:1019
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Annotation > testOkClass05() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:1025
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Annotation > testOkClass06() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:1037
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Annotation > testOkClass07() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:1049
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Annotation > testOkClass08() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:1061
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Annotation > Globals > testAllkinds() FAILED
+    java.lang.AssertionError at CfirAnalysisMacroPsiTestGenerated.kt:1136
+        Caused by: java.lang.Throwable at CfirAnalysisMacroPsiTestGenerated.kt:1136
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Annotation > Globals > testEnumconsInsideMacro() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:1154
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Annotation > Globals > testInstantiated() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:1184
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Annotation > Globals > testGlobal() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:1172
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Annotation > Globals > Bad > testGlobalvarOnGlobalfunc() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:1211
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Annotation > Globals > Bad > testGlobalfuncOnGlobalvar() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:1205
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Annotation > Globals > Bad > testInstantiated() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:1217
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Annotation > Globals > Datarace > testGlobalfunc() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:1233
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Annotation > Globals > Multipkgs > test255() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:1249
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Annotation > Ifavailable > testErrWithoutImport() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:1302
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Annotation > Ifavailable > testErrLambdaWithParam() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:1284
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Annotation > Ifavailable > testBasecase() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:1272
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Annotation > Ifavailable > testLevelLimit() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:1314
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Annotation > Ifavailable > testErrNotLambda() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:1290
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Annotation > Ifavailable > testLambdaNotUnitReturnType() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:1308
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Annotation > Ifavailable > testErrDesugar() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:1278
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Annotation > Ifavailable > testNested() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:1320
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Annotation > Ifavailable > testErrNotLiteral() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:1296
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Annotation > Ifavailable > ExternalWeak > testExternalWeak() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:1335
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Annotation > Ifavailable > LevelSyscapCheck > testSyscapTest01() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:1351
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Annotation > Ifavailable > LevelSyscapCheck > testSyscapTest02() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:1357
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Annotation > Ifavailable > LevelSyscapCheck > testTest01() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:1363
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Annotation > Ifavailable > LevelSyscapCheck > testTest02() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:1369
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Annotation > Ifavailable > LevelSyscapCheck > testTest03() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:1375
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Annotation > Ifavailable > LevelSyscapCheck > testTest04() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:1381
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Annotation > Ifavailable > LevelSyscapCheck > testTest05() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:1387
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Annotation > Ifavailable > LevelSyscapCheck > testTest06() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:1393
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Annotation > Ifavailable > LevelSyscapCheck > testTest07() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:1399
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Annotation > Ifavailable > LevelSyscapCheck > testTest08() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:1405
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Annotation > Ifavailable > LevelSyscapCheck > testTest09() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:1411
+
+CfirAnalysisMacroPsiTestGenerated > Llt > ConstEvaluation > testConstSafeStd() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:1467
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Ffi > testCTypeInterface() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:1505
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Function > DefaultParameterPkg02 > testTestMutation() FAILED
+    org.cangnova.cangjie.util.FileAnalysisException at CfirAnalysisMacroPsiTestGenerated.kt:1560
+        Caused by: org.cangnova.cangjie.utils.exceptions.CangJieIllegalArgumentExceptionWithAttachments at CfirAnalysisMacroPsiTestGenerated.kt:1560
+            Caused by: org.cangnova.cangjie.cfir.resolve.match.exhaustive.inria.MarangetException at CfirAnalysisMacroPsiTestGenerated.kt:1560
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Function > DefaultParameterPkg02 > testTest() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:1542
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Function > DefaultParameterPkg02 > testTestMacro() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:1548
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Function > DefaultParameterPkg02 > F2 > testTest3() FAILED
+    org.cangnova.cangjie.util.FileAnalysisException at CfirAnalysisMacroPsiTestGenerated.kt:1575
+        Caused by: org.cangnova.cangjie.utils.exceptions.CangJieIllegalArgumentExceptionWithAttachments at CfirAnalysisMacroPsiTestGenerated.kt:1575
+            Caused by: org.cangnova.cangjie.cfir.resolve.match.exhaustive.inria.MarangetException at CfirAnalysisMacroPsiTestGenerated.kt:1575
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Function > DefaultParameterPkg02 > G1 > testTest2() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:1591
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Functionlinkage > UsedInternalDecl02 > testTest() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:1634
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Lookup > MultiFilesPrivate01 > Pkg > testMain() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:1747
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Operator > testErrQuoteUnary() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:1765
+
+CfirAnalysisMacroPsiTestGenerated > Llt > OperatorOverload > testErrBinary00() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:1781
+
+CfirAnalysisMacroPsiTestGenerated > Llt > QuoteExpr > testErr1() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:1797
+
+CfirAnalysisMacroPsiTestGenerated > Llt > QuoteExpr > testMainErr() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:1803
+
+CfirAnalysisMacroPsiTestGenerated > Llt > QuoteExpr > testMainOk1() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:1821
+
+CfirAnalysisMacroPsiTestGenerated > Llt > QuoteExpr > testMainErr1() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:1809
+
+CfirAnalysisMacroPsiTestGenerated > Llt > QuoteExpr > testMainOk() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:1815
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Type > IntTypeSuffix > test004() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:1870
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Typealias > ImportMacroAlias > testTypeaslias() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:1914
+
+CfirAnalysisMacroPsiTestGenerated > Llt > UnusedImport > UnusedImport005 > testUnused001() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:1982
+
+CfirAnalysisMacroPsiTestGenerated > Llt > UnusedImport > UnusedImport005 > Unused003 > testUnused003() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:2003
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Varray > testSubsriptWithMemberAccessLet() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:2069
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Varray > VarrayCffi > testVarrayInout02() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:2138
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Varray > VarrayCffi > testVarrayInout03() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:2144
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Varray > VarrayCffi > testVarrayInout04() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:2150
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Varray > VarrayCffi > testVarrayInout05() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:2156
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Varray > VarrayCffi > testVarrayCstruct01() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:2084
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Varray > VarrayCffi > testVarrayCstruct02() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:2090
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Varray > VarrayCffi > testVarrayCstruct03() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:2096
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Varray > VarrayCffi > testVarrayCstruct04() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:2102
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Varray > VarrayCffi > testVarrayCstruct05() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:2108
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Varray > VarrayCffi > testVarrayCtype01() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:2114
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Varray > VarrayCffi > testVarrayCtype02() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:2120
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Varray > VarrayCffi > testVarrayCtype03() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:2126
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Varray > VarrayWithReftype > testVarrayWithReftype02() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:2184
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Varray > VarrayWithReftype > testVarrayWithReftype03() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:2190
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Varray > VarrayWithReftype > testVarrayWithReftype04() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:2196
+
+CfirAnalysisMacroPsiTestGenerated > Llt > Varray > VarrayWithReftype > testVarrayWithReftype05() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroPsiTestGenerated.kt:2202
+
+CfirAnalysisMacroTestGenerated > testSameProjectMacroPackageDeclarationReference() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:31
+
+CfirAnalysisMacroTestGenerated > testSameProjectMacroPackageExpression() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:37
+
+CfirAnalysisMacroTestGenerated > Diagnostics > Coverage > Extensions > testExtendCTypeNotAllowed() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:122
+
+CfirAnalysisMacroTestGenerated > Diagnostics2 > Interop > testObjcInitMethodBoundaryPlaceholder() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:201
+
+CfirAnalysisMacroTestGenerated > Diagnostics2 > Interop > testForeignNameLegalityPlaceholder() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:189
+
+CfirAnalysisMacroTestGenerated > Llt > APILevelChecker > testIndex() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:233
+
+CfirAnalysisMacroTestGenerated > Llt > APILevelChecker > Hide > testMixMacro2() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:362
+
+CfirAnalysisMacroTestGenerated > Llt > APILevelChecker > Hide > testMixMacro2Use() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:368
+
+CfirAnalysisMacroTestGenerated > Llt > APILevelChecker > Level > testMultiAnno() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:498
+
+CfirAnalysisMacroTestGenerated > Llt > APILevelChecker > Level > testNonLiteral() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:504
+
+CfirAnalysisMacroTestGenerated > Llt > APILevelChecker > Level > testDepErr() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:480
+
+CfirAnalysisMacroTestGenerated > Llt > APILevelChecker > Level > testInvalidRef() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:492
+
+CfirAnalysisMacroTestGenerated > Llt > APILevelChecker > Level > MergeAnno > testMerge1() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:525
+
+CfirAnalysisMacroTestGenerated > Llt > APILevelChecker > Level > MergeAnno > testMerge2() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:531
+
+CfirAnalysisMacroTestGenerated > Llt > APILevelChecker > Level > MergeAnno > testMerge3() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:537
+
+CfirAnalysisMacroTestGenerated > Llt > APILevelChecker > Level > MergeAnno > Merge01 > testMerge1() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:552
+
+CfirAnalysisMacroTestGenerated > Llt > APILevelChecker > Level > MergeAnno > Merge01 > testMerge2() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:558
+
+CfirAnalysisMacroTestGenerated > Llt > APILevelChecker > Level > MergeAnno > Merge02 > testMerge3() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:574
+
+CfirAnalysisMacroTestGenerated > Llt > APILevelChecker > Level > MergeAnno > Merge03 > testTest1() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:590
+
+CfirAnalysisMacroTestGenerated > Llt > APILevelChecker > Level > MergeAnno > Merge04 > testTest1() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:636
+
+CfirAnalysisMacroTestGenerated > Llt > APILevelChecker > Level > MergeAnno > Merge05 > testTest() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:670
+
+CfirAnalysisMacroTestGenerated > Llt > APILevelChecker > Level > MergeAnno > MergeStd > testImportsingle() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:692
+
+CfirAnalysisMacroTestGenerated > Llt > APILevelChecker > Level > MergeAnno > MergeStd > testImportall() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:686
+
+CfirAnalysisMacroTestGenerated > Llt > APILevelChecker > LevelV1 > testCallConstruct() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:710
+
+CfirAnalysisMacroTestGenerated > Llt > APILevelChecker > LevelV1 > testMultiAnno() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:734
+
+CfirAnalysisMacroTestGenerated > Llt > APILevelChecker > LevelV1 > testTestDep01() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:746
+
+CfirAnalysisMacroTestGenerated > Llt > APILevelChecker > LevelV1 > testNonLiteral() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:740
+
+CfirAnalysisMacroTestGenerated > Llt > APILevelChecker > LevelV1 > testDepErr() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:716
+
+CfirAnalysisMacroTestGenerated > Llt > APILevelChecker > LevelV1 > testDepOk1() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:722
+
+CfirAnalysisMacroTestGenerated > Llt > APILevelChecker > LevelV1 > testInvalidRef() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:728
+
+CfirAnalysisMacroTestGenerated > Llt > APILevelChecker > LevelV1 > MergeAnno > testMerge1() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:761
+
+CfirAnalysisMacroTestGenerated > Llt > APILevelChecker > LevelV1 > MergeAnno > testMerge2() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:767
+
+CfirAnalysisMacroTestGenerated > Llt > APILevelChecker > LevelV1 > MergeAnno > testMerge3() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:773
+
+CfirAnalysisMacroTestGenerated > Llt > APILevelChecker > LevelV1 > MergeAnno > Merge01 > testMerge1() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:788
+
+CfirAnalysisMacroTestGenerated > Llt > APILevelChecker > LevelV1 > MergeAnno > Merge01 > testMerge2() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:794
+
+CfirAnalysisMacroTestGenerated > Llt > APILevelChecker > LevelV1 > MergeAnno > Merge02 > testMerge3() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:810
+
+CfirAnalysisMacroTestGenerated > Llt > APILevelChecker > LevelV1 > MergeAnno > Merge03 > testTest1() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:826
+
+CfirAnalysisMacroTestGenerated > Llt > APILevelChecker > LevelV1 > MergeAnno > Merge04 > testTest1() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:872
+
+CfirAnalysisMacroTestGenerated > Llt > APILevelChecker > LevelV1 > MergeAnno > Merge05 > testTest() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:906
+
+CfirAnalysisMacroTestGenerated > Llt > APILevelChecker > LevelV1 > MergeAnno > MergeStd > testImportall() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:922
+
+CfirAnalysisMacroTestGenerated > Llt > Annotation > testErrCustomAnnotationPlaceVar01() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:971
+
+CfirAnalysisMacroTestGenerated > Llt > Annotation > testErrCustomAnnotationPlaceVar02() FAILED
+    org.gradle.internal.exceptions.DefaultMultiCauseException at CfirAnalysisMacroTestGenerated.kt:977
+        Caused by: org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:977
+
+CfirAnalysisMacroTestGenerated > Llt > Annotation > testErrOpen() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:983
+
+CfirAnalysisMacroTestGenerated > Llt > Annotation > testErrConstArg00() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:953
+
+CfirAnalysisMacroTestGenerated > Llt > Annotation > testErrConstArg01() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:959
+
+CfirAnalysisMacroTestGenerated > Llt > Annotation > testErrAbstract() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:941
+
+CfirAnalysisMacroTestGenerated > Llt > Annotation > testOkMemberInextend() FAILED
+    java.lang.AssertionError at CfirAnalysisMacroTestGenerated.kt:1091
+        Caused by: java.lang.Throwable at CfirAnalysisMacroTestGenerated.kt:1091
+
+CfirAnalysisMacroTestGenerated > Llt > Annotation > testErrSealed() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:989
+
+CfirAnalysisMacroTestGenerated > Llt > Annotation > testOkParam00() FAILED
+    java.lang.AssertionError at CfirAnalysisMacroTestGenerated.kt:1103
+        Caused by: java.lang.Throwable at CfirAnalysisMacroTestGenerated.kt:1103
+
+CfirAnalysisMacroTestGenerated > Llt > Annotation > testOkParam01() FAILED
+    java.lang.AssertionError at CfirAnalysisMacroTestGenerated.kt:1109
+        Caused by: java.lang.Throwable at CfirAnalysisMacroTestGenerated.kt:1109
+
+CfirAnalysisMacroTestGenerated > Llt > Annotation > testErrCustomAnnotationPlaceFunc01() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:965
+
+CfirAnalysisMacroTestGenerated > Llt > Annotation > testErrAnnotationNoConstInit() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:947
+
+CfirAnalysisMacroTestGenerated > Llt > Annotation > testOkClass04() FAILED
+    java.lang.AssertionError at CfirAnalysisMacroTestGenerated.kt:1019
+        Caused by: java.lang.Throwable at CfirAnalysisMacroTestGenerated.kt:1019
+
+CfirAnalysisMacroTestGenerated > Llt > Annotation > testOkClass05() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:1025
+
+CfirAnalysisMacroTestGenerated > Llt > Annotation > testOkClass06() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:1037
+
+CfirAnalysisMacroTestGenerated > Llt > Annotation > testOkClass07() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:1049
+
+CfirAnalysisMacroTestGenerated > Llt > Annotation > testOkClass08() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:1061
+
+CfirAnalysisMacroTestGenerated > Llt > Annotation > Globals > testAllkinds() FAILED
+    java.lang.AssertionError at CfirAnalysisMacroTestGenerated.kt:1136
+        Caused by: java.lang.Throwable at CfirAnalysisMacroTestGenerated.kt:1136
+
+CfirAnalysisMacroTestGenerated > Llt > Annotation > Globals > testEnumconsInsideMacro() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:1154
+
+CfirAnalysisMacroTestGenerated > Llt > Annotation > Globals > testInstantiated() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:1184
+
+CfirAnalysisMacroTestGenerated > Llt > Annotation > Globals > testGlobal() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:1172
+
+CfirAnalysisMacroTestGenerated > Llt > Annotation > Globals > Bad > testGlobalvarOnGlobalfunc() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:1211
+
+CfirAnalysisMacroTestGenerated > Llt > Annotation > Globals > Bad > testGlobalfuncOnGlobalvar() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:1205
+
+CfirAnalysisMacroTestGenerated > Llt > Annotation > Globals > Bad > testInstantiated() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:1217
+
+CfirAnalysisMacroTestGenerated > Llt > Annotation > Globals > Datarace > testGlobalfunc() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:1233
+
+CfirAnalysisMacroTestGenerated > Llt > Annotation > Globals > Multipkgs > test255() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:1249
+
+CfirAnalysisMacroTestGenerated > Llt > Annotation > Ifavailable > testErrWithoutImport() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:1302
+
+CfirAnalysisMacroTestGenerated > Llt > Annotation > Ifavailable > testErrLambdaWithParam() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:1284
+
+CfirAnalysisMacroTestGenerated > Llt > Annotation > Ifavailable > testBasecase() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:1272
+
+CfirAnalysisMacroTestGenerated > Llt > Annotation > Ifavailable > testLevelLimit() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:1314
+
+CfirAnalysisMacroTestGenerated > Llt > Annotation > Ifavailable > testErrNotLambda() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:1290
+
+CfirAnalysisMacroTestGenerated > Llt > Annotation > Ifavailable > testLambdaNotUnitReturnType() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:1308
+
+CfirAnalysisMacroTestGenerated > Llt > Annotation > Ifavailable > testErrDesugar() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:1278
+
+CfirAnalysisMacroTestGenerated > Llt > Annotation > Ifavailable > testNested() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:1320
+
+CfirAnalysisMacroTestGenerated > Llt > Annotation > Ifavailable > testErrNotLiteral() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:1296
+
+CfirAnalysisMacroTestGenerated > Llt > Annotation > Ifavailable > ExternalWeak > testExternalWeak() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:1335
+
+CfirAnalysisMacroTestGenerated > Llt > Annotation > Ifavailable > LevelSyscapCheck > testSyscapTest01() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:1351
+
+CfirAnalysisMacroTestGenerated > Llt > Annotation > Ifavailable > LevelSyscapCheck > testSyscapTest02() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:1357
+
+CfirAnalysisMacroTestGenerated > Llt > Annotation > Ifavailable > LevelSyscapCheck > testTest01() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:1363
+
+CfirAnalysisMacroTestGenerated > Llt > Annotation > Ifavailable > LevelSyscapCheck > testTest02() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:1369
+
+CfirAnalysisMacroTestGenerated > Llt > Annotation > Ifavailable > LevelSyscapCheck > testTest03() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:1375
+
+CfirAnalysisMacroTestGenerated > Llt > Annotation > Ifavailable > LevelSyscapCheck > testTest04() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:1381
+
+CfirAnalysisMacroTestGenerated > Llt > Annotation > Ifavailable > LevelSyscapCheck > testTest05() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:1387
+
+CfirAnalysisMacroTestGenerated > Llt > Annotation > Ifavailable > LevelSyscapCheck > testTest06() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:1393
+
+CfirAnalysisMacroTestGenerated > Llt > Annotation > Ifavailable > LevelSyscapCheck > testTest07() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:1399
+
+CfirAnalysisMacroTestGenerated > Llt > Annotation > Ifavailable > LevelSyscapCheck > testTest08() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:1405
+
+CfirAnalysisMacroTestGenerated > Llt > Annotation > Ifavailable > LevelSyscapCheck > testTest09() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:1411
+
+CfirAnalysisMacroTestGenerated > Llt > ConstEvaluation > testConstSafeStd() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:1467
+
+CfirAnalysisMacroTestGenerated > Llt > Ffi > testCTypeInterface() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:1505
+
+CfirAnalysisMacroTestGenerated > Llt > Function > DefaultParameterPkg02 > testTestMutation() FAILED
+    org.cangnova.cangjie.util.FileAnalysisException at CfirAnalysisMacroTestGenerated.kt:1560
+        Caused by: org.cangnova.cangjie.utils.exceptions.CangJieIllegalArgumentExceptionWithAttachments at CfirAnalysisMacroTestGenerated.kt:1560
+            Caused by: org.cangnova.cangjie.cfir.resolve.match.exhaustive.inria.MarangetException at CfirAnalysisMacroTestGenerated.kt:1560
+
+CfirAnalysisMacroTestGenerated > Llt > Function > DefaultParameterPkg02 > testTest() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:1542
+
+CfirAnalysisMacroTestGenerated > Llt > Function > DefaultParameterPkg02 > testTestMacro() FAILED
+    org.cangnova.cangjie.util.FileAnalysisException at CfirAnalysisMacroTestGenerated.kt:1548
+        Caused by: org.cangnova.cangjie.utils.exceptions.CangJieIllegalArgumentExceptionWithAttachments at CfirAnalysisMacroTestGenerated.kt:1548
+            Caused by: org.cangnova.cangjie.cfir.resolve.match.exhaustive.inria.MarangetException at CfirAnalysisMacroTestGenerated.kt:1548
+
+CfirAnalysisMacroTestGenerated > Llt > Function > DefaultParameterPkg02 > F2 > testTest3() FAILED
+    org.cangnova.cangjie.util.FileAnalysisException at CfirAnalysisMacroTestGenerated.kt:1575
+        Caused by: org.cangnova.cangjie.utils.exceptions.CangJieIllegalArgumentExceptionWithAttachments at CfirAnalysisMacroTestGenerated.kt:1575
+            Caused by: org.cangnova.cangjie.cfir.resolve.match.exhaustive.inria.MarangetException at CfirAnalysisMacroTestGenerated.kt:1575
+
+CfirAnalysisMacroTestGenerated > Llt > Function > DefaultParameterPkg02 > G1 > testTest2() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:1591
+
+CfirAnalysisMacroTestGenerated > Llt > Functionlinkage > UsedInternalDecl02 > testTest() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:1634
+
+CfirAnalysisMacroTestGenerated > Llt > Lookup > MultiFilesPrivate01 > Pkg > testMain() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:1747
+
+CfirAnalysisMacroTestGenerated > Llt > Operator > testErrQuoteUnary() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:1765
+
+CfirAnalysisMacroTestGenerated > Llt > OperatorOverload > testErrBinary00() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:1781
+
+CfirAnalysisMacroTestGenerated > Llt > QuoteExpr > testErr1() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:1797
+
+CfirAnalysisMacroTestGenerated > Llt > QuoteExpr > testMainErr() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:1803
+
+CfirAnalysisMacroTestGenerated > Llt > QuoteExpr > testMainOk1() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:1821
+
+CfirAnalysisMacroTestGenerated > Llt > QuoteExpr > testMainErr1() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:1809
+
+CfirAnalysisMacroTestGenerated > Llt > QuoteExpr > testMainOk() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:1815
+
+CfirAnalysisMacroTestGenerated > Llt > Type > IntTypeSuffix > test004() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:1870
+
+CfirAnalysisMacroTestGenerated > Llt > Typealias > ImportMacroAlias > testTypeaslias() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:1914
+
+CfirAnalysisMacroTestGenerated > Llt > UnusedImport > UnusedImport005 > testUnused001() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:1982
+
+CfirAnalysisMacroTestGenerated > Llt > UnusedImport > UnusedImport005 > Unused003 > testUnused003() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:2003
+
+CfirAnalysisMacroTestGenerated > Llt > Varray > testSubsriptWithMemberAccessLet() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:2069
+
+CfirAnalysisMacroTestGenerated > Llt > Varray > VarrayCffi > testVarrayInout02() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:2138
+
+CfirAnalysisMacroTestGenerated > Llt > Varray > VarrayCffi > testVarrayInout03() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:2144
+
+CfirAnalysisMacroTestGenerated > Llt > Varray > VarrayCffi > testVarrayInout04() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:2150
+
+CfirAnalysisMacroTestGenerated > Llt > Varray > VarrayCffi > testVarrayInout05() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:2156
+
+CfirAnalysisMacroTestGenerated > Llt > Varray > VarrayCffi > testVarrayCstruct01() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:2084
+
+CfirAnalysisMacroTestGenerated > Llt > Varray > VarrayCffi > testVarrayCstruct02() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:2090
+
+CfirAnalysisMacroTestGenerated > Llt > Varray > VarrayCffi > testVarrayCstruct03() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:2096
+
+CfirAnalysisMacroTestGenerated > Llt > Varray > VarrayCffi > testVarrayCstruct04() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:2102
+
+CfirAnalysisMacroTestGenerated > Llt > Varray > VarrayCffi > testVarrayCstruct05() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:2108
+
+CfirAnalysisMacroTestGenerated > Llt > Varray > VarrayCffi > testVarrayCtype01() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:2114
+
+CfirAnalysisMacroTestGenerated > Llt > Varray > VarrayCffi > testVarrayCtype02() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:2120
+
+CfirAnalysisMacroTestGenerated > Llt > Varray > VarrayCffi > testVarrayCtype03() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:2126
+
+CfirAnalysisMacroTestGenerated > Llt > Varray > VarrayWithReftype > testVarrayWithReftype02() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:2184
+
+CfirAnalysisMacroTestGenerated > Llt > Varray > VarrayWithReftype > testVarrayWithReftype03() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:2190
+
+CfirAnalysisMacroTestGenerated > Llt > Varray > VarrayWithReftype > testVarrayWithReftype04() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:2196
+
+CfirAnalysisMacroTestGenerated > Llt > Varray > VarrayWithReftype > testVarrayWithReftype05() FAILED
+    org.opentest4j.AssertionFailedError at CfirAnalysisMacroTestGenerated.kt:2202
+
+8422 tests completed, 664 failed, 307 skipped
+
+> Task :cfir:analysis-tests:test FAILED
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':cfir:analysis-tests:test'.
+> There were failing tests. See the report at: file:///D:/code/intellij/cangjie/cfir/analysis-tests/build/reports/tests/test/index.html
+
+* Try:
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+
+BUILD FAILED in 12m 6s
+102 actionable tasks: 1 executed, 101 up-to-date
+[GradleQueue] gradlew finished with exitCode=1
